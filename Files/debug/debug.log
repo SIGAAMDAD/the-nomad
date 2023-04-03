@@ -1,0 +1,112 @@
+[info]: initializing renderer
+[info]: alllocating memory to the SDL_Window context
+[info]: success
+[info]: allocating memory to the SDL_Renderer context
+[info]: success
+[info]: loading the sprite sheet from Files/gamedata/SPRITES/texmap.bmp
+[info]: success
+[info]: successful initialization of SDL2 context
+[info]: pre-caching models/textures
+[trace]: loading up model at index 0
+[trace]: loading up model at index 1
+[trace]: loading up model at index 2
+[trace]: loading up model at index 3
+[trace]: loading up model at index 4
+[trace]: loading up model at index 5
+[trace]: loading up model at index 6
+[trace]: loading up model at index 7
+[trace]: loading up model at index 8
+[trace]: loading up model at index 9
+[trace]: loading up model at index 10
+[trace]: loading up model at index 11
+[trace]: loading up model at index 12
+[trace]: loading up model at index 13
+[trace]: loading up model at index 14
+[trace]: loading up model at index 15
+[trace]: loading up model at index 16
+[info]: finished loading
+[trace]: model loading statistics:
+[trace]: 
+    index   : 0
+    address : 0x7f1723427788
+    time    : 0.000012
+[trace]: 
+    index   : 1
+    address : 0x7f1723427808
+    time    : 0.000006
+[trace]: 
+    index   : 2
+    address : 0x7f1723427888
+    time    : 0.000013
+[trace]: 
+    index   : 3
+    address : 0x7f1723427908
+    time    : 0.000012
+[trace]: 
+    index   : 4
+    address : 0x7f1723427988
+    time    : 0.000013
+[trace]: 
+    index   : 5
+    address : 0x7f1723427a08
+    time    : 0.000014
+[trace]: 
+    index   : 6
+    address : 0x7f1723427a88
+    time    : 0.000014
+[trace]: 
+    index   : 7
+    address : 0x7f1723427b08
+    time    : 0.000012
+[trace]: 
+    index   : 8
+    address : 0x7f1723427b88
+    time    : 0.000011
+[trace]: 
+    index   : 9
+    address : 0x7f1723427c08
+    time    : 0.000010
+[trace]: 
+    index   : 10
+    address : 0x7f1723427c88
+    time    : 0.000013
+[trace]: 
+    index   : 11
+    address : 0x7f1723427d08
+    time    : 0.000013
+[trace]: 
+    index   : 12
+    address : 0x7f1723427d88
+    time    : 0.000013
+[trace]: 
+    index   : 13
+    address : 0x7f1723427e08
+    time    : 0.000013
+[trace]: 
+    index   : 14
+    address : 0x7f1723427e88
+    time    : 0.000011
+[trace]: 
+    index   : 15
+    address : 0x7f1723427f08
+    time    : 0.000014
+[trace]: 
+    index   : 16
+    address : 0x7f1723427f88
+    time    : 0.000013
+[trace]: average: 0.000012
+[trace]: longest: 0.000014 (index 15)
+[info]: setting up imgui
+[info]: running main gameplay loop
+[info]: gamestate = GS_MENU
+[info]: exiting main menu
+[info]: gamestate = GS_SETTINGS
+[info]: exiting settings menu
+[info]: gamestate = GS_MENU
+[info]: exiting main menu
+[info]: gamestate = GS_SETTINGS
+[info]: exiting settings menu
+[info]: gamestate = GS_MENU
+[info]: exiting main menu
+[info]: gamestate = GS_SETTINGS
+[info]: deallocating and shutting down all systems
