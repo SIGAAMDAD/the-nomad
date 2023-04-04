@@ -24,15 +24,18 @@ void G_SaveGame(const char* svfile)
 {
     assert(svfile);
     json data;
+    uint32_t nummobs = Game::GetMobs().size();
+
     data["header"] = {
         {"version", NOMAD_VERSION},
         {"version.update", NOMAD_VERSION_UPDATE},
         {"version.patch", NOMAD_VERSION_PATCH},
         {"bffname", Game::Get()->bffname},
-        {"scfname", Game::Get()->scfname}
+        {"scfname", Game::Get()->scfname},
+        {"nummobs", nummobs}
     };
     data["playr"] = {
-        {"name", Game::GetPlayr()->name},
+        {"name", std::string(Game::GetPlayr()->name)},
         {"health", Game::GetPlayr()->health},
         {"armor", Game::GetPlayr()->armor},
         {"pos.y", Game::GetPlayr()->pos.y},
@@ -41,7 +44,6 @@ void G_SaveGame(const char* svfile)
         {"level", Game::GetPlayr()->level},
         {"xp", Game::GetPlayr()->xp}
     };
-    uint32_t nummobs = Game::GetMobs().size();
     linked_list<Mob*>::iterator it = Game::GetMobs().begin();
     for (uint32_t i = 0; i < nummobs; ++i) {
         std::string node_name = "mob_"+std::to_string(i);
@@ -69,12 +71,42 @@ void G_LoadGame(const char* svfile)
     json data = json::from_bjdata(file);
     file.close();
 
-    std::array<uint64_t, 3> version;
-    version[0] = data["header"]["version"];
+    uint64_t version[3];
+    *version = data["header"]["version"];
     version[1] = data["header"]["version.update"];
     version[2] = data["header"]["version.patch"];
+    uint32_t nummobs = data["header"]["nummobs"];
 
     if (version[0] != _NOMAD_VERSION) {
         LOG_WARN("version[0] != _NOMAD_VERSION");
+    }
+
+    {
+        const std::string name = data["playr"]["name"];
+        N_strncpy(Game::GetPlayr()->name, name.c_str(), 256);
+        playr->armor = data["playr"]["armor"];
+        playr->health = data["playr"]["health"];
+        playr->level = data["playr"]["level"];
+        playr->xp = data["playr"]["level"];
+        playr->pos.y = data["playr"]["pos.y"];
+        playr->pos.x = data["playr"]["pos.x"];
+    }
+
+    for (linked_list<Mob*>::iterator it = Game::GetMobs().begin(); it != Game::GetMobs().end();
+    it = it->next) {
+        Z_Free(it->val);
+    }
+    Game::GetMobs().clear();
+    linked_list<Mob*>::iterator it = Game::GetMobs().begin();
+    for (uint32_t i = 0; i < nummobs; ++i) {
+        const std::string node_name = "mob_"+std::to_string(i);
+        Mob* const mob = it->val;
+        mob->health = data[node_name]["health"];
+        mob->mpos.y = data[node_name]["mpos.y"];
+        mob->mpos.x = data[node_name]["mpos.x"];
+        mob->c_mob = mobinfo[data["mob"]["mobj_index"]];
+        mob->flags = data[node_name]["flags"];
+        mob->mdir = data[node_name]["mdir"];
+        it = it->next;
     }
 }

@@ -16,6 +16,7 @@ inline void N_DebugWindowDraw();
 #include "p_playr.h"
 #include "g_sound.h"
 #include "g_mob.h"
+#include "g_bff.h"
 
 inline std::chrono::system_clock::time_point start_time;
 inline std::chrono::system_clock::time_point end_time;
@@ -70,6 +71,18 @@ typedef enum : uint8_t
     NUMGAMESTATES
 } gamestate_t;
 
+template <auto fn>
+struct zone_deleter {
+    template <typename T>
+    constexpr void operator()(T* arg) const { Z_Free(arg); }
+};
+
+template<typename T>
+using zone_ptr = std::unique_ptr<T, zone_deleter<T>>;
+template<typename T>
+inline zone_ptr<T> make_ptr(int tag, void *user)
+{ return std::unique_ptr<T, zone_deleter<T>>((T *)Z_Malloc(sizeof(T), tag, user)); }
+
 class Game
 {
 private:
@@ -85,6 +98,10 @@ public:
     playr_t* playr; // player on the current machine
     gamestate_t gamestate;
     linked_list<Mob*> m_Active;
+    item_t* i_Active;
+
+    std::shared_ptr<BFF> bff;
+    bff_level_t* level = NULL;
 public:
     Game() = default;
     ~Game();
@@ -99,9 +116,13 @@ public:
     static inline playr_t* GetPlayers() { return gptr->playrs; }
 };
 
+void
+
 void G_SaveGame(const char* svfile);
 void G_LoadGame(const char* svfile);
 json& N_GetSaveJSon();
+void G_SpawnItem(item_t item);
+void G_SpawnItem(const item_t& item);
 
 inline coord_t E_GetDir(byte dir)
 {
@@ -117,61 +138,6 @@ inline coord_t E_GetDir(byte dir)
 
 void ImGui_Init();
 void ImGui_ShutDown();
-
-class FrameRate
-{
-public:
-    uint32_t start_tics;
-    uint32_t paused_tics;
-    bool pause_bool;
-    bool started;
-
-    FrameRate()
-        : start_tics(0), paused_tics(0), pause_bool(false), started(false)
-    { }
-    ~FrameRate() = default;
-
-    inline void start() {
-        started = true;
-        pause_bool = false;
-
-        start_tics = SDL_GetTicks();
-        paused_tics = 0;
-    }
-    inline void stop() {
-        started = false;
-        pause_bool = false;
-
-        start_tics = 0;
-        paused_tics = 0;
-    }
-    inline void pause() {
-        if (started && !pause_bool) {
-            pause_bool = true;
-            paused_tics = SDL_GetTicks() - start_tics;
-            start_tics = 0;
-        }
-    }
-    inline void unpause() {
-        if (started && pause_bool) {
-            pause_bool = false;
-            start_tics = SDL_GetTicks() - paused_tics;
-            paused_tics = 0;
-        }
-    }
-    inline uint32_t getTicks() {
-        uint32_t time = 0;
-        if (started) {
-            if (pause_bool)
-                time = paused_tics;
-            else
-                time = SDL_GetTicks() - start_tics;
-        }
-        return time;
-    }
-    inline bool running(void) const { return started; }
-    inline bool paused(void) const { return pause_bool && started; }
-};
 
 #include "g_zone.h"
 

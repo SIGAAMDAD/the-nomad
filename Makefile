@@ -10,7 +10,7 @@ SDIR          = src
 .PHONY: all clean
 
 ifdef release
-CFLAGS= -Ofast -s -std=c++17 -I/usr/include -Ideps
+CFLAGS= -Ofast -s -std=c++17 -I/usr/include -Ideps -fno-exceptions
 else
 CFLAGS= -Og -g -std=c++17 -I/usr/include -Ideps -Wall -Wpedantic -D_NOMAD_DEBUG
 endif

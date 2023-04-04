@@ -12,7 +12,7 @@ typedef enum armortype_e : uint_fast8_t
 
 typedef struct playr_s
 {
-    std::string name;
+    char name[256];
     int_fast16_t health;
     armortype_t armor;
     
@@ -24,7 +24,7 @@ typedef struct playr_s
     uint_fast16_t level = 0;
     uint_fast64_t xp = 0;
 
-    weapon_t P_wpns[11];
+    weapon_t P_wpns[PLAYR_MAX_WPNS];
     weapon_t *c_wpn = NULL;
     weapon_t *swap = NULL;
     cvector_vector_type(item_t) inv;
