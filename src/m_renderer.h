@@ -60,7 +60,7 @@ typedef struct renderer_s
     screen_t screen;
     texture_ptr SDL_spr_sheet;
     surface_ptr SDL_win_sur;
-    linked_list<model_t*> models;
+    model_t** models;
     sprite_t vmatrix[24][88];
 } renderer_t;
 

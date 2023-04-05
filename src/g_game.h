@@ -11,12 +11,12 @@ inline void N_DebugWindowDraw();
 #include "n_scf.h"
 #include "m_renderer.h"
 #include "g_rng.h"
+#include "g_mob.h"
+#include "g_bff.h"
 #include "g_map.h"
 #include "g_items.h"
 #include "p_playr.h"
 #include "g_sound.h"
-#include "g_mob.h"
-#include "g_bff.h"
 
 inline std::chrono::system_clock::time_point start_time;
 inline std::chrono::system_clock::time_point end_time;
@@ -77,11 +77,13 @@ struct zone_deleter {
     constexpr void operator()(T* arg) const { Z_Free(arg); }
 };
 
+#if 0
 template<typename T>
 using zone_ptr = std::unique_ptr<T, zone_deleter<T>>;
 template<typename T>
 inline zone_ptr<T> make_ptr(int tag, void *user)
 { return std::unique_ptr<T, zone_deleter<T>>((T *)Z_Malloc(sizeof(T), tag, user)); }
+#endif
 
 class Game
 {
@@ -116,7 +118,7 @@ public:
     static inline playr_t* GetPlayers() { return gptr->playrs; }
 };
 
-void
+inline bool imgui_on = false;
 
 void G_SaveGame(const char* svfile);
 void G_LoadGame(const char* svfile);
@@ -140,6 +142,7 @@ void ImGui_Init();
 void ImGui_ShutDown();
 
 #include "g_zone.h"
+#include "g_bff.h"
 
 void I_NomadInit();
 void N_MainLoop();

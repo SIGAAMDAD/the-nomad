@@ -72,7 +72,7 @@ void G_LoadGame(const char* svfile)
     file.close();
 
     uint64_t version[3];
-    *version = data["header"]["version"];
+    version[0] = data["header"]["version"];
     version[1] = data["header"]["version.update"];
     version[2] = data["header"]["version.patch"];
     uint32_t nummobs = data["header"]["nummobs"];
@@ -82,6 +82,7 @@ void G_LoadGame(const char* svfile)
     }
 
     {
+        playr_t* playr = Game::GetPlayr();
         const std::string name = data["playr"]["name"];
         N_strncpy(Game::GetPlayr()->name, name.c_str(), 256);
         playr->armor = data["playr"]["armor"];
@@ -104,7 +105,7 @@ void G_LoadGame(const char* svfile)
         mob->health = data[node_name]["health"];
         mob->mpos.y = data[node_name]["mpos.y"];
         mob->mpos.x = data[node_name]["mpos.x"];
-        mob->c_mob = mobinfo[data["mob"]["mobj_index"]];
+        mob->c_mob = mobinfo[(uint64_t)data["mob"]["mobj_index"]];
         mob->flags = data[node_name]["flags"];
         mob->mdir = data[node_name]["mdir"];
         it = it->next;

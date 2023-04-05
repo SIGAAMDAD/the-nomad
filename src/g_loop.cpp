@@ -63,9 +63,11 @@ static void N_Level()
 {
     LOG_INFO("gamestate = GS_LEVEL");
     SDL_Event event;
-    LOG_INFO("beginning level loop, capped frame rate: %hu", scf::renderer::framerate);
+    LOG_INFO("beginning level loop, capped frame rate: {}", scf::renderer::framerate);
+#ifdef _NOMAD_DEBUG
     float renderer_time, events_time, loop_time;
     profiler_stats renderer, events, loop;
+#endif
     while (Game::Get()->gamestate == GS_LEVEL) {
         PROFILE_FUNC(loop_time);
         N_DebugWindowClear();
@@ -94,12 +96,14 @@ static void N_Level()
             R_DrawCompass();
             R_DrawFilledBox(SCREEN_HEIGHT - 300, 0, SCREEN_WIDTH, 30, 0, 255, 0, 255);
         }
+#ifdef _NOMAD_DEBUG
         loop.total++;
         renderer.total++;
         events.total++;
         loop.avg += loop_time;
         renderer.avg += renderer_time;
         events.avg += events_time;
+#endif
         IMGUI_BEGIN("Profiler");
         IMGUI_TEXT("[Render (Scope)]: %f", renderer_time);
         IMGUI_TEXT("[Event Poll (Scope)]: %f", events_time);
@@ -107,9 +111,9 @@ static void N_Level()
         IMGUI_END();
         N_DebugWindowDraw();
     }
-    LOG_TRACE("renderer average time: %f", renderer.avg / renderer.total);
-    LOG_TRACE("event loop average time: %f", events.avg / events.total);
-    LOG_TRACE("loop average time: %f", loop.avg / loop.total);
+    LOG_TRACE("renderer average time: {}", renderer.avg / renderer.total);
+    LOG_TRACE("event loop average time: {}", events.avg / events.total);
+    LOG_TRACE("loop average time: {}", loop.avg / loop.total);
     LOG_INFO("exiting level loop");
 }
 
@@ -270,31 +274,31 @@ static inline void N_RenderSettings(bool *open)
     }
     ImGui::NewLine();
     {
-        float sfx_vol = scf::sfx_vol * 100.0f;
-        float music_vol = scf::music_vol * 100.0f;
+        float sfx_vol = scf::audio::sfx_vol * 100.0f;
+        float music_vol = scf::audio::music_vol * 100.0f;
         ImGui::Text("<-------------------------  Audio  Settings  ------------------------->");
-        ImGui::Checkbox("SFX On", &scf::sfx_on);
+        ImGui::Checkbox("SFX On", &scf::audio::sfx_on);
         ImGui::SameLine(200);
-        ImGui::Text("%s", N_booltostr2(scf::sfx_on));
-        if (scf::sfx_on && scf::sfx_vol < 0.1f)
-            scf::sfx_vol = 0.1f;
-        if (scf::music_on && scf::music_vol < 0.1f)
-            scf::music_vol = 0.1f;
+        ImGui::Text("%s", N_booltostr2(scf::audio::sfx_on));
+        if (scf::audio::sfx_on && scf::audio::sfx_vol < 0.1f)
+            scf::audio::sfx_vol = 0.1f;
+        if (scf::audio::music_on && scf::audio::music_vol < 0.1f)
+            scf::audio::music_vol = 0.1f;
         
-        ImGui::Checkbox("Music On", &scf::music_on);
+        ImGui::Checkbox("Music On", &scf::audio::music_on);
         ImGui::SameLine(200);
-        ImGui::Text("%s", N_booltostr2(scf::music_on));
-        if (scf::sfx_on)
+        ImGui::Text("%s", N_booltostr2(scf::audio::music_on));
+        if (scf::audio::sfx_on)
             ImGui::SliderFloat("SFX Volume", &sfx_vol, 1.0f, 100.0f);
         else
             ImGui::Text("SFX Off");
-        if (scf::music_on)
+        if (scf::audio::music_on)
             ImGui::SliderFloat("Music Volume", &music_vol, 1.0f, 100.0f);
         else
             ImGui::Text("Music Off");
         
-        scf::music_vol = music_vol / 100.0f;
-        scf::sfx_vol = sfx_vol / 100.0f;
+        scf::audio::music_vol = music_vol / 100.0f;
+        scf::audio::sfx_vol = sfx_vol / 100.0f;
     }
     ImGui::NewLine();
     {

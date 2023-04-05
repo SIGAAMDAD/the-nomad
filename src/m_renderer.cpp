@@ -5,8 +5,7 @@ color_t red =   {255, 0, 0, 255};
 color_t green = {0, 255, 0, 255};
 color_t blue =  {0, 0, 255, 255};
 
-static constexpr const char *TEXMAP_PATH = "Files/gamedata/SPRITES/texmap.bmp";
-static constexpr const char *HUDMAP_PATH = "Files/gamedata/SPRITES/hudmap.bmp";
+static constexpr const char *TEXMAP_PATH = "Files/gamedata/RES/texmap.bmp";
 
 static model_t* health_model;
 static model_t* armor_model;
@@ -67,17 +66,18 @@ static void I_CacheModels()
     float total{};
     std::vector<loader> stats;
     stats.reserve(modelinfo.size());
+    renderer->models = (model_t **)Z_Malloc(sizeof(model_t *), TAG_CACHE, &renderer->models);
 
     for (uint32_t i = 0; i < NUMMODELS; ++i) {
         start = std::clock();
-        LOG_TRACE("loading up model at index %i", i);
-        renderer->models.emplace_back();
-        renderer->models.back() = (model_t *)Z_Malloc(sizeof(model_t), TAG_CACHE, &renderer->models.back());
-        assert(renderer->models.back());
-        N_memcpy(renderer->models.back(), &modelinfo[i], sizeof(model_t));
+        LOG_TRACE("loading up model at index {}", i);
+        renderer->models = (model_t **)Z_Realloc(renderer->models, sizeof(model_t *) * (i == 0 ? 1 : i), &renderer->models);
+        renderer->models[i] = (model_t *)Z_Malloc(sizeof(model_t), TAG_CACHE, &renderer->models[i]);
+        assert(renderer->models[i]);
+        N_memcpy(renderer->models[i], &modelinfo[i], sizeof(model_t));
         end = std::clock();
         total = (float)(end - start) / (float)CLOCKS_PER_SEC;
-        stats.emplace_back(loader{ (void *)renderer->models.back(), i, total });
+        stats.emplace_back(loader{ (void *)renderer->models[i], i, total });
         start = end = 0;
         total = 0;
     }
@@ -88,16 +88,16 @@ static void I_CacheModels()
     double avg = 0;
     for (const auto& i : stats) {
         LOG_TRACE(
-            "\n    index   : %i\n"
-            "    address : %p\n"
-            "    time    : %f",
-        i.index, i.addr, i.time);
+            "\n    index   : {index}\n"
+            "    address : {address}\n"
+            "    time    : {time}",
+        fmt::arg("index", i.index), fmt::arg("address", i.addr), fmt::arg("time", i.time));
         avg += i.time;
         longest = longest > i.time ? longest : i.time;
         longest_index = longest != i.time ? longest_index : i.index;
     }
-    LOG_TRACE("average: %f", avg / stats.size());
-    LOG_TRACE("longest: %f (index %i)", longest, longest_index);
+    LOG_TRACE("average: {}", avg / stats.size());
+    LOG_TRACE("longest: {1} (index {0})", longest, longest_index);
 }
 
 void R_DrawCompass()
@@ -148,21 +148,12 @@ void R_DrawVitals()
 {
 }
 
-static inline void R_DrawHud()
-{
-    R_DrawBox(0, 100, 100, 1000, {0, 0, 0, 255});
-    for (linked_list<model_t*>::iterator it = renderer->models.begin(); it != renderer->models.end(); it = it->next) {
-        R_DrawTexture(renderer->SDL_spr_sheet.get(), &it->val->offset, &it->val->screen_pos);
-    }
-}
-
 void R_DrawScreen(void)
 {
     R_ClearScreen();
     switch (Game::Get()->gamestate) {
     case GS_MENU:
     case GS_LEVEL:
-        R_DrawHud();
         break;
     };
     R_FlushBuffer();
@@ -228,7 +219,7 @@ void R_Init()
     assert(R_GetRenderer());
     LOG_INFO("success");
 
-    LOG_INFO("loading the sprite sheet from %s", TEXMAP_PATH);
+    LOG_INFO("loading the sprite sheet from {}", TEXMAP_PATH);
     renderer->SDL_spr_sheet = make_texture_from_image(TEXMAP_PATH);
     
     if (!renderer->SDL_spr_sheet) {
@@ -252,6 +243,7 @@ void R_ShutDown()
         return;
 
     con.ConPrintf("R_ShutDown: deallocating SDL2 contexts and window");
+    Z_Free(renderer);
     TTF_Quit();
     SDL_Quit();
 }
@@ -261,6 +253,8 @@ int R_DrawMenu(const char* fontfile, const std::vector<std::string>& choices,
 {
     assert(fontfile);
     assert(choices.size() > 0);
+
+    std::string font_name = "Files/gamedata/RES/"+std::string(fontfile);
     int x, y;
     int NUMMENU = choices.size();
     std::vector<SDL_Texture*> menus(choices.size());
@@ -270,7 +264,7 @@ int R_DrawMenu(const char* fontfile, const std::vector<std::string>& choices,
     SDL_Color color[2] = {{255,255,255},{255,0,0}};
     int32_t text_size = DEFAULT_TEXT_SIZE;
 
-    font_ptr font = make_font(fontfile, text_size);
+    font_ptr font = make_font(font_name.c_str(), text_size);
     if (!font) {
         N_Error("R_DrawMenu: TTF_OpenFont returned NULL for font file %s\n", fontfile);
     }

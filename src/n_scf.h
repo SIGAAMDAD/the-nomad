@@ -16,10 +16,12 @@ constexpr uint16_t res_height_720 = 720;
 constexpr uint16_t res_width_720 = 1280;
 
 namespace scf {
-    extern float music_vol;
-    extern float sfx_vol;
-    extern bool music_on;
-    extern bool sfx_on;
+    namespace audio {
+        extern float music_vol;
+        extern float sfx_vol;
+        extern bool music_on;
+        extern bool sfx_on;
+    };
 
     typedef enum renderapi_e : uint8_t
     {
@@ -118,7 +120,7 @@ namespace scf {
     extern keybind_t kb_binds[NUMBINDS];
 };
 
-void G_LoadSCF(const char* file);
+void G_LoadSCF();
 
 // hard-coded sprite positions for the various resolutions
 const non_atomic_coord_t playr_pos[scf::NUMRESOLUTIONS] = {

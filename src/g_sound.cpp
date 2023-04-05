@@ -50,9 +50,13 @@ static nomadsnd_t* music_cache;
 
 static void I_CacheSFX()
 {
-    LOG_TRACE("running I_CacheSFX for sfx pre-allocation");
+    if (!scf::audio::sfx_on)
+        return;
+
+    LOG_INFO("running I_CacheSFX for sfx pre-allocation");
     sfx_cache = (nomadsnd_t *)Z_Malloc(sizeof(nomadsnd_t) * numsfx, TAG_CACHE, &sfx_cache);
     assert(sfx_cache);
+    LOG_INFO("successfully allocated sfx_cache pointer via the heap");
 
     int16_t buffer[4096];
     memset(buffer, 0, sizeof(buffer));
@@ -63,7 +67,7 @@ static void I_CacheSFX()
             std::vector<int16_t> rdbuf;
             SNDFILE* sf = sf_open(sfxinfo[i], SFM_READ, &fdata);
             if (!sf) {
-                LOG_WARN_N(2048, "I_CacheSFX: failed to open sfx file %s, canceling caching of this sfx", sfxinfo[i]);
+                LOG_WARN("I_CacheSFX: failed to open sfx file {}, canceling caching of this sfx", sfxinfo[i]);
                 goto skip;
             }
             assert(sf);
@@ -77,7 +81,7 @@ static void I_CacheSFX()
             alCall(alBufferData(sfx->buffer, fdata.channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16,
                 &rdbuf.front(), rdbuf.size() * sizeof(int16_t), fdata.samplerate));
             alCall(alSourcei(sfx->source, AL_BUFFER, sfx->buffer));
-            alCall(alSourcef(sfx->source, AL_GAIN, scf::sfx_vol));
+            alCall(alSourcef(sfx->source, AL_GAIN, scf::audio::sfx_vol));
         }
         sfx->failed = false;
         sfx->queued = false;
@@ -95,10 +99,10 @@ static void I_CacheMusic()
 void Snd_Kill()
 {
     con.ConPrintf("Snd_Kill: deallocating and freeing OpenAL sources and buffers");
-    if (!scf::music_on && !scf::sfx_on)
+    if (!scf::audio::music_on && !scf::audio::sfx_on)
         return;
 
-    if (scf::sfx_on) {
+    if (scf::audio::sfx_on) {
         for (uint32_t i = 0; i < numsfx; ++i) {
             if (!sfx_cache[i].failed) {
                 alSourcei(sfx_cache[i].source, AL_BUFFER, 0);
@@ -107,9 +111,9 @@ void Snd_Kill()
             }
         }
     }
-    if (scf::music_on) {
+    if (scf::audio::music_on) {
     }
-    if (scf::sfx_on || scf::music_on) {
+    if (scf::audio::sfx_on || scf::audio::music_on) {
         alcMakeContextCurrent(NULL);
         alcDestroyContext(context);
         alcCloseDevice(device);
@@ -127,10 +131,10 @@ static std::mutex snd_mutex;
 void G_RunSound()
 {
     std::lock_guard lock(snd_mutex);
-    if (!scf::music_on)
+    if (!scf::audio::music_on)
         return;
     
-    if (!scf::sfx_on)
+    if (!scf::audio::sfx_on)
         return;
 
     for (uint32_t i = 0; i < numsfx; ++i) {
@@ -146,8 +150,8 @@ void Snd_Init()
     con.ConPrintf("Snd_Init: initializing OpenAL and libsndfile");
     device = alcOpenDevice(NULL);
     if (!device) {
-        scf::sfx_on = false;
-        scf::music_on = false;
+        scf::audio::sfx_on = false;
+        scf::audio::music_on = false;
         con.ConError("Snd_Init: alcOpenDevice returned NULL, turning off sound");
         return;
     }
@@ -155,8 +159,8 @@ void Snd_Init()
 
     context = alcCreateContext(device, NULL);
     if (!context) {
-        scf::sfx_on = false;
-        scf::music_on = false;
+        scf::audio::sfx_on = false;
+        scf::audio::music_on = false;
         con.ConError("Snd_Init: alcCreateContext returned NULL, turning off sound, error message: %s",
             alcGetString(device, alcGetError(device)));
         alcCloseDevice(device);
@@ -167,8 +171,8 @@ void Snd_Init()
 
     con.ConPrintf("Snd_Init: successfully initialized sound libraries");
 
-    scf::sfx_on = true;
-    scf::music_on = true;
+    scf::audio::sfx_on = true;
+    scf::audio::music_on = true;
 
     I_CacheSFX();
     I_CacheMusic();

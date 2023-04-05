@@ -2,9 +2,13 @@
 #include "g_game.h"
 
 bool sdl_on = false;
+static bool exited = false;
 
 void N_Error(const char *err, ...)
 {
+    if (exited)
+        return;
+    
     char msg[1024];
     N_memset(msg, 0, sizeof(msg));
     va_list argptr;
@@ -17,8 +21,8 @@ void N_Error(const char *err, ...)
     con.ConError("Error: %s", msg);
     con.ConFlush();
     Game::Get()->~Game();
-    Log::GetFileLogger()->flush();
-    zonefilelogger->flush();
+    Log::GetLogger()->flush();
+    exited = true;
     exit(EXIT_FAILURE);
 }
 
@@ -32,11 +36,15 @@ void ImGui_Init()
     ImGui::SetCurrentContext(Game::Get()->context);
     ImGui_ImplSDL2_InitForSDLRenderer(renderer->SDL_window.get(), R_GetRenderer());
     ImGui_ImplSDLRenderer_Init(R_GetRenderer());
+    imgui_on = true;
 }
 
 void I_NomadInit()
 {
     Z_Init();
+    con.ConPrintf("setting up logger");
+    Log::Init();
+
     Game::Init();
 
     fprintf(stdout,
@@ -48,10 +56,7 @@ void I_NomadInit()
     );
 
     con.ConPrintf("G_LoadSCF: parsing scf file");
-    G_LoadSCF(Game::Get()->scfname);
-
-    con.ConPrintf("setting up logger");
-    Log::Init();
+    G_LoadSCF();
 
     LOG_INFO("initializing renderer");
     R_Init();

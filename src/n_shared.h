@@ -80,10 +80,8 @@ class Log
 public:
 	static void Init();
 	static std::shared_ptr<spdlog::logger>& GetLogger() { return m_Instance; }
-	static std::shared_ptr<spdlog::logger>& GetFileLogger() { return m_FileLogger; }
 private:
 	static std::shared_ptr<spdlog::logger> m_Instance;
-	static std::shared_ptr<spdlog::logger> m_FileLogger;
 };
 
 class Console
@@ -410,91 +408,12 @@ inline bool N_strtobool2(const char* str)
 #define CVECTOR_LOGARITHMIC_GROWTH
 #include "cvector.h"
 
-#define BUFFER_FILL(...)\
-	static char buffer[128];snprintf(buffer,sizeof(buffer),__VA_ARGS__)
-#define BUFFER_FILL_N(n,...)\
-	static char buffer[n];snprintf(buffer,sizeof(buffer),__VA_ARGS__)
-
-#define LOG_TRACE_OVERRIDE_N(n,...) \
-{ \
-	BUFFER_FILL_N(n,__VA_ARGS__); \
-	::Log::GetLogger()->trace(buffer); \
-	::Log::GetFileLogger()->trace(buffer); \
-}
-#define LOG_INFO_N(n,...) \
-{ \
-	BUFFER_FILL_N(n,__VA_ARGS__); \
-	::Log::GetLogger()->info(buffer); \
-	::Log::GetFileLogger()->info(buffer); \
-}
-#define LOG_WARN_N(n,...) \
-{ \
-	BUFFER_FILL_N(n,__VA_ARGS__); \
-	::Log::GetLogger()->warn(buffer); \
-	::Log::GetFileLogger()->warn(buffer); \
-}
-#define LOG_ERROR_N(n,...) \
-{ \
-	BUFFER_FILL(n,__VA_ARGS__); \
-	::Log::GetLogger()->error(buffer); \
-	::Log::GetFileLogger()->error(buffer); \
-}
+#define LOG_INFO(...)  ::spdlog::info(__VA_ARGS__)
+#define LOG_WARN(...)  ::spdlog::warn(__VA_ARGS__)
+#define LOG_ERROR(...) ::spdlog::error(__VA_ARGS__)
 #ifdef _NOMAD_DEBUG
-#define LOG_TRACE_N(n,...) \
-{ \
-	BUFFER_FILL_N(n,__VA_ARGS__); \
-	::Log::GetLogger()->trace(buffer); \
-	::Log::GetFileLogger()->trace(buffer); \
-}
-#define LOG_DEBUG_N(n,...) \
-{ \
-	BUFFER_FILL_N(n,__VA_ARGS__); \
-	::Log::GetLogger()->debug(buffer); \
-	::Log::GetFileLogger()->debug(buffer); \
-}
-#else
-#define LOG_DEBUG_N(n,...)
-#define LOG_TRACE_N(n,...)
-#endif
-
-// LOG_TRACE_OVERRIDE: to be used incredibly sparingly
-#define LOG_TRACE_OVERRIDE(...) \
-{ \
-	BUFFER_FILL(__VA_ARGS__); \
-	::Log::GetLogger()->trace(buffer); \
-	::Log::GetFileLogger()->trace(buffer); \
-}
-#define LOG_INFO(...) \
-{ \
-	BUFFER_FILL(__VA_ARGS__); \
-	::Log::GetLogger()->info(buffer); \
-	::Log::GetFileLogger()->info(buffer); \
-}
-#define LOG_WARN(...) \
-{ \
-	BUFFER_FILL(__VA_ARGS__); \
-	::Log::GetLogger()->warn(buffer); \
-	::Log::GetFileLogger()->warn(buffer); \
-}
-#define LOG_ERROR(...) \
-{ \
-	BUFFER_FILL(__VA_ARGS__); \
-	::Log::GetLogger()->error(buffer); \
-	::Log::GetFileLogger()->error(buffer); \
-}
-#ifdef _NOMAD_DEBUG
-#define LOG_TRACE(...) \
-{ \
-	BUFFER_FILL(__VA_ARGS__); \
-	::Log::GetLogger()->trace(buffer); \
-	::Log::GetFileLogger()->trace(buffer); \
-}
-#define LOG_DEBUG(...) \
-{ \
-	BUFFER_FILL(__VA_ARGS__); \
-	::Log::GetLogger()->debug(buffer); \
-	::Log::GetFileLogger()->debug(buffer); \
-}
+#define LOG_TRACE(...) ::spdlog::trace(__VA_ARGS__)
+#define LOG_DEBUG(...) ::spdlog::debug(__VA_ARGS__)
 #else
 #define LOG_DEBUG(...)
 #define LOG_TRACE(...)

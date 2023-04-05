@@ -2,28 +2,34 @@
 #include "g_game.h"
 
 std::shared_ptr<spdlog::logger> Log::m_Instance;
-std::shared_ptr<spdlog::logger> Log::m_FileLogger;
 Console con;
 Game* Game::gptr;
 
 void ImGui_ShutDown()
 {
-    con.ConPrintf("ImGui_ShutDown: deallocating ImGui context");
-    ImGui_ImplSDLRenderer_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
-    ImGui::DestroyContext();
+    if (imgui_on) {
+        imgui_on = false;
+        con.ConPrintf("ImGui_ShutDown: deallocating ImGui context");
+        ImGui_ImplSDLRenderer_Shutdown();
+        ImGui_ImplSDL2_Shutdown();
+        ImGui::DestroyContext();
+    }
 }
 
 void Log::Init()
 {
-    m_Instance = spdlog::stdout_color_mt("LOG");
-    m_Instance->set_pattern("%^[%l]: %v%$");
+    std::vector<spdlog::sink_ptr> sinks;
+    sinks.emplace_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
+    sinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>("Files/debug/debug.log", true));
+
+    sinks[0]->set_pattern("%^[%l]: %v%$");
+    sinks[1]->set_pattern("[%l]: %v");
+
+    m_Instance = std::make_shared<spdlog::logger>("GAME", begin(sinks), end(sinks));
+    spdlog::register_logger(m_Instance);
+    spdlog::set_default_logger(m_Instance);
     m_Instance->set_level(spdlog::level::trace);
     m_Instance->flush_on(spdlog::level::trace);
-
-    m_FileLogger = spdlog::basic_logger_mt("DEBUG DUMP", "Files/debug/debug.log", true);
-    m_FileLogger->set_pattern("[%l]: %v");
-    m_FileLogger->set_level(spdlog::level::trace);
 }
 
 void Game::Init()
@@ -36,7 +42,7 @@ void Game::Init()
 
     N_strncpy(Game::Get()->bffname, "nomadmain.bff", sizeof(Game::Get()->bffname));
     N_strncpy(Game::Get()->scfname, "default.scf", sizeof(Game::Get()->scfname));
-    N_strncpy(Game::Get()->svfile, "nomadsv.ngd", sizeof(Game::Get()->svfile);
+    N_strncpy(Game::Get()->svfile, "nomadsv.ngd", sizeof(Game::Get()->svfile));
     Game::Get()->gamestate = GS_MENU;
 
     Game::Get()->playrs = (playr_t *)Z_Malloc(sizeof(playr_t) * 1, TAG_STATIC, &Game::Get()->playrs);
@@ -48,8 +54,7 @@ void Game::Init()
 
 Game::~Game()
 {
-    zonefilelogger->flush();
-    Log::GetFileLogger()->flush();
+    Log::GetLogger()->flush();
     ImGui_ShutDown();
     R_ShutDown();
 }

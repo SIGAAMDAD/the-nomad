@@ -37,34 +37,6 @@ enum {
 #define LOG_CALL(func)
 #endif
 
-#define Z_LOG(...) \
-{ \
-	BUFFER_FILL(__VA_ARGS__); \
-	::zonelogger->trace(buffer); \
-	::zonefilelogger->trace(buffer); \
-}
-#define Z_ERROR(...) \
-{ \
-	BUFFER_FILL(__VA_ARGS__); \
-	::zonelogger->error(buffer); \
-	::zonefilelogger->error(buffer); \
-}
-#define Z_WARN(...) \
-{ \
-	BUFFER_FILL(__VA_ARGS__); \
-	::zonelogger->warn(buffer); \
-	::zonefilelogger->warn(buffer); \
-}
-#define Z_DEBUG(...) \
-{ \
-	BUFFER_FILL(__VA_ARGS__); \
-	::zonelogger->debug(buffer); \
-	::zonefilelogger->debug(buffer); \
-}
-
-inline std::shared_ptr<spdlog::logger> zonelogger;
-inline std::shared_ptr<spdlog::logger> zonefilelogger;
-
 extern "C" void Z_Init();
 
 extern "C" void Z_FreeTags(uint8_t lowtag, uint8_t hightag);

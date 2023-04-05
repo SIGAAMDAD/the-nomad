@@ -30,7 +30,4 @@ typedef struct pint_s
 
 typedef std::atomic<pint_t> atomic_pint;
 
-constexpr uint16_t MAP_MAX_Y = 320;
-constexpr uint16_t MAP_MAX_X = 320;
-
 #endif
