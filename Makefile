@@ -34,6 +34,7 @@ OBJS= \
 	$(O)/g_main.o \
 	$(O)/g_rng.o \
 	$(O)/s_saveg.o \
+	$(O)/g_bff.o \
 	$(O)/imgui.o \
 	$(O)/imgui_impl_sdl2.o \
 	$(O)/imgui_impl_sdlrenderer.o \
@@ -43,6 +44,8 @@ OBJS= \
 
 all: glnomad
 
+$(O)/g_bff.o: $(SDIR)/g_bff.cpp
+	$(CC) $(CFLAGS) -Wno-unused-result -o $@ -c $<
 $(O)/%.o: $(SDIR)/%.cpp
 	$(CC) $(CFLAGS) -o $@ -c $<
 

@@ -529,12 +529,9 @@ extern "C" void* Z_Malloc(uint32_t size, uint8_t tag, void* user)
 	return retn;
 }
 
-extern "C" void* Z_Realloc(void *ptr, uint32_t nsize, void *user)
+extern "C" void* Z_Realloc(void *ptr, uint32_t nsize, void *user, uint8_t tag)
 {
 	LOG_INFO("Z_Realloc called with nsize of {0}, ptr at {1}, and user at {2}", nsize, ptr, user);
-	uint8_t tag;
-	memblock_t* base = (memblock_t *)((byte *)ptr - sizeof(memblock_t));
-	tag = base->tag;
 	void *p = Z_Malloc(nsize, tag, user);
 	if (ptr) {
 		memblock_t* block = (memblock_t *)((byte *)ptr - sizeof(memblock_t));

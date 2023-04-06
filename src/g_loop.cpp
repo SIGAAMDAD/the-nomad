@@ -18,16 +18,16 @@ static void N_HandleWindowEvent(const SDL_Event& event)
         LOG_INFO("SDL_WINDOWEVENT_HIDDEN triggered");
         break;
     case SDL_WINDOWEVENT_MOVED:
-        LOG_TRACE("SDL_WINDOWEVENT_MOVED triggered. new position: %d, %d",
+        LOG_TRACE("SDL_WINDOWEVENT_MOVED triggered. new position: {}, {}",
             event.window.data1, event.window.data2);
         break;
     case SDL_WINDOWEVENT_RESIZED:
-        LOG_INFO("SDL_WINDOWEVENT_RESIZED triggered. new size: %dx%d",
+        LOG_INFO("SDL_WINDOWEVENT_RESIZED triggered. new size: {}x{}",
             event.window.data1, event.window.data2);
         SDL_RenderSetScale(R_GetRenderer(), scf::renderer::width, scf::renderer::height);
         break;
     case SDL_WINDOWEVENT_SIZE_CHANGED:
-        LOG_INFO("SDL_WINDOWEVENT_SIZE_CHANGED triggered. new size: %dx%d",
+        LOG_INFO("SDL_WINDOWEVENT_SIZE_CHANGED triggered. new size: {}x{}",
             event.window.data1, event.window.data2);
         break;
     case SDL_WINDOWEVENT_MINIMIZED:

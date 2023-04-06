@@ -102,7 +102,7 @@ public:
     linked_list<Mob*> m_Active;
     item_t* i_Active;
 
-    std::shared_ptr<BFF> bff;
+    bff_file_t* file = NULL;
     bff_level_t* level = NULL;
 public:
     Game() = default;
@@ -117,6 +117,16 @@ public:
     static inline playr_t* GetPlayr() { return &gptr->playrs[0]; }
     static inline playr_t* GetPlayers() { return gptr->playrs; }
 };
+
+typedef enum : uint_fast8_t
+{
+    ET_PLAYR,
+    ET_MOB,
+    ET_ITEM,
+    ET_WEAPON,
+
+    NUMENTITIES
+} entitytype_t;
 
 inline bool imgui_on = false;
 

@@ -27,7 +27,7 @@
 #define NOMAD_VERSION_UPDATE _NOMAD_VERSION_UPDATE
 #define NOMAD_VERSION_PATCH _NOMAD_VERSION_PATCH
 
-typedef enum : uint_fast16_t
+typedef enum : uint16_t
 {
 	SPR_PLAYR = 0x00,
 	SPR_MERC,
@@ -35,6 +35,11 @@ typedef enum : uint_fast16_t
 	SPR_WATER,
 	SPR_FLOOR_INSIDE,
 	SPR_FLOOR_OUTSIDE,
+	SPR_DOOR_STATIC,
+	SPR_DOOR_OPEN,
+	SPR_DOOR_CLOSE,
+	SPR_ROCK,
+	SPR_CUSTOM,
 
 	NUMSPRITES
 } sprite_t;

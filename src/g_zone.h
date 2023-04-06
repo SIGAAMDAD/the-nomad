@@ -47,7 +47,7 @@ extern "C" void Z_ChangeTag(void *ptr, uint8_t tag);
 extern "C" void Z_ChangeTag2(void *ptr, uint8_t tag, const char *file, uint32_t line);
 extern "C" uint32_t Z_ZoneSize();
 extern "C" void *Z_Malloc(uint32_t size, uint8_t tag, void *user);
-extern "C" void *Z_Realloc(void *ptr, uint32_t nsize, void *user);
+extern "C" void *Z_Realloc(void *ptr, uint32_t nsize, void *user, uint8_t tag = TAG_STATIC);
 extern "C" void *Z_Calloc(void *user, uint32_t nelem, uint32_t elemsize, uint8_t tag);
 extern "C" void Z_Free(void *ptr);
 
