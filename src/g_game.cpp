@@ -39,6 +39,7 @@ void Game::Init()
     N_memset(Game::Get()->bffname, 0, sizeof(Game::Get()->bffname));
     N_memset(Game::Get()->scfname, 0, sizeof(Game::Get()->scfname));
     N_memset(Game::Get()->svfile, 0, sizeof(Game::Get()->svfile));
+    N_memset(Game::Get()->c_map, SPR_FLOOR_OUTSIDE, sizeof(Game::Get()->c_map));
 
     N_strncpy(Game::Get()->bffname, "nomadmain.bff", sizeof(Game::Get()->bffname));
     N_strncpy(Game::Get()->scfname, "default.scf", sizeof(Game::Get()->scfname));
@@ -49,12 +50,23 @@ void Game::Init()
     assert(Game::Get()->playrs);
     Game::Get()->playr = &gptr->playrs[0];
     assert(Game::Get()->playr);
-    Game::Get()->playr->pdir = D_NORTH;
+    playr_t* const playr = Game::GetPlayr();
+    playr->pdir = D_NORTH;
+    playr->health = PLAYR_MAX_HEALTH;
+    playr->armor = ARMOR_STREET;
+    playr->c_wpn = playr->P_wpns;
+    N_memset(playr->P_wpns, 0, sizeof(playr->P_wpns));
+    playr->xp = 0;
+    playr->level = 0;
+    playr->pos = {0, 0};
+    playr->inv.resize(1);
+    N_memset(&playr->inv[0], 0, sizeof(item_t));
 }
 
 Game::~Game()
 {
     Log::GetLogger()->flush();
     ImGui_ShutDown();
+    Snd_Kill();
     R_ShutDown();
 }

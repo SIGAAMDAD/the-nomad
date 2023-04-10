@@ -161,30 +161,11 @@ typedef struct
 
 memzone_t* mainzone;
 
-static uint_fast64_t active_memory = 0;
-static uint_fast64_t purgable_memory = 0;
-static uint_fast64_t free_memory = 0;
-
-void Z_PrintStats(void)
-{
-	if  (mainzone->size > 0) {
-		uint64_t total_memory = active_memory + free_memory + purgable_memory;
-
-		con.ConPrintf(
-			"[Zone Allocation Daemon Log]\n"
-			"  -> General <-\n"
-			"   total memory         => %lu\n"
-			"   free memory          => %lu\n"
-			"   purgable memory      => %lu\n"
-			"   active memory        => %lu\n",
-		total_memory, free_memory, purgable_memory, active_memory);
-	}
-}
-
-extern "C" void Z_KillHeap(void)
-{
-	free(mainzone);
-}
+static uint64_t active_memory = 0;
+static uint64_t purgable_memory = 0;
+static uint64_t free_memory = 0;
+static uint64_t total_blocks = 0;
+static uint64_t block_stats[NUMTAGS];
 
 static const char* Z_TagToStr(uint8_t tag)
 {
@@ -195,7 +176,68 @@ static const char* Z_TagToStr(uint8_t tag)
 	case TAG_PURGELEVEL: return "TAG_PURGELEVEL";
 	case TAG_CACHE: return "TAG_CACHE";
 	};
-	return "Unknown tag";
+	return "No Tag Given";
+}
+
+static int indexer = 0;
+
+void Z_PrintStats(void)
+{
+	if (write_bff_mode)
+		return;
+
+	if  (mainzone->size > 0) {
+		active_memory = active_memory < 0 ? 0 : active_memory;
+		free_memory = free_memory < 0 ? 0 : free_memory;
+		purgable_memory = purgable_memory < 0 ? 0 : purgable_memory;
+		indexer = 0;
+		uint64_t total_memory = active_memory + free_memory + purgable_memory;
+
+		con.ConPrintf(
+			"[Zone Allocation Daemon Log]\n"
+			"  -> General <-\n"
+			"   total memory         => {}\n"
+			"   free memory          => {}\n"
+			"   purgable memory      => {}\n"
+			"   active memory        => {}\n"
+			"  -> Block Info <-\n"
+			"   total blocks         => {}",
+		total_memory, free_memory, purgable_memory, active_memory, total_blocks);
+		
+		if (!total_blocks) {
+			con.ConPrintf("   > No Blocks To Report <");
+		}
+		else {
+			char addr[256];
+			N_memset(addr, 0, sizeof(addr));
+			uint64_t index = 0;
+			for (memblock_t* block = mainzone->blocklist.next;; block = block->next, ++index) {
+				if (block == &mainzone->blocklist)
+					break;
+				
+				if (block->user)
+					stbsp_snprintf(addr, sizeof(addr), "0x%lx", (uint64_t)block->user);
+				else
+					stbsp_snprintf(addr, sizeof(addr), "null user");
+				
+				con.ConPrintf(
+					"   > Block {} <\n"
+					"     address    : {}\n"
+					"     size       : {}\n"
+					"     tag        : {}\n"
+					"     user       : {}",
+				index, (void *)block, block->size, Z_TagToStr(block->tag), addr);
+			}
+		}
+		con.ConPrintf("\n");
+		con.ConFlush();
+	}
+}
+
+extern "C" void Z_KillHeap(void)
+{
+	con.ConPrintf("Z_KillHeap: freeing mainzone pointer of size {}", mainzone->size);
+	free(mainzone);
 }
 
 //
@@ -203,7 +245,9 @@ static const char* Z_TagToStr(uint8_t tag)
 //
 extern "C" void Z_Free(void *ptr)
 {
+#ifdef ZONEDEBUG
 	LOG_INFO("freeing up zone-allocated block memory at {}", ptr);
+#endif
 	if (ptr == NULL) {
 		LOG_WARN("Z_Free pointer given is NULL, aborting.");
 		return;
@@ -223,17 +267,21 @@ extern "C" void Z_Free(void *ptr)
 	if (block->tag >= TAG_PURGELEVEL && !block->user)
 		N_Error("Z_Free: an owner is required for purgable blocks");
 	if (block->id != ZONEID) {
-		Z_WARN("Z_Free trying to free pointer without ZONEID, aborting.");
+		LOG_WARN("Z_Free trying to free pointer without ZONEID, aborting.");
 		return;
 	}
 #endif
 	
+	--block_stats[block->tag];
 	if (block->tag != TAG_FREE && block->user)
 		block->user = (void *)NULL;
+	if (block->tag == TAG_PURGELEVEL)
+		purgable_memory -= block->size;
 	if (block->user > (void *)0x100)
 		block->user = (void *)NULL;
 
-
+	--total_blocks;
+	++indexer;
 
 	// mark as free
 	block->user = (void *)NULL;
@@ -241,10 +289,13 @@ extern "C" void Z_Free(void *ptr)
 #ifdef ZONEIDCHECK
 	block->id = 0;
 #endif
+	++block_stats[TAG_FREE];
 	
 	other = block->prev;
 	if (other->tag == TAG_FREE) {
+#ifdef ZONEDEBUG
 		LOG_INFO("block->prev->tag == TAG_FREE, merging blocks");
+#endif
 		// merge with previous free block
 		other->size += block->size;
 		other->next = block->next;
@@ -257,7 +308,9 @@ extern "C" void Z_Free(void *ptr)
 
 	other = block->next;
 	if (other->tag == TAG_FREE) {
+#ifdef ZONEDEBUG
 		LOG_INFO("block->next->tag == TAG_FREE, merging blocks");
+#endif
 		// merge the next free block onto the end
 		block->size += other->size;
 		block->next = other->next;
@@ -269,47 +322,46 @@ extern "C" void Z_Free(void *ptr)
 	}
 }
 
-#if 0
 extern "C" void Z_FileDumpHeap()
 {
 	memblock_t* block;
 	const char* filename = "Files/debug/heapdump.log";
 	filestream fp(filename, "w");
-	fprintf(fp.fp, "zone size:%i   location:%p\n", mainzone->size, (void *)mainzone);
+	fprintf(fp.get(), "zone size:%i   location:%p\n", mainzone->size, (void *)mainzone);
 	for (block = mainzone->blocklist.next;; block = block->next) {
-		fprintf (fp.fp, "block:%p     size:%7i     user:%p      tag:%3i\n",
-			block, block->size, block->user, block->tag);
+		fprintf (fp.get(), "block:%p     size:%7i     user:%p      tag:%3i\n",
+			(void *)block, block->size, block->user, block->tag);
 		if (block->next == &mainzone->blocklist) {
 			// all blocks have been hit
 			break;
 		}
 		if ((byte *)block+block->size != (byte *)block->next) {
-			fprintf(fp.fp, "ERROR: block size doesn't touch next block!\n");
+			fprintf(fp.get(), "ERROR: block size doesn't touch next block!\n");
 		}
 		if (block->next->prev != block) {
-			fprintf(fp.fp, "ERROR: next block doesn't have proper back linkage!\n");
+			fprintf(fp.get(), "ERROR: next block doesn't have proper back linkage!\n");
 		}
 		if (!block->user && !block->next->user) {
-			fprintf(fp.fp, "ERROR: two consecutive free blocks!\n");
+			fprintf(fp.get(), "ERROR: two consecutive free blocks!\n");
 		}
 	}
 }
-#endif
 
-#define DEFAULT_SIZE (68*1024*1024) // 68 MiB
+#define DEFAULT_SIZE (100*1024*1024) // 100 MiB
 #define MIN_SIZE     (50*1024*1024) // 50 MiB
 
-byte *I_ZoneMemory(int32_t *size)
+static bool initialized = false;
+
+byte *I_ZoneMemory(uint32_t *size)
 {
-	int32_t current_size = DEFAULT_SIZE;
-	const int32_t min_size = MIN_SIZE;
-	
+	uint32_t current_size = DEFAULT_SIZE;
+	const uint32_t min_size = MIN_SIZE;
+
 	byte *ptr = (byte *)calloc(current_size, 1);
 	while (ptr == NULL) {
 		if (current_size < min_size) {
-			N_Error("I_ZoneMemory: failed allocation of zone memory of %i bytes", current_size);
+			N_Error("I_ZoneMemory: failed allocation of zone memory of %iu bytes", current_size);
 		}
-		
 		ptr = (byte *)calloc(current_size, 1);
 		if (ptr == NULL) {
 			current_size -= RETRY_AMOUNT;
@@ -319,12 +371,11 @@ byte *I_ZoneMemory(int32_t *size)
 	return ptr;
 }
 
-static bool initialized = false;
-
 extern "C" void Z_Init()
 {
+	srand(time(NULL));
 	memblock_t* base;
-	int32_t size;
+	uint32_t size;
 	mainzone = (memzone_t*)I_ZoneMemory(&size);
 	if (!mainzone)
 		N_Error("Z_Init: memory allocation failed");
@@ -346,11 +397,12 @@ extern "C" void Z_Init()
 	base->user = (void *)NULL;
 	base->size = mainzone->size - sizeof(memzone_t);
 	if (!initialized) {
-		con.ConPrintf("Z_Init: initializing Zone Allocation Daemon from addresses %p -> %p of size %u MiB",
+		con.ConPrintf("Z_Init: initializing Zone Allocation Daemon from addresses {} -> {} of size {} MiB",
 			(void *)mainzone, (void *)(mainzone+mainzone->size), mainzone->size >> 20);
+		free_memory = mainzone->size;
 	}
 	else
-		LOG_INFO("Resizing zone from {0} -> {1}, new size {2}",
+		LOG_INFO("Resizing zone from {} -> {}, new size {}",
 			(void *)(mainzone), (void *)(mainzone+mainzone->size), mainzone->size);
 	
 	initialized = true;
@@ -395,15 +447,25 @@ extern "C" void Z_ChangeTag(void *ptr, uint8_t tag)
 	if (base->id != ZONEID)
 		LOG_WARN("Z_ChangeTag: block {} has invalid zoneid", (void *)base);
 #endif
-	LOG_INFO("changing tag of block {0} from {1} to {2}", (void *)base, Z_TagToStr(base->tag), Z_TagToStr(tag));
+	--block_stats[base->tag];
+#ifdef ZONEDEBUG
+	LOG_INFO("changing tag of block {} from {} to {}", (void *)base, Z_TagToStr(base->tag), Z_TagToStr(tag));
+#endif
 	base->tag = tag;
+	++block_stats[tag];
 }
 
 extern "C" void Z_ClearZone()
 {
-//	LOG_INFO("clearing zone");
+	LOG_INFO("clearing zone");
 	memblock_t*		block;
 	
+	free_memory = mainzone->size - sizeof(memzone_t);
+	active_memory = 0;
+	purgable_memory = 0;
+	N_memset(block_stats, 0, sizeof(block_stats));
+	block_stats[TAG_FREE] = 1;
+
 	// set the entire zone to one free block
 	mainzone->blocklist.next =
 	mainzone->blocklist.prev =
@@ -431,13 +493,19 @@ extern "C" void* Z_Malloc(uint32_t size, uint8_t tag, void* user)
 		LOG_WARN("size of 0 given to Z_Malloc with a tag of {}", Z_TagToStr(tag));
 		return user ? user = NULL : NULL;
 	}
-	LOG_INFO("Z_Malloc called with size of {}, tag of {}, and user at {}", size, Z_TagToStr(tag), user);
+	if (tag >= NUMTAGS) {
+		LOG_WARN("tag given to Z_Malloc was greater than or equal to NUMTAGS, assigning TAG_STATIC");
+		tag = TAG_STATIC;
+	}
+
+	active_memory += size;
+	free_memory -= size;
 	
 	memblock_t* rover;
 	memblock_t* newblock;
 	memblock_t* base;
 	memblock_t* start;
-	int32_t space;
+	uint32_t space;
 	
 	size = (size + MEM_ALIGN - 1) & ~(MEM_ALIGN - 1);
 	
@@ -462,6 +530,7 @@ extern "C" void* Z_Malloc(uint32_t size, uint8_t tag, void* user)
 			LOG_WARN("zone size wasn't big enough for Z_Malloc size given, resizing zone");
 			// allocate a new zone twice as big
 			Z_Init();
+			free_memory = ((mainzone->size - sizeof(memzone_t)) - active_memory) - purgable_memory;
 			
 			base = mainzone->rover;
 			rover = base;
@@ -475,8 +544,9 @@ extern "C" void* Z_Malloc(uint32_t size, uint8_t tag, void* user)
 			}
 			else {
 				LOG_INFO("rover->tag is >=  TAG_PURGELEVEL, freeing");
+				--block_stats[TAG_PURGELEVEL];
 				free_memory += rover->size;
-				active_memory -= rover->size;
+				purgable_memory -= rover->size;
 				// free the rover block (adding to the size of the base)
 				// the rover can be the base block
 				base = base->prev;
@@ -492,6 +562,9 @@ extern "C" void* Z_Malloc(uint32_t size, uint8_t tag, void* user)
 	// old: (base->user || base->size < size)
 	
 	free_memory -= rover->size;
+	if (tag == TAG_PURGELEVEL)
+		purgable_memory += rover->size;
+
 	active_memory += rover->size;
 	space = base->size - size;
 	
@@ -521,7 +594,15 @@ extern "C" void* Z_Malloc(uint32_t size, uint8_t tag, void* user)
 
 	// next allocation will start looking here
 	mainzone->rover = base->next;
-	
+
+	++block_stats[tag];
+	++total_blocks;
+	++indexer;
+
+	if (indexer > 60)
+		Z_PrintStats();
+	if (total_blocks > 80)
+		Z_FreeTags(TAG_PURGELEVEL, TAG_SCOPE);
 #ifdef ZONEIDCHECK
 	base->id = ZONEID;
 #endif
@@ -531,7 +612,6 @@ extern "C" void* Z_Malloc(uint32_t size, uint8_t tag, void* user)
 
 extern "C" void* Z_Realloc(void *ptr, uint32_t nsize, void *user, uint8_t tag)
 {
-	LOG_INFO("Z_Realloc called with nsize of {0}, ptr at {1}, and user at {2}", nsize, ptr, user);
 	void *p = Z_Malloc(nsize, tag, user);
 	if (ptr) {
 		memblock_t* block = (memblock_t *)((byte *)ptr - sizeof(memblock_t));
@@ -560,7 +640,7 @@ extern "C" void Z_FreeTags(uint8_t lowtag, uint8_t hightag)
 	int32_t size = 0;
 	memblock_t*	block;
     memblock_t*	next;
-	LOG_INFO("freeing memblocks with lowtag {0} to hightag {1}", Z_TagToStr(lowtag), Z_TagToStr(hightag));
+	LOG_INFO("freeing memblocks with lowtag {} to hightag {}", Z_TagToStr(lowtag), Z_TagToStr(hightag));
 
     for (block = mainzone->blocklist.next; 
 		block != &mainzone->blocklist; block = next) {
@@ -577,7 +657,7 @@ extern "C" void Z_FreeTags(uint8_t lowtag, uint8_t hightag)
 			Z_Free ((byte *)block+sizeof(memblock_t));
 		}
 	}
-	LOG_INFO("printing current state of zone after Z_FreeTags(lowtag: {0}, hightag: {1})", Z_TagToStr(lowtag), Z_TagToStr(hightag));
+	LOG_INFO("printing current state of zone after Z_FreeTags(lowtag: {}, hightag: {})", Z_TagToStr(lowtag), Z_TagToStr(hightag));
 	Z_PrintStats();
 //	LOG_FREETAGS(lowtag, hightag, numblocks, size);
 }
@@ -650,14 +730,14 @@ extern "C" void Z_ChangeTag2(void *ptr, uint8_t tag, const char *file, uint32_t 
     block = (memblock_t *) ((byte *)ptr - sizeof(memblock_t));
 #ifdef ZONEIDCHECK
     if (block->id != ZONEID)
-        LOG_WARN("{0}:{1}: Z_ChangeTag: block without a ZONEID!",
+        LOG_WARN("{}:{}: Z_ChangeTag: block without a ZONEID!",
                 file, line);
 #endif
     if (tag >= TAG_PURGELEVEL && !block->user) {
         N_Error("%s: %i: Z_ChangeTag: an owner is required "
                 "for purgable blocks", file, line);
     }
-	LOG_INFO("changing tag of ptr {0} to {1}, old tag was {2}", ptr, Z_TagToStr(tag), Z_TagToStr(block->tag));
+	LOG_INFO("changing tag of ptr {} to {}, old tag was {}", ptr, Z_TagToStr(tag), Z_TagToStr(block->tag));
     block->tag = tag;
 }
 
@@ -673,7 +753,7 @@ extern "C" void Z_ChangeUser(void *ptr, void *user)
 	if (block->id != ZONEID)
 		LOG_WARN("Z_ChangeUser: tried to change user for invalid block!");
 #endif
-	LOG_INFO("changing user of ptr {0} to {1}, old user was {2}", ptr, user, block->user);
+	LOG_INFO("changing user of ptr {} to {}, old user was {}", ptr, user, block->user);
 	block->user = user;
 	user = ptr;
 }

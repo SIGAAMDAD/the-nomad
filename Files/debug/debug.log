@@ -28,8 +28,21 @@
     audio::sfx_on              = true
 
 [info]: done parsing scf file
+[trace]: successfully decompressed 48 bytes of level data
+[trace]: successfully decompressed 2743 bytes of texture data
+[trace]: successfully decompressed 17558615 bytes of audio data
+[info]: rover->tag is >=  TAG_PURGELEVEL, freeing
+[info]: rover->tag is >=  TAG_PURGELEVEL, freeing
+[info]: rover->tag is >=  TAG_PURGELEVEL, freeing
+[trace]: successfully decompressed 16366615 bytes of audio data
+[info]: rover->tag is >=  TAG_PURGELEVEL, freeing
+[info]: rover->tag is >=  TAG_PURGELEVEL, freeing
+[warning]: zone size wasn't big enough for Z_Malloc size given, resizing zone
+[info]: Resizing zone from 0x7fffcb59c010 -> 0x8000f759c010, new size 104857600
+[trace]: successfully decompressed 25117750 bytes of audio data
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
 [info]: initializing renderer
-[info]: Z_Malloc called with size of 16936, tag of TAG_STATIC, and user at 0x55d5b86068f0
 [info]: alllocating memory to the SDL_Window context
 [info]: success
 [info]: allocating memory to the SDL_Renderer context
@@ -38,188 +51,121 @@
 [info]: success
 [info]: successful initialization of SDL2 context
 [info]: pre-caching models/textures
-[info]: Z_Malloc called with size of 8, tag of TAG_CACHE, and user at 0x7fec19540620
+[info]: rover->tag is >=  TAG_PURGELEVEL, freeing
 [trace]: loading up model at index 0
-[info]: Z_Realloc called with nsize of 8, ptr at 0x7fec19544848, and user at 0x7fec19540620
-[info]: Z_Malloc called with size of 8, tag of TAG_CACHE, and user at 0x7fec19540620
-[info]: freeing up zone-allocated block memory at 0x7fec19544848
-[info]: Z_Malloc called with size of 36, tag of TAG_CACHE, and user at 0x7fec19544870
 [trace]: loading up model at index 1
-[info]: Z_Realloc called with nsize of 8, ptr at 0x7fec19544870, and user at 0x7fec19540620
-[info]: Z_Malloc called with size of 8, tag of TAG_CACHE, and user at 0x7fec19540620
-[info]: freeing up zone-allocated block memory at 0x7fec19544870
-[info]: block->prev->tag == TAG_FREE, merging blocks
-[info]: Z_Malloc called with size of 36, tag of TAG_CACHE, and user at 0x7fec195448e8
 [trace]: loading up model at index 2
-[info]: Z_Realloc called with nsize of 16, ptr at 0x7fec195448e0, and user at 0x7fec19540620
-[info]: Z_Malloc called with size of 16, tag of TAG_CACHE, and user at 0x7fec19540620
-[info]: freeing up zone-allocated block memory at 0x7fec195448e0
-[info]: Z_Malloc called with size of 36, tag of TAG_CACHE, and user at 0x7fec19544960
 [trace]: loading up model at index 3
-[info]: Z_Realloc called with nsize of 24, ptr at 0x7fec19544950, and user at 0x7fec19540620
-[info]: Z_Malloc called with size of 24, tag of TAG_CACHE, and user at 0x7fec19540620
-[info]: freeing up zone-allocated block memory at 0x7fec19544950
-[info]: Z_Malloc called with size of 36, tag of TAG_CACHE, and user at 0x7fec195449e0
 [trace]: loading up model at index 4
-[info]: Z_Realloc called with nsize of 32, ptr at 0x7fec195449c8, and user at 0x7fec19540620
-[info]: Z_Malloc called with size of 32, tag of TAG_CACHE, and user at 0x7fec19540620
-[info]: freeing up zone-allocated block memory at 0x7fec195449c8
-[info]: block->next->tag == TAG_FREE, merging blocks
-[info]: Z_Malloc called with size of 36, tag of TAG_CACHE, and user at 0x7fec19544a68
 [trace]: loading up model at index 5
-[info]: Z_Realloc called with nsize of 40, ptr at 0x7fec19544a48, and user at 0x7fec19540620
-[info]: Z_Malloc called with size of 40, tag of TAG_CACHE, and user at 0x7fec19540620
-[info]: freeing up zone-allocated block memory at 0x7fec19544a48
-[info]: block->prev->tag == TAG_FREE, merging blocks
-[info]: Z_Malloc called with size of 36, tag of TAG_CACHE, and user at 0x7fec19544af8
 [trace]: loading up model at index 6
-[info]: Z_Realloc called with nsize of 48, ptr at 0x7fec19544ad0, and user at 0x7fec19540620
-[info]: Z_Malloc called with size of 48, tag of TAG_CACHE, and user at 0x7fec19540620
-[info]: freeing up zone-allocated block memory at 0x7fec19544ad0
-[info]: Z_Malloc called with size of 36, tag of TAG_CACHE, and user at 0x7fec19544b90
 [trace]: loading up model at index 7
-[info]: Z_Realloc called with nsize of 56, ptr at 0x7fec19544b60, and user at 0x7fec19540620
-[info]: Z_Malloc called with size of 56, tag of TAG_CACHE, and user at 0x7fec19540620
-[info]: freeing up zone-allocated block memory at 0x7fec19544b60
-[info]: Z_Malloc called with size of 36, tag of TAG_CACHE, and user at 0x7fec19544c30
 [trace]: loading up model at index 8
-[info]: Z_Realloc called with nsize of 64, ptr at 0x7fec19544bf8, and user at 0x7fec19540620
-[info]: Z_Malloc called with size of 64, tag of TAG_CACHE, and user at 0x7fec19540620
-[info]: freeing up zone-allocated block memory at 0x7fec19544bf8
-[info]: Z_Malloc called with size of 36, tag of TAG_CACHE, and user at 0x7fec19544cd8
 [trace]: loading up model at index 9
-[info]: Z_Realloc called with nsize of 72, ptr at 0x7fec19544c98, and user at 0x7fec19540620
-[info]: Z_Malloc called with size of 72, tag of TAG_CACHE, and user at 0x7fec19540620
-[info]: freeing up zone-allocated block memory at 0x7fec19544c98
-[info]: Z_Malloc called with size of 36, tag of TAG_CACHE, and user at 0x7fec19544d88
 [trace]: loading up model at index 10
-[info]: Z_Realloc called with nsize of 80, ptr at 0x7fec19544d40, and user at 0x7fec19540620
-[info]: Z_Malloc called with size of 80, tag of TAG_CACHE, and user at 0x7fec19540620
-[info]: freeing up zone-allocated block memory at 0x7fec19544d40
-[info]: Z_Malloc called with size of 36, tag of TAG_CACHE, and user at 0x7fec19544e40
 [trace]: loading up model at index 11
-[info]: Z_Realloc called with nsize of 88, ptr at 0x7fec19544df0, and user at 0x7fec19540620
-[info]: Z_Malloc called with size of 88, tag of TAG_CACHE, and user at 0x7fec19540620
-[info]: freeing up zone-allocated block memory at 0x7fec19544df0
-[info]: Z_Malloc called with size of 36, tag of TAG_CACHE, and user at 0x7fec19544f00
 [trace]: loading up model at index 12
-[info]: Z_Realloc called with nsize of 96, ptr at 0x7fec19544ea8, and user at 0x7fec19540620
-[info]: Z_Malloc called with size of 96, tag of TAG_CACHE, and user at 0x7fec19540620
-[info]: freeing up zone-allocated block memory at 0x7fec19544ea8
-[info]: Z_Malloc called with size of 36, tag of TAG_CACHE, and user at 0x7fec19544fc8
 [trace]: loading up model at index 13
-[info]: Z_Realloc called with nsize of 104, ptr at 0x7fec19544f68, and user at 0x7fec19540620
-[info]: Z_Malloc called with size of 104, tag of TAG_CACHE, and user at 0x7fec19540620
-[info]: freeing up zone-allocated block memory at 0x7fec19544f68
-[info]: Z_Malloc called with size of 36, tag of TAG_CACHE, and user at 0x7fec19545098
 [trace]: loading up model at index 14
-[info]: Z_Realloc called with nsize of 112, ptr at 0x7fec19545030, and user at 0x7fec19540620
-[info]: Z_Malloc called with size of 112, tag of TAG_CACHE, and user at 0x7fec19540620
-[info]: freeing up zone-allocated block memory at 0x7fec19545030
-[info]: Z_Malloc called with size of 36, tag of TAG_CACHE, and user at 0x7fec19545170
 [trace]: loading up model at index 15
-[info]: Z_Realloc called with nsize of 120, ptr at 0x7fec19545100, and user at 0x7fec19540620
-[info]: Z_Malloc called with size of 120, tag of TAG_CACHE, and user at 0x7fec19540620
-[info]: freeing up zone-allocated block memory at 0x7fec19545100
-[info]: Z_Malloc called with size of 36, tag of TAG_CACHE, and user at 0x7fec19545250
 [trace]: loading up model at index 16
-[info]: Z_Realloc called with nsize of 128, ptr at 0x7fec195451d8, and user at 0x7fec19540620
-[info]: Z_Malloc called with size of 128, tag of TAG_CACHE, and user at 0x7fec19540620
-[info]: freeing up zone-allocated block memory at 0x7fec195451d8
-[info]: Z_Malloc called with size of 36, tag of TAG_CACHE, and user at 0x7fec19545338
 [info]: finished loading
 [trace]: model loading statistics:
 [trace]: 
     index   : 0
-    address : 0x7fec19544898
-    time    : 6.4e-05
+    address : 0x7fffce6610c8
+    time    : 1.4e-05
 [trace]: 
     index   : 1
-    address : 0x7fec19544908
-    time    : 6e-05
+    address : 0x7fffce6610ec
+    time    : 1.1e-05
 [trace]: 
     index   : 2
-    address : 0x7fec19544980
-    time    : 5e-05
+    address : 0x7fffce661110
+    time    : 1.2e-05
 [trace]: 
     index   : 3
-    address : 0x7fec19544a00
-    time    : 5e-05
+    address : 0x7fffce661134
+    time    : 1e-05
 [trace]: 
     index   : 4
-    address : 0x7fec19544a88
-    time    : 5.7e-05
+    address : 0x7fffce661158
+    time    : 1e-05
 [trace]: 
     index   : 5
-    address : 0x7fec19544b18
-    time    : 0.000243
+    address : 0x7fffce66117c
+    time    : 1e-05
 [trace]: 
     index   : 6
-    address : 0x7fec19544bb0
-    time    : 7.8e-05
+    address : 0x7fffce6611a0
+    time    : 1e-05
 [trace]: 
     index   : 7
-    address : 0x7fec19544c50
-    time    : 6.1e-05
+    address : 0x7fffce6611c4
+    time    : 1.1e-05
 [trace]: 
     index   : 8
-    address : 0x7fec19544cf8
-    time    : 5.2e-05
+    address : 0x7fffce6611e8
+    time    : 1e-05
 [trace]: 
     index   : 9
-    address : 0x7fec19544da8
-    time    : 4.9e-05
+    address : 0x7fffce66120c
+    time    : 1e-05
 [trace]: 
     index   : 10
-    address : 0x7fec19544e60
-    time    : 5e-05
+    address : 0x7fffce661230
+    time    : 9e-06
 [trace]: 
     index   : 11
-    address : 0x7fec19544f20
-    time    : 4.9e-05
+    address : 0x7fffce661254
+    time    : 1e-05
 [trace]: 
     index   : 12
-    address : 0x7fec19544fe8
-    time    : 5.3e-05
+    address : 0x7fffce661278
+    time    : 1e-05
 [trace]: 
     index   : 13
-    address : 0x7fec195450b8
-    time    : 4.9e-05
+    address : 0x7fffce66129c
+    time    : 1e-05
 [trace]: 
     index   : 14
-    address : 0x7fec19545190
-    time    : 4.8e-05
+    address : 0x7fffce6612c0
+    time    : 1.1e-05
 [trace]: 
     index   : 15
-    address : 0x7fec19545270
-    time    : 5e-05
+    address : 0x7fffce6612e4
+    time    : 9e-06
 [trace]: 
     index   : 16
-    address : 0x7fec19545358
-    time    : 4.8e-05
-[trace]: average: 6.535294061691007e-05
-[trace]: longest: 5 (index 0.000243)
+    address : 0x7fffce661308
+    time    : 1e-05
+[trace]: average: 1.0411764646157868e-05
+[trace]: longest: 0 (index 1.4e-05)
 [info]: setting up imgui
 [info]: running main gameplay loop
 [info]: gamestate = GS_MENU
 [info]: exiting main menu
 [info]: gamestate = GS_LEVEL
 [info]: beginning level loop, capped frame rate: 125
-[trace]: SDL_WINDOWEVENT_MOVED triggered. new position: %d, %d
-[trace]: SDL_WINDOWEVENT_MOVED triggered. new position: %d, %d
-[trace]: SDL_WINDOWEVENT_MOVED triggered. new position: %d, %d
-[trace]: SDL_WINDOWEVENT_MOVED triggered. new position: %d, %d
-[trace]: SDL_WINDOWEVENT_MOVED triggered. new position: %d, %d
-[trace]: SDL_WINDOWEVENT_MOVED triggered. new position: %d, %d
-[trace]: SDL_WINDOWEVENT_MOVED triggered. new position: %d, %d
-[trace]: SDL_WINDOWEVENT_MOVED triggered. new position: %d, %d
-[trace]: SDL_WINDOWEVENT_MOVED triggered. new position: %d, %d
-[trace]: SDL_WINDOWEVENT_MOVED triggered. new position: %d, %d
-[trace]: SDL_WINDOWEVENT_MOVED triggered. new position: %d, %d
-[trace]: SDL_WINDOWEVENT_MOVED triggered. new position: %d, %d
-[trace]: SDL_WINDOWEVENT_MOVED triggered. new position: %d, %d
-[trace]: SDL_WINDOWEVENT_MOVED triggered. new position: %d, %d
-[trace]: SDL_WINDOWEVENT_MOVED triggered. new position: %d, %d
+[trace]: renderer average time: 1.7833332928300177e-05
+[trace]: event loop average time: 2.2500000227410055e-06
+[trace]: loop average time: 0.0023529999792420617
+[info]: exiting level loop
+[info]: gamestate = GS_PAUSE
+[info]: gamestate = GS_LEVEL
+[info]: beginning level loop, capped frame rate: 125
+[trace]: renderer average time: 1.741666649953307e-05
+[trace]: event loop average time: inf
+[trace]: loop average time: 0.0010708333284128457
+[info]: exiting level loop
+[info]: gamestate = GS_PAUSE
+[info]: gamestate = GS_LEVEL
+[info]: beginning level loop, capped frame rate: 125
+[trace]: renderer average time: 1.728571409590326e-05
+[trace]: event loop average time: inf
+[trace]: loop average time: 0.001089714272114049
+[info]: exiting level loop
+[info]: gamestate = GS_PAUSE
+[info]: gamestate = GS_LEVEL
+[info]: beginning level loop, capped frame rate: 125
 [info]: deallocating and shutting down all systems
-[info]: freeing up zone-allocated block memory at 0x7fec19540600
-[info]: block->next->tag == TAG_FREE, merging blocks

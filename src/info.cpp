@@ -29,6 +29,8 @@ namespace scf {
         {"Next Weapon",           (button_t)MOUSE_WHEELDOWN,   KMOD_NONE,  SDL_MOUSEWHEEL,      kbNextWeapon,    P_NextWeapon},
         {"Prev Weapon",           (button_t)MOUSE_WHEELUP,     KMOD_NONE,  SDL_MOUSEWHEEL,      kbPrevWeapon,    P_PrevWeapon},
         {"Quick Swap",            (button_t)SDL_BUTTON_MIDDLE, KMOD_NONE,  SDL_MOUSEBUTTONDOWN, kbQuickSwap,     P_QuickSwap},
+        {"Change Direction Left", (button_t)SDLK_q,            KMOD_NONE,  SDL_KEYDOWN,         kbChangeDirL,    P_ChangeDirL},
+        {"Change Direction Right",(button_t)SDLK_e,            KMOD_NONE,  SDL_KEYDOWN,         kbChangeDirR,    P_ChangeDirR},
     };
 };
 

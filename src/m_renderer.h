@@ -50,17 +50,17 @@ typedef std::unique_ptr<SDL_Renderer, sdl_deleter<SDL_DestroyRenderer>> renderer
 
 typedef union screen_u
 {
-    renderer_ptr screen;
-    renderer_ptr software;
+    SDL_Renderer* screen;
+    SDL_Renderer* software;
 } screen_t;
 
 typedef struct renderer_s
 {
-    window_ptr SDL_window;
+    SDL_Window* SDL_window;
     screen_t screen;
-    texture_ptr SDL_spr_sheet;
-    surface_ptr SDL_win_sur;
-    model_t** models;
+    SDL_Texture* SDL_spr_sheet;
+    SDL_Surface* SDL_win_sur;
+    model_t* models;
     sprite_t vmatrix[24][88];
 } renderer_t;
 
@@ -75,13 +75,13 @@ extern renderer_t* renderer;
 #define SDL_Call(x) assert(x == 0)
 #endif
 
-#define R_GetRenderer() (renderer->screen.screen ? renderer->screen.screen.get() : renderer->screen.software.get())
+#define R_GetRenderer() (renderer->screen.screen ? renderer->screen.screen : renderer->screen.software)
 #define R_ResetScreenColor() SDL_Call(SDL_SetRenderDrawColor(R_GetRenderer(), 0, 0, 0, SDL_ALPHA_OPAQUE))
 
 void R_Init();
 void R_ShutDown();
 void R_DrawScreen();
-inline SDL_Texture* R_GetSpriteSheet(void) { return renderer->SDL_spr_sheet.get(); }
+inline SDL_Texture* R_GetSpriteSheet(void) { return renderer->SDL_spr_sheet; }
 int R_DrawMenu(const char* fontfile, const std::vector<std::string>& choices, const char* title);
 
 void R_DrawCompass();
@@ -101,12 +101,7 @@ inline void R_ClearScreen()
 }
 inline void R_DrawTextureFromTable(uint32_t index)
 {
-    SDL_Call(SDL_RenderCopy(R_GetRenderer(), renderer->SDL_spr_sheet.get(), &modelinfo[index].offset, &modelinfo[index].screen_pos));
-}
-inline void R_DrawTexture(texture_ptr& texture, const SDL_Rect* src_rect, const SDL_Rect* dest_rect)
-{
-    assert(texture);
-    SDL_Call(SDL_RenderCopy(R_GetRenderer(), texture.get(), src_rect, dest_rect));
+    SDL_Call(SDL_RenderCopy(R_GetRenderer(), renderer->SDL_spr_sheet, &modelinfo[index].offset, &modelinfo[index].screen_pos));
 }
 inline void R_DrawTexture(SDL_Texture* texture, const SDL_Rect* src_rect, const SDL_Rect* dest_rect)
 {
@@ -130,16 +125,17 @@ inline void R_SetScreenColor(byte r, byte g, byte b, byte a)
     SDL_Call(SDL_SetRenderDrawColor(R_GetRenderer(), r, g, b, a));
 }
 
+#if 0
 inline texture_ptr make_texture_from_image(const char* file)
 {
     assert(file);
     return texture_ptr(IMG_LoadTexture(R_GetRenderer(), file));
 }
-inline texture_ptr make_texture_from_font(font_ptr& font, const char* str, const SDL_Color& color)
+inline texture_ptr make_texture_from_font(TTF_Font* font, const char* str, const SDL_Color& color)
 {
     assert(font && str);
-    surface_ptr surface(TTF_RenderText_Solid(font.get(), str, color));
-    return texture_ptr(SDL_CreateTextureFromSurface(R_GetRenderer(), surface.get()));
+    SDL_Surface* surface = TTF_RenderText_Solid(font, str, color);
+    return texture_ptr(SDL_CreateTextureFromSurface(R_GetRenderer(), surface));
 }
 inline renderer_ptr make_renderer()
 {
@@ -161,5 +157,6 @@ inline font_ptr make_font(const char* fontfile, int fontsize) {
     assert(fontfile);
     return font_ptr(TTF_OpenFont(fontfile, fontsize));
 }
+#endif
 
 #endif

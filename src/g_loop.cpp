@@ -42,14 +42,14 @@ static void N_HandleWindowEvent(const SDL_Event& event)
 static void N_ShowAbout()
 {
     R_ClearScreen();
-    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "*** The Nomad: About ***", about_str, renderer->SDL_window.get());
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "*** The Nomad: About ***", about_str, renderer->SDL_window);
     R_FlushBuffer();
 }
 
 static void N_ShowCredits()
 {
     R_ClearScreen();
-    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "*** The Nomad: Credits ***", credits_str, renderer->SDL_window.get());
+    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "*** The Nomad: Credits ***", credits_str, renderer->SDL_window);
     R_FlushBuffer();
 }
 
@@ -86,15 +86,22 @@ static void N_Level()
                     Game::Get()->gamestate = GS_PAUSE;
                     break;
                 };
+                for (const auto& [name, button, mod, type, bind, action] : scf::kb_binds) {
+                    if (button == (scf::button_t)event.key.keysym.sym) {
+                        action();
+                    }
+                }
             }
         }
         {
             PROFILE_SCOPE(renderer_time);
             R_ClearScreen();
-            R_DrawFilledBox(0, 350, 40, SCREEN_HEIGHT, 0, 255, 0, 255);
-            R_DrawFilledBox(200, 0, SCREEN_WIDTH, 30, 0, 255, 0, 255);
+            R_DrawFilledBox(0, 170, 40, SCREEN_HEIGHT, 0, 255, 0, 255);
+            R_DrawFilledBox(170, 0, SCREEN_WIDTH, 30, 0, 255, 0, 255);
             R_DrawCompass();
-            R_DrawFilledBox(SCREEN_HEIGHT - 300, 0, SCREEN_WIDTH, 30, 0, 255, 0, 255);
+            R_DrawFilledBox(SCREEN_HEIGHT - 170, 0, SCREEN_WIDTH, 30, 0, 255, 0, 255);
+            R_DrawFilledBox(0, SCREEN_WIDTH - 250, 40, SCREEN_HEIGHT, 0, 255, 0, 255);
+            R_DrawFilledBox(SCREEN_HEIGHT - 150, 180, 350, 100, 0, 0, 255, 255);
         }
 #ifdef _NOMAD_DEBUG
         loop.total++;
@@ -132,10 +139,10 @@ static void N_PauseMenu()
             Game::Get()->gamestate = GS_LEVEL;
             break;
         case 1:
-            Game::Get()->gamestate = GS_LOAD;
+            G_LoadGame();
             break;
         case 2:
-            Game::Get()->gamestate = GS_SAVE;
+            G_SaveGame();
             break;
         case 3:
             prev_settings_menu = GS_PAUSE;
@@ -164,7 +171,7 @@ static void N_MainMenu()
             Game::Get()->gamestate = GS_LEVEL;
             break;
         case 1:
-            Game::Get()->gamestate = GS_LOAD;
+            G_LoadGame();
             break;
         case 2:
             prev_settings_menu = GS_MENU;
@@ -384,12 +391,6 @@ void N_MainLoop()
             break;
         case GS_LEVEL:
             N_Level();
-            break;
-        case GS_SAVE:
-            G_SaveGame(Game::Get()->svfile);
-            break;
-        case GS_LOAD:
-            G_LoadGame(Game::Get()->svfile);
             break;
         case GS_PAUSE:
             N_PauseMenu();

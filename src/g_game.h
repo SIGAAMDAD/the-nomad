@@ -64,18 +64,10 @@ typedef enum : uint8_t
     GS_MENU,
     GS_LEVEL,
     GS_PAUSE,
-    GS_LOAD,
-    GS_SAVE,
     GS_SETTINGS,
 
     NUMGAMESTATES
 } gamestate_t;
-
-template <auto fn>
-struct zone_deleter {
-    template <typename T>
-    constexpr void operator()(T* arg) const { Z_Free(arg); }
-};
 
 #if 0
 template<typename T>
@@ -84,6 +76,29 @@ template<typename T>
 inline zone_ptr<T> make_ptr(int tag, void *user)
 { return std::unique_ptr<T, zone_deleter<T>>((T *)Z_Malloc(sizeof(T), tag, user)); }
 #endif
+
+enum : uint8_t
+{
+    OCC_NORMY,
+    OCC_EASTER,
+    OCC_CHRISTMAS,
+    OCC_HALLOWEEN,
+    OCC_THANKSGIVING
+};
+
+enum : uint8_t
+{
+    DIF_NOOB,
+    DIF_RECRUIT,
+    DIF_MERC,
+    DIF_NOMAD,
+    DIF_BLACKDEATH,
+    DIF_MINORINCONVENIECE,
+
+    DIF_HARDEST = DIF_MINORINCONVENIECE
+};
+
+inline bool write_bff_mode = false;
 
 class Game
 {
@@ -100,7 +115,8 @@ public:
     playr_t* playr; // player on the current machine
     gamestate_t gamestate;
     linked_list<Mob*> m_Active;
-    item_t* i_Active;
+    linked_list<item_t*> i_Active;
+    uint8_t difficulty;
 
     bff_file_t* file = NULL;
     bff_level_t* level = NULL;
@@ -130,8 +146,8 @@ typedef enum : uint_fast8_t
 
 inline bool imgui_on = false;
 
-void G_SaveGame(const char* svfile);
-void G_LoadGame(const char* svfile);
+void G_SaveGame();
+void G_LoadGame();
 json& N_GetSaveJSon();
 void G_SpawnItem(item_t item);
 void G_SpawnItem(const item_t& item);
@@ -154,7 +170,7 @@ void ImGui_ShutDown();
 #include "g_zone.h"
 #include "g_bff.h"
 
-void I_NomadInit();
+void I_NomadInit(int argc, char** argv);
 void N_MainLoop();
 
 #endif

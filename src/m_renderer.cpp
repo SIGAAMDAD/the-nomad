@@ -7,13 +7,6 @@ color_t blue =  {0, 0, 255, 255};
 
 static constexpr const char *TEXMAP_PATH = "Files/gamedata/RES/texmap.bmp";
 
-static model_t* health_model;
-static model_t* armor_model;
-//static model_t* vmatrix_model;
-static model_t* compass_model;
-static model_t* playr_model;
-static model_t* merc_model;
-
 renderer_t *renderer;
 
 constexpr int32_t vert_fov = 24 >> 1;
@@ -22,7 +15,7 @@ constexpr int32_t horz_fov = 88 >> 1;
 template<typename T>
 void R_ScaleToResolution(T &y, T &x)
 {
-    SDL_Surface* screen = SDL_GetWindowSurface(renderer->SDL_window.get());
+    SDL_Surface* screen = SDL_GetWindowSurface(renderer->SDL_window);
     y *= screen->clip_rect.w;
     x *= screen->clip_rect.h;
 }
@@ -66,18 +59,15 @@ static void I_CacheModels()
     float total{};
     std::vector<loader> stats;
     stats.reserve(modelinfo.size());
-    renderer->models = (model_t **)Z_Malloc(sizeof(model_t *), TAG_CACHE, &renderer->models);
+    renderer->models = (model_t *)Z_Malloc(sizeof(model_t) * modelinfo.size(), TAG_CACHE, &renderer->models);
 
     for (uint32_t i = 0; i < NUMMODELS; ++i) {
         start = std::clock();
         LOG_TRACE("loading up model at index {}", i);
-        renderer->models = (model_t **)Z_Realloc(renderer->models, sizeof(model_t *) * (i == 0 ? 1 : i), &renderer->models);
-        renderer->models[i] = (model_t *)Z_Malloc(sizeof(model_t), TAG_CACHE, &renderer->models[i]);
-        assert(renderer->models[i]);
-        N_memcpy(renderer->models[i], &modelinfo[i], sizeof(model_t));
+        N_memcpy(&renderer->models[i], &modelinfo[i], sizeof(model_t));
         end = std::clock();
         total = (float)(end - start) / (float)CLOCKS_PER_SEC;
-        stats.emplace_back(loader{ (void *)renderer->models[i], i, total });
+        stats.emplace_back(loader{ (void *)&renderer->models[i], i, total });
         start = end = 0;
         total = 0;
     }
@@ -86,15 +76,14 @@ static void I_CacheModels()
     float longest = 0;
     uint32_t longest_index = 0;
     double avg = 0;
-    for (const auto& i : stats) {
-        LOG_TRACE(
-            "\n    index   : {index}\n"
+    for (size_t i = 0; i < stats.size(); ++i) {
+        LOG_TRACE("\n    index   : {index}\n"
             "    address : {address}\n"
             "    time    : {time}",
-        fmt::arg("index", i.index), fmt::arg("address", i.addr), fmt::arg("time", i.time));
-        avg += i.time;
-        longest = longest > i.time ? longest : i.time;
-        longest_index = longest != i.time ? longest_index : i.index;
+        fmt::arg("index", stats[i].index), fmt::arg("address", stats[i].addr), fmt::arg("time", stats[i].time));
+        avg += stats[i].time;
+        longest = longest > stats[i].time ? longest : stats[i].time;
+        longest_index = longest != stats[i].time ? longest_index : stats[i].index;
     }
     LOG_TRACE("average: {}", avg / stats.size());
     LOG_TRACE("longest: {1} (index {0})", longest, longest_index);
@@ -115,11 +104,11 @@ void R_DrawCompass()
         break;
     };
     SDL_Rect rect;
-    rect.x = 50;
+    rect.x = 0;
     rect.y = 0;
-    rect.w = 180;
-    rect.h = 180;
-    R_DrawTexture(renderer->SDL_spr_sheet.get(), &modelinfo[mdl].offset, &rect);
+    rect.w = 170;
+    rect.h = 170;
+    R_DrawTexture(renderer->SDL_spr_sheet, &modelinfo[mdl].offset, &rect);
 //    R_DrawTextureFromTable(mdl);
 }
 
@@ -128,18 +117,19 @@ inline SDL_Texture* R_GenTextureFromFont(TTF_Font* font, const char* str, const 
     assert(font);
     assert(str);
 
-    surface_ptr surface(TTF_RenderText_Solid(font, str, color));
+    SDL_Surface *surface = TTF_RenderText_Solid(font, str, color);
     if (!surface) {
         N_Error("R_GenTextureFromFont: TTF_RenderTextSolid returned NULL, SDL2 error message: %s",
             SDL_GetError());
     }
     assert(surface);
 
-    SDL_Texture* texture = SDL_CreateTextureFromSurface(R_GetRenderer(), surface.get());
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(R_GetRenderer(), surface);
     if (!texture) {
         N_Error("R_GenTextureFromFont: SDL_CreateTextureFromSurface returned NULL, SDL2 error message: %s",
             SDL_GetError());
     }
+    SDL_FreeSurface(surface);
     assert(texture);
     return texture;
 }
@@ -188,7 +178,7 @@ void R_Init()
     }
 
     LOG_INFO("alllocating memory to the SDL_Window context");
-    renderer->SDL_window = make_window(
+    renderer->SDL_window = SDL_CreateWindow(
                             "The Nomad",
                             SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                             scf::renderer::width, scf::renderer::height,
@@ -200,16 +190,18 @@ void R_Init()
     }
     assert(renderer->SDL_window);
     LOG_INFO("success");
-    Game::Get()->window = renderer->SDL_window.get();
+    Game::Get()->window = renderer->SDL_window;
     
     LOG_INFO("allocating memory to the SDL_Renderer context");
-    renderer->screen.screen = make_renderer();
+    renderer->screen.screen = SDL_CreateRenderer(renderer->SDL_window, -1, SDL_RENDERER_ACCELERATED |
+        (scf::renderer::vsync ? SDL_RENDERER_PRESENTVSYNC : 0));
     if (!renderer->screen.screen) {
         con.ConError("R_Init: failed to initialize an SDL2 rendering context, error message: %s\n"
                         "        Setting up software rendering fallback",
         SDL_GetError());
 
-        renderer->screen.software = make_software_renderer();
+        renderer->screen.software = SDL_CreateRenderer(renderer->SDL_window, -1, SDL_RENDERER_SOFTWARE |
+            (scf::renderer::vsync ? SDL_RENDERER_PRESENTVSYNC : 0));
         if (!renderer->screen.software) {
             N_Error("R_Init: failed to initialize an SDL2 software rendering context, error message: %s",
                 SDL_GetError());
@@ -220,7 +212,7 @@ void R_Init()
     LOG_INFO("success");
 
     LOG_INFO("loading the sprite sheet from {}", TEXMAP_PATH);
-    renderer->SDL_spr_sheet = make_texture_from_image(TEXMAP_PATH);
+    renderer->SDL_spr_sheet = IMG_LoadTexture(R_GetRenderer(), TEXMAP_PATH);
     
     if (!renderer->SDL_spr_sheet) {
         N_Error("R_Init: failed to load required texture file %s for rendering, error message: %s",
@@ -229,7 +221,7 @@ void R_Init()
     assert(renderer->SDL_spr_sheet);
     LOG_INFO("success");
 
-    renderer->SDL_win_sur = make_surface();
+    renderer->SDL_win_sur = SDL_GetWindowSurface(renderer->SDL_window);
     assert(renderer->SDL_win_sur);
 
     sdl_on = true;
@@ -243,6 +235,18 @@ void R_ShutDown()
         return;
 
     con.ConPrintf("R_ShutDown: deallocating SDL2 contexts and window");
+    if (R_GetRenderer()) {
+        SDL_DestroyRenderer(R_GetRenderer());
+    }
+    if (renderer->SDL_spr_sheet) {
+        SDL_DestroyTexture(renderer->SDL_spr_sheet);
+    }
+    if (renderer->SDL_win_sur) {
+        SDL_FreeSurface(renderer->SDL_win_sur);
+    }
+    if (renderer->SDL_window) {
+        SDL_DestroyWindow(renderer->SDL_window);
+    }
     Z_Free(renderer);
     TTF_Quit();
     SDL_Quit();
@@ -252,6 +256,7 @@ int R_DrawMenu(const char* fontfile, const std::vector<std::string>& choices,
     const char* title)
 {
     assert(fontfile);
+    assert(title);
     assert(choices.size() > 0);
 
     std::string font_name = "Files/gamedata/RES/"+std::string(fontfile);
@@ -264,18 +269,18 @@ int R_DrawMenu(const char* fontfile, const std::vector<std::string>& choices,
     SDL_Color color[2] = {{255,255,255},{255,0,0}};
     int32_t text_size = DEFAULT_TEXT_SIZE;
 
-    font_ptr font = make_font(font_name.c_str(), text_size);
+    TTF_Font *font = TTF_OpenFont(font_name.c_str(), text_size);
     if (!font) {
-        N_Error("R_DrawMenu: TTF_OpenFont returned NULL for font file %s\n", fontfile);
+        N_Error("R_DrawMenu: TTF_OpenFont returned NULL for font file %s", fontfile);
     }
     for (int i = 0; i < NUMMENU; ++i) {
-        menus[i] = R_GenTextureFromFont(font.get(), choices[i].c_str(), color[0]);
+        menus[i] = R_GenTextureFromFont(font, choices[i].c_str(), color[0]);
     }
     // get the title
-    texture_ptr title_texture = make_texture_from_font(font, title, {0, 255, 255});
+    SDL_Texture* title_texture = R_GenTextureFromFont(font, title, {0, 255, 255});
 
     int w, h;
-    SDL_Call(SDL_QueryTexture(title_texture.get(), NULL, NULL, &w, &h));
+    SDL_Call(SDL_QueryTexture(title_texture, NULL, NULL, &w, &h));
     SDL_Rect title_rect;
     title_rect.x = 75;
     title_rect.y = 50;
@@ -303,6 +308,7 @@ int R_DrawMenu(const char* fontfile, const std::vector<std::string>& choices,
                 for (auto* i : menus) {
                     SDL_DestroyTexture(i);
                 }
+                SDL_DestroyTexture(title_texture);
                 Game::Get()->~Game();
                 exit(EXIT_SUCCESS);
             }
@@ -316,14 +322,14 @@ int R_DrawMenu(const char* fontfile, const std::vector<std::string>& choices,
                         if (!selected[i]) {
                             selected[i] = true;
                             SDL_DestroyTexture(menus[i]);
-                            menus[i] = R_GenTextureFromFont(font.get(), choices[i].c_str(), color[1]);
+                            menus[i] = R_GenTextureFromFont(font, choices[i].c_str(), color[1]);
                         }
                     }
                     else {
                         if (selected[i]) {
                             selected[i] = false;
                             SDL_DestroyTexture(menus[i]);
-                            menus[i] = R_GenTextureFromFont(font.get(), choices[i].c_str(), color[0]);
+                            menus[i] = R_GenTextureFromFont(font, choices[i].c_str(), color[0]);
                         }
                     }
                 }
@@ -360,6 +366,7 @@ done:
     for (auto* i : menus) {
         SDL_DestroyTexture(i);
     }
+    SDL_DestroyTexture(title_texture);
     return -1;
 }
 

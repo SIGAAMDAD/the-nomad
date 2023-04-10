@@ -24,9 +24,11 @@
 enum {
 	TAG_FREE = 0,
 	TAG_STATIC = 1,
+	TAG_NODE = 2,
+	TAG_CACHE = 3,
 	TAG_PURGELEVEL = 100,
 	TAG_SCOPE = 101,
-	TAG_CACHE = 102,
+	TAG_LOAD = TAG_SCOPE,
 	
 	NUMTAGS
 };
@@ -94,6 +96,16 @@ inline void N_Free(void *ptr)
 }
 
 template<typename T>
+struct zone_deleter {
+    constexpr void operator()(T* arg) const { Z_Free(arg); }
+};
+
+template<typename T>
+inline std::unique_ptr<T, zone_deleter<T>> make_scoped_block(uint8_t tag = TAG_SCOPE) {
+	return std::unique_ptr<T, zone_deleter<T>>(static_cast<T*>(Z_Malloc(sizeof(T), tag, NULL)));
+}
+
+template<typename T>
 class zone_ptr
 {
 private:
@@ -123,40 +135,79 @@ public:
 	inline T* operator->(void) noexcept { return ptr; }
 };
 
-// broken - dont use
-#if 0
-template<typename T, typename... Args>
-inline T* make_ptr<T>(Args&&... args)
-{
-	T* ptr = static_cast<T*>(Z_Malloc(sizeof(T), TAG_STATIC, NULL));
-	new (ptr) T(std::forward<Args>(args)...);
-	return ptr;
-}
-
-template <class T>
+template<class T>
 struct nomad_allocator
 {
 	nomad_allocator() noexcept { }
 
 	typedef T value_type;
-    template <class U>
-    constexpr nomad_allocator(const nomad_allocator<U>&) noexcept { }
+	template<class U>
+	constexpr nomad_allocator(const nomad_allocator<U>&) noexcept { }
 
-    [[nodiscard]] T* allocate(std::size_t n) {
+	[[nodiscard]] inline T* allocate(std::size_t n) const {
+		if (n > std::numeric_limits<std::size_t>::max() / sizeof(T))
+			throw std::bad_array_new_length();
+		if (auto p = static_cast<T*>(malloc(n)) != NULL)
+			return p;
+		
+		throw std::bad_alloc();
+	}
+	[[nodiscard]] inline T* allocate(std::size_t& n, std::size_t& alignment, std::size_t& offset) const {
+		if (n > std::numeric_limits<std::size_t>::max() / sizeof(T))
+			throw std::bad_array_new_length();
+#if EASTL_ALIGNED_MALLOC_AVAILABLE
+		if ((offset % alignment) == 0) {
+			if(auto p = memalign(alignment, n) != NULL) // memalign is more consistently available than posix_memalign.
+				return p;
+			else
+				throw std::bad_alloc();
+		}
+#else
+		if ((alignment <= EASTL_SYSTEM_ALLOCATOR_MIN_ALIGNMENT) && ((offset % alignment) == 0)) {
+			if (auto p = static_cast<T*>(malloc(n)) != NULL)
+				return p;
+			else
+				throw std::bad_alloc();
+		}
+#endif
+		return NULL;
+	}
+};
+
+template<class T>
+struct zone_allocator
+{
+	zone_allocator() noexcept { }
+
+	typedef T value_type;
+    template<class U>
+    constexpr zone_allocator(const zone_allocator<U>&) noexcept { }
+
+    [[nodiscard]] inline T* allocate(std::size_t n) const {
         if (n > std::numeric_limits<std::size_t>::max() / sizeof(T))
             throw std::bad_array_new_length();
-        if (auto p = static_cast<T*>(Z_Malloc(n * sizeof(T), TAG_STATIC, NULL))) {
+        T* p = NULL;
+		if ((p = static_cast<T*>(Z_Realloc(p, n, &p, TAG_STATIC))) != NULL)
             return p;
-        }
 
         throw std::bad_alloc();
     }
-
-	void deallocate(T* p, std::size_t n) noexcept {
-	    Z_Free(p);
+	[[nodiscard]] inline T* allocate(std::size_t& n, std::size_t& alignment, std::size_t& offset) const {
+		if (n > std::numeric_limits<std::size_t>::max() / sizeof(T))
+			throw std::bad_array_new_length();
+		T* p = NULL;
+		if ((p = static_cast<T*>(Z_Realloc(p, n, &p, TAG_STATIC))) != NULL)
+			return p;
+		
+		throw std::bad_alloc();
 	}
+	void deallocate(void* p, std::size_t n) const noexcept {
+		Z_Free(p);
+	}
+//	void deallocate(T* p, std::size_t n) noexcept {
+//	    Z_Free(p);
+//	}
 };
-#endif
 
 
 template<typename T>

@@ -44,6 +44,13 @@ namespace scf {
 
 #define PRINTARG(x) fmt::arg(#x, x)
 
+static void I_ProcessArgs(void)
+{
+    for (int i = 0; i < myargc; ++i) {
+
+    }
+}
+
 void G_LoadSCF()
 {
     try {
@@ -80,7 +87,8 @@ void G_LoadSCF()
         else if (api == "R_VULKAN")
             N_Error("G_LoadSCF: Vulkan renderering isn't yet available");
         else
-            N_Error("G_LoadSCF: unknown renndering api: %s", api.c_str());
+            N_Error("G_LoadSCF: unknown rendering api: %s", api.c_str());
+
         renderer::drawfps = static_cast<bool>(data["renderer"]["drawfps"]);
         renderer::framerate = static_cast<uint16_t>(data["renderer"]["framecap"]);
         renderer::fullscreen = static_cast<bool>(data["renderer"]["fullscreen"]);

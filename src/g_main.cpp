@@ -1,3 +1,4 @@
+#define STB_SPRINTF_IMPLEMENTATION
 #include "n_shared.h"
 #include "g_game.h"
 
@@ -61,6 +62,6 @@ int main(int argc, char** argv)
 #ifdef SIGTERM
     signal(SIGTERM, SIG_INTERRUPT);
 #endif
-    I_NomadInit();
+    I_NomadInit(argc, argv);
     return 0;
 }

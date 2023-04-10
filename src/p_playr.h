@@ -27,7 +27,7 @@ typedef struct playr_s
     weapon_t P_wpns[PLAYR_MAX_WPNS];
     weapon_t *c_wpn = NULL;
     weapon_t *swap = NULL;
-    cvector_vector_type(item_t) inv;
+    eastl::vector<item_t, zone_allocator<item_t>> inv;
 } playr_t;
 
 void P_MoveN();
@@ -56,5 +56,7 @@ void P_SwapWeapon10();
 void P_NextWeapon();
 void P_PrevWeapon();
 void P_QuickSwap();
+void P_ChangeDirL();
+void P_ChangeDirR();
 
 #endif

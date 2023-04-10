@@ -27,7 +27,7 @@
 #define NOMAD_VERSION_UPDATE _NOMAD_VERSION_UPDATE
 #define NOMAD_VERSION_PATCH _NOMAD_VERSION_PATCH
 
-typedef enum : uint16_t
+typedef enum : unsigned char
 {
 	SPR_PLAYR = 0x00,
 	SPR_MERC,
@@ -64,6 +64,60 @@ enum : byte
 	D_NULL
 };
 
+
+void N_Error(const char *err, ...);
+
+
+class filestream
+{
+private:
+	FILE* fp;
+public:
+	inline filestream(const char* filename, const char *modes)
+		: fp(fopen(filename, modes))
+	{
+		if (!fp)
+			N_Error("filestream: failed to open file %s for modes %s", filename, modes);
+	}
+	inline filestream(const std::string& filename, const char *modes)
+		: fp(fopen(filename.c_str(), modes))
+	{
+		if (!fp)
+			N_Error("filestream: failed to open file %s for modes %s", filename.c_str(), modes);
+	}
+	inline filestream(void *buffer, size_t len, const char *modes)
+		: fp(fmemopen(buffer, len, modes))
+	{
+		if (!fp)
+			N_Error("filestream: failed to create an %s buffer", modes);
+	}
+	inline ~filestream()
+	{ fclose(fp); }
+	inline filestream(const filestream &) = delete;
+	inline filestream(filestream &&) = default;
+
+	inline int getc(void) const noexcept
+	{ return ::getc(fp); }
+	inline size_t read(void *buffer, size_t elemsize, size_t nelem) const noexcept
+	{ return fread(buffer, elemsize, nelem, fp); }
+	inline void write(const void *buffer, size_t elemsize, size_t nelem) const noexcept
+	{ fwrite(buffer, elemsize, nelem, fp); }
+	inline FILE* get(void) noexcept
+	{ return fp; }
+	inline size_t size(void) noexcept {
+		fseek(fp, 0L, SEEK_END);
+		size_t len = ftell(fp);
+		fseek(fp, 0L, SEEK_SET);
+		return len;
+	}
+	inline void close(void) const noexcept
+	{ fclose(fp); }
+	inline filestream& operator=(FILE* _fp) noexcept
+	{ fp = _fp; return *this; }
+	inline filestream& operator=(const filestream& f) noexcept
+	{ fp = f.fp; return *this; }
+};
+
 extern bool sdl_on;
 
 template<typename T>
@@ -92,21 +146,19 @@ private:
 class Console
 {
 public:
-	inline void ConPrintf(const char* fmt, ...)
+	template<typename... Args>
+	inline void ConPrintf(fmt::format_string<Args...> fmt, Args&&... args)
 	{
-		va_list argptr;
-		va_start(argptr, fmt);
-		vfprintf(stdout, fmt, argptr);
-		va_end(argptr);
-		fprintf(stdout, "\n");
+		std::string str = fmt::format(fmt, std::forward<Args>(args)...);
+		fmt::print(stdout, str);
+		fmt::print(stdout, "\n");
 	}
-	inline void ConError(const char* fmt, ...)
+	template<typename... Args>
+	inline void ConError(fmt::format_string<Args...> fmt, Args&&... args)
 	{
-		va_list argptr;
-		va_start(argptr, fmt);
-		vfprintf(stderr, fmt, argptr);
-		va_end(argptr);
-		fprintf(stderr, "\n");
+		std::string str = fmt::format(fmt, std::forward<Args>(args)...);
+		fmt::print(stderr, str);
+		fmt::print(stderr, "\n");
 	}
 	inline void ConFlush()
 	{
@@ -115,9 +167,9 @@ public:
 	}
 };
 
+extern int myargc;
+extern char** myargv;
 extern Console con;
-
-void N_Error(const char *err, ...);
 
 typedef struct non_atomic_coord_s
 {
@@ -130,9 +182,9 @@ typedef struct non_atomic_coord_s
 
 typedef struct coord_s
 {
-	point_t y, x;
+	float y, x;
 	inline coord_s() = default;
-	inline coord_s(int_fast32_t _y, int_fast32_t _x)
+	inline coord_s(float _y, float _x)
 		: y(_y), x(_x)
 	{
 	}
@@ -194,7 +246,7 @@ typedef struct coord_s
 		x = c.x;
 		return *this;
 	}
-	inline coord_s& operator=(const int_fast32_t p) {
+	inline coord_s& operator=(const float p) {
 		y = p;
 		x = p;
 		return *this;
@@ -239,10 +291,10 @@ typedef struct dim_s
 inline void __nomad_assert_fail(const char* expression, const char* file, const char* func, unsigned line)
 {
 	N_Error(
-		"Assertion '%s' failed:\n"
-		"  \\file: %s\n"
-		"  \\function: %s\n"
-		"  \\line: %u\n\nIf this is an SDL2 error, here is the message string: %s\n",
+		"Assertion '{}' failed:\n"
+		"  \\file: {}\n"
+		"  \\function: {}\n"
+		"  \\line: {}\n\nIf this is an SDL2 error, here is the message string: {}\n",
 	expression, file, func, line, SDL_GetError());
 }
 #define assert(x) (((bool)(x)) ? void(0) : __nomad_assert_fail(#x,__FILE__,__func__,__LINE__))
@@ -279,6 +331,20 @@ inline int32_t disBetweenOBJ(const coord_t& src, const coord_t& tar)
 	else // diagonal
 		return Q_root((pow((src.x - tar.x), 2) + pow((src.y - tar.y), 2)));
 }
+
+int I_GetParm(const char* name);
+
+#define LOG_INFO(...)  ::spdlog::info(__VA_ARGS__)
+#define LOG_WARN(...)  ::spdlog::warn(__VA_ARGS__)
+#define LOG_ERROR(...) ::spdlog::error(__VA_ARGS__)
+#ifdef _NOMAD_DEBUG
+#define LOG_TRACE(...) ::spdlog::trace(__VA_ARGS__)
+#define LOG_DEBUG(...) ::spdlog::debug(__VA_ARGS__)
+#else
+#define LOG_DEBUG(...)
+#define LOG_TRACE(...)
+#endif
+
 
 template<typename T>
 inline T abs(T x) { return x ? -x : x; }
@@ -413,17 +479,6 @@ inline bool N_strtobool2(const char* str)
 #define CVECTOR_LOGARITHMIC_GROWTH
 #include "cvector.h"
 
-#define LOG_INFO(...)  ::spdlog::info(__VA_ARGS__)
-#define LOG_WARN(...)  ::spdlog::warn(__VA_ARGS__)
-#define LOG_ERROR(...) ::spdlog::error(__VA_ARGS__)
-#ifdef _NOMAD_DEBUG
-#define LOG_TRACE(...) ::spdlog::trace(__VA_ARGS__)
-#define LOG_DEBUG(...) ::spdlog::debug(__VA_ARGS__)
-#else
-#define LOG_DEBUG(...)
-#define LOG_TRACE(...)
-#endif
-
 using json = nlohmann::json;
 
 #define SCREEN_HEIGHT scf::renderer::height
@@ -545,9 +600,15 @@ public:
 #define IMGUI_END()
 #endif
 
+#ifdef _NOMAD_DEBUG
 #define PROFILE_LINE(line,timer) Profiler profilerVar##line(&timer)
 #define PROFILE_SCOPE(timer)  PROFILE_LINE(__LINE__,timer)
 #define PROFILE_FUNC(timer)   PROFILE_LINE(__LINE__,timer)
+#else
+#define PROFILE_LINE(line,timer) 
+#define PROFILE_SCOPE(timer)
+#define PROFILE_FUNC(timer)
+#endif
 
 #define IMGUI_USER_CONFIG "imconfig.h"
 #include "imgui.h"

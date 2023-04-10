@@ -1,49 +1,63 @@
 #include "n_shared.h"
 #include "g_game.h"
 
-static playr_t* playr;
-
 void P_MoveN()
 {
-    --playr->pos.y;
+    --Game::GetPlayr()->pos.y;
 }
 
 void P_MoveW()
 {
-    --playr->pos.x;
+    --Game::GetPlayr()->pos.x;
 }
 
 void P_MoveS()
 {
-    ++playr->pos.y;
+    ++Game::GetPlayr()->pos.y;
 }
 
 void P_MoveE()
 {
-    ++playr->pos.x;
+    ++Game::GetPlayr()->pos.x;
 }
 
 void P_NextWeapon()
 {
-    playr->swap = playr->c_wpn;
-    if (playr->c_wpn == &playr->P_wpns[10])
-        playr->c_wpn = playr->P_wpns;
+    Game::GetPlayr()->swap = Game::GetPlayr()->c_wpn;
+    if (Game::GetPlayr()->c_wpn == &Game::GetPlayr()->P_wpns[10])
+        Game::GetPlayr()->c_wpn = Game::GetPlayr()->P_wpns;
     else
-        ++playr->c_wpn;
+        ++Game::GetPlayr()->c_wpn;
 }
 void P_PrevWeapon()
 {
-    playr->swap = playr->c_wpn;
-    if (playr->c_wpn == playr->P_wpns)
-        playr->c_wpn = &playr->P_wpns[0];
+    Game::GetPlayr()->swap = Game::GetPlayr()->c_wpn;
+    if (Game::GetPlayr()->c_wpn == Game::GetPlayr()->P_wpns)
+        Game::GetPlayr()->c_wpn = &Game::GetPlayr()->P_wpns[0];
     else
-        --playr->c_wpn;
+        --Game::GetPlayr()->c_wpn;
 }
 void P_QuickSwap()
 {
-    weapon_t* const tmp = playr->c_wpn;
-    playr->c_wpn = playr->swap;
-    playr->swap = tmp;
+    weapon_t* const tmp = Game::GetPlayr()->c_wpn;
+    Game::GetPlayr()->c_wpn = Game::GetPlayr()->swap;
+    Game::GetPlayr()->swap = tmp;
+}
+
+void P_ChangeDirL()
+{
+    if (Game::GetPlayr()->pdir == D_EAST)
+        Game::GetPlayr()->pdir = D_NORTH;
+    else
+        ++Game::GetPlayr()->pdir;
+}
+
+void P_ChangeDirR()
+{
+    if (Game::GetPlayr()->pdir == D_NORTH)
+        Game::GetPlayr()->pdir = D_EAST;
+    else
+        --Game::GetPlayr()->pdir;
 }
 
 void P_DashN()

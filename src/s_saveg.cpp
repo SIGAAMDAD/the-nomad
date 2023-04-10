@@ -15,99 +15,147 @@ json& N_GetSaveJSon()
     for (int i = 0; i < MAXSAVES; ++i) {
         std::string node_name = "sv_"+std::to_string(i);
         const std::string svname = data[node_name]["name"];
-        LOG_INFO("save file %i name: %s", i, svname.c_str());
+        LOG_INFO("save file {} name: {}", i, svname.c_str());
     }
     return data;
 }
 
-void G_SaveGame(const char* svfile)
+void G_SaveGame()
 {
-    assert(svfile);
-    json data;
-    uint32_t nummobs = Game::GetMobs().size();
-
-    data["header"] = {
-        {"version", NOMAD_VERSION},
-        {"version.update", NOMAD_VERSION_UPDATE},
-        {"version.patch", NOMAD_VERSION_PATCH},
-        {"bffname", Game::Get()->bffname},
-        {"scfname", Game::Get()->scfname},
-        {"nummobs", nummobs}
-    };
-    data["playr"] = {
-        {"name", std::string(Game::GetPlayr()->name)},
-        {"health", Game::GetPlayr()->health},
-        {"armor", Game::GetPlayr()->armor},
-        {"pos.y", Game::GetPlayr()->pos.y},
-        {"pos.x", Game::GetPlayr()->pos.x},
-        {"pdir", Game::GetPlayr()->pdir},
-        {"level", Game::GetPlayr()->level},
-        {"xp", Game::GetPlayr()->xp}
-    };
-    linked_list<Mob*>::iterator it = Game::GetMobs().begin();
-    for (uint32_t i = 0; i < nummobs; ++i) {
-        std::string node_name = "mob_"+std::to_string(i);
-        data[node_name] = {
-            {"health", it->val->health},
-            {"mpos.y", it->val->mpos.y},
-            {"mpos.x", it->val->mpos.x},
-            {"mdir", it->val->mdir},
-            {"flags", it->val->flags},
-            {"mobj_index", it->val->getmobjindex()}
-        };
-        it = it->next;
+    std::string svfile = "nomadsv.ngd";
+    int arg = I_GetParm("-save");
+    if (arg != -1) {
+        svfile = myargv[arg + 1];
     }
-    std::vector<uint8_t> bin = json::to_bjdata(data);
+    FILE* fp = fopen(svfile.c_str(), "wb");
+    if (!fp) {
+        LOG_WARN("G_SaveGame: failed to open a writeonly filestream for savefile {}, aborting.", svfile);
+        return;
+    }
 
-    std::ofstream file(svfile, std::ios::out | std::ios::binary);
-    file << bin.data();
-    file.close();
+    Game* const game = Game::Get();
+    size_t nummobs = game->m_Active.size();
+    size_t numitems = game->i_Active.size();
+    fwrite(&game->difficulty, sizeof(uint8_t), 1, fp);
+    fwrite(&game->gamestate, sizeof(gamestate_t), 1, fp);
+    fwrite(&nummobs, sizeof(size_t), 1, fp);
+    fwrite(&numitems, sizeof(size_t), 1, fp);
+    
+    playr_t* const playr = Game::GetPlayr();
+    fwrite(playr->name, sizeof(char), 256, fp);
+    fwrite(&playr->health, sizeof(int_fast16_t), 1, fp);
+    fwrite(&playr->armor, sizeof(armortype_t), 1, fp);
+    fwrite(&playr->level, sizeof(uint_fast16_t), 1, fp);
+    fwrite(&playr->xp, sizeof(uint_fast64_t), 1, fp);
+    fwrite(&playr->pos, sizeof(coord_t), 1, fp);
+    fwrite(&playr->pdir, sizeof(uint_fast8_t), 1, fp);
+    size_t invsize = playr->inv.size();
+    fwrite(&invsize, sizeof(size_t), 1, fp);
+    for (size_t i = 0; i < playr->inv.size(); ++i)
+        fwrite(&playr->inv[i], sizeof(item_t), 1, fp);
+    
+    fwrite(playr->P_wpns, sizeof(weapon_t), PLAYR_MAX_WPNS, fp);
+    uint8_t c_wpn_index = 0;
+    for (int i = 0; i < arraylen(playr->P_wpns); ++i) {
+        if (N_memcmp(&playr->P_wpns[i], playr->c_wpn, sizeof(item_t))) {
+            c_wpn_index = i;
+            break;
+        }
+    }
+    fwrite(&c_wpn_index, sizeof(uint8_t), 1, fp);
+
+    if (nummobs >= 1) {
+        linked_list<Mob*>::iterator it = game->m_Active.begin();
+        for (size_t i = 0; i < nummobs; ++i) {
+            Mob* const mob = it->val;
+            fwrite(&mob->health, sizeof(int16_t), 1, fp);
+            fwrite(&mob->flags, sizeof(uint32_t), 1, fp);
+            fwrite(&mob->mpos, sizeof(coord_t), 1, fp);
+            fwrite(&mob->mdir, sizeof(uint8_t), 1, fp);
+            fwrite(&mob->c_mob, sizeof(mobj_t), 1, fp);
+            it = it->next;
+        }
+    }
+    if (numitems >= 1) {
+        linked_list<item_t*>::iterator it = game->i_Active.begin();
+        for (size_t i = 0; i < numitems; ++i) {
+            fwrite(it->val, sizeof(item_t), 1, fp);
+        }
+    }
+    fclose(fp);
 }
 
-void G_LoadGame(const char* svfile)
+void G_LoadGame()
 {
-    assert(svfile);
-    std::ifstream file(svfile, std::ios::in | std::ios::binary);
-    json data = json::from_bjdata(file);
-    file.close();
-
-    uint64_t version[3];
-    version[0] = data["header"]["version"];
-    version[1] = data["header"]["version.update"];
-    version[2] = data["header"]["version.patch"];
-    uint32_t nummobs = data["header"]["nummobs"];
-
-    if (version[0] != _NOMAD_VERSION) {
-        LOG_WARN("version[0] != _NOMAD_VERSION");
+    std::string svfile = "nomadsv.ngd";
+    int arg = I_GetParm("-save");
+    if (arg != -1) {
+        svfile = myargv[arg + 1];
     }
+    FILE* fp = fopen(svfile.c_str(), "rb");
+    if (!fp) {
+        LOG_WARN("G_LoadGame: failed to open a readonly filestream for savefile {}, aborting.", svfile);
+        return;
+    }
+    Game* const game = Game::Get();
+    size_t nummobs, numitems;
+    fread(&game->difficulty, sizeof(uint8_t), 1, fp);
+    fread(&game->gamestate, sizeof(gamestate_t), 1, fp);
+    fread(&nummobs, sizeof(size_t), 1, fp);
+    fread(&numitems, sizeof(size_t), 1, fp);
+    
+    playr_t* const playr = Game::GetPlayr();
+    fread(playr->name, sizeof(char), 256, fp);
+    fread(&playr->health, sizeof(int_fast16_t), 1, fp);
+    fread(&playr->armor, sizeof(armortype_t), 1, fp);
+    fread(&playr->level, sizeof(uint_fast16_t), 1, fp);
+    fread(&playr->xp, sizeof(uint_fast64_t), 1, fp);
+    fread(&playr->pos, sizeof(coord_t), 1, fp);
+    fread(&playr->pdir, sizeof(uint_fast8_t), 1, fp);
+    size_t invsize;
+    playr->inv.clear();
+    fread(&invsize, sizeof(size_t), 1, fp);
+    if (invsize >= 1) {
+        playr->inv.resize(invsize);
+        fread(playr->inv.data(), sizeof(item_t), invsize, fp);
+    }
+    fread(playr->P_wpns, sizeof(weapon_t), PLAYR_MAX_WPNS, fp);
+    uint8_t c_wpn_index = 0;
+    fread(&c_wpn_index, sizeof(uint8_t), 1, fp);
+    playr->c_wpn = &playr->P_wpns[c_wpn_index];
 
-    {
-        playr_t* playr = Game::GetPlayr();
-        const std::string name = data["playr"]["name"];
-        N_strncpy(Game::GetPlayr()->name, name.c_str(), 256);
-        playr->armor = data["playr"]["armor"];
-        playr->health = data["playr"]["health"];
-        playr->level = data["playr"]["level"];
-        playr->xp = data["playr"]["level"];
-        playr->pos.y = data["playr"]["pos.y"];
-        playr->pos.x = data["playr"]["pos.x"];
+    if (nummobs >= 1) {
+        if (Game::GetMobs().size() >= 1) {
+            linked_list<Mob*>::iterator it = Game::GetMobs().begin();
+            for (size_t i = 0; i < Game::GetMobs().size(); ++i) {
+                Z_Free(it->val);
+                it = it->next;
+            }
+        }
+        Game::GetMobs().clear();
+        for (size_t i = 0; i < nummobs; ++i) {
+            Game::GetMobs().emplace_back();
+            Game::GetMobs().back() = (Mob *)Z_Malloc(sizeof(Mob), TAG_STATIC, &Game::GetMobs().back());
+            Mob* const mob = Game::GetMobs().back();
+            fread(&mob->health, sizeof(int16_t), 1, fp);
+            fread(&mob->flags, sizeof(uint32_t), 1, fp);
+            fread(&mob->mpos, sizeof(coord_t), 1, fp);
+            fread(&mob->mdir, sizeof(uint8_t), 1, fp);
+            fread(&mob->c_mob, sizeof(mobj_t), 1, fp);
+        }
     }
-
-    for (linked_list<Mob*>::iterator it = Game::GetMobs().begin(); it != Game::GetMobs().end();
-    it = it->next) {
-        Z_Free(it->val);
+    if (numitems >= 1) {
+        if (Game::Get()->i_Active.size() >= 1) {
+            linked_list<item_t*>::iterator it = Game::Get()->i_Active.begin();
+            for (size_t i = 0; i < Game::Get()->i_Active.size(); ++i) {
+                Z_Free(it->val);
+                it = it->next;
+            }
+        }
+        for (size_t i = 0; i < numitems; ++i) {
+            Game::Get()->i_Active.emplace_back();
+            fread(Game::Get()->i_Active.back(), sizeof(item_t), 1, fp);
+        }
     }
-    Game::GetMobs().clear();
-    linked_list<Mob*>::iterator it = Game::GetMobs().begin();
-    for (uint32_t i = 0; i < nummobs; ++i) {
-        const std::string node_name = "mob_"+std::to_string(i);
-        Mob* const mob = it->val;
-        mob->health = data[node_name]["health"];
-        mob->mpos.y = data[node_name]["mpos.y"];
-        mob->mpos.x = data[node_name]["mpos.x"];
-        mob->c_mob = mobinfo[(uint64_t)data["mob"]["mobj_index"]];
-        mob->flags = data[node_name]["flags"];
-        mob->mdir = data[node_name]["mdir"];
-        it = it->next;
-    }
+    fclose(fp);
 }

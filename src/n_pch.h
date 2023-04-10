@@ -32,12 +32,18 @@
 #include <string>
 #include <string.h>
 #include <vector>
-#include <array>
 #include <algorithm>
 #include <utility>
 
 // deps
+#include <EABase/eabase.h>
+#include <EASTL/array.h>
+#include <EASTL/string.h>
+#include <EASTL/vector.h>
+#include <absl/hash/hash.h>
+#include "stb_sprintf.h"
 #include <nlohmann/json.hpp>
+#include <sndfile.h>
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_sinks.h>
 #include <spdlog/sinks/base_sink.h>

@@ -101,6 +101,8 @@ namespace scf {
         kbNextWeapon,
         kbPrevWeapon,
         kbQuickSwap,
+        kbChangeDirL,
+        kbChangeDirR,
 
         NUMBINDS
     } bind_t;
