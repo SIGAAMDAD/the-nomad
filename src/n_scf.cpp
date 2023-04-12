@@ -18,7 +18,7 @@ namespace scf {
         bool fullscreen = false;
         bool native_fullscreen = false;
         float ratio = width / framerate;
-        uint16_t framerate = 125;
+        uint16_t ticrate = 35;
 #ifdef _NOMAD_DEBUG
         bool drawfps = true;
 #else

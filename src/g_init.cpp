@@ -6,6 +6,57 @@ static bool exited = false;
 int myargc;
 char** myargv;
 
+#ifndef _WIN32
+#define LoadLibraryA(x) dlopen((x), RTLD_NOW | RTLD_LOCAL)
+#define GetProcAddress(a,b) dlsym((a),(b))
+#define FreeLibrary(x) dlclose((x))
+using HMODULE = void*;
+#endif
+
+HMODULE G_LoadLibrary(const char *lib)
+{
+    HMODULE handle;
+#ifdef _WIN32
+    if ((handle = GetModuleHandleA(lib)) != NULL)
+        return (void *)NULL;
+#elif defined(__unix__)
+    if (*lib == '\0')
+        return (void *)NULL;
+#endif
+    handle = LoadLibraryA(lib);
+    return handle;
+}
+
+void *G_LoadSym(HMODULE handle, const char *name)
+{
+    return (void *)GetProcAddress((HMODULE)handle, name);
+}
+
+#define LOAD(ptr,name) \
+{ \
+    *((void **)&ptr) = G_LoadSym(handle,name); \
+    if (!ptr) N_Error("failed to load library symbol %s", name); \
+}
+
+void G_LoadBZip2()
+{
+    constexpr const char* libname = "Files/deps/libbz2.so.1.0.4";
+    HMODULE handle = G_LoadLibrary(libname);
+    
+    LOAD(bzip2_bufcompress, "BZ2_bzBuffToBuffCompress");
+    LOAD(bzip2_bufdecompress, "BZ2_bzBuffToBuffDecompress");
+}
+
+void G_LoadSndFile()
+{
+    constexpr const char* libname = "Files/deps/libsndfile.so.1.0.31";
+    HMODULE handle = G_LoadLibrary(libname);
+
+    LOAD(sndfile_open, "sf_open");
+    LOAD(sndfile_close, "sf_close");
+    LOAD(sndfile_readshort, "sf_read_short");
+}
+
 int I_GetParm(const char* name)
 {
     if (myargc < 2)
@@ -54,6 +105,9 @@ void I_NomadInit(int argc, char** argv)
     myargc = argc;
     myargv = argv;
 
+    G_LoadBZip2();
+    G_LoadSndFile();
+
     Z_Init();
 
     con.ConPrintf("setting up logger");
@@ -62,7 +116,7 @@ void I_NomadInit(int argc, char** argv)
     int i = I_GetParm("-bff=write");
     if (i != -1) {
         write_bff_mode = true;
-        G_WriteBFF(myargv[2], myargv[3]);
+        G_WriteBFF(myargv[i + 1], myargv[i + 2]);
     }
 
     Game::Init();

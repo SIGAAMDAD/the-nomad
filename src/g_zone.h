@@ -145,32 +145,33 @@ struct nomad_allocator
 	constexpr nomad_allocator(const nomad_allocator<U>&) noexcept { }
 
 	[[nodiscard]] inline T* allocate(std::size_t n) const {
-		if (n > std::numeric_limits<std::size_t>::max() / sizeof(T))
-			throw std::bad_array_new_length();
-		if (auto p = static_cast<T*>(malloc(n)) != NULL)
+		T* p;
+		if ((p = static_cast<T*>(malloc(n))) != NULL)
 			return p;
 		
 		throw std::bad_alloc();
 	}
 	[[nodiscard]] inline T* allocate(std::size_t& n, std::size_t& alignment, std::size_t& offset) const {
-		if (n > std::numeric_limits<std::size_t>::max() / sizeof(T))
-			throw std::bad_array_new_length();
+		T* p;
 #if EASTL_ALIGNED_MALLOC_AVAILABLE
 		if ((offset % alignment) == 0) {
-			if(auto p = memalign(alignment, n) != NULL) // memalign is more consistently available than posix_memalign.
+			if((p = memalign(alignment, n)) != NULL) // memalign is more consistently available than posix_memalign.
 				return p;
 			else
 				throw std::bad_alloc();
 		}
 #else
 		if ((alignment <= EASTL_SYSTEM_ALLOCATOR_MIN_ALIGNMENT) && ((offset % alignment) == 0)) {
-			if (auto p = static_cast<T*>(malloc(n)) != NULL)
+			if ((p = static_cast<T*>(malloc(n))) != NULL)
 				return p;
 			else
 				throw std::bad_alloc();
 		}
 #endif
 		return NULL;
+	}
+	void deallocate(void *p, std::size_t n) const noexcept {
+		free(p);
 	}
 };
 
@@ -184,8 +185,6 @@ struct zone_allocator
     constexpr zone_allocator(const zone_allocator<U>&) noexcept { }
 
     [[nodiscard]] inline T* allocate(std::size_t n) const {
-        if (n > std::numeric_limits<std::size_t>::max() / sizeof(T))
-            throw std::bad_array_new_length();
         T* p = NULL;
 		if ((p = static_cast<T*>(Z_Realloc(p, n, &p, TAG_STATIC))) != NULL)
             return p;
@@ -193,8 +192,6 @@ struct zone_allocator
         throw std::bad_alloc();
     }
 	[[nodiscard]] inline T* allocate(std::size_t& n, std::size_t& alignment, std::size_t& offset) const {
-		if (n > std::numeric_limits<std::size_t>::max() / sizeof(T))
-			throw std::bad_array_new_length();
 		T* p = NULL;
 		if ((p = static_cast<T*>(Z_Realloc(p, n, &p, TAG_STATIC))) != NULL)
 			return p;

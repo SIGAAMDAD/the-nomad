@@ -10,24 +10,28 @@ typedef enum armortype_e : uint_fast8_t
     ARMOR_MERC
 } armortype_t;
 
+inline std::vector<std::array<uint64_t, 4>> xp_to_stats = {
+    {0, PLAYR_MAX_HEALTH, PLAYR_MAX_WPNS, PLAYR_MAX_ITEMS},      // level 0
+};
+
 typedef struct playr_s
 {
     char name[256];
-    int_fast16_t health;
+    int64_t health;
     armortype_t armor;
-    
-    model_t* model;
-    
-    coord_t pos;
+    entitypos_t pos;
     uint_fast8_t pdir;
+    uint64_t level = 0;
+    uint64_t xp = 0;
 
-    uint_fast16_t level = 0;
-    uint_fast64_t xp = 0;
-
-    weapon_t P_wpns[PLAYR_MAX_WPNS];
+    uint64_t *max_health = &xp_to_stats[0][1];
+    uint64_t *max_weapons = &xp_to_stats[0][2];
+    uint64_t *max_items = &xp_to_stats[0][3];
+    model_t* model;
+    eastl::vector<item_t, zone_allocator<item_t>> inv;
+    eastl::vector<weapon_t, zone_allocator<weapon_t>> P_wpns;
     weapon_t *c_wpn = NULL;
     weapon_t *swap = NULL;
-    eastl::vector<item_t, zone_allocator<item_t>> inv;
 } playr_t;
 
 void P_MoveN();

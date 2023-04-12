@@ -17,12 +17,23 @@ inline void N_DebugWindowDraw();
 #include "g_items.h"
 #include "p_playr.h"
 #include "g_sound.h"
+#include "n_lib.h"
 
-inline std::chrono::system_clock::time_point start_time;
-inline std::chrono::system_clock::time_point end_time;
-inline std::chrono::duration<double, std::milli> work_time, sleep_time;
+inline clock_t start = clock(), end_time = clock();
+inline uint64_t delta;
+inline uint64_t sleep_time;
+inline uint64_t work;
 
 #define CLOCK_TO_MILLISECONDS(ticks) (((ticks)/(double)CLOCKS_PER_SEC)*1000.0)
+
+#ifdef __unix__
+#define sleepfor(x) usleep((x)*1000)
+#elif defined(_WIN32)
+#define sleepfor(x) Sleep(x)
+#endif
+
+bool N_WriteFile(const char* name, const void *buffer, const size_t count);
+size_t N_ReadFile(const char* name, char **buffer);
 
 inline void N_DebugWindowClear()
 {
@@ -30,29 +41,22 @@ inline void N_DebugWindowClear()
     ImGui_ImplSDL2_NewFrame();
     ImGui_ImplSDLRenderer_NewFrame();
     ImGui::NewFrame();
-
-    start_time = std::chrono::system_clock::now();
-    work_time = start_time - end_time;
-    if (work_time.count() < scf::renderer::framerate) {
-        std::chrono::duration<double, std::milli> delta_ms(scf::renderer::framerate - work_time.count());
-        auto delta_ms_duration = std::chrono::duration_cast<std::chrono::milliseconds>(delta_ms);
-        std::this_thread::sleep_for(std::chrono::milliseconds(delta_ms_duration.count()));
-    }
 }
 inline void N_DebugWindowDraw()
 {
-    end_time = std::chrono::system_clock::now();
-    if (scf::renderer::drawfps) {
-        sleep_time = end_time - start_time;
+    /*if (scf::renderer::drawfps) {
+        sleep_time = end_time - start;
         ImGui::Begin("FPS", NULL,
             (IMGUI_STANDARD_FLAGS | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoDecoration));
         ImGui::SetWindowPos(ImVec2(SCREEN_WIDTH - 50, 10));
-        ImGui::Text("%f", (work_time + sleep_time).count());
+        ImGui::Text("%ld", work + sleep_time);
         ImGui::End();
-    }
+    } */
     ImGui::Render();
     ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
     R_FlushBuffer();
+
+    sleepfor(scf::renderer::ticrate);
 }
 
 inline void N_DrawFPS()
@@ -117,6 +121,7 @@ public:
     linked_list<Mob*> m_Active;
     linked_list<item_t*> i_Active;
     uint8_t difficulty;
+    uint64_t ticcount;
 
     bff_file_t* file = NULL;
     bff_level_t* level = NULL;

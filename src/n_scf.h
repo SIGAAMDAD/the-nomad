@@ -50,10 +50,10 @@ namespace scf {
         extern float ratio;
         extern uint16_t framerate;
         extern bool drawfps;
+        extern uint16_t ticrate;
         
-        // min-max fps caps
-        constexpr uint16_t framerate_max = 1000;
-        constexpr uint16_t framerate_min = 30;
+        // min-max tic caps
+        constexpr uint16_t ticrate_max = 60;
     };
     namespace launch {
         extern bool fastmobs1;

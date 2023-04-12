@@ -20,142 +20,166 @@ json& N_GetSaveJSon()
     return data;
 }
 
+#define UINTPTR_C(x)      ((uintptr_t)(UINTMAX_C(x)))
+#define PADSAVEP()	save_p = (byte*)(((uintptr_t)save_p + UINTPTR_C(3)) & (~UINTPTR_C(3)))
+
 void G_SaveGame()
 {
+	playr_t* const playr = Game::GetPlayr();
+	Game* const game = Game::Get();
+	
     std::string svfile = "nomadsv.ngd";
     int arg = I_GetParm("-save");
     if (arg != -1) {
         svfile = myargv[arg + 1];
     }
-    FILE* fp = fopen(svfile.c_str(), "wb");
-    if (!fp) {
-        LOG_WARN("G_SaveGame: failed to open a writeonly filestream for savefile {}, aborting.", svfile);
-        return;
+	FILE* fp = fopen(svfile.c_str(), "wb");
+	if (!fp) {
+	
+	}
+	
+	uint64_t version[3] = { _NOMAD_VERSION, _NOMAD_VERSION_UPDATE, _NOMAD_VERSION_PATCH };
+	uint64_t magic = 0x5f3759df;
+	uint64_t nummobs = game->m_Active.size();
+	uint64_t numitems = game->i_Active.size();
+	uint64_t player_inv_size = playr->inv.size();
+	uint64_t player_wpns_size = playr->P_wpns.size();
+	
+	// header
+	fwrite(&magic, sizeof(uint64_t), 1, fp);
+	fwrite(version, sizeof(uint64_t), arraylen(version), fp);
+	fwrite(&game->gamestate, sizeof(gamestate_t), 1, fp);
+	fwrite(&game->difficulty, sizeof(uint8_t), 1, fp);
+	fwrite(&game->ticcount, sizeof(uint64_t), 1, fp);
+	fwrite(game->c_map, sizeof(sprite_t), MAP_MAX_Y * MAP_MAX_X, fp);
+	
+	// players
+	fwrite(playr->name, sizeof(char), 256, fp);
+	fwrite(&playr->health, sizeof(uint64_t), 1, fp);
+	fwrite(&playr->armor, sizeof(armortype_t), 1, fp);
+	fwrite(&playr->pdir, sizeof(uint8_t), 1, fp);
+	fwrite(&playr->xp, sizeof(uint64_t), 1, fp);
+	fwrite(&playr->level, sizeof(uint64_t), 1, fp);
+	fwrite(&player_inv_size, sizeof(uint64_t), 1, fp);
+	fwrite(&player_wpns_size, sizeof(uint64_t), 1, fp);
+    if (playr->inv.size() > 0) {
+    	fwrite(playr->inv.data(), sizeof(item_t), playr->inv.size(), fp);
     }
-
-    Game* const game = Game::Get();
-    size_t nummobs = game->m_Active.size();
-    size_t numitems = game->i_Active.size();
-    fwrite(&game->difficulty, sizeof(uint8_t), 1, fp);
-    fwrite(&game->gamestate, sizeof(gamestate_t), 1, fp);
-    fwrite(&nummobs, sizeof(size_t), 1, fp);
-    fwrite(&numitems, sizeof(size_t), 1, fp);
-    
-    playr_t* const playr = Game::GetPlayr();
-    fwrite(playr->name, sizeof(char), 256, fp);
-    fwrite(&playr->health, sizeof(int_fast16_t), 1, fp);
-    fwrite(&playr->armor, sizeof(armortype_t), 1, fp);
-    fwrite(&playr->level, sizeof(uint_fast16_t), 1, fp);
-    fwrite(&playr->xp, sizeof(uint_fast64_t), 1, fp);
-    fwrite(&playr->pos, sizeof(coord_t), 1, fp);
-    fwrite(&playr->pdir, sizeof(uint_fast8_t), 1, fp);
-    size_t invsize = playr->inv.size();
-    fwrite(&invsize, sizeof(size_t), 1, fp);
-    for (size_t i = 0; i < playr->inv.size(); ++i)
-        fwrite(&playr->inv[i], sizeof(item_t), 1, fp);
-    
-    fwrite(playr->P_wpns, sizeof(weapon_t), PLAYR_MAX_WPNS, fp);
-    uint8_t c_wpn_index = 0;
-    for (int i = 0; i < arraylen(playr->P_wpns); ++i) {
-        if (N_memcmp(&playr->P_wpns[i], playr->c_wpn, sizeof(item_t))) {
-            c_wpn_index = i;
-            break;
-        }
+    if (playr->P_wpns.size() > 0) {
+    	fwrite(playr->P_wpns.data(), sizeof(weapon_t), playr->P_wpns.size(), fp);
     }
-    fwrite(&c_wpn_index, sizeof(uint8_t), 1, fp);
-
-    if (nummobs >= 1) {
-        linked_list<Mob*>::iterator it = game->m_Active.begin();
-        for (size_t i = 0; i < nummobs; ++i) {
-            Mob* const mob = it->val;
-            fwrite(&mob->health, sizeof(int16_t), 1, fp);
-            fwrite(&mob->flags, sizeof(uint32_t), 1, fp);
-            fwrite(&mob->mpos, sizeof(coord_t), 1, fp);
-            fwrite(&mob->mdir, sizeof(uint8_t), 1, fp);
-            fwrite(&mob->c_mob, sizeof(mobj_t), 1, fp);
-            it = it->next;
-        }
-    }
-    if (numitems >= 1) {
-        linked_list<item_t*>::iterator it = game->i_Active.begin();
-        for (size_t i = 0; i < numitems; ++i) {
-            fwrite(it->val, sizeof(item_t), 1, fp);
-        }
-    }
-    fclose(fp);
+	fwrite(&playr->pos, sizeof(entitypos_t), 1, fp);
+	
+	fwrite(&nummobs, sizeof(uint64_t), 1, fp);
+	if (game->m_Active.size() > 0) {
+		for (linked_list<Mob*>::iterator it = game->m_Active.begin(); it != game->m_Active.end(); it = it->next) {
+			Mob* const mob = it->val;
+			fwrite(&mob->health, sizeof(int16_t), 1, fp);
+			fwrite(&mob->mdir, sizeof(uint8_t), 1, fp);
+			fwrite(&mob->mpos, sizeof(entitypos_t), 1, fp);
+			fwrite(&mob->flags, sizeof(uint32_t), 1, fp);
+			fwrite(&mob->c_mob, sizeof(mobj_t), 1, fp);
+		}
+	}
+	fwrite(&numitems, sizeof(uint64_t), 1, fp);
+	if (game->i_Active.size() > 0) {
+		for (linked_list<item_t*>::iterator it = game->i_Active.begin(); it != game->i_Active.end(); it = it->next) {
+			item_t* const item = it->val;
+			fwrite(&item->cost, sizeof(uint16_t), 1, fp);
+		}
+	}
+	fclose(fp);
 }
 
 void G_LoadGame()
 {
+    Game* const game = Game::Get();
+    playr_t* const playr = game->playr;
+
     std::string svfile = "nomadsv.ngd";
     int arg = I_GetParm("-save");
     if (arg != -1) {
         svfile = myargv[arg + 1];
     }
     FILE* fp = fopen(svfile.c_str(), "rb");
-    if (!fp) {
-        LOG_WARN("G_LoadGame: failed to open a readonly filestream for savefile {}, aborting.", svfile);
-        return;
+	if (!fp) {
+	
+	}
+	
+	uint64_t version[3] = { _NOMAD_VERSION, _NOMAD_VERSION_UPDATE, _NOMAD_VERSION_PATCH };
+	uint64_t magic = 0x5f3759df;
+	uint64_t nummobs;
+	uint64_t numitems;
+	uint64_t player_inv_size;
+	uint64_t player_wpns_size;
+	
+	// header
+	fread(&magic, sizeof(uint64_t), 1, fp);
+    if (magic != HEADER_MAGIC) {
+        fclose(fp);
+        N_Error("G_LoadGame: invalid header magic number, was %lx, expected %lx", magic, HEADER_MAGIC);
     }
-    Game* const game = Game::Get();
-    size_t nummobs, numitems;
-    fread(&game->difficulty, sizeof(uint8_t), 1, fp);
-    fread(&game->gamestate, sizeof(gamestate_t), 1, fp);
-    fread(&nummobs, sizeof(size_t), 1, fp);
-    fread(&numitems, sizeof(size_t), 1, fp);
-    
-    playr_t* const playr = Game::GetPlayr();
-    fread(playr->name, sizeof(char), 256, fp);
-    fread(&playr->health, sizeof(int_fast16_t), 1, fp);
-    fread(&playr->armor, sizeof(armortype_t), 1, fp);
-    fread(&playr->level, sizeof(uint_fast16_t), 1, fp);
-    fread(&playr->xp, sizeof(uint_fast64_t), 1, fp);
-    fread(&playr->pos, sizeof(coord_t), 1, fp);
-    fread(&playr->pdir, sizeof(uint_fast8_t), 1, fp);
-    size_t invsize;
-    playr->inv.clear();
-    fread(&invsize, sizeof(size_t), 1, fp);
-    if (invsize >= 1) {
-        playr->inv.resize(invsize);
-        fread(playr->inv.data(), sizeof(item_t), invsize, fp);
-    }
-    fread(playr->P_wpns, sizeof(weapon_t), PLAYR_MAX_WPNS, fp);
-    uint8_t c_wpn_index = 0;
-    fread(&c_wpn_index, sizeof(uint8_t), 1, fp);
-    playr->c_wpn = &playr->P_wpns[c_wpn_index];
 
-    if (nummobs >= 1) {
-        if (Game::GetMobs().size() >= 1) {
-            linked_list<Mob*>::iterator it = Game::GetMobs().begin();
-            for (size_t i = 0; i < Game::GetMobs().size(); ++i) {
-                Z_Free(it->val);
-                it = it->next;
-            }
+	fread(version, sizeof(uint64_t), arraylen(version), fp);
+	fread(&game->gamestate, sizeof(gamestate_t), 1, fp);
+	fread(&game->difficulty, sizeof(uint8_t), 1, fp);
+	fread(&game->ticcount, sizeof(uint64_t), 1, fp);
+	fread(game->c_map, sizeof(sprite_t), MAP_MAX_Y * MAP_MAX_X, fp);
+	
+	// players
+	fread(playr->name, sizeof(char), 256, fp);
+	fread(&playr->health, sizeof(uint64_t), 1, fp);
+	fread(&playr->armor, sizeof(armortype_t), 1, fp);
+	fread(&playr->pdir, sizeof(uint8_t), 1, fp);
+	fread(&playr->xp, sizeof(uint64_t), 1, fp);
+	fread(&playr->level, sizeof(uint64_t), 1, fp);
+	fread(&player_inv_size, sizeof(uint64_t), 1, fp);
+	fread(&player_wpns_size, sizeof(uint64_t), 1, fp);
+
+    if (playr->P_wpns.size() != player_wpns_size) {
+        playr->P_wpns.resize(player_wpns_size);
+    }
+    if (playr->inv.size() != player_inv_size) {
+        playr->inv.resize(player_inv_size);
+    }
+    if (player_inv_size > 0) {
+        playr->inv.resize(player_inv_size);
+        fread(playr->inv.data(), sizeof(item_t), player_inv_size, fp);
+    }
+    if (player_wpns_size > 0)  {
+        playr->P_wpns.resize(player_wpns_size);
+        fread(playr->P_wpns.data(), sizeof(weapon_t), player_wpns_size, fp);
+    }
+	fread(&playr->pos, sizeof(entitypos_t), 1, fp);
+	
+	fread(&nummobs, sizeof(uint64_t), 1, fp);
+    if (nummobs > 0) {
+        for (linked_list<Mob*>::iterator it = game->m_Active.begin(); it != game->m_Active.end(); it = it->next) {
+            Z_Free(it->val);
         }
-        Game::GetMobs().clear();
-        for (size_t i = 0; i < nummobs; ++i) {
-            Game::GetMobs().emplace_back();
-            Game::GetMobs().back() = (Mob *)Z_Malloc(sizeof(Mob), TAG_STATIC, &Game::GetMobs().back());
-            Mob* const mob = Game::GetMobs().back();
-            fread(&mob->health, sizeof(int16_t), 1, fp);
-            fread(&mob->flags, sizeof(uint32_t), 1, fp);
-            fread(&mob->mpos, sizeof(coord_t), 1, fp);
-            fread(&mob->mdir, sizeof(uint8_t), 1, fp);
-            fread(&mob->c_mob, sizeof(mobj_t), 1, fp);
+        game->m_Active.clear();
+        for (uint64_t i = 0; i < nummobs; ++i) {
+            game->m_Active.emplace_back();
+            game->m_Active.back() = (Mob *)Z_Malloc(sizeof(Mob), TAG_STATIC, &game->m_Active.back());
+            Mob* const mob = game->m_Active.back();
+			fread(&mob->health, sizeof(int16_t), 1, fp);
+			fread(&mob->mdir, sizeof(uint8_t), 1, fp);
+			fread(&mob->mpos, sizeof(entitypos_t), 1, fp);
+			fread(&mob->flags, sizeof(uint32_t), 1, fp);
+			fread(&mob->c_mob, sizeof(mobj_t), 1, fp);
         }
     }
-    if (numitems >= 1) {
-        if (Game::Get()->i_Active.size() >= 1) {
-            linked_list<item_t*>::iterator it = Game::Get()->i_Active.begin();
-            for (size_t i = 0; i < Game::Get()->i_Active.size(); ++i) {
-                Z_Free(it->val);
-                it = it->next;
-            }
+    fread(&numitems, sizeof(uint64_t), 1, fp);
+    if (numitems > 0) {
+        for (linked_list<item_t*>::iterator it = game->i_Active.begin(); it != game->i_Active.end(); it = it->next) {
+            Z_Free(it->val);
         }
-        for (size_t i = 0; i < numitems; ++i) {
-            Game::Get()->i_Active.emplace_back();
-            fread(Game::Get()->i_Active.back(), sizeof(item_t), 1, fp);
+        game->i_Active.clear();
+        for (uint64_t i = 0; i < numitems; ++i) {
+            game->i_Active.emplace_back();
+            game->i_Active.back() = (item_t *)Z_Malloc(sizeof(item_t), TAG_STATIC, &game->i_Active.back());
+            fread(game->i_Active.back(), sizeof(item_t), 1, fp);
         }
     }
-    fclose(fp);
+	fclose(fp);
 }

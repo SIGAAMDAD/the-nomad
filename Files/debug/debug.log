@@ -38,7 +38,7 @@
 [info]: rover->tag is >=  TAG_PURGELEVEL, freeing
 [info]: rover->tag is >=  TAG_PURGELEVEL, freeing
 [warning]: zone size wasn't big enough for Z_Malloc size given, resizing zone
-[info]: Resizing zone from 0x7fffcb59c010 -> 0x8000f759c010, new size 104857600
+[info]: Resizing zone from 0x7fbb1111a010 -> 0x7fbc3d11a010, new size 104857600
 [trace]: successfully decompressed 25117750 bytes of audio data
 [info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
 [info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
@@ -73,99 +73,75 @@
 [trace]: model loading statistics:
 [trace]: 
     index   : 0
-    address : 0x7fffce6610c8
-    time    : 1.4e-05
+    address : 0x7fbb141df0c8
+    time    : 1.3e-05
 [trace]: 
     index   : 1
-    address : 0x7fffce6610ec
-    time    : 1.1e-05
+    address : 0x7fbb141df0ec
+    time    : 9e-06
 [trace]: 
     index   : 2
-    address : 0x7fffce661110
-    time    : 1.2e-05
+    address : 0x7fbb141df110
+    time    : 9e-06
 [trace]: 
     index   : 3
-    address : 0x7fffce661134
+    address : 0x7fbb141df134
     time    : 1e-05
 [trace]: 
     index   : 4
-    address : 0x7fffce661158
-    time    : 1e-05
-[trace]: 
-    index   : 5
-    address : 0x7fffce66117c
-    time    : 1e-05
-[trace]: 
-    index   : 6
-    address : 0x7fffce6611a0
-    time    : 1e-05
-[trace]: 
-    index   : 7
-    address : 0x7fffce6611c4
-    time    : 1.1e-05
-[trace]: 
-    index   : 8
-    address : 0x7fffce6611e8
-    time    : 1e-05
-[trace]: 
-    index   : 9
-    address : 0x7fffce66120c
-    time    : 1e-05
-[trace]: 
-    index   : 10
-    address : 0x7fffce661230
+    address : 0x7fbb141df158
     time    : 9e-06
 [trace]: 
-    index   : 11
-    address : 0x7fffce661254
+    index   : 5
+    address : 0x7fbb141df17c
+    time    : 9e-06
+[trace]: 
+    index   : 6
+    address : 0x7fbb141df1a0
+    time    : 9e-06
+[trace]: 
+    index   : 7
+    address : 0x7fbb141df1c4
+    time    : 9e-06
+[trace]: 
+    index   : 8
+    address : 0x7fbb141df1e8
+    time    : 9e-06
+[trace]: 
+    index   : 9
+    address : 0x7fbb141df20c
+    time    : 8e-06
+[trace]: 
+    index   : 10
+    address : 0x7fbb141df230
     time    : 1e-05
+[trace]: 
+    index   : 11
+    address : 0x7fbb141df254
+    time    : 9e-06
 [trace]: 
     index   : 12
-    address : 0x7fffce661278
-    time    : 1e-05
+    address : 0x7fbb141df278
+    time    : 1.7e-05
 [trace]: 
     index   : 13
-    address : 0x7fffce66129c
+    address : 0x7fbb141df29c
     time    : 1e-05
 [trace]: 
     index   : 14
-    address : 0x7fffce6612c0
-    time    : 1.1e-05
+    address : 0x7fbb141df2c0
+    time    : 1e-05
 [trace]: 
     index   : 15
-    address : 0x7fffce6612e4
-    time    : 9e-06
+    address : 0x7fbb141df2e4
+    time    : 2.7e-05
 [trace]: 
     index   : 16
-    address : 0x7fffce661308
-    time    : 1e-05
-[trace]: average: 1.0411764646157868e-05
-[trace]: longest: 0 (index 1.4e-05)
+    address : 0x7fbb141df308
+    time    : 1.8e-05
+[trace]: average: 1.1470588373520192e-05
+[trace]: longest: 15 (index 2.7e-05)
 [info]: setting up imgui
 [info]: running main gameplay loop
 [info]: gamestate = GS_MENU
-[info]: exiting main menu
-[info]: gamestate = GS_LEVEL
-[info]: beginning level loop, capped frame rate: 125
-[trace]: renderer average time: 1.7833332928300177e-05
-[trace]: event loop average time: 2.2500000227410055e-06
-[trace]: loop average time: 0.0023529999792420617
-[info]: exiting level loop
-[info]: gamestate = GS_PAUSE
-[info]: gamestate = GS_LEVEL
-[info]: beginning level loop, capped frame rate: 125
-[trace]: renderer average time: 1.741666649953307e-05
-[trace]: event loop average time: inf
-[trace]: loop average time: 0.0010708333284128457
-[info]: exiting level loop
-[info]: gamestate = GS_PAUSE
-[info]: gamestate = GS_LEVEL
-[info]: beginning level loop, capped frame rate: 125
-[trace]: renderer average time: 1.728571409590326e-05
-[trace]: event loop average time: inf
-[trace]: loop average time: 0.001089714272114049
-[info]: exiting level loop
-[info]: gamestate = GS_PAUSE
-[info]: gamestate = GS_LEVEL
-[info]: beginning level loop, capped frame rate: 125
 [info]: deallocating and shutting down all systems

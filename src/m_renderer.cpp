@@ -32,8 +32,8 @@ void R_DrawVMatrix(void)
 void R_GetVMatrix(void)
 {
     playr_t* const playr = Game::Get()->playr;
-    coord_t startc = {playr->pos.y - vert_fov, playr->pos.x - horz_fov};
-    coord_t endc = {playr->pos.y + vert_fov, playr->pos.x + horz_fov};
+    coord_t startc = {playr->pos.pos.y - vert_fov, playr->pos.pos.x - horz_fov};
+    coord_t endc = {playr->pos.pos.y + vert_fov, playr->pos.pos.x + horz_fov};
     for (int32_t y = startc.y; y < endc.y; ++y) {
         for (int32_t x = startc.x; x < endc.x; ++x) {
             renderer->vmatrix[y][x] = Game::Get()->c_map[y][x];

@@ -5,7 +5,7 @@
 
 typedef struct weapon_s
 {
-    const char* name;
+    const char name[80]={0};
 
     uint16_t dmg;
     int32_t range;
@@ -13,7 +13,7 @@ typedef struct weapon_s
 
 typedef struct item_s
 {
-    const char* name;
+    const char name[80]={0};
 
     uint16_t cost;
 } item_t;

@@ -3,37 +3,37 @@
 
 void P_MoveN()
 {
-    --Game::GetPlayr()->pos.y;
+    --Game::GetPlayr()->pos.pos.y;
 }
 
 void P_MoveW()
 {
-    --Game::GetPlayr()->pos.x;
+    --Game::GetPlayr()->pos.pos.x;
 }
 
 void P_MoveS()
 {
-    ++Game::GetPlayr()->pos.y;
+    ++Game::GetPlayr()->pos.pos.y;
 }
 
 void P_MoveE()
 {
-    ++Game::GetPlayr()->pos.x;
+    ++Game::GetPlayr()->pos.pos.x;
 }
 
 void P_NextWeapon()
 {
     Game::GetPlayr()->swap = Game::GetPlayr()->c_wpn;
-    if (Game::GetPlayr()->c_wpn == &Game::GetPlayr()->P_wpns[10])
-        Game::GetPlayr()->c_wpn = Game::GetPlayr()->P_wpns;
+    if (Game::GetPlayr()->c_wpn == &Game::GetPlayr()->P_wpns.back())
+        Game::GetPlayr()->c_wpn = &Game::GetPlayr()->P_wpns.front();
     else
         ++Game::GetPlayr()->c_wpn;
 }
 void P_PrevWeapon()
 {
     Game::GetPlayr()->swap = Game::GetPlayr()->c_wpn;
-    if (Game::GetPlayr()->c_wpn == Game::GetPlayr()->P_wpns)
-        Game::GetPlayr()->c_wpn = &Game::GetPlayr()->P_wpns[0];
+    if (Game::GetPlayr()->c_wpn == &Game::GetPlayr()->P_wpns.back())
+        Game::GetPlayr()->c_wpn = &Game::GetPlayr()->P_wpns.front();
     else
         --Game::GetPlayr()->c_wpn;
 }

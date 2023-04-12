@@ -5,6 +5,49 @@ std::shared_ptr<spdlog::logger> Log::m_Instance;
 Console con;
 Game* Game::gptr;
 
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+
+bool N_WriteFile(const char* name, const void *buffer, const size_t count)
+{
+    int handle;
+    ssize_t size;
+#ifdef __unix__
+    handle = open(name, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, (mode_t)0666);
+    if (handle == -1)
+        return false;
+    size = write(handle, buffer, count);
+    if (size < count)
+        return false;
+    close(handle);
+#elif defined(_WIN32)
+    handle = _open(name, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, (mode_t)0666);
+    if (handle == -1)
+        return false;
+    size = _write(handle, buffer, count);
+    if (size < count)
+        return false;
+    _close(handle);
+#endif
+    return true;
+}
+size_t N_ReadFile(const char* name, char **buffer)
+{
+    assert(buffer);
+    FILE* fp = fopen(name, "rb");
+    if (!fp)
+        N_Error("N_ReadFile: failed to open file %s", name);
+    fseek(fp, 0L, SEEK_END);
+    size_t size = ftell(fp);
+    fseek(fp, 0L, SEEK_SET);
+    void *buf = malloc(size);
+    size_t count = fread(buf, sizeof(char), size, fp);
+    *buffer = (char *)buf;
+    fclose(fp);
+    return count;
+}
+
 void ImGui_ShutDown()
 {
     if (imgui_on) {
@@ -54,13 +97,16 @@ void Game::Init()
     playr->pdir = D_NORTH;
     playr->health = PLAYR_MAX_HEALTH;
     playr->armor = ARMOR_STREET;
-    playr->c_wpn = playr->P_wpns;
-    N_memset(playr->P_wpns, 0, sizeof(playr->P_wpns));
     playr->xp = 0;
     playr->level = 0;
-    playr->pos = {0, 0};
-    playr->inv.resize(1);
-    N_memset(&playr->inv[0], 0, sizeof(item_t));
+    playr->pos.pos = {0, 0};
+
+    playr->P_wpns.resize(PLAYR_MAX_WPNS);
+    N_memset(playr->P_wpns.data(), 0, PLAYR_MAX_WPNS * sizeof(weapon_t));
+    playr->c_wpn = &playr->P_wpns.front();
+
+    playr->inv.resize(PLAYR_MAX_ITEMS);
+    N_memset(playr->inv.data(), 0, PLAYR_MAX_ITEMS * sizeof(item_t));
 }
 
 Game::~Game()

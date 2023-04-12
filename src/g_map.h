@@ -3,6 +3,24 @@
 
 #pragma once
 
+#include <glm/vec2.hpp>
+#include <glm/vec4.hpp>
+#include <glm/gtc/round.hpp>
+#include <glm/gtc/constants.hpp>
+#include <glm/simd/integer.h>
+#include <glm/simd/common.h>
+#include <glm/simd/matrix.h>
+#include <glm/simd/trigonometric.h>
+
+typedef struct entitypos_s
+{
+    sprite_t sprite;
+    glm::vec2 thrust;
+    glm::vec2 to;
+    glm::vec2 pos;
+    glm::vec4 hitbox;
+} entitypos_t;
+
 typedef struct pint_s
 {
     sprite_t sprite;

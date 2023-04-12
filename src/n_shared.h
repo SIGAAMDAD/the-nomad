@@ -291,10 +291,10 @@ typedef struct dim_s
 inline void __nomad_assert_fail(const char* expression, const char* file, const char* func, unsigned line)
 {
 	N_Error(
-		"Assertion '{}' failed:\n"
-		"  \\file: {}\n"
-		"  \\function: {}\n"
-		"  \\line: {}\n\nIf this is an SDL2 error, here is the message string: {}\n",
+		"Assertion '%s' failed:\n"
+		"  \\file: %s\n"
+		"  \\function: %s\n"
+		"  \\line: %u\n\nIf this is an SDL2 error, here is the message string: %s\n",
 	expression, file, func, line, SDL_GetError());
 }
 #define assert(x) (((bool)(x)) ? void(0) : __nomad_assert_fail(#x,__FILE__,__func__,__LINE__))
