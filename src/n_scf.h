@@ -48,12 +48,12 @@ namespace scf {
         extern bool fullscreen;
         extern bool native_fullscreen;
         extern float ratio;
-        extern uint16_t framerate;
         extern bool drawfps;
         extern uint16_t ticrate;
         
         // min-max tic caps
         constexpr uint16_t ticrate_max = 60;
+        constexpr uint16_t ticrate_min = 14;
     };
     namespace launch {
         extern bool fastmobs1;

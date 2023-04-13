@@ -9,7 +9,7 @@ Game* Game::gptr;
 #define O_BINARY 0
 #endif
 
-bool N_WriteFile(const char* name, const void *buffer, const size_t count)
+bool N_WriteFile(const char* name, const void *buffer, const ssize_t count)
 {
     int handle;
     ssize_t size;
@@ -18,7 +18,7 @@ bool N_WriteFile(const char* name, const void *buffer, const size_t count)
     if (handle == -1)
         return false;
     size = write(handle, buffer, count);
-    if (size < count)
+    if (size < count || size == -1)
         return false;
     close(handle);
 #elif defined(_WIN32)
@@ -32,20 +32,39 @@ bool N_WriteFile(const char* name, const void *buffer, const size_t count)
 #endif
     return true;
 }
-size_t N_ReadFile(const char* name, char **buffer)
+ssize_t N_ReadFile(const char* name, char **buffer)
 {
     assert(buffer);
-    FILE* fp = fopen(name, "rb");
-    if (!fp)
-        N_Error("N_ReadFile: failed to open file %s", name);
-    fseek(fp, 0L, SEEK_END);
-    size_t size = ftell(fp);
-    fseek(fp, 0L, SEEK_SET);
-    void *buf = malloc(size);
-    size_t count = fread(buf, sizeof(char), size, fp);
+#ifdef __unix__
+    int handle = open(name, O_RDONLY | O_BINARY, (mode_t)0666);
+    if (handle == -1)
+        N_Error("N_ReadFile: failed to open() file %s", name);
+    struct stat fdata;
+    if (fstat(handle, &fdata) == -1)
+        N_Error("N_ReadFile: failed to fstat() file %s", name);
+#elif defined(_WIN32)
+    int handle = _open(name, O_RDONLY | O_BINARY, (mode_t)0666);
+    if (handle == -1)
+        N_Error("N_ReadFile: failed to open() file %s", name);
+    struct _stati64 fdata;
+    if (_fstati64(handle, &fdata) == -1)
+        N_Error("N_ReadFile: failed to fstat() file %s", name);
+#endif
+    
+    void *buf = Z_Malloc(fdata.st_size, TAG_STATIC, &buf);
+#ifdef __unix__
+    ssize_t size = read(handle, buf, fdata.st_size);
+    if (size < fdata.st_size || size == -1)
+        N_Error("N_ReadFile: failed to read() file %s", name);
+    close(handle);
+#elif defined(_WIN32)
+    ssize_t size = _read(handle, buf, fdata.st_size);
+    if (size < fdata.st_size || size == -1)
+        N_Error("N_ReadFile: failed to read() file %s", name);
+    _close(handle);
+#endif
     *buffer = (char *)buf;
-    fclose(fp);
-    return count;
+    return size;
 }
 
 void ImGui_ShutDown()

@@ -35,7 +35,7 @@ void G_SaveGame()
     }
 	FILE* fp = fopen(svfile.c_str(), "wb");
 	if (!fp) {
-	
+		N_Error("G_SaveGame: failed to create a save file named %s", svfile.c_str());
 	}
 	
 	uint64_t version[3] = { _NOMAD_VERSION, _NOMAD_VERSION_UPDATE, _NOMAD_VERSION_PATCH };

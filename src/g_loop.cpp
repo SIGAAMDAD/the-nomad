@@ -63,7 +63,7 @@ static void N_Level()
 {
     LOG_INFO("gamestate = GS_LEVEL");
     SDL_Event event;
-    LOG_INFO("beginning level loop, capped frame rate: {}", scf::renderer::framerate);
+    LOG_INFO("beginning level loop, ticrate: {}", scf::renderer::ticrate);
 #ifdef _NOMAD_DEBUG
     float renderer_time, events_time, loop_time;
     profiler_stats renderer, events, loop;
@@ -276,8 +276,8 @@ static inline void N_RenderSettings(bool *open)
         ImGui::Checkbox("VSYNC", &scf::renderer::vsync);
         ImGui::SameLine(200);
         ImGui::Text("%s", N_booltostr2(scf::renderer::vsync));
-        ImGui::SliderScalar("FPS Cap", ImGuiDataType_U16, &scf::renderer::framerate,
-            &scf::renderer::framerate_min, &scf::renderer::framerate_max);
+        ImGui::SliderScalar("FPS Cap", ImGuiDataType_U16, &scf::renderer::ticrate,
+            &scf::renderer::ticrate_min, &scf::renderer::ticrate_max);
     }
     ImGui::NewLine();
     {

@@ -3,7 +3,7 @@ VERSION_UPDATE= 1
 VERSION_PATCH = 0
 CC            = g++
 LDLIBS        = /usr/local/lib/libSDL2.a -lSDL2_image /usr/local/lib/libSDL2_ttf.a /usr/local/lib/libopenal.a \
-				-lGL libEASTL.a -logg -lvorbisfile
+				-lGL libEASTL.a -logg -lvorbisfile -lsndfile
 O             = obj
 SDIR          = src
 

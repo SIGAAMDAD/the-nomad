@@ -81,10 +81,17 @@ typedef struct bff_audio_s
 	uint64_t fsize;
     int channels;
     int samplerate;
+#if 0
+    char *filebuf;
+#endif
+    eastl::vector<int16_t, zone_allocator<int16_t>> buffer;
 
     // not used in file i/o
-    eastl::vector<int16_t, zone_allocator<int16_t>> buffer;
 	bff_level_t* level;
+#if 0
+    char *fileptr;
+    char *curptr;
+#endif
 } bff_audio_t;
 
 typedef struct bff_level_s

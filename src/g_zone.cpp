@@ -347,7 +347,7 @@ extern "C" void Z_FileDumpHeap()
 	}
 }
 
-#define DEFAULT_SIZE (100*1024*1024) // 100 MiB
+#define DEFAULT_SIZE (500*1024*1024) // 100 MiB
 #define MIN_SIZE     (50*1024*1024) // 50 MiB
 
 static bool initialized = false;

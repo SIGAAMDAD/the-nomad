@@ -32,8 +32,8 @@ inline uint64_t work;
 #define sleepfor(x) Sleep(x)
 #endif
 
-bool N_WriteFile(const char* name, const void *buffer, const size_t count);
-size_t N_ReadFile(const char* name, char **buffer);
+bool N_WriteFile(const char* name, const void *buffer, const ssize_t count);
+ssize_t N_ReadFile(const char* name, char **buffer);
 
 inline void N_DebugWindowClear()
 {
