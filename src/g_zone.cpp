@@ -70,73 +70,10 @@
 #define MEM_ALIGN  8
 #define RETRY_AMOUNT (256*1024)
 
-extern "C" void *N_mmap(void *start, size_t size, int32_t prot, int32_t flags, int32_t fd, off_t offset)
-{
-#ifdef __unix__
-	return mmap(start, size, prot, flags, fd, offset);
-#elif defined(_WIN32)
-	if (prot & ~(PROT_READ | PROT_WRITE | PROT_EXEC))
-		return MAP_FAILED;
-	if (fd == -1) {
-		if (!(flags & MAP_ANON) || offset)
-			return MAP_FAILED;
-	} else if (flags & MAP_ANON)
-		return MAP_FAILED;
-
-	DWORD flProtect;
-	if (prot & PROT_WRITE) {
-		if (prot & PROT_EXEC)
-			flProtect = PAGE_EXECUTE_READWRITE;
-		else
-			flProtect = PAGE_READWRITE;
-	} else if (prot & PROT_EXEC) {
-		if (prot & PROT_READ)
-			flProtect = PAGE_EXECUTE_READ;
-		else if (prot & PROT_EXEC)
-			flProtect = PAGE_EXECUTE;
-	} else
-		flProtect = PAGE_READONLY;
-
-	off_t end = length + offset;
-	HANDLE mmap_fd, h;
-	if (fd == -1)
-		mmap_fd = INVALID_HANDLE_VALUE;
-	else
-		mmap_fd = (HANDLE)_get_osfhandle(fd);
-	h = CreateFileMapping(mmap_fd, NULL, flProtect, DWORD_HI(end), DWORD_LO(end), NULL);
-	if (h == NULL)
-		return MAP_FAILED;
-
-	DWORD dwDesiredAccess;
-	if (prot & PROT_WRITE)
-		dwDesiredAccess = FILE_MAP_WRITE;
-	else
-		dwDesiredAccess = FILE_MAP_READ;
-	if (prot & PROT_EXEC)
-		dwDesiredAccess |= FILE_MAP_EXECUTE;
-	if (flags & MAP_PRIVATE)
-		dwDesiredAccess |= FILE_MAP_COPY;
-	void *ret = MapViewOfFile(h, dwDesiredAccess, DWORD_HI(offset), DWORD_LO(offset), length);
-	if (ret == NULL) {
-		CloseHandle(h);
-		ret = MAP_FAILED;
-	}
-	return ret;
-#endif
-}
-extern "C" void N_munmap(void *addr, size_t size)
-{
-#ifdef __unix__
-	munmap(addr, size);
-#elif defined(_WIN32)
-	UnmapViewOfFile(addr);
-#endif
-}
-
 // 29 without id, 33 with id
 typedef struct memblock_s
 {
-#if defined(_NOMAD_DEBUG) || defined(_NOMAD_LOGS)
+#if defined(_NOMAD_DEBUG) || (defined(ZONEDEBUG) && defined(ZONEIDCHECK))
 	unsigned id;
 #endif
 	uint8_t tag;
@@ -150,7 +87,7 @@ typedef struct memblock_s
 typedef struct
 {
 	// size of the zone, including size of the header
-	uint32_t size;
+	uint64_t size;
 	
 	// start/end cap for blocklist
 	memblock_t blocklist;
@@ -183,7 +120,7 @@ static int indexer = 0;
 
 void Z_PrintStats(void)
 {
-	if (write_bff_mode)
+	if (bff_mode)
 		return;
 
 	if  (mainzone->size > 0) {
@@ -196,12 +133,12 @@ void Z_PrintStats(void)
 		con.ConPrintf(
 			"[Zone Allocation Daemon Log]\n"
 			"  -> General <-\n"
-			"   total memory         => {}\n"
-			"   free memory          => {}\n"
-			"   purgable memory      => {}\n"
-			"   active memory        => {}\n"
+			"   total memory         -> {}\n"
+			"   free memory          -> {}\n"
+			"   purgable memory      -> {}\n"
+			"   active memory        -> {}\n"
 			"  -> Block Info <-\n"
-			"   total blocks         => {}",
+			"   total blocks         -> {}",
 		total_memory, free_memory, purgable_memory, active_memory, total_blocks);
 		
 		if (!total_blocks) {
@@ -209,7 +146,7 @@ void Z_PrintStats(void)
 		}
 		else {
 			char addr[256];
-			N_memset(addr, 0, sizeof(addr));
+			memset(addr, 0, sizeof(addr));
 			uint64_t index = 0;
 			for (memblock_t* block = mainzone->blocklist.next;; block = block->next, ++index) {
 				if (block == &mainzone->blocklist)
@@ -236,6 +173,12 @@ void Z_PrintStats(void)
 
 extern "C" void Z_KillHeap(void)
 {
+	if (!mainzone) // if an error occurs before the zone is actually allocated
+		return;
+	
+#ifdef PARANOID
+	Z_DumpHeap();
+#endif
 	con.ConPrintf("Z_KillHeap: freeing mainzone pointer of size {}", mainzone->size);
 	free(mainzone);
 }
@@ -322,12 +265,35 @@ extern "C" void Z_Free(void *ptr)
 	}
 }
 
+extern "C" void Z_DumpHeap()
+{
+	memblock_t* block;
+	fprintf(stdout, "zone size:%ld   location:%p\n", mainzone->size, (void *)mainzone);
+	for (block = mainzone->blocklist.next;; block = block->next) {
+		fprintf (stdout, "block:%p     size:%7i     user:%p      tag:%3i\n",
+			(void *)block, block->size, block->user, block->tag);
+		if (block->next == &mainzone->blocklist) {
+			// all blocks have been hit
+			break;
+		}
+		if ((byte *)block+block->size != (byte *)block->next) {
+			fprintf(stderr, "ERROR: block size doesn't touch next block!\n");
+		}
+		if (block->next->prev != block) {
+			fprintf(stderr, "ERROR: next block doesn't have proper back linkage!\n");
+		}
+		if (block->tag == TAG_FREE && block->next->tag == TAG_FREE) {
+			fprintf(stderr, "ERROR: two consecutive free blocks!\n");
+		}
+	}
+}
+
 extern "C" void Z_FileDumpHeap()
 {
 	memblock_t* block;
 	const char* filename = "Files/debug/heapdump.log";
 	filestream fp(filename, "w");
-	fprintf(fp.get(), "zone size:%i   location:%p\n", mainzone->size, (void *)mainzone);
+	fprintf(fp.get(), "zone size:%ld   location:%p\n", mainzone->size, (void *)mainzone);
 	for (block = mainzone->blocklist.next;; block = block->next) {
 		fprintf (fp.get(), "block:%p     size:%7i     user:%p      tag:%3i\n",
 			(void *)block, block->size, block->user, block->tag);
@@ -341,31 +307,34 @@ extern "C" void Z_FileDumpHeap()
 		if (block->next->prev != block) {
 			fprintf(fp.get(), "ERROR: next block doesn't have proper back linkage!\n");
 		}
-		if (!block->user && !block->next->user) {
+		if (block->tag == TAG_FREE && block->next->tag == TAG_FREE) {
 			fprintf(fp.get(), "ERROR: two consecutive free blocks!\n");
 		}
 	}
 }
 
-#define DEFAULT_SIZE (500*1024*1024) // 100 MiB
+#define DEFAULT_SIZE (800*1024*1024) // 800 MiB
 #define MIN_SIZE     (50*1024*1024) // 50 MiB
 
 static bool initialized = false;
 
-byte *I_ZoneMemory(uint32_t *size)
+byte *I_ZoneMemory(uint64_t *size)
 {
-	uint32_t current_size = DEFAULT_SIZE;
-	const uint32_t min_size = MIN_SIZE;
-
-	byte *ptr = (byte *)calloc(current_size, 1);
+	uint64_t current_size = initialized ? mainzone->size << 1 : DEFAULT_SIZE;
+	const uint32_t min_size = initialized ? mainzone->size + 1024 : MIN_SIZE;
+	byte *ptr = (byte *)malloc(current_size);
 	while (ptr == NULL) {
 		if (current_size < min_size) {
-			N_Error("I_ZoneMemory: failed allocation of zone memory of %iu bytes", current_size);
+			N_Error("I_ZoneMemory: failed allocation of zone memory of %ld bytes (malloc())", current_size);
 		}
-		ptr = (byte *)calloc(current_size, 1);
+		ptr = (byte *)malloc(current_size);
 		if (ptr == NULL) {
 			current_size -= RETRY_AMOUNT;
 		}
+	}
+	if (initialized) {
+		memmove(ptr, mainzone, mainzone->size);
+		free(mainzone);
 	}
 	*size = current_size;
 	return ptr;
@@ -375,7 +344,7 @@ extern "C" void Z_Init()
 {
 	srand(time(NULL));
 	memblock_t* base;
-	uint32_t size;
+	uint64_t size;
 	mainzone = (memzone_t*)I_ZoneMemory(&size);
 	if (!mainzone)
 		N_Error("Z_Init: memory allocation failed");
@@ -402,8 +371,8 @@ extern "C" void Z_Init()
 		free_memory = mainzone->size;
 	}
 	else
-		LOG_INFO("Resizing zone from {} -> {}, new size {}",
-			(void *)(mainzone), (void *)(mainzone+mainzone->size), mainzone->size);
+		LOG_INFO("Resizing zone from {} -> {} of new size {} ({} MiB)",
+			(void *)(mainzone), (void *)(mainzone+mainzone->size), mainzone->size, mainzone->size >> 20);
 	
 	initialized = true;
 }
@@ -463,7 +432,7 @@ extern "C" void Z_ClearZone()
 	free_memory = mainzone->size - sizeof(memzone_t);
 	active_memory = 0;
 	purgable_memory = 0;
-	N_memset(block_stats, 0, sizeof(block_stats));
+	memset(block_stats, 0, sizeof(block_stats));
 	block_stats[TAG_FREE] = 1;
 
 	// set the entire zone to one free block
@@ -615,7 +584,12 @@ extern "C" void* Z_Realloc(void *ptr, uint32_t nsize, void *user, uint8_t tag)
 	void *p = Z_Malloc(nsize, tag, user);
 	if (ptr) {
 		memblock_t* block = (memblock_t *)((byte *)ptr - sizeof(memblock_t));
-		N_memcpy(p, ptr, nsize <= block->size ? nsize : block->size);
+		size_t size = nsize <= block->size ? nsize : block->size;
+		if (size <= 64)
+			memcpy(p, ptr, size);
+		else
+			memmove(p, ptr, size);
+		
 		Z_Free(ptr);
 		if (user)
 			user  = p;
@@ -759,3 +733,234 @@ extern "C" void Z_ChangeUser(void *ptr, void *user)
 }
 
 extern "C" uint32_t Z_ZoneSize() { return mainzone->size; }
+
+
+#ifdef _WIN32
+
+extern "C" FILE *fmemopen(void *buf, size_t size, const char *mode)
+{
+	char temppath[MAX_PATH + 1];
+  	char tempnam[MAX_PATH + 1];
+  	DWORD l;
+  	HANDLE fh;
+  	FILE *fp;
+
+  	if (strcmp(mode, "r") != 0 && strcmp(mode, "r+") != 0)
+   		return 0;
+  	l = GetTempPath(MAX_PATH, temppath);
+  	if (!l || l >= MAX_PATH)
+  		return NULL;
+  	if (!GetTempFileName(temppath, "solvtmp", 0, tempnam))
+    	return NULL;
+  	fh = CreateFile(tempnam, DELETE | GENERIC_READ | GENERIC_WRITE, 0,
+    				NULL, CREATE_ALWAYS,
+    				FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE,
+    				NULL);
+	if (fh == INVALID_HANDLE_VALUE)
+		return 0;
+	fp = _fdopen(_open_osfhandle((intptr_t)fh, 0), "w+b");
+	if (!fp) {
+    	CloseHandle(fh);
+    	return NULL;
+    }
+	if (buf && size && fwrite(buf, size, 1, fp) != 1) {
+		fclose(fp);
+		return NULL;
+	}
+	rewind(fp);
+	return fp;
+}
+extern "C" void *mmap(void *start, size_t size, int32_t prot, int32_t flags, int32_t fd, off_t offset)
+{
+	if (prot & ~(PROT_READ | PROT_WRITE | PROT_EXEC))
+		return MAP_FAILED;
+	if (fd == -1) {
+		if (!(flags & MAP_ANON) || offset)
+			return MAP_FAILED;
+	} else if (flags & MAP_ANON)
+		return MAP_FAILED;
+
+	DWORD flProtect;
+	if (prot & PROT_WRITE) {
+		if (prot & PROT_EXEC)
+			flProtect = PAGE_EXECUTE_READWRITE;
+		else
+			flProtect = PAGE_READWRITE;
+	} else if (prot & PROT_EXEC) {
+		if (prot & PROT_READ)
+			flProtect = PAGE_EXECUTE_READ;
+		else if (prot & PROT_EXEC)
+			flProtect = PAGE_EXECUTE;
+	} else
+		flProtect = PAGE_READONLY;
+
+	off_t end = length + offset;
+	HANDLE mmap_fd, h;
+	if (fd == -1)
+		mmap_fd = INVALID_HANDLE_VALUE;
+	else
+		mmap_fd = (HANDLE)_get_osfhandle(fd);
+	h = CreateFileMapping(mmap_fd, NULL, flProtect, DWORD_HI(end), DWORD_LO(end), NULL);
+	if (h == NULL)
+		return MAP_FAILED;
+
+	DWORD dwDesiredAccess;
+	if (prot & PROT_WRITE)
+		dwDesiredAccess = FILE_MAP_WRITE;
+	else
+		dwDesiredAccess = FILE_MAP_READ;
+	if (prot & PROT_EXEC)
+		dwDesiredAccess |= FILE_MAP_EXECUTE;
+	if (flags & MAP_PRIVATE)
+		dwDesiredAccess |= FILE_MAP_COPY;
+	void *ret = MapViewOfFile(h, dwDesiredAccess, DWORD_HI(offset), DWORD_LO(offset), length);
+	if (ret == NULL) {
+		CloseHandle(h);
+		ret = MAP_FAILED;
+	}
+	return ret;
+}
+extern "C" void munmap(void *addr, size_t size)
+{
+	UnmapViewOfFile(addr);
+}
+
+static void addONode(int o_stream_number, FILE *file, char **buf, size_t *length);
+static void delONode(FILE *file);
+static int get_o_stream_number(void);
+static void setODirName(char *str);
+static void setOFileName(char *str, int stream_number);
+
+struct oListNode
+{
+  int o_stream_number;
+  FILE *file;
+  char **buf;
+  size_t *length;
+  struct oListNode *pnext;
+};
+
+static struct oListNode *oList = NULL;
+
+static void addONode(
+        int o_stream_number,
+        FILE *file,
+        char **buf,
+        size_t *length)
+{
+  struct oListNode **pcur = &oList;
+  struct oListNode *node = (struct oListNode *)calloc(1, sizeof(struct oListNode));
+
+  if(node == NULL)
+	N_Error("calloc() failed");
+
+  while((*pcur) && (*pcur)->o_stream_number < o_stream_number)
+    pcur = &((*pcur)->pnext);
+
+  node->pnext = *pcur;
+  node->o_stream_number = o_stream_number;
+  node->file = file;
+  node->buf = buf;
+  node->length = length;
+  (*pcur) = node;
+}
+
+static void delONode(FILE *file)
+{
+  struct oListNode **pcur = &oList;
+  struct oListNode *todel;
+  char file_name[30];
+
+  while((*pcur) && (*pcur)->file != file)
+    pcur = &((*pcur)->pnext);
+
+  todel = (*pcur);
+  if(todel == NULL){ //not found
+    // WARNING(("Trying to close a simple FILE* with close_memstream()"));
+  } else {
+    if(EOF == fflush(file))
+      abort();
+    if((*(todel->length) = ftell(file)) == -1)
+      abort();
+    if((*(todel->buf) = calloc(1, *(todel->length) + 1)) == NULL)
+      abort();
+    if(EOF == fseek(file, 0, SEEK_SET))
+      abort();
+    fread(*(todel->buf), 1, *(todel->length), file);
+
+    fclose(file);
+    setOFileName(file_name,todel->o_stream_number);
+    if(-1 == remove(file_name))
+      abort();
+
+    (*pcur) = todel->pnext;
+    free(todel);
+  }
+}
+
+
+static int get_o_stream_number(void)
+{
+  int o_stream_number = 1;
+  struct oListNode *cur = oList;
+
+  while(cur && o_stream_number >= cur->o_stream_number){
+    o_stream_number++;
+        cur = cur->pnext;
+  }
+  return o_stream_number;
+}
+
+static void setODirName(char *str)
+{
+  stbsp_sprintf(str, "ostr_job_%d", _getpid());
+}
+
+static void setOFileName(char *str, int stream_number)
+{
+  setODirName(str);
+  char fname[30];
+  memset(fname,0,sizeof(fname));
+  stbsp_sprintf(fname,"/o_stream_%d",stream_number);
+  strncat(str,fname,29);
+}
+
+extern "C" FILE *open_memstream(char **ptr, size_t *sizeloc)
+{
+  FILE *f;
+  char file_name[30];
+  int o_stream_number;
+
+  if(oList == NULL){
+    setODirName(file_name);
+    _mkdir(file_name);
+  }
+
+  o_stream_number = get_o_stream_number();
+  setOFileName(file_name,o_stream_number);
+  f = fopen(file_name,"w+");
+
+  if(!f)
+    return NULL;
+
+  addONode(o_stream_number, f, ptr, sizeloc);
+
+  return f;
+}
+
+#endif
+
+extern "C" void close_memstream(FILE *f)
+{
+#ifdef _WIN32
+  char file_name[30];
+  delONode(f);
+
+  if(oList == NULL){
+    setODirName(file_name);
+    _rmdir(file_name);
+  }
+#elif defined(__unix__)
+	fclose(f);
+#endif
+}

@@ -5,8 +5,8 @@ namespace scf {
     namespace audio {
         float music_vol = 0.8f;
         float sfx_vol = 1.0f;
-        bool music_on = true;
-        bool sfx_on = true;
+        bool music_on = false;
+        bool sfx_on = false;
     };
 
     namespace renderer {
@@ -17,8 +17,10 @@ namespace scf {
         bool hidden = false;
         bool fullscreen = false;
         bool native_fullscreen = false;
-        float ratio = width / height;
+//        float ratio = width / height;
         uint16_t ticrate = 35;
+        uint8_t vert_fov = 44;
+        uint8_t horz_fov = 88;
 #ifdef _NOMAD_DEBUG
         bool drawfps = true;
 #else

@@ -1,21 +1,25 @@
 VERSION       = 1
 VERSION_UPDATE= 1
 VERSION_PATCH = 0
-CC            = g++
+ifndef win32
+CC            = g++ -I/usr/include
 LDLIBS        = /usr/local/lib/libSDL2.a -lSDL2_image /usr/local/lib/libSDL2_ttf.a /usr/local/lib/libopenal.a \
-				-lGL libEASTL.a -logg -lvorbisfile -lsndfile
+				-lGL libEASTL.a -logg -lvorbisfile -lsndfile -lbz2
+else
+CC            = x86_64-w64-mingw32-g++ -I/usr/x86_64-w64-mingw32/include -I/usr/x86_64-w64-mingw32/include/c++/11/
+LDLIBS        = -lSDL2 -lSDL2_image -lSDL2_ttf -lGL -lbz2 -lvorbisfile -logg
+endif
 O             = obj
 SDIR          = src
 
 .PHONY: all clean
 
 ifdef release
-CFLAGS= -Ofast -s -std=c++17 -I/usr/include -Ideps -Isrc/
+CFLAGS= -Ofast -s -std=c++17 -Ideps -Isrc/ -Wno-class-memaccess
 else
-CFLAGS= -Og -g -std=c++17 -I/usr/include -Ideps -Wall -Wpedantic -D_NOMAD_DEBUG -Isrc/
+CFLAGS= -Og -g -std=c++17 -Ideps -Wall -Wpedantic -D_NOMAD_DEBUG -Isrc/ -Wno-class-memaccess
 endif
-
-OPIMTIZERS=-fexpensive-optimizations -funroll-loops -ffast-math
+OPIMTIZERS=-fexpensive-optimizations -funroll-loops -ffast-math -finline-limit=10000 -mavx -mavx2 -mfma
 DEFINES    =-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPDATE) -D_NOMAD_VERSION_PATCH=$(VERSION_PATCH)
 CFLAGS    +=$(DEFINES) $(OPIMTIZERS)
 
@@ -35,12 +39,12 @@ OBJS= \
 	$(O)/g_rng.o \
 	$(O)/s_saveg.o \
 	$(O)/g_bff.o \
-	$(O)/imgui.o \
+	$(O)/imgui_draw.o \
 	$(O)/imgui_impl_sdl2.o \
 	$(O)/imgui_impl_sdlrenderer.o \
-	$(O)/imgui_tables.o \
+	$(O)/imgui.o \
 	$(O)/imgui_widgets.o \
-	$(O)/imgui_draw.o \
+	$(O)/imgui_tables.o \
 
 all: glnomad
 
@@ -51,7 +55,7 @@ $(O)/g_bff.o: $(SDIR)/g_bff.cpp
 $(O)/%.o: $(SDIR)/%.cpp
 	$(CC) $(CFLAGS) -o $@ -c $<
 
-glnomad: $(OBJS)
+glnomad: n_pch.h.gch $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) $(LIBS) -o glnomad $(LDLIBS)
 
 clean:

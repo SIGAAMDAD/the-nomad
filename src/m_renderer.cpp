@@ -7,7 +7,7 @@ color_t blue =  {0, 0, 255, 255};
 
 static constexpr const char *TEXMAP_PATH = "Files/gamedata/RES/texmap.bmp";
 
-renderer_t *renderer;
+std::unique_ptr<renderer_t> renderer;
 
 constexpr int32_t vert_fov = 24 >> 1;
 constexpr int32_t horz_fov = 88 >> 1;
@@ -20,29 +20,7 @@ void R_ScaleToResolution(T &y, T &x)
     x *= screen->clip_rect.h;
 }
 
-void R_DrawVMatrix(void)
-{
-    for (int32_t y = 0; y < 24; ++y) {
-        for (int32_t x = 0; x < 88; ++x) {
-            
-        }
-    }
-}
-
-void R_GetVMatrix(void)
-{
-    playr_t* const playr = Game::Get()->playr;
-    coord_t startc = {playr->pos.pos.y - vert_fov, playr->pos.pos.x - horz_fov};
-    coord_t endc = {playr->pos.pos.y + vert_fov, playr->pos.pos.x + horz_fov};
-    for (int32_t y = startc.y; y < endc.y; ++y) {
-        for (int32_t x = startc.x; x < endc.x; ++x) {
-            renderer->vmatrix[y][x] = Game::Get()->c_map[y][x];
-        }
-    }
-    R_DrawVMatrix();
-}
-
-static void I_CacheModels()
+void I_CacheModels()
 {
     LOG_INFO("pre-caching models/textures");
 
@@ -64,7 +42,7 @@ static void I_CacheModels()
     for (uint32_t i = 0; i < NUMMODELS; ++i) {
         start = std::clock();
         LOG_TRACE("loading up model at index {}", i);
-        N_memcpy(&renderer->models[i], &modelinfo[i], sizeof(model_t));
+        memcpy(&renderer->models[i], &modelinfo[i], sizeof(model_t));
         end = std::clock();
         total = (float)(end - start) / (float)CLOCKS_PER_SEC;
         stats.emplace_back(loader{ (void *)&renderer->models[i], i, total });
@@ -92,7 +70,7 @@ static void I_CacheModels()
 void R_DrawCompass()
 {
     uint32_t mdl = 0;
-    switch (Game::GetPlayr()->pdir) {
+    switch (Game::Get()->entities.front().dir) {
     case D_NORTH: mdl = MDL_COMPASS_UP; break;
     case D_WEST: mdl = MDL_COMPASS_LEFT; break;
     case D_SOUTH: mdl = MDL_COMPASS_DOWN; break;
@@ -100,7 +78,7 @@ void R_DrawCompass()
     default:
         LOG_WARN("playr->pdir was an invalid direction, assigning default value of D_NORTH");
         mdl = MDL_COMPASS_UP;
-        Game::GetPlayr()->pdir = D_NORTH;
+        Game::Get()->entities.front().dir = D_NORTH;
         break;
     };
     SDL_Rect rect;
@@ -138,6 +116,12 @@ void R_DrawVitals()
 {
 }
 
+void R_DrawMap()
+{
+    glm::vec2 startc = {Game::GetPlayr()->p->pos.coords.y - (vert_fov >> 1), Game::GetPlayr()->p->pos.coords.x - (horz_fov >> 1)};
+    glm::vec2 endc = {Game::GetPlayr()->p->pos.coords.y + (vert_fov >> 1), Game::GetPlayr()->p->pos.coords.x + (horz_fov >> 1)};
+}
+
 void R_DrawScreen(void)
 {
     R_ClearScreen();
@@ -162,12 +146,15 @@ static Uint32 R_GetWindowFlags(void)
     else if (scf::renderer::native_fullscreen)
         flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
     
+    flags |= SDL_WINDOW_OPENGL;
+    
     return flags;
 }
 
 void R_Init()
 {
-    renderer = (renderer_t *)Z_Malloc(sizeof(renderer_t), TAG_STATIC, &renderer);
+    renderer = std::make_unique<renderer_t>();
+    assert(renderer);
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
         N_Error("R_Init: failed to initialize SDL2, error message: %s",
             SDL_GetError());
@@ -185,12 +172,11 @@ void R_Init()
                             R_GetWindowFlags()
                         );
     if (!renderer->SDL_window) {
-        N_Error("R_Init: failed to initialize an SDL2 window (a std::shared_ptr), error message: %s",
+        N_Error("R_Init: failed to initialize an SDL2 window, error message: %s",
             SDL_GetError());
     }
     assert(renderer->SDL_window);
     LOG_INFO("success");
-    Game::Get()->window = renderer->SDL_window;
     
     LOG_INFO("allocating memory to the SDL_Renderer context");
     renderer->screen.screen = SDL_CreateRenderer(renderer->SDL_window, -1, SDL_RENDERER_ACCELERATED |
@@ -225,9 +211,8 @@ void R_Init()
     assert(renderer->SDL_win_sur);
 
     sdl_on = true;
-    N_memset((void *)renderer->vmatrix, 0, sizeof(renderer->vmatrix));
+    memset((void *)renderer->vmatrix, 0, sizeof(renderer->vmatrix));
     LOG_INFO("successful initialization of SDL2 context");
-    I_CacheModels();
 }
 void R_ShutDown()
 {
@@ -235,21 +220,18 @@ void R_ShutDown()
         return;
 
     con.ConPrintf("R_ShutDown: deallocating SDL2 contexts and window");
-    if (R_GetRenderer()) {
-        SDL_DestroyRenderer(R_GetRenderer());
-    }
     if (renderer->SDL_spr_sheet) {
         SDL_DestroyTexture(renderer->SDL_spr_sheet);
+        renderer->SDL_spr_sheet = NULL;
     }
     if (renderer->SDL_win_sur) {
         SDL_FreeSurface(renderer->SDL_win_sur);
+        renderer->SDL_win_sur = NULL;
     }
     if (renderer->SDL_window) {
         SDL_DestroyWindow(renderer->SDL_window);
+        renderer->SDL_window = NULL;
     }
-    Z_Free(renderer);
-    TTF_Quit();
-    SDL_Quit();
 }
 
 int R_DrawMenu(const char* fontfile, const std::vector<std::string>& choices,
@@ -434,3 +416,147 @@ void R_DrawFilledBox(int32_t y, int32_t x, int32_t width, int32_t height, color_
     R_ResetScreenColor();
     R_DrawBox(rect);
 }
+
+#if 0
+#include "../SDL-OpenGL/src/engine/resource_manager.h"
+
+void G_LoadEngine(void)
+{
+    ResourceManager::loadShader("SDL-OpenGL/assets/shaders/sprite.vert", "SDL-OpenGL/assets/shaders/sprite.frag", "", "sprite");
+}
+
+Shader::Shader(const std::string& vertfile, const std::string& fragfile, const std::string& geomfile)
+{
+    vert_id = Compile(vertfile, GL_VERTEX_SHADER);
+    frag_id = Compile(fragfile, GL_FRAGMENT_SHADER);
+    geom_id = Compile(geomfile, GL_GEOMETRY_SHADER);
+
+    shader_id = glCreateProgram();
+    glAttachShader(vert_id);
+    glAttachShader(frag_id);
+    glAttachShader();
+}
+Shader::Shader(const char* vertfile, const char* fragfile, const char* geomfile)
+{
+    if (vertfile)
+        vert_id = Compile(vertfile, GL_VERTEX_SHADER);
+    if (fragfile)
+        frag_id = Compile(fragfile, GL_FRAGMENT_SHADER);
+    if (geomfile)
+        geom_id = Compile(geomfile, GL_GEOMETRY_SHADER);
+}
+
+GLuint Shader::Compile(const std::string& filepath, GLuint type)
+{
+    std::ifstream file(filepath, std::ios::in);
+    if (file.fail()) {
+        N_Error("Shader::Compile: failed to open file %s", filepath.c_str());
+    }
+    std::stringstream stream;
+    stream << file.rdbuf();
+    file.close();
+
+    GLuint id = glCreateShader(type);
+    glShaderSource(id, 1, stream.str().c_str(), NULL);
+    glCompileShader(id);
+
+    GLint params{};
+    glGetShaderiv(id, GL_COMPILE_STATUS, &params);
+    if (params != GL_TRUE) {
+        char msg[2048];
+        size_t len = sizeof(msg);
+        glGetShaderInfoLog(id, sizeof(msg), &len, len);
+        N_Error("Shader::Compile: failed to compile shader of type %i with error string: %s",
+            type, msg);
+    }
+    free(buffer);
+    return id;
+}
+
+GLuint Shader::Compile(const char* filepath, GLuint type)
+{
+    std::ifstream file(filepath, std::ios::in);
+    if (file.fail()) {
+        N_Error("Shader::Compile: failed to open file %s", filepath);
+    }
+    std::stringstream stream;
+    stream << file.rdbuf();
+    file.close();
+
+    GLuint id = glCreateShader(type);
+    glShaderSource(id, 1, stream.str().c_str(), NULL);
+    glCompileShader(id);
+
+    GLint params{};
+    glGetShaderiv(id, GL_COMPILE_STATUS, &params);
+    if (params != GL_TRUE) {
+        char msg[2048];
+        size_t len = sizeof(msg);
+        glGetShaderInfoLog(id, sizeof(msg), &len, len);
+        N_Error("Shader::Compile: failed to compile shader of type %i with error string: %s",
+            type, msg);
+    }
+    free(buffer);
+    return id;
+}
+
+VertexArray::VertexArray(const std::vector<glm::vec2>& _vertices, const std::vector<glm::vec2>& _texcoords)
+{
+    vertices.resize(_vertices.size());
+    memmove(vertices.data(), _vertices.data(), _vertices.size() * sizeof(glm::vec2));
+    texcoords.resize(_texcoords.size());
+    memmove(texcoords.data(), _texcoords.data(), _texcoords.size() * sizeof(glm::vec2));
+    
+    glGenBuffers(1, &buffer_id);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
+    glBufferData(GL_ARRAY_BUFFER, _vertices.size() * sizeof(glm::vec2), _vertices.data(), GL_STATIC_DRAW);
+
+    glGenBuffers(1, &texbuffer_id);
+    glBindBuffer(GL_ARRAY_BUFFER, texbuffer_id);
+    glBufferData(GL_ARRAY_BUFFER, _texcoords.size() * sizeof(glm::vec2), _texcoords.data(), GL_STATIC_DRAW);
+
+    glGenVertexArrays(1, &vao_id);
+    glBindVertexArrays(vao_id);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+}
+
+VertexArray::VertexArray()
+{
+    glDeleteBuffers(1, &buffer_id);
+    glDeleteBuffers(1, &texbuffer_id);
+    glDeleteVertexArrays(1, &vao_id);
+}
+
+void Camera::DrawScreen(const std::shared_ptr<Shader>& shader)
+{
+    glm::mat4 view;
+    glm::vec2 offset = glm::vec2(scf::renderer::horz_fov * 0.5f, scf::renderer::vert_fov * 0.5f)
+
+    view = glm::translate(view, glm::vec3(offset, 0.0f));
+
+    shader->Bind();
+    shader->UniformMat4f("u_ModelViewProjection", view);
+}
+
+void Sprite::DrawSprite(const std::shared_ptr<Texture>& texture, const glm::vec2& pos,
+    const glm::vec2& size, GLfloat rotate, colorf_t color)
+{
+    glm::mat4 model = glm::scale(model, glm::vec3(size.x, size.y, 1.0f));
+    model = glm::rotate();
+
+    shader->Bind();
+    shader->UniformMat4f("u_SpriteModel", )
+
+    vertexArray->Bind();
+    texture->Bind(0);
+
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+}
+
+#endif

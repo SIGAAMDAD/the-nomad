@@ -40,15 +40,13 @@ typedef struct bff_level_s bff_level_t;
 
 typedef struct bff_texture_s
 {
-    char name[BFF_STR_SIZE];
     char *buffer;
     uint64_t fsize;
 } bff_texture_t;
 
 typedef struct bff_spawn_s
 {
-	char name[BFF_STR_SIZE];
-    char entityid[BFF_STR_SIZE];
+    char entityid[BFF_STR_SIZE+1];
 	sprite_t replacement;
 	sprite_t marker;
     coord_t where;
@@ -62,11 +60,12 @@ enum : uint8_t
 {
     FT_OGG,
     FT_WAV,
+    FT_FLAC,
+    FT_OPUS
 };
 
 typedef struct bff_script_s
 {
-    char name[BFF_STR_SIZE];
     uint64_t fsize;
     char *filebuf;
 
@@ -76,38 +75,26 @@ typedef struct bff_script_s
 typedef struct bff_audio_s
 {
     // used in file i/o
-    char name[BFF_STR_SIZE];
 	int32_t lvl_index; // equal to -1 if not a level-specific track
+    uint8_t type;
 	uint64_t fsize;
-    int channels;
-    int samplerate;
-#if 0
     char *filebuf;
-#endif
-    eastl::vector<int16_t, zone_allocator<int16_t>> buffer;
 
-    // not used in file i/o
-	bff_level_t* level;
-#if 0
-    char *fileptr;
-    char *curptr;
-#endif
+    eastl::vector<int16_t, nomad_allocator<int16_t>> buffer;
 } bff_audio_t;
 
 typedef struct bff_level_s
 {
-    char name[BFF_STR_SIZE];
 	sprite_t lvl_map[NUMSECTORS][SECTOR_MAX_Y][SECTOR_MAX_X];
-	
-//	uint16_t numspawns;
-//	uint16_t numtracks;
+	uint16_t *spawnlist;
+    uint16_t spawncount;
+
 	bff_audio_t *tracks;
 	bff_spawn_t *spawns;
 } bff_level_t;
 typedef struct bffinfo_s
 {
 	uint64_t magic = HEADER_MAGIC;
-	eastl::basic_string<char, zone_allocator<char>> name;
 	uint16_t numlevels;
 	uint16_t numspawns;
     uint16_t numtextures;
@@ -124,9 +111,15 @@ typedef struct bff_file_s
     bff_texture_t* textures;
 } bff_file_t;
 
+extern uint64_t extra_heap;
 extern bff_file_t* bff;
+extern bff_level_t* levels;
+extern bff_texture_t* textures;
+extern bff_spawn_t* spawns;
+extern bffinfo_t bffinfo;
 
-void G_LoadBFF();
+void G_LoadBFF(const std::string& bffname);
+void G_ExtractBFF(const std::string& filepath);
 void G_WriteBFF(const char* outfile, const char* dirname);
 
 /**

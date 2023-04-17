@@ -7,6 +7,7 @@
 inline void N_DebugWindowClear();
 inline void N_DebugWindowDraw();
 
+#include "g_entity.h"
 #include "g_zone.h"
 #include "n_scf.h"
 #include "m_renderer.h"
@@ -19,10 +20,16 @@ inline void N_DebugWindowDraw();
 #include "g_sound.h"
 #include "n_lib.h"
 
+
 inline clock_t start = clock(), end_time = clock();
 inline uint64_t delta;
 inline uint64_t sleep_time;
 inline uint64_t work;
+
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+
 
 #define CLOCK_TO_MILLISECONDS(ticks) (((ticks)/(double)CLOCKS_PER_SEC)*1000.0)
 
@@ -102,7 +109,7 @@ enum : uint8_t
     DIF_HARDEST = DIF_MINORINCONVENIECE
 };
 
-inline bool write_bff_mode = false;
+inline bool bff_mode = false;
 
 class Game
 {
@@ -115,11 +122,11 @@ public:
     char svfile[256];
     SDL_Window* window;
     ImGuiContext* context;
+    uint16_t numplayers;
     playr_t* playrs = NULL; // for when multiplayer is added
     playr_t* playr; // player on the current machine
     gamestate_t gamestate;
-    linked_list<Mob*> m_Active;
-    linked_list<item_t*> i_Active;
+    linked_list<entity_t> entities;
     uint8_t difficulty;
     uint64_t ticcount;
 
@@ -134,20 +141,9 @@ public:
 
     static void Init();
     static inline Game* Get() { return gptr; }
-    static inline linked_list<Mob*>& GetMobs() { return gptr->m_Active; }
     static inline playr_t* GetPlayr() { return &gptr->playrs[0]; }
     static inline playr_t* GetPlayers() { return gptr->playrs; }
 };
-
-typedef enum : uint_fast8_t
-{
-    ET_PLAYR,
-    ET_MOB,
-    ET_ITEM,
-    ET_WEAPON,
-
-    NUMENTITIES
-} entitytype_t;
 
 inline bool imgui_on = false;
 
@@ -172,7 +168,6 @@ inline coord_t E_GetDir(byte dir)
 void ImGui_Init();
 void ImGui_ShutDown();
 
-#include "g_zone.h"
 #include "g_bff.h"
 
 void I_NomadInit(int argc, char** argv);

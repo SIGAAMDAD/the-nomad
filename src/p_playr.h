@@ -3,12 +3,6 @@
 
 #pragma once
 
-typedef enum armortype_e : uint_fast8_t
-{
-    ARMOR_STREET,
-    ARMOR_MILITART,
-    ARMOR_MERC
-} armortype_t;
 
 inline std::vector<std::array<uint64_t, 4>> xp_to_stats = {
     {0, PLAYR_MAX_HEALTH, PLAYR_MAX_WPNS, PLAYR_MAX_ITEMS},      // level 0
@@ -16,11 +10,7 @@ inline std::vector<std::array<uint64_t, 4>> xp_to_stats = {
 
 typedef struct playr_s
 {
-    char name[256];
-    int64_t health;
-    armortype_t armor;
-    entitypos_t pos;
-    uint_fast8_t pdir;
+    entity_t* p;
     uint64_t level = 0;
     uint64_t xp = 0;
 
@@ -28,10 +18,10 @@ typedef struct playr_s
     uint64_t *max_weapons = &xp_to_stats[0][2];
     uint64_t *max_items = &xp_to_stats[0][3];
     model_t* model;
-    eastl::vector<item_t, zone_allocator<item_t>> inv;
-    eastl::vector<weapon_t, zone_allocator<weapon_t>> P_wpns;
-    weapon_t *c_wpn = NULL;
-    weapon_t *swap = NULL;
+    weapon_t P_wpns[PLAYR_MAX_WPNS];
+    item_t inv[PLAYR_MAX_ITEMS];
+    weapon_t *c_wpn = &P_wpns[0];
+    weapon_t *swap = c_wpn;
 } playr_t;
 
 void P_MoveN();

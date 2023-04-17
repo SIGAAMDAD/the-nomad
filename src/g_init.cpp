@@ -38,6 +38,7 @@ void *G_LoadSym(HMODULE handle, const char *name)
     if (!ptr) N_Error("failed to load library symbol %s", name); \
 }
 
+#if 0
 void G_LoadBZip2()
 {
     constexpr const char* libname = "Files/deps/libbz2.so.1.0.4";
@@ -46,7 +47,6 @@ void G_LoadBZip2()
     LOAD(bzip2_bufcompress, "BZ2_bzBuffToBuffCompress");
     LOAD(bzip2_bufdecompress, "BZ2_bzBuffToBuffDecompress");
 }
-
 void G_LoadSndFile()
 {
     constexpr const char* libname = "Files/deps/libsndfile.so.1.0.31";
@@ -56,26 +56,27 @@ void G_LoadSndFile()
     LOAD(sndfile_close, "sf_close");
     LOAD(sndfile_readshort, "sf_read_short");
 }
+#endif
 
 int I_GetParm(const char* name)
 {
-    if (myargc < 2)
+    if (myargc < 1)
         return -1;
     for (int i = 1; i < myargc; ++i) {
-        if (N_strncmp(name, myargv[i], N_strlen(name))) {
+        if (strncmp(name, myargv[i], strlen(name))) {
             return i;
         }
     }
     return -1;
 }
 
-void N_Error(const char *err, ...)
+void __attribute__((__noreturn__)) N_Error(const char *err, ...)
 {
     char msg[1024];
-    N_memset(msg, 0, sizeof(msg));
+    memset(msg, 0, sizeof(msg));
     va_list argptr;
     va_start(argptr, err);
-    vsnprintf(msg, sizeof(msg), err, argptr);
+    stbsp_vsnprintf(msg, sizeof(msg), err, argptr);
     va_end(argptr);
     if (sdl_on) {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Engine Error (Fatal)", msg, Game::Get()->window);
@@ -105,21 +106,52 @@ void I_NomadInit(int argc, char** argv)
     myargc = argc;
     myargv = argv;
 
-    G_LoadBZip2();
-    G_LoadSndFile();
-
-    Z_Init();
+//    G_LoadBZip2();
 
     con.ConPrintf("setting up logger");
     Log::Init();
 
-    int i = I_GetParm("-bff=write");
+    int i = I_GetParm("-bff=");
     if (i != -1) {
-        write_bff_mode = true;
-        G_WriteBFF(myargv[i + 1], myargv[i + 2]);
-    }
+        bff_mode = true;
 
-    Game::Init();
+        bool operations[4];
+        memset(operations, false, sizeof(operations));
+        if (strstr(myargv[i], "help"))
+            operations[0] = true;
+        else if (strstr(myargv[i], "write"))
+            operations[1] = true;
+        else if (strstr(myargv[i], "read"))
+            operations[2] = true;
+        else if (strstr(myargv[i], "extract"))
+            operations[3] = true;
+
+        if (operations[0] || (!operations[1] && !operations[2] && !operations[3])) {
+            fprintf(stdout,
+                "%s -bff=[operation] <arguments...>\n"
+                "operations:\n"
+                "  write [output] [dirpath]    write a bff file given an output file and a directory path\n"
+                "  extract [input]             extract a written bff file to the game's file tree to use as a mod\n",
+            myargv[0]);
+            exit(EXIT_SUCCESS);
+        }
+        
+        if (operations[1]) {
+            if (myargc < (i + 1) || myargc < (i + 2)) {
+                N_Error("output and/or dirpath not provided to bff write operations, aborting.");
+            }
+            G_WriteBFF(myargv[i + 1], myargv[i + 2]);
+        }
+        else if (operations[3]) {
+            if (myargc < (i + 1)) {
+                N_Error("input file must be provided to bff extract operations, aborting.");
+            }
+            G_ExtractBFF(myargv[i + 1]);
+        }
+    }
+    
+    con.ConPrintf("G_LoadBFF: loading bff file");
+    G_LoadBFF("nomadmain.bff");
 
     fprintf(stdout,
         "+===========================================================+\n"
@@ -131,12 +163,6 @@ void I_NomadInit(int argc, char** argv)
 
     con.ConPrintf("G_LoadSCF: parsing scf file");
     G_LoadSCF();
-
-    con.ConPrintf("G_LoadBFF: loading bff file");
-    G_LoadBFF();
-
-    LOG_INFO("initializing renderer");
-    R_Init();
 
     LOG_INFO("setting up imgui");
     ImGui_Init();

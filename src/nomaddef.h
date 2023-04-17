@@ -10,8 +10,10 @@
 #define PLAYR_MAX_PLASMA     400
 #define PLAYR_MAX_FUSION     10
 #define PLAYR_MAX_LVL        50
-#define PLAYR_MAX_WPNS       3
-#define PLAYR_MAX_ITEMS      6
+#define PLAYR_MAX_WPNS       10
+#define PLAYR_MAX_ITEMS      36
+
+#define MAX_MOBS_ACTIVE      300
 
 #define MAXSAVES             5
 #define IMGUI_STANDARD_FLAGS (ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_UnsavedDocument)

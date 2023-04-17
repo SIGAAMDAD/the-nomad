@@ -34,7 +34,7 @@ typedef struct mobj_s
     inline ~mobj_s() = default;
 
     inline mobj_s& operator=(const mobj_s &m) {
-        N_memcpy((void *)this, &m, sizeof(mobj_s));
+        memmove((void *)this, &m, sizeof(mobj_s));
         return *this;
     }
 } mobj_t;
@@ -88,7 +88,7 @@ public:
     inline uint32_t getmobjindex() const
     {
         for (uint32_t i = 0; i < NUMMOBS; ++i) {
-            if (N_memcmp(&mobinfo[i], &c_mob, sizeof(mobj_t))) {
+            if (memcmp(&mobinfo[i], &c_mob, sizeof(mobj_t))) {
                 return i;
                 break;
             }

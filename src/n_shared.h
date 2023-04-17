@@ -21,11 +21,30 @@
 #undef NULL
 #endif
 
+#define LOG_INFO(...)  ::spdlog::info(__VA_ARGS__)
+#define LOG_WARN(...)  ::spdlog::warn(__VA_ARGS__)
+#define LOG_ERROR(...) ::spdlog::error(__VA_ARGS__)
+#ifdef _NOMAD_DEBUG
+#define LOG_TRACE(...) ::spdlog::trace(__VA_ARGS__)
+#define LOG_DEBUG(...) ::spdlog::debug(__VA_ARGS__)
+#else
+#define LOG_DEBUG(...)
+#define LOG_TRACE(...)
+#endif
+
 #define NULL 0
 
 #define NOMAD_VERSION _NOMAD_VERSION
 #define NOMAD_VERSION_UPDATE _NOMAD_VERSION_UPDATE
 #define NOMAD_VERSION_PATCH _NOMAD_VERSION_PATCH
+
+#if 0
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#define NOMAD_LITTLE_ENDIAN
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#define NOMAD_BIG_ENDIAN
+#endif
+#endif
 
 typedef enum : unsigned char
 {
@@ -51,6 +70,7 @@ typedef vec_t vec3_t[3];
 typedef vec_t vec4_t[4];
 typedef uint_fast8_t byte;
 typedef byte color_t[4];
+typedef vec4_t colorf_t;
 
 enum : byte
 {
@@ -65,7 +85,7 @@ enum : byte
 };
 
 
-void N_Error(const char *err, ...);
+void __attribute__((__noreturn__)) N_Error(const char *err, ...);
 
 
 class filestream
@@ -302,169 +322,7 @@ inline void __nomad_assert_fail(const char* expression, const char* file, const 
 #define assert(x)
 #endif
 
-constexpr float threehalfs = 1.5f;
-
-template<typename T>
-inline float Q_root(T x)
-{
-	int64_t     i;								// The integer interpretation of x
-	float       x_half = x * 0.5f;
-	float       r_sqrt = x;
-
-	// trick c/c++, bit hack
-	i = *(int64_t *)&r_sqrt;					    // oh yes, undefined behaviour, who gives a fuck?
-	i = 0x5f375a86 - (i >> 1);				            // weird magic base-16 nums
-	r_sqrt = *(float *) &i;
-
-	r_sqrt = r_sqrt * (threehalfs - (x_half * r_sqrt * r_sqrt)); // 1st Newton iteration
-	r_sqrt = r_sqrt * (threehalfs - (x_half * r_sqrt * r_sqrt)); // 2nd Newton iteration
-
-	return x * r_sqrt; // x * (1/sqrt(x)) := sqrt(x)
-}
-
-inline int32_t disBetweenOBJ(const coord_t& src, const coord_t& tar)
-{
-	if (src.y == tar.y) // horizontal
-		return src.x > tar.x ? (src.x - tar.x) : (tar.x - src.x);
-	else if (src.x == tar.x) // vertical
-		return src.y > tar.y ? (src.y - tar.y) : (tar.y - src.y);
-	else // diagonal
-		return Q_root((pow((src.x - tar.x), 2) + pow((src.y - tar.y), 2)));
-}
-
-int I_GetParm(const char* name);
-
-#define LOG_INFO(...)  ::spdlog::info(__VA_ARGS__)
-#define LOG_WARN(...)  ::spdlog::warn(__VA_ARGS__)
-#define LOG_ERROR(...) ::spdlog::error(__VA_ARGS__)
-#ifdef _NOMAD_DEBUG
-#define LOG_TRACE(...) ::spdlog::trace(__VA_ARGS__)
-#define LOG_DEBUG(...) ::spdlog::debug(__VA_ARGS__)
-#else
-#define LOG_DEBUG(...)
-#define LOG_TRACE(...)
-#endif
-
-
-template<typename T>
-inline T abs(T x) { return x ? -x : x; }
-
-inline bool N_strcmp(const char* str1, const char* str2)
-{
-	assert(str1 && str2);
-	const char *__restrict it1 = str1;
-	const char *__restrict it2 = str2;
-	while (*it1 && *it2) {
-		if (*it1++ != *it2++) return false;
-	}
-	return true;
-}
-inline bool N_strncmp(const char* str1, const char* str2, uint_fast64_t count)
-{
-	assert(str1 && str2 && count > 0);
-	const char* it1 = str1;
-	const char* it2 = str2;
-	while (*it1 && *it2 && --count) {
-		if (*it1++ != *it2++) return false;
-	}
-	return true;
-}
-inline char *N_strcpy(char *dest, const char* src)
-{
-	assert(src);
-	char *to = dest;
-	const char* from = src;
-	while (*from)
-		*to++ = *from++;
-	return dest;
-}
-inline char *N_strncpy(char *dest, const char* src, uint_fast64_t count)
-{
-	assert(src && count > 0);
-	char *to = dest;
-	const char *from = src;
-	while (*dest && --count)
-		*to++ = *from++;
-	return dest;
-}
-inline size_t N_strlen(const char* str)
-{
-	assert(str);
-	size_t len = 0;
-	const char *it = str;
-	while (*it++)
-		++len;
-	return len;
-}
-inline void *N_memcpy(void *dest, const void *src, uint_fast64_t count)
-{
-	assert(dest);
-	assert(src);
-	unsigned char *to = (unsigned char *)dest;
-	const unsigned char *from = (const unsigned char *)src;
-	while (--count)
-		*to++ = *from++;
-	return dest;
-}
-inline bool N_memcmp(const void *ptr1, const void *ptr2, uint_fast64_t count)
-{
-	assert(ptr1);
-	assert(ptr2);
-	const unsigned char *it1 = (const unsigned char *)ptr1;
-	const unsigned char *it2 = (const unsigned char *)ptr2;
-	while (--count) {
-		if (*it1++ != *it2++) return false;
-	}
-	return true;
-}
-inline void *N_memmove(void *dest, const void *src, uint_fast64_t count)
-{
-	assert(dest);
-	assert(src);
-#ifdef _NOMAD_DEBUG
-	assert(count > 0);
-#else
-	if (count < 1) {
-		LOG_WARN("count given to N_memmove was less than 1");
-		return NULL;
-	}
-#endif
-
-	unsigned char *to = (unsigned char *)dest;
-	const unsigned char *from = (const unsigned char *)src;
-	if (to < from)
-		while (--count)
-			*to++ = *from++;
-	else {
-		const unsigned char *lastsrc = from + (count - 1);
-		unsigned char *lastdest = to + (count - 1);
-		while (--count)
-			*lastdest++ = *lastsrc++;
-	}
-	return dest;
-}
-inline void *N_memset(void *dest, int c, uint_fast64_t count)
-{
-	assert(dest);
-	unsigned char *it = (unsigned char *)dest;
-	while (--count)
-		*it++ = c;
-	return dest;
-}
-inline const char* N_booltostr(bool b)
-{ return b == true ? "true" : "false"; }
-inline const char* N_booltostr2(bool b)
-{ return b == true ? "yes" : "no"; }
-inline bool N_strtobool(const std::string& str)
-{ return str == "true" ? true : false; }
-inline bool N_strtobool(const char* str)
-{ return N_strncmp(str, "true", N_strlen(str)) ? true : false; }
-inline bool N_strtobool2(const std::string& str)
-{ return str == "yes" ? true : false; }
-inline bool N_strtobool2(const char* str)
-{ return N_strncmp(str, "yes", N_strlen(str)) ? true : false; }
-
-#define arraylen(arr) (size_t)(sizeof(arr)/sizeof(arr[0]))
+#define arraylen(arr) (size_t)(sizeof(arr)/sizeof(*arr))
 
 #ifdef _MSVC_VER
 #define DEBUG_BREAK() __debugbreak()
@@ -472,10 +330,10 @@ inline bool N_strtobool2(const char* str)
 #define DEBUG_BREAK() __builtin_trap()
 #endif
 
-#define cvector_clib_free Z_Free
-#define cvector_clib_malloc Z_Malloc
-#define cvector_clib_realloc Z_Realloc
-#define cvector_clib_calloc Z_Calloc
+#define cvector_clib_free free
+#define cvector_clib_malloc malloc
+#define cvector_clib_realloc realloc
+#define cvector_clib_calloc calloc
 #define CVECTOR_LOGARITHMIC_GROWTH
 #include "cvector.h"
 
@@ -708,5 +566,56 @@ inline const char* N_ButtonToString(const uint32_t& code)
 		break;
 	};
 }
+
+constexpr float threehalfs = 1.5f;
+
+template<typename T>
+inline float Q_root(T x)
+{
+	int64_t     i;								// The integer interpretation of x
+	float       x_half = x * 0.5f;
+	float       r_sqrt = x;
+
+	// trick c/c++, bit hack
+	i = *(int64_t *)&r_sqrt;					    // oh yes, undefined behaviour, who gives a fuck?
+	i = 0x5f375a86 - (i >> 1);				            // weird magic base-16 nums
+	r_sqrt = *(float *) &i;
+
+	r_sqrt = r_sqrt * (threehalfs - (x_half * r_sqrt * r_sqrt)); // 1st Newton iteration
+	r_sqrt = r_sqrt * (threehalfs - (x_half * r_sqrt * r_sqrt)); // 2nd Newton iteration
+
+	return x * r_sqrt; // x * (1/sqrt(x)) := sqrt(x)
+}
+
+inline int32_t disBetweenOBJ(const coord_t& src, const coord_t& tar)
+{
+	if (src.y == tar.y) // horizontal
+		return src.x > tar.x ? (src.x - tar.x) : (tar.x - src.x);
+	else if (src.x == tar.x) // vertical
+		return src.y > tar.y ? (src.y - tar.y) : (tar.y - src.y);
+	else // diagonal
+		return Q_root((pow((src.x - tar.x), 2) + pow((src.y - tar.y), 2)));
+}
+
+int I_GetParm(const char* name);
+
+
+template<typename T>
+inline T abs(T x) { return x ? -x : x; }
+
+#define zeroinit(dst, size) memset(dst, 0, size)
+
+inline const char* N_booltostr(bool b)
+{ return b == true ? "true" : "false"; }
+inline const char* N_booltostr2(bool b)
+{ return b == true ? "yes" : "no"; }
+inline bool N_strtobool(const std::string& str)
+{ return str == "true" ? true : false; }
+inline bool N_strtobool(const char* str)
+{ return strncmp(str, "true", strlen(str)) ? true : false; }
+inline bool N_strtobool2(const std::string& str)
+{ return str == "yes" ? true : false; }
+inline bool N_strtobool2(const char* str)
+{ return strncmp(str, "yes", strlen(str)) ? true : false; }
 
 #endif

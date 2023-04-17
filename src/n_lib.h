@@ -3,6 +3,7 @@
 
 #pragma once
 
+#if 0
 #define BZ_RUN               0
 #define BZ_FLUSH             1
 #define BZ_FINISH            2
@@ -21,6 +22,7 @@
 #define BZ_UNEXPECTED_EOF    (-7)
 #define BZ_OUTBUFF_FULL      (-8)
 #define BZ_CONFIG_ERROR      (-9)
+#endif
 
 inline const char* bzip2_strerror(int err)
 {
@@ -38,11 +40,12 @@ inline const char* bzip2_strerror(int err)
     };
 }
 
-
+#if 0
 inline int(*bzip2_bufcompress)(char *, unsigned int *, char *, unsigned int, int, int, int);
 inline int(*bzip2_bufdecompress)(char *, unsigned int *, char *, unsigned int, int, int);
 
 #define BZ2_bzBuffToBuffCompress(dst,dstlen,src,srclen,blksize,verbosity,workfactor) (*bzip2_bufcompress)(dst,dstlen,src,srclen,blksize,verbosity,workfactor)
 #define BZ2_bzBuffToBuffDecompress(dst,dstlen,src,srclen,small,verbosity) (*bzip2_bufdecompress)(dst,dstlen,src,srclen,small,verbosity)
+#endif
 
 #endif

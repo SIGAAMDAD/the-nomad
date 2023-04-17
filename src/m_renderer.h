@@ -6,6 +6,36 @@
 #define HARDWARE_RENDERER_FLAGS (SDL_RENDERER_ACCELERATED | (scf::renderer::vsync ? SDL_RENDERER_ACCELERATED : SDL_RENDERER_PRESENTVSYNC))
 #define SOFTWARE_RENDERER_FLAGS (SDL_RENDERER_SOFTWARE | (scf::renderer::vsync ? SDL_RENDERER_SOFTWARE : SDL_RENDERER_PRESENTVSYNC))
 
+#if 0
+class Shader
+{
+private:
+    GLuint vert_id;
+    GLuint frag_id;
+    GLuint geom_id;
+    GLuint shader_id;
+public:
+    Shader(const std::string& vertfile, const std::string& fragfile, const std::string& geomfile);
+    Shader(const char* vertfile, const char* fragfile, const char* geomfile);
+    Shader() = default;
+    Shader(const Shader &) = delete;
+    Shader(Shader &&) = default;
+    ~Shader();
+
+    void Uniform1f(const char* name, float v);
+    void Uniform2f(const char* name, float v0, float v1);
+    void Uniform1i(const char* name, int value);
+    void UniformVec2(const char* name, const glm::vec2& vec);
+    void UniformVec3(const char* name, const glm::vec3& vec);
+    void UniformMat4(const char* name, const glm::mat4& mat);
+
+    GLuint Compile(const std::string &filepath, GLuint type);
+    GLuint Compile(const char *filepath, GLuint type);
+
+    void Bind(void) const;
+};
+#endif
+
 typedef struct model_s
 {
     SDL_Rect screen_pos;
@@ -65,7 +95,7 @@ typedef struct renderer_s
 } renderer_t;
 
 extern std::vector<model_t> modelinfo;
-extern renderer_t* renderer;
+extern std::unique_ptr<renderer_t> renderer;
 
 #define DEFAULT_TEXT_SIZE 50
 
@@ -158,5 +188,72 @@ inline font_ptr make_font(const char* fontfile, int fontsize) {
     return font_ptr(TTF_OpenFont(fontfile, fontsize));
 }
 #endif
+
+#if 0
+class Texture
+{
+private:
+    byte *buffer;
+    GLuint id;
+    uint8_t slot;
+public:
+    Texture() = default;
+    Texture(const Texture &) = delete;
+    Texture(Texture &&) = default;
+    Texture(const std::string& texfile);
+    Texture(const char* texfile);
+    ~Texture();
+};
+class Shader
+{
+private:
+    GLuint vert_id;
+    GLuint frag_id;
+    GLuint geom_id;
+    GLuint shader_id;
+public:
+    Shader() = default;
+    Shader(const Shader &) = delete;
+    Shader(Shader &&) = default;
+    Shader(const std::string& shaderfile);
+    Shader(const char* shaderfile);
+    ~Shader();
+
+    void Compile(const char* src, GLuint type);
+    void Uniform4f(const char* name, float v0, float v1, float v2, float v3);
+    void Uniform4f(const char* name, color_t color);
+};
+
+class VertexArray
+{
+private:
+    GLuint vao_id;
+    Gluint buffer_id;
+    GLuint texbuffer_id;
+    std::vector<glm::vec2> vertices;
+    std::vector<glm::vec2> texcoords;
+public:
+    VertexArray() = default;
+    VertexArray(const VertexArray &) = delete;
+    VertexArray(VertexArray &&) = default;
+    ~VertexArray();
+    VertexArray(const std::vector<glm::vec2>& _vertices, const std::vector<glm::vec2>& _texcoords);
+    inline void Bind(void) const
+    { glBindVertexArray(vao_id); }
+    inline void UnBind(void) const
+    { glBindVertexArray(0); }
+    void Draw(const std::shared_ptr<Shader>& shader);
+};
+
+class Camera
+{
+public:
+    Camera() = default;
+};
+
+void DrawScreen();
+#endif
+
+void I_CacheModels();
 
 #endif

@@ -52,6 +52,8 @@ extern "C" void *Z_Malloc(uint32_t size, uint8_t tag, void *user);
 extern "C" void *Z_Realloc(void *ptr, uint32_t nsize, void *user, uint8_t tag = TAG_STATIC);
 extern "C" void *Z_Calloc(void *user, uint32_t nelem, uint32_t elemsize, uint8_t tag);
 extern "C" void Z_Free(void *ptr);
+extern "C" void Z_DumpHeap();
+extern "C" void Z_FileDumpHeap();
 
 #ifdef _WIN32
 #define PROT_READ     0x1
@@ -79,20 +81,28 @@ extern "C" void Z_Free(void *ptr);
 #endif
 #endif
 
-extern "C" void *N_mmap(void *start, size_t size, int32_t prot, int32_t flags, int32_t fd, off_t offset);
-extern "C" void N_munmap(void *addr, size_t size);
+#ifdef _WIN32
+extern "C" FILE* fmemopen(void *buf, size_t size, const char *mode);
+extern "C" FILE* open_memstream(char **buf, size_t* size);
+extern "C" void *mmap(void *start, size_t size, int32_t prot, int32_t flags, int32_t fd, off_t offset);
+extern "C" void munmap(void *addr, size_t size);
+#endif
 
 inline void *N_malloc(size_t size)
 {
 	size += sizeof(uint64_t);
-	void *ptr = N_mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+	void *ptr = mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 	*(uint64_t *)ptr = size;
 	return (void *)((byte *)ptr + sizeof(uint64_t));
 }
+inline void *N_calloc(size_t elemsize, size_t nelem)
+{
+	return memset((N_malloc)(elemsize * nelem), 0, nelem * elemsize);
+}
 inline void N_Free(void *ptr)
 {
-	uint64_t size = *(uint64_t *)((byte *)ptr - sizeof(uint64_t));
-	N_munmap(ptr, size);
+	void *addr = (void *)((byte *)ptr - sizeof(uint64_t));
+	munmap(addr, *(uint64_t *)addr);
 }
 
 template<typename T>

@@ -1,2 +1,52 @@
-[info]: done
-[error]: Segmentation Violation recieved, freeing all memory
+[info]: initializing renderer
+[info]: alllocating memory to the SDL_Window context
+[info]: success
+[info]: allocating memory to the SDL_Renderer context
+[info]: success
+[info]: loading the sprite sheet from Files/gamedata/RES/texmap.bmp
+[info]: success
+[info]: successful initialization of SDL2 context
+[info]: scf configuration:
+  launch::
+    launch::fastmobs1          = false
+    launch::fastmobs2          = false
+    launch::fastmobs3          = false
+    launch::ext_bff            = false
+    launch::ext_scf            = false
+    launch::deafmobs           = false
+    launch::blindmobs          = false
+    launch::nosmell            = false
+    launch::nomobs             = false
+    launch::godmode            = false
+    launch::infinite_ammo      = false
+    launch::bottomless_clip    = false
+    launch::devmode            = false
+  renderer::
+    renderer::api              = 0
+    renderer::drawfps          = true
+    renderer::ticrate          = 35
+    renderer::fullscreen       = false
+    renderer::native_fullscreen= false
+    renderer::hidden           = false
+    renderer::vsync            = true
+  audio::
+    audio::music_vol           = 0.8
+    audio::sfx_vol             = 1.1
+    audio::music_on            = true
+    audio::sfx_on              = true
+
+[info]: done parsing scf file
+[info]: setting up imgui
+[info]: running main gameplay loop
+[info]: gamestate = GS_MENU
+[info]: exiting main menu
+[info]: gamestate = GS_LEVEL
+[info]: beginning level loop, ticrate: 35
+[trace]: renderer average time: 1.8000000311855858e-05
+[trace]: event loop average time: 1.499999996212864e-06
+[trace]: loop average time: 0.0006552142793745068
+[info]: exiting level loop
+[info]: gamestate = GS_PAUSE
+[info]: gamestate = GS_LEVEL
+[info]: beginning level loop, ticrate: 35
+[info]: deallocating and shutting down all systems

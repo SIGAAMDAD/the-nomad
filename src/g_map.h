@@ -12,15 +12,6 @@
 #include <glm/simd/matrix.h>
 #include <glm/simd/trigonometric.h>
 
-typedef struct entitypos_s
-{
-    sprite_t sprite;
-    glm::vec2 thrust;
-    glm::vec2 to;
-    glm::vec2 pos;
-    glm::vec4 hitbox;
-} entitypos_t;
-
 typedef struct pint_s
 {
     sprite_t sprite;
@@ -41,7 +32,7 @@ typedef struct pint_s
     inline pint_s(const pint_s &) = default;
 
     inline pint_s& operator=(const pint_s& p) {
-        N_memcpy(&(*this), &p, sizeof(pint_s));
+        memmove(&(*this), &p, sizeof(pint_s));
         return *this;
     }
 } pint_t;

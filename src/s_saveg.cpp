@@ -23,6 +23,42 @@ json& N_GetSaveJSon()
 #define UINTPTR_C(x)      ((uintptr_t)(UINTMAX_C(x)))
 #define PADSAVEP()	save_p = (byte*)(((uintptr_t)save_p + UINTPTR_C(3)) & (~UINTPTR_C(3)))
 
+byte *buffer;
+byte *save_p;
+size_t buffer_size;
+size_t buffer_index;
+
+static void *n_realloc(void *ptr, size_t nsize)
+{
+	void *p = memalign(1024, nsize);
+	if (ptr) {
+		memmove(p, ptr, nsize);
+		free(ptr);
+	}
+	return p;
+}
+
+// hacky overload
+ssize_t write(const void *buf, const size_t elemsize, const size_t nelem)
+{
+	buffer = (byte *)n_realloc(buffer, buffer_size + (elemsize * nelem) + 16);
+	if (!buffer) {
+		N_Error("G_SaveGame: n_realloc() failed");
+	}
+	assert(buffer);
+	memmove(&buffer[buffer_index], buf, elemsize * nelem);
+	buffer_size += elemsize * nelem + 16;
+	buffer_index += elemsize * nelem;
+	save_p = &buffer[buffer_index];
+	return elemsize * nelem;
+}
+ssize_t read(void *buf, const size_t elemsize, const size_t nelem)
+{
+	memmove(buf, save_p, elemsize * nelem);
+	save_p += elemsize * nelem;
+	return elemsize * nelem;
+}
+
 void G_SaveGame()
 {
 	playr_t* const playr = Game::GetPlayr();
@@ -33,153 +69,115 @@ void G_SaveGame()
     if (arg != -1) {
         svfile = myargv[arg + 1];
     }
-	FILE* fp = fopen(svfile.c_str(), "wb");
-	if (!fp) {
-		N_Error("G_SaveGame: failed to create a save file named %s", svfile.c_str());
-	}
-	
-	uint64_t version[3] = { _NOMAD_VERSION, _NOMAD_VERSION_UPDATE, _NOMAD_VERSION_PATCH };
 	uint64_t magic = 0x5f3759df;
-	uint64_t nummobs = game->m_Active.size();
-	uint64_t numitems = game->i_Active.size();
-	uint64_t player_inv_size = playr->inv.size();
-	uint64_t player_wpns_size = playr->P_wpns.size();
+	uint32_t player_size = sizeof(playr_t) - ((sizeof(void *) * 6) + (24 << 1));
+	uint16_t version_major = _NOMAD_VERSION;
+	uint32_t version_update = _NOMAD_VERSION_UPDATE;
+	uint64_t version_patch = _NOMAD_VERSION_PATCH;
+	char versionstring[80];
+	memset(versionstring, 0, sizeof(versionstring));
+	stbsp_snprintf(versionstring, 80, "thenomad-v%hu.%i.%ld", version_major, version_update, version_patch);
+
+	buffer_size = buffer_index = 0;
+	uint16_t numentities = game->entities.size();
+
+	write(versionstring, sizeof(char), 80);
+	write(&version_major, sizeof(uint16_t), 1);
+	write(&version_update, sizeof(uint32_t), 1);
+	write(&version_patch, sizeof(uint64_t), 1);
 	
-	// header
-	fwrite(&magic, sizeof(uint64_t), 1, fp);
-	fwrite(version, sizeof(uint64_t), arraylen(version), fp);
-	fwrite(&game->gamestate, sizeof(gamestate_t), 1, fp);
-	fwrite(&game->difficulty, sizeof(uint8_t), 1, fp);
-	fwrite(&game->ticcount, sizeof(uint64_t), 1, fp);
-	fwrite(game->c_map, sizeof(sprite_t), MAP_MAX_Y * MAP_MAX_X, fp);
-	
-	// players
-	fwrite(playr->name, sizeof(char), 256, fp);
-	fwrite(&playr->health, sizeof(uint64_t), 1, fp);
-	fwrite(&playr->armor, sizeof(armortype_t), 1, fp);
-	fwrite(&playr->pdir, sizeof(uint8_t), 1, fp);
-	fwrite(&playr->xp, sizeof(uint64_t), 1, fp);
-	fwrite(&playr->level, sizeof(uint64_t), 1, fp);
-	fwrite(&player_inv_size, sizeof(uint64_t), 1, fp);
-	fwrite(&player_wpns_size, sizeof(uint64_t), 1, fp);
-    if (playr->inv.size() > 0) {
-    	fwrite(playr->inv.data(), sizeof(item_t), playr->inv.size(), fp);
-    }
-    if (playr->P_wpns.size() > 0) {
-    	fwrite(playr->P_wpns.data(), sizeof(weapon_t), playr->P_wpns.size(), fp);
-    }
-	fwrite(&playr->pos, sizeof(entitypos_t), 1, fp);
-	
-	fwrite(&nummobs, sizeof(uint64_t), 1, fp);
-	if (game->m_Active.size() > 0) {
-		for (linked_list<Mob*>::iterator it = game->m_Active.begin(); it != game->m_Active.end(); it = it->next) {
-			Mob* const mob = it->val;
-			fwrite(&mob->health, sizeof(int16_t), 1, fp);
-			fwrite(&mob->mdir, sizeof(uint8_t), 1, fp);
-			fwrite(&mob->mpos, sizeof(entitypos_t), 1, fp);
-			fwrite(&mob->flags, sizeof(uint32_t), 1, fp);
-			fwrite(&mob->c_mob, sizeof(mobj_t), 1, fp);
-		}
+	PADSAVEP();
+	write(&magic, sizeof(uint64_t), 1);
+	write(&numentities, sizeof(uint16_t), 1);
+	write(&game->difficulty, sizeof(uint8_t), 1);
+	write(&game->gamestate, sizeof(gamestate_t), 1);
+	write(&game->ticcount, sizeof(uint64_t), 1);
+
+	PADSAVEP();
+	write(&playr->level, sizeof(uint64_t), 1);
+	write(&playr->xp, sizeof(uint64_t), 1);
+	write(playr->P_wpns, sizeof(weapon_t), PLAYR_MAX_WPNS);
+	write(playr->inv, sizeof(item_t), PLAYR_MAX_ITEMS);
+
+	linked_list<entity_t>::iterator entities = game->entities.begin();
+	for (uint16_t i = 0; i < numentities; ++i) {
+		PADSAVEP();
+		write(&entities->val, sizeof(entity_t) - sizeof(entitypos_t) + sizeof(state_t) + (sizeof(void *) * 2) + 1, 1);
+		write(&entities->val.state, sizeof(state_t), 1);
+		write(&entities->val.dir, sizeof(uint8_t), 1);
+		write(&entities->val.ticker, sizeof(uint64_t), 1);
+		write(&entities->val.pos.coords, sizeof(glm::vec3), 1);
+		write(&entities->val.pos.lookangle, sizeof(glm::vec2), 1);
+		write(entities->val.pos.hitbox, sizeof(vec2_t), 4);
+		write(entities->val.pos.to, sizeof(vec3_t), 1);
+		write(entities->val.pos.thrust, sizeof(vec3_t), 1);
+		entities = entities->next;
 	}
-	fwrite(&numitems, sizeof(uint64_t), 1, fp);
-	if (game->i_Active.size() > 0) {
-		for (linked_list<item_t*>::iterator it = game->i_Active.begin(); it != game->i_Active.end(); it = it->next) {
-			item_t* const item = it->val;
-			fwrite(&item->cost, sizeof(uint16_t), 1, fp);
-		}
-	}
-	fclose(fp);
+	PADSAVEP();
+	write(game->c_map, sizeof(sprite_t), MAP_MAX_Y*MAP_MAX_X);
+
+	N_WriteFile(svfile.c_str(), buffer, buffer_size);
+	free(buffer);
 }
 
 void G_LoadGame()
 {
-    Game* const game = Game::Get();
-    playr_t* const playr = game->playr;
-
+    playr_t* const playr = Game::GetPlayr();
+	Game* const game = Game::Get();
+	
     std::string svfile = "nomadsv.ngd";
     int arg = I_GetParm("-save");
     if (arg != -1) {
         svfile = myargv[arg + 1];
     }
-    FILE* fp = fopen(svfile.c_str(), "rb");
-	if (!fp) {
-	
-	}
-	
-	uint64_t version[3] = { _NOMAD_VERSION, _NOMAD_VERSION_UPDATE, _NOMAD_VERSION_PATCH };
 	uint64_t magic = 0x5f3759df;
-	uint64_t nummobs;
-	uint64_t numitems;
-	uint64_t player_inv_size;
-	uint64_t player_wpns_size;
-	
-	// header
-	fread(&magic, sizeof(uint64_t), 1, fp);
-    if (magic != HEADER_MAGIC) {
-        fclose(fp);
-        N_Error("G_LoadGame: invalid header magic number, was %lx, expected %lx", magic, HEADER_MAGIC);
-    }
+	uint16_t numentities = game->entities.size();
+	uint64_t player_size = sizeof(playr_t) - ((sizeof(void *) * 6) + (24 << 1));
+	uint16_t version_major = 0;
+	uint32_t version_update = 0;
+	uint64_t version_patch = 0;
+	char versionstring[80];
+	memset(versionstring, 0, sizeof(versionstring));
 
-	fread(version, sizeof(uint64_t), arraylen(version), fp);
-	fread(&game->gamestate, sizeof(gamestate_t), 1, fp);
-	fread(&game->difficulty, sizeof(uint8_t), 1, fp);
-	fread(&game->ticcount, sizeof(uint64_t), 1, fp);
-	fread(game->c_map, sizeof(sprite_t), MAP_MAX_Y * MAP_MAX_X, fp);
-	
-	// players
-	fread(playr->name, sizeof(char), 256, fp);
-	fread(&playr->health, sizeof(uint64_t), 1, fp);
-	fread(&playr->armor, sizeof(armortype_t), 1, fp);
-	fread(&playr->pdir, sizeof(uint8_t), 1, fp);
-	fread(&playr->xp, sizeof(uint64_t), 1, fp);
-	fread(&playr->level, sizeof(uint64_t), 1, fp);
-	fread(&player_inv_size, sizeof(uint64_t), 1, fp);
-	fread(&player_wpns_size, sizeof(uint64_t), 1, fp);
+	N_ReadFile(svfile.c_str(), (char **)&buffer);
+	save_p = buffer;
 
-    if (playr->P_wpns.size() != player_wpns_size) {
-        playr->P_wpns.resize(player_wpns_size);
-    }
-    if (playr->inv.size() != player_inv_size) {
-        playr->inv.resize(player_inv_size);
-    }
-    if (player_inv_size > 0) {
-        playr->inv.resize(player_inv_size);
-        fread(playr->inv.data(), sizeof(item_t), player_inv_size, fp);
-    }
-    if (player_wpns_size > 0)  {
-        playr->P_wpns.resize(player_wpns_size);
-        fread(playr->P_wpns.data(), sizeof(weapon_t), player_wpns_size, fp);
-    }
-	fread(&playr->pos, sizeof(entitypos_t), 1, fp);
+	read(versionstring, sizeof(char), 80);
+	read(&version_major, sizeof(uint16_t), 1);
+	read(&version_update, sizeof(uint32_t), 1);
+	read(&version_patch, sizeof(uint64_t), 1);
 	
-	fread(&nummobs, sizeof(uint64_t), 1, fp);
-    if (nummobs > 0) {
-        for (linked_list<Mob*>::iterator it = game->m_Active.begin(); it != game->m_Active.end(); it = it->next) {
-            Z_Free(it->val);
-        }
-        game->m_Active.clear();
-        for (uint64_t i = 0; i < nummobs; ++i) {
-            game->m_Active.emplace_back();
-            game->m_Active.back() = (Mob *)Z_Malloc(sizeof(Mob), TAG_STATIC, &game->m_Active.back());
-            Mob* const mob = game->m_Active.back();
-			fread(&mob->health, sizeof(int16_t), 1, fp);
-			fread(&mob->mdir, sizeof(uint8_t), 1, fp);
-			fread(&mob->mpos, sizeof(entitypos_t), 1, fp);
-			fread(&mob->flags, sizeof(uint32_t), 1, fp);
-			fread(&mob->c_mob, sizeof(mobj_t), 1, fp);
-        }
-    }
-    fread(&numitems, sizeof(uint64_t), 1, fp);
-    if (numitems > 0) {
-        for (linked_list<item_t*>::iterator it = game->i_Active.begin(); it != game->i_Active.end(); it = it->next) {
-            Z_Free(it->val);
-        }
-        game->i_Active.clear();
-        for (uint64_t i = 0; i < numitems; ++i) {
-            game->i_Active.emplace_back();
-            game->i_Active.back() = (item_t *)Z_Malloc(sizeof(item_t), TAG_STATIC, &game->i_Active.back());
-            fread(game->i_Active.back(), sizeof(item_t), 1, fp);
-        }
-    }
-	fclose(fp);
+	PADSAVEP();
+	read(&magic, sizeof(uint64_t), 1);
+	read(&numentities, sizeof(uint16_t), 1);
+	read(&game->difficulty, sizeof(uint8_t), 1);
+	read(&game->gamestate, sizeof(gamestate_t), 1);
+	read(&game->ticcount, sizeof(uint64_t), 1);
+
+	PADSAVEP();
+	read(&playr->level, sizeof(uint64_t), 1);
+	read(&playr->xp, sizeof(uint64_t), 1);
+	read(playr->P_wpns, sizeof(weapon_t), PLAYR_MAX_WPNS);
+	read(playr->inv, sizeof(item_t), PLAYR_MAX_ITEMS);
+
+	game->entities.clear();
+
+	for (uint16_t i = 0; i < numentities; ++i) {
+		PADSAVEP();
+		game->entities.emplace_back();
+		entity_t* const entity = &game->entities.back();
+		read(entity, sizeof(entity_t) - sizeof(entitypos_t) + sizeof(state_t) + (sizeof(void *) * 2) + 1, 1);
+		read(&entity->state, sizeof(state_t), 1);
+		read(&entity->dir, sizeof(uint8_t), 1);
+		read(&entity->ticker, sizeof(uint64_t), 1);
+		read(&entity->pos.coords, sizeof(glm::vec3), 1);
+		read(&entity->pos.lookangle, sizeof(glm::vec2), 1);
+		read(entity->pos.hitbox, sizeof(vec2_t), 4);
+		read(entity->pos.to, sizeof(vec3_t), 1);
+		read(entity->pos.thrust, sizeof(vec3_t), 1);
+	}
+	PADSAVEP();
+	read(game->c_map, sizeof(sprite_t), MAP_MAX_Y*MAP_MAX_X);
+
+	free(buffer);
 }

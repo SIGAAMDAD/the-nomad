@@ -5,10 +5,6 @@ std::shared_ptr<spdlog::logger> Log::m_Instance;
 Console con;
 Game* Game::gptr;
 
-#ifndef O_BINARY
-#define O_BINARY 0
-#endif
-
 bool N_WriteFile(const char* name, const void *buffer, const ssize_t count)
 {
     int handle;
@@ -51,7 +47,9 @@ ssize_t N_ReadFile(const char* name, char **buffer)
         N_Error("N_ReadFile: failed to fstat() file %s", name);
 #endif
     
-    void *buf = Z_Malloc(fdata.st_size, TAG_STATIC, &buf);
+    void *buf = malloc(fdata.st_size);
+    if (!buf)
+        N_Error("N_ReadFile: malloc() failed");
 #ifdef __unix__
     ssize_t size = read(handle, buf, fdata.st_size);
     if (size < fdata.st_size || size == -1)
@@ -98,14 +96,14 @@ void Game::Init()
 {
     gptr = (Game *)Z_Malloc(sizeof(Game), TAG_STATIC, &gptr);
     assert(gptr);
-    N_memset(Game::Get()->bffname, 0, sizeof(Game::Get()->bffname));
-    N_memset(Game::Get()->scfname, 0, sizeof(Game::Get()->scfname));
-    N_memset(Game::Get()->svfile, 0, sizeof(Game::Get()->svfile));
-    N_memset(Game::Get()->c_map, SPR_FLOOR_OUTSIDE, sizeof(Game::Get()->c_map));
+    memset(Game::Get()->bffname, 0, sizeof(Game::Get()->bffname));
+    memset(Game::Get()->scfname, 0, sizeof(Game::Get()->scfname));
+    memset(Game::Get()->svfile, 0, sizeof(Game::Get()->svfile));
+    memset(Game::Get()->c_map, SPR_FLOOR_OUTSIDE, sizeof(Game::Get()->c_map));
 
-    N_strncpy(Game::Get()->bffname, "nomadmain.bff", sizeof(Game::Get()->bffname));
-    N_strncpy(Game::Get()->scfname, "default.scf", sizeof(Game::Get()->scfname));
-    N_strncpy(Game::Get()->svfile, "nomadsv.ngd", sizeof(Game::Get()->svfile));
+    strncpy(Game::Get()->bffname, "nomadmain.bff", sizeof(Game::Get()->bffname));
+    strncpy(Game::Get()->scfname, "default.scf", sizeof(Game::Get()->scfname));
+    strncpy(Game::Get()->svfile, "nomadsv.ngd", sizeof(Game::Get()->svfile));
     Game::Get()->gamestate = GS_MENU;
 
     Game::Get()->playrs = (playr_t *)Z_Malloc(sizeof(playr_t) * 1, TAG_STATIC, &Game::Get()->playrs);
@@ -113,25 +111,17 @@ void Game::Init()
     Game::Get()->playr = &gptr->playrs[0];
     assert(Game::Get()->playr);
     playr_t* const playr = Game::GetPlayr();
-    playr->pdir = D_NORTH;
-    playr->health = PLAYR_MAX_HEALTH;
-    playr->armor = ARMOR_STREET;
-    playr->xp = 0;
-    playr->level = 0;
-    playr->pos.pos = {0, 0};
 
-    playr->P_wpns.resize(PLAYR_MAX_WPNS);
-    N_memset(playr->P_wpns.data(), 0, PLAYR_MAX_WPNS * sizeof(weapon_t));
-    playr->c_wpn = &playr->P_wpns.front();
-
-    playr->inv.resize(PLAYR_MAX_ITEMS);
-    N_memset(playr->inv.data(), 0, PLAYR_MAX_ITEMS * sizeof(item_t));
+    memset(playr->P_wpns, 0, sizeof(weapon_t) * arraylen(playr->P_wpns));
+    memset(playr->inv, 0, sizeof(item_t) * arraylen(playr->inv));
 }
 
 Game::~Game()
 {
     Log::GetLogger()->flush();
-    ImGui_ShutDown();
-    Snd_Kill();
-    R_ShutDown();
+    if (!bff_mode) {
+        ImGui_ShutDown();
+        Snd_Kill();
+        R_ShutDown();
+    }
 }

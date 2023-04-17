@@ -86,9 +86,9 @@ static void N_Level()
                     Game::Get()->gamestate = GS_PAUSE;
                     break;
                 };
-                for (const auto& [name, button, mod, type, bind, action] : scf::kb_binds) {
-                    if (button == (scf::button_t)event.key.keysym.sym) {
-                        action();
+                for (const auto& i : scf::kb_binds) {
+                    if (i.button == (scf::button_t)event.key.keysym.sym) {
+                        i.action();
                     }
                 }
             }
@@ -199,7 +199,7 @@ static void N_SaveMenu()
     
     const ImVec4 selected(0, 180, 50, 255);
     char slotname[256];
-    N_memset(slotname, 0, sizeof(slotname));
+    memset(slotname, 0, sizeof(slotname));
     int selector = 0;
 
     bool open = true;

@@ -3,37 +3,37 @@
 
 void P_MoveN()
 {
-    --Game::GetPlayr()->pos.pos.y;
+    --Game::GetPlayr()->p->pos.coords.y;
 }
 
 void P_MoveW()
 {
-    --Game::GetPlayr()->pos.pos.x;
+    --Game::GetPlayr()->p->pos.coords.x;
 }
 
 void P_MoveS()
 {
-    ++Game::GetPlayr()->pos.pos.y;
+    ++Game::GetPlayr()->p->pos.coords.y;
 }
 
 void P_MoveE()
 {
-    ++Game::GetPlayr()->pos.pos.x;
+    ++Game::GetPlayr()->p->pos.coords.x;
 }
 
 void P_NextWeapon()
 {
     Game::GetPlayr()->swap = Game::GetPlayr()->c_wpn;
-    if (Game::GetPlayr()->c_wpn == &Game::GetPlayr()->P_wpns.back())
-        Game::GetPlayr()->c_wpn = &Game::GetPlayr()->P_wpns.front();
+    if (Game::GetPlayr()->c_wpn == &Game::GetPlayr()->P_wpns[PLAYR_MAX_WPNS - 1])
+        Game::GetPlayr()->c_wpn = &Game::GetPlayr()->P_wpns[0];
     else
         ++Game::GetPlayr()->c_wpn;
 }
 void P_PrevWeapon()
 {
     Game::GetPlayr()->swap = Game::GetPlayr()->c_wpn;
-    if (Game::GetPlayr()->c_wpn == &Game::GetPlayr()->P_wpns.back())
-        Game::GetPlayr()->c_wpn = &Game::GetPlayr()->P_wpns.front();
+    if (Game::GetPlayr()->c_wpn == &Game::GetPlayr()->P_wpns[PLAYR_MAX_WPNS - 1])
+        Game::GetPlayr()->c_wpn = &Game::GetPlayr()->P_wpns[0];
     else
         --Game::GetPlayr()->c_wpn;
 }
@@ -46,18 +46,18 @@ void P_QuickSwap()
 
 void P_ChangeDirL()
 {
-    if (Game::GetPlayr()->pdir == D_EAST)
-        Game::GetPlayr()->pdir = D_NORTH;
+    if (Game::GetPlayr()->p->dir == D_EAST)
+        Game::GetPlayr()->p->dir = D_NORTH;
     else
-        ++Game::GetPlayr()->pdir;
+        ++Game::GetPlayr()->p->dir;
 }
 
 void P_ChangeDirR()
 {
-    if (Game::GetPlayr()->pdir == D_NORTH)
-        Game::GetPlayr()->pdir = D_EAST;
+    if (Game::GetPlayr()->p->dir == D_NORTH)
+        Game::GetPlayr()->p->dir = D_EAST;
     else
-        --Game::GetPlayr()->pdir;
+        --Game::GetPlayr()->p->dir;
 }
 
 void P_DashN()

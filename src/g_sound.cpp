@@ -1,7 +1,7 @@
 #include "n_shared.h"
 #include "g_game.h"
 
-#define alCall(x) x; if (alGetError() != AL_NO_ERROR) N_Error("%s: OpenAL error occurred, error message: %s",__func__,alGetString(alGetError()))
+#define alCall(x) x; if (alGetError() != AL_NO_ERROR) N_Error("%s: OpenAL error occurred, error message: %s",FUNC_SIG,alGetString(alGetError()))
 
 static ALCdevice* device;
 static ALCcontext* context;
@@ -12,7 +12,7 @@ nomadsnd_t* sfx_cache;
 void Snd_Kill()
 {
     con.ConPrintf("Snd_Kill: deallocating and freeing OpenAL sources and buffers");
-    if (!scf::audio::music_on && !scf::audio::sfx_on)
+    if ((!scf::audio::music_on && !scf::audio::sfx_on) || (!device || !context) || !sfx_cache)
         return;
 
     if (scf::audio::sfx_on) {

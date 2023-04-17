@@ -47,13 +47,17 @@ namespace scf {
         extern bool hidden;
         extern bool fullscreen;
         extern bool native_fullscreen;
-        extern float ratio;
+//        extern float ratio;
         extern bool drawfps;
         extern uint16_t ticrate;
+        extern uint8_t vert_fov;
+        extern uint8_t horz_fov;
         
         // min-max tic caps
         constexpr uint16_t ticrate_max = 60;
         constexpr uint16_t ticrate_min = 14;
+        constexpr uint8_t max_vert_fov = 100;
+        constexpr uint8_t max_horz_fov = 250;
     };
     namespace launch {
         extern bool fastmobs1;
