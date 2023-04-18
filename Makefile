@@ -1,14 +1,9 @@
 VERSION       = 1
 VERSION_UPDATE= 1
 VERSION_PATCH = 0
-ifndef win32
 CC            = g++ -I/usr/include
 LDLIBS        = /usr/local/lib/libSDL2.a -lSDL2_image /usr/local/lib/libSDL2_ttf.a /usr/local/lib/libopenal.a \
 				-lGL libEASTL.a -logg -lvorbisfile -lsndfile -lbz2
-else
-CC            = x86_64-w64-mingw32-g++ -I/usr/x86_64-w64-mingw32/include -I/usr/x86_64-w64-mingw32/include/c++/11/
-LDLIBS        = -lSDL2 -lSDL2_image -lSDL2_ttf -lGL -lbz2 -lvorbisfile -logg
-endif
 O             = obj
 SDIR          = src
 
@@ -19,7 +14,7 @@ CFLAGS= -Ofast -s -std=c++17 -Ideps -Isrc/ -Wno-class-memaccess
 else
 CFLAGS= -Og -g -std=c++17 -Ideps -Wall -Wpedantic -D_NOMAD_DEBUG -Isrc/ -Wno-class-memaccess
 endif
-OPIMTIZERS=-fexpensive-optimizations -funroll-loops -ffast-math -finline-limit=10000 -mavx -mavx2 -mfma
+OPIMTIZERS=-fexpensive-optimizations -funroll-loops -ffast-math -finline-limit=10000 -mavx -mavx2 -mfma -msse3
 DEFINES    =-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPDATE) -D_NOMAD_VERSION_PATCH=$(VERSION_PATCH)
 CFLAGS    +=$(DEFINES) $(OPIMTIZERS)
 

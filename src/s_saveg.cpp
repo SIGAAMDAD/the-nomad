@@ -1,5 +1,6 @@
 #include "n_shared.h"
 #include "g_game.h"
+#include <cpuid.h>
 
 json& N_GetSaveJSon()
 {
@@ -28,20 +29,10 @@ byte *save_p;
 size_t buffer_size;
 size_t buffer_index;
 
-static void *n_realloc(void *ptr, size_t nsize)
-{
-	void *p = memalign(1024, nsize);
-	if (ptr) {
-		memmove(p, ptr, nsize);
-		free(ptr);
-	}
-	return p;
-}
-
 // hacky overload
 ssize_t write(const void *buf, const size_t elemsize, const size_t nelem)
 {
-	buffer = (byte *)n_realloc(buffer, buffer_size + (elemsize * nelem) + 16);
+	buffer = (byte *)realloc(buffer, buffer_size + (elemsize * nelem) + 16);
 	if (!buffer) {
 		N_Error("G_SaveGame: n_realloc() failed");
 	}

@@ -47,20 +47,20 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 #include <GL/glew.h>
-//#include <vulkan/vulkan.h>
-//#include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
 #include <SDL2/SDL_vulkan.h>
 #include <SDL2/SDL_opengl.h>
 
 // speed is key
-//#include <EABase/eabase.h>
-//#include <EASTL/allocator.h>
-//#include <EASTL/allocator_malloc.h>
-//#include <EASTL/core_allocator.h>
-//#include <EASTL/array.h>
-//#include <EASTL/string.h>
-//#include <EASTL/vector.h>
-//#include <absl/hash/hash.h>
+#include <EABase/eabase.h>
+#include <EASTL/allocator.h>
+#include <EASTL/allocator_malloc.h>
+#include <EASTL/core_allocator.h>
+#include <EASTL/array.h>
+#include <EASTL/string.h>
+#include <EASTL/vector.h>
+#include <absl/hash/hash.h>
 #include "stb_sprintf.h"
 
 // logging
@@ -84,7 +84,7 @@
 #include <vorbis/codec.h>
 #include <vorbis/vorbisfile.h>
 #include <vorbis/vorbisenc.h>
-#include <sndfile.h>
+//#include <sndfile.h>
 #include <ALsoft/al.h>
 #include <ALsoft/alc.h>
 

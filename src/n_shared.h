@@ -63,6 +63,17 @@ typedef enum : unsigned char
 	NUMSPRITES
 } sprite_t;
 
+#define ALIGN_32 __attribute__((aligned(32)))
+
+typedef ALIGN_32 int8_t int_align8_t;
+typedef ALIGN_32 int16_t int_align16_t;
+typedef ALIGN_32 int32_t int_align32_t;
+typedef ALIGN_32 int64_t int_align64_t;
+typedef ALIGN_32 uint8_t uint_align8_t;
+typedef ALIGN_32 uint16_t uint_align16_t;
+typedef ALIGN_32 uint32_t uint_align32_t;
+typedef ALIGN_32 uint64_t uint_align64_t;
+
 typedef int_fast32_t point_t;
 typedef float vec_t;
 typedef vec_t vec2_t[2];
@@ -86,7 +97,6 @@ enum : byte
 
 
 void __attribute__((__noreturn__)) N_Error(const char *err, ...);
-
 
 class filestream
 {

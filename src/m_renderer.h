@@ -230,14 +230,13 @@ private:
     GLuint vao_id;
     Gluint buffer_id;
     GLuint texbuffer_id;
-    std::vector<glm::vec2> vertices;
-    std::vector<glm::vec2> texcoords;
+    std::vector<float> vertices;
 public:
     VertexArray() = default;
     VertexArray(const VertexArray &) = delete;
     VertexArray(VertexArray &&) = default;
     ~VertexArray();
-    VertexArray(const std::vector<glm::vec2>& _vertices, const std::vector<glm::vec2>& _texcoords);
+    VertexArray(const std::vector<float>& _vertices);
     inline void Bind(void) const
     { glBindVertexArray(vao_id); }
     inline void UnBind(void) const
@@ -245,13 +244,8 @@ public:
     void Draw(const std::shared_ptr<Shader>& shader);
 };
 
-class Camera
-{
-public:
-    Camera() = default;
-};
-
-void DrawScreen();
+class Renderer
+{};
 #endif
 
 void I_CacheModels();

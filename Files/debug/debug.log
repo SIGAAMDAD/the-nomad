@@ -42,11 +42,890 @@
 [info]: exiting main menu
 [info]: gamestate = GS_LEVEL
 [info]: beginning level loop, ticrate: 35
-[trace]: renderer average time: 1.8000000311855858e-05
-[trace]: event loop average time: 1.499999996212864e-06
-[trace]: loop average time: 0.0006552142793745068
+[trace]: renderer average time: 1.5562499982024747e-05
+[trace]: event loop average time: 1.6250000385298335e-06
+[trace]: loop average time: 0.0007443749964295421
 [info]: exiting level loop
 [info]: gamestate = GS_PAUSE
 [info]: gamestate = GS_LEVEL
 [info]: beginning level loop, ticrate: 35
-[info]: deallocating and shutting down all systems
+[trace]: renderer average time: 1.6444444251343764e-05
+[trace]: event loop average time: 2.333333340074104e-06
+[trace]: loop average time: 0.0008013333459126039
+[info]: exiting level loop
+[info]: gamestate = GS_PAUSE
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[info]: freeing memblocks with lowtag TAG_PURGELEVEL to hightag TAG_SCOPE
+[info]: printing current state of zone after Z_FreeTags(lowtag: TAG_PURGELEVEL, hightag: TAG_SCOPE)
+[error]: Segmentation Violation recieved, freeing all memory

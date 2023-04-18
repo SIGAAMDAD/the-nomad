@@ -18,7 +18,6 @@ inline void N_DebugWindowDraw();
 #include "g_items.h"
 #include "p_playr.h"
 #include "g_sound.h"
-#include "n_lib.h"
 
 
 inline clock_t start = clock(), end_time = clock();

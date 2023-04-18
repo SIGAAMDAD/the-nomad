@@ -500,36 +500,26 @@ GLuint Shader::Compile(const char* filepath, GLuint type)
     return id;
 }
 
-VertexArray::VertexArray(const std::vector<glm::vec2>& _vertices, const std::vector<glm::vec2>& _texcoords)
+VertexArray::VertexArray(const std::vector<float>& _vertices)
 {
     vertices.resize(_vertices.size());
-    memmove(vertices.data(), _vertices.data(), _vertices.size() * sizeof(glm::vec2));
-    texcoords.resize(_texcoords.size());
-    memmove(texcoords.data(), _texcoords.data(), _texcoords.size() * sizeof(glm::vec2));
+    memmove(vertices.data(), _vertices.data(), _vertices.size() * sizeof(float));
     
     glGenBuffers(1, &buffer_id);
     glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
-    glBufferData(GL_ARRAY_BUFFER, _vertices.size() * sizeof(glm::vec2), _vertices.data(), GL_STATIC_DRAW);
-
-    glGenBuffers(1, &texbuffer_id);
-    glBindBuffer(GL_ARRAY_BUFFER, texbuffer_id);
-    glBufferData(GL_ARRAY_BUFFER, _texcoords.size() * sizeof(glm::vec2), _texcoords.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, _vertices.size() * sizeof(float), _vertices.data(), GL_STATIC_DRAW);
 
     glGenVertexArrays(1, &vao_id);
     glBindVertexArrays(vao_id);
     glBindBuffer(GL_ARRAY_BUFFER, buffer_id);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
 
     glEnableVertexAttribArray(0);
-    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 }
 
 VertexArray::VertexArray()
 {
     glDeleteBuffers(1, &buffer_id);
-    glDeleteBuffers(1, &texbuffer_id);
     glDeleteVertexArrays(1, &vao_id);
 }
 
