@@ -41,12 +41,15 @@ inline uint64_t work;
 bool N_WriteFile(const char* name, const void *buffer, const ssize_t count);
 ssize_t N_ReadFile(const char* name, char **buffer);
 
+inline std::vector<float> vertices;
+
 inline void N_DebugWindowClear()
 {
-    R_ClearScreen();
-    ImGui_ImplSDL2_NewFrame();
-    ImGui_ImplSDLRenderer_NewFrame();
-    ImGui::NewFrame();
+//    R_ClearScreen();
+//    ImGui_ImplSDL2_NewFrame();
+//    ImGui_ImplSDLRenderer_NewFrame();
+//    ImGui::NewFrame();
+    glClear(GL_COLOR_BUFFER_BIT);
 }
 inline void N_DebugWindowDraw()
 {
@@ -58,9 +61,11 @@ inline void N_DebugWindowDraw()
         ImGui::Text("%ld", work + sleep_time);
         ImGui::End();
     } */
-    ImGui::Render();
-    ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
-    R_FlushBuffer();
+//    ImGui::Render();
+//    ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
+
+    SDL_GL_SwapWindow(renderer->window);
+    //R_FlushBuffer();
 
     sleepfor(scf::renderer::ticrate);
 }

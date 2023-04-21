@@ -264,14 +264,11 @@ void G_LoadBFF(const std::string& bffname)
             buffer, ret, samplerate);
         alSourcei(sounds[i].source, AL_BUFFER, sounds[i].buffer);
     }
-    LOG_INFO("initializing renderer");
-    R_Init();
 
     // initialize the zone
     Z_Init();
 
     Game::Init();
-    Game::Get()->window = renderer->SDL_window;
 
     // pre-cache the bff stuff
     memmove(&bffinfo, header, sizeof(bffinfo_t));
@@ -309,8 +306,8 @@ void G_LoadBFF(const std::string& bffname)
 
     memset(Game::Get()->playr->p, 0, sizeof(entity_t));
     memset(Game::Get()->playr->p->pos.hitbox, 0, sizeof(vec2_t) * 4);
-    memset(Game::Get()->playr->p->pos.thrust, 0, sizeof(vec3_t));
-    memset(Game::Get()->playr->p->pos.to, 0, sizeof(vec3_t));
+    memset(&Game::Get()->playr->p->pos.thrust, 0, sizeof(vec3_t));
+    memset(&Game::Get()->playr->p->pos.to, 0, sizeof(vec3_t));
 }
 
 void G_WriteBFF(const char* outfile, const char* dirname)

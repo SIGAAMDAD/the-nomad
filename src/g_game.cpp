@@ -120,7 +120,7 @@ Game::~Game()
 {
     Log::GetLogger()->flush();
     if (!bff_mode) {
-        ImGui_ShutDown();
+//        ImGui_ShutDown();
         Snd_Kill();
         R_ShutDown();
     }

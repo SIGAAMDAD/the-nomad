@@ -1,9 +1,9 @@
 VERSION       = 1
 VERSION_UPDATE= 1
 VERSION_PATCH = 0
-CC            = g++ -I/usr/include
+CC            = g++ -I/usr/include -Isrc/glad/include
 LDLIBS        = /usr/local/lib/libSDL2.a -lSDL2_image /usr/local/lib/libSDL2_ttf.a /usr/local/lib/libopenal.a \
-				-lGL libEASTL.a -logg -lvorbisfile -lsndfile -lbz2
+				-lGL libEASTL.a -logg -lvorbisfile -lsndfile -lbz2 libglad.a
 O             = obj
 SDIR          = src
 

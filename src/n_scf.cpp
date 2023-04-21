@@ -11,8 +11,8 @@ namespace scf {
 
     namespace renderer {
         renderapi_t api = R_SDL2;
-        uint32_t height = res_height_1080;
-        uint32_t width = res_width_1080;
+        uint32_t height = 720;
+        uint32_t width = 1024;
         bool vsync = true;
         bool hidden = false;
         bool fullscreen = false;

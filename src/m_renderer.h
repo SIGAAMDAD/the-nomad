@@ -1,40 +1,12 @@
 #ifndef _M_RENDERER_
 #define _M_RENDERER_
 
+#include <glm/gtc/type_ptr.hpp>
+
 #pragma once
 
 #define HARDWARE_RENDERER_FLAGS (SDL_RENDERER_ACCELERATED | (scf::renderer::vsync ? SDL_RENDERER_ACCELERATED : SDL_RENDERER_PRESENTVSYNC))
 #define SOFTWARE_RENDERER_FLAGS (SDL_RENDERER_SOFTWARE | (scf::renderer::vsync ? SDL_RENDERER_SOFTWARE : SDL_RENDERER_PRESENTVSYNC))
-
-#if 0
-class Shader
-{
-private:
-    GLuint vert_id;
-    GLuint frag_id;
-    GLuint geom_id;
-    GLuint shader_id;
-public:
-    Shader(const std::string& vertfile, const std::string& fragfile, const std::string& geomfile);
-    Shader(const char* vertfile, const char* fragfile, const char* geomfile);
-    Shader() = default;
-    Shader(const Shader &) = delete;
-    Shader(Shader &&) = default;
-    ~Shader();
-
-    void Uniform1f(const char* name, float v);
-    void Uniform2f(const char* name, float v0, float v1);
-    void Uniform1i(const char* name, int value);
-    void UniformVec2(const char* name, const glm::vec2& vec);
-    void UniformVec3(const char* name, const glm::vec3& vec);
-    void UniformMat4(const char* name, const glm::mat4& mat);
-
-    GLuint Compile(const std::string &filepath, GLuint type);
-    GLuint Compile(const char *filepath, GLuint type);
-
-    void Bind(void) const;
-};
-#endif
 
 typedef struct model_s
 {
@@ -78,175 +50,407 @@ typedef std::unique_ptr<TTF_Font, sdl_deleter<TTF_CloseFont>> font_ptr;
 typedef std::unique_ptr<SDL_Surface, sdl_deleter<SDL_FreeSurface>> surface_ptr;
 typedef std::unique_ptr<SDL_Renderer, sdl_deleter<SDL_DestroyRenderer>> renderer_ptr;
 
-typedef union screen_u
-{
-    SDL_Renderer* screen;
-    SDL_Renderer* software;
-} screen_t;
-
-typedef struct renderer_s
-{
-    SDL_Window* SDL_window;
-    screen_t screen;
-    SDL_Texture* SDL_spr_sheet;
-    SDL_Surface* SDL_win_sur;
-    model_t* models;
-    sprite_t vmatrix[24][88];
-} renderer_t;
-
-extern std::vector<model_t> modelinfo;
-extern std::unique_ptr<renderer_t> renderer;
-
 #define DEFAULT_TEXT_SIZE 50
-
-#ifndef _NOMAD_DEBUG
-#define SDL_Call(x) if (x < 0) N_Error("%s: an SDL2 Error occurred, error message: %s\n",__func__,SDL_GetError())
-#else
-#define SDL_Call(x) assert(x == 0)
-#endif
-
-#define R_GetRenderer() (renderer->screen.screen ? renderer->screen.screen : renderer->screen.software)
-#define R_ResetScreenColor() SDL_Call(SDL_SetRenderDrawColor(R_GetRenderer(), 0, 0, 0, SDL_ALPHA_OPAQUE))
 
 void R_Init();
 void R_ShutDown();
 void R_DrawScreen();
-inline SDL_Texture* R_GetSpriteSheet(void) { return renderer->SDL_spr_sheet; }
 int R_DrawMenu(const char* fontfile, const std::vector<std::string>& choices, const char* title);
 
-void R_DrawCompass();
-void R_DrawBox(const SDL_Rect& rect);
-void R_DrawBox(int32_t y, int32_t x, int32_t width, int32_t height);
-void R_DrawBox(int32_t y, int32_t x, int32_t width, int32_t height, const SDL_Color& color);
-void R_DrawFilledBox(const SDL_Rect& rect, const SDL_Color& fill_color);
-void R_DrawFilledBox(const SDL_Rect& rect, byte r, byte g, byte b, byte a);
-void R_DrawFilledBox(const SDL_Rect& rect, color_t fill_color);
-void R_DrawFilledBox(int32_t y, int32_t x, int32_t width, int32_t height, const SDL_Color& fill_color);
-void R_DrawFilledBox(int32_t y, int32_t x, int32_t width, int32_t height, byte r, byte g, byte b, byte a);
-void R_DrawFilledBox(int32_t y, int32_t x, int32_t width, int32_t height, color_t fill_color);
 
-inline void R_ClearScreen()
-{
-    SDL_Call(SDL_RenderClear(R_GetRenderer()));
-}
-inline void R_DrawTextureFromTable(uint32_t index)
-{
-    SDL_Call(SDL_RenderCopy(R_GetRenderer(), renderer->SDL_spr_sheet, &modelinfo[index].offset, &modelinfo[index].screen_pos));
-}
-inline void R_DrawTexture(SDL_Texture* texture, const SDL_Rect* src_rect, const SDL_Rect* dest_rect)
-{
-    assert(texture);
-    SDL_Call(SDL_RenderCopy(R_GetRenderer(), texture, src_rect, dest_rect));
-}
-inline void R_FlushBuffer()
-{
-    SDL_RenderPresent(R_GetRenderer());
-}
-inline void R_SetScreenColor(const SDL_Color& color)
-{
-    SDL_Call(SDL_SetRenderDrawColor(R_GetRenderer(), color.r, color.g, color.b, color.a));
-}
-inline void R_SetScreenColor(color_t color)
-{
-    SDL_Call(SDL_SetRenderDrawColor(R_GetRenderer(), color[0], color[1], color[2], color[3]));
-}
-inline void R_SetScreenColor(byte r, byte g, byte b, byte a)
-{
-    SDL_Call(SDL_SetRenderDrawColor(R_GetRenderer(), r, g, b, a));
-}
+#ifdef PARANOID
+#   ifdef __GNUC__
+#       define debugbreak() __builtin_trap()
+#   elif defined(_MSVC_VER)
+#       define debugbreak() __debugbreak()
+#   endif
+#else
+#   define debugbreak()
+#endif
 
-#if 0
-inline texture_ptr make_texture_from_image(const char* file)
-{
-    assert(file);
-    return texture_ptr(IMG_LoadTexture(R_GetRenderer(), file));
+#define GL_ASSERT_FILLER __FILE__,FUNC_SIG,__LINE__
+#ifdef _NOMAD_DEBUG
+#   define GL_ASSERT(op,x) \
+{ \
+    if (!(x)) { \
+        fprintf(stderr, \
+        "[OpenGL Error Thrown] %s:%s:%u\n" \
+        "   operation: %s\n" \
+        "   id: %i\n" \
+        "   error: %s\n", \
+        GL_ASSERT_FILLER,op,glGetError(),glGetString(glGetError())); \
+        debugbreak(); \
+    } \
 }
-inline texture_ptr make_texture_from_font(TTF_Font* font, const char* str, const SDL_Color& color)
-{
-    assert(font && str);
-    SDL_Surface* surface = TTF_RenderText_Solid(font, str, color);
-    return texture_ptr(SDL_CreateTextureFromSurface(R_GetRenderer(), surface));
-}
-inline renderer_ptr make_renderer()
-{
-    return renderer_ptr(SDL_CreateRenderer(renderer->SDL_window.get(), -1,
-        HARDWARE_RENDERER_FLAGS));
-}
-inline renderer_ptr make_software_renderer()
-{
-    return renderer_ptr(SDL_CreateRenderer(renderer->SDL_window.get(), -1,
-        SOFTWARE_RENDERER_FLAGS));
-}
-inline window_ptr make_window(const char* name, int x, int y, int w, int h, Uint32 flags) {
-    assert(name);
-    return window_ptr(SDL_CreateWindow(name, x, y, w, h, flags));
-}
-inline surface_ptr make_surface()
-{ return surface_ptr(SDL_GetWindowSurface(renderer->SDL_window.get())); }
-inline font_ptr make_font(const char* fontfile, int fontsize) {
-    assert(fontfile);
-    return font_ptr(TTF_OpenFont(fontfile, fontsize));
+#else
+#   define GL_ASSERT(op,x) \
+{ \
+    if (!(x)) { \
+        fprintf(stderr, \
+        "[OpenGL Error Thrown] %s:%s:%u\n" \
+        "   operation: %s\n" \
+        "   id: %i\n" \
+        "   error: %s\n", \
+        GL_ASSERT_FILLER,op,glGetError(),glGetString(glGetError())); \
+    } \
 }
 #endif
 
-#if 0
-class Texture
+#define glCall(x) while (glGetError() != GL_NO_ERROR); x; GL_ASSERT(#x, glGetError() == GL_NO_ERROR)
+
+struct Vertex
+{
+    glm::vec3 pos;
+    glm::vec4 color;
+    glm::vec3 offset;
+    glm::vec2 texcoords;
+
+    inline Vertex(const glm::vec3& _pos, const glm::vec4& _color)
+        : pos(_pos), color(_color)
+    {
+    }
+    inline Vertex() = default;
+    inline Vertex(const Vertex &) = default;
+    inline Vertex(Vertex &&) = default;
+    inline ~Vertex() = default;
+
+    inline Vertex& operator=(const Vertex &v) {
+        memmove(this, &v, sizeof(Vertex));
+        return *this;
+    }
+};
+
+class VertexBuffer
 {
 private:
-    byte *buffer;
     GLuint id;
-    uint8_t slot;
+    mutable std::vector<Vertex> vertices;
+    bool batch;
 public:
-    Texture() = default;
-    Texture(const Texture &) = delete;
-    Texture(Texture &&) = default;
-    Texture(const std::string& texfile);
-    Texture(const char* texfile);
-    ~Texture();
+    VertexBuffer(const std::initializer_list<Vertex>& _vertices, bool _batch = false)
+        : vertices(_vertices), batch(_batch)
+    {
+        glCall(glGenBuffers(1, &id));
+        glCall(glBindBuffer(GL_ARRAY_BUFFER, id));
+        glCall(glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(), vertices.data(), GL_STATIC_DRAW));
+
+        glCall(glEnableVertexArrayAttrib(id, 0));
+        glCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, pos)));
+
+        glCall(glEnableVertexArrayAttrib(id, 1));
+        glCall(glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, color)));
+
+        glCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
+    }
+    VertexBuffer()
+    {
+        glCall(glGenBuffers(1, &id));
+    }
+    VertexBuffer(const VertexBuffer &) = delete;
+    VertexBuffer(VertexBuffer &&) = default;
+    ~VertexBuffer()
+    {
+        Unbind();
+        glCall(glDeleteBuffers(1, &id));
+    }
+
+    inline void Draw(GLenum mode = GL_TRIANGLES, GLint first = 0, GLsizei count = 0) const {
+        if (count == 0) count = vertices.size();
+        glCall(glDrawArrays(mode, first, count));
+    }
+    inline void Bind() const
+    { glCall(glBindBuffer(GL_ARRAY_BUFFER, id)); }
+    inline void Unbind() const
+    { glCall(glBindBuffer(GL_ARRAY_BUFFER, 0)); }
+    inline size_t numvertices() const
+    { return vertices.size(); }
+    inline Vertex* data(void) const
+    { return vertices.data(); }
+    inline void SwapBuffer(const std::vector<Vertex>& _vertices) {
+        vertices.resize(_vertices.size());
+        memmove(vertices.data(), _vertices.data(), sizeof(Vertex) * _vertices.size());
+    }
 };
+
 class Shader
 {
 private:
-    GLuint vert_id;
-    GLuint frag_id;
-    GLuint geom_id;
-    GLuint shader_id;
+    mutable std::unordered_map<std::string, GLint> uniformCache;
+    GLuint id;
+
+    GLuint Compile(const std::string& src, GLuint type)
+    {
+        glCall(GLuint id = glCreateShader(type));
+        const char *buffer = src.c_str();
+        glCall(glShaderSource(id, 1, &buffer, NULL));
+        glCall(glCompileShader(id));
+        int success;
+        char infolog[512];
+        glGetShaderiv(id, GL_COMPILE_STATUS, &success);
+        if (success == GL_FALSE) {
+            glGetShaderInfoLog(id, sizeof(infolog), NULL, infolog);
+            LOG_ERROR("Shader::Compile: failed to compile shader: {}", infolog);
+            glCall(glDeleteShader(id));
+            return 0;
+        }
+        return id;
+    }
+    GLint GetUniformLocation(const std::string& name) const
+    {
+        if (uniformCache.find(name) != uniformCache.end())
+            return uniformCache[name];
+        
+        glCall(GLint location = glGetUniformLocation(id, name.c_str()));
+        if (location == -1) {
+            LOG_WARN("glGetUniform location returned -1 for uniform named {}", name);
+            return -1;
+        }
+        uniformCache[name] = location;
+        return location;
+    }
 public:
-    Shader() = default;
+    Shader(const std::string& filepath)
+    {
+        std::ifstream file(filepath, std::ios::in);
+        if (!file)
+            N_Error("Shader::Shader: failed to open shader file %s", filepath.c_str());
+        
+        assert(file.is_open());
+        std::string line;
+        int index = 0;
+        std::stringstream stream[3];
+        while (std::getline(file, line)) {
+            if (line == "#shader vertex")
+                index = 0;
+            else if (line == "#shader fragment")
+                index = 1;
+            else if (line == "#shader geometry")
+                index = 2;
+            else
+                stream[index] << line << '\n';
+        }
+        const std::string vertsrc = stream[0].str();
+        const std::string fragsrc = stream[1].str();
+        file.close();
+        GLuint vertid = Compile(vertsrc, GL_VERTEX_SHADER);
+        GLuint fragid = Compile(fragsrc, GL_FRAGMENT_SHADER);
+
+        glCall(id = glCreateProgram());
+        glCall(glAttachShader(id, vertid));
+        glCall(glAttachShader(id, fragid));
+        glCall(glLinkProgram(id));
+        glCall(glValidateProgram(id));
+        glCall(glDeleteShader(vertid));
+        glCall(glDeleteShader(fragid));
+        glCall(glUseProgram(0));
+    }
+    Shader()
+    {
+        id = glCreateProgram();
+    }
     Shader(const Shader &) = delete;
     Shader(Shader &&) = default;
-    Shader(const std::string& shaderfile);
-    Shader(const char* shaderfile);
-    ~Shader();
+    ~Shader()
+    {
+        glCall(glDeleteProgram(id));
+    }
 
-    void Compile(const char* src, GLuint type);
-    void Uniform4f(const char* name, float v0, float v1, float v2, float v3);
-    void Uniform4f(const char* name, color_t color);
+    inline void Bind() const
+    { glCall(glUseProgram(id)); }
+    inline void Unbind() const
+    { glCall(glUseProgram(0)); }
+
+    inline void UniformMat4(const std::string& name, const glm::mat4& m) const
+    {
+        GLint location = GetUniformLocation(name);
+        glCall(glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(m)));
+    }
+    inline void UniformInt(const std::string& name, GLint value) const
+    {
+        GLint location = GetUniformLocation(name);
+        glCall(glUniform1i(location, value));
+    }
+    inline void UniformInt2(const std::string& name, GLint v1, GLint v2) const
+    {
+        GLint location = GetUniformLocation(name);
+        glCall(glUniform2i(location, v1, v2));
+    }
+    inline void UniformFloat(const std::string& name, float value) const
+    {
+        GLint location = GetUniformLocation(name);
+        glCall(glUniform1f(location, value));
+    }
+    inline void UniformVec2(const std::string& name, const glm::vec2& value) const
+    {
+        GLint location = GetUniformLocation(name);
+        glCall(glUniform2f(location, value.x, value.y));
+    }
+    inline void UniformVec3(const std::string& name, const glm::vec3& value) const
+    {
+        GLint location = GetUniformLocation(name);
+        glCall(glUniform3f(location, value.x, value.y, value.z));
+    }
+    inline void UniformVec4(const std::string& name, const glm::vec4& value) const
+    {
+        GLint location = GetUniformLocation(name);
+        glCall(glUniform4f(location, value.r, value.g, value.b, value.a));
+    }
+};
+
+class IndexBuffer
+{
+private:
+    GLuint id;
+    mutable std::vector<uint32_t> indices;
+    bool batch;
+public:
+    IndexBuffer(std::initializer_list<uint32_t> _indices, bool _batch = false)
+        : indices(_indices), batch(_batch)
+    {
+        glCall(glGenBuffers(1, &id));
+        Bind();
+
+        glCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(uint32_t), indices.data(),
+            (batch ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW)));
+
+        Unbind();
+    }
+    IndexBuffer(const IndexBuffer &) = delete;
+    IndexBuffer(IndexBuffer &&) = default;
+    ~IndexBuffer()
+    {
+        Unbind();
+        glCall(glDeleteBuffers(1, &id));
+    }
+    
+    inline void Draw(GLenum mode = GL_TRIANGLES) const {
+        glCall(glDrawElements(mode, indices.size(), GL_UNSIGNED_INT, indices.data()));
+    }
+    inline void Bind() const
+    { glCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, id)); }
+    inline void Unbind() const
+    { glCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)); }
+    inline uint32_t* data() const { return indices.data(); }
+    inline size_t numindices() const { return indices.size(); }
+    inline void SwapBuffer(const std::vector<uint32_t>& _indices) {
+        indices.resize(_indices.size());
+        memmove(indices.data(), _indices.data(), sizeof(uint32_t) * _indices.size());
+    }
 };
 
 class VertexArray
 {
 private:
-    GLuint vao_id;
-    Gluint buffer_id;
-    GLuint texbuffer_id;
-    std::vector<float> vertices;
+    GLuint id;
+    mutable std::shared_ptr<VertexBuffer> vbo;
+    mutable std::shared_ptr<IndexBuffer> ibo;
+    
+    bool has_ibo;
+    bool has_vbo;
 public:
-    VertexArray() = default;
+    VertexArray(std::initializer_list<Vertex> _vertices, bool batch = false)
+        : has_ibo(true), has_vbo(false)
+    {
+        glCall(glGenVertexArrays(1, &id));
+        Bind();
+
+        vbo = std::make_shared<VertexBuffer>(_vertices, batch);
+
+        Unbind();
+    }
+    VertexArray(std::initializer_list<Vertex> _vertices, std::initializer_list<uint32_t> _indices, bool batch = false)
+        : has_ibo(true), has_vbo(true)
+    {
+        glCall(glGenVertexArrays(1, &id));
+        Bind();
+
+        vbo = std::make_shared<VertexBuffer>(_vertices, batch);
+        ibo = std::make_shared<IndexBuffer>(_indices, batch);
+
+        Unbind();
+    }
+    VertexArray()
+    {
+        glCall(glGenVertexArrays(1, &id));
+    }
     VertexArray(const VertexArray &) = delete;
     VertexArray(VertexArray &&) = default;
-    ~VertexArray();
-    VertexArray(const std::vector<float>& _vertices);
-    inline void Bind(void) const
-    { glBindVertexArray(vao_id); }
-    inline void UnBind(void) const
-    { glBindVertexArray(0); }
-    void Draw(const std::shared_ptr<Shader>& shader);
+    ~VertexArray()
+    {
+        Unbind();
+        glCall(glDeleteVertexArrays(1, &id));
+    }
+
+    inline void Bind() const
+    { glCall(glBindVertexArray(id)); }
+    inline void Unbind() const
+    { glCall(glBindVertexArray(0)); }
+    inline void BindVBO() const
+    { vbo->Bind(); }
+    inline void UnbindVBO() const
+    { vbo->Unbind(); }
+    inline void BindIBO() const
+    { ibo->Bind(); }
+    inline void UnbindIBO() const
+    { ibo->Unbind(); }
+    inline bool HasVBO() const
+    { return has_vbo; }
+    inline bool HasIBO() const
+    { return has_ibo; }
+    inline std::shared_ptr<VertexBuffer>& GetVBO() const { return vbo; }
+    inline std::shared_ptr<IndexBuffer>& GetIBO() const { return ibo; }
+};
+
+class Camera
+{
+private:
+    mutable glm::mat4 m_ProjectionMatrix;
+    mutable glm::mat4 m_ViewMatrix;
+    mutable glm::mat4 m_ViewProjectionMatrix;
+    mutable glm::vec3 m_CameraPos;
+    mutable float m_Rotation = 0.0f;
+    mutable float m_ZoomLevel = 1.0f;
+    float m_AspectRatio;
+
+    // only reason why it isn't a singleton is because MAYBE co-op, MAYBE...
+public:
+    Camera(float left, float right, float bottom, float top, float zFar, float zNear);
+    Camera(const Camera &) = delete;
+    Camera(Camera &&) = default;
+    ~Camera() = default;
+
+    inline glm::mat4& GetProjection() const { return m_ProjectionMatrix; }
+    inline glm::mat4& GetViewMatix() const { return m_ViewMatrix; }
+    inline glm::mat4& GetVPM() const { return m_ViewProjectionMatrix; }
+    inline glm::vec3& GetPos() const { return m_CameraPos; }
+    inline float& GetRotation() const { return m_Rotation; }
+    inline glm::mat4& CalcMVP(const glm::vec3& translation) const
+    {
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), translation);
+        static glm::mat4 mvp = m_ProjectionMatrix * m_ViewMatrix * model;
+        return mvp;
+    }
+
+    void CalculateViewMatrix();
 };
 
 class Renderer
-{};
-#endif
+{
+private:
+    std::vector<std::shared_ptr<VertexArray>> vao;
+    std::vector<std::shared_ptr<Shader>> shaders;    
+public:
+    SDL_Window* window;
+    SDL_GLContext context;
+public:
+    void AllocBuffers(const std::vector<Vertex>& _vertices);
+    void Draw(const Shader& shader, const VertexArray& va) const;
+
+    static void LoadShader(const std::string& filepath);
+};
+
+extern std::vector<model_t> modelinfo;
+extern std::unique_ptr<Renderer> renderer;
 
 void I_CacheModels();
 

@@ -24,7 +24,7 @@ static void N_HandleWindowEvent(const SDL_Event& event)
     case SDL_WINDOWEVENT_RESIZED:
         LOG_INFO("SDL_WINDOWEVENT_RESIZED triggered. new size: {}x{}",
             event.window.data1, event.window.data2);
-        SDL_RenderSetScale(R_GetRenderer(), scf::renderer::width, scf::renderer::height);
+//        SDL_RenderSetScale(R_GetRenderer(), scf::renderer::width, scf::renderer::height);
         break;
     case SDL_WINDOWEVENT_SIZE_CHANGED:
         LOG_INFO("SDL_WINDOWEVENT_SIZE_CHANGED triggered. new size: {}x{}",
@@ -41,16 +41,14 @@ static void N_HandleWindowEvent(const SDL_Event& event)
 
 static void N_ShowAbout()
 {
-    R_ClearScreen();
-    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "*** The Nomad: About ***", about_str, renderer->SDL_window);
-    R_FlushBuffer();
+//    R_ClearScreen();
+//    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "*** The Nomad: About ***", about_str, renderer->SDL_window);
+//    R_FlushBuffer();
 }
 
 static void N_ShowCredits()
 {
-    R_ClearScreen();
-    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "*** The Nomad: Credits ***", credits_str, renderer->SDL_window);
-    R_FlushBuffer();
+//    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "*** The Nomad: Credits ***", credits_str, renderer->SDL_window);
 }
 
 struct profiler_stats
@@ -95,6 +93,7 @@ static void N_Level()
         }
         {
             PROFILE_SCOPE(renderer_time);
+#if 0
             R_ClearScreen();
             R_DrawFilledBox(0, 170, 40, SCREEN_HEIGHT, 0, 255, 0, 255);
             R_DrawFilledBox(170, 0, SCREEN_WIDTH, 30, 0, 255, 0, 255);
@@ -102,6 +101,7 @@ static void N_Level()
             R_DrawFilledBox(SCREEN_HEIGHT - 170, 0, SCREEN_WIDTH, 30, 0, 255, 0, 255);
             R_DrawFilledBox(0, SCREEN_WIDTH - 250, 40, SCREEN_HEIGHT, 0, 255, 0, 255);
             R_DrawFilledBox(SCREEN_HEIGHT - 150, 180, 350, 100, 0, 0, 255, 255);
+#endif
         }
 #ifdef _NOMAD_DEBUG
         loop.total++;
@@ -366,7 +366,7 @@ static void N_SettingsMenu()
     }
 #endif
     if (scf::renderer::vsync) {
-        SDL_RenderSetVSync(R_GetRenderer(), scf::renderer::vsync);
+//        SDL_RenderSetVSync(R_GetRenderer(), scf::renderer::vsync);
     }
     LOG_INFO("exiting settings menu");
 }

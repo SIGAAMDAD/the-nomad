@@ -75,13 +75,23 @@ typedef ALIGN_32 uint32_t uint_align32_t;
 typedef ALIGN_32 uint64_t uint_align64_t;
 
 typedef int_fast32_t point_t;
+typedef struct vec3_s
+{
+    float x, y, z;
+} __attribute__((packed)) vec3_t;
+typedef struct vec2_s
+{
+    float x, y;
+} __attribute__((packed)) vec2_t;
+#if 0
 typedef float vec_t;
 typedef vec_t vec2_t[2];
 typedef vec_t vec3_t[3];
 typedef vec_t vec4_t[4];
+#endif
 typedef uint_fast8_t byte;
 typedef byte color_t[4];
-typedef vec4_t colorf_t;
+typedef float colorf_t[4];
 
 enum : byte
 {

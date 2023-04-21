@@ -43,10 +43,11 @@
 /*** deps ***/
 // random
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <nlohmann/json.hpp>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan.hpp>
 #include <SDL2/SDL_vulkan.h>
