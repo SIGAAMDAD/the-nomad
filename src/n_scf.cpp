@@ -26,6 +26,11 @@ namespace scf {
 #else
         bool drawfps = false;
 #endif
+	namespace limits { // graphics driver limitations, read-only unless setting them at initialization
+		int32_t max_texture_slots = 0;
+		int32_t max_vertex_attribs = 0;
+		int32_t max_draw_buffers = 0;
+	};
     };
     namespace launch {
         bool fastmobs1 = false;
