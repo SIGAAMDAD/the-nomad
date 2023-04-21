@@ -58,6 +58,11 @@ namespace scf {
         constexpr uint16_t ticrate_min = 14;
         constexpr uint8_t max_vert_fov = 100;
         constexpr uint8_t max_horz_fov = 250;
+	namespace limits { // graphics driver limitations, read-only unless setting them at initialization
+		extern int32_t max_texture_slots;
+		extern int32_t max_vertex_attribs;
+		extern int32_t max_draw_buffers;
+	};
     };
     namespace launch {
         extern bool fastmobs1;
