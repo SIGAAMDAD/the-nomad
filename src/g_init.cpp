@@ -108,116 +108,50 @@ void done()
     exit(EXIT_SUCCESS);
 }
 
-static GLuint R_CompileShader(const std::string& src, GLenum type)
-{
-    GLuint id = glCreateShader(type);
-    const char *buffer = src.c_str();
-    glShaderSource(id, 1, &buffer, NULL);
-    glCompileShader(id);
-    int success;
-    char infolog[512];
-    glGetShaderiv(id, GL_COMPILE_STATUS, &success);
-    if (success == GL_FALSE) {
-        glGetShaderInfoLog(id, sizeof(infolog), NULL, infolog);
-        fprintf(stderr, "Error: failed to compile shader: %s\n", infolog);
-        glDeleteShader(id);
-        return 0;
-    }
-    return id;
-}
-
-static GLuint R_AllocShader(const char *shaderfile)
-{
-    std::ifstream file(shaderfile, std::ios::in);
-    if (!file) {
-        fprintf(stderr, "Error: failed to open shader file %s\n", shaderfile);
-        return 0;
-    }
-    std::string line;
-    int index;
-    std::stringstream stream[2];
-    while (std::getline(file, line)) {
-        if (line == "#shader vertex")
-            index = 0;
-        else if (line == "#shader fragment")
-            index = 1;
-        else
-            stream[index] << line << '\n';
-    }
-    const std::string vertsrc = stream[0].str();
-    const std::string fragsrc = stream[1].str();
-    file.close();
-    GLuint vertid = R_CompileShader(vertsrc, GL_VERTEX_SHADER);
-    GLuint fragid = R_CompileShader(fragsrc, GL_FRAGMENT_SHADER);
-
-    GLuint shader = glCreateProgram();
-    glAttachShader(shader, vertid);
-    glAttachShader(shader, fragid);
-    glLinkProgram(shader);
-    glValidateProgram(shader);
-    glDeleteShader(vertid);
-    glDeleteShader(fragid);
-    return shader;
-}
-
 void mainLoop()
 {
-    VertexArray vao({
-        Vertex(glm::vec3(100.0f, 100.0f, 0.0f), glm::vec4(1.0f, 1.0f, 0.0f, 6.0f)), // 0
-        Vertex(glm::vec3(200.0f, 100.0f, 0.0f), glm::vec4(1.0f, 0.0f, 5.0f, 0.0f)), // 1
-        Vertex(glm::vec3(200.0f, 200.0f, 0.0f), glm::vec4(1.0f, 2.0f, 0.0f, 0.0f)), // 2
-        Vertex(glm::vec3(100.0f, 100.0f, 0.0f), glm::vec4(1.0f, 1.0f, 0.0f, 6.0f)), // 0
-        Vertex(glm::vec3(200.0f, 200.0f, 0.0f), glm::vec4(1.0f, 2.0f, 0.0f, 0.0f)), // 2
-        Vertex(glm::vec3(100.0f, 200.0f, 0.0f), glm::vec4(1.0f, 1.0f, 0.0f, 6.0f)), // 3
+    R_InitScene();
+    Vertex vertices[] = {
+        Vertex(glm::vec3(-1.5f, -0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.0f, 6.0f)), // 0
+        Vertex(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 5.0f, 0.0f)), // 1
+        Vertex(glm::vec3(-0.5f,  0.5f, 0.0f), glm::vec4(1.0f, 2.0f, 0.0f, 0.0f)), // 2
+        Vertex(glm::vec3(-1.5f,  0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.0f, 6.0f)), // 3
 
-        Vertex(glm::vec3(100.0f, 100.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 0.0f)), // 4
-        Vertex(glm::vec3(200.0f, 100.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 6.0f)), // 5
-        Vertex(glm::vec3(200.0f, 200.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 6.0f)), // 6
-        Vertex(glm::vec3(100.0f, 200.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 6.0f)), // 7
-        Vertex(glm::vec3(100.0f, 100.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 0.0f)), // 8
-        Vertex(glm::vec3(200.0f, 200.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 0.0f)), // 9
+        Vertex(glm::vec3( 0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.0f, 0.0f)), // 4
+        Vertex(glm::vec3( 1.5f, -0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 1.0f, 0.0f)), // 5
+        Vertex(glm::vec3( 1.5f,  0.5f, 0.0f), glm::vec4(1.0f, 2.0f, 1.0f, 0.0f)), // 6
+        Vertex(glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 1.0f, 0.0f)), // 7
 
-        Vertex(glm::vec3(100.0f, 100.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 0.0f)), // 4
-        Vertex(glm::vec3(200.0f, 100.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 6.0f)), // 5
-        Vertex(glm::vec3(200.0f, 200.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 6.0f)), // 6
-        Vertex(glm::vec3(100.0f, 200.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 6.0f)), // 7
-        Vertex(glm::vec3(100.0f, 100.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 0.0f)), // 8
-        Vertex(glm::vec3(200.0f, 200.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 0.0f)), // 9
-
-        Vertex(glm::vec3(100.0f, 100.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 0.0f)), // 4
-        Vertex(glm::vec3(200.0f, 100.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 6.0f)), // 5
-        Vertex(glm::vec3(200.0f, 200.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 6.0f)), // 6
-        Vertex(glm::vec3(100.0f, 200.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 6.0f)), // 7
-        Vertex(glm::vec3(100.0f, 100.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 0.0f)), // 8
-        Vertex(glm::vec3(200.0f, 200.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 0.0f)), // 9
-
-#if 0
-        Vertex(glm::vec3(100.0f, 100.0f, 0.0f), glm::vec4(1.0f, 1.0f, 0.0f, 6.0f)), // 0
-        Vertex(glm::vec3(200.0f, 100.0f, 0.0f), glm::vec4(1.0f, 0.0f, 5.0f, 0.0f)), // 1
-        Vertex(glm::vec3(200.0f, 200.0f, 0.0f), glm::vec4(1.0f, 2.0f, 0.0f, 0.0f)), // 2
-        Vertex(glm::vec3(100.0f, 200.0f, 0.0f), glm::vec4(1.0f, 1.0f, 0.0f, 6.0f)), // 3
-//        Vertex(glm::vec3(200.0f, 200.0f, 0.0f), glm::vec4(1.0f, 1.0f, 0.0f, 6.0f)),
-//        Vertex(glm::vec3(100.0f, 200.0f, 0.0f), glm::vec4(1.0f, 2.0f, 0.0f, 0.0f)),
-
-        Vertex(glm::vec3(100.0f, 100.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 0.0f)), // 4
-        Vertex(glm::vec3(200.0f, 100.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 6.0f)), // 5
-        Vertex(glm::vec3(200.0f, 200.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 0.0f)), // 6
-        Vertex(glm::vec3(100.0f, 200.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 0.0f)), // 7
-#endif
-    });
+        Vertex(glm::vec3( 0.5f, -0.5f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f)), // 8
+        Vertex(glm::vec3( 1.5f, -0.5f, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 0.0f)), // 9
+        Vertex(glm::vec3( 1.5f,  0.5f, 0.0f), glm::vec4(0.0f, 2.0f, 1.0f, 0.0f)), // 10
+        Vertex(glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 0.0f)), // 11
+    };
+    uint32_t indices[] = {
+        4, 5, 6,  4,  6,  7,
+        8, 9, 10, 8, 10, 11,
+    };
+    std::shared_ptr<VertexArray> vao = std::make_shared<VertexArray>(vertices, arraylen(vertices), indices, arraylen(indices));
+    std::shared_ptr<VertexBuffer>& vbo = vao->GetVBO().front();
+    std::shared_ptr<IndexBuffer>& ibo = vao->GetIBO();
+    vao->Unbind();
+    vbo->Unbind();
+    ibo->Unbind();
 
     SDL_Event event;
     memset(&event, 0, sizeof(event));
 
-    Shader shader("shader.glsl");
+    std::shared_ptr<Shader> shader = std::make_shared<Shader>("shader.glsl");
 
-    Camera camera(0.0f, 960.0f, 0.0f, 540.0f, -1.0f, 1.0f);
+    uint32_t pindices[] = {
+        0, 1, 2, 0, 2, 3
+    };
+
+    Camera camera(-3.0f, 3.0f, -3.0f, 3.0f);
 
     std::vector<glm::vec3> translations = {
-        glm::vec3(100, 150, 0),
-        glm::vec3(300, 150, 0),
-        glm::vec3(150, 190, 0),
-        glm::vec3(200, 250, 0)
+        glm::vec3(1, 1, 0),
+        glm::vec3(2, 3, 0)
     };
     std::vector<glm::mat4> mvps(translations.size());
 
@@ -247,62 +181,93 @@ void mainLoop()
             drawmode = GL_LINE_STRIP_ADJACENCY;
     }
 #endif
-    shader.Bind();
-    vao.Bind();
-    vao.GetVBO()->Bind();
+    vao->Bind();
+    vbo->Bind();
+    ibo->Bind();
+    shader->Bind();
+    glm::vec3 pos(0, 0, 0);
+    glm::ivec2 mousepos;
+    glm::vec3 mousepos_f;
     while (1) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 done();
             }
+#if 0 // works but too fast and sensitive
+            else if (event.type == SDL_MOUSEMOTION) {
+                SDL_GetMouseState(&mousepos.x, &mousepos.y);
+                mousepos_f.y = (float)mousepos.y;
+                mousepos_f.x = (float)mousepos.x;
+
+                // this is where that high school trig comes in handy
+                float adjacent = disBetweenOBJ(translations[0], mousepos_f);
+                float opposite = tan(90) * adjacent;
+
+                camera.GetRotation() = -opposite / M_PI;
+            }
+#endif
             else if (event.type == SDL_KEYDOWN) {
                 switch (event.key.keysym.sym) {
                 case SDLK_w:
-                    translations[0].y += 10;
+                    pos.y += 0.25f;
                     break;
                 case SDLK_a:
-                    translations[0].x -= 10;
+                    pos.x -= 0.25f;
                     break;
                 case SDLK_s:
-                    translations[0].y -= 10;
+                    pos.y -= 0.25f;
                     break;
                 case SDLK_d:
-                    translations[0].x += 10;
+                    pos.x += 0.25f;
                     break;
                 case SDLK_q:
-                    camera.GetRotation() += 5.0f;
+                    camera.GetRotation() -= camera.GetRotationSpeed();
+                    if (camera.GetRotation() > 180.0f)
+                        camera.GetRotation() -= 360.0f;
+                    else if (camera.GetRotation() <= -180.0f)
+                        camera.GetRotation() += 360.0f;
                     break;
                 case SDLK_e:
-                    camera.GetRotation() -= 5.0f;
+                    camera.GetRotation() += camera.GetRotationSpeed();
+                    if (camera.GetRotation() > 180.0f)
+                        camera.GetRotation() -= 360.0f;
+                    else if (camera.GetRotation() <= -180.0f)
+                        camera.GetRotation() += 360.0f;
                     break;
                 case SDLK_UP:
-                    camera.GetPos().y += 10;
+                    camera.GetPos().x += -sin(glm::radians(camera.GetRotation())) * camera.GetSpeed();
+                    camera.GetPos().y += cos(glm::radians(camera.GetRotation())) * camera.GetSpeed();
                     break;
                 case SDLK_DOWN:
-                    camera.GetPos().y -= 10;
+                    camera.GetPos().x -= -sin(glm::radians(camera.GetRotation())) * camera.GetSpeed();
+                    camera.GetPos().y -= cos(glm::radians(camera.GetRotation())) * camera.GetSpeed();
                     break;
                 case SDLK_LEFT:
-                    camera.GetPos().x += 10;
+                    camera.GetPos().x -= cos(glm::radians(camera.GetRotation())) * camera.GetSpeed();
+                    camera.GetPos().y -= sin(glm::radians(camera.GetRotation())) * camera.GetSpeed();
                     break;
                 case SDLK_RIGHT:
-                    camera.GetPos().x -= 10;
+                    camera.GetPos().x += cos(glm::radians(camera.GetRotation())) * camera.GetSpeed();
+                    camera.GetPos().y += sin(glm::radians(camera.GetRotation())) * camera.GetSpeed();
                     break;
                 };
             }
         }
         glClear(GL_COLOR_BUFFER_BIT);
         camera.CalculateViewMatrix();
-        shader.UniformMat4("u_Transform", camera.GetVPM());
-        for (size_t i = 0; i < mvps.size(); ++i) {
-            mvps[i] = camera.CalcMVP(translations[i]);
+        {
+            ibo->SwapBuffer(indices, 6);
+            vbo->SwapBuffer(vertices, 4);
+            shader->UniformMat4("u_ViewProjection", camera.GetVPM());
+            shader->UniformMat4("u_Transform", glm::translate(glm::mat4(1.0f), pos));
+            ibo->Draw(GL_TRIANGLES, 6);
         }
         {
-            shader.UniformMat4("u_MVP", mvps[0]);
-            vao.GetVBO()->Draw(drawmode, 0, 6);
-        }
-        for (size_t i = 1; i < translations.size(); ++i) {
-            shader.UniformMat4("u_MVP", mvps[i]);
-            vao.GetVBO()->Draw(drawmode, 6, 6);
+            shader->UniformMat4("u_ViewProjection", camera.GetVPM());
+            shader->UniformMat4("u_Transform", glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
+            ibo->SwapBuffer(pindices, 6);
+            glBufferSubData(GL_ARRAY_BUFFER, 4, 8, vertices);
+            ibo->Draw(GL_TRIANGLES, ibo->numindices());
         }
         SDL_GL_SwapWindow(renderer->window);
     }

@@ -12,51 +12,19 @@ std::unique_ptr<Renderer> renderer;
 constexpr int32_t vert_fov = 24 >> 1;
 constexpr int32_t horz_fov = 88 >> 1;
 
-void R_DrawCompass()
-{
-    uint32_t mdl = 0;
-    switch (Game::Get()->entities.front().dir) {
-    case D_NORTH: mdl = MDL_COMPASS_UP; break;
-    case D_WEST: mdl = MDL_COMPASS_LEFT; break;
-    case D_SOUTH: mdl = MDL_COMPASS_DOWN; break;
-    case D_EAST: mdl = MDL_COMPASS_RIGHT; break;
-    default:
-        LOG_WARN("playr->pdir was an invalid direction, assigning default value of D_NORTH");
-        mdl = MDL_COMPASS_UP;
-        Game::Get()->entities.front().dir = D_NORTH;
-        break;
-    };
-    SDL_Rect rect;
-    rect.x = 0;
-    rect.y = 0;
-    rect.w = 170;
-    rect.h = 170;
-//    R_DrawTexture(renderer->SDL_spr_sheet, &modelinfo[mdl].offset, &rect);
-//    R_DrawTextureFromTable(mdl);
-}
-
-void R_DrawVitals()
-{
-}
-
-void R_DrawMap()
-{
-    glm::vec2 startc = {Game::GetPlayr()->p->pos.coords.y - (vert_fov >> 1), Game::GetPlayr()->p->pos.coords.x - (horz_fov >> 1)};
-    glm::vec2 endc = {Game::GetPlayr()->p->pos.coords.y + (vert_fov >> 1), Game::GetPlayr()->p->pos.coords.x + (horz_fov >> 1)};
-}
-
-void R_DrawScreen(void)
-{
-    switch (Game::Get()->gamestate) {
-    case GS_MENU:
-    case GS_LEVEL:
-        break;
-    };
-}
-
 static Uint32 R_GetWindowFlags(void)
 {
     Uint32 flags = 0;
+
+    switch (scf::renderer::api) {
+    case scf::R_OPENGL:
+        flags |= SDL_WINDOW_OPENGL;
+    case scf::R_SDL2:
+        break;
+    case scf::R_VULKAN:
+        N_Error("R_Init: Vulkan rendering isn't yet supported, will be though very soon");
+        break;
+    };
     if (scf::renderer::hidden)
         flags |= SDL_WINDOW_HIDDEN;
     
@@ -65,10 +33,10 @@ static Uint32 R_GetWindowFlags(void)
     else if (scf::renderer::native_fullscreen)
         flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
     
-    flags |= SDL_WINDOW_OPENGL;
-    
     return flags;
 }
+
+void R_InitScene();
 
 void R_Init()
 {
@@ -91,8 +59,8 @@ void R_Init()
             SDL_GetError());
     }
     SDL_GL_SetSwapInterval(1);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
     SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
     renderer->context = SDL_GL_CreateContext(renderer->window);
@@ -136,7 +104,7 @@ void R_Init()
     };
 
     printf("-----------------------------\n");
-    printf("GL Context Params:\n");
+    printf("OpenGL Context Params:\n");
     // integers - only works if the order is 0-10 integer return types
     for (int i = 0; i < 10; i++) {
         int v = 0;
@@ -145,7 +113,7 @@ void R_Init()
     }
     // others
     int v[2];
-    v[0] = v[1] = 0;
+    memset(v, 0, sizeof(v));
     glGetIntegerv(params[10], v);
     con.ConPrintf("{}: {} {}", names[10], v[0], v[1]);
     unsigned char s = 0;
@@ -154,7 +122,7 @@ void R_Init()
     printf("\n");
 
     printf("-----------------------------\n");
-    printf("GL Extensions:\n");
+    printf("OpenGL Extensions:\n");
     int extension_count = 0;
     glGetIntegerv(GL_NUM_EXTENSIONS, &extension_count);
     for (int i = 0; i < extension_count; ++i) {
@@ -163,32 +131,27 @@ void R_Init()
     }
     printf("\n");
 
+#ifdef _NOMAD_DEBUG
+    con.ConPrintf("turning on OpenGL debug callbacks");
+    if (glDebugMessageControlARB != NULL) {
+        glEnable(GL_DEBUG_OUTPUT);
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+        glDebugMessageCallback((GLDEBUGPROCARB)DBG_GL_ErrorCallback, NULL);
+        GLuint unusedIds = 0;
+        glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, &unusedIds, GL_TRUE);
+    }
+#endif
+
     LOG_INFO("successful initialization of SDL2 context");
 
     glEnable(GL_BLEND);
 //    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_CULL_FACE);
+    glEnable(GL_LINE_SMOOTH);
 #if 0 // for future 3d...
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CCW);
 #endif
-}
-
-void Renderer::Draw(const Shader& shader, const VertexArray& va) const
-{
-    shader.Bind();
-    va.Bind();
-    if (va.HasIBO()) {
-        va.BindIBO();
-        glCall(glDrawElements(GL_TRIANGLES, va.GetIBO()->numindices(), GL_UNSIGNED_INT, NULL));
-    }
-    else if (va.HasVBO()) {
-        va.BindVBO();
-        glCall(glDrawArrays(GL_TRIANGLES, 0, va.GetVBO()->numvertices()));
-    }
-    va.Unbind();
-    va.GetIBO()->Unbind();
-    SDL_GL_SwapWindow(window);
 }
 
 void R_ShutDown()
@@ -210,11 +173,12 @@ void R_ShutDown()
     sdl_on = false;
 }
 
-Camera::Camera(float left, float right, float bottom, float top, float zFar, float zNear)
+
+Camera::Camera(float left, float right, float bottom, float top)
     : m_ProjectionMatrix(glm::ortho(left, right, bottom, top, -1.0f, 1.0f)), m_ViewMatrix(1.0f)
 {
     m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
-    m_CameraPos = glm::vec3(0.5f, 0.5f, 0.0f);
+    m_CameraPos = glm::vec3(0.0f, 0.0f, 0.0f);
 }
 
 void Camera::CalculateViewMatrix()
@@ -222,9 +186,8 @@ void Camera::CalculateViewMatrix()
     glm::mat4 transform = glm::translate(glm::mat4(1.0f), m_CameraPos) *
         glm::rotate(glm::mat4(1.0f), glm::radians(m_Rotation), glm::vec3(0, 0, 1));
     
-//    m_ViewMatrix = glm::inverse(transform);
-    m_ViewMatrix = glm::translate(transform, glm::vec3(0, 0, 0));
-    m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewProjectionMatrix;
+    m_ViewMatrix = glm::inverse(transform);
+    m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
 }
 
 int R_DrawMenu(const char* fontfile, const std::vector<std::string>& choices,
@@ -339,3 +302,286 @@ done:
     N_DebugWindowDraw();
     return -1;
 }
+
+#ifdef _NOMAD_DEBUG
+
+const char *DBG_GL_SourceToStr(GLenum source)
+{
+    switch (source) {
+    case GL_DEBUG_SOURCE_API: return "API";
+    case GL_DEBUG_SOURCE_WINDOW_SYSTEM: return "Window System";
+    case GL_DEBUG_SOURCE_SHADER_COMPILER: return "Shader Compiler";
+    case GL_DEBUG_SOURCE_THIRD_PARTY: return "Third Party";
+    case GL_DEBUG_SOURCE_APPLICATION: return "Application User";
+    case GL_DEBUG_SOURCE_OTHER: return "Other";
+    };
+    return "Unknown Source";
+}
+
+const char *DBG_GL_TypeToStr(GLenum type)
+{
+    switch (type) {
+    case GL_DEBUG_TYPE_ERROR: return "Error";
+    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: return "Deprecated Behaviour";
+    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: return "Undefined Behaviour";
+    case GL_DEBUG_TYPE_PORTABILITY: return "Portability";
+    case GL_DEBUG_TYPE_PERFORMANCE: return "Performance";
+    case GL_DEBUG_TYPE_MARKER: return "Marker";
+    case GL_DEBUG_TYPE_PUSH_GROUP: return "Debug Push group";
+    case GL_DEBUG_TYPE_POP_GROUP: return "Debug Pop Group";
+    case GL_DEBUG_TYPE_OTHER: return "Other";
+    };
+    return "Unknown Type";
+}
+
+const char *DBG_GL_SeverityToStr(GLenum severity)
+{
+    switch (severity) {
+    case GL_DEBUG_SEVERITY_HIGH: return "High";
+    case GL_DEBUG_SEVERITY_MEDIUM: return "Medium";
+    case GL_DEBUG_SEVERITY_LOW: return "Low";
+    case GL_DEBUG_SEVERITY_NOTIFICATION: return "Notification";
+    };
+    return "Unknown Severity";
+}
+
+void DBG_GL_ErrorCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const GLvoid *userParam)
+{
+    if (type == GL_DEBUG_TYPE_ERROR) {
+        LOG_ERROR(
+            "<---- OpenGL Debug Log (ERROR) ---->\n"
+            "    source: {}\n"
+            "    message: {}\n"
+            "    type: {}\n"
+            "    id: {}\n"
+            "    severity: {}\n",
+        DBG_GL_SourceToStr(source), message, DBG_GL_TypeToStr(type), std::to_string(id), DBG_GL_SeverityToStr(severity));
+#ifdef PARANOID
+        debugbreak();
+#endif
+    }
+    else if (type == GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR || type == GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR 
+          || type == GL_DEBUG_TYPE_PORTABILITY || type == GL_DEBUG_TYPE_PERFORMANCE)
+    {
+        LOG_WARN(
+            "<---- OpenGL Debug Log (WARN) ---->\n"
+            "    source: {}\n"
+            "    message: {}\n"
+            "    type: {}\n"
+            "    id: {}\n"
+            "    severity: {}\n",
+        DBG_GL_SourceToStr(source), message, DBG_GL_TypeToStr(type), std::to_string(id), DBG_GL_SeverityToStr(severity));
+    }
+    else {
+        LOG_TRACE(
+            "<---- OpenGL Debug Log (TRACE) ---->\n"
+            "    source: {}\n"
+            "    message: {}\n"
+            "    type: {}\n"
+            "    id: {}\n"
+            "    severity: {}\n",
+        DBG_GL_SourceToStr(source), message, DBG_GL_TypeToStr(type), std::to_string(id), DBG_GL_SeverityToStr(severity));
+    }
+}
+
+#endif
+
+struct QuadVertex
+{
+    glm::vec3 pos;
+    glm::vec4 color;
+    glm::vec2 texcoords;
+};
+
+struct SquareVertex
+{
+    std::array<Vertex, 4> vertices;
+    std::array<uint32_t, 6> indices;
+};
+
+struct SceneData
+{
+    static const size_t MaxQuads = 20000;
+    static const size_t MaxVertices = MaxQuads * 4;
+    static const size_t MaxIndices = MaxQuads * 6;
+
+    std::shared_ptr<Shader> SceneShader;
+
+    std::shared_ptr<VertexArray> vao;
+    std::shared_ptr<VertexBuffer> vbo;
+    std::shared_ptr<Shader> VertexShader;
+
+    uint32_t VerticesCount = 0;
+    Vertex* VertexBufferBase = NULL;
+    Vertex* VertexBufferPtr = NULL;
+
+    std::shared_ptr<VertexArray> SquareVertexArray;
+    std::shared_ptr<VertexBuffer> SquareVertexBuffer;
+    std::shared_ptr<IndexBuffer> SquareIndexBuffer;
+    std::shared_ptr<Shader> SquareShader;
+
+    uint32_t SquareIndexCount = 0;
+    SquareVertex* SquareBufferBase = NULL;
+    SquareVertex* SquareBufferPtr = NULL;
+
+    std::unique_ptr<Camera> camera;
+};
+
+static SceneData scene;
+
+static float squareVertices[4 * 3] = {
+    -0.5f, -0.5f, 0.0f,
+     0.5f, -0.5f, 0.0f,
+     0.5f,  0.5f, 0.0f,
+    -0.5f,  0.5f, 0.0f
+};
+static uint32_t squareIndices[6] = {
+    0, 1, 2, 0, 2, 3
+};
+
+void R_InitScene()
+{
+    scene.SquareVertexArray = VertexArray::Create();
+    scene.SquareVertexBuffer = VertexBuffer::Create(scene.MaxQuads, scene.SquareVertexArray);
+    scene.SquareVertexArray->PushVBO(scene.SquareVertexBuffer);
+    scene.SquareIndexBuffer = IndexBuffer::Create(squareIndices, 6);
+    scene.SquareVertexArray->SwapIBO(scene.SquareIndexBuffer);
+    scene.SquareShader = std::make_shared<Shader>("shader.glsl");
+    scene.SquareBufferBase = (SquareVertex *)Z_Malloc(sizeof(SquareVertex) * scene.MaxQuads, TAG_STATIC, &scene.SquareBufferBase);
+    memset(scene.SquareBufferBase, 0, sizeof(SquareVertex) * scene.MaxQuads);
+    scene.SquareBufferPtr = scene.SquareBufferBase;
+    scene.SquareIndexBuffer->Unbind();
+    scene.SquareVertexBuffer->Unbind();
+    scene.SquareVertexArray->Unbind();
+
+    scene.vao = std::make_shared<VertexArray>();
+    scene.vao->Bind();
+    scene.vbo = std::make_shared<VertexBuffer>(scene.MaxVertices, scene.vao);
+
+    scene.VertexBufferBase = (Vertex *)Z_Malloc(sizeof(Vertex) * scene.MaxVertices, TAG_STATIC, &scene.VertexBufferBase);
+    memset(scene.VertexBufferBase, 0, sizeof(Vertex) * scene.MaxVertices);
+    scene.VertexBufferPtr = scene.VertexBufferBase;
+    
+    scene.vbo->Unbind();
+    scene.vao->Unbind();
+
+//    camera = std::make_unique<Camera>(-3.0f, 3.0f, -3.0f, 3.0f);
+//    glViewport(-3.0f, 3.0f, -3.0f, 3.0f);
+}
+
+void Renderer::BeginScene()
+{
+    scene.camera->CalculateViewMatrix();
+    scene.SceneShader->Bind();
+    scene.SceneShader->UniformMat4("u_ViewProjection", scene.camera->GetVPM());
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void Renderer::EndScene()
+{
+    scene.SceneShader->Unbind();
+}
+
+void Renderer::Flush()
+{
+    if (scene.SquareIndexCount) {
+    
+    }
+    if (scene.VerticesCount) {
+        uint32_t dataSize = (uint32_t)((byte *)scene.VertexBufferPtr - (byte *)scene.VertexBufferBase);
+        scene.vao->Bind();
+        scene.VertexShader->Bind();
+        scene.vbo->SwapBuffer(scene.VertexBufferBase, dataSize);
+        glDrawArrays(GL_TRIANGLES, 0, dataSize);
+        scene.vao->Unbind();
+    }
+}
+
+static void R_NextBatch()
+{
+    Renderer::Flush();
+}
+
+void R_DrawSquare(const glm::vec2& pos, const glm::vec2& size, const glm::vec4& color)
+{
+//    if (scene.SquareIndexCount >= scene.MaxQuads)
+//        R_NextBatch();
+
+
+    if (scene.SquareIndexCount >= scene.MaxQuads)
+        R_NextBatch();
+}
+
+#if 0
+
+void Renderer::Submit(const std::vector<Vertex>& vertices)
+{
+}
+
+void Renderer::Submit(const Vertex* vertices, const size_t count)
+{
+    memmove(scene.VertexBufferPtr, vertices, sizeof(Vertex) * count);
+    scene.VertexBufferPtr += count;
+    scene.VerticesCount += count;
+}
+
+void R_StartBatch()
+{
+    scene.VerticesCount = 0;
+    scene.VertexBufferPtr = scene.VertexBufferBase;
+}
+
+void R_Flush()
+{
+    scene.vao->Bind();
+    if (scene.VerticesCount) {
+        uint32_t dataSize = (uint32_t)((byte *)scene.VertexBufferPtr - (byte* )scene.VertexBufferBase);
+        scene.vbo->Bind();
+        scene.vbo->SwapBuffer(scene.VertexBufferBase, dataSize);
+        scene.vbo->Draw(GL_TRIANGLES, 0, scene.VerticesCount);
+        scene.vbo->Unbind();
+    }
+    scene.vao->Unbind();
+}
+
+void R_NextBatch()
+{
+    R_Flush();
+    R_StartBatch();
+}
+
+void R_DrawQuad(const glm::vec2& pos, const glm::vec2& size, const glm::vec4& color)
+{
+    glm::mat4 transform = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, 0.0f))
+        * glm::scale(glm::mat4(1.0f), glm::vec3(size.x, size.y, 1.0f));
+}
+
+void Renderer::BeginScene()
+{
+
+}
+
+void Renderer::EndScene()
+{
+    R_Flush();
+}
+
+void Renderer::Draw()
+{
+    scene.vao->Bind();
+    if (scene.VerticesCount) {
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBuffer(GL_ARRAY_BUFFER, scene.vbo->GetID());
+
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * scene.VerticesCount, scene.VertexBufferBase);
+        glDrawArrays(GL_TRIANGLES, 0, scene.VerticesCount);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        scene.VerticesCount = 0;
+        scene.VertexBufferPtr = scene.VertexBufferBase;
+    }
+    scene.vao->Unbind();
+}
+#endif

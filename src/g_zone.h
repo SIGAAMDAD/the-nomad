@@ -24,13 +24,16 @@
 enum {
 	TAG_FREE = 0,
 	TAG_STATIC = 1,
-	TAG_NODE = 2,
-	TAG_CACHE = 3,
+	TAG_LEVEL = 2,
+	TAG_SFX = 3,
+	TAG_MUSIC = 4,
+
 	TAG_PURGELEVEL = 100,
 	TAG_SCOPE = 101,
-	TAG_LOAD = TAG_SCOPE,
-	
-	NUMTAGS
+	TAG_LOAD = 102,
+	TAG_CACHE = 103,
+
+	NUMTAGS = 104
 };
 
 #ifdef _NOMAD_DEBUG
@@ -39,21 +42,22 @@ enum {
 #define LOG_CALL(func)
 #endif
 
-extern "C" void Z_Init();
-
-extern "C" void Z_FreeTags(uint8_t lowtag, uint8_t hightag);
-extern "C" void Z_CleanCache();
-extern "C" void Z_CheckHeap();
-extern "C" void Z_ChangeUser(void *user, void *ptr);
-extern "C" void Z_ChangeTag(void *ptr, uint8_t tag);
-extern "C" void Z_ChangeTag2(void *ptr, uint8_t tag, const char *file, uint32_t line);
-extern "C" uint32_t Z_ZoneSize();
 extern "C" void *Z_Malloc(uint32_t size, uint8_t tag, void *user);
 extern "C" void *Z_Realloc(void *ptr, uint32_t nsize, void *user, uint8_t tag = TAG_STATIC);
-extern "C" void *Z_Calloc(void *user, uint32_t nelem, uint32_t elemsize, uint8_t tag);
-extern "C" void Z_Free(void *ptr);
-extern "C" void Z_DumpHeap();
+extern "C" void *Z_Calloc(void *user, uint32_t elemsize, uint32_t nelem, uint8_t tag);
+extern "C" void Z_CheckHeap();
 extern "C" void Z_FileDumpHeap();
+extern "C" void Z_DumpHeap();
+extern "C" void Z_FreeTags(uint8_t lowtag, uint8_t hightag);
+extern "C" void Z_ClearZone();
+extern "C" uint32_t Z_ZoneSize();
+extern "C" void Z_ChangeUser(void *ptr, void *user);
+extern "C" void Z_ChangeTag2(void *ptr, uint8_t tag, const char* file, uint32_t line);
+extern "C" void Z_CleanCache();
+extern "C" void Z_ChangeTag(void *ptr, uint8_t tag);
+extern "C" void Z_ScanForBlock(void *start, void *end);
+extern "C" void Z_Init();
+extern "C" void Z_Free(void *ptr);
 
 #ifdef _WIN32
 #define PROT_READ     0x1

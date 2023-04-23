@@ -61,8 +61,12 @@
 #include <EASTL/array.h>
 #include <EASTL/string.h>
 #include <EASTL/vector.h>
-#include <absl/hash/hash.h>
+#include <EASTL/unordered_map.h>
 #include "stb_sprintf.h"
+#include <google/dense_hash_map>
+#include <google/sparse_hash_map>
+#include <xalloc/Allocator.h>
+#include <xalloc/xallocator.h>
 
 // logging
 #include <spdlog/spdlog.h>

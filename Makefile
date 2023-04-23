@@ -1,9 +1,9 @@
 VERSION       = 1
 VERSION_UPDATE= 1
 VERSION_PATCH = 0
-CC            = g++ -I/usr/include -Isrc/glad/include
-LDLIBS        = /usr/local/lib/libSDL2.a -lSDL2_image /usr/local/lib/libSDL2_ttf.a /usr/local/lib/libopenal.a \
-				-lGL libEASTL.a -logg -lvorbisfile -lsndfile -lbz2 libglad.a
+CC            = distcc g++ -I/usr/include -Isrc/glad/include -I/usr/local/include
+LDLIBS        = -fPIE /usr/local/lib/libSDL2.a -lSDL2_image /usr/local/lib/libSDL2_ttf.a /usr/local/lib/libopenal.a \
+				-lGL libEASTL.a -logg -lvorbisfile -lsndfile -lbz2 libglad.a /usr/local/lib/xallocator.a
 O             = obj
 SDIR          = src
 
@@ -17,6 +17,7 @@ endif
 OPIMTIZERS=-fexpensive-optimizations -funroll-loops -ffast-math -finline-limit=10000 -mavx -mavx2 -mfma -msse3
 DEFINES    =-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPDATE) -D_NOMAD_VERSION_PATCH=$(VERSION_PATCH)
 CFLAGS    +=$(DEFINES) $(OPIMTIZERS)
+
 
 OBJS= \
 	$(O)/m_renderer.o \
@@ -40,6 +41,7 @@ OBJS= \
 	$(O)/imgui.o \
 	$(O)/imgui_widgets.o \
 	$(O)/imgui_tables.o \
+	$(O)/r_opengl.o \
 
 all: glnomad
 
@@ -50,8 +52,8 @@ $(O)/g_bff.o: $(SDIR)/g_bff.cpp
 $(O)/%.o: $(SDIR)/%.cpp
 	$(CC) $(CFLAGS) -o $@ -c $<
 
-glnomad: n_pch.h.gch $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) $(LIBS) -o glnomad $(LDLIBS)
+glnomad: $(OBJS)
+	$(CC) $(CFLAGS) $(OBJS) $(LIBS) -o glnomad $(LDLIBS) $(ABSL)
 
 clean:
 	rm -r $(OBJS)

@@ -227,31 +227,13 @@ void G_ExtractBFF(const std::string& filepath)
 
 void G_LoadBFF(const std::string& bffname)
 {
+
     bffinfo_t *header;
     N_ReadFile(FILEPATH("bffinfo", ".dat", bffname), (char **)&header);
 
     std::vector<nomadsnd_t> sounds(header->numsounds);
     memset(sounds.data(), 0, sounds.size() * sizeof(nomadsnd_t));
     for (uint16_t i = 0; i < header->numsounds; ++i) {
-#if 0
-        SF_INFO fdata;
-        memset(&fdata, 0, sizeof(SF_INFO));
-        fdata.format = SF_FORMAT_VORBIS | SF_FORMAT_OGG;
-        SNDFILE* sf = sf_open(FILEPATH(filepath, ".ogg", bffname), SFM_READ, &fdata);
-        if (!sf) {
-            N_Error("G_LoadBFF: failed to load audio chunk %s, sndfile error: %s", FILEPATH(filepath, ".ogg", bffname), sf_strerror(sf));
-        }
-        assert(sf);
-
-        int16_t buffer[4096];
-        memset(buffer, 0, sizeof(buffer));
-        std::vector<int16_t> rdbuf;
-        size_t read;
-        while ((read = sf_read_short(sf, buffer, sizeof(buffer))) != 0) {
-            rdbuf.insert(rdbuf.end(), buffer, buffer + read);
-        }
-        sf_close(sf);
-#endif
         std::string filepath = "NMSNDFILE_"+std::to_string((int)i);
         int channels{};
         int samplerate{};
@@ -265,9 +247,7 @@ void G_LoadBFF(const std::string& bffname)
         alSourcei(sounds[i].source, AL_BUFFER, sounds[i].buffer);
     }
 
-    // initialize the zone
     Z_Init();
-
     Game::Init();
 
     // pre-cache the bff stuff
@@ -497,23 +477,6 @@ void G_WriteBFF(const char* outfile, const char* dirname)
             Z_Free(bff->levels[i].spawnlist);
         }
         fwrite(bff->levels[i].lvl_map, sizeof(sprite_t), MAP_MAX_Y*MAP_MAX_X, fp);
-#if 0
-
-        char outbuffer[(MAP_MAX_Y * MAP_MAX_X) / 2];
-        unsigned int outsize = sizeof(outbuffer);
-
-        int ret = BZ2_bzBuffToBuffCompress(outbuffer, &outsize, (char *)bff->levels[i].lvl_map, sizeof(bff->levels[i].lvl_map),
-            9, 1, 100);
-        if (ret != BZ_OK) {
-            fclose(fp);
-            N_Error("G_WriteBFF: bzip2 failed to compress a buffer with error %s", bzip2_strerror(ret));
-        }
-        
-        LOG_INFO("compressed bff level data from size of {} to new size of {}, compressed {} bytes", sizeof(bff->levels[i].lvl_map), outsize,
-            sizeof(bff->levels[i].lvl_map) - outsize);
-        fwrite(&outsize, sizeof(unsigned int), 1, fp);
-        fwrite(outbuffer, sizeof(char), outsize, fp);
-#endif
         fflush(fp);
     }
     for (uint16_t i = 0; i < bff->header.numspawns; ++i) { // no need to compress spawners

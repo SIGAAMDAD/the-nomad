@@ -37,6 +37,35 @@ typedef struct pint_s
     }
 } pint_t;
 
+
+typedef struct tile_s
+{
+    struct tile_s* left;
+    struct tile_s* right;
+    struct tile_s* up;
+    struct tile_s* down;
+
+    glm::vec2 pos;
+    glm::vec4 color;
+    bff_texture_t* texture;
+    sprite_t tiletype;
+} tile_t;
+
+class Map
+{
+private:
+    mutable tile_t** tilemap;
+    
+    static std::unique_ptr<Map> world;
+public:
+    Map();
+    ~Map();
+
+    static void Init();
+    static void Draw();
+    inline tile_t** GetTilemap() const { return tilemap; }
+};
+
 typedef std::atomic<pint_t> atomic_pint;
 
 #endif

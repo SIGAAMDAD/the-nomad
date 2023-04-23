@@ -99,7 +99,7 @@ void G_SaveGame()
 	fwrite(&numentities, sizeof(uint16_t), 1, fp);
 	fwrite(&game->difficulty, sizeof(uint8_t), 1, fp);
 	fwrite(&game->gamestate, sizeof(gamestate_t), 1, fp);
-	fwrite(&game->ticcount, sizeof(uint64_t), 1, fp);
+	fwrite(&ticcount, sizeof(uint64_t), 1, fp);
 
 	fwrite(&playr->level, sizeof(uint64_t), 1, fp);
 	fwrite(&playr->xp, sizeof(uint64_t), 1, fp);
@@ -158,7 +158,7 @@ void G_LoadGame()
 	fread(&numentities, sizeof(uint16_t), 1, fp);
 	fread(&game->difficulty, sizeof(uint8_t), 1, fp);
 	fread(&game->gamestate, sizeof(gamestate_t), 1, fp);
-	fread(&game->ticcount, sizeof(uint64_t), 1, fp);
+	fread(&ticcount, sizeof(uint64_t), 1, fp);
 
 	fread(&playr->level, sizeof(uint64_t), 1, fp);
 	fread(&playr->xp, sizeof(uint64_t), 1, fp);

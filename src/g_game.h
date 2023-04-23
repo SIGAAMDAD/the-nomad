@@ -114,6 +114,7 @@ enum : uint8_t
 };
 
 inline bool bff_mode = false;
+inline uint64_t ticcount = 0;
 
 class Game
 {
@@ -132,7 +133,6 @@ public:
     gamestate_t gamestate;
     linked_list<entity_t> entities;
     uint8_t difficulty;
-    uint64_t ticcount;
 
     bff_file_t* file = NULL;
     bff_level_t* level = NULL;

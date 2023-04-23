@@ -102,7 +102,6 @@ struct Vertex
 {
     glm::vec3 pos;
     glm::vec4 color;
-    glm::vec3 offset;
     glm::vec2 texcoords;
 
     inline Vertex(const glm::vec3& _pos, const glm::vec4& _color)
@@ -120,39 +119,56 @@ struct Vertex
     }
 };
 
+typedef enum : uint8_t
+{
+    Null = 0,
+    Float,
+    Vec2,
+    Vec3,
+    Vec4,
+    Int,
+    Int2,
+    Int3,
+    Int4,
+    UInt,
+    UInt2,
+    UInt3,
+    UInt4,
+    Mat2,
+    Mat3,
+    Mat4
+} attribtype_t;
+
+class VertexArray;
+
 class VertexBuffer
 {
 private:
-    GLuint id;
+    mutable GLuint id;
     mutable std::vector<Vertex> vertices;
-    bool batch;
+    bool has_been_allocated;
 public:
-    VertexBuffer(const std::initializer_list<Vertex>& _vertices, bool _batch = false)
-        : vertices(_vertices), batch(_batch)
+    VertexBuffer(const size_t reserve)
+        : vertices(reserve)
     {
         glCall(glGenBuffers(1, &id));
-        glCall(glBindBuffer(GL_ARRAY_BUFFER, id));
-        glCall(glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(), vertices.data(), GL_STATIC_DRAW));
-
-        glCall(glEnableVertexArrayAttrib(id, 0));
-        glCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, pos)));
-
-        glCall(glEnableVertexArrayAttrib(id, 1));
-        glCall(glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, color)));
-
-        glCall(glBindBuffer(GL_ARRAY_BUFFER, 0));
-    }
-    VertexBuffer()
-    {
-        glCall(glGenBuffers(1, &id));
-    }
-    VertexBuffer(const VertexBuffer &) = delete;
-    VertexBuffer(VertexBuffer &&) = default;
-    ~VertexBuffer()
-    {
+        Bind();
+        glCall(glBufferData(GL_ARRAY_BUFFER, reserve * sizeof(Vertex), NULL, GL_DYNAMIC_DRAW));
         Unbind();
-        glCall(glDeleteBuffers(1, &id));
     }
+    VertexBuffer(const size_t reserve, const std::shared_ptr<VertexArray>& vao);
+    VertexBuffer() {
+        glCall(glGenBuffers(1, &id));
+    }
+    VertexBuffer(const std::vector<Vertex>& _vertices, const VertexArray* vao);
+    VertexBuffer(const Vertex* _vertices, const size_t count, const VertexArray* vao);
+    VertexBuffer(const Vertex* _vertices, const size_t count, const std::shared_ptr<VertexArray>& vao);
+    VertexBuffer(const std::vector<Vertex>& _vertices);
+    VertexBuffer(const Vertex* _vertices, const size_t count);
+    VertexBuffer(const VertexBuffer &vb)
+        : vertices(vb.vertices.size()) { SwapBuffer(vb.vertices); }
+    VertexBuffer(VertexBuffer &&) = default;
+    ~VertexBuffer();
 
     inline void Draw(GLenum mode = GL_TRIANGLES, GLint first = 0, GLsizei count = 0) const {
         if (count == 0) count = vertices.size();
@@ -166,10 +182,42 @@ public:
     { return vertices.size(); }
     inline Vertex* data(void) const
     { return vertices.data(); }
-    inline void SwapBuffer(const std::vector<Vertex>& _vertices) {
-        vertices.resize(_vertices.size());
-        memmove(vertices.data(), _vertices.data(), sizeof(Vertex) * _vertices.size());
+
+    inline Vertex& front() const { return vertices.front(); }
+    inline Vertex& back() const { return vertices.back(); }
+    inline std::vector<Vertex>::iterator begin() { return vertices.begin(); }
+    inline std::vector<Vertex>::iterator end() { return vertices.end(); }
+    inline std::vector<Vertex>::const_iterator begin() const { return vertices.begin(); }
+    inline std::vector<Vertex>::const_iterator end() const { return vertices.end(); }
+    inline bool is_allocated() const { return has_been_allocated; }
+    inline void GenBuffer() {
+        glCall(glGenBuffers(1, &id));
+        has_been_allocated = true;
     }
+
+    void SwapBuffer(const std::vector<Vertex>& _vertices, bool newbuffer = false);
+    void SwapBuffer(const Vertex* _vertices, const size_t offset, const size_t count);
+    void SwapBuffer(const Vertex* _vertices, const size_t count, bool newbuffer = false);
+    void SwapBuffer(std::initializer_list<Vertex> _vertices, bool newbuffer = false);
+    void SwapBuffer(const VertexBuffer& vbo, bool newbuffer = false);
+
+    static inline std::shared_ptr<VertexBuffer> Create(const size_t reserve, const std::shared_ptr<VertexArray>& vao) {
+        return std::make_shared<VertexBuffer>(reserve, vao);
+    }
+    static inline std::shared_ptr<VertexBuffer> Create(const Vertex* vertices, const size_t count, const std::shared_ptr<VertexArray>& vao) {
+        return std::make_shared<VertexBuffer>(vertices, count, vao);
+    }
+    static inline std::shared_ptr<VertexBuffer> Create(const std::vector<Vertex>& vertices) {
+        return std::make_shared<VertexBuffer>(vertices);
+    }
+    static inline std::shared_ptr<VertexBuffer> Create(const Vertex* vertices, const size_t count) {
+        return std::make_shared<VertexBuffer>(vertices, count);
+    }
+    static inline std::shared_ptr<VertexBuffer> Create(const size_t reserve) {
+        return std::make_shared<VertexBuffer>(reserve);
+    }
+
+    inline GLuint& GetID() const { return id; }
 };
 
 class Shader
@@ -209,51 +257,10 @@ private:
         return location;
     }
 public:
-    Shader(const std::string& filepath)
-    {
-        std::ifstream file(filepath, std::ios::in);
-        if (!file)
-            N_Error("Shader::Shader: failed to open shader file %s", filepath.c_str());
-        
-        assert(file.is_open());
-        std::string line;
-        int index = 0;
-        std::stringstream stream[3];
-        while (std::getline(file, line)) {
-            if (line == "#shader vertex")
-                index = 0;
-            else if (line == "#shader fragment")
-                index = 1;
-            else if (line == "#shader geometry")
-                index = 2;
-            else
-                stream[index] << line << '\n';
-        }
-        const std::string vertsrc = stream[0].str();
-        const std::string fragsrc = stream[1].str();
-        file.close();
-        GLuint vertid = Compile(vertsrc, GL_VERTEX_SHADER);
-        GLuint fragid = Compile(fragsrc, GL_FRAGMENT_SHADER);
-
-        glCall(id = glCreateProgram());
-        glCall(glAttachShader(id, vertid));
-        glCall(glAttachShader(id, fragid));
-        glCall(glLinkProgram(id));
-        glCall(glValidateProgram(id));
-        glCall(glDeleteShader(vertid));
-        glCall(glDeleteShader(fragid));
-        glCall(glUseProgram(0));
-    }
-    Shader()
-    {
-        id = glCreateProgram();
-    }
+    Shader(const std::string& filepath);
     Shader(const Shader &) = delete;
     Shader(Shader &&) = default;
-    ~Shader()
-    {
-        glCall(glDeleteProgram(id));
-    }
+    ~Shader();
 
     inline void Bind() const
     { glCall(glUseProgram(id)); }
@@ -261,146 +268,165 @@ public:
     { glCall(glUseProgram(0)); }
 
     inline void UniformMat4(const std::string& name, const glm::mat4& m) const
-    {
-        GLint location = GetUniformLocation(name);
-        glCall(glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(m)));
-    }
+    { glCall(glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, glm::value_ptr(m))); }
     inline void UniformInt(const std::string& name, GLint value) const
-    {
-        GLint location = GetUniformLocation(name);
-        glCall(glUniform1i(location, value));
-    }
+    { glCall(glUniform1i(GetUniformLocation(name), value)); }
     inline void UniformInt2(const std::string& name, GLint v1, GLint v2) const
-    {
-        GLint location = GetUniformLocation(name);
-        glCall(glUniform2i(location, v1, v2));
-    }
+    { glCall(glUniform2i(GetUniformLocation(name), v1, v2)); }
     inline void UniformFloat(const std::string& name, float value) const
-    {
-        GLint location = GetUniformLocation(name);
-        glCall(glUniform1f(location, value));
-    }
+    { glCall(glUniform1f(GetUniformLocation(name), value)); }
     inline void UniformVec2(const std::string& name, const glm::vec2& value) const
-    {
-        GLint location = GetUniformLocation(name);
-        glCall(glUniform2f(location, value.x, value.y));
-    }
+    { glCall(glUniform2f(GetUniformLocation(name), value.x, value.y)); }
     inline void UniformVec3(const std::string& name, const glm::vec3& value) const
-    {
-        GLint location = GetUniformLocation(name);
-        glCall(glUniform3f(location, value.x, value.y, value.z));
-    }
+    { glCall(glUniform3f(GetUniformLocation(name), value.x, value.y, value.z)); }
     inline void UniformVec4(const std::string& name, const glm::vec4& value) const
-    {
-        GLint location = GetUniformLocation(name);
-        glCall(glUniform4f(location, value.r, value.g, value.b, value.a));
-    }
+    { glCall(glUniform4f(GetUniformLocation(name), value.r, value.g, value.b, value.a)); }
+
+    inline GLuint GetID() const { return id; }
 };
 
 class IndexBuffer
 {
 private:
     GLuint id;
-    mutable std::vector<uint32_t> indices;
-    bool batch;
+    size_t indices_count = 0;
 public:
-    IndexBuffer(std::initializer_list<uint32_t> _indices, bool _batch = false)
-        : indices(_indices), batch(_batch)
-    {
-        glCall(glGenBuffers(1, &id));
-        Bind();
-
-        glCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(uint32_t), indices.data(),
-            (batch ? GL_DYNAMIC_DRAW : GL_STATIC_DRAW)));
-
-        Unbind();
-    }
-    IndexBuffer(const IndexBuffer &) = delete;
+    IndexBuffer(const size_t reserve);
+    IndexBuffer() = default;
+    IndexBuffer(const std::vector<uint32_t>& indices);
+    IndexBuffer(const uint32_t* indices, const size_t count);
     IndexBuffer(IndexBuffer &&) = default;
-    ~IndexBuffer()
-    {
-        Unbind();
-        glCall(glDeleteBuffers(1, &id));
-    }
+    ~IndexBuffer();
     
-    inline void Draw(GLenum mode = GL_TRIANGLES) const {
-        glCall(glDrawElements(mode, indices.size(), GL_UNSIGNED_INT, indices.data()));
+    inline void Draw(GLenum mode, GLsizei count) const {
+        Bind();
+        glCall(glDrawElements(mode, count, GL_UNSIGNED_INT, NULL));
+        Unbind();
     }
     inline void Bind() const
     { glCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, id)); }
     inline void Unbind() const
     { glCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)); }
-    inline uint32_t* data() const { return indices.data(); }
-    inline size_t numindices() const { return indices.size(); }
-    inline void SwapBuffer(const std::vector<uint32_t>& _indices) {
-        indices.resize(_indices.size());
-        memmove(indices.data(), _indices.data(), sizeof(uint32_t) * _indices.size());
+    inline size_t numindices() const
+    { return indices_count; }
+
+    void SwapBuffer(const uint32_t* _indices, const size_t count, bool newbuffer = false);
+    void SwapBuffer(const std::vector<uint32_t>& _indices, bool newbuffer = false);
+    void SwapBuffer(const IndexBuffer& ibo, bool newbuffer = false);
+
+    static std::shared_ptr<IndexBuffer> Create(const std::vector<uint32_t>& indices) {
+        return std::make_shared<IndexBuffer>(indices);
     }
+    static std::shared_ptr<IndexBuffer> Create(const uint32_t* indices, const size_t count) {
+        return std::make_shared<IndexBuffer>(indices, count);
+    }
+
+    inline GLuint GetID() const { return id; }
 };
 
 class VertexArray
 {
 private:
-    GLuint id;
-    mutable std::shared_ptr<VertexBuffer> vbo;
+    mutable GLuint id;
+    mutable std::vector<std::shared_ptr<VertexBuffer>> vbo;
     mutable std::shared_ptr<IndexBuffer> ibo;
-    
-    bool has_ibo;
-    bool has_vbo;
 public:
-    VertexArray(std::initializer_list<Vertex> _vertices, bool batch = false)
-        : has_ibo(true), has_vbo(false)
-    {
-        glCall(glGenVertexArrays(1, &id));
-        Bind();
-
-        vbo = std::make_shared<VertexBuffer>(_vertices, batch);
-
-        Unbind();
-    }
-    VertexArray(std::initializer_list<Vertex> _vertices, std::initializer_list<uint32_t> _indices, bool batch = false)
-        : has_ibo(true), has_vbo(true)
-    {
-        glCall(glGenVertexArrays(1, &id));
-        Bind();
-
-        vbo = std::make_shared<VertexBuffer>(_vertices, batch);
-        ibo = std::make_shared<IndexBuffer>(_indices, batch);
-
-        Unbind();
-    }
-    VertexArray()
-    {
-        glCall(glGenVertexArrays(1, &id));
-    }
+    VertexArray();
+    VertexArray(std::initializer_list<Vertex> _vertices);
+    VertexArray(std::initializer_list<Vertex> _vertices, const std::vector<uint32_t>& _indices);
+    VertexArray(const std::vector<Vertex>& _vertices);
+    VertexArray(const std::vector<Vertex>& _vertices, const std::vector<uint32_t>& _indices);
+    VertexArray(const Vertex* _vertices, const size_t count);
+    VertexArray(const Vertex* _vertices, const size_t vertices_count, const uint32_t *_indices, const size_t indices_count);
     VertexArray(const VertexArray &) = delete;
     VertexArray(VertexArray &&) = default;
-    ~VertexArray()
-    {
-        Unbind();
-        glCall(glDeleteVertexArrays(1, &id));
-    }
+    ~VertexArray();
 
     inline void Bind() const
     { glCall(glBindVertexArray(id)); }
     inline void Unbind() const
     { glCall(glBindVertexArray(0)); }
-    inline void BindVBO() const
-    { vbo->Bind(); }
-    inline void UnbindVBO() const
-    { vbo->Unbind(); }
     inline void BindIBO() const
     { ibo->Bind(); }
     inline void UnbindIBO() const
     { ibo->Unbind(); }
-    inline bool HasVBO() const
-    { return has_vbo; }
-    inline bool HasIBO() const
-    { return has_ibo; }
-    inline std::shared_ptr<VertexBuffer>& GetVBO() const { return vbo; }
+
+    void DrawVBO(GLenum mode = GL_TRIANGLES, GLint first = 0, GLsizei count = 0) const;
+    void DrawIBO(GLenum mode = GL_TRIANGLES) const;
+
+    inline void SwapIBO(const std::shared_ptr<IndexBuffer>& _ibo)
+    { ibo = _ibo; }
+
+    inline void PushVBO(const Vertex* vertices, const size_t count)
+    { vbo.emplace_back(std::make_shared<VertexBuffer>(vertices, count)); }
+    inline void PushVBO(const std::vector<Vertex>& vertices)
+    { vbo.emplace_back(std::make_shared<VertexBuffer>(vertices)); }
+    inline void PushVBO(std::initializer_list<Vertex> vertices)
+    { vbo.emplace_back(std::make_shared<VertexBuffer>(vertices)); }
+    inline void PushVBO(const std::shared_ptr<VertexBuffer>& vb)
+    { vbo.emplace_back(vb); }
+    inline void PopVBO()
+    { vbo.pop_back(); }
+    inline void EraseVBO(std::vector<std::shared_ptr<VertexBuffer>>::iterator it) {
+        vbo.erase(it);
+    }
+    
+    inline std::vector<std::shared_ptr<VertexBuffer>>& GetVBO() const { return vbo; }
+    inline std::shared_ptr<VertexBuffer>& front_vbo() const { return vbo.front(); }
+    inline std::shared_ptr<VertexBuffer>& back_vbo() const { return vbo.back(); }
+
+    inline std::vector<std::shared_ptr<VertexBuffer>>::iterator begin_vbo() { return vbo.begin(); }
+    inline std::vector<std::shared_ptr<VertexBuffer>>::iterator end_vbo() { return vbo.end(); }
+    inline std::vector<std::shared_ptr<VertexBuffer>>::const_iterator begin_vbo() const { return vbo.begin(); }
+    inline std::vector<std::shared_ptr<VertexBuffer>>::const_iterator end_vbo() const { return vbo.end(); }
+    inline size_t numvbo() const { return vbo.size(); }
+
     inline std::shared_ptr<IndexBuffer>& GetIBO() const { return ibo; }
+    inline GLuint &GetID() const { return id; }
+
+    static inline std::shared_ptr<VertexArray> Create(std::initializer_list<Vertex> vertices) {
+        return std::make_shared<VertexArray>(std::initializer_list<Vertex>(vertices));
+    }
+    static inline std::shared_ptr<VertexArray> Create(std::initializer_list<Vertex> vertices, const std::vector<uint32_t>& indices) {
+        return std::make_shared<VertexArray>(std::initializer_list<Vertex>(vertices), indices);
+    }
+    static inline std::shared_ptr<VertexArray> Create(const std::vector<Vertex>& vertices) {
+        return std::make_shared<VertexArray>(vertices);
+    }
+    static inline std::shared_ptr<VertexArray> Create(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices) {
+        return std::make_shared<VertexArray>(vertices, indices);
+    }
+    static inline std::shared_ptr<VertexArray> Create(const Vertex* vertices, const size_t count) {
+        return std::make_shared<VertexArray>(vertices, count);
+    }
+    static inline std::shared_ptr<VertexArray> Create(void) {
+        return std::make_shared<VertexArray>();
+    }
 };
 
+
+class Texture
+{
+private:
+    GLuint id;
+    int width, height;
+    int n;
+    uint8_t* buffer;
+public:
+    Texture(const std::string& filepath);
+    ~Texture();
+
+    inline void Bind(uint8_t slot = 0) const {
+        glCall(glActiveTexture(GL_TEXTURE0+slot));
+        glCall(glBindTexture(GL_TEXTURE_2D, id));
+    }
+    inline void Unbind() const
+    { glCall(glBindTexture(GL_TEXTURE_2D, 0)); }
+};
+
+// interface with the vao's shader
+#define CAMERA_RENDER_MVP 0
+#define CAMERA_RENDER_VPM 1
 class Camera
 {
 private:
@@ -411,47 +437,140 @@ private:
     mutable float m_Rotation = 0.0f;
     mutable float m_ZoomLevel = 1.0f;
     float m_AspectRatio;
+    float m_CameraRotationSpeed = 0.20f;
+    float m_CameraSpeed = 0.25f;
+
 
     // only reason why it isn't a singleton is because MAYBE co-op, MAYBE...
 public:
-    Camera(float left, float right, float bottom, float top, float zFar, float zNear);
+    Camera(float left, float right, float bottom, float top);
     Camera(const Camera &) = delete;
     Camera(Camera &&) = default;
     ~Camera() = default;
 
     inline glm::mat4& GetProjection() const { return m_ProjectionMatrix; }
-    inline glm::mat4& GetViewMatix() const { return m_ViewMatrix; }
+    inline glm::mat4& GetViewMatrix() const { return m_ViewMatrix; }
     inline glm::mat4& GetVPM() const { return m_ViewProjectionMatrix; }
     inline glm::vec3& GetPos() const { return m_CameraPos; }
     inline float& GetRotation() const { return m_Rotation; }
+    inline float GetRotationSpeed() const { return m_CameraRotationSpeed; }
+    inline float GetSpeed() const { return m_CameraSpeed; }
     inline glm::mat4& CalcMVP(const glm::vec3& translation) const
     {
-        glm::mat4 model = glm::translate(glm::mat4(1.0f), translation);
-        static glm::mat4 mvp = m_ProjectionMatrix * m_ViewMatrix * model;
+        glm::mat4 model = glm::translate(m_ViewProjectionMatrix, translation);
+        static glm::mat4 mvp = m_ProjectionMatrix * m_ViewProjectionMatrix * model;
         return mvp;
+    }
+    inline glm::mat4 CalcVPM() const { return m_ProjectionMatrix * m_ViewMatrix; }
+
+    inline void MoveUp() {
+        m_CameraPos.x += -sin(glm::radians(m_Rotation)) * m_CameraSpeed;
+        m_CameraPos.y += cos(glm::radians(m_Rotation)) * m_CameraSpeed;
+    }
+    inline void MoveDown() {
+        m_CameraPos.x -= -sin(glm::radians(m_Rotation)) * m_CameraSpeed;
+        m_CameraPos.y -= cos(glm::radians(m_Rotation)) * m_CameraSpeed;
+    }
+    inline void MoveLeft() {
+        m_CameraPos.x -= cos(glm::radians(m_Rotation)) * m_CameraSpeed;
+        m_CameraPos.y -= sin(glm::radians(m_Rotation)) * m_CameraSpeed;
+    }
+    inline void MoveRight() {
+        m_CameraPos.x += cos(glm::radians(m_Rotation)) * m_CameraSpeed;
+        m_CameraPos.y += sin(glm::radians(m_Rotation)) * m_CameraSpeed;
     }
 
     void CalculateViewMatrix();
 };
 
+class Renderer;
+
+extern std::unique_ptr<Renderer> renderer;
+
 class Renderer
 {
 private:
-    std::vector<std::shared_ptr<VertexArray>> vao;
-    std::vector<std::shared_ptr<Shader>> shaders;    
+    mutable std::vector<std::shared_ptr<VertexArray>> vertexarrays;
+    mutable std::vector<std::shared_ptr<Shader>> shaders;
+
+    mutable std::unordered_map<GLuint, std::shared_ptr<IndexBuffer>> bound_ibo;
+    mutable std::unordered_map<GLuint, std::shared_ptr<Shader>> bound_shaders;
+    mutable std::unordered_map<GLuint, std::shared_ptr<VertexArray>> bound_vao;
+    mutable std::unordered_map<GLuint, std::shared_ptr<VertexBuffer>> bound_vbo;
 public:
     SDL_Window* window;
     SDL_GLContext context;
 public:
     void AllocBuffers(const std::vector<Vertex>& _vertices);
-    void Draw(const Shader& shader, const VertexArray& va) const;
 
-    static void LoadShader(const std::string& filepath);
+    static void DrawSquare();
+    static void Submit();
+    static void Flush();
+    static void BeginScene();
+    static void EndScene();
+    static void StartBatch();
+    static void NextBatch();
+    static void Draw();
+    static void Submit(const std::vector<Vertex>& vertices);
+    static void Submit(const Vertex* vertices, const size_t count);
+
+    static inline std::vector<std::shared_ptr<Shader>>& GetShaders(void)
+    { return renderer->shaders; }
+    static inline std::vector<std::shared_ptr<VertexArray>>& GetVertexArrays(void)
+    { return renderer->vertexarrays; }
+    static inline std::shared_ptr<Shader> CreateShader(const std::string& filepath) {
+        return renderer->shaders.emplace_back(std::make_shared<Shader>(filepath));
+    }
+    static inline std::shared_ptr<VertexArray> CreateVertexArray(std::initializer_list<Vertex> vertices) {
+        return renderer->vertexarrays.emplace_back(std::make_shared<VertexArray>(vertices));
+    }
+    static inline std::shared_ptr<VertexArray> CreateVertexArray(const Vertex* vertices, const size_t count) {
+        return renderer->vertexarrays.emplace_back(std::make_shared<VertexArray>(vertices, count));
+    }
+
+    static inline void Bind(const std::shared_ptr<VertexArray>& vao) {
+        if (renderer->bound_vao.find(vao->GetID()) != renderer->bound_vao.end())
+            return;
+        
+        renderer->bound_vao[vao->GetID()] = vao;
+        vao->Bind();
+    }
+    static inline void Bind(const std::shared_ptr<VertexBuffer>& vbo) {
+        if (renderer->bound_vbo.find(vbo->GetID()) != renderer->bound_vbo.end())
+            return;
+        
+        renderer->bound_vbo[vbo->GetID()] = vbo;
+        vbo->Bind();
+    }
+    static inline void Bind(const std::shared_ptr<IndexBuffer>& ibo) {
+        if (renderer->bound_ibo.find(ibo->GetID()) != renderer->bound_ibo.end())
+            return;
+        
+        renderer->bound_ibo[ibo->GetID()] = ibo;
+        ibo->Bind();
+    }
+    static inline void Bind(const std::shared_ptr<Shader>& shader) {
+        if (renderer->bound_shaders.find(shader->GetID()) != renderer->bound_shaders.end())
+            return;
+        
+        renderer->bound_shaders[shader->GetID()] = shader;
+        shader->Bind();
+    }
 };
 
 extern std::vector<model_t> modelinfo;
-extern std::unique_ptr<Renderer> renderer;
 
-void I_CacheModels();
+void glDrawBatches(GLenum mode, GLsizei count, const Vertex* vertices);
+
+#ifdef _NOMAD_DEBUG
+
+const char *DBG_GL_SourceToStr(GLenum source);
+const char *DBG_GL_TypeToStr(GLenum type);
+const char *DBG_GL_SeverityToStr(GLenum severity);
+void DBG_GL_ErrorCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const GLvoid *userParam);
+
+#endif
+
+void R_InitScene();
 
 #endif

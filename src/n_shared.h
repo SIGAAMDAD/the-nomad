@@ -7,9 +7,6 @@
 #define M_PI
 #endif
 
-#define RAD2DEG(x)
-#define DEG2RAD(x)
-
 #ifndef _NOMAD_VERSION
 #   error There must be a _NOMAD_VERSION pre-defined!
 #endif
@@ -75,23 +72,20 @@ typedef ALIGN_32 uint32_t uint_align32_t;
 typedef ALIGN_32 uint64_t uint_align64_t;
 
 typedef int_fast32_t point_t;
-typedef struct vec3_s
-{
-    float x, y, z;
-} __attribute__((packed)) vec3_t;
-typedef struct vec2_s
-{
-    float x, y;
-} __attribute__((packed)) vec2_t;
-#if 0
+
 typedef float vec_t;
 typedef vec_t vec2_t[2];
 typedef vec_t vec3_t[3];
 typedef vec_t vec4_t[4];
-#endif
+typedef vec_t mat2_t[2][2];
+typedef vec_t mat3_t[3][3];
+typedef vec_t mat4_t[4][4];
+
 typedef uint_fast8_t byte;
 typedef byte color_t[4];
 typedef float colorf_t[4];
+
+#define BIND_EVENT_FUNC(x) [this](auto&&... args) -> decltype(auto) { return this->x(std::foward<decltype>(args)...); }
 
 enum : byte
 {
@@ -106,7 +100,7 @@ enum : byte
 };
 
 
-void __attribute__((__noreturn__)) N_Error(const char *err, ...);
+void __attribute__((__noreturn__)) __attribute__((format(printf,1,2))) N_Error(const char *err, ...);
 
 class filestream
 {
@@ -605,6 +599,43 @@ inline float Q_root(T x)
 	r_sqrt = r_sqrt * (threehalfs - (x_half * r_sqrt * r_sqrt)); // 2nd Newton iteration
 
 	return x * r_sqrt; // x * (1/sqrt(x)) := sqrt(x)
+}
+
+// yep
+inline float Q_rsqrt(float number)
+{
+    long x;
+    float x2, y;
+    const float threehalfs = 1.5F;
+
+    x2 = number * 0.5F;
+    x = *(long *)&number;
+    x = 0x5f3759df - (x >> 1);
+    y = *(float *)&x;
+    y = y * ( threehalfs - ( x2 * y * y ) );
+//  y = y * ( threehalfs - ( x2 * y * y ) );
+
+    return y;
+}
+
+inline float disBetweenOBJ(const glm::vec3& src, const glm::vec3& tar)
+{
+	if (src.y == tar.y) // horizontal
+		return src.x > tar.x ? (src.x - tar.x) : (tar.x - src.x);
+	else if (src.x == tar.x) // vertical
+		return src.y > tar.y ? (src.y - tar.y) : (tar.y - src.y);
+	else // diagonal
+		return Q_root((pow((src.x - tar.x), 2) + pow((src.y - tar.y), 2)));
+}
+
+inline float disBetweenOBJ(const glm::vec2& src, const glm::vec2& tar)
+{
+	if (src.y == tar.y) // horizontal
+		return src.x > tar.x ? (src.x - tar.x) : (tar.x - src.x);
+	else if (src.x == tar.x) // vertical
+		return src.y > tar.y ? (src.y - tar.y) : (tar.y - src.y);
+	else // diagonal
+		return Q_root((pow((src.x - tar.x), 2) + pow((src.y - tar.y), 2)));
 }
 
 inline int32_t disBetweenOBJ(const coord_t& src, const coord_t& tar)

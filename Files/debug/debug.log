@@ -32,3 +32,17 @@
 
 [info]: done parsing scf file
 [info]: running main gameplay loop
+[trace]: <---- OpenGL Debug Log (TRACE) ---->
+    source: API
+    message: Buffer detailed info: Buffer object 4 (bound to GL_ARRAY_BUFFER_ARB, usage hint is GL_STATIC_DRAW) will use VIDEO memory as the source for buffer object operations.
+    type: Other
+    id: 131185
+    severity: Notification
+
+[trace]: <---- OpenGL Debug Log (TRACE) ---->
+    source: API
+    message: Buffer detailed info: Buffer object 5 (bound to GL_ELEMENT_ARRAY_BUFFER_ARB, usage hint is GL_DYNAMIC_DRAW) will use VIDEO memory as the source for buffer object operations.
+    type: Other
+    id: 131185
+    severity: Notification
+

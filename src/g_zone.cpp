@@ -458,17 +458,15 @@ extern "C" void Z_ClearZone()
 // from within the zone without calling malloc
 extern "C" void* Z_Malloc(uint32_t size, uint8_t tag, void* user)
 {
+#ifdef ZONEIDCHECK
+	if (tag >= TAG_PURGELEVEL && !user)
+		N_Error("Z_Malloc: an owner is required for purgable blocks");
+#endif
+
 	if (!size) {
 		LOG_WARN("size of 0 given to Z_Malloc with a tag of {}", Z_TagToStr(tag));
 		return user ? user = NULL : NULL;
 	}
-	if (tag >= NUMTAGS) {
-		LOG_WARN("tag given to Z_Malloc was greater than or equal to NUMTAGS, assigning TAG_STATIC");
-		tag = TAG_STATIC;
-	}
-
-	active_memory += size;
-	free_memory -= size;
 	
 	memblock_t* rover;
 	memblock_t* newblock;
@@ -570,8 +568,6 @@ extern "C" void* Z_Malloc(uint32_t size, uint8_t tag, void* user)
 
 	if (indexer > 60)
 		Z_PrintStats();
-	if (total_blocks > 80)
-		Z_FreeTags(TAG_PURGELEVEL, TAG_SCOPE);
 #ifdef ZONEIDCHECK
 	base->id = ZONEID;
 #endif
@@ -585,10 +581,7 @@ extern "C" void* Z_Realloc(void *ptr, uint32_t nsize, void *user, uint8_t tag)
 	if (ptr) {
 		memblock_t* block = (memblock_t *)((byte *)ptr - sizeof(memblock_t));
 		size_t size = nsize <= block->size ? nsize : block->size;
-		if (size <= 64)
-			memcpy(p, ptr, size);
-		else
-			memmove(p, ptr, size);
+		memmove(p, ptr, size);
 		
 		Z_Free(ptr);
 		if (user)
