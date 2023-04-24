@@ -122,10 +122,10 @@ void mainLoop()
         Vertex(glm::vec3( 1.5f,  0.5f, 0.0f), glm::vec4(1.0f, 2.0f, 1.0f, 0.0f)), // 6
         Vertex(glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 1.0f, 0.0f)), // 7
 
-        Vertex(glm::vec3( 0.5f, -0.5f, 0.0f), glm::vec4(0.0f, 1.0f, 0.0f, 0.0f)), // 8
-        Vertex(glm::vec3( 1.5f, -0.5f, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 0.0f)), // 9
-        Vertex(glm::vec3( 1.5f,  0.5f, 0.0f), glm::vec4(0.0f, 2.0f, 1.0f, 0.0f)), // 10
-        Vertex(glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec4(0.0f, 0.0f, 1.0f, 0.0f)), // 11
+        Vertex(glm::vec3( 0.5f, -0.5f, 0.0f), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f)), // 8
+        Vertex(glm::vec3( 1.5f, -0.5f, 0.0f), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f)), // 9
+        Vertex(glm::vec3( 1.5f,  0.5f, 0.0f), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f)), // 10
+        Vertex(glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f)), // 11
     };
     uint32_t indices[] = {
         4, 5, 6,  4,  6,  7,
