@@ -17,7 +17,7 @@
     launch::bottomless_clip    = false
     launch::devmode            = false
   renderer::
-    renderer::api              = 0
+    renderer::api              = 1
     renderer::drawfps          = true
     renderer::ticrate          = 35
     renderer::fullscreen       = false
@@ -34,15 +34,23 @@
 [info]: running main gameplay loop
 [trace]: <---- OpenGL Debug Log (TRACE) ---->
     source: API
-    message: Buffer detailed info: Buffer object 4 (bound to GL_ARRAY_BUFFER_ARB, usage hint is GL_STATIC_DRAW) will use VIDEO memory as the source for buffer object operations.
+    message: Buffer detailed info: Buffer object 2 (bound to GL_ARRAY_BUFFER_ARB, usage hint is GL_STATIC_DRAW) will use VIDEO memory as the source for buffer object operations.
     type: Other
     id: 131185
     severity: Notification
 
+[info]: successfully compiled shader shader.glsl
 [trace]: <---- OpenGL Debug Log (TRACE) ---->
     source: API
-    message: Buffer detailed info: Buffer object 5 (bound to GL_ELEMENT_ARRAY_BUFFER_ARB, usage hint is GL_DYNAMIC_DRAW) will use VIDEO memory as the source for buffer object operations.
+    message: Buffer detailed info: Buffer object 1 (bound to GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING_ARB (0), GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING_ARB (1), and GL_ARRAY_BUFFER_ARB, usage hint is GL_DYNAMIC_DRAW) will use VIDEO memory as the source for buffer object operations.
     type: Other
     id: 131185
     severity: Notification
+
+[warning]: <---- OpenGL Debug Log (WARN) ---->
+    source: API
+    message: Program/shader state performance warning: Vertex shader in program 1 is being recompiled based on GL state.
+    type: Performance
+    id: 131218
+    severity: Medium
 

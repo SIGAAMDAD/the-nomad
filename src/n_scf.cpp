@@ -90,7 +90,7 @@ void G_LoadSCF()
         if (api == "R_SDL2")
             scf::renderer::api = R_SDL2;
         else if (api == "R_OPENGL")
-            N_Error("G_LoadSCF: OpenGL renderering isn't yet available");
+            scf::renderer::api = R_OPENGL;
         else if (api == "R_VULKAN")
             N_Error("G_LoadSCF: Vulkan renderering isn't yet available");
         else

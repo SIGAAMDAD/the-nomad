@@ -73,7 +73,7 @@
 // 29 without id, 33 with id
 typedef struct memblock_s
 {
-#if defined(_NOMAD_DEBUG) || (defined(ZONEDEBUG) && defined(ZONEIDCHECK))
+#ifdef ZONEIDCHECK
 	unsigned id;
 #endif
 	uint8_t tag;
@@ -82,6 +82,11 @@ typedef struct memblock_s
 	
 	struct memblock_s* next;
 	struct memblock_s* prev;
+#ifdef ZONEDEBUG
+	const char *file;
+	const char *func;
+	unsigned line;
+#endif
 } memblock_t;
 
 typedef struct

@@ -43,7 +43,7 @@ enum {
 #endif
 
 extern "C" void *Z_Malloc(uint32_t size, uint8_t tag, void *user);
-extern "C" void *Z_Realloc(void *ptr, uint32_t nsize, void *user, uint8_t tag = TAG_STATIC);
+extern "C" void *Z_Realloc(void *ptr, uint32_t nsize, void *user, uint8_t tag);
 extern "C" void *Z_Calloc(void *user, uint32_t elemsize, uint32_t nelem, uint8_t tag);
 extern "C" void Z_CheckHeap();
 extern "C" void Z_FileDumpHeap();
@@ -58,6 +58,12 @@ extern "C" void Z_ChangeTag(void *ptr, uint8_t tag);
 extern "C" void Z_ScanForBlock(void *start, void *end);
 extern "C" void Z_Init();
 extern "C" void Z_Free(void *ptr);
+
+#if 0
+#define Z_Malloc(size, tag, user)            (Z_Malloc)   (size,tag,user,       __FILE__,FUNC_SIG,__LINE__)
+#define Z_Calloc(user, elemsize, nelem, tag) (Z_Calloc)   (user,elemsize,nelem, __FILE__,FUNC_SIG,__LINE__)
+#define Z_Realloc(ptr, nsize, user)          (Z_Realloc)  (ptr,nsize,user,      __FILE__,FUNC_SIG,__LINE__)
+#endif
 
 #ifdef _WIN32
 #define PROT_READ     0x1

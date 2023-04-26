@@ -1,312 +1,362 @@
 #include "n_shared.h"
-#include "g_game.h"
+#include "n_scf.h"
+#include "m_renderer.h"
 
-VertexBuffer::VertexBuffer(const size_t reserve, const std::shared_ptr<VertexArray>& vao)
-    : vertices(reserve)
+static GLenum ShaderTypeFromString(const std::string& type)
 {
-    glCall(glGenBuffers(1, &id));
-    Bind();
-
-    glCall(glBufferData(GL_ARRAY_BUFFER, reserve * sizeof(Vertex), NULL, GL_DYNAMIC_DRAW));
-
-    glCall(glEnableVertexAttribArray(0));
-    glCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, pos)));
-
-    glCall(glEnableVertexAttribArray(1));
-    glCall(glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, color)));
+    if (type == "vertex")
+        return GL_VERTEX_SHADER;
+    else if (type == "fragment")
+        return GL_FRAGMENT_SHADER;
+    return 0;
 }
 
-VertexBuffer::VertexBuffer(const std::vector<Vertex>& _vertices, const VertexArray* vao)
-    : vertices(_vertices)
+std::unordered_map<GLenum, std::string> ShaderPreProcess(const std::string& source)
 {
-    glCall(glGenBuffers(1, &id));
-    Bind();
+	std::unordered_map<GLenum, std::string> shaderSources;
 
-    glCall(glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(), vertices.data(), GL_DYNAMIC_DRAW));
+	const char* typeToken = "#type";
+	size_t typeTokenLength = strlen(typeToken);
+	size_t pos = source.find(typeToken, 0); //Start of shader type declaration line
+	while (pos != std::string::npos) {
+		size_t eol = source.find_first_of("\r\n", pos); //End of shader type declaration line
+		if (eol == std::string::npos)
+            N_Error("ShaderPreProcess: syntax error");
+		
+        size_t begin = pos + typeTokenLength + 1; //Start of shader type name (after "#type " keyword)
+		std::string type = source.substr(begin, eol - begin);
+		if (!ShaderTypeFromString(type))
+            N_Error("ShaderPreProcess: invalid shader type specified");
 
-    glCall(glEnableVertexAttribArray(0));
-    glCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, pos)));
-
-    glCall(glEnableVertexAttribArray(1));
-    glCall(glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, color)));
+		size_t nextLinePos = source.find_first_not_of("\r\n", eol); //Start of shader code after shader type declaration line
+		if (nextLinePos == std::string::npos)
+            N_Error("ShaderPreProcess: syntax error");
+        
+		pos = source.find(typeToken, nextLinePos); //Start of next shader type declaration line
+		shaderSources[ShaderTypeFromString(type)] = (pos == std::string::npos)
+            ? source.substr(nextLinePos) : source.substr(nextLinePos, pos - nextLinePos);
+	}
+	
+    return shaderSources;
 }
 
-VertexBuffer::VertexBuffer(const Vertex* _vertices, const size_t count, const VertexArray* vao)
-    : vertices(count)
+GLuint GL_Shader::Compile(const std::string& src, GLenum type)
 {
-    glCall(glGenBuffers(1, &id));
-    Bind();
-
-    memmove(vertices.data(), _vertices, count * sizeof(Vertex));
-    glCall(glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * count, _vertices, GL_DYNAMIC_DRAW));
-
-    glCall(glEnableVertexAttribArray(0));
-    glCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, pos)));
-
-    glCall(glEnableVertexAttribArray(1));
-    glCall(glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, color)));
-}
-
-VertexBuffer::VertexBuffer(const Vertex* _vertices, const size_t count, const std::shared_ptr<VertexArray>& vao)
-    : vertices(count)
-{
-    glCall(glGenBuffers(1, &id));
-    Bind();
-
-    memmove(vertices.data(), _vertices, sizeof(Vertex) * count);
-    glCall(glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(), _vertices, GL_DYNAMIC_DRAW));
-    
-    glCall(glEnableVertexAttribArray(0));
-    glCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, pos)));
-
-    glCall(glEnableVertexAttribArray(1));
-    glCall(glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, color)));
-}
-
-VertexBuffer::VertexBuffer(const std::vector<Vertex>& _vertices)
-    : vertices(_vertices)
-{
-    glCall(glGenBuffers(1, &id));
-    Bind();
-
-    glCall(glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(), vertices.data(), GL_DYNAMIC_DRAW));
-
-    glCall(glEnableVertexArrayAttrib(id, 0));
-    glCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, pos)));
-
-    glCall(glEnableVertexArrayAttrib(id, 1));
-    glCall(glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, color)));
-}
-
-VertexBuffer::VertexBuffer(const Vertex* _vertices, const size_t count)
-    : vertices(count)
-{
-    glCall(glGenBuffers(1, &id));
-    Bind();
-    
-    memmove(vertices.data(), _vertices, sizeof(Vertex) * count);
-    glCall(glBufferData(GL_ARRAY_BUFFER, sizeof(Vertex) * vertices.size(), vertices.data(), GL_DYNAMIC_DRAW));
-
-    glCall(glEnableVertexArrayAttrib(id, 0));
-    glCall(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, pos)));
-
-    glCall(glEnableVertexArrayAttrib(id, 1));
-    glCall(glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, color)));
-}
-
-VertexBuffer::~VertexBuffer()
-{
-    Unbind();
-    glCall(glDeleteBuffers(1, &id));
-}
-
-void VertexBuffer::SwapBuffer(const Vertex* _vertices, const size_t offset, const size_t count)
-{
-    Bind();
-    glCall(glBufferSubData(GL_ARRAY_BUFFER, offset, count * sizeof(Vertex), _vertices));
-}
-
-void VertexBuffer::SwapBuffer(const std::vector<Vertex>& _vertices, bool newbuffer)
-{
-    if (_vertices.size() != vertices.size())
-        vertices.resize(_vertices.size());
-    
-    memmove(vertices.data(), _vertices.data(), sizeof(Vertex) * _vertices.size());
-    Bind();
-    if (newbuffer) {
-        glCall(glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_DYNAMIC_DRAW));
+    GLuint program = glCreateShader(type);
+    const char* buffer = src.c_str();
+    glShaderSource(program, 1, &buffer, NULL);
+    glCompileShader(program);
+    int success;
+    glGetShaderiv(program, GL_COMPILE_STATUS, &success);
+    if (success == GL_FALSE) {
+        GLint length = 0;
+        glGetShaderiv(program, GL_INFO_LOG_LENGTH, &length);
+        char *str = (char *)alloca(length);
+        glGetShaderInfoLog(program, length, (GLsizei *)&length, str);
+        glDeleteShader(program);
+        glDeleteShader(id);
+        N_Error("GL_Shader::Compile: failed to compile shader of type %s, error message: %s",
+            (type == GL_VERTEX_SHADER ? "vertex" : type == GL_FRAGMENT_SHADER ? "fragement" : "unknown shader type"), str);
     }
-    else {
-        glCall(glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(Vertex), vertices.data()));
-    }
+    return program;
 }
 
-void VertexBuffer::SwapBuffer(const Vertex* _vertices, const size_t count, bool newbuffer)
+GLuint GL_Shader::CreateProgram(const std::string& filepath)
 {
-    if (count != vertices.size())
-        vertices.resize(count);
-    
-    memmove(vertices.data(), _vertices, sizeof(Vertex) * count);
-    Bind();
-    if (newbuffer) {
-        glCall(glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_DYNAMIC_DRAW));
+    GLuint program = glCreateProgram();
+
+    std::cout << "vertex source: \n" << GLSL_Src[GL_VERTEX_SHADER] << std::endl;
+    std::cout << "fragment source: \n" << GLSL_Src[GL_FRAGMENT_SHADER] << std::endl; 
+    GLuint vertid = Compile(GLSL_Src[GL_VERTEX_SHADER], GL_VERTEX_SHADER);
+    GLuint fragid = Compile(GLSL_Src[GL_FRAGMENT_SHADER], GL_FRAGMENT_SHADER);
+
+    glAttachShader(program, vertid);
+    glAttachShader(program, fragid);
+    glLinkProgram(program);
+    glValidateProgram(program);
+    int success = 0;
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
+    if (success == GL_FALSE) {
+        GLint length = 0;
+        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &length);
+        char *str = (char *)alloca(length);
+        glGetProgramInfoLog(program, length, (GLsizei *)&length, str);
+        glDeleteShader(vertid);
+        glDeleteShader(fragid);
+        glDeleteProgram(program);
+        N_Error("GL_Shader::Compile: failed to compile and/or link shader program file %s, error message: %s",
+            filepath.c_str(), str);
     }
-    else {
-        glCall(glBufferSubData(GL_ARRAY_BUFFER, 0, vertices.size() * sizeof(Vertex), vertices.data()));
-    }
+    glDeleteShader(vertid);
+    glDeleteShader(fragid);
+    return program;
 }
 
-Shader::Shader(const std::string& filepath)
+void GL_Shader::Bind() const
+{ glUseProgram(id); }
+void GL_Shader::Unbind() const
+{ glUseProgram(0); }
+
+GL_Shader::GL_Shader(const std::string& filepath)
 {
-    std::ifstream file(filepath, std::ios::in);
+    std::ifstream file(filepath, std::ios::in | std::ios::binary);
     if (!file)
-        N_Error("Shader::Shader: failed to open shader file %s", filepath.c_str());
+        N_Error("GL_Shader::GL_Shader: failed to open shader file %s", filepath.c_str());
     
     assert(file.is_open());
-    std::string line;
-    int index = 0;
-    std::stringstream stream[3];
-    while (std::getline(file, line)) {
-        if (line == "#shader vertex")
-            index = 0;
-        else if (line == "#shader fragment")
-            index = 1;
-        else if (line == "#shader geometry")
-            index = 2;
-        else
-            stream[index] << line << '\n';
-    }
-    const std::string vertsrc = stream[0].str();
-    const std::string fragsrc = stream[1].str();
+    file.seekg(0L, std::ios::end);
+    size_t fsize = file.tellg();
+    std::string retn;
+    retn.resize(fsize);
+    file.seekg(0L, std::ios::beg);
+    file.read(&retn[0], fsize);
     file.close();
-    GLuint vertid = Compile(vertsrc, GL_VERTEX_SHADER);
-    GLuint fragid = Compile(fragsrc, GL_FRAGMENT_SHADER);
 
-    glCall(id = glCreateProgram());
-    glCall(glAttachShader(id, vertid));
-    glCall(glAttachShader(id, fragid));
-    glCall(glLinkProgram(id));
-    glCall(glValidateProgram(id));
-    glCall(glDeleteShader(vertid));
-    glCall(glDeleteShader(fragid));
-    glCall(glUseProgram(0));
+    GLSL_Src = ShaderPreProcess(retn);
+
+    id = CreateProgram(filepath);
+    LOG_INFO("successfully compiled shader {}", filepath);
 }
 
-Shader::~Shader()
+GL_Shader::~GL_Shader()
 {
-    Unbind();
-    glCall(glDeleteProgram(id));
+    glDeleteProgram(id);
 }
 
-IndexBuffer::IndexBuffer(const uint32_t* _indices, const size_t count)
-    : indices_count(count)
-{
-    glCall(glGenBuffers(1, &id));
-    Bind();
 
-    glCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(uint32_t), NULL, GL_DYNAMIC_DRAW));
+std::shared_ptr<VertexBuffer> VertexBuffer::Create(size_t reserve)
+{
+    switch (scf::renderer::api) {
+    case scf::R_OPENGL: return std::make_shared<GL_VertexBuffer>(reserve);
+    };
+
+    if (scf::renderer::api != scf::R_SDL2)
+        N_Error("VertexBuffer::Create: unknown rendering api");
+    else
+        N_Error("VertexBuffer::Create: SDL2 doesn't support Vertex Buffer Objects");
+    
+    return NULL;
 }
 
-IndexBuffer::IndexBuffer(const std::vector<uint32_t>& _indices)
-    : indices_count(_indices.size())
+std::shared_ptr<VertexBuffer> VertexBuffer::Create(float *vertices, size_t size)
 {
-    glCall(glGenBuffers(1, &id));
-    Bind();
+    switch (scf::renderer::api) {
+    case scf::R_OPENGL: return std::make_shared<GL_VertexBuffer>(vertices, size);
+    };
 
-    glCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, _indices.size() * sizeof(uint32_t), _indices.data(), GL_STATIC_DRAW));
+    if (scf::renderer::api != scf::R_SDL2)
+        N_Error("VertexBuffer::Create: unknown rendering api");
+    else
+        N_Error("VertexBuffer::Create: SDL2 doesn't support Vertex Buffer Objects");
+    
+    return NULL;
 }
 
-IndexBuffer::IndexBuffer(const size_t count)
-    : indices_count(count)
+std::shared_ptr<IndexBuffer> IndexBuffer::Create(uint32_t* indices, size_t size)
 {
-    glCall(glGenBuffers(1, &id));
-    Bind();
+    switch (scf::renderer::api) {
+    case scf::R_OPENGL: return std::make_shared<GL_IndexBuffer>(indices, size);
+    };
 
-    glCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(uint32_t), NULL, GL_DYNAMIC_DRAW));
+    if (scf::renderer::api != scf::R_SDL2)
+        N_Error("IndexBuffer::Create: unknown rendering api");
+    else
+        N_Error("IndexBuffer::Create: SDL2 doesn't support Index Buffer Objects");
+    
+    return NULL;
 }
 
-IndexBuffer::~IndexBuffer()
+std::shared_ptr<VertexArray> VertexArray::Create()
 {
-    Unbind();
-    glCall(glDeleteBuffers(1, &id));
+    switch (scf::renderer::api) {
+    case scf::R_OPENGL: return std::make_shared<GL_VertexArray>();
+    };
+
+    if (scf::renderer::api != scf::R_SDL2)
+        N_Error("VertexArray::Create: unknown rendering api");
+    else
+        N_Error("VertexArray::Create: SDL2 doesn't support Vertex Array Objects");
+    
+    return NULL;
 }
 
-void IndexBuffer::SwapBuffer(const uint32_t* _indices, const size_t count, bool newbuffer)
+std::shared_ptr<Shader> Shader::Create(const std::string& filepath)
 {
-    indices_count = count;
-    Bind();
-    if (newbuffer) {
-        glCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, count * sizeof(uint32_t), _indices, GL_DYNAMIC_DRAW));
+	switch (scf::renderer::api) {
+	case scf::R_OPENGL:  return std::make_shared<GL_Shader>(filepath);
+	};
+    assert(false);
+    if (!false) {
+        N_Error("Shader::Create: unknown rendering api");
     }
-    else {
-        glCall(glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, count * sizeof(uint32_t), _indices));
+    
+	return NULL;
+}
+
+static GLenum ShaderDataTypeToGLBaseType(ShaderDataType type)
+{
+	switch (type) {
+	case ShaderDataType::Float:    return GL_FLOAT;
+	case ShaderDataType::Float2:   return GL_FLOAT;
+	case ShaderDataType::Float3:   return GL_FLOAT;
+	case ShaderDataType::Float4:   return GL_FLOAT;
+	case ShaderDataType::Mat3:     return GL_FLOAT;
+	case ShaderDataType::Mat4:     return GL_FLOAT;
+	case ShaderDataType::Int:      return GL_INT;
+	case ShaderDataType::Int2:     return GL_INT;
+	case ShaderDataType::Int3:     return GL_INT;
+	case ShaderDataType::Int4:     return GL_INT;
+	case ShaderDataType::Bool:     return GL_BOOL;
+	};
+    if (!false) {
+        N_Error("unknown ShaderDataType");
     }
+        
+	return 0;
 }
 
-void IndexBuffer::SwapBuffer(const std::vector<uint32_t>& _indices, bool newbuffer)
+GL_VertexArray::GL_VertexArray()
 {
-    indices_count = _indices.size();
-    Bind();
-    if (newbuffer) {
-        glCall(glBufferData(GL_ELEMENT_ARRAY_BUFFER, _indices.size() * sizeof(uint32_t), _indices.data(), GL_STATIC_DRAW));
-    }
-    else {
-        glCall(glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, _indices.size() * sizeof(uint32_t), _indices.data()));
-    }
+	glGenVertexArrays(1, &id);
 }
 
-VertexArray::VertexArray()
+GL_VertexArray::~GL_VertexArray()
 {
-    glCall(glGenVertexArrays(1, &id));
-}
-VertexArray::VertexArray(const std::vector<Vertex>& _vertices)
-{
-    glCall(glGenVertexArrays(1, &id));
-    Bind();
-
-    vbo.emplace_back(std::make_shared<VertexBuffer>(_vertices, this));
-}
-VertexArray::VertexArray(const Vertex* _vertices, const size_t count)
-{
-    glCall(glGenVertexArrays(1, &id));
-    Bind();
-
-    vbo.emplace_back(std::make_shared<VertexBuffer>(_vertices, count, this));
+	glDeleteVertexArrays(1, &id);
 }
 
-VertexArray::VertexArray(const std::vector<Vertex>& _vertices, const std::vector<uint32_t>& _indices)
+void GL_VertexArray::Bind() const
 {
-    glCall(glGenVertexArrays(1, &id));
-    Bind();
-
-    vbo.emplace_back(std::make_shared<VertexBuffer>(_vertices, this));
-    ibo = std::make_shared<IndexBuffer>(_indices);
-}
-VertexArray::VertexArray(const Vertex* _vertices, const size_t vertices_count, const uint32_t* _indices, const size_t indices_count)
-{
-    glCall(glGenVertexArrays(1, &id));
-    Bind();
-
-    vbo.emplace_back(std::make_shared<VertexBuffer>(_vertices, vertices_count, this));
-    ibo = std::make_shared<IndexBuffer>(_indices, indices_count);
+	glBindVertexArray(id);
 }
 
-VertexArray::~VertexArray()
+void GL_VertexArray::Unbind() const
 {
-    Unbind();
-    glCall(glDeleteVertexArrays(1, &id));
+	glBindVertexArray(0);
 }
 
-void VertexArray::DrawVBO(GLenum mode, GLint first, GLsizei count) const
+void GL_VertexArray::AddVertexBuffer(const std::shared_ptr<VertexBuffer>& vertexBuffer)
 {
-    for (const auto& i : vbo) {
-        i->Bind();
-        i->Draw(mode, first, count);
-        i->Unbind();
-    }
+//		HZ_CORE_ASSERT(vertexBuffer->GetLayout().GetElements().size(), "Vertex Buffer has no layout!");
+
+	glBindVertexArray(id);
+	vertexBuffer->Bind();
+
+	const auto& layout = vertexBuffer->GetLayout();
+	for (const auto& element : layout) {
+		switch (element.Type) {
+		case ShaderDataType::Float:
+		case ShaderDataType::Float2:
+		case ShaderDataType::Float3:
+		case ShaderDataType::Float4:
+		{
+			glEnableVertexAttribArray(vertexBufferIndex);
+			glVertexAttribPointer(vertexBufferIndex,
+				element.GetComponentCount(),
+				ShaderDataTypeToGLBaseType(element.Type),
+				element.Normalized ? GL_TRUE : GL_FALSE,
+				layout.GetStride(),
+				(const void*)element.Offset);
+			vertexBufferIndex++;
+			break;
+		}
+		case ShaderDataType::Int:
+		case ShaderDataType::Int2:
+		case ShaderDataType::Int3:
+		case ShaderDataType::Int4:
+		case ShaderDataType::Bool: {
+			glEnableVertexAttribArray(vertexBufferIndex);
+			glVertexAttribIPointer(vertexBufferIndex,
+				element.GetComponentCount(),
+				ShaderDataTypeToGLBaseType(element.Type),
+				layout.GetStride(),
+				(const void*)element.Offset);
+			vertexBufferIndex++;
+			break; }
+		case ShaderDataType::Mat3:
+		case ShaderDataType::Mat4: {
+			uint8_t count = element.GetComponentCount();
+			for (uint8_t i = 0; i < count; i++) {
+				glEnableVertexAttribArray(vertexBufferIndex);
+				glVertexAttribPointer(vertexBufferIndex,
+					count,
+					ShaderDataTypeToGLBaseType(element.Type),
+					element.Normalized ? GL_TRUE : GL_FALSE,
+					layout.GetStride(),
+					(const void*)(element.Offset + sizeof(float) * count * i));
+				glVertexAttribDivisor(vertexBufferIndex, 1);
+				vertexBufferIndex++;
+			}
+			break; }
+		default:
+			N_Error("unkown ShaderDataType");
+		};
+	}
+    vertexBuffers.push_back(vertexBuffer);
 }
-void VertexArray::DrawIBO(GLenum mode) const
+
+void GL_VertexArray::SetIndexBuffer(const std::shared_ptr<IndexBuffer>& _indexBuffer)
 {
-    ibo->Bind();
-    ibo->Draw(mode, ibo->numindices());
-    ibo->Unbind();
+	glBindVertexArray(id);
+
+	indexBuffer = _indexBuffer;
 }
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb/stb_image.h>
-#include <stb/stb_image_resize.h>
-
-Texture::Texture(const std::string& filepath)
+GL_VertexBuffer::GL_VertexBuffer(size_t reserve)
 {
-    glCall(glGenTextures(1, &id));
-    Bind();
+    glGenBuffers(1, &id);
+    glBindBuffer(GL_ARRAY_BUFFER, id);
+    glBufferData(GL_ARRAY_BUFFER, reserve, NULL, GL_DYNAMIC_DRAW);
+}
 
-//    buffer = (uint8_t *)stbi_load();
+GL_VertexBuffer::GL_VertexBuffer(float* vertices, size_t size)
+{
+    glGenBuffers(1, &id);
+    glBindBuffer(GL_ARRAY_BUFFER, id);
+    glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
+}
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
-//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapS);
-//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapT); // GL_CLAMP_TO_EDGE
-//	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filterMin);
-//    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filterMax);
-	glBindTexture(GL_TEXTURE_2D, 0);
+GL_VertexBuffer::~GL_VertexBuffer()
+{
+    glDeleteBuffers(1, &id);
+}
+
+void GL_VertexBuffer::Bind() const
+{
+    glBindBuffer(GL_ARRAY_BUFFER, id);
+}
+
+void GL_VertexBuffer::Unbind() const
+{
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void GL_VertexBuffer::SetData(const void *data, size_t size)
+{
+    glBindBuffer(GL_ARRAY_BUFFER, id);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, size, data);
+}
+
+GL_IndexBuffer::GL_IndexBuffer(uint32_t* indices, size_t count)
+    : NumIndices(count)
+{
+    glGenBuffers(1, &id);
+
+    glBindBuffer(GL_ARRAY_BUFFER, id);
+    glBufferData(GL_ARRAY_BUFFER, count * sizeof(uint32_t), indices, GL_STATIC_DRAW);
+}
+
+GL_IndexBuffer::~GL_IndexBuffer()
+{
+    glDeleteBuffers(1, &id);
+}
+
+void GL_IndexBuffer::Bind() const
+{
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, id);
+}
+
+void GL_IndexBuffer::Unbind() const
+{ 
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }

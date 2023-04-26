@@ -111,43 +111,8 @@ void done()
 void mainLoop()
 {
     R_InitScene();
-    Vertex vertices[] = {
-        Vertex(glm::vec3(-1.5f, -0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.0f, 6.0f)), // 0
-        Vertex(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 5.0f, 0.0f)), // 1
-        Vertex(glm::vec3(-0.5f,  0.5f, 0.0f), glm::vec4(1.0f, 2.0f, 0.0f, 0.0f)), // 2
-        Vertex(glm::vec3(-1.5f,  0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.0f, 6.0f)), // 3
-
-        Vertex(glm::vec3( 0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.0f, 0.0f)), // 4
-        Vertex(glm::vec3( 1.5f, -0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 1.0f, 0.0f)), // 5
-        Vertex(glm::vec3( 1.5f,  0.5f, 0.0f), glm::vec4(1.0f, 2.0f, 1.0f, 0.0f)), // 6
-        Vertex(glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 1.0f, 0.0f)), // 7
-
-        Vertex(glm::vec3( 0.5f, -0.5f, 0.0f), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f)), // 8
-        Vertex(glm::vec3( 1.5f, -0.5f, 0.0f), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f)), // 9
-        Vertex(glm::vec3( 1.5f,  0.5f, 0.0f), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f)), // 10
-        Vertex(glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f)), // 11
-    };
-    uint32_t indices[] = {
-        4, 5, 6,  4,  6,  7,
-        8, 9, 10, 8, 10, 11,
-    };
-    std::shared_ptr<VertexArray> vao = std::make_shared<VertexArray>(vertices, arraylen(vertices), indices, arraylen(indices));
-    std::shared_ptr<VertexBuffer>& vbo = vao->GetVBO().front();
-    std::shared_ptr<IndexBuffer>& ibo = vao->GetIBO();
-    vao->Unbind();
-    vbo->Unbind();
-    ibo->Unbind();
-
     SDL_Event event;
     memset(&event, 0, sizeof(event));
-
-    std::shared_ptr<Shader> shader = std::make_shared<Shader>("shader.glsl");
-
-    uint32_t pindices[] = {
-        0, 1, 2, 0, 2, 3
-    };
-
-    Camera camera(-3.0f, 3.0f, -3.0f, 3.0f);
 
     std::vector<glm::vec3> translations = {
         glm::vec3(1, 1, 0),
@@ -181,10 +146,6 @@ void mainLoop()
             drawmode = GL_LINE_STRIP_ADJACENCY;
     }
 #endif
-    vao->Bind();
-    vbo->Bind();
-    ibo->Bind();
-    shader->Bind();
     glm::vec3 pos(0, 0, 0);
     glm::ivec2 mousepos;
     glm::vec3 mousepos_f;
@@ -203,7 +164,7 @@ void mainLoop()
                 float adjacent = disBetweenOBJ(translations[0], mousepos_f);
                 float opposite = tan(90) * adjacent;
 
-                camera.GetRotation() = -opposite / M_PI;
+                renderer->camera->GetRotation() = -opposite / M_PI;
             }
 #endif
             else if (event.type == SDL_KEYDOWN) {
@@ -221,55 +182,41 @@ void mainLoop()
                     pos.x += 0.25f;
                     break;
                 case SDLK_q:
-                    camera.GetRotation() -= camera.GetRotationSpeed();
-                    if (camera.GetRotation() > 180.0f)
-                        camera.GetRotation() -= 360.0f;
-                    else if (camera.GetRotation() <= -180.0f)
-                        camera.GetRotation() += 360.0f;
+                    renderer->camera->GetRotation() -= renderer->camera->GetRotationSpeed();
+                    if (renderer->camera->GetRotation() > 180.0f)
+                        renderer->camera->GetRotation() -= 360.0f;
+                    else if (renderer->camera->GetRotation() <= -180.0f)
+                        renderer->camera->GetRotation() += 360.0f;
                     break;
                 case SDLK_e:
-                    camera.GetRotation() += camera.GetRotationSpeed();
-                    if (camera.GetRotation() > 180.0f)
-                        camera.GetRotation() -= 360.0f;
-                    else if (camera.GetRotation() <= -180.0f)
-                        camera.GetRotation() += 360.0f;
+                    renderer->camera->GetRotation() += renderer->camera->GetRotationSpeed();
+                    if (renderer->camera->GetRotation() > 180.0f)
+                        renderer->camera->GetRotation() -= 360.0f;
+                    else if (renderer->camera->GetRotation() <= -180.0f)
+                        renderer->camera->GetRotation() += 360.0f;
                     break;
                 case SDLK_UP:
-                    camera.GetPos().x += -sin(glm::radians(camera.GetRotation())) * camera.GetSpeed();
-                    camera.GetPos().y += cos(glm::radians(camera.GetRotation())) * camera.GetSpeed();
+                    renderer->camera->GetPos().x += -sin(glm::radians(renderer->camera->GetRotation())) * renderer->camera->GetSpeed();
+                    renderer->camera->GetPos().y += cos(glm::radians(renderer->camera->GetRotation())) * renderer->camera->GetSpeed();
                     break;
                 case SDLK_DOWN:
-                    camera.GetPos().x -= -sin(glm::radians(camera.GetRotation())) * camera.GetSpeed();
-                    camera.GetPos().y -= cos(glm::radians(camera.GetRotation())) * camera.GetSpeed();
+                    renderer->camera->GetPos().x -= -sin(glm::radians(renderer->camera->GetRotation())) * renderer->camera->GetSpeed();
+                    renderer->camera->GetPos().y -= cos(glm::radians(renderer->camera->GetRotation())) * renderer->camera->GetSpeed();
                     break;
                 case SDLK_LEFT:
-                    camera.GetPos().x -= cos(glm::radians(camera.GetRotation())) * camera.GetSpeed();
-                    camera.GetPos().y -= sin(glm::radians(camera.GetRotation())) * camera.GetSpeed();
+                    renderer->camera->GetPos().x -= cos(glm::radians(renderer->camera->GetRotation())) * renderer->camera->GetSpeed();
+                    renderer->camera->GetPos().y -= sin(glm::radians(renderer->camera->GetRotation())) * renderer->camera->GetSpeed();
                     break;
                 case SDLK_RIGHT:
-                    camera.GetPos().x += cos(glm::radians(camera.GetRotation())) * camera.GetSpeed();
-                    camera.GetPos().y += sin(glm::radians(camera.GetRotation())) * camera.GetSpeed();
+                    renderer->camera->GetPos().x += cos(glm::radians(renderer->camera->GetRotation())) * renderer->camera->GetSpeed();
+                    renderer->camera->GetPos().y += sin(glm::radians(renderer->camera->GetRotation())) * renderer->camera->GetSpeed();
                     break;
                 };
             }
         }
-        glClear(GL_COLOR_BUFFER_BIT);
-        camera.CalculateViewMatrix();
-        {
-            ibo->SwapBuffer(indices, 6);
-            vbo->SwapBuffer(vertices, 4);
-            shader->UniformMat4("u_ViewProjection", camera.GetVPM());
-            shader->UniformMat4("u_Transform", glm::translate(glm::mat4(1.0f), pos));
-            ibo->Draw(GL_TRIANGLES, 6);
-        }
-        {
-            shader->UniformMat4("u_ViewProjection", camera.GetVPM());
-            shader->UniformMat4("u_Transform", glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
-            ibo->SwapBuffer(pindices, 6);
-            glBufferSubData(GL_ARRAY_BUFFER, 4, 8, vertices);
-            ibo->Draw(GL_TRIANGLES, ibo->numindices());
-        }
-        SDL_GL_SwapWindow(renderer->window);
+        Renderer::BeginScene();
+        Renderer::DrawQuad(glm::vec2(0.0f, 0.0f), glm::vec2(4.0f, 4.0f), glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
+        Renderer::EndScene();
     }
 }
 

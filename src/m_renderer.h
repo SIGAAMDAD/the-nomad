@@ -119,314 +119,294 @@ struct Vertex
     }
 };
 
-typedef enum : uint8_t
+enum class ShaderDataType
 {
-    Null = 0,
-    Float,
-    Vec2,
-    Vec3,
-    Vec4,
-    Int,
-    Int2,
-    Int3,
-    Int4,
-    UInt,
-    UInt2,
-    UInt3,
-    UInt4,
-    Mat2,
-    Mat3,
-    Mat4
-} attribtype_t;
+	None = 0, Float, Float2, Float3, Float4, Mat3, Mat4, Int, Int2, Int3, Int4, Bool
+};
 
-class VertexArray;
+static uint32_t ShaderDataTypeSize(ShaderDataType type)
+{
+	switch (type) {
+	case ShaderDataType::Float:    return 4;
+	case ShaderDataType::Float2:   return 4 * 2;
+	case ShaderDataType::Float3:   return 4 * 3;
+	case ShaderDataType::Float4:   return 4 * 4;
+	case ShaderDataType::Mat3:     return 4 * 3 * 3;
+	case ShaderDataType::Mat4:     return 4 * 4 * 4;
+	case ShaderDataType::Int:      return 4;
+	case ShaderDataType::Int2:     return 4 * 2;
+	case ShaderDataType::Int3:     return 4 * 3;
+	case ShaderDataType::Int4:     return 4 * 4;
+	case ShaderDataType::Bool:     return 1;
+	};
+    assert(false);
+	if (!false)
+        N_Error("Unknown ShaderDataType!");
+	return 0;
+}
+struct BufferElement
+{
+	std::string Name;
+	ShaderDataType Type;
+	uint32_t Size;
+	size_t Offset;
+	bool Normalized;
+	BufferElement() = default;
+	BufferElement(ShaderDataType type, const std::string& name, bool normalized = false)
+		: Name(name), Type(type), Size(ShaderDataTypeSize(type)), Offset(0), Normalized(normalized)
+	{
+	}
+	uint32_t GetComponentCount() const
+	{
+		switch (Type) {
+		case ShaderDataType::Float:   return 1;
+		case ShaderDataType::Float2:  return 2;
+		case ShaderDataType::Float3:  return 3;
+		case ShaderDataType::Float4:  return 4;
+		case ShaderDataType::Mat3:    return 3; // 3* float3
+		case ShaderDataType::Mat4:    return 4; // 4* float4
+		case ShaderDataType::Int:     return 1;
+		case ShaderDataType::Int2:    return 2;
+		case ShaderDataType::Int3:    return 3;
+		case ShaderDataType::Int4:    return 4;
+		case ShaderDataType::Bool:    return 1;
+		};
+        assert(false);
+        if (!false)
+            N_Error("invalid ShaderDataType");
+        
+		return 0;
+	}
+};
+class BufferLayout
+{
+public:
+	BufferLayout() {}
+	
+    BufferLayout(std::initializer_list<BufferElement> elements)
+		: m_Elements(elements)
+	{
+		CalculateOffsetsAndStride();
+	}
+	size_t GetStride() const { return m_Stride; }
 
+	const std::vector<BufferElement>& GetElements() const { return m_Elements; }
+	
+    std::vector<BufferElement>::iterator begin() { return m_Elements.begin(); }
+	std::vector<BufferElement>::iterator end() { return m_Elements.end(); }
+	std::vector<BufferElement>::const_iterator begin() const { return m_Elements.begin(); }
+	std::vector<BufferElement>::const_iterator end() const { return m_Elements.end(); }
+private:
+	void CalculateOffsetsAndStride()
+	{
+		size_t offset = 0;
+		m_Stride = 0;
+		for (auto& element : m_Elements)
+		{
+			element.Offset = offset;
+			offset += element.Size;
+			m_Stride += element.Size;
+		}
+	}
+private:
+	mutable std::vector<BufferElement> m_Elements;
+	size_t m_Stride = 0;
+};
 class VertexBuffer
 {
-private:
-    mutable GLuint id;
-    mutable std::vector<Vertex> vertices;
-    bool has_been_allocated;
 public:
-    VertexBuffer(const size_t reserve)
-        : vertices(reserve)
-    {
-        glCall(glGenBuffers(1, &id));
-        Bind();
-        glCall(glBufferData(GL_ARRAY_BUFFER, reserve * sizeof(Vertex), NULL, GL_DYNAMIC_DRAW));
-        Unbind();
-    }
-    VertexBuffer(const size_t reserve, const std::shared_ptr<VertexArray>& vao);
-    VertexBuffer() {
-        glCall(glGenBuffers(1, &id));
-    }
-    VertexBuffer(const std::vector<Vertex>& _vertices, const VertexArray* vao);
-    VertexBuffer(const Vertex* _vertices, const size_t count, const VertexArray* vao);
-    VertexBuffer(const Vertex* _vertices, const size_t count, const std::shared_ptr<VertexArray>& vao);
-    VertexBuffer(const std::vector<Vertex>& _vertices);
-    VertexBuffer(const Vertex* _vertices, const size_t count);
-    VertexBuffer(const VertexBuffer &vb)
-        : vertices(vb.vertices.size()) { SwapBuffer(vb.vertices); }
-    VertexBuffer(VertexBuffer &&) = default;
-    ~VertexBuffer();
+	virtual ~VertexBuffer() = default;
+	
+    virtual void Bind() const = 0;
+	virtual void Unbind() const = 0;
+	virtual void SetData(const void* data, size_t size) = 0;
+	
+    virtual const BufferLayout& GetLayout() const = 0;
+	virtual void SetLayout(const BufferLayout& layout) = 0;
+	
+    static std::shared_ptr<VertexBuffer> Create(size_t reserve);
+	static std::shared_ptr<VertexBuffer> Create(float* vertices, size_t size);
+};
+// Currently Hazel only supports 32-bit index buffers
+class IndexBuffer
+{
+public:
+	virtual ~IndexBuffer() = default;
 
-    inline void Draw(GLenum mode = GL_TRIANGLES, GLint first = 0, GLsizei count = 0) const {
-        if (count == 0) count = vertices.size();
-        glCall(glDrawArrays(mode, first, count));
-    }
-    inline void Bind() const
-    { glCall(glBindBuffer(GL_ARRAY_BUFFER, id)); }
-    inline void Unbind() const
-    { glCall(glBindBuffer(GL_ARRAY_BUFFER, 0)); }
-    inline size_t numvertices() const
-    { return vertices.size(); }
-    inline Vertex* data(void) const
-    { return vertices.data(); }
+	virtual void Bind() const = 0;
+	virtual void Unbind() const = 0;
+	virtual size_t GetCount() const = 0;
+	
+    static std::shared_ptr<IndexBuffer> Create(uint32_t* indices, size_t count);
+};
 
-    inline Vertex& front() const { return vertices.front(); }
-    inline Vertex& back() const { return vertices.back(); }
-    inline std::vector<Vertex>::iterator begin() { return vertices.begin(); }
-    inline std::vector<Vertex>::iterator end() { return vertices.end(); }
-    inline std::vector<Vertex>::const_iterator begin() const { return vertices.begin(); }
-    inline std::vector<Vertex>::const_iterator end() const { return vertices.end(); }
-    inline bool is_allocated() const { return has_been_allocated; }
-    inline void GenBuffer() {
-        glCall(glGenBuffers(1, &id));
-        has_been_allocated = true;
-    }
+class VertexArray
+{
+public:
+    virtual ~VertexArray() = default;
 
-    void SwapBuffer(const std::vector<Vertex>& _vertices, bool newbuffer = false);
-    void SwapBuffer(const Vertex* _vertices, const size_t offset, const size_t count);
-    void SwapBuffer(const Vertex* _vertices, const size_t count, bool newbuffer = false);
-    void SwapBuffer(std::initializer_list<Vertex> _vertices, bool newbuffer = false);
-    void SwapBuffer(const VertexBuffer& vbo, bool newbuffer = false);
+    virtual void Bind() const = 0;
+    virtual void Unbind() const = 0;
 
-    static inline std::shared_ptr<VertexBuffer> Create(const size_t reserve, const std::shared_ptr<VertexArray>& vao) {
-        return std::make_shared<VertexBuffer>(reserve, vao);
-    }
-    static inline std::shared_ptr<VertexBuffer> Create(const Vertex* vertices, const size_t count, const std::shared_ptr<VertexArray>& vao) {
-        return std::make_shared<VertexBuffer>(vertices, count, vao);
-    }
-    static inline std::shared_ptr<VertexBuffer> Create(const std::vector<Vertex>& vertices) {
-        return std::make_shared<VertexBuffer>(vertices);
-    }
-    static inline std::shared_ptr<VertexBuffer> Create(const Vertex* vertices, const size_t count) {
-        return std::make_shared<VertexBuffer>(vertices, count);
-    }
-    static inline std::shared_ptr<VertexBuffer> Create(const size_t reserve) {
-        return std::make_shared<VertexBuffer>(reserve);
-    }
+    virtual void AddVertexBuffer(const std::shared_ptr<VertexBuffer>& vertexBuffer) = 0;
+    virtual void SetIndexBuffer(const std::shared_ptr<IndexBuffer>& indexBuffer) = 0;
 
-    inline GLuint& GetID() const { return id; }
+    virtual const std::vector<std::shared_ptr<VertexBuffer>>& GetVertexBuffers() const = 0;
+    virtual const std::shared_ptr<IndexBuffer>& GetIndexBuffer() const = 0;
+
+    static std::shared_ptr<VertexArray> Create();
 };
 
 class Shader
 {
-private:
-    mutable std::unordered_map<std::string, GLint> uniformCache;
-    GLuint id;
+public:
+	virtual ~Shader() = default;
 
-    GLuint Compile(const std::string& src, GLuint type)
-    {
-        glCall(GLuint id = glCreateShader(type));
-        const char *buffer = src.c_str();
-        glCall(glShaderSource(id, 1, &buffer, NULL));
-        glCall(glCompileShader(id));
-        int success;
-        char infolog[512];
-        glGetShaderiv(id, GL_COMPILE_STATUS, &success);
-        if (success == GL_FALSE) {
-            glGetShaderInfoLog(id, sizeof(infolog), NULL, infolog);
-            LOG_ERROR("Shader::Compile: failed to compile shader: {}", infolog);
-            glCall(glDeleteShader(id));
-            return 0;
-        }
-        return id;
-    }
+	virtual void Bind() const = 0;
+	virtual void Unbind() const = 0;
+
+	virtual void SetInt(const std::string& name, int value) = 0;
+	virtual void SetIntArray(const std::string& name, int* values, uint32_t count) = 0;
+	virtual void SetFloat(const std::string& name, float value) = 0;
+	virtual void SetFloat2(const std::string& name, const glm::vec2& value) = 0;
+	virtual void SetFloat3(const std::string& name, const glm::vec3& value) = 0;
+	virtual void SetFloat4(const std::string& name, const glm::vec4& value) = 0;
+	virtual void SetMat4(const std::string& name, const glm::mat4& value) = 0;
+
+	static std::shared_ptr<Shader> Create(const std::string& filepath);
+//	static std::shared_ptr<Shader> Create(const std::string& name, const std::string& vertexSrc, const std::string& fragmentSrc);
+};
+
+
+class GL_VertexArray : public VertexArray
+{
+private:
+    GLuint id;
+    size_t vertexBufferIndex = 0;
+    mutable std::vector<std::shared_ptr<VertexBuffer>> vertexBuffers;
+    mutable std::shared_ptr<IndexBuffer> indexBuffer;
+public:
+    GL_VertexArray();
+    virtual ~GL_VertexArray();
+
+    virtual void Bind() const override;
+    virtual void Unbind() const override;
+
+    virtual void AddVertexBuffer(const std::shared_ptr<VertexBuffer>& vertexBuffer) override;
+    virtual void SetIndexBuffer(const std::shared_ptr<IndexBuffer>& _indexBuffer) override;
+    
+    virtual const std::vector<std::shared_ptr<VertexBuffer>>& GetVertexBuffers() const { return vertexBuffers; }
+    virtual const std::shared_ptr<IndexBuffer>& GetIndexBuffer() const { return indexBuffer; }
+};
+
+class GL_VertexBuffer : public VertexBuffer
+{
+private:
+    GLuint id;
+    mutable BufferLayout layout;
+public:
+    GL_VertexBuffer(size_t reserve);
+    GL_VertexBuffer(float* vertices, size_t size);
+    virtual ~GL_VertexBuffer();
+
+    virtual void Bind() const override;
+    virtual void Unbind() const override;
+
+    virtual void SetData(const void *data, size_t size) override;
+
+    virtual const BufferLayout& GetLayout() const override { return layout; }
+    virtual void SetLayout(const BufferLayout& _layout) override { layout = _layout; }
+};
+
+class GL_IndexBuffer : public IndexBuffer
+{
+private:
+    GLuint id;
+    size_t NumIndices;
+public:
+    GL_IndexBuffer(uint32_t* indices, size_t count);
+    virtual ~GL_IndexBuffer();
+
+    virtual void Bind() const override;
+    virtual void Unbind() const override;
+
+    virtual size_t GetCount() const override { return NumIndices; }
+};
+
+class GL_Shader : public Shader
+{
+private:
+    GLuint id;
+    mutable std::unordered_map<std::string, GLint> uniformCache;
+    mutable std::unordered_map<GLenum, std::string> GLSL_Src;
     GLint GetUniformLocation(const std::string& name) const
     {
         if (uniformCache.find(name) != uniformCache.end())
             return uniformCache[name];
         
-        glCall(GLint location = glGetUniformLocation(id, name.c_str()));
+        GLint location = glGetUniformLocation(id, name.c_str());
         if (location == -1) {
-            LOG_WARN("glGetUniform location returned -1 for uniform named {}", name);
-            return -1;
+            LOG_WARN("failed to get location of uniform {}", name);
+            return 0;
         }
         uniformCache[name] = location;
         return location;
     }
+    GLuint Compile(const std::string& src, GLenum type);
+    GLuint CreateProgram(const std::string& filepath);
 public:
-    Shader(const std::string& filepath);
-    Shader(const Shader &) = delete;
-    Shader(Shader &&) = default;
-    ~Shader();
+    GL_Shader(const std::string& filepath);
+    virtual ~GL_Shader();
 
-    inline void Bind() const
-    { glCall(glUseProgram(id)); }
-    inline void Unbind() const
-    { glCall(glUseProgram(0)); }
+    virtual void Bind() const override;
+    virtual void Unbind() const override;
 
-    inline void UniformMat4(const std::string& name, const glm::mat4& m) const
-    { glCall(glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, glm::value_ptr(m))); }
-    inline void UniformInt(const std::string& name, GLint value) const
-    { glCall(glUniform1i(GetUniformLocation(name), value)); }
-    inline void UniformInt2(const std::string& name, GLint v1, GLint v2) const
-    { glCall(glUniform2i(GetUniformLocation(name), v1, v2)); }
-    inline void UniformFloat(const std::string& name, float value) const
-    { glCall(glUniform1f(GetUniformLocation(name), value)); }
-    inline void UniformVec2(const std::string& name, const glm::vec2& value) const
-    { glCall(glUniform2f(GetUniformLocation(name), value.x, value.y)); }
-    inline void UniformVec3(const std::string& name, const glm::vec3& value) const
-    { glCall(glUniform3f(GetUniformLocation(name), value.x, value.y, value.z)); }
-    inline void UniformVec4(const std::string& name, const glm::vec4& value) const
-    { glCall(glUniform4f(GetUniformLocation(name), value.r, value.g, value.b, value.a)); }
-
-    inline GLuint GetID() const { return id; }
-};
-
-class IndexBuffer
-{
-private:
-    GLuint id;
-    size_t indices_count = 0;
-public:
-    IndexBuffer(const size_t reserve);
-    IndexBuffer() = default;
-    IndexBuffer(const std::vector<uint32_t>& indices);
-    IndexBuffer(const uint32_t* indices, const size_t count);
-    IndexBuffer(IndexBuffer &&) = default;
-    ~IndexBuffer();
-    
-    inline void Draw(GLenum mode, GLsizei count) const {
-        Bind();
-        glCall(glDrawElements(mode, count, GL_UNSIGNED_INT, NULL));
-        Unbind();
+    virtual void SetInt(const std::string& name, int value) override {
+        Uniform1i(name, value);
     }
-    inline void Bind() const
-    { glCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, id)); }
-    inline void Unbind() const
-    { glCall(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)); }
-    inline size_t numindices() const
-    { return indices_count; }
-
-    void SwapBuffer(const uint32_t* _indices, const size_t count, bool newbuffer = false);
-    void SwapBuffer(const std::vector<uint32_t>& _indices, bool newbuffer = false);
-    void SwapBuffer(const IndexBuffer& ibo, bool newbuffer = false);
-
-    static std::shared_ptr<IndexBuffer> Create(const std::vector<uint32_t>& indices) {
-        return std::make_shared<IndexBuffer>(indices);
+    virtual void SetIntArray(const std::string& name, int* values, uint32_t count) override {
+        Uniformiv(name, values, count);
     }
-    static std::shared_ptr<IndexBuffer> Create(const uint32_t* indices, const size_t count) {
-        return std::make_shared<IndexBuffer>(indices, count);
+	virtual void SetFloat(const std::string& name, float value) override {
+        Uniform1f(name, value);
+    }
+	virtual void SetFloat2(const std::string& name, const glm::vec2& value) override {
+        Uniform2f(name, value);
+    }
+	virtual void SetFloat3(const std::string& name, const glm::vec3& value) override {
+        Uniform3f(name, value);
+    }
+	virtual void SetFloat4(const std::string& name, const glm::vec4& value) override {
+        Uniform4f(name, value);
+    }
+	virtual void SetMat4(const std::string& name, const glm::mat4& value) override {
+        UniformMat4(name, value);
     }
 
-    inline GLuint GetID() const { return id; }
-};
-
-class VertexArray
-{
-private:
-    mutable GLuint id;
-    mutable std::vector<std::shared_ptr<VertexBuffer>> vbo;
-    mutable std::shared_ptr<IndexBuffer> ibo;
-public:
-    VertexArray();
-    VertexArray(std::initializer_list<Vertex> _vertices);
-    VertexArray(std::initializer_list<Vertex> _vertices, const std::vector<uint32_t>& _indices);
-    VertexArray(const std::vector<Vertex>& _vertices);
-    VertexArray(const std::vector<Vertex>& _vertices, const std::vector<uint32_t>& _indices);
-    VertexArray(const Vertex* _vertices, const size_t count);
-    VertexArray(const Vertex* _vertices, const size_t vertices_count, const uint32_t *_indices, const size_t indices_count);
-    VertexArray(const VertexArray &) = delete;
-    VertexArray(VertexArray &&) = default;
-    ~VertexArray();
-
-    inline void Bind() const
-    { glCall(glBindVertexArray(id)); }
-    inline void Unbind() const
-    { glCall(glBindVertexArray(0)); }
-    inline void BindIBO() const
-    { ibo->Bind(); }
-    inline void UnbindIBO() const
-    { ibo->Unbind(); }
-
-    void DrawVBO(GLenum mode = GL_TRIANGLES, GLint first = 0, GLsizei count = 0) const;
-    void DrawIBO(GLenum mode = GL_TRIANGLES) const;
-
-    inline void SwapIBO(const std::shared_ptr<IndexBuffer>& _ibo)
-    { ibo = _ibo; }
-
-    inline void PushVBO(const Vertex* vertices, const size_t count)
-    { vbo.emplace_back(std::make_shared<VertexBuffer>(vertices, count)); }
-    inline void PushVBO(const std::vector<Vertex>& vertices)
-    { vbo.emplace_back(std::make_shared<VertexBuffer>(vertices)); }
-    inline void PushVBO(std::initializer_list<Vertex> vertices)
-    { vbo.emplace_back(std::make_shared<VertexBuffer>(vertices)); }
-    inline void PushVBO(const std::shared_ptr<VertexBuffer>& vb)
-    { vbo.emplace_back(vb); }
-    inline void PopVBO()
-    { vbo.pop_back(); }
-    inline void EraseVBO(std::vector<std::shared_ptr<VertexBuffer>>::iterator it) {
-        vbo.erase(it);
+    inline void Uniform1i(const std::string& name, int value) const {
+        glUniform1i(GetUniformLocation(name), value);
     }
-    
-    inline std::vector<std::shared_ptr<VertexBuffer>>& GetVBO() const { return vbo; }
-    inline std::shared_ptr<VertexBuffer>& front_vbo() const { return vbo.front(); }
-    inline std::shared_ptr<VertexBuffer>& back_vbo() const { return vbo.back(); }
-
-    inline std::vector<std::shared_ptr<VertexBuffer>>::iterator begin_vbo() { return vbo.begin(); }
-    inline std::vector<std::shared_ptr<VertexBuffer>>::iterator end_vbo() { return vbo.end(); }
-    inline std::vector<std::shared_ptr<VertexBuffer>>::const_iterator begin_vbo() const { return vbo.begin(); }
-    inline std::vector<std::shared_ptr<VertexBuffer>>::const_iterator end_vbo() const { return vbo.end(); }
-    inline size_t numvbo() const { return vbo.size(); }
-
-    inline std::shared_ptr<IndexBuffer>& GetIBO() const { return ibo; }
-    inline GLuint &GetID() const { return id; }
-
-    static inline std::shared_ptr<VertexArray> Create(std::initializer_list<Vertex> vertices) {
-        return std::make_shared<VertexArray>(std::initializer_list<Vertex>(vertices));
+    inline void Uniformiv(const std::string& name, int *values, uint32_t count) const {
+        glUniform1iv(GetUniformLocation(name), count, values);
     }
-    static inline std::shared_ptr<VertexArray> Create(std::initializer_list<Vertex> vertices, const std::vector<uint32_t>& indices) {
-        return std::make_shared<VertexArray>(std::initializer_list<Vertex>(vertices), indices);
+    inline void Uniform1f(const std::string& name, float value) const {
+        glUniform1f(GetUniformLocation(name), value);
     }
-    static inline std::shared_ptr<VertexArray> Create(const std::vector<Vertex>& vertices) {
-        return std::make_shared<VertexArray>(vertices);
+    inline void Uniform2f(const std::string& name, const glm::vec2& value) const {
+        glUniform2f(GetUniformLocation(name), value.x, value.y);
     }
-    static inline std::shared_ptr<VertexArray> Create(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices) {
-        return std::make_shared<VertexArray>(vertices, indices);
+    inline void Uniform3f(const std::string& name, const glm::vec3& value) const {
+        glUniform3f(GetUniformLocation(name), value.x, value.y, value.z);
     }
-    static inline std::shared_ptr<VertexArray> Create(const Vertex* vertices, const size_t count) {
-        return std::make_shared<VertexArray>(vertices, count);
+    inline void Uniform4f(const std::string& name, const glm::vec4& value) const {
+        glUniform4f(GetUniformLocation(name), value.r, value.g, value.b, value.a);
     }
-    static inline std::shared_ptr<VertexArray> Create(void) {
-        return std::make_shared<VertexArray>();
+    inline void UniformMat4(const std::string& name, const glm::mat4& value) const {
+        glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, glm::value_ptr(value));
     }
 };
 
 
-class Texture
-{
-private:
-    GLuint id;
-    int width, height;
-    int n;
-    uint8_t* buffer;
-public:
-    Texture(const std::string& filepath);
-    ~Texture();
-
-    inline void Bind(uint8_t slot = 0) const {
-        glCall(glActiveTexture(GL_TEXTURE0+slot));
-        glCall(glBindTexture(GL_TEXTURE_2D, id));
-    }
-    inline void Unbind() const
-    { glCall(glBindTexture(GL_TEXTURE_2D, 0)); }
-};
-
-// interface with the vao's shader
-#define CAMERA_RENDER_MVP 0
-#define CAMERA_RENDER_VPM 1
 class Camera
 {
 private:
@@ -489,21 +469,14 @@ extern std::unique_ptr<Renderer> renderer;
 
 class Renderer
 {
-private:
-    mutable std::vector<std::shared_ptr<VertexArray>> vertexarrays;
-    mutable std::vector<std::shared_ptr<Shader>> shaders;
-
-    mutable std::unordered_map<GLuint, std::shared_ptr<IndexBuffer>> bound_ibo;
-    mutable std::unordered_map<GLuint, std::shared_ptr<Shader>> bound_shaders;
-    mutable std::unordered_map<GLuint, std::shared_ptr<VertexArray>> bound_vao;
-    mutable std::unordered_map<GLuint, std::shared_ptr<VertexBuffer>> bound_vbo;
 public:
+    std::shared_ptr<Camera> camera;
     SDL_Window* window;
     SDL_GLContext context;
 public:
     void AllocBuffers(const std::vector<Vertex>& _vertices);
 
-    static void DrawSquare();
+    static void DrawQuad(const glm::vec2& pos, const glm::vec2& size, const glm::vec4& color);
     static void Submit();
     static void Flush();
     static void BeginScene();
@@ -513,49 +486,6 @@ public:
     static void Draw();
     static void Submit(const std::vector<Vertex>& vertices);
     static void Submit(const Vertex* vertices, const size_t count);
-
-    static inline std::vector<std::shared_ptr<Shader>>& GetShaders(void)
-    { return renderer->shaders; }
-    static inline std::vector<std::shared_ptr<VertexArray>>& GetVertexArrays(void)
-    { return renderer->vertexarrays; }
-    static inline std::shared_ptr<Shader> CreateShader(const std::string& filepath) {
-        return renderer->shaders.emplace_back(std::make_shared<Shader>(filepath));
-    }
-    static inline std::shared_ptr<VertexArray> CreateVertexArray(std::initializer_list<Vertex> vertices) {
-        return renderer->vertexarrays.emplace_back(std::make_shared<VertexArray>(vertices));
-    }
-    static inline std::shared_ptr<VertexArray> CreateVertexArray(const Vertex* vertices, const size_t count) {
-        return renderer->vertexarrays.emplace_back(std::make_shared<VertexArray>(vertices, count));
-    }
-
-    static inline void Bind(const std::shared_ptr<VertexArray>& vao) {
-        if (renderer->bound_vao.find(vao->GetID()) != renderer->bound_vao.end())
-            return;
-        
-        renderer->bound_vao[vao->GetID()] = vao;
-        vao->Bind();
-    }
-    static inline void Bind(const std::shared_ptr<VertexBuffer>& vbo) {
-        if (renderer->bound_vbo.find(vbo->GetID()) != renderer->bound_vbo.end())
-            return;
-        
-        renderer->bound_vbo[vbo->GetID()] = vbo;
-        vbo->Bind();
-    }
-    static inline void Bind(const std::shared_ptr<IndexBuffer>& ibo) {
-        if (renderer->bound_ibo.find(ibo->GetID()) != renderer->bound_ibo.end())
-            return;
-        
-        renderer->bound_ibo[ibo->GetID()] = ibo;
-        ibo->Bind();
-    }
-    static inline void Bind(const std::shared_ptr<Shader>& shader) {
-        if (renderer->bound_shaders.find(shader->GetID()) != renderer->bound_shaders.end())
-            return;
-        
-        renderer->bound_shaders[shader->GetID()] = shader;
-        shader->Bind();
-    }
 };
 
 extern std::vector<model_t> modelinfo;
