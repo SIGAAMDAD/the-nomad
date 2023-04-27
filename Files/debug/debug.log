@@ -1,56 +1,5 @@
+[trace]: clearing zone
 [info]: initiazing renderer
 [info]: alllocating memory to the SDL_Window context
 [info]: successful initialization of SDL2 context
-[info]: scf configuration:
-  launch::
-    launch::fastmobs1          = false
-    launch::fastmobs2          = false
-    launch::fastmobs3          = false
-    launch::ext_bff            = false
-    launch::ext_scf            = false
-    launch::deafmobs           = false
-    launch::blindmobs          = false
-    launch::nosmell            = false
-    launch::nomobs             = false
-    launch::godmode            = false
-    launch::infinite_ammo      = false
-    launch::bottomless_clip    = false
-    launch::devmode            = false
-  renderer::
-    renderer::api              = 1
-    renderer::drawfps          = true
-    renderer::ticrate          = 35
-    renderer::fullscreen       = false
-    renderer::native_fullscreen= false
-    renderer::hidden           = false
-    renderer::vsync            = true
-  audio::
-    audio::music_vol           = 0.8
-    audio::sfx_vol             = 1.1
-    audio::music_on            = true
-    audio::sfx_on              = true
-
-[info]: done parsing scf file
-[info]: running main gameplay loop
-[trace]: <---- OpenGL Debug Log (TRACE) ---->
-    source: API
-    message: Buffer detailed info: Buffer object 2 (bound to GL_ARRAY_BUFFER_ARB, usage hint is GL_STATIC_DRAW) will use VIDEO memory as the source for buffer object operations.
-    type: Other
-    id: 131185
-    severity: Notification
-
-[info]: successfully compiled shader shader.glsl
-[trace]: <---- OpenGL Debug Log (TRACE) ---->
-    source: API
-    message: Buffer detailed info: Buffer object 1 (bound to GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING_ARB (0), GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING_ARB (1), and GL_ARRAY_BUFFER_ARB, usage hint is GL_DYNAMIC_DRAW) will use VIDEO memory as the source for buffer object operations.
-    type: Other
-    id: 131185
-    severity: Notification
-
-[warning]: <---- OpenGL Debug Log (WARN) ---->
-    source: API
-    message: Program/shader state performance warning: Vertex shader in program 1 is being recompiled based on GL state.
-    type: Performance
-    id: 131218
-    severity: Medium
-
+[info]: cache_move ok

@@ -7,60 +7,42 @@ Game* Game::gptr;
 
 bool N_WriteFile(const char* name, const void *buffer, const ssize_t count)
 {
-    int handle;
-    ssize_t size;
-#ifdef __unix__
-    handle = open(name, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, (mode_t)0666);
-    if (handle == -1)
+    assert(buffer);
+    FILE* fp;
+    size_t size;
+
+    fp = fopen(name, "wb");
+    if (!fp)
         return false;
-    size = write(handle, buffer, count);
-    if (size < count || size == -1)
+    assert(fp);
+    size = fwrite(buffer, sizeof(char), count, fp);
+    if (size < count || size == 0)
         return false;
-    close(handle);
-#elif defined(_WIN32)
-    handle = _open(name, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, (mode_t)0666);
-    if (handle == -1)
-        return false;
-    size = _write(handle, buffer, count);
-    if (size < count)
-        return false;
-    _close(handle);
-#endif
+    fclose(fp);
     return true;
 }
-ssize_t N_ReadFile(const char* name, char **buffer)
+
+size_t N_ReadFile(const char* name, char **buffer, bool cache)
 {
     assert(buffer);
-#ifdef __unix__
-    int handle = open(name, O_RDONLY | O_BINARY, (mode_t)0666);
-    if (handle == -1)
-        N_Error("N_ReadFile: failed to open() file %s", name);
-    struct stat fdata;
-    if (fstat(handle, &fdata) == -1)
-        N_Error("N_ReadFile: failed to fstat() file %s", name);
-#elif defined(_WIN32)
-    int handle = _open(name, O_RDONLY | O_BINARY, (mode_t)0666);
-    if (handle == -1)
-        N_Error("N_ReadFile: failed to open() file %s", name);
-    struct _stati64 fdata;
-    if (_fstati64(handle, &fdata) == -1)
-        N_Error("N_ReadFile: failed to fstat() file %s", name);
-#endif
+    FILE* fp;
+    size_t size, fsize;
+    void *buf;
     
-    void *buf = malloc(fdata.st_size);
+    fp = fopen(name, "rb");
+    if (!fp)
+        N_Error("N_ReadFile: failed to fopen() file %s", name);
+    assert(fp);
+    fseek(fp, 0L, SEEK_END);
+    fsize = ftell(fp);
+    fseek(fp, 0L, SEEK_SET);
+    buf = cache ? Cache_Alloc(&buf, fsize, "filebuffer") : malloc(fsize);
     if (!buf)
-        N_Error("N_ReadFile: malloc() failed");
-#ifdef __unix__
-    ssize_t size = read(handle, buf, fdata.st_size);
-    if (size < fdata.st_size || size == -1)
-        N_Error("N_ReadFile: failed to read() file %s", name);
-    close(handle);
-#elif defined(_WIN32)
-    ssize_t size = _read(handle, buf, fdata.st_size);
-    if (size < fdata.st_size || size == -1)
-        N_Error("N_ReadFile: failed to read() file %s", name);
-    _close(handle);
-#endif
+        N_Error("N_ReadFile: %s failed", (cache ? "Cache_Alloc()" : "malloc()"));
+    size = fread(buf, sizeof(char), fsize, fp);
+    if (size < fsize)
+        N_Error("N_ReadFile: failed to fread() file %s", name);
+    fclose(fp);
     *buffer = (char *)buf;
     return size;
 }
@@ -94,7 +76,7 @@ void Log::Init()
 
 void Game::Init()
 {
-    gptr = (Game *)Z_Malloc(sizeof(Game), TAG_STATIC, &gptr);
+    gptr = (Game *)Hunk_AllocName(sizeof(Game), "gameclass");
     assert(gptr);
     memset(Game::Get()->bffname, 0, sizeof(Game::Get()->bffname));
     memset(Game::Get()->scfname, 0, sizeof(Game::Get()->scfname));
@@ -106,7 +88,7 @@ void Game::Init()
     strncpy(Game::Get()->svfile, "nomadsv.ngd", sizeof(Game::Get()->svfile));
     Game::Get()->gamestate = GS_MENU;
 
-    Game::Get()->playrs = (playr_t *)Z_Malloc(sizeof(playr_t) * 1, TAG_STATIC, &Game::Get()->playrs);
+    Game::Get()->playrs = (playr_t *)Hunk_AllocName(sizeof(playr_t) * 1, "pstructs");
     assert(Game::Get()->playrs);
     Game::Get()->playr = &gptr->playrs[0];
     assert(Game::Get()->playr);

@@ -465,7 +465,7 @@ public:
 
 class Renderer;
 
-extern std::unique_ptr<Renderer> renderer;
+extern Renderer* renderer;
 
 class Renderer
 {

@@ -268,10 +268,6 @@ void I_NomadInit(int argc, char** argv)
             G_ExtractBFF(myargv[i + 1]);
         }
     }
-
-    LOG_INFO("initiazing renderer");
-    R_Init();
-
     con.ConPrintf("G_LoadBFF: loading bff file");
     G_LoadBFF("nomadmain.bff");
 

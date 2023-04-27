@@ -21,11 +21,12 @@ CFLAGS    +=$(DEFINES) $(OPIMTIZERS)
 
 OBJS= \
 	$(O)/m_renderer.o \
-	$(O)/g_game.o \
 	$(O)/g_init.o \
 	$(O)/g_loop.o \
 	$(O)/g_sound.o \
-	$(O)/g_zone.o \
+	$(O)/z_zone.o \
+	$(O)/g_game.o \
+	$(O)/z_hunk.o \
 	$(O)/n_scf.o \
 	$(O)/p_playr.o \
 	$(O)/s_mmisc.o \
@@ -53,7 +54,7 @@ $(O)/%.o: $(SDIR)/%.cpp
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 glnomad: $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) $(LIBS) -o glnomad $(LDLIBS) $(ABSL)
+	$(CC) $(CFLAGS) $(OBJS) $(LIBS) -o glnomad $(LDLIBS)
 
 clean:
 	rm -r $(OBJS)

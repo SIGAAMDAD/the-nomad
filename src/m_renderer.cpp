@@ -7,7 +7,7 @@ color_t blue =  {0, 0, 255, 255};
 
 static constexpr const char *TEXMAP_PATH = "Files/gamedata/RES/texmap.bmp";
 
-std::unique_ptr<Renderer> renderer;
+Renderer* renderer;
 
 constexpr int32_t vert_fov = 24 >> 1;
 constexpr int32_t horz_fov = 88 >> 1;
@@ -40,7 +40,7 @@ void R_InitScene();
 
 void R_Init()
 {
-    renderer = std::make_unique<Renderer>();
+    renderer = (Renderer *)Hunk_AllocName(sizeof(Renderer), "renderer");
     assert(renderer);
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
         N_Error("R_Init: failed to initialize SDL2, error message: %s",
@@ -145,13 +145,8 @@ void R_Init()
     LOG_INFO("successful initialization of SDL2 context");
 
     glEnable(GL_BLEND);
-//    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_CULL_FACE);
-    glEnable(GL_LINE_SMOOTH);
-#if 0 // for future 3d...
+    glEnable(GL_STENCIL_TEST);
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CCW);
-#endif
 }
 
 void R_ShutDown()
@@ -423,7 +418,7 @@ void R_InitScene()
         { ShaderDataType::Float4, "a_Color" },
     });
     scene.QuadVertexArray->AddVertexBuffer(scene.QuadVertexBuffer);
-    scene.QuadVertexBufferBase = (QuadVertex *)Z_Malloc(sizeof(QuadVertex) * scene.MaxQuads, TAG_STATIC, &scene.QuadVertexBufferBase);
+    scene.QuadVertexBufferBase = (QuadVertex *)Hunk_AllocName(sizeof(QuadVertex) * scene.MaxQuads, "quadBuffer");
     uint32_t* quadIndices = (uint32_t *)malloc(sizeof(uint32_t) * scene.MaxIndices);
 
     uint32_t offset = 0;
@@ -432,9 +427,9 @@ void R_InitScene()
         quadIndices[i + 1] = offset + 1;
         quadIndices[i + 2] = offset + 2;
 
-        quadIndices[i + 3] = offset + 3;
-        quadIndices[i + 4] = offset + 4;
-        quadIndices[i + 5] = offset + 5;
+        quadIndices[i + 3] = offset + 0;
+        quadIndices[i + 4] = offset + 2;
+        quadIndices[i + 5] = offset + 3;
         
         offset += 4;
     }

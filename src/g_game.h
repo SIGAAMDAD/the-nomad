@@ -8,7 +8,7 @@ inline void N_DebugWindowClear();
 inline void N_DebugWindowDraw();
 
 #include "g_entity.h"
-#include "g_zone.h"
+#include "n_alloc.h"
 #include "n_scf.h"
 #include "m_renderer.h"
 #include "g_rng.h"
@@ -39,7 +39,7 @@ inline uint64_t work;
 #endif
 
 bool N_WriteFile(const char* name, const void *buffer, const ssize_t count);
-ssize_t N_ReadFile(const char* name, char **buffer);
+size_t N_ReadFile(const char* name, char **buffer, bool cache = true);
 
 inline std::vector<float> vertices;
 
