@@ -230,7 +230,7 @@ void I_NomadInit(int argc, char** argv)
     con.ConPrintf("setting up logger");
     Log::Init();
 
-    int i = I_GetParm("-bff=");
+    int i = I_GetParm("bff");
     if (i != -1 && argc > 2) {
         bff_mode = true;
 

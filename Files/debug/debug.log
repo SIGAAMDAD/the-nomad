@@ -1,5 +1,3 @@
-[trace]: clearing zone
 [info]: initiazing renderer
 [info]: alllocating memory to the SDL_Window context
 [info]: successful initialization of SDL2 context
-[info]: cache_move ok

@@ -58,6 +58,7 @@ extern "C" void Z_ChangeTag(void *ptr, uint8_t tag);
 extern "C" void Z_ScanForBlock(void *start, void *end);
 extern "C" void Z_Init();
 extern "C" void Z_Free(void *ptr);
+extern "C" void Z_Print(bool all);
 
 #if 0
 #define Z_Malloc(size, tag, user)            (Z_Malloc)   (size,tag,user,       __FILE__,FUNC_SIG,__LINE__)

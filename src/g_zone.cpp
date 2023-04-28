@@ -123,57 +123,59 @@ static const char* Z_TagToStr(uint8_t tag)
 
 static int indexer = 0;
 
-void Z_PrintStats(void)
+void Z_Print(bool all)
 {
-	if (bff_mode)
-		return;
+	memblock_t* block, *next;
+	size_t count, sum;
+	size_t totalblocks;
+	char	name[15];
 
-	if  (mainzone->size > 0) {
-		active_memory = active_memory < 0 ? 0 : active_memory;
-		free_memory = free_memory < 0 ? 0 : free_memory;
-		purgable_memory = purgable_memory < 0 ? 0 : purgable_memory;
-		indexer = 0;
-		uint64_t total_memory = active_memory + free_memory + purgable_memory;
+	name[14] = 0;
+	count = 0;
+	sum = 0;
+	totalblocks = 0;
+	
+	block = mainzone->blocklist.next;
 
-		con.ConPrintf(
-			"[Zone Allocation Daemon Log]\n"
-			"  -> General <-\n"
-			"   total memory         -> {}\n"
-			"   free memory          -> {}\n"
-			"   purgable memory      -> {}\n"
-			"   active memory        -> {}\n"
-			"  -> Block Info <-\n"
-			"   total blocks         -> {}",
-		total_memory, free_memory, purgable_memory, active_memory, total_blocks);
+	fprintf(stdout, "          :%8li total zone size\n", mainzone->size);
+	fprintf(stdout, "-------------------------\n");
+	fprintf(stdout, "-------------------------\n");
+	fprintf(stdout, "          :%8li REMAINING\n", mainzone->size - active_memory - purgable_memory);
+	fprintf(stdout, "-------------------------\n");
+
+	while (1) {
+		if (block == &mainzone->blocklist)
+			break;
 		
-		if (!total_blocks) {
-			con.ConPrintf("   > No Blocks To Report <");
+		// run consistancy checks
+//		if (block->id != ZONEID)
+//			N_Error("Z_Print: block id isn't ZONEID");
+		
+		next = block->next;
+		count++;
+		totalblocks++;
+		sum += block->size;
+		
+		// print the single block
+//		memcpy(name, block->name, 8);
+		if (all)
+			fprintf(stdout, "%8p :%8i\n", (void *)block, block->size);
+		
+		// print the total
+		if (next == &mainzone->blocklist) {
+			if (!all)
+				fprintf(stdout, "          :%8li (TOTAL)\n", sum);
+			
+			count = 0;
+			sum = 0;
 		}
-		else {
-			char addr[256];
-			memset(addr, 0, sizeof(addr));
-			uint64_t index = 0;
-			for (memblock_t* block = mainzone->blocklist.next;; block = block->next, ++index) {
-				if (block == &mainzone->blocklist)
-					break;
-				
-				if (block->user)
-					stbsp_snprintf(addr, sizeof(addr), "0x%lx", (uint64_t)block->user);
-				else
-					stbsp_snprintf(addr, sizeof(addr), "null user");
-				
-				con.ConPrintf(
-					"   > Block {} <\n"
-					"     address    : {}\n"
-					"     size       : {}\n"
-					"     tag        : {}\n"
-					"     user       : {}",
-				index, (void *)block, block->size, Z_TagToStr(block->tag), addr);
-			}
-		}
-		con.ConPrintf("\n");
-		con.ConFlush();
+
+		block = next;
 	}
+
+	fprintf(stdout, "-------------------------\n");
+	fprintf(stdout, "%8li total blocks\n", totalblocks);
+	fflush(stdout);
 }
 
 extern "C" void Z_KillHeap(void)
@@ -181,9 +183,6 @@ extern "C" void Z_KillHeap(void)
 	if (!mainzone) // if an error occurs before the zone is actually allocated
 		return;
 	
-#ifdef PARANOID
-	Z_DumpHeap();
-#endif
 	con.ConPrintf("Z_KillHeap: freeing mainzone pointer of size {}", mainzone->size);
 	free(mainzone);
 }
@@ -572,7 +571,7 @@ extern "C" void* Z_Malloc(uint32_t size, uint8_t tag, void* user)
 	++indexer;
 
 	if (indexer > 60)
-		Z_PrintStats();
+		Z_Print(true);
 #ifdef ZONEIDCHECK
 	base->id = ZONEID;
 #endif
@@ -630,7 +629,7 @@ extern "C" void Z_FreeTags(uint8_t lowtag, uint8_t hightag)
 		}
 	}
 	LOG_INFO("printing current state of zone after Z_FreeTags(lowtag: {}, hightag: {})", Z_TagToStr(lowtag), Z_TagToStr(hightag));
-	Z_PrintStats();
+	Z_Print(true);
 //	LOG_FREETAGS(lowtag, hightag, numblocks, size);
 }
 
@@ -662,7 +661,7 @@ extern "C" void Z_CleanCache(void)
 		}
 	}
 	LOG_INFO("printing current state after garbage collection");
-	Z_PrintStats();
+	Z_Print(true);
 }
 
 extern "C" void Z_CheckHeap()
@@ -690,7 +689,7 @@ extern "C" void Z_CheckHeap()
 	}
 	LOG_INFO("heap check successful");
 	LOG_INFO("printing current zone state");
-	Z_PrintStats();
+	Z_Print(true);
 }
 
 extern "C" void Z_ChangeTag2(void *ptr, uint8_t tag, const char *file, uint32_t line)

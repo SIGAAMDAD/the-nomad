@@ -24,9 +24,8 @@ OBJS= \
 	$(O)/g_init.o \
 	$(O)/g_loop.o \
 	$(O)/g_sound.o \
-	$(O)/z_zone.o \
 	$(O)/g_game.o \
-	$(O)/z_hunk.o \
+	$(O)/g_zone.o \
 	$(O)/n_scf.o \
 	$(O)/p_playr.o \
 	$(O)/s_mmisc.o \

@@ -5,7 +5,7 @@ std::shared_ptr<spdlog::logger> Log::m_Instance;
 Console con;
 Game* Game::gptr;
 
-bool N_WriteFile(const char* name, const void *buffer, const ssize_t count)
+bool N_WriteFile(const char* name, const void *buffer, const size_t count)
 {
     assert(buffer);
     FILE* fp;
@@ -22,7 +22,7 @@ bool N_WriteFile(const char* name, const void *buffer, const ssize_t count)
     return true;
 }
 
-size_t N_ReadFile(const char* name, char **buffer, bool cache)
+size_t N_ReadFile(const char* name, char **buffer)
 {
     assert(buffer);
     FILE* fp;
@@ -36,9 +36,9 @@ size_t N_ReadFile(const char* name, char **buffer, bool cache)
     fseek(fp, 0L, SEEK_END);
     fsize = ftell(fp);
     fseek(fp, 0L, SEEK_SET);
-    buf = cache ? Cache_Alloc(&buf, fsize, "filebuffer") : malloc(fsize);
+    buf = malloc(fsize);
     if (!buf)
-        N_Error("N_ReadFile: %s failed", (cache ? "Cache_Alloc()" : "malloc()"));
+        N_Error("N_ReadFile: %s failed", "malloc()");
     size = fread(buf, sizeof(char), fsize, fp);
     if (size < fsize)
         N_Error("N_ReadFile: failed to fread() file %s", name);
@@ -76,7 +76,7 @@ void Log::Init()
 
 void Game::Init()
 {
-    gptr = (Game *)Hunk_AllocName(sizeof(Game), "gameclass");
+    gptr = (Game *)Z_Malloc(sizeof(Game), TAG_STATIC, &gptr);
     assert(gptr);
     memset(Game::Get()->bffname, 0, sizeof(Game::Get()->bffname));
     memset(Game::Get()->scfname, 0, sizeof(Game::Get()->scfname));
@@ -88,7 +88,7 @@ void Game::Init()
     strncpy(Game::Get()->svfile, "nomadsv.ngd", sizeof(Game::Get()->svfile));
     Game::Get()->gamestate = GS_MENU;
 
-    Game::Get()->playrs = (playr_t *)Hunk_AllocName(sizeof(playr_t) * 1, "pstructs");
+    Game::Get()->playrs = (playr_t *)Z_Malloc(sizeof(playr_t) * 10, TAG_STATIC, &Game::Get()->playrs);
     assert(Game::Get()->playrs);
     Game::Get()->playr = &gptr->playrs[0];
     assert(Game::Get()->playr);
