@@ -55,6 +55,9 @@
 
 // speed is key
 #include <EABase/eabase.h>
+#include <EASTL/shared_ptr.h>
+#include <EASTL/weak_ptr.h>
+#include <EASTL/unique_ptr.h>
 #include <EASTL/allocator.h>
 #include <EASTL/allocator_malloc.h>
 #include <EASTL/core_allocator.h>

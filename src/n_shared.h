@@ -374,6 +374,41 @@ constexpr const char* credits_str =
 "A Few of the Guns: Ben Pavlovic\n"
 "\n";
 
+class mutex
+{
+private:
+	pthread_mutex_t id;
+	bool is_locked;
+public:
+	inline mutex()
+		: is_locked(false)
+	{
+		pthread_mutex_init(&id, NULL);
+	}
+	mutex(const mutex &) = delete;
+	inline mutex(mutex &&) = default;
+	inline ~mutex()
+	{
+		pthread_mutex_destroy(&id);
+	}
+	void lock()
+	{
+		if (is_locked)
+			return;
+		
+		pthread_mutex_trylock(&id);
+		is_locked = true;
+	}
+	void unlock()
+	{
+		if (!is_locked)
+			return;
+		
+		pthread_mutex_unlock(&id);
+		is_locked = false;
+	}
+};
+
 class thread
 {
 private:
@@ -394,23 +429,21 @@ public:
 		if (working)
 			join();
 	}
-	inline void create(void *_args = NULL)
+	void create(void *_args = NULL)
 	{
-		if (working) {
-			LOG_WARN("attempted to create a new thread when it is already working");
+		if (working)
 			return;
-		}
+		
 		pthread_create(&id, NULL, work, _args);
-		LOG_INFO("launching new thread with id %lu", id);
+		LOG_INFO("launching new thread with id {}", id);
 		working = true;
 	}
-	inline void join(void *_args = NULL)
+	void join(void *_args = NULL)
 	{
-		if (!working) {
-			LOG_WARN("attempted to join thread worker when it isn't working");
+		if (!working)
 			return;
-		}
-		LOG_INFO("joining worker thread with id %lu back to calling thread of id %lu", id, pthread_self());
+		
+		LOG_INFO("joining worker thread with id {} back to calling thread of id {}", id, pthread_self());
 		pthread_join(id, &_args);
 	}
 	thread(const thread &) = delete;
@@ -581,6 +614,13 @@ inline const char* N_ButtonToString(const uint32_t& code)
 	};
 }
 
+#define MAX_STRING_CHARS 1024
+typedef unsigned int dword;
+#define ID_TIME_T time_t
+#define id_attribute(x) __attribute__(x)
+#define ID_INLINE inline
+#include <idlib/Heap.h>
+
 constexpr float threehalfs = 1.5f;
 
 template<typename T>
@@ -668,5 +708,91 @@ inline bool N_strtobool2(const std::string& str)
 { return str == "yes" ? true : false; }
 inline bool N_strtobool2(const char* str)
 { return strncmp(str, "yes", strlen(str)) ? true : false; }
+
+inline int Cmd_Argc(void)
+{
+	return myargc;
+}
+
+inline char* Cmd_Argv(int argc)
+{
+	if (myargc == 1)
+		return myargv[0];
+	if (argc > myargc)
+		N_Error("Cmd_Argv: argc greater than myargc");
+	
+	return myargv[argc];
+}
+
+void* N_memset (void *dest, int fill, size_t count);
+void* N_memcpy (void *dest, const void *src, size_t count);
+bool N_memcmp (const void *ptr1, const void *ptr2, size_t count);
+char* N_strcpy (char *dest, const char *src);
+char* N_strncpy (char *dest, const char *src, size_t count);
+size_t N_strlen (const char *str);
+char *N_strrchr(char *str, char c);
+void N_strcat (char *dest, char *src);
+int N_strcmp (const char *str1, const char *str2);
+int N_strncmp (const char *str1, const char *str2, size_t count);
+int N_strncasecmp (const char *str1, const char *str2, size_t n);
+int N_atoi (const char *s);
+float N_atof(const char *s);
+bool N_strnbcmp(const char* str1, const char* str2, size_t n);
+bool N_strbcmp(const char* str1, const char* str2);
+
+#define alloca16(x)                     alloca(((x+15)&(~15)))
+#define malloc_aligned(alignment,size)  xmalloc(((size + (alignment - 1)) & ~(alignment - 1)))
+#define malloc(size)            xmalloc(size)
+#define free(ptr)               xfree(ptr)
+#define calloc(nelem, elemsise) memset(xmalloc(nelem*elemsize),0,nelem*elemsize)
+#define realloc(ptr, nsize)     xrealloc(ptr, nsize)
+template<class T>
+struct nomad_allocator
+{
+	char allocator_name[15]={0};
+	nomad_allocator() noexcept { }
+	nomad_allocator(const char* name = "nallocator") noexcept {
+		N_strncpy(allocator_name, name, 14);
+	}
+
+	typedef T value_type;
+	template<class U>
+	constexpr nomad_allocator(const nomad_allocator<U>&) noexcept { }
+
+	[[nodiscard]] inline T* allocate(std::size_t n) const {
+		T* p;
+		if ((p = static_cast<T*>(xmalloc(n))) != NULL)
+			return p;
+		
+		throw std::bad_alloc();
+	}
+	[[nodiscard]] inline T* allocate(std::size_t& n, std::size_t& alignment, std::size_t& offset) const {
+		T* p;
+		if ((p = static_cast<T*>(malloc_aligned(alignment, n))) != NULL)
+			return p;
+		else
+			throw std::bad_alloc();
+		return NULL;
+	}
+	void deallocate(void *p, std::size_t n) const noexcept {
+		free(p);
+	}
+};
+
+inline size_t BytesToMiB(size_t bytes)
+{
+
+}
+inline size_t BytesToGiB(size_t bytes);
+inline size_t BytesToKiB(size_t bytes);
+inline size_t MiBToBytes(size_t mb);
+
+template<typename T>
+struct zone_deleter;
+
+template<typename T>
+using nomadvector = eastl::vector<T, nomad_allocator<T>>;
+template<typename Key, typename T>
+using nomad_unordered_map = eastl::unordered_map<Key, T, eastl::hash<T>, eastl::equal_to<T>, nomad_allocator<T>>;
 
 #endif

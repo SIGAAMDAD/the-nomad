@@ -32,7 +32,12 @@ typedef struct nomadsnd_s
 {
     ALuint source;
     ALuint buffer;
-    char name[180];
+    char name[80];
+
+    int samplerate;
+    int channels;
+    int length;
+    short* sndbuf;
 
     bool queued = false;
     bool failed = false; // if the pre-caching effort failed for this specific sound

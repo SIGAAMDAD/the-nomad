@@ -77,17 +77,14 @@ typedef struct bff_audio_s
     uint8_t type;
 	uint64_t fsize;
     char *filebuf;
-
-    eastl::vector<int16_t, nomad_allocator<int16_t>> buffer;
 } bff_audio_t;
 
 typedef struct bff_level_s
 {
 	sprite_t lvl_map[NUMSECTORS][SECTOR_MAX_Y][SECTOR_MAX_X];
 	uint16_t *spawnlist;
-    uint16_t spawncount;
+    uint16_t spawncount = 0;
 
-	bff_audio_t *tracks;
 	bff_spawn_t *spawns;
 } bff_level_t;
 typedef struct bffinfo_s

@@ -63,7 +63,7 @@ int I_GetParm(const char* name)
     if (myargc < 1)
         return -1;
     for (int i = 1; i < myargc; ++i) {
-        if (strncmp(name, myargv[i], strlen(name))) {
+        if (strstr(name, myargv[i])) {
             return i;
         }
     }
@@ -101,6 +101,14 @@ void ImGui_Init()
     imgui_on = true;
 }
 
+void VectorNormalize(glm::vec3& v)
+{
+    float ilength = Q_rsqrt((v.x*v.x+v.y*v.y+v.z*v.z));
+
+    v.x *= ilength;
+    v.y *= ilength;
+    v.z *= ilength;
+}
 
 void done()
 {
@@ -108,17 +116,214 @@ void done()
     exit(EXIT_SUCCESS);
 }
 
+#if 1
+static GLuint R_CompileShader(const std::string& src, GLenum type)
+{
+    GLuint id = glCreateShader(type);
+    const char *buffer = src.c_str();
+    glShaderSource(id, 1, &buffer, NULL);
+    glCompileShader(id);
+    int success;
+    char infolog[512];
+    glGetShaderiv(id, GL_COMPILE_STATUS, &success);
+    if (success == GL_FALSE) {
+        glGetShaderInfoLog(id, sizeof(infolog), NULL, infolog);
+        fprintf(stderr, "Error: failed to compile shader: %s\n", infolog);
+        glDeleteShader(id);
+        return 0;
+    }
+    return id;
+}
+
+static GLuint R_AllocShader(const char *shaderfile)
+{
+    std::ifstream file(shaderfile, std::ios::in);
+    if (!file) {
+        fprintf(stderr, "Error: failed to open shader file %s\n", shaderfile);
+        return 0;
+    }
+    std::string line;
+    int index;
+    std::stringstream stream[2];
+    while (std::getline(file, line)) {
+        if (line == "#type vertex")
+            index = 0;
+        else if (line == "#type fragment")
+            index = 1;
+        else
+            stream[index] << line << '\n';
+    }
+    const std::string vertsrc = stream[0].str();
+    const std::string fragsrc = stream[1].str();
+    file.close();
+    GLuint vertid = R_CompileShader(vertsrc, GL_VERTEX_SHADER);
+    GLuint fragid = R_CompileShader(fragsrc, GL_FRAGMENT_SHADER);
+
+    GLuint shader = glCreateProgram();
+    glAttachShader(shader, vertid);
+    glAttachShader(shader, fragid);
+    glLinkProgram(shader);
+    glValidateProgram(shader);
+    glDeleteShader(vertid);
+    glDeleteShader(fragid);
+    return shader;
+}
+
+#endif
+
 void mainLoop()
 {
+#if 1
     R_InitScene();
+    Vertex vertices[] = {
+        Vertex(glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.0f, 0.0f)), // 0
+        Vertex(glm::vec3(-0.5f,  0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 1.0f, 0.0f)), // 1
+        Vertex(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 2.0f, 1.0f, 0.0f)), // 2
+        Vertex(glm::vec3( 0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 1.0f, 0.0f)), // 3
+        Vertex(glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.0f, 0.0f)), // 0
+        Vertex(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 2.0f, 1.0f, 0.0f)), // 2
+        Vertex(glm::vec3( 0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 1.0f, 0.0f)),
+//        100.0f, 100.0f,
+//        200.0f, 200.0f,
+//        100.0f, 200.0f // 3
+    };
+    uint32_t indices[] = {
+        0, 1, 2,
+        0, 2, 3
+    };
+
+    nomadvector<Vertex> verts;
+
+    SDL_Event event;
+    memset(&event, 0, sizeof(event));
+//    GLuint vao;
+//    glGenVertexArrays(1, &vao);
+//    glBindVertexArray(vao);
+//
+//    GLuint buffer;
+//    glGenBuffers(1, &buffer);
+//    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+//    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+//
+//    glEnableVertexArrayAttrib(buffer, 0);
+//    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 7, 0);
+//
+//    glEnableVertexArrayAttrib(buffer, 2);
+//    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 7, (const void *)12);
+//
+//    GLuint ibo;
+//    glGenBuffers(1, &ibo);
+//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+//    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+//    VertexArray vao;
+//    VertexBuffer vbo(sizeof(vertices));
+//    vbo.PushVertexAttrib(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, pos));
+//    vbo.PushVertexAttrib(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, color));
+
+//    IndexBuffer ibo(indices, 6);
+//    ibo.Bind();
+//
+//    Shader shader("shader.glsl");
+//    GLuint shader = R_AllocShader("shader.glsl");
+//    glUseProgram(shader);
+//    shader.Bind();
+
+//    glm::mat4 proj = glm::ortho(0.0f, 960.0f, 0.0f, 540.0f, -1.0f, 1.0f);
+//    glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(-100, 0, 0));
+//    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(200, 200, 0));
+//    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
+//    glm::mat4 mvp = renderer->camera->GetProjection() * renderer->camera->GetViewMatrix() * model;
+//
+    std::vector<glm::vec3> translations = {
+        glm::vec3(1, 1.5, 0),
+        glm::vec3(1, 2.5, 0),
+        glm::vec3(3, 2.5, 0)
+    };
+//
+//    shader.SetMat4("u_MVP", mvp);
+//    GLint location = glGetUniformLocation(shader, "u_MVP");
+//    glUniformMatrix4fv(location, 1, GL_FALSE, &mvp[0][0]);
+//    glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
+
+    while (1) {
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
+                done();
+            }
+            switch (event.key.keysym.sym) {
+            case SDLK_w:
+                translations[0].y += .25;
+                break;
+            case SDLK_a:
+                translations[0].x -= .25;
+                break;
+            case SDLK_s:
+                translations[0].y -= .25;
+                break;
+            case SDLK_d:
+                translations[0].x += .25;
+                break;
+            };
+        }
+        Renderer::BeginScene();
+        Renderer::DrawQuad(glm::vec2(translations[0].x, translations[0].y), glm::vec2(10, 10), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+        Renderer::EndScene();
+//        renderer->camera->CalculateViewMatrix();
+//        shader.SetMat4("u_ViewProjection", renderer->camera->GetVPM());
+//        glClear(GL_COLOR_BUFFER_BIT);
+//
+//        for (auto &i : vertices) {
+//            i.color.r += .1f;
+//            i.color.g += .1f;
+//        }
+//
+//        vbo.SetData(vertices, sizeof(vertices));
+//        
+//        for (const auto& i : translations) {
+//            model = glm::translate(glm::mat4(1.0f), i);
+//            mvp = renderer->camera->GetProjection() * renderer->camera->GetViewMatrix() * model;
+//            shader.SetMat4("u_MVP", mvp);
+//            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
+//        }
+//        SDL_GL_SwapWindow(renderer->window);
+//        verts.clear();
+    }
+#else
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_)
     SDL_Event event;
     memset(&event, 0, sizeof(event));
 
-    std::vector<glm::vec3> translations = {
-        glm::vec3(1, 1, 0),
-        glm::vec3(2, 3, 0)
+    Vertex vertices[] = {
+        Vertex(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)),
+        Vertex(glm::vec3( 0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)),
+        Vertex(glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)),
+        Vertex(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)),
+        Vertex(glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)),
+        Vertex(glm::vec3(-0.5f,  0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)),
     };
-    std::vector<glm::mat4> mvps(translations.size());
+
+    std::shared_ptr<VertexArray> vao = VertexArray::Create();
+    std::shared_ptr<VertexBuffer> vbo = VertexBuffer::Create(vertices, sizeof(vertices));
+
+    glEnableVertexArrayAttrib(vbo->id, 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, pos));
+
+    glEnableVertexArrayAttrib(vbo->id, 1);
+    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, color));
+
+    std::shared_ptr<Shader> shader = Shader::Create("shader.glsl");
+
+    renderer->camera = (Camera *)Z_Malloc(sizeof(Camera), TAG_STATIC, &renderer->camera, "camera");
+    new (renderer->camera) Camera(-2.0f, 2.0f, -2.0f, 2.0f);
+
+    glm::vec3 pos(0);
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), pos);
+    glm::mat4 mvp = renderer->camera->GetProjection() * renderer->camera->GetViewMatrix() * model;
+
+//    shader->Unbind();
+//    vao->Unbind();
+//    vbo->Unbind();
 
     glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -146,27 +351,11 @@ void mainLoop()
             drawmode = GL_LINE_STRIP_ADJACENCY;
     }
 #endif
-    glm::vec3 pos(0, 0, 0);
-    glm::ivec2 mousepos;
-    glm::vec3 mousepos_f;
     while (1) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 done();
             }
-#if 0 // works but too fast and sensitive
-            else if (event.type == SDL_MOUSEMOTION) {
-                SDL_GetMouseState(&mousepos.x, &mousepos.y);
-                mousepos_f.y = (float)mousepos.y;
-                mousepos_f.x = (float)mousepos.x;
-
-                // this is where that high school trig comes in handy
-                float adjacent = disBetweenOBJ(translations[0], mousepos_f);
-                float opposite = tan(90) * adjacent;
-
-                renderer->camera->GetRotation() = -opposite / M_PI;
-            }
-#endif
             else if (event.type == SDL_KEYDOWN) {
                 switch (event.key.keysym.sym) {
                 case SDLK_w:
@@ -212,12 +401,28 @@ void mainLoop()
                     renderer->camera->GetPos().y += sin(glm::radians(renderer->camera->GetRotation())) * renderer->camera->GetSpeed();
                     break;
                 };
+                renderer->camera->
+                glClear(GL_COLOR_BUFFER_BIT);
+
+                shader->Bind();
+                vao->Bind();
+                vbo->Bind();
+
+                model = glm::translate(glm::mat4(1.0f), pos);
+                mvp = renderer->camera->GetProjection() * renderer->camera->GetViewMatrix() * model;
+
+//                shader->SetMat4("u_MVP", mvp);
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+
+                shader->Unbind();
+                vao->Unbind();
+                vbo->Unbind();
+
+                SDL_GL_SwapWindow(renderer->window);
             }
         }
-        Renderer::BeginScene();
-        Renderer::DrawQuad(glm::vec2(0.0f, 0.0f), glm::vec2(4.0f, 4.0f), glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
-        Renderer::EndScene();
     }
+#endif
 }
 
 void I_NomadInit(int argc, char** argv)
@@ -225,13 +430,15 @@ void I_NomadInit(int argc, char** argv)
     myargc = argc;
     myargv = argv;
 
+    xalloc_init();
+
 //    G_LoadBZip2();
 
     con.ConPrintf("setting up logger");
     Log::Init();
 
-    int i = I_GetParm("bff");
-    if (i != -1 && argc > 2) {
+    int i = I_GetParm("-bff");
+    if (i != -1) {
         bff_mode = true;
 
         bool operations[4];

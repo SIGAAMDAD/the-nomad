@@ -59,7 +59,7 @@ int remove_recursive(const char* path)
 void G_ExtractBFF(const std::string& filepath)
 {
     Z_Init();
-    bff = (bff_file_t *)Z_Malloc(sizeof(bff_file_t), TAG_STATIC, &bff);
+    bff = (bff_file_t *)Z_Malloc(sizeof(bff_file_t), TAG_STATIC, &bff, "BFF");
 
 	bff->fp = fopen(filepath.c_str(), "rb");
 	if (!bff->fp) {
@@ -79,13 +79,13 @@ void G_ExtractBFF(const std::string& filepath)
     LOG_INFO("number of texture chunks to load: {}", bff->header.numtextures);
 	
 	bff->levels = bff->header.numlevels
-        ? (bff_level_t *)Z_Malloc(sizeof(bff_level_t) * bff->header.numlevels, TAG_STATIC, &bff->levels) : NULL;
+        ? (bff_level_t *)Z_Malloc(sizeof(bff_level_t) * bff->header.numlevels, TAG_STATIC, &bff->levels, "bfflvls") : NULL;
 	bff->sounds = bff->header.numsounds
-        ? (bff_audio_t *)Z_Malloc(sizeof(bff_audio_t) * bff->header.numsounds, TAG_STATIC, &bff->sounds) : NULL;
+        ? (bff_audio_t *)Z_Malloc(sizeof(bff_audio_t) * bff->header.numsounds, TAG_STATIC, &bff->sounds, "bffsnds") : NULL;
 	bff->spawns = bff->header.numspawns
-        ? (bff_spawn_t *)Z_Malloc(sizeof(bff_spawn_t) * bff->header.numspawns, TAG_STATIC, &bff->spawns) : NULL;
+        ? (bff_spawn_t *)Z_Malloc(sizeof(bff_spawn_t) * bff->header.numspawns, TAG_STATIC, &bff->spawns, "bffspns") : NULL;
     bff->textures = bff->header.numtextures
-        ? (bff_texture_t *)Z_Malloc(sizeof(bff_texture_t) * bff->header.numtextures, TAG_STATIC, &bff->textures) : NULL;
+        ? (bff_texture_t *)Z_Malloc(sizeof(bff_texture_t) * bff->header.numtextures, TAG_STATIC, &bff->textures, "bfftextures") : NULL;
 
 
     for (uint16_t i = 0; i < bff->header.numlevels; ++i) {
@@ -95,7 +95,7 @@ void G_ExtractBFF(const std::string& filepath)
         LOG_INFO("loading level chunk {}", i);
         fread(&ptr->spawncount, sizeof(uint16_t), 1, bff->fp);
         if (ptr->spawncount) {
-            ptr->spawnlist = (uint16_t *)Z_Malloc(sizeof(uint16_t) * ptr->spawncount, TAG_STATIC, &ptr->spawnlist);
+            ptr->spawnlist = (uint16_t *)Z_Malloc(sizeof(uint16_t) * ptr->spawncount, TAG_STATIC, &ptr->spawnlist, "spnlist");
             fread(ptr->spawnlist, sizeof(uint16_t), ptr->spawncount, bff->fp);
         }
         fread(ptr->lvl_map, sizeof(sprite_t), MAP_MAX_Y*MAP_MAX_X, bff->fp);
@@ -147,7 +147,7 @@ void G_ExtractBFF(const std::string& filepath)
         fread(&ptr->lvl_index, sizeof(int32_t), 1, bff->fp);
         fread(&ptr->fsize, sizeof(uint64_t), 1, bff->fp);
         if (ptr->fsize) {
-            ptr->filebuf = (char *)Z_Malloc(ptr->fsize, TAG_STATIC, &ptr->filebuf);
+            ptr->filebuf = (char *)Z_Malloc(ptr->fsize, TAG_STATIC, &ptr->filebuf, "sndfilebuf");
             fread(ptr->filebuf, sizeof(char), ptr->fsize, bff->fp);
         }
     }
@@ -228,6 +228,7 @@ void G_ExtractBFF(const std::string& filepath)
 void G_LoadBFF(const std::string& bffname)
 {
     bffinfo_t *header;
+    Z_Init();
     N_ReadFile(FILEPATH("bffinfo", ".dat", bffname), (char **)&header);
 
     std::vector<nomadsnd_t> sounds(header->numsounds);
@@ -244,9 +245,8 @@ void G_LoadBFF(const std::string& bffname)
         alBufferData(sounds[i].buffer, channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16,
             buffer, ret, samplerate);
         alSourcei(sounds[i].source, AL_BUFFER, sounds[i].buffer);
+        xfree(buffer);
     }
-
-    Z_Init();
 
     LOG_INFO("initiazing renderer");
     R_Init();
@@ -255,30 +255,29 @@ void G_LoadBFF(const std::string& bffname)
 
     // pre-cache the bff stuff
     memmove(&bffinfo, header, sizeof(bffinfo_t));
-    free(header);
+    xfree(header);
 
     levels = bffinfo.numlevels
-        ? (bff_level_t *)Z_Malloc(sizeof(bff_level_t) * bffinfo.numlevels, TAG_STATIC, &levels) : NULL;
+        ? (bff_level_t *)Z_Malloc(sizeof(bff_level_t) * bffinfo.numlevels, TAG_STATIC, &levels, "bfflvls") : NULL;
 	//bff->sounds = bff->header.numsounds
     //    ? (bff_audio_t *)Z_Malloc(sizeof(bff_audio_t) * bff->header.numsounds, TAG_CACHE, &bff->sounds) : NULL;
 	spawns = bffinfo.numspawns
-        ? (bff_spawn_t *)Z_Malloc(sizeof(bff_spawn_t) * bffinfo.numspawns, TAG_STATIC, &spawns) : NULL;
+        ? (bff_spawn_t *)Z_Malloc(sizeof(bff_spawn_t) * bffinfo.numspawns, TAG_STATIC, &spawns, "bffspns") : NULL;
     textures = bffinfo.numtextures
-        ? (bff_texture_t *)Z_Malloc(sizeof(bff_texture_t) * bffinfo.numtextures, TAG_CACHE, &textures) : NULL;
+        ? (bff_texture_t *)Z_Malloc(sizeof(bff_texture_t) * bffinfo.numtextures, TAG_STATIC, &textures, "bfftextures") : NULL;
 
     for (uint16_t i = 0; i < bffinfo.numlevels; ++i) {
         std::string filepath = "NMLVLFILE_"+std::to_string(i);
         char *buffer;
         size_t size = N_ReadFile(FILEPATH(filepath, ".blf", bffname), &buffer);
-        memmove(&levels[i], buffer, size);
-        free(buffer);
+        memcpy(&levels[i], buffer, sizeof(bff_level_t));
+        xfree(buffer);
     }
 
     // transfer sound data from malloc to the zone
     sfx_cache = (nomadsnd_t *)Z_Malloc(sizeof(nomadsnd_t) * sounds.size(), TAG_STATIC, &sfx_cache);
-    memmove(sfx_cache, sounds.data(), sizeof(nomadsnd_t) * sounds.size());
+    memcpy(sfx_cache, sounds.data(), sizeof(nomadsnd_t) * sounds.size());
     sounds.clear();
-
 
     // all mob/non-player-entity memory will be slapped onto the heap from this point forward,
     // and everything with TAG_CACHE or TAG_STATIC will remain allocated for the entirety of
@@ -288,6 +287,14 @@ void G_LoadBFF(const std::string& bffname)
         Game::Get()->entities.emplace_back();
         memset(&Game::Get()->entities.back(), 0, sizeof(entity_t));
     }
+    for (uint16_t i = 0; i < bffinfo.numsounds; ++i) {
+        alGenSources(1, &sfx_cache[i].source);
+        alGenBuffers(1, &sfx_cache[i].buffer);
+        alSourcei(sfx_cache[i].source, AL_BUFFER, sfx_cache[i].buffer);
+        alBufferData(sfx_cache[i].buffer, sfx_cache[i].channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16,
+            sfx_cache[i].sndbuf, sfx_cache[i].length * sizeof(short), sfx_cache[i].samplerate);
+        alSourcef(sfx_cache[i].source, AL_GAIN, scf::audio::sfx_vol);
+    }
     
     Game::Get()->playr->p = &Game::Get()->entities.front();
 
@@ -295,6 +302,14 @@ void G_LoadBFF(const std::string& bffname)
     memset(Game::Get()->playr->p->pos.hitbox, 0, sizeof(vec2_t) * 4);
     memset(&Game::Get()->playr->p->pos.thrust, 0, sizeof(vec3_t));
     memset(&Game::Get()->playr->p->pos.to, 0, sizeof(vec3_t));
+
+    Z_Print(true);
+    if (levels)
+        Z_ChangeTag(levels, TAG_CACHE);
+    if (spawns)
+        Z_ChangeTag(spawns, TAG_CACHE);
+    if (textures)
+        Z_ChangeTag(textures, TAG_CACHE);
 }
 
 void G_WriteBFF(const char* outfile, const char* dirname)
@@ -303,7 +318,7 @@ void G_WriteBFF(const char* outfile, const char* dirname)
         return;
 
     Z_Init();
-    bff = (bff_file_t *)Z_Malloc(sizeof(bff_file_t), TAG_STATIC, &bff);
+    bff = (bff_file_t *)Z_Malloc(sizeof(bff_file_t), TAG_STATIC, &bff, "BFF");
 
     std::ifstream file(std::string(dirname)+"entries.json", std::ios::in);
     if (file.fail()) {
@@ -337,7 +352,7 @@ void G_WriteBFF(const char* outfile, const char* dirname)
             default: return SPR_CUSTOM; break;
             };
         };
-        bff->spawns = (bff_spawn_t *)Z_Malloc(sizeof(bff_spawn_t) * bff->header.numspawns, TAG_STATIC, &bff->spawns);
+        bff->spawns = (bff_spawn_t *)Z_Malloc(sizeof(bff_spawn_t) * bff->header.numspawns, TAG_STATIC, &bff->spawns, "bffspns");
 
         for (uint16_t i = 0; i < bff->header.numspawns; ++i) {
             const std::string node_name = "spawner_"+std::to_string(i);
@@ -366,7 +381,7 @@ void G_WriteBFF(const char* outfile, const char* dirname)
     }
     // load the levels
     if (bff->header.numlevels) {
-        bff->levels = (bff_level_t *)Z_Malloc(sizeof(bff_level_t) * bff->header.numlevels, TAG_STATIC, &bff->levels);
+        bff->levels = (bff_level_t *)Z_Malloc(sizeof(bff_level_t) * bff->header.numlevels, TAG_STATIC, &bff->levels, "bfflvls");
 
         for (uint16_t i = 0; i < bff->header.numlevels; ++i) {
             const std::string node_name = "level_"+std::to_string(i);
@@ -412,7 +427,7 @@ void G_WriteBFF(const char* outfile, const char* dirname)
                         for (uint16_t x = 0; x < SECTOR_MAX_X; ++x) {
                             if (ptr->lvl_map[m][y][x] == spn->marker) {
                                 ptr->spawnlist = (uint16_t *)Z_Realloc(ptr->spawnlist,
-                                    sizeof(uint16_t) * (ptr->spawncount ? ptr->spawncount : 1), &ptr->spawnlist, TAG_STATIC);
+                                    sizeof(uint16_t) * (ptr->spawncount ? ptr->spawncount : 1), &ptr->spawnlist, TAG_STATIC, "spnlist");
                                 ptr->spawnlist[ptr->spawncount] = s;
                                 spn->where = {y, x};
                                 ++ptr->spawncount;
@@ -425,7 +440,7 @@ void G_WriteBFF(const char* outfile, const char* dirname)
     }
     // load the textures
     if (bff->header.numtextures) {
-        bff->textures = (bff_texture_t *)Z_Malloc(sizeof(bff_texture_t) * bff->header.numtextures, TAG_STATIC, &bff->textures);
+        bff->textures = (bff_texture_t *)Z_Malloc(sizeof(bff_texture_t) * bff->header.numtextures, TAG_STATIC, &bff->textures, "bfftextures");
 
         for (uint16_t i = 0; i < bff->header.numtextures; ++i) {
             const std::string node_name = "texture_"+std::to_string(i);
@@ -438,7 +453,7 @@ void G_WriteBFF(const char* outfile, const char* dirname)
     }
     // load the sounds
     if (bff->header.numsounds) {
-        bff->sounds = (bff_audio_t *)Z_Malloc(sizeof(bff_audio_t) * bff->header.numsounds, TAG_STATIC, &bff->sounds);
+        bff->sounds = (bff_audio_t *)Z_Malloc(sizeof(bff_audio_t) * bff->header.numsounds, TAG_STATIC, &bff->sounds, "bffsnds");
 
         for (uint16_t i = 0; i < bff->header.numsounds; ++i) {
             const std::string node_name = "sound_"+std::to_string(i);
@@ -462,6 +477,7 @@ void G_WriteBFF(const char* outfile, const char* dirname)
     }
 
     Z_Print(true);
+    xalloc_stats();
 
     // write everything
     FILE* fp = fopen(outfile, "wb");
@@ -498,7 +514,7 @@ void G_WriteBFF(const char* outfile, const char* dirname)
     for (uint16_t i = 0; i < bff->header.numtextures; ++i) {
         fwrite(&bff->textures[i].fsize, sizeof(uint64_t), 1, fp);
         fwrite(bff->textures[i].buffer, sizeof(char), bff->textures[i].fsize, fp);
-        free(bff->textures[i].buffer);
+        xfree(bff->textures[i].buffer);
         fflush(fp);
     }
     for (uint16_t i = 0; i < bff->header.numsounds; ++i) {
@@ -506,7 +522,7 @@ void G_WriteBFF(const char* outfile, const char* dirname)
         fwrite(&bff->sounds[i].lvl_index, sizeof(int32_t), 1, fp);
         fwrite(&bff->sounds[i].fsize, sizeof(uint64_t), 1, fp);
         fwrite(bff->sounds[i].filebuf, sizeof(char), bff->sounds[i].fsize, fp);
-        free(bff->sounds[i].filebuf);
+        xfree(bff->sounds[i].filebuf);
         LOG_INFO("wrote audio chunk {}", i);
         fflush(fp);
     }

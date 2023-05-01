@@ -16,55 +16,44 @@
 // DESCRIPTION: src/g_zone.h
 //  header for the zone allocation daemon
 //----------------------------------------------------------
-#ifndef _Z_ZONE_
-#define _Z_ZONE_
+#ifndef _G_ZONE_
+#define _G_ZONE_
 
 #pragma once
 
-enum {
-	TAG_FREE = 0,
-	TAG_STATIC = 1,
-	TAG_LEVEL = 2,
-	TAG_SFX = 3,
-	TAG_MUSIC = 4,
 
+enum : uint8_t
+{
+	TAG_FREE       = 0,
+	TAG_STATIC     = 1,
+	TAG_LEVEL      = 2,
+	TAG_SFX        = 3,
+	TAG_MUSIC      = 4,
 	TAG_PURGELEVEL = 100,
-	TAG_SCOPE = 101,
-	TAG_LOAD = 102,
-	TAG_CACHE = 103,
-
-	NUMTAGS = 104
+	TAG_CACHE      = 101,
+	
+	NUMTAGS
 };
 
-#ifdef _NOMAD_DEBUG
-#define LOG_CALL(func) LOG_DEBUG("%s called from %s:%s:%iu",func,_FILE__,__func__,__LINE__)
-#else
-#define LOG_CALL(func)
-#endif
+#define TAG_SCOPE TAG_CACHE
+#define TAG_LOAD TAG_CACHE
 
-extern "C" void *Z_Malloc(uint32_t size, uint8_t tag, void *user);
-extern "C" void *Z_Realloc(void *ptr, uint32_t nsize, void *user, uint8_t tag);
-extern "C" void *Z_Calloc(void *user, uint32_t elemsize, uint32_t nelem, uint8_t tag);
-extern "C" void Z_CheckHeap();
-extern "C" void Z_FileDumpHeap();
-extern "C" void Z_DumpHeap();
-extern "C" void Z_FreeTags(uint8_t lowtag, uint8_t hightag);
-extern "C" void Z_ClearZone();
-extern "C" uint32_t Z_ZoneSize();
-extern "C" void Z_ChangeUser(void *ptr, void *user);
-extern "C" void Z_ChangeTag2(void *ptr, uint8_t tag, const char* file, uint32_t line);
-extern "C" void Z_CleanCache();
-extern "C" void Z_ChangeTag(void *ptr, uint8_t tag);
-extern "C" void Z_ScanForBlock(void *start, void *end);
-extern "C" void Z_Init();
-extern "C" void Z_Free(void *ptr);
-extern "C" void Z_Print(bool all);
-
-#if 0
-#define Z_Malloc(size, tag, user)            (Z_Malloc)   (size,tag,user,       __FILE__,FUNC_SIG,__LINE__)
-#define Z_Calloc(user, elemsize, nelem, tag) (Z_Calloc)   (user,elemsize,nelem, __FILE__,FUNC_SIG,__LINE__)
-#define Z_Realloc(ptr, nsize, user)          (Z_Realloc)  (ptr,nsize,user,      __FILE__,FUNC_SIG,__LINE__)
-#endif
+void* Z_Malloc(size_t size, int tag, void *user);
+void* Z_AlignedAlloc(size_t alignment, size_t size, int tag, void *user, const char* name);
+void* Z_Malloc(size_t size, int tag, void *user, const char* name);
+void* Z_Calloc(void *user, size_t nelem, size_t elemsize, int tag, const char* name);
+void* Z_Realloc(void *ptr, size_t nsize, void *user, int tag, const char* name);
+void Z_Free(void *ptr);
+void Z_FreeTags(int lowtag, int hightag);
+void Z_ChangeTag(void* user, int tag);
+void Z_ChangeUser(void* olduser, void* newuser);
+void Z_ChangeName(void* user, const char* name);
+void Z_ClearCache();
+void Z_CheckHeap();
+void Z_ClearZone();
+void Z_Print(bool all);
+void Z_Init();
+int Z_FreeMemory(void);
 
 #ifdef _WIN32
 #define PROT_READ     0x1
@@ -99,103 +88,6 @@ extern "C" void *mmap(void *start, size_t size, int32_t prot, int32_t flags, int
 extern "C" void munmap(void *addr, size_t size);
 #endif
 
-inline void *N_malloc(size_t size)
-{
-	size += sizeof(uint64_t);
-	void *ptr = mmap(0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-	*(uint64_t *)ptr = size;
-	return (void *)((byte *)ptr + sizeof(uint64_t));
-}
-inline void *N_calloc(size_t elemsize, size_t nelem)
-{
-	return memset((N_malloc)(elemsize * nelem), 0, nelem * elemsize);
-}
-inline void N_Free(void *ptr)
-{
-	void *addr = (void *)((byte *)ptr - sizeof(uint64_t));
-	munmap(addr, *(uint64_t *)addr);
-}
-
-template<typename T>
-struct zone_deleter {
-    constexpr void operator()(T* arg) const { Z_Free(arg); }
-};
-
-template<typename T>
-inline std::unique_ptr<T, zone_deleter<T>> make_scoped_block(uint8_t tag = TAG_SCOPE) {
-	return std::unique_ptr<T, zone_deleter<T>>(static_cast<T*>(Z_Malloc(sizeof(T), tag, NULL)));
-}
-
-template<typename T>
-class zone_ptr
-{
-private:
-	T *ptr;
-public:
-	zone_ptr(T *_ptr) noexcept
-		: ptr(_ptr) { }
-	template<typename... Args>
-	zone_ptr(T *_ptr, Args&&... args) noexcept
-		: ptr(_ptr)
-	{
-		new (ptr) T(std::forward<Args>(args)...);
-	}
-	zone_ptr(const zone_ptr &) noexcept = default;
-	zone_ptr(zone_ptr &&) noexcept = default;
-
-	constexpr zone_ptr(std::nullptr_t) noexcept : zone_ptr(){}
-	constexpr zone_ptr() noexcept = default;
-
-	~zone_ptr()
-	{
-		ptr->~T();
-		Z_Free(ptr);
-	}
-
-	inline zone_ptr& operator=(const zone_ptr &) noexcept = default;
-	inline T* operator->(void) noexcept { return ptr; }
-};
-
-template<class T>
-struct nomad_allocator
-{
-	nomad_allocator() noexcept { }
-
-	typedef T value_type;
-	template<class U>
-	constexpr nomad_allocator(const nomad_allocator<U>&) noexcept { }
-
-	[[nodiscard]] inline T* allocate(std::size_t n) const {
-		T* p;
-		if ((p = static_cast<T*>(malloc(n))) != NULL)
-			return p;
-		
-		throw std::bad_alloc();
-	}
-	[[nodiscard]] inline T* allocate(std::size_t& n, std::size_t& alignment, std::size_t& offset) const {
-		T* p;
-#if EASTL_ALIGNED_MALLOC_AVAILABLE
-		if ((offset % alignment) == 0) {
-			if((p = memalign(alignment, n)) != NULL) // memalign is more consistently available than posix_memalign.
-				return p;
-			else
-				throw std::bad_alloc();
-		}
-#else
-		if ((alignment <= EASTL_SYSTEM_ALLOCATOR_MIN_ALIGNMENT) && ((offset % alignment) == 0)) {
-			if ((p = static_cast<T*>(malloc(n))) != NULL)
-				return p;
-			else
-				throw std::bad_alloc();
-		}
-#endif
-		return NULL;
-	}
-	void deallocate(void *p, std::size_t n) const noexcept {
-		free(p);
-	}
-};
-
 template<class T>
 struct zone_allocator
 {
@@ -207,26 +99,85 @@ struct zone_allocator
 
     [[nodiscard]] inline T* allocate(std::size_t n) const {
         T* p = NULL;
-		if ((p = static_cast<T*>(Z_Realloc(p, n, &p, TAG_STATIC))) != NULL)
+		if ((p = static_cast<T*>(Z_Malloc(n, TAG_STATIC, &p, "zallocator"))) != NULL)
             return p;
 
         throw std::bad_alloc();
     }
 	[[nodiscard]] inline T* allocate(std::size_t& n, std::size_t& alignment, std::size_t& offset) const {
 		T* p = NULL;
-		if ((p = static_cast<T*>(Z_Realloc(p, n, &p, TAG_STATIC))) != NULL)
+		if ((p = static_cast<T*>(Z_Malloc(n, TAG_STATIC, &p, "zallocator"))) != NULL)
 			return p;
 		
 		throw std::bad_alloc();
 	}
-	void deallocate(void* p, std::size_t n) const noexcept {
-		Z_Free(p);
+	void deallocate(T* p, std::size_t n) const noexcept {
+		Z_Free((void *)p);
 	}
-//	void deallocate(T* p, std::size_t n) noexcept {
-//	    Z_Free(p);
-//	}
 };
 
+template<typename T>
+struct zone_deleter
+{
+	constexpr void operator()(T *p) { Z_Free((void *)p); }
+};
+
+template<typename T>
+using nomad_uniqueptr = eastl::unique_ptr<T, zone_deleter<T>>;
+template<typename T>
+using nomad_sharedptr = eastl::shared_ptr<T>;
+template<typename T>
+using nomad_weakptr = eastl::weak_ptr<T>;
+
+template<class T, typename... Args>
+inline nomad_uniqueptr<T> make_nomadunique(const std::string& name, Args&&... args)
+{
+	nomad_uniqueptr<T> ptr(static_cast<T*>(Z_Malloc(sizeof(T), TAG_STATIC, NULL, name.c_str())));
+	new (ptr.get()) T(std::forward<Args>(args)...);
+	return ptr;
+}
+template<class T, typename... Args>
+inline nomad_uniqueptr<T> make_nomadunique(Args&&... args)
+{
+	nomad_uniqueptr<T> ptr(static_cast<T*>(Z_Malloc(sizeof(T), TAG_STATIC, NULL, "uniqueptr")));
+	new (ptr.get()) T(std::forward<Args>(args)...);
+	return ptr;
+}
+template<typename T>
+inline nomad_uniqueptr<T> make_nomadunique(const std::string& name)
+{
+	return nomad_uniqueptr<T>(static_cast<T*>(Z_Malloc(sizeof(T), TAG_STATIC, NULL, name.c_str())));
+}
+template<typename T>
+inline nomad_uniqueptr<T> make_nomadunique(void)
+{
+	return nomad_uniqueptr<T>(static_cast<T*>(Z_Malloc(sizeof(T), TAG_STATIC, NULL, "uniqueptr")));
+}
+
+template<class T, typename... Args>
+inline nomad_sharedptr<T> make_nomadshared(const std::string& name, Args&&... args)
+{
+	eastl::shared_ptr<T> ptr(static_cast<T*>(Z_Malloc(sizeof(T), TAG_STATIC, NULL, name.c_str())), zone_deleter<T>());
+	new (ptr.get()) T(std::forward<Args>(args)...);
+	return ptr;
+}
+template<class T, typename... Args>
+inline nomad_sharedptr<T> make_nomadshared(Args&&... args)
+{
+	eastl::shared_ptr<T> ptr(static_cast<T*>(Z_Malloc(sizeof(T), TAG_STATIC, NULL, "sharedptr")), zone_deleter<T>());
+	new (ptr.get()) T(std::forward<Args>(args)...);
+	return ptr;
+}
+template<typename T>
+inline nomad_sharedptr<T> make_nomadshared(const std::string& name)
+{
+	return eastl::shared_ptr<T>(static_cast<T*>(Z_Malloc(sizeof(T), TAG_STATIC, NULL, name.c_str())), zone_allocator<T>());
+}
+template<typename T>
+inline nomad_sharedptr<T> make_nomadshared(void)
+{
+	return eastl::shared_ptr<T>(static_cast<T*>(Z_Malloc(sizeof(T), TAG_STATIC, NULL, "sharedptr")), zone_deleter<T>());
+}
 
 template<typename T>
 class linked_list
@@ -273,7 +224,7 @@ private:
 	
 	linked_list<T>::node alloc_node(void) {
 		linked_list<T>::node ptr = (linked_list<T>::node)Z_Malloc(
-			sizeof(linked_list<T>::list_node), TAG_STATIC, &ptr);
+			sizeof(linked_list<T>::list_node), TAG_STATIC, &ptr, "listnode");
 		if (ptr == NULL)
 			N_Error("linked_list::alloc_node: memory allocation failed");
 		
@@ -282,7 +233,7 @@ private:
 	void dealloc_node(linked_list<T>::node ptr) noexcept {
 		if (ptr == NULL)
 			return;
-		Z_Free(ptr);
+		Z_Free((void *)ptr);
 	}
 public:
 	linked_list() noexcept = default;

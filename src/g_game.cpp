@@ -4,6 +4,7 @@
 std::shared_ptr<spdlog::logger> Log::m_Instance;
 Console con;
 Game* Game::gptr;
+uint64_t ticcount = 0;
 
 bool N_WriteFile(const char* name, const void *buffer, const size_t count)
 {
@@ -36,9 +37,9 @@ size_t N_ReadFile(const char* name, char **buffer)
     fseek(fp, 0L, SEEK_END);
     fsize = ftell(fp);
     fseek(fp, 0L, SEEK_SET);
-    buf = malloc(fsize);
+    buf = xmalloc(fsize);
     if (!buf)
-        N_Error("N_ReadFile: %s failed", "malloc()");
+        N_Error("N_ReadFile: %s failed", "xmalloc()");
     size = fread(buf, sizeof(char), fsize, fp);
     if (size < fsize)
         N_Error("N_ReadFile: failed to fread() file %s", name);
@@ -76,8 +77,9 @@ void Log::Init()
 
 void Game::Init()
 {
-    gptr = (Game *)Z_Malloc(sizeof(Game), TAG_STATIC, &gptr);
+    gptr = (Game *)Z_Malloc(sizeof(Game), TAG_STATIC, &gptr, "gptr");
     assert(gptr);
+    void *pad = Z_Malloc(64, TAG_STATIC, &pad, "padding64");
     memset(Game::Get()->bffname, 0, sizeof(Game::Get()->bffname));
     memset(Game::Get()->scfname, 0, sizeof(Game::Get()->scfname));
     memset(Game::Get()->svfile, 0, sizeof(Game::Get()->svfile));
@@ -88,7 +90,8 @@ void Game::Init()
     strncpy(Game::Get()->svfile, "nomadsv.ngd", sizeof(Game::Get()->svfile));
     Game::Get()->gamestate = GS_MENU;
 
-    Game::Get()->playrs = (playr_t *)Z_Malloc(sizeof(playr_t) * 10, TAG_STATIC, &Game::Get()->playrs);
+    Game::Get()->playrs = (playr_t *)Z_Malloc(sizeof(playr_t) * 10, TAG_STATIC, &Game::Get()->playrs, "pstructs");
+    pad = Z_Malloc(64, TAG_STATIC, &pad, "padding64"); // will not need to be freed
     assert(Game::Get()->playrs);
     Game::Get()->playr = &gptr->playrs[0];
     assert(Game::Get()->playr);
@@ -106,4 +109,6 @@ Game::~Game()
         Snd_Kill();
         R_ShutDown();
     }
+    xalloc_stats();
+    xalloc_destroy();
 }

@@ -42,7 +42,7 @@ mobj_t mobinfo[NUMMOBS] = {
     },
 };
 
-std::vector<model_t> modelinfo = {
+nomadvector<model_t> modelinfo = {
     {{0, 0, 0, 0},   {16,  0,  16, 16}, {0, 0, 0, 0}}, // MDL_PLAYER
     {{0, 0, 0, 0},   {32,  0,  16, 16}, {0, 0, 0, 0}}, // MDL_MERC
     {{0, 0, 0, 0},   {48,  0,  16, 16}, {0, 0, 0, 0}}, // MDL_HEALTH

@@ -40,7 +40,7 @@ void R_InitScene();
 
 void R_Init()
 {
-    renderer = (Renderer *)Z_Malloc(sizeof(Renderer), TAG_STATIC, &renderer);
+    renderer = (Renderer *)Z_Malloc(sizeof(Renderer), TAG_STATIC, &renderer, "renderer");
     assert(renderer);
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
         N_Error("R_Init: failed to initialize SDL2, error message: %s",
@@ -144,9 +144,9 @@ void R_Init()
 
     LOG_INFO("successful initialization of SDL2 context");
 
-    glEnable(GL_BLEND);
-    glEnable(GL_STENCIL_TEST);
-    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_DEPTH_TEST);
+//    glEnable(GL_BLEND);
+//    glEnable(GL_DEPTH_TEST);
 }
 
 void R_ShutDown()
@@ -185,7 +185,7 @@ void Camera::CalculateViewMatrix()
     m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
 }
 
-int R_DrawMenu(const char* fontfile, const std::vector<std::string>& choices,
+int R_DrawMenu(const char* fontfile, const nomadvector<std::string>& choices,
     const char* title)
 {
     assert(fontfile);
@@ -351,9 +351,7 @@ void DBG_GL_ErrorCallback(GLenum source, GLenum type, GLuint id, GLenum severity
             "    id: {}\n"
             "    severity: {}\n",
         DBG_GL_SourceToStr(source), message, DBG_GL_TypeToStr(type), std::to_string(id), DBG_GL_SeverityToStr(severity));
-#ifdef PARANOID
-        debugbreak();
-#endif
+        abort();
     }
     else if (type == GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR || type == GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR 
           || type == GL_DEBUG_TYPE_PORTABILITY || type == GL_DEBUG_TYPE_PERFORMANCE)
@@ -381,6 +379,14 @@ void DBG_GL_ErrorCallback(GLenum source, GLenum type, GLuint id, GLenum severity
 
 #endif
 
+struct DrawCall
+{
+    size_t numvertices = 0;
+    Vertex *vertices = NULL;
+
+    glm::mat4 mvp;
+};
+
 struct QuadVertex
 {
     glm::vec3 pos;
@@ -390,37 +396,42 @@ struct QuadVertex
 
 struct SceneData
 {
-    static const size_t MaxQuads = 20000;
-    static const size_t MaxVertices = MaxQuads * 4;
-    static const size_t MaxIndices = MaxQuads * 6;
+    static const uint32_t MaxQuads = 20000;
+    static const uint32_t MaxIndices = MaxQuads * 6;
+    static const uint32_t MaxVertices = MaxQuads * 4;
+
+    VertexArray* SceneVertexArray = NULL;
+    VertexBuffer* SceneVertexBuffer = NULL;
+    Shader* SceneShader = NULL;
 
     uint32_t QuadIndexCount = 0;
-    std::shared_ptr<VertexArray> QuadVertexArray;
-    std::shared_ptr<VertexBuffer> QuadVertexBuffer;
-    std::shared_ptr<Shader> QuadShader;
+    Vertex* QuadVertexBufferBase = NULL;
+    Vertex* QuadVertexBufferPtr = NULL;
 
-    QuadVertex* QuadVertexBufferBase;
-    QuadVertex* QuadVertexBufferPtr;
-
-    glm::vec3 QuadVertexPositions[4];
-    
-    std::shared_ptr<Camera> camera;
+    glm::vec4 QuadVertexPositions[4];
 };
 
 static SceneData scene;
 
 void R_InitScene()
 {
-    scene.QuadVertexArray = VertexArray::Create();
-    scene.QuadVertexBuffer = VertexBuffer::Create(scene.MaxVertices * sizeof(QuadVertex));
-    scene.QuadVertexBuffer->SetLayout({
-        { ShaderDataType::Float3, "a_Position" },
-        { ShaderDataType::Float4, "a_Color" },
-    });
-    scene.QuadVertexArray->AddVertexBuffer(scene.QuadVertexBuffer);
-    scene.QuadVertexBufferBase = (QuadVertex *)Z_Malloc(sizeof(QuadVertex) * scene.MaxQuads, TAG_STATIC, &scene.QuadVertexBufferBase);
-    uint32_t* quadIndices = (uint32_t *)malloc(sizeof(uint32_t) * scene.MaxIndices);
+    scene.SceneVertexArray = (VertexArray *)Z_Malloc(sizeof(VertexArray), TAG_STATIC, &scene.SceneVertexArray,
+        "sceneVAO");
+    new (scene.SceneVertexArray) VertexArray();
+    scene.SceneVertexBuffer = (VertexBuffer *)Z_Malloc(sizeof(VertexBuffer), TAG_STATIC, &scene.SceneVertexBuffer,
+        "sceneVBO");
+    new (scene.SceneVertexBuffer) VertexBuffer(sizeof(Vertex) * scene.MaxVertices);
+    scene.SceneVertexBuffer->PushVertexAttrib(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, pos));
+    scene.SceneVertexBuffer->PushVertexAttrib(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, color));
 
+    scene.QuadVertexBufferBase = (Vertex *)Z_Malloc(sizeof(Vertex) * scene.MaxVertices, TAG_STATIC, &scene.QuadVertexBufferBase,
+        "quadBuffer");
+    scene.QuadVertexBufferPtr = scene.QuadVertexBufferBase;
+
+    scene.SceneShader = (Shader *)Z_Malloc(sizeof(Shader), TAG_STATIC, &scene.SceneShader, "sceneShader");
+    new (scene.SceneShader) Shader("shader.glsl");
+
+    uint32_t quadIndices[scene.MaxIndices];
     uint32_t offset = 0;
     for (uint32_t i = 0; i < scene.MaxIndices; i += 6) {
         quadIndices[i + 0] = offset + 0;
@@ -430,155 +441,87 @@ void R_InitScene()
         quadIndices[i + 3] = offset + 0;
         quadIndices[i + 4] = offset + 2;
         quadIndices[i + 5] = offset + 3;
-        
+
         offset += 4;
     }
-    std::shared_ptr<IndexBuffer> quadIBO = IndexBuffer::Create(quadIndices, scene.MaxIndices);
-    scene.QuadVertexArray->SetIndexBuffer(quadIBO);
-    free(quadIndices);
+    std::shared_ptr<IndexBuffer> ibo = IndexBuffer::Create(quadIndices, scene.MaxIndices);
 
-    scene.QuadShader = Shader::Create("shader.glsl");
+    scene.SceneVertexArray->SetIndexBuffer(ibo);
 
-    scene.QuadVertexPositions[0] = { -0.5f, -0.5f, 0.0f };
-    scene.QuadVertexPositions[1] = {  0.5f, -0.5f, 0.0f };
-    scene.QuadVertexPositions[2] = {  0.5f,  0.5f, 0.0f };
-    scene.QuadVertexPositions[3] = { -0.5f,  0.5f, 0.0f };
+    scene.QuadVertexPositions[0] = {  0.5f,  0.5f, 0.0f, 1.0f };
+    scene.QuadVertexPositions[1] = { -0.5f,  0.5f, 0.0f, 1.0f };
+    scene.QuadVertexPositions[2] = { -0.5f, -0.5f, 0.0f, 1.0f };
+    scene.QuadVertexPositions[3] = {  0.5f, -0.5f, 0.0f, 1.0f };
+//    scene.QuadVertexPositions[4] = {  0.5f,  0.5f, 0.0f, 1.0f };
+//    scene.QuadVertexPositions[5] = { -0.5f, -0.5f, 0.0f, 1.0f };
+//    scene.QuadVertexPositions[6] = {  0.5f, -0.5f, 0.0f, 1.0f };
 
-    scene.camera = std::make_shared<Camera>(-6.0f, 6.0f, -6.0f, 6.0f);
-    renderer->camera = scene.camera;
-}
+    renderer->camera = (Camera *)Z_Malloc(sizeof(Camera), TAG_STATIC, &renderer->camera, "camera");
+    new (renderer->camera) Camera(-2.0f, 2.0f, -2.0f, 2.0f);
 
-static void R_StartBatch()
-{
-    scene.QuadIndexCount = 0;
-    scene.QuadVertexBufferPtr = scene.QuadVertexBufferBase;
+    ibo->Unbind();
+    scene.SceneShader->Unbind();
+    scene.SceneVertexArray->Unbind();
+    scene.SceneVertexBuffer->Unbind();
+
+    glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
 }
 
 void Renderer::BeginScene()
 {
-    scene.camera->CalculateViewMatrix();
-    scene.QuadShader->Bind();
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    R_StartBatch();
-}
-
-void Renderer::EndScene()
-{
-    Flush();
-    SDL_GL_SwapWindow(renderer->window);
+    renderer->camera->CalculateViewMatrix();
+    scene.SceneShader->Bind();
+    scene.SceneShader->SetMat4("u_ViewProjection", renderer->camera->GetVPM());
+    glClear(GL_COLOR_BUFFER_BIT);
 }
 
 void Renderer::Flush()
 {
     if (scene.QuadIndexCount) {
         uint32_t dataSize = (uint32_t)((byte *)scene.QuadVertexBufferPtr - (byte *)scene.QuadVertexBufferBase);
-        scene.QuadVertexBuffer->SetData(scene.QuadVertexBufferBase, dataSize);
+        scene.SceneShader->SetMat4("u_Transform", glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0)));
+        scene.SceneVertexArray->Bind();
+        scene.SceneVertexBuffer->SetData(scene.QuadVertexBufferBase, dataSize);
 
-        scene.QuadShader->Bind();
-        uint32_t count = dataSize ? dataSize : scene.QuadVertexArray->GetIndexBuffer()->GetCount();
-        scene.QuadVertexArray->Bind();
-        scene.QuadVertexArray->GetIndexBuffer()->Bind(); 
-        scene.QuadShader->SetMat4("u_ViewProjection", scene.camera->GetVPM());
-        scene.QuadShader->SetMat4("u_Transform", glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
-        glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, NULL);
-        scene.QuadVertexArray->Unbind();
-        scene.QuadShader->Unbind();
+        scene.SceneVertexArray->GetIndexBuffer()->Bind();
+
+        glDrawElements(GL_TRIANGLES, scene.QuadIndexCount, GL_UNSIGNED_INT, NULL);
+
+        scene.SceneVertexArray->GetIndexBuffer()->Unbind();
+        scene.SceneVertexArray->Unbind();
     }
 }
 
-static void R_NextBatch()
+void Renderer::StartBatch()
 {
-    Renderer::Flush();
-    R_StartBatch();
+    scene.QuadIndexCount = 0;
+    scene.QuadVertexBufferPtr = scene.QuadVertexBufferBase;
+}
+
+void Renderer::NextBatch()
+{
+    Flush();
+    StartBatch();
+}
+
+void Renderer::EndScene()
+{
+    scene.SceneShader->Unbind();
+    SDL_GL_SwapWindow(renderer->window);
 }
 
 void Renderer::DrawQuad(const glm::vec2& pos, const glm::vec2& size, const glm::vec4& color)
 {
-    if (scene.QuadIndexCount >= scene.MaxQuads)
-        R_NextBatch();
+    if (scene.QuadIndexCount >= scene.MaxIndices)
+        NextBatch();
+
+    glm::mat4 transform = glm::translate(glm::mat4(1.0f), glm::vec3(pos, 0.0f))
+        * glm::scale(glm::mat4(1.0f), glm::vec3(size, 1.0f));
     
-    glm::mat4 transform = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, 0.0f));
-      //  * glm::scale(glm::mat4(1.0f), glm::vec3(size.x, size.y, 1.0f));
-    
-    for (size_t i = 0; i < 4; ++i) {
-        scene.QuadVertexBufferPtr->pos = scene.QuadVertexPositions[i];
+    for (uint32_t i = 0; i < 4; ++i) {
+        scene.QuadVertexBufferPtr->pos = transform * scene.QuadVertexPositions[i];
         scene.QuadVertexBufferPtr->color = color;
         scene.QuadVertexBufferPtr++;
     }
     scene.QuadIndexCount += 6;
 }
-
-#if 0
-
-void Renderer::Submit(const std::vector<Vertex>& vertices)
-{
-}
-
-void Renderer::Submit(const Vertex* vertices, const size_t count)
-{
-    memmove(scene.VertexBufferPtr, vertices, sizeof(Vertex) * count);
-    scene.VertexBufferPtr += count;
-    scene.VerticesCount += count;
-}
-
-void R_StartBatch()
-{
-    scene.VerticesCount = 0;
-    scene.VertexBufferPtr = scene.VertexBufferBase;
-}
-
-void R_Flush()
-{
-    scene.vao->Bind();
-    if (scene.QuadIndexCount) {
-        uint32_t dataSize = (uint32_t)((byte *)scene.VertexBufferPtr - (byte* )scene.VertexBufferBase);
-        scene.vbo->Bind();
-        scene.vbo->SwapBuffer(scene.VertexBufferBase, dataSize);
-        scene.vbo->Draw(GL_TRIANGLES, 0, scene.VerticesCount);
-        scene.vbo->Unbind();
-    }
-    scene.vao->Unbind();
-}
-
-void R_NextBatch()
-{
-    R_Flush();
-    R_StartBatch();
-}
-
-void R_DrawQuad(const glm::vec2& pos, const glm::vec2& size, const glm::vec4& color)
-{
-    glm::mat4 transform = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, 0.0f))
-        * glm::scale(glm::mat4(1.0f), glm::vec3(size.x, size.y, 1.0f));
-}
-
-void Renderer::BeginScene()
-{
-
-}
-
-void Renderer::EndScene()
-{
-    R_Flush();
-}
-
-void Renderer::Draw()
-{
-    scene.vao->Bind();
-    if (scene.VerticesCount) {
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindBuffer(GL_ARRAY_BUFFER, scene.vbo->GetID());
-
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(Vertex) * scene.VerticesCount, scene.VertexBufferBase);
-        glDrawArrays(GL_TRIANGLES, 0, scene.VerticesCount);
-
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-        scene.VerticesCount = 0;
-        scene.VertexBufferPtr = scene.VertexBufferBase;
-    }
-    scene.vao->Unbind();
-}
-#endif

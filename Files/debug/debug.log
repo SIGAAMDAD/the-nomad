@@ -1,3 +1,48 @@
 [info]: initiazing renderer
 [info]: alllocating memory to the SDL_Window context
 [info]: successful initialization of SDL2 context
+[info]: scf configuration:
+  launch::
+    launch::fastmobs1          = false
+    launch::fastmobs2          = false
+    launch::fastmobs3          = false
+    launch::ext_bff            = false
+    launch::ext_scf            = false
+    launch::deafmobs           = false
+    launch::blindmobs          = false
+    launch::nosmell            = false
+    launch::nomobs             = false
+    launch::godmode            = false
+    launch::infinite_ammo      = false
+    launch::bottomless_clip    = false
+    launch::devmode            = false
+  renderer::
+    renderer::api              = 1
+    renderer::drawfps          = true
+    renderer::ticrate          = 35
+    renderer::fullscreen       = false
+    renderer::native_fullscreen= false
+    renderer::hidden           = false
+    renderer::vsync            = true
+  audio::
+    audio::music_vol           = 0.8
+    audio::sfx_vol             = 1.1
+    audio::music_on            = true
+    audio::sfx_on              = true
+
+[info]: done parsing scf file
+[info]: running main gameplay loop
+[info]: successfully compiled shader shader.glsl
+[trace]: <---- OpenGL Debug Log (TRACE) ---->
+    source: API
+    message: Buffer detailed info: Buffer object 2 (bound to GL_ARRAY_BUFFER_ARB, usage hint is GL_STATIC_DRAW) will use VIDEO memory as the source for buffer object operations.
+    type: Other
+    id: 131185
+    severity: Notification
+
+[warning]: Z_ScanForBlock: 0x7fffb77ff110 (gptr) has dangling pointer into freed block 0x7fffb784f630 (0x7fffb7837840 -> 0x7fffb784f630)
+[warning]: Z_ScanForBlock: 0x7fffb7837930 (pstructs) has dangling pointer into freed block 0x7fffb784f630 (0x7fffb7837930 -> 0x7fffb784f630)
+[trace]: Z_MergePB: merging prev block for block at 0x7fffb784f5f0
+[trace]: Z_MergeFB: prev block not TAG_FREE
+[trace]: Z_MergeNB: merging next block for block at 0x7fffb784f5f0
+[trace]: Z_MergeNB: next block not TAG_FREE

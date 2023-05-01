@@ -55,7 +55,7 @@ typedef std::unique_ptr<SDL_Renderer, sdl_deleter<SDL_DestroyRenderer>> renderer
 void R_Init();
 void R_ShutDown();
 void R_DrawScreen();
-int R_DrawMenu(const char* fontfile, const std::vector<std::string>& choices, const char* title);
+int R_DrawMenu(const char* fontfile, const nomadvector<std::string>& choices, const char* title);
 
 
 #ifdef PARANOID
@@ -106,6 +106,10 @@ struct Vertex
 
     inline Vertex(const glm::vec3& _pos, const glm::vec4& _color)
         : pos(_pos), color(_color)
+    {
+    }
+    inline Vertex(const glm::vec3& _pos)
+        : pos(_pos), color(0.0f)
     {
     }
     inline Vertex() = default;
@@ -190,12 +194,12 @@ public:
 	}
 	size_t GetStride() const { return m_Stride; }
 
-	const std::vector<BufferElement>& GetElements() const { return m_Elements; }
+	const nomadvector<BufferElement>& GetElements() const { return m_Elements; }
 	
-    std::vector<BufferElement>::iterator begin() { return m_Elements.begin(); }
-	std::vector<BufferElement>::iterator end() { return m_Elements.end(); }
-	std::vector<BufferElement>::const_iterator begin() const { return m_Elements.begin(); }
-	std::vector<BufferElement>::const_iterator end() const { return m_Elements.end(); }
+    nomadvector<BufferElement>::iterator begin() { return m_Elements.begin(); }
+	nomadvector<BufferElement>::iterator end() { return m_Elements.end(); }
+	nomadvector<BufferElement>::const_iterator begin() const { return m_Elements.begin(); }
+	nomadvector<BufferElement>::const_iterator end() const { return m_Elements.end(); }
 private:
 	void CalculateOffsetsAndStride()
 	{
@@ -209,131 +213,102 @@ private:
 		}
 	}
 private:
-	mutable std::vector<BufferElement> m_Elements;
+	mutable nomadvector<BufferElement> m_Elements;
 	size_t m_Stride = 0;
 };
 class VertexBuffer
 {
 public:
-	virtual ~VertexBuffer() = default;
-	
-    virtual void Bind() const = 0;
-	virtual void Unbind() const = 0;
-	virtual void SetData(const void* data, size_t size) = 0;
-	
-    virtual const BufferLayout& GetLayout() const = 0;
-	virtual void SetLayout(const BufferLayout& layout) = 0;
-	
-    static std::shared_ptr<VertexBuffer> Create(size_t reserve);
-	static std::shared_ptr<VertexBuffer> Create(float* vertices, size_t size);
+    GLuint id;
+    size_t NumVertices;
+public:
+    VertexBuffer(size_t reserve);
+    VertexBuffer(const void* data, size_t size);
+    ~VertexBuffer();
+
+    void Bind() const {
+        glBindBuffer(GL_ARRAY_BUFFER, id);
+    }
+    void Unbind() const{ 
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+    }
+
+    void PushVertexAttrib(GLint index, GLsizei count, GLenum type, GLboolean normalized, GLsizei stride, const void *offset) {
+        Bind();
+        glEnableVertexArrayAttrib(id, index);
+        glVertexAttribPointer(index, count, type, normalized, stride, offset);
+        Unbind();
+    }
+    void SetData(const void *data, size_t size);
+    inline size_t GetCount() const { return NumVertices; }
+
+    static std::shared_ptr<VertexBuffer> Create(const void *data, size_t count)
+    { return std::make_shared<VertexBuffer>(data, count); }
+    static std::shared_ptr<VertexBuffer> Create(size_t reserve)
+    { return std::make_shared<VertexBuffer>(reserve); }
 };
 // Currently Hazel only supports 32-bit index buffers
 class IndexBuffer
-{
-public:
-	virtual ~IndexBuffer() = default;
-
-	virtual void Bind() const = 0;
-	virtual void Unbind() const = 0;
-	virtual size_t GetCount() const = 0;
-	
-    static std::shared_ptr<IndexBuffer> Create(uint32_t* indices, size_t count);
-};
-
-class VertexArray
-{
-public:
-    virtual ~VertexArray() = default;
-
-    virtual void Bind() const = 0;
-    virtual void Unbind() const = 0;
-
-    virtual void AddVertexBuffer(const std::shared_ptr<VertexBuffer>& vertexBuffer) = 0;
-    virtual void SetIndexBuffer(const std::shared_ptr<IndexBuffer>& indexBuffer) = 0;
-
-    virtual const std::vector<std::shared_ptr<VertexBuffer>>& GetVertexBuffers() const = 0;
-    virtual const std::shared_ptr<IndexBuffer>& GetIndexBuffer() const = 0;
-
-    static std::shared_ptr<VertexArray> Create();
-};
-
-class Shader
-{
-public:
-	virtual ~Shader() = default;
-
-	virtual void Bind() const = 0;
-	virtual void Unbind() const = 0;
-
-	virtual void SetInt(const std::string& name, int value) = 0;
-	virtual void SetIntArray(const std::string& name, int* values, uint32_t count) = 0;
-	virtual void SetFloat(const std::string& name, float value) = 0;
-	virtual void SetFloat2(const std::string& name, const glm::vec2& value) = 0;
-	virtual void SetFloat3(const std::string& name, const glm::vec3& value) = 0;
-	virtual void SetFloat4(const std::string& name, const glm::vec4& value) = 0;
-	virtual void SetMat4(const std::string& name, const glm::mat4& value) = 0;
-
-	static std::shared_ptr<Shader> Create(const std::string& filepath);
-//	static std::shared_ptr<Shader> Create(const std::string& name, const std::string& vertexSrc, const std::string& fragmentSrc);
-};
-
-
-class GL_VertexArray : public VertexArray
-{
-private:
-    GLuint id;
-    size_t vertexBufferIndex = 0;
-    mutable std::vector<std::shared_ptr<VertexBuffer>> vertexBuffers;
-    mutable std::shared_ptr<IndexBuffer> indexBuffer;
-public:
-    GL_VertexArray();
-    virtual ~GL_VertexArray();
-
-    virtual void Bind() const override;
-    virtual void Unbind() const override;
-
-    virtual void AddVertexBuffer(const std::shared_ptr<VertexBuffer>& vertexBuffer) override;
-    virtual void SetIndexBuffer(const std::shared_ptr<IndexBuffer>& _indexBuffer) override;
-    
-    virtual const std::vector<std::shared_ptr<VertexBuffer>>& GetVertexBuffers() const { return vertexBuffers; }
-    virtual const std::shared_ptr<IndexBuffer>& GetIndexBuffer() const { return indexBuffer; }
-};
-
-class GL_VertexBuffer : public VertexBuffer
-{
-private:
-    GLuint id;
-    mutable BufferLayout layout;
-public:
-    GL_VertexBuffer(size_t reserve);
-    GL_VertexBuffer(float* vertices, size_t size);
-    virtual ~GL_VertexBuffer();
-
-    virtual void Bind() const override;
-    virtual void Unbind() const override;
-
-    virtual void SetData(const void *data, size_t size) override;
-
-    virtual const BufferLayout& GetLayout() const override { return layout; }
-    virtual void SetLayout(const BufferLayout& _layout) override { layout = _layout; }
-};
-
-class GL_IndexBuffer : public IndexBuffer
 {
 private:
     GLuint id;
     size_t NumIndices;
 public:
-    GL_IndexBuffer(uint32_t* indices, size_t count);
-    virtual ~GL_IndexBuffer();
+    IndexBuffer(uint32_t* indices, size_t count);
+    ~IndexBuffer();
 
-    virtual void Bind() const override;
-    virtual void Unbind() const override;
+    void Bind() const {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, id);
+    }
+    void Unbind() const {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    }
 
-    virtual size_t GetCount() const override { return NumIndices; }
+    size_t GetCount() const { return NumIndices; }
+
+    static std::shared_ptr<IndexBuffer> Create(uint32_t* indices, size_t count) {
+        return std::make_shared<IndexBuffer>(indices, count);
+    }
 };
 
-class GL_Shader : public Shader
+class VertexArray
+{
+private:
+    GLuint id;
+    size_t vertexBufferIndex = 0;
+    mutable nomadvector<std::shared_ptr<VertexBuffer>> vertexBuffers;
+    mutable std::shared_ptr<IndexBuffer> indexBuffer;
+public:
+    VertexArray();
+    ~VertexArray();
+
+    void Bind() const {
+        glBindVertexArray(id);
+    }
+    void Unbind() const {
+        glBindVertexArray(0);
+    }
+
+    void PushVertexAttrib(GLint index, GLsizei count, GLenum type, GLboolean normalized, GLsizei stride, const void *offset) {
+        Bind();
+        glEnableVertexAttribArray(index);
+        glVertexAttribPointer(index, count, type, normalized, stride, offset);
+        Unbind();
+    }
+    void AddVertexBuffer(VertexBuffer* const vertexBuffer);
+    void SetIndexBuffer(const std::shared_ptr<IndexBuffer>& _indexBuffer) {
+        indexBuffer = _indexBuffer;
+    }
+    
+    const nomadvector<std::shared_ptr<VertexBuffer>> GetVertexBuffers() const { return vertexBuffers; }
+    const std::shared_ptr<IndexBuffer> GetIndexBuffer() const { return indexBuffer; }
+
+
+    static std::shared_ptr<VertexArray> Create()
+    { return std::make_shared<VertexArray>(); }
+};
+
+class Shader
 {
 private:
     GLuint id;
@@ -355,57 +330,61 @@ private:
     GLuint Compile(const std::string& src, GLenum type);
     GLuint CreateProgram(const std::string& filepath);
 public:
-    GL_Shader(const std::string& filepath);
-    virtual ~GL_Shader();
+    Shader(const std::string& filepath);
+    ~Shader();
 
-    virtual void Bind() const override;
-    virtual void Unbind() const override;
+    void Bind() const;
+    void Unbind() const;
 
-    virtual void SetInt(const std::string& name, int value) override {
-        Uniform1i(name, value);
-    }
-    virtual void SetIntArray(const std::string& name, int* values, uint32_t count) override {
-        Uniformiv(name, values, count);
-    }
-	virtual void SetFloat(const std::string& name, float value) override {
-        Uniform1f(name, value);
-    }
-	virtual void SetFloat2(const std::string& name, const glm::vec2& value) override {
-        Uniform2f(name, value);
-    }
-	virtual void SetFloat3(const std::string& name, const glm::vec3& value) override {
-        Uniform3f(name, value);
-    }
-	virtual void SetFloat4(const std::string& name, const glm::vec4& value) override {
-        Uniform4f(name, value);
-    }
-	virtual void SetMat4(const std::string& name, const glm::mat4& value) override {
-        UniformMat4(name, value);
-    }
+    void SetInt(const std::string& name, int value)
+    { Uniform1i(name, value); }
+    void SetIntArray(const std::string& name, int* values, uint32_t count)
+    { Uniformiv(name, values, count); }
+	void SetFloat(const std::string& name, float value)
+    { Uniform1f(name, value); }
+	void SetFloat2(const std::string& name, const glm::vec2& value)
+    { Uniform2f(name, value); }
+	void SetFloat3(const std::string& name, const glm::vec3& value)
+    { Uniform3f(name, value); }
+	void SetFloat4(const std::string& name, const glm::vec4& value)
+    { Uniform4f(name, value); }
+	void SetMat4(const std::string& name, const glm::mat4& value)
+    { UniformMat4(name, value); }
 
-    inline void Uniform1i(const std::string& name, int value) const {
-        glUniform1i(GetUniformLocation(name), value);
-    }
-    inline void Uniformiv(const std::string& name, int *values, uint32_t count) const {
-        glUniform1iv(GetUniformLocation(name), count, values);
-    }
-    inline void Uniform1f(const std::string& name, float value) const {
-        glUniform1f(GetUniformLocation(name), value);
-    }
-    inline void Uniform2f(const std::string& name, const glm::vec2& value) const {
-        glUniform2f(GetUniformLocation(name), value.x, value.y);
-    }
-    inline void Uniform3f(const std::string& name, const glm::vec3& value) const {
-        glUniform3f(GetUniformLocation(name), value.x, value.y, value.z);
-    }
-    inline void Uniform4f(const std::string& name, const glm::vec4& value) const {
-        glUniform4f(GetUniformLocation(name), value.r, value.g, value.b, value.a);
-    }
-    inline void UniformMat4(const std::string& name, const glm::mat4& value) const {
-        glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, glm::value_ptr(value));
+    inline void Uniform1i(const std::string& name, int value) const
+    { glUniform1i(GetUniformLocation(name), value); }
+    inline void Uniformiv(const std::string& name, int *values, uint32_t count) const
+    { glUniform1iv(GetUniformLocation(name), count, values); }
+    inline void Uniform1f(const std::string& name, float value) const
+    { glUniform1f(GetUniformLocation(name), value); }
+    inline void Uniform2f(const std::string& name, const glm::vec2& value) const
+    { glUniform2f(GetUniformLocation(name), value.x, value.y); }
+    inline void Uniform3f(const std::string& name, const glm::vec3& value) const
+    { glUniform3f(GetUniformLocation(name), value.x, value.y, value.z); }
+    inline void Uniform4f(const std::string& name, const glm::vec4& value) const
+    { glUniform4f(GetUniformLocation(name), value.r, value.g, value.b, value.a); }
+    inline void UniformMat4(const std::string& name, const glm::mat4& value) const
+    { glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, glm::value_ptr(value)); }
+
+	static std::shared_ptr<Shader> Create(const std::string& filepath) {
+        return std::make_shared<Shader>(filepath);
     }
 };
 
+
+class SpriteRenderer
+{
+public:
+	SpriteRenderer(Shader* const shader);
+	~SpriteRenderer();
+
+	void drawSprite(const glm::vec2& position,
+		const glm::vec2& size = glm::vec2(10, 10), GLfloat rotate = 0.0f, const glm::vec4& color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
+
+private:
+	mutable Shader* shader;
+	mutable VertexArray* vertexArray;
+};
 
 class Camera
 {
@@ -443,19 +422,33 @@ public:
     }
     inline glm::mat4 CalcVPM() const { return m_ProjectionMatrix * m_ViewMatrix; }
 
-    inline void MoveUp() {
+    void RotateRight() {
+        m_Rotation += m_CameraRotationSpeed;
+        if (m_Rotation > 180.0f)
+            m_Rotation -= 360.0f;
+        else if (m_Rotation <= -180.0f)
+            m_Rotation += 360.0f;
+    }
+    void RotateLeft() {
+        m_Rotation -= m_CameraRotationSpeed;
+        if (m_Rotation > 180.0f)
+            m_Rotation -= 360.0f;
+        else if (m_Rotation <= -180.0f)
+            m_Rotation += 360.0f;
+    }
+    void MoveUp() {
         m_CameraPos.x += -sin(glm::radians(m_Rotation)) * m_CameraSpeed;
         m_CameraPos.y += cos(glm::radians(m_Rotation)) * m_CameraSpeed;
     }
-    inline void MoveDown() {
+    void MoveDown() {
         m_CameraPos.x -= -sin(glm::radians(m_Rotation)) * m_CameraSpeed;
         m_CameraPos.y -= cos(glm::radians(m_Rotation)) * m_CameraSpeed;
     }
-    inline void MoveLeft() {
+    void MoveLeft() {
         m_CameraPos.x -= cos(glm::radians(m_Rotation)) * m_CameraSpeed;
         m_CameraPos.y -= sin(glm::radians(m_Rotation)) * m_CameraSpeed;
     }
-    inline void MoveRight() {
+    void MoveRight() {
         m_CameraPos.x += cos(glm::radians(m_Rotation)) * m_CameraSpeed;
         m_CameraPos.y += sin(glm::radians(m_Rotation)) * m_CameraSpeed;
     }
@@ -470,11 +463,11 @@ extern Renderer* renderer;
 class Renderer
 {
 public:
-    std::shared_ptr<Camera> camera;
+    Camera*camera;
     SDL_Window* window;
     SDL_GLContext context;
 public:
-    void AllocBuffers(const std::vector<Vertex>& _vertices);
+    void AllocBuffers(const nomadvector<Vertex>& _vertices);
 
     static void DrawQuad(const glm::vec2& pos, const glm::vec2& size, const glm::vec4& color);
     static void Submit();
@@ -484,13 +477,15 @@ public:
     static void StartBatch();
     static void NextBatch();
     static void Draw();
-    static void Submit(const std::vector<Vertex>& vertices);
+    static void Submit(const nomadvector<Vertex>& vertices);
     static void Submit(const Vertex* vertices, const size_t count);
 };
 
-extern std::vector<model_t> modelinfo;
+extern nomadvector<model_t> modelinfo;
+
 
 void glDrawBatches(GLenum mode, GLsizei count, const Vertex* vertices);
+void glDrawDuplicate(GLenum mode, GLsizei amount, GLsizei numvertices, const Vertex* vertices);
 
 #ifdef _NOMAD_DEBUG
 

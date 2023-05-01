@@ -114,7 +114,7 @@ enum : uint8_t
 };
 
 inline bool bff_mode = false;
-inline uint64_t ticcount = 0;
+extern uint64_t ticcount;
 
 class Game
 {
