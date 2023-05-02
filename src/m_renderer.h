@@ -104,8 +104,8 @@ struct Vertex
     glm::vec4 color;
     glm::vec2 texcoords;
 
-    inline Vertex(const glm::vec3& _pos, const glm::vec4& _color)
-        : pos(_pos), color(_color)
+    inline Vertex(const glm::vec3& _pos, const glm::vec4& _color, const glm::vec2& _texcoords)
+        : pos(_pos), color(_color), texcoords(_texcoords)
     {
     }
     inline Vertex(const glm::vec3& _pos)
@@ -227,16 +227,16 @@ public:
     ~VertexBuffer();
 
     void Bind() const {
-        glBindBuffer(GL_ARRAY_BUFFER, id);
+        glBindBufferARB(GL_ARRAY_BUFFER, id);
     }
     void Unbind() const{ 
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindBufferARB(GL_ARRAY_BUFFER, 0);
     }
 
     void PushVertexAttrib(GLint index, GLsizei count, GLenum type, GLboolean normalized, GLsizei stride, const void *offset) {
         Bind();
         glEnableVertexArrayAttrib(id, index);
-        glVertexAttribPointer(index, count, type, normalized, stride, offset);
+        glVertexAttribPointerARB(index, count, type, normalized, stride, offset);
         Unbind();
     }
     void SetData(const void *data, size_t size);
@@ -258,10 +258,10 @@ public:
     ~IndexBuffer();
 
     void Bind() const {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, id);
+        glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, id);
     }
     void Unbind() const {
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
     size_t GetCount() const { return NumIndices; }
@@ -291,8 +291,8 @@ public:
 
     void PushVertexAttrib(GLint index, GLsizei count, GLenum type, GLboolean normalized, GLsizei stride, const void *offset) {
         Bind();
-        glEnableVertexAttribArray(index);
-        glVertexAttribPointer(index, count, type, normalized, stride, offset);
+        glEnableVertexAttribArrayARB(index);
+        glVertexAttribPointerARB(index, count, type, normalized, stride, offset);
         Unbind();
     }
     void AddVertexBuffer(VertexBuffer* const vertexBuffer);
@@ -306,6 +306,28 @@ public:
 
     static std::shared_ptr<VertexArray> Create()
     { return std::make_shared<VertexArray>(); }
+};
+
+class Texture2D
+{
+private:
+    GLuint id;
+
+    byte* buffer;
+    int width;
+    int height;
+    int n;
+public:
+    Texture2D(const std::string& filepath);
+    ~Texture2D();
+
+    void Bind(uint32_t slot = 0) const {
+        glActiveTexture(GL_TEXTURE0+slot);
+        glBindTexture(GL_TEXTURE_2D, id);
+    }
+    void Unbind() const {
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
 };
 
 class Shader
@@ -352,19 +374,19 @@ public:
     { UniformMat4(name, value); }
 
     inline void Uniform1i(const std::string& name, int value) const
-    { glUniform1i(GetUniformLocation(name), value); }
+    { glUniform1iARB(GetUniformLocation(name), value); }
     inline void Uniformiv(const std::string& name, int *values, uint32_t count) const
-    { glUniform1iv(GetUniformLocation(name), count, values); }
+    { glUniform1ivARB(GetUniformLocation(name), count, values); }
     inline void Uniform1f(const std::string& name, float value) const
-    { glUniform1f(GetUniformLocation(name), value); }
+    { glUniform1fARB(GetUniformLocation(name), value); }
     inline void Uniform2f(const std::string& name, const glm::vec2& value) const
-    { glUniform2f(GetUniformLocation(name), value.x, value.y); }
+    { glUniform2fARB(GetUniformLocation(name), value.x, value.y); }
     inline void Uniform3f(const std::string& name, const glm::vec3& value) const
-    { glUniform3f(GetUniformLocation(name), value.x, value.y, value.z); }
+    { glUniform3fARB(GetUniformLocation(name), value.x, value.y, value.z); }
     inline void Uniform4f(const std::string& name, const glm::vec4& value) const
-    { glUniform4f(GetUniformLocation(name), value.r, value.g, value.b, value.a); }
+    { glUniform4fARB(GetUniformLocation(name), value.r, value.g, value.b, value.a); }
     inline void UniformMat4(const std::string& name, const glm::mat4& value) const
-    { glUniformMatrix4fv(GetUniformLocation(name), 1, GL_FALSE, glm::value_ptr(value)); }
+    { glUniformMatrix4fvARB(GetUniformLocation(name), 1, GL_FALSE, glm::value_ptr(value)); }
 
 	static std::shared_ptr<Shader> Create(const std::string& filepath) {
         return std::make_shared<Shader>(filepath);

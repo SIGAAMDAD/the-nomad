@@ -42,8 +42,8 @@ GLuint Shader::Compile(const std::string& src, GLenum type)
 {
     GLuint program = glCreateShader(type);
     const char* buffer = src.c_str();
-    glShaderSource(program, 1, &buffer, NULL);
-    glCompileShader(program);
+    glShaderSourceARB(program, 1, &buffer, NULL);
+    glCompileShaderARB(program);
     int success;
     glGetShaderiv(program, GL_COMPILE_STATUS, &success);
     if (success == GL_FALSE) {
@@ -67,8 +67,8 @@ GLuint Shader::CreateProgram(const std::string& filepath)
 
     glAttachShader(program, vertid);
     glAttachShader(program, fragid);
-    glLinkProgram(program);
-    glValidateProgram(program);
+    glLinkProgramARB(program);
+    glValidateProgramARB(program);
     int success = 0;
     glGetProgramiv(program, GL_LINK_STATUS, &success);
     if (success == GL_FALSE) {
@@ -88,9 +88,9 @@ GLuint Shader::CreateProgram(const std::string& filepath)
 }
 
 void Shader::Bind() const
-{ glUseProgram(id); }
+{ glUseProgramObjectARB(id); }
 void Shader::Unbind() const
-{ glUseProgram(0); }
+{ glUseProgramObjectARB(0); }
 
 Shader::Shader(const std::string& filepath)
 {
@@ -131,38 +131,96 @@ VertexArray::~VertexArray()
 
 VertexBuffer::VertexBuffer(const void *data, size_t count)
 {
-    glGenBuffers(1, &id);
-    glBindBuffer(GL_ARRAY_BUFFER, id);
-    glBufferData(GL_ARRAY_BUFFER, count, data, GL_STATIC_DRAW);
+    glGenBuffersARB(1, &id);
+    glBindBufferARB(GL_ARRAY_BUFFER, id);
+    glBufferDataARB(GL_ARRAY_BUFFER, count, data, GL_STATIC_DRAW);
 }
 
 VertexBuffer::VertexBuffer(size_t reserve)
 {
-    glGenBuffers(1, &id);
-    glBindBuffer(GL_ARRAY_BUFFER, id);
-    glBufferData(GL_ARRAY_BUFFER, reserve, NULL, GL_DYNAMIC_DRAW);
+    glGenBuffersARB(1, &id);
+    glBindBufferARB(GL_ARRAY_BUFFER, id);
+    glBufferDataARB(GL_ARRAY_BUFFER, reserve, NULL, GL_DYNAMIC_DRAW);
 }
 
 VertexBuffer::~VertexBuffer()
 {
-    glDeleteBuffers(1, &id);
+    glDeleteBuffersARB(1, &id);
 }
 
 void VertexBuffer::SetData(const void *data, size_t count)
 {
     Bind();
-    glBufferSubData(GL_ARRAY_BUFFER, 0, count, data);
+    glBufferSubDataARB(GL_ARRAY_BUFFER, 0, count, data);
 }
 
 IndexBuffer::IndexBuffer(uint32_t *indices, size_t count)
     : NumIndices(count)
 {
-    glGenBuffers(1, &id);
-    glBindBuffer(GL_ARRAY_BUFFER, id);
-    glBufferData(GL_ARRAY_BUFFER, count * sizeof(uint32_t), indices, GL_STATIC_DRAW);
+    glGenBuffersARB(1, &id);
+    glBindBufferARB(GL_ARRAY_BUFFER, id);
+    glBufferDataARB(GL_ARRAY_BUFFER, count * sizeof(uint32_t), indices, GL_STATIC_DRAW);
 }
 
 IndexBuffer::~IndexBuffer()
 {
     glDeleteBuffers(1, &id);
+}
+
+#define STB_IMAGE_IMPLEMENTATION
+#undef malloc
+#undef realloc
+#undef free
+#define STBI_MALLOC(size) (malloc)(size)
+#define STBI_REALLOC(ptr, nsize) (realloc)(ptr, nsize)
+#define STBI_FREE(ptr) (free)(ptr)
+#include <stb/stb_image.h>
+
+Texture2D::Texture2D(const std::string& filepath)
+{
+    stbi_set_flip_vertically_on_load(1);
+    buffer = (byte *)stbi_load(filepath.c_str(), &width, &height, &n, 4);
+    if (!buffer)
+        N_Error("Texture2D::Texture2D: failed to load 2d texture %s", filepath.c_str());
+    
+    assert(buffer);
+    if ((width & (width - 1)) != 0 || (height & (height - 1)) != 0)
+        LOG_WARN("texture dimesions ({}) aren't a power of two", filepath);
+
+    // Flip image vertically
+    int width_in_bytes = width * 4;
+    byte *top = NULL;
+    byte *bottom = NULL;
+    byte temp = 0;
+    int half_height = height / 2;
+
+//    for (int row = 0; row < half_height; row++)
+//    {
+//        top = buffer + row * width_in_bytes;
+//        bottom = buffer + (height - row - 1) * width_in_bytes;
+//        for (int col = 0; col < width_in_bytes; col++)
+//        {
+//            temp = *top;
+//            *top = *bottom;
+//            *bottom = temp;
+//            top++;
+//            bottom++;
+//        }
+//    }
+
+    glActiveTexture(GL_TEXTURE0);
+    glGenTextures(1, &id);
+    glBindTexture(GL_TEXTURE_2D, id);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE); // GL_CLAMP_TO_EDGE
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
+	glBindTexture(GL_TEXTURE_2D, 0);
+    (free)(buffer);
+}
+
+Texture2D::~Texture2D()
+{
+    glDeleteTextures(1, &id);
 }

@@ -173,81 +173,104 @@ static GLuint R_AllocShader(const char *shaderfile)
 
 void mainLoop()
 {
-#if 1
-    R_InitScene();
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     Vertex vertices[] = {
-        Vertex(glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.0f, 0.0f)), // 0
-        Vertex(glm::vec3(-0.5f,  0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 1.0f, 0.0f)), // 1
-        Vertex(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 2.0f, 1.0f, 0.0f)), // 2
-        Vertex(glm::vec3( 0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 1.0f, 0.0f)), // 3
-        Vertex(glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.0f, 0.0f)), // 0
-        Vertex(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 2.0f, 1.0f, 0.0f)), // 2
-        Vertex(glm::vec3( 0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 1.0f, 0.0f)),
-//        100.0f, 100.0f,
-//        200.0f, 200.0f,
-//        100.0f, 200.0f // 3
+        Vertex(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.0f, 0.0f), glm::vec2(-0.5f, -0.5f)), // 0
+        Vertex(glm::vec3( 0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 1.0f, 0.0f), glm::vec2( 0.5f, -0.5f)), // 1
+        Vertex(glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec4(1.0f, 2.0f, 1.0f, 0.0f), glm::vec2( 0.5f,  0.5f)), // 2
+        Vertex(glm::vec3(-0.5f,  0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 1.0f, 0.0f), glm::vec2(-0.5f,  0.5f)), // 3
+
+//        Vertex(glm::vec3(-1.5f, -1.5f, 0.0f), glm::vec4(1.0f, 1.0f, 0.0f, 0.0f)), // 4
+//        Vertex(glm::vec3( 1.5f, -1.5f, 0.0f), glm::vec4(1.0f, 0.0f, 1.0f, 0.0f)), // 5
+//        Vertex(glm::vec3( 1.5f,  1.5f, 0.0f), glm::vec4(1.0f, 2.0f, 1.0f, 0.0f)), // 6
+//        Vertex(glm::vec3(-1.5f,  1.5f, 0.0f), glm::vec4(1.0f, 0.0f, 1.0f, 0.0f)), // 7
     };
     uint32_t indices[] = {
         0, 1, 2,
-        0, 2, 3
+        0, 2, 3,
     };
+    IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG);
 
-    nomadvector<Vertex> verts;
+    //SDL_Renderer* render = SDL_CreateRenderer(renderer->window, -1, SDL_RENDERER_TARGETTEXTURE);
+    //assert(render);
+    //SDL_Surface* surface = IMG_Load("Files/gamedata/RES/texmap.bmp");
+    //SDL_Texture* texture = SDL_CreateTextureFromSurface(render, surface);
 
     SDL_Event event;
     memset(&event, 0, sizeof(event));
-//    GLuint vao;
-//    glGenVertexArrays(1, &vao);
-//    glBindVertexArray(vao);
-//
-//    GLuint buffer;
-//    glGenBuffers(1, &buffer);
-//    glBindBuffer(GL_ARRAY_BUFFER, buffer);
-//    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-//
-//    glEnableVertexArrayAttrib(buffer, 0);
-//    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 7, 0);
-//
-//    glEnableVertexArrayAttrib(buffer, 2);
-//    glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 7, (const void *)12);
-//
-//    GLuint ibo;
-//    glGenBuffers(1, &ibo);
-//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-//    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-//    VertexArray vao;
-//    VertexBuffer vbo(sizeof(vertices));
-//    vbo.PushVertexAttrib(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, pos));
-//    vbo.PushVertexAttrib(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, color));
+    VertexArray vao;
+    VertexBuffer vbo(vertices, sizeof(vertices));
+    vbo.PushVertexAttrib(0, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, pos));
+    vbo.PushVertexAttrib(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, color));
+    vbo.PushVertexAttrib(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, texcoords));
 
-//    IndexBuffer ibo(indices, 6);
-//    ibo.Bind();
-//
-//    Shader shader("shader.glsl");
-//    GLuint shader = R_AllocShader("shader.glsl");
-//    glUseProgram(shader);
-//    shader.Bind();
+//    Texture2D texture("Files/gamedata/RES/texmap.bmp");
 
-//    glm::mat4 proj = glm::ortho(0.0f, 960.0f, 0.0f, 540.0f, -1.0f, 1.0f);
-//    glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(-100, 0, 0));
-//    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(200, 200, 0));
-//    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
-//    glm::mat4 mvp = renderer->camera->GetProjection() * renderer->camera->GetViewMatrix() * model;
-//
+    SDL_Surface* surf = SDL_LoadBMP("Files/gamedata/RES/texmap.bmp");
+
+
+    GLuint texture;
+    GLenum data_fmt;
+    Uint8 test = SDL_MapRGB(surf->format, 0xAA, 0xBB, 0xCC) & 0xFF;
+    if (test == 0xAA) data_fmt = GL_RGB;
+    else if (test == 0xCC) data_fmt = GL_BGR;
+    else data_fmt = GL_RGBA;
+    //Generate an array of textures.  We only want one texture (one element array), so trick
+    //it by treating "texture" as array of length one.
+    glGenTextures(1,&texture);
+    //Select (bind) the texture we just generated as the current 2D texture OpenGL is using/modifying.
+    //All subsequent changes to OpenGL's texturing state for 2D textures will affect this texture.
+    glBindTexture(GL_TEXTURE_2D,texture);
+    //Specify the texture's data.  This function is a bit tricky, and it's hard to find helpful documentation.  A summary:
+    //   GL_TEXTURE_2D:    The currently bound 2D texture (i.e. the one we just made)
+    //               0:    The mipmap level.  0, since we want to update the base level mipmap image (i.e., the image itself,
+    //                         not cached smaller copies)
+    //         GL_RGBA:    The internal format of the texture.  This is how OpenGL will store the texture internally (kinda)--
+    //                         it's essentially the texture's type.
+    //         surf->w:    The width of the texture
+    //         surf->h:    The height of the texture
+    //               0:    The border.  Don't worry about this if you're just starting.
+    //        data_fmt:    The format that the *data* is in--NOT the texture!  Our test image doesn't have an alpha channel,
+    //                         so this must be RGB.
+    //GL_UNSIGNED_BYTE:    The type the data is in.  In SDL, the data is stored as an array of bytes, with each channel
+    //                         getting one byte.  This is fairly typical--it means that the image can store, for each channel,
+    //                         any value that fits in one byte (so 0 through 255).  These values are to be interpreted as
+    //                         *unsigned* values (since 0x00 should be dark and 0xFF should be bright).
+    // surface->pixels:    The actual data.  As above, SDL's array of bytes.
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surf->w,surf->h, 0, data_fmt,GL_UNSIGNED_BYTE,surf->pixels);
+    //Set the minification and magnification filters.  In this case, when the texture is minified (i.e., the texture's pixels (texels) are
+    //*smaller* than the screen pixels you're seeing them on, linearly filter them (i.e. blend them together).  This blends four texels for
+    //each sample--which is not very much.  Mipmapping can give better results.  Find a texturing tutorial that discusses these issues
+    //further.  Conversely, when the texture is magnified (i.e., the texture's texels are *larger* than the screen pixels you're seeing
+    //them on), linearly filter them.  Qualitatively, this causes "blown up" (overmagnified) textures to look blurry instead of blocky.
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+    SDL_FreeSurface(surf);
+
+    IndexBuffer ibo(indices, 6);
+    ibo.Bind();
+
+    Shader shader("shader.glsl");
+    shader.Bind();
+    
+    renderer->camera = (Camera *)Z_Malloc(sizeof(Camera), TAG_STATIC, &renderer->camera, "camera");
+    new (renderer->camera) Camera(-3.0f, 3.0f, -3.0f, 3.0f);
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
+    glm::mat4 mvp = renderer->camera->GetProjection() * renderer->camera->GetViewMatrix() * model;
+
     std::vector<glm::vec3> translations = {
         glm::vec3(1, 1.5, 0),
         glm::vec3(1, 2.5, 0),
         glm::vec3(3, 2.5, 0)
     };
-//
-//    shader.SetMat4("u_MVP", mvp);
-//    GLint location = glGetUniformLocation(shader, "u_MVP");
-//    glUniformMatrix4fv(location, 1, GL_FALSE, &mvp[0][0]);
-//    glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
+
+    glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
 
     while (1) {
+        glViewport(-3.0f, 3.0f, scf::renderer::width, scf::renderer::height);
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
+                glDeleteTextures(1, &texture);
                 done();
             }
             switch (event.key.keysym.sym) {
@@ -263,166 +286,46 @@ void mainLoop()
             case SDLK_d:
                 translations[0].x += .25;
                 break;
+            case SDLK_q:
+                renderer->camera->RotateLeft();
+                break;
+            case SDLK_e:
+                renderer->camera->RotateRight();
+                break;
+            case SDLK_UP:
+                renderer->camera->MoveUp();
+                break;
+            case SDLK_DOWN:
+                renderer->camera->MoveDown();
+                break;
+            case SDLK_LEFT:
+                renderer->camera->MoveLeft();
+                break;
+            case SDLK_RIGHT:
+                renderer->camera->MoveRight();
+                break;
             };
         }
-        Renderer::BeginScene();
-        Renderer::DrawQuad(glm::vec2(translations[0].x, translations[0].y), glm::vec2(10, 10), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-        Renderer::EndScene();
-//        renderer->camera->CalculateViewMatrix();
-//        shader.SetMat4("u_ViewProjection", renderer->camera->GetVPM());
-//        glClear(GL_COLOR_BUFFER_BIT);
-//
-//        for (auto &i : vertices) {
-//            i.color.r += .1f;
-//            i.color.g += .1f;
-//        }
-//
-//        vbo.SetData(vertices, sizeof(vertices));
-//        
-//        for (const auto& i : translations) {
-//            model = glm::translate(glm::mat4(1.0f), i);
-//            mvp = renderer->camera->GetProjection() * renderer->camera->GetViewMatrix() * model;
-//            shader.SetMat4("u_MVP", mvp);
-//            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
-//        }
-//        SDL_GL_SwapWindow(renderer->window);
-//        verts.clear();
-    }
-#else
-    glDisable(GL_CULL_FACE);
-    glDisable(GL_)
-    SDL_Event event;
-    memset(&event, 0, sizeof(event));
+        renderer->camera->CalculateViewMatrix();
+        shader.SetMat4("u_ViewProjection", renderer->camera->GetVPM());
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    Vertex vertices[] = {
-        Vertex(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)),
-        Vertex(glm::vec3( 0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)),
-        Vertex(glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)),
-        Vertex(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)),
-        Vertex(glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)),
-        Vertex(glm::vec3(-0.5f,  0.5f, 0.0f), glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)),
-    };
-
-    std::shared_ptr<VertexArray> vao = VertexArray::Create();
-    std::shared_ptr<VertexBuffer> vbo = VertexBuffer::Create(vertices, sizeof(vertices));
-
-    glEnableVertexArrayAttrib(vbo->id, 0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, pos));
-
-    glEnableVertexArrayAttrib(vbo->id, 1);
-    glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, color));
-
-    std::shared_ptr<Shader> shader = Shader::Create("shader.glsl");
-
-    renderer->camera = (Camera *)Z_Malloc(sizeof(Camera), TAG_STATIC, &renderer->camera, "camera");
-    new (renderer->camera) Camera(-2.0f, 2.0f, -2.0f, 2.0f);
-
-    glm::vec3 pos(0);
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), pos);
-    glm::mat4 mvp = renderer->camera->GetProjection() * renderer->camera->GetViewMatrix() * model;
-
-//    shader->Unbind();
-//    vao->Unbind();
-//    vbo->Unbind();
-
-    glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-    GLenum drawmode = GL_TRIANGLES;
-#ifdef _NOMAD_DEBUG
-    if (myargc > 1) {
-        if (strstr(myargv[1], "0"))
-            drawmode = GL_TRIANGLES;
-        else if (strstr(myargv[1], "1"))
-            drawmode = GL_LINES;
-        else if (strstr(myargv[1], "2"))
-            drawmode = GL_LINE_LOOP;
-        else if (strstr(myargv[1], "3"))
-            drawmode = GL_LINE_STRIP;
-        else if (strstr(myargv[1], "4"))
-            drawmode = GL_TRIANGLE_FAN;
-        else if (strstr(myargv[1], "5"))
-            drawmode = GL_PATCHES;
-        else if (strstr(myargv[1], "6"))
-            drawmode = GL_TRIANGLE_STRIP;
-        else if (strstr(myargv[1], "7"))
-            drawmode = GL_TRIANGLES_ADJACENCY;
-        else if (strstr(myargv[1], "8"))
-            drawmode = GL_LINE_STRIP_ADJACENCY;
-    }
-#endif
-    while (1) {
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
-                done();
-            }
-            else if (event.type == SDL_KEYDOWN) {
-                switch (event.key.keysym.sym) {
-                case SDLK_w:
-                    pos.y += 0.25f;
-                    break;
-                case SDLK_a:
-                    pos.x -= 0.25f;
-                    break;
-                case SDLK_s:
-                    pos.y -= 0.25f;
-                    break;
-                case SDLK_d:
-                    pos.x += 0.25f;
-                    break;
-                case SDLK_q:
-                    renderer->camera->GetRotation() -= renderer->camera->GetRotationSpeed();
-                    if (renderer->camera->GetRotation() > 180.0f)
-                        renderer->camera->GetRotation() -= 360.0f;
-                    else if (renderer->camera->GetRotation() <= -180.0f)
-                        renderer->camera->GetRotation() += 360.0f;
-                    break;
-                case SDLK_e:
-                    renderer->camera->GetRotation() += renderer->camera->GetRotationSpeed();
-                    if (renderer->camera->GetRotation() > 180.0f)
-                        renderer->camera->GetRotation() -= 360.0f;
-                    else if (renderer->camera->GetRotation() <= -180.0f)
-                        renderer->camera->GetRotation() += 360.0f;
-                    break;
-                case SDLK_UP:
-                    renderer->camera->GetPos().x += -sin(glm::radians(renderer->camera->GetRotation())) * renderer->camera->GetSpeed();
-                    renderer->camera->GetPos().y += cos(glm::radians(renderer->camera->GetRotation())) * renderer->camera->GetSpeed();
-                    break;
-                case SDLK_DOWN:
-                    renderer->camera->GetPos().x -= -sin(glm::radians(renderer->camera->GetRotation())) * renderer->camera->GetSpeed();
-                    renderer->camera->GetPos().y -= cos(glm::radians(renderer->camera->GetRotation())) * renderer->camera->GetSpeed();
-                    break;
-                case SDLK_LEFT:
-                    renderer->camera->GetPos().x -= cos(glm::radians(renderer->camera->GetRotation())) * renderer->camera->GetSpeed();
-                    renderer->camera->GetPos().y -= sin(glm::radians(renderer->camera->GetRotation())) * renderer->camera->GetSpeed();
-                    break;
-                case SDLK_RIGHT:
-                    renderer->camera->GetPos().x += cos(glm::radians(renderer->camera->GetRotation())) * renderer->camera->GetSpeed();
-                    renderer->camera->GetPos().y += sin(glm::radians(renderer->camera->GetRotation())) * renderer->camera->GetSpeed();
-                    break;
-                };
-                renderer->camera->
-                glClear(GL_COLOR_BUFFER_BIT);
-
-                shader->Bind();
-                vao->Bind();
-                vbo->Bind();
-
-                model = glm::translate(glm::mat4(1.0f), pos);
-                mvp = renderer->camera->GetProjection() * renderer->camera->GetViewMatrix() * model;
-
-//                shader->SetMat4("u_MVP", mvp);
-                glDrawArrays(GL_TRIANGLES, 0, 6);
-
-                shader->Unbind();
-                vao->Unbind();
-                vbo->Unbind();
-
-                SDL_GL_SwapWindow(renderer->window);
-            }
+        vao.Bind();
+        ibo.Bind();
+//        SDL_GL_BindTexture(texture, NULL, NULL);
+        
+        for (const auto& i : translations) {
+            model = glm::translate(glm::mat4(1.0f), i);
+            mvp = renderer->camera->GetProjection() * renderer->camera->GetViewMatrix() * model;
+            shader.SetMat4("u_MVP", mvp);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
         }
+        SDL_GL_SwapWindow(renderer->window);
+        vao.Unbind();
+        ibo.Unbind();
+//        SDL_GL_UnbindTexture(texture);
+//        texture.Unbind();
     }
-#endif
 }
 
 void I_NomadInit(int argc, char** argv)
@@ -430,6 +333,7 @@ void I_NomadInit(int argc, char** argv)
     myargc = argc;
     myargv = argv;
 
+    Mem_Init();
     xalloc_init();
 
 //    G_LoadBZip2();

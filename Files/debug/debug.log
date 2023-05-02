@@ -32,7 +32,13 @@
 
 [info]: done parsing scf file
 [info]: running main gameplay loop
-[info]: successfully compiled shader shader.glsl
+[trace]: <---- OpenGL Debug Log (TRACE) ---->
+    source: API
+    message: Buffer detailed info: Buffer object 1 (bound to GL_ARRAY_BUFFER_ARB, usage hint is GL_STATIC_DRAW) will use VIDEO memory as the source for buffer object operations.
+    type: Other
+    id: 131185
+    severity: Notification
+
 [trace]: <---- OpenGL Debug Log (TRACE) ---->
     source: API
     message: Buffer detailed info: Buffer object 2 (bound to GL_ARRAY_BUFFER_ARB, usage hint is GL_STATIC_DRAW) will use VIDEO memory as the source for buffer object operations.
@@ -40,9 +46,10 @@
     id: 131185
     severity: Notification
 
-[warning]: Z_ScanForBlock: 0x7fffb77ff110 (gptr) has dangling pointer into freed block 0x7fffb784f630 (0x7fffb7837840 -> 0x7fffb784f630)
-[warning]: Z_ScanForBlock: 0x7fffb7837930 (pstructs) has dangling pointer into freed block 0x7fffb784f630 (0x7fffb7837930 -> 0x7fffb784f630)
-[trace]: Z_MergePB: merging prev block for block at 0x7fffb784f5f0
+[info]: successfully compiled shader shader.glsl
+[warning]: Z_ScanForBlock: 0x7f2e8f756110 (gptr) has dangling pointer into freed block 0x7f2e8f7a6630 (0x7f2e8f78e840 -> 0x7f2e8f7a6630)
+[warning]: Z_ScanForBlock: 0x7f2e8f78e930 (pstructs) has dangling pointer into freed block 0x7f2e8f7a6630 (0x7f2e8f78e930 -> 0x7f2e8f7a6630)
+[trace]: Z_MergePB: merging prev block for block at 0x7f2e8f7a65f0
 [trace]: Z_MergeFB: prev block not TAG_FREE
-[trace]: Z_MergeNB: merging next block for block at 0x7fffb784f5f0
+[trace]: Z_MergeNB: merging next block for block at 0x7f2e8f7a65f0
 [trace]: Z_MergeNB: next block not TAG_FREE

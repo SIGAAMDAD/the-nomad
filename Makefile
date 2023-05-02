@@ -45,6 +45,7 @@ OBJS= \
 	$(O)/imgui_tables.o \
 	$(O)/r_opengl.o \
 	$(O)/n_shared.o \
+	$(O)/Heap.o \
 
 all: glnomad
 

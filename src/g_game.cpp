@@ -111,4 +111,5 @@ Game::~Game()
     }
     xalloc_stats();
     xalloc_destroy();
+    Mem_Shutdown();
 }
