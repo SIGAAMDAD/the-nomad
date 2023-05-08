@@ -52,11 +52,13 @@
 #include <vulkan/vulkan.hpp>
 #include <SDL2/SDL_vulkan.h>
 #include <SDL2/SDL_opengl.h>
+#include <SOIL/SOIL.h>
 
 // speed is key
 #include <EABase/eabase.h>
 #include <EASTL/shared_ptr.h>
 #include <EASTL/weak_ptr.h>
+#include <EASTL/algorithm.h>
 #include <EASTL/unique_ptr.h>
 #include <EASTL/allocator.h>
 #include <EASTL/allocator_malloc.h>
@@ -66,10 +68,20 @@
 #include <EASTL/vector.h>
 #include <EASTL/unordered_map.h>
 #include "stb_sprintf.h"
-#include <google/dense_hash_map>
-#include <google/sparse_hash_map>
 #include <xalloc/Allocator.h>
 #include <xalloc/xallocator.h>
+#include <google/sparse_hash_map>
+#include <google/dense_hash_map>
+#include "smmalloc.h"
+#include <freetype2/ft2build.h>
+#include <freetype2/freetype/ftrender.h>
+#include <freetype2/freetype/freetype.h>
+#include <foonathan_memory/foonathan/memory/container.hpp> // vector, list, list_node_size
+#include <foonathan_memory/foonathan/memory/memory_pool.hpp> // memory_pool
+#include <foonathan_memory/foonathan/memory/smart_ptr.hpp> // allocate_unique
+#include <foonathan_memory/foonathan/memory/static_allocator.hpp> // static_allocator_storage, static_block_allocator
+#include <foonathan_memory/foonathan/memory/temporary_allocator.hpp> // temporary_allocator
+#include <foonathan_memory/foonathan/memory/namespace_alias.hpp>
 
 // logging
 #include <spdlog/spdlog.h>

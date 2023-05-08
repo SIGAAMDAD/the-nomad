@@ -50,13 +50,7 @@ size_t N_ReadFile(const char* name, char **buffer)
 
 void ImGui_ShutDown()
 {
-    if (imgui_on) {
-        imgui_on = false;
-        con.ConPrintf("ImGui_ShutDown: deallocating ImGui context");
-        ImGui_ImplSDLRenderer_Shutdown();
-        ImGui_ImplSDL2_Shutdown();
-        ImGui::DestroyContext();
-    }
+
 }
 
 void Log::Init()
@@ -111,5 +105,4 @@ Game::~Game()
     }
     xalloc_stats();
     xalloc_destroy();
-    Mem_Shutdown();
 }

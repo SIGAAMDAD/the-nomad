@@ -17,6 +17,23 @@ void* N_memset (void *dest, int fill, size_t count)
     return dest;
 }
 
+void* N_memmove (void *dest, const void *src, size_t count)
+{
+	byte *d = (byte *)dest;
+	const byte *s = (const byte *)src;
+	if (d < s) {
+		while (--count)
+			*d++ = *s++;
+	}
+	else {
+		s += count - 1;
+		d += count - 1;
+		while (--count)
+			*d-- = *s--;
+	}
+	return dest;
+}
+
 void* N_memcpy (void *dest, const void *src, size_t count)
 {
 	size_t i;
@@ -123,6 +140,7 @@ int N_strncmp (const char *str1, const char *str2, size_t count)
 	
 	return -1;
 }
+
 
 int N_strncasecmp (const char *str1, const char *str2, size_t n)
 {

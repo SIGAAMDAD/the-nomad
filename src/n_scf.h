@@ -37,8 +37,15 @@ namespace scf {
         RES_4K,
         NUMRESOLUTIONS
     };
+    typedef enum msaa_amount_e : uint8_t
+    {
+        MSAA_OFF,
+        MSAA_4X,
+        MSAA_8X
+    } msaa_amount_t;
 
     namespace renderer {
+        extern nomadvector<const byte*> api_extensions;
         extern renderapi_t api;
         extern uint32_t height;
         extern uint32_t width;
@@ -47,7 +54,7 @@ namespace scf {
         extern bool hidden;
         extern bool fullscreen;
         extern bool native_fullscreen;
-//        extern float ratio;
+        extern msaa_amount_t msaa;
         extern bool drawfps;
         extern uint16_t ticrate;
         extern uint8_t vert_fov;

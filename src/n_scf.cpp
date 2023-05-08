@@ -10,6 +10,7 @@ namespace scf {
     };
 
     namespace renderer {
+        nomadvector<const byte*> api_extensions; // only applies really to OpenGL/Vulkan
         renderapi_t api = R_SDL2;
         uint32_t height = 720;
         uint32_t width = 1024;

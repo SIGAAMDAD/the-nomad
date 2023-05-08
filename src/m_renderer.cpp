@@ -12,69 +12,26 @@ Renderer* renderer;
 constexpr int32_t vert_fov = 24 >> 1;
 constexpr int32_t horz_fov = 88 >> 1;
 
-static Uint32 R_GetWindowFlags(void)
+static void R_InitGL(void)
 {
-    Uint32 flags = 0;
-
-    switch (scf::renderer::api) {
-    case scf::R_OPENGL:
-        flags |= SDL_WINDOW_OPENGL;
-    case scf::R_SDL2:
-        break;
-    case scf::R_VULKAN:
-        N_Error("R_Init: Vulkan rendering isn't yet supported, will be though very soon");
-        break;
-    };
-    if (scf::renderer::hidden)
-        flags |= SDL_WINDOW_HIDDEN;
-    
-    if (scf::renderer::fullscreen && !scf::renderer::native_fullscreen)
-        flags |= SDL_WINDOW_FULLSCREEN;
-    else if (scf::renderer::native_fullscreen)
-        flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-    
-    return flags;
-}
-
-void R_InitScene();
-
-void R_Init()
-{
-    renderer = (Renderer *)Z_Malloc(sizeof(Renderer), TAG_STATIC, &renderer, "renderer");
-    assert(renderer);
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
-        N_Error("R_Init: failed to initialize SDL2, error message: %s",
-            SDL_GetError());
-    }
-
-    LOG_INFO("alllocating memory to the SDL_Window context");
-    renderer->window = SDL_CreateWindow(
-                            "The Nomad",
-                            SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                            scf::renderer::width, scf::renderer::height,
-                            SDL_WINDOW_OPENGL
-                        );
-    if (!renderer->window) {
-        N_Error("R_Init: failed to initialize an SDL2 window, error message: %s",
-            SDL_GetError());
-    }
+    renderer->context = SDL_GL_CreateContext(renderer->window);
     SDL_GL_SetSwapInterval(1);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-    renderer->context = SDL_GL_CreateContext(renderer->window);
-    
+
     if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
-        N_Error("glad failed to initialize");
-
-    std::cout <<
+        N_Error("R_Init: failed to initialize OpenGL (glad)");
+    
+    fprintf(stdout,
         "OpenGL Info:\n"
-        "  Vendor: " << glGetString(GL_VENDOR) << '\n' <<
-        "  Version: " << glGetString(GL_VERSION) << '\n' <<
-        "  Renderer: " << glGetString(GL_RENDERER) << std::endl;
+        "  Version: %s\n"
+        "  Renderer: %s\n"
+        "  Vendor: %s\n",
+    glGetString(GL_VERSION), glGetString(GL_RENDERER), glGetString(GL_VENDOR));
 
-    GLenum params[] = {
+    const GLenum params[] = {
         GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS,
         GL_MAX_CUBE_MAP_TEXTURE_SIZE,
         GL_MAX_DRAW_BUFFERS,
@@ -127,26 +84,84 @@ void R_Init()
     glGetIntegerv(GL_NUM_EXTENSIONS, &extension_count);
     for (int i = 0; i < extension_count; ++i) {
         const GLubyte* name = glGetStringi(GL_EXTENSIONS, i);
-        printf("%s\n", name);
+        scf::renderer::api_extensions.emplace_back(name);
+        puts((const char *)name);
     }
     printf("\n");
 
 #ifdef _NOMAD_DEBUG
     con.ConPrintf("turning on OpenGL debug callbacks");
     if (glDebugMessageControlARB != NULL) {
-        glEnable(GL_DEBUG_OUTPUT);
-        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-        glDebugMessageCallback((GLDEBUGPROCARB)DBG_GL_ErrorCallback, NULL);
+        glEnable(GL_DEBUG_OUTPUT_KHR);
+        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
+        glDebugMessageCallbackARB((GLDEBUGPROCARB)DBG_GL_ErrorCallback, NULL);
         GLuint unusedIds = 0;
-        glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, &unusedIds, GL_TRUE);
+        glDebugMessageControlARB(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, &unusedIds, GL_TRUE);
     }
 #endif
 
-    LOG_INFO("successful initialization of SDL2 context");
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_STENCIL_TEST);
+    glEnable(GL_BLEND);
+    /*
+    * don't know why, but GL_CULL_FACE fucks up the 2d rendering
+    */
 
-    glDisable(GL_DEPTH_TEST);
-//    glEnable(GL_BLEND);
-//    glEnable(GL_DEPTH_TEST);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDepthMask(GL_FALSE);
+    glDepthFunc(GL_ALWAYS);
+}
+
+
+static Uint32 R_GetWindowFlags(void)
+{
+    Uint32 flags = 0;
+
+    switch (scf::renderer::api) {
+    case scf::R_OPENGL:
+        flags |= SDL_WINDOW_OPENGL;
+    case scf::R_SDL2:
+        break;
+    case scf::R_VULKAN:
+        N_Error("R_Init: Vulkan rendering isn't yet supported, will be though very soon");
+        break;
+    };
+    if (scf::renderer::hidden)
+        flags |= SDL_WINDOW_HIDDEN;
+    
+    if (scf::renderer::fullscreen && !scf::renderer::native_fullscreen)
+        flags |= SDL_WINDOW_FULLSCREEN;
+    else if (scf::renderer::native_fullscreen)
+        flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+    
+    return flags;
+}
+
+void R_InitScene();
+
+void R_Init()
+{
+    renderer = (Renderer *)Z_Malloc(sizeof(Renderer), TAG_STATIC, &renderer, "renderer");
+    assert(renderer);
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
+        N_Error("R_Init: failed to initialize SDL2, error message: %s",
+            SDL_GetError());
+    }
+
+    LOG_INFO("alllocating memory to the SDL_Window context");
+    renderer->window = SDL_CreateWindow(
+                            "The Nomad",
+                            SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+                            scf::renderer::width, scf::renderer::height,
+                            SDL_WINDOW_OPENGL
+                        );
+    if (!renderer->window) {
+        N_Error("R_Init: failed to initialize an SDL2 window, error message: %s",
+            SDL_GetError());
+    }
+    assert(renderer->window);
+    R_InitGL();
 }
 
 void R_ShutDown()
@@ -166,6 +181,21 @@ void R_ShutDown()
     }
     SDL_Quit();
     sdl_on = false;
+}
+
+struct Character
+{
+    GLuint texid;
+    glm::ivec2 size;
+    glm::ivec2 bearing;
+    uint32_t advance;
+};
+
+static eastl::unordered_map<char, Character> R_LoadFont(const eastl::string filepath)
+{
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    for (uint8_t i = 0; i < 128; i++) {
+    }
 }
 
 
@@ -342,6 +372,21 @@ const char *DBG_GL_SeverityToStr(GLenum severity)
 
 void DBG_GL_ErrorCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const GLvoid *userParam)
 {
+    switch (type) {
+    case GL_DEBUG_TYPE_ERROR:
+        LOG_ERROR("[OpenGL Debug Log] {}", message);
+        break;
+    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+    case GL_DEBUG_TYPE_PORTABILITY:
+    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+    case GL_DEBUG_TYPE_PERFORMANCE:
+        LOG_WARN("[OpenGL Debug Log] {}", message);
+        break;
+    default:
+        LOG_TRACE("[OpenGL Debug Log] {}", message);
+        break;
+    };
+#if 0
     if (type == GL_DEBUG_TYPE_ERROR) {
         LOG_ERROR(
             "<---- OpenGL Debug Log (ERROR) ---->\n"
@@ -375,6 +420,7 @@ void DBG_GL_ErrorCallback(GLenum source, GLenum type, GLuint id, GLenum severity
             "    severity: {}\n",
         DBG_GL_SourceToStr(source), message, DBG_GL_TypeToStr(type), std::to_string(id), DBG_GL_SeverityToStr(severity));
     }
+#endif
 }
 
 #endif
@@ -411,6 +457,7 @@ struct SceneData
     glm::vec4 QuadVertexPositions[4];
 };
 
+#if 0
 static SceneData scene;
 
 void R_InitScene()
@@ -525,3 +572,4 @@ void Renderer::DrawQuad(const glm::vec2& pos, const glm::vec2& size, const glm::
     }
     scene.QuadIndexCount += 6;
 }
+#endif

@@ -2,6 +2,10 @@
 #define _M_RENDERER_
 
 #include <glm/gtc/type_ptr.hpp>
+#include "r_buffer.h"
+#include "r_framebuffer.h"
+#include "r_shader.h"
+#include "r_texture.h"
 
 #pragma once
 
@@ -73,7 +77,7 @@ int R_DrawMenu(const char* fontfile, const nomadvector<std::string>& choices, co
 #   define GL_ASSERT(op,x) \
 { \
     if (!(x)) { \
-        fprintf(stderr, \
+        fprintf stderr, \
         "[OpenGL Error Thrown] %s:%s:%u\n" \
         "   operation: %s\n" \
         "   id: %i\n" \
@@ -86,7 +90,7 @@ int R_DrawMenu(const char* fontfile, const nomadvector<std::string>& choices, co
 #   define GL_ASSERT(op,x) \
 { \
     if (!(x)) { \
-        fprintf(stderr, \
+        fprintf stderr, \
         "[OpenGL Error Thrown] %s:%s:%u\n" \
         "   operation: %s\n" \
         "   id: %i\n" \
@@ -106,6 +110,10 @@ struct Vertex
 
     inline Vertex(const glm::vec3& _pos, const glm::vec4& _color, const glm::vec2& _texcoords)
         : pos(_pos), color(_color), texcoords(_texcoords)
+    {
+    }
+    inline Vertex(const glm::vec3& _pos, const glm::vec4& _color)
+        : pos(_pos), color(_color)
     {
     }
     inline Vertex(const glm::vec3& _pos)
@@ -150,7 +158,7 @@ static uint32_t ShaderDataTypeSize(ShaderDataType type)
 }
 struct BufferElement
 {
-	std::string Name;
+    std::string Name;
 	ShaderDataType Type;
 	uint32_t Size;
 	size_t Offset;
@@ -216,61 +224,6 @@ private:
 	mutable nomadvector<BufferElement> m_Elements;
 	size_t m_Stride = 0;
 };
-class VertexBuffer
-{
-public:
-    GLuint id;
-    size_t NumVertices;
-public:
-    VertexBuffer(size_t reserve);
-    VertexBuffer(const void* data, size_t size);
-    ~VertexBuffer();
-
-    void Bind() const {
-        glBindBufferARB(GL_ARRAY_BUFFER, id);
-    }
-    void Unbind() const{ 
-        glBindBufferARB(GL_ARRAY_BUFFER, 0);
-    }
-
-    void PushVertexAttrib(GLint index, GLsizei count, GLenum type, GLboolean normalized, GLsizei stride, const void *offset) {
-        Bind();
-        glEnableVertexArrayAttrib(id, index);
-        glVertexAttribPointerARB(index, count, type, normalized, stride, offset);
-        Unbind();
-    }
-    void SetData(const void *data, size_t size);
-    inline size_t GetCount() const { return NumVertices; }
-
-    static std::shared_ptr<VertexBuffer> Create(const void *data, size_t count)
-    { return std::make_shared<VertexBuffer>(data, count); }
-    static std::shared_ptr<VertexBuffer> Create(size_t reserve)
-    { return std::make_shared<VertexBuffer>(reserve); }
-};
-// Currently Hazel only supports 32-bit index buffers
-class IndexBuffer
-{
-private:
-    GLuint id;
-    size_t NumIndices;
-public:
-    IndexBuffer(uint32_t* indices, size_t count);
-    ~IndexBuffer();
-
-    void Bind() const {
-        glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, id);
-    }
-    void Unbind() const {
-        glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER, 0);
-    }
-
-    size_t GetCount() const { return NumIndices; }
-
-    static std::shared_ptr<IndexBuffer> Create(uint32_t* indices, size_t count) {
-        return std::make_shared<IndexBuffer>(indices, count);
-    }
-};
-
 class VertexArray
 {
 private:
@@ -299,98 +252,35 @@ public:
     void SetIndexBuffer(const std::shared_ptr<IndexBuffer>& _indexBuffer) {
         indexBuffer = _indexBuffer;
     }
-    
     const nomadvector<std::shared_ptr<VertexBuffer>> GetVertexBuffers() const { return vertexBuffers; }
     const std::shared_ptr<IndexBuffer> GetIndexBuffer() const { return indexBuffer; }
 
 
-    static std::shared_ptr<VertexArray> Create()
-    { return std::make_shared<VertexArray>(); }
-};
-
-class Texture2D
-{
-private:
-    GLuint id;
-
-    byte* buffer;
-    int width;
-    int height;
-    int n;
-public:
-    Texture2D(const std::string& filepath);
-    ~Texture2D();
-
-    void Bind(uint32_t slot = 0) const {
-        glActiveTexture(GL_TEXTURE0+slot);
-        glBindTexture(GL_TEXTURE_2D, id);
-    }
-    void Unbind() const {
-        glBindTexture(GL_TEXTURE_2D, 0);
+    static VertexArray* Create(const std::string& name) {
+        VertexArray* ptr = (VertexArray *)Z_Malloc(sizeof(VertexArray), TAG_STATIC, &ptr, name.c_str());
+        glGenVertexArrays(1, &ptr->id);
+        return ptr;
     }
 };
+struct FramebufferFlags
+{
+    uint32_t width, height;
+};
 
-class Shader
+class Framebuffer
 {
 private:
-    GLuint id;
-    mutable std::unordered_map<std::string, GLint> uniformCache;
-    mutable std::unordered_map<GLenum, std::string> GLSL_Src;
-    GLint GetUniformLocation(const std::string& name) const
-    {
-        if (uniformCache.find(name) != uniformCache.end())
-            return uniformCache[name];
-        
-        GLint location = glGetUniformLocation(id, name.c_str());
-        if (location == -1) {
-            LOG_WARN("failed to get location of uniform {}", name);
-            return 0;
-        }
-        uniformCache[name] = location;
-        return location;
-    }
-    GLuint Compile(const std::string& src, GLenum type);
-    GLuint CreateProgram(const std::string& filepath);
+    GLuint rboId;
+    GLuint fboMsaaId, fboId;
+    GLuint texId, texMsaaId;
 public:
-    Shader(const std::string& filepath);
-    ~Shader();
+    Framebuffer();
+    ~Framebuffer();
 
     void Bind() const;
     void Unbind() const;
 
-    void SetInt(const std::string& name, int value)
-    { Uniform1i(name, value); }
-    void SetIntArray(const std::string& name, int* values, uint32_t count)
-    { Uniformiv(name, values, count); }
-	void SetFloat(const std::string& name, float value)
-    { Uniform1f(name, value); }
-	void SetFloat2(const std::string& name, const glm::vec2& value)
-    { Uniform2f(name, value); }
-	void SetFloat3(const std::string& name, const glm::vec3& value)
-    { Uniform3f(name, value); }
-	void SetFloat4(const std::string& name, const glm::vec4& value)
-    { Uniform4f(name, value); }
-	void SetMat4(const std::string& name, const glm::mat4& value)
-    { UniformMat4(name, value); }
-
-    inline void Uniform1i(const std::string& name, int value) const
-    { glUniform1iARB(GetUniformLocation(name), value); }
-    inline void Uniformiv(const std::string& name, int *values, uint32_t count) const
-    { glUniform1ivARB(GetUniformLocation(name), count, values); }
-    inline void Uniform1f(const std::string& name, float value) const
-    { glUniform1fARB(GetUniformLocation(name), value); }
-    inline void Uniform2f(const std::string& name, const glm::vec2& value) const
-    { glUniform2fARB(GetUniformLocation(name), value.x, value.y); }
-    inline void Uniform3f(const std::string& name, const glm::vec3& value) const
-    { glUniform3fARB(GetUniformLocation(name), value.x, value.y, value.z); }
-    inline void Uniform4f(const std::string& name, const glm::vec4& value) const
-    { glUniform4fARB(GetUniformLocation(name), value.r, value.g, value.b, value.a); }
-    inline void UniformMat4(const std::string& name, const glm::mat4& value) const
-    { glUniformMatrix4fvARB(GetUniformLocation(name), 1, GL_FALSE, glm::value_ptr(value)); }
-
-	static std::shared_ptr<Shader> Create(const std::string& filepath) {
-        return std::make_shared<Shader>(filepath);
-    }
+    void AddTexture(const Texture2D& texture);
 };
 
 
@@ -406,6 +296,17 @@ public:
 private:
 	mutable Shader* shader;
 	mutable VertexArray* vertexArray;
+};
+
+class GPUContext
+{
+private:
+    GLuint memObj;
+    int gpu_memory_total;
+    int gpu_memory_available;
+public:
+    GPUContext();
+    ~GPUContext();
 };
 
 class Camera

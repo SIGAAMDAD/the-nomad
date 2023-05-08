@@ -71,7 +71,6 @@ static void N_Level()
         N_DebugWindowClear();
         while (SDL_PollEvent(&event)) {
             PROFILE_SCOPE(events_time);
-            ImGui_ImplSDL2_ProcessEvent(&event);
             if (event.type == SDL_QUIT) {
                 done();
             }
@@ -111,12 +110,12 @@ static void N_Level()
         renderer.avg += renderer_time;
         events.avg += events_time;
 #endif
-        IMGUI_BEGIN("Profiler");
-        IMGUI_TEXT("[Render (Scope)]: %f", renderer_time);
-        IMGUI_TEXT("[Event Poll (Scope)]: %f", events_time);
-        IMGUI_TEXT("[N_Level (Function)]: %f", loop_time);
-        IMGUI_END();
-        N_DebugWindowDraw();
+//        IMGUI_BEGIN("Profiler");
+//        IMGUI_TEXT("[Render (Scope)]: %f", renderer_time);
+//        IMGUI_TEXT("[Event Poll (Scope)]: %f", events_time);
+//        IMGUI_TEXT("[N_Level (Function)]: %f", loop_time);
+//        IMGUI_END();
+//        N_DebugWindowDraw();
     }
     LOG_TRACE("renderer average time: {}", renderer.avg / renderer.total);
     LOG_TRACE("event loop average time: {}", events.avg / events.total);
@@ -268,6 +267,7 @@ static void N_SaveMenu()
 
 static inline void N_RenderSettings(bool *open)
 {
+#if 0
     ImGui::Begin("Settings", open, IMGUI_STANDARD_FLAGS);
     ImGui::SetWindowSize(ImVec2(800, SCREEN_HEIGHT - 100));
     ImGui::SetWindowFontScale(1.5f);
@@ -315,6 +315,7 @@ static inline void N_RenderSettings(bool *open)
         }
     }
     ImGui::End();
+#endif
 }
 
 static void N_SettingsMenu()
@@ -326,7 +327,7 @@ static void N_SettingsMenu()
     while (Game::Get()->gamestate == GS_SETTINGS || open) {
         N_DebugWindowClear();
         while (SDL_PollEvent(&event)) {
-            ImGui_ImplSDL2_ProcessEvent(&event);
+//            ImGui_ImplSDL2_ProcessEvent(&event);
             if (event.type == SDL_QUIT) {
                 done();
             }

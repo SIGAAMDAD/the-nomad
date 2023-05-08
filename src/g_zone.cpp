@@ -45,6 +45,30 @@
 #include "n_shared.h"
 #include "g_zone.h"
 
+void* operator new[](size_t size, const char* pName, int flags, unsigned debugFlags, const char* file, int line)
+{
+	LOG_TRACE(
+		"EASTL::new allocation ->\n"
+		"   size: {}\n"
+		"   name: {}\n"
+		"   file: {}\n"
+		"   line: {}\n",
+	size, pName, file, line);
+	return ::operator new[](size);
+}
+void* operator new[](size_t size, size_t alignment, size_t alignmentOffset, const char* pName, int flags, unsigned debugFlags, const char* file, int line)
+{
+	LOG_TRACE(
+		"EASTL::new aligned allocation ->\n"
+		"   size: {}\n"
+		"   alignment: {}\n"
+		"   name: {}\n"
+		"   file: {}\n"
+		"   line: {}\n",
+	size, alignment, pName, file, line);
+	return ::operator new[](size, std::align_val_t(alignment));
+}
+
 #define UNOWNED    ((void *)666)
 #define ZONEID     0xa21d49
 
@@ -60,64 +84,69 @@
 #define ZONEIDCHECK
 #define CHECKHEAP
 
-#undef malloc
-#undef realloc
-#undef free
-#undef calloc
-
-#ifndef ZONE_NO_ALIGNMENT
-//#define zone_malloc(alignment,size) ((void *)((((int *)(malloc)((size)+(alignment-1)))+(alignment-1)) & ~(alignment-1)))
-#define zone_malloc(alignment,size)           aligned_alloc(alignment,size)
-#define zone_calloc(alignment,nelem,elemsize) memset(zone_malloc(alignment,nelem*elemsize), 0, nelem*elemsize)
-#define zone_realloc(alignment,ptr,nsize)     (realloc)(ptr,((nsize + (alignment - 1)) & ~(alignment-1)))
-#else
-#define zone_realloc(alignment,ptr,nsize)     (realloc)(ptr,nsize)
-#define zone_calloc(alignment,nelem,elemsize) (calloc)(nelem,elemsize)
-#define zone_malloc(alignment,size)           (malloc)(size)
-#endif
-#define zone_free(ptr)                        (free)(ptr)
-
 #define MEM_ALIGN  16
 #define RETRY_AMOUNT (256*1024)
 
 static int indexer = 0;
 
+#ifdef __GNUC__
+#define ZONE_PACK(x) x __attribute__((packed))
+#elif defined(_MSVC_VER)
+#define ZONE_PACK(x) __pragma(push(pack,1)) x __pragma(pop)
+#endif
+
 typedef struct memblock_s
 {
-	uint8_t tag;
+	char name[15];
 	size_t size;
 	void **user;
-	char name[15];
 #ifdef ZONEIDCHECK
 	unsigned id;
 #endif
-	
 	struct memblock_s* next;
 	struct memblock_s* prev;
-} memblock_t;
+	int tag;
+} __attribute__((packed)) memblock_t;
 
 typedef struct memzone_s
 {
-	bool full = false;
+	// start/end cap for linked list
+	memblock_t blocklist;
 
 	size_t size;
 	
-	// start/end cap for linked list
-	memblock_t blocklist;
-	
 	// the roving block for general operations
 	memblock_t* rover;
-} memzone_t;
+} __attribute__((packed)) memzone_t;
 
 static size_t numzones = 0;
 static memzone_t** memzones;
 static memzone_t* mainzone; // the currently active zone
+static memblock_t* tmp; // a lot like Quake's Hunk_TempAlloc, but has dynamic size of whatever's left at the top of the zone, min size, however, of 1024 bytes
 
 
 static size_t active_memory = 0;
 static size_t free_memory = 0;
 static size_t inactive_memory = 0;
 static size_t purgable_memory = 0;
+
+void* Z_ZoneBegin(void)
+{
+	return (void *)mainzone;
+}
+
+void* Z_ZoneEnd(void)
+{
+	return (void *)(mainzone+sizeof(memzone_t)+mainzone->size);
+}
+
+#define TMP_BLOCK_MAX_SIZE (64*1024*1024)
+#define TMP_BLOCK_MIN_SIZE (1*1024)
+
+void* Z_AllocTemp(size_t size, int tag, void* user, const char *name)
+{
+}
+
 
 byte *I_ZoneMemory(size_t *size)
 {
@@ -127,10 +156,6 @@ byte *I_ZoneMemory(size_t *size)
 	const size_t min_size = MIN_SIZE;
     p = I_GetParm("-ram");
 	if (p != -1) {
-		if (p < Cmd_Argc() - 1)
-			current_size = atol(Cmd_Argv(p+1)) * 1024 * 1024;
-		else
-			N_Error("Z_Init: must specify a size in MB after -ram");
 	}
 	ptr = (byte *)malloc_aligned(16, current_size);
 	while (ptr == NULL) {
@@ -167,7 +192,6 @@ void Z_Init()
 	mainzone->blocklist.tag = TAG_STATIC;
 	mainzone->blocklist.id = ZONEID;
 	mainzone->rover = base;
-	mainzone->full = false;
 	
 	base->prev = base->next = &mainzone->blocklist;
 	base->user = (void **)NULL;
@@ -340,55 +364,6 @@ void Z_Free(void *ptr)
 		indexer = 0;
 		Z_Print(true);
 	}
-}
-
-void Z_InitZone(memzone_t* zone, size_t size)
-{
-	memblock_t* base;
-
-	zone->size = size;
-	zone->blocklist.next = 
-	zone->blocklist.prev = 
-	base = (memblock_t *)((byte *)zone+sizeof(memzone_t));
-	
-	zone->blocklist.user = (void **)zone;
-	zone->blocklist.tag = TAG_STATIC;
-	zone->blocklist.id = ZONEID;
-	zone->rover = base;
-	zone->full = false;
-	
-	base->prev = base->next = &zone->blocklist;
-	base->user = (void **)NULL;
-	base->size = zone->size - sizeof(memzone_t);
-	base->id = ZONEID;
-	memset(base->name, 0, 15);
-	strncpy(base->name, "base", 14);
-	free_memory += zone->size;
-}
-
-static memzone_t* Z_AllocMemzone()
-{
-	memzones = (memzone_t **)zone_realloc(16, memzones, sizeof(memzone_t *) * numzones);
-	size_t size = DEFAULT_SIZE;
-	memzones[numzones] = (memzone_t *)I_ZoneMemory(&size);
-	if (!memzones[numzones])
-		N_Error("Z_AllocMemzone: memory allocation failed");
-	
-	assert(memzones[numzones]);
-	numzones++;
-	Z_InitZone(memzones[numzones - 1], size);
-	return memzones[numzones - 1];
-}
-
-static memzone_t* Z_GetFreeMemzone()
-{
-	for (size_t i = 0; i < numzones; ++i) {
-		if (!memzones[i]->full) {
-			return memzones[i];
-		}
-	}
-	LOG_WARN("all memzones are full allocating new memzone");
-	return Z_AllocMemzone();
 }
 
 void* Z_Malloc(size_t size, int tag, void *user)
@@ -740,7 +715,7 @@ void Z_Print(bool all)
 	printf("-------------------------\n");
 	printf("          : %8li REMAINING\n", mainzone->size - active_memory - purgable_memory);
 	printf("-------------------------\n");
-	printf("(PERCENTAGES)");
+	printf("(PERCENTAGES)\n");
 	printf(
 			"%8li   %6.02f%%   static\n"
 			"%8li   %6.02f%%   purgable\n"

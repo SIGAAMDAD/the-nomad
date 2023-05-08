@@ -55,6 +55,9 @@ void Z_Print(bool all);
 void Z_Init();
 int Z_FreeMemory(void);
 
+void *Z_ZoneBegin(void);
+void *Z_ZoneEnd(void);
+
 #ifdef _WIN32
 #define PROT_READ     0x1
 #define PROT_WRITE    0x2
@@ -115,69 +118,6 @@ struct zone_allocator
 		Z_Free((void *)p);
 	}
 };
-
-template<typename T>
-struct zone_deleter
-{
-	constexpr void operator()(T *p) { Z_Free((void *)p); }
-};
-
-template<typename T>
-using nomad_uniqueptr = eastl::unique_ptr<T, zone_deleter<T>>;
-template<typename T>
-using nomad_sharedptr = eastl::shared_ptr<T>;
-template<typename T>
-using nomad_weakptr = eastl::weak_ptr<T>;
-
-template<class T, typename... Args>
-inline nomad_uniqueptr<T> make_nomadunique(const std::string& name, Args&&... args)
-{
-	nomad_uniqueptr<T> ptr(static_cast<T*>(Z_Malloc(sizeof(T), TAG_STATIC, NULL, name.c_str())));
-	new (ptr.get()) T(std::forward<Args>(args)...);
-	return ptr;
-}
-template<class T, typename... Args>
-inline nomad_uniqueptr<T> make_nomadunique(Args&&... args)
-{
-	nomad_uniqueptr<T> ptr(static_cast<T*>(Z_Malloc(sizeof(T), TAG_STATIC, NULL, "uniqueptr")));
-	new (ptr.get()) T(std::forward<Args>(args)...);
-	return ptr;
-}
-template<typename T>
-inline nomad_uniqueptr<T> make_nomadunique(const std::string& name)
-{
-	return nomad_uniqueptr<T>(static_cast<T*>(Z_Malloc(sizeof(T), TAG_STATIC, NULL, name.c_str())));
-}
-template<typename T>
-inline nomad_uniqueptr<T> make_nomadunique(void)
-{
-	return nomad_uniqueptr<T>(static_cast<T*>(Z_Malloc(sizeof(T), TAG_STATIC, NULL, "uniqueptr")));
-}
-
-template<class T, typename... Args>
-inline nomad_sharedptr<T> make_nomadshared(const std::string& name, Args&&... args)
-{
-	eastl::shared_ptr<T> ptr(static_cast<T*>(Z_Malloc(sizeof(T), TAG_STATIC, NULL, name.c_str())), zone_deleter<T>());
-	new (ptr.get()) T(std::forward<Args>(args)...);
-	return ptr;
-}
-template<class T, typename... Args>
-inline nomad_sharedptr<T> make_nomadshared(Args&&... args)
-{
-	eastl::shared_ptr<T> ptr(static_cast<T*>(Z_Malloc(sizeof(T), TAG_STATIC, NULL, "sharedptr")), zone_deleter<T>());
-	new (ptr.get()) T(std::forward<Args>(args)...);
-	return ptr;
-}
-template<typename T>
-inline nomad_sharedptr<T> make_nomadshared(const std::string& name)
-{
-	return eastl::shared_ptr<T>(static_cast<T*>(Z_Malloc(sizeof(T), TAG_STATIC, NULL, name.c_str())), zone_allocator<T>());
-}
-template<typename T>
-inline nomad_sharedptr<T> make_nomadshared(void)
-{
-	return eastl::shared_ptr<T>(static_cast<T*>(Z_Malloc(sizeof(T), TAG_STATIC, NULL, "sharedptr")), zone_deleter<T>());
-}
 
 template<typename T>
 class linked_list

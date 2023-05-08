@@ -1,6 +1,5 @@
 [info]: initiazing renderer
 [info]: alllocating memory to the SDL_Window context
-[info]: successful initialization of SDL2 context
 [info]: scf configuration:
   launch::
     launch::fastmobs1          = false
@@ -32,24 +31,124 @@
 
 [info]: done parsing scf file
 [info]: running main gameplay loop
-[trace]: <---- OpenGL Debug Log (TRACE) ---->
-    source: API
-    message: Buffer detailed info: Buffer object 1 (bound to GL_ARRAY_BUFFER_ARB, usage hint is GL_STATIC_DRAW) will use VIDEO memory as the source for buffer object operations.
-    type: Other
-    id: 131185
-    severity: Notification
-
-[trace]: <---- OpenGL Debug Log (TRACE) ---->
-    source: API
-    message: Buffer detailed info: Buffer object 2 (bound to GL_ARRAY_BUFFER_ARB, usage hint is GL_STATIC_DRAW) will use VIDEO memory as the source for buffer object operations.
-    type: Other
-    id: 131185
-    severity: Notification
-
+[trace]: [OpenGL Debug Log] Buffer detailed info: Buffer object 1 (bound to GL_ARRAY_BUFFER_ARB, usage hint is GL_STATIC_DRAW) will use VIDEO memory as the source for buffer object operations.
+[trace]: [OpenGL Debug Log] Buffer detailed info: Buffer object 2 (bound to GL_ARRAY_BUFFER_ARB, usage hint is GL_STATIC_DRAW) will use VIDEO memory as the source for buffer object operations.
 [info]: successfully compiled shader shader.glsl
-[warning]: Z_ScanForBlock: 0x7f2e8f756110 (gptr) has dangling pointer into freed block 0x7f2e8f7a6630 (0x7f2e8f78e840 -> 0x7f2e8f7a6630)
-[warning]: Z_ScanForBlock: 0x7f2e8f78e930 (pstructs) has dangling pointer into freed block 0x7f2e8f7a6630 (0x7f2e8f78e930 -> 0x7f2e8f7a6630)
-[trace]: Z_MergePB: merging prev block for block at 0x7f2e8f7a65f0
+[info]: loading texture file chernologo.png
+[info]: successfully loaded texture file chernologo.png
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[error]: [OpenGL Debug Log] GL_INVALID_OPERATION error generated.
+[warning]: Z_ScanForBlock: 0x7f1ce80bf0ed (gptr) has dangling pointer into freed block 0x7f1ce810f5ce (0x7f1ce80f781d -> 0x7f1ce810f5ce)
+[warning]: Z_ScanForBlock: 0x7f1ce80f78fb (pstructs) has dangling pointer into freed block 0x7f1ce810f5ce (0x7f1ce80f78fb -> 0x7f1ce810f5ce)
+[trace]: Z_MergePB: merging prev block for block at 0x7f1ce810f597
 [trace]: Z_MergeFB: prev block not TAG_FREE
-[trace]: Z_MergeNB: merging next block for block at 0x7f2e8f7a65f0
+[trace]: Z_MergeNB: merging next block for block at 0x7f1ce810f597
 [trace]: Z_MergeNB: next block not TAG_FREE

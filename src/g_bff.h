@@ -42,6 +42,19 @@ typedef struct bff_texture_s
     uint64_t fsize;
 } bff_texture_t;
 
+/*
+* CAN BE USED FOR THE FOLLOWING TYPES OF BINARY DATA:
+* - glslang SPIRV (pre-processed OpenGL/Vulkan shader stuff)
+* - .so/.dll or .a/.lib, essentially compiled c++ scripted events
+* - .ncb (in the future, there'll be a dedicated scripting binary language for this game, but not for now)
+*/
+typedef struct bff_binary_s
+{
+	uint8_t type;
+	size_t fsize;
+	char *buffer;
+} bff_binary_t;
+
 typedef struct bff_spawn_s
 {
     char entityid[BFF_STR_SIZE+1];

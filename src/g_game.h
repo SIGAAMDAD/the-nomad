@@ -9,6 +9,7 @@ inline void N_DebugWindowDraw();
 
 #include "g_entity.h"
 #include "g_zone.h"
+#include "n_console.h"
 #include "n_scf.h"
 #include "m_renderer.h"
 #include "g_rng.h"
