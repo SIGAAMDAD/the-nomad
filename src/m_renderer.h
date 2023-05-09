@@ -116,6 +116,10 @@ struct Vertex
         : pos(_pos), color(_color)
     {
     }
+    inline Vertex(const glm::vec3& _pos, const glm::vec2& _texcoords)
+        : pos(_pos), texcoords(_texcoords)
+    {
+    }
     inline Vertex(const glm::vec3& _pos)
         : pos(_pos), color(0.0f)
     {
@@ -270,17 +274,19 @@ struct FramebufferFlags
 class Framebuffer
 {
 private:
-    GLuint rboId;
-    GLuint fboMsaaId, fboId;
-    GLuint texId, texMsaaId;
+    GLuint rboDepthId;
+    GLuint fboId;
+    GLuint texColorId;
+
+    VertexArray* vao;
+    VertexBuffer* vbo;
+    Shader* shader;
 public:
     Framebuffer();
     ~Framebuffer();
 
-    void Bind() const;
-    void Unbind() const;
-
-    void AddTexture(const Texture2D& texture);
+    void SetBuffer();
+    void SetDefault();
 };
 
 
@@ -307,6 +313,11 @@ private:
 public:
     GPUContext();
     ~GPUContext();
+};
+
+struct CameraBuffer
+{
+    glm::mat4 u_ViewProjectionMatrix;
 };
 
 class Camera

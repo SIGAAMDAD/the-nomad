@@ -134,6 +134,7 @@ void done()
 
 void mainLoop()
 {
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
     glEnable(GL_MULTISAMPLE);
     Vertex vertices[] = {
         Vertex(glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 1.0f)),   // top right
@@ -157,14 +158,13 @@ void mainLoop()
     vbo->PushVertexAttrib(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, texcoords));
 
     IndexBuffer* ibo = IndexBuffer::Create(indices, 6, GL_UNSIGNED_INT, "ibo");
-    Shader* shader = Shader::Create("shader.glsl", "shader0");
-    Framebuffer fbo;
-    Texture2D* texture = Texture2D::Create("chernologo.png", "texture");
-    fbo.Bind();
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, texture->GetID(), 0);
-
     vao->Unbind();
     vbo->Unbind();
+    Shader* shader = Shader::Create("shader.glsl", "shader0");
+//    CameraBuffer camera;
+//    UniformBuffer* ubo = UniformBuffer::Create(&camera, sizeof(CameraBuffer), "camera_UBO");
+    Framebuffer fbo;
+    Texture2D* texture = Texture2D::Create("chernologo.png", "texture0");
 
     renderer->camera = (Camera *)Z_Malloc(sizeof(Camera), TAG_STATIC, &renderer->camera, "camera");
     new (renderer->camera) Camera(-3.0f, 3.0f, -3.0f, 3.0f);
@@ -222,44 +222,35 @@ void mainLoop()
         }
         renderer->camera->CalculateViewMatrix();
         
-        glViewport(0, 0, scf::renderer::width * 2, scf::renderer::height * 2);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+//        glViewport(0, 0, scf::renderer::width, scf::renderer::height);
+//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+//        camera.u_ViewProjectionMatrix = renderer->camera->GetVPM();
+
+        fbo.SetBuffer();
+
         shader->Bind();
         vao->Bind();
         ibo->Bind();
-
+        texture->Bind();
         shader->SetMat4("u_ViewProjection", renderer->camera->GetVPM());
 
         next += std::chrono::milliseconds(1000 / scf::renderer::ticrate);
 
-        fbo.Bind();
-//        glFramebufferTexture(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture->GetID(), 0);
-        glActiveTexture(GL_TEXTURE0);
-        texture->Bind();
-        shader->SetMat4("u_MVP", renderer->camera->GetProjection() * renderer->camera->GetViewMatrix() * glm::translate(glm::mat4(1.0f), translations[0]));
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
-        texture->Unbind();
-        fbo.Unbind();
-
-        texture->Bind();
-        shader->SetMat4("u_MVP", renderer->camera->GetProjection() * renderer->camera->GetViewMatrix() * glm::translate(glm::mat4(1.0f), translations[1]));
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
-        texture->Unbind();
-
+        for (const auto& i : translations) {
+            model = glm::translate(glm::mat4(1.0f), i);
+            mvp = renderer->camera->GetProjection() * renderer->camera->GetViewMatrix() * model;
+            shader->SetMat4("u_MVP", mvp);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
+        }
+        
         shader->Unbind();
-        ibo->Unbind();
         vao->Unbind();
-        //for (size_t i = 1; i < translations.size(); i++) {
-        //    model = glm::translate(glm::mat4(1.0f), translations[i]);
-        //    mvp = renderer->camera->GetProjection() * renderer->camera->GetViewMatrix() * model;
-        //    shader->SetMat4("u_MVP", mvp);
-        //    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
-        //}
-//
-        //vao->Unbind();
-        //ibo->Unbind();
-        //shader->Unbind();
-        //fbo.Unbind();
+        ibo->Unbind();
+        texture->Unbind();
+
+        fbo.SetDefault();
+
         SDL_GL_SwapWindow(renderer->window);
 
         std::this_thread::sleep_until(next);

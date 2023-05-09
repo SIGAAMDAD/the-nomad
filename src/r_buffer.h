@@ -5,20 +5,25 @@ class UniformBuffer
 {
 private:
     GLuint id;
+    size_t size;
 public:
-    UniformBuffer();
+    UniformBuffer(const void *data, size_t count);
+    UniformBuffer(size_t reserve);
     UniformBuffer(const UniformBuffer& other);
     UniformBuffer(UniformBuffer &&) = delete;
     ~UniformBuffer();
 
     UniformBuffer& operator=(const UniformBuffer& other);
 
-    void Bind() const;
-    void Unbind() const;
+    inline void Bind() const
+    { glBindBufferARB(GL_UNIFORM_BUFFER, id); }
+    inline void Unbind() const
+    { glBindBufferARB(GL_UNIFORM_BUFFER, 0); }
 
     void SetData(const void *data, size_t size);
     
-    static UniformBuffer* Create(const eastl::string& name);
+    static UniformBuffer* Create(const void *data, size_t count, const eastl::string& name);
+    static UniformBuffer* Create(size_t reserve, const eastl::string& name);
 };
 
 class VertexBuffer

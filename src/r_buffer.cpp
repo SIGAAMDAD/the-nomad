@@ -1,6 +1,10 @@
 #include "n_shared.h"
 #include "g_game.h"
 
+/*
+* Vertex Buffer Objects
+*/
+
 VertexBuffer::VertexBuffer(const void *data, size_t count)
 {
     glGenBuffersARB(1, &id);
@@ -143,4 +147,51 @@ void ShaderStorageBuffer::SetData(const void *data, size_t count)
     Bind();
     glBufferSubDataARB(GL_SHADER_STORAGE_BUFFER, 0, count, data);
     Unbind();
+}
+
+/*
+* Uniform Buffer Objects
+*/
+UniformBuffer::UniformBuffer(const void *data, size_t count)
+    : size(count)
+{
+    glGenBuffersARB(1, &id);
+    glBindBufferARB(GL_UNIFORM_BUFFER, id);
+    glBufferDataARB(GL_UNIFORM_BUFFER, count, data, GL_STREAM_DRAW_ARB);
+    glBindBufferARB(GL_UNIFORM_BUFFER, 0);
+}
+
+UniformBuffer::UniformBuffer(size_t reserve)
+    : size(reserve)
+{
+    glGenBuffersARB(1, &id);
+    glBindBufferARB(GL_UNIFORM_BUFFER, id);
+    glBufferDataARB(GL_UNIFORM_BUFFER, reserve, NULL, GL_STREAM_DRAW_ARB);
+    glBindBufferARB(GL_UNIFORM_BUFFER, 0);
+}
+
+UniformBuffer::~UniformBuffer()
+{
+    glDeleteBuffersARB(1, &id);
+}
+
+void UniformBuffer::SetData(const void *data, size_t count)
+{
+    size = count;
+    glBindBufferARB(GL_UNIFORM_BUFFER, id);
+    glBufferSubDataARB(GL_UNIFORM_BUFFER, 0, count, data);
+    glBindBufferARB(GL_UNIFORM_BUFFER, 0);
+}
+
+UniformBuffer* UniformBuffer::Create(const void *data, size_t count, const eastl::string& name)
+{
+    UniformBuffer* ptr = (UniformBuffer *)Z_Malloc(sizeof(UniformBuffer), TAG_STATIC, &ptr, name.c_str());
+    new (ptr) UniformBuffer(data, count);
+    return ptr;
+}
+UniformBuffer* UniformBuffer::Create(size_t reserve, const eastl::string& name)
+{
+    UniformBuffer* ptr = (UniformBuffer *)Z_Malloc(sizeof(UniformBuffer), TAG_STATIC, &ptr, name.c_str());
+    new (ptr) UniformBuffer(reserve);
+    return ptr;
 }
