@@ -116,7 +116,7 @@ ShaderStorageBuffer::ShaderStorageBuffer(const void *data, size_t count, GLuint 
 {
     glGenBuffersARB(1, &id);
     glBindBufferARB(GL_SHADER_STORAGE_BUFFER, id);
-    glBufferDataARB(GL_SHADER_STORAGE_BUFFER, count, data, GL_STATIC_DRAW_ARB);
+    glBufferDataARB(GL_SHADER_STORAGE_BUFFER, count, data, GL_DYNAMIC_DRAW_ARB);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, binding, id);
     glBindBufferARB(GL_SHADER_STORAGE_BUFFER, 0);
 }
@@ -157,7 +157,7 @@ UniformBuffer::UniformBuffer(const void *data, size_t count)
 {
     glGenBuffersARB(1, &id);
     glBindBufferARB(GL_UNIFORM_BUFFER, id);
-    glBufferDataARB(GL_UNIFORM_BUFFER, count, data, GL_STREAM_DRAW_ARB);
+    glBufferDataARB(GL_UNIFORM_BUFFER, count, data, GL_DYNAMIC_DRAW_ARB);
     glBindBufferARB(GL_UNIFORM_BUFFER, 0);
 }
 
@@ -166,7 +166,7 @@ UniformBuffer::UniformBuffer(size_t reserve)
 {
     glGenBuffersARB(1, &id);
     glBindBufferARB(GL_UNIFORM_BUFFER, id);
-    glBufferDataARB(GL_UNIFORM_BUFFER, reserve, NULL, GL_STREAM_DRAW_ARB);
+    glBufferDataARB(GL_UNIFORM_BUFFER, reserve, NULL, GL_DYNAMIC_DRAW_ARB);
     glBindBufferARB(GL_UNIFORM_BUFFER, 0);
 }
 

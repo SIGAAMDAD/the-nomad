@@ -77,7 +77,7 @@ int R_DrawMenu(const char* fontfile, const nomadvector<std::string>& choices, co
 #   define GL_ASSERT(op,x) \
 { \
     if (!(x)) { \
-        fprintf stderr, \
+        fprintf(stderr, \
         "[OpenGL Error Thrown] %s:%s:%u\n" \
         "   operation: %s\n" \
         "   id: %i\n" \
@@ -90,7 +90,7 @@ int R_DrawMenu(const char* fontfile, const nomadvector<std::string>& choices, co
 #   define GL_ASSERT(op,x) \
 { \
     if (!(x)) { \
-        fprintf stderr, \
+        fprintf(stderr, \
         "[OpenGL Error Thrown] %s:%s:%u\n" \
         "   operation: %s\n" \
         "   id: %i\n" \
@@ -266,29 +266,6 @@ public:
         return ptr;
     }
 };
-struct FramebufferFlags
-{
-    uint32_t width, height;
-};
-
-class Framebuffer
-{
-private:
-    GLuint rboDepthId;
-    GLuint fboId;
-    GLuint texColorId;
-
-    VertexArray* vao;
-    VertexBuffer* vbo;
-    Shader* shader;
-public:
-    Framebuffer();
-    ~Framebuffer();
-
-    void SetBuffer();
-    void SetDefault();
-};
-
 
 class SpriteRenderer
 {
@@ -306,10 +283,25 @@ private:
 
 class GPUContext
 {
-private:
+public:
     GLuint memObj;
     int gpu_memory_total;
     int gpu_memory_available;
+
+    const char* renderer;
+    const char* version;
+    const char* vendor;
+
+    int version_major;
+    int version_minor;
+
+    int num_extensions;
+    char** extensions;
+
+    int num_glsl_extensions;
+    const char* glsl_extensions;
+
+    static GPUContext* gpuContext;
 public:
     GPUContext();
     ~GPUContext();
@@ -317,7 +309,10 @@ public:
 
 struct CameraBuffer
 {
-    glm::mat4 u_ViewProjectionMatrix;
+    glm::mat4 u_ViewProjection;
+    glm::mat4 u_ProjectionMatrix;
+    glm::mat4 u_ViewMatrix;
+    glm::vec3 u_CameraPos;
 };
 
 class Camera

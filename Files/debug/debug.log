@@ -34,11 +34,14 @@
 [trace]: [OpenGL Debug Log] Buffer detailed info: Buffer object 1 (bound to GL_ARRAY_BUFFER_ARB, usage hint is GL_STATIC_DRAW) will use VIDEO memory as the source for buffer object operations.
 [trace]: [OpenGL Debug Log] Buffer detailed info: Buffer object 2 (bound to GL_ARRAY_BUFFER_ARB, usage hint is GL_STATIC_DRAW) will use VIDEO memory as the source for buffer object operations.
 [info]: successfully compiled shader shader.glsl
+[info]: successfully compiled shader framebuffer.glsl
+[trace]: [OpenGL Debug Log] Buffer detailed info: Buffer object 3 (bound to GL_ARRAY_BUFFER_ARB, usage hint is GL_STATIC_DRAW) will use VIDEO memory as the source for buffer object operations.
+[trace]: [OpenGL Debug Log] Buffer detailed info: Buffer object 4 (bound to GL_ARRAY_BUFFER_ARB, usage hint is GL_STATIC_DRAW) will use VIDEO memory as the source for buffer object operations.
 [info]: loading texture file chernologo.png
 [info]: successfully loaded texture file chernologo.png
-[warning]: Z_ScanForBlock: 0x7fd467dff0ed (gptr) has dangling pointer into freed block 0x7fd467e4f5ce (0x7fd467e3781d -> 0x7fd467e4f5ce)
-[warning]: Z_ScanForBlock: 0x7fd467e378fb (pstructs) has dangling pointer into freed block 0x7fd467e4f5ce (0x7fd467e378fb -> 0x7fd467e4f5ce)
-[trace]: Z_MergePB: merging prev block for block at 0x7fd467e4f597
+[warning]: Z_ScanForBlock: 0x7fdf976bf0ed (gptr) has dangling pointer into freed block 0x7fdf9770f5ce (0x7fdf976f781d -> 0x7fdf9770f5ce)
+[warning]: Z_ScanForBlock: 0x7fdf976f78fb (pstructs) has dangling pointer into freed block 0x7fdf9770f5ce (0x7fdf976f78fb -> 0x7fdf9770f5ce)
+[trace]: Z_MergePB: merging prev block for block at 0x7fdf9770f597
 [trace]: Z_MergeFB: prev block not TAG_FREE
-[trace]: Z_MergeNB: merging next block for block at 0x7fd467e4f597
+[trace]: Z_MergeNB: merging next block for block at 0x7fdf9770f597
 [trace]: Z_MergeNB: next block not TAG_FREE

@@ -140,11 +140,17 @@ void mainLoop()
         Vertex(glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 1.0f)),   // top right
         Vertex(glm::vec3( 0.5f, -0.5f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 0.0f)),   // bottom right
         Vertex(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f)),   // bottom left
-        Vertex(glm::vec3(-0.5f,  0.5f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 1.0f))    // top left
+        Vertex(glm::vec3(-0.5f,  0.5f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 1.0f)),   // top left
+    };
+    Vertex screenVertices[] = {
+        Vertex(glm::vec3( 1.0f,  1.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
+        Vertex(glm::vec3( 1.0f, -1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
+        Vertex(glm::vec3(-1.0f, -1.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
+        Vertex(glm::vec3(-1.0f,  1.0f, 0.0f), glm::vec2(0.0f, 1.0f))
     };
     uint32_t indices[] = {
         0, 1, 2,
-        0, 2, 3,
+        0, 2, 3
     };
 
     SDL_Event event;
@@ -161,9 +167,23 @@ void mainLoop()
     vao->Unbind();
     vbo->Unbind();
     Shader* shader = Shader::Create("shader.glsl", "shader0");
-//    CameraBuffer camera;
-//    UniformBuffer* ubo = UniformBuffer::Create(&camera, sizeof(CameraBuffer), "camera_UBO");
-    Framebuffer fbo;
+    Shader* screenShader = Shader::Create("framebuffer.glsl", "screenShader");
+
+    VertexArray* screenVAO = VertexArray::Create("screenVAO");
+    screenVAO->Bind();
+    VertexBuffer* screenVBO = VertexBuffer::Create(screenVertices, sizeof(screenVertices), "screenVBO");
+    screenVBO->Bind();
+    vbo->PushVertexAttrib(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, pos));
+    vbo->PushVertexAttrib(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, texcoords));
+
+    IndexBuffer* screenIBO = IndexBuffer::Create(indices, 6, GL_UNSIGNED_INT, "screenIBO");
+    screenVBO->Unbind();
+    screenVAO->Unbind();
+
+    Framebuffer* fbo = Framebuffer::Create(DEFAULT_FRAMEBUFFER_SETUP, "fbo0");
+//    Framebuffer* finalFBO = Framebuffer::Create(FramebufferSetup(
+//        scf::renderer::width, scf::renderer::height, GL_COLOR_BUFFER_BIT, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT,
+//        GL_TEXTURE_2D, GL_NO_DEPTHATTACHMENT, false, false), "finalFBO");
     Texture2D* texture = Texture2D::Create("chernologo.png", "texture0");
 
     renderer->camera = (Camera *)Z_Malloc(sizeof(Camera), TAG_STATIC, &renderer->camera, "camera");
@@ -181,6 +201,8 @@ void mainLoop()
     
     Z_Print(true);
 
+    float light_intensity = 1.0f;
+
     std::chrono::high_resolution_clock::time_point next = std::chrono::high_resolution_clock::now();
     while (1) {
         while (SDL_PollEvent(&event)) {
@@ -188,6 +210,12 @@ void mainLoop()
                 done();
             }
             switch (event.key.keysym.sym) {
+            case SDLK_o:
+                light_intensity += 0.1f;
+                break;
+            case SDLK_p:
+                light_intensity -= 0.1f;
+                break;
             case SDLK_w:
                 translations[0].y += .25;
                 break;
@@ -221,19 +249,18 @@ void mainLoop()
             };
         }
         renderer->camera->CalculateViewMatrix();
-        
-//        glViewport(0, 0, scf::renderer::width, scf::renderer::height);
-//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glViewport(0, 0, scf::renderer::width, scf::renderer::height);
 
-//        camera.u_ViewProjectionMatrix = renderer->camera->GetVPM();
-
-        fbo.SetBuffer();
+        fbo->SetBuffer();
 
         shader->Bind();
         vao->Bind();
         ibo->Bind();
         texture->Bind();
         shader->SetMat4("u_ViewProjection", renderer->camera->GetVPM());
+        shader->SetFloat3("u_LightPos", renderer->camera->GetPos());
+        shader->SetFloat("u_LightIntensity", light_intensity);
 
         next += std::chrono::milliseconds(1000 / scf::renderer::ticrate);
 
@@ -248,8 +275,7 @@ void mainLoop()
         vao->Unbind();
         ibo->Unbind();
         texture->Unbind();
-
-        fbo.SetDefault();
+        fbo->SetDefault();
 
         SDL_GL_SwapWindow(renderer->window);
 
