@@ -11,107 +11,79 @@ VertexArray::~VertexArray()
     glDeleteVertexArrays(1, &id);
 }
 
-Framebuffer* Framebuffer::Create(const FramebufferSetup& setup, const eastl::string& name)
+#if 0
+
+Framebuffer* Framebuffer::Create(const eastl::string& name)
 {
     Framebuffer* ptr = (Framebuffer *)Z_Malloc(sizeof(Framebuffer), TAG_STATIC, &ptr, name.c_str());
-    new (ptr) Framebuffer(setup);
+    new (ptr) Framebuffer();
     return ptr;
 }
 
-void Framebuffer::InitDepthBuffer(void)
-{
-    if (setup.depthBufferTarget == GL_NO_DEPTHATTACHMENT)
-        return;
-
-    GenDepthBuffer();
-    BindDepthBuffer();
-
-    if (setup.colorBufferTarget == GL_TEXTURE_2D) {
-        glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        if (setup.colorBufferMultisample)
-            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_DEPTH24_STENCIL8, setup.width, setup.height, GL_TRUE);
-        else {
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, setup.width, setup.height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_BYTE, NULL);
-        }
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, (setup.depthBufferMultisample ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D),
-            depthBufferId, 0);
-    }
-    else if (setup.colorBufferTarget == GL_RENDERBUFFER) {
-        if (setup.colorBufferMultisample)
-            glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, setup.width, setup.height);
-        else
-            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, setup.width, setup.height);
-        
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, depthBufferId);
-    }
-
-    UnbindDepthBuffer();
-}
-
-void Framebuffer::InitColorBuffer(void)
-{
-    if (setup.colorBufferTarget == GL_NO_COLORATTACHMENT)
-        return;
-
-    GenColorBuffer();
-    BindColorBuffer();
-
-    if (setup.colorBufferTarget == GL_TEXTURE_2D) {
-        glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D_MULTISAMPLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        if (setup.colorBufferMultisample)
-            glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGB, setup.width, setup.height, GL_TRUE);
-        else {
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, setup.width, setup.height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-        }
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, (setup.colorBufferMultisample ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D),
-            colorBufferId, 0);
-    }
-    else if (setup.colorBufferTarget == GL_RENDERBUFFER) {
-        if (setup.colorBufferMultisample)
-            glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_RGB, setup.width, setup.height);
-        else
-            glRenderbufferStorage(GL_RENDERBUFFER, GL_RGB, setup.width, setup.height);
-        
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, colorBufferId);
-    }
-
-    UnbindColorBuffer();
-}
-
-Framebuffer::Framebuffer(const FramebufferSetup& _setup)
-    : setup(_setup)
+Framebuffer::Framebuffer()
 {
     glGenFramebuffers(1, &fboId);
+    glGenFramebuffers(1, &fboMsaaId);
+    glGenTextures(1, &texMsaaColorId);
 
     glBindFramebuffer(GL_FRAMEBUFFER, fboId);
-    
-    InitColorBuffer();
-    InitDepthBuffer();
+
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texColorId);
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGBA8, scf::renderer::width, scf::renderer::height, GL_TRUE);
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+
+    glBindRenderbuffer(GL_RENDERBUFFER, rboDepthId);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, scf::renderer::width, scf::renderer::height);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, texColorId, 0);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rboDepthId);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         N_Error("Framebuffer::Framebuffer: glCheckFramebufferStatus != GL_FRAMEBUFFER_COMPLETE");
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    Vertex vertices[] = {
+        Vertex(glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec2(1.0f, 1.0f)), // top right
+        Vertex(glm::vec3( 0.5f, -0.5f, 0.0f), glm::vec2(1.0f, 0.0f)), // bottom right
+        Vertex(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec2(0.0f, 0.0f)), // bottom left
+        Vertex(glm::vec3(-0.5f,  0.5f, 0.0f), glm::vec2(0.0f, 1.0f)), // top left
+    };
+    uint32_t indices[] = {
+        0, 1, 2,
+        0, 2, 3
+    };
+
+    vao = VertexArray::Create("fbo_VAO");
+    glBindVertexArray(0); // extra security
+    vao->Bind();
+    vbo = VertexBuffer::Create(vertices, sizeof(Vertices), "fbo_VBO");
+    vbo->Bind();
+
+    vbo->PushVertexAttrib(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, pos));
+    vbo->PushVertexAttrib(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, texcoords));
+
+    ibo = IndexBuffer::Create(indices, 6, GL_UNSIGNED_INT, "fbo_IBO");
+
+    vbo->Unbind();
+    vao->Unbind();
+
+    shader = Shader::Create("framebuffer.glsl", "fbo_Shader");
 }
 
 Framebuffer::~Framebuffer()
 {
     glDeleteFramebuffers(1, &fboId);
-    UnbindColorBuffer();
-    UnbindDepthBuffer();
+    glDeleteTextures(1, &texColorId);
+    glDeleteRenderbuffers(1, &rboDepthId);
 }
 
 void Framebuffer::SetBuffer(void)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, fboId);
-    glViewport(0, 0, setup.width, setup.height);
-    glClear(setup.clear);
+    glViewport(0, 0, scf::renderer::width, scf::renderer::height);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void Framebuffer::SetDefault(void)
@@ -119,49 +91,14 @@ void Framebuffer::SetDefault(void)
     glBindFramebuffer(GL_READ_FRAMEBUFFER, fboId);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
-    glBlitFramebuffer(0, 0, setup.width, setup.height,
+    glBlitFramebuffer(0, 0, scf::renderer::width, scf::renderer::height,
                       0, 0, scf::renderer::width, scf::renderer::height,
-                      setup.blit,
+                      GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT,
                       GL_NEAREST);
     
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
-
-void Framebuffer::Draw(VertexArray* const vao, IndexBuffer* const ibo, Shader* const shader)
-{
-    vao->Bind();
-    ibo->Bind();
-    shader->Bind();
-
-    if (setup.colorBufferTarget == GL_TEXTURE_2D) {
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture((setup.colorBufferMultisample ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D), colorBufferId);
-        shader->SetInt("u_ColorTexture", 0);
-    }
-//    if (setup.depthBufferTarget == GL_TEXTURE_2D) {
-//        glActiveTexture(GL_TEXTURE1);
-//        glBindTexture((setup.colorBufferMultisample ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D), colorBufferId);
-//        shader->SetFloat("u_DepthTexture", 1);
-//    }
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
-
-    shader->Unbind();
-    ibo->Unbind();
-    vao->Unbind();
-}
-
-void Framebuffer::Blit(const Framebuffer* const fbo)
-{
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, fboId);
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo->GetID());
-    
-    glBlitFramebuffer(0, 0, setup.width, setup.height,
-                      0, 0, fbo->setup.width, fbo->setup.height,
-                      setup.blit,
-                      GL_NEAREST);
-    
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
+#endif
 
 GPUContext::GPUContext()
 {

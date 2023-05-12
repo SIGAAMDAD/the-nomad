@@ -132,32 +132,69 @@ void done()
     exit(EXIT_SUCCESS);
 }
 
+static void MoveUp(glm::vec3 *pos)
+{
+    for (int i = 0; i < 4; i++)
+        pos[i].y += .25f;
+}
+static void MoveLeft(glm::vec3 *pos)
+{
+    for (int i = 0; i < 4; i++)
+        pos[i].x -= .25f;
+}
+static void MoveDown(glm::vec3 *pos)
+{
+    for (int i = 0; i < 4; i++)
+        pos[i].y -= .25f;
+}
+static void MoveRight(glm::vec3 *pos)
+{
+    for (int i = 0; i < 4; i++)
+        pos[i].x += 0.25;
+}
+
 void mainLoop()
 {
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
     glEnable(GL_MULTISAMPLE);
+    glm::vec4 positions[] = {
+        glm::vec4( 0.5f,  0.5f, 0.0f, 1.0f),
+        glm::vec4( 0.5f, -0.5f, 0.0f, 1.0f),
+        glm::vec4(-0.5f, -0.5f, 0.0f, 1.0f),
+        glm::vec4(-0.5f,  0.5f, 0.0f, 1.0f),
+    };
     Vertex vertices[] = {
         Vertex(glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 1.0f)),   // top right
         Vertex(glm::vec3( 0.5f, -0.5f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 0.0f)),   // bottom right
         Vertex(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f)),   // bottom left
         Vertex(glm::vec3(-0.5f,  0.5f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 1.0f)),   // top left
-    };
-    Vertex screenVertices[] = {
-        Vertex(glm::vec3( 1.0f,  1.0f, 0.0f), glm::vec2(1.0f, 1.0f)),
-        Vertex(glm::vec3( 1.0f, -1.0f, 0.0f), glm::vec2(1.0f, 0.0f)),
-        Vertex(glm::vec3(-1.0f, -1.0f, 0.0f), glm::vec2(0.0f, 0.0f)),
-        Vertex(glm::vec3(-1.0f,  1.0f, 0.0f), glm::vec2(0.0f, 1.0f))
+
+        Vertex(glm::vec3( 0.1f,  0.1f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 1.0f)),   // top right
+        Vertex(glm::vec3( 0.1f, -0.1f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 0.0f)),   // bottom right
+        Vertex(glm::vec3(-0.1f, -0.1f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f)),   // bottom left
+        Vertex(glm::vec3(-0.1f,  0.1f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 1.0f)),   // top left
+
+        Vertex(glm::vec3( 1.0f,  1.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 1.0f)),   // top right
+        Vertex(glm::vec3( 1.0f, -1.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 0.0f)),   // bottom right
+        Vertex(glm::vec3(-1.0f, -1.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f)),   // bottom left
+        Vertex(glm::vec3(-1.0f,  1.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 1.0f)),   // top left
     };
     uint32_t indices[] = {
         0, 1, 2,
-        0, 2, 3
+        0, 2, 3,
+
+        4, 5, 6,
+        4, 6, 7,
+
+        8, 9, 10,
+        8, 10, 11
     };
 
     SDL_Event event;
     memset(&event, 0, sizeof(event));
     VertexArray* vao = VertexArray::Create("vao");
     vao->Bind();
-    VertexBuffer* vbo = VertexBuffer::Create(vertices, sizeof(vertices), "vbo");
+    VertexBuffer* vbo = VertexBuffer::Create(sizeof(vertices), "vbo");
     vbo->Bind();
     vbo->PushVertexAttrib(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, pos));
     vbo->PushVertexAttrib(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, color));
@@ -167,34 +204,15 @@ void mainLoop()
     vao->Unbind();
     vbo->Unbind();
     Shader* shader = Shader::Create("shader.glsl", "shader0");
-    Shader* screenShader = Shader::Create("framebuffer.glsl", "screenShader");
 
-    VertexArray* screenVAO = VertexArray::Create("screenVAO");
-    screenVAO->Bind();
-    VertexBuffer* screenVBO = VertexBuffer::Create(screenVertices, sizeof(screenVertices), "screenVBO");
-    screenVBO->Bind();
-    vbo->PushVertexAttrib(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, pos));
-    vbo->PushVertexAttrib(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, texcoords));
-
-    IndexBuffer* screenIBO = IndexBuffer::Create(indices, 6, GL_UNSIGNED_INT, "screenIBO");
-    screenVBO->Unbind();
-    screenVAO->Unbind();
-
-    Framebuffer* fbo = Framebuffer::Create(DEFAULT_FRAMEBUFFER_SETUP, "fbo0");
-//    Framebuffer* finalFBO = Framebuffer::Create(FramebufferSetup(
-//        scf::renderer::width, scf::renderer::height, GL_COLOR_BUFFER_BIT, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT,
-//        GL_TEXTURE_2D, GL_NO_DEPTHATTACHMENT, false, false), "finalFBO");
     Texture2D* texture = Texture2D::Create("chernologo.png", "texture0");
 
     renderer->camera = (Camera *)Z_Malloc(sizeof(Camera), TAG_STATIC, &renderer->camera, "camera");
     new (renderer->camera) Camera(-3.0f, 3.0f, -3.0f, 3.0f);
-    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
-    glm::mat4 mvp = renderer->camera->GetProjection() * renderer->camera->GetViewMatrix() * model;
-
     std::vector<glm::vec3> translations = {
-        glm::vec3(1, 1.5, 0),
+        glm::vec3(-2.4, -1, 0),
         glm::vec3(1, 2.5, 0),
-        glm::vec3(3, 2.5, 0)
+        glm::vec3(3, 2.5, 0),
     };
 
     glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
@@ -217,16 +235,16 @@ void mainLoop()
                 light_intensity -= 0.1f;
                 break;
             case SDLK_w:
-                translations[0].y += .25;
+                translations[0].y += 0.25f;
                 break;
             case SDLK_a:
-                translations[0].x -= .25;
+                translations[0].x -= 0.25f;
                 break;
             case SDLK_s:
-                translations[0].y -= .25;
+                translations[0].y -= 0.25f;
                 break;
             case SDLK_d:
-                translations[0].x += .25;
+                translations[0].x += 0.25;
                 break;
             case SDLK_q:
                 renderer->camera->RotateLeft();
@@ -252,30 +270,40 @@ void mainLoop()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glViewport(0, 0, scf::renderer::width, scf::renderer::height);
 
-        fbo->SetBuffer();
-
         shader->Bind();
         vao->Bind();
+        vbo->SetData((const void *)vertices, sizeof(vertices));
         ibo->Bind();
         texture->Bind();
         shader->SetMat4("u_ViewProjection", renderer->camera->GetVPM());
         shader->SetFloat3("u_LightPos", renderer->camera->GetPos());
         shader->SetFloat("u_LightIntensity", light_intensity);
+        int i, t;
+        for (i = 0, t = 0; i < arraylen(vertices) && t < translations.size(); i += 4, t++) {
+            vertices[i + 0].pos = glm::mat4(glm::translate(glm::mat4(1.0f), translations[t]) *
+                glm::scale(glm::mat4(1.0f), glm::vec3(.5f, .5f, .0f))) * positions[0];
+            vertices[i + 1].pos = glm::mat4(glm::translate(glm::mat4(1.0f), translations[t]) *
+                glm::scale(glm::mat4(1.0f), glm::vec3(.5f, .5f, .0f))) * positions[1];
+            vertices[i + 2].pos = glm::mat4(glm::translate(glm::mat4(1.0f), translations[t]) *
+                glm::scale(glm::mat4(1.0f), glm::vec3(.5f, .5f, .0f))) * positions[2];
+            vertices[i + 3].pos = glm::mat4(glm::translate(glm::mat4(1.0f), translations[t]) *
+                glm::scale(glm::mat4(1.0f), glm::vec3(.5f, .5f, .0f))) * positions[3];
+        }
+        glDrawElements(GL_TRIANGLES, arraylen(vertices), GL_UNSIGNED_INT, NULL);
+        
+        //for (const auto& i : translations) {
+        //    glm::mat4 model = glm::translate(glm::mat4(1.0f), i);
+        //    glm::mat4 mvp = renderer->camera->GetProjection() * renderer->camera->GetViewMatrix() * model;
+        //    shader->SetMat4("u_MVP", mvp);
+        //    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
+        //}
 
         next += std::chrono::milliseconds(1000 / scf::renderer::ticrate);
-
-        for (const auto& i : translations) {
-            model = glm::translate(glm::mat4(1.0f), i);
-            mvp = renderer->camera->GetProjection() * renderer->camera->GetViewMatrix() * model;
-            shader->SetMat4("u_MVP", mvp);
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
-        }
         
         shader->Unbind();
         vao->Unbind();
         ibo->Unbind();
         texture->Unbind();
-        fbo->SetDefault();
 
         SDL_GL_SwapWindow(renderer->window);
 

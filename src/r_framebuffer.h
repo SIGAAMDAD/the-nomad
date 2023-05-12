@@ -45,109 +45,16 @@ class Shader;
 class Framebuffer
 {
 private:
-    typedef void(*glfn_t)(GLenum target, GLuint id);
+    GLuint fboId, fboMsaaId;
+    GLuint rboDepthId;
+    GLuint texColorId, texMsaaColorId;
 
-    const FramebufferSetup setup;
-    GLuint fboId;
-    GLuint depthBufferId;
-    GLuint colorBufferId;
-
+    Shader* shader;
     VertexArray* vao;
     VertexBuffer* vbo;
-    Shader* shader;
-
-    void DeleteColorBuffer(void)
-    {
-        if (setup.colorBufferTarget == GL_NO_COLORATTACHMENT)
-            return;
-        if (setup.colorBufferTarget == GL_TEXTURE_2D)
-            glDeleteTextures(1, &colorBufferId);
-        else if (setup.colorBufferTarget == GL_RENDERBUFFER)
-            glDeleteRenderbuffers(1, &colorBufferId);
-    }
-    void DeleteDepthBuffer(void)
-    {
-        if (setup.depthBufferTarget == GL_NO_DEPTHATTACHMENT)
-            return;
-        if (setup.depthBufferTarget == GL_TEXTURE_2D)
-            glDeleteTextures(1, &depthBufferId);
-        else if (setup.depthBufferTarget == GL_RENDERBUFFER)
-            glDeleteRenderbuffers(1, &depthBufferId);
-    }
-    void BindColorBuffer(void)
-    {
-        if (setup.colorBufferTarget == GL_NO_COLORATTACHMENT)
-            return;
-        if (setup.colorBufferTarget == GL_TEXTURE_2D) {
-            if (setup.colorBufferMultisample)
-                glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, colorBufferId);
-            else
-                glBindTexture(GL_TEXTURE_2D, colorBufferId);
-        }
-        else if (setup.colorBufferTarget == GL_RENDERBUFFER)
-            glBindRenderbuffer(GL_RENDERBUFFER, colorBufferId);
-    }
-    void BindDepthBuffer(void)
-    {
-        if (setup.depthBufferTarget == GL_NO_DEPTHATTACHMENT)
-            return;
-        if (setup.depthBufferTarget == GL_TEXTURE_2D) {
-            if (setup.depthBufferMultisample)
-                glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, depthBufferId);
-            else
-                glBindTexture(GL_TEXTURE_2D, depthBufferId);
-        }
-        else if (setup.depthBufferTarget == GL_RENDERBUFFER)
-            glBindRenderbuffer(GL_RENDERBUFFER, depthBufferId);
-    }
-    void UnbindDepthBuffer(void)
-    {
-        if (setup.depthBufferTarget == GL_NO_DEPTHATTACHMENT)
-            return;
-        if (setup.depthBufferTarget == GL_TEXTURE_2D) {
-            if (setup.depthBufferMultisample)
-                glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
-            else
-                glBindTexture(GL_TEXTURE_2D, 0);
-        }
-        else if (setup.depthBufferTarget == GL_RENDERBUFFER)
-            glBindRenderbuffer(GL_RENDERBUFFER, 0);
-    }
-    void UnbindColorBuffer(void)
-    {
-        if (setup.colorBufferTarget == GL_NO_COLORATTACHMENT)
-            return;
-        if (setup.colorBufferTarget == GL_TEXTURE_2D) {
-            if (setup.colorBufferMultisample)
-                glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
-            else
-                glBindTexture(GL_TEXTURE_2D, 0);
-        }
-        else if (setup.colorBufferTarget == GL_RENDERBUFFER)
-            glBindRenderbuffer(GL_RENDERBUFFER, 0);
-    }
-    void GenColorBuffer(void)
-    {
-        if (setup.colorBufferTarget == GL_NO_COLORATTACHMENT)
-            return;
-        if (setup.colorBufferTarget == GL_TEXTURE_2D)
-            glGenTextures(1, &colorBufferId);
-        else if (setup.colorBufferTarget == GL_RENDERBUFFER)
-            glGenRenderbuffers(1, &colorBufferId);
-    }
-    void GenDepthBuffer(void)
-    {
-        if (setup.depthBufferTarget == GL_NO_DEPTHATTACHMENT)
-            return;
-        if (setup.depthBufferTarget == GL_TEXTURE_2D)
-            glGenTextures(1, &depthBufferId);
-        else if (setup.depthBufferTarget == GL_RENDERBUFFER)
-            glGenRenderbuffers(1, &depthBufferId);
-    }
-    void InitColorBuffer(void);
-    void InitDepthBuffer(void);
+    IndexBuffer* ibo;
 public:
-    Framebuffer(const FramebufferSetup& _setup);
+    Framebuffer();
     ~Framebuffer();
 
     void SetBuffer();
@@ -157,9 +64,9 @@ public:
     void Draw(VertexArray* const vao, IndexBuffer* const ibo, Shader* const shader);
 
     inline GLuint GetID(void) const { return fboId; }
-    inline const FramebufferSetup& GetSetup(void) const { return setup; }
+//    inline const FramebufferSetup& GetSetup(void) const { return setup; }
 
-    static Framebuffer* Create(const FramebufferSetup& setup, const eastl::string& filepath);
+    static Framebuffer* Create(const eastl::string& filepath);
 };
 
 #endif
