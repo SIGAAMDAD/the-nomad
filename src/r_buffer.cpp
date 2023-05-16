@@ -1,6 +1,24 @@
 #include "n_shared.h"
 #include "g_game.h"
 
+VK_VertexBuffer::VK_VertexBuffer(const void *data, size_t count)
+{
+    VkDevice device;
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = count;
+    bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateBuffer(device, &bufferInfo, NULL, &buffer) != VK_SUCCESS)
+        N_Error("VK_VertexBuffer: failed to create vkBuffer object");
+}
+
+VK_VertexBuffer::~VK_VertexBuffer()
+{
+    VkDevice device;
+    vkDestroyBuffer(device, buffer, NULL);
+}
+
 /*
 * Vertex Buffer Objects
 */
@@ -40,18 +58,23 @@ void VertexBuffer::PushVertexAttrib(GLint index, GLsizei count, GLenum type, GLb
     glVertexAttribPointerARB(index, count, type, normalized, stride, offset);
     glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 }
+void VertexBuffer::PushVertexAttrib(const VertexArray* vao, GLint index, GLsizei count, GLenum type, GLboolean normalized, GLsizei stride, const void *offset)
+{
+    vao->Bind();
+    glBindBufferARB(GL_ARRAY_BUFFER_ARB, id);
+    glEnableVertexAttribArrayARB(index);
+    glVertexAttribPointerARB(index, count, type, normalized, stride, offset);
+    glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+    vao->Unbind();
+}
 
 VertexBuffer* VertexBuffer::Create(const void* data, size_t size, const eastl::string& name)
 {
-    VertexBuffer* ptr = (VertexBuffer *)Z_Malloc(sizeof(VertexBuffer), TAG_STATIC, &ptr, name.c_str());
-    new (ptr) VertexBuffer(data, size);
-    return ptr;
+    return CONSTRUCT(VertexBuffer, name.c_str(), data, size);
 }
 VertexBuffer* VertexBuffer::Create(size_t reserve, const eastl::string& name)
 {
-    VertexBuffer* ptr = (VertexBuffer *)Z_Malloc(sizeof(VertexBuffer), TAG_STATIC, &ptr, name.c_str());
-    new (ptr) VertexBuffer(reserve);
-    return ptr;
+    return CONSTRUCT(VertexBuffer, name.c_str(), reserve);
 }
 
 /*
@@ -60,9 +83,7 @@ VertexBuffer* VertexBuffer::Create(size_t reserve, const eastl::string& name)
 
 IndexBuffer* IndexBuffer::Create(const void *indices, size_t count, GLenum type, const eastl::string& name)
 {
-    IndexBuffer* ptr = (IndexBuffer *)Z_Malloc(sizeof(IndexBuffer), TAG_STATIC, &ptr, name.c_str());
-    new (ptr) IndexBuffer(indices, count, type);
-    return ptr;
+    return CONSTRUCT(IndexBuffer, name.c_str(), indices, count, type);
 }
 
 IndexBuffer::IndexBuffer(const void* data, size_t count, GLenum _type)
@@ -101,15 +122,11 @@ IndexBuffer::~IndexBuffer()
 
 ShaderStorageBuffer* ShaderStorageBuffer::Create(const void *data, size_t count, GLuint binding, const std::string& name)
 {
-    ShaderStorageBuffer* ptr = (ShaderStorageBuffer *)Z_Malloc(sizeof(ShaderStorageBuffer), TAG_STATIC, &ptr, name.c_str());
-    new (ptr) ShaderStorageBuffer(data, count, binding);
-    return ptr;
+    return CONSTRUCT(ShaderStorageBuffer, name.c_str(), data, count, binding);
 }
 ShaderStorageBuffer* ShaderStorageBuffer::Create(size_t reserve, GLuint binding, const std::string& name)
 {
-    ShaderStorageBuffer* ptr = (ShaderStorageBuffer *)Z_Malloc(sizeof(ShaderStorageBuffer), TAG_STATIC, &ptr, name.c_str());
-    new (ptr) ShaderStorageBuffer(reserve, binding);
-    return ptr;
+    return CONSTRUCT(ShaderStorageBuffer, name.c_str(), reserve, binding);
 }
 
 ShaderStorageBuffer::ShaderStorageBuffer(const void *data, size_t count, GLuint binding)
@@ -185,13 +202,9 @@ void UniformBuffer::SetData(const void *data, size_t count)
 
 UniformBuffer* UniformBuffer::Create(const void *data, size_t count, const eastl::string& name)
 {
-    UniformBuffer* ptr = (UniformBuffer *)Z_Malloc(sizeof(UniformBuffer), TAG_STATIC, &ptr, name.c_str());
-    new (ptr) UniformBuffer(data, count);
-    return ptr;
+    return CONSTRUCT(UniformBuffer, name.c_str(), data, count);
 }
 UniformBuffer* UniformBuffer::Create(size_t reserve, const eastl::string& name)
 {
-    UniformBuffer* ptr = (UniformBuffer *)Z_Malloc(sizeof(UniformBuffer), TAG_STATIC, &ptr, name.c_str());
-    new (ptr) UniformBuffer(reserve);
-    return ptr;
+    return CONSTRUCT(UniformBuffer, name.c_str(), reserve);
 }

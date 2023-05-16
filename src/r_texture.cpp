@@ -15,41 +15,33 @@ static byte* R_LoadImage(const eastl::string& filepath)
     return buffer;
 }
 
-Texture2D::Texture2D(const eastl::string& filepath, bool _multisample)
-    : multisampled(_multisample)
-{    
-    // texture
+Texture2D::Texture2D(const Texture2DSetup& setup, const eastl::string& filepath)
+{
     glGenTextures(1, &id);
-    glBindTexture((_multisample ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D), id);
+    glBindTexture(GL_TEXTURE_2D, id);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    if (_multisample) {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    }
-    else {
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    }
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, setup.minFilter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, setup.magFilter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, setup.wrapS);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, setup.wrapT);
+    glTexParameteri(GL_TEXTURE_2D, GL_AUTO_GENERATE_MIPMAP, (setup.genMipmap ? GL_TRUE : GL_FALSE));
 
     byte* image = SOIL_load_image(filepath.c_str(), &width, &height, 0, SOIL_LOAD_RGBA);
     if (!image)
         N_Error("Texture2D::Texture2D: SOIL_load_image failed for texture file %s, error string: %s", filepath.c_str(), SOIL_last_result());
     
     assert(image);
-    if (!_multisample)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-    else
-        glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGBA, width, height, GL_TRUE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
     
-    if (!_multisample)
-        glGenerateMipmapEXT(GL_TEXTURE_2D);
-    
-    buffer = (byte *)Z_Malloc((width * height) * 4, TAG_STATIC, &buffer, "texbuffer");
-    memcpy(buffer, image, (width * height) * 4);
-    SOIL_free_image_data(image);
-    glBindTexture((_multisample ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D), 0);
+    if (setup.genMipmap)
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    buffer = (byte *)Z_Malloc(width * height * 4, TAG_STATIC, &buffer, "texbuffer");
+    memcpy(buffer, image, width * height * 4);
+    (free)(image);
+
     LOG_INFO("successfully loaded texture file {}", filepath.c_str());
 }
 
@@ -59,10 +51,8 @@ Texture2D::~Texture2D()
     Z_Free(buffer);
 }
 
-Texture2D* Texture2D::Create(const eastl::string& filepath, const eastl::string& name, bool multisample)
+Texture2D* Texture2D::Create(const Texture2DSetup& setup, const eastl::string& filepath, const eastl::string& name)
 {
     LOG_INFO("loading texture file {}", filepath.c_str());
-    Texture2D* ptr = (Texture2D *)Z_Malloc(sizeof(Texture2D), TAG_STATIC, &ptr, name.c_str());
-    new (ptr) Texture2D(filepath, multisample);
-    return ptr;
+    return CONSTRUCT(Texture2D, name.c_str(), setup, filepath);
 }

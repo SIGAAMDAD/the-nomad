@@ -37,6 +37,8 @@ public:
     inline void Unbind() const
     { glUseProgramObjectARB(0); }
 
+    inline void SetBool(const std::string& name, bool value) const
+    { Uniform1i(name, value); }
     inline void SetInt(const std::string& name, int value) const
     { Uniform1i(name, value); }
     inline void SetIntArray(const std::string& name, int* values, uint32_t count) const

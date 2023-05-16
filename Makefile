@@ -17,6 +17,7 @@ LDLIBS        =\
 			-lvorbisfile \
 			-lfreetype \
 			libimgui_dbg.a \
+			-lvulkan \
 
 .PHONY: all clean
 

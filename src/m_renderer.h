@@ -6,6 +6,7 @@
 #include "r_framebuffer.h"
 #include "r_shader.h"
 #include "r_texture.h"
+#include "r_spritesheet.h"
 
 #pragma once
 
@@ -107,9 +108,14 @@ struct Vertex
     glm::vec3 pos;
     glm::vec4 color;
     glm::vec2 texcoords;
+    float texindex;
 
     inline Vertex(const glm::vec3& _pos, const glm::vec4& _color, const glm::vec2& _texcoords)
         : pos(_pos), color(_color), texcoords(_texcoords)
+    {
+    }
+    inline Vertex(const glm::vec3& _pos, const glm::vec4& _color, const glm::vec2& _texcoords, float _texindex)
+        : pos(_pos), color(_color), texcoords(_texcoords), texindex(_texindex)
     {
     }
     inline Vertex(const glm::vec3& _pos, const glm::vec4& _color)
@@ -118,6 +124,10 @@ struct Vertex
     }
     inline Vertex(const glm::vec3& _pos, const glm::vec2& _texcoords)
         : pos(_pos), texcoords(_texcoords)
+    {
+    }
+    inline Vertex(const glm::vec3& _pos, const glm::vec2& _texcoords, float _texindex)
+        : pos(_pos), texcoords(_texcoords), texindex(_texindex)
     {
     }
     inline Vertex(const glm::vec3& _pos)
@@ -267,20 +277,6 @@ public:
     }
 };
 
-class SpriteRenderer
-{
-public:
-	SpriteRenderer(Shader* const shader);
-	~SpriteRenderer();
-
-	void drawSprite(const glm::vec2& position,
-		const glm::vec2& size = glm::vec2(10, 10), GLfloat rotate = 0.0f, const glm::vec4& color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f));
-
-private:
-	mutable Shader* shader;
-	mutable VertexArray* vertexArray;
-};
-
 class GPUContext
 {
 public:
@@ -323,7 +319,7 @@ private:
     mutable glm::mat4 m_ViewProjectionMatrix;
     mutable glm::vec3 m_CameraPos;
     mutable float m_Rotation = 0.0f;
-    mutable float m_ZoomLevel = 1.0f;
+    mutable float m_ZoomLevel = 3.0f;
     float m_AspectRatio;
     float m_CameraRotationSpeed = 0.20f;
     float m_CameraSpeed = 0.25f;
@@ -351,36 +347,14 @@ public:
     }
     inline glm::mat4 CalcVPM() const { return m_ProjectionMatrix * m_ViewMatrix; }
 
-    void RotateRight() {
-        m_Rotation += m_CameraRotationSpeed;
-        if (m_Rotation > 180.0f)
-            m_Rotation -= 360.0f;
-        else if (m_Rotation <= -180.0f)
-            m_Rotation += 360.0f;
-    }
-    void RotateLeft() {
-        m_Rotation -= m_CameraRotationSpeed;
-        if (m_Rotation > 180.0f)
-            m_Rotation -= 360.0f;
-        else if (m_Rotation <= -180.0f)
-            m_Rotation += 360.0f;
-    }
-    void MoveUp() {
-        m_CameraPos.x += -sin(glm::radians(m_Rotation)) * m_CameraSpeed;
-        m_CameraPos.y += cos(glm::radians(m_Rotation)) * m_CameraSpeed;
-    }
-    void MoveDown() {
-        m_CameraPos.x -= -sin(glm::radians(m_Rotation)) * m_CameraSpeed;
-        m_CameraPos.y -= cos(glm::radians(m_Rotation)) * m_CameraSpeed;
-    }
-    void MoveLeft() {
-        m_CameraPos.x -= cos(glm::radians(m_Rotation)) * m_CameraSpeed;
-        m_CameraPos.y -= sin(glm::radians(m_Rotation)) * m_CameraSpeed;
-    }
-    void MoveRight() {
-        m_CameraPos.x += cos(glm::radians(m_Rotation)) * m_CameraSpeed;
-        m_CameraPos.y += sin(glm::radians(m_Rotation)) * m_CameraSpeed;
-    }
+    void ZoomIn(void);
+    void ZoomOut(void);
+    void RotateRight(void);
+    void RotateLeft(void);
+    void MoveUp(void);
+    void MoveDown(void);
+    void MoveLeft(void);
+    void MoveRight(void);
 
     void CalculateViewMatrix();
 };
@@ -389,12 +363,28 @@ class Renderer;
 
 extern Renderer* renderer;
 
+struct VKContext
+{
+    VkInstance instance;
+    VkSurfaceKHR surface;
+    VkApplicationInfo appInfo;
+    VkInstanceCreateInfo createInfo;
+    VkPhysicalDevice device;
+    VkXcbSurfaceCreateInfoKHR surfaceInfo;
+};
+
+typedef union gpuContext_u
+{
+    SDL_GLContext context;
+    VKContext* instance;
+} gpuContext_t;
+
 class Renderer
 {
 public:
-    Camera*camera;
+    gpuContext_t gpuContext;
+    Camera* camera;
     SDL_Window* window;
-    SDL_GLContext context;
 public:
     void AllocBuffers(const nomadvector<Vertex>& _vertices);
 
@@ -408,6 +398,11 @@ public:
     static void Draw();
     static void Submit(const nomadvector<Vertex>& vertices);
     static void Submit(const Vertex* vertices, const size_t count);
+
+    static void Clear(void)
+    {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
 };
 
 extern nomadvector<model_t> modelinfo;

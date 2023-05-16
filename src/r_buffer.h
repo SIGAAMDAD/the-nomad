@@ -1,6 +1,8 @@
 #ifndef _R_BUFFER_
 #define _R_BUFFER_
 
+class VertexArray;
+
 class UniformBuffer
 {
 private:
@@ -26,6 +28,67 @@ public:
     static UniformBuffer* Create(size_t reserve, const eastl::string& name);
 };
 
+class VK_VertexBuffer
+{
+public:
+    VkBufferCreateInfo bufferInfo{};
+    VkBuffer buffer{};
+    VkMemoryRequirements memReqs{};
+public:
+    VK_VertexBuffer(const void *data, size_t count);
+    ~VK_VertexBuffer();
+};
+
+// for the future
+#if 0
+
+struct VK_VertexBuffer
+{
+    VkBuffer buffer;
+    VkMemoryRequirements memReqs;
+    VkBufferCreateInfo bufferInfo;
+    VkMemoryAllocateInfo allocInfo;
+    VkDeviceMemory bufferMemory;
+
+    void Bind(void) const
+    {
+//        vkCmdBindVertexBuffers();
+    }
+    void Unbind(void) const;
+};
+
+struct GL_VertexBuffer
+{
+    GLuint id;
+    void *data;
+    size_t numvertices;
+
+    void Bind(void) const
+    {
+        glBindBufferARB(GL_ARRAY_BUFFER_ARB, id);
+    }
+    void Unbind(void) const
+    {
+        glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+    }
+};
+
+class VertexBuffer
+{
+private:
+    typedef union {
+        GL_VertexBuffer* glPtr;
+        VK_VertexBuffer* vkPtr;
+    } obj;
+public:
+    VertexBuffer();
+    ~VertexBuffer();
+
+    inline void Bind(void) const;
+    inline void Unbind(void) const;
+};
+#endif
+
 class VertexBuffer
 {
 public:
@@ -44,6 +107,7 @@ public:
     { glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0); }
 
     void PushVertexAttrib(GLint index, GLsizei count, GLenum type, GLboolean normalized, GLsizei stride, const void *offset);
+    void PushVertexAttrib(const VertexArray* vao, GLint index, GLsizei count, GLenum type, GLboolean normalized, GLsizei stride, const void *offset);
     void SetData(const void *data, size_t size);
     inline size_t GetCount() const { return NumVertices; }
 
@@ -57,6 +121,17 @@ private:
     GLuint id;
     size_t NumIndices;
     GLenum type;
+    inline size_t TypeSize(void) const
+    {
+        switch (type) {
+        case GL_UNSIGNED_BYTE: return 1;
+        case GL_UNSIGNED_SHORT: return 2;
+        case GL_UNSIGNED_INT: return 4;
+        case GL_UNSIGNED_INT64_ARB: return 8;
+        };
+        assert(false);
+        N_Error("IndexBuffer::TypeSize: invalid type for index buffer");
+    }
 public:
     IndexBuffer(const void* indices, size_t count, GLenum _type);
     ~IndexBuffer();
@@ -66,6 +141,7 @@ public:
     inline void Unbind() const
     { glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0); }
     inline size_t GetCount() const { return NumIndices; }
+    inline size_t BufferSize() const { return NumIndices * TypeSize(); }
 
     static IndexBuffer* Create(const void *indices, size_t count, GLenum type, const eastl::string& name);
 };

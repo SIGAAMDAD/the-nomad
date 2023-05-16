@@ -48,6 +48,7 @@
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
 #include <glad/glad.h>
+#define VK_USE_PLATFORM_XCB_KHR
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan.hpp>
 #include <SDL2/SDL_vulkan.h>
@@ -63,6 +64,7 @@
 #include <EASTL/allocator.h>
 #include <EASTL/allocator_malloc.h>
 #include <EASTL/core_allocator.h>
+#include <EASTL/initializer_list.h>
 #include <EASTL/array.h>
 #include <EASTL/string.h>
 #include <EASTL/vector.h>

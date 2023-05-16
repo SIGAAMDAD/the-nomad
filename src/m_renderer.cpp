@@ -12,9 +12,49 @@ Renderer* renderer;
 constexpr int32_t vert_fov = 24 >> 1;
 constexpr int32_t horz_fov = 88 >> 1;
 
+static void R_InitVK(void)
+{
+    renderer->gpuContext.instance = (VKContext *)Z_Malloc(sizeof(VKContext), TAG_STATIC, &renderer->gpuContext.instance, "VKContext");
+
+    VkApplicationInfo *info = &renderer->gpuContext.instance->appInfo;
+    memset(info, 0, sizeof(VkApplicationInfo));
+    info->sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    info->pApplicationName = "The Nomad";
+    info->applicationVersion = VK_MAKE_VERSION(1, 1, 0);
+    info->pEngineName = "GDRLib";
+    info->engineVersion = VK_MAKE_VERSION(0, 0, 1);
+    info->apiVersion = VK_API_VERSION_1_0;
+
+    VkInstanceCreateInfo *createInfo = &renderer->gpuContext.instance->createInfo;
+    memset(createInfo, 0, sizeof(VkInstanceCreateInfo));
+    createInfo->sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    createInfo->pApplicationInfo = info;
+
+    VkResult result = vkCreateInstance(createInfo, NULL, &renderer->gpuContext.instance->instance);
+    if (result != VK_SUCCESS)
+        N_Error("R_Init: failed to initialize a vulkan instance");
+
+    VkPhysicalDevice device = VK_NULL_HANDLE;
+    uint32_t deviceCount = 0;
+    vkEnumeratePhysicalDevices(renderer->gpuContext.instance->instance, &deviceCount, NULL);
+    if (!deviceCount)
+        N_Error("R_Init: failed to get physical device count for vulkan instance");
+    
+    std::vector<VkPhysicalDevice> devices(deviceCount);
+    vkEnumeratePhysicalDevices(renderer->gpuContext.instance->instance, &deviceCount, devices.data());
+
+    VkPhysicalDeviceProperties properties;
+    vkGetPhysicalDeviceProperties(devices.front(), &properties);
+
+    SDL_Vulkan_CreateSurface(renderer->window, renderer->gpuContext.instance->instance, &renderer->gpuContext.instance->surface);
+
+    VkBool32 presentSupport = false;
+    vkGetPhysicalDeviceSurfaceSupportKHR(renderer->gpuContext.instance->device, 1, renderer->gpuContext.instance->surface, &presentSupport);
+}
+
 static void R_InitGL(void)
 {
-    renderer->context = SDL_GL_CreateContext(renderer->window);
+    renderer->gpuContext.context = SDL_GL_CreateContext(renderer->window);
     SDL_GL_SetSwapInterval(1);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
@@ -135,6 +175,7 @@ static Uint32 R_GetWindowFlags(void)
     else if (scf::renderer::native_fullscreen)
         flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
     
+    flags |= SDL_WINDOW_RESIZABLE;
     return flags;
 }
 
@@ -171,9 +212,14 @@ void R_ShutDown()
 
     con.ConPrintf("R_ShutDown: deallocating SDL2 contexts and window");
 
-    if (renderer->context) {
-        SDL_GL_DeleteContext(renderer->context);
-        renderer->context = NULL;
+    if (scf::renderer::api == scf::R_OPENGL && renderer->gpuContext.context) {
+        SDL_GL_DeleteContext(renderer->gpuContext.context);
+        renderer->gpuContext.context = NULL;
+    }
+    else if (scf::renderer::api == scf::R_VULKAN && renderer->gpuContext.instance) {
+        vkDestroySurfaceKHR(renderer->gpuContext.instance->instance, renderer->gpuContext.instance->surface, NULL);
+        vkDestroyInstance(renderer->gpuContext.instance->instance, NULL);
+        renderer->gpuContext.instance = NULL;
     }
     if (renderer->window) {
         SDL_DestroyWindow(renderer->window);
@@ -213,6 +259,58 @@ void Camera::CalculateViewMatrix()
     
     m_ViewMatrix = glm::inverse(transform);
     m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
+}
+
+void Camera::ZoomIn(void)
+{
+    m_ZoomLevel -= 0.05f;
+    m_ProjectionMatrix = glm::ortho(m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel, -m_ZoomLevel);
+}
+void Camera::ZoomOut(void)
+{
+    m_ZoomLevel += 0.05f;
+    m_ProjectionMatrix = glm::ortho(m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel, -m_ZoomLevel);
+}
+
+void Camera::RotateRight(void)
+{
+    m_Rotation += m_CameraRotationSpeed;
+    if (m_Rotation > 180.0f) {
+        m_Rotation -= 360.0f;
+    }
+    else if (m_Rotation <= -180.0f) {
+        m_Rotation += 360.0f;
+    }
+}
+void Camera::RotateLeft(void)
+{
+    m_Rotation -= m_CameraRotationSpeed;
+    if (m_Rotation > 180.0f) {
+        m_Rotation -= 360.0f;
+    }
+    else if (m_Rotation <= -180.0f) {
+        m_Rotation += 360.0f;
+    }
+}
+void Camera::MoveUp(void)
+{
+    m_CameraPos.x += -sin(glm::radians(m_Rotation)) * m_CameraSpeed;
+    m_CameraPos.y += cos(glm::radians(m_Rotation)) * m_CameraSpeed;
+}
+void Camera::MoveDown(void)
+{
+    m_CameraPos.x -= -sin(glm::radians(m_Rotation)) * m_CameraSpeed;
+    m_CameraPos.y -= cos(glm::radians(m_Rotation)) * m_CameraSpeed;
+}
+void Camera::MoveLeft(void)
+{
+    m_CameraPos.x -= cos(glm::radians(m_Rotation)) * m_CameraSpeed;
+    m_CameraPos.y -= sin(glm::radians(m_Rotation)) * m_CameraSpeed;
+}
+void Camera::MoveRight(void)
+{
+    m_CameraPos.x += cos(glm::radians(m_Rotation)) * m_CameraSpeed;
+    m_CameraPos.y += sin(glm::radians(m_Rotation)) * m_CameraSpeed;
 }
 
 int R_DrawMenu(const char* fontfile, const nomadvector<std::string>& choices,

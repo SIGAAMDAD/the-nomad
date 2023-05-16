@@ -32,7 +32,10 @@ typedef struct pint_s
     inline pint_s(const pint_s &) = default;
 
     inline pint_s& operator=(const pint_s& p) {
-        memmove(&(*this), &p, sizeof(pint_s));
+        sprite = p.sprite;
+        pos = p.pos;
+        r_info = p.r_info;
+        color = p.color;
         return *this;
     }
 } pint_t;

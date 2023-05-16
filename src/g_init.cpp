@@ -153,9 +153,20 @@ static void MoveRight(glm::vec3 *pos)
         pos[i].x += 0.25;
 }
 
+static void R_VertexTransforms(const glm::vec3& pos,
+    Vertex* vertices, int numvertices, int offset, const glm::vec4* positions, float scale)
+{
+    glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos) * glm::scale(glm::mat4(1.0f), glm::vec3(scale));
+    for (int i = 0; i < numvertices; i++)
+        vertices[i + offset].pos = transform * positions[i];
+}
+
 void mainLoop()
 {
-    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
+    SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 16);
     glEnable(GL_MULTISAMPLE);
     glm::vec4 positions[] = {
         glm::vec4( 0.5f,  0.5f, 0.0f, 1.0f),
@@ -164,55 +175,42 @@ void mainLoop()
         glm::vec4(-0.5f,  0.5f, 0.0f, 1.0f),
     };
     Vertex vertices[] = {
-        Vertex(glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 1.0f)),   // top right
-        Vertex(glm::vec3( 0.5f, -0.5f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 0.0f)),   // bottom right
-        Vertex(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f)),   // bottom left
-        Vertex(glm::vec3(-0.5f,  0.5f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 1.0f)),   // top left
-
-        Vertex(glm::vec3( 0.1f,  0.1f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 1.0f)),   // top right
-        Vertex(glm::vec3( 0.1f, -0.1f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 0.0f)),   // bottom right
-        Vertex(glm::vec3(-0.1f, -0.1f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f)),   // bottom left
-        Vertex(glm::vec3(-0.1f,  0.1f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 1.0f)),   // top left
-
-        Vertex(glm::vec3( 1.0f,  1.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 1.0f)),   // top right
-        Vertex(glm::vec3( 1.0f, -1.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 0.0f)),   // bottom right
-        Vertex(glm::vec3(-1.0f, -1.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f)),   // bottom left
-        Vertex(glm::vec3(-1.0f,  1.0f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 1.0f)),   // top left
+        Vertex(glm::vec3( 0.5f,  0.5f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), /*glm::vec2(1.0f, 0.5f)*/ glm::vec2(1.0f, 1.0f)),   // top right
+        Vertex(glm::vec3( 0.5f, -0.5f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), /*glm::vec2(1.0f, 0.0f)*/ glm::vec2(1.0f, 0.0f)),   // bottom right
+        Vertex(glm::vec3(-0.5f, -0.5f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), /*glm::vec2(0.0f, 0.0f)*/ glm::vec2(0.0f, 0.0f)),   // bottom left
+        Vertex(glm::vec3(-0.5f,  0.5f, 0.0f), glm::vec4(0.0f, 0.0f, 0.0f, 1.0f), /*glm::vec2(0.0f, 0.5f)*/ glm::vec2(0.0f, 1.0f)),   // top left
     };
     uint32_t indices[] = {
         0, 1, 2,
-        0, 2, 3,
-
-        4, 5, 6,
-        4, 6, 7,
-
-        8, 9, 10,
-        8, 10, 11
+        0, 2, 3
     };
 
     SDL_Event event;
     memset(&event, 0, sizeof(event));
     VertexArray* vao = VertexArray::Create("vao");
     vao->Bind();
-    VertexBuffer* vbo = VertexBuffer::Create(sizeof(vertices), "vbo");
+    VertexBuffer* vbo = VertexBuffer::Create(vertices, sizeof(vertices), "vbo");
     vbo->Bind();
-    vbo->PushVertexAttrib(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, pos));
-    vbo->PushVertexAttrib(1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, color));
-    vbo->PushVertexAttrib(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, texcoords));
+    vbo->PushVertexAttrib(vao, 0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, pos));
+    vbo->PushVertexAttrib(vao, 1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, color));
+    vbo->PushVertexAttrib(vao, 2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, texcoords));
 
     IndexBuffer* ibo = IndexBuffer::Create(indices, 6, GL_UNSIGNED_INT, "ibo");
-    vao->Unbind();
     vbo->Unbind();
+    vao->Unbind();
     Shader* shader = Shader::Create("shader.glsl", "shader0");
 
-    Texture2D* texture = Texture2D::Create("chernologo.png", "texture0");
+    Framebuffer* fbo = Framebuffer::Create("fbo");
+    Texture2D* texture = Texture2D::Create(DEFAULT_TEXTURE_SETUP, "sand.jpg", "texture0");
+    Texture2D* screenTexture = Texture2D::Create(DEFAULT_TEXTURE_SETUP, "desertbkgd.jpg", "screenTexture");
+    fbo->SetScreenTexture(screenTexture);
 
-    renderer->camera = (Camera *)Z_Malloc(sizeof(Camera), TAG_STATIC, &renderer->camera, "camera");
-    new (renderer->camera) Camera(-3.0f, 3.0f, -3.0f, 3.0f);
+
+    renderer->camera = CONSTRUCT(Camera, "camera", -3.0f, 3.0f, -3.0f, 3.0f);
     std::vector<glm::vec3> translations = {
-        glm::vec3(-2.4, -1, 0),
-        glm::vec3(1, 2.5, 0),
-        glm::vec3(3, 2.5, 0),
+        glm::vec3(0, -1, 0),
+        glm::vec3(1, 0, 0),
+        glm::vec3(0, .5, 0),
     };
 
     glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
@@ -227,83 +225,87 @@ void mainLoop()
             if (event.type == SDL_QUIT) {
                 done();
             }
-            switch (event.key.keysym.sym) {
-            case SDLK_o:
-                light_intensity += 0.1f;
-                break;
-            case SDLK_p:
-                light_intensity -= 0.1f;
-                break;
-            case SDLK_w:
-                translations[0].y += 0.25f;
-                break;
-            case SDLK_a:
-                translations[0].x -= 0.25f;
-                break;
-            case SDLK_s:
-                translations[0].y -= 0.25f;
-                break;
-            case SDLK_d:
-                translations[0].x += 0.25;
-                break;
-            case SDLK_q:
-                renderer->camera->RotateLeft();
-                break;
-            case SDLK_e:
-                renderer->camera->RotateRight();
-                break;
-            case SDLK_UP:
-                renderer->camera->MoveUp();
-                break;
-            case SDLK_DOWN:
-                renderer->camera->MoveDown();
-                break;
-            case SDLK_LEFT:
-                renderer->camera->MoveLeft();
-                break;
-            case SDLK_RIGHT:
-                renderer->camera->MoveRight();
-                break;
-            };
+            if (event.type == SDL_KEYDOWN) {
+                switch (event.key.keysym.sym) {
+                case SDLK_o:
+                    light_intensity += 0.1f;
+                    break;
+                case SDLK_p:
+                    light_intensity -= 0.1f;
+                    break;
+                case SDLK_n:
+                    renderer->camera->ZoomIn();
+                    break;
+                case SDLK_m:
+                    renderer->camera->ZoomOut();
+                    break;
+                case SDLK_w:
+                    translations[0].y += 0.25f;
+                    break;
+                case SDLK_a:
+                    translations[0].x -= 0.25f;
+                    break;
+                case SDLK_s:
+                    translations[0].y -= 0.25f;
+                    break;
+                case SDLK_d:
+                    translations[0].x += 0.25;
+                    break;
+                case SDLK_q:
+                    renderer->camera->RotateLeft();
+                    break;
+                case SDLK_e:
+                    renderer->camera->RotateRight();
+                    break;
+                case SDLK_UP:
+                    renderer->camera->MoveUp();
+                    break;
+                case SDLK_DOWN:
+                    renderer->camera->MoveDown();
+                    break;
+                case SDLK_LEFT:
+                    renderer->camera->MoveLeft();
+                    break;
+                case SDLK_RIGHT:
+                    renderer->camera->MoveRight();
+                    break;
+                };
+            }
         }
         renderer->camera->CalculateViewMatrix();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glViewport(0, 0, scf::renderer::width, scf::renderer::height);
 
-        shader->Bind();
-        vao->Bind();
-        vbo->SetData((const void *)vertices, sizeof(vertices));
-        ibo->Bind();
-        texture->Bind();
-        shader->SetMat4("u_ViewProjection", renderer->camera->GetVPM());
-        shader->SetFloat3("u_LightPos", renderer->camera->GetPos());
-        shader->SetFloat("u_LightIntensity", light_intensity);
-        int i, t;
-        for (i = 0, t = 0; i < arraylen(vertices) && t < translations.size(); i += 4, t++) {
-            vertices[i + 0].pos = glm::mat4(glm::translate(glm::mat4(1.0f), translations[t]) *
-                glm::scale(glm::mat4(1.0f), glm::vec3(.5f, .5f, .0f))) * positions[0];
-            vertices[i + 1].pos = glm::mat4(glm::translate(glm::mat4(1.0f), translations[t]) *
-                glm::scale(glm::mat4(1.0f), glm::vec3(.5f, .5f, .0f))) * positions[1];
-            vertices[i + 2].pos = glm::mat4(glm::translate(glm::mat4(1.0f), translations[t]) *
-                glm::scale(glm::mat4(1.0f), glm::vec3(.5f, .5f, .0f))) * positions[2];
-            vertices[i + 3].pos = glm::mat4(glm::translate(glm::mat4(1.0f), translations[t]) *
-                glm::scale(glm::mat4(1.0f), glm::vec3(.5f, .5f, .0f))) * positions[3];
-        }
-        glDrawElements(GL_TRIANGLES, arraylen(vertices), GL_UNSIGNED_INT, NULL);
-        
-        //for (const auto& i : translations) {
-        //    glm::mat4 model = glm::translate(glm::mat4(1.0f), i);
-        //    glm::mat4 mvp = renderer->camera->GetProjection() * renderer->camera->GetViewMatrix() * model;
-        //    shader->SetMat4("u_MVP", mvp);
-        //    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
-        //}
-
+        fbo->SetBuffer();
+//        {
+//            screenTexture->Bind();
+//            glm::mat4 model = glm::translate(glm::mat4(1.0f), translations[1]);
+//            glm::mat4 mvp = renderer->camera->GetProjection() * renderer->camera->GetViewMatrix() * model;
+//            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
+//            screenTexture->Unbind();
+//        }
         next += std::chrono::milliseconds(1000 / scf::renderer::ticrate);
         
-        shader->Unbind();
-        vao->Unbind();
+        fbo->SetDefault();
+
+        shader->Bind();
+        vao->Bind();
+        ibo->Bind();
+        
+        shader->SetMat4("u_ViewProjection", renderer->camera->GetVPM());
+
+        {
+            texture->Bind(0);
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), translations[0]);
+            glm::mat4 mvp = renderer->camera->GetProjection() * renderer->camera->GetViewMatrix() * model;
+            shader->SetMat4("u_MVP", mvp);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
+            texture->Unbind();
+        }
+
         ibo->Unbind();
-        texture->Unbind();
+        vao->Unbind();
+        shader->Unbind();
 
         SDL_GL_SwapWindow(renderer->window);
 

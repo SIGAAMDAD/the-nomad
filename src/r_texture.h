@@ -3,6 +3,22 @@
 
 #pragma once
 
+struct Texture2DSetup
+{
+    GLenum magFilter;
+    GLenum minFilter;
+    GLenum wrapS;
+    GLenum wrapT;
+    bool genMipmap;
+
+    inline Texture2DSetup(GLenum _magFilter, GLenum _minFilter, GLenum _wrapS, GLenum _wrapT, bool _genMipmap)
+        : magFilter(_magFilter), minFilter(_minFilter), wrapS(_wrapS), wrapT(_wrapT), genMipmap(_genMipmap)
+    {
+    }
+};
+
+const inline Texture2DSetup DEFAULT_TEXTURE_SETUP = Texture2DSetup(GL_NEAREST, GL_LINEAR_MIPMAP_LINEAR, GL_REPEAT, GL_REPEAT, true);
+
 class Texture2D
 {
 private:
@@ -12,27 +28,25 @@ private:
     int width;
     int height;
     int n;
-
-    bool multisampled;
 public:
-    Texture2D(const eastl::string& filepath, bool _multisample = false);
+    Texture2D(const Texture2DSetup& _setup, const eastl::string& filepath);
     ~Texture2D();
 
-    inline void Bind(uint32_t slot = 0) const {
-        glBindTexture((multisampled ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D), id);
+    inline void Bind(uint32_t slot = 0) const
+    {
+        glActiveTexture(GL_TEXTURE0+slot);
+        glBindTexture(GL_TEXTURE_2D, id);
     }
-    inline void Unbind() const {
-        glBindTexture((multisampled ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D), 0);
+    inline void Unbind() const
+    {
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
-    inline byte* GetData() {
-        return buffer;
-    }
+    inline byte* GetData() { return buffer; }
     inline int GetWidth() const { return width; }
     inline int GetHeight() const { return height; }
     inline GLuint GetID() const { return id; }
-    inline bool IsMultisampled() const { return multisampled; }
     
-    static Texture2D* Create(const eastl::string& filepath, const eastl::string& name, bool multisample = false);
+    static Texture2D* Create(const Texture2DSetup& setup, const eastl::string& filepath, const eastl::string& name);
 };
 
 #endif

@@ -31,6 +31,15 @@
 
 #define NULL 0
 
+template<class T, typename... Args>
+inline T* Construct(const char* name, Args&&... args)
+{
+	T *ptr = (T *)Z_Malloc(sizeof(T), 1, &ptr, name);
+	new (ptr) T(std::forward<Args>(args)...);
+	return ptr;
+}
+#define CONSTRUCT(class,name,...) ({class* ptr=(class*)Z_Malloc(sizeof(class),TAG_STATIC,&ptr,name);new (ptr) class(__VA_ARGS__);ptr;})
+
 #define NOMAD_VERSION _NOMAD_VERSION
 #define NOMAD_VERSION_UPDATE _NOMAD_VERSION_UPDATE
 #define NOMAD_VERSION_PATCH _NOMAD_VERSION_PATCH
@@ -730,5 +739,18 @@ template<typename T>
 using nomadvector = eastl::vector<T, nomad_allocator<T>>;
 template<typename Key, typename T>
 using nomad_unordered_map = eastl::unordered_map<Key, T, eastl::hash<T>, eastl::equal_to<T>, nomad_allocator<T>>;
+
+inline void* new_realloc(void *p, size_t nsize)
+{
+	if (!nsize)
+		N_Error("new_realloc: bad size");
+	
+	void *ptr = ::operator new(nsize);
+	if (p) {
+		memcpy(ptr, p, nsize);
+		delete p;
+	}
+	return ptr;
+}
 
 #endif

@@ -136,3 +136,13 @@ void P_SwapWeapon10()
 {
     
 }
+
+void P_ZoomIn()
+{
+
+}
+
+void P_ZoomOut()
+{
+    
+}
