@@ -38,14 +38,12 @@
 [trace]: [OpenGL Debug Log] Buffer detailed info: Buffer object 4 (bound to GL_ELEMENT_ARRAY_BUFFER_ARB, usage hint is GL_STATIC_DRAW) will use VIDEO memory as the source for buffer object operations.
 [info]: successfully compiled shader framebuffer.glsl
 [info]: loading texture file sand.jpg
-[error]: [OpenGL Debug Log] GL_INVALID_ENUM error generated. <pname> enum is invalid; expected GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TEXTURE_WRAP_R, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER, GL_DEPTH_TEXTURE_MODE, GL_TEXTURE_COMPARE_MODE, etc. (19 others).
 [info]: successfully loaded texture file sand.jpg
 [info]: loading texture file desertbkgd.jpg
-[error]: [OpenGL Debug Log] GL_INVALID_ENUM error generated. <pname> enum is invalid; expected GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TEXTURE_WRAP_R, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MAG_FILTER, GL_DEPTH_TEXTURE_MODE, GL_TEXTURE_COMPARE_MODE, etc. (19 others).
 [info]: successfully loaded texture file desertbkgd.jpg
-[warning]: Z_ScanForBlock: 0x7f844fcbf0ed (gptr) has dangling pointer into freed block 0x7f844fd0f5ce (0x7f844fcf781d -> 0x7f844fd0f5ce)
-[warning]: Z_ScanForBlock: 0x7f844fcf78fb (pstructs) has dangling pointer into freed block 0x7f844fd0f5ce (0x7f844fcf78fb -> 0x7f844fd0f5ce)
-[trace]: Z_MergePB: merging prev block for block at 0x7f844fd0f597
+[warning]: Z_ScanForBlock: 0x7f60478a70ed (gptr) has dangling pointer into freed block 0x7f60478f75ce (0x7f60478df81d -> 0x7f60478f75ce)
+[warning]: Z_ScanForBlock: 0x7f60478df8fb (pstructs) has dangling pointer into freed block 0x7f60478f75ce (0x7f60478df8fb -> 0x7f60478f75ce)
+[trace]: Z_MergePB: merging prev block for block at 0x7f60478f7597
 [trace]: Z_MergeFB: prev block not TAG_FREE
-[trace]: Z_MergeNB: merging next block for block at 0x7f844fd0f597
+[trace]: Z_MergeNB: merging next block for block at 0x7f60478f7597
 [trace]: Z_MergeNB: next block not TAG_FREE

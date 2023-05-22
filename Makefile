@@ -1,9 +1,9 @@
 VERSION       = 1
 VERSION_UPDATE= 1
 VERSION_PATCH = 0
-CC            = distcc g++ -I/usr/include -Ideps -Ideps/glad/include -I/usr/local/include -I/usr/include/freetype2 -Isrc
+CC            = distcc g++
 O             = obj
-SDIR          = src
+SDIR          = code
 LDLIBS        =\
 			/usr/local/lib/libSDL2.a \
 			/usr/local/lib/libopenal.a \
@@ -24,53 +24,51 @@ LDLIBS        =\
 ifdef release
 CFLAGS= -Ofast -s -std=c++17
 LDLIBS+=libglad.a
+VMFLAGS= -Ofast -s -std=c89
 else
 CFLAGS= -Og -g -std=c++17 -Wall -Wpedantic -D_NOMAD_DEBUG
 LDLIBS+=libglad_dbg.a
+VMFLAGS= -Og -g -std=c89 -Wall -Wpedantic -D_NOMAD_DEBUG -DDEBUG_VM
 endif
+INCLUDE= -I/usr/include -Ideps -Ideps/glad/include -I/usr/local/include -I/usr/include/freetype2 -Isrc
 OPIMTIZERS=-fexpensive-optimizations -funroll-loops -ffast-math -finline-limit=10000 -mavx -mavx2 -mfma -msse3
 DEFINES    =-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPDATE) -D_NOMAD_VERSION_PATCH=$(VERSION_PATCH)
-CFLAGS    +=$(DEFINES) $(OPIMTIZERS)
+CFLAGS    += $(INCLUDE) $(DEFINES) $(OPIMTIZERS)
 
+COMMONOBJ= \
+	$(O)/vm.o \
 
-OBJS= \
-	$(O)/m_renderer.o \
-	$(O)/g_init.o \
-	$(O)/g_loop.o \
+BFFOBJ= \
+	$(O)/bffread.o \
+
+SRCOBJ= \
+	$(O)/g_syscalls.o \
 	$(O)/g_sound.o \
-	$(O)/g_game.o \
-	$(O)/g_zone.o \
-	$(O)/n_scf.o \
-	$(O)/p_playr.o \
-	$(O)/s_mmisc.o \
-	$(O)/s_mthink.o \
-	$(O)/info.o \
-	$(O)/g_main.o \
 	$(O)/g_rng.o \
-	$(O)/s_saveg.o \
-	$(O)/g_bff.o \
-	$(O)/r_opengl.o \
-	$(O)/n_shared.o \
+	$(O)/g_zone.o \
 	$(O)/g_math.o \
+	$(O)/g_main.o \
+	$(O)/g_init.o \
+	$(O)/g_bff.o \
+	\
+	$(O)/n_console.o \
+	$(O)/n_scf.o \
+	$(O)/n_shared.o \
+	\
 	$(O)/r_buffer.o \
-	$(O)/r_shader.o \
 	$(O)/r_framebuffer.o \
+	$(O)/r_opengl.o \
+	$(O)/r_vertexarray.o \
 	$(O)/r_texture.o \
+	$(O)/r_shader.o \
 
-all: glnomad
+all: nomadgl
 
-$(O)/%.o: $(SDIR)/idlib/%.cpp
+$(O)/%.o: $(SDIR)/src/%.cpp
 	$(CC) $(CFLAGS) -o $@ -c $<
-$(O)/s_saveg.o: $(SDIR)/s_saveg.cpp
-	$(CC) $(CFLAGS) -Wno-unused-result -o $@ -c $<
-$(O)/g_bff.o: $(SDIR)/g_bff.cpp
-	$(CC) $(CFLAGS) -Wno-unused-result -o $@ -c $<
-$(O)/%.o: $(SDIR)/%.cpp
-	$(CC) $(CFLAGS) -o $@ -c $<
-
-glnomad: $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) $(LIBS) -o glnomad $(LDLIBS)
+nomadgl: $(SRCOBJ) $(BFFOBJ) $(COMMONOBJ)
+	$(CC) $(CFLAGS) $(SRCOBJ) $(BFFOBJ) $(COMMONOBJ) -o glnomad $(LDLIBS)
 
 clean:
 	rm -r $(OBJS)
-	rm glnomad
+	rm nomadgl
