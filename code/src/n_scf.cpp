@@ -1,74 +1,74 @@
 #include "n_shared.h"
 #include "g_game.h"
+#include "g_zone.h"
 
-int g_vert_fov;
-int g_horz_fov;
-float g_pspeed;
-float g_gravity;
+cvar_t g_vert_fov = {"g_vert_fov","24",TYPE_INT,qtrue};
+cvar_t g_horz_fov = {"g_horz_fov","64",TYPE_INT,qtrue};
+cvar_t g_pspeed = {"g_pspeed","1.0",TYPE_FLOAT,qtrue};
+cvar_t g_gravity = {"g_gravity","1.5",TYPE_FLOAT,qtrue};
 
-float snd_musicvol;
-float snd_sfxvol;
-qboolean snd_musicon;
-qboolean snd_sfxon;
+cvar_t snd_musicvol = {"snd_musicvol","0.7",TYPE_FLOAT,qtrue};
+cvar_t snd_sfxvol = {"snd_sfxvol","1.0",TYPE_FLOAT,qtrue};
+cvar_t snd_musicon = {"snd_musicon","true",TYPE_BOOL,qtrue};
+cvar_t snd_sfxon = {"snd_sfxon","true",TYPE_BOOL,qtrue};
 
-int r_ticrate;
-int r_texture_magfilter;
-int r_texture_minfilter;
-int r_screenheight;
-int r_screenwidth;
-int r_renderapi;
-qboolean r_vsync;
-qboolean r_fullscreen;
-qboolean r_hidden;
-qboolean r_drawFPS;
-int r_renderapi;
-int r_msaa_amount;
+cvar_t r_ticrate = {"r_ticrate","35",TYPE_INT,qtrue};
+cvar_t r_texture_magfilter = {"r_texture_magfilter","GL_NEAREST",TYPE_STRING,qtrue};
+cvar_t r_texture_minfilter = {"r_texture_minfilter","GL_LINEAR_MIPMAP_LINEAR",TYPE_STRING,qtrue};
+cvar_t r_screenheight = {"r_screenheight","720",TYPE_INT,qtrue};
+cvar_t r_screenwidth = {"r_screenwidth","1024",TYPE_INT,qtrue};
+cvar_t r_vsync = {"r_vsync","true",TYPE_BOOL,qtrue};
+cvar_t r_fullscreen = {"r_fullscreen","false",TYPE_BOOL,qtrue};
+cvar_t r_native_fullscreen = {"r_native_fullscreen","false",TYPE_BOOL,qtrue};
+cvar_t r_hidden = {"r_hidden","false",TYPE_BOOL,qtrue};
+cvar_t r_drawFPS = {"r_drawFPS","false",TYPE_BOOL,qtrue};
+cvar_t r_renderapi = {"r_renderapi","R_OPENGL",TYPE_STRING,qtrue};
+cvar_t r_msaa_amount = {"r_msaa_amount","OFF",TYPE_STRING,qtrue};
 
 nomadvector<const byte*> api_extensions;
 
-qboolean c_fastmobs1 = qfalse;
-qboolean c_fastmobs2 = qfalse;
-qboolean c_fastmobs3 = qfalse;
-qboolean c_deafmobs = qfalse;
-qboolean c_blindmobs = qfalse;
-qboolean c_nosmell = qfalse;
-qboolean c_nomobs = qfalse;
-qboolean c_godmode = qfalse;
-qboolean c_infinite_ammo = qfalse;
-qboolean c_bottomless_clip = qfalse;
-qboolean c_devmode = qfalse;
+cvar_t c_fastmobs1 = {"c_fastmobs1","false",TYPE_BOOL,qtrue};
+cvar_t c_fastmobs2 = {"c_fastmobs2","false",TYPE_BOOL,qtrue};
+cvar_t c_fastmobs3 = {"c_fastmobs3","false",TYPE_BOOL,qtrue};
+cvar_t c_deafmobs = {"c_deafmobs","false",TYPE_BOOL,qtrue};
+cvar_t c_blindmobs = {"c_blindmobs","false",TYPE_BOOL,qtrue};
+cvar_t c_nosmell = {"c_nosmell","false",TYPE_BOOL,qtrue};
+cvar_t c_nomobs = {"c_nomobs","false",TYPE_BOOL,qtrue};
+cvar_t c_godmode = {"c_godmode","false",TYPE_BOOL,qtrue};
+cvar_t c_infinite_ammo = {"c_infinite_ammo","false",TYPE_BOOL,qtrue};
+cvar_t c_bottomless_clip = {"c_bottomless_clip","false",TYPE_BOOL,qtrue};
+cvar_t c_devmode = {"c_devmode","false",TYPE_BOOL,qtrue};
 
-static vmCvar_t cvars[] = {
-    {"g_vert_fov", (char *)&g_vert_fov, TYPE_INT},
-    {"g_horz_fov", (char *)&g_horz_fov, TYPE_INT},
-    {"g_pspeed", (char *)&g_pspeed, TYPE_FLOAT},
-    {"g_gravity", (char *)&g_gravity, TYPE_FLOAT},
-    {"snd_musicvol", (char *)&snd_musicvol, TYPE_FLOAT},
-    {"snd_musicon", (char *)&snd_musicon, TYPE_BOOL},
-    {"snd_sfxvol", (char *)&snd_sfxvol, TYPE_FLOAT},
-    {"snd_sfxon", (char *)&snd_sfxon, TYPE_BOOL},
-    {"c_fastmobs1", (char *)&c_fastmobs1, TYPE_BOOL},
-    {"c_fastmobs2", (char *)&c_fastmobs2, TYPE_BOOL},
-    {"c_fastmobs3", (char *)&c_fastmobs3, TYPE_BOOL},
-    {"c_deafmobs", (char *)&c_deafmobs, TYPE_BOOL},
-    {"c_blindmobs", (char *)&c_blindmobs, TYPE_BOOL},
-    {"c_nosmell", (char *)&c_nosmell, TYPE_BOOL},
-    {"c_nomobs", (char *)&c_nomobs, TYPE_BOOL},
-    {"c_godmode", (char *)&c_godmode, TYPE_BOOL},
-    {"c_infinite_ammo", (char *)&c_infinite_ammo, TYPE_BOOL},
-    {"c_bottomless_clip", (char *)&c_bottomless_clip, TYPE_BOOL},
-    {"c_devmode", (char *)&c_devmode, TYPE_BOOL},
-    {"r_ticrate", (char *)&r_ticrate, TYPE_INT},
-    {"r_texture_magfilter", (char *)&r_texture_magfilter, TYPE_INT},
-    {"r_texture_minfilter", (char *)&r_texture_minfilter, TYPE_INT},
-    {"r_screenheight", (char *)&r_screenheight, TYPE_INT},
-    {"r_screenwidth", (char *)&r_screenwidth, TYPE_INT},
-    {"r_renderapi", (char *)&r_renderapi, TYPE_INT},
-    {"r_vsync", (char *)&r_vsync, TYPE_BOOL},
-    {"r_fullscreen", (char *)&r_fullscreen, TYPE_BOOL},
-    {"r_hidden", (char *)&r_hidden, TYPE_BOOL}
+static cvar_t *cvars[] = {
+    &g_vert_fov,
+    &g_horz_fov,
+    &snd_musicvol,
+    &snd_sfxvol,
+    &snd_musicon,
+    &snd_sfxon,
+    &r_ticrate,
+    &r_texture_magfilter,
+    &r_texture_minfilter,
+    &r_screenheight,
+    &r_screenwidth,
+    &r_vsync,
+    &r_fullscreen,
+    &r_native_fullscreen,
+    &r_hidden,
+    &r_drawFPS,
+    &r_renderapi,
+    &r_msaa_amount,
+    &c_fastmobs1,
+    &c_fastmobs2,
+    &c_fastmobs3,
+    &c_deafmobs,
+    &c_blindmobs,
+    &c_nosmell,
+    &c_godmode,
+    &c_infinite_ammo,
+    &c_bottomless_clip,
+    &c_devmode,
 };
-
 
 #define PRINTARG(x) fmt::arg(#x, x)
 
@@ -77,9 +77,30 @@ uint32_t G_NumCvars(void)
     return arraylen(cvars);
 }
 
-vmCvar_t* G_GetCvars(void)
+cvar_t** G_GetCvars(void)
 {
     return cvars;
+}
+
+static void Cvar_Load(const json& data, const std::string& name, cvar_t* cvar)
+{
+    if (!cvar->save) {
+        return;
+    }
+    if (cvar->name[0] == 'c' && !data.contains(name)) { // cheats are not required in the config file
+        return;
+    }
+    if (!data.contains(name)) {
+        N_Error("Cvar_Load: cvar %s required in configuration file to run the game", name.c_str());
+    }
+    const std::string value = data[name];
+
+    if (!N_strcmp(cvar->value, value.c_str())) {
+        cvar->value = (char *)Z_Malloc(value.size()+1, TAG_STATIC, &cvar->value, "CvarVal");
+        strncpy(cvar->value, value.c_str(), value.size());
+    }
+
+    Con_Printf("Initialized cvar %s with value %s", cvar->name, cvar->value);
 }
 
 void G_LoadSCF()
@@ -96,25 +117,7 @@ void G_LoadSCF()
     }
     stream.close();
 
-    std::vector<std::string> vars = data["cvars"];
-    for (const auto& v : vars) {
-        for (uint32_t i = 0; i < arraylen(cvars); i++) {
-            if (i == cvars[i].name) {
-                switch (cvars[i].type) {
-                case TYPE_INT:
-                    *(int *)cvars[i].value = atoi(v.c_str());
-                    break;
-                case TYPE_BOOL:
-                    *(qboolean *)cvars[i].value = v == "true" ? qtrue : qfalse;
-                    break;
-                case TYPE_FLOAT:
-                    *(float *)cvars[i].value = atof(v.c_str());
-                    break;
-                case TYPE_STRING:
-                    strncpy(cvars[i].value, v.c_str(), strlen(cvars[i].value));
-                    break;
-                };
-            }
-        }
+    for (uint32_t i = 0; i < arraylen(cvars); i++) {
+        Cvar_Load(data, cvars[i]->name, cvars[i]);
     }
 }

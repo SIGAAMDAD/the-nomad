@@ -14,8 +14,9 @@
 #define NOMAD_VERSION _NOMAD_VERSION
 #define NOMAD_VERSION_UPDATE _NOMAD_VERSION_UPDATE
 #define NOMAD_VERSION_PATCH _NOMAD_VERSION_PATCH
-
-#define NOMAD_VERSION_STRING "glnomad v1.1.0"
+#define VSTR_HELPER(x) #x
+#define VSTR(x) VSTR_HELPER(x)
+#define NOMAD_VERSION_STRING "glnomad v" VSTR(_NOMAD_VERSION) "." VSTR(_NOMAD_VERSION_UPDATE) "." VSTR(_NOMAD_VERSION_PATCH)
 
 #ifndef QVM
 #include "n_pch.h"
@@ -51,8 +52,8 @@
 #define NUMSECTORS 4
 #define SECTOR_MAX_Y 120
 #define SECTOR_MAX_X 120
-#define MAP_MAX_Y 480
-#define MAP_MAX_X 480
+#define MAP_MAX_Y 240
+#define MAP_MAX_X 240
 
 #define arraylen(arr) (sizeof(arr)/sizeof(*arr))
 
@@ -169,20 +170,37 @@ typedef enum
 #define MSAA_8X 2
 #define MSAA_16X 3
 
-typedef enum
-{
-    TYPE_INT,
-    TYPE_STRING,
-    TYPE_FLOAT,
-    TYPE_BOOL
-} vmVarType_t;
+// cvars in this header
+#include "n_console.h"
 
-typedef struct
+int N_strcmp(const char *str1, const char *str2);
+int N_strncmp(const char *str1, const char *str2, size_t count);
+int N_strcasecmp(const char *str1, const char *str2);
+int N_strncasecmp(const char *str1, const char *str2, size_t n);
+int N_atoi(const char *s);
+float N_atof(const char *s);
+size_t N_strlen(const char *str);
+char* N_strcpy(char *dest, const char *src, size_t count);
+
+#ifdef QVM
+static qboolean N_strtobool(const char *s)
 {
-    const char *name;
-    char *value;
-    vmVarType_t type;
-} vmCvar_t;
+	return N_strcmp(s, "true") ? qtrue : qfalse;
+}
+static const char* N_booltostr(qboolean b)
+{
+	return b ? "true" : "false";
+}
+#else
+inline qboolean N_strtobool(const char *s)
+{
+	return N_strcmp(s, "true") ? qtrue : qfalse;
+}
+inline const char* N_booltostr(qboolean b)
+{
+	return b ? "true" : "false";
+}
+#endif
 
 // c++ stuff here
 #ifndef QVM
@@ -198,9 +216,6 @@ void N_WriteFile(const char *filepath, const void *data, size_t size);
 float disBetweenOBJ(const vec2_t src, const vec2_t tar);
 float disBetweenOBJ(const glm::vec2& src, const glm::vec2& tar);
 float disBetweenOBJ(const glm::vec3& src, const glm::vec3& tar);
-
-#include "n_console.h"
-#include <spdlog/spdlog.h>
 
 typedef struct coord_s
 {
@@ -274,26 +289,6 @@ typedef struct coord_s
 		return *this;
 	}
 } coord_t;
-
-#define LOG_INFO(...)  ::spdlog::info(__VA_ARGS__)
-#define LOG_WARN(...)  ::spdlog::warn(__VA_ARGS__)
-#define LOG_ERROR(...) ::spdlog::error(__VA_ARGS__)
-#ifdef _NOMAD_DEBUG
-#define LOG_TRACE(...) ::spdlog::trace(__VA_ARGS__)
-#define LOG_DEBUG(...) ::spdlog::debug(__VA_ARGS__)
-#else
-#define LOG_DEBUG(...)
-#define LOG_TRACE(...)
-#endif
-
-class Log
-{
-public:
-	static void Init();
-	static std::shared_ptr<spdlog::logger>& GetLogger() { return m_Instance; }
-private:
-	static std::shared_ptr<spdlog::logger> m_Instance;
-};
 
 float disBetweenOBJ(const glm::vec3& src, const glm::vec3& tar);
 float disBetweenOBJ(const glm::vec2& src, const glm::vec2& tar);
@@ -408,7 +403,7 @@ inline const char* N_ButtonToString(const uint32_t& code)
 	case SDLK_F11: return "F11"; break;
 	case SDLK_F12: return "F12"; break;
 	default:
-		LOG_WARN("N_ButtonToString was given an unknown SDL_KeyCode, aborting");
+		Con_Printf("WARNING: unknown SDL_KeyCode given");
 		return "Unknown";
 		break;
 	};

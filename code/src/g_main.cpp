@@ -9,7 +9,7 @@
 #ifdef SIGINT
 void SIG_INTERRUPT(int signum)
 {
-    LOG_INFO("SIGINT recieved, exit not unnatural, freeing all memory");
+    Con_Printf("SIGINT recieved, exit not unnatural, freeing all memory");
     Game::Get()->~Game();
     exit(EXIT_SUCCESS);
 }
@@ -18,7 +18,7 @@ void SIG_INTERRUPT(int signum)
 #ifdef SIGSEGV
 void SIG_SEGV(int signum)
 {
-    LOG_ERROR("Segmentation Violation recieved, freeing all memory");
+    Con_Error("Segmentation Violation recieved, freeing all memory");
     Game::Get()->~Game();
     exit(EXIT_FAILURE);
 }
@@ -27,7 +27,7 @@ void SIG_SEGV(int signum)
 #ifdef SIGABRT
 void SIG_ABORT(int signum)
 {
-    LOG_ERROR("SIGABRT recieved, freeing all memory");
+    Con_Error("SIGABRT recieved, freeing all memory");
     Game::Get()->~Game();
     exit(EXIT_FAILURE);
 }
@@ -36,7 +36,7 @@ void SIG_ABORT(int signum)
 #ifdef SIGBUS
 void SIG_BUS(int signum)
 {
-    LOG_ERROR("SIBGUS recieved, attempted to write/read to an invalid address, freeing all memory");
+    Con_Error("SIBGUS recieved, attempted to write/read to an invalid address, freeing all memory");
     Game::Get()->~Game();
     exit(EXIT_FAILURE);
 }

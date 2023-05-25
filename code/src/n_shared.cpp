@@ -17,23 +17,6 @@ void* N_memset (void *dest, int fill, size_t count)
     return dest;
 }
 
-void* N_memmove (void *dest, const void *src, size_t count)
-{
-	byte *d = (byte *)dest;
-	const byte *s = (const byte *)src;
-	if (d < s) {
-		while (--count)
-			*d++ = *s++;
-	}
-	else {
-		s += count - 1;
-		d += count - 1;
-		while (--count)
-			*d-- = *s--;
-	}
-	return dest;
-}
-
 void* N_memcpy (void *dest, const void *src, size_t count)
 {
 	size_t i;
@@ -115,7 +98,7 @@ int N_strcmp (const char *str1, const char *str2)
 		if (*s1 != *s2)
 			return -1;              // strings not equal    
 		if (!*s1)
-			return 0;               // strings are equal
+			return 1;               // strings are equal
 		s1++;
 		s2++;
 	}
@@ -129,11 +112,11 @@ int N_strncmp (const char *str1, const char *str2, size_t count)
     const char* s2 = str2;
 	while (1) {
 		if (!count--)
-			return 0;
+			return 1;
 		if (*s1 != *s2)
 			return -1;              // strings not equal    
 		if (!*s1)
-			return 0;               // strings are equal
+			return 1;               // strings are equal
 		s1++;
 		s2++;
 	}
@@ -165,7 +148,7 @@ int N_strncasecmp (const char *str1, const char *str2, size_t n)
 				return -1;              // strings not equal
 		}
 		if (!c1)
-			return 0;               // strings are equal
+			return 1;               // strings are equal
 //              s1++;
 //              s2++;
 	}
@@ -373,11 +356,11 @@ void N_WriteFile(const char *filepath, const void *data, size_t size)
 {
 	FILE* fp = fopen(filepath, "wb");
 	if (!fp) {
-		LOG_WARN("N_WriteFile: failed to open file %s", filepath);
+		Con_Error("N_WriteFile: failed to open file %s", filepath);
 		return;
 	}
 	if (fwrite(data, size, 1, fp) == 0) {
-		LOG_WARN("N_WriteFile: failed to write %lu bytes to file %s", size, filepath);
+		Con_Error("N_WriteFile: failed to write %lu bytes to file %s", size, filepath);
 		return;
 	}
 	fclose(fp);

@@ -1,21 +1,42 @@
-#ifndef _G_BFF_
-#define _G_BFF_
+#ifndef _BFF_
+#define _BFF_
+
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
+#include <string>
+#include <fstream>
+#include "../../deps/nlohmann/json.hpp"
+using json = nlohmann::json;
 
 #pragma once
 
-#ifdef QVM
-#error only compile bff_file on native builds!
+#ifdef __BIG_ENDIAN__
+inline void SwapBytes(void *pv, size_t n)
+{
+	assert(n > 0);
+	char *p = (char *)pv;
+	size_t lo, hi;
+	
+	for (lo = 0, hi = n - 1; hi > lo; lo++, hi--) {
+		char tmp = p[lo];
+		p[lo] = p[hi];
+		p[hi] = tmp;
+	}
+}
+#define SWAP(x) SwapBytes(&x, sizeof(x))
+#else
+#define SWAP(x)
 #endif
 
-#ifndef _NOMAD_VERSION // if this isn't defined, then we're compiling the bff-tool program
-#include <stdlib.h>
-#include <stdio.h>
-#include <fstream>
-#include <string>
-#include <string.h>
-#include <strings.h>
-#include <nlohmann/json.hpp>
-using json = nlohmann::json;
+#if !defined(_N_SHARED_) || !defined(_NOMAD_VERSION)
+#define NUMSECTORS 4
+#define SECTOR_MAX_Y 120
+#define SECTOR_MAX_X 120
+#define MAP_MAX_Y 240
+#define MAP_MAX_X 240
 #endif
 
 #define HEADER_MAGIC 0x5f3759df
@@ -27,15 +48,42 @@ enum : uint64_t
 {
 	LEVEL_CHUNK,
 	SOUND_CHUNK,
-	SCRIPT_CHUNK
+	SCRIPT_CHUNK,
+	TEXTURE_CHUNK
 };
 
+enum : char
+{
+	SPR_SPAWNER = '$',
+	SPR_LAMP = '|',
+};
 
+typedef uint32_t bff_int_t;
+typedef uint16_t bff_short_t;
+typedef float bff_float_t;
+
+
+bff_short_t LittleShort(bff_short_t x);
+bff_float_t LittleFloat(bff_float_t x);
+bff_int_t LittleInt(bff_int_t x);
 #ifndef _NOMAD_VERSION
 void __attribute__((noreturn)) BFF_Error(const char* fmt, ...);
 #else
 #define BFF_Error N_Error
 #endif
+
+const __inline uint16_t bffPaidID[70] = {
+	0x0000, 0x0000, 0x0412, 0x0000, 0x0000, 0x0000, 0x0527,
+	0x421f, 0x0400, 0x0000, 0x0383, 0x0000, 0x0000, 0x0000,
+	0x0000, 0x5666, 0x6553, 0x0000, 0x0000, 0xad82, 0x8270,
+	0x2480, 0x0040, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+	0x0000, 0x0000, 0x053d, 0x0000, 0x0000, 0x7813, 0x0000,
+	0x02aa, 0x0100, 0x0000, 0x4941, 0x0000, 0x3334, 0xff42,
+	0x0000, 0x0546, 0xa547, 0x1321, 0x0000, 0x0000, 0x0000,
+	0x0000, 0x0000, 0x0000, 0xa235, 0xfa31, 0x215a, 0x0000
+};
+
+#define MAGIC_XOR 0x4ff3ade3
 
 #define MAX_BFF_PATH 256
 #define MAX_BFF_CHUNKNAME 11
@@ -46,28 +94,35 @@ void __attribute__((noreturn)) BFF_Error(const char* fmt, ...);
 #define MAX_MAP_SPAWNS 1024
 #define MAX_MAP_LIGHTS 1024
 
+enum : uint16_t
+{
+	SFT_OGG,
+	SFT_WAV,
+	SFT_OPUS
+};
+
 typedef struct
 {
 	char name[MAX_BFF_CHUNKNAME];
-	char *filebuffer;
-	uint64_t filesize;
-	uint16_t filetype;
+	char *fileBuffer;
+	bff_int_t fileSize;
+	bff_short_t fileType;
 } bffsound_t;
 
 typedef struct
 {
-	uint32_t y;
-	uint32_t x;
-	uint16_t sector;
+	bff_int_t y;
+	bff_int_t x;
+	bff_short_t sector;
 } mapspawn_t;
 
 typedef struct
 {
-	uint32_t y;
-	uint32_t x;
-	uint16_t sector;
-	float intensity;
-	float aoe;
+	bff_int_t y;
+	bff_int_t x;
+	bff_short_t sector;
+	bff_float_t intensity;
+	bff_float_t aoe;
 } maplight_t;
 
 typedef struct
@@ -76,19 +131,17 @@ typedef struct
 	char tilemap[NUMSECTORS][SECTOR_MAX_Y][SECTOR_MAX_X];
 	mapspawn_t spawns[MAX_MAP_SPAWNS];
 	maplight_t lights[MAX_MAP_LIGHTS];
-	uint64_t levelNumber;
-	uint64_t numLights;
-	uint64_t numSpawns;
+	bff_int_t levelNumber;
+	bff_int_t numLights;
+	bff_int_t numSpawns;
 } bfflevel_t;
 
 // scripted encounters (boss fights, story mode, etc.)
 typedef struct
 {
 	char name[MAX_BFF_CHUNKNAME];
-	bfflevel_t* level; // level data
-	bffsound_t* music; // soundtrack data
 	
-	uint64_t codelen;
+	bff_int_t codelen;
 	uint8_t* bytecode; // q3vm raw bytecode
 } bffscript_t;
 
@@ -96,15 +149,14 @@ typedef struct
 {
 	char name[MAX_BFF_CHUNKNAME];
 
-	uint16_t fileType;
-	uint64_t fileSize;
+	bff_int_t fileSize;
 	unsigned char *fileBuffer;
 } bfftexture_t;
 
 typedef struct
 {
-	float lightIntensity;
-	float lightAOE;
+	bff_float_t lightIntensity;
+	bff_float_t lightAOE;
 } bffconfig_t;
 
 typedef struct bffinfo_s
@@ -120,27 +172,25 @@ typedef struct bffinfo_s
 	char bffPathname[MAX_BFF_PATH];
 	char bffGamename[256];
 	
-	uint64_t numTextures;
-	uint64_t numLevels;
-	uint64_t numSounds;
-	uint64_t numScripts;
+	bff_int_t numTextures;
+	bff_int_t numLevels;
+	bff_int_t numSounds;
+	bff_int_t numScripts;
 } bffinfo_t;
 
 typedef struct
 {
 	char chunkName[MAX_BFF_CHUNKNAME];
-	uint64_t chunkSize;
+	bff_int_t chunkSize;
 	char *chunkBuffer;
-	uint32_t chunkType;
+	bff_int_t chunkType;
 } bff_chunk_t;
 
 typedef struct
 {
-	uint32_t ident = BFF_IDENT;
-	uint64_t magic = HEADER_MAGIC;
-	uint64_t numChunks;
-	uint64_t fileDecompressedSize;
-	uint64_t fileCompressedSize;
+	bff_int_t ident = BFF_IDENT;
+	bff_int_t magic = HEADER_MAGIC;
+	bff_int_t numChunks;
 } bffheader_t;
 
 typedef struct
@@ -148,32 +198,28 @@ typedef struct
 	char bffPathname[MAX_BFF_PATH];
 	char bffGamename[256];
 	
-	uint64_t numChunks;
+	bff_int_t numChunks;
 	bff_chunk_t* chunkList;
 } bff_t;
 
-typedef unsigned char byte;
-
-bff_t* BFF_OpenArchive(const eastl::string& filepath);
+FILE* SafeOpen(const char* filepath, const char* mode);
+bff_t* BFF_OpenArchive(const std::string& filepath);
 bffinfo_t* BFF_GetInfo(bff_t* archive);
 void BFF_FreeInfo(bffinfo_t* info);
 void BFF_CloseArchive(bff_t* archive);
 
 #ifndef _NOMAD_VERSION
-void DecompileBFF(const char *filepath);
-void WriteBFF(const char *outfile, const char *jsonfile);
+typedef unsigned char byte;
+void DecompileBFF(const char* filepath);
+void WriteBFF(const char* filepath, const char* jsonfile);
 void GetLevels(const json& data, bffinfo_t* info);
 void GetScripts(const json& data, bffinfo_t* info);
+void GetSounds(const json& data, bffinfo_t* info);
+void GetTextures(const json& data, bffinfo_t* info);
 
-FILE* SafeOpen(const char* filepath, const char* mode);
 void* SafeMalloc(size_t size, const char* name = "unknown");
-void LoadFile(FILE* fp, void** buffer, size_t* length);
-
-void Con_Printf(const char *fmt, ...);
-#else
-#define SafeOpen(filepath, mode) N_OpenFile(filepath, mode)
-#define SafeMalloc(size, name) xmalloc(size)
-#define LoadFile(fp, buffer, length) N_ReadFile(fp, buffer, length)
+void LoadFile(FILE* fp, void** buffer, bff_int_t* length);
+void Con_Printf(const char* fmt, ...);
 #endif
 
 #endif

@@ -16,7 +16,7 @@ private:
         
         GLint location = glGetUniformLocationARB(id, name.c_str());
         if (location == -1) {
-            LOG_WARN("failed to get location of uniform {}", name);
+            Con_Printf("WARNING: failed to get location of uniform %s", name);
             return 0;
         }
         uniformCache[name] = location;

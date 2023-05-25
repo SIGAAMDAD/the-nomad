@@ -1,5 +1,9 @@
 #include "n_shared.h"
+#include "../bff_file/g_bff.h"
+#include "g_bff.h"
 #include "g_game.h"
+#include "m_renderer.h"
+#include "g_zone.h"
 #include "../common/n_vm.h"
 
 bool sdl_on = false;
@@ -45,7 +49,7 @@ int I_GetParm(const char *parm)
         N_Error("I_GetParm: parm is NULL");
 
     for (int i = 1; i < myargc; i++) {
-        if (!strcasecmp(myargv[i], parm))
+        if (N_strcasecmp(myargv[i], parm))
             return i;
     }
     return -1;
@@ -53,19 +57,15 @@ int I_GetParm(const char *parm)
 
 void __attribute__((noreturn)) N_Error(const char *err, ...)
 {
-    char msg[2048];
+    char msg[1024];
     memset(msg, 0, sizeof(msg));
     va_list argptr;
     va_start(argptr, err);
     stbsp_vsnprintf(msg, sizeof(msg) - 1, err, argptr);
     va_end(argptr);
-    if (sdl_on) {
-        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Engine Error (Fatal)", msg, Game::Get()->window);
-    }
-    Con_Error("Error: %s", msg);
-    Con_Flush();
+
+    Con_Error("%s", msg);
     Game::Get()->~Game();
-    Log::GetLogger()->flush();
     exit(EXIT_FAILURE);
 }
 
@@ -158,7 +158,8 @@ void mainLoop()
 
     float light_intensity = 1.0f;
 
-    std::chrono::high_resolution_clock::time_point next = std::chrono::high_resolution_clock::now();
+    uint32_t ticrate = atoi(r_ticrate.value);
+    uint64_t next = clock();
     while (1) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
@@ -213,7 +214,7 @@ void mainLoop()
         }
         renderer->camera->CalculateViewMatrix();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glViewport(0, 0, scf::renderer::width, scf::renderer::height);
+        glViewport(0, 0, atoi(r_screenwidth.value), atoi(r_screenheight.value));
 
         fbo->SetBuffer();
 //        {
@@ -223,7 +224,7 @@ void mainLoop()
 //            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
 //            screenTexture->Unbind();
 //        }
-        next += std::chrono::milliseconds(1000 / scf::renderer::ticrate);
+        next = 1000 / ticrate;
         
         fbo->SetDefault();
 
@@ -247,8 +248,9 @@ void mainLoop()
         shader->Unbind();
 
         SDL_GL_SwapWindow(renderer->window);
-
-        std::this_thread::sleep_until(next);
+        
+        sleepfor(next);
+//        std::this_thread::sleep_until(next);
     }
 }
 
@@ -265,46 +267,8 @@ void I_NomadInit(int argc, char** argv)
 //    G_LoadBZip2();
 
     Con_Printf("setting up logger");
-    Log::Init();
+//    Log::Init();
 
-    int i =  I_GetParm("-bff");
-    if (i != -1) {
-        bff_mode = true;
-
-        bool operations[4];
-        memset(operations, false, sizeof(operations));
-        if (strstr(myargv[i], "help"))
-            operations[0] = true;
-        else if (strstr(myargv[i], "write"))
-            operations[1] = true;
-        else if (strstr(myargv[i], "read"))
-            operations[2] = true;
-        else if (strstr(myargv[i], "extract"))
-            operations[3] = true;
-
-        if (operations[0] || (!operations[1] && !operations[2] && !operations[3])) {
-            Con_Printf(
-                "%s -bff [operation] <arguments...>\n"
-                "operations:\n"
-                "  write [output] [dirpath]    write a bff file given an output file and a directory path\n"
-                "  extract [input]             extract a written bff file to the game's file tree to use as a mod\n",
-            myargv[0]);
-            exit(EXIT_SUCCESS);
-        }
-        
-        if (operations[1]) {
-            if (myargc < (i + 1) || myargc < (i + 2)) {
-                N_Error("output and/or dirpath not provided to bff write operations, aborting.");
-            }
-            G_WriteBFF(myargv[i + 1], myargv[i + 2]);
-        }
-        else if (operations[3]) {
-            if (myargc < (i + 1)) {
-                N_Error("input file must be provided to bff extract operations, aborting.");
-            }
-            G_ExtractBFF(myargv[i + 1]);
-        }
-    }
     Con_Printf("G_LoadBFF: loading bff file");
     G_LoadBFF("nomadmain.bff");
 
@@ -319,14 +283,8 @@ void I_NomadInit(int argc, char** argv)
     Con_Printf("G_LoadSCF: parsing scf file");
     G_LoadSCF();
 
-    VM_Init();
-
-//    LOG_INFO("setting up imgui");
-//    ImGui_Init();
-
     Con_Flush();
 
-
-    LOG_INFO("running main gameplay loop");
+    Con_Printf("running main gameplay loop");
     mainLoop();
 }

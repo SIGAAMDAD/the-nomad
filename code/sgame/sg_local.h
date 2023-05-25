@@ -11,41 +11,6 @@
 #define MAX_MOBS_ACTIVE 150
 #define MAX_PLAYR_INVENTORY 20
 
-extern int g_vert_fov;
-extern int g_horz_fov;
-extern float g_pspeed;
-extern float g_gravity;
-
-extern float snd_musicvol;
-extern float snd_sfxvol;
-extern qboolean snd_musicon;
-extern qboolean snd_sfxon;
-
-extern int r_ticrate;
-extern int r_texture_magfilter;
-extern int r_texture_minfilter;
-extern int r_screenheight;
-extern int r_screenwidth;
-extern int r_renderapi;
-extern qboolean r_vsync;
-extern qboolean r_fullscreen;
-extern qboolean r_hidden;
-extern qboolean r_drawFPS;
-extern int r_renderapi;
-extern int r_msaa_amount;
-
-extern qboolean c_fastmobs1;
-extern qboolean c_fastmobs2;
-extern qboolean c_fastmobs3;
-extern qboolean c_deafmobs;
-extern qboolean c_blindmobs;
-extern qboolean c_nosmell;
-extern qboolean c_nomobs;
-extern qboolean c_godmode;
-extern qboolean c_infinite_ammo;
-extern qboolean c_bottomless_clip;
-extern qboolean c_devmode;
-
 int G_Init();
 int G_Shutdown();
 

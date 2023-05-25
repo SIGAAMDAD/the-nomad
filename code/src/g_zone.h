@@ -322,7 +322,7 @@ public:
 	inline T& operator[](std::size_t index) noexcept
 	{
 		if (ptr_list == NULL || index > _size) {
-			LOG_WARN("ptr_list is NULL or index > _size in linked_list::operator[]");
+			Con_Printf("WARNING: ptr_list is NULL or index > _size in linked_list::operator[]");
 			return 0;
 		}
 		
@@ -336,13 +336,13 @@ public:
 	{ return _size; }
 	inline linked_list<T>::iterator begin(void) {
 		if (ptr_list == NULL)
-			LOG_WARN("ptr_list is NULL in linked_list::begin");
+			Con_Printf("WARNING: ptr_list is NULL in linked_list::begin");
 		
 		return ptr_list;
 	}
 	inline linked_list<T>::iterator end(void) {
 		if (ptr_list == NULL) {
-			LOG_WARN("ptr_list is NULL in linked_list::end");
+			Con_Printf("WARNING: ptr_list is NULL in linked_list::end");
 			return NULL;
 		}
 		
@@ -354,7 +354,7 @@ public:
 	}
 	inline linked_list<T>::node back_node(void) {
 		if (ptr_list == NULL) {
-			LOG_WARN("ptr_list is NULL in linked_list::back_node");
+			Con_Printf("WARNING: ptr_list is NULL in linked_list::back_node");
 			return NULL;
 		}
 		linked_list<T>::node _endptr;
@@ -365,19 +365,19 @@ public:
 	}
 	inline linked_list<T>::node front_node(void) {
 		if (ptr_list == NULL)
-			LOG_WARN("ptr_list is NULL in linked_list::front_node");
+			Con_Printf("WARNING: ptr_list is NULL in linked_list::front_node");
 		
 		return ptr_list;
 	}
 	inline T& back(void) noexcept {
 		if (ptr_list == NULL)
-			LOG_WARN("ptr_list is NULL in linked_list::back");
+			Con_Printf("WARNING: ptr_list is NULL in linked_list::back");
 		
 		return back_node()->val;
     }
 	inline T& front(void) noexcept {
 		if (ptr_list == NULL)
-			LOG_WARN("ptr_list is NULL in linked_list::front");
+			Con_Printf("WARNING: ptr_list is NULL in linked_list::front");
 
 		return front_node()->val;
 	}

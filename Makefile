@@ -3,7 +3,10 @@ VERSION_UPDATE= 1
 VERSION_PATCH = 0
 CC            = distcc g++
 O             = obj
+QVM           = qvm
 SDIR          = code
+SGAME         = sgame.qvm
+EXE           = nomadgl
 LDLIBS        =\
 			/usr/local/lib/libSDL2.a \
 			/usr/local/lib/libopenal.a \
@@ -18,8 +21,9 @@ LDLIBS        =\
 			-lfreetype \
 			libimgui_dbg.a \
 			-lvulkan \
+			-lsndfile \
 
-.PHONY: all clean
+.PHONY: all clean targets
 
 ifdef release
 CFLAGS= -Ofast -s -std=c++17
@@ -31,15 +35,24 @@ LDLIBS+=libglad_dbg.a
 VMFLAGS= -Og -g -std=c89 -Wall -Wpedantic -D_NOMAD_DEBUG -DDEBUG_VM
 endif
 INCLUDE= -I/usr/include -Ideps -Ideps/glad/include -I/usr/local/include -I/usr/include/freetype2 -Isrc
-OPIMTIZERS=-fexpensive-optimizations -funroll-loops -ffast-math -finline-limit=10000 -mavx -mavx2 -mfma -msse3
+OPIMTIZERS=-fexpensive-optimizations -funroll-loops -ffast-math -finline-limit=10000
 DEFINES    =-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPDATE) -D_NOMAD_VERSION_PATCH=$(VERSION_PATCH)
 CFLAGS    += $(INCLUDE) $(DEFINES) $(OPIMTIZERS)
 
-COMMONOBJ= \
-	$(O)/vm.o \
+SGAME_ASM= \
+	$(QVM)/sg_item.q3asm \
+	$(QVM)/sg_main.q3asm \
+	$(QVM)/sg_mem.q3asm \
+	$(QVM)/sg_mthink.q3asm \
+	$(QVM)/sg_playr.q3asm \
 
 BFFOBJ= \
-	$(O)/bffread.o \
+	$(O)/read.o \
+	$(O)/common.o \
+
+COMMONOBJ= \
+	$(O)/vm_run.o \
+	$(O)/vm.o \
 
 SRCOBJ= \
 	$(O)/g_syscalls.o \
@@ -50,6 +63,7 @@ SRCOBJ= \
 	$(O)/g_main.o \
 	$(O)/g_init.o \
 	$(O)/g_bff.o \
+	$(O)/g_game.o \
 	\
 	$(O)/n_console.o \
 	$(O)/n_scf.o \
@@ -61,14 +75,32 @@ SRCOBJ= \
 	$(O)/r_vertexarray.o \
 	$(O)/r_texture.o \
 	$(O)/r_shader.o \
+	\
+	$(O)/m_renderer.o \
 
 all: nomadgl
+targets: $(EXE) $(SGAME)
 
+$(QVM)/%.q3asm: $(SDIR)/sgame/%.c
+	./lcc -o $@ $<
+
+$(O)/%.o: $(SDIR)/bff_file/%.cpp
+	$(CC) $(CFLAGS) -o $@ -c $<
 $(O)/%.o: $(SDIR)/src/%.cpp
 	$(CC) $(CFLAGS) -o $@ -c $<
-nomadgl: $(SRCOBJ) $(BFFOBJ) $(COMMONOBJ)
-	$(CC) $(CFLAGS) $(SRCOBJ) $(BFFOBJ) $(COMMONOBJ) -o glnomad $(LDLIBS)
+$(O)/%.o: $(SDIR)/src/%.c
+	$(CC) $(CFLAGS) -o $@ -c $<
+$(O)/vm_run.o: $(SDIR)/common/vm_run.cpp
+	$(CC) $(CFLAGS) -o $@ -c $<
+$(O)/vm.o: $(SDIR)/common/vm.c
+	gcc -std=c89 -ansi -Ofast -s -o $@ -c $<
+
+$(EXE): $(SRCOBJ) $(BFFOBJ) $(COMMONOBJ)
+	$(CC) $(CFLAGS) $(SRCOBJ) $(BFFOBJ) $(COMMONOBJ) -o $(EXE) $(LDLIBS)
+$(SGAME): $(SGAME_ASM)
+	./q3asm -f qvm/compile_sgame.q3asm
+
 
 clean:
-	rm -r $(OBJS)
+	rm -r $(SRCOBJ) $(BFFOBJ) $(COMMONOBJ)
 	rm nomadgl

@@ -4,6 +4,8 @@
 #pragma once
 
 #include "n_scf.h"
+#include "../bff_file/g_bff.h"
+#include "g_bff.h"
 
 #ifndef O_BINARY
 #define O_BINARY 0
@@ -97,14 +99,12 @@ inline coord_t E_GetDir(byte dir)
     case D_SOUTH: return {1, 0};
     case D_EAST: return {0, 1};
     };
-    LOG_WARN("E_GetDir: dir given is not a valid dir, returning default value of D_NORTH");
+    Con_Printf("E_GetDir: dir given is not a valid dir, returning default value of D_NORTH");
     return {-1, 0};
 }
 
 void ImGui_Init();
 void ImGui_ShutDown();
-
-#include "g_bff.h"
 
 void I_NomadInit(int argc, char** argv);
 void N_MainLoop();

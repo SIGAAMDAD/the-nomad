@@ -86,14 +86,6 @@
 #include <foonathan_memory/foonathan/memory/temporary_allocator.hpp> // temporary_allocator
 #include <foonathan_memory/foonathan/memory/namespace_alias.hpp>
 
-// logging
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/stdout_sinks.h>
-#include <spdlog/sinks/base_sink.h>
-#include <spdlog/sinks/basic_file_sink.h>
-#include <spdlog/async.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-
 // bff stuff
 //#include <zlib.h>
 //#include <zstd/zstd.h>

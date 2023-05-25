@@ -3,43 +3,49 @@
 
 #pragma once
 
+#define MAX_FOV_HEIGHT 100
+#define MAX_FOV_WIDTH 250
+#define TICRATE_MAX 333
+#define TICRATE_MIN 35
+
 typedef void(*pactionp_t)();
-extern int g_vert_fov;
-extern int g_horz_fov;
-extern float g_pspeed;
-extern float g_gravity;
 
-extern float snd_musicvol;
-extern float snd_sfxvol;
-extern qboolean snd_musicon;
-extern qboolean snd_sfxon;
+extern cvar_t g_vert_fov;
+extern cvar_t g_horz_fov;
+extern cvar_t g_pspeed;
+extern cvar_t g_gravity;
 
-extern int r_ticrate;
-extern int r_texture_magfilter;
-extern int r_texture_minfilter;
-extern int r_screenheight;
-extern int r_screenwidth;
-extern int r_renderapi;
-extern qboolean r_vsync;
-extern qboolean r_fullscreen;
-extern qboolean r_hidden;
-extern qboolean r_drawFPS;
-extern int r_renderapi;
-extern int r_msaa_amount;
+extern cvar_t snd_musicvol;
+extern cvar_t snd_sfxvol;
+extern cvar_t snd_musicon;
+extern cvar_t snd_sfxon;
+
+extern cvar_t r_ticrate;
+extern cvar_t r_texture_magfilter;
+extern cvar_t r_texture_minfilter;
+extern cvar_t r_screenheight;
+extern cvar_t r_screenwidth;
+extern cvar_t r_vsync;
+extern cvar_t r_fullscreen;
+extern cvar_t r_hidden;
+extern cvar_t r_native_fullscreen;
+extern cvar_t r_drawFPS;
+extern cvar_t r_renderapi;
+extern cvar_t r_msaa_amount;
 
 extern nomadvector<const byte*> api_extensions;
 
-extern qboolean c_fastmobs1;
-extern qboolean c_fastmobs2;
-extern qboolean c_fastmobs3;
-extern qboolean c_deafmobs;
-extern qboolean c_blindmobs;
-extern qboolean c_nosmell;
-extern qboolean c_nomobs;
-extern qboolean c_godmode;
-extern qboolean c_infinite_ammo;
-extern qboolean c_bottomless_clip;
-extern qboolean c_devmode;
+extern cvar_t c_fastmobs1;
+extern cvar_t c_fastmobs2;
+extern cvar_t c_fastmobs3;
+extern cvar_t c_deafmobs;
+extern cvar_t c_blindmobs;
+extern cvar_t c_nosmell;
+extern cvar_t c_nomobs;
+extern cvar_t c_godmode;
+extern cvar_t c_infinite_ammo;
+extern cvar_t c_bottomless_clip;
+extern cvar_t c_devmode;
 
 typedef enum
 {
@@ -89,7 +95,7 @@ typedef struct keybind_s
 extern keybind_t kb_binds[NUMBINDS];
 
 void G_LoadSCF();
-vmCvar_t* G_GetCvars(void);
+cvar_t** G_GetCvars(void);
 uint32_t G_NumCvars(void);
 
 #endif

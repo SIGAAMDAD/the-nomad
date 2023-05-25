@@ -1,4 +1,5 @@
 #include "n_shared.h"
+#include "g_zone.h"
 #include "m_renderer.h"
 
 VertexArray::VertexArray()
@@ -23,7 +24,7 @@ void VertexArray::Unbind(void) const
 
 void VertexArray::SetIndexBuffer(const std::shared_ptr<IndexBuffer>& _ibo)
 {
-    ibo = _ibo;
+    indexBuffer = _ibo;
 }
 
 VertexArray* VertexArray::Create(const eastl::string& name)

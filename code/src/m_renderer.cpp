@@ -1,4 +1,6 @@
 #include "n_shared.h"
+#include "g_zone.h"
+#include "m_renderer.h"
 
 static constexpr const char *TEXMAP_PATH = "Files/gamedata/RES/texmap.bmp";
 
@@ -56,7 +58,7 @@ static void R_InitGL(void)
     if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
         N_Error("R_Init: failed to initialize OpenGL (glad)");
     
-    fprintf(stdout,
+    Con_Printf(
         "OpenGL Info:\n"
         "  Version: %s\n"
         "  Renderer: %s\n"
@@ -92,37 +94,41 @@ static void R_InitGL(void)
         "GL_STEREO",
     };
 
-    printf("-----------------------------\n");
-    printf("OpenGL Context Params:\n");
+    Con_Printf("<-------- OpenGL Context Parameters -------->");
     // integers - only works if the order is 0-10 integer return types
     for (int i = 0; i < 10; i++) {
         int v = 0;
         glGetIntegerv(params[i], &v);
-        con.ConPrintf("{}: {}" , names[i], v);
+        Con_Printf("%s: %i" , names[i], v);
     }
     // others
     int v[2];
     memset(v, 0, sizeof(v));
     glGetIntegerv(params[10], v);
-    con.ConPrintf("{}: {} {}", names[10], v[0], v[1]);
+    Con_Printf("%s: %i %i", names[10], v[0], v[1]);
     unsigned char s = 0;
     glGetBooleanv(params[11], &s);
-    con.ConPrintf("{}: {}", names[11], (unsigned int)s);
-    printf("\n");
+    Con_Printf("%s: %i", names[11], (unsigned int)s);
+    Con_Printf(" ");
 
-    printf("-----------------------------\n");
-    printf("OpenGL Extensions:\n");
-    int extension_count = 0;
-    glGetIntegerv(GL_NUM_EXTENSIONS, &extension_count);
-    for (int i = 0; i < extension_count; ++i) {
+    Con_Printf("<-------- OpenGL Extensions Info -------->");
+    uint32_t extension_count = 0;
+    glGetIntegerv(GL_NUM_EXTENSIONS, (int *)&extension_count);
+    Con_Printf("Extension Count: %i", extension_count);
+    Con_Printf("Extension List:");
+    for (uint32_t i = 0; i < extension_count; ++i) {
+        if (i >= 30) { // dont go crazy
+            Con_Printf("... (%i more extensions)", extension_count - i);
+            break;
+        }
         const GLubyte* name = glGetStringi(GL_EXTENSIONS, i);
-        scf::renderer::api_extensions.emplace_back(name);
-        puts((const char *)name);
+        api_extensions.emplace_back(name);
+        Con_Printf("%s", (const char *)name);
     }
-    printf("\n");
+    Con_Printf(" ");
 
 #ifdef _NOMAD_DEBUG
-    con.ConPrintf("turning on OpenGL debug callbacks");
+    Con_Printf("turning on OpenGL debug callbacks");
     if (glDebugMessageControlARB != NULL) {
         glEnable(GL_DEBUG_OUTPUT_KHR);
         glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
@@ -147,27 +153,26 @@ static Uint32 R_GetWindowFlags(void)
 {
     Uint32 flags = 0;
 
-    switch (scf::renderer::api) {
-    case scf::R_OPENGL:
+    if (N_strcmp(r_renderapi.value, "R_OPENGL"))
         flags |= SDL_WINDOW_OPENGL;
-        break;
-    case scf::R_SDL2:
-        break;
-    case scf::R_VULKAN:
+    else if (N_strcmp(r_renderapi.value, "R_SDL2"))
+        N_Error("R_Init: SDL2 rendering isn't yet supported");
+    else if (N_strcmp(r_renderapi.value, "R_VULKAN"))
         N_Error("R_Init: Vulkan rendering isn't yet supported, will be though very soon");
-        break;
-    };
-    if (scf::renderer::hidden)
+    
+    if (N_strcmp(r_hidden.value, "true"))
         flags |= SDL_WINDOW_HIDDEN;
     
-    if (scf::renderer::fullscreen && !scf::renderer::native_fullscreen)
+    if (N_strcmp(r_fullscreen.value, "true") && N_strcmp(r_native_fullscreen.value, "false"))
         flags |= SDL_WINDOW_FULLSCREEN;
-    else if (scf::renderer::native_fullscreen)
+    else if (N_strcmp(r_native_fullscreen.value, "true"))
         flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
     
     flags |= SDL_WINDOW_RESIZABLE;
     return flags;
 }
+
+static bool sdl_on = false;
 
 void R_Init()
 {
@@ -178,11 +183,11 @@ void R_Init()
             SDL_GetError());
     }
 
-    LOG_INFO("alllocating memory to the SDL_Window context");
+    Con_Printf("alllocating memory to the SDL_Window context");
     renderer->window = SDL_CreateWindow(
                             "The Nomad",
                             SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                            scf::renderer::width, scf::renderer::height,
+                            atoi(r_screenwidth.value), atoi(r_screenheight.value),
                             SDL_WINDOW_OPENGL
                         );
     if (!renderer->window) {
@@ -191,6 +196,7 @@ void R_Init()
     }
     assert(renderer->window);
     R_InitGL();
+    sdl_on = true;
 }
 
 void R_ShutDown()
@@ -200,11 +206,11 @@ void R_ShutDown()
 
     Con_Printf("R_ShutDown: deallocating SDL2 contexts and window");
 
-    if (scf::renderer::api == scf::R_OPENGL && renderer->gpuContext.context) {
+    if (N_strcmp(r_renderapi.value, "R_OPENGL") && renderer->gpuContext.context) {
         SDL_GL_DeleteContext(renderer->gpuContext.context);
         renderer->gpuContext.context = NULL;
     }
-    else if (scf::renderer::api == scf::R_VULKAN && renderer->gpuContext.instance) {
+    else if (N_strcmp(r_renderapi.value, "R_VULKAN") && renderer->gpuContext.instance) {
         vkDestroySurfaceKHR(renderer->gpuContext.instance->instance, renderer->gpuContext.instance->surface, NULL);
         vkDestroyInstance(renderer->gpuContext.instance->instance, NULL);
         renderer->gpuContext.instance = NULL;
@@ -263,16 +269,16 @@ void DBG_GL_ErrorCallback(GLenum source, GLenum type, GLuint id, GLenum severity
 {
     switch (type) {
     case GL_DEBUG_TYPE_ERROR:
-        LOG_ERROR("[OpenGL Debug Log] {}", message);
+        Con_Error("[OpenGL Debug Log] %s", message);
         break;
     case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
     case GL_DEBUG_TYPE_PORTABILITY:
     case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
     case GL_DEBUG_TYPE_PERFORMANCE:
-        LOG_WARN("[OpenGL Debug Log] {}", message);
+        Con_Printf("WARNING: [OpenGL Debug Log] %s", message);
         break;
     default:
-        LOG_TRACE("[OpenGL Debug Log] {}", message);
+        Con_Printf("[OpenGL Debug Log] %s", message);
         break;
     };
 }

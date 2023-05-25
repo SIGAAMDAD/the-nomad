@@ -3,10 +3,11 @@
 
 #include <glm/gtc/type_ptr.hpp>
 #include "r_buffer.h"
+#include "r_shader.h"
 #include "r_framebuffer.h"
-#include ""
 #include "r_texture.h"
-#include "r_spritesheet.h"
+#include "r_vertexarray.h"
+//#include "r_spritesheet.h"
 
 #pragma once
 
@@ -66,6 +67,7 @@ struct Vertex
         return *this;
     }
 };
+
 
 class GPUContext
 {

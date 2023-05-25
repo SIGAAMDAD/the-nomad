@@ -1,4 +1,5 @@
 #include "n_shared.h"
+#include "../bff_file/g_bff.h"
 #include "../common/vm.h"
 #include "g_game.h"
 #include "g_public.h"
@@ -68,7 +69,7 @@ intptr_t G_SystemCalls(vm_t *vm, intptr_t *args)
             return systemCalls[i].sysFunc(vm, args);
         }
     }
-    LOG_ERROR("invalid VM system call id given to G_SystemCalls: {}", id);
+    Con_Error("invalid VM system call id given to G_SystemCalls: %i", id);
     
     return -1;
 }

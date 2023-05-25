@@ -1,4 +1,5 @@
 #include "n_shared.h"
+#include "g_zone.h"
 #include "m_renderer.h"
 
 inline static GLenum ShaderTypeFromString(const std::string& type)
@@ -15,7 +16,7 @@ std::unordered_map<GLenum, std::string> ShaderPreProcess(const std::string& sour
 	std::unordered_map<GLenum, std::string> shaderSources;
 
 	const char* typeToken = "#type";
-	size_t typeTokenLength = strlen(typeToken);
+	size_t typeTokenLength = N_strlen(typeToken);
 	size_t pos = source.find(typeToken, 0); //Start of shader type declaration line
 	while (pos != std::string::npos) {
 		size_t eol = source.find_first_of("\r\n", pos); //End of shader type declaration line
@@ -93,10 +94,10 @@ void Shader::CreateProgram(const std::string& filepath)
 Shader::Shader(const std::string& filepath)
 {
     char *buffer;
-    size_t fsize = N_ReadFile(filepath.c_str(), &buffer);
+    size_t fsize = N_LoadFile(filepath.c_str(), &buffer);
     GLSL_Src = ShaderPreProcess(std::string(buffer));
     CreateProgram(filepath.c_str());
-    LOG_INFO("successfully compiled shader {}", filepath);
+    Con_Printf("Shader::Shader: successfully compiled shader %s", filepath.c_str());
 }
 
 GLuint Shader::CompileSPIRV(const char* buf, size_t len, GLenum type)
@@ -153,8 +154,8 @@ Shader::Shader(const std::string& vertfile, const std::string& fragfile)
     char *vertbuf, *fragbuf;
     size_t vertbufsize, fragbufsize;
 
-    vertbufsize = N_ReadFile(vertfile.c_str(), &vertbuf);
-    fragbufsize = N_ReadFile(fragfile.c_str(), &fragbuf);
+    vertbufsize = N_LoadFile(vertfile.c_str(), &vertbuf);
+    fragbufsize = N_LoadFile(fragfile.c_str(), &fragbuf);
     ProcessSPIRV(vertbuf, vertbufsize, fragbuf, fragbufsize);
 }
 
@@ -164,7 +165,5 @@ Shader::~Shader()
 }
 
 Shader* Shader::Create(const std::string& filepath, const eastl::string& name) {
-    Shader* ptr = (Shader *)Z_Malloc(sizeof(Shader), TAG_STATIC, &ptr, name.c_str());
-    new (ptr) Shader(filepath);
-    return ptr;
+    return CONSTRUCT(Shader, name.c_str(), filepath);
 }

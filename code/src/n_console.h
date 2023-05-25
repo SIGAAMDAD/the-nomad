@@ -3,10 +3,26 @@
 
 #pragma once
 
-void Cmd_AddVar(const char* name, void* value);
-void Cmd_RemoveVar(const char* name);
-void* Cmd_GetVar(const char* name);
+typedef enum
+{
+    TYPE_INT,
+    TYPE_STRING,
+    TYPE_FLOAT,
+    TYPE_BOOL
+} cvartype_t;
 
+typedef struct cvar_s
+{
+    char *name;
+    char *value;
+    cvartype_t type;
+    qboolean save; // whether this should be saved to the config file
+
+    struct cvar_s* next = NULL;
+} cvar_t;
+
+void G_Printf(const char *fmt);
+void G_Error(const char *fmt);
 void Con_Printf(const char *fmt, ...);
 void Con_Error(const char *fmt, ...);
 void Con_Flush(void);

@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "n_scf.h"
+
 class Texture2D;
 
 #define GL_NO_DEPTHATTACHMENT 0
@@ -48,10 +50,10 @@ struct FramebufferSetup
 };
 
 const inline FramebufferSetup DEFAULT_FRAMEBUFFER_SETUP = FramebufferSetup(
-    scf::renderer::width, scf::renderer::height, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT,
+    N_atoi(r_screenwidth.value), N_atoi(r_screenheight.value), GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT,
     {
-        FramebufferAttachment(GL_RENDERBUFFER, GL_COLOR_ATTACHMENT0, scf::renderer::width, scf::renderer::height, true, GL_RGBA8),
-        FramebufferAttachment(GL_RENDERBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, scf::renderer::width, scf::renderer::height, true, GL_DEPTH24_STENCIL8),
+        FramebufferAttachment(GL_RENDERBUFFER, GL_COLOR_ATTACHMENT0, N_atoi(r_screenwidth.value), N_atoi(r_screenheight.value), true, GL_RGBA8),
+        FramebufferAttachment(GL_RENDERBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, N_atoi(r_screenwidth.value), N_atoi(r_screenheight.value), true, GL_DEPTH24_STENCIL8),
     }
 );
 

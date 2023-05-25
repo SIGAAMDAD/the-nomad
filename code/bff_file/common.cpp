@@ -1,6 +1,6 @@
+#include "../src/n_shared.h"
 #include "g_bff.h"
-
-#ifndef _NOMAD_VERSION
+#include "../bff_compiler/zone.h"
 
 FILE* SafeOpen(const char* filepath, const char* mode)
 {
@@ -10,6 +10,8 @@ FILE* SafeOpen(const char* filepath, const char* mode)
 	}
 	return fp;
 }
+
+#ifndef _NOMAD_VERSION
 
 void* SafeMalloc(size_t size, const char *name)
 {

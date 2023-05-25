@@ -43,8 +43,8 @@ typedef struct nomadsnd_s
     bool failed = false; // if the pre-caching effort failed for this specific sound
 } nomadsnd_t;
 
-extern nomadsnd_t* sfx_cache;
-extern nomadsnd_t* mus_cache;
+extern uint32_t sndcache_size;
+extern nomadsnd_t* snd_cache;
 
 void P_PlaySFX(uint32_t sfx);
 void S_PlayMusic(uint32_t music);

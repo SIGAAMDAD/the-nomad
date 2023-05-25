@@ -1,15 +1,6 @@
 #include "n_shared.h"
+#include "g_zone.h"
 #include "m_renderer.h"
-
-VertexArray::VertexArray()
-{
-    glGenVertexArrays(1, &id);
-}
-
-VertexArray::~VertexArray()
-{
-    glDeleteVertexArrays(1, &id);
-}
 
 GPUContext::GPUContext()
 {

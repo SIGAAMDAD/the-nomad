@@ -47,7 +47,7 @@
 
 void* operator new[](size_t size, const char* pName, int flags, unsigned debugFlags, const char* file, int line)
 {
-	LOG_TRACE(
+	Con_Printf(
 		"EASTL::new allocation ->\n"
 		"   size: {}\n"
 		"   name: {}\n"
@@ -58,7 +58,7 @@ void* operator new[](size_t size, const char* pName, int flags, unsigned debugFl
 }
 void* operator new[](size_t size, size_t alignment, size_t alignmentOffset, const char* pName, int flags, unsigned debugFlags, const char* file, int line)
 {
-	LOG_TRACE(
+	Con_Printf(
 		"EASTL::new aligned allocation ->\n"
 		"   size: {}\n"
 		"   alignment: {}\n"
@@ -209,7 +209,7 @@ void Z_Init()
 static void Z_MergePB(memblock_t* block)
 {
 	memblock_t* other;
-	LOG_TRACE("Z_MergePB: merging prev block for block at {}", (void *)block);
+	Con_Printf("Z_MergePB: merging prev block for block at %p", (void *)block);
 	
 	other = block->prev;
 	if (other->tag == TAG_FREE) {
@@ -224,13 +224,13 @@ static void Z_MergePB(memblock_t* block)
 		block = other;
 	}
 	else
-		LOG_TRACE("Z_MergeFB: prev block not TAG_FREE");
+		Con_Printf("Z_MergeFB: prev block not TAG_FREE");
 }
 
 static void Z_MergeNB(memblock_t* block)
 {
 	memblock_t* other;
-	LOG_TRACE("Z_MergeNB: merging next block for block at {}", (void *)block);
+	Con_Printf("Z_MergeNB: merging next block for block at %p", (void *)block);
 	
 	other = block->next;
 	if (other->tag == TAG_FREE) {
@@ -243,7 +243,7 @@ static void Z_MergeNB(memblock_t* block)
 			mainzone->rover = block;
 	}
 	else
-		LOG_TRACE("Z_MergeNB: next block not TAG_FREE");
+		Con_Printf("Z_MergeNB: next block not TAG_FREE");
 }
 
 void Z_ScanForBlock(void *start, void *end)
@@ -264,10 +264,10 @@ void Z_ScanForBlock(void *start, void *end)
 			len = (block->size - sizeof(memblock_t)) / sizeof(void *);
 			for (i = 0; i < len; ++i) {
 				if (start <= mem[i] && mem[i] <= end) {
-					LOG_WARN(
+					Con_Printf(
 						"Z_ScanForBlock: "
-						"{} ({}) has dangling pointer into freed block "
-						"{} ({} -> {})",
+						"%p (%p) has dangling pointer into freed block "
+						"%p (%p -> %p)",
 					(void *)mem, block->name, start, (void *)&mem[i],
 					mem[i]);
 				}
@@ -283,7 +283,7 @@ void Z_ScanForBlock(void *start, void *end)
 
 void Z_ClearZone(void)
 {
-	LOG_TRACE("clearing zone");
+	Con_Printf("clearing zone");
 	memblock_t*		block;
 
 	// set the entire zone to one free block
@@ -403,7 +403,7 @@ void* Z_AlignedAlloc(size_t alignment, size_t size, int tag, void *user, const c
 
 	do {
 		if (rover == start) {
-			LOG_WARN("zone size wasn't big enough for Z_Malloc size given, clearing cache");
+			Con_Printf("zone size wasn't big enough for Z_Malloc size given, clearing cache");
 			Z_FreeTags(TAG_PURGELEVEL, TAG_CACHE);
 			if (tryagain)
 				N_Error("Z_Malloc: failed allocation of %li bytes because zone wasn't big enough", size);
@@ -417,7 +417,7 @@ void* Z_AlignedAlloc(size_t alignment, size_t size, int tag, void *user, const c
 				base = rover = rover->next;
 			}
 			else {
-				LOG_INFO("rover->tag is >=  TAG_PURGELEVEL, freeing");
+				Con_Printf("rover->tag is >=  TAG_PURGELEVEL, freeing");
 				
 				// free the rover block (adding to the size of the base)
 				// the rover can be the base block
@@ -522,7 +522,7 @@ void* Z_Malloc(size_t size, int tag, void *user, const char* name)
 
 	do {
 		if (rover == start) {
-			LOG_WARN("zone size wasn't big enough for Z_Malloc size given, clearing cache");
+			Con_Printf("zone size wasn't big enough for Z_Malloc size given, clearing cache");
 			Z_FreeTags(TAG_PURGELEVEL, TAG_CACHE);
 			if (tryagain)
 				N_Error("Z_Malloc: failed allocation of %li bytes because zone wasn't big enough", size);
@@ -536,7 +536,7 @@ void* Z_Malloc(size_t size, int tag, void *user, const char* name)
 				base = rover = rover->next;
 			}
 			else {
-				LOG_INFO("rover->tag is >=  TAG_PURGELEVEL, freeing");
+				Con_Printf("rover->tag is >=  TAG_PURGELEVEL, freeing");
 				
 				// free the rover block (adding to the size of the base)
 				// the rover can be the base block
@@ -796,7 +796,7 @@ void* Z_Calloc(void *user, size_t nelem, size_t elemsize, int tag, const char* n
 void Z_CleanCache(void)
 {
 	memblock_t* block;
-	LOG_TRACE("performing garbage collection of zone");
+	Con_Printf("performing garbage collection of zone");
 	
 	for (block = mainzone->blocklist.next; block != &mainzone->blocklist; block = block->next) {
 		if (block->id != ZONEID) {
@@ -806,7 +806,7 @@ void Z_CleanCache(void)
 			N_Error("Z_CleanCache: next block doesn't have proper back linkage");
 		}
 		if (block->tag == TAG_FREE && block->next->tag == TAG_FREE) {
-			LOG_INFO("Z_CleanCache: two free blocks in a row, merging");
+			Con_Printf("Z_CleanCache: two free blocks in a row, merging");
 			Z_MergeNB(block);
 			Z_MergePB(block);
 		}
@@ -829,7 +829,7 @@ void Z_CleanCache(void)
 void Z_CheckHeap(void)
 {
 	memblock_t* block;
-//	LOG_TRACE("running heap check");
+//	Con_Printf("running heap check");
 	for (block = mainzone->blocklist.next;; block = block->next) {
 		if (block->next == &mainzone->blocklist) {
 			// all blocks have been hit
@@ -842,7 +842,7 @@ void Z_CheckHeap(void)
 			N_Error("Z_CheckHeap: next block doesn't have proper back linkage, name: %s, back linked name: %s", block->name, block->next->name);
 		}
 		if (block->tag == TAG_FREE && block->next->tag == TAG_FREE) {
-			LOG_INFO("Z_CleanCache: two free blocks in a row, merging");
+			Con_Printf("Z_CleanCache: two free blocks in a row, merging");
 			Z_MergeNB(block);
 			Z_MergePB(block);
 		}
@@ -851,5 +851,5 @@ void Z_CheckHeap(void)
 		indexer = 0;
 		Z_Print(true);
 	}
-//	LOG_TRACE("done with heap check");
+//	Con_Printf("done with heap check");
 }
