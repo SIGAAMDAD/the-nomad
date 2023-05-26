@@ -1,6 +1,5 @@
 #include "../src/n_shared.h"
 #include "g_bff.h"
-#include "../bff_compiler/zone.h"
 
 static void SafeRead(FILE* fp, void *data, size_t size)
 {
@@ -13,7 +12,7 @@ bff_t* BFF_OpenArchive(const std::string& filepath)
 {
 	FILE* fp = SafeOpen(filepath.c_str(), "rb");
 
-	bff_t* archive = (bff_t *)Z_Malloc(sizeof(bff_t), TAG_STATIC, &archive, "bffArchive");
+	bff_t* archive = (bff_t *)Hunk_Alloc(sizeof(bff_t), "bffArchive", h_low);
 	bffheader_t header;
 	SafeRead(fp, &header, sizeof(bffheader_t));
 	if (header.ident != BFF_IDENT) {
@@ -50,7 +49,7 @@ bff_t* BFF_OpenArchive(const std::string& filepath)
 			"file offset: %lu\n",
 		i, archive->chunkList[i].chunkSize, archive->chunkList[i].chunkType, archive->chunkList[i].chunkName, offset);
 
-		archive->chunkList[i].chunkBuffer = (char *)Z_Malloc(archive->chunkList[i].chunkSize, TAG_STATIC, &archive->chunkList[i].chunkBuffer, "chunkBuffer");
+		archive->chunkList[i].chunkBuffer = (char *)Hunk_Alloc(archive->chunkList[i].chunkSize, "chunkBuffer", h_low);
 		SafeRead(fp, archive->chunkList[i].chunkBuffer, archive->chunkList[i].chunkSize);
 	}
 	fclose(fp);

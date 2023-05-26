@@ -1,5 +1,5 @@
 #include "n_shared.h"
-#include "g_zone.h"
+#include "n_scf.h"
 #include "m_renderer.h"
 
 Framebuffer* Framebuffer::Create(const eastl::string& name)
@@ -18,11 +18,11 @@ Framebuffer::Framebuffer()
     glBindFramebuffer(GL_FRAMEBUFFER, fboMsaaId);
 
     glBindRenderbuffer(GL_RENDERBUFFER, rboColorId);
-    glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_RGBA8, r_screenwidth, r_screenheight);
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_RGBA8, N_atoi(r_screenwidth.value), N_atoi(r_screenheight.value));
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
     glBindRenderbuffer(GL_RENDERBUFFER, rboDepthId);
-    glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, r_screenwidth, r_screenheight);
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, N_atoi(r_screenwidth.value), N_atoi(r_screenheight.value));
     glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rboColorId);
@@ -36,7 +36,7 @@ Framebuffer::Framebuffer()
     glBindFramebuffer(GL_FRAMEBUFFER, fboId);
 
     glBindTexture(GL_TEXTURE_2D, texColorId);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, r_screenwidth, r_screenheight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, N_atoi(r_screenwidth.value), N_atoi(r_screenheight.value), 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -80,7 +80,7 @@ Framebuffer::Framebuffer()
     glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, sizeof(indices), indices, GL_STATIC_DRAW_ARB);
     glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
 
-    shader = Shader::Create("framebuffer.glsl", "fbo_Shader");
+    shader = Shader::Create("gamedata/framebuffer.glsl", "fbo_Shader");
 }
 
 Framebuffer::~Framebuffer()
@@ -96,7 +96,7 @@ void Framebuffer::SetBuffer(void)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, fboMsaaId);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glViewport(0, 0, r_screenwidth, r_screenheight);
+    glViewport(0, 0, N_atoi(r_screenwidth.value), N_atoi(r_screenheight.value));
 }
 
 void Framebuffer::SetDefault(void)
@@ -104,16 +104,16 @@ void Framebuffer::SetDefault(void)
     glBindFramebuffer(GL_READ_FRAMEBUFFER, fboMsaaId);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fboId);
 
-    glBlitFramebuffer(0, 0, r_screenwidth, r_screenheight,
-                      0, 0, r_screenwidth, r_screenheight,
+    glBlitFramebuffer(0, 0, N_atoi(r_screenwidth.value), N_atoi(r_screenheight.value),
+                      0, 0, N_atoi(r_screenwidth.value), N_atoi(r_screenheight.value),
                       GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT,
                       GL_NEAREST);
     
     glBindFramebuffer(GL_READ_FRAMEBUFFER, fboId);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
-    glBlitFramebuffer(0, 0, r_screenwidth, r_screenheight,
-                      0, 0, r_screenwidth, r_screenheight,
+    glBlitFramebuffer(0, 0, N_atoi(r_screenwidth.value), N_atoi(r_screenheight.value),
+                      0, 0, N_atoi(r_screenwidth.value), N_atoi(r_screenheight.value),
                       GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT,
                       GL_NEAREST);
 

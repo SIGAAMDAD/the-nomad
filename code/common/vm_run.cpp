@@ -2,7 +2,6 @@
 #include "../bff_file/g_bff.h"
 #include "vm.h"
 #include "n_vm.h"
-#include "../src/g_zone.h"
 
 #define MAX_VM_NAME 10
 
@@ -37,7 +36,7 @@ void G_AddVM(bffscript_t* script, const char *name)
         N_Error("G_AddVM: vmCount >= MAX_ACTIVE_VM");
     }
     memset(activeVM[vmCount].name, 0, MAX_VM_NAME);
-    strncpy(activeVM[vmCount].name, name, MAX_VM_NAME - 1);
+    N_strncpy(activeVM[vmCount].name, name, MAX_VM_NAME - 1);
     activeVM[vmCount].bytecode = script->bytecode;
     activeVM[vmCount].codelen = script->codelen;
     vm_t* vm = &activeVM[vmCount].vm;

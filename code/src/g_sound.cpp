@@ -2,6 +2,7 @@
 #include <ALsoft/alc.h>
 #include "n_shared.h"
 #include "g_game.h"
+#include "n_scf.h"
 #include "g_sound.h"
 
 static ALCdevice* device;
@@ -10,10 +11,10 @@ static ALCcontext* context;
 void Snd_Kill()
 {
     Con_Printf("Snd_Kill: deallocating and freeing OpenAL sources and buffers");
-    if ((!snd_musicon && !snd_sfxon) || (!device || !context) || !snd_cache)
+    if ((!N_strtobool(snd_musicon.value) && !N_strtobool(snd_sfxon.value)) || (!device || !context) || !snd_cache)
         return;
 
-    if (snd_sfxon || snd_musicon) {
+    if (N_strtobool(snd_sfxon.value) || N_strtobool(snd_musicon.value)) {
         for (uint32_t i = 0; i < numsfx; ++i) {
             if (!snd_cache[i].failed) {
                 alSourcei(snd_cache[i].source, AL_BUFFER, 0);
@@ -47,11 +48,14 @@ void G_RunSound()
 
 void Snd_Init()
 {
+    if (!N_strtobool(snd_sfxon.value) || !N_strtobool(snd_musicon.value))
+        return;
+
     Con_Printf("Snd_Init: initializing OpenAL and libsndfile");
     device = alcOpenDevice(NULL);
     if (!device) {
-        snd_sfxon = qfalse;
-        snd_musicon = qfalse;
+        N_strncpy(snd_sfxon.value, "false", 5);
+        N_strncpy(snd_musicon.value, "false", 5);
         Con_Printf("Snd_Init: alcOpenDevice returned NULL, turning off sound");
         return;
     }
@@ -59,8 +63,8 @@ void Snd_Init()
 
     context = alcCreateContext(device, NULL);
     if (!context) {
-        snd_sfxon = qfalse;
-        snd_musicon = qfalse;
+        N_strncpy(snd_sfxon.value, "false", 5);
+        N_strncpy(snd_musicon.value, "false", 5);
         Con_Printf("Snd_Init: alcCreateContext returned NULL, turning off sound, error message: %s",
             alcGetString(device, alcGetError(device)));
         alcCloseDevice(device);
@@ -70,7 +74,4 @@ void Snd_Init()
     alcMakeContextCurrent(context);
 
     Con_Printf("Snd_Init: successfully initialized sound libraries");
-
-    snd_sfxon = qtrue;
-    snd_musicon = qtrue;
 }

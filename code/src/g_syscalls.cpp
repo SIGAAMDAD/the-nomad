@@ -34,11 +34,6 @@ static intptr_t Sys_G_GetTilemap(vm_t *vm, intptr_t *args)
     memcpy((sprite_t **)VMA(1, vm), Game::Get()->c_map, MAP_MAX_Y * MAP_MAX_X * sizeof(sprite_t));
     return 0;
 }
-static intptr_t Sys_G_UpdateConfig(vm_t *vm, intptr_t *args)
-{
-    memcpy((vmCvar_t *)VMA(1, vm), G_GetCvars(), G_NumCvars() * sizeof(vmCvar_t));
-    return 0;
-}
 static intptr_t Sys_N_SaveGame(vm_t *vm, intptr_t *args)
 {
 //    G_SaveGame(*(uint32_t *)VMA(1, vm));
@@ -55,7 +50,6 @@ const vmSystemCall_t systemCalls[] = {
     {(const int)-SYS_CON_ERROR,   Sys_Con_Error},
     {(const int)-CON_FLUSH,       Sys_Con_Flush},
     {(const int)-G_GETTILEMAP,    Sys_G_GetTilemap},
-    {(const int)-G_UPDATECONFIG,  Sys_G_UpdateConfig},
     {(const int)-N_SAVEGAME,      Sys_N_SaveGame},
     {(const int)-N_LOADGAME,      Sys_N_LoadGame},
 };

@@ -1,14 +1,22 @@
 #include "n_shared.h"
-#include "g_zone.h"
 #include "m_renderer.h"
 
 static constexpr const char *TEXMAP_PATH = "Files/gamedata/RES/texmap.bmp";
 
 Renderer* renderer;
 
+void R_BindShader(const Shader* shader)
+{
+    if (renderer->shaderid == shader->GetID()) {
+        return;
+    }
+    renderer->shaderid = shader->GetID();
+    glBindProgram(renderer->shaderid);
+}
+
 static void R_InitVK(void)
 {
-    renderer->gpuContext.instance = (VKContext *)Z_Malloc(sizeof(VKContext), TAG_STATIC, &renderer->gpuContext.instance, "VKContext");
+    renderer->gpuContext.instance = (VKContext *)Hunk_Alloc(sizeof(VKContext), "VKContext", h_hight);
 
     VkApplicationInfo *info = &renderer->gpuContext.instance->appInfo;
     memset(info, 0, sizeof(VkApplicationInfo));
@@ -176,7 +184,7 @@ static bool sdl_on = false;
 
 void R_Init()
 {
-    renderer = (Renderer *)Z_Malloc(sizeof(Renderer), TAG_STATIC, &renderer, "renderer");
+    renderer = (Renderer *)Hunk_Alloc(sizeof(Renderer), "renderer", h_high);
     assert(renderer);
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
         N_Error("R_Init: failed to initialize SDL2, error message: %s",

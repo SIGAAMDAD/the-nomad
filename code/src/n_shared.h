@@ -180,7 +180,12 @@ int N_strncasecmp(const char *str1, const char *str2, size_t n);
 int N_atoi(const char *s);
 float N_atof(const char *s);
 size_t N_strlen(const char *str);
-char* N_strcpy(char *dest, const char *src, size_t count);
+void N_strcpy(char *dest, const char *src);
+void N_strncpy(char *dest, const char *src, size_t count);
+void* N_memset(void *dest, int fill, size_t count);
+void N_memcpy(void *dest, const void *src, size_t count);
+void* N_memchr(void *ptr, int c, size_t count);
+int N_memcmp(const void *ptr1, const void *ptr2, size_t count);
 
 #ifdef QVM
 static qboolean N_strtobool(const char *s)
@@ -205,11 +210,13 @@ inline const char* N_booltostr(qboolean b)
 // c++ stuff here
 #ifndef QVM
 
+#include "z_heap.h"
+
 using json = nlohmann::json;
 
 // engine-only file stuff
 int I_GetParm(const char *parm);
-size_t N_LoadFile(const char *filepath, void *buffer);
+size_t N_ReadFile(const char *filepath, void *buffer);
 size_t N_LoadFile(const char *filepath, void **buffer);
 size_t N_FileSize(const char *filepath);
 void N_WriteFile(const char *filepath, const void *data, size_t size);
@@ -409,12 +416,6 @@ inline const char* N_ButtonToString(const uint32_t& code)
 	};
 }
 
-#define alloca16(x)                     alloca(((x+15)&(~15)))
-#define malloc_aligned(alignment,size)  xmalloc(((size + (alignment - 1)) & ~(alignment - 1)))
-#define malloc(size)            xmalloc(size)
-#define free(ptr)               xfree(ptr)
-#define calloc(nelem, elemsise) memset(xmalloc(nelem*elemsize),0,nelem*elemsize)
-#define realloc(ptr, nsize)     xrealloc(ptr, nsize)
 template<class T>
 struct nomad_allocator
 {
@@ -428,36 +429,30 @@ struct nomad_allocator
 	template<class U>
 	constexpr nomad_allocator(const nomad_allocator<U>&) noexcept { }
 
+	constexpr inline bool operator!=(const eastl::allocator&) { return true; }
+	constexpr inline bool operator!=(const nomad_allocator&) { return false; }
+
 	[[nodiscard]] inline T* allocate(std::size_t n) const {
-		T* p;
-		if ((p = static_cast<T*>(xmalloc(n))) != NULL)
-			return p;
-		
-		throw std::bad_alloc();
+		T* p = (T *)Z_Malloc(n, TAG_STATIC, &p, "zallocator");
+		return p;
 	}
 	[[nodiscard]] inline T* allocate(std::size_t& n, std::size_t& alignment, std::size_t& offset) const {
-		T* p;
-		if ((p = static_cast<T*>(malloc_aligned(alignment, n))) != NULL)
-			return p;
-		else
-			throw std::bad_alloc();
-		return NULL;
+		T* p = (T *)Z_AlignedAlloc(alignment, n, TAG_STATIC, &p, "zallocator");
+		return p;
 	}
 	[[nodiscard]] inline T* allocate(std::size_t n, std::size_t alignment, std::size_t alignmentOffset, int flags) const {
-		T* p;
-		if ((p = static_cast<T*>(malloc_aligned(alignment, n))) != NULL)
-			return p;
-		else
-			throw std::bad_alloc();
-		return NULL;
+		T* p = (T *)Z_AlignedAlloc(alignment, n, TAG_STATIC, &p, "zallocator");
+		return p;
 	}
 	void deallocate(void *p, std::size_t n) const noexcept {
-		free(p);
+		Z_Free(p);
 	}
 };
 
 template<typename T>
 using nomadvector = eastl::vector<T, nomad_allocator<T>>;
+template<typename Key, typename T>
+using nomad_hashtable = eastl::hash_map<Key, T, eastl::hash<Key>, eastl::equal_to<Key>, nomad_allocator<T>, false>;
 
 #else
 

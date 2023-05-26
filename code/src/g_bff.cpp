@@ -4,7 +4,6 @@
 #include "../common/n_vm.h"
 #include "g_game.h"
 #include "g_sound.h"
-#include "g_zone.h"
 #include "m_renderer.h"
 #include <sndfile.h>
 
@@ -49,20 +48,20 @@ static void I_CacheAudio(bffinfo_t *info)
     }
 }
 
-bff_chunk_t* G_GetChunk(const char *chunkname)
+bff_t* B_AddModule(const char *bffpath)
 {
+
 }
 
 void G_LoadBFF(const std::string& bffname)
 {
-    Z_Init();
 
     bff_t* archive = BFF_OpenArchive(bffname);
     bffinfo = BFF_GetInfo(archive);
 
     I_CacheAudio(bffinfo);
 
-    Con_Printf("G_LoadBFF: initiazing renderer");
+    Con_Printf("G_LoadBFF: initializing renderer");
     R_Init();
 
     Game::Init();

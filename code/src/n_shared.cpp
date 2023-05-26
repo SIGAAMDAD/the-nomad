@@ -12,56 +12,71 @@ void* N_memset (void *dest, int fill, size_t count)
 	}
 	else
 		for (i = 0; i < count; i++)
-			((byte *)dest)[i] = fill;
+			((char *)dest)[i] = fill;
     
     return dest;
 }
 
-void* N_memcpy (void *dest, const void *src, size_t count)
+void* N_memchr (void *ptr, int c, size_t count)
+{
+	while (--count) {
+		if (((char *)ptr)[count] == c)
+			return (void *)&((char *)ptr)[count];
+	}
+	return NULL;
+}
+
+void N_memcpy (void *dest, const void *src, size_t count)
 {
 	size_t i;
-	if (( ( (long)dest | (long)src | count) & 3) == 0 ) {
+	if (( ( (long)dest | (long)src | count) & 7) == 0) {
+		while (count >= 4) {
+			((long *)dest)[count] = ((long *)src)[count];
+			count -= 4;
+		}
+	}
+	else if (( ( (long)dest | (long)src | count) & 3) == 0 ) {
 		count>>=2;
 		for (i = 0; i < count; i++)
 			((int *)dest)[i] = ((int *)src)[i];
 	}
 	else
 		for (i = 0; i < count; i++)
-			((byte *)dest)[i] = ((byte *)src)[i];
-    return dest;
+			((char *)dest)[i] = ((char *)src)[i];
 }
 
-bool N_memcmp (const void *ptr1, const void *ptr2, size_t count)
+int N_memcmp (const void *ptr1, const void *ptr2, size_t count)
 {
 	while (count--) {
-		if (((byte *)ptr1)[count] != ((byte *)ptr2)[count])
-			return false;
+		if (((char *)ptr1)[count] != ((char *)ptr2)[count])
+			return -1;
 	}
-	return true;
+	return 1;
 }
 
-char* N_strcpy (char *dest, const char *src)
+void N_strcpy (char *dest, const char *src)
 {
-    char *to = dest;
-    const char *from = src;
-	while (*from)
-		*to++ = *from++;
+	char *d = dest;
+	const char *s = src;
+	while (*s)
+		*d++ = *s++;
 	
-	*to++ = 0;
-    return dest;
+	*d++ = 0;
 }
 
-char* N_strncpy (char *dest, const char *src, size_t count)
+void N_strncpy (char *dest, const char *src, size_t count)
 {
-    char *to = dest;
-    const char *from = src;
-	while (*from && count--)
-		*to++ = *from++;
+	char *d = dest;
+	const char *s = src;
+	while (*d && count--)
+		*d++ = *s++;
 
+#if 1
 	if (count)
-		*to++ = 0;
-    
-    return to;
+		*d++ = 0;
+#else
+	*d++ = 0;
+#endif
 }
 
 size_t N_strlen (const char *str)
@@ -83,11 +98,11 @@ char *N_strrchr(char *str, char c)
     return 0;
 }
 
-void N_strcat (char *dest, char *src)
+void N_strcat (char *dest, const char *src)
 {
-    char *to = dest;
-	to += N_strlen(dest);
-	N_strcpy (to, src);
+    char *d = dest;
+	d += N_strlen(dest);
+	N_strcpy (d, src);
 }
 
 int N_strcmp (const char *str1, const char *str2)
@@ -127,7 +142,7 @@ int N_strncmp (const char *str1, const char *str2, size_t count)
 
 int N_strncasecmp (const char *str1, const char *str2, size_t n)
 {
-	int             c1, c2;
+	int c1, c2;
 
     const char* s1 = str1;
     const char* s2 = str2;
@@ -137,7 +152,7 @@ int N_strncasecmp (const char *str1, const char *str2, size_t n)
 		c2 = *s2++;
 
 		if (!n--)
-			return 0;               // strings are equal until end point
+			return 1;               // strings are equal until end point
 		
 		if (c1 != c2) {
 			if (c1 >= 'a' && c1 <= 'z')
@@ -305,8 +320,11 @@ bool N_strbcmp(const char* str1, const char* str2)
     return true;
 }
 
-size_t N_LoadFile(const char *filepath, void *buffer)
+size_t N_ReadFile(const char *filepath, void *buffer)
 {
+	if (!buffer) {
+		N_Error("N_ReadFile: null buffer");
+	}
 	FILE* fp = fopen(filepath, "rb");
 	if (!fp) {
 		N_Error("N_LoadFile: failed to open file %s", filepath);
@@ -314,11 +332,11 @@ size_t N_LoadFile(const char *filepath, void *buffer)
 	fseek(fp, 0L, SEEK_END);
 	size_t fsize = ftell(fp);
 	fseek(fp, 0L, SEEK_SET);
-	void *buf = xmalloc(fsize);
+	void *buf = Z_Malloc(fsize, TAG_STATIC, &buf, "filebuf");
 	if (fread(buf, fsize, 1, fp) == 0) {
 		N_Error("N_LoadFile: failed to read %lu bytes from file %s", fsize, filepath);
 	}
-	memcpy(buffer, buf, fsize);
+	N_memcpy(buffer, buf, fsize);
 	xfree(buf);
 	fclose(fp);
 	return fsize;
@@ -344,7 +362,7 @@ size_t N_LoadFile(const char *filepath, void **buffer)
 	fseek(fp, 0L, SEEK_END);
 	size_t fsize = ftell(fp);
 	fseek(fp, 0L, SEEK_SET);
-	void *buf = xmalloc(fsize);
+	void *buf = Z_Malloc(fsize, TAG_STATIC, &buf, "filebuf");
 	if (fread(buf, fsize, 1, fp) == 0) {
 		N_Error("N_LoadFile: failed to read %lu bytes from file %s", fsize, filepath);
 	}

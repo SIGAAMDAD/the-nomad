@@ -1,6 +1,5 @@
 #include "n_shared.h"
 #include "g_game.h"
-#include "g_zone.h"
 
 cvar_t g_vert_fov = {"g_vert_fov","24",TYPE_INT,qtrue};
 cvar_t g_horz_fov = {"g_horz_fov","64",TYPE_INT,qtrue};
@@ -96,8 +95,7 @@ static void Cvar_Load(const json& data, const std::string& name, cvar_t* cvar)
     const std::string value = data[name];
 
     if (!N_strcmp(cvar->value, value.c_str())) {
-        cvar->value = (char *)Z_Malloc(value.size()+1, TAG_STATIC, &cvar->value, "CvarVal");
-        strncpy(cvar->value, value.c_str(), value.size());
+        N_strncpy(cvar->value, value.c_str(), (value.size() >= sizeof(cvar->value) ? sizeof(cvar->value) - 1 : value.size()));
     }
 
     Con_Printf("Initialized cvar %s with value %s", cvar->name, cvar->value);

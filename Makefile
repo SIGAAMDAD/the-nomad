@@ -6,7 +6,7 @@ O             = obj
 QVM           = qvm
 SDIR          = code
 SGAME         = sgame.qvm
-EXE           = nomadgl
+EXE           = glnomad
 LDLIBS        =\
 			/usr/local/lib/libSDL2.a \
 			/usr/local/lib/libopenal.a \
@@ -23,7 +23,7 @@ LDLIBS        =\
 			-lvulkan \
 			-lsndfile \
 
-.PHONY: all clean targets
+.PHONY: all clean targets clean.objs clean.exe
 
 ifdef release
 CFLAGS= -Ofast -s -std=c++17
@@ -34,8 +34,8 @@ CFLAGS= -Og -g -std=c++17 -Wall -Wpedantic -D_NOMAD_DEBUG
 LDLIBS+=libglad_dbg.a
 VMFLAGS= -Og -g -std=c89 -Wall -Wpedantic -D_NOMAD_DEBUG -DDEBUG_VM
 endif
-INCLUDE= -I/usr/include -Ideps -Ideps/glad/include -I/usr/local/include -I/usr/include/freetype2 -Isrc
-OPIMTIZERS=-fexpensive-optimizations -funroll-loops -ffast-math -finline-limit=10000
+INCLUDE= -I/usr/include -Ideps -Ideps/glad/include -I/usr/local/include -I/usr/include/freetype2 -Isrc -mfma -mavx2
+#OPIMTIZERS=-fexpensive-optimizations -funroll-loops -ffast-math -finline-limit=10000
 DEFINES    =-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPDATE) -D_NOMAD_VERSION_PATCH=$(VERSION_PATCH)
 CFLAGS    += $(INCLUDE) $(DEFINES) $(OPIMTIZERS)
 
@@ -77,8 +77,9 @@ SRCOBJ= \
 	$(O)/r_shader.o \
 	\
 	$(O)/m_renderer.o \
+	$(O)/z_heap.o \
 
-all: nomadgl
+all: $(EXE)
 targets: $(EXE) $(SGAME)
 
 $(QVM)/%.q3asm: $(SDIR)/sgame/%.c
@@ -100,7 +101,10 @@ $(EXE): $(SRCOBJ) $(BFFOBJ) $(COMMONOBJ)
 $(SGAME): $(SGAME_ASM)
 	./q3asm -f qvm/compile_sgame.q3asm
 
-
+clean.exe:
+	rm $(EXE)
+clean.objs:
+	rm -r $(SRCOBJ) $(BFFOBJ) $(COMMONOBJ)
 clean:
 	rm -r $(SRCOBJ) $(BFFOBJ) $(COMMONOBJ)
-	rm nomadgl
+	rm $(EXE)

@@ -30,7 +30,7 @@ typedef enum
     SGAME_ENDLEVEL,
 } sgameExport_t;
 
-void G_UpdateConfig(vmCvar_t* vars);
+void G_UpdateConfig(cvar_t** vars);
 void G_GetTilemap(sprite_t tilemap[MAP_MAX_Y][MAP_MAX_X]);
 void N_SaveGame(uint32_t slot);
 

@@ -13,8 +13,8 @@ typedef enum
 
 typedef struct cvar_s
 {
-    char *name;
-    char *value;
+    char name[80];
+    char value[80];
     cvartype_t type;
     qboolean save; // whether this should be saved to the config file
 

@@ -3,7 +3,6 @@
 #include "g_bff.h"
 #include "g_game.h"
 #include "m_renderer.h"
-#include "g_zone.h"
 #include "../common/n_vm.h"
 
 bool sdl_on = false;
@@ -137,7 +136,7 @@ void mainLoop()
     IndexBuffer* ibo = IndexBuffer::Create(indices, 6, GL_UNSIGNED_INT, "ibo");
     vbo->Unbind();
     vao->Unbind();
-    Shader* shader = Shader::Create("shader.glsl", "shader0");
+    Shader* shader = Shader::Create("gamedata/shader.glsl", "shader0");
 
     Framebuffer* fbo = Framebuffer::Create("fbo");
     Texture2D* texture = Texture2D::Create(DEFAULT_TEXTURE_SETUP, "sand.jpg", "texture0");
@@ -254,15 +253,12 @@ void mainLoop()
     }
 }
 
-void __attribute__((constructor)) Init_Memory()
-{
-    xalloc_init();
-}
-
 void I_NomadInit(int argc, char** argv)
 {
     myargc = argc;
     myargv = argv;
+
+    Mem_Init();
 
 //    G_LoadBZip2();
 

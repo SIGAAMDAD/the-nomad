@@ -1,6 +1,5 @@
 #include "n_shared.h"
 #include "n_scf.h"
-#include "g_zone.h"
 #include "m_renderer.h"
 
 static byte* R_LoadImage(const eastl::string& filepath)

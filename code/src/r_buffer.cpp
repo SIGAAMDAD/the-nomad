@@ -1,5 +1,4 @@
 #include "n_shared.h"
-#include "g_zone.h"
 #include "m_renderer.h"
 
 VK_VertexBuffer::VK_VertexBuffer(const void *data, size_t count)

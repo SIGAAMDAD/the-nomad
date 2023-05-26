@@ -67,6 +67,7 @@
 #include <EASTL/core_allocator.h>
 #include <EASTL/initializer_list.h>
 #include <EASTL/array.h>
+#include <EASTL/hash_map.h>
 #include <EASTL/string.h>
 #include <EASTL/vector.h>
 #include <EASTL/unordered_map.h>

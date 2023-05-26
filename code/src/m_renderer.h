@@ -163,12 +163,26 @@ typedef union gpuContext_u
     VKContext* instance;
 } gpuContext_t;
 
+#define MAX_SHADERS 128
+#define MAX_VAOS 64
+#define MAX_VBOS 72
+#define MAX_IBOS 64
+#define MAX_TEXTURES 128
+
 class Renderer
 {
 public:
     gpuContext_t gpuContext;
     Camera* camera;
     SDL_Window* window;
+
+    Shader* shaders[MAX_SHADERS];
+    VertexArray* vaos[MAX_VAOS];
+    VertexBuffer* vbos[MAX_VBOS];
+    IndexBuffer* ibos[MAX_IBOS];
+    Texture2D* textures[MAX_TEXTURES];
+
+    GLuint shaderid, vaoid, vboid, iboid, textureid;
 public:
     Renderer() = default;
     Renderer(const Renderer &) = delete;
