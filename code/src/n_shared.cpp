@@ -68,15 +68,11 @@ void N_strncpy (char *dest, const char *src, size_t count)
 {
 	char *d = dest;
 	const char *s = src;
-	while (*d && count--)
+	while (*s && count--)
 		*d++ = *s++;
 
-#if 1
 	if (count)
 		*d++ = 0;
-#else
-	*d++ = 0;
-#endif
 }
 
 size_t N_strlen (const char *str)

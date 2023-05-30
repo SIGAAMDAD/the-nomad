@@ -1,80 +1,58 @@
 #include "n_shared.h"
-#include "n_console.h"
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-typedef enum {
-    DEV = 0, // vm shouldn't really be using this...
-    INFO,
-    WARN,
-} loglevel_t;
-
-static thread_local va_list con_argptr;
-static thread_local va_list com_argptr;
-
-void Con_Printf(int level, const char *fmt, ...);
-void Con_Error(int level, const char *fmt, ...);
-
 void Con_Printf(loglevel_t level, const char *fmt, ...)
 {
-    switch (level) {
-    case DEV:
-        fprintf(stdout, "DEV: ");
-        break;
-    case WARN:
-        fprintf(stdout, "WARNING: ");
-        break;
-    default: break;
-    };
-    char buffer[1024];
+    // code error if this is thrown
+    if (strlen(fmt) >= MAX_MSG_SIZE) {
+        N_Error("Con_Printf: strlen(fmt) >= MAX_MSG_SIZE (%i)", MAX_MSG_SIZE);
+    }
 
     va_list argptr;
+    int length;
+    char msg[MAX_MSG_SIZE];
+    memset(msg, 0, sizeof(msg));
+
     va_start(argptr, fmt);
-    stbsp_vsnprintf(buffer, sizeof(buffer) - 1, fmt, argptr);
+    length = vsnprintf(msg, sizeof(msg), fmt, argptr);
     va_end(argptr);
 
-    G_Printf(buffer);
+    if (length >= MAX_MSG_SIZE) {
+        N_Error("Con_Printf: buffer overrun");
+    }
+
+    msg[length] = '\n';
+
+    // dont buffer
+    Sys_Print(msg);
 }
 
 void Con_Printf(const char *fmt, ...)
 {
-    va_start(con_argptr, fmt);
-    vfprintf(stdout, fmt, con_argptr);
-    va_end(con_argptr);
-    fprintf(stdout, "\n");
+    if (strlen(fmt) >= MAX_MSG_SIZE) {
+        N_Error("Con_Printf: strlen(fmt) >= MAX_MSG_SIZE (%i)", MAX_MSG_SIZE);
+    }
+
+    va_list argptr;
+    int length;
+    char msg[MAX_MSG_SIZE];
+
+    va_start(argptr, fmt);
+    length = vsnprintf(msg, sizeof(msg), fmt, argptr);
+    va_end(argptr);
+
+    Con_Printf(NONE, "%s", msg);
 }
+
 void Con_Error(const char *fmt, ...)
 {
-    fprintf(stderr, "Error: ");
-    va_start(con_argptr, fmt);
-    vfprintf(stderr, fmt, con_argptr);
-    va_end(con_argptr);
+    va_list argptr;
+
+    fprintf(stderr,"ERROR: ");
+    va_start(argptr, fmt);
+    vfprintf(stderr, fmt, argptr);
+    va_end(argptr);
     fprintf(stderr, "\n");
-}
-void Con_Flush(void)
-{
-    fflush(stdout);
     fflush(stderr);
 }
-void G_Printf(const char *fmt)
-{
-    fprintf(stdout, "%s", fmt);
-}
-void G_Error(const char *fmt)
-{
-    fprintf(stderr, "%s", fmt);
-}
-#if 0
-void Com_Printf(const char *fmt, ...)
-{
-    va_start(com_argptr, fmt);
-    vfprintf(stdout, fmt, com_argptr);
-    va_end(com_argptr);
-}
-void Com_Error(const char *fmt, ...)
-{
-    va_start(com_argptr, fmt);
-    vfprintf(stderr, fmt, com_argptr);
-    va_end(com_argptr);
-}
-#endif

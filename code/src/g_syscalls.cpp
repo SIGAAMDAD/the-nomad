@@ -16,18 +16,13 @@ typedef struct
 
 static intptr_t Sys_Con_Printf(vm_t *vm, intptr_t *args)
 {
-    Con_Printf("%s", (const char*)VMA(1, vm));
+    Com_Printf("%s", (const char*)VMA(1, vm));
     return args[1];
 }
 static intptr_t Sys_Con_Error(vm_t *vm, intptr_t *args)
 {
-    Con_Error("%s", (const char*)VMA(1, vm));
+    Com_Error(vm, "%s", (const char*)VMA(1, vm));
     return args[1];
-}
-static intptr_t Sys_Con_Flush(vm_t *vm, intptr_t *args)
-{
-    Con_Flush();
-    return 0;
 }
 static intptr_t Sys_G_GetTilemap(vm_t *vm, intptr_t *args)
 {
@@ -48,7 +43,6 @@ static intptr_t Sys_N_LoadGame(vm_t *vm, intptr_t *args)
 const vmSystemCall_t systemCalls[] = {
     {(const int)-SYS_CON_PRINTF,  Sys_Con_Printf},
     {(const int)-SYS_CON_ERROR,   Sys_Con_Error},
-    {(const int)-CON_FLUSH,       Sys_Con_Flush},
     {(const int)-G_GETTILEMAP,    Sys_G_GetTilemap},
     {(const int)-N_SAVEGAME,      Sys_N_SaveGame},
     {(const int)-N_LOADGAME,      Sys_N_LoadGame},

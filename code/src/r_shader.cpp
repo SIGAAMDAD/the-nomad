@@ -10,9 +10,22 @@ inline static GLenum ShaderTypeFromString(const eastl::string& type)
     return 0;
 }
 
-nomad_hashtable<GLenum, eastl::string> ShaderPreProcess(const eastl::string& source)
+GLint R_GetUniformLocation(shader_t* shader, const char *name)
 {
-	nomad_hashtable<GLenum, eastl::string> shaderSources;
+    if (shader->uniformCache.find(name) != shader->uniformCache.end())
+        return shader->uniformCache[name];
+    
+    GLint location = glGetUniformLocation(shader->id, name);
+    if (location == -1)
+        N_Error("R_GetUniformLocation: location was -1 for %s", name);
+    
+    shader->uniformCache[name] = location;
+    return location;
+}
+
+eastl::unordered_map<GLenum, eastl::string> R_ParseShader(const eastl::string& source)
+{
+    eastl::unordered_map<GLenum, eastl::string> shaderSources;
 
 	const char* typeToken = "#type";
 	size_t typeTokenLength = strlen(typeToken);
@@ -39,69 +52,80 @@ nomad_hashtable<GLenum, eastl::string> ShaderPreProcess(const eastl::string& sou
     return shaderSources;
 }
 
-GLuint Shader::Compile(const char* src, GLenum type)
+static GLuint R_CompileShaderSource(const char *src, GLenum type, GLuint id)
 {
-    GLuint program = glCreateShaderObjectARB(type);
-    const char* buffer = src;
-    glShaderSourceARB(program, 1, &buffer, NULL);
+    GLuint program;
+    int success, length;
+    char *str;
+    
+    program = glCreateShaderObjectARB(type);
+    glShaderSourceARB(program, 1, &src, NULL);
     glCompileShaderARB(program);
-    int success;
+
     glGetShaderiv(program, GL_COMPILE_STATUS, &success);
     if (success == GL_FALSE) {
-        GLint length = 0;
         glGetShaderiv(program, GL_INFO_LOG_LENGTH, &length);
-        char *str = (char *)alloca(length);
+        str = (char *)alloca(length);
         glGetShaderInfoLog(program, length, (GLsizei *)&length, str);
+
         glDeleteShader(program);
-        glDeleteShader(id);
-        N_Error("Shader::Compile: failed to compile shader of type %s, error message: %s",
+        glDeleteProgram(id);
+
+        N_Error("R_CompileShaderSource: failed to compile shader of type %s.\nglslang error message: %s",
             (type == GL_VERTEX_SHADER ? "vertex" : type == GL_FRAGMENT_SHADER ? "fragment" : "unknown shader type"), str);
     }
     return program;
 }
 
-Shader::Shader(const char* filepath)
+void R_ShaderClear(shader_t* shader)
 {
-    char *buffer;
-    const size_t fsize = N_LoadFile(filepath, (void **)&buffer);
+    shader->uniformCache.clear();
+}
+
+shader_t* R_CreateShader(const char* filepath, const char* name)
+{
+    shader_t* shader = (shader_t *)Hunk_Alloc(sizeof(shader_t), name, h_low);
     
-    nomad_hashtable<GLenum, eastl::string> GLSL_Src = ShaderPreProcess(buffer);
+    char *filebuf, *str;
+    int success, length;
+    const size_t fsize = N_LoadFile(filepath, (void **)&filebuf);
 
-    id = glCreateProgram();
-    glUseProgram(id);
+    eastl::unordered_map<GLenum, eastl::string> GLSL_Src = R_ParseShader(eastl::string(filebuf));
 
-    GLuint vertid = Compile(GLSL_Src[GL_VERTEX_SHADER].c_str(), GL_VERTEX_SHADER);
-    GLuint fragid = Compile(GLSL_Src[GL_FRAGMENT_SHADER].c_str(), GL_FRAGMENT_SHADER);
+    shader->uniformCache = nomad_hashtable<const char*, GLint>();
 
-    glAttachShader(id, vertid);
-    glAttachShader(id, fragid);
-    glLinkProgramARB(id);
-    glValidateProgramARB(id);
+    shader->id = glCreateProgram();
+    glUseProgram(shader->id);
 
-    int success = 0;
-    glGetProgramiv(id, GL_LINK_STATUS, &success);
+    // compile
+    GLuint vertid = R_CompileShaderSource(GLSL_Src[GL_VERTEX_SHADER].c_str(), GL_VERTEX_SHADER, shader->id);
+    GLuint fragid = R_CompileShaderSource(GLSL_Src[GL_FRAGMENT_SHADER].c_str(), GL_FRAGMENT_SHADER, shader->id);
+
+    // link
+    glAttachShader(shader->id, vertid);
+    glAttachShader(shader->id, fragid);
+    glLinkProgramARB(shader->id);
+    glValidateProgramARB(shader->id);
+
+    // error checks
+    glGetProgramiv(shader->id, GL_LINK_STATUS, &success);
     if (success == GL_FALSE) {
-        GLint length = 0;
-        glGetProgramiv(id, GL_INFO_LOG_LENGTH, &length);
-        char *str = (char *)alloca(length);
-        glGetProgramInfoLog(id, length, (GLsizei *)&length, str);
+        glGetProgramiv(shader->id, GL_INFO_LOG_LENGTH, &length);
+        str = (char *)alloca(length);
+        glGetProgramInfoLog(shader->id, length, (GLsizei *)&length, str);
+        
         glDeleteShader(vertid);
         glDeleteShader(fragid);
-        glDeleteProgram(id);
-        N_Error("Shader::Compile: failed to compile and/or link shader file %s, error message: %s",
-            filepath, str);
+        glDeleteProgram(shader->id);
+
+        N_Error("R_CreateShader: failed to compile and/or link shader file %s.\nglslang error message: %s", filepath, str);
     }
+
+    // cleanup
     glDeleteShader(vertid);
     glDeleteShader(fragid);
+
     glUseProgram(0);
-}
 
-Shader::~Shader()
-{
-    glDeleteProgram(id);
-}
-
-Shader* Shader::Create(const char *filepath, const char *name)
-{
-    return CONSTRUCT(Shader, name, filepath);
+    return shader;
 }

@@ -1,6 +1,5 @@
 #include "../src/n_shared.h"
 #include "g_bff.h"
-#include "../bff_compiler/zone.h"
 
 FILE* SafeOpen(const char* filepath, const char* mode)
 {

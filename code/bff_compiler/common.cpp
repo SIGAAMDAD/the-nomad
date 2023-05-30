@@ -3,6 +3,7 @@
 #define N_Error BFF_Error
 #include "zone.h"
 
+#if 0
 bff_short_t LittleShort(bff_short_t x)
 {
 #ifdef __BIG_ENDIAN__
@@ -43,6 +44,7 @@ bff_int_t LittleInt(bff_int_t x)
 	return x;
 #endif
 }
+#endif
 
 FILE* SafeOpen(const char* filepath, const char* mode)
 {

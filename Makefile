@@ -58,7 +58,6 @@ SRCOBJ= \
 	$(O)/g_syscalls.o \
 	$(O)/g_sound.o \
 	$(O)/g_rng.o \
-	$(O)/g_zone.o \
 	$(O)/g_math.o \
 	$(O)/g_main.o \
 	$(O)/g_init.o \
@@ -68,16 +67,17 @@ SRCOBJ= \
 	$(O)/n_console.o \
 	$(O)/n_scf.o \
 	$(O)/n_shared.o \
+	$(O)/n_common.o \
 	\
-	$(O)/r_buffer.o \
 	$(O)/r_framebuffer.o \
 	$(O)/r_opengl.o \
-	$(O)/r_vertexarray.o \
+	$(O)/r_vertexcache.o \
 	$(O)/r_texture.o \
 	$(O)/r_shader.o \
 	\
 	$(O)/m_renderer.o \
 	$(O)/z_heap.o \
+	$(O)/z_alloc.o \
 
 all: $(EXE)
 targets: $(EXE) $(SGAME)

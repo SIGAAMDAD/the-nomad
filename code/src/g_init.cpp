@@ -62,8 +62,8 @@ void __attribute__((noreturn)) N_Error(const char *err, ...)
     va_start(argptr, err);
     stbsp_vsnprintf(msg, sizeof(msg) - 1, err, argptr);
     va_end(argptr);
-
     Con_Error("%s", msg);
+
     Game::Get()->~Game();
     exit(EXIT_FAILURE);
 }
@@ -123,25 +123,30 @@ void mainLoop()
         0, 2, 3
     };
 
+    Vertex screenvertices[] = {
+        Vertex(glm::vec3( 1.0f,  1.0f, 0.0f), glm::vec2(0.0f, 0.0f)), // top right
+        Vertex(glm::vec3( 1.0f, -1.0f, 0.0f), glm::vec2(0.0f, 1.0f)), // bottom right
+        Vertex(glm::vec3(-1.0f, -1.0f, 0.0f), glm::vec2(1.0f, 1.0f)), // bottom left
+        Vertex(glm::vec3(-1.0f,  1.0f, 0.0f), glm::vec2(1.0f, 0.0f)), // top left
+    };
+
     SDL_Event event;
     memset(&event, 0, sizeof(event));
-    VertexArray* vao = VertexArray::Create("vao");
-    vao->Bind();
-    VertexBuffer* vbo = VertexBuffer::Create(vertices, sizeof(vertices), "vbo");
-    vbo->Bind();
-    vbo->PushVertexAttrib(vao, 0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, pos));
-    vbo->PushVertexAttrib(vao, 1, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, color));
-    vbo->PushVertexAttrib(vao, 2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (const void *)offsetof(Vertex, texcoords));
 
-    IndexBuffer* ibo = IndexBuffer::Create(indices, 6, GL_UNSIGNED_INT, "ibo");
-    vbo->Unbind();
-    vao->Unbind();
-    Shader* shader = Shader::Create("gamedata/shader.glsl", "shader0");
+    vertexCache_t *screenCache = R_CreateCache(screenvertices, sizeof(screenvertices), indices, sizeof(indices), "scache");
+    R_PushVertexAttrib(screenCache, 0, GL_FLOAT, 3, sizeof(Vertex), (const void *)offsetof(Vertex, pos));
+    R_PushVertexAttrib(screenCache, 1, GL_FLOAT, 2, sizeof(Vertex), (const void *)offsetof(Vertex, texcoords));
 
-    Framebuffer* fbo = Framebuffer::Create("fbo");
-    Texture2D* texture = Texture2D::Create(DEFAULT_TEXTURE_SETUP, "sand.jpg", "texture0");
-    Texture2D* screenTexture = Texture2D::Create(DEFAULT_TEXTURE_SETUP, "desertbkgd.jpg", "screenTexture");
-    fbo->SetScreenTexture(screenTexture);
+    vertexCache_t *cache = R_CreateCache(vertices, sizeof(vertices), indices, sizeof(indices), "vcache");
+    R_PushVertexAttrib(cache, 0, GL_FLOAT, 3, sizeof(Vertex), (const void *)offsetof(Vertex, pos));
+    R_PushVertexAttrib(cache, 1, GL_FLOAT, 4, sizeof(Vertex), (const void *)offsetof(Vertex, color));
+    R_PushVertexAttrib(cache, 2, GL_FLOAT, 2, sizeof(Vertex), (const void *)offsetof(Vertex, texcoords));
+    
+    shader_t* shader = R_CreateShader("gamedata/shader.glsl", "shader0");
+    shader_t* screenShader = R_CreateShader("gamedata/framebuffer.glsl", "screenShader");
+
+    texture_t* texture = R_CreateTexture("sand.jpg", "texture0");
+    texture_t* screenTexture = R_CreateTexture("desertbkgd.jpg", "screenTexture");
 
 
     renderer->camera = CONSTRUCT(Camera, "camera", -3.0f, 3.0f, -3.0f, 3.0f);
@@ -153,6 +158,7 @@ void mainLoop()
 
     glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
     
+    Hunk_Print();
     Z_Print(true);
 
     float light_intensity = 1.0f;
@@ -213,38 +219,32 @@ void mainLoop()
         }
         renderer->camera->CalculateViewMatrix();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glViewport(0, 0, atoi(r_screenwidth.value), atoi(r_screenheight.value));
+        glViewport(0, 0, N_atoi(r_screenwidth.value), N_atoi(r_screenheight.value));
 
-        fbo->SetBuffer();
-//        {
-//            screenTexture->Bind();
-//            glm::mat4 model = glm::translate(glm::mat4(1.0f), translations[1]);
-//            glm::mat4 mvp = renderer->camera->GetProjection() * renderer->camera->GetViewMatrix() * model;
-//            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
-//            screenTexture->Unbind();
-//        }
         next = 1000 / ticrate;
-        
-        fbo->SetDefault();
 
-        shader->Bind();
-        vao->Bind();
-        ibo->Bind();
-        
-        shader->SetMat4("u_ViewProjection", renderer->camera->GetVPM());
+        R_BindShader(screenShader);
+        R_SetInt(screenShader, "u_ScreenTexture", 0);
+        R_BindTexture(screenTexture, 0);
+
+        R_DrawIndexed(screenCache, 6);
+
+        R_UnbindTexture();
+        R_UnbindShader();
+
+        R_BindShader(shader);
+        R_BindTexture(texture, 0);
+        R_SetMat4(shader, "u_ViewProjection", renderer->camera->GetVPM());
 
         {
-            texture->Bind(0);
             glm::mat4 model = glm::translate(glm::mat4(1.0f), translations[0]);
             glm::mat4 mvp = renderer->camera->GetProjection() * renderer->camera->GetViewMatrix() * model;
-            shader->SetMat4("u_MVP", mvp);
-            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
-            texture->Unbind();
+            R_SetMat4(shader, "u_MVP", mvp);
+            R_DrawIndexed(cache, 6);
         }
 
-        ibo->Unbind();
-        vao->Unbind();
-        shader->Unbind();
+        R_UnbindTexture();
+        R_UnbindShader();
 
         SDL_GL_SwapWindow(renderer->window);
         
@@ -258,17 +258,12 @@ void I_NomadInit(int argc, char** argv)
     myargc = argc;
     myargv = argv;
 
-    Mem_Init();
-
-//    G_LoadBZip2();
-
-    Con_Printf("setting up logger");
-//    Log::Init();
+    Com_Init();
 
     Con_Printf("G_LoadBFF: loading bff file");
     G_LoadBFF("nomadmain.bff");
 
-    fprintf(stdout,
+    Con_Printf(
         "+===========================================================+\n"
          "\"The Nomad\" is free software distributed under the terms\n"
          "of both the GNU General Public License v2.0 and Apache License\n"
@@ -278,8 +273,6 @@ void I_NomadInit(int argc, char** argv)
 
     Con_Printf("G_LoadSCF: parsing scf file");
     G_LoadSCF();
-
-    Con_Flush();
 
     Con_Printf("running main gameplay loop");
     mainLoop();

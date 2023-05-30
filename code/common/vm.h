@@ -44,14 +44,11 @@ extern "C" {
 /**< Maximum length of a pathname, 64 to be Q3 compatible */
 #define VM_MAX_QPATH 64
 
-/** Redirect printf() calls with this macro */
-#define Com_Printf printf
-
-/** Redirect memset() calls with this macro */
+#ifndef _NOMAD_VERSION
 #define Com_Memset memset
-
-/** Redirect memcpy() calls with this macro */
 #define Com_Memcpy memcpy
+#define Com_Printf printf
+#endif
 
 /** Translate from virtual machine memory to real machine memory. */
 #define VMA(x, vm) VM_ArgPtr(args[x], vm)

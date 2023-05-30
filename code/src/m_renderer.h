@@ -2,12 +2,10 @@
 #define _M_RENDERER_
 
 #include <glm/gtc/type_ptr.hpp>
-#include "r_buffer.h"
+#include "r_vertexcache.h"
 #include "r_shader.h"
 #include "r_framebuffer.h"
 #include "r_texture.h"
-#include "r_vertexarray.h"
-//#include "r_spritesheet.h"
 
 #pragma once
 
@@ -163,12 +161,14 @@ typedef union gpuContext_u
     VKContext* instance;
 } gpuContext_t;
 
-#define MAX_SHADERS 128
-#define MAX_VAOS 64
-#define MAX_VBOS 72
-#define MAX_IBOS 64
-#define MAX_TEXTURES 128
+#define MAX_VERTEX_CACHES 64
+#define MAX_SHADERS 64
+#define MAX_TEXTURES 64
+#define MAX_FBOS 16
 
+/*
+the renderer class manages all the opengl objects, initializes them, and then deletes them upon destruction
+*/
 class Renderer
 {
 public:
@@ -176,22 +176,40 @@ public:
     Camera* camera;
     SDL_Window* window;
 
-    Shader* shaders[MAX_SHADERS];
-    VertexArray* vaos[MAX_VAOS];
-    VertexBuffer* vbos[MAX_VBOS];
-    IndexBuffer* ibos[MAX_IBOS];
-    Texture2D* textures[MAX_TEXTURES];
+    shader_t* shaders[MAX_SHADERS];
+    texture_t* textures[MAX_TEXTURES];
+    framebuffer_t* fbos[MAX_FBOS];
+    vertexCache_t* vertexCaches[MAX_VERTEX_CACHES];
 
-    GLuint shaderid, vaoid, vboid, iboid, textureid;
+    uint32_t numVertexCaches, numTextures, numFBOs, numShaders;
+    GLuint shaderid, vaoid, vboid, iboid, textureid, fboid;
 public:
     Renderer() = default;
     Renderer(const Renderer &) = delete;
     Renderer(Renderer &&) = delete;
-    ~Renderer() = default;
+    ~Renderer();
 
     Renderer& operator=(const Renderer &) = delete;
     Renderer& operator=(Renderer &&) = delete;
 };
+
+void R_BindCache(const vertexCache_t* cache);
+void R_UnbindCache(void);
+
+void R_DrawIndexed(const vertexCache_t* cache, uint32_t count);
+void R_BeginFramebuffer(framebuffer_t* fbo);
+void R_EndFramebuffer(void);
+void R_BindTexture(const texture_t* texture, uint32_t slot = 0);
+void R_UnbindTexture(void);
+void R_UnbindShader(void);
+void R_BindShader(const shader_t* shader);
+void R_UnbindShader(void);
+void R_BindVertexBuffer(const vertexCache_t* cache);
+void R_UnbindVertexBuffer(void);
+void R_BindVertexArray(const vertexCache_t* cache);
+void R_UnbindVertexArray(void);
+void R_BindIndexBuffer(const vertexCache_t* cache);
+void R_UnbindIndexBuffer(void);
 
 #ifdef _NOMAD_DEBUG
 

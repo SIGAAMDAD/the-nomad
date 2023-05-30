@@ -33,7 +33,7 @@ extern cvar_t r_drawFPS;
 extern cvar_t r_renderapi;
 extern cvar_t r_msaa_amount;
 
-extern nomadvector<const byte*> api_extensions;
+extern eastl::vector<const byte*> api_extensions;
 
 extern cvar_t c_fastmobs1;
 extern cvar_t c_fastmobs2;

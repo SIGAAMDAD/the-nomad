@@ -57,20 +57,6 @@
 #include <SOIL/SOIL.h>
 
 // speed is key
-#include <EABase/eabase.h>
-#include <EASTL/shared_ptr.h>
-#include <EASTL/weak_ptr.h>
-#include <EASTL/algorithm.h>
-#include <EASTL/unique_ptr.h>
-#include <EASTL/allocator.h>
-#include <EASTL/allocator_malloc.h>
-#include <EASTL/core_allocator.h>
-#include <EASTL/initializer_list.h>
-#include <EASTL/array.h>
-#include <EASTL/hash_map.h>
-#include <EASTL/string.h>
-#include <EASTL/vector.h>
-#include <EASTL/unordered_map.h>
 #include "stb_sprintf.h"
 #include <xalloc/Allocator.h>
 #include <xalloc/xallocator.h>

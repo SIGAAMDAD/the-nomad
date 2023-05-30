@@ -3,13 +3,15 @@
 
 #pragma once
 
-void Mem_Init();
+void Memory_Init();
+void Memory_Shutdown();
 
 enum {
     h_low,
     h_high
 };
 
+void Hunk_Print();
 void* Hunk_Alloc(uint32_t size, const char *name, int where);
 void Hunk_Check(void);
 void Hunk_FreeToLowMark(uint64_t mark);
@@ -35,11 +37,11 @@ enum
 #define TAG_SCOPE TAG_CACHE
 #define TAG_LOAD TAG_CACHE
 
-void* Z_Malloc(size_t size, int tag, void *user);
-void* Z_AlignedAlloc(size_t alignment, size_t size, int tag, void *user, const char* name);
-void* Z_Malloc(size_t size, int tag, void *user, const char* name);
-void* Z_Calloc(void *user, size_t nelem, size_t elemsize, int tag, const char* name);
-void* Z_Realloc(void *ptr, size_t nsize, void *user, int tag, const char* name);
+void* Z_AlignedAlloc(uint32_t alignment, uint32_t size, int tag, void *user, const char* name);
+void* Z_Malloc(uint32_t size, int tag, void *user, const char* name);
+void* Z_Calloc(void *user, uint32_t size, int tag, const char* name);
+void* Z_Realloc(void *ptr, uint32_t nsize, void *user, int tag, const char* name);
+
 void Z_Free(void *ptr);
 void Z_FreeTags(int lowtag, int hightag);
 void Z_ChangeTag(void* user, int tag);
@@ -55,6 +57,7 @@ int Z_FreeMemory(void);
 void *Z_ZoneBegin(void);
 void *Z_ZoneEnd(void);
 
+#if 0
 template<typename T>
 class linked_list
 {
@@ -318,5 +321,6 @@ public:
 		return front_node()->val;
 	}
 };
+#endif
 
 #endif

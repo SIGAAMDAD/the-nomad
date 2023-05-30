@@ -24,7 +24,7 @@ cvar_t r_drawFPS = {"r_drawFPS","false",TYPE_BOOL,qtrue};
 cvar_t r_renderapi = {"r_renderapi","R_OPENGL",TYPE_STRING,qtrue};
 cvar_t r_msaa_amount = {"r_msaa_amount","OFF",TYPE_STRING,qtrue};
 
-nomadvector<const byte*> api_extensions;
+eastl::vector<const byte*> api_extensions;
 
 cvar_t c_fastmobs1 = {"c_fastmobs1","false",TYPE_BOOL,qtrue};
 cvar_t c_fastmobs2 = {"c_fastmobs2","false",TYPE_BOOL,qtrue};
@@ -100,6 +100,7 @@ static void Cvar_Load(const json& data, const std::string& name, cvar_t* cvar)
 
     Con_Printf("Initialized cvar %s with value %s", cvar->name, cvar->value);
 }
+
 
 void G_LoadSCF()
 {

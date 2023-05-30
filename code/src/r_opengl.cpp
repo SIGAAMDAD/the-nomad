@@ -1,5 +1,4 @@
 #include "n_shared.h"
-#include "g_zone.h"
 #include "m_renderer.h"
 
 GPUContext::GPUContext()

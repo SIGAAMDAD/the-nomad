@@ -6,10 +6,15 @@
 #include "../bff_file/g_bff.h"
 #include "vm.h"
 
+#define MAX_ACTIVE_VM 2
+#define INVALID_VM (MAX_ACTIVE_VM+1)
+
 void VM_Init(bffscript_t* scripts);
 void G_AddVM(bffscript_t* script, const char* name);
 void G_RemoveVM(uint64_t index);
-void VM_Shutdown(void);
+intptr_t VM_Stop(uint64_t index);
+uint64_t VM_GetIndex(const char* name);
+uint64_t VM_GetIndex(vm_t *vm);
 
 intptr_t G_SystemCalls(vm_t *vm, intptr_t *args);
 

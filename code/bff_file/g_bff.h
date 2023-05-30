@@ -62,10 +62,6 @@ typedef uint32_t bff_int_t;
 typedef uint16_t bff_short_t;
 typedef float bff_float_t;
 
-
-bff_short_t LittleShort(bff_short_t x);
-bff_float_t LittleFloat(bff_float_t x);
-bff_int_t LittleInt(bff_int_t x);
 #ifndef _NOMAD_VERSION
 void __attribute__((noreturn)) BFF_Error(const char* fmt, ...);
 #else

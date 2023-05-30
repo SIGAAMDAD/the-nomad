@@ -17,7 +17,6 @@ typedef struct nomadVM_s
     intptr_t result;
 } nomadVM_t;
 
-#define MAX_ACTIVE_VM 2
 static nomadVM_t activeVM[MAX_ACTIVE_VM];
 static uint64_t vmCount = 0;
 
@@ -28,6 +27,25 @@ void VM_Init(bffscript_t *scripts)
 
     G_AddVM(&scripts[0], "sgame");
     G_AddVM(&scripts[1], "script");
+}
+
+uint64_t VM_GetIndex(const char* name)
+{
+    for (uint64_t i = 0; i < arraylen(activeVM); i++) {
+        if (N_strncmp(activeVM[i].name, name, MAX_VM_NAME)) {
+            return i;
+        }
+    }
+    return INVALID_VM;
+}
+uint64_t VM_GetIndex(vm_t *vm)
+{
+    for (uint64_t i = 0; i < arraylen(activeVM); i++) {
+        if (vm == &activeVM[i].vm) {
+            return i;
+        }
+    }
+    return INVALID_VM;
 }
 
 void G_AddVM(bffscript_t* script, const char *name)
@@ -81,17 +99,15 @@ static void* VM_RunMain(void *in_args)
     return NULL;
 }
 
-void VM_Stop(uint64_t index)
+
+intptr_t VM_Stop(uint64_t index)
 {
     if (!activeVM[index].running) {
-        return;
+        return -1;
     }
     pthread_join(activeVM[index].thread, (void **)NULL);
     intptr_t result = activeVM[index].result;
-
-    if (result == -1) {
-        Con_Error("vmMain for vm {} returned -1", activeVM[index].name);
-    }
+    return result;
 }
 
 void VM_Run(uint64_t index, int command, const nomadvector<int>& vm_args)
@@ -115,13 +131,13 @@ void Com_free(void *p, vm_t* vm, vmMallocType_t type)
         Con_Error("null pointer (Com_free)");
         return;
     }
-    xfree(p);
+    Z_Free(p);
 }
 void* Com_malloc(size_t size, vm_t* vm, vmMallocType_t type)
 {
     (void)vm;
     (void)type;
-    return malloc_aligned(32, size);
+    return Z_Malloc(size, TAG_STATIC, NULL, "vmMem");
 }
 void Com_Error(vmErrorCode_t level, const char* error)
 {

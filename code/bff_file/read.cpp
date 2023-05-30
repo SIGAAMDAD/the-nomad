@@ -130,7 +130,7 @@ bffinfo_t* BFF_GetInfo(bff_t* archive)
 		BFF_Error("BFF_GetInfo: null archive");
 	}
 	
-	bffinfo_t* info = (bffinfo_t *)(malloc)(sizeof(bffinfo_t));
+	bffinfo_t* info = (bffinfo_t *)Hunk_Alloc(sizeof(bffinfo_t), "bffinfo", h_low);
 	memset(info, 0, sizeof(bffinfo_t));
 	info->numLevels = 0;
 	info->numSounds = 0;
@@ -153,16 +153,6 @@ bffinfo_t* BFF_GetInfo(bff_t* archive)
 }
 void BFF_FreeInfo(bffinfo_t* info)
 {
-	if (!info) {
-		BFF_Error("BFF_FreeInfo: null info");
-	}
-	for (bff_int_t i = 0; i < info->numScripts; i++) {
-		Z_ChangeTag(info->scripts[i].bytecode, TAG_CACHE);
-	}
-	for (bff_int_t i = 0; i < info->numSounds; i++) {
-		Z_ChangeTag(info->sounds[i].fileBuffer, TAG_CACHE);
-	}
-	(free)(info);	
 }
 
 void BFF_CloseArchive(bff_t* archive)

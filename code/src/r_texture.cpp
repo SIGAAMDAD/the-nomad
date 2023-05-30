@@ -2,20 +2,6 @@
 #include "n_scf.h"
 #include "m_renderer.h"
 
-static byte* R_LoadImage(const eastl::string& filepath)
-{
-    const char* file = filepath.c_str();
-    if (!strcasestr(file, ".jpg")
-    ||  !strcasestr(file, ".png")
-    ||  !strcasestr(file, ".bmp")
-    ||  !strcasestr(file, ".tga")
-    ||  !strcasestr(file, ".pcx")) {
-        N_Error("R_LoadImage: unsupported image file type: %s", file);
-    }
-    byte *buffer;
-    return buffer;
-}
-
 typedef struct
 {
     const char *str;
@@ -64,46 +50,59 @@ static GLint R_TexMinFilter(void)
 
 void R_UpdateTextures(void)
 {
+    // clear the texture binded, if there is any
+    R_UnbindTexture();
 
+    for (uint32_t i = 0; i < renderer->numTextures; i++) {
+        glBindTexture(GL_TEXTURE_2D, renderer->textures[i]->id);
+
+        texture_t* tex = renderer->textures[i];
+        tex->minFilter = R_TexMinFilter();
+        tex->magFilter = R_TexMagFilter();
+        tex->wrapS = GL_REPEAT;
+        tex->wrapT = GL_REPEAT;
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, tex->minFilter);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, tex->magFilter);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, tex->wrapT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, tex->wrapS);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
 }
 
-Texture2D::Texture2D(const Texture2DSetup& setup, const eastl::string& filepath)
+texture_t* R_CreateTexture(const char *filepath, const char *name)
 {
-    glGenTextures(1, &id);
-    glBindTexture(GL_TEXTURE_2D, id);
+    texture_t* tex = (texture_t *)Hunk_Alloc(sizeof(texture_t), name, h_low);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, R_TexMinFilter());
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, R_TexMagFilter());
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    tex->minFilter = R_TexMinFilter();
+    tex->magFilter = R_TexMagFilter();
+    tex->wrapS = GL_REPEAT;
+    tex->wrapT = GL_REPEAT;
 
-    byte* image = SOIL_load_image(filepath.c_str(), &width, &height, 0, SOIL_LOAD_RGBA);
-    if (!image)
-        N_Error("Texture2D::Texture2D: SOIL_load_image failed for texture file %s, error string: %s", filepath.c_str(), SOIL_last_result());
+    glGenTextures(1, &tex->id);
+    glBindTexture(GL_TEXTURE_2D, tex->id);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, tex->minFilter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, tex->magFilter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, tex->wrapS);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, tex->wrapT);
     
-    assert(image);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-    
-    if (setup.genMipmap)
-        glGenerateMipmap(GL_TEXTURE_2D);
-
+    byte* image = SOIL_load_image(filepath, &tex->width, &tex->height, &tex->channels, SOIL_LOAD_RGBA);
+    if (!image) {
+        N_Error("R_CreateTexture: SOIL_load_image failed to load file %s, error string: %s", filepath, SOIL_last_result());
+    }
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, tex->width, tex->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    buffer = (byte *)Z_Malloc(width * height * 4, TAG_STATIC, &buffer, "texbuffer");
-    memcpy(buffer, image, width * height * 4);
-    (free)(image);
+    tex->data = (byte *)Hunk_Alloc(tex->width * tex->height * 4, "texbuffer", h_low);
+    memcpy(tex->data, image, tex->width * tex->height * 4);
+    free(image);
 
-    Con_Printf("Texture2D::Texture2D: successfully loaded texture file %s", filepath.c_str());
-}
+    Con_Printf("Loaded texture file %s", filepath);
 
-Texture2D::~Texture2D()
-{
-    glDeleteTextures(1, &id);
-    Z_Free(buffer);
-}
+    renderer->textures[renderer->numTextures] = tex;
+    renderer->numTextures++;
 
-Texture2D* Texture2D::Create(const Texture2DSetup& setup, const eastl::string& filepath, const eastl::string& name)
-{
-    Con_Printf("Texture2D::Create: loading texture file %s", filepath.c_str());
-    return CONSTRUCT(Texture2D, name.c_str(), setup, filepath);
+    return tex;
 }

@@ -5,18 +5,151 @@ static constexpr const char *TEXMAP_PATH = "Files/gamedata/RES/texmap.bmp";
 
 Renderer* renderer;
 
-void R_BindShader(const Shader* shader)
+void R_DrawIndexed(const vertexCache_t* cache, uint32_t count)
 {
-    if (renderer->shaderid == shader->GetID()) {
+    R_BindCache(cache);
+    glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, NULL);
+    R_UnbindCache();
+}
+
+void R_BindCache(const vertexCache_t* cache)
+{
+    R_BindVertexArray(cache);
+    R_BindVertexBuffer(cache);
+    R_BindIndexBuffer(cache);
+}
+
+void R_UnbindCache(void)
+{
+    R_UnbindVertexBuffer();
+    R_UnbindIndexBuffer();
+    R_UnbindVertexArray();
+}
+
+void R_BeginFramebuffer(framebuffer_t* fbo)
+{
+    R_SetFramebuffer(fbo);
+}
+void R_EndFramebuffer(void)
+{
+    R_SetFramebuffer(NULL);
+}
+
+void R_BindTexture(const texture_t* texture, uint32_t slot)
+{
+    if (!texture) {
+        N_Error("R_BindTexture: null texture");
+    }
+    if (renderer->textureid == texture->id) {
         return;
     }
-    renderer->shaderid = shader->GetID();
-    glBindProgram(renderer->shaderid);
+    glActiveTexture(GL_TEXTURE0+slot);
+    glBindTexture(GL_TEXTURE_2D, texture->id);
 }
+
+void R_UnbindTexture(void)
+{
+    if (renderer->textureid == 0) {
+        return;
+    }
+    renderer->textureid = 0;
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void R_BindShader(const shader_t* shader)
+{
+    if (!shader) {
+        N_Error("R_BindShader: null shader");
+    }
+    if (renderer->shaderid == shader->id) {
+        return;
+    }
+    renderer->shaderid = shader->id;
+    glUseProgram(renderer->shaderid);
+}
+
+void R_UnbindShader(void)
+{
+    if (renderer->shaderid == 0) {
+        return;
+    }
+    glUseProgram(0);
+    renderer->shaderid = 0;
+}
+
+void R_BindVertexArray(const vertexCache_t* cache)
+{
+    if (!cache) {
+        N_Error("R_BindVertexArray: null cache");
+    }
+    if (renderer->vaoid == cache->vaoId) {
+        return;
+    }
+    renderer->vaoid = cache->vaoId;
+    glBindVertexArray(renderer->vaoid);
+}
+
+void R_UnbindVertexArray(void)
+{
+    if (renderer->vaoid == 0) {
+        return;
+    }
+    glBindVertexArray(0);
+    renderer->vaoid = 0;
+}
+
+void R_BindVertexBuffer(const vertexCache_t* cache)
+{
+    if (!cache) {
+        N_Error("R_BindVertexBuffer: null cache");
+    }
+    if (renderer->vboid == cache->vboId) {
+        return;
+    }
+    renderer->vboid = cache->vboId;
+    glBindBufferARB(GL_ARRAY_BUFFER_ARB, renderer->vboid);
+}
+
+void R_UnbindVertexBuffer(void)
+{
+    if (renderer->vboid == 0) {
+        return;
+    }
+    renderer->vboid = 0;
+    glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+}
+
+void R_BindIndexBuffer(const vertexCache_t* cache)
+{
+    if (!cache) {
+        N_Error("R_BindIndexBuffer: null cache");
+    }
+    if (renderer->iboid == cache->iboId) {
+        return;
+    }
+    if (renderer->vaoid == 0) {
+        R_BindVertexArray(cache);
+    }
+    renderer->iboid = cache->iboId;
+    glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, renderer->iboid);
+}
+
+void R_UnbindIndexBuffer(void)
+{
+    if (renderer->iboid == 0) {
+        return;
+    }
+    if (renderer->vaoid == 0) {
+        Con_Printf("WARNING: ibo bount when vaoid is 0");
+    }
+    renderer->iboid = 0;
+    glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+}
+
 
 static void R_InitVK(void)
 {
-    renderer->gpuContext.instance = (VKContext *)Hunk_Alloc(sizeof(VKContext), "VKContext", h_hight);
+    renderer->gpuContext.instance = (VKContext *)Hunk_Alloc(sizeof(VKContext), "VKContext", h_high);
 
     VkApplicationInfo *info = &renderer->gpuContext.instance->appInfo;
     memset(info, 0, sizeof(VkApplicationInfo));
@@ -204,6 +337,11 @@ void R_Init()
     }
     assert(renderer->window);
     R_InitGL();
+
+    renderer->numTextures = 0;
+    renderer->numVertexCaches = 0;
+    renderer->numFBOs = 0;
+    renderer->numShaders = 0;
     sdl_on = true;
 }
 
@@ -213,6 +351,25 @@ void R_ShutDown()
         return;
 
     Con_Printf("R_ShutDown: deallocating SDL2 contexts and window");
+
+    for (uint32_t i = 0; i < renderer->numShaders; i++) {
+        glDeleteProgram(renderer->shaders[i]->id);
+    }
+    for (uint32_t i = 0; i < renderer->numFBOs; i++) {
+        glDeleteFramebuffers(1, &renderer->fbos[i]->fboId);
+        glDeleteFramebuffers(1, &renderer->fbos[i]->defId);
+        glDeleteRenderbuffers(1, &renderer->fbos[i]->colorId);
+        glDeleteRenderbuffers(1, &renderer->fbos[i]->depthId);
+        glDeleteTextures(1, &renderer->fbos[i]->defTex);
+    }
+    for (uint32_t i = 0; i < renderer->numVertexCaches; i++) {
+        glDeleteVertexArrays(1, &renderer->vertexCaches[i]->vaoId);
+        glDeleteBuffersARB(1, &renderer->vertexCaches[i]->vboId);
+        glDeleteBuffersARB(1, &renderer->vertexCaches[i]->iboId);
+    }
+    for (uint32_t i = 0; i < renderer->numTextures; i++) {
+        glDeleteTextures(1, &renderer->textures[i]->id);
+    }
 
     if (N_strcmp(r_renderapi.value, "R_OPENGL") && renderer->gpuContext.context) {
         SDL_GL_DeleteContext(renderer->gpuContext.context);
