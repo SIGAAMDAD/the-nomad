@@ -3,6 +3,12 @@
 
 #pragma once
 
+#ifdef __LCC__
+#ifndef Q3_VM
+#define Q3_VM
+#endif
+#endif
+
 #ifndef Q3_VM
 
 #ifndef _NOMAD_VERSION
@@ -20,7 +26,6 @@
 
 #ifndef Q3_VM
 #include "n_pch.h"
-#include "z_heap.h"
 #include <EABase/eabase.h>
 #include <EASTL/shared_ptr.h>
 #include <EASTL/weak_ptr.h>
@@ -41,6 +46,9 @@
 
 #define PADP(base, alignment)	((void *) PAD((intptr_t) (base), (alignment)))
 #endif
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
 
 #ifdef __GNUC__
 #define GDR_NORETURN __attribute__((noreturn))
@@ -102,6 +110,7 @@ void CrossProduct(const vec2_t v1, const vec2_t v2, vec2_t out);
 #include "n_platform.h"
 #include "n_console.h"
 #include "n_common.h"
+#include "z_heap.h"
 
 #ifdef Q3_VM
 
@@ -114,11 +123,15 @@ typedef signed short int int16_t;
 typedef signed int int32_t;
 typedef signed long int int64_t;
 
+// everything is 32-bit on the vm/lcc
 typedef int ptrdiff_t;
+typedef int intptr_t;
+typedef unsigned int uintptr_t;
 typedef unsigned int size_t;
 typedef signed int ssize_t;
 
 #endif
+
 
 typedef enum
 {
@@ -152,7 +165,7 @@ typedef enum
 void GDR_NORETURN N_Error(const char *err, ...);
 
 #ifdef _NOMAD_DEBUG
-inline void __nomad_assert_fail(const char* expression, const char* file, const char* func, unsigned line)
+GDR_INLINE void __nomad_assert_fail(const char* expression, const char* file, const char* func, unsigned line)
 {
 #ifndef Q3_VM
 	N_Error(
@@ -439,109 +452,6 @@ inline const char* N_ButtonToString(const uint32_t& code)
 		break;
 	};
 }
-
-template<class T>
-struct nomad_allocator
-{
-	nomad_allocator() noexcept { }
-	nomad_allocator(const char* name = "zallocator") noexcept { }
-
-	typedef T value_type;
-	template<class U>
-	constexpr nomad_allocator(const nomad_allocator<U>&) noexcept { }
-
-	constexpr inline bool operator!=(const eastl::allocator) { return true; }
-	constexpr inline bool operator!=(const nomad_allocator) { return false; }
-	constexpr inline bool operator==(const eastl::allocator) { return false; }
-	constexpr inline bool operator==(const nomad_allocator) { return true; }
-
-	inline void* allocate(size_t n) const {
-		return Z_Malloc(n, TAG_STATIC, NULL, "zallocator");
-	}
-	inline void* allocate(size_t& n, size_t& alignment, size_t& offset) const {
-		return Z_Malloc(n, TAG_STATIC, NULL, "zallocator");
-	}
-	inline void* allocate(size_t n, size_t alignment, size_t alignmentOffset, int flags) const {
-		return Z_Malloc(n, TAG_STATIC, NULL, "zallocator");
-	}
-	inline void deallocate(void *p, size_t) const noexcept {
-		Z_ChangeTag(p, TAG_PURGELEVEL);
-	}
-};
-
-typedef struct
-{
-	int num;
-	int minSize;
-	int maxSize;
-	int totalSize;
-} memoryStats_t;
-
-void Mem_Init( void );
-void Mem_Shutdown( void );
-void Mem_EnableLeakTest( const char *name );
-void Mem_ClearFrameStats( void );
-void Mem_GetFrameStats( memoryStats_t& allocs, memoryStats_t& frees );
-void Mme_GetStats( memoryStats_t& stats );
-void Mem_AllocDefragBlock( void );
-
-#ifndef DEBUG_MEMORY
-
-void* Mem_Alloc(const uint32_t size);
-void* Mem_ClearedAlloc(const uint32_t size);
-void Mem_Free(void *ptr);
-char* Mem_CopyString(const char *in);
-void* Mem_Alloc16(const uint32_t size);
-void Mem_Free16(void *ptr);
-
-#else
-
-void* Mem_Alloc( const uint32_t size, const char *fileName, const int lineNumber );
-void* Mem_ClearedAlloc( const uint32_t size, const char *fileName, const int lineNumber );
-void Mem_Free( void *ptr, const char *fileName, const int lineNumber );
-char* Mem_CopyString( const char *in, const char *fileName, const int lineNumber );
-void* Mem_Alloc16( const uint32_t size, const char *fileName, const int lineNumber );
-void Mem_Free16( void *ptr, const char *fileName, const int lineNumber );
-
-#define Mem_Alloc(size) Mem_Alloc(size, __FILE__, __LINE__)
-#define Mem_ClearedAlloc(size) Mem_ClearedAlloc(size, __FILE__, __LINE__)
-#define Mem_Free(ptr) Mem_Free(ptr, __FILE__, __LINE__)
-#define Mem_CopyString(s) Mem_CopyString(s, __FILE__, __LINE__)
-#define Mem_Alloc16(size) Mem_Alloc16(size, __FILE__, __LINE__)
-#define Mem_Free16(ptr) Mem_Free16(ptr, __FILE__, __LINE__)
-
-#endif
-
-template<class T>
-struct id_allocator
-{
-	id_allocator() noexcept { }
-	id_allocator(const char* name = "zallocator") noexcept { }
-
-	typedef T value_type;
-	template<class U>
-	constexpr id_allocator(const id_allocator<U>&) noexcept { }
-
-	constexpr inline bool operator!=(const eastl::allocator) { return true; }
-	constexpr inline bool operator!=(const id_allocator) { return false; }
-	constexpr inline bool operator==(const eastl::allocator) { return false; }
-	constexpr inline bool operator==(const id_allocator) { return true; }
-
-	inline void* allocate(size_t n) const {
-		return Mem_Alloc(n);
-	}
-	inline void* allocate(size_t& n, size_t& alignment, size_t& offset) const {
-		n = (n + (alignment - 1)) & ~(alignment - 1);
-		return Mem_Alloc(n);
-	}
-	inline void* allocate(size_t n, size_t alignment, size_t alignmentOffset, int flags) const {
-		n = (n + (alignment - 1)) & ~(alignment - 1);
-		return Mem_Alloc(n);
-	}
-	inline void deallocate(void *p, size_t) const noexcept {
-		Mem_Free(p);
-	}
-};
 
 template<typename T>
 using nomadvector = eastl::vector<T, nomad_allocator<T>>;

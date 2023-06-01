@@ -26,6 +26,7 @@ void R_UnbindCache(void)
     R_UnbindVertexArray();
 }
 
+#if 0
 void R_BeginFramebuffer(framebuffer_t* fbo)
 {
     R_SetFramebuffer(fbo);
@@ -34,15 +35,17 @@ void R_EndFramebuffer(void)
 {
     R_SetFramebuffer(NULL);
 }
+#endif
 
 void R_BindTexture(const texture_t* texture, uint32_t slot)
 {
-    if (!texture) {
-        N_Error("R_BindTexture: null texture");
-    }
     if (renderer->textureid == texture->id) {
         return;
     }
+    else if (renderer->textureid) {
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+    renderer->textureid = texture->id;
     glActiveTexture(GL_TEXTURE0+slot);
     glBindTexture(GL_TEXTURE_2D, texture->id);
 }
@@ -58,14 +61,11 @@ void R_UnbindTexture(void)
 
 void R_BindShader(const shader_t* shader)
 {
-    if (!shader) {
-        N_Error("R_BindShader: null shader");
-    }
     if (renderer->shaderid == shader->id) {
         return;
     }
     renderer->shaderid = shader->id;
-    glUseProgram(renderer->shaderid);
+    glUseProgram(shader->id);
 }
 
 void R_UnbindShader(void)
@@ -79,14 +79,11 @@ void R_UnbindShader(void)
 
 void R_BindVertexArray(const vertexCache_t* cache)
 {
-    if (!cache) {
-        N_Error("R_BindVertexArray: null cache");
-    }
     if (renderer->vaoid == cache->vaoId) {
         return;
     }
     renderer->vaoid = cache->vaoId;
-    glBindVertexArray(renderer->vaoid);
+    glBindVertexArray(cache->vaoId);
 }
 
 void R_UnbindVertexArray(void)
@@ -100,14 +97,11 @@ void R_UnbindVertexArray(void)
 
 void R_BindVertexBuffer(const vertexCache_t* cache)
 {
-    if (!cache) {
-        N_Error("R_BindVertexBuffer: null cache");
-    }
     if (renderer->vboid == cache->vboId) {
         return;
     }
     renderer->vboid = cache->vboId;
-    glBindBufferARB(GL_ARRAY_BUFFER_ARB, renderer->vboid);
+    glBindBufferARB(GL_ARRAY_BUFFER_ARB, cache->vboId);
 }
 
 void R_UnbindVertexBuffer(void)
@@ -121,26 +115,20 @@ void R_UnbindVertexBuffer(void)
 
 void R_BindIndexBuffer(const vertexCache_t* cache)
 {
-    if (!cache) {
-        N_Error("R_BindIndexBuffer: null cache");
-    }
     if (renderer->iboid == cache->iboId) {
         return;
     }
-    if (renderer->vaoid == 0) {
+    if (!renderer->vaoid) {
         R_BindVertexArray(cache);
     }
     renderer->iboid = cache->iboId;
-    glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, renderer->iboid);
+    glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, cache->iboId);
 }
 
 void R_UnbindIndexBuffer(void)
 {
     if (renderer->iboid == 0) {
         return;
-    }
-    if (renderer->vaoid == 0) {
-        Con_Printf("WARNING: ibo bount when vaoid is 0");
     }
     renderer->iboid = 0;
     glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
@@ -649,3 +637,47 @@ done:
     return -1;
 }
 #endif
+
+
+#define MAX_RENDER_CALLS 64
+#define MAX_RENDER_QUADS 64
+#define MAX_RENDER_VERTICES (MAX_RENDER_QUADS*4)
+#define MAX_RENDER_INDICES (MAX_RENDER_VERTICES*6)
+
+typedef struct
+{
+    Vertex vertices[MAX_RENDER_VERTICES];
+    uint32_t indices[MAX_RENDER_INDICES];
+    uint32_t numVertices;
+    uint32_t numIndices;
+} renderCall_t;
+
+typedef struct
+{
+    uint32_t numCalls;
+    renderCall_t calls[MAX_RENDER_CALLS];
+
+    vertexCache_t* frameCache;
+//    renderCall_t* callPtr;
+} renderFrame_t;
+
+static renderFrame_t* frame;
+
+void R_FlushFrame(void)
+{
+    frame->numCalls = 0;
+}
+
+void R_DrawCmd(Vertex* vertices, uint32_t numVertices, uint32_t* indices, uint32_t numIndices)
+{
+    if (frame->numCalls >= MAX_RENDER_CALLS) {
+        R_FlushFrame();
+    }
+    renderCall_t* call = &frame->calls[frame->numCalls];
+
+    memcpy(call->vertices, vertices, numVertices);
+    memcpy(call->indices, indices, numIndices);
+    call->numVertices = numVertices;
+    call->numIndices = numIndices;
+}
+

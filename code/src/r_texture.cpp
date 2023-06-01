@@ -2,6 +2,9 @@
 #include "n_scf.h"
 #include "m_renderer.h"
 
+#define MAX_FILE_HASH 1024
+static texture_t* textures[MAX_FILE_HASH];
+
 typedef struct
 {
     const char *str;
@@ -14,7 +17,7 @@ static const texmode_t modes[] = {
     {"GL_LINEAR_MIPMAP_LINEAR", GL_LINEAR_MIPMAP_LINEAR},
     {"GL_LINEAR_MIPMAP_NEAREST", GL_LINEAR_MIPMAP_NEAREST},
     {"GL_NEAREST_MIPMAP_LINEAR", GL_NEAREST_MIPMAP_LINEAR},
-    {"GL_NEAREST_MIPMAP_NEAREST", GL_NEAREST_MIPMAP_NEAREST}
+    {"GL_NEAREST_MIPMAP_NEAREST", GL_NEAREST_MIPMAP_NEAREST},
 };
 
 static GLint R_TexMagFilter(void)
@@ -29,6 +32,7 @@ static GLint R_TexMagFilter(void)
     if (filter == -1) {
         Con_Printf("WARNING: r_texture_magfilter was invalid, using default of GL_NEAREST");
         filter = GL_NEAREST;
+        N_strcpy(r_texture_magfilter.value, "GL_NEAREST");
     }
     return filter;
 }
@@ -44,14 +48,15 @@ static GLint R_TexMinFilter(void)
     if (filter == -1) {
         Con_Printf("WARNING: r_texture_minfilter was invalid, using default of GL_LINEAR_MIPMAP_LINEAR");
         filter = GL_LINEAR_MIPMAP_LINEAR;
+        N_strcpy(r_texture_minfilter.value, "GL_LINEAR_MIPMAP_LINEAR");
     }
     return filter;
 }
 
 void R_UpdateTextures(void)
 {
-    // clear the texture binded, if there is any
-    R_UnbindTexture();
+    // clear the texture bound, if there is any
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     for (uint32_t i = 0; i < renderer->numTextures; i++) {
         glBindTexture(GL_TEXTURE_2D, renderer->textures[i]->id);
@@ -101,7 +106,9 @@ texture_t* R_CreateTexture(const char *filepath, const char *name)
 
     Con_Printf("Loaded texture file %s", filepath);
 
+    uint64_t hash = Com_GenerateHashValue(filepath, MAX_TEXTURES);
     renderer->textures[renderer->numTextures] = tex;
+    textures[hash] = tex;
     renderer->numTextures++;
 
     return tex;

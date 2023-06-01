@@ -1,12 +1,6 @@
 #include "n_shared.h"
 
-static byte *hunk_base;
-static uint64_t hunk_size;
-static uint64_t hunk_low_used;
-static uint64_t hunk_high_used;
-static bool hunk_tempactive;
-static uint64_t hunk_tempmark;
-
+Heap Heap::heap;
 
 #define UNOWNED    ((void *)666)
 #define ZONEID     0xa21d49
@@ -14,7 +8,15 @@ static uint64_t hunk_tempmark;
 #define MIN_FRAGMENT 128
 
 #define DEFAULT_HEAP_SIZE (1000*1024*1024)
-#define DEFAULT_ZONE_SIZE (250*1024*1024)
+#define DEFAULT_ZONE_SIZE (100*1024*1024)
+
+static byte *hunk_base;
+static uint64_t hunk_size;
+static uint64_t hunk_low_used;
+static uint64_t hunk_high_used;
+static bool hunk_tempactive;
+static uint64_t hunk_tempmark;
+static memzone_t* mainzone;
 
 // tunables
 #define ZONEDEBUG
@@ -24,30 +26,15 @@ static uint64_t hunk_tempmark;
 #define MEM_ALIGN  16
 #define RETRY_AMOUNT (256*1024)
 
-
-typedef struct memblock_s
+Heap::Heap()
 {
-    uint32_t size;
-    void **user;
-    int tag;
-    int id;
-    char name[14];
-    struct memblock_s* next;
-    struct memblock_s* prev;
-} memblock_t;
+	Memory_Init();
+}
 
-typedef struct memzone_s
+Heap::~Heap()
 {
-	uint64_t size;
-	
-    // start/end cap for linked list
-	memblock_t blocklist;
-
-	// the roving block for general operations
-	memblock_t* rover;
-} memzone_t;
-
-static memzone_t* mainzone; // the currently active zone
+	Memory_Shutdown();
+}
 
 void Memory_Shutdown(void)
 {
@@ -57,6 +44,7 @@ void Memory_Shutdown(void)
 
 void Memory_Init(void)
 {
+	Con_Printf("Memory_Init: initializing allocation daemons");
     Mem_Init();
 
     hunk_size = 0;
@@ -66,7 +54,7 @@ void Memory_Init(void)
     int i = I_GetParm("-ram");
     if (i != -1) {
         if (i+1 > myargc)
-            N_Error("Mem_Init: you must specify the amount of ram in MB after -ram");
+            N_Error("Memory_Init: you must specify the amount of ram in MB after -ram");
         else
             hunk_size = N_atoi(myargv[i]) * 1024 * 1024;
     }
@@ -75,7 +63,7 @@ void Memory_Init(void)
     }
     hunk_base = (byte *)malloc(hunk_size);
     if (!hunk_base)
-        N_Error("Mem_Init: malloc() failed on %lu bytes when allocating the hunk", hunk_size);
+        N_Error("Memory_Init: malloc() failed on %lu bytes when allocating the hunk", hunk_size);
     
     memset(hunk_base, 0, hunk_size);
 
@@ -83,7 +71,7 @@ void Memory_Init(void)
     i = I_GetParm("-zoneram");
     if (i != -1) {
         if (i+1 > myargc)
-            N_Error("Mem_Init: you must specifiy the amount of ram in MB after -zoneram");
+            N_Error("Memory_Init: you must specifiy the amount of ram in MB after -zoneram");
         else
             zonesize = N_atoi(myargv[i]) * 1024 * 1024;
     }
@@ -98,7 +86,7 @@ void Memory_Init(void)
     mainzone->size = zonesize - sizeof(memzone_t);
 
     // initialize the zone heap variables
-    Z_Init();
+    Heap::Get().Z_Init();
 
     atexit(Mem_Shutdown);
 }
@@ -112,14 +100,7 @@ for the entirety of runtime. ONLY MEANT FOR MAIN ENGINE ALLOCATIONS
 */
 #define HUNKID 0xffa3d9
 
-typedef struct
-{
-    unsigned id;
-    char name[14];
-    uint32_t size;
-} hunk_t;
-
-void Hunk_Check(void)
+void Heap::Hunk_Check(void)
 {
     hunk_t *hunk;
     for (hunk = (hunk_t *)hunk_base; (byte *)hunk != hunk_base + hunk_low_used;) {
@@ -132,19 +113,19 @@ void Hunk_Check(void)
     }
 }
 
-void Hunk_Clear(void)
+void Heap::Hunk_Clear(void)
 {
     Con_Printf("WARNING: clearing hunk heap");
     hunk_low_used = hunk_high_used = 0;
     memset(hunk_base, 0, hunk_size);
 }
 
-uint64_t Hunk_LowMark(void)
+uint64_t Heap::Hunk_LowMark(void)
 {
     return hunk_low_used;
 }
 
-void Hunk_FreeToLowMark(uint64_t mark)
+void Heap::Hunk_FreeToLowMark(uint64_t mark)
 {
     if (!mark || mark > hunk_low_used)
         N_Error("Hunk_FreeToLowMark: bad mark %lu", mark);
@@ -153,21 +134,21 @@ void Hunk_FreeToLowMark(uint64_t mark)
     hunk_low_used = mark;
 }
 
-uint64_t Hunk_HighMark(void)
+uint64_t Heap::Hunk_HighMark(void)
 {
     return hunk_high_used;
 }
 
-void Hunk_FreeToHighMark(uint64_t mark)
+void Heap::Hunk_FreeToHighMark(uint64_t mark)
 {
     if (!mark || mark > hunk_high_used)
         N_Error("Hunk_FreeToHighMark: bad mark %lu", mark);
     
-    N_memset(hunk_base + hunk_size - hunk_high_used, 0, hunk_high_used - mark);
+    memset(hunk_base + hunk_size - hunk_high_used, 0, hunk_high_used - mark);
     hunk_high_used = mark;
 }
 
-void Hunk_Print()
+void Heap::Hunk_Print(void)
 {
     hunk_t	*h, *next, *endlow, *starthigh, *endhigh;
 	int		count, sum;
@@ -224,25 +205,18 @@ void Hunk_Print()
 	//
 		N_strncpy (name, h->name, 14);
 		Con_Printf ("%8p : %8i   %8s", h, h->size, name);
-			
-	//
-	// print the total
-	//
-		if (next == endlow || next == endhigh || !N_strncmp (h->name, next->name, 14) )
-		{
-			Con_Printf ("          :%8i (TOTAL)", sum);
-			count = 0;
-			sum = 0;
-		}
 
 		h = next;
 	}
+	Con_Printf ("          :%8i (TOTAL)", sum);
+	count = 0;
+	sum = 0;
 
 	Con_Printf ("-------------------------");
 	Con_Printf ("%8i total allocations\n\n", totalblocks);
 }
 
-void* Hunk_AllocHigh(uint32_t size, const char *name)
+void* Heap::Hunk_AllocHigh(uint32_t size, const char *name)
 {
     hunk_t *hunk;
 
@@ -263,7 +237,7 @@ void* Hunk_AllocHigh(uint32_t size, const char *name)
     return (void *)(hunk+1);
 }
 
-void* Hunk_AllocLow(uint32_t size, const char *name)
+void* Heap::Hunk_AllocLow(uint32_t size, const char *name)
 {
     hunk_t *hunk;
 
@@ -281,7 +255,7 @@ void* Hunk_AllocLow(uint32_t size, const char *name)
     return (void *)(hunk+1);
 }
 
-void* Hunk_Alloc(uint32_t size, const char *name, int where)
+void* Heap::Hunk_Alloc(uint32_t size, const char *name, int where)
 {
     if (!size)
         N_Error("Hunk_Alloc: bad size");
@@ -307,7 +281,7 @@ void* Hunk_Alloc(uint32_t size, const char *name, int where)
     return NULL;
 }
 
-void* Hunk_TempAlloc(uint32_t size)
+void* Heap::Hunk_TempAlloc(uint32_t size)
 {
     void *buf;
     
@@ -346,25 +320,10 @@ meant for level-to-level allocations. Used by allocation callbacks and is cleare
 
 void* operator new[](size_t size, const char* pName, int flags, unsigned debugFlags, const char* file, int line)
 {
-	Con_Printf(
-		"EASTL::new allocation ->\n"
-		"   size: %li\n"
-		"   name: %s\n"
-		"   file: %s\n"
-		"   line: %i\n",
-	size, pName, file, line);
     return ::operator new[](size);
 }
 void* operator new[](size_t size, size_t alignment, size_t alignmentOffset, const char* pName, int flags, unsigned debugFlags, const char* file, int line)
 {
-	Con_Printf(
-		"EASTL::new aligned allocation ->\n"
-		"   size: %li\n"
-		"   alignment: %li\n"
-		"   name: %s\n"
-		"   file: %s\n"
-		"   line: %i\n",
-	size, alignment, pName, file, line);
     return ::operator new[](size, std::align_val_t(alignment));
 }
 
@@ -373,17 +332,17 @@ static size_t free_memory = 0;
 static size_t inactive_memory = 0;
 static size_t purgable_memory = 0;
 
-void* Z_ZoneBegin(void)
+void* Heap::Z_ZoneBegin(void)
 {
 	return (void *)mainzone;
 }
 
-void* Z_ZoneEnd(void)
+void* Heap::Z_ZoneEnd(void)
 {
-	return (void *)(mainzone+sizeof(memzone_t)+mainzone->size);
+	return (void *)((char *)mainzone+mainzone->size);
 }
 
-void Z_Init()
+void Heap::Z_Init(void)
 {
 	memblock_t* base;
 	
@@ -407,7 +366,7 @@ void Z_Init()
     purgable_memory = 0;
 }
 
-static void Z_MergePB(memblock_t* block)
+void Heap::Z_MergePB(memblock_t* block)
 {
 	memblock_t* other;
 	Con_Printf("Z_MergePB: merging prev block for block at %p", (void *)block);
@@ -428,7 +387,7 @@ static void Z_MergePB(memblock_t* block)
 		Con_Printf("Z_MergeFB: prev block not TAG_FREE");
 }
 
-static void Z_MergeNB(memblock_t* block)
+void Heap::Z_MergeNB(memblock_t* block)
 {
 	memblock_t* other;
 	Con_Printf("Z_MergeNB: merging next block for block at %p", (void *)block);
@@ -447,7 +406,7 @@ static void Z_MergeNB(memblock_t* block)
 		Con_Printf("Z_MergeNB: next block not TAG_FREE");
 }
 
-void Z_ScanForBlock(void *start, void *end)
+void Heap::Z_ScanForBlock(void *start, void *end)
 {
 	memblock_t *block;
 	void **mem;
@@ -478,9 +437,9 @@ void Z_ScanForBlock(void *start, void *end)
     }
 }
 
-void Z_ClearZone(void)
+void Heap::Z_ClearZone(void)
 {
-	Con_Printf("clearing zone");
+	Con_Printf("WARNING: clearing zone");
 	memblock_t*		block;
 
     // set it all to zero, weed out any bugs
@@ -510,7 +469,7 @@ void Z_ClearZone(void)
 }
 
 // counts the number of blocks by the tag
-static int Z_NumBlocks(int tag)
+uint32_t Heap::Z_NumBlocks(int tag)
 {
 	memblock_t* block;
 	int count = 0;
@@ -522,7 +481,7 @@ static int Z_NumBlocks(int tag)
 	return count;
 }
 
-void Z_Free(void *ptr)
+void Heap::Z_Free(void *ptr)
 {
 	memblock_t* other;
 	memblock_t* block;
@@ -558,7 +517,7 @@ void Z_Free(void *ptr)
 	Z_MergeNB(block);
 }
 
-void* Z_AlignedAlloc(uint32_t alignment, uint32_t size, int tag, void *user, const char* name)
+void* Heap::Z_AlignedAlloc(uint32_t alignment, uint32_t size, int tag, void *user, const char* name)
 {
 #ifdef CHECKHEAP
 	Z_CheckHeap();
@@ -672,7 +631,7 @@ void* Z_AlignedAlloc(uint32_t alignment, uint32_t size, int tag, void *user, con
 
 // Z_Malloc: garbage collection and zone block allocater that returns a block of free memory
 // from within the zone without calling malloc
-void* Z_Malloc(uint32_t size, int tag, void *user, const char* name)
+void* Heap::Z_Malloc(uint32_t size, int tag, void *user, const char* name)
 {
 #ifdef CHECKHEAP
 	Z_CheckHeap();
@@ -777,7 +736,7 @@ void* Z_Malloc(uint32_t size, int tag, void *user, const char* name)
 	base->id = ZONEID;
 	
     memset(base->name, 0, 15);
-    strncpy(base->name, name, 14);
+    N_strncpy(base->name, name, 14);
 #ifdef CHECKHEAP
 	Z_CheckHeap();
 #endif
@@ -785,7 +744,7 @@ void* Z_Malloc(uint32_t size, int tag, void *user, const char* name)
     return retn;
 }
 
-void Z_ChangeTag(void *user, int tag)
+void Heap::Z_ChangeTag(void *user, int tag)
 {
 	// sanity
 	if (!user)
@@ -804,7 +763,7 @@ void Z_ChangeTag(void *user, int tag)
 	block->tag = tag;
 }
 
-void Z_ChangeName(void *ptr, const char* name)
+void Heap::Z_ChangeName(void *ptr, const char* name)
 {
 	memblock_t* block;
 	
@@ -815,7 +774,7 @@ void Z_ChangeName(void *ptr, const char* name)
 	N_strncpy(block->name, name, sizeof(block->name) - 1);
 }
 
-void Z_ChangeUser(void *ptr, void *user)
+void Heap::Z_ChangeUser(void *ptr, void *user)
 {
 	memblock_t* block;
 	
@@ -826,10 +785,10 @@ void Z_ChangeUser(void *ptr, void *user)
 	*block->user = ptr;
 }
 
-int Z_FreeMemory(void)
+uint64_t Heap::Z_FreeMemory(void)
 {
 	memblock_t* block;
-	int memory;
+	uint64_t memory;
 	
 	memory = 0;
 	for (block = mainzone->blocklist.next; block != &mainzone->blocklist; block = block->next) {
@@ -839,7 +798,7 @@ int Z_FreeMemory(void)
 	return memory;
 }
 
-void Z_FreeTags(int lowtag, int hightag)
+void Heap::Z_FreeTags(int lowtag, int hightag)
 {
 	memblock_t* block;
 	memblock_t* next;
@@ -855,7 +814,7 @@ void Z_FreeTags(int lowtag, int hightag)
 	}
 }
 
-void Z_Print(bool all)
+void Heap::Z_Print(bool all)
 {
 	memblock_t* block;
 	memblock_t* next;
@@ -920,7 +879,7 @@ void Z_Print(bool all)
 	Con_Printf("%8li total blocks\n\n", totalblocks);
 }
 
-void* Z_Realloc(void* ptr, uint32_t nsize, void* user, int tag, const char* name)
+void* Heap::Z_Realloc(void* ptr, uint32_t nsize, void* user, int tag, const char* name)
 {
 #ifdef CHECKHEAP
 	Z_CheckHeap();
@@ -938,7 +897,7 @@ void* Z_Realloc(void* ptr, uint32_t nsize, void* user, int tag, const char* name
 	return p;
 }
 
-void* Z_Calloc(void *user, uint32_t size, int tag, const char* name)
+void* Heap::Z_Calloc(void *user, uint32_t size, int tag, const char* name)
 {
 #ifdef CHECKHEAP
 	Z_CheckHeap();
@@ -947,7 +906,7 @@ void* Z_Calloc(void *user, uint32_t size, int tag, const char* name)
 }
 
 // cleans all zone caches (only blocks from scope to free to unused)
-void Z_CleanCache(void)
+void Heap::Z_CleanCache(void)
 {
 	memblock_t* block;
 	Con_Printf("performing garbage collection of zone");
@@ -976,7 +935,7 @@ void Z_CleanCache(void)
 	}
 }
 
-void Z_CheckHeap(void)
+void Heap::Z_CheckHeap(void)
 {
 	memblock_t* block;
 	Con_Printf(DEBUG, "Running heap check");
@@ -1002,7 +961,7 @@ void Z_CheckHeap(void)
 #endif
 }
 
-void Mem_Info(void)
+void Heap::Mem_Info(void)
 {
     Hunk_Print();
     Z_Print(true);

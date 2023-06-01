@@ -1,6 +1,7 @@
 #include "n_shared.h"
 #include "n_scf.h"
 #include "m_renderer.h"
+#if 0
 
 framebuffer_t* R_CreateFramebuffer(const char *name)
 {
@@ -59,10 +60,11 @@ framebuffer_t* R_CreateFramebuffer(const char *name)
         0, 1, 2,
         0, 2, 3
     };
-    fbo->cache = R_CreateCache(vertices, sizeof(vertices), indices, sizeof(indices), "fboVAO");
-    fbo->shader = R_CreateShader("gamedata/framebuffer.glsl", "fboShader");
+//    fbo->cache = R_CreateCache(vertices, sizeof(vertices), indices, sizeof(indices), "fboVAO");
+//    fbo->shader = R_CreateShader("gamedata/framebuffer.glsl", "fboShader");
 
-    renderer->fbos[renderer->numFBOs] = fbo;
+    uint64_t hash = Com_GenerateHashValue(name, MAX_FBO_HASH);
+    renderer->fbos[hash] = fbo;
     renderer->numFBOs++;
 
     return fbo;
@@ -90,7 +92,7 @@ static void R_SetDefaultFramebuffer(void)
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     
-    R_BindShader(fbo->shader);
+    glUseProgram(fbo->shader->id);
     glBindTexture(GL_TEXTURE_2D, 0);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, fbo->defTex);
@@ -102,8 +104,8 @@ static void R_SetDefaultFramebuffer(void)
 
     R_DrawIndexed(fbo->cache, 6);
 
-    R_UnbindTexture();
-    R_UnbindShader();
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glUseProgram(0);
 }
 
 void R_SetFramebuffer(framebuffer_t* fbo)
@@ -117,3 +119,4 @@ void R_SetFramebuffer(framebuffer_t* fbo)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 }
+#endif

@@ -12,18 +12,14 @@ void R_PushVertexAttrib(vertexCache_t* cache, uint32_t index, uint32_t glType, u
     if (size > 4) {
         N_Error("R_PushVertexAttrib: bad size: %i", size);
     }
-
-    glBindVertexArray(0);
-    glBindVertexArray(cache->vaoId);
-
-    glBindBufferARB(GL_ARRAY_BUFFER_ARB, cache->vboId);
+    R_BindVertexArray(cache);
+    R_BindVertexBuffer(cache);
 
     glEnableVertexAttribArray(index);
     glVertexAttribPointer(index, size, glType, GL_FALSE, stride, offset);
 
-    glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-
-    glBindVertexArray(0);
+    R_UnbindVertexBuffer();
+    R_UnbindVertexArray();
 }
 
 void R_SetIndexData(vertexCache_t* cache, const uint32_t* indices, uint32_t size)
@@ -85,7 +81,13 @@ vertexCache_t* R_CreateCache(const void* vertices, uint32_t verticesSize, const 
 
     cache->dynamicVBO = qfalse;
     cache->dynamicIBO = qfalse;
-    
+
+    cache->vertexData = Hunk_Alloc(verticesSize, name, h_low);
+    memcpy(cache->vertexData, vertices, verticesSize);
+
+    cache->indexData = (uint32_t *)Hunk_Alloc(indicesSize, name, h_low);
+    memcpy(cache->indexData, indices, indicesSize);
+
     // initialize the opengl objects
     glGenVertexArrays(1, &cache->vaoId);
     glGenBuffersARB(1, &cache->vboId);

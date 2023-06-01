@@ -31,37 +31,37 @@ struct Vertex
     glm::vec2 texcoords;
     float texindex;
 
-    inline Vertex(const glm::vec3& _pos, const glm::vec4& _color, const glm::vec2& _texcoords)
-        : pos(_pos), color(_color), texcoords(_texcoords)
+    GDR_INLINE Vertex(const glm::vec3& _pos, const glm::vec4& _color, const glm::vec2& _texcoords)
+        : color(_color), pos(_pos), texcoords(_texcoords)
     {
     }
-    inline Vertex(const glm::vec3& _pos, const glm::vec4& _color, const glm::vec2& _texcoords, float _texindex)
-        : pos(_pos), color(_color), texcoords(_texcoords), texindex(_texindex)
+    GDR_INLINE Vertex(const glm::vec3& _pos, const glm::vec4& _color, const glm::vec2& _texcoords, float _texindex)
+        : color(_color), pos(_pos), texcoords(_texcoords), texindex(_texindex)
     {
     }
-    inline Vertex(const glm::vec3& _pos, const glm::vec4& _color)
-        : pos(_pos), color(_color)
+    GDR_INLINE Vertex(const glm::vec3& _pos, const glm::vec4& _color)
+        : color(_color), pos(_pos)
     {
     }
-    inline Vertex(const glm::vec3& _pos, const glm::vec2& _texcoords)
+    GDR_INLINE Vertex(const glm::vec3& _pos, const glm::vec2& _texcoords)
         : pos(_pos), texcoords(_texcoords)
     {
     }
-    inline Vertex(const glm::vec3& _pos, const glm::vec2& _texcoords, float _texindex)
+    GDR_INLINE Vertex(const glm::vec3& _pos, const glm::vec2& _texcoords, float _texindex)
         : pos(_pos), texcoords(_texcoords), texindex(_texindex)
     {
     }
-    inline Vertex(const glm::vec3& _pos)
-        : pos(_pos), color(0.0f)
+    GDR_INLINE Vertex(const glm::vec3& _pos)
+        : color(0.0f), pos(_pos)
     {
     }
-    inline Vertex() = default;
-    inline Vertex(const Vertex &) = default;
-    inline Vertex(Vertex &&) = default;
-    inline ~Vertex() = default;
+    GDR_INLINE Vertex() = default;
+    GDR_INLINE Vertex(const Vertex &) = default;
+    GDR_INLINE Vertex(Vertex &&) = default;
+    GDR_INLINE ~Vertex() = default;
 
-    inline Vertex& operator=(const Vertex &v) {
-        memmove(this, &v, sizeof(Vertex));
+    GDR_INLINE Vertex& operator=(const Vertex &v) {
+        memcpy(this, &v, sizeof(Vertex));
         return *this;
     }
 };
@@ -114,20 +114,20 @@ public:
     Camera(Camera &&) = default;
     ~Camera() = default;
 
-    inline glm::mat4& GetProjection() const { return m_ProjectionMatrix; }
-    inline glm::mat4& GetViewMatrix() const { return m_ViewMatrix; }
-    inline glm::mat4& GetVPM() const { return m_ViewProjectionMatrix; }
-    inline glm::vec3& GetPos() const { return m_CameraPos; }
-    inline float& GetRotation() const { return m_Rotation; }
-    inline float GetRotationSpeed() const { return m_CameraRotationSpeed; }
-    inline float GetSpeed() const { return m_CameraSpeed; }
-    inline glm::mat4& CalcMVP(const glm::vec3& translation) const
+    GDR_INLINE glm::mat4& GetProjection() const { return m_ProjectionMatrix; }
+    GDR_INLINE glm::mat4& GetViewMatrix() const { return m_ViewMatrix; }
+    GDR_INLINE glm::mat4& GetVPM() const { return m_ViewProjectionMatrix; }
+    GDR_INLINE glm::vec3& GetPos() const { return m_CameraPos; }
+    GDR_INLINE float& GetRotation() const { return m_Rotation; }
+    GDR_INLINE float GetRotationSpeed() const { return m_CameraRotationSpeed; }
+    GDR_INLINE float GetSpeed() const { return m_CameraSpeed; }
+    GDR_INLINE glm::mat4& CalcMVP(const glm::vec3& translation) const
     {
         glm::mat4 model = glm::translate(m_ViewProjectionMatrix, translation);
         static glm::mat4 mvp = m_ProjectionMatrix * m_ViewProjectionMatrix * model;
         return mvp;
     }
-    inline glm::mat4 CalcVPM() const { return m_ProjectionMatrix * m_ViewMatrix; }
+    GDR_INLINE glm::mat4 CalcVPM() const { return m_ProjectionMatrix * m_ViewMatrix; }
 
     void ZoomIn(void);
     void ZoomOut(void);
@@ -161,10 +161,10 @@ typedef union gpuContext_u
     VKContext* instance;
 } gpuContext_t;
 
-#define MAX_VERTEX_CACHES 64
-#define MAX_SHADERS 64
-#define MAX_TEXTURES 64
-#define MAX_FBOS 16
+#define MAX_FBOS 64
+#define MAX_VERTEXCACHES 1024
+#define MAX_SHADERS 1024
+#define MAX_TEXTURES 1024
 
 /*
 the renderer class manages all the opengl objects, initializes them, and then deletes them upon destruction
@@ -179,10 +179,10 @@ public:
     shader_t* shaders[MAX_SHADERS];
     texture_t* textures[MAX_TEXTURES];
     framebuffer_t* fbos[MAX_FBOS];
-    vertexCache_t* vertexCaches[MAX_VERTEX_CACHES];
+    vertexCache_t* vertexCaches[MAX_VERTEXCACHES];
 
     uint32_t numVertexCaches, numTextures, numFBOs, numShaders;
-    GLuint shaderid, vaoid, vboid, iboid, textureid, fboid;
+    uint32_t shaderid, vaoid, vboid, iboid, textureid, fboid;
 public:
     Renderer() = default;
     Renderer(const Renderer &) = delete;

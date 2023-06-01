@@ -1,6 +1,9 @@
 #include "n_shared.h"
 #include "m_renderer.h"
 
+#define MAX_FILE_HASH 1024
+static shader_t* shaders[MAX_FILE_HASH];
+
 inline static GLenum ShaderTypeFromString(const eastl::string& type)
 {
     if (type == "vertex")
@@ -92,6 +95,7 @@ shader_t* R_CreateShader(const char* filepath, const char* name)
 
     eastl::unordered_map<GLenum, eastl::string> GLSL_Src = R_ParseShader(eastl::string(filebuf));
 
+    uint64_t hash = Com_GenerateHashValue(filepath, MAX_FILE_HASH);
     shader->uniformCache = nomad_hashtable<const char*, GLint>();
 
     shader->id = glCreateProgram();
@@ -126,6 +130,11 @@ shader_t* R_CreateShader(const char* filepath, const char* name)
     glDeleteShader(fragid);
 
     glUseProgram(0);
+
+    shader->hash = hash;
+    shaders[hash] = shader;
+    renderer->shaders[renderer->numShaders] = shader;
+    renderer->numShaders++;
 
     return shader;
 }

@@ -7,6 +7,7 @@ typedef struct
 {
     nomad_hashtable<const char*, GLint> uniformCache;
     GLuint id;
+    uint64_t hash;
 } shader_t;
 
 void R_ShaderClear(shader_t* shader);

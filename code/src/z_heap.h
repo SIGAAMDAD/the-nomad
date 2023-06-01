@@ -3,6 +3,8 @@
 
 #pragma once
 
+#ifndef Q3_VM
+
 void Memory_Init();
 void Memory_Shutdown();
 
@@ -10,16 +12,6 @@ enum {
     h_low,
     h_high
 };
-
-void Hunk_Print();
-void* Hunk_Alloc(uint32_t size, const char *name, int where);
-void Hunk_Check(void);
-void Hunk_FreeToLowMark(uint64_t mark);
-void Hunk_FreeToHighMark(uint64_t mark);
-void* Hunk_TempAlloc(uint32_t size);
-void Hunk_Clear(void);
-uint64_t Hunk_LowMark(void);
-uint64_t Hunk_HighMark(void);
 
 enum
 {
@@ -37,25 +29,292 @@ enum
 #define TAG_SCOPE TAG_CACHE
 #define TAG_LOAD TAG_CACHE
 
-void* Z_AlignedAlloc(uint32_t alignment, uint32_t size, int tag, void *user, const char* name);
-void* Z_Malloc(uint32_t size, int tag, void *user, const char* name);
-void* Z_Calloc(void *user, uint32_t size, int tag, const char* name);
-void* Z_Realloc(void *ptr, uint32_t nsize, void *user, int tag, const char* name);
+typedef struct
+{
+    unsigned id;
+    char name[14];
+    uint32_t size;
+} hunk_t;
+typedef struct memblock_s
+{
+    uint32_t size;
+    void **user;
+    int tag;
+    int id;
+    char name[14];
+    struct memblock_s* next;
+    struct memblock_s* prev;
+} memblock_t;
 
-void Z_Free(void *ptr);
-void Z_FreeTags(int lowtag, int hightag);
-void Z_ChangeTag(void* user, int tag);
-void Z_ChangeUser(void* olduser, void* newuser);
-void Z_ChangeName(void* user, const char* name);
-void Z_ClearCache();
-void Z_CheckHeap();
-void Z_ClearZone();
-void Z_Print(bool all);
-void Z_Init();
-int Z_FreeMemory(void);
+typedef struct memzone_s
+{
+	uint64_t size;
+    
+	// start/end cap for linked list
+	memblock_t blocklist;
 
-void *Z_ZoneBegin(void);
-void *Z_ZoneEnd(void);
+	// the roving block for general operations
+	memblock_t* rover;
+} memzone_t;
+
+class Heap
+{
+private:
+	static void* Hunk_AllocHigh(uint32_t size, const char *name);
+	static void* Hunk_AllocLow(uint32_t size, const char *name);
+	static void Z_MergeNB(memblock_t *block);
+	static void Z_MergePB(memblock_t *block);
+	static void Z_ScanForBlock(void *start, void *end);
+
+	static Heap heap;
+public:
+	Heap();
+	~Heap();
+
+	friend void Memory_Init();
+	friend void Memory_Shutdown();
+
+	static void* Hunk_Alloc(uint32_t size, const char *name, int where);
+	static void Hunk_Check(void);
+	static void Hunk_Print(void);
+	static void Hunk_FreeToLowMark(uint64_t mark);
+	static void Hunk_FreeToHighMark(uint64_t mark);
+	static void Hunk_Clear(void);
+	static void* Hunk_TempAlloc(uint32_t size);
+	static uint64_t Hunk_LowMark(void);
+	static uint64_t Hunk_HighMark(void);
+
+	static void* Z_AlignedAlloc(uint32_t alignment, uint32_t size, int tag, void *user, const char* name);
+	static void* Z_Malloc(uint32_t size, int tag, void *user, const char* name);
+	static void* Z_Calloc(void *user, uint32_t size, int tag, const char* name);
+	static void* Z_Realloc(void *ptr, uint32_t nsize, void *user, int tag, const char* name);
+
+	static void Z_Free(void *ptr);
+	static void Z_FreeTags(int lowtag, int hightag);
+	static void Z_ChangeTag(void* user, int tag);
+	static void Z_ChangeUser(void* olduser, void* newuser);
+	static void Z_ChangeName(void* user, const char* name);
+	static void Z_CleanCache(void);
+	static void Z_CheckHeap(void);
+	static void Z_ClearZone(void);
+	static void Z_Print(bool all);
+	static void Z_Init(void);
+	static uint64_t Z_FreeMemory(void);
+	static void* Z_ZoneBegin(void);
+	static void* Z_ZoneEnd(void);
+	static uint32_t Z_NumBlocks(int tag);
+
+	static void Mem_Info(void);
+
+	GDR_INLINE static Heap& Get(void) { return heap; }
+};
+
+#define Hunk_HighAlloc Heap::Hunk_HighAlloc
+#define Hunk_LowAlloc Heap::Hunk_LowAlloc
+#define Hunk_Alloc Heap::Hunk_Alloc
+#define Hunk_Check Heap::Hunk_Check
+#define Hunk_Print Heap::Hunk_Print
+#define Hunk_FreeToLowMark Heap::Hunk_FreeToLowMark
+#define Hunk_FreeToHighMark Heap::Hunk_FreeToHighMark
+#define Hunk_Clear Heap::Hunk_Clear
+#define Hunk_TempAlloc Heap::Hunk_TempAlloc
+#define Hunk_LowMark Heap::Hunk_LowMark
+#define Hunk_highmark Heap::Hunk_HighMark
+
+#define Z_ScanForBlock Heap::Z_ScanForBlock
+#define Z_MergePB Heap::Z_MergePB
+#define Z_MergeNB Heap::Z_MergeNB
+#define Z_AlignedAlloc Heap::Z_AlignedAlloc
+#define Z_Malloc Heap::Z_Malloc
+#define Z_Calloc Heap::Z_Calloc
+#define Z_Realloc Heap::Z_Realloc
+#define Z_Free Heap::Z_Free
+#define Z_FreeTags Heap::Z_FreeTags
+#define Z_ChangeTag Heap::Z_ChangeTag
+#define Z_ChangeUser Heap::Z_ChangeUser
+#define Z_ChangeName Heap::Z_ChangeName
+#define Z_ClearCache Heap::Z_ClearCache
+#define Z_CheckHeap Heap::Z_CheckHeap
+#define Z_ClearZone Heap::Z_ClearZone
+#define Z_Print Heap::Z_Print
+#define Z_FreeMemory Heap::Z_FreeMemory
+#define Z_ZoneBegin Heap::Z_ZoneBegin
+#define Z_ZoneEnd Heap::Z_ZoneEnd
+#define Z_NumBlocks Heap::Z_NumBlocks
+#define Mem_Info Heap::Mem_Info
+
+template<class T>
+struct nomad_allocator
+{
+	nomad_allocator() noexcept { }
+	nomad_allocator(const char* name = "zallocator") noexcept { }
+
+	typedef T value_type;
+	template<class U>
+	constexpr nomad_allocator(const nomad_allocator<U>&) noexcept { }
+
+	constexpr GDR_INLINE bool operator!=(const eastl::allocator) { return true; }
+	constexpr GDR_INLINE bool operator!=(const nomad_allocator) { return false; }
+	constexpr GDR_INLINE bool operator==(const eastl::allocator) { return false; }
+	constexpr GDR_INLINE bool operator==(const nomad_allocator) { return true; }
+
+	GDR_INLINE void* allocate(size_t n) const {
+		return Z_Malloc(n, TAG_STATIC, NULL, "zallocator");
+	}
+	GDR_INLINE void* allocate(size_t& n, size_t& alignment, size_t& offset) const {
+		return Z_Malloc(n, TAG_STATIC, NULL, "zallocator");
+	}
+	GDR_INLINE void* allocate(size_t n, size_t alignment, size_t alignmentOffset, int flags) const {
+		return Z_Malloc(n, TAG_STATIC, NULL, "zallocator");
+	}
+	GDR_INLINE void deallocate(void *p, size_t) const noexcept {
+		Z_ChangeTag(p, TAG_PURGELEVEL);
+	}
+};
+
+typedef struct
+{
+	int num;
+	int minSize;
+	int maxSize;
+	int totalSize;
+} memoryStats_t;
+
+void Mem_Init( void );
+void Mem_Shutdown( void );
+void Mem_EnableLeakTest( const char *name );
+void Mem_ClearFrameStats( void );
+void Mem_GetFrameStats( memoryStats_t& allocs, memoryStats_t& frees );
+void Mem_GetStats( memoryStats_t& stats );
+void Mem_AllocDefragBlock( void );
+
+#ifndef DEBUG_MEMORY
+
+void* Mem_Alloc(const uint32_t size);
+void* Mem_ClearedAlloc(const uint32_t size);
+void Mem_Free(void *ptr);
+char* Mem_CopyString(const char *in);
+void* Mem_Alloc16(const uint32_t size);
+void Mem_Free16(void *ptr);
+
+#else
+
+void* Mem_Alloc( const uint32_t size, const char *fileName, const int lineNumber );
+void* Mem_ClearedAlloc( const uint32_t size, const char *fileName, const int lineNumber );
+void Mem_Free( void *ptr, const char *fileName, const int lineNumber );
+char* Mem_CopyString( const char *in, const char *fileName, const int lineNumber );
+void* Mem_Alloc16( const uint32_t size, const char *fileName, const int lineNumber );
+void Mem_Free16( void *ptr, const char *fileName, const int lineNumber );
+
+#define Mem_Alloc(size) Mem_Alloc(size, __FILE__, __LINE__)
+#define Mem_ClearedAlloc(size) Mem_ClearedAlloc(size, __FILE__, __LINE__)
+#define Mem_Free(ptr) Mem_Free(ptr, __FILE__, __LINE__)
+#define Mem_CopyString(s) Mem_CopyString(s, __FILE__, __LINE__)
+#define Mem_Alloc16(size) Mem_Alloc16(size, __FILE__, __LINE__)
+#define Mem_Free16(ptr) Mem_Free16(ptr, __FILE__, __LINE__)
+
+#endif
+
+template<class T>
+struct id_allocator
+{
+	id_allocator() noexcept { }
+	id_allocator(const char* name = "zallocator") noexcept { }
+
+	typedef T value_type;
+	template<class U>
+	constexpr id_allocator(const id_allocator<U>&) noexcept { }
+
+	constexpr GDR_INLINE bool operator!=(const eastl::allocator) { return true; }
+	constexpr GDR_INLINE bool operator!=(const id_allocator) { return false; }
+	constexpr GDR_INLINE bool operator==(const eastl::allocator) { return false; }
+	constexpr GDR_INLINE bool operator==(const id_allocator) { return true; }
+
+	GDR_INLINE void* allocate(size_t n) const {
+		return Mem_Alloc(n);
+	}
+	GDR_INLINE void* allocate(size_t& n, size_t& alignment, size_t& offset) const {
+		n = (n + (alignment - 1)) & ~(alignment - 1);
+		return Mem_Alloc(n);
+	}
+	GDR_INLINE void* allocate(size_t n, size_t alignment, size_t alignmentOffset, int flags) const {
+		n = (n + (alignment - 1)) & ~(alignment - 1);
+		return Mem_Alloc(n);
+	}
+	GDR_INLINE void deallocate(void *p, size_t) const noexcept {
+		Mem_Free(p);
+	}
+};
+
+
+template<class type, uint32_t blockSize>
+class BlockAlloc
+{
+public:
+	BlockAlloc()
+		: blocks(NULL), free(NULL), total(0), active(0) { }
+	~BlockAlloc()
+	{ Shutdown(); }
+
+	void Shutdown(void)
+	{
+		while(blocks) {
+			block_t *block = blocks;
+			blocks = blocks->next;
+			delete block;
+		}
+		blocks = NULL;
+		free = NULL;
+		total = active = 0;
+	}
+	
+	type* Alloc(void)
+	{
+		if (!free) {
+			block_t *block = (block_t *)Mem_Alloc(sizeof(block_t));
+			block->next = blocks;
+			blocks = block;
+			for (uint32_t i = 0; i < blockSize; i++) {
+				block->elements[i].next = free;
+				free = &block->elements[i];
+			}
+			total += blockSize;
+		}
+		active++;
+		element_t *element = free;
+		free = free->next;
+		element->next = NULL;
+		return &element->t;
+	}
+	void Free(type *t)
+	{
+		element_t *element = (element_t *)t;
+		element->next = free;
+		free = element;
+		active--;
+	}
+
+	GDR_INLINE uint32_t GetTotalCount(void) const { return total; }
+	GDR_INLINE uint32_t GetAllocCount(void) const { return active; }
+	GDR_INLINE uint32_t GetFreeCount(void) const { return total - active; }
+private:
+	typedef struct element_s
+	{
+		type t;
+		struct element_s* next;
+	} element_t;
+
+	typedef struct block_s
+	{
+		element_t elements[blockSize];
+		struct block_s* next;
+	} block_t;
+
+	block_t* blocks;
+	element_t* free;
+	uint32_t total;
+	uint32_t active;
+};
 
 #if 0
 template<typename T>
@@ -321,6 +580,8 @@ public:
 		return front_node()->val;
 	}
 };
+#endif
+
 #endif
 
 #endif

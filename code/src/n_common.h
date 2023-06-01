@@ -10,6 +10,7 @@ Common functionality for the engine and vm alike
 */
 void Com_Init(void);
 void GDR_DECL Com_Printf(const char *fmt, ...);
+uint64_t Com_GenerateHashValue(const char *fname, const uint32_t size);
 
 char* va(const char *fmt, ...);
 

@@ -133,11 +133,11 @@ void mainLoop()
     SDL_Event event;
     memset(&event, 0, sizeof(event));
 
-    vertexCache_t *screenCache = R_CreateCache(screenvertices, sizeof(screenvertices), indices, sizeof(indices), "scache");
+    vertexCache_t* screenCache = R_CreateCache(screenvertices, sizeof(screenvertices), indices, sizeof(indices), "scache");
     R_PushVertexAttrib(screenCache, 0, GL_FLOAT, 3, sizeof(Vertex), (const void *)offsetof(Vertex, pos));
     R_PushVertexAttrib(screenCache, 1, GL_FLOAT, 2, sizeof(Vertex), (const void *)offsetof(Vertex, texcoords));
 
-    vertexCache_t *cache = R_CreateCache(vertices, sizeof(vertices), indices, sizeof(indices), "vcache");
+    vertexCache_t* cache = R_CreateCache(vertices, sizeof(vertices), indices, sizeof(indices), "vcache");
     R_PushVertexAttrib(cache, 0, GL_FLOAT, 3, sizeof(Vertex), (const void *)offsetof(Vertex, pos));
     R_PushVertexAttrib(cache, 1, GL_FLOAT, 4, sizeof(Vertex), (const void *)offsetof(Vertex, color));
     R_PushVertexAttrib(cache, 2, GL_FLOAT, 2, sizeof(Vertex), (const void *)offsetof(Vertex, texcoords));
@@ -227,24 +227,36 @@ void mainLoop()
         R_SetInt(screenShader, "u_ScreenTexture", 0);
         R_BindTexture(screenTexture, 0);
 
-        R_DrawIndexed(screenCache, 6);
+        R_BindVertexArray(screenCache);
+        R_BindVertexBuffer(screenCache);
+        R_BindIndexBuffer(screenCache);
+        
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
 
+        R_UnbindVertexArray();
+        R_UnbindVertexBuffer();
+        R_UnbindIndexBuffer();
         R_UnbindTexture();
         R_UnbindShader();
 
+
+        R_BindCache(cache);
         R_BindShader(shader);
-        R_BindTexture(texture, 0);
+        R_BindTexture(texture);
         R_SetMat4(shader, "u_ViewProjection", renderer->camera->GetVPM());
 
         {
             glm::mat4 model = glm::translate(glm::mat4(1.0f), translations[0]);
             glm::mat4 mvp = renderer->camera->GetProjection() * renderer->camera->GetViewMatrix() * model;
             R_SetMat4(shader, "u_MVP", mvp);
-            R_DrawIndexed(cache, 6);
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL);
         }
 
         R_UnbindTexture();
         R_UnbindShader();
+        R_UnbindVertexArray();
+        R_UnbindVertexBuffer();
+        R_UnbindIndexBuffer();
 
         SDL_GL_SwapWindow(renderer->window);
         

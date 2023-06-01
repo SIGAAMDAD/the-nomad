@@ -12,7 +12,12 @@ void Con_Printf(loglevel_t level, const char *fmt, ...)
     va_list argptr;
     int length;
     char msg[MAX_MSG_SIZE];
-    memset(msg, 0, sizeof(msg));
+    
+    if (level == DEBUG) {
+#ifndef _NOMAD_DEBUG
+        return;
+#endif
+    }
 
     va_start(argptr, fmt);
     length = vsnprintf(msg, sizeof(msg), fmt, argptr);
