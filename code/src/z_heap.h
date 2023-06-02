@@ -68,7 +68,7 @@ private:
 
 	static Heap heap;
 public:
-	Heap();
+	Heap() = default;
 	~Heap();
 
 	friend void Memory_Init();

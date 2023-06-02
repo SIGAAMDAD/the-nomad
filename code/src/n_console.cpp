@@ -4,50 +4,35 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 void Con_Printf(loglevel_t level, const char *fmt, ...)
 {
-    // code error if this is thrown
-    if (strlen(fmt) >= MAX_MSG_SIZE) {
-        N_Error("Con_Printf: strlen(fmt) >= MAX_MSG_SIZE (%i)", MAX_MSG_SIZE);
+    if (level == DEV) {
+        fprintf(stdout, "DEV: ");
     }
-
-    va_list argptr;
-    int length;
-    char msg[MAX_MSG_SIZE];
-    
-    if (level == DEBUG) {
-#ifndef _NOMAD_DEBUG
+    else if (level == DEBUG) {
+#ifdef _NOMAD_DEBUG
+        fprintf(stdout, "DEBUG: ");
+#else
         return;
 #endif
     }
 
+    va_list argptr;
+    
     va_start(argptr, fmt);
-    length = vsnprintf(msg, sizeof(msg), fmt, argptr);
+    vfprintf(stdout, fmt, argptr);
     va_end(argptr);
-
-    if (length >= MAX_MSG_SIZE) {
-        N_Error("Con_Printf: buffer overrun");
-    }
-
-    msg[length] = '\n';
-
-    // dont buffer
-    Sys_Print(msg);
+    fprintf(stdout, "\n");
 }
 
 void Con_Printf(const char *fmt, ...)
 {
-    if (strlen(fmt) >= MAX_MSG_SIZE) {
-        N_Error("Con_Printf: strlen(fmt) >= MAX_MSG_SIZE (%i)", MAX_MSG_SIZE);
-    }
-
     va_list argptr;
-    int length;
-    char msg[MAX_MSG_SIZE];
 
     va_start(argptr, fmt);
-    length = vsnprintf(msg, sizeof(msg), fmt, argptr);
+    vfprintf(stdout, fmt, argptr);
     va_end(argptr);
 
-    Con_Printf(NONE, "%s", msg);
+    fprintf(stdout, "\n");
+    fflush(stdout);
 }
 
 void Con_Error(const char *fmt, ...)

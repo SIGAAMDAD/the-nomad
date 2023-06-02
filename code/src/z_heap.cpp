@@ -26,11 +26,6 @@ static memzone_t* mainzone;
 #define MEM_ALIGN  16
 #define RETRY_AMOUNT (256*1024)
 
-Heap::Heap()
-{
-	Memory_Init();
-}
-
 Heap::~Heap()
 {
 	Memory_Shutdown();
@@ -38,6 +33,7 @@ Heap::~Heap()
 
 void Memory_Shutdown(void)
 {
+	Con_Printf("Memory_Shutdown: deallocating allocation daemons");
     free(hunk_base);
     Mem_Shutdown();
 }
@@ -87,8 +83,6 @@ void Memory_Init(void)
 
     // initialize the zone heap variables
     Heap::Get().Z_Init();
-
-    atexit(Mem_Shutdown);
 }
 
 /*
@@ -938,7 +932,7 @@ void Heap::Z_CleanCache(void)
 void Heap::Z_CheckHeap(void)
 {
 	memblock_t* block;
-	Con_Printf(DEBUG, "Running heap check");
+	Con_Printf("Running heap check");
 	for (block = mainzone->blocklist.next;; block = block->next) {
 		if (block->next == &mainzone->blocklist) {
 			// all blocks have been hit
@@ -957,7 +951,7 @@ void Heap::Z_CheckHeap(void)
 		}
     }
 #if 0
-	Con_Printf(DEBUG, "Done with heap check");
+	Con_Printf("Done with heap check");
 #endif
 }
 

@@ -68,6 +68,7 @@ SRCOBJ= \
 	$(O)/n_scf.o \
 	$(O)/n_shared.o \
 	$(O)/n_common.o \
+	$(O)/n_files.o \
 	\
 	$(O)/r_framebuffer.o \
 	$(O)/r_opengl.o \

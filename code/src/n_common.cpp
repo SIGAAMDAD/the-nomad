@@ -159,13 +159,15 @@ void GDR_DECL Sys_Print(const char* str)
     if (!str) {
         N_Error("Sys_Print: null string");
     }
-    int length = strlen(str);
+    fwrite(str, strlen(str), 1, stdout);
+    fflush(stdout);
+//    int length = strlen(str);
 
     // no buffering, that's already done by the calling functions
 #ifdef _WIN32
-    _write(STDOUT_FILENO, (const void *)str, length); // shitty win32 api
+//    _write(STDOUT_FILENO, (const void *)str, length); // shitty win32 api
 #else
-    write(STDOUT_FILENO, (const void *)str, length);
+//    write(STDOUT_FILENO, (const void *)str, length);
 #endif
 }
 

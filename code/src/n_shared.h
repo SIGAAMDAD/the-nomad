@@ -47,8 +47,16 @@
 #define PADP(base, alignment)	((void *) PAD((intptr_t) (base), (alignment)))
 #endif
 
-#pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wclass-memaccess"
+#pragma GCC diagnostic error "-Wtype-limits"
+#pragma GCC diagnostic error "-Woverflow"
+
+#define MAX_GDR_PATH 64
+#ifdef PATH_MAX
+#define MAX_OSPATH PATH_MAX
+#else
+#define MAX_OSPATH 256
+#endif
 
 #ifdef __GNUC__
 #define GDR_NORETURN __attribute__((noreturn))

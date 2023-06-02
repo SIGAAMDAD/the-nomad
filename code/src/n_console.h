@@ -32,8 +32,8 @@ typedef enum {
 #define MAX_MSG_SIZE 2*1024
 #define MAX_BUFFER_SIZE 8*1024
 
-void Con_Printf(const char *fmt, ...);
 void Con_Printf(loglevel_t level, const char *fmt, ...);
+void Con_Printf(const char *fmt, ...);
 void Con_Error(const char *fmt, ...);
 #endif
 

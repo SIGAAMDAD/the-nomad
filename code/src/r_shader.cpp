@@ -131,6 +131,8 @@ shader_t* R_CreateShader(const char* filepath, const char* name)
 
     glUseProgram(0);
 
+    Z_ChangeTag(filebuf, TAG_PURGELEVEL);
+
     shader->hash = hash;
     shaders[hash] = shader;
     renderer->shaders[renderer->numShaders] = shader;
