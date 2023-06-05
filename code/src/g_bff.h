@@ -21,7 +21,6 @@ inline void SwapBytes(void *pv, size_t n)
 #define SWAP(x)
 #endif
 
-#if !defined(_N_SHARED_) || !defined(_NOMAD_VERSION)
 #define NUMSECTORS 4
 #define SECTOR_MAX_Y 120
 #define SECTOR_MAX_X 120
@@ -52,10 +51,6 @@ typedef uint32_t bff_int_t;
 typedef uint16_t bff_short_t;
 typedef float bff_float_t;
 
-
-bff_short_t LittleShort(bff_short_t x);
-bff_float_t LittleFloat(bff_float_t x);
-bff_int_t LittleInt(bff_int_t x);
 #ifndef _NOMAD_VERSION
 void __attribute__((noreturn)) BFF_Error(const char* fmt, ...);
 #else
@@ -89,6 +84,14 @@ enum : uint16_t
 	SFT_OGG,
 	SFT_WAV,
 	SFT_OPUS
+};
+
+enum : bff_short_t
+{
+	TEX_JPG,
+	TEX_BMP,
+	TEX_TGA,
+	TEX_PNG,
 };
 
 typedef struct
@@ -140,6 +143,7 @@ typedef struct
 	char name[MAX_BFF_CHUNKNAME];
 
 	bff_int_t fileSize;
+	bff_short_t fileType;
 	unsigned char *fileBuffer;
 } bfftexture_t;
 
@@ -191,11 +195,11 @@ typedef struct
 	bff_int_t numChunks;
 	bff_chunk_t* chunkList;
 } bff_t;
-#endif
 
 void B_GetChunk(const char *chunkname);
-bff_t* B_AddModule(const char *bffpath);
+void BFF_CloseArchive(bff_t* archive);
+bff_t* BFF_OpenArchive(const GDRStr& filepath);
 
-void G_LoadBFF(const std::string& bffname);
+void G_LoadBFF(const GDRStr& bffname);
 
 #endif

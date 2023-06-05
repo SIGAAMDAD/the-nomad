@@ -67,6 +67,8 @@ static cvar_t *cvars[] = {
     &c_infinite_ammo,
     &c_bottomless_clip,
     &c_devmode,
+    &fs_gamedir,
+    &fs_numArchives,
 };
 
 #define PRINTARG(x) fmt::arg(#x, x)

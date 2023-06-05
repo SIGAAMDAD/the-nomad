@@ -3,7 +3,6 @@
 #define N_Error BFF_Error
 #include "zone.h"
 
-
 static void GetInfo(const json& data, bffinfo_t* info, const char *path)
 {
 	if (!data.contains("info")) {
@@ -59,11 +58,11 @@ void CopyBuffer(char *bufferPtr, const void *data, bff_int_t size)
 
 void WriteBFF(const char* outfile, const char* jsonfile)
 {
-	Z_Init();
+//	Z_Init();
 	bff_t* archive;
 	FILE* fp;
 	
-	bffinfo_t* info = (bffinfo_t *)Z_Malloc(sizeof(bffinfo_t), TAG_STATIC, &info, "info");
+	bffinfo_t* info = (bffinfo_t *)SafeMalloc(sizeof(bffinfo_t), "info");
 	
 	FILE* jsonfp = SafeOpen(jsonfile, "r");
 	json data = json::parse(jsonfp);
@@ -73,12 +72,13 @@ void WriteBFF(const char* outfile, const char* jsonfile)
 	GetLevels(data, info);
 	GetScripts(data, info);
 	GetSounds(data, info);
+	GetTextures(data, info);
 	
-	archive = (bff_t *)Z_Malloc(sizeof(bff_t), TAG_STATIC, &archive, "archive");
+	archive = (bff_t *)SafeMalloc(sizeof(bff_t), "archive");
 	
 	bff_int_t totalChunks = info->numLevels + info->numSounds + info->numScripts;
 	archive->numChunks = totalChunks;
-	archive->chunkList = (bff_chunk_t *)Z_Malloc(sizeof(bff_chunk_t) * archive->numChunks, TAG_STATIC, &archive->chunkList, "chunkList");
+	archive->chunkList = (bff_chunk_t *)SafeMalloc(sizeof(bff_chunk_t) * archive->numChunks, "chunkList");
 	bff_chunk_t* chunk = archive->chunkList;
 
 	for (bff_int_t i = 0; i < info->numLevels; i++) {
@@ -86,7 +86,7 @@ void WriteBFF(const char* outfile, const char* jsonfile)
 		strncpy(chunk->chunkName, info->levels[i].name, MAX_BFF_CHUNKNAME);
 		chunk->chunkSize = sizeof(bfflevel_t);
 		chunk->chunkType = LEVEL_CHUNK;
-		chunk->chunkBuffer = (char *)Z_Malloc(sizeof(bfflevel_t), TAG_STATIC, &chunk->chunkBuffer, "levelChunk");
+		chunk->chunkBuffer = (char *)SafeMalloc(sizeof(bfflevel_t), "levelChunk");
 		ptr = chunk->chunkBuffer;
 		
 		*(bff_int_t *)ptr = info->levels[i].numSpawns;
@@ -108,16 +108,13 @@ void WriteBFF(const char* outfile, const char* jsonfile)
 	for (bff_int_t i = 0; i < info->numTextures; i++) {
 		char *ptr;
 		strncpy(chunk->chunkName, info->textures[i].name, MAX_BFF_CHUNKNAME);
-		chunk->chunkSize = sizeof(bff_int_t) + info->textures[i].fileSize;
-		chunk->chunkBuffer = (char *)Z_Malloc(chunk->chunkSize, TAG_STATIC, &chunk->chunkBuffer, "texChunk");
+		chunk->chunkSize = info->textures[i].fileSize;
+		chunk->chunkBuffer = (char *)SafeMalloc(chunk->chunkSize, "texChunk");
 		ptr = chunk->chunkBuffer;
 		chunk->chunkType = TEXTURE_CHUNK;
 
-		*(bff_int_t *)ptr = info->textures[i].fileSize;
-		ptr += sizeof(bff_int_t);
-
 		memcpy(ptr, info->textures[i].fileBuffer, info->textures[i].fileSize);
-		Z_ChangeTag(info->textures[i].fileBuffer, TAG_PURGELEVEL);
+		free(info->textures[i].fileBuffer);
 
 		chunk++;
 	}
@@ -125,7 +122,7 @@ void WriteBFF(const char* outfile, const char* jsonfile)
 		char *ptr;
 		strncpy(chunk->chunkName, info->sounds[i].name, MAX_BFF_CHUNKNAME);
 		chunk->chunkSize = sizeof(bff_int_t) + sizeof(bff_short_t) + info->sounds[i].fileSize;
-		chunk->chunkBuffer = (char *)Z_Malloc(chunk->chunkSize, TAG_STATIC, &chunk->chunkBuffer, "soundChunk");
+		chunk->chunkBuffer = (char *)SafeMalloc(chunk->chunkSize, "soundChunk");
 		ptr = chunk->chunkBuffer;
 		chunk->chunkType = SOUND_CHUNK;
 		
@@ -135,28 +132,25 @@ void WriteBFF(const char* outfile, const char* jsonfile)
 		ptr += sizeof(bff_short_t);
 		
 		memcpy(ptr, info->sounds[i].fileBuffer, info->sounds[i].fileSize);
-		Z_ChangeTag(info->sounds[i].fileBuffer, TAG_PURGELEVEL);
+		free(info->sounds[i].fileBuffer);
 		
 		chunk++;
 	}
 	for (bff_int_t i = 0; i < info->numScripts; i++) {
 		char *ptr;
 		strncpy(chunk->chunkName, info->scripts[i].name, MAX_BFF_CHUNKNAME);
-		chunk->chunkSize = sizeof(bff_int_t) + (info->scripts[i].codelen * sizeof(uint8_t));
+		chunk->chunkSize = (info->scripts[i].codelen * sizeof(uint8_t));
 		chunk->chunkType = SCRIPT_CHUNK;
-		chunk->chunkBuffer = (char *)Z_Malloc(chunk->chunkSize, TAG_STATIC, &chunk->chunkBuffer, "scriptChunk");
+		chunk->chunkBuffer = (char *)SafeMalloc(chunk->chunkSize, "scriptChunk");
 		ptr = chunk->chunkBuffer;
-		
-		*(bff_int_t *)ptr = info->scripts[i].codelen;
-		ptr += sizeof(bff_int_t);
-		
+
 		Con_Printf("qvm bytecode length: %lu", info->scripts[i].codelen);
 		memcpy(ptr, info->scripts[i].bytecode, sizeof(uint8_t) * info->scripts[i].codelen);
-		Z_ChangeTag(info->scripts[i].bytecode, TAG_PURGELEVEL);
+		free(info->scripts[i].bytecode);
 
 		chunk++;
 	}
-	Z_ChangeTag(info, TAG_PURGELEVEL);
+	free(info);
 	
 	bffheader_t header = {
 		.ident = BFF_IDENT,
@@ -181,10 +175,8 @@ void WriteBFF(const char* outfile, const char* jsonfile)
 		SafeWrite(fp, &archive->chunkList[i].chunkSize, sizeof(bff_int_t));
 		SafeWrite(fp, &archive->chunkList[i].chunkType, sizeof(bff_int_t));
 		SafeWrite(fp, archive->chunkList[i].chunkBuffer, sizeof(char) * archive->chunkList[i].chunkSize);
-		Z_ChangeTag(archive->chunkList[i].chunkBuffer, TAG_PURGELEVEL);
+//		free(archive->chunkList[i].chunkBuffer);
 	}
 	fclose(fp);
-
-	Z_ChangeTag(archive->chunkList, TAG_PURGELEVEL);
-	Z_ChangeTag(archive, TAG_PURGELEVEL);
+	exit(1);
 }

@@ -8,14 +8,14 @@ typedef enum
     SG_INACTIVE,
     SG_IN_MENU,
     SG_IN_LEVEL
-} gamestate_t;
+} sg_gamestate_t;
 
 typedef struct
 {
     sprite_t tilemap[MAP_MAX_Y][MAP_MAX_X];
 
     playr_t* playr;
-    gamestate_t state;
+    sg_gamestate_t state;
 
     int numPlayrs;
     int numMobs;

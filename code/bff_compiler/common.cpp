@@ -58,7 +58,7 @@ FILE* SafeOpen(const char* filepath, const char* mode)
 
 void* SafeMalloc(size_t size, const char *name)
 {
-	Con_Printf("SafeMalloc: allocating %lu bytes with malloc() for %s", size, name);
+//	Con_Printf("SafeMalloc: allocating %lu bytes with malloc() for %s", size, name);
 	void *p = malloc(size);
 	if (p == NULL) {
 		BFF_Error("SafeMalloc: malloc() failed on allocation of %li bytes, errno: %s", size, strerror(errno));
@@ -85,7 +85,7 @@ void LoadFile(FILE* fp, void** buffer, bff_int_t* length)
 	*length = ftell(fp);
 	fseek(fp, 0L, SEEK_SET);
 	
-	void *buf = Z_Malloc(*length, TAG_STATIC, &buf, "filebuf");
+	void *buf = SafeMalloc(*length, "filebuf");
 	fread(buf, sizeof(char), *length, fp);
 	*buffer = buf;
 }
@@ -108,10 +108,9 @@ static void SafeRead(FILE* fp, void *data, size_t size)
 
 void DecompileBFF(const char *filepath)
 {
-	Z_Init();
 	FILE* fp = SafeOpen(filepath, "rb");
 
-	bff_t* archive = (bff_t *)Z_Malloc(sizeof(bff_t), TAG_STATIC, &archive, "bffArchive");
+	bff_t* archive = (bff_t *)SafeMalloc(sizeof(bff_t), "bffArchive");
 	bffheader_t header;
 	SafeRead(fp, &header, sizeof(bffheader_t));
 	if (header.ident != BFF_IDENT) {
@@ -133,7 +132,7 @@ void DecompileBFF(const char *filepath)
 	header.numChunks);
 
 	archive->numChunks = header.numChunks;
-	archive->chunkList = (bff_chunk_t *)Z_Malloc(sizeof(bff_chunk_t) * header.numChunks, TAG_STATIC, &archive->chunkList, "chunkList");
+	archive->chunkList = (bff_chunk_t *)SafeMalloc(sizeof(bff_chunk_t) * header.numChunks, "chunkList");
 
 	for (bff_int_t i = 0; i < archive->numChunks; i++) {
 		SafeRead(fp, archive->chunkList[i].chunkName, MAX_BFF_CHUNKNAME);
@@ -146,14 +145,11 @@ void DecompileBFF(const char *filepath)
 			"name: %s\n",
 		i, archive->chunkList[i].chunkSize, archive->chunkList[i].chunkType, archive->chunkList[i].chunkName);
 
-		archive->chunkList[i].chunkBuffer = (char *)Z_Malloc(archive->chunkList[i].chunkSize, TAG_STATIC, &archive->chunkList[i].chunkBuffer, "chunkBuffer");
+		archive->chunkList[i].chunkBuffer = (char *)SafeMalloc(archive->chunkList[i].chunkSize, "chunkBuffer");
 		SafeRead(fp, archive->chunkList[i].chunkBuffer, sizeof(char) * archive->chunkList[i].chunkSize);
+		free(archive->chunkList[i].chunkBuffer);
 	}
 	fclose(fp);
-
-	for (bff_int_t i = 0; i < archive->numChunks; i++) {
-		Z_Free(archive->chunkList[i].chunkBuffer);
-	}
-	Z_Free(archive->chunkList);
-	Z_Free(archive);
+	free(archive->chunkList);
+	free(archive);
 }

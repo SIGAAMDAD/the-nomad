@@ -12,12 +12,9 @@ typedef enum
 {
     SYS_CON_PRINTF = 0,
     SYS_CON_ERROR,
-    CON_FLUSH,
-    G_PLAYSFX,
     G_GETTILEMAP,
-    N_SAVEGAME,
-    N_LOADGAME,
-    G_UPDATECONFIG,
+    G_SAVEGAME,
+    G_LOADGAME,
 
     NUM_SGAME_IMPORT
 } sgameImport_t;

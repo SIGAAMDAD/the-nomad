@@ -1,6 +1,10 @@
-CC     = g++
-CFLAGS = -Ofast -s -std=c++17
-EXE    = bff-tool
+VERSION       = 1
+VERSION_UPDATE= 1
+VERSION_PATCH = 0
+CC            = g++
+CFLAGS        = -D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPDATE) -D_NOMAD_VERSION_PATCH=$(VERSION_PATCH) -DBFF_COMPILER \
+				-Og -g -std=c++17
+EXE           = bff-tool
 
 .PHONY: all clean
 

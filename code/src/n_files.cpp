@@ -1,31 +1,30 @@
 #include "n_shared.h"
+#include "g_bff.h"
 
 #define MAX_FILE_HANDLES 1024
 #define MAX_BFF_FILES 8
 #define MAX_FILE_HASH 1024
+#define FS_HashFileName Com_GenerateHashValue
+#define MAX_TMP_FILES 16
 
 typedef struct
 {
-	char name[MAX_GDR_PATH];
+	char name[MAX_BFF_CHUNKNAME];
+
+	char *buffer;
+	char *bufPtr;
 	uint32_t size;
-	uint32_t type;
-	
-	char *curPtr; // position in the cache
-	void *cache;
-	
-	uint32_t filePos;
-	uint32_t bytesLeft;
 } fileInBFF_t;
 
 typedef struct
 {
-	char bffPathname[MAX_BFF_PATH];
-	char bffGamename[MAX_GDR_PATH];
+	char name[256];
+	fileInBFF_t *fileList;
+	bff_t *handle;
 	
-	uint16_t checksum;
-	uint16_t id[40];
 	uint32_t numfiles;
-	fileInBFF_t* hashtable;
+	uint32_t handlesUsed;
+	int32_t index;
 } bffFile_t;
 
 typedef union fileData
@@ -38,807 +37,581 @@ typedef union fileData
 
 typedef struct
 {
-	fileData data;
 	char name[MAX_GDR_PATH];
-	int32_t bffIndex;
-	qboolean bffFile;
-	uint32_t size;
-	uint32_t filePos;
+
+	fileData data;
+
 	bffFile_t* bff;
+	qboolean used;
+	qboolean bffFile;
+	qboolean tmpFile;
+	int32_t bffIndex;
 } fileHandle_t;
 
 static fileHandle_t handles[MAX_FILE_HANDLES];
 static bffFile_t* bffs[MAX_BFF_FILES];
+
+static uint32_t fs_numHandles;
 static uint32_t fs_totalArchives;
-static uint32_t fs_currentArchive;
-
-cvar_t fs_gamedir;
-cvar_t fs_numArchives;
+cvar_t fs_gamedir={"fs_gamedir","gamedata",TYPE_STRING,qtrue};
+cvar_t fs_numArchives={"fs_numArchives","1",TYPE_INT,qtrue};
+static GDRStr fs_homepath;
 static bool fs_initialized;
+static uint64_t fs_writeCount;
+static uint64_t fs_readCount;
+static int32_t fs_lastBffIndex;
+static uint32_t fs_numTmpFiles;
+static uint32_t fs_loadStack;
 
-// c++ overloaders here
-static fileInBFF_t* FS_OpenFileInBFF(const char* name, int32_t bffIndex, fileHandle_t* file);
-static bool FS_FilenameCompare(const char *s1, const char *s2);
-static bool FS_IsBFFRegistered(bffFile_t* bff);
-static bool FS_FileIsInBFF(fileHandle_t *f);
-static bool FS_FileIsInBFF(const char *path);
-static bool FS_FileIsBFF(fileHandle_t *f);
-static bool FS_FileIsBFF(const char *path);
-static bffFile_t* FS_LoadBFF(const char *path);
+static bool FS_IsChunk(fileHandle_t* handle);
+static bool FS_IsChunk(const char *filepath);
+static fileInBFF_t* FS_GetBFFChunk(const char *filepath);
+static bffFile_t* FS_GetChunkBFF(fileInBFF_t* chunk);
+static char* FS_BuildOSPath(const char *base, const char *game, const char *npath);
 static void FS_ReplaceSeparators(char *str);
-static bool FS_CheckFileExt(const char *filepath, bool allowBFFs, const char **ext)
+static void FS_ForceFlush(file_t f);
+static uint64_t FS_FileLength(FILE *f);
+static qboolean FS_OpenFileInBFF(const char *chunkname, file_t *fd, bffFile_t *bff, fileInBFF_t *chunk, fileHandle_t *f);
+
+static FILE* FS_FileForHandle(file_t f)
 {
-	static const char *extlist[] = { "dll", "exe", "so", "dylib", "qvm", "bff" };
-	char *e;
-	int i, n;
-
-	char str[6];
-	for (uint32_t i = 0; i < arraylen(extlist); ++i) {
-		if (strstr(filepath, extlist[i]) != NULL) {
-			str[0] = '.';
-			N_strncpy(&str[1], extlist[i], sizeof(str));
-			*ext = str;
-			return false;
-		}
-	}
-	return true;
-}
-static void FS_CheckFilenameIsNotAllowed(const char *filename, const char *function, bool allowBFFs)
-{
-	const char *extension;
-	if (!FS_CheckFileExt(filename, allowBFFs, &extension)) {
-		N_Error("%s: not allowed to manipulate '%s' due to %s extension",
-			function, filename, extension);
-	}
-}
-
-static int FS_PathCmp(const char *s1, const char *s2)
-{
-	int c1, c2;
-	const char *str1 = s1;
-	const char *str2 = s2;
-	
-	do {
-		c1 = *str1++;
-		c2 = *str2++;
-
-		if (c1 >= 'a' && c1 <= 'z') {
-			c1 -= ('a' - 'A');
-		}
-		if (c2 >= 'a' && c2 <= 'z') {
-			c2 -= ('a' - 'A');
-		}
-
-		if ( c1 == '\\' || c1 == ':' ) {
-			c1 = '/';
-		}
-		if ( c2 == '\\' || c2 == ':' ) {
-			c2 = '/';
-		}
-		
-		if (c1 < c2) {
-			return -1;		// strings not equal
-		}
-		if (c1 > c2) {
-			return 1;
-		}
-	} while (c1);
-	
-	return 0;		// strings are equal
-}
-
-static bool FS_PathEq(const char *s1, const char *s2)
-{
-	int c1, c2;
-	const char *str1 = s1;
-	const char *str2 = s2;
-	
-	do {
-		c1 = *str1++;
-		c2 = *str2++;
-
-		if (c1 >= 'a' && c1 <= 'z') {
-			c1 -= ('a' - 'A');
-		}
-		if (c2 >= 'a' && c2 <= 'z') {
-			c2 -= ('a' - 'A');
-		}
-
-		if ( c1 == '\\' || c1 == ':' ) {
-			c1 = '/';
-		}
-		if ( c2 == '\\' || c2 == ':' ) {
-			c2 = '/';
-		}
-		
-		if (c1 < c2 || c1 > c2) {
-			return false;
-		}
-	} while (c1);
-	
-	return true;
-}
-
-static void FS_ReplaceSeparators(char *str);
-static bool FS_CheckDirTraversal(const char *checkdir)
-{
-	if (strstr(checkdir, "../") || strstr(checkdir, "..\\"))
-		return true;
-	if (strstr(checkdir, "::"))
-		return true;
-	
-	return false;
-}
-static bool FS_CreatePath(const char *ospath)
-{
-	char path[MAX_OSPATH*2+1];
-	char *ofs;
-	
-	// make absolutely sure that it can't back up the path
-	// FIXME: is c: allowed???
-	if (FS_CheckDirTraversal(ospath)) {
-		Con_Printf("WARNING: refusing to create relative path \"%s\"", ospath);
-		return false;
-	}
-	
-	N_strncpy(path, ospath, sizeof(path));
-	// make sure we have os correct slashes
-	FS_ReplaceSeparators(path);
-	for (ofs = path + 1; *ofs; ofs++) {
-		if (*ofs == PATH_SEP) {
-			// create the directory
-			*ofs = '\0';
-			Sys_mkdir(path);
-			*ofs = PATH_SEP;
-		}
-	}
-	return false;
-}
-
-static void FS_CopyFile(const char *fromospath, const char *toospath)
-{
-	FILE *f;
-	uint32_t len, read;
-	byte *buf;
-	
-	Con_Printf("copying %s to %s", fromospath, toospath);
-	
-	if (strstr(fromospath, "journal.dat") || strstr(fromospath, "journaldata.dat")) {
-		Con_Printf("Ignoring journal files");
-		return;
-	}
-	
-	f = Sys_FOpen(fromospath, "rb");
-	if (!f) {
-		return;
-	}
-	
-	len = FS_FileLength(f);
-	
-	// we are using direct malloc instead of Z_Malloc here, so it probably won't work on mac... It's only for developers anyway...
-	buf = (byte *)Mem_Alloc(len);
-	if (!buf) {
-		fclose(f);
-		N_Error("FS_CopyFile: malloc() failed");
-	}
-	if ((read = fread(buf, 1, len, f)) != len) {
-		Mem_Free(buf);
-		fclose(f);
-		N_Error("FS_CopyFile: short read of %i bytes, should have read %i bytes", read, len);
-	}
-	fclose(f);
-	
-	f = Sys_FOpen(toospath, "wb");
-	if (!f) {
-		if (!FS_CreatePath(toospath)) {
-			Mem_Free(buf);
-			return;
-		}
-		f = Sys_FOpen(toospath, "wb");
-		if (!f) {
-			Mem_Free(buf);
-			return;
-		}
-	}
-	
-	if ((read = fwrite(buf, 1, len, f)) != len) {
-		Mem_Free(buf);
-		fclose(f);
-		N_Error("FS_CopyFile: short write of %i bytes, should have written %i bytes", read, len);
-	}
-	fclose(f);
-	Mem_Free(buf);
-}
-
-static FILE* FS_FileForHandle(file_t fd)
-{
-	if (fd <= FS_INVALID_HANDLE || fd >= MAX_FILE_HANDLES) {
+	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
 		N_Error("FS_FileForHandle: out of range");
 	}
-	if (handles[fd].bffFile) {
+	if (handles[f].bffFile) {
 		N_Error("FS_FileForHandle: can't get FILE on bff file");
 	}
-	if (!handles[fd].data.fp) {
+	if (!handles[f].data.fp) {
 		N_Error("FS_FileForHandle: NULL");
 	}
-	return handles[fd].data.fp;
+	return handles[f].data.fp;
 }
 
 static file_t FS_HandleForFile(void)
 {
-	file_t fd;
+	file_t f;
 	
-	for (fd = 1; fd < MAX_FILE_HANDLES; fd++) {
-		if (handles[fd].data.stream == NULL)
-			return fd;
+	for (f = 1; f < MAX_FILE_HANDLES; f++) {
+		if (!handles[f].used) {
+			return f;
+		}
 	}
-	Con_Printf("WARNING: FS_HandleForFile: none free");
+	Con_Printf("WARNING: no free file handle");
 	return FS_INVALID_HANDLE;
 }
 
-static char* FS_BuildOSPath(const char *base, const char *game, const char *fname)
+static void FS_CloseBFF(fileHandle_t* f)
 {
-	char temp[MAX_GDR_PATH*2+1];
-	static char ospath[2][sizeof(temp)+MAX_OSPATH];
-	static int toggle;
-	
-	toggle ^= 1;
-	
-	if (!game || !game[0])
-		game = fs_gamedir.value;
-	
-	if (fname)
-		snprintf(temp, sizeof(temp), "%c%s%c%s", PATH_SEP, game, PATH_SEP, fname);
-	else
-		snprintf(temp, sizeof(temp), "%c%s", PATH_SEP, game);
-	
-	FS_ReplaceSeparators(temp);
-	snprintf(ospath[toggle], sizeof(ospath[0]), "%s%s", base, temp);
-	
-	return ospath[toggle];
+	bffFile_t* bff = bffs[f->bffIndex];
+
+	f->bff = NULL;
+	f->bffIndex = -1;
+	f->bffFile = qfalse;
+
+	Mem_Free(bff->fileList);
+	BFF_CloseArchive(bff->handle);
 }
 
-static bffFile_t* FS_OpenBFF(const char *path)
+static void FS_InitHandle(fileHandle_t* f)
 {
-	char *ospath;
-	bffFile_t* file;
-	fileHandle_t* handle;
-	bffheader_t header;
-	file_t fd;
-	uint64_t hash, offset;
-	
-	fd = FS_HashFileName(path, MAX_FILE_HASH);
-	handle = &handles[fd];
-	ospath = FS_BuildOSPath(fs_homepath.value, fs_gamedir.value, path);
-	
-	FILE* fp = Sys_FOpen(ospath, "rb");
-	if (!fp) {
-		N_Error();
-	}
-	
-	fread(&header, sizeof(bffheader_t), 1, fp);
-	if (header.ident != BFF_IDENT) {
-		N_Error("FS_OpenBFF: header identifier isn't correct");
-	}
-	if (header.magic != BFF_MAGIC) {
-		N_Error("FS_OpenBFF: header magic isn't correct");
-	}
-	if (!header.numChunks) {
-		N_Error("FS_OpenBFF: bad chunk count");
-	}
-	
-	file = (bffFile_t *)Hunk_Alloc(sizeof(bffFile_t), "BFFfile", h_high);
-	file->numfiles = header.numChunks;
-	file->checksum = 0;
-	file->hashtable = (fileInBFF_t *)Z_Malloc(sizeof(fileInBFF_t) * file->numfiles, TAG_STATIC, &file->hashtable, "BFFfiles");
-	
-	fread(file->bffPathname, sizeof(char), MAX_BFF_PATH, fp);
-	fread(file->bffGamename, sizeof(char), MAX_GDR_PATH, fp);
-	
-	for (uint32_t i = 0; i < file->numfiles; ++i) {
-		offset = ftell(fp);
-		char chunkname[MAX_BFF_CHUNKNAME];
-		
-		fread(chunkname, sizeof(char), MAX_BFF_CHUNKNAME, fp);
-		hash = FS_HashFileName(chunkname, file->numfiles);
-		
-		chunk = &file->hashtable[hash];
-		
-		fread(&chunk->size, sizeof(uint32_t), 1, fp);
-		fread(&chunk->type, sizeof(uint32_t), 1, fp);
-		
-		chunk->cache = Z_Malloc(chunk->size, TAG_STATIC, &chunk->cache, "BFFcache");
-		fread(chunk->cache, chunk->size, 1, fp);
-	}
-	
-	fclose(fp);
+	f->bffIndex = -1;
+	f->bff = NULL;
+	f->bffFile = qfalse;
+	f->data.stream = NULL;
+	f->tmpFile = qfalse;
+	f->used = qfalse;
 }
 
 static void FS_InitBFFs(void)
 {
+	bff_t *bff;
+	bffFile_t *file;
+	char bffpath[12];
+	char *ospath;
+	
 	for (uint32_t i = 0; i < fs_totalArchives; i++) {
-		char name[MAX_GDR_PATH];
-		sprintf(name, "bff%i.bff", i);
-		const char *path = FS_BuildOSPath(fs_homepath.value, fs_gamedir.value, name);
-		
-		bffs[i] = FS_OpenBFF(path);
+		snprintf(bffpath, sizeof(bffpath), "bff%i.bff", i);
+
+		ospath = FS_BuildOSPath(fs_homepath.c_str(), NULL, bffpath);
+		bff = BFF_OpenArchive(ospath);
+
+		bffs[i] = (bffFile_t *)Mem_Alloc(sizeof(bffFile_t));
+		file = bffs[i];
+	
+		file->index = (int32_t)i;
+		file->handle = bff;
+		file->handlesUsed = 0;
+		file->numfiles = bff->numChunks;
+		file->fileList = (fileInBFF_t *)Mem_Alloc(sizeof(fileInBFF_t) * file->numfiles);
+
+		N_strncpy(file->name, bff->bffGamename, 256);
+
+		for (uint32_t c = 0; c < bff->numChunks; c++) {
+			N_strncpy(file->fileList[c].name, bff->chunkList[c].chunkName, MAX_BFF_CHUNKNAME);
+			file->fileList[c].buffer = bff->chunkList[c].chunkBuffer;
+			file->fileList[c].size = bff->chunkList[c].chunkSize;
+			file->fileList[c].bufPtr = bff->chunkList[c].chunkBuffer;
+		}
+	}
+}
+
+uint32_t FS_NumBFFs(void)
+{
+	return fs_totalArchives;
+}
+
+file_t FS_OpenBFF(int32_t index)
+{
+	file_t fd;
+	fileHandle_t *f;
+	bffFile_t *file;
+
+	if (!fs_initialized) {
+		N_Error("Filesystem call made without initialization");
+	}
+	if (index == -1) {
+		N_Error("FS_OpenBFF: invalid index");
+	}
+	if (index > fs_totalArchives) {
+		Con_Printf("WARNING: index over fs_totalArchives (FS_OpenBFF)");
+		return FS_INVALID_HANDLE;
+	}
+	fd = FS_HandleForFile();
+	f = &handles[fd];
+	FS_InitHandle(f);
+	
+	f->bff = bffs[index];
+	f->bffFile = qtrue;
+	f->bffIndex = index;
+	N_strncpy(f->name, bffs[index]->name, MAX_GDR_PATH);
+	f->used = qtrue;
+
+	return fd;
+}
+
+uint64_t FS_LoadFile(const char *filepath, void **buffer)
+{
+	file_t fd = FS_FOpenRead(filepath);
+	if (fd == FS_INVALID_HANDLE) {
+		N_Error("FS_LoadFile: failed to load file %s", filepath);
+	}
+
+	uint64_t fsize = FS_FileLength(fd);
+	void *buf = Mem_Alloc(fsize);
+	FS_Read(buf, fsize, fd);
+	*buffer = buf;
+
+	return fsize;
+}
+
+static bool FS_AllowedExtension(const char *filename, bool allowBFFs, const char **extension)
+{
+	static const char *extlist[] = { "dll", "so", "exe", "dylib", "qvm", "bff" };
+	const char *e;
+	uint32_t n;
+
+	e = strrchr(filename, '.');
+
+	if (allowBFFs)
+		n = arraylen(extlist);
+	else
+		n = arraylen(extlist) - 1;
+
+	for (uint32_t i = 0; i < n; i++) {
+		if (N_strcasecmp(e, extlist[n])) {
+			if (extension) {
+				*extension = extlist[n];
+			}
+			return false;
+		}
+	}
+	return true;
+}
+
+static void FS_CheckFilenameAllowed(const char *filename, const char *function, bool allowBFFs)
+{
+	const char *extension;
+	if (!FS_AllowedExtension(filename, allowBFFs, &extension)) {
+		N_Error("%s: not allowed to manipulate '%s' due to %s extension", function, filename, extension);
+	}
+}
+
+void FS_Remove(const char *ospath)
+{
+	FS_CheckFilenameAllowed(ospath, __func__, qtrue);
+	remove(FS_BuildOSPath(fs_homepath.c_str(), NULL, ospath));
+}
+
+uint64_t FS_FileLength(file_t f)
+{
+	fileHandle_t* file;
+
+	if (!fs_initialized) {
+		N_Error("Filesystem call made without initialization");
+	}
+	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
+		N_Error("FS_FileLength: out of range");
+	}
+
+	file = &handles[f];
+
+	if (FS_IsChunk(file)) {
+		return file->data.chunk->size;
+	}
+	else {
+		return FS_FileLength(file->data.fp);
+	}
+}
+
+uint64_t FS_FileTell(file_t f)
+{
+	fileHandle_t* file;
+
+	if (!fs_initialized) {
+		N_Error("Filesystem call made without initialization");
+	}
+	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
+		N_Error("FS_FileTell: out of range");
+	}
+	
+	file = &handles[f];
+
+	if (FS_IsChunk(file)) {
+		return (uint64_t)(file->data.chunk->bufPtr - file->data.chunk->buffer);
+	}
+	else {
+		return (uint64_t)ftell(file->data.fp);
+	}
+}
+
+fileOffset_t FS_FileSeek(file_t f, fileOffset_t offset, uint32_t whence)
+{
+	fileHandle_t* file;
+	
+	if (!fs_initialized) {
+		N_Error("Filesystem call made without initialization");
+	}
+	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
+		N_Error("FS_FileSeek: out of range");
+	}
+	
+	file = &handles[f];
+
+	if (FS_IsChunk(file)) {
+		char *begin = file->data.chunk->buffer;
+
+		if (whence == FS_SEEK_END && offset) {
+			return -1;
+		}
+		else if (whence == FS_SEEK_CUR
+		&& file->data.chunk->bufPtr + offset >= &file->data.chunk->buffer[file->data.chunk->size]) {
+			return -1;
+		}
+		switch (whence) {
+		case FS_SEEK_CUR:
+			file->data.chunk->bufPtr += offset;
+			break;
+		case FS_SEEK_BEGIN:
+			file->data.chunk->bufPtr = begin + offset;
+			break;
+		case FS_SEEK_END:
+			file->data.chunk->bufPtr = &begin[file->data.chunk->size];
+			break;
+		};
+	}
+	else {
+		uint32_t fwhence;
+		switch (whence) {
+		case FS_SEEK_CUR:
+			fwhence = SEEK_CUR;
+			break;
+		case FS_SEEK_BEGIN:
+			fwhence = SEEK_SET;
+			break;
+		case FS_SEEK_END:
+			fwhence = SEEK_END;
+			break;
+		default:
+			N_Error("FS_FileSeek: invalid whence");
+		};
+		fseek(file->data.fp, (long)offset, (int)fwhence);
 	}
 }
 
 void FS_Init(void)
 {
-	int numArchives = N_atoi(fs_numArchives.value);
+	fs_homepath = Sys_pwd();
+
+	int numArchives = atoi(fs_numArchives.value);
 	if (numArchives >= MAX_BFF_FILES) {
-		N_Error("FS_Init: too many bff files in config, limit is %i files", MAX_BFF_FILES);
+		N_Error("FS_Init: too many bff files");
 	}
+
 	fs_totalArchives = numArchives;
-	
-	fs_currentArchive = 0;
-	memset(bffs, 0, sizeof(bffs));
-	
+
 	FS_InitBFFs();
-	
+
 	for (uint32_t i = 0; i < MAX_FILE_HANDLES; i++) {
-		handles[i].id = FS_INVALID_HANDLE;
+		handles[i].used = qfalse;
+		handles[i].data.stream = NULL;
 	}
-	
+
+	fs_lastBffIndex = -1;
+	fs_readCount = 0;
+	fs_writeCount = 0;
+	fs_numHandles = 0;
 	fs_initialized = true;
+	fs_numTmpFiles = 0;
 }
 
-void FS_Remove(const char *ospath)
+uint64_t FS_Write(const void *buffer, uint64_t size, file_t fd)
 {
-	FS_CheckFilenameIsNotAllowed(ospath, __func__, true);
-	remove(ospath);
-}
+	fileHandle_t *f;
+	uint64_t writeCount;
 
-void FS_HomeRemove(const char *ospath)
-{
-	FS_CheckFilenameIsNotAllowed(ospath, __func__, false);
-	remove(FS_BuildOSPath(fs_homepath.value, fs_gamedir.value, ospath));
-}
+	if (fd <= FS_INVALID_HANDLE || fd >= MAX_FILE_HANDLES) {
+		N_Error("FS_Write: out of range");
+	}
 
-void FS_Rename(const char *from, const char *to)
-{
-	const char *from_ospath, *to_ospath;
-	FILE *f;
-	
-	if (!fs_initialized) {
-		N_Error("Filesystem call made without initialization");
-	}
-	
-	from_ospath = FS_BuildOSPath(fs_homepath.value, fs_gamedir.value, from);
-	to_ospath = FS_BuildOSPath(fs_homepath.value, fs_gamedir.value, to);
-	
-	Con_Printf(DEBUG, "FS_Rename: %s --> %s", from_ospath, to_ospath);
-	
-	f = Sys_FOpen(from_ospath, "rb");
-	if (f) {
-		fclose(f);
-		FS_Remove(to_ospath);
-	}
-	
-	if (rename(from_ospath, to_ospath)) {
-		// failed, try copying it and deleting the original
-		FS_CopyFile(from_ospath, to_ospath);
-		FS_Remove(from_ospath);
-	}
-}
+	f = &handles[fd];
 
-void FS_VM_FOpenRead(const char* filepath, file_t* f)
-{
-	*f = FS_FOpenRead(filepath);
-}
-
-void FS_VM_FOpenWrite(const char* filepath, file_t* f)
-{
-	*f = FS_FOpenWrite(filepath);
-}
-
-file_t FS_FOpenRead(const char* filepath)
-{
-	char *ospath;
-	uint64_t hash;
-	file_t f;
-	fileHandle_t *handle;
-	
-	if (!fs_initialized) {
-		N_Error("Filesystem call made without initialization");
-	}
-	if (!filepath) {
-		N_Error("FS_FOpenRead: null path");
-	}
-	if (!*filepath) {
-		N_Error("FS_FOpenRead: empty path");
-	}
-	
-	hash = FS_HashFileName(filepath, MAX_GDR_PATH);
-	handle = &handles[hash];
-	if (handle->id != FS_INVALID_HANDLE) {
-		N_Error("FS_FOpenRead: %s opened twice", filepath);
-	}
-	
-	f = hash;
-	handle->id = f;
-	
-	// bff chunk
-	if (FS_FileIsInBFF(filepath)) {
-		ospath = filepath;
-	}
-	// bff archive file
-	else if (FS_FileIsBFF(filepath)) {
-		
-	}
-	// regular file
-	else {
-		ospath = FS_BuildOSPath(fs_homepath.value, fs_gamedir.value, filepath);
-		
-		handle->data.fp = Sys_FOpen(ospath, "rb");
-		if (!handle->data.fp) {
-			Con_Printf("WARNING: failed to create an rb stream for %s", filepath);
-			return FS_INVALID_HANDLE;
-		}
-		
-		handle->bffIndex = -1;
-		handle->bff = NULL;
-		handle->bffFile = qfalse;
-		handle->filePos = 0;
-		
-		fseek(handle->data.fp, 0L, SEEK_END);
-		handle->size = ftell(handle->data.fp);
-		fseek(handle->data.fp, 0L, SEEK_SET);
-	}
-	
-	return f;
-}
-
-void FS_VM_FOpenWrite(const char* filepath, file_t* f)
-{
-
-}
-
-file_t FS_FOpenWrite(const char* filepath)
-{
-	char *ospath;
-	uint64_t hash;
-	fileHandle_t* handle;
-	file_t f;
-	
-	if (!fs_initialized) {
-		N_Error("Filesystem call made without initialization");
-	}
-	
-	hash = FS_HashFileName(filepath, MAX_GDR_PATH);
-	handle = &handles[hash];
-	if (handle->id != FS_INVALID_HANDLE) {
-		N_Error("File %s opened twice", filepath);
-	}
-	
-	f = hash;
-	handle->id = f;
-	
-	if (FS_FileIsInBFF(filepath)) {
-		Con_Printf("WARNING: refusing to open bff chunk with FS_FOpenWrite");
-		return FS_INVALID_HANDLE;
-	}
-	
-	ospath = FS_BuildOSPath(fs_gamedir.value, filepath);
-	handle->data.fp = Sys_FOpen(filepath, "wb");
-	if (!handle->data.fp) {
-		Con_Printf("WARNING: failed to create write-only FILE* for file %s", filepath);
-		return FS_INVALID_HANDLE;
-	}
-	
-	return f;
-}
-
-int32_t FS_BFFIndex(file_t f)
-{
-	
-}
-
-// compares two bffs, if they aren't exactly equal, then return false
-bool FS_CompareBFFs(const bffFile_t* bff1, const bffFile_t* bff2)
-{
-	// get the easy stuff out of the way
-	if (bff1->numfiles != bff2->numfiles) {
-		return false;
-	}
-	if (bff1->checksum != bff2->checksum) {
-		return false;
-	}
-	if (!N_memcmp(bff1->id, bff2->id, sizeof(uint16_t) * 40)) {
-		return false;
-	}
-	
-	fileInBFF_t *chunk1, *chunk2;
-	
-	// compare each chunk
-	for (uint32_t i = 0; i < bff1->numfiles; i++) {
-		chunk1 = &bff1->hashtable[i];
-		chunk2 = &bff2->hashtable[i];
-		
-		if (!N_strncmp(chunk1->name, chunk2->name, MAX_GDR_PATH)) {
-			return false;
-		}
-		if (chunk1->size != chunk2->size) {
-			return false;
-		}
-		if (chunk1->type != chunk2->type) {
-			return false;
-		}
-		if (!N_memcmp(chunk1->cache, chunk2->cache, chunk1->size)) {
-			return false;
-		}
-	}
-	return true;
-}
-
-bool FS_InvalidGameDir(const char *gamedir)
-{
-	if (!strcmp(gamedir, ".") || !strcmp(gamedir, "..")
-	|| strchr(gamedir, '/') || strchr(gamedir, '\\')) {
-		return true;
-	}
-	return false;
-}
-
-static bool FS_OpenFileInBFF(const char* name, fileHandle_t* file)
-{
-	bffFile_t* bff;
-	fileInBFF_t* chunk;
-	uint64_t hash;
-	
-	if (!fs_initialized) {
-		N_Error("Filesystem call made without initialization");
-	}
-	if (!name) {
-		N_Error("FS_FOpenFileRead: null name");
-	}
-	
-	while (name[0] == '/' || name[0] == '\\')
-		name++;
-	
-	if (FS_CheckDirTraversal(name))
-		return false;
-	
-	for (uint32_t i = 0; i < fs_totalArchives; i++) {
-		
-		bool found = false;
-		hash = FS_HashFileName(name, bffs[i]->numfiles);
-		chunk = &bffs[i]->hashtable[hash];
-		for (uint32_t c = 0; c < bffs[i]->numfiles; c++) {
-			if (N_strncmp(name, chunk->name, MAX_BFF_CHUNKNAME)) {
-				found = true;
-				break;
-			}
-			chunk++;
-		}
-		if (found) {
-			file->stream.chunk = chunk;
-			file->bff = bffs[i];
-			file->bffIndex = i;
-			file->filePos = 0;
-			file->size = chunk->size;
-			return true;
-		}
-		
-	}
-	return false;
-}
-
-void FS_ClearBFFs(void)
-{
-	bffFile_t* bff;
-	
-	for (uint32_t i = 0, bff = bffs[0]; i < fs_totalArchives; i++, bff++) {
-		if (!bff->touched) {
-			Z_ChangeTag(bff->hashtable, TAG_PURGELEVEL);
-			for (uint32_t f = 0; f < bff->numfiles; f++) {
-				Z_ChangeTag(bff->hashtable[f].cache, TAG_PURGELEVEL);
-			}
-			B_CloseArchive(bff);
-		}
-	}
-}
-
-void FS_FClose(file_t *f)
-{
-	if (!f) {
-		N_Error("FS_FClose: null handle");
-	}
-	if (*f <= FS_INVALID_HANDLE || *f >= MAX_FILE_HANDLES) {
-		return;
-	}
-	
-	fileHandle_t* handle = &handles[*f];
-	if (FS_FileIsInBFF(handle)) {
-		Z_ChangeTag(handle->data.chunk->cache, TAG_CACHE);
-		handle->data.chunk->filePos = 0;
-		handle->data.chunk->bytesLeft = handle->data.chunk->size;
-		
-		handle->bffFile = qfalse;
-		handle->bff = NULL;
-		handle->bffIndex = -1;
-	}
-	// never free the bff (dont want to load it up and fuck up the zone), just simply kill the ownership of the handle
-	else if (FS_FileIsBFF(handle)) {
-		handle->bffFile = qfalse;
-		handle->bffIndex = -1;
-		handle->bff = NULL;
-		
-		// mark as purgable
-		Z_ChangeTag(hande->data.bff->hashtable, TAG_CACHE);
-	}
-	// flush the buffer and fclose it
-	else {
-		FS_ForceFlush(*f);
-		fclose(handle->data.fp);
-	}
-	
-	// for all streams
-	handle->size = 0;
-	handle->id = 0;
-	handle->data.stream = NULL;
-	*f = FS_INVALID_HANDLE;
-}
-
-uint32_t FS_Write(const void *data, uint32_t size, file_t f)
-{
-	uint32_t remaining, block;
-	size_t written;
-	int tries;
-	const byte *buf;
-	fileHandle_t* file;
-	
-	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
-		return 0;
-	}
-	file = &handles[f];
-	buf = (const char *)data;
-	fs_writeCount += size;
-	
-	if (!FS_FileIsInBFF(file)) {
-		remaining = size;
-		tries = 0;
-		while (remaining) {
-			block = remaining;
-			write = fwrite(buf);
-			if (write == 0) {
-				if (!tries) {
-					tries = 1;
-				}
-				else {
-					return size - remaining;
-				}
-			}
-			if (write == -1) {
-				N_Error("FS_Write: -1 bytes written");
-			}
-			
-			remaining -= written;
-			buf += written;
-			handle->filePos += written;
-		}
+	// bff chunks are read-only
+	if (FS_IsChunk(f)) {
+		Con_Printf("WARNING: attempted to write to bff chunk");
 	}
 	else {
-		Con_Printf("WARNING: attempted to write to a bff chunk (all of which are read-only)");
-		return 0;
-	}
-}
-
-uint32_t FS_ReadFromBFF(void *data, uint32_t size, fileHandle_t* f)
-{
-	fileInBFF_t* chunk = f->data.chunk;
-	char *endPtr = &((char *)chunk->cache)[file->size];
-	
-	if (chunk->curPtr == endPtr) {
-		return 0; // eof
-	}
-	else if (chunk->bytesRead + size >= chunk->size) {
-		uint32_t bytesLeft = chunk->size - chunk->bytesRead + size;
-		memcpy(data, chunk->curPtr, bytesLeft);
-		chunk->curPtr = endPtr;
-		Con_Printf("WARNING: overread in chunk %s of %i bytes", chunk->name, chunk->bytesRead + size);
-		return bytesLeft;
-	}
-	else {
-		memcpy(data, chunk->curPtr, size);
-		chunk->curPtr += size;
-		return size;
-	}
-}
-
-uint32_t FS_Read(void *data, uint32_t size, file_t f)
-{
-	uint32_t block, remaining;
-	size_t read;
-	int tries;
-	char *buf;
-	
-	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
-		return 0;
-	}
-	
-	fileHandle_t* file = &handles[f];
-	buf = (char *)data;
-	fs_readCount += size;
-	
-	// simple fread
-	if (!FS_FileIsInBFF(file)) {
-		remaining = size;
-		tries = 0;
-		while (remaining) {
-			block = remaining;
-			read = fread(buf, 1, block. file->data.fp);
-			if (!read) {
-				if (!tries) {
-					tries = 1;
-				}
-				else {
-					return size - remaining;
-				}
-			}
-			
-			if (read == -1) {
-				N_Error("FS_Read: -1 bytes read");
-			}
-			
-			remaining -= read;
-			buf += read;
+		writeCount = fwrite(buffer, 1, size, f->data.fp);
+		if (writeCount != size) {
+			N_Error("FS_Write: short write of %lu bytes, should have read %lu bytes", writeCount, size);
 		}
-		return read;
-	}
-	// more complex memory management when reading from a chunk
-	else {
-		return FS_ReadFromBFF(data, size, file);
-	}
-}
-
-uint32_t FS_FileLength(file_t f)
-{
-	FILE *fp;
-	bff_chunk_t *chunk;
-	uint32_t pos, end;
-	
-	if (!FS_FileIsInBFF(&handles[f])) {
-		fp = handles[f].data.fp;
-		pos = ftell(fp);
-		fseek(fp, 0L, SEEK_END);
-		end = ftell(fp);
-		fseek(fp, pos, SEEK_SET);
-		return end;
-	}
-	else if (handles[f].data.chunk) {
-		return handles[f].data.chunk->chunkSize;
-	}
-}
-
-uint32_t FS_FileTell(file_t f)
-{
-	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
-		return 0;
-	}
-	fileHandle_t* handle = &handles[f];
-	if (!FS_FileIsInBFF(handle)) {
-		return ftell(handle->data.fp);
-	}
-	else if (FS_FileIsInBFF(handle)) {
-		return handle->data.chunk->filePos;
+		fs_writeCount += writeCount;
+		return writeCount;
 	}
 	return 0;
 }
 
-/**********************
-*  Utility Functions  *
-***********************/
+uint64_t FS_Read(void *buffer, uint64_t size, file_t fd)
+{
+	fileHandle_t *f;
+	uint64_t readCount;
 
-/*
-FS_ReplaceSeparators: replaces all foreign filepath separators if any are found
-*/
+	if (fd <= FS_INVALID_HANDLE || fd >= MAX_FILE_HANDLES) {
+		N_Error("FS_Read: out of range");
+	}
+
+	f = &handles[fd];
+
+	if (FS_IsChunk(f)) {
+		if (f->data.chunk->bufPtr + size > &f->data.chunk->buffer[f->data.chunk->size]) {
+			// should (logically) never happen, if it does, probably a code or bff corruption error
+			N_Error("FS_Read: overread of %lu bytes", size);
+		}
+		memcpy(buffer, f->data.chunk->bufPtr, size);
+		f->data.chunk->bufPtr += size;
+		fs_readCount += size;
+		return size;
+	}
+	// bff archives and normal files
+	else {
+		readCount = fread(buffer, 1, size, f->data.fp);
+		if (readCount != size) {
+			N_Error("FS_Read: short read of %lu bytes, should have read %lu bytes", readCount, size);
+		}
+		fs_readCount += readCount;
+		return readCount;
+	}
+	return 0;
+}
+
+file_t FS_CreateTmp(char **name, const char *ext)
+{
+	file_t fd;
+	fileHandle_t *f;
+	static char *ospath;
+	const char *tmpname;
+	FILE *fp;
+
+	if (!fs_initialized) {
+		N_Error("Filesystem call made without initialization");
+	}
+	if (fs_numTmpFiles >= MAX_TMP_FILES) {
+		N_Error("FS_CreateTmp: too many temp files");
+	}
+
+	fd = FS_HandleForFile();
+	f = &handles[fd];
+	FS_InitHandle(f);
+
+	if (ext)
+		tmpname = va("tmpfile%i.%s", fs_numTmpFiles, ext);
+	else
+		tmpname = va("tmpfile%i.ntf", fs_numTmpFiles);
+
+	ospath = FS_BuildOSPath(fs_homepath.c_str(), NULL, tmpname);
+	f->tmpFile = qtrue;
+	f->data.fp = Sys_FOpen(ospath, "wb+");
+	if (!f->data.fp) {
+		return FS_INVALID_HANDLE;
+	}
+	f->used = qtrue;
+	N_strncpy(f->name, tmpname, MAX_GDR_PATH);
+	*name = ospath;
+
+#ifdef _NOMAD_DEBUG
+	Con_Printf("DEBUG: created tempfile %s", ospath);
+#endif
+
+	fs_numTmpFiles++;
+
+	return fd;
+}
+
+void* FS_GetBFFData(file_t handle)
+{
+	return (void *)handles[handle].bff->handle;
+}
+
+void FS_FClose(file_t f)
+{
+	fileHandle_t* handle;
+
+	if (!fs_initialized) {
+		N_Error("Filesystem call made without initialization");
+	}
+	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
+		N_Error("FS_FClose: out of range");
+	}
+
+	handle = &handles[f];
+	if (!handle->used) {
+		N_Error("FS_FClose: file closed twice");
+	}
+
+	// handle is a bff archive
+	if (handle->bff && handle->bffFile && handle->bffIndex > -1 && !handle->data.stream) {
+		FS_CloseBFF(handle);
+	}
+	else if (FS_IsChunk(handle)) {
+		handle->bff = NULL;
+		handle->bffIndex = -1;
+		handle->bffFile = qfalse;
+	}
+	else {
+		FS_ForceFlush(f);
+		fclose(handle->data.fp);
+		if (handle->tmpFile) { // its a temporary file, delete when closing
+			FS_Remove(handle->name);
+			handle->tmpFile = qfalse;
+			fs_numTmpFiles--;
+		}
+	}
+
+	handle->used = qfalse;
+	handle->data.stream = NULL;
+}
+
+char* FS_GetOSPath(file_t f)
+{
+	fileHandle_t *file;
+	static char *ospath;
+
+	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
+		N_Error("FS_GetOSPath: out of range");
+	}
+
+	file = &handles[f];
+	ospath = FS_BuildOSPath(fs_homepath.c_str(), NULL, file->name);
+
+	return ospath;
+}
+
+file_t FS_FOpenWrite(const char *filepath)
+{
+	char *ospath;
+	fileHandle_t *f;
+	file_t fd;
+
+	if (!fs_initialized) {
+		N_Error("Filesystem call made without initialization");
+	}
+	if (!filepath) {
+		N_Error("FS_FOpenWrite: NULL filepath");
+	}
+	if (!*filepath) {
+		N_Error("FS_FOpenWrite: empty filepath");
+	}
+
+	fd = FS_HandleForFile();
+	f = &handles[fd];
+	FS_InitHandle(f);
+
+	if (FS_IsChunk(filepath)) {
+		N_Error("FS_FOpenWrite: cannot create a write stream for a bff chunk");
+	}
+	else {
+		ospath = FS_BuildOSPath(fs_homepath.c_str(), NULL, filepath);
+		N_strncpy(f->name, filepath, MAX_GDR_PATH);
+		f->data.fp = Sys_FOpen(ospath, "wb");
+		if (!f->data.fp) {
+			N_Error("FS_FOpenWrite: failed to open file %s", ospath);
+			return FS_INVALID_HANDLE;
+		}
+	}
+	f->used = qtrue;
+	return fd;
+}
+
+file_t FS_FOpenRead(const char *filepath)
+{
+	char *ospath;
+	fileHandle_t* f;
+	file_t fd;
+	bffFile_t* bff;
+	fileInBFF_t* chunk;
+
+	if (!fs_initialized) {
+		N_Error("Filesystem call made without initialization");
+	}
+	if (!filepath) {
+		N_Error("FS_FOpenRead: NULL filepath");
+	}
+	if (!*filepath) {
+		N_Error("FS_FOpenRead: empty filepath");
+	}
+
+	fd = FS_HandleForFile();
+	f = &handles[fd];
+	FS_InitHandle(f);
+
+	if (FS_IsChunk(filepath)) {
+		chunk = FS_GetBFFChunk(filepath);
+		if (!chunk) {
+			Con_Printf("WARNING: failed to load bff chunk %s", filepath);
+			return FS_INVALID_HANDLE;
+		}
+		bff = FS_GetChunkBFF(chunk);
+		if (!FS_OpenFileInBFF(filepath, &fd, bff, chunk, f)) {
+			return FS_INVALID_HANDLE;
+		}
+	}
+	// normal file
+	else {
+		ospath = FS_BuildOSPath(fs_homepath.c_str(), NULL, filepath);
+		N_strncpy(f->name, filepath, MAX_GDR_PATH);
+		f->data.fp = Sys_FOpen(ospath, "rb");
+		if (!f->data.fp) {
+			N_Error("FS_FOpenRead: failed to open file %s", ospath);
+			return FS_INVALID_HANDLE;
+		}
+	}
+	f->used = qtrue;
+	return fd;
+}
+
 static void FS_ReplaceSeparators(char *str)
 {
 	char *s;
-	
+
 	for (s = str; *s; s++) {
 		if (*s == PATH_SEP_FOREIGN) {
 			*s = PATH_SEP;
@@ -846,177 +619,101 @@ static void FS_ReplaceSeparators(char *str)
 	}
 }
 
-/*
-FS_IsBFFRegistered: checks if the bff file in question is an officially registered one via crc
-*/
-static bool FS_IsBFFRegistered(bffFile_t* bff)
+static uint64_t FS_FileLength(FILE *f)
 {
-	byte *p;
-	const uint32_t crc_size = sizeof(uint32_t) * 2 + MAX_BFF_CHUNKNAME;
-	uint16_t crc = 0;
-	for (uint32_t i = 0; i < bff->numfiles; i++) {
-		p = (byte *)&bff->hashtable[i];
-		for (uint32_t c = 0; c < crc_size; c++) {
-			CRC_ProcessByte(&crc, *p);
-			p++;
+	uint64_t pos, end;
+
+	pos = ftell(f);
+	fseek(f, 0L, SEEK_END);
+	end = ftell(f);
+	fseek(f, pos, SEEK_SET);
+	
+	return end;
+}
+
+static void FS_ForceFlush(file_t f)
+{
+	FILE *fp;
+
+	fp = FS_FileForHandle(f);
+	setvbuf(fp, NULL, _IONBF, 0);
+}
+
+static char* FS_BuildOSPath(const char *base, const char *game, const char *npath)
+{
+	char temp[MAX_OSPATH*2+1];
+	static char ospath[2][sizeof(temp)+MAX_OSPATH];
+	static uint32_t toggle;
+
+	toggle ^= 1;
+
+	if (!game || !*game)
+		game = fs_gamedir.value;
+	
+	if (npath)
+		stbsp_snprintf(temp, sizeof(temp), "%c%s%c%s", PATH_SEP, game, PATH_SEP, npath);
+	else
+		stbsp_snprintf(temp, sizeof(temp), "%c%s", PATH_SEP, game);
+	
+	FS_ReplaceSeparators(temp);
+	stbsp_snprintf(ospath[toggle], sizeof(ospath[0]), "%s%s", base, temp);
+
+	return ospath[toggle];
+}
+
+static bool FS_IsChunk(fileHandle_t *handle)
+{
+	if (!handle->bff) return false;
+	if (handle->bffIndex == -1) return false;
+	if (!handle->bffFile) return false;
+	return true;
+}
+
+static bool FS_IsChunk(const char *filepath)
+{
+	for (uint32_t i = 0; i < fs_totalArchives; i++) {
+		for (uint32_t c = 0; c < bffs[i]->numfiles; c++) {
+			if (N_strncmp(filepath, bffs[i]->fileList[c].name, MAX_BFF_CHUNKNAME)) {
+				return true;
+			}
 		}
-	}
-	return crc == bff->checksum;
-}
-
-
-/*
-FS_FilenameCompare: ignore case and separator char distinctions
-*/
-static bool FS_FilenameCompare( const char *s1, const char *s2 )
-{
-	int		c1, c2;
-	
-	do {
-		c1 = *s1++;
-		c2 = *s2++;
-
-		if ( c1 <= 'Z' && c1 >= 'A' )
-			c1 += ('a' - 'A');
-		else if ( c1 == '\\' || c1 == ':' )
-			c1 = '/';
-
-		if ( c2 <= 'Z' && c2 >= 'A' )
-			c2 += ('a' - 'A');
-		else if ( c2 == '\\' || c2 == ':' )
-			c2 = '/';
-
-		if ( c1 != c2 ) {
-			return false;		// strings not equal
-		}
-	} while ( c1 );
-	
-	return true;		// strings are equal
-}
-
-/*
-FS_IsExt: returns true if ext matches file extension filename
-*/
-static bool FS_IsExt(const char *filename, const char *ext, size_t namelen)
-{
-	size_t extlen;
-	
-	extlen = strlen(ext);
-	
-	if (extlen > namelen)
-		return false;
-	
-	filename += namelen - extlen;
-	
-	return N_strcasecmp(filename, ext);
-}
-
-/*
-FS_StripExt:
-*/
-bool FS_StripExt(char *filename, const char *ext)
-{
-	int extlen, namelen;
-	
-	extlen = strlen(ext);
-	namelen = strlen(filename);
-	
-	if (extlen > namelen)
-		return false;
-	
-	filename += namelen - extlen;
-	
-	if (N_strcasecmp(filename, ext)) {
-		filename[0] = '\0';
-		return true;
 	}
 	return false;
 }
-
-/*
-FS_HasExt
-*/
-static const char* FS_HasExt(const char *filename, const char **extlist, int extCount)
+static fileInBFF_t* FS_GetBFFChunk(const char *filepath)
 {
-	const char *e;
-	int i;
-	
-	e = strrchr(filename, '.');
-	
-	if (!e)
-		return NULL;
-	
-	for (i = 0, e++; i < extCount; i++) {
-		if (N_strcasecmp(e, extList[i]))
-			return e;
+	for (uint32_t i = 0; i < fs_totalArchives; i++) {
+		for (uint32_t c = 0; c < bffs[i]->numfiles; c++) {
+			if (N_strncmp(filepath, bffs[i]->fileList[c].name, MAX_BFF_CHUNKNAME)) {
+				return &bffs[i]->fileList[c];
+			}
+		}
+	}
+	return NULL;
+}
+static bffFile_t* FS_GetChunkBFF(fileInBFF_t* chunk)
+{
+	for (uint32_t i = 0; i < fs_totalArchives; i++) {
+		for (uint32_t c = 0; c < bffs[i]->numfiles; c++) {
+			if (chunk == &bffs[i]->fileList[c]) {
+				return bffs[i];
+			}
+		}
 	}
 	return NULL;
 }
 
-/*
-FS_FileIsBFF: if the handle is a bff archive
-*/
-static bool FS_FileIsBFF(const char *path)
+static qboolean FS_OpenFileInBFF(const char *chunkname, file_t *fd, bffFile_t *bff, fileInBFF_t *chunk, fileHandle_t *f)
 {
-	for (uint32_t i = 0; i < fs_totalArchives; i++) {
-	}
-}
-static bool FS_FileIsBFF(fileHandle_t *f)
-{
-	if (!f->data.chunk && f->bff && f->bffFile && f->bffIndex)
-		return true;
-	else
-		return false;
-}
-/*
-FS_FileIsInBFF:
-if the handle is a file within a bff
-*/
-static bool FS_FileIsInBFF(const char *path)
-{
-	uint64_t hash = FS_HashFileName(path, MAX_FILE_HASH);
-	
-	for (uint32_t i = 0; i < fs_totalArchives; i++) {
-		if (N_strcmp(bffs[i]->hashtable[hash], path)) {
-			return true;
-		}
-	}
-	return false;
-}
-static bool FS_FileIsInBFF(fileHandle_t *f)
-{
-	if (f->data.chunk && f->bff && f->bffFile && f->bffIndex)
-		return true;
-	else
-		return false;
-}
+	f->bffFile = qtrue;
+	f->bff = bff;
+	f->bffIndex = bff->index;
+	f->data.chunk = chunk;
+	fs_lastBffIndex = bff->index;
 
+	N_strncpy(f->name, chunk->name, MAX_BFF_CHUNKNAME);
 
-uint32_t FS_LoadFile(const char *filepath, void **buffer)
-{
-	file_t f = FS_FOpenRead(filepath);
-	if (f == FS_INVALID_HANDLE) {
-		N_Error("FS_LoadFile: failed to open file %s", filepath);
-	}
-	
-	uint32_t fsize = FS_FileLength(f);
-	void *buf = Hunk_TempAlloc(fsize);
-	if (FS_Read(buf, fsize, f) != fsize) {
-		N_Error("FS_LoadFile: short read");
-	}
-	FS_FClose(&f);
-	
-	*buffer = buf;
-	return fsize;
+	bff->handlesUsed++;
+
+	return qtrue;
 }
-
-uint32_t FS_ReadFile(const char *filepath, void *buffer)
-{
-	file_t f = FS_FOpenRead(filepath);
-	if (f == FS_INVALID_HANDLE) {
-		N_Error("FS_ReadFile: failed to open file %s", filepath);
-	}
-	
-	uint32_t fsize = FS_FileLength(f);
-}
-

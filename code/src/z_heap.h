@@ -5,6 +5,7 @@
 
 #ifndef Q3_VM
 
+
 void Memory_Init();
 void Memory_Shutdown();
 
@@ -60,8 +61,8 @@ typedef struct memzone_s
 class Heap
 {
 private:
-	static void* Hunk_AllocHigh(uint32_t size, const char *name);
-	static void* Hunk_AllocLow(uint32_t size, const char *name);
+	static void* Hunk_AllocHigh(uint64_t size, const char *name);
+	static void* Hunk_AllocLow(uint64_t size, const char *name);
 	static void Z_MergeNB(memblock_t *block);
 	static void Z_MergePB(memblock_t *block);
 	static void Z_ScanForBlock(void *start, void *end);
@@ -74,7 +75,7 @@ public:
 	friend void Memory_Init();
 	friend void Memory_Shutdown();
 
-	static void* Hunk_Alloc(uint32_t size, const char *name, int where);
+	static void* Hunk_Alloc(uint64_t size, const char *name, int where);
 	static void Hunk_Check(void);
 	static void Hunk_Print(void);
 	static void Hunk_FreeToLowMark(uint64_t mark);
@@ -103,6 +104,7 @@ public:
 	static void* Z_ZoneBegin(void);
 	static void* Z_ZoneEnd(void);
 	static uint32_t Z_NumBlocks(int tag);
+	static void Z_Defrag(void);
 
 	static void Mem_Info(void);
 
@@ -141,6 +143,7 @@ public:
 #define Z_ZoneBegin Heap::Z_ZoneBegin
 #define Z_ZoneEnd Heap::Z_ZoneEnd
 #define Z_NumBlocks Heap::Z_NumBlocks
+#define Z_Defrag Heap::Z_Defrag
 #define Mem_Info Heap::Mem_Info
 
 template<class T>
@@ -171,24 +174,23 @@ struct nomad_allocator
 		Z_ChangeTag(p, TAG_PURGELEVEL);
 	}
 };
-
-typedef struct
-{
-	int num;
-	int minSize;
-	int maxSize;
-	int totalSize;
+typedef struct {
+	int		num;
+	int		minSize;
+	int		maxSize;
+	int		totalSize;
 } memoryStats_t;
 
-void Mem_Init( void );
-void Mem_Shutdown( void );
-void Mem_EnableLeakTest( const char *name );
-void Mem_ClearFrameStats( void );
-void Mem_GetFrameStats( memoryStats_t& allocs, memoryStats_t& frees );
-void Mem_GetStats( memoryStats_t& stats );
-void Mem_AllocDefragBlock( void );
 
-#ifndef DEBUG_MEMORY
+void		Mem_Init( void );
+void		Mem_Shutdown( void );
+void		Mem_EnableLeakTest( const char *name );
+void		Mem_ClearFrameStats( void );
+void		Mem_GetFrameStats( memoryStats_t &allocs, memoryStats_t &frees );
+void		Mem_GetStats( memoryStats_t &stats );
+void		Mem_AllocDefragBlock( void );
+
+#if 1
 
 void* Mem_Alloc(const uint32_t size);
 void* Mem_ClearedAlloc(const uint32_t size);
@@ -199,21 +201,23 @@ void Mem_Free16(void *ptr);
 
 #else
 
-void* Mem_Alloc( const uint32_t size, const char *fileName, const int lineNumber );
-void* Mem_ClearedAlloc( const uint32_t size, const char *fileName, const int lineNumber );
-void Mem_Free( void *ptr, const char *fileName, const int lineNumber );
-char* Mem_CopyString( const char *in, const char *fileName, const int lineNumber );
-void* Mem_Alloc16( const uint32_t size, const char *fileName, const int lineNumber );
-void Mem_Free16( void *ptr, const char *fileName, const int lineNumber );
+void* Mem_AllocDebug(const uint32_t size, const char *fileName, const uint32_t lineNumber);
+void* Mem_ClearedAllocDebug(const uint32_t size, const char *fileName, const uint32_t lineNumber);
+void Mem_FreeDebug(void *ptr, const char *fileName, const uint32_t lineNumber);
+char* Mem_CopyStringDebug(const char *in, const char *fileName, const uint32_t lineNumber);
+void* Mem_Alloc16Debug(const uint32_t size, const char *fileName, const uint32_t lineNumber);
+void Mem_Free16Debug(void *ptr, const char *fileName, const uint32_t lineNumber);
 
-#define Mem_Alloc(size) Mem_Alloc(size, __FILE__, __LINE__)
-#define Mem_ClearedAlloc(size) Mem_ClearedAlloc(size, __FILE__, __LINE__)
-#define Mem_Free(ptr) Mem_Free(ptr, __FILE__, __LINE__)
-#define Mem_CopyString(s) Mem_CopyString(s, __FILE__, __LINE__)
-#define Mem_Alloc16(size) Mem_Alloc16(size, __FILE__, __LINE__)
-#define Mem_Free16(ptr) Mem_Free16(ptr, __FILE__, __LINE__)
+#define Mem_Alloc(size) Mem_AllocDebug(size, __FILE__, __LINE__)
+#define Mem_ClearedAlloc(size) Mem_ClearedAllocDebug(size, __FILE__, __LINE__)
+#define Mem_Free(ptr) Mem_FreeDebug(ptr, __FILE__, __LINE__)
+#define Mem_CopyString(s) Mem_CopyStringDebug(s, __FILE__, __LINE__)
+#define Mem_Alloc16(size) Mem_Alloc16Debug(size, __FILE__, __LINE__)
+#define Mem_Free16(ptr) Mem_Free16Debug(ptr, __FILE__, __LINE__)
 
 #endif
+
+
 
 template<class T>
 struct id_allocator

@@ -23,7 +23,7 @@ void GetScripts(const json& data, bffinfo_t* info)
 			strncpy(script->name, name.c_str(), MAX_BFF_CHUNKNAME - 1);
 		}
 		else {
-			Con_Printf("WARNING: script at index %lu doesn't have an assigned name, using default name of %s", scriptnode.c_str());
+			Con_Printf("WARNING: script at index %lu doesn't have an assigned name, using default name of %s", i, scriptnode.c_str());
 			strncpy(script->name, scriptnode.c_str(), MAX_BFF_CHUNKNAME - 1);
 		}
 		

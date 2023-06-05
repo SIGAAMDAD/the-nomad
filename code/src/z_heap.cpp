@@ -5,10 +5,10 @@ Heap Heap::heap;
 #define UNOWNED    ((void *)666)
 #define ZONEID     0xa21d49
 
-#define MIN_FRAGMENT 128
+#define MIN_FRAGMENT 64
 
-#define DEFAULT_HEAP_SIZE (1000*1024*1024)
-#define DEFAULT_ZONE_SIZE (100*1024*1024)
+#define DEFAULT_HEAP_SIZE (1700*1024*1024)
+#define DEFAULT_ZONE_SIZE (400*1024*1024)
 
 static byte *hunk_base;
 static uint64_t hunk_size;
@@ -41,7 +41,8 @@ void Memory_Shutdown(void)
 void Memory_Init(void)
 {
 	Con_Printf("Memory_Init: initializing allocation daemons");
-    Mem_Init();
+
+	Mem_Init();
 
     hunk_size = 0;
     hunk_low_used = hunk_high_used = hunk_tempmark = 0;
@@ -52,32 +53,30 @@ void Memory_Init(void)
         if (i+1 > myargc)
             N_Error("Memory_Init: you must specify the amount of ram in MB after -ram");
         else
-            hunk_size = N_atoi(myargv[i]) * 1024 * 1024;
+            hunk_size = N_atoi(myargv[i+1]) * 1024 * 1024;
     }
     else {
         hunk_size = DEFAULT_HEAP_SIZE;
     }
     hunk_base = (byte *)malloc(hunk_size);
-    if (!hunk_base)
-        N_Error("Memory_Init: malloc() failed on %lu bytes when allocating the hunk", hunk_size);
-    
+    if (!hunk_base) {
+        N_Error("Memory_Init: malloc() failed on %lu bytes when allocating the hunk, errno: %d", hunk_size, errno);
+	}
+	Con_Printf("Initialized heap from %p -> %p (%lu MiB)", (void *)hunk_base, (void *)(hunk_base + hunk_size), hunk_size >> 20);
     memset(hunk_base, 0, hunk_size);
 
     uint64_t zonesize;
-    i = I_GetParm("-zoneram");
-    if (i != -1) {
-        if (i+1 > myargc)
-            N_Error("Memory_Init: you must specifiy the amount of ram in MB after -zoneram");
-        else
-            zonesize = N_atoi(myargv[i]) * 1024 * 1024;
-    }
-    else {
-        zonesize = DEFAULT_ZONE_SIZE;
-    }
+	if (hunk_size != DEFAULT_HEAP_SIZE) {
+		zonesize = hunk_size / 4;
+	}
+	else {
+		zonesize = DEFAULT_ZONE_SIZE;
+	}
+	Con_Printf("Zone Memory initialized with %lu bytes", zonesize);
+
     zonesize += sizeof(memzone_t);
     mainzone = (memzone_t *)Hunk_Alloc(zonesize, "zoneheap", h_low);
     memset(mainzone, 0, zonesize);
-    Con_Printf("Initialized heap from %p -> %p (%lu MiB)", (void *)hunk_base, (void *)(hunk_base + hunk_size), hunk_size >> 20);
 
     mainzone->size = zonesize - sizeof(memzone_t);
 
@@ -121,7 +120,7 @@ uint64_t Heap::Hunk_LowMark(void)
 
 void Heap::Hunk_FreeToLowMark(uint64_t mark)
 {
-    if (!mark || mark > hunk_low_used)
+    if (mark > hunk_low_used)
         N_Error("Hunk_FreeToLowMark: bad mark %lu", mark);
     
     memset(hunk_base + mark, 0, hunk_low_used - mark);
@@ -135,7 +134,7 @@ uint64_t Heap::Hunk_HighMark(void)
 
 void Heap::Hunk_FreeToHighMark(uint64_t mark)
 {
-    if (!mark || mark > hunk_high_used)
+    if (mark > hunk_high_used)
         N_Error("Hunk_FreeToHighMark: bad mark %lu", mark);
     
     memset(hunk_base + hunk_size - hunk_high_used, 0, hunk_high_used - mark);
@@ -164,26 +163,21 @@ void Heap::Hunk_Print(void)
 	Con_Printf ("-------------------------");
 
 	while (1) {
-	//
-	// skip to the high hunk if done with low hunk
-	//
-		if ( h == endlow )
-		{
-			Con_Printf ("-------------------------");
-			Con_Printf ("          :%8i REMAINING", hunk_size - hunk_low_used - hunk_high_used);
-			Con_Printf ("-------------------------");
+		//
+		// skip to the high hunk if done with low hunk
+		//
+		if (h == endlow)
 			h = starthigh;
-		}
 		
-	//
-	// if totally done, break
-	//
+		//
+		// if totally done, break
+		//
 		if ( h == endhigh )
 			break;
 
-	//
-	// run consistancy checks
-	//
+		//
+		// run consistancy checks
+		//
 		if (h->id != HUNKID)
 			N_Error ("Hunk_Check: hunk id isn't correct");
 		if (h->size < 16 || h->size + (byte *)h - hunk_base > hunk_size)
@@ -194,14 +188,17 @@ void Heap::Hunk_Print(void)
 		totalblocks++;
 		sum += h->size;
 
-	//
-	// print the single block
-	//
+		//
+		// print the single block
+		//
 		N_strncpy (name, h->name, 14);
 		Con_Printf ("%8p : %8i   %8s", h, h->size, name);
 
 		h = next;
 	}
+	Con_Printf ("-------------------------");
+	Con_Printf ("          :%8i REMAINING", hunk_size - hunk_low_used - hunk_high_used);
+	Con_Printf ("-------------------------");
 	Con_Printf ("          :%8i (TOTAL)", sum);
 	count = 0;
 	sum = 0;
@@ -210,12 +207,12 @@ void Heap::Hunk_Print(void)
 	Con_Printf ("%8i total allocations\n\n", totalblocks);
 }
 
-void* Heap::Hunk_AllocHigh(uint32_t size, const char *name)
+void* Heap::Hunk_AllocHigh(uint64_t size, const char *name)
 {
     hunk_t *hunk;
 
-    if (hunk_size - hunk_low_used - hunk_high_used < size) {
-        Con_Printf("Hunk_AllocHigh: failed on allocation of %i bytes", size);
+    if (hunk_size - hunk_high_used < size) {
+        Con_Printf("Hunk_AllocHigh: failed on allocation of %li bytes", size);
         return NULL;
     }
 
@@ -231,12 +228,12 @@ void* Heap::Hunk_AllocHigh(uint32_t size, const char *name)
     return (void *)(hunk+1);
 }
 
-void* Heap::Hunk_AllocLow(uint32_t size, const char *name)
+void* Heap::Hunk_AllocLow(uint64_t size, const char *name)
 {
     hunk_t *hunk;
 
-    if (hunk_size - hunk_low_used - hunk_high_used < size)
-        N_Error("Hunk_AllocLow: failed on allocation of %i bytes", size);
+    if (hunk_size - hunk_low_used < size)
+        N_Error("Hunk_AllocLow: failed on allocation of %li bytes", size);
     
     hunk = (hunk_t *)(hunk_base + hunk_low_used);
     hunk_low_used += size;
@@ -249,7 +246,7 @@ void* Heap::Hunk_AllocLow(uint32_t size, const char *name)
     return (void *)(hunk+1);
 }
 
-void* Heap::Hunk_Alloc(uint32_t size, const char *name, int where)
+void* Heap::Hunk_Alloc(uint64_t size, const char *name, int where)
 {
     if (!size)
         N_Error("Hunk_Alloc: bad size");
@@ -321,11 +318,6 @@ void* operator new[](size_t size, size_t alignment, size_t alignmentOffset, cons
     return ::operator new[](size, std::align_val_t(alignment));
 }
 
-static size_t active_memory = 0;
-static size_t free_memory = 0;
-static size_t inactive_memory = 0;
-static size_t purgable_memory = 0;
-
 void* Heap::Z_ZoneBegin(void)
 {
 	return (void *)mainzone;
@@ -353,18 +345,12 @@ void Heap::Z_Init(void)
 	base->user = (void **)NULL;
 	base->size = mainzone->size - sizeof(memzone_t);
 	base->id = ZONEID;
-	memset(base->name, 0, 15);
 	N_strncpy(base->name, "base", 14);
-	free_memory = mainzone->size;
-    active_memory = 0;
-    purgable_memory = 0;
 }
 
 void Heap::Z_MergePB(memblock_t* block)
 {
 	memblock_t* other;
-	Con_Printf("Z_MergePB: merging prev block for block at %p", (void *)block);
-	
 	other = block->prev;
 	if (other->tag == TAG_FREE) {
 		// merge with previous free block
@@ -377,14 +363,11 @@ void Heap::Z_MergePB(memblock_t* block)
 		
 		block = other;
 	}
-	else
-		Con_Printf("Z_MergeFB: prev block not TAG_FREE");
 }
 
 void Heap::Z_MergeNB(memblock_t* block)
 {
 	memblock_t* other;
-	Con_Printf("Z_MergeNB: merging next block for block at %p", (void *)block);
 	
 	other = block->next;
 	if (other->tag == TAG_FREE) {
@@ -396,8 +379,6 @@ void Heap::Z_MergeNB(memblock_t* block)
 		if (other == mainzone->rover)
 			mainzone->rover = block;
 	}
-	else
-		Con_Printf("Z_MergeNB: next block not TAG_FREE");
 }
 
 void Heap::Z_ScanForBlock(void *start, void *end)
@@ -451,10 +432,8 @@ void Heap::Z_ClearZone(void)
 	
 	block->prev = block->next = &mainzone->blocklist;
 	block->id = ZONEID;
-	memset(block->name, 0, 15);
+
 	N_strncpy(block->name, "base", 14);
-	free_memory = mainzone->size;
-	active_memory = purgable_memory = 0;
 	
 	// a free block.
 	block->tag = TAG_FREE;
@@ -475,6 +454,20 @@ uint32_t Heap::Z_NumBlocks(int tag)
 	return count;
 }
 
+void Heap::Z_Defrag(void)
+{
+	memblock_t* block;
+	for (block = mainzone->blocklist.next;; block = block->next) {
+		if (block == &mainzone->blocklist) {
+			break;
+		}
+		if (block->tag == TAG_FREE) {
+			Z_MergePB(block);
+			Z_MergeNB(block);
+		}
+	}
+}
+
 void Heap::Z_Free(void *ptr)
 {
 	memblock_t* other;
@@ -489,17 +482,10 @@ void Heap::Z_Free(void *ptr)
 		*block->user = NULL;
 	}
 	
-	free_memory += block->size;
-	if (block->tag >= TAG_PURGELEVEL)
-	    purgable_memory -= block->size;
-	else
-	    active_memory -= block->size;
-	
 	// mark as free
 	block->tag = TAG_FREE;
 	block->user = (void **)NULL;
 	block->id = ZONEID;
-	memset(block->name, 0, sizeof(block->name));
 	N_strncpy(block->name, "freed", 14);
 	
 #ifdef _NOMAD_DEBUG
@@ -545,7 +531,8 @@ void* Heap::Z_AlignedAlloc(uint32_t alignment, uint32_t size, int tag, void *use
 	do {
 		if (rover == start) {
 			Con_Printf("WARNING: zone size wasn't big enough for Z_Malloc size given, clearing cache");
-			Z_FreeTags(TAG_PURGELEVEL, TAG_CACHE);
+			Z_CleanCache();
+			Z_FreeTags(TAG_PUR)
 			if (tryagain)
 				N_Error("Z_Malloc: failed allocation of %li bytes because zone wasn't big enough", size);
 			
@@ -574,15 +561,9 @@ void* Heap::Z_AlignedAlloc(uint32_t alignment, uint32_t size, int tag, void *use
 	} while (base->tag != TAG_FREE || base->size < size);
 	// old: (base->user || base->size < size)
 	
-	free_memory -= rover->size;
-	if (tag >= TAG_PURGELEVEL)
-		purgable_memory += rover->size;
-	else
-		active_memory += rover->size;
-	
 	extra = base->size - size;
 	
-	if (extra > MIN_FRAGMENT) {
+	if (extra >= MIN_FRAGMENT) {
 		newblock = (memblock_t *)((byte *)base + size);
 		newblock->size = extra;
 		newblock->user = NULL;
@@ -593,18 +574,9 @@ void* Heap::Z_AlignedAlloc(uint32_t alignment, uint32_t size, int tag, void *use
 		base->next = newblock;
 		base->size = size;
 	}
-	else if (tag >= TAG_PURGELEVEL)
-		purgable_memory += size;
 	
 	base->user = (void **)user;
 	base->tag = tag;
-	
-	if (tag >= TAG_PURGELEVEL)
-	    purgable_memory += size;
-	else
-	    active_memory += size;
-	
-	free_memory -= size;
 	
 	void *retn = (void *)( (byte *)base + sizeof(memblock_t) );
 	
@@ -630,6 +602,7 @@ void* Heap::Z_Malloc(uint32_t size, int tag, void *user, const char* name)
 #ifdef CHECKHEAP
 	Z_CheckHeap();
 #endif
+	Z_Defrag();
 	if (tag >= TAG_PURGELEVEL && !user)
 		N_Error("Z_Malloc: an owner is required for purgable blocks, name: %s", name);
 	if (size == 0)
@@ -659,7 +632,7 @@ void* Heap::Z_Malloc(uint32_t size, int tag, void *user, const char* name)
 	do {
 		if (rover == start) {
 			Con_Printf("WARNING: zone size wasn't big enough for Z_Malloc size given, clearing cache");
-			Z_FreeTags(TAG_PURGELEVEL, TAG_CACHE);
+			Z_CleanCache();
 			if (tryagain)
 				N_Error("Z_Malloc: failed allocation of %li bytes because zone wasn't big enough", size);
 			
@@ -687,16 +660,10 @@ void* Heap::Z_Malloc(uint32_t size, int tag, void *user, const char* name)
 		}
 	} while (base->tag != TAG_FREE || base->size < size);
 	// old: (base->user || base->size < size)
-	
-	free_memory -= rover->size;
-	if (tag >= TAG_PURGELEVEL)
-		purgable_memory += rover->size;
-	else
-		active_memory += rover->size;
-	
+
 	extra = base->size - size;
 	
-	if (extra > MIN_FRAGMENT) {
+	if (extra >= MIN_FRAGMENT) {
 		newblock = (memblock_t *)((byte *)base + size);
 		newblock->size = extra;
 		newblock->user = NULL;
@@ -707,18 +674,9 @@ void* Heap::Z_Malloc(uint32_t size, int tag, void *user, const char* name)
 		base->next = newblock;
 		base->size = size;
 	}
-	else if (tag >= TAG_PURGELEVEL)
-		purgable_memory += size;
 	
 	base->user = (void **)user;
 	base->tag = tag;
-	
-	if (tag >= TAG_PURGELEVEL)
-	    purgable_memory += size;
-	else
-	    active_memory += size;
-	
-	free_memory -= size;
 	
 	void *retn = (void *)( (byte *)base + sizeof(memblock_t) );
 	
@@ -729,7 +687,6 @@ void* Heap::Z_Malloc(uint32_t size, int tag, void *user, const char* name)
 	mainzone->rover = base->next;
 	base->id = ZONEID;
 	
-    memset(base->name, 0, 15);
     N_strncpy(base->name, name, 14);
 #ifdef CHECKHEAP
 	Z_CheckHeap();
@@ -796,59 +753,91 @@ void Heap::Z_FreeTags(int lowtag, int hightag)
 {
 	memblock_t* block;
 	memblock_t* next;
+	uint64_t totalBytes = 0;
 	
     Con_Printf("freeing zone blocks from tags %i (lowtag) to %i (hightag)", lowtag, hightag);
 	for (block = mainzone->blocklist.next; block != &mainzone->blocklist; block = block->next) {
 		next = block->next;
 		
-		if (block->tag == TAG_FREE)
-			continue;
-		if (block->tag >= lowtag && block->tag <= hightag)
+		if (block->tag == TAG_FREE) { // avoid frags
+			Z_MergeNB(block);
+			Z_MergePB(block);
+		}
+		if (block->tag >= lowtag && block->tag <= hightag) {
+			totalBytes += block->size;
 			Z_Free((byte *)block+sizeof(memblock_t));
+		}
 	}
+	Con_Printf("Total bytes freed: %lu", totalBytes);
 }
 
 void Heap::Z_Print(bool all)
 {
-	memblock_t* block;
-	memblock_t* next;
-	size_t count, sum;
-	size_t totalblocks;
+	memblock_t *block, *next;
+	uint64_t count, sum, totalblocks;
+	uint64_t blockcount[NUMTAGS] = {0};
 	char name[15];
 	
+	uint64_t static_mem, purgable_mem, cached_mem, free_mem, audio_mem, total_memory;
+	static_mem = purgable_mem = cached_mem = free_mem = audio_mem = total_memory = 0;
+
+	for (block = mainzone->blocklist.next;; block = block->next) {
+		if (block == &mainzone->blocklist) {
+			break;
+		}
+		if (block->tag == TAG_STATIC || block->tag == TAG_LEVEL) {
+			static_mem += block->size;
+		}
+		else if (block->tag == TAG_SFX || block->tag == TAG_MUSIC) {
+			audio_mem += block->size;
+		}
+		else if (block->tag == TAG_CACHE) {
+			cached_mem += block->size;
+		}
+		else if (block->tag == TAG_PURGELEVEL) {
+			purgable_mem += block->size;
+		}
+		else if (block->tag == TAG_FREE) {
+			free_mem += block->size;
+		}
+	}
+
 	name[14] = 0;
 	count = 0;
 	sum = 0;
 	totalblocks = 0;
 	
-	size_t total_memory = active_memory + purgable_memory + free_memory;
+	total_memory = static_mem + audio_mem + cached_mem + purgable_mem + free_mem;
 	double s = 100.0f / total_memory;
 	
     Con_Printf("\n\n<---- Zone Allocation Daemon Heap Report ---->");
-	Con_Printf("          : %8li total zone size", mainzone->size);
+	Con_Printf("          : %8lu total zone size", mainzone->size);
 	Con_Printf("-------------------------");
 	Con_Printf("-------------------------");
-	Con_Printf("          : %8li REMAINING", mainzone->size - active_memory - purgable_memory);
+	Con_Printf("          : %8lu REMAINING", mainzone->size - static_mem - cached_mem - purgable_mem - audio_mem);
 	Con_Printf("-------------------------");
 	Con_Printf("(PERCENTAGES)");
 	Con_Printf(
-			"%8li   %6.02f%%   static\n"
-			"%8li   %6.02f%%   purgable\n"
-			"%8li   %6.02f%%   free",
-	active_memory, active_memory*s,
-	purgable_memory, purgable_memory*s,
-	free_memory, free_memory*s);
+			"%8lu   %6.02f%%   static\n"
+			"%8lu   %6.02f%%   cached\n"
+			"%8lu   %6.02f%%   audio\n"
+			"%8lu   %6.02f%%   purgable\n"
+			"%8lu   %6.02f%%   free",
+	static_mem, static_mem*s,
+	cached_mem, cached_mem*s,
+	audio_mem, audio_mem*s,
+	purgable_mem, purgable_mem*s,
+	free_mem, free_mem*s);
 	Con_Printf("-------------------------");
-	
-	size_t blockcount[NUMTAGS] = {0};
+
 	for (block = mainzone->blocklist.next; block != &mainzone->blocklist; block = block->next)
 		++blockcount[block->tag];
 	
-	Con_Printf("total purgable blocks: %li", blockcount[TAG_PURGELEVEL]);
-	Con_Printf("total cache blocks:    %li", blockcount[TAG_CACHE]);
-	Con_Printf("total free blocks:     %li", blockcount[TAG_FREE]);
-	Con_Printf("total static blocks:   %li", blockcount[TAG_STATIC]);
-	Con_Printf("total level blocks:    %li", blockcount[TAG_LEVEL]);
+	Con_Printf("total purgable blocks: %lu", blockcount[TAG_PURGELEVEL]);
+	Con_Printf("total cache blocks:    %lu", blockcount[TAG_CACHE]);
+	Con_Printf("total free blocks:     %lu", blockcount[TAG_FREE]);
+	Con_Printf("total static blocks:   %lu", blockcount[TAG_STATIC]);
+	Con_Printf("total level blocks:    %lu", blockcount[TAG_LEVEL]);
 	Con_Printf("-------------------------");
 	
 	for (block = mainzone->blocklist.next;; block = block->next) {
@@ -864,13 +853,13 @@ void Heap::Z_Print(bool all)
 			Con_Printf("%8p : %8i  %8s", (void *)block, block->size, name);
 		
 		if (block->next == &mainzone->blocklist) {
-			Con_Printf("          : %8li (TOTAL)", sum);
+			Con_Printf("          : %8lu (TOTAL)", sum);
 			count = 0;
 			sum = 0;
 		}
 	}
 	Con_Printf("-------------------------");
-	Con_Printf("%8li total blocks\n\n", totalblocks);
+	Con_Printf("%8lu total blocks\n\n", totalblocks);
 }
 
 void* Heap::Z_Realloc(void* ptr, uint32_t nsize, void* user, int tag, const char* name)
@@ -913,9 +902,10 @@ void Heap::Z_CleanCache(void)
 			N_Error("Z_CleanCache: next block doesn't have proper back linkage");
 		}
 		if (block->tag == TAG_FREE && block->next->tag == TAG_FREE) {
-			Con_Printf("Z_CleanCache: two free blocks in a row, merging");
-			Z_MergeNB(block);
-			Z_MergePB(block);
+			N_Error("Z_CleanCache: two free blocks in a row");
+		}
+		if ((byte *)block+block->size != (byte *)block->next) {
+			N_Error("Z_CleanCache: block size doesn't touch next block");
 		}
 		if (block->tag < TAG_PURGELEVEL) {
 			continue;
@@ -932,22 +922,23 @@ void Heap::Z_CleanCache(void)
 void Heap::Z_CheckHeap(void)
 {
 	memblock_t* block;
-	Con_Printf("Running heap check");
+	Con_Printf(DEBUG, "Running heap check");
 	for (block = mainzone->blocklist.next;; block = block->next) {
 		if (block->next == &mainzone->blocklist) {
 			// all blocks have been hit
 			break;
 		}
 		if (block->id != ZONEID) {
-			N_Error("Z_CheckHeap: block id wasn't ZONEID, name: %s", block->name);
+			N_Error("Z_CheckHeap: block id wasn't ZONEID");
 		}
 		if (block->next->prev != block) {
-			N_Error("Z_CheckHeap: next block doesn't have proper back linkage, name: %s, back linked name: %s", block->name, block->next->name);
+			N_Error("Z_CheckHeap: next block doesn't have proper back linkage");
 		}
 		if (block->tag == TAG_FREE && block->next->tag == TAG_FREE) {
-			Con_Printf("Z_CleanCache: two free blocks in a row, merging");
-			Z_MergeNB(block);
-			Z_MergePB(block);
+			N_Error("Z_CheckHeap: two free blocks in a row!");
+		}
+		if ((byte *)block+block->size != (byte *)block->next) {
+			N_Error("Z_CleanCache: block size doesn't touch next block");
 		}
     }
 #if 0

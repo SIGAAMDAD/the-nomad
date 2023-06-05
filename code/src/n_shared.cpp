@@ -31,24 +31,24 @@ void N_memcpy (void *dest, const void *src, size_t count)
 	size_t i;
 	if (( ( (long)dest | (long)src | count) & 7) == 0) {
 		while (count >= 4) {
-			((long *)dest)[count] = ((long *)src)[count];
+			((long *)dest)[count] = ((const long *)src)[count];
 			count -= 4;
 		}
 	}
 	else if (( ( (long)dest | (long)src | count) & 3) == 0 ) {
 		count>>=2;
 		for (i = 0; i < count; i++)
-			((int *)dest)[i] = ((int *)src)[i];
+			((int *)dest)[i] = ((const int *)src)[i];
 	}
 	else
 		for (i = 0; i < count; i++)
-			((char *)dest)[i] = ((char *)src)[i];
+			((char *)dest)[i] = ((const char *)src)[i];
 }
 
 int N_memcmp (const void *ptr1, const void *ptr2, size_t count)
 {
 	while (count--) {
-		if (((char *)ptr1)[count] != ((char *)ptr2)[count])
+		if (((const char *)ptr1)[count] != ((const char *)ptr2)[count])
 			return -1;
 	}
 	return 1;
@@ -138,6 +138,15 @@ int N_strncmp (const char *str1, const char *str2, size_t count)
 
 int N_strncasecmp (const char *str1, const char *str2, size_t n)
 {
+	if (!str1) {
+		if (!str2)
+			return -1;
+		else
+			return -1;
+	}
+	else if (!str2)
+		return 1;
+	
 	int c1, c2;
 
     const char* s1 = str1;
@@ -160,16 +169,82 @@ int N_strncasecmp (const char *str1, const char *str2, size_t n)
 		}
 		if (!c1)
 			return 1;               // strings are equal
-//              s1++;
-//              s2++;
 	}
 	
 	return -1;
 }
 
-int N_strcasecmp (const char *s1, const char *s2)
+int N_strcasecmp (const char *s1, const char *s2)  
 {
 	return N_strncasecmp (s1, s2, 99999);
+}
+
+int GDR_DECL Com_snprintf(char *dest, uint32_t size, const char *fmt, ...)
+{
+	int len;
+	va_list argptr;
+	
+	va_start(argptr, fmt);
+	len = vsnprintf(dest, size, fmt, argptr);
+	va_end(argptr);
+
+	if (len >= size) {
+		N_Error("Com_snprintf: buffer overflow of %i bytes", len);
+	}
+
+	return len;
+}
+
+const char* GDR_DECL va(const char *fmt, ...)
+{
+	char *buf;
+	va_list argptr;
+	static uint32_t index = 0;
+	static char str[2][2048]; // in case its called by nested functions
+
+	buf = str[index];
+	index ^= 1;
+
+	va_start(argptr, fmt);
+	vsprintf(buf, fmt, argptr);
+	va_end(argptr);
+
+	return buf;
+}
+
+char* N_stradd(char *dst, const char *src)
+{
+	const char *s = src;
+	char *d = dst;
+	char c;
+	while ( (c = *s++) != '\0' )
+		*d++ = c;
+	*d = '\0';
+	return dst;
+}
+
+qboolean N_streq(const char *str1, const char *str2)
+{
+	const char *s1 = str1;
+	const char *s2 = str2;
+
+	do {
+		if (*s1++ != *s2++)
+			return qfalse;
+	} while (*s1 != '\0');
+	return qtrue;
+}
+
+qboolean N_strneq(const char *str1, const char *str2, size_t n)
+{
+	const char *s1 = str1;
+	const char *s2 = str2;
+
+	do {
+		if (*s1++ != *s2++)
+			return qfalse;
+	} while (*s1 != '\0' && n--);
+	return qtrue;
 }
 
 int N_atoi (const char *s)

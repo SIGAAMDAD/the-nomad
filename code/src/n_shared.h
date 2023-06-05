@@ -15,8 +15,8 @@
 #   error a version must be supplied when compiling the engine!
 #endif
 
-#define CONSTRUCT(class,name,...) ({class* ptr=(class*)Z_Malloc(sizeof(class),TAG_STATIC,&ptr,name);new (ptr) class(__VA_ARGS__);ptr;})
-#endif
+#define CONSTRUCT(class,name,...) ({class* ptr=(class*)Hunk_Alloc(sizeof(class),name,h_low);new (ptr) class(__VA_ARGS__);ptr;})
+
 #define NOMAD_VERSION _NOMAD_VERSION
 #define NOMAD_VERSION_UPDATE _NOMAD_VERSION_UPDATE
 #define NOMAD_VERSION_PATCH _NOMAD_VERSION_PATCH
@@ -24,7 +24,9 @@
 #define VSTR(x) VSTR_HELPER(x)
 #define NOMAD_VERSION_STRING "glnomad v" VSTR(_NOMAD_VERSION) "." VSTR(_NOMAD_VERSION_UPDATE) "." VSTR(_NOMAD_VERSION_PATCH)
 
-#ifndef Q3_VM
+#endif
+
+#if !defined(Q3_VM) && !defined(BFF_COMPILER)
 #include "n_pch.h"
 #include <EABase/eabase.h>
 #include <EASTL/shared_ptr.h>
@@ -50,6 +52,18 @@
 #pragma GCC diagnostic ignored "-Wclass-memaccess"
 #pragma GCC diagnostic error "-Wtype-limits"
 #pragma GCC diagnostic error "-Woverflow"
+
+#ifdef _MSVC_VER
+#pragma warning(disable : 4996) // posix compatibility
+#pragma warning(disable : 4267) // size_t to int conversion, possible loss of data
+#pragma warning(disable : 4018) // signed/unsigned mismatch
+#endif
+
+#if !defined(__GNUC__) && !defined(__clang__)
+#ifndef __attribute__
+#define __attribute__(x)
+#endif
+#endif
 
 #define MAX_GDR_PATH 64
 #ifdef PATH_MAX
@@ -113,12 +127,50 @@ typedef enum { qfalse = 0, qtrue = 1 } qboolean;
 #define VectorCopy(x,y) {x[0]=y[0];x[1]=y[1];}
 void CrossProduct(const vec2_t v1, const vec2_t v2, vec2_t out);
 
+int N_strcmp(const char *str1, const char *str2);
+int N_strncmp(const char *str1, const char *str2, size_t count);
+int N_strcasecmp(const char *str1, const char *str2);
+int N_strncasecmp(const char *str1, const char *str2, size_t n);
+int N_atoi(const char *s);
+float N_atof(const char *s);
+size_t N_strlen(const char *str);
+char* N_stradd(char *dst, const char *src);
+void N_strcpy(char *dest, const char *src);
+void N_strncpy(char *dest, const char *src, size_t count);
+void* N_memset(void *dest, int fill, size_t count);
+void N_memcpy(void *dest, const void *src, size_t count);
+void* N_memchr(void *ptr, int c, size_t count);
+int N_memcmp(const void *ptr1, const void *ptr2, size_t count);
 
 // main engine headers
 #include "n_platform.h"
+
+int GDR_DECL Com_snprintf(char *dest, uint32_t size, const char *fmt, ...);
+const char* GDR_DECL va(const char *fmt, ...);
+
+void GDR_NORETURN N_Error(const char *err, ...);
+
+#ifdef _NOMAD_DEBUG
+GDR_INLINE void __nomad_assert_fail(const char* expression, const char* file, const char* func, unsigned line)
+{
+	N_Error(
+		"Assertion '%s' failed (Main Engine):\n"
+		"  \\file: %s\n"
+		"  \\function: %s\n"
+		"  \\line: %u\n\nIf this is an SDL2 error, here is the message string: %s\n",
+	expression, file, func, line, SDL_GetError());
+}
+#define assert(x) (((x)) ? void(0) : __nomad_assert_fail(#x,__FILE__,__func__,__LINE__))
+#else
+#define assert(x)
+#endif
+#ifndef BFF_COMPILER
 #include "n_console.h"
-#include "n_common.h"
 #include "z_heap.h"
+#include "string.hpp"
+#include "vector.hpp"
+#include "n_common.h"
+#endif
 
 #ifdef Q3_VM
 
@@ -170,32 +222,6 @@ typedef enum
 	D_NULL
 } dirtype_t;
 
-void GDR_NORETURN N_Error(const char *err, ...);
-
-#ifdef _NOMAD_DEBUG
-GDR_INLINE void __nomad_assert_fail(const char* expression, const char* file, const char* func, unsigned line)
-{
-#ifndef Q3_VM
-	N_Error(
-		"Assertion '%s' failed (Main Engine):\n"
-		"  \\file: %s\n"
-		"  \\function: %s\n"
-		"  \\line: %u\n\nIf this is an SDL2 error, here is the message string: %s\n",
-	expression, file, func, line, SDL_GetError());
-#else
-	fprintf(stderr,
-		"Assertion '%s' failed (Q3VM):\n"
-		"  \\file: %s\n"
-		"  \\function: %s\n"
-		"  \\line: %u\n",
-	expression, file, func, line);
-#endif
-}
-#define assert(x) (((x)) ? void(0) : __nomad_assert_fail(#x,__FILE__,__func__,__LINE__))
-#else
-#define assert(x)
-#endif
-
 // math stuff
 float disBetweenOBJ(const vec2_t src, const vec2_t tar);
 float Q_rsqrt(float number);
@@ -216,20 +242,6 @@ typedef enum
 #define MSAA_4X 1
 #define MSAA_8X 2
 #define MSAA_16X 3
-
-int N_strcmp(const char *str1, const char *str2);
-int N_strncmp(const char *str1, const char *str2, size_t count);
-int N_strcasecmp(const char *str1, const char *str2);
-int N_strncasecmp(const char *str1, const char *str2, size_t n);
-int N_atoi(const char *s);
-float N_atof(const char *s);
-size_t N_strlen(const char *str);
-void N_strcpy(char *dest, const char *src);
-void N_strncpy(char *dest, const char *src, size_t count);
-void* N_memset(void *dest, int fill, size_t count);
-void N_memcpy(void *dest, const void *src, size_t count);
-void* N_memchr(void *ptr, int c, size_t count);
-int N_memcmp(const void *ptr1, const void *ptr2, size_t count);
 
 #ifdef Q3_VM
 static qboolean N_strtobool(const char *s)
@@ -252,7 +264,7 @@ inline const char* N_booltostr(qboolean b)
 #endif
 
 // c++ stuff here
-#ifndef Q3_VM
+#if !defined(Q3_VM) && !defined(BFF_COMPILER)
 
 extern int myargc;
 extern char** myargv;

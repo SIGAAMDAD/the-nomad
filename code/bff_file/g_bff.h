@@ -8,6 +8,7 @@
 #include <string.h>
 #include <string>
 #include <fstream>
+#include "../src/n_shared.h"
 #include "../../deps/nlohmann/json.hpp"
 using json = nlohmann::json;
 
@@ -29,14 +30,6 @@ inline void SwapBytes(void *pv, size_t n)
 #define SWAP(x) SwapBytes(&x, sizeof(x))
 #else
 #define SWAP(x)
-#endif
-
-#if !defined(_N_SHARED_) || !defined(_NOMAD_VERSION)
-#define NUMSECTORS 4
-#define SECTOR_MAX_Y 120
-#define SECTOR_MAX_X 120
-#define MAP_MAX_Y 240
-#define MAP_MAX_X 240
 #endif
 
 #define HEADER_MAGIC 0x5f3759df
@@ -62,7 +55,7 @@ typedef uint32_t bff_int_t;
 typedef uint16_t bff_short_t;
 typedef float bff_float_t;
 
-#ifndef _NOMAD_VERSION
+#ifdef BFF_COMPILER
 void __attribute__((noreturn)) BFF_Error(const char* fmt, ...);
 #else
 #define BFF_Error N_Error
@@ -90,11 +83,19 @@ const __inline uint16_t bffPaidID[70] = {
 #define MAX_MAP_SPAWNS 1024
 #define MAX_MAP_LIGHTS 1024
 
-enum : uint16_t
+enum : bff_short_t
 {
 	SFT_OGG,
 	SFT_WAV,
 	SFT_OPUS
+};
+
+enum : bff_short_t
+{
+	TEX_JPG,
+	TEX_BMP,
+	TEX_TGA,
+	TEX_PNG,
 };
 
 typedef struct
@@ -187,6 +188,9 @@ typedef struct
 	bff_int_t ident = BFF_IDENT;
 	bff_int_t magic = HEADER_MAGIC;
 	bff_int_t numChunks;
+//	bff_int_t int_size;
+//	bff_int_t short_size;
+//	bff_short_t id[40];
 } bffheader_t;
 
 typedef struct
@@ -199,12 +203,7 @@ typedef struct
 } bff_t;
 
 FILE* SafeOpen(const char* filepath, const char* mode);
-bff_t* BFF_OpenArchive(const std::string& filepath);
-bffinfo_t* BFF_GetInfo(bff_t* archive);
-void BFF_FreeInfo(bffinfo_t* info);
-void BFF_CloseArchive(bff_t* archive);
 
-#ifndef _NOMAD_VERSION
 typedef unsigned char byte;
 void DecompileBFF(const char* filepath);
 void WriteBFF(const char* filepath, const char* jsonfile);
@@ -216,6 +215,5 @@ void GetTextures(const json& data, bffinfo_t* info);
 void* SafeMalloc(size_t size, const char* name = "unknown");
 void LoadFile(FILE* fp, void** buffer, bff_int_t* length);
 void Con_Printf(const char* fmt, ...);
-#endif
 
 #endif

@@ -1,5 +1,5 @@
 #include "../src/n_shared.h"
-#include "../bff_file/g_bff.h"
+#include "../src/g_bff.h"
 #include "vm.h"
 #include "n_vm.h"
 
@@ -54,7 +54,7 @@ void G_AddVM(bffscript_t* script, const char *name)
         N_Error("G_AddVM: vmCount >= MAX_ACTIVE_VM");
     }
     memset(activeVM[vmCount].name, 0, MAX_VM_NAME);
-    N_strncpy(activeVM[vmCount].name, name, MAX_VM_NAME - 1);
+    N_strncpy(activeVM[vmCount].name, name, MAX_VM_NAME);
     activeVM[vmCount].bytecode = script->bytecode;
     activeVM[vmCount].codelen = script->codelen;
     vm_t* vm = &activeVM[vmCount].vm;
@@ -88,14 +88,15 @@ void G_RestartVM(void)
     }
 }
 
-static void* VM_RunMain(void *in_args)
-{
-    uint64_t index = ((uint64_t *)in_args)[0];
-    int command = ((int *)in_args)[3];
-    int* args = &((int *)in_args)[4];
+static uint64_t active_vm = 0;
+uint32_t vm_command;
+uint32_t vm_args[12];
 
-    activeVM[index].result = VM_Call(&activeVM[index].vm, command, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8],
-        args[9], args[10], args[11]);
+static void* VM_RunMain(void *unused)
+{
+    activeVM[active_vm].result = VM_Call(&activeVM[active_vm].vm, vm_command,
+        vm_args[0], vm_args[1], vm_args[2], vm_args[3], vm_args[4], vm_args[5],
+        vm_args[6], vm_args[7], vm_args[8], vm_args[9], vm_args[10], vm_args[11]);
     return NULL;
 }
 
@@ -110,17 +111,11 @@ intptr_t VM_Stop(uint64_t index)
     return result;
 }
 
-void VM_Run(uint64_t index, int command, const nomadvector<int>& vm_args)
+void VM_Run(uint64_t index)
 {
-    int args[15];
-    memset(args, 0, sizeof(args));
-
-    *(uint64_t *)args = index;
-    args[3] = command;
-    memcpy(args+4, vm_args.data(), vm_args.size() * sizeof(int));
-
+    active_vm = index;
     activeVM[index].running = true;
-    pthread_create(&activeVM[index].thread, NULL, VM_RunMain, (void *)args);
+    pthread_create(&activeVM[index].thread, NULL, VM_RunMain, NULL);
 }
 
 void Com_free(void *p, vm_t* vm, vmMallocType_t type)
@@ -131,13 +126,12 @@ void Com_free(void *p, vm_t* vm, vmMallocType_t type)
         Con_Error("null pointer (Com_free)");
         return;
     }
-    Z_Free(p);
 }
 void* Com_malloc(size_t size, vm_t* vm, vmMallocType_t type)
 {
     (void)vm;
     (void)type;
-    return Z_Malloc(size, TAG_STATIC, NULL, "vmMem");
+    return Z_Malloc(size, TAG_LEVEL, NULL, "vmMem");
 }
 void Com_Error(vmErrorCode_t level, const char* error)
 {
