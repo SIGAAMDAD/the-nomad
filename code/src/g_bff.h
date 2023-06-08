@@ -200,6 +200,8 @@ void B_GetChunk(const char *chunkname);
 void BFF_CloseArchive(bff_t* archive);
 bff_t* BFF_OpenArchive(const GDRStr& filepath);
 
+bffscript_t* BFF_FetchScript(const char *name);
+
 void G_LoadBFF(const GDRStr& bffname);
 
 #endif

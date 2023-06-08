@@ -8,12 +8,22 @@ world_t sg_world;
 playr_t playrs[MAX_PLAYR_COUNT];
 mobj_t mobs[MAX_MOBS_ACTIVE];
 
+eventState_t events;
+
+int G_Init(void);
+int G_Shutdown(void);
+int G_RunLoop(void);
+int G_StartLevel(void);
+int G_EndLevel(void);
+
 int vmMain(int command, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7,
     int arg8, int arg9, int arg10)
 {
     switch (command) {
     case SGAME_INIT:
         return G_Init();
+    case SGAME_RUNTIC:
+        return G_RunLoop();
     case SGAME_SHUTDOWN:
         return G_Shutdown();
     default:
@@ -29,7 +39,14 @@ const mobj_t mobinfo[NUMMOBS] = {
     {"Shotty"},
 };
 
-int G_Init()
+int G_RunLoop(void)
+{
+    G_GetEvents(&events);
+
+    return 0;
+}
+
+int G_Init(void)
 {
     int i;
     playr_t* p;
@@ -54,14 +71,13 @@ int G_Init()
     sg_world.mobs = mobs;
     memset(mobs, 0, MAX_MOBS_ACTIVE * sizeof(*mobs));
 
-    G_UpdateConfig(cvars);
     G_GetTilemap(sg_world.tilemap);
     G_InitMem();
 
     return 0;
 }
 
-void G_Shutdown()
+int G_Shutdown(void)
 {
 
 

@@ -1,5 +1,7 @@
 #include "n_shared.h"
 #include "m_renderer.h"
+#include "g_game.h"
+#include "g_sound.h"
 
 #ifdef __unix__
 #include <unistd.h>
@@ -9,12 +11,76 @@
 static char *com_buffer;
 static int com_bufferLen;
 
-/*
-==================
-Com_GenerateHashValue
+eventState_t evState;
+qboolean console_open = qfalse;
 
-used in renderer and filesystem
-==================
+/*
+==================================================
+Common stuff:
+common functions that are used almost everywhere
+==================================================
+*/
+
+static void Con_ProcessInput(void)
+{
+    if (!console_open)
+        return;
+
+    char buffer[2048];
+    memset(buffer, 0, sizeof(buffer));
+
+    ImGui::Text("> ");
+    ImGui::SameLine();
+    ImGui::InputText(" ", buffer, sizeof(buffer));
+//    ImGui::InputText("> ", buffer, sizeof(buffer));
+}
+
+static void done(void)
+{
+    Game::Get()->~Game();
+    exit(EXIT_SUCCESS);
+}
+
+void Com_UpdateEvents(void)
+{
+    SDL_Event event;
+    SDL_PumpEvents();
+    evState.kbstate = SDL_GetKeyboardState(NULL);
+
+    if (console_open) {
+        while (SDL_PollEvent(&event)) {
+            ImGui_ImplSDL2_ProcessEvent(&event);
+            if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_BACKQUOTE) {
+                console_open = qfalse;
+            }
+            else if (event.type == SDL_QUIT) {
+                done();
+            }
+        }
+    }
+
+//    while (SDL_PollEvent(&event)) {
+//        if (event.type == SDL_QUIT) {
+//            done();
+//        }
+//        for (const auto& i : kb_binds) {
+//            if (i.button == event.key.keysym.sym) {
+//                i.action();
+//            }
+//        }
+//    }
+}
+
+void Con_RenderConsole(void)
+{
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplSDL2_NewFrame();
+    ImGui::NewFrame();
+}
+
+
+/*
+Com_GenerateHashValue: used in renderer and filesystem
 */
 // ASCII lowcase conversion table with '\\' turned to '/' and '.' to '\0'
 static const byte hash_locase[ 256 ] =
@@ -82,10 +148,23 @@ void Com_Init(void)
 
     Memory_Init();
     R_Init();
+//    Con_RenderConsole();
 
-    com_bufferLen = 0;
-    com_buffer = (char *)Hunk_Alloc(MAX_BUFFER_SIZE, "combuffer", h_low);
-    memset(com_buffer, 0, MAX_BUFFER_SIZE);
+    Snd_Init();
+
+    Con_Printf("G_LoadBFF: loading bff file");
+    G_LoadBFF("nomadmain.bff");
+
+    Con_Printf(
+        "+===========================================================+\n"
+         "\"The Nomad\" is free software distributed under the terms\n"
+         "of both the GNU General Public License v2.0 and Apache License\n"
+         "v2.0\n"
+         "+==========================================================+\n"
+    );
+
+    Con_Printf("G_LoadSCF: parsing scf file");
+    G_LoadSCF();
 }
 
 

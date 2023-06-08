@@ -140,6 +140,11 @@ static intptr_t Sys_G_LoadGame(vm_t *vm, intptr_t *args)
 //    G_LoadGame(*(uint32_t *)VMA(1, vm));
     return 0;
 }
+static intptr_t Sys_G_GetEvents(vm_t *vm, intptr_t *args)
+{
+    memcpy(VMA(1, vm), &evState, sizeof(eventState_t));
+    return 0;
+}
 
 const vmSystemCall_t systemCalls[] = {
     {(const int)-SYS_CON_PRINTF,  Sys_Con_Printf},
@@ -147,6 +152,7 @@ const vmSystemCall_t systemCalls[] = {
     {(const int)-G_GETTILEMAP,    Sys_G_GetTilemap},
     {(const int)-G_SAVEGAME,      Sys_G_SaveGame},
     {(const int)-G_LOADGAME,      Sys_G_LoadGame},
+    {(const int)-G_GETEVENTS,     Sys_G_GetEvents}
 };
 
 intptr_t G_SystemCalls(vm_t *vm, intptr_t *args)

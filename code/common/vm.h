@@ -125,6 +125,7 @@ typedef struct vm_s
 {
     /* DO NOT MOVE OR CHANGE THESE WITHOUT CHANGING THE VM_OFFSET_* DEFINES
        USED BY THE ASM CODE (IF WE ADD THE Q3 JIT COMPILER IN THE FUTURE) */
+    vmHeader_t header;
 
     int programStack; /**< Stack pointer into .data segment. */
 
@@ -178,6 +179,8 @@ typedef struct vm_s
     /* non vanilla q3 area: */
     vmErrorCode_t lastError; /**< Last known error */
 } vm_t;
+
+const vmHeader_t* VM_LoadQVM(vm_t* vm, const uint8_t* bytecode, int length);
 
 /******************************************************************************
  * FUNCTION PROTOTYPES

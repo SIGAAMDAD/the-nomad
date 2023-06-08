@@ -67,6 +67,4 @@ int toupper(int c);
 int abs(int n);
 double fabs(double x);
 
-#include "../src/stb_sprintf.h"
-
 #endif

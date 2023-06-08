@@ -98,12 +98,13 @@ shader_t* R_CreateShader(const char* filepath, const char* name)
     uint64_t hash = Com_GenerateHashValue(filepath, MAX_FILE_HASH);
     shader->uniformCache = nomad_hashtable<const char*, GLint>();
 
-    shader->id = glCreateProgram();
-    glUseProgram(shader->id);
 
     // compile
     GLuint vertid = R_CompileShaderSource(GLSL_Src[GL_VERTEX_SHADER].c_str(), GL_VERTEX_SHADER, shader->id);
     GLuint fragid = R_CompileShaderSource(GLSL_Src[GL_FRAGMENT_SHADER].c_str(), GL_FRAGMENT_SHADER, shader->id);
+
+    shader->id = glCreateProgram();
+    glUseProgram(shader->id);
 
     // link
     glAttachShader(shader->id, vertid);
@@ -130,8 +131,6 @@ shader_t* R_CreateShader(const char* filepath, const char* name)
     glDeleteShader(fragid);
 
     glUseProgram(0);
-
-    Z_ChangeTag(filebuf, TAG_PURGELEVEL);
 
     shader->hash = hash;
     shaders[hash] = shader;

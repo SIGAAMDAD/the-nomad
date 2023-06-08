@@ -96,8 +96,8 @@ static void Cvar_Load(const json& data, const std::string& name, cvar_t* cvar)
     }
     const std::string value = data[name];
 
-    if (!N_strcmp(cvar->value, value.c_str())) {
-        N_strncpy(cvar->value, value.c_str(), (value.size() >= sizeof(cvar->value) ? sizeof(cvar->value) - 1 : value.size()));
+    if (!N_strcasecmp(cvar->value, value.c_str())) {
+        N_strncpy(cvar->value, value.c_str(), (value.size() >= 80 ? 80 : value.size()));
     }
 
     Con_Printf("Initialized cvar %s with value %s", cvar->name, cvar->value);

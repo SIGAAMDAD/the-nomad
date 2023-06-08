@@ -24,7 +24,7 @@ OBJS= \
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 $(EXE): $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $(EXE)
+	$(CC) $(CFLAGS) $(OBJS) -o $(EXE) -lbz2
 
 clean:
 	rm $(OBJS)

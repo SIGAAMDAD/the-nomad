@@ -3,6 +3,7 @@
 #include "g_game.h"
 #include "g_sound.h"
 #include "m_renderer.h"
+#include "../sgame/sg_public.h"
 #include "../common/n_vm.h"
 
 bool sdl_on = false;
@@ -59,7 +60,7 @@ void VectorNormalize(glm::vec3& v)
     v.z *= ilength;
 }
 
-void done()
+static void done()
 {
     Game::Get()->~Game();
     exit(EXIT_SUCCESS);
@@ -140,6 +141,8 @@ void mainLoop()
     uint32_t ticrate = atoi(r_ticrate.value);
     uint64_t next = clock();
     while (1) {
+        Com_UpdateEvents();
+        vm_command = SGAME_RUNTIC;
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
                 done();
@@ -188,9 +191,18 @@ void mainLoop()
                 case SDLK_RIGHT:
                     renderer->camera->MoveRight();
                     break;
+                case SDLK_BACKQUOTE:
+                    if (console_open)
+                        console_open = qfalse;
+                    else
+                        console_open = qtrue;
+                    break;
                 };
             }
         }
+//        VM_Run(SGAME_VM);
+//        Con_RenderConsole();
+
         renderer->camera->CalculateViewMatrix();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glViewport(0, 0, N_atoi(r_screenwidth.value), N_atoi(r_screenheight.value));
@@ -231,7 +243,9 @@ void mainLoop()
         R_UnbindVertexArray();
         R_UnbindVertexBuffer();
         R_UnbindIndexBuffer();
-
+        
+//        VM_Stop(SGAME_VM);
+//        Con_EndFrame();
         SDL_GL_SwapWindow(renderer->window);
         
         sleepfor(next);
@@ -245,22 +259,6 @@ void I_NomadInit(int argc, char** argv)
     myargv = argv;
 
     Com_Init();
-
-    Snd_Init();
-
-    Con_Printf("G_LoadBFF: loading bff file");
-    G_LoadBFF("nomadmain.bff");
-
-    Con_Printf(
-        "+===========================================================+\n"
-         "\"The Nomad\" is free software distributed under the terms\n"
-         "of both the GNU General Public License v2.0 and Apache License\n"
-         "v2.0\n"
-         "+==========================================================+\n"
-    );
-
-    Con_Printf("G_LoadSCF: parsing scf file");
-    G_LoadSCF();
 
     Con_Printf("running main gameplay loop");
     mainLoop();

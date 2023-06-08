@@ -6,6 +6,8 @@
 #include "m_renderer.h"
 #include <sndfile.h>
 #include "stb_vorbis.c"
+#include <bzlib.h>
+#include <zlib.h>
 
 static void SafeRead(FILE* fp, void *data, size_t size)
 {
@@ -71,7 +73,7 @@ static void CopyScriptChunk(const bff_chunk_t* chunk, bffinfo_t* info)
 	bffscript_t* data;
 	const char* ptr;
 
-	data = &info->scripts[info->numScripts];
+	data = &info->scripts[Com_GenerateHashValue(chunk->chunkName, MAX_SCRIPT_CHUNKS)];
 	strncpy(data->name, chunk->chunkName, MAX_BFF_CHUNKNAME);
 	ptr = chunk->chunkBuffer;
 	Con_Printf("Loading script chunk %s", data->name);
@@ -97,7 +99,7 @@ static void CopyTextureChunk(const bff_chunk_t* chunk, bffinfo_t* info)
 
 	data->fileSize = chunk->chunkSize;
 
-	data->fileBuffer = (unsigned char *)Hunk_Alloc(data->fileSize, "texbuffer", h_high);
+	data->fileBuffer = (unsigned char *)Hunk_Alloc(data->fileSize, "texCache", h_low);
 	memcpy(data->fileBuffer, ptr, data->fileSize);
 	Con_Printf("Done loading texture chunk %s", data->name);
 
@@ -110,13 +112,13 @@ bffinfo_t* BFF_GetInfo(bff_t* archive)
 		BFF_Error("BFF_GetInfo: null archive");
 	}
 	
-	bffinfo_t* info = (bffinfo_t *)Mem_Alloc(sizeof(bffinfo_t));
+	bffinfo_t* info = (bffinfo_t *)Hunk_Alloc(sizeof(bffinfo_t), "BFFinfo", h_low);
 	memset(info, 0, sizeof(bffinfo_t));
 	info->numLevels = 0;
 	info->numSounds = 0;
 	info->numScripts = 0;
 	info->numTextures = 0;
-	
+
 	for (bff_int_t i = 0; i < archive->numChunks; i++) {
 		switch (archive->chunkList[i].chunkType) {
 		case LEVEL_CHUNK:
@@ -140,7 +142,6 @@ void BFF_FreeInfo(bffinfo_t* info)
 	for (bff_int_t i = 0; i < info->numSounds; i++) {
 		Mem_Free(info->sounds[i].fileBuffer);
 	}
-	Mem_Free(info);
 }
 
 uint32_t sndcache_size;
@@ -172,8 +173,8 @@ static void I_CacheAudio(bffinfo_t *info)
 	SNDFILE* sf;
 	SF_INFO fdata;
 	sf_count_t readcount;
-	float sfx_vol = N_atof(snd_sfxvol.value);
-	float music_vol = N_atof(snd_musicvol.value);
+	float sfx_vol = atof(snd_sfxvol.value);
+	float music_vol = atof(snd_musicvol.value);
 
     snd_cache = (nomadsnd_t *)Hunk_Alloc(sizeof(nomadsnd_t) * info->numSounds, "snd_cache", h_low);
     sndcache_size = info->numSounds;
@@ -192,7 +193,7 @@ static void I_CacheAudio(bffinfo_t *info)
                 info->sounds[i].name, sf_strerror(sf));
         }
 
-        snd_cache[i].sndbuf = (short *)Z_Malloc(sizeof(short) * fdata.frames * fdata.channels, TAG_STATIC, &snd_cache[i].sndbuf, "audiobuffer");
+        snd_cache[i].sndbuf = (short *)Hunk_Alloc(sizeof(short) * fdata.frames * fdata.channels, "soundcache", h_low);
         readcount = sf_read_short(sf, snd_cache[i].sndbuf, sizeof(short) * fdata.frames * fdata.channels);
         if (!readcount) {
             N_Error("I_CacheAudio: libsndfile failed to decode audio chunk %s, libsndfile error: %s",
@@ -211,11 +212,12 @@ static void I_CacheAudio(bffinfo_t *info)
         alSourcei(snd_cache[i].source, AL_BUFFER, snd_cache[i].buffer);
 		alSourcef(snd_cache[i].source, AL_GAIN, music_vol);
         alSourcePlay(snd_cache[i].source);
-
-		Z_ChangeTag(snd_cache[i].sndbuf, TAG_CACHE);
     }
 }
 
+
+// this makes it so that only a single bff archive can be in ram at a time
+static uint64_t bffmark;
 
 bff_t* BFF_OpenArchive(const GDRStr& filepath)
 {
@@ -224,7 +226,7 @@ bff_t* BFF_OpenArchive(const GDRStr& filepath)
         N_Error("BFF_OpenArchive: failed to open bff %s", filepath.c_str());
     }
 
-	bff_t* archive = (bff_t *)Mem_Alloc(sizeof(bff_t));
+	bff_t* archive = (bff_t *)Z_Malloc(sizeof(bff_t), TAG_STATIC, &archive, "BFFfile");
 	bffheader_t header;
 	SafeRead(fp, &header, sizeof(bffheader_t));
 	if (header.ident != BFF_IDENT) {
@@ -246,10 +248,11 @@ bff_t* BFF_OpenArchive(const GDRStr& filepath)
 	header.numChunks);
 
 	archive->numChunks = header.numChunks;
-	archive->chunkList = (bff_chunk_t *)Mem_Alloc(sizeof(bff_chunk_t) * header.numChunks);
+	archive->chunkList = (bff_chunk_t *)Z_Malloc(sizeof(bff_chunk_t) * header.numChunks, TAG_STATIC, &archive->chunkList, "BFFchunks");
 
 	for (bff_int_t i = 0; i < archive->numChunks; i++) {
 		size_t offset = ftell(fp);
+
 		SafeRead(fp, archive->chunkList[i].chunkName, MAX_BFF_CHUNKNAME);
 		SafeRead(fp, &archive->chunkList[i].chunkSize, sizeof(bff_int_t));
 		SafeRead(fp, &archive->chunkList[i].chunkType, sizeof(bff_int_t));
@@ -261,11 +264,11 @@ bff_t* BFF_OpenArchive(const GDRStr& filepath)
 			"file offset: %lu\n",
 		i, archive->chunkList[i].chunkSize, archive->chunkList[i].chunkType, archive->chunkList[i].chunkName, offset);
 
-		archive->chunkList[i].chunkBuffer = (char *)Mem_Alloc(archive->chunkList[i].chunkSize);
+		archive->chunkList[i].chunkBuffer = (char *)Z_Malloc(archive->chunkList[i].chunkSize, TAG_STATIC, &archive->chunkList[i].chunkBuffer,
+			"BFFcache");
 		SafeRead(fp, archive->chunkList[i].chunkBuffer, archive->chunkList[i].chunkSize);
 	}
 	fclose(fp);
-
     return archive;
 }
 
@@ -275,9 +278,15 @@ void BFF_CloseArchive(bff_t* archive)
 		BFF_Error("BFF_CloseArchive: null archive");
 	}
 	for (bff_int_t i = 0; i < archive->numChunks; i++) {
-		Mem_Free(archive->chunkList[i].chunkBuffer);
+		Z_ChangeTag(archive->chunkList[i].chunkBuffer, TAG_CACHE);
 	}
-	Mem_Free(archive);
+	Z_ChangeTag(archive->chunkList, TAG_CACHE);
+	Z_ChangeTag(archive, TAG_CACHE);
+}
+
+bffscript_t *BFF_FetchScript(const char *name)
+{
+	return &bffinfo->scripts[Com_GenerateHashValue(name, MAX_SCRIPT_CHUNKS)];
 }
 
 

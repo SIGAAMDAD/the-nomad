@@ -30,121 +30,43 @@ enum
 #define TAG_SCOPE TAG_CACHE
 #define TAG_LOAD TAG_CACHE
 
-typedef struct
-{
-    unsigned id;
-    char name[14];
-    uint32_t size;
-} hunk_t;
-typedef struct memblock_s
-{
-    uint32_t size;
-    void **user;
-    int tag;
-    int id;
-    char name[14];
-    struct memblock_s* next;
-    struct memblock_s* prev;
-} memblock_t;
+void Memory_Init();
+void Memory_Shutdown();
 
-typedef struct memzone_s
-{
-	uint64_t size;
-    
-	// start/end cap for linked list
-	memblock_t blocklist;
+void* Hunk_Alloc(uint64_t size, const char *name, int where);
+void Hunk_Check(void);
+void Hunk_Print(void);
+void Hunk_FreeToLowMark(uint64_t mark);
+void Hunk_FreeToHighMark(uint64_t mark);
+void Hunk_Clear(void);
+void* Hunk_TempAlloc(uint32_t size);
+uint64_t Hunk_LowMark(void);
+uint64_t Hunk_HighMark(void);
+void* Hunk_Begin(void);
+void* Hunk_End(void);
 
-	// the roving block for general operations
-	memblock_t* rover;
-} memzone_t;
+void* Z_AlignedAlloc(uint32_t alignment, uint32_t size, int tag, void *user, const char* name);
+void* Z_Malloc(uint32_t size, int tag, void *user, const char* name);
+void* Z_Calloc(void *user, uint32_t size, int tag, const char* name);
+void* Z_Realloc(void *ptr, uint32_t nsize, void *user, int tag, const char* name);
 
-class Heap
-{
-private:
-	static void* Hunk_AllocHigh(uint64_t size, const char *name);
-	static void* Hunk_AllocLow(uint64_t size, const char *name);
-	static void Z_MergeNB(memblock_t *block);
-	static void Z_MergePB(memblock_t *block);
-	static void Z_ScanForBlock(void *start, void *end);
+void Z_Free(void *ptr);
+void Z_FreeTags(int lowtag, int hightag);
+void Z_ChangeTag(void* user, int tag);
+void Z_ChangeUser(void* olduser, void* newuser);
+void Z_ChangeName(void* user, const char* name);
+void Z_CleanCache(void);
+void Z_CheckHeap(void);
+void Z_ClearZone(void);
+void Z_Print(bool all);
+void Z_Init(void);
+uint64_t Z_FreeMemory(void);
+void* Z_ZoneBegin(void);
+void* Z_ZoneEnd(void);
+uint32_t Z_NumBlocks(int tag);
+void Z_Defrag(void);
 
-	static Heap heap;
-public:
-	Heap() = default;
-	~Heap();
-
-	friend void Memory_Init();
-	friend void Memory_Shutdown();
-
-	static void* Hunk_Alloc(uint64_t size, const char *name, int where);
-	static void Hunk_Check(void);
-	static void Hunk_Print(void);
-	static void Hunk_FreeToLowMark(uint64_t mark);
-	static void Hunk_FreeToHighMark(uint64_t mark);
-	static void Hunk_Clear(void);
-	static void* Hunk_TempAlloc(uint32_t size);
-	static uint64_t Hunk_LowMark(void);
-	static uint64_t Hunk_HighMark(void);
-
-	static void* Z_AlignedAlloc(uint32_t alignment, uint32_t size, int tag, void *user, const char* name);
-	static void* Z_Malloc(uint32_t size, int tag, void *user, const char* name);
-	static void* Z_Calloc(void *user, uint32_t size, int tag, const char* name);
-	static void* Z_Realloc(void *ptr, uint32_t nsize, void *user, int tag, const char* name);
-
-	static void Z_Free(void *ptr);
-	static void Z_FreeTags(int lowtag, int hightag);
-	static void Z_ChangeTag(void* user, int tag);
-	static void Z_ChangeUser(void* olduser, void* newuser);
-	static void Z_ChangeName(void* user, const char* name);
-	static void Z_CleanCache(void);
-	static void Z_CheckHeap(void);
-	static void Z_ClearZone(void);
-	static void Z_Print(bool all);
-	static void Z_Init(void);
-	static uint64_t Z_FreeMemory(void);
-	static void* Z_ZoneBegin(void);
-	static void* Z_ZoneEnd(void);
-	static uint32_t Z_NumBlocks(int tag);
-	static void Z_Defrag(void);
-
-	static void Mem_Info(void);
-
-	GDR_INLINE static Heap& Get(void) { return heap; }
-};
-
-#define Hunk_HighAlloc Heap::Hunk_HighAlloc
-#define Hunk_LowAlloc Heap::Hunk_LowAlloc
-#define Hunk_Alloc Heap::Hunk_Alloc
-#define Hunk_Check Heap::Hunk_Check
-#define Hunk_Print Heap::Hunk_Print
-#define Hunk_FreeToLowMark Heap::Hunk_FreeToLowMark
-#define Hunk_FreeToHighMark Heap::Hunk_FreeToHighMark
-#define Hunk_Clear Heap::Hunk_Clear
-#define Hunk_TempAlloc Heap::Hunk_TempAlloc
-#define Hunk_LowMark Heap::Hunk_LowMark
-#define Hunk_highmark Heap::Hunk_HighMark
-
-#define Z_ScanForBlock Heap::Z_ScanForBlock
-#define Z_MergePB Heap::Z_MergePB
-#define Z_MergeNB Heap::Z_MergeNB
-#define Z_AlignedAlloc Heap::Z_AlignedAlloc
-#define Z_Malloc Heap::Z_Malloc
-#define Z_Calloc Heap::Z_Calloc
-#define Z_Realloc Heap::Z_Realloc
-#define Z_Free Heap::Z_Free
-#define Z_FreeTags Heap::Z_FreeTags
-#define Z_ChangeTag Heap::Z_ChangeTag
-#define Z_ChangeUser Heap::Z_ChangeUser
-#define Z_ChangeName Heap::Z_ChangeName
-#define Z_ClearCache Heap::Z_ClearCache
-#define Z_CheckHeap Heap::Z_CheckHeap
-#define Z_ClearZone Heap::Z_ClearZone
-#define Z_Print Heap::Z_Print
-#define Z_FreeMemory Heap::Z_FreeMemory
-#define Z_ZoneBegin Heap::Z_ZoneBegin
-#define Z_ZoneEnd Heap::Z_ZoneEnd
-#define Z_NumBlocks Heap::Z_NumBlocks
-#define Z_Defrag Heap::Z_Defrag
-#define Mem_Info Heap::Mem_Info
+void Mem_Info(void);
 
 template<class T>
 struct nomad_allocator

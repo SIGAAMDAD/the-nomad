@@ -6,9 +6,18 @@
 /*
 Common functionality for the engine and vm alike
 */
+extern qboolean console_open;
+typedef struct
+{
+    const uint8_t *kbstate;
+} eventState_t;
+extern eventState_t evState;
+
 void Com_Init(void);
 void GDR_DECL Com_Printf(const char *fmt, ...);
 uint64_t Com_GenerateHashValue(const char *fname, const uint32_t size);
+void Con_RenderConsole(void);
+void Com_UpdateEvents(void);
 void GDR_DECL Com_Error(const char *fmt, ...);
 
 /*
@@ -17,11 +26,11 @@ commands, shouldn't be called by the vm
 
 #ifndef Q3_VM
 
-typedef void (*completionFunc_t)(const GDRStr& args, uint32_t argnum);
+typedef void (*completionFunc_t)(const char* args, uint32_t argnum);
 typedef void (*cmdfunc_t)(void);
 
-void Cmd_AddCommand(const GDRStr& name, cmdfunc_t function);
-void Cmd_ExecuteCommand(const GDRStr& name);
+void Cmd_AddCommand(const char* name, cmdfunc_t function);
+void Cmd_ExecuteCommand(const char* name);
 
 #endif
 
@@ -39,8 +48,10 @@ THIS SHOULD NEVER BE USED BY THE VM
 typedef int32_t file_t;
 #if defined(_MSVC_VER) || defined(__clang__)
 typedef _off_t fileOffset_t;
-#else
+#elif !defined(Q3_VM)
 typedef off_t fileOffset_t;
+#else
+typedef long fileOffset_t;
 #endif
 
 extern cvar_t fs_gamedir;
@@ -53,7 +64,7 @@ uint64_t FS_Read(void *data, uint64_t size, file_t f);
 file_t FS_OpenBFF(int32_t index);
 file_t FS_FOpenRead(const char *filepath);
 file_t FS_FOpenWrite(const char *filepath);
-file_t FS_CreateTmp(char **name, const char *ext = NULL);
+file_t FS_CreateTmp(char **name, const char *ext);
 char* FS_GetOSPath(file_t f);
 //uint32_t FS_NumBFFs(void);
 void* FS_GetBFFData(file_t handle);

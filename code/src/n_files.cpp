@@ -197,7 +197,7 @@ uint64_t FS_LoadFile(const char *filepath, void **buffer)
 	}
 
 	uint64_t fsize = FS_FileLength(fd);
-	void *buf = Mem_Alloc(fsize);
+	void *buf = Hunk_TempAlloc(fsize);
 	FS_Read(buf, fsize, fd);
 	*buffer = buf;
 

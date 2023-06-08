@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "g_bff.h"
+
 typedef struct
 {
     uint32_t magFilter;

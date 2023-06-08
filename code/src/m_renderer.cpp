@@ -134,6 +134,7 @@ void R_UnbindIndexBuffer(void)
     glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
 }
 
+bool imgui_on = false;
 
 static void R_InitVK(void)
 {
@@ -175,9 +176,28 @@ static void R_InitVK(void)
     vkGetPhysicalDeviceSurfaceSupportKHR(renderer->gpuContext.instance->device, 1, renderer->gpuContext.instance->surface, &presentSupport);
 }
 
+static void R_InitImGui(void)
+{
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_IsSRGB;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+    ImGui::StyleColorsDark();
+
+    ImGui_ImplSDL2_InitForOpenGL(renderer->window, renderer->gpuContext.context);
+    ImGui_ImplOpenGL3_Init("#version 330 core");
+    ImGui_ImplOpenGL3_CreateDeviceObjects();
+    ImGui_ImplOpenGL3_CreateFontsTexture();
+    
+    imgui_on = true;
+}
+
 static void R_InitGL(void)
 {
     renderer->gpuContext.context = SDL_GL_CreateContext(renderer->window);
+    SDL_GL_MakeCurrent(renderer->window, renderer->gpuContext.context);
     SDL_GL_SetSwapInterval(1);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
@@ -275,6 +295,8 @@ static void R_InitGL(void)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDepthMask(GL_FALSE);
     glDepthFunc(GL_ALWAYS);
+
+//    R_InitImGui();
 }
 
 
@@ -294,8 +316,6 @@ static Uint32 R_GetWindowFlags(void)
     
     if (N_strcmp(r_fullscreen.value, "true") && N_strcmp(r_native_fullscreen.value, "false"))
         flags |= SDL_WINDOW_FULLSCREEN;
-    else if (N_strcmp(r_native_fullscreen.value, "true"))
-        flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
     
     flags |= SDL_WINDOW_RESIZABLE;
     return flags;
@@ -339,6 +359,12 @@ void R_ShutDown()
         return;
 
     Con_Printf("R_ShutDown: deallocating SDL2 contexts and window");
+
+    if (imgui_on) {
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplSDL3_Shutdown();
+        ImGui::DestroyContext();
+    }
 
     for (uint32_t i = 0; i < renderer->numShaders; i++) {
         glDeleteProgram(renderer->shaders[i]->id);
@@ -420,6 +446,10 @@ const char *DBG_GL_SeverityToStr(GLenum severity)
 
 void DBG_GL_ErrorCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const GLvoid *userParam)
 {
+    // nothing massive or useless
+    if (length >= 300 || severity == GL_DEBUG_SEVERITY_NOTIFICATION) {
+        return;
+    }
     switch (type) {
     case GL_DEBUG_TYPE_ERROR:
         Con_Error("[OpenGL Debug Log] %s", message);

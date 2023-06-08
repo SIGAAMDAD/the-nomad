@@ -26,6 +26,26 @@
 
 #endif
 
+#ifdef Q3_VM
+
+typedef unsigned char uint8_t;
+typedef unsigned short int uint16_t;
+typedef unsigned int uint32_t;
+typedef unsigned long int uint64_t;
+typedef signed char int8_t;
+typedef signed short int int16_t;
+typedef signed int int32_t;
+typedef signed long int int64_t;
+
+// everything is 32-bit on the vm/lcc
+typedef int ptrdiff_t;
+typedef int intptr_t;
+typedef unsigned int uintptr_t;
+typedef unsigned int size_t;
+typedef signed int ssize_t;
+
+#endif
+
 #if !defined(Q3_VM) && !defined(BFF_COMPILER)
 #include "n_pch.h"
 #include <EABase/eabase.h>
@@ -46,7 +66,11 @@
 #define PAD(base, alignment)	(((base)+(alignment)-1) & ~((alignment)-1))
 #define PADLEN(base, alignment)	(PAD((base), (alignment)) - (base))
 
-#define PADP(base, alignment)	((void *) PAD((intptr_t) (base), (alignment)))
+template<typename type, typename alignment>
+__inline type* PADP(type *base, alignment align)
+{
+	return (type *)((void *)PAD((intptr_t)base, align));
+}
 #endif
 
 #pragma GCC diagnostic ignored "-Wclass-memaccess"
@@ -106,7 +130,6 @@
 #define MAP_MAX_X 240
 
 #define arraylen(arr) (sizeof(arr)/sizeof(*arr))
-
 
 typedef float vec_t;
 typedef vec_t vec2_t[2];
@@ -172,26 +195,6 @@ GDR_INLINE void __nomad_assert_fail(const char* expression, const char* file, co
 #include "n_common.h"
 #endif
 
-#ifdef Q3_VM
-
-typedef unsigned char uint8_t;
-typedef unsigned short int uint16_t;
-typedef unsigned int uint32_t;
-typedef unsigned long int uint64_t;
-typedef signed char int8_t;
-typedef signed short int int16_t;
-typedef signed int int32_t;
-typedef signed long int int64_t;
-
-// everything is 32-bit on the vm/lcc
-typedef int ptrdiff_t;
-typedef int intptr_t;
-typedef unsigned int uintptr_t;
-typedef unsigned int size_t;
-typedef signed int ssize_t;
-
-#endif
-
 
 typedef enum
 {
@@ -244,20 +247,18 @@ typedef enum
 #define MSAA_16X 3
 
 #ifdef Q3_VM
-static qboolean N_strtobool(const char *s)
+static qboolean N_strtobool(const char* s)
 {
-	return N_strcmp(s, "true") ? qtrue : qfalse;
+	return N_strcasecmp(s, "true") ? qtrue : qfalse;
 }
 static const char* N_booltostr(qboolean b)
 {
 	return b ? "true" : "false";
 }
 #else
-inline qboolean N_strtobool(const char *s)
-{
-	return N_strcmp(s, "true") ? qtrue : qfalse;
-}
-inline const char* N_booltostr(qboolean b)
+#define N_strtobool(s) (N_strcasecmp((s),"true") ? (1) : (0))
+template<typename type>
+inline const char* N_booltostr(type b)
 {
 	return b ? "true" : "false";
 }
@@ -378,6 +379,8 @@ constexpr const char* credits_str =
 #define IMGUI_USER_CONFIG "imconfig.h"
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_opengl3.h>
+#include <imgui/backends/imgui_impl_sdl2.h>
+#include <imgui/backends/imgui_impl_sdl3.h>
 
 #define UPPER_CASE(x) (char)((x) - 32)
 #define UPPER_CASE_STR(x) (const char *)((x) - 32)

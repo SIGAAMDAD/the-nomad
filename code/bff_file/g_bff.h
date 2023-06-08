@@ -61,7 +61,7 @@ void __attribute__((noreturn)) BFF_Error(const char* fmt, ...);
 #define BFF_Error N_Error
 #endif
 
-const __inline uint16_t bffPaidID[70] = {
+const GDR_INLINE bff_short_t bffPaidID[70] = {
 	0x0000, 0x0000, 0x0412, 0x0000, 0x0000, 0x0000, 0x0527,
 	0x421f, 0x0400, 0x0000, 0x0383, 0x0000, 0x0000, 0x0000,
 	0x0000, 0x5666, 0x6553, 0x0000, 0x0000, 0xad82, 0x8270,
@@ -97,6 +97,7 @@ enum : bff_short_t
 	TEX_TGA,
 	TEX_PNG,
 };
+
 
 typedef struct
 {

@@ -22,19 +22,21 @@ LDLIBS        =\
 			libimgui_dbg.a \
 			-lvulkan \
 			-lsndfile \
+			-lbz2 \
+			libglad.a \
+			-lSDL3 \
+
 
 .PHONY: all clean targets clean.objs clean.exe
 
 ifdef release
 CFLAGS= -Ofast -s -std=c++17
-LDLIBS+=libglad.a
 VMFLAGS= -Ofast -s -std=c89
 else
 CFLAGS= -Og -g -std=c++17 -Wall -Wpedantic -D_NOMAD_DEBUG
-LDLIBS+=libglad_dbg.a
 VMFLAGS= -Og -g -std=c89 -Wall -Wpedantic -D_NOMAD_DEBUG -DDEBUG_VM
 endif
-INCLUDE= -I/usr/include -Ideps -Ideps/glad/include -I/usr/local/include -I/usr/include/freetype2 -Isrc -mfma -mavx2
+INCLUDE= -I/usr/include -Ideps -Ideps/glad/include -Ideps/imgui -I/usr/local/include -I/usr/include/freetype2 -Isrc -mfma -mavx2
 OPIMTIZERS=-fexpensive-optimizations -funroll-loops -ffast-math -finline-limit=10000
 DEFINES    =-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPDATE) -D_NOMAD_VERSION_PATCH=$(VERSION_PATCH)
 CFLAGS    += $(INCLUDE) $(DEFINES) $(OPIMTIZERS)
@@ -91,7 +93,7 @@ $(O)/%.o: $(SDIR)/src/%.c
 $(O)/vm_run.o: $(SDIR)/common/vm_run.cpp
 	$(CC) $(CFLAGS) -o $@ -c $<
 $(O)/vm.o: $(SDIR)/common/vm.c
-	gcc -std=c89 -ansi -Ofast -s -o $@ -c $<
+	gcc -std=c99 -DDEBUG_VM -Og -g -o $@ -c $<
 
 $(EXE): $(SRCOBJ) $(BFFOBJ) $(COMMONOBJ)
 	$(CC) $(CFLAGS) $(SRCOBJ) $(BFFOBJ) $(COMMONOBJ) -o $(EXE) $(LDLIBS)

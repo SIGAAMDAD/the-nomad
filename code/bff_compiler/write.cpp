@@ -2,6 +2,9 @@
 #define LOG_WARN(...) Con_Printf(__VA_ARGS__)
 #define N_Error BFF_Error
 #include "zone.h"
+#include <bzlib.h>
+#include <zlib.h>
+
 
 static void GetInfo(const json& data, bffinfo_t* info, const char *path)
 {
@@ -76,7 +79,7 @@ void WriteBFF(const char* outfile, const char* jsonfile)
 	
 	archive = (bff_t *)SafeMalloc(sizeof(bff_t), "archive");
 	
-	bff_int_t totalChunks = info->numLevels + info->numSounds + info->numScripts;
+	bff_int_t totalChunks = info->numLevels + info->numSounds + info->numScripts + info->numTextures;
 	archive->numChunks = totalChunks;
 	archive->chunkList = (bff_chunk_t *)SafeMalloc(sizeof(bff_chunk_t) * archive->numChunks, "chunkList");
 	bff_chunk_t* chunk = archive->chunkList;
@@ -174,7 +177,7 @@ void WriteBFF(const char* outfile, const char* jsonfile)
 		SafeWrite(fp, archive->chunkList[i].chunkName, MAX_BFF_CHUNKNAME);
 		SafeWrite(fp, &archive->chunkList[i].chunkSize, sizeof(bff_int_t));
 		SafeWrite(fp, &archive->chunkList[i].chunkType, sizeof(bff_int_t));
-		SafeWrite(fp, archive->chunkList[i].chunkBuffer, sizeof(char) * archive->chunkList[i].chunkSize);
+		SafeWrite(fp, archive->chunkList[i].chunkBuffer, archive->chunkList[i].chunkSize);
 //		free(archive->chunkList[i].chunkBuffer);
 	}
 	fclose(fp);

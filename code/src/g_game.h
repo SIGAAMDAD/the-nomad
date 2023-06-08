@@ -63,15 +63,9 @@ public:
     char svfile[256];
     SDL_Window* window;
     ImGuiContext* context;
-//    uint16_t numplayers;
-//    playr_t* playrs = NULL; // for when multiplayer is added
-//    playr_t* playr; // player on the current machine
+    
     gamestate_t gamestate;
-//    linked_list<entity_t> entities;
     uint8_t difficulty;
-
-//    bff_file_t* file = NULL;
-//    bff_level_t* level = NULL;
 public:
     Game() = default;
     ~Game();
@@ -81,11 +75,7 @@ public:
 
     static void Init();
     static inline Game* Get() { return gptr; }
-//    static inline playr_t* GetPlayr() { return &gptr->playrs[0]; }
-//    static inline playr_t* GetPlayers() { return gptr->playrs; }
 };
-
-inline bool imgui_on = false;
 
 void G_SaveGame();
 void G_LoadGame();

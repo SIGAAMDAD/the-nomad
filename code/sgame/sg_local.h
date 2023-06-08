@@ -11,12 +11,6 @@
 #define MAX_MOBS_ACTIVE 150
 #define MAX_PLAYR_INVENTORY 20
 
-int G_Init();
-int G_Shutdown();
-
-int G_StartLevel();
-int G_EndLevel();
-
 void* G_AllocMem(int size);
 void G_FreeMem(void *ptr);
 void G_InitMem(void);

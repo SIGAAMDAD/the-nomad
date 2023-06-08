@@ -277,8 +277,9 @@ const static char* opnames[OPCODE_TABLE_SIZE] = {
  * @param[in] bytecode Pointer to bytecode.
  * @param[in] length Number of bytes in bytecode array.
  * @return Pointer to start/header of vm bytecode. */
-static const vmHeader_t* VM_LoadQVM(vm_t* vm, const uint8_t* bytecode,
-                                    int length);
+
+// const vmHeader_t* VM_LoadQVM(vm_t* vm, const uint8_t* bytecode,
+//                                    int length);
 
 /** Helper function for VM_Create: Set up the virtual machine during loading.
  * Ensure consistency and prepare the jumps.
@@ -439,8 +440,7 @@ int VM_Create(vm_t* vm, const char* name, const uint8_t* bytecode, int length,
     return 0;
 }
 
-static const vmHeader_t* VM_LoadQVM(vm_t* vm, const uint8_t* bytecode,
-                                    int length)
+const vmHeader_t* VM_LoadQVM(vm_t* vm, const uint8_t* bytecode, int length)
 {
     int dataLength;
     int i;
@@ -530,7 +530,7 @@ intptr_t VM_Call(vm_t* vm, int command, ...)
     int      args[MAX_VMMAIN_ARGS];
     va_list  ap;
     int      i;
-
+    
     if (vm == NULL)
     {
         Com_Error(VM_INVALID_POINTER, "VM_Call with NULL vm");

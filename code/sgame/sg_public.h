@@ -15,6 +15,11 @@ typedef enum
     G_GETTILEMAP,
     G_SAVEGAME,
     G_LOADGAME,
+    G_GETEVENTS,
+    CVAR_REGISTER,
+    CVAR_GETVALUE,
+    CVAR_SETVALUE,
+    CVAR_REGISTERNAME,
 
     NUM_SGAME_IMPORT
 } sgameImport_t;
@@ -23,12 +28,14 @@ typedef enum
 {
     SGAME_INIT,
     SGAME_SHUTDOWN,
+    SGAME_RUNTIC,
     SGAME_STARTLEVEL,
     SGAME_ENDLEVEL,
 } sgameExport_t;
 
-void G_UpdateConfig(cvar_t** vars);
 void G_GetTilemap(sprite_t tilemap[MAP_MAX_Y][MAP_MAX_X]);
-void N_SaveGame(uint32_t slot);
+void G_SaveGame(uint32_t slot, const void *data, const uint64_t size);
+void G_LoadGame(uint32_t slot, void *data, uint64_t *size);
+void G_GetEvents(eventState_t* events);
 
 #endif

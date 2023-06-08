@@ -1,7 +1,21 @@
 #include "n_shared.h"
+#include "m_renderer.h"
 #include "n_scf.h"
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+bool imgui_window_open = false;
+static eastl::vector<char> con_buffer;
+
+void Con_ClearBuffer(const char *msg, int length)
+{
+    if (con_buffer.size() >= MAX_BUFFER_SIZE) {
+        // linux console it
+        eastl::vector<char>::const_iterator ptr = con_buffer.end() - MAX_BUFFER_SIZE;
+        while (*ptr != '\n');
+        con_buffer.erase(con_buffer.begin(), ptr);
+    }
+    con_buffer.insert(con_buffer.end(), msg, msg + length);
+}
 
 void Con_Printf(loglevel_t level, const char *fmt, ...)
 {
@@ -17,23 +31,54 @@ void Con_Printf(loglevel_t level, const char *fmt, ...)
     }
 
     va_list argptr;
-    
+    int length;
+    char msg[1024];
+    memset(msg, 0, sizeof(msg));
+
     va_start(argptr, fmt);
-    vfprintf(stdout, fmt, argptr);
+    length = vsnprintf(msg, sizeof(msg), fmt, argptr);
     va_end(argptr);
-    fprintf(stdout, "\n");
+
+    if (length >= sizeof(msg)) {
+        N_Error("Con_Printf: overflow occured");
+    }
+    fprintf(stdout, "%s\n", msg);
+    Con_ClearBuffer(msg, length);
 }
 
 void Con_Printf(const char *fmt, ...)
 {
     va_list argptr;
+    int length;
+    char msg[1024];
+    memset(msg, 0, sizeof(msg));
 
     va_start(argptr, fmt);
-    vfprintf(stdout, fmt, argptr);
+    length = vsnprintf(msg, sizeof(msg), fmt, argptr);
     va_end(argptr);
 
-    fprintf(stdout, "\n");
-    fflush(stdout);
+    if (length >= sizeof(msg)) {
+        N_Error("Con_Printf: overflow occured");
+    }
+    fprintf(stdout, "%s\n", msg);
+    Con_ClearBuffer(msg, length);
+}
+
+void Con_EndFrame(void)
+{
+    con_buffer.push_back('\0');
+
+    int flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove;
+    ImGui::SetWindowSize(ImVec2(N_atoi(r_screenwidth.value), (float)(N_atoi(r_screenheight.value) >> 1)));
+    ImGui::SetWindowPos(ImVec2(0, 0));
+    ImGui::Begin("Command Console", NULL, flags);
+    ImGui::Text("%s", con_buffer.data());
+    con_buffer.pop_back();
+    ImGui::End();
+    if (console_open) {
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    }
 }
 
 void Con_Error(const char *fmt, ...)
@@ -48,15 +93,15 @@ void Con_Error(const char *fmt, ...)
     fflush(stderr);
 }
 
-// dynamically allocated list of cvars, not really for the static/extern ones
-static cvar_t cvar_list = {0};
+#define MAX_CVAR_HASH 2048
+static cvar_t cvar_list{0};
 
 cvar_t* Cvar_Find(const char *name)
 {
     cvar_t* cvar;
 
     for (cvar = &cvar_list; cvar; cvar = cvar->next) {
-        if (N_strncmp(name, cvar->name, sizeof(cvar->name))) {
+        if (N_strncasecmp(name, cvar->name, 79)) {
             return cvar;
         }
     }
@@ -75,11 +120,14 @@ void Cvar_RegisterName(const char *name, const char *value, cvartype_t type, qbo
     for (cvar = &cvar_list; cvar->next; cvar = cvar->next);
     cvar->next = (cvar_t *)Z_Malloc(sizeof(*cvar), TAG_STATIC, &cvar->next, "cvar");
     cvar = cvar->next;
-    N_strncpy(cvar->name, name, sizeof(cvar->name));
-    cvar->name[sizeof(cvar->name) - 1] = '\0'; // extra careful
 
-    N_strncpy(cvar->value, value, sizeof(cvar->value));
-    cvar->value[sizeof(cvar->value) - 1] = '\0'; // also extra careful
+    cvar->name = (char *)Z_Malloc(80, TAG_STATIC, &cvar->name, "cvar");
+    N_strncpy(cvar->name, name, 79);
+    cvar->name[79] = '\0';
+
+    cvar->value = (char *)Z_Malloc(80, TAG_STATIC, &cvar->value, "cvar");
+    N_strncpy(cvar->value, value, 79);
+    cvar->value[79] = '\0';
 
     cvar->type = type;
     cvar->save = save;
@@ -94,8 +142,8 @@ void Cvar_ChangeValue(const char *name, const char *value)
         Con_Printf("WARNING: attempting to change the value of non-existent cvar %s", name);
         return;
     }
-    N_strncpy(cvar->value, value, sizeof(cvar->value));
-    cvar->value[sizeof(cvar->value)] = '\0';
+    N_strncpy(cvar->value, value, 80);
+    cvar->value[79] = '\0';
 }
 
 void Cvar_Register(cvar_t* cvar)
@@ -114,7 +162,7 @@ void Cvar_Register(cvar_t* cvar)
 
 #define DEFAULT_CFG_NAME "nomadconfig.scf"
 
-void Cvar_WriteCfg(void)
+void Cvar_WriteCfg_f(void)
 {
     cvar_t* cvar;
 

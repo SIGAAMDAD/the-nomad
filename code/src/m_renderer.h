@@ -211,6 +211,8 @@ void R_UnbindVertexArray(void);
 void R_BindIndexBuffer(const vertexCache_t* cache);
 void R_UnbindIndexBuffer(void);
 
+extern bool imgui_on;
+
 #ifdef _NOMAD_DEBUG
 
 const char *DBG_GL_SourceToStr(GLenum source);
