@@ -1,5 +1,5 @@
 #include "../src/n_shared.h"
-#include "../bff_file/g_bff.h"
+#include "../src/g_bff.h"
 #include "vm.h"
 #include "n_vm.h"
 

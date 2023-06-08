@@ -1,5 +1,5 @@
 #include "n_shared.h"
-#include "../bff_file/g_bff.h"
+#include "g_bff.h"
 #include "g_bff.h"
 #include "g_game.h"
 #include "m_renderer.h"
@@ -10,32 +10,6 @@ bool sdl_on = false;
 static bool exited = false;
 int myargc;
 char** myargv;
-
-#ifndef _WIN32
-#define LoadLibraryA(x) dlopen((x), RTLD_NOW | RTLD_LOCAL)
-#define GetProcAddress(a,b) dlsym((a),(b))
-#define FreeLibrary(x) dlclose((x))
-using HMODULE = void*;
-#endif
-
-HMODULE G_LoadLibrary(const char *lib)
-{
-    HMODULE handle;
-#ifdef _WIN32
-    if ((handle = GetModuleHandleA(lib)) != NULL)
-        return (void *)NULL;
-#elif defined(__unix__)
-    if (*lib == '\0')
-        return (void *)NULL;
-#endif
-    handle = LoadLibraryA(lib);
-    return handle;
-}
-
-void *G_LoadSym(HMODULE handle, const char *name)
-{
-    return (void *)GetProcAddress((HMODULE)handle, name);
-}
 
 #define LOAD(ptr,name) \
 { \
@@ -67,23 +41,6 @@ void __attribute__((noreturn)) N_Error(const char *err, ...)
 
     Game::Get()->~Game();
     exit(EXIT_FAILURE);
-}
-
-
-void ImGui_Init()
-{
-    Con_Printf("ImGui_Init: initializing and allocating an ImGui_SDLRenderer context");
-    IMGUI_CHECKVERSION();
-    imgui_on = true;
-}
-
-void VectorNormalize(glm::vec3& v)
-{
-    float ilength = Q_rsqrt((v.x*v.x+v.y*v.y+v.z*v.z));
-
-    v.x *= ilength;
-    v.y *= ilength;
-    v.z *= ilength;
 }
 
 static void done()
@@ -146,8 +103,8 @@ void mainLoop()
     shader_t* shader = R_CreateShader("gamedata/shader.glsl", "shader0");
     shader_t* screenShader = R_CreateShader("gamedata/framebuffer.glsl", "screenShader");
 
-    texture_t* texture = R_CreateTexture("sand.jpg", "texture0");
-    texture_t* screenTexture = R_CreateTexture("desertbkgd.jpg", "screenTexture");
+    texture_t* texture = R_GetTexture("NMTEX_SAND");
+    texture_t* screenTexture = R_GetTexture("NMTEX_BKGD");
 
 
     renderer->camera = CONSTRUCT(Camera, "camera", -3.0f, 3.0f, -3.0f, 3.0f);
@@ -285,20 +242,6 @@ void I_NomadInit(int argc, char** argv)
     myargv = argv;
 
     Com_Init();
-
-    Con_Printf("G_LoadBFF: loading bff file");
-    G_LoadBFF("nomadmain.bff");
-
-    Con_Printf(
-        "+===========================================================+\n"
-         "\"The Nomad\" is free software distributed under the terms\n"
-         "of both the GNU General Public License v2.0 and Apache License\n"
-         "v2.0\n"
-         "+==========================================================+\n"
-    );
-
-    Con_Printf("G_LoadSCF: parsing scf file");
-    G_LoadSCF();
 
     Con_Printf("running main gameplay loop");
     mainLoop();

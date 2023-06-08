@@ -22,6 +22,8 @@ typedef struct
 } texture_t;
 
 void R_UpdateTextures(void);
-texture_t* R_CreateTexture(const char *filepath, const char *name);
+texture_t* R_CreateTexture(const char *filepath, const char *name, const void* texture);
+texture_t* R_GetTexture(const char *name);
+void I_CacheTextures(bffinfo_t *info);
 
 #endif

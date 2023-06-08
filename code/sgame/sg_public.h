@@ -15,7 +15,6 @@ typedef enum
     CON_FLUSH,
     G_PLAYSFX,
     G_GETTILEMAP,
-<<<<<<< HEAD
     G_SAVEGAME,
     G_LOADGAME,
     G_GETEVENTS,
@@ -23,11 +22,6 @@ typedef enum
     CVAR_GETVALUE,
     CVAR_SETVALUE,
     CVAR_REGISTERNAME,
-=======
-    N_SAVEGAME,
-    N_LOADGAME,
-    G_UPDATECONFIG,
->>>>>>> parent of 7803dbe (got sound working, engine almost don)
 
     NUM_SGAME_IMPORT
 } sgameImport_t;

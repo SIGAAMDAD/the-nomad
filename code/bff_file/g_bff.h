@@ -97,7 +97,6 @@ enum : uint16_t
 	SFT_OPUS
 };
 
-<<<<<<< HEAD
 enum : bff_short_t
 {
 	TEX_JPG,
@@ -106,9 +105,6 @@ enum : bff_short_t
 	TEX_PNG,
 };
 
-
-=======
->>>>>>> parent of 7803dbe (got sound working, engine almost don)
 typedef struct
 {
 	char name[MAX_BFF_CHUNKNAME];

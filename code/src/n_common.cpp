@@ -3,6 +3,11 @@
 #include "g_game.h"
 #include "g_sound.h"
 
+#ifdef __unix__
+#include <unistd.h>
+#include <sys/stat.h>
+#endif
+
 static char *com_buffer;
 static int com_bufferLen;
 
@@ -169,39 +174,24 @@ a raw string should NEVER be passed as fmt, same reason as the quake3 engine.
 */
 void GDR_DECL Com_Printf(const char *fmt, ...)
 {
-    int length;
     va_list argptr;
-    char msg[MAX_MSG_SIZE];
 
     va_start(argptr, fmt);
-    length = stbsp_vsnprintf(msg, sizeof(msg), fmt, argptr);
+    vfprintf(stdout, fmt, argptr);
     va_end(argptr);
-
-    if (com_bufferLen + length >= MAX_BUFFER_SIZE) {
-        Sys_Print(com_buffer);
-        Sys_Print(GDR_NEWLINE);
-        memset(com_buffer, 0, MAX_BUFFER_SIZE);
-        com_bufferLen = 0;
-    }
-    memcpy(com_buffer+com_bufferLen, msg, length);
-    com_bufferLen += length;
+    fprintf(stdout, "\n");
 }
 
 /*
 Com_Error: the vm's version of N_Error
 */
-void GDR_DECL Com_Error(vm_t* vm, const char *fmt,  ...)
+void GDR_DECL Com_Error(const char *fmt,  ...)
 {
-    if (VM_GetIndex(vm) == INVALID_VM) {
-        N_Error("Com_Error: INVALID VM!!!"); // THIS SHOULD NEVER HAPPEN
-    }
-    const uint64_t index = VM_GetIndex(vm);
-    int length;
     va_list argptr;
     char msg[MAX_MSG_SIZE];
 
     va_start(argptr, fmt);
-    length = stbsp_vsnprintf(msg, sizeof(msg), fmt, argptr);
+    stbsp_vsnprintf(msg, sizeof(msg), fmt, argptr);
     va_end(argptr);
 
     N_Error("(VM Error) %s", msg);
@@ -253,15 +243,6 @@ void GDR_DECL Sys_Print(const char* str)
 void GDR_DECL Sys_Exit(int code)
 {
     exit(code);
-}
-
-int Sys_stat(nstat_t* buffer, const char *filepath)
-{
-#ifdef _WIN32
-    return __stat64(filepath, buffer);
-#else
-    return stat(filepath, buffer);
-#endif
 }
 
 FILE* Sys_FOpen(const char *filepath, const char *mode)
@@ -327,51 +308,277 @@ void Sys_FreeLibrary(void *handle)
 #endif
 }
 
+void Sys_mkdir(const char *dirpath)
+{
+    if (!dirpath)
+        N_Error("Sys_mkdir: NULL dirpath");
+    
+    mkdir(dirpath, (mode_t)0777);
+}
+
+const char* Sys_pwd(void)
+{
+    static char buffer[MAX_OSPATH];
+    char *p;
+
+    p = getcwd(buffer, MAX_OSPATH);
+    if (!p) {
+        N_Error("Sys_pwd: getcwd returned NULL, errno: %s", strerror(errno));
+    }
+    return buffer;
+}
+
 /*
 ==================================================
 Commands:
-anything with a Cmd_ or CMD_ prefix is a function that operates on the command-line (or in-game console) functionality.
+anything with a Cmd_, Cbuf_, or CMD_ prefix is a function that operates on the command-line (or in-game console) functionality.
 mostly meant for developers/debugging
 ==================================================
 */
 
-typedef void (*cmdfunc_t)(void);
+#define MAX_CMD_BUFFER 65536
+#define MAX_STRING_TOKENS 1024
+#define BIG_INFO_STRING 8192
+
+typedef struct
+{
+    byte *data;
+    uint32_t maxsize;
+    uint32_t cursize;
+} cbuf_t;
+
+static cbuf_t cmd_text;
+static byte cmd_text_buf[MAX_CMD_BUFFER];
+
+void Cbuf_Init(void)
+{
+    cmd_text.data = cmd_text_buf;
+    cmd_text.maxsize = MAX_CMD_BUFFER;
+    cmd_text.cursize = 0;
+}
+
+void Cbud_AddText(const char *text)
+{
+    const uint64_t l = (uint64_t)strlen(text);
+    
+    if (cmd_text.cursize + l >= cmd_text.maxsize) {
+        Con_Printf("Cbuf_AddText: overflow");
+        return;
+    }
+
+    memcpy(&cmd_text.data[cmd_text.cursize], text, l);
+    cmd_text.cursize += l;
+}
+
+int Cbuf_Add( const char *text, int pos )
+{
+	int len = (int)strlen( text );
+	qboolean separate = qfalse;
+	int i;
+
+	if ( len == 0 ) {
+		return cmd_text.cursize;
+	}
+
+	if ( pos > cmd_text.cursize || pos < 0 ) {
+		// insert at the text end
+		pos = cmd_text.cursize;
+	}
+
+	if ( text[len - 1] == '\n' || text[len - 1] == ';' ) {
+		// command already has separator
+	} else {
+		separate = qtrue;
+		len += 1;
+	}
+
+	if ( len + cmd_text.cursize > cmd_text.maxsize ) {
+		Con_Printf("%s(%i) overflowed", FUNC_SIG, pos );
+		return cmd_text.cursize;
+	}
+
+	// move the existing command text
+	for ( i = cmd_text.cursize - 1; i >= pos; i-- ) {
+		cmd_text.data[i + len] = cmd_text.data[i];
+	}
+
+	if ( separate ) {
+		// copy the new text in + add a \n
+		memcpy( cmd_text.data + pos, text, len - 1 );
+		cmd_text.data[pos + len - 1] = '\n';
+	} else {
+		// copy the new text in
+		memcpy( cmd_text.data + pos, text, len );
+	}
+
+	cmd_text.cursize += len;
+
+	return pos + len;
+}
+
+
+
 typedef struct cmd_s
 {
-    char *name;
+    GDRStr name;
     cmdfunc_t function;
+    completionFunc_t complete;
     struct cmd_s* next;
 } cmd_t;
-
 static cmd_t* cmd_functions;
+static uint64_t numCommands = 0;
+static int cmd_argc;
+static char cmd_argv[MAX_STRING_TOKENS];
 
 static cmd_t* Cmd_FindCommand(const char *name)
 {
-    cmd_t* cmd;
-    for (cmd = cmd_functions; cmd; cmd = cmd->next) {
-        if (N_strcasecmp(name, cmd->name))
+    for (cmd_t *cmd = cmd_functions; cmd; cmd = cmd->next) {
+        if (cmd->name == name) {
             return cmd;
+        }
     }
     return NULL;
 }
 
-void Cmd_AddCommand(const char *name, cmdfunc_t function)
+void Cmd_AddCommand(const char *name, cmdfunc_t func)
 {
-    cmd_t* cmd;
+    cmd_t *cmd;
+
+    if (strlen(name) >= BASE_CHAR_BUFFER_SIZE) {
+        Con_Printf("WARNING: strlen(name) >= BASE_CHAR_BUFFER_SIZE in Cmd_AddCommand, heap allocation required");
+    }
+
+    // fail if the command already exists
     if (Cmd_FindCommand(name)) {
-        if (function)
+        // allow completeion-only commands to be silently doubled
+        if (func != NULL)
             Con_Printf("Cmd_AddCommand: %s already defined", name);
         return;
     }
 
-    cmd = (cmd_t *)Mem_Alloc16(sizeof(*cmd));
-    cmd->name = Mem_CopyString(name);
-    cmd->function = function;
+    cmd = (cmd_t *)Z_Malloc(sizeof(cmd_t), TAG_STATIC, &cmd, "cmd");
+    cmd->name = name;
+    cmd->function = func;
+    cmd->complete = NULL;
     cmd->next = cmd_functions;
     cmd_functions = cmd;
+    numCommands++;
 }
 
-void Cmd_ExecuteCmd()
-{
+/*
+============
+Cmd_ExecuteString
 
+A complete command line has been parsed, so try to execute it
+============
+*/
+#if 0
+void Cmd_ExecuteString( const char *text )
+{
+	cmd_t *cmd, **prev;
+
+	// execute the command line
+	Cmd_TokenizeString( text );
+	if ( !Cmd_Argc() ) {
+		return;		// no tokens
+	}
+
+	// check registered command functions
+	for ( prev = &cmd_functions ; *prev ; prev = &cmd->next ) {
+		cmd = *prev;
+		if ( N_strcasecmp( cmd_argv[0], cmd->name ) ) {
+			// rearrange the links so that the command will be
+			// near the head of the list next time it is used
+			*prev = cmd->next;
+			cmd->next = cmd_functions;
+			cmd_functions = cmd;
+
+			// perform the action
+			if ( !cmd->function ) {
+				// let the cgame or game handle it
+				break;
+			} else {
+				cmd->function();
+			}
+			return;
+		}
+	}
+
+	// check cvars
+	if (Cvar_Command()) {
+		return;
+	}
+}
+#endif
+
+void Cmd_SetCommandCompletetionFunc(const char *name, completionFunc_t func)
+{
+    for (cmd_t *cmd = cmd_functions; cmd; cmd = cmd->next) {
+        if (cmd->name == name) {
+            cmd->complete = func;
+            return;
+        }
+    }
+}
+
+void Cmd_RemoveCmd(const char *name)
+{
+    cmd_t *cmd, **back;
+
+    back = &cmd_functions;
+    while (1) {
+        cmd = *back;
+        if (!cmd) {
+            // command wasn't active
+            break;
+        }
+        if (cmd->name.casecmp(name)) {
+            *back = cmd->next;
+            if (cmd->name.casecmp(name)) {
+                cmd->name.clear();
+            }
+            numCommands--;
+            Z_Free(cmd);
+            return;
+        }
+        back = &cmd->next;
+    }
+}
+
+char* Cmd_ArgsFrom(int32_t arg)
+{
+    static char cmd_args[BIG_INFO_STRING], *s;
+    int32_t i;
+
+    s = cmd_args;
+    *s = '\0';
+    if (arg < 0)
+        arg = 0;
+    for (i = arg; i < cmd_argc; i++) {
+//        s = N_stradd(s, cmd_argv[i]);
+        if (i != cmd_argc - 1) {
+            s = N_stradd(s, " ");
+        }
+    }
+    return cmd_args;
+}
+
+static void Cmd_List_f(void)
+{
+    Con_Printf("Total number of commands: %lu", numCommands);
+    for (const cmd_t *cmd = cmd_functions; cmd; cmd = cmd->next) {
+        Con_Printf("%s", cmd->name.c_str());
+    }
+}
+
+static void Cmd_Echo_f(void)
+{
+    Con_Printf("%s", Cmd_ArgsFrom(1));
+}
+
+void Cmd_Init(void)
+{
+    Cmd_AddCommand("cmdlist", Cmd_List_f);
+    Cmd_AddCommand("crash", Com_Crash_f);
+    Cmd_AddCommand("echo", Cmd_Echo_f);
 }

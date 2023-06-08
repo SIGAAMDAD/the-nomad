@@ -36,13 +36,8 @@ else
 CFLAGS= -Og -g -std=c++17 -Wall -Wpedantic -D_NOMAD_DEBUG
 VMFLAGS= -Og -g -std=c89 -Wall -Wpedantic -D_NOMAD_DEBUG -DDEBUG_VM
 endif
-<<<<<<< HEAD
 INCLUDE= -I/usr/include -Ideps -Ideps/glad/include -Ideps/imgui -I/usr/local/include -I/usr/include/freetype2 -Isrc -mfma -mavx2
-OPIMTIZERS=-fexpensive-optimizations -funroll-loops -ffast-math -finline-limit=10000
-=======
-INCLUDE= -I/usr/include -Ideps -Ideps/glad/include -I/usr/local/include -I/usr/include/freetype2 -Isrc -mfma -mavx2
 #OPIMTIZERS=-fexpensive-optimizations -funroll-loops -ffast-math -finline-limit=10000
->>>>>>> parent of 7803dbe (got sound working, engine almost don)
 DEFINES    =-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPDATE) -D_NOMAD_VERSION_PATCH=$(VERSION_PATCH)
 CFLAGS    += $(INCLUDE) $(DEFINES) $(OPIMTIZERS)
 
@@ -52,10 +47,6 @@ SGAME_ASM= \
 	$(QVM)/sg_mem.q3asm \
 	$(QVM)/sg_mthink.q3asm \
 	$(QVM)/sg_playr.q3asm \
-
-BFFOBJ= \
-	$(O)/read.o \
-	$(O)/common.o \
 
 COMMONOBJ= \
 	$(O)/vm_run.o \

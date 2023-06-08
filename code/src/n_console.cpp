@@ -43,7 +43,7 @@ void Con_Printf(loglevel_t level, const char *fmt, ...)
         N_Error("Con_Printf: overflow occured");
     }
     fprintf(stdout, "%s\n", msg);
-    Con_ClearBuffer(msg, length);
+//    Con_ClearBuffer(msg, length);
 }
 
 void Con_Printf(const char *fmt, ...)
@@ -61,7 +61,7 @@ void Con_Printf(const char *fmt, ...)
         N_Error("Con_Printf: overflow occured");
     }
     fprintf(stdout, "%s\n", msg);
-    Con_ClearBuffer(msg, length);
+//    Con_ClearBuffer(msg, length);
 }
 
 void Con_EndFrame(void)

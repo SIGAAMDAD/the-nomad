@@ -3,11 +3,14 @@
 
 #pragma once
 
-#include "../bff_file/g_bff.h"
+#include "../src/g_bff.h"
 #include "vm.h"
 
 #define MAX_ACTIVE_VM 2
 #define INVALID_VM (MAX_ACTIVE_VM+1)
+
+extern uint32_t vm_command;
+extern uint32_t vm_args[12];
 
 void VM_Init(bffscript_t* scripts);
 void G_RemoveVM(uint64_t index);
