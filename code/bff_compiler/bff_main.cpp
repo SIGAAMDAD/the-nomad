@@ -1,5 +1,6 @@
 #include "../bff_file/g_bff.h"
 
+#ifndef _NOMAD_VERSION
 
 int main(int argc, char** argv)
 {
@@ -22,3 +23,5 @@ int main(int argc, char** argv)
     }
     return 0;
 }
+
+#endif

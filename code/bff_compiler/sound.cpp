@@ -23,7 +23,7 @@ void GetSounds(const json& data, bffinfo_t* info)
 			strncpy(sound->name, name.c_str(), MAX_BFF_CHUNKNAME - 1);
 		}
 		else {
-			Con_Printf("WARNING: sound at index %lu doesn't have an assigned name, using default name of %s", i, soundnode.c_str());
+			Con_Printf("WARNING: sound at index %lu doesn't have an assigned name, using default name of %s", soundnode.c_str());
 			strncpy(sound->name, soundnode.c_str(), MAX_BFF_CHUNKNAME - 1);
 		}
         if (!data["sounds"][soundnode].contains("soundfile")) {

@@ -4,6 +4,7 @@
 #pragma once
 
 #include "n_scf.h"
+#include "../bff_file/g_bff.h"
 #include "g_bff.h"
 
 #ifndef O_BINARY

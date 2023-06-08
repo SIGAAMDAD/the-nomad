@@ -21,10 +21,6 @@ typedef struct cvar_s
     struct cvar_s* next;
 } cvar_t;
 
-void Cvar_RegisterName(const char *name, const char *value, cvartype_t type, qboolean save);
-void Cvar_Register(cvar_t* cvar);
-void Cvar_ChangeValue(const char *name, const char *value);
-
 #ifndef Q3_VM
 
 typedef enum {
@@ -45,5 +41,5 @@ void Con_Printf(const char *fmt, ...);
 void Con_Error(const char *fmt, ...);
 #endif
 
-
 #endif
+

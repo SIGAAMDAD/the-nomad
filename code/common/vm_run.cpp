@@ -1,5 +1,5 @@
 #include "../src/n_shared.h"
-#include "../src/g_bff.h"
+#include "../bff_file/g_bff.h"
 #include "vm.h"
 #include "n_vm.h"
 
@@ -51,7 +51,7 @@ intptr_t VM_Stop(uint64_t index)
 {
 }
 
-void VM_Run(uint64_t index)
+void VM_Run(uint64_t index, int command, const nomadvector<int>& vm_args)
 {
     intptr_t result = VM_Call(&sgame, vm_command,
         vm_args[0], vm_args[1], vm_args[2], vm_args[3], vm_args[4], vm_args[5],
@@ -72,7 +72,7 @@ void* Com_malloc(size_t size, vm_t* vm, vmMallocType_t type)
 {
     (void)vm;
     (void)type;
-    return Z_Malloc(size, TAG_LEVEL, NULL, "vmMem");
+    return Z_Malloc(size, TAG_STATIC, NULL, "vmMem");
 }
 void Com_Error(vmErrorCode_t level, const char* error)
 {

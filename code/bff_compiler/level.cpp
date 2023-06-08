@@ -171,7 +171,7 @@ void GetLevels(const json& data, bffinfo_t* info)
 			strncpy(level->name, name.c_str(), MAX_BFF_CHUNKNAME - 1);
 		}
 		else {
-			Con_Printf("WARNING: level at index %lu doesn't have an assigned name, using default name of %s", i, levelnode.c_str());
+			Con_Printf("WARNING: level at index %lu doesn't have an assigned name, using default name of %s", levelnode.c_str());
 			strncpy(level->name, levelnode.c_str(), MAX_BFF_CHUNKNAME - 1);
 		}
 		

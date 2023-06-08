@@ -21,7 +21,7 @@ void Cbuf_Init(void)
 
 void Cbud_AddText(const char *text)
 {
-    const uint64_t l = (uint64_t)strlen(text);
+    const int l = (int)strlen(text);
     
     if (cmd_text.cursize + l >= cmd_text.maxsize) {
         Con_Printf("Cbuf_AddText: overflow");
@@ -55,7 +55,7 @@ int Cbuf_Add( const char *text, int pos )
 	}
 
 	if ( len + cmd_text.cursize > cmd_text.maxsize ) {
-		Con_Printf("%s(%i) overflowed", FUNC_SIG, pos );
+		Con_Printf("%s(%i) overflowed\n", FUNC_SIG, pos );
 		return cmd_text.cursize;
 	}
 
@@ -77,4 +77,3 @@ int Cbuf_Add( const char *text, int pos )
 
 	return pos + len;
 }
-
