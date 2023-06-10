@@ -142,8 +142,11 @@ static intptr_t Sys_G_LoadGame(vm_t *vm, intptr_t *args)
 }
 static intptr_t Sys_G_GetEvents(vm_t *vm, intptr_t *args)
 {
-    memcpy(VMA(1, vm), &evState, sizeof(eventState_t));
-    return 0;
+    SDL_Event *e = (SDL_Event *)VMA(1, vm);
+    if (console_open)
+        memset(e, 0, sizeof(SDL_Event)); // tells the vm there is nothing to handle
+    else
+       memcpy((SDL_Event *)VMA(1, vm), &evState.event, sizeof(SDL_Event));
 }
 
 const vmSystemCall_t systemCalls[] = {

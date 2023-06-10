@@ -4,10 +4,6 @@
 #include "g_game.h"
 #include "g_sound.h"
 #include "m_renderer.h"
-#include <sndfile.h>
-#include "stb_vorbis.c"
-#include <bzlib.h>
-#include <zlib.h>
 
 static void SafeRead(FILE* fp, void *data, size_t size)
 {
@@ -60,7 +56,7 @@ static void CopySoundChunk(const bff_chunk_t* chunk, bffinfo_t* info)
 	ptr += sizeof(bff_int_t);
 	data->fileType = *(bff_short_t *)ptr;
 	ptr += sizeof(bff_short_t);
-	data->fileBuffer = (char *)Mem_Alloc(data->fileSize);
+	data->fileBuffer = (char *)Hunk_Alloc(data->fileSize, "sndfile", h_high);
 	
 	memcpy(data->fileBuffer, ptr, data->fileSize);
 	Con_Printf("Done loading audio chunk %s", data->name);
@@ -99,12 +95,14 @@ static void CopyTextureChunk(const bff_chunk_t* chunk, bffinfo_t* info)
 
 	data->fileSize = chunk->chunkSize;
 
-	data->fileBuffer = (unsigned char *)Hunk_Alloc(data->fileSize, "texCache", h_low);
+	data->fileBuffer = (unsigned char *)Hunk_Alloc(data->fileSize, "texCache", h_high);
 	memcpy(data->fileBuffer, ptr, data->fileSize);
 	Con_Printf("Done loading texture chunk %s", data->name);
 
 	info->numTextures++;
 }
+
+static uint64_t infomark;
 
 bffinfo_t* BFF_GetInfo(bff_t* archive)
 {
@@ -112,7 +110,8 @@ bffinfo_t* BFF_GetInfo(bff_t* archive)
 		BFF_Error("BFF_GetInfo: null archive");
 	}
 	
-	bffinfo_t* info = (bffinfo_t *)Hunk_Alloc(sizeof(bffinfo_t), "BFFinfo", h_low);
+	infomark = Hunk_HighMark();
+	bffinfo_t* info = (bffinfo_t *)Hunk_Alloc(sizeof(bffinfo_t), "BFFinfo", h_high);
 	memset(info, 0, sizeof(bffinfo_t));
 	info->numLevels = 0;
 	info->numSounds = 0;
@@ -139,81 +138,10 @@ bffinfo_t* BFF_GetInfo(bff_t* archive)
 }
 void BFF_FreeInfo(bffinfo_t* info)
 {
-	for (bff_int_t i = 0; i < info->numSounds; i++) {
-		Mem_Free(info->sounds[i].fileBuffer);
-	}
+	Hunk_FreeToHighMark(infomark);
 }
 
-uint32_t sndcache_size;
-nomadsnd_t* snd_cache;
 static bffinfo_t* bffinfo;
-
-static void Snd_LoadOGG(nomadsnd_t* snd, bffsound_t* buffer)
-{
-    char temppath[256];
-    stbsp_sprintf(temppath, "gamedata/sndfile.ogg");
-    FILE *fp = fopen(temppath, "wb");
-    if (!fp) {
-        N_Error("Snd_LoadOGG: failed to create temporary audio file");
-    }
-    fwrite(buffer->fileBuffer, 1, buffer->fileSize, fp);
-    fclose(fp);
-
-    snd->length = stb_vorbis_decode_filename(temppath, &snd->channels, &snd->samplerate, &snd->sndbuf);
-    if (snd->length == -1) {
-        N_Error("Snd_LoadOGG: stb_vorbis_decode_filename failed");
-    }
-
-    remove(temppath);
-}
-
-static void I_CacheAudio(bffinfo_t *info)
-{
-	FILE* fp;
-	SNDFILE* sf;
-	SF_INFO fdata;
-	sf_count_t readcount;
-	float sfx_vol = atof(snd_sfxvol.value);
-	float music_vol = atof(snd_musicvol.value);
-
-    snd_cache = (nomadsnd_t *)Hunk_Alloc(sizeof(nomadsnd_t) * info->numSounds, "snd_cache", h_low);
-    sndcache_size = info->numSounds;
-
-    for (uint32_t i = 0; i < info->numSounds; i++) {
-        fp = tmpfile();
-        if (!fp) {
-            N_Error("I_CacheAudio: failed to create temporary audio file");
-        }
-        fwrite(info->sounds[i].fileBuffer, 1, info->sounds[i].fileSize, fp);
-        fseek(fp, 0L, SEEK_SET);
-
-        sf = sf_open_fd(fileno(fp), SFM_READ, &fdata, SF_TRUE);
-        if (!sf) {
-            N_Error("I_CacheAudio: failed to create temporary audio stream for chunk %s, libsndfile error: %s",
-                info->sounds[i].name, sf_strerror(sf));
-        }
-
-        snd_cache[i].sndbuf = (short *)Hunk_Alloc(sizeof(short) * fdata.frames * fdata.channels, "soundcache", h_low);
-        readcount = sf_read_short(sf, snd_cache[i].sndbuf, sizeof(short) * fdata.frames * fdata.channels);
-        if (!readcount) {
-            N_Error("I_CacheAudio: libsndfile failed to decode audio chunk %s, libsndfile error: %s",
-                info->sounds[i].name, sf_strerror(sf));
-        }
-        sf_close(sf);
-
-        snd_cache[i].samplerate = fdata.samplerate;
-        snd_cache[i].channels = fdata.channels;
-        snd_cache[i].length = fdata.samplerate * fdata.frames;
-
-        alGenSources(1, &snd_cache[i].source);
-        alGenBuffers(1, &snd_cache[i].buffer);
-        alBufferData(snd_cache[i].buffer, snd_cache[i].channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16,
-            snd_cache[i].sndbuf, fdata.frames * fdata.channels, snd_cache[i].samplerate);
-        alSourcei(snd_cache[i].source, AL_BUFFER, snd_cache[i].buffer);
-		alSourcef(snd_cache[i].source, AL_GAIN, music_vol);
-        alSourcePlay(snd_cache[i].source);
-    }
-}
 
 
 // this makes it so that only a single bff archive can be in ram at a time
@@ -296,7 +224,7 @@ void G_LoadBFF(const GDRStr& bffname)
 
 	file_t archive = FS_OpenBFF(0);
 	bffinfo = BFF_GetInfo((bff_t*)FS_GetBFFData(archive));
-    I_CacheAudio(bffinfo);
+    I_CacheAudio((void *)bffinfo);
 	I_CacheTextures(bffinfo);
 
 	FS_FClose(archive);

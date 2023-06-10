@@ -5,6 +5,11 @@
 
 #ifdef _WIN32
 
+#ifdef GDR_DLLCOMPILE
+#define GDR_EXPORT __declspec(dllexport)
+#else
+#define GDR_EXPORT __declspec(dllimport)
+#endif
 #define DLL_EXT ".dll"
 #define PATH_SEP '\\'
 #define PATH_SEP_FOREIGN '/'
@@ -47,6 +52,7 @@
 
 // common unix platform stuff
 
+#define GDR_EXPORT __attribute__((visibility("default")))
 #define DLL_EXT ".so"
 #define PATH_SEP '/'
 #define PATH_SEP_FOREIGN '\\'

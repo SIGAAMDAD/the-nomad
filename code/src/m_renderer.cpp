@@ -296,7 +296,7 @@ static void R_InitGL(void)
     glDepthMask(GL_FALSE);
     glDepthFunc(GL_ALWAYS);
 
-//    R_InitImGui();
+    R_InitImGui();
 }
 
 
@@ -323,8 +323,13 @@ static Uint32 R_GetWindowFlags(void)
 
 static bool sdl_on = false;
 
-void R_Init()
+void R_InitLib(void)
 {
+    renderImport_t imports;
+    imports.Printf = static_cast<void(*)(const char *fmt, ...)>(Con_Printf);
+    imports.LPrintf = static_cast<void(*)(loglevel_t level, const char *fmt, ...)>(Con_Printf);
+    imports.
+
     renderer = (Renderer *)Hunk_Alloc(sizeof(Renderer), "renderer", h_high);
     assert(renderer);
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {

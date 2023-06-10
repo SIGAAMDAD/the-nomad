@@ -6,12 +6,16 @@
 /*
 Common functionality for the engine and vm alike
 */
+#ifndef Q3_VM
 extern qboolean console_open;
 typedef struct
 {
+    SDL_Event event;
     const uint8_t *kbstate;
 } eventState_t;
 extern eventState_t evState;
+#endif
+
 
 void Com_Init(void);
 void GDR_DECL Com_Printf(const char *fmt, ...);
@@ -19,6 +23,70 @@ uint64_t Com_GenerateHashValue(const char *fname, const uint32_t size);
 void Con_RenderConsole(void);
 void Com_UpdateEvents(void);
 void GDR_DECL Com_Error(const char *fmt, ...);
+
+const char *Com_SkipTokens( const char *s, int numTokens, const char *sep );
+const char *Com_SkipCharset( const char *s, const char *sep );
+void	COM_BeginParseSession( const char *name );
+int		COM_GetCurrentParseLine( void );
+const char	*COM_Parse( const char **data_p );
+const char	*COM_ParseExt( const char **data_p, qboolean allowLineBreak );
+int		COM_Compress( char *data_p );
+void	COM_ParseError( const char *format, ... ) __attribute__ ((format (printf, 1, 2)));
+void	COM_ParseWarning( const char *format, ... ) __attribute__ ((format (printf, 1, 2)));
+//int		COM_ParseInfos( const char *buf, int max, char infos[][MAX_INFO_STRING] );
+
+char	*COM_ParseComplex( const char **data_p, qboolean allowLineBreak );
+
+typedef enum {
+	TK_GENEGIC = 0, // for single-char tokens
+	TK_STRING,
+	TK_QUOTED,
+	TK_EQ,
+	TK_NEQ,
+	TK_GT,
+	TK_GTE,
+	TK_LT,
+	TK_LTE,
+	TK_MATCH,
+	TK_OR,
+	TK_AND,
+	TK_SCOPE_OPEN,
+	TK_SCOPE_CLOSE,
+	TK_NEWLINE,
+	TK_EOF,
+} tokenType_t;
+
+extern tokenType_t com_tokentype;
+
+#define MAX_TOKENLENGTH		1024
+
+#ifndef TT_STRING
+//token types
+#define TT_STRING					1			// string
+#define TT_LITERAL					2			// literal
+#define TT_NUMBER					3			// number
+#define TT_NAME						4			// name
+#define TT_PUNCTUATION				5			// punctuation
+#endif
+
+typedef struct pc_token_s
+{
+	int type;
+	int subtype;
+	int intvalue;
+	float floatvalue;
+	char string[MAX_TOKENLENGTH];
+} pc_token_t;
+
+// data is an in/out parm, returns a parsed out token
+
+qboolean SkipBracedSection( const char **program, int depth );
+void SkipRestOfLine( const char **data );
+
+void Parse1DMatrix( const char **buf_p, int x, float *m);
+void Parse2DMatrix( const char **buf_p, int y, int x, float *m);
+void Parse3DMatrix( const char **buf_p, int z, int y, int x, float *m);
+
 
 /*
 commands, shouldn't be called by the vm
@@ -30,7 +98,13 @@ typedef void (*completionFunc_t)(const char* args, uint32_t argnum);
 typedef void (*cmdfunc_t)(void);
 
 void Cmd_AddCommand(const char* name, cmdfunc_t function);
+void Cmd_RemoveCommand(const char* name);
 void Cmd_ExecuteCommand(const char* name);
+void Cmd_ExecuteText(const char *str);
+void Cmd_ExecuteString(const char *str);
+uint32_t Cmd_Argc(void);
+const char* Cmd_Argv(uint32_t index);
+void Cmd_Clear(void);
 
 #endif
 

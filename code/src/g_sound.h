@@ -46,9 +46,11 @@ typedef struct nomadsnd_s
 extern uint32_t sndcache_size;
 extern nomadsnd_t* snd_cache;
 
+void I_CacheAudio(void *bffinfo);
 void P_PlaySFX(uint32_t sfx);
 void S_PlayMusic(uint32_t music);
 void Snd_Init();
+void Snd_PlayTrack(const char *name);
 void Snd_Kill();
 void G_RunSound();
 

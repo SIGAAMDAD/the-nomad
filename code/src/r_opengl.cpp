@@ -1,6 +1,15 @@
 #include "n_shared.h"
 #include "m_renderer.h"
 
+void R_ContextInfo_f(void)
+{
+    
+}
+
+void R_Screenshot_f(void)
+{
+}
+
 GPUContext::GPUContext()
 {
     glGetIntegerv(GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX, &gpu_memory_total);

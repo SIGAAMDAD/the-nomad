@@ -32,6 +32,9 @@ static void Con_ProcessInput(void)
     ImGui::Text("> ");
     ImGui::SameLine();
     ImGui::InputText(" ", buffer, sizeof(buffer));
+    if (buffer[0]) {
+        Cmd_ExecuteString(buffer);
+    }
 //    ImGui::InputText("> ", buffer, sizeof(buffer));
 }
 
@@ -43,17 +46,16 @@ static void done(void)
 
 void Com_UpdateEvents(void)
 {
-    SDL_Event event;
     SDL_PumpEvents();
     evState.kbstate = SDL_GetKeyboardState(NULL);
 
     if (console_open) {
-        while (SDL_PollEvent(&event)) {
-            ImGui_ImplSDL2_ProcessEvent(&event);
-            if (event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_BACKQUOTE) {
+        while (SDL_PollEvent(&evState.event)) {
+            ImGui_ImplSDL2_ProcessEvent(&evState.event);
+            if (evState.event.type == SDL_KEYDOWN && evState.event.key.keysym.sym == SDLK_BACKQUOTE) {
                 console_open = qfalse;
             }
-            else if (event.type == SDL_QUIT) {
+            else if (evState.event.type == SDL_QUIT) {
                 done();
             }
         }
@@ -76,6 +78,9 @@ void Con_RenderConsole(void)
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
+
+    if (console_open)
+        Con_ProcessInput();
 }
 
 
@@ -137,36 +142,6 @@ uint64_t Com_GenerateHashValue( const char *fname, const uint32_t size )
 
 	return hash;
 }
-
-
-/*
-Com_Init: initializes all the engine's systems
-*/
-void Com_Init(void)
-{
-    Con_Printf("Com_Init: initializing systems");
-
-    Memory_Init();
-    R_Init();
-//    Con_RenderConsole();
-
-    Snd_Init();
-
-    Con_Printf("G_LoadBFF: loading bff file");
-    G_LoadBFF("nomadmain.bff");
-
-    Con_Printf(
-        "+===========================================================+\n"
-         "\"The Nomad\" is free software distributed under the terms\n"
-         "of both the GNU General Public License v2.0 and Apache License\n"
-         "v2.0\n"
-         "+==========================================================+\n"
-    );
-
-    Con_Printf("G_LoadSCF: parsing scf file");
-    G_LoadSCF();
-}
-
 
 /*
 Com_Printf: can be used by either the main engine, or the vm
@@ -336,87 +311,9 @@ mostly meant for developers/debugging
 ==================================================
 */
 
-#define MAX_CMD_BUFFER 65536
-#define MAX_STRING_TOKENS 1024
 #define BIG_INFO_STRING 8192
-
-typedef struct
-{
-    byte *data;
-    uint32_t maxsize;
-    uint32_t cursize;
-} cbuf_t;
-
-static cbuf_t cmd_text;
-static byte cmd_text_buf[MAX_CMD_BUFFER];
-
-void Cbuf_Init(void)
-{
-    cmd_text.data = cmd_text_buf;
-    cmd_text.maxsize = MAX_CMD_BUFFER;
-    cmd_text.cursize = 0;
-}
-
-void Cbud_AddText(const char *text)
-{
-    const uint64_t l = (uint64_t)strlen(text);
-    
-    if (cmd_text.cursize + l >= cmd_text.maxsize) {
-        Con_Printf("Cbuf_AddText: overflow");
-        return;
-    }
-
-    memcpy(&cmd_text.data[cmd_text.cursize], text, l);
-    cmd_text.cursize += l;
-}
-
-int Cbuf_Add( const char *text, int pos )
-{
-	int len = (int)strlen( text );
-	qboolean separate = qfalse;
-	int i;
-
-	if ( len == 0 ) {
-		return cmd_text.cursize;
-	}
-
-	if ( pos > cmd_text.cursize || pos < 0 ) {
-		// insert at the text end
-		pos = cmd_text.cursize;
-	}
-
-	if ( text[len - 1] == '\n' || text[len - 1] == ';' ) {
-		// command already has separator
-	} else {
-		separate = qtrue;
-		len += 1;
-	}
-
-	if ( len + cmd_text.cursize > cmd_text.maxsize ) {
-		Con_Printf("%s(%i) overflowed", FUNC_SIG, pos );
-		return cmd_text.cursize;
-	}
-
-	// move the existing command text
-	for ( i = cmd_text.cursize - 1; i >= pos; i-- ) {
-		cmd_text.data[i + len] = cmd_text.data[i];
-	}
-
-	if ( separate ) {
-		// copy the new text in + add a \n
-		memcpy( cmd_text.data + pos, text, len - 1 );
-		cmd_text.data[pos + len - 1] = '\n';
-	} else {
-		// copy the new text in
-		memcpy( cmd_text.data + pos, text, len );
-	}
-
-	cmd_text.cursize += len;
-
-	return pos + len;
-}
-
-
+#define MAX_STRING_TOKENS 1024
+#define MAX_HISTORY 32
 
 typedef struct cmd_s
 {
@@ -425,19 +322,215 @@ typedef struct cmd_s
     completionFunc_t complete;
     struct cmd_s* next;
 } cmd_t;
+
 static cmd_t* cmd_functions;
 static uint64_t numCommands = 0;
-static int cmd_argc;
-static char cmd_argv[MAX_STRING_TOKENS];
+static uint32_t cmd_argc;
+static char *cmd_argv[MAX_STRING_TOKENS];
+static char cmd_tokenized[BIG_INFO_STRING+MAX_STRING_TOKENS];
+static char cmd_cmd[BIG_INFO_STRING];
+
+static char cmd_history[MAX_HISTORY][BIG_INFO_STRING];
+static uint32_t cmd_historyused;
+
+uint32_t Cmd_Argc(void)
+{
+    return cmd_argc;
+}
+
+void Cmd_Clear(void)
+{
+    cmd_cmd[0] = '\0';
+    cmd_argc = 0;
+}
+
+const char *Cmd_Argv(uint32_t index)
+{
+    if ((unsigned)index  >= cmd_argc) {
+        return "";
+    }
+    return cmd_argv[index];
+}
 
 static cmd_t* Cmd_FindCommand(const char *name)
 {
     for (cmd_t *cmd = cmd_functions; cmd; cmd = cmd->next) {
-        if (cmd->name == name) {
+        if (N_strneq(cmd->name.c_str(), name, cmd->name.size())) {
             return cmd;
         }
     }
     return NULL;
+}
+
+static void Cmd_TokenizeString2(const char *str, bool ignoreQuotes)
+{
+    const char *text;
+    char *textOut;
+
+    // clear previous args
+    cmd_argc = 0;
+    cmd_cmd[0] = '\0';
+
+    if (!str) {
+        return;
+    }
+
+    N_strncpy(cmd_cmd, str, sizeof(cmd_cmd));
+
+    text = cmd_cmd; // read from safe-length buffer
+    textOut = cmd_tokenized;
+
+    while (1) {
+        if (cmd_argc >= arraylen(cmd_argv)) {
+            break; // this is usually something malicious
+        }
+
+        while (1) {
+            // skip whitespace
+            while (*text && *text <= ' ') {
+                text++;
+            }
+            if (!*text) { // all tokens parsed
+                return;
+            }
+            
+            // skip // comments
+            if (text[0] == '/' && text[1] == '/') {
+                // accept protocol headers (e.g. http://) in command lines that matching "*?[a-z]://" pattern
+                if (text < cmd_cmd + 3 || text[-1] != ':' || text[-2] < 'a' || text[-2] > 'z') {
+                    return; // all tokens parsed
+                }
+            }
+
+            // skip /* */ comments
+            if (text[0] == '/' && text[1] == '*') {
+                while (*text && (text[0] != '*' || text[1] != '/')) {
+                    text++;
+                }
+                if (!*text) {
+                    return; // all tokens parsed
+                }
+                text += 2;
+            }
+            else {
+                break; // we are ready to parse a token
+            }
+
+            // handle quoted strings
+            // NOTE TTime this doesn't handle \" escape
+            if (!ignoreQuotes && *text == '*') {
+                cmd_argv[cmd_argc] = textOut;
+                cmd_argc++;
+                text++;
+
+                while (*text && *text != '"') {
+                    *textOut++ = *text++;
+                }
+                *textOut = '\0';
+                if (!*text) {
+                    return; // all tokens parsed
+                }
+                text++;
+                continue;
+            }
+            
+            // regular tokens
+            cmd_argv[cmd_argc] = textOut;
+            cmd_argc++;
+
+            // skip until whitespace, quote, or command
+            while (*text > ' ') {
+                if (!ignoreQuotes && text[0] == '"') {
+                    break;
+                }
+
+                if (text[0] == '/' && text[1] == '/') {
+                    // accept protocol headers (e.g. http://) in command lines that matching "*?[a-z]://" pattern
+			    	if ( text < cmd_cmd + 3 || text[-1] != ':' || text[-2] < 'a' || text[-2] > 'z' ) {
+					    break;
+				    }
+                }
+
+                // skip /* */ comments
+                if (text[0] == '/' && text[1] == '*') {
+                    break;
+                }
+
+                *textOut++ = *text++;
+            }
+
+            *textOut++ = '\0';
+            if (!*text) {
+                return; // al tokens parsed
+            }
+        }
+    }
+}
+
+static void Cmd_TokenizeStringIngoreQuotes(const char *str)
+{
+    Cmd_TokenizeString2(str, true);
+}
+
+static void Cmd_TokenizeString(const char *str)
+{
+    Cmd_TokenizeString2(str, false);
+}
+
+
+void Cmd_ExecuteText(const char *str)
+{
+    cmd_t *cmd;
+
+    if (!*str) {
+        return; // nothing to do
+    }
+
+    cmd = Cmd_FindCommand(str);
+    if (!cmd) {
+        Con_Printf("No such command '%s'", str);
+        return;
+    }
+
+    cmd->function();
+}
+
+void Cmd_ExecuteString(const char *str)
+{
+    cmd_t *cmd, **prev;
+
+    // execute the command line
+    Cmd_TokenizeString(str);
+    if (!Cmd_Argc()) {
+        return; // no tokens
+    }
+
+    // check registered command functions
+    for (prev = &cmd_functions; *prev; prev = &cmd->next) {
+        cmd = *prev;
+        if (!N_strneq(cmd_argv[0], cmd->name.c_str(), cmd->name.size())) {
+            // rearrange the links so that the command will be near the
+            // head of the list next time it is used
+            *prev = cmd->next;
+            cmd->next = cmd_functions;
+            cmd_functions = cmd;
+
+            // perform the action
+            if (!cmd->function) {
+                // let the sgame or game handle it
+                break;
+            }
+            else {
+                cmd->function();
+            }
+            return;
+        }
+    }
+
+    // check cvars
+    if (Cvar_Command()) {
+        return;
+    }
 }
 
 void Cmd_AddCommand(const char *name, cmdfunc_t func)
@@ -455,6 +548,7 @@ void Cmd_AddCommand(const char *name, cmdfunc_t func)
             Con_Printf("Cmd_AddCommand: %s already defined", name);
         return;
     }
+    Con_Printf("Registered command %s", name);
 
     cmd = (cmd_t *)Z_Malloc(sizeof(cmd_t), TAG_STATIC, &cmd, "cmd");
     cmd->name = name;
@@ -576,9 +670,770 @@ static void Cmd_Echo_f(void)
     Con_Printf("%s", Cmd_ArgsFrom(1));
 }
 
-void Cmd_Init(void)
+static void Cmd_Init(void)
 {
     Cmd_AddCommand("cmdlist", Cmd_List_f);
     Cmd_AddCommand("crash", Com_Crash_f);
     Cmd_AddCommand("echo", Cmd_Echo_f);
+}
+
+
+/*
+Com_Init: initializes all the engine's systems
+*/
+void Com_Init(void)
+{
+    Con_Printf("Com_Init: initializing systems");
+
+    Memory_Init();
+    
+    // initialize the rendering engine
+    renderImport_t imports;
+    imports.Printf = static_cast<void(*)(const char *fmt, ...)>(Con_Printf);
+    imports.LPrintf = static_cast<void(*)(loglevel_t level, const char *fmt, ...)>(Con_Printf);
+    imports.N_LoadFile = N_LoadFile;
+    imports.BFF_FetchInfo = BFF_FetchInfo;
+    imports.Cmd_AddCommand = Cmd_AddCommand;
+    imports.Cmd_RemoveCommand = Cmd_RemoveCommand;
+    imports.Cvar_Register = Cvar_Register;
+    imports.Cvar_RegisterName = Cvar_RegisterName;
+    imports.Cvar_Find = Cvar_Find;
+    imports.Cvar_ChangeValue = Cvar_ChangeValue;
+    imports.Com_GenerateHashValue = Com_GenerateHashValue;
+    imports.Sys_LoadLibrary = Sys_LoadLibrary;
+    imports.Sys_FreeLibrary = Sys_FreeLibrary;
+    imports.Sys_LoadProc = Sys_LoadProc;
+    imports.Z_Malloc = Z_Malloc;
+    imports.Z_Calloc = Z_Calloc;
+    imports.Z_Realloc = Z_Realloc;
+    imports.Z_FreeTags = Z_FreeTags;
+    imports.Z_ChangeTag = Z_ChangeTag;
+    imports.Z_ChangeUser = Z_ChangeUser;
+    imports.Free = free;
+    imports.Malloc = malloc;
+    imports.Realloc = realloc;
+    imports.Mem_Alloc = Mem_Alloc;
+    imports.Mem_Free = Mem_Free;
+    imports.Hunk_Alloc = Hunk_Alloc;
+    imports.Hunk_TempAlloc = Hunk_TempAlloc;
+
+    RE_Init(&imports);
+
+
+    Cmd_Init();
+
+    Snd_Init();
+
+    Con_Printf("G_LoadBFF: loading bff file");
+    G_LoadBFF("nomadmain.bff");
+
+    Con_Printf(
+        "+===========================================================+\n"
+         "\"The Nomad\" is free software distributed under the terms\n"
+         "of both the GNU General Public License v2.0 and Apache License\n"
+         "v2.0\n"
+         "+==========================================================+\n"
+    );
+
+    Con_Printf("G_LoadSCF: parsing scf file");
+    G_LoadSCF();
+}
+
+/*
+Parsing functions mostly meant for shader stuff, but is also used on occasion around the project
+*/
+
+
+static	char	com_token[MAX_TOKEN_CHARS];
+static	char	com_parsename[MAX_TOKEN_CHARS];
+static	int		com_lines;
+static  int		com_tokenline;
+
+// for complex parser
+tokenType_t		com_tokentype;
+
+void COM_BeginParseSession( const char *name )
+{
+	com_lines = 1;
+	com_tokenline = 0;
+	Com_sprintf(com_parsename, sizeof(com_parsename), "%s", name);
+}
+
+
+int COM_GetCurrentParseLine( void )
+{
+	if ( com_tokenline )
+	{
+		return com_tokenline;
+	}
+
+	return com_lines;
+}
+
+
+const char *COM_Parse( const char **data_p )
+{
+	return COM_ParseExt( data_p, qtrue );
+}
+
+
+void COM_ParseError( const char *format, ... )
+{
+	va_list argptr;
+	static char string[4096];
+
+	va_start( argptr, format );
+	Q_vsnprintf (string, sizeof(string), format, argptr);
+	va_end( argptr );
+
+	Com_Printf( "ERROR: %s, line %d: %s\n", com_parsename, COM_GetCurrentParseLine(), string );
+}
+
+
+void COM_ParseWarning( const char *format, ... )
+{
+	va_list argptr;
+	static char string[4096];
+
+	va_start( argptr, format );
+	Q_vsnprintf (string, sizeof(string), format, argptr);
+	va_end( argptr );
+
+	Com_Printf( "WARNING: %s, line %d: %s\n", com_parsename, COM_GetCurrentParseLine(), string );
+}
+
+
+/*
+==============
+COM_Parse
+
+Parse a token out of a string
+Will never return NULL, just empty strings
+
+If "allowLineBreaks" is qtrue then an empty
+string will be returned if the next token is
+a newline.
+==============
+*/
+static const char *SkipWhitespace( const char *data, qboolean *hasNewLines ) {
+	int c;
+
+	while( (c = *data) <= ' ') {
+		if( !c ) {
+			return NULL;
+		}
+		if( c == '\n' ) {
+			com_lines++;
+			*hasNewLines = qtrue;
+		}
+		data++;
+	}
+
+	return data;
+}
+
+
+int COM_Compress( char *data_p ) {
+	const char *in;
+	char *out;
+	int c;
+	qboolean newline = qfalse, whitespace = qfalse;
+
+	in = out = data_p;
+	while ((c = *in) != '\0') {
+		// skip double slash comments
+		if ( c == '/' && in[1] == '/' ) {
+			while (*in && *in != '\n') {
+				in++;
+			}
+		// skip /* */ comments
+		} else if ( c == '/' && in[1] == '*' ) {
+			while ( *in && ( *in != '*' || in[1] != '/' ) ) 
+				in++;
+			if ( *in ) 
+				in += 2;
+			// record when we hit a newline
+		} else if ( c == '\n' || c == '\r' ) {
+			newline = qtrue;
+			in++;
+			// record when we hit whitespace
+		} else if ( c == ' ' || c == '\t') {
+			whitespace = qtrue;
+			in++;
+			// an actual token
+		} else {
+			// if we have a pending newline, emit it (and it counts as whitespace)
+			if (newline) {
+				*out++ = '\n';
+				newline = qfalse;
+				whitespace = qfalse;
+			} else if (whitespace) {
+				*out++ = ' ';
+				whitespace = qfalse;
+			}
+			// copy quoted strings unmolested
+			if (c == '"') {
+				*out++ = c;
+				in++;
+				while (1) {
+					c = *in;
+					if (c && c != '"') {
+						*out++ = c;
+						in++;
+					} else {
+						break;
+					}
+				}
+				if (c == '"') {
+					*out++ = c;
+					in++;
+				}
+			} else {
+				*out++ = c;
+				in++;
+			}
+		}
+	}
+
+	*out = '\0';
+
+	return out - data_p;
+}
+
+
+const char *COM_ParseExt( const char **data_p, qboolean allowLineBreaks )
+{
+	int c = 0, len;
+	qboolean hasNewLines = qfalse;
+	const char *data;
+
+	data = *data_p;
+	len = 0;
+	com_token[0] = '\0';
+	com_tokenline = 0;
+
+	// make sure incoming data is valid
+	if ( !data )
+	{
+		*data_p = NULL;
+		return com_token;
+	}
+
+	while ( 1 )
+	{
+		// skip whitespace
+		data = SkipWhitespace( data, &hasNewLines );
+		if ( !data )
+		{
+			*data_p = NULL;
+			return com_token;
+		}
+		if ( hasNewLines && !allowLineBreaks )
+		{
+			*data_p = data;
+			return com_token;
+		}
+
+		c = *data;
+
+		// skip double slash comments
+		if ( c == '/' && data[1] == '/' )
+		{
+			data += 2;
+			while (*data && *data != '\n') {
+				data++;
+			}
+		}
+		// skip /* */ comments
+		else if ( c == '/' && data[1] == '*' )
+		{
+			data += 2;
+			while ( *data && ( *data != '*' || data[1] != '/' ) )
+			{
+				if ( *data == '\n' )
+				{
+					com_lines++;
+				}
+				data++;
+			}
+			if ( *data )
+			{
+				data += 2;
+			}
+		}
+		else
+		{
+			break;
+		}
+	}
+
+	// token starts on this line
+	com_tokenline = com_lines;
+
+	// handle quoted strings
+	if ( c == '"' )
+	{
+		data++;
+		while ( 1 )
+		{
+			c = *data;
+			if ( c == '"' || c == '\0' )
+			{
+				if ( c == '"' )
+					data++;
+				com_token[ len ] = '\0';
+				*data_p = data;
+				return com_token;
+			}
+			data++;
+			if ( c == '\n' )
+			{
+				com_lines++;
+			}
+			if ( len < ARRAY_LEN( com_token )-1 )
+			{
+				com_token[ len ] = c;
+				len++;
+			}
+		}
+	}
+
+	// parse a regular word
+	do
+	{
+		if ( len < ARRAY_LEN( com_token )-1 )
+		{
+			com_token[ len ] = c;
+			len++;
+		}
+		data++;
+		c = *data;
+	} while ( c > ' ' );
+
+	com_token[ len ] = '\0';
+
+	*data_p = data;
+	return com_token;
+}
+	
+
+/*
+==============
+COM_ParseComplex
+==============
+*/
+char *COM_ParseComplex( const char **data_p, qboolean allowLineBreaks )
+{
+	static const byte is_separator[ 256 ] =
+	{
+	// \0 . . . . . . .\b\t\n . .\r . .
+		1,0,0,0,0,0,0,0,0,1,1,0,0,1,0,0,
+	//  . . . . . . . . . . . . . . . .
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	//    ! " # $ % & ' ( ) * + , - . /
+		1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0, // excl. '-' '.' '/'
+	//  0 1 2 3 4 5 6 7 8 9 : ; < = > ?
+		0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,
+	//  @ A B C D E F G H I J K L M N O
+		1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	//  P Q R S T U V W X Y Z [ \ ] ^ _
+		0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,0, // excl. '\\' '_'
+	//  ` a b c d e f g h i j k l m n o
+		1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	//  p q r s t u v w x y z { | } ~ 
+		0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1
+	};
+
+	int c, len, shift;
+	const byte *str;
+
+	str = (byte*)*data_p;
+	len = 0; 
+	shift = 0; // token line shift relative to com_lines
+	com_tokentype = TK_GENEGIC;
+	
+__reswitch:
+	switch ( *str )
+	{
+	case '\0':
+		com_tokentype = TK_EOF;
+		break;
+
+	// whitespace
+	case ' ':
+	case '\t':
+		str++;
+		while ( (c = *str) == ' ' || c == '\t' )
+			str++;
+		goto __reswitch;
+
+	// newlines
+	case '\n':
+	case '\r':
+	com_lines++;
+		if ( *str == '\r' && str[1] == '\n' )
+			str += 2; // CR+LF
+		else
+			str++;
+		if ( !allowLineBreaks ) {
+			com_tokentype = TK_NEWLINE;
+			break;
+		}
+		goto __reswitch;
+
+	// comments, single slash
+	case '/':
+		// until end of line
+		if ( str[1] == '/' ) {
+			str += 2;
+			while ( (c = *str) != '\0' && c != '\n' && c != '\r' )
+				str++;
+			goto __reswitch;
+		}
+
+		// comment
+		if ( str[1] == '*' ) {
+			str += 2;
+			while ( (c = *str) != '\0' && ( c != '*' || str[1] != '/' ) ) {
+				if ( c == '\n' || c == '\r' ) {
+					com_lines++;
+					if ( c == '\r' && str[1] == '\n' ) // CR+LF?
+						str++;
+				}
+				str++;
+			}
+			if ( c != '\0' && str[1] != '\0' ) {
+				str += 2;
+			} else {
+				// FIXME: unterminated comment?
+			}
+			goto __reswitch;
+		}
+
+		// single slash
+		com_token[ len++ ] = *str++;
+		break;
+	
+	// quoted string?
+	case '"':
+		str++; // skip leading '"'
+		//com_tokenline = com_lines;
+		while ( (c = *str) != '\0' && c != '"' ) {
+			if ( c == '\n' || c == '\r' ) {
+				com_lines++; // FIXME: unterminated quoted string?
+				shift++;
+			}
+			if ( len < MAX_TOKEN_CHARS-1 ) // overflow check
+				com_token[ len++ ] = c;
+			str++;
+		}
+		if ( c != '\0' ) {
+			str++; // skip ending '"'
+		} else {
+			// FIXME: unterminated quoted string?
+		}
+		com_tokentype = TK_QUOTED;
+		break;
+
+	// single tokens:
+	case '+': case '`':
+	/*case '*':*/ case '~':
+	case '{': case '}':
+	case '[': case ']':
+	case '?': case ',':
+	case ':': case ';':
+	case '%': case '^':
+		com_token[ len++ ] = *str++;
+		break;
+
+	case '*':
+		com_token[ len++ ] = *str++;
+		com_tokentype = TK_MATCH;
+		break;
+
+	case '(':
+		com_token[ len++ ] = *str++;
+		com_tokentype = TK_SCOPE_OPEN;
+		break;
+
+	case ')':
+		com_token[ len++ ] = *str++;
+		com_tokentype = TK_SCOPE_CLOSE;
+		break;
+
+	// !, !=
+	case '!':
+		com_token[ len++ ] = *str++;
+		if ( *str == '=' ) {
+			com_token[ len++ ] = *str++;
+			com_tokentype = TK_NEQ;
+		}
+		break;
+
+	// =, ==
+	case '=':
+		com_token[ len++ ] = *str++;
+		if ( *str == '=' ) {
+			com_token[ len++ ] = *str++;
+			com_tokentype = TK_EQ;
+		}
+		break;
+
+	// >, >=
+	case '>':
+		com_token[ len++ ] = *str++;
+		if ( *str == '=' ) {
+			com_token[ len++ ] = *str++;
+			com_tokentype = TK_GTE;
+		} else {
+			com_tokentype = TK_GT;
+		}
+		break;
+
+	//  <, <=
+	case '<':
+		com_token[ len++ ] = *str++;
+		if ( *str == '=' ) {
+			com_token[ len++ ] = *str++;
+			com_tokentype = TK_LTE;
+		} else {
+			com_tokentype = TK_LT;
+		}
+		break;
+
+	// |, ||
+	case '|':
+		com_token[ len++ ] = *str++;
+		if ( *str == '|' ) {
+			com_token[ len++ ] = *str++;
+			com_tokentype = TK_OR;
+		}
+		break;
+
+	// &, &&
+	case '&':
+		com_token[ len++ ] = *str++;
+		if ( *str == '&' ) {
+			com_token[ len++ ] = *str++;
+			com_tokentype = TK_AND;
+		}
+		break;
+
+	// rest of the charset
+	default:
+		com_token[ len++ ] = *str++;
+		while ( !is_separator[ (c = *str) ] ) {
+			if ( len < MAX_TOKEN_CHARS-1 )
+				com_token[ len++ ] = c;
+			str++;
+		}
+		com_tokentype = TK_STRING;
+		break;
+
+	} // switch ( *str )
+
+	com_tokenline = com_lines - shift;
+	com_token[ len ] = '\0';
+	*data_p = ( char * )str;
+	return com_token;
+}
+
+
+/*
+==================
+COM_MatchToken
+==================
+*/
+static void COM_MatchToken( const char **buf_p, const char *match ) {
+	const char *token;
+
+	token = COM_Parse( buf_p );
+	if ( strcmp( token, match ) ) {
+		Com_Error( ERR_DROP, "MatchToken: %s != %s", token, match );
+	}
+}
+
+
+/*
+=================
+SkipBracedSection
+
+The next token should be an open brace or set depth to 1 if already parsed it.
+Skips until a matching close brace is found.
+Internal brace depths are properly skipped.
+=================
+*/
+qboolean SkipBracedSection( const char **program, int depth ) {
+	const char			*token;
+
+	do {
+		token = COM_ParseExt( program, qtrue );
+		if( token[1] == 0 ) {
+			if( token[0] == '{' ) {
+				depth++;
+			}
+			else if( token[0] == '}' ) {
+				depth--;
+			}
+		}
+	} while( depth && *program );
+
+	return ( depth == 0 );
+}
+
+
+/*
+=================
+SkipRestOfLine
+=================
+*/
+void SkipRestOfLine( const char **data ) {
+	const char *p;
+	int		c;
+
+	p = *data;
+
+	if ( !*p )
+		return;
+
+	while ( (c = *p) != '\0' ) {
+		p++;
+		if ( c == '\n' ) {
+			com_lines++;
+			break;
+		}
+	}
+
+	*data = p;
+}
+
+
+void Parse1DMatrix( const char **buf_p, int x, float *m ) {
+	const char	*token;
+	int		i;
+
+	COM_MatchToken( buf_p, "(" );
+
+	for (i = 0 ; i < x; i++) {
+		token = COM_Parse( buf_p );
+		m[i] = Q_atof( token );
+	}
+
+	COM_MatchToken( buf_p, ")" );
+}
+
+
+void Parse2DMatrix( const char **buf_p, int y, int x, float *m ) {
+	int		i;
+
+	COM_MatchToken( buf_p, "(" );
+
+	for (i = 0 ; i < y ; i++) {
+		Parse1DMatrix (buf_p, x, m + i * x);
+	}
+
+	COM_MatchToken( buf_p, ")" );
+}
+
+
+void Parse3DMatrix( const char **buf_p, int z, int y, int x, float *m ) {
+	int		i;
+
+	COM_MatchToken( buf_p, "(" );
+
+	for (i = 0 ; i < z ; i++) {
+		Parse2DMatrix (buf_p, y, x, m + i * x*y);
+	}
+
+	COM_MatchToken( buf_p, ")" );
+}
+
+
+static int Hex( char c )
+{
+	if ( c >= '0' && c <= '9' ) {
+		return c - '0';
+	}
+	else
+	if ( c >= 'A' && c <= 'F' ) {
+		return 10 + c - 'A';
+	}
+	else
+	if ( c >= 'a' && c <= 'f' ) {
+		return 10 + c - 'a';
+	}
+
+	return -1;
+}
+
+
+/*
+===================
+Com_HexStrToInt
+===================
+*/
+int Com_HexStrToInt(const char *str)
+{
+	if (!str)
+		return -1;
+
+	// check for hex code
+	if (str[ 0 ] == '0' && str[ 1 ] == 'x' && str[ 2 ] != '\0') {
+	    uint32_t i, digit, n = 0, len = strlen( str );
+
+		for (i = 2; i < len; i++) {
+			n *= 16;
+
+			digit = Hex( str[ i ] );
+
+			if ( digit < 0 )
+				return -1;
+
+			n += digit;
+		}
+
+		return n;
+	}
+
+	return -1;
+}
+
+qboolean Com_GetHashColor(const char *str, byte *color)
+{
+	int i, len, hex[6];
+
+	color[0] = color[1] = color[2] = 0;
+
+	if ( *str++ != '#' ) {
+		return qfalse;
+	}
+
+	len = (int)strlen( str );
+	if ( len <= 0 || len > 6 ) {
+		return qfalse;
+	}
+
+	for ( i = 0; i < len; i++ ) {
+		hex[i] = Hex( str[i] );
+		if ( hex[i] < 0 ) {
+			return qfalse;
+		}
+	}
+
+	switch ( len ) {
+		case 3: // #rgb
+			color[0] = hex[0] << 4 | hex[0];
+			color[1] = hex[1] << 4 | hex[1];
+			color[2] = hex[2] << 4 | hex[2];
+			break;
+		case 6: // #rrggbb
+			color[0] = hex[0] << 4 | hex[1];
+			color[1] = hex[2] << 4 | hex[3];
+			color[2] = hex[4] << 4 | hex[5];
+			break;
+		default: // unsupported format
+			return qfalse;
+	}
+
+	return qtrue;
 }

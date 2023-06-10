@@ -157,6 +157,8 @@ int N_strncasecmp(const char *str1, const char *str2, size_t n);
 int N_atoi(const char *s);
 float N_atof(const char *s);
 size_t N_strlen(const char *str);
+qboolean N_streq(const char *str1, const char *str2);
+qboolean N_strneq(const char *str1, const char *str2, size_t n);
 char* N_stradd(char *dst, const char *src);
 void N_strcpy(char *dest, const char *src);
 void N_strncpy(char *dest, const char *src, size_t count);

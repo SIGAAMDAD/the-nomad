@@ -7,6 +7,13 @@
 
 static vm_t sgame;
 
+static void VM_Restart(void);
+static void VM_Info_f(void)
+{
+    Con_Printf("<-------- VM Info -------->");
+    Con_Printf("sgame running: %s", (sgame.callLevel ? "yes" : "no"));
+}
+
 void VM_Init(bffscript_t *scripts)
 {
     Con_Printf("VM_Init: initializing virtual bytecode interpreters");
@@ -15,20 +22,19 @@ void VM_Init(bffscript_t *scripts)
     bffscript_t *script = BFF_FetchScript("NM_SGAME");
     VM_Create(&sgame, "sgame", script->bytecode, script->codelen, G_SystemCalls);
     Con_Printf("Allocated sgame.qvm");
+
+    Cmd_AddCommand("vminfo", VM_Info_f);
+    Cmd_AddCommand("vmrestart", VM_Restart);
 }
 
-void VM_Restart(void)
+static void VM_Restart(void)
 {
     bffscript_t *script;
     if (!BFF_FetchScript("NM_SGAME")->bytecode) {
         N_Error("VM_Restart: vm bytecode freed prematurely (sgame)");
     }
-    if (sgame.callLevel) {
-        N_Error("VM_Restart: called on running vm (sgame)");
-    }
 
     // restart the memory
-    //TODO: THIS SHIT
     script = BFF_FetchScript("NM_SGAME");
 
     VM_Free(&sgame);
@@ -51,7 +57,7 @@ intptr_t VM_Stop(uint64_t index)
 {
 }
 
-void VM_Run(uint64_t index, int command, const nomadvector<int>& vm_args)
+void VM_Run(uint64_t index)
 {
     intptr_t result = VM_Call(&sgame, vm_command,
         vm_args[0], vm_args[1], vm_args[2], vm_args[3], vm_args[4], vm_args[5],
@@ -66,7 +72,7 @@ void Com_free(void *p, vm_t* vm, vmMallocType_t type)
         Con_Error("null pointer (Com_free)");
         return;
     }
-    p = NULL;
+    Z_ChangeTag(p, TAG_LEVEL);
 }
 void* Com_malloc(size_t size, vm_t* vm, vmMallocType_t type)
 {

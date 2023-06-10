@@ -21,6 +21,12 @@ typedef struct cvar_s
     struct cvar_s* next;
 } cvar_t;
 
+cvar_t* Cvar_Find(const char *name);
+void Cvar_RegisterName(const char *name, const char *value, cvartype_t type, qboolean save);
+void Cvar_ChangeValue(const char *name, const char *value);
+void Cvar_Register(cvar_t *cvar);
+qboolean Cvar_Command(void);
+
 #ifndef Q3_VM
 
 typedef enum {
@@ -30,8 +36,8 @@ typedef enum {
     NONE // reserved for Con_Printf without the level specified, don't use
 } loglevel_t;
 
-#define MAX_MSG_SIZE 2*1024
-#define MAX_BUFFER_SIZE 8*1024
+#define MAX_MSG_SIZE (4*1024)
+#define MAX_BUFFER_SIZE (10*1024)
 
 extern bool imgui_window_open;
 

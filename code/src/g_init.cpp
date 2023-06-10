@@ -2,6 +2,7 @@
 #include "g_bff.h"
 #include "g_bff.h"
 #include "g_game.h"
+#include "g_sound.h"
 #include "m_renderer.h"
 #include "../sgame/sg_public.h"
 #include "../common/n_vm.h"
@@ -118,12 +119,14 @@ void mainLoop()
     
     Hunk_Print();
     Z_Print(true);
+    Snd_PlayTrack("NMMUS01");
 
     float light_intensity = 1.0f;
 
     uint32_t ticrate = atoi(r_ticrate.value);
     uint64_t next = clock();
     while (1) {
+        std::thread sndthread(G_RunSound);
         Com_UpdateEvents();
         vm_command = SGAME_RUNTIC;
         while (SDL_PollEvent(&event)) {
@@ -183,8 +186,8 @@ void mainLoop()
                 };
             }
         }
-//        VM_Run(SGAME_VM);
-//        Con_RenderConsole();
+        VM_Run(SGAME_VM);
+        Con_RenderConsole();
 
         renderer->camera->CalculateViewMatrix();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -227,8 +230,9 @@ void mainLoop()
         R_UnbindVertexBuffer();
         R_UnbindIndexBuffer();
         
-//        VM_Stop(SGAME_VM);
-//        Con_EndFrame();
+        VM_Stop(SGAME_VM);
+        Con_EndFrame();
+        sndthread.join();
         SDL_GL_SwapWindow(renderer->window);
         
         sleepfor(next);
