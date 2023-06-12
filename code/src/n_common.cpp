@@ -3,11 +3,6 @@
 #include "g_game.h"
 #include "g_sound.h"
 
-#ifdef __unix__
-#include <unistd.h>
-#include <sys/stat.h>
-#endif
-
 static char *com_buffer;
 static int com_bufferLen;
 
@@ -149,12 +144,14 @@ a raw string should NEVER be passed as fmt, same reason as the quake3 engine.
 */
 void GDR_DECL Com_Printf(const char *fmt, ...)
 {
+    int length;
     va_list argptr;
+    char msg[MAX_MSG_SIZE];
 
     va_start(argptr, fmt);
-    vfprintf(stdout, fmt, argptr);
+	vfprintf(stdout, fmt, argptr);
     va_end(argptr);
-    fprintf(stdout, "\n");
+	fprintf(stdout, "\n");
 }
 
 /*
@@ -162,11 +159,12 @@ Com_Error: the vm's version of N_Error
 */
 void GDR_DECL Com_Error(const char *fmt,  ...)
 {
+    int length;
     va_list argptr;
     char msg[MAX_MSG_SIZE];
 
     va_start(argptr, fmt);
-    stbsp_vsnprintf(msg, sizeof(msg), fmt, argptr);
+    length = stbsp_vsnprintf(msg, sizeof(msg), fmt, argptr);
     va_end(argptr);
 
     N_Error("(VM Error) %s", msg);
@@ -218,6 +216,15 @@ void GDR_DECL Sys_Print(const char* str)
 void GDR_DECL Sys_Exit(int code)
 {
     exit(code);
+}
+
+int Sys_stat(nstat_t* buffer, const char *filepath)
+{
+#ifdef _WIN32
+    return __stat64(filepath, buffer);
+#else
+    return stat(filepath, buffer);
+#endif
 }
 
 FILE* Sys_FOpen(const char *filepath, const char *mode)
@@ -283,13 +290,6 @@ void Sys_FreeLibrary(void *handle)
 #endif
 }
 
-void Sys_mkdir(const char *dirpath)
-{
-    if (!dirpath)
-        N_Error("Sys_mkdir: NULL dirpath");
-    
-    mkdir(dirpath, (mode_t)0777);
-}
 
 const char* Sys_pwd(void)
 {
@@ -306,7 +306,7 @@ const char* Sys_pwd(void)
 /*
 ==================================================
 Commands:
-anything with a Cmd_, Cbuf_, or CMD_ prefix is a function that operates on the command-line (or in-game console) functionality.
+anything with a Cmd_ or CMD_ prefix is a function that operates on the command-line (or in-game console) functionality.
 mostly meant for developers/debugging
 ==================================================
 */
@@ -315,11 +315,12 @@ mostly meant for developers/debugging
 #define MAX_STRING_TOKENS 1024
 #define MAX_HISTORY 32
 
+typedef void (*cmdfunc_t)(void);
 typedef struct cmd_s
 {
     GDRStr name;
     cmdfunc_t function;
-    completionFunc_t complete;
+	completionFunc_t complete;
     struct cmd_s* next;
 } cmd_t;
 
@@ -357,7 +358,7 @@ static cmd_t* Cmd_FindCommand(const char *name)
     for (cmd_t *cmd = cmd_functions; cmd; cmd = cmd->next) {
         if (N_strneq(cmd->name.c_str(), name, cmd->name.size())) {
             return cmd;
-        }
+		}
     }
     return NULL;
 }
@@ -535,39 +536,23 @@ void Cmd_ExecuteString(const char *str)
 
 void Cmd_AddCommand(const char *name, cmdfunc_t func)
 {
-    cmd_t *cmd;
-
-    if (strlen(name) >= BASE_CHAR_BUFFER_SIZE) {
-        Con_Printf("WARNING: strlen(name) >= BASE_CHAR_BUFFER_SIZE in Cmd_AddCommand, heap allocation required");
-    }
-
-    // fail if the command already exists
+    cmd_t* cmd;
     if (Cmd_FindCommand(name)) {
-        // allow completeion-only commands to be silently doubled
-        if (func != NULL)
+        if (func)
             Con_Printf("Cmd_AddCommand: %s already defined", name);
         return;
     }
     Con_Printf("Registered command %s", name);
 
-    cmd = (cmd_t *)Z_Malloc(sizeof(cmd_t), TAG_STATIC, &cmd, "cmd");
+    cmd = (cmd_t *)Z_Malloc(sizeof(*cmd), TAG_STATIC, &cmd, "cmd");
     cmd->name = name;
     cmd->function = func;
-    cmd->complete = NULL;
+	cmd->complete = NULL;
     cmd->next = cmd_functions;
     cmd_functions = cmd;
-    numCommands++;
 }
 
-/*
-============
-Cmd_ExecuteString
-
-A complete command line has been parsed, so try to execute it
-============
-*/
-#if 0
-void Cmd_ExecuteString( const char *text )
+void Cmd_ExecuteCmd(const char *text)
 {
 	cmd_t *cmd, **prev;
 
@@ -603,7 +588,6 @@ void Cmd_ExecuteString( const char *text )
 		return;
 	}
 }
-#endif
 
 void Cmd_SetCommandCompletetionFunc(const char *name, completionFunc_t func)
 {
@@ -651,7 +635,7 @@ char* Cmd_ArgsFrom(int32_t arg)
     for (i = arg; i < cmd_argc; i++) {
 //        s = N_stradd(s, cmd_argv[i]);
         if (i != cmd_argc - 1) {
-            s = N_stradd(s, " ");
+//            s = N_stradd(s, " ");
         }
     }
     return cmd_args;
@@ -677,7 +661,22 @@ static void Cmd_Init(void)
     Cmd_AddCommand("echo", Cmd_Echo_f);
 }
 
+const char* GDR_DECL va(const char *format, ...)
+{
+	char *buf;
+	va_list argptr;
+	static uint32_t index = 0;
+	static char string[2][32000];	// in case va is called by nested functions
 
+	buf = string[ index ];
+	index ^= 1;
+
+	va_start( argptr, format );
+	vsprintf( buf, format, argptr );
+	va_end( argptr );
+
+	return buf;
+}
 /*
 Com_Init: initializes all the engine's systems
 */
@@ -686,42 +685,8 @@ void Com_Init(void)
     Con_Printf("Com_Init: initializing systems");
 
     Memory_Init();
-    
-    // initialize the rendering engine
-    renderImport_t imports;
-    imports.Printf = static_cast<void(*)(const char *fmt, ...)>(Con_Printf);
-    imports.LPrintf = static_cast<void(*)(loglevel_t level, const char *fmt, ...)>(Con_Printf);
-    imports.N_LoadFile = N_LoadFile;
-    imports.BFF_FetchInfo = BFF_FetchInfo;
-    imports.Cmd_AddCommand = Cmd_AddCommand;
-    imports.Cmd_RemoveCommand = Cmd_RemoveCommand;
-    imports.Cvar_Register = Cvar_Register;
-    imports.Cvar_RegisterName = Cvar_RegisterName;
-    imports.Cvar_Find = Cvar_Find;
-    imports.Cvar_ChangeValue = Cvar_ChangeValue;
-    imports.Com_GenerateHashValue = Com_GenerateHashValue;
-    imports.Sys_LoadLibrary = Sys_LoadLibrary;
-    imports.Sys_FreeLibrary = Sys_FreeLibrary;
-    imports.Sys_LoadProc = Sys_LoadProc;
-    imports.Z_Malloc = Z_Malloc;
-    imports.Z_Calloc = Z_Calloc;
-    imports.Z_Realloc = Z_Realloc;
-    imports.Z_FreeTags = Z_FreeTags;
-    imports.Z_ChangeTag = Z_ChangeTag;
-    imports.Z_ChangeUser = Z_ChangeUser;
-    imports.Free = free;
-    imports.Malloc = malloc;
-    imports.Realloc = realloc;
-    imports.Mem_Alloc = Mem_Alloc;
-    imports.Mem_Free = Mem_Free;
-    imports.Hunk_Alloc = Hunk_Alloc;
-    imports.Hunk_TempAlloc = Hunk_TempAlloc;
-
-    RE_Init(&imports);
-
-
+    R_Init();
     Cmd_Init();
-
     Snd_Init();
 
     Con_Printf("G_LoadBFF: loading bff file");
@@ -743,6 +708,22 @@ void Com_Init(void)
 Parsing functions mostly meant for shader stuff, but is also used on occasion around the project
 */
 
+// the game guarantees that no string from the network will ever
+// exceed MAX_STRING_CHARS
+#define	MAX_STRING_CHARS	1024	// max length of a string passed to Cmd_TokenizeString
+#define	MAX_STRING_TOKENS	1024	// max tokens resulting from Cmd_TokenizeString
+#define	MAX_TOKEN_CHARS		1024	// max length of an individual token
+
+#define	MAX_INFO_STRING		1024
+#define	MAX_INFO_KEY		1024
+#define	MAX_INFO_VALUE		1024
+
+#define MAX_USERINFO_LENGTH (MAX_INFO_STRING-13) // incl. length of 'connect ""' or 'userinfo ""' and reserving one byte to avoid q3msgboom
+													
+#define	BIG_INFO_STRING		8192  // used for system info key only
+#define	BIG_INFO_KEY		  8192
+#define	BIG_INFO_VALUE		8192
+
 
 static	char	com_token[MAX_TOKEN_CHARS];
 static	char	com_parsename[MAX_TOKEN_CHARS];
@@ -756,7 +737,7 @@ void COM_BeginParseSession( const char *name )
 {
 	com_lines = 1;
 	com_tokenline = 0;
-	Com_sprintf(com_parsename, sizeof(com_parsename), "%s", name);
+	snprintf(com_parsename, sizeof(com_parsename), "%s", name);
 }
 
 
@@ -783,10 +764,10 @@ void COM_ParseError( const char *format, ... )
 	static char string[4096];
 
 	va_start( argptr, format );
-	Q_vsnprintf (string, sizeof(string), format, argptr);
+	vsnprintf (string, sizeof(string), format, argptr);
 	va_end( argptr );
 
-	Com_Printf( "ERROR: %s, line %d: %s\n", com_parsename, COM_GetCurrentParseLine(), string );
+	Con_Printf( "ERROR: %s, line %d: %s\n", com_parsename, COM_GetCurrentParseLine(), string );
 }
 
 
@@ -796,10 +777,10 @@ void COM_ParseWarning( const char *format, ... )
 	static char string[4096];
 
 	va_start( argptr, format );
-	Q_vsnprintf (string, sizeof(string), format, argptr);
+	vsnprintf (string, sizeof(string), format, argptr);
 	va_end( argptr );
 
-	Com_Printf( "WARNING: %s, line %d: %s\n", com_parsename, COM_GetCurrentParseLine(), string );
+	Con_Printf( "WARNING: %s, line %d: %s\n", com_parsename, COM_GetCurrentParseLine(), string );
 }
 
 
@@ -990,7 +971,7 @@ const char *COM_ParseExt( const char **data_p, qboolean allowLineBreaks )
 			{
 				com_lines++;
 			}
-			if ( len < ARRAY_LEN( com_token )-1 )
+			if ( len < arraylen( com_token )-1 )
 			{
 				com_token[ len ] = c;
 				len++;
@@ -1001,7 +982,7 @@ const char *COM_ParseExt( const char **data_p, qboolean allowLineBreaks )
 	// parse a regular word
 	do
 	{
-		if ( len < ARRAY_LEN( com_token )-1 )
+		if ( len < arraylen( com_token )-1 )
 		{
 			com_token[ len ] = c;
 			len++;
@@ -1249,7 +1230,7 @@ static void COM_MatchToken( const char **buf_p, const char *match ) {
 
 	token = COM_Parse( buf_p );
 	if ( strcmp( token, match ) ) {
-		Com_Error( ERR_DROP, "MatchToken: %s != %s", token, match );
+		N_Error( "MatchToken: %s != %s", token, match );
 	}
 }
 
@@ -1278,7 +1259,7 @@ qboolean SkipBracedSection( const char **program, int depth ) {
 		}
 	} while( depth && *program );
 
-	return ( depth == 0 );
+	return (qboolean)( depth == 0 );
 }
 
 
@@ -1316,7 +1297,7 @@ void Parse1DMatrix( const char **buf_p, int x, float *m ) {
 
 	for (i = 0 ; i < x; i++) {
 		token = COM_Parse( buf_p );
-		m[i] = Q_atof( token );
+		m[i] = N_atof( token );
 	}
 
 	COM_MatchToken( buf_p, ")" );
@@ -1379,7 +1360,7 @@ int Com_HexStrToInt(const char *str)
 
 	// check for hex code
 	if (str[ 0 ] == '0' && str[ 1 ] == 'x' && str[ 2 ] != '\0') {
-	    uint32_t i, digit, n = 0, len = strlen( str );
+	    int32_t i, digit, n = 0, len = strlen( str );
 
 		for (i = 2; i < len; i++) {
 			n *= 16;
@@ -1400,7 +1381,7 @@ int Com_HexStrToInt(const char *str)
 
 qboolean Com_GetHashColor(const char *str, byte *color)
 {
-	int i, len, hex[6];
+	int32_t i, len, hex[6];
 
 	color[0] = color[1] = color[2] = 0;
 

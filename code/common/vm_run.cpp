@@ -1,5 +1,4 @@
 #include "../src/n_shared.h"
-#include "../src/g_bff.h"
 #include "vm.h"
 #include "n_vm.h"
 

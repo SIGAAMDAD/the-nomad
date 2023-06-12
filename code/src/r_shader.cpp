@@ -61,9 +61,9 @@ static GLuint R_CompileShaderSource(const char *src, GLenum type, GLuint id)
     int success, length;
     char *str;
     
-    program = glCreateShaderObjectARB(type);
-    glShaderSourceARB(program, 1, &src, NULL);
-    glCompileShaderARB(program);
+    program = glCreateShader(type);
+    glShaderSource(program, 1, &src, NULL);
+    glCompileShader(program);
 
     glGetShaderiv(program, GL_COMPILE_STATUS, &success);
     if (success == GL_FALSE) {
@@ -109,8 +109,8 @@ shader_t* R_CreateShader(const char* filepath, const char* name)
     // link
     glAttachShader(shader->id, vertid);
     glAttachShader(shader->id, fragid);
-    glLinkProgramARB(shader->id);
-    glValidateProgramARB(shader->id);
+    glLinkProgram(shader->id);
+    glValidateProgram(shader->id);
 
     // error checks
     glGetProgramiv(shader->id, GL_LINK_STATUS, &success);

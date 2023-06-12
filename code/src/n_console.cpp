@@ -341,7 +341,6 @@ static void Con_ProcessInput(void)
         Con_Printf("> %s", buffer);
         Cmd_ExecuteText(buffer);
     }
-
 }
 
 void Con_EndFrame(void)

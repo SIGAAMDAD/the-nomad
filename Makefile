@@ -19,13 +19,10 @@ LDLIBS        =\
 			-logg \
 			-lvorbisfile \
 			-lfreetype \
-			libimgui_dbg.a \
 			-lvulkan \
 			-lsndfile \
 			-lbz2 \
-			libglad.a \
 			-lSDL3 \
-			-L. -lrenderglx64
 
 
 .PHONY: all clean targets clean.objs clean.exe
@@ -37,8 +34,8 @@ else
 CFLAGS= -Og -g -std=c++17 -Wall -Wpedantic -D_NOMAD_DEBUG
 VMFLAGS= -Og -g -std=c89 -Wall -Wpedantic -D_NOMAD_DEBUG -DDEBUG_VM
 endif
-INCLUDE= -I/usr/include -Ideps -Ideps/glad/include -Ideps/imgui -I/usr/local/include -I/usr/include/freetype2 -Isrc -mfma -mavx2
-#OPTIMIZERS=-fexpensive-optimizations -funroll-loops -ffast-math -finline-limit=10000
+INCLUDE= -I/usr/include -Ideps -I/usr/local/include -I/usr/include/freetype2 -Isrc -mfma -mavx2
+OPIMTIZERS=-fexpensive-optimizations -funroll-loops -ffast-math -finline-limit=10000
 DEFINES    =-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPDATE) -D_NOMAD_VERSION_PATCH=$(VERSION_PATCH)
 CFLAGS    += $(INCLUDE) $(DEFINES) $(OPIMTIZERS)
 
@@ -78,12 +75,17 @@ SRCOBJ= \
 	$(O)/m_renderer.o \
 	$(O)/z_heap.o \
 	$(O)/z_alloc.o \
+	\
+	$(O)/imgui_impl_sdl2.o \
+	$(O)/imgui_impl_opengl3.o \
+	$(O)/imgui.o \
+	$(O)/imgui_draw.o \
+	$(O)/imgui_widgets.o \
+	$(O)/imgui_tables.o \
+	\
+	$(O)/glad.o \
 
 all: $(EXE)
-targets: $(EXE) $(SGAME)
-
-$(QVM)/%.q3asm: $(SDIR)/sgame/%.c
-	./lcc -o $@ $<
 
 $(O)/%.o: $(SDIR)/bff_file/%.cpp
 	$(CC) $(CFLAGS) -o $@ -c $<
@@ -96,15 +98,15 @@ $(O)/vm_run.o: $(SDIR)/common/vm_run.cpp
 $(O)/vm.o: $(SDIR)/common/vm.c
 	gcc -std=c99 -DDEBUG_VM -Og -g -o $@ -c $<
 
-$(EXE): $(SRCOBJ) $(BFFOBJ) $(COMMONOBJ)
-	$(CC) $(CFLAGS) $(SRCOBJ) $(BFFOBJ) $(COMMONOBJ) -o $(EXE) $(LDLIBS)
+$(EXE): $(SRCOBJ) $(COMMONOBJ)
+	$(CC) $(CFLAGS) $(SRCOBJ) $(COMMONOBJ) -o $(EXE) $(LDLIBS)
 $(SGAME): $(SGAME_ASM)
 	./q3asm -f qvm/compile_sgame.q3asm
 
 clean.exe:
 	rm $(EXE)
 clean.objs:
-	rm -r $(SRCOBJ) $(BFFOBJ) $(COMMONOBJ)
+	rm -r $(SRCOBJ) $(COMMONOBJ)
 clean:
-	rm -r $(SRCOBJ) $(BFFOBJ) $(COMMONOBJ)
+	rm -r $(SRCOBJ) $(COMMONOBJ)
 	rm $(EXE)

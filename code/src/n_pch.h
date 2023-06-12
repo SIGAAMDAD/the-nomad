@@ -48,13 +48,16 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
-//#include <glad/glad.h>
-//#define VK_USE_PLATFORM_XCB_KHR
-//#include <vulkan/vulkan.h>
-//#include <vulkan/vulkan.hpp>
-//#include <SDL2/SDL_vulkan.h>
-//#include <SDL2/SDL_opengl.h>
-//#include <SOIL/SOIL.h>
+#include "glad.h"
+#include "imgui.h"
+#include "imgui_impl_sdl2.h"
+#include "imgui_impl_opengl3.h"
+#define VK_USE_PLATFORM_XCB_KHR
+#include <vulkan/vulkan.h>
+#include <vulkan/vulkan.hpp>
+#include <SDL2/SDL_vulkan.h>
+#include <SDL2/SDL_opengl.h>
+#include <SOIL/SOIL.h>
 
 // speed is key
 #include "stb_sprintf.h"

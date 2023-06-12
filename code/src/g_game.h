@@ -5,7 +5,6 @@
 
 #include "n_scf.h"
 #include "g_bff.h"
-#include "g_bff.h"
 
 #ifndef O_BINARY
 #define O_BINARY 0

@@ -203,6 +203,10 @@ static void R_InitGL(void)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+    SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 16);
 
     if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
         N_Error("R_Init: failed to initialize OpenGL (glad)");
@@ -291,6 +295,8 @@ static void R_InitGL(void)
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_BLEND);
+    glEnable(GL_MULTISAMPLE_ARB);
+    glEnable(GL_DITHER);
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDepthMask(GL_FALSE);
@@ -323,13 +329,8 @@ static Uint32 R_GetWindowFlags(void)
 
 static bool sdl_on = false;
 
-void R_InitLib(void)
+void R_Init(void)
 {
-    renderImport_t imports;
-    imports.Printf = static_cast<void(*)(const char *fmt, ...)>(Con_Printf);
-    imports.LPrintf = static_cast<void(*)(loglevel_t level, const char *fmt, ...)>(Con_Printf);
-    imports.
-
     renderer = (Renderer *)Hunk_Alloc(sizeof(Renderer), "renderer", h_high);
     assert(renderer);
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
@@ -367,7 +368,7 @@ void R_ShutDown()
 
     if (imgui_on) {
         ImGui_ImplOpenGL3_Shutdown();
-        ImGui_ImplSDL3_Shutdown();
+        ImGui_ImplSDL2_Shutdown();
         ImGui::DestroyContext();
     }
 

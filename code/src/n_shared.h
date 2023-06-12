@@ -378,12 +378,6 @@ constexpr const char* credits_str =
 "A Few of the Guns: Ben Pavlovic\n"
 "\n";
 
-#define IMGUI_USER_CONFIG "imconfig.h"
-#include <imgui/imgui.h>
-#include <imgui/backends/imgui_impl_opengl3.h>
-#include <imgui/backends/imgui_impl_sdl2.h>
-#include <imgui/backends/imgui_impl_sdl3.h>
-
 #define UPPER_CASE(x) (char)((x) - 32)
 #define UPPER_CASE_STR(x) (const char *)((x) - 32)
 #define MOUSE_WHEELUP   5

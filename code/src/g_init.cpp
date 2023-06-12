@@ -1,6 +1,5 @@
 #include "n_shared.h"
 #include "g_bff.h"
-#include "g_bff.h"
 #include "g_game.h"
 #include "g_sound.h"
 #include "m_renderer.h"
@@ -11,6 +10,7 @@ bool sdl_on = false;
 static bool exited = false;
 int myargc;
 char** myargv;
+
 
 #define LOAD(ptr,name) \
 { \
@@ -50,21 +50,8 @@ static void done()
     exit(EXIT_SUCCESS);
 }
 
-static void R_VertexTransforms(const glm::vec3& pos,
-    Vertex* vertices, int numvertices, int offset, const glm::vec4* positions, float scale)
-{
-    glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos) * glm::scale(glm::mat4(1.0f), glm::vec3(scale));
-    for (int i = 0; i < numvertices; i++)
-        vertices[i + offset].pos = transform * positions[i];
-}
-
 void mainLoop()
 {
-    SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 16);
-    glEnable(GL_MULTISAMPLE);
     glm::vec4 positions[] = {
         glm::vec4( 0.5f,  0.5f, 0.0f, 1.0f),
         glm::vec4( 0.5f, -0.5f, 0.0f, 1.0f),
@@ -246,6 +233,20 @@ void I_NomadInit(int argc, char** argv)
     myargv = argv;
 
     Com_Init();
+
+    Con_Printf("G_LoadBFF: loading bff file");
+    G_LoadBFF("nomadmain.bff");
+
+    Con_Printf(
+        "+===========================================================+\n"
+         "\"The Nomad\" is free software distributed under the terms\n"
+         "of both the GNU General Public License v2.0 and Apache License\n"
+         "v2.0\n"
+         "+==========================================================+\n"
+    );
+
+    Con_Printf("G_LoadSCF: parsing scf file");
+    G_LoadSCF();
 
     Con_Printf("running main gameplay loop");
     mainLoop();

@@ -19,9 +19,6 @@ GPUContext::GPUContext()
     version = (const char*)glGetString(GL_VERSION);
     vendor = (const char*)glGetString(GL_VENDOR);
 
-    glGetIntegerv(GL_NUM_SPIR_V_EXTENSIONS, &num_glsl_extensions);
-    glsl_extensions = (const char*)glGetString(GL_SPIR_V_EXTENSIONS);
-
     glGetIntegerv(GL_NUM_EXTENSIONS, &num_extensions);
     extensions = (char **)Z_Malloc(sizeof(char *) * num_extensions, TAG_STATIC, &extensions, "OpenGL_EXT");
     for (int i = 0; i < num_extensions; i++) {

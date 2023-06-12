@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "../common/n_vm.h"
+
 /*
 Common functionality for the engine and vm alike
 */
@@ -105,8 +107,9 @@ void Cmd_ExecuteString(const char *str);
 uint32_t Cmd_Argc(void);
 const char* Cmd_Argv(uint32_t index);
 void Cmd_Clear(void);
+const char* GDR_DECL va(const char *format, ...);
 
-#endif
+void GDR_DECL Com_Error(const char *fmt, ...);
 
 /*
 The filesystem, heavily based on quake's filesystem
@@ -115,9 +118,6 @@ THIS SHOULD NEVER BE USED BY THE VM
 */
 
 #define FS_INVALID_HANDLE 0
-#define FS_SEEK_CUR 0
-#define FS_SEEK_BEGIN 1
-#define FS_SEEK_END 2
 
 typedef int32_t file_t;
 #if defined(_MSVC_VER) || defined(__clang__)
@@ -127,6 +127,10 @@ typedef off_t fileOffset_t;
 #else
 typedef long fileOffset_t;
 #endif
+
+#define FS_SEEK_END 0
+#define FS_SEEK_CUR 1
+#define FS_SEEK_BEGIN 2
 
 extern cvar_t fs_gamedir;
 extern cvar_t fs_numArchives;
@@ -147,9 +151,8 @@ uint64_t FS_FileLength(file_t f);
 void FS_Remove(const char *ospath);
 uint64_t FS_FileTell(file_t f);
 fileOffset_t FS_FileSeek(file_t f, fileOffset_t offset, uint32_t whence);
+file_t FS_BFFOpen(const char *chunkpath);
 qboolean FS_FileExists(const char *file);
-uint64_t FS_LoadFile(const char *filepath, void **buffer);
-uint64_t FS_ReadFile(const char *filepath, void *buffer);
 
 
 /*
@@ -160,17 +163,17 @@ System calls, engine only stuff
 #ifdef _WIN32
 #define nstat_t struct __stat64
 #else
+#include <sys/stat.h>
 #define nstat_t struct stat
 #endif
 
-void* Sys_LoadLibrary(const char *libname);
-void* Sys_LoadProc(void *handle, const char *name);
-void Sys_FreeLibrary(void *handle);
-
-void Sys_mkdir(const char *dirpath);
 FILE* Sys_FOpen(const char *filepath, const char *mode);
-const char* Sys_pwd(void);
+int Sys_stat(nstat_t* buffer, const char *filepath);
 void GDR_DECL Sys_Print(const char* str);
+const char* Sys_pwd(void);
+
+#endif
+
 #endif
 
 #endif
