@@ -40,7 +40,7 @@ static GLint R_TexMagFilter(void)
 {
     GLint filter = -1;
     for (uint32_t i = 0; i < arraylen(modes); i++) {
-        if (N_strcmp(r_texture_magfilter.value, modes[i].str)) {
+        if (N_strcmp(r_texture_magfilter.s, modes[i].str)) {
             filter = modes[i].value;
             break;
         }
@@ -48,7 +48,7 @@ static GLint R_TexMagFilter(void)
     if (filter == -1) {
         Con_Printf("WARNING: r_texture_magfilter was invalid, using default of GL_NEAREST");
         filter = GL_NEAREST;
-        N_strcpy(r_texture_magfilter.value, "GL_NEAREST");
+        N_strcpy(r_texture_magfilter.s, "GL_NEAREST");
     }
     return filter;
 }
@@ -56,7 +56,7 @@ static GLint R_TexMinFilter(void)
 {
     GLint filter = -1;
     for (uint32_t i = 0; i < arraylen(modes); i++) {
-        if (N_strcmp(r_texture_minfilter.value, modes[i].str)) {
+        if (N_strcmp(r_texture_minfilter.s, modes[i].str)) {
             filter = modes[i].value;
             break;
         }
@@ -64,7 +64,7 @@ static GLint R_TexMinFilter(void)
     if (filter == -1) {
         Con_Printf("WARNING: r_texture_minfilter was invalid, using default of GL_LINEAR_MIPMAP_LINEAR");
         filter = GL_LINEAR_MIPMAP_LINEAR;
-        N_strcpy(r_texture_minfilter.value, "GL_LINEAR_MIPMAP_LINEAR");
+        N_strcpy(r_texture_minfilter.s, "GL_LINEAR_MIPMAP_LINEAR");
     }
     return filter;
 }

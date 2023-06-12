@@ -42,18 +42,27 @@ void SIG_BUS(int signum)
 }
 #endif
 
+#ifdef SIGFPE
+void SIG_FPE(int signum)
+{
+    Con_Error("SIGFPE recieved, rounding or divide-by-0 error, freeing all memory");
+    Game::Get()->~Game();
+    exit(EXIT_FAILURE);
+}
+#endif
+
 int main(int argc, char** argv)
 {
 #ifdef SIGINT
     signal(SIGINT, SIG_INTERRUPT);
 #endif
-#ifdef SIGSEGV
+#ifdef SIGSEGV // seggy
     signal(SIGSEGV, SIG_SEGV);
 #endif
-#ifdef SIGABRT
+#ifdef SIGABRT // abort
     signal(SIGABRT, SIG_ABORT);
 #endif
-#ifdef SIGBUS
+#ifdef SIGBUS // bus error
     signal(SIGBUS, SIG_BUS);
 #endif
 #ifdef SIGKILL
@@ -61,6 +70,9 @@ int main(int argc, char** argv)
 #endif
 #ifdef SIGTERM
     signal(SIGTERM, SIG_INTERRUPT);
+#endif
+#ifdef SIGFPE // floating-point exception
+    signal(SIGFPE, SIG_FPE);
 #endif
     I_NomadInit(argc, argv);
     return 0;

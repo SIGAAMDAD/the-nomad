@@ -12,18 +12,6 @@
 void R_Init();
 void R_ShutDown();
 
-#ifdef PARANOID
-#   ifdef __GNUC__
-#       define debugbreak() __builtin_trap()
-#   elif defined(_MSVC_VER)
-#       define debugbreak() __debugbreak()
-#   endif
-#else
-#   define debugbreak()
-#endif
-
-#define glCall(x) while (glGetError() != GL_NO_ERROR); x; GL_ASSERT(#x, glGetError() == GL_NO_ERROR)
-
 struct Vertex
 {
     glm::vec4 color;

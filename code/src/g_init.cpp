@@ -110,7 +110,6 @@ void mainLoop()
 
     float light_intensity = 1.0f;
 
-    uint32_t ticrate = atoi(r_ticrate.value);
     uint64_t next = clock();
     while (1) {
         std::thread sndthread(G_RunSound);
@@ -178,9 +177,9 @@ void mainLoop()
 
         renderer->camera->CalculateViewMatrix();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glViewport(0, 0, N_atoi(r_screenwidth.value), N_atoi(r_screenheight.value));
+        glViewport(0, 0, r_screenwidth.i, r_screenheight.i);
 
-        next = 1000 / ticrate;
+        next = 1000 / r_ticrate.i;
 
         R_BindShader(screenShader);
         R_SetInt(screenShader, "u_ScreenTexture", 0);
@@ -234,9 +233,6 @@ void I_NomadInit(int argc, char** argv)
 
     Com_Init();
 
-    Con_Printf("G_LoadBFF: loading bff file");
-    G_LoadBFF("nomadmain.bff");
-
     Con_Printf(
         "+===========================================================+\n"
          "\"The Nomad\" is free software distributed under the terms\n"
@@ -244,9 +240,6 @@ void I_NomadInit(int argc, char** argv)
          "v2.0\n"
          "+==========================================================+\n"
     );
-
-    Con_Printf("G_LoadSCF: parsing scf file");
-    G_LoadSCF();
 
     Con_Printf("running main gameplay loop");
     mainLoop();

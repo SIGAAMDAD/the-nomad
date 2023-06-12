@@ -53,8 +53,8 @@ static bffFile_t* bffs[MAX_BFF_FILES];
 
 static uint32_t fs_numHandles;
 static uint32_t fs_totalArchives;
-cvar_t fs_gamedir={"fs_gamedir","gamedata",TYPE_STRING,qtrue};
-cvar_t fs_numArchives={"fs_numArchives","1",TYPE_INT,qtrue};
+cvar_t fs_gamedir     = {"fs_gamedir",     "gamedata", 0.0f, 0, qfalse, TYPE_STRING, qtrue};
+cvar_t fs_numArchives = {"fs_numArchives", "",         0.0f, 1, qfalse, TYPE_INT,    qtrue};
 static GDRStr fs_homepath;
 static bool fs_initialized;
 static uint64_t fs_writeCount;
@@ -342,7 +342,7 @@ void FS_Init(void)
 {
 	fs_homepath = Sys_pwd();
 
-	int numArchives = atoi(fs_numArchives.value);
+	int numArchives = fs_numArchives.i;
 	if (numArchives >= MAX_BFF_FILES) {
 		N_Error("FS_Init: too many bff files");
 	}
@@ -648,7 +648,7 @@ static char* FS_BuildOSPath(const char *base, const char *game, const char *npat
 	toggle ^= 1;
 
 	if (!game || !*game)
-		game = fs_gamedir.value;
+		game = fs_gamedir.s;
 	
 	if (npath)
 		stbsp_snprintf(temp, sizeof(temp), "%c%s%c%s", PATH_SEP, game, PATH_SEP, npath);

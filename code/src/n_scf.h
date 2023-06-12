@@ -32,6 +32,7 @@ extern cvar_t r_native_fullscreen;
 extern cvar_t r_drawFPS;
 extern cvar_t r_renderapi;
 extern cvar_t r_msaa_amount;
+extern cvar_t r_dither;
 
 extern eastl::vector<const byte*> api_extensions;
 

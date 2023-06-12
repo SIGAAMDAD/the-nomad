@@ -62,6 +62,7 @@ typedef signed int ssize_t;
 #include <EASTL/string.h>
 #include <EASTL/vector.h>
 #include <EASTL/unordered_map.h>
+#include <nlohmann/json.hpp>
 
 #define PAD(base, alignment)	(((base)+(alignment)-1) & ~((alignment)-1))
 #define PADLEN(base, alignment)	(PAD((base), (alignment)) - (base))
@@ -150,11 +151,11 @@ typedef enum { qfalse = 0, qtrue = 1 } qboolean;
 #define VectorCopy(x,y) {x[0]=y[0];x[1]=y[1];}
 void CrossProduct(const vec2_t v1, const vec2_t v2, vec2_t out);
 
-int N_strcmp(const char *str1, const char *str2);
-int N_strncmp(const char *str1, const char *str2, size_t count);
-int N_strcasecmp(const char *str1, const char *str2);
-int N_strncasecmp(const char *str1, const char *str2, size_t n);
-int N_atoi(const char *s);
+int32_t N_strcmp(const char *str1, const char *str2);
+int32_t N_strncmp(const char *str1, const char *str2, size_t count);
+int32_t N_strcasecmp(const char *str1, const char *str2);
+int32_t N_strncasecmp(const char *str1, const char *str2, size_t n);
+int32_t N_atoi(const char *s);
 float N_atof(const char *s);
 size_t N_strlen(const char *str);
 qboolean N_streq(const char *str1, const char *str2);
@@ -165,7 +166,7 @@ void N_strncpy(char *dest, const char *src, size_t count);
 void* N_memset(void *dest, int fill, size_t count);
 void N_memcpy(void *dest, const void *src, size_t count);
 void* N_memchr(void *ptr, int c, size_t count);
-int N_memcmp(const void *ptr1, const void *ptr2, size_t count);
+int32_t N_memcmp(const void *ptr1, const void *ptr2, size_t count);
 
 // main engine headers
 #include "n_platform.h"
@@ -258,9 +259,9 @@ static const char* N_booltostr(qboolean b)
 	return b ? "true" : "false";
 }
 #else
-#define N_strtobool(s) (N_strcasecmp((s),"true") ? (1) : (0))
+#define N_strtobool(str) (N_strncasecmp("true", (str), 4) ? (1) : (0))
 template<typename type>
-inline const char* N_booltostr(type b)
+GDR_INLINE const char* N_booltostr(type b)
 {
 	return b ? "true" : "false";
 }

@@ -1,6 +1,6 @@
 #include "n_shared.h"
 
-void* N_memset (void *dest, int fill, size_t count)
+void* N_memset (void *dest, int32_t fill, size_t count)
 {
 	size_t i;
 	
@@ -8,7 +8,7 @@ void* N_memset (void *dest, int fill, size_t count)
 		count >>= 2;
 		fill = fill | (fill<<8) | (fill<<16) | (fill<<24);
 		for (i = 0; i < count; i++)
-			((int *)dest)[i] = fill;
+			((int32_t *)dest)[i] = fill;
 	}
 	else
 		for (i = 0; i < count; i++)
@@ -17,7 +17,7 @@ void* N_memset (void *dest, int fill, size_t count)
     return dest;
 }
 
-void* N_memchr (void *ptr, int c, size_t count)
+void* N_memchr (void *ptr, int32_t c, size_t count)
 {
 	while (--count) {
 		if (((char *)ptr)[count] == c)
@@ -38,14 +38,14 @@ void N_memcpy (void *dest, const void *src, size_t count)
 	else if (( ( (long)dest | (long)src | count) & 3) == 0 ) {
 		count>>=2;
 		for (i = 0; i < count; i++)
-			((int *)dest)[i] = ((int *)src)[i];
+			((int32_t *)dest)[i] = ((int32_t *)src)[i];
 	}
 	else
 		for (i = 0; i < count; i++)
 			((char *)dest)[i] = ((char *)src)[i];
 }
 
-int N_memcmp (const void *ptr1, const void *ptr2, size_t count)
+int32_t N_memcmp (const void *ptr1, const void *ptr2, size_t count)
 {
 	while (count--) {
 		if (((char *)ptr1)[count] != ((char *)ptr2)[count])
@@ -101,7 +101,7 @@ void N_strcat (char *dest, const char *src)
 	N_strcpy (d, src);
 }
 
-int N_strcmp (const char *str1, const char *str2)
+int32_t N_strcmp (const char *str1, const char *str2)
 {
     const char *s1 = str1;
     const char *s2 = str2;
@@ -142,7 +142,7 @@ qboolean N_strneq(const char *str1, const char *str2, size_t n)
 	return qtrue;
 }
 
-int N_strncmp (const char *str1, const char *str2, size_t count)
+int32_t N_strncmp (const char *str1, const char *str2, size_t count)
 {
     const char* s1 = str1;
     const char* s2 = str2;
@@ -156,14 +156,14 @@ int N_strncmp (const char *str1, const char *str2, size_t count)
 		s1++;
 		s2++;
 	}
-	
+
 	return -1;
 }
 
 
-int N_strncasecmp (const char *str1, const char *str2, size_t n)
+int32_t N_strncasecmp (const char *str1, const char *str2, size_t n)
 {
-	int c1, c2;
+	int32_t c1, c2;
 
     const char* s1 = str1;
     const char* s2 = str2;
@@ -173,7 +173,7 @@ int N_strncasecmp (const char *str1, const char *str2, size_t n)
 		c2 = *s2++;
 
 		if (!n--)
-			return 1;               // strings are equal until end point
+			return 1;               // strings are equal until end point32_t
 		
 		if (c1 != c2) {
 			if (c1 >= 'a' && c1 <= 'z')
@@ -192,16 +192,16 @@ int N_strncasecmp (const char *str1, const char *str2, size_t n)
 	return -1;
 }
 
-int N_strcasecmp (const char *s1, const char *s2)
+int32_t N_strcasecmp (const char *s1, const char *s2)
 {
 	return N_strncasecmp (s1, s2, 99999);
 }
 
-int N_atoi (const char *s)
+int32_t N_atoi (const char *s)
 {
-	int             val;
-	int             sign;
-	int             c;
+	int32_t val;
+	int32_t sign;
+	int32_t c;
     const char* str = s;
 	
 	if (*str == '-') {
@@ -254,9 +254,9 @@ int N_atoi (const char *s)
 float N_atof(const char *s)
 {
 	double			val;
-	int             sign;
-	int             c;
-	int             decimal, total;
+	int32_t             sign;
+	int32_t             c;
+	int32_t             decimal, total;
     const char *str = s;
 	
 	if (*str == '-') {

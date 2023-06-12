@@ -15,8 +15,6 @@
 typedef struct
 {
     vertexCache_t* cache;
-    shader_t* shader;
-    texture_t* screenTexture;
 
     uint32_t height;
     uint32_t width;
@@ -24,12 +22,11 @@ typedef struct
     GLuint fboId;
     GLuint colorId;
     GLuint depthId;
-    
-    GLuint defId;
-    GLuint defTex;
 } framebuffer_t;
 
-void R_SetFramebuffer(framebuffer_t* fbo);
-framebuffer_t* R_CreateFramebuffer(const char *name);
+void RE_InitFramebuffers(void);
+void R_BeginFramebuffer(void);
+void R_EndFramebuffer(void);
+void RE_ShutdownFramebuffers(void);
 
 #endif

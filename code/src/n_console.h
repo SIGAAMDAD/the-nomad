@@ -13,8 +13,11 @@ typedef enum
 
 typedef struct cvar_s
 {
-    char *name;
-    char *value;
+    char name[64];
+    char *s;
+    float f;
+    int32_t i;
+    qboolean b;
     cvartype_t type;
     qboolean save; // whether this should be saved to the config file
 
@@ -26,6 +29,7 @@ void Cvar_RegisterName(const char *name, const char *value, cvartype_t type, qbo
 void Cvar_ChangeValue(const char *name, const char *value);
 void Cvar_Register(cvar_t *cvar);
 qboolean Cvar_Command(void);
+const char* Cvar_GetValue(const char *name);
 
 #ifndef Q3_VM
 

@@ -31,8 +31,8 @@ ifdef release
 CFLAGS= -Ofast -s -std=c++17
 VMFLAGS= -Ofast -s -std=c89
 else
-CFLAGS= -Og -g -std=c++17 -Wall -Wpedantic -D_NOMAD_DEBUG
-VMFLAGS= -Og -g -std=c89 -Wall -Wpedantic -D_NOMAD_DEBUG -DDEBUG_VM
+CFLAGS= -Og -g -std=c++17 -Wall -Wall -D_NOMAD_DEBUG
+VMFLAGS= -Og -g -std=c89 -Wall -Wall -D_NOMAD_DEBUG -DDEBUG_VM
 endif
 INCLUDE= -I/usr/include -Ideps -I/usr/local/include -I/usr/include/freetype2 -Isrc -mfma -mavx2
 OPIMTIZERS=-fexpensive-optimizations -funroll-loops -ffast-math -finline-limit=10000

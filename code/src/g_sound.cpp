@@ -43,8 +43,6 @@ void I_CacheAudio(void *bffinfo)
 	SNDFILE* sf;
 	SF_INFO fdata;
 	sf_count_t readcount;
-	float sfx_vol = atof(snd_sfxvol.value);
-	float music_vol = atof(snd_musicvol.value);
 
     snd_cache = (nomadsnd_t *)Hunk_Alloc(sizeof(nomadsnd_t) * info->numSounds, "snd_cache", h_low);
     sndcache_size = info->numSounds;
@@ -80,7 +78,7 @@ void I_CacheAudio(void *bffinfo)
         alBufferData(snd_cache[i].buffer, snd_cache[i].channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16,
             snd_cache[i].sndbuf, sizeof(short) * fdata.frames * fdata.channels, snd_cache[i].samplerate);
         alSourcei(snd_cache[i].source, AL_BUFFER, snd_cache[i].buffer);
-		alSourcef(snd_cache[i].source, AL_GAIN, music_vol);
+		alSourcef(snd_cache[i].source, AL_GAIN, snd_musicvol.f);
 
         sndhash[Com_GenerateHashValue(info->sounds[i].name, MAX_SND_HASH)] = &snd_cache[i];
         snd_cache[i].failed = false;
@@ -138,14 +136,14 @@ void G_RunSound()
 
 void Snd_Init()
 {
-    if (!N_strtobool(snd_sfxon.value) || !N_strtobool(snd_musicon.value))
+    if (!snd_sfxon.b || !snd_musicon.b)
         return;
 
     Con_Printf("Snd_Init: initializing OpenAL and libsndfile");
     device = alcOpenDevice(NULL);
     if (!device) {
-        N_strncpy(snd_sfxon.value, "false", 5);
-        N_strncpy(snd_musicon.value, "false", 5);
+        snd_sfxon.b = qfalse;
+        snd_musicon.b = qfalse;
         Con_Printf("Snd_Init: alcOpenDevice returned NULL, turning off sound");
         return;
     }
@@ -153,13 +151,15 @@ void Snd_Init()
 
     context = alcCreateContext(device, NULL);
     if (!context) {
-        N_strncpy(snd_sfxon.value, "false", 5);
-        N_strncpy(snd_musicon.value, "false", 5);
+        snd_sfxon.b = qfalse;
+        snd_musicon.b = qfalse;
         Con_Printf("Snd_Init: alcCreateContext returned NULL, turning off sound, error message: %s",
             alcGetString(device, alcGetError(device)));
         alcCloseDevice(device);
         return;
     }
+    snd_sfxon.b = qtrue;
+    snd_musicon.b = qtrue;
     assert(context);
     alcMakeContextCurrent(context);
 

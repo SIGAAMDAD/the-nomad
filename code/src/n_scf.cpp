@@ -1,42 +1,50 @@
 #include "n_shared.h"
 #include "g_game.h"
 
-cvar_t g_vert_fov = {"g_vert_fov","24",TYPE_INT,qtrue};
-cvar_t g_horz_fov = {"g_horz_fov","64",TYPE_INT,qtrue};
-cvar_t g_pspeed = {"g_pspeed","1.0",TYPE_FLOAT,qtrue};
-cvar_t g_gravity = {"g_gravity","1.5",TYPE_FLOAT,qtrue};
+/*
+char s[64];
+float f;
+int32_t i;
+qboolean b;
+*/
 
-cvar_t snd_musicvol = {"snd_musicvol","0.7",TYPE_FLOAT,qtrue};
-cvar_t snd_sfxvol = {"snd_sfxvol","1.0",TYPE_FLOAT,qtrue};
-cvar_t snd_musicon = {"snd_musicon","true",TYPE_BOOL,qtrue};
-cvar_t snd_sfxon = {"snd_sfxon","true",TYPE_BOOL,qtrue};
+cvar_t g_vert_fov          = {"g_vert_fov",          "",                        0.0f, 24,   qfalse,   TYPE_INT,  qtrue};
+cvar_t g_horz_fov          = {"g_horz_fov",          "",                        0.0f, 64,   qfalse,   TYPE_INT,  qtrue};
+cvar_t g_pspeed            = {"g_pspeed",            "",                        1.0f, 0,    qfalse, TYPE_FLOAT,  qtrue};
+cvar_t g_gravity           = {"g_gravity",           "",                        1.5f, 0,    qfalse, TYPE_FLOAT,  qtrue};
 
-cvar_t r_ticrate = {"r_ticrate","35",TYPE_INT,qtrue};
-cvar_t r_texture_magfilter = {"r_texture_magfilter","GL_NEAREST",TYPE_STRING,qtrue};
-cvar_t r_texture_minfilter = {"r_texture_minfilter","GL_LINEAR_MIPMAP_LINEAR",TYPE_STRING,qtrue};
-cvar_t r_screenheight = {"r_screenheight","720",TYPE_INT,qtrue};
-cvar_t r_screenwidth = {"r_screenwidth","1024",TYPE_INT,qtrue};
-cvar_t r_vsync = {"r_vsync","true",TYPE_BOOL,qtrue};
-cvar_t r_fullscreen = {"r_fullscreen","false",TYPE_BOOL,qtrue};
-cvar_t r_native_fullscreen = {"r_native_fullscreen","false",TYPE_BOOL,qtrue};
-cvar_t r_hidden = {"r_hidden","false",TYPE_BOOL,qtrue};
-cvar_t r_drawFPS = {"r_drawFPS","false",TYPE_BOOL,qtrue};
-cvar_t r_renderapi = {"r_renderapi","R_OPENGL",TYPE_STRING,qtrue};
-cvar_t r_msaa_amount = {"r_msaa_amount","OFF",TYPE_STRING,qtrue};
+cvar_t snd_musicvol        = {"snd_musicvol",        "",                        0.7f, 0,    qfalse, TYPE_FLOAT,  qtrue};
+cvar_t snd_sfxvol          = {"snd_sfxvol",          "",                        1.0f, 0,    qfalse, TYPE_FLOAT,  qtrue};
+cvar_t snd_musicon         = {"snd_musicon",         "",                        0.0f, 0,    qtrue,  TYPE_BOOL,   qtrue};
+cvar_t snd_sfxon           = {"snd_sfxon",           "",                        0.0f, 0,    qtrue,  TYPE_BOOL,   qtrue};
+
+cvar_t r_ticrate           = {"r_ticrate",           "",                        0.0f, 35,   qfalse, TYPE_INT,    qtrue};
+cvar_t r_texture_magfilter = {"r_texture_magfilter", "GL_NEAREST",              0.0f, 0,    qfalse, TYPE_STRING, qtrue};
+cvar_t r_texture_minfilter = {"r_texture_minfilter", "GL_LINEAR_MIPMAP_LINEAR", 0.0f, 0,    qfalse, TYPE_STRING, qtrue};
+cvar_t r_screenheight      = {"r_screenheight",      "",                        0.0f, 720,  qfalse, TYPE_INT,    qtrue};
+cvar_t r_screenwidth       = {"r_screenwidth",       "",                        0.0f, 1024, qfalse, TYPE_INT,    qtrue};
+cvar_t r_vsync             = {"r_vsync",             "",                        0.0f, 0,    qtrue,  TYPE_BOOL,   qtrue};
+cvar_t r_fullscreen        = {"r_fullscreen",        "",                        0.0f, 0,    qtrue,  TYPE_BOOL,   qtrue};
+cvar_t r_native_fullscreen = {"r_native_fullscreen", "",                        0.0f, 0,    qfalse, TYPE_BOOL,   qtrue};
+cvar_t r_hidden            = {"r_hidden",            "",                        0.0f, 0,    qfalse, TYPE_BOOL,   qtrue};
+cvar_t r_drawFPS           = {"r_drawFPS",           "",                        0.0f, 0,    qfalse, TYPE_BOOL,   qtrue};
+cvar_t r_renderapi         = {"r_renderapi",         "R_OPENGL",                0.0f, 0,    qfalse, TYPE_STRING, qtrue};
+cvar_t r_msaa_amount       = {"r_msaa_amount",       "",                        0.0f, 2,    qfalse, TYPE_INT,    qtrue};
+cvar_t r_dither            = {"r_dither",            "",                        0.0f, 0,    qfalse, TYPE_BOOL,   qtrue};
 
 eastl::vector<const byte*> api_extensions;
 
-cvar_t c_fastmobs1 = {"c_fastmobs1","false",TYPE_BOOL,qtrue};
-cvar_t c_fastmobs2 = {"c_fastmobs2","false",TYPE_BOOL,qtrue};
-cvar_t c_fastmobs3 = {"c_fastmobs3","false",TYPE_BOOL,qtrue};
-cvar_t c_deafmobs = {"c_deafmobs","false",TYPE_BOOL,qtrue};
-cvar_t c_blindmobs = {"c_blindmobs","false",TYPE_BOOL,qtrue};
-cvar_t c_nosmell = {"c_nosmell","false",TYPE_BOOL,qtrue};
-cvar_t c_nomobs = {"c_nomobs","false",TYPE_BOOL,qtrue};
-cvar_t c_godmode = {"c_godmode","false",TYPE_BOOL,qtrue};
-cvar_t c_infinite_ammo = {"c_infinite_ammo","false",TYPE_BOOL,qtrue};
-cvar_t c_bottomless_clip = {"c_bottomless_clip","false",TYPE_BOOL,qtrue};
-cvar_t c_devmode = {"c_devmode","false",TYPE_BOOL,qtrue};
+cvar_t c_fastmobs1         = {"c_fastmobs1",         "",                        0.0f, 0,    qfalse, TYPE_BOOL,   qtrue};
+cvar_t c_fastmobs2         = {"c_fastmobs2",         "",                        0.0f, 0,    qfalse, TYPE_BOOL,   qtrue};
+cvar_t c_fastmobs3         = {"c_fastmobs3",         "",                        0.0f, 0,    qfalse, TYPE_BOOL,   qtrue};
+cvar_t c_deafmobs          = {"c_deafmobs",          "",                        0.0f, 0,    qfalse, TYPE_BOOL,   qtrue};
+cvar_t c_blindmobs         = {"c_blindmobs",         "",                        0.0f, 0,    qfalse, TYPE_BOOL,   qtrue};
+cvar_t c_nosmell           = {"c_nosmell",           "",                        0.0f, 0,    qfalse, TYPE_BOOL,   qtrue};
+cvar_t c_nomobs            = {"c_nomobs",            "",                        0.0f, 0,    qfalse, TYPE_BOOL,   qtrue};
+cvar_t c_godmode           = {"c_godmode",           "",                        0.0f, 0,    qfalse, TYPE_BOOL,   qtrue};
+cvar_t c_infinite_ammo     = {"c_infinite_ammo",     "",                        0.0f, 0,    qfalse, TYPE_BOOL,   qtrue};
+cvar_t c_bottomless_clip   = {"c_bottomless_clip",   "",                        0.0f, 0,    qfalse, TYPE_BOOL,   qtrue};
+cvar_t c_devmode           = {"c_devmode",           "",                        0.0f, 0,    qfalse, TYPE_BOOL,   qtrue};
 
 static cvar_t *cvars[] = {
     &g_vert_fov,
@@ -57,6 +65,7 @@ static cvar_t *cvars[] = {
     &r_drawFPS,
     &r_renderapi,
     &r_msaa_amount,
+    &r_dither,
     &c_fastmobs1,
     &c_fastmobs2,
     &c_fastmobs3,
@@ -81,7 +90,15 @@ cvar_t** G_GetCvars(void)
     return cvars;
 }
 
-static void Cvar_Load(const json& data, const std::string& name, cvar_t* cvar)
+static void SCF_ParseFile(void)
+{
+    int parm = I_GetParm("-config");
+    if (parm != -1) {
+
+    }
+}
+
+static void Cvar_Load(const json& data, const eastl::string& name, cvar_t* cvar)
 {
     if (!cvar->save) {
         return;
@@ -92,13 +109,31 @@ static void Cvar_Load(const json& data, const std::string& name, cvar_t* cvar)
     if (!data.contains(name)) {
         N_Error("Cvar_Load: cvar %s required in configuration file to run the game", name.c_str());
     }
-    const std::string value = data[name];
+    const eastl::string value = data[name];
+    if (value.size() >= 64)
+        N_Error("Cvar_Load: cvar value is too long (max of 64 characters), was %lu characters long", value.size());
 
-    if (!N_strcasecmp(cvar->value, value.c_str())) {
-        N_strncpy(cvar->value, value.c_str(), (value.size() >= 80 ? 80 : value.size()));
-    }
+    switch (cvar->type) {
+    case TYPE_BOOL:
+        if (value == "true")
+            cvar->b = qtrue;
+        else
+            cvar->b = qfalse;
+        break;
+    case TYPE_INT:
+        cvar->i = N_atoi(value.c_str());
+        printf("%i\n", N_atoi(value.c_str()));
+        break;
+    case TYPE_FLOAT:
+        cvar->f = N_atof(value.c_str());
+        break;
+    case TYPE_STRING:
+        cvar->s = (char *)Z_Malloc(value.size(), TAG_STATIC, &cvar->s, "cvarValue");
+        N_strncpy(cvar->s, value.c_str(), value.size());
+        break;
+    };
 
-    Con_Printf("Initialized cvar %s with value %s", cvar->name, cvar->value);
+    Con_Printf("Initialized cvar %s with value %s", cvar->name, value.c_str());
 }
 
 

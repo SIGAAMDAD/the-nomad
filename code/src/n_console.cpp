@@ -4,6 +4,8 @@
 
 #define MAX_CMD_LINE 1024
 
+const char *Cvar_GetValue(const cvar_t* cvar);
+
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 bool imgui_window_open = false;
 static eastl::vector<char> con_buffer;
@@ -346,7 +348,8 @@ static void Con_ProcessInput(void)
 void Con_EndFrame(void)
 {
     int flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove;
-    ImGui::SetWindowSize(ImVec2(N_atoi(r_screenwidth.value), (float)(N_atoi(r_screenheight.value) >> 1)));
+
+    ImGui::SetWindowSize(ImVec2(r_screenwidth.i, (r_screenheight.i >> 1)));
     ImGui::SetWindowPos(ImVec2(0, 0));
     ImGui::Begin("Command Console", NULL, flags);
     con_buffer.emplace_back('\0');
@@ -379,10 +382,10 @@ static cvar_t cvar_list{0};
 
 cvar_t* Cvar_Find(const char *name)
 {
-    cvar_t* cvar;
+    cvar_t *cvar;
 
     for (cvar = &cvar_list; cvar; cvar = cvar->next) {
-        if (N_strncasecmp(name, cvar->name, 79)) {
+        if (N_strncasecmp(name, cvar->name, sizeof(cvar->name))) {
             return cvar;
         }
     }
@@ -412,9 +415,65 @@ cvar_t* Cvar_Set2(const char *name, const char *value, qboolean force)
 }
 #endif
 
+const char *Cvar_GetValue(const char *name)
+{
+    static char str[64];
+    cvar_t *cvar;
+
+    cvar = Cvar_Find(name);
+    if (!cvar) {
+        Con_Printf("WARNING: attempted to retrieve cvar value from non-existent cvar");
+        return "(null)";
+    }
+
+    switch (cvar->type) {
+    case TYPE_BOOL:
+        if (cvar->b)
+            N_strncpy(str, "true", 64);
+        else
+            N_strncpy(str, "false", 64);
+        break;
+    case TYPE_INT:
+        snprintf(str, 64, "%i", cvar->i);
+        break;
+    case TYPE_FLOAT:
+        snprintf(str, 64, "%f", cvar->f);
+        break;
+    case TYPE_STRING:
+        N_strncpy(str, cvar->s, strlen(cvar->s));
+        break;
+    };
+
+    return str;
+}
+
+const char *Cvar_GetValue(const cvar_t* cvar)
+{
+    static char str[64];
+    switch (cvar->type) {
+    case TYPE_BOOL:
+        if (cvar->b)
+            N_strncpy(str, "true", 64);
+        else
+            N_strncpy(str, "false", 64);
+        break;
+    case TYPE_INT:
+        snprintf(str, 64, "%i", cvar->i);
+        break;
+    case TYPE_FLOAT:
+        snprintf(str, 64, "%f", cvar->f);
+        break;
+    case TYPE_STRING:
+        N_strncpy(str, cvar->s, strlen(cvar->s));
+        break;
+    };
+
+    return str;
+}
+
 static void Cvar_Print(const cvar_t *var)
 {
-    Con_Printf("\"%s\" is: \"%s\"", var->name, var->value);
+    Con_Printf("\"%s\" is: \"%s\"", var->name, Cvar_GetValue(var));
 }
 
 static void Cvar_Print_f(void)
@@ -469,13 +528,30 @@ void Cvar_RegisterName(const char *name, const char *value, cvartype_t type, qbo
     cvar->next = (cvar_t *)Z_Malloc(sizeof(*cvar), TAG_STATIC, &cvar->next, "cvar");
     cvar = cvar->next;
 
-    cvar->name = (char *)Z_Malloc(80, TAG_STATIC, &cvar->name, "cvar");
     N_strncpy(cvar->name, name, 79);
     cvar->name[79] = '\0';
 
-    cvar->value = (char *)Z_Malloc(80, TAG_STATIC, &cvar->value, "cvar");
-    N_strncpy(cvar->value, value, 79);
-    cvar->value[79] = '\0';
+    switch (type) {
+    case TYPE_BOOL:
+        if (N_strneq("true", value, 4))
+            cvar->b = qtrue;
+        else
+            cvar->b = qfalse;
+        break;
+    case TYPE_INT:
+        cvar->i = N_atoi(value);
+        break;
+    case TYPE_FLOAT:
+        cvar->f = N_atof(value);
+        break;
+    case TYPE_STRING:
+        if (strlen(value) >= 64)
+            N_Error("Cvar_RegisterName: cvar values musn't be greater than 64 characters long");
+        cvar->s = (char *)Z_Malloc(64, TAG_STATIC, &cvar->s, "cvarVal");
+        N_strncpy(cvar->s, value, 63);
+        cvar->s[63] = '\0';
+        break;
+    };
 
     cvar->type = type;
     cvar->save = save;
@@ -490,8 +566,26 @@ void Cvar_ChangeValue(const char *name, const char *value)
         Con_Printf("WARNING: attempting to change the value of non-existent cvar %s", name);
         return;
     }
-    N_strncpy(cvar->value, value, 80);
-    cvar->value[79] = '\0';
+    switch (cvar->type) {
+    case TYPE_BOOL:
+        if (N_strneq("true", value, 4))
+            cvar->b = qtrue;
+        else
+            cvar->b = qfalse;
+        break;
+    case TYPE_INT:
+        cvar->i = N_atoi(value);
+        break;
+    case TYPE_FLOAT:
+        cvar->f = N_atof(value);
+        break;
+    case TYPE_STRING:
+        if (strlen(value) >= 64)
+            N_Error("Cvar_ChangeValue: cvar strings musn't be greater than 64 characters long");
+        N_strncpy(cvar->s, value, strlen(value));
+        cvar->s[63] = '\0';
+        break;
+    };
 }
 
 void Cvar_Register(cvar_t* cvar)
@@ -517,14 +611,14 @@ static void Cvar_WriteCfg_f(void)
     json data;
 
     for (cvar = &cvar_list; cvar; cvar = cvar->next) {
-        data[cvar->name] = cvar->value;
+        data[cvar->name] = Cvar_GetValue(cvar);
     }
     for (cvar = G_GetCvars()[0]; cvar; cvar = cvar->next) {
-        data[cvar->name] = cvar->value;
+        data[cvar->name] = Cvar_GetValue(cvar);
     }
 
     char cfgpath[256];
-    stbsp_snprintf(cfgpath, sizeof(cfgpath), "%s%c%s", fs_gamedir.value, PATH_SEP, DEFAULT_CFG_NAME);
+    stbsp_snprintf(cfgpath, sizeof(cfgpath), "%s%c%s", fs_gamedir.s, PATH_SEP, DEFAULT_CFG_NAME);
     std::ofstream file(cfgpath, std::ios::out);
     if (!file.is_open()) {
         Con_Printf("WARNING: failed to open file %s to write cvar config", cfgpath);
@@ -539,7 +633,7 @@ static void Cvar_List_f(void)
     cvar_t *cvar;
 
     for (cvar = &cvar_list; cvar; cvar = cvar->next) {
-        Con_Printf("%8s = %8s", cvar->name, cvar->value);
+        Con_Printf("%8s = %8s", cvar->name, Cvar_GetValue(cvar));
     }
 }
 

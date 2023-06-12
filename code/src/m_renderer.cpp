@@ -1,138 +1,10 @@
 #include "n_shared.h"
 #include "m_renderer.h"
+#include "n_scf.h"
 
 static constexpr const char *TEXMAP_PATH = "Files/gamedata/RES/texmap.bmp";
 
 Renderer* renderer;
-
-void R_DrawIndexed(const vertexCache_t* cache, uint32_t count)
-{
-    R_BindCache(cache);
-    glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, NULL);
-    R_UnbindCache();
-}
-
-void R_BindCache(const vertexCache_t* cache)
-{
-    R_BindVertexArray(cache);
-    R_BindVertexBuffer(cache);
-    R_BindIndexBuffer(cache);
-}
-
-void R_UnbindCache(void)
-{
-    R_UnbindVertexBuffer();
-    R_UnbindIndexBuffer();
-    R_UnbindVertexArray();
-}
-
-#if 0
-void R_BeginFramebuffer(framebuffer_t* fbo)
-{
-    R_SetFramebuffer(fbo);
-}
-void R_EndFramebuffer(void)
-{
-    R_SetFramebuffer(NULL);
-}
-#endif
-
-void R_BindTexture(const texture_t* texture, uint32_t slot)
-{
-    if (renderer->textureid == texture->id) {
-        return;
-    }
-    else if (renderer->textureid) {
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
-    renderer->textureid = texture->id;
-    glActiveTexture(GL_TEXTURE0+slot);
-    glBindTexture(GL_TEXTURE_2D, texture->id);
-}
-
-void R_UnbindTexture(void)
-{
-    if (renderer->textureid == 0) {
-        return;
-    }
-    renderer->textureid = 0;
-    glBindTexture(GL_TEXTURE_2D, 0);
-}
-
-void R_BindShader(const shader_t* shader)
-{
-    if (renderer->shaderid == shader->id) {
-        return;
-    }
-    renderer->shaderid = shader->id;
-    glUseProgram(shader->id);
-}
-
-void R_UnbindShader(void)
-{
-    if (renderer->shaderid == 0) {
-        return;
-    }
-    glUseProgram(0);
-    renderer->shaderid = 0;
-}
-
-void R_BindVertexArray(const vertexCache_t* cache)
-{
-    if (renderer->vaoid == cache->vaoId) {
-        return;
-    }
-    renderer->vaoid = cache->vaoId;
-    glBindVertexArray(cache->vaoId);
-}
-
-void R_UnbindVertexArray(void)
-{
-    if (renderer->vaoid == 0) {
-        return;
-    }
-    glBindVertexArray(0);
-    renderer->vaoid = 0;
-}
-
-void R_BindVertexBuffer(const vertexCache_t* cache)
-{
-    if (renderer->vboid == cache->vboId) {
-        return;
-    }
-    renderer->vboid = cache->vboId;
-    glBindBufferARB(GL_ARRAY_BUFFER_ARB, cache->vboId);
-}
-
-void R_UnbindVertexBuffer(void)
-{
-    if (renderer->vboid == 0) {
-        return;
-    }
-    renderer->vboid = 0;
-    glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-}
-
-void R_BindIndexBuffer(const vertexCache_t* cache)
-{
-    if (renderer->iboid == cache->iboId) {
-        return;
-    }
-    if (!renderer->vaoid) {
-        R_BindVertexArray(cache);
-    }
-    renderer->iboid = cache->iboId;
-    glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, cache->iboId);
-}
-
-void R_UnbindIndexBuffer(void)
-{
-    if (renderer->iboid == 0) {
-        return;
-    }
-    renderer->iboid = 0;
-    glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
-}
 
 bool imgui_on = false;
 
@@ -203,7 +75,7 @@ static void R_InitGL(void)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-    SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
+//    SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
     SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 16);
@@ -291,18 +163,45 @@ static void R_InitGL(void)
     }
 #endif
 
+    // always-on features
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_BLEND);
-    glEnable(GL_MULTISAMPLE_ARB);
-    glEnable(GL_DITHER);
+#if 0
+//    glEnable(GL_FRAMEBUFFER_SRGB);
+
+    if (r_msaa_amount.i > 0)
+        glEnable(GL_MULTISAMPLE_ARB);
+    else
+        glDisable(GL_MULTISAMPLE_ARB);
+
+    if (r_dither.b)
+        glEnable(GL_DITHER);
+    else
+        glDisable(GL_DITHER);
+#endif
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDepthMask(GL_FALSE);
     glDepthFunc(GL_ALWAYS);
 
-    R_InitImGui();
+    RE_InitFramebuffers();
+}
+
+void RE_InitSettings(void)
+{
+    // anti-aliasing/multisampling
+    if (r_msaa_amount.i > 0)
+        glEnable(GL_MULTISAMPLE_ARB);
+    else
+        glDisable(GL_MULTISAMPLE_ARB);
+
+    // dither
+    if (r_dither.b)
+        glEnable(GL_DITHER);
+    else
+        glDisable(GL_DITHER);
 }
 
 
@@ -310,17 +209,17 @@ static Uint32 R_GetWindowFlags(void)
 {
     Uint32 flags = 0;
 
-    if (N_strcmp(r_renderapi.value, "R_OPENGL"))
+    if (N_strcmp(r_renderapi.s, "R_OPENGL"))
         flags |= SDL_WINDOW_OPENGL;
-    else if (N_strcmp(r_renderapi.value, "R_SDL2"))
+    else if (N_strcmp(r_renderapi.s, "R_SDL2"))
         N_Error("R_Init: SDL2 rendering isn't yet supported");
-    else if (N_strcmp(r_renderapi.value, "R_VULKAN"))
+    else if (N_strcmp(r_renderapi.s, "R_VULKAN"))
         N_Error("R_Init: Vulkan rendering isn't yet supported, will be though very soon");
     
-    if (N_strcmp(r_hidden.value, "true"))
+    if (r_hidden.b)
         flags |= SDL_WINDOW_HIDDEN;
     
-    if (N_strcmp(r_fullscreen.value, "true") && N_strcmp(r_native_fullscreen.value, "false"))
+    if (r_fullscreen.b && !r_native_fullscreen.b)
         flags |= SDL_WINDOW_FULLSCREEN;
     
     flags |= SDL_WINDOW_RESIZABLE;
@@ -342,7 +241,7 @@ void R_Init(void)
     renderer->window = SDL_CreateWindow(
                             "The Nomad",
                             SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                            atoi(r_screenwidth.value), atoi(r_screenheight.value),
+                            r_screenwidth.i, r_screenheight.i,
                             SDL_WINDOW_OPENGL
                         );
     if (!renderer->window) {
@@ -356,6 +255,8 @@ void R_Init(void)
     renderer->numVertexCaches = 0;
     renderer->numFBOs = 0;
     renderer->numShaders = 0;
+
+    R_InitImGui();
     sdl_on = true;
 }
 
@@ -370,17 +271,12 @@ void R_ShutDown()
         ImGui_ImplOpenGL3_Shutdown();
         ImGui_ImplSDL2_Shutdown();
         ImGui::DestroyContext();
+        imgui_on = false;
     }
 
+    RE_ShutdownFramebuffers();
     for (uint32_t i = 0; i < renderer->numShaders; i++) {
         glDeleteProgram(renderer->shaders[i]->id);
-    }
-    for (uint32_t i = 0; i < renderer->numFBOs; i++) {
-        glDeleteFramebuffers(1, &renderer->fbos[i]->fboId);
-        glDeleteFramebuffers(1, &renderer->fbos[i]->defId);
-        glDeleteRenderbuffers(1, &renderer->fbos[i]->colorId);
-        glDeleteRenderbuffers(1, &renderer->fbos[i]->depthId);
-        glDeleteTextures(1, &renderer->fbos[i]->defTex);
     }
     for (uint32_t i = 0; i < renderer->numVertexCaches; i++) {
         glDeleteVertexArrays(1, &renderer->vertexCaches[i]->vaoId);
@@ -391,11 +287,11 @@ void R_ShutDown()
         glDeleteTextures(1, &renderer->textures[i]->id);
     }
 
-    if (N_strcmp(r_renderapi.value, "R_OPENGL") && renderer->gpuContext.context) {
+    if (N_strcmp(r_renderapi.s, "R_OPENGL") && renderer->gpuContext.context) {
         SDL_GL_DeleteContext(renderer->gpuContext.context);
         renderer->gpuContext.context = NULL;
     }
-    else if (N_strcmp(r_renderapi.value, "R_VULKAN") && renderer->gpuContext.instance) {
+    else if (N_strcmp(r_renderapi.s, "R_VULKAN") && renderer->gpuContext.instance) {
         vkDestroySurfaceKHR(renderer->gpuContext.instance->instance, renderer->gpuContext.instance->surface, NULL);
         vkDestroyInstance(renderer->gpuContext.instance->instance, NULL);
         renderer->gpuContext.instance = NULL;
@@ -717,3 +613,131 @@ void R_DrawCmd(Vertex* vertices, uint32_t numVertices, uint32_t* indices, uint32
     call->numIndices = numIndices;
 }
 
+void R_DrawIndexed(const vertexCache_t* cache, uint32_t count)
+{
+    R_BindCache(cache);
+    glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, NULL);
+    R_UnbindCache();
+}
+
+void R_BindCache(const vertexCache_t* cache)
+{
+    R_BindVertexArray(cache);
+    R_BindVertexBuffer(cache);
+    R_BindIndexBuffer(cache);
+}
+
+void R_UnbindCache(void)
+{
+    R_UnbindVertexBuffer();
+    R_UnbindIndexBuffer();
+    R_UnbindVertexArray();
+}
+
+#if 0
+void R_BeginFramebuffer(framebuffer_t* fbo)
+{
+    R_SetFramebuffer(fbo);
+}
+void R_EndFramebuffer(void)
+{
+    R_SetFramebuffer(NULL);
+}
+#endif
+
+void R_BindTexture(const texture_t* texture, uint32_t slot)
+{
+    if (renderer->textureid == texture->id) {
+        return;
+    }
+    else if (renderer->textureid) {
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+    renderer->textureid = texture->id;
+    glActiveTexture(GL_TEXTURE0+slot);
+    glBindTexture(GL_TEXTURE_2D, texture->id);
+}
+
+void R_UnbindTexture(void)
+{
+    if (renderer->textureid == 0) {
+        return;
+    }
+    renderer->textureid = 0;
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void R_BindShader(const shader_t* shader)
+{
+    if (renderer->shaderid == shader->id) {
+        return;
+    }
+    renderer->shaderid = shader->id;
+    glUseProgram(shader->id);
+}
+
+void R_UnbindShader(void)
+{
+    if (renderer->shaderid == 0) {
+        return;
+    }
+    glUseProgram(0);
+    renderer->shaderid = 0;
+}
+
+void R_BindVertexArray(const vertexCache_t* cache)
+{
+    if (renderer->vaoid == cache->vaoId) {
+        return;
+    }
+    renderer->vaoid = cache->vaoId;
+    glBindVertexArray(cache->vaoId);
+}
+
+void R_UnbindVertexArray(void)
+{
+    if (renderer->vaoid == 0) {
+        return;
+    }
+    glBindVertexArray(0);
+    renderer->vaoid = 0;
+}
+
+void R_BindVertexBuffer(const vertexCache_t* cache)
+{
+    if (renderer->vboid == cache->vboId) {
+        return;
+    }
+    renderer->vboid = cache->vboId;
+    glBindBufferARB(GL_ARRAY_BUFFER_ARB, cache->vboId);
+}
+
+void R_UnbindVertexBuffer(void)
+{
+    if (renderer->vboid == 0) {
+        return;
+    }
+    renderer->vboid = 0;
+    glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+}
+
+void R_BindIndexBuffer(const vertexCache_t* cache)
+{
+    if (renderer->iboid == cache->iboId) {
+        return;
+    }
+    if (!renderer->vaoid) {
+        R_BindVertexArray(cache);
+    }
+    renderer->iboid = cache->iboId;
+    glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, cache->iboId);
+}
+
+void R_UnbindIndexBuffer(void)
+{
+    if (renderer->iboid == 0) {
+        return;
+    }
+    renderer->iboid = 0;
+    glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+}
