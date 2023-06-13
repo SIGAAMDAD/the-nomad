@@ -14,9 +14,9 @@ typedef struct
 
 static intptr_t Sys_Con_Printf(vm_t *vm, intptr_t *args);
 static intptr_t Sys_Con_Error(vm_t *vm, intptr_t *args);
-static intptr_t Sys_G_GetTilemap(vm_t *vm, intptr_t *args);
-static intptr_t Sys_G_KeyIsPressed(vm_t *vm, intptr_t *args);
-static intptr_t Sys_G_ModIsPressed(vm_t *vm, intptr_t *args);
+static intptr_t G_GetTilemap(vm_t *vm, intptr_t *args);
+static intptr_t G_KeyIsPressed(vm_t *vm, intptr_t *args);
+static intptr_t G_ModIsPressed(vm_t *vm, intptr_t *args);
 
 const vmSystemCall_t systemCalls[] = {
 };
@@ -35,4 +35,25 @@ intptr_t G_SystemCalls(vm_t *vm, intptr_t *args)
     return -1;
 }
 
-static intptr_t Sys_G_SavePlayr(vm_t *vm, intptr_t *args);
+static intptr_t Sys_Con_Printf(vm_t *vm, intptr_t *args)
+{
+    Con_Printf("%s", (const char *)VMA(1, vm));
+    return 0;
+}
+
+static intptr_t Sys_Con_Error(vm_t *vm, intptr_t *args)
+{
+    Con_Error("%s", (const char *)VMA(1, vm));
+    return 0;
+}
+
+static intptr_t G_GetTilemap(vm_t *vm, intptr_t *args)
+{
+    memcpy((sprite_t **)VMA(1, vm), Game::Get()->c_map, sizeof(Game::Get()->c_map));
+    return 0;
+}
+
+static intptr_t G_GetKeyboardState(vm_t *vm, intptr_t *args)
+{
+    memcpy((qboolean *)VMA(1, vm), evState.kbstate, sizeof(qboolean) * NUMKEYS);
+}

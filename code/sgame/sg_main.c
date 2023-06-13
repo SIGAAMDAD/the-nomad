@@ -8,7 +8,7 @@ world_t sg_world;
 playr_t playrs[MAX_PLAYR_COUNT];
 mobj_t mobs[MAX_MOBS_ACTIVE];
 
-eventState_t events;
+static qboolean kbstate[NUMKEYS];
 
 int G_Init(void);
 int G_Shutdown(void);
@@ -41,8 +41,8 @@ const mobj_t mobinfo[NUMMOBS] = {
 
 int G_RunLoop(void)
 {
-    G_GetEvents(&events);
-
+    G_GetKeyboardState(kbstate);
+    
     return 0;
 }
 

@@ -4,6 +4,7 @@
 #pragma once
 
 #include "../common/n_vm.h"
+#include "../sgame/sg_public.h"
 
 /*
 Common functionality for the engine and vm alike
@@ -13,7 +14,7 @@ extern qboolean console_open;
 typedef struct
 {
     SDL_Event event;
-    const uint8_t *kbstate;
+	qboolean kbstate[NUMKEYS];
 } eventState_t;
 extern eventState_t evState;
 #endif

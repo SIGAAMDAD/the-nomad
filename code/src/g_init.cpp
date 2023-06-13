@@ -114,63 +114,35 @@ void mainLoop()
     while (1) {
         Com_UpdateEvents();
         vm_command = SGAME_RUNTIC;
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
-                done();
-            }
-            if (event.type == SDL_KEYDOWN) {
-                switch (event.key.keysym.sym) {
-                case SDLK_o:
-                    light_intensity += 0.1f;
-                    break;
-                case SDLK_p:
-                    light_intensity -= 0.1f;
-                    break;
-                case SDLK_n:
-                    renderer->camera->ZoomIn();
-                    break;
-                case SDLK_m:
-                    renderer->camera->ZoomOut();
-                    break;
-                case SDLK_w:
-                    translations[0].y += 0.25f;
-                    break;
-                case SDLK_a:
-                    translations[0].x -= 0.25f;
-                    break;
-                case SDLK_s:
-                    translations[0].y -= 0.25f;
-                    break;
-                case SDLK_d:
-                    translations[0].x += 0.25;
-                    break;
-                case SDLK_q:
-                    renderer->camera->RotateLeft();
-                    break;
-                case SDLK_e:
-                    renderer->camera->RotateRight();
-                    break;
-                case SDLK_UP:
-                    renderer->camera->MoveUp();
-                    break;
-                case SDLK_DOWN:
-                    renderer->camera->MoveDown();
-                    break;
-                case SDLK_LEFT:
-                    renderer->camera->MoveLeft();
-                    break;
-                case SDLK_RIGHT:
-                    renderer->camera->MoveRight();
-                    break;
-                case SDLK_BACKQUOTE:
-                    if (console_open)
-                        console_open = qfalse;
-                    else
-                        console_open = qtrue;
-                    break;
-                };
-            }
-        }
+        if (evState.kbstate[KEY_O])
+            light_intensity += 0.1f;
+        if (evState.kbstate[KEY_P])
+            light_intensity -= 0.1f;
+        if (evState.kbstate[KEY_N])
+            renderer->camera->ZoomIn();
+        if (evState.kbstate[KEY_M])
+            renderer->camera->ZoomOut();
+        if (evState.kbstate[KEY_W])
+            translations[0].y += 0.25f;
+        if (evState.kbstate[KEY_A])
+            translations[0].x -= 0.25f;
+        if (evState.kbstate[KEY_S])
+            translations[0].y -= 0.25f;
+        if (evState.kbstate[KEY_D])
+            translations[0].x += 0.25;
+        if (evState.kbstate[KEY_Q])
+            renderer->camera->RotateLeft();
+        if (evState.kbstate[KEY_E])
+            renderer->camera->RotateRight();
+        if (evState.kbstate[KEY_UP])
+            renderer->camera->MoveUp();
+        if (evState.kbstate[KEY_DOWN])
+            renderer->camera->MoveDown();
+        if (evState.kbstate[KEY_LEFT])
+            renderer->camera->MoveLeft();
+        if (evState.kbstate[KEY_RIGHT])
+            renderer->camera->MoveRight();
+
         VM_Run(SGAME_VM);
 
         renderer->camera->CalculateViewMatrix();

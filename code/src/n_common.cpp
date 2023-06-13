@@ -2,7 +2,6 @@
 #include "m_renderer.h"
 #include "g_game.h"
 #include "g_sound.h"
-#include "../sgame/sg_public.h"
 
 static char *com_buffer;
 static int com_bufferLen;
@@ -27,30 +26,79 @@ static void done(void)
 void Com_UpdateEvents(void)
 {
     SDL_PumpEvents();
-    evState.kbstate = SDL_GetKeyboardState(NULL);
 
-    if (console_open) {
-        while (SDL_PollEvent(&evState.event)) {
-            ImGui_ImplSDL2_ProcessEvent(&evState.event);
-            if (evState.event.type == SDL_KEYDOWN && evState.event.key.keysym.sym == SDLK_BACKQUOTE) {
-                console_open = qfalse;
-            }
-            else if (evState.event.type == SDL_QUIT) {
-                done();
-            }
-        }
-    }
-
-//    while (SDL_PollEvent(&event)) {
-//        if (event.type == SDL_QUIT) {
-//            done();
-//        }
-//        for (const auto& i : kb_binds) {
-//            if (i.button == event.key.keysym.sym) {
-//                i.action();
-//            }
-//        }
-//    }
+	memset(evState.kbstate, qfalse, sizeof(evState.kbstate));
+	while (SDL_PollEvent(&evState.event)) {
+		if (console_open) {
+			ImGui_ImplSDL2_ProcessEvent(&evState.event);
+			if (evState.event.type == SDL_KEYDOWN && evState.event.key.keysym.sym == SDLK_BACKQUOTE) {
+				console_open = qfalse;
+			}
+			else if (evState.event.type == SDL_QUIT) {
+				done();
+			}
+		}
+		else {
+			switch (evState.event.type) {
+			case SDL_KEYDOWN:
+				switch (evState.event.key.keysym.sym) {
+				case SDLK_a: evState.kbstate[KEY_A] = qtrue; break;
+				case SDLK_b: evState.kbstate[KEY_B] = qtrue; break;
+				case SDLK_c: evState.kbstate[KEY_C] = qtrue; break;
+				case SDLK_d: evState.kbstate[KEY_D] = qtrue; break;
+				case SDLK_e: evState.kbstate[KEY_E] = qtrue; break;
+				case SDLK_f: evState.kbstate[KEY_F] = qtrue; break;
+				case SDLK_g: evState.kbstate[KEY_G] = qtrue; break;
+				case SDLK_h: evState.kbstate[KEY_H] = qtrue; break;
+				case SDLK_i: evState.kbstate[KEY_I] = qtrue; break;
+				case SDLK_j: evState.kbstate[KEY_J] = qtrue; break;
+				case SDLK_k: evState.kbstate[KEY_K] = qtrue; break;
+				case SDLK_l: evState.kbstate[KEY_L] = qtrue; break;
+				case SDLK_m: evState.kbstate[KEY_M] = qtrue; break;
+				case SDLK_n: evState.kbstate[KEY_N] = qtrue; break;
+				case SDLK_o: evState.kbstate[KEY_O] = qtrue; break;
+				case SDLK_p: evState.kbstate[KEY_P] = qtrue; break;
+				case SDLK_q: evState.kbstate[KEY_Q] = qtrue; break;
+				case SDLK_r: evState.kbstate[KEY_R] = qtrue; break;
+				case SDLK_s: evState.kbstate[KEY_S] = qtrue; break;
+				case SDLK_t: evState.kbstate[KEY_T] = qtrue; break;
+				case SDLK_u: evState.kbstate[KEY_U] = qtrue; break;
+				case SDLK_v: evState.kbstate[KEY_V] = qtrue; break;
+				case SDLK_w: evState.kbstate[KEY_W] = qtrue; break;
+				case SDLK_x: evState.kbstate[KEY_X] = qtrue; break;
+				case SDLK_y: evState.kbstate[KEY_Y] = qtrue; break;
+				case SDLK_z: evState.kbstate[KEY_Z] = qtrue; break;
+				case SDLK_0: evState.kbstate[KEY_0] = qtrue; break;
+				case SDLK_1: evState.kbstate[KEY_1] = qtrue; break;
+				case SDLK_2: evState.kbstate[KEY_2] = qtrue; break;
+				case SDLK_3: evState.kbstate[KEY_3] = qtrue; break;
+				case SDLK_4: evState.kbstate[KEY_4] = qtrue; break;
+				case SDLK_5: evState.kbstate[KEY_5] = qtrue; break;
+				case SDLK_6: evState.kbstate[KEY_6] = qtrue; break;
+				case SDLK_7: evState.kbstate[KEY_7] = qtrue; break;
+				case SDLK_8: evState.kbstate[KEY_8] = qtrue; break;
+				case SDLK_9: evState.kbstate[KEY_9] = qtrue; break;
+				case SDLK_UP: evState.kbstate[KEY_UP] = qtrue; break;
+				case SDLK_DOWN: evState.kbstate[KEY_DOWN] = qtrue; break;
+				case SDLK_LEFT: evState.kbstate[KEY_LEFT] = qtrue; break;
+				case SDLK_RIGHT: evState.kbstate[KEY_RIGHT] = qtrue; break;
+				case SDLK_BACKQUOTE:
+					if (console_open)
+						console_open = qfalse;
+					else
+						console_open = qtrue;
+					break;
+				};
+				break;
+			case SDL_QUIT:
+				done();
+				break;
+			case SDL_KEYUP:
+			case SDL_WINDOWEVENT: // ignore (for now)
+				break;
+			};
+		}
+	}
 }
 
 void Con_RenderConsole(void)

@@ -14,6 +14,10 @@
 void* G_AllocMem(int size);
 void G_FreeMem(void *ptr);
 void G_InitMem(void);
+void G_GetTilemap(sprite_t tilemap[MAP_MAX_Y][MAP_MAX_X]);
+void G_SaveGame(int slot, const void *data, const int size);
+void G_LoadGame(int slot, void *data, int *size);
+void G_GetKeyboardState(qboolean keys[NUMKEYS]);
 
 enum
 {
