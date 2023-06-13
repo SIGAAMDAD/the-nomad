@@ -20,6 +20,10 @@
  ******************************************************************************/
 
 #include "vm.h"
+#define Com_Memcpy memcpy
+#define Com_Printf printf
+#define Com_Error Com_Error
+#define Com_Memset memset
 
 /******************************************************************************
  * DEFINES

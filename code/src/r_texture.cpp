@@ -40,7 +40,7 @@ static GLint R_TexMagFilter(void)
 {
     GLint filter = -1;
     for (uint32_t i = 0; i < arraylen(modes); i++) {
-        if (N_strcmp(r_texture_magfilter.s, modes[i].str)) {
+        if (N_strcmp(modes[i].str, r_texture_magfilter.s)) {
             filter = modes[i].value;
             break;
         }
@@ -56,7 +56,7 @@ static GLint R_TexMinFilter(void)
 {
     GLint filter = -1;
     for (uint32_t i = 0; i < arraylen(modes); i++) {
-        if (N_strcmp(r_texture_minfilter.s, modes[i].str)) {
+        if (N_strcmp(modes[i].str, r_texture_minfilter.s)) {
             filter = modes[i].value;
             break;
         }

@@ -122,14 +122,13 @@ static void Cvar_Load(const json& data, const eastl::string& name, cvar_t* cvar)
         break;
     case TYPE_INT:
         cvar->i = N_atoi(value.c_str());
-        printf("%i\n", N_atoi(value.c_str()));
         break;
     case TYPE_FLOAT:
         cvar->f = N_atof(value.c_str());
         break;
     case TYPE_STRING:
-        cvar->s = (char *)Z_Malloc(value.size(), TAG_STATIC, &cvar->s, "cvarValue");
-        N_strncpy(cvar->s, value.c_str(), value.size());
+        memset(cvar->s, 0, sizeof(cvar->s));
+        strncpy(cvar->s, value.c_str(), value.size());
         break;
     };
 

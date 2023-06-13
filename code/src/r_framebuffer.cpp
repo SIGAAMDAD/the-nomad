@@ -64,27 +64,27 @@ void RE_InitFramebuffers(void)
     msaa = (framebuffer_t *)Hunk_Alloc(sizeof(framebuffer_t), "msaaFBO", h_low);
     endbuffer = (framebuffer_t *)Hunk_Alloc(sizeof(framebuffer_t), "endbufFBO", h_low);
 
-//    RE_InitMsaa();
-//    RE_InitDefault();
+    RE_InitMsaa();
+    RE_InitDefault();
 }
 
 void RE_ShutdownFramebuffers(void)
 {
-//    glDeleteFramebuffers(1, &msaa->fboId);
-//    glDeleteFramebuffers(1, &endbuffer->fboId);
-//    glDeleteTextures(1, &endbuffer->colorId);
-//    glDeleteRenderbuffers(1, &msaa->colorId);
-//    glDeleteRenderbuffers(1, &msaa->depthId);
+    glDeleteFramebuffers(1, &msaa->fboId);
+    glDeleteFramebuffers(1, &endbuffer->fboId);
+    glDeleteTextures(1, &endbuffer->colorId);
+    glDeleteRenderbuffers(1, &msaa->colorId);
+    glDeleteRenderbuffers(1, &msaa->depthId);
 }
 
-void R_BeginBuffer(void)
+void R_BeginFramebuffer(void)
 {
     glBindFramebuffer(GL_FRAMEBUFFER, msaa->fboId);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glViewport(0, 0, msaa->width, msaa->height);
 }
 
-void R_EndBuffer(void)
+void R_EndFramebuffer(void)
 {
     glBindFramebuffer(GL_READ_FRAMEBUFFER, msaa->fboId);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);

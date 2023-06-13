@@ -13,6 +13,7 @@ static ALCcontext* context;
 
 uint32_t sndcache_size;
 nomadsnd_t* snd_cache;
+static pthread_mutex_t snd_lock = PTHREAD_MUTEX_INITIALIZER;
 
 #define MAX_SND_HASH 1024
 static nomadsnd_t *sndhash[MAX_SND_HASH];
@@ -72,7 +73,9 @@ void I_CacheAudio(void *bffinfo)
         snd_cache[i].samplerate = fdata.samplerate;
         snd_cache[i].channels = fdata.channels;
         snd_cache[i].length = fdata.samplerate * fdata.frames;
+        snd_cache[i].frames = fdata.frames;
 
+        N_strncpy(snd_cache[i].name, info->sounds[i].name, MAX_BFF_CHUNKNAME);
         alGenSources(1, &snd_cache[i].source);
         alGenBuffers(1, &snd_cache[i].buffer);
         alBufferData(snd_cache[i].buffer, snd_cache[i].channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16,
@@ -116,20 +119,46 @@ nomadsnd_t* Snd_FetchSnd(const char *name)
 
 void Snd_PlayTrack(const char *name)
 {
+    pthread_mutex_lock(&snd_lock);
     nomadsnd_t *snd = Snd_FetchSnd(name);
     if (!snd) {
         N_Error("Snd_PlayTrack: no such track named '%s'", name);
     }
 
     snd->queued = true;
+    pthread_mutex_unlock(&snd_lock);
 }
 
-void G_RunSound()
+static nomadsnd_t *track; // currently playing music chunk
+
+static void Snd_MusicInfo_f(void)
 {
-    for (uint32_t i = 0; i < sndcache_size; i++) {
-        if (snd_cache[i].queued && !snd_cache[i].failed) {
+    if (!track) {
+        Con_Printf("No music track is currently playing");
+    }
+
+    Con_Printf("\n<---------- Music Info ---------->");
+    Con_Printf("Track Name: %s", track->name);
+    Con_Printf("Duration: %lu", (uint64_t)(track->frames / (float)track->samplerate));
+}
+
+static void Snd_DriverInfo_f(void)
+{
+    Con_Printf("\n<---------- OpenAL Info ---------->");
+    Con_Printf("ALC_MAJOR_VERSION: %lu", ALC_MAJOR_VERSION);
+    Con_Printf("ALC_MINOR_VERSION: %lu", ALC_MINOR_VERSION);
+    Con_Printf("ALC_EXTENSIONS: %s", alcGetString(device, ALC_EXTENSIONS));
+}
+
+void Snd_Submit(void)
+{
+    for (uint32_t i = 0; i < sndcache_size; ++i) {
+        if (snd_cache[i].queued) {
             alSourcePlay(snd_cache[i].source);
             snd_cache[i].queued = false;
+            if (strstr(snd_cache[i].name, "MUS")) { // music chunk
+                track = &snd_cache[i];
+            }
         }
     }
 }
@@ -162,6 +191,9 @@ void Snd_Init()
     snd_musicon.b = qtrue;
     assert(context);
     alcMakeContextCurrent(context);
+
+    Cmd_AddCommand("musicinfo", Snd_MusicInfo_f);
+    Cmd_AddCommand("sndinfo", Snd_DriverInfo_f);
 
     Con_Printf("Snd_Init: successfully initialized sound libraries");
 }

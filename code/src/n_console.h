@@ -14,7 +14,7 @@ typedef enum
 typedef struct cvar_s
 {
     char name[64];
-    char *s;
+    char s[64];
     float f;
     int32_t i;
     qboolean b;
@@ -45,6 +45,7 @@ typedef enum {
 
 extern bool imgui_window_open;
 
+void Con_Init(void);
 void Con_EndFrame(void);
 void Con_Printf(loglevel_t level, const char *fmt, ...);
 void Con_Printf(const char *fmt, ...);

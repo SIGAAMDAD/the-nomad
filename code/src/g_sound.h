@@ -37,6 +37,7 @@ typedef struct nomadsnd_s
     int samplerate;
     int channels;
     int length;
+    int frames;
     short* sndbuf;
 
     bool queued = false;
@@ -50,6 +51,7 @@ void I_CacheAudio(void *bffinfo);
 void P_PlaySFX(uint32_t sfx);
 void S_PlayMusic(uint32_t music);
 void Snd_Init();
+void Snd_Submit(void);
 void Snd_PlayTrack(const char *name);
 void Snd_Kill();
 void G_RunSound();

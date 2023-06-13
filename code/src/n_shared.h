@@ -193,6 +193,9 @@ GDR_INLINE void __nomad_assert_fail(const char* expression, const char* file, co
 #ifndef BFF_COMPILER
 #include "n_console.h"
 #include "z_heap.h"
+#ifndef Q3_VM
+#include "n_lexer.hpp"
+#endif
 #include "string.hpp"
 #include "vector.hpp"
 #include "n_common.h"

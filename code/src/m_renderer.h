@@ -210,4 +210,10 @@ void DBG_GL_ErrorCallback(GLenum source, GLenum type, GLuint id, GLenum severity
 
 #endif
 
+typedef struct renderEntity_s renderEntity_t;
+
+renderEntity_t RE_InitEntity(const char *texchunk, const char *name, vec2_t worldpos);
+void RE_DestroyHandle(renderEntity_t id);
+void RE_CmdDrawEntity(renderEntity_t id);
+
 #endif

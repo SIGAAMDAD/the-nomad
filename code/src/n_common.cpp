@@ -2,6 +2,7 @@
 #include "m_renderer.h"
 #include "g_game.h"
 #include "g_sound.h"
+#include "../sgame/sg_public.h"
 
 static char *com_buffer;
 static int com_bufferLen;
@@ -16,22 +17,6 @@ common functions that are used almost everywhere
 ==================================================
 */
 
-static void Con_ProcessInput(void)
-{
-    if (!console_open)
-        return;
-
-    char buffer[2048];
-    memset(buffer, 0, sizeof(buffer));
-
-    ImGui::Text("> ");
-    ImGui::SameLine();
-    ImGui::InputText(" ", buffer, sizeof(buffer));
-    if (buffer[0]) {
-        Cmd_ExecuteString(buffer);
-    }
-//    ImGui::InputText("> ", buffer, sizeof(buffer));
-}
 
 static void done(void)
 {
@@ -73,9 +58,6 @@ void Con_RenderConsole(void)
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
-
-    if (console_open)
-        Con_ProcessInput();
 }
 
 
@@ -325,10 +307,10 @@ typedef struct cmd_s
 } cmd_t;
 
 static cmd_t* cmd_functions;
-static uint64_t numCommands = 0;
+static uint32_t numCommands = 0;
 static uint32_t cmd_argc;
-static char *cmd_argv[MAX_STRING_TOKENS];
 static char cmd_tokenized[BIG_INFO_STRING+MAX_STRING_TOKENS];
+static char *cmd_argv[MAX_STRING_TOKENS];
 static char cmd_cmd[BIG_INFO_STRING];
 
 static char cmd_history[MAX_HISTORY][BIG_INFO_STRING];
@@ -341,7 +323,9 @@ uint32_t Cmd_Argc(void)
 
 void Cmd_Clear(void)
 {
-    cmd_cmd[0] = '\0';
+	memset(cmd_cmd, 0, sizeof(cmd_cmd));
+	memset(cmd_argv, 0, sizeof(cmd_argv));
+	memset(cmd_tokenized, 0, sizeof(cmd_tokenized));
     cmd_argc = 0;
 }
 
@@ -352,7 +336,6 @@ const char *Cmd_Argv(uint32_t index)
     }
     return cmd_argv[index];
 }
-
 static cmd_t* Cmd_FindCommand(const char *name)
 {
     for (cmd_t *cmd = cmd_functions; cmd; cmd = cmd->next) {
@@ -363,175 +346,81 @@ static cmd_t* Cmd_FindCommand(const char *name)
     return NULL;
 }
 
-static void Cmd_TokenizeString2(const char *str, bool ignoreQuotes)
-{
-    const char *text;
-    char *textOut;
-
-    // clear previous args
-    cmd_argc = 0;
-    cmd_cmd[0] = '\0';
-
-    if (!str) {
-        return;
-    }
-
-    N_strncpy(cmd_cmd, str, sizeof(cmd_cmd));
-
-    text = cmd_cmd; // read from safe-length buffer
-    textOut = cmd_tokenized;
-
-    while (1) {
-        if (cmd_argc >= arraylen(cmd_argv)) {
-            break; // this is usually something malicious
-        }
-
-        while (1) {
-            // skip whitespace
-            while (*text && *text <= ' ') {
-                text++;
-            }
-            if (!*text) { // all tokens parsed
-                return;
-            }
-            
-            // skip // comments
-            if (text[0] == '/' && text[1] == '/') {
-                // accept protocol headers (e.g. http://) in command lines that matching "*?[a-z]://" pattern
-                if (text < cmd_cmd + 3 || text[-1] != ':' || text[-2] < 'a' || text[-2] > 'z') {
-                    return; // all tokens parsed
-                }
-            }
-
-            // skip /* */ comments
-            if (text[0] == '/' && text[1] == '*') {
-                while (*text && (text[0] != '*' || text[1] != '/')) {
-                    text++;
-                }
-                if (!*text) {
-                    return; // all tokens parsed
-                }
-                text += 2;
-            }
-            else {
-                break; // we are ready to parse a token
-            }
-
-            // handle quoted strings
-            // NOTE TTime this doesn't handle \" escape
-            if (!ignoreQuotes && *text == '*') {
-                cmd_argv[cmd_argc] = textOut;
-                cmd_argc++;
-                text++;
-
-                while (*text && *text != '"') {
-                    *textOut++ = *text++;
-                }
-                *textOut = '\0';
-                if (!*text) {
-                    return; // all tokens parsed
-                }
-                text++;
-                continue;
-            }
-            
-            // regular tokens
-            cmd_argv[cmd_argc] = textOut;
-            cmd_argc++;
-
-            // skip until whitespace, quote, or command
-            while (*text > ' ') {
-                if (!ignoreQuotes && text[0] == '"') {
-                    break;
-                }
-
-                if (text[0] == '/' && text[1] == '/') {
-                    // accept protocol headers (e.g. http://) in command lines that matching "*?[a-z]://" pattern
-			    	if ( text < cmd_cmd + 3 || text[-1] != ':' || text[-2] < 'a' || text[-2] > 'z' ) {
-					    break;
-				    }
-                }
-
-                // skip /* */ comments
-                if (text[0] == '/' && text[1] == '*') {
-                    break;
-                }
-
-                *textOut++ = *text++;
-            }
-
-            *textOut++ = '\0';
-            if (!*text) {
-                return; // al tokens parsed
-            }
-        }
-    }
-}
-
-static void Cmd_TokenizeStringIngoreQuotes(const char *str)
-{
-    Cmd_TokenizeString2(str, true);
-}
-
 static void Cmd_TokenizeString(const char *str)
 {
-    Cmd_TokenizeString2(str, false);
-}
+	const char *p;
+	char *tok;
 
+	Cmd_Clear();
+	N_strncpy(cmd_cmd, str, sizeof(cmd_cmd));
+	p = str;
+	tok = cmd_tokenized;
+
+	while (1) {
+		if (cmd_argc >= arraylen(cmd_argv)) {
+			return; // usually something malicious
+		}
+		while (*p && *p <= ' ') {
+			p++; // skip whitespace
+		}
+		if (!*p) {
+			break; // end of string
+		}
+		if (*p == '"') {
+			cmd_argv[cmd_argc] = tok;
+			cmd_argc++;
+			p++;
+			while (*p && *p != '"') {
+				*tok++ = *p++;
+			}
+			if (!*p) {
+				return; // end of string
+			}
+			p++;
+			continue;
+		}
+
+		// regular stuff
+		cmd_argv[cmd_argc] = tok;
+		cmd_argc++;
+
+		// skip until whitespace
+		while (*p > ' ') {
+			*tok++ = *p++;
+		}
+		*tok++ = '\0';
+		if (!*p) {
+			return; // end of string
+		}
+	}
+}
 
 void Cmd_ExecuteText(const char *str)
 {
     cmd_t *cmd;
+	const char *cmdstr;
 
     if (!*str) {
         return; // nothing to do
     }
+	Cmd_TokenizeString(str+1);
+	if (!Cmd_Argc()) {
+		return; // no tokens
+	}
+	cmdstr = cmd_argv[0];
+    cmd = Cmd_FindCommand(cmdstr);
+	if (cmd && cmd->function) {
+		cmd->function();
+		return;
+	}
+	else {
+		Con_Printf("Command '%s' doesn't exist", cmdstr);
+		return;
+	}
 
-    cmd = Cmd_FindCommand(str);
-    if (!cmd) {
-        Con_Printf("No such command '%s'", str);
-        return;
-    }
-
-    cmd->function();
-}
-
-void Cmd_ExecuteString(const char *str)
-{
-    cmd_t *cmd, **prev;
-
-    // execute the command line
-    Cmd_TokenizeString(str);
-    if (!Cmd_Argc()) {
-        return; // no tokens
-    }
-
-    // check registered command functions
-    for (prev = &cmd_functions; *prev; prev = &cmd->next) {
-        cmd = *prev;
-        if (!N_strneq(cmd_argv[0], cmd->name.c_str(), cmd->name.size())) {
-            // rearrange the links so that the command will be near the
-            // head of the list next time it is used
-            *prev = cmd->next;
-            cmd->next = cmd_functions;
-            cmd_functions = cmd;
-
-            // perform the action
-            if (!cmd->function) {
-                // let the sgame or game handle it
-                break;
-            }
-            else {
-                cmd->function();
-            }
-            return;
-        }
-    }
-
-    // check cvars
-    if (Cvar_Command()) {
-        return;
-    }
+//	if (Cvar_Command()) {
+//		return;
+//	}
 }
 
 void Cmd_AddCommand(const char *name, cmdfunc_t func)
@@ -550,43 +439,7 @@ void Cmd_AddCommand(const char *name, cmdfunc_t func)
 	cmd->complete = NULL;
     cmd->next = cmd_functions;
     cmd_functions = cmd;
-}
-
-void Cmd_ExecuteCmd(const char *text)
-{
-	cmd_t *cmd, **prev;
-
-	// execute the command line
-	Cmd_TokenizeString( text );
-	if ( !Cmd_Argc() ) {
-		return;		// no tokens
-	}
-
-	// check registered command functions
-	for ( prev = &cmd_functions ; *prev ; prev = &cmd->next ) {
-		cmd = *prev;
-		if ( N_strcasecmp( cmd_argv[0], cmd->name ) ) {
-			// rearrange the links so that the command will be
-			// near the head of the list next time it is used
-			*prev = cmd->next;
-			cmd->next = cmd_functions;
-			cmd_functions = cmd;
-
-			// perform the action
-			if ( !cmd->function ) {
-				// let the cgame or game handle it
-				break;
-			} else {
-				cmd->function();
-			}
-			return;
-		}
-	}
-
-	// check cvars
-	if (Cvar_Command()) {
-		return;
-	}
+	numCommands++;
 }
 
 void Cmd_SetCommandCompletetionFunc(const char *name, completionFunc_t func)
@@ -633,9 +486,9 @@ char* Cmd_ArgsFrom(int32_t arg)
     if (arg < 0)
         arg = 0;
     for (i = arg; i < cmd_argc; i++) {
-//        s = N_stradd(s, cmd_argv[i]);
+        s = N_stradd(s, cmd_argv[i]);
         if (i != cmd_argc - 1) {
-//            s = N_stradd(s, " ");
+            s = N_stradd(s, " ");
         }
     }
     return cmd_args;
@@ -652,6 +505,11 @@ static void Cmd_List_f(void)
 static void Cmd_Echo_f(void)
 {
     Con_Printf("%s", Cmd_ArgsFrom(1));
+}
+
+static void Cmd_Exit_f(void)
+{
+	done();
 }
 
 static void Cmd_Init(void)
@@ -685,6 +543,10 @@ void Com_Init(void)
     Con_Printf("Com_Init: initializing systems");
 
     Memory_Init();
+
+	Con_Printf("G_LoadSCF: parsing scf file");
+    G_LoadSCF();
+	Con_Init();
     R_Init();
     Cmd_Init();
     Snd_Init();
@@ -699,9 +561,35 @@ void Com_Init(void)
          "v2.0\n"
          "+==========================================================+\n"
     );
+}
 
-    Con_Printf("G_LoadSCF: parsing scf file");
-    G_LoadSCF();
+/*
+Com_Frame: runs a single frame for the game
+*/
+void Com_Frame(void)
+{
+	vm_command = SGAME_RUNTIC;
+
+	// update the event queue
+	Com_UpdateEvents();
+
+	// run the backend threads
+//	Snd_Run();
+	VM_Run(SGAME_VM);
+
+#if 0
+	RE_BeginFrame();
+
+	RE_DrawBuffers();
+
+	RE_EndFrame(); // submit everything
+#endif
+
+	VM_Stop(SGAME_VM);
+//	Snd_Stop();
+
+	// 'framerate cap'
+	sleepfor(1000 / r_ticrate.i);
 }
 
 /*

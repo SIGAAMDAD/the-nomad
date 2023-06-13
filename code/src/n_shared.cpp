@@ -75,6 +75,19 @@ void N_strncpy (char *dest, const char *src, size_t count)
 		*d++ = 0;
 }
 
+char* N_stradd(char *dst, const char *src)
+{
+	char *d = dst;
+	const char *s = src;
+	char c;
+
+	while ((c = *s++) != '\0')
+		*d++ = c;
+	
+	*d = '\0';
+	return dst;
+}
+
 size_t N_strlen (const char *str)
 {
 	size_t count = 0;
@@ -122,7 +135,7 @@ qboolean N_streq(const char *str1, const char *str2)
 	const char *s1 = str1;
 	const char *s2 = str2;
 	
-	while (*s2) {
+	while (*s2 && *s1) {
 		if (*s1++ != *s2++)
 			return qfalse;
 	}
@@ -134,7 +147,7 @@ qboolean N_strneq(const char *str1, const char *str2, size_t n)
 	const char *s1 = str1;
 	const char *s2 = str2;
 
-	while (*s2 && n) {
+	while (*s1 && n) {
 		if (*s1++ != *s2++)
 			return qfalse;
 		n--;

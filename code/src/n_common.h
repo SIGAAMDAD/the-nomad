@@ -105,6 +105,7 @@ void Cmd_ExecuteCommand(const char* name);
 void Cmd_ExecuteText(const char *str);
 void Cmd_ExecuteString(const char *str);
 uint32_t Cmd_Argc(void);
+char* Cmd_ArgsFrom(int32_t index);
 const char* Cmd_Argv(uint32_t index);
 void Cmd_Clear(void);
 const char* GDR_DECL va(const char *format, ...);

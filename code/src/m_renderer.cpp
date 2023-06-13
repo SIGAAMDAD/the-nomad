@@ -66,6 +66,47 @@ static void R_InitImGui(void)
     imgui_on = true;
 }
 
+static void R_GfxInfo_f(void)
+{
+    Con_Printf("\n\n<---------- Gfx Info ---------->");
+    Con_Printf("Rendering API: %s", r_renderapi.s);
+    
+    if (N_strcmp("R_OPENGL", r_renderapi.s)) {
+        Con_Printf("=== OpenGL Driver Info ===");
+        Con_Printf("GL_RENDERER: %s", glGetString(GL_RENDERER));
+        Con_Printf("GL_VERSION: %s", glGetString(GL_VERSION));
+        Con_Printf("GL_VENDOR: %s", glGetString(GL_VENDOR));
+    }
+    Con_Printf("=== Cvars ===");
+    Con_Printf("r_screenwidth: %i", r_screenwidth.i);
+    Con_Printf("r_screenheight: %i", r_screenheight.i);
+    Con_Printf("r_drawFPS: %s", N_booltostr(r_drawFPS.b));
+    Con_Printf("r_ticrate: %i", r_ticrate.i);
+    Con_Printf("r_fullscreen: %s", N_booltostr(r_fullscreen.b));
+    Con_Printf("r_msaa_amount: x%i", r_msaa_amount.i);
+    Con_Printf("r_vsync: %s", N_booltostr(r_vsync.b));
+//    Con_Printf("r_gl_extensions: %s", N_booltostr(r_gl_extensions.b));
+    Con_Printf("r_texture_minfilter: %s", r_texture_minfilter.s);
+    Con_Printf("r_texture_magfilter: %s", r_texture_magfilter.s);
+    Con_Printf("r_dither: %s", N_booltostr(r_dither.b));
+    Con_Printf(" ");
+}
+
+void RE_InitSettings_f(void)
+{
+    // anti-aliasing/multisampling
+    if (r_msaa_amount.i > 0)
+        glEnable(GL_MULTISAMPLE_ARB);
+    else
+        glDisable(GL_MULTISAMPLE_ARB);
+
+    // dither
+    if (r_dither.b)
+        glEnable(GL_DITHER);
+    else
+        glDisable(GL_DITHER);
+}
+
 static void R_InitGL(void)
 {
     renderer->gpuContext.context = SDL_GL_CreateContext(renderer->window);
@@ -168,40 +209,17 @@ static void R_InitGL(void)
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_STENCIL_TEST);
     glEnable(GL_BLEND);
-#if 0
 //    glEnable(GL_FRAMEBUFFER_SRGB);
-
-    if (r_msaa_amount.i > 0)
-        glEnable(GL_MULTISAMPLE_ARB);
-    else
-        glDisable(GL_MULTISAMPLE_ARB);
-
-    if (r_dither.b)
-        glEnable(GL_DITHER);
-    else
-        glDisable(GL_DITHER);
-#endif
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDepthMask(GL_FALSE);
     glDepthFunc(GL_ALWAYS);
 
+    RE_InitSettings_f();
     RE_InitFramebuffers();
-}
 
-void RE_InitSettings(void)
-{
-    // anti-aliasing/multisampling
-    if (r_msaa_amount.i > 0)
-        glEnable(GL_MULTISAMPLE_ARB);
-    else
-        glDisable(GL_MULTISAMPLE_ARB);
-
-    // dither
-    if (r_dither.b)
-        glEnable(GL_DITHER);
-    else
-        glDisable(GL_DITHER);
+    Cmd_AddCommand("gfxinfo", R_GfxInfo_f);
+    Cmd_AddCommand("gfxrestart", RE_InitSettings_f);
 }
 
 
@@ -287,11 +305,11 @@ void R_ShutDown()
         glDeleteTextures(1, &renderer->textures[i]->id);
     }
 
-    if (N_strcmp(r_renderapi.s, "R_OPENGL") && renderer->gpuContext.context) {
+    if (N_strcmp("R_OPENGL", r_renderapi.s) && renderer->gpuContext.context) {
         SDL_GL_DeleteContext(renderer->gpuContext.context);
         renderer->gpuContext.context = NULL;
     }
-    else if (N_strcmp(r_renderapi.s, "R_VULKAN") && renderer->gpuContext.instance) {
+    else if (N_strcmp("R_VULKAN", r_renderapi.s) && renderer->gpuContext.instance) {
         vkDestroySurfaceKHR(renderer->gpuContext.instance->instance, renderer->gpuContext.instance->surface, NULL);
         vkDestroyInstance(renderer->gpuContext.instance->instance, NULL);
         renderer->gpuContext.instance = NULL;

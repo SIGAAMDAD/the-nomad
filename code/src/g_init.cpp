@@ -112,7 +112,6 @@ void mainLoop()
 
     uint64_t next = clock();
     while (1) {
-        std::thread sndthread(G_RunSound);
         Com_UpdateEvents();
         vm_command = SGAME_RUNTIC;
         while (SDL_PollEvent(&event)) {
@@ -173,11 +172,13 @@ void mainLoop()
             }
         }
         VM_Run(SGAME_VM);
-        Con_RenderConsole();
 
         renderer->camera->CalculateViewMatrix();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glViewport(0, 0, r_screenwidth.i, r_screenheight.i);
+
+        R_BeginFramebuffer();
+        Con_RenderConsole();
 
         next = 1000 / r_ticrate.i;
 
@@ -216,9 +217,11 @@ void mainLoop()
         R_UnbindVertexBuffer();
         R_UnbindIndexBuffer();
         
-        VM_Stop(SGAME_VM);
         Con_EndFrame();
-        sndthread.join();
+        R_EndFramebuffer();
+
+        Snd_Submit();
+        VM_Stop(SGAME_VM);
         SDL_GL_SwapWindow(renderer->window);
         
         sleepfor(next);
