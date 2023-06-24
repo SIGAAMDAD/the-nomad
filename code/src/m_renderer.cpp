@@ -1,4 +1,5 @@
 #include "n_shared.h"
+#include "g_game.h"
 #include "m_renderer.h"
 #include "n_scf.h"
 
@@ -297,9 +298,7 @@ void R_ShutDown()
         glDeleteProgram(renderer->shaders[i]->id);
     }
     for (uint32_t i = 0; i < renderer->numVertexCaches; i++) {
-        glDeleteVertexArrays(1, &renderer->vertexCaches[i]->vaoId);
-        glDeleteBuffersARB(1, &renderer->vertexCaches[i]->vboId);
-        glDeleteBuffersARB(1, &renderer->vertexCaches[i]->iboId);
+        RGL_ShutdownCache(renderer->vertexCaches[i]);
     }
     for (uint32_t i = 0; i < renderer->numTextures; i++) {
         glDeleteTextures(1, &renderer->textures[i]->id);
@@ -387,22 +386,6 @@ void DBG_GL_ErrorCallback(GLenum source, GLenum type, GLuint id, GLenum severity
 }
 
 #endif
-
-struct Character
-{
-    GLuint texid;
-    glm::ivec2 size;
-    glm::ivec2 bearing;
-    uint32_t advance;
-};
-
-static eastl::unordered_map<char, Character> R_LoadFont(const eastl::string filepath)
-{
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    for (uint8_t i = 0; i < 128; i++) {
-    }
-}
-
 
 Camera::Camera(float left, float right, float bottom, float top)
     : m_ProjectionMatrix(glm::ortho(left, right, bottom, top, -1.0f, 1.0f)), m_ViewMatrix(1.0f)
@@ -588,68 +571,84 @@ done:
 }
 #endif
 
-
-#define MAX_RENDER_CALLS 64
-#define MAX_RENDER_QUADS 64
-#define MAX_RENDER_VERTICES (MAX_RENDER_QUADS*4)
-#define MAX_RENDER_INDICES (MAX_RENDER_VERTICES*6)
-
-typedef struct
+bool R_CullVertex(const glm::vec2& pos)
 {
-    Vertex vertices[MAX_RENDER_VERTICES];
-    uint32_t indices[MAX_RENDER_INDICES];
-    uint32_t numVertices;
-    uint32_t numIndices;
-} renderCall_t;
+    const glm::ivec2 endpos = glm::ivec2(
+        Game::Get()->cameraPos.x + 32,
+        Game::Get()->cameraPos.y + 12
+    );
+    const glm::ivec2 startpos = glm::ivec2(
+        Game::Get()->cameraPos.x - 32,
+        Game::Get()->cameraPos.y - 12
+    );
 
-typedef struct
-{
-    uint32_t numCalls;
-    renderCall_t calls[MAX_RENDER_CALLS];
-
-    vertexCache_t* frameCache;
-//    renderCall_t* callPtr;
-} renderFrame_t;
-
-static renderFrame_t* frame;
-
-void R_FlushFrame(void)
-{
-    frame->numCalls = 0;
+    if ((pos.x <= startpos.x || pos.y <= startpos.y) || (pos.x >= endpos.x || pos.y >= endpos.y))
+        return false;
+    else
+        return true;
 }
 
-void R_DrawCmd(Vertex* vertices, uint32_t numVertices, uint32_t* indices, uint32_t numIndices)
+static vertexCache_t *pintCache;
+void R_InitPints(void)
 {
-    if (frame->numCalls >= MAX_RENDER_CALLS) {
-        R_FlushFrame();
+    vertex_t *vertices = (vertex_t *)alloca((64 * 4 * 24 * 4) * sizeof(vertex_t));
+    vertex_t *vert = vertices;
+    uint32_t numVerts = 64 * 4 * 24 * 4;
+
+    for (uint32_t y = 0; y < 64; y++) {
+        for (uint32_t x = 0; x < 24; x++) {
+            
+        }
     }
-    renderCall_t* call = &frame->calls[frame->numCalls];
-
-    memcpy(call->vertices, vertices, numVertices);
-    memcpy(call->indices, indices, numIndices);
-    call->numVertices = numVertices;
-    call->numIndices = numIndices;
 }
 
-void R_DrawIndexed(const vertexCache_t* cache, uint32_t count)
+void RE_DrawPints(SpriteSheet* sheet, vertexCache_t *cache)
 {
-    R_BindCache(cache);
-    glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, NULL);
-    R_UnbindCache();
-}
+    const glm::ivec2 endpos = glm::ivec2(
+        Game::Get()->cameraPos.x + 32,
+        Game::Get()->cameraPos.y + 12
+    );
+    const glm::ivec2 startpos = glm::ivec2(
+        Game::Get()->cameraPos.x - 32,
+        Game::Get()->cameraPos.y - 12
+    );
 
-void R_BindCache(const vertexCache_t* cache)
-{
-    R_BindVertexArray(cache);
-    R_BindVertexBuffer(cache);
-    R_BindIndexBuffer(cache);
-}
+    const glm::vec4 positions[] = {
+        glm::vec4( 0.5f,  0.5f, 0.0f, 1.0f),
+        glm::vec4( 0.5f, -0.5f, 0.0f, 1.0f),
+        glm::vec4(-0.5f, -0.5f, 0.0f, 1.0f),
+        glm::vec4(-0.5f,  0.5f, 0.0f, 1.0f),
+    };
+    
+    glm::mat4 model;
+    glm::mat4 mvp;
+    vertex_t *vertices = (vertex_t *)alloca(sizeof(vertex_t) * (64 * 24 * 4)); // hopefully no stack overflow
+    vertex_t *vert = vertices;
 
-void R_UnbindCache(void)
-{
-    R_UnbindVertexBuffer();
-    R_UnbindIndexBuffer();
-    R_UnbindVertexArray();
+    for (int32_t y = startpos.y; y <= endpos.y; ++y) {
+        for (int32_t x = startpos.x; x <= startpos.x; ++x) {
+            glm::vec3 pos = glm::vec3(y, x, 0.0f);
+            //WorldToScreen(pos, pos);
+            
+            model = glm::translate(glm::mat4(1.0f), pos);
+            mvp = renderer->camera.GetProjection() * renderer->camera.GetViewMatrix() * model;
+
+            sprite_t spr;
+            if ((!y || !x) || (y >= 240 || x >= 240))
+                spr = SPR_SKYBOX;
+            else
+                spr = Game::Get()->c_map[y][x];
+            
+            const glm::vec2* coords = sheet->GetSpriteCoords(spr);
+            for (uint32_t i = 0; i < 4; ++i) {
+                vert[y + x + i].pos = mvp * positions[i];
+                vert[y + x + i].texcoords = coords[i];
+                vert[y + x + i].color = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+            }
+            vert += 4;
+        }
+    }
+    RGL_SwapVertexData(vertices, 64 * 24 * 4, cache);
 }
 
 #if 0
@@ -701,61 +700,4 @@ void R_UnbindShader(void)
     }
     glUseProgram(0);
     renderer->shaderid = 0;
-}
-
-void R_BindVertexArray(const vertexCache_t* cache)
-{
-    if (renderer->vaoid == cache->vaoId) {
-        return;
-    }
-    renderer->vaoid = cache->vaoId;
-    glBindVertexArray(cache->vaoId);
-}
-
-void R_UnbindVertexArray(void)
-{
-    if (renderer->vaoid == 0) {
-        return;
-    }
-    glBindVertexArray(0);
-    renderer->vaoid = 0;
-}
-
-void R_BindVertexBuffer(const vertexCache_t* cache)
-{
-    if (renderer->vboid == cache->vboId) {
-        return;
-    }
-    renderer->vboid = cache->vboId;
-    glBindBufferARB(GL_ARRAY_BUFFER_ARB, cache->vboId);
-}
-
-void R_UnbindVertexBuffer(void)
-{
-    if (renderer->vboid == 0) {
-        return;
-    }
-    renderer->vboid = 0;
-    glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-}
-
-void R_BindIndexBuffer(const vertexCache_t* cache)
-{
-    if (renderer->iboid == cache->iboId) {
-        return;
-    }
-    if (!renderer->vaoid) {
-        R_BindVertexArray(cache);
-    }
-    renderer->iboid = cache->iboId;
-    glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, cache->iboId);
-}
-
-void R_UnbindIndexBuffer(void)
-{
-    if (renderer->iboid == 0) {
-        return;
-    }
-    renderer->iboid = 0;
-    glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
 }

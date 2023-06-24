@@ -659,7 +659,7 @@ int VM_MemoryRangeValid(intptr_t vmAddr, size_t len, const vm_t* vm)
     }
     else
     {
-        return 0;
+        return 1;
     }
 }
 

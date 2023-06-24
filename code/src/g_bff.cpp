@@ -17,7 +17,7 @@ static void CopyLevelChunk(const bff_chunk_t* chunk, bffinfo_t* info)
 	bfflevel_t* data;
 	const char *ptr;
 	
-	data = &info->levels[info->numLevels];
+	data = &info->levels[Com_GenerateHashValue(chunk->chunkName, MAX_LEVEL_CHUNKS)];
 	strncpy(data->name, chunk->chunkName, MAX_BFF_CHUNKNAME);
 	ptr = chunk->chunkBuffer;
 	Con_Printf("Loading level chunk %s", data->name);
@@ -56,7 +56,7 @@ static void CopySoundChunk(const bff_chunk_t* chunk, bffinfo_t* info)
 	ptr += sizeof(bff_int_t);
 	data->fileType = *(bff_short_t *)ptr;
 	ptr += sizeof(bff_short_t);
-	data->fileBuffer = (char *)Hunk_Alloc(data->fileSize, "sndfile", h_high);
+	data->fileBuffer = (char *)Z_Malloc(data->fileSize, TAG_STATIC, &data->fileBuffer, "sndfile");
 	
 	memcpy(data->fileBuffer, ptr, data->fileSize);
 	Con_Printf("Done loading audio chunk %s", data->name);
@@ -95,7 +95,7 @@ static void CopyTextureChunk(const bff_chunk_t* chunk, bffinfo_t* info)
 
 	data->fileSize = chunk->chunkSize;
 
-	data->fileBuffer = (unsigned char *)Hunk_Alloc(data->fileSize, "texCache", h_high);
+	data->fileBuffer = (unsigned char *)Z_Malloc(data->fileSize, TAG_STATIC, &data->fileBuffer, "texCache");
 	memcpy(data->fileBuffer, ptr, data->fileSize);
 	Con_Printf("Done loading texture chunk %s", data->name);
 
@@ -111,7 +111,7 @@ bffinfo_t* BFF_GetInfo(bff_t* archive)
 	}
 	
 	infomark = Hunk_HighMark();
-	bffinfo_t* info = (bffinfo_t *)Hunk_Alloc(sizeof(bffinfo_t), "BFFinfo", h_high);
+	bffinfo_t* info = (bffinfo_t *)Mem_Alloc(sizeof(bffinfo_t));
 	memset(info, 0, sizeof(bffinfo_t));
 	info->numLevels = 0;
 	info->numSounds = 0;
@@ -138,7 +138,12 @@ bffinfo_t* BFF_GetInfo(bff_t* archive)
 }
 void BFF_FreeInfo(bffinfo_t* info)
 {
-	Hunk_FreeToHighMark(infomark);
+	for (uint32_t i = 0; i < info->numSounds; ++i) {
+		Z_ChangeTag(info->sounds[i].fileBuffer, TAG_CACHE);
+	}
+	for (uint32_t i = 0; i < info->numTextures; ++i) {
+		Z_ChangeTag(info->textures[i].fileBuffer, TAG_CACHE);
+	}
 }
 
 static bffinfo_t* bffinfo;
@@ -217,6 +222,10 @@ bffscript_t *BFF_FetchScript(const char *name)
 	return &bffinfo->scripts[Com_GenerateHashValue(name, MAX_SCRIPT_CHUNKS)];
 }
 
+bfflevel_t *BFF_FetchLevel(const char *name)
+{
+	return &bffinfo->levels[Com_GenerateHashValue(name, MAX_LEVEL_CHUNKS)];
+}
 
 void G_LoadBFF(const GDRStr& bffname)
 {
@@ -232,6 +241,4 @@ void G_LoadBFF(const GDRStr& bffname)
     Game::Init();
 
     VM_Init(bffinfo->scripts);
-
-    BFF_FreeInfo(bffinfo);
 }

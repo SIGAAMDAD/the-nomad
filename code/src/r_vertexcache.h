@@ -1,47 +1,134 @@
-#ifndef _R_BUFFER_
-#define _R_BUFFER_
+#ifndef _R_VERTEXCACHE_
+#define _R_VERTEXCACHE_
+
+#pragma once
+
+#define RENDER_MAX_QUADS 0x200
+#define RENDER_MAX_VERTICES (RENDER_MAX_QUADS*4)
+#define RENDER_MAX_INDICES (RENDER_MAX_VERTICES*6)
+
+typedef struct vertex_s
+{
+	glm::vec3 pos;
+	glm::vec2 texcoords;
+	glm::vec4 color;
+//	float islight;
+	
+	GDR_INLINE vertex_s(const glm::vec3& _pos, const glm::vec2& _texcoords, const glm::vec4& _color)
+		: pos(_pos), texcoords(+texcoords), color(_color) { }
+	GDR_INLINE vertex_s()
+		: pos(0.0f), texcoords(0.0f), color(0.0f) { }
+	GDR_INLINE vertex_s(const vertex_s &v)
+		: pos(v.pos), texcoords(v.texcoords), color(v.color) { }
+	GDR_INLINE vertex_s(vertex_s &&v)
+		: pos(v.pos), texcoords(v.texcoords), color(v.color) { }
+	GDR_INLINE ~vertex_s() = default;
+} vertex_t;
 
 typedef struct
 {
-    uint32_t size;
-    uint32_t stride;
-    uint32_t numAttribs;
-    GLuint id;
-    bool dynamicBuffer;
-} vertexBuffer_t;
+	uint32_t index;
+	uint32_t count;
+	uint32_t type;
+	uint32_t offset;
+} vertexAttrib_t;
 
-typedef struct
+class VertexCache
 {
-    uint32_t glType;
-    uint32_t count;
-    GLuint id;
-} indexBuffer_t;
+public:
+	VertexCache();
+	VertexCache(const VertexCache &) = delete;
+	VertexCache(VertexCache &&) = delete;
+	~VertexCache();
+	
+	VertexCache& operator=(const VertexCache &) = delete;
+	VertexCache& operator=(VertexCache &&) = delete;
+	
+	void Init(void);
+	void Shutdown(void);
+	
+	void ClearVertexData(void);
+	void ClearIndexData(void);
+	void ClearData(void);
+	
+	void SwapVertexData(uint64_t offset, const vertex_t *_vertices, uint64_t _numVertices);
+	void SwapIndexData(uint64_t offset, const void *_indices, uint64_t _numIndices);
+	
+	void Bind(void) const;
+	void Unbind(void) const;
+	void BindVertexArray(void) const;
+	void BindVertexBuffer(void) const;
+	void BindIndexBuffer(void) const;
+	void UnbindVertexArray(void) const;
+	void UnbindVertexBuffer(void) const;
+	void UnbindIndexBuffer(void) const;
+	
+	/* c-styled interface (method replacements) */
+	// opengl stuff
+	friend VertexCache* RGL_InitCache(const vertex_t *vertices, uint64_t numVertices,
+		const void *indices, uint64_t numIndices, uint32_t indexType);
+	friend void RGL_ShutdownCache(VertexCache *cache);
+	friend void RGL_SwapVertexData(const vertex_t *vertices, uint64_t numVertices, VertexCache *cache);
+	friend void RGL_SwapIndexData(const void *indices, uint64_t numIndices, VertexCache *cache);
+	friend void RGL_BindCache(const VertexCache *cache);
+	friend void RGL_BindVertexArray(const VertexCache *cache);
+	friend void RGL_BindVertexBuffer(const VertexCache *cache);
+	friend void RGL_BindIndexBuffer(const VertexCache *cache);
+	friend void RGL_UnbindCache(void);
+	friend void RGL_UnbindVertexArray(void);
+	friend void RGL_UnbindVertexBuffer(void);
+	friend void RGL_UnbindIndexBuffer(void);
+    friend void RGL_DrawCache(VertexCache *cache);
+    friend void RGL_ResetVertexData(VertexCache *cache);
+    friend void RGL_ResetIndexData(VertexCache *cache);
+private:
+	typedef union {
+		uint32_t glObj;
+		VkBuffer vkObj[2]; // staging buffer and gpu buffer
+	} cacheObject_t;
+	
+	vertex_t vertices[RENDER_MAX_VERTICES];
+	uint32_t indices[RENDER_MAX_INDICES];
+	
+	uint64_t numVertices;
+	uint64_t numIndices;
+	
+	void *attribs;
+	
+	VkVertexInputBindingDescription attribDescription;
+	
+	// if the buffer has been changed to warrant a gpu buffer swap
+	qboolean vboChanged;
+	qboolean iboChanged;
+	
+	uint32_t vaoId;
+	cacheObject_t vbo;
+	cacheObject_t ibo;
+	
+	uint32_t indexType;
+	uint32_t indexSize;
+	
+	void InitVertexBuffer(void);
+	void InitIndexBuffer(void);
+};
 
-typedef uint32_t glbuffer_t;
+typedef VertexCache vertexCache_t;
 
-typedef struct
-{
-    void* vertexData;
-    uint32_t* indexData;
-    uint32_t numAttribs;
-
-    uint32_t numVertices;
-    uint32_t vboDrawHint;
-
-    uint32_t numIndices;
-    uint32_t iboDrawHint;
-    
-    GLuint vaoId;
-    GLuint vboId;
-    GLuint iboId;
-
-    qboolean dynamicVBO;
-    qboolean dynamicIBO;
-} vertexCache_t;
-
-void R_PushVertexAttrib(vertexCache_t* cache, uint32_t index, uint32_t glType, uint32_t size, uint32_t stride, const void *offset);
-void R_SetIndexData(vertexCache_t* cache, const uint32_t* indices, uint32_t size);
-void R_SetVertexData(vertexCache_t* cache, const void* vertices, uint32_t size);
-vertexCache_t* R_CreateCache(const void* vertices, uint32_t verticesSize, const uint32_t* indices, uint32_t indicesSize, const char *name);
+VertexCache* RGL_InitCache(const vertex_t *vertices, uint64_t numVertices,
+	const void *indices, uint64_t numIndices, uint32_t indexType);
+void RGL_ShutdownCache(VertexCache *cache);
+void RGL_SwapVertexData(const vertex_t *vertices, uint64_t numVertices, VertexCache *cache);
+void RGL_SwapIndexData(const void *indices, uint64_t numIndices, VertexCache *cache);
+void RGL_BindCache(const VertexCache *cache);
+void RGL_BindVertexArray(const VertexCache *cache);
+void RGL_BindVertexBuffer(const VertexCache *cache);
+void RGL_BindIndexBuffer(const VertexCache *cache);
+void RGL_UnbindCache(void);
+void RGL_UnbindVertexArray(void);
+void RGL_UnbindVertexBuffer(void);
+void RGL_UnbindIndexBuffer(void);
+void RGL_DrawCache(VertexCache *cache);
+void RGL_ResetVertexData(VertexCache *cache);
+void RGL_ResetIndexData(VertexCache *cache);
 
 #endif

@@ -3,14 +3,15 @@
 
 #pragma once
 
+#define RENDER_MAX_UNIFORMS 1024
+
 typedef struct
 {
-    nomad_hashtable<const char*, GLint> uniformCache;
+    GLint uniformCache[RENDER_MAX_UNIFORMS];
     GLuint id;
     uint64_t hash;
 } shader_t;
 
-void R_ShaderClear(shader_t* shader);
 shader_t* R_CreateShader(const char *filepath, const char *name);
 GLint R_GetUniformLocation(shader_t* shader, const char *name);
 

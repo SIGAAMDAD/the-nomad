@@ -21,9 +21,6 @@ inline void SwapBytes(void *pv, size_t n)
 #define SWAP(x)
 #endif
 
-#define NUMSECTORS 4
-#define SECTOR_MAX_Y 120
-#define SECTOR_MAX_X 120
 #define MAP_MAX_Y 240
 #define MAP_MAX_X 240
 #endif
@@ -121,7 +118,7 @@ typedef struct
 typedef struct
 {
 	char name[MAX_BFF_CHUNKNAME];
-	char tilemap[NUMSECTORS][SECTOR_MAX_Y][SECTOR_MAX_X];
+	char tilemap[MAP_MAX_Y][MAP_MAX_X];
 	mapspawn_t spawns[MAX_MAP_SPAWNS];
 	maplight_t lights[MAX_MAP_LIGHTS];
 	bff_int_t levelNumber;
@@ -201,6 +198,7 @@ void BFF_CloseArchive(bff_t* archive);
 bff_t* BFF_OpenArchive(const GDRStr& filepath);
 
 bffscript_t* BFF_FetchScript(const char *name);
+bfflevel_t* BFF_FetchLevel(const char *name);
 
 void G_LoadBFF(const GDRStr& bffname);
 

@@ -10,10 +10,13 @@
 
 typedef enum
 {
-    SYS_CON_PRINTF = 0,
-    SYS_CON_ERROR,
+    SYS_COM_PRINTF = 0,
+    SYS_COM_ERROR,
     G_GETTILEMAP,
     G_GETKEYBOARDSTATE,
+    SYS_MEMCPY,
+    SYS_MEMMOVE,
+    SYS_MEMSET,
 
     NUM_SGAME_IMPORT
 } sgameImport_t;

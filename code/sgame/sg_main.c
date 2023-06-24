@@ -1,4 +1,3 @@
-#include "../src/n_shared.h"
 #include "sg_local.h"
 #include "sg_playr.h"
 #include "sg_mob.h"

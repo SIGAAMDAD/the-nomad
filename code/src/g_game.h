@@ -66,6 +66,7 @@ public:
     
     gamestate_t gamestate;
     uint8_t difficulty;
+    glm::ivec3 cameraPos;
 public:
     Game() = default;
     ~Game();

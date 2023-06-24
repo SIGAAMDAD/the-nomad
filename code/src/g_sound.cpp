@@ -62,7 +62,7 @@ void I_CacheAudio(void *bffinfo)
                 info->sounds[i].name, sf_strerror(sf));
         }
 
-        snd_cache[i].sndbuf = (short *)Hunk_TempAlloc(sizeof(short) * fdata.frames * fdata.channels);
+        snd_cache[i].sndbuf = (short *)Mem_Alloc(sizeof(short) * fdata.frames * fdata.channels);
         readcount = sf_read_short(sf, snd_cache[i].sndbuf, sizeof(short) * fdata.frames * fdata.channels);
         if (!readcount) {
             N_Error("I_CacheAudio: libsndfile failed to decode audio chunk %s, libsndfile error: %s",
@@ -82,6 +82,7 @@ void I_CacheAudio(void *bffinfo)
             snd_cache[i].sndbuf, sizeof(short) * fdata.frames * fdata.channels, snd_cache[i].samplerate);
         alSourcei(snd_cache[i].source, AL_BUFFER, snd_cache[i].buffer);
 		alSourcef(snd_cache[i].source, AL_GAIN, snd_musicvol.f);
+        Mem_Free(snd_cache[i].sndbuf);
 
         sndhash[Com_GenerateHashValue(info->sounds[i].name, MAX_SND_HASH)] = &snd_cache[i];
         snd_cache[i].failed = false;

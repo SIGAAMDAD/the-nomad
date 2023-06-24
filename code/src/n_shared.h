@@ -124,9 +124,6 @@ __inline type* PADP(type *base, alignment align)
 #endif
 #undef assert
 
-#define NUMSECTORS 4
-#define SECTOR_MAX_Y 120
-#define SECTOR_MAX_X 120
 #define MAP_MAX_Y 240
 #define MAP_MAX_X 240
 
@@ -202,9 +199,15 @@ GDR_INLINE void __nomad_assert_fail(const char* expression, const char* file, co
 #endif
 
 
+#ifndef Q3_VM
+typedef enum : char
+#else
 typedef enum
+#endif
 {
-	SPR_PLAYR = 0x00,
+	SPR_ROCK = 0x0,
+	SPR_SKYBOX,
+	SPR_PLAYR,
 	SPR_MERC,
 	SPR_WALL,
 	SPR_WATER,
@@ -213,8 +216,6 @@ typedef enum
 	SPR_DOOR_STATIC,
 	SPR_DOOR_OPEN,
 	SPR_DOOR_CLOSE,
-	SPR_ROCK,
-	SPR_CUSTOM,
 
 	NUMSPRITES
 } sprite_t;

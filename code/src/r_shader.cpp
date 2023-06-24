@@ -15,14 +15,16 @@ inline static GLenum ShaderTypeFromString(const eastl::string& type)
 
 GLint R_GetUniformLocation(shader_t* shader, const char *name)
 {
-    if (shader->uniformCache.find(name) != shader->uniformCache.end())
-        return shader->uniformCache[name];
+    uint64_t hash = Com_GenerateHashValue(name, RENDER_MAX_UNIFORMS);
+
+    if (shader->uniformCache[hash] != -1)
+        return shader->uniformCache[hash];
     
     GLint location = glGetUniformLocation(shader->id, name);
     if (location == -1)
         N_Error("R_GetUniformLocation: location was -1 for %s", name);
     
-    shader->uniformCache[name] = location;
+    shader->uniformCache[hash] = location;
     return location;
 }
 
@@ -80,11 +82,6 @@ static GLuint R_CompileShaderSource(const char *src, GLenum type, GLuint id)
     return program;
 }
 
-void R_ShaderClear(shader_t* shader)
-{
-    shader->uniformCache.clear();
-}
-
 shader_t* R_CreateShader(const char* filepath, const char* name)
 {
     shader_t* shader = (shader_t *)Hunk_Alloc(sizeof(shader_t), name, h_low);
@@ -96,7 +93,7 @@ shader_t* R_CreateShader(const char* filepath, const char* name)
     eastl::unordered_map<GLenum, eastl::string> GLSL_Src = R_ParseShader(eastl::string(filebuf));
 
     uint64_t hash = Com_GenerateHashValue(filepath, MAX_FILE_HASH);
-    shader->uniformCache = nomad_hashtable<const char*, GLint>();
+    memset(shader->uniformCache, -1, sizeof(shader->uniformCache));
 
 
     // compile

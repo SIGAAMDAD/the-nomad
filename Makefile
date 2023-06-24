@@ -42,6 +42,7 @@ RENDERGL=\
 	$(O)/rendergl/r_vertexcache.o \
 	$(O)/rendergl/r_texture.o \
 	$(O)/rendergl/r_shader.o \
+	$(O)/rendergl/r_spritesheet.o \
 	$(O)/rendergl/m_renderer.o \
 	$(O)/rendergl/glad.o \
 	$(O)/rendergl/imgui_impl_sdl2.o \
@@ -83,6 +84,8 @@ $(O)/rendergl/r_vertexcache.o: $(SDIR)/src/r_vertexcache.cpp
 $(O)/rendergl/r_texture.o: $(SDIR)/src/r_texture.cpp
 	$(COMPILE_SRC)
 $(O)/rendergl/r_shader.o: $(SDIR)/src/r_shader.cpp
+	$(COMPILE_SRC)
+$(O)/rendergl/r_spritesheet.o: $(SDIR)/src/r_spritesheet.cpp
 	$(COMPILE_SRC)
 $(O)/rendergl/m_renderer.o: $(SDIR)/src/m_renderer.cpp
 	$(COMPILE_SRC)

@@ -6,54 +6,21 @@
 #include "r_shader.h"
 #include "r_framebuffer.h"
 #include "r_texture.h"
+#include "r_spritesheet.h"
 
 #pragma once
 
 void R_Init();
 void R_ShutDown();
 
-struct Vertex
-{
-    glm::vec4 color;
-    glm::vec3 pos;
-    glm::vec2 texcoords;
-    float texindex;
-
-    GDR_INLINE Vertex(const glm::vec3& _pos, const glm::vec4& _color, const glm::vec2& _texcoords)
-        : color(_color), pos(_pos), texcoords(_texcoords)
-    {
-    }
-    GDR_INLINE Vertex(const glm::vec3& _pos, const glm::vec4& _color, const glm::vec2& _texcoords, float _texindex)
-        : color(_color), pos(_pos), texcoords(_texcoords), texindex(_texindex)
-    {
-    }
-    GDR_INLINE Vertex(const glm::vec3& _pos, const glm::vec4& _color)
-        : color(_color), pos(_pos)
-    {
-    }
-    GDR_INLINE Vertex(const glm::vec3& _pos, const glm::vec2& _texcoords)
-        : pos(_pos), texcoords(_texcoords)
-    {
-    }
-    GDR_INLINE Vertex(const glm::vec3& _pos, const glm::vec2& _texcoords, float _texindex)
-        : pos(_pos), texcoords(_texcoords), texindex(_texindex)
-    {
-    }
-    GDR_INLINE Vertex(const glm::vec3& _pos)
-        : color(0.0f), pos(_pos)
-    {
-    }
-    GDR_INLINE Vertex() = default;
-    GDR_INLINE Vertex(const Vertex &) = default;
-    GDR_INLINE Vertex(Vertex &&) = default;
-    GDR_INLINE ~Vertex() = default;
-
-    GDR_INLINE Vertex& operator=(const Vertex &v) {
-        memcpy(this, &v, sizeof(Vertex));
-        return *this;
-    }
-};
-
+#define RENDER_ASSERT(x,...) \
+{\
+    if (!(x)) {\
+        char bigbuffer[1024];\
+        stbsp_snprintf(bigbuffer, sizeof(bigbuffer), __VA_ARGS__);\
+        N_Error("%s: %s",__func__,bigbuffer);\
+    }\
+}
 
 class GPUContext
 {
@@ -116,6 +83,15 @@ public:
         return mvp;
     }
     GDR_INLINE glm::mat4 CalcVPM() const { return m_ProjectionMatrix * m_ViewMatrix; }
+    constexpr GDR_INLINE Camera& operator=(const Camera& other)
+    {
+        m_ProjectionMatrix = other.m_ProjectionMatrix;
+        m_ViewMatrix = other.m_ViewMatrix;
+        m_CameraPos = other.m_CameraPos;
+        m_Rotation = other.m_Rotation;
+        m_ZoomLevel = other.m_ZoomLevel;
+        return *this;
+    }
 
     void ZoomIn(void);
     void ZoomOut(void);
@@ -149,6 +125,10 @@ typedef union gpuContext_u
     VKContext* instance;
 } gpuContext_t;
 
+void WorldToScreen(const glm::vec3& in, glm::vec3& out);
+void RE_DrawPints(SpriteSheet* sheet, vertexCache_t *cache);
+bool R_CullVertex(const glm::vec2& pos);
+
 #define MAX_FBOS 64
 #define MAX_VERTEXCACHES 1024
 #define MAX_SHADERS 1024
@@ -161,7 +141,7 @@ class Renderer
 {
 public:
     gpuContext_t gpuContext;
-    Camera* camera;
+    Camera camera;
     SDL_Window* window;
 
     shader_t* shaders[MAX_SHADERS];
@@ -181,10 +161,6 @@ public:
     Renderer& operator=(Renderer &&) = delete;
 };
 
-void R_BindCache(const vertexCache_t* cache);
-void R_UnbindCache(void);
-
-void R_DrawIndexed(const vertexCache_t* cache, uint32_t count);
 void R_BeginFramebuffer(framebuffer_t* fbo);
 void R_EndFramebuffer(void);
 void R_BindTexture(const texture_t* texture, uint32_t slot = 0);
@@ -192,12 +168,6 @@ void R_UnbindTexture(void);
 void R_UnbindShader(void);
 void R_BindShader(const shader_t* shader);
 void R_UnbindShader(void);
-void R_BindVertexBuffer(const vertexCache_t* cache);
-void R_UnbindVertexBuffer(void);
-void R_BindVertexArray(const vertexCache_t* cache);
-void R_UnbindVertexArray(void);
-void R_BindIndexBuffer(const vertexCache_t* cache);
-void R_UnbindIndexBuffer(void);
 
 extern bool imgui_on;
 
