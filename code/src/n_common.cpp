@@ -25,6 +25,7 @@ static void done(void)
 
 void Com_UpdateEvents(void)
 {
+	EASY_FUNCTION();
     SDL_PumpEvents();
 
 	memset(evState.kbstate, qfalse, sizeof(evState.kbstate));
@@ -94,7 +95,13 @@ void Com_UpdateEvents(void)
 				done();
 				break;
 			case SDL_KEYUP:
-			case SDL_WINDOWEVENT: // ignore (for now)
+				break;
+			case SDL_WINDOWEVENT:
+				switch (evState.event.window.type) {
+				case SDL_WINDOWEVENT_RESIZED:
+					renderer->camera.Resize();
+					break;
+				};
 				break;
 			};
 		}

@@ -7,8 +7,8 @@ VertexCache* RGL_InitCache(const vertex_t *vertices, uint64_t numVertices,
 	VertexCache *cache;
 	uint32_t dataSize;
 	
-	RENDER_ASSERT(numVertices && numVertices < RENDER_MAX_VERTICES, "bad vertex count");
-	RENDER_ASSERT(numIndices && numIndices < RENDER_MAX_INDICES, "bad index count");
+	RENDER_ASSERT(numVertices && numVertices <= RENDER_MAX_VERTICES, "bad vertex count");
+	RENDER_ASSERT(numIndices && numIndices <= RENDER_MAX_INDICES, "bad index count");
 	
 	switch (indexType) {
 	case GL_UNSIGNED_BYTE:
@@ -69,7 +69,8 @@ VertexCache* RGL_InitCache(const vertex_t *vertices, uint64_t numVertices,
 	
 	glBindBufferARB(GL_ARRAY_BUFFER_ARB, cache->vbo.glObj);
 	glBufferDataARB(GL_ARRAY_BUFFER_ARB, sizeof(vertex_t) * RENDER_MAX_VERTICES, NULL, GL_DYNAMIC_DRAW);
-    glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, sizeof(vertex_t) * numVertices, vertices);
+	if (vertices)
+	    glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, sizeof(vertex_t) * numVertices, vertices);
 	
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertex_t), (const void *)offsetof(vertex_t, pos));
@@ -82,7 +83,9 @@ VertexCache* RGL_InitCache(const vertex_t *vertices, uint64_t numVertices,
 	
 	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, cache->ibo.glObj);
 	glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, dataSize * RENDER_MAX_INDICES, NULL, GL_DYNAMIC_DRAW);
-    glBufferSubDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0, dataSize * numIndices, indices);
+    if (indices)
+		glBufferSubDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0, dataSize * numIndices, indices);
+	
 	glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
     glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 	
@@ -104,8 +107,18 @@ void RGL_ShutdownCache(VertexCache* cache)
 
 void RGL_SwapVertexData(const vertex_t *vertices, uint64_t numVertices, VertexCache* cache)
 {
+	EASY_FUNCTION();
 	RENDER_ASSERT(cache, "NULL cache");
 	RENDER_ASSERT(vertices, "NULL vertices");
+
+	if (cache->numVertices + numVertices >= RENDER_MAX_VERTICES) {
+		EASY_BLOCK("OpenGL Swap & Flush");
+		RGL_BindCache(cache);
+		glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, sizeof(vertex_t) * cache->numVertices, cache->vertices);
+		glBufferSubDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0, cache->indexSize * cache->numIndices, cache->indices);
+		glDrawElements(GL_TRIANGLES, cache->numIndices, cache->indexType, NULL);
+		RGL_ResetVertexData(cache);
+	}
 	
     vertex_t *verts = &cache->vertices[cache->numVertices];
     for (uint32_t i = 0; i < numVertices; ++i) {
@@ -119,6 +132,7 @@ void RGL_SwapVertexData(const vertex_t *vertices, uint64_t numVertices, VertexCa
 
 void RGL_SwapIndexData(const void *indices, uint64_t numIndices, VertexCache* cache)
 {
+	EASY_FUNCTION();
 	RENDER_ASSERT(cache, "NULL cache");
 	RENDER_ASSERT(indices, "NULL indices");
 
@@ -149,14 +163,16 @@ void RGL_ResetVertexData(VertexCache *cache)
 
 void RGL_DrawCache(VertexCache *cache)
 {
+	EASY_FUNCTION();
 	RENDER_ASSERT(cache, "NULL cache");
 	
 	RGL_BindCache(cache);
-
-    glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, sizeof(vertex_t) * cache->numVertices, cache->vertices);
-    glBufferSubDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0, cache->indexSize * cache->numIndices, cache->indices);
-
-	glDrawElements(GL_TRIANGLES, cache->numIndices, cache->indexType, NULL);
+	{
+		EASY_BLOCK("OpenGL Swap & Draw");
+	    glBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, sizeof(vertex_t) * cache->numVertices, cache->vertices);
+    	glBufferSubDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0, cache->indexSize * cache->numIndices, cache->indices);
+		glDrawElements(GL_TRIANGLES, cache->numIndices, cache->indexType, NULL);
+	}
 
     RGL_ResetIndexData(cache);
     RGL_ResetVertexData(cache);

@@ -102,6 +102,9 @@ void I_CacheTextures(bffinfo_t *info)
 
 texture_t* R_GetTexture(const char *name)
 {
+	if (!textures[Com_GenerateHashValue(name, MAX_TEXTURES)])
+		N_Error("R_GetTexture: texture chunk %s doesn't exist", name);
+	
     return textures[Com_GenerateHashValue(name, MAX_TEXTURES)];
 }
 

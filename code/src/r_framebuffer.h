@@ -6,12 +6,6 @@
 #include "n_scf.h"
 #include "r_texture.h"
 
-#define GL_NO_DEPTHATTACHMENT 3
-#define GL_NO_COLORATTACHMENT 3
-
-#define GL_TEXTURE_ATTACHMENT 0
-#define GL_RENDERBUFFER_ATTACHMENT 1
-
 typedef struct
 {
     vertexCache_t* cache;
@@ -19,14 +13,16 @@ typedef struct
     uint32_t height;
     uint32_t width;
 
-    GLuint fboId;
-    GLuint colorId;
-    GLuint depthId;
+    uint32_t fboId;
+    uint32_t usedColors;
+    uint32_t colorIds[32];
+    uint32_t depthId;
 } framebuffer_t;
 
 void RE_InitFramebuffers(void);
-void R_BeginFramebuffer(void);
-void R_EndFramebuffer(void);
+void RE_BeginFramebuffer(void);
+void RE_EndFramebuffer(void);
+void RE_SetScreenTexture(const texture_t *tex);
 void RE_ShutdownFramebuffers(void);
 
 #endif

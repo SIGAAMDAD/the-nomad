@@ -47,6 +47,7 @@ extern cvar_t c_godmode;
 extern cvar_t c_infinite_ammo;
 extern cvar_t c_bottomless_clip;
 extern cvar_t c_devmode;
+extern cvar_t c_cheatsallowed;
 
 typedef enum
 {

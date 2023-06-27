@@ -24,6 +24,7 @@ LDLIBS        =\
 			-lbz2 \
 			-lSDL3 \
 			-lpthread \
+			-leasy_profiler \
 
 
 .PHONY: all clean targets clean.objs clean.exe

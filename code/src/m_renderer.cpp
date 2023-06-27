@@ -7,6 +7,20 @@ static constexpr const char *TEXMAP_PATH = "Files/gamedata/RES/texmap.bmp";
 
 Renderer* renderer;
 
+cvar_t r_ticrate           = {"r_ticrate", "", 0.0f, 35, qfalse, TYPE_INT, CVAR_SAVE};
+cvar_t r_texture_magfilter = {"r_texture_magfilter", "GL_NEAREST", 0.0f, 0, qfalse, TYPE_STRING, CVAR_SAVE};
+cvar_t r_texture_minfilter = {"r_texture_minfilter", "GL_LINEAR_MIPMAP_LINEAR", 0.0f, 0, qfalse, TYPE_STRING, CVAR_SAVE};
+cvar_t r_screenheight      = {"r_screenheight", "", 0.0f, 720, qfalse, TYPE_INT, CVAR_SAVE | CVAR_ROM};
+cvar_t r_screenwidth       = {"r_screenwidth", "", 0.0f, 1024, qfalse, TYPE_INT, CVAR_SAVE | CVAR_ROM};
+cvar_t r_vsync             = {"r_vsync", "", 0.0f, 0, qtrue, TYPE_BOOL, CVAR_SAVE};
+cvar_t r_fullscreen        = {"r_fullscreen", "", 0.0f, 0, qtrue, TYPE_BOOL, CVAR_SAVE};
+cvar_t r_native_fullscreen = {"r_native_fullscreen", "", 0.0f, 0, qfalse, TYPE_BOOL, CVAR_SAVE};
+cvar_t r_hidden            = {"r_hidden", "", 0.0f, 0, qfalse, TYPE_BOOL, CVAR_SAVE};
+cvar_t r_drawFPS           = {"r_drawFPS", "", 0.0f, 0, qfalse, TYPE_BOOL, CVAR_SAVE};
+cvar_t r_renderapi         = {"r_renderapi", "", 0.0f, (int32_t)R_OPENGL, qfalse, TYPE_INT, CVAR_SAVE};
+cvar_t r_msaa_amount       = {"r_msaa_amount", "", 0.0f, 2, qfalse, TYPE_INT, CVAR_SAVE};
+cvar_t r_dither            = {"r_dither", "", 0.0f, 0, qfalse, TYPE_BOOL, CVAR_SAVE};
+
 bool imgui_on = false;
 
 static void R_InitVK(void)
@@ -108,6 +122,17 @@ void RE_InitSettings_f(void)
         glDisable(GL_DITHER);
 }
 
+void RE_SetDefaultState(void)
+{
+    glEnable(GL_MULTISAMPLE_ARB);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+
+    glDisable(GL_DITHER);
+    glDisable(GL_CULL_FACE);
+}
+
 static void R_InitGL(void)
 {
     renderer->gpuContext.context = SDL_GL_CreateContext(renderer->window);
@@ -117,10 +142,10 @@ static void R_InitGL(void)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-//    SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
+//   SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 16);
+//    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+//    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
 
     if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
         N_Error("R_Init: failed to initialize OpenGL (glad)");
@@ -228,12 +253,14 @@ static Uint32 R_GetWindowFlags(void)
 {
     Uint32 flags = 0;
 
-    if (N_strcmp(r_renderapi.s, "R_OPENGL"))
+    if (r_renderapi.i == R_OPENGL)
         flags |= SDL_WINDOW_OPENGL;
-    else if (N_strcmp(r_renderapi.s, "R_SDL2"))
+    else if (r_renderapi.i == R_SDL2)
         N_Error("R_Init: SDL2 rendering isn't yet supported");
-    else if (N_strcmp(r_renderapi.s, "R_VULKAN"))
+    else if (r_renderapi.i == R_VULKAN)
         N_Error("R_Init: Vulkan rendering isn't yet supported, will be though very soon");
+    else
+        N_Error("R_Init: unkown rendering api %i", r_renderapi.i);
     
     if (r_hidden.b)
         flags |= SDL_WINDOW_HIDDEN;
@@ -247,10 +274,15 @@ static Uint32 R_GetWindowFlags(void)
 
 static bool sdl_on = false;
 
+Renderer::Renderer()
+    : camera(-3.0f, 3.0f, -3.0f, 3.0f)
+{
+}
+
 void R_Init(void)
 {
     renderer = (Renderer *)Hunk_Alloc(sizeof(Renderer), "renderer", h_high);
-    assert(renderer);
+    new (renderer) Renderer();
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
         N_Error("R_Init: failed to initialize SDL2, error message: %s",
             SDL_GetError());
@@ -277,6 +309,9 @@ void R_Init(void)
 
     R_InitImGui();
     sdl_on = true;
+
+    EASY_PROFILER_ENABLE;
+    profiler::startListen();
 }
 
 void R_ShutDown()
@@ -292,6 +327,8 @@ void R_ShutDown()
         ImGui::DestroyContext();
         imgui_on = false;
     }
+    profiler::dumpBlocksToFile("gamedata/profiler.prof");
+    profiler::stopListen();
 
     RE_ShutdownFramebuffers();
     for (uint32_t i = 0; i < renderer->numShaders; i++) {
@@ -387,17 +424,45 @@ void DBG_GL_ErrorCallback(GLenum source, GLenum type, GLuint id, GLenum severity
 
 #endif
 
+static void R_CameraInfo_f(void)
+{
+    Con_Printf("\n<---------- Camera Info ---------->");
+    Con_Printf(
+        "Rotation (Degrees): %f\n"
+        "Rotation (Radians): %f\n"
+        "Position: (x) %f, (y) %f, (z) %f\n"
+        "Zoom Level: %f\n",
+    renderer->camera.GetRotation(), glm::radians(renderer->camera.GetRotation()),
+    renderer->camera.GetPos().x, renderer->camera.GetPos().y, renderer->camera.GetPos().z,
+    renderer->camera.GetZoom());
+}
+
 Camera::Camera(float left, float right, float bottom, float top)
     : m_ProjectionMatrix(glm::ortho(left, right, bottom, top, -1.0f, 1.0f)), m_ViewMatrix(1.0f)
 {
+    glm::mat4 transform = glm::translate(glm::mat4(1.0f), m_CameraPos)
+                        * glm::rotate(glm::mat4(1.0f), glm::radians(m_Rotation), glm::vec3(0, 0, 1));
+    
+    m_ViewMatrix = glm::inverse(transform);
     m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
+    m_ZoomLevel = left;
     m_CameraPos = glm::vec3(0.0f, 0.0f, 0.0f);
+    m_AspectRatio = r_screenwidth.i / r_screenheight.i;
+
+    Cmd_AddCommand("gfx_camerainfo", R_CameraInfo_f);
+}
+
+void Camera::SetProjection(float left, float right, float bottom, float top)
+{
+    m_ProjectionMatrix = glm::ortho(left, right, bottom, top);
+    CalculateViewMatrix();
 }
 
 void Camera::CalculateViewMatrix()
 {
-    glm::mat4 transform = glm::translate(glm::mat4(1.0f), m_CameraPos) *
-        glm::rotate(glm::mat4(1.0f), glm::radians(m_Rotation), glm::vec3(0, 0, 1));
+    EASY_FUNCTION();
+    glm::mat4 transform = glm::translate(glm::mat4(1.0f), m_CameraPos)
+                        * glm::rotate(glm::mat4(1.0f), glm::radians(m_Rotation), glm::vec3(0, 0, 1));
     
     m_ViewMatrix = glm::inverse(transform);
     m_ViewProjectionMatrix = m_ProjectionMatrix * m_ViewMatrix;
@@ -406,17 +471,18 @@ void Camera::CalculateViewMatrix()
 void Camera::ZoomIn(void)
 {
     m_ZoomLevel -= 0.05f;
-    m_ProjectionMatrix = glm::ortho(m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel, -m_ZoomLevel);
+    SetProjection(-m_ZoomLevel, m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
 }
+
 void Camera::ZoomOut(void)
 {
     m_ZoomLevel += 0.05f;
-    m_ProjectionMatrix = glm::ortho(m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel, -m_ZoomLevel);
+    SetProjection(-m_ZoomLevel, m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
 }
 
 void Camera::RotateRight(void)
 {
-    m_Rotation += m_CameraRotationSpeed;
+    m_Rotation += 0.75f;
     if (m_Rotation > 180.0f) {
         m_Rotation -= 360.0f;
     }
@@ -424,9 +490,10 @@ void Camera::RotateRight(void)
         m_Rotation += 360.0f;
     }
 }
+
 void Camera::RotateLeft(void)
 {
-    m_Rotation -= m_CameraRotationSpeed;
+    m_Rotation -= 0.75f;
     if (m_Rotation > 180.0f) {
         m_Rotation -= 360.0f;
     }
@@ -434,25 +501,47 @@ void Camera::RotateLeft(void)
         m_Rotation += 360.0f;
     }
 }
+
+void Camera::Resize(void)
+{
+    m_AspectRatio = r_screenwidth.i / r_screenheight.i;
+    SetProjection(-m_AspectRatio * m_ZoomLevel, m_AspectRatio * m_ZoomLevel, -m_ZoomLevel, m_ZoomLevel);
+}
+
 void Camera::MoveUp(void)
 {
-    m_CameraPos.x += -sin(glm::radians(m_Rotation)) * m_CameraSpeed;
-    m_CameraPos.y += cos(glm::radians(m_Rotation)) * m_CameraSpeed;
+    m_CameraPos.x += -sin(glm::radians(m_Rotation)) * 0.25f;
+    m_CameraPos.y += cos(glm::radians(m_Rotation)) * 0.25f;
+
+    if (renderer->camera.GetPos().y >= 4.0f)
+        renderer->camera.GetPos().y = 4.0f;
 }
+
 void Camera::MoveDown(void)
 {
-    m_CameraPos.x -= -sin(glm::radians(m_Rotation)) * m_CameraSpeed;
-    m_CameraPos.y -= cos(glm::radians(m_Rotation)) * m_CameraSpeed;
+    m_CameraPos.x -= -sin(glm::radians(m_Rotation)) * 0.25f;
+    m_CameraPos.y -= cos(glm::radians(m_Rotation)) * 0.25f;
+
+    if (renderer->camera.GetPos().y <= 2.7f)
+        renderer->camera.GetPos().y = 2.6f;
 }
+
 void Camera::MoveLeft(void)
 {
-    m_CameraPos.x -= cos(glm::radians(m_Rotation)) * m_CameraSpeed;
-    m_CameraPos.y -= sin(glm::radians(m_Rotation)) * m_CameraSpeed;
+    m_CameraPos.x -= cos(glm::radians(m_Rotation)) * 0.25f;
+    m_CameraPos.y -= sin(glm::radians(m_Rotation)) * 0.25f;
+
+    if (renderer->camera.GetPos().x <= -2.5f)
+        renderer->camera.GetPos().x = -2.4f;
 }
+
 void Camera::MoveRight(void)
 {
-    m_CameraPos.x += cos(glm::radians(m_Rotation)) * m_CameraSpeed;
-    m_CameraPos.y += sin(glm::radians(m_Rotation)) * m_CameraSpeed;
+    m_CameraPos.x += cos(glm::radians(m_Rotation)) * 0.25f;
+    m_CameraPos.y += sin(glm::radians(m_Rotation)) * 0.25f;
+
+    if (renderer->camera.GetPos().x >= 2.3f)
+        renderer->camera.GetPos().x = 2.2f;
 }
 
 #if 0
@@ -584,83 +673,169 @@ bool R_CullVertex(const glm::vec2& pos)
 
     if ((pos.x <= startpos.x || pos.y <= startpos.y) || (pos.x >= endpos.x || pos.y >= endpos.y))
         return false;
-    else
-        return true;
+    
+    return true;
 }
 
-static vertexCache_t *pintCache;
-void R_InitPints(void)
+typedef struct
 {
-    vertex_t *vertices = (vertex_t *)alloca((64 * 4 * 24 * 4) * sizeof(vertex_t));
-    vertex_t *vert = vertices;
-    uint32_t numVerts = 64 * 4 * 24 * 4;
+    const uint32_t maxQuads = RENDER_MAX_QUADS;
+    const uint32_t maxVertices = RENDER_MAX_VERTICES;
+    const uint32_t maxIndices = RENDER_MAX_INDICES;
 
-    for (uint32_t y = 0; y < 64; y++) {
-        for (uint32_t x = 0; x < 24; x++) {
-            
-        }
+    uint32_t *indices;
+    uint32_t numSprites;
+    uint32_t numPints;
+
+    vertex_t *pintVerts;
+    shader_t *pintShader;
+    shader_t *spriteShader;
+    vertexCache_t *pintCache;
+    vertexCache_t *spriteCache;
+    SpriteSheet *sprSheet;
+} frameData_t;
+
+static frameData_t frame;
+
+void RE_InitFrameData(void)
+{
+    frame.indices = (uint32_t *)Hunk_Alloc(sizeof(uint32_t) * frame.maxIndices, "frameIndices", h_low);
+    uint32_t offset = 0;
+    for (uint32_t i = 0; i < frame.maxIndices; i += 6) {
+        frame.indices[i + 0] = offset + 0;
+        frame.indices[i + 1] = offset + 1;
+        frame.indices[i + 2] = offset + 2;
+
+        frame.indices[i + 3] = offset + 2;
+        frame.indices[i + 4] = offset + 3;
+        frame.indices[i + 5] = offset + 0;
+
+        offset += 4;
     }
+
+    frame.spriteCache = RGL_InitCache(NULL, RENDER_MAX_VERTICES, NULL, RENDER_MAX_INDICES, GL_UNSIGNED_INT);
+    frame.spriteShader = R_CreateShader("gamedata/sprite.glsl", "spriteShader");
+    frame.sprSheet = CONSTRUCT(SpriteSheet, "spriteSheet", "NMTEXSHEET", glm::vec2(16.0f, 16.0f), glm::vec2(256, 256), NUMSPRITES);
+
+    frame.pintVerts = (vertex_t *)Hunk_Alloc(sizeof(vertex_t) * (64 * 24 * 4), "pintVerts", h_low);
+    frame.pintCache = RGL_InitCache(NULL, MAP_MAX_Y * MAP_MAX_X * 4, NULL, MAP_MAX_Y * MAP_MAX_X * 6, GL_UNSIGNED_INT);
+
+    RGL_ResetVertexData(frame.spriteCache);
+    RGL_ResetVertexData(frame.pintCache);
+    RGL_ResetIndexData(frame.spriteCache);
+    RGL_ResetIndexData(frame.pintCache);
+
+    frame.sprSheet->AddSprite(SPR_ROCK, { 0, 0 });
+    frame.sprSheet->AddSprite(SPR_SKYBOX, { 1, 0 });
+    frame.sprSheet->AddSprite(SPR_PLAYR, { 2, 0 });
 }
 
-void RE_DrawPints(SpriteSheet* sheet, vertexCache_t *cache)
+void RE_CmdDrawSprite(sprite_t spr, const glm::vec2& pos, const glm::vec2& size)
 {
-    const glm::ivec2 endpos = glm::ivec2(
-        Game::Get()->cameraPos.x + 32,
-        Game::Get()->cameraPos.y + 12
-    );
-    const glm::ivec2 startpos = glm::ivec2(
-        Game::Get()->cameraPos.x - 32,
-        Game::Get()->cameraPos.y - 12
-    );
+    frame.sprSheet->DrawSprite(spr, frame.spriteCache, pos, size);
+    frame.numSprites++;
+}
 
+static void RE_CmdDrawPint(const glm::vec2& pos, sprite_t spr)
+{
+    const glm::vec2* coords = frame.sprSheet->GetSpriteCoords(SPR_ROCK);
     const glm::vec4 positions[] = {
         glm::vec4( 0.5f,  0.5f, 0.0f, 1.0f),
         glm::vec4( 0.5f, -0.5f, 0.0f, 1.0f),
         glm::vec4(-0.5f, -0.5f, 0.0f, 1.0f),
         glm::vec4(-0.5f,  0.5f, 0.0f, 1.0f),
     };
-    
-    glm::mat4 model;
-    glm::mat4 mvp;
-    vertex_t *vertices = (vertex_t *)alloca(sizeof(vertex_t) * (64 * 24 * 4)); // hopefully no stack overflow
-    vertex_t *vert = vertices;
+    const glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, 0.0f));
+//                        * glm::scale(glm::mat4(1.0f), glm::vec3(0.0625f, 0.0625f, 0.0f)); // 16x16 texture sprite pints
+    const glm::mat4 mvp = renderer->camera.GetProjection() * renderer->camera.GetViewMatrix() * model;
+    vertex_t verts[4];
 
-    for (int32_t y = startpos.y; y <= endpos.y; ++y) {
-        for (int32_t x = startpos.x; x <= startpos.x; ++x) {
-            glm::vec3 pos = glm::vec3(y, x, 0.0f);
-            //WorldToScreen(pos, pos);
-            
-            model = glm::translate(glm::mat4(1.0f), pos);
+    for (uint32_t i = 0; i < 4; ++i) {
+        verts[i].pos = mvp * positions[i];
+        verts[i].texcoords = coords[i];
+        verts[i].color = glm::vec4(0.0f);
+    }
+    RGL_SwapVertexData(verts, 4, frame.pintCache);
+    frame.numPints++;
+}
+
+const uint32_t width = 36;
+const uint32_t height = 24;
+
+void RE_DrawPints(void)
+{
+    EASY_FUNCTION();
+    int32_t y, x;
+    glm::mat4 mvp, model;
+    const glm::ivec2 start = glm::ivec2(
+        Game::Get()->cameraPos.x - 32,
+        Game::Get()->cameraPos.y - 12
+    );
+    const glm::ivec2 end = glm::ivec2(
+        Game::Get()->cameraPos.x + 32,
+        Game::Get()->cameraPos.y + 12
+    );
+    const uint32_t from = width * 0.25f;
+    const float pintVertexWidth = 0.5f;
+    const glm::vec4 positions[] = {
+        glm::vec4( pintVertexWidth,  pintVertexWidth, 0.0f, 1.0f),
+        glm::vec4( pintVertexWidth, -pintVertexWidth, 0.0f, 1.0f),
+        glm::vec4(-pintVertexWidth, -pintVertexWidth, 0.0f, 1.0f),
+        glm::vec4(-pintVertexWidth,  pintVertexWidth, 0.0f, 1.0f)
+    };
+    vertex_t *verts = frame.pintVerts;
+
+    // render the top quad
+    for (y = 0; y < height; y++) {
+        for (x = 0; x < width; x++) {
+            model = glm::translate(glm::mat4(1.0f), glm::vec3(x - width / 2.0f, height - y, 0.0f));
             mvp = renderer->camera.GetProjection() * renderer->camera.GetViewMatrix() * model;
 
-            sprite_t spr;
-            if ((!y || !x) || (y >= 240 || x >= 240))
-                spr = SPR_SKYBOX;
-            else
-                spr = Game::Get()->c_map[y][x];
-            
-            const glm::vec2* coords = sheet->GetSpriteCoords(spr);
             for (uint32_t i = 0; i < 4; ++i) {
-                vert[y + x + i].pos = mvp * positions[i];
-                vert[y + x + i].texcoords = coords[i];
-                vert[y + x + i].color = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+                verts->pos = mvp * positions[i];
+                verts->texcoords = frame.sprSheet->GetSpriteCoords(SPR_ROCK)[i];
+                verts->color = glm::vec4(0.0f);
+                verts++;
             }
-            vert += 4;
         }
     }
-    RGL_SwapVertexData(vertices, 64 * 24 * 4, cache);
 }
 
-#if 0
-void R_BeginFramebuffer(framebuffer_t* fbo)
+void RE_BeginFrame(void)
 {
-    R_SetFramebuffer(fbo);
+    EASY_FUNCTION();
+    RE_SetDefaultState();
+    renderer->camera.CalculateViewMatrix();
+
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glViewport(0, 0, r_screenwidth.i, r_screenheight.i);
 }
-void R_EndFramebuffer(void)
+
+void RE_EndFrame(void)
 {
-    R_SetFramebuffer(NULL);
+    EASY_FUNCTION();
+    R_BindShader(frame.spriteShader);
+    R_SetMat4(frame.spriteShader, "u_ViewProjection", renderer->camera.GetVPM());
+    frame.sprSheet->BindSheet();
+    
+    RGL_ResetVertexData(frame.pintCache);
+    RGL_ResetIndexData(frame.pintCache);
+    RE_DrawPints();
+    RGL_SwapIndexData(frame.indices, width * height * 6, frame.pintCache);
+    RGL_SwapVertexData(frame.pintVerts, width * height * 4, frame.pintCache);
+    RGL_DrawCache(frame.pintCache);
+
+    // draw all the sprites over the pints
+    RGL_ResetIndexData(frame.spriteCache);
+    RGL_SwapIndexData(frame.indices, frame.numSprites * 6, frame.spriteCache);
+    RGL_DrawCache(frame.spriteCache);
+
+    frame.numSprites = 0;
+    frame.numPints = 0;
+    frame.sprSheet->UnbindSheet();
+    R_UnbindShader();
 }
-#endif
+
 
 void R_BindTexture(const texture_t* texture, uint32_t slot)
 {

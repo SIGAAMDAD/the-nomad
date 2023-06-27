@@ -13,7 +13,9 @@ static eastl::vector<char> con_buffer;
 
 void Con_ClearBuffer(const char *msg, int length)
 {
+    EASY_FUNCTION();
     if (con_buffer.size() > MAX_BUFFER_SIZE) {
+        EASY_BLOCK("Console Buffer Resize");
         eastl::vector<char>::iterator ptr = con_buffer.end() - MAX_BUFFER_SIZE;
         while (ptr != con_buffer.end()) {
             if (*ptr == '\n') {
@@ -30,6 +32,7 @@ void Con_ClearBuffer(const char *msg, int length)
 
 void Con_Printf(loglevel_t level, const char *fmt, ...)
 {
+    EASY_FUNCTION();
     if (level == DEV) {
         fprintf(stdout, "DEV: ");
     }
@@ -59,6 +62,7 @@ void Con_Printf(loglevel_t level, const char *fmt, ...)
 
 void Con_Printf(const char *fmt, ...)
 {
+    EASY_FUNCTION();
     va_list argptr;
     int length;
     char msg[MAX_MSG_SIZE];
@@ -77,12 +81,14 @@ void Con_Printf(const char *fmt, ...)
 
 static void Con_Clear_f(void)
 {
+    EASY_FUNCTION();
     con_buffer.clear();
     con_buffer.reserve(MAX_BUFFER_SIZE);
 }
 
 static void Con_ProcessInput(void)
 {
+    EASY_FUNCTION();
     if (!console_open)
         return; // nothing to process
     
@@ -132,14 +138,15 @@ void Con_Error(const char *fmt, ...)
 }
 
 #define MAX_CVAR_HASH 2048
-static cvar_t cvar_list{0};
+static cvar_t cvar_list;
+static uint64_t cvar_count;
 
 cvar_t* Cvar_Find(const char *name)
 {
     cvar_t *cvar;
-
+    
     for (cvar = &cvar_list; cvar; cvar = cvar->next) {
-        if (N_strneq(cvar->name, name, sizeof(cvar->name))) {
+        if (N_strcmp(cvar->name, name) == 1) {
             return cvar;
         }
     }
@@ -181,6 +188,46 @@ static void Cvar_Set(const char *name, const char *value)
         }
         cvar->f = f;
     }
+}
+
+void Cvar_Reset(const char *name)
+{
+    cvar_t *cvar;
+
+    cvar = Cvar_Find(name);
+    if (!cvar) {
+        Con_Printf("Cvar_Reset: cvar %s doesn't exist", name);
+        return;
+    }
+    
+    if (cvar->flags & CVAR_DEV && !c_devmode.b) {
+        Con_Printf("Cvar_Reset: cannot change value of a devmode only variable when not in devmode");
+        return;
+    }
+    if (cvar->flags & CVAR_CHEAT && !c_cheatsallowed.b) {
+        Con_Printf("Cvar_Reset: cheats are currently disabled");
+        return;
+    }
+    if (cvar->flags & CVAR_ROM) {
+        Con_Printf("Cvar_Reset: cannot change read-only cvar %s", name);
+        return;
+    }
+
+    switch (cvar->type) {
+    case TYPE_BOOL:
+        cvar->b = qfalse;
+        break;
+    case TYPE_FLOAT:
+        cvar->f = 0.0f;
+        break;
+    case TYPE_INT:
+        cvar->i = 0;
+        break;
+    case TYPE_STRING:
+        memset(cvar->s, 0, sizeof(cvar->s));
+        N_strcpy(cvar->s, "null");
+        break;
+    };
 }
 
 static void Cvar_Print(const cvar_t *var)
@@ -246,6 +293,7 @@ const char *Cvar_GetValue(const char *name)
 const char *Cvar_GetValue(const cvar_t* cvar)
 {
     static char str[64];
+    memset(str, 0, sizeof(str));
     switch (cvar->type) {
     case TYPE_BOOL:
         if (cvar->b)
@@ -257,10 +305,10 @@ const char *Cvar_GetValue(const cvar_t* cvar)
         snprintf(str, 64, "%i", cvar->i);
         break;
     case TYPE_FLOAT:
-        snprintf(str, 64, "%f", cvar->f);
+        snprintf(str, 64, "%6.03f", cvar->f);
         break;
     case TYPE_STRING:
-        N_strncpy(str, cvar->s, strlen(cvar->s));
+        N_strncpy(str, cvar->s, 63);
         break;
     };
 
@@ -287,19 +335,19 @@ static void Cvar_Print_f(void)
 		Con_Printf("Cvar '%s' does not exist", name);
 }
 
-void Cvar_RegisterName(const char *name, const char *value, cvartype_t type, qboolean save)
+void Cvar_RegisterName(const char *name, const char *value, cvartype_t type, int32_t flags)
 {
     cvar_t* cvar;
 
     if (Cvar_Find(name)) {
-        Con_Printf("Cvar_Register: cvar %s already defined", name);
         return;
     }
 
     for (cvar = &cvar_list; cvar->next; cvar = cvar->next);
     cvar->next = (cvar_t *)Z_Malloc(sizeof(*cvar), TAG_STATIC, &cvar->next, "cvar");
     cvar = cvar->next;
-
+    
+    cvar->flags = flags;
     N_strncpy(cvar->name, name, sizeof(cvar->name));
     cvar->name[sizeof(cvar->name) - 1] = '\0';
 
@@ -324,8 +372,8 @@ void Cvar_RegisterName(const char *name, const char *value, cvartype_t type, qbo
         break;
     };
 
+    cvar_count++;
     cvar->type = type;
-    cvar->save = save;
 }
 
 void Cvar_ChangeValue(const char *name, const char *value)
@@ -337,6 +385,22 @@ void Cvar_ChangeValue(const char *name, const char *value)
         Con_Printf("WARNING: attempting to change the value of non-existent cvar %s", name);
         return;
     }
+
+    if (cvar->flags & CVAR_ROM) {
+        if (!c_devmode.b) {
+            Con_Printf("Cvar_ChangeValue: cannot change read-only cvar when not in dev mode");
+            return;
+        }
+    }
+    if (cvar->flags & CVAR_DEV && !c_devmode.b) {
+        Con_Printf("Cvar_ChangeValue: cannot change devmode cvar when not in devmode");
+        return;
+    }
+    if (cvar->flags & CVAR_CHEAT && !c_cheatsallowed.b) {
+        Con_Printf("Cvar_ChangeValue: cheats are currently disabled");
+        return;
+    }
+
     switch (cvar->type) {
     case TYPE_BOOL:
         if (N_strneq("true", value, 4))
@@ -359,18 +423,94 @@ void Cvar_ChangeValue(const char *name, const char *value)
     };
 }
 
-void Cvar_Register(cvar_t* cvar)
+static void Cvar_ChangeValue(cvar_t *cvar, const char *value)
 {
-    cvar_t* other;
-
-    if (Cvar_Find(cvar->name)) {
-        Con_Printf("Cvar_Register: cvar %s already defined", cvar->name);
+    if (cvar->flags & CVAR_ROM) {
+        if (!c_devmode.b) {
+            Con_Printf("Cvar_ChangeValue: cannot change read-only cvar when not in dev mode");
+            return;
+        }
+    }
+    if (cvar->flags & CVAR_DEV && !c_devmode.b) {
+        Con_Printf("Cvar_ChangeValue: cannot change devmode cvar when not in devmode");
+        return;
+    }
+    if (cvar->flags & CVAR_CHEAT && !c_cheatsallowed.b) {
+        Con_Printf("Cvar_ChangeValue: cheats are currently disabled");
         return;
     }
 
-    for (other = &cvar_list; other->next; other = other->next);
+    switch (cvar->type) {
+    case TYPE_BOOL:
+        if (N_strneq("true", value, 4))
+            cvar->b = qtrue;
+        else
+            cvar->b = qfalse;
+        break;
+    case TYPE_INT:
+        cvar->i = N_atoi(value);
+        break;
+    case TYPE_FLOAT:
+        cvar->f = N_atof(value);
+        break;
+    case TYPE_STRING:
+        if (strlen(value) >= 64)
+            N_Error("Cvar_RegisterName: cvar values musn't be greater than 64 characters long");
+        N_strncpy(cvar->s, value, 63);
+        cvar->s[63] = '\0';
+        break;
+    };
+}
 
-    other->next = cvar;
+// Cvar_ValueCheck: if the value param is different from the given cvar's value, change it, otherwise, return
+static void Cvar_ValueCheck(cvar_t *cvar, const char *value)
+{
+    switch (cvar->type) {
+    case TYPE_BOOL:
+        if ((qboolean)N_strtobool(value) != cvar->b)
+            cvar->b = (qboolean)N_strtobool(value);
+        break;
+    case TYPE_INT:
+        if (N_atoi(value) != cvar->i)
+            cvar->i = N_atoi(value);
+        break;
+    case TYPE_FLOAT:
+        if (N_atof(value) != cvar->f)
+            cvar->f = N_atof(value);
+        break;
+    case TYPE_STRING: {
+        if (strlen(value) >= 64)
+            N_Error("Cvar_RegisterName: cvar values musn't be greater than 64 characters long");
+        if (!N_strncmp(cvar->s, value, sizeof(cvar->s))) {
+            N_strncpy(cvar->s, value, 63);
+            cvar->s[63] = '\0';
+        }
+        break; }
+    };
+}
+
+void Cvar_Register(cvar_t* cvar, const char *value)
+{
+    cvar_t* other;
+
+    other = Cvar_Find(cvar->name);
+    if (other) { // already exists
+        Con_Printf("Cvar_Register: cvar %s already exists", cvar->name);
+        if (value)
+            Cvar_ValueCheck(cvar, value);
+        return;
+    }
+    for (other = &cvar_list;; other = other->next) {
+        if (!other->next) {
+            other->next = cvar;
+            break;
+        }
+    }
+
+    cvar_count++;
+    cvar->next = NULL;
+    if (value)
+        Cvar_ValueCheck(cvar, value);
 }
 
 #define DEFAULT_CFG_NAME "nomadconfig.scf"
@@ -379,28 +519,133 @@ static void Cvar_WriteCfg_f(void)
 {
     cvar_t* cvar;
 
-    json data;
-
-//    for (cvar = &cvar_list; cvar; cvar = cvar->next) {
-//        data[cvar->name] = Cvar_GetValue(cvar);
-//    }
-    for (cvar = G_GetCvars()[0]; cvar; cvar = cvar->next) {
-        data[cvar->name] = Cvar_GetValue(cvar);
-    }
-
     file_t out = FS_FOpenWrite("default.scf");
     if (out == FS_INVALID_HANDLE) {
         N_Error("FS_FOpenWrite: failed to open write stream for default.scf");
     }
-    FS_Write(data.dump().c_str(), data.dump().size() + 1, out);
+    FS_Write("{\n", 2, out);
+    for (cvar = cvar_list.next; cvar; cvar = cvar->next) {
+        if (!(cvar->flags & CVAR_SAVE))
+            continue; // don't write it
+
+        char buffer[256];
+        snprintf(buffer, sizeof(buffer), "\t\"%s\": \"%s\"", cvar->name, Cvar_GetValue(cvar));
+        FS_Write(buffer, strlen(buffer), out);
+        if (cvar->next) { // not the end of the list
+            FS_Write(",\n", 2, out);
+        }
+        else {
+            FS_Write("\n", 1, out);
+        }
+    }
+    FS_Write("}\n", 2, out);
     FS_FClose(out);
 }
 
 static void Cvar_List_f(void)
 {
-    for (cvar_t *cvar = &cvar_list; cvar; cvar = cvar->next) {
-        Con_Printf("%8s = %8s", cvar->name, Cvar_GetValue(cvar));
+    for (cvar_t *cvar = cvar_list.next; cvar; cvar = cvar->next) {
+        Con_Printf("%s%24 = %s", cvar->name, Cvar_GetValue(cvar));
     }
+}
+
+static cvartype_t Cvar_StringToType(const char *str)
+{
+    if (N_strcmp("boolean", str) == 1) return TYPE_BOOL;
+    else if (N_strcmp("float", str) == 1) return TYPE_FLOAT;
+    else if (N_strcmp("integer", str) == 1) return TYPE_INT;
+    else if (N_strcmp("string", str) == 1) return TYPE_STRING;
+
+    Con_Printf("Unkown cvar type string: %s", str);
+    return (cvartype_t)-1;
+}
+
+static const char *Cvar_TypeToString(const cvar_t *cvar)
+{
+    switch (cvar->type) {
+    case TYPE_BOOL: return "boolean";
+    case TYPE_FLOAT: return "float";
+    case TYPE_INT: return "integer";
+    case TYPE_STRING: return "string";
+    };
+    N_Error("unkown cvar type for cvar %s", cvar->name);
+}
+
+static void Cvar_Set_f(void)
+{
+    uint32_t c;
+    const char *cmd;
+    cvar_t *cvar;
+
+    c = Cmd_Argc();
+    cmd = Cmd_Argv(0);
+
+    if (c < 2) {
+        Con_Printf("usage: %s <variable> <type> <value>", cmd);
+        return;
+    }
+    if (c == 2) {
+        Cvar_Print_f();
+        return;
+    }
+
+    cvar = Cvar_Find(Cmd_Argv(1));
+    if (!cvar) {
+        if (Cvar_StringToType(Cmd_Argv(2)) == -1) {
+            Con_Printf("Invalid cvar type, types are: boolean, float, integer, or string");
+            return;
+        }
+        Cvar_RegisterName(Cmd_Argv(1), Cmd_ArgsFrom(3), Cvar_StringToType(Cmd_Argv(2)), CVAR_USER_CREATED);
+        cvar = Cvar_Find(Cmd_Argv(1));
+    }
+    else {
+        if (Cvar_StringToType(Cmd_Argv(2)) != cvar->type) {
+            Con_Printf("Cvar type for %s isn't the same as %s, use the correct type", cvar->name, Cmd_Argv(2));
+        }
+        Cvar_ChangeValue(cvar, Cmd_ArgsFrom(2));
+    }
+    
+    switch (cmd[3]) {
+    case 's':
+        if (!(cvar->flags & CVAR_SAVE))
+            cvar->flags |= CVAR_SAVE;
+        break;
+    case 'd': {
+        if (!c_devmode.b) {
+            Con_Printf("Cvar_Set: (setd) not in devmode");
+            break;
+        }
+        if (!(cvar->flags & CVAR_DEV))
+            cvar->flags |= CVAR_DEV;
+        break; }
+    case 'u':
+        if (!(cvar->flags & CVAR_USER_CREATED))
+            cvar->flags |= CVAR_USER_CREATED;
+        break;
+    };
+}
+
+static void Cvar_Reset_f(void)
+{
+    if (Cmd_Argc() != 2) {
+        Con_Printf("usage: reset <variable>");
+        return;
+    }
+    Cvar_Reset(Cmd_Argv(1));
+}
+
+static void Cvar_PrintType_f(void)
+{
+    if (Cmd_Argc() != 2) {
+        Con_Printf("usage: print_type <variable>");
+        return;
+    }
+    const cvar_t *cvar = Cvar_Find(Cmd_Argv(1));
+    if (!cvar) {
+        Con_Printf("Cvar %s doesn't exist", Cmd_Argv(1));
+        return;
+    }
+    Con_Printf("Type of cvar %s is %s", cvar->name, Cvar_TypeToString(cvar));
 }
 
 void Con_Init()
@@ -410,8 +655,21 @@ void Con_Init()
     Cmd_AddCommand("listcvars", Cvar_List_f);
     Cmd_AddCommand("print", Cvar_Print_f);
     Cmd_AddCommand("clear", Con_Clear_f);
+    Cmd_AddCommand("sets", Cvar_Set_f);
+    Cmd_AddCommand("setu", Cvar_Set_f);
+    Cmd_AddCommand("setd", Cvar_Set_f);
+    Cmd_AddCommand("reset", Cvar_Reset_f);
+    Cmd_AddCommand("print_type", Cvar_PrintType_f);
+
+    cvar_list.next = NULL;
+    memset(cvar_list.name, 0, sizeof(cvar_list.name));
+    memset(cvar_list.s, 0, sizeof(cvar_list.s));
+    cvar_list.i = 0;
+    cvar_list.f = 0.0f;
+    cvar_list.flags = 0;
+    cvar_list.type = TYPE_STRING;
 
     for (uint32_t i = 0; i < G_NumCvars(); i++) {
-        Cvar_Register(G_GetCvars()[i]);
+        Cvar_Register(G_GetCvars()[i], NULL);
     }
 }

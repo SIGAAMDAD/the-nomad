@@ -59,6 +59,8 @@
 #include <SOIL/SOIL.h>
 
 // speed is key
+#define USING_EASY_PROFILER
+#include <easy/profiler.h>
 #include "stb_sprintf.h"
 #include <xalloc/Allocator.h>
 #include <xalloc/xallocator.h>

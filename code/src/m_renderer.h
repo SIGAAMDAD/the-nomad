@@ -69,6 +69,7 @@ public:
     Camera(Camera &&) = default;
     ~Camera() = default;
 
+    GDR_INLINE float GetZoom(void) const { return m_ZoomLevel; }
     GDR_INLINE glm::mat4& GetProjection() const { return m_ProjectionMatrix; }
     GDR_INLINE glm::mat4& GetViewMatrix() const { return m_ViewMatrix; }
     GDR_INLINE glm::mat4& GetVPM() const { return m_ViewProjectionMatrix; }
@@ -85,11 +86,15 @@ public:
     GDR_INLINE glm::mat4 CalcVPM() const { return m_ProjectionMatrix * m_ViewMatrix; }
     constexpr GDR_INLINE Camera& operator=(const Camera& other)
     {
-        m_ProjectionMatrix = other.m_ProjectionMatrix;
-        m_ViewMatrix = other.m_ViewMatrix;
-        m_CameraPos = other.m_CameraPos;
-        m_Rotation = other.m_Rotation;
-        m_ZoomLevel = other.m_ZoomLevel;
+        m_ProjectionMatrix = m_ProjectionMatrix;
+        m_ViewMatrix = m_ViewMatrix;
+        m_ViewProjectionMatrix = m_ViewProjectionMatrix;
+        m_CameraPos = m_CameraPos;
+        m_Rotation = m_Rotation;
+        m_ZoomLevel = m_ZoomLevel;
+        m_AspectRatio = m_AspectRatio;
+        m_CameraRotationSpeed = m_CameraRotationSpeed;
+        m_CameraSpeed = m_CameraSpeed;
         return *this;
     }
 
@@ -102,6 +107,8 @@ public:
     void MoveLeft(void);
     void MoveRight(void);
 
+    void Resize(void);
+    void SetProjection(float left, float right, float bottom, float top);
     void CalculateViewMatrix();
 };
 
@@ -129,6 +136,12 @@ void WorldToScreen(const glm::vec3& in, glm::vec3& out);
 void RE_DrawPints(SpriteSheet* sheet, vertexCache_t *cache);
 bool R_CullVertex(const glm::vec2& pos);
 
+// rendering engine interface
+void RE_CmdDrawSprite(sprite_t spr, const glm::vec2& pos, const glm::vec2& size);
+void RE_BeginFrame(void);
+void RE_EndFrame(void);
+void RE_InitFrameData(void);
+
 #define MAX_FBOS 64
 #define MAX_VERTEXCACHES 1024
 #define MAX_SHADERS 1024
@@ -152,7 +165,7 @@ public:
     uint32_t numVertexCaches, numTextures, numFBOs, numShaders;
     uint32_t shaderid, vaoid, vboid, iboid, textureid, fboid;
 public:
-    Renderer() = default;
+    Renderer();
     Renderer(const Renderer &) = delete;
     Renderer(Renderer &&) = delete;
     ~Renderer();

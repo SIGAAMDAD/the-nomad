@@ -53,8 +53,8 @@ static bffFile_t* bffs[MAX_BFF_FILES];
 
 static uint32_t fs_numHandles;
 static uint32_t fs_totalArchives;
-cvar_t fs_gamedir     = {"fs_gamedir",     "gamedata", 0.0f, 0, qfalse, TYPE_STRING, qtrue};
-cvar_t fs_numArchives = {"fs_numArchives", "",         0.0f, 1, qfalse, TYPE_INT,    qtrue};
+cvar_t fs_gamedir     = {"fs_gamedir",     "gamedata", 0.0f, 0, qfalse, TYPE_STRING, CVAR_SAVE | CVAR_ROM | CVAR_DEV};
+cvar_t fs_numArchives = {"fs_numArchives", "",         0.0f, 1, qfalse, TYPE_INT, CVAR_SAVE | CVAR_ROM};
 static GDRStr fs_homepath;
 static bool fs_initialized;
 static uint64_t fs_writeCount;
@@ -119,7 +119,7 @@ static void FS_InitHandle(fileHandle_t* f)
 	f->bffFile = qfalse;
 	f->data.stream = NULL;
 	f->tmpFile = qfalse;
-	f->used = qfalse;
+	f->used = qtrue;
 }
 
 static void FS_InitBFFs(void)
@@ -279,9 +279,8 @@ uint64_t FS_FileTell(file_t f)
 	if (FS_IsChunk(file)) {
 		return (uint64_t)(file->data.chunk->bufPtr - file->data.chunk->buffer);
 	}
-	else {
-		return (uint64_t)ftell(file->data.fp);
-	}
+	
+	return (uint64_t)ftell(file->data.fp);
 }
 
 fileOffset_t FS_FileSeek(file_t f, fileOffset_t offset, uint32_t whence)
@@ -353,6 +352,9 @@ void FS_Init(void)
 
 	for (uint32_t i = 0; i < MAX_FILE_HANDLES; i++) {
 		handles[i].used = qfalse;
+		handles[i].bff = NULL;
+		handles[i].bffIndex = -1;
+		handles[i].bffFile = qfalse;
 		handles[i].data.stream = NULL;
 	}
 
@@ -673,7 +675,7 @@ static bool FS_IsChunk(const char *filepath)
 {
 	for (uint32_t i = 0; i < fs_totalArchives; i++) {
 		for (uint32_t c = 0; c < bffs[i]->numfiles; c++) {
-			if (N_strncmp(filepath, bffs[i]->fileList[c].name, MAX_BFF_CHUNKNAME)) {
+			if (N_strncmp(filepath, bffs[i]->fileList[c].name, MAX_BFF_CHUNKNAME) == 1) {
 				return true;
 			}
 		}
@@ -684,7 +686,7 @@ static fileInBFF_t* FS_GetBFFChunk(const char *filepath)
 {
 	for (uint32_t i = 0; i < fs_totalArchives; i++) {
 		for (uint32_t c = 0; c < bffs[i]->numfiles; c++) {
-			if (N_strncmp(filepath, bffs[i]->fileList[c].name, MAX_BFF_CHUNKNAME)) {
+			if (N_strncmp(filepath, bffs[i]->fileList[c].name, MAX_BFF_CHUNKNAME) == 1) {
 				return &bffs[i]->fileList[c];
 			}
 		}
