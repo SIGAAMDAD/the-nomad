@@ -11,6 +11,12 @@ static bool exited = false;
 int myargc;
 char** myargv;
 
+static void CameraGame_f(void)
+{
+    Con_Printf(
+        "CameraPos.x: %i\n"
+        "CameraPos.y: %i", Game::Get()->cameraPos.x, Game::Get()->cameraPos.y);
+}
 
 #define LOAD(ptr,name) \
 { \
@@ -50,20 +56,6 @@ static void done()
     exit(EXIT_SUCCESS);
 }
 
-void LoadLevel(bfflevel_t *lvl)
-{
-    for (uint32_t y = 0; y < MAP_MAX_Y; ++y) {
-        for (uint32_t x = 0; x < MAP_MAX_X; ++x) {
-            switch (lvl->tilemap[y][x]) {
-            case '#':
-            case '.':
-                Game::Get()->c_map[y][x] = SPR_ROCK;
-                break;
-            };
-        }
-    }
-}
-
 void mainLoop()
 {
     SDL_Event event;
@@ -76,9 +68,6 @@ void mainLoop()
         glm::vec3(1, 0, 0),
         glm::vec3(0, .5, 0),
     };
-    glm::vec3 pos = glm::vec3(0.0f, 0.0f, 0.0f);
-
-    LoadLevel(BFF_FetchLevel("NMLVL0"));
 
     glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
 
@@ -92,6 +81,7 @@ void mainLoop()
     float light_intensity = 1.0f;
 
     uint64_t next = clock();
+    Cmd_AddCommand("cameraGame", CameraGame_f);
     while (1) {
         Com_UpdateEvents();
         vm_command = SGAME_RUNTIC;
@@ -104,37 +94,27 @@ void mainLoop()
         if (evState.kbstate[KEY_M])
             renderer->camera.ZoomOut();
         if (evState.kbstate[KEY_W])
-            pos.y += 3;
+            Game::Get()->cameraPos.y -= 3;
         if (evState.kbstate[KEY_A])
-            pos.x -= 3;
+            Game::Get()->cameraPos.x -= 3;
         if (evState.kbstate[KEY_S])
-            pos.y -= 3;
+            Game::Get()->cameraPos.y += 3;
         if (evState.kbstate[KEY_D])
-            pos.x += 3;
+            Game::Get()->cameraPos.x += 3;
         if (evState.kbstate[KEY_Q])
             renderer->camera.RotateLeft();
         if (evState.kbstate[KEY_E])
             renderer->camera.RotateRight();
-        if (evState.kbstate[KEY_UP])
-            renderer->camera.MoveUp();
-        if (evState.kbstate[KEY_DOWN])
-            renderer->camera.MoveDown();
-        if (evState.kbstate[KEY_LEFT])
-            renderer->camera.MoveLeft();
-        if (evState.kbstate[KEY_RIGHT])
-            renderer->camera.MoveRight();
-
+        
         VM_Run(SGAME_VM);
+        
 
         RE_BeginFrame();
         RE_BeginFramebuffer();
-        renderer->camera.CalculateViewMatrix();
-//        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//        glViewport(0, 0, r_screenwidth.i, r_screenheight.i);
 
         next = 1000 / r_ticrate.i;
         
-        RE_CmdDrawSprite(SPR_PLAYR, glm::vec2(pos.x, pos.y), glm::vec2(.5));
+        RE_CmdDrawSprite(SPR_PLAYR, glm::vec2(renderer->camera.GetPos().x, renderer->camera.GetPos().y), glm::vec2(1));
         RE_EndFrame();
         RE_EndFramebuffer();
 

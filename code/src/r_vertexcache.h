@@ -12,7 +12,8 @@ typedef struct vertex_s
 	glm::vec3 pos;
 	glm::vec2 texcoords;
 	glm::vec4 color;
-//	float islight;
+	glm::vec2 background;
+	float type;
 	
 	GDR_INLINE vertex_s(const glm::vec3& _pos, const glm::vec2& _texcoords, const glm::vec4& _color)
 		: pos(_pos), texcoords(+texcoords), color(_color) { }

@@ -3,6 +3,13 @@
 #include "g_game.h"
 #include "g_sound.h"
 
+
+static void G_LoadLevel(bfflevel_t *lvl)
+{
+	new (Game::Get()->c_map) tmx::Map();
+	Game::Get()->c_map->load("nomadmain/LVLS/NMLVL0.tmx");
+}
+
 static char *com_buffer;
 static int com_bufferLen;
 
@@ -590,6 +597,7 @@ const char* GDR_DECL va(const char *format, ...)
 
 	return buf;
 }
+
 /*
 Com_Init: initializes all the engine's systems
 */
@@ -597,17 +605,25 @@ void Com_Init(void)
 {
     Con_Printf("Com_Init: initializing systems");
 
-    Memory_Init();
+	Memory_Init();
 
 	Con_Printf("G_LoadSCF: parsing scf file");
-    G_LoadSCF();
+	Cmd_Init();
 	Con_Init();
-    R_Init();
-    Cmd_Init();
+    G_LoadSCF();
     Snd_Init();
-
-    Con_Printf("G_LoadBFF: loading bff file");
+	Con_Printf("G_LoadBFF: loading bff file");
     G_LoadBFF("nomadmain.bff");
+	Game::Init();
+    R_Init();
+
+	I_CacheAudio((void *)BFF_FetchInfo());
+	I_CacheTextures(BFF_FetchInfo());
+
+	G_LoadLevel(BFF_FetchLevel("NMLVL0"));
+
+	RE_InitFrameData();
+	BFF_FreeInfo(BFF_FetchInfo());
 
     Con_Printf(
         "+===========================================================+\n"

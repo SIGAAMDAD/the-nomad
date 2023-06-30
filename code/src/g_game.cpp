@@ -9,6 +9,7 @@ uint64_t ticcount = 0;
 void Game::Init()
 {
     gptr = (Game *)Hunk_Alloc(sizeof(Game), "gptr", h_low);
+    gptr->c_map = (tmx::Map *)Hunk_Alloc(sizeof(tmx::Map), "mapData", h_low);
 }
 
 Game::~Game()

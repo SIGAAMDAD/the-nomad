@@ -50,6 +50,7 @@ typedef signed int ssize_t;
 #include "n_pch.h"
 #include <EABase/eabase.h>
 #include <EASTL/shared_ptr.h>
+#include <EASTL/iterator.h>
 #include <EASTL/weak_ptr.h>
 #include <EASTL/algorithm.h>
 #include <EASTL/unique_ptr.h>
@@ -63,6 +64,141 @@ typedef signed int ssize_t;
 #include <EASTL/vector.h>
 #include <EASTL/unordered_map.h>
 #include <nlohmann/json.hpp>
+
+// a wee little eastl thingy
+namespace eastl {
+	constexpr const uint32_t file_end = SEEK_END;
+	constexpr const uint32_t file_cur = SEEK_CUR;
+	constexpr const uint32_t file_beg = SEEK_SET;
+
+	GDR_INLINE ofstream(const ::eastl::string& filepath)
+			: fp(fopen(filepath.c_str(), "rb")) { }
+		GDR_INLINE ofstream(const char *filepath)
+			: fp(fopen(filepath, "rb")) { }
+		ofstream(const ofstream &) = delete;
+		ofstream(ofstream &&) = delete;
+		GDR_INLINE ~ofstream(void)
+		{ fclose(fp); }
+		GDR_INLINE operator bool(void) const
+		{ return fp ? true : false; }
+		GDR_INLINE size_t read(void *buffer, size_t size)
+		{ return fread(buffer, sizeof(char), size, fp); }
+		GDR_INLINE bool fail(void) const
+		{ return fp == NULL; }
+		GDR_INLINE bool is_open(void) const
+		{ return fp != NULL; }
+		GDR_INLINE void close(void)
+		{ fclose(fp); }
+		GDR_INLINE void open(const ::eastl::string& filepath)
+		{ fp = fopen(filepath.c_str(), "wb"); }
+		GDR_INLINE void open(const char *filepath)
+		{ fp = fopen(filepath, "wb"); }
+		GDR_INLINE uint64_t seekg(uint64_t offset, const uint32_t whence)
+		{ return fseek(fp, offset, whence); }
+		GDR_INLINE uint64_t tellg(void)
+		{ return ftell(fp); }
+		GDR_INLINE void rewind(void)
+		{ rewind(fp); }
+		GDR_INLINE int getc(void)
+		{ ::fgetc(fp, c); }
+	private:
+		FILE *fp = NULL;
+	};
+
+	struct ofstream {
+		GDR_INLINE ofstream(const ::eastl::string& filepath)
+			: fp(fopen(filepath.c_str(), "wb")) { }
+		GDR_INLINE ofstream(const char *filepath)
+			: fp(fopen(filepath, "wb")) { }
+		ofstream(const ofstream &) = delete;
+		ofstream(ofstream &&) = delete;
+		GDR_INLINE ~ofstream(void)
+		{ fclose(fp); }
+		GDR_INLINE size_t write(const void *buffer, size_t size)
+		{ return fwrite(buffer, sizeof(char), size, fp); }
+		GDR_INLINE bool fail(void) const
+		{ return fp == NULL; }
+		GDR_INLINE bool is_open(void) const
+		{ return fp != NULL; }
+		GDR_INLINE void close(void)
+		{ fclose(fp); }
+		GDR_INLINE void open(const ::eastl::string& filepath)
+		{ fp = fopen(filepath.c_str(), "wb"); }
+		GDR_INLINE void open(const char *filepath)
+		{ fp = fopen(filepath, "wb"); }
+		GDR_INLINE uint64_t seekg(uint64_t offset, const uint32_t whence)
+		{ return fseek(fp, offset, whence); }
+		GDR_INLINE uint64_t tellg(void)
+		{ return ftell(fp); }
+		GDR_INLINE void rewind(void)
+		{ rewind(fp); }
+		GDR_INLINE void putc(int c)
+		{ ::fputc(fp, c); }
+		int32_t printf(const char *fmt, ...) GDR_ATTRIBUTE(format(printf, 1, 2))
+		{
+			va_list argptr;
+			int32_t ret;
+
+			va_start(argptr, fmt);
+			ret = vfprintf(fp, fmt, argptr);
+			va_end(argptr);
+
+			return ret;
+		}
+	private:
+		FILE *fp = NULL;
+	};
+	
+	struct fstream {
+		GDR_INLINE fstream(const ::eastl::string& filepath)
+			: fp(fopen(filepath.c_str(), "wb+")) { }
+		GDR_INLINE fstream(const char *filepath)
+			: fp(fopen(filepath, "wb+")) { }
+		fstream(const fstream &) = delete;
+		fstream(fstream &&) = delete;
+		GDR_INLINE ~fstream(void)
+		{ fclose(fp); }
+		GDR_INLINE size_t read(void *buffer, size_t size)
+		{ return fread(buffer, sizeof(char), size, fp); }
+		GDR_INLINE size_t write(const void *buffer, size_t size)
+		{ return fwrite(buffer, sizeof(char), size, fp); }
+		GDR_INLINE bool fail(void) const
+		{ return fp == NULL; }
+		GDR_INLINE bool is_open(void) const
+		{ return fp != NULL; }
+		GDR_INLINE void close(void)
+		{ fclose(fp); }
+		GDR_INLINE void open(const ::eastl::string& filepath)
+		{ fp = fopen(filepath.c_str(), "wb+"); }
+		GDR_INLINE void open(const char *filepath)
+		{ fp = fopen(filepath, "wb+"); }
+		GDR_INLINE uint64_t seekg(uint64_t offset, const uint32_t whence)
+		{ return fseek(fp, offset, whence); }
+		GDR_INLINE uint64_t tellg(void)
+		{ return ftell(fp); }
+		GDR_INLINE void rewind(void)
+		{ rewind(fp); }
+		GDR_INLINE void putc(int c)
+		{ ::fputc(fp, c); }
+		GDR_INLINE int getc(void)
+		{ return ::fgetc(fp); }
+		GDR_INLINE void ungetc(void)
+		{ ::ungetc(fp); }
+		int32_t printf(const char *fmt, ...) GDR_ATTRIBUTE(format(printf, 1, 2))
+		{
+			va_list argptr;
+			int32_t ret;
+
+			va_start(argptr, fmt);
+			ret = vfprintf(fp, fmt, argptr);
+			va_end(argptr);
+
+			return ret;
+		}
+	private:
+		FILE *fp = NULL;
+	};
+};
 
 #define PAD(base, alignment)	(((base)+(alignment)-1) & ~((alignment)-1))
 #define PADLEN(base, alignment)	(PAD((base), (alignment)) - (base))
@@ -99,10 +235,27 @@ __inline type* PADP(type *base, alignment align)
 
 #ifdef __GNUC__
 #define GDR_NORETURN __attribute__((noreturn))
+#define GDR_INITIALIZER(f) \
+        static void f(void) __attribute__((constructor)); \
+        static void f(void)
 #elif defined(_MSVC_VER)
 #define GDR_NORETURN __declspec(noreturn)
+
+#pragma section(".CRT$XCU",read)
+#define GDR_INITIALIZER2(f,p) \
+    static void f(void); \
+    __declspec(allocate(".CRT$XCU")) void (*f##_)(void) = f; \
+    __pragma(comment(linker,"/include:" p #f "_")) \
+    static void f(void)
+#ifdef _WIN64
+    #define GDR_INITIALIZER(f) GDR_INITIALIZER(f,"")
+#else
+    #define GDR_INITIALIZER(f) GDR_INITIALIZER(f,"_")
+#endif
+
 #else
 #define GDR_NORETURN
+#define GDR_INITIALIZER(f)
 #endif
 
 #if defined(__GNUC__) || (defined(__MWERKS__) && (__MWERKS__ >= 0x3000)) || (defined(__ICC) && (__ICC >= 600)) || defined(__ghs__)
@@ -141,6 +294,17 @@ extern const vec3_t vec3_origin;
 extern const vec2_t vec2_origin;
 
 typedef enum { qfalse = 0, qtrue = 1 } qboolean;
+typedef enum
+{
+    DIF_NOOB,
+    DIF_RECRUIT,
+    DIF_MERC,
+    DIF_NOMAD,
+    DIF_BLACKDEATH,
+    DIF_MINORINCONVENIECE,
+
+    DIF_HARDEST = DIF_MINORINCONVENIECE
+} gamedif_t;
 
 #define VectorAdd(a,b,c) {c[0]=a[0]+b[0];c[1]=a[1]+b[1];}
 #define VectorSubtract(a,b,c) {c[0]=a[0]-b[0];c[1]=a[1]-b[1];}

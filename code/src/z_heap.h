@@ -5,9 +5,6 @@
 
 #ifndef Q3_VM
 
-void Memory_Init();
-void Memory_Shutdown();
-
 enum {
     h_low,
     h_high
@@ -29,8 +26,8 @@ enum
 #define TAG_SCOPE TAG_CACHE
 #define TAG_LOAD TAG_CACHE
 
-void Memory_Init();
-void Memory_Shutdown();
+void Memory_Init(void);
+void Memory_Shutdown(void);
 
 void* Hunk_Alloc(uint64_t size, const char *name, int where);
 void Hunk_Check(void);
@@ -44,15 +41,14 @@ uint64_t Hunk_HighMark(void);
 void* Hunk_Begin(void);
 void* Hunk_End(void);
 
-void* Z_AlignedAlloc(uint32_t alignment, uint32_t size, int tag, void *user, const char* name);
-void* Z_Malloc(uint32_t size, int tag, void *user, const char* name);
-void* Z_Calloc(void *user, uint32_t size, int tag, const char* name);
-void* Z_Realloc(void *ptr, uint32_t nsize, void *user, int tag, const char* name);
+void* Z_Malloc(uint32_t size, int32_t tag, void *user, const char* name);
+void* Z_Calloc(uint32_t size, int32_t tag, void *user, const char* name);
+void* Z_Realloc(uint32_t nsize, int32_t tag, void *user, void *ptr, const char* name);
 
 void Z_Free(void *ptr);
-void Z_FreeTags(int lowtag, int hightag);
-void Z_ChangeTag(void* user, int tag);
-void Z_ChangeUser(void* olduser, void* newuser);
+void Z_FreeTags(int32_t lowtag, int32_t hightag);
+void Z_ChangeTag(void* user, int32_t tag);
+void Z_ChangeUser(void* newuser, void* olduser);
 void Z_ChangeName(void* user, const char* name);
 void Z_CleanCache(void);
 void Z_CheckHeap(void);
@@ -62,8 +58,7 @@ void Z_Init(void);
 uint64_t Z_FreeMemory(void);
 void* Z_ZoneBegin(void);
 void* Z_ZoneEnd(void);
-uint32_t Z_NumBlocks(int tag);
-void Z_Defrag(void);
+uint32_t Z_NumBlocks(int32_t tag);
 
 void Mem_Info(void);
 

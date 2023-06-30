@@ -15,16 +15,18 @@ LDLIBS        =\
 			/usr/local/lib/libfoonathan_memory-0.7.3.a \
 			/usr/local/lib/libSOIL.a \
 			libEASTL.a \
+			base64.a \
+			-lbz2 \
 			-lGL \
 			-logg \
 			-lvorbisfile \
 			-lfreetype \
 			-lvulkan \
 			-lsndfile \
-			-lbz2 \
 			-lSDL3 \
 			-lpthread \
 			-leasy_profiler \
+			-ltinyxml2 \
 
 
 .PHONY: all clean targets clean.objs clean.exe
@@ -32,7 +34,7 @@ LDLIBS        =\
 INCLUDE    =-I/usr/include -Ideps -I/usr/local/include -I/usr/include/freetype2 -Isrc
 OPTIMIZERS =-fexpensive-optimizations -funroll-loops -ffast-math -mfma -mavx2
 DEFINES    =-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPDATE) -D_NOMAD_VERSION_PATCH=$(VERSION_PATCH)
-CFLAGS     =-std=c++17 -Og -g
+CFLAGS     =-std=c++17 -Og -g -O0
 
 COMPILE_SRC=$(CC) $(CFLAGS) $(INCLUDE) $(DEFINES) $(OPTIMIZERS) -o $@ -c $<
 COMPILE_C=gcc -Og -g $(INCLUDE) $(DEFINES) $(OPTIMIZERS) -o $@ -c $<

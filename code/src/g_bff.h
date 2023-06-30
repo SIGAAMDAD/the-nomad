@@ -118,12 +118,14 @@ typedef struct
 typedef struct
 {
 	char name[MAX_BFF_CHUNKNAME];
-	char tilemap[MAP_MAX_Y][MAP_MAX_X];
+	char *mapBuffer;
 	mapspawn_t spawns[MAX_MAP_SPAWNS];
 	maplight_t lights[MAX_MAP_LIGHTS];
 	bff_int_t levelNumber;
 	bff_int_t numLights;
 	bff_int_t numSpawns;
+	bff_int_t mapBufferLen;
+	bff_int_t tilesetIndex;
 } bfflevel_t;
 
 // scripted encounters (boss fights, story mode, etc.)
@@ -196,6 +198,8 @@ typedef struct
 void B_GetChunk(const char *chunkname);
 void BFF_CloseArchive(bff_t* archive);
 bff_t* BFF_OpenArchive(const GDRStr& filepath);
+bffinfo_t* BFF_FetchInfo(void);
+void BFF_FreeInfo(bffinfo_t* info);
 
 bffscript_t* BFF_FetchScript(const char *name);
 bfflevel_t* BFF_FetchLevel(const char *name);

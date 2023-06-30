@@ -18,6 +18,8 @@
 #define sleepfor(x) Sleep(x)
 #endif
 
+#define MAP_SIZE (sizeof(sprite_t) * ((MAP_MAX_Y + 128) * (MAP_MAX_X + 128)))
+
 typedef enum : uint8_t
 {
     GS_MENU,
@@ -37,18 +39,6 @@ enum : uint8_t
     OCC_THANKSGIVING
 };
 
-enum : uint8_t
-{
-    DIF_NOOB,
-    DIF_RECRUIT,
-    DIF_MERC,
-    DIF_NOMAD,
-    DIF_BLACKDEATH,
-    DIF_MINORINCONVENIECE,
-
-    DIF_HARDEST = DIF_MINORINCONVENIECE
-};
-
 inline bool bff_mode = false;
 extern uint64_t ticcount;
 
@@ -57,15 +47,15 @@ class Game
 private:
     static Game* gptr;
 public:
-    sprite_t c_map[MAP_MAX_X][MAP_MAX_Y];
-    char bffname[256];
-    char scfname[256];
-    char svfile[256];
+    tmx::Map *c_map;
+//    sprite_t backup[MAP_MAX_X+160][MAP_MAX_Y+160];
+    char lvlname[256];
     SDL_Window* window;
     ImGuiContext* context;
     
+    FILE* mapfile;
     gamestate_t gamestate;
-    uint8_t difficulty;
+    gamedif_t difficulty;
     glm::ivec3 cameraPos;
 public:
     Game() = default;

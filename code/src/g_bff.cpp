@@ -28,9 +28,11 @@ static void CopyLevelChunk(const bff_chunk_t* chunk, bffinfo_t* info)
 	ptr += sizeof(bff_int_t);
 	data->levelNumber = *(bff_int_t *)ptr;
 	ptr += sizeof(bff_int_t);
-	
-	memcpy(data->tilemap, ptr, sizeof(data->tilemap));
-	ptr += sizeof(data->tilemap);
+	data->tilesetIndex = *(bff_int_t *)ptr;
+	ptr += sizeof(bff_int_t);
+		
+	memcpy(data->mapBuffer, ptr, data->mapBufferLen);
+	ptr += data->mapBufferLen;
 	memcpy(data->spawns, ptr, sizeof(data->spawns));
 	ptr += sizeof(mapspawn_t) * data->numSpawns;
 	memcpy(data->lights, ptr, sizeof(data->lights));
@@ -111,7 +113,7 @@ bffinfo_t* BFF_GetInfo(bff_t* archive)
 	}
 	
 	infomark = Hunk_HighMark();
-	bffinfo_t* info = (bffinfo_t *)Mem_Alloc(sizeof(bffinfo_t));
+	bffinfo_t* info = (bffinfo_t *)Hunk_Alloc(sizeof(bffinfo_t), "BFFinfo", h_low);
 	memset(info, 0, sizeof(bffinfo_t));
 	info->numLevels = 0;
 	info->numSounds = 0;
@@ -227,18 +229,19 @@ bfflevel_t *BFF_FetchLevel(const char *name)
 	return &bffinfo->levels[Com_GenerateHashValue(name, MAX_LEVEL_CHUNKS)];
 }
 
+bffinfo_t *BFF_FetchInfo(void)
+{
+	return bffinfo;
+}
+
 void G_LoadBFF(const GDRStr& bffname)
 {
 	FS_Init();
 
 	file_t archive = FS_OpenBFF(0);
 	bffinfo = BFF_GetInfo((bff_t*)FS_GetBFFData(archive));
-    I_CacheAudio((void *)bffinfo);
-	I_CacheTextures(bffinfo);
 
 	FS_FClose(archive);
-
-    Game::Init();
 
     VM_Init(bffinfo->scripts);
 }

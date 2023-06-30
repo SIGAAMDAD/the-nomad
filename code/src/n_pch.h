@@ -57,6 +57,8 @@
 #include <SDL2/SDL_vulkan.h>
 #include <SDL2/SDL_opengl.h>
 #include <SOIL/SOIL.h>
+#include <tinyxml2.h>
+#include <tmx/tmx>
 
 // speed is key
 #define USING_EASY_PROFILER
