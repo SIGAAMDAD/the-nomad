@@ -171,24 +171,30 @@
 #elif defined( GDR_BIG_ENDIAN )
 
 #define CopyLittleShort(dest, src) CopyShortSwap(dest, src)
+#define CopyLitteInt(dest, src) CopyIntSwap(dest, src)
 #define CopyLittleLong(dest, src) CopyLongSwap(dest, src)
-#define LittleShort(x) ShortSwap(x)
-#define LittleLong(x) LongSwap(x)
-#define LittleFloat(x) FloatSwap(&x)
-#define BigShort
-#define BigLong
-#define BigFloat
+#define LittleShort(x) SDL_SwapLE16(x)
+#define LittleInt(x) SDL_SwapLE32(x)
+#define LittleLong(x) SDL_SwapLE64(x)
+#define LittleFloat(x) SDL_SwapFloatLE(x)
+#define BigShort(x) x
+#define BigInt(x) x
+#define BigLong(x) x
+#define BigFloat(x) x
 
 #elif defined( GDR_LITTLE_ENDIAN )
 
-#define CopyLittleShort(dest, src) Com_Memcpy(dest, src, 2)
-#define CopyLittleLong(dest, src) Com_Memcpy(dest, src, 4)
-#define LittleShort
-#define LittleLong
-#define LittleFloat
-#define BigShort(x) ShortSwap(x)
-#define BigLong(x) LongSwap(x)
-#define BigFloat(x) FloatSwap(&x)
+#define CopyLittleShort(dest, src) memcpy(dest, src, 2)
+#define CopyLittleInt(dest, src) memcpy(dest, src, 4)
+#define CopyLittleLong(dest, src) memcpy(dest, src, 8)
+#define LittleShort(x) x
+#define LittleInt(x) x
+#define LittleLong(x) x
+#define LittleFloat(x) x
+#define BigShort(x) SDL_SwapBE16(x)
+#define BigInt(x) SDL_SwapBE32(x)
+#define BigLong(x) SDL_SwapBE64(x)
+#define BigFloat(x) SDL_SwapFloatBE(x)
 
 #else
 #error "Endianness not defined"

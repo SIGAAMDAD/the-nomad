@@ -21,8 +21,6 @@ SpriteSheet::SpriteSheet(const char *filepath, const glm::vec2& spriteDims, cons
 
     if (!texSheet)
         N_Error("R_InitSpriteSheet: failed to load texture %s", filepath);
-    if (sheetDims.x != sheetDims.y)
-        N_Error("R_InitSpriteSheet: sprite sheets must have equal height and width, texchunk: %s", filepath);
 }
 
 SpriteSheet::~SpriteSheet()

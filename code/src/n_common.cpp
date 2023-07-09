@@ -3,15 +3,8 @@
 #include "g_game.h"
 #include "g_sound.h"
 
-
-static void G_LoadLevel(bfflevel_t *lvl)
-{
-	new (Game::Get()->c_map) tmx::Map();
-	Game::Get()->c_map->load("nomadmain/LVLS/NMLVL0.tmx");
-}
-
 static char *com_buffer;
-static int com_bufferLen;
+static int32_t com_bufferLen;
 
 eventState_t evState;
 qboolean console_open = qfalse;
@@ -115,6 +108,32 @@ void Com_UpdateEvents(void)
 	}
 }
 
+int I_GetParm(const char *parm)
+{
+    if (!parm)
+        N_Error("I_GetParm: parm is NULL");
+
+    for (int i = 1; i < myargc; i++) {
+        if (N_strcasecmp(myargv[i], parm))
+            return i;
+    }
+    return -1;
+}
+
+void GDR_NORETURN N_Error(const char *err, ...)
+{
+    char msg[1024];
+    memset(msg, 0, sizeof(msg));
+    va_list argptr;
+    va_start(argptr, err);
+    stbsp_vsnprintf(msg, sizeof(msg) - 1, err, argptr);
+    va_end(argptr);
+    Con_Error("%s", msg);
+
+    Game::Get()->~Game();
+    exit(EXIT_FAILURE);
+}
+
 void Con_RenderConsole(void)
 {
     ImGui_ImplOpenGL3_NewFrame();
@@ -182,9 +201,22 @@ uint64_t Com_GenerateHashValue( const char *fname, const uint32_t size )
 	return hash;
 }
 
+void COM_StripExtension(const char *in, char *out, uint64_t destsize)
+{
+	const char *dot = strrchr(in, '.'), *slash;
+
+	if (dot && ((slash = strrchr(in, '/')) == NULL || slash < dot))
+		destsize = (destsize < dot-in+1 ? destsize : dot-in+1);
+
+	if ( in == out && destsize > 1 )
+		out[destsize-1] = '\0';
+	else
+		N_strncpy(out, in, destsize);
+}
+
 /*
-Com_Printf: can be used by either the main engine, or the vm
-a raw string should NEVER be passed as fmt, same reason as the quake3 engine.
+Com_Printf: can be used by either the main engine, or the vm.
+A raw string should NEVER be passed as fmt, same reason as the quake3 engine.
 */
 void GDR_DECL Com_Printf(const char *fmt, ...)
 {
@@ -368,32 +400,36 @@ typedef struct cmd_s
     struct cmd_s* next;
 } cmd_t;
 
+static GDRMutex cmdLock;
 static cmd_t* cmd_functions;
 static uint32_t numCommands = 0;
-static uint32_t cmd_argc;
+static eastl::atomic<uint32_t> cmd_argc;
 static char cmd_tokenized[BIG_INFO_STRING+MAX_STRING_TOKENS];
 static char *cmd_argv[MAX_STRING_TOKENS];
 static char cmd_cmd[BIG_INFO_STRING];
 
 static char cmd_history[MAX_HISTORY][BIG_INFO_STRING];
-static uint32_t cmd_historyused;
+static eastl::atomic<uint32_t> cmd_historyused;
 
 uint32_t Cmd_Argc(void)
 {
-    return cmd_argc;
+	return cmd_argc.load();
 }
 
 void Cmd_Clear(void)
 {
+	cmdLock.lock();
 	memset(cmd_cmd, 0, sizeof(cmd_cmd));
 	memset(cmd_argv, 0, sizeof(cmd_argv));
 	memset(cmd_tokenized, 0, sizeof(cmd_tokenized));
-    cmd_argc = 0;
+	cmdLock.unlock();
+	cmd_argc.store(0);
 }
 
 const char *Cmd_Argv(uint32_t index)
 {
-    if ((unsigned)index  >= cmd_argc) {
+	GDRLockGuard<GDRMutex> lock{cmdLock};
+    if ((unsigned)index >= cmd_argc.load()) {
         return "";
     }
     return cmd_argv[index];
@@ -419,7 +455,7 @@ static void Cmd_TokenizeString(const char *str)
 	tok = cmd_tokenized;
 
 	while (1) {
-		if (cmd_argc >= arraylen(cmd_argv)) {
+		if (cmd_argc.load() >= arraylen(cmd_argv)) {
 			return; // usually something malicious
 		}
 		while (*p && *p <= ' ') {
@@ -430,7 +466,7 @@ static void Cmd_TokenizeString(const char *str)
 		}
 		if (*p == '"') {
 			cmd_argv[cmd_argc] = tok;
-			cmd_argc++;
+			cmd_argc.fetch_add(1);
 			p++;
 			while (*p && *p != '"') {
 				*tok++ = *p++;
@@ -444,7 +480,7 @@ static void Cmd_TokenizeString(const char *str)
 
 		// regular stuff
 		cmd_argv[cmd_argc] = tok;
-		cmd_argc++;
+		cmd_argc.fetch_add(1);
 
 		// skip until whitespace
 		while (*p > ' ') {
@@ -459,6 +495,7 @@ static void Cmd_TokenizeString(const char *str)
 
 void Cmd_ExecuteText(const char *str)
 {
+	GDRLockGuard<GDRMutex> lock{cmdLock};
     cmd_t *cmd;
 	const char *cmdstr;
 
@@ -487,6 +524,7 @@ void Cmd_ExecuteText(const char *str)
 
 void Cmd_AddCommand(const char *name, cmdfunc_t func)
 {
+	GDRLockGuard<GDRMutex> lock{cmdLock};
     cmd_t* cmd;
     if (Cmd_FindCommand(name)) {
         if (func)
@@ -506,6 +544,7 @@ void Cmd_AddCommand(const char *name, cmdfunc_t func)
 
 void Cmd_SetCommandCompletetionFunc(const char *name, completionFunc_t func)
 {
+	GDRLockGuard<GDRMutex> lock{cmdLock};
     for (cmd_t *cmd = cmd_functions; cmd; cmd = cmd->next) {
         if (cmd->name == name) {
             cmd->complete = func;
@@ -516,6 +555,7 @@ void Cmd_SetCommandCompletetionFunc(const char *name, completionFunc_t func)
 
 void Cmd_RemoveCmd(const char *name)
 {
+	GDRLockGuard<GDRMutex> lock{cmdLock};
     cmd_t *cmd, **back;
 
     back = &cmd_functions;
@@ -540,6 +580,7 @@ void Cmd_RemoveCmd(const char *name)
 
 char* Cmd_ArgsFrom(int32_t arg)
 {
+	GDRLockGuard<GDRMutex> lock{cmdLock};
     static char cmd_args[BIG_INFO_STRING], *s;
     int32_t i;
 
@@ -547,7 +588,7 @@ char* Cmd_ArgsFrom(int32_t arg)
     *s = '\0';
     if (arg < 0)
         arg = 0;
-    for (i = arg; i < cmd_argc; i++) {
+    for (i = arg; i < cmd_argc.load(); i++) {
         s = N_stradd(s, cmd_argv[i]);
         if (i != cmd_argc - 1) {
             s = N_stradd(s, " ");
@@ -583,6 +624,7 @@ static void Cmd_Init(void)
 
 const char* GDR_DECL va(const char *format, ...)
 {
+	GDRLockGuard<GDRMutex> lock{cmdLock};
 	char *buf;
 	va_list argptr;
 	static uint32_t index = 0;
@@ -619,8 +661,7 @@ void Com_Init(void)
 
 	I_CacheAudio((void *)BFF_FetchInfo());
 	I_CacheTextures(BFF_FetchInfo());
-
-	G_LoadLevel(BFF_FetchLevel("NMLVL0"));
+	Com_CacheMaps();
 
 	RE_InitFrameData();
 	BFF_FreeInfo(BFF_FetchInfo());

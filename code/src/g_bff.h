@@ -25,6 +25,10 @@ inline void SwapBytes(void *pv, size_t n)
 #define MAP_MAX_X 240
 #endif
 
+#define BFF_VERSION_MAJOR 0
+#define BFF_VERSION_MINOR 1
+#define BFF_VERSION ((BFF_VERSION_MAJOR<<8)+BFF_VERSION_MINOR)
+
 #define HEADER_MAGIC 0x5f3759df
 #define BFF_IDENT (('B'<<24)+('F'<<16)+('F'<<8)+'I')
 #define BFF_STR_SIZE (int)80
@@ -38,23 +42,13 @@ enum : uint64_t
 	TEXTURE_CHUNK
 };
 
-enum : char
-{
-	SPR_SPAWNER = '$',
-	SPR_LAMP = '|',
-};
-
-typedef uint32_t bff_int_t;
-typedef uint16_t bff_short_t;
-typedef float bff_float_t;
-
 #ifndef _NOMAD_VERSION
 void __attribute__((noreturn)) BFF_Error(const char* fmt, ...);
 #else
 #define BFF_Error N_Error
 #endif
 
-const __inline uint16_t bffPaidID[70] = {
+const __inline int32_t bffPaidID[70] = {
 	0x0000, 0x0000, 0x0412, 0x0000, 0x0000, 0x0000, 0x0527,
 	0x421f, 0x0400, 0x0000, 0x0383, 0x0000, 0x0000, 0x0000,
 	0x0000, 0x5666, 0x6553, 0x0000, 0x0000, 0xad82, 0x8270,
@@ -65,25 +59,31 @@ const __inline uint16_t bffPaidID[70] = {
 	0x0000, 0x0000, 0x0000, 0xa235, 0xfa31, 0x215a, 0x0000
 };
 
-#define MAGIC_XOR 0x4ff3ade3
+constexpr uint32_t MAGIC_XOR = 0x4ff3ade3;
 
-#define MAX_BFF_PATH 256
-#define MAX_BFF_CHUNKNAME 11
-#define MAX_TEXTURE_CHUNKS 128
-#define MAX_LEVEL_CHUNKS 128
-#define MAX_SOUND_CHUNKS 128
-#define MAX_SCRIPT_CHUNKS 64
-#define MAX_MAP_SPAWNS 1024
-#define MAX_MAP_LIGHTS 1024
+constexpr uint32_t MAX_BFF_PATH = 256;
+constexpr uint32_t MAX_BFF_CHUNKNAME = 11;
+constexpr uint32_t MAX_TEXTURE_CHUNKS = 128;
+constexpr uint32_t MAX_LEVEL_CHUNKS = 128;
+constexpr uint32_t MAX_SOUND_CHUNKS = 128;
+constexpr uint32_t MAX_SCRIPT_CHUNKS = 64;
+constexpr uint32_t MAX_MAP_SPAWNS = 1024;
+constexpr uint32_t MAX_MAP_LIGHTS = 1024;
 
-enum : uint16_t
+enum : int32_t {
+	COMPRESSION_NONE,
+	COMPRESSION_BZIP2,
+	COMPRESSION_ZLIB
+};
+
+enum : int32_t
 {
 	SFT_OGG,
 	SFT_WAV,
 	SFT_OPUS
 };
 
-enum : bff_short_t
+enum : int32_t
 {
 	TEX_JPG,
 	TEX_BMP,
@@ -95,37 +95,22 @@ typedef struct
 {
 	char name[MAX_BFF_CHUNKNAME];
 	char *fileBuffer;
-	bff_int_t fileSize;
-	bff_short_t fileType;
+	
+	int32_t fileSize;
+	int32_t fileType;
 } bffsound_t;
 
 typedef struct
 {
-	bff_int_t y;
-	bff_int_t x;
-	bff_short_t sector;
-} mapspawn_t;
-
-typedef struct
-{
-	bff_int_t y;
-	bff_int_t x;
-	bff_short_t sector;
-	bff_float_t intensity;
-	bff_float_t aoe;
-} maplight_t;
-
-typedef struct
-{
+	// bff stuff
 	char name[MAX_BFF_CHUNKNAME];
-	char *mapBuffer;
-	mapspawn_t spawns[MAX_MAP_SPAWNS];
-	maplight_t lights[MAX_MAP_LIGHTS];
-	bff_int_t levelNumber;
-	bff_int_t numLights;
-	bff_int_t numSpawns;
-	bff_int_t mapBufferLen;
-	bff_int_t tilesetIndex;
+	int32_t levelNumber;
+
+	char *tmjBuffer;
+	char **tsjBuffers;
+
+	int32_t mapBufferLen;
+	int32_t numTilesets;
 } bfflevel_t;
 
 // scripted encounters (boss fights, story mode, etc.)
@@ -133,7 +118,7 @@ typedef struct
 {
 	char name[MAX_BFF_CHUNKNAME];
 	
-	bff_int_t codelen;
+	int32_t codelen;
 	uint8_t* bytecode; // q3vm raw bytecode
 } bffscript_t;
 
@@ -141,22 +126,14 @@ typedef struct
 {
 	char name[MAX_BFF_CHUNKNAME];
 
-	bff_int_t fileSize;
-	bff_short_t fileType;
+	int32_t fileSize;
+	int32_t fileType;
 	unsigned char *fileBuffer;
 } bfftexture_t;
 
-typedef struct
-{
-	bff_float_t lightIntensity;
-	bff_float_t lightAOE;
-} bffconfig_t;
 
 typedef struct bffinfo_s
 {
-	// compile-time variables, not written to the bff
-	bffconfig_t config;
-
 	bfftexture_t textures[MAX_TEXTURE_CHUNKS];
 	bfflevel_t levels[MAX_LEVEL_CHUNKS];
 	bffscript_t scripts[MAX_SCRIPT_CHUNKS];
@@ -165,33 +142,37 @@ typedef struct bffinfo_s
 	char bffPathname[MAX_BFF_PATH];
 	char bffGamename[256];
 	
-	bff_int_t numTextures;
-	bff_int_t numLevels;
-	bff_int_t numSounds;
-	bff_int_t numScripts;
+	int32_t compression;
+	int32_t numTextures;
+	int32_t numLevels;
+	int32_t numSounds;
+	int32_t numScripts;
 } bffinfo_t;
 
 typedef struct
 {
 	char chunkName[MAX_BFF_CHUNKNAME];
-	bff_int_t chunkSize;
+	int32_t chunkSize;
 	char *chunkBuffer;
-	bff_int_t chunkType;
+	int32_t chunkType;
 } bff_chunk_t;
 
 typedef struct
 {
-	bff_int_t ident = BFF_IDENT;
-	bff_int_t magic = HEADER_MAGIC;
-	bff_int_t numChunks;
+	int32_t ident = BFF_IDENT;
+	int32_t magic = HEADER_MAGIC;
+	int32_t numChunks;
+	int32_t compression;
+	int16_t version;
 } bffheader_t;
 
 typedef struct
 {
 	char bffPathname[MAX_BFF_PATH];
 	char bffGamename[256];
+	bffheader_t header;
 	
-	bff_int_t numChunks;
+	int32_t numChunks;
 	bff_chunk_t* chunkList;
 } bff_t;
 

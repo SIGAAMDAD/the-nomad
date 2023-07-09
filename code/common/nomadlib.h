@@ -19,4 +19,19 @@ void* N_memset(void *dst, int fill, size_t count);
 float Q_root(float x);
 float Q_rsqrt(float number);
 
+// quake vm only stuff, because its x86 (32-bit)
+typedef union {
+    int i[2];
+    short s[4];
+    char b[8];
+} qint64;
+
+typedef union {
+    float f[2];
+    char b[8];
+} qdouble;
+
+qint64 Q64_AddInt();
+qint64 Q64_
+
 #endif

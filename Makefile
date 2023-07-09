@@ -1,3 +1,5 @@
+COMPILE_ARCH=$(shell uname -m | sed -e 's/i.86/x86/' | sed -e 's/^arm.*/arm/')
+
 VERSION       = 1
 VERSION_UPDATE= 1
 VERSION_PATCH = 0
@@ -17,21 +19,35 @@ LDLIBS        =\
 			libEASTL.a \
 			base64.a \
 			-lbz2 \
+			-lz \
 			-lGL \
 			-logg \
 			-lvorbisfile \
 			-lfreetype \
 			-lvulkan \
 			-lsndfile \
-			-lSDL3 \
 			-lpthread \
-			-leasy_profiler \
-			-ltinyxml2 \
+			-leasy_profiler
 
+LIB_PREFIX      = dependencies/
+
+STATIC_LIBS     =\
+			
+
+# engine build options
+BUILD_ALLOCATOR = 1
+BUILD_RENDERER  = 1
+
+RENDERER = opengl
+EXE      = glnomad
+
+ifndef CODE_DIR
+SRC_DIR  = code/
+endif
 
 .PHONY: all clean targets clean.objs clean.exe
 
-INCLUDE    =-I/usr/include -Ideps -I/usr/local/include -I/usr/include/freetype2 -Isrc
+INCLUDE    =-I/usr/include -Idependencies/include -I/usr/local/include -Icode -I.
 OPTIMIZERS =-fexpensive-optimizations -funroll-loops -ffast-math -mfma -mavx2
 DEFINES    =-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPDATE) -D_NOMAD_VERSION_PATCH=$(VERSION_PATCH)
 CFLAGS     =-std=c++17 -Og -g -O0
@@ -47,13 +63,7 @@ RENDERGL=\
 	$(O)/rendergl/r_shader.o \
 	$(O)/rendergl/r_spritesheet.o \
 	$(O)/rendergl/m_renderer.o \
-	$(O)/rendergl/glad.o \
-	$(O)/rendergl/imgui_impl_sdl2.o \
-	$(O)/rendergl/imgui_impl_opengl3.o \
-	$(O)/rendergl/imgui.o \
-	$(O)/rendergl/imgui_draw.o \
-	$(O)/rendergl/imgui_widgets.o \
-	$(O)/rendergl/imgui_tables.o
+	$(O)/rendergl/glad.o
 COMMON=\
 	$(O)/common/vm_run.o \
 	$(O)/common/vm.o
@@ -72,73 +82,22 @@ SRC=\
 	$(O)/engine/n_shared.o \
 	$(O)/engine/n_common.o \
 	$(O)/engine/n_files.o \
+	$(O)/engine/n_map.o \
 	\
 	$(O)/allocator/z_heap.o \
 	$(O)/allocator/z_alloc.o
 
 all: $(EXE)
 
-$(O)/rendergl/r_framebuffer.o: $(SDIR)/src/r_framebuffer.cpp
+$(O)/rendergl/%.o: $(SDIR)/src/%.cpp
 	$(COMPILE_SRC)
-$(O)/rendergl/r_opengl.o: $(SDIR)/src/r_opengl.cpp
+$(O)/common/%.o: $(SDIR)/common/%.cpp
 	$(COMPILE_SRC)
-$(O)/rendergl/r_vertexcache.o: $(SDIR)/src/r_vertexcache.cpp
+$(O)/game/%.o: $(SDIR)/src/%.cpp
 	$(COMPILE_SRC)
-$(O)/rendergl/r_texture.o: $(SDIR)/src/r_texture.cpp
+$(O)/engine/%.o: $(SDIR)/src/%.cpp
 	$(COMPILE_SRC)
-$(O)/rendergl/r_shader.o: $(SDIR)/src/r_shader.cpp
-	$(COMPILE_SRC)
-$(O)/rendergl/r_spritesheet.o: $(SDIR)/src/r_spritesheet.cpp
-	$(COMPILE_SRC)
-$(O)/rendergl/m_renderer.o: $(SDIR)/src/m_renderer.cpp
-	$(COMPILE_SRC)
-$(O)/rendergl/glad.o: $(SDIR)/src/glad.c
-	$(COMPILE_C)
-$(O)/rendergl/imgui_impl_sdl2.o: $(SDIR)/src/imgui_impl_sdl2.cpp
-	$(COMPILE_SRC)
-$(O)/rendergl/imgui_impl_opengl3.o: $(SDIR)/src/imgui_impl_opengl3.cpp
-	$(COMPILE_SRC)
-$(O)/rendergl/imgui.o: $(SDIR)/src/imgui.cpp
-	$(COMPILE_SRC)
-$(O)/rendergl/imgui_draw.o: $(SDIR)/src/imgui_draw.cpp
-	$(COMPILE_SRC)
-$(O)/rendergl/imgui_widgets.o: $(SDIR)/src/imgui_widgets.cpp
-	$(COMPILE_SRC)
-$(O)/rendergl/imgui_tables.o: $(SDIR)/src/imgui_tables.cpp
-	$(COMPILE_SRC)
-$(O)/common/vm_run.o: $(SDIR)/common/vm_run.cpp
-	$(COMPILE_SRC)
-$(O)/common/vm.o: $(SDIR)/common/vm.c
-	$(COMPILE_C)
-$(O)/game/g_syscalls.o: $(SDIR)/src/g_syscalls.cpp
-	$(COMPILE_SRC)
-$(O)/game/g_sound.o: $(SDIR)/src/g_sound.cpp
-	$(COMPILE_SRC)
-$(O)/game/g_rng.o: $(SDIR)/src/g_rng.c
-	$(COMPILE_SRC)
-$(O)/game/g_math.o: $(SDIR)/src/g_math.cpp
-	$(COMPILE_SRC)
-$(O)/game/g_main.o: $(SDIR)/src/g_main.cpp
-	$(COMPILE_SRC)
-$(O)/game/g_init.o: $(SDIR)/src/g_init.cpp
-	$(COMPILE_SRC)
-$(O)/game/g_bff.o: $(SDIR)/src/g_bff.cpp
-	$(COMPILE_SRC)
-$(O)/game/g_game.o: $(SDIR)/src/g_game.cpp
-	$(COMPILE_SRC)
-$(O)/engine/n_console.o: $(SDIR)/src/n_console.cpp
-	$(COMPILE_SRC)
-$(O)/engine/n_scf.o: $(SDIR)/src/n_scf.cpp
-	$(COMPILE_SRC)
-$(O)/engine/n_shared.o: $(SDIR)/src/n_shared.cpp
-	$(COMPILE_SRC)
-$(O)/engine/n_common.o: $(SDIR)/src/n_common.cpp
-	$(COMPILE_SRC)
-$(O)/engine/n_files.o: $(SDIR)/src/n_files.cpp
-	$(COMPILE_SRC)
-$(O)/allocator/z_heap.o: $(SDIR)/src/z_heap.cpp
-	$(COMPILE_SRC)
-$(O)/allocator/z_alloc.o: $(SDIR)/src/z_alloc.cpp
+$(O)/allocator/%.o: $(SDIR)/src/%.cpp
 	$(COMPILE_SRC)
 
 $(EXE): $(SRC) $(COMMON) $(RENDERGL)

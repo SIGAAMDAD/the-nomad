@@ -5,26 +5,117 @@
 #define MAX_CMD_LINE 1024
 #define MAX_CMD_BUFFER 8192
 
-const char *Cvar_GetValue(const cvar_t* cvar);
+enum class LogLevel
+{
+    LOG_INFO,
+    LOG_DEBUG,
+    LOG_DEV,
+    LOG_ERR,
+};
 
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+#ifdef __unix__
+#define STDOUT_HANDLE STDOUT_FILENO
+#define STDERR_HANDLE STDERR_FILENO
+#define BAD_HANDLE NULL
+typedef FILE* consoleHandle_t;
+#define OpenConsoleHandle(fd) fdopen(fd,"w")
+#define CloseConsoleHandle(fd) fclose(fd)
+#elif defined(_WIN32)
+#define STDOUT_HANDLE STD_OUT_HANDLE
+#define STDERR_HANDLE STD_ERROR_HANDLE
+#define BAD_HANDLE INVALID_HANDLE_VALUE
+typedef HANDLE consoleHandle_t;
+#define OpenConsoleHandle(fd) GetStdHandle(fd)
+#define CloseConsoleHandle(fd) CloseHandle(fd)
+#endif
+
+#if 0
+
+class GDRConsole
+{
+private:
+    std::mutex m_conLock;
+    GDRCondVar 
+};
+
+typedef struct
+{
+    consoleHandle_t stderr;
+    consoleHandle_t stdout;
+
+    char msg[MAX_MSG_SIZE];
+    std::mutex m_conLock;
+    std::condition_variable m_conVar;
+} cmdConsole_t;
+
+static cmdConsole_t conInfo;
+
+void Con_Write(consoleHandle_t fd, bool nline = false)
+{
+#ifdef __unix__
+    size_t bytesWritten;
+    bytesWritten = fwrite((const void *)msg, sizeof(char), length, fd);
+    if (bytesWritten != length)
+        N_Error("Con_Write: bad fwrite!");
+    if (nline) {
+        bytesWritte = fwrite((const void *)"\n", sizeof(char), 1, fd);
+        if (bytesWritten != 1)
+            N_Error("Con_Write: bad fwrite!");
+    }
+    
+#elif defined(_WIN32)
+    DWORD bytesWritten;
+    WriteConsoleA(conHandle, (const void *)msg, length, &bytesWritten, NULL);
+//    if (bytesWritten != length) // ...?
+    WriteConsoleA(conHandle, (const void *)"\n", 1, &bytesWritten, NULL);
+//    if (bytesWritten != 1) // ...?
+#endif
+}
+
+void pop_msg(void)
+{
+    std::unique_lock<std::mutex> lock{conLock};
+    m_conVar.wait(lock, [this](){ return !m_msgQueue.empty(); });
+    const eastl::string& msgBuf = m_msgQueue.front();
+    m_msgQueue.pop();
+}
+
+void push_msg(LogLevel lvl, const char *fmt, ...)-
+{
+    va_list argptr;
+    char msg[MAX_MSG_SIZE];
+    int32_t length;
+
+    va_start(argptr, fmt);
+    length = vsnprintf(msg, MAX_MSG_SIZE, fmt, argptr);
+    va_end(argptr);
+
+    std::unique_lock<std::mutex> lock{conLock};
+    m_msgQueue.push(conInfo.msgBuf);
+    m_conVar.notify_one();
+}
+#endif
+
+// thread-safety
+static std::mutex conLock;
+static thread_local va_list argptr;
+static thread_local char msg[MAX_MSG_SIZE];
+static thread_local int32_t length;
+
 bool imgui_window_open = false;
 static eastl::vector<char> con_buffer;
 
-void Con_ClearBuffer(const char *msg, int length)
+void Con_ClearBuffer(const char *msg, int32_t length)
 {
     EASY_FUNCTION();
-    if (con_buffer.size() > MAX_BUFFER_SIZE) {
+
+    if (con_buffer.size() >= MAX_BUFFER_SIZE) {
         EASY_BLOCK("Console Buffer Resize");
-        eastl::vector<char>::iterator ptr = con_buffer.end() - MAX_BUFFER_SIZE;
-        while (ptr != con_buffer.end()) {
-            if (*ptr == '\n') {
-                ptr--;
-                break;
-            }
-            ptr++;
-        }
-        con_buffer.erase(con_buffer.begin(), ptr);
+        char *it = con_buffer.end() - MAX_BUFFER_SIZE;
+        char *ptr = strrchr(it, '\n');
+        
+        if (ptr)
+            con_buffer.erase(con_buffer.begin(), ptr);
     }
     con_buffer.insert(con_buffer.end(), msg, msg + length);
     con_buffer.emplace_back('\n');
@@ -33,22 +124,8 @@ void Con_ClearBuffer(const char *msg, int length)
 void Con_Printf(loglevel_t level, const char *fmt, ...)
 {
     EASY_FUNCTION();
-    if (level == DEV) {
-        fprintf(stdout, "DEV: ");
-    }
-    else if (level == DEBUG) {
-#ifdef _NOMAD_DEBUG
-        fprintf(stdout, "DEBUG: ");
-#else
-        return;
-#endif
-    }
 
-    va_list argptr;
-    int length;
-    char msg[MAX_MSG_SIZE];
     memset(msg, 0, sizeof(msg));
-
     va_start(argptr, fmt);
     length = vsnprintf(msg, sizeof(msg), fmt, argptr);
     va_end(argptr);
@@ -56,18 +133,27 @@ void Con_Printf(loglevel_t level, const char *fmt, ...)
     if (length >= sizeof(msg)) {
         N_Error("Con_Printf: overflow occured");
     }
-    fprintf(stdout, "%s\n", msg);
+
+    std::unique_lock<std::mutex> lock{conLock};
+    if (level == DEV)
+        write(STDOUT_FILENO, "DEV: ", 5);
+    else if (level == DEBUG) {
+#ifdef _NOMAD_DEBUG
+        write(STDOUT_FILENO, "DEBUG: ", 7);
+#else
+        return;
+#endif
+    }
+    write(STDOUT_FILENO, (const void *)msg, length);
+    write(STDOUT_FILENO, "\n", 1);
     Con_ClearBuffer(msg, length);
 }
 
 void Con_Printf(const char *fmt, ...)
 {
     EASY_FUNCTION();
-    va_list argptr;
-    int length;
-    char msg[MAX_MSG_SIZE];
-    memset(msg, 0, sizeof(msg));
 
+    memset(msg, 0, sizeof(msg));
     va_start(argptr, fmt);
     length = vsnprintf(msg, sizeof(msg), fmt, argptr);
     va_end(argptr);
@@ -75,7 +161,9 @@ void Con_Printf(const char *fmt, ...)
     if (length >= sizeof(msg)) {
         N_Error("Con_Printf: overflow occured");
     }
-    fprintf(stdout, "%s\n", msg);
+
+    std::unique_lock<std::mutex> lock{conLock};
+    write(STDOUT_FILENO, (const void *)msg, length);
     Con_ClearBuffer(msg, length);
 }
 
@@ -89,6 +177,7 @@ static void Con_Clear_f(void)
 static void Con_ProcessInput(void)
 {
     EASY_FUNCTION();
+
     if (!console_open)
         return; // nothing to process
     
@@ -127,19 +216,23 @@ void Con_EndFrame(void)
 
 void Con_Error(const char *fmt, ...)
 {
-    va_list argptr;
+    EASY_FUNCTION();
 
-    fprintf(stderr,"ERROR: ");
+    memset(msg, 0, sizeof(msg));
     va_start(argptr, fmt);
-    vfprintf(stderr, fmt, argptr);
+    length = vsnprintf(msg, sizeof(msg), fmt, argptr);
     va_end(argptr);
-    fprintf(stderr, "\n");
-    fflush(stderr);
+
+    std::unique_lock<std::mutex> lock{conLock};
+    write(STDERR_FILENO, "ERROR: ", 7);
+    write(STDERR_FILENO, msg, length);
 }
 
 #define MAX_CVAR_HASH 2048
 static cvar_t cvar_list;
 static uint64_t cvar_count;
+
+const char *Cvar_GetValue(const cvar_t* cvar);
 
 cvar_t* Cvar_Find(const char *name)
 {
@@ -648,8 +741,38 @@ static void Cvar_PrintType_f(void)
     Con_Printf("Type of cvar %s is %s", cvar->name, Cvar_TypeToString(cvar));
 }
 
+void Con_Shutdown(void)
+{
+#if 0
+    CloseConsoleHandle(conInfo.stdout);
+    CloseConsoleHandle(conInfo.stderr);
+#endif
+
+#ifdef _WIN32
+    if (!FreeConsole()) {
+
+    }
+#endif
+}
+
 void Con_Init()
 {
+#ifdef _WIN32
+    if (!AllocConsole()) {
+
+    }
+#endif
+
+#if 0
+    conInfo.stdout = OpenConsoleHandle(STDOUT_HANDLE);
+    if (conInfo.stdout == BAD_HANDLE)
+        N_Error();
+
+    conInfo.stderr = OpenConsoleHandle(STDERR_HANDLE)
+    if (conInfo.stderr == BAD_HANDLE)
+        N_Error();
+#endif
+
     con_buffer.reserve(MAX_BUFFER_SIZE);
     Cmd_AddCommand("writecfg", Cvar_WriteCfg_f);
     Cmd_AddCommand("listcvars", Cvar_List_f);

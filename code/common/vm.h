@@ -1,14 +1,3 @@
-/*
-      ___   _______     ____  __
-     / _ \ |___ /\ \   / /  \/  |
-    | | | |  |_ \ \ \ / /| |\/| |
-    | |_| |____) | \ V / | |  | |
-     \__\_______/   \_/  |_|  |_|
-
-
-   Quake III Arena Virtual Machine
-*/
-
 #ifndef __Q3VM_H
 #define __Q3VM_H
 
@@ -16,74 +5,219 @@
 extern "C" {
 #endif
 
-/******************************************************************************
- * SYSTEM INCLUDE FILES
- ******************************************************************************/
-
 #include <stdint.h>
-#include <stdio.h>  /* remove this if Com_Printf does not point to printf */
-#include <string.h> /* remove this if Com_Mem*** does not point to memcpy */
+#include <string.h>
 
 /******************************************************************************
  * DEFINES
  ******************************************************************************/
 
 #ifdef _NOMAD_DEBUG
-#define DEBUG_VM /**< ifdef: enable debug functions and additional checks */
+#define DEBUG_VM
 #endif
 
-/** File start magic number for .qvm files (4 bytes, little endian) */
 #define VM_MAGIC 0x12721444
-
-/** Don't change stack size: Hardcoded in q3asm and reserved at end of BSS */
 #define VM_PROGRAM_STACK_SIZE 0x10000
-
-/** Max. number of bytes in .qvm */
 #define VM_MAX_IMAGE_SIZE 0x400000
-
-/**< Maximum length of a pathname, 64 to be Q3 compatible */
 #define VM_MAX_QPATH 64
 
-#ifndef _NOMAD_VERSION
 #define Com_Memset memset
 #define Com_Memcpy memcpy
-#define Com_Printf printf
-#endif
 
-/** Translate from virtual machine memory to real machine memory. */
 #define VMA(x, vm) VM_ArgPtr(args[x], vm)
-
-/** Get argument in syscall and interpret it bit by bit as IEEE 754 float */
 #define VMF(x) VM_IntToFloat(args[x])
 
-/******************************************************************************
- * TYPEDEFS
- ******************************************************************************/
+#define OPSTACK_SIZE 1024
+#define MAX_VMSYSCALL_ARGS 16
+#define MAX_VMMAIN_ARGS 13
 
-/** VM error codes */
+#ifdef __GNUC__
+#ifndef DEBUG_VM           /* can't use computed gotos in debug mode */
+#define USE_COMPUTED_GOTOS /**< use computed gotos instead of a switch */
+#endif
+#endif
+
+#define OPCODE_TABLE_SIZE 64
+#define OPCODE_TABLE_MASK (OPCODE_TABLE_SIZE - 1)
+
+#define VM_MAX_BSS_LENGTH 10485760
+
 typedef enum {
-    VM_NO_ERROR                    = 0,   /**< 0 = OK */
-    VM_INVALID_POINTER             = -1,  /**< NULL pointer for vm_t */
-    VM_FAILED_TO_LOAD_BYTECODE     = -2,  /**< Invalid byte code */
-    VM_NO_SYSCALL_CALLBACK         = -3,  /**< Syscall pointer missing */
-    VM_FREE_ON_RUNNING_VM          = -4,  /**< Call to VM_Free while running */
-    VM_BLOCKCOPY_OUT_OF_RANGE      = -5,  /**< VM tries to escape sandbox */
-    VM_PC_OUT_OF_RANGE             = -6,  /**< Program counter out of range */
-    VM_JUMP_TO_INVALID_INSTRUCTION = -7,  /**< VM tries to escape sandbox */
-    VM_STACK_OVERFLOW              = -8,  /**< Only in DEBUG_VM mode */
-    VM_STACK_MISALIGNED            = -9,  /**< Stack not aligned (DEBUG_VM) */
-    VM_OP_LOAD4_MISALIGNED         = -10, /**< Access misaligned (DEBUG_VM) */
-    VM_STACK_ERROR                 = -11, /**< Stack corrupted after call */
-    VM_DATA_OUT_OF_RANGE           = -12, /**< Syscall pointer not in sandbox */
-    VM_MALLOC_FAILED               = -13, /**< Not enough memory */
-    VM_BAD_INSTRUCTION             = -14, /**< Unknown OP code in bytecode */
-    VM_NOT_LOADED                  = -15, /**< VM not loaded */
+    OP_UNDEF, /* Error: VM halt */
+
+    OP_IGNORE, /* No operation */
+
+    OP_BREAK, /* vm->breakCount++ */
+
+    OP_ENTER, /* Begin subroutine. */
+    OP_LEAVE, /* End subroutine. */
+    OP_CALL,  /* Call subroutine. */
+    OP_PUSH,  /* Push to stack. */
+    OP_POP,   /* Discard top-of-stack. */
+
+    OP_CONST, /* Load constant to stack. */
+    OP_LOCAL, /* Get local variable. */
+
+    OP_JUMP, /* Unconditional jump. */
+
+    /*-------------------*/
+
+    OP_EQ, /* Compare integers, jump if equal. */
+    OP_NE, /* Compare integers, jump if not equal. */
+
+    OP_LTI, /* Compare integers, jump if less-than. */
+    OP_LEI, /* Compare integers, jump if less-than-or-equal. */
+    OP_GTI, /* Compare integers, jump if greater-than. */
+    OP_GEI, /* Compare integers, jump if greater-than-or-equal. */
+
+    OP_LTU, /* Compare unsigned integers, jump if less-than */
+    OP_LEU, /* Compare unsigned integers, jump if less-than-or-equal */
+    OP_GTU, /* Compare unsigned integers, jump if greater-than */
+    OP_GEU, /* Compare unsigned integers, jump if greater-than-or-equal */
+
+    OP_EQF, /* Compare floats, jump if equal */
+    OP_NEF, /* Compare floats, jump if not-equal */
+
+    OP_LTF, /* Compare floats, jump if less-than */
+    OP_LEF, /* Compare floats, jump if less-than-or-equal */
+    OP_GTF, /* Compare floats, jump if greater-than */
+    OP_GEF, /* Compare floats, jump if greater-than-or-equal */
+
+    /*-------------------*/
+
+    OP_LOAD1,  /* Load 1-byte from memory */
+    OP_LOAD2,  /* Load 2-bytes from memory */
+    OP_LOAD4,  /* Load 4-bytes from memory */
+    OP_STORE1, /* Store 1-byte to memory */
+    OP_STORE2, /* Store 2-byte to memory */
+    OP_STORE4, /* *(stack[top-1]) = stack[top] */
+    OP_ARG,    /* Marshal argument */
+
+    OP_BLOCK_COPY, /* memcpy */
+
+    /*-------------------*/
+
+    OP_SEX8,  /* Sign-Extend 8-bit */
+    OP_SEX16, /* Sign-Extend 16-bit */
+
+    OP_NEGI, /* Negate integer. */
+    OP_ADD,  /* Add integers (two's complement). */
+    OP_SUB,  /* Subtract integers (two's complement). */
+    OP_DIVI, /* Divide signed integers. */
+    OP_DIVU, /* Divide unsigned integers. */
+    OP_MODI, /* Modulus (signed). */
+    OP_MODU, /* Modulus (unsigned). */
+    OP_MULI, /* Multiply signed integers. */
+    OP_MULU, /* Multiply unsigned integers. */
+
+    OP_BAND, /* Bitwise AND */
+    OP_BOR,  /* Bitwise OR */
+    OP_BXOR, /* Bitwise eXclusive-OR */
+    OP_BCOM, /* Bitwise COMplement */
+
+    OP_LSH,  /* Left-shift */
+    OP_RSHI, /* Right-shift (algebraic; preserve sign) */
+    OP_RSHU, /* Right-shift (bitwise; ignore sign) */
+
+    OP_NEGF, /* Negate float */
+    OP_ADDF, /* Add floats */
+    OP_SUBF, /* Subtract floats */
+    OP_DIVF, /* Divide floats */
+    OP_MULF, /* Multiply floats */
+
+    OP_CVIF, /* Convert to integer from float */
+    OP_CVFI, /* Convert to float from integer */
+
+    OP_MAX /* Make this the last item */
+} opcode_t;
+
+#ifndef USE_COMPUTED_GOTOS
+/* for the the computed gotos we need labels,
+ * but for the normal switch case we need the cases */
+#define goto_OP_UNDEF case OP_UNDEF
+#define goto_OP_IGNORE case OP_IGNORE
+#define goto_OP_BREAK case OP_BREAK
+#define goto_OP_ENTER case OP_ENTER
+#define goto_OP_LEAVE case OP_LEAVE
+#define goto_OP_CALL case OP_CALL
+#define goto_OP_PUSH case OP_PUSH
+#define goto_OP_POP case OP_POP
+#define goto_OP_CONST case OP_CONST
+#define goto_OP_LOCAL case OP_LOCAL
+#define goto_OP_JUMP case OP_JUMP
+#define goto_OP_EQ case OP_EQ
+#define goto_OP_NE case OP_NE
+#define goto_OP_LTI case OP_LTI
+#define goto_OP_LEI case OP_LEI
+#define goto_OP_GTI case OP_GTI
+#define goto_OP_GEI case OP_GEI
+#define goto_OP_LTU case OP_LTU
+#define goto_OP_LEU case OP_LEU
+#define goto_OP_GTU case OP_GTU
+#define goto_OP_GEU case OP_GEU
+#define goto_OP_EQF case OP_EQF
+#define goto_OP_NEF case OP_NEF
+#define goto_OP_LTF case OP_LTF
+#define goto_OP_LEF case OP_LEF
+#define goto_OP_GTF case OP_GTF
+#define goto_OP_GEF case OP_GEF
+#define goto_OP_LOAD1 case OP_LOAD1
+#define goto_OP_LOAD2 case OP_LOAD2
+#define goto_OP_LOAD4 case OP_LOAD4
+#define goto_OP_STORE1 case OP_STORE1
+#define goto_OP_STORE2 case OP_STORE2
+#define goto_OP_STORE4 case OP_STORE4
+#define goto_OP_ARG case OP_ARG
+#define goto_OP_BLOCK_COPY case OP_BLOCK_COPY
+#define goto_OP_SEX8 case OP_SEX8
+#define goto_OP_SEX16 case OP_SEX16
+#define goto_OP_NEGI case OP_NEGI
+#define goto_OP_ADD case OP_ADD
+#define goto_OP_SUB case OP_SUB
+#define goto_OP_DIVI case OP_DIVI
+#define goto_OP_DIVU case OP_DIVU
+#define goto_OP_MODI case OP_MODI
+#define goto_OP_MODU case OP_MODU
+#define goto_OP_MULI case OP_MULI
+#define goto_OP_MULU case OP_MULU
+#define goto_OP_BAND case OP_BAND
+#define goto_OP_BOR case OP_BOR
+#define goto_OP_BXOR case OP_BXOR
+#define goto_OP_BCOM case OP_BCOM
+#define goto_OP_LSH case OP_LSH
+#define goto_OP_RSHI case OP_RSHI
+#define goto_OP_RSHU case OP_RSHU
+#define goto_OP_NEGF case OP_NEGF
+#define goto_OP_ADDF case OP_ADDF
+#define goto_OP_SUBF case OP_SUBF
+#define goto_OP_DIVF case OP_DIVF
+#define goto_OP_MULF case OP_MULF
+#define goto_OP_CVIF case OP_CVIF
+#define goto_OP_CVFI case OP_CVFI
+#endif
+
+typedef enum
+{
+    VM_NO_ERROR                    = 0,
+    VM_INVALID_POINTER             = -1,
+    VM_FAILED_TO_LOAD_BYTECODE     = -2,
+    VM_NO_SYSCALL_CALLBACK         = -3,
+    VM_FREE_ON_RUNNING_VM          = -4,
+    VM_BLOCKCOPY_OUT_OF_RANGE      = -5,
+    VM_PC_OUT_OF_RANGE             = -6,
+    VM_JUMP_TO_INVALID_INSTRUCTION = -7,
+    VM_STACK_OVERFLOW              = -8,
+    VM_STACK_MISALIGNED            = -9,
+    VM_OP_LOAD4_MISALIGNED         = -10,
+    VM_STACK_ERROR                 = -11,
+    VM_DATA_OUT_OF_RANGE           = -12,
+    VM_MALLOC_FAILED               = -13,
+    VM_BAD_INSTRUCTION             = -14,
+    VM_NOT_LOADED                  = -15
 } vmErrorCode_t;
 
-/** VM alloc type. This is just an information passed to the host malloc
- * callback function (via Com_malloc). You can safely ignore this if you see no
- * use for this information. */
-typedef enum {
+typedef enum
+{
     VM_ALLOC_CODE_SEC             = 0, /**< Bytecode code section */
     VM_ALLOC_DATA_SEC             = 1, /**< Bytecode data section */
     VM_ALLOC_INSTRUCTION_POINTERS = 2, /**< Bytecode instruction pointers */
@@ -91,8 +225,6 @@ typedef enum {
     VM_ALLOC_TYPE_MAX                  /**< Last item in vmMallocType_t */
 } vmMallocType_t;
 
-/** File header of a bytecode .qvm file. Can be directly mapped to the start of
- *  the file. This is always little endian encoded in the file. */
 typedef struct
 {
     int32_t vmMagic;          /**< Bytecode image shall start with VM_MAGIC */
@@ -105,86 +237,58 @@ typedef struct
     int32_t bssLength; /**< How many bytes should be used for .bss segment */
 } vmHeader_t;
 
-/** For debugging (DEBUG_VM): symbol list */
 typedef struct vmSymbol_s
 {
     struct vmSymbol_s* next; /**< Linked list of symbols */
 
-    int symValue; /**< Value of symbol that we want to have the ASCII name for
+    int32_t symValue; /**< Value of symbol that we want to have the ASCII name for
                      */
-    int  profileCount; /**< For the runtime profiler. +1 for each call. */
+    int32_t  profileCount; /**< For the runtime profiler. +1 for each call. */
     char symName[1];   /**< Variable sized symbol name. Space is reserved by
                           malloc at load time. */
 } vmSymbol_t;
 
-/** Main struct (think of a kind of a main class) to keep all information of
- * the virtual machine together. Has pointer to the bytecode, the stack and
- * everything. Call VM_Create(...) to initialize this struct. Call VM_Free(...)
- * to cleanup this struct and free the memory. */
 typedef struct vm_s
 {
-    /* DO NOT MOVE OR CHANGE THESE WITHOUT CHANGING THE VM_OFFSET_* DEFINES
-       USED BY THE ASM CODE (IF WE ADD THE Q3 JIT COMPILER IN THE FUTURE) */
     vmHeader_t header;
 
-    int programStack; /**< Stack pointer into .data segment. */
-
-    /** Function pointer to callback function for native functions called by
-     * the bytecode. The function is identified by an integer id that
-     * corresponds to the bytecode function ids defined in g_syscalls.asm.
-     * Note however that parms equals to (-1 - function_id).
-     * So -1 in g_syscalls.asm equals to 0 in the systemCall parms argument,
-     *    -2 in g_syscalls.asm equals to 1 in the systemCall parms argument,
-     *    -3 in g_syscalls.asm equals to 2 in the systemCall parms argument
-     * and so on. You can convert it back to -1, -2, -3, but the 0 based
-     * index might help a lookup table. */
+    int32_t programStack;
     intptr_t (*systemCall)(struct vm_s* vm, intptr_t* parms);
 
-    /*------------------------------------*/
+    char  name[VM_MAX_QPATH];
+    void* searchPath;
 
-    char  name[VM_MAX_QPATH]; /** File name of the bytecode */
-    void* searchPath;         /**< unused */
+    void* unused_dllHandle;
+    intptr_t (*unused_entryPoint)(int32_t callNum, ...);
+    void (*unused_destroy)(struct vm_s* self);
 
-    /* for dynamic libs (unused in Q3VM) */
-    void* unused_dllHandle;                          /**< unused */
-    intptr_t (*unused_entryPoint)(int callNum, ...); /**< unused */
-    void (*unused_destroy)(struct vm_s* self);       /**< unused */
+    qboolean currentlyInterpreting;
 
-    int currentlyInterpreting; /**< Is the vm currently running? */
-
-    int      compiled;   /**< Is a JIT active? Otherwise interpreted */
-    uint8_t* codeBase;   /**< Bytecode code segment */
-    int      entryOfs;   /**< unused */
-    int      codeLength; /**< Number of bytes in code segment */
+    qboolean compiled;
+    uint8_t* codeBase;
+    int32_t entryOfs;
+    uint32_t codeLength;
 
     intptr_t* instructionPointers;
-    int       instructionCount; /**< Number of instructions for VM */
+    uint32_t instructionCount;
 
-    uint8_t* dataBase;  /**< Start of .data memory segment */
-    int      dataMask;  /**< VM mask to protect access to dataBase */
-    int      dataAlloc; /**< Number of bytes allocated for dataBase */
+    uint8_t* dataBase;
+    uint32_t dataMask;
+    uint32_t dataAlloc;
 
-    int stackBottom; /**< If programStack < stackBottom, error */
+    uint32_t stackBottom;
 
-    /*------------------------------------*/
+    uint32_t numSymbols;
+    vmSymbol_t* symbols;
 
-    /* DEBUG_VM */
-    int         numSymbols; /**< Number of symbols from VM_LoadSymbols */
-    vmSymbol_t* symbols;    /**< By VM_LoadSymbols: names for debugging */
+    uint32_t callLevel;
+    uint32_t breakFunction;
+    uint32_t breakCount;
 
-    int callLevel;     /**< Counts recursive VM_Call */
-    int breakFunction; /**< For debugging: break at this function */
-    int breakCount;    /**< Used for breakpoints, triggered by OP_BREAK */
-
-    /* non vanilla q3 area: */
-    vmErrorCode_t lastError; /**< Last known error */
+    vmErrorCode_t lastError;
 } vm_t;
 
 const vmHeader_t* VM_LoadQVM(vm_t* vm, const uint8_t* bytecode, int length);
-
-/******************************************************************************
- * FUNCTION PROTOTYPES
- ******************************************************************************/
 
 /** Initialize a virtual machine.
  * @param[out] vm Pointer to a virtual machine to initialize.

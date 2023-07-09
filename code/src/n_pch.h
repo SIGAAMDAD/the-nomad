@@ -3,42 +3,117 @@
 
 #pragma once
 
-//#include <boost/atomic/atomic.hpp>
-//#include <boost/thread/futures/launch.hpp>
-//#include <boost/thread.hpp>
-//#include <boost/thread/mutex.hpp>
-#ifdef __unix__
-#   include <sys/mman.h>
-#   include <sys/fcntl.h>
-#   include <unistd.h>
-#   include <dlfcn.h>
-#elif defined(_WIN32)
-#   define WIN32_LEAN_AND_MEAN
-#   include <windows.h>
-#   include <io.h>
-#   include <sys/types.h>
-#   include <libloaderapi.h>
-#   pragma comment(lib, "Kernel32.lib")
-#else
-#   error Unsupported OS!
+#if defined(__MINGW32__) || defined(__MINGW64__)
+    #define GDR_THREADS_NO_SUPPORT 1
 #endif
 
-#include <iomanip>
-#include <iostream>
-#include <fstream>
-#include <memory>
-#include <functional>
-#include <future>
+/*
+OS-specific stuff
+*/
+#include <sys/types.h>
+#ifdef __unix__
+    #include <sys/mman.h>
+    #include <sys/stat.h>
+    #include <sys/dir.h>
+    #include <sys/errno.h>
+    #include <unistd.h>
+    #include <dlfcn.h>
+#elif defined(_WIN32)
+    #define WIN32_LEAN_AND_MEAN
+    #include <windows.h>
+    #include <io.h>
+    #include <libloaderapi.h>
+    #pragma comment(lib, "Kernel32.lib")
+    #pragma comment(lib, "libloader.lib")
+#else
+    #error Unsupported OS!
+#endif
+
+/*
+Multithreading
+*/
+#ifdef GDR_THREADS_NO_SUPPORT // we're using mingw
+    #include "mingw-std-threads/mingw.condition_variable.h"
+    #include "mingw-std-threads/mingw.invoke.h"
+    #include "mingw-std-threads/mingw.mutex.h"
+    #include "mingw-std-threads/mingw.future.h"
+    #include "mingw-std-threads/mingw.shared_mutex.h"
+    #include "mingw-std-threads/mingw.thread.h"
+#else
+    #include <boost/thread/thread.hpp>
+    #include <boost/thread/mutex.hpp>
+    #include <boost/thread/condition_variable.hpp>
+    #include <boost/thread/future.hpp>
+    #include <boost/thread/shared_mutex.hpp>
+#endif
+
+/*
+Standard Library
+*/
 #include <stdlib.h>
-#include <sstream>
 #include <stdio.h>
-#include <stdint.h>
 #include <stdarg.h>
-#include <string>
 #include <string.h>
-#include <vector>
-#include <algorithm>
-#include <utility>
+#include <stddef.h>
+#include <stdint.h>
+#include <setjmp.h>
+#include <strings.h>
+
+/*
+Dependencies
+*/
+#include <EA/EASTL/array.h>
+#include <EA/EASTL/vector.h>
+#include <EA/EASTL/string.h>
+#include <EA/EASTL/map.h>
+#include <EA/EASTL/unordered_map.h
+#include <EA/EASTL/utility.h>
+#include <EA/EASTL/algorithm.h>
+#include <EA/EASTL/memory.h>
+#include <EA/EASTL/numeric.h>
+#include <EA/EASTL/unique_ptr.h>
+#include <EA/EASTL/shared_ptr.h>
+#include <EA/EASTL/weak_ptr.h>
+#include <EA/EASTL/shared_array.h>
+#include <EA/EASTL/vector_map.h>
+#include <EA/EASTL/slist.h>
+#include <EA/EASTL/dequeue.h>
+#include <EA/EASTL/queue.h>
+#include <EA/EASTL/list.h>
+#include <EA/EASTL/iterator.h>
+#include <EA/EASTL/internal/atomic/atomic.h>
+
+#include <GDRLib/lib.hpp>
+
+// eastl stuff
+#include <EABase/eabase.h>
+#include <EASTL/shared_ptr.h>
+#include <EASTL/unique_ptr.h>
+#include <EASTL/iterator.h>
+#include <EASTL/weak_ptr.h>
+#include <EASTL/algorithm.h>
+#include <EASTL/unique_ptr.h>
+#include <EASTL/allocator.h>
+#include <EASTL/type_traits.h>
+#include <EASTL/utility.h>
+#include <EASTL/tuple.h>
+#include <EASTL/allocator_malloc.h>
+#include <EASTL/core_allocator.h>
+#include <EASTL/initializer_list.h>
+#include <EASTL/array.h>
+#include <EASTL/hash_map.h>
+#include <EASTL/string.h>
+#include <EASTL/vector.h>
+#include <EASTL/map.h>
+#include <EASTL/slist.h>
+#include <EASTL/queue.h>
+#include <EASTL/unordered_map.h>
+#include <EASTL/allocator.h>
+#include <EASTL/list.h>
+
+#include <EASTL/internal/atomic/atomic.h>
+#include <EASTL/internal/atomic/atomic_standalone.h>
+#include <EASTL/internal/function.h>
 
 /*** deps ***/
 // random

@@ -5,6 +5,7 @@
 
 #include "n_scf.h"
 #include "g_bff.h"
+#include "n_map.h"
 
 #ifndef O_BINARY
 #define O_BINARY 0
@@ -47,7 +48,7 @@ class Game
 private:
     static Game* gptr;
 public:
-    tmx::Map *c_map;
+    eastl::shared_ptr<GDRMap> c_map;
 //    sprite_t backup[MAP_MAX_X+160][MAP_MAX_Y+160];
     char lvlname[256];
     SDL_Window* window;

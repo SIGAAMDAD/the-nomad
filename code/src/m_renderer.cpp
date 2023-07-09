@@ -41,7 +41,9 @@ typedef struct
     shader_t *spriteShader;
     vertexCache_t *pintCache;
     vertexCache_t *spriteCache;
-    SpriteSheet *sprSheet;
+
+    eastl::shared_ptr<GDRLayer> currentLayer;
+    eastl::shared_ptr<SpriteSheet> layerSpriteData;
 } frameData_t;
 
 static frameData_t frame;
@@ -145,32 +147,38 @@ void RE_InitSettings_f(void)
         glEnable(GL_DITHER);
     else
         glDisable(GL_DITHER);
+    
+    SDL_GL_SetSwapInterval((r_vsync.b ? -1 : 0));
 }
 
 void RE_SetDefaultState(void)
 {
     glEnable(GL_MULTISAMPLE_ARB);
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_STENCIL_TEST);
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
 
-    glDisable(GL_DITHER);
     glDisable(GL_CULL_FACE);
+
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glDepthMask(GL_FALSE);
+    glDepthFunc(GL_ALWAYS);
 }
 
 static void R_InitGL(void)
 {
     renderer->gpuContext.context = SDL_GL_CreateContext(renderer->window);
     SDL_GL_MakeCurrent(renderer->window, renderer->gpuContext.context);
-    SDL_GL_SetSwapInterval(1);
+    SDL_GL_SetSwapInterval(-1);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
 //   SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-//    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-//    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
 
     if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
         N_Error("R_Init: failed to initialize OpenGL (glad)");
@@ -726,7 +734,6 @@ void RE_InitFrameData(void)
 
     frame.spriteCache = RGL_InitCache(NULL, RENDER_MAX_VERTICES, NULL, RENDER_MAX_INDICES, GL_UNSIGNED_INT);
     frame.spriteShader = R_CreateShader("gamedata/sprite.glsl", "spriteShader");
-    frame.sprSheet = CONSTRUCT(SpriteSheet, "spriteSheet", "NMTEXSHEET", glm::vec2(16.0f, 16.0f), glm::vec2(256, 256), NUMSPRITES);
 
     frame.pintVerts = (vertex_t *)Hunk_Alloc(sizeof(vertex_t) * (64 * 24 * 4), "pintVerts", h_low);
     frame.pintCache = RGL_InitCache(NULL, MAP_MAX_Y * MAP_MAX_X * 4, NULL, MAP_MAX_Y * MAP_MAX_X * 6, GL_UNSIGNED_INT);
@@ -735,10 +742,6 @@ void RE_InitFrameData(void)
     RGL_ResetVertexData(frame.pintCache);
     RGL_ResetIndexData(frame.spriteCache);
     RGL_ResetIndexData(frame.pintCache);
-
-    frame.sprSheet->AddSprite(SPR_SKYBOX, { 1, 0 });
-    frame.sprSheet->AddSprite(SPR_ROCK, { 0, 0 });
-    frame.sprSheet->AddSprite(SPR_PLAYR, { 2, 0 });
 }
 
 
@@ -748,16 +751,18 @@ void RE_CmdDrawSprite(sprite_t spr, const glm::vec2& pos, const glm::vec2& size)
     frame.numSprites++;
 }
 
-static void RE_CmdDrawPint(const glm::vec2& pos, sprite_t spr)
+static void RE_CmdDrawPint(const glm::vec2& pos, uint32_t gid, const float pintVertexWidth, const eastl::shared_ptr<SpriteSheet>& sheet)
 {
-    const glm::vec2* coords = frame.sprSheet->GetSpriteCoords(SPR_ROCK);
+    const glm::vec2* coords = sheet->GetSpriteCoords(gid);
     const glm::vec4 positions[] = {
         glm::vec4( 0.5f,  0.5f, 0.0f, 1.0f),
         glm::vec4( 0.5f, -0.5f, 0.0f, 1.0f),
         glm::vec4(-0.5f, -0.5f, 0.0f, 1.0f),
         glm::vec4(-0.5f,  0.5f, 0.0f, 1.0f),
     };
-    const glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x, pos.y, 0.0f));
+
+    const glm::vec2 dim = { frame.currentLayer->getWidth(), frame.currentLayer->getHeight() };
+    const glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x - dim.x, dim.y - pos.y / pintVertexWidth, 0.0f));
 //                        * glm::scale(glm::mat4(1.0f), glm::vec3(0.0625f, 0.0625f, 0.0f)); // 16x16 texture sprite pints
     const glm::mat4 mvp = renderer->camera.GetProjection() * renderer->camera.GetViewMatrix() * model;
     vertex_t verts[4];
@@ -776,21 +781,41 @@ static void R_GetMapBuffer(void)
     EASY_FUNCTION();
 }
 
+
+static void R_RenderLayer(const eastl::shared_ptr<GDRTileLayer>& layer, const eastl::shared_ptr<GDRMap>& mapData)
+{
+    const GDRTile *tile;
+
+    for (uint64_t y = 0; y < layer->getHeight(); ++y) {
+        for (uint64_t x = 0; x < layer->getWidth(); ++x) {
+            tile = layer->getTile(y * layer->GetWidth() + x);
+
+            if (tile->tilesetIndex == mapData->numTilesets()) {
+                // invalid tile, render the skybox
+                RE_CmdDrawPint({ x, y }, (uint32_t)SPR_SKYBOX, 0.5f, frame.defaultSpriteSheet);
+            }
+            else {
+                // valid tile, render the gid
+                RE_CmdDrawPint({ x, y }, tile->gid, 0.5f, mapData->getTilesets()[tile->tilesetIndex]);
+            }
+        }
+    }
+}
+
 void RE_DrawPints(void)
 {
     EASY_FUNCTION();
-    R_GetMapBuffer();
-    sprite_t spr;
+    
+    int32_t tileGID;
+    GDRTile *tile;
     glm::mat4 mvp, model;
-    const glm::ivec2 start = glm::ivec2(
-        Game::Get()->cameraPos.x - (width / 2),
-        Game::Get()->cameraPos.y - (height / 2)
-    );
-    const glm::ivec2 end = glm::ivec2(
-        Game::Get()->cameraPos.x + (width / 2),
-        Game::Get()->cameraPos.y + (height / 2)
-    );
     const uint32_t from = width * 0.25f;
+    vertex_t *verts = frame.pintVerts;
+
+    const eastl::shared_ptr<GDRMap>& mapData = Game::Get()->c_map;
+    const eastl::vector<eastl::shared_ptr<GDRTileSet>>& tileset = mapData->getTilesets();
+    const eastl::vector<eastl::shared_ptr<GDRTileLayer>>& layers = mapData->getLayers();
+    
     const float pintVertexWidth = 0.5f;
     const glm::vec4 positions[] = {
         glm::vec4( pintVertexWidth,  pintVertexWidth, 0.0f, 1.0f),
@@ -798,8 +823,13 @@ void RE_DrawPints(void)
         glm::vec4(-pintVertexWidth, -pintVertexWidth, 0.0f, 1.0f),
         glm::vec4(-pintVertexWidth,  pintVertexWidth, 0.0f, 1.0f)
     };
-    vertex_t *verts = frame.pintVerts;
+
 #if 0
+    glm::ivec2 startPos = { renderer->camera.GetPos().x, renderer->camera.GetPos().y };
+    glm::ivec2 visibleTiles = { r_screenheight.i, r_screenwidth.i };
+
+    if (r_screenwidth.i )
+
     struct RENDER_RECT
     {
         uint64_t left;
@@ -808,17 +838,17 @@ void RE_DrawPints(void)
         uint64_t bottom;
     };
 
-    RENDER_RECT renderLoc = {0, 0, 16, 16};
+    RENDER_RECT renderLoc = {0, 0, mapData->getTileWidth(), mapData->getTileHeight()};
 
-    int32_t startCol = Game::Get()->cameraPos.x / 16;
-    int32_t startRow = Game::Get()->cameraPos.y / 16;
+    int32_t startCol = Game::Get()->cameraPos.x / mapData->getTileWidth();
+    int32_t startRow = Game::Get()->cameraPos.y / mapData->getTileHeight();
 
-    int32_t visibleTilesY = (r_screenheight.i / 16);
-    int32_t visibleTilesX = (r_screenwidth.i / 16);
+    int32_t visibleTilesY = (r_screenheight.i / mapData->getTileHeight());
+    int32_t visibleTilesX = (r_screenwidth.i / mapData->getTileWidth());
 
-    if (r_screenwidth.i % 16)
+    if (r_screenwidth.i % mapData->getTileWidth())
         visibleTilesX++;
-    if (r_screenheight.i % 16)
+    if (r_screenheight.i % mapData->getTileHeight())
         visibleTilesY++;
     
     int32_t endCol = startCol + visibleTilesX;
@@ -826,8 +856,8 @@ void RE_DrawPints(void)
 
     int32_t y, x, l;
 
-    x = Game::Get()->cameraPos.x % 16;
-    y = Game::Get()->cameraPos.y % 16;
+    x = Game::Get()->cameraPos.x % mapData->getTileWidth();
+    y = Game::Get()->cameraPos.y % mapData->getTileHeight();
 
     if (!x) {
         endCol--;
@@ -845,32 +875,69 @@ void RE_DrawPints(void)
         renderLoc.bottom -= y;
     }
 
-    if (endCol >= MAP_MAX_X)
-        endCol = MAP_MAX_X;
-    if (endRow >= MAP_MAX_Y)
-        endRow = MAP_MAX_Y;
+    if (endCol > mapData->getWidth())
+        endCol = mapData->getWidth();
+    if (endRow > mapData->getHeight())
+        endRow = mapData->getHeight();
     
-#endif
-    const GDRMap& mapData = *Game::Get()->c_map;
-    uint32_t y2, x2;
+    int32_t y2, x2;
     x2 = 0;
     y2 = 0;
+#endif
+    for (eastl::vector<eastl::shared_ptr<GDRMapLayer>>::const_iterator it = layers.cbegin(); it != layers.cend(); ++it) {
+        const eastl::shared_ptr<GDRMapLayer>& layerBase = *it;
+        
+        switch (layerBase->getType()) {
+        case MAP_LAYER_TILE:
+            R_RenderLayer(eastl::dynamic_pointer_cast<GDRTileLayer>(layerBase), mapData);
+            break;
+        case MAP_LAYER_GROUP:
+            R_LayerIterate(eastl::dynamic_pointer_cast<GDRGroupLayer>(layerBase), mapData);
+            break;
+        case MAP_LAYER_IMAGE:
+            R_RenderLayer(eastl::dynamic_pointer_cast<GDRImageLayer>(layerBase), mapData);
+            break;
+        case MAP_LAYER_OBJECT:
+            R_RenderLayer(eastl::dynamic_pointer_cast<GDRObjectGroup>(layerBase), mapData);
+            break;
+        };
+        
+        const eastl::shared_ptr<GDRTileLayer>& layer = eastl::dynamic_pointer_cast<GDRTileLayer>(*it);
+        const GDRTile *tiles = layer->getTiles();
+        
+        for (int32_t x = 0; x < layer->getWidth(); ++x) {
+            for (int32_t y = 0; y < layer->getHeight(); ++y) {
+                tileGID = tiles[x][y];
 
-    for (int32_t x = start.x; x <= end.x; x++) {
-        for (int32_t y = start.y; y <= end.y; y++) {
-            model = glm::translate(glm::mat4(1.0f), glm::vec3(x2 - from / pintVertexWidth, height - y2, 0.0f));
-            mvp = renderer->camera.GetProjection() * renderer->camera.GetViewMatrix() * model;
+                if (tileGID == 0)
+                    continue;
+                
+                tileGID--;
+                x2 = (tileGID % mapData->getWidth());
+                y2 = (tileGID / mapData->getWidth());
 
-            for (uint32_t i = 0; i < 4; ++i) {
-                verts->pos = mvp * positions[i];
-                verts->texcoords = frame.sprSheet->GetSpriteCoords(mapData[y][x])[i];
-                verts->color = glm::vec4(0.0f);
-                verts++;
+                SDL_Rect rect_CurTile;
+                rect_CurTile.x = (tileset->getMargin() + (tileset->getTileWidth() + tileset->getSpacing()) * x2);
+                rect_CurTile.y = (tileset->getMargin() + (tileset->getTileHeight() + tileset->getSpacing()) * y2);
+                rect_CurTile.w = tileset->getTileWidth();
+                rect_CurTile.h = tileset->getTileHeight();
+
+                int32_t DrawX = (x * tileset->getTileWidth() / 2) + (y * tileset->getTileWidth() / 2);
+                int32_t DrawY = (y * tileset->getTileHeight() / 2) - (x * tileset->getTileHeight() / 2);
+
+                model = glm::translate(glm::mat4(1.0f), glm::vec3(DrawX - from / pintVertexWidth, DrawY - y, 0.0f))
+                    * glm::scale(glm::mat4(1.0f), glm::vec3(rect_CurTile.w, rect_CurTile.h, 0.0f))
+                    * glm::rotate(glm::mat4(1.0f), glm::radians(renderer->camera.GetRotation()), glm::vec3(0, 0, 1));
+                mvp = renderer->camera.GetVPM() * model;
+                
+                for (uint32_t i = 0; i < 4; ++i) {
+                    verts->pos = mvp * positions[i];
+                    verts->texcoords = tileset->getTile()->;
+                }
             }
-            x2++;
         }
-        y2++;
     }
+    
 }
 
 void RE_BeginFrame(void)

@@ -1,5 +1,10 @@
 #include "n_shared.h"
 
+namespace EA::StdC {
+	int Vsnprintf(char* EA_RESTRICT pDestination, size_t n, const char* EA_RESTRICT pFormat, va_list arguments)
+	{ return vsnprintf(pDestination, n, pFormat, arguments); }
+};
+
 void* N_memset (void *dest, int32_t fill, size_t count)
 {
 	size_t i;
@@ -416,4 +421,36 @@ void N_WriteFile(const char *filepath, const void *data, size_t size)
 		return;
 	}
 	fclose(fp);
+}
+
+void CopyShortSwap(void *dest, void *src)
+{
+	byte *to = (byte *)dest, *from = (byte *)src;
+
+	to[0] = from[1];
+	to[1] = from[0];
+}
+
+void CopyIntSwap(void *dest, void *src)
+{
+	byte *to = (byte *)dest, *from = (byte *)src;
+
+	to[0] = from[3];
+	to[1] = from[2];
+	to[2] = from[1];
+	to[3] = from[0];
+}
+
+void CopyLongSwap(void *dest, void *src)
+{
+	byte *to = (byte *)dest, *from = (byte *)src;
+
+	to[0] = from[7];
+	to[1] = from[6];
+	to[2] = from[5];
+	to[3] = from[4];
+	to[4] = from[3];
+	to[5] = from[2];
+	to[6] = from[1];
+	to[7] = from[0];
 }

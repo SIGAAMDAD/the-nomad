@@ -20,6 +20,7 @@ private:
 
     const texture_t *texSheet;
 public:
+    SpriteSheet() = default;
     SpriteSheet(const char *filepath, const glm::vec2& spriteDims, const glm::vec2& sheetDims, uint32_t numSprites);
     ~SpriteSheet();
 
@@ -28,8 +29,8 @@ public:
 
     void BindSheet(void) const;
     void UnbindSheet(void) const;
-    GDR_INLINE const texture_t* GetTexture(void) const { return texSheet; }
-    GDR_INLINE const glm::vec2* GetSpriteCoords(uint32_t index) const { return sprites[index].coords; }
+    inline const texture_t* GetTexture(void) const { return texSheet; }
+    inline const glm::vec2* GetSpriteCoords(uint32_t index) const { return sprites[index].coords; }
 };
 
 #endif

@@ -24,32 +24,6 @@ static void CameraGame_f(void)
     if (!ptr) N_Error("failed to load library symbol %s", name); \
 }
 
-int I_GetParm(const char *parm)
-{
-    if (!parm)
-        N_Error("I_GetParm: parm is NULL");
-
-    for (int i = 1; i < myargc; i++) {
-        if (N_strcasecmp(myargv[i], parm))
-            return i;
-    }
-    return -1;
-}
-
-void __attribute__((noreturn)) N_Error(const char *err, ...)
-{
-    char msg[1024];
-    memset(msg, 0, sizeof(msg));
-    va_list argptr;
-    va_start(argptr, err);
-    stbsp_vsnprintf(msg, sizeof(msg) - 1, err, argptr);
-    va_end(argptr);
-    Con_Error("%s", msg);
-
-    Game::Get()->~Game();
-    exit(EXIT_FAILURE);
-}
-
 static void done()
 {
     Game::Get()->~Game();
@@ -61,7 +35,7 @@ void mainLoop()
     SDL_Event event;
     memset(&event, 0, sizeof(event));
 
-    Game::Get()->cameraPos = glm::ivec3(120, 120, 0);
+    Game::Get()->cameraPos = glm::ivec3(0, 0, 0);
 
     std::vector<glm::vec3> translations = {
         glm::vec3(0, 0, 0),

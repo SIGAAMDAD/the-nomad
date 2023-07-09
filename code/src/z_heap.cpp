@@ -561,7 +561,9 @@ void Z_Free(void *ptr)
 	
 	if (block->id != ZONEID)
 		N_Error("Z_Free: freed a pointer without ZONEID");
-	if (block->tag != TAG_FREE && block->user != (void **)NULL) {
+	if (N_strncmp("zalloc", block->name, 7) && block->tag >= TAG_PURGELEVEL) // its a smart pointer
+		block->tag = TAG_FREE;
+	else if (block->tag != TAG_FREE && block->user != (void **)NULL) {
 		// clear the user's mark
 		*block->user = NULL;
 	}
@@ -588,7 +590,7 @@ void* Z_Malloc(uint32_t size, int32_t tag, void *user, const char *name)
 #ifdef _NOMAD_DEBUG
 	Z_CheckHeap();
 #endif
-	if (tag >= TAG_PURGELEVEL && !user)
+	if (tag >= TAG_PURGELEVEL && !user && (!N_strncmp("zalloc", name, 7))) // not a smart pointer
 		N_Error("Z_Malloc: an owner is required for purgable blocks, name: %s", name);
 	if (size == 0)
 		N_Error("Z_Malloc: bad size, name: %s", name);
@@ -686,8 +688,6 @@ void Z_ChangeTag(void *user, int32_t tag)
 	// sanity
 	if (!user)
 		N_Error("Z_ChangeTag: user is NULL");
-	if (tag >= TAG_PURGELEVEL && !user)
-		N_Error("Z_ChangeTag: user is required for purgable blocks");
 	if (!tag || tag >= NUMTAGS)
 		N_Error("Z_ChangeTag: invalid tag");
 	
@@ -860,7 +860,7 @@ void* Z_Realloc(uint32_t nsize, int32_t tag, void *user, void *ptr, const char* 
 		memblock_t* block = (memblock_t *)((byte *)ptr - sizeof(memblock_t));
 		memcpy(p, ptr, nsize <= block->size ? nsize : block->size);
 		
-		Z_Free(ptr);
+		Z_ChangeTag(ptr, TAG_PURGELEVEL);
 		block->user = (void **)user;
 		if (block->user)
 			*block->user = p;

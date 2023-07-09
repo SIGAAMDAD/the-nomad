@@ -27,6 +27,8 @@ void Con_RenderConsole(void);
 void Com_UpdateEvents(void);
 void GDR_DECL Com_Error(const char *fmt, ...);
 
+void COM_StripExtension(const char *in, char *out, uint64_t destsize);
+
 const char *Com_SkipTokens( const char *s, int numTokens, const char *sep );
 const char *Com_SkipCharset( const char *s, const char *sep );
 void	COM_BeginParseSession( const char *name );
