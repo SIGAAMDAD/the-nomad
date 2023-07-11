@@ -28,25 +28,6 @@ constexpr const char sfxinfo[numsfx][180] = {
     "FABSHOT.wav",
 };
 
-typedef struct nomadsnd_s
-{
-    ALuint source;
-    ALuint buffer;
-    char name[80];
-
-    int samplerate;
-    int channels;
-    int length;
-    int frames;
-    short* sndbuf;
-
-    bool queued = false;
-    bool failed = false; // if the pre-caching effort failed for this specific sound
-} nomadsnd_t;
-
-extern uint32_t sndcache_size;
-extern nomadsnd_t* snd_cache;
-
 void I_CacheAudio(void *bffinfo);
 void P_PlaySFX(uint32_t sfx);
 void S_PlayMusic(uint32_t music);

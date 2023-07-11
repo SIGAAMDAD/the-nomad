@@ -21,20 +21,26 @@ extern cvar_t snd_musicon;
 extern cvar_t snd_sfxon;
 
 extern cvar_t r_ticrate;
-extern cvar_t r_texture_magfilter;
-extern cvar_t r_texture_minfilter;
 extern cvar_t r_screenheight;
 extern cvar_t r_screenwidth;
 extern cvar_t r_vsync;
 extern cvar_t r_fullscreen;
-extern cvar_t r_hidden;
 extern cvar_t r_native_fullscreen;
+extern cvar_t r_hidden;
 extern cvar_t r_drawFPS;
 extern cvar_t r_renderapi;
-extern cvar_t r_msaa_amount;
+extern cvar_t r_multisampleAmount;
+extern cvar_t r_multisampleType;
 extern cvar_t r_dither;
-
-extern eastl::vector<const byte*> api_extensions;
+extern cvar_t r_anisotropicFiltering;
+extern cvar_t r_gammaAmount;
+extern cvar_t r_textureMagFilter;
+extern cvar_t r_textureMinFilter;
+extern cvar_t r_textureFiltering;
+extern cvar_t r_textureCompression;
+extern cvar_t r_textureDetail;
+extern cvar_t r_bloomOn;
+extern cvar_t r_useExtensions;
 
 extern cvar_t c_fastmobs1;
 extern cvar_t c_fastmobs2;

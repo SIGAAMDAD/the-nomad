@@ -1,19 +1,35 @@
 #include <ALsoft/al.h>
 #include <ALsoft/alc.h>
+#include <sndfile.h>
 #include "n_shared.h"
 #include "g_bff.h"
 #include "g_game.h"
 #include "n_scf.h"
 #include "g_sound.h"
-#include <sndfile.h>
 #include "stb_vorbis.c"
 
 static ALCdevice* device;
 static ALCcontext* context;
 
-uint32_t sndcache_size;
-nomadsnd_t* snd_cache;
-static pthread_mutex_t snd_lock = PTHREAD_MUTEX_INITIALIZER;
+typedef struct nomadsnd_s
+{
+    ALuint source;
+    ALuint buffer;
+    char name[80];
+
+    int samplerate;
+    int channels;
+    int length;
+    int frames;
+    short* sndbuf;
+
+    bool queued = false;
+    bool failed = false; // if the pre-caching effort failed for this specific sound
+} nomadsnd_t;
+
+static uint32_t sndcache_size;
+static nomadsnd_t* snd_cache;
+static boost::mutex sndLock;
 
 #define MAX_SND_HASH 1024
 static nomadsnd_t *sndhash[MAX_SND_HASH];
@@ -109,6 +125,7 @@ void Snd_Kill()
 
 void P_PlaySFX(uint32_t sfx)
 {
+    boost::unique_lock<boost::mutex> lock{sndLock};
     assert(sfx < numsfx);
     snd_cache[sfx].queued = true;
 }
@@ -120,27 +137,17 @@ nomadsnd_t* Snd_FetchSnd(const char *name)
 
 void Snd_PlayTrack(const char *name)
 {
-    pthread_mutex_lock(&snd_lock);
+    boost::unique_lock<boost::mutex> lock{sndLock};
     nomadsnd_t *snd = Snd_FetchSnd(name);
     if (!snd) {
         N_Error("Snd_PlayTrack: no such track named '%s'", name);
     }
 
     snd->queued = true;
-    pthread_mutex_unlock(&snd_lock);
 }
-
-static nomadsnd_t *track; // currently playing music chunk
 
 static void Snd_MusicInfo_f(void)
 {
-    if (!track) {
-        Con_Printf("No music track is currently playing");
-    }
-
-    Con_Printf("\n<---------- Music Info ---------->");
-    Con_Printf("Track Name: %s", track->name);
-    Con_Printf("Duration: %lu", (uint64_t)(track->frames / (float)track->samplerate));
 }
 
 static void Snd_DriverInfo_f(void)

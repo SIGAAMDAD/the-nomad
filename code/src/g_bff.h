@@ -2,28 +2,8 @@
 #define _G_BFF_
 
 #pragma once
-#if 0
-#ifdef __BIG_ENDIAN__
-inline void SwapBytes(void *pv, size_t n)
-{
-	assert(n > 0);
-	char *p = (char *)pv;
-	size_t lo, hi;
-	
-	for (lo = 0, hi = n - 1; hi > lo; lo++, hi--) {
-		char tmp = p[lo];
-		p[lo] = p[hi];
-		p[hi] = tmp;
-	}
-}
-#define SWAP(x) SwapBytes(&x, sizeof(x))
-#else
-#define SWAP(x)
-#endif
 
-#define MAP_MAX_Y 240
-#define MAP_MAX_X 240
-#endif
+#include "string.hpp"
 
 #define BFF_VERSION_MAJOR 0
 #define BFF_VERSION_MINOR 1
@@ -42,11 +22,7 @@ enum : uint64_t
 	TEXTURE_CHUNK
 };
 
-#ifndef _NOMAD_VERSION
-void __attribute__((noreturn)) BFF_Error(const char* fmt, ...);
-#else
 #define BFF_Error N_Error
-#endif
 
 const __inline int32_t bffPaidID[70] = {
 	0x0000, 0x0000, 0x0412, 0x0000, 0x0000, 0x0000, 0x0527,
@@ -184,6 +160,10 @@ void BFF_FreeInfo(bffinfo_t* info);
 
 bffscript_t* BFF_FetchScript(const char *name);
 bfflevel_t* BFF_FetchLevel(const char *name);
+bfftexture_t* BFF_FetchTexture(const char *name);
+
+const eastl::vector<const bfflevel_t*>& BFF_OrderLevels(const bffinfo_t *info);
+const eastl::vector<const bfftexture_t*>& BFF_OrderTextures(const bffinfo_t *info);
 
 void G_LoadBFF(const GDRStr& bffname);
 

@@ -1,7 +1,35 @@
 #include "n_shared.h"
-#include "m_renderer.h"
+#include "n_scf.h"
+#include "../rendergl/rgl_public.h"
 #include "g_game.h"
 #include "g_sound.h"
+
+cvar_t r_ticrate              = {"r_ticrate", "", 0.0f, 35, qfalse, TYPE_INT, CVAR_SAVE};
+cvar_t r_screenheight         = {"r_screenheight", "", 0.0f, 720, qfalse, TYPE_INT, CVAR_SAVE | CVAR_ROM};
+cvar_t r_screenwidth          = {"r_screenwidth", "", 0.0f, 1024, qfalse, TYPE_INT, CVAR_SAVE | CVAR_ROM};
+cvar_t r_vsync                = {"r_vsync", "", 0.0f, 0, qtrue, TYPE_BOOL, CVAR_SAVE};
+cvar_t r_fullscreen           = {"r_fullscreen", "", 0.0f, 0, qtrue, TYPE_BOOL, CVAR_SAVE};
+cvar_t r_native_fullscreen    = {"r_native_fullscreen", "", 0.0f, 0, qfalse, TYPE_BOOL, CVAR_SAVE};
+cvar_t r_hidden               = {"r_hidden", "", 0.0f, 0, qfalse, TYPE_BOOL, CVAR_SAVE};
+cvar_t r_drawFPS              = {"r_drawFPS", "", 0.0f, 0, qfalse, TYPE_BOOL, CVAR_SAVE};
+cvar_t r_dither               = {"r_dither", "", 0.0f, 0, qfalse, TYPE_BOOL, CVAR_SAVE};
+cvar_t r_multisampleAmount    = {"r_multisampleAmount", "", 0.0f, 2, qfalse, TYPE_INT, CVAR_SAVE};
+cvar_t r_multisampleType      = {"r_multisampleType", "MSAA", 0.0f, 0, qfalse, TYPE_STRING, CVAR_SAVE};
+cvar_t r_renderapi            = {"r_renderapi", "", 0.0f, (int32_t)R_OPENGL, qfalse, TYPE_INT, CVAR_SAVE};
+cvar_t r_anisotropicFiltering = {"r_anisotropicFiltering", 0.0f, 0, qfalse, TYPE_INT, CVAR_SAVE};
+cvar_t r_gammaAmount          = {"r_gammaAmount", "", 0.0f, 0, qfalse, TYPE_INT, CVAR_SAVE};
+cvar_t r_textureMagFilter     = {"r_textureMagFilter", "GL_NEAREST", 0.0f, 0, qfalse, TYPE_STRING, CVAR_SAVE | CVAR_DEV};
+cvar_t r_textureMinFilter     = {"r_textureMinFilter", "GL_NEAREST", 0.0f, 0, qfalse, TYPE_STRING, CVAR_SAVE | CVAR_DEV};
+cvar_t r_textureFiltering     = {"r_textureFiltering", "Nearest", 0.0f, 0, qfalse, TYPE_STRING, CVAR_SAVE};
+cvar_t r_textureCompression   = {"r_textureCompression", "", 0.0f, 0, qfalse, TYPE_BOOL, CVAR_SAVE};
+cvar_t r_textureDetail        = {"r_textureDetail", "medium", 0.0f, 0, qfalse, TYPE_STRING, CVAR_SAVE};
+cvar_t r_bloomOn              = {"r_bloomOn", "", 0.0f, 0, qtrue, TYPE_BOOL, CVAR_SAVE};
+cvar_t r_useExtensions        = {"r_useExtensions", "", 0.0f, 0, qtrue, TYPE_BOOL, CVAR_SAVE};
+
+namespace EA::StdC {
+	int Vsnprintf(char* EA_RESTRICT pDestination, size_t n, const char* EA_RESTRICT pFormat, va_list arguments)
+	{ return vsnprintf(pDestination, n, pFormat, arguments); }
+};
 
 static char *com_buffer;
 static int32_t com_bufferLen;
@@ -21,6 +49,14 @@ static void done(void)
 {
     Game::Get()->~Game();
     exit(EXIT_SUCCESS);
+}
+
+/*
+Com_GetEvents: used by the external engine libraries as a helper for the events loop
+*/
+static eventState_t *Com_GetEvents(void)
+{
+	return &evState;
 }
 
 void Com_UpdateEvents(void)
@@ -99,7 +135,7 @@ void Com_UpdateEvents(void)
 			case SDL_WINDOWEVENT:
 				switch (evState.event.window.type) {
 				case SDL_WINDOWEVENT_RESIZED:
-					renderer->camera.Resize();
+					evState.windowEvents |= WINDOW_EVENT_RESIZED;
 					break;
 				};
 				break;
@@ -120,7 +156,7 @@ int I_GetParm(const char *parm)
     return -1;
 }
 
-void GDR_NORETURN N_Error(const char *err, ...)
+void GDR_NORETURN GDR_DECL N_Error(const char *err, ...)
 {
     char msg[1024];
     memset(msg, 0, sizeof(msg));
@@ -139,79 +175,6 @@ void Con_RenderConsole(void)
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
-}
-
-
-/*
-Com_GenerateHashValue: used in renderer and filesystem
-*/
-// ASCII lowcase conversion table with '\\' turned to '/' and '.' to '\0'
-static const byte hash_locase[ 256 ] =
-{
-	0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
-	0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
-	0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
-	0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,
-	0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27,
-	0x28,0x29,0x2a,0x2b,0x2c,0x2d,0x00,0x2f,
-	0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,
-	0x38,0x39,0x3a,0x3b,0x3c,0x3d,0x3e,0x3f,
-	0x40,0x61,0x62,0x63,0x64,0x65,0x66,0x67,
-	0x68,0x69,0x6a,0x6b,0x6c,0x6d,0x6e,0x6f,
-	0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,
-	0x78,0x79,0x7a,0x5b,0x2f,0x5d,0x5e,0x5f,
-	0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67,
-	0x68,0x69,0x6a,0x6b,0x6c,0x6d,0x6e,0x6f,
-	0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,
-	0x78,0x79,0x7a,0x7b,0x7c,0x7d,0x7e,0x7f,
-	0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,
-	0x88,0x89,0x8a,0x8b,0x8c,0x8d,0x8e,0x8f,
-	0x90,0x91,0x92,0x93,0x94,0x95,0x96,0x97,
-	0x98,0x99,0x9a,0x9b,0x9c,0x9d,0x9e,0x9f,
-	0xa0,0xa1,0xa2,0xa3,0xa4,0xa5,0xa6,0xa7,
-	0xa8,0xa9,0xaa,0xab,0xac,0xad,0xae,0xaf,
-	0xb0,0xb1,0xb2,0xb3,0xb4,0xb5,0xb6,0xb7,
-	0xb8,0xb9,0xba,0xbb,0xbc,0xbd,0xbe,0xbf,
-	0xc0,0xc1,0xc2,0xc3,0xc4,0xc5,0xc6,0xc7,
-	0xc8,0xc9,0xca,0xcb,0xcc,0xcd,0xce,0xcf,
-	0xd0,0xd1,0xd2,0xd3,0xd4,0xd5,0xd6,0xd7,
-	0xd8,0xd9,0xda,0xdb,0xdc,0xdd,0xde,0xdf,
-	0xe0,0xe1,0xe2,0xe3,0xe4,0xe5,0xe6,0xe7,
-	0xe8,0xe9,0xea,0xeb,0xec,0xed,0xee,0xef,
-	0xf0,0xf1,0xf2,0xf3,0xf4,0xf5,0xf6,0xf7,
-	0xf8,0xf9,0xfa,0xfb,0xfc,0xfd,0xfe,0xff
-};
-
-uint64_t Com_GenerateHashValue( const char *fname, const uint32_t size )
-{
-	const byte *s;
-	uint32_t hash;
-	int c;
-
-	s = (byte *)fname;
-	hash = 0;
-	
-	while ( (c = hash_locase[(byte)*s++]) != '\0' ) {
-		hash = hash * 101 + c;
-	}
-	
-	hash = (hash ^ (hash >> 10) ^ (hash >> 20));
-	hash &= (size-1);
-
-	return hash;
-}
-
-void COM_StripExtension(const char *in, char *out, uint64_t destsize)
-{
-	const char *dot = strrchr(in, '.'), *slash;
-
-	if (dot && ((slash = strrchr(in, '/')) == NULL || slash < dot))
-		destsize = (destsize < dot-in+1 ? destsize : dot-in+1);
-
-	if ( in == out && destsize > 1 )
-		out[destsize-1] = '\0';
-	else
-		N_strncpy(out, in, destsize);
 }
 
 /*
@@ -400,7 +363,7 @@ typedef struct cmd_s
     struct cmd_s* next;
 } cmd_t;
 
-static GDRMutex cmdLock;
+static boost::mutex cmdLock;
 static cmd_t* cmd_functions;
 static uint32_t numCommands = 0;
 static eastl::atomic<uint32_t> cmd_argc;
@@ -418,17 +381,17 @@ uint32_t Cmd_Argc(void)
 
 void Cmd_Clear(void)
 {
-	cmdLock.lock();
+	boost::unique_lock<boost::mutex> lock{cmdLock};
 	memset(cmd_cmd, 0, sizeof(cmd_cmd));
 	memset(cmd_argv, 0, sizeof(cmd_argv));
 	memset(cmd_tokenized, 0, sizeof(cmd_tokenized));
-	cmdLock.unlock();
+	lock.unlock();
 	cmd_argc.store(0);
 }
 
 const char *Cmd_Argv(uint32_t index)
 {
-	GDRLockGuard<GDRMutex> lock{cmdLock};
+	boost::unique_lock<boost::mutex> lock{cmdLock};
     if ((unsigned)index >= cmd_argc.load()) {
         return "";
     }
@@ -495,7 +458,7 @@ static void Cmd_TokenizeString(const char *str)
 
 void Cmd_ExecuteText(const char *str)
 {
-	GDRLockGuard<GDRMutex> lock{cmdLock};
+	boost::unique_lock<boost::mutex> lock{cmdLock};
     cmd_t *cmd;
 	const char *cmdstr;
 
@@ -524,7 +487,7 @@ void Cmd_ExecuteText(const char *str)
 
 void Cmd_AddCommand(const char *name, cmdfunc_t func)
 {
-	GDRLockGuard<GDRMutex> lock{cmdLock};
+	boost::unique_lock<boost::mutex> lock{cmdLock};
     cmd_t* cmd;
     if (Cmd_FindCommand(name)) {
         if (func)
@@ -544,7 +507,7 @@ void Cmd_AddCommand(const char *name, cmdfunc_t func)
 
 void Cmd_SetCommandCompletetionFunc(const char *name, completionFunc_t func)
 {
-	GDRLockGuard<GDRMutex> lock{cmdLock};
+	boost::unique_lock<boost::mutex> lock{cmdLock};
     for (cmd_t *cmd = cmd_functions; cmd; cmd = cmd->next) {
         if (cmd->name == name) {
             cmd->complete = func;
@@ -555,7 +518,7 @@ void Cmd_SetCommandCompletetionFunc(const char *name, completionFunc_t func)
 
 void Cmd_RemoveCmd(const char *name)
 {
-	GDRLockGuard<GDRMutex> lock{cmdLock};
+	boost::unique_lock<boost::mutex> lock{cmdLock};
     cmd_t *cmd, **back;
 
     back = &cmd_functions;
@@ -580,7 +543,7 @@ void Cmd_RemoveCmd(const char *name)
 
 char* Cmd_ArgsFrom(int32_t arg)
 {
-	GDRLockGuard<GDRMutex> lock{cmdLock};
+	boost::unique_lock<boost::mutex> lock{cmdLock};
     static char cmd_args[BIG_INFO_STRING], *s;
     int32_t i;
 
@@ -624,7 +587,7 @@ static void Cmd_Init(void)
 
 const char* GDR_DECL va(const char *format, ...)
 {
-	GDRLockGuard<GDRMutex> lock{cmdLock};
+	boost::unique_lock<boost::mutex> lock{cmdLock};
 	char *buf;
 	va_list argptr;
 	static uint32_t index = 0;
@@ -638,6 +601,100 @@ const char* GDR_DECL va(const char *format, ...)
 	va_end( argptr );
 
 	return buf;
+}
+
+static const eastl::shared_ptr<GDRMap>& G_GetCurrentMap(void)
+{
+	return Game::Get()->c_map;
+}
+
+/*
+Com_FillImport: fills render import functions for the dynamic library to use
+*/
+static void Com_FillImport(renderImport_t *import)
+{
+	import->Hunk_Alloc = Hunk_Alloc;
+    import->Hunk_Check = Hunk_Check;
+    import->Hunk_Print = Hunk_Print;
+    import->Hunk_FreeToLowMark = Hunk_FreeToLowMark;
+    import->Hunk_FreeToHighMark = Hunk_FreeToHighMark;
+    import->Hunk_Clear = Hunk_Clear;
+    import->Hunk_TempAlloc = Hunk_TempAlloc;
+    import->Hunk_LowMark = Hunk_LowMark;
+    import->Hunk_HighMark = Hunk_HighMark;
+
+    import->Z_Malloc = Z_Malloc;
+    import->Z_Calloc = Z_Calloc;
+    import->Z_Realloc = Z_Realloc;
+
+	import->Z_Free = Z_Free;
+	import->Z_FreeTags = Z_FreeTags;
+	import->Z_ChangeTag = Z_ChangeTag;
+	import->Z_ChangeUser = Z_ChangeUser;
+	import->Z_ChangeName = Z_ChangeName;
+	import->Z_CleanCache = Z_CleanCache;
+	import->Z_CheckHeap = Z_CheckHeap;
+	import->Z_ClearZone = Z_ClearZone;
+	import->Z_Print = Z_Print;
+    import->Z_FreeMemory = Z_FreeMemory;
+    import->Z_NumBlocks = Z_NumBlocks;
+
+	import->Alloca = alloca;
+
+    import->Mem_Alloc = Mem_Alloc;
+    import->Mem_Free = Mem_Free;
+	import->Mem_Msize = Mem_Msize;
+	import->Mem_DefragIsActive = Mem_DefragIsActive;
+	import->Mem_AllocDefragBlock = Mem_AllocDefragBlock;
+
+	// get the specific logger function (its been overloaded)
+	import->Con_Printf = static_cast<void(*)(loglevel_t, const char *, ...)>(Con_Printf);
+	import->Con_Error = Con_Error;
+	import->va = va;
+    import->N_Error = N_Error;
+
+	import->Cvar_Find = Cvar_Find;
+    import->Cvar_RegisterName = Cvar_RegisterName;
+    import->Cvar_ChangeValue = Cvar_ChangeValue;
+    import->Cvar_Register = Cvar_Register;
+    import->Cvar_GetValue = Cvar_GetValue;
+
+    import->Cmd_AddCommand = Cmd_AddCommand;
+    import->Cmd_RemoveCommand = Cmd_RemoveCommand;
+    import->Cmd_ExecuteCommand = Cmd_ExecuteCommand;
+    import->Cmd_ExecuteText = Cmd_ExecuteText;
+    import->Cmd_ExecuteString = Cmd_ExecuteString;
+    import->Cmd_Argc = Cmd_Argc;
+    import->Cmd_ArgsFrom = Cmd_ArgsFrom;
+    import->Cmd_Argv = Cmd_Argv;
+    import->Cmd_Clear = Cmd_Clear;
+
+    import->FS_Write = FS_Write;
+    import->FS_Read = FS_Read;
+    import->FS_OpenBFF = FS_OpenBFF;
+    import->FS_FOpenRead = FS_FOpenRead;
+    import->FS_FOpenWrite = FS_FOpenWrite;
+    import->FS_CreateTmp = FS_CreateTmp;
+    import->FS_GetOSPath = FS_GetOSPath;
+    import->FS_GetBFFData = FS_GetBFFData;
+    import->FS_FClose = FS_FClose;
+    import->FS_FileLength = FS_FileLength;
+    import->FS_Remove = FS_Remove;
+    import->FS_FileTell = FS_FileTell;
+    import->FS_FileSeek = FS_FileSeek;
+    import->FS_BFFOpen = FS_BFFOpen;
+    import->FS_FileExists = FS_FileExists;
+
+	import->Com_GetEvents = Com_GetEvents;
+
+	import->BFF_FetchInfo = BFF_FetchInfo;
+	import->BFF_FetchTexture = BFF_FetchTexture;
+	import->BFF_FetchLevel = BFF_FetchLevel;
+	import->BFF_FetchScript = BFF_FetchScript;
+	import->BFF_OrderLevels = BFF_OrderLevels;
+	import->BFF_OrderTextures = BFF_OrderTextures;
+
+	import->G_GetCurrentMap = G_GetCurrentMap;
 }
 
 /*
@@ -657,10 +714,13 @@ void Com_Init(void)
 	Con_Printf("G_LoadBFF: loading bff file");
     G_LoadBFF("nomadmain.bff");
 	Game::Init();
-    R_Init();
+
+	renderImport_t import;
+	Com_FillImport(&import);
+    RE_Init(&import);
 
 	I_CacheAudio((void *)BFF_FetchInfo());
-	I_CacheTextures(BFF_FetchInfo());
+	RE_CacheTextures();
 	Com_CacheMaps();
 
 	RE_InitFrameData();
@@ -674,6 +734,71 @@ void Com_Init(void)
          "+==========================================================+\n"
     );
 }
+
+size_t Com_ReadFile(const char *filepath, void *buffer)
+{
+	if (!buffer) {
+		N_Error("N_ReadFile: null buffer");
+	}
+	FILE* fp = fopen(filepath, "rb");
+	if (!fp) {
+		N_Error("N_LoadFile: failed to open file %s", filepath);
+	}
+	fseek(fp, 0L, SEEK_END);
+	size_t fsize = ftell(fp);
+	fseek(fp, 0L, SEEK_SET);
+	void *buf = Z_Malloc(fsize, TAG_STATIC, &buf, "filebuf");
+	if (fread(buf, fsize, 1, fp) == 0) {
+		N_Error("N_LoadFile: failed to read %lu bytes from file %s", fsize, filepath);
+	}
+	N_memcpy(buffer, buf, fsize);
+	xfree(buf);
+	fclose(fp);
+	return fsize;
+}
+size_t Com_FileSize(const char *filepath)
+{
+	FILE* fp = fopen(filepath, "rb");
+	if (!fp) {
+		N_Error("N_FileSize: failed to oepn file %s", filepath);
+	}
+	fseek(fp, 0L, SEEK_END);
+	size_t fsize = ftell(fp);
+	fseek(fp, 0L, SEEK_SET);
+	fclose(fp);
+	return fsize;
+}
+size_t Com_LoadFile(const char *filepath, void **buffer)
+{
+	FILE* fp = fopen(filepath, "rb");
+	if (!fp) {
+		N_Error("N_LoadFile: failed to open file %s", filepath);
+	}
+	fseek(fp, 0L, SEEK_END);
+	size_t fsize = ftell(fp);
+	fseek(fp, 0L, SEEK_SET);
+	void *buf = Z_Malloc(fsize, TAG_STATIC, &buf, "filebuf");
+	if (fread(buf, fsize, 1, fp) == 0) {
+		N_Error("N_LoadFile: failed to read %lu bytes from file %s", fsize, filepath);
+	}
+	*buffer = buf;
+	fclose(fp);
+	return fsize;
+}
+void Com_WriteFile(const char *filepath, const void *data, size_t size)
+{
+	FILE* fp = fopen(filepath, "wb");
+	if (!fp) {
+		Con_Error("N_WriteFile: failed to open file %s", filepath);
+		return;
+	}
+	if (fwrite(data, size, 1, fp) == 0) {
+		Con_Error("N_WriteFile: failed to write %lu bytes to file %s", size, filepath);
+		return;
+	}
+	fclose(fp);
+}
+
 
 /*
 Com_Frame: runs a single frame for the game

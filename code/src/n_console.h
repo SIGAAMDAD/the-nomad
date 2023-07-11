@@ -51,6 +51,7 @@ const char* Cvar_GetValue(const char *name);
 typedef enum {
     DEV = 0,
     DEBUG,
+    INFO,
     
     NONE // reserved for Con_Printf without the level specified, don't use
 } loglevel_t;
@@ -62,9 +63,9 @@ extern bool imgui_window_open;
 
 void Con_Init(void);
 void Con_EndFrame(void);
-void Con_Printf(loglevel_t level, const char *fmt, ...);
-void Con_Printf(const char *fmt, ...);
-void Con_Error(const char *fmt, ...);
+void GDR_DECL Con_Printf(loglevel_t level, const char *fmt, ...);
+void GDR_DECL Con_Printf(const char *fmt, ...);
+void GDR_DECL Con_Error(const char *fmt, ...);
 #endif
 
 #endif

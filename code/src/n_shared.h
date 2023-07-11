@@ -10,14 +10,9 @@
 #endif
 
 #include "n_platform.h"
-
-#ifndef Q3_VM
-
 #ifndef _NOMAD_VERSION
-#   error a version must be supplied when compiling the engine!
+#   error a version must be supplied when compiling the engine or a mod
 #endif
-
-#define CONSTRUCT(class,name,...) ({class* ptr=(class*)Hunk_Alloc(sizeof(class),name,h_low);new (ptr) class(__VA_ARGS__);ptr;})
 
 #define NOMAD_VERSION _NOMAD_VERSION
 #define NOMAD_VERSION_UPDATE _NOMAD_VERSION_UPDATE
@@ -26,49 +21,106 @@
 #define VSTR(x) VSTR_HELPER(x)
 #define NOMAD_VERSION_STRING "glnomad v" VSTR(_NOMAD_VERSION) "." VSTR(_NOMAD_VERSION_UPDATE) "." VSTR(_NOMAD_VERSION_PATCH)
 
-#endif
-
 #ifdef Q3_VM
-
-typedef unsigned char uint8_t;
-typedef unsigned short int uint16_t;
-typedef unsigned int uint32_t;
-typedef unsigned long int uint64_t;
-typedef signed char int8_t;
-typedef signed short int int16_t;
-typedef signed int int32_t;
-typedef signed long int int64_t;
-
-// everything is 32-bit on the vm/lcc
-typedef int ptrdiff_t;
-typedef int intptr_t;
-typedef unsigned int uintptr_t;
-typedef unsigned int size_t;
-typedef signed int ssize_t;
-
+#include "bg_lib.h"
+#else
+#include <stdlib.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <stdarg.h>
+#include <string.h>
+#include <math.h>
 #endif
 
-#if !defined(Q3_VM) && !defined(BFF_COMPILER)
 #include "n_pch.h"
 
-#ifndef BFF_COMPILER
+typedef enum { qfalse = 0, qtrue = 1 } qboolean;
+
+int N_strcmp(const char *str1, const char *str2);
+int N_strncmp(const char *str1, const char *str2, size_t count);
+int N_stricmp(const char *str1, const char *str2);
+int N_stricmpn(const char *str1, const char *str2, size_t n);
+char *N_strlwr(char *s1);
+char *N_strupr(char *s1);
+void N_strcat(char *dest, size_t size, const char *src);
+const char *N_stristr(const char *s, const char *find);
+#ifdef _WIN32
+int N_vsnprintf(char *str, size_t size, const char *format, va_list ap);
+#else
+#define N_vsnprintf vsnprintf
+#endif
+int N_atoi(const char *s);
+float N_atof(const char *s);
+size_t N_strlen(const char *str);
+qboolean N_streq(const char *str1, const char *str2);
+qboolean N_strneq(const char *str1, const char *str2, size_t n);
+char* N_stradd(char *dst, const char *src);
+void N_strcpy(char *dest, const char *src);
+void N_strncpy(char *dest, const char *src, size_t count);
+void N_strncpyz(char *dest, const char *src, size_t count);
+void* N_memset(void *dest, int fill, size_t count);
+void N_memcpy(void *dest, const void *src, size_t count);
+void* N_memchr(void *ptr, int c, size_t count);
+int N_memcmp(const void *ptr1, const void *ptr2, size_t count);
+int N_replace(const char *str1, const char *str2, char *src, size_t max_len);
+
 #include "z_heap.h"
-#ifndef Q3_VM
-#include "n_lexer.hpp"
+#include "string.hpp"
+
+#ifndef MIN
+#define MIN(a,b) ((a)<(b)?(a):(b))
 #endif
+#ifndef MAX
+#define MAX(a,b) ((a)>(b)?(a):(b))
 #endif
 
-#include <GDRLib/lib.hpp>
-#include <nlohmann/json.hpp>
+typedef float vec_t;
+typedef vec_t vec2_t[2];
+typedef vec_t vec3_t[3];
+typedef vec_t vec4_t[4];
+typedef vec_t mat3_t[3][3];
+typedef vec_t mat4_t[4][4];
+typedef unsigned char byte;
 
-#if defined(__MINGW32__) || defined(__MINGW64__)
-#include "mingw.thread.h"
-#include "mingw.mutex.h"
-#include "mingw.shared_mutex.h"
-#include "mingw.future.h"
-#include "mingw.condition_variable.h"
-#include "mingw.invoke.h"
+extern const vec3_t vec3_origin;
+extern const vec2_t vec2_origin;
+
+#define arraylen(arr) (sizeof(arr)/sizeof(*arr))
+
+// math stuff
+#define VectorAdd(a,b,c) (c[0]=a[0]+b[0];c[1]=a[1]+b[1];)
+#define VectorSubtract(a,b,c) {c[0]=a[0]-b[0];c[1]=a[1]-b[1];}
+#define DotProduct(x,y) (x[0]*y[0]+x[1]*y[1])
+#define VectorCopy(x,y) (x[0]=y[0];x[1]=y[1];)
+void CrossProduct(const vec2_t v1, const vec2_t v2, vec2_t out);
+float disBetweenOBJ(const vec2_t src, const vec2_t tar);
+float Q_rsqrt(float number);
+float Q_root(float x);
+
+#ifndef __cplusplus
+static qboolean N_strtobool(const char* s)
+{
+	return N_stricmp(s, "true") ? qtrue : qfalse;
+}
+static const char* N_booltostr(qboolean b)
+{
+	return b ? "true" : "false";
+}
 #endif
+
+#include "n_console.h"
+#include "n_common.h"
+
+#ifdef __cplusplus
+
+#if !defined(NDEBUG) && !defined(_NOMAD_DEBUG)
+    #undef NDEBUG
+#endif
+
+using json = nlohmann::json;
+
+#include "g_bff.h"
+#include "n_map.h"
 
 template<typename T>
 struct GDRSmartPointerDeleter {
@@ -202,70 +254,27 @@ namespace eastl {
 #define PADLEN(base, alignment)	(PAD((base), (alignment)) - (base))
 
 template<typename type, typename alignment>
-__inline type* PADP(type *base, alignment align)
+inline type* PADP(type *base, alignment align)
 {
 	return (type *)((void *)PAD((intptr_t)base, align));
 }
-#endif
 
-#undef assert
-
-#define MAP_MAX_Y 240
-#define MAP_MAX_X 240
-
-#define arraylen(arr) (sizeof(arr)/sizeof(*arr))
-
-typedef float vec_t;
-typedef vec_t vec2_t[2];
-typedef vec_t vec3_t[3];
-typedef vec_t vec4_t[4];
-typedef vec_t mat3_t[3][3];
-typedef vec_t mat4_t[4][4];
-typedef unsigned char byte;
-
-extern const vec3_t vec3_origin;
-extern const vec2_t vec2_origin;
-
-typedef enum { qfalse = 0, qtrue = 1 } qboolean;
-typedef enum
+template<class T, typename... Args>
+inline T* construct(T *ptr, Args&&... args)
 {
-    DIF_NOOB,
-    DIF_RECRUIT,
-    DIF_MERC,
-    DIF_NOMAD,
-    DIF_BLACKDEATH,
-    DIF_MINORINCONVENIECE,
+    ::new ((void *)ptr) T(eastl::forward<Args>(args)...);
+    return ptr;
+}
 
-    DIF_HARDEST = DIF_MINORINCONVENIECE
-} gamedif_t;
-
-#define VectorAdd(a,b,c) {c[0]=a[0]+b[0];c[1]=a[1]+b[1];}
-#define VectorSubtract(a,b,c) {c[0]=a[0]-b[0];c[1]=a[1]-b[1];}
-#define DotProduct(x,y) (x[0]*y[0]+x[1]*y[1])
-#define VectorCopy(x,y) {x[0]=y[0];x[1]=y[1];}
-void CrossProduct(const vec2_t v1, const vec2_t v2, vec2_t out);
-
-int32_t N_strcmp(const char *str1, const char *str2);
-int32_t N_strncmp(const char *str1, const char *str2, size_t count);
-int32_t N_strcasecmp(const char *str1, const char *str2);
-int32_t N_strncasecmp(const char *str1, const char *str2, size_t n);
-int32_t N_atoi(const char *s);
-float N_atof(const char *s);
-size_t N_strlen(const char *str);
-qboolean N_streq(const char *str1, const char *str2);
-qboolean N_strneq(const char *str1, const char *str2, size_t n);
-char* N_stradd(char *dst, const char *src);
-void N_strcpy(char *dest, const char *src);
-void N_strncpy(char *dest, const char *src, size_t count);
-void* N_memset(void *dest, int fill, size_t count);
-void N_memcpy(void *dest, const void *src, size_t count);
-void* N_memchr(void *ptr, int c, size_t count);
-int32_t N_memcmp(const void *ptr1, const void *ptr2, size_t count);
-
-int GDR_DECL Com_snprintf(char *dest, uint32_t size, const char *fmt, ...);
-const char* GDR_DECL va(const char *fmt, ...);
+template<class T>
+inline T* construct(T *ptr)
+{
+    ::new ((void *)ptr) T();
+    return ptr;
+}
 
 #ifdef _NOMAD_DEBUG
+#undef assert
 inline void __nomad_assert_fail(const char* expression, const char* file, const char* func, unsigned line)
 {
 	N_Error(
@@ -280,52 +289,6 @@ inline void __nomad_assert_fail(const char* expression, const char* file, const 
 #define assert(x)
 #endif
 
-
-#ifndef Q3_VM
-typedef enum : char
-#else
-typedef enum
-#endif
-{
-	SPR_ROCK = 0x0,
-	SPR_SKYBOX,
-	SPR_PLAYR,
-	SPR_MERC,
-	SPR_WALL,
-	SPR_WATER,
-	SPR_FLOOR_INSIDE,
-	SPR_FLOOR_OUTSIDE,
-	SPR_DOOR_STATIC,
-	SPR_DOOR_OPEN,
-	SPR_DOOR_CLOSE,
-
-	NUMSPRITES
-} sprite_t;
-
-typedef enum
-{
-	D_NORTH,
-	D_WEST,
-	D_SOUTH,
-	D_EAST,
-
-	NUMDIRS,
-
-	D_NULL
-} dirtype_t;
-
-// math stuff
-float disBetweenOBJ(const vec2_t src, const vec2_t tar);
-float Q_rsqrt(float number);
-float Q_root(float x);
-
-typedef enum
-{
-    R_SDL2,
-    R_OPENGL,
-    R_VULKAN
-} renderapi_t;
-
 #define MAX_TICRATE 333
 #define MIN_TICRATE 10
 #define MAX_VERT_FOV 100
@@ -335,35 +298,13 @@ typedef enum
 #define MSAA_8X 2
 #define MSAA_16X 3
 
-#ifdef Q3_VM
-static qboolean N_strtobool(const char* s)
-{
-	return N_strcasecmp(s, "true") ? qtrue : qfalse;
-}
-static const char* N_booltostr(qboolean b)
-{
-	return b ? "true" : "false";
-}
-#else
 #define N_strtobool(str) (N_strncasecmp("true", (str), 4) ? (1) : (0))
 template<typename type>
 inline const char* N_booltostr(type b)
 {
 	return b ? "true" : "false";
 }
-#endif
 
-// c++ stuff here
-#if !defined(Q3_VM) && !defined(BFF_COMPILER)
-
-#ifndef BFF_COMPILER
-#include "n_console.h"
-#include "string.hpp"
-#include "n_common.h"
-#endif
-
-extern int myargc;
-extern char** myargv;
 
 // eastl overloaders
 inline std::ofstream& operator<<(std::ofstream& o, const eastl::string& data)
@@ -384,9 +325,9 @@ inline std::ifstream& operator<<(eastl::string& data, std::ifstream& i)
 	return i >> data;
 }
 
-using json = nlohmann::json;
+extern int myargc;
+extern char** myargv;
 
-// engine-only file stuff
 int I_GetParm(const char *parm);
 size_t N_ReadFile(const char *filepath, void *buffer);
 size_t N_LoadFile(const char *filepath, void **buffer);
@@ -468,10 +409,6 @@ typedef struct coord_s
 		return *this;
 	}
 } coord_t;
-
-float disBetweenOBJ(const glm::vec3& src, const glm::vec3& tar);
-float disBetweenOBJ(const glm::vec2& src, const glm::vec2& tar);
-float disBetweenOBJ(const coord_t& src, const coord_t& tar);
 
 constexpr const char* about_str =
 "The Nomad has been a project in the making for a long time now, and its been a hard game to,\n"
@@ -583,15 +520,39 @@ inline const char* N_ButtonToString(const uint32_t& code)
 		break;
 	};
 }
-
-template<typename T>
-using nomadvector = eastl::vector<T, nomad_allocator<T>>;
-template<typename Key, typename T>
-using nomad_hashtable = eastl::unordered_map<Key, T, eastl::hash<Key>, eastl::equal_to<Key>, nomad_allocator<T>, false>;
-using nomadstring = eastl::basic_string<char, nomad_allocator<char>>;
-
-#include <boost/lockfree/queue.hpp>
-
 #endif
+
+
+
+typedef enum
+{
+    DIF_NOOB,
+    DIF_RECRUIT,
+    DIF_MERC,
+    DIF_NOMAD,
+    DIF_BLACKDEATH,
+    DIF_MINORINCONVENIECE,
+
+    DIF_HARDEST = DIF_MINORINCONVENIECE
+} gamedif_t;
+
+typedef enum
+{
+	D_NORTH,
+	D_WEST,
+	D_SOUTH,
+	D_EAST,
+
+	NUMDIRS,
+
+	D_NULL
+} dirtype_t;
+
+typedef enum
+{
+    R_SDL2,
+    R_OPENGL,
+    R_VULKAN
+} renderapi_t;
 
 #endif

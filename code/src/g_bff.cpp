@@ -348,6 +348,31 @@ bffinfo_t *BFF_FetchInfo(void)
 	return bffinfo;
 }
 
+const eastl::vector<const bfftexture_t*>& BFF_OrderTextures(const bffinfo_t *info)
+{
+	static eastl::vector<const bfftexture_t*> textures;
+	textures.reserve(info->numTextures);
+
+	for (uint32_t i = 0; i < info->numTextures; ++i) {
+		if (info->textures[i].fileBuffer)
+			textures.emplace_back(&info->textures[i]);
+	}
+	return textures;
+}
+
+const eastl::vector<const bfflevel_t*>& BFF_OrderLevels(const bffinfo_t *info)
+[
+	static eastl::vector<const bfflevel_t*> levels;
+	levels.reserve(info->numLevels);
+
+	for (uint32_t i = 0; i < info->numLevels; ++i) {
+		if (strlen(info->levels[i].name)) // name wont be empty if its a valid level
+			levels.emplace_back(&info->levels[i]);
+	}
+	return levels;
+]
+
+
 void G_LoadBFF(const GDRStr& bffname)
 {
 	FS_Init();

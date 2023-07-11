@@ -11,10 +11,17 @@ Common functionality for the engine and vm alike
 */
 #ifndef Q3_VM
 extern qboolean console_open;
+
+enum : uint32_t
+{
+	WINDOW_EVENT_RESIZED = 0,
+};
+
 typedef struct
 {
     SDL_Event event;
 	qboolean kbstate[NUMKEYS];
+	uint32_t windowEvents;
 } eventState_t;
 extern eventState_t evState;
 #endif

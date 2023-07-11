@@ -18,8 +18,6 @@ cvar_t snd_sfxvol          = {"snd_sfxvol",        "", 1.0f, 0,  qfalse, TYPE_FL
 cvar_t snd_musicon         = {"snd_musicon",       "", 0.0f, 0,  qtrue,   TYPE_BOOL, CVAR_SAVE};
 cvar_t snd_sfxon           = {"snd_sfxon",         "", 0.0f, 0,  qtrue,   TYPE_BOOL, CVAR_SAVE};
 
-eastl::vector<const byte*> api_extensions;
-
 cvar_t c_fastmobs1         = {"c_fastmobs1",       "", 0.0f, 0, qfalse, TYPE_BOOL, CVAR_SAVE | CVAR_CHEAT};
 cvar_t c_fastmobs2         = {"c_fastmobs2",       "", 0.0f, 0, qfalse, TYPE_BOOL, CVAR_SAVE | CVAR_CHEAT};
 cvar_t c_fastmobs3         = {"c_fastmobs3",       "", 0.0f, 0, qfalse, TYPE_BOOL, CVAR_SAVE | CVAR_CHEAT};

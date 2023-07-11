@@ -121,7 +121,7 @@ void Con_ClearBuffer(const char *msg, int32_t length)
     con_buffer.emplace_back('\n');
 }
 
-void Con_Printf(loglevel_t level, const char *fmt, ...)
+void GDR_DECL Con_Printf(loglevel_t level, const char *fmt, ...)
 {
     EASY_FUNCTION();
 
@@ -135,8 +135,12 @@ void Con_Printf(loglevel_t level, const char *fmt, ...)
     }
 
     std::unique_lock<std::mutex> lock{conLock};
-    if (level == DEV)
+    if (level == DEV) {
+        if (!c_devmode.b) {
+            return; // don't print it if we're not in devmode
+        }
         write(STDOUT_FILENO, "DEV: ", 5);
+    }
     else if (level == DEBUG) {
 #ifdef _NOMAD_DEBUG
         write(STDOUT_FILENO, "DEBUG: ", 7);
@@ -149,7 +153,7 @@ void Con_Printf(loglevel_t level, const char *fmt, ...)
     Con_ClearBuffer(msg, length);
 }
 
-void Con_Printf(const char *fmt, ...)
+void GDR_DECL Con_Printf(const char *fmt, ...)
 {
     EASY_FUNCTION();
 
@@ -214,7 +218,7 @@ void Con_EndFrame(void)
     }
 }
 
-void Con_Error(const char *fmt, ...)
+void GDR_DECL Con_Error(const char *fmt, ...)
 {
     EASY_FUNCTION();
 
