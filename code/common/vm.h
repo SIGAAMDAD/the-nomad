@@ -21,10 +21,7 @@ extern "C" {
 #define VM_MAX_IMAGE_SIZE 0x400000
 #define VM_MAX_QPATH 64
 
-#define Com_Memset memset
-#define Com_Memcpy memcpy
-
-#define VMA(x, vm) VM_ArgPtr(args[x], vm)
+#define VMA(x) VM_ArgPtr(args[x], vm)
 #define VMF(x) VM_IntToFloat(args[x])
 
 #define OPSTACK_SIZE 1024
@@ -39,162 +36,6 @@ extern "C" {
 
 #define OPCODE_TABLE_SIZE 64
 #define OPCODE_TABLE_MASK (OPCODE_TABLE_SIZE - 1)
-
-#define VM_MAX_BSS_LENGTH 10485760
-
-typedef enum {
-    OP_UNDEF, /* Error: VM halt */
-
-    OP_IGNORE, /* No operation */
-
-    OP_BREAK, /* vm->breakCount++ */
-
-    OP_ENTER, /* Begin subroutine. */
-    OP_LEAVE, /* End subroutine. */
-    OP_CALL,  /* Call subroutine. */
-    OP_PUSH,  /* Push to stack. */
-    OP_POP,   /* Discard top-of-stack. */
-
-    OP_CONST, /* Load constant to stack. */
-    OP_LOCAL, /* Get local variable. */
-
-    OP_JUMP, /* Unconditional jump. */
-
-    /*-------------------*/
-
-    OP_EQ, /* Compare integers, jump if equal. */
-    OP_NE, /* Compare integers, jump if not equal. */
-
-    OP_LTI, /* Compare integers, jump if less-than. */
-    OP_LEI, /* Compare integers, jump if less-than-or-equal. */
-    OP_GTI, /* Compare integers, jump if greater-than. */
-    OP_GEI, /* Compare integers, jump if greater-than-or-equal. */
-
-    OP_LTU, /* Compare unsigned integers, jump if less-than */
-    OP_LEU, /* Compare unsigned integers, jump if less-than-or-equal */
-    OP_GTU, /* Compare unsigned integers, jump if greater-than */
-    OP_GEU, /* Compare unsigned integers, jump if greater-than-or-equal */
-
-    OP_EQF, /* Compare floats, jump if equal */
-    OP_NEF, /* Compare floats, jump if not-equal */
-
-    OP_LTF, /* Compare floats, jump if less-than */
-    OP_LEF, /* Compare floats, jump if less-than-or-equal */
-    OP_GTF, /* Compare floats, jump if greater-than */
-    OP_GEF, /* Compare floats, jump if greater-than-or-equal */
-
-    /*-------------------*/
-
-    OP_LOAD1,  /* Load 1-byte from memory */
-    OP_LOAD2,  /* Load 2-bytes from memory */
-    OP_LOAD4,  /* Load 4-bytes from memory */
-    OP_STORE1, /* Store 1-byte to memory */
-    OP_STORE2, /* Store 2-byte to memory */
-    OP_STORE4, /* *(stack[top-1]) = stack[top] */
-    OP_ARG,    /* Marshal argument */
-
-    OP_BLOCK_COPY, /* memcpy */
-
-    /*-------------------*/
-
-    OP_SEX8,  /* Sign-Extend 8-bit */
-    OP_SEX16, /* Sign-Extend 16-bit */
-
-    OP_NEGI, /* Negate integer. */
-    OP_ADD,  /* Add integers (two's complement). */
-    OP_SUB,  /* Subtract integers (two's complement). */
-    OP_DIVI, /* Divide signed integers. */
-    OP_DIVU, /* Divide unsigned integers. */
-    OP_MODI, /* Modulus (signed). */
-    OP_MODU, /* Modulus (unsigned). */
-    OP_MULI, /* Multiply signed integers. */
-    OP_MULU, /* Multiply unsigned integers. */
-
-    OP_BAND, /* Bitwise AND */
-    OP_BOR,  /* Bitwise OR */
-    OP_BXOR, /* Bitwise eXclusive-OR */
-    OP_BCOM, /* Bitwise COMplement */
-
-    OP_LSH,  /* Left-shift */
-    OP_RSHI, /* Right-shift (algebraic; preserve sign) */
-    OP_RSHU, /* Right-shift (bitwise; ignore sign) */
-
-    OP_NEGF, /* Negate float */
-    OP_ADDF, /* Add floats */
-    OP_SUBF, /* Subtract floats */
-    OP_DIVF, /* Divide floats */
-    OP_MULF, /* Multiply floats */
-
-    OP_CVIF, /* Convert to integer from float */
-    OP_CVFI, /* Convert to float from integer */
-
-    OP_MAX /* Make this the last item */
-} opcode_t;
-
-#ifndef USE_COMPUTED_GOTOS
-/* for the the computed gotos we need labels,
- * but for the normal switch case we need the cases */
-#define goto_OP_UNDEF case OP_UNDEF
-#define goto_OP_IGNORE case OP_IGNORE
-#define goto_OP_BREAK case OP_BREAK
-#define goto_OP_ENTER case OP_ENTER
-#define goto_OP_LEAVE case OP_LEAVE
-#define goto_OP_CALL case OP_CALL
-#define goto_OP_PUSH case OP_PUSH
-#define goto_OP_POP case OP_POP
-#define goto_OP_CONST case OP_CONST
-#define goto_OP_LOCAL case OP_LOCAL
-#define goto_OP_JUMP case OP_JUMP
-#define goto_OP_EQ case OP_EQ
-#define goto_OP_NE case OP_NE
-#define goto_OP_LTI case OP_LTI
-#define goto_OP_LEI case OP_LEI
-#define goto_OP_GTI case OP_GTI
-#define goto_OP_GEI case OP_GEI
-#define goto_OP_LTU case OP_LTU
-#define goto_OP_LEU case OP_LEU
-#define goto_OP_GTU case OP_GTU
-#define goto_OP_GEU case OP_GEU
-#define goto_OP_EQF case OP_EQF
-#define goto_OP_NEF case OP_NEF
-#define goto_OP_LTF case OP_LTF
-#define goto_OP_LEF case OP_LEF
-#define goto_OP_GTF case OP_GTF
-#define goto_OP_GEF case OP_GEF
-#define goto_OP_LOAD1 case OP_LOAD1
-#define goto_OP_LOAD2 case OP_LOAD2
-#define goto_OP_LOAD4 case OP_LOAD4
-#define goto_OP_STORE1 case OP_STORE1
-#define goto_OP_STORE2 case OP_STORE2
-#define goto_OP_STORE4 case OP_STORE4
-#define goto_OP_ARG case OP_ARG
-#define goto_OP_BLOCK_COPY case OP_BLOCK_COPY
-#define goto_OP_SEX8 case OP_SEX8
-#define goto_OP_SEX16 case OP_SEX16
-#define goto_OP_NEGI case OP_NEGI
-#define goto_OP_ADD case OP_ADD
-#define goto_OP_SUB case OP_SUB
-#define goto_OP_DIVI case OP_DIVI
-#define goto_OP_DIVU case OP_DIVU
-#define goto_OP_MODI case OP_MODI
-#define goto_OP_MODU case OP_MODU
-#define goto_OP_MULI case OP_MULI
-#define goto_OP_MULU case OP_MULU
-#define goto_OP_BAND case OP_BAND
-#define goto_OP_BOR case OP_BOR
-#define goto_OP_BXOR case OP_BXOR
-#define goto_OP_BCOM case OP_BCOM
-#define goto_OP_LSH case OP_LSH
-#define goto_OP_RSHI case OP_RSHI
-#define goto_OP_RSHU case OP_RSHU
-#define goto_OP_NEGF case OP_NEGF
-#define goto_OP_ADDF case OP_ADDF
-#define goto_OP_SUBF case OP_SUBF
-#define goto_OP_DIVF case OP_DIVF
-#define goto_OP_MULF case OP_MULF
-#define goto_OP_CVIF case OP_CVIF
-#define goto_OP_CVFI case OP_CVFI
-#endif
 
 typedef enum
 {
@@ -265,21 +106,21 @@ typedef struct vm_s
     qboolean currentlyInterpreting;
 
     qboolean compiled;
-    uint8_t* codeBase;
+    uint8_t* codeBase = NULL;
     int32_t entryOfs;
     uint32_t codeLength;
 
-    intptr_t* instructionPointers;
+    intptr_t* instructionPointers = NULL;
     uint32_t instructionCount;
 
-    uint8_t* dataBase;
+    uint8_t* dataBase = NULL;
     uint32_t dataMask;
     uint32_t dataAlloc;
 
     uint32_t stackBottom;
 
     uint32_t numSymbols;
-    vmSymbol_t* symbols;
+    vmSymbol_t* symbols = NULL;
 
     uint32_t callLevel;
     uint32_t breakFunction;
@@ -288,7 +129,9 @@ typedef struct vm_s
     vmErrorCode_t lastError;
 } vm_t;
 
-const vmHeader_t* VM_LoadQVM(vm_t* vm, const uint8_t* bytecode, int length);
+void VM_Error(vm_t *vm, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
+void VM_Restart(vm_t *vm);
+
 
 /** Initialize a virtual machine.
  * @param[out] vm Pointer to a virtual machine to initialize.
@@ -367,6 +210,7 @@ void VM_Debug(int level);
  * CALLBACK FUNCTIONS (USER DEFINED IN HOST APPLICATION)
  ******************************************************************************/
 
+#if 0
 /** Implement this error callback function for error callbacks in the host
  * application.
  * @param[in] level Error identifier, see vmErrorCode_t.
@@ -391,6 +235,7 @@ void* Com_malloc(size_t size, vm_t* vm, vmMallocType_t type);
  * @param[in] vm Pointer to vm releasing the memory.
  * @param[in] type What purpose has the memory, see vmMallocType_t. */
 void Com_free(void* p, vm_t* vm, vmMallocType_t type);
+#endif
 
 #ifdef __cplusplus
 }

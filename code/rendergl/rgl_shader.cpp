@@ -3,16 +3,7 @@
 #define MAX_SHADER_HASH 1024
 static shader_t* shaders[MAX_SHADER_HASH];
 
-inline static uint32_t ShaderTypeFromString(const eastl::string& type)
-{
-    if (type == "vertex")
-        return GL_VERTEX_SHADER;
-    else if (type == "fragment")
-        return GL_FRAGMENT_SHADER;
-    return 0;
-}
-
-int32_t R_GetUniformLocation(shader_t *shader, const char *name)
+GO_AWAY_MANGLE int32_t R_GetUniformLocation(shader_t *shader, const char *name)
 {
     uint64_t hash = Com_GenerateHashValue(name, RENDER_MAX_UNIFORMS);
 
@@ -26,6 +17,207 @@ int32_t R_GetUniformLocation(shader_t *shader, const char *name)
     shader->uniformCache[hash] = location;
     return location;
 }
+
+
+GO_AWAY_MANGLE uint32_t R_CompileShaderSource(const char *src, uint32_t type, uint32_t id, const char **macros, uint32_t numMacros)
+{
+    uint32_t program, i;
+    int success;
+    char str[1024];
+
+    const char *sources[1];
+
+    sources[0] = src;
+    
+    program = nglCreateShader(type);
+    nglShaderSource(program, 1, sources, NULL);
+    nglCompileShader(program);
+
+    nglGetShaderiv(program, GL_COMPILE_STATUS, (int *)&success);
+    if (success == GL_FALSE) {
+        memset(str, 0, sizeof(str));
+
+        nglGetShaderInfoLog(program, sizeof(str), NULL, str);
+        nglDeleteShader(program);
+        nglDeleteProgram(id);
+
+        ri.N_Error("R_CompileShaderSource: failed to compile shader of type %s.\nglslang error message: %s",
+            (type == GL_VERTEX_SHADER ? "vertex" : type == GL_FRAGMENT_SHADER ? "fragment" : "unknown shader type"), str);
+    }
+    return program;
+}
+
+GO_AWAY_MANGLE void R_RecompileShader(shader_t *shader, const char **vertexMacros, const char **fragmentMacros,
+    uint32_t numVertexMacros, uint32_t numFragmentMacros)
+{
+    uint32_t vertid, fragid;
+    int success;
+    char str[1024];
+
+    R_UnbindShader();
+
+    vertid = R_CompileShaderSource(shader->vertexBuf, GL_VERTEX_SHADER, shader->programId, vertexMacros, numVertexMacros);
+    fragid = R_CompileShaderSource(shader->fragmentBuf, GL_FRAGMENT_SHADER, shader->programId, fragmentMacros, numFragmentMacros);
+
+    nglUseProgram(shader->programId);
+
+    // link
+    nglAttachShader(shader->programId, vertid);
+    nglAttachShader(shader->programId, fragid);
+    nglLinkProgram(shader->programId);
+    nglValidateProgram(shader->programId);
+
+    // error checks
+    nglGetProgramiv(shader->programId, GL_LINK_STATUS, &success);
+    if (success == GL_FALSE) {
+        memset(str, 0, sizeof(str));
+        nglGetProgramInfoLog(shader->programId, sizeof(str), NULL, str);
+        
+        nglDeleteShader(vertid);
+        nglDeleteShader(fragid);
+        nglDeleteProgram(shader->programId);
+
+        ri.N_Error("R_RecompileShader: failed to compile and/or link shader program (fragment: %s, vertex: %s).\n"
+                    "glslang error message: %s", shader->fragmentFile, shader->vertexFile, str);
+    }
+
+    // cleanup
+    nglDeleteShader(vertid);
+    nglDeleteShader(fragid);
+
+    nglUseProgram(0);
+}
+
+GO_AWAY_MANGLE void R_PrintMacros(const char **macros, uint32_t numMacros)
+{
+    if (!macros || !numMacros)
+        return;
+    
+    ri.Con_Printf(DEV, "Shader Macro List:");
+    for (uint32_t i = 0; i < numMacros; i++)
+        ri.Con_Printf(DEV, "%s", macros[i]);
+}
+
+GO_AWAY_MANGLE shader_t* R_InitShader(const char *vertexFile, const char *fragmentFile, const char **vertexMacros, const char **fragmentMacros,
+    uint32_t numVertexMacros, uint32_t numFragmentMacros)
+{
+    shader_t *shader;
+    char str[1024];
+    int success;
+    uint32_t vertid, fragid;
+
+    shader = (shader_t *)ri.Hunk_Alloc(sizeof(shader_t), "GLshader", h_low);
+
+    shader->vertexBufLen = ri.FS_LoadFile(vertexFile, (void **)&shader->vertexBuf);
+    shader->fragmentBufLen = ri.FS_LoadFile(fragmentFile, (void **)&shader->fragmentBuf);
+
+    ri.Con_Printf(DEBUG, "\nvertex file: %s\nvertex file length: %i\nvertex file buffer: %s",
+        vertexFile, shader->vertexBufLen, shader->vertexBuf);
+    ri.Con_Printf(DEBUG, "\nfragment file: %s\nfragment file length: %i\nfragment file buffer: %s",
+        fragmentFile, shader->fragmentBufLen, shader->fragmentBuf);
+
+    char filepath[strlen(vertexFile) + strlen(fragmentFile) + 1];
+    stbsp_sprintf(filepath, "%s%s", vertexFile, fragmentFile);
+
+    uint64_t hash = Com_GenerateHashValue(filepath, MAX_SHADER_HASH);
+    memset(shader->uniformCache, -1, sizeof(shader->uniformCache));
+
+    R_PrintMacros(vertexMacros, numVertexMacros);
+    R_PrintMacros(fragmentMacros, numFragmentMacros);
+
+    // compile
+    vertid = R_CompileShaderSource(shader->vertexBuf, GL_VERTEX_SHADER, shader->programId, vertexMacros, numVertexMacros);
+    fragid = R_CompileShaderSource(shader->fragmentBuf, GL_FRAGMENT_SHADER, shader->programId, fragmentMacros, numFragmentMacros);
+
+    shader->programId = nglCreateProgram();
+    nglUseProgram(shader->programId);
+
+    // link
+    nglAttachShader(shader->programId, vertid);
+    nglAttachShader(shader->programId, fragid);
+    nglLinkProgram(shader->programId);
+    nglValidateProgram(shader->programId);
+
+    // error checks
+    nglGetProgramiv(shader->programId, GL_LINK_STATUS, &success);
+    if (success == GL_FALSE) {
+        memset(str, 0, sizeof(str));
+        nglGetProgramInfoLog(shader->programId, sizeof(str), NULL, str);
+        
+        nglDeleteShader(vertid);
+        nglDeleteShader(fragid);
+        nglDeleteProgram(shader->programId);
+
+        ri.N_Error("R_InitShader: failed to compile and/or link shader program (fragment: %s, vertex: %s).\n"
+                    "glslang error message: %s", fragmentFile, vertexFile, str);
+    }
+
+    shader->vertexFile = (char *)ri.Z_Malloc(strlen(vertexFile) + 1, TAG_STATIC, &shader->vertexFile, "strdup");
+    N_strncpyz(shader->vertexFile, vertexFile, strlen(vertexFile) + 1);
+    shader->fragmentFile = (char *)ri.Z_Malloc(strlen(fragmentFile) + 1, TAG_STATIC, &shader->fragmentFile, "strdup");
+    N_strncpyz(shader->fragmentFile, fragmentFile, strlen(fragmentFile) + 1);
+
+    // cleanup
+    nglDeleteShader(vertid);
+    nglDeleteShader(fragid);
+
+    nglUseProgram(0);
+
+    shaders[hash] = shader;
+    renderer->shaders[renderer->numShaders] = shader;
+    renderer->numShaders++;
+
+    return shader;
+}
+
+GO_AWAY_MANGLE void R_ShutdownShader(shader_t *shader)
+{
+    nglDeleteProgram(shader->programId);
+    ri.FS_FreeFile(shader->vertexBuf);
+    ri.FS_FreeFile(shader->fragmentBuf);
+}
+
+GO_AWAY_MANGLE void RE_ShutdownShaders(void)
+{
+    uint32_t i;
+
+    for (i = 0; i < MAX_SHADER_HASH; ++i) {
+        if (shaders[i])
+            nglDeleteProgram(shaders[i]->programId);
+    }
+}
+
+GO_AWAY_MANGLE void R_BindShader(const shader_t *shader)
+{
+    if (renderer->shaderid == shader->programId)
+        return; // already bound
+    else if (renderer->shaderid)
+        nglUseProgram(0); // unbind whatever's being used
+    
+    renderer->shaderid = shader->programId;
+    nglUseProgram(shader->programId);
+}
+
+GO_AWAY_MANGLE void R_UnbindShader(void)
+{
+    if (!renderer->shaderid)
+        return; // already unbound
+    
+    renderer->shaderid = 0;
+    nglUseProgram(0);
+}
+
+
+#if 0
+inline static uint32_t ShaderTypeFromString(const eastl::string& type)
+{
+    if (type == "vertex")
+        return GL_VERTEX_SHADER;
+    else if (type == "fragment")
+        return GL_FRAGMENT_SHADER;
+    return 0;
+}
+
 
 eastl::unordered_map<uint32_t, eastl::string> R_ParseShader(const eastl::string& source)
 {
@@ -55,127 +247,4 @@ eastl::unordered_map<uint32_t, eastl::string> R_ParseShader(const eastl::string&
 	
     return shaderSources;
 }
-
-static uint32_t R_CompileShaderSource(const char *src, uint32_t type, uint32_t id)
-{
-    uint32_t program;
-    int32_t success, length;
-    char str[1024];
-    
-    program = nglCreateShader(type);
-    nglShaderSource(program, 1, &src, NULL);
-    nglCompileShader(program);
-
-    nglGetShaderiv(program, GL_COMPILE_STATUS, (int *)&success);
-    if (success == GL_FALSE) {
-        memset(str, 0, sizeof(str));
-
-        nglGetShaderInfoLog(program, sizeof(str), NULL, str);
-        nglDeleteShader(program);
-        nglDeleteProgram(id);
-
-        ri.N_Error("R_CompileShaderSource: failed to compile shader of type %s.\nglslang error message: %s",
-            (type == GL_VERTEX_SHADER ? "vertex" : type == GL_FRAGMENT_SHADER ? "fragment" : "unknown shader type"), str);
-    }
-    return program;
-}
-
-shader_t* R_InitShader(const char *vertexFile, const char *fragmentFile)
-{
-    shader_t *shader;
-    char str[1024];
-    int success;
-    file_t fd;
-
-    shader = (shader_t *)Hunk_Alloc(sizeof(shader_t), "GLshader", h_low);
-
-    fd = ri.FS_FOpenRead(vertexFile);
-    if (fd == FS_INVALID_HANDLE) {
-        ri.N_Error("R_InitShader: failed to open vertex shader file %s", vertexFile);
-    }
-    shader->vertexBufLen = ri.FS_FileLength(fd);
-    shader->vertexBuf = (char *)ri.Z_Malloc(shader->vertexBufLen, TAG_RENDERER, &shader->vertexBuf, "GLvertShader");
-    ri.FS_Read(shader->vertexBuf, shader->vertexBufLen, fd);
-    ri.FS_FClose(fd);
-
-    fd = ri.FS_FOpenRead(fragmentFile);
-    if (fd == FS_INVALID_HANDLE) {
-        ri.N_Error("R_InitShader: failed to open fragment shader file %s", fragmentFile);
-    }
-    shader->fragmentBufLen = ri.FS_FileLength(fd);
-    shader->fragmentBuf = (char *)ri.Z_Malloc(shader->fragmentBufLen, TAG_RENDERER, &shader->fragmentBuf, "GLfragShader");
-    ri.FS_Read(shader->fragmentBuf, shader->fragmentBufLen, fd);
-    ri.FS_FClose(fd);
-
-    char *filepath = (char *)ri.Alloca(strlen(vertexFile) + strlen(fragmentFile) + 1);
-    stbsp_sprintf(filepath, "%s%s", vertexFile, fragmentFile);
-
-    uint64_t hash = Com_GenerateHashValue(filepath, MAX_SHADER_HASH);
-    memset(shader->uniformCache, -1, sizeof(shader->uniformCache));
-
-    // compile
-    uint32_t vertid = R_CompileShaderSource(shader->fragmentBuf, GL_VERTEX_SHADER, shader->programId);
-    uint32_t fragid = R_CompileShaderSource(shader->vertexBuf, GL_FRAGMENT_SHADER, shader->programId);
-
-    shader->programId = nglCreateProgram();
-    nglUseProgram(shader->programId);
-
-    // link
-    nglAttachShader(shader->programId, vertid);
-    nglAttachShader(shader->programId, fragid);
-    nglLinkProgram(shader->programId);
-    nglValidateProgram(shader->programId);
-
-    // error checks
-    nglGetProgramiv(shader->programId, GL_LINK_STATUS, &success);
-    if (success == GL_FALSE) {
-        memset(str, 0, sizeof(str));
-        nglGetProgramInfoLog(shader->programId, sizeof(str), NULL, str);
-        
-        nglDeleteShader(vertid);
-        nglDeleteShader(fragid);
-        nglDeleteProgram(shader->programId);
-
-        ri.N_Error("R_InitShader: failed to compile and/or link shader file %s.\nglslang error message: %s", filepath, str);
-    }
-
-    // cleanup
-    nglDeleteShader(vertid);
-    nglDeleteShader(fragid);
-
-    nglUseProgram(0);
-
-    shaders[hash] = shader;
-    renderer->shaders[renderer->numShaders] = shader;
-    renderer->numShaders++;
-
-    return shader;
-}
-
-void R_ShutdownShader(shader_t *shader)
-{
-    nglDeleteProgram(shader->programId);
-    ri.Z_ChangeTag(shader->fragmentBuf, TAG_PURGELEVEL);
-    ri.Z_ChangeTag(shader->vertexBuf, TAG_PURGELEVEL);
-}
-
-void R_BindShader(const shader_t *shader)
-{
-    if (renderer->shaderid == shader->programId)
-        return; // already bound
-    else if (renderer->shaderid)
-        nglUseProgram(0); // unbind whatever's being used
-    
-    renderer->shaderid = shader->programId;
-    nglUseProgram(shader->programId);
-}
-
-void R_UnbindShader(void)
-{
-    if (!renderer->shaderid)
-        return; // already unbound
-    
-    renderer->shaderid = 0;
-    nglUseProgram(0);
-}
-
+#endif

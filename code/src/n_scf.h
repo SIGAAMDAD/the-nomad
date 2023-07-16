@@ -10,6 +10,8 @@
 
 typedef void(*pactionp_t)();
 
+extern cvar_t com_demo;
+
 extern cvar_t g_vert_fov;
 extern cvar_t g_horz_fov;
 extern cvar_t g_pspeed;
@@ -32,7 +34,7 @@ extern cvar_t r_renderapi;
 extern cvar_t r_multisampleAmount;
 extern cvar_t r_multisampleType;
 extern cvar_t r_dither;
-extern cvar_t r_anisotropicFiltering;
+extern cvar_t r_EXT_anisotropicFiltering;
 extern cvar_t r_gammaAmount;
 extern cvar_t r_textureMagFilter;
 extern cvar_t r_textureMinFilter;
@@ -41,6 +43,8 @@ extern cvar_t r_textureCompression;
 extern cvar_t r_textureDetail;
 extern cvar_t r_bloomOn;
 extern cvar_t r_useExtensions;
+extern cvar_t r_fovWidth;
+extern cvar_t r_fovHeight;
 
 extern cvar_t c_fastmobs1;
 extern cvar_t c_fastmobs2;
@@ -54,6 +58,9 @@ extern cvar_t c_infinite_ammo;
 extern cvar_t c_bottomless_clip;
 extern cvar_t c_devmode;
 extern cvar_t c_cheatsallowed;
+
+extern cvar_t z_minRam;
+extern cvar_t z_zoneMegs;
 
 typedef enum
 {

@@ -49,12 +49,7 @@ private:
     static Game* gptr;
 public:
     eastl::shared_ptr<GDRMap> c_map;
-//    sprite_t backup[MAP_MAX_X+160][MAP_MAX_Y+160];
-    char lvlname[256];
-    SDL_Window* window;
-    ImGuiContext* context;
     
-    FILE* mapfile;
     gamestate_t gamestate;
     gamedif_t difficulty;
     glm::ivec3 cameraPos;

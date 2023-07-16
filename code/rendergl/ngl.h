@@ -52,7 +52,8 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( GLenum, glGetError, void ) \
     NGL( void, glDrawBuffer, GLenum mode ) \
     NGL( void, glDepthRange, GLclampf zNear, GLclampf zFar ) \
-    NGL( void, glDrawBuffers, GLsizei n, const GLenum *bufs )
+    NGL( void, glDrawBuffers, GLsizei n, const GLenum *bufs ) \
+    NGL( void, glClearColor, GLfloat r, GLfloat g, GLfloat b, GLfloat a ) \
 
 #define NGL_Debug_Procs \
     NGL( void, glDebugMessageControlARB, GLenum source, GLenum type, GLenum severity, GLsizei count, const GLuint *ids, GLboolean enabled ) \
@@ -107,6 +108,7 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glCompileShader, GLuint shader ) \
     NGL( void, glAttachShader, GLuint program, GLuint shader ) \
     NGL( void, glValidateProgram, GLuint program ) \
+    NGL( GLuint, glGetUniformBlockIndex, GLuint program, const GLchar *uniformBlockName ) \
 
 #define NGL_Texture_Procs \
     NGL( void, glTexImage2DMultisample, GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations ) \
@@ -121,7 +123,7 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glCompressedTexImage2D,GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const GLvoid *data )
 
 #define NGL_FBO_Procs \
-    NGL( void, glGenFramebuffers, GLsizei n, GLint *buffers ) \
+    NGL( void, glGenFramebuffers, GLsizei n, GLuint *buffers ) \
     NGL( void, glDeleteFramebuffers, GLsizei n, const GLuint *buffers ) \
     NGL( void, glGenRenderbuffers, GLsizei n, GLuint *buffers ) \
     NGL( void, glDeleteRenderbuffers, GLsizei n, const GLuint *buffers ) \
@@ -149,14 +151,17 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glDeleteBuffersARB, GLsizei n, const GLuint *buffers ) \
     NGL( void, glBindBufferARB, GLenum target, GLuint buffer ) \
     NGL( void, glBufferDataARB, GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage ) \
-    NGL( void, glBufferSubDataARB, GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data )
+    NGL( void, glBufferSubDataARB, GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data ) \
+    NGL( void, glUnmapBufferARB, GLenum target ) \
+    NGL( void*, glMapBufferARB, GLenum target, GLbitfield access ) \
 
 #define NGL_Buffer_Procs \
     NGL( void, glGenBuffers, GLsizei n, GLuint *buffers ) \
     NGL( void, glDeleteBuffers, GLsizei n, const GLuint *buffers ) \
     NGL( void, glBindBuffer, GLenum target, GLuint buffer ) \
     NGL( void, glBufferData, GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage ) \
-    NGL( void, glBufferSubData, GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data )
+    NGL( void, glBufferSubData, GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data ) \
+    NGL( void*, glMapBufferRange, GLenum target, GLintptr offset, GLsizeiptr length, GLbitfield access ) \
 
 #define NGL_Procs \
     NGL_Core_Procs \
@@ -168,8 +173,8 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL_Texture_Procs
 
 #define NGL( ret, name, ... )\
-    typedef ret (APIENTRYP PFN##name) (__VA_ARGS__); \
-    extern PFN##name n##name;
+    typedef ret (APIENTRYP PFN ## name) (__VA_ARGS__); \
+    extern PFN ## name n ## name;
 NGL_Core_Procs
 NGL_Debug_Procs
 NGL_Shader_Procs

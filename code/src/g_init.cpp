@@ -2,7 +2,7 @@
 #include "g_bff.h"
 #include "g_game.h"
 #include "g_sound.h"
-#include "m_renderer.h"
+#include "../rendergl/rgl_public.h"
 #include "../sgame/sg_public.h"
 #include "../common/n_vm.h"
 
@@ -18,39 +18,12 @@ static void CameraGame_f(void)
         "CameraPos.y: %i", Game::Get()->cameraPos.x, Game::Get()->cameraPos.y);
 }
 
-#define LOAD(ptr,name) \
-{ \
-    *((void **)&ptr) = G_LoadSym(handle,name); \
-    if (!ptr) N_Error("failed to load library symbol %s", name); \
-}
-
-static void done()
-{
-    Game::Get()->~Game();
-    exit(EXIT_SUCCESS);
-}
-
 void mainLoop()
 {
-    SDL_Event event;
-    memset(&event, 0, sizeof(event));
-
     Game::Get()->cameraPos = glm::ivec3(0, 0, 0);
-
-    std::vector<glm::vec3> translations = {
-        glm::vec3(0, 0, 0),
-        glm::vec3(1, 0, 0),
-        glm::vec3(0, .5, 0),
-    };
-
-    glClearColor(0.1f, 0.1f, 0.1f, 0.0f);
-
-    texture_t *screenTexture = R_GetTexture("NMTEX_BKGD");
     
-    Hunk_Print();
     Z_Print(true);
     Snd_PlayTrack("NMMUS01");
-    RE_InitFrameData();
 
     float light_intensity = 1.0f;
 
@@ -58,57 +31,33 @@ void mainLoop()
     Cmd_AddCommand("cameraGame", CameraGame_f);
     while (1) {
         Com_UpdateEvents();
+        qboolean *kbstate = Com_GetKeyboard();
         vm_command = SGAME_RUNTIC;
-        if (evState.kbstate[KEY_O])
-            light_intensity += 0.1f;
-        if (evState.kbstate[KEY_P])
-            light_intensity -= 0.1f;
-        if (evState.kbstate[KEY_N])
-            renderer->camera.ZoomIn();
-        if (evState.kbstate[KEY_M])
-            renderer->camera.ZoomOut();
-        if (evState.kbstate[KEY_W])
+        if (kbstate[KEY_W])
             Game::Get()->cameraPos.y -= 3;
-        if (evState.kbstate[KEY_A])
+        if (kbstate[KEY_A])
             Game::Get()->cameraPos.x -= 3;
-        if (evState.kbstate[KEY_S])
+        if (kbstate[KEY_S])
             Game::Get()->cameraPos.y += 3;
-        if (evState.kbstate[KEY_D])
+        if (kbstate[KEY_D])
             Game::Get()->cameraPos.x += 3;
-        if (evState.kbstate[KEY_Q])
-            renderer->camera.RotateLeft();
-        if (evState.kbstate[KEY_E])
-            renderer->camera.RotateRight();
         
         VM_Run(SGAME_VM);
         
-
         RE_BeginFrame();
-        RE_BeginFramebuffer();
 
         next = 1000 / r_ticrate.i;
-        
-        RE_CmdDrawSprite(SPR_PLAYR, glm::vec2(renderer->camera.GetPos().x, renderer->camera.GetPos().y), glm::vec2(1));
-        RE_EndFrame();
-        RE_EndFramebuffer();
-
-        Con_RenderConsole();
-        Con_EndFrame();
 
         Snd_Submit();
         VM_Stop(SGAME_VM);
-        SDL_GL_SwapWindow(renderer->window);
-        
+
+        RE_EndFrame();
         sleepfor(next);
-//        std::this_thread::sleep_until(next);
     }
 }
 
-void I_NomadInit(int argc, char** argv)
+void I_NomadInit(void)
 {
-    myargc = argc;
-    myargv = argv;
-
     Com_Init();
 
     Con_Printf("running main gameplay loop");

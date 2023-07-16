@@ -1,112 +1,30 @@
 #include "n_shared.h"
-#include "m_renderer.h"
 #include "n_scf.h"
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/ansicolor_sink.h>
+#include <spdlog/sinks/base_sink.h>
+#include <spdlog/sinks/stdout_sinks.h>
+#include <spdlog/sinks/sink.h>
+#include <spdlog/sinks/basic_file_sink.h>
+#include <spdlog/sinks/callback_sink.h>
 
 #define MAX_CMD_LINE 1024
 #define MAX_CMD_BUFFER 8192
 
-enum class LogLevel
-{
-    LOG_INFO,
-    LOG_DEBUG,
-    LOG_DEV,
-    LOG_ERR,
-};
-
-#ifdef __unix__
-#define STDOUT_HANDLE STDOUT_FILENO
-#define STDERR_HANDLE STDERR_FILENO
-#define BAD_HANDLE NULL
-typedef FILE* consoleHandle_t;
-#define OpenConsoleHandle(fd) fdopen(fd,"w")
-#define CloseConsoleHandle(fd) fclose(fd)
-#elif defined(_WIN32)
-#define STDOUT_HANDLE STD_OUT_HANDLE
-#define STDERR_HANDLE STD_ERROR_HANDLE
-#define BAD_HANDLE INVALID_HANDLE_VALUE
-typedef HANDLE consoleHandle_t;
-#define OpenConsoleHandle(fd) GetStdHandle(fd)
-#define CloseConsoleHandle(fd) CloseHandle(fd)
-#endif
-
-#if 0
-
-class GDRConsole
-{
-private:
-    std::mutex m_conLock;
-    GDRCondVar 
-};
-
-typedef struct
-{
-    consoleHandle_t stderr;
-    consoleHandle_t stdout;
-
-    char msg[MAX_MSG_SIZE];
-    std::mutex m_conLock;
-    std::condition_variable m_conVar;
-} cmdConsole_t;
-
-static cmdConsole_t conInfo;
-
-void Con_Write(consoleHandle_t fd, bool nline = false)
-{
-#ifdef __unix__
-    size_t bytesWritten;
-    bytesWritten = fwrite((const void *)msg, sizeof(char), length, fd);
-    if (bytesWritten != length)
-        N_Error("Con_Write: bad fwrite!");
-    if (nline) {
-        bytesWritte = fwrite((const void *)"\n", sizeof(char), 1, fd);
-        if (bytesWritten != 1)
-            N_Error("Con_Write: bad fwrite!");
-    }
-    
-#elif defined(_WIN32)
-    DWORD bytesWritten;
-    WriteConsoleA(conHandle, (const void *)msg, length, &bytesWritten, NULL);
-//    if (bytesWritten != length) // ...?
-    WriteConsoleA(conHandle, (const void *)"\n", 1, &bytesWritten, NULL);
-//    if (bytesWritten != 1) // ...?
-#endif
-}
-
-void pop_msg(void)
-{
-    std::unique_lock<std::mutex> lock{conLock};
-    m_conVar.wait(lock, [this](){ return !m_msgQueue.empty(); });
-    const eastl::string& msgBuf = m_msgQueue.front();
-    m_msgQueue.pop();
-}
-
-void push_msg(LogLevel lvl, const char *fmt, ...)-
-{
-    va_list argptr;
-    char msg[MAX_MSG_SIZE];
-    int32_t length;
-
-    va_start(argptr, fmt);
-    length = vsnprintf(msg, MAX_MSG_SIZE, fmt, argptr);
-    va_end(argptr);
-
-    std::unique_lock<std::mutex> lock{conLock};
-    m_msgQueue.push(conInfo.msgBuf);
-    m_conVar.notify_one();
-}
-#endif
-
-// thread-safety
-static std::mutex conLock;
-static thread_local va_list argptr;
+// this allows vsnprintf to run on multiple threads without a lock
 static thread_local char msg[MAX_MSG_SIZE];
 static thread_local int32_t length;
+static thread_local va_list argptr;
+
+extern file_t logfile;
+//static boost::mutex conLock;
 
 bool imgui_window_open = false;
 static eastl::vector<char> con_buffer;
 
-void Con_ClearBuffer(const char *msg, int32_t length)
+void Con_ClearBuffer(void)
 {
+//    boost::unique_lock<boost::mutex> lock{conLock};
     EASY_FUNCTION();
 
     if (con_buffer.size() >= MAX_BUFFER_SIZE) {
@@ -134,23 +52,29 @@ void GDR_DECL Con_Printf(loglevel_t level, const char *fmt, ...)
         N_Error("Con_Printf: overflow occured");
     }
 
-    std::unique_lock<std::mutex> lock{conLock};
-    if (level == DEV) {
-        if (!c_devmode.b) {
-            return; // don't print it if we're not in devmode
-        }
-        write(STDOUT_FILENO, "DEV: ", 5);
-    }
-    else if (level == DEBUG) {
-#ifdef _NOMAD_DEBUG
-        write(STDOUT_FILENO, "DEBUG: ", 7);
-#else
+#ifndef _NOMAD_DEBUG
+    if (level == DEBUG)
         return;
+#else
+    if (level == DEBUG)
+        fprintf(stdout, C_BLUE "DEBUG: ");
 #endif
+    else if (level == DEV && !c_devmode.b)
+        return;
+    else if (level == DEV && c_devmode.b)
+        fprintf(stdout, C_GREEN "DEVLOG: ");
+    else if (level == WARNING)
+        fprintf(stderr, C_YELLOW "WARNING: ");
+    else if (level == ERROR)
+        fprintf(stderr, C_RED "ERROR: ");
+    
+    fprintf(stdout, "%s\n" C_RESET, msg);
+    if (logfile && FS_Initialized()) {
+        FS_Write(msg, length, logfile);
+        FS_Write("\n", 1, logfile);
     }
-    write(STDOUT_FILENO, (const void *)msg, length);
-    write(STDOUT_FILENO, "\n", 1);
-    Con_ClearBuffer(msg, length);
+
+//    Con_ClearBuffer();
 }
 
 void GDR_DECL Con_Printf(const char *fmt, ...)
@@ -166,9 +90,12 @@ void GDR_DECL Con_Printf(const char *fmt, ...)
         N_Error("Con_Printf: overflow occured");
     }
 
-    std::unique_lock<std::mutex> lock{conLock};
-    write(STDOUT_FILENO, (const void *)msg, length);
-    Con_ClearBuffer(msg, length);
+    fprintf(stdout, "%s\n", msg);
+    if (logfile && FS_Initialized()) {
+        FS_Write(msg, length, logfile);
+        FS_Write("\n", 1, logfile);
+    }
+//    Con_ClearBuffer();
 }
 
 static void Con_Clear_f(void)
@@ -178,47 +105,12 @@ static void Con_Clear_f(void)
     con_buffer.reserve(MAX_BUFFER_SIZE);
 }
 
-static void Con_ProcessInput(void)
+eastl::vector<char>& Con_GetBuffer(void)
 {
-    EASY_FUNCTION();
-
-    if (!console_open)
-        return; // nothing to process
-    
-    char buffer[MAX_CMD_BUFFER];
-    memset(buffer, 0, sizeof(buffer));
-    
-    ImGui::Text("> ");
-    ImGui::SameLine();
-    if (ImGui::InputText(" ", buffer, MAX_CMD_BUFFER, ImGuiInputTextFlags_EnterReturnsTrue)) {
-        Con_Printf("]%s", buffer); // echo it into the console
-        if (*buffer == '/') { // its a command
-            Cmd_ExecuteText(buffer);
-        }
-    }
+    return con_buffer;
 }
 
-void Con_EndFrame(void)
-{
-    int flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize;
-
-    ImGui::SetWindowPos(ImVec2(0.0f, 0.0f));
-    ImGui::SetWindowSize(ImVec2((float)r_screenwidth.i, (float)(r_screenheight.i >> 1)));
-    ImGui::Begin("Command Console", NULL, flags);
-    con_buffer.emplace_back('\0');
-    ImGui::Text("%s", con_buffer.data());
-    con_buffer.pop_back();
-
-    Con_ProcessInput();
-
-    ImGui::End();
-    if (console_open) {
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-    }
-}
-
-void GDR_DECL Con_Error(const char *fmt, ...)
+void GDR_DECL Con_Error(bool exit, const char *fmt, ...)
 {
     EASY_FUNCTION();
 
@@ -227,10 +119,15 @@ void GDR_DECL Con_Error(const char *fmt, ...)
     length = vsnprintf(msg, sizeof(msg), fmt, argptr);
     va_end(argptr);
 
-    std::unique_lock<std::mutex> lock{conLock};
-    write(STDERR_FILENO, "ERROR: ", 7);
-    write(STDERR_FILENO, msg, length);
+    fprintf(stderr, C_RED "ERROR: %s\n" C_RESET, msg);
+    if (logfile && FS_Initialized()) {
+        FS_Write(msg, length, logfile);
+        FS_Write("\n", 1, logfile);
+    }
+    if (exit)
+        Sys_Exit(-1);
 }
+
 
 #define MAX_CVAR_HASH 2048
 static cvar_t cvar_list;
@@ -238,14 +135,51 @@ static uint64_t cvar_count;
 
 const char *Cvar_GetValue(const cvar_t* cvar);
 
+static cvar_t *Cvar_VMToVar(const vmCvar_t *cvar)
+{
+    cvar_t *cv;
+    for (cv = cvar_list.next; cv; cv = cv->next) {
+        if (cv->id == cvar->handle)
+            return cv;
+    }
+    N_Error("Cvar_VMToVar: invalid vmCvar handle");
+}
+
+static int Cvar_MakeHandle(cvar_t *cvar)
+{
+    int handle;
+
+    handle = cvar_count;
+    cvar->id = handle;
+    return handle;
+}
+
+void Cvar_Find(vmCvar_t *cvar, const char *name)
+{
+    cvar_t *cv;
+
+    cv = Cvar_Find(name);
+    if (!cv) {
+        cvar->handle = CVAR_INVALID_HANDLE;
+        return;
+    }
+    cvar->b = cv->b;
+    cvar->i = cv->i;
+    cvar->f = cv->f;
+    N_strncpyz(cvar->s, cv->s, MAX_CVAR_NAME);
+    cvar->handle = Cvar_MakeHandle(cv);
+
+    if (cv->group != CVG_VM)
+        cv->group = CVG_VM;
+}
+
 cvar_t* Cvar_Find(const char *name)
 {
     cvar_t *cvar;
     
     for (cvar = &cvar_list; cvar; cvar = cvar->next) {
-        if (N_strcmp(cvar->name, name) == 1) {
+        if (!N_stricmpn(cvar->name, name, MAX_CVAR_NAME)) // found it
             return cvar;
-        }
     }
     return NULL;
 }
@@ -254,22 +188,25 @@ static void Cvar_Set(const char *name, const char *value)
 {
     cvar_t *cvar;
     int32_t i;
-    char s[64];
+    char s[MAX_CVAR_VALUE];
     float f;
+    qboolean b;
 
-    if (!Cvar_Find(name) || strlen(name) >= 64) {
+    if (!Cvar_Find(name) || strlen(name) >= MAX_CVAR_NAME) {
         Con_Printf("Invalid cvar name string %s", name);
         return;
     }
-    if (strlen(value) >= 64) {
+    if (strlen(value) >= MAX_CVAR_VALUE) {
         Con_Printf("Invalid cvar value string %s", value);
     }
 
     cvar = Cvar_Find(name);
     f = N_atof(value);
     i = N_atoi(value);
+    b = (qboolean)N_strtobool(value);
+    cvar->b = b;
     memset(cvar->s, 0, sizeof(cvar->s));
-    N_strncpy(cvar->s, value, sizeof(cvar->s));
+    N_strncpyz(cvar->s, value, sizeof(cvar->s));
 
     if (i == (int32_t)f) {
         if (cvar->type != TYPE_INT) {
@@ -321,8 +258,7 @@ void Cvar_Reset(const char *name)
         cvar->i = 0;
         break;
     case TYPE_STRING:
-        memset(cvar->s, 0, sizeof(cvar->s));
-        N_strcpy(cvar->s, "null");
+        N_strncpyz(cvar->s, "null", MAX_CVAR_VALUE);
         break;
     };
 }
@@ -354,9 +290,14 @@ qboolean Cvar_Command(void)
     return qtrue;
 }
 
+void Cvar_SetGroup(cvar_t *cvar, cvarGroup_t group)
+{
+    cvar->group = group;
+}
+
 const char *Cvar_GetValue(const char *name)
 {
-    static char str[64];
+    static char str[MAX_CVAR_VALUE];
     cvar_t *cvar;
 
     memset(str, 0, sizeof(str));
@@ -368,10 +309,7 @@ const char *Cvar_GetValue(const char *name)
 
     switch (cvar->type) {
     case TYPE_BOOL:
-        if (cvar->b)
-            N_strncpy(str, "true", 64);
-        else
-            N_strncpy(str, "false", 64);
+        N_strncpyz(str, N_booltostr(cvar->b), MAX_CVAR_VALUE);
         break;
     case TYPE_INT:
         snprintf(str, 64, "%i", cvar->i);
@@ -380,7 +318,7 @@ const char *Cvar_GetValue(const char *name)
         snprintf(str, 64, "%f", cvar->f);
         break;
     case TYPE_STRING:
-        N_strncpy(str, cvar->s, strlen(cvar->s));
+        N_strncpyz(str, cvar->s, MAX_CVAR_VALUE);
         break;
     };
 
@@ -389,14 +327,11 @@ const char *Cvar_GetValue(const char *name)
 
 const char *Cvar_GetValue(const cvar_t* cvar)
 {
-    static char str[64];
+    static char str[MAX_CVAR_VALUE];
     memset(str, 0, sizeof(str));
     switch (cvar->type) {
     case TYPE_BOOL:
-        if (cvar->b)
-            N_strncpy(str, "true", 64);
-        else
-            N_strncpy(str, "false", 64);
+        N_strncpyz(str, N_booltostr(cvar->b), MAX_CVAR_VALUE);
         break;
     case TYPE_INT:
         snprintf(str, 64, "%i", cvar->i);
@@ -405,7 +340,7 @@ const char *Cvar_GetValue(const cvar_t* cvar)
         snprintf(str, 64, "%6.03f", cvar->f);
         break;
     case TYPE_STRING:
-        N_strncpy(str, cvar->s, 63);
+        N_strncpyz(str, cvar->s, MAX_CVAR_VALUE - 1);
         break;
     };
 
@@ -435,42 +370,39 @@ static void Cvar_Print_f(void)
 void Cvar_RegisterName(const char *name, const char *value, cvartype_t type, int32_t flags)
 {
     cvar_t* cvar;
+    uint64_t hash;
 
     if (Cvar_Find(name)) {
         return;
     }
 
-    for (cvar = &cvar_list; cvar->next; cvar = cvar->next);
+    for (cvar = cvar_list.next; cvar->next; cvar = cvar->next);
+    
     cvar->next = (cvar_t *)Z_Malloc(sizeof(*cvar), TAG_STATIC, &cvar->next, "cvar");
     cvar = cvar->next;
     
     cvar->flags = flags;
-    N_strncpy(cvar->name, name, sizeof(cvar->name));
-    cvar->name[sizeof(cvar->name) - 1] = '\0';
-
-    switch (type) {
-    case TYPE_BOOL:
-        if (N_strneq("true", value, 4))
-            cvar->b = qtrue;
-        else
-            cvar->b = qfalse;
-        break;
-    case TYPE_INT:
-        cvar->i = N_atoi(value);
-        break;
-    case TYPE_FLOAT:
-        cvar->f = N_atof(value);
-        break;
-    case TYPE_STRING:
-        if (strlen(value) >= 64)
-            N_Error("Cvar_RegisterName: cvar values musn't be greater than 64 characters long");
-        N_strncpy(cvar->s, value, 63);
-        cvar->s[63] = '\0';
-        break;
-    };
-
-    cvar_count++;
+    N_strncpyz(cvar->name, name, MAX_CVAR_NAME);
     cvar->type = type;
+    cvar_count++;
+
+    Cvar_ChangeValue(cvar, value);
+}
+
+void Cvar_Register(vmCvar_t *cvar, const char *name, const char *value, cvartype_t type)
+{
+    cvar_t *cv;
+
+    cv = Cvar_Find(name);
+    if (cv) { // already exists
+        Con_Printf("Cvar_RegisterName: vmCvar '%s' already exists with value '%s'", name, value);
+        
+        // initialize the vmCvar to the current state
+        Cvar_Find(cvar, name);
+        return;
+    }
+    Cvar_SetGroup(Cvar_VMToVar(cvar), CVG_VM);
+    Cvar_RegisterName(name, value, type, CVAR_VM_CREATED);
 }
 
 void Cvar_ChangeValue(const char *name, const char *value)
@@ -500,10 +432,7 @@ void Cvar_ChangeValue(const char *name, const char *value)
 
     switch (cvar->type) {
     case TYPE_BOOL:
-        if (N_strneq("true", value, 4))
-            cvar->b = qtrue;
-        else
-            cvar->b = qfalse;
+        cvar->b = (qboolean)N_strtobool(value);
         break;
     case TYPE_INT:
         cvar->i = N_atoi(value);
@@ -512,15 +441,12 @@ void Cvar_ChangeValue(const char *name, const char *value)
         cvar->f = N_atof(value);
         break;
     case TYPE_STRING:
-        if (strlen(value) >= 64)
-            N_Error("Cvar_ChangeValue: cvar strings musn't be greater than 64 characters long");
-        N_strncpy(cvar->s, value, strlen(value));
-        cvar->s[63] = '\0';
+        N_strncpyz(cvar->s, value, MAX_CVAR_VALUE);
         break;
     };
 }
 
-static void Cvar_ChangeValue(cvar_t *cvar, const char *value)
+void Cvar_ChangeValue(cvar_t *cvar, const char *value)
 {
     if (cvar->flags & CVAR_ROM) {
         if (!c_devmode.b) {
@@ -539,10 +465,7 @@ static void Cvar_ChangeValue(cvar_t *cvar, const char *value)
 
     switch (cvar->type) {
     case TYPE_BOOL:
-        if (N_strneq("true", value, 4))
-            cvar->b = qtrue;
-        else
-            cvar->b = qfalse;
+        cvar->b = (qboolean)N_strtobool(value);
         break;
     case TYPE_INT:
         cvar->i = N_atoi(value);
@@ -551,10 +474,7 @@ static void Cvar_ChangeValue(cvar_t *cvar, const char *value)
         cvar->f = N_atof(value);
         break;
     case TYPE_STRING:
-        if (strlen(value) >= 64)
-            N_Error("Cvar_RegisterName: cvar values musn't be greater than 64 characters long");
-        N_strncpy(cvar->s, value, 63);
-        cvar->s[63] = '\0';
+        N_strncpyz(cvar->s, value, MAX_CVAR_VALUE - 1);
         break;
     };
 }
@@ -575,20 +495,17 @@ static void Cvar_ValueCheck(cvar_t *cvar, const char *value)
         if (N_atof(value) != cvar->f)
             cvar->f = N_atof(value);
         break;
-    case TYPE_STRING: {
-        if (strlen(value) >= 64)
-            N_Error("Cvar_RegisterName: cvar values musn't be greater than 64 characters long");
-        if (!N_strncmp(cvar->s, value, sizeof(cvar->s))) {
-            N_strncpy(cvar->s, value, 63);
-            cvar->s[63] = '\0';
-        }
-        break; }
+    case TYPE_STRING:
+        if (N_stricmpn(cvar->s, value, MAX_CVAR_VALUE) == -1)
+            N_strncpyz(cvar->s, value, MAX_CVAR_VALUE);
+        break;
     };
 }
 
 void Cvar_Register(cvar_t* cvar, const char *value)
 {
     cvar_t* other;
+    uint64_t hash;
 
     other = Cvar_Find(cvar->name);
     if (other) { // already exists
@@ -597,20 +514,23 @@ void Cvar_Register(cvar_t* cvar, const char *value)
             Cvar_ValueCheck(cvar, value);
         return;
     }
-    for (other = &cvar_list;; other = other->next) {
-        if (!other->next) {
-            other->next = cvar;
+
+    for (other = &cvar_list; other; other = other->next) {
+        if (!other->next)
             break;
-        }
     }
 
+    other->next = cvar;
+    other = other->next;
     cvar_count++;
-    cvar->next = NULL;
+
     if (value)
-        Cvar_ValueCheck(cvar, value);
+        Cvar_ValueCheck(other, value);
 }
 
 #define DEFAULT_CFG_NAME "nomadconfig.scf"
+
+static void Cvar_Sort_f(void);
 
 static void Cvar_WriteCfg_f(void)
 {
@@ -621,7 +541,7 @@ static void Cvar_WriteCfg_f(void)
         N_Error("FS_FOpenWrite: failed to open write stream for default.scf");
     }
     FS_Write("{\n", 2, out);
-    for (cvar = cvar_list.next; cvar; cvar = cvar->next) {
+    for (cvar = &cvar_list; cvar; cvar = cvar->next) {
         if (!(cvar->flags & CVAR_SAVE))
             continue; // don't write it
 
@@ -641,17 +561,18 @@ static void Cvar_WriteCfg_f(void)
 
 static void Cvar_List_f(void)
 {
-    for (cvar_t *cvar = cvar_list.next; cvar; cvar = cvar->next) {
+    Cvar_Sort_f();
+    for (cvar_t *cvar = &cvar_list; cvar; cvar = cvar->next) {
         Con_Printf("%s%24 = %s", cvar->name, Cvar_GetValue(cvar));
     }
 }
 
 static cvartype_t Cvar_StringToType(const char *str)
 {
-    if (N_strcmp("boolean", str) == 1) return TYPE_BOOL;
-    else if (N_strcmp("float", str) == 1) return TYPE_FLOAT;
-    else if (N_strcmp("integer", str) == 1) return TYPE_INT;
-    else if (N_strcmp("string", str) == 1) return TYPE_STRING;
+    if (!N_stricmpn("boolean", str, sizeof("boolean"))) return TYPE_BOOL;
+    else if (!N_stricmpn("float", str, sizeof("float"))) return TYPE_FLOAT;
+    else if (!N_stricmpn("integer", str, sizeof("integer"))) return TYPE_INT;
+    else if (!N_stricmpn("string", str, sizeof("string"))) return TYPE_STRING;
 
     Con_Printf("Unkown cvar type string: %s", str);
     return (cvartype_t)-1;
@@ -698,6 +619,7 @@ static void Cvar_Set_f(void)
     else {
         if (Cvar_StringToType(Cmd_Argv(2)) != cvar->type) {
             Con_Printf("Cvar type for %s isn't the same as %s, use the correct type", cvar->name, Cmd_Argv(2));
+            return;
         }
         Cvar_ChangeValue(cvar, Cmd_ArgsFrom(2));
     }
@@ -731,6 +653,69 @@ static void Cvar_Reset_f(void)
     Cvar_Reset(Cmd_Argv(1));
 }
 
+static void Cvar_QSortByName( cvar_t **a, uint64_t n )
+{
+	cvar_t *temp;
+	cvar_t *m;
+	int32_t i, j;
+
+	i = 0;
+	j = n;
+	m = a[ n>>1 ];
+
+	do {
+		// sort in descending order
+		while ( strcmp( a[i]->name, m->name ) > 0 ) i++;
+		while ( strcmp( a[j]->name, m->name ) < 0 ) j--;
+
+		if ( i <= j ) {
+			temp = a[i]; 
+			a[i] = a[j]; 
+			a[j] = temp;
+			i++; 
+			j--;
+		}
+	} while ( i <= j );
+
+	if ( j > 0 ) Cvar_QSortByName( a, j );
+	if ( n > i ) Cvar_QSortByName( a+i, n-i );
+}
+
+
+static void Cvar_Sort_f( void ) 
+{
+	cvar_t *list[ MAX_CVAR_HASH ], *var;
+	uint64_t count;
+	uint64_t i;
+
+	for ( count = 0, var = cvar_list.next; var; var = var->next ) {
+		if ( var->name ) {
+			list[ count++ ] = var;
+		} else {
+			N_Error( "%s: NULL cvar name", __func__ );
+		}
+	}
+
+	if ( count < 2 ) {
+		return; // nothing to sort
+	}
+
+	Cvar_QSortByName( &list[0], count-1 );
+	
+	cvar_list.next = NULL;
+
+	// relink cvars
+	for ( i = 0; i < count; i++ ) {
+		var = list[ i ];
+		// link the variable in
+		var->next = cvar_list.next;
+		if ( cvar_list.next )
+			cvar_list.prev = var;
+		var->prev = NULL;
+		cvar_list.next = var;
+	}
+}
+
 static void Cvar_PrintType_f(void)
 {
     if (Cmd_Argc() != 2) {
@@ -745,49 +730,14 @@ static void Cvar_PrintType_f(void)
     Con_Printf("Type of cvar %s is %s", cvar->name, Cvar_TypeToString(cvar));
 }
 
+
 void Con_Shutdown(void)
 {
-#if 0
-    CloseConsoleHandle(conInfo.stdout);
-    CloseConsoleHandle(conInfo.stderr);
-#endif
-
-#ifdef _WIN32
-    if (!FreeConsole()) {
-
-    }
-#endif
+    con_buffer.clear();
 }
 
-void Con_Init()
+void Cvar_Init(void)
 {
-#ifdef _WIN32
-    if (!AllocConsole()) {
-
-    }
-#endif
-
-#if 0
-    conInfo.stdout = OpenConsoleHandle(STDOUT_HANDLE);
-    if (conInfo.stdout == BAD_HANDLE)
-        N_Error();
-
-    conInfo.stderr = OpenConsoleHandle(STDERR_HANDLE)
-    if (conInfo.stderr == BAD_HANDLE)
-        N_Error();
-#endif
-
-    con_buffer.reserve(MAX_BUFFER_SIZE);
-    Cmd_AddCommand("writecfg", Cvar_WriteCfg_f);
-    Cmd_AddCommand("listcvars", Cvar_List_f);
-    Cmd_AddCommand("print", Cvar_Print_f);
-    Cmd_AddCommand("clear", Con_Clear_f);
-    Cmd_AddCommand("sets", Cvar_Set_f);
-    Cmd_AddCommand("setu", Cvar_Set_f);
-    Cmd_AddCommand("setd", Cvar_Set_f);
-    Cmd_AddCommand("reset", Cvar_Reset_f);
-    Cmd_AddCommand("print_type", Cvar_PrintType_f);
-
     cvar_list.next = NULL;
     memset(cvar_list.name, 0, sizeof(cvar_list.name));
     memset(cvar_list.s, 0, sizeof(cvar_list.s));
@@ -799,4 +749,39 @@ void Con_Init()
     for (uint32_t i = 0; i < G_NumCvars(); i++) {
         Cvar_Register(G_GetCvars()[i], NULL);
     }
+}
+
+void Con_Init(void)
+{
+#if 0
+    std::array<spdlog::sink_ptr, 2> sinks;
+
+    sinks[0] = std::make_shared<spdlog::sinks::basic_file_sink_mt>("gamedata/logfile.txt", true);
+    sinks[1] = std::make_shared<spdlog::sinks::stdout_sink_mt>();
+
+    sinks[0]->set_pattern("%l: %v");
+    sinks[1]->set_pattern("%^%l: %v%$");
+
+    spdlog::set_pattern("%^%l: %v%$");
+
+    conLogger = std::make_shared<spdlog::logger>("conlog", begin(sinks), end(sinks));
+
+    spdlog::register_logger(conLogger);
+    conLogger->set_level(spdlog::level::trace);
+    conLogger->flush_on(spdlog::level::trace);
+
+    spdlog::set_default_logger(conLogger);
+#endif
+    con_buffer.reserve(MAX_BUFFER_SIZE);
+
+    Cmd_AddCommand("writecfg", Cvar_WriteCfg_f);
+    Cmd_AddCommand("listcvars", Cvar_List_f);
+    Cmd_AddCommand("print", Cvar_Print_f);
+    Cmd_AddCommand("clear", Con_Clear_f);
+    Cmd_AddCommand("sets", Cvar_Set_f);
+    Cmd_AddCommand("setu", Cvar_Set_f);
+    Cmd_AddCommand("setd", Cvar_Set_f);
+    Cmd_AddCommand("reset", Cvar_Reset_f);
+    Cmd_AddCommand("print_type", Cvar_PrintType_f);
+    Cmd_AddCommand("sortvars", Cvar_Sort_f);
 }

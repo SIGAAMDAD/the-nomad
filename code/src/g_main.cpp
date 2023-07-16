@@ -53,27 +53,6 @@ void SIG_FPE(int signum)
 
 int main(int argc, char** argv)
 {
-#ifdef SIGINT
-    signal(SIGINT, SIG_INTERRUPT);
-#endif
-#ifdef SIGSEGV // seggy
-    signal(SIGSEGV, SIG_SEGV);
-#endif
-#ifdef SIGABRT // abort
-    signal(SIGABRT, SIG_ABORT);
-#endif
-#ifdef SIGBUS // bus error
-    signal(SIGBUS, SIG_BUS);
-#endif
-#ifdef SIGKILL
-    signal(SIGKILL, SIG_INTERRUPT);
-#endif
-#ifdef SIGTERM
-    signal(SIGTERM, SIG_INTERRUPT);
-#endif
-#ifdef SIGFPE // floating-point exception
-    signal(SIGFPE, SIG_FPE);
-#endif
     I_NomadInit(argc, argv);
     return 0;
 }

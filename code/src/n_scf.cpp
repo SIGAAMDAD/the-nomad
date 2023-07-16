@@ -8,33 +8,36 @@ int32_t i;
 qboolean b;
 */
 
-cvar_t g_vert_fov          = {"g_vert_fov",        "", 0.0f, 24, qfalse,   TYPE_INT, CVAR_SAVE};
-cvar_t g_horz_fov          = {"g_horz_fov",        "", 0.0f, 64, qfalse,   TYPE_INT, CVAR_SAVE};
-cvar_t g_pspeed            = {"g_pspeed",          "", 1.0f, 0,  qfalse, TYPE_FLOAT, CVAR_SAVE};
-cvar_t g_gravity           = {"g_gravity",         "", 1.5f, 0,  qfalse, TYPE_FLOAT, CVAR_SAVE};
+cvar_t g_vert_fov          = {"g_vert_fov",        "", 0.0f, 24, qfalse,   TYPE_INT, CVG_ENGINE, CVAR_SAVE};
+cvar_t g_horz_fov          = {"g_horz_fov",        "", 0.0f, 64, qfalse,   TYPE_INT, CVG_ENGINE, CVAR_SAVE};
+cvar_t g_pspeed            = {"g_pspeed",          "", 1.0f, 0,  qfalse, TYPE_FLOAT, CVG_ENGINE, CVAR_SAVE};
+cvar_t g_gravity           = {"g_gravity",         "", 1.5f, 0,  qfalse, TYPE_FLOAT, CVG_ENGINE, CVAR_SAVE};
 
-cvar_t snd_musicvol        = {"snd_musicvol",      "", 0.7f, 0,  qfalse, TYPE_FLOAT, CVAR_SAVE};
-cvar_t snd_sfxvol          = {"snd_sfxvol",        "", 1.0f, 0,  qfalse, TYPE_FLOAT, CVAR_SAVE};
-cvar_t snd_musicon         = {"snd_musicon",       "", 0.0f, 0,  qtrue,   TYPE_BOOL, CVAR_SAVE};
-cvar_t snd_sfxon           = {"snd_sfxon",         "", 0.0f, 0,  qtrue,   TYPE_BOOL, CVAR_SAVE};
+cvar_t snd_musicvol        = {"snd_musicvol",      "", 0.7f, 0,  qfalse, TYPE_FLOAT, CVG_ENGINE, CVAR_SAVE};
+cvar_t snd_sfxvol          = {"snd_sfxvol",        "", 1.0f, 0,  qfalse, TYPE_FLOAT, CVG_ENGINE, CVAR_SAVE};
+cvar_t snd_musicon         = {"snd_musicon",       "", 0.0f, 0,  qtrue,   TYPE_BOOL, CVG_ENGINE, CVAR_SAVE};
+cvar_t snd_sfxon           = {"snd_sfxon",         "", 0.0f, 0,  qtrue,   TYPE_BOOL, CVG_ENGINE, CVAR_SAVE};
 
-cvar_t c_fastmobs1         = {"c_fastmobs1",       "", 0.0f, 0, qfalse, TYPE_BOOL, CVAR_SAVE | CVAR_CHEAT};
-cvar_t c_fastmobs2         = {"c_fastmobs2",       "", 0.0f, 0, qfalse, TYPE_BOOL, CVAR_SAVE | CVAR_CHEAT};
-cvar_t c_fastmobs3         = {"c_fastmobs3",       "", 0.0f, 0, qfalse, TYPE_BOOL, CVAR_SAVE | CVAR_CHEAT};
-cvar_t c_deafmobs          = {"c_deafmobs",        "", 0.0f, 0, qfalse, TYPE_BOOL, CVAR_SAVE | CVAR_CHEAT};
-cvar_t c_blindmobs         = {"c_blindmobs",       "", 0.0f, 0, qfalse, TYPE_BOOL, CVAR_SAVE | CVAR_CHEAT};
-cvar_t c_nosmell           = {"c_nosmell",         "", 0.0f, 0, qfalse, TYPE_BOOL, CVAR_SAVE | CVAR_CHEAT};
-cvar_t c_nomobs            = {"c_nomobs",          "", 0.0f, 0, qfalse, TYPE_BOOL, CVAR_SAVE | CVAR_CHEAT};
-cvar_t c_godmode           = {"c_godmode",         "", 0.0f, 0, qfalse, TYPE_BOOL, CVAR_SAVE | CVAR_CHEAT};
-cvar_t c_infinite_ammo     = {"c_infinite_ammo",   "", 0.0f, 0, qfalse, TYPE_BOOL, CVAR_SAVE | CVAR_CHEAT};
-cvar_t c_bottomless_clip   = {"c_bottomless_clip", "", 0.0f, 0, qfalse, TYPE_BOOL, CVAR_SAVE | CVAR_CHEAT};
+cvar_t c_fastmobs1         = {"c_fastmobs1",       "", 0.0f, 0, qfalse, TYPE_BOOL, CVG_ENGINE, CVAR_SAVE | CVAR_CHEAT};
+cvar_t c_fastmobs2         = {"c_fastmobs2",       "", 0.0f, 0, qfalse, TYPE_BOOL, CVG_ENGINE, CVAR_SAVE | CVAR_CHEAT};
+cvar_t c_fastmobs3         = {"c_fastmobs3",       "", 0.0f, 0, qfalse, TYPE_BOOL, CVG_ENGINE, CVAR_SAVE | CVAR_CHEAT};
+cvar_t c_deafmobs          = {"c_deafmobs",        "", 0.0f, 0, qfalse, TYPE_BOOL, CVG_ENGINE, CVAR_SAVE | CVAR_CHEAT};
+cvar_t c_blindmobs         = {"c_blindmobs",       "", 0.0f, 0, qfalse, TYPE_BOOL, CVG_ENGINE, CVAR_SAVE | CVAR_CHEAT};
+cvar_t c_nosmell           = {"c_nosmell",         "", 0.0f, 0, qfalse, TYPE_BOOL, CVG_ENGINE, CVAR_SAVE | CVAR_CHEAT};
+cvar_t c_nomobs            = {"c_nomobs",          "", 0.0f, 0, qfalse, TYPE_BOOL, CVG_ENGINE, CVAR_SAVE | CVAR_CHEAT};
+cvar_t c_godmode           = {"c_godmode",         "", 0.0f, 0, qfalse, TYPE_BOOL, CVG_ENGINE, CVAR_SAVE | CVAR_CHEAT};
+cvar_t c_infinite_ammo     = {"c_infinite_ammo",   "", 0.0f, 0, qfalse, TYPE_BOOL, CVG_ENGINE, CVAR_SAVE | CVAR_CHEAT};
+cvar_t c_bottomless_clip   = {"c_bottomless_clip", "", 0.0f, 0, qfalse, TYPE_BOOL, CVG_ENGINE, CVAR_SAVE | CVAR_CHEAT};
 #ifdef _NOMAD_DEBUG
-cvar_t c_devmode           = {"c_devmode",         "", 0.0f, 0,  qtrue, TYPE_BOOL, CVAR_SAVE | CVAR_CHEAT};
-cvar_t c_cheatsallowed     = {"c_cheatsallowed",   "", 0.0f, 0,  qtrue, TYPE_BOOL, CVAR_SAVE};
+cvar_t c_devmode           = {"c_devmode",         "", 0.0f, 0,  qtrue, TYPE_BOOL, CVG_ENGINE, CVAR_SAVE | CVAR_CHEAT};
+cvar_t c_cheatsallowed     = {"c_cheatsallowed",   "", 0.0f, 0,  qtrue, TYPE_BOOL, CVG_ENGINE, CVAR_SAVE};
 #else
-cvar_t c_devmode           = {"c_devmode",         "", 0.0f, 0, qfalse, TYPE_BOOL, CVAR_SAVE | CVAR_CHEAT};
-cvar_t c_cheatsallowed     = {"c_cheatsallowed",   "", 0.0f, 0, qfalse, TYPE_BOOL, CVAR_SAVE};
+cvar_t c_devmode           = {"c_devmode",         "", 0.0f, 0, qfalse, TYPE_BOOL, CVG_ENGINE, CVAR_SAVE | CVAR_CHEAT};
+cvar_t c_cheatsallowed     = {"c_cheatsallowed",   "", 0.0f, 0, qfalse, TYPE_BOOL, CVG_ENGINE, CVAR_SAVE};
 #endif
+
+cvar_t z_minRam            = {"z_minRam",          "", 0.0f, 280, qfalse, TYPE_INT, CVG_ENGINE, CVAR_SAVE};
+cvar_t z_zoneMegs          = {"z_zoneMegs",        "", 0.0f, 300, qfalse, TYPE_INT, CVG_ENGINE, CVAR_SAVE};
 
 static cvar_t *cvars[] = {
     &g_vert_fov,
@@ -44,8 +47,6 @@ static cvar_t *cvars[] = {
     &snd_musicon,
     &snd_sfxon,
     &r_ticrate,
-    &r_texture_magfilter,
-    &r_texture_minfilter,
     &r_screenheight,
     &r_screenwidth,
     &r_vsync,
@@ -54,8 +55,20 @@ static cvar_t *cvars[] = {
     &r_hidden,
     &r_drawFPS,
     &r_renderapi,
-    &r_msaa_amount,
+    &r_multisampleAmount,
+    &r_multisampleType,
     &r_dither,
+    &r_EXT_anisotropicFiltering,
+    &r_gammaAmount,
+    &r_textureMagFilter,
+    &r_textureMinFilter,
+    &r_textureFiltering,
+    &r_textureCompression,
+    &r_textureDetail,
+    &r_bloomOn,
+    &r_useExtensions,
+    &r_fovWidth,
+    &r_fovHeight,
     &c_fastmobs1,
     &c_fastmobs2,
     &c_fastmobs3,
@@ -68,7 +81,9 @@ static cvar_t *cvars[] = {
     &c_devmode,
     &c_cheatsallowed,
     &fs_gamedir,
-    &fs_numArchives
+    &fs_numArchives,
+    &z_minRam,
+    &z_zoneMegs
 };
 
 #define PRINTARG(x) fmt::arg(#x, x)
@@ -91,7 +106,7 @@ static void SCF_ParseFile(void)
     }
 }
 
-static void Cvar_Load(const json& data, const eastl::string& name, cvar_t* cvar)
+static void Cvar_Load(const json& data, const std::string& name, cvar_t* cvar)
 {
     if (!(cvar->flags & CVAR_SAVE)) {
         return;
@@ -102,7 +117,7 @@ static void Cvar_Load(const json& data, const eastl::string& name, cvar_t* cvar)
     if (!data.contains(name)) {
         N_Error("Cvar_Load: cvar %s required in configuration file to run the game", name.c_str());
     }
-    const eastl::string value = data[name];
+    const std::string& value = data[name];
     if (value.size() >= 64)
         N_Error("Cvar_Load: cvar value is too long (max of 64 characters), was %lu characters long", value.size());
 
@@ -121,7 +136,7 @@ static void Cvar_Load(const json& data, const eastl::string& name, cvar_t* cvar)
         break;
     case TYPE_STRING:
         memset(cvar->s, 0, sizeof(cvar->s));
-        strncpy(cvar->s, value.c_str(), value.size());
+        N_strncpy(cvar->s, value.c_str(), value.size());
         break;
     };
 

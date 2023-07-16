@@ -14,11 +14,9 @@
 extern uint32_t vm_command;
 extern uint32_t vm_args[12];
 
-void VM_Init(bffscript_t* scripts);
+void VM_Init(void);
 void G_RemoveVM(uint64_t index);
 intptr_t VM_Stop(uint64_t index);
 void VM_Run(uint64_t index);
-
-intptr_t G_SystemCalls(vm_t *vm, intptr_t *args);
 
 #endif

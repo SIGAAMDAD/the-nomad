@@ -13,8 +13,8 @@ static ALCcontext* context;
 
 typedef struct nomadsnd_s
 {
-    ALuint source;
-    ALuint buffer;
+    uint32_t source = 0;
+    uint32_t buffer = 0;
     char name[80];
 
     int samplerate;
@@ -24,7 +24,7 @@ typedef struct nomadsnd_s
     short* sndbuf;
 
     bool queued = false;
-    bool failed = false; // if the pre-caching effort failed for this specific sound
+    bool failed = true; // if the pre-caching effort failed for this specific sound
 } nomadsnd_t;
 
 static uint32_t sndcache_size;
@@ -61,6 +61,7 @@ void I_CacheAudio(void *bffinfo)
 	SF_INFO fdata;
 	sf_count_t readcount;
 
+    Con_Printf("I_CacheAudio: allocating OpenAL buffers and sources");
     snd_cache = (nomadsnd_t *)Hunk_Alloc(sizeof(nomadsnd_t) * info->numSounds, "snd_cache", h_low);
     sndcache_size = info->numSounds;
 
@@ -92,30 +93,33 @@ void I_CacheAudio(void *bffinfo)
         snd_cache[i].frames = fdata.frames;
 
         N_strncpy(snd_cache[i].name, info->sounds[i].name, MAX_BFF_CHUNKNAME);
-        alGenSources(1, &snd_cache[i].source);
-        alGenBuffers(1, &snd_cache[i].buffer);
+        alGenSources(1, (ALuint *)&snd_cache[i].source);
+        alGenBuffers(1, (ALuint *)&snd_cache[i].buffer);
         alBufferData(snd_cache[i].buffer, snd_cache[i].channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16,
             snd_cache[i].sndbuf, sizeof(short) * fdata.frames * fdata.channels, snd_cache[i].samplerate);
         alSourcei(snd_cache[i].source, AL_BUFFER, snd_cache[i].buffer);
 		alSourcef(snd_cache[i].source, AL_GAIN, snd_musicvol.f);
-        Z_ChangeTag(snd_cache[i].sndbuf, TAG_PURGELEVEL);
+        Z_Free(snd_cache[i].sndbuf);
 
         sndhash[Com_GenerateHashValue(info->sounds[i].name, MAX_SND_HASH)] = &snd_cache[i];
         snd_cache[i].failed = false;
     }
 }
 
-void Snd_Kill()
+void Snd_Shutdown(void)
 {
-    Con_Printf("Snd_Kill: deallocating and freeing OpenAL sources and buffers");
+    Con_Printf("Snd_Shutdown: deallocating and freeing OpenAL sources and buffers");
     if ((!device || !context) || !snd_cache)
         return;
     
     for (uint32_t i = 0; i < numsfx; ++i) {
         if (!snd_cache[i].failed) {
-            alSourcei(snd_cache[i].source, AL_BUFFER, 0);
-            alDeleteBuffers(1, &snd_cache[i].buffer);
-            alDeleteSources(1, &snd_cache[i].source);
+            if (snd_cache[i].source)
+               alSourcei(snd_cache[i].source, AL_BUFFER, 0);
+            if (snd_cache[i].buffer)
+                alDeleteBuffers(1, (const ALuint *)&snd_cache[i].buffer);
+            if (snd_cache[i].source)
+                alDeleteSources(1, (const ALuint *)&snd_cache[i].source);
         }
     }
     alcMakeContextCurrent(NULL);
@@ -168,7 +172,7 @@ void Snd_Submit(void)
     }
 }
 
-void Snd_Init()
+void Snd_Init(void)
 {
     if (!snd_sfxon.b || !snd_musicon.b)
         return;

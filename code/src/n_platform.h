@@ -3,19 +3,18 @@
 
 #pragma once
 
+#define GDRx64  0
+#define GDRi386 0
+#define arm64   0
+#define arm32   0
+
 #ifdef _WIN32
 
-#ifdef GDR_DLLCOMPILE
-#define GDR_EXPORT __declspec(dllexport)
-#else
-#define GDR_EXPORT __declspec(dllimport)
-#endif
 #define DLL_EXT ".dll"
 #define PATH_SEP '\\'
 #define PATH_SEP_FOREIGN '/'
 #define GDR_DECL __cdecl
 #define GDR_NEWLINE "\r\n"
-#define GDR_INLINE __inline
 
 #if defined(_MSVC_VER) && _MSVC_VER >= 1400
 #define COMPILER_STRING "msvc"
@@ -36,23 +35,37 @@
 #if defined(_M_IX86)
 #define ARCH_STRING "x86"
 #define GDR_LITTLE_ENDIAN
+#undef GDRi386
+#define GDRi386 1
+#ifndef __WORDSIZE
+#define __WORDSIZE 32
+#endif
 #endif
 
 #if defined(_M_AMD64)
 #define ARCH_STRING "x86_64"
 #define GDR_LITTLE_ENDIAN
+#undef GDRx64
+#define GDRx64 1
+#ifndef __WORDSIZE
+#define __WORDSIZE 64
+#endif
 #endif
 
 #if defined(_M_ARM64)
 #define ARCH_STRING "arm64"
 #define GDR_LITTLE_ENDIAN
+#undef arm64
+#define arm64 1
+#ifndef __WORDSIZE
+#define __WORDSIZE 64
+#endif
 #endif
 
 #else // !defined _WIN32
 
 // common unix platform stuff
 
-#define GDR_EXPORT __attribute__((visibility("default")))
 #define DLL_EXT ".so"
 #define PATH_SEP '/'
 #define PATH_SEP_FOREIGN '\\'
@@ -62,21 +75,29 @@
 #if defined(__i386__)
 #define ARCH_STRING "i386"
 #define GDR_LITTLE_ENDIAN
+#undef GDRi386
+#define GDRi386 1
 #endif
 
 #if defined(__x86_64__) || defined(__amd64__)
 #define ARCH_STRING "x86-64"
 #define GDR_LITTLE_ENDIAN
+#undef GDRx64
+#define GDRx64 1
 #endif
 
 #if defined(__arm__)
 #define ARCH_STRING "arm"
 #define GDR_LITTLE_ENDIAN
+#undef arm32
+#define arm32 1
 #endif
 
 #if defined(__aarch64__)
 #define ARCH_STRING "aarch64"
 #define GDR_LITTLE_ENDIAN
+#undef arm64
+#define arm64 1
 #endif
 
 #endif
@@ -93,7 +114,6 @@
 #include <endian.h>
 
 #define OS_STRING "linux"
-#define GDR_INLINE inline
 
 #endif
 
@@ -110,8 +130,6 @@
 #define OS_STRING "netbsd"
 #endif
 
-#define GDR_INLINE inline
-
 #if BYTE_ORDER == BIG_ENDIAN
 #define GDR_BIG_ENDIAN
 #else
@@ -123,7 +141,6 @@
 #ifdef __APPLE__
 
 #define OS_STRING "macos"
-#define GDR_INLINE inline
 #undef DLL_EXT
 #define DLL_EXT ".dylib"
 
@@ -132,7 +149,7 @@
 #ifdef Q3_VM
 
 #define OS_STRING "q3vm"
-#define GDR_INLINE
+#define GDR_INLINE // GDRLib/lib.hpp isn't meant to be included when compiling with lcc
 
 #define ARCH_STRING "bytecode"
 #define GDR_LITTLE_ENDIAN
@@ -148,10 +165,6 @@
 
 #if !defined( ARCH_STRING )
 #error "Architecture not supported"
-#endif
-
-#ifndef GDR_INLINE
-#error "GDR_INLINE not defined"
 #endif
 
 #ifndef PATH_SEP

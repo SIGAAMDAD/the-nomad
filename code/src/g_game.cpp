@@ -1,5 +1,5 @@
 #include "n_shared.h"
-#include "m_renderer.h"
+#include "../rendergl/rgl_public.h"
 #include "g_sound.h"
 #include "g_game.h"
 
@@ -13,6 +13,4 @@ void Game::Init()
 
 Game::~Game()
 {
-    Snd_Kill();
-    R_ShutDown();
 }

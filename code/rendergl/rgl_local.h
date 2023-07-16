@@ -8,6 +8,10 @@
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl2.h"
+#include <cglm/cglm.h>
+#include <cglm/vec3.h>
+#include <cglm/vec2.h>
+#include <cglm/mat4.h>
 
 #define RENDER_MAX_UNIFORMS 1024
 
@@ -17,9 +21,13 @@
 #define TEXTURE_FILTER_TRILINEAR 3
 #define RENDER_MAX_QUADS 0x80000
 #define RENDER_MAX_VERTICES (RENDER_MAX_QUADS*4)
-#define RENDER_MAX_INDICES (RENDER_MAX_VERTICES*6)
+#define RENDER_MAX_INDICES (RENDER_MAX_QUADS*6)
 
+#ifdef _NOMAD_DEBUG
 #define RENDER_ASSERT(x,...) if (!(x)) ri.N_Error("%s: %s",__func__,va(__VA_ARGS__))
+#else
+#define RENDER_ASSERT(x,...)
+#endif
 
 #include <SDL2/SDL_opengl.h>
 
@@ -102,54 +110,16 @@ typedef struct
     char *vertexBuf;
     char *fragmentBuf;
 
+    char *vertexFile;
+    char *fragmentFile;
+
     uint32_t vertexBufLen;
     uint32_t fragmentBufLen;
 
     uint32_t programId;
 } shader_t;
 
-typedef struct vertex_s
-{
-	glm::vec3 pos;
-	glm::vec2 texcoords;
-	glm::vec4 color;
-	float type;
-	
-	inline vertex_s(const glm::vec3& _pos, const glm::vec2& _texcoords, const glm::vec4& _color)
-		: pos(_pos), texcoords(+texcoords), color(_color) { }
-    inline vertex_s(void)
-		: pos(0.0f), texcoords(0.0f), color(0.0f) { }
-	inline vertex_s(const vertex_s &v)
-		: pos(v.pos), texcoords(v.texcoords), color(v.color) { }
-	inline vertex_s(vertex_s &&v)
-		: pos(v.pos), texcoords(v.texcoords), color(v.color) { }
-    inline ~vertex_s() = default;
-} vertex_t;
-
-typedef struct
-{
-	uint32_t index;
-	uint32_t count;
-	uint32_t type;
-	uint32_t offset;
-} vertexAttrib_t;
-
-typedef struct
-{
-    vertex_t *vertices;
-    uint32_t *indices;
-
-    uint64_t numVertices;
-    uint64_t numIndices;
-
-    vertexAttrib_t *attribs;
-    uint64_t numAttribs;
-    uint64_t attribStride;
-
-    uint32_t vaoId;
-    uint32_t iboId;
-    uint32_t vboId;
-} vertexCache_t;
+#include "rgl_vertexcache.h"
 
 typedef struct
 {
@@ -160,6 +130,31 @@ typedef struct
     uint32_t width;
     uint32_t height;
 } framebuffer_t;
+
+typedef struct
+{
+    uint32_t target;
+    uint32_t bufSize;
+    uint32_t bufferId;
+    uint32_t bindingId;
+} shaderBuffer_t;
+#if 0
+typedef struct
+{
+    mat4 projection;
+    mat4 viewMatrix;
+    mat4 vpm;
+
+    vec3 cameraPos;
+    float rotation;
+    float zoomLevel;
+    float aspectRatio;
+    float rotationSpeed;
+    float moveSpeed;
+} camera_t;
+
+void RC_CalculateView(camera_t *camera);
+#endif
 
 class Camera
 {
@@ -258,67 +253,65 @@ public:
     vertexCache_t* vertexCaches[MAX_VERTEXCACHES];
 
     uint32_t numVertexCaches, numTextures, numFBOs, numShaders;
-    uint32_t shaderid, vaoid, vboid, iboid, textureid, fboid;
+    uint32_t shaderid, vaoid, vboid, iboid, textureid, fboid, uboid;
 public:
     Renderer();
     Renderer(const Renderer &) = delete;
     Renderer(Renderer &&) = delete;
-    ~Renderer();
+    ~Renderer() = default;
 
     Renderer& operator=(const Renderer &) = delete;
     Renderer& operator=(Renderer &&) = delete;
 };
 
-vertexCache_t* R_InitCache(const vertex_t *vertices, uint64_t numVertices, const uint32_t *indices, uint64_t numIndices);
-void R_ShutdownCache(vertexCache_t *cache);
-void R_SwapVertexData(const vertex_t *vertices, uint64_t numVertices, vertexCache_t* cache);
-void R_SwapIndexData(const void *indices, uint64_t numIndices, vertexCache_t* cache);
-void R_ResetVertexData(vertexCache_t *cache);
-void R_ResetIndexData(vertexCache_t *cache);
-void R_DrawCache(vertexCache_t *cache);
-void R_BindCache(const vertexCache_t *cache);
-void R_BindVertexArray(const vertexCache_t *cache);
-void R_BindVertexBuffer(const vertexCache_t *cache);
-void R_BindIndexBuffer(const vertexCache_t *cache);
-void R_UnbindCache(void);
-void R_UnbindVertexArray(void);
-void R_UnbindVertexBuffer(void);
-void R_UnbindIndexBuffer(void);
+GO_AWAY_MANGLE void RE_InitSettings_f(void);
 
-texture_t *R_InitTexture(const char *chunkname);
-void R_ShutdownTexture(texture_t *texture);
-void R_UpdateTextures(void);
-void R_BindTexture(const texture_t *texture, uint32_t slot = 0);
-void R_UnbindTexture(void);
-void R_InitTexBuffer(texture_t *tex, bool withFramebuffer = false);
-uint32_t R_TexFormat(void);
-uint32_t R_TexMagFilter(void);
-uint32_t R_TexMinFilter(void);
-uint32_t R_TexFilter(void);
-texture_t *R_GetTexture(const char *name);
+GO_AWAY_MANGLE shaderBuffer_t *R_InitShaderBuffer(uint32_t GLtarget, uint32_t bufSize, shader_t *shader, const char *block);
+GO_AWAY_MANGLE void R_UpdateShaderBuffer(const void *data, shaderBuffer_t *buf);
+GO_AWAY_MANGLE void R_ShutdownShaderBuffer(shaderBuffer_t *buf);
+GO_AWAY_MANGLE void R_BindShaderBuffer(const shaderBuffer_t *buf);
+GO_AWAY_MANGLE void R_UnbindShaderBuffer(void);
+GO_AWAY_MANGLE void RE_ShutdownShaderBuffers(void);
 
-shader_t *R_InitShader(const char *vertexFile, const char *fragmentFile);
-void R_ShutdownShader(shader_t *shader);
-void R_BindShader(const shader_t *shader);
-void R_UnbindShader(void);
-int32_t R_GetUniformLocation(shader_t *shader, const char *name);
+GO_AWAY_MANGLE texture_t *R_InitTexture(const bfftexture_t *tex);
+GO_AWAY_MANGLE void RE_ShutdownTextures(void);
+GO_AWAY_MANGLE void R_UpdateTextures(void);
+GO_AWAY_MANGLE void R_BindTexture(const texture_t *texture, uint32_t slot = 0);
+GO_AWAY_MANGLE void R_UnbindTexture(void);
+GO_AWAY_MANGLE void R_InitTexBuffer(texture_t *tex, bool withFramebuffer = false);
+GO_AWAY_MANGLE uint32_t R_TexFormat(void);
+GO_AWAY_MANGLE uint32_t R_TexMagFilter(void);
+GO_AWAY_MANGLE uint32_t R_TexMinFilter(void);
+GO_AWAY_MANGLE uint32_t R_TexFilter(void);
+GO_AWAY_MANGLE texture_t *R_GetTexture(const char *name);
+
+GO_AWAY_MANGLE void R_RecompileShader(shader_t *shader, const char **vertexMacros, const char **fragmentMacros,
+                                                        uint32_t numVertexMacros, uint32_t numFragmentMacros);
+GO_AWAY_MANGLE shader_t *R_InitShader(const char *vertexFile, const char *fragmentFile, const char **vertexMacros = NULL,
+                                                                                        const char **fragmentMacros = NULL,
+                                                                                        uint32_t numVertexMacros = 0,
+                                                                                        uint32_t numFragmentMacros = 0);
+GO_AWAY_MANGLE void RE_ShutdownShaders(void);
+GO_AWAY_MANGLE void R_BindShader(const shader_t *shader);
+GO_AWAY_MANGLE void R_UnbindShader(void);
+GO_AWAY_MANGLE int32_t R_GetUniformLocation(shader_t *shader, const char *name);
 
 inline void R_SetBool(shader_t *shader, const char *name, bool value)
-{ glUniform1i(R_GetUniformLocation(shader, name), (GLint)value); }
+{ nglUniform1iARB(R_GetUniformLocation(shader, name), (GLint)value); }
 inline void R_SetInt(shader_t *shader, const char *name, int32_t value)
-{ glUniform1i(R_GetUniformLocation(shader, name), value); }
+{ nglUniform1iARB(R_GetUniformLocation(shader, name), value); }
 inline void R_SetIntArray(shader_t *shader, const char *name, int32_t *values, uint32_t count)
-{ glUniform1iv(R_GetUniformLocation(shader, name), count, values); }
+{ nglUniform1ivARB(R_GetUniformLocation(shader, name), count, values); }
 inline void R_SetFloat(shader_t *shader, const char *name, float value)
-{ glUniform1f(R_GetUniformLocation(shader, name), value); }
+{ nglUniform1fARB(R_GetUniformLocation(shader, name), value); }
 inline void R_SetFloat2(shader_t *shader, const char *name, const glm::vec2& value)
-{ glUniform2f(R_GetUniformLocation(shader, name), value.x, value.y); }
+{ nglUniform2fARB(R_GetUniformLocation(shader, name), value.x, value.y); }
 inline void R_SetFloat3(shader_t *shader, const char *name, const glm::vec3& value)
-{ glUniform3f(R_GetUniformLocation(shader, name), value.x, value.y, value.z); }
+{ nglUniform3fARB(R_GetUniformLocation(shader, name), value.x, value.y, value.z); }
 inline void R_SetFloat4(shader_t *shader, const char *name, const glm::vec4& value)
-{ glUniform4f(R_GetUniformLocation(shader, name), value.r, value.g, value.b, value.a); }
+{ nglUniform4fARB(R_GetUniformLocation(shader, name), value.r, value.g, value.b, value.a); }
 inline void R_SetMatrix4(shader_t *shader, const char *name, const glm::mat4& value)
-{ glUniformMatrix4fv(R_GetUniformLocation(shader, name), 1, GL_FALSE, glm::value_ptr(value)); }
+{ nglUniformMatrix4fvARB(R_GetUniformLocation(shader, name), 1, GL_FALSE, glm::value_ptr(value)); }
 
 void load_gl_procs(NGLloadproc load);
 
@@ -339,7 +332,7 @@ extern cvar_t *r_renderapi;
 extern cvar_t *r_multisampleAmount;
 extern cvar_t *r_multisampleType;
 extern cvar_t *r_dither;
-extern cvar_t *r_anisotropicFiltering;
+extern cvar_t *r_EXT_anisotropicFiltering;
 extern cvar_t *r_gammaAmount;
 extern cvar_t *r_textureMagFilter;
 extern cvar_t *r_textureMinFilter;
@@ -348,6 +341,8 @@ extern cvar_t *r_textureCompression;
 extern cvar_t *r_textureDetail;
 extern cvar_t *r_bloomOn;
 extern cvar_t *r_useExtensions;
+extern cvar_t *r_fovWidth;
+extern cvar_t *r_fovHeight;
 
 // using libraries without using custom allocators is annoying, so this is here
 #undef new
@@ -365,6 +360,49 @@ inline void *operator new[]( size_t s ) {
 inline void operator delete[]( void *p ) {
 	ri.Mem_Free( p );
 }
+
+// texture details
+typedef struct {
+    const char *string;
+    int num;
+    int string_len;
+} textureDetail_t;
+enum {
+    GPUvsGod = 0,
+    extreme,
+    high,
+    medium,
+    low,
+    msdos
+};
+inline constexpr textureDetail_t textureDetails[] = {
+    {"GPUvsGod", GPUvsGod, (int)sizeof("GPUvsGod")},
+    {"extreme",  extreme,  (int)sizeof("extreme")},
+    {"high",     high,     (int)sizeof("high")},
+    {"medium",   medium,   (int)sizeof("medium")},
+    {"low",      low,      (int)sizeof("low")},
+    {"msdos",    msdos,    (int)sizeof("msdos")}
+};
+
+GDR_INLINE uint32_t R_GetTextureDetail(void)
+{
+    for (const auto& i : textureDetails) {
+        if (!N_stricmpn(i.string, r_textureDetail->s, i.string_len))
+            return i.num;
+    }
+    ri.Con_Printf(WARNING, "r_textureDetail is invalid, setting to medium");
+    N_strncpyz(r_textureDetail->s, "medium", sizeof("medium"));
+    return medium;
+}
+
+GO_AWAY_MANGLE void *R_FrameAlloc(uint32_t size);
+GO_AWAY_MANGLE void *R_ClearedFrameAlloc(uint32_t size);
+GO_AWAY_MANGLE void *R_StaticAlloc(uint32_t size);
+GO_AWAY_MANGLE void *R_ClearedFrameAlloc(uint32_t size);
+GO_AWAY_MANGLE void R_InitFrameMemory(void);
+GO_AWAY_MANGLE void R_ShutdownFrameMemory(void);
+GO_AWAY_MANGLE void R_ToggleFrame(void);
+GO_AWAY_MANGLE uint64_t R_CountFrameMemory(void);
 
 #include "rgl_framebuffer.h"
 

@@ -3,20 +3,17 @@
 
 #pragma once
 
-#ifdef Q3_VM
-#include "qvmstdlib.h"
-#include "nomadlib.h"
-#endif
-
 typedef enum
 {
-    SYS_COM_PRINTF = 0,
-    SYS_COM_ERROR,
-    G_GETTILEMAP,
-    G_GETKEYBOARDSTATE,
-    SYS_MEMCPY,
-    SYS_MEMMOVE,
-    SYS_MEMSET,
+    COM_PRINTF = 0,
+    COM_ERROR,
+    
+    CVAR_FIND,
+    CVAR_REGISTER,
+    CVAR_REGISTER_NAME,
+    CVAR_CHANGE_VALUE,
+
+    G_GETKEYBOARD,
 
     NUM_SGAME_IMPORT
 } sgameImport_t;
@@ -71,6 +68,27 @@ enum {
     KEY_DOWN,
     KEY_LEFT,
     KEY_RIGHT,
+    KEY_BACKQUOTE,
+    KEY_SPACE,
+    KEY_BACKSPACE,
+    KEY_TAB,
+    KEY_LCTRL,
+    KEY_RCTRL,
+    KEY_ESCAPE,
+    KEY_F1,
+    KEY_F2,
+    KEY_F3,
+    KEY_F4,
+    KEY_F5,
+    KEY_F6,
+    KEY_F7,
+    KEY_F8,
+    KEY_F9,
+    KEY_F10,
+    KEY_F11,
+    KEY_F12,
+    KEY_LSHIFT,
+    KEY_RSHIFT,
 
     NUMKEYS
 };
