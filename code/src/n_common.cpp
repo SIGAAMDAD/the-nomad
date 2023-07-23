@@ -488,7 +488,7 @@ const char* GDR_DECL va(const char *format, ...)
 	return buf;
 }
 
-static const eastl::shared_ptr<GDRMap>& G_GetCurrentMap(void)
+static const GDRMap *G_GetCurrentMap(void)
 {
 	return Game::Get()->c_map;
 }
@@ -505,6 +505,17 @@ int I_GetParm(const char *parm)
     }
     return -1;
 }
+
+#if defined(__OS2__) || defined(_WIN32)
+SDL_Thread *PFN_SDL_CreateThread(SDL_ThreadFunction fn, const char *name, void *data)
+{
+	return SDL_CreateThread(fn, name, data);
+}
+SDL_Thread *PFN_SDL_CreateThreadWithStackSize(SDL_ThreadFunction fn, const char *name, const size_t stacksize, void *data)
+{
+	return SDL_CreateThreadWithStackSize(fn, name, stacksize, data);
+}
+#endif
 
 /*
 Com_FillImport: fills render import functions for the dynamic library to use
@@ -634,6 +645,33 @@ static void Com_FillImport(renderImport_t *import)
     import->SDL_GL_MakeCurrent = SDL_GL_MakeCurrent;
     import->SDL_GL_SetSwapInterval = SDL_GL_SetSwapInterval;
     import->SDL_GetError = SDL_GetError;
+
+#if defined(__OS2__) || defined(_WIN32)
+	import->SDL_CreateThread = PFN_SDL_CreateThread;
+	import->SDL_CreateThreadWithStackSize = PFN_SDL_CreateThreadWithStackSize;
+#else
+	import->SDL_CreateThread = SDL_CreateThread;
+	import->SDL_CreateThreadWithStackSize = SDL_CreateThreadWithStackSize;
+#endif
+    import->SDL_WaitThread = SDL_WaitThread;
+    import->SDL_SetThreadPriority = SDL_SetThreadPriority;
+    import->SDL_DetachThread = SDL_DetachThread;
+    import->SDL_GetThreadName = SDL_GetThreadName;
+    import->SDL_ThreadID = SDL_ThreadID;
+    import->SDL_GetThreadID = SDL_GetThreadID;
+
+	import->SDL_CreateMutex = SDL_CreateMutex;
+    import->SDL_DestroyMutex = SDL_DestroyMutex;
+    import->SDL_LockMutex = SDL_LockMutex;
+    import->SDL_UnlockMutex = SDL_UnlockMutex;
+    import->SDL_TryLockMutex = SDL_TryLockMutex;
+
+	import->SDL_CreateCond = SDL_CreateCond;
+    import->SDL_DestroyCond = SDL_DestroyCond;
+    import->SDL_CondSignal = SDL_CondSignal;
+    import->SDL_CondBroadcast = SDL_CondBroadcast;
+    import->SDL_CondWait = SDL_CondWait;
+    import->SDL_CondWaitTimeout = SDL_CondWaitTimeout;
 }
 
 /*

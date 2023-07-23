@@ -5,7 +5,7 @@ R_InitCacheBase: initializes a cache's basic features
 */
 GO_AWAY_MANGLE void R_InitCacheBase(vertexCache_t *cache)
 {
-	cache->attribs = (vertexAttrib_t *)ri.Hunk_Alloc(sizeof(vertexAttrib_t) * 3, "GLvattribs", h_low);
+	cache->attribs = (vertexAttrib_t *)ri.Z_Malloc(sizeof(vertexAttrib_t) * 3, TAG_STATIC, &cache->attribs, "GLvattribs");
 
 	cache->attribs[0].index = 0;
 	cache->attribs[0].type = GL_FLOAT;
@@ -33,7 +33,7 @@ GO_AWAY_MANGLE void R_InitCacheBase(vertexCache_t *cache)
     for (uint64_t i = 0; i < cache->numAttribs; ++i) {
     	nglEnableVertexAttribArray(cache->attribs[i].index);
 	    nglVertexAttribPointer(cache->attribs[i].index, cache->attribs[i].count, cache->attribs[i].type, GL_FALSE,
-            cache->attribStride, (const void *)((uint64_t)cache->attribs[i].offset));
+            cache->attribStride, (const void *)cache->attribs[i].offset);
     }
     nglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 	nglBindVertexArray(0);
@@ -49,7 +49,7 @@ GO_AWAY_MANGLE vertexCache_t *R_InitFrameCache(void)
 {
 	vertexCache_t *cache;
 
-	cache = (vertexCache_t *)ri.Hunk_Alloc(sizeof(vertexCache_t), "GLvcache", h_low);
+	cache = (vertexCache_t *)ri.Z_Malloc(sizeof(vertexCache_t), TAG_STATIC, &cache, "GLvcache");
 
 	R_InitCacheBase(cache);
 
@@ -79,7 +79,7 @@ GO_AWAY_MANGLE vertexCache_t *R_InitStaticCache(uint64_t numVertices, const vert
 {
 	vertexCache_t *cache;
 
-	cache = (vertexCache_t *)ri.Hunk_Alloc(sizeof(vertexCache_t), "GLvcache", h_low);
+	cache = (vertexCache_t *)ri.Z_Malloc(sizeof(vertexCache_t), TAG_STATIC, &cache, "GLvcache");
 
 	R_InitCacheBase(cache);
 
@@ -175,10 +175,7 @@ GO_AWAY_MANGLE void R_ShutdownCache(vertexCache_t *cache)
 	nglDeleteBuffersARB(1, (const GLuint *)&cache->iboId);
 
 	// free the cpu memory back into the zone
-//	if (cache->vertices)
-//		ri.Z_Free(cache->vertices);
-//	if (cache->indices)
-//		ri.Z_Free(cache->indices);
+	ri.Z_ChangeTag(cache, TAG_PURGELEVEL);
 }
 
 /*

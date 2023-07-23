@@ -23,6 +23,7 @@ void mainLoop()
     Game::Get()->cameraPos = glm::ivec3(0, 0, 0);
     
     Z_Print(true);
+    Hunk_Print();
     Snd_PlayTrack("NMMUS01");
 
     float light_intensity = 1.0f;
@@ -30,6 +31,10 @@ void mainLoop()
     uint64_t next = clock();
     Cmd_AddCommand("cameraGame", CameraGame_f);
     while (1) {
+#ifdef _NOMAD_DEBUG
+        Hunk_Check();
+        Z_CheckHeap();
+#endif
         Com_UpdateEvents();
         qboolean *kbstate = Com_GetKeyboard();
         vm_command = SGAME_RUNTIC;

@@ -15,11 +15,12 @@ extern byte* hunkbase;
 
 typedef struct
 {
-	char name[14];
 	uint64_t id;
 	uint64_t size;
+	char name[14];
 } hunk_t;
 
+static boost::shared_mutex hunkLock;
 static uint64_t hunk_low_used = 0;
 static uint64_t hunk_high_used = 0;
 static uint64_t hunk_temp_used = 0;
@@ -97,7 +98,7 @@ void *Hunk_AllocateTempMemory(uint64_t size)
 		return Z_Malloc(size, TAG_STATIC, NULL, "temp");
 	}
 
-	size = sizeof(hunk_t) + ((size+15)&~15);
+	size = sizeof(hunk_t) + ((size + 15) & ~15);
 
 	if (hunksize - hunk_low_used - hunk_high_used < size) {
 		Con_Printf(ERROR, "Hunk_AllocateTempMemory: failed on %lu", size);
@@ -179,7 +180,7 @@ void *Hunk_Alloc (uint64_t size, const char *name, ha_pref where)
 	if (!size)
 		N_Error ("Hunk_Alloc: bad size: %lu", size);
 
-	size = sizeof(hunk_t) + ((size+15)&~15);
+	size = sizeof(hunk_t) + ((size + 15) & ~15);
 	
 	h = (hunk_t *)(hunkbase + hunk_low_used);
 	hunk_low_used += size;
@@ -187,6 +188,7 @@ void *Hunk_Alloc (uint64_t size, const char *name, ha_pref where)
 	h->size = size;
 	h->id = HUNKID;
 	N_strncpy(h->name, name, sizeof(h->name));
+	Con_Printf(DEBUG, "Called Hunk_Alloc for %s", name);
 
 	return (void *)(h+1);
 }
@@ -196,7 +198,7 @@ extern uint64_t hunksize;
 
 void Hunk_Print(void)
 {
-    hunk_t *h, *next, *endlow, *starthigh, *endhigh;
+    hunk_t *h, *next, *endlow, *starthigh, *endhigh, *prev;
 	uint64_t count, sum;
 	uint64_t totalblocks;
 	char name[15];
@@ -210,6 +212,7 @@ void Hunk_Print(void)
 	endlow = (hunk_t *)(hunkbase + hunk_low_used);
 	starthigh = (hunk_t *)(hunkbase + hunksize - hunk_high_used);
 	endhigh = (hunk_t *)(hunkbase + hunksize);
+	prev = h;
 
     Con_Printf("\n\n<----- Hunk Heap Report ----->");
 	Con_Printf("          :%8lu total hunk size", hunksize);
@@ -226,10 +229,10 @@ void Hunk_Print(void)
 
 		// run consistancy checks
 		if (h->id != HUNKID)
-			N_Error("Hunk_Check: hunk id isn't correct");
+			N_Error("Hunk_Check: hunk id isn't correct, prev name: '%s'", prev->name);
 		if (h->size < 16 || h->size + (byte *)h - hunkbase > hunksize)
-			N_Error("Hunk_Check: bad size");
-			
+			N_Error("Hunk_Check: bad size, name: '%s'", h->name);
+		
 		next = (hunk_t *)((byte *)h+h->size);
 		count++;
 		totalblocks++;
@@ -239,6 +242,7 @@ void Hunk_Print(void)
 		memcpy(name, h->name, 14);
 		Con_Printf("%8p : %8lu   %8s", h, h->size, name);
 
+		prev = h;
 		h = next;
 	}
 	Con_Printf("-------------------------");

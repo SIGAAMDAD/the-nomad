@@ -254,6 +254,8 @@ public:
 
     uint32_t numVertexCaches, numTextures, numFBOs, numShaders;
     uint32_t shaderid, vaoid, vboid, iboid, textureid, fboid, uboid;
+
+    SDL_Thread *glDebugThread;
 public:
     Renderer();
     Renderer(const Renderer &) = delete;

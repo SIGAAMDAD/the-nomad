@@ -42,8 +42,8 @@ typedef struct memblock_s
 	char name[14];
 	uint64_t size;
 	memzone_t *zone;
-	struct memblock_s* next;
-    struct memblock_s* prev;
+	struct memblock_s *next;
+    struct memblock_s *prev;
     void **user;
     int tag;
     int id;
@@ -51,6 +51,7 @@ typedef struct memblock_s
 
 struct memzone_s
 {
+	// size of the zone in bytes
 	uint64_t size;
     
 	// start/end cap for linked list
@@ -110,7 +111,7 @@ byte *Z_InitBase(uint64_t *size, uint64_t default_ram, uint64_t min_ram)
 	while (ptr == NULL) {
 		// resize the memory requirements until we've got a reasonable amount of RAM
 		if (default_ram < min_ram) {
-			N_Error("Z_Init: malloc() failed on %lu bytes", min_ram);
+			N_Error("Z_Init: calloc() failed on %lu bytes", min_ram);
 		}
 		*size = default_ram;
 
@@ -118,11 +119,17 @@ byte *Z_InitBase(uint64_t *size, uint64_t default_ram, uint64_t min_ram)
 		ptr = (byte *)calloc(*size, sizeof(byte));
 		
 		if (ptr == NULL) {
-			Con_Printf(DEV, "malloc() failed on %lu bytes, retrying with %lu bytes", default_ram, default_ram - RETRYAMOUNT);
+			Con_Printf(DEV, "calloc() failed on %lu bytes, retrying with %lu bytes", default_ram, default_ram - RETRYAMOUNT);
 			default_ram -= RETRYAMOUNT;
 		}
 	}
 	return ptr;
+}
+
+void Z_Shutdown(void)
+{
+	free(mainzone);
+	free(smallzone);
 }
 
 void Z_Init(void)
@@ -688,11 +695,11 @@ void Z_Print(bool all)
 	Con_Printf("-------------------------");
 	Con_Printf("(PERCENTAGES)");
 	Con_Printf(
-			"%9lu   %3.02f%%    static\n"
-			"%9lu   %3.02f%%    cached\n"
-			"%9lu   %3.02f%%    audio\n"
-			"%9lu   %3.02f%%    purgable\n"
-			"%9lu   %3.02f%%    free",
+			"%-9lu   %5.01lf%%    static\n"
+			"%-9lu   %5.01lf%%    cached\n"
+			"%-9lu   %5.01lf%%    audio\n"
+			"%-9lu   %5.01lf%%    purgable\n"
+			"%-9lu   %5.01lf%%    free",
 		static_mem, static_mem*s,
 		cached_mem, cached_mem*s,
 		audio_mem, audio_mem*s,

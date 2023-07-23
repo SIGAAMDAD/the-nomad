@@ -1,11 +1,15 @@
-#include <ALsoft/al.h>
-#include <ALsoft/alc.h>
-#include <sndfile.h>
 #include "n_shared.h"
 #include "g_bff.h"
 #include "g_game.h"
 #include "n_scf.h"
 #include "g_sound.h"
+
+#include <ALsoft/al.h>
+#include <ALsoft/alc.h>
+#include <sndfile.h>
+#include <ogg/ogg.h>
+#include <vorbis/vorbisfile.h>
+#include <pulse/pulseaudio.h>
 #include "stb_vorbis.c"
 
 static ALCdevice* device;
@@ -66,6 +70,9 @@ void I_CacheAudio(void *bffinfo)
     sndcache_size = info->numSounds;
 
     for (uint32_t i = 0; i < info->numSounds; i++) {
+        memset(&fdata, 0, sizeof(fdata));
+        readcount = 0;
+
         fp = tmpfile();
         if (!fp) {
             N_Error("I_CacheAudio: failed to create temporary audio file");

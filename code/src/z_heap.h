@@ -46,6 +46,8 @@ void Hunk_Log(void);
 void Hunk_SmallLog(void);
 void Hunk_ClearToMark(uint64_t mark);
 qboolean Hunk_CheckMark(void);
+void Hunk_Print(void);
+void Hunk_Check(void);
 
 
 void* Z_Malloc(uint64_t size, int tag, void *user, const char* name);

@@ -95,6 +95,8 @@ void Mem_Free(void *p);
 #include <SDL2/SDL_atomic.h>
 #include <SDL2/SDL_image.h>
 #include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_thread.h>
+#include <SDL2/SDL_mutex.h>
 
 // speed is key
 #define USING_EASY_PROFILER

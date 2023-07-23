@@ -730,6 +730,12 @@ static void Cvar_PrintType_f(void)
     Con_Printf("Type of cvar %s is %s", cvar->name, Cvar_TypeToString(cvar));
 }
 
+static qboolean historyLoaded = qfalse;
+
+#define COMMAND_HISTORY 32
+
+static field_t historyEditLines[COMMAND_HISTORY];
+
 
 void Con_Shutdown(void)
 {

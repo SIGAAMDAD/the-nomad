@@ -9,6 +9,53 @@
     #undef NDEBUG
 #endif
 
+namespace boost {
+	template<typename mutex>
+	class spinlock
+	{
+	private:
+		eastl::atomic<bool> _lock = {false};
+	public:
+		inline spinlock(void) = default;
+		~spinlock() = default;
+
+		inline void lock(void)
+		{
+			for (;;) {
+				if (!_lock.exchange(true, eastl::memory_order_acquire))
+					break;
+			
+			#if defined(__GNUC__) || defined(_MSVC_VER)
+				while (_lock.load(eastl::memory_order_relaxed))
+			#ifdef __GNUC__
+					__builtin_ia32_pause();
+			#elif _MSVC_VER
+					_mm_pause();
+			#endif
+			#else
+				while (_lock.load(eastl::memory_order_relaxed));
+			#endif
+			}
+		}
+		inline void unlock(void)
+		{ _lock.store(false, eastl::memory_order_release); }
+	};
+};
+
+template<typename T, typename... Args>
+inline T* construct(T *ptr, Args&&... args)
+{
+    ::new ((void *)ptr) T(eastl::forward<Args>(args)...);
+    return ptr;
+}
+
+template<typename T>
+inline T* construct(T *ptr)
+{
+    ::new ((void *)ptr) T();
+    return ptr;
+}
+
 using json = nlohmann::json;
 
 #include "g_bff.h"
@@ -146,20 +193,6 @@ template<typename type, typename alignment>
 inline type* PADP(type *base, alignment align)
 {
 	return (type *)((void *)PAD((intptr_t)base, align));
-}
-
-template<class T, typename... Args>
-inline T* construct(T *ptr, Args&&... args)
-{
-    ::new ((void *)ptr) T(eastl::forward<Args>(args)...);
-    return ptr;
-}
-
-template<class T>
-inline T* construct(T *ptr)
-{
-    ::new ((void *)ptr) T();
-    return ptr;
 }
 
 #ifdef _NOMAD_DEBUG

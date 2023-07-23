@@ -125,12 +125,12 @@ GO_AWAY_MANGLE shader_t* R_InitShader(const char *vertexFile, const char *fragme
     R_PrintMacros(vertexMacros, numVertexMacros);
     R_PrintMacros(fragmentMacros, numFragmentMacros);
 
+    shader->programId = nglCreateProgram();
+    nglUseProgram(shader->programId);
+
     // compile
     vertid = R_CompileShaderSource(shader->vertexBuf, GL_VERTEX_SHADER, shader->programId, vertexMacros, numVertexMacros);
     fragid = R_CompileShaderSource(shader->fragmentBuf, GL_FRAGMENT_SHADER, shader->programId, fragmentMacros, numFragmentMacros);
-
-    shader->programId = nglCreateProgram();
-    nglUseProgram(shader->programId);
 
     // link
     nglAttachShader(shader->programId, vertid);

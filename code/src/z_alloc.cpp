@@ -1201,7 +1201,7 @@ char *Mem_CopyString( const char *in )
 Mem_Init
 ==================
 */
-GDR_INITIALIZER(Mem_Init) 
+void Mem_Init(void)
 {
 	mem_heap = new GDRHeap;
 	Mem_ClearFrameStats();
@@ -1214,9 +1214,7 @@ Mem_Shutdown
 */
 void Mem_Shutdown( void )
 {
-	GDRHeap *m = mem_heap;
-	mem_heap = NULL;
-	delete m;
+	delete mem_heap;
 }
 
 /*
@@ -1654,7 +1652,7 @@ char *Mem_CopyStringDebug( const char *in, const char *fileName, const uint32_t 
 Mem_Init
 ==================
 */
-GDR_INITIALIZER(Mem_Init)
+void Mem_Init(void)
 {
 	mem_heap = new GDRHeap;
 }
@@ -1671,9 +1669,7 @@ void Mem_Shutdown( void )
 		Mem_DumpCompressed( va( "%s_leak_location.txt", mem_leakName ), MEMSORT_LOCATION, 0 );
 	}
 
-	GDRHeap *m = mem_heap;
-	mem_heap = NULL;
-	delete m;
+	delete mem_heap;
 }
 
 /*

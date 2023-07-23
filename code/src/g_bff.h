@@ -1,9 +1,9 @@
 #ifndef _G_BFF_
 #define _G_BFF_
 
-#pragma once
-
-#include "string.hpp"
+#ifdef GDR_PRAGMA_ONCE_SUPPORTED
+	#pragma once
+#endif
 
 #define BFF_VERSION_MAJOR 0
 #define BFF_VERSION_MINOR 1

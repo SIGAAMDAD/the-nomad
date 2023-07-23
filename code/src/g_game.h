@@ -48,7 +48,7 @@ class Game
 private:
     static Game* gptr;
 public:
-    eastl::shared_ptr<GDRMap> c_map;
+    GDRMap *c_map;
     
     gamestate_t gamestate;
     gamedif_t difficulty;

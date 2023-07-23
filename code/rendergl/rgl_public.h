@@ -97,7 +97,7 @@ typedef struct
     const eastl::vector<const bfflevel_t*>& (*BFF_OrderLevels)(const bffinfo_t *info);
     const eastl::vector<const bfftexture_t*>& (*BFF_OrderTextures)(const bffinfo_t *info);
 
-    const eastl::shared_ptr<GDRMap>& (*G_GetCurrentMap)(void);
+    const GDRMap *(*G_GetCurrentMap)(void);
 
     // most of this stuff is for imgui's usage
     SDL_bool (*SDL_SetHint)(const char *name, const char *value);
@@ -137,6 +137,28 @@ typedef struct
     int (*SDL_GL_MakeCurrent)(SDL_Window *window, SDL_GLContext context);
     int (*SDL_GL_SetSwapInterval)(int interval);
     const char *(*SDL_GetError)();
+    
+    SDL_Thread *(*SDL_CreateThread)(SDL_ThreadFunction fn, const char *name, void *dat);
+    SDL_Thread *(*SDL_CreateThreadWithStackSize)(SDL_ThreadFunction fn, const char *name, const size_t stacksize, void *data);
+    void (*SDL_WaitThread)(SDL_Thread *thread, int *status);
+    int (*SDL_SetThreadPriority)(SDL_ThreadPriority priority);
+    void (*SDL_DetachThread)(SDL_Thread *thread);
+    const char *(*SDL_GetThreadName)(SDL_Thread *thread);
+    SDL_threadID (*SDL_ThreadID)(void);
+    SDL_threadID (*SDL_GetThreadID)(SDL_Thread *thread);
+
+    SDL_mutex *(*SDL_CreateMutex)(void);
+    void (*SDL_DestroyMutex)(SDL_mutex *mutex);
+    int (*SDL_LockMutex)(SDL_mutex *mutex);
+    int (*SDL_UnlockMutex)(SDL_mutex *mutex);
+    int (*SDL_TryLockMutex)(SDL_mutex *mutex);
+
+    SDL_cond *(*SDL_CreateCond)(void);
+    void (*SDL_DestroyCond)(SDL_cond *cond);
+    int (*SDL_CondSignal)(SDL_cond *cond);
+    int (*SDL_CondBroadcast)(SDL_cond *cond);
+    int (*SDL_CondWait)(SDL_cond *cond, SDL_mutex *mutex);
+    int (*SDL_CondWaitTimeout)(SDL_cond *cond, SDL_mutex *mutex, Uint32 ms);
 } renderImport_t;
 
 #define GO_AWAY_MANGLE extern "C"

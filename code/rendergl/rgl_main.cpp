@@ -577,6 +577,9 @@ void RE_Shutdown(void)
         return;
     
     rendererInitialized = qfalse;
+    sdl_on = false;
+
+
     RE_ShutdownFramebuffers();
     RE_ShutdownTextures();
     RE_ShutdownShaders();
@@ -594,7 +597,6 @@ void RE_Shutdown(void)
     ri.SDL_Quit();
     renderer->window = NULL;
     renderer->instance = NULL;
-    sdl_on = false;
 }
 
 void RE_CacheTextures(void)
@@ -658,7 +660,7 @@ static void DBG_GL_ErrorCallback(GLenum source, GLenum type, GLuint id, GLenum s
     }
     switch (type) {
     case GL_DEBUG_TYPE_ERROR:
-        ri.Con_Error(false, "[OpenGL Debug Log] %s Source: %s, Id: %i", message, DBG_GL_SourceToStr(source), id);
+        ri.Con_Error(false, "[OpenGL Error: %i] %s", id, message);
         break;
     case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
         ri.Con_Printf(WARNING, "[OpenGL Debug Log] %s Deprecated Behaviour, Id: %i", message, id);
@@ -670,10 +672,10 @@ static void DBG_GL_ErrorCallback(GLenum source, GLenum type, GLuint id, GLenum s
         ri.Con_Printf(WARNING, "[OpenGL Debug Log] %s Undefined Behaviour, Id: %i", message, id);
         break;
     case GL_DEBUG_TYPE_PERFORMANCE:
-        ri.Con_Printf(INFO, "[OpenGL Debug Log (Performance)] %s Source: %s, Id: %i", message, DBG_GL_SourceToStr(source), id);
+        ri.Con_Printf(INFO, "[OpenGL Debug Log (Performance)] %s Id: %i", message, id);
         break;
     default:
-        ri.Con_Printf(INFO, "[OpenGL Debug Log] %s Source: %s, Id: %i", message, DBG_GL_SourceToStr(source), id);
+        ri.Con_Printf(INFO, "[OpenGL Debug Log] %s Id: %i", message, id);
         break;
     };
 }

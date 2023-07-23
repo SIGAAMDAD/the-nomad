@@ -35,10 +35,14 @@ hunkUsed_t hunk_low, hunk_high;
 hunkUsed_t *hunk_permanent, *hunk_temp;
 #endif
 
+void Mem_Init(void);
+void Z_Shutdown(void);
+
 void Memory_Shutdown(void)
 {
 	Con_Printf("Memory_Shutdown: deallocating allocation daemons");
 	free(hunkbase);
+	Z_Shutdown();
     Mem_Shutdown();
 }
 
@@ -123,6 +127,7 @@ static uint64_t Com_TouchMemory(void)
 void Memory_Init(void)
 {
 	Con_Printf("Memory_Init: initializing allocation daemons");
+	Mem_Init();
 
 	// make sure the file system has allocated and "not" freed any temp blocks
 	// this allows the config and product id files ( journal files too ) to be loaded
@@ -147,9 +152,9 @@ void Memory_Init(void)
         hunksize = DEFAULT_HEAP_SIZE;
     }
 	
-    hunkbase = (byte *)calloc(hunksize, sizeof(byte));
+    hunkbase = (byte *)calloc(hunksize, 1);
     if (!hunkbase) {
-        N_Error("Memory_Init: malloc() failed on %lu bytes when allocating the hunk", hunksize);
+        N_Error("Memory_Init: calloc() failed on %lu bytes when allocating the hunk", hunksize);
 	}
 	// initialize it all
 	Hunk_Clear();

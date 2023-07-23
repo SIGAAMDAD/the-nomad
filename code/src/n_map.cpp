@@ -8,178 +8,196 @@
 #include <zlib.h>
 #include <gzstream.h>
 
-static std::mutex mapLoad;
+static eastl::vector<GDRMap *> mapCache;
+static boost::mutex mapLoad;
 
-void Map_LoadLayers(eastl::shared_ptr<GDRMap>& mapData, const json& data)
+static uint64_t Map_LayerSize(const char* typeStr)
 {
+    if (!N_stricmpn("tilelayer", typeStr, sizeof("tilelayer"))) return sizeof(GDRTileLayer);
+    else if (!N_stricmpn("objectgroup", typeStr, sizeof("objectgroup"))) return sizeof(GDRObjectGroup);
+    else if (!N_stricmpn("imagelayer", typeStr, sizeof("imagelayer"))) return sizeof(GDRImageLayer);
+    else if (!N_stricmpn("group", typeStr, sizeof("group"))) return sizeof(GDRGroupLayer);
+
+    N_Error("Map_LayerSize: invalid layer string type '%s'", typeStr);
+}
+
+void Map_LoadLayers(GDRMap *mapData, const json& data)
+{
+    GDRMapLayer *layer = mapData->getLayers();
     for (const auto& i : data.at("layers")) {
-//        std::unique_lock<std::mutex> lock{mapLoad};
-        eastl::shared_ptr<GDRMapLayer> layer;
+        construct(layer);
 
         const std::string& name = i.at("name");
         const std::string& type = i.at("type");
 
         if (type == "tilelayer")
-            layer = eastl::make_shared<GDRTileLayer>();
+            layer->setType(MAP_LAYER_TILE);
         else if (type == "objectgroup")
-            layer = eastl::make_shared<GDRObjectGroup>();
+            layer->setType(MAP_LAYER_OBJECT);
         else if (type == "imagelayer")
-            layer = eastl::make_shared<GDRImageLayer>();
+            layer->setType(MAP_LAYER_IMAGE);
         else if (type == "group")
-            layer = eastl::make_shared<GDRGroupLayer>();
+            layer->setType(MAP_LAYER_GROUP);
         
-        layer->ParseBase(mapData, i, type);
-        layer->Parse(mapData, i);
-        mapData->AddLayer(layer);
+        layer->ParseBase(mapData, i, type.c_str());
+        layer->allocLayer(Z_Malloc(Map_LayerSize(type.c_str()), TAG_STATIC, NULL, "mapLayer"));
+        layer->Parse(i);
+        layer++;
     }
 }
 
-void Map_LoadObjects(eastl::shared_ptr<GDRMap>& mapData, const json& data)
+static uint64_t Map_ObjectSize(const char *typeStr)
 {
-    if (!json_contains("objects")) // not strictly required
-        return;
+    if (!N_stricmpn("polygon", typeStr, sizeof("polygon"))) return sizeof(GDRPolygonObject);
+    else if (!N_stricmpn("polyline", typeStr, sizeof("polyline"))) return sizeof(GDRPolylineObject);
+    else if (!N_stricmpn("text", typeStr, sizeof("text"))) return sizeof(GDRTextObject);
+    else if (!N_stricmpn("point", typeStr, sizeof("point"))) return sizeof(GDRPointObject);
+    else if (!N_stricmpn("rect", typeStr, sizeof("rect"))) return sizeof(GDRRectObject);
+    
+    N_Error("Map_ObjectSize: invalid object string type '%s'", typeStr);
+}
 
+void Map_LoadObjects(GDRMap *mapData, const json& data)
+{
+    {
+        if (!json_contains("objects")) // not strictly required
+            return;
+    }
+
+    GDRMapObject *object = mapData->getObjects();
     for (const auto& i : data.at("objects")) {
-//        std::unique_lock<std::mutex> lock{mapLoad};
-        eastl::shared_ptr<GDRMapObject> object;
-        std::string typeStr;
+        construct(object);
+        const char *typeStr;
         
         if (i.contains("polygon")) {
-            object = eastl::make_shared<GDRPolygonObject>();
+            object->setType(MAP_OBJECT_POLYGON);
             typeStr = "polygon";
         }
         else if (i.contains("polyline")) {
-            object = eastl::make_shared<GDRPolylineObject>();
+            object->setType(MAP_OBJECT_POLYLINE);
             typeStr = "polyline";
         }
         else if (i.contains("text")) {
-            object = eastl::make_shared<GDRTextObject>();
+            object->setType(MAP_OBJECT_TEXT);
             typeStr = "text";
         }
         else { // point or rectangle
             uint64_t height = i.at("height");
             uint64_t width = i.at("width");
             if (!width && !height) {
-                object = eastl::make_shared<GDRPointObject>();
+                object->setType(MAP_OBJECT_POINT);
                 typeStr = "point";
             }
             else {
-                object = eastl::make_shared<GDRRectObject>();
+                object->setType(MAP_OBJECT_RECT);
                 typeStr = "rect";
             }
         }
 
         object->ParseBase(mapData, i, typeStr);
+        object->allocObject(Z_Malloc(Map_ObjectSize(typeStr), TAG_STATIC, NULL, "mapObj"));
         object->Parse(mapData, i);
-        mapData->AddObject(object);
+        object++;
     }
 }
 
-void Map_LoadTilesets(eastl::shared_ptr<GDRMap>& mapData, const json& data)
+void Map_LoadTilesets(GDRMap *mapData, const json& data)
 {
-    eastl::vector<json> tilesets;
-    tilesets.resize(mapData->getLevelData()->numTilesets);
-    for (uint32_t i = 0; i < mapData->getLevelData()->numTilesets; ++i) {
-        try {
-            tilesets[i] = json::parse(mapData->getLevelData()->tsjBuffers[i]);
-        } catch (const json::exception& e) {
-            N_Error("Map_LoadTilesets: json exception occurred. Id: %i, String: %s", e.id, e.what());
-        }
-    }
+    mapData->allocTSJBuffers();
+    GDRTileset *tileset = mapData->getTilesets();
 
     for (const auto& i : data.at("tilesets")) {
-//        std::unique_lock<std::mutex> lock{mapLoad};
-        eastl::shared_ptr<GDRTileset> tileset = eastl::make_shared<GDRTileset>();
+        construct(tileset);
 
-        tileset->Parse(mapData, i, tilesets);
-        mapData->AddTileset(tileset);
+        tileset->Parse(mapData, i, mapData->getTSJBuffers());
+        tileset++;
     }
 }
 
-void Map_LoadMap(const bfflevel_t *lvl/*, boost::asio::thread_pool& pool*/)
+void Map_LoadMap(const bfflevel_t *lvl)
 {
-    json data;
+    GDRMap *mapData = (GDRMap *)Hunk_Alloc(sizeof(GDRMap), "mapData", h_low);
+    construct(mapData);
 
     try {
-        data = json::parse(lvl->tmjBuffer);
+        mapData->Parse(json::parse(lvl->tmjBuffer), lvl);
     } catch (const json::exception& e) {
         N_Error("Map_LoadMap: json exception occurred. Id: %i, String: %s", e.id, e.what());
     }
 
-    eastl::shared_ptr<GDRMap> mapData = eastl::make_shared<GDRMap>();
-    mapData->Parse(data, lvl);
-#if 0
-    boost::asio::post(pool,
-        [&] { Map_LoadTilesets(mapData, data); }
-    );
-    boost::asio::post(pool,
-        [&] { Map_LoadObjects(mapData, data); }
-    );
-#endif
-    Map_LoadTilesets(mapData, data);
-    Map_LoadObjects(mapData, data);
-    Map_LoadLayers(mapData, data);
+    Map_LoadTilesets(mapData, mapData->getTMJBuffer());
+    Map_LoadObjects(mapData, mapData->getTMJBuffer());
+    Map_LoadLayers(mapData, mapData->getTMJBuffer());
+
+//    for (uint64_t i = 0; i < mapData->numTilesets(); i++)
+//        mapData->getTilesets()[i].updateSpriteData();
+
+//    boost::unique_lock<boost::mutex> lock{mapLoad};
+    mapCache.emplace_back(mapData);
 }
 
 void Com_CacheMaps(void)
 {
-//    boost::asio::thread_pool pool(BFF_FetchInfo()->numLevels << 1);
+//    eastl::vector<boost::thread> threads;
+//    threads.reserve(BFF_FetchInfo()->numLevels);
 
+    // give the map loading a 'boost' by multithreading it, not a pool, just multiple threads
     for (uint32_t levelCount = 0; levelCount < BFF_FetchInfo()->numLevels; ++levelCount) {
         char name[MAX_BFF_CHUNKNAME];
         stbsp_snprintf(name, sizeof(name), "NMLVL%i", levelCount);
         Map_LoadMap(BFF_FetchLevel(name));
-//        boost::asio::post(pool,
-//            [&] { Map_LoadMap(BFF_FetchLevel(name), pool); }
-//        );
+//        threads.emplace_back(Map_LoadMap, BFF_FetchLevel(name));
     }
-//    pool.join();
+//    for (auto& i : threads)
+//        i.join();
+//    
     Con_Printf("Successfully cached all maps");
+    Game::Get()->c_map = mapCache.front();
 }
 
-bool GDRMapPropertyList::getBoolean(const std::string& name, bool def) const
+bool GDRMapPropertyList::getBoolean(const char *name, bool def) const
 {
-    const uint64_t hash = Com_GenerateHashValue(name.c_str(), GDR_MAX_MAP_PROPS);
-    if (!m_propertyList[hash])
+    auto it = m_propertyList.find(name);
+    if (it == m_propertyList.end())
         return def;
     
-    return m_propertyList[hash]->getBoolean(def);
+    return it->second.getBoolean();
 }
 
-const std::string& GDRMapPropertyList::getString(const std::string& name, const std::string& def) const
+const char *GDRMapPropertyList::getString(const char *name, const char *def) const
 {
-    const uint64_t hash = Com_GenerateHashValue(name.c_str(), GDR_MAX_MAP_PROPS);
-    if (!m_propertyList[hash])
+    auto it = m_propertyList.find(name);
+    if (it == m_propertyList.end())
         return def;
     
-    return m_propertyList[hash]->getString(def);
+    return it->second.getString();
 }
 
-double GDRMapPropertyList::getFloat(const std::string& name, double def) const
+double GDRMapPropertyList::getFloat(const char *name, double def) const
 {
-    const uint64_t hash = Com_GenerateHashValue(name.c_str(), GDR_MAX_MAP_PROPS);
-    if (!m_propertyList[hash])
+    auto it = m_propertyList.find(name);
+    if (it == m_propertyList.end())
         return def;
     
-    return m_propertyList[hash]->getFloat(def);
+    return it->second.getFloat();
 }
 
-int64_t GDRMapPropertyList::getInt(const std::string& name, int64_t def) const
+int64_t GDRMapPropertyList::getInt(const char *name, int64_t def) const
 {
-    const uint64_t hash = Com_GenerateHashValue(name.c_str(), GDR_MAX_MAP_PROPS);
-    if (!m_propertyList[hash])
+    auto it = m_propertyList.find(name);
+    if (it == m_propertyList.end())
         return def;
     
-    return m_propertyList[hash]->getInt(def);
+    return it->second.getInt();
 }
 
-const glm::vec4& GDRMapPropertyList::getColor(const std::string& name, const glm::vec4& def) const
+const glm::vec4& GDRMapPropertyList::getColor(const char *name, const glm::vec4& def) const
 {
-    const uint64_t hash = Com_GenerateHashValue(name.c_str(), GDR_MAX_MAP_PROPS);
-    if (!m_propertyList[hash])
+    auto it = m_propertyList.find(name);
+    if (it == m_propertyList.end())
         return def;
     
-    return m_propertyList[hash]->getColor(def);
+    return it->second.getColor();
 }
 
 template<typename T>
@@ -204,6 +222,7 @@ void GDRMapPropertyList::LoadProps(const json& data)
     if (!json_contains("properties")) // no properties to load
         return;
 
+    m_propertyList.reserve(data.at("properties").size());
     for (auto& i : data.at("properties")) {
 #define check_json(key) if (!data.contains(key)) N_Error("Map_LoadPropertyList: tmj file is invalid, reason: missing required parm '" key "'")
         check_json("name");
@@ -228,13 +247,11 @@ void GDRMapPropertyList::LoadProps(const json& data)
         else if (typeStr == "file")
             typeId = MAP_PROP_FILE;
         
-        const uint64_t hash = Com_GenerateHashValue(name.c_str(), GDR_MAX_MAP_PROPS);
-        m_propertyList[hash] = (GDRMapProperty *)allocator.allocate(sizeof(GDRMapProperty));
-        ::new ((void *)m_propertyList[hash]) GDRMapProperty(typeId, value, name);
+        m_propertyList.try_emplace(name.c_str(), typeId, value, name);
     }
 }
 
-void GDRMapLayer::ParseBase(eastl::shared_ptr<GDRMap>& mapData, const json& data, const std::string& typeStr)
+void GDRMapLayer::ParseBase(GDRMap *mapData, const json& data, const char *typeStr)
 {
     m_mapData = mapData;
     m_properties.LoadProps(data);
@@ -251,13 +268,13 @@ void GDRMapLayer::ParseBase(eastl::shared_ptr<GDRMap>& mapData, const json& data
 
     m_name = data.at("name");
     
-    if (typeStr == "tilelayer")
+    if (!N_stricmpn("tilelayer", typeStr, sizeof("tilelayer")))
         m_type = MAP_LAYER_TILE;
-    else if (typeStr == "objectgroup")
+    else if (!N_stricmpn("objectgroup", typeStr, sizeof("objectgroup")))
         m_type = MAP_LAYER_OBJECT;
-    else if (typeStr == "imagelayer")
+    else if (!N_stricmpn("imagelayer", typeStr, sizeof("imagelayer")))
         m_type = MAP_LAYER_IMAGE;
-    else if (typeStr == "group")
+    else if (!N_stricmpn("group", typeStr, sizeof("group")))
         m_type = MAP_LAYER_GROUP;
     
     m_width = data.at("width");
@@ -492,9 +509,29 @@ uint32_t* GDRTileLayer::LoadBase64(const json& data)
     return data32;
 }
 
+#if 0 // broken
+static void Map_UpdateTilesets(const GDRTile *tileMap, const uint64_t width, const uint64_t height, GDRMap *mapData)
+{
+    const GDRTile *tile;
+    GDRTileset *tileset;
+
+    // set the tileset stuff
+    for (uint64_t x = 0; x < width; x++) {
+        for (uint64_t y = 0; y < height; y++) {
+            tile = &tileMap[y * width + x];
+            
+            if (tile->tilesetIndex < mapData->numTilesets()) {
+                tileset = mapData->getTilesets()[tile->tilesetIndex];
+//                tileset->updateSpriteData(tile, y * width + x);
+            }
+        }
+    }
+}
+#endif
+
 void GDRTileLayer::ParseData(const json& data)
 {
-    uint32_t *tileData;
+    uint32_t *tileData, gid, tileIndex;
 
     // its csv
     if (!json_contains("encoding")) {
@@ -509,42 +546,93 @@ void GDRTileLayer::ParseData(const json& data)
     if (!m_tileData)
         m_tileData = (GDRTile *)Hunk_Alloc(sizeof(GDRTile) * (m_width * m_height), "tileData", h_low);
     
+    // reset it all regardless of whether its begin reloaded or not
+    memset(m_tileData, 0, sizeof(GDRTile) * (m_width * m_height));
+
     // convert the gids to map tiles
+#if 1
+    tileIndex = 0;
+    for (uint64_t y = 0; y < m_height; y++) {
+        for (uint64_t x = 0; x < m_width; x++) {
+            gid = tileData[tileIndex];
+
+            // get the gid's flags
+            bool flippedHorz = gid & TILE_FLIPPED_HORZ;
+            bool flippedDiag = gid & TILE_FLIPPED_DIAG;
+            bool flippedVert = gid & TILE_FLIPPED_VERT;
+
+            // clear them all
+            gid &= ~(TILE_FLIPPED_HORZ | TILE_FLIPPED_VERT | TILE_FLIPPED_DIAG);
+
+            tileIndex++;
+        }
+    }
+#else
     for (uint64_t x = 0; x < m_width; x++) {
         for (uint64_t y = 0; y < m_height; y++) {
-            uint32_t gid = tileData[y * m_width + x];
+            int32_t gid = tileData[y * m_width + x];
 
             // find the tileset index
             const uint64_t tilesetIndex = m_mapData->getTilesetIndex(gid);
 
             if (tilesetIndex < m_mapData->numTilesets()) {
                 // if valid, set up the map tile with the tileset
-                const eastl::shared_ptr<GDRTileset>& tileset = m_mapData->getTilesets()[tilesetIndex];
+                GDRTileset *tileset = &m_mapData->getTilesets()[tilesetIndex];
                 
-                ::new ((void *)&m_tileData[y * m_width + x]) GDRTile(tilesetIndex, gid, tileset->getFirstGID());
+                construct(&m_tileData[y * m_width + x], tilesetIndex, gid, tileset->getFirstGID());
+                // if the tileset's sprite data is modified here, it'll segfault for some reason on the
+                // constructor
             }
             else {
                 // otherwise, make it null
-                ::new ((void *)&m_tileData[y * m_width + x]) GDRTile(m_mapData->numTilesets(), gid, 0);
+                construct( &m_tileData[y * m_width + x], m_mapData->numTilesets(), gid, 0 );
             }
         }
     }
+#endif
 
     // give it back to the zone
     Z_ChangeTag(tileData, TAG_PURGELEVEL);
 }
 
-void GDRTileLayer::Parse(eastl::shared_ptr<GDRMap>& mapData, const json& data)
+void GDRTileset::updateSpriteData(void)
+{
+    const GDRMapLayer *it = m_mapData->getLayers();
+
+    for (uint64_t i = 0; i < m_mapData->numLayers(); ++i) {
+        if (it->getType() != MAP_LAYER_TILE) // skip if not a tilelayer
+            continue;
+        
+        const GDRTile *tileData = ((const GDRTileLayer *)it->data())->getTiles();
+        const GDRTile *tile;
+        for (uint64_t x = 0; x < it->getWidth(); x++) {
+            for (uint64_t y = 0; y < it->getHeight(); y++) {
+                tile = &tileData[y * it->getWidth() + x];
+
+                // is it the index?
+                if (tile->tilesetIndex == eastl::distance(m_mapData->getTilesets(), this))
+                    m_spriteData->getSprites()[y * it->getWidth() + x].gid = tile->gid;
+            }
+        }
+        ++it;
+    }
+}
+
+void GDRTileLayer::Parse(const GDRMapLayer *layerData, GDRMap *mapData, const json& data)
 {
 #define check_json(key) if (!data.contains(key)) N_Error("Map_LoadTileLayer: tmj file is invalid, reason: missing required parm '" key "'")
     check_json("data");
 #undef check_json
 
+    m_width = layerData->getWidth();
+    m_height = layerData->getHeight();
+    m_mapData = mapData;
+
     // get the tile data
     ParseData(data);
 }
 
-void GDRTileset::Parse(eastl::shared_ptr<GDRMap>& mapData, const json& data, const eastl::vector<json>& tsj)
+void GDRTileset::Parse(GDRMap *mapData, const json& data, const eastl::vector<json>& tsj)
 {
     m_mapData = mapData;
     m_properties.LoadProps(data);
@@ -556,11 +644,14 @@ void GDRTileset::Parse(eastl::shared_ptr<GDRMap>& mapData, const json& data, con
 
     const std::string& source = data.at("source");
     m_firstGid = (int32_t)data.at("firstgid");
-    
+
     // strip the .tsj part if its there (the source will be used for bff texture lookups)
     if (source.find(".tsj") != std::string::npos) {
         m_source.resize(source.size() - 4);
         COM_StripExtension(source.c_str(), m_source.data(), m_source.size());
+    }
+    else {
+        m_source = source;
     }
 
     // hash it
@@ -572,17 +663,7 @@ void GDRTileset::Parse(eastl::shared_ptr<GDRMap>& mapData, const json& data, con
     
     // find the json chunk within the tilesets
     const json* tsjData;
-#if 0
-    for (std::vector<json>::const_iterator it = tsj.cbegin(); it != tsj.cend(); ++it) {
-        const std::string& name = it->at("name");
-
-        if (std::string(name).c_str() == m_source) {
-            tsjData = it;
-            break;
-        }
-    }
-#endif
-    for (uint64_t i = 0; i < tsj.size(); i++) {
+    for (uint64_t i = 0; i < tsj.size(); ++i) {
         const std::string& name = tsj[i].at("name");
 
         if (name == m_source) {
@@ -590,6 +671,8 @@ void GDRTileset::Parse(eastl::shared_ptr<GDRMap>& mapData, const json& data, con
             break;
         }
     }
+    if (!tsjData)
+        N_Error("Map_LoadTileset: failed to find tileset source for '%s'", m_source.c_str());
 
 #define check_json(key) if (!tsjData->contains(key)) N_Error("Map_LoadTileset: tsj file is invalid, reason: missing required parm '" key "'")
     check_json("tilewidth");
@@ -612,10 +695,27 @@ void GDRTileset::Parse(eastl::shared_ptr<GDRMap>& mapData, const json& data, con
     m_imageWidth = tsjData->at("imagewidth");
     m_imageHeight = tsjData->at("imageheight");
 
-    m_spriteData = eastl::make_shared<GDRTileSheet>(this);
+    Hunk_Print();
+    Z_Print(true);
+    m_spriteData = (GDRTileSheet *)Hunk_Alloc(sizeof(*m_spriteData), "spriteData", h_low);
+    construct(m_spriteData, this);
+
+    Con_Printf(DEV,
+        "\n"
+        "[Tileset Info]\n"
+        "tilewidth: %li\n"
+        "tileheight: %li\n"
+        "spacing; %li\n"
+        "columns: %li\n"
+        "imagewidth: %li\n"
+        "imageheight: %li\n"
+        "tilecount: %li\n"
+        "source: %s\n"
+        "name: %s\n",
+    m_tileWidth, m_tileHeight, m_spacing, m_columns, m_imageWidth, m_imageHeight, m_tileCount, m_source.c_str(), m_name.c_str());
 }
 
-GDRTileSheet::GDRTileSheet(const GDRTileset* tileset)
+GDRTileSheet::GDRTileSheet(const GDRTileset *tileset)
 {
     auto genCoords = [&](const glm::vec2& sheetDims, const glm::vec2& spriteDims, const glm::vec2& coords, glm::vec2 tex[4]) {
         glm::vec2 min = { (coords.x * spriteDims.x) / sheetDims.x, (coords.y * spriteDims.y) / sheetDims.y };
@@ -627,7 +727,7 @@ GDRTileSheet::GDRTileSheet(const GDRTileset* tileset)
         tex[3] = { min.x, max.y };
     };
 
-    uint32_t gid;
+    int64_t gid;
 
     m_sheetWidth = tileset->getImageWidth();
     m_sheetHeight = tileset->getImageHeight();
@@ -637,25 +737,27 @@ GDRTileSheet::GDRTileSheet(const GDRTileset* tileset)
 
     gid = m_firstGid;
 
-    const uint32_t tileCountX = m_sheetWidth / m_tileWidth;
-    const uint32_t tileCountY = m_sheetHeight / m_tileHeight;
-    const float tileVertexWidth = floor(m_sheetWidth / m_tileWidth);
-    const uint32_t lastgid = tileVertexWidth / floor(m_sheetHeight / m_tileHeight) * m_firstGid - 1;
+    const uint64_t tileCountX = m_sheetWidth / m_tileWidth;
+    const uint64_t tileCountY = m_sheetHeight / m_tileHeight;
+    const double tileVertexWidth = floor(m_sheetWidth / m_tileWidth);
+    const uint64_t lastgid = tileVertexWidth / floor(m_sheetHeight / m_tileHeight) * m_firstGid - 1;
 
-    m_sheetData.resize(tileset->getTileCount());
-    eastl::vector<GDRSprite>::iterator spriteIt = m_sheetData.begin();
-    for (uint32_t y = 0; y < tileCountY; ++y) {
-        for (uint32_t x = 0; x < tileCountX; ++x) {
-            gid = 1 - (x * y);
-
-            spriteIt->gid = gid;
+    m_numSprites = tileset->getTileCount();
+    m_sheetData = (GDRSprite *)Hunk_Alloc(sizeof(GDRSprite) * tileset->getTileCount(), "sheetData", h_low);
+    
+    GDRSprite *spriteIt = m_sheetData;
+    for (uint64_t y = 0; y < tileCountY; ++y) {
+        for (uint64_t x = 0; x < tileCountX; ++x) {
+            gid = 
             genCoords({ m_sheetWidth, m_sheetHeight }, { m_tileWidth, m_tileHeight }, { x, y }, spriteIt->coords);
             spriteIt++;
+            printf("%li ", gid);
         }
+        printf("\n");
     }
 }
 
-void GDRImageLayer::Parse(eastl::shared_ptr<GDRMap>& mapData, const json& data)
+void GDRImageLayer::Parse(GDRMap *mapData, const json& data)
 {
 #define check_json(key) if (!data.contains(key)) N_Error("Map_LoadImageLayer: tmj file is invalid, reason: missing required parm '" key "'")
     check_json("source");
@@ -668,78 +770,127 @@ void GDRImageLayer::Parse(eastl::shared_ptr<GDRMap>& mapData, const json& data)
     RE_SubmitMapTilesheet(m_image.c_str(), BFF_FetchInfo());
 }
 
-void GDRPolylineObject::Parse(eastl::shared_ptr<GDRMap>& mapData, const json& data)
+void GDRPolylineObject::Parse(GDRMap *mapData, const json& data)
 {
 #define check_json(key) if (!data.contains(key)) N_Error("Map_LoadPolylineObject: tmj file is invalid, reason: missing required parm '" key "'")
     check_json("polyline");
 #undef check_json
 
-    m_pointList.reserve(data.at("polyline").size());
+    m_numPoints = data.at("polyline").size();
+    m_pointList = (GDRMapPoint *)Z_Malloc(sizeof(GDRMapPoint) * m_numPoints, TAG_STATIC, &m_pointList, "mapPoints");
+
+    GDRMapPoint *point = m_pointList;
     for (const auto& i : data.at("polyline")) {
         const glm::ivec2 coords = { (int)i.at("x"), (int)i.at("y") };
-        m_pointList.emplace_back( coords.x, coords.y );
+        construct( point, coords.x, coords.y );
+        point++;
     }
 }
 
-void GDRPolygonObject::Parse(eastl::shared_ptr<GDRMap>& mapData, const json& data)
+void GDRPolygonObject::Parse(GDRMap *mapData, const json& data)
 {
 #define check_json(key) if (!data.contains(key)) N_Error("Map_LoadPolygonObject: tmj file is invalid, reason: missing required parm '" key "'")
     check_json("polygon");
 #undef check_json
 
-    m_pointList.reserve(data.at("polygon").size());
+    m_numPoints = data.at("polygon").size();
+    m_pointList = (GDRMapPoint *)Z_Malloc(sizeof(GDRMapPoint) * m_numPoints, TAG_STATIC, &m_pointList, "mapPoints");
+
+    GDRMapPoint *point = m_pointList;
     for (const auto& i : data.at("polygon")) {
         const glm::ivec2 coords = { (int)i.at("x"), (int)i.at("y") };
-        m_pointList.emplace_back(GDRMapPoint( coords.x, coords.y ));
+        construct(point, coords.x, coords.y);
+        point++;
     }
 }
 
-void GDRGroupLayer::ParseLayer(const json& data)
+void GDRMapLayer::Parse(const json& data)
 {
-    eastl::shared_ptr<GDRMapLayer> layer;
-    const std::string& name = data.at("name");
-    const std::string& type = data.at("type");
-
-    if (type == "tilelayer")
-        layer = eastl::make_shared<GDRTileLayer>();
-    else if (type == "objectgroup")
-        layer = eastl::make_shared<GDRObjectGroup>();
-    else if (type == "imagelayer")
-        layer = eastl::make_shared<GDRImageLayer>();
-    else if (type == "group")
-        layer = eastl::make_shared<GDRGroupLayer>();
-    
-    layer->ParseBase(m_mapData, data, type);
-    layer->Parse(m_mapData, data);
-    m_layerList.emplace_back(layer);
+    switch (m_type) {
+    case MAP_LAYER_IMAGE:
+        m_data.image->Parse(m_mapData, data);
+        break;
+    case MAP_LAYER_TILE:
+        m_data.tile->Parse(this, m_mapData, data);
+        break;
+    case MAP_LAYER_GROUP:
+        m_data.group->Parse(m_mapData, data);
+        break;
+    case MAP_LAYER_OBJECT:
+        m_data.object->Parse(m_mapData, data);
+        break;
+    };
 }
 
-void GDRGroupLayer::Parse(eastl::shared_ptr<GDRMap>& mapData, const json& data)
+void GDRGroupLayer::Parse(GDRMap *mapData, const json& data)
 {
-    m_layerList.reserve(data.at("layers").size());
+    m_numLayers = data.at("layers").size();
+    m_layerList = (GDRMapLayer *)Hunk_Alloc(sizeof(GDRMapLayer) * m_numLayers, "mapLayers", h_low);
+
+    GDRMapLayer *layer = m_layerList;
     for (const auto& i : data.at("layers")) {
-        ParseLayer(i);
+        construct(layer);
+        const std::string& name = data.at("name");
+        const std::string& type = data.at("type");
+
+        if (type == "tilelayer")
+            layer->setType(MAP_LAYER_TILE);
+        else if (type == "objectgroup")
+            layer->setType(MAP_LAYER_OBJECT);
+        else if (type == "imagelayer")
+            layer->setType(MAP_LAYER_IMAGE);
+        else if (type == "group")
+            layer->setType(MAP_LAYER_GROUP);
+    
+        layer->ParseBase(m_mapData, data, type.c_str());
+        layer->allocLayer(Z_Malloc(Map_LayerSize(type.c_str()), TAG_STATIC, NULL, "mapLayer"));
+        layer->Parse(data);
+        layer++;
     }
 }
 
-void GDRMapObject::ParseBase(eastl::shared_ptr<GDRMap>& mapData, const json& data, const std::string& typeStr)
+void GDRMapObject::ParseBase(GDRMap *mapData, const json& data, const char *typeStr)
 {
     m_name = data.at("name");
-
+    m_mapData = mapData;
 }
 
-void GDRRectObject::Parse(eastl::shared_ptr<GDRMap>& mapData, const json& data)
+void GDRMapObject::Parse(GDRMap *mapData, const json& data)
+{
+    switch (m_type) {
+    case MAP_OBJECT_POINT:
+        m_data.point->Parse(m_mapData, data);
+        break;
+    case MAP_OBJECT_POLYGON:
+        m_data.polygon->Parse(m_mapData, data);
+        break;
+    case MAP_OBJECT_POLYLINE:
+        m_data.polyline->Parse(m_mapData, data);
+        break;
+    case MAP_OBJECT_RECT:
+        m_data.rect->Parse(m_mapData, data);
+        break;
+    case MAP_OBJECT_TEXT:
+        m_data.text->Parse(m_mapData, data);
+        break;
+    };
+}
+
+void GDRRectObject::Parse(GDRMap *mapData, const json& data)
 {
     // nothing to parse
 }
 
-void GDRPointObject::Parse(eastl::shared_ptr<GDRMap>& mapData, const json& data)
+void GDRPointObject::Parse(GDRMap *mapData, const json& data)
 {
-    // nothing to parse
+    m_mapData = mapData;
+    m_point.x = data.at("x");
+    m_point.y = data.at("y");
 }
 
-void GDRTextObject::Parse(eastl::shared_ptr<GDRMap>& mapData, const json& data)
+void GDRTextObject::Parse(GDRMap *mapData, const json& data)
 {
+    m_mapData = mapData;
     const json& text = data.at("text");
     const std::string& halign = data.at("halign");
     const std::string& valign = data.at("valign");
@@ -764,40 +915,44 @@ void GDRTextObject::Parse(eastl::shared_ptr<GDRMap>& mapData, const json& data)
         m_flags |= TEXT_UNDERLINE;
 }
 
-void GDRObjectGroup::Parse(eastl::shared_ptr<GDRMap>& mapData, const json& data)
+void GDRObjectGroup::Parse(GDRMap *mapData, const json& data)
 {
-    m_objectList.reserve(data.at("objects").size());
+    m_numObjects = data.at("objects").size();
+    m_objectList = (GDRMapObject *)Hunk_Alloc(sizeof(GDRMapObject) * m_numObjects, "mapObjs", h_low);
+
+    GDRMapObject *object = m_objectList;
     for (const auto& i : data.at("objects")) {
-        eastl::shared_ptr<GDRMapObject> object;
-        std::string typeStr;
+        construct(object);
+        const char *typeStr;
         
         if (i.contains("polygon")) {
-            object = eastl::make_shared<GDRPolygonObject>();
+            object->setType(MAP_OBJECT_POLYGON);
             typeStr = "polygon";
         }
         else if (i.contains("polyline")) {
-            object = eastl::make_shared<GDRPolylineObject>();
+            object->setType(MAP_OBJECT_POLYLINE);
             typeStr = "polyline";
         }
         else if (i.contains("text")) {
-            object = eastl::make_shared<GDRTextObject>();
+            object->setType(MAP_OBJECT_TEXT);
             typeStr = "text";
         }
         else { // point or rectangle
             uint64_t height = i.at("height");
             uint64_t width = i.at("width");
             if (!width && !height) {
-                object = eastl::make_shared<GDRPointObject>();
+                object->setType(MAP_OBJECT_POINT);
                 typeStr = "point";
             }
             else {
-                object = eastl::make_shared<GDRRectObject>();
+                object->setType(MAP_OBJECT_RECT);
                 typeStr = "rect";
             }
         }
 
         object->ParseBase(mapData, i, typeStr);
+        object->allocObject(Z_Malloc(Map_ObjectSize(typeStr), TAG_STATIC, NULL, "mapObj"));
         object->Parse(mapData, i);
-        m_objectList.emplace_back(object);
+        object++;
     }
 }

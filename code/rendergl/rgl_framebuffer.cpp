@@ -20,13 +20,9 @@ GO_AWAY_MANGLE void R_ValidateFramebuffer(const char *name);
 GO_AWAY_MANGLE uint32_t R_HDRFormat(void);
 GO_AWAY_MANGLE uint32_t R_BloomFormat(void);
 
-GO_AWAY_MANGLE void R_InitColorBuffer(uint32_t format, uint32_t *buffer, uint32_t attachment)
+GO_AWAY_MANGLE void R_InitColorBuffer(uint32_t format, uint32_t buffer, uint32_t attachment)
 {
-    // initialize it again
-    if (!*buffer)
-        nglGenRenderbuffers(1, (GLuint *)buffer);
-
-    nglBindRenderbuffer(GL_RENDERBUFFER, *buffer);
+    nglBindRenderbuffer(GL_RENDERBUFFER, buffer);
     
     // multisampling?
     if (!N_stricmpn("MSAA", r_multisampleType->s, sizeof("MSAA")) && r_multisampleAmount->i)
@@ -35,16 +31,11 @@ GO_AWAY_MANGLE void R_InitColorBuffer(uint32_t format, uint32_t *buffer, uint32_
         nglRenderbufferStorage(GL_RENDERBUFFER, format, fbo->width, fbo->height);
 
     nglBindRenderbuffer(GL_RENDERBUFFER, 0);
-    nglFramebufferRenderbuffer(GL_FRAMEBUFFER, attachment, GL_RENDERBUFFER, *buffer);
 }
 
-GO_AWAY_MANGLE void R_InitDepthBuffer(uint32_t *buffer)
+GO_AWAY_MANGLE void R_InitDepthBuffer(uint32_t buffer)
 {
-    // initialize it again
-    if (!*buffer)
-        nglGenRenderbuffers(1, (GLuint *)buffer);
-    
-    nglBindRenderbuffer(GL_RENDERBUFFER, *buffer);
+    nglBindRenderbuffer(GL_RENDERBUFFER, buffer);
 
     // multisampling?
     if (!N_stricmpn("MSAA", r_multisampleType->s, sizeof("MSAA")) && r_multisampleAmount->i)
@@ -53,7 +44,6 @@ GO_AWAY_MANGLE void R_InitDepthBuffer(uint32_t *buffer)
         nglRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, fbo->width, fbo->height);
 
     nglBindRenderbuffer(GL_RENDERBUFFER, 0);
-    nglFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, *buffer);
 }
 
 GO_AWAY_MANGLE void R_InitFancyFramebuffer(void)
@@ -61,59 +51,51 @@ GO_AWAY_MANGLE void R_InitFancyFramebuffer(void)
     uint32_t numColorBuffers;
 
     nglGenFramebuffers(1, (GLuint *)&fbo->fboId);
+    if (!fbo->colorIds[FBO_COLOR_MULTISAMPLE])
+        nglGenRenderbuffers(1, (GLuint *)&fbo->colorIds[FBO_COLOR_MULTISAMPLE]);
+    if (!fbo->depthId)
+        nglGenRenderbuffers(1, (GLuint *)&fbo->depthId);
 
     fbo->width = r_screenwidth->i;
     fbo->height = r_screenheight->i;
-    memset(fbo->colorIds, 0, sizeof(fbo->colorIds));
 
     nglBindFramebuffer(GL_FRAMEBUFFER, fbo->fboId);
 
-    numColorBuffers = 0;
-    if (r_multisampleAmount->i) {
-        // super-sampling?
-        if (!N_stricmpn("SSAA", r_multisampleType->s, sizeof("SSAA"))) {
-            fbo->width *= r_multisampleAmount->i;
-            fbo->height *= r_multisampleAmount->i;
-        }
-        ++numColorBuffers;
-        R_InitColorBuffer(R_TexFormat(), &fbo->colorIds[FBO_COLOR_MULTISAMPLE], GL_COLOR_ATTACHMENT0);
+    // super-sampling?
+    if (!N_stricmpn("SSAA", r_multisampleType->s, sizeof("SSAA"))) {
+        fbo->width *= r_multisampleAmount->i;
+        fbo->height *= r_multisampleAmount->i;
     }
-    if (r_gammaAmount->f > 0.0f) {
-        R_InitColorBuffer(GL_SRGB8, &fbo->colorIds[FBO_COLOR_GAMMA], GL_COLOR_ATTACHMENT0 + numColorBuffers);
-        ++numColorBuffers;
-    }
-    if (r_bloomOn->b) {
-        R_InitColorBuffer(GL_RGBA16F, &fbo->colorIds[FBO_COLOR_BLOOM], GL_COLOR_ATTACHMENT0 + numColorBuffers);
-        ++numColorBuffers;
-    }
-    if (R_HDRFormat() != 0) {
-        R_InitColorBuffer(R_HDRFormat(), &fbo->colorIds[FBO_COLOR_HDR], GL_COLOR_ATTACHMENT0 + numColorBuffers);
-        ++numColorBuffers;
-    }
-    R_InitDepthBuffer(&fbo->depthId);
+    R_InitColorBuffer(GL_RGBA8, fbo->colorIds[FBO_COLOR_MULTISAMPLE], GL_COLOR_ATTACHMENT0);
+    R_InitDepthBuffer(fbo->depthId);
+    
+    nglDrawBuffer(GL_COLOR_ATTACHMENT0);
+
+    nglFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, fbo->colorIds[FBO_COLOR_MULTISAMPLE]);
+    nglFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, fbo->depthId);
+
+    R_ValidateFramebuffer("fancy");
+
+    nglBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     if (!pintShader)
         pintShader = R_InitShader("pint.glsl.vert", "pint.glsl.frag");
     else
         R_RecompileShader(pintShader, NULL, NULL, 0, 0);
-
-//    GLenum dBuffers[numColorBuffers];
-//    for (uint32_t i = 0; i < numColorBuffers; ++i)
-//        dBuffers[i] = GL_COLOR_ATTACHMENT0 + i;
-//
-//    if (numColorBuffers)
-//        nglDrawBuffers(numColorBuffers, dBuffers);
-    nglDrawBuffer(GL_COLOR_ATTACHMENT0);
-
-    R_ValidateFramebuffer("fancy");
-
-    nglBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void RE_InitFramebuffers(void)
 {
-    fbo = (framebuffer_t *)ri.Hunk_Alloc(sizeof(framebuffer_t), "GLfbo", h_low);
-    intermediate = (framebuffer_t *)ri.Hunk_Alloc(sizeof(framebuffer_t), "GLinterFbo", h_low);
+    fbo = (framebuffer_t *)ri.Z_Malloc(sizeof(framebuffer_t), TAG_STATIC, &fbo, "GLfbo");
+    intermediate = (framebuffer_t *)ri.Z_Malloc(sizeof(framebuffer_t), TAG_STATIC, &intermediate, "GLinterFbo");
+
+    memset(fbo->colorIds, 0, sizeof(fbo->colorIds));
+    fbo->depthId = 0;
+    fbo->fboId = 0;
+
+    memset(intermediate->colorIds, 0, sizeof(intermediate->colorIds));
+    intermediate->depthId = 0;
+    intermediate->fboId = 0;
 
     R_InitFancyFramebuffer();
     R_InitIntermediateFramebuffer();
@@ -272,12 +254,17 @@ GO_AWAY_MANGLE void R_InitIntermediateFramebuffer(void)
     nglGenFramebuffers(1, (GLuint *)&intermediate->fboId);
     nglGenTextures(1, (GLuint *)&intermediate->colorIds[0]);
 
+    intermediate->width = r_screenwidth->i;
+    intermediate->height = r_screenheight->i;
+
     nglBindFramebuffer(GL_FRAMEBUFFER, intermediate->fboId);
 
     nglBindTexture(GL_TEXTURE_2D, intermediate->colorIds[0]);
-    nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    nglTexImage2D(GL_TEXTURE_2D, 0, R_TexFormat(), intermediate->width, intermediate->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    nglTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, intermediate->width, intermediate->height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     nglBindTexture(GL_TEXTURE_2D, 0);
 
     nglFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, intermediate->colorIds[0], 0);
@@ -300,6 +287,7 @@ GO_AWAY_MANGLE uint32_t R_HDRFormat(void)
     case msdos: // not allowed when using msdos level
         return 0;
     };
+    N_Error("R_HDRFormat: r_textureDetail has invalid value");
 }
 
 GO_AWAY_MANGLE uint32_t R_BloomFormat(void);

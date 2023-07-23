@@ -25,8 +25,8 @@ typedef struct
 //    emptyCmd_t *cmd_head, *cmd_tail;
     vertexCache_t *pintCache;
 
-    eastl::shared_ptr<GDRMap> currentMap;
-    eastl::shared_ptr<GDRMapLayer> currentLayer;
+    const GDRMap *currentMap;
+    const GDRMapLayer *currentLayer;
 } frameData_t;
 
 static frameData_t frame;
@@ -76,7 +76,7 @@ static void R_ExecuteCommands(void)
         nglBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, sizeof(vertex_t) * v->verts.size() * 4, v->verts.data());
         nglBufferSubDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0, sizeof(uint32_t) * v->verts.size() * 6, frame.indices);
 
-        nglDrawElements(GL_TRIANGLES, v->vverts.size() * 6, GL_UNSIGNED_INT, NULL);
+        nglDrawElements(GL_TRIANGLES, v->verts.size() * 6, GL_UNSIGNED_INT, NULL);
         
         if (cmd == frame.cmd_tail)
             break;
@@ -190,7 +190,7 @@ qboolean RE_ConsoleIsOpen(void)
     return console_open;
 }
 
-#define FRAME_QUADS 0x20000
+#define FRAME_QUADS 0x2000
 
 GO_AWAY_MANGLE void RE_BeginFrame(void)
 {
@@ -205,10 +205,25 @@ GO_AWAY_MANGLE void RE_BeginFrame(void)
     R_BeginImGui();
 
     R_InitFrameMemory();
+    if (!ri.G_GetCurrentMap()->getTilesets()[0].getSpriteData())
+        ri.N_Error("DEREFERENCED!");
+    
     frame.currentMap = ri.G_GetCurrentMap();
+
+    if (!frame.currentMap->getTilesets()[0].getSpriteData())
+        ri.N_Error("DEREFERENCED!");
+    
     R_ReserveFrameMemory(frame.pintCache);
+    if (!frame.currentMap->getTilesets()[0].getSpriteData())
+        ri.N_Error("DEREFERENCED!");
+
     RE_SetDefaultState();
+    if (!frame.currentMap->getTilesets()[0].getSpriteData())
+        ri.N_Error("DEREFERENCED!");
+
     renderer->camera.CalculateViewMatrix();
+    if (!frame.currentMap->getTilesets()[0].getSpriteData())
+        ri.N_Error("DEREFERENCED!");
 
     nglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     nglViewport(0, 0, r_screenwidth->i, r_screenheight->i);
@@ -217,6 +232,9 @@ GO_AWAY_MANGLE void RE_BeginFrame(void)
 GO_AWAY_MANGLE void RE_EndFrame(void)
 {
     EASY_FUNCTION();
+
+    if (!frame.currentMap->getTilesets()[0].getSpriteData())
+        ri.N_Error("DEREFERENCED!");
 
     RE_RenderMap();
     RE_CommandConsoleFrame();
@@ -252,7 +270,7 @@ GO_AWAY_MANGLE void RE_InitFrameData(void)
 /*
 RE_SubmitPint: frameVerts should always be stack-based
 */
-GO_AWAY_MANGLE void RE_SubmitPint(const glm::vec2& pos, const glm::vec2& dims, uint32_t gid, const eastl::shared_ptr<GDRTileSheet>& sheet,
+GO_AWAY_MANGLE void RE_SubmitPint(const glm::vec2& pos, const glm::vec2& dims, uint32_t gid, const GDRTileSheet *sheet,
     vertex_t *frameVerts)
 {
     glm::mat4 model, mvp;
@@ -278,10 +296,12 @@ GO_AWAY_MANGLE void RE_SubmitPint(const glm::vec2& pos, const glm::vec2& dims, u
     }
 }
 
-GO_AWAY_MANGLE void R_RenderImageLayer(const eastl::shared_ptr<GDRImageLayer>& layer)
+GO_AWAY_MANGLE void R_RenderImageLayer(const GDRImageLayer *layer)
 {
-    frame.currentLayer = eastl::dynamic_pointer_cast<GDRMapLayer>(layer);
-    const texture_t *tex = R_GetTexture(layer->getImage().c_str());
+    if (!frame.currentMap->getTilesets()[0].getSpriteData())
+        ri.N_Error("DEREFERENCED!");
+    
+    const texture_t *tex = R_GetTexture(layer->getImage());
 
     R_BindTexture(tex);
 
@@ -308,27 +328,34 @@ GO_AWAY_MANGLE void R_RenderImageLayer(const eastl::shared_ptr<GDRImageLayer>& l
     R_UnbindTexture();
 }
 
-GO_AWAY_MANGLE void R_RenderTileLayer(const eastl::shared_ptr<GDRTileLayer>& layer)
+GO_AWAY_MANGLE void R_RenderTileLayer(const GDRMapLayer *layer)
 {
     const GDRTile *tile;
     vertex_t *pintVertices, *vertPtr;
     uint32_t numVerts;
     const uint32_t maxVerts = FRAME_QUADS * 4;
+    const GDRTileLayer *tileLayer;
+
+    if (!frame.currentMap->getTilesets()[0].getSpriteData())
+        ri.N_Error("DEREFERENCED!");
 
     numVerts = 0;
     pintVertices = (vertex_t *)R_FrameAlloc(sizeof(vertex_t) * maxVerts);
     vertPtr = pintVertices;
+    tileLayer = (const GDRTileLayer *)layer->data();
 
     for (uint64_t y = 0; y < layer->getHeight(); ++y) {
         for (uint64_t x = 0; x < layer->getWidth(); ++x) {
-            tile = &layer->getTiles()[y * layer->getWidth() + x];
+            tile = &tileLayer->getTiles()[y * layer->getWidth() + x];
 
             // invalid tile, skip it
-            if (tile->tilesetIndex == frame.currentMap->numTilesets())
+            if (tile->tilesetIndex >= frame.currentMap->numTilesets())
                 continue;
             
+            Con_Printf(DEBUG, "tilesetIndex: %li", tile->tilesetIndex);
+            Con_Printf(DEBUG, "tileset.m_name: %s", frame.currentMap->getTilesets()[tile->tilesetIndex].getName());
             RE_SubmitPint({ x, y }, { layer->getWidth(), layer->getHeight() }, tile->gid,
-                frame.currentMap->getTilesets()[tile->tilesetIndex]->getSpriteData(), vertPtr);
+                frame.currentMap->getTilesets()[tile->tilesetIndex].getSpriteData(), vertPtr);
             
             if (numVerts + 4 >= maxVerts) {
                 R_PushVertices(frame.pintCache, pintVertices, numVerts);
@@ -342,29 +369,32 @@ GO_AWAY_MANGLE void R_RenderTileLayer(const eastl::shared_ptr<GDRTileLayer>& lay
     R_DrawCache(frame.pintCache);
 }
 
-GO_AWAY_MANGLE void R_LayerIterate(const eastl::shared_ptr<GDRGroupLayer>& layer)
+GO_AWAY_MANGLE void R_LayerIterate(const GDRGroupLayer *layer)
 {
-    frame.currentLayer = eastl::dynamic_pointer_cast<GDRMapLayer>(layer);
+    if (!frame.currentMap->getTilesets()[0].getSpriteData())
+        ri.N_Error("DEREFERENCED!");
 
-    for (const auto& i : layer->getChildren()) {
-        switch (i->getType()) {
+    const GDRMapLayer *layerBase = layer->getChildren();
+
+    for (uint64_t i = 0; i < layer->getNumChildren(); ++i) {
+        switch (layerBase->getType()) {
 //        case MAP_LAYER_OBJECT: {
-//            const eastl::shared_ptr<GDRObjectGroup>& object = eastl::dynamic_pointer_cast<GDRObjectGroup>(i);
+//            const GDRObjectGroup *object = dynamic_cast<const GDRObjectGroup *>(i);
 //            R_RenderLayer(object);
 //            break; }
         case MAP_LAYER_IMAGE: {
-            const eastl::shared_ptr<GDRImageLayer>& image = eastl::dynamic_pointer_cast<GDRImageLayer>(i);
+            const GDRImageLayer *image = (const GDRImageLayer *)layerBase->data();
             R_RenderImageLayer(image);
             break; }
         case MAP_LAYER_TILE: {
-            const eastl::shared_ptr<GDRTileLayer>& tile = eastl::dynamic_pointer_cast<GDRTileLayer>(i);
-            R_RenderTileLayer(tile);
+            R_RenderTileLayer(layerBase);
             break; }
         case MAP_LAYER_GROUP: {
-            const eastl::shared_ptr<GDRGroupLayer>& group = eastl::dynamic_pointer_cast<GDRGroupLayer>(i);
+            const GDRGroupLayer *group = (const GDRGroupLayer *)layerBase->data();
             R_LayerIterate(group); // hopefully this doesn't end up in an infinite loop
             break; }
         };
+        layerBase++;
     }
 }
 
@@ -372,33 +402,34 @@ GO_AWAY_MANGLE void RE_RenderMap(void)
 {
     EASY_FUNCTION();
 
+    if (!frame.currentMap->getTilesets()[0].getSpriteData())
+        ri.N_Error("DEREFERENCED!");
+
     uint64_t renderStartTime, renderEndTime;
-    const eastl::vector<eastl::shared_ptr<GDRTileset>>& tileset = frame.currentMap->getTilesets();
-    const eastl::vector<eastl::shared_ptr<GDRMapLayer>>& layers = frame.currentMap->getLayers();
+    const GDRTileset *tileset = frame.currentMap->getTilesets();
+    const GDRMapLayer *layerBase = frame.currentMap->getLayers();
 
     // begin the profiling
     renderStartTime = clock();
-    for (const auto* it = layers.cbegin(); it != layers.cend(); ++it) {
-        const eastl::shared_ptr<GDRMapLayer>& layerBase = *it;
-        
+    for (uint64_t i = 0; i < frame.currentMap->numLayers(); ++i) {
         switch (layerBase->getType()) {
         case MAP_LAYER_TILE: {
-            const eastl::shared_ptr<GDRTileLayer>& layer = eastl::dynamic_pointer_cast<GDRTileLayer>(layerBase);
-            R_RenderTileLayer(layer);
+            R_RenderTileLayer(layerBase);
             break; }
         case MAP_LAYER_GROUP: {
-            const eastl::shared_ptr<GDRGroupLayer>& layer = eastl::dynamic_pointer_cast<GDRGroupLayer>(layerBase);
+            const GDRGroupLayer *layer = (const GDRGroupLayer *)layerBase->data();
             R_LayerIterate(layer);
             break; }
         case MAP_LAYER_IMAGE: {
-            const eastl::shared_ptr<GDRImageLayer>& layer = eastl::dynamic_pointer_cast<GDRImageLayer>(layerBase);
+            const GDRImageLayer *layer = (const GDRImageLayer *)layerBase->data();
             R_RenderImageLayer(layer);
             break; }
 //        case MAP_LAYER_OBJECT: {
-//            const eastl::shared_ptr<GDRObjectGroup>& layer = eastl::dynamic_pointer_cast<GDRObjectGroup>(layerBase);
+//            const GDRObjectGroup *layer = dynamic_cast<GDRObjectGroup *>(layerBase);
 //            R_RenderLayer(eastl::dynamic_pointer_cast<GDRObjectGroup>(layerBase), mapData);
 //            break; }
         };
+        layerBase++;
     }
     renderEndTime = clock();
 
@@ -437,7 +468,7 @@ typedef struct {
 frameMemory_t *frameData;
 
 #if 1
-#define	MEMORY_BLOCK_SIZE	0x100000
+#define	MEMORY_BLOCK_SIZE	0x600000
 #else
 #define MEMORY_BLOCK_SIZE   0x1000
 #endif

@@ -155,7 +155,7 @@ GO_AWAY_MANGLE texture_t *R_InitTexture(const bfftexture_t *tex)
         ri.N_Error("R_InitTexture: corrupted buffer for %s", tex->name);
     }
 
-    t = (texture_t *)ri.Hunk_Alloc(sizeof(texture_t), "GLtexture", h_low);
+    t = (texture_t *)ri.Z_Malloc(sizeof(texture_t), TAG_STATIC, &t, "GLtexture");
     t->minFilter = R_TexMinFilter();
     t->magFilter = R_TexMagFilter();
     t->wrapS = GL_REPEAT;
@@ -207,7 +207,8 @@ GO_AWAY_MANGLE void RE_ShutdownTextures(void)
 GO_AWAY_MANGLE void R_ShutdownTexture(texture_t *texture)
 {
     nglDeleteTextures(1, (const GLuint *)&texture->id);
-    ri.Z_Free(texture->data);
+    ri.Z_ChangeTag(texture, TAG_CACHE);
+    ri.Z_ChangeTag(texture->data, TAG_STATIC);
 }
 
 GO_AWAY_MANGLE void R_BindTexture(const texture_t* texture, uint32_t slot)

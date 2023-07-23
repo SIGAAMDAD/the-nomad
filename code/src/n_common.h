@@ -94,7 +94,6 @@ void Parse1DMatrix( const char **buf_p, int x, float *m);
 void Parse2DMatrix( const char **buf_p, int y, int x, float *m);
 void Parse3DMatrix( const char **buf_p, int z, int y, int x, float *m);
 
-
 /*
 commands, shouldn't be called by the vm
 */
@@ -117,6 +116,7 @@ typedef void (*cmdfunc_t)(void);
 #define	BIG_INFO_STRING		8192  // used for system info key only
 #define	BIG_INFO_KEY		  8192
 #define	BIG_INFO_VALUE		8192
+#define MAX_CMD_LINE 1024
 
 void Cmd_AddCommand(const char* name, cmdfunc_t function);
 void Cmd_RemoveCommand(const char* name);
@@ -130,6 +130,24 @@ void Cmd_Clear(void);
 const char* GDR_DECL va(const char *format, ...);
 
 void GDR_DECL Com_Error(const char *fmt, ...);
+
+/*
+
+Edit fields and command line history/completion
+
+*/
+
+#define	MAX_EDIT_LINE 512
+#if MAX_EDIT_LINE > MAX_CMD_LINE
+#error "MAX_EDIT_LINE > MAX_CMD_LINE"
+#endif
+typedef struct {
+	int		cursor;
+	int		scroll;
+	int		widthInChars;
+	char	buffer[MAX_EDIT_LINE];
+} field_t;
+
 
 /*
 The filesystem, heavily based on quake's filesystem
