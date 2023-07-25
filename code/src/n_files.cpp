@@ -640,7 +640,10 @@ const char* FS_GetOSPath(file_t f)
 	return ospath;
 }
 
-file_t FS_FOpenRW()
+file_t FS_FOpenRW(const char *filepath)
+{
+	
+}
 
 file_t FS_FOpenWrite(const char *filepath)
 {
