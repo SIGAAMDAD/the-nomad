@@ -22,7 +22,6 @@
 #pragma GCC diagnostic ignored "-Wsign-compare"
 #pragma GCC diagnostic ignored "-Wnoexcept"
 
-#pragma GCC diagnostic error "-Wtype-limits"
 #pragma GCC diagnostic error "-Walloca-larger-than=1048576" // prevent stack overflows (allocating more than a mb on the stack)
 #elif defined(__clang__)
 #pragma clang diagnostic ignored "-Wold-style-cast" // c style stuff, its more readable without the syntax sugar
@@ -32,7 +31,6 @@
 #pragma clang diagnostic ignored "-Wsign-compare"
 #pragma clang diagnostic ignored "-Wnoexcept"
 
-#pragma clang diagnostic error "-Wtype-limits"
 #pragma clang diagnostic error "-Walloca-larger-than=1048576" // prevent stack overflows (allocating more than a mb on the stack)
 #endif
 

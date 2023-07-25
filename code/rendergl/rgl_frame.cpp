@@ -205,25 +205,12 @@ GO_AWAY_MANGLE void RE_BeginFrame(void)
     R_BeginImGui();
 
     R_InitFrameMemory();
-    if (!ri.G_GetCurrentMap()->getTilesets()[0].getSpriteData())
-        ri.N_Error("DEREFERENCED!");
-    
     frame.currentMap = ri.G_GetCurrentMap();
-
-    if (!frame.currentMap->getTilesets()[0].getSpriteData())
-        ri.N_Error("DEREFERENCED!");
     
     R_ReserveFrameMemory(frame.pintCache);
-    if (!frame.currentMap->getTilesets()[0].getSpriteData())
-        ri.N_Error("DEREFERENCED!");
-
     RE_SetDefaultState();
-    if (!frame.currentMap->getTilesets()[0].getSpriteData())
-        ri.N_Error("DEREFERENCED!");
 
     renderer->camera.CalculateViewMatrix();
-    if (!frame.currentMap->getTilesets()[0].getSpriteData())
-        ri.N_Error("DEREFERENCED!");
 
     nglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     nglViewport(0, 0, r_screenwidth->i, r_screenheight->i);
@@ -232,9 +219,6 @@ GO_AWAY_MANGLE void RE_BeginFrame(void)
 GO_AWAY_MANGLE void RE_EndFrame(void)
 {
     EASY_FUNCTION();
-
-    if (!frame.currentMap->getTilesets()[0].getSpriteData())
-        ri.N_Error("DEREFERENCED!");
 
     RE_RenderMap();
     RE_CommandConsoleFrame();
@@ -270,12 +254,17 @@ GO_AWAY_MANGLE void RE_InitFrameData(void)
 /*
 RE_SubmitPint: frameVerts should always be stack-based
 */
-GO_AWAY_MANGLE void RE_SubmitPint(const glm::vec2& pos, const glm::vec2& dims, uint32_t gid, const GDRTileSheet *sheet,
+GO_AWAY_MANGLE void RE_SubmitPint(const glm::vec2& pos, const glm::vec2& dims, uint32_t gid, const GDRTileset *set,
     vertex_t *frameVerts)
 {
     glm::mat4 model, mvp;
     vertex_t *vert;
-    const glm::vec2* coords = sheet->getSpriteCoords(gid);
+    const glm::vec2* coords = set->getSpriteCoords(gid);
+    if (!coords) { // oh no
+        Con_Printf(ERROR, "bad GID (%i)", gid);
+        return;
+    }
+
     constexpr glm::vec4 positions[] = {
         glm::vec4( 0.5f,  0.5f, 0.0f, 1.0f),
         glm::vec4( 0.5f, -0.5f, 0.0f, 1.0f),
@@ -298,9 +287,6 @@ GO_AWAY_MANGLE void RE_SubmitPint(const glm::vec2& pos, const glm::vec2& dims, u
 
 GO_AWAY_MANGLE void R_RenderImageLayer(const GDRImageLayer *layer)
 {
-    if (!frame.currentMap->getTilesets()[0].getSpriteData())
-        ri.N_Error("DEREFERENCED!");
-    
     const texture_t *tex = R_GetTexture(layer->getImage());
 
     R_BindTexture(tex);
@@ -336,9 +322,6 @@ GO_AWAY_MANGLE void R_RenderTileLayer(const GDRMapLayer *layer)
     const uint32_t maxVerts = FRAME_QUADS * 4;
     const GDRTileLayer *tileLayer;
 
-    if (!frame.currentMap->getTilesets()[0].getSpriteData())
-        ri.N_Error("DEREFERENCED!");
-
     numVerts = 0;
     pintVertices = (vertex_t *)R_FrameAlloc(sizeof(vertex_t) * maxVerts);
     vertPtr = pintVertices;
@@ -355,7 +338,7 @@ GO_AWAY_MANGLE void R_RenderTileLayer(const GDRMapLayer *layer)
             Con_Printf(DEBUG, "tilesetIndex: %li", tile->tilesetIndex);
             Con_Printf(DEBUG, "tileset.m_name: %s", frame.currentMap->getTilesets()[tile->tilesetIndex].getName());
             RE_SubmitPint({ x, y }, { layer->getWidth(), layer->getHeight() }, tile->gid,
-                frame.currentMap->getTilesets()[tile->tilesetIndex].getSpriteData(), vertPtr);
+                &frame.currentMap->getTilesets()[tile->tilesetIndex], vertPtr);
             
             if (numVerts + 4 >= maxVerts) {
                 R_PushVertices(frame.pintCache, pintVertices, numVerts);
@@ -371,9 +354,6 @@ GO_AWAY_MANGLE void R_RenderTileLayer(const GDRMapLayer *layer)
 
 GO_AWAY_MANGLE void R_LayerIterate(const GDRGroupLayer *layer)
 {
-    if (!frame.currentMap->getTilesets()[0].getSpriteData())
-        ri.N_Error("DEREFERENCED!");
-
     const GDRMapLayer *layerBase = layer->getChildren();
 
     for (uint64_t i = 0; i < layer->getNumChildren(); ++i) {
@@ -401,9 +381,6 @@ GO_AWAY_MANGLE void R_LayerIterate(const GDRGroupLayer *layer)
 GO_AWAY_MANGLE void RE_RenderMap(void)
 {
     EASY_FUNCTION();
-
-    if (!frame.currentMap->getTilesets()[0].getSpriteData())
-        ri.N_Error("DEREFERENCED!");
 
     uint64_t renderStartTime, renderEndTime;
     const GDRTileset *tileset = frame.currentMap->getTilesets();

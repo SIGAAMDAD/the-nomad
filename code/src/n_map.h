@@ -70,19 +70,17 @@ enum : uint32_t {
     TILE_FLIPPED_DIAG = 0x20000000
 };
 
+// a rendering-engine compatible tile
+#pragma pack(push, 1)
 struct GDRTile
 {
-    constexpr inline GDRTile()
-        : tilesetIndex(0), id(0), gid(0), flags(0)
+    inline constexpr GDRTile(void)
+        : tilesetIndex(0), gid(0), flags(0) {}
+    inline GDRTile(uint64_t _tilesetIndex, uint32_t _gid)
+        : tilesetIndex(_tilesetIndex), gid(_gid)
     {
-    }
-    inline GDRTile(uint64_t tileset, int32_t _gid, int64_t tilesetFirstGID)
-        : tilesetIndex(tileset),
-        id(_gid & ~(TILE_FLIPPED_HORZ | TILE_FLIPPED_VERT | TILE_FLIPPED_DIAG))
-    {
-        gid = id;
-        id -= tilesetFirstGID;
-        flags = 0;
+        // clear the flags
+        gid &= ~(TILE_FLIPPED_HORZ | TILE_FLIPPED_DIAG | TILE_FLIPPED_VERT);
 
         // set the flags
         if (_gid & TILE_FLIPPED_HORZ)
@@ -102,23 +100,6 @@ struct GDRTile
         return *this;
     }
 
-    inline void init(uint64_t tileset, int32_t _gid, int64_t tilesetFirstGID)
-    {
-        tilesetIndex = tileset;
-        id = _gid & ~(TILE_FLIPPED_HORZ | TILE_FLIPPED_VERT | TILE_FLIPPED_DIAG);
-
-        gid = id;
-        id -= tilesetFirstGID;
-        flags = 0;
-
-        // set the flags
-        if (_gid & TILE_FLIPPED_HORZ)
-            flags |= TILE_FLIPPED_HORZ;
-        if (_gid & TILE_FLIPPED_DIAG)
-            flags |= TILE_FLIPPED_DIAG;
-        if (_gid & TILE_FLIPPED_VERT)
-            flags |= TILE_FLIPPED_VERT;
-    }
     inline bool flippedHorizontally(void) const
     { return (flags & TILE_FLIPPED_HORZ); }
     inline bool flippedVertically(void) const
@@ -127,11 +108,11 @@ struct GDRTile
     { return (flags & TILE_FLIPPED_DIAG); }
 
     uint64_t tilesetIndex;
-    uint64_t id;
-    int32_t gid;
-    uint64_t flags;
+    uint32_t gid;
+    uint32_t flags;
+    glm::vec2 coords[4]; // opengl texture coordinates
 };
-
+#pragma pop()
 struct GDRMapProperty
 {
     inline GDRMapProperty(GDRMapPropertyType _type, const char *_value, const char *_name)
@@ -264,7 +245,8 @@ private:
 };
 
 
-struct GDRMapPoint {
+struct GDRMapPoint
+{
     double x;
     double y;
 
@@ -278,79 +260,35 @@ struct GDRMapPoint {
     ~GDRMapPoint() = default;
 };
 
-struct GDRSprite
-{
-    glm::vec2 coords[4]; // opengl texture coordinates
-    int32_t gid;
-};
-
-class GDRTileSheet
-{
-public:
-    GDRTileSheet(const GDRTileset *tileset);
-    ~GDRTileSheet() = default;
-
-    inline const glm::vec2* getSpriteCoords(int32_t gid) const
-    {
-        for (uint64_t i = 0; i < m_numSprites; i++) {
-            if (m_sheetData[i].gid == gid) {
-                return m_sheetData[i].coords;
-            }
-        }
-        N_Error("GDRTileSheet::getSpriteCoords: bad gid");
-    }
-
-    inline const GDRSprite *getSprites(void) const
-    { return m_sheetData; }
-    inline GDRSprite *getSprites(void)
-    { return m_sheetData; }
-    inline uint64_t numSprites(void) const
-    { return m_numSprites; }
-    inline uint64_t getSheetWidth(void) const
-    { return m_sheetWidth; }
-    inline uint64_t getSheetHeight(void) const
-    { return m_sheetHeight; }
-    inline uint64_t getTileWidth(void) const
-    { return m_tileWidth; }
-    inline uint64_t getTileHeight(void) const
-    { return m_tileHeight; }
-    inline int32_t getFirstGID(void) const
-    { return m_firstGid; }
-private:
-    GDRSprite* m_sheetData;
-    uint64_t m_numSprites;
-
-    uint64_t m_sheetWidth;
-    uint64_t m_sheetHeight;
-    uint64_t m_tileWidth;
-    uint64_t m_tileHeight;
-    
-    int32_t m_firstGid;
-};
-
 class GDRTileset
 {
 public:
     inline GDRTileset(void) = default;
     ~GDRTileset() = default;
 
-    void Parse(GDRMap *mapData, const json& data, const eastl::vector<json>& tilesets);
+    void Parse(uint64_t index, GDRMap *mapData, const json& data, const eastl::vector<json>& tilesets);
     void updateSpriteData(void);
-    inline void updateSpriteData(const GDRTile *tile, uint64_t coords)
-    {
-        m_spriteData->getSprites()[coords].gid = tile->gid;
-    }
 
-    inline const eastl::vector<eastl::vector<GDRTile>>& getTiles(void) const
-    { return m_tiles; }
+    inline const glm::vec2* getSpriteCoords(uint32_t gid) const
+    {
+        // clear the flags
+        gid &= ~(TILE_FLIPPED_HORZ | TILE_FLIPPED_DIAG | TILE_FLIPPED_VERT);
+
+        // do the search
+        for (uint64_t i = 0; i < m_tileCount; ++i) {
+            if (m_tileData[i].gid == gid)
+                return m_tileData[i].coords;
+        }
+        return NULL;
+    }
+    inline const GDRTile *getTiles(void) const
+    { return m_tileData; }
+    inline GDRTile *getTiles(void)
+    { return m_tileData; }
     inline const GDRMap *getMap(void) const
     { return m_mapData; }
     inline GDRMap *getMap(void)
     { return m_mapData; }
-    inline const GDRTileSheet* getSpriteData(void) const
-    { return m_spriteData; }
-    inline GDRTileSheet* getSpriteData(void)
-    { return m_spriteData; }
     inline const char *getSource(void) const
     { return m_source.c_str(); }
     inline const char *getName(void) const
@@ -377,10 +315,8 @@ public:
     { return m_firstGid; }
 private:
     GDRMapPropertyList m_properties;
-
-    eastl::vector<eastl::vector<GDRTile>> m_tiles;
+    GDRTile *m_tileData;
     GDRMap *m_mapData;
-    GDRTileSheet* m_spriteData;
     std::string m_name;
     std::string m_source;
 
@@ -687,7 +623,7 @@ private:
     void ParseData(const json& data);
 
     GDRMap *m_mapData;
-    GDRTile *m_tileData;
+    GDRTile *m_tileData; // points to a tileset's tile data
 
     uint64_t m_dataFmt;
     uint64_t m_width;

@@ -105,12 +105,14 @@ void Map_LoadTilesets(GDRMap *mapData, const json& data)
 {
     mapData->allocTSJBuffers();
     GDRTileset *tileset = mapData->getTilesets();
+    uint64_t tilesetIndex = 0;
 
     for (const auto& i : data.at("tilesets")) {
         construct(tileset);
 
-        tileset->Parse(mapData, i, mapData->getTSJBuffers());
+        tileset->Parse(tilesetIndex, mapData, i, mapData->getTSJBuffers());
         tileset++;
+        tilesetIndex++;
     }
 }
 
@@ -285,6 +287,104 @@ void GDRMapLayer::ParseBase(GDRMap *mapData, const json& data, const char *typeS
     m_visible = data.at("visible");
 }
 
+#if 0 // broken
+static void Map_UpdateTilesets(const GDRTile *tileMap, const uint64_t width, const uint64_t height, GDRMap *mapData)
+{
+    const GDRTile *tile;
+    GDRTileset *tileset;
+
+    // set the tileset stuff
+    for (uint64_t x = 0; x < width; x++) {
+        for (uint64_t y = 0; y < height; y++) {
+            tile = &tileMap[y * width + x];
+            
+            if (tile->tilesetIndex < mapData->numTilesets()) {
+                tileset = mapData->getTilesets()[tile->tilesetIndex];
+//                tileset->updateSpriteData(tile, y * width + x);
+            }
+        }
+    }
+}
+#endif
+
+void GDRTileLayer::ParseData(const json& data)
+{
+    // if the map has already been loaded (maps are reloaded either on command or every time a non-fatal error occurs)
+    if (!m_tileData)
+        m_tileData = (GDRTile *)Hunk_Alloc(sizeof(GDRTile) * (m_width * m_height), "tileData", h_low);
+    
+    // reset it all regardless of whether its begin reloaded or not
+    memset(m_tileData, 0, sizeof(GDRTile) * (m_width * m_height));
+
+    // convert the gids to map tiles
+    tileIndex = 0;
+    for (uint64_t y = 0; y < m_height; y++) {
+        for (uint64_t x = 0; x < m_width; x++) {
+            gid = [tileIndex];
+
+            // get the gid's flags
+            bool flippedHorz = gid & TILE_FLIPPED_HORZ;
+            bool flippedDiag = gid & TILE_FLIPPED_DIAG;
+            bool flippedVert = gid & TILE_FLIPPED_VERT;
+
+            // clear them all
+            gid &= ~(TILE_FLIPPED_HORZ | TILE_FLIPPED_VERT | TILE_FLIPPED_DIAG);
+
+            for (uint64_t i = m_mapData->numTilesets() - 1; i >= 0; --i) {
+                const GDRTileset *tileset = &m_mapData->getTilesets()[i];
+
+                if (tileset->getFirstGID() <= gid) {
+                    m_tileData[y * m_width + x] = tileset->getTiles()[gid - tileset->getFirstGID()];
+                }
+            }
+
+            tileIndex++;
+        }
+    }
+
+    // give it back to the zone
+    Z_ChangeTag(tileData, TAG_PURGELEVEL);
+}
+
+#if 0
+void GDRTileset::updateSpriteData(void)
+{
+    const GDRMapLayer *it = m_mapData->getLayers();
+
+    for (uint64_t i = 0; i < m_mapData->numLayers(); ++i) {
+        if (it->getType() != MAP_LAYER_TILE) // skip if not a tilelayer
+            continue;
+        
+        const GDRTile *tileData = ((const GDRTileLayer *)it->data())->getTiles();
+        const GDRTile *tile;
+        for (uint64_t x = 0; x < it->getWidth(); x++) {
+            for (uint64_t y = 0; y < it->getHeight(); y++) {
+                tile = &tileData[y * it->getWidth() + x];
+
+                // is it the index?
+                if (tile->tilesetIndex == eastl::distance(m_mapData->getTilesets(), this))
+                    m_spriteData->getSprites()[y * it->getWidth() + x].gid = tile->gid;
+            }
+        }
+        ++it;
+    }
+}
+#endif
+
+void GDRTileLayer::Parse(const GDRMapLayer *layerData, GDRMap *mapData, const json& data)
+{
+#define check_json(key) if (!data.contains(key)) N_Error("Map_LoadTileLayer: tmj file is invalid, reason: missing required parm '" key "'")
+    check_json("data");
+#undef check_json
+
+    m_width = layerData->getWidth();
+    m_height = layerData->getHeight();
+    m_mapData = mapData;
+
+    // get the tile data
+    ParseData(data);
+}
+
 static const std::string base64_chars = 
              "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
              "abcdefghijklmnopqrstuvwxyz"
@@ -454,7 +554,7 @@ static char *Map_DecompressGZIP(const char *data, uint64_t inlen, uint64_t *outl
     return out;
 }
 
-uint32_t* GDRTileLayer::LoadCSV(const json& data)
+uint32_t* GDRTileset::LoadCSV(const json& data)
 {
     uint32_t *data32;
     const uint64_t *csv_ptr;
@@ -471,7 +571,7 @@ uint32_t* GDRTileLayer::LoadCSV(const json& data)
     return data32;
 }
 
-uint32_t* GDRTileLayer::LoadBase64(const json& data)
+uint32_t* GDRTileset::LoadBase64(const json& data)
 {
     const std::string& compression = data.at("compression");
     std::string str = data.at("data");
@@ -509,130 +609,8 @@ uint32_t* GDRTileLayer::LoadBase64(const json& data)
     return data32;
 }
 
-#if 0 // broken
-static void Map_UpdateTilesets(const GDRTile *tileMap, const uint64_t width, const uint64_t height, GDRMap *mapData)
-{
-    const GDRTile *tile;
-    GDRTileset *tileset;
 
-    // set the tileset stuff
-    for (uint64_t x = 0; x < width; x++) {
-        for (uint64_t y = 0; y < height; y++) {
-            tile = &tileMap[y * width + x];
-            
-            if (tile->tilesetIndex < mapData->numTilesets()) {
-                tileset = mapData->getTilesets()[tile->tilesetIndex];
-//                tileset->updateSpriteData(tile, y * width + x);
-            }
-        }
-    }
-}
-#endif
-
-void GDRTileLayer::ParseData(const json& data)
-{
-    uint32_t *tileData, gid, tileIndex;
-
-    // its csv
-    if (!json_contains("encoding")) {
-        m_dataFmt = MAP_FMT_CSV;
-        tileData = LoadCSV(data);
-    }
-    else {
-        tileData = LoadBase64(data);
-    }
-    
-    // if the map has already been loaded (maps are reloaded either on command or every time a non-fatal error occurs)
-    if (!m_tileData)
-        m_tileData = (GDRTile *)Hunk_Alloc(sizeof(GDRTile) * (m_width * m_height), "tileData", h_low);
-    
-    // reset it all regardless of whether its begin reloaded or not
-    memset(m_tileData, 0, sizeof(GDRTile) * (m_width * m_height));
-
-    // convert the gids to map tiles
-#if 1
-    tileIndex = 0;
-    for (uint64_t y = 0; y < m_height; y++) {
-        for (uint64_t x = 0; x < m_width; x++) {
-            gid = tileData[tileIndex];
-
-            // get the gid's flags
-            bool flippedHorz = gid & TILE_FLIPPED_HORZ;
-            bool flippedDiag = gid & TILE_FLIPPED_DIAG;
-            bool flippedVert = gid & TILE_FLIPPED_VERT;
-
-            // clear them all
-            gid &= ~(TILE_FLIPPED_HORZ | TILE_FLIPPED_VERT | TILE_FLIPPED_DIAG);
-
-            tileIndex++;
-        }
-    }
-#else
-    for (uint64_t x = 0; x < m_width; x++) {
-        for (uint64_t y = 0; y < m_height; y++) {
-            int32_t gid = tileData[y * m_width + x];
-
-            // find the tileset index
-            const uint64_t tilesetIndex = m_mapData->getTilesetIndex(gid);
-
-            if (tilesetIndex < m_mapData->numTilesets()) {
-                // if valid, set up the map tile with the tileset
-                GDRTileset *tileset = &m_mapData->getTilesets()[tilesetIndex];
-                
-                construct(&m_tileData[y * m_width + x], tilesetIndex, gid, tileset->getFirstGID());
-                // if the tileset's sprite data is modified here, it'll segfault for some reason on the
-                // constructor
-            }
-            else {
-                // otherwise, make it null
-                construct( &m_tileData[y * m_width + x], m_mapData->numTilesets(), gid, 0 );
-            }
-        }
-    }
-#endif
-
-    // give it back to the zone
-    Z_ChangeTag(tileData, TAG_PURGELEVEL);
-}
-
-void GDRTileset::updateSpriteData(void)
-{
-    const GDRMapLayer *it = m_mapData->getLayers();
-
-    for (uint64_t i = 0; i < m_mapData->numLayers(); ++i) {
-        if (it->getType() != MAP_LAYER_TILE) // skip if not a tilelayer
-            continue;
-        
-        const GDRTile *tileData = ((const GDRTileLayer *)it->data())->getTiles();
-        const GDRTile *tile;
-        for (uint64_t x = 0; x < it->getWidth(); x++) {
-            for (uint64_t y = 0; y < it->getHeight(); y++) {
-                tile = &tileData[y * it->getWidth() + x];
-
-                // is it the index?
-                if (tile->tilesetIndex == eastl::distance(m_mapData->getTilesets(), this))
-                    m_spriteData->getSprites()[y * it->getWidth() + x].gid = tile->gid;
-            }
-        }
-        ++it;
-    }
-}
-
-void GDRTileLayer::Parse(const GDRMapLayer *layerData, GDRMap *mapData, const json& data)
-{
-#define check_json(key) if (!data.contains(key)) N_Error("Map_LoadTileLayer: tmj file is invalid, reason: missing required parm '" key "'")
-    check_json("data");
-#undef check_json
-
-    m_width = layerData->getWidth();
-    m_height = layerData->getHeight();
-    m_mapData = mapData;
-
-    // get the tile data
-    ParseData(data);
-}
-
-void GDRTileset::Parse(GDRMap *mapData, const json& data, const eastl::vector<json>& tsj)
+void GDRTileset::Parse(uint64_t index, GDRMap *mapData, const json& data, const eastl::vector<json>& tsj)
 {
     m_mapData = mapData;
     m_properties.LoadProps(data);
@@ -695,10 +673,51 @@ void GDRTileset::Parse(GDRMap *mapData, const json& data, const eastl::vector<js
     m_imageWidth = tsjData->at("imagewidth");
     m_imageHeight = tsjData->at("imageheight");
 
-    Hunk_Print();
-    Z_Print(true);
-    m_spriteData = (GDRTileSheet *)Hunk_Alloc(sizeof(*m_spriteData), "spriteData", h_low);
-    construct(m_spriteData, this);
+    RE_SubmitMapTilesheet(m_source.c_str(), BFF_FetchInfo());
+
+    // generate the texture coordinates
+    auto genCoords = [&](const glm::vec2& sheetDims, const glm::vec2& spriteDims, const glm::vec2& coords, glm::vec2 tex[4]) {
+        glm::vec2 min = { (coords.x * spriteDims.x) / sheetDims.x, (coords.y * spriteDims.y) / sheetDims.y };
+        glm::vec2 max = { ((coords.x + 1) * spriteDims.x) / sheetDims.x, ((coords.y + 1) * spriteDims.y) / sheetDims.y };
+
+        tex[0] = { min.x, min.y };
+        tex[1] = { max.x, min.y };
+        tex[2] = { max.x, max.y };
+        tex[3] = { min.x, max.y };
+    };
+
+    const uint64_t tileCountX = m_imageWidth / m_tileWidth;
+    const uint64_t tileCountY = m_imageHeight / m_tileHeight;
+    const double tileVertexWidth = floor(m_imageWidth / m_tileWidth);
+    const uint32_t lastgid = tileVertexWidth / floor(m_imageHeight / m_tileHeight) * m_firstGid - 1;
+    uint32_t tileIndex = 0;
+
+    m_tileData = (GDRTile *)Hunk_Alloc(sizeof(GDRTile) * (tileCountX * tileCountY), "tilesetData", h_low);
+    const glm::vec2 imageDims = { m_imageWidth, m_imageHeight };
+    const glm::vec2 tileDims = { m_tileWidth, m_tileHeight };
+    
+    for (uint64_t x = 0; x < tileCountX; ++x) {
+        for (uint64_t y = 0; x < tileCountY; ++y) {
+            m_tileData[y * tileCountX + x].tilesetIndex = index;
+            m_tileData[y * tileCOuntX + x].gid = m_firstGid + tileIndex;
+
+            uint32_t gid = m_tileData[y * tileCountX]
+            // clear the flags
+            gid &= ~(TILE_FLIPPED_HORZ | TILE_FLIPPED_DIAG | TILE_FLIPPED_VERT);
+            
+            // set the flags
+            if (_gid & TILE_FLIPPED_HORZ)
+                flags |= TILE_FLIPPED_HORZ;
+            if (_gid & TILE_FLIPPED_DIAG)
+                flags |= TILE_FLIPPED_DIAG;
+            if (_gid & TILE_FLIPPED_VERT)
+                flags |= TILE_FLIPPED_VERT;
+            
+            construct(&m_tileData[y * tileCountX + x], index, tileIndex + m_firstGid);
+            genCoords(imageDims, tileDims, glm::vec2(x, y), m_tileData[y * tileCountX + x].coords);
+            tileIndex++;
+        }
+    }
 
     Con_Printf(DEV,
         "\n"
@@ -713,48 +732,6 @@ void GDRTileset::Parse(GDRMap *mapData, const json& data, const eastl::vector<js
         "source: %s\n"
         "name: %s\n",
     m_tileWidth, m_tileHeight, m_spacing, m_columns, m_imageWidth, m_imageHeight, m_tileCount, m_source.c_str(), m_name.c_str());
-}
-
-GDRTileSheet::GDRTileSheet(const GDRTileset *tileset)
-{
-    auto genCoords = [&](const glm::vec2& sheetDims, const glm::vec2& spriteDims, const glm::vec2& coords, glm::vec2 tex[4]) {
-        glm::vec2 min = { (coords.x * spriteDims.x) / sheetDims.x, (coords.y * spriteDims.y) / sheetDims.y };
-        glm::vec2 max = { ((coords.x + 1) * spriteDims.x) / sheetDims.x, ((coords.y + 1) * spriteDims.y) / sheetDims.y };
-
-        tex[0] = { min.x, min.y };
-        tex[1] = { max.x, min.y };
-        tex[2] = { max.x, max.y };
-        tex[3] = { min.x, max.y };
-    };
-
-    int64_t gid;
-
-    m_sheetWidth = tileset->getImageWidth();
-    m_sheetHeight = tileset->getImageHeight();
-    m_tileWidth = tileset->getTileWidth();
-    m_tileHeight = tileset->getTileHeight();
-    m_firstGid = tileset->getFirstGID();
-
-    gid = m_firstGid;
-
-    const uint64_t tileCountX = m_sheetWidth / m_tileWidth;
-    const uint64_t tileCountY = m_sheetHeight / m_tileHeight;
-    const double tileVertexWidth = floor(m_sheetWidth / m_tileWidth);
-    const uint64_t lastgid = tileVertexWidth / floor(m_sheetHeight / m_tileHeight) * m_firstGid - 1;
-
-    m_numSprites = tileset->getTileCount();
-    m_sheetData = (GDRSprite *)Hunk_Alloc(sizeof(GDRSprite) * tileset->getTileCount(), "sheetData", h_low);
-    
-    GDRSprite *spriteIt = m_sheetData;
-    for (uint64_t y = 0; y < tileCountY; ++y) {
-        for (uint64_t x = 0; x < tileCountX; ++x) {
-            gid = 
-            genCoords({ m_sheetWidth, m_sheetHeight }, { m_tileWidth, m_tileHeight }, { x, y }, spriteIt->coords);
-            spriteIt++;
-            printf("%li ", gid);
-        }
-        printf("\n");
-    }
 }
 
 void GDRImageLayer::Parse(GDRMap *mapData, const json& data)
