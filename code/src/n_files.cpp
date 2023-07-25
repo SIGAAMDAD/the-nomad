@@ -298,7 +298,6 @@ file_t FS_OpenBFF(int32_t index)
 char* FS_CopyString( const char *in )
 {
 	char *out;
-	//out = S_Malloc( strlen( in ) + 1 );
 	out = (char *)Z_Malloc(strlen( in ) + 1, TAG_STATIC, &out, "fsCopyString");
 	strcpy( out, in );
 	return out;
@@ -320,17 +319,20 @@ uint64_t FS_LoadFile(const char *path, void **buffer)
 	fread(buf, fsize, 1, fp);
 	fclose(fp);
 	*buffer = buf;
-//	file_t fd = FS_FOpenRead(path);
-//	if (fd == FS_INVALID_HANDLE) {
-//		Con_Printf(ERROR, "FS_LoadFile: failed to load file named '%s'", path);
-//		*buffer = NULL;
-//		return 0;
-//	}
-//
-//	uint64_t fsize = FS_FileLength(fd);
-//	void *buf = Z_Malloc(fsize, TAG_FILE_USED, &buf, "filebuf");
-//	FS_Read(buf, fsize, fd);
-//	*buffer = buf;
+
+#if 0
+	file_t fd = FS_FOpenRead(path);
+	if (fd == FS_INVALID_HANDLE) {
+		Con_Printf(ERROR, "FS_LoadFile: failed to load file named '%s'", path);
+		*buffer = NULL;
+		return 0;
+	}
+
+	uint64_t fsize = FS_FileLength(fd);
+	void *buf = Z_Malloc(fsize, TAG_FILE_USED, &buf, "filebuf");
+	FS_Read(buf, fsize, fd);
+	*buffer = buf;
+#endif
 
 	return fsize;
 }
@@ -623,10 +625,10 @@ void FS_FClose(file_t f)
 	fs_loadStack--;
 }
 
-char* FS_GetOSPath(file_t f)
+const char* FS_GetOSPath(file_t f)
 {
 	fileHandle_t *file;
-	static char *ospath;
+	static const char *ospath;
 
 	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
 		N_Error("FS_GetOSPath: out of range");
@@ -637,6 +639,8 @@ char* FS_GetOSPath(file_t f)
 
 	return ospath;
 }
+
+file_t FS_FOpenRW()
 
 file_t FS_FOpenWrite(const char *filepath)
 {
@@ -661,15 +665,14 @@ file_t FS_FOpenWrite(const char *filepath)
 	if (FS_IsChunk(filepath)) {
 		N_Error("FS_FOpenWrite: attempted to create write stream for bff chunk %s", filepath);
 	}
-	else {
-		ospath = FS_BuildOSPath(fs_homepath, NULL, filepath);
-		N_strncpyz(f->name, filepath, MAX_GDR_PATH);
-		f->data.fp = Sys_FOpen(ospath, "wb");
-		if (!f->data.fp) {
-			N_Error("FS_FOpenWrite: failed to open file %s", ospath);
-			return FS_INVALID_HANDLE;
-		}
+	ospath = FS_BuildOSPath(fs_homepath, NULL, filepath);
+	N_strncpyz(f->name, filepath, MAX_GDR_PATH);
+	f->data.fp = Sys_FOpen(ospath, "wb");
+	if (!f->data.fp) {
+		N_Error("FS_FOpenWrite: failed to open file %s", ospath);
+		return FS_INVALID_HANDLE;
 	}
+	
 	f->used = qtrue;
 	fs_loadStack++;
 	return fd;

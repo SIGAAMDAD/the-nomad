@@ -192,23 +192,33 @@ extern file_t logfile; // VM USERS DO NOT USE!!!!!!!!!!!!
 
 void FS_Init(void);
 
-uint32_t FS_LoadStack(void);
+
+/* engine and vm file utilities */
 uint64_t FS_Write(const void *data, uint64_t size, file_t f);
+qboolean FS_FileExists(const char *file);
+fileOffset_t FS_FileSeek(file_t f, fileOffset_t offset, uint32_t whence);
+
+/* vm specific file handling */
+void FS_VM_FOpenRead(const char *path, file_t *f);
+void FS_VM_FClose(file_t *f);
+void FS_VM_CreateTmp(char *name, const char *ext, file_t *f);
+
+/* engine specific file handling */
+uint32_t FS_LoadStack(void);
 uint64_t FS_Read(void *data, uint64_t size, file_t f);
 qboolean FS_Initialized(void);
 file_t FS_OpenBFF(int32_t index);
 file_t FS_FOpenRead(const char *filepath);
 file_t FS_FOpenWrite(const char *filepath);
 file_t FS_CreateTmp(char **name, const char *ext);
-char* FS_GetOSPath(file_t f);
+file_t FS_FOpenRW(const char *filepath, file_t *f);
+const char* FS_GetOSPath(file_t f);
 void FS_ThePurge(void);
 void* FS_GetBFFData(file_t handle);
 void FS_FClose(file_t handle);
 uint64_t FS_FileLength(file_t f);
 void FS_Remove(const char *ospath);
 uint64_t FS_FileTell(file_t f);
-fileOffset_t FS_FileSeek(file_t f, fileOffset_t offset, uint32_t whence);
-qboolean FS_FileExists(const char *file);
 int32_t FS_LastBFFIndex(void);
 void FS_FreeFile(void *buffer);
 uint64_t FS_LoadFile(const char *path, void **buffer);
