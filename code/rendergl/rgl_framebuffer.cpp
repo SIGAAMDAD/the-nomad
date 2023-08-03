@@ -179,6 +179,7 @@ void RE_EndFramebuffer(void)
     nglBindFramebuffer(GL_READ_FRAMEBUFFER, fbo->fboId);
 
     GLenum blit = GL_NEAREST;
+    GLenum clear = GL_COLOR_BUFFER_BIT;
     
     // check if ssaa is on (intermediate's dimensions will always be the viewport's dimensions)
     if (fbo->width != intermediate->width || fbo->height != intermediate->height)
@@ -190,6 +191,7 @@ void RE_EndFramebuffer(void)
                        blit);
     
     nglBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    nglBindFramebuffer(GL_READ_FRAMEBUFFER, intermediate->fboId);
     nglClear(GL_COLOR_BUFFER_BIT);
     nglDisable(GL_DEPTH_TEST);
     R_UnbindShader();

@@ -6,6 +6,7 @@
 #include "ngl.h"
 #include "rgl_public.h"
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_sdl2.h"
 #include <cglm/cglm.h>
@@ -131,13 +132,17 @@ typedef struct
     uint32_t height;
 } framebuffer_t;
 
+#pragma pack(push, 1)
 typedef struct
 {
+    uint32_t bufferSize;
     uint32_t target;
-    uint32_t bufSize;
-    uint32_t bufferId;
     uint32_t bindingId;
+    uint32_t index;
+    uint32_t bufferId;
 } shaderBuffer_t;
+#pragma pack(pop)
+
 #if 0
 typedef struct
 {
@@ -320,6 +325,7 @@ void load_gl_procs(NGLloadproc load);
 extern Renderer *renderer;
 extern renderImport_t ri;
 extern glContext_t glContext;
+extern shader_t *pintShader;
 
 // cvars
 extern cvar_t *r_ticrate;

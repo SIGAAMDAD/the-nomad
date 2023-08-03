@@ -41,6 +41,45 @@
 #define VSTR(x) VSTR_HELPER(x)
 #define NOMAD_VERSION_STRING "glnomad v" VSTR(_NOMAD_VERSION) "." VSTR(_NOMAD_VERSION_UPDATE) "." VSTR(_NOMAD_VERSION_PATCH)
 
+// disable name-mangling
+#ifdef __cplusplus
+#define GO_AWAY_MANGLE extern "C"
+#else
+#define GO_AWAY_MANGLE
+#endif
+
+#include "n_pch.h"
+
+#undef assert
+#define assert(x)
+#if defined(_NOMAD_DEBUG) && !defined(Q3_VM)
+#undef assert
+inline void __nomad_assert_fail(const char* expression, const char* file, const char* func, unsigned line)
+{
+	N_Error(
+		"Assertion '%s' failed (Main Engine):\n"
+		"  \\file: %s\n"
+		"  \\function: %s\n"
+		"  \\line: %u\n\nIf this is an SDL2 error, here is the message string: %s\n",
+	expression, file, func, line, SDL_GetError());
+}
+#define assert(x) (((x)) ? void(0) : __nomad_assert_fail(#x,__FILE__,__func__,__LINE__))
+#else
+#define assert(x)
+#endif
+#ifndef Q3_VM
+#include <GDRLib/config.hpp>
+#else
+#define GDR_ATTRIBUTE(x)
+#define GDR_ASSERT(x)
+#define GDR_ASSERT_MSG(x)
+#define GDR_ASSERT_FAIL(x)
+#define GDR_INLINE
+#define GDR_WARN_UNUSED
+#define MAX_GDR_PATH 64
+#define GDR_NORETURN
+#endif
+
 #ifdef Q3_VM
 #include "bg_lib.h"
 #else
@@ -52,8 +91,6 @@
 #include <math.h>
 #include <limits.h>
 #endif
-
-#include "n_pch.h"
 
 typedef enum { qfalse = 0, qtrue = 1 } qboolean;
 
@@ -109,24 +146,18 @@ extern const vec2_t vec2_origin;
 #define arraylen(arr) (sizeof(arr)/sizeof(*arr))
 
 // math stuff
-#define VectorAdd(a,b,c) (c[0]=a[0]+b[0];c[1]=a[1]+b[1];)
-#define VectorSubtract(a,b,c) {c[0]=a[0]-b[0];c[1]=a[1]-b[1];}
+#define VectorAdd(a,b,c) (c[0]=a[0]+b[0],c[1]=a[1]+b[1])
+#define VectorSubtract(a,b,c) (c[0]=a[0]-b[0],c[1]=a[1]-b[1])
 #define DotProduct(x,y) (x[0]*y[0]+x[1]*y[1])
-#define VectorCopy(x,y) (x[0]=y[0];x[1]=y[1];)
+#define VectorCopy(x,y) (x[0]=y[0],x[1]=y[1])
 void CrossProduct(const vec2_t v1, const vec2_t v2, vec2_t out);
 float disBetweenOBJ(const vec2_t src, const vec2_t tar);
 float Q_rsqrt(float number);
 float Q_root(float x);
 
 #ifndef __cplusplus
-static qboolean N_strtobool(const char* s)
-{
-	return N_stricmp(s, "true") ? qtrue : qfalse;
-}
-static const char* N_booltostr(qboolean b)
-{
-	return b ? "true" : "false";
-}
+qboolean N_strtobool(const char* s);
+const char* N_booltostr(qboolean b);
 #endif
 
 #include "n_console.h"

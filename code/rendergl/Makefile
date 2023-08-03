@@ -22,7 +22,7 @@ VERSION       = 1
 VERSION_UPDATE= 1
 VERSION_PATCH = 0
 
-INCLUDE       =-Idependencies/include/ -Idependencies/include/EA/ $(OS_INCLUDE) -I. -Icode/
+INCLUDE       =-Idependencies/include/ -Idependencies/include/EA/ $(OS_INCLUDE) -I. -Icode/ -Idependencies/include/jdk
 VERSION_DEFINE=-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPDATE) -D_NOMAD_VERSION_PATCH=$(VERSION_PATCH)
 
 .PHONY: all clean
@@ -56,7 +56,6 @@ INTERNAL_OBJS=\
 	$(O)/rendergl/rgl_texture.o \
 	$(O)/rendergl/rgl_framebuffer.o \
 	$(O)/rendergl/rgl_vertexcache.o \
-	$(O)/rendergl/rgl_shaderbuffer.o \
 	$(O)/rendergl/ngl_proc.o \
 	$(O)/rendergl/imgui.o \
 	$(O)/rendergl/imgui_draw.o \
@@ -69,8 +68,8 @@ INTERNAL_OBJS=\
 $(O)/rendergl/%.o: $(SDIR)/rendergl/%.cpp
 	$(CC) $(CFLAGS) -shared -fPIC -o $@ -c $<
 
-$(LIB): $(INTERNAL_OBJS) $(ENGINE_OBS)
-	$(CC) $(CFLAGS) $(INTERNAL_OBJS) -shared -fPIC -o $(LIB) $(LIB_PREFIX)/libEASTL.a
+$(LIB): $(INTERNAL_OBJS)
+	$(CC) $(CFLAGS) $(INTERNAL_OBJS)-shared -fPIC -o $(LIB) $(LIB_PREFIX)/libEASTL.a
 
 clean:
 	rm -rf $(INTERNAL_OBJS)

@@ -17,7 +17,7 @@ extern const vec2_t vec2_origin;
 #define VectorAdd(a,b,c) ((c)[0]=(a)[0]+(b)[0];(c)[1]=(a)[1]+(b)[1];)
 #define VectorSubtract(a,b,c) ((c)[0]=(a)[0]-(b)[0];(c)[1]=(a)[1]-(b)[1];)
 #define DotProduct(x,y) ((x)[0]*(y)[0]+(x)[1]*(y)[1])
-#define VectorCopy(x,y) ((x)[0]=(y)[0];(x)[1]=(y)[1];)
+#define VectorCopy(x,y) ((x)[0]=(y)[0];(x)[1]=(y)[1])
 #define VectorScale(in,scale,out) ((out)[0]=(in)[0]*(scale);(out)[1]=(in)[1]*(scale);)
 #define VectorClear(x) ((x)[0]=0;(x)[1]=0;)
 

@@ -45,8 +45,6 @@ Dependencies
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition_variable.hpp>
 
-void *Mem_Alloc(const uint32_t size);
-void Mem_Free(void *p);
 // EASTL, a salute to EA where they suck everywhere else but do good with c++ libraries
 #include <EASTL/array.h>
 #include <EASTL/vector.h>

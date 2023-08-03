@@ -106,7 +106,7 @@ static void SCF_ParseFile(void)
     }
 }
 
-static void Cvar_Load(const json& data, const std::string& name, cvar_t* cvar)
+static void Cvar_Load(const json& data, const json_string& name, cvar_t* cvar)
 {
     if (!(cvar->flags & CVAR_SAVE)) {
         return;
@@ -117,7 +117,7 @@ static void Cvar_Load(const json& data, const std::string& name, cvar_t* cvar)
     if (!data.contains(name)) {
         N_Error("Cvar_Load: cvar %s required in configuration file to run the game", name.c_str());
     }
-    const std::string& value = data[name];
+    const json_string& value = data[name];
     if (value.size() >= 64)
         N_Error("Cvar_Load: cvar value is too long (max of 64 characters), was %lu characters long", value.size());
 

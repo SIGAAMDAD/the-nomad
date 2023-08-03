@@ -9,31 +9,8 @@ file_t logfile;
 byte *hunkbase = NULL;
 uint64_t hunksize = 0;
 
-#if 0
-typedef struct {
-	uint64_t magic;
-	uint64_t size;
-} hunkHeader_t;
-
-typedef struct {
-	uint64_t mark;
-	uint64_t permanent;
-	uint64_t temp;
-	uint64_t tempHighwater;
-} hunkUsed_t;
-
-typedef struct hunkblock_s {
-	uint64_t size;
-	byte printed;
-	struct hunkblock_s *next;
-	const char *label;
-	const char *file;
-	uint64_t line;
-} hunkblock_t;
-
-hunkUsed_t hunk_low, hunk_high;
-hunkUsed_t *hunk_permanent, *hunk_temp;
-#endif
+extern uint64_t hunk_low_used;
+extern uint64_t hunk_high_used;
 
 void Mem_Init(void);
 void Z_Shutdown(void);
@@ -41,93 +18,64 @@ void Z_Shutdown(void);
 void Memory_Shutdown(void)
 {
 	Con_Printf("Memory_Shutdown: deallocating allocation daemons");
-	free(hunkbase);
 	Z_Shutdown();
     Mem_Shutdown();
 }
 
+void Zone_Stats(void);
+
 static void Com_Meminfo_f(void)
 {
-	uint64_t unused;
-
-#if 0
-	Con_Printf( "%8li bytes total hunk", hunksize );
+	Con_Printf( "%8lu bytes total hunk", hunksize );
+	Con_Printf( "%8lu bytes remaining", hunksize - hunk_low_used - hunk_low_used );
+	Con_Printf( "%8p  hunk top address", (void *)(hunkbase + hunksize) );
+	Con_Printf( "%8p  hunk bottom address", (void *)hunkbase );
 	Con_Printf( " " );
-	Con_Printf( "%8li low mark\n", hunk_low.mark );
-	Con_Printf( "%8li low permanent", hunk_low.permanent );
-	if ( hunk_low.temp != hunk_low.permanent ) {
-		Con_Printf( "%8li low temp", hunk_low.temp );
-	}
-	Con_Printf( "%8li low tempHighwater", hunk_low.tempHighwater );
+	Con_Printf( "%8lu low mark", hunk_low_used );
+	Con_Printf( "%8p  low used address", (void *)(hunkbase + hunk_low_used) );
+	Con_Printf( "%8lu high mark", hunk_high_used );
+	Con_Printf( "%8p  high used address", (void *)(hunkbase + hunksize - hunk_high_used));
 	Con_Printf( " " );
-	Con_Printf( "%8li high mark", hunk_high.mark );
-	Con_Printf( "%8li high permanent", hunk_high.permanent );
-	if ( hunk_high.temp != hunk_high.permanent ) {
-		Con_Printf( "%8li high temp", hunk_high.temp );
-	}
-	Con_Printf( "%8li high tempHighwater", hunk_high.tempHighwater );
-	Con_Printf( " " );
-	Con_Printf( "%8li total hunk in use", hunk_low.permanent + hunk_high.permanent );
-	unused = 0;
-	if ( hunk_low.tempHighwater > hunk_low.permanent ) {
-		unused += hunk_low.tempHighwater - hunk_low.permanent;
-	}
-	if ( hunk_high.tempHighwater > hunk_high.permanent ) {
-		unused += hunk_high.tempHighwater - hunk_high.permanent;
-	}
-	Con_Printf( "%8li unused highwater", unused );
-	Con_Printf( " " );
-#endif
-
-//	Zone_Stats( "main", mainzone, !Q_stricmp( Cmd_Argv(1), "main" ) || !Q_stricmp( Cmd_Argv(1), "all" ), &st );
-//	Con_Printf( "%8li bytes total main zone\n\n", mainzone->size );
-//	Con_Printf( "%8li bytes in %i main zone blocks%s\n", st.zoneBytes, st.zoneBlocks,
-//		st.zoneSegments > 1 ? va( " and %i segments", st.zoneSegments ) : "" );
-//	Con_Printf( "        %8li bytes in botlib\n", st.botlibBytes );
-//	Con_Printf( "        %8li bytes in renderer\n", st.rendererBytes );
-//	Con_Printf( "        %8li bytes in other\n", st.zoneBytes - ( st.botlibBytes + st.rendererBytes ) );
-//	Con_Printf( "        %8li bytes in %i free blocks\n", st.freeBytes, st.freeBlocks );
-//	if ( st.freeBlocks > 1 ) {
-//		Con_Printf( "        (largest: %i bytes, smallest: %i bytes)\n\n", st.freeLargest, st.freeSmallest );
-//	}
-//
-//	Zone_Stats( "small", smallzone, !Q_stricmp( Cmd_Argv(1), "small" ) || !Q_stricmp( Cmd_Argv(1), "all" ), &st );
-//	Con_Printf( "%8li bytes total small zone\n\n", smallzone->size );
-//	Con_Printf( "%8li bytes in %i small zone blocks%s\n", st.zoneBytes, st.zoneBlocks,
-//		st.zoneSegments > 1 ? va( " and %i segments", st.zoneSegments ) : "" );
-//	Con_Printf( "        %8li bytes in %i free blocks\n", st.freeBytes, st.freeBlocks );
-//	if ( st.freeBlocks > 1 ) {
-//		Con_Printf( "        (largest: %i bytes, smallest: %i bytes)\n\n", st.freeLargest, st.freeSmallest );
-//	}
+	Zone_Stats();
 }
 
-static uint64_t Com_TouchMemory(void)
+uint64_t Com_TouchMemory(void)
 {
-	uint64_t i, j, sum;
+	uint64_t i, j, sum, start, end;
 
+	Z_CheckHeap();
+
+	start = Sys_Milliseconds();
 	sum = 0;
-#if 0
-	j = hunk_low.permanent >> 2;
+
+	j = hunk_low_used >> 2;
 	for ( i = 0 ; i < j ; i+=64 ) {			// only need to touch each page
 		sum += ((uint32_t *)hunkbase)[i];
 	}
 
-	i = ( hunksize - hunk_high.permanent ) >> 2;
-	j = hunk_high.permanent >> 2;
+	i = ( hunksize - hunk_high_used ) >> 2;
+	j = hunk_high_used >> 2;
 	for (  ; i < j ; i+=64 ) {			// only need to touch each page
 		sum += ((uint32_t *)hunkbase)[i];
 	}
-#endif
 
 	Z_TouchMemory(&sum);
 
+	end = Sys_Milliseconds();
+
+	Con_Printf("Com_TouchMemory: %lu msec", end - start);
+
 	return sum;
+}
+
+static void Com_TouchMemory_f(void)
+{
+	Com_TouchMemory();
 }
 
 void Memory_Init(void)
 {
 	Con_Printf("Memory_Init: initializing allocation daemons");
-	Mem_Init();
 
 	// make sure the file system has allocated and "not" freed any temp blocks
 	// this allows the config and product id files ( journal files too ) to be loaded
@@ -139,6 +87,7 @@ void Memory_Init(void)
 	}
 #endif
 
+	Mem_Init();
 	uint64_t zonesize;
 
     int i = I_GetParm("-ram");
@@ -152,10 +101,11 @@ void Memory_Init(void)
         hunksize = DEFAULT_HEAP_SIZE;
     }
 	
-    hunkbase = (byte *)calloc(hunksize, 1);
+    hunkbase = (byte *)memset(malloc(hunksize), 0, hunksize);
     if (!hunkbase) {
-        N_Error("Memory_Init: calloc() failed on %lu bytes when allocating the hunk", hunksize);
+        N_Error("Memory_Init: malloc() failed on %lu bytes when allocating the hunk", hunksize);
 	}
+	hunkbase = PADP(hunkbase, 64);
 	// initialize it all
 	Hunk_Clear();
 
@@ -165,12 +115,12 @@ void Memory_Init(void)
 	Z_Init();
 
 	Cmd_AddCommand("meminfo", Com_Meminfo_f);
+	Cmd_AddCommand("touchmemory", Com_TouchMemory_f);
 #if 0
 	Cmd_AddCommand("hunklogsmall", Hunk_SmallLog);
 	Cmd_AddCommand("hunklog", Hunk_Log);
 #endif
 }
-
 
 void Mem_Info(void)
 {

@@ -1,6 +1,8 @@
 #ifndef _N_SCF_
 #define _N_SCF_
 
+#ifndef Q3_VM
+
 #pragma once
 
 #define MAX_FOV_HEIGHT 100
@@ -62,6 +64,8 @@ extern cvar_t c_cheatsallowed;
 extern cvar_t z_minRam;
 extern cvar_t z_zoneMegs;
 
+#endif
+
 typedef enum
 {
     kbMove_n,
@@ -96,6 +100,8 @@ typedef enum
     NUMBINDS
 } bind_t;
 
+#ifndef Q3_VM
+
 typedef uint32_t button_t;
 typedef struct keybind_s
 {
@@ -112,5 +118,7 @@ extern keybind_t kb_binds[NUMBINDS];
 void G_LoadSCF();
 cvar_t** G_GetCvars(void);
 uint32_t G_NumCvars(void);
+
+#endif
 
 #endif

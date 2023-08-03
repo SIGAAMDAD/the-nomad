@@ -114,6 +114,7 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glAttachShader, GLuint program, GLuint shader ) \
     NGL( void, glValidateProgram, GLuint program ) \
     NGL( GLuint, glGetUniformBlockIndex, GLuint program, const GLchar *uniformBlockName ) \
+    NGL( void, glUniformBlockBinding, GLuint program, GLuint uniformBlockIndex, GLuint uniformBlockBinding ) \
 
 #define NGL_Texture_Procs \
     NGL( void, glTexImage2DMultisample, GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height, GLboolean fixedsamplelocations ) \

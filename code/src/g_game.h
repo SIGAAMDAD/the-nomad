@@ -48,7 +48,7 @@ class Game
 private:
     static Game* gptr;
 public:
-    GDRMap *c_map;
+    nmap_t *c_map;
     
     gamestate_t gamestate;
     gamedif_t difficulty;

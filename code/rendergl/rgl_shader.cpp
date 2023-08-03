@@ -111,11 +111,6 @@ GO_AWAY_MANGLE shader_t* R_InitShader(const char *vertexFile, const char *fragme
     shader->vertexBufLen = ri.FS_LoadFile(vertexFile, (void **)&shader->vertexBuf);
     shader->fragmentBufLen = ri.FS_LoadFile(fragmentFile, (void **)&shader->fragmentBuf);
 
-    ri.Con_Printf(DEBUG, "\nvertex file: %s\nvertex file length: %i\nvertex file buffer: %s",
-        vertexFile, shader->vertexBufLen, shader->vertexBuf);
-    ri.Con_Printf(DEBUG, "\nfragment file: %s\nfragment file length: %i\nfragment file buffer: %s",
-        fragmentFile, shader->fragmentBufLen, shader->fragmentBuf);
-
     char filepath[strlen(vertexFile) + strlen(fragmentFile) + 1];
     stbsp_sprintf(filepath, "%s%s", vertexFile, fragmentFile);
 
@@ -125,18 +120,19 @@ GO_AWAY_MANGLE shader_t* R_InitShader(const char *vertexFile, const char *fragme
     R_PrintMacros(vertexMacros, numVertexMacros);
     R_PrintMacros(fragmentMacros, numFragmentMacros);
 
-    shader->programId = nglCreateProgram();
-    nglUseProgram(shader->programId);
-
     // compile
     vertid = R_CompileShaderSource(shader->vertexBuf, GL_VERTEX_SHADER, shader->programId, vertexMacros, numVertexMacros);
     fragid = R_CompileShaderSource(shader->fragmentBuf, GL_FRAGMENT_SHADER, shader->programId, fragmentMacros, numFragmentMacros);
+
+    shader->programId = nglCreateProgram();
 
     // link
     nglAttachShader(shader->programId, vertid);
     nglAttachShader(shader->programId, fragid);
     nglLinkProgram(shader->programId);
     nglValidateProgram(shader->programId);
+
+    nglUseProgram(shader->programId);
 
     // error checks
     nglGetProgramiv(shader->programId, GL_LINK_STATUS, &success);

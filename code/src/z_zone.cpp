@@ -65,21 +65,40 @@ static memzone_t *mainzone, *smallzone;
 
 static void Z_MergeNB(memblock_t *block);
 static void Z_MergePB(memblock_t *block);
-static void Z_ScanForBlock(void *start, void *end);
 static void Z_Defrag(void);
 
 void* operator new[](size_t size, const char* pName, int flags, unsigned debugFlags, const char* file, int line)
 {
-    return Mem_Alloc(size);
+	return ::operator new[](size);
 }
 void* operator new[](size_t size, size_t alignment, size_t alignmentOffset, const char* pName, int flags, unsigned debugFlags, const char* file, int line)
 {
-    return Mem_Alloc(size);
+	return ::operator new[](size, std::align_val_t(alignment));
 }
 
 static void Z_Print_f(void)
 {
 	Z_Print(true);
+}
+
+GDR_INLINE const char *Z_TagToString(int tag)
+{
+	switch (tag) {
+	case TAG_FREE: return "TAG_FREE";
+	case TAG_STATIC: return "TAG_STATIC";
+	case TAG_LEVEL: return "TAG_LEVEL";
+	case TAG_RENDERER: return "TAG_RENDERER";
+	case TAG_SFX: return "TAG_SFX";
+	case TAG_MUSIC: return "TAG_MUSIC";
+	case TAG_CBFF: return "TAG_CBFF";
+	case TAG_UBFF: return "TAG_UBFF";
+	case TAG_FILE_USED: return "TAG_FILE_USED";
+	case TAG_FILE_FREE: return "TAG_FILE_FREE";
+	case TAG_PURGELEVEL: return "TAG_PURGELEVEL";
+	case TAG_CACHE: return "TAG_CACHE";
+	};
+	GDR_ASSERT_MSG(0, "Unkown Tag");
+	return "Unkown Tag";
 }
 
 void Z_InitZone(memzone_t *zone, uint64_t size)
@@ -103,7 +122,7 @@ void Z_InitZone(memzone_t *zone, uint64_t size)
 	N_strncpy(base->name, "base", 14);
 }
 
-byte *Z_InitBase(uint64_t *size, uint64_t default_ram, uint64_t min_ram)
+static byte *Z_InitBase(uint64_t *size, uint64_t default_ram, uint64_t min_ram)
 {
 	byte *ptr;
 
@@ -200,8 +219,89 @@ void* Z_ZoneEnd(void)
 	return (void *)((char *)mainzone+mainzone->size);
 }
 
+typedef struct
+{
+	const char *zone;
+	uint64_t zonesize;
+	uint64_t totalBlocks;
+	uint64_t numBlocks[NUMTAGS];
 
-void Z_MergePB(memblock_t* block)
+	uint64_t freeBytes;
+	uint64_t rendererBytes;
+	uint64_t filesystemBytes;
+	uint64_t cachedBytes;
+	uint64_t purgeableBytes;
+	uint64_t otherBytes;
+} zone_stats_t;
+
+static void Z_DisplayStats(const zone_stats_t *stats)
+{
+	Con_Printf( "%8lu bytes total in %s", stats->zonesize, stats->zone );
+	Con_Printf( "%8lu bytes free in %s", stats->freeBytes, stats->zone );
+	Con_Printf( "\t%8lu bytes in renderer segment", stats->rendererBytes );
+	Con_Printf( "\t%8lu bytes in filesystem segment", stats->filesystemBytes );
+	Con_Printf( "\t%8lu bytes in cache segment", stats->cachedBytes );
+	Con_Printf( "\t%8lu bytes in purgeable segment", stats->purgeableBytes );
+	Con_Printf( "\t%8lu bytes in other", stats->otherBytes );
+	Con_Printf( " " );
+	for (uint32_t i = 0; i < NUMTAGS; i++)
+		Con_Printf( "\t%8lu total blocks in %s segment", stats->numBlocks[i], Z_TagToString(i) );
+}
+
+static void Z_GetStats(zone_stats_t *stats, const char *name, const memzone_t *zone)
+{
+	const memblock_t *block;
+
+	memset(stats, 0, sizeof(*stats));
+	stats->zone = name;
+	stats->zonesize = zone->size;
+	for (block = mainzone->blocklist.next; block != &mainzone->blocklist; block = block->next) {
+		stats->totalBlocks++;
+		stats->numBlocks[block->tag]++;
+
+		switch (block->tag) {
+		case TAG_FREE:
+			stats->freeBytes += block->size;
+			break;
+		case TAG_RENDERER:
+			stats->rendererBytes += block->size;
+			break;
+		case TAG_STATIC:
+		case TAG_SFX:
+		case TAG_MUSIC:
+		case TAG_LEVEL:
+			stats->otherBytes += block->size;
+			break;
+		case TAG_CBFF:
+		case TAG_CACHE:
+			stats->cachedBytes += block->size;
+			break;
+		case TAG_PURGELEVEL:
+			stats->purgeableBytes += block->size;
+			break;
+		case TAG_FILE_USED:
+		case TAG_FILE_FREE:
+		case TAG_UBFF:
+			stats->filesystemBytes += block->size;
+			break;
+		};
+	}
+}
+
+void Zone_Stats(void)
+{
+	zone_stats_t stats;
+
+	Z_GetStats(&stats, "mainzone", mainzone);
+	Z_DisplayStats(&stats);
+
+	Con_Printf( " " );
+
+	Z_GetStats(&stats, "smallzone", smallzone);
+	Z_DisplayStats(&stats);
+}
+
+static void Z_MergePB(memblock_t* block)
 {
 	memblock_t* other;
 	other = block->prev;
@@ -218,7 +318,7 @@ void Z_MergePB(memblock_t* block)
 	}
 }
 
-void Z_MergeNB(memblock_t* block)
+static void Z_MergeNB(memblock_t* block)
 {
 	memblock_t* other;
 	
@@ -232,6 +332,14 @@ void Z_MergeNB(memblock_t* block)
 		if (other == mainzone->rover)
 			mainzone->rover = block;
 	}
+}
+
+char* Z_Strdup(const char *str)
+{
+	const uint64_t length = strlen(str);
+	char *s = (char *)Z_Malloc(length + 1, TAG_STATIC, &s, "string");
+	N_strncpyz(s, str, length + 1);
+	return s;
 }
 
 static void Z_ScanForBlock(memzone_t *zone, void *start, void *end)
@@ -300,7 +408,7 @@ uint32_t Z_NumBlocks(int tag)
 	return count;
 }
 
-void Z_Defrag(void)
+static void Z_Defrag(void)
 {
 	memblock_t* block;
 
@@ -585,7 +693,7 @@ void Z_ChangeName(void *ptr, const char* name)
 	if (block->id != ZONEID)
 		N_Error("Z_ChangeName: block id wasn't zoneid");
 	
-	N_strncpy(block->name, name, sizeof(block->name) - 1);
+	N_strncpy(block->name, name, sizeof(block->name));
 }
 
 void Z_ChangeUser(void *newuser, void *olduser)
@@ -695,16 +803,16 @@ void Z_Print(bool all)
 	Con_Printf("-------------------------");
 	Con_Printf("(PERCENTAGES)");
 	Con_Printf(
-			"%-9lu   %5.01lf%%    static\n"
-			"%-9lu   %5.01lf%%    cached\n"
-			"%-9lu   %5.01lf%%    audio\n"
-			"%-9lu   %5.01lf%%    purgable\n"
-			"%-9lu   %5.01lf%%    free",
-		static_mem, static_mem*s,
-		cached_mem, cached_mem*s,
-		audio_mem, audio_mem*s,
-		purgable_mem, purgable_mem*s,
-		free_mem, free_mem*s);
+			"%-9lu   %4.03lf%%    static\n"
+			"%-9lu   %4.03lf%%    cached\n"
+			"%-9lu   %4.03lf%%    audio\n"
+			"%-9lu   %4.03lf%%    purgable\n"
+			"%-9lu   %4.03lf%%    free",
+		static_mem, (double)(static_mem*s),
+		cached_mem, (double)(cached_mem*s),
+		audio_mem, (double)(audio_mem*s),
+		purgable_mem, (double)(purgable_mem*s),
+		free_mem, (double)(free_mem*s));
 	Con_Printf("-------------------------");
 
 	for (block = mainzone->blocklist.next; block != &mainzone->blocklist; block = block->next)
@@ -727,7 +835,7 @@ void Z_Print(bool all)
 		
 		memcpy(name, block->name, 14);
 		if (all)
-			Con_Printf("0x%8p : %8lu  %8s", (void *)block, block->size, name);
+			Con_Printf("0x%8p : %8lu %16s %14s", (void *)block, block->size, Z_TagToString(block->tag), name);
 	
 		if (block->next == &mainzone->blocklist) {
 			Con_Printf("          : %8lu (TOTAL)", sum);
@@ -799,7 +907,6 @@ void Z_CleanCache(void)
 void Z_CheckHeap(void)
 {
 	memblock_t* block;
-	Con_Printf(DEV, "Running heap check");
 	for (block = mainzone->blocklist.next;; block = block->next) {
 		if (block->next == &mainzone->blocklist) {
 			// all blocks have been hit
@@ -818,5 +925,4 @@ void Z_CheckHeap(void)
 			N_Error("Z_CleanCache: block size doesn't touch next block");
 		}
     }
-	Con_Printf(DEV, "Done with heap check");
 }

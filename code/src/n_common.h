@@ -11,11 +11,9 @@ Common functionality for the engine and vm alike
 */
 
 void I_NomadInit(void);
-
 uint32_t crc32_buffer(const byte *buf, uint32_t len);
-
 void Com_Init(void);
-void GDR_DECL Com_Printf(const char *fmt, ...);
+void GDR_DECL Com_Printf(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
 uint64_t Com_GenerateHashValue(const char *fname, const uint64_t size);
 void Con_RenderConsole(void);
 void Com_UpdateEvents(void);
@@ -29,20 +27,20 @@ void* Com_GetEvents(void);
 qboolean* Com_GetKeyboard(void);
 const char* Com_Base64Decode();
 int Com_HexStrToInt(const char *str);
-void GDR_DECL Com_Error(const char *fmt, ...);
 void COM_StripExtension(const char *in, char *out, uint64_t destsize);
 const char *Com_SkipTokens( const char *s, int numTokens, const char *sep );
 const char *Com_SkipCharset( const char *s, const char *sep );
 void COM_BeginParseSession( const char *name );
-int	 COM_GetCurrentParseLine( void );
+int COM_GetCurrentParseLine( void );
 const char *COM_Parse( const char **data_p );
 const char *COM_ParseExt( const char **data_p, qboolean allowLineBreak );
 int COM_Compress( char *data_p );
-void COM_ParseError( const char *format, ... ) __attribute__ ((format (printf, 1, 2)));
-void COM_ParseWarning( const char *format, ... ) __attribute__ ((format (printf, 1, 2)));
+void GDR_DECL Com_Error(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
+void COM_ParseError( const char *format, ... ) GDR_ATTRIBUTE((format(printf, 1, 2)));
+void COM_ParseWarning( const char *format, ... ) GDR_ATTRIBUTE((format(printf, 1, 2)));
 //int		COM_ParseInfos( const char *buf, int max, char infos[][MAX_INFO_STRING] );
 
-char	*COM_ParseComplex( const char **data_p, qboolean allowLineBreak );
+char *COM_ParseComplex( const char **data_p, qboolean allowLineBreak );
 
 typedef enum {
 	TK_GENEGIC = 0, // for single-char tokens
@@ -90,6 +88,7 @@ typedef struct pc_token_s
 qboolean SkipBracedSection( const char **program, int depth );
 void SkipRestOfLine( const char **data );
 
+int ParseHex(const char* text);
 void Parse1DMatrix( const char **buf_p, int x, float *m);
 void Parse2DMatrix( const char **buf_p, int y, int x, float *m);
 void Parse3DMatrix( const char **buf_p, int z, int y, int x, float *m);
@@ -118,6 +117,7 @@ typedef void (*cmdfunc_t)(void);
 #define	BIG_INFO_VALUE		8192
 #define MAX_CMD_LINE 1024
 
+void Cmd_Init(void);
 void Cmd_AddCommand(const char* name, cmdfunc_t function);
 void Cmd_RemoveCommand(const char* name);
 void Cmd_ExecuteCommand(const char* name);
@@ -127,9 +127,8 @@ uint32_t Cmd_Argc(void);
 char* Cmd_ArgsFrom(int32_t index);
 const char* Cmd_Argv(uint32_t index);
 void Cmd_Clear(void);
-const char* GDR_DECL va(const char *format, ...);
-
-void GDR_DECL Com_Error(const char *fmt, ...);
+const char* GDR_DECL va(const char *format, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
+void GDR_DECL Com_Error(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
 
 /*
 
@@ -185,38 +184,41 @@ typedef long fileOffset_t;
 #define FS_SEEK_CUR 1
 #define FS_SEEK_BEGIN 2
 
+#ifndef Q3_VM
 extern cvar_t fs_gamedir;
 extern cvar_t fs_numArchives;
 
-extern file_t logfile; // VM USERS DO NOT USE!!!!!!!!!!!!
+extern file_t logfile;
+#endif
 
 void FS_Init(void);
 
-
-/* engine and vm file utilities */
-uint64_t FS_Write(const void *data, uint64_t size, file_t f);
-qboolean FS_FileExists(const char *file);
-fileOffset_t FS_FileSeek(file_t f, fileOffset_t offset, uint32_t whence);
-
 /* vm specific file handling */
+void FS_VM_FOpenWrite(const char *path, file_t *f);
 void FS_VM_FOpenRead(const char *path, file_t *f);
 void FS_VM_FClose(file_t *f);
 void FS_VM_CreateTmp(char *name, const char *ext, file_t *f);
 
-/* engine specific file handling */
+uint64_t FS_Read(void *data, uint64_t size, file_t f);
+uint64_t FS_Write(const void *data, uint64_t size, file_t f);
+qboolean FS_FileExists(const char *file);
+fileOffset_t FS_FileSeek(file_t f, fileOffset_t offset, uint32_t whence);
+uint64_t FS_FileLength(file_t f);
+
 uint32_t FS_LoadStack(void);
 uint64_t FS_Read(void *data, uint64_t size, file_t f);
+void FS_GetLine(char *buffer, uint64_t bufferLen, file_t f);
 qboolean FS_Initialized(void);
 file_t FS_OpenBFF(int32_t index);
 file_t FS_FOpenRead(const char *filepath);
 file_t FS_FOpenWrite(const char *filepath);
 file_t FS_CreateTmp(char **name, const char *ext);
-file_t FS_FOpenRW(const char *filepath, file_t *f);
+file_t FS_FOpenRW(const char *filepath);
+int FS_FileToFileno(file_t f);
 const char* FS_GetOSPath(file_t f);
 void FS_ThePurge(void);
 void* FS_GetBFFData(file_t handle);
 void FS_FClose(file_t handle);
-uint64_t FS_FileLength(file_t f);
 void FS_Remove(const char *ospath);
 uint64_t FS_FileTell(file_t f);
 int32_t FS_LastBFFIndex(void);
@@ -230,17 +232,21 @@ System calls, engine only stuff
 
 #ifndef Q3_VM
 typedef struct {
-	
-	uint64_t length;
+	time_t mtime;
+	time_t ctime;
+	uint64_t size;
 	qboolean exists;
 } fileStats_t;
+
+typedef struct memoryMap_s memoryMap_t;
 
 const char *Sys_GetSteamPath(void);
 uint64_t Sys_Milliseconds(void);
 void Sys_InitConsole(void);
 void Sys_FreeConsole(void);
 FILE *Sys_FOpen(const char *filepath, const char *mode);
-void Sys_Print(const char *str, uint64_t nBytes, void *handle);
+
+void GDR_DECL Sys_Printf(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
 const char *Sys_pwd(void);
 void *Sys_LoadDLL(const char *path);
 void Sys_CloseDLL(void *handle);

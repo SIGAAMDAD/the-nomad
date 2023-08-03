@@ -152,21 +152,25 @@ GO_AWAY_MANGLE void R_DrawCache(vertexCache_t *cache)
 /*
 R_ReserveFrameMemory: reserves memory on the zone heap for the current frame based on FRAME_RESERVE_MEMORY
 */
-GO_AWAY_MANGLE void R_ReserveFrameMemory(vertexCache_t *cache)
+GO_AWAY_MANGLE void R_ReserveFrameMemory(vertexCache_t *cache, uint64_t numVertices, uint64_t numIndices)
 {
 	if (cache->cacheType != VERTCACHE_FRAME)
 		ri.N_Error("R_ReserveFrameMemory: cache type isn't VERTCACHE_FRAME");
 
-	cache->vertices = (vertex_t *)R_FrameAlloc(sizeof(vertex_t) * FRAME_RESERVE_MEMORY * 4);
-	cache->indices = (uint32_t *)R_FrameAlloc(sizeof(uint32_t) * FRAME_RESERVE_MEMORY * 6);
+	cache->vertices = (vertex_t *)R_FrameAlloc(sizeof(vertex_t) * numVertices * 4);
+	cache->indices = (uint32_t *)R_FrameAlloc(sizeof(uint32_t) * numIndices * 6);
 
 	cache->usedIndices = 0;
 	cache->usedVertices = 0;
 
-	cache->numIndices = FRAME_RESERVE_MEMORY * 6;
-	cache->numVertices = FRAME_RESERVE_MEMORY * 4;
+	cache->numIndices = numIndices * 6;
+	cache->numVertices = numVertices * 4;
 }
 
+/*
+R_ShutdownCache: frees the cache's cpu memory and deallocates the GL buffer objects.
+this function does not free the vertices or the indices, you'll have to do that yourself
+*/
 GO_AWAY_MANGLE void R_ShutdownCache(vertexCache_t *cache)
 {
 	// delete the gpu buffers
@@ -175,7 +179,7 @@ GO_AWAY_MANGLE void R_ShutdownCache(vertexCache_t *cache)
 	nglDeleteBuffersARB(1, (const GLuint *)&cache->iboId);
 
 	// free the cpu memory back into the zone
-	ri.Z_ChangeTag(cache, TAG_PURGELEVEL);
+	ri.Z_Free(cache);
 }
 
 /*
@@ -185,7 +189,7 @@ GO_AWAY_MANGLE void R_PushVertices(vertexCache_t *cache, const vertex_t *vertice
 {
 	RENDER_ASSERT(cache, "NULL cache");
 	RENDER_ASSERT(vertices, "NULL vertices");
-	RENDER_ASSERT(numVertices < cache->numVertices, "Too many vertices");
+//	RENDER_ASSERT(numVertices > cache->numVertices, "Too many vertices");
 	RENDER_ASSERT(cache->cacheType == VERTCACHE_FRAME, "cache isn't a frame-based cache");
 
 	vertex_t *verts;
@@ -212,7 +216,7 @@ GO_AWAY_MANGLE void R_PushIndices(vertexCache_t *cache, const uint32_t *indices,
 {
 	RENDER_ASSERT(cache, "NULL cache");
 	RENDER_ASSERT(indices, "NULL indices");
-	RENDER_ASSERT(numIndices < cache->numIndices, "Too many indices");
+//	RENDER_ASSERT(numIndices > cache->numIndices, "Too many indices");
 	RENDER_ASSERT(cache->cacheType == VERTCACHE_FRAME, "cache isn't a frame-based cache");
 
 	// the buffer has been filled, flush it

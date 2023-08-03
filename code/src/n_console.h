@@ -109,6 +109,7 @@ extern bool imgui_window_open;
 void Cvar_Init(void);
 void Con_Init(void);
 void Con_Shutdown(void);
+void Con_GetInput(void);
 void GDR_DECL Con_Printf(loglevel_t level, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
 void GDR_DECL Con_Printf(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
 void GDR_DECL Con_Error(bool exit, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));

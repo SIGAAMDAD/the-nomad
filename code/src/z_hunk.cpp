@@ -21,18 +21,18 @@ typedef struct
 } hunk_t;
 
 static boost::shared_mutex hunkLock;
-static uint64_t hunk_low_used = 0;
-static uint64_t hunk_high_used = 0;
-static uint64_t hunk_temp_used = 0;
+uint64_t hunk_low_used = 0;
+uint64_t hunk_high_used = 0;
+uint64_t hunk_temp_used = 0;
 
-void Hunk_Clear(void)
+GO_AWAY_MANGLE void Hunk_Clear(void)
 {
 	hunk_high_used = 0;
 	hunk_low_used = 0;
 	memset(hunkbase, 0, hunksize);
 }
 
-uint64_t Hunk_MemoryRemaining (void)
+GO_AWAY_MANGLE uint64_t Hunk_MemoryRemaining (void)
 {
 	return hunksize - hunk_low_used - hunk_high_used;
 }
@@ -44,7 +44,7 @@ Hunk_Check
 Run consistancy and id checks
 ==============
 */
-void Hunk_Check (void)
+GO_AWAY_MANGLE void Hunk_Check (void)
 {
 	hunk_t	*h;
 	
@@ -60,7 +60,7 @@ void Hunk_Check (void)
 /*
 Hunk_HighAlloc: allocates memory on the high hunk temporary memory
 */
-static void *Hunk_HighAlloc (uint64_t size, const char *name)
+GO_AWAY_MANGLE void *Hunk_HighAlloc (uint64_t size, const char *name)
 {
 	hunk_t *h;
 
@@ -74,7 +74,7 @@ static void *Hunk_HighAlloc (uint64_t size, const char *name)
 	return (void *)(h+1);
 }
 
-static void *Hunk_LowAlloc(uint64_t size, const char *name)
+GO_AWAY_MANGLE void *Hunk_LowAlloc(uint64_t size, const char *name)
 {
 	hunk_t *h;
 
@@ -88,7 +88,7 @@ static void *Hunk_LowAlloc(uint64_t size, const char *name)
 	return (void *)(h+1);
 }
 
-void *Hunk_AllocateTempMemory(uint64_t size)
+GO_AWAY_MANGLE void *Hunk_AllocateTempMemory(uint64_t size)
 {
 	hunk_t *h;
 
@@ -115,7 +115,7 @@ void *Hunk_AllocateTempMemory(uint64_t size)
 	return (void *)(h+1);
 }
 
-void Hunk_FreeTempMemory(void *p)
+GO_AWAY_MANGLE void Hunk_FreeTempMemory(void *p)
 {
 	hunk_t *h;
 
@@ -137,7 +137,7 @@ void Hunk_FreeTempMemory(void *p)
 		Con_Printf("Hunk_FreeTempMemory: not final block");
 }
 
-void Hunk_ClearTempMemory(void)
+GO_AWAY_MANGLE void Hunk_ClearTempMemory(void)
 {
 	if (hunkbase) {
 		// set it all to 0
@@ -146,12 +146,12 @@ void Hunk_ClearTempMemory(void)
 	}
 }
 
-uint64_t Hunk_LowMark(void)
+GO_AWAY_MANGLE uint64_t Hunk_LowMark(void)
 {
 	return hunk_low_used;
 }
 
-void Hunk_FreeToLowMark(uint64_t mark)
+GO_AWAY_MANGLE void Hunk_FreeToLowMark(uint64_t mark)
 {
 	if (mark > hunk_low_used)
 		N_Error("Hunk_FreeToLowMark: bad mark");
@@ -164,9 +164,9 @@ void Hunk_FreeToLowMark(uint64_t mark)
 Hunk_Alloc: allocates a chunk of memory out of the hunk heap in the ha_pref (h_low, h_high)
 */
 #ifdef _NOMAD_DEBUG
-void *Hunk_AllocDebug (uint64_t size, ha_pref where, const char *name, const char *file, uint64_t line)
+GO_AWAY_MANGLE void *Hunk_AllocDebug (uint64_t size, ha_pref where, const char *name, const char *file, uint64_t line)
 #else
-void *Hunk_Alloc (uint64_t size, const char *name, ha_pref where)
+GO_AWAY_MANGLE void *Hunk_Alloc (uint64_t size, const char *name, ha_pref where)
 #endif
 {
 	hunk_t	*h;
@@ -196,7 +196,7 @@ void *Hunk_Alloc (uint64_t size, const char *name, ha_pref where)
 extern byte *hunkbase;
 extern uint64_t hunksize;
 
-void Hunk_Print(void)
+GO_AWAY_MANGLE void Hunk_Print(void)
 {
     hunk_t *h, *next, *endlow, *starthigh, *endhigh, *prev;
 	uint64_t count, sum;
@@ -257,7 +257,7 @@ void Hunk_Print(void)
 }
 
 
-void Hunk_SmallLog(void)
+GO_AWAY_MANGLE void Hunk_SmallLog(void)
 {
 	hunk_t *h;
 	char buf[4096];
@@ -284,7 +284,7 @@ void Hunk_SmallLog(void)
 	stbsp_snprintf(buf, sizeof(buf), "%lu total hunk blocks\r\n", numBlocks);
 }
 
-void Hunk_Log(void)
+GO_AWAY_MANGLE void Hunk_Log(void)
 {
 	Hunk_SmallLog();
 }

@@ -53,7 +53,6 @@ common functions that are used almost everywhere
 ==================================================
 */
 
-
 static void done(void)
 {
 	Sys_Exit(1);
@@ -77,6 +76,8 @@ qboolean* Com_GetKeyboard(void)
 	return evState.kbstate;
 }
 
+GO_AWAY_MANGLE GDR_EXPORT bool ImGui_ImplSDL2_ProcessEvent(const SDL_Event* event);
+
 void Com_UpdateEvents(void)
 {
 	EASY_FUNCTION();
@@ -84,85 +85,88 @@ void Com_UpdateEvents(void)
 
 	memset(&evState, 0, sizeof(evState));
 	while (SDL_PollEvent(&evState.event)) {
-		if (!RE_ConsoleIsOpen())
-			switch (evState.event.type) {
-			case SDL_KEYDOWN:
-				switch (evState.event.key.keysym.sym) {
-				case SDLK_a: evState.kbstate[KEY_A] = qtrue; break;
-				case SDLK_b: evState.kbstate[KEY_B] = qtrue; break;
-				case SDLK_c: evState.kbstate[KEY_C] = qtrue; break;
-				case SDLK_d: evState.kbstate[KEY_D] = qtrue; break;
-				case SDLK_e: evState.kbstate[KEY_E] = qtrue; break;
-				case SDLK_f: evState.kbstate[KEY_F] = qtrue; break;
-				case SDLK_g: evState.kbstate[KEY_G] = qtrue; break;
-				case SDLK_h: evState.kbstate[KEY_H] = qtrue; break;
-				case SDLK_i: evState.kbstate[KEY_I] = qtrue; break;
-				case SDLK_j: evState.kbstate[KEY_J] = qtrue; break;
-				case SDLK_k: evState.kbstate[KEY_K] = qtrue; break;
-				case SDLK_l: evState.kbstate[KEY_L] = qtrue; break;
-				case SDLK_m: evState.kbstate[KEY_M] = qtrue; break;
-				case SDLK_n: evState.kbstate[KEY_N] = qtrue; break;
-				case SDLK_o: evState.kbstate[KEY_O] = qtrue; break;
-				case SDLK_p: evState.kbstate[KEY_P] = qtrue; break;
-				case SDLK_q: evState.kbstate[KEY_Q] = qtrue; break;
-				case SDLK_r: evState.kbstate[KEY_R] = qtrue; break;
-				case SDLK_s: evState.kbstate[KEY_S] = qtrue; break;
-				case SDLK_t: evState.kbstate[KEY_T] = qtrue; break;
-				case SDLK_u: evState.kbstate[KEY_U] = qtrue; break;
-				case SDLK_v: evState.kbstate[KEY_V] = qtrue; break;
-				case SDLK_w: evState.kbstate[KEY_W] = qtrue; break;
-				case SDLK_x: evState.kbstate[KEY_X] = qtrue; break;
-				case SDLK_y: evState.kbstate[KEY_Y] = qtrue; break;
-				case SDLK_z: evState.kbstate[KEY_Z] = qtrue; break;
-				case SDLK_0: evState.kbstate[KEY_0] = qtrue; break;
-				case SDLK_1: evState.kbstate[KEY_1] = qtrue; break;
-				case SDLK_2: evState.kbstate[KEY_2] = qtrue; break;
-				case SDLK_3: evState.kbstate[KEY_3] = qtrue; break;
-				case SDLK_4: evState.kbstate[KEY_4] = qtrue; break;
-				case SDLK_5: evState.kbstate[KEY_5] = qtrue; break;
-				case SDLK_6: evState.kbstate[KEY_6] = qtrue; break;
-				case SDLK_7: evState.kbstate[KEY_7] = qtrue; break;
-				case SDLK_8: evState.kbstate[KEY_8] = qtrue; break;
-				case SDLK_9: evState.kbstate[KEY_9] = qtrue; break;
-				case SDLK_UP: evState.kbstate[KEY_UP] = qtrue; break;
-				case SDLK_DOWN: evState.kbstate[KEY_DOWN] = qtrue; break;
-				case SDLK_LEFT: evState.kbstate[KEY_LEFT] = qtrue; break;
-				case SDLK_RIGHT: evState.kbstate[KEY_RIGHT] = qtrue; break;
-				case SDLK_BACKQUOTE: evState.kbstate[KEY_BACKQUOTE] = qtrue; break;
-				case SDLK_SPACE: evState.kbstate[KEY_SPACE] = qtrue; break;
-				case SDLK_BACKSPACE: evState.kbstate[KEY_BACKSPACE] = qtrue; break;
-				case SDLK_TAB: evState.kbstate[KEY_TAB] = qtrue; break;
-				case SDLK_LSHIFT: evState.kbstate[KEY_LSHIFT] = qtrue; break;
-				case SDLK_RSHIFT: evState.kbstate[KEY_RSHIFT] = qtrue; break;
-				case SDLK_F1: evState.kbstate[KEY_F1] = qtrue; break;
-				case SDLK_F2: evState.kbstate[KEY_F2] = qtrue; break;
-				case SDLK_F3: evState.kbstate[KEY_F3] = qtrue; break;
-				case SDLK_F4: evState.kbstate[KEY_F4] = qtrue; break;
-				case SDLK_F5: evState.kbstate[KEY_F5] = qtrue; break;
-				case SDLK_F6: evState.kbstate[KEY_F6] = qtrue; break;
-				case SDLK_F7: evState.kbstate[KEY_F7] = qtrue; break;
-				case SDLK_F8: evState.kbstate[KEY_F8] = qtrue; break;
-				case SDLK_F9: evState.kbstate[KEY_F9] = qtrue; break;
-				case SDLK_F10: evState.kbstate[KEY_F10] = qtrue; break;
-				case SDLK_F11: evState.kbstate[KEY_F11] = qtrue; break;
-				case SDLK_F12: evState.kbstate[KEY_F12] = qtrue; break;
-				case SDLK_ESCAPE: evState.kbstate[KEY_ESCAPE] = qtrue; break;
-				case SDLK_LCTRL: evState.kbstate[KEY_LCTRL] = qtrue; break;
-				case SDLK_RCTRL: evState.kbstate[KEY_RCTRL] = qtrue; break;
-			case SDL_QUIT:
-				done();
-				break;
-			case SDL_KEYUP:
-				break;
-			case SDL_WINDOWEVENT:
-				switch (evState.event.window.type) {
-				case SDL_WINDOWEVENT_RESIZED:
-					evState.windowEvents |= SDL_WINDOWEVENT_RESIZED;
-					break;
-				};
+		if (RE_ConsoleIsOpen())
+    	    ImGui_ImplSDL2_ProcessEvent(&evState.event);
+		
+		switch (evState.event.type) {
+		case SDL_KEYDOWN:
+			switch (evState.event.key.keysym.sym) {
+			case SDLK_a: evState.kbstate[KEY_A] = qtrue; break;
+			case SDLK_b: evState.kbstate[KEY_B] = qtrue; break;
+			case SDLK_c: evState.kbstate[KEY_C] = qtrue; break;
+			case SDLK_d: evState.kbstate[KEY_D] = qtrue; break;
+			case SDLK_e: evState.kbstate[KEY_E] = qtrue; break;
+			case SDLK_f: evState.kbstate[KEY_F] = qtrue; break;
+			case SDLK_g: evState.kbstate[KEY_G] = qtrue; break;
+			case SDLK_h: evState.kbstate[KEY_H] = qtrue; break;
+			case SDLK_i: evState.kbstate[KEY_I] = qtrue; break;
+			case SDLK_j: evState.kbstate[KEY_J] = qtrue; break;
+			case SDLK_k: evState.kbstate[KEY_K] = qtrue; break;
+			case SDLK_l: evState.kbstate[KEY_L] = qtrue; break;
+			case SDLK_m: evState.kbstate[KEY_M] = qtrue; break;
+			case SDLK_n: evState.kbstate[KEY_N] = qtrue; break;
+			case SDLK_o: evState.kbstate[KEY_O] = qtrue; break;
+			case SDLK_p: evState.kbstate[KEY_P] = qtrue; break;
+			case SDLK_q: evState.kbstate[KEY_Q] = qtrue; break;
+			case SDLK_r: evState.kbstate[KEY_R] = qtrue; break;
+			case SDLK_s: evState.kbstate[KEY_S] = qtrue; break;
+			case SDLK_t: evState.kbstate[KEY_T] = qtrue; break;
+			case SDLK_u: evState.kbstate[KEY_U] = qtrue; break;
+			case SDLK_v: evState.kbstate[KEY_V] = qtrue; break;
+			case SDLK_w: evState.kbstate[KEY_W] = qtrue; break;
+			case SDLK_x: evState.kbstate[KEY_X] = qtrue; break;
+			case SDLK_y: evState.kbstate[KEY_Y] = qtrue; break;
+			case SDLK_z: evState.kbstate[KEY_Z] = qtrue; break;
+			case SDLK_0: evState.kbstate[KEY_0] = qtrue; break;
+			case SDLK_1: evState.kbstate[KEY_1] = qtrue; break;
+			case SDLK_2: evState.kbstate[KEY_2] = qtrue; break;
+			case SDLK_3: evState.kbstate[KEY_3] = qtrue; break;
+			case SDLK_4: evState.kbstate[KEY_4] = qtrue; break;
+			case SDLK_5: evState.kbstate[KEY_5] = qtrue; break;
+			case SDLK_6: evState.kbstate[KEY_6] = qtrue; break;
+			case SDLK_7: evState.kbstate[KEY_7] = qtrue; break;
+			case SDLK_8: evState.kbstate[KEY_8] = qtrue; break;
+			case SDLK_9: evState.kbstate[KEY_9] = qtrue; break;
+			case SDLK_UP: evState.kbstate[KEY_UP] = qtrue; break;
+			case SDLK_DOWN: evState.kbstate[KEY_DOWN] = qtrue; break;
+			case SDLK_LEFT: evState.kbstate[KEY_LEFT] = qtrue; break;
+			case SDLK_RIGHT: evState.kbstate[KEY_RIGHT] = qtrue; break;
+			case SDLK_BACKQUOTE: evState.kbstate[KEY_BACKQUOTE] = qtrue; break;
+			case SDLK_SPACE: evState.kbstate[KEY_SPACE] = qtrue; break;
+			case SDLK_BACKSPACE: evState.kbstate[KEY_BACKSPACE] = qtrue; break;
+			case SDLK_TAB: evState.kbstate[KEY_TAB] = qtrue; break;
+			case SDLK_LSHIFT: evState.kbstate[KEY_LSHIFT] = qtrue; break;
+			case SDLK_RSHIFT: evState.kbstate[KEY_RSHIFT] = qtrue; break;
+			case SDLK_F1: evState.kbstate[KEY_F1] = qtrue; break;
+			case SDLK_F2: evState.kbstate[KEY_F2] = qtrue; break;
+			case SDLK_F3: evState.kbstate[KEY_F3] = qtrue; break;
+			case SDLK_F4: evState.kbstate[KEY_F4] = qtrue; break;
+			case SDLK_F5: evState.kbstate[KEY_F5] = qtrue; break;
+			case SDLK_F6: evState.kbstate[KEY_F6] = qtrue; break;
+			case SDLK_F7: evState.kbstate[KEY_F7] = qtrue; break;
+			case SDLK_F8: evState.kbstate[KEY_F8] = qtrue; break;
+			case SDLK_F9: evState.kbstate[KEY_F9] = qtrue; break;
+			case SDLK_F10: evState.kbstate[KEY_F10] = qtrue; break;
+			case SDLK_F11: evState.kbstate[KEY_F11] = qtrue; break;
+			case SDLK_F12: evState.kbstate[KEY_F12] = qtrue; break;
+			case SDLK_ESCAPE: evState.kbstate[KEY_ESCAPE] = qtrue; break;
+			case SDLK_LCTRL: evState.kbstate[KEY_LCTRL] = qtrue; break;
+			case SDLK_RCTRL: evState.kbstate[KEY_RCTRL] = qtrue; break;
+			};
+			break;
+		case SDL_QUIT:
+			Sys_Exit(1);
+			break;
+		case SDL_KEYUP:
+			break;
+		case SDL_WINDOWEVENT:
+			switch (evState.event.window.type) {
+			case SDL_WINDOWEVENT_RESIZED:
+				evState.windowEvents |= SDL_WINDOWEVENT_RESIZED;
 				break;
 			};
-		}
+			break;
+		};
 	}
 }
 
@@ -214,7 +218,7 @@ void GDR_DECL Com_Error(const char *fmt,  ...)
 /*
 Com_Crash_f: force crash, only for devs
 */
-void Com_Crash_f(void)
+static void Com_Crash_f(void)
 {
     *((int *)0) = 0x1234;
 }
@@ -222,257 +226,16 @@ void Com_Crash_f(void)
 /*
 Com_Shutdown_f: for testing exit/crashing processes
 */
-void Com_Shutdown_f(void)
+static void Com_Shutdown_f(void)
 {
     N_Error("testing");
 }
 
 /*
-==================================================
-Commands:
-anything with a Cmd_ or CMD_ prefix is a function that operates on the command-line (or in-game console) functionality.
-mostly meant for developers/debugging
-==================================================
+Not thread safe
 */
-
-#define BIG_INFO_STRING 8192
-#define MAX_STRING_TOKENS 1024
-#define MAX_HISTORY 32
-
-typedef void (*cmdfunc_t)(void);
-typedef struct cmd_s
-{
-    GDRStr name;
-    cmdfunc_t function;
-	completionFunc_t complete;
-    struct cmd_s* next;
-} cmd_t;
-
-static boost::mutex cmdLock;
-static cmd_t* cmd_functions;
-static uint32_t numCommands = 0;
-static eastl::atomic<uint32_t> cmd_argc;
-static char cmd_tokenized[BIG_INFO_STRING+MAX_STRING_TOKENS];
-static char *cmd_argv[MAX_STRING_TOKENS];
-static char cmd_cmd[BIG_INFO_STRING];
-
-static char cmd_history[MAX_HISTORY][BIG_INFO_STRING];
-static eastl::atomic<uint32_t> cmd_historyused;
-
-uint32_t Cmd_Argc(void)
-{
-	return cmd_argc.load();
-}
-
-void Cmd_Clear(void)
-{
-	boost::unique_lock<boost::mutex> lock{cmdLock};
-	memset(cmd_cmd, 0, sizeof(cmd_cmd));
-	memset(cmd_argv, 0, sizeof(cmd_argv));
-	memset(cmd_tokenized, 0, sizeof(cmd_tokenized));
-	lock.unlock();
-	cmd_argc.store(0);
-}
-
-const char *Cmd_Argv(uint32_t index)
-{
-	boost::unique_lock<boost::mutex> lock{cmdLock};
-    if ((unsigned)index >= cmd_argc.load()) {
-        return "";
-    }
-    return cmd_argv[index];
-}
-static cmd_t* Cmd_FindCommand(const char *name)
-{
-    for (cmd_t *cmd = cmd_functions; cmd; cmd = cmd->next) {
-        if (N_strneq(cmd->name.c_str(), name, cmd->name.size())) {
-            return cmd;
-		}
-    }
-    return NULL;
-}
-
-static void Cmd_TokenizeString(const char *str)
-{
-	const char *p;
-	char *tok;
-
-	Cmd_Clear();
-	N_strncpy(cmd_cmd, str, sizeof(cmd_cmd));
-	p = str;
-	tok = cmd_tokenized;
-
-	while (1) {
-		if (cmd_argc.load() >= arraylen(cmd_argv)) {
-			return; // usually something malicious
-		}
-		while (*p && *p <= ' ') {
-			p++; // skip whitespace
-		}
-		if (!*p) {
-			break; // end of string
-		}
-		if (*p == '"') {
-			cmd_argv[cmd_argc] = tok;
-			cmd_argc.fetch_add(1);
-			p++;
-			while (*p && *p != '"') {
-				*tok++ = *p++;
-			}
-			if (!*p) {
-				return; // end of string
-			}
-			p++;
-			continue;
-		}
-
-		// regular stuff
-		cmd_argv[cmd_argc] = tok;
-		cmd_argc.fetch_add(1);
-
-		// skip until whitespace
-		while (*p > ' ') {
-			*tok++ = *p++;
-		}
-		*tok++ = '\0';
-		if (!*p) {
-			return; // end of string
-		}
-	}
-}
-
-void Cmd_ExecuteText(const char *str)
-{
-	boost::unique_lock<boost::mutex> lock{cmdLock};
-    cmd_t *cmd;
-	const char *cmdstr;
-
-    if (!*str) {
-        return; // nothing to do
-    }
-	Cmd_TokenizeString(str+1);
-	if (!Cmd_Argc()) {
-		return; // no tokens
-	}
-	cmdstr = cmd_argv[0];
-    cmd = Cmd_FindCommand(cmdstr);
-	if (cmd && cmd->function) {
-		cmd->function();
-		return;
-	}
-	else {
-		Con_Printf("Command '%s' doesn't exist", cmdstr);
-		return;
-	}
-
-//	if (Cvar_Command()) {
-//		return;
-//	}
-}
-
-void Cmd_AddCommand(const char *name, cmdfunc_t func)
-{
-	boost::unique_lock<boost::mutex> lock{cmdLock};
-    cmd_t* cmd;
-    if (Cmd_FindCommand(name)) {
-        if (func)
-            Con_Printf("Cmd_AddCommand: %s already defined", name);
-        return;
-    }
-    Con_Printf("Registered command %s", name);
-
-    cmd = (cmd_t *)Z_Malloc(sizeof(*cmd), TAG_STATIC, &cmd, "cmd");
-    cmd->name = name;
-    cmd->function = func;
-	cmd->complete = NULL;
-    cmd->next = cmd_functions;
-    cmd_functions = cmd;
-	numCommands++;
-}
-
-void Cmd_SetCommandCompletetionFunc(const char *name, completionFunc_t func)
-{
-	boost::unique_lock<boost::mutex> lock{cmdLock};
-    for (cmd_t *cmd = cmd_functions; cmd; cmd = cmd->next) {
-        if (cmd->name == name) {
-            cmd->complete = func;
-            return;
-        }
-    }
-}
-
-void Cmd_RemoveCommand(const char *name)
-{
-	boost::unique_lock<boost::mutex> lock{cmdLock};
-    cmd_t *cmd, **back;
-
-    back = &cmd_functions;
-    while (1) {
-        cmd = *back;
-        if (!cmd) {
-            // command wasn't active
-            break;
-        }
-        if (cmd->name.casecmp(name)) {
-            *back = cmd->next;
-            if (cmd->name.casecmp(name)) {
-                cmd->name.clear();
-            }
-            numCommands--;
-            Z_Free(cmd);
-            return;
-        }
-        back = &cmd->next;
-    }
-}
-
-char* Cmd_ArgsFrom(int32_t arg)
-{
-	boost::unique_lock<boost::mutex> lock{cmdLock};
-    static char cmd_args[BIG_INFO_STRING], *s;
-    int32_t i;
-
-    s = cmd_args;
-    *s = '\0';
-    if (arg < 0)
-        arg = 0;
-    for (i = arg; i < cmd_argc.load(); i++) {
-        s = N_stradd(s, cmd_argv[i]);
-        if (i != cmd_argc - 1) {
-            s = N_stradd(s, " ");
-        }
-    }
-    return cmd_args;
-}
-
-static void Cmd_List_f(void)
-{
-    Con_Printf("Total number of commands: %i", numCommands);
-    for (const cmd_t *cmd = cmd_functions; cmd; cmd = cmd->next) {
-        Con_Printf("%s", cmd->name.c_str());
-    }
-}
-
-static void Cmd_Echo_f(void)
-{
-    Con_Printf("%s", Cmd_ArgsFrom(1));
-}
-
-static void Cmd_Exit_f(void)
-{
-	done();
-}
-
-static void Cmd_Init(void)
-{
-    Cmd_AddCommand("cmdlist", Cmd_List_f);
-    Cmd_AddCommand("crash", Com_Crash_f);
-    Cmd_AddCommand("echo", Cmd_Echo_f);
-}
-
 const char* GDR_DECL va(const char *format, ...)
 {
-	boost::unique_lock<boost::mutex> lock{cmdLock};
 	char *buf;
 	va_list argptr;
 	static uint32_t index = 0;
@@ -488,7 +251,7 @@ const char* GDR_DECL va(const char *format, ...)
 	return buf;
 }
 
-static const GDRMap *G_GetCurrentMap(void)
+static const nmap_t *G_GetCurrentMap(void)
 {
 	return Game::Get()->c_map;
 }
@@ -520,7 +283,7 @@ SDL_Thread *PFN_SDL_CreateThreadWithStackSize(SDL_ThreadFunction fn, const char 
 /*
 Com_FillImport: fills render import functions for the dynamic library to use
 */
-static void Com_FillImport(renderImport_t *import)
+void Com_FillImport(renderImport_t *import)
 {
 #ifdef _NOMAD_DEBUG
     import->Hunk_AllocDebug = Hunk_AllocDebug;
@@ -606,6 +369,7 @@ static void Com_FillImport(renderImport_t *import)
 	import->BFF_OrderTextures = BFF_OrderTextures;
 
 	import->G_GetCurrentMap = G_GetCurrentMap;
+	import->Map_GetSpriteCoords = Map_GetSpriteCoords;
 
 	// most of this stuff is for imgui's usage
 	import->SDL_SetCursor = SDL_SetCursor;
@@ -645,6 +409,9 @@ static void Com_FillImport(renderImport_t *import)
     import->SDL_GL_MakeCurrent = SDL_GL_MakeCurrent;
     import->SDL_GL_SetSwapInterval = SDL_GL_SetSwapInterval;
     import->SDL_GetError = SDL_GetError;
+	import->SDL_PollEvent = SDL_PollEvent;
+
+	import->Sys_Exit = Sys_Exit;
 
 #if defined(__OS2__) || defined(_WIN32)
 	import->SDL_CreateThread = PFN_SDL_CreateThread;
@@ -677,7 +444,7 @@ static void Com_FillImport(renderImport_t *import)
 /*
 Com_InitJournals: initializes the logfile and the event journal
 */
-static void Com_InitJournals(void)
+void Com_InitJournals(void)
 {
 	if (!c_devmode.b)
 		return;
@@ -744,6 +511,8 @@ void Com_Init(void)
          "v2.0\n"
          "+==========================================================+\n"
     );
+
+	Cmd_AddCommand("crash", Com_Crash_f);
 }
 
 /*
@@ -812,7 +581,6 @@ const char *COM_Parse( const char **data_p )
 	return COM_ParseExt( data_p, qtrue );
 }
 
-
 void COM_ParseError( const char *format, ... )
 {
 	va_list argptr;
@@ -824,7 +592,6 @@ void COM_ParseError( const char *format, ... )
 
 	Con_Printf( "ERROR: %s, line %d: %s\n", com_parsename, COM_GetCurrentParseLine(), string );
 }
-
 
 void COM_ParseWarning( const char *format, ... )
 {
@@ -851,7 +618,7 @@ string will be returned if the next token is
 a newline.
 ==============
 */
-static const char *SkipWhitespace( const char *data, qboolean *hasNewLines ) {
+const char *SkipWhitespace( const char *data, qboolean *hasNewLines ) {
 	int c;
 
 	while( (c = *data) <= ' ') {
@@ -867,7 +634,6 @@ static const char *SkipWhitespace( const char *data, qboolean *hasNewLines ) {
 
 	return data;
 }
-
 
 int COM_Compress( char *data_p ) {
 	const char *in;
@@ -935,7 +701,6 @@ int COM_Compress( char *data_p ) {
 
 	return out - data_p;
 }
-
 
 const char *COM_ParseExt( const char **data_p, qboolean allowLineBreaks )
 {
@@ -1280,7 +1045,7 @@ __reswitch:
 COM_MatchToken
 ==================
 */
-static void COM_MatchToken( const char **buf_p, const char *match ) {
+void COM_MatchToken( const char **buf_p, const char *match ) {
 	const char *token;
 
 	token = COM_Parse( buf_p );
@@ -1343,6 +1108,29 @@ void SkipRestOfLine( const char **data ) {
 	*data = p;
 }
 
+int ParseHex(const char *text)
+{
+    int value;
+    int c;
+
+    value = 0;
+    while ((c = *text++) != 0) {
+        if (c >= '0' && c <= '9') {
+            value = value * 16 + c - '0';
+            continue;
+        }
+        if (c >= 'a' && c <= 'f') {
+            value = value * 16 + 10 + c - 'a';
+            continue;
+        }
+        if (c >= 'A' && c <= 'F') {
+            value = value * 16 + 10 + c - 'A';
+            continue;
+        }
+    }
+
+    return value;
+}
 
 void Parse1DMatrix( const char **buf_p, int x, float *m ) {
 	const char	*token;
@@ -1358,7 +1146,6 @@ void Parse1DMatrix( const char **buf_p, int x, float *m ) {
 	COM_MatchToken( buf_p, ")" );
 }
 
-
 void Parse2DMatrix( const char **buf_p, int y, int x, float *m ) {
 	int		i;
 
@@ -1370,7 +1157,6 @@ void Parse2DMatrix( const char **buf_p, int y, int x, float *m ) {
 
 	COM_MatchToken( buf_p, ")" );
 }
-
 
 void Parse3DMatrix( const char **buf_p, int z, int y, int x, float *m ) {
 	int		i;
@@ -1384,8 +1170,7 @@ void Parse3DMatrix( const char **buf_p, int z, int y, int x, float *m ) {
 	COM_MatchToken( buf_p, ")" );
 }
 
-
-static int Hex( char c )
+int Hex( char c )
 {
 	if ( c >= '0' && c <= '9' ) {
 		return c - '0';
@@ -1474,7 +1259,6 @@ qboolean Com_GetHashColor(const char *str, byte *color)
 	return qtrue;
 }
 
-
 size_t Com_ReadFile(const char *filepath, void *buffer)
 {
 	if (!buffer) {
@@ -1509,6 +1293,7 @@ size_t Com_FileSize(const char *filepath)
 	fclose(fp);
 	return fsize;
 }
+
 size_t Com_LoadFile(const char *filepath, void **buffer)
 {
 	FILE* fp = fopen(filepath, "rb");
@@ -1526,6 +1311,7 @@ size_t Com_LoadFile(const char *filepath, void **buffer)
 	fclose(fp);
 	return fsize;
 }
+
 void Com_WriteFile(const char *filepath, const void *data, size_t size)
 {
 	FILE* fp = fopen(filepath, "wb");

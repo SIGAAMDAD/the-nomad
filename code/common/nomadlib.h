@@ -3,9 +3,7 @@
 
 #pragma once
 
-void Con_Printf(const char *fmt, ...);
-void Con_Error(const char *fmt, ...);
-void Con_Flush(void);
+void VM_Com_Printf();
 
 // ONLY MEANT FOR TEMPORARY (scope-based) ALLOCATIONS
 void G_InitMem(void);

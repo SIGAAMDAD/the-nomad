@@ -1,5 +1,6 @@
 #include "n_shared.h"
 #include "n_scf.h"
+#include "../rendergl/imgui.h"
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/ansicolor_sink.h>
 #include <spdlog/sinks/base_sink.h>
@@ -74,7 +75,7 @@ void GDR_DECL Con_Printf(loglevel_t level, const char *fmt, ...)
         FS_Write("\n", 1, logfile);
     }
 
-//    Con_ClearBuffer();
+    Con_ClearBuffer();
 }
 
 void GDR_DECL Con_Printf(const char *fmt, ...)
@@ -95,7 +96,38 @@ void GDR_DECL Con_Printf(const char *fmt, ...)
         FS_Write(msg, length, logfile);
         FS_Write("\n", 1, logfile);
     }
-//    Con_ClearBuffer();
+    Con_ClearBuffer();
+}
+
+void Con_GetInput(void)
+{
+    EASY_FUNCTION();
+
+    int flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize;
+
+    ImGui::SetWindowPos(ImVec2(0.0f, 0.0f));
+    ImGui::SetWindowSize(ImVec2((float)r_screenwidth.i, (float)(r_screenheight.i / 2)));
+    ImGui::Begin("Command Console", NULL, flags);
+    con_buffer.emplace_back('\0');
+    ImGui::Text("%s", Con_GetBuffer().data());
+    con_buffer.clear();
+
+    if (!RE_ConsoleIsOpen())
+        return; // nothing to process
+        
+    char buffer[MAX_CMD_BUFFER];
+    memset(buffer, 0, sizeof(buffer));
+    
+    ImGui::Text("> ");
+    ImGui::SameLine();
+    if (ImGui::InputText(" ", buffer, MAX_CMD_BUFFER, ImGuiInputTextFlags_EnterReturnsTrue)) {
+        Con_Printf("]%s", buffer); // echo it into the console
+        if (*buffer == '/') { // its a command
+            Cmd_ExecuteText(buffer);
+        }
+    }
+
+    ImGui::End();
 }
 
 static void Con_Clear_f(void)

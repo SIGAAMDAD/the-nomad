@@ -25,8 +25,7 @@ typedef struct
 //    emptyCmd_t *cmd_head, *cmd_tail;
     vertexCache_t *pintCache;
 
-    const GDRMap *currentMap;
-    const GDRMapLayer *currentLayer;
+    const nmap_t *currentMap;
 } frameData_t;
 
 static frameData_t frame;
@@ -123,38 +122,10 @@ GO_AWAY_MANGLE void RE_SubmitMapTilesheet(const char *chunkname, const bffinfo_t
 
 GO_AWAY_MANGLE void R_ConsoleGetInput(void)
 {
-    EASY_FUNCTION();
-
-    if (!console_open)
-        return; // nothing to process
-    
-    char buffer[MAX_CMD_BUFFER];
-    memset(buffer, 0, sizeof(buffer));
-    
-    ImGui::Text("> ");
-    ImGui::SameLine();
-    if (ImGui::InputText(" ", buffer, MAX_CMD_BUFFER, ImGuiInputTextFlags_EnterReturnsTrue)) {
-        ri.Con_Printf(INFO, "]%s", buffer); // echo it into the console
-        if (*buffer == '/') { // its a command
-            ri.Cmd_ExecuteText(buffer);
-        }
-    }
 }
 
 GO_AWAY_MANGLE void RE_CommandConsoleFrame(void)
 {
-    int flags = ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize;
-
-    ImGui::SetWindowPos(ImVec2(0.0f, 0.0f));
-    ImGui::SetWindowSize(ImVec2((float)r_screenwidth->i, (float)(r_screenheight->i / 2)));
-    ImGui::Begin("Command Console", NULL, flags);
-    Con_GetBuffer().emplace_back('\0');
-    ImGui::Text("%s", Con_GetBuffer().data());
-    Con_GetBuffer().clear();
-
-    R_ConsoleGetInput();
-
-    ImGui::End();
     if (console_open) {
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -176,6 +147,26 @@ GO_AWAY_MANGLE void R_UpdateState(void)
         // redo the settings if the window has been resized
         RE_InitSettings_f();
     }
+    if (keys[KEY_UP])
+        renderer->camera.MoveUp();
+    if (keys[KEY_DOWN])
+        renderer->camera.MoveDown();
+    if (keys[KEY_LEFT])
+        renderer->camera.MoveLeft();
+    if (keys[KEY_RIGHT])
+        renderer->camera.MoveRight();
+    if (keys[KEY_M])
+        renderer->camera.ZoomIn();
+    if (keys[KEY_N])
+        renderer->camera.ZoomOut();
+}
+
+GO_AWAY_MANGLE void RE_ProcessConsoleEvents(SDL_Event *events)
+{
+    if (!console_open)
+        return;
+    
+    ImGui_ImplSDL2_ProcessEvent(events);
 }
 
 GO_AWAY_MANGLE void R_BeginImGui(void)
@@ -185,12 +176,12 @@ GO_AWAY_MANGLE void R_BeginImGui(void)
     ImGui::NewFrame();
 }
 
-qboolean RE_ConsoleIsOpen(void)
+GO_AWAY_MANGLE qboolean RE_ConsoleIsOpen(void)
 {
     return console_open;
 }
 
-#define FRAME_QUADS 0x2000
+#define FRAME_QUADS 0x20000
 
 GO_AWAY_MANGLE void RE_BeginFrame(void)
 {
@@ -198,22 +189,24 @@ GO_AWAY_MANGLE void RE_BeginFrame(void)
 
     nglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     nglViewport(0, 0, r_screenwidth->i, r_screenheight->i);
-    nglClearColor(0.1f, 0.1f, 0.1f, 0.0f);
+    nglClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
-    RE_BeginFramebuffer();
+//    RE_BeginFramebuffer();
     R_UpdateState();
     R_BeginImGui();
 
     R_InitFrameMemory();
     frame.currentMap = ri.G_GetCurrentMap();
     
-    R_ReserveFrameMemory(frame.pintCache);
-    RE_SetDefaultState();
+    R_ReserveFrameMemory(frame.pintCache, FRAME_QUADS, FRAME_QUADS);
+//    RE_SetDefaultState();
 
     renderer->camera.CalculateViewMatrix();
 
-    nglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    nglViewport(0, 0, r_screenwidth->i, r_screenheight->i);
+    R_BindShader(pintShader);
+    R_SetMatrix4(pintShader, "u_ViewProjection", renderer->camera.GetVPM());
+//    R_SetBool(pintShader, "u_UseGamma", (bool)r_gammaAmount->f);
+//    R_SetFloat(pintShader, "u_Gamma", r_gammaAmount->f);
 }
 
 GO_AWAY_MANGLE void RE_EndFrame(void)
@@ -225,8 +218,22 @@ GO_AWAY_MANGLE void RE_EndFrame(void)
 
     // flush it if there's anything in there
     R_DrawCache(frame.pintCache);
+
+    R_BindTexture(R_GetTexture(frame.currentMap->tilesetName));
+    nglBegin(GL_TRIANGLES);
+    nglVertex2f( 0.5f,  0.5f);
+    nglVertex2f( 0.5f, -0.5f);
+    nglVertex2f(-0.5f, -0.5f);
+    nglVertex2f(-0.5f,  0.5f);
+    nglVertex2f(-0.5f, -0.5f);
+    nglVertex2f(-0.5f,  0.5f);
+    nglVertex2f( 0.5f,  0.5f);
+    nglEnd();
+    R_UnbindTexture();
+
+    R_UnbindShader();
     
-    RE_EndFramebuffer();
+//    RE_EndFramebuffer();
 
     ri.SDL_GL_SwapWindow(renderer->window);
 }
@@ -254,12 +261,11 @@ GO_AWAY_MANGLE void RE_InitFrameData(void)
 /*
 RE_SubmitPint: frameVerts should always be stack-based
 */
-GO_AWAY_MANGLE void RE_SubmitPint(const glm::vec2& pos, const glm::vec2& dims, uint32_t gid, const GDRTileset *set,
-    vertex_t *frameVerts)
+GO_AWAY_MANGLE void RE_SubmitPint(const glm::vec2& pos, const glm::vec2& dims, uint32_t gid, vertex_t *frameVerts)
 {
     glm::mat4 model, mvp;
     vertex_t *vert;
-    const glm::vec2* coords = set->getSpriteCoords(gid);
+    const glm::vec2* coords = ri.Map_GetSpriteCoords(gid);
     if (!coords) { // oh no
         Con_Printf(ERROR, "bad GID (%i)", gid);
         return;
@@ -269,7 +275,10 @@ GO_AWAY_MANGLE void RE_SubmitPint(const glm::vec2& pos, const glm::vec2& dims, u
         glm::vec4( 0.5f,  0.5f, 0.0f, 1.0f),
         glm::vec4( 0.5f, -0.5f, 0.0f, 1.0f),
         glm::vec4(-0.5f, -0.5f, 0.0f, 1.0f),
-        glm::vec4(-0.5f,  0.5f, 0.0f, 1.0f)
+        glm::vec4(-0.5f,  0.5f, 0.0f, 1.0f),
+        glm::vec4(-0.5f, -0.5f, 0.0f, 1.0f), // extra
+        glm::vec4(-0.5f,  0.5f, 0.0f, 1.0f), // extra
+        glm::vec4( 0.5f,  0.5f, 0.0f, 1.0f) // extra
     };
 
     model = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x - (dims.x * 0.5f), dims.y - pos.y, 0.0f));
@@ -277,7 +286,7 @@ GO_AWAY_MANGLE void RE_SubmitPint(const glm::vec2& pos, const glm::vec2& dims, u
     mvp = renderer->camera.GetVPM() * model;
 
     vert = frameVerts;
-    for (uint32_t i = 0; i < 4; ++i) {
+    for (uint32_t i = 0; i < 6; ++i) {
         vert->pos = mvp * positions[i];
         vert->texcoords = coords[i];
         vert->color = glm::vec4(0.0f);
@@ -285,129 +294,51 @@ GO_AWAY_MANGLE void RE_SubmitPint(const glm::vec2& pos, const glm::vec2& dims, u
     }
 }
 
-GO_AWAY_MANGLE void R_RenderImageLayer(const GDRImageLayer *layer)
-{
-    const texture_t *tex = R_GetTexture(layer->getImage());
-
-    R_BindTexture(tex);
-
-#if 0
-#else
-    // using immediate mode until it becomes necessary to use a vbo to render the stuff (more than one fullscreen texture per frame)
-    nglBegin(GL_TRIANGLE_FAN);
-
-    nglTexCoord2f(0.0f, 0.0f);
-    nglVertex2f(1.0f,  1.0f);
-
-    nglTexCoord2f(0.0f, 1.0f);
-    nglVertex2f(1.0f, -1.0f);
-    
-    nglTexCoord2f(1.0f, 1.0f);
-    nglVertex2f(-1.0f, -1.0f);
-    
-    nglTexCoord2f(1.0f, 0.0f);
-    nglVertex2f(-1.0f,  1.0f);
-    
-    nglEnd();
-#endif
-
-    R_UnbindTexture();
-}
-
-GO_AWAY_MANGLE void R_RenderTileLayer(const GDRMapLayer *layer)
-{
-    const GDRTile *tile;
-    vertex_t *pintVertices, *vertPtr;
-    uint32_t numVerts;
-    const uint32_t maxVerts = FRAME_QUADS * 4;
-    const GDRTileLayer *tileLayer;
-
-    numVerts = 0;
-    pintVertices = (vertex_t *)R_FrameAlloc(sizeof(vertex_t) * maxVerts);
-    vertPtr = pintVertices;
-    tileLayer = (const GDRTileLayer *)layer->data();
-
-    for (uint64_t y = 0; y < layer->getHeight(); ++y) {
-        for (uint64_t x = 0; x < layer->getWidth(); ++x) {
-            tile = &tileLayer->getTiles()[y * layer->getWidth() + x];
-
-            // invalid tile, skip it
-            if (tile->tilesetIndex >= frame.currentMap->numTilesets())
-                continue;
-            
-            Con_Printf(DEBUG, "tilesetIndex: %li", tile->tilesetIndex);
-            Con_Printf(DEBUG, "tileset.m_name: %s", frame.currentMap->getTilesets()[tile->tilesetIndex].getName());
-            RE_SubmitPint({ x, y }, { layer->getWidth(), layer->getHeight() }, tile->gid,
-                &frame.currentMap->getTilesets()[tile->tilesetIndex], vertPtr);
-            
-            if (numVerts + 4 >= maxVerts) {
-                R_PushVertices(frame.pintCache, pintVertices, numVerts);
-                vertPtr = pintVertices;
-                numVerts = 0;
-            }
-            numVerts += 4;
-        }
-    }
-    // submit it
-    R_DrawCache(frame.pintCache);
-}
-
-GO_AWAY_MANGLE void R_LayerIterate(const GDRGroupLayer *layer)
-{
-    const GDRMapLayer *layerBase = layer->getChildren();
-
-    for (uint64_t i = 0; i < layer->getNumChildren(); ++i) {
-        switch (layerBase->getType()) {
-//        case MAP_LAYER_OBJECT: {
-//            const GDRObjectGroup *object = dynamic_cast<const GDRObjectGroup *>(i);
-//            R_RenderLayer(object);
-//            break; }
-        case MAP_LAYER_IMAGE: {
-            const GDRImageLayer *image = (const GDRImageLayer *)layerBase->data();
-            R_RenderImageLayer(image);
-            break; }
-        case MAP_LAYER_TILE: {
-            R_RenderTileLayer(layerBase);
-            break; }
-        case MAP_LAYER_GROUP: {
-            const GDRGroupLayer *group = (const GDRGroupLayer *)layerBase->data();
-            R_LayerIterate(group); // hopefully this doesn't end up in an infinite loop
-            break; }
-        };
-        layerBase++;
-    }
-}
-
 GO_AWAY_MANGLE void RE_RenderMap(void)
 {
     EASY_FUNCTION();
 
+    vertex_t pintVerts[6];
+    uint32_t numVerts;
+    const uint32_t maxVerts = (FRAME_QUADS / 2) * 4;
+    const uint32_t maxIndices = (FRAME_QUADS / 2) * 6;
     uint64_t renderStartTime, renderEndTime;
-    const GDRTileset *tileset = frame.currentMap->getTilesets();
-    const GDRMapLayer *layerBase = frame.currentMap->getLayers();
+
+    // initialize and allocate the temp frame data
+    numVerts = 0;
 
     // begin the profiling
     renderStartTime = clock();
-    for (uint64_t i = 0; i < frame.currentMap->numLayers(); ++i) {
-        switch (layerBase->getType()) {
-        case MAP_LAYER_TILE: {
-            R_RenderTileLayer(layerBase);
-            break; }
-        case MAP_LAYER_GROUP: {
-            const GDRGroupLayer *layer = (const GDRGroupLayer *)layerBase->data();
-            R_LayerIterate(layer);
-            break; }
-        case MAP_LAYER_IMAGE: {
-            const GDRImageLayer *layer = (const GDRImageLayer *)layerBase->data();
-            R_RenderImageLayer(layer);
-            break; }
-//        case MAP_LAYER_OBJECT: {
-//            const GDRObjectGroup *layer = dynamic_cast<GDRObjectGroup *>(layerBase);
-//            R_RenderLayer(eastl::dynamic_pointer_cast<GDRObjectGroup>(layerBase), mapData);
-//            break; }
-        };
-        layerBase++;
+    uint32_t gid = 0;
+    R_SetInt(pintShader, "u_Texture", 0);
+    R_BindTexture(R_GetTexture(frame.currentMap->tilesetName));
+    nglBegin(GL_TRIANGLES);
+    for (uint64_t y = 0; y < frame.currentMap->mapHeight; y++) {
+        for (uint64_t x = 0; x < frame.currentMap->mapWidth; x++) {
+            gid = frame.currentMap->tilemapData[y * frame.currentMap->mapWidth + x][0];
+            RE_SubmitPint({ x, y }, { frame.currentMap->tileWidth, frame.currentMap->tileHeight }, gid, pintVerts);
+
+            for (uint32_t i = 0; i < arraylen(pintVerts); i++) {
+                nglVertex2f(pintVerts[i].pos.x, pintVerts[i].pos.y);
+                nglTexCoord2f(pintVerts[i].texcoords.x, pintVerts[i].texcoords.y);
+            }
+
+            if (numVerts + 4 >= (FRAME_QUADS / 2) * 4) {
+//                R_DrawCache(frame.pintCache);
+//                numVerts = 0;
+            }
+
+//            R_PushVertices(frame.pintCache, pintVerts, arraylen(pintVerts));
+            numVerts += 4;
+        }
     }
+    nglEnd();
+    R_UnbindTexture();
+
+//    R_PushVertices(frame.pintCache, pintVerts, numVerts);
+//    R_PushIndices(frame.pintCache, frame.indices, maxIndices);
+//    R_DrawCache(frame.pintCache);
+
     renderEndTime = clock();
 
     frame.frameStats.c_mapRenderTime = renderEndTime - renderStartTime;
@@ -445,7 +376,7 @@ typedef struct {
 frameMemory_t *frameData;
 
 #if 1
-#define	MEMORY_BLOCK_SIZE	0x600000
+#define	MEMORY_BLOCK_SIZE   0x9000000
 #else
 #define MEMORY_BLOCK_SIZE   0x1000
 #endif

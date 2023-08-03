@@ -381,6 +381,8 @@ typedef struct
 ////
 ////
 
+#
+
 
 // implementation isn't include-guarded, since it might have indirectly
 // included just the "header" portion
@@ -400,7 +402,7 @@ typedef struct
 // traverse the layout to locate the nearest character to a display position
 static int stb_text_locate_coord(STB_TEXTEDIT_STRING *str, float x, float y)
 {
-   StbTexteditRow r;
+   ImStb::StbTexteditRow r;
    int n = STB_TEXTEDIT_STRINGLEN(str);
    float base_y = 0, prev_x;
    int i=0, k;

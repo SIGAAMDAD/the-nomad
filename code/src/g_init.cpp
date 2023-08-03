@@ -29,12 +29,9 @@ void mainLoop()
     float light_intensity = 1.0f;
 
     uint64_t next = clock();
-    Cmd_AddCommand("cameraGame", CameraGame_f);
+    Com_TouchMemory();
     while (1) {
-#ifdef _NOMAD_DEBUG
         Hunk_Check();
-        Z_CheckHeap();
-#endif
         Com_UpdateEvents();
         qboolean *kbstate = Com_GetKeyboard();
         vm_command = SGAME_RUNTIC;
@@ -56,6 +53,7 @@ void mainLoop()
         Snd_Submit();
         VM_Stop(SGAME_VM);
 
+        Con_GetInput();
         RE_EndFrame();
         sleepfor(next);
     }

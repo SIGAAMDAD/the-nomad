@@ -1,4 +1,8 @@
 #include "rgl_local.h"
+#define STB_RECT_PACK_IMPLEMENTATION
+#include "../rendergl/imstb_rectpack.h"
+#define STB_TRUETYPE_IMPLEMENTATION
+#include "../rendergl/imstb_truetype.h"
 #define STB_SPRINTF_IMPLEMENTATION
 #include "../src/stb_sprintf.h"
 
@@ -496,6 +500,8 @@ GO_AWAY_MANGLE void RE_Init(renderImport_t *import)
 {
     memcpy(&ri, import, sizeof(*import)); // copy all the functions
 
+    ri.Con_Printf(INFO, "RE_Init: initializing rendering engine");
+
     r_ticrate = ri.Cvar_Find("r_ticrate");
     r_textureMagFilter = ri.Cvar_Find("r_textureMagFilter");
     r_textureMinFilter = ri.Cvar_Find("r_textureMinFilter");
@@ -575,6 +581,8 @@ void RE_Shutdown(void)
         return;
     if (!rendererInitialized)
         return;
+
+    ri.Con_Printf(INFO, "RE_Shutdown: shutting down OpenGL buffers and memory, and deallocating rendering context");
     
     rendererInitialized = qfalse;
     sdl_on = false;
@@ -583,7 +591,7 @@ void RE_Shutdown(void)
     RE_ShutdownFramebuffers();
     RE_ShutdownTextures();
     RE_ShutdownShaders();
-    RE_ShutdownShaderBuffers();
+//    RE_ShutdownShaderBuffers();
     for (uint32_t i = 0; i < renderer->numVertexCaches; ++i)
         R_ShutdownCache(renderer->vertexCaches[i]);
     

@@ -3,7 +3,10 @@
 
 #pragma once
 
+#include "sg_version.h"
+#include "../src/n_shared.h"
 #include "sg_public.h"
+#include "sg_local.h"
 
 // everything is globally or statically allocated within the vm, unless its using the G_AllocMem stuff, but the vm doesn't like it
 // (reasonably, raw pointers + vm bytecode = exploits) when you pass pointers back and forth from the vm and native bytecode, so non of that'll happen
@@ -11,13 +14,13 @@
 #define MAX_MOBS_ACTIVE 150
 #define MAX_PLAYR_INVENTORY 20
 
+void VM_Com_Printf(const char *fmt);
+void VM_Com_Error(const char *fmt);
+
+void G_GetKeyboardState(qboolean **state, unsigned int numbinds);
 void* G_AllocMem(int size);
 void G_FreeMem(void *ptr);
 void G_InitMem(void);
-void G_GetTilemap(sprite_t tilemap[MAP_MAX_Y][MAP_MAX_X]);
-void G_SaveGame(int slot, const void *data, const int size);
-void G_LoadGame(int slot, void *data, int *size);
-void G_GetKeyboardState(qboolean keys[NUMKEYS]);
 
 enum
 {
@@ -45,7 +48,7 @@ enum
 
 typedef enum
 {
-
+    ST_NULL,
 } statenum_t;
 
 typedef struct sgentity_s sgentity_t;
@@ -73,5 +76,9 @@ struct sgentity_s
 
     struct sgentity_s* target; // only really applies to mobs and homing attacks
 };
+
+#include "sg_playr.h"
+#include "sg_mob.h"
+#include "sg_game.h"
 
 #endif

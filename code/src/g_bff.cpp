@@ -67,7 +67,6 @@ static void LVL_LoadTMJBuffer(bfflevel_t *lvl, char *ptr, int64_t buflen, int co
 	memcpy(buffer, ptr, mapBufferLen);
 //	FS_Read(buffer, buflen, fd);
 	ptr += mapBufferLen;
-#if 0
 	switch (compression) {
 	case COMPRESSION_BZIP2:
 		tmp = Decompress_BZIP2(buffer, buflen, &mapBufferLen);
@@ -79,9 +78,6 @@ static void LVL_LoadTMJBuffer(bfflevel_t *lvl, char *ptr, int64_t buflen, int co
 		tmp = buffer;
 		break;
 	};
-#else
-	tmp = buffer;
-#endif
 	lvl->mapBufferLen = mapBufferLen;
 
 	lvl->tmjBuffer = (char *)Z_Malloc(lvl->mapBufferLen, TAG_STATIC, &lvl->tmjBuffer, "TMJbuffer");
@@ -110,7 +106,6 @@ static void LVL_LoadTSJBuffers(bfflevel_t *lvl, char *ptr, int compression)
 		memcpy(buffer, ptr, buflen);
 		ptr += buflen;
 		mapBufferLen = buflen;
-#if 0
 		switch (compression) {
 		case COMPRESSION_BZIP2:
 			tmp = Decompress_BZIP2(buffer, buflen, &mapBufferLen);
@@ -122,9 +117,6 @@ static void LVL_LoadTSJBuffers(bfflevel_t *lvl, char *ptr, int compression)
 			tmp = buffer;
 			break;
 		};
-#else
-		tmp = buffer;
-#endif
 
 		real_size = mapBufferLen;
 		lvl->tsjBuffers[i] = (char *)Z_Malloc(buflen, TAG_STATIC, &lvl->tsjBuffers[i], "TSJbuffer");
@@ -164,7 +156,6 @@ void BFF_ReadLevel(bfflevel_t *lvl, const bff_chunk_t *chunk)
 	lvl->tmjBuffer = (char *)Z_Malloc(lvl->mapBufferLen, TAG_STATIC, &lvl->tmjBuffer, "TMJbuffer");
     memcpy(lvl->tmjBuffer, buf_p, lvl->mapBufferLen);
 	lvl->tmjBuffer[lvl->mapBufferLen - 1] = '\0';
-	Con_Printf("TMJ String: %s", lvl->tmjBuffer);
 
     buf_p += lvl->mapBufferLen;
 
@@ -177,7 +168,6 @@ void BFF_ReadLevel(bfflevel_t *lvl, const bff_chunk_t *chunk)
         lvl->tsjBuffers[i] = (char *)Z_Malloc(len, TAG_STATIC, &lvl->tsjBuffers[i], "TSJbuffer");
         memcpy(lvl->tsjBuffers[i], buf_p, len);
 		lvl->tsjBuffers[i][len - 1] = '\0';
-		Con_Printf("TSJ String[%li]: %s", i, lvl->tsjBuffers[i]);
         buf_p += len;
     }
 }

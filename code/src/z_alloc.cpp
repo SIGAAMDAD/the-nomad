@@ -194,7 +194,7 @@ GDRHeap::~GDRHeap(void)
 	ReleaseSwappedPages();
 
 	if ( defragBlock ) {
-		free( defragBlock );
+		(free)( defragBlock );
 	}
 
 	assert( pagesAllocated == 0 );
@@ -213,7 +213,7 @@ void GDRHeap::AllocDefragBlock(void)
 		return;
 	}
 	while( 1 ) {
-		defragBlock = malloc( size );
+		defragBlock = (malloc)( size );
 		if ( defragBlock ) {
 			break;
 		}
@@ -235,7 +235,7 @@ void *GDRHeap::Allocate( const uint32_t bytes )
 	c_heapAllocRunningCount++;
 
 #if USE_LIBC_MALLOC
-	return malloc( bytes );
+	return (malloc)( bytes );
 #else
 	if ( !(bytes & ~255) ) {
 		return SmallAllocate( bytes );
@@ -260,7 +260,7 @@ void GDRHeap::Free( void *p )
 	c_heapAllocRunningCount--;
 
 #if USE_LIBC_MALLOC
-	free( p );
+	(free)( p );
 #else
 	switch( ((byte *)(p))[-1] ) {
 		case SMALL_ALLOC: {
@@ -292,13 +292,13 @@ void *GDRHeap::Allocate16( const uint32_t bytes )
 {
 	byte *ptr, *alignedPtr;
 
-	ptr = (byte *) malloc( bytes + 16 + sizeof(uintptr_t) );
+	ptr = (byte *) (malloc)( bytes + 16 + sizeof(uintptr_t) );
 	if ( !ptr ) {
 		if ( defragBlock ) {
 			Con_Printf("Freeing defragBlock on alloc of %i.", bytes );
-			free( defragBlock );
+			(free)( defragBlock );
 			defragBlock = NULL;
-			ptr = (byte *) malloc( bytes + 16 + sizeof(uintptr_t) );
+			ptr = (byte *) (malloc)( bytes + 16 + sizeof(uintptr_t) );
 			AllocDefragBlock();
 		}
 		if ( !ptr ) {
@@ -320,7 +320,7 @@ GDRHeap::Free16
 */
 void GDRHeap::Free16( void *p )
 {
-	free( (void *) *((uintptr_t *) (( (byte *) p ) - sizeof(uintptr_t))) );
+	(free)( (void *) *((uintptr_t *) (( (byte *) p ) - sizeof(uintptr_t))) );
 }
 
 /*
@@ -413,7 +413,7 @@ void GDRHeap::FreePageReal( GDRHeap::page_t *p )
 	if (!p)
 		N_Error("GDRHeap::FreePageReal: NULL page");
 	
-	free( p );
+	(free)( p );
 }
 
 /*
@@ -455,13 +455,13 @@ GDRHeap::page_t* GDRHeap::AllocatePage( uint32_t bytes )
 
 		size = bytes + sizeof(GDRHeap::page_t);
 
-		p = (GDRHeap::page_t *) malloc( size + ALIGN - 1 );
+		p = (GDRHeap::page_t *) (malloc)( size + ALIGN - 1 );
 		if ( !p ) {
 			if ( defragBlock ) {
 				Con_Printf("Freeing defragBlock on alloc of %i.\n", size + ALIGN - 1 );
-				free( defragBlock );
+				(free)( defragBlock );
 				defragBlock = NULL;
-				p = (GDRHeap::page_t *) malloc( size + ALIGN - 1 );
+				p = (GDRHeap::page_t *) (malloc)( size + ALIGN - 1 );
 				AllocDefragBlock();
 			}
 			if ( !p ) {
@@ -1087,7 +1087,7 @@ void *Mem_Alloc( const uint32_t size )
 #ifdef CRASH_ON_STATIC_ALLOCATION
 		*((uint32_t*)0x0) = 1;
 #endif
-		return malloc( size );
+		return (malloc)( size );
 	}
 	void *mem = mem_heap->Allocate( size );
 	Mem_UpdateAllocStats( mem_heap->Msize( mem ) );
@@ -1108,7 +1108,7 @@ void Mem_Free( void *ptr )
 #ifdef CRASH_ON_STATIC_ALLOCATION
 		*((uint32_t*)0x0) = 1;
 #endif
-		free( ptr );
+		(free)( ptr );
 		return;
 	}
 	Mem_UpdateFreeStats( mem_heap->Msize( ptr ) );
@@ -1129,7 +1129,7 @@ void *Mem_Alloc16( const uint32_t size )
 #ifdef CRASH_ON_STATIC_ALLOCATION
 		*((uint32_t*)0x0) = 1;
 #endif
-		return malloc( size );
+		return (malloc)( size );
 	}
 	void *mem = mem_heap->Allocate16( size );
 	// make sure the memory is 16 byte aligned
@@ -1151,7 +1151,7 @@ void Mem_Free16( void *ptr )
 #ifdef CRASH_ON_STATIC_ALLOCATION
 		*((uint32_t*)0x0) = 1;
 #endif
-		free( ptr );
+		(free)( ptr );
 		return;
 	}
 	// make sure the memory is 16 byte aligned
@@ -1483,8 +1483,9 @@ void *Mem_AllocDebugMemory( const uint32_t size, const char *fileName, const uin
 #ifdef CRASH_ON_STATIC_ALLOCATION
 		*((uint32_t*)0x0) = 1;
 #endif
-		// NOTE: set a breakpouint32_t here to find memory allocations before mem_heap is initialized
-		return malloc( size );
+		// fixed the note
+		GDR_DEBUG_BREAK();
+		return (malloc)( size );
 	}
 
 	if ( align16 ) {
@@ -1528,8 +1529,9 @@ void Mem_FreeDebugMemory( void *p, const char *fileName, const uint32_t lineNumb
 #ifdef CRASH_ON_STATIC_ALLOCATION
 		*((uint32_t*)0x0) = 1;
 #endif
-		// NOTE: set a breakpouint32_t here to find memory being freed before mem_heap is initialized
-		free( p );
+		// fixed the note
+		GDR_DEBUG_BREAK();
+		(free)( p );
 		return;
 	}
 
@@ -1617,7 +1619,7 @@ void Mem_Free16Debug( void *ptr, const char *fileName, const uint32_t lineNumber
 		return;
 	}
 	// make sure the memory is 16 byte aligned
-//	assert( ( ((uint32_t)ptr) & 15) == 0 );
+	assert( ( ((uint32_t)ptr) & 15) == 0 );
 	Mem_FreeDebugMemory( ptr, fileName, lineNumber, true );
 }
 
@@ -1629,7 +1631,7 @@ Mem_ClearedAlloc
 void *Mem_ClearedAllocDebug( const uint32_t size, const char *fileName, const uint32_t lineNumber )
 {
 	void *mem = Mem_Alloc( size, fileName, lineNumber );
-//	memset( mem, 0, size );
+	memset( mem, 0, size );
 	return mem;
 }
 
@@ -1668,7 +1670,6 @@ void Mem_Shutdown( void )
 		Mem_DumpCompressed( va( "%s_leak_size.txt", mem_leakName ), MEMSORT_SIZE, 0 );
 		Mem_DumpCompressed( va( "%s_leak_location.txt", mem_leakName ), MEMSORT_LOCATION, 0 );
 	}
-
 	delete mem_heap;
 }
 

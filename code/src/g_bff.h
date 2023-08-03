@@ -5,6 +5,8 @@
 	#pragma once
 #endif
 
+#ifndef Q3_VM
+
 #define BFF_VERSION_MAJOR 0
 #define BFF_VERSION_MINOR 1
 #define BFF_VERSION ((BFF_VERSION_MAJOR<<8)+BFF_VERSION_MINOR)
@@ -166,5 +168,6 @@ const eastl::vector<const bfflevel_t*>& BFF_OrderLevels(const bffinfo_t *info);
 const eastl::vector<const bfftexture_t*>& BFF_OrderTextures(const bffinfo_t *info);
 
 void G_LoadBFF(const char *bffname);
+#endif
 
 #endif

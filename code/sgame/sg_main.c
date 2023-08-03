@@ -1,13 +1,12 @@
+#include "../src/n_shared.h"
+#include "../src/n_scf.h"
 #include "sg_local.h"
-#include "sg_playr.h"
-#include "sg_mob.h"
-#include "sg_game.h"
 
 world_t sg_world;
 playr_t playrs[MAX_PLAYR_COUNT];
 mobj_t mobs[MAX_MOBS_ACTIVE];
 
-static qboolean kbstate[NUMKEYS];
+static qboolean *kbstate[NUMBINDS];
 
 int G_Init(void);
 int G_Shutdown(void);
@@ -26,9 +25,33 @@ int vmMain(int command, int arg0, int arg1, int arg2, int arg3, int arg4, int ar
     case SGAME_SHUTDOWN:
         return G_Shutdown();
     default:
-        Con_Error("vmMain: invalid command id: %i", command);
+        Com_Error("vmMain: invalid command id: %i", command);
     };
     return -1;
+}
+
+void GDR_DECL SG_Printf(const char *fmt, ...)
+{
+    va_list argptr;
+    char msg[1024];
+
+    va_start(argptr, fmt);
+    vsprintf(msg, fmt, argptr);
+    va_end(argptr);
+
+    VM_Com_Printf(msg);
+}
+
+void GDR_DECL SG_Error(const char *fmt, ...)
+{
+    va_list argptr;
+    char msg[1024];
+
+    va_start(argptr, fmt);
+    vsprintf(msg, fmt, argptr);
+    va_end(argptr);
+
+    VM_Com_Error(msg);
 }
 
 const mobj_t mobinfo[NUMMOBS] = {
@@ -40,15 +63,17 @@ const mobj_t mobinfo[NUMMOBS] = {
 
 int G_RunLoop(void)
 {
-    G_GetKeyboardState(kbstate);
+    G_GetKeyboardState(kbstate, NUMBINDS);
     
     return 0;
 }
 
 int G_Init(void)
-{
+{    
     int i;
     playr_t* p;
+
+    G_Printf("SG_Init: initializing solo-player campaign variables");
 
     sg_world.state = SG_IN_LEVEL;
     
@@ -70,7 +95,10 @@ int G_Init(void)
     sg_world.mobs = mobs;
     memset(mobs, 0, MAX_MOBS_ACTIVE * sizeof(*mobs));
 
-    G_GetTilemap(sg_world.tilemap);
+    sg_world.mapwidth = 0;
+    sg_world.mapheight = 0;
+    sg_world.spritemap = (sprite_t **)G_AllocMem(sizeof(sprite_t *) * sg_world.mapwidth);
+
     G_InitMem();
 
     return 0;

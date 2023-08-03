@@ -3,6 +3,8 @@
 
 #pragma once
 
+typedef unsigned int sprite_t;
+
 typedef enum
 {
     SG_INACTIVE,
@@ -12,15 +14,17 @@ typedef enum
 
 typedef struct
 {
-    sprite_t tilemap[MAP_MAX_Y][MAP_MAX_X];
+    int mapwidth;
+    int mapheight;
+    sprite_t **spritemap;
 
-    playr_t* playr;
+    playr_t *playr;
     gamestate_t state;
 
     int numPlayrs;
     int numMobs;
-    playr_t* playrs;
-    mobj_t* mobs;
+    playr_t *playrs;
+    mobj_t *mobs;
 } world_t;
 
 extern world_t sg_world;

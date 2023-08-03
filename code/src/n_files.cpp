@@ -119,6 +119,45 @@ static file_t FS_HandleForFile(void)
 	return FS_INVALID_HANDLE;
 }
 
+void FS_VM_FClose(file_t *f)
+{
+	if (!f) {
+		return;
+	}
+	if (*f <= FS_INVALID_HANDLE || *f >= MAX_FILE_HANDLES) {
+		return;
+	}
+
+	FS_FClose(*f);
+	*f = FS_INVALID_HANDLE;
+}
+
+void FS_VM_FOpenWrite(const char *path, file_t *f)
+{
+	if (!f) {
+#ifdef _NOMAD_DEBUG
+		N_Error("FS_VM_FOpenWrite: NULL handle");
+#else
+		Con_Printf(ERROR, "FS_VM_FOpenWrite: NULL handle");
+#endif
+	}
+
+	*f = FS_FOpenWrite(path);
+}
+
+void FS_VM_FOpenRead(const char *path, file_t *f)
+{
+	if (!f) {
+#ifdef _NOMAD_DEBUG
+		N_Error("FS_VM_FOpenRead: NULL handle");
+#else
+		Con_Printf(ERROR, "FS_VM_FOpenWrite: NULL handle");
+#endif
+	}
+
+	*f = FS_FOpenRead(path);
+}
+
 static void FS_FreeBFF(bffFile_t *bff)
 {
 	uint32_t i;
@@ -503,10 +542,24 @@ uint64_t FS_Write(const void *buffer, uint64_t size, file_t fd)
 	return 0;
 }
 
+static uint64_t FS_ReadFromChunk(void *buffer, uint64_t size, fileHandle_t *file)
+{
+	if (file->data.chunk->bytesRead + size > file->data.chunk->size) {
+		// should (logically) never happen, if it does, probably a code or bff corruption error
+		N_Error("FS_Read: overread of %lu bytes", size);
+	}
+	memcpy(buffer, &file->data.chunk->buffer[file->data.chunk->bytesRead], size);
+	file->data.chunk->bytesRead += size;
+	return size;
+}
+
 uint64_t FS_Read(void *buffer, uint64_t size, file_t fd)
 {
 	fileHandle_t *f;
-	uint64_t readCount;
+	int64_t readCount;
+	uint64_t remaining;
+	int tries;
+	byte *buf;
 
 	if (fd <= FS_INVALID_HANDLE || fd >= MAX_FILE_HANDLES) {
 		N_Error("FS_Read: out of range");
@@ -515,25 +568,33 @@ uint64_t FS_Read(void *buffer, uint64_t size, file_t fd)
 	f = &handles[fd];
 
 	if (FS_IsChunk(f)) {
-		if (f->data.chunk->bytesRead + size > f->data.chunk->size) {
-			// should (logically) never happen, if it does, probably a code or bff corruption error
-			N_Error("FS_Read: overread of %lu bytes", size);
-		}
-		memcpy(buffer, &f->data.chunk->buffer[f->data.chunk->bytesRead], size);
-		f->data.chunk->bytesRead += size;
-		fs_readCount += size;
-		return size;
+		return FS_ReadFromChunk(buffer, size, f);
 	}
-	// bff archives and normal files
-	else {
-		readCount = fread(buffer, 1, size, f->data.fp);
-		if (readCount != size) {
-			N_Error("FS_Read: short read of %lu bytes, should have read %lu bytes", readCount, size);
+
+	buf = (byte *)buffer;
+	remaining = len;
+	tries = 0;
+	while (remaining) {
+		block = remaining;
+		read = fread( buf, 1, block, f->data.fp );
+		if (read == 0) {
+			// we might have been trying to read from a CD, which
+			// sometimes returns a 0 read on windows
+			if (!tries) {
+				tries = 1;
+			} else {
+				return size - remaining;	//Com_Error (ERR_FATAL, "FS_Read: 0 bytes read");
+			}
 		}
-		fs_readCount += readCount;
-		return readCount;
+
+		if (read == -1) {
+			N_Error("FS_Read: -1 bytes read");
+		}
+
+		remaining -= read;
+		buf += read;
 	}
-	return 0;
+	return size;
 }
 
 file_t FS_CreateTmp(char **name, const char *ext)
@@ -639,10 +700,52 @@ const char* FS_GetOSPath(file_t f)
 
 	return ospath;
 }
+int FS_FileToFileno(file_t f)
+{
+	fileHandle_t *file;
+
+	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
+		N_Error("FS_FileToFileno: out of range");
+	}
+
+	file = &handles[f];
+	return fileno(file->data.fp);
+}
 
 file_t FS_FOpenRW(const char *filepath)
 {
+	char *ospath;
+	fileHandle_t *f;
+	file_t fd;
+
+	if (!fs_initialized) {
+		N_Error("Filesystem call made without initialization");
+	}
+	if (!filepath) {
+		N_Error("FS_FOpenWrite: NULL filepath");
+	}
+	if (!*filepath) {
+		N_Error("FS_FOpenWrite: empty filepath");
+	}
+
+	fd = FS_HandleForFile();
+	f = &handles[fd];
+	FS_InitHandle(f);
+
+	if (FS_IsChunk(filepath)) {
+		N_Error("FS_FOpenWrite: attempted to create write stream for bff chunk %s", filepath);
+	}
+	ospath = FS_BuildOSPath(fs_homepath, NULL, filepath);
+	N_strncpyz(f->name, filepath, MAX_GDR_PATH);
+	f->data.fp = Sys_FOpen(ospath, "wb+");
+	if (!f->data.fp) {
+		N_Error("FS_FOpenWrite: failed to open file %s", ospath);
+		return FS_INVALID_HANDLE;
+	}
 	
+	f->used = qtrue;
+	fs_loadStack++;
+	return fd;
 }
 
 file_t FS_FOpenWrite(const char *filepath)
@@ -936,7 +1039,6 @@ static qboolean FS_OpenFileInBFF(const char *chunkname, file_t *fd, bffFile_t *b
 	f->bffIndex = bff->index;
 	f->data.chunk = chunk;
 	fs_lastBFFIndex = bff->index;
-
 	N_strncpyz(f->name, chunk->name, MAX_BFF_CHUNKNAME);
 
 	bff->handlesUsed++;
@@ -1103,6 +1205,74 @@ static void FS_FreeUnused(void)
 	}
 }
 
+void FS_GetLine(char *buffer, uint64_t bufferLen, file_t f)
+{
+	fileHandle_t *file;
+
+	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
+		N_Error("FS_GetLine: out of range");
+	}
+
+	file = &handles[f];
+
+	if (FS_IsChunk(file)) {
+		char *ptr = &file->data.chunk->buffer[file->data.chunk->bytesRead];
+		char *it = buffer;
+		while (*ptr != '\n' && --bufferLen) {
+			*it++ = *ptr++;
+		}
+		return;
+	}
+	
+	fgets(buffer, bufferLen, file->data.fp);
+}
+
+file_t FS_FOpenWithMode(const char *path, const char *mode, bool vm)
+{
+	file_t f;
+	fileHandle_t *h;
+	const char *ospath;
+	FILE *fp;
+
+	if (!fs_initialized) {
+		N_Error("Filesystem call made without initialization");
+	}
+	if (!path) {
+		N_Error("FS_FOpenWithMode: NULL path");
+	}
+	if (!mode) {
+		N_Error("FS_FOpenWithMode: NULL mode");
+	}
+#ifdef __unix__
+	if (!*path) {
+		Con_Printf(ERROR, "FS_FOpenWithMode: empty path (this is a *nix system)");
+		return FS_INVALID_HANDLE;
+	}
+#endif
+
+	f = FS_HandleForFile();
+	h = &handles[f];
+	FS_InitHandle(h);
+
+	if ((*mode == 'r' && vm) || (*mode == 'w' && FS_IsChunk(path))) {
+		return FS_INVALID_HANDLE;
+	}
+	else if (FS_IsChunk(path) && *mode != 'w') {
+		bffFile_t *bff = FS_GetChunkBFF(FS_GetBFFChunk(path));
+		FS_OpenFileInBFF(path, &f, bff, FS_GetBFFChunk(path), h);
+		return f;
+	}
+
+	ospath = FS_BuildOSPath(fs_homepath, NULL, path);
+	
+	fp = Sys_FOpen(ospath, mode);
+	if (!fp) {
+		return FS_INVALID_HANDLE;
+	}
+
+	return f;
+}
+
 /*
 FS_LoadLibrary: tried to load libraries within known searchpaths
 */
@@ -1120,4 +1290,76 @@ void *FS_LoadLibrary(const char *name)
 		return NULL;
 	
 	return libHandle;
+}
+
+#define BFF_CACHE_MAGIC 0xffa28d
+
+#pragma pack(push, 1)
+
+typedef struct
+{
+	uint32_t magic;			// should be BFF_CACHE_MAGIC
+	uint32_t version;		// should be _NOMAD_VERSION
+	uint32_t numFiles;		// number of cached bff files
+} bffCacheHeader_t;
+
+typedef struct
+{
+	uint32_t pathLen;
+	uint32_t nameLen;
+	uint32_t hash;
+	uint32_t numChunks;
+} bffCacheEntry_t;
+
+#pragma pack(pop)
+
+#define BFF_CACHE_FILE "bffcache.dat"
+#define MAX_BFF_CACHE 256
+#define FS_HashBFF(x) Com_GenerateHashValue((x),MAX_BFF_CACHE)
+
+static bff_t *bffCacheTable[MAX_BFF_CACHE];
+
+static uint32_t fs_numMods;
+static uint32_t fs_cachedBFFs;
+static uint32_t fs_activeBFFs;
+
+static bff_t *FS_FindBFFInCache(const char *name)
+{
+}
+
+static void FS_LoadBFFFromCache(FILE *fp)
+{
+	bff_t *bff;
+
+
+}
+
+static void FS_WriteCache(void)
+{
+	bffCacheHeader_t header;
+	const char *ospath;
+	FILE *fp;
+
+	header.magic = BFF_CACHE_MAGIC;
+	header.version = _NOMAD_VERSION;
+	header.numFiles = fs_totalArchives;
+
+	ospath = FS_BuildOSPath(fs_homepath, NULL, BFF_CACHE_FILE);
+	fp = Sys_FOpen(ospath, "wb");
+	if (!fp) {
+		N_Error("FS_WriteCache: failed to open cache file %s in write mode", BFF_CACHE_FILE);
+	}
+
+	if (fwrite(&header, sizeof(header), 1, fp) != sizeof(header)) {
+		N_Error("FS_WriteCache: failed to write header");
+	}
+}
+
+
+static char **fs_modList;
+static uint64_t fs_modCount;
+
+static void FS_GetModList(void)
+{
+	
 }

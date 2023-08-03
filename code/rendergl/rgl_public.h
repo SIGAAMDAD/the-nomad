@@ -73,13 +73,17 @@ typedef struct
     qboolean *(*Com_GetKeyboard)(void);
     void *(*Com_GetEvents)(void);
 
+    void GDR_NORETURN (*Sys_Exit)(int code);
+
+    const glm::vec2* (*Map_GetSpriteCoords)(uint32_t gid);
+
     uint64_t (*FS_Write)(const void *data, uint64_t size, file_t f);
     uint64_t (*FS_Read)(void *data, uint64_t size, file_t f);
     file_t (*FS_OpenBFF)(int32_t index);
     file_t (*FS_FOpenRead)(const char *filepath);
     file_t (*FS_FOpenWrite)(const char *filepath);
     file_t (*FS_CreateTmp)(char **name, const char *ext);
-    char *(*FS_GetOSPath)(file_t f);
+    const char *(*FS_GetOSPath)(file_t f);
     void *(*FS_GetBFFData)(file_t handle);
     void (*FS_FClose)(file_t handle);
     uint64_t (*FS_FileLength)(file_t f);
@@ -97,7 +101,7 @@ typedef struct
     const eastl::vector<const bfflevel_t*>& (*BFF_OrderLevels)(const bffinfo_t *info);
     const eastl::vector<const bfftexture_t*>& (*BFF_OrderTextures)(const bffinfo_t *info);
 
-    const GDRMap *(*G_GetCurrentMap)(void);
+    const nmap_t *(*G_GetCurrentMap)(void);
 
     // most of this stuff is for imgui's usage
     SDL_bool (*SDL_SetHint)(const char *name, const char *value);
@@ -137,6 +141,7 @@ typedef struct
     int (*SDL_GL_MakeCurrent)(SDL_Window *window, SDL_GLContext context);
     int (*SDL_GL_SetSwapInterval)(int interval);
     const char *(*SDL_GetError)();
+    int (*SDL_PollEvent)(SDL_Event *events);
     
     SDL_Thread *(*SDL_CreateThread)(SDL_ThreadFunction fn, const char *name, void *dat);
     SDL_Thread *(*SDL_CreateThreadWithStackSize)(SDL_ThreadFunction fn, const char *name, const size_t stacksize, void *data);
@@ -161,8 +166,6 @@ typedef struct
     int (*SDL_CondWaitTimeout)(SDL_cond *cond, SDL_mutex *mutex, Uint32 ms);
 } renderImport_t;
 
-#define GO_AWAY_MANGLE extern "C"
-
 // rendering engine interface
 GO_AWAY_MANGLE GDR_EXPORT void RE_Init(renderImport_t *import);
 GO_AWAY_MANGLE GDR_EXPORT void RE_Shutdown(void);
@@ -172,5 +175,6 @@ GO_AWAY_MANGLE GDR_EXPORT void RE_InitFrameData(void);
 GO_AWAY_MANGLE GDR_EXPORT void RE_SubmitMapTilesheet(const char *chunkname, const bffinfo_t *info);
 GO_AWAY_MANGLE GDR_EXPORT void RE_CacheTextures(void);
 GO_AWAY_MANGLE GDR_EXPORT qboolean RE_ConsoleIsOpen(void);
+GO_AWAY_MANGLE GDR_EXPORT void RE_ProcessConsoleEvents(SDL_Event *events);
 
 #endif

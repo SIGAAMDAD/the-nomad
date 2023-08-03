@@ -98,11 +98,8 @@ VERSION_DEFINE=-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPD
 
 DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF)
 OPTIMIZERS    =\
-			-fexpensive-optimizations \
-			-funroll-loops \
 			-ffast-math \
-			-fomit-frame-pointer \
-			-fdelete-null-pointer-checks \
+			-rdynamic -export-dynamic \
 			-mfma -msse3 -msse2 -msse -mavx -mavx2 -mmmx -mfpmath=sse
 
 CFLAGS        =-std=c++17 $(FTYPE) $(DEFINES) $(INCLUDE) $(OPTIMIZERS)
@@ -128,7 +125,6 @@ LDLIBS=-L/usr/lib/x86_64-linux-gnu/ \
 		$(LIB_PREFIX)/libzstd.a \
 		$(LIB_PREFIX)/libopenal.a \
 		-L$(LIB_PREFIX) \
-		-limgui \
 		-lxallocator \
 		-lSDL2 \
 		-lSDL2_image \
@@ -142,7 +138,6 @@ SYS_DIR=$(SDIR)/unix
 else
 LDLIBS=-L$(LIB_PREFIX) \
 		-lSDL2 \
-		-limgui \
 		-lz \
 		-lbz2 \
 		-lSDL2_image \
@@ -188,11 +183,12 @@ SRC=\
 	$(O)/engine/n_files.o \
 	$(O)/engine/n_map.o \
 	$(O)/engine/n_shared.o \
+	$(O)/engine/n_cmd.o \
 	\
 	$(O)/allocator/z_heap.o \
 	$(O)/allocator/z_hunk.o \
 	$(O)/allocator/z_zone.o \
-	$(O)/allocator/z_alloc.o
+	$(O)/allocator/z_alloc.o \
 
 
 MAKE=make
@@ -211,6 +207,7 @@ makedirs:
 	@if [ ! -d $(O)/common ];then $(MKDIR) $(O)/common;fi
 	@if [ ! -d $(O)/engine ];then $(MKDIR) $(O)/engine;fi
 	@if [ ! -d $(O)/sys ];then $(MKDIR) $(O)/sys;fi
+	@if [ ! -d $(O)/nmap ];then $(MKDIR) $(O)/nmap;fi
 
 targets: makedirs
 	$(MAKE) $(EXE)
@@ -226,6 +223,18 @@ $(O)/engine/%.o: $(SDIR)/src/%.cpp
 $(O)/allocator/%.o: $(SDIR)/src/%.cpp
 	$(COMPILE_SRC)
 $(O)/sys/%.o: $(SYS_DIR)/%.cpp
+	$(COMPILE_SRC)
+$(O)/common/%.o: $(SDIR)/common/%.c
+	$(COMPILE_SRC)
+$(O)/common/%.o: $(SDIR)/sgame/%.c
+	$(COMPILE_SRC)
+$(O)/game/%.o: $(SDIR)/src/%.c
+	$(COMPILE_SRC)
+$(O)/engine/%.o: $(SDIR)/src/%.c
+	$(COMPILE_SRC)
+$(O)/allocator/%.o: $(SDIR)/src/%.c
+	$(COMPILE_SRC)
+$(O)/sys/%.o: $(SYS_DIR)/%.c
 	$(COMPILE_SRC)
 
 $(EXE): $(SRC) $(COMMON) $(SYS)

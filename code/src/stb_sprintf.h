@@ -193,8 +193,10 @@ PERFORMANCE vs MSVC 2008 32-/64-bit (GCC is even slower than MSVC):
 #define STBSP__NOTUSED(v)  (void)sizeof(v)
 #endif
 
+#ifndef Q3_VM
 #include <stdarg.h> // for va_arg(), va_list()
 #include <stddef.h> // size_t, ptrdiff_t
+#endif
 
 #ifndef STB_SPRINTF_MIN
 #define STB_SPRINTF_MIN 512 // how many characters per callback

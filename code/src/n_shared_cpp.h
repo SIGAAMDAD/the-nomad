@@ -58,6 +58,10 @@ inline T* construct(T *ptr)
 
 using json = nlohmann::json;
 
+typedef eastl::basic_string<char> json_string;
+template<typename T>
+using json_vector = eastl::vector<T, GDRAllocator<T>>;
+
 #include "g_bff.h"
 #include "n_map.h"
 
@@ -194,22 +198,6 @@ inline type* PADP(type *base, alignment align)
 {
 	return (type *)((void *)PAD((intptr_t)base, align));
 }
-
-#ifdef _NOMAD_DEBUG
-#undef assert
-inline void __nomad_assert_fail(const char* expression, const char* file, const char* func, unsigned line)
-{
-	N_Error(
-		"Assertion '%s' failed (Main Engine):\n"
-		"  \\file: %s\n"
-		"  \\function: %s\n"
-		"  \\line: %u\n\nIf this is an SDL2 error, here is the message string: %s\n",
-	expression, file, func, line, SDL_GetError());
-}
-#define assert(x) (((x)) ? void(0) : __nomad_assert_fail(#x,__FILE__,__func__,__LINE__))
-#else
-#define assert(x)
-#endif
 
 #define MAX_TICRATE 333
 #define MIN_TICRATE 10

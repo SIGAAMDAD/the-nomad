@@ -31,46 +31,48 @@ enum {
 #define TAG_SCOPE TAG_CACHE
 #define TAG_LOAD TAG_CACHE
 
-void Memory_Init(void);
-void Memory_Shutdown(void);
+GO_AWAY_MANGLE void Memory_Init(void);
+GO_AWAY_MANGLE void Memory_Shutdown(void);
 
 #ifdef _NOMAD_DEBUG
-void *Hunk_AllocDebug( uint64_t size, ha_pref preference, const char *name, const char *file, uint64_t line );
+GO_AWAY_MANGLE void *Hunk_AllocDebug( uint64_t size, ha_pref preference, const char *name, const char *file, uint64_t line );
 #define Hunk_Alloc(size,name,preference) Hunk_AllocDebug(size,preference,name,__FILE__,__LINE__)
 #else
-void *Hunk_Alloc( uint64_t size, const char *name, ha_pref preference );
+GO_AWAY_MANGLE void *Hunk_Alloc( uint64_t size, const char *name, ha_pref preference );
 #endif
-void Hunk_Clear(void);
-uint64_t Hunk_MemoryRemaining(void);
-void Hunk_Log(void);
-void Hunk_SmallLog(void);
-void Hunk_ClearToMark(uint64_t mark);
-qboolean Hunk_CheckMark(void);
-void Hunk_Print(void);
-void Hunk_Check(void);
+GO_AWAY_MANGLE void Hunk_Clear(void);
+GO_AWAY_MANGLE uint64_t Hunk_MemoryRemaining(void);
+GO_AWAY_MANGLE void Hunk_Log(void);
+GO_AWAY_MANGLE void Hunk_SmallLog(void);
+GO_AWAY_MANGLE void Hunk_ClearToMark(uint64_t mark);
+GO_AWAY_MANGLE qboolean Hunk_CheckMark(void);
+GO_AWAY_MANGLE void Hunk_Print(void);
+GO_AWAY_MANGLE void Hunk_Check(void);
 
+GO_AWAY_MANGLE uint64_t Com_TouchMemory(void);
 
-void* Z_Malloc(uint64_t size, int tag, void *user, const char* name);
-void* Z_Calloc(uint64_t size, int tag, void *user, const char* name);
-void* Z_Realloc(uint64_t nsize, int tag, void *user, void *ptr, const char* name);
+GO_AWAY_MANGLE void* Z_Malloc(uint64_t size, int tag, void *user, const char* name);
+GO_AWAY_MANGLE void* Z_Calloc(uint64_t size, int tag, void *user, const char* name);
+GO_AWAY_MANGLE void* Z_Realloc(uint64_t nsize, int tag, void *user, void *ptr, const char* name);
+GO_AWAY_MANGLE char* Z_Strdup(const char *str);
 
-void Z_Free(void *ptr);
-void Z_FreeTags(int lowtag, int hightag);
-void Z_ChangeTag(void* user, int tag);
-void Z_ChangeUser(void* newuser, void* olduser);
-void Z_ChangeName(void* user, const char* name);
-void Z_CleanCache(void);
-void Z_CheckHeap(void);
-void Z_ClearZone(void);
-void Z_Print(bool all);
-void Z_Init(void);
-uint64_t Z_FreeMemory(void);
-void* Z_ZoneBegin(void);
-void* Z_ZoneEnd(void);
-uint32_t Z_NumBlocks(int tag);
-void Z_TouchMemory(uint64_t *sum);
+GO_AWAY_MANGLE void Z_Free(void *ptr);
+GO_AWAY_MANGLE void Z_FreeTags(int lowtag, int hightag);
+GO_AWAY_MANGLE void Z_ChangeTag(void* user, int tag);
+GO_AWAY_MANGLE void Z_ChangeUser(void* newuser, void* olduser);
+GO_AWAY_MANGLE void Z_ChangeName(void* user, const char* name);
+GO_AWAY_MANGLE void Z_CleanCache(void);
+GO_AWAY_MANGLE void Z_CheckHeap(void);
+GO_AWAY_MANGLE void Z_ClearZone(void);
+GO_AWAY_MANGLE void Z_Print(bool all);
+GO_AWAY_MANGLE void Z_Init(void);
+GO_AWAY_MANGLE uint64_t Z_FreeMemory(void);
+GO_AWAY_MANGLE void* Z_ZoneBegin(void);
+GO_AWAY_MANGLE void* Z_ZoneEnd(void);
+GO_AWAY_MANGLE uint32_t Z_NumBlocks(int tag);
+GO_AWAY_MANGLE void Z_TouchMemory(uint64_t *sum);
 
-void Mem_Info(void);
+GO_AWAY_MANGLE void Mem_Info(void);
 
 template<class T>
 struct nomad_allocator
@@ -101,31 +103,6 @@ struct nomad_allocator
 	}
 };
 
-typedef struct
-{
-	int num;
-	int minSize;
-	int maxSize;
-	int totalSize;
-} memoryStats_t;
-
-//void Mem_Init( void );
-void Mem_Shutdown( void );
-void Mem_EnableLeakTest( const char *name );
-void Mem_ClearFrameStats( void );
-void Mem_GetFrameStats( memoryStats_t& allocs, memoryStats_t& frees );
-void Mem_GetStats( memoryStats_t& stats );
-void Mem_AllocDefragBlock( void );
-uint32_t Mem_Msize(void *ptr);
-bool Mem_DefragIsActive(void);
-
-void* Mem_Alloc(const uint32_t size);
-void* Mem_ClearedAlloc(const uint32_t size);
-void Mem_Free(void *ptr);
-char* Mem_CopyString(const char *in);
-void* Mem_Alloc16(const uint32_t size);
-void Mem_Free16(void *ptr);
-
 #if 0
 GDR_INLINE void *operator new(size_t n)
 { return Mem_Alloc(n); }
@@ -138,6 +115,30 @@ GDR_INLINE void operator delete[](void *p)
 GDR_INLINE void operator delete[](void *p, size_t n)
 { Mem_Free(p); }
 #endif
+
+typedef struct
+{
+	int num;
+	int minSize;
+	int maxSize;
+	int totalSize;
+} memoryStats_t;
+
+GO_AWAY_MANGLE void Mem_Shutdown( void );
+GO_AWAY_MANGLE void Mem_EnableLeakTest( const char *name );
+GO_AWAY_MANGLE void Mem_ClearFrameStats( void );
+GO_AWAY_MANGLE void Mem_GetFrameStats( memoryStats_t& allocs, memoryStats_t& frees );
+GO_AWAY_MANGLE void Mem_GetStats( memoryStats_t& stats );
+GO_AWAY_MANGLE void Mem_AllocDefragBlock( void );
+GO_AWAY_MANGLE uint32_t Mem_Msize(void *ptr);
+GO_AWAY_MANGLE bool Mem_DefragIsActive(void);
+
+GO_AWAY_MANGLE void* Mem_Alloc(const uint32_t size);
+GO_AWAY_MANGLE void* Mem_ClearedAlloc(const uint32_t size);
+GO_AWAY_MANGLE void Mem_Free(void *ptr);
+GO_AWAY_MANGLE char* Mem_CopyString(const char *in);
+GO_AWAY_MANGLE void* Mem_Alloc16(const uint32_t size);
+GO_AWAY_MANGLE void Mem_Free16(void *ptr);
 
 template<class T>
 struct id_allocator
@@ -176,45 +177,45 @@ class BlockAlloc
 {
 public:
 	BlockAlloc()
-		: blocks(NULL), free(NULL), total(0), active(0) { }
+		: blocks(NULL), free_(NULL), total(0), active(0) { }
 	~BlockAlloc()
 	{ Shutdown(); }
 
 	void Shutdown(void)
 	{
-		while(blocks) {
+		while (blocks) {
 			block_t *block = blocks;
 			blocks = blocks->next;
 			delete block;
 		}
 		blocks = NULL;
-		free = NULL;
+		free_ = NULL;
 		total = active = 0;
 	}
 	
 	type* Alloc(void)
 	{
-		if (!free) {
+		if (!free_) {
 			block_t *block = (block_t *)Mem_Alloc(sizeof(block_t));
 			block->next = blocks;
 			blocks = block;
 			for (uint32_t i = 0; i < blockSize; i++) {
-				block->elements[i].next = free;
-				free = &block->elements[i];
+				block->elements[i].next = free_;
+				free_ = &block->elements[i];
 			}
 			total += blockSize;
 		}
 		active++;
 		element_t *element = free;
-		free = free->next;
+		free_ = free_->next;
 		element->next = NULL;
 		return &element->t;
 	}
 	void Free(type *t)
 	{
 		element_t *element = (element_t *)t;
-		element->next = free;
-		free = element;
+		element->next = free_;
+		free_ = element;
 		active--;
 	}
 
@@ -235,7 +236,7 @@ private:
 	} block_t;
 
 	block_t* blocks;
-	element_t* free;
+	element_t* free_;
 	uint32_t total;
 	uint32_t active;
 };
