@@ -50,9 +50,32 @@ typedef struct
 	int32_t bffIndex;
 } fileHandle_t;
 
+typedef enum : uint64_t
+{
+	DIR_STATIC = 0,		// the game can do anything to the directory
+	DIR_CONST,			// read-only directory
+} diraccess_t;
+
+typedef struct
+{
+	char *name; // gamedata/
+	char *path; // /home/user/glnomad/gamedata/
+} directory_t;
+
+typedef struct searchpath_s
+{
+	directory_t dir;
+	bffFile_t *bff;
+	struct searchpath_s *next;
+	diraccess_t access;
+} searchpath_t;
 
 static fileHandle_t handles[MAX_FILE_HANDLES];
-static bffFile_t* fs_archives[MAX_BFF_FILES];
+static bffFile_t **fs_archives;
+
+static searchpath_t *fs_basepath; // cwd without the other stuff
+static searchpath_t *fs_gamepath; // either gamedata/ or a dedicated mod directory
+static searchpath_t *fs_homepath; // ospath to the cwd
 
 static uint32_t   fs_numHandles;
 static uint32_t   fs_totalArchives;
@@ -62,7 +85,7 @@ static uint64_t   fs_readCount;
 static int32_t    fs_lastBFFIndex;
 static uint32_t   fs_numTmpFiles;
 static uint32_t   fs_loadStack;
-static const char *fs_homepath;
+static const char *fs_homedir;
 
 cvar_t fs_gamedir     = {"fs_gamedir",     "gamedata", 0.0f, 0, qfalse, TYPE_STRING, CVG_ENGINE, CVAR_SAVE | CVAR_ROM | CVAR_DEV};
 cvar_t fs_numArchives = {"fs_numArchives", "",         0.0f, 1, qfalse, TYPE_INT, CVG_ENGINE, CVAR_SAVE | CVAR_ROM};
@@ -208,13 +231,14 @@ static void FS_InitBFFs(void)
 {
 	bff_t *bff;
 	bffFile_t *file;
+	searchpath_t *path, *prev;
 	char bffpath[12];
 	char *ospath;
 	
 	for (uint32_t i = 0; i < fs_totalArchives; i++) {
 		snprintf(bffpath, sizeof(bffpath), "bff%i.bff", i);
 
-		ospath = FS_BuildOSPath(fs_homepath, NULL, bffpath);
+		ospath = FS_BuildOSPath(fs_homedir, NULL, bffpath);
 		bff = BFF_OpenArchive(ospath);
 
 		fs_archives[i] = (bffFile_t *)Z_Malloc(sizeof(bffFile_t), TAG_CBFF, &fs_archives[i], "bffFile");
@@ -228,6 +252,18 @@ static void FS_InitBFFs(void)
 
 		N_strncpyz(file->name, bff->bffGamename, 256);
 		FS_LoadFilesFromBFF(bff->chunkList, file->fileList, file->numfiles);
+	}
+
+	prev = fs_gamepath;
+	for (uint32_t i = 0; i < fs_totalArchives; i++) {
+		path = (searchpath_t *)Hunk_Alloc(sizeof(*path), "bffpath", h_low);
+		path->dir.name = Z_Strdup(fs_archives[i]->handle->bffGamename);
+		path->dir.path = Z_Strdup(fs_archives[i]->handle->bffPathname);
+		path->bff = fs_archives[i]->handle;
+		path->access = DIR_CONST;
+
+		prev->next = path;
+		prev = path;
 	}
 }
 
@@ -292,7 +328,7 @@ void FS_FreeFile( void *buffer )
 
 qboolean FS_FileExists(const char *file)
 {
-	const char *path = FS_BuildOSPath(fs_homepath, NULL, file);
+	const char *path = FS_BuildOSPath(fs_homedir, NULL, file);
 
 	FILE* fp = Sys_FOpen(path, "r");
 	if (!fp) {
@@ -344,7 +380,7 @@ char* FS_CopyString( const char *in )
 
 uint64_t FS_LoadFile(const char *path, void **buffer)
 {
-	char *ospath = FS_BuildOSPath(fs_homepath, NULL, path);
+	char *ospath = FS_BuildOSPath(fs_homedir, NULL, path);
 	FILE* fp = Sys_FOpen(ospath, "r");
 	if (!fp) {
 		Con_Printf(ERROR, "FS_LoadFile: failed to load file named '%s'", path);
@@ -387,7 +423,7 @@ static void FS_CheckFilenameAllowed(const char *filename, const char *function, 
 void FS_Remove(const char *ospath)
 {
 	FS_CheckFilenameAllowed(ospath, __func__, qtrue);
-	remove(FS_BuildOSPath(fs_homepath, NULL, ospath));
+	remove(FS_BuildOSPath(fs_homedir, NULL, ospath));
 }
 
 uint64_t FS_FileLength(file_t f)
@@ -482,14 +518,35 @@ fileOffset_t FS_FileSeek(file_t f, fileOffset_t offset, uint32_t whence)
 	return (fileOffset_t)fseek(file->data.fp, (long)offset, (int)fwhence);
 }
 
+void GDR_DECL FS_Printf(file_t f, const char *fmt, ...)
+{
+	va_list argptr;
+	char msg[MAX_MSG_SIZE];
+
+	va_start(argptr, fmt);
+	stbsp_vsnprintf(msg, sizeof(msg), fmt, argptr);
+	va_end(argptr);
+
+	FS_Write(msg, strlen(msg), f);
+}
+
+void FS_Restart(void)
+{
+	fs_archives = (bffFile_t *)Hunk_Alloc(sizeof(*fs_archives) * fs_numArchives.i, "BFFarchives", h_low);
+
+	Cmd_AddCommand("listbffs", FS_ListArchives_f);
+
+	fs_totalArchives = fs_numArchives.i;
+
+	fs_gamepath = (searchpath_t *)Hunk_Alloc(sizeof(*fs_gamepath) * fs_gamepath, "gamepath", h_low);
+	fs_homepath = (searchpath_t *)
+}
+
 void FS_Init(void)
 {
-	fs_homepath = Sys_pwd();
+	fs_homedir = Z_Strdup(Sys_pwd());
 
-	int numArchives = fs_numArchives.i;
-	if (numArchives >= MAX_BFF_FILES) {
-		N_Error("FS_Init: too many bff files");
-	}
+	fs_archives = (bffFile_t *)Hunk_Alloc(sizeof(fs_archives));
 
 	for (uint32_t i = 0; i < MAX_FILE_HANDLES; i++) {
 		handles[i].used = qfalse;
@@ -621,7 +678,7 @@ file_t FS_CreateTmp(char **name, const char *ext)
 	else
 		tmpname = va("tmpfile%i.ntf", fs_numTmpFiles);
 
-	ospath = FS_BuildOSPath(fs_homepath, NULL, tmpname);
+	ospath = FS_BuildOSPath(fs_homedir, NULL, tmpname);
 	f->tmpFile = qtrue;
 	f->data.fp = Sys_FOpen(ospath, "wb+");
 	if (!f->data.fp) {
@@ -696,7 +753,7 @@ const char* FS_GetOSPath(file_t f)
 	}
 
 	file = &handles[f];
-	ospath = FS_BuildOSPath(fs_homepath, NULL, file->name);
+	ospath = FS_BuildOSPath(fs_homedir, NULL, file->name);
 
 	return ospath;
 }
@@ -735,7 +792,7 @@ file_t FS_FOpenRW(const char *filepath)
 	if (FS_IsChunk(filepath)) {
 		N_Error("FS_FOpenWrite: attempted to create write stream for bff chunk %s", filepath);
 	}
-	ospath = FS_BuildOSPath(fs_homepath, NULL, filepath);
+	ospath = FS_BuildOSPath(fs_homedir, NULL, filepath);
 	N_strncpyz(f->name, filepath, MAX_GDR_PATH);
 	f->data.fp = Sys_FOpen(ospath, "wb+");
 	if (!f->data.fp) {
@@ -771,7 +828,7 @@ file_t FS_FOpenWrite(const char *filepath)
 	if (FS_IsChunk(filepath)) {
 		N_Error("FS_FOpenWrite: attempted to create write stream for bff chunk %s", filepath);
 	}
-	ospath = FS_BuildOSPath(fs_homepath, NULL, filepath);
+	ospath = FS_BuildOSPath(fs_homedir, NULL, filepath);
 	N_strncpyz(f->name, filepath, MAX_GDR_PATH);
 	f->data.fp = Sys_FOpen(ospath, "wb");
 	if (!f->data.fp) {
@@ -819,7 +876,7 @@ file_t FS_FOpenRead(const char *filepath)
 	}
 	// normal file
 	else {
-		ospath = FS_BuildOSPath(fs_homepath, NULL, filepath);
+		ospath = FS_BuildOSPath(fs_homedir, NULL, filepath);
 		N_strncpyz(f->name, filepath, MAX_GDR_PATH);
 		f->data.fp = Sys_FOpen(ospath, "rb");
 		if (!f->data.fp) {
@@ -1263,7 +1320,7 @@ file_t FS_FOpenWithMode(const char *path, const char *mode, bool vm)
 		return f;
 	}
 
-	ospath = FS_BuildOSPath(fs_homepath, NULL, path);
+	ospath = FS_BuildOSPath(fs_homedir, NULL, path);
 	
 	fp = Sys_FOpen(ospath, mode);
 	if (!fp) {
@@ -1305,10 +1362,13 @@ typedef struct
 
 typedef struct
 {
-	uint32_t pathLen;
+	char *name;
 	uint32_t nameLen;
 	uint32_t hash;
 	uint32_t numChunks;
+	time_t mtime;
+	time_t ctime;
+	fileOffset_t size;
 } bffCacheEntry_t;
 
 #pragma pack(pop)
@@ -1337,22 +1397,38 @@ static void FS_LoadBFFFromCache(FILE *fp)
 static void FS_WriteCache(void)
 {
 	bffCacheHeader_t header;
+	bffCacheEntry_t entry;
 	const char *ospath;
 	FILE *fp;
 
 	header.magic = BFF_CACHE_MAGIC;
 	header.version = _NOMAD_VERSION;
 	header.numFiles = fs_totalArchives;
-
-	ospath = FS_BuildOSPath(fs_homepath, NULL, BFF_CACHE_FILE);
-	fp = Sys_FOpen(ospath, "wb");
-	if (!fp) {
-		N_Error("FS_WriteCache: failed to open cache file %s in write mode", BFF_CACHE_FILE);
+	
+	{
+		ospath = FS_BuildOSPath(fs_homedir, NULL, BFF_CACHE_FILE);
+		fp = Sys_FOpen(ospath, "wb");
+		if (!fp) {
+			N_Error("FS_WriteCache: failed to open cache file %s in write mode", BFF_CACHE_FILE);
+		}
 	}
 
 	if (fwrite(&header, sizeof(header), 1, fp) != sizeof(header)) {
 		N_Error("FS_WriteCache: failed to write header");
 	}
+
+	for (uint32_t i = 0; i < fs_totalArchives; i++) {
+		entry.hash = FS_HashBFF(fs_archives[i]->name);
+		entry.nameLen = strlen(fs_archives[i]->name);
+		entry.numChunks = fs_archives[i]->numfiles;
+		entry.mtime = fs_archives[i]->stats.mtime;
+		entry.ctime = fs_archives[i]->stats.ctime;
+
+		if (fwrite(&entry, sizeof(entry), 1, fp) != sizeof(entry)) {
+			N_Error("FS_WriteCache: failed to write entry %i into the cache", i);
+		}
+	}
+	fclose(fp);
 }
 
 
