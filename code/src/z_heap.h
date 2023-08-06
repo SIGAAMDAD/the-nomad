@@ -12,18 +12,16 @@ typedef enum {
 } ha_pref;
 
 enum {
-	TAG_FREE       = 0, // a free block
-	TAG_STATIC     = 1, // stays allocated for entirety (or until explicitly free) of execution time
-	TAG_LEVEL      = 2, // level-scoped allocations
-	TAG_RENDERER   = 3, // allocations made from any of the rendering libraries
-	TAG_SFX        = 4, // general sound allocations
-	TAG_MUSIC      = 5, // music allocations
-	TAG_CBFF       = 6, // a (maybe) cached bff file or a file within a bff
-	TAG_UBFF       = 7, // a not cached bff file or file within a bff
-	TAG_FILE_USED  = 8, // used temp file memory
-	TAG_FILE_FREE  = 9, // freed temp file memory
-	TAG_PURGELEVEL = 100,
-	TAG_CACHE      = 101,
+	TAG_FREE		= 0, // a free block
+	TAG_STATIC		= 1, // stays allocated for entirety (or until explicitly free) of execution time
+	TAG_LEVEL		= 2, // level-scoped allocations
+	TAG_RENDERER	= 3, // allocations made from any of the rendering libraries
+	TAG_SFX			= 4, // general sound allocations
+	TAG_MUSIC		= 5, // music allocations
+	TAG_SEARCH_PATH	= 6, // a filesystem searchpath
+	TAG_BFF			= 7, // a bff archive file
+	TAG_PURGELEVEL	= 100, // purgeable block
+	TAG_CACHE		= 101, // cached block, migh be used in the future, but can also be purged
 	
 	NUMTAGS
 };
@@ -41,13 +39,16 @@ GO_AWAY_MANGLE void *Hunk_AllocDebug( uint64_t size, ha_pref preference, const c
 GO_AWAY_MANGLE void *Hunk_Alloc( uint64_t size, const char *name, ha_pref preference );
 #endif
 GO_AWAY_MANGLE void Hunk_Clear(void);
+GO_AWAY_MANGLE void *Hunk_AllocateTempMemory(uint64_t size);
+GO_AWAY_MANGLE void Hunk_FreeTempMemory(void *buffer);
+GO_AWAY_MANGLE void Hunk_ClearTempMemory(void);
 GO_AWAY_MANGLE uint64_t Hunk_MemoryRemaining(void);
 GO_AWAY_MANGLE void Hunk_Log(void);
 GO_AWAY_MANGLE void Hunk_SmallLog(void);
-GO_AWAY_MANGLE void Hunk_ClearToMark(uint64_t mark);
 GO_AWAY_MANGLE qboolean Hunk_CheckMark(void);
 GO_AWAY_MANGLE void Hunk_Print(void);
 GO_AWAY_MANGLE void Hunk_Check(void);
+GO_AWAY_MANGLE void Hunk_InitMemory(void);
 
 GO_AWAY_MANGLE uint64_t Com_TouchMemory(void);
 
@@ -75,46 +76,51 @@ GO_AWAY_MANGLE void Z_TouchMemory(uint64_t *sum);
 GO_AWAY_MANGLE void Mem_Info(void);
 
 template<class T>
-struct nomad_allocator
+struct zone_allocator
 {
-	nomad_allocator() noexcept { }
-	nomad_allocator(const char* name = "zallocator") noexcept { }
+	constexpr zone_allocator(void) noexcept { }
+	constexpr zone_allocator(const char* name = "zallocator") noexcept { }
 
 	typedef T value_type;
 	template<class U>
-	constexpr nomad_allocator(const nomad_allocator<U>&) noexcept { }
+	constexpr zone_allocator(const zone_allocator<U> &) noexcept { }
 
-	constexpr inline bool operator!=(const eastl::allocator) { return true; }
-	constexpr inline bool operator!=(const nomad_allocator) { return false; }
-	constexpr inline bool operator==(const eastl::allocator) { return false; }
-	constexpr inline bool operator==(const nomad_allocator) { return true; }
+	constexpr GDR_INLINE bool operator!=(const eastl::allocator) { return true; }
+	constexpr GDR_INLINE bool operator!=(const zone_allocator) { return false; }
+	constexpr GDR_INLINE bool operator==(const eastl::allocator) { return false; }
+	constexpr GDR_INLINE bool operator==(const zone_allocator) { return true; }
 
-	inline void* allocate(size_t n) const {
-		return Z_Malloc(n, TAG_STATIC, NULL, "zallocator");
-	}
-	inline void* allocate(size_t& n, size_t& alignment, size_t& offset) const {
-		return Z_Malloc(n, TAG_STATIC, NULL, "zallocator");
-	}
-	inline void* allocate(size_t n, size_t alignment, size_t alignmentOffset, int flags) const {
-		return Z_Malloc(n, TAG_STATIC, NULL, "zallocator");
-	}
-	inline void deallocate(void *p, size_t) const noexcept {
-		Z_ChangeTag(p, TAG_PURGELEVEL);
-	}
+	GDR_INLINE void* allocate(size_t n) const
+	{ return Z_Malloc(n, TAG_STATIC, NULL, "zallocator"); }
+	GDR_INLINE void* allocate(size_t& n, size_t& alignment, size_t& offset) const
+	{ return Z_Malloc(n, TAG_STATIC, NULL, "zallocator"); }
+	GDR_INLINE void* allocate(size_t n, size_t alignment, size_t alignmentOffset, int flags) const
+	{ return Z_Malloc(n, TAG_STATIC, NULL, "zallocator"); }
+	GDR_INLINE void deallocate(void *p, size_t) const noexcept
+	{ Z_Free(p); }
 };
 
-#if 0
-GDR_INLINE void *operator new(size_t n)
-{ return Mem_Alloc(n); }
-GDR_INLINE void *operator new[](size_t n)
-{ return Mem_Alloc(n); }
-GDR_INLINE void operator delete(void *p)
-{ Mem_Free(p); }
-GDR_INLINE void operator delete[](void *p)
-{ Mem_Free(p); }
-GDR_INLINE void operator delete[](void *p, size_t n)
-{ Mem_Free(p); }
-#endif
+class zone_allocator_notemplate
+{
+public:
+	zone_allocator_notemplate(const char* name = "zallocator") noexcept { }
+
+	constexpr zone_allocator_notemplate(const zone_allocator_notemplate &) noexcept { }
+
+	GDR_INLINE bool operator!=(const eastl::allocator) { return true; }
+	GDR_INLINE bool operator!=(const zone_allocator_notemplate) { return false; }
+	GDR_INLINE bool operator==(const eastl::allocator) { return false; }
+	GDR_INLINE bool operator==(const zone_allocator_notemplate) { return true; }
+
+	GDR_INLINE void* allocate(size_t n) const
+	{ return Z_Malloc(n, TAG_STATIC, NULL, "zallocator"); }
+	GDR_INLINE void* allocate(size_t& n, size_t& alignment, size_t& offset) const
+	{ return Z_Malloc(n, TAG_STATIC, NULL, "zallocator"); }
+	GDR_INLINE void* allocate(size_t n, size_t alignment, size_t alignmentOffset, int flags) const
+	{ return Z_Malloc(n, TAG_STATIC, NULL, "zallocator"); }
+	GDR_INLINE void deallocate(void *p, size_t) const noexcept
+	{ Z_Free(p); }
+};
 
 typedef struct
 {
@@ -139,373 +145,6 @@ GO_AWAY_MANGLE void Mem_Free(void *ptr);
 GO_AWAY_MANGLE char* Mem_CopyString(const char *in);
 GO_AWAY_MANGLE void* Mem_Alloc16(const uint32_t size);
 GO_AWAY_MANGLE void Mem_Free16(void *ptr);
-
-template<class T>
-struct id_allocator
-{
-	id_allocator() noexcept { }
-	id_allocator(const char* name = "zallocator") noexcept { }
-
-	typedef T value_type;
-	template<class U>
-	constexpr id_allocator(const id_allocator<U>&) noexcept { }
-
-	constexpr inline bool operator!=(const eastl::allocator) { return true; }
-	constexpr inline bool operator!=(const id_allocator) { return false; }
-	constexpr inline bool operator==(const eastl::allocator) { return false; }
-	constexpr inline bool operator==(const id_allocator) { return true; }
-	
-	inline void* allocate(size_t n) const {
-		return Mem_Alloc(n);
-	}
-	inline void* allocate(size_t& n, size_t& alignment, size_t& offset) const {
-		n = (n + (alignment - 1)) & ~(alignment - 1);
-		return Mem_Alloc(n);
-	}
-	inline void* allocate(size_t n, size_t alignment, size_t alignmentOffset, int flags) const {
-		n = (n + (alignment - 1)) & ~(alignment - 1);
-		return Mem_Alloc(n);
-	}
-	inline void deallocate(void *p, size_t) const noexcept {
-		Mem_Free(p);
-	}
-};
-
-
-template<class type, uint32_t blockSize>
-class BlockAlloc
-{
-public:
-	BlockAlloc()
-		: blocks(NULL), free_(NULL), total(0), active(0) { }
-	~BlockAlloc()
-	{ Shutdown(); }
-
-	void Shutdown(void)
-	{
-		while (blocks) {
-			block_t *block = blocks;
-			blocks = blocks->next;
-			delete block;
-		}
-		blocks = NULL;
-		free_ = NULL;
-		total = active = 0;
-	}
-	
-	type* Alloc(void)
-	{
-		if (!free_) {
-			block_t *block = (block_t *)Mem_Alloc(sizeof(block_t));
-			block->next = blocks;
-			blocks = block;
-			for (uint32_t i = 0; i < blockSize; i++) {
-				block->elements[i].next = free_;
-				free_ = &block->elements[i];
-			}
-			total += blockSize;
-		}
-		active++;
-		element_t *element = free;
-		free_ = free_->next;
-		element->next = NULL;
-		return &element->t;
-	}
-	void Free(type *t)
-	{
-		element_t *element = (element_t *)t;
-		element->next = free_;
-		free_ = element;
-		active--;
-	}
-
-	GDR_INLINE uint32_t GetTotalCount(void) const { return total; }
-	GDR_INLINE uint32_t GetAllocCount(void) const { return active; }
-	GDR_INLINE uint32_t GetFreeCount(void) const { return total - active; }
-private:
-	typedef struct element_s
-	{
-		type t;
-		struct element_s* next;
-	} element_t;
-
-	typedef struct block_s
-	{
-		element_t elements[blockSize];
-		struct block_s* next;
-	} block_t;
-
-	block_t* blocks;
-	element_t* free_;
-	uint32_t total;
-	uint32_t active;
-};
-
-#if 0
-template<typename T>
-class linked_list
-{
-public:
-	class linked_list_node
-	{
-	public:
-		T val;
-		linked_list_node *next;
-		linked_list_node *prev;
-	public:
-		linked_list_node() = default;
-		linked_list_node(const linked_list_node &) = delete;
-		linked_list_node(linked_list_node &&) = default;
-		~linked_list_node() = default;
-		inline linked_list_node& operator++(int) noexcept
-		{
-			next->next->prev = this;
-			next->prev = prev;
-			next->next = this;
-			prev->next = next;
-			return *this;
-		}
-		inline linked_list_node& operator++() noexcept
-		{
-			next->next->prev = this;
-			next->prev = prev;
-			next->next = this;
-			prev->next = next;
-			return *this;
-		}
-	};
-	
-	typedef linked_list_node* node;
-	typedef linked_list_node list_node;
-	typedef linked_list_node* iterator;
-	typedef const linked_list_node* const_iterator;
-	typedef std::size_t size_type;
-	typedef T value_type;
-private:
-	linked_list<T>::node ptr_list = NULL;
-	std::size_t _size = 0;
-	
-	linked_list<T>::node alloc_node(void) {
-		linked_list<T>::node ptr = (linked_list<T>::node)Z_Malloc(
-			sizeof(linked_list<T>::list_node), TAG_STATIC, &ptr, "listnode");
-		if (ptr == NULL)
-			N_Error("linked_list::alloc_node: memory allocation failed");
-		
-		return ptr;
-	}
-	void dealloc_node(linked_list<T>::node ptr) noexcept {
-		if (ptr == NULL)
-			return;
-		Z_Free((void *)ptr);
-	}
-public:
-	linked_list() noexcept = default;
-	~linked_list() noexcept
-	{
-		if (ptr_list == NULL || begin() == NULL)
-			return;
-
-		for (linked_list<T>::iterator it = begin(); it != end(); it = it->next)
-			dealloc_node(it);
-	}
-	linked_list(linked_list &&) = default;
-	linked_list(const linked_list &) = default;
-	
-	// memory management
-	inline void clear(void) noexcept
-	{
-		if (ptr_list == NULL)
-			return;
-		
-		for (linked_list<T>::iterator it = begin(); it != end(); it = it->next)
-			dealloc_node(it);
-	}
-	inline void free_node(linked_list<T>::node ptr) noexcept
-	{
-		if (ptr == NULL)
-			return;
-		
-		ptr->prev->next = ptr->next;
-		ptr->next->prev = ptr->prev;
-		dealloc_node(ptr);
-		--_size;
-	}
-	inline void pop_back() noexcept
-	{
-		if (ptr_list == NULL)
-			return;
-		
-		linked_list<T>::node endptr = back_node();
-		endptr->prev->next = NULL;
-		dealloc_node(endptr);
-		--_size;
-	}
-	inline void erase(linked_list<T>::node ptr) noexcept
-	{
-		if (ptr == NULL || ptr_list == NULL)
-			return;
-		
-		if (ptr == front_node())
-			pop_front();
-		else if (ptr == back_node())
-			pop_back();
-		else
-			free_node(ptr);
-	}
-	inline void pop_front() noexcept
-	{
-		linked_list<T>::node frontptr = front_node();
-		if (frontptr->next != NULL) {
-			frontptr->next->prev = NULL;
-			frontptr = frontptr->next;
-			ptr_list = frontptr;
-		}
-		dealloc_node(ptr_list);
-		--_size;
-	}
-	inline linked_list<T>::node push_back(void) noexcept
-	{
-		linked_list<T>::node ptr;
-		if (ptr_list == NULL) {
-			ptr_list = alloc_node();
-			ptr = ptr_list;
-			ptr_list->prev = NULL;
-		}
-		else {
-			ptr = alloc_node();
-			linked_list<T>::node endptr = back_node();
-			endptr->next = ptr;
-			ptr->prev = endptr;
-		}
-		ptr->next = NULL;
-		++_size;
-		return ptr;
-	}
-	inline linked_list<T>::node emplace_back(void) noexcept
-	{ return push_back(); }
-	
-	// random algos
-	inline void swap(linked_list& list)
-	{
-		if (list.ptr_list == NULL || ptr_list == NULL)
-			return;
-	}
-	inline void swap_nodes(linked_list<T>::iterator iter1, linked_list<T>::iterator iter2) noexcept
-	{
-		if (ptr_list == NULL || iter1 == NULL || iter2 == NULL)
-			return;
-		
-		if (iter1 == front_node())
-			iter1->next->prev = iter2;
-		else if (iter1 == back_node())
-			iter1->prev->next = iter2;
-		else {
-			iter1->prev->next = iter2;
-			iter1->next->prev = iter2;
-		}
-		
-		if (iter2 == front_node())
-			iter2->next->prev = iter1;
-		else if (iter2 == back_node())
-			iter2->prev->next = iter1;
-		else {
-			iter2->prev->next = iter1;
-			iter2->next->prev = iter1;
-		}
-	}
-	linked_list<T>::node find_node(linked_list<T>::iterator begin_it, std::size_t n,
-		const T &val) noexcept
-	{
-		if (ptr_list == NULL || begin_it == NULL || n == 0)
-			return NULL;
-		
-		for (linked_list<T>::iterator it = begin_it; --n; it = it->next) {
-			if (it->val == val) return it;
-		}
-		return ptr_list;
-	}
-	inline void erase_n(linked_list<T>::iterator begin_it, std::size_t n) noexcept
-	{
-		if (begin_it == NULL || ptr_list == NULL || n == 0)
-			return;
-		
-		for (linked_list<T>::iterator it = begin_it; --n; it = it->next)
-			erase(it);
-	}
-	inline void erase_range(linked_list<T>::iterator begin_it, linked_list<T>::iterator end_it) noexcept
-	{
-		if (begin_it == NULL || end_it == NULL || ptr_list == NULL)
-			return;
-		
-		for (linked_list<T>::iterator it = begin_it; it != end_it; it = it->next)
-			erase(it);
-	}
-
-	// iterators/access
-	inline T& operator[](std::size_t index) noexcept
-	{
-		if (ptr_list == NULL || index > _size) {
-			Con_Printf("WARNING: ptr_list is NULL or index > _size in linked_list::operator[]");
-			return 0;
-		}
-		
-		linked_list<T>::iterator it = begin();
-		while (--index && it != end())
-			it = it->next;
-		
-		return it->val;
-	}
-	inline std::size_t size(void) const noexcept
-	{ return _size; }
-	inline linked_list<T>::iterator begin(void) {
-		if (ptr_list == NULL)
-			Con_Printf("WARNING: ptr_list is NULL in linked_list::begin");
-		
-		return ptr_list;
-	}
-	inline linked_list<T>::iterator end(void) {
-		if (ptr_list == NULL) {
-			Con_Printf("WARNING: ptr_list is NULL in linked_list::end");
-			return NULL;
-		}
-		
-		linked_list<T>::iterator _endptr;
-		for (_endptr = begin();; _endptr = _endptr->next) {
-			if (_endptr == NULL) break;
-		}
-		return _endptr;
-	}
-	inline linked_list<T>::node back_node(void) {
-		if (ptr_list == NULL) {
-			Con_Printf("WARNING: ptr_list is NULL in linked_list::back_node");
-			return NULL;
-		}
-		linked_list<T>::node _endptr;
-		for (_endptr = begin();; _endptr = _endptr->next) {
-			if (_endptr->next == NULL) break;
-		}
-		return _endptr;
-	}
-	inline linked_list<T>::node front_node(void) {
-		if (ptr_list == NULL)
-			Con_Printf("WARNING: ptr_list is NULL in linked_list::front_node");
-		
-		return ptr_list;
-	}
-	inline T& back(void) noexcept {
-		if (ptr_list == NULL)
-			Con_Printf("WARNING: ptr_list is NULL in linked_list::back");
-		
-		return back_node()->val;
-    }
-	inline T& front(void) noexcept {
-		if (ptr_list == NULL)
-			Con_Printf("WARNING: ptr_list is NULL in linked_list::front");
-
-		return front_node()->val;
-	}
-};
-#endif
 
 #endif
 

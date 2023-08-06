@@ -179,7 +179,7 @@ GO_AWAY_MANGLE texture_t *R_InitTexture(const bfftexture_t *tex)
     memcpy(t->data, image, t->width * t->height * t->channels);
     ri.Mem_Free(image);
 
-    R_InitTexBuffer(t);
+    nglTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, t->width, t->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
 
     nglBindTexture(GL_TEXTURE_2D, 0);
 
@@ -207,8 +207,8 @@ GO_AWAY_MANGLE void RE_ShutdownTextures(void)
 GO_AWAY_MANGLE void R_ShutdownTexture(texture_t *texture)
 {
     nglDeleteTextures(1, (const GLuint *)&texture->id);
-    ri.Z_ChangeTag(texture, TAG_CACHE);
-    ri.Z_ChangeTag(texture->data, TAG_STATIC);
+    ri.Z_Free(texture->data);
+    ri.Z_Free(texture);
 }
 
 GO_AWAY_MANGLE void R_BindTexture(const texture_t* texture, uint32_t slot)

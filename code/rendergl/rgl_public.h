@@ -26,6 +26,7 @@ typedef struct
     void *(*Z_Malloc)(uint64_t size, int tag, void *user, const char *name);
     void *(*Z_Calloc)(uint64_t size, int tag, void *user, const char *name);
     void *(*Z_Realloc)(uint64_t nsize, int tag, void *user, void *ptr, const char *name);
+    char *(*Z_Strdup)(const char *str);
 
     void (*Z_Free)(void *ptr);
     void (*Z_FreeTags)(int lowtag, int hightag);
@@ -39,8 +40,6 @@ typedef struct
     uint64_t (*Z_FreeMemory)(void);
     uint32_t (*Z_NumBlocks)(int tag);
 
-    void *(*Alloca)(size_t size);
-
     void *(*Mem_Alloc)(const uint32_t size);
     void (*Mem_Free)(void *ptr);
     uint32_t (*Mem_Msize)(void *ptr);
@@ -53,11 +52,23 @@ typedef struct
     const char *(GDR_DECL *va)(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
     void GDR_NORETURN (GDR_DECL *N_Error)(const char *err, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
 
-    cvar_t *(*Cvar_Find)(const char *name);
-    void (*Cvar_RegisterName)(const char *name, const char *value, cvartype_t type, int32_t flags);
-    void (*Cvar_ChangeValue)(const char *name, const char *value);
-    void (*Cvar_Register)(cvar_t *cvar, const char *value);
-    const char *(*Cvar_GetValue)(const char *name);
+    void (*Cvar_VariableStringBuffer)(const char *name, char *buffer, uint64_t bufferSize);
+    void (*Cvar_VariableStringBufferSafe)(const char *name, char *buffer, uint64_t bufferSize, uint32_t flag);
+    int32_t (*Cvar_VariableInteger)(const char *name);
+    float (*Cvar_VariableFloat)(const char *name);
+    qboolean (*Cvar_VariableBoolean)(const char *name);
+    const char *(*Cvar_VariableString)(const char *name);
+    uint32_t (*Cvar_Flags)(const char *name);
+    cvar_t *(*Cvar_Get)(const char *name, const char *value, uint32_t flags);
+    void (*Cvar_SetGroup)(cvar_t *cv, cvarGroup_t group);
+    void (*Cvar_SetDescription)(cvar_t *cv, const char *description);
+    void (*Cvar_Set)(const char *name, const char *value);
+    qboolean (*Cvar_SetModified)(const char *name, qboolean modified);
+    void (*Cvar_SetSafe)(const char *name, const char *value);
+    void (*Cvar_SetIntegerValue)(const char *name, int32_t value);
+    void (*Cvar_SetFloatValue)(const char *name, float value);
+    void (*Cvar_SetStringValue)(const char *name, const char *value);
+    void (*Cvar_SetBooleanValue)(const char *name, qboolean value);
 
     void (*Cmd_AddCommand)(const char* name, cmdfunc_t function);
     void (*Cmd_RemoveCommand)(const char* name);
@@ -70,7 +81,7 @@ typedef struct
     void (*Cmd_Clear)(void);
 
     uint32_t (*Com_GetWindowEvents)(void);
-    qboolean *(*Com_GetKeyboard)(void);
+    qboolean **(*Com_GetKeyboard)(void);
     void *(*Com_GetEvents)(void);
 
     void GDR_NORETURN (*Sys_Exit)(int code);

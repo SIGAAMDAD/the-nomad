@@ -94,6 +94,12 @@ inline void __nomad_assert_fail(const char* expression, const char* file, const 
 
 typedef enum { qfalse = 0, qtrue = 1 } qboolean;
 
+int N_isprint(int c);
+int N_islower(int c);
+int N_isupper(int c);
+int N_isalpha(int c);
+qboolean N_isintegral(float f);
+qboolean N_isanumber(const char *s);
 int N_strcmp(const char *str1, const char *str2);
 int N_strncmp(const char *str1, const char *str2, size_t count);
 int N_stricmp(const char *str1, const char *str2);

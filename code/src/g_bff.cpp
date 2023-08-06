@@ -126,77 +126,52 @@ static void LVL_LoadTSJBuffers(bfflevel_t *lvl, char *ptr, int compression)
 	}
 }
 
-static void LVL_LoadBase(bfflevel_t *data, char *ptr, uint64_t *buflen)
+static void LVL_LoadBase(bfflevel_t *data, file_t f, uint64_t *buflen)
 {
-//	FS_Read(&data->levelNumber, sizeof(int64_t), fd);
-//	FS_Read(&data->numTilesets, sizeof(int64_t), fd);
-//	FS_Read(&data->mapBufferLen, sizeof(int64_t), fd);
-//	FS_Read(buflen, sizeof(int64_t), fd);
-	data->levelNumber = *(uint64_t *)ptr;
-	ptr += sizeof(uint64_t);
-	data->numTilesets = *(uint64_t *)ptr;
-	ptr += sizeof(uint64_t);
-	data->mapBufferLen = *(uint64_t *)ptr;
-	ptr += sizeof(uint64_t);
+	FS_Read(&data->levelNumber, sizeof(int64_t), f);
+	FS_Read(&data->numTilesets, sizeof(int64_t), f);
+	FS_Read(&data->mapBufferLen, sizeof(int64_t), f);
+	FS_Read(buflen, sizeof(int64_t), f);
 }
 
-void BFF_ReadLevel(bfflevel_t *lvl, const bff_chunk_t *chunk)
+void BFF_ReadLevel(bfflevel_t *lvl, const bff_chunk_t *chunk, file_t f)
 {
-    const char *buf_p;
+	int64_t len;
 
-	buf_p = chunk->chunkBuffer;
+	lvl->tmjBuffer = (char *)Hunk_Alloc(lvl->mapBufferLen, "TMJbuffer", h_low);
+	FS_Read(lvl->tmjBuffer, lvl->mapBufferLen, f);
 
-    lvl->levelNumber = *(int64_t *)buf_p;
-	buf_p += sizeof(int64_t);
-    lvl->numTilesets = *(int64_t *)buf_p;
-	buf_p += sizeof(int64_t);
-    lvl->mapBufferLen = *(int64_t *)buf_p;
-	buf_p += sizeof(int64_t);
-
-	lvl->tmjBuffer = (char *)Z_Malloc(lvl->mapBufferLen, TAG_STATIC, &lvl->tmjBuffer, "TMJbuffer");
-    memcpy(lvl->tmjBuffer, buf_p, lvl->mapBufferLen);
-	lvl->tmjBuffer[lvl->mapBufferLen - 1] = '\0';
-
-    buf_p += lvl->mapBufferLen;
-
-    lvl->tsjBuffers = (char **)Z_Malloc(sizeof(char *) * lvl->numTilesets, TAG_STATIC, &lvl->tsjBuffers, "TSJbuffers");
+	lvl->tsjBuffers = (char **)Hunk_Alloc(sizeof(char *) * lvl->numTilesets, "TSJbuffers", h_low);
     for (int64_t i = 0; i < lvl->numTilesets; i++) {
-        int64_t len = *(int64_t *)buf_p;
-		buf_p += sizeof(int64_t);
-
+		FS_Read(&len, sizeof(int64_t), f);
         len++;
-        lvl->tsjBuffers[i] = (char *)Z_Malloc(len, TAG_STATIC, &lvl->tsjBuffers[i], "TSJbuffer");
-        memcpy(lvl->tsjBuffers[i], buf_p, len);
-		lvl->tsjBuffers[i][len - 1] = '\0';
-        buf_p += len;
+
+        lvl->tsjBuffers[i] = (char *)Hunk_Alloc(len, "TSJbuffer", h_low);
+		FS_Read(lvl->tsjBuffers[i], len, f);
     }
 }
 
 static void CopyLevelChunk(const bff_chunk_t *chunk, bffinfo_t* info)
 {
-	bfflevel_t* data;
-//	char *ptr;
-//	uint64_t buflen;
+	bfflevel_t *data;
+	file_t f;
 	
 	data = &info->levels[Com_GenerateHashValue(chunk->chunkName, MAX_LEVEL_CHUNKS)];
 	N_strncpyz(data->name, chunk->chunkName, MAX_BFF_CHUNKNAME);
-//	ptr = buffer;
 
-//	fd = FS_FOpenRead(name);
-//	if (fd == FS_INVALID_HANDLE) {
-//		N_Error("BFF_GetInfo: failed to load level chunk %s", name);
-//	}
+	f = FS_FOpenRead(data->name);
+	if (f == FS_INVALID_HANDLE) {
+		N_Error("BFF_GetInfo: failed to load level chunk %s, FS_INVALID_HANDLE", data->name);
+	}
 
 	Con_Printf(DEV, "Loading level chunk %s", data->name);
-	
-//	buflen = 0;
-//	LVL_LoadBase(data, ptr, &buflen);
-//	LVL_LoadTMJBuffer(data, ptr, buflen, info->compression);
-//	LVL_LoadTSJBuffers(data, ptr, info->compression);
 
-	BFF_ReadLevel(data, chunk);
+	FS_Read(&data->levelNumber, sizeof(int64_t), f);
+	FS_Read(&data->numTilesets, sizeof(int64_t), f);
+	FS_Read(&data->mapBufferLen, sizeof(int64_t), f);
+	BFF_ReadLevel(data, chunk, f);
 
-//	FS_FClose(fd);
+	FS_FClose(f);
 	
 	Con_Printf(DEV, "Done loading level chunk %s", data->name);
 
@@ -206,19 +181,25 @@ static void CopyLevelChunk(const bff_chunk_t *chunk, bffinfo_t* info)
 static void CopySoundChunk(const bff_chunk_t* chunk, bffinfo_t* info)
 {
 	bffsound_t* data;
-	const char* ptr;
+	file_t f;
 	
 	data = &info->sounds[info->numSounds];
 	N_strncpyz(data->name, chunk->chunkName, MAX_BFF_CHUNKNAME);
-	Con_Printf("Loading audio chunk %s", data->name);
 
-	ptr = chunk->chunkBuffer;
+	f = FS_FOpenRead(data->name);
+	if (f == FS_INVALID_HANDLE) {
+		N_Error("Failed to load sound chunk %s, FS_INVALID_HANDLE", data->name);
+	}
+
+	Con_Printf(DEV, "Loading audio chunk %s", data->name);
 
 	data->fileSize = chunk->chunkSize;
-	data->fileBuffer = (char *)Z_Malloc(data->fileSize, TAG_STATIC, &data->fileBuffer, "sndfile");
-	
-	memcpy(data->fileBuffer, ptr, data->fileSize);
-	Con_Printf("Done loading audio chunk %s", data->name);
+	data->fileBuffer = (char *)Hunk_Alloc(data->fileSize, "sndfile", h_low);
+
+	FS_Read(data->fileBuffer, data->fileSize, f);
+	FS_FClose(f);
+
+	Con_Printf(DEV, "Done loading audio chunk %s", data->name);
 	
 	info->numSounds++;
 }
@@ -226,20 +207,25 @@ static void CopySoundChunk(const bff_chunk_t* chunk, bffinfo_t* info)
 static void CopyScriptChunk(const bff_chunk_t* chunk, bffinfo_t* info)
 {
 	bffscript_t* data;
-	const char* ptr;
+	file_t f;
 
 	data = &info->scripts[Com_GenerateHashValue(chunk->chunkName, MAX_SCRIPT_CHUNKS)];
 	N_strncpyz(data->name, chunk->chunkName, MAX_BFF_CHUNKNAME);
-	ptr = chunk->chunkBuffer;
-	Con_Printf("Loading script chunk %s", data->name);
+
+	f = FS_FOpenRead(data->name);
+	if (f == FS_INVALID_HANDLE) {
+		N_Error("Failed to load script chunk %s, FS_INVALID_HANDLE", data->name);
+	}
+
+	Con_Printf(DEV, "Loading script chunk %s", data->name);
 
 	data->codelen = chunk->chunkSize;
-	
-	// kept on the hunk so that restarting a vm won't be impossible if the zone starts binging and purging cached blocks
 	data->bytecode = (uint8_t *)Hunk_Alloc(data->codelen, "bytecode", h_low);
-	//Z_Malloc(sizeof(uint8_t) * data->codelen, TAG_STATIC, &data->bytecode, "QVM_BYTES"); 
-	memcpy(data->bytecode, ptr, data->codelen * sizeof(uint8_t));
-	Con_Printf("Done loading script chunk %s", data->name);
+
+	FS_Read(data->bytecode, data->codelen * sizeof(uint8_t), f);
+	FS_FClose(f);
+
+	Con_Printf(DEV, "Done loading script chunk %s", data->name);
 	
 	info->numScripts++;
 }
@@ -247,27 +233,25 @@ static void CopyScriptChunk(const bff_chunk_t* chunk, bffinfo_t* info)
 static void CopyTextureChunk(const bff_chunk_t* chunk, bffinfo_t* info)
 {
 	bfftexture_t* data;
-	const char *ptr;
-//	file_t fd;
-
-//	fd = FS_FOpenRead(chunk->chunkName);
-//	if (fd == FS_INVALID_HANDLE) {
-//		N_Error("BFF_GetInfo: failed to create stream to texture buffer");
-//	}
+	file_t f;
 
 	data = &info->textures[Com_GenerateHashValue(chunk->chunkName, MAX_TEXTURE_CHUNKS)];
-	ptr = chunk->chunkBuffer;
-
 	N_strncpyz(data->name, chunk->chunkName, MAX_BFF_CHUNKNAME);
-	Con_Printf("Loading texture chunk %s", data->name);
+
+	f = FS_FOpenRead(data->name);
+	if (f == FS_INVALID_HANDLE) {
+		N_Error("Failed to load texture chunk %s, FS_INVALID_HANDLE", data->name);
+	}
+
+	Con_Printf(DEV, "Loading texture chunk %s", data->name);
 
 	data->fileSize = chunk->chunkSize;
+	data->fileBuffer = (unsigned char *)Hunk_Alloc(data->fileSize, "texbuffer", h_low);
 
-	data->fileBuffer = (unsigned char *)Z_Malloc(data->fileSize, TAG_STATIC, &data->fileBuffer, "texbuffer");
-	memcpy(data->fileBuffer, ptr, data->fileSize);
-//	FS_Read(data->fileBuffer, data->fileSize, fd);
-//	FS_FClose(fd);
-	Con_Printf("Done loading texture chunk %s", data->name);
+	FS_Read(data->fileBuffer, data->fileSize, f);
+	FS_FClose(f);
+
+	Con_Printf(DEV, "Done loading texture chunk %s", data->name);
 
 	info->numTextures++;
 }
@@ -276,8 +260,7 @@ bffinfo_t* BFF_GetInfo(bff_t* archive)
 {
 	bffinfo_t* info;
 	
-	info = (bffinfo_t *)Z_Malloc(sizeof(bffinfo_t), TAG_STATIC, &info, "BFFinfo");
-	memset(info, 0, sizeof(bffinfo_t));
+	info = (bffinfo_t *)Hunk_Alloc(sizeof(bffinfo_t), "BFFinfo", h_low);
 	info->numLevels = 0;
 	info->numSounds = 0;
 	info->numScripts = 0;
@@ -304,24 +287,6 @@ bffinfo_t* BFF_GetInfo(bff_t* archive)
 }
 void BFF_FreeInfo(bffinfo_t* info)
 {
-	// dont change it to TAG_UBFF because the memory is not strictly tied to the filesystem
-	for (uint64_t i = 0; i < info->numSounds; ++i) {
-		if (info->sounds[i].fileBuffer)
-			Z_ChangeTag(info->sounds[i].fileBuffer, TAG_CACHE);
-	}
-	for (uint64_t i = 0; i < info->numTextures; ++i) {
-		if (info->textures[i].fileBuffer)
-			Z_ChangeTag(info->textures[i].fileBuffer, TAG_CACHE);
-	}
-	for (uint64_t i = 0; i < info->numLevels; ++i) {
-		if (info->levels[i].tmjBuffer)
-			Z_ChangeTag(info->levels[i].tmjBuffer, TAG_CACHE);
-		for (uint64_t t = 0; t < info->levels[i].numTilesets; ++t) {
-			if (info->levels[i].tsjBuffers[t])
-				Z_ChangeTag(info->levels[i].tsjBuffers[t], TAG_CACHE);
-		}
-	}
-	Z_ChangeTag(info, TAG_CACHE);
 }
 
 static bffinfo_t* bffinfo;
@@ -335,6 +300,9 @@ static inline const char *BFF_CompressionString(int compression)
 	return "None";
 }
 
+/*
+TODO: put this in n_files and add safety procedures
+*/
 bff_t* BFF_OpenArchive(const char *filepath)
 {
 	FILE* fd;
@@ -471,9 +439,27 @@ const eastl::vector<const bfflevel_t*>& BFF_OrderLevels(const bffinfo_t *info)
 	return levels;
 }
 
+#if 0
 
-void G_LoadBFF(const char *bffname)
+typedef void* bffHandle;
+typedef void* bffChunk;
+typedef int bffError;
+
+typedef struct
 {
-	file_t archive = FS_OpenBFF(0);
-	bffinfo = BFF_GetInfo((bff_t*)FS_GetBFFData(archive));
-}
+	char *name;
+	uint64_t size;
+	uint64_t realSize;
+	uint64_t compression;
+} bffChunkInfo;
+
+#define BFF_NOERROR			(0)
+#define BFF_INVALID_CHUNK	(-1)
+#define BFF_BAD_HEADER		(-2)
+
+bffError bffLoadFileRead(bffHandle *handle, const char *filename);
+bffError bffLoadFileWrite(bffHandle *handle, const char *filename);
+bffError bffGetChunkInfo(bffChunk chunk, bffChunkInfo *info);
+bffError bffReadFromChunk(bfFChunk chunk, void *buffer, uint64_t size);
+
+#endif

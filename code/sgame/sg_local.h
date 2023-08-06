@@ -14,9 +14,6 @@
 #define MAX_MOBS_ACTIVE 150
 #define MAX_PLAYR_INVENTORY 20
 
-void VM_Com_Printf(const char *fmt);
-void VM_Com_Error(const char *fmt);
-
 void G_GetKeyboardState(qboolean **state, unsigned int numbinds);
 void* G_AllocMem(int size);
 void G_FreeMem(void *ptr);

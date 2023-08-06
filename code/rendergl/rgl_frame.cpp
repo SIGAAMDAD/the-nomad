@@ -1,4 +1,5 @@
 #include "rgl_local.h"
+#include "../src/n_scf.h"
 #include "../src/g_bff.h"
 #include "r_framevector.h"
 
@@ -110,11 +111,14 @@ GO_AWAY_MANGLE void RE_SubmitMapTilesheet(const char *chunkname, const bffinfo_t
     
     // does it exist?
     if (!info->textures[hash].fileBuffer)
-        ri.N_Error("RE_SubmitMapTileset: invalid texture chunk");
+        ri.N_Error("RE_SubmitMapTileset: invalid texture chunk '%s'", chunkname);
     
+    ri.Con_Printf(INFO, "Submitted texture chunk '%s' to rendering loop", chunkname);
     // check if its already been loaded
     if (!R_GetTexture(chunkname))
         R_InitTexture(&info->textures[hash]);
+    else
+        ri.Con_Printf(INFO, "Texture already added");
 }
 
 #define MAX_CMD_LINE 1024
@@ -134,10 +138,10 @@ GO_AWAY_MANGLE void RE_CommandConsoleFrame(void)
 
 GO_AWAY_MANGLE void R_UpdateState(void)
 {
-    const qboolean *keys = ri.Com_GetKeyboard();
+    qboolean **keys = ri.Com_GetKeyboard();
     const uint32_t window = ri.Com_GetWindowEvents();
 
-    if (keys[KEY_BACKQUOTE]) {
+    if (Key_IsPressed(keys, kbConsole)) {
         if (console_open)
             console_open = qfalse;
         else
@@ -147,17 +151,17 @@ GO_AWAY_MANGLE void R_UpdateState(void)
         // redo the settings if the window has been resized
         RE_InitSettings_f();
     }
-    if (keys[KEY_UP])
+    if (Key_IsPressed(keys, kbCameraUp))
         renderer->camera.MoveUp();
-    if (keys[KEY_DOWN])
+    if (Key_IsPressed(keys, kbCameraDown))
         renderer->camera.MoveDown();
-    if (keys[KEY_LEFT])
+    if (Key_IsPressed(keys, kbCameraLeft))
         renderer->camera.MoveLeft();
-    if (keys[KEY_RIGHT])
+    if (Key_IsPressed(keys, kbCameraRight))
         renderer->camera.MoveRight();
-    if (keys[KEY_M])
+    if (Key_IsPressed(keys, kbZoomIn))
         renderer->camera.ZoomIn();
-    if (keys[KEY_N])
+    if (Key_IsPressed(keys, kbZoomOut))
         renderer->camera.ZoomOut();
 }
 
@@ -220,15 +224,6 @@ GO_AWAY_MANGLE void RE_EndFrame(void)
     R_DrawCache(frame.pintCache);
 
     R_BindTexture(R_GetTexture(frame.currentMap->tilesetName));
-    nglBegin(GL_TRIANGLES);
-    nglVertex2f( 0.5f,  0.5f);
-    nglVertex2f( 0.5f, -0.5f);
-    nglVertex2f(-0.5f, -0.5f);
-    nglVertex2f(-0.5f,  0.5f);
-    nglVertex2f(-0.5f, -0.5f);
-    nglVertex2f(-0.5f,  0.5f);
-    nglVertex2f( 0.5f,  0.5f);
-    nglEnd();
     R_UnbindTexture();
 
     R_UnbindShader();
@@ -275,10 +270,7 @@ GO_AWAY_MANGLE void RE_SubmitPint(const glm::vec2& pos, const glm::vec2& dims, u
         glm::vec4( 0.5f,  0.5f, 0.0f, 1.0f),
         glm::vec4( 0.5f, -0.5f, 0.0f, 1.0f),
         glm::vec4(-0.5f, -0.5f, 0.0f, 1.0f),
-        glm::vec4(-0.5f,  0.5f, 0.0f, 1.0f),
-        glm::vec4(-0.5f, -0.5f, 0.0f, 1.0f), // extra
-        glm::vec4(-0.5f,  0.5f, 0.0f, 1.0f), // extra
-        glm::vec4( 0.5f,  0.5f, 0.0f, 1.0f) // extra
+        glm::vec4(-0.5f,  0.5f, 0.0f, 1.0f)
     };
 
     model = glm::translate(glm::mat4(1.0f), glm::vec3(pos.x - (dims.x * 0.5f), dims.y - pos.y, 0.0f));
@@ -286,7 +278,7 @@ GO_AWAY_MANGLE void RE_SubmitPint(const glm::vec2& pos, const glm::vec2& dims, u
     mvp = renderer->camera.GetVPM() * model;
 
     vert = frameVerts;
-    for (uint32_t i = 0; i < 6; ++i) {
+    for (uint32_t i = 0; i < 4; ++i) {
         vert->pos = mvp * positions[i];
         vert->texcoords = coords[i];
         vert->color = glm::vec4(0.0f);
@@ -298,7 +290,7 @@ GO_AWAY_MANGLE void RE_RenderMap(void)
 {
     EASY_FUNCTION();
 
-    vertex_t pintVerts[6];
+    vertex_t pintVerts[4];
     uint32_t numVerts;
     const uint32_t maxVerts = (FRAME_QUADS / 2) * 4;
     const uint32_t maxIndices = (FRAME_QUADS / 2) * 6;
@@ -312,7 +304,7 @@ GO_AWAY_MANGLE void RE_RenderMap(void)
     uint32_t gid = 0;
     R_SetInt(pintShader, "u_Texture", 0);
     R_BindTexture(R_GetTexture(frame.currentMap->tilesetName));
-    nglBegin(GL_TRIANGLES);
+    nglBegin(GL_TRIANGLE_FAN);
     for (uint64_t y = 0; y < frame.currentMap->mapHeight; y++) {
         for (uint64_t x = 0; x < frame.currentMap->mapWidth; x++) {
             gid = frame.currentMap->tilemapData[y * frame.currentMap->mapWidth + x][0];

@@ -33,7 +33,7 @@ void mainLoop()
     while (1) {
         Hunk_Check();
         Com_UpdateEvents();
-        qboolean *kbstate = Com_GetKeyboard();
+        qboolean **kbstate = Com_GetKeyboard();
         vm_command = SGAME_RUNTIC;
         if (kbstate[KEY_W])
             Game::Get()->cameraPos.y -= 3;
@@ -48,7 +48,7 @@ void mainLoop()
         
         RE_BeginFrame();
 
-        next = 1000 / r_ticrate.i;
+        next = 1000 / Cvar_VariableInteger("r_ticrate");
 
         Snd_Submit();
         VM_Stop(SGAME_VM);

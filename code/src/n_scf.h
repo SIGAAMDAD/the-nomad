@@ -10,114 +10,95 @@
 #define TICRATE_MAX 333
 #define TICRATE_MIN 35
 
-typedef void(*pactionp_t)();
+//extern cvar_t com_demo;
 
-extern cvar_t com_demo;
+//extern cvar_t g_vert_fov;
+//extern cvar_t g_horz_fov;
+//extern cvar_t g_pspeed;
+//extern cvar_t g_gravity;
 
-extern cvar_t g_vert_fov;
-extern cvar_t g_horz_fov;
-extern cvar_t g_pspeed;
-extern cvar_t g_gravity;
-
-extern cvar_t snd_musicvol;
-extern cvar_t snd_sfxvol;
-extern cvar_t snd_musicon;
-extern cvar_t snd_sfxon;
-
-extern cvar_t r_ticrate;
-extern cvar_t r_screenheight;
-extern cvar_t r_screenwidth;
-extern cvar_t r_vsync;
-extern cvar_t r_fullscreen;
-extern cvar_t r_native_fullscreen;
-extern cvar_t r_hidden;
-extern cvar_t r_drawFPS;
-extern cvar_t r_renderapi;
-extern cvar_t r_multisampleAmount;
-extern cvar_t r_multisampleType;
-extern cvar_t r_dither;
-extern cvar_t r_EXT_anisotropicFiltering;
-extern cvar_t r_gammaAmount;
-extern cvar_t r_textureMagFilter;
-extern cvar_t r_textureMinFilter;
-extern cvar_t r_textureFiltering;
-extern cvar_t r_textureCompression;
-extern cvar_t r_textureDetail;
-extern cvar_t r_bloomOn;
-extern cvar_t r_useExtensions;
-extern cvar_t r_fovWidth;
-extern cvar_t r_fovHeight;
-
-extern cvar_t c_fastmobs1;
-extern cvar_t c_fastmobs2;
-extern cvar_t c_fastmobs3;
-extern cvar_t c_deafmobs;
-extern cvar_t c_blindmobs;
-extern cvar_t c_nosmell;
-extern cvar_t c_nomobs;
-extern cvar_t c_godmode;
-extern cvar_t c_infinite_ammo;
-extern cvar_t c_bottomless_clip;
-extern cvar_t c_devmode;
-extern cvar_t c_cheatsallowed;
-
-extern cvar_t z_minRam;
-extern cvar_t z_zoneMegs;
+//extern cvar_t r_ticrate;
+//extern cvar_t r_screenheight;
+//extern cvar_t r_screenwidth;
+//extern cvar_t r_vsync;
+//extern cvar_t r_fullscreen;
+//extern cvar_t r_native_fullscreen;
+//extern cvar_t r_hidden;
+//extern cvar_t r_drawFPS;
+//extern cvar_t r_renderapi;
+//extern cvar_t r_multisampleAmount;
+//extern cvar_t r_multisampleType;
+//extern cvar_t r_dither;
+//extern cvar_t r_EXT_anisotropicFiltering;
+//extern cvar_t r_gammaAmount;
+//extern cvar_t r_textureMagFilter;
+//extern cvar_t r_textureMinFilter;
+//extern cvar_t r_textureFiltering;
+//extern cvar_t r_textureCompression;
+//extern cvar_t r_textureDetail;
+//extern cvar_t r_bloomOn;
+//extern cvar_t r_useExtensions;
+//extern cvar_t r_fovWidth;
+//extern cvar_t r_fovHeight;
+//
+//extern cvar_t c_fastmobs1;
+//extern cvar_t c_fastmobs2;
+//extern cvar_t c_fastmobs3;
+//extern cvar_t c_deafmobs;
+//extern cvar_t c_blindmobs;
+//extern cvar_t c_nosmell;
+//extern cvar_t c_nomobs;
+//extern cvar_t c_godmode;
+//extern cvar_t c_infinite_ammo;
+//extern cvar_t c_bottomless_clip;
 
 #endif
 
 typedef enum
 {
-    kbMove_n,
-    kbMove_s,
-    kbStrafe_l,
-    kbStrafe_r,
-    kbSlide_n,
-    kbSlide_w,
-    kbSlide_s,
-    kbSlide_e,
-    kbDash_n,
-    kbDash_w,
-    kbDash_s,
-    kbDash_e,
-    kbUseWeapon,
-    kbSwapWeapon_1,
-    kbSwapWeapon_2,
-    kbSwapWeapon_3,
-    kbSwapWeapon_4,
-    kbSwapWeapon_5,
-    kbSwapWeapon_6,
-    kbSwapWeapon_7,
-    kbSwapWeapon_8,
-    kbSwapWeapon_9,
-    kbSwapWeapon_10,
-    kbNextWeapon,
-    kbPrevWeapon,
-    kbQuickSwap,
-    kbChangeDirL,
-    kbChangeDirR,
+    // player movement
+    kbMoveUp = 0,
+    kbMoveDown,
+    kbMoveLeft,
+    kbMoveRight,
+
+    // camera movement
+    kbCameraUp,
+    kbCameraDown,
+    kbCameraLeft,
+    kbCameraRight,
+    kbZoomIn,
+    kbZoomOut,
+
+    // general actions
+    kbShoot,
+    kbJump,
+    kbCrouch,
+    
+    // misc.
+    kbConsole,
+    kbExit,
 
     NUMBINDS
 } bind_t;
 
 #ifndef Q3_VM
 
-typedef uint32_t button_t;
 typedef struct keybind_s
 {
-    const char* name;
-    button_t button;
+    const char *name;
+    SDL_KeyCode button;
     SDL_Keymod mod;
     SDL_EventType type;
     bind_t bind;
-    pactionp_t action;
 } keybind_t;
 
 extern keybind_t kb_binds[NUMBINDS];
 
-void G_LoadSCF();
+void G_LoadSCF(void);
 cvar_t** G_GetCvars(void);
 uint32_t G_NumCvars(void);
+void Com_LoadConfig(void);
 
 #endif
 

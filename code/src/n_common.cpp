@@ -4,36 +4,24 @@
 #include "g_game.h"
 #include "g_sound.h"
 
-cvar_t com_demo               = {"com_demo", "", 0.0f, 0, qfalse, TYPE_BOOL, CVG_ENGINE, CVAR_ROM};
-
-cvar_t r_ticrate                  = {"r_ticrate", "", 0.0f, 35, qfalse, TYPE_INT, CVG_RENDERER, CVAR_SAVE};
-cvar_t r_screenheight             = {"r_screenheight", "", 0.0f, 720, qfalse, TYPE_INT, CVG_RENDERER, CVAR_SAVE | CVAR_ROM};
-cvar_t r_screenwidth              = {"r_screenwidth", "", 0.0f, 1024, qfalse, TYPE_INT, CVG_RENDERER, CVAR_SAVE | CVAR_ROM};
-cvar_t r_vsync                    = {"r_vsync", "", 0.0f, 0, qtrue, TYPE_BOOL, CVG_RENDERER, CVAR_SAVE};
-cvar_t r_fullscreen               = {"r_fullscreen", "", 0.0f, 0, qtrue, TYPE_BOOL, CVG_RENDERER, CVAR_SAVE};
-cvar_t r_native_fullscreen        = {"r_native_fullscreen", "", 0.0f, 0, qfalse, TYPE_BOOL, CVG_RENDERER, CVAR_SAVE};
-cvar_t r_hidden                   = {"r_hidden", "", 0.0f, 0, qfalse, TYPE_BOOL, CVG_RENDERER, CVAR_SAVE};
-cvar_t r_drawFPS                  = {"r_drawFPS", "", 0.0f, 0, qfalse, TYPE_BOOL, CVG_RENDERER, CVAR_SAVE};
-cvar_t r_dither                   = {"r_dither", "", 0.0f, 0, qfalse, TYPE_BOOL, CVG_RENDERER, CVAR_SAVE};
-cvar_t r_multisampleAmount        = {"r_multisampleAmount", "", 0.0f, 2, qfalse, TYPE_INT, CVG_RENDERER, CVAR_SAVE};
-cvar_t r_multisampleType          = {"r_multisampleType", "MSAA", 0.0f, 0, qfalse, TYPE_STRING, CVG_RENDERER, CVAR_SAVE};
-cvar_t r_renderapi                = {"r_renderapi", "", 0.0f, (int32_t)R_OPENGL, qfalse, TYPE_INT, CVG_RENDERER, CVAR_SAVE};
-cvar_t r_EXT_anisotropicFiltering = {"r_EXT_anisotropicFiltering", "", 0.0f, 0, qfalse, TYPE_INT, CVG_RENDERER, CVAR_SAVE};
-cvar_t r_gammaAmount              = {"r_gammaAmount", "", 2.2f, 0, qfalse, TYPE_FLOAT, CVG_RENDERER, CVAR_SAVE};
-cvar_t r_textureMagFilter         = {"r_textureMagFilter", "GL_NEAREST", 0.0f, 0, qfalse, TYPE_STRING, CVG_RENDERER, CVAR_SAVE | CVAR_DEV};
-cvar_t r_textureMinFilter         = {"r_textureMinFilter", "GL_NEAREST", 0.0f, 0, qfalse, TYPE_STRING, CVG_RENDERER, CVAR_SAVE | CVAR_DEV};
-cvar_t r_textureFiltering         = {"r_textureFiltering", "Nearest", 0.0f, 0, qfalse, TYPE_STRING, CVG_RENDERER, CVAR_SAVE};
-cvar_t r_textureCompression       = {"r_textureCompression", "", 0.0f, 0, qfalse, TYPE_BOOL, CVG_RENDERER, CVAR_SAVE};
-cvar_t r_textureDetail            = {"r_textureDetail", "medium", 0.0f, 0, qfalse, TYPE_STRING, CVG_RENDERER, CVAR_SAVE};
-cvar_t r_bloomOn                  = {"r_bloomOn", "", 0.0f, 0, qtrue, TYPE_BOOL, CVG_RENDERER, CVAR_SAVE};
-cvar_t r_useExtensions            = {"r_useExtensions", "", 0.0f, 0, qtrue, TYPE_BOOL, CVG_RENDERER, CVAR_SAVE};
-cvar_t r_fovWidth                 = {"r_fovWidth", "", 0.0f, 60, qfalse, TYPE_INT, CVG_RENDERER, CVAR_SAVE};
-cvar_t r_fovHeight                = {"r_fovHeight", "", 0.0f, 40, qfalse, TYPE_INT, CVG_RENDERER, CVAR_SAVE};
+cvar_t *com_demo;
 
 typedef struct
 {
+	SDL_KeyCode code;
+	bind_t bind;
+	qboolean pressed;
+} nkey_t;
+
+typedef struct eventState_s
+{
+	eventState_s(void)
+		: allocator{}, event{}, kbstate{}, kbptr{}, windowEvents{0} { }
+
+	zone_allocator_notemplate allocator;
     SDL_Event event;
-	qboolean kbstate[NUMKEYS];
+	eastl::unordered_map<SDL_Keycode, nkey_t> kbstate;
+	qboolean *kbptr[NUMBINDS];
 	uint32_t windowEvents;
 } eventState_t;
 
@@ -71,93 +59,45 @@ uint32_t Com_GetWindowEvents(void)
 	return evState.windowEvents;
 }
 
-qboolean* Com_GetKeyboard(void)
+qboolean** Com_GetKeyboard(void)
 {
-	return evState.kbstate;
+	return evState.kbptr;
 }
 
 GO_AWAY_MANGLE GDR_EXPORT bool ImGui_ImplSDL2_ProcessEvent(const SDL_Event* event);
+
+static void Com_InitEvents(void)
+{
+	// reserve
+	evState.kbstate.clear();
+	evState.kbstate.set_allocator((const eastl::allocator &)evState.allocator);
+	evState.kbstate.reserve(NUMBINDS);
+
+	for (uint32_t i = 0; i < NUMBINDS; i++) {
+		evState.kbstate[kb_binds[i].button] = { .code = kb_binds[i].button, .bind = kb_binds[i].bind, .pressed = qfalse };
+		evState.kbptr[i] = &evState.kbstate[kb_binds[i].button].pressed;
+	}
+}
 
 void Com_UpdateEvents(void)
 {
 	EASY_FUNCTION();
     SDL_PumpEvents();
 
-	memset(&evState, 0, sizeof(evState));
 	while (SDL_PollEvent(&evState.event)) {
+		// process command console events if its open
 		if (RE_ConsoleIsOpen())
     	    ImGui_ImplSDL2_ProcessEvent(&evState.event);
 		
 		switch (evState.event.type) {
 		case SDL_KEYDOWN:
-			switch (evState.event.key.keysym.sym) {
-			case SDLK_a: evState.kbstate[KEY_A] = qtrue; break;
-			case SDLK_b: evState.kbstate[KEY_B] = qtrue; break;
-			case SDLK_c: evState.kbstate[KEY_C] = qtrue; break;
-			case SDLK_d: evState.kbstate[KEY_D] = qtrue; break;
-			case SDLK_e: evState.kbstate[KEY_E] = qtrue; break;
-			case SDLK_f: evState.kbstate[KEY_F] = qtrue; break;
-			case SDLK_g: evState.kbstate[KEY_G] = qtrue; break;
-			case SDLK_h: evState.kbstate[KEY_H] = qtrue; break;
-			case SDLK_i: evState.kbstate[KEY_I] = qtrue; break;
-			case SDLK_j: evState.kbstate[KEY_J] = qtrue; break;
-			case SDLK_k: evState.kbstate[KEY_K] = qtrue; break;
-			case SDLK_l: evState.kbstate[KEY_L] = qtrue; break;
-			case SDLK_m: evState.kbstate[KEY_M] = qtrue; break;
-			case SDLK_n: evState.kbstate[KEY_N] = qtrue; break;
-			case SDLK_o: evState.kbstate[KEY_O] = qtrue; break;
-			case SDLK_p: evState.kbstate[KEY_P] = qtrue; break;
-			case SDLK_q: evState.kbstate[KEY_Q] = qtrue; break;
-			case SDLK_r: evState.kbstate[KEY_R] = qtrue; break;
-			case SDLK_s: evState.kbstate[KEY_S] = qtrue; break;
-			case SDLK_t: evState.kbstate[KEY_T] = qtrue; break;
-			case SDLK_u: evState.kbstate[KEY_U] = qtrue; break;
-			case SDLK_v: evState.kbstate[KEY_V] = qtrue; break;
-			case SDLK_w: evState.kbstate[KEY_W] = qtrue; break;
-			case SDLK_x: evState.kbstate[KEY_X] = qtrue; break;
-			case SDLK_y: evState.kbstate[KEY_Y] = qtrue; break;
-			case SDLK_z: evState.kbstate[KEY_Z] = qtrue; break;
-			case SDLK_0: evState.kbstate[KEY_0] = qtrue; break;
-			case SDLK_1: evState.kbstate[KEY_1] = qtrue; break;
-			case SDLK_2: evState.kbstate[KEY_2] = qtrue; break;
-			case SDLK_3: evState.kbstate[KEY_3] = qtrue; break;
-			case SDLK_4: evState.kbstate[KEY_4] = qtrue; break;
-			case SDLK_5: evState.kbstate[KEY_5] = qtrue; break;
-			case SDLK_6: evState.kbstate[KEY_6] = qtrue; break;
-			case SDLK_7: evState.kbstate[KEY_7] = qtrue; break;
-			case SDLK_8: evState.kbstate[KEY_8] = qtrue; break;
-			case SDLK_9: evState.kbstate[KEY_9] = qtrue; break;
-			case SDLK_UP: evState.kbstate[KEY_UP] = qtrue; break;
-			case SDLK_DOWN: evState.kbstate[KEY_DOWN] = qtrue; break;
-			case SDLK_LEFT: evState.kbstate[KEY_LEFT] = qtrue; break;
-			case SDLK_RIGHT: evState.kbstate[KEY_RIGHT] = qtrue; break;
-			case SDLK_BACKQUOTE: evState.kbstate[KEY_BACKQUOTE] = qtrue; break;
-			case SDLK_SPACE: evState.kbstate[KEY_SPACE] = qtrue; break;
-			case SDLK_BACKSPACE: evState.kbstate[KEY_BACKSPACE] = qtrue; break;
-			case SDLK_TAB: evState.kbstate[KEY_TAB] = qtrue; break;
-			case SDLK_LSHIFT: evState.kbstate[KEY_LSHIFT] = qtrue; break;
-			case SDLK_RSHIFT: evState.kbstate[KEY_RSHIFT] = qtrue; break;
-			case SDLK_F1: evState.kbstate[KEY_F1] = qtrue; break;
-			case SDLK_F2: evState.kbstate[KEY_F2] = qtrue; break;
-			case SDLK_F3: evState.kbstate[KEY_F3] = qtrue; break;
-			case SDLK_F4: evState.kbstate[KEY_F4] = qtrue; break;
-			case SDLK_F5: evState.kbstate[KEY_F5] = qtrue; break;
-			case SDLK_F6: evState.kbstate[KEY_F6] = qtrue; break;
-			case SDLK_F7: evState.kbstate[KEY_F7] = qtrue; break;
-			case SDLK_F8: evState.kbstate[KEY_F8] = qtrue; break;
-			case SDLK_F9: evState.kbstate[KEY_F9] = qtrue; break;
-			case SDLK_F10: evState.kbstate[KEY_F10] = qtrue; break;
-			case SDLK_F11: evState.kbstate[KEY_F11] = qtrue; break;
-			case SDLK_F12: evState.kbstate[KEY_F12] = qtrue; break;
-			case SDLK_ESCAPE: evState.kbstate[KEY_ESCAPE] = qtrue; break;
-			case SDLK_LCTRL: evState.kbstate[KEY_LCTRL] = qtrue; break;
-			case SDLK_RCTRL: evState.kbstate[KEY_RCTRL] = qtrue; break;
-			};
+			evState.kbstate[evState.event.key.keysym.sym].pressed = qtrue;
 			break;
 		case SDL_QUIT:
 			Sys_Exit(1);
 			break;
 		case SDL_KEYUP:
+			evState.kbstate[evState.event.key.keysym.sym].pressed = qfalse;
 			break;
 		case SDL_WINDOWEVENT:
 			switch (evState.event.window.type) {
@@ -194,25 +134,37 @@ void GDR_DECL Com_Printf(const char *fmt, ...)
     char msg[MAX_MSG_SIZE];
 
     va_start(argptr, fmt);
-	vfprintf(stdout, fmt, argptr);
+	length = N_vsnprintf(msg, sizeof(msg), fmt, argptr);
     va_end(argptr);
-	fprintf(stdout, "\n");
+
+	Con_Printf("%s", msg);
 }
+
+
+static jmp_buf abort_vmframe;
 
 /*
 Com_Error: the vm's version of N_Error
 */
-void GDR_DECL Com_Error(const char *fmt,  ...)
+void GDR_DECL Com_Error(vm_t *vm, int level, const char *fmt,  ...)
 {
     int length;
     va_list argptr;
     char msg[MAX_MSG_SIZE];
 
     va_start(argptr, fmt);
-    length = stbsp_vsnprintf(msg, sizeof(msg), fmt, argptr);
+    length = N_vsnprintf(msg, sizeof(msg), fmt, argptr);
     va_end(argptr);
 
-    N_Error("(VM Error) %s", msg);
+	if (level == ERR_FATAL) {
+		VM_Restart(vm);
+		Con_Error(false, "(VM Fatal Error): %s", msg);
+	}
+	else if (level == ERR_FRAME || level == ERR_RESTART) {
+		if (level == ERR_FRAME) {
+			longjmp(abort_vmframe, 0);
+		}
+	}
 }
 
 /*
@@ -229,6 +181,14 @@ Com_Shutdown_f: for testing exit/crashing processes
 static void Com_Shutdown_f(void)
 {
     N_Error("testing");
+}
+
+const char *Key_GetBinding(uint32_t key)
+{
+	if (key >= NUMBINDS)
+		return "Invalid";
+	
+	return kb_binds[key].name;
 }
 
 /*
@@ -301,6 +261,7 @@ void Com_FillImport(renderImport_t *import)
     import->Z_Malloc = Z_Malloc;
     import->Z_Calloc = Z_Calloc;
     import->Z_Realloc = Z_Realloc;
+	import->Z_Strdup = Z_Strdup;
 
 	import->Z_Free = Z_Free;
 	import->Z_FreeTags = Z_FreeTags;
@@ -320,18 +281,28 @@ void Com_FillImport(renderImport_t *import)
 //	import->Mem_DefragIsActive = Mem_DefragIsActive;
 //	import->Mem_AllocDefragBlock = Mem_AllocDefragBlock;
 
-	// get the specific logger function (its been overloaded)
+	// get the specific logger function (it's been overloaded)
 	import->Con_Printf = static_cast<void(*)(loglevel_t, const char *, ...)>(Con_Printf);
 	import->Con_GetBuffer = Con_GetBuffer;
 	import->Con_Error = Con_Error;
 	import->va = va;
     import->N_Error = N_Error;
 
-	import->Cvar_Find = Cvar_Find;
-    import->Cvar_RegisterName = Cvar_RegisterName;
-    import->Cvar_ChangeValue = Cvar_ChangeValue;
-    import->Cvar_Register = Cvar_Register;
-    import->Cvar_GetValue = Cvar_GetValue;
+	import->Cvar_VariableStringBuffer = Cvar_VariableStringBuffer;
+	import->Cvar_VariableStringBufferSafe = Cvar_VariableStringBufferSafe;
+	import->Cvar_VariableInteger = Cvar_VariableInteger;
+	import->Cvar_VariableFloat = Cvar_VariableFloat;
+	import->Cvar_VariableBoolean = Cvar_VariableBoolean;
+	import->Cvar_VariableString = Cvar_VariableString;
+	import->Cvar_Flags = Cvar_Flags;
+	import->Cvar_Get = Cvar_Get;
+	import->Cvar_SetGroup = Cvar_SetGroup;
+	import->Cvar_SetDescription = Cvar_SetDescription;
+	import->Cvar_SetSafe = Cvar_SetSafe;
+	import->Cvar_SetBooleanValue = Cvar_SetBooleanValue;
+	import->Cvar_SetStringValue = Cvar_SetStringValue;
+	import->Cvar_SetFloatValue = Cvar_SetFloatValue;
+	import->Cvar_SetIntegerValue = Cvar_SetIntegerValue;
 
     import->Cmd_AddCommand = Cmd_AddCommand;
     import->Cmd_RemoveCommand = Cmd_RemoveCommand;
@@ -446,12 +417,17 @@ Com_InitJournals: initializes the logfile and the event journal
 */
 void Com_InitJournals(void)
 {
-	if (!c_devmode.b)
-		return;
-
 	logfile = FS_FOpenWrite("logfile.txt");
 	if (logfile == FS_INVALID_HANDLE) {
 		Con_Printf("Failed to open logfile");
+	}
+}
+
+void Com_Shutdown(void)
+{
+	if (logfile != FS_INVALID_HANDLE) {
+		FS_FClose(logfile);
+		logfile = FS_INVALID_HANDLE;
 	}
 }
 
@@ -462,29 +438,34 @@ void Com_Init(void)
 {
     Con_Printf("Com_Init: initializing systems");
 
-	// initialize the cvar system
-	Cvar_Init();
+	Cbuf_Init();
+	Z_Init();
 
-	Con_Printf("G_LoadSCF: parsing scf file");
-    G_LoadSCF();
-
-	// initialize the allocation daemons
-	Memory_Init();
-	
 	// initialize the command console
-	Con_Init();
+	Cvar_Init();
 	Cmd_Init();
+	Com_LoadConfig();
+	Con_Init();
+
+	FS_Init();
+
+	Com_InitEvents();
+	Com_InitJournals();
+
+	Hunk_InitMemory();
 
 	// initialize the filesystem
 	FS_Init();
-
+	
+	// event processing
 	Com_InitJournals();
-    
+	Com_InitEvents();
+
+	G_LoadBFF("");
+
 	// initialize OpenAL
 	Snd_Init();
-
-	Con_Printf("G_LoadBFF: loading bff file");
-    G_LoadBFF("nomadmain.bff");
+	I_CacheAudio((void *)BFF_FetchInfo());
 
 	// initialize the vm
 	VM_Init();
@@ -496,7 +477,6 @@ void Com_Init(void)
 	Com_FillImport(&import);
     RE_Init(&import);
 
-	I_CacheAudio((void *)BFF_FetchInfo());
 	Com_CacheMaps();
 	
 	BFF_FreeInfo(BFF_FetchInfo());
@@ -513,6 +493,8 @@ void Com_Init(void)
     );
 
 	Cmd_AddCommand("crash", Com_Crash_f);
+
+	Con_Printf("==== Common Initialization Done ====");
 }
 
 /*
@@ -527,7 +509,10 @@ void Com_Frame(void)
 
 	// run the backend threads
 //	Snd_Run();
-	VM_Run(SGAME_VM);
+
+	// setjmp for abort_vmframe will be true if the vm has thrown an error
+	if (!setjmp(abort_vmframe))
+		VM_Run(SGAME_VM);
 
 #if 0
 	RE_BeginFrame();
@@ -541,7 +526,7 @@ void Com_Frame(void)
 //	Snd_Stop();
 
 	// 'framerate cap'
-	sleepfor(1000 / r_ticrate.i);
+	sleepfor(1000 / Cvar_VariableInteger("r_ticrate"));
 }
 
 /*
@@ -1271,12 +1256,12 @@ size_t Com_ReadFile(const char *filepath, void *buffer)
 	fseek(fp, 0L, SEEK_END);
 	size_t fsize = ftell(fp);
 	fseek(fp, 0L, SEEK_SET);
-	void *buf = Z_Malloc(fsize, TAG_FILE_USED, &buf, "filebuf");
+	void *buf = Z_Malloc(fsize, TAG_STATIC, &buf, "filebuf");
 	if (fread(buf, fsize, 1, fp) == 0) {
 		N_Error("N_LoadFile: failed to read %lu bytes from file %s", fsize, filepath);
 	}
 	memcpy(buffer, buf, fsize);
-	Z_ChangeTag(buf, TAG_FILE_FREE);
+	Z_Free(buffer);
 	fclose(fp);
 	return fsize;
 }
@@ -1285,7 +1270,7 @@ size_t Com_FileSize(const char *filepath)
 {
 	FILE* fp = fopen(filepath, "rb");
 	if (!fp) {
-		N_Error("N_FileSize: failed to oepn file %s", filepath);
+		N_Error("N_FileSize: failed to open file %s", filepath);
 	}
 	fseek(fp, 0L, SEEK_END);
 	size_t fsize = ftell(fp);
@@ -1303,7 +1288,7 @@ size_t Com_LoadFile(const char *filepath, void **buffer)
 	fseek(fp, 0L, SEEK_END);
 	size_t fsize = ftell(fp);
 	fseek(fp, 0L, SEEK_SET);
-	void *buf = Z_Malloc(fsize, TAG_FILE_USED, &buf, "filebuf");
+	void *buf = Z_Malloc(fsize, TAG_STATIC, &buf, "filebuf");
 	if (fread(buf, fsize, 1, fp) == 0) {
 		N_Error("N_LoadFile: failed to read %lu bytes from file %s", fsize, filepath);
 	}

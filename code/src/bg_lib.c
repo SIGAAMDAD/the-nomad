@@ -905,7 +905,7 @@ done:
 }
 
 void VM_Com_Printf(const char *string);
-void VM_Com_Error(const char *string);
+void VM_Com_Error(int level, const char *string);
 
 void GDR_DECL G_Printf(const char *fmt, ...)
 {
@@ -931,7 +931,7 @@ void GDR_DECL Com_Printf(const char *fmt, ...)
     VM_Com_Printf(msg);
 }
 
-void GDR_DECL Com_Error(const char *fmt, ...)
+void GDR_DECL Com_Error(int level, const char *fmt, ...)
 {
     va_list argptr;
     char msg[1024];
@@ -940,5 +940,5 @@ void GDR_DECL Com_Error(const char *fmt, ...)
     vsprintf(msg, fmt, argptr);
     va_end(argptr);
 
-    VM_Com_Error(msg);
+    VM_Com_Error(level, msg);
 }

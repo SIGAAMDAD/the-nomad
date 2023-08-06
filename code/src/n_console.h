@@ -5,29 +5,39 @@
 
 typedef enum
 {
-    TYPE_INT,
-    TYPE_STRING,
-    TYPE_FLOAT,
-    TYPE_BOOL
+    CVT_NONE = 0,
+    CVT_INT,
+    CVT_STRING,
+    CVT_FLOAT,
+    CVT_BOOL,
+
+    CVT_MAX
 } cvartype_t;
 
 typedef enum {
 	CVG_VM,
 	CVG_ENGINE,
 	CVG_RENDERER,
-	CVG_ALLOCATOR
+	CVG_ALLOCATOR,
+    CVG_NONE,
+    CVG_FILESYSTEM,
+
+    CVG_MAX
 } cvarGroup_t;
 
 // cvar flags
 enum
 {
-    CVAR_ROM            = 0x100, // read-only access from console
-    CVAR_USER_CREATED   = 0x200, // created from the console
-    CVAR_VM_CREATED     = 0x300, // initialized from the vm
-    CVAR_DEV            = 0x400, // can only be modified in dev mode (c_devmode == true)
-    CVAR_SAVE           = 0x500, // will be written to upon app exit and read from upon initialization
-    CVAR_CHEAT          = 0x600, // is it a cheat?
-    CVAR_PRIVATE        = 0x700, // cannot be accessed by the vm
+    CVAR_ROM            =  0x0000, // read-only access from console
+    CVAR_USER_CREATED   =  0x2000, // created from the console
+    CVAR_VM_CREATED     =  0x4000, // initialized from the vm
+    CVAR_DEV            =  0x8000, // can only be modified in dev mode (c_devmode == true)
+    CVAR_SAVE           =  0x0200, // will be written to upon app exit and read from upon initialization
+    CVAR_CHEAT          =  0x0400, // is it a cheat?
+    CVAR_PRIVATE        =  0x0800, // cannot be accessed by the vm
+    CVAR_MODIFIED       =  0x1000, // its been modified
+    CVAR_NOTABCOMPLETE  =  0x0100, // no tab completion in console
+    CVAR_NONEXISTENT    = 0x80000, // cvar doesn't exist
 };
 
 typedef int cvarHandle_t;
@@ -37,32 +47,30 @@ typedef int cvarHandle_t;
 
 #define CVAR_INVALID_HANDLE -1
 
-#ifndef Q3_VM
 typedef struct cvar_s
 {
-	char name[MAX_CVAR_NAME]={0};
+    char *name;
+    char *description;
+    uint64_t hashIndex;
 	
 	// cvar's data (can be modified outside of cvar functions)
-	char s[MAX_CVAR_VALUE]={0};
+	char *s;
     float f;
     int32_t i;
 	qboolean b;
     
     cvartype_t type;
     cvarGroup_t group; // for tracking changes
-    int32_t flags;
-
-	char *description;
+    uint32_t flags;
 
     qboolean modified;
     cvarHandle_t id;
 
 	struct cvar_s *prev = NULL;
     struct cvar_s *next = NULL;
-//	struct cvar_s *hashNext;
-//	struct cvar_s *hashPrev;
+	struct cvar_s *hashNext;
+	struct cvar_s *hashPrev;
 } cvar_t;
-#endif
 
 typedef struct {
     char s[MAX_CVAR_VALUE];
@@ -74,20 +82,27 @@ typedef struct {
     cvarHandle_t handle;
 } vmCvar_t;
 
-#ifndef Q3_VM
-cvar_t* Cvar_Find(const char *name);
-void Cvar_SetGroup(cvar_t *cvar, cvarGroup_t group);
-void Cvar_Register(cvar_t *cvar, const char *value);
+void Cvar_VariableStringBuffer(const char *name, char *buffer, uint64_t bufferSize);
+void Cvar_VariableStringBufferSafe(const char *name, char *buffer, uint64_t bufferSize, uint32_t flag);
+int32_t Cvar_VariableInteger(const char *name);
+float Cvar_VariableFloat(const char *name);
+qboolean Cvar_VariableBoolean(const char *name);
+const char *Cvar_VariableString(const char *name);
+uint32_t Cvar_Flags(const char *name);
+void Cvar_Update(vmCvar_t *vmCvar, int privateFlag);
+cvar_t *Cvar_Get(const char *name, const char *value, uint32_t flags);
 qboolean Cvar_Command(void);
-const char* Cvar_GetValue(const char *name);
-const char* Cvar_Description(const char *name);
-void Cvar_ChangeValue(cvar_t *cvar, const char *value);
-#endif
-
-void Cvar_Find(vmCvar_t *cvar, const char *name);
-void Cvar_Register(vmCvar_t *cvar, const char *name, const char *value, cvartype_t type);
-void Cvar_RegisterName(const char *name, const char *value, cvartype_t type, int32_t flags);
-void Cvar_ChangeValue(const char *name, const char *value);
+void Cvar_SetGroup(cvar_t *cv, cvarGroup_t group);
+void Cvar_SetDescription(cvar_t *cv, const char *description);
+void Cvar_Register(vmCvar_t *vmCvar, const char *name, const char *value, uint32_t flags);
+void Cvar_SetSafe(const char *name, const char *value);
+void Cvar_Set(const char *name, const char *value);
+void Cvar_SetValueSafe(const char *name, float value);
+qboolean Cvar_SetModified(const char *name, qboolean modified);
+void Cvar_SetIntegerValue(const char *name, int32_t value);
+void Cvar_SetFloatValue(const char *name, float value);
+void Cvar_SetStringValue(const char *name, const char *value);
+void Cvar_SetBooleanValue(const char *name, qboolean value);
 
 #ifndef Q3_VM
 

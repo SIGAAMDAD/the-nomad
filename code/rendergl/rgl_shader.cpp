@@ -106,7 +106,7 @@ GO_AWAY_MANGLE shader_t* R_InitShader(const char *vertexFile, const char *fragme
     int success;
     uint32_t vertid, fragid;
 
-    shader = (shader_t *)ri.Hunk_Alloc(sizeof(shader_t), "GLshader", h_low);
+    shader = (shader_t *)ri.Z_Malloc(sizeof(*shader), TAG_RENDERER, &shader, "GLshader");
 
     shader->vertexBufLen = ri.FS_LoadFile(vertexFile, (void **)&shader->vertexBuf);
     shader->fragmentBufLen = ri.FS_LoadFile(fragmentFile, (void **)&shader->fragmentBuf);
@@ -148,10 +148,8 @@ GO_AWAY_MANGLE shader_t* R_InitShader(const char *vertexFile, const char *fragme
                     "glslang error message: %s", fragmentFile, vertexFile, str);
     }
 
-    shader->vertexFile = (char *)ri.Z_Malloc(strlen(vertexFile) + 1, TAG_STATIC, &shader->vertexFile, "strdup");
-    N_strncpyz(shader->vertexFile, vertexFile, strlen(vertexFile) + 1);
-    shader->fragmentFile = (char *)ri.Z_Malloc(strlen(fragmentFile) + 1, TAG_STATIC, &shader->fragmentFile, "strdup");
-    N_strncpyz(shader->fragmentFile, fragmentFile, strlen(fragmentFile) + 1);
+    shader->vertexFile = ri.Z_Strdup(vertexFile);
+    shader->fragmentFile = ri.Z_Strdup(fragmentFile);
 
     // cleanup
     nglDeleteShader(vertid);
@@ -171,6 +169,9 @@ GO_AWAY_MANGLE void R_ShutdownShader(shader_t *shader)
     nglDeleteProgram(shader->programId);
     ri.FS_FreeFile(shader->vertexBuf);
     ri.FS_FreeFile(shader->fragmentBuf);
+    ri.Z_Free(shader->fragmentFile);
+    ri.Z_Free(shader->vertexFile);
+    ri.Z_Free(shader);
 }
 
 GO_AWAY_MANGLE void RE_ShutdownShaders(void)

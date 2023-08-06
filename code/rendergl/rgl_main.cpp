@@ -298,8 +298,7 @@ GO_AWAY_MANGLE void R_InitExtensions(NGLloadproc load)
     glContext.maxViewportDims[0], glContext.maxViewportDims[1], glContext.maxTextureUnits,
     glContext.maxVertexAttribs, glContext.maxTextureSize, glContext.maxMultisampleSamples);
 
-    // extended info, mostly for debugging stuff, but also just for fun
-    ri.Con_Printf(DEV,
+    ri.Con_Printf(INFO,
         "==== Extended OpenGL Context Info ====\n"
         "GL_MAX_VERTEX_ATTRIB_STRIDE: %i\n"
         "GL_MAX_INTEGER_SAMPLES: %i\n"
@@ -331,6 +330,14 @@ GO_AWAY_MANGLE void R_InitExtensions(NGLloadproc load)
 
     if (!r_useExtensions->b) {
         ri.Con_Printf(INFO, "****** IGNORING OPENGL EXTENSIONS ******");
+
+        // use the default buffer functions if GL_ARB_vertex_buffer_object is disabled
+        nglGenBuffersARB = nglGenBuffers;
+        nglBindBufferARB = nglBindBuffer;
+        nglDeleteBuffersARB = nglDeleteBuffers;
+        nglBufferDataARB = nglBufferData;
+        nglBufferSubDataARB = nglBufferSubData;
+
         return;
     }
 
@@ -347,11 +354,15 @@ GO_AWAY_MANGLE void R_InitExtensions(NGLloadproc load)
             ri.Con_Printf(INFO, "... GL_EXT_texture_filter_anisotropic (max: %i)", glContext.maxAnisotropy);
             r_EXT_anisotropicFiltering->b = qtrue;
             glContext.maxAnisotropy = MIN(r_EXT_anisotropicFiltering->i, glContext.maxAnisotropy);
-            r_EXT_anisotropicFiltering->i = glContext.maxAnisotropy;
         }
     }
     else {
         ri.Con_Printf(INFO, "... GL_EXT_texture_filter_anisotropic not found");
+    }
+
+    r_EXT_anisotropicFiltering->b = (qboolean)glContext.maxAnisotropy > 0;
+    if (r_EXT_anisotropicFiltering->i != glContext.maxAnisotropy) {
+        ri.Cvar_SetIntegerValue("r_EXT_anisotropicFiltering", glContext.maxAnisotropy);
     }
 
     if (R_HasExtension("ARB_vertex_buffer_object")) {
@@ -359,7 +370,7 @@ GO_AWAY_MANGLE void R_InitExtensions(NGLloadproc load)
         if (!nglGenBuffersARB || !nglDeleteBuffersARB || !nglBindBufferARB || !nglBufferDataARB || !nglBufferSubDataARB) {
             ri.Con_Printf(INFO, "WARNING: failed to load ARB_vertex_buffer_object extension procs");
 
-            // use the default buffer functions
+            // use default buffer functions
             nglGenBuffersARB = nglGenBuffers;
             nglBindBufferARB = nglBindBuffer;
             nglDeleteBuffersARB = nglDeleteBuffers;
@@ -376,13 +387,18 @@ GO_AWAY_MANGLE void R_InitExtensions(NGLloadproc load)
         if (r_textureCompression->b) {
             glContext.textureCompression = TC_S3TC_ARB;
             ri.Con_Printf(INFO, "... using GL_EXT_texture_compression_s3tc");
+            ri.Cvar_SetStringValue("r_textureCompression", "TC_S3TC_ARB");
         }
         else {
             ri.Con_Printf(INFO, "... ignoring GL_EXT_texture_compression_s3tc");
+            if (N_stricmp(r_textureCompression->s, "none") != 0)
+                ri.Cvar_SetStringValue("r_textureCompression", "none");
         }
     }
     else {
         ri.Con_Printf(INFO, "... GL_EXT_texture_compression_s3tc not found");
+        if (N_stricmp(r_textureCompression->s, "none") != 0)
+            ri.Cvar_SetStringValue("r_textureCompression", "none");
     }
 
     // GL_S3_s3tc
@@ -391,14 +407,19 @@ GO_AWAY_MANGLE void R_InitExtensions(NGLloadproc load)
             if (r_textureCompression->b) {
                 glContext.textureCompression = TC_S3TC;
                 ri.Con_Printf(INFO, "... using GL_S3_s3tc");
+                ri.Cvar_SetStringValue("r_textureCompression", "TC_S3TC");
             }
             else {
                 glContext.textureCompression = TC_NONE;
                 ri.Con_Printf(INFO, "... ignoring GL_S3_s3tc");
+                if (N_stricmp(r_textureCompression->s, "none") != 0)
+                    ri.Cvar_SetStringValue("r_textureCompression", "none");
             }
         }
         else {
             ri.Con_Printf(INFO, "... GL_S3_s3tc not found");
+            if (N_stricmp(r_textureCompression->s, "none") != 0)
+                ri.Cvar_SetStringValue("r_textureCompression", "none");
         }
     }
 }
@@ -413,10 +434,7 @@ GO_AWAY_MANGLE void R_InitGL(void)
     ri.SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     ri.SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     ri.SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-//   SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
     ri.SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-//    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-//    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
 
     load_gl_procs((NGLloadproc)ri.SDL_GL_GetProcAddress);
 
@@ -501,32 +519,47 @@ GO_AWAY_MANGLE void RE_Init(renderImport_t *import)
     memcpy(&ri, import, sizeof(*import)); // copy all the functions
 
     ri.Con_Printf(INFO, "RE_Init: initializing rendering engine");
+    
+    r_ticrate = ri.Cvar_Get("r_ticrate", "35", CVAR_PRIVATE | CVAR_ROM | CVAR_SAVE);
+    ri.Cvar_SetGroup(r_ticrate, CVG_RENDERER);
+    r_textureMagFilter = ri.Cvar_Get("r_textureMagFilter", "GL_NEAREST", CVAR_PRIVATE | CVAR_SAVE);
+    ri.Cvar_SetGroup(r_textureMagFilter, CVG_RENDERER);
+    r_textureMinFilter = ri.Cvar_Get("r_textureMinFilter", "GL_LINEAR", CVAR_PRIVATE | CVAR_SAVE);
+    ri.Cvar_SetGroup(r_textureMinFilter, CVG_RENDERER);
+    r_textureFiltering = ri.Cvar_Get("r_textureFiltering", "Nearest", CVAR_PRIVATE | CVAR_SAVE);
+    ri.Cvar_SetGroup(r_textureFiltering, CVG_RENDERER);
+    r_textureCompression = ri.Cvar_Get("r_textureCompression", "none", CVAR_PRIVATE | CVAR_SAVE);
+    ri.Cvar_SetGroup(r_textureCompression, CVG_RENDERER);
+    r_textureDetail = ri.Cvar_Get("r_textureDetail", "medium", CVAR_PRIVATE | CVAR_SAVE);
+    ri.Cvar_SetGroup(r_textureDetail, CVG_RENDERER);
+    r_screenwidth = ri.Cvar_Get("r_screenwidth", "1920", CVAR_PRIVATE | CVAR_SAVE);
+    ri.Cvar_SetGroup(r_screenwidth, CVG_RENDERER);
+    r_screenheight = ri.Cvar_Get("r_screenheight", "1080", CVAR_PRIVATE | CVAR_SAVE);
+    ri.Cvar_SetGroup(r_screenheight, CVG_RENDERER);
+    r_vsync = ri.Cvar_Get("r_vsync", "1", CVAR_PRIVATE | CVAR_SAVE);
+    ri.Cvar_SetGroup(r_vsync, CVG_RENDERER);
+    r_fullscreen = ri.Cvar_Get("r_fullscreen", CVAR_PRIVATE | CVAR_SAVE);
+    ri.Cvar_SetGroup(r_fullscreen, CVG_RENDERER);
+    r_drawFPS = ri.Cvar_Get("r_drawFPS", "0", CVAR_PRIVATE | CVAR_SAVE);
+    ri.Cvar_SetGroup(r_drawFPS, CVG_RENDERER);
+    r_renderapi = ri.Cvar_Get("r_renderapi", "R_OPENGL", CVAR_PRIVATE | CVAR_SAVE);
+    ri.Cvar_SetGroup(r_renderapi, CVG_RENDERER);
+    r_dither = ri.Cvar_Get("r_dither", "0", CVAR_PRIVATE | CVAR_SAVE);
+    ri.Cvar_SetGroup(r_dither, CVG_RENDERER);
+    r_multisampleAmount = ri.Cvar_Get("r_multisampleAmount", "2", CVAR_PRIVATE | CVAR_SAVE);
+    ri.Cvar_SetGroup(r_multisampleAmount, CVG_RENDERER);
+    r_multisampleType = ri.Cvar_Get("r_multisampleType", "none", CVAR_PRIVATE | CVAR_SAVE);
+    ri.Cvar_SetGroup(r_multisampleType, CVG_RENDERER);
+    r_EXT_anisotropicFiltering = ri.Cvar_Get("r_EXT_anisotropicFiltering", "0", CVAR_PRIVATE | CVAR_SAVE);
+    ri.Cvar_SetGroup(r_EXT_anisotropicFiltering, CVG_RENDERER);
+    r_gammaAmount = ri.Cvar_Get("r_gammaAmount", "2.2.", CVAR_PRIVATE | CVAR_SAVE);
+    ri.Cvar_SetGroup(r_gammaAmount, CVG_RENDERER);
+    r_bloomOn = ri.Cvar_Get("r_bloomOn", "0", CVAR_PRIVATE | CVAR_SAVE);
+    ri.Cvar_SetGroup(r_bloomOn, CVG_RENDERER);
+    r_useExtensions = ri.Cvar_Get("r_useExtensions", "1", CVAR_PRIVATE | CVAR_SAVE);
+    ri.Cvar_SetGroup(r_useExtensions, CVG_RENDERER);
 
-    r_ticrate = ri.Cvar_Find("r_ticrate");
-    r_textureMagFilter = ri.Cvar_Find("r_textureMagFilter");
-    r_textureMinFilter = ri.Cvar_Find("r_textureMinFilter");
-    r_textureFiltering = ri.Cvar_Find("r_textureFiltering");
-    r_textureCompression = ri.Cvar_Find("r_textureCompression");
-    r_textureDetail = ri.Cvar_Find("r_textureDetail");
-    r_screenheight = ri.Cvar_Find("r_screenheight");
-    r_screenwidth = ri.Cvar_Find("r_screenwidth");
-    r_vsync = ri.Cvar_Find("r_vsync");
-    r_fullscreen = ri.Cvar_Find("r_fullscreen");
-    r_native_fullscreen = ri.Cvar_Find("r_native_fullscreen");
-    r_hidden = ri.Cvar_Find("r_hidden");
-    r_drawFPS = ri.Cvar_Find("r_drawFPS");
-    r_renderapi = ri.Cvar_Find("r_renderapi");
-    r_dither = ri.Cvar_Find("r_dither");
-    r_multisampleAmount = ri.Cvar_Find("r_multisampleAmount");
-    r_multisampleType = ri.Cvar_Find("r_multisampleType");
-    r_EXT_anisotropicFiltering = ri.Cvar_Find("r_EXT_anisotropicFiltering");
-    r_gammaAmount = ri.Cvar_Find("r_gammaAmount");
-    r_bloomOn = ri.Cvar_Find("r_bloomOn");
-    r_useExtensions = ri.Cvar_Find("r_useExtensions");
-    r_fovWidth = ri.Cvar_Find("r_fovWidth");
-    r_fovHeight = ri.Cvar_Find("r_fovHeight");
-
-    renderer = (Renderer *)ri.Hunk_Alloc(sizeof(Renderer), "renderer", h_high);
+    renderer = (Renderer *)ri.Z_Malloc(sizeof(Renderer), TAG_STATIC, &renderer, "renderer");
     construct(renderer);
     if (ri.SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
         ri.N_Error("RE_Init: failed to initialize SDL2, error message: %s",

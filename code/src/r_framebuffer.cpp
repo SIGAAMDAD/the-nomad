@@ -58,7 +58,7 @@ static void R_DeallocFramebuffer(framebuffer_t *fbo)
 
 static void RE_InitMsaa(void)
 {
-    fbo = (framebuffer_t *)Hunk_Alloc(sizeof(framebuffer_t), "GLfbo", h_low);
+    fbo = (framebuffer_t *)ri.Z_Malloc(sizeof(framebuffer_t), "GLfbo", h_low);
 
     fbo->width = 1024;
     fbo->height = 720;

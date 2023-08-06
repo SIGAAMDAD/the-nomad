@@ -16,12 +16,15 @@ static cvar_t *z_hunkMegs;
 
 #define HUNKID 0x553dfa2
 
-typedef struct
+typedef struct hunkblock_s
 {
 	uint64_t id;
 	uint64_t size;
-	char name[14];
-} hunk_t;
+	struct hunkblock_s *next;
+	const char *name;
+} hunkblock_t;
+
+static hunkblock_t *hunkblocks;
 
 typedef struct
 {
@@ -41,16 +44,56 @@ hunkUsed_t *hunk_temp;
 hunkUsed_t hunk_low;
 hunkUsed_t hunk_high;
 
+/*
+Hunk_Clear: gets called whenever a new level is loaded or is being shutdown
+*/
 void Hunk_Clear(void)
+{	
+	hunk_low.highWater = 0;
+	hunk_low.mark = 0;
+	hunk_low.temp = 0;
+	hunk_low.permanent = 0;
+
+	hunk_high.highWater = 0;
+	hunk_high.mark = 0;
+	hunk_high.temp = 0;
+	hunk_high.permanent = 0;
+	
+	hunk_permanent = &hunk_low;
+	hunk_temp = &hunk_high;
+
+	Con_Printf("Hunk_Clear: reset the hunk ok");
+
+	hunkblocks = NULL;
+}
+
+uint64_t Hunk_MemoryRemaining( void )
 {
-	hunk_high_used = 0;
-	hunk_low_used = 0;
-	memset(hunkbase, 0, hunksize);
+	uint64_t low, high;
+
+	low = hunk_low.permanent > hunk_low.temp ? hunk_low.permanent : hunk_low.temp;
+	high = hunk_high.permanent > hunk_high.temp ? hunk_high.permanent : hunk_high.temp;
+
+	return s_hunkTotal - ( low + high );
+}
+
+/*
+Hunk_SetMark: gets called after the level and game vm have been loaded
+*/
+void Hunk_SetMark( void )
+{
+	hunk_low.mark = hunk_low.permanent;
+	hunk_high.mark = hunk_high.permanent;
+}
+
+void Hunk_ClearToMark( void )
+{
+	hunk_low.permanent = hunk_low.temp = hunk_low.mark;
+	hunk_high.permanent = hunk_high.temp = hunk_high.mark;
 }
 
 uint64_t Hunk_MemoryRemaining (void)
 {
-	return hunksize - hunk_low_used - hunk_high_used;
 }
 
 /*
@@ -58,14 +101,13 @@ Hunk_Check: Run consistancy and id checks
 */
 void Hunk_Check (void)
 {
-	hunk_t	*h;
+	hunkblock_t *h;
 	
-	for (h = (hunk_t *)hunkbase ; (byte *)h != hunkbase + hunk_low_used ; ) {
+	for (h = hunkblocks; h; h = h->next) {
 		if (h->id != HUNKID)
 			N_Error ("Hunk_Check: hunk id isn't correct");
-		if (h->size < 16 || h->size + (byte *)h - hunkbase > hunksize)
+		if (h->size < 64 || h->size + (byte *)h - hunkbase > hunksize)
 			N_Error ("Hunk_Check: bad size");
-		h = (hunk_t *)((byte *)h+h->size);
 	}
 }
 
@@ -88,40 +130,11 @@ static void Hunk_SwapBanks(void)
 	}
 }
 
-/*
-Hunk_HighAlloc: allocates memory on the high hunk temporary memory
-*/
-static void *Hunk_HighAlloc (uint64_t size, const char *name)
-{
-	hunk_t *h;
-
-	hunk_high_used += size;
-	h = (hunk_t *)(hunkbase + hunksize - hunk_high_used);
-
-	h->size = size;
-	h->id = HUNKID;
-	N_strncpy(h->name, name, sizeof(h->name));
-
-	return (void *)(h+1);
-}
-
-static void *Hunk_LowAlloc(uint64_t size, const char *name)
-{
-	hunk_t *h;
-
-	hunk_low_used += size;
-	h = (hunk_t *)(hunkbase + hunk_low_used);
-
-	h->size = size;
-	h->id = HUNKID;
-	N_strncpy(h->name, name, sizeof(h->name));
-
-	return (void *)(h+1);
-}
 
 void *Hunk_AllocateTempMemory(uint64_t size)
 {
-	hunk_t *h;
+	void *buf;
+	hunkblock_t *h;
 
 	// if the hunk hasn't been initialized yet, but there are filesystem calls
 	// being made, then just allocate with Z_Malloc
@@ -129,26 +142,41 @@ void *Hunk_AllocateTempMemory(uint64_t size)
 		return Z_Malloc(size, TAG_STATIC, NULL, "temp");
 	}
 
-	size = sizeof(hunk_t) + ((size + 15) & ~15);
+	Hunk_SwapBanks();
+	
+	size = PAD(size, sizeof(intptr_t) + sizeof(hunkblock_t));
 
-	if (hunksize - hunk_low_used - hunk_high_used < size) {
+	if (hunk_temp->temp + hunk_permanent->permanent + size > hunksize) {
 		Con_Printf(ERROR, "Hunk_AllocateTempMemory: failed on %lu", size);
 		return NULL;
 	}
 
-	hunk_high_used += size;
-	h = (hunk_t *)(hunkbase + hunksize - hunk_high_used);
+	if ( hunk_temp == &hunk_low ) {
+		buf = (void *)(hunkbase + hunk_temp->temp);
+		hunk_temp->temp += size;
+	}
+	else {
+		hunk_temp->temp += size;
+		buf = (void *)(hunkbase + hunksize - hunk_temp->temp );
+	}
 
+	if ( hunk_temp->temp > hunk_temp->highWater ) {
+		hunk_temp->highWater = hunk_temp->temp;
+	}
+
+	h = (hunkblock_t *)buf;
+	buf = (void *)(h+1);
+
+	h->magic = HUNK_MAGIC;
 	h->size = size;
-	h->id = HUNKID;
-	N_strncpy(h->name, "temp", sizeof(h->name));
 
-	return (void *)(h+1);
+	// don't bother clearing, because we are going to load a file over it
+	return buf;
 }
 
 void Hunk_FreeTempMemory(void *p)
 {
-	hunk_t *h;
+	hunkblock_t *h;
 
 	// if hunk hasn't been initialized yet, just Z_Free the data
 	if (!hunkbase) {
@@ -156,16 +184,26 @@ void Hunk_FreeTempMemory(void *p)
 		return;
 	}
 
-	h = ((hunk_t *)p) - 1;
+	h = ((hunkblock_t *)p) - 1;
 
 	if (h->id != HUNKID) {
 		N_Error ("Hunk_FreeTempMemory: hunk id isn't correct");
 	}
 
-	if (h == (hunk_t *)(hunkbase + hunksize - hunk_high_used))
-		hunk_high_used -= h->size;
-	else
-		Con_Printf("Hunk_FreeTempMemory: not final block");
+	// this only works if the files are freed in the stack order,
+	// otherwise the memory will stay around until Hunk_ClearTempMemory
+	if ( hunk_temp == &hunk_low ) {
+		if ( hdr == (void *)(hunkbase + hunk_temp->temp - h->size ) )
+			hunk_temp->temp -= h->size;
+		else
+			Con_Printf( "Hunk_FreeTempMemory: not the final block" );
+	}
+	else {
+		if ( h == (void *)(hunkbase + hunksize - hunk_temp->temp ) )
+			hunk_temp->temp -= h->size;
+		else
+			Con_Printf( "Hunk_FreeTempMemory: not the final block" );
+	}
 }
 
 void Hunk_ClearTempMemory(void)
@@ -175,6 +213,14 @@ void Hunk_ClearTempMemory(void)
 		memset(hunkbase + hunksize - hunk_high_used, 0, hunk_high_used);
 		hunk_high_used = 0;
 	}
+}
+
+qboolean Hunk_CheckMark(void)
+{
+	if (hunk_low.mark || hunk_high.mark)
+		return qtrue;
+	
+	return qfalse;
 }
 
 uint64_t Hunk_LowMark(void)
@@ -199,12 +245,14 @@ void *Hunk_AllocDebug (uint64_t size, ha_pref where, const char *name, const cha
 #else
 void *Hunk_Alloc (uint64_t size, const char *name, ha_pref where)
 #endif
-{	
+{
+	void *buf;
 #ifdef _NOMAD_DEBUG
 	Hunk_Check ();
 #endif
 
 	if (!size)
+		N_Error("Hunk_Alloc: bad size");
 	
 	if (where == h_dontcare || hunk_temp->temp != hunk_temp->permanent) {
 		Hunk_SwapBanks();
@@ -218,24 +266,39 @@ void *Hunk_Alloc (uint64_t size, const char *name, ha_pref where)
 		}
 	}
 
-	size = PAD(size, 16);
+	// round to the cacheline
+	size = sizeof(hunkblock_t) + PAD(size, 64);
 
-	if (hunksize - hunk_low_used - hunk_high_used < size)
-		N_Error ("Hunk_Alloc: failed on %lu bytes", size);
-	if (!size)
-		N_Error ("Hunk_Alloc: bad size: %lu", size);
+	if ( hunk_low.temp + hunk_high.temp + size > hunksize ) {
+		N_Error("Hunk_Alloc failed on %li", size);
+	}
 
-	size = sizeof(hunk_t) + ((size + 15) & ~15);
-	
-	h = (hunk_t *)(hunkbase + hunk_low_used);
-	hunk_low_used += size;
+	if ( hunk_permanent == &hunk_low ) {
+		buf = (void *)(hunkbase + hunk_permanent->permanent);
+		hunk_permanent->permanent += size;
+	}
+	else {
+		hunk_permanent->permanent += size;
+		buf = (void *)(hunkbase + hunksize - hunk_permanent->permanent );
+	}
 
-	h->size = size;
-	h->id = HUNKID;
-	N_strncpy(h->name, name, sizeof(h->name));
-	Con_Printf(DEBUG, "Called Hunk_Alloc for %s", name);
+	hunk_permanent->temp = hunk_permanent->permanent;
 
-	return (void *)(h+1);
+	memset( buf, 0, size );
+
+	{
+		hunkblock_t *block;
+
+		block = (hunkblock_t *)buf;
+		block->size = size - sizeof(hunkblock_t);
+		block->name = name;
+		block->id = HUNKID;
+		block->next = hunkblocks;
+		hunkblocks = block;
+		buf = ((byte *)buf) + sizeof(hunkblock_t);
+	}
+
+	return buf;
 }
 
 extern byte *hunkbase;
@@ -243,20 +306,15 @@ extern uint64_t hunksize;
 
 void Hunk_Print(void)
 {
-    hunk_t *h, *next, *endlow, *starthigh, *endhigh, *prev;
+    hunkblock_t *h, *prev;
 	uint64_t count, sum;
 	uint64_t totalblocks;
-	char name[15];
 
-	name[14] = 0;
 	count = 0;
 	sum = 0;
 	totalblocks = 0;
-	
-	h = (hunk_t *)hunkbase;
-	endlow = (hunk_t *)(hunkbase + hunk_low_used);
-	starthigh = (hunk_t *)(hunkbase + hunksize - hunk_high_used);
-	endhigh = (hunk_t *)(hunkbase + hunksize);
+
+	h = hunkblocks;
 	prev = h;
 
     Con_Printf("\n\n<----- Hunk Heap Report ----->");
@@ -264,31 +322,27 @@ void Hunk_Print(void)
 	Con_Printf("-------------------------");
 
 	while (1) {
-		// skip to the high hunk if done with low hunk
-		if (h == endlow)
-			h = starthigh;
-		
-		// if totally done, break
-		if (h == endhigh)
-			break;
 
 		// run consistancy checks
 		if (h->id != HUNKID)
 			N_Error("Hunk_Check: hunk id isn't correct, prev name: '%s'", prev->name);
-		if (h->size < 16 || h->size + (byte *)h - hunkbase > hunksize)
+		if (h->size < 64 || h->size + (byte *)h - hunkbase > hunksize)
 			N_Error("Hunk_Check: bad size, name: '%s'", h->name);
 		
-		next = (hunk_t *)((byte *)h+h->size);
+		h = h->next;
 		count++;
 		totalblocks++;
 		sum += h->size;
 
 		// print the single block
-		memcpy(name, h->name, 14);
-		Con_Printf("%8p : %8lu   %8s", h, h->size, name);
+		Con_Printf("%8p : %8lu   %8s", h, h->size, h->name);
 
 		prev = h;
 		h = next;
+
+		// we've scanned around the list
+		if (!h)
+			break;
 	}
 	Con_Printf("-------------------------");
 	Con_Printf("          :%8lu REMAINING", hunksize - hunk_low_used - hunk_high_used);
@@ -304,24 +358,21 @@ void Hunk_Print(void)
 
 void Hunk_SmallLog(void)
 {
-	hunk_t *h;
+	hunkblock_t *h;
 	char buf[4096];
-	char name[15];
 	uint64_t size, locsize, numBlocks;
 
 	if (!logfile || !FS_Initialized())
 		return;
 	
-	name[14] = '\0';
 	size = 0;
 	numBlocks = 0;
 	stbsp_snprintf(buf, sizeof(buf), "\r\n================\r\nHunk Small log\r\n================\r\n");
 	FS_Write(buf, strlen(buf), logfile);
-	for (h = (hunk_t *)hunkbase; (byte *)h != hunkbase + hunk_low_used; h = (hunk_t *)((byte *)h+h->size)) {
+	for (h = hunkblocks; h; h = h->next) {
 		size += h->size;
 		numBlocks++;
-		memcpy(name, h->name, 14);
-		stbsp_snprintf(buf, sizeof(buf), "size = %8lu: %s\r\n", h->size, name);
+		stbsp_snprintf(buf, sizeof(buf), "size = %8lu: %s\r\n", h->size, h->name);
 		FS_Write(buf, strlen(buf), logfile);
 	}
 	stbsp_snprintf(buf, sizeof(buf), "%lu total hunk memory\r\n", size);

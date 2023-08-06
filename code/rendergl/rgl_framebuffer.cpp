@@ -86,8 +86,8 @@ GO_AWAY_MANGLE void R_InitFancyFramebuffer(void)
 
 void RE_InitFramebuffers(void)
 {
-    fbo = (framebuffer_t *)ri.Z_Malloc(sizeof(framebuffer_t), TAG_STATIC, &fbo, "GLfbo");
-    intermediate = (framebuffer_t *)ri.Z_Malloc(sizeof(framebuffer_t), TAG_STATIC, &intermediate, "GLinterFbo");
+    fbo = (framebuffer_t *)ri.Z_Malloc(sizeof(framebuffer_t), TAG_RENDERER, &fbo, "GLfbo");
+    intermediate = (framebuffer_t *)ri.Z_Malloc(sizeof(framebuffer_t), TAG_RENDERER, &intermediate, "GLinterFbo");
 
     memset(fbo->colorIds, 0, sizeof(fbo->colorIds));
     fbo->depthId = 0;

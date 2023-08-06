@@ -11,6 +11,8 @@
 
 #define MAP_CACHE_MAGIC 0x55dfa1
 
+static int64_t currentBFFIndex;
+
 typedef struct
 {
     uint32_t magic;     // should be MAP_CACHE_MAGIC
@@ -23,7 +25,8 @@ typedef struct
     uint32_t hash;
 } mapInCache_t;
 
-static eastl::vector<nmap_t *> mapCache;
+static uint64_t numLevels;
+static nmap_t *mapCache;
 static boost::mutex mapLoad;
 
 static void Map_LoadCheckpoints(nmap_t *mapData, const json& data)
@@ -53,10 +56,7 @@ static void Map_LoadCheckpoints(nmap_t *mapData, const json& data)
 static void Map_LoadSprites(const json_string& source, nmap_t *mapData)
 {
     json_string path = source;
-    if (source.find(".tsj")) {
-        path.resize(source.size() - 4);
-        COM_StripExtension(source.c_str(), path.data(), path.size());
-    }
+    Con_Printf(DEBUG, "tileset path: %s", path.c_str());
 
     // submit the tileset to the rendering engine    
     RE_SubmitMapTilesheet(path.c_str(), BFF_FetchInfo());
@@ -125,7 +125,6 @@ static void Map_LoadTiles(nmap_t *mapData, const json *tilelayer, const json *ti
     mapData->tilesetName = Z_Strdup(tilesetName.c_str());
     Con_Printf("tileset: %s", mapData->tilesetName);
     Map_LoadSprites(mapData->tilesetName, mapData);
-    RE_SubmitMapTilesheet(mapData->tilesetName, BFF_FetchInfo());
 
     // set the pointer to the newly parsed json buffer
     tileset = &mapData->tsj;
@@ -142,7 +141,7 @@ static void Map_LoadTiles(nmap_t *mapData, const json *tilelayer, const json *ti
     tileIndex = 0;
     for (uint64_t y = 0; y < mapData->mapHeight; y++) {
         for (uint64_t x = 0; x < mapData->mapWidth; x++) {
-            uint32_t gid = tileData[tileIndex];
+            uint32_t gid = tileData[y * mapData->mapWidth + x] - mapData->firstGid;
 
             // get the flags
             bool flippedHorz = gid & TILE_FLIPPED_HORZ;
@@ -162,7 +161,9 @@ static void Map_LoadTiles(nmap_t *mapData, const json *tilelayer, const json *ti
                 mapData->tilemapData[tileIndex][1] |= TILE_FLIPPED_VERT;
 
             tileIndex++;
+            printf("%i ", gid);
         }
+        printf("\n");
     }
     Map_LoadTileset(mapData);
 
@@ -177,11 +178,9 @@ static void Map_LoadTiles(nmap_t *mapData, const json *tilelayer, const json *ti
     Z_Free(tileData);
 }
 
-void Map_LoadMap(const bfflevel_t *lvl)
+void Map_LoadMap(uint64_t index)
 {
-    nmap_t *mapData = (nmap_t *)Hunk_Alloc(sizeof(*mapData), "mapData", h_low);
-    mapData->lvl = lvl;
-    mapData->name = Z_Strdup(lvl->name);
+    nmap_t *mapData = &mapCache[index];
 
     try {
         mapData->tmj = json::parse(lvl->tmjBuffer);
@@ -225,22 +224,6 @@ void Map_LoadMap(const bfflevel_t *lvl)
     }
 
     Map_LoadTiles(mapData, tilelayer, tileset);
-    
-
-    mapCache.emplace_back(mapData);
-}
-
-void Com_CacheMaps(void)
-{
-    // give the map loading a 'boost' by multithreading it, not a pool, just multiple threads
-    for (uint32_t levelCount = 0; levelCount < BFF_FetchInfo()->numLevels; ++levelCount) {
-        char name[MAX_BFF_CHUNKNAME];
-        stbsp_snprintf(name, sizeof(name), "NMLVL%i", levelCount);
-        Map_LoadMap(BFF_FetchLevel(name));
-    }
-
-    Con_Printf("Successfully cached all maps");
-    Game::Get()->c_map = mapCache.front();
 }
 
 const glm::vec2* Map_GetSpriteCoords(uint32_t gid)
@@ -485,4 +468,221 @@ uint32_t* Map_LoadBase64(const json& data, uint64_t width, uint64_t height, uint
         N_Error("Map_LoadMap: zstd compression isn't supported yet. If you want compression, use either gzip or zlib");
     
     return data32;
+}
+
+#if 0
+template<typename CharT, typename Fn, typename... Args, typename Error>
+inline const CharT* Decompress(Error errCheck, CharT **out, CharT *in, uint64_t inlen, uint64_t *outlen, Fn&& fn, Args&&... args)
+{
+	uint64_t old = *outlen;
+	int ret = fn(std::forward<Args>(args)...);
+	errCheck(ret);
+
+	if (*outlen != old) {
+		void *tmp = Mem_Alloc(*outlen);
+		memcpy(tmp, *out, *outlen);
+		Mem_Free(*out);
+		*out = (CharT *)tmp;
+	}
+
+	return *out;
+}
+
+template<typename CharT>
+inline const CharT* Decompress_BZIP2(CharT *in, uint64_t inlen, uint64_t *outlen)
+{
+	CharT *out = (CharT *)Mem_Alloc(*outlen);
+	return Decompress(
+		[=](int ret) {
+			if (ret != BZ_OK)
+				BFF_Error("Compress_BZIP2: bzip2 failed to compress buffer of size %lu bytes! id: %i", inlen, ret);
+		}
+	, &out, in, inlen, outlen, BZ2_bzBuffToBuffDecompress, (char *)out, (unsigned int *)outlen, (char *)in, inlen, 0, 1);
+}
+
+template<typename CharT>
+inline const CharT* Decompress_ZLIB(CharT *in, uint64_t inlen, uint64_t *outlen)
+{
+	CharT *out = (CharT *)Mem_Alloc(*outlen);
+	return Decompress(
+		[=](int ret) {
+			if (ret != Z_OK)
+				BFF_Error("Decompress_ZLIB: zlib failed to decompress buffer of size %lu bytes! id: %i", inlen, ret);
+		}
+	, &out, in, inlen, outlen, uncompress, (Bytef *)out, (uLongf *)outlen, (const Bytef *)in, (uLong)inlen);
+}
+
+static void LVL_LoadTMJBuffer(bfflevel_t *lvl, char *ptr, int64_t buflen, int compression)
+{
+	const char *tmp;
+	char *buffer;
+	uint64_t mapBufferLen;
+
+	mapBufferLen = lvl->mapBufferLen;
+
+	buffer = (char *)Z_Malloc(mapBufferLen, TAG_STATIC, &buffer, "tmp");
+	// first read the compressed buffer
+	memcpy(buffer, ptr, mapBufferLen);
+//	FS_Read(buffer, buflen, fd);
+	ptr += mapBufferLen;
+	switch (compression) {
+	case COMPRESSION_BZIP2:
+		tmp = Decompress_BZIP2(buffer, buflen, &mapBufferLen);
+		break;
+	case COMPRESSION_ZLIB:
+		tmp = Decompress_ZLIB(buffer, buflen, &mapBufferLen);
+		break;
+	case COMPRESSION_NONE:
+		tmp = buffer;
+		break;
+	};
+	lvl->mapBufferLen = mapBufferLen;
+
+	lvl->tmjBuffer = (char *)Z_Malloc(lvl->mapBufferLen, TAG_STATIC, &lvl->tmjBuffer, "TMJbuffer");
+	memcpy(lvl->tmjBuffer, tmp, lvl->mapBufferLen);
+	if (tmp != buffer)
+		Mem_Free((void *)tmp);
+
+	Z_ChangeTag(buffer, TAG_PURGELEVEL);
+}
+
+static void LVL_LoadTSJBuffers(bfflevel_t *lvl, char *ptr, int compression)
+{
+	int64_t buflen, real_size;
+	uint64_t mapBufferLen;
+	const char *tmp;
+	char *buffer;
+
+	lvl->tsjBuffers = (char **)Z_Malloc(sizeof(char *) * lvl->numTilesets, TAG_STATIC, &lvl->tsjBuffers, "TSJbuffers");
+	for (int64_t i = 0; i < lvl->numTilesets; i++) {
+		buflen = *(int64_t *)ptr;
+		ptr += sizeof(int64_t);
+		//FS_Read(&real_size, sizeof(int64_t), fd);
+		//FS_Read(&buflen, sizeof(int64_t), fd);
+
+		buffer = (char *)Z_Malloc(buflen, TAG_STATIC, &buffer, "tmp");
+		memcpy(buffer, ptr, buflen);
+		ptr += buflen;
+		mapBufferLen = buflen;
+		switch (compression) {
+		case COMPRESSION_BZIP2:
+			tmp = Decompress_BZIP2(buffer, buflen, &mapBufferLen);
+			break;
+		case COMPRESSION_ZLIB:
+			tmp = Decompress_ZLIB(buffer, buflen, &mapBufferLen);
+			break;
+		case COMPRESSION_NONE:
+			tmp = buffer;
+			break;
+		};
+
+		real_size = mapBufferLen;
+		lvl->tsjBuffers[i] = (char *)Z_Malloc(buflen, TAG_STATIC, &lvl->tsjBuffers[i], "TSJbuffer");
+		memcpy(lvl->tsjBuffers[i], tmp, mapBufferLen);
+		ptr += mapBufferLen;
+		Z_ChangeTag(buffer, TAG_PURGELEVEL);
+	}
+}
+
+static void LVL_LoadBase(bfflevel_t *data, file_t f, uint64_t *buflen)
+{
+	FS_Read(&data->levelNumber, sizeof(int64_t), f);
+	FS_Read(&data->numTilesets, sizeof(int64_t), f);
+	FS_Read(&data->mapBufferLen, sizeof(int64_t), f);
+	FS_Read(buflen, sizeof(int64_t), f);
+}
+
+void BFF_ReadLevel(bfflevel_t *lvl, const bff_chunk_t *chunk, file_t f)
+{
+	int64_t len;
+
+	lvl->tmjBuffer = (char *)Hunk_Alloc(lvl->mapBufferLen, "TMJbuffer", h_low);
+	FS_Read(lvl->tmjBuffer, lvl->mapBufferLen, f);
+
+	lvl->tsjBuffers = (char **)Hunk_Alloc(sizeof(char *) * lvl->numTilesets, "TSJbuffers", h_low);
+    for (int64_t i = 0; i < lvl->numTilesets; i++) {
+		FS_Read(&len, sizeof(int64_t), f);
+        len++;
+
+        lvl->tsjBuffers[i] = (char *)Hunk_Alloc(len, "TSJbuffer", h_low);
+		FS_Read(lvl->tsjBuffers[i], len, f);
+    }
+}
+#endif
+
+void Map_LoadLevels(void)
+{
+    file_t f;
+    const int64_t nLevels = FS_NumFilesOfTypeInBFF(currentBFFIndex, LEVEL_CHUNK);
+    bfflevel_t *lvl;
+    numLevels = nLevels;
+
+    mapCache = (nmap_t *)Hunk_Alloc(sizeof(*mapCache) * numLevels, "mapCache", h_low);
+    for (int64_t i = 0; i < nLevels; i++) {
+        lvl = (bfflevel_t *)Hunk_Alloc(sizeof(*lvl), "levelData", h_low);
+        f = FS_OpenFileInBFF(LEVEL_CHUNK, i, currentBFFIndex);
+        if (f == FS_INVALID_HANDLE) {
+            N_Error("Map_LoadLevels: Failed to load level chunk %i", i);
+        }
+
+        mapCache[i].lvl = lvl;
+
+        FS_Read(&lvl->levelNumver, sizeof(int64_t), f);
+        FS_Read(&lvl->numTilesets, sizeof(int64_t), f);
+        FS_Read(&lvl->mapBufferLen, sizeof(int64_t), f);
+
+        lvl->tmjBuffer = (char *)Hunk_Alloc(lvl->mapBufferLen, "TMJbuffer", h_low);
+        FS_Read(lvl->tmjBuffer, lvl->mapBufferLen, f);
+
+        int64_t len;
+        lvl->tsjBuffers = (char **)Hunk_Alloc(sizeof(*lvl->tsjBuffers) * lvl->numTilesets, "TSJbuffers", h_low);
+        for (int64_t l = 0; l < lvl.numTilesets; l++) {
+            FS_Read(&len, sizeof(int64_t), f);
+            len++;
+
+            lvl->tsjBuffers[i] = (char *)Hunk_Alloc(len, "TSJbuffer", h_low);
+            FS_Read(lvl->tsjBuffers[i], len, f);
+        }
+
+        FS_FClose(f);
+    }
+}
+
+void CopyLevelChunk(const bff_chunk_t *chunk, bffinfo_t* info)
+{
+	bfflevel_t *data;
+	file_t f;
+	
+	data = &info->levels[Com_GenerateHashValue(chunk->chunkName, MAX_LEVEL_CHUNKS)];
+	N_strncpyz(data->name, chunk->chunkName, MAX_BFF_CHUNKNAME);
+
+	f = FS_FOpenRead(data->name);
+	if (f == FS_INVALID_HANDLE) {
+		N_Error("BFF_GetInfo: failed to load level chunk %s, FS_INVALID_HANDLE", data->name);
+	}
+
+	Con_Printf(DEV, "Loading level chunk %s", data->name);
+
+	FS_Read(&data->levelNumber, sizeof(int64_t), f);
+	FS_Read(&data->numTilesets, sizeof(int64_t), f);
+	FS_Read(&data->mapBufferLen, sizeof(int64_t), f);
+	BFF_ReadLevel(data, chunk, f);
+
+	FS_FClose(f);
+	
+	Con_Printf(DEV, "Done loading level chunk %s", data->name);
+
+	info->numLevels++;
+}
+
+void Com_CacheMaps(void)
+{
+    Map_LoadLevels();
+
+    for (uint64_t i = 0; i < numLevels; i++) {
+        Map_LoadMap();
+    }
+
+    Con_Printf("Successfully loaded all maps");
+    Game::Get()->c_map = &mapCache[0];
 }

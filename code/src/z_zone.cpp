@@ -90,10 +90,6 @@ GDR_INLINE const char *Z_TagToString(int tag)
 	case TAG_RENDERER: return "TAG_RENDERER";
 	case TAG_SFX: return "TAG_SFX";
 	case TAG_MUSIC: return "TAG_MUSIC";
-	case TAG_CBFF: return "TAG_CBFF";
-	case TAG_UBFF: return "TAG_UBFF";
-	case TAG_FILE_USED: return "TAG_FILE_USED";
-	case TAG_FILE_FREE: return "TAG_FILE_FREE";
 	case TAG_PURGELEVEL: return "TAG_PURGELEVEL";
 	case TAG_CACHE: return "TAG_CACHE";
 	};
@@ -156,14 +152,8 @@ void Z_Init(void)
 	uint64_t mainzone_size;
 	uint64_t smallzone_size;
 
-	cvar_t *z_minRam, *z_zoneMegs;
-
-	z_minRam = Cvar_Find("z_minRam");
-	z_zoneMegs = Cvar_Find("z_zoneMegs");
-
-	mainzone_size = z_zoneMegs->i * 1024 * 1024 + sizeof(memzone_t);
-	mainzone = (memzone_t *)Z_InitBase(&mainzone_size, z_zoneMegs->i * 1024 * 1024 + sizeof(memzone_t),
-		z_minRam->i * 1024 * 1024 + sizeof(memzone_t));
+	mainzone_size = MAINZONE_DEFSIZE;
+	mainzone = (memzone_t *)Z_InitBase(&mainzone_size, MAINZONE_DEFSIZE, MAINZONE_MINSIZE);
 
 	smallzone_size = SMALLZONE_DEFSIZE;
 	smallzone = (memzone_t *)Z_InitBase(&smallzone_size, SMALLZONE_DEFSIZE, SMALLZONE_MINSIZE);
@@ -272,18 +262,14 @@ static void Z_GetStats(zone_stats_t *stats, const char *name, const memzone_t *z
 		case TAG_LEVEL:
 			stats->otherBytes += block->size;
 			break;
-		case TAG_CBFF:
 		case TAG_CACHE:
 			stats->cachedBytes += block->size;
 			break;
 		case TAG_PURGELEVEL:
 			stats->purgeableBytes += block->size;
 			break;
-		case TAG_FILE_USED:
-		case TAG_FILE_FREE:
-		case TAG_UBFF:
-			stats->filesystemBytes += block->size;
-			break;
+//			stats->filesystemBytes += block->size;
+//			break;
 		};
 	}
 }
@@ -661,7 +647,7 @@ void* Z_Malloc(uint64_t size, int tag, void *user, const char *name)
 		N_Error("Z_Malloc: bad size, name: %s", name);
 	
 	size += sizeof(memzone_t);
-	size = (size + (MEM_ALIGN - 1)) & ~(MEM_ALIGN - 1);
+	size = PAD(size, sizeof(uintptr_t) * 8);
 	if (size < 1024) // small enough for the smallzone
 		return Z_SmallAlloc(size, tag, user, name);
 	
@@ -803,16 +789,16 @@ void Z_Print(bool all)
 	Con_Printf("-------------------------");
 	Con_Printf("(PERCENTAGES)");
 	Con_Printf(
-			"%-9lu   %4.03lf%%    static\n"
-			"%-9lu   %4.03lf%%    cached\n"
-			"%-9lu   %4.03lf%%    audio\n"
-			"%-9lu   %4.03lf%%    purgable\n"
-			"%-9lu   %4.03lf%%    free",
-		static_mem, (double)(static_mem*s),
-		cached_mem, (double)(cached_mem*s),
-		audio_mem, (double)(audio_mem*s),
-		purgable_mem, (double)(purgable_mem*s),
-		free_mem, (double)(free_mem*s));
+			"%-9lu   %3.03f%%    static\n"
+			"%-9lu   %3.03f%%    cached\n"
+			"%-9lu   %3.03f%%    audio\n"
+			"%-9lu   %3.03f%%    purgable\n"
+			"%-9lu   %3.03f%%    free",
+		static_mem, (float)(static_mem)*s,
+		cached_mem, (float)(cached_mem)*s,
+		audio_mem, (float)(audio_mem)*s,
+		purgable_mem, (float)(purgable_mem)*s,
+		free_mem, (float)(free_mem)*s);
 	Con_Printf("-------------------------");
 
 	for (block = mainzone->blocklist.next; block != &mainzone->blocklist; block = block->next)
@@ -835,7 +821,7 @@ void Z_Print(bool all)
 		
 		memcpy(name, block->name, 14);
 		if (all)
-			Con_Printf("0x%8p : %8lu %16s %14s", (void *)block, block->size, Z_TagToString(block->tag), name);
+			Con_Printf("%8p : %8lu %16s %14s", (void *)block, block->size, Z_TagToString(block->tag), name);
 	
 		if (block->next == &mainzone->blocklist) {
 			Con_Printf("          : %8lu (TOTAL)", sum);

@@ -15,6 +15,11 @@
 static ALCdevice* device;
 static ALCcontext* context;
 
+cvar_t *snd_musicvol;
+cvar_t *snd_sfxvol;
+cvar_t *snd_musicon;
+cvar_t *snd_sfxon;
+
 typedef struct nomadsnd_s
 {
     uint32_t source = 0;
@@ -66,7 +71,7 @@ void I_CacheAudio(void *bffinfo)
 	sf_count_t readcount;
 
     Con_Printf("I_CacheAudio: allocating OpenAL buffers and sources");
-    snd_cache = (nomadsnd_t *)Hunk_Alloc(sizeof(nomadsnd_t) * info->numSounds, "snd_cache", h_low);
+    snd_cache = (nomadsnd_t *)Z_Malloc(sizeof(nomadsnd_t) * info->numSounds, TAG_SFX, &snd_cache, "snd_cache");
     sndcache_size = info->numSounds;
 
     for (uint32_t i = 0; i < info->numSounds; i++) {
@@ -99,14 +104,13 @@ void I_CacheAudio(void *bffinfo)
         snd_cache[i].length = fdata.samplerate * fdata.frames;
         snd_cache[i].frames = fdata.frames;
 
-        N_strncpy(snd_cache[i].name, info->sounds[i].name, MAX_BFF_CHUNKNAME);
+        N_strncpyz(snd_cache[i].name, info->sounds[i].name, MAX_BFF_CHUNKNAME);
         alGenSources(1, (ALuint *)&snd_cache[i].source);
         alGenBuffers(1, (ALuint *)&snd_cache[i].buffer);
         alBufferData(snd_cache[i].buffer, snd_cache[i].channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16,
             snd_cache[i].sndbuf, sizeof(short) * fdata.frames * fdata.channels, snd_cache[i].samplerate);
         alSourcei(snd_cache[i].source, AL_BUFFER, snd_cache[i].buffer);
-		alSourcef(snd_cache[i].source, AL_GAIN, snd_musicvol.f);
-        Z_Free(snd_cache[i].sndbuf);
+		alSourcef(snd_cache[i].source, AL_GAIN, snd_musicvol->f);
 
         sndhash[Com_GenerateHashValue(info->sounds[i].name, MAX_SND_HASH)] = &snd_cache[i];
         snd_cache[i].failed = false;
@@ -181,14 +185,14 @@ void Snd_Submit(void)
 
 void Snd_Init(void)
 {
-    if (!snd_sfxon.b || !snd_musicon.b)
+    if (!snd_sfxon->i || !snd_musicon->i)
         return;
 
     Con_Printf("Snd_Init: initializing OpenAL and libsndfile");
     device = alcOpenDevice(NULL);
     if (!device) {
-        snd_sfxon.b = qfalse;
-        snd_musicon.b = qfalse;
+        snd_sfxon = Cvar_Get("snd_sfxon", "0", CVAR_PRIVATE | CVAR_SAVE);
+        snd_musicon = Cvar_Get("snd_musicon", "0", CVAR_PRIVATE | CVAR_SAVE);
         Con_Printf("Snd_Init: alcOpenDevice returned NULL, turning off sound");
         return;
     }
@@ -196,15 +200,15 @@ void Snd_Init(void)
 
     context = alcCreateContext(device, NULL);
     if (!context) {
-        snd_sfxon.b = qfalse;
-        snd_musicon.b = qfalse;
+        snd_sfxon = Cvar_Get("snd_sfxon", "0", CVAR_PRIVATE | CVAR_SAVE);
+        snd_musicon = Cvar_Get("snd_musicon", "0", CVAR_PRIVATE | CVAR_SAVE);
         Con_Printf("Snd_Init: alcCreateContext returned NULL, turning off sound, error message: %s",
             alcGetString(device, alcGetError(device)));
         alcCloseDevice(device);
         return;
     }
-    snd_sfxon.b = qtrue;
-    snd_musicon.b = qtrue;
+    snd_sfxon = Cvar_Get("snd_sfxon", "1", CVAR_PRIVATE | CVAR_SAVE);
+    snd_musicon = Cvar_Get("snd_musicon", "1", CVAR_PRIVATE | CVAR_SAVE);
     assert(context);
     alcMakeContextCurrent(context);
 

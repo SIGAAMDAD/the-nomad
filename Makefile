@@ -184,6 +184,9 @@ SRC=\
 	$(O)/engine/n_map.o \
 	$(O)/engine/n_shared.o \
 	$(O)/engine/n_cmd.o \
+	$(O)/engine/n_cvar.o \
+	$(O)/engine/n_history.o \
+	$(O)/engine/md4.o \
 	\
 	$(O)/allocator/z_heap.o \
 	$(O)/allocator/z_hunk.o \

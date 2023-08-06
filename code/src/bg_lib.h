@@ -68,7 +68,7 @@ double fabs(double x);
 int vsprintf(char *buffer, const char *fmt, va_list argptr);
 void GDR_DECL G_Printf(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
 void GDR_DECL Com_Printf(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
-void GDR_DECL Com_Error(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
+void GDR_DECL Com_Error(int level, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
 
 #define CHAR_BIT 8       /* number of bits in a char */
 #define SCHAR_MIN (-128) /* minimum signed char value */

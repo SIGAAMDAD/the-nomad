@@ -7,6 +7,7 @@
 file_t logfile;
 
 byte *hunkbase = NULL;
+void *hunkorig = NULL;
 uint64_t hunksize = 0;
 
 extern uint64_t hunk_low_used;
@@ -18,6 +19,7 @@ void Z_Shutdown(void);
 void Memory_Shutdown(void)
 {
 	Con_Printf("Memory_Shutdown: deallocating allocation daemons");
+	free(hunkorig);
 	Z_Shutdown();
     Mem_Shutdown();
 }
@@ -73,6 +75,60 @@ static void Com_TouchMemory_f(void)
 	Com_TouchMemory();
 }
 
+static cvar_t *z_hunkMegs;
+
+void Hunk_InitMemory(void)
+{
+	int i;
+	cvar_t *cv;
+
+	// make sure the file system has allocated and "not" freed any temp blocks
+	// this allows the config and resource files ( journal files too ) to be loaded
+	// by the file system without redundant routines in the file system utilizing different
+	// memory systems
+	if (FS_LoadStack() != 0) {
+		N_Error("Hunk initialization failed. File ssytem load stack not zero");
+	}
+
+	i = I_GetParm("-ram");
+	if (i != -1) {
+        if (i+1 >= myargc)
+            N_Error("Memory_Init: you must specify the amount of ram in MB after -ram");
+        else
+            hunksize = N_atoi(myargv[i+1]) * 1024 * 1024;
+    }
+    else {
+        hunksize = DEFAULT_HEAP_SIZE;
+    }
+
+	// allocate stack based hunk allocator
+	cv = Cvar_Get("z_hunkMegs", "1800", CVAR_PRIVATE | CVAR_ROM | CVAR_SAVE);
+	if ((cv->i * 1024 * 1024) != hunksize) {
+		hunksize = cv->i * 1024 * 1024;
+	}
+	Cvar_SetDescription(cv, "The size of the hunk heap memory segment.");
+
+	hunkbase = (byte *)memset(malloc(hunksize + 63), 0, hunksize);
+    if (!hunkbase) {
+        N_Error("Memory_Init: malloc() failed on %lu bytes when allocating the hunk", hunksize);
+	}
+	hunkorig = hunkbase;
+
+	// cacheline align
+	hunkbase = PADP(hunkbase, 64);
+	
+	// initialize it all
+	Hunk_Clear();
+
+	Con_Printf("Initialized hunk heap from %p -> %p (%lu MiB)", (void *)hunkbase, (void *)(hunkbase + hunksize), hunksize >> 20);
+
+	Cmd_AddCommand("meminfo", Com_Meminfo_f);
+	Cmd_AddCommand("touchmemory", Com_TouchMemory_f);
+
+	Cmd_AddCommand("hunklogsmall", Hunk_SmallLog);
+	Cmd_AddCommand("hunklog", Hunk_Log);
+}
+
 void Memory_Init(void)
 {
 	Con_Printf("Memory_Init: initializing allocation daemons");
@@ -101,10 +157,11 @@ void Memory_Init(void)
         hunksize = DEFAULT_HEAP_SIZE;
     }
 	
-    hunkbase = (byte *)memset(malloc(hunksize), 0, hunksize);
+    hunkbase = (byte *)memset(malloc(hunksize + 63), 0, hunksize);
     if (!hunkbase) {
         N_Error("Memory_Init: malloc() failed on %lu bytes when allocating the hunk", hunksize);
 	}
+	hunkorig = hunkbase;
 	hunkbase = PADP(hunkbase, 64);
 	// initialize it all
 	Hunk_Clear();
