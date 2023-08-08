@@ -51,7 +51,7 @@ static void PrintCvarMatches( const char *s )
 {
 	char value[ TRUNCATE_LENGTH ];
 
-	if ( !Q_stricmpn( s, shortestMatch, strlen( shortestMatch ) ) ) {
+	if ( !N_stricmpn( s, shortestMatch, strlen( shortestMatch ) ) ) {
 		Com_TruncateLongString( value, Cvar_VariableString( s ) );
 		Con_Printf( "    %s = \"%s\"", s, value );
 	}
@@ -136,7 +136,7 @@ static void Field_CompleteCvarValue(const char *value, const char *current)
         return;
     
     blen = strlen(completionField->buffer);
-    vlen = strlen(vlaue);
+    vlen = strlen(value);
 
     if (*current)
         return;
@@ -166,10 +166,10 @@ void Field_CompleteFilename(const char *dir, const char *ext, qboolean stripExt,
     matchCount = 0;
     shortestMatch[0] = '\0';
 
-    FS_FilenameCompletion(dir, ext, stripExt, FindMatches, flags);
+//    FS_FilenameCompletion(dir, ext, stripExt, FindMatches, flags);
 
-    if (!Field_Complete())
-        FS_FilenameCompletion(dir, ext, stripExt, PrintMatches, flags);
+//    if (!Field_Complete())
+//        FS_FilenameCompletion(dir, ext, stripExt, PrintMatches, flags);
 }
 
 void Field_CompleteCommand(const char *cmd, qboolean doCommands, qboolean doCvars)
@@ -214,14 +214,14 @@ void Field_CompleteCommand(const char *cmd, qboolean doCommands, qboolean doCvar
         if ((p = Field_FindFirstSeparator(cmd)) != NULL)
             Field_CompleteCommand(p + 1, qtrue, qtrue); // compound command
         else {
-            qboolean argumentCompleted = Cmd_CompleteArgument(baseCmd, cmd, completionArgument);
-            if ((matchCount == 1 || argumentCompleted) && doCvars) {
-                if (cmd[0] == '/' || cmd[0] == '\\')
-                    cmd++;
-                
-                Cmd_TokenizeString(cmd);
-                Field_CompleteCvarValue(Cvar_VariableString(Cmd_Argv(0)), Cmd_Argv(1));
-            }
+//            qboolean argumentCompleted = Cmd_CompleteArgument(baseCmd, cmd, completionArgument);
+//            if ((matchCount == 1 || argumentCompleted) && doCvars) {
+//                if (cmd[0] == '/' || cmd[0] == '\\')
+//                    cmd++;
+//                
+//                Cmd_TokenizeString(cmd);
+//                Field_CompleteCvarValue(Cvar_VariableString(Cmd_Argv(0)), Cmd_Argv(1));
+//            }
         }
     }
     else {
@@ -234,28 +234,30 @@ void Field_CompleteCommand(const char *cmd, qboolean doCommands, qboolean doCvar
         if (completionString[0] == '\0')
             return;
         
-        if (doCommands)
-            Cmd_CommandCompletion(FindMatches);
-        if (doCvars)
-            Cvar_CommandCompletion(FindMatches);
-        
-        if (!Field_Complete()) {
-            // run through again, printing matches
-            if (doCommands)
-                Cmd_CommandCompletion(PrintMatches);
-            if (doCvars)
-                Cvar_CommandCompletion(PrintMatches);
-        }
+//        if (doCommands)
+//            Cmd_CommandCompletion(FindMatches);
+//        if (doCvars)
+//            Cvar_CommandCompletion(FindMatches);
+//        
+//        if (!Field_Complete()) {
+//            // run through again, printing matches
+//            if (doCommands)
+//                Cmd_CommandCompletion(PrintMatches);
+//            if (doCvars)
+//                Cvar_CommandCompletion(PrintMatches);
+//		}
     }
 }
 
+
+#define CONSOLE_HISTORY_FILE "glnomad_history.dat"
 /*
 Field_AutoComplete: perform tab expansion
 */
 void Field_AutoComplete(field_t *field)
 {
-    compeltionField = field;
-    Field_CompleteCommand(completionField->bufffer, qtrue, qtrue);
+    completionField = field;
+    Field_CompleteCommand(completionField->buffer, qtrue, qtrue);
 }
 
 static qboolean historyLoaded = qfalse;
@@ -460,7 +462,7 @@ static void Con_SaveHistory( void )
 
 			if ( saveBufferLength + additionalLength < MAX_CONSOLE_SAVE_BUFFER ) {
 				N_strcat( consoleSaveBuffer, MAX_CONSOLE_SAVE_BUFFER,
-						va( "%d %d %d %s ",
+						va( "%i %lu %lu %s ",
 						historyEditLines[ i ].cursor,
 						historyEditLines[ i ].scroll,
 						lineLength,
@@ -475,7 +477,7 @@ static void Con_SaveHistory( void )
 
 	consoleSaveBufferSize = strlen( consoleSaveBuffer );
 
-	f = FS_FOpenFileWrite( CONSOLE_HISTORY_FILE );
+	f = FS_FOpenWrite( CONSOLE_HISTORY_FILE );
 	if ( f == FS_INVALID_HANDLE ) {
 		Con_Printf( "Couldn't write %s.", CONSOLE_HISTORY_FILE );
 		return;
@@ -484,5 +486,5 @@ static void Con_SaveHistory( void )
 	if ( FS_Write( consoleSaveBuffer, consoleSaveBufferSize, f ) < consoleSaveBufferSize )
 		Con_Printf( "Couldn't write %s.", CONSOLE_HISTORY_FILE );
 
-	FS_FCloseFile( f );
+	FS_FClose( f );
 }

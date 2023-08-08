@@ -36,7 +36,7 @@ typedef struct nomadsnd_s
     bool failed = true; // if the pre-caching effort failed for this specific sound
 } nomadsnd_t;
 
-static uint32_t sndcache_size;
+static uint64_t sndcache_size;
 static nomadsnd_t* snd_cache;
 static boost::mutex sndLock;
 
@@ -62,40 +62,58 @@ static void Snd_LoadOGG(nomadsnd_t* snd, bffsound_t* buffer)
     remove(temppath);
 }
 
-void I_CacheAudio(void *bffinfo)
+void I_CacheAudio(void)
 {
-    const bffinfo_t *info = (bffinfo_t *)bffinfo;
-	FILE* fp;
+    uint64_t numchunks;
+    char **chunklist;
+    FILE *fp;
+    uint64_t bufferlen;
+    char *buffer;
 	SNDFILE* sf;
 	SF_INFO fdata;
 	sf_count_t readcount;
 
     Con_Printf("I_CacheAudio: allocating OpenAL buffers and sources");
-    snd_cache = (nomadsnd_t *)Z_Malloc(sizeof(nomadsnd_t) * info->numSounds, TAG_SFX, &snd_cache, "snd_cache");
-    sndcache_size = info->numSounds;
 
-    for (uint32_t i = 0; i < info->numSounds; i++) {
+    chunklist = FS_GetCurrentChunkList(&numchunks);
+    sndcache_size = 0;
+
+    for (uint64_t i = 0; i < numchunks; i++) {
+        if (strstr(chunklist[i], ".ogg") != NULL || strstr(chunklist[i], ".wav") != NULL)
+            sndcache_size++;
+    }
+    snd_cache = (nomadsnd_t *)Z_Malloc(sizeof(nomadsnd_t) * sndcache_size, TAG_SFX, &snd_cache, "snd_cache");
+    for (uint64_t i = 0; i < numchunks; i++) {
+        if (strstr(chunklist[i], ".ogg") == NULL && strstr(chunklist[i], ".wav") == NULL)
+            continue;
+        
         memset(&fdata, 0, sizeof(fdata));
         readcount = 0;
+
+        bufferlen = FS_LoadFile(chunklist[i], (void **)&buffer);
+        if (!buffer) {
+            N_Error("I_CacheAudio: failed to open audio file %s", chunklist[i]);
+        }
 
         fp = tmpfile();
         if (!fp) {
             N_Error("I_CacheAudio: failed to create temporary audio file");
         }
-        fwrite(info->sounds[i].fileBuffer, 1, info->sounds[i].fileSize, fp);
+
+        fwrite(buffer, bufferlen, 1, fp);
         fseek(fp, 0L, SEEK_SET);
 
         sf = sf_open_fd(fileno(fp), SFM_READ, &fdata, SF_TRUE);
         if (!sf) {
             N_Error("I_CacheAudio: failed to create temporary audio stream for chunk %s, libsndfile error: %s",
-                info->sounds[i].name, sf_strerror(sf));
+                chunklist[i], sf_strerror(sf));
         }
 
         snd_cache[i].sndbuf = (short *)Z_Malloc(sizeof(short) * fdata.frames * fdata.channels, TAG_STATIC, &snd_cache[i].sndbuf, "sndbuf");
         readcount = sf_read_short(sf, snd_cache[i].sndbuf, sizeof(short) * fdata.frames * fdata.channels);
         if (!readcount) {
             N_Error("I_CacheAudio: libsndfile failed to decode audio chunk %s, libsndfile error: %s",
-                info->sounds[i].name, sf_strerror(sf));
+                chunklist[i], sf_strerror(sf));
         }
         sf_close(sf);
 
@@ -104,7 +122,7 @@ void I_CacheAudio(void *bffinfo)
         snd_cache[i].length = fdata.samplerate * fdata.frames;
         snd_cache[i].frames = fdata.frames;
 
-        N_strncpyz(snd_cache[i].name, info->sounds[i].name, MAX_BFF_CHUNKNAME);
+        N_strncpyz(snd_cache[i].name, chunklist[i], MAX_BFF_CHUNKNAME);
         alGenSources(1, (ALuint *)&snd_cache[i].source);
         alGenBuffers(1, (ALuint *)&snd_cache[i].buffer);
         alBufferData(snd_cache[i].buffer, snd_cache[i].channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16,
@@ -112,7 +130,7 @@ void I_CacheAudio(void *bffinfo)
         alSourcei(snd_cache[i].source, AL_BUFFER, snd_cache[i].buffer);
 		alSourcef(snd_cache[i].source, AL_GAIN, snd_musicvol->f);
 
-        sndhash[Com_GenerateHashValue(info->sounds[i].name, MAX_SND_HASH)] = &snd_cache[i];
+        sndhash[Com_GenerateHashValue(chunklist[i], MAX_SND_HASH)] = &snd_cache[i];
         snd_cache[i].failed = false;
     }
 }

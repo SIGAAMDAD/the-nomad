@@ -141,6 +141,11 @@ static byte *Z_InitBase(uint64_t *size, uint64_t default_ram, uint64_t min_ram)
 	return ptr;
 }
 
+uint64_t Z_BlockSize(void *p)
+{
+	return ((memblock_t *)p - 1)->size;
+}
+
 void Z_Shutdown(void)
 {
 	free(mainzone);

@@ -227,6 +227,30 @@ static int FS_PathCmp( const char *s1, const char *s2 )
 	return 0;		// strings are equal
 }
 
+void FS_VM_FOpenRead(const char *path, file_t *f)
+{
+	*f = FS_FOpenRead(path);
+}
+
+void FS_VM_FOpenWrite(const char *path, file_t *f)
+{
+	*f = FS_FOpenWrite(path);
+}
+
+void FS_VM_FClose(file_t *f)
+{
+	if (*f <= FS_INVALID_HANDLE || *f >= MAX_FILE_HANDLES)
+		return;
+	
+	FS_FClose(*f);
+	*f = FS_INVALID_HANDLE;
+}
+
+qboolean FS_Initialized(void)
+{
+	return fs_initialized;
+}
+
 /*
 FS_AllowedExtension: returns qfalse if the extension is allowed
 */
@@ -491,26 +515,37 @@ file_t FS_OpenFileMapping(const char *path, qboolean temp)
 	return fd;
 }
 
-bff_chunk_t *FS_GetCurrentChunkList(uint64_t *numchunks)
+void FS_SetBFFIndex(uint64_t index)
 {
-	bff_chunk_t *chunkList;
+	fs_lastBFFIndex = index;
+}
+
+char **FS_GetCurrentChunkList(uint64_t *numchunks)
+{
+	char **chunkList;
+	char *listCopy[MAX_FOUND_FILES];
+	uint64_t nfiles, i;
 	fileInBFF_t *file;
 
 	if (fs_lastBFFIndex == -1) {
 		return NULL;
 	}
 
-	*numchunks = fs_archives[fs_lastBFFIndex]->numfiles;
-
-	chunkList = (bff_chunk_t *)Z_Malloc(sizeof(*chunkList) * *numchunks, TAG_STATIC, &chunkList, "chunkList");
 	file = fs_archives[fs_lastBFFIndex]->fileList;
-	for (uint64_t i = 0; i < *numchunks; i++) {
-		N_strncpyz(chunkList[i].chunkName, file->handle->chunkName, MAX_BFF_CHUNKNAME);
-		chunkList[i].chunkSize = file->handle->chunkSize;
-		chunkList[i].chunkType = file->handle->chunkType;
-		chunkList[i].chunkBuffer = file->handle->chunkBuffer;
+	for (i = 0; i < fs_archives[fs_lastBFFIndex]->numfiles; i++) {
+		if (i == MAX_FOUND_FILES - 1)
+			break;
+
+		listCopy[i] = fs_archives[fs_lastBFFIndex]->fileList[i].handle->chunkName;
+		nfiles++;
 	}
 
+	*numchunks = nfiles;
+	chunkList = (char **)Z_Malloc(sizeof(*chunkList) * (nfiles + 1), TAG_STATIC, &chunkList, "chunkListing");
+	for (i = 0; i < nfiles; i++) {
+		chunkList[i] = listCopy[i];
+	}
+	chunkList[i] = NULL;
 	return chunkList;
 }
 
@@ -1081,6 +1116,47 @@ file_t FS_FOpenWrite(const char *path)
 	return fd;
 }
 
+file_t FS_FOpenRW(const char *path)
+{
+	file_t fd;
+	fileHandle_t *f;
+	FILE *fp;
+	const char *ospath;
+
+	if (!fs_initialized) {
+		N_Error("Filesystem call made without initialization");
+	}
+	if (!path || !*path) {
+		N_Error("FS_FOpenRW: NULL or empty path");
+	}
+
+	// write streams aren't allowed for chunks
+	if (FS_FileIsInBFF(path)) {
+		return FS_INVALID_HANDLE;
+	}
+
+	// validate the file is actually write-enabled
+	FS_CheckFilenameIsNotAllowed(path, __func__, qfalse);
+
+	fd = FS_HandleForFile();
+	if (fd == FS_INVALID_HANDLE)
+		return fd;
+	
+	f = &handles[fd];
+	FS_InitHandle(f);
+	ospath = FS_BuildOSPath(fs_homepath->s, NULL, path);
+
+	fp = Sys_FOpen(ospath, "wb+");
+	if (!fp) {
+		N_Error("FS_FOpenRW: failed to create read/write stream for %s", path);
+	}
+
+	f->used = qtrue;
+	f->data.fp = fp;
+
+	return fd;
+}
+
 file_t FS_FOpenRead(const char *path)
 {
 	file_t fd;
@@ -1269,6 +1345,11 @@ uint64_t FS_LoadFile(const char *npath, void **buffer)
 	FS_FClose(fd);
 
 	return size;
+}
+
+int FS_FileToFileno(file_t f)
+{
+	return fileno(handles[f].data.fp);
 }
 
 void FS_FreeFile(void *buffer)
@@ -1495,6 +1576,49 @@ static void FS_ReorderSearchPaths(void)
 	Z_Free(list);
 }
 
+static void FS_ThePurge_f(void)
+{
+
+}
+
+static void FS_ListBFF_f(void)
+{
+	
+}
+
+static void FS_ShowDir_f(void)
+{
+
+}
+
+static void FS_AddMod_f(void)
+{
+	
+}
+
+static void FS_Touch_f(void)
+{
+
+}
+
+void FS_Restart(void)
+{
+	Cmd_RemoveCommand("dir");
+	Cmd_RemoveCommand("ls");
+	Cmd_RemoveCommand("list");
+	Cmd_RemoveCommand("addmod");
+	Cmd_RemoveCommand("touch");
+	Cmd_RemoveCommand("purge");
+}
+
+void FS_Shutdown(void)
+{
+	for (uint64_t i = 0; i < MAX_FILE_HANDLES; i++) {
+		if (!handles[i].bff && handles[i].data.fp)
+			fclose(handles[i].data.fp);
+	}
+}
+
 void FS_InitFilesystem(void)
 {
 	const char *homepath;
@@ -1514,7 +1638,7 @@ void FS_InitFilesystem(void)
 	Cvar_SetDescription(fs_basepath, "Write-protected CVar specifying the path to the installation folder of the game.");
 	fs_basegame = Cvar_Get("fs_basegame", BASEGAME_DIR, CVAR_PRIVATE);
 	Cvar_SetDescription(fs_basegame, "Cvar specifying the path to the base game folder.");
-	fs_steampath = Cvar_Get("fs_steampath", Sys_GetSteamPath(), CVAR_PRIVATE | CVAR_ROM);
+//	fs_steampath = Cvar_Get("fs_steampath", Sys_GetSteamPath(), CVAR_PRIVATE | CVAR_ROM);
 
 	if (!fs_basegame->s[0])
 		N_Error("* fs_basegame not set *");
@@ -1568,6 +1692,13 @@ void FS_InitFilesystem(void)
 
 	Con_Printf( "----------------------\n" );
 	Con_Printf( "%lu chunks in %lu bff files\n", fs_bffChunks, fs_bffCount );
+	
+	Cmd_AddCommand("dir", FS_ShowDir_f);
+	Cmd_AddCommand("ls", FS_ShowDir_f);
+	Cmd_AddCommand("list", FS_ListBFF_f);
+	Cmd_AddCommand("addmod", FS_AddMod_f);
+	Cmd_AddCommand("touch", FS_Touch_f);
+	Cmd_AddCommand("purge", FS_ThePurge_f);
 }
 
 

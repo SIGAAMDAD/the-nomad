@@ -12,6 +12,7 @@ static uint64_t cvar_group[CVG_MAX];
 static cvar_t *hashTable[MAX_CVAR_HASH];
 static qboolean cvar_sort = qfalse;
 
+
 static cvar_t *c_cheatsAllowed;
 static cvar_t *c_devmode;
 
@@ -48,6 +49,72 @@ static qboolean Cvar_IsIntegral(const char *s)
     }
     return qtrue;
 }
+
+static const char *Cvar_Validate(cvar_t *cvar, const char *value, qboolean warn)
+{
+    static char intbuf[32];
+    const char *limit;
+    float valuef;
+    int32_t valuei;
+
+    if (cvar->type = CVT_NONE)
+        return value;
+    if (!value)
+        return value;
+    
+    limit = NULL;
+    
+    if (cvar->type == CVT_INT || cvar->type == CVT_FLOAT) {
+        if (!N_isanumber(value)) {
+            if (warn)
+                Con_Printf(WARNING, "cvar '%s' must be numeric", cvar->name);
+            
+            limit = cvar->s;
+        }
+        else {
+            if (cvar->type == CVT_INT) {
+                if (!Cvar_IsIntegral(value)) {
+                    if (warn)
+                        Con_Printf(WARNING, "cvar '%s' must be integral", cvar->name);
+                    
+                    sprintf(intbuf, "%i", atoi(value));
+                    value = intbuf;
+                }
+                valuei = atoi(value);
+            }
+            // CVT_FLOAT
+            else {
+                valuef = N_atof(value);
+            }
+        }
+    }
+    // TODO: add in filesystem paths for cvars
+    if (limit || value == intbuf) {
+        if (!limit)
+            limit = value;
+        if (warn)
+            Con_Printf(", setting to '%s", limit);
+        
+        return limit;
+    }
+
+    return value;
+}
+
+static void Cvar_Print(const cvar_t *cv)
+{
+    Con_Printf("\"%s\" is:\"%s" C_WHITE "\"", cv->name, cv->s);
+
+//    if (!(cv->flags & CVAR_ROM)) {
+//        Con_Printf(" default:\"%s" C_WHITE "\"", cv->);
+//    }
+    Con_Printf(" ");
+
+    if (cv->description) {
+        Con_Printf("%s", cv->description);
+    }
+}
+
 
 int32_t Cvar_VariableInteger(const char *name)
 {
@@ -90,9 +157,9 @@ uint32_t Cvar_Flags(const char *name)
         return CVAR_NONEXISTENT;
     else {
         if (cv->modified)
-            return cvar->flags | CVAR_MODIFIED;
+            return cv->flags | CVAR_MODIFIED;
         else
-            return cvar->flags;
+            return cv->flags;
     }
 }
 
@@ -225,57 +292,6 @@ void Cvar_SetSafe(const char *name, const char *value)
     Cvar_Set2(name, value);
 }
 
-static const char *Cvar_Validate(cvar_t *cvar, const char *value, qboolean warn)
-{
-    static char intbuf[32];
-    const char *limit;
-    float valuef;
-    int32_t valuei;
-
-    if (cvar->type = CVT_NONE)
-        return value;
-    if (!value)
-        return value;
-    
-    limit = NULL;
-    
-    if (cvar->type == CVT_INT || cvar->type == CVT_FLOAT) {
-        if (!N_isanumber(value)) {
-            if (warn)
-                Con_Printf(WARNING, "cvar '%s' must be numeric", cvar->name);
-            
-            limit = cvar->s;
-        }
-        else {
-            if (cvar->type == CVT_INT) {
-                if (!Cvar_IsIntegral(value)) {
-                    if (warn)
-                        Con_Printf(WARNING, "cvar '%s' must be integral", cvar->name);
-                    
-                    sprintf(intbuf, "%i", atoi(value));
-                    value = intbuf;
-                }
-                valuei = atoi(value);
-            }
-            // CVT_FLOAT
-            else {
-                valuef = N_atof(value);
-            }
-        }
-    }
-    // TODO: add in filesystem paths for cvars
-    if (limit || value == intbuf) {
-        if (!limit)
-            limit = value;
-        if (warn)
-            Con_Printf(", setting to '%s", limit);
-        
-        return limit;
-    }
-
-    return value;
-}
-
 cvar_t *Cvar_Get(const char *name, const char *value, uint32_t flags)
 {
     cvar_t *cvar;
@@ -377,116 +393,12 @@ void Cvar_CommandCompletion(void (*callback)(const char *s))
 
 const char *Cvar_GetValue(const cvar_t* cvar);
 
-static cvar_t *Cvar_VMToVar(const vmCvar_t *cvar)
-{
-    cvar_t *cv;
-    for (cv = cvar_list.next; cv; cv = cv->next) {
-        if (cv->id == cvar->handle)
-            return cv;
-    }
-    N_Error("Cvar_VMToVar: invalid vmCvar handle");
-}
-
-static int Cvar_MakeHandle(cvar_t *cvar)
-{
-    int handle;
-
-    handle = cvar_count;
-    cvar->id = handle;
-    return handle;
-}
-
-void Cvar_Find(vmCvar_t *cvar, const char *name)
-{
-    cvar_t *cv;
-
-    cv = Cvar_Find(name);
-    if (!cv) {
-        cvar->handle = CVAR_INVALID_HANDLE;
-        return;
-    }
-    cvar->i = cv->i;
-    cvar->f = cv->f;
-    N_strncpyz(cvar->s, cv->s, MAX_CVAR_NAME);
-    cvar->handle = Cvar_MakeHandle(cv);
-
-    if (cv->group != CVG_VM)
-        cv->group = CVG_VM;
-}
-
-static void Cvar_Set(const char *name, const char *value)
-{
-    cvar_t *cvar;
-    int32_t i;
-    char s[MAX_CVAR_VALUE];
-    float f;
-    qboolean b;
-
-    if (!Cvar_Find(name) || strlen(name) >= MAX_CVAR_NAME) {
-        Con_Printf("Invalid cvar name string %s", name);
-        return;
-    }
-    if (strlen(value) >= MAX_CVAR_VALUE) {
-        Con_Printf("Invalid cvar value string %s", value);
-    }
-
-    cvar = Cvar_Find(name);
-    f = N_atof(value);
-    i = N_atoi(value);
-    b = (qboolean)N_strtobool(value);
-    cvar->b = b;
-    memset(cvar->s, 0, sizeof(cvar->s));
-    N_strncpyz(cvar->s, value, sizeof(cvar->s));
-
-    if (i == (int32_t)f) {
-        if (cvar->type != TYPE_INT) {
-            Con_Printf("Cannot change cvar value type for cvar '%s'", name);
-            return;
-        }
-        cvar->i = i;
-    }
-    else {
-        if (cvar->type != TYPE_FLOAT && cvar->type != TYPE_STRING) {
-            Con_Printf("Cannot change cvar value type for cvar '%s'", name);
-            return;
-        }
-        cvar->f = f;
-    }
-}
 
 void Cvar_Reset(const char *name)
 {
     Cvar_Set2(name, NULL);
 }
 
-void Cvar_Reset(const char *name)
-{
-    cvar_t *cvar;
-
-    cvar = Cvar_Find(name);
-    if (!cvar) {
-        Con_Printf("Cvar_Reset: cvar %s doesn't exist", name);
-        return;
-    }
-    
-    if (cvar->flags & CVAR_DEV && !c_devmode->b) {
-        Con_Printf("Cvar_Reset: cannot change value of a devmode only variable when not in devmode");
-        return;
-    }
-    if (cvar->flags & CVAR_CHEAT && !c_cheatsAllowed->b) {
-        Con_Printf("Cvar_Reset: cheats are currently disabled");
-        return;
-    }
-    if (cvar->flags & CVAR_ROM) {
-        Con_Printf("Cvar_Reset: cannot change read-only cvar %s", name);
-        return;
-    }
-
-    Z_Free(cvar->s);
-    cvar->i = 0;
-    cvar->b = qfalse;
-    cvar->f = 0.0f;
-}
 
 
 qboolean Cvar_Command(void)
@@ -635,7 +547,7 @@ void Cvar_Register(vmCvar_t *vmCvar, const char *name, const char *value, uint32
     // don't modify cvar if it's protected
     if (cv && (cv->flags & (CVAR_PRIVATE))) {
         Con_Printf(WARNING, "VM tried to register protected cvar '%s' with value '%s'%s",
-            name, value, (flags & ~cv->flags) !== 0 ? " and new flags" : "");
+            name, value, (flags & ~cv->flags) != 0 ? " and new flags" : "");
         if (cv->flags & CVAR_PRIVATE) {
             return;
         }
@@ -655,21 +567,6 @@ void Cvar_Register(vmCvar_t *vmCvar, const char *name, const char *value, uint32
 
 #define DEFAULT_CFG_NAME "default.cfg"
 
-static void Cvar_Print(const cvar_t *cv)
-{
-    Con_Printf("\"%s\" is:\"%s" C_WHITE "\"", cv->name, cv->s);
-
-//    if (!(cv->flags & CVAR_ROM)) {
-//        Con_Printf(" default:\"%s" C_WHITE "\"", cv->);
-//    }
-    Con_Printf(" ");
-
-    if (cv->description) {
-        Con_Printf("%s", cv->description);
-    }
-}
-
-
 static void Cvar_Sort_f(void);
 
 static void Cvar_WriteCfg_f(void)
@@ -680,31 +577,67 @@ static void Cvar_WriteCfg_f(void)
     if (out == FS_INVALID_HANDLE) {
         N_Error("FS_FOpenWrite: failed to open write stream for default.scf");
     }
-    FS_Write("{\n", 2, out);
-    for (cvar = &cvar_list; cvar; cvar = cvar->next) {
-        if (!(cvar->flags & CVAR_SAVE))
+    char buffer[1024];
+    for (cvar = cvar_vars; cvar; cvar = cvar->next) {
+        if (!(cvar->flags & CVAR_SAVE) || !cvar->name)
             continue; // don't write it
-
-        char buffer[256];
-        snprintf(buffer, sizeof(buffer), "\t\"%s\": \"%s\"", cvar->name, Cvar_GetValue(cvar));
-        FS_Write(buffer, strlen(buffer), out);
-        if (cvar->next) { // not the end of the list
-            FS_Write(",\n", 2, out);
-        }
-        else {
-            FS_Write("\n", 1, out);
-        }
+    
+        FS_Printf(out, "sets %s\n", cvar->name);
     }
-    FS_Write("}\n", 2, out);
     FS_FClose(out);
 }
 
 static void Cvar_List_f(void)
 {
-    Cvar_Sort_f();
-    for (cvar_t *cvar = &cvar_list; cvar; cvar = cvar->next) {
-        Con_Printf("%s%24 = %s", cvar->name, Cvar_GetValue(cvar));
-    }
+    cvar_t *var;
+	uint64_t i;
+	const char *match;
+
+	// sort to get more predictable output
+	if ( cvar_sort ) {
+		cvar_sort = qfalse;
+		Cvar_Sort_f();
+	}
+
+	if ( Cmd_Argc() > 1 ) {
+		match = Cmd_Argv( 1 );
+	} else {
+		match = NULL;
+	}
+
+	i = 0;
+    char buffer[256];
+    memset(buffer, 0, sizeof(buffer));
+	for (var = cvar_vars ; var ; var = var->next, i++) {
+		if(!var->name || (match && !Com_Filter(match, var->name)))
+			continue;
+        
+        if (var->flags & CVAR_SAVE)
+            N_strcat(buffer, 1, "S");
+        else
+            N_strcat(buffer, 1, " ");
+        if (var->flags & CVAR_CHEAT)
+            N_strcat(buffer, 1, "C");
+        else
+            N_strcat(buffer, 1, " ");
+        if (var->flags & CVAR_DEV) 
+            N_strcat(buffer, 1,  "D");
+        else
+            N_strcat(buffer, 1, " ");
+        if (var->flags & CVAR_ROM)
+            N_strcat(buffer, 1, "R");
+        else
+            N_strcat(buffer, 1, " ");
+        if (var->flags & CVAR_USER_CREATED)
+            N_strcat(buffer, 1, "U");
+        else
+            N_strcat(buffer, 1, " ");
+
+		Con_Printf ("%s %s \"%s\"", buffer,  var->name, var->s);
+	}
+
+	Con_Printf ("\n%lu total cvars", i);
+	Con_Printf ("%lu cvar indexes", cvar_numIndexes);
 }
 
 static void Cvar_Set_f(void)
@@ -822,7 +755,7 @@ static void Cvar_Sort_f( void )
 
 void Cvar_SetDescription(cvar_t *cv, const char *description)
 {
-    if (description && description[i] != '\0') {
+    if (description && description[0] != '\0') {
         if (cv->description != NULL)
             Z_Free(cv->description);
         
@@ -844,8 +777,6 @@ void Cvar_CompleteCvarName(const char *args, uint32_t argnum)
         // skip "<cmd> "
         const char *p = Com_SkipTokens(args, 1, " ");
 
-        if (p > args)
-//            Field_CompleteCommand(p, qfalse, qtrue);
     }
 }
 
@@ -864,7 +795,7 @@ void Cvar_Init(void)
     Cmd_AddCommand("sets", Cvar_Set_f);
     Cmd_AddCommand("setd", Cvar_Set_f);
     Cmd_AddCommand("setu", Cvar_Set_f);
-    Cmd_AddCommand("unset", Cvar_Unset_f);
+//    Cmd_AddCommand("unset", Cvar_Unset_f);
     Cmd_AddCommand("reset", Cvar_Reset_f);
     Cmd_AddCommand("cvarlist", Cvar_List_f);
 }

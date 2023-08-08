@@ -26,13 +26,12 @@ uint32_t Com_GetWindowEvents(void);
 void* Com_GetEvents(void);
 qboolean** Com_GetKeyboard(void);
 const char* Com_Base64Decode(void);
+void Com_SortFileList( char **list, uint64_t nfiles, uint64_t fastSort );
 void Com_TruncateLongString( char *buffer, const char *s );
 int Com_HexStrToInt(const char *str);
 void COM_StripExtension(const char *in, char *out, uint64_t destsize);
-const char *Com_SkipTokens( const char *s, int numTokens, const char *sep );
-const char *Com_SkipCharset( const char *s, const char *sep );
 void COM_BeginParseSession( const char *name );
-int COM_GetCurrentParseLine( void );
+uint64_t COM_GetCurrentParseLine( void );
 const char *COM_Parse( const char **data_p );
 const char *COM_ParseExt( const char **data_p, qboolean allowLineBreak );
 int COM_Compress( char *data_p );
@@ -210,6 +209,12 @@ typedef off_t fileOffset_t;
 typedef long fileOffset_t;
 #endif
 
+typedef enum {
+	FS_OPEN_READ,
+	FS_OPEN_WRITE,
+	FS_OPEN_RW = FS_OPEN_READ | FS_OPEN_WRITE
+} fileMode_t;
+
 #define FS_SEEK_END 0
 #define FS_SEEK_CUR 1
 #define FS_SEEK_BEGIN 2
@@ -242,8 +247,13 @@ void FS_Flush(file_t f);
 
 void GDR_DECL FS_Printf(file_t f, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
 
+int FS_FileToFileno(file_t f);
+file_t FS_FOpenWithMode(const char *path, fileMode_t mode);
+uint64_t FS_FOpenFileWithMode(const char *path, file_t *f, fileMode_t mode);
+
 file_t FS_FOpenRead(const char *path);
 file_t FS_FOpenWrite(const char *path);
+file_t FS_FOpenRW(const char *path);
 uint64_t FS_FOpenFileRead(const char *path, file_t *fd);
 void FS_Rename(const char *from, const char *to);
 uint64_t FS_LoadStack(void);
@@ -256,9 +266,13 @@ qboolean FS_FilenameCompare(const char *s1, const char *s2);
 char *FS_BuildOSPath(const char *base, const char *game, const char *npath);
 char *FS_CopyString(const char *s);
 
+qboolean FS_AllowedExtension(const char *fileName, qboolean allowBFFs, const char **ext);
 qboolean FS_StripExt(char *filename, const char *ext);
 qboolean FS_FileIsInBFF(const char *path);
 qboolean FS_Initialized(void);
+char **FS_GetCurrentChunkList(uint64_t *numchunks);
+void FS_SetBFFIndex(uint64_t index);
+void FS_FreeFile(void *buffer);
 
 extern int CPU_flags;
 

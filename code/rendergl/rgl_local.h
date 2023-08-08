@@ -280,7 +280,7 @@ GO_AWAY_MANGLE void R_BindShaderBuffer(const shaderBuffer_t *buf);
 GO_AWAY_MANGLE void R_UnbindShaderBuffer(void);
 GO_AWAY_MANGLE void RE_ShutdownShaderBuffers(void);
 
-GO_AWAY_MANGLE texture_t *R_InitTexture(const bfftexture_t *tex);
+GO_AWAY_MANGLE texture_t *R_InitTexture(const char *filename);
 GO_AWAY_MANGLE void RE_ShutdownTextures(void);
 GO_AWAY_MANGLE void R_UpdateTextures(void);
 GO_AWAY_MANGLE void R_BindTexture(const texture_t *texture, uint32_t slot = 0);

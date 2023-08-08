@@ -25,7 +25,6 @@ typedef struct
     uint32_t hash;
 } mapInCache_t;
 
-static uint64_t numLevels;
 static nmap_t *mapCache;
 static boost::mutex mapLoad;
 
@@ -53,7 +52,7 @@ static void Map_LoadCheckpoints(nmap_t *mapData, const json& data)
     }
 }
 
-static void Map_LoadSprites(const json_string& source, nmap_t *mapData)
+static qboolean Map_LoadSprites(const json_string& source, nmap_t *mapData)
 {
     json_string path = source;
     Con_Printf(DEBUG, "tileset path: %s", path.c_str());
@@ -65,19 +64,24 @@ static void Map_LoadSprites(const json_string& source, nmap_t *mapData)
     try {
         mapData->tsj = json::parse(mapData->lvl->tsjBuffers[0]);
     } catch (const json::exception& e) {
-        N_Error("Map_LoadSprites: nlohmann exception occurred when parsing tileset %s.\n\tId: %i\n\tWhat: %s", path.c_str(), e.id, e.what());
+        Con_Error(false,
+            "Map_LoadSprites: nlohmann exception occurred when parsing tileset %s.\n"
+            "\tId: %i\n\tWhat: %s", path.c_str(), e.id, e.what());
+        return qfalse;
     }
 
     const uint64_t numTiles = mapData->tileCountX * mapData->tileCountY + mapData->firstGid;
     uint32_t *tiles = mapData->tilesetData;
     for (uint64_t i = mapData->firstGid; i < numTiles; ++i)
         tiles[i] = i;
+    
+    return qtrue;
 }
 
 static void Map_GenTextureCoords(const glm::vec2& sheetDims, const glm::vec2& spriteDims, const glm::vec2& coords, texcoord_t tex)
 {
-    glm::vec2 min = { (coords.x * spriteDims.x) / sheetDims.x, (coords.y * spriteDims.y) / sheetDims.x };
-    glm::vec2 max = { ((coords.x + 1) * spriteDims.x) / sheetDims.y, ((coords.y + 1) * spriteDims.y) / sheetDims.y };
+    const glm::vec2 min = { (coords.x * spriteDims.x) / sheetDims.x, (coords.y * spriteDims.y) / sheetDims.x };
+    const glm::vec2 max = { ((coords.x + 1) * spriteDims.x) / sheetDims.y, ((coords.y + 1) * spriteDims.y) / sheetDims.y };
 
     tex[0] = { min.x, min.y };
     tex[1] = { max.x, max.y };
@@ -85,9 +89,11 @@ static void Map_GenTextureCoords(const glm::vec2& sheetDims, const glm::vec2& sp
     tex[3] = { min.x, max.y };
 }
 
-static void Map_LoadTileset(nmap_t *mapData)
+static void Map_LoadTiles(nmap_t *mapData)
 {
-    uint64_t tileIndex = 0;
+    uint64_t tileIndex;
+    
+    tileIndex = 0;
     for (uint64_t y = 0; y < mapData->tileCountY; y++) {
         for (uint64_t x = 0; x < mapData->tileCountX; x++) {
             Map_GenTextureCoords({ mapData->imageWidth, mapData->imageHeight }, { mapData->tileWidth, mapData->tileHeight },
@@ -97,7 +103,7 @@ static void Map_LoadTileset(nmap_t *mapData)
     }
 }
 
-static void Map_LoadTiles(nmap_t *mapData, const json *tilelayer, const json *tileset)
+static qboolean Map_LoadTiles(nmap_t *mapData, const json *tilelayer, const json *tileset)
 {
     uint32_t *tileData, tileIndex;
 
@@ -124,7 +130,8 @@ static void Map_LoadTiles(nmap_t *mapData, const json *tilelayer, const json *ti
 
     mapData->tilesetName = Z_Strdup(tilesetName.c_str());
     Con_Printf("tileset: %s", mapData->tilesetName);
-    Map_LoadSprites(mapData->tilesetName, mapData);
+    if (!Map_LoadSprites(mapData->tilesetName, mapData))
+        return qfalse;
 
     // set the pointer to the newly parsed json buffer
     tileset = &mapData->tsj;
@@ -165,7 +172,7 @@ static void Map_LoadTiles(nmap_t *mapData, const json *tilelayer, const json *ti
         }
         printf("\n");
     }
-    Map_LoadTileset(mapData);
+    Map_LoadTiles(mapData);
 
     Con_Printf(
         "imageWidth: %lu\n"
@@ -176,20 +183,34 @@ static void Map_LoadTiles(nmap_t *mapData, const json *tilelayer, const json *ti
 
     // give it back to the zone
     Z_Free(tileData);
+
+    return qtrue;
 }
 
-void Map_LoadMap(uint64_t index)
+nmap_t *LVL_LoadMap(const char *tmjFile)
 {
-    nmap_t *mapData = &mapCache[index];
+    nmap_t *mapData;
+    char *tmjBuffer, *tsjBuffer;
+    uint64_t tmjBufLen, tsjBufLen;
+    uint64_t numTilesets, numTileLayers;
+    const json *tilelayer, *tileset;
 
+    tmjBufLen = FS_LoadFile(tmjFile, (void **)&tmjBuffer);
+    if (!tmjBuffer) {
+        Con_Error(false, "LVL_LoadMap: failed to load tmj file %s", tmjFile);
+        return NULL;
+    }
+    
+    mapData = (nmap_t *)Hunk_Alloc(sizeof(*mapData), "mapData", h_low);
     try {
-        mapData->tmj = json::parse(lvl->tmjBuffer);
+        mapData->tmj = json::parse(tmjBuffer);
     } catch (const json::exception& e) {
-        N_Error("Map_LoadMap: json exception occurred.\n\tId: %i\n\tWhat: %s", e.id, e.what());
+        Con_Error(false, "LVL_LoadMap: json exception occurred.\n\tId: %i\n\tWhat: %s", e.id, e.what());
+        return NULL;
     }
 
     if ((bool)mapData->tmj.at("infinite")) {
-        N_Error("Map_LoadMap: this game does not support infinite tile maps");
+        Con_Error(false, "LVL_LoadMap: this game doesn't support infinite tile maps");
     }
     if (mapData->tmj.at("tilesets").size() > 1) {
         Con_Printf(WARNING, "Maximum tilesets per map is 1, only loading the first tileset");
@@ -198,22 +219,22 @@ void Map_LoadMap(uint64_t index)
     mapData->tileWidth = mapData->tmj.at("tilewidth");
     mapData->tileHeight = mapData->tmj.at("tileheight");
 
-    uint64_t numTileLayers = 0;
-    const json* tilelayer;
+    numTileLayers = 0;
     for (const auto& i : mapData->tmj.at("layers")) {
         const json_string& type = i.at("type");
 
         if (type == "tilelayer") {
-            if (numTileLayers)
-                N_Error("Map_LoadMap: too many tile layers");
+            if (numTileLayers) {
+                Con_Error(false, "LVL_LoadMap: too many tile layers");
+                return NULL;
+            }
             else {
                 numTileLayers++;
                 tilelayer = eastl::addressof(i);
             }
         }
     }
-    uint64_t numTilesets = 0;
-    const json* tileset;
+    numTilesets = 0;
     for (const auto& i : mapData->tmj.at("tilesets")) {
         if (numTilesets)
             continue;
@@ -223,7 +244,12 @@ void Map_LoadMap(uint64_t index)
         }
     }
 
-    Map_LoadTiles(mapData, tilelayer, tileset);
+    if (!Map_LoadTiles(mapData, tilelayer, tileset)) {
+        Hunk_FreeTempMemory(tmjBuffer);
+        return NULL;
+    }
+
+    return mapData;
 }
 
 const glm::vec2* Map_GetSpriteCoords(uint32_t gid)
@@ -379,7 +405,7 @@ static char *Map_DecompressGZIP(const char *data, uint64_t inlen, uint64_t *outl
 
     ret = inflateInit2(&stream, 15 + 32);
     if (ret != Z_OK)
-        N_Error("Map_LoadMap: zlib (inflateInit2) failed");
+        N_Error("LVL_LoadMap: zlib (inflateInit2) failed");
 
     do {
         ret = inflate(&stream, Z_SYNC_FLUSH);
@@ -392,7 +418,7 @@ static char *Map_DecompressGZIP(const char *data, uint64_t inlen, uint64_t *outl
         case Z_DATA_ERROR:
         case Z_MEM_ERROR:
             inflateEnd(&stream);
-            N_Error("Map_LoadMap: zlib (inflate) failed");
+            N_Error("LVL_LoadMap: zlib (inflate) failed");
         };
 
         if (ret != Z_STREAM_END) {
@@ -405,7 +431,7 @@ static char *Map_DecompressGZIP(const char *data, uint64_t inlen, uint64_t *outl
     } while (ret != Z_STREAM_END);
 
     if (stream.avail_in != 0)
-        N_Error("Map_LoadMap: zlib failed to decompress gzip buffer");
+        N_Error("LVL_LoadMap: zlib failed to decompress gzip buffer");
 
     inflateEnd(&stream);
 
@@ -608,7 +634,6 @@ void BFF_ReadLevel(bfflevel_t *lvl, const bff_chunk_t *chunk, file_t f)
 		FS_Read(lvl->tsjBuffers[i], len, f);
     }
 }
-#endif
 
 void Map_LoadLevels(void)
 {
@@ -674,15 +699,146 @@ void CopyLevelChunk(const bff_chunk_t *chunk, bffinfo_t* info)
 
 	info->numLevels++;
 }
+#endif
+
+typedef struct
+{
+    uint64_t startTime;
+    uint64_t endTime;
+    uint64_t kills;
+    uint64_t longestCombo;
+} levelStats_t;
+
+typedef struct
+{
+    levelStats_t stats;     // level-by-level statistics
+    nmap_t *mapData;        // a pointer to the cached map data
+    char *levelName;        // the chunk name
+    char *longName;         // the name on screen
+    char *textureName;      // name of the texture file to use when rendering tiles
+    vec4_t background;
+
+    int levelIndex;
+} nlevel_t;
+
+static nlevel_t *level;
+
+// only used if none are provided within the .level file
+static const char *defaultLevelName = "tnNoName";
+static const char *defaultLongName = "GLNomad No Name";
+
+void LVL_Shutdown(void)
+{
+    if (level->levelName != defaultLevelName)
+        Z_Free(level->levelName);
+    if (level->longName != defaultLongName)
+        Z_Free(level->longName);
+
+    Z_Free(level->textureName);
+    Hunk_Clear();
+}
+
+static void LVL_ParseShader(const char *tok, const char *buffer)
+{
+    while (tok) {
+        if (!N_stricmp(tok, "background_R")) {
+            tok = COM_ParseExt(&buffer, qfalse);
+            level->background[0] = N_atof(tok);
+        }
+        else if (!N_stricmp(tok, "background_G")) {
+            tok = COM_ParseExt(&buffer, qfalse);
+            level->background[1] = N_atof(tok);
+        }
+        else if (!N_stricmp(tok, "background_B")) {
+            tok = COM_ParseExt(&buffer, qfalse);
+            level->background[2] = N_atof(tok);
+        }
+        else if (!N_stricmp(tok, "background_A")) {
+            tok = COM_ParseExt(&buffer, qfalse);
+            level->background[3] = N_atof(tok);
+        }
+        else {
+            COM_ParseWarning("unkown token '%s'", tok);
+        }
+        
+        tok = COM_ParseExt(&buffer, qfalse);
+    }
+}
+
+static void LVL_ParseGeneral(const char *shaderBuffer)
+{
+    const char *tok, *buffer;
+
+    buffer = shaderBuffer;
+    tok = COM_ParseExt(&buffer, qfalse);
+
+    while (tok) {
+        if (!N_stricmp(tok, "name")) {
+            tok = COM_ParseExt(&buffer, qfalse);
+            level->levelName = Z_Strdup(tok);
+        }
+        else if (!N_stricmp(tok, "longname")) {
+            tok = COM_ParseExt(&buffer, qfalse);
+            level->longName = Z_Strdup(tok);
+        }
+        else if (!N_stricmp(tok, "levelIndex")) {
+            tok = COM_ParseExt(&buffer, qfalse);
+            level->levelIndex = atoi(tok);
+
+            if (level->levelIndex < 0) {
+                COM_ParseError("LVL_ParseGeneral: invalid levelIndex: %i", level->levelIndex);
+                // TODO: make an error state for this
+            }
+        }
+        else if (!N_stricmp(tok, "texture")) {
+            tok = COM_ParseExt(&buffer, qfalse);
+            level->textureName = Z_Strdup(tok);
+        }
+        else if (!N_stricmp(tok, "map")) {
+            tok = COM_ParseExt(&buffer, qfalse);
+            level->mapData = LVL_LoadMap(tok);
+        }
+        // special textures shader information
+        else if (!N_stricmp(tok, "shader")) {
+            LVL_ParseShader(tok, buffer);
+        }
+        else {
+            COM_ParseWarning("unknown token '%s'", tok);
+        }
+
+        tok = COM_ParseExt(&buffer, qfalse);
+    }
+}
+
+void Com_LoadLevel(const char *name)
+{
+    uint64_t shaderLen;
+    char *shaderBuffer;
+
+    // clear the hunk before doing anything
+    Hunk_Clear();
+
+    shaderLen = FS_LoadFile(name, (void **)&shaderBuffer);
+
+    if (!shaderBuffer) {
+        Con_Error(false, "Com_LoadLevel: Couldn't load file %s", name);
+        return;
+    }
+
+    level = (nlevel_t *)Hunk_Alloc(sizeof(*level), "levelData", h_low);
+    memset(level, 0, sizeof(*level));
+
+    level->levelName = (char *)defaultLevelName;
+    level->longName = (char *)defaultLongName;
+
+    COM_BeginParseSession(name);
+    LVL_ParseGeneral(shaderBuffer);
+
+}
 
 void Com_CacheMaps(void)
 {
-    Map_LoadLevels();
-
-    for (uint64_t i = 0; i < numLevels; i++) {
-        Map_LoadMap();
-    }
-
+    Com_LoadLevel("eaglesPk.level");
     Con_Printf("Successfully loaded all maps");
-    Game::Get()->c_map = &mapCache[0];
+    Game::Get()->c_map = level->mapData;
 }

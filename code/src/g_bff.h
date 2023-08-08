@@ -40,7 +40,7 @@ const __inline int64_t bffPaidID[70] = {
 constexpr uint64_t MAGIC_XOR = 0x4ff3ade3;
 
 constexpr uint64_t MAX_BFF_PATH = 256;
-constexpr uint64_t MAX_BFF_CHUNKNAME = 11;
+constexpr uint64_t MAX_BFF_CHUNKNAME = 72;
 constexpr uint64_t MAX_TEXTURE_CHUNKS = 128;
 constexpr uint64_t MAX_LEVEL_CHUNKS = 128;
 constexpr uint64_t MAX_SOUND_CHUNKS = 128;
@@ -83,6 +83,9 @@ typedef struct
 	// bff stuff
 	char name[MAX_BFF_CHUNKNAME];
 	int64_t levelNumber;
+
+	char *levelBuffer;
+	int64_t levelBufferLen;
 
 	char *tmjBuffer;
 	char **tsjBuffers;
@@ -132,7 +135,6 @@ typedef struct
 	char chunkName[MAX_BFF_CHUNKNAME];
 	int64_t chunkSize;
 	char *chunkBuffer;
-	int64_t chunkType;
 } bff_chunk_t;
 
 typedef struct
@@ -146,8 +148,7 @@ typedef struct
 
 typedef struct
 {
-	char bffPathname[MAX_BFF_PATH];
-	char bffGamename[256];
+	char *bffGamename;
 	bffheader_t header;
 	
 	int64_t numChunks;

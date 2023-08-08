@@ -3,15 +3,15 @@
 
 void *Malloc(uint32_t size)
 {
-    return ri.Mem_Alloc(size);
+    return ri.Z_Malloc(size, TAG_RENDERER, NULL, "stbimage");
 }
 void Free(void *p)
 {
-    ri.Mem_Free(p);
+    ri.Z_Free(p);
 }
-uint32_t Msize(void *p)
+void *Realloc(void *p, uint64_t nsize)
 {
-    return ri.Mem_Msize(p);
+    return ri.Z_Realloc(nsize, TAG_RENDERER, NULL, p, "stbimage");
 }
 
 #define MAX_FILE_HASH 1024
@@ -147,15 +147,22 @@ GO_AWAY_MANGLE texture_t *R_GetTexture(const char *name)
 NOTE TO SELF: for some reason, bffs don't work well with any textures that have very low (16x16 ish) resolution, just keep that in mind,
 otherwise, it'll cause a crash.
 */
-GO_AWAY_MANGLE texture_t *R_InitTexture(const bfftexture_t *tex)
+GO_AWAY_MANGLE texture_t *R_InitTexture(const char *filename)
 {
     texture_t *t;
+    char *buffer;
+    uint64_t bufferLen, hash;
 
-    if (!tex->fileBuffer) {
-        ri.N_Error("R_InitTexture: corrupted buffer for %s", tex->name);
+    hash = Com_GenerateHashValue(filename, MAX_TEXTURES);
+    bufferLen = ri.FS_LoadFile(filename, &buffer);
+    if (!buffer) {
+        ri.N_Error("R_InitTexture: failed to load texture file '%s'", filename);
+    }
+    if (textures[hash]) {
+        return NULL;
     }
 
-    t = (texture_t *)ri.Z_Malloc(sizeof(texture_t), TAG_STATIC, &t, "GLtexture");
+    t = (texture_t *)ri.Z_Malloc(sizeof(texture_t), TAG_RENDERER, &t, "GLtexture");
     t->minFilter = R_TexMinFilter();
     t->magFilter = R_TexMagFilter();
     t->wrapS = GL_REPEAT;
@@ -171,9 +178,9 @@ GO_AWAY_MANGLE texture_t *R_InitTexture(const bfftexture_t *tex)
     if (r_EXT_anisotropicFiltering->b)
         nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1);
 
-    stbi_uc *image = stbi_load_from_memory((const stbi_uc *)tex->fileBuffer, tex->fileSize, (int *)&t->width, (int *)&t->height, (int *)&t->channels, 4);
+    stbi_uc *image = stbi_load_from_memory((const stbi_uc *)buffer, bufferLen, (int *)&t->width, (int *)&t->height, (int *)&t->channels, 4);
     if (!image)
-        ri.N_Error("R_CreateTexture: stbi_load_from_memory failed to load file %s, error string: %s", tex->name, stbi_failure_reason());
+        ri.N_Error("R_CreateTexture: stbi_load_from_memory failed to load file %s, error string: %s", filename, stbi_failure_reason());
 
     t->data = (byte *)ri.Z_Malloc(t->width * t->height * t->channels, TAG_RENDERER, &t->data, "GLtexbuffer");
     memcpy(t->data, image, t->width * t->height * t->channels);
@@ -183,9 +190,7 @@ GO_AWAY_MANGLE texture_t *R_InitTexture(const bfftexture_t *tex)
 
     nglBindTexture(GL_TEXTURE_2D, 0);
 
-    ri.Con_Printf(DEBUG, "Loaded texture file %s", tex->name);
-
-    uint64_t hash = Com_GenerateHashValue(tex->name, MAX_TEXTURES);
+    ri.Con_Printf(DEBUG, "Loaded texture file %s", filename);
     textures[hash] = t;
 
     return t;

@@ -642,12 +642,19 @@ void RE_Shutdown(void)
 
 void RE_CacheTextures(void)
 {
-    const bffinfo_t *info = ri.BFF_FetchInfo();
+    uint64_t i, numchunks;
+    char **chunklist;
 
-    for (int64_t i = 0; i < MAX_TEXTURE_CHUNKS; i++) {
-        if (info->textures[i].fileBuffer != NULL)
-            R_InitTexture(&info->textures[i]);
+    chunklist = ri.FS_GetCurrentChunkList(&numchunks);
+
+    for (i = 0; i < numchunks; i++) {
+        if (strstr(chunklist[i], ".tga") || strstr(chunklist[i], ".jpg") || strstr(chunklist[i], ".jpeg")
+        || strstr(chunklist[i], ".png") || strstr(chunklist[i], ".bmp")) {
+            R_InitTexture(chunklist[i]);
+        }
     }
+
+    ri.Sys_FreeFileList(chunklist)''
 }
 
 

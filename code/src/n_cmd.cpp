@@ -268,19 +268,19 @@ void Cmd_TokenizeString2(const char *str, qboolean ignoreQuotes)
 
 		// skip until whitespace, quote, or command
 		while (*p > ' ') {
-			if (!ignoreQuotes && text[0] == '"') {
+			if (!ignoreQuotes && p[0] == '"') {
 				break;
 			}
 
-			if (text[0] == '/' && text[1] == '/') {
+			if (p[0] == '/' && p[1] == '/') {
 				// accept protocol headers (e.g. http://) in command lines that match "*?[a-z]://" pattern
-				if (text < cmd_cmd + 3 || text[-1] != ':' || text[-2] < 'a' || text[-2] > 'z') {
+				if (p < cmd_cmd + 3 || p[-1] != ':' || p[-2] < 'a' || p[-2] > 'z') {
 					break;
 				}
 			}
 
 			// skip /* */ comments
-			if (text[0] == '/' && text[1] == '*') {
+			if (p[0] == '/' && p[1] == '*') {
 				break;
 			}
 
@@ -293,7 +293,7 @@ void Cmd_TokenizeString2(const char *str, qboolean ignoreQuotes)
 	}
 }
 
-qboolean Cmd_CompleteArgument(const char *comand, const char *args, uint32_t argnum)
+qboolean Cmd_CompleteArgument(const char *command, const char *args, uint32_t argnum)
 {
 	const cmd_t *cmd;
 
@@ -482,7 +482,7 @@ void Cmd_Init(void)
 	Cmd_AddCommand("start", Cmd_Exec_f);
 	Cmd_AddCommand("run", Cmd_Exec_f);
 	Cmd_AddCommand("execq", Cmd_Exec_f);
-	Cmd_SetCommandCompletionFunc("exec", Cmd_CompleteCfgName);
+//	Cmd_SetCommandCompletionFunc("exec", Cmd_CompleteCfgName);
 
 	cmd_text.cursize = 0;
 	cmd_text.maxsize = MAX_CMD_BUFFER;

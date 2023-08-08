@@ -94,6 +94,8 @@ inline void __nomad_assert_fail(const char* expression, const char* file, const 
 
 typedef enum { qfalse = 0, qtrue = 1 } qboolean;
 
+const char *Com_SkipTokens( const char *s, uint64_t numTokens, const char *sep );
+const char *Com_SkipCharset( const char *s, const char *sep );
 int N_isprint(int c);
 int N_islower(int c);
 int N_isupper(int c);

@@ -39,6 +39,9 @@ typedef struct
     void (*Z_Print)(bool all);
     uint64_t (*Z_FreeMemory)(void);
     uint32_t (*Z_NumBlocks)(int tag);
+    uint64_t (*Z_BlockSize)(void *p);
+
+    void (*Sys_FreeFileList)(char **list);
 
     void *(*Mem_Alloc)(const uint32_t size);
     void (*Mem_Free)(void *ptr);
@@ -88,29 +91,18 @@ typedef struct
 
     const glm::vec2* (*Map_GetSpriteCoords)(uint32_t gid);
 
-    uint64_t (*FS_Write)(const void *data, uint64_t size, file_t f);
-    uint64_t (*FS_Read)(void *data, uint64_t size, file_t f);
-    file_t (*FS_OpenBFF)(int32_t index);
-    file_t (*FS_FOpenRead)(const char *filepath);
-    file_t (*FS_FOpenWrite)(const char *filepath);
-    file_t (*FS_CreateTmp)(char **name, const char *ext);
-    const char *(*FS_GetOSPath)(file_t f);
-    void *(*FS_GetBFFData)(file_t handle);
-    void (*FS_FClose)(file_t handle);
-    uint64_t (*FS_FileLength)(file_t f);
-    void (*FS_Remove)(const char *ospath);
-    uint64_t (*FS_FileTell)(file_t f);
+    uint64_t (*FS_Write)(const void *buffer, uint64_t size, file_t f);
+    uint64_t (*FS_Read)(void *buffer, uint64_t size, file_t);
     fileOffset_t (*FS_FileSeek)(file_t f, fileOffset_t offset, uint32_t whence);
-    file_t (*FS_BFFOpen)(const char *chunkpath);
-    qboolean (*FS_FileExists)(const char *file);
-    uint64_t (*FS_LoadFile)(const char *path, void **buffer);
+    fileOffset_t (*FS_FileTell)(file_t f);
+    uint64_t (*FS_FileLength)(file_t f);
+    qboolean (*FS_FileExists)(const char *filename);
+    file_t (*FS_FOpenRead)(const char *path);
+    file_t (*FS_FOpenWrite)(const char *path);
+    void (*FS_FClose)(file_t f);
     void (*FS_FreeFile)(void *buffer);
-
-    bffinfo_t *(*BFF_FetchInfo)(void);
-    bffscript_t *(*BFF_FetchScript)(const char *name);
-    bfflevel_t *(*BFF_FetchLevel)(const char *name);
-    const eastl::vector<const bfflevel_t*>& (*BFF_OrderLevels)(const bffinfo_t *info);
-    const eastl::vector<const bfftexture_t*>& (*BFF_OrderTextures)(const bffinfo_t *info);
+    uint64_t (*FS_LoadFile)(const char *path, void **buffer);
+    char **(*FS_GetCurrentChunkList)(uint64_t *numchunks);
 
     const nmap_t *(*G_GetCurrentMap)(void);
 
@@ -183,7 +175,6 @@ GO_AWAY_MANGLE GDR_EXPORT void RE_Shutdown(void);
 GO_AWAY_MANGLE GDR_EXPORT void RE_BeginFrame(void);
 GO_AWAY_MANGLE GDR_EXPORT void RE_EndFrame(void);
 GO_AWAY_MANGLE GDR_EXPORT void RE_InitFrameData(void);
-GO_AWAY_MANGLE GDR_EXPORT void RE_SubmitMapTilesheet(const char *chunkname, const bffinfo_t *info);
 GO_AWAY_MANGLE GDR_EXPORT void RE_CacheTextures(void);
 GO_AWAY_MANGLE GDR_EXPORT qboolean RE_ConsoleIsOpen(void);
 GO_AWAY_MANGLE GDR_EXPORT void RE_ProcessConsoleEvents(SDL_Event *events);

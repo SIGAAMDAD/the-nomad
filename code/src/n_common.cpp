@@ -274,6 +274,9 @@ void Com_FillImport(renderImport_t *import)
 	import->Z_Print = Z_Print;
     import->Z_FreeMemory = Z_FreeMemory;
     import->Z_NumBlocks = Z_NumBlocks;
+	import->Z_BlockSize = Z_BlockSize;
+
+	import->Sys_FreeFileList = Sys_FreeFileList;
 	
     import->Mem_Alloc = Mem_Alloc;
     import->Mem_Free = Mem_Free;
@@ -314,30 +317,20 @@ void Com_FillImport(renderImport_t *import)
 
     import->FS_Write = FS_Write;
     import->FS_Read = FS_Read;
-    import->FS_OpenBFF = FS_OpenBFF;
+    import->FS_FileSeek = FS_FileSeek;
+    import->FS_FileTell = FS_FileTell;
+    import->FS_FileLength = FS_FileLength;
+    import->FS_FileExists = FS_FileExists;
     import->FS_FOpenRead = FS_FOpenRead;
     import->FS_FOpenWrite = FS_FOpenWrite;
-    import->FS_CreateTmp = FS_CreateTmp;
-    import->FS_GetOSPath = FS_GetOSPath;
-    import->FS_GetBFFData = FS_GetBFFData;
     import->FS_FClose = FS_FClose;
-    import->FS_FileLength = FS_FileLength;
-    import->FS_Remove = FS_Remove;
-    import->FS_FileTell = FS_FileTell;
-    import->FS_FileSeek = FS_FileSeek;
-    import->FS_FileExists = FS_FileExists;
-	import->FS_LoadFile = FS_LoadFile;
-	import->FS_FreeFile = FS_FreeFile;
+    import->FS_FreeFile = FS_FreeFile;
+    import->FS_LoadFile = FS_LoadFile;
+	import->FS_GetCurrentChunkList = FS_GetCurrentChunkList;
 
 	import->Com_GetWindowEvents = Com_GetWindowEvents;
 	import->Com_GetEvents = Com_GetEvents;
 	import->Com_GetKeyboard = Com_GetKeyboard;
-
-	import->BFF_FetchInfo = BFF_FetchInfo;
-	import->BFF_FetchLevel = BFF_FetchLevel;
-	import->BFF_FetchScript = BFF_FetchScript;
-	import->BFF_OrderLevels = BFF_OrderLevels;
-	import->BFF_OrderTextures = BFF_OrderTextures;
 
 	import->G_GetCurrentMap = G_GetCurrentMap;
 	import->Map_GetSpriteCoords = Map_GetSpriteCoords;
@@ -447,7 +440,7 @@ void Com_Init(void)
 	Com_LoadConfig();
 	Con_Init();
 
-	FS_Init();
+	FS_InitFilesystem();
 
 	Com_InitEvents();
 	Com_InitJournals();
@@ -455,17 +448,15 @@ void Com_Init(void)
 	Hunk_InitMemory();
 
 	// initialize the filesystem
-	FS_Init();
+	FS_InitFilesystem();
 	
 	// event processing
 	Com_InitJournals();
 	Com_InitEvents();
 
-	G_LoadBFF("");
-
 	// initialize OpenAL
 	Snd_Init();
-	I_CacheAudio((void *)BFF_FetchInfo());
+	I_CacheAudio();
 
 	// initialize the vm
 	VM_Init();
@@ -478,11 +469,6 @@ void Com_Init(void)
     RE_Init(&import);
 
 	Com_CacheMaps();
-	
-	BFF_FreeInfo(BFF_FetchInfo());
-
-	// clean all the uncached bffs out of memory
-	FS_ThePurge();
 
     Con_Printf(
         "+===========================================================+\n"
@@ -536,8 +522,8 @@ Parsing functions mostly meant for shader stuff, but is also used on occasion ar
 
 static	char	com_token[MAX_TOKEN_CHARS];
 static	char	com_parsename[MAX_TOKEN_CHARS];
-static	int		com_lines;
-static  int		com_tokenline;
+static	uint64_t com_lines;
+static  uint64_t com_tokenline;
 
 // for complex parser
 tokenType_t		com_tokentype;
@@ -550,7 +536,7 @@ void COM_BeginParseSession( const char *name )
 }
 
 
-int COM_GetCurrentParseLine( void )
+uint64_t COM_GetCurrentParseLine( void )
 {
 	if ( com_tokenline )
 	{
@@ -572,10 +558,10 @@ void COM_ParseError( const char *format, ... )
 	static char string[4096];
 
 	va_start( argptr, format );
-	vsnprintf (string, sizeof(string), format, argptr);
+	N_vsnprintf (string, sizeof(string), format, argptr);
 	va_end( argptr );
 
-	Con_Printf( "ERROR: %s, line %d: %s\n", com_parsename, COM_GetCurrentParseLine(), string );
+	Con_Printf( ERROR, ": %s, line %lu: %s\n", com_parsename, COM_GetCurrentParseLine(), string );
 }
 
 void COM_ParseWarning( const char *format, ... )
@@ -584,10 +570,10 @@ void COM_ParseWarning( const char *format, ... )
 	static char string[4096];
 
 	va_start( argptr, format );
-	vsnprintf (string, sizeof(string), format, argptr);
+	N_vsnprintf (string, sizeof(string), format, argptr);
 	va_end( argptr );
 
-	Con_Printf( "WARNING: %s, line %d: %s\n", com_parsename, COM_GetCurrentParseLine(), string );
+	Con_Printf( WARNING, "%s, line %lu: %s\n", com_parsename, COM_GetCurrentParseLine(), string );
 }
 
 
@@ -699,23 +685,19 @@ const char *COM_ParseExt( const char **data_p, qboolean allowLineBreaks )
 	com_tokenline = 0;
 
 	// make sure incoming data is valid
-	if ( !data )
-	{
+	if ( !data ) {
 		*data_p = NULL;
 		return com_token;
 	}
 
-	while ( 1 )
-	{
+	while ( 1 ) {
 		// skip whitespace
 		data = SkipWhitespace( data, &hasNewLines );
-		if ( !data )
-		{
+		if ( !data ) {
 			*data_p = NULL;
 			return com_token;
 		}
-		if ( hasNewLines && !allowLineBreaks )
-		{
+		if ( hasNewLines && !allowLineBreaks ) {
 			*data_p = data;
 			return com_token;
 		}
@@ -723,32 +705,26 @@ const char *COM_ParseExt( const char **data_p, qboolean allowLineBreaks )
 		c = *data;
 
 		// skip double slash comments
-		if ( c == '/' && data[1] == '/' )
-		{
+		if ( c == '/' && data[1] == '/' ) {
 			data += 2;
 			while (*data && *data != '\n') {
 				data++;
 			}
 		}
 		// skip /* */ comments
-		else if ( c == '/' && data[1] == '*' )
-		{
+		else if ( c == '/' && data[1] == '*' ) {
 			data += 2;
-			while ( *data && ( *data != '*' || data[1] != '/' ) )
-			{
-				if ( *data == '\n' )
-				{
+			while ( *data && ( *data != '*' || data[1] != '/' ) ) {
+				if ( *data == '\n' ) {
 					com_lines++;
 				}
 				data++;
 			}
-			if ( *data )
-			{
+			if ( *data ) {
 				data += 2;
 			}
 		}
-		else
-		{
+		else {
 			break;
 		}
 	}
@@ -1242,6 +1218,74 @@ qboolean Com_GetHashColor(const char *str, byte *color)
 	}
 
 	return qtrue;
+}
+
+static qboolean strgtr(const char *s0, const char *s1)
+{
+	uint64_t l0, l1, i;
+
+	l0 = strlen( s0 );
+	l1 = strlen( s1 );
+
+	if ( l1 < l0 ) {
+		l0 = l1;
+	}
+
+	for( i = 0; i < l0; i++ ) {
+		if ( s1[i] > s0[i] ) {
+			return qtrue;
+		}
+		if ( s1[i] < s0[i] ) {
+			return qfalse;
+		}
+	}
+	return qfalse;
+}
+
+
+static void Com_SortList( char **list, uint64_t n )
+{
+	const char *m;
+	char *temp;
+	uint64_t i, j;
+	i = 0;
+	j = n;
+	m = list[ n >> 1 ];
+	do {
+		while ( strcmp( list[i], m ) < 0 ) i++;
+		while ( strcmp( list[j], m ) > 0 ) j--;
+		if ( i <= j ) {
+			temp = list[i];
+			list[i] = list[j];
+			list[j] = temp;
+			i++;
+			j--;
+		}
+	} while ( i <= j );
+	if ( j > 0 ) Com_SortList( list, j );
+	if ( n > i ) Com_SortList( list+i, n-i );
+}
+
+
+void Com_SortFileList( char **list, uint64_t nfiles, uint64_t fastSort )
+{
+	if ( nfiles > 1 && fastSort ) {
+		Com_SortList( list, nfiles-1 );
+	}
+	else { // defrag mod demo UI can't handle _properly_ sorted directories
+		uint64_t i, flag;
+		do {
+			flag = 0;
+			for( i = 1; i < nfiles; i++ ) {
+				if ( strgtr( list[i-1], list[i] ) ) {
+					char *temp = list[i];
+					list[i] = list[i-1];
+					list[i-1] = temp;
+					flag = 1;
+				}
+			}
+		} while( flag );
+	}
 }
 
 size_t Com_ReadFile(const char *filepath, void *buffer)

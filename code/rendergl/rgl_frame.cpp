@@ -105,22 +105,6 @@ GO_AWAY_MANGLE void RE_SetDefaultState(void)
 
 GO_AWAY_MANGLE void RE_RenderMap(void);
 
-GO_AWAY_MANGLE void RE_SubmitMapTilesheet(const char *chunkname, const bffinfo_t *info)
-{
-    const uint64_t hash = Com_GenerateHashValue(chunkname, MAX_TEXTURE_CHUNKS);
-    
-    // does it exist?
-    if (!info->textures[hash].fileBuffer)
-        ri.N_Error("RE_SubmitMapTileset: invalid texture chunk '%s'", chunkname);
-    
-    ri.Con_Printf(INFO, "Submitted texture chunk '%s' to rendering loop", chunkname);
-    // check if its already been loaded
-    if (!R_GetTexture(chunkname))
-        R_InitTexture(&info->textures[hash]);
-    else
-        ri.Con_Printf(INFO, "Texture already added");
-}
-
 #define MAX_CMD_LINE 1024
 #define MAX_CMD_BUFFER 8192
 
@@ -203,7 +187,7 @@ GO_AWAY_MANGLE void RE_BeginFrame(void)
     frame.currentMap = ri.G_GetCurrentMap();
     
     R_ReserveFrameMemory(frame.pintCache, FRAME_QUADS, FRAME_QUADS);
-//    RE_SetDefaultState();
+    RE_SetDefaultState();
 
     renderer->camera.CalculateViewMatrix();
 

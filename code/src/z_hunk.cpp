@@ -74,7 +74,7 @@ uint64_t Hunk_MemoryRemaining( void )
 	low = hunk_low.permanent > hunk_low.temp ? hunk_low.permanent : hunk_low.temp;
 	high = hunk_high.permanent > hunk_high.temp ? hunk_high.permanent : hunk_high.temp;
 
-	return s_hunkTotal - ( low + high );
+	return hunksize - ( low + high );
 }
 
 /*
@@ -90,10 +90,6 @@ void Hunk_ClearToMark( void )
 {
 	hunk_low.permanent = hunk_low.temp = hunk_low.mark;
 	hunk_high.permanent = hunk_high.temp = hunk_high.mark;
-}
-
-uint64_t Hunk_MemoryRemaining (void)
-{
 }
 
 /*
@@ -167,7 +163,7 @@ void *Hunk_AllocateTempMemory(uint64_t size)
 	h = (hunkblock_t *)buf;
 	buf = (void *)(h+1);
 
-	h->magic = HUNK_MAGIC;
+	h->id = HUNKID;
 	h->size = size;
 
 	// don't bother clearing, because we are going to load a file over it
@@ -193,7 +189,7 @@ void Hunk_FreeTempMemory(void *p)
 	// this only works if the files are freed in the stack order,
 	// otherwise the memory will stay around until Hunk_ClearTempMemory
 	if ( hunk_temp == &hunk_low ) {
-		if ( hdr == (void *)(hunkbase + hunk_temp->temp - h->size ) )
+		if ( h == (void *)(hunkbase + hunk_temp->temp - h->size ) )
 			hunk_temp->temp -= h->size;
 		else
 			Con_Printf( "Hunk_FreeTempMemory: not the final block" );
@@ -338,14 +334,14 @@ void Hunk_Print(void)
 		Con_Printf("%8p : %8lu   %8s", h, h->size, h->name);
 
 		prev = h;
-		h = next;
+		h = h->next;
 
 		// we've scanned around the list
 		if (!h)
 			break;
 	}
 	Con_Printf("-------------------------");
-	Con_Printf("          :%8lu REMAINING", hunksize - hunk_low_used - hunk_high_used);
+	Con_Printf("          :%8lu REMAINING", Hunk_MemoryRemaining());
 	Con_Printf("-------------------------");
 	Con_Printf("          :%8lu (TOTAL)", sum);
 	count = 0;

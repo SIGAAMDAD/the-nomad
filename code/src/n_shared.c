@@ -563,6 +563,70 @@ void N_strncpy (char *dest, const char *src, size_t count)
 		*dest++ = 0;
 }
 
+/*
+==================
+Com_CharIsOneOfCharset
+==================
+*/
+static qboolean Com_CharIsOneOfCharset( char c, const char *set )
+{
+	uint64_t i, n = (uint64_t)(strlen(set));
+
+	for( i = 0; i < n; i++ ) {
+		if( set[ i ] == c )
+			return qtrue;
+	}
+
+	return qfalse;
+}
+
+/*
+==================
+Com_SkipCharset
+==================
+*/
+const char *Com_SkipCharset( const char *s, const char *sep )
+{
+	const char	*p = s;
+
+	while( p ) {
+		if( Com_CharIsOneOfCharset( *p, sep ) )
+			p++;
+		else
+			break;
+	}
+
+	return p;
+}
+
+
+/*
+==================
+Com_SkipTokens
+==================
+*/
+const char *Com_SkipTokens( const char *s, uint64_t numTokens, const char *sep )
+{
+	uint64_t sepCount = 0;
+	const char	*p = s;
+
+	while( sepCount < numTokens ) {
+		if( Com_CharIsOneOfCharset( *p++, sep ) ) {
+			sepCount++;
+			while( Com_CharIsOneOfCharset( *p, sep ) )
+				p++;
+		}
+		else if( *p == '\0' )
+			break;
+	}
+
+	if( sepCount == numTokens )
+		return p;
+	else
+		return s;
+}
+
+
 char *N_strlwr(char *s1)
 {
 	char	*s;

@@ -28,7 +28,7 @@ constexpr const char sfxinfo[numsfx][180] = {
     "FABSHOT.wav",
 };
 
-void I_CacheAudio(void *bffinfo);
+void I_CacheAudio(void);
 void P_PlaySFX(uint32_t sfx);
 void S_PlayMusic(uint32_t music);
 void Snd_Init(void);

@@ -70,6 +70,7 @@ GO_AWAY_MANGLE void Z_Init(void);
 GO_AWAY_MANGLE uint64_t Z_FreeMemory(void);
 GO_AWAY_MANGLE void* Z_ZoneBegin(void);
 GO_AWAY_MANGLE void* Z_ZoneEnd(void);
+GO_AWAY_MANGLE uint64_t Z_BlockSize(void *p);
 GO_AWAY_MANGLE uint32_t Z_NumBlocks(int tag);
 GO_AWAY_MANGLE void Z_TouchMemory(uint64_t *sum);
 
