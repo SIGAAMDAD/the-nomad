@@ -5,6 +5,8 @@
 
 #include "../src/n_shared.h"
 
+typedef int32_t nhandle_t;
+
 typedef struct
 {
 #ifdef _NOMAD_DEBUG
@@ -175,7 +177,8 @@ GO_AWAY_MANGLE GDR_EXPORT void RE_Shutdown(void);
 GO_AWAY_MANGLE GDR_EXPORT void RE_BeginFrame(void);
 GO_AWAY_MANGLE GDR_EXPORT void RE_EndFrame(void);
 GO_AWAY_MANGLE GDR_EXPORT void RE_InitFrameData(void);
-GO_AWAY_MANGLE GDR_EXPORT void RE_CacheTextures(void);
+GO_AWAY_MANGLE GDR_EXPORT nhandle_t RE_RegisterTexture(const char *name);
+GO_AWAY_MANGLE GDR_EXPORT nhandle_t RE_RegisterShader(const char *name);
 GO_AWAY_MANGLE GDR_EXPORT qboolean RE_ConsoleIsOpen(void);
 GO_AWAY_MANGLE GDR_EXPORT void RE_ProcessConsoleEvents(SDL_Event *events);
 

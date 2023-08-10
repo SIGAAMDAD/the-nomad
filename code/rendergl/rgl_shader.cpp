@@ -56,8 +56,15 @@ GO_AWAY_MANGLE void R_RecompileShader(shader_t *shader, const char **vertexMacro
 
     R_UnbindShader();
 
+    // load the files back into ram
+    shader->fragmentBufLen = ri.FS_LoadFile(shader->fragmentFile, &shader->fragmentBuf);
+    shader->vertexBufLen = ri.FS_LoadFile(shader->vertexFile, &shader->vertexBuf);
+
     vertid = R_CompileShaderSource(shader->vertexBuf, GL_VERTEX_SHADER, shader->programId, vertexMacros, numVertexMacros);
     fragid = R_CompileShaderSource(shader->fragmentBuf, GL_FRAGMENT_SHADER, shader->programId, fragmentMacros, numFragmentMacros);
+
+    ri.FS_FreeFile(shader->fragmentBuf);
+    ri.FS_FreeFile(shader->vertexBuf);
 
     nglUseProgram(shader->programId);
 
@@ -124,6 +131,9 @@ GO_AWAY_MANGLE shader_t* R_InitShader(const char *vertexFile, const char *fragme
     vertid = R_CompileShaderSource(shader->vertexBuf, GL_VERTEX_SHADER, shader->programId, vertexMacros, numVertexMacros);
     fragid = R_CompileShaderSource(shader->fragmentBuf, GL_FRAGMENT_SHADER, shader->programId, fragmentMacros, numFragmentMacros);
 
+    ri.FS_FreeFile(shader->vertexBuf);
+    ri.FS_FreeFile(shader->fragmentBuf);
+
     shader->programId = nglCreateProgram();
 
     // link
@@ -167,8 +177,6 @@ GO_AWAY_MANGLE shader_t* R_InitShader(const char *vertexFile, const char *fragme
 GO_AWAY_MANGLE void R_ShutdownShader(shader_t *shader)
 {
     nglDeleteProgram(shader->programId);
-    ri.FS_FreeFile(shader->vertexBuf);
-    ri.FS_FreeFile(shader->fragmentBuf);
     ri.Z_Free(shader->fragmentFile);
     ri.Z_Free(shader->vertexFile);
     ri.Z_Free(shader);

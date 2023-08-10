@@ -191,26 +191,6 @@ const char *Key_GetBinding(uint32_t key)
 	return kb_binds[key].name;
 }
 
-/*
-Not thread safe
-*/
-const char* GDR_DECL va(const char *format, ...)
-{
-	char *buf;
-	va_list argptr;
-	static uint32_t index = 0;
-	static char string[2][32000];	// in case va is called by nested functions
-
-	buf = string[ index ];
-	index ^= 1;
-
-	va_start( argptr, format );
-	vsprintf( buf, format, argptr );
-	va_end( argptr );
-
-	return buf;
-}
-
 static const nmap_t *G_GetCurrentMap(void)
 {
 	return Game::Get()->c_map;

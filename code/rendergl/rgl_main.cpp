@@ -10,7 +10,7 @@
 static void DBG_GL_ErrorCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const GLvoid *userParam);
 #endif
 
-Renderer *renderer;
+renderGlobals_t rg;
 renderImport_t ri;
 glContext_t glContext;
 
@@ -431,8 +431,8 @@ GO_AWAY_MANGLE void R_InitGL(void)
     ri.SDL_GL_MakeCurrent(renderer->window, renderer->instance);
     ri.SDL_GL_SetSwapInterval(-1);
     ri.SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    ri.SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-    ri.SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    ri.SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+    ri.SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
     ri.SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
     ri.SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
@@ -559,21 +559,19 @@ GO_AWAY_MANGLE void RE_Init(renderImport_t *import)
     r_useExtensions = ri.Cvar_Get("r_useExtensions", "1", CVAR_PRIVATE | CVAR_SAVE);
     ri.Cvar_SetGroup(r_useExtensions, CVG_RENDERER);
 
-    renderer = (Renderer *)ri.Z_Malloc(sizeof(Renderer), TAG_STATIC, &renderer, "renderer");
-    construct(renderer);
     if (ri.SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
         ri.N_Error("RE_Init: failed to initialize SDL2, error message: %s",
             ri.SDL_GetError());
     }
 
     ri.Con_Printf(INFO, "alllocating memory to the SDL_Window context");
-    renderer->window = ri.SDL_CreateWindow(
+    rg.window = ri.SDL_CreateWindow(
                             "The Nomad",
                             SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                             r_screenwidth->i, r_screenheight->i,
                             SDL_WINDOW_OPENGL
                         );
-    if (!renderer->window) {
+    if (!rg.window) {
         ri.N_Error("RE_Init: failed to initialize an SDL2 window, error message: %s",
             ri.SDL_GetError());
     }
@@ -638,23 +636,6 @@ void RE_Shutdown(void)
     ri.SDL_Quit();
     renderer->window = NULL;
     renderer->instance = NULL;
-}
-
-void RE_CacheTextures(void)
-{
-    uint64_t i, numchunks;
-    char **chunklist;
-
-    chunklist = ri.FS_GetCurrentChunkList(&numchunks);
-
-    for (i = 0; i < numchunks; i++) {
-        if (strstr(chunklist[i], ".tga") || strstr(chunklist[i], ".jpg") || strstr(chunklist[i], ".jpeg")
-        || strstr(chunklist[i], ".png") || strstr(chunklist[i], ".bmp")) {
-            R_InitTexture(chunklist[i]);
-        }
-    }
-
-    ri.Sys_FreeFileList(chunklist)''
 }
 
 

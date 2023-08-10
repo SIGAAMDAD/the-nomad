@@ -601,6 +601,26 @@ const char *Com_SkipCharset( const char *s, const char *sep )
 
 
 /*
+Not thread safe
+*/
+const char* GDR_DECL va(const char *format, ...)
+{
+	char *buf;
+	va_list argptr;
+	static uint32_t index = 0;
+	static char string[2][32000];	// in case va is called by nested functions
+
+	buf = string[ index ];
+	index ^= 1;
+
+	va_start( argptr, format );
+	vsprintf( buf, format, argptr );
+	va_end( argptr );
+
+	return buf;
+}
+
+/*
 ==================
 Com_SkipTokens
 ==================

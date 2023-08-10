@@ -92,6 +92,7 @@ uint32_t Cvar_Flags(const char *name);
 void Cvar_Update(vmCvar_t *vmCvar, int privateFlag);
 cvar_t *Cvar_Get(const char *name, const char *value, uint32_t flags);
 qboolean Cvar_Command(void);
+void Cvar_Reset(const char *name);
 void Cvar_SetGroup(cvar_t *cv, cvarGroup_t group);
 void Cvar_SetDescription(cvar_t *cv, const char *description);
 void Cvar_Register(vmCvar_t *vmCvar, const char *name, const char *value, uint32_t flags);

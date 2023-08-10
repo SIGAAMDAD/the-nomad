@@ -16,11 +16,9 @@ typedef void (APIENTRY *GLDEBUGPROCARB)(GLenum source, GLenum type, GLuint id, G
 typedef void*(*NGLloadproc)(const char *name);
 
 #define NGL_Core_Procs \
-    NGL( void, glBegin, GLenum mode ) \
-    NGL( void, glEnd, void ) \
-    NGL( void, glVertex2f, GLfloat x, GLfloat y ) \
-    NGL( void, glTexCoord2f, GLfloat u, GLfloat v ) \
+    NGL( GLenum glGetError, void ) \
     NGL( void, glGetIntegerv, GLenum pname, GLint *data ) \
+    NGL( void, glGetFloatv, GLenum pname, GLfloat *data ) \
     NGL( void, glEnable, GLenum mode ) \
     NGL( void, glDisable, GLenum mode ) \
     NGL( void, glBlendFunc, GLenum sfactor, GLenum dfactor ) \
@@ -53,7 +51,28 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glDrawBuffer, GLenum mode ) \
     NGL( void, glDepthRange, GLclampf zNear, GLclampf zFar ) \
     NGL( void, glDrawBuffers, GLsizei n, const GLenum *bufs ) \
+    NGL( void, glBegin, GLenum mode ) \
+    NGL( void, glEnd, void ) \
+    NGL( void, glFlush, void ) \
+    NGL( void, glFinish, void ) \
     NGL( void, glClearColor, GLfloat r, GLfloat g, GLfloat b, GLfloat a ) \
+    NGL( void, glColor4f, GLfloat r, GLfloat g, GLfloat b, GLfloat a ) \
+    NGL( void, glColor3f, GLfloat r, GLfloat g, GLfloat b ) \
+    NGL( void, glColor4fv, const GLfloat *values ) \
+    NGL( void, glColor3fv, const GLfloat *values ) \
+    NGL( void, glVertex3fv, const GLfloat *values ) \
+    NGL( void, glVertex2f, GLfloat x, GLfloat y ) \
+    NGL( void, glTextCoord2f, GLfloat u, GLfloat v ) \
+    NGL( void, glPushMatrix, void ) \
+    NGL( void, glPopMatrix, void ) \
+    NGL( void, glMatrixMode, GLenum mode ) \
+    NGL( void, glMultMatrixf, const GLfloat *m ) \
+    NGL( void, glMultMatrixd, const GLdouble *m ) \
+    NGL( void, glLoadIdentity, void ) \
+    NGL( void, glLoadMatrixf, const GLfloat *m ) \
+    NGL( void, glLoadMatrixd, const GLdouble *m ) \
+    NGL( void, glPushAttrib, GLbitfield mask ) \
+    NGL( void, glPopAttrib, void ) \
 
 #define NGL_Debug_Procs \
     NGL( void, glDebugMessageControlARB, GLenum source, GLenum type, GLenum severity, GLsizei count, const GLuint *ids, GLboolean enabled ) \

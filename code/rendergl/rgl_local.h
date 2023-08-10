@@ -143,6 +143,82 @@ typedef struct
 } shaderBuffer_t;
 #pragma pack(pop)
 
+typedef enum : uint32_t
+{
+    RC_SET_COLOR = 0,
+    RC_DRAW_RECT,
+    RC_DRAW_SPRITE,
+
+    RC_END_LIST
+} renderCmdType_t;
+
+#define MAX_RC_BUFFER 64
+#define MAX_RC_LIST 1024
+
+#pragma pack(push, 1)
+typedef struct
+{
+    char buffer[MAX_RC_BUFFER];
+    renderCmdType_t id;
+} renderCmd_t;
+#pragma pack(pop)
+
+#pragma pack(push, 1)
+typedef struct
+{
+    renderCmd_t buffers[MAX_RC_LIST];
+    uint32_t usedCommands;
+} renderCommandList_t;
+#pragma pack(pop)
+
+typedef struct
+{
+    glm::vec2 pos;
+} drawSprite_t;
+
+typedef struct
+{
+    renderCommandList_t list;
+
+    vertex_t *vertices;
+    uint32_t usedVertices;
+    uint32_t numVertices;
+
+    uint32_t *indices;
+    uint32_t usedIndices;
+    uint32_t numIndices;
+} renderBackend_t;
+
+extern renderBackend_t backend;
+
+typedef struct
+{
+    glm::vec4 color;
+} setColorCmd_t;
+
+typedef struct
+{
+    glm::vec4 color;
+    glm::vec2 pos;
+    float rotation;
+    float size;
+    qboolean filled;
+} drawRectCmd_t;
+
+typedef struct
+{
+    glm::vec2 pos;
+    float length;
+    float width;
+} drawLineCmd_t;
+
+typedef struct
+{
+    glm::vec2 pos;
+    drawSprite_t *sprite;
+    float rotation;
+} drawSpriteCmd_t;
+
 #if 0
 typedef struct
 {
@@ -167,6 +243,7 @@ private:
     mutable glm::mat4 m_ProjectionMatrix;
     mutable glm::mat4 m_ViewMatrix;
     mutable glm::mat4 m_ViewProjectionMatrix;
+    mutable glm::mat4 m_ModelViewMatrix;
     mutable glm::vec3 m_CameraPos;
     mutable float m_Rotation = 0.0f;
     mutable float m_ZoomLevel = 3.0f;
@@ -186,6 +263,7 @@ public:
     inline glm::mat4& GetViewMatrix() const { return m_ViewMatrix; }
     inline glm::mat4& GetVPM() const { return m_ViewProjectionMatrix; }
     inline glm::vec3& GetPos() const { return m_CameraPos; }
+    inline glm::mat4& GetModelViewMatrix() const { return m_ModelViewMatrix; }
     inline float& GetRotation() const { return m_Rotation; }
     inline float GetRotationSpeed() const { return m_CameraRotationSpeed; }
     inline float GetSpeed() const { return m_CameraSpeed; }
@@ -237,39 +315,27 @@ struct VKContext
 };
 #endif
 
-#define MAX_FBOS 64
-#define MAX_VERTEXCACHES 1024
-#define MAX_SHADERS 1024
-#define MAX_TEXTURES 1024
+#define RS_DRAWING 0x0000
 
-/*
-the renderer class manages all the opengl objects, initializes them, and then deletes them upon destruction
-*/
-class Renderer
+typedef struct
 {
-public:
-    SDL_GLContext instance;
     Camera camera;
-    SDL_Window* window;
 
-    shader_t* shaders[MAX_SHADERS];
-    texture_t* textures[MAX_TEXTURES];
-    framebuffer_t* fbos[MAX_FBOS];
-    vertexCache_t* vertexCaches[MAX_VERTEXCACHES];
+    SDL_Window *window;
+    SDL_GLcontext context;
 
-    uint32_t numVertexCaches, numTextures, numFBOs, numShaders;
-    uint32_t shaderid, vaoid, vboid, iboid, textureid, fboid, uboid;
+    shader_t *shaders;
+    uint64_t numShaders;
 
-    SDL_Thread *glDebugThread;
-public:
-    Renderer();
-    Renderer(const Renderer &) = delete;
-    Renderer(Renderer &&) = delete;
-    ~Renderer() = default;
+    drawSprite_t *sprites;
+    uint64_t numSprites;
 
-    Renderer& operator=(const Renderer &) = delete;
-    Renderer& operator=(Renderer &&) = delete;
-};
+    uint32_t state;
+    uint32_t drawMode;
+} renderGlobals_t;
+
+#define VEC3_TO_GLM(x) glm::vec3((x)[0],(x)[1],(x)[2])
+#define VEC4_TO_GLM(x) glm::vec4((x)[0],(x)[1],(x)[2],(x)[3])
 
 GO_AWAY_MANGLE void RE_InitSettings_f(void);
 
@@ -322,7 +388,7 @@ inline void R_SetMatrix4(shader_t *shader, const char *name, const glm::mat4& va
 
 void load_gl_procs(NGLloadproc load);
 
-extern Renderer *renderer;
+extern renderGlobals_t rg;
 extern renderImport_t ri;
 extern glContext_t glContext;
 extern shader_t *pintShader;
@@ -351,6 +417,10 @@ extern cvar_t *r_bloomOn;
 extern cvar_t *r_useExtensions;
 extern cvar_t *r_fovWidth;
 extern cvar_t *r_fovHeight;
+
+// for the truly old-school peeps
+extern cvar_t *r_enableBuffers;     // forces immediate mode rendering
+extern cvar_t *r_enableShaders;     // forces stuff like glPushAttrib
 
 // using libraries without using custom allocators is annoying, so this is here
 #undef new
