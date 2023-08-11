@@ -12,7 +12,10 @@
 #include <cglm/cglm.h>
 #include <cglm/vec3.h>
 #include <cglm/vec2.h>
+#include <cglm/affine-mat.h>
 #include <cglm/mat4.h>
+#include <cglm/plane.h>
+#include <cglm/ray.h>
 
 #define RENDER_MAX_UNIFORMS 1024
 
@@ -88,6 +91,7 @@ typedef struct
     int maxUniformLocations;
     int maxUniformBufferBindings;
 } glContext_t;
+
 typedef struct
 {
     uint32_t magFilter;
@@ -103,6 +107,29 @@ typedef struct
 
     byte* data;
 } texture_t;
+
+typedef struct
+{
+    vec4_t color;
+    vec3_t pos;
+    vec2_t texcoords;
+    vec2_t light;
+} drawVert_t;
+
+typedef struct
+{
+    vec4_t color;
+    vec3_t worldPos;
+    vec3_t screenPos;
+
+    float size;
+    float rotation;
+
+    uint32_t numVerts;
+    drawVert_t *verts;
+
+    texture_t *sprite;
+} renderEntityDef_t;
 
 typedef struct
 {
@@ -147,38 +174,22 @@ typedef enum : uint32_t
 {
     RC_SET_COLOR = 0,
     RC_DRAW_RECT,
-    RC_DRAW_SPRITE,
+    RC_DRAW_REF,
 
     RC_END_LIST
 } renderCmdType_t;
 
-#define MAX_RC_BUFFER 64
-#define MAX_RC_LIST 1024
+#define MAX_RC_BUFFER 0x60000
 
-#pragma pack(push, 1)
 typedef struct
 {
-    char buffer[MAX_RC_BUFFER];
-    renderCmdType_t id;
-} renderCmd_t;
-#pragma pack(pop)
-
-#pragma pack(push, 1)
-typedef struct
-{
-    renderCmd_t buffers[MAX_RC_LIST];
-    uint32_t usedCommands;
+    byte buffer[MAX_RC_BUFFER];
+    uint32_t usedBytes;
 } renderCommandList_t;
-#pragma pack(pop)
 
 typedef struct
 {
-    glm::vec2 pos;
-} drawSprite_t;
-
-typedef struct
-{
-    renderCommandList_t list;
+    renderCommandList_t commandList;
 
     vertex_t *vertices;
     uint32_t usedVertices;
@@ -193,13 +204,15 @@ extern renderBackend_t backend;
 
 typedef struct
 {
-    glm::vec4 color;
+    renderCmdType_t id;
+    vec4_t color;
 } setColorCmd_t;
 
 typedef struct
 {
-    glm::vec4 color;
-    glm::vec2 pos;
+    renderCmdType_t id;
+    vec4_t color;
+    vec3_t pos;
     float rotation;
     float size;
     qboolean filled;
@@ -207,17 +220,18 @@ typedef struct
 
 typedef struct
 {
-    glm::vec2 pos;
+    renderCmdType_t id;
+    vec3_t pos;
     float length;
     float width;
 } drawLineCmd_t;
 
 typedef struct
 {
-    glm::vec2 pos;
-    drawSprite_t *sprite;
-    float rotation;
-} drawSpriteCmd_t;
+    renderCmdType_t id;
+    float vpm[16];
+    renderEntityDef_t *ref;
+} drawRefCmd_t;
 
 #if 0
 typedef struct
@@ -315,27 +329,40 @@ struct VKContext
 };
 #endif
 
-#define RS_DRAWING 0x0000
+#define RS_DRAWING          0x0000
+#define RS_IN_FRAMBUFFER    0x2000
 
-typedef struct
+#define MAX_RENDER_ENTITIES 1024
+#define MAX_RENDER_TEXTURES 1024
+#define MAX_RENDER_SHADERS 1024
+
+typedef struct renderGlobals_s
 {
+    renderGlobals_s(void) = default;
+
     Camera camera;
 
     SDL_Window *window;
-    SDL_GLcontext context;
+    SDL_GLContext context;
 
-    shader_t *shaders;
-    uint64_t numShaders;
+    shader_t *shaders[MAX_RENDER_SHADERS];
+    uint32_t numShaders;
 
-    drawSprite_t *sprites;
-    uint64_t numSprites;
+    // index 0 is always the local player entity
+    renderEntityDef_t *entityDefs[MAX_RENDER_ENTITIES];
+    uint32_t numEntityDefs;
 
-    uint32_t state;
+    texture_t *textures[MAX_RENDER_TEXTURES];
+    uint32_t numTextures;
+
+    uint32_t stateBits;
     uint32_t drawMode;
 } renderGlobals_t;
 
 #define VEC3_TO_GLM(x) glm::vec3((x)[0],(x)[1],(x)[2])
 #define VEC4_TO_GLM(x) glm::vec4((x)[0],(x)[1],(x)[2],(x)[3])
+
+qboolean R_IsInView(const vec3_t pos);
 
 GO_AWAY_MANGLE void RE_InitSettings_f(void);
 
@@ -385,6 +412,11 @@ inline void R_SetFloat4(shader_t *shader, const char *name, const glm::vec4& val
 { nglUniform4fARB(R_GetUniformLocation(shader, name), value.r, value.g, value.b, value.a); }
 inline void R_SetMatrix4(shader_t *shader, const char *name, const glm::mat4& value)
 { nglUniformMatrix4fvARB(R_GetUniformLocation(shader, name), 1, GL_FALSE, glm::value_ptr(value)); }
+
+void RB_FlushVertices(void);
+void RB_PushRect(const drawVert_t *vertices);
+void RB_DrawRect(const drawRectCmd_t *cmd);
+void RB_DrawEntity(const drawRefCmd_t *cmd);
 
 void load_gl_procs(NGLloadproc load);
 
@@ -481,6 +513,8 @@ GO_AWAY_MANGLE void R_InitFrameMemory(void);
 GO_AWAY_MANGLE void R_ShutdownFrameMemory(void);
 GO_AWAY_MANGLE void R_ToggleFrame(void);
 GO_AWAY_MANGLE uint64_t R_CountFrameMemory(void);
+
+extern const mat4_t mat4_identity;
 
 #include "rgl_framebuffer.h"
 

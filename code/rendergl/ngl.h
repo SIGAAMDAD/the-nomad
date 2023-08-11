@@ -16,7 +16,7 @@ typedef void (APIENTRY *GLDEBUGPROCARB)(GLenum source, GLenum type, GLuint id, G
 typedef void*(*NGLloadproc)(const char *name);
 
 #define NGL_Core_Procs \
-    NGL( GLenum glGetError, void ) \
+    NGL( GLenum, glGetError, void ) \
     NGL( void, glGetIntegerv, GLenum pname, GLint *data ) \
     NGL( void, glGetFloatv, GLenum pname, GLfloat *data ) \
     NGL( void, glEnable, GLenum mode ) \
@@ -61,8 +61,11 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glColor4fv, const GLfloat *values ) \
     NGL( void, glColor3fv, const GLfloat *values ) \
     NGL( void, glVertex3fv, const GLfloat *values ) \
+    NGL( void, glVertex3f, GLfloat x, GLfloat y, GLfloat z ) \
     NGL( void, glVertex2f, GLfloat x, GLfloat y ) \
-    NGL( void, glTextCoord2f, GLfloat u, GLfloat v ) \
+    NGL( void, glVertex2fv, const GLfloat *values ) \
+    NGL( void, glTexCoord2f, GLfloat u, GLfloat v ) \
+    NGL( void, glTexCoord2fv, const GLfloat *values ) \
     NGL( void, glPushMatrix, void ) \
     NGL( void, glPopMatrix, void ) \
     NGL( void, glMatrixMode, GLenum mode ) \
@@ -71,8 +74,7 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glLoadIdentity, void ) \
     NGL( void, glLoadMatrixf, const GLfloat *m ) \
     NGL( void, glLoadMatrixd, const GLdouble *m ) \
-    NGL( void, glPushAttrib, GLbitfield mask ) \
-    NGL( void, glPopAttrib, void ) \
+    NGL( void, glDrawArrays, GLenum mode, GLint first, GLsizei count ) \
 
 #define NGL_Debug_Procs \
     NGL( void, glDebugMessageControlARB, GLenum source, GLenum type, GLenum severity, GLsizei count, const GLuint *ids, GLboolean enabled ) \

@@ -154,11 +154,35 @@ extern const vec2_t vec2_origin;
 #define arraylen(arr) (sizeof(arr)/sizeof(*arr))
 
 // math stuff
-#define VectorAdd(a,b,c) (c[0]=a[0]+b[0],c[1]=a[1]+b[1])
-#define VectorSubtract(a,b,c) (c[0]=a[0]-b[0],c[1]=a[1]-b[1])
-#define DotProduct(x,y) (x[0]*y[0]+x[1]*y[1])
-#define VectorCopy(x,y) (x[0]=y[0],x[1]=y[1])
+#define VectorAdd(a,b,c)		((c)[0]=(a)[0]+(b)[0],(c)[1]=(a)[1]+(b)[1])
+#define VectorSubtract(a,b,c)	((c)[0]=(a)[0]-(b)[0],(c)[1]=(a)[1]-(b)[1])
+#define DotProduct(x,y)			((x)[0]*(y)[0]+(y)[1]*(y)[1]+(x)[2]*(y)[2])
+#define VectorCopy(x,y)			((x)[0]=(y)[0],(y)[1]=(y)[1],(x)[2]=(y)[2])
+#define	VectorScale(v, s, o)	((o)[0]=(v)[0]*(s),(o)[1]=(v)[1]*(s),(o)[2]=(v)[2]*(s))
+#define	VectorMA(v, s, b, o)	((o)[0]=(v)[0]+(b)[0]*(s),(o)[1]=(v)[1]+(b)[1]*(s),(o)[2]=(v)[2]+(b)[2]*(s))
+#define MatrixTranslateVector3(m, o, v) ((o)[3]=(m)[0]*(v)[0]+(m)[1]*(v)[1]+(m)[2]*(v)[2]+(m)[3])
+
+#define DEG2RAD( a ) ( ( (a) * M_PI ) / 180.0F )
+#define RAD2DEG( a ) ( ( (a) * 180.0f ) / M_PI )
+
+GDR_INLINE void VectorNormalize(vec3_t v)
+{
+	float ilength;
+	ilength = Q_rsqrt( DotProduct( v, v ) );
+	v[0] *= ilength;
+	v[1] *= ilength;
+	v[2] *= ilength;
+}
+GDR_INLINE void MatrixScaleVector(const mat4_t m, mat4_t o, vec3_t v)
+{
+	o[0] = m[0] * v[0];
+	o[1] = m[1] * v[1];
+	o[2] = m[2] * v[2];
+	o[3] = m[3];
+}
+
 void CrossProduct(const vec2_t v1, const vec2_t v2, vec2_t out);
+void MatrixRotate(const mat4_t m, mat4_t o, float radians, const vec3_t v);
 float disBetweenOBJ(const vec2_t src, const vec2_t tar);
 float Q_rsqrt(float number);
 float Q_root(float x);
