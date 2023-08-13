@@ -206,10 +206,10 @@ static qboolean Cvar_ValidateName(const char *name)
     
     s = name;
     while ((c = *s++) != '\0') {
-        if (c == '\\' || c == '\"' || c == ';' || c == '%' || c <= ' ' || c >= '=')
+        if (c == '\\' || c == '\"')
             return qfalse;
     }
-    if ((s - name) >= MAX_STRING_CHARS)
+    if (strlen(name) >= MAX_STRING_CHARS)
         return qfalse;
     
     return qtrue;

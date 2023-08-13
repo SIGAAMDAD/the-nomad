@@ -3,8 +3,6 @@
 
 #pragma once
 
-#ifndef Q3_VM
-
 typedef enum {
     h_low,
     h_high,
@@ -76,6 +74,7 @@ GO_AWAY_MANGLE void Z_TouchMemory(uint64_t *sum);
 
 GO_AWAY_MANGLE void Mem_Info(void);
 
+#ifdef __cplusplus
 template<class T>
 struct zone_allocator
 {

@@ -479,15 +479,7 @@ static void *Z_MainAlloc(uint64_t size, int tag, void *user, const char *name)
 
 	do {
 		if (rover == start) {
-			Con_Printf(WARNING, "zone size wasn't big enough for Z_MainAlloc size given, clearing cache");
-			// clean all the caches
-			Z_FreeTags(TAG_PURGELEVEL, TAG_CACHE);
-			if (tryagain)
-				N_Error("Z_SmallAlloc: failed allocation of %lu bytes because zone wasn't big enough", size);
-			else {
-				tryagain = qtrue;
-				return Z_MainAlloc(size, tag, user, name);
-			}
+			N_Error("Z_MainAlloc: failed on allocation of %lu bytes because mainzone wasn't big enough", size);
 		}
 		if (rover->tag != TAG_FREE) {
 			if (rover->tag < TAG_PURGELEVEL) {

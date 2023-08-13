@@ -5,7 +5,7 @@
 
 #include "z_heap.h"
 
-#ifndef Q3_VM
+#ifdef __cplusplus
 
 constexpr uint32_t BASE_CHAR_BUFFER_SIZE = 256;
 constexpr uint32_t STRING_GROW_SIZE = 256;

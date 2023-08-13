@@ -20,10 +20,10 @@ cvar_t *snd_sfxvol;
 cvar_t *snd_musicon;
 cvar_t *snd_sfxon;
 
-typedef struct nomadsnd_s
+typedef struct
 {
-    uint32_t source = 0;
-    uint32_t buffer = 0;
+    uint32_t source;
+    uint32_t buffer;
     char name[80];
 
     int samplerate;
@@ -43,29 +43,11 @@ static boost::mutex sndLock;
 #define MAX_SND_HASH 1024
 static nomadsnd_t *sndhash[MAX_SND_HASH];
 
-static void Snd_LoadOGG(nomadsnd_t* snd, bffsound_t* buffer)
-{
-    char temppath[256];
-    stbsp_sprintf(temppath, "gamedata/sndfile.ogg");
-    FILE *fp = fopen(temppath, "wb");
-    if (!fp) {
-        N_Error("Snd_LoadOGG: failed to create temporary audio file");
-    }
-    fwrite(buffer->fileBuffer, 1, buffer->fileSize, fp);
-    fclose(fp);
-
-    snd->length = stb_vorbis_decode_filename(temppath, &snd->channels, &snd->samplerate, &snd->sndbuf);
-    if (snd->length == -1) {
-        N_Error("Snd_LoadOGG: stb_vorbis_decode_filename failed");
-    }
-
-    remove(temppath);
-}
 
 void I_CacheAudio(void)
 {
-    uint64_t numchunks;
-    char **chunklist;
+    uint64_t OGGchunks, WAVchunks;
+    char **ogglist, **wavlist;
     FILE *fp;
     uint64_t bufferlen;
     char *buffer;
@@ -75,24 +57,22 @@ void I_CacheAudio(void)
 
     Con_Printf("I_CacheAudio: allocating OpenAL buffers and sources");
 
-    chunklist = FS_GetCurrentChunkList(&numchunks);
-    sndcache_size = 0;
+    ogglist = FS_ListFiles("", ".ogg", &OGGchunks);
+    wavlist = FS_ListFiles("", ".wav", &WAVchunks);
 
-    for (uint64_t i = 0; i < numchunks; i++) {
-        if (strstr(chunklist[i], ".ogg") != NULL || strstr(chunklist[i], ".wav") != NULL)
-            sndcache_size++;
-    }
+    sndcache_size = OGGchunks + WAVchunks;
+
+    if (!sndcache_size)
+        return;
+
     snd_cache = (nomadsnd_t *)Z_Malloc(sizeof(nomadsnd_t) * sndcache_size, TAG_SFX, &snd_cache, "snd_cache");
-    for (uint64_t i = 0; i < numchunks; i++) {
-        if (strstr(chunklist[i], ".ogg") == NULL && strstr(chunklist[i], ".wav") == NULL)
-            continue;
-        
+    for (uint64_t i = 0; i < OGGchunks; i++) {
         memset(&fdata, 0, sizeof(fdata));
         readcount = 0;
 
-        bufferlen = FS_LoadFile(chunklist[i], (void **)&buffer);
+        bufferlen = FS_LoadFile(ogglist[i], (void **)&buffer);
         if (!buffer) {
-            N_Error("I_CacheAudio: failed to open audio file %s", chunklist[i]);
+            N_Error("I_CacheAudio: failed to open audio file %s", ogglist[i]);
         }
 
         fp = tmpfile();
@@ -106,14 +86,14 @@ void I_CacheAudio(void)
         sf = sf_open_fd(fileno(fp), SFM_READ, &fdata, SF_TRUE);
         if (!sf) {
             N_Error("I_CacheAudio: failed to create temporary audio stream for chunk %s, libsndfile error: %s",
-                chunklist[i], sf_strerror(sf));
+                ogglist[i], sf_strerror(sf));
         }
 
         snd_cache[i].sndbuf = (short *)Z_Malloc(sizeof(short) * fdata.frames * fdata.channels, TAG_STATIC, &snd_cache[i].sndbuf, "sndbuf");
         readcount = sf_read_short(sf, snd_cache[i].sndbuf, sizeof(short) * fdata.frames * fdata.channels);
         if (!readcount) {
             N_Error("I_CacheAudio: libsndfile failed to decode audio chunk %s, libsndfile error: %s",
-                chunklist[i], sf_strerror(sf));
+                ogglist[i], sf_strerror(sf));
         }
         sf_close(sf);
 
@@ -122,7 +102,7 @@ void I_CacheAudio(void)
         snd_cache[i].length = fdata.samplerate * fdata.frames;
         snd_cache[i].frames = fdata.frames;
 
-        N_strncpyz(snd_cache[i].name, chunklist[i], MAX_BFF_CHUNKNAME);
+        N_strncpyz(snd_cache[i].name, ogglist[i], MAX_BFF_CHUNKNAME);
         alGenSources(1, (ALuint *)&snd_cache[i].source);
         alGenBuffers(1, (ALuint *)&snd_cache[i].buffer);
         alBufferData(snd_cache[i].buffer, snd_cache[i].channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16,
@@ -130,7 +110,7 @@ void I_CacheAudio(void)
         alSourcei(snd_cache[i].source, AL_BUFFER, snd_cache[i].buffer);
 		alSourcef(snd_cache[i].source, AL_GAIN, snd_musicvol->f);
 
-        sndhash[Com_GenerateHashValue(chunklist[i], MAX_SND_HASH)] = &snd_cache[i];
+        sndhash[Com_GenerateHashValue(ogglist[i], MAX_SND_HASH)] = &snd_cache[i];
         snd_cache[i].failed = false;
     }
 }
@@ -203,18 +183,20 @@ void Snd_Submit(void)
 
 void Snd_Init(void)
 {
+    snd_sfxon = Cvar_Get("snd_sfxon", "0", CVAR_SAVE | CVAR_PRIVATE);
+    snd_musicon = Cvar_Get("snd_musicon", "0", CVAR_SAVE | CVAR_PRIVATE);
+
     if (!snd_sfxon->i || !snd_musicon->i)
         return;
 
     Con_Printf("Snd_Init: initializing OpenAL and libsndfile");
     device = alcOpenDevice(NULL);
     if (!device) {
-        snd_sfxon = Cvar_Get("snd_sfxon", "0", CVAR_PRIVATE | CVAR_SAVE);
-        snd_musicon = Cvar_Get("snd_musicon", "0", CVAR_PRIVATE | CVAR_SAVE);
-        Con_Printf("Snd_Init: alcOpenDevice returned NULL, turning off sound");
+        Cvar_Set("snd_sfxon", "0");
+        Cvar_Set("snd_musicon", "0");
+        Con_Printf(ERROR, "Snd_Init: alcOpenDevice returned NULL, turning off sound");
         return;
     }
-    assert(device);
 
     context = alcCreateContext(device, NULL);
     if (!context) {
@@ -227,7 +209,6 @@ void Snd_Init(void)
     }
     snd_sfxon = Cvar_Get("snd_sfxon", "1", CVAR_PRIVATE | CVAR_SAVE);
     snd_musicon = Cvar_Get("snd_musicon", "1", CVAR_PRIVATE | CVAR_SAVE);
-    assert(context);
     alcMakeContextCurrent(context);
 
     Cmd_AddCommand("musicinfo", Snd_MusicInfo_f);

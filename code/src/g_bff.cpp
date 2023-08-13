@@ -6,6 +6,7 @@
 #include <zlib.h>
 #include <bzlib.h>
 
+#if 0
 static void SafeRead(FILE* fp, void *data, size_t size)
 {
 	if (fread(data, size, 1, fp) == 0) {
@@ -438,8 +439,6 @@ const eastl::vector<const bfflevel_t*>& BFF_OrderLevels(const bffinfo_t *info)
 	}
 	return levels;
 }
-
-#if 0
 
 typedef void* bffHandle;
 typedef void* bffChunk;

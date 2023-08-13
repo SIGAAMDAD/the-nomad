@@ -95,9 +95,6 @@ typedef struct keybind_s
 
 extern keybind_t kb_binds[NUMBINDS];
 
-void G_LoadSCF(void);
-cvar_t** G_GetCvars(void);
-uint32_t G_NumCvars(void);
 void Com_LoadConfig(void);
 
 #endif

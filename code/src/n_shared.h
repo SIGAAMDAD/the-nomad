@@ -14,7 +14,7 @@
 #   error a version must be supplied when compiling the engine or a mod
 #endif
 
-#ifdef __GNUC__
+#ifdef __GNUG__
 #pragma GCC diagnostic ignored "-Wold-style-cast" // c style stuff, its more readable without the syntax sugar
 #pragma GCC diagnostic ignored "-Wclass-memaccess" // non-trivial copy instead of memcpy
 #pragma GCC diagnostic ignored "-Wcast-function-type" // incompatible function pointer types
@@ -23,7 +23,7 @@
 #pragma GCC diagnostic ignored "-Wnoexcept"
 
 #pragma GCC diagnostic error "-Walloca-larger-than=1048576" // prevent stack overflows (allocating more than a mb on the stack)
-#elif defined(__clang__)
+#elif defined(__clang__) && defined(__cplusplus)
 #pragma clang diagnostic ignored "-Wold-style-cast" // c style stuff, its more readable without the syntax sugar
 #pragma clang diagnostic ignored "-Wclass-memaccess" // non-trivial copy instead of memcpy
 #pragma clang diagnostic ignored "-Wcast-function-type" // incompatible function pointer types
@@ -50,9 +50,22 @@
 
 #include "n_pch.h"
 
+#ifndef Q3_VM
+#include <GDRLib/config.hpp>
+#else
+#define GDR_ATTRIBUTE(x)
+#define GDR_ASSERT(x)
+#define GDR_ASSERT_MSG(x)
+#define GDR_ASSERT_FAIL(x)
+#define GDR_INLINE
+#define GDR_WARN_UNUSED
+#define MAX_GDR_PATH 64
+#define GDR_NORETURN
+#endif
+
 #undef assert
 #define assert(x)
-#if defined(_NOMAD_DEBUG) && !defined(Q3_VM)
+#if defined(_NOMAD_DEBUG) && !defined(Q3_VM) && !defined(GDR_DLLCOMPILE) && defined(__cplusplus)
 #undef assert
 inline void __nomad_assert_fail(const char* expression, const char* file, const char* func, unsigned line)
 {
@@ -67,18 +80,6 @@ inline void __nomad_assert_fail(const char* expression, const char* file, const 
 #else
 #define assert(x)
 #endif
-#ifndef Q3_VM
-#include <GDRLib/config.hpp>
-#else
-#define GDR_ATTRIBUTE(x)
-#define GDR_ASSERT(x)
-#define GDR_ASSERT_MSG(x)
-#define GDR_ASSERT_FAIL(x)
-#define GDR_INLINE
-#define GDR_WARN_UNUSED
-#define MAX_GDR_PATH 64
-#define GDR_NORETURN
-#endif
 
 #ifdef Q3_VM
 #include "bg_lib.h"
@@ -90,6 +91,7 @@ inline void __nomad_assert_fail(const char* expression, const char* file, const 
 #include <string.h>
 #include <math.h>
 #include <limits.h>
+#include <stdbool.h>
 #endif
 
 typedef enum { qfalse = 0, qtrue = 1 } qboolean;
@@ -130,6 +132,10 @@ void* N_memchr(void *ptr, int c, size_t count);
 int N_memcmp(const void *ptr1, const void *ptr2, size_t count);
 int N_replace(const char *str1, const char *str2, char *src, size_t max_len);
 
+typedef int32_t nhandle_t;
+typedef int32_t sfxHandle_t;
+
+
 #include "z_heap.h"
 #include "string.hpp"
 
@@ -148,22 +154,40 @@ typedef vec_t mat3_t[3][3];
 typedef vec_t mat4_t[4][4];
 typedef unsigned char byte;
 
+extern const mat4_t mat4_identity;
 extern const vec3_t vec3_origin;
 extern const vec2_t vec2_origin;
+
+extern	const vec4_t		colorBlack;
+extern	const vec4_t		colorRed;
+extern	const vec4_t		colorGreen;
+extern	const vec4_t		colorBlue;
+extern	const vec4_t		colorYellow;
+extern	const vec4_t		colorMagenta;
+extern	const vec4_t		colorCyan;
+extern	const vec4_t		colorWhite;
+extern	const vec4_t		colorLtGrey;
+extern	const vec4_t		colorMdGrey;
+extern	const vec4_t		colorDkGrey;
 
 #define arraylen(arr) (sizeof(arr)/sizeof(*arr))
 
 // math stuff
+#define VectorLength(v)			(float)(sqrt((v)[0]*(v)[0]+(v)[1]*(v)[1]+(v)[2]*(v)[2]))
 #define VectorAdd(a,b,c)		((c)[0]=(a)[0]+(b)[0],(c)[1]=(a)[1]+(b)[1])
 #define VectorSubtract(a,b,c)	((c)[0]=(a)[0]-(b)[0],(c)[1]=(a)[1]-(b)[1])
-#define DotProduct(x,y)			((x)[0]*(y)[0]+(y)[1]*(y)[1]+(x)[2]*(y)[2])
-#define VectorCopy(x,y)			((x)[0]=(y)[0],(y)[1]=(y)[1],(x)[2]=(y)[2])
+#define DotProduct(x,y)			((x)[0]*(y)[0]+(x)[1]*(y)[1]+(x)[2]*(y)[2])
+#define VectorCopy(x,y)			((x)[0]=(y)[0],(x)[1]=(y)[1],(x)[2]=(y)[2])
 #define	VectorScale(v, s, o)	((o)[0]=(v)[0]*(s),(o)[1]=(v)[1]*(s),(o)[2]=(v)[2]*(s))
 #define	VectorMA(v, s, b, o)	((o)[0]=(v)[0]+(b)[0]*(s),(o)[1]=(v)[1]+(b)[1]*(s),(o)[2]=(v)[2]+(b)[2]*(s))
-#define MatrixTranslateVector3(m, o, v) ((o)[3]=(m)[0]*(v)[0]+(m)[1]*(v)[1]+(m)[2]*(v)[2]+(m)[3])
 
 #define DEG2RAD( a ) ( ( (a) * M_PI ) / 180.0F )
 #define RAD2DEG( a ) ( ( (a) * 180.0f ) / M_PI )
+
+void CrossProduct(const vec2_t v1, const vec2_t v2, vec2_t out);
+float disBetweenOBJ(const vec2_t src, const vec2_t tar);
+float Q_rsqrt(float number);
+float Q_root(float x);
 
 GDR_INLINE void VectorNormalize(vec3_t v)
 {
@@ -173,19 +197,6 @@ GDR_INLINE void VectorNormalize(vec3_t v)
 	v[1] *= ilength;
 	v[2] *= ilength;
 }
-GDR_INLINE void MatrixScaleVector(const mat4_t m, mat4_t o, vec3_t v)
-{
-	o[0] = m[0] * v[0];
-	o[1] = m[1] * v[1];
-	o[2] = m[2] * v[2];
-	o[3] = m[3];
-}
-
-void CrossProduct(const vec2_t v1, const vec2_t v2, vec2_t out);
-void MatrixRotate(const mat4_t m, mat4_t o, float radians, const vec3_t v);
-float disBetweenOBJ(const vec2_t src, const vec2_t tar);
-float Q_rsqrt(float number);
-float Q_root(float x);
 
 #ifndef __cplusplus
 qboolean N_strtobool(const char* s);

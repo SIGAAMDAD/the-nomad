@@ -20,6 +20,8 @@ Standard Library
 #include <stdint.h>
 #include <setjmp.h>
 #include <strings.h>
+
+#ifdef __cplusplus
 #include <fstream>
 #include <istream>
 #include <ostream>
@@ -69,8 +71,8 @@ Dependencies
 #include <EASTL/internal/atomic/atomic_standalone.h>
 #include <EASTL/internal/function.h>
 
+
 // GDRLib, my custom stuff, specific to game development, some of the meat of the engine
-#include <GDRLib/lib.hpp>
 #include <GDRLib/allocator.hpp>
 
 // glm, funmathgames
@@ -78,6 +80,15 @@ Dependencies
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/type_trait.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+#include <xalloc/Allocator.h>
+#include <xalloc/xallocator.h>
+
+#include <nlohmann/json.hpp>
+
+#define USING_EASY_PROFILER
+#include <easy/profiler.h>
+#endif
 
 // SDL2, i don't trust SDL3
 #include <SDL2/SDL_syswm.h>
@@ -97,12 +108,8 @@ Dependencies
 #include <SDL2/SDL_mutex.h>
 
 // speed is key
-#define USING_EASY_PROFILER
-#include <easy/profiler.h>
 #include "stb_sprintf.h"
-#include <xalloc/Allocator.h>
-#include <xalloc/xallocator.h>
 
-#include <nlohmann/json.hpp>
+#include <GDRLib/lib.hpp>
 
 #endif

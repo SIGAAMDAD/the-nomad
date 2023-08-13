@@ -5,10 +5,6 @@
 
 #include "ngl.h"
 #include "rgl_public.h"
-#include "imgui.h"
-#include "imgui_internal.h"
-#include "imgui_impl_opengl3.h"
-#include "imgui_impl_sdl2.h"
 #include <cglm/cglm.h>
 #include <cglm/vec3.h>
 #include <cglm/vec2.h>
@@ -16,6 +12,9 @@
 #include <cglm/mat4.h>
 #include <cglm/plane.h>
 #include <cglm/ray.h>
+#include <cglm/struct.h>
+#define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
+#include "cimgui.h"
 
 #define RENDER_MAX_UNIFORMS 1024
 
@@ -23,9 +22,6 @@
 #define TEXTURE_FILTER_LINEAR 1
 #define TEXTURE_FILTER_BILLINEAR 2
 #define TEXTURE_FILTER_TRILINEAR 3
-#define RENDER_MAX_QUADS 0x80000
-#define RENDER_MAX_VERTICES (RENDER_MAX_QUADS*4)
-#define RENDER_MAX_INDICES (RENDER_MAX_QUADS*6)
 
 #ifdef _NOMAD_DEBUG
 #define RENDER_ASSERT(x,...) if (!(x)) ri.N_Error("%s: %s",__func__,va(__VA_ARGS__))
@@ -40,6 +36,11 @@ typedef enum {
     TC_S3TC, // for the GL_S3_s3tc extension
     TC_S3TC_ARB // for the GL_EXT_texture_compression_s3tc extension
 } glTextureCompression_t;
+
+typedef enum {
+    RES_SQUARE = 0,
+    RES_CIRCLE
+} renderEntityShape_t;
 
 typedef struct
 {
@@ -110,29 +111,6 @@ typedef struct
 
 typedef struct
 {
-    vec4_t color;
-    vec3_t pos;
-    vec2_t texcoords;
-    vec2_t light;
-} drawVert_t;
-
-typedef struct
-{
-    vec4_t color;
-    vec3_t worldPos;
-    vec3_t screenPos;
-
-    float size;
-    float rotation;
-
-    uint32_t numVerts;
-    drawVert_t *verts;
-
-    texture_t *sprite;
-} renderEntityDef_t;
-
-typedef struct
-{
     int32_t uniformCache[RENDER_MAX_UNIFORMS];
 
     char *vertexBuf;
@@ -146,6 +124,69 @@ typedef struct
 
     uint32_t programId;
 } shader_t;
+
+typedef enum
+{
+    DL_POINT,       // point light
+    DL_SPOT,        // spot light
+    DL_SKY,         // sky light
+    DL_DIR,         // directional light
+} dlightType_t; 
+
+typedef struct dlight_s
+{
+    vec4_t color;
+    vec3_t pos;
+
+    float brightness;
+    float diffuse;
+    float specular;
+    float ambient;
+
+    dlightType_t ltype;
+
+    renderEntityRef_t *ref;
+
+    struct dlight_s *next;
+    struct dlight_s *prev;
+} dlight_t;
+
+/*
+used for rendering chunks of the tilemap into the player's view
+*/
+typedef struct
+{
+    shader_t *shader;
+
+    tile_t **tiles;
+    uint32_t numTilesX;
+    uint32_t numTilesY;
+
+    dlight_t *lights;
+    uint32_t numLights;
+} tileSurf_t;
+
+typedef struct
+{
+    vec4_t color;
+    vec3_t pos;
+    vec2_t texcoords;
+    vec2_t light;
+} drawVert_t;
+
+struct renderEntityRef_s
+{
+    vec4_t color;
+    vec3_t worldPos;
+    vec3_t screenPos;
+
+    renderEntityShape_t shape;
+
+    float size;
+    float rotation;
+
+    texture_t *sprite;
+};
 
 #include "rgl_vertexcache.h"
 
@@ -170,11 +211,12 @@ typedef struct
 } shaderBuffer_t;
 #pragma pack(pop)
 
-typedef enum : uint32_t
+typedef enum
 {
     RC_SET_COLOR = 0,
     RC_DRAW_RECT,
     RC_DRAW_REF,
+    RC_DRAW_TILE,
 
     RC_END_LIST
 } renderCmdType_t;
@@ -198,6 +240,17 @@ typedef struct
     uint32_t *indices;
     uint32_t usedIndices;
     uint32_t numIndices;
+
+    uint32_t numDLights;
+
+    uint32_t texId;
+    uint32_t vaoId;
+    uint32_t vboId;
+    uint32_t iboId;
+    uint32_t shaderId;
+
+    shader_t *frameShader;
+    vertexCache_t *frameCache;
 } renderBackend_t;
 
 extern renderBackend_t backend;
@@ -216,7 +269,14 @@ typedef struct
     float rotation;
     float size;
     qboolean filled;
+    nhandle_t texture;
 } drawRectCmd_t;
+
+typedef struct
+{
+    renderCmdType_t id;
+    drawVert_t vertices[6];
+} drawTileCmd_t;
 
 typedef struct
 {
@@ -229,105 +289,20 @@ typedef struct
 typedef struct
 {
     renderCmdType_t id;
-    float vpm[16];
-    renderEntityDef_t *ref;
+    renderEntityRef_t *ref;
 } drawRefCmd_t;
 
-#if 0
+
 typedef struct
 {
-    mat4 projection;
-    mat4 viewMatrix;
-    mat4 vpm;
+    mat4_t projection;
+    mat4_t viewMatrix;
+    mat4_t vpm;
 
-    vec3 cameraPos;
+    vec3_t cameraPos;
     float rotation;
     float zoomLevel;
-    float aspectRatio;
-    float rotationSpeed;
-    float moveSpeed;
 } camera_t;
-
-void RC_CalculateView(camera_t *camera);
-#endif
-
-class Camera
-{
-private:
-    mutable glm::mat4 m_ProjectionMatrix;
-    mutable glm::mat4 m_ViewMatrix;
-    mutable glm::mat4 m_ViewProjectionMatrix;
-    mutable glm::mat4 m_ModelViewMatrix;
-    mutable glm::vec3 m_CameraPos;
-    mutable float m_Rotation = 0.0f;
-    mutable float m_ZoomLevel = 3.0f;
-    float m_AspectRatio;
-    float m_CameraRotationSpeed = 0.20f;
-    float m_CameraSpeed = 0.25f;
-
-    // only reason why it isn't a singleton is because MAYBE co-op, MAYBE...
-public:
-    Camera(float left, float right, float bottom, float top);
-    Camera(const Camera &) = delete;
-    Camera(Camera &&) = default;
-    ~Camera() = default;
-
-    inline float GetZoom(void) const { return m_ZoomLevel; }
-    inline glm::mat4& GetProjection() const { return m_ProjectionMatrix; }
-    inline glm::mat4& GetViewMatrix() const { return m_ViewMatrix; }
-    inline glm::mat4& GetVPM() const { return m_ViewProjectionMatrix; }
-    inline glm::vec3& GetPos() const { return m_CameraPos; }
-    inline glm::mat4& GetModelViewMatrix() const { return m_ModelViewMatrix; }
-    inline float& GetRotation() const { return m_Rotation; }
-    inline float GetRotationSpeed() const { return m_CameraRotationSpeed; }
-    inline float GetSpeed() const { return m_CameraSpeed; }
-    inline glm::mat4& CalcMVP(const glm::vec3& translation) const
-    {
-        glm::mat4 model = glm::translate(m_ViewProjectionMatrix, translation);
-        static glm::mat4 mvp = m_ProjectionMatrix * m_ViewProjectionMatrix * model;
-        return mvp;
-    }
-    inline glm::mat4 CalcVPM() const { return m_ProjectionMatrix * m_ViewMatrix; }
-    constexpr inline Camera& operator=(const Camera& other)
-    {
-        m_ProjectionMatrix = m_ProjectionMatrix;
-        m_ViewMatrix = m_ViewMatrix;
-        m_ViewProjectionMatrix = m_ViewProjectionMatrix;
-        m_CameraPos = m_CameraPos;
-        m_Rotation = m_Rotation;
-        m_ZoomLevel = m_ZoomLevel;
-        m_AspectRatio = m_AspectRatio;
-        m_CameraRotationSpeed = m_CameraRotationSpeed;
-        m_CameraSpeed = m_CameraSpeed;
-        return *this;
-    }
-
-    void ZoomIn(void);
-    void ZoomOut(void);
-    void RotateRight(void);
-    void RotateLeft(void);
-    void MoveUp(void);
-    void MoveDown(void);
-    void MoveLeft(void);
-    void MoveRight(void);
-
-    void Resize(void);
-    void SetProjection(float left, float right, float bottom, float top);
-    void CalculateViewMatrix();
-};
-
-
-#if 0
-struct VKContext
-{
-    VkInstance instance;
-    VkSurfaceKHR surface;
-    VkApplicationInfo appInfo;
-    VkInstanceCreateInfo createInfo;
-    VkPhysicalDevice device;
-    VkXcbSurfaceCreateInfoKHR surfaceInfo;
-};
-#endif
 
 #define RS_DRAWING          0x0000
 #define RS_IN_FRAMBUFFER    0x2000
@@ -335,12 +310,11 @@ struct VKContext
 #define MAX_RENDER_ENTITIES 1024
 #define MAX_RENDER_TEXTURES 1024
 #define MAX_RENDER_SHADERS 1024
+#define MAX_RENDER_CACHES 256
 
 typedef struct renderGlobals_s
 {
-    renderGlobals_s(void) = default;
-
-    Camera camera;
+    camera_t camera;
 
     SDL_Window *window;
     SDL_GLContext context;
@@ -349,74 +323,110 @@ typedef struct renderGlobals_s
     uint32_t numShaders;
 
     // index 0 is always the local player entity
-    renderEntityDef_t *entityDefs[MAX_RENDER_ENTITIES];
+    renderEntityRef_t *entityDefs[MAX_RENDER_ENTITIES];
     uint32_t numEntityDefs;
+
+    renderEntityRef_t *plRef;
 
     texture_t *textures[MAX_RENDER_TEXTURES];
     uint32_t numTextures;
 
+    vertexCache_t *vertexCaches[MAX_RENDER_CACHES];
+    uint32_t numVertexCaches;
+
     uint32_t stateBits;
     uint32_t drawMode;
+
+    tileSurf_t *tileSurf;
+
+    nmap_t *mapData;
+
+    ImGuiIO *imguiIO;
 } renderGlobals_t;
 
 #define VEC3_TO_GLM(x) glm::vec3((x)[0],(x)[1],(x)[2])
 #define VEC4_TO_GLM(x) glm::vec4((x)[0],(x)[1],(x)[2],(x)[3])
 
+void RB_SetProjection(float left, float right, float bottom, float top);
+void RB_ZoomIn(void);
+void RB_ZoomOut(void);
+void RB_RotateLeft(void);
+void RB_RotateRight(void);
+void RB_MakeViewMatrix(void);
+void RB_MoveUp(void);
+void RB_MoveLeft(void);
+void RB_MoveRight(void);
+void RB_MoveDown(void);
+void RB_CameraInit(void);
+void RB_CameraResize(void);
+
 qboolean R_IsInView(const vec3_t pos);
 
-GO_AWAY_MANGLE void RE_InitSettings_f(void);
+void RE_InitSettings_f(void);
 
-GO_AWAY_MANGLE shaderBuffer_t *R_InitShaderBuffer(uint32_t GLtarget, uint32_t bufSize, shader_t *shader, const char *block);
-GO_AWAY_MANGLE void R_UpdateShaderBuffer(const void *data, shaderBuffer_t *buf);
-GO_AWAY_MANGLE void R_ShutdownShaderBuffer(shaderBuffer_t *buf);
-GO_AWAY_MANGLE void R_BindShaderBuffer(const shaderBuffer_t *buf);
-GO_AWAY_MANGLE void R_UnbindShaderBuffer(void);
-GO_AWAY_MANGLE void RE_ShutdownShaderBuffers(void);
+shaderBuffer_t *R_InitShaderBuffer(uint32_t GLtarget, uint32_t bufSize, shader_t *shader, const char *block);
+void R_UpdateShaderBuffer(const void *data, shaderBuffer_t *buf);
+void R_ShutdownShaderBuffer(shaderBuffer_t *buf);
+void R_BindShaderBuffer(const shaderBuffer_t *buf);
+void R_UnbindShaderBuffer(void);
+void RE_ShutdownShaderBuffers(void);
 
-GO_AWAY_MANGLE texture_t *R_InitTexture(const char *filename);
-GO_AWAY_MANGLE void RE_ShutdownTextures(void);
-GO_AWAY_MANGLE void R_UpdateTextures(void);
-GO_AWAY_MANGLE void R_BindTexture(const texture_t *texture, uint32_t slot = 0);
-GO_AWAY_MANGLE void R_UnbindTexture(void);
-GO_AWAY_MANGLE void R_InitTexBuffer(texture_t *tex, bool withFramebuffer = false);
-GO_AWAY_MANGLE uint32_t R_TexFormat(void);
-GO_AWAY_MANGLE uint32_t R_TexMagFilter(void);
-GO_AWAY_MANGLE uint32_t R_TexMinFilter(void);
-GO_AWAY_MANGLE uint32_t R_TexFilter(void);
-GO_AWAY_MANGLE texture_t *R_GetTexture(const char *name);
+texture_t *R_InitTexture(const char *filename);
+void RE_ShutdownTextures(void);
+void R_UpdateTextures(void);
+void R_BindTexture(const texture_t *texture);
+void R_UnbindTexture(void);
+void R_InitTexBuffer(texture_t *tex, qboolean withFramebuffer);
+uint32_t R_TexFormat(void);
+uint32_t R_TexMagFilter(void);
+uint32_t R_TexMinFilter(void);
+uint32_t R_TexFilter(void);
+texture_t *R_GetTexture(const char *name);
 
-GO_AWAY_MANGLE void R_RecompileShader(shader_t *shader, const char **vertexMacros, const char **fragmentMacros,
-                                                        uint32_t numVertexMacros, uint32_t numFragmentMacros);
-GO_AWAY_MANGLE shader_t *R_InitShader(const char *vertexFile, const char *fragmentFile, const char **vertexMacros = NULL,
-                                                                                        const char **fragmentMacros = NULL,
-                                                                                        uint32_t numVertexMacros = 0,
-                                                                                        uint32_t numFragmentMacros = 0);
-GO_AWAY_MANGLE void RE_ShutdownShaders(void);
-GO_AWAY_MANGLE void R_BindShader(const shader_t *shader);
-GO_AWAY_MANGLE void R_UnbindShader(void);
-GO_AWAY_MANGLE int32_t R_GetUniformLocation(shader_t *shader, const char *name);
+void R_RecompileShader(shader_t *shader);
+void R_ShutdownShader(shader_t *shader);
+shader_t *R_InitShader(const char *vertexFile, const char *fragmentFile);
+void RE_ShutdownShaders(void);
+void R_BindShader(const shader_t *shader);
+void R_UnbindShader(void);
+int32_t R_GetUniformLocation(shader_t *shader, const char *name);
 
-inline void R_SetBool(shader_t *shader, const char *name, bool value)
+#define GLM_MAT4_VALUE_PTR(m) ({float o[16];memcpy(o,(m),sizeof(o));o;})
+
+GDR_INLINE void R_SetBool(shader_t *shader, const char *name, qboolean value)
 { nglUniform1iARB(R_GetUniformLocation(shader, name), (GLint)value); }
-inline void R_SetInt(shader_t *shader, const char *name, int32_t value)
+GDR_INLINE void R_SetInt(shader_t *shader, const char *name, int32_t value)
 { nglUniform1iARB(R_GetUniformLocation(shader, name), value); }
-inline void R_SetIntArray(shader_t *shader, const char *name, int32_t *values, uint32_t count)
+GDR_INLINE void R_SetIntArray(shader_t *shader, const char *name, int32_t *values, uint32_t count)
 { nglUniform1ivARB(R_GetUniformLocation(shader, name), count, values); }
-inline void R_SetFloat(shader_t *shader, const char *name, float value)
+GDR_INLINE void R_SetFloat(shader_t *shader, const char *name, float value)
 { nglUniform1fARB(R_GetUniformLocation(shader, name), value); }
-inline void R_SetFloat2(shader_t *shader, const char *name, const glm::vec2& value)
-{ nglUniform2fARB(R_GetUniformLocation(shader, name), value.x, value.y); }
-inline void R_SetFloat3(shader_t *shader, const char *name, const glm::vec3& value)
-{ nglUniform3fARB(R_GetUniformLocation(shader, name), value.x, value.y, value.z); }
-inline void R_SetFloat4(shader_t *shader, const char *name, const glm::vec4& value)
-{ nglUniform4fARB(R_GetUniformLocation(shader, name), value.r, value.g, value.b, value.a); }
-inline void R_SetMatrix4(shader_t *shader, const char *name, const glm::mat4& value)
-{ nglUniformMatrix4fvARB(R_GetUniformLocation(shader, name), 1, GL_FALSE, glm::value_ptr(value)); }
+GDR_INLINE void R_SetFloat2(shader_t *shader, const char *name, const vec2_t value)
+{ nglUniform2fARB(R_GetUniformLocation(shader, name), value[0], value[1]); }
+GDR_INLINE void R_SetFloat3(shader_t *shader, const char *name, const vec3_t value)
+{ nglUniform3fARB(R_GetUniformLocation(shader, name), value[0], value[1], value[2]); }
+GDR_INLINE void R_SetFloat4(shader_t *shader, const char *name, const vec4_t value)
+{ nglUniform4fARB(R_GetUniformLocation(shader, name), value[0], value[1], value[2], value[3]); }
+GDR_INLINE void R_SetMatrix4(shader_t *shader, const char *name, const mat4 value)
+{ nglUniformMatrix4fvARB(R_GetUniformLocation(shader, name), 1, GL_FALSE, GLM_MAT4_VALUE_PTR(value)); }
+
+
+void RB_ExecuteCommands(void);
+void RE_IssueRenderCommands(void);
 
 void RB_FlushVertices(void);
 void RB_PushRect(const drawVert_t *vertices);
 void RB_DrawRect(const drawRectCmd_t *cmd);
 void RB_DrawEntity(const drawRefCmd_t *cmd);
+void RB_DrawTile(const drawTileCmd_t *cmd);
+void RE_AddTile(const drawVert_t *vertices);
+void RE_RenderTilemap(void);
+
+void *R_FrameAlloc(uint32_t size);
+void R_InitFrameMemory(void);
+void R_ShutdownFrameMemory(void);
+
+void RB_ConvertCoords(drawVert_t *v);
 
 void load_gl_procs(NGLloadproc load);
 
@@ -449,11 +459,13 @@ extern cvar_t *r_bloomOn;
 extern cvar_t *r_useExtensions;
 extern cvar_t *r_fovWidth;
 extern cvar_t *r_fovHeight;
+extern cvar_t *r_aspectRatio;
 
 // for the truly old-school peeps
-extern cvar_t *r_enableBuffers;     // forces immediate mode rendering
-extern cvar_t *r_enableShaders;     // forces stuff like glPushAttrib
+extern cvar_t *r_enableBuffers;     // if 0, forces immediate mode rendering
+extern cvar_t *r_enableShaders;     // if 0, forces deprecated matrix operations
 
+#ifdef __cplusplus
 // using libraries without using custom allocators is annoying, so this is here
 #undef new
 #undef delete
@@ -470,6 +482,7 @@ inline void *operator new[]( size_t s ) {
 inline void operator delete[]( void *p ) {
 	ri.Mem_Free( p );
 }
+#endif
 
 // texture details
 typedef struct {
@@ -485,34 +498,21 @@ enum {
     low,
     msdos
 };
-inline constexpr textureDetail_t textureDetails[] = {
-    {"GPUvsGod", GPUvsGod, (int)sizeof("GPUvsGod")},
-    {"extreme",  extreme,  (int)sizeof("extreme")},
-    {"high",     high,     (int)sizeof("high")},
-    {"medium",   medium,   (int)sizeof("medium")},
-    {"low",      low,      (int)sizeof("low")},
-    {"msdos",    msdos,    (int)sizeof("msdos")}
-};
+
+extern const textureDetail_t textureDetails[6];
 
 GDR_INLINE uint32_t R_GetTextureDetail(void)
 {
-    for (const auto& i : textureDetails) {
-        if (!N_stricmpn(i.string, r_textureDetail->s, i.string_len))
-            return i.num;
+    uint32_t i;
+
+    for (i = 0; i < arraylen(textureDetails); ++i) {
+        if (!N_stricmpn(textureDetails[i].string, r_textureDetail->s, textureDetails[i].string_len))
+            return textureDetails[i].num;
     }
     ri.Con_Printf(WARNING, "r_textureDetail is invalid, setting to medium");
     N_strncpyz(r_textureDetail->s, "medium", sizeof("medium"));
     return medium;
 }
-
-GO_AWAY_MANGLE void *R_FrameAlloc(uint32_t size);
-GO_AWAY_MANGLE void *R_ClearedFrameAlloc(uint32_t size);
-GO_AWAY_MANGLE void *R_StaticAlloc(uint32_t size);
-GO_AWAY_MANGLE void *R_ClearedFrameAlloc(uint32_t size);
-GO_AWAY_MANGLE void R_InitFrameMemory(void);
-GO_AWAY_MANGLE void R_ShutdownFrameMemory(void);
-GO_AWAY_MANGLE void R_ToggleFrame(void);
-GO_AWAY_MANGLE uint64_t R_CountFrameMemory(void);
 
 extern const mat4_t mat4_identity;
 

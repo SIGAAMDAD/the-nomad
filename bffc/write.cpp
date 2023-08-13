@@ -8,20 +8,14 @@
 
 static const char *defName = DEFAULT_BFF_GAMENAME;
 
+void strncpyz(char *dst, const char *src, size_t n)
+{
+	strncpy(dst, src, n);
+	dst[n - 1] = '\0';
+}
+
 static void GetInfo(const json& data, bffinfo_t* info, const char *path)
 {
-	if (!data.contains("info")) {
-		BFF_Error("WriteBFF: an info json node is required for bff compilation");
-	}
-
-	if (data["info"].contains("name")) {
-		const std::string gamename = data["info"]["name"];
-		info->bffGamename = strdup(gamename.c_str());
-	}
-	else {
-		info->bffGamename = (char *)defName;
-		Con_Printf("WARNING: no name provided in info section, using default bffGamename value of %s", DEFAULT_BFF_GAMENAME);
-	}
 }
 
 #ifndef O_BINARY
@@ -172,7 +166,8 @@ void WriteBFF(const char *outfile, const char *jsonfile, int compression)
 	fclose(jsonfp);
 
 	archive = (bff_t *)SafeMalloc(sizeof(*archive), "archive");
-	archive->bffGamename = strdup(data.at("name").get<std::string>().c_str());
+	memset(archive->bffGamename, 0, sizeof(archive->bffGamename));
+	strncpyz(archive->bffGamename, data.at("name").get<std::string>().c_str(), sizeof(archive->bffGamename));
 	archive->numChunks = data.at("files").size();
 	archive->chunkList = new bff_chunk_t[archive->numChunks];
 
@@ -194,10 +189,8 @@ void WriteBFF(const char *outfile, const char *jsonfile, int compression)
 
 	fp = SafeOpen(outfile, "wb");
 
-	uint64_t len = strlen(archive->bffGamename) + 1;
 	SafeWrite(fp, &header, sizeof(header));
-	SafeWrite(fp, &len, sizeof(uint64_t));
-	SafeWrite(fp, archive->bffGamename, len);
+	SafeWrite(fp, archive->bffGamename, sizeof(archive->bffGamename));
 
 	uint64_t index = 0;
 	for (const auto& i : data.at("files")) {

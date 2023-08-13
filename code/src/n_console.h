@@ -66,8 +66,8 @@ typedef struct cvar_s
     qboolean modified;
     cvarHandle_t id;
 
-	struct cvar_s *prev = NULL;
-    struct cvar_s *next = NULL;
+	struct cvar_s *prev;
+    struct cvar_s *next;
 	struct cvar_s *hashNext;
 	struct cvar_s *hashPrev;
 } cvar_t;
@@ -106,7 +106,6 @@ void Cvar_SetStringValue(const char *name, const char *value);
 void Cvar_SetBooleanValue(const char *name, qboolean value);
 
 #ifndef Q3_VM
-
 typedef enum {
     DEV = 0,
     INFO,
@@ -116,6 +115,9 @@ typedef enum {
     
     NONE // reserved for Con_Printf without the level specified, don't use
 } loglevel_t;
+void GDR_DECL Con_Printf(loglevel_t level, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
+#endif
+#ifdef __cplusplus
 
 #define MAX_MSG_SIZE (1*1024*1024)
 #define MAX_BUFFER_SIZE (3*1024*1024)
@@ -131,8 +133,6 @@ void GDR_DECL Con_Printf(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 
 void GDR_DECL Con_Error(bool exit, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
 eastl::vector<char>& Con_GetBuffer(void);
 #endif
-
-#ifndef Q3_VM
 
 // credits to michaelfm1211 for writing this
 // use a SGR parameter not supported by colors.h. ex: alternate fonts
@@ -247,7 +247,6 @@ eastl::vector<char>& Con_GetBuffer(void);
 // enter a RGB value
 #define C_RGB(r, g, b) "\x1b[38;2;"#r";"#g";"#b"m"
 #define C_BG_RGB(r, g, b) "\x1b[48;2;"#r";"#g";"#b"m"
-#endif
 
 #endif
 

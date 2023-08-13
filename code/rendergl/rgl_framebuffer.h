@@ -12,10 +12,10 @@ typedef enum {
     TSAA // temporal sample
 } multisamplingType_t;
 
-GO_AWAY_MANGLE void RE_InitFramebuffers(void);
-GO_AWAY_MANGLE void RE_ShutdownFramebuffers(void);
-GO_AWAY_MANGLE void RE_UpdateFramebuffers(void);
-GO_AWAY_MANGLE void RE_BeginFramebuffer(void);
-GO_AWAY_MANGLE void RE_EndFramebuffer(void);
+void RE_InitFramebuffers(void);
+void RE_ShutdownFramebuffers(void);
+void RE_UpdateFramebuffers(void);
+void RE_BeginFramebuffer(void);
+void RE_EndFramebuffer(void);
 
 #endif

@@ -26,7 +26,7 @@
 #include "imgui.h"      // IMGUI_IMPL_API
 
 // Backend API
-extern "C" IMGUI_IMPL_API bool     ImGui_ImplOpenGL3_Init(const char* glsl_version = nullptr);
+extern "C" IMGUI_IMPL_API bool     ImGui_ImplOpenGL3_Init(const char* glsl_version = NULL);
 extern "C" IMGUI_IMPL_API void     ImGui_ImplOpenGL3_Shutdown();
 extern "C" IMGUI_IMPL_API void     ImGui_ImplOpenGL3_NewFrame();
 extern "C" IMGUI_IMPL_API void     ImGui_ImplOpenGL3_RenderDrawData(ImDrawData* draw_data);

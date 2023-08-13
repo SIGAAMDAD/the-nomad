@@ -57,8 +57,8 @@ static qboolean Map_LoadSprites(const json_string& source, nmap_t *mapData)
     json_string path = source;
     Con_Printf(DEBUG, "tileset path: %s", path.c_str());
 
-    // submit the tileset to the rendering engine    
-    RE_SubmitMapTilesheet(path.c_str(), BFF_FetchInfo());
+    // submit the tileset to the rendering engine
+    mapData->texHandle = RE_RegisterTexture(path.c_str());
 
     // parse the level tsj buffer
     try {
@@ -83,10 +83,17 @@ static void Map_GenTextureCoords(const glm::vec2& sheetDims, const glm::vec2& sp
     const glm::vec2 min = { (coords.x * spriteDims.x) / sheetDims.x, (coords.y * spriteDims.y) / sheetDims.x };
     const glm::vec2 max = { ((coords.x + 1) * spriteDims.x) / sheetDims.y, ((coords.y + 1) * spriteDims.y) / sheetDims.y };
 
-    tex[0] = { min.x, min.y };
-    tex[1] = { max.x, max.y };
-    tex[2] = { max.x, max.y };
-    tex[3] = { min.x, max.y };
+    tex[0][0] = min.x;
+    tex[0][1] = min.y;
+
+    tex[1][0] = max.x;
+    tex[1][1] = max.y;
+    
+    tex[2][0] = max.x;
+    tex[2][1] = max.y;
+
+    tex[3][0] = min.x;
+    tex[3][1] = max.y;
 }
 
 static void Map_LoadTiles(nmap_t *mapData)
@@ -252,7 +259,7 @@ nmap_t *LVL_LoadMap(const char *tmjFile)
     return mapData;
 }
 
-const glm::vec2* Map_GetSpriteCoords(uint32_t gid)
+const vec2_t* Map_GetSpriteCoords(uint32_t gid)
 {
     const uint64_t totalSprites = Game::Get()->c_map->tileCountX * Game::Get()->c_map->tileCountY;
     return gid > totalSprites || gid < Game::Get()->c_map->firstGid ? NULL /* invalid gid */ : Game::Get()->c_map->tileCoords[gid];

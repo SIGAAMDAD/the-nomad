@@ -1,4 +1,7 @@
 #include "n_shared.h"
+#include "code/rendergl/rgl_public.h"
+
+extern renderImport_t ri;
 
 const byte locase[ 256 ] = {
 	0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
@@ -532,6 +535,13 @@ void N_strncpyz (char *dest, const char *src, size_t count)
 		Com_Error( ERR_FATAL, "N_strncpyz: NULL src");
 	if (count < 1)
 		Com_Error( ERR_FATAL, "N_strncpyz: bad count");
+#elif defined(GDR_DLLCOMPILE)
+	if (!dest)
+		ri.N_Error("N_strncpyz: NULL dest");
+	if (!src)
+		ri.N_Error("N_strncpyz: NULL src");
+	if (count < 1)
+		ri.N_Error("N_strncpyz: bad count");
 #else
 	if (!dest)
 		N_Error("N_strncpyz: NULL dest");
@@ -681,6 +691,8 @@ void N_strcat(char *dest, size_t size, const char *src)
 	if (l1 >= size)
 #ifdef Q3_VM
 		Com_Error( ERR_FATAL, "N_strcat: already overflowed" );
+#elif defined(GDR_DLLCOMPILE)
+		ri.N_Error("N_strcat: already overflowed");
 #else
 		N_Error("N_strcat: already overflowed");
 #endif

@@ -5,7 +5,7 @@
 	#pragma once
 #endif
 
-#ifndef Q3_VM
+#ifdef __cplusplus
 
 #define BFF_VERSION_MAJOR 0
 #define BFF_VERSION_MINOR 1
@@ -69,6 +69,21 @@ enum : int64_t
 	TEX_PNG,
 };
 
+#else
+
+#define MAGIC_XOR 0x4ff3ade3
+
+#define MAX_BFF_PATH 256
+#define MAX_BFF_CHUNKNAME 72
+#define MAX_TEXTURE_CHUNKS 128
+#define MAX_LEVEL_CHUNKS 128
+#define MAX_SOUND_CHUNKS 128
+#define MAX_SCRIPT_CHUNKS 64
+#define MAX_MAP_SPAWNS 1024
+#define MAX_MAP_LIGHTS 1024
+
+#endif
+
 typedef struct
 {
 	char name[MAX_BFF_CHUNKNAME];
@@ -109,7 +124,7 @@ typedef struct
 
 	int64_t fileSize;
 	int64_t fileType;
-	unsigned char *fileBuffer = NULL;
+	unsigned char *fileBuffer;
 } bfftexture_t;
 
 
@@ -139,8 +154,8 @@ typedef struct
 
 typedef struct
 {
-	int64_t ident = BFF_IDENT;
-	int64_t magic = HEADER_MAGIC;
+	int64_t ident;
+	int64_t magic;
 	int64_t numChunks;
 	int64_t compression;
 	int16_t version;
@@ -165,10 +180,6 @@ bffscript_t* BFF_FetchScript(const char *name);
 bfflevel_t* BFF_FetchLevel(const char *name);
 bfftexture_t* BFF_FetchTexture(const char *name);
 
-const eastl::vector<const bfflevel_t*>& BFF_OrderLevels(const bffinfo_t *info);
-const eastl::vector<const bfftexture_t*>& BFF_OrderTextures(const bffinfo_t *info);
-
 void G_LoadBFF(const char *bffname);
-#endif
 
 #endif

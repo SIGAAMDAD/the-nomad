@@ -30,7 +30,8 @@ Index of this file:
 #define IMGUI_DEFINE_MATH_OPERATORS
 #endif
 
-#include "rgl_local.h"
+#include "ngl.h"
+#include "rgl_public.h"
 
 
 #include "imgui.h"

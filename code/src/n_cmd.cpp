@@ -49,7 +49,7 @@ Adds a \n to the text
 void Cbuf_InsertText( const char *text )
 {
 	uint64_t len;
-	uint64_t i;
+	int64_t i;
 
 	len = strlen( text ) + 1;
 
@@ -116,7 +116,7 @@ void Cbuf_Execute(void)
 		text = (char *)cmd_text.data;
 
 		quotes = 0;
-		for ( i = 0 ; i< cmd_text.cursize ; i++ ) {
+		for ( i = 0 ; i < cmd_text.cursize ; i++ ) {
 			if (text[i] == '"')
 				quotes++;
 
@@ -200,17 +200,12 @@ uint32_t Cmd_Argc(void)
 
 void Cmd_Clear(void)
 {
-	boost::unique_lock<boost::mutex> lock{cmdLock};
-	memset(cmd_cmd, 0, sizeof(cmd_cmd));
-	memset(cmd_argv, 0, sizeof(cmd_argv));
-	memset(cmd_tokenized, 0, sizeof(cmd_tokenized));
-	lock.unlock();
+	cmd_cmd[0] = '\0';
 	cmd_argc.store(0);
 }
 
 const char *Cmd_Argv(uint32_t index)
 {
-	boost::unique_lock<boost::mutex> lock{cmdLock};
     if ((unsigned)index >= cmd_argc.load()) {
         return "";
     }
@@ -220,7 +215,7 @@ const char *Cmd_Argv(uint32_t index)
 static cmd_t* Cmd_FindCommand(const char *name)
 {
     for (cmd_t *cmd = cmd_functions; cmd; cmd = cmd->next) {
-        if (N_streq(cmd->name, name)) {
+        if (!N_stricmp(name, cmd->name)) {
             return cmd;
 		}
     }
@@ -326,7 +321,10 @@ void Cmd_ExecuteText(const char *str)
     if (!*str) {
         return; // nothing to do
     }
-	Cmd_TokenizeString(str+1);
+	if (*str == '/' || *str == '\\') {
+		str++;
+	}
+	Cmd_TokenizeString(str);
 	if (!Cmd_Argc()) {
 		return; // no tokens
 	}
@@ -362,7 +360,6 @@ void Cmd_SetHelpString(const char *name, const char *help)
 
 void Cmd_AddCommand(const char *name, cmdfunc_t func)
 {
-	boost::unique_lock<boost::mutex> lock{cmdLock};
     cmd_t* cmd;
     if (Cmd_FindCommand(name)) {
         if (func)
@@ -382,7 +379,6 @@ void Cmd_AddCommand(const char *name, cmdfunc_t func)
 
 void Cmd_RemoveCommand(const char *name)
 {
-	boost::unique_lock<boost::mutex> lock{cmdLock};
     cmd_t *cmd, **back;
 
     back = &cmd_functions;
@@ -407,7 +403,6 @@ void Cmd_RemoveCommand(const char *name)
 
 void Cmd_SetCommandCompletionFunc(const char *name, completionFunc_t fn)
 {
-	boost::unique_lock<boost::mutex> lock{cmdLock};
 	cmd_t *cmd;
 
 	for (cmd = cmd_functions; cmd; cmd = cmd->next) {
@@ -420,7 +415,6 @@ void Cmd_SetCommandCompletionFunc(const char *name, completionFunc_t fn)
 
 char* Cmd_ArgsFrom(int32_t arg)
 {
-	boost::unique_lock<boost::mutex> lock{cmdLock};
     static char cmd_args[BIG_INFO_STRING], *s;
     int32_t i;
 
@@ -457,25 +451,41 @@ static void Cmd_Exit_f(void)
 
 static void Cmd_Exec_f(void)
 {
+	file_t f;
+	char buffer[MAX_CMD_LINE];
+	uint64_t numlines;
+	const char *path;
+
 	if (Cmd_Argc() < 1) {
 		Con_Printf("usage: exec <script file> [args...] (maximum of 16 args)");
 		return;
 	}
-
+#if 0
 	char args[16][256];
-	for (int32_t i = 1; i < Cmd_Argc(); i++)
-		N_strncpyz(args[i], Cmd_ArgsFrom(i), sizeof(*args));
+	for (int32_t i = 2; i < Cmd_Argc(); i++)
+		N_strncpyz(args[i], Cmd_Argv(i), sizeof(*args));
+#endif
 
-	const char *path = Cmd_Argv(0);
-	char *buffer;
-	FS_LoadFile(path, (void **)&buffer);
+	path = Cmd_Argv(1);
+	f = FS_FOpenRead(path);
+	if (f == FS_INVALID_HANDLE) {
+		Con_Printf("Couldn't exec %s", path);
+		return;
+	}
 
-	Cbuf_InsertText(buffer);
-	Cbuf_Execute();
+	numlines = FS_FileLength(f);
+	for (uint64_t i = 0; i < numlines; i++) {
+		FS_ReadLine(buffer, sizeof(buffer), f);
+		Cmd_ExecuteText(buffer);
+	}
+
+	FS_FClose(f);
 }
 
 void Cmd_Init(void)
 {
+	Cbuf_Init();
+
     Cmd_AddCommand("cmdlist", Cmd_List_f);
     Cmd_AddCommand("echo", Cmd_Echo_f);
 	Cmd_AddCommand("exec", Cmd_Exec_f);
@@ -483,8 +493,4 @@ void Cmd_Init(void)
 	Cmd_AddCommand("run", Cmd_Exec_f);
 	Cmd_AddCommand("execq", Cmd_Exec_f);
 //	Cmd_SetCommandCompletionFunc("exec", Cmd_CompleteCfgName);
-
-	cmd_text.cursize = 0;
-	cmd_text.maxsize = MAX_CMD_BUFFER;
-	cmd_text.data = NULL;
 }

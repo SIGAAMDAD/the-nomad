@@ -5,8 +5,6 @@
 
 #include "../src/n_shared.h"
 
-typedef int32_t nhandle_t;
-
 typedef struct
 {
 #ifdef _NOMAD_DEBUG
@@ -38,7 +36,6 @@ typedef struct
     void (*Z_CleanCache)(void);
     void (*Z_CheckHeap)(void);
     void (*Z_ClearZone)(void);
-    void (*Z_Print)(bool all);
     uint64_t (*Z_FreeMemory)(void);
     uint32_t (*Z_NumBlocks)(int tag);
     uint64_t (*Z_BlockSize)(void *p);
@@ -48,12 +45,9 @@ typedef struct
     void *(*Mem_Alloc)(const uint32_t size);
     void (*Mem_Free)(void *ptr);
     uint32_t (*Mem_Msize)(void *ptr);
-    bool (*Mem_DefragIsActive)(void);
     void (*Mem_AllocDefragBlock)(void);
 
-    eastl::vector<char>& (*Con_GetBuffer)(void);
     void (GDR_DECL *Con_Printf)(loglevel_t level, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
-    void (GDR_DECL *Con_Error)(bool exit, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
     const char *(GDR_DECL *va)(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
     void GDR_NORETURN (GDR_DECL *N_Error)(const char *err, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
 
@@ -91,7 +85,7 @@ typedef struct
 
     void GDR_NORETURN (*Sys_Exit)(int code);
 
-    const glm::vec2* (*Map_GetSpriteCoords)(uint32_t gid);
+    const vec2_t* (*Map_GetSpriteCoords)(uint32_t gid);
 
     uint64_t (*FS_Write)(const void *buffer, uint64_t size, file_t f);
     uint64_t (*FS_Read)(void *buffer, uint64_t size, file_t);
@@ -105,6 +99,7 @@ typedef struct
     void (*FS_FreeFile)(void *buffer);
     uint64_t (*FS_LoadFile)(const char *path, void **buffer);
     char **(*FS_GetCurrentChunkList)(uint64_t *numchunks);
+    char **(*FS_ListFiles)(const char *path, const char *extension, uint64_t *numfiles);
 
     const nmap_t *(*G_GetCurrentMap)(void);
 
@@ -171,6 +166,18 @@ typedef struct
     int (*SDL_CondWaitTimeout)(SDL_cond *cond, SDL_mutex *mutex, Uint32 ms);
 } renderImport_t;
 
+typedef struct renderEntityRef_s renderEntityRef_t;
+typedef struct
+{
+    vec4_t color;
+    vec3_t pos;
+    
+    float size;
+    float rotation;
+    qboolean filled;
+    nhandle_t texture;
+} renderRect_t;
+
 // rendering engine interface
 GO_AWAY_MANGLE GDR_EXPORT void RE_Init(renderImport_t *import);
 GO_AWAY_MANGLE GDR_EXPORT void RE_Shutdown(void);
@@ -181,5 +188,10 @@ GO_AWAY_MANGLE GDR_EXPORT nhandle_t RE_RegisterTexture(const char *name);
 GO_AWAY_MANGLE GDR_EXPORT nhandle_t RE_RegisterShader(const char *name);
 GO_AWAY_MANGLE GDR_EXPORT qboolean RE_ConsoleIsOpen(void);
 GO_AWAY_MANGLE GDR_EXPORT void RE_ProcessConsoleEvents(SDL_Event *events);
+
+// rendering commands
+GO_AWAY_MANGLE GDR_EXPORT void RE_AddDrawEntity(renderEntityRef_t *ref);
+GO_AWAY_MANGLE GDR_EXPORT void RE_SetColor(const float *color, uint32_t count);
+GO_AWAY_MANGLE GDR_EXPORT void RE_DrawRect(renderRect_t *rect);
 
 #endif

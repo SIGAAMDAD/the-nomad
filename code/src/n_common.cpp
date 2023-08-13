@@ -110,6 +110,9 @@ void Com_UpdateEvents(void)
 	}
 }
 
+static qboolean com_errorEntered = qfalse;
+static jmp_buf abort_;
+
 void GDR_NORETURN GDR_DECL N_Error(const char *err, ...)
 {
     char msg[1024];
@@ -119,7 +122,7 @@ void GDR_NORETURN GDR_DECL N_Error(const char *err, ...)
     stbsp_vsnprintf(msg, sizeof(msg) - 1, err, argptr);
     va_end(argptr);
 
-	Con_Printf(ERROR, "%s", msg);
+	fprintf(stderr, C_RED "ERROR: " C_RESET "%s\n", msg);
 	Sys_Exit(-1);
 }
 
@@ -220,6 +223,7 @@ SDL_Thread *PFN_SDL_CreateThreadWithStackSize(SDL_ThreadFunction fn, const char 
 }
 #endif
 
+
 /*
 Com_FillImport: fills render import functions for the dynamic library to use
 */
@@ -230,13 +234,10 @@ void Com_FillImport(renderImport_t *import)
 #else
     import->Hunk_Alloc = Hunk_Alloc;
 #endif
-//    import->Hunk_Log = Hunk_Log;
-//    import->Hunk_SmallLog = Hunk_SmallLog;
     import->Hunk_MemoryRemaining = Hunk_MemoryRemaining;
-//    import->Hunk_SetMark = Hunk_SetMark;
-//    import->Hunk_ClearToMark = Hunk_ClearToMark;
-//    import->Hunk_CheckMark = Hunk_CheckMark;
-//    import->Hunk_Clear = Hunk_Clear;
+	import->Hunk_AllocateTempMemory = Hunk_AllocateTempMemory;
+	import->Hunk_FreeTempMemory = Hunk_FreeTempMemory;
+
 
     import->Z_Malloc = Z_Malloc;
     import->Z_Calloc = Z_Calloc;
@@ -251,7 +252,6 @@ void Com_FillImport(renderImport_t *import)
 	import->Z_CleanCache = Z_CleanCache;
 	import->Z_CheckHeap = Z_CheckHeap;
 	import->Z_ClearZone = Z_ClearZone;
-	import->Z_Print = Z_Print;
     import->Z_FreeMemory = Z_FreeMemory;
     import->Z_NumBlocks = Z_NumBlocks;
 	import->Z_BlockSize = Z_BlockSize;
@@ -260,15 +260,9 @@ void Com_FillImport(renderImport_t *import)
 	
     import->Mem_Alloc = Mem_Alloc;
     import->Mem_Free = Mem_Free;
-//	import->Mem_Msize = Mem_Msize;
-//	import->Mem_DefragIsActive = Mem_DefragIsActive;
-//	import->Mem_AllocDefragBlock = Mem_AllocDefragBlock;
 
 	// get the specific logger function (it's been overloaded)
 	import->Con_Printf = static_cast<void(*)(loglevel_t, const char *, ...)>(Con_Printf);
-	import->Con_GetBuffer = Con_GetBuffer;
-	import->Con_Error = Con_Error;
-	import->va = va;
     import->N_Error = N_Error;
 
 	import->Cvar_VariableStringBuffer = Cvar_VariableStringBuffer;
@@ -306,7 +300,7 @@ void Com_FillImport(renderImport_t *import)
     import->FS_FClose = FS_FClose;
     import->FS_FreeFile = FS_FreeFile;
     import->FS_LoadFile = FS_LoadFile;
-	import->FS_GetCurrentChunkList = FS_GetCurrentChunkList;
+	import->FS_ListFiles = FS_ListFiles;
 
 	import->Com_GetWindowEvents = Com_GetWindowEvents;
 	import->Com_GetEvents = Com_GetEvents;
@@ -417,18 +411,16 @@ void Com_Init(void)
 	// initialize the command console
 	Cvar_Init();
 	Cmd_Init();
-	Com_LoadConfig();
 	Con_Init();
 
 	FS_InitFilesystem();
+
+	Com_LoadConfig();
 
 	Com_InitEvents();
 	Com_InitJournals();
 
 	Hunk_InitMemory();
-
-	// initialize the filesystem
-	FS_InitFilesystem();
 	
 	// event processing
 	Com_InitJournals();

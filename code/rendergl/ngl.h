@@ -47,7 +47,6 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( GLboolean, glIsDisabled, GLenum cap ) \
     NGL( GLboolean, glIsProgram, GLenum program ) \
     NGL( GLboolean, glIsShader, GLenum shader ) \
-    NGL( GLenum, glGetError, void ) \
     NGL( void, glDrawBuffer, GLenum mode ) \
     NGL( void, glDepthRange, GLclampf zNear, GLclampf zFar ) \
     NGL( void, glDrawBuffers, GLsizei n, const GLenum *bufs ) \
@@ -74,7 +73,6 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glLoadIdentity, void ) \
     NGL( void, glLoadMatrixf, const GLfloat *m ) \
     NGL( void, glLoadMatrixd, const GLdouble *m ) \
-    NGL( void, glDrawArrays, GLenum mode, GLint first, GLsizei count ) \
 
 #define NGL_Debug_Procs \
     NGL( void, glDebugMessageControlARB, GLenum source, GLenum type, GLenum severity, GLsizei count, const GLuint *ids, GLboolean enabled ) \

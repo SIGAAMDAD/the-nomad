@@ -72,13 +72,10 @@ Com_LoadConfig: loads the default configuration file
 */
 void Com_LoadConfig(void)
 {
-    Cbuf_Clear();
-    Cbuf_InsertText("exec " NOMAD_CONFIG);
-    Cbuf_Execute();
+    Cmd_ExecuteText("exec " NOMAD_CONFIG);
 }
 
-void G_LoadSCF(void)
-{
+void G_LoadSCF(void){
     std::ifstream stream("gamedata/default.scf", std::ios::in);
     if (stream.fail()) {
         N_Error("G_LoadSCF: failed to open default.scf");

@@ -1,7 +1,7 @@
 #ifndef __Q3VM_H
 #define __Q3VM_H
 
-#ifndef Q3_VM
+#ifdef __cplusplus
 
 #ifdef __cplusplus
 extern "C" {
@@ -129,7 +129,7 @@ typedef struct vm_s
 void VM_Error(vm_t *vm, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
 void VM_Restart(vm_t *vm);
 
-intptr_t VM_CallInterpreted(vm_t* vm, int command, ...);
+intptr_t VM_CallInterpreted(vm_t* vm, int numargs, int command, ...);
 int VM_CreateInterpreted(vm_t* vm, const char* module, const uint8_t* bytecode, int length,
               intptr_t (*systemCalls)(vm_t*, intptr_t*));
 

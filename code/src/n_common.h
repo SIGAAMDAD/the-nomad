@@ -141,7 +141,7 @@ char* Cmd_ArgsFrom(int32_t index);
 const char* Cmd_Argv(uint32_t index);
 void Cmd_Clear(void);
 const char* GDR_DECL va(const char *format, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
-#ifndef Q3_VM
+#ifdef __cplusplus
 void GDR_DECL Com_Error(vm_t *vm, int level, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 3, 4)));
 #endif
 
@@ -273,6 +273,8 @@ qboolean FS_Initialized(void);
 char **FS_GetCurrentChunkList(uint64_t *numchunks);
 void FS_SetBFFIndex(uint64_t index);
 void FS_FreeFile(void *buffer);
+char **FS_ListFiles(const char *path, const char *extension, uint64_t *numfiles);
+char *FS_ReadLine(char *buf, uint64_t size, file_t f);
 
 extern int CPU_flags;
 
@@ -288,7 +290,7 @@ extern int CPU_flags;
 System calls, engine only stuff
 */
 
-#ifndef Q3_VM
+#ifdef __cplusplus
 typedef struct {
 	time_t mtime;
 	time_t ctime;
@@ -308,6 +310,14 @@ FILE *Sys_FOpen(const char *filepath, const char *mode);
 memoryMap_t *Sys_MapMemory(FILE *fp, qboolean temp, file_t fd);
 // like Sys_MapMemory but frees the mapped file, doesn't close it though
 void Sys_UnmapMemory(memoryMap_t *file);
+
+#define Sys_GetFreeRAM_Physical() (uint64_t)(Sys_GetTotalRAM_Physical() - Sys_GetUsedRAM_Physical())
+#define Sys_GetFreeRAM_Virtual() (uint64_t)(Sys_GetTotalRAM_Virtual() - Sys_GetUsedRAM_Virtual())
+
+uint64_t Sys_GetUsedRAM_Physical(void);
+uint64_t Sys_GetUsedRAM_Virtual(void);
+uint64_t Sys_GetTotalRAM_Virtual(void);
+uint64_t Sys_GetTotalRAM_Physical(void);
 
 fileOffset_t Sys_SeekMappedFile(fileOffset_t offset, uint32_t whence, memoryMap_t *file);
 fileOffset_t Sys_TellMappedFile(memoryMap_t *file);
@@ -330,6 +340,8 @@ char **Sys_ListFiles(const char *directory, const char *extension, const char *f
 const char *Sys_DefaultHomePath(void);
 const char *Sys_DefaultBasePath(void);
 qboolean Sys_RandomBytes(byte *s, uint64_t len);
+
+void GDR_NORETURN Sys_ExitNoMsg(void);
 #endif
 
 #endif

@@ -1,6 +1,6 @@
 ifndef win32
 OS_INCLUDE=-I/usr/include/ -I/usr/local/include/
-COMPILER  =distcc g++
+COMPILER  =distcc gcc
 LIB_PREFIX=dependencies/libs/linux
 DLL_EXT   =so
 else
@@ -12,7 +12,7 @@ endif
 
 ifndef release
 DEBUGDEF  =-D_NOMAD_DEBUG
-FTYPE     =-Og -g -Wl,--demangle
+FTYPE     =-Og -g
 else
 DEBUGDEF  =
 FTYPE     =-Ofast -s
@@ -56,6 +56,9 @@ INTERNAL_OBJS=\
 	$(O)/rendergl/rgl_texture.o \
 	$(O)/rendergl/rgl_framebuffer.o \
 	$(O)/rendergl/rgl_vertexcache.o \
+	$(O)/rendergl/rgl_draw.o \
+	$(O)/rendergl/rgl_cmd.o \
+	$(O)/rendergl/rgl_world.o \
 	$(O)/rendergl/ngl_proc.o \
 	$(O)/rendergl/imgui.o \
 	$(O)/rendergl/imgui_draw.o \
@@ -64,12 +67,19 @@ INTERNAL_OBJS=\
 	$(O)/rendergl/imgui_impl_sdl2.o \
 	$(O)/rendergl/imgui_impl_opengl3.o \
 	$(O)/rendergl/stb_image.o \
+	$(O)/rendergl/n_shared.o \
+	$(O)/rendergl/g_math.o \
+	$(O)/rendergl/cimgui.o \
 
+$(O)/rendergl/%.o: $(SDIR)/src/%.c
+	distcc gcc $(CFLAGS) -shared -fPIC -o $@ -c $<
 $(O)/rendergl/%.o: $(SDIR)/rendergl/%.cpp
-	$(CC) $(CFLAGS) -shared -fPIC -o $@ -c $<
+	distcc g++ $(CFLAGS) -shared -fPIC -o $@ -c $<
+$(O)/rendergl/%.o: $(SDIR)/rendergl/%.c
+	distcc gcc $(CFLAGS) -shared -fPIC -o $@ -c $<
 
 $(LIB): $(INTERNAL_OBJS)
-	$(CC) $(CFLAGS) $(INTERNAL_OBJS)-shared -fPIC -o $(LIB) $(LIB_PREFIX)/libEASTL.a
+	$(CC) $(CFLAGS) $(INTERNAL_OBJS) -shared -fPIC -o $(LIB) $(LIB_PREFIX)/libEASTL.a
 
 clean:
 	rm -rf $(INTERNAL_OBJS)

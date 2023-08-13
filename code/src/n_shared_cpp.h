@@ -62,9 +62,6 @@ typedef eastl::basic_string<char> json_string;
 template<typename T>
 using json_vector = eastl::vector<T, GDRAllocator<T>>;
 
-#include "g_bff.h"
-#include "n_map.h"
-
 template<typename T>
 struct GDRSmartPointerDeleter {
 	constexpr GDRSmartPointerDeleter() = default;
@@ -430,5 +427,8 @@ inline const char* N_ButtonToString(const uint32_t& code)
 	};
 }
 #endif
+
+#include "g_bff.h"
+#include "n_map.h"
 
 #endif
