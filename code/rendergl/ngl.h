@@ -73,6 +73,20 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glLoadIdentity, void ) \
     NGL( void, glLoadMatrixf, const GLfloat *m ) \
     NGL( void, glLoadMatrixd, const GLdouble *m ) \
+    NGL( void, glEnableClientState, GLenum cap ) \
+    NGL( void, glDisableClientState, GLenum cap ) \
+    NGL( void, glTexCoordPointer, GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) \
+    NGL( void, glVertexPointer, GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) \
+    NGL( void, glColorPointer, GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) \
+
+#define NGL_List_Procs \
+    NGL( void, glListBase, GLuint base ) \
+    NGL( void, glNewList, GLuint list, GLenum mode ) \
+    NGL( void, glCallList, GLuint list ) \
+    NGL( void, glCallLists, GLsizei n, GLenum type, const GLvoid *lists ) \
+    NGL( void, glGenLists, GLsizei range ) \
+    NGL( void, glDeleteLists, GLuint list, GLsizei range ) \
+    NGL( void, glEndList, void )
 
 #define NGL_Debug_Procs \
     NGL( void, glDebugMessageControlARB, GLenum source, GLenum type, GLenum severity, GLsizei count, const GLuint *ids, GLboolean enabled ) \

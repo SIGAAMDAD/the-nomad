@@ -170,9 +170,7 @@ COMMON=\
 	$(O)/common/vm.o \
 	$(O)/common/sg_syscalls.o
 SRC=\
-	$(O)/game/g_sound.o \
 	$(O)/game/g_rng.o \
-	$(O)/game/g_math.o \
 	$(O)/game/g_init.o \
 	$(O)/game/g_bff.o \
 	$(O)/game/g_game.o \
@@ -186,6 +184,8 @@ SRC=\
 	$(O)/engine/n_cmd.o \
 	$(O)/engine/n_cvar.o \
 	$(O)/engine/n_history.o \
+	$(O)/engine/n_event.o \
+	$(O)/engine/n_sound.o \
 	$(O)/engine/md4.o \
 	\
 	$(O)/allocator/z_heap.o \
@@ -221,9 +221,11 @@ $(O)/common/%.o: $(SDIR)/sgame/%.cpp
 	$(COMPILE_SRC)
 $(O)/game/%.o: $(SDIR)/src/%.cpp
 	$(COMPILE_SRC)
-$(O)/engine/%.o: $(SDIR)/src/%.cpp
+$(O)/engine/%.o: $(SDIR)/engine/%.cpp
 	$(COMPILE_SRC)
-$(O)/allocator/%.o: $(SDIR)/src/%.cpp
+$(O)/engine/%.o: $(SDIR)/engine/%.c
+	$(COMPILE_SRC)
+$(O)/allocator/%.o: $(SDIR)/allocator/%.cpp
 	$(COMPILE_SRC)
 $(O)/sys/%.o: $(SYS_DIR)/%.cpp
 	$(COMPILE_SRC)

@@ -143,8 +143,7 @@ void DecompileBFF(const char *filepath)
 	if (header.version != BFF_VERSION) {
 		Con_Printf("======== WARNING: Version found in header isn't the same as this application's ========\n");
 	}
-
-	SafeRead(fp, archive->bffPathname, sizeof(archive->bffPathname));
+	
 	SafeRead(fp, archive->bffGamename, sizeof(archive->bffGamename));
 
 	Con_Printf(
@@ -162,14 +161,12 @@ void DecompileBFF(const char *filepath)
 
 		SafeRead(fp, archive->chunkList[i].chunkName, MAX_BFF_CHUNKNAME);
 		SafeRead(fp, &archive->chunkList[i].chunkSize, sizeof(int64_t));
-		SafeRead(fp, &archive->chunkList[i].chunkType, sizeof(int64_t));
 		Con_Printf(
 			"<-------- CHUNK %li -------->\n"
 			"size: %3.03f KiB\n"
-			"type: %li\n"
 			"name: %s\n"
 			"offset: %lu\n",
-		i, ((float)archive->chunkList[i].chunkSize / 1024), archive->chunkList[i].chunkType, archive->chunkList[i].chunkName, offset);
+		i, ((float)archive->chunkList[i].chunkSize / 1024), archive->chunkList[i].chunkName, offset);
 
 		archive->chunkList[i].chunkBuffer = (char *)SafeMalloc(archive->chunkList[i].chunkSize, "chunkBuffer");
 		SafeRead(fp, archive->chunkList[i].chunkBuffer, sizeof(char) * archive->chunkList[i].chunkSize);

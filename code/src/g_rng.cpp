@@ -1,4 +1,4 @@
-#include "n_shared.h"
+#include "../engine/n_shared.h"
 
 static const unsigned char rndtable[256] = {
     0,    8, 109,  220,  222, 241,  149, 107,  75, 248, 254, 140,  16,  66,

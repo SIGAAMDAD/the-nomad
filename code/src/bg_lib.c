@@ -1,5 +1,5 @@
 #include "../sgame/sg_version.h"
-#include "../src/n_shared.h"
+#include "../engine/n_shared.h"
 
 #ifndef Q3_VM
     #error Never include this in engine builds

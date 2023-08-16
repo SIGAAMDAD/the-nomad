@@ -4,7 +4,7 @@
 #pragma once
 
 // safeguard
-#ifndef Q3_VM
+#ifdef __cplusplus
     #error Never include this in engine builds
 #endif
 

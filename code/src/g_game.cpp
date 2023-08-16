@@ -1,6 +1,6 @@
-#include "n_shared.h"
+#include "../engine/n_shared.h"
 #include "../rendergl/rgl_public.h"
-#include "g_sound.h"
+#include "../engine/n_sound.h"
 #include "g_game.h"
 
 Game* Game::gptr;

@@ -1,6 +1,6 @@
 ifndef win32
 OS_INCLUDE=-I/usr/include/ -I/usr/local/include/
-COMPILER  =distcc gcc
+COMPILER  =distcc g++
 LIB_PREFIX=dependencies/libs/linux
 DLL_EXT   =so
 else
@@ -59,6 +59,7 @@ INTERNAL_OBJS=\
 	$(O)/rendergl/rgl_draw.o \
 	$(O)/rendergl/rgl_cmd.o \
 	$(O)/rendergl/rgl_world.o \
+	$(O)/rendergl/rgl_entity.o \
 	$(O)/rendergl/ngl_proc.o \
 	$(O)/rendergl/imgui.o \
 	$(O)/rendergl/imgui_draw.o \
@@ -68,15 +69,14 @@ INTERNAL_OBJS=\
 	$(O)/rendergl/imgui_impl_opengl3.o \
 	$(O)/rendergl/stb_image.o \
 	$(O)/rendergl/n_shared.o \
-	$(O)/rendergl/g_math.o \
-	$(O)/rendergl/cimgui.o \
+	$(O)/rendergl/n_math.o \
 
 $(O)/rendergl/%.o: $(SDIR)/src/%.c
-	distcc gcc $(CFLAGS) -shared -fPIC -o $@ -c $<
+	$(CC) $(CFLAGS) -shared -fPIC -o $@ -c $<
 $(O)/rendergl/%.o: $(SDIR)/rendergl/%.cpp
-	distcc g++ $(CFLAGS) -shared -fPIC -o $@ -c $<
+	$(CC) $(CFLAGS) -shared -fPIC -o $@ -c $<
 $(O)/rendergl/%.o: $(SDIR)/rendergl/%.c
-	distcc gcc $(CFLAGS) -shared -fPIC -o $@ -c $<
+	$(CC) $(CFLAGS) -shared -fPIC -o $@ -c $<
 
 $(LIB): $(INTERNAL_OBJS)
 	$(CC) $(CFLAGS) $(INTERNAL_OBJS) -shared -fPIC -o $(LIB) $(LIB_PREFIX)/libEASTL.a

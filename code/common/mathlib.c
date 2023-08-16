@@ -1,4 +1,4 @@
-#include "../src/n_shared.h"
+#include "../engine/n_shared.h"
 
 const vec3_t vec3_origin = {0, 0, 0};
 const vec2_t vec2_origin = {0, 0};

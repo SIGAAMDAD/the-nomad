@@ -1,4 +1,4 @@
-#include "../src/n_shared.h"
+#include "../engine/n_shared.h"
 #include "vm.h"
 #include "n_vm.h"
 
@@ -20,6 +20,7 @@ void VM_Init(void)
     sgvm = &vmTable[SGAME_VM];
 
     VM_CreateInterpreted(sgvm, "sgame", bytecode, bytecodeLen, SG_Syscalls);
+    FS_FreeFile(bytecode);
 }
 
 static uint64_t active_vm = 0;

@@ -3,20 +3,11 @@
 
 #pragma once
 
-#include "n_scf.h"
 #include "g_bff.h"
-#include "n_map.h"
+#include "../engine/n_map.h"
 
 #ifndef O_BINARY
 #define O_BINARY 0
-#endif
-
-#define CLOCK_TO_MILLISECONDS(ticks) (((ticks)/(double)CLOCKS_PER_SEC)*1000.0)
-
-#ifdef __unix__
-#define sleepfor(x) usleep((x)*1000)
-#elif defined(_WIN32)
-#define sleepfor(x) Sleep(x)
 #endif
 
 #define MAP_SIZE (sizeof(sprite_t) * ((MAP_MAX_Y + 128) * (MAP_MAX_X + 128)))

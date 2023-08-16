@@ -1,7 +1,7 @@
-#include "n_shared.h"
+#include "../engine/n_shared.h"
+#include "../engine/n_sound.h"
 #include "g_bff.h"
 #include "g_game.h"
-#include "g_sound.h"
 #include "../rendergl/rgl_public.h"
 #include "../sgame/sg_public.h"
 #include "../common/n_vm.h"
@@ -20,35 +20,26 @@ static void CameraGame_f(void)
 
 void mainLoop()
 {
+    extern cvar_t *com_frameTime;
     Game::Get()->cameraPos = glm::ivec3(0, 0, 0);
     
     Z_Print(true);
     Hunk_Print();
-    Snd_PlayTrack("NMMUS01");
 
     float light_intensity = 1.0f;
 
+    int32_t r_ticrate;
     uint64_t next = clock();
     Com_TouchMemory();
     while (1) {
         Hunk_Check();
-        Com_UpdateEvents();
-        qboolean **kbstate = Com_GetKeyboard();
+        Com_EventLoop();
         vm_command = SGAME_RUNTIC;
-        if (kbstate[KEY_W])
-            Game::Get()->cameraPos.y -= 3;
-        if (kbstate[KEY_A])
-            Game::Get()->cameraPos.x -= 3;
-        if (kbstate[KEY_S])
-            Game::Get()->cameraPos.y += 3;
-        if (kbstate[KEY_D])
-            Game::Get()->cameraPos.x += 3;
-        
         VM_Run(SGAME_VM);
-        
         RE_BeginFrame();
 
-        next = 1000 / Cvar_VariableInteger("r_ticrate");
+        r_ticrate = Cvar_VariableInteger("r_ticrate");
+        next = 1000 / r_ticrate;
 
         Snd_Submit();
         VM_Stop(SGAME_VM);
@@ -56,6 +47,8 @@ void mainLoop()
         Con_GetInput();
         RE_EndFrame();
         sleepfor(next);
+        
+        com_frameTime->i++;
     }
 }
 

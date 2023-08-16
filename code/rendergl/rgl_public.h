@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "../src/n_shared.h"
+#include "../engine/n_shared.h"
 
 typedef struct
 {
@@ -23,12 +23,19 @@ typedef struct
     void (*Hunk_FreeTempMemory)(void *buf);
     void (*Hunk_ClearTempMemory)(void);
 
-    void *(*Z_Malloc)(uint64_t size, int tag, void *user, const char *name);
-    void *(*Z_Calloc)(uint64_t size, int tag, void *user, const char *name);
-    void *(*Z_Realloc)(uint64_t nsize, int tag, void *user, void *ptr, const char *name);
+#ifdef _NOMAD_DEBUG
+    void *(*Z_MallocDebug)(uint32_t size, int tag, void *user, const char *name, const char *func, const char *file, uint32_t line);
+    void *(*Z_CallocDebug)(uint32_t size, int tag, void *user, const char *name, const char *func, const char *file, uint32_t line);
+    void *(*Z_ReallocDebug)(void *ptr, uint32_t nsize, int tag, void *user, const char *name, const char *func, const char *file, uint32_t line);
+    char *(*Z_StrdupDebug)(const char *str, const char *func, const char *file, uint32_t line);
+    void (*Z_FreeDebug)(void *ptr, const char *func, const char *file, uint32_t line);
+#else
+    void *(*Z_Malloc)(uint32_t size, int tag, void *user, const char *name);
+    void *(*Z_Calloc)(uint32_t size, int tag, void *user, const char *name);
+    void *(*Z_Realloc)(void *ptr, uint32_t nsize, int tag, void *user, const char *name);
     char *(*Z_Strdup)(const char *str);
-
     void (*Z_Free)(void *ptr);
+#endif
     void (*Z_FreeTags)(int lowtag, int hightag);
     void (*Z_ChangeTag)(void* user, int32_t tag);
     void (*Z_ChangeUser)(void* newuser, void* olduser);
@@ -79,9 +86,7 @@ typedef struct
     const char *(*Cmd_Argv)(uint32_t index);
     void (*Cmd_Clear)(void);
 
-    uint32_t (*Com_GetWindowEvents)(void);
-    qboolean **(*Com_GetKeyboard)(void);
-    void *(*Com_GetEvents)(void);
+    qboolean (*Key_IsDown)(uint32_t keynum);
 
     void GDR_NORETURN (*Sys_Exit)(int code);
 
@@ -187,7 +192,8 @@ GO_AWAY_MANGLE GDR_EXPORT void RE_InitFrameData(void);
 GO_AWAY_MANGLE GDR_EXPORT nhandle_t RE_RegisterTexture(const char *name);
 GO_AWAY_MANGLE GDR_EXPORT nhandle_t RE_RegisterShader(const char *name);
 GO_AWAY_MANGLE GDR_EXPORT qboolean RE_ConsoleIsOpen(void);
-GO_AWAY_MANGLE GDR_EXPORT void RE_ProcessConsoleEvents(SDL_Event *events);
+GO_AWAY_MANGLE GDR_EXPORT void RE_ProcessConsoleEvents(SDL_Event *event);
+GO_AWAY_MANGLE GDR_EXPORT void RE_ToggleConsole(void);
 
 // rendering commands
 GO_AWAY_MANGLE GDR_EXPORT void RE_AddDrawEntity(renderEntityRef_t *ref);

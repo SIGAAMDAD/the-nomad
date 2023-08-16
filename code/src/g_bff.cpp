@@ -1,8 +1,8 @@
-#include "n_shared.h"
+#include "../engine/n_shared.h"
 #include "g_bff.h"
 #include "../common/n_vm.h"
 #include "g_game.h"
-#include "g_sound.h"
+#include "../engine/n_sound.h"
 #include <zlib.h>
 #include <bzlib.h>
 
@@ -456,7 +456,27 @@ typedef struct
 #define BFF_INVALID_CHUNK	(-1)
 #define BFF_BAD_HEADER		(-2)
 
-bffError bffLoadFileRead(bffHandle *handle, const char *filename);
+#define MAX_BFF_PATH 256
+
+typedef struct
+{
+	char name[MAX_BFF_PATH];
+} bff_t;
+
+int bffFilenameCompare();
+void bffStrncpySafe(char *dst, const char *src, size_t n)
+{
+	strncpy(dst, src, n);
+	dst[n - 1] = '\0';
+}
+
+bffError bffLoadFileRead(bffHandle *handle, const char *filename)
+{
+
+
+	return BFF_NOERROR;
+}
+
 bffError bffLoadFileWrite(bffHandle *handle, const char *filename);
 bffError bffGetChunkInfo(bffChunk chunk, bffChunkInfo *info);
 bffError bffReadFromChunk(bfFChunk chunk, void *buffer, uint64_t size);

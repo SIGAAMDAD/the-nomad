@@ -5,16 +5,9 @@
 
 #include "ngl.h"
 #include "rgl_public.h"
-#include <cglm/cglm.h>
-#include <cglm/vec3.h>
-#include <cglm/vec2.h>
-#include <cglm/affine-mat.h>
-#include <cglm/mat4.h>
-#include <cglm/plane.h>
-#include <cglm/ray.h>
-#include <cglm/struct.h>
-#define CIMGUI_DEFINE_ENUMS_AND_STRUCTS
-#include "cimgui.h"
+#include "imgui.h"
+#include "imgui_impl_sdl2.h"
+#include "imgui_impl_opengl3.h"
 
 #define RENDER_MAX_UNIFORMS 1024
 
@@ -221,7 +214,7 @@ typedef enum
     RC_END_LIST
 } renderCmdType_t;
 
-#define MAX_RC_BUFFER 0x60000
+#define MAX_RC_BUFFER 0x80000
 
 typedef struct
 {
@@ -233,7 +226,7 @@ typedef struct
 {
     renderCommandList_t commandList;
 
-    vertex_t *vertices;
+    drawVert_t *vertices;
     uint32_t usedVertices;
     uint32_t numVertices;
 
@@ -251,6 +244,12 @@ typedef struct
 
     shader_t *frameShader;
     vertexCache_t *frameCache;
+
+    boost::thread renderThread;
+    boost::mutex renderMutex;
+    boost::condition_variable renderCondVar;
+    eastl::atomic<bool> renderReady;
+    eastl::atomic<bool> renderDone;
 } renderBackend_t;
 
 extern renderBackend_t backend;
@@ -295,11 +294,11 @@ typedef struct
 
 typedef struct
 {
-    mat4_t projection;
-    mat4_t viewMatrix;
-    mat4_t vpm;
+    glm::mat4 projection;
+    glm::mat4 viewMatrix;
+    glm::mat4 vpm;
 
-    vec3_t cameraPos;
+    glm::vec3 cameraPos;
     float rotation;
     float zoomLevel;
 } camera_t;
@@ -339,59 +338,60 @@ typedef struct renderGlobals_s
 
     tileSurf_t *tileSurf;
 
-    nmap_t *mapData;
-
-    ImGuiIO *imguiIO;
+    const nmap_t *mapData;
 } renderGlobals_t;
 
 #define VEC3_TO_GLM(x) glm::vec3((x)[0],(x)[1],(x)[2])
 #define VEC4_TO_GLM(x) glm::vec4((x)[0],(x)[1],(x)[2],(x)[3])
 
-void RB_SetProjection(float left, float right, float bottom, float top);
-void RB_ZoomIn(void);
-void RB_ZoomOut(void);
-void RB_RotateLeft(void);
-void RB_RotateRight(void);
-void RB_MakeViewMatrix(void);
-void RB_MoveUp(void);
-void RB_MoveLeft(void);
-void RB_MoveRight(void);
-void RB_MoveDown(void);
-void RB_CameraInit(void);
-void RB_CameraResize(void);
+extern "C" void RB_SetProjection(float left, float right, float bottom, float top);
+extern "C" void RB_ZoomIn(void);
+extern "C" void RB_ZoomOut(void);
+extern "C" void RB_RotateLeft(void);
+extern "C" void RB_RotateRight(void);
+extern "C" void RB_MakeViewMatrix(void);
+extern "C" void RB_MoveUp(void);
+extern "C" void RB_MoveLeft(void);
+extern "C" void RB_MoveRight(void);
+extern "C" void RB_MoveDown(void);
+extern "C" void RB_CameraInit(void);
+extern "C" void RB_CameraResize(void);
 
-qboolean R_IsInView(const vec3_t pos);
+extern "C" void *RB_BeginRenderThread(void *unused);
+extern "C" void RB_EndRenderThread(void);
 
-void RE_InitSettings_f(void);
+extern "C" void RE_InitPLRef(void);
 
-shaderBuffer_t *R_InitShaderBuffer(uint32_t GLtarget, uint32_t bufSize, shader_t *shader, const char *block);
-void R_UpdateShaderBuffer(const void *data, shaderBuffer_t *buf);
-void R_ShutdownShaderBuffer(shaderBuffer_t *buf);
-void R_BindShaderBuffer(const shaderBuffer_t *buf);
-void R_UnbindShaderBuffer(void);
-void RE_ShutdownShaderBuffers(void);
+extern "C" qboolean R_IsInView(const glm::vec3& pos);
 
-texture_t *R_InitTexture(const char *filename);
-void RE_ShutdownTextures(void);
-void R_UpdateTextures(void);
-void R_BindTexture(const texture_t *texture);
-void R_UnbindTexture(void);
-void R_InitTexBuffer(texture_t *tex, qboolean withFramebuffer);
-uint32_t R_TexFormat(void);
-uint32_t R_TexMagFilter(void);
-uint32_t R_TexMinFilter(void);
-uint32_t R_TexFilter(void);
-texture_t *R_GetTexture(const char *name);
+extern "C" void RE_InitSettings_f(void);
 
-void R_RecompileShader(shader_t *shader);
-void R_ShutdownShader(shader_t *shader);
-shader_t *R_InitShader(const char *vertexFile, const char *fragmentFile);
-void RE_ShutdownShaders(void);
-void R_BindShader(const shader_t *shader);
-void R_UnbindShader(void);
-int32_t R_GetUniformLocation(shader_t *shader, const char *name);
+extern "C" shaderBuffer_t *R_InitShaderBuffer(uint32_t GLtarget, uint32_t bufSize, shader_t *shader, const char *block);
+extern "C" void R_UpdateShaderBuffer(const void *data, shaderBuffer_t *buf);
+extern "C" void R_ShutdownShaderBuffer(shaderBuffer_t *buf);
+extern "C" void R_BindShaderBuffer(const shaderBuffer_t *buf);
+extern "C" void R_UnbindShaderBuffer(void);
+extern "C" void RE_ShutdownShaderBuffers(void);
 
-#define GLM_MAT4_VALUE_PTR(m) ({float o[16];memcpy(o,(m),sizeof(o));o;})
+extern "C" texture_t *R_InitTexture(const char *filename);
+extern "C" void RE_ShutdownTextures(void);
+extern "C" void R_UpdateTextures(void);
+extern "C" void R_BindTexture(const texture_t *texture);
+extern "C" void R_UnbindTexture(void);
+extern "C" void R_InitTexBuffer(texture_t *tex, qboolean withFramebuffer);
+extern "C" uint32_t R_TexFormat(void);
+extern "C" uint32_t R_TexMagFilter(void);
+extern "C" uint32_t R_TexMinFilter(void);
+extern "C" uint32_t R_TexFilter(void);
+extern "C" texture_t *R_GetTexture(const char *name);
+
+extern "C" void R_RecompileShader(shader_t *shader);
+extern "C" void R_ShutdownShader(shader_t *shader);
+extern "C" shader_t *R_InitShader(const char *vertexFile, const char *fragmentFile);
+extern "C" void RE_ShutdownShaders(void);
+extern "C" void R_BindShader(const shader_t *shader);
+extern "C" void R_UnbindShader(void);
+extern "C" int32_t R_GetUniformLocation(shader_t *shader, const char *name);
 
 GDR_INLINE void R_SetBool(shader_t *shader, const char *name, qboolean value)
 { nglUniform1iARB(R_GetUniformLocation(shader, name), (GLint)value); }
@@ -401,34 +401,42 @@ GDR_INLINE void R_SetIntArray(shader_t *shader, const char *name, int32_t *value
 { nglUniform1ivARB(R_GetUniformLocation(shader, name), count, values); }
 GDR_INLINE void R_SetFloat(shader_t *shader, const char *name, float value)
 { nglUniform1fARB(R_GetUniformLocation(shader, name), value); }
-GDR_INLINE void R_SetFloat2(shader_t *shader, const char *name, const vec2_t value)
+GDR_INLINE void R_SetFloat2(shader_t *shader, const char *name, const glm::vec2& value)
 { nglUniform2fARB(R_GetUniformLocation(shader, name), value[0], value[1]); }
-GDR_INLINE void R_SetFloat3(shader_t *shader, const char *name, const vec3_t value)
+GDR_INLINE void R_SetFloat3(shader_t *shader, const char *name, const glm::vec3& value)
 { nglUniform3fARB(R_GetUniformLocation(shader, name), value[0], value[1], value[2]); }
-GDR_INLINE void R_SetFloat4(shader_t *shader, const char *name, const vec4_t value)
+GDR_INLINE void R_SetFloat4(shader_t *shader, const char *name, const glm::vec4& value)
 { nglUniform4fARB(R_GetUniformLocation(shader, name), value[0], value[1], value[2], value[3]); }
-GDR_INLINE void R_SetMatrix4(shader_t *shader, const char *name, const mat4 value)
-{ nglUniformMatrix4fvARB(R_GetUniformLocation(shader, name), 1, GL_FALSE, GLM_MAT4_VALUE_PTR(value)); }
+GDR_INLINE void R_SetFloat2(shader_t *shader, const char *name, const float *value)
+{ nglUniform2fARB(R_GetUniformLocation(shader, name), value[0], value[1]); }
+GDR_INLINE void R_SetFloat3(shader_t *shader, const char *name, const float *value)
+{ nglUniform3fARB(R_GetUniformLocation(shader, name), value[0], value[1], value[2]); }
+GDR_INLINE void R_SetFloat4(shader_t *shader, const char *name, const float *value)
+{ nglUniform4fARB(R_GetUniformLocation(shader, name), value[0], value[1], value[2], value[3]); }
+GDR_INLINE void R_SetMatrix4(shader_t *shader, const char *name, const glm::mat4& value)
+{ nglUniformMatrix4fvARB(R_GetUniformLocation(shader, name), 1, GL_FALSE, glm::value_ptr(value)); }
 
+extern "C" void RB_ExecuteCommands(void);
+extern "C" void RE_IssueRenderCommands(void);
 
-void RB_ExecuteCommands(void);
-void RE_IssueRenderCommands(void);
+extern "C" void RB_FlushVertices(void);
+extern "C" void RB_PushRect(const drawVert_t *vertices);
+extern "C" void RB_DrawRect(const drawRectCmd_t *cmd);
+extern "C" void RB_DrawEntity(const drawRefCmd_t *cmd);
+extern "C" void RB_DrawTile(const drawTileCmd_t *cmd);
+extern "C" void RE_AddTile(const drawVert_t *vertices);
+extern "C" void RE_RenderTilemap(void);
+extern "C" void RE_InitFrameData(void);
 
-void RB_FlushVertices(void);
-void RB_PushRect(const drawVert_t *vertices);
-void RB_DrawRect(const drawRectCmd_t *cmd);
-void RB_DrawEntity(const drawRefCmd_t *cmd);
-void RB_DrawTile(const drawTileCmd_t *cmd);
-void RE_AddTile(const drawVert_t *vertices);
-void RE_RenderTilemap(void);
+extern "C" texture_t *R_TextureFromHandle(nhandle_t handle);
 
-void *R_FrameAlloc(uint32_t size);
-void R_InitFrameMemory(void);
-void R_ShutdownFrameMemory(void);
+extern "C" void *R_FrameAlloc(uint32_t size);
+extern "C" void R_InitFrameMemory(void);
+extern "C" void R_ShutdownFrameMemory(void);
 
-void RB_ConvertCoords(drawVert_t *v);
+extern "C" void RB_ConvertCoords(drawVert_t *v, const glm::vec3& pos, uint32_t count);
 
-void load_gl_procs(NGLloadproc load);
+extern "C" void load_gl_procs(NGLloadproc load);
 
 extern renderGlobals_t rg;
 extern renderImport_t ri;
@@ -460,6 +468,7 @@ extern cvar_t *r_useExtensions;
 extern cvar_t *r_fovWidth;
 extern cvar_t *r_fovHeight;
 extern cvar_t *r_aspectRatio;
+extern cvar_t *r_useFramebuffer;
 
 // for the truly old-school peeps
 extern cvar_t *r_enableBuffers;     // if 0, forces immediate mode rendering
