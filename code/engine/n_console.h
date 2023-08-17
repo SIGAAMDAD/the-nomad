@@ -3,7 +3,8 @@
 
 #pragma once
 
-typedef enum
+typedef int cvartype_t;
+enum
 {
     CVT_NONE = 0,
     CVT_INT,
@@ -12,7 +13,7 @@ typedef enum
     CVT_BOOL,
 
     CVT_MAX
-} cvartype_t;
+};
 
 typedef enum {
 	CVG_VM,
@@ -26,7 +27,7 @@ typedef enum {
 } cvarGroup_t;
 
 // cvar flags
-#define	CVAR_ARCHIVE		0x0001	// set to cause it to be saved to vars.rc
+#define	CVAR_SAVE		0x0001	// set to cause it to be saved to vars.rc
 					// used for system variables, not for player
 					// specific configurations
 #define	CVAR_USERINFO		0x0002	// sent to server on connect or change
@@ -53,10 +54,10 @@ typedef enum {
 
 #define CVAR_PRIVATE		0x8000	// can't be read from VM
 
-#define CVAR_DEVELOPER		0x10000 // can be set only in developer mode
+#define CVAR_DEV		0x10000 // can be set only in developer mode
 #define CVAR_NOTABCOMPLETE	0x20000 // no tab completion in console
 
-#define CVAR_ARCHIVE_ND		(CVAR_ARCHIVE | CVAR_NODEFAULT)
+#define CVAR_ARCHIVE_ND		(CVAR_SAVE | CVAR_NODEFAULT)
 
 // These flags are only returned by the Cvar_Flags() function
 #define CVAR_MODIFIED		0x40000000	// Cvar was modified
@@ -71,27 +72,26 @@ typedef int cvarHandle_t;
 
 typedef struct cvar_s
 {
-    char *name;
-    char *description;
-    uint64_t hashIndex;
-	
-	// cvar's data (can be modified outside of cvar functions)
-	char *s;
-    float f;
-    int32_t i;
-	qboolean b;
-    
-    cvartype_t type;
-    cvarGroup_t group; // for tracking changes
-    uint32_t flags;
+    char		*name;
+	char		*s;
+	char		*resetString;		// cvar_restart will reset to this value
+	char		*latchedString;		// for CVAR_LATCH vars
+	uint32_t	flags;
+	qboolean	modified;			// set each time the cvar is changed
+	uint32_t	modificationCount;	// incremented each time the cvar is changed
+	float		f;  				// Q_atof( string )
+	int32_t		i;      			// atoi( string )
+	cvartype_t  type;
+	char		*mins;
+	char		*maxs;
+	char		*description;
 
-    qboolean modified;
-    cvarHandle_t id;
-
+	struct cvar_s *next;
 	struct cvar_s *prev;
-    struct cvar_s *next;
 	struct cvar_s *hashNext;
 	struct cvar_s *hashPrev;
+	uint64_t	hashIndex;
+	cvarGroup_t	group;				// to track changes
 } cvar_t;
 
 typedef struct {
@@ -104,6 +104,7 @@ typedef struct {
     cvarHandle_t handle;
 } vmCvar_t;
 
+cvar_t *Cvar_Set2(const char *var_name, const char *value, qboolean force);
 void Cvar_VariableStringBuffer(const char *name, char *buffer, uint64_t bufferSize);
 void Cvar_VariableStringBufferSafe(const char *name, char *buffer, uint64_t bufferSize, uint32_t flag);
 int32_t Cvar_VariableInteger(const char *name);
@@ -111,7 +112,7 @@ float Cvar_VariableFloat(const char *name);
 qboolean Cvar_VariableBoolean(const char *name);
 const char *Cvar_VariableString(const char *name);
 uint32_t Cvar_Flags(const char *name);
-void Cvar_Update(vmCvar_t *vmCvar, int privateFlag);
+void Cvar_Update(vmCvar_t *vmCvar, uint32_t privateFlag);
 cvar_t *Cvar_Get(const char *name, const char *value, uint32_t flags);
 qboolean Cvar_Command(void);
 void Cvar_Reset(const char *name);
@@ -155,6 +156,15 @@ void GDR_DECL Con_Printf(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 
 void GDR_DECL Con_Error(bool exit, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
 eastl::vector<char>& Con_GetBuffer(void);
 #endif
+
+#define COLOR_YELLOW	"\\^0"
+#define COLOR_RED		"\\^1"
+#define COLOR_GREEN		"\\^2"
+#define COLOR_BLUE		"\\^3"
+#define COLOR_BLACK		"\\^4"
+#define COLOR_MAGENTA	"\\^5"
+#define COLOR_WHITE		"\\^6"
+#define COLOR_GREY		"\\^7"
 
 // credits to michaelfm1211 for writing this
 // use a SGR parameter not supported by colors.h. ex: alternate fonts

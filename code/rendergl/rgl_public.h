@@ -75,11 +75,11 @@ typedef struct
     void (*Cvar_SetFloatValue)(const char *name, float value);
     void (*Cvar_SetStringValue)(const char *name, const char *value);
     void (*Cvar_SetBooleanValue)(const char *name, qboolean value);
+    void (*Cvar_CheckRange)(cvar_t *var, const char *mins, const char *maxs, cvartype_t type);
 
     void (*Cmd_AddCommand)(const char* name, cmdfunc_t function);
     void (*Cmd_RemoveCommand)(const char* name);
     void (*Cmd_ExecuteCommand)(const char* name);
-    void (*Cmd_ExecuteText)(const char *str);
     void (*Cmd_ExecuteString)(const char *str);
     uint32_t (*Cmd_Argc)(void);
     char *(*Cmd_ArgsFrom)(int32_t index);

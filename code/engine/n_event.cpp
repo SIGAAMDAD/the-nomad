@@ -381,10 +381,10 @@ static void Com_KeyDownEvent(uint32_t key, uint32_t time)
 	// hardcoded screenshot key
 	if (key == KEY_SCREENSHOT) {
 		if (keys[KEY_LSHIFT].down) {
-			Cmd_ExecuteText("screenshotBMP");
+			Cbuf_InsertText("screenshotBMP");
 		}
 		else {
-			Cmd_ExecuteText("screenshotBMP clipboard");
+			Cbuf_InsertText("screenshotBMP clipboard");
 		}
 		return;
 	}

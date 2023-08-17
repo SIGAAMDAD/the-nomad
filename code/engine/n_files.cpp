@@ -1581,9 +1581,9 @@ void FS_InitFilesystem(void)
 
 	Con_Printf("============ FS_InitFilesystem ============");
 
-	fs_basepath = Cvar_Get("fs_basepath", Sys_DefaultBasePath(), CVAR_PRIVATE | CVAR_ROM);
+	fs_basepath = Cvar_Get("fs_basepath", Sys_DefaultBasePath(), CVAR_INIT);
 	Cvar_SetDescription(fs_basepath, "Write-protected CVar specifying the path to the installation folder of the game.");
-	fs_basegame = Cvar_Get("fs_basegame", BASEGAME_DIR, CVAR_PRIVATE);
+	fs_basegame = Cvar_Get("fs_basegame", BASEGAME_DIR, CVAR_PRIVATE | CVAR_LATCH);
 	Cvar_SetDescription(fs_basegame, "Cvar specifying the path to the base game folder.");
 //	fs_steampath = Cvar_Get("fs_steampath", Sys_GetSteamPath(), CVAR_PRIVATE | CVAR_ROM);
 
@@ -1599,7 +1599,7 @@ void FS_InitFilesystem(void)
 	fs_homepath = Cvar_Get("fs_homepath", homepath, CVAR_PRIVATE | CVAR_ROM);
 #endif
 
-	fs_gamedirvar = Cvar_Get("fs_gamedir", "", CVAR_PRIVATE);
+	fs_gamedirvar = Cvar_Get("fs_gamedir", "", CVAR_PRIVATE | CVAR_LATCH);
 	Cvar_SetDescription(fs_gamedirvar, "Specify an alternate mod directory and run the game with this mod.");
 
 	if (!N_stricmp(fs_basegame->s, fs_gamedirvar->s)) {

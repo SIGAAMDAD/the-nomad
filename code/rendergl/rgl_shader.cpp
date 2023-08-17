@@ -3,6 +3,109 @@
 #define MAX_SHADER_HASH 1024
 static shader_t* shaders[MAX_SHADER_HASH];
 
+#if 0
+typedef struct
+{
+    char *buffer;
+    uint32_t verison;
+} glShader_t;
+
+const char *gammaFunc_310 =
+"vec4 applyGamma(sampler2D texture, vec2 texcoords) {\n"
+"   \n"
+"}\n";
+
+const char *gammaFunc_OLD =
+"";
+
+extern "C" glShader_t *R_GenFragmentPintShader(void)
+{
+    glShader_t *shader;
+    char version[256];
+    char layout[1024];
+    char mainfunc[1024];
+    char buf[4096];
+
+    if (r_glsl_version->i == 330) {
+        N_strcpy(version, "#version 330 core\n");
+    }
+
+    if (glContext.version_i < 310) {
+        N_strcpy(layout,
+            "varying vec2 v_TexCoords;\n"
+            "uniform sampler2D u_Texture;\n");
+    }
+    else {
+        N_strcpy(layout,
+            "layout(location = 0) out vec4 a_Color;\n"
+            "\n"
+            "in vec2 v_TexCoords;\n"
+            "uniform sampler2D u_Texture;\n");
+    }
+
+    if (glContext.version_i < 310) {
+        N_strcpy(mainfunc,
+            "void main() {\n"
+            "   gl_FragColor = texture2D(u_Texture, v_TexCoords);\n"
+            "}\n");
+    }
+    else {
+        N_strcpy(mainfunc,
+            "void main() {\n"
+            "   a_Color = texture2D(u_Texture, v_TexCoords);\n"
+            "}\n");
+    }
+}
+
+extern "C" glShader_t *R_GenVertexPintShader(void)
+{
+    glShader_t *shader;
+    char version[64];
+    char layout[256];
+    char mainfunc[2048];
+    uint64_t size;
+    char *buf;
+
+    if (r_glsl_version->i == 330) {
+        N_strcpy(version, "#version 330 core\n");
+    }
+
+    if (glContext.version_i < 310) {
+        N_strcpy(layout,
+            "attribute vec3 a_Position;\n"
+            "attribute vec2 a_TexCoords;\n"
+            "attribute vec4 a_Color;\n"
+            "\n"
+            "varying vec2 v_TexCoords;\n"
+            "uniform mat4 u_ViewProjection;\n");
+    }
+    else {
+        N_strcpy(layout,
+            "layout(location = 0) in vec3 a_Position;\n"
+            "layout(location = 1) in vec2 a_TexCoords;\n"
+            "layout(location = 2) in vec4 a_Color;\n"
+            "\n"
+            "out vec2 v_TexCoords;\n"
+            "uniform mat4 u_ViewProjection;\n");
+    }
+
+    N_strcpy(mainfunc,
+        "void main() {\n"
+        "   v_TexCoords = a_TexCoords;\n"
+        "   gl_Position = u_ViewProjection * vec4(a_Position, 1.0);\n"
+        "}\n");
+
+    size = 0;
+    size += strlen(version);
+    size += strlen(layout);
+    size += strlen(mainfunc);
+
+    buf = (char *)ri.Hunk_AllocateTempMemory(size + 1);
+    snprintf(buf, size + 1, "%s%s%s", version, layout, mainfunc);
+    buf[size + 1] = '\0';
+}
+#endif
+
 extern "C" int32_t R_GetUniformLocation(shader_t *shader, const char *name)
 {
     int32_t location;

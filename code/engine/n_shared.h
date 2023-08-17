@@ -183,7 +183,10 @@ extern	const vec4_t		colorLtGrey;
 extern	const vec4_t		colorMdGrey;
 extern	const vec4_t		colorDkGrey;
 
+extern const byte locase[256];
+
 #define arraylen(arr) (sizeof(arr)/sizeof(*arr))
+#define zeroinit(x,size) memset((x),0,(size))
 
 // math stuff
 #define VectorLength(v)			(float)(sqrt((v)[0]*(v)[0]+(v)[1]*(v)[1]+(v)[2]*(v)[2]))

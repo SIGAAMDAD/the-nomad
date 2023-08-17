@@ -1,5 +1,17 @@
 #include "code/engine/n_shared.h"
 
+#if defined(__SSE2__) || defined(_MSC_SSE2_)
+#define USING_SSE2
+#ifdef _MSC
+#include <intrin.h>
+#else
+#include <immintrin.h>
+#include <xmmintrin.h>
+#endif
+#endif
+
+int CPU_flags;
+
 // c++ version of the stuff found in mathlib.c
 
 const vec4_t		colorBlack	= {0, 0, 0, 1};
@@ -35,6 +47,27 @@ float Q_root(float x)
 
 float Q_rsqrt(float number)
 {
+#ifdef USING_SSE2
+	// does this cpu actually support sse2?
+	if (!(CPU_flags & CPU_SSE2)) {
+		long x;
+    	float x2, y;
+		const float threehalfs = 1.5F;
+
+    	x2 = number * 0.5F;
+    	x = *(long *)&number;                    // evil floating point bit level hacking
+    	x = 0x5f3759df - (x >> 1);               // what the fuck?
+    	y = *(float *)&x;
+    	y = y * ( threehalfs - ( x2 * y * y ) ); // 1st iteration
+  	//	y = y * ( threehalfs - ( x2 * y * y ) ); // 2nd iteration, this can be removed
+
+    	return y;
+	}
+
+	float ret;
+	_mm_store_ss( &ret, _mm_rsqrt_ss( _mm_load_ss( &number ) ) );
+	return ret;
+#else
     long x;
     float x2, y;
 	const float threehalfs = 1.5F;
@@ -47,6 +80,7 @@ float Q_rsqrt(float number)
 //  y = y * ( threehalfs - ( x2 * y * y ) ); // 2nd iteration, this can be removed
 
     return y;
+#endif
 }
 
 float disBetweenOBJ(const glm::vec3& src, const glm::vec3& tar)

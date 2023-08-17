@@ -97,7 +97,7 @@ void Hunk_InitMemory(void)
     }
 
 	// allocate stack based hunk allocator
-	cv = Cvar_Get("z_hunkMegs", "1800", CVAR_PRIVATE | CVAR_ROM | CVAR_SAVE);
+	cv = Cvar_Get("z_hunkMegs", "1800", CVAR_PRIVATE | CVAR_ROM | CVAR_SAVE | CVAR_LATCH);
 	if ((cv->i * 1024 * 1024) != hunksize) {
 		hunksize = cv->i * 1024 * 1024;
 	}

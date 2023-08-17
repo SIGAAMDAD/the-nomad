@@ -21,6 +21,7 @@ void GDR_DECL Com_Printf(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 
 uint64_t Com_GenerateHashValue(const char *fname, const uint64_t size);
 void Con_RenderConsole(void);
 void Com_WriteConfig(void);
+void COM_DefaultExtension( char *path, uint64_t maxSize, const char *extension );
 int32_t Com_HexStrToInt(const char *str);
 qboolean Com_FilterExt( const char *filter, const char *name );
 int Com_Filter( const char *filter, const char *name );
@@ -190,6 +191,13 @@ const char* GDR_DECL va(const char *format, ...) GDR_ATTRIBUTE((format(printf, 1
 void GDR_DECL Com_Error(vm_t *vm, int level, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 3, 4)));
 #endif
 
+typedef enum {
+	EXEC_NOW = 0,
+	EXEC_INSERT,
+	EXEC_APPEND
+} cbufExec_t;
+
+void Cbuf_ExecuteText( cbufExec_t exec_when, const char *text );
 void Cbuf_InsertText( const char *text );
 void Cbuf_Execute(void);
 void Cbuf_AddText( const char *text );

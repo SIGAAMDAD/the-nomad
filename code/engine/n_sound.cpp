@@ -275,10 +275,10 @@ void Snd_Submit(void)
 
 void Snd_Init(void)
 {
-    snd_sfxon = Cvar_Get("snd_sfxon", "1", CVAR_SAVE | CVAR_PRIVATE);
-    snd_musicon = Cvar_Get("snd_musicon", "1", CVAR_SAVE | CVAR_PRIVATE);
-    snd_sfxvol = Cvar_Get("snd_sfxvol", "1.1f", CVAR_SAVE | CVAR_PRIVATE);
-    snd_musicvol = Cvar_Get("snd_musicvol", "0.8f", CVAR_SAVE | CVAR_PRIVATE);
+    snd_sfxon = Cvar_Get("snd_sfxon", "1", CVAR_SAVE | CVAR_PRIVATE | CVAR_LATCH);
+    snd_musicon = Cvar_Get("snd_musicon", "1", CVAR_SAVE | CVAR_PRIVATE | CVAR_LATCH);
+    snd_sfxvol = Cvar_Get("snd_sfxvol", "1.1f", CVAR_SAVE | CVAR_PRIVATE | CVAR_LATCH);
+    snd_musicvol = Cvar_Get("snd_musicvol", "0.8f", CVAR_SAVE | CVAR_PRIVATE | CVAR_LATCH);
 
     if (!snd_sfxon->i || !snd_musicon->i)
         return;
@@ -294,15 +294,13 @@ void Snd_Init(void)
 
     context = alcCreateContext(device, NULL);
     if (!context) {
-        snd_sfxon = Cvar_Get("snd_sfxon", "0", CVAR_PRIVATE | CVAR_SAVE);
-        snd_musicon = Cvar_Get("snd_musicon", "0", CVAR_PRIVATE | CVAR_SAVE);
+        Cvar_Set("snd_sfxon", "0");
+        Cvar_Set("snd_musicon", "0");
         Con_Printf("Snd_Init: alcCreateContext returned NULL, turning off sound, error message: %s",
             alcGetString(device, alcGetError(device)));
         alcCloseDevice(device);
         return;
     }
-    snd_sfxon = Cvar_Get("snd_sfxon", "1", CVAR_PRIVATE | CVAR_SAVE);
-    snd_musicon = Cvar_Get("snd_musicon", "1", CVAR_PRIVATE | CVAR_SAVE);
     alcMakeContextCurrent(context);
 
     memset(sfxqueue, NULL, sizeof(sfxqueue));

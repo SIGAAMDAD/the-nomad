@@ -49,7 +49,7 @@ typedef struct
     qboolean stereo;
 
     int maxViewportDims[2];
-    int maxAnisotropy;
+    float maxAnisotropy;
     int maxTextureUnits;
     int maxTextureSize;
     int maxBufferSize;
@@ -456,7 +456,6 @@ extern cvar_t *r_renderapi;
 extern cvar_t *r_multisampleAmount;
 extern cvar_t *r_multisampleType;
 extern cvar_t *r_dither;
-extern cvar_t *r_EXT_anisotropicFiltering;
 extern cvar_t *r_gammaAmount;
 extern cvar_t *r_textureMagFilter;
 extern cvar_t *r_textureMinFilter;
@@ -468,7 +467,25 @@ extern cvar_t *r_useExtensions;
 extern cvar_t *r_fovWidth;
 extern cvar_t *r_fovHeight;
 extern cvar_t *r_aspectRatio;
-extern cvar_t *r_useFramebuffer;
+extern cvar_t *r_useFramebuffer;        // use a framebuffer?
+extern cvar_t *r_hdr;                   // is high-dynamic-range enabled?
+extern cvar_t *r_texShaderLod;          // the lod integer passed to the shader
+extern cvar_t *r_ssao;                  // screen-space ambient occlusion (SSAO) enabled?
+
+// OpenGL extensions
+extern cvar_t *r_EXT_anisotropicFiltering;
+extern cvar_t *r_EXT_compiled_vertex_array;
+extern cvar_t *r_ARB_texture_float;
+extern cvar_t *r_ARB_texture_filter_anisotropic;
+extern cvar_t *r_ARB_vertex_attrib_64bit;
+extern cvar_t *r_ARB_vertex_buffer_object;
+extern cvar_t *r_ARB_sparse_buffer;
+extern cvar_t *r_ARB_vertex_attrib_binding;
+extern cvar_t *r_ARB_texture_compression_bptc;
+extern cvar_t *r_ARB_texture_compression_rgtc;
+extern cvar_t *r_ARB_texture_compression;
+extern cvar_t *r_ARB_pipeline_statistics_query;
+
 
 // for the truly old-school peeps
 extern cvar_t *r_enableBuffers;     // if 0, forces immediate mode rendering
@@ -499,14 +516,13 @@ typedef struct {
     int num;
     int string_len;
 } textureDetail_t;
-enum {
-    GPUvsGod = 0,
-    extreme,
-    high,
-    medium,
-    low,
-    msdos
-};
+
+#define TEX_GPUvsGod 0
+#define TEX_xtreme 1
+#define TEX_high 2
+#define TEX_medium 3
+#define TEX_low 4
+#define TEX_msdos 5
 
 extern const textureDetail_t textureDetails[6];
 
@@ -519,7 +535,7 @@ GDR_INLINE uint32_t R_GetTextureDetail(void)
             return textureDetails[i].num;
     }
     ri.Con_Printf(WARNING, "r_textureDetail is invalid, setting to medium");
-    N_strncpyz(r_textureDetail->s, "medium", sizeof("medium"));
+    ri.Cvar_Set("r_textureDetail", va("%i", TEX_medium));
     return medium;
 }
 

@@ -10,20 +10,56 @@ mostly meant for developers/debugging
 #define BIG_INFO_STRING 8192
 #define MAX_STRING_TOKENS 1024
 #define MAX_HISTORY 32
+#define MAX_CMD_BUFFER  65536
 
 typedef struct {
 	byte *data;
-	uint64_t maxsize;
-	uint64_t cursize;
+	int maxsize;
+	int cursize;
 } cbuf_t;
 
-static byte cmd_text_buf[MAX_CMD_BUFFER];
+static int   cmd_wait;
 static cbuf_t cmd_text;
+static byte  cmd_text_buf[MAX_CMD_BUFFER];
+
+
+//=============================================================================
 
 /*
-Cbuf_Clear: clears the command buffer
+============
+Cmd_Wait_f
+
+Causes execution of the remainder of the command buffer to be delayed until
+next frame.  This allows commands like:
+bind g "cmd use rocket ; +attack ; wait ; -attack ; cmd use blaster"
+============
 */
-void Cbuf_Clear(void)
+static void Cmd_Wait_f( void )
+{
+	if ( Cmd_Argc() == 2 ) {
+		cmd_wait = atoi( Cmd_Argv( 1 ) );
+		if ( cmd_wait < 0 )
+			cmd_wait = 1; // ignore the argument
+	} else {
+		cmd_wait = 1;
+	}
+}
+
+
+/*
+=============================================================================
+
+						COMMAND BUFFER
+
+=============================================================================
+*/
+
+/*
+============
+Cbuf_Init
+============
+*/
+void Cbuf_Init( void )
 {
 	memset(cmd_text_buf, 0, sizeof(cmd_text_buf));
 	cmd_text.data = cmd_text_buf;
@@ -31,19 +67,90 @@ void Cbuf_Clear(void)
 	cmd_text.cursize = 0;
 }
 
-/*
-Cbuf_Init: initializes the command buffer
-*/
-void Cbuf_Init(void)
-{
-	Cbuf_Clear();
-}
 
 /*
+============
+Cbuf_AddText
+
+Adds command text at the end of the buffer, does NOT add a final \n
+============
+*/
+void Cbuf_AddText( const char *text )
+{
+	const uint64_t l = strlen( text );
+
+	if (cmd_text.cursize + l >= cmd_text.maxsize) {
+		Con_Printf ("Cbuf_AddText: overflow");
+		return;
+	}
+
+	memcpy(&cmd_text.data[cmd_text.cursize], text, l);
+	cmd_text.cursize += l;
+}
+
+
+/*
+============
+Cbuf_Add
+
+// Adds command text at the specified position of the buffer, adds \n when needed
+============
+*/
+uint64_t Cbuf_Add( const char *text, uint64_t pos )
+{
+
+	uint64_t len = strlen( text );
+	qboolean separate = qfalse;
+	int64_t i;
+
+	if ( len == 0 ) {
+		return cmd_text.cursize;
+	}
+
+	if ( pos > cmd_text.cursize || pos < 0 ) {
+		// insert at the text end
+		pos = cmd_text.cursize;
+	}
+
+	if ( text[len - 1] == '\n' || text[len - 1] == ';' ) {
+		// command already has separator
+	} else {
+		separate = qtrue;
+		len += 1;
+	}
+
+	if ( len + cmd_text.cursize > cmd_text.maxsize ) {
+		Con_Printf( WARNING, "%s(%lu) overflowed", __func__, pos );
+		return cmd_text.cursize;
+	}
+
+	// move the existing command text
+	for ( i = cmd_text.cursize - 1; i >= pos; i-- ) {
+		cmd_text.data[i + len] = cmd_text.data[i];
+	}
+
+	if ( separate ) {
+		// copy the new text in + add a \n
+		memcpy( cmd_text.data + pos, text, len - 1 );
+		cmd_text.data[pos + len - 1] = '\n';
+	} else {
+		// copy the new text in
+		memcpy( cmd_text.data + pos, text, len );
+	}
+
+	cmd_text.cursize += len;
+
+	return pos + len;
+}
+
+
+/*
+============
 Cbuf_InsertText
 
 Adds command text immediately after the current command
 Adds a \n to the text
+============
 */
 void Cbuf_InsertText( const char *text )
 {
@@ -53,7 +160,7 @@ void Cbuf_InsertText( const char *text )
 	len = strlen( text ) + 1;
 
 	if ( len + cmd_text.cursize > cmd_text.maxsize ) {
-		Con_Printf( WARNING, "Cbuf_InsertText overflowed" );
+		Con_Printf( "Cbuf_InsertText overflowed" );
 		return;
 	}
 
@@ -71,30 +178,48 @@ void Cbuf_InsertText( const char *text )
 	cmd_text.cursize += len;
 }
 
+
 /*
-Cbuf_AddText: Adds command text at the end of the buffer, does NOT add a final \n
+============
+Cbuf_ExecuteText
+============
 */
-void Cbuf_AddText( const char *text )
+void Cbuf_ExecuteText( cbufExec_t exec_when, const char *text )
 {
-	const uint64_t l = strlen( text );
-
-	if (cmd_text.cursize + l >= cmd_text.maxsize) {
-		Con_Printf ("Cbuf_AddText: overflow");
-		return;
+	switch (exec_when) {
+	case EXEC_NOW:
+		if ( text && text[0] != '\0' ) {
+			Con_Printf(DEBUG, "EXEC_NOW %s", text);
+			Cmd_ExecuteString (text);
+		}
+		else {
+			Cbuf_Execute();
+			Con_Printf(DEBUG, "EXEC_NOW %s", cmd_text.data);
+		}
+		break;
+	case EXEC_INSERT:
+		Cbuf_InsertText (text);
+		break;
+	case EXEC_APPEND:
+		Cbuf_AddText (text);
+		break;
+	default:
+		N_Error ( "Cbuf_ExecuteText: bad exec_when");
 	}
-
-	memcpy(&cmd_text.data[cmd_text.cursize], text, l);
-	cmd_text.cursize += l;
 }
 
 
-
-void Cbuf_Execute(void)
+/*
+============
+Cbuf_Execute
+============
+*/
+void Cbuf_Execute( void )
 {
-	uint64_t i;
+	int i;
 	char *text;
 	char line[MAX_CMD_LINE];
-	uint64_t quotes;
+	int quotes;
 
 	// This will keep // style comments all on one line by not breaking on
 	// a semicolon.  It will keep /* ... */ style comments all on one line by not
@@ -102,20 +227,18 @@ void Cbuf_Execute(void)
 	qboolean in_star_comment = qfalse;
 	qboolean in_slash_comment = qfalse;
 	while ( cmd_text.cursize > 0 ) {
-#if 0
 		if ( cmd_wait > 0 ) {
 			// skip out while text still remains in buffer, leaving it
 			// for next frame
 			cmd_wait--;
 			break;
 		}
-#endif
 
 		// find a \n or ; line break or comment: // or /* */
 		text = (char *)cmd_text.data;
 
 		quotes = 0;
-		for ( i = 0 ; i < cmd_text.cursize ; i++ ) {
+		for ( i = 0 ; i< cmd_text.cursize ; i++ ) {
 			if (text[i] == '"')
 				quotes++;
 
@@ -167,8 +290,80 @@ void Cbuf_Execute(void)
 		}
 
 		// execute the command line
-		Cmd_ExecuteText( line );
+		Cmd_ExecuteString( line );
 	}
+}
+
+
+/*
+==============================================================================
+
+						SCRIPT COMMANDS
+
+==============================================================================
+*/
+
+
+/*
+===============
+Cmd_Exec_f
+===============
+*/
+static void Cmd_Exec_f( void )
+{
+	union {
+		char *c;
+		void *v;
+	} f;
+	qboolean quiet;
+	char filename[MAX_GDR_PATH];
+
+	quiet = (qboolean)!N_stricmp(Cmd_Argv(0), "execq");
+
+	if (Cmd_Argc () != 2) {
+		Con_Printf ("exec%s <filename> : execute a script file%s",
+			quiet ? "q" : "", quiet ? " without notification" : "");
+		return;
+	}
+
+	N_strncpyz( filename, Cmd_Argv(1), sizeof( filename ) );
+	COM_DefaultExtension( filename, sizeof( filename ), ".cfg" );
+	FS_LoadFile(filename, &f.v);
+	if ( f.v == NULL ) {
+		Con_Printf( "couldn't exec %s", filename );
+		return;
+	}
+	if (!quiet)
+		Con_Printf ("execing %s", filename);
+
+	Cbuf_InsertText(f.c);
+	FS_FreeFile(f.v);
+}
+
+
+static void Cmd_ExecuteBuffer_f(void)
+{
+	Cbuf_Execute();
+}
+
+/*
+===============
+Cmd_Vstr_f
+
+Inserts the current value of a variable as command text
+===============
+*/
+static void Cmd_Vstr_f( void )
+{
+	const char *v;
+
+	if ( Cmd_Argc () != 2 ) {
+		Con_Printf( "vstr <variablename> : execute a variable command" );
+		return;
+	}
+
+	v = Cvar_VariableString( Cmd_Argv( 1 ) );
+	Cbuf_InsertText( v );
 }
 
 typedef void (*cmdfunc_t)(void);
@@ -200,7 +395,11 @@ uint32_t Cmd_Argc(void)
 void Cmd_Clear(void)
 {
 	boost::lock_guard<boost::recursive_mutex> lock{cmdLock};
-	cmd_cmd[0] = '\0';
+
+	// exec command breaks if this isn't done
+	memset(cmd_cmd, 0, sizeof(cmd_cmd));
+	memset(cmd_tokenized, 0, sizeof(cmd_tokenized));
+
 	cmd_argc.store(0);
 }
 
@@ -245,11 +444,11 @@ void Cmd_TokenizeString2(const char *str, qboolean ignoreQuotes)
 			break; // end of string
 		}
 		// handle quoted strings
-		if (!ignoreQuotes && *p == '"') {
+		if (!ignoreQuotes && *p == '\"') {
 			cmd_argv[cmd_argc.load()] = tok;
 			cmd_argc.fetch_add(1);
 			p++;
-			while (*p && *p != '"') {
+			while (*p && *p != '\"') {
 				*tok++ = *p++;
 			}
 			if (!*p) {
@@ -265,7 +464,7 @@ void Cmd_TokenizeString2(const char *str, qboolean ignoreQuotes)
 
 		// skip until whitespace, quote, or command
 		while (*p > ' ') {
-			if (!ignoreQuotes && p[0] == '"') {
+			if (!ignoreQuotes && p[0] == '\"') {
 				break;
 			}
 
@@ -315,6 +514,59 @@ void Cmd_TokenizeString(const char *text_p)
 	Cmd_TokenizeString2(text_p, qfalse);
 }
 
+void Cmd_ExecuteString(const char *str)
+{
+	boost::lock_guard<boost::recursive_mutex> lock{cmdLock};
+	cmd_t *cmd, **prev;
+
+	if (*str == '/' || *str == '\\') {
+		str++;
+	}
+
+	// execute the command line
+	Cmd_TokenizeString( str );
+	if ( !Cmd_Argc() ) {
+		return;		// no tokens
+	}
+
+	cmd = Cmd_FindCommand(Cmd_Argv(0));
+	if (cmd && cmd->function) {
+		cmd->function();
+		return;
+	}
+	else {
+		Con_Printf("Command '%s' doesn't exist", Cmd_Argv(0));
+	}
+#if 0
+	// check registered command functions
+	for ( prev = &cmd_functions ; *prev ; prev = &cmd->next ) {
+		cmd = *prev;
+		if ( !N_stricmp( cmd_argv[0], cmd->name ) ) {
+			// rearrange the links so that the command will be
+			// near the head of the list next time it is used
+			*prev = cmd->next;
+			cmd->next = cmd_functions;
+			cmd_functions = cmd;
+
+			// perform the action
+			if ( !cmd->function ) {
+				// let the cgame or game handle it
+				break;
+			}
+			else {
+				cmd->function();
+			}
+			return;
+		}
+	}
+#endif
+	// check cvars
+	if ( Cvar_Command() ) {
+		return;
+	}
+}
+
+#if 0
 void Cmd_ExecuteText(const char *str)
 {
 	boost::lock_guard<boost::recursive_mutex> lock{cmdLock};
@@ -346,6 +598,7 @@ void Cmd_ExecuteText(const char *str)
 //		return;
 //	}
 }
+#endif
 
 void Cmd_SetHelpString(const char *name, const char *help)
 {
@@ -452,43 +705,11 @@ static void Cmd_Exit_f(void)
 	Sys_Exit(1);
 }
 
-static void Cmd_Exec_f(void)
-{
-	file_t f;
-	char *buffer;
-	uint64_t bufLen;
-	const char *path;
-
-	// clear out the cbuf first
-	Cbuf_Execute();
-	Cbuf_Clear();
-
-	if (Cmd_Argc() < 1) {
-		Con_Printf("usage: exec <script file> [args...] (maximum of 16 args)");
-		return;
-	}
-#if 0
-	char args[16][256];
-	for (int32_t i = 2; i < Cmd_Argc(); i++)
-		N_strncpyz(args[i], Cmd_Argv(i), sizeof(*args));
-#endif
-
-	path = Cmd_Argv(1);
-	bufLen = FS_LoadFile(path, (void **)&buffer);
-	if (!buffer) {
-		Con_Printf(WARNING, "Couldn't exec %s", path);
-		return;
-	}
-	Cbuf_InsertText(buffer);
-	Cbuf_Execute();
-
-	FS_FreeFile(buffer);
-}
-
 void Cmd_Init(void)
 {
 	Cbuf_Init();
 
+	Cmd_AddCommand("flushbuf", Cmd_ExecuteBuffer_f);
     Cmd_AddCommand("cmdlist", Cmd_List_f);
     Cmd_AddCommand("echo", Cmd_Echo_f);
 	Cmd_AddCommand("exec", Cmd_Exec_f);

@@ -47,9 +47,7 @@ static qboolean imgui_on = qfalse;
 
 extern "C" void RB_CameraInit(void)
 {
-    r_aspectRatio = ri.Cvar_Get("r_aspectRatio", va("%i",r_screenwidth->i/r_screenheight->i), CVAR_SAVE | CVAR_PRIVATE);
-    r_aspectRatio->group = CVG_RENDERER;
-
+    ri.Cvar_Set("r_aspectRatio", va("%i", r_screenwidth->i / r_screenheight->i));
     RB_SetProjection(-3.0f, 3.0f, -3.0f, 3.0f);
 }
 
@@ -104,13 +102,12 @@ extern "C" void RB_MakeViewMatrix(void)
 
 extern "C" void RB_SetProjection(float left, float right, float bottom, float top)
 {
-    rg.camera.projection = glm::ortho(left, right, bottom, top, -1.0f, 1.0f);
+    rg.camera.projection = glm::ortho(left, right, bottom, top);
     RB_MakeViewMatrix();
 }
 
 extern "C" void RB_CameraResize(void)
 {
-    ri.Cvar_Set("r_aspectRatio", va("%i", r_screenwidth->i/r_screenheight->i));
     RB_SetProjection(-r_aspectRatio->i * rg.camera.zoomLevel, r_aspectRatio->i * rg.camera.zoomLevel, -r_aspectRatio->i, r_aspectRatio->i);
 }
 
@@ -168,7 +165,7 @@ extern "C" void RE_InitSettings_f(void)
     int width, height;
 
     // dither
-    if (r_dither->b)
+    if (r_dither->i)
         nglEnable(GL_DITHER);
     else
         nglDisable(GL_DITHER);
@@ -186,7 +183,7 @@ extern "C" void RE_InitSettings_f(void)
     ri.Cvar_Set("r_screenwidth", va("%i", width));
     ri.Cvar_Set("r_screenheight", va("%i", height));
 
-    ri.SDL_GL_SetSwapInterval((r_vsync->b ? -1 : 0));
+    ri.SDL_GL_SetSwapInterval((r_vsync->i ? -1 : 0));
 
     if (r_useFramebuffer->i) {
         RE_UpdateFramebuffers();
@@ -237,7 +234,7 @@ extern "C" void R_InitExtensions(NGLloadproc load)
 
     glContext.textureCompression = TC_NONE;
 
-    r_EXT_anisotropicFiltering->b = qfalse;
+    r_EXT_anisotropicFiltering->i = 0;
 
     glContext.maxAnisotropy = 0;
     glContext.nonPowerOfTwoTextures = qfalse;
@@ -342,15 +339,14 @@ extern "C" void R_InitExtensions(NGLloadproc load)
         }
         else {
             ri.Con_Printf(INFO, "... GL_EXT_texture_filter_anisotropic (max: %i)", glContext.maxAnisotropy);
-            r_EXT_anisotropicFiltering->b = qtrue;
-            glContext.maxAnisotropy = MIN(r_EXT_anisotropicFiltering->i, glContext.maxAnisotropy);
+            r_EXT_anisotropicFiltering->i = 1;
         }
     }
     else {
         ri.Con_Printf(INFO, "... GL_EXT_texture_filter_anisotropic not found");
     }
 
-    r_EXT_anisotropicFiltering->b = (qboolean)(glContext.maxAnisotropy > 0);
+    r_EXT_anisotropicFiltering->i = glContext.maxAnisotropy > 0;
     if (r_EXT_anisotropicFiltering->i != glContext.maxAnisotropy) {
         ri.Cvar_SetIntegerValue("r_EXT_anisotropicFiltering", glContext.maxAnisotropy);
     }
@@ -374,7 +370,7 @@ extern "C" void R_InitExtensions(NGLloadproc load)
 
     // GL_EXT_texture_compression_s3tc
     if (R_HasExtension("GL_ARB_texture_compression") && R_HasExtension("GL_EXT_texture_compression_s3tc")) {
-        if (r_textureCompression->b) {
+        if (r_textureCompression->i) {
             glContext.textureCompression = TC_S3TC_ARB;
             ri.Con_Printf(INFO, "... using GL_EXT_texture_compression_s3tc");
             ri.Cvar_SetStringValue("r_textureCompression", "TC_S3TC_ARB");
@@ -392,9 +388,9 @@ extern "C" void R_InitExtensions(NGLloadproc load)
     }
 
     // GL_S3_s3tc
-    if (glContext.textureCompression == TC_NONE && r_textureCompression->b) {
+    if (glContext.textureCompression == TC_NONE && r_textureCompression->i) {
         if (R_HasExtension("GL_S3_s3tc")) {
-            if (r_textureCompression->b) {
+            if (r_textureCompression->i) {
                 glContext.textureCompression = TC_S3TC;
                 ri.Con_Printf(INFO, "... using GL_S3_s3tc");
                 ri.Cvar_SetStringValue("r_textureCompression", "TC_S3TC");
@@ -457,19 +453,19 @@ void R_GfxInfo_f(void)
     ri.Con_Printf(INFO, "=== Cvars ===");
     ri.Con_Printf(INFO, "r_screenwidth: %i", r_screenwidth->i);
     ri.Con_Printf(INFO, "r_screenheight: %i", r_screenheight->i);
-    ri.Con_Printf(INFO, "r_drawFPS: %s", N_booltostr(r_drawFPS->b));
+    ri.Con_Printf(INFO, "r_drawFPS: %s", N_booltostr(r_drawFPS->i));
     ri.Con_Printf(INFO, "r_ticrate: %i", r_ticrate->i);
-    ri.Con_Printf(INFO, "r_fullscreen: %s", N_booltostr(r_fullscreen->b));
+    ri.Con_Printf(INFO, "r_fullscreen: %s", N_booltostr(r_fullscreen->i));
     ri.Con_Printf(INFO, "r_multisampleAmount: x%i", r_multisampleAmount->i);
-    ri.Con_Printf(INFO, "r_vsync: %s", N_booltostr(r_vsync->b));
+    ri.Con_Printf(INFO, "r_vsync: %s", N_booltostr(r_vsync->i));
     ri.Con_Printf(DEV, "r_textureMinFilter: %s", r_textureMagFilter->s);
     ri.Con_Printf(DEV, "r_textureMagFilter: %s", r_textureMinFilter->s);
     ri.Con_Printf(INFO, "r_textureFiltering: %s", r_textureFiltering->s);
     ri.Con_Printf(INFO, "r_gammaAmount: %f", r_gammaAmount->f);
     ri.Con_Printf(INFO, "r_textureDetail: %s", r_textureDetail->s);
-    ri.Con_Printf(INFO, "r_EXT_anisotropicFilter: %s, %i", N_booltostr(r_EXT_anisotropicFiltering->b), r_EXT_anisotropicFiltering->i);
-    ri.Con_Printf(INFO, "r_useExtensions: %s", N_booltostr(r_useExtensions->b));
-    ri.Con_Printf(INFO, "r_dither: %s", N_booltostr(r_dither->b));
+    ri.Con_Printf(INFO, "r_EXT_anisotropicFilter: %s, %i", N_booltostr(r_EXT_anisotropicFiltering->i), r_EXT_anisotropicFiltering->i);
+    ri.Con_Printf(INFO, "r_useExtensions: %s", N_booltostr(r_useExtensions->i));
+    ri.Con_Printf(INFO, "r_dither: %s", N_booltostr(r_dither->i));
     ri.Con_Printf(INFO, " ");
 }
 
@@ -499,6 +495,89 @@ extern "C" void R_InitImGui(void)
     imgui_on = qtrue;
 }
 
+extern "C" void R_GetVars(void)
+{
+    r_aspectRatio = ri.Cvar_Get("r_aspectRatio", "16:9", CVAR_PRIVATE | CVAR_SAVE);
+    ri.Cvar_SetDescription(r_aspectRatio, "Screen's aspect ratio.");
+
+    r_fovWidth = ri.Cvar_Get("r_fovWidth", "72", CVAR_SAVE | CVAR_LATCH | CVAR_ARCHIVE_ND);
+    ri.Cvar_SetGroup(r_fovWidth, CVG_RENDERER);
+    r_fovHeight = ri.Cvar_Get("r_fovHeight", "24", CVAR_SAVE | CVAR_LATCH | CVAR_ARCHIVE_ND);
+    ri.Cvar_SetGroup(r_fovHeight, CVG_RENDERER);
+    
+    r_ticrate = ri.Cvar_Get("r_ticrate", "35", CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_ticrate, CVG_RENDERER);
+    ri.Cvar_SetDescription(r_ticrate, "The amount of times the game will loop per second");
+    
+    r_textureMagFilter = ri.Cvar_Get("r_textureMagFilter", "GL_NEAREST", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_textureMagFilter, CVG_RENDERER);
+    r_textureMinFilter = ri.Cvar_Get("r_textureMinFilter", "GL_LINEAR", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_textureMinFilter, CVG_RENDERER);
+    r_textureFiltering = ri.Cvar_Get("r_textureFiltering", "Nearest", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_textureFiltering, CVG_RENDERER);
+    r_textureCompression = ri.Cvar_Get("r_textureCompression", "none", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_textureCompression, CVG_RENDERER);
+    r_textureDetail = ri.Cvar_Get("r_textureDetail", "medium", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_textureDetail, CVG_RENDERER);
+    
+    r_screenwidth = ri.Cvar_Get("r_screenwidth", "1920", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_screenwidth, CVG_RENDERER);
+    ri.Cvar_SetDescription(r_screenwidth, "Video rendering width");
+    ri.Cvar_CheckRange(r_screenwidth, "800", "3840", CVT_INT);
+    r_screenheight = ri.Cvar_Get("r_screenheight", "1080", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_screenheight, CVG_RENDERER);
+    ri.Cvar_SetDescription(r_screenheight, "Video rendering height");
+    ri.Cvar_CheckRange(r_screenheight, "600", "2160", CVT_INT);
+
+    r_vsync = ri.Cvar_Get("r_vsync", "1", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_vsync, CVG_RENDERER);
+
+    r_fullscreen = ri.Cvar_Get("r_fullscreen", "0", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_fullscreen, CVG_RENDERER);
+
+    r_drawFPS = ri.Cvar_Get("r_drawFPS", "0", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_drawFPS, CVG_RENDERER);
+
+    r_renderapi = ri.Cvar_Get("r_renderapi", "R_OPENGL", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_renderapi, CVG_RENDERER);
+    ri.Cvar_SetDescription(r_renderapi,
+        "   R_OPENGL = use OpenGL 3.1 rendering\n"
+        "   R_VULKAN = use Vulkan rendering (NOT SUPPORTED YET)\n"
+        "   R_D3D11  = use DirectX11 rendering (NOT SUPPORTED YET)");
+
+    r_dither = ri.Cvar_Get("r_dither", "0", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_dither, CVG_RENDERER);
+
+    r_multisampleAmount = ri.Cvar_Get("r_multisampleAmount", "2", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_multisampleAmount, CVG_RENDERER);
+    r_multisampleType = ri.Cvar_Get("r_multisampleType", "none", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_multisampleType, CVG_RENDERER);
+
+    r_EXT_anisotropicFiltering = ri.Cvar_Get("r_EXT_anisotropicFiltering", "0", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_EXT_anisotropicFiltering, CVG_RENDERER);
+
+    r_gammaAmount = ri.Cvar_Get("r_gammaAmount", "2.2.", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_gammaAmount, CVG_RENDERER);
+    r_bloomOn = ri.Cvar_Get("r_bloomOn", "0", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_bloomOn, CVG_RENDERER);
+    
+    r_useExtensions = ri.Cvar_Get("r_useExtensions", "1", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_useExtensions, CVG_RENDERER);
+    
+    r_enableShaders = ri.Cvar_Get("r_enableShaders", "1", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_enableShaders, CVG_RENDERER);
+    r_enableBuffers = ri.Cvar_Get("r_enableBuffers", "1", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_enableBuffers, CVG_RENDERER);
+    ri.Cvar_SetDescription(r_enableBuffers,
+        "    0 = force immediate (old-fashioned) rendering\n"
+        "    1 = allow OpenGL 3.1 buffer objects");
+    r_useFramebuffer = ri.Cvar_Get("r_useFramebuffer", "0", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_useFramebuffer, CVG_RENDERER);
+    ri.Cvar_SetDescription(r_useFramebuffer,
+        "    0 = force the renderer to let OpenGL do all the post-processing (faster, but looks worse)\n"
+        "    1 = let the renderer use its own custom post-processing (slower, but better looking)");
+}
+
 static qboolean rendererInitialized = qfalse;
 
 extern "C" void RE_Init(renderImport_t *import)
@@ -506,67 +585,13 @@ extern "C" void RE_Init(renderImport_t *import)
     memcpy(&ri, import, sizeof(*import)); // copy all the functions
 
     ri.Con_Printf(INFO, "RE_Init: initializing rendering engine");
-    
-    r_fovWidth = ri.Cvar_Get("r_fovWidth", "72", CVAR_PRIVATE | CVAR_SAVE);
-    ri.Cvar_SetGroup(r_fovWidth, CVG_RENDERER);
-    r_fovHeight = ri.Cvar_Get("r_fovHeight", "24", CVAR_PRIVATE | CVAR_SAVE);
-    ri.Cvar_SetGroup(r_fovHeight, CVG_RENDERER);
-    r_ticrate = ri.Cvar_Get("r_ticrate", "35", CVAR_PRIVATE | CVAR_ROM | CVAR_SAVE);
-    ri.Cvar_SetGroup(r_ticrate, CVG_RENDERER);
-    r_textureMagFilter = ri.Cvar_Get("r_textureMagFilter", "GL_NEAREST", CVAR_PRIVATE | CVAR_SAVE);
-    ri.Cvar_SetGroup(r_textureMagFilter, CVG_RENDERER);
-    r_textureMinFilter = ri.Cvar_Get("r_textureMinFilter", "GL_LINEAR", CVAR_PRIVATE | CVAR_SAVE);
-    ri.Cvar_SetGroup(r_textureMinFilter, CVG_RENDERER);
-    r_textureFiltering = ri.Cvar_Get("r_textureFiltering", "Nearest", CVAR_PRIVATE | CVAR_SAVE);
-    ri.Cvar_SetGroup(r_textureFiltering, CVG_RENDERER);
-    r_textureCompression = ri.Cvar_Get("r_textureCompression", "none", CVAR_PRIVATE | CVAR_SAVE);
-    ri.Cvar_SetGroup(r_textureCompression, CVG_RENDERER);
-    r_textureDetail = ri.Cvar_Get("r_textureDetail", "medium", CVAR_PRIVATE | CVAR_SAVE);
-    ri.Cvar_SetGroup(r_textureDetail, CVG_RENDERER);
-    r_screenwidth = ri.Cvar_Get("r_screenwidth", "1920", CVAR_PRIVATE | CVAR_SAVE);
-    ri.Cvar_SetGroup(r_screenwidth, CVG_RENDERER);
-    r_screenheight = ri.Cvar_Get("r_screenheight", "1080", CVAR_PRIVATE | CVAR_SAVE);
-    ri.Cvar_SetGroup(r_screenheight, CVG_RENDERER);
-    r_vsync = ri.Cvar_Get("r_vsync", "1", CVAR_PRIVATE | CVAR_SAVE);
-    ri.Cvar_SetGroup(r_vsync, CVG_RENDERER);
-    r_fullscreen = ri.Cvar_Get("r_fullscreen", "0", CVAR_PRIVATE | CVAR_SAVE);
-    ri.Cvar_SetGroup(r_fullscreen, CVG_RENDERER);
-    r_drawFPS = ri.Cvar_Get("r_drawFPS", "0", CVAR_PRIVATE | CVAR_SAVE);
-    ri.Cvar_SetGroup(r_drawFPS, CVG_RENDERER);
-    r_renderapi = ri.Cvar_Get("r_renderapi", "R_OPENGL", CVAR_PRIVATE | CVAR_SAVE);
-    ri.Cvar_SetGroup(r_renderapi, CVG_RENDERER);
-    r_dither = ri.Cvar_Get("r_dither", "0", CVAR_PRIVATE | CVAR_SAVE);
-    ri.Cvar_SetGroup(r_dither, CVG_RENDERER);
-    r_multisampleAmount = ri.Cvar_Get("r_multisampleAmount", "2", CVAR_PRIVATE | CVAR_SAVE);
-    ri.Cvar_SetGroup(r_multisampleAmount, CVG_RENDERER);
-    r_multisampleType = ri.Cvar_Get("r_multisampleType", "none", CVAR_PRIVATE | CVAR_SAVE);
-    ri.Cvar_SetGroup(r_multisampleType, CVG_RENDERER);
-    r_EXT_anisotropicFiltering = ri.Cvar_Get("r_EXT_anisotropicFiltering", "0", CVAR_PRIVATE | CVAR_SAVE);
-    ri.Cvar_SetGroup(r_EXT_anisotropicFiltering, CVG_RENDERER);
-    r_gammaAmount = ri.Cvar_Get("r_gammaAmount", "2.2.", CVAR_PRIVATE | CVAR_SAVE);
-    ri.Cvar_SetGroup(r_gammaAmount, CVG_RENDERER);
-    r_bloomOn = ri.Cvar_Get("r_bloomOn", "0", CVAR_PRIVATE | CVAR_SAVE);
-    ri.Cvar_SetGroup(r_bloomOn, CVG_RENDERER);
-    r_useExtensions = ri.Cvar_Get("r_useExtensions", "1", CVAR_PRIVATE | CVAR_SAVE);
-    ri.Cvar_SetGroup(r_useExtensions, CVG_RENDERER);
-    r_enableShaders = ri.Cvar_Get("r_enableShaders", "1", CVAR_PRIVATE | CVAR_SAVE);
-    ri.Cvar_SetGroup(r_enableShaders, CVG_RENDERER);
-    r_enableBuffers = ri.Cvar_Get("r_enableBuffers", "1", CVAR_PRIVATE | CVAR_SAVE);
-    ri.Cvar_SetGroup(r_enableBuffers, CVG_RENDERER);
-    ri.Cvar_SetDescription(r_enableBuffers,
-        "    0 = force immediate (old-fashioned) rendering\n"
-        "    1 = allow OpenGL 3.1 buffer objects");
-    r_useFramebuffer = ri.Cvar_Get("r_useFramebuffer", "0", CVAR_PRIVATE | CVAR_SAVE);
-    ri.Cvar_SetGroup(r_useFramebuffer, CVG_RENDERER);
-    ri.Cvar_SetDescription(r_useFramebuffer,
-        "    0 = force the renderer to let OpenGL do all the post-processing (faster, but looks worse)\n"
-        "    1 = let the renderer use its own custom post-processing (slower, but better looking)");
 
     if (ri.SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
         ri.N_Error("RE_Init: failed to initialize SDL2, error message: %s",
             ri.SDL_GetError());
     }
 
+    R_GetVars();
     RB_CameraInit();
 
     ri.Con_Printf(INFO, "alllocating memory to the SDL_Window context");

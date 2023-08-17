@@ -42,27 +42,27 @@ static const texmode_t filters[] = {
 
 extern "C" uint32_t StringToFilter(const char *str)
 {
-    if (!N_stricmpn("GL_NEAREST", str, sizeof("GL_NEAREST"))) return GL_NEAREST;
-    else if (!N_stricmpn("GL_LINEAR", str, sizeof("GL_LINEAR"))) return GL_LINEAR;
-    else if (!N_stricmpn("GL_NEAREST_MIPMAP_NEAREST", str, sizeof("GL_NEAREST_MIMAP_NEAREST"))) return GL_NEAREST_MIPMAP_NEAREST;
-    else if (!N_stricmpn("GL_LINEAR_MIPMAP_LINEAR", str, sizeof("GL_LINEAR_MIPMAP_LINEAR"))) return GL_LINEAR_MIPMAP_LINEAR;
-    else if (!N_stricmpn("GL_NEAREST_MIPMAP_LINEAR", str, sizeof("GL_NEAREST_MIPMAP_LINEAR"))) return GL_NEAREST_MIPMAP_LINEAR;
-    else if (!N_stricmpn("GL_LINEAR_MIPMAP_NEAREST", str, sizeof("GL_LINEAR_MIPMAP_NEAREST"))) return GL_LINEAR_MIPMAP_NEAREST;
+    if (!N_stricmp("GL_NEAREST", str)) return GL_NEAREST;
+    else if (!N_stricmp("GL_LINEAR", str)) return GL_LINEAR;
+    else if (!N_stricmp("GL_NEAREST_MIPMAP_NEAREST", str)) return GL_NEAREST_MIPMAP_NEAREST;
+    else if (!N_stricmp("GL_LINEAR_MIPMAP_LINEAR", str)) return GL_LINEAR_MIPMAP_LINEAR;
+    else if (!N_stricmp("GL_NEAREST_MIPMAP_LINEAR", str)) return GL_NEAREST_MIPMAP_LINEAR;
+    else if (!N_stricmp("GL_LINEAR_MIPMAP_NEAREST", str)) return GL_LINEAR_MIPMAP_NEAREST;
 
-    ri.N_Error("StringToFilter: invalid filter string");
+    ri.N_Error("StringToFilter: invalid filter string: %s", str);
 }
 
 extern "C" uint32_t R_TexFormat(void)
 {
-    switch (R_GetTextureDetail()) {
-    case GPUvsGod: return GL_RGBA32F;
-    case extreme: return GL_RGBA16F;
-    case high: return GL_RGBA12;
-    case medium: return GL_RGBA8;
-    case low: return GL_RGBA4;
-    case msdos: return GL_RGBA2;
+    switch (r_textureDetail->i) {
+    case TEX_GPUvsGod: return GL_RGBA16;
+    case TEX_xtreme: return GL_RGBA12;
+    case TEX_high: return GL_RGBA8;
+    case TEX_medium: return GL_RGBA4;
+    case TEX_low: return GL_RGB8;
+    case TEX_msdos: return GL_RGB4;
     };
-    return GL_RGBA8;
+    return GL_RGBA4;
 }
 
 extern "C" uint32_t R_TexMagFilter(void)
@@ -73,7 +73,7 @@ extern "C" uint32_t R_TexMagFilter(void)
             return magFilter;
     }
     ri.Con_Printf(WARNING, "r_textureMagFilter is invalid, setting to GL_NEAREST");
-    N_strncpyz(r_textureMagFilter->s, "GL_NEAREST", sizeof("GL_NEAREST"));
+    ri.Cvar_Set("r_textureMagFilter", "GL_NEAREST");
     return GL_NEAREST;
 }
 
@@ -85,7 +85,7 @@ extern "C" uint32_t R_TexMinFilter(void)
             return minFilter;
     }
     ri.Con_Printf(INFO, "WARNING: r_textureMinFilter is invalid, setting to GL_NEAREST");
-    N_strncpyz(r_textureMinFilter->s, "GL_NEAREST", sizeof("GL_NEAREST"));
+    ri.Cvar_Set("r_textureMinFilter", "GL_NEAREST");
     return GL_NEAREST;
 }
 
@@ -97,9 +97,9 @@ extern "C" uint32_t R_TexFilter(void)
     }
 
     ri.Con_Printf(INFO, "WARNING: r_textureFiltering is invalid, setting to Nearest");
-    N_strncpyz(r_textureFiltering->s, "Nearest", sizeof("Nearest"));
-    N_strncpyz(r_textureMagFilter->s, "GL_NEAREST", sizeof("GL_NEAREST"));
-    N_strncpyz(r_textureMinFilter->s, "GL_NEAREST", sizeof("GL_NEAREST"));
+    ri.Cvar_Set("r_textureFiltering", "Nearest");
+    ri.Cvar_Set("r_textureMagFilter", "GL_NEAREST");
+    ri.Cvar_Set("r_textureMinFilter", "GL_NEAREST");
     return TEXTURE_FILTER_NEAREST;
 }
 
@@ -122,8 +122,8 @@ extern "C" void R_UpdateTextures(void)
         nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
         nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapT);
         nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapS);
-        if (r_EXT_anisotropicFiltering->b)
-            nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1);
+        if (r_EXT_anisotropicFiltering->i)
+            nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, glContext.maxAnisotropy);
 
         nglBindTexture(GL_TEXTURE_2D, 0);
     }
@@ -132,7 +132,7 @@ extern "C" void R_UpdateTextures(void)
 extern "C" void R_InitTexBuffer(texture_t *tex, qboolean withFramebuffer)
 {
     // is there compression allowed/available, no framebuffer attachments should be compressed
-    if (r_textureCompression->b && !withFramebuffer) {
+    if (r_textureCompression->i && !withFramebuffer) {
         nglCompressedTexImage2D(GL_TEXTURE_2D, 0, R_TexFormat(), tex->width, tex->height, 0, tex->width * tex->height * tex->channels, tex->data);
     }
     else {
@@ -201,8 +201,8 @@ extern "C" texture_t *R_InitTexture(const char *filename)
     nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, t->magFilter);
     nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, t->wrapS);
     nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, t->wrapT);
-    if (r_EXT_anisotropicFiltering->b)
-        nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 1);
+    if (r_EXT_anisotropicFiltering->i)
+        nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, glContext.maxAnisotropy);
 
     bufferLen = ri.FS_LoadFile(filename, (void **)&buffer);
     if (!buffer) {
@@ -248,12 +248,12 @@ extern "C" void RE_ShutdownTextures(void)
 }
 
 const textureDetail_t textureDetails[6] = {
-    {"GPUvsGod", GPUvsGod, (int)sizeof("GPUvsGod")},
-    {"extreme",  extreme,  (int)sizeof("extreme")},
-    {"high",     high,     (int)sizeof("high")},
-    {"medium",   medium,   (int)sizeof("medium")},
-    {"low",      low,      (int)sizeof("low")},
-    {"msdos",    msdos,    (int)sizeof("msdos")}
+    {"GPUvsGod", TEX_GPUvsGod, (int)sizeof("GPUvsGod")},
+    {"xtreme",   TEX_xtreme,   (int)sizeof("xtreme")},
+    {"high",     TEX_high,     (int)sizeof("high")},
+    {"medium",   TEX_medium,   (int)sizeof("medium")},
+    {"low",      TEX_low,      (int)sizeof("low")},
+    {"msdos",    TEX_msdos,    (int)sizeof("msdos")}
 };
 
 extern "C" texture_t *R_TextureFromHandle(nhandle_t handle)

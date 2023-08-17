@@ -439,7 +439,6 @@ void Com_FillImport(renderImport_t *import)
 	import->Z_FreeTags = Z_FreeTags;
 	import->Z_ChangeTag = Z_ChangeTag;
 	import->Z_ChangeUser = Z_ChangeUser;
-	import->Z_ChangeName = Z_ChangeName;
 	import->Z_CleanCache = Z_CleanCache;
 	import->Z_CheckHeap = Z_CheckHeap;
 	import->Z_ClearZone = Z_ClearZone;
@@ -471,10 +470,11 @@ void Com_FillImport(renderImport_t *import)
 	import->Cvar_SetStringValue = Cvar_SetStringValue;
 	import->Cvar_SetFloatValue = Cvar_SetFloatValue;
 	import->Cvar_SetIntegerValue = Cvar_SetIntegerValue;
+	import->Cvar_CheckRange = Cvar_CheckRange;
 
     import->Cmd_AddCommand = Cmd_AddCommand;
     import->Cmd_RemoveCommand = Cmd_RemoveCommand;
-    import->Cmd_ExecuteText = Cmd_ExecuteText;
+    import->Cmd_ExecuteString = Cmd_ExecuteString;
     import->Cmd_Argc = Cmd_Argc;
     import->Cmd_ArgsFrom = Cmd_ArgsFrom;
     import->Cmd_Argv = Cmd_Argv;

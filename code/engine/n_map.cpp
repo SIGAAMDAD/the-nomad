@@ -41,8 +41,7 @@ static void Map_LoadCheckpoints(nmap_t *mapData, const json* data)
     }
     
     c = 0;
-    mapData->checkpoints = (checkpoint_t *)Z_Malloc(sizeof(*mapData->checkpoints) * mapData->numCheckpoints,
-        TAG_LEVEL, &mapData->checkpoints, "checkpoints");
+    mapData->checkpoints = (checkpoint_t *)Hunk_Alloc(sizeof(*mapData->checkpoints) * mapData->numCheckpoints, "checkpoints", h_low);
     for (const auto& i : data->at("objects")) {
         const json_string& type = data->at("type");
         if (type != "checkpoint") { // skip any non-checkpoint objects
@@ -130,7 +129,7 @@ static qboolean Map_LoadTiles(nmap_t *mapData, const json *tilelayer, const json
     uint32_t *tileData, tileIndex;
     json *tsj;
 
-    tsj = (json *)Z_Malloc(sizeof(json), TAG_LEVEL, &tsj, "JSONtsj");
+    tsj = (json *)Hunk_Alloc(sizeof(json), "JSONtsj", h_low);
 
     mapData->firstGid = tileset->at("firstgid");
     mapData->mapWidth = tilelayer->at("width");
@@ -153,12 +152,9 @@ static qboolean Map_LoadTiles(nmap_t *mapData, const json *tilelayer, const json
     mapData->tileCountX = mapData->imageWidth / mapData->tileWidth;
     mapData->tileCountY = mapData->imageHeight / mapData->tileHeight;
 
-    mapData->tilemapData = (tile_t *)Z_Malloc(sizeof(*mapData->tilemapData) * mapData->mapWidth * mapData->mapHeight,
-        TAG_LEVEL, &mapData->tilemapData, "tilemapData");
-    mapData->tilesetData = (uint32_t *)Z_Malloc(sizeof(*mapData->tilesetData) * mapData->tileCountX * mapData->tileCountY,
-        TAG_LEVEL, &mapData->tilesetData, "tilesetData");
-    mapData->tileCoords = (texcoord_t *)Z_Malloc(sizeof(texcoord_t) * mapData->tileCountX * mapData->tileCountY,
-        TAG_LEVEL, &mapData->tileCoords, "tileCoords");
+    mapData->tilemapData = (tile_t *)Hunk_Alloc(sizeof(*mapData->tilemapData) * mapData->mapWidth * mapData->mapHeight, "tilemapData", h_low);
+    mapData->tilesetData = (uint32_t *)Hunk_Alloc(sizeof(*mapData->tilesetData) * mapData->tileCountX * mapData->tileCountY, "tilesetData", h_low);
+    mapData->tileCoords = (texcoord_t *)Hunk_Alloc(sizeof(texcoord_t) * mapData->tileCountX * mapData->tileCountY, "tileCoords", h_low);
 
     //
     // load the tiles
@@ -230,7 +226,7 @@ nmap_t *LVL_LoadMap(const char *tmjFile)
         return NULL;
     }
 
-    tmj = (json *)Z_Malloc(sizeof(json), TAG_LEVEL, &mapData->tmj, "JSONtmj");
+    tmj = (json *)Hunk_Alloc(sizeof(json), "JSONtmj", h_low);
 
     try {
         *tmj = json::parse(tmjBuffer);
@@ -249,7 +245,7 @@ nmap_t *LVL_LoadMap(const char *tmjFile)
         Con_Printf(WARNING, "Maximum tilesets per map is 1, only loading the first tileset");
     }
 
-    mapData = (nmap_t *)Z_Malloc(sizeof(*mapData), TAG_LEVEL, &mapData, "mapData");
+    mapData = (nmap_t *)Hunk_Alloc(sizeof(*mapData), "mapData", h_low);
 
     mapData->tmj = tmj;
     mapData->tileWidth = tmj->at("tilewidth");
@@ -282,6 +278,7 @@ nmap_t *LVL_LoadMap(const char *tmjFile)
 
     if (!Map_LoadTiles(mapData, tilelayer, tileset)) {
         Z_FreeTags(TAG_LEVEL, TAG_LEVEL);
+        Hunk_Clear();
         return NULL;
     }
 
@@ -671,6 +668,7 @@ qboolean Com_LoadLevel(const char *name)
     if (!LVL_ParseGeneral(shaderBuffer)) {
         FS_FreeFile(shaderBuffer);
         Z_FreeTags(TAG_LEVEL, TAG_LEVEL);
+        Hunk_Clear();
         Con_Error(false, "Failed to parse level %s", name);
         return qfalse;
     }
@@ -678,6 +676,7 @@ qboolean Com_LoadLevel(const char *name)
     level->mapData = LVL_LoadMap(level->mapName);
     if (!level->mapData) {
         Z_FreeTags(TAG_LEVEL, TAG_LEVEL);
+        Hunk_Clear();
         Con_Error(false, "Failed to load map data for %s", name);
         return qfalse;
     }

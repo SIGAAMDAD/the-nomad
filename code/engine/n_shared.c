@@ -308,6 +308,24 @@ qboolean Com_HasPatterns( const char *str )
 	return qfalse;
 }
 
+/*
+==================
+COM_DefaultExtension
+
+if path doesn't have an extension, then append
+ the specified one (which should include the .)
+==================
+*/
+void COM_DefaultExtension( char *path, uint64_t maxSize, const char *extension )
+{
+	const char *dot = strrchr(path, '.'), *slash;
+	if (dot && ((slash = strrchr(path, '/')) == NULL || slash < dot))
+		return;
+	else
+		N_strcat(path, maxSize, extension);
+}
+
+
 void COM_StripExtension(const char *in, char *out, uint64_t destsize)
 {
 	const char *dot = (char *)strrchr(in, '.'), *slash;
@@ -501,6 +519,15 @@ qboolean N_isanumber( const char *s )
 #endif
 }
 
+void N_itoa(char *buf, uint64_t bufsize, int i)
+{
+	snprintf(buf, bufsize, "%i", i);
+}
+
+void N_ftoa(char *buf, uint64_t bufsize, float f)
+{
+	snprintf(buf, bufsize, "%f", f);
+}
 
 void N_strcpy (char *dest, const char *src)
 {
@@ -1022,70 +1049,40 @@ int N_atoi (const char *s)
 	return 0;
 }
 
+/*
+================
+N_isfinite
+================
+*/
+static int N_isfinite( float f )
+{
+	union {
+		float f;
+		unsigned u;
+	} fi;
+	fi.f = f;
+
+	if ( fi.u == 0xFF800000 || fi.u == 0x7F800000 )
+		return 0; // -INF or +INF
+
+	fi.u = 0x7F800000 - (fi.u & 0x7FFFFFFF);
+	if ( (int)( fi.u >> 31 ) )
+		return 0; // -NAN or +NAN
+
+	return 1;
+}
+
 float N_atof(const char *s)
 {
-	double			val;
-	int             sign;
-	int             c;
-	int             decimal, total;
-    const char *str = s;
-	
-	if (*str == '-') {
-		sign = -1;
-		str++;
-	}
-	else
-		sign = 1;
-		
-	val = 0;
+	float f;
 
-    //
-    // check for hex
-    //
-	if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X') ) {
-		str += 2;
-		while (1) {
-			c = *str++;
-			if (c >= '0' && c <= '9')
-				val = (val*16) + c - '0';
-			else if (c >= 'a' && c <= 'f')
-				val = (val*16) + c - 'a' + 10;
-			else if (c >= 'A' && c <= 'F')
-				val = (val*16) + c - 'A' + 10;
-			else
-				return val*sign;
-		}
-	}
-	
-    //
-    // check for character
-    //
-	if (str[0] == '\'')
-		return sign * str[1];
-	
-    //
-    // assume decimal
-    //
-	decimal = -1;
-	total = 0;
-	while (1) {
-		c = *str++;
-		if (c == '.') {
-			decimal = total;
-			continue;
-		}
-		if (c <'0' || c > '9')
-			break;
-		val = val*10 + c - '0';
-		total++;
-	}
+	f = atof( s );
 
-	if (decimal == -1)
-		return val*sign;
-	while (total > decimal) {
-		val /= 10;
-		total--;
-	}
-	
-	return val*sign;
+	// modern C11-like implementations of atof() may return INF or NAN
+	// which breaks all FP code where such values getting passed
+	// and effectively corrupts range checks for cvars as well
+	if ( !N_isfinite( f ) )
+		return 0.0f;
+
+	return f;
 }
