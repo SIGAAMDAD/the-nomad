@@ -123,6 +123,7 @@ char *N_strlwr(char *s1);
 char *N_strupr(char *s1);
 void N_strcat(char *dest, size_t size, const char *src);
 const char *N_stristr(const char *s, const char *find);
+float N_fmaxf(float a, float b);
 #ifdef _WIN32
 int N_vsnprintf(char *str, size_t size, const char *format, va_list ap);
 #else
