@@ -1460,3 +1460,20 @@ done:
     return buf_p - buffer;
 }
 #endif
+
+float N_fmaxf(float a, float b)
+{
+    if (N_isnan(a) || N_isnan(b)) {
+        return NAN; // Return NaN if any input is NaN
+    }
+    if (N_isinf(a) || N_isinf(b)) {
+        if (a > 0 && b > 0) {
+            return INFINITY; // Return positive infinity if both inputs are positive infinity
+        } else if (a < 0 && b < 0) {
+            return -INFINITY; // Return negative infinity if both inputs are negative infinity
+        } else {
+            return NAN; // Return NaN if inputs are different signs of infinity
+        }
+    }
+    return (a > b) ? a : b;
+}
