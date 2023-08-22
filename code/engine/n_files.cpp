@@ -74,6 +74,7 @@ typedef struct
 	qboolean tmp;
 	qboolean used;
 	qboolean mapped;
+	handleOwner_t owner;
 } fileHandle_t;
 
 typedef enum : uint64_t
@@ -103,6 +104,7 @@ static bffFile_t	**fs_archives;
 
 static searchpath_t *fs_searchpaths;
 static cvar_t		*fs_homepath;
+static cvar_t		*fs_restrict;
 static cvar_t		*fs_basepath;
 static cvar_t		*fs_steampath;
 static cvar_t		*fs_basegame;
@@ -198,8 +200,6 @@ char *FS_BuildOSPath(const char *base, const char *game, const char *npath)
 	FS_ReplaceSeparators(temp);
 	snprintf(ospath[toggle], sizeof(*ospath), "%s%s", base, temp);
 
-	Con_Printf(DEBUG, "FS_BuildOSPath: %s", ospath[toggle]);
-
 	return ospath[toggle];
 }
 
@@ -239,23 +239,108 @@ static int FS_PathCmp( const char *s1, const char *s2 )
 	return 0;		// strings are equal
 }
 
-void FS_VM_FOpenRead(const char *path, file_t *f)
+static const char *FS_OwnerName(handleOwner_t owner)
 {
-	*f = FS_FOpenRead(path);
+	switch (owner) {
+	case H_SGAME: return "SGAME";
+	case H_SCRIPT: return "SCRIPT";
+	case H_UI: return "UI";
+	};
+	return "UNKOWN";
 }
 
-void FS_VM_FOpenWrite(const char *path, file_t *f)
+file_t FS_VM_FOpenRead(const char *path, file_t *f, handleOwner_t owner)
 {
-	*f = FS_FOpenWrite(path);
+	int32_t r;
+
+	r = FS_FOpenRead(path);
+	if (f && r != FS_INVALID_HANDLE) {
+		handles[*f].owner = owner;
+		*f = r;
+	}
+	return r;
 }
 
-void FS_VM_FClose(file_t *f)
+file_t FS_VM_FOpenWrite(const char *path, file_t *f, handleOwner_t owner)
 {
-	if (*f <= FS_INVALID_HANDLE || *f >= MAX_FILE_HANDLES)
+	int32_t r;
+	
+	r = FS_FOpenWrite(path);
+	if (f && r != FS_INVALID_HANDLE) {
+		handles[*f].owner = owner;
+		*f = r;
+	}
+	return r;
+}
+
+uint32_t FS_VM_Read(void *buffer, uint32_t len, file_t f, handleOwner_t owner)
+{
+	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES)
+		return 0;
+	
+	if (handles[f].owner != owner || !handles[f].data.fp)
+		return 0;
+	
+	return (uint32_t)FS_Read(buffer, len, f);
+}
+
+uint32_t FS_VM_Write(const void *buffer, uint32_t len, file_t f, handleOwner_t owner)
+{
+	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES)
+		return 0;
+	
+	if (handles[f].owner != owner || !handles[f].data.fp)
+		return 0;
+	
+	return (uint32_t)FS_Write(buffer, len, f);
+}
+
+void FS_VM_WriteFile(const void *buffer, uint32_t len, file_t f, handleOwner_t owner)
+{
+	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES)
 		return;
 	
-	FS_FClose(*f);
-	*f = FS_INVALID_HANDLE;
+	if (handles[f].owner != owner || !handles[f].data.fp)
+		return;
+	
+	FS_Write(buffer, len, f);
+}
+
+void FS_VM_CreateTmp(char *name, const char *ext, file_t *f, handleOwner_t owner);
+uint64_t FS_VM_FOpenFileRead(const char *path, file_t *f, handleOwner_t owner);
+uint64_t FS_VM_FOpenFileWrite(const char *path, file_t *f, handleOwner_t owner);
+
+fileOffset_t FS_VM_FileSeek(file_t f, fileOffset_t offset, uint32_t whence, handleOwner_t owner)
+{
+	fileOffset_t r;
+
+	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES)
+		return -1;
+	
+	if (handles[f].owner != owner || !handles[f].data.fp)
+		return -1;
+	
+	r = FS_FileSeek(f, offset, whence);
+	return r;
+}
+
+void FS_VM_CloseFiles(handleOwner_t owner)
+{
+	for (uint32_t i = 0; i < MAX_FILE_HANDLES; i++) {
+		if (handles[i].owner != owner)
+			continue;
+		
+		Con_Printf(WARNING, "%s:%i:%s leaked filehandle", FS_OwnerName(owner), i, handles[i].name);
+		FS_FClose(i);
+	}
+}
+
+void FS_VM_FClose(file_t f)
+{
+	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES)
+		return;
+	
+	FS_FClose(f);
 }
 
 qboolean FS_Initialized(void)
@@ -386,6 +471,25 @@ qboolean FS_FileIsInBFF(const char *filename)
 		}
 	}
 	return qfalse;
+}
+
+
+static uint64_t FS_AddFileToList( const char *name, char **list, uint64_t nfiles )
+{
+	uint64_t i;
+
+	if ( nfiles == MAX_FOUND_FILES - 1 ) {
+		return nfiles;
+	}
+	for ( i = 0 ; i < nfiles ; i++ ) {
+		if ( !N_stricmp( name, list[i] ) ) {
+			return nfiles; // already in list
+		}
+	}
+	list[ nfiles ] = FS_CopyString( name );
+	nfiles++;
+
+	return nfiles;
 }
 
 static void FS_SortFileList( char **list, uint64_t n )
@@ -546,6 +650,169 @@ static qboolean FS_IsExt( const char *filename, const char *ext, size_t namelen 
 int64_t FS_LastBFFIndex(void)
 {
 	return fs_lastBFFIndex;
+}
+
+
+/*
+FS_ListFilteredFiles: returns a unique list of files that match the given criteria
+from all search paths
+*/
+static char **FS_ListFilteredFiles(const char *path, const char *extension, const char *filter, uint64_t *numfiles, uint32_t flags)
+{
+	uint64_t nfiles;
+	char **listCopy;
+	char *list[MAX_FOUND_FILES];
+	uint64_t i;
+	uint64_t pathLength;
+	uint64_t extLen;
+	uint64_t length, pathDepth, temp;
+	const bffFile_t *bff;
+	bff_chunk_t *file;
+	qboolean hasPatterns;
+	const char *x;
+	const searchpath_t *sp;
+
+	if (!fs_initialized) {
+		N_Error("Filesystem call made without initialization");
+	}
+
+	if (!path) {
+		*numfiles = 0;
+		return NULL;
+	}
+
+	if (!extension) {
+		extension = "";
+	}
+
+	extLen = strlen(extension);
+	hasPatterns = Com_HasPatterns(extension);
+	if (hasPatterns && extension[0] == '.' && extension[1] != '\0') {
+		extension++;
+	}
+
+	pathLength = strlen(path);
+	if (pathLength > 0 && (path[pathLength - 1] == '\\' || path[pathLength - 1] == '/')) {
+		pathLength--;
+	}
+	nfiles = 0;
+//	FS_ReturnPath(path, );
+
+	// search through the path, one element at a time, adding to the list
+	for (sp = fs_searchpaths; sp; sp = sp->next) {
+		// is the element a bff archive?
+		if (sp->bff && (flags & FS_MATCH_BFFs)) {
+			
+			// look through all the bff chunks
+			bff = sp->bff;
+			file = bff->chunkList;
+			for (i = 0; i < bff->numfiles; i++) {
+				const char *name;
+				uint64_t depth;
+
+				// check for directory match
+				name = file->chunkName;
+
+				if (filter) {
+					// case insensitive
+					if (!Com_FilterPath(filter, name))
+						continue;
+					// unique the match
+					nfiles = FS_AddFileToList(name, list, nfiles);
+				}
+				else {
+					length = strlen(name);
+
+					if (length < extLen)
+						continue;
+					
+					if (*extension) {
+						if (hasPatterns) {
+							x = strrchr(name, '.');
+							if (!x || !Com_FilterExt(extension, x+1)) {
+								continue;
+							}
+						}
+						else {
+							if (N_stricmp(name + length - extLen, extension)) {
+								continue;
+							}
+						}
+					}
+					
+					// unique the match
+					temp = pathLength;
+					if (pathLength) {
+						temp++; // include the '/'
+					}
+
+					nfiles = FS_AddFileToList(name + temp, list, nfiles);
+				}
+				file++;
+			}
+		}
+		else if (sp->dir && (flags & FS_MATCH_EXTERN) && sp->access != DIR_CONST) {
+			char **sysFiles;
+			uint64_t numSysFiles;
+			const char *name;
+			const char *ospath;
+
+			ospath = FS_BuildOSPath(sp->dir->path, sp->dir->gamedir, path);
+			sysFiles = Sys_ListFiles(ospath, extension, filter, &numSysFiles, qfalse);
+			for (i = 0; i < numSysFiles; i++) {
+				// unique the match
+				name = sysFiles[i];
+				length = strlen(name);
+
+				nfiles = FS_AddFileToList(name, list, nfiles);
+			}
+			Sys_FreeFileList(sysFiles);
+		}
+	}
+
+	// return a copy of the list
+	*numfiles = nfiles;
+
+	if (nfiles) {
+		return NULL;
+	}
+
+	listCopy = (char **)Z_Malloc((nfiles + 1) * sizeof(*listCopy), TAG_STATIC, &listCopy, "fsListCopy");
+	for (i = 0; i < nfiles; i++) {
+		listCopy[i] = list[i];
+	}
+	listCopy[i] = NULL;
+
+	return listCopy;
+}
+
+char *FS_ReadLine(char *buf, uint64_t size, file_t f)
+{
+	return fgets(buf, size, handles[f].data.fp);
+}
+
+char **FS_ListFiles(const char *path, const char *extension, uint64_t *numfiles)
+{
+	return FS_ListFilteredFiles(path, extension, NULL, numfiles, FS_MATCH_ANY);
+}
+
+void FS_FreeFileList( char **list )
+{
+	uint64_t i;
+
+	if ( !fs_searchpaths ) {
+		N_Error( "Filesystem call made without initialization" );
+	}
+
+	if ( !list ) {
+		return;
+	}
+
+	for ( i = 0 ; list[i] ; i++ ) {
+		Z_Free( list[i] );
+	}
+
+	Z_Free( list );
 }
 
 /*
@@ -1486,6 +1753,52 @@ static void FS_AddGameDirectory(const char *path, const char *dir)
 	Sys_FreeFileList(bffList);
 }
 
+/*
+===========
+FS_ConvertPath
+===========
+*/
+static void FS_ConvertPath( char *s ) {
+	while (*s) {
+		if ( *s == '\\' || *s == ':' ) {
+			*s = '/';
+		}
+		s++;
+	}
+}
+
+
+void FS_Flush(file_t f)
+{
+	fflush(handles[f].data.fp);
+}
+
+void FS_FilenameCompletion( const char *dir, const char *ext, qboolean stripExt, void(*callback)(const char *s), uint32_t flags )
+{
+	char	filename[ MAX_STRING_CHARS ];
+	char	**filenames;
+	uint64_t nfiles;
+	uint64_t i;
+
+	filenames = FS_ListFilteredFiles( dir, ext, NULL, &nfiles, flags );
+
+	if ( nfiles >= 2 )
+		FS_SortFileList( filenames, nfiles-1 );
+
+	for ( i = 0; i < nfiles; i++ ) {
+		N_strncpyz( filename, filenames[ i ], sizeof( filename ) );
+		FS_ConvertPath( filename );
+
+		if ( stripExt ) {
+			COM_StripExtension( filename, filename, sizeof( filename ) );
+		}
+
+		callback( filename );
+	}
+	FS_FreeFileList( filenames );
+}
+
+
 static void FS_ReorderSearchPaths(void)
 {
 	searchpath_t **list, **bffs, **dirs;
@@ -1530,17 +1843,61 @@ static void FS_ThePurge_f(void)
 
 static void FS_ListBFF_f(void)
 {
+	Con_Printf("<-------------------- BFF List -------------------->");
+	Con_Printf("fs_bffCount: %lu", fs_bffCount);
+	Con_Printf("fs_bffChunks; %lu", fs_bffChunks);
+	Con_Printf("fs_dirCount: %lu", fs_dirCount);
+	Con_Printf("====================================================");
 	
+	for (searchpath_t *sp = fs_searchpaths; sp; sp = sp->next) {
+		if (sp->bff) {
+			const bffFile_t *bff = sp->bff;
+
+			Con_Printf("[BFF #%lu]", bff->index);
+			Con_Printf("Chunk count: %lu", bff->numfiles);
+			Con_Printf("Basename: %s", bff->bffBasename);
+			Con_Printf("Gamename: %s", bff->bffGamename);
+			Con_Printf("Filename: %s", bff->bffFilename);
+			Con_Printf("Checksum: %i", bff->checksum);
+			Con_Printf(" ");
+		}
+	}
 }
 
 static void FS_ShowDir_f(void)
 {
+	char **list;
+	uint64_t numfiles;
 
+	list = Sys_ListFiles(fs_basepath->s, NULL, NULL, &numfiles, qfalse);
+
+	Con_Printf("<-------------------- Directory %s -------------------->", fs_basepath->s);
+	for (uint64_t i = 0; i < numfiles; i++) {
+		Con_Printf("%s", list[i]);
+	}
+
+	Sys_FreeFileList(list);
 }
 
 static void FS_AddMod_f(void)
 {
+	const char *moddir, *modname;
 	
+	if (Cmd_Argc() != 2) {
+		Con_Printf("usage: addmod <directory>");
+		return;
+	}
+
+	moddir = Cmd_Argv(1);
+	modname = strrchr(moddir, PATH_SEP);
+	if (!modname) {
+		modname = moddir; 
+	}
+	else {
+		modname++;
+	}
+
+	FS_AddGameDirectory(moddir, moddir);
 }
 
 static void FS_Touch_f(void)
@@ -1548,22 +1905,80 @@ static void FS_Touch_f(void)
 
 }
 
-void FS_Restart(void)
+void FS_Shutdown(qboolean closeFiles)
 {
+	searchpath_t *p, *next;
+
+	if (closeFiles) {
+		for (uint64_t i = 0; i < MAX_FILE_HANDLES; i++) {
+			if (!handles[i].data.stream)
+				continue;
+			
+			FS_FClose(i);
+		}
+	}
+
+	for (p = fs_searchpaths; p; p = next) {
+		next = p->next;
+
+		if (p->bff) {
+			FS_FreeBFF(p->bff);
+			p->bff = NULL;
+		}
+
+		Z_Free(p);
+	}
+
+	fs_searchpaths = NULL;
+	fs_bffCount = 0;
+	fs_bffChunks = 0;
+	fs_dirCount = 0;
+
 	Cmd_RemoveCommand("dir");
 	Cmd_RemoveCommand("ls");
 	Cmd_RemoveCommand("list");
-	Cmd_RemoveCommand("addmod");
-	Cmd_RemoveCommand("touch");
-	Cmd_RemoveCommand("purge");
 }
 
-void FS_Shutdown(void)
+void FS_Restart(void)
 {
-	for (uint64_t i = 0; i < MAX_FILE_HANDLES; i++) {
-		if (!handles[i].bff && handles[i].data.fp)
-			fclose(handles[i].data.fp);
+	// last valid game folder
+	static char lastValidBase[MAX_OSPATH];
+	static char lastValidGame[MAX_OSPATH];
+
+	static qboolean execConfig = qfalse;
+
+	// free anything we currently have loaded
+	FS_Shutdown(qfalse);
+
+	// try to start up normally
+	FS_InitFilesystem();
+
+	// if we can't find default.cfg, assume that the paths are
+	// busted and error out now, rather than getting an unreadable
+	// graphics screen when the font fails to load
+	if ( FS_LoadFile( "default.cfg", NULL ) <= 0 ) {
+		if (lastValidBase[0]) {
+			Cvar_Set( "fs_basepath", lastValidBase );
+			Cvar_Set( "fs_game", lastValidGame );
+			lastValidBase[0] = '\0';
+			lastValidGame[0] = '\0';
+			Cvar_Set( "fs_restrict", "0" );
+			execConfig = qtrue;
+			FS_Restart();
+			Con_Printf( ERROR, "Invalid game folder" );
+			return;
+		}
+		N_Error( "Couldn't load default.cfg" );
 	}
+
+	if (execConfig) {
+		Cbuf_AddText("exec default.cfg\n");
+	}
+
+	execConfig = qfalse;
+
+	N_strncpyz( lastValidBase, fs_basepath->s, sizeof( lastValidBase ) );
+	N_strncpyz( lastValidGame, fs_gamedirvar->s, sizeof( lastValidGame ) );
 }
 
 void FS_InitFilesystem(void)
@@ -1578,6 +1993,10 @@ void FS_InitFilesystem(void)
 	fs_readCount = 0;
 	fs_writeCount = 0;
 	fs_cacheLoaded = qfalse;
+
+#ifdef _WIN32
+	_setmaxstdio(2048);
+#endif
 
 	Con_Printf("============ FS_InitFilesystem ============");
 
@@ -1657,10 +2076,11 @@ void FS_InitFilesystem(void)
 		FS_InitHandle(&handles[i]);
 	}
 	
-//	Cmd_AddCommand("dir", FS_ShowDir_f);
-//	Cmd_AddCommand("ls", FS_ShowDir_f);
-//	Cmd_AddCommand("list", FS_ListBFF_f);
-//	Cmd_AddCommand("addmod", FS_AddMod_f);
+	Cmd_AddCommand("dir", FS_ShowDir_f);
+	Cmd_AddCommand("ls", FS_ShowDir_f);
+	Cmd_AddCommand("list", FS_ListBFF_f);
+	Cmd_AddCommand("addmod", FS_AddMod_f);
+	Cmd_AddCommand("fs_restart", FS_Restart);
 //	Cmd_AddCommand("touch", FS_Touch_f);
 //	Cmd_AddCommand("purge", FS_ThePurge_f);
 }
@@ -1905,184 +2325,83 @@ static uint64_t FS_GetModList(char *listbuf, uint64_t bufSize)
 	return nMods;
 }
 
-static uint64_t FS_AddFileToList( const char *name, char **list, uint64_t nfiles )
+
+const char *FS_GetCurrentGameDir( void )
 {
-	uint64_t i;
+	if ( fs_gamedirvar->s[0] )
+		return fs_gamedirvar->s;
 
-	if ( nfiles == MAX_FOUND_FILES - 1 ) {
-		return nfiles;
-	}
-	for ( i = 0 ; i < nfiles ; i++ ) {
-		if ( !N_stricmp( name, list[i] ) ) {
-			return nfiles; // already in list
-		}
-	}
-	list[ nfiles ] = FS_CopyString( name );
-	nfiles++;
+	return fs_basegame->s;
+}
 
-	return nfiles;
+
+const char *FS_GetBaseGameDir( void )
+{
+	return fs_basegame->s;
+}
+
+
+const char *FS_GetBasePath( void )
+{
+	if ( fs_basepath && fs_basepath->s[0] )
+		return fs_basepath->s;
+	else
+		return "";
+}
+
+
+const char *FS_GetHomePath( void )
+{
+	if ( fs_homepath && fs_homepath->s[0] )
+		return fs_homepath->s;
+	else
+		return FS_GetBasePath();
+}
+
+
+const char *FS_GetGamePath( void )
+{
+	static char buffer[ MAX_OSPATH + MAX_CVAR_VALUE + 1 ];
+	if ( fs_gamedirvar && fs_gamedirvar->s[0] ) {
+		snprintf( buffer, sizeof( buffer ), "%s%c%s", FS_GetHomePath(), 
+			PATH_SEP, fs_gamedirvar->s );
+		return buffer;
+	} else {
+		buffer[0] = '\0';
+		return buffer;
+	}
 }
 
 /*
-FS_ListFilteredFiles: returns a unique list of files that match the given criteria
-from all search paths
+FS_LoadLibrary: tries to load libraries within known searchpaths
 */
-static char **FS_ListFilteredFiles(const char *path, const char *extension, const char *filter, uint64_t *numfiles, uint32_t flags)
+void *FS_LoadLibrary(const char *name)
 {
-	uint64_t nfiles;
-	char **listCopy;
-	char *list[MAX_FOUND_FILES];
-	uint64_t i;
-	uint64_t pathLength;
-	uint64_t extLen;
-	uint64_t length, pathDepth, temp;
-	const bffFile_t *bff;
-	bff_chunk_t *file;
-	qboolean hasPatterns;
-	const char *x;
-	const searchpath_t *sp;
+	const searchpath_t *sp = fs_searchpaths;
+	void *libHandle = NULL;
+	char *fn;
 
-	if (!fs_initialized) {
-		N_Error("Filesystem call made without initialization");
-	}
+#ifdef _NOMAD_DEBUG
+	fn = FS_BuildOSPath( Sys_pwd(), name, NULL );
+	libHandle = Sys_LoadDLL( fn );
+#endif
 
-	if (!path) {
-		*numfiles = 0;
-		return NULL;
-	}
-
-	if (!extension) {
-		extension = "";
-	}
-
-	extLen = strlen(extension);
-	hasPatterns = Com_HasPatterns(extension);
-	if (hasPatterns && extension[0] == '.' && extension[1] != '\0') {
-		extension++;
-	}
-
-	pathLength = strlen(path);
-	if (pathLength > 0 && (path[pathLength - 1] == '\\' || path[pathLength - 1] == '/')) {
-		pathLength--;
-	}
-	nfiles = 0;
-//	FS_ReturnPath(path, );
-
-	// search through the path, one element at a time, adding to the list
-	for (sp = fs_searchpaths; sp; sp = sp->next) {
-		// is the element a bff archive?
-		if (sp->bff && (flags & FS_MATCH_BFFs)) {
-			
-			// look through all the bff chunks
-			bff = sp->bff;
-			file = bff->chunkList;
-			for (i = 0; i < bff->numfiles; i++) {
-				const char *name;
-				uint64_t depth;
-
-				// check for directory match
-				name = file->chunkName;
-
-				if (filter) {
-					// case insensitive
-					if (!Com_FilterPath(filter, name))
-						continue;
-					// unique the match
-					nfiles = FS_AddFileToList(name, list, nfiles);
-				}
-				else {
-					length = strlen(name);
-
-					if (length < extLen)
-						continue;
-					
-					if (*extension) {
-						if (hasPatterns) {
-							x = strrchr(name, '.');
-							if (!x || !Com_FilterExt(extension, x+1)) {
-								continue;
-							}
-						}
-						else {
-							if (N_stricmp(name + length - extLen, extension)) {
-								continue;
-							}
-						}
-					}
-					
-					// unique the match
-					temp = pathLength;
-					if (pathLength) {
-						temp++; // include the '/'
-					}
-
-					nfiles = FS_AddFileToList(name + temp, list, nfiles);
-				}
-				file++;
-			}
+	while ( !libHandle && sp ) {
+		while ( sp && ( sp->access != DIR_STATIC || !sp->dir ) ) {
+			sp = sp->next;
 		}
-		else if (sp->dir && (flags & FS_MATCH_EXTERN) && sp->access != DIR_CONST) {
-			char **sysFiles;
-			uint64_t numSysFiles;
-			const char *name;
-			const char *ospath;
-
-			ospath = FS_BuildOSPath(sp->dir->path, sp->dir->gamedir, path);
-			sysFiles = Sys_ListFiles(ospath, extension, filter, &numSysFiles, qfalse);
-			for (i = 0; i < numSysFiles; i++) {
-				// unique the match
-				name = sysFiles[i];
-				length = strlen(name);
-
-				nfiles = FS_AddFileToList(name, list, nfiles);
-			}
-			Sys_FreeFileList(sysFiles);
+		if ( sp ) {
+			fn = FS_BuildOSPath( sp->dir->path, sp->dir->gamedir, name );
+			libHandle = Sys_LoadDLL( fn );
+			sp = sp->next;
 		}
 	}
 
-	// return a copy of the list
-	*numfiles = nfiles;
 
-	if (nfiles) {
+	if ( !libHandle ) {
 		return NULL;
 	}
 
-	listCopy = (char **)Z_Malloc((nfiles + 1) * sizeof(*listCopy), TAG_STATIC, &listCopy, "fsListCopy");
-	for (i = 0; i < nfiles; i++) {
-		listCopy[i] = list[i];
-	}
-	listCopy[i] = NULL;
-
-	return listCopy;
+	return libHandle;
 }
-
-char *FS_ReadLine(char *buf, uint64_t size, file_t f)
-{
-	return fgets(buf, size, handles[f].data.fp);
-}
-
-char **FS_ListFiles(const char *path, const char *extension, uint64_t *numfiles)
-{
-	return FS_ListFilteredFiles(path, extension, NULL, numfiles, FS_MATCH_ANY);
-}
-
-void FS_FreeFileList( char **list )
-{
-	uint64_t i;
-
-	if ( !fs_searchpaths ) {
-		N_Error( "Filesystem call made without initialization" );
-	}
-
-	if ( !list ) {
-		return;
-	}
-
-	for ( i = 0 ; list[i] ; i++ ) {
-		Z_Free( list[i] );
-	}
-
-	Z_Free( list );
-}
-
 

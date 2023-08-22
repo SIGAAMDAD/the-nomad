@@ -10,7 +10,7 @@ void Field_Clear( field_t *edit )
 static const char *completionString;
 static char shortestMatch[MAX_TOKEN_CHARS];
 static uint64_t matchCount;
-// field we are working on, passed to Field_AutoComplete(&g_consoleCommand for instance)
+// field we are working on, passed to Field_AutoComplete(&con_field for instance)
 static field_t *completionField;
 
 static void FindMatches( const char *s )
@@ -101,13 +101,25 @@ static qboolean Field_Complete( void )
 	return qfalse;
 }
 
+
+void Field_CompleteKeyname( void )
+{
+	matchCount = 0;
+	shortestMatch[ 0 ] = '\0';
+
+	Key_KeynameCompletion( FindMatches );
+
+	if ( !Field_Complete() )
+		Key_KeynameCompletion( PrintMatches );
+}
+
 void Field_CompleteKeyBind( uint32_t key )
 {
 	const char *value;
 	uint64_t vlen;
 	uint64_t blen;
 
-//	value = Key_GetBinding( key );
+	value = Key_GetBinding( key );
 	if ( value == NULL || *value == '\0' )
 		return;
 
@@ -180,7 +192,7 @@ void Field_CompleteCommand(const char *cmd, qboolean doCommands, qboolean doCvar
     cmd = Com_SkipCharset(cmd, " \"");
 
     Cmd_TokenizeStringIgnoreQuotes(cmd);
-    completionArgument = 0;
+    completionArgument = Cmd_Argc();
 
     // if there is trailing whitespace on the cmd
     if (*(cmd + strlen(cmd) - 1) == ' ') {
@@ -200,7 +212,7 @@ void Field_CompleteCommand(const char *cmd, qboolean doCommands, qboolean doCvar
             memmove(&completionField->buffer[1], &completionField->buffer[0], strlen(completionField->buffer + 1));
             completionField->cursor++;
         }
-        completionField->buffer[0] = '\\';
+        completionField->buffer[0] = '/';
     }
     
     if (completionArgument > 1) {
@@ -211,17 +223,18 @@ void Field_CompleteCommand(const char *cmd, qboolean doCommands, qboolean doCvar
         if (baseCmd[0] == '\\' || baseCmd[0] == '/')
             baseCmd++;
         
+		Field_Complete();
         if ((p = Field_FindFirstSeparator(cmd)) != NULL)
             Field_CompleteCommand(p + 1, qtrue, qtrue); // compound command
         else {
-//            qboolean argumentCompleted = Cmd_CompleteArgument(baseCmd, cmd, completionArgument);
-//            if ((matchCount == 1 || argumentCompleted) && doCvars) {
-//                if (cmd[0] == '/' || cmd[0] == '\\')
-//                    cmd++;
-//                
-//                Cmd_TokenizeString(cmd);
-//                Field_CompleteCvarValue(Cvar_VariableString(Cmd_Argv(0)), Cmd_Argv(1));
-//            }
+            qboolean argumentCompleted = Cmd_CompleteArgument(baseCmd, cmd, completionArgument);
+            if ((matchCount == 1 || argumentCompleted) && doCvars) {
+                if (cmd[0] == '/' || cmd[0] == '\\')
+                    cmd++;
+                
+                Cmd_TokenizeString(cmd);
+                Field_CompleteCvarValue(Cvar_VariableString(Cmd_Argv(0)), Cmd_Argv(1));
+            }
         }
     }
     else {
@@ -234,18 +247,18 @@ void Field_CompleteCommand(const char *cmd, qboolean doCommands, qboolean doCvar
         if (completionString[0] == '\0')
             return;
         
-//        if (doCommands)
-//            Cmd_CommandCompletion(FindMatches);
-//        if (doCvars)
-//            Cvar_CommandCompletion(FindMatches);
-//        
-//        if (!Field_Complete()) {
-//            // run through again, printing matches
-//            if (doCommands)
-//                Cmd_CommandCompletion(PrintMatches);
-//            if (doCvars)
-//                Cvar_CommandCompletion(PrintMatches);
-//		}
+        if (doCommands)
+            Cmd_CommandCompletion(FindMatches);
+        if (doCvars)
+            Cvar_CommandCompletion(FindMatches);
+        
+        if (!Field_Complete()) {
+            // run through again, printing matches
+            if (doCommands)
+                Cmd_CommandCompletion(PrintMatches);
+            if (doCvars)
+                Cvar_CommandCompletion(PrintMatches);
+		}
     }
 }
 
@@ -326,8 +339,8 @@ qboolean Con_HistoryGetPrev(field_t *field)
     }
     else
         bresult = qfalse;
-    
-    *field = historyEditLines[historyLine % COMMAND_HISTORY];
+
+	*field = historyEditLines[historyLine % COMMAND_HISTORY];
 
     return bresult;
 }
@@ -357,7 +370,7 @@ qboolean Con_HistoryGetNext( field_t *field )
 		return bresult;
 	}
 
-	*field = historyEditLines[ historyLine % COMMAND_HISTORY ];
+	*field = historyEditLines[historyLine % COMMAND_HISTORY];
 
 	return qtrue;
 }
@@ -462,7 +475,7 @@ static void Con_SaveHistory( void )
 
 			if ( saveBufferLength + additionalLength < MAX_CONSOLE_SAVE_BUFFER ) {
 				N_strcat( consoleSaveBuffer, MAX_CONSOLE_SAVE_BUFFER,
-						va( "%i %lu %lu %s ",
+						va( "%i %i %lu %s ",
 						historyEditLines[ i ].cursor,
 						historyEditLines[ i ].scroll,
 						lineLength,

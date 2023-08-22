@@ -28,6 +28,8 @@ enum {
 #define TAG_SCOPE TAG_CACHE
 #define TAG_LOAD TAG_CACHE
 
+#ifdef __cplusplus
+
 GO_AWAY_MANGLE void Memory_Init(void);
 GO_AWAY_MANGLE void Memory_Shutdown(void);
 
@@ -53,28 +55,12 @@ GO_AWAY_MANGLE void *Hunk_ReallocateTempMemory(void *ptr, uint64_t nsize);
 
 GO_AWAY_MANGLE uint64_t Com_TouchMemory(void);
 
-#ifdef _NOMAD_DEBUG
-extern "C" void *Z_MallocDebug(uint32_t size, int tag, void *user, const char *name, const char *func, const char *file, uint32_t line);
-extern "C" void *Z_CallocDebug(uint32_t size, int tag, void *user, const char *name, const char *func, const char *file, uint32_t line);
-extern "C" void *Z_ReallocDebug(void *ptr, uint32_t nsize, int tag, void *user, const char *name, const char *func, const char *file, uint32_t line);
-extern "C" char *Z_StrdupDebug(const char *str, const char *func, const char *file, uint32_t line);
-extern "C" void Z_FreeDebug(void *ptr, const char *func, const char *file, uint32_t line);
-extern "C" char *Z_StrdupTagDebug(const char *str, int tag, const char *func, const char *file, uint32_t line);
-
-#define Z_Malloc(size,tag,user,name) Z_MallocDebug((size),(tag),(user),(name),__func__,__FILE__,__LINE__)
-#define Z_Calloc(size,tag,user,name) Z_CallocDebug((size),(tag),(user),(name),__func__,__FILE__,__LINE__)
-#define Z_Realloc(ptr,nsize,tag,user,name) Z_ReallocDebug((ptr),(nsize),(tag),(user),(name),__func__,__FILE__,__LINE__)
-#define Z_Strdup(str) Z_StrdupDebug((str),__func__,__FILE__,__LINE__)
-#define Z_Free(ptr) Z_FreeDebug((ptr),__func__,__FILE__,__LINE__)
-#define Z_StrdupTag(str,tag) Z_StrdupTagDebug((str),(tag),__func__,__FILE__,__LINE__)
-#else
-extern "C" void* Z_Malloc(uint32_t size, int tag, void *user, const char *name);
-extern "C" void* Z_Calloc(uint32_t size, int tag, void *user, const char *name);
-extern "C" void* Z_Realloc(void *ptr, uint32_t nsize, int tag, void *user, const char *name);
-extern "C" char* Z_Strdup(const char *str);
-extern "C" void Z_Free(void *ptr);
-extern "C" char* Z_StrdupTag(const char *str, int tag);
-#endif
+GO_AWAY_MANGLE void* Z_Malloc(uint32_t size, int tag, void *user, const char *name);
+GO_AWAY_MANGLE void* Z_Calloc(uint32_t size, int tag, void *user, const char *name);
+GO_AWAY_MANGLE void* Z_Realloc(void *ptr, uint32_t nsize, int tag, void *user, const char *name);
+GO_AWAY_MANGLE char* Z_Strdup(const char *str);
+GO_AWAY_MANGLE void Z_Free(void *ptr);
+GO_AWAY_MANGLE char* Z_StrdupTag(const char *str, int tag);
 
 GO_AWAY_MANGLE void Z_FreeTags(int lowtag, int hightag);
 GO_AWAY_MANGLE void Z_ChangeTag(void* user, int tag);
@@ -94,7 +80,6 @@ GO_AWAY_MANGLE void Z_TouchMemory(uint64_t *sum);
 
 GO_AWAY_MANGLE void Mem_Info(void);
 
-#ifdef __cplusplus
 template<class T>
 struct zone_allocator
 {

@@ -1,5 +1,5 @@
 #include "rgl_local.h"
-#include "../src/g_bff.h"
+#include "code/game/g_bff.h"
 
 typedef struct {
 	uint32_t c_alloc, c_free;       // total bytes allocated/freed from R_StaticAlloc and R_StaticFree
@@ -32,12 +32,9 @@ extern "C" void RE_SetDefaultState(void)
     nglEnable(GL_STENCIL_TEST);
     nglEnable(GL_TEXTURE_2D);
     nglEnable(GL_BLEND);
-    
-    nglDisable(GL_CULL_FACE);
 
     nglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    nglDepthMask(GL_FALSE);
-    nglDepthFunc(GL_LESS);
+    nglDisable(GL_CULL_FACE);
 }
 
 #define MAX_CMD_LINE 1024
@@ -110,16 +107,14 @@ extern "C" void RE_InitFrameData(void)
     uint32_t i, offset;
 
     // if we're reinitializing, reallocate
-    if (frame.indices)
-        ri.Z_Free(frame.indices);
     if (backend.frameCache)
         R_ShutdownCache(backend.frameCache);
     if (backend.frameShader)
         R_ShutdownShader(backend.frameShader);
+    
+    frame.indices = (uint32_t *)ri.Hunk_Alloc(sizeof(*frame.indices) * (FRAME_QUADS * 6), "GLindices", h_low);
 
-    frame.indices = (uint32_t *)ri.Z_Malloc(sizeof(uint32_t) * (FRAME_QUADS + 128) * 6, TAG_RENDERER, &frame.indices, "GLindices");
     offset = 0;
-
     for (i = 0; i < (FRAME_QUADS * 6); i += 6) {
         frame.indices[i + 0] = offset + 0;
         frame.indices[i + 1] = offset + 1;
@@ -132,17 +127,14 @@ extern "C" void RE_InitFrameData(void)
         offset += 4;
     }
 
-    backend.indices = frame.indices;
     backend.usedIndices = 0;
     backend.usedVertices = 0;
     backend.numIndices = FRAME_QUADS * 6;
     backend.numVertices = FRAME_QUADS * 4;
+    backend.indices = frame.indices;
 
     backend.frameShader = R_InitShader("pint.glsl.vert", "pint.glsl.frag");
     backend.frameCache = R_InitFrameCache();
-
-    backend.frameCache->indices =  frame.indices;
-    backend.frameCache->numIndices = backend.numIndices;
     
     ri.Cmd_AddCommand("framestats", R_FrameStats_f);
 }
@@ -152,7 +144,7 @@ extern "C" void RE_ToggleConsole(void)
     if (console_open)
         console_open = qfalse;
     else
-        console_open = qtrue;
+        console_open = qtrue; 
 }
 
 extern "C" void RE_BeginFrame(void)
@@ -166,17 +158,16 @@ extern "C" void RE_BeginFrame(void)
     RE_SetDefaultState();
     R_BeginImGui();
     R_InitFrameMemory();
-
-    if (r_enableBuffers->i) {
-        R_ReserveFrameMemory(backend.frameCache, backend.numVertices + 64, backend.numIndices + 64);
-        backend.vertices = backend.frameCache->vertices;
-        backend.indices = backend.frameCache->indices;
-    }
+    backend.frameCache->usedVertices = 0;
+    backend.frameCache->usedIndices = 0;
+    backend.frameCache->indices = frame.indices;
+    R_ReserveFrameMemory(backend.frameCache, backend.numVertices + 64);
     backend.commandList.usedBytes = 0;
 
     RB_MakeViewMatrix();
 
     rg.mapData = ri.G_GetCurrentMap();
+
     R_BindShader(backend.frameShader);
     R_SetMatrix4(backend.frameShader, "u_ViewProjection", rg.camera.vpm);
 }
@@ -187,13 +178,12 @@ extern "C" void RE_EndFrame(void)
 
     // flush it if there's anything in there
     if (r_enableBuffers->i) {
-        R_DrawCache(backend.frameCache);
     }
-
-    R_UnbindShader();
 
     // flush the command buffer
     RE_IssueRenderCommands();
+    R_UnbindShader();
+
     RE_EndFramebuffer();
 
     RE_CommandConsoleFrame();
@@ -222,8 +212,8 @@ static frameMemoryData_t frameMem;
 
 #define MEMORY_BLOCK_SIZE 0x1000000
 #if 1
-#define FrameAlloc(size) ri.Z_Malloc((size),TAG_RENDERER,NULL,"")
-#define FrameFree(p) ri.Z_Free(p)
+#define FrameAlloc(size) ri.Malloc((size),NULL,"")
+#define FrameFree(p) ri.Free(p)
 #else
 #define FrameAlloc(size) ri.Hunk_AllocateTempMemory((size))
 #define FrameFree(p) ri.Hunk_FreeTempMemory((p))

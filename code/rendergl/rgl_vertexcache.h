@@ -30,19 +30,19 @@ typedef enum {
 
 typedef struct
 {
-    drawVert_t *vertices;
     uint32_t *indices;
+    drawVert_t *vertices;
 
     vertexAttrib_t *attribs;
     uint64_t numAttribs;
     uintptr_t attribStride;
 
-    uint64_t numVertices;
-    uint64_t numIndices;
+    uint32_t numVertices;
+    uint32_t numIndices;
 
     // unused by static caches
-    uint64_t usedVertices;
-    uint64_t usedIndices;
+    uint32_t usedVertices;
+    uint32_t usedIndices;
 
     uint32_t vaoId;
     uint32_t vboId;
@@ -52,15 +52,13 @@ typedef struct
 } vertexCache_t;
 
 extern "C" vertexCache_t *R_InitFrameCache(void);
-extern "C" vertexCache_t *R_InitStaticCache(uint64_t numVertices, const drawVert_t *vertices, uint64_t numIndices, const uint32_t *indices,
-	qboolean stackAllocated);
+extern "C" vertexCache_t *R_InitStaticCache(uint64_t numVertices, const drawVert_t *vertices, qboolean stackAllocated);
 extern "C" void R_DrawFrameCache(vertexCache_t *cache);
 extern "C" void R_DrawCache(vertexCache_t *cache);
-extern "C" void R_ReserveFrameMemory(vertexCache_t *cache, uint64_t numVertices, uint64_t numIndices);
 extern "C" void R_PushVertices(vertexCache_t *cache, const drawVert_t *vertices, uint64_t numVertices);
-extern "C" void R_PushIndices(vertexCache_t *cache, const uint32_t *indices, uint64_t numIndices);
 extern "C" void R_ShutdownCache(vertexCache_t *cache);
 extern "C" void R_BindCache(const vertexCache_t *cache);
+extern "C" void R_ReserveFrameMemory(vertexCache_t *cache, uint64_t numVertices);
 extern "C" void R_UnbindCache(void);
 extern "C" void R_BindVertexBuffer(const vertexCache_t *cache);
 extern "C" void R_UnbindVertexBuffer(void);

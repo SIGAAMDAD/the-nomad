@@ -68,7 +68,6 @@ extern "C" void RE_SetColor(const float *color, uint32_t count)
 extern "C" void RE_AddTile(const drawVert_t *vertices)
 {
     drawTileCmd_t *cmd;
-    const uint32_t count = r_enableBuffers->i ? 4 : 6;
 
     cmd = (drawTileCmd_t *)R_GetCommandBuffer(sizeof(*cmd));
     if (!cmd)
@@ -76,16 +75,12 @@ extern "C" void RE_AddTile(const drawVert_t *vertices)
     
     boost::unique_lock<boost::shared_mutex> lock{cmdLock};
     cmd->id = RC_DRAW_TILE;
-#if 1
-    for (uint32_t i = 0; i < count; ++i) {
-        memcpy(cmd->vertices[i].pos, vertices[i].pos, sizeof(*vertices) * sizeof(vec3_t));
-        memcpy(cmd->vertices[i].color, vertices[i].color, sizeof(*vertices) * sizeof(vec4_t));
-        memcpy(cmd->vertices[i].light, vertices[i].light, sizeof(*vertices) * sizeof(vec2_t));
-        memcpy(cmd->vertices[i].texcoords, vertices[i].texcoords, sizeof(*vertices) * sizeof(vec2_t));
+    for (uint32_t i = 0; i < 6; ++i) {
+        VectorCopy(cmd->vertices[i].pos, vertices[i].pos);
+        Vector4Copy(cmd->vertices[i].color, vertices[i].color);
+        memcpy(cmd->vertices[i].light, vertices[i].light, sizeof(vec2_t));
+        memcpy(cmd->vertices[i].texcoords, vertices[i].texcoords, sizeof(vec2_t));
     }
-#else
-    memcpy(cmd->vertices, vertices, sizeof(*vertices) * count);
-#endif
 }
 
 extern "C" void RE_AddDrawEntity(renderEntityRef_t *ref)

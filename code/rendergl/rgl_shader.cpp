@@ -124,11 +124,45 @@ extern "C" int32_t R_GetUniformLocation(shader_t *shader, const char *name)
     return location;
 }
 
+/*
+R_CheckProgramStatus: checks if a gl shader program linked correctly
+*/
+extern "C" void R_CheckProgramStatus(uint32_t id, const char *frag, const char *vert)
+{
+    int success;
+    char str[1024];
+
+    nglGetProgramiv(id, GL_LINK_STATUS, &success);
+    if (success == GL_FALSE) {
+        memset(str, 0, sizeof(str));
+        nglGetProgramInfoLog(id, sizeof(str), NULL, str);
+
+        ri.N_Error("R_CheckProgramStatus: failed to compile and/or link shader program (fragment: %s, vertex: %s).\n"
+                    "glslang error message: %s", frag, vert, str);
+    }
+}
+
+/*
+R_CheckShaderStatus: checks if a gl shader source compiled correctly
+*/
+extern "C" void R_CheckShaderStatus(uint32_t id, uint32_t type)
+{
+    int success;
+    char str[1024];
+
+    nglGetShaderiv(id, GL_COMPILE_STATUS, &success);
+    if (success == GL_FALSE) {
+        memset(str, 0, sizeof(str));
+        nglGetShaderInfoLog(id, sizeof(str), NULL, str);
+    
+        ri.N_Error("R_CheckShaderStatus: failed to compile shader of type %s.\nglslang error message: %s",
+            (type == GL_VERTEX_SHADER ? "vertex" : type == GL_FRAGMENT_SHADER ? "fragment" : "unknown shader type"), str);
+    }
+}
+
 extern "C" uint32_t R_CompileShaderSource(const char *src, uint32_t type, uint32_t id)
 {
     uint32_t program, i;
-    int success;
-    char str[1024];
     const char *sources[1];
 
     sources[0] = src;
@@ -137,25 +171,13 @@ extern "C" uint32_t R_CompileShaderSource(const char *src, uint32_t type, uint32
     nglShaderSource(program, 1, sources, NULL);
     nglCompileShader(program);
 
-    nglGetShaderiv(program, GL_COMPILE_STATUS, (int *)&success);
-    if (success == GL_FALSE) {
-        memset(str, 0, sizeof(str));
-
-        nglGetShaderInfoLog(program, sizeof(str), NULL, str);
-        nglDeleteShader(program);
-        nglDeleteProgram(id);
-
-        ri.N_Error("R_CompileShaderSource: failed to compile shader of type %s.\nglslang error message: %s",
-            (type == GL_VERTEX_SHADER ? "vertex" : type == GL_FRAGMENT_SHADER ? "fragment" : "unknown shader type"), str);
-    }
+    R_CheckShaderStatus(program, type);
     return program;
 }
 
 extern "C" void R_RecompileShader(shader_t *shader)
 {
     uint32_t vertid, fragid;
-    int success;
-    char str[1024];
 
     R_UnbindShader();
 
@@ -178,18 +200,7 @@ extern "C" void R_RecompileShader(shader_t *shader)
     nglValidateProgram(shader->programId);
 
     // error checks
-    nglGetProgramiv(shader->programId, GL_LINK_STATUS, &success);
-    if (success == GL_FALSE) {
-        memset(str, 0, sizeof(str));
-        nglGetProgramInfoLog(shader->programId, sizeof(str), NULL, str);
-        
-        nglDeleteShader(vertid);
-        nglDeleteShader(fragid);
-        nglDeleteProgram(shader->programId);
-
-        ri.N_Error("R_RecompileShader: failed to compile and/or link shader program (fragment: %s, vertex: %s).\n"
-                    "glslang error message: %s", shader->fragmentFile, shader->vertexFile, str);
-    }
+    R_CheckProgramStatus(shader->programId, shader->fragmentFile, shader->vertexFile);
 
     // cleanup
     nglDeleteShader(vertid);
@@ -201,11 +212,10 @@ extern "C" void R_RecompileShader(shader_t *shader)
 extern "C" shader_t* R_InitShader(const char *vertexFile, const char *fragmentFile)
 {
     shader_t *shader;
-    char str[1024];
-    int success;
     uint32_t vertid, fragid;
     char filepath[MAX_GDR_PATH*2+32];
-    uint64_t hash;
+    uint64_t hash, size;
+    uint64_t vertex_len, fragment_len;
 
     if (strlen(vertexFile) >= MAX_GDR_PATH) {
         ri.Con_Printf(WARNING, "R_InitShader: vertexFile too long");
@@ -216,7 +226,12 @@ extern "C" shader_t* R_InitShader(const char *vertexFile, const char *fragmentFi
         return NULL;
     }
 
-    shader = (shader_t *)ri.Z_Malloc(sizeof(*shader), TAG_RENDERER, &shader, "GLshader");
+    size = 0;
+    vertex_len = PAD(strlen(vertexFile), 64);
+    fragment_len = PAD(strlen(fragmentFile), 64);
+    size += sizeof(*shader) + vertex_len + fragment_len;
+
+    shader = (shader_t *)ri.Hunk_Alloc(size, "GLshader", h_low);
     stbsp_sprintf(filepath, "%s%s", vertexFile, fragmentFile);
 
     hash = Com_GenerateHashValue(filepath, MAX_SHADER_HASH);
@@ -243,21 +258,13 @@ extern "C" shader_t* R_InitShader(const char *vertexFile, const char *fragmentFi
     nglUseProgram(shader->programId);
 
     // error checks
-    nglGetProgramiv(shader->programId, GL_LINK_STATUS, &success);
-    if (success == GL_FALSE) {
-        memset(str, 0, sizeof(str));
-        nglGetProgramInfoLog(shader->programId, sizeof(str), NULL, str);
-        
-        nglDeleteShader(vertid);
-        nglDeleteShader(fragid);
-        nglDeleteProgram(shader->programId);
+    R_CheckProgramStatus(shader->programId, vertexFile, fragmentFile);
 
-        ri.N_Error("R_InitShader: failed to compile and/or link shader program (fragment: %s, vertex: %s).\n"
-                    "glslang error message: %s", fragmentFile, vertexFile, str);
-    }
+    shader->vertexFile = (char *)(shader + 1);
+    shader->fragmentFile = (char *)(shader->vertexFile + vertex_len);
 
-    shader->vertexFile = ri.Z_Strdup(vertexFile);
-    shader->fragmentFile = ri.Z_Strdup(fragmentFile);
+    memcpy(shader->vertexFile, vertexFile, strlen(vertexFile) + 1);
+    memcpy(shader->fragmentFile, fragmentFile, strlen(fragmentFile) + 1);
 
     // cleanup
     nglDeleteShader(vertid);
@@ -275,9 +282,6 @@ extern "C" shader_t* R_InitShader(const char *vertexFile, const char *fragmentFi
 extern "C" void R_ShutdownShader(shader_t *shader)
 {
     nglDeleteProgram(shader->programId);
-    ri.Z_Free(shader->fragmentFile);
-    ri.Z_Free(shader->vertexFile);
-    ri.Z_Free(shader);
 }
 
 extern "C" void RE_ShutdownShaders(void)
@@ -336,7 +340,7 @@ void R_ParseTexShader(const char **buf, const char *name)
     texShader_t *shader;
     
     tok = COM_ParseExt(buf, qfalse);
-    shader = (texShader_t *)ri.Z_Malloc(sizeof(*shader), TAG_RENDERER, &shader, "texShader");
+    shader = (texShader_t *)ri.Malloc(sizeof(*shader), &shader, "texShader");
 
     while (tok[0]) {
         if (!N_stricmp(tok, "minfilter")) {

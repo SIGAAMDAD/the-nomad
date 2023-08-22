@@ -15,15 +15,21 @@ static cvar_t *z_hunkDebug;
 static cvar_t *z_hunkMegs;
 
 #define HUNKID 0x553dfa2
+#define HUNKFREE 0x0ffa3d
 
 typedef struct hunkblock_s
 {
 	uint64_t id;
 	uint64_t size;
-	qboolean temp;
 	struct hunkblock_s *next;
 	const char *name;
 } hunkblock_t;
+
+typedef struct
+{
+	uint64_t id;
+	uint64_t size;
+} hunkHeader_t;
 
 static hunkblock_t *hunkblocks;
 
@@ -97,6 +103,8 @@ void Hunk_ClearToMark( void )
 	hunk_high.permanent = hunk_high.temp = hunk_high.mark;
 }
 
+// broken
+#if 0
 /*
 Hunk_Check: Run consistancy and id checks
 */
@@ -107,10 +115,11 @@ void Hunk_Check (void)
 	for (h = hunkblocks; h; h = h->next) {
 		if (h->id != HUNKID)
 			N_Error ("Hunk_Check: hunk id isn't correct");
-		if (h->size < 64 || h->size + (byte *)h - hunkbase > hunksize)
+		if (h->size < 16 || h->size + (byte *)h - hunkbase > hunksize)
 			N_Error ("Hunk_Check: bad size");
 	}
 }
+#endif
 
 static void Hunk_SwapBanks(void)
 {
@@ -170,17 +179,17 @@ void *Hunk_AllocateTempMemory(uint64_t size)
 {
 	boost::lock_guard<boost::recursive_mutex> lock{hunkLock};
 	void *buf;
-	hunkblock_t *h;
+	hunkHeader_t *h;
 
 	// if the hunk hasn't been initialized yet, but there are filesystem calls
 	// being made, then just allocate with Z_Malloc
-	if (!hunkbase) {
+	if (hunkbase == NULL) {
 		return Z_Malloc(size, TAG_HUNK, NULL, "temp");
 	}
 
 	Hunk_SwapBanks();
 	
-	size = PAD(size, sizeof(intptr_t) + sizeof(hunkblock_t));
+	size = PAD(size, sizeof(intptr_t)) + sizeof(hunkHeader_t);
 
 	if (hunk_temp->temp + hunk_permanent->permanent + size > hunksize) {
 		Hunk_Stats();
@@ -201,12 +210,11 @@ void *Hunk_AllocateTempMemory(uint64_t size)
 		hunk_temp->highWater = hunk_temp->temp;
 	}
 
-	h = (hunkblock_t *)buf;
+	h = (hunkHeader_t *)buf;
 	buf = (void *)(h+1);
 
 	h->id = HUNKID;
 	h->size = size;
-	h->temp = qtrue;
 
 	// don't bother clearing, because we are going to load a file over it
 	return buf;
@@ -215,16 +223,16 @@ void *Hunk_AllocateTempMemory(uint64_t size)
 void *Hunk_ReallocateTempMemory(void *ptr, uint64_t nsize)
 {
 	boost::lock_guard<boost::recursive_mutex> lock{hunkLock};
-	hunkblock_t *h;
+	hunkHeader_t *h;
 	void *p;
 
 	// if hunk hasn't been initialized yet, just Z_Realloc it
-	if (!hunkbase) {
+	if (hunkbase == NULL) {
 		return Z_Realloc(ptr, nsize, TAG_HUNK, NULL, "temp");
 	}
 
 	if (ptr) {
-		h = ((hunkblock_t *)ptr) - 1;
+		h = ((hunkHeader_t *)ptr) - 1;
 		Hunk_FreeTempMemory(ptr);
 		p = Hunk_AllocateTempMemory(nsize);
 		memcpy(p, ptr, h->size);
@@ -238,17 +246,20 @@ void *Hunk_ReallocateTempMemory(void *ptr, uint64_t nsize)
 void Hunk_FreeTempMemory(void *p)
 {
 	boost::lock_guard<boost::recursive_mutex> lock{hunkLock};
-	hunkblock_t *h;
+	hunkHeader_t *h;
 
 	// if hunk hasn't been initialized yet, just Z_Free the data
-	if (!hunkbase) {
+	if (hunkbase == NULL) {
 		Z_Free(p);
+		return;
 	}
 
-	h = ((hunkblock_t *)p) - 1;
+	h = ((hunkHeader_t *)p) - 1;
 	if (h->id != HUNKID) {
 		N_Error ("Hunk_FreeTempMemory: hunk id isn't correct");
 	}
+
+	h->id = HUNKFREE;
 
 	// this only works if the files are freed in the stack order,
 	// otherwise the memory will stay around until Hunk_ClearTempMemory
@@ -298,9 +309,6 @@ void *Hunk_Alloc (uint64_t size, const char *name, ha_pref where)
 {
 	boost::lock_guard<boost::recursive_mutex> lock{allocLock};
 	void *buf;
-#ifdef _NOMAD_DEBUG
-	Hunk_Check ();
-#endif
 
 	if (!size)
 		N_Error("Hunk_Alloc: bad size");
@@ -317,11 +325,22 @@ void *Hunk_Alloc (uint64_t size, const char *name, ha_pref where)
 		}
 	}
 
+#ifdef _NOMAD_DEBUG
+	size += sizeof(hunkblock_t);
+#endif
+
 	// round to the cacheline
-	size = sizeof(hunkblock_t) + PAD(size, 64);
+	size = PAD(size, 64);
 
 	if ( hunk_low.temp + hunk_high.temp + size > hunksize ) {
-		N_Error("Hunk_Alloc failed on %li", size);
+#ifdef _NOMAD_DEBUG
+		Hunk_Log();
+		Hunk_SmallLog();
+
+		Con_Printf(ERROR, "Hunk_Alloc failed on %lu: %s, line: %lu (%s)", size, file, line, name);
+#else
+		Con_Printf(ERROR, "Hunk_Alloc failed on %lu", size);
+#endif
 	}
 
 	if ( hunk_permanent == &hunk_low ) {
@@ -337,18 +356,19 @@ void *Hunk_Alloc (uint64_t size, const char *name, ha_pref where)
 
 	memset( buf, 0, size );
 
+#ifdef _NOMAD_DEBUG
 	{
 		hunkblock_t *block;
 
 		block = (hunkblock_t *)buf;
 		block->size = size - sizeof(hunkblock_t);
-		block->temp = qfalse;
 		block->name = name;
 		block->id = HUNKID;
 		block->next = hunkblocks;
 		hunkblocks = block;
 		buf = ((byte *)buf) + sizeof(hunkblock_t);
 	}
+#endif
 
 	return buf;
 }
@@ -358,6 +378,9 @@ void Hunk_Print(void)
     hunkblock_t *h, *prev;
 	uint64_t count, sum;
 	uint64_t totalblocks;
+
+	if (!hunkblocks)
+		return;
 
 	count = 0;
 	sum = 0;
@@ -371,26 +394,18 @@ void Hunk_Print(void)
 	Con_Printf("-------------------------");
 
 	while (1) {
-		// run consistancy checks
-		if (h->id != HUNKID)
-			N_Error("Hunk_Check: hunk id isn't correct, prev name: '%s'", prev->name);
-		if (h->size < 64 || h->size + (byte *)h - hunkbase > hunksize)
-			N_Error("Hunk_Check: bad size, name: '%s'", h->name);
-		
+		prev = h;
 		h = h->next;
 		// we've scanned around the list
 		if (!h)
 			break;
-
+		
 		count++;
 		totalblocks++;
 		sum += h->size;
 
 		// print the single block
-		Con_Printf("%8p : %8lu  %5s   %8s", h, h->size, N_booltostr(h->temp), h->name);
-
-		prev = h;
-		h = h->next;
+		Con_Printf("%8p : %8lu   %8s", h, h->size, h->name);
 	}
 	Con_Printf("-------------------------");
 	Con_Printf("          :%8lu REMAINING", Hunk_MemoryRemaining());

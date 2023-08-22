@@ -5,6 +5,7 @@
 
 #include "../engine/n_shared.h"
 
+#ifdef __cplusplus
 typedef struct
 {
 #ifdef _NOMAD_DEBUG
@@ -23,19 +24,12 @@ typedef struct
     void (*Hunk_FreeTempMemory)(void *buf);
     void (*Hunk_ClearTempMemory)(void);
 
-#ifdef _NOMAD_DEBUG
-    void *(*Z_MallocDebug)(uint32_t size, int tag, void *user, const char *name, const char *func, const char *file, uint32_t line);
-    void *(*Z_CallocDebug)(uint32_t size, int tag, void *user, const char *name, const char *func, const char *file, uint32_t line);
-    void *(*Z_ReallocDebug)(void *ptr, uint32_t nsize, int tag, void *user, const char *name, const char *func, const char *file, uint32_t line);
-    char *(*Z_StrdupDebug)(const char *str, const char *func, const char *file, uint32_t line);
-    void (*Z_FreeDebug)(void *ptr, const char *func, const char *file, uint32_t line);
-#else
-    void *(*Z_Malloc)(uint32_t size, int tag, void *user, const char *name);
-    void *(*Z_Calloc)(uint32_t size, int tag, void *user, const char *name);
-    void *(*Z_Realloc)(void *ptr, uint32_t nsize, int tag, void *user, const char *name);
-    char *(*Z_Strdup)(const char *str);
-    void (*Z_Free)(void *ptr);
-#endif
+    void *(*Malloc)(uint32_t size, void *user, const char *name);
+    void *(*Calloc)(uint32_t size,void *user, const char *name);
+    void *(*Realloc)(void *ptr, uint32_t nsize, void *user, const char *name);
+    char *(*Strdup)(const char *str);
+    void (*Free)(void *ptr);
+
     void (*Z_FreeTags)(int lowtag, int hightag);
     void (*Z_ChangeTag)(void* user, int32_t tag);
     void (*Z_ChangeUser)(void* newuser, void* olduser);
@@ -90,7 +84,7 @@ typedef struct
 
     void GDR_NORETURN (*Sys_Exit)(int code);
 
-    const vec2_t* (*Map_GetSpriteCoords)(uint32_t gid);
+    const texcoord_t* (*Map_GetSpriteCoords)(uint32_t gid);
 
     uint64_t (*FS_Write)(const void *buffer, uint64_t size, file_t f);
     uint64_t (*FS_Read)(void *buffer, uint64_t size, file_t);
@@ -170,8 +164,20 @@ typedef struct
     int (*SDL_CondWait)(SDL_cond *cond, SDL_mutex *mutex);
     int (*SDL_CondWaitTimeout)(SDL_cond *cond, SDL_mutex *mutex, Uint32 ms);
 } renderImport_t;
+#endif
 
-typedef struct renderEntityRef_s renderEntityRef_t;
+typedef struct renderEntityRef_s
+{
+    vec4_t color;
+    vec3_t worldPos;
+    vec3_t screenPos;
+    
+    float size;
+    float rotation;
+
+    nhandle_t sprite;
+} renderEntityRef_t;
+
 typedef struct
 {
     vec4_t color;
@@ -184,16 +190,20 @@ typedef struct
 } renderRect_t;
 
 // rendering engine interface
-GO_AWAY_MANGLE GDR_EXPORT void RE_Init(renderImport_t *import);
-GO_AWAY_MANGLE GDR_EXPORT void RE_Shutdown(void);
+#ifdef __cplusplus
+GO_AWAY_MANGLE GDR_EXPORT void RE_GetImport(const renderImport_t *import);
+GO_AWAY_MANGLE GDR_EXPORT void RE_Init(void);
+GO_AWAY_MANGLE GDR_EXPORT void RE_Shutdown(qboolean killWindow);
 GO_AWAY_MANGLE GDR_EXPORT void RE_BeginFrame(void);
 GO_AWAY_MANGLE GDR_EXPORT void RE_EndFrame(void);
 GO_AWAY_MANGLE GDR_EXPORT void RE_InitFrameData(void);
-GO_AWAY_MANGLE GDR_EXPORT nhandle_t RE_RegisterTexture(const char *name);
-GO_AWAY_MANGLE GDR_EXPORT nhandle_t RE_RegisterShader(const char *name);
 GO_AWAY_MANGLE GDR_EXPORT qboolean RE_ConsoleIsOpen(void);
 GO_AWAY_MANGLE GDR_EXPORT void RE_ProcessConsoleEvents(SDL_Event *event);
 GO_AWAY_MANGLE GDR_EXPORT void RE_ToggleConsole(void);
+#endif
+
+GO_AWAY_MANGLE GDR_EXPORT nhandle_t RE_RegisterTexture(const char *name);
+GO_AWAY_MANGLE GDR_EXPORT nhandle_t RE_RegisterShader(const char *name);
 
 // rendering commands
 GO_AWAY_MANGLE GDR_EXPORT void RE_AddDrawEntity(renderEntityRef_t *ref);

@@ -376,11 +376,7 @@ static const memstatic_t numberString[] = {
 Z_Strdup: never write over the memory Z_Strdup returns with the chance
 that its from memstatic_t
 */
-#ifdef _NOMAD_DEBUG
-char *Z_StrdupDebug(const char *str, const char *func, const char *file, uint32_t line)
-#else
 char *Z_Strdup(const char *str)
-#endif
 {
 	char *s;
 	uint64_t len;
@@ -393,11 +389,7 @@ char *Z_Strdup(const char *str)
 	}
 #endif
 	len = strlen(str) + 1;
-#ifdef _NOMAD_DEBUG
-	s = (char *)Z_MallocDebug(len, TAG_STATIC, &s, "string", func, file, line);
-#else
 	s = (char *)Z_Malloc(len, TAG_STATIC, &s, "string");
-#endif
 	N_strncpyz(s, str, len);
 	return s;
 }
@@ -405,11 +397,7 @@ char *Z_Strdup(const char *str)
 /*
 Z_StrdupTag: just Z_Strdup with a custom tag
 */
-#ifdef _NOMAD_DEBUG
-char *Z_StrdupTagDebug(const char *str, int tag, const char *func, const char *file, uint32_t line)
-#else
 char *Z_StrdupTag(const char *str, int tag)
-#endif
 {
 	char *s;
 	uint64_t len;
@@ -422,11 +410,7 @@ char *Z_StrdupTag(const char *str, int tag)
 	}
 #endif
 	len = strlen(str) + 1;
-#ifdef _NOMAD_DEBUG
-	s = (char *)Z_MallocDebug(len, tag, &s, "string", func, file, line);
-#else
 	s = (char *)Z_Malloc(len, tag, &s, "string");
-#endif
 	N_strncpyz(s, str, len);
 	return s;
 }
@@ -497,29 +481,6 @@ uint32_t Z_NumBlocks(int tag)
 	return count;
 }
 
-// broken, don't use
-#ifdef _NOMAD_DEBUG
-static void Z_DumpHistory(void)
-{
-	uint32_t i, j;
-	static const char *desc[NUM_HISTORY_TYPES] = {"malloc()'s","free()'s"};
-
-	for (i = 0; i < NUM_HISTORY_TYPES; i++) {
-		Con_Printf("Last several %s:\n", desc[i]);
-
-		for (j = 0; j < MAX_HISTORY; j++) {
-			uint32_t k = (history_index[i] - j - 1) & (MAX_HISTORY - 1);
-			if (file_history[i][k] && func_history[i][k]) {
-//				snprintf(buf, sizeof(buf), "Function: %s, File: %s, Line: %i\n",
-//					func_history[i][k], file_history[i][k], line_history[i][k]);
-				Con_Printf("Function: %s, File: %s, Line: %i",
-					func_history[i][k], file_history[i][k], line_history[i][k]);
-			}
-		}
-	}
-}
-#endif
-
 static void Z_Defrag(void)
 {
 	memblock_t* block;
@@ -546,19 +507,8 @@ static void Z_Defrag(void)
 	}
 }
 
-#ifdef _NOMAD_DEBUG
-void Z_FreeDebug(void *ptr, const char *func, const char *file, uint32_t line)
-#else
 void Z_Free(void *ptr)
-#endif
 {
-#ifdef _NOMAD_DEBUG
-	func_history[free_history][history_index[free_history]] = func;
-	file_history[free_history][history_index[free_history]] = file;
-	line_history[free_history][history_index[free_history]++] = line;
-	history_index[free_history] &= MAX_HISTORY - 1;
-#endif
-
 	memblock_t* other;
 	memblock_t* block;
 
@@ -592,11 +542,7 @@ void Z_Free(void *ptr)
 	Z_MergeNB(block);
 }
 
-#ifdef _NOMAD_DEBUG
-static void *Z_MainAllocDebug(uint32_t size, int tag, void *user, const char *name, const char *func, const char *file, uint32_t line)
-#else
 static void *Z_MainAlloc(uint32_t size, int tag, void *user, const char *name)
-#endif
 {
 	memblock_t *rover;
 	memblock_t *newblock;
@@ -683,11 +629,7 @@ __error:
 	N_Error("Z_MainAlloc: failed on allocation of %i bytes because mainzone wasn't big enough", size);
 }
 
-#ifdef _NOMAD_DEBUG
-static void *Z_SmallAllocDebug(uint32_t size, int tag, void *user, const char *name, const char *func,  const char *file, uint32_t line)
-#else
 static void *Z_SmallAlloc(uint32_t size, int tag, void *user, const char *name)
-#endif
 {
 	memblock_t *rover;
 	memblock_t *newblock;
@@ -780,11 +722,7 @@ __error:
 Z_Malloc: garbage collection and zone block allocater that returns a block of free memory
 from within the zone without calling malloc
 */
-#ifdef _NOMAD_DEBUG
-void *Z_MallocDebug(uint32_t size, int tag, void *user, const char *name, const char *func, const char *file, uint32_t line)
-#else
 void *Z_Malloc(uint32_t size, int tag, void *user, const char *name)
-#endif
 {
 #ifdef _NOMAD_DEBUG
 	Z_CheckHeap();
@@ -794,28 +732,13 @@ void *Z_Malloc(uint32_t size, int tag, void *user, const char *name)
 	if (!size)
 		N_Error("Z_Malloc: bad size, name: %s", name);
 	
-#ifdef _NOMAD_DEBUG
-	func_history[malloc_history][history_index[malloc_history]] = func;
-	file_history[malloc_history][history_index[malloc_history]] = file;
-	line_history[malloc_history][history_index[malloc_history]++] = line;
-	history_index[malloc_history] &= MAX_HISTORY - 1;
-#endif
-	
 	// round to the cacheline
-	size += sizeof(memzone_t);
+	size += sizeof(memblock_t);
 	size = PAD(size, MEM_ALIGN);
-	if (size < 1024) // small enough for the smallzone
-#ifdef _NOMAD_DEBUG
-		return Z_SmallAllocDebug(size, tag, user, name, func, file, line);
-#else
+	if (size < 256) // small enough for the smallzone
 		return Z_SmallAlloc(size, tag, user, name);
-#endif
 
-#ifdef _NOMAD_DEBUG
-	return Z_MainAllocDebug(size, tag, user, name, func, file, line);
-#else
 	return Z_MainAlloc(size, tag, user, name);
-#endif
 }
 
 void Z_ChangeTag(void *user, int tag)
@@ -912,21 +835,22 @@ void Z_FreeTags(int lowtag, int hightag)
 	Con_Printf("Total bytes freed: %lu", totalBytes);
 }
 
-void Z_Print(bool all)
+static void Z_PrintZone(memzone_t *zone, bool all)
 {
 	memblock_t *block, *next;
 	uint64_t count, sum, totalblocks;
-	uint64_t blockcount[NUMTAGS] = {0};
+	uint64_t blockcount[NUMTAGS];
 	char name[15];
 
+	memset(blockcount, 0, sizeof(blockcount));
 	totalblocks = 0;
 	count = 0;
 	sum = 0;
 	uint64_t static_mem, purgable_mem, cached_mem, free_mem, audio_mem, total_memory;
 	static_mem = purgable_mem = cached_mem = free_mem = audio_mem = total_memory = 0;
 
-	for (block = mainzone->blocklist.next;; block = block->next) {
-		if (block == &mainzone->blocklist) {
+	for (block = zone->blocklist.next;; block = block->next) {
+		if (block == &zone->blocklist) {
 			break;
 		}
 		if (block->tag == TAG_STATIC || block->tag == TAG_LEVEL) {
@@ -948,29 +872,32 @@ void Z_Print(bool all)
 	const uint64_t totalMemory = static_mem + free_mem + cached_mem + audio_mem + purgable_mem;
 	const float s = totalMemory / 100.0f;
 
-	Zone_Stats();
-
-	Con_Printf("\n<---- Zone Allocation Daemon Heap Report ---->");
-	Con_Printf("          : %8lu total zone size", mainzone->size);
+	if (zone == mainzone) {
+		Con_Printf("[MAINZONE HEAP]");
+	}
+	else if (zone == smallzone) {
+		Con_Printf("[SMALLZONE HEAP]");
+	}
+	Con_Printf("          : %8lu total zone size", zone->size);
 	Con_Printf("-------------------------");
 	Con_Printf("-------------------------");
-	Con_Printf("          : %8lu REMAINING", mainzone->size - static_mem - cached_mem - purgable_mem - audio_mem);
+	Con_Printf("          : %8lu REMAINING", zone->size - static_mem - cached_mem - purgable_mem - audio_mem);
 	Con_Printf("-------------------------");
 	Con_Printf("(PERCENTAGES)");
 	Con_Printf(
-			"%-9lu   %5.03f%%    static\n"
-			"%-9lu   %5.03f%%    cached\n"
-			"%-9lu   %5.03f%%    audio\n"
-			"%-9lu   %5.03f%%    purgable\n"
-			"%-9lu   %5.03f%%    free",
-		static_mem, (float)(static_mem)*s,
-		cached_mem, (float)(cached_mem)*s,
-		audio_mem, (float)(audio_mem)*s,
-		purgable_mem, (float)(purgable_mem)*s,
-		free_mem, (float)(free_mem)*s);
+			"%-8lu   %6.01f%%    static\n"
+			"%-8lu   %6.01f%%    cached\n"
+			"%-8lu   %6.01f%%    audio\n"
+			"%-8lu   %6.01f%%    purgable\n"
+			"%-8lu   %6.01f%%    free",
+		static_mem, (float)(static_mem*s),
+		cached_mem, (float)(cached_mem*s),
+		audio_mem, (float)(audio_mem*s),
+		purgable_mem, (float)(purgable_mem*s),
+		free_mem, (float)(free_mem*s));
 	Con_Printf("-------------------------");
 
-	for (block = mainzone->blocklist.next; block != &mainzone->blocklist; block = block->next)
+	for (block = zone->blocklist.next; block != &zone->blocklist; block = block->next)
 		++blockcount[block->tag];
 
 	Con_Printf("total purgable blocks: %lu", blockcount[TAG_PURGELEVEL]);
@@ -980,8 +907,8 @@ void Z_Print(bool all)
 	Con_Printf("total level blocks:    %lu", blockcount[TAG_LEVEL]);
 	Con_Printf("-------------------------");
 	
-	for (block = mainzone->blocklist.next;; block = block->next) {
-		if (block == &mainzone->blocklist)
+	for (block = zone->blocklist.next;; block = block->next) {
+		if (block == &zone->blocklist)
 	        break;
 		
 		count++;
@@ -1003,20 +930,21 @@ void Z_Print(bool all)
 	Con_Printf("%8lu total blocks\n\n", totalblocks);
 }
 
-#ifdef _NOMAD_DEBUG
-void *Z_ReallocDebug(void *ptr, uint32_t nsize, int tag, void *user, const char *name, const char *func, const char *file, uint32_t line)
-#else
+void Z_Print(bool all)
+{
+	Zone_Stats();
+
+	Con_Printf("\n<---- Zone Allocation Daemon Heap Report ---->");
+	Z_PrintZone(mainzone, all);
+	Z_PrintZone(smallzone, all);
+}
+
 void *Z_Realloc(void *ptr, uint32_t nsize, int tag, void *user, const char *name)
-#endif
 {
 #ifdef _NOMAD_DEBUG
 	Z_CheckHeap();
 #endif
-#ifdef _NOMAD_DEBUG
-	void *p = Z_MallocDebug(nsize, tag, user, name, func, file, line);
-#else
 	void *p = Z_Malloc(nsize, tag, user, name);
-#endif
 	if (ptr) {
 		memblock_t* block = (memblock_t *)((byte *)ptr - sizeof(memblock_t));
 		memcpy(p, ptr, nsize <= block->size ? nsize : block->size);
@@ -1029,20 +957,12 @@ void *Z_Realloc(void *ptr, uint32_t nsize, int tag, void *user, const char *name
 	return p;
 }
 
-#ifdef _NOMAD_DEBUG
-void* Z_CallocDebug(uint32_t size, int tag, void *user, const char *name, const char *func, const char *file, uint32_t line)
-#else
 void* Z_Calloc(uint32_t size, int tag, void *user, const char *name)
-#endif
 {
 #ifdef _NOMAD_DEBUG
 	Z_CheckHeap();
 #endif
-#ifdef _NOMAD_DEBUG
-	return memset(Z_MallocDebug(size, tag, user, name, func, file, line), 0, size);
-#else
 	return memset(Z_Malloc(size, tag, user, name), 0, size);
-#endif
 }
 
 // cleans all zone caches (only blocks from scope to free to unused)

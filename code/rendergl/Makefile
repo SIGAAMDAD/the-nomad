@@ -71,7 +71,7 @@ INTERNAL_OBJS=\
 	$(O)/rendergl/n_shared.o \
 	$(O)/rendergl/n_math.o \
 
-$(O)/rendergl/%.o: $(SDIR)/src/%.c
+$(O)/rendergl/%.o: $(SDIR)/game/%.c
 	$(CC) $(CFLAGS) -shared -fPIC -o $@ -c $<
 $(O)/rendergl/%.o: $(SDIR)/rendergl/%.cpp
 	$(CC) $(CFLAGS) -shared -fPIC -o $@ -c $<

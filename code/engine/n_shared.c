@@ -1,7 +1,13 @@
-#include "code/engine/n_shared.h"
-#include "code/rendergl/rgl_public.h"
+#if defined(GDR_DLLCOMPILE) || defined(__cplusplus)
+#include "../engine/n_shared.h"
+#else
+#include "n_shared.h"
+#endif
+#include "../rendergl/rgl_public.h"
 
+#ifdef __cplusplus
 extern renderImport_t ri;
+#endif
 
 const byte locase[ 256 ] = {
 	0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
@@ -519,6 +525,7 @@ qboolean N_isanumber( const char *s )
 #endif
 }
 
+#ifndef Q3_VM
 void N_itoa(char *buf, uint64_t bufsize, int i)
 {
 	snprintf(buf, bufsize, "%i", i);
@@ -528,6 +535,7 @@ void N_ftoa(char *buf, uint64_t bufsize, float f)
 {
 	snprintf(buf, bufsize, "%f", f);
 }
+#endif
 
 void N_strcpy (char *dest, const char *src)
 {
@@ -555,13 +563,13 @@ void Com_TruncateLongString( char *buffer, const char *s )
 
 void N_strncpyz (char *dest, const char *src, size_t count)
 {
-#ifdef Q3_VM
+#if defined(Q3_VM) || !defined(__cplusplus)
 	if (!dest)
-		Com_Error( ERR_FATAL, "N_strncpyz: NULL dest");
+		SG_Error( "N_strncpyz: NULL dest");
 	if (!src)
-		Com_Error( ERR_FATAL, "N_strncpyz: NULL src");
+		SG_Error( "N_strncpyz: NULL src");
 	if (count < 1)
-		Com_Error( ERR_FATAL, "N_strncpyz: bad count");
+		SG_Error( "N_strncpyz: bad count");
 #elif defined(GDR_DLLCOMPILE)
 	if (!dest)
 		ri.N_Error("N_strncpyz: NULL dest");
@@ -651,7 +659,11 @@ const char* GDR_DECL va(const char *format, ...)
 	index ^= 1;
 
 	va_start( argptr, format );
+#ifdef Q3_VM
 	vsprintf( buf, format, argptr );
+#else
+	N_vsnprintf( buf, sizeof(*string), format, argptr );
+#endif
 	va_end( argptr );
 
 	return buf;
@@ -716,8 +728,8 @@ void N_strcat(char *dest, size_t size, const char *src)
 
 	l1 = strlen(dest);
 	if (l1 >= size)
-#ifdef Q3_VM
-		Com_Error( ERR_FATAL, "N_strcat: already overflowed" );
+#if defined(Q3_VM) || !defined(__cplusplus)
+		SG_Error( "N_strcat: already overflowed" );
 #elif defined(GDR_DLLCOMPILE)
 		ri.N_Error("N_strcat: already overflowed");
 #else
@@ -1051,15 +1063,32 @@ int N_atoi (const char *s)
 
 /*
 ================
+N_isnan
+
+Don't pass doubles to this
+================
+*/
+int N_isnan( float x )
+{
+	floatint_t fi;
+
+	fi.f = x;
+	fi.u &= 0x7FFFFFFF;
+	fi.u = 0x7F800000 - fi.u;
+
+	return (int)( fi.u >> 31 );
+}
+//------------------------------------------------------------------------
+
+
+/*
+================
 N_isfinite
 ================
 */
 static int N_isfinite( float f )
 {
-	union {
-		float f;
-		unsigned u;
-	} fi;
+	floatint_t fi;
 	fi.f = f;
 
 	if ( fi.u == 0xFF800000 || fi.u == 0x7F800000 )
@@ -1072,11 +1101,17 @@ static int N_isfinite( float f )
 	return 1;
 }
 
-float N_atof(const char *s)
+
+/*
+================
+N_atof
+================
+*/
+float N_atof( const char *str )
 {
 	float f;
 
-	f = atof( s );
+	f = atof( str );
 
 	// modern C11-like implementations of atof() may return INF or NAN
 	// which breaks all FP code where such values getting passed
@@ -1086,3 +1121,342 @@ float N_atof(const char *s)
 
 	return f;
 }
+
+
+#ifndef Q3_VM
+/*
+================
+N_log2f
+================
+*/
+float N_log2f( float f )
+{
+	const float v = logf( f );
+	return v / M_LN2;
+}
+
+
+/*
+================
+N_exp2f
+================
+*/
+float N_exp2f( float f )
+{
+	return powf( 2.0f, f );
+}
+
+
+/*
+=====================
+N_acos
+
+the msvc acos doesn't always return a value between -PI and PI:
+
+int i;
+i = 1065353246;
+acos(*(float*) &i) == -1.#IND0
+
+=====================
+*/
+float N_acos(float c)
+{
+	float angle;
+
+	angle = acos(c);
+
+	if (angle > M_PI) {
+		return (float)M_PI;
+	}
+	if (angle < -M_PI) {
+		return (float)M_PI;
+	}
+	return angle;
+}
+#endif
+
+#ifdef Q3_VM
+#define ALT 0x00000001       /* alternate form */
+#define HEXPREFIX 0x00000002 /* add 0x or 0X prefix */
+#define LADJUST 0x00000004   /* left adjustment */
+#define LONGDBL 0x00000008   /* long double */
+#define LONGINT 0x00000010   /* long integer */
+#define QUADINT 0x00000020   /* quad integer */
+#define SHORTINT 0x00000040  /* short integer */
+#define ZEROPAD 0x00000080   /* zero (as opposed to blank) pad */
+#define FPT 0x00000100       /* floating point number */
+
+#define to_digit(c) ((c) - '0')
+#define is_digit(c) ((unsigned)to_digit(c) <= 9)
+#define to_char(n) ((n) + '0')
+
+void AddInt(char** buf_p, int val, int width, int flags)
+{
+    char  text[32];
+    int   digits;
+    int   signedVal;
+    char* buf;
+
+    digits    = 0;
+    signedVal = val;
+    if (val < 0)
+    {
+        val = -val;
+    }
+    do
+    {
+        text[digits++] = '0' + val % 10;
+        val /= 10;
+    } while (val);
+
+    if (signedVal < 0)
+    {
+        text[digits++] = '-';
+    }
+
+    buf = *buf_p;
+
+    if (!(flags & LADJUST))
+    {
+        while (digits < width)
+        {
+            *buf++ = (flags & ZEROPAD) ? '0' : ' ';
+            width--;
+        }
+    }
+
+    while (digits--)
+    {
+        *buf++ = text[digits];
+        width--;
+    }
+
+    if (flags & LADJUST)
+    {
+        while (width--)
+        {
+            *buf++ = (flags & ZEROPAD) ? '0' : ' ';
+        }
+    }
+
+    *buf_p = buf;
+}
+
+void AddFloat(char** buf_p, float fval, int width, int prec)
+{
+    char  text[32];
+    int   digits;
+    float signedVal;
+    char* buf;
+    int   val;
+
+    // get the sign
+    signedVal = fval;
+    if (fval < 0)
+    {
+        fval = -fval;
+    }
+
+    // write the float number
+    digits = 0;
+    val    = (int)fval;
+    do
+    {
+        text[digits++] = '0' + val % 10;
+        val /= 10;
+    } while (val);
+
+    if (signedVal < 0)
+    {
+        text[digits++] = '-';
+    }
+
+    buf = *buf_p;
+
+    while (digits < width)
+    {
+        *buf++ = ' ';
+        width--;
+    }
+
+    while (digits--)
+    {
+        *buf++ = text[digits];
+    }
+
+    *buf_p = buf;
+
+    if (prec < 0)
+        prec = 6;
+    // write the fraction
+    digits = 0;
+    while (digits < prec)
+    {
+        fval -= (int)fval;
+        fval *= 10.0;
+        val            = (int)fval;
+        text[digits++] = '0' + val % 10;
+    }
+
+    if (digits > 0)
+    {
+        buf    = *buf_p;
+        *buf++ = '.';
+        for (prec = 0; prec < digits; prec++)
+        {
+            *buf++ = text[prec];
+        }
+        *buf_p = buf;
+    }
+}
+
+void AddString(char** buf_p, char* string, int width, int prec)
+{
+    int   size;
+    char* buf;
+
+    buf = *buf_p;
+
+    if (string == NULL)
+    {
+        string = "(null)";
+        prec   = -1;
+    }
+
+    if (prec >= 0)
+    {
+        for (size = 0; size < prec; size++)
+        {
+            if (string[size] == '\0')
+            {
+                break;
+            }
+        }
+    }
+    else
+    {
+        size = strlen(string);
+    }
+
+    width -= size;
+
+    while (size--)
+    {
+        *buf++ = *string++;
+    }
+
+    while (width-- > 0)
+    {
+        *buf++ = ' ';
+    }
+
+    *buf_p = buf;
+}
+
+int vsprintf(char* buffer, const char* fmt, va_list argptr)
+{
+    int*  arg;
+    char* buf_p;
+    char  ch;
+    int   flags;
+    int   width;
+    int   prec;
+    int   n;
+    char  sign;
+
+    buf_p = buffer;
+    arg   = (int*)argptr;
+
+    while (1)
+    {
+        // run through the format string until we hit a '%' or '\0'
+        for (ch = *fmt; (ch = *fmt) != '\0' && ch != '%'; fmt++)
+        {
+            *buf_p++ = ch;
+        }
+        if (ch == '\0')
+        {
+            goto done;
+        }
+
+        // skip over the '%'
+        fmt++;
+
+        // reset formatting state
+        flags = 0;
+        width = 0;
+        prec  = -1;
+        sign  = '\0';
+
+    rflag:
+        ch = *fmt++;
+    reswitch:
+        switch (ch)
+        {
+        case '-':
+            flags |= LADJUST;
+            goto rflag;
+        case '.':
+            n = 0;
+            while (is_digit((ch = *fmt++)))
+            {
+                n = 10 * n + (ch - '0');
+            }
+            prec = n < 0 ? -1 : n;
+            goto reswitch;
+        case '0':
+            flags |= ZEROPAD;
+            goto rflag;
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+            n = 0;
+            do
+            {
+                n  = 10 * n + (ch - '0');
+                ch = *fmt++;
+            } while (is_digit(ch));
+            width = n;
+            goto reswitch;
+        case 'c':
+            *buf_p++ = (char)*arg;
+            arg++;
+            break;
+        case 'd':
+        case 'i':
+            AddInt(&buf_p, *arg, width, flags);
+            arg++;
+            break;
+        case 'f':
+            AddFloat(&buf_p, *(double*)arg, width, prec);
+#ifdef __LCC__
+            arg += 1; // everything is 32 bit in my compiler
+#else
+            arg += 2;
+#endif
+            break;
+        case 's':
+            AddString(&buf_p, (char*)*arg, width, prec);
+            arg++;
+            break;
+        case '%':
+            *buf_p++ = ch;
+            break;
+        default:
+            *buf_p++ = (char)*arg;
+            arg++;
+            break;
+        }
+    }
+
+done:
+    *buf_p = 0;
+    return buf_p - buffer;
+}
+#endif

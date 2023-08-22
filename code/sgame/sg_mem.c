@@ -5,12 +5,13 @@
 static char mempool[MEMPOOL_SIZE];
 static int allocPoint;
 
-void G_InitMem(void)
+void SG_InitMem(void)
 {
     allocPoint = 0;
+    memset(mempool, 0, sizeof(mempool));
 }
 
-void* G_AllocMem(int size)
+void* SG_AllocMem(int size)
 {
     char *ptr;
 
@@ -20,7 +21,7 @@ void* G_AllocMem(int size)
     size += sizeof(int);
     size = (size + 31) & ~31;
     if (allocPoint + size >= MEMPOOL_SIZE) {
-        Com_Error("G_AllocMem: failed to allocate %i bytes", size);
+        SG_Error("SG_AllocMem: failed to allocate %i bytes", size);
         return NULL;
     }
     allocPoint += size;
@@ -29,11 +30,11 @@ void* G_AllocMem(int size)
     return (void *)(ptr + sizeof(int));
 }
 
-void G_FreeMem(void *ptr)
+void SG_FreeMem(void *ptr)
 {
     int size;
     if (ptr == NULL) {
-        Com_Error("G_FreeMem: null pointer");
+        SG_Error("SG_FreeMem: null pointer");
         return;
     }
 
@@ -41,7 +42,7 @@ void G_FreeMem(void *ptr)
     allocPoint -= size;
 }
 
-void G_ClearMem(void)
+void SG_ClearMem(void)
 {
-    allocPoint = 0;
+    SG_InitMem();
 }

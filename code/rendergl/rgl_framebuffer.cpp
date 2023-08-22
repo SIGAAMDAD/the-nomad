@@ -4,7 +4,8 @@
 enum {
     FBO_COLOR_MULTISAMPLE,
     FBO_COLOR_GAMMA,
-    FBO_COLOR_BLOOM,
+    FBO_COLOR_BLOOM1,
+    FBO_COLOR_BLOOM2,
     FBO_COLOR_HDR,
 
     NUM_COLOR_ATTACHMENTS
@@ -68,9 +69,17 @@ extern "C" void R_InitFancyFramebuffer(void)
     nglGenRenderbuffers(1, (GLuint *)&fbo->depthId);
 
     nglBindRenderbuffer(GL_RENDERBUFFER, fbo->colorIds[FBO_COLOR_MULTISAMPLE]);
-    nglRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, fbo->width, fbo->height);
+    nglRenderbufferStorage(GL_RENDERBUFFER, R_TexFormat(), fbo->width, fbo->height);
     nglBindRenderbuffer(GL_RENDERBUFFER, 0);
 
+//    nglBindRenderbuffer(GL_RENDERBUFFER, fbo->colorIds[FBO_COLOR_BLOOM1]);
+//    nglRenderbufferStorage(GL_RENDERBUFFER, R_BloomFormat(), fbo->width, fbo->height);
+//    nglBindRenderbuffer(GL_RENDERBUFFER, 0);
+//
+//    nglBindRenderbuffer(GL_RENDERBUFFER, fbo->colorIds[FBO_COLOR_BLOOM2]);
+//    nglRenderbufferStorage(GL_RENDERBUFFER, R_BloomFormat(), fbo->width, fbo->height);
+//    nglBindRenderbuffer(GL_RENDERBUFFER, 0);
+//
     nglBindRenderbuffer(GL_RENDERBUFFER, fbo->depthId);
     nglRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, fbo->width, fbo->height);
     nglBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -87,8 +96,8 @@ extern "C" void R_InitFancyFramebuffer(void)
 
 extern "C" void RE_InitFramebuffers(void)
 {
-    fbo = (framebuffer_t *)ri.Z_Malloc(sizeof(framebuffer_t), TAG_RENDERER, &fbo, "GLfbo");
-    intermediate = (framebuffer_t *)ri.Z_Malloc(sizeof(framebuffer_t), TAG_RENDERER, &intermediate, "GLinterFbo");
+    fbo = (framebuffer_t *)ri.Malloc(sizeof(framebuffer_t), &fbo, "GLfbo");
+    intermediate = (framebuffer_t *)ri.Malloc(sizeof(framebuffer_t), &intermediate, "GLinterFbo");
 
     memset(fbo->colorIds, 0, sizeof(fbo->colorIds));
     fbo->depthId = 0;
@@ -118,6 +127,7 @@ extern "C" void RE_ShutdownFramebuffers(void)
         fbo->fboId = 0;
         fbo->depthId = 0;
         memset(fbo->colorIds, 0, sizeof(fbo->colorIds));
+        ri.Free(fbo);
     }
     if (intermediate->fboId) {
         nglDeleteFramebuffers(1, (GLuint *)&intermediate->fboId);
@@ -125,6 +135,7 @@ extern "C" void RE_ShutdownFramebuffers(void)
 
         intermediate->colorIds[0] = 0;
         intermediate->fboId = 0;
+        ri.Free(intermediate);
     }
 }
 
@@ -203,25 +214,12 @@ extern "C" void RE_EndFramebuffer(void)
     R_UnbindTexture();
     nglBindTexture(GL_TEXTURE_2D, intermediate->colorIds[0]);
 
-    nglBegin(GL_TRIANGLES);
+    nglBegin(GL_TRIANGLE_FAN);
 
-    nglTexCoord2f(0.0f, 0.0f);
-    nglVertex2f(1.0f,  1.0f);
-
-    nglTexCoord2f(0.0f, 1.0f);
-    nglVertex2f(1.0f, -1.0f);
-    
-    nglTexCoord2f(1.0f, 1.0f);
-    nglVertex2f(-1.0f, -1.0f);
-
-    nglTexCoord2f(1.0f, 1.0f);
-    nglVertex2f(-1.0f, -1.0f);
-    
-    nglTexCoord2f(1.0f, 0.0f);
-    nglVertex2f(-1.0f,  1.0f);
-
-    nglTexCoord2f(0.0f, 0.0f);
-    nglVertex2f(1.0f,  1.0f);
+    nglVertex3f( 1.0f,  1.0f, 0.0f); nglTexCoord2f(1.0f, 1.0f);
+    nglVertex3f( 1.0f, -1.0f, 0.0f); nglTexCoord2f(0.0f, 1.0f);
+    nglVertex3f(-1.0f, -1.0f, 0.0f); nglTexCoord2f(0.0f, 0.0f);
+    nglVertex3f(-1.0f,  1.0f, 0.0f); nglTexCoord2f(1.0f, 0.0f);
 
     nglEnd();
     R_UnbindTexture();
@@ -287,18 +285,29 @@ extern "C" void R_InitIntermediateFramebuffer(void)
 
 extern "C" uint32_t R_HDRFormat(void)
 {
-    switch (R_GetTextureDetail()) {
-    case GPUvsGod:
-    case extreme:
-    case high:
+    switch (r_textureDetail->i) {
+    case TEX_GPUvsGod:
+    case TEX_xtreme:
+    case TEX_high:
         return GL_RGBA32F;
-    case medium:
-    case low:
+    case TEX_medium:
+    case TEX_low:
         return GL_RGBA16F;
-    case msdos: // not allowed when using msdos level
+    case TEX_msdos: // not allowed when using msdos level
         return 0;
     };
     ri.N_Error("R_HDRFormat: r_textureDetail has invalid value");
 }
 
-extern "C" uint32_t R_BloomFormat(void);
+extern "C" uint32_t R_BloomFormat(void)
+{
+    switch (r_textureDetail->i) {
+    case TEX_GPUvsGod:
+    case TEX_xtreme:
+    case TEX_high:
+        return GL_RGBA32F;
+    case TEX_medium:
+    case TEX_low:
+        return GL_RGBA16F;
+    };
+}

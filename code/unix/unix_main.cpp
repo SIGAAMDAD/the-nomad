@@ -1,18 +1,12 @@
-#include "../engine/n_shared.h"
+#include "code/rendergl/rgl_public.h"
+#include "code/engine/n_shared.h"
 #include "sys_unix.h"
-#include "../engine/n_scf.h"
-#include "../engine/n_sound.h"
+#include "code/engine/n_scf.h"
+#include "code/engine/n_sound.h"
 #include <execinfo.h>
 #include <sys/sysinfo.h>
 
 #define SYS_BACKTRACE_MAX 1024
-
-GO_AWAY_MANGLE GDR_EXPORT void RE_Shutdown(void);
-
-void GDR_NORETURN Sys_ExitNoMsg(void)
-{
-    abort();
-}
 
 GDR_INLINE void Sys_DoBacktrace(int amount)
 {
@@ -39,8 +33,7 @@ GDR_INLINE void Sys_DoBacktrace(int amount)
             FS_Printf(logfile, C_RED "ERROR:" C_RESET " Failed to open a backtrace file");
             fprintf(stderr, C_RED "ERROR:" C_RESET " Failed to open a backtrace file\n");
             Con_Shutdown();
-            RE_Shutdown();
-            Memory_Shutdown();
+            Com_Shutdown();
             exit(-1);
         }
 
@@ -108,9 +101,7 @@ void GDR_NORETURN Sys_Exit(int code)
     }
     
     Con_Shutdown();
-    RE_Shutdown();
-    Snd_Shutdown();
-    Memory_Shutdown();
+    Com_Shutdown();
 
     if (code == -1)
         exit(EXIT_FAILURE);
@@ -407,6 +398,14 @@ uint64_t Sys_EventSubtime(uint64_t time)
     return ret;
 }
 
+void Sys_Print(const char *str)
+{
+    const uint64_t len = strlen(str);
+    if (write(STDOUT_FILENO, str, len) != len) {
+        N_Error("Sys_Print: bad write");
+    }
+}
+
 void GDR_DECL Sys_Printf(const char *fmt, ...)
 {
     va_list argptr;
@@ -590,16 +589,27 @@ uint64_t Sys_GetUsedRAM_Physical(void)
     return (info.totalram - info.freeram) * info.mem_unit;
 }
 
-void *Sys_LoadDLL(const char *path)
+/*
+Sys_LoadDLL: all paths given to this are assumed to be absolute paths that won't be modified
+*/
+void *Sys_LoadDLL(const char *name)
 {
-    void *handle;
-    const char *ext;
+    void *libHandle;
+    char ospath[MAX_OSPATH*2];
 
-    if (FS_AllowedExtension(path, qfalse, &ext))
-        N_Error("Sys_LoadDLL: Unable to load library with '%s' extension", ext);
+    // allow a little bit of pedanticity
+    GDR_ASSERT(name);
 
-    handle = dlopen(path, RTLD_NOW);
-    return handle;
+    if (name[0] == '/')
+        snprintf(ospath, sizeof(ospath), ".%s" ARCH_STRING DLL_EXT, name);
+    else
+        snprintf(ospath, sizeof(ospath), "./%s" ARCH_STRING DLL_EXT, name);
+
+    libHandle = dlopen(ospath, RTLD_NOW);
+    if (!libHandle) {
+        Con_Printf(ERROR, "Sys_LoadDLL: failed, dlerror(): %s", dlerror());
+    }
+    return libHandle;
 }
 
 void *Sys_GetProcAddress(void *handle, const char *name)

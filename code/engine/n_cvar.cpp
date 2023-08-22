@@ -198,22 +198,6 @@ uint32_t Cvar_Flags(const char *var_name)
     }
 }
 
-/*
-============
-Cvar_CommandCompletion
-============
-*/
-void Cvar_CommandCompletion(void (*callback)(const char *s))
-{
-    const cvar_t *cvar;
-
-    for (cvar = cvar_vars; cvar; cvar = cvar->next) {
-        if (cvar->name && (cvar->flags & CVAR_NOTABCOMPLETE) == 0) {
-            callback(cvar->name);
-        }
-    }
-}
-
 static qboolean Cvar_IsIntegral(const char *s)
 {
     if (*s == '-' && *(s + 1) != '\0')
@@ -620,7 +604,7 @@ cvar_t *Cvar_Set2(const char *var_name, const char *value, qboolean force)
 {
     cvar_t *var;
 
-    Con_Printf(DEBUG, "Cvar_Set2: %s %s", var_name, value);
+//    Con_Printf(DEBUG, "Cvar_Set2: %s %s", var_name, value);
 
     if (!Cvar_ValidateName(var_name)) {
         Con_Printf("invalid cvar name string: %s", var_name);
@@ -689,7 +673,7 @@ cvar_t *Cvar_Set2(const char *var_name, const char *value, qboolean force)
 
     if (!force) {
         if (var->flags & CVAR_LATCH) {
-            if (var->latchedString[0]) {
+            if (var->latchedString) {
                 if (strcmp(value, var->latchedString) == 0)
                     return var;
                 
@@ -1918,7 +1902,7 @@ basically a slightly modified Cvar_Get for the interpreted modules
 =====================
 */
 #define INVALID_FLAGS (CVAR_USER_CREATED | CVAR_SERVER_CREATED | CVAR_PROTECTED | CVAR_PRIVATE | CVAR_MODIFIED | CVAR_NONEXISTENT)
-void Cvar_Register(vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags, int privateFlag)
+void Cvar_Register(vmCvar_t *vmCvar, const char *varName, const char *defaultValue, uint32_t flags, uint32_t privateFlag)
 {
     cvar_t *cv;
 
@@ -2026,6 +2010,23 @@ void Cvar_CompleteCvarName(const char *args, uint32_t argNum)
         if (p > args)
             Field_CompleteCommand(p, qfalse, qtrue);
     }
+}
+
+
+/*
+============
+Cvar_CommandCompletion
+============
+*/
+void Cvar_CommandCompletion( void (*callback)(const char *s) )
+{
+	const cvar_t *cvar;
+
+	for ( cvar = cvar_vars; cvar; cvar = cvar->next ) {
+		if ( cvar->name && ( cvar->flags & CVAR_NOTABCOMPLETE ) == 0 ) {
+			callback( cvar->name );
+		}
+	}
 }
 
 /*

@@ -3,9 +3,20 @@
 
 #pragma once
 
+// gid, flags
+typedef uint32_t tile_t[2];
+// 4 gpu-style texture coordinates
+typedef vec2_t texcoord_t[4];
+// x, y
+typedef uint32_t checkpoint_t[2];
+// x, y, entity type, specific entity id
+typedef uint32_t spawn_t[4];
+
+typedef uint32_t sprite_t;
+
 #ifdef __cplusplus
 
-#include "code/src/g_bff.h"
+#include "../game/g_bff.h"
 
 class GDRMap;
 class GDRMapLayer;
@@ -67,16 +78,6 @@ static char *Map_DecompressGZIP(const char *data, uint64_t inlen, uint64_t *outl
 const eastl::string& base64_decode(const eastl::string& in);
 const eastl::string& base64_encode(uint8_t *out, uint32_t in_len);
 
-#endif
-
-// gid, flags
-typedef uint32_t tile_t[2];
-// 4 gpu-style texture coordinates
-typedef vec2_t texcoord_t[4];
-// x, y
-typedef uint64_t checkpoint_t[2];
-// x, y, entity type, specific entity id
-typedef uint64_t spawn_t[4];
 typedef struct
 {
 #ifdef __cplusplus
@@ -136,6 +137,9 @@ typedef struct
 
 extern nlevel_t *level;
 
-const vec2_t* Map_GetSpriteCoords(uint32_t gid);
+const texcoord_t* Map_GetSpriteCoords(uint32_t gid);
+void LVL_Shutdown(void);
+
+#endif
 
 #endif

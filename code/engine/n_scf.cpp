@@ -1,5 +1,5 @@
 #include "n_shared.h"
-#include "code/src/g_game.h"
+#include "../game/g_game.h"
 
 /*
 char s[64];

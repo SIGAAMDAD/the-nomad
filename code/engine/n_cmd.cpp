@@ -165,9 +165,14 @@ void Cbuf_InsertText( const char *text )
 	}
 
 	// move the existing command text
+	// [glnomad] changed to memmove, much faster with hardware/SIMD
+#if 1
+	memmove(&cmd_text.data[cmd_text.cursize - 1 + len], &cmd_text.data[cmd_text.cursize - 1], cmd_text.cursize - 1);
+#else
 	for ( i = cmd_text.cursize - 1 ; i >= 0 ; i-- ) {
 		cmd_text.data[ i + len ] = cmd_text.data[ i ];
 	}
+#endif
 
 	// copy the new text in
 	memcpy( cmd_text.data, text, len - 1 );
@@ -411,6 +416,24 @@ const char *Cmd_Argv(uint32_t index)
     return cmd_argv[index];
 }
 
+/*
+Cmd_ArgvBuffer: The interpreted versions use this because they can't have
+pointers returned to them
+*/
+void Cmd_ArgvBuffer(uint32_t arg, char *buffer, uint32_t bufLen)
+{
+	N_strncpyz(buffer, Cmd_Argv(arg), bufLen);
+}
+
+/*
+Cmd_ArgsBuffer: The interpreted versions use this because they can't have
+pointers returned to them
+*/
+void Cmd_ArgsBuffer( char *buffer, uint32_t bufferLength )
+{
+	N_strncpyz( buffer, Cmd_ArgsFrom( 1 ), bufferLength );
+}
+
 static cmd_t* Cmd_FindCommand(const char *name)
 {
 	boost::lock_guard<boost::recursive_mutex> lock{cmdLock};
@@ -489,6 +512,20 @@ void Cmd_TokenizeString2(const char *str, qboolean ignoreQuotes)
 	}
 }
 
+/*
+============
+Cmd_CommandCompletion
+============
+*/
+void Cmd_CommandCompletion( void(*callback)(const char *s) )
+{
+	const cmd_t *cmd;
+
+	for ( cmd = cmd_functions ; cmd ; cmd=cmd->next ) {
+		callback( cmd->name );
+	}
+}
+
 qboolean Cmd_CompleteArgument(const char *command, const char *args, uint32_t argnum)
 {
 	boost::lock_guard<boost::recursive_mutex> lock{cmdLock};
@@ -537,29 +574,6 @@ void Cmd_ExecuteString(const char *str)
 	else {
 		Con_Printf("Command '%s' doesn't exist", Cmd_Argv(0));
 	}
-#if 0
-	// check registered command functions
-	for ( prev = &cmd_functions ; *prev ; prev = &cmd->next ) {
-		cmd = *prev;
-		if ( !N_stricmp( cmd_argv[0], cmd->name ) ) {
-			// rearrange the links so that the command will be
-			// near the head of the list next time it is used
-			*prev = cmd->next;
-			cmd->next = cmd_functions;
-			cmd_functions = cmd;
-
-			// perform the action
-			if ( !cmd->function ) {
-				// let the cgame or game handle it
-				break;
-			}
-			else {
-				cmd->function();
-			}
-			return;
-		}
-	}
-#endif
 	// check cvars
 	if ( Cvar_Command() ) {
 		return;
@@ -705,6 +719,33 @@ static void Cmd_Exit_f(void)
 	Sys_Exit(1);
 }
 
+
+/*
+==================
+Cmd_CompleteCfgName
+==================
+*/
+static void Cmd_CompleteCfgName( const char *args, uint32_t argNum )
+{
+	if( argNum == 2 ) {
+		Field_CompleteFilename( "", "cfg", qfalse, FS_MATCH_ANY | FS_MATCH_BASEDIR );
+	}
+}
+
+
+/*
+==================
+Cmd_CompleteWriteCfgName
+==================
+*/
+void Cmd_CompleteWriteCfgName( const char *args, uint32_t argNum )
+{
+	if( argNum == 2 ) {
+		Field_CompleteFilename( "", "cfg", qfalse, FS_MATCH_EXTERN | FS_MATCH_BASEDIR );
+	}
+}
+
+
 void Cmd_Init(void)
 {
 	Cbuf_Init();
@@ -716,5 +757,5 @@ void Cmd_Init(void)
 	Cmd_AddCommand("start", Cmd_Exec_f);
 	Cmd_AddCommand("run", Cmd_Exec_f);
 	Cmd_AddCommand("execq", Cmd_Exec_f);
-//	Cmd_SetCommandCompletionFunc("exec", Cmd_CompleteCfgName);
+	Cmd_SetCommandCompletionFunc("exec", Cmd_CompleteCfgName);
 }

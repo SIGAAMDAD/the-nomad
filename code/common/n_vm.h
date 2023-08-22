@@ -5,7 +5,7 @@
 
 #ifndef Q3_VM
 
-#include "../src/g_bff.h"
+#include "code/game/g_bff.h"
 #include "vm.h"
 
 #define MAX_ACTIVE_VM 2

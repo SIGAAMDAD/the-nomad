@@ -1,10 +1,9 @@
 #include "n_shared.h"
-#include "code/src/g_bff.h"
+#include "../game/g_bff.h"
 #include "../rendergl/rgl_public.h"
-#include "code/src/g_game.h"
+#include "../game/g_game.h"
 #include "n_map.h"
 
-#include <cjson/cJSON.h>
 #include <zstd/zstd.h>
 #include <zlib.h>
 #include <gzstream.h>
@@ -64,6 +63,9 @@ static qboolean Map_LoadSprites(const json_string& source, nmap_t *mapData, json
 
     // submit the tileset to the rendering engine
     mapData->texHandle = RE_RegisterTexture(level->textureName);
+    if (mapData->texHandle == -1) {
+        N_Error("Failed to load texture %s", level->textureName);
+    }
 
     bufLen = FS_LoadFile(path.c_str(), (void **)&buffer);
     if (!buffer) {
@@ -285,10 +287,10 @@ nmap_t *LVL_LoadMap(const char *tmjFile)
     return mapData;
 }
 
-const vec2_t* Map_GetSpriteCoords(uint32_t gid)
+const texcoord_t* Map_GetSpriteCoords(uint32_t gid)
 {
     const uint64_t totalSprites = level->mapData->tileCountX * level->mapData->tileCountY;
-    return gid > totalSprites || gid < level->mapData->firstGid ? NULL /* invalid gid */ : level->mapData->tileCoords[gid];
+    return gid > totalSprites || gid < level->mapData->firstGid ? NULL /* invalid gid */ : &level->mapData->tileCoords[gid];
 }
 
 template<typename T>
@@ -541,8 +543,6 @@ LVL_Shutdown: clears the entire hunk and frees all zone allocations with TAG_LEV
 void LVL_Shutdown(void)
 {
     Z_FreeTags(TAG_LEVEL, TAG_LEVEL);
-    Hunk_ClearTempMemory();
-    Hunk_Clear();
 }
 
 static qboolean LVL_ParseShader(const char *tok, const char *buffer)

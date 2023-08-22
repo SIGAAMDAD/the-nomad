@@ -1,5 +1,6 @@
 #include "n_shared.h"
 #include "../rendergl/rgl_public.h"
+#include "../game/g_game.h"
 
 typedef struct
 {
@@ -89,8 +90,8 @@ static void Key_CompleteBind(const char *args, uint32_t argnum)
 		// skip "bind "
 		p = Com_SkipTokens(args, 1, " ");
 
-//		if (p > args)
-//			Field_CompleteKeyname();
+		if (p > args)
+			Field_CompleteKeyname();
 	}
 	else if (argnum >= 3) {
 		uint32_t key;
@@ -98,10 +99,10 @@ static void Key_CompleteBind(const char *args, uint32_t argnum)
 		// skip "bind <key> "
 		p = Com_SkipTokens(args, 2, " ");
 		if (*p == '\0' && (key = Key_StringToKeynum(Cmd_Argv(1))) >= 0) {
-//			Field_CompleteKeyBind(key);
+			Field_CompleteKeyBind(key);
 		}
 		else if (p > args) {
-//			Field_CompleteCommand(p, qtrue, qtrue);
+			Field_CompleteCommand(p, qtrue, qtrue);
 		}
 	}
 }
@@ -291,7 +292,8 @@ void Key_WriteBindings( file_t f )
 	}
 }
 
-static void Key_Bindlist_f( void ) {
+static void Key_Bindlist_f( void )
+{
 	uint32_t i;
 
 	for ( i = 0 ; i < NUMKEYS ; i++ ) {
@@ -302,7 +304,8 @@ static void Key_Bindlist_f( void ) {
 }
 
 
-void Key_KeynameCompletion( void(*callback)(const char *s) ) {
+void Key_KeynameCompletion( void(*callback)(const char *s) )
+{
 	int	i;
 
 	for( i = 0; keynames[ i ].name != NULL; i++ )
@@ -394,6 +397,19 @@ static void Com_KeyDownEvent(uint32_t key, uint32_t time)
 //        VM_Call();
         return;
     }
+
+//	if (Key_GetCatcher() & KEYCATCH_SCRIPT) {
+//		G_CallVM(VM_UI, 2, UI_KEY_EVENT, key, qfalse);
+//	}
+	if (Key_GetCatcher() & KEYCATCH_SGAME) {
+		VM_Call(sgvm, 2, SGAME_KEY_EVENT, key, qtrue);
+	}
+	if (Key_GetCatcher() & KEYCATCH_UI) {
+
+	}
+	if (Key_GetCatcher() & KEYCATCH_SCRIPT) {
+
+	}
 }
 
 static void Com_KeyUpEvent(uint32_t key, uint32_t time)
@@ -450,4 +466,48 @@ void Com_InitKeyCommands( void )
 	Cmd_SetCommandCompletionFunc( "unbind", Key_CompleteUnbind );
 	Cmd_AddCommand( "unbindall", Key_Unbindall_f );
 	Cmd_AddCommand( "bindlist", Key_Bindlist_f );
+}
+
+/*
+===================
+Key_ClearStates
+===================
+*/
+void Key_ClearStates( void )
+{
+	for (uint32_t i = 0; i < NUMKEYS; i++) {
+		if ( keys[i].down )
+			Com_KeyEvent( i, qfalse, 0 );
+
+		keys[i].down = qfalse;
+		keys[i].repeats = 0;
+	}
+}
+
+
+static uint32_t keyCatchers = 0;
+
+/*
+====================
+Key_GetCatcher
+====================
+*/
+uint32_t Key_GetCatcher( void )
+{
+	return keyCatchers;
+}
+
+
+/*
+====================
+Key_SetCatcher
+====================
+*/
+void Key_SetCatcher( uint32_t catcher )
+{
+	// If the catcher state is changing, clear all key states
+	if ( catcher != keyCatchers )
+		Key_ClearStates();
+
+	keyCatchers = catcher;
 }

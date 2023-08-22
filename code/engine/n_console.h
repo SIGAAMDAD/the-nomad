@@ -104,6 +104,10 @@ typedef struct {
     cvarHandle_t handle;
 } vmCvar_t;
 
+void Cvar_Restart(qboolean unsetVM);
+void Cvar_Register(vmCvar_t *vmCvar, const char *varName, const char *defaultValue, uint32_t flags, uint32_t privateFlag);
+void Cvar_CompleteCvarName(const char *args, uint32_t argNum);
+void Cvar_CommandCompletion( void (*callback)(const char *s) );
 cvar_t *Cvar_Set2(const char *var_name, const char *value, qboolean force);
 void Cvar_VariableStringBuffer(const char *name, char *buffer, uint64_t bufferSize);
 void Cvar_VariableStringBufferSafe(const char *name, char *buffer, uint64_t bufferSize, uint32_t flag);
@@ -111,6 +115,7 @@ int32_t Cvar_VariableInteger(const char *name);
 float Cvar_VariableFloat(const char *name);
 qboolean Cvar_VariableBoolean(const char *name);
 const char *Cvar_VariableString(const char *name);
+void Cvar_CheckRange(cvar_t *var, const char *mins, const char *maxs, cvartype_t type);
 uint32_t Cvar_Flags(const char *name);
 void Cvar_Update(vmCvar_t *vmCvar, uint32_t privateFlag);
 cvar_t *Cvar_Get(const char *name, const char *value, uint32_t flags);
@@ -118,7 +123,6 @@ qboolean Cvar_Command(void);
 void Cvar_Reset(const char *name);
 void Cvar_SetGroup(cvar_t *cv, cvarGroup_t group);
 void Cvar_SetDescription(cvar_t *cv, const char *description);
-void Cvar_Register(vmCvar_t *vmCvar, const char *name, const char *value, uint32_t flags);
 void Cvar_SetSafe(const char *name, const char *value);
 void Cvar_Set(const char *name, const char *value);
 void Cvar_SetValueSafe(const char *name, float value);
@@ -140,6 +144,38 @@ typedef enum {
 } loglevel_t;
 void GDR_DECL Con_Printf(loglevel_t level, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
 #endif
+
+#define N_COLOR_ESCAPE	'^'
+#define N_IsColorString(p) ( *(p) == Q_COLOR_ESCAPE && *((p)+1) && *((p)+1) != Q_COLOR_ESCAPE )
+
+#define ColorIndex(c)	( ( (c) - '0' ) & 7 )
+
+#define S_COLOR_BLACK		'0'
+#define S_COLOR_RED			'1'
+#define S_COLOR_GREEN		'2'
+#define S_COLOR_YELLOW		'3'
+#define S_COLOR_BLUE		'4'
+#define S_COLOR_CYAN		'5'
+#define S_COLOR_MAGENTA		'6'
+#define S_COLOR_WHITE		'7'
+#define S_COLOR_RESET		'8'
+
+#define COLOR_BLACK		"\\^0"
+#define COLOR_RED		"\\^1"
+#define COLOR_GREEN		"\\^2"
+#define COLOR_YELLOW	"\\^3"
+#define COLOR_BLUE		"\\^4"
+#define COLOR_CYAN		"\\^5"
+#define COLOR_MAGENTA	"\\^6"
+#define COLOR_WHITE		"\\^7"
+#define COLOR_RESET		"\\^8"
+
+extern const vec4_t	g_color_table[ 64 ];
+extern int ColorIndexFromChar( char ccode );
+
+#define	MAKERGB( v, r, g, b ) v[0]=r;v[1]=g;v[2]=b
+#define	MAKERGBA( v, r, g, b, a ) v[0]=r;v[1]=g;v[2]=b;v[3]=a
+
 #ifdef __cplusplus
 
 #define MAX_MSG_SIZE (1*1024*1024)
@@ -156,15 +192,6 @@ void GDR_DECL Con_Printf(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 
 void GDR_DECL Con_Error(bool exit, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
 eastl::vector<char>& Con_GetBuffer(void);
 #endif
-
-#define COLOR_YELLOW	"\\^0"
-#define COLOR_RED		"\\^1"
-#define COLOR_GREEN		"\\^2"
-#define COLOR_BLUE		"\\^3"
-#define COLOR_BLACK		"\\^4"
-#define COLOR_MAGENTA	"\\^5"
-#define COLOR_WHITE		"\\^6"
-#define COLOR_GREY		"\\^7"
 
 // credits to michaelfm1211 for writing this
 // use a SGR parameter not supported by colors.h. ex: alternate fonts

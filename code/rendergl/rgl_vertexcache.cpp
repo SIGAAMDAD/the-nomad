@@ -30,6 +30,9 @@ R_InitCacheBase: initializes a cache's basic features
 */
 extern "C" void R_InitCacheBase(vertexCache_t *cache)
 {
+	if (!r_enableBuffers->i)
+		return;
+
 	cache->attribs = (vertexAttrib_t *)(cache + 1);
 	cache->attribStride = sizeof(drawVert_t);
 
@@ -46,12 +49,15 @@ extern "C" void R_InitCacheBase(vertexCache_t *cache)
 
 	nglBindVertexArray(cache->vaoId);
 	nglBindBufferARB(GL_ARRAY_BUFFER_ARB, cache->vboId);
+	nglBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, cache->iboId);
+
+	nglEnableVertexAttribArray(0);
+	nglVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(drawVert_t), (const void *)offsetof(drawVert_t, pos));
 	
-    for (uint64_t i = 0; i < cache->numAttribs; ++i) {
-    	nglEnableVertexAttribArray(cache->attribs[i].index);
-	    nglVertexAttribPointer(cache->attribs[i].index, cache->attribs[i].count, cache->attribs[i].type, GL_FALSE,
-            cache->attribStride, (const void *)cache->attribs[i].offset);
-    }
+	nglEnableVertexAttribArray(1);
+	nglVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(drawVert_t), (const void *)offsetof(drawVert_t, texcoords));
+
+	nglBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
     nglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 	nglBindVertexArray(0);
 
@@ -69,27 +75,25 @@ extern "C" vertexCache_t *R_InitFrameCache(void)
 {
 	vertexCache_t *cache;
 
-	cache = (vertexCache_t *)ri.Z_Malloc(sizeof(*cache) + (sizeof(*cache->attribs) * 4), TAG_RENDERER, &cache, "GLvcache");
+	cache = (vertexCache_t *)ri.Hunk_Alloc(sizeof(*cache) + (sizeof(*cache->attribs) * 4), "GLvcache", h_low);
 	r_totalMemUsed += sizeof(*cache) + (sizeof(*cache->attribs) * 4);
 
 	R_InitCacheBase(cache);
 
 	R_BindCache(cache);
 
-	nglBufferDataARB(GL_ARRAY_BUFFER_ARB, sizeof(drawVert_t) * RENDER_MAX_VERTICES, NULL, GL_DYNAMIC_DRAW);
-	nglBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, sizeof(uint32_t) * RENDER_MAX_INDICES, NULL, GL_DYNAMIC_DRAW);
+	if (r_enableBuffers->i) {
+		nglBufferDataARB(GL_ARRAY_BUFFER_ARB, sizeof(drawVert_t) * RENDER_MAX_VERTICES, NULL, GL_DYNAMIC_DRAW);
+		nglBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, sizeof(uint32_t) * RENDER_MAX_INDICES, NULL, GL_DYNAMIC_DRAW);
+	}
 
 	r_totalMemUsed += sizeof(drawVert_t) * RENDER_MAX_VERTICES;
-	r_totalMemUsed += sizeof(uint32_t) * RENDER_MAX_INDICES;
 
 	R_UnbindCache();
 
 	cache->cacheType = VERTCACHE_FRAME;
 	cache->vertices = NULL;
-	cache->indices = NULL;
-	cache->numIndices = 0;
 	cache->numVertices = 0;
-	cache->usedIndices = 0;
 	cache->usedVertices = 0;
 
 	return cache;
@@ -98,42 +102,36 @@ extern "C" vertexCache_t *R_InitFrameCache(void)
 /*
 R_InitStaticCache: initializes a static/immutable vertex cache
 */
-extern "C" vertexCache_t *R_InitStaticCache(uint64_t numVertices, const drawVert_t *vertices, uint64_t numIndices, const uint32_t *indices,
-	qboolean stackAllocated)
+extern "C" vertexCache_t *R_InitStaticCache(uint64_t numVertices, const drawVert_t *vertices, qboolean stackAllocated)
 {
 	vertexCache_t *cache;
 
-	cache = (vertexCache_t *)ri.Z_Malloc(sizeof(*cache) + (sizeof(*cache->attribs) * 4), TAG_RENDERER, &cache, "GLvcache");
+	cache = (vertexCache_t *)ri.Hunk_Alloc(sizeof(*cache) + (sizeof(*cache->attribs) * 4), "GLvcache", h_low);
 	r_totalMemUsed += sizeof(*cache) + (sizeof(*cache->attribs) * 4);
 
 	R_InitCacheBase(cache);
 
-	cache->numIndices = numIndices;
 	cache->numVertices = numVertices;
 	cache->cacheType = VERTCACHE_STATIC;
 	
 	// if the data given to this function is stack allocated, make a heap copy of it
 	if (stackAllocated) {
-		cache->vertices = (drawVert_t *)ri.Z_Malloc(sizeof(drawVert_t) * numVertices, TAG_RENDERER, &cache->vertices, "GLvertices");
-		cache->indices = (uint32_t *)ri.Z_Malloc(sizeof(uint32_t) * numIndices, TAG_RENDERER, &cache->indices, "GLindices");
+		cache->vertices = (drawVert_t *)ri.Hunk_Alloc(sizeof(drawVert_t) * numVertices, "GLvertices", h_low);
 		memcpy(cache->vertices, vertices, sizeof(drawVert_t) * numVertices);
-		memcpy(cache->indices, indices, sizeof(uint32_t) * numIndices);
 
 		r_totalMemUsed += sizeof(drawVert_t) * numVertices;
-		r_totalMemUsed += sizeof(uint32_t) * numIndices;
 	}
 	else {
 		cache->vertices = (drawVert_t *)vertices;
-		cache->indices = (uint32_t *)indices;
 	}
 
 	R_BindCache(cache);
 
-	nglBufferDataARB(GL_ARRAY_BUFFER_ARB, sizeof(drawVert_t) * numVertices, cache->vertices, GL_STATIC_DRAW);
-	nglBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, sizeof(uint32_t) * numIndices, cache->indices, GL_STATIC_DRAW);
+	if (r_enableBuffers->i) {
+		nglBufferDataARB(GL_ARRAY_BUFFER_ARB, sizeof(drawVert_t) * numVertices, cache->vertices, GL_STATIC_DRAW);
+	}
 
 	r_totalMemUsed += sizeof(drawVert_t) * numVertices;
-	r_totalMemUsed += sizeof(uint32_t) * numIndices;
 
 	R_UnbindCache();
 
@@ -146,14 +144,36 @@ NOTE: THIS DOES NOT BIND THE CACHE!
 */
 extern "C" void R_DrawFrameCache(vertexCache_t *cache)
 {
-	if (!cache->usedIndices || !cache->usedVertices)
-		return; // don't draw it if its already been flushed
-
 	// swap the gpu data with the updated cpu data
-	nglBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, sizeof(drawVert_t) * cache->usedVertices, cache->vertices);
-	nglBufferSubDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0, sizeof(uint32_t) * cache->usedIndices, cache->indices);
-	
-	nglDrawElements(GL_TRIANGLES, cache->numIndices, GL_UNSIGNED_INT, NULL);
+	if (r_enableClientState->i) {
+		nglEnableClientState(GL_VERTEX_ARRAY);
+		nglEnableClientState(GL_COLOR_ARRAY);
+		nglEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+		nglVertexPointer(3, GL_FLOAT, sizeof(*cache->vertices), cache->vertices[0].pos);
+		nglTexCoordPointer(2, GL_FLOAT, sizeof(*cache->vertices), cache->vertices[0].texcoords);
+		nglColorPointer(4, GL_FLOAT, sizeof(*cache->vertices), cache->vertices[0].color);
+
+//		nglDrawElements(GL_TRIANGLES, cache->usedIndices, GL_UNSIGNED_INT, cache->indices);
+		nglDrawArrays(GL_TRIANGLE_FAN, 0, cache->usedVertices);
+
+		nglDisableClientState(GL_VERTEX_ARRAY);
+		nglDisableClientState(GL_COLOR_ARRAY);
+		nglDisableClientState(GL_TEXTURE_COORD_ARRAY);
+	}
+	else if (r_enableBuffers->i) {
+		nglBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, sizeof(drawVert_t) * cache->usedVertices, cache->vertices);
+		nglBufferSubDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0, sizeof(uint32_t) * cache->usedIndices, cache->indices);
+		nglDrawElements(GL_TRIANGLES, cache->usedIndices, GL_UNSIGNED_INT, NULL);
+	}
+	else {
+		nglBegin(GL_TRIANGLE_FAN);
+		for (uint32_t i = 0; i < cache->usedVertices; i++) {
+			nglVertex2fv(cache->vertices[i].pos);
+			nglTexCoord2fv(cache->vertices[i].texcoords);
+		}
+		nglEnd();
+	}
 	
 	cache->usedIndices = 0;
 	cache->usedVertices = 0;
@@ -169,7 +189,32 @@ extern "C" void R_DrawCache(vertexCache_t *cache)
 	{
 		switch (cache->cacheType) {
 		case VERTCACHE_STATIC:
-			nglDrawElements(GL_TRIANGLES, cache->numIndices, GL_UNSIGNED_INT, NULL);
+			if (r_enableClientState->i) {
+				nglEnableClientState(GL_VERTEX_ARRAY);
+				nglEnableClientState(GL_COLOR_ARRAY);
+				nglEnableClientState(GL_TEXTURE_COORD_ARRAY);
+
+				nglVertexPointer(3, GL_FLOAT, sizeof(*cache->vertices), cache->vertices[0].pos);
+				nglTexCoordPointer(2, GL_FLOAT, sizeof(*cache->vertices), cache->vertices[0].texcoords);
+				nglColorPointer(4, GL_FLOAT, sizeof(*cache->vertices), cache->vertices[0].color);
+
+				nglDrawArrays(GL_TRIANGLE_FAN, 0, cache->usedVertices);
+
+				nglDisableClientState(GL_VERTEX_ARRAY);
+				nglDisableClientState(GL_COLOR_ARRAY);
+				nglDisableClientState(GL_TEXTURE_COORD_ARRAY);
+			}
+			else if (r_enableBuffers->i) {
+				nglDrawArrays(GL_TRIANGLE_FAN, 0, cache->usedVertices);
+			}
+			else {
+				nglBegin(GL_TRIANGLE_FAN);
+				for (uint32_t i = 0; i < cache->usedIndices; i++) {
+					nglVertex2fv(cache->vertices[i].pos);
+					nglTexCoord2fv(cache->vertices[i].texcoords);
+				}
+				nglEnd();
+			}
 			break;
 		case VERTCACHE_FRAME:
 			R_DrawFrameCache(cache);
@@ -183,18 +228,13 @@ extern "C" void R_DrawCache(vertexCache_t *cache)
 /*
 R_ReserveFrameMemory: reserves memory on the zone heap for the current frame. Uses the temporary R_FrameAlloc
 */
-extern "C" void R_ReserveFrameMemory(vertexCache_t *cache, uint64_t numVertices, uint64_t numIndices)
+extern "C" void R_ReserveFrameMemory(vertexCache_t *cache, uint64_t numVertices)
 {
 	if (cache->cacheType != VERTCACHE_FRAME)
 		ri.N_Error("R_ReserveFrameMemory: cache type isn't VERTCACHE_FRAME");
 
 	cache->vertices = (drawVert_t *)R_FrameAlloc(sizeof(drawVert_t) * numVertices * 4);
-	cache->indices = (uint32_t *)R_FrameAlloc(sizeof(uint32_t) * numIndices * 6);
-
-	cache->usedIndices = 0;
 	cache->usedVertices = 0;
-
-	cache->numIndices = numIndices * 6;
 	cache->numVertices = numVertices * 4;
 }
 
@@ -205,12 +245,11 @@ this function does not free the vertices or the indices, you'll have to do that 
 extern "C" void R_ShutdownCache(vertexCache_t *cache)
 {
 	// delete the gpu buffers
-	nglDeleteVertexArrays(1, (const GLuint *)&cache->vaoId);
-	nglDeleteBuffersARB(1, (const GLuint *)&cache->vboId);
-	nglDeleteBuffersARB(1, (const GLuint *)&cache->iboId);
-
-	// free the cpu memory back into the zone
-	ri.Z_Free(cache);
+	if (r_enableBuffers->i) {
+		nglDeleteVertexArrays(1, (const GLuint *)&cache->vaoId);
+		nglDeleteBuffersARB(1, (const GLuint *)&cache->vboId);
+		nglDeleteBuffersARB(1, (const GLuint *)&cache->iboId);
+	}
 }
 
 /*
@@ -240,30 +279,12 @@ extern "C" void R_PushVertices(vertexCache_t *cache, const drawVert_t *vertices,
 	cache->usedVertices += numVertices;
 }
 
-/*
-R_PushIndices: pushes indices into the cache's buffer, flushes the buffer if needed
-*/
-extern "C" void R_PushIndices(vertexCache_t *cache, const uint32_t *indices, uint64_t numIndices)
-{
-	RENDER_ASSERT(cache, "NULL cache");
-	RENDER_ASSERT(indices, "NULL indices");
-//	RENDER_ASSERT(numIndices > cache->numIndices, "Too many indices");
-	RENDER_ASSERT(cache->cacheType == VERTCACHE_FRAME, "cache isn't a frame-based cache");
-
-	// the buffer has been filled, flush it
-	if (cache->usedVertices + numIndices >= cache->numIndices) {
-		R_BindCache(cache);
-		R_DrawFrameCache(cache);
-		R_UnbindCache();
-	}
-
-	// the index type is a primitive, use memcpy instead of a manual copy
-	memcpy(cache->indices, indices, sizeof(uint32_t) * numIndices);
-	cache->usedIndices += numIndices;
-}
 
 extern "C" void R_BindCache(const vertexCache_t *cache)
 {
+	if (!r_enableBuffers->i)
+		return;
+
 	R_BindVertexArray(cache);
 	R_BindVertexBuffer(cache);
 	R_BindIndexBuffer(cache);
@@ -271,6 +292,8 @@ extern "C" void R_BindCache(const vertexCache_t *cache)
 
 extern "C" void R_BindVertexArray(const vertexCache_t *cache)
 {
+	if (!r_enableBuffers->i)
+		return;
 	if (!cache) {
 		Con_Printf(ERROR, "R_BindVertexArray(NULL)");
 		return;
@@ -284,23 +307,10 @@ extern "C" void R_BindVertexArray(const vertexCache_t *cache)
 	nglBindVertexArray(cache->vaoId);
 }
 
-extern "C" void R_BindVertexBuffer(const vertexCache_t* cache)
+extern "C" void R_BindIndexBuffer(const vertexCache_t *cache)
 {
-	if (!cache) {
-		Con_Printf(ERROR, "R_BindVertexBuffer(NULL)");
+	if (!r_enableBuffers->i)
 		return;
-	}
-	if (backend.vboId == cache->vboId)
-		return; // already bound
-	else if (backend.vboId)
-		nglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-	
-	backend.vboId = cache->vboId;
-	nglBindBufferARB(GL_ARRAY_BUFFER_ARB, cache->vboId);
-}
-
-extern "C" void R_BindIndexBuffer(const vertexCache_t* cache)
-{
 	if (!cache) {
 		Con_Printf(ERROR, "R_BindIndexBuffer(NULL)");
 		return;
@@ -314,8 +324,28 @@ extern "C" void R_BindIndexBuffer(const vertexCache_t* cache)
 	nglBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, cache->iboId);
 }
 
+extern "C" void R_BindVertexBuffer(const vertexCache_t* cache)
+{
+	if (!r_enableBuffers->i)
+		return;
+	if (!cache) {
+		Con_Printf(ERROR, "R_BindVertexBuffer(NULL)");
+		return;
+	}
+	if (backend.vboId == cache->vboId)
+		return; // already bound
+	else if (backend.vboId)
+		nglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
+	
+	backend.vboId = cache->vboId;
+	nglBindBufferARB(GL_ARRAY_BUFFER_ARB, cache->vboId);
+}
+
 extern "C" void R_UnbindCache(void)
 {
+	if (!r_enableBuffers->i)
+		return;
+	
 	R_UnbindVertexBuffer();
 	R_UnbindIndexBuffer();
 	R_UnbindVertexArray();
@@ -323,6 +353,8 @@ extern "C" void R_UnbindCache(void)
 
 extern "C" void R_UnbindVertexArray(void)
 {
+	if (!r_enableBuffers->i)
+		return;
 	if (!backend.vaoId)
 		return; // already unbound
 	
@@ -330,20 +362,24 @@ extern "C" void R_UnbindVertexArray(void)
 	nglBindVertexArray(0);
 }
 
-extern "C" void R_UnbindVertexBuffer(void)
-{
-	if (!backend.vboId)
-		return; // already unbound
-	
-	backend.vboId = 0;
-	nglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
-}
-
 extern "C" void R_UnbindIndexBuffer(void)
 {
+	if (!r_enableBuffers->i)
+		return;
 	if (!backend.iboId)
 		return; // already unbound
 	
 	backend.iboId = 0;
 	nglBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+}
+
+extern "C" void R_UnbindVertexBuffer(void)
+{
+	if (!r_enableBuffers->i)
+		return;
+	if (!backend.vboId)
+		return; // already unbound
+	
+	backend.vboId = 0;
+	nglBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 }

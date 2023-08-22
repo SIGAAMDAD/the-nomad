@@ -3,6 +3,8 @@
 
 #pragma once
 
+#ifndef Q3_VM
+
 /*
 OS-specific stuff
 */
@@ -20,6 +22,7 @@ Standard Library
 #include <stdint.h>
 #include <setjmp.h>
 #include <strings.h>
+#include <math.h>
 
 #ifdef __cplusplus
 #include <fstream>
@@ -113,8 +116,10 @@ Dependencies
 #include <SDL2/SDL_mutex.h>
 
 // speed is key
-#include "../src/stb_sprintf.h"
+#include "../game/stb_sprintf.h"
 
 #include <GDRLib/lib.hpp>
+
+#endif
 
 #endif

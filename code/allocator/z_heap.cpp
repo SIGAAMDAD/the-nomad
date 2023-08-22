@@ -4,7 +4,7 @@
 #define MIN_HEAP_SIZE (1000*1024*1024)
 #define DEFAULT_ZONE_SIZE (400*1024*1024)
 
-file_t logfile;
+file_t logfile = FS_INVALID_HANDLE;
 
 byte *hunkbase = NULL;
 void *hunkorig = NULL;
@@ -22,7 +22,9 @@ void Memory_Shutdown(void)
 	Con_Printf("Memory_Shutdown: deallocating allocation daemons");
 	hunkLock.unlock();
 	allocLock.unlock();
-	free(hunkorig);
+	if (hunkorig)
+		free(hunkorig);
+	
 	Z_Shutdown();
     Mem_Shutdown();
 }

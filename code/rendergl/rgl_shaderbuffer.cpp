@@ -4,7 +4,7 @@ extern "C" shaderBuffer_t *R_InitShaderBuffer(const shader_t *shader, const char
 {
     shaderBuffer_t *buffer;
 
-    buffer = (shaderBuffer_t *)ri.Z_Malloc(sizeof(*buffer), TAG_RENDERER, &buffer, "GLshaderBuf");
+    buffer = (shaderBuffer_t *)ri.Malloc(sizeof(*buffer), &buffer, "GLshaderBuf");
     buffer->bindingId = binding;
     buffer->bufferSize = bufferSize;
 

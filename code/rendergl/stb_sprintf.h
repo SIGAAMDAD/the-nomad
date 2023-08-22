@@ -1,1 +1,1 @@
-../src/stb_sprintf.h
+../game/stb_sprintf.h

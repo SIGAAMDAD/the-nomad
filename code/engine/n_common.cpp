@@ -1,6 +1,6 @@
 #include "n_shared.h"
 #include "n_scf.h"
-#include "../src/g_game.h"
+#include "../game/g_game.h"
 #include "../rendergl/rgl_public.h"
 #include "n_sound.h"
 #include "n_map.h"
@@ -34,7 +34,7 @@ static sysEvent_t com_pushedEvents[MAX_PUSHED_EVENTS];
 
 cvar_t *com_journal;
 cvar_t *com_frameTime;
-file_t com_journalFile;
+file_t com_journalFile = FS_INVALID_HANDLE;
 
 /*
 ===============================================================
@@ -43,6 +43,93 @@ LOGGING
 
 ===============================================================
 */
+
+static char *rd_buffer;
+static uint64_t rd_buffersize;
+static qboolean rd_flushing = qfalse;
+static void (*rd_flush)(const char *buffer);
+
+void Com_BeginRedirect(char *buffer, uint64_t buffersize, void (*flush)(const char *))
+{
+	if (!buffer || !buffersize || !flush)
+		return;
+	
+	rd_buffer = buffer;
+	rd_buffersize = buffersize;
+	rd_flush = flush;
+
+	*rd_buffer = '\0';
+}
+
+void Com_EndRedirect( void )
+{
+	if ( rd_flush ) {
+		rd_flushing = qtrue;
+		rd_flush( rd_buffer );
+		rd_flushing = qfalse;
+	}
+
+	rd_buffer = NULL;
+	rd_buffersize = 0;
+	rd_flush = NULL;
+}
+
+/*
+Com_Printf: can be used by either the main engine, or the vm.
+A raw string should NEVER be passed as fmt, same reason as the quake3 engine.
+*/
+void GDR_DECL Com_Printf(const char *fmt, ...)
+{
+    int length;
+    va_list argptr;
+    char msg[MAXPRINTMSG];
+
+    va_start(argptr, fmt);
+	length = N_vsnprintf(msg, sizeof(msg), fmt, argptr);
+    va_end(argptr);
+
+	if (rd_buffer && !rd_flushing) {
+		if (length + strlen(rd_buffer) > (rd_buffersize - 1)) {
+			rd_flushing = qtrue;
+			rd_flush(rd_buffer);
+			rd_flushing = qfalse;
+			*rd_buffer = '\0';
+		}
+		N_strcat(rd_buffer, rd_buffersize, msg);
+		return;
+	}
+
+	// echo to the main console
+	Con_Printf("%s", msg);
+}
+
+
+static jmp_buf abort_vmframe;
+
+/*
+Com_Error: the vm's version of N_Error
+*/
+void GDR_DECL Com_Error(vm_t *vm, int level, const char *fmt,  ...)
+{
+    int length;
+    va_list argptr;
+    char msg[MAXPRINTMSG];
+
+    va_start(argptr, fmt);
+    length = N_vsnprintf(msg, sizeof(msg), fmt, argptr);
+    va_end(argptr);
+
+	if (level == ERR_FATAL) {
+		VM_Restart(vm);
+		Con_Error(false, "(VM Fatal Error): %s", msg);
+	}
+	else if (level == ERR_FRAME || level == ERR_RESTART) {
+		if (level == ERR_FRAME) {
+			longjmp(abort_vmframe, 0);
+		}
+	}
+}
+
 
 /*
 ===============================================================
@@ -303,63 +390,24 @@ uint64_t Com_EventLoop(void)
 	return 0; // never reached
 }
 
-static qboolean com_errorEntered = qfalse;
-
 void GDR_NORETURN GDR_DECL N_Error(const char *err, ...)
 {
-    char msg[1024];
-    memset(msg, 0, sizeof(msg));
-    va_list argptr;
+	int length;
+	char msg[MAXPRINTMSG];
+	va_list argptr;
+	static qboolean com_errorEntered = qfalse;
+
+	if (com_errorEntered) {
+
+	}
+	com_errorEntered = qtrue;
+
     va_start(argptr, err);
-    stbsp_vsnprintf(msg, sizeof(msg) - 1, err, argptr);
+    length = N_vsnprintf(msg, sizeof(msg), err, argptr);
     va_end(argptr);
 
 	fprintf(stderr, C_RED "ERROR: " C_RESET "%s\n", msg);
 	Sys_Exit(-1);
-}
-
-/*
-Com_Printf: can be used by either the main engine, or the vm.
-A raw string should NEVER be passed as fmt, same reason as the quake3 engine.
-*/
-void GDR_DECL Com_Printf(const char *fmt, ...)
-{
-    int length;
-    va_list argptr;
-    char msg[MAX_MSG_SIZE];
-
-    va_start(argptr, fmt);
-	length = N_vsnprintf(msg, sizeof(msg), fmt, argptr);
-    va_end(argptr);
-
-	Con_Printf("%s", msg);
-}
-
-
-static jmp_buf abort_vmframe;
-
-/*
-Com_Error: the vm's version of N_Error
-*/
-void GDR_DECL Com_Error(vm_t *vm, int level, const char *fmt,  ...)
-{
-    int length;
-    va_list argptr;
-    char msg[MAX_MSG_SIZE];
-
-    va_start(argptr, fmt);
-    length = N_vsnprintf(msg, sizeof(msg), fmt, argptr);
-    va_end(argptr);
-
-	if (level == ERR_FATAL) {
-		VM_Restart(vm);
-		Con_Error(false, "(VM Fatal Error): %s", msg);
-	}
-	else if (level == ERR_FRAME || level == ERR_RESTART) {
-		if (level == ERR_FRAME) {
-			longjmp(abort_vmframe, 0);
-		}
-	}
 }
 
 /*
@@ -394,178 +442,6 @@ int I_GetParm(const char *parm)
             return i;
     }
     return -1;
-}
-
-#if defined(__OS2__) || defined(_WIN32)
-SDL_Thread *PFN_SDL_CreateThread(SDL_ThreadFunction fn, const char *name, void *data)
-{
-	return SDL_CreateThread(fn, name, data);
-}
-SDL_Thread *PFN_SDL_CreateThreadWithStackSize(SDL_ThreadFunction fn, const char *name, const size_t stacksize, void *data)
-{
-	return SDL_CreateThreadWithStackSize(fn, name, stacksize, data);
-}
-#endif
-
-
-/*
-Com_FillImport: fills render import functions for the dynamic library to use
-*/
-void Com_FillImport(renderImport_t *import)
-{
-#ifdef _NOMAD_DEBUG
-    import->Hunk_AllocDebug = Hunk_AllocDebug;
-#else
-    import->Hunk_Alloc = Hunk_Alloc;
-#endif
-    import->Hunk_MemoryRemaining = Hunk_MemoryRemaining;
-	import->Hunk_AllocateTempMemory = Hunk_AllocateTempMemory;
-	import->Hunk_FreeTempMemory = Hunk_FreeTempMemory;
-
-#ifdef _NOMAD_DEBUG
-    import->Z_MallocDebug = Z_MallocDebug;
-    import->Z_CallocDebug = Z_CallocDebug;
-    import->Z_ReallocDebug = Z_ReallocDebug;
-	import->Z_StrdupDebug = Z_StrdupDebug;
-	import->Z_FreeDebug = Z_FreeDebug;
-#else
-    import->Z_Malloc = Z_Malloc;
-    import->Z_Calloc = Z_Calloc;
-    import->Z_Realloc = Z_Realloc;
-	import->Z_Strdup = Z_Strdup;
-	import->Z_Free = Z_Free;
-#endif
-
-	import->Z_FreeTags = Z_FreeTags;
-	import->Z_ChangeTag = Z_ChangeTag;
-	import->Z_ChangeUser = Z_ChangeUser;
-	import->Z_CleanCache = Z_CleanCache;
-	import->Z_CheckHeap = Z_CheckHeap;
-	import->Z_ClearZone = Z_ClearZone;
-    import->Z_FreeMemory = Z_FreeMemory;
-    import->Z_NumBlocks = Z_NumBlocks;
-	import->Z_BlockSize = Z_BlockSize;
-
-	import->Sys_FreeFileList = Sys_FreeFileList;
-	
-    import->Mem_Alloc = Mem_Alloc;
-    import->Mem_Free = Mem_Free;
-
-	// get the specific logger function (it's been overloaded)
-	import->Con_Printf = static_cast<void(*)(loglevel_t, const char *, ...)>(Con_Printf);
-    import->N_Error = N_Error;
-
-	import->Cvar_VariableStringBuffer = Cvar_VariableStringBuffer;
-	import->Cvar_VariableStringBufferSafe = Cvar_VariableStringBufferSafe;
-	import->Cvar_VariableInteger = Cvar_VariableInteger;
-	import->Cvar_VariableFloat = Cvar_VariableFloat;
-	import->Cvar_VariableBoolean = Cvar_VariableBoolean;
-	import->Cvar_VariableString = Cvar_VariableString;
-	import->Cvar_Flags = Cvar_Flags;
-	import->Cvar_Get = Cvar_Get;
-	import->Cvar_SetGroup = Cvar_SetGroup;
-	import->Cvar_SetDescription = Cvar_SetDescription;
-	import->Cvar_SetSafe = Cvar_SetSafe;
-	import->Cvar_SetBooleanValue = Cvar_SetBooleanValue;
-	import->Cvar_SetStringValue = Cvar_SetStringValue;
-	import->Cvar_SetFloatValue = Cvar_SetFloatValue;
-	import->Cvar_SetIntegerValue = Cvar_SetIntegerValue;
-	import->Cvar_CheckRange = Cvar_CheckRange;
-
-    import->Cmd_AddCommand = Cmd_AddCommand;
-    import->Cmd_RemoveCommand = Cmd_RemoveCommand;
-    import->Cmd_ExecuteString = Cmd_ExecuteString;
-    import->Cmd_Argc = Cmd_Argc;
-    import->Cmd_ArgsFrom = Cmd_ArgsFrom;
-    import->Cmd_Argv = Cmd_Argv;
-    import->Cmd_Clear = Cmd_Clear;
-
-    import->FS_Write = FS_Write;
-    import->FS_Read = FS_Read;
-    import->FS_FileSeek = FS_FileSeek;
-    import->FS_FileTell = FS_FileTell;
-    import->FS_FileLength = FS_FileLength;
-    import->FS_FileExists = FS_FileExists;
-    import->FS_FOpenRead = FS_FOpenRead;
-    import->FS_FOpenWrite = FS_FOpenWrite;
-    import->FS_FClose = FS_FClose;
-    import->FS_FreeFile = FS_FreeFile;
-    import->FS_LoadFile = FS_LoadFile;
-	import->FS_ListFiles = FS_ListFiles;
-
-	import->Key_IsDown = Key_IsDown;
-
-	import->G_GetCurrentMap = G_GetCurrentMap;
-	import->Map_GetSpriteCoords = Map_GetSpriteCoords;
-
-	// most of this stuff is for imgui's usage
-	import->SDL_SetCursor = SDL_SetCursor;
-    import->SDL_SetHint = SDL_SetHint;
-    import->SDL_FreeCursor = SDL_FreeCursor;
-    import->SDL_CaptureMouse = SDL_CaptureMouse;
-    import->SDL_GetKeyboardFocus = SDL_GetKeyboardFocus;
-    import->SDL_GetWindowFlags = SDL_GetWindowFlags;
-    import->SDL_WarpMouseInWindow = SDL_WarpMouseInWindow;
-    import->SDL_GetGlobalMouseState = SDL_GetGlobalMouseState;
-    import->SDL_GetWindowPosition = SDL_GetWindowPosition;
-	import->SDL_GetWindowSize = SDL_GetWindowSize;
-    import->SDL_ShowCursor = SDL_ShowCursor;
-    import->SDL_GetRendererOutputSize = SDL_GetRendererOutputSize;
-    import->SDL_GameControllerGetButton = SDL_GameControllerGetButton;
-    import->SDL_GameControllerGetAxis = SDL_GameControllerGetAxis;
-    import->SDL_GameControllerOpen = SDL_GameControllerOpen;
-    import->SDL_GetClipboardText = SDL_GetClipboardText;
-    import->SDL_SetClipboardText = SDL_SetClipboardText;
-    import->SDL_SetTextInputRect = SDL_SetTextInputRect;
-    import->SDL_GetCurrentVideoDriver = SDL_GetCurrentVideoDriver;
-    import->SDL_CreateSystemCursor = SDL_CreateSystemCursor;
-    import->SDL_GetWindowWMInfo = SDL_GetWindowWMInfo;
-    import->SDL_Init = SDL_Init;
-    import->SDL_Quit = SDL_Quit;
-    import->SDL_GetTicks64 = SDL_GetTicks64;
-    import->SDL_GetPerformanceCounter = SDL_GetPerformanceCounter;
-    import->SDL_GetPerformanceFrequency = SDL_GetPerformanceFrequency;
-    import->SDL_GL_GetDrawableSize = SDL_GL_GetDrawableSize;
-    import->SDL_CreateWindow = SDL_CreateWindow;
-    import->SDL_DestroyWindow = SDL_DestroyWindow;
-    import->SDL_GL_SwapWindow = SDL_GL_SwapWindow;
-    import->SDL_GL_CreateContext = SDL_GL_CreateContext;
-    import->SDL_GL_GetProcAddress = SDL_GL_GetProcAddress;
-    import->SDL_GL_DeleteContext = SDL_GL_DeleteContext;
-    import->SDL_GL_SetAttribute = SDL_GL_SetAttribute;
-    import->SDL_GL_MakeCurrent = SDL_GL_MakeCurrent;
-    import->SDL_GL_SetSwapInterval = SDL_GL_SetSwapInterval;
-    import->SDL_GetError = SDL_GetError;
-	import->SDL_PollEvent = SDL_PollEvent;
-
-	import->Sys_Exit = Sys_Exit;
-
-#if defined(__OS2__) || defined(_WIN32)
-	import->SDL_CreateThread = PFN_SDL_CreateThread;
-	import->SDL_CreateThreadWithStackSize = PFN_SDL_CreateThreadWithStackSize;
-#else
-	import->SDL_CreateThread = SDL_CreateThread;
-	import->SDL_CreateThreadWithStackSize = SDL_CreateThreadWithStackSize;
-#endif
-    import->SDL_WaitThread = SDL_WaitThread;
-    import->SDL_SetThreadPriority = SDL_SetThreadPriority;
-    import->SDL_DetachThread = SDL_DetachThread;
-    import->SDL_GetThreadName = SDL_GetThreadName;
-    import->SDL_ThreadID = SDL_ThreadID;
-    import->SDL_GetThreadID = SDL_GetThreadID;
-
-	import->SDL_CreateMutex = SDL_CreateMutex;
-    import->SDL_DestroyMutex = SDL_DestroyMutex;
-    import->SDL_LockMutex = SDL_LockMutex;
-    import->SDL_UnlockMutex = SDL_UnlockMutex;
-    import->SDL_TryLockMutex = SDL_TryLockMutex;
-
-	import->SDL_CreateCond = SDL_CreateCond;
-    import->SDL_DestroyCond = SDL_DestroyCond;
-    import->SDL_CondSignal = SDL_CondSignal;
-    import->SDL_CondBroadcast = SDL_CondBroadcast;
-    import->SDL_CondWait = SDL_CondWait;
-    import->SDL_CondWaitTimeout = SDL_CondWaitTimeout;
 }
 
 /*
@@ -603,13 +479,55 @@ void Com_InitJournals(void)
 	}
 }
 
+void Com_RestartGame(void)
+{
+	static qboolean gameRestarting = qfalse;
+	renderImport_t import;
+
+	// make sure no recursion is possible
+	if (!gameRestarting) {
+		gameRestarting = qtrue;
+
+		Con_Printf("Com_RestartGame: restarting all engine systems");
+
+		G_ClearMem();
+
+		// reset console history
+		Con_ResetHistory();
+
+		// clear the filesystem before restarting the cvars
+		FS_Shutdown(qtrue);
+
+		// reset all cvars
+		Cvar_Restart(qtrue);
+
+		FS_Restart();
+
+		// reload the config file
+		Com_LoadConfig();
+
+		G_Restart();
+
+		gameRestarting = qtrue;
+	}
+}
+
+/*
+Com_Shutdown: shuts down all the engine's systems
+*/
 void Com_Shutdown(void)
 {
+	Con_Printf("Com_Shutdown: shutting down engine");
+
 	if (logfile != FS_INVALID_HANDLE) {
 		FS_FClose(logfile);
 		logfile = FS_INVALID_HANDLE;
 	}
+
+	G_Shutdown();
+	Memory_Shutdown();
 }
+
 /*
 Com_Init: initializes all the engine's systems
 */
@@ -619,39 +537,30 @@ void Com_Init(void)
 
 	Z_Init();
 	Cvar_Init();
+
 	Cmd_Init();
 	Con_Init();
 
 	Com_InitKeyCommands();
-	Hunk_InitMemory();
-	FS_InitFilesystem();
-	Com_LoadConfig();
-
 	Com_InitEvents();
+	Cbuf_Init();
+
+	FS_InitFilesystem();
+	Com_InitJournals();
+
+	Cbuf_AddText("exec default.cfg\n");
+	Cbuf_Execute();
+
+	Hunk_InitMemory();
 
 	com_frameTime = Cvar_Get("com_frameTime", "0", CVAR_ROM | CVAR_PRIVATE | CVAR_SAVE);
 	Cvar_SetDescription(com_frameTime, "framerate counter but for tics");
 
-	Com_InitJournals();
-
 	Cmd_AddCommand("crash", Com_Crash_f);
 	Cmd_AddCommand("shutdown", Com_Shutdown_f);
 
-	// initialize the rendering engine
-	renderImport_t import;
-	Com_FillImport(&import);
-    RE_Init(&import);
-
+	G_Init();
 	Com_CacheMaps();
-
-	// initialize OpenAL
-	Snd_Init();
-	I_CacheAudio();
-
-	// initialize the vm
-	VM_Init();
-	
-	Game::Init();
 
     Con_Printf(
         "+===========================================================+\n"
@@ -661,11 +570,7 @@ void Com_Init(void)
          "+==========================================================+\n"
     );
 
-	Cmd_AddCommand("crash", Com_Crash_f);
-
 	Con_Printf("==== Common Initialization Done ====");
-
-	Hunk_ClearTempMemory();
 }
 
 /*
@@ -673,17 +578,12 @@ Com_Frame: runs a single frame for the game
 */
 void Com_Frame(void)
 {
-	vm_command = SGAME_RUNTIC;
-
 	// process events
 	Com_EventLoop();
 
 	// run the backend threads
 //	Snd_Run();
 
-	// setjmp for abort_vmframe will be true if the vm has thrown an error
-	if (!setjmp(abort_vmframe))
-		VM_Run(SGAME_VM);
 
 #if 0
 	RE_BeginFrame();
@@ -692,9 +592,6 @@ void Com_Frame(void)
 
 	RE_EndFrame(); // submit everything
 #endif
-
-	VM_Stop(SGAME_VM);
-//	Snd_Stop();
 
 	// 'framerate cap'
 	sleepfor(1000 / Cvar_VariableInteger("r_ticrate"));

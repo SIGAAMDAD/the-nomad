@@ -1,10 +1,10 @@
 #include "rgl_local.h"
 #define STB_RECT_PACK_IMPLEMENTATION
-#include "../rendergl/imstb_rectpack.h"
+#include "code/rendergl/imstb_rectpack.h"
 #define STB_TRUETYPE_IMPLEMENTATION
-#include "../rendergl/imstb_truetype.h"
+#include "code/rendergl/imstb_truetype.h"
 #define STB_SPRINTF_IMPLEMENTATION
-#include "../src/stb_sprintf.h"
+#include "code/game/stb_sprintf.h"
 
 #ifdef _NOMAD_DEBUG
 static void DBG_GL_ErrorCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const GLvoid *userParam);
@@ -26,7 +26,6 @@ cvar_t *r_renderapi;
 cvar_t *r_multisampleAmount;
 cvar_t *r_multisampleType;
 cvar_t *r_dither;
-cvar_t *r_EXT_anisotropicFiltering;
 cvar_t *r_gammaAmount;
 cvar_t *r_textureMagFilter;
 cvar_t *r_textureMinFilter;
@@ -41,13 +40,49 @@ cvar_t *r_aspectRatio;
 cvar_t *r_useFramebuffer;
 cvar_t *r_enableBuffers;
 cvar_t *r_enableShaders;
+cvar_t *r_enableClientState;
+cvar_t *r_flipTextureVertically;
+
+cvar_t *r_EXT_anisotropicFiltering;
+cvar_t *r_EXT_compiled_vertex_array;
+cvar_t *r_ARB_texture_float;
+cvar_t *r_ARB_texture_filter_anisotropic;
+cvar_t *r_ARB_vertex_attrib_64bit;
+cvar_t *r_ARB_vertex_buffer_object;
+cvar_t *r_ARB_sparse_buffer;
+cvar_t *r_ARB_vertex_attrib_binding;
+cvar_t *r_ARB_texture_compression_bptc;
+cvar_t *r_ARB_texture_compression_rgtc;
+cvar_t *r_ARB_texture_compression;
+cvar_t *r_ARB_pipeline_statistics_query;
+
 
 static qboolean sdl_on = qfalse;
 static qboolean imgui_on = qfalse;
 
+typedef struct
+{
+    const char *str;
+    const char *aspectRatio;
+    int width, height;
+    int w, h;
+} vidmode_t;
+
+static const vidmode_t videoModes[] = {
+    {"3840x2160 (16:9)",  "16:9",  3840, 2160, 16, 9},
+    {"2560x1440 (16:9)",  "16:9",  2560, 1440, 16, 9},
+    {"1920x1080 (16:9)",  "16:9",  1920, 1080, 16, 9},
+    {"1680x1050 (16:10)", "16:10", 1680, 1050, 16, 10},
+    {"1600x900 (16:9)",   "16:9",  1600, 900,  16, 9},
+    {"1280x800 (16:10)",  "16:10", 1280, 800,  16, 10},
+    {"1280x720 (16:9)",   "16:9",  1280, 720,  16, 9},
+    {"1024x768 (4:3)",    "4:3",   1024, 768,  4,  3},
+    {"800x600 (4:3)",     "4:3",   800,  600,  4,  3},
+};
+
 extern "C" void RB_CameraInit(void)
 {
-    ri.Cvar_Set("r_aspectRatio", va("%i", r_screenwidth->i / r_screenheight->i));
+    rg.camera.zoomLevel = 1.0f;
     RB_SetProjection(-3.0f, 3.0f, -3.0f, 3.0f);
 }
 
@@ -94,6 +129,7 @@ extern "C" void RB_RotateLeft(void)
 extern "C" void RB_MakeViewMatrix(void)
 {
     glm::mat4 transform = glm::translate(glm::mat4(1.0f), rg.camera.cameraPos)
+                        * glm::scale(glm::mat4(1.0f), glm::vec3(rg.camera.zoomLevel))
                         * glm::rotate(glm::mat4(1.0f), (float)DEG2RAD(rg.camera.rotation), glm::vec3(0, 0, 1));
         
     rg.camera.viewMatrix = glm::inverse(transform);
@@ -102,12 +138,13 @@ extern "C" void RB_MakeViewMatrix(void)
 
 extern "C" void RB_SetProjection(float left, float right, float bottom, float top)
 {
-    rg.camera.projection = glm::ortho(left, right, bottom, top);
+    rg.camera.projection = glm::ortho(left, right, bottom, top, -1.0f, 1.0f);
     RB_MakeViewMatrix();
 }
 
 extern "C" void RB_CameraResize(void)
 {
+    r_aspectRatio->i = r_screenwidth->i / r_screenheight->i;
     RB_SetProjection(-r_aspectRatio->i * rg.camera.zoomLevel, r_aspectRatio->i * rg.camera.zoomLevel, -r_aspectRatio->i, r_aspectRatio->i);
 }
 
@@ -164,6 +201,13 @@ extern "C" void RE_InitSettings_f(void)
 {
     int width, height;
 
+    nglEnable(GL_DEPTH_TEST);
+    nglEnable(GL_STENCIL_TEST);
+    nglEnable(GL_TEXTURE_2D);
+    nglEnable(GL_BLEND);
+    
+    nglDisable(GL_CULL_FACE);
+
     // dither
     if (r_dither->i)
         nglEnable(GL_DITHER);
@@ -180,6 +224,8 @@ extern "C" void RE_InitSettings_f(void)
     RB_MakeViewMatrix();
     RB_CameraResize();
 
+    nglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     ri.Cvar_Set("r_screenwidth", va("%i", width));
     ri.Cvar_Set("r_screenheight", va("%i", height));
 
@@ -189,7 +235,7 @@ extern "C" void RE_InitSettings_f(void)
         RE_UpdateFramebuffers();
     }
     else {
-        nglEnable(GL_MULTISAMPLE_ARB);
+        nglEnable(GL_MULTISAMPLE);
     }
 }
 
@@ -233,8 +279,6 @@ extern "C" void R_InitExtensions(NGLloadproc load)
     glContext.version_i = (int)(glContext.version_f * 10.001);
 
     glContext.textureCompression = TC_NONE;
-
-    r_EXT_anisotropicFiltering->i = 0;
 
     glContext.maxAnisotropy = 0;
     glContext.nonPowerOfTwoTextures = qfalse;
@@ -330,28 +374,26 @@ extern "C" void R_InitExtensions(NGLloadproc load)
 
     ri.Con_Printf(INFO, "Initializing OpenGL Extensions");
 
-    if (R_HasExtension("GL_EXT_texture_filter_anisotropic")) {
-        nglGetIntegerv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &glContext.maxAnisotropy);
+    // GL_ARB_texture_filter_anisotropic
+    if (R_HasExtension("GL_ARB_texture_filter_anisotropic")) {
+        nglGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &glContext.maxAnisotropy);
 
         if (glContext.maxAnisotropy <= 0) {
-            ri.Con_Printf(INFO, "... GL_EXT_texture_filter_anisotropic not property supported");
-            glContext.maxAnisotropy = 0;
+            ri.Con_Printf(INFO, "... GL_ARB_texture_filter_anisotropic not property supported");
         }
         else {
-            ri.Con_Printf(INFO, "... GL_EXT_texture_filter_anisotropic (max: %i)", glContext.maxAnisotropy);
-            r_EXT_anisotropicFiltering->i = 1;
+            ri.Con_Printf(INFO, "... GL_ARB_texture_filter_anisotropic (max: %f)", glContext.maxAnisotropy);
+            ri.Cvar_SetFloatValue("r_ARB_texture_filter_anisotropic", glContext.maxAnisotropy);
         }
     }
     else {
         ri.Con_Printf(INFO, "... GL_EXT_texture_filter_anisotropic not found");
     }
 
-    r_EXT_anisotropicFiltering->i = glContext.maxAnisotropy > 0;
-    if (r_EXT_anisotropicFiltering->i != glContext.maxAnisotropy) {
-        ri.Cvar_SetIntegerValue("r_EXT_anisotropicFiltering", glContext.maxAnisotropy);
-    }
+    r_ARB_texture_filter_anisotropic->i = glContext.maxAnisotropy > 0;
 
-    if (R_HasExtension("ARB_vertex_buffer_object")) {
+    // GL_ARB_vertex_buffer_object
+    if (R_HasExtension("GL_ARB_vertex_buffer_object")) {
         LOAD_GL_PROCS(NGL_BufferARB_Procs);
         if (!nglGenBuffersARB || !nglDeleteBuffersARB || !nglBindBufferARB || !nglBufferDataARB || !nglBufferSubDataARB) {
             ri.Con_Printf(INFO, "WARNING: failed to load ARB_vertex_buffer_object extension procs");
@@ -368,21 +410,22 @@ extern "C" void R_InitExtensions(NGLloadproc load)
         }
     }
 
-    // GL_EXT_texture_compression_s3tc
-    if (R_HasExtension("GL_ARB_texture_compression") && R_HasExtension("GL_EXT_texture_compression_s3tc")) {
+
+    // GL_ARB_texture_compression_s3tc
+    if (r_ARB_texture_compression->i && R_HasExtension("GL_ARB_texture_compression_s3tc")) {
         if (r_textureCompression->i) {
             glContext.textureCompression = TC_S3TC_ARB;
-            ri.Con_Printf(INFO, "... using GL_EXT_texture_compression_s3tc");
+            ri.Con_Printf(INFO, "... using GL_ARB_texture_compression_s3tc");
             ri.Cvar_SetStringValue("r_textureCompression", "TC_S3TC_ARB");
         }
         else {
-            ri.Con_Printf(INFO, "... ignoring GL_EXT_texture_compression_s3tc");
+            ri.Con_Printf(INFO, "... ignoring GL_ARB_texture_compression_s3tc");
             if (N_stricmp(r_textureCompression->s, "none") != 0)
                 ri.Cvar_SetStringValue("r_textureCompression", "none");
         }
     }
     else {
-        ri.Con_Printf(INFO, "... GL_EXT_texture_compression_s3tc not found");
+        ri.Con_Printf(INFO, "... GL_ARB_texture_compression_s3tc not found");
         if (N_stricmp(r_textureCompression->s, "none") != 0)
             ri.Cvar_SetStringValue("r_textureCompression", "none");
     }
@@ -421,8 +464,11 @@ extern "C" void R_InitGL(void)
     ri.SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
     ri.SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
     ri.SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    ri.SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 2);
-    ri.SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 8);
+
+    if (!r_useFramebuffer->i) {
+        ri.SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 2);
+        ri.SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, r_multisampleAmount->i);
+    }
 
     load_gl_procs((NGLloadproc)ri.SDL_GL_GetProcAddress);
 
@@ -463,7 +509,7 @@ void R_GfxInfo_f(void)
     ri.Con_Printf(INFO, "r_textureFiltering: %s", r_textureFiltering->s);
     ri.Con_Printf(INFO, "r_gammaAmount: %f", r_gammaAmount->f);
     ri.Con_Printf(INFO, "r_textureDetail: %s", r_textureDetail->s);
-    ri.Con_Printf(INFO, "r_EXT_anisotropicFilter: %s, %i", N_booltostr(r_EXT_anisotropicFiltering->i), r_EXT_anisotropicFiltering->i);
+    ri.Con_Printf(INFO, "r_EXT_anisotropicFilter: %s, %i", N_booltostr(r_ARB_texture_filter_anisotropic->i), r_ARB_texture_filter_anisotropic->i);
     ri.Con_Printf(INFO, "r_useExtensions: %s", N_booltostr(r_useExtensions->i));
     ri.Con_Printf(INFO, "r_dither: %s", N_booltostr(r_dither->i));
     ri.Con_Printf(INFO, " ");
@@ -517,8 +563,9 @@ extern "C" void R_GetVars(void)
     ri.Cvar_SetGroup(r_textureFiltering, CVG_RENDERER);
     r_textureCompression = ri.Cvar_Get("r_textureCompression", "none", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
     ri.Cvar_SetGroup(r_textureCompression, CVG_RENDERER);
-    r_textureDetail = ri.Cvar_Get("r_textureDetail", "medium", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
+    r_textureDetail = ri.Cvar_Get("r_textureDetail", "3", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
     ri.Cvar_SetGroup(r_textureDetail, CVG_RENDERER);
+    ri.Cvar_CheckRange(r_textureDetail, "0", "5", CVT_INT);
     
     r_screenwidth = ri.Cvar_Get("r_screenwidth", "1920", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
     ri.Cvar_SetGroup(r_screenwidth, CVG_RENDERER);
@@ -550,11 +597,24 @@ extern "C" void R_GetVars(void)
 
     r_multisampleAmount = ri.Cvar_Get("r_multisampleAmount", "2", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
     ri.Cvar_SetGroup(r_multisampleAmount, CVG_RENDERER);
+    ri.Cvar_CheckRange(r_multisampleAmount, "0", "16", CVT_INT);
+    ri.Cvar_SetDescription(r_multisampleAmount, "Specify the amount of samples per pixel the renderer uses for anti-aliasing.");
     r_multisampleType = ri.Cvar_Get("r_multisampleType", "none", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
     ri.Cvar_SetGroup(r_multisampleType, CVG_RENDERER);
+    ri.Cvar_SetDescription(r_multisampleType,
+        "Specify what kind of anti-aliasing type the renderer uses.\n"
+        "    MSAA = use multisampling\n"
+        "    FXAA = use fast-approximate (not yet supported)\n"
+        "    SSAA = use super-sampling");
+    
+    r_flipTextureVertically = ri.Cvar_Get("r_flipTextureVertically", "0", CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_flipTextureVertically, CVG_RENDERER);
 
-    r_EXT_anisotropicFiltering = ri.Cvar_Get("r_EXT_anisotropicFiltering", "0", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
-    ri.Cvar_SetGroup(r_EXT_anisotropicFiltering, CVG_RENDERER);
+    r_enableClientState = ri.Cvar_Get("r_enableClientState", "0", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_enableClientState, CVG_RENDERER);
+    ri.Cvar_SetDescription(r_enableClientState,
+        "    0 = use either buffers or immediate mode for vertex rendering\n"
+        "    1 = override both buffers and immediate mode for rendering, use nglEnableClientState instead.");
 
     r_gammaAmount = ri.Cvar_Get("r_gammaAmount", "2.2.", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
     ri.Cvar_SetGroup(r_gammaAmount, CVG_RENDERER);
@@ -576,34 +636,53 @@ extern "C" void R_GetVars(void)
     ri.Cvar_SetDescription(r_useFramebuffer,
         "    0 = force the renderer to let OpenGL do all the post-processing (faster, but looks worse)\n"
         "    1 = let the renderer use its own custom post-processing (slower, but better looking)");
+    
+    r_ARB_texture_filter_anisotropic = ri.Cvar_Get("r_ARB_texture_filter_anistropic", "0", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_ARB_texture_filter_anisotropic, CVG_RENDERER);
+    ri.Cvar_SetDescription(r_ARB_texture_filter_anisotropic,
+        "    0 = GL implementation doesn't support anisotropic filtering\n"
+        "    1 = GL implementation does support anisotropic filtering");
+    ri.Cvar_CheckRange(r_ARB_texture_filter_anisotropic, "0", "1", CVT_INT);
+
+    r_ARB_texture_compression = ri.Cvar_Get("r_ARB_texture_compression", "0", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetGroup(r_ARB_texture_compression, CVG_RENDERER);
+    ri.Cvar_SetDescription(r_ARB_texture_compression,
+        "    0 = GL implementation doesn't support texture compression\n"
+        "    1 = GL implementation does support texture compression");
 }
 
-static qboolean rendererInitialized = qfalse;
+static qboolean r_windowOpen = qfalse, r_initialized = qfalse;
 
-extern "C" void RE_Init(renderImport_t *import)
+extern "C" void RE_GetImport(const renderImport_t *import)
 {
-    memcpy(&ri, import, sizeof(*import)); // copy all the functions
+    memcpy(&ri, import, sizeof(*import));
+}
 
+extern "C" void RE_Init(void)
+{
     ri.Con_Printf(INFO, "RE_Init: initializing rendering engine");
-
-    if (ri.SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
-        ri.N_Error("RE_Init: failed to initialize SDL2, error message: %s",
-            ri.SDL_GetError());
-    }
 
     R_GetVars();
     RB_CameraInit();
 
     ri.Con_Printf(INFO, "alllocating memory to the SDL_Window context");
-    rg.window = ri.SDL_CreateWindow(
+
+    if (!r_windowOpen) {
+        if (ri.SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS) < 0) {
+            ri.N_Error("RE_Init: failed to initialize SDL2, error message: %s",
+                ri.SDL_GetError());
+        }
+        rg.window = ri.SDL_CreateWindow(
                             "The Nomad",
                             SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                             r_screenwidth->i, r_screenheight->i,
                             SDL_WINDOW_OPENGL
                         );
-    if (!rg.window) {
-        ri.N_Error("RE_Init: failed to initialize an SDL2 window, error message: %s",
-            ri.SDL_GetError());
+        if (!rg.window) {
+            ri.N_Error("RE_Init: failed to initialize an SDL2 window, error message: %s",
+                ri.SDL_GetError());
+        }
+        r_windowOpen = qtrue;
     }
     R_InitGL();
 
@@ -618,7 +697,6 @@ extern "C" void RE_Init(renderImport_t *import)
     backend.texId = 0;
 
     R_InitImGui();
-    sdl_on = qtrue;
 
     ri.Cmd_AddCommand("gfxinfo", R_GfxInfo_f);
     ri.Cmd_AddCommand("gfxrestart", RE_InitSettings_f);
@@ -627,21 +705,18 @@ extern "C" void RE_Init(renderImport_t *import)
     RE_InitFramebuffers();
     RE_InitPLRef();
 
-    rendererInitialized = qtrue;
+    r_initialized = qtrue;
 }
 
-extern "C" void RE_Shutdown(void)
+extern "C" void RE_Shutdown(qboolean killWindow)
 {
-    if (!sdl_on) // may recurse
-        return;
-    if (!rendererInitialized)
+    // this may be called before RE_Init
+    if (!r_initialized)
         return;
 
     ri.Con_Printf(INFO, "RE_Shutdown: shutting down OpenGL buffers and memory, and deallocating rendering context");
-    
-    rendererInitialized = qfalse;
-    sdl_on = qfalse;
-
+    ri.Cmd_RemoveCommand("gfxinfo");
+    ri.Cmd_RemoveCommand("gfxrestart");
 
     RE_ShutdownFramebuffers();
     RE_ShutdownTextures();
@@ -652,14 +727,16 @@ extern "C" void RE_Shutdown(void)
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
 
-    if (rg.window)
-        ri.SDL_DestroyWindow(rg.window);
-    if (rg.context)
-        ri.SDL_GL_DeleteContext(rg.context);
+    if (killWindow) {
+        if (rg.window)
+            ri.SDL_DestroyWindow(rg.window);
+        if (rg.context)
+            ri.SDL_GL_DeleteContext(rg.context);
 
-    ri.SDL_Quit();
-    rg.window = NULL;
-    rg.context = NULL;
+        ri.SDL_Quit();
+        rg.window = NULL;
+        rg.context = NULL;
+    }
 }
 
 
@@ -713,7 +790,7 @@ static void DBG_GL_ErrorCallback(GLenum source, GLenum type, GLuint id, GLenum s
     }
     switch (type) {
     case GL_DEBUG_TYPE_ERROR:
-        ri.Con_Printf(ERROR, "[OpenGL Error: %i] %s", id, message);
+        ri.N_Error("[OpenGL Error: %i] %s", id, message);
         break;
     case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
         ri.Con_Printf(WARNING, "[OpenGL Debug Log] %s Deprecated Behaviour, Id: %i", message, id);

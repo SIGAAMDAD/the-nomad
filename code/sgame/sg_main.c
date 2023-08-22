@@ -1,31 +1,24 @@
-#include "../src/n_shared.h"
-#include "../src/n_scf.h"
+#include "../engine/n_shared.h"
+#include "../engine/n_scf.h"
 #include "sg_local.h"
 
 world_t sg_world;
 playr_t playrs[MAX_PLAYR_COUNT];
 mobj_t mobs[MAX_MOBS_ACTIVE];
 
-static qboolean *kbstate[NUMBINDS];
-
-int G_Init(void);
-int G_Shutdown(void);
-int G_RunLoop(void);
-int G_StartLevel(void);
-int G_EndLevel(void);
+int SG_Init(void);
+int SG_Shutdown(void);
+int SG_RunLoop(void);
 
 int vmMain(int command, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7,
     int arg8, int arg9, int arg10)
 {
     switch (command) {
     case SGAME_INIT:
-        return G_Init();
-    case SGAME_RUNTIC:
-        return G_RunLoop();
-    case SGAME_SHUTDOWN:
-        return G_Shutdown();
+        return SG_Init();
     default:
-        Com_Error("vmMain: invalid command id: %i", command);
+        SG_Error("vmMain: invalid command id: %i", command);
+        break;
     };
     return -1;
 }
@@ -39,7 +32,7 @@ void GDR_DECL SG_Printf(const char *fmt, ...)
     vsprintf(msg, fmt, argptr);
     va_end(argptr);
 
-    VM_Com_Printf(msg);
+    trap_Print(msg);
 }
 
 void GDR_DECL SG_Error(const char *fmt, ...)
@@ -51,7 +44,7 @@ void GDR_DECL SG_Error(const char *fmt, ...)
     vsprintf(msg, fmt, argptr);
     va_end(argptr);
 
-    VM_Com_Error(msg);
+    trap_Error(msg);
 }
 
 const mobj_t mobinfo[NUMMOBS] = {
@@ -61,21 +54,13 @@ const mobj_t mobinfo[NUMMOBS] = {
     {"Shotty"},
 };
 
-int G_RunLoop(void)
+int SG_Init(void)
 {
-    G_GetKeyboardState(kbstate, NUMBINDS);
-    
-    return 0;
-}
-
-int G_Init(void)
-{    
-    int i;
     playr_t* p;
 
-    G_Printf("SG_Init: initializing solo-player campaign variables");
+    SG_Printf("SG_Init: initializing solo-player campaign variables");
 
-    sg_world.state = SG_IN_LEVEL;
+    sg_world.state = GS_LEVEL;
     
     sg_world.playr = &playrs[0];
     sg_world.numPlayrs = 0;
@@ -95,18 +80,26 @@ int G_Init(void)
     sg_world.mobs = mobs;
     memset(mobs, 0, MAX_MOBS_ACTIVE * sizeof(*mobs));
 
+    SG_InitMem();
+
     sg_world.mapwidth = 0;
     sg_world.mapheight = 0;
-    sg_world.spritemap = (sprite_t **)G_AllocMem(sizeof(sprite_t *) * sg_world.mapwidth);
+    sg_world.spritemap = (sprite_t **)SG_AllocMem(sizeof(sprite_t *) * sg_world.mapwidth);
 
-    G_InitMem();
+    if (!trap_Key_GetCatcher() & KEYCATCH_SGAME) {
+        trap_Key_SetCatcher(trap_Key_GetCatcher() & KEYCATCH_SGAME);
+    }
 
     return 0;
 }
 
-int G_Shutdown(void)
+int SG_Shutdown(void)
 {
+    SG_ClearMem();
 
+    if (trap_Key_GetCatcher() & KEYCATCH_SGAME) {
+        trap_Key_SetCatcher(trap_Key_GetCatcher() & ~KEYCATCH_SGAME);
+    }
 
     return 0;
 }

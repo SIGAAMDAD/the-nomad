@@ -122,8 +122,8 @@ extern "C" void R_UpdateTextures(void)
         nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
         nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapT);
         nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapS);
-        if (r_EXT_anisotropicFiltering->i)
-            nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, glContext.maxAnisotropy);
+        if (r_ARB_texture_filter_anisotropic->i)
+            nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, glContext.maxAnisotropy);
 
         nglBindTexture(GL_TEXTURE_2D, 0);
     }
@@ -188,7 +188,7 @@ extern "C" texture_t *R_InitTexture(const char *filename)
         return textures[hash];
     }
 
-    t = (texture_t *)ri.Z_Malloc(sizeof(texture_t), TAG_RENDERER, &t, "GLtexture");
+    t = (texture_t *)ri.Hunk_Alloc(sizeof(texture_t), "GLtexture", h_low);
     t->minFilter = R_TexMinFilter();
     t->magFilter = R_TexMagFilter();
     t->wrapS = GL_REPEAT;
@@ -201,29 +201,32 @@ extern "C" texture_t *R_InitTexture(const char *filename)
     nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, t->magFilter);
     nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, t->wrapS);
     nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, t->wrapT);
-    if (r_EXT_anisotropicFiltering->i)
-        nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, glContext.maxAnisotropy);
+//    if (r_ARB_texture_filter_anisotropic->i)
+//        nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, glContext.maxAnisotropy);
 
     bufferLen = ri.FS_LoadFile(filename, (void **)&buffer);
     if (!buffer) {
         goto error;
     }
+    stbi_set_flip_vertically_on_load(r_flipTextureVertically->i);
     image = stbi_load_from_memory((const stbi_uc *)buffer, bufferLen, (int *)&t->width, (int *)&t->height, (int *)&t->channels, 4);
     if (!image) {
         ri.Con_Printf(ERROR, "stbi_load_from_memory failed to load texture %s, error string: %s", filename, stbi_failure_reason());
         goto error;
     }
 
-    t->data = (byte *)ri.Z_Malloc(t->width * t->height * t->channels, TAG_RENDERER, &t->data, "GLtexbuffer");
+    nglTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, t->width, t->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+
+    t->data = (byte *)ri.Hunk_Alloc(t->width * t->height * t->channels, "GLtexbuffer", h_low);
     memcpy(t->data, image, t->width * t->height * t->channels);
     ri.Mem_Free(image);
-
-    nglTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, t->width, t->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
 
     nglBindTexture(GL_TEXTURE_2D, 0);
 
     ri.Con_Printf(DEBUG, "Loaded texture file %s", filename);
     textures[hash] = t;
+    rg.textures[hash] = t;
+    rg.numTextures++;
 
     return t;
 
@@ -264,8 +267,6 @@ extern "C" texture_t *R_TextureFromHandle(nhandle_t handle)
 extern "C" void R_ShutdownTexture(texture_t *texture)
 {
     nglDeleteTextures(1, (const GLuint *)&texture->id);
-    ri.Z_Free(texture->data);
-    ri.Z_Free(texture);
 }
 
 extern "C" void R_BindTexture(const texture_t* texture)

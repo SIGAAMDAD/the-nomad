@@ -3,15 +3,6 @@
 
 #pragma once
 
-typedef unsigned int sprite_t;
-
-typedef enum
-{
-    SG_INACTIVE,
-    SG_IN_MENU,
-    SG_IN_LEVEL
-} gamestate_t;
-
 typedef struct
 {
     int mapwidth;

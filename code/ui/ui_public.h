@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "../src/n_shared.h"
+#include "../engine/n_shared.h"
 
 #define MENU_INDEX_TITLE    0
 #define MENU_INDEX_MAIN     1
@@ -12,8 +12,8 @@
 
 typedef enum
 {
-    COM_PRINTF,
-    COM_ERROR,
+    UI_FLOOR = 107,
+    UI_CEIL,
 
     NUM_UIIMPORT
 } uiImport_t;
@@ -21,6 +21,7 @@ typedef enum
 typedef enum
 {
     UI_INIT,
+    UI_KEY_EVENT,
     UI_SHUTDOWN,
     UI_CLEAR,
 

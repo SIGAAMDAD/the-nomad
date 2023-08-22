@@ -166,14 +166,15 @@ GAME_DIR=$(O)/game
 COMPILE_SRC=$(CC) $(CFLAGS) -o $@ -c $<
 
 COMMON=\
-	$(O)/common/vm_run.o \
 	$(O)/common/vm.o \
-	$(O)/common/sg_syscalls.o
+	$(O)/common/vm_interpreted.o \
+	$(O)/common/vm_x86.o
 SRC=\
 	$(O)/game/g_rng.o \
 	$(O)/game/g_init.o \
 	$(O)/game/g_bff.o \
 	$(O)/game/g_game.o \
+	$(O)/game/g_sgame.o \
 	\
 	$(O)/engine/n_console.o \
 	$(O)/engine/n_scf.o \
@@ -217,9 +218,11 @@ targets: makedirs
 
 $(O)/common/%.o: $(SDIR)/common/%.cpp
 	$(COMPILE_SRC)
-$(O)/common/%.o: $(SDIR)/sgame/%.cpp
+$(O)/common/%.o: $(SDIR)/common/%.c
 	$(COMPILE_SRC)
-$(O)/game/%.o: $(SDIR)/src/%.cpp
+$(O)/game/%.o: $(SDIR)/game/%.cpp
+	$(COMPILE_SRC)
+$(O)/game/%.o: $(SDIR)/game/%.c
 	$(COMPILE_SRC)
 $(O)/engine/%.o: $(SDIR)/engine/%.cpp
 	$(COMPILE_SRC)
@@ -228,18 +231,6 @@ $(O)/engine/%.o: $(SDIR)/engine/%.c
 $(O)/allocator/%.o: $(SDIR)/allocator/%.cpp
 	$(COMPILE_SRC)
 $(O)/sys/%.o: $(SYS_DIR)/%.cpp
-	$(COMPILE_SRC)
-$(O)/common/%.o: $(SDIR)/common/%.c
-	$(COMPILE_SRC)
-$(O)/common/%.o: $(SDIR)/sgame/%.c
-	$(COMPILE_SRC)
-$(O)/game/%.o: $(SDIR)/src/%.c
-	$(COMPILE_SRC)
-$(O)/engine/%.o: $(SDIR)/src/%.c
-	$(COMPILE_SRC)
-$(O)/allocator/%.o: $(SDIR)/src/%.c
-	$(COMPILE_SRC)
-$(O)/sys/%.o: $(SYS_DIR)/%.c
 	$(COMPILE_SRC)
 
 $(EXE): $(SRC) $(COMMON) $(SYS)

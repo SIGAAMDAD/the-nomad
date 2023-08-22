@@ -3,10 +3,11 @@
 
 #pragma once
 
-#include "sg_version.h"
-#include "../src/n_shared.h"
+#include "../engine/n_shared.h"
+#include "../game/g_game.h"
+#include "../engine/n_map.h"
+#include "../rendergl/rgl_public.h"
 #include "sg_public.h"
-#include "sg_local.h"
 
 // everything is globally or statically allocated within the vm, unless its using the G_AllocMem stuff, but the vm doesn't like it
 // (reasonably, raw pointers + vm bytecode = exploits) when you pass pointers back and forth from the vm and native bytecode, so non of that'll happen
@@ -14,10 +15,13 @@
 #define MAX_MOBS_ACTIVE 150
 #define MAX_PLAYR_INVENTORY 20
 
-void G_GetKeyboardState(qboolean **state, unsigned int numbinds);
-void* G_AllocMem(int size);
-void G_FreeMem(void *ptr);
-void G_InitMem(void);
+void GDR_DECL SG_Error(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
+void GDR_DECL SG_Printf(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
+
+void* SG_AllocMem(int size);
+void SG_ClearMem(void);
+void SG_FreeMem(void *ptr);
+void SG_InitMem(void);
 
 enum
 {
@@ -73,6 +77,80 @@ struct sgentity_s
 
     struct sgentity_s* target; // only really applies to mobs and homing attacks
 };
+
+//===============================================
+
+//
+// system traps
+// These functions are how the cgame communicates with the main game system
+//
+
+// print a message to the console
+void trap_Print(const char *fmt);
+
+// abort the vm
+void trap_Error(const char *fmt);
+
+
+// milliseconds should only be used for performance tuning, never
+// for anything game related
+unsigned int trap_Milliseconds( void );
+
+// console variable interaction
+void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, unsigned int flags );
+void trap_Cvar_Update( vmCvar_t *vmCvar );
+void trap_Cvar_Set( const char *var_name, const char *value );
+void trap_Cvar_VariableStringBuffer( const char *var_name, char *buffer, unsigned int bufsize );
+
+// ConsoleCommand parameter access
+int trap_Argc( void );
+void trap_Argv( unsigned int n, char *buffer, unsigned int bufferLength );
+void trap_Args( char *buffer, unsigned int bufferLength );
+
+// filesystem access
+file_t trap_FS_FOpenRead(const char *npath, file_t *f);
+file_t trap_FS_FOpenWrite(const char *npath, file_t *f);
+unsigned int trap_FS_FileLength(file_t f);
+unsigned int trap_FS_Write(const void *buffer, unsigned int len, file_t f);
+unsigned int trap_FS_Read(void *buffer, unsigned int len, file_t f);
+fileOffset_t trap_FS_FileSeek(file_t f, fileOffset_t offset, unsigned int whence);
+fileOffset_t trap_FS_FileTell(file_t f);
+void trap_FS_FClose(file_t f);
+
+// register a command name so the console can perform command completion.
+void trap_AddCommand( const char *cmdName );
+
+// register a sound effect
+sfxHandle_t trap_Snd_RegisterSfx(const char *npath);
+
+// queue a sound effect
+void trap_Snd_PlaySfx(sfxHandle_t sfx);
+
+// force stop an sfx
+void trap_Snd_StopSfx(sfxHandle_t sfx);
+
+// register a texture
+nhandle_t trap_RE_RegisterTexture(const char *npath);
+
+// register a shader
+nhandle_t trap_RE_RegisterShader(const char *npath);
+
+int trap_Key_GetCatcher(void);
+void trap_Key_SetCatcher(int catcher);
+int trap_Key_GetKey(const char *binding);
+qboolean trap_Key_IsDown(unsigned int keynum);
+
+// add a render entity to the current scene
+void trap_RE_AddEntity(renderEntityRef_t *ref);
+
+// draw a rectangle to the current scene
+void trap_RE_DrawRect(renderRect_t *rect);
+
+// set the rendering color
+void trap_RE_SetColor(const float *color, unsigned int count);
+
+// attains to the current gamestate
+void trap_GetGameState(gamestate_t *state);
 
 #include "sg_playr.h"
 #include "sg_mob.h"

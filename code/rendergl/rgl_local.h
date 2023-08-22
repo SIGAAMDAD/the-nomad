@@ -30,11 +30,6 @@ typedef enum {
     TC_S3TC_ARB // for the GL_EXT_texture_compression_s3tc extension
 } glTextureCompression_t;
 
-typedef enum {
-    RES_SQUARE = 0,
-    RES_CIRCLE
-} renderEntityShape_t;
-
 typedef struct
 {
     char vendor[1024];
@@ -166,20 +161,6 @@ typedef struct
     vec2_t texcoords;
     vec2_t light;
 } drawVert_t;
-
-struct renderEntityRef_s
-{
-    vec4_t color;
-    vec3_t worldPos;
-    vec3_t screenPos;
-
-    renderEntityShape_t shape;
-
-    float size;
-    float rotation;
-
-    texture_t *sprite;
-};
 
 #include "rgl_vertexcache.h"
 
@@ -467,10 +448,12 @@ extern cvar_t *r_useExtensions;
 extern cvar_t *r_fovWidth;
 extern cvar_t *r_fovHeight;
 extern cvar_t *r_aspectRatio;
+extern cvar_t *r_enableClientState;     // uses glEnableClientState and stuff like that. Overrides buffers and immediate mode
 extern cvar_t *r_useFramebuffer;        // use a framebuffer?
 extern cvar_t *r_hdr;                   // is high-dynamic-range enabled?
 extern cvar_t *r_texShaderLod;          // the lod integer passed to the shader
 extern cvar_t *r_ssao;                  // screen-space ambient occlusion (SSAO) enabled?
+extern cvar_t *r_flipTextureVertically; // stbi_set_flip_vertically_on_load(?)
 
 // OpenGL extensions
 extern cvar_t *r_EXT_anisotropicFiltering;
@@ -525,19 +508,6 @@ typedef struct {
 #define TEX_msdos 5
 
 extern const textureDetail_t textureDetails[6];
-
-GDR_INLINE uint32_t R_GetTextureDetail(void)
-{
-    uint32_t i;
-
-    for (i = 0; i < arraylen(textureDetails); ++i) {
-        if (!N_stricmpn(textureDetails[i].string, r_textureDetail->s, textureDetails[i].string_len))
-            return textureDetails[i].num;
-    }
-    ri.Con_Printf(WARNING, "r_textureDetail is invalid, setting to medium");
-    ri.Cvar_Set("r_textureDetail", va("%i", TEX_medium));
-    return medium;
-}
 
 extern const mat4_t mat4_identity;
 

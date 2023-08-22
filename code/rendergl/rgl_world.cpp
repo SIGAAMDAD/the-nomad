@@ -55,25 +55,47 @@ extern "C" void RE_DrawTileSurf(const tileSurf_t *surf)
 {
     uint32_t y, x, i;
     uint32_t gid;
-    const uint32_t count = r_enableBuffers->i ? 4 : 6;
-    drawVert_t vertices[6];
+//    drawVert_t vertices[6];
     qboolean warning = qfalse;
-    const vec2_t *texcoords;
+    const texcoord_t *texcoords;
 
     if (r_enableBuffers->i)
         RB_FlushVertices();
 
-    R_BindTexture(R_TextureFromHandle(rg.mapData->texHandle));
+    R_BindTexture(rg.textures[rg.mapData->texHandle]);
+    drawVert_t vertices[6] = {
+        {{0.0f, 0.0f, 0.0f, 0.0f}, { 0.5f,  0.5f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f}},
+        {{0.0f, 0.0f, 0.0f, 0.0f}, { 0.5f, -0.5f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}},
+        {{0.0f, 0.0f, 0.0f, 0.0f}, {-0.5f, -0.5f, 0.0f}, {1.0f, 1.0f}, {0.0f, 0.0f}},
+        {{0.0f, 0.0f, 0.0f, 0.0f}, {-0.5f,  0.5f, 0.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}},
+    };
+
+#if 0
+    nglBegin(GL_TRIANGLE_FAN);
+
+    nglVertex3f( 1.0f,  1.0f, 0.0f); nglTexCoord2f(1.0f, 1.0f);
+    nglVertex3f( 1.0f, -1.0f, 0.0f); nglTexCoord2f(0.0f, 1.0f);
+    nglVertex3f(-1.0f, -1.0f, 0.0f); nglTexCoord2f(0.0f, 0.0f);
+    nglVertex3f(-1.0f,  1.0f, 0.0f); nglTexCoord2f(1.0f, 0.0f);
+
+    nglEnd();
+#endif
+    R_PushVertices(backend.frameCache, vertices, 4);
+    backend.frameCache->usedIndices = 6;
+    R_DrawCache(backend.frameCache);
+#if 0
     for (y = 0; y < surf->numTilesY; ++y) {
         for (x = 0; x < surf->numTilesX; ++x) {
             // convert the world/tilemap coordinates to OpenGL screen coordinates
-            RB_ConvertCoords(vertices, glm::vec3( x - (rg.mapData->tileWidth * 0.5f), rg.mapData->tileHeight - y, 0.0f ), count);
+            RB_ConvertCoords(vertices, glm::vec3( x - (rg.mapData->tileWidth * 0.5f), rg.mapData->tileHeight - y, 0.0f ), 6);
 
             // fetch the gid
             gid = rg.mapData->firstGid + rg.mapData->tilemapData[y * rg.mapData->mapWidth + x][0];
             texcoords = ri.Map_GetSpriteCoords(gid);
             if (!texcoords) { // uh oh...
-                memset(vertices[i].texcoords, 0, sizeof(vec2_t));
+                for (i = 0; i < 6; ++i) {
+                    memset(vertices[i].texcoords, 0, sizeof(vertices[i].texcoords));
+                }
                 if (!warning) {
                     warning = qtrue;
                     Con_Printf(WARNING, "Bad gid: %i", gid);
@@ -81,14 +103,15 @@ extern "C" void RE_DrawTileSurf(const tileSurf_t *surf)
 //              if (r_debug)
 //                  Con_Printf(WARNING, "Bad gid: %i", rg.);
             }
-
-            for (i = 0; i < count; ++i) {
-                if (texcoords)
-                    memcpy(vertices[i].texcoords, texcoords[i], sizeof(vec2_t));
+            else {
+                for (i = 0; i < 6; ++i) {
+                    memcpy(vertices[i].texcoords, texcoords[i][0], sizeof(vec2_t));
+                }
             }
             RE_AddTile(vertices);
         }
     }
+#endif
     if (r_enableBuffers->i)
         RB_FlushVertices();
     
@@ -108,26 +131,15 @@ extern "C" void RB_ConvertCoords(drawVert_t *v, const glm::vec3& pos, uint32_t c
     glm::mat4 model, mvp, identity = glm::mat4(1.0f);
     const glm::vec4 *positions;
 
-    if (count == 4) {
-        static constexpr glm::vec4 p[4] = {
-            { 0.5f,  0.5f, 0.0f, 1.0f},
-            { 0.5f, -0.5f, 0.0f, 1.0f},
-            {-0.5f, -0.5f, 0.0f, 1.0f},
-            {-0.5f, -0.5f, 0.0f, 1.0f},
-        };
-        positions = p;
-    }
-    else if (count == 6) {
-        static constexpr glm::vec4 p[6] = {
-            { 0.5f,  0.5f, 0.0f, 1.0f},
-            { 0.5f, -0.5f, 0.0f, 1.0f},
-            {-0.5f, -0.5f, 0.0f, 1.0f},
-            {-0.5f, -0.5f, 0.0f, 1.0f},
-            {-0.5f,  0.5f, 0.0f, 1.0f},
-            { 0.5f,  0.5f, 0.0f, 1.0f}
-        };
-        positions = p;
-    }
+    constexpr glm::vec4 p[6] = {
+        { 0.5f,  0.5f, 0.0f, 1.0f},
+        { 0.5f, -0.5f, 0.0f, 1.0f},
+        {-0.5f, -0.5f, 0.0f, 1.0f},
+        {-0.5f, -0.5f, 0.0f, 1.0f},
+        {-0.5f,  0.5f, 0.0f, 1.0f},
+        { 0.5f,  0.5f, 0.0f, 1.0f}
+    };
+    positions = p;
 
     model = glm::translate(identity, pos);
     mvp = rg.camera.vpm * mvp;

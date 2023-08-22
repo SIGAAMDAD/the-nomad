@@ -428,7 +428,7 @@ inline const char* N_ButtonToString(const uint32_t& code)
 }
 #endif
 
-#include "../src/g_bff.h"
+#include "../game/g_bff.h"
 #include "../engine/n_map.h"
 
 #endif

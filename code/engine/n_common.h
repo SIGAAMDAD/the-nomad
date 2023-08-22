@@ -17,6 +17,7 @@ void Com_PushToPool(void (*work)(int));
 void I_NomadInit(void);
 uint32_t crc32_buffer(const byte *buf, uint32_t len);
 void Com_Init(void);
+void Com_Shutdown(void);
 void GDR_DECL Com_Printf(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
 uint64_t Com_GenerateHashValue(const char *fname, const uint64_t size);
 void Con_RenderConsole(void);
@@ -149,12 +150,21 @@ void Com_SendKeyEvents(void);
 void Com_KeyEvent(uint32_t key, qboolean down, uint32_t time);
 uint64_t Com_EventLoop(void);
 
-
 #include "keycodes.h"
 
+#define KEYCATCH_SGAME	0x2000
+#define KEYCATCH_SCRIPT	0x0400
+#define KEYCATCH_UI		0x0080
+
+void Key_KeynameCompletion( void(*callback)(const char *s) );
 uint32_t Key_StringToKeynum( const char *str );
 const char *Key_KeynumToString(uint32_t keynum);
 qboolean Key_IsDown(uint32_t keynum);
+const char *Key_GetBinding(uint32_t keynum);
+void Key_ClearStates(void);
+void Key_SetCatcher(uint32_t catcher);
+uint32_t Key_GetCatcher(void);
+uint32_t Key_GetKey( const char *binding );
 
 typedef struct
 {
@@ -177,9 +187,11 @@ void Cmd_Init(void);
 void Cmd_AddCommand(const char* name, cmdfunc_t function);
 void Cmd_RemoveCommand(const char* name);
 void Cmd_ExecuteCommand(const char* name);
+void Cmd_ArgsBuffer( char *buffer, uint32_t bufferLength );
 void Cmd_ExecuteText(const char *str);
 void Cmd_ExecuteString(const char *str);
 uint32_t Cmd_Argc(void);
+void Cmd_ArgvBuffer(uint32_t arg, char *buffer, uint32_t bufLen);
 void Cmd_TokenizeString(const char *text_p);
 void Cmd_TokenizeStringIgnoreQuotes(const char *text_p);
 void Cmd_SetCommandCompletionFunc(const char *name, completionFunc_t fn);
@@ -190,6 +202,8 @@ const char* GDR_DECL va(const char *format, ...) GDR_ATTRIBUTE((format(printf, 1
 #ifdef __cplusplus
 void GDR_DECL Com_Error(vm_t *vm, int level, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 3, 4)));
 #endif
+void Cmd_CommandCompletion( void(*callback)(const char *s) );
+qboolean Cmd_CompleteArgument(const char *command, const char *args, uint32_t argnum);
 
 typedef enum {
 	EXEC_NOW = 0,
@@ -211,7 +225,7 @@ Edit fields and command line history/completion
 */
 
 #define TRUNCATE_LENGTH 64
-#define	MAX_EDIT_LINE 512
+#define	MAX_EDIT_LINE 1024
 #if MAX_EDIT_LINE > MAX_CMD_LINE
 #error "MAX_EDIT_LINE > MAX_CMD_LINE"
 #endif
@@ -222,9 +236,17 @@ typedef struct {
 	char	buffer[MAX_EDIT_LINE];
 } field_t;
 
+void Field_Clear( field_t *edit );
+void Field_AutoComplete( field_t *edit );
+void Field_CompleteKeyname( void );
 void Field_CompleteKeyBind( uint32_t key );
-void Field_CompleteFilename(const char *dir, const char *ext, qboolean stripExt, int flags);
-void Field_CompleteCommand(const char *cmd, qboolean doCommands, qboolean doCvars);
+void Field_CompleteFilename( const char *dir, const char *ext, qboolean stripExt, int flags );
+void Field_CompleteCommand( const char *cmd, qboolean doCommands, qboolean doCvars );
+
+void Con_ResetHistory( void );
+void Con_SaveField( const field_t *field );
+qboolean Con_HistoryGetPrev( field_t *field );
+qboolean Con_HistoryGetNext( field_t *field );
 
 /*
 The filesystem, heavily based on quake's filesystem
@@ -234,6 +256,7 @@ typedef enum {
 	H_ENGINE,
 	H_SCRIPT,
 	H_SGAME,
+	H_UI,
 	H_ALLOCATOR,
 	H_RENDERER
 } handleOwner_t;
@@ -250,7 +273,11 @@ typedef enum {
 #define FS_INVALID_HANDLE -1
 
 typedef int32_t file_t;
+#ifdef Q3_VM
+typedef unsigned long int fileTime_t;
+#else
 typedef time_t fileTime_t;
+#endif
 #if defined(_MSVC_VER) || defined(__clang__)
 typedef _off_t fileOffset_t;
 #elif !defined(Q3_VM)
@@ -275,16 +302,23 @@ typedef enum {
 extern file_t logfile;
 #endif
 
+/* vm specific file handling */
+file_t FS_VM_FOpenWrite(const char *path, file_t *f, handleOwner_t owner);
+file_t FS_VM_FOpenRead(const char *path, file_t *f, handleOwner_t owner);
+void FS_VM_FClose(file_t f);
+uint32_t FS_VM_Read(void *buffer, uint32_t len, file_t f, handleOwner_t owner);
+uint32_t FS_VM_Write(const void *buffer, uint32_t len, file_t f, handleOwner_t owner);
+void FS_VM_WriteFile(const void *buffer, uint32_t len, file_t f, handleOwner_t owner);
+void FS_VM_CreateTmp(char *name, const char *ext, file_t *f, handleOwner_t owner);
+uint64_t FS_VM_FOpenFileRead(const char *path, file_t *f, handleOwner_t owner);
+fileOffset_t FS_VM_FileSeek(file_t f, fileOffset_t offset, uint32_t whence, handleOwner_t owner);
+uint64_t FS_VM_FOpenFileWrite(const char *path, file_t *f, handleOwner_t owner);
+void FS_VM_CloseFiles(handleOwner_t owner);
+
 void FS_Init(void);
 void FS_InitFilesystem(void);
-void FS_Shutdown(void);
+void FS_Shutdown(qboolean closeFiles);
 void FS_Restart(void);
-
-/* vm specific file handling */
-void FS_VM_FOpenWrite(const char *path, file_t *f);
-void FS_VM_FOpenRead(const char *path, file_t *f);
-void FS_VM_FClose(file_t *f);
-void FS_VM_CreateTmp(char *name, const char *ext, file_t *f);
 
 void FS_Remove(const char *path);
 uint64_t FS_Read(void *buffer, uint64_t size, file_t f);
@@ -294,6 +328,12 @@ uint64_t FS_LoadFile(const char *npath, void **buffer);
 void FS_FClose(file_t f);
 void FS_ForceFlush(file_t f);
 void FS_Flush(file_t f);
+
+const char *FS_GetCurrentGameDir( void );
+const char *FS_GetBaseGameDir( void );
+const char *FS_GetBasePath( void );
+const char *FS_GetHomePath( void );
+const char *FS_GetGamePath( void );
 
 void GDR_DECL FS_Printf(file_t f, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
 
@@ -315,6 +355,7 @@ fileOffset_t FS_FileTell(file_t f);
 qboolean FS_FilenameCompare(const char *s1, const char *s2);
 char *FS_BuildOSPath(const char *base, const char *game, const char *npath);
 char *FS_CopyString(const char *s);
+void *FS_LoadLibrary(const char *filename);
 
 qboolean FS_AllowedExtension(const char *fileName, qboolean allowBFFs, const char **ext);
 qboolean FS_StripExt(char *filename, const char *ext);
@@ -378,9 +419,10 @@ uint64_t Sys_ReadMappedFile(void *buffer, uint64_t size, memoryMap_t *file);
 void *Sys_GetMappedFileBuffer(memoryMap_t *file);
 void Sys_UnmapFile(memoryMap_t *file);
 
+void Sys_Print(const char *str);
 void GDR_DECL Sys_Printf(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
 const char *Sys_pwd(void);
-void *Sys_LoadDLL(const char *path);
+void *Sys_LoadDLL(const char *name);
 void Sys_CloseDLL(void *handle);
 void *Sys_GetProcAddress(void *handle, const char *name);
 const char *Sys_GetError(void);
@@ -392,8 +434,6 @@ char **Sys_ListFiles(const char *directory, const char *extension, const char *f
 const char *Sys_DefaultHomePath(void);
 const char *Sys_DefaultBasePath(void);
 qboolean Sys_RandomBytes(byte *s, uint64_t len);
-
-void GDR_NORETURN Sys_ExitNoMsg(void);
 #endif
 
 #endif

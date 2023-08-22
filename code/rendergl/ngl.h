@@ -78,6 +78,10 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glTexCoordPointer, GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) \
     NGL( void, glVertexPointer, GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) \
     NGL( void, glColorPointer, GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) \
+    NGL( void, glIndexPointer, GLenum type, GLsizei stride, const GLvoid *pointer ) \
+    NGL( void, glScalef, GLfloat x, GLfloat y, GLfloat z ) \
+    NGL( void, glRotatef, GLfloat angle, GLfloat x, GLfloat y, GLfloat z ) \
+    NGL( void, glTranslatef, GLfloat x, GLfloat y, GLfloat z ) \
 
 #define NGL_List_Procs \
     NGL( void, glListBase, GLuint base ) \

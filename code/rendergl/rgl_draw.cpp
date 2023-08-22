@@ -4,13 +4,7 @@ renderBackend_t backend;
 
 extern "C" void RB_FlushVertices(void)
 {
-    R_BindCache(backend.frameCache);
-    nglBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, sizeof(drawVert_t) * backend.usedVertices, backend.vertices);
-    nglBufferSubDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0, sizeof(uint32_t) * backend.usedIndices, backend.indices);
-    nglDrawElements(GL_TRIANGLES, backend.usedIndices, GL_UNSIGNED_INT, NULL);
-    backend.usedVertices = 0;
-    backend.usedIndices = 0;
-    R_UnbindCache();
+    R_DrawCache(backend.frameCache);
 }
 
 extern "C" void RB_DrawVertices(const drawVert_t *vertices, uint32_t numVertices)
@@ -18,7 +12,27 @@ extern "C" void RB_DrawVertices(const drawVert_t *vertices, uint32_t numVertices
     const float *v, *c, *t;
     uint32_t i;
 
-    nglBegin(GL_TRIANGLES);
+    if (r_enableBuffers->i) {
+        R_PushVertices(backend.frameCache, vertices, numVertices);
+    }
+
+    if (r_enableClientState->i) {
+        nglEnableClientState(GL_VERTEX_ARRAY);
+        nglEnableClientState(GL_COLOR_ARRAY);
+        nglEnableClientState(GL_NORMAL_ARRAY);
+
+        nglVertexPointer(3, GL_FLOAT, sizeof(drawVert_t), vertices[0].pos);
+        nglTexCoordPointer(2, GL_FLOAT, sizeof(drawVert_t), vertices[0].texcoords);
+
+        nglDrawArrays(GL_TRIANGLES, 0, numVertices);
+
+        nglDisableClientState(GL_VERTEX_ARRAY);
+        nglDisableClientState(GL_COLOR_ARRAY);
+        nglDisableClientState(GL_NORMAL_ARRAY);
+        return;
+    }
+
+    nglBegin(GL_TRIANGLE_FAN);
     for (i = 0; i < numVertices; ++i) {
         v = (const float *)vertices[i].pos;
         c = (const float *)vertices[i].color;
@@ -33,19 +47,14 @@ extern "C" void RB_DrawVertices(const drawVert_t *vertices, uint32_t numVertices
 
 extern "C" void RB_PushRect(const drawVert_t *vertices)
 {
-    if (backend.usedVertices + 4 >= backend.numVertices || backend.usedIndices + 6 >= backend.numIndices) {
-        RB_FlushVertices();
-    }
-
-    memcpy(backend.vertices + backend.usedVertices, vertices, 4 * sizeof(drawVert_t));
+    R_PushVertices(backend.frameCache, vertices, 6);
     backend.usedVertices += 4;
-    backend.usedIndices += 6;
 }
 
 extern "C" void RB_DrawTile(const drawTileCmd_t *cmd)
 {
     if (!r_enableBuffers->i)
-        RB_DrawVertices(cmd->vertices, 6);
+        RB_DrawVertices(cmd->vertices, 4);
     else
         RB_PushRect(cmd->vertices);
 }
@@ -58,7 +67,6 @@ extern "C" void RB_DrawEntity(const drawRefCmd_t *cmd)
     glm::vec4 result;
     glm::mat4 model, mvp, identity = glm::mat4(1.0f);
     uint32_t i;
-    const uint32_t count = r_enableBuffers->i ? 4 : 6;
 
     constexpr glm::vec4 positions[6] = {
         { 0.5f,  0.5f, 0.0f, 1.0f},
@@ -77,18 +85,17 @@ extern "C" void RB_DrawEntity(const drawRefCmd_t *cmd)
             * glm::rotate(identity, (float)DEG2RAD(ref->rotation), pos);
     mvp = rg.camera.vpm * model;
 
-    for (i = 0; i < count; ++i) {
+    for (i = 0; i < 6; ++i) {
         result = mvp * positions[i];
         VectorCopy(vertices[i].pos, result);
     }
-    RB_DrawVertices(vertices, count);
+    RB_DrawVertices(vertices, 6);
 }
 
 extern "C" void RB_DrawRect(const drawRectCmd_t *cmd)
 {
     drawVert_t vertices[6];
     uint32_t i;
-    const uint32_t count = r_enableBuffers->i == 1 ? 4 : 6;
     glm::vec3 pos, p;
     glm::vec4 out;
     glm::mat4 model, mvp, identity;
@@ -110,7 +117,7 @@ extern "C" void RB_DrawRect(const drawRectCmd_t *cmd)
             * glm::rotate(identity, (float)DEG2RAD(cmd->rotation), pos);
     mvp = rg.camera.vpm * model;
 
-    for (i = 0; i < count; ++i) {
+    for (i = 0; i < 6; ++i) {
         out = mvp * positions[i];
         VectorCopy(vertices[i].pos, out);
 
@@ -119,10 +126,7 @@ extern "C" void RB_DrawRect(const drawRectCmd_t *cmd)
         else
             VectorCopy(vertices[i].color, cmd->color);
     }
-    if (count == 4)
-        RB_PushRect(vertices);
-    else
-        RB_DrawVertices(vertices, count);
+    RB_PushRect(vertices);
 }
 
 
