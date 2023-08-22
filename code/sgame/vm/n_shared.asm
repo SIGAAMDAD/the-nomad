@@ -1,0 +1,8982 @@
+data
+export locase
+align 1
+LABELV locase
+byte 1 0
+byte 1 1
+byte 1 2
+byte 1 3
+byte 1 4
+byte 1 5
+byte 1 6
+byte 1 7
+byte 1 8
+byte 1 9
+byte 1 10
+byte 1 11
+byte 1 12
+byte 1 13
+byte 1 14
+byte 1 15
+byte 1 16
+byte 1 17
+byte 1 18
+byte 1 19
+byte 1 20
+byte 1 21
+byte 1 22
+byte 1 23
+byte 1 24
+byte 1 25
+byte 1 26
+byte 1 27
+byte 1 28
+byte 1 29
+byte 1 30
+byte 1 31
+byte 1 32
+byte 1 33
+byte 1 34
+byte 1 35
+byte 1 36
+byte 1 37
+byte 1 38
+byte 1 39
+byte 1 40
+byte 1 41
+byte 1 42
+byte 1 43
+byte 1 44
+byte 1 45
+byte 1 46
+byte 1 47
+byte 1 48
+byte 1 49
+byte 1 50
+byte 1 51
+byte 1 52
+byte 1 53
+byte 1 54
+byte 1 55
+byte 1 56
+byte 1 57
+byte 1 58
+byte 1 59
+byte 1 60
+byte 1 61
+byte 1 62
+byte 1 63
+byte 1 64
+byte 1 97
+byte 1 98
+byte 1 99
+byte 1 100
+byte 1 101
+byte 1 102
+byte 1 103
+byte 1 104
+byte 1 105
+byte 1 106
+byte 1 107
+byte 1 108
+byte 1 109
+byte 1 110
+byte 1 111
+byte 1 112
+byte 1 113
+byte 1 114
+byte 1 115
+byte 1 116
+byte 1 117
+byte 1 118
+byte 1 119
+byte 1 120
+byte 1 121
+byte 1 122
+byte 1 91
+byte 1 92
+byte 1 93
+byte 1 94
+byte 1 95
+byte 1 96
+byte 1 97
+byte 1 98
+byte 1 99
+byte 1 100
+byte 1 101
+byte 1 102
+byte 1 103
+byte 1 104
+byte 1 105
+byte 1 106
+byte 1 107
+byte 1 108
+byte 1 109
+byte 1 110
+byte 1 111
+byte 1 112
+byte 1 113
+byte 1 114
+byte 1 115
+byte 1 116
+byte 1 117
+byte 1 118
+byte 1 119
+byte 1 120
+byte 1 121
+byte 1 122
+byte 1 123
+byte 1 124
+byte 1 125
+byte 1 126
+byte 1 127
+byte 1 128
+byte 1 129
+byte 1 130
+byte 1 131
+byte 1 132
+byte 1 133
+byte 1 134
+byte 1 135
+byte 1 136
+byte 1 137
+byte 1 138
+byte 1 139
+byte 1 140
+byte 1 141
+byte 1 142
+byte 1 143
+byte 1 144
+byte 1 145
+byte 1 146
+byte 1 147
+byte 1 148
+byte 1 149
+byte 1 150
+byte 1 151
+byte 1 152
+byte 1 153
+byte 1 154
+byte 1 155
+byte 1 156
+byte 1 157
+byte 1 158
+byte 1 159
+byte 1 160
+byte 1 161
+byte 1 162
+byte 1 163
+byte 1 164
+byte 1 165
+byte 1 166
+byte 1 167
+byte 1 168
+byte 1 169
+byte 1 170
+byte 1 171
+byte 1 172
+byte 1 173
+byte 1 174
+byte 1 175
+byte 1 176
+byte 1 177
+byte 1 178
+byte 1 179
+byte 1 180
+byte 1 181
+byte 1 182
+byte 1 183
+byte 1 184
+byte 1 185
+byte 1 186
+byte 1 187
+byte 1 188
+byte 1 189
+byte 1 190
+byte 1 191
+byte 1 192
+byte 1 193
+byte 1 194
+byte 1 195
+byte 1 196
+byte 1 197
+byte 1 198
+byte 1 199
+byte 1 200
+byte 1 201
+byte 1 202
+byte 1 203
+byte 1 204
+byte 1 205
+byte 1 206
+byte 1 207
+byte 1 208
+byte 1 209
+byte 1 210
+byte 1 211
+byte 1 212
+byte 1 213
+byte 1 214
+byte 1 215
+byte 1 216
+byte 1 217
+byte 1 218
+byte 1 219
+byte 1 220
+byte 1 221
+byte 1 222
+byte 1 223
+byte 1 224
+byte 1 225
+byte 1 226
+byte 1 227
+byte 1 228
+byte 1 229
+byte 1 230
+byte 1 231
+byte 1 232
+byte 1 233
+byte 1 234
+byte 1 235
+byte 1 236
+byte 1 237
+byte 1 238
+byte 1 239
+byte 1 240
+byte 1 241
+byte 1 242
+byte 1 243
+byte 1 244
+byte 1 245
+byte 1 246
+byte 1 247
+byte 1 248
+byte 1 249
+byte 1 250
+byte 1 251
+byte 1 252
+byte 1 253
+byte 1 254
+byte 1 255
+bss
+align 4
+LABELV $32
+skip 1024
+data
+align 4
+LABELV $33
+byte 4 0
+export crc32_buffer
+code
+proc crc32_buffer 20 0
+file "../../engine/n_shared.c"
+line 48
+;1:#if defined(GDR_DLLCOMPILE) || defined(__cplusplus)
+;2:#include "../engine/n_shared.h"
+;3:#else
+;4:#include "n_shared.h"
+;5:#endif
+;6:#include "../rendergl/rgl_public.h"
+;7:
+;8:#ifdef __cplusplus
+;9:extern renderImport_t ri;
+;10:#endif
+;11:
+;12:const byte locase[ 256 ] = {
+;13:	0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
+;14:	0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
+;15:	0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
+;16:	0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,
+;17:	0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27,
+;18:	0x28,0x29,0x2a,0x2b,0x2c,0x2d,0x2e,0x2f,
+;19:	0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,
+;20:	0x38,0x39,0x3a,0x3b,0x3c,0x3d,0x3e,0x3f,
+;21:	0x40,0x61,0x62,0x63,0x64,0x65,0x66,0x67,
+;22:	0x68,0x69,0x6a,0x6b,0x6c,0x6d,0x6e,0x6f,
+;23:	0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,
+;24:	0x78,0x79,0x7a,0x5b,0x5c,0x5d,0x5e,0x5f,
+;25:	0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67,
+;26:	0x68,0x69,0x6a,0x6b,0x6c,0x6d,0x6e,0x6f,
+;27:	0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,
+;28:	0x78,0x79,0x7a,0x7b,0x7c,0x7d,0x7e,0x7f,
+;29:	0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,
+;30:	0x88,0x89,0x8a,0x8b,0x8c,0x8d,0x8e,0x8f,
+;31:	0x90,0x91,0x92,0x93,0x94,0x95,0x96,0x97,
+;32:	0x98,0x99,0x9a,0x9b,0x9c,0x9d,0x9e,0x9f,
+;33:	0xa0,0xa1,0xa2,0xa3,0xa4,0xa5,0xa6,0xa7,
+;34:	0xa8,0xa9,0xaa,0xab,0xac,0xad,0xae,0xaf,
+;35:	0xb0,0xb1,0xb2,0xb3,0xb4,0xb5,0xb6,0xb7,
+;36:	0xb8,0xb9,0xba,0xbb,0xbc,0xbd,0xbe,0xbf,
+;37:	0xc0,0xc1,0xc2,0xc3,0xc4,0xc5,0xc6,0xc7,
+;38:	0xc8,0xc9,0xca,0xcb,0xcc,0xcd,0xce,0xcf,
+;39:	0xd0,0xd1,0xd2,0xd3,0xd4,0xd5,0xd6,0xd7,
+;40:	0xd8,0xd9,0xda,0xdb,0xdc,0xdd,0xde,0xdf,
+;41:	0xe0,0xe1,0xe2,0xe3,0xe4,0xe5,0xe6,0xe7,
+;42:	0xe8,0xe9,0xea,0xeb,0xec,0xed,0xee,0xef,
+;43:	0xf0,0xf1,0xf2,0xf3,0xf4,0xf5,0xf6,0xf7,
+;44:	0xf8,0xf9,0xfa,0xfb,0xfc,0xfd,0xfe,0xff
+;45:};
+;46:
+;47:uint32_t crc32_buffer(const byte *buf, uint32_t len)
+;48:{
+line 52
+;49:	static uint32_t crc32_table[256];
+;50:	static qboolean crc32_inited = qfalse;
+;51:
+;52:	uint32_t crc = UINT_MAX;
+ADDRLP4 0
+CNSTU4 4294967295
+ASGNU4
+line 54
+;53:
+;54:	if (!crc32_inited) {
+ADDRGP4 $33
+INDIRI4
+CNSTI4 0
+NEI4 $48
+line 58
+;55:		uint32_t c;
+;56:		int i, j;
+;57:
+;58:		for (i = 0; i < 256; i++) {
+ADDRLP4 12
+CNSTI4 0
+ASGNI4
+LABELV $36
+line 59
+;59:			c = i;
+ADDRLP4 4
+ADDRLP4 12
+INDIRI4
+CVIU4 4
+ASGNU4
+line 60
+;60:			for (j = 0; j < 8; j++)
+ADDRLP4 8
+CNSTI4 0
+ASGNI4
+LABELV $40
+line 61
+;61:				c = (c & 1) ? (c >> 1) ^ 0xEDB88320UL : c >> 1;
+ADDRLP4 4
+INDIRU4
+CNSTU4 1
+BANDU4
+CNSTU4 0
+EQU4 $45
+ADDRLP4 16
+ADDRLP4 4
+INDIRU4
+CNSTI4 1
+RSHU4
+CNSTU4 3988292384
+BXORU4
+ASGNU4
+ADDRGP4 $46
+JUMPV
+LABELV $45
+ADDRLP4 16
+ADDRLP4 4
+INDIRU4
+CNSTI4 1
+RSHU4
+ASGNU4
+LABELV $46
+ADDRLP4 4
+ADDRLP4 16
+INDIRU4
+ASGNU4
+LABELV $41
+line 60
+ADDRLP4 8
+ADDRLP4 8
+INDIRI4
+CNSTI4 1
+ADDI4
+ASGNI4
+ADDRLP4 8
+INDIRI4
+CNSTI4 8
+LTI4 $40
+line 63
+;62:			
+;63:			crc32_table[i] = c;
+ADDRLP4 12
+INDIRI4
+CNSTI4 2
+LSHI4
+ADDRGP4 $32
+ADDP4
+ADDRLP4 4
+INDIRU4
+ASGNU4
+line 64
+;64:		}
+LABELV $37
+line 58
+ADDRLP4 12
+ADDRLP4 12
+INDIRI4
+CNSTI4 1
+ADDI4
+ASGNI4
+ADDRLP4 12
+INDIRI4
+CNSTI4 256
+LTI4 $36
+line 65
+;65:		crc32_inited = qtrue;
+ADDRGP4 $33
+CNSTI4 1
+ASGNI4
+line 66
+;66:	}
+ADDRGP4 $48
+JUMPV
+LABELV $47
+line 69
+;67:
+;68:	while (len--)
+;69:		crc = crc32_table[(crc ^ *buf++) & 0xFF] ^ (crc >> 8);
+ADDRLP4 4
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRFP4 0
+ADDRLP4 4
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 0
+ADDRLP4 0
+INDIRU4
+ADDRLP4 4
+INDIRP4
+INDIRU1
+CVUI4 1
+CVIU4 4
+BXORU4
+CNSTU4 255
+BANDU4
+CNSTI4 2
+LSHU4
+ADDRGP4 $32
+ADDP4
+INDIRU4
+ADDRLP4 0
+INDIRU4
+CNSTI4 8
+RSHU4
+BXORU4
+ASGNU4
+LABELV $48
+line 68
+ADDRLP4 12
+ADDRFP4 4
+INDIRU4
+ASGNU4
+ADDRFP4 4
+ADDRLP4 12
+INDIRU4
+CNSTU4 1
+SUBU4
+ASGNU4
+ADDRLP4 12
+INDIRU4
+CNSTU4 0
+NEU4 $47
+line 71
+;70:
+;71:	return crc ^ UINT_MAX;
+ADDRLP4 0
+INDIRU4
+CNSTU4 4294967295
+BXORU4
+RETU4
+LABELV $31
+endproc crc32_buffer 20 0
+export N_strtobool
+proc N_strtobool 8 8
+line 77
+;72:}
+;73:
+;74:
+;75:#ifndef __cplusplus
+;76:qboolean N_strtobool(const char* s)
+;77:{
+line 78
+;78:	return N_stricmp(s, "true") ? qtrue : qfalse;
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRGP4 $51
+ARGP4
+ADDRLP4 4
+ADDRGP4 N_stricmp
+CALLI4
+ASGNI4
+ADDRLP4 4
+INDIRI4
+CNSTI4 0
+EQI4 $53
+ADDRLP4 0
+CNSTI4 1
+ASGNI4
+ADDRGP4 $54
+JUMPV
+LABELV $53
+ADDRLP4 0
+CNSTI4 0
+ASGNI4
+LABELV $54
+ADDRLP4 0
+INDIRI4
+RETI4
+LABELV $50
+endproc N_strtobool 8 8
+export N_booltostr
+proc N_booltostr 4 0
+line 81
+;79:}
+;80:const char* N_booltostr(qboolean b)
+;81:{
+line 82
+;82:	return b ? "true" : "false";
+ADDRFP4 0
+INDIRI4
+CNSTI4 0
+EQI4 $58
+ADDRLP4 0
+ADDRGP4 $51
+ASGNP4
+ADDRGP4 $59
+JUMPV
+LABELV $58
+ADDRLP4 0
+ADDRGP4 $56
+ASGNP4
+LABELV $59
+ADDRLP4 0
+INDIRP4
+RETP4
+LABELV $55
+endproc N_booltostr 4 0
+export Key_IsPressed
+proc Key_IsPressed 0 0
+line 87
+;83:}
+;84:#endif
+;85:
+;86:qboolean Key_IsPressed(qboolean **keys, uint32_t code)
+;87:{
+line 88
+;88:	return (*keys)[code];
+ADDRFP4 4
+INDIRU4
+CNSTI4 2
+LSHU4
+ADDRFP4 0
+INDIRP4
+INDIRP4
+ADDP4
+INDIRI4
+RETI4
+LABELV $60
+endproc Key_IsPressed 0 0
+lit
+align 1
+LABELV hash_locase
+byte 1 0
+byte 1 1
+byte 1 2
+byte 1 3
+byte 1 4
+byte 1 5
+byte 1 6
+byte 1 7
+byte 1 8
+byte 1 9
+byte 1 10
+byte 1 11
+byte 1 12
+byte 1 13
+byte 1 14
+byte 1 15
+byte 1 16
+byte 1 17
+byte 1 18
+byte 1 19
+byte 1 20
+byte 1 21
+byte 1 22
+byte 1 23
+byte 1 24
+byte 1 25
+byte 1 26
+byte 1 27
+byte 1 28
+byte 1 29
+byte 1 30
+byte 1 31
+byte 1 32
+byte 1 33
+byte 1 34
+byte 1 35
+byte 1 36
+byte 1 37
+byte 1 38
+byte 1 39
+byte 1 40
+byte 1 41
+byte 1 42
+byte 1 43
+byte 1 44
+byte 1 45
+byte 1 0
+byte 1 47
+byte 1 48
+byte 1 49
+byte 1 50
+byte 1 51
+byte 1 52
+byte 1 53
+byte 1 54
+byte 1 55
+byte 1 56
+byte 1 57
+byte 1 58
+byte 1 59
+byte 1 60
+byte 1 61
+byte 1 62
+byte 1 63
+byte 1 64
+byte 1 97
+byte 1 98
+byte 1 99
+byte 1 100
+byte 1 101
+byte 1 102
+byte 1 103
+byte 1 104
+byte 1 105
+byte 1 106
+byte 1 107
+byte 1 108
+byte 1 109
+byte 1 110
+byte 1 111
+byte 1 112
+byte 1 113
+byte 1 114
+byte 1 115
+byte 1 116
+byte 1 117
+byte 1 118
+byte 1 119
+byte 1 120
+byte 1 121
+byte 1 122
+byte 1 91
+byte 1 47
+byte 1 93
+byte 1 94
+byte 1 95
+byte 1 96
+byte 1 97
+byte 1 98
+byte 1 99
+byte 1 100
+byte 1 101
+byte 1 102
+byte 1 103
+byte 1 104
+byte 1 105
+byte 1 106
+byte 1 107
+byte 1 108
+byte 1 109
+byte 1 110
+byte 1 111
+byte 1 112
+byte 1 113
+byte 1 114
+byte 1 115
+byte 1 116
+byte 1 117
+byte 1 118
+byte 1 119
+byte 1 120
+byte 1 121
+byte 1 122
+byte 1 123
+byte 1 124
+byte 1 125
+byte 1 126
+byte 1 127
+byte 1 128
+byte 1 129
+byte 1 130
+byte 1 131
+byte 1 132
+byte 1 133
+byte 1 134
+byte 1 135
+byte 1 136
+byte 1 137
+byte 1 138
+byte 1 139
+byte 1 140
+byte 1 141
+byte 1 142
+byte 1 143
+byte 1 144
+byte 1 145
+byte 1 146
+byte 1 147
+byte 1 148
+byte 1 149
+byte 1 150
+byte 1 151
+byte 1 152
+byte 1 153
+byte 1 154
+byte 1 155
+byte 1 156
+byte 1 157
+byte 1 158
+byte 1 159
+byte 1 160
+byte 1 161
+byte 1 162
+byte 1 163
+byte 1 164
+byte 1 165
+byte 1 166
+byte 1 167
+byte 1 168
+byte 1 169
+byte 1 170
+byte 1 171
+byte 1 172
+byte 1 173
+byte 1 174
+byte 1 175
+byte 1 176
+byte 1 177
+byte 1 178
+byte 1 179
+byte 1 180
+byte 1 181
+byte 1 182
+byte 1 183
+byte 1 184
+byte 1 185
+byte 1 186
+byte 1 187
+byte 1 188
+byte 1 189
+byte 1 190
+byte 1 191
+byte 1 192
+byte 1 193
+byte 1 194
+byte 1 195
+byte 1 196
+byte 1 197
+byte 1 198
+byte 1 199
+byte 1 200
+byte 1 201
+byte 1 202
+byte 1 203
+byte 1 204
+byte 1 205
+byte 1 206
+byte 1 207
+byte 1 208
+byte 1 209
+byte 1 210
+byte 1 211
+byte 1 212
+byte 1 213
+byte 1 214
+byte 1 215
+byte 1 216
+byte 1 217
+byte 1 218
+byte 1 219
+byte 1 220
+byte 1 221
+byte 1 222
+byte 1 223
+byte 1 224
+byte 1 225
+byte 1 226
+byte 1 227
+byte 1 228
+byte 1 229
+byte 1 230
+byte 1 231
+byte 1 232
+byte 1 233
+byte 1 234
+byte 1 235
+byte 1 236
+byte 1 237
+byte 1 238
+byte 1 239
+byte 1 240
+byte 1 241
+byte 1 242
+byte 1 243
+byte 1 244
+byte 1 245
+byte 1 246
+byte 1 247
+byte 1 248
+byte 1 249
+byte 1 250
+byte 1 251
+byte 1 252
+byte 1 253
+byte 1 254
+byte 1 255
+export Com_GenerateHashValue
+code
+proc Com_GenerateHashValue 24 0
+ADDRFP4 4
+ADDRFP4 4
+INDIRU4
+ASGNU4
+line 132
+;89:}
+;90:
+;91:/*
+;92:Com_GenerateHashValue: used in renderer and filesystem
+;93:*/
+;94:// ASCII lowcase conversion table with '\\' turned to '/' and '.' to '\0'
+;95:static const byte hash_locase[ 256 ] =
+;96:{
+;97:	0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
+;98:	0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
+;99:	0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
+;100:	0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,
+;101:	0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27,
+;102:	0x28,0x29,0x2a,0x2b,0x2c,0x2d,0x00,0x2f,
+;103:	0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,
+;104:	0x38,0x39,0x3a,0x3b,0x3c,0x3d,0x3e,0x3f,
+;105:	0x40,0x61,0x62,0x63,0x64,0x65,0x66,0x67,
+;106:	0x68,0x69,0x6a,0x6b,0x6c,0x6d,0x6e,0x6f,
+;107:	0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,
+;108:	0x78,0x79,0x7a,0x5b,0x2f,0x5d,0x5e,0x5f,
+;109:	0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67,
+;110:	0x68,0x69,0x6a,0x6b,0x6c,0x6d,0x6e,0x6f,
+;111:	0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,
+;112:	0x78,0x79,0x7a,0x7b,0x7c,0x7d,0x7e,0x7f,
+;113:	0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,
+;114:	0x88,0x89,0x8a,0x8b,0x8c,0x8d,0x8e,0x8f,
+;115:	0x90,0x91,0x92,0x93,0x94,0x95,0x96,0x97,
+;116:	0x98,0x99,0x9a,0x9b,0x9c,0x9d,0x9e,0x9f,
+;117:	0xa0,0xa1,0xa2,0xa3,0xa4,0xa5,0xa6,0xa7,
+;118:	0xa8,0xa9,0xaa,0xab,0xac,0xad,0xae,0xaf,
+;119:	0xb0,0xb1,0xb2,0xb3,0xb4,0xb5,0xb6,0xb7,
+;120:	0xb8,0xb9,0xba,0xbb,0xbc,0xbd,0xbe,0xbf,
+;121:	0xc0,0xc1,0xc2,0xc3,0xc4,0xc5,0xc6,0xc7,
+;122:	0xc8,0xc9,0xca,0xcb,0xcc,0xcd,0xce,0xcf,
+;123:	0xd0,0xd1,0xd2,0xd3,0xd4,0xd5,0xd6,0xd7,
+;124:	0xd8,0xd9,0xda,0xdb,0xdc,0xdd,0xde,0xdf,
+;125:	0xe0,0xe1,0xe2,0xe3,0xe4,0xe5,0xe6,0xe7,
+;126:	0xe8,0xe9,0xea,0xeb,0xec,0xed,0xee,0xef,
+;127:	0xf0,0xf1,0xf2,0xf3,0xf4,0xf5,0xf6,0xf7,
+;128:	0xf8,0xf9,0xfa,0xfb,0xfc,0xfd,0xfe,0xff
+;129:};
+;130:
+;131:uint64_t Com_GenerateHashValue( const char *fname, const uint64_t size )
+;132:{
+line 137
+;133:	const byte *s;
+;134:	uint64_t hash;
+;135:	int c;
+;136:
+;137:	s = (byte *)fname;
+ADDRLP4 8
+ADDRFP4 0
+INDIRP4
+ASGNP4
+line 138
+;138:	hash = 0;
+ADDRLP4 0
+CNSTU4 0
+ASGNU4
+ADDRGP4 $63
+JUMPV
+LABELV $62
+line 140
+;139:	
+;140:	while ( (c = hash_locase[(byte)*s++]) != '\0' ) {
+line 141
+;141:		hash = hash * 101 + c;
+ADDRLP4 0
+CNSTU4 101
+ADDRLP4 0
+INDIRU4
+MULU4
+ADDRLP4 4
+INDIRI4
+CVIU4 4
+ADDU4
+ASGNU4
+line 142
+;142:	}
+LABELV $63
+line 140
+ADDRLP4 12
+ADDRLP4 8
+INDIRP4
+ASGNP4
+ADDRLP4 8
+ADDRLP4 12
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 16
+ADDRLP4 12
+INDIRP4
+INDIRU1
+CVUI4 1
+ADDRGP4 hash_locase
+ADDP4
+INDIRU1
+CVUI4 1
+ASGNI4
+ADDRLP4 4
+ADDRLP4 16
+INDIRI4
+ASGNI4
+ADDRLP4 16
+INDIRI4
+CNSTI4 0
+NEI4 $62
+line 144
+;143:	
+;144:	hash = (hash ^ (hash >> 10) ^ (hash >> 20));
+ADDRLP4 0
+ADDRLP4 0
+INDIRU4
+ADDRLP4 0
+INDIRU4
+CNSTI4 10
+RSHU4
+BXORU4
+ADDRLP4 0
+INDIRU4
+CNSTI4 20
+RSHU4
+BXORU4
+ASGNU4
+line 145
+;145:	hash &= (size-1);
+ADDRLP4 0
+ADDRLP4 0
+INDIRU4
+ADDRFP4 4
+INDIRU4
+CNSTU4 1
+SUBU4
+BANDU4
+ASGNU4
+line 147
+;146:
+;147:	return hash;
+ADDRLP4 0
+INDIRU4
+RETU4
+LABELV $61
+endproc Com_GenerateHashValue 24 0
+export Com_StringContains
+proc Com_StringContains 24 4
+line 151
+;148:}
+;149:
+;150:const char *Com_StringContains( const char *str1, const char *str2, uint64_t len2 )
+;151:{
+line 154
+;152:	int64_t len, i, j;
+;153:
+;154:	len = strlen(str1) - len2;
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRLP4 12
+ADDRGP4 strlen
+CALLU4
+ASGNU4
+ADDRLP4 8
+ADDRLP4 12
+INDIRU4
+ADDRFP4 8
+INDIRU4
+SUBU4
+CVUI4 4
+ASGNI4
+line 155
+;155:	for (i = 0; i <= len; i++, str1++) {
+ADDRLP4 4
+CNSTI4 0
+ASGNI4
+ADDRGP4 $69
+JUMPV
+LABELV $66
+line 156
+;156:		for (j = 0; str2[j]; j++) {
+ADDRLP4 0
+CNSTI4 0
+ASGNI4
+ADDRGP4 $73
+JUMPV
+LABELV $70
+line 157
+;157:			if (locase[(byte)str1[j]] != locase[(byte)str2[j]]) {
+ADDRLP4 20
+ADDRGP4 locase
+ASGNP4
+ADDRLP4 0
+INDIRI4
+ADDRFP4 0
+INDIRP4
+ADDP4
+INDIRI1
+CVII4 1
+CVIU4 4
+CVUU1 4
+CVUI4 1
+ADDRLP4 20
+INDIRP4
+ADDP4
+INDIRU1
+CVUI4 1
+ADDRLP4 0
+INDIRI4
+ADDRFP4 4
+INDIRP4
+ADDP4
+INDIRI1
+CVII4 1
+CVIU4 4
+CVUU1 4
+CVUI4 1
+ADDRLP4 20
+INDIRP4
+ADDP4
+INDIRU1
+CVUI4 1
+EQI4 $74
+line 158
+;158:				break;
+ADDRGP4 $72
+JUMPV
+LABELV $74
+line 160
+;159:			}
+;160:		}
+LABELV $71
+line 156
+ADDRLP4 0
+ADDRLP4 0
+INDIRI4
+CNSTI4 1
+ADDI4
+ASGNI4
+LABELV $73
+ADDRLP4 0
+INDIRI4
+ADDRFP4 4
+INDIRP4
+ADDP4
+INDIRI1
+CVII4 1
+CNSTI4 0
+NEI4 $70
+LABELV $72
+line 161
+;161:		if (!str2[j]) {
+ADDRLP4 0
+INDIRI4
+ADDRFP4 4
+INDIRP4
+ADDP4
+INDIRI1
+CVII4 1
+CNSTI4 0
+NEI4 $76
+line 162
+;162:			return str1;
+ADDRFP4 0
+INDIRP4
+RETP4
+ADDRGP4 $65
+JUMPV
+LABELV $76
+line 164
+;163:		}
+;164:	}
+LABELV $67
+line 155
+ADDRLP4 4
+ADDRLP4 4
+INDIRI4
+CNSTI4 1
+ADDI4
+ASGNI4
+ADDRFP4 0
+ADDRFP4 0
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+LABELV $69
+ADDRLP4 4
+INDIRI4
+ADDRLP4 8
+INDIRI4
+LEI4 $66
+line 165
+;165:	return NULL;
+CNSTP4 0
+RETP4
+LABELV $65
+endproc Com_StringContains 24 4
+export Com_FilterExt
+proc Com_FilterExt 1040 12
+line 169
+;166:}
+;167:
+;168:qboolean Com_FilterExt( const char *filter, const char *name )
+;169:{
+ADDRGP4 $80
+JUMPV
+LABELV $79
+line 174
+;170:	char buf[ MAX_TOKEN_CHARS ];
+;171:	const char *ptr;
+;172:	uint32_t i;
+;173:
+;174:	while ( *filter ) {
+line 175
+;175:		if ( *filter == '*' ) {
+ADDRFP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 42
+NEI4 $82
+line 176
+;176:			filter++;
+ADDRFP4 0
+ADDRFP4 0
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+line 177
+;177:			for ( i = 0; *filter != '\0' && i < sizeof(buf)-1; i++ ) {
+ADDRLP4 0
+CNSTU4 0
+ASGNU4
+ADDRGP4 $87
+JUMPV
+LABELV $84
+line 178
+;178:				if ( *filter == '*' || *filter == '?' )
+ADDRLP4 1032
+ADDRFP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+ASGNI4
+ADDRLP4 1032
+INDIRI4
+CNSTI4 42
+EQI4 $90
+ADDRLP4 1032
+INDIRI4
+CNSTI4 63
+NEI4 $88
+LABELV $90
+line 179
+;179:					break;
+ADDRGP4 $86
+JUMPV
+LABELV $88
+line 180
+;180:				buf[i] = *filter++;
+ADDRLP4 1036
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRFP4 0
+ADDRLP4 1036
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 0
+INDIRU4
+ADDRLP4 4
+ADDP4
+ADDRLP4 1036
+INDIRP4
+INDIRI1
+ASGNI1
+line 181
+;181:			}
+LABELV $85
+line 177
+ADDRLP4 0
+ADDRLP4 0
+INDIRU4
+CNSTU4 1
+ADDU4
+ASGNU4
+LABELV $87
+ADDRFP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 0
+EQI4 $91
+ADDRLP4 0
+INDIRU4
+CNSTU4 1023
+LTU4 $84
+LABELV $91
+LABELV $86
+line 182
+;182:			buf[ i ] = '\0';
+ADDRLP4 0
+INDIRU4
+ADDRLP4 4
+ADDP4
+CNSTI1 0
+ASGNI1
+line 183
+;183:			if ( i ) {
+ADDRLP4 0
+INDIRU4
+CNSTU4 0
+EQU4 $92
+line 184
+;184:				ptr = Com_StringContains( name, buf, i );
+ADDRFP4 4
+INDIRP4
+ARGP4
+ADDRLP4 4
+ARGP4
+ADDRLP4 0
+INDIRU4
+ARGU4
+ADDRLP4 1032
+ADDRGP4 Com_StringContains
+CALLP4
+ASGNP4
+ADDRLP4 1028
+ADDRLP4 1032
+INDIRP4
+ASGNP4
+line 185
+;185:				if ( !ptr )
+ADDRLP4 1028
+INDIRP4
+CVPU4 4
+CNSTU4 0
+NEU4 $94
+line 186
+;186:					return qfalse;
+CNSTI4 0
+RETI4
+ADDRGP4 $78
+JUMPV
+LABELV $94
+line 187
+;187:				name = ptr + i;
+ADDRFP4 4
+ADDRLP4 0
+INDIRU4
+ADDRLP4 1028
+INDIRP4
+ADDP4
+ASGNP4
+line 188
+;188:			} else if ( *filter == '\0' ) {
+ADDRGP4 $83
+JUMPV
+LABELV $92
+ADDRFP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 0
+NEI4 $83
+line 189
+;189:				return qtrue;
+CNSTI4 1
+RETI4
+ADDRGP4 $78
+JUMPV
+line 191
+;190:			}
+;191:		}
+LABELV $82
+line 192
+;192:		else if ( *filter == '?' ) {
+ADDRFP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 63
+NEI4 $98
+line 193
+;193:			if ( *name == '\0' )
+ADDRFP4 4
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 0
+NEI4 $100
+line 194
+;194:				return qfalse;
+CNSTI4 0
+RETI4
+ADDRGP4 $78
+JUMPV
+LABELV $100
+line 195
+;195:			filter++;
+ADDRFP4 0
+ADDRFP4 0
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+line 196
+;196:			name++;
+ADDRFP4 4
+ADDRFP4 4
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+line 197
+;197:		}
+ADDRGP4 $99
+JUMPV
+LABELV $98
+line 198
+;198:		else {
+line 199
+;199:			if ( locase[(byte)*filter] != locase[(byte)*name] )
+ADDRLP4 1032
+ADDRGP4 locase
+ASGNP4
+ADDRFP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CVIU4 4
+CVUU1 4
+CVUI4 1
+ADDRLP4 1032
+INDIRP4
+ADDP4
+INDIRU1
+CVUI4 1
+ADDRFP4 4
+INDIRP4
+INDIRI1
+CVII4 1
+CVIU4 4
+CVUU1 4
+CVUI4 1
+ADDRLP4 1032
+INDIRP4
+ADDP4
+INDIRU1
+CVUI4 1
+EQI4 $102
+line 200
+;200:				return qfalse;
+CNSTI4 0
+RETI4
+ADDRGP4 $78
+JUMPV
+LABELV $102
+line 201
+;201:			filter++;
+ADDRFP4 0
+ADDRFP4 0
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+line 202
+;202:			name++;
+ADDRFP4 4
+ADDRFP4 4
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+line 203
+;203:		}
+LABELV $99
+LABELV $83
+line 204
+;204:	}
+LABELV $80
+line 174
+ADDRFP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 0
+NEI4 $79
+line 205
+;205:	if ( *name ) {
+ADDRFP4 4
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 0
+EQI4 $104
+line 206
+;206:		return qfalse;
+CNSTI4 0
+RETI4
+ADDRGP4 $78
+JUMPV
+LABELV $104
+line 208
+;207:	}
+;208:	return qtrue;
+CNSTI4 1
+RETI4
+LABELV $78
+endproc Com_FilterExt 1040 12
+export Com_Filter
+proc Com_Filter 1076 12
+line 213
+;209:}
+;210:
+;211:
+;212:int Com_Filter( const char *filter, const char *name )
+;213:{
+ADDRGP4 $108
+JUMPV
+LABELV $107
+line 218
+;214:	char buf[ MAX_TOKEN_CHARS ];
+;215:	const char *ptr;
+;216:	int i, found;
+;217:
+;218:	while (*filter) {
+line 219
+;219:		if (*filter == '*') {
+ADDRFP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 42
+NEI4 $110
+line 220
+;220:			filter++;
+ADDRFP4 0
+ADDRFP4 0
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+line 221
+;221:			for (i = 0; *filter; i++) {
+ADDRLP4 0
+CNSTI4 0
+ASGNI4
+ADDRGP4 $115
+JUMPV
+LABELV $112
+line 222
+;222:				if (*filter == '*' || *filter == '?')
+ADDRLP4 1036
+ADDRFP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+ASGNI4
+ADDRLP4 1036
+INDIRI4
+CNSTI4 42
+EQI4 $118
+ADDRLP4 1036
+INDIRI4
+CNSTI4 63
+NEI4 $116
+LABELV $118
+line 223
+;223:					break;
+ADDRGP4 $114
+JUMPV
+LABELV $116
+line 224
+;224:				buf[i] = *filter;
+ADDRLP4 0
+INDIRI4
+ADDRLP4 4
+ADDP4
+ADDRFP4 0
+INDIRP4
+INDIRI1
+ASGNI1
+line 225
+;225:				filter++;
+ADDRFP4 0
+ADDRFP4 0
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+line 226
+;226:			}
+LABELV $113
+line 221
+ADDRLP4 0
+ADDRLP4 0
+INDIRI4
+CNSTI4 1
+ADDI4
+ASGNI4
+LABELV $115
+ADDRFP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 0
+NEI4 $112
+LABELV $114
+line 227
+;227:			buf[i] = '\0';
+ADDRLP4 0
+INDIRI4
+ADDRLP4 4
+ADDP4
+CNSTI1 0
+ASGNI1
+line 228
+;228:			if ( i ) {
+ADDRLP4 0
+INDIRI4
+CNSTI4 0
+EQI4 $111
+line 229
+;229:				ptr = Com_StringContains( name, buf, i );
+ADDRFP4 4
+INDIRP4
+ARGP4
+ADDRLP4 4
+ARGP4
+ADDRLP4 0
+INDIRI4
+CVIU4 4
+ARGU4
+ADDRLP4 1036
+ADDRGP4 Com_StringContains
+CALLP4
+ASGNP4
+ADDRLP4 1032
+ADDRLP4 1036
+INDIRP4
+ASGNP4
+line 230
+;230:				if ( !ptr )
+ADDRLP4 1032
+INDIRP4
+CVPU4 4
+CNSTU4 0
+NEU4 $121
+line 231
+;231:					return qfalse;
+CNSTI4 0
+RETI4
+ADDRGP4 $106
+JUMPV
+LABELV $121
+line 232
+;232:				name = ptr + i;
+ADDRFP4 4
+ADDRLP4 0
+INDIRI4
+ADDRLP4 1032
+INDIRP4
+ADDP4
+ASGNP4
+line 233
+;233:			}
+line 234
+;234:		}
+ADDRGP4 $111
+JUMPV
+LABELV $110
+line 235
+;235:		else if (*filter == '?') {
+ADDRFP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 63
+NEI4 $123
+line 236
+;236:			filter++;
+ADDRFP4 0
+ADDRFP4 0
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+line 237
+;237:			name++;
+ADDRFP4 4
+ADDRFP4 4
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+line 238
+;238:		}
+ADDRGP4 $124
+JUMPV
+LABELV $123
+line 239
+;239:		else if (*filter == '[' && *(filter+1) == '[') {
+ADDRLP4 1036
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 1040
+CNSTI4 91
+ASGNI4
+ADDRLP4 1036
+INDIRP4
+INDIRI1
+CVII4 1
+ADDRLP4 1040
+INDIRI4
+NEI4 $125
+ADDRLP4 1036
+INDIRP4
+CNSTI4 1
+ADDP4
+INDIRI1
+CVII4 1
+ADDRLP4 1040
+INDIRI4
+NEI4 $125
+line 240
+;240:			filter++;
+ADDRFP4 0
+ADDRFP4 0
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+line 241
+;241:		}
+ADDRGP4 $126
+JUMPV
+LABELV $125
+line 242
+;242:		else if (*filter == '[') {
+ADDRFP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 91
+NEI4 $127
+line 243
+;243:			filter++;
+ADDRFP4 0
+ADDRFP4 0
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+line 244
+;244:			found = qfalse;
+ADDRLP4 1028
+CNSTI4 0
+ASGNI4
+ADDRGP4 $130
+JUMPV
+LABELV $129
+line 245
+;245:			while(*filter && !found) {
+line 246
+;246:				if (*filter == ']' && *(filter+1) != ']') break;
+ADDRLP4 1044
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 1048
+CNSTI4 93
+ASGNI4
+ADDRLP4 1044
+INDIRP4
+INDIRI1
+CVII4 1
+ADDRLP4 1048
+INDIRI4
+NEI4 $132
+ADDRLP4 1044
+INDIRP4
+CNSTI4 1
+ADDP4
+INDIRI1
+CVII4 1
+ADDRLP4 1048
+INDIRI4
+EQI4 $132
+ADDRGP4 $131
+JUMPV
+LABELV $132
+line 247
+;247:				if (*(filter+1) == '-' && *(filter+2) && (*(filter+2) != ']' || *(filter+3) == ']')) {
+ADDRLP4 1052
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 1052
+INDIRP4
+CNSTI4 1
+ADDP4
+INDIRI1
+CVII4 1
+CNSTI4 45
+NEI4 $134
+ADDRLP4 1056
+ADDRLP4 1052
+INDIRP4
+CNSTI4 2
+ADDP4
+INDIRI1
+CVII4 1
+ASGNI4
+ADDRLP4 1056
+INDIRI4
+CNSTI4 0
+EQI4 $134
+ADDRLP4 1060
+CNSTI4 93
+ASGNI4
+ADDRLP4 1056
+INDIRI4
+ADDRLP4 1060
+INDIRI4
+NEI4 $136
+ADDRLP4 1052
+INDIRP4
+CNSTI4 3
+ADDP4
+INDIRI1
+CVII4 1
+ADDRLP4 1060
+INDIRI4
+NEI4 $134
+LABELV $136
+line 248
+;248:					if (locase[(byte)*name] >= locase[(byte)*filter] &&
+ADDRLP4 1064
+ADDRGP4 locase
+ASGNP4
+ADDRLP4 1068
+ADDRFP4 4
+INDIRP4
+INDIRI1
+CVII4 1
+CVIU4 4
+CVUU1 4
+CVUI4 1
+ADDRLP4 1064
+INDIRP4
+ADDP4
+INDIRU1
+CVUI4 1
+ASGNI4
+ADDRLP4 1072
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 1068
+INDIRI4
+ADDRLP4 1072
+INDIRP4
+INDIRI1
+CVII4 1
+CVIU4 4
+CVUU1 4
+CVUI4 1
+ADDRLP4 1064
+INDIRP4
+ADDP4
+INDIRU1
+CVUI4 1
+LTI4 $137
+ADDRLP4 1068
+INDIRI4
+ADDRLP4 1072
+INDIRP4
+CNSTI4 2
+ADDP4
+INDIRI1
+CVII4 1
+CVIU4 4
+CVUU1 4
+CVUI4 1
+ADDRLP4 1064
+INDIRP4
+ADDP4
+INDIRU1
+CVUI4 1
+GTI4 $137
+line 250
+;249:						locase[(byte)*name] <= locase[(byte)*(filter+2)])
+;250:							found = qtrue;
+ADDRLP4 1028
+CNSTI4 1
+ASGNI4
+LABELV $137
+line 251
+;251:					filter += 3;
+ADDRFP4 0
+ADDRFP4 0
+INDIRP4
+CNSTI4 3
+ADDP4
+ASGNP4
+line 252
+;252:				}
+ADDRGP4 $135
+JUMPV
+LABELV $134
+line 253
+;253:				else {
+line 254
+;254:					if (locase[(byte)*filter] == locase[(byte)*name])
+ADDRLP4 1064
+ADDRGP4 locase
+ASGNP4
+ADDRFP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CVIU4 4
+CVUU1 4
+CVUI4 1
+ADDRLP4 1064
+INDIRP4
+ADDP4
+INDIRU1
+CVUI4 1
+ADDRFP4 4
+INDIRP4
+INDIRI1
+CVII4 1
+CVIU4 4
+CVUU1 4
+CVUI4 1
+ADDRLP4 1064
+INDIRP4
+ADDP4
+INDIRU1
+CVUI4 1
+NEI4 $139
+line 255
+;255:						found = qtrue;
+ADDRLP4 1028
+CNSTI4 1
+ASGNI4
+LABELV $139
+line 256
+;256:					filter++;
+ADDRFP4 0
+ADDRFP4 0
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+line 257
+;257:				}
+LABELV $135
+line 258
+;258:			}
+LABELV $130
+line 245
+ADDRLP4 1044
+CNSTI4 0
+ASGNI4
+ADDRFP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+ADDRLP4 1044
+INDIRI4
+EQI4 $141
+ADDRLP4 1028
+INDIRI4
+ADDRLP4 1044
+INDIRI4
+EQI4 $129
+LABELV $141
+LABELV $131
+line 259
+;259:			if (!found) return qfalse;
+ADDRLP4 1028
+INDIRI4
+CNSTI4 0
+NEI4 $145
+CNSTI4 0
+RETI4
+ADDRGP4 $106
+JUMPV
+LABELV $144
+line 260
+;260:			while (*filter) {
+line 261
+;261:				if (*filter == ']' && *(filter+1) != ']') break;
+ADDRLP4 1048
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 1052
+CNSTI4 93
+ASGNI4
+ADDRLP4 1048
+INDIRP4
+INDIRI1
+CVII4 1
+ADDRLP4 1052
+INDIRI4
+NEI4 $147
+ADDRLP4 1048
+INDIRP4
+CNSTI4 1
+ADDP4
+INDIRI1
+CVII4 1
+ADDRLP4 1052
+INDIRI4
+EQI4 $147
+ADDRGP4 $146
+JUMPV
+LABELV $147
+line 262
+;262:				filter++;
+ADDRFP4 0
+ADDRFP4 0
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+line 263
+;263:			}
+LABELV $145
+line 260
+ADDRFP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 0
+NEI4 $144
+LABELV $146
+line 264
+;264:			filter++;
+ADDRFP4 0
+ADDRFP4 0
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+line 265
+;265:			name++;
+ADDRFP4 4
+ADDRFP4 4
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+line 266
+;266:		}
+ADDRGP4 $128
+JUMPV
+LABELV $127
+line 267
+;267:		else {
+line 268
+;268:			if (locase[(byte)*filter] != locase[(byte)*name])
+ADDRLP4 1044
+ADDRGP4 locase
+ASGNP4
+ADDRFP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CVIU4 4
+CVUU1 4
+CVUI4 1
+ADDRLP4 1044
+INDIRP4
+ADDP4
+INDIRU1
+CVUI4 1
+ADDRFP4 4
+INDIRP4
+INDIRI1
+CVII4 1
+CVIU4 4
+CVUU1 4
+CVUI4 1
+ADDRLP4 1044
+INDIRP4
+ADDP4
+INDIRU1
+CVUI4 1
+EQI4 $149
+line 269
+;269:				return qfalse;
+CNSTI4 0
+RETI4
+ADDRGP4 $106
+JUMPV
+LABELV $149
+line 270
+;270:			filter++;
+ADDRFP4 0
+ADDRFP4 0
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+line 271
+;271:			name++;
+ADDRFP4 4
+ADDRFP4 4
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+line 272
+;272:		}
+LABELV $128
+LABELV $126
+LABELV $124
+LABELV $111
+line 273
+;273:	}
+LABELV $108
+line 218
+ADDRFP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 0
+NEI4 $107
+line 274
+;274:	return qtrue;
+CNSTI4 1
+RETI4
+LABELV $106
+endproc Com_Filter 1076 12
+export Com_FilterPath
+proc Com_FilterPath 144 8
+line 278
+;275:}
+;276:
+;277:int Com_FilterPath( const char *filter, const char *name )
+;278:{
+line 283
+;279:	int i;
+;280:	char new_filter[MAX_GDR_PATH];
+;281:	char new_name[MAX_GDR_PATH];
+;282:
+;283:	for (i = 0; i < MAX_GDR_PATH-1 && filter[i]; i++) {
+ADDRLP4 0
+CNSTI4 0
+ASGNI4
+ADDRGP4 $155
+JUMPV
+LABELV $152
+line 284
+;284:		if ( filter[i] == '\\' || filter[i] == ':' ) {
+ADDRLP4 132
+ADDRLP4 0
+INDIRI4
+ADDRFP4 0
+INDIRP4
+ADDP4
+INDIRI1
+CVII4 1
+ASGNI4
+ADDRLP4 132
+INDIRI4
+CNSTI4 92
+EQI4 $158
+ADDRLP4 132
+INDIRI4
+CNSTI4 58
+NEI4 $156
+LABELV $158
+line 285
+;285:			new_filter[i] = '/';
+ADDRLP4 0
+INDIRI4
+ADDRLP4 4
+ADDP4
+CNSTI1 47
+ASGNI1
+line 286
+;286:		}
+ADDRGP4 $157
+JUMPV
+LABELV $156
+line 287
+;287:		else {
+line 288
+;288:			new_filter[i] = filter[i];
+ADDRLP4 0
+INDIRI4
+ADDRLP4 4
+ADDP4
+ADDRLP4 0
+INDIRI4
+ADDRFP4 0
+INDIRP4
+ADDP4
+INDIRI1
+ASGNI1
+line 289
+;289:		}
+LABELV $157
+line 290
+;290:	}
+LABELV $153
+line 283
+ADDRLP4 0
+ADDRLP4 0
+INDIRI4
+CNSTI4 1
+ADDI4
+ASGNI4
+LABELV $155
+ADDRLP4 0
+INDIRI4
+CNSTI4 63
+GEI4 $159
+ADDRLP4 0
+INDIRI4
+ADDRFP4 0
+INDIRP4
+ADDP4
+INDIRI1
+CVII4 1
+CNSTI4 0
+NEI4 $152
+LABELV $159
+line 291
+;291:	new_filter[i] = '\0';
+ADDRLP4 0
+INDIRI4
+ADDRLP4 4
+ADDP4
+CNSTI1 0
+ASGNI1
+line 292
+;292:	for (i = 0; i < MAX_GDR_PATH-1 && name[i]; i++) {
+ADDRLP4 0
+CNSTI4 0
+ASGNI4
+ADDRGP4 $163
+JUMPV
+LABELV $160
+line 293
+;293:		if ( name[i] == '\\' || name[i] == ':' ) {
+ADDRLP4 136
+ADDRLP4 0
+INDIRI4
+ADDRFP4 4
+INDIRP4
+ADDP4
+INDIRI1
+CVII4 1
+ASGNI4
+ADDRLP4 136
+INDIRI4
+CNSTI4 92
+EQI4 $166
+ADDRLP4 136
+INDIRI4
+CNSTI4 58
+NEI4 $164
+LABELV $166
+line 294
+;294:			new_name[i] = '/';
+ADDRLP4 0
+INDIRI4
+ADDRLP4 68
+ADDP4
+CNSTI1 47
+ASGNI1
+line 295
+;295:		}
+ADDRGP4 $165
+JUMPV
+LABELV $164
+line 296
+;296:		else {
+line 297
+;297:			new_name[i] = name[i];
+ADDRLP4 0
+INDIRI4
+ADDRLP4 68
+ADDP4
+ADDRLP4 0
+INDIRI4
+ADDRFP4 4
+INDIRP4
+ADDP4
+INDIRI1
+ASGNI1
+line 298
+;298:		}
+LABELV $165
+line 299
+;299:	}
+LABELV $161
+line 292
+ADDRLP4 0
+ADDRLP4 0
+INDIRI4
+CNSTI4 1
+ADDI4
+ASGNI4
+LABELV $163
+ADDRLP4 0
+INDIRI4
+CNSTI4 63
+GEI4 $167
+ADDRLP4 0
+INDIRI4
+ADDRFP4 4
+INDIRP4
+ADDP4
+INDIRI1
+CVII4 1
+CNSTI4 0
+NEI4 $160
+LABELV $167
+line 300
+;300:	new_name[i] = '\0';
+ADDRLP4 0
+INDIRI4
+ADDRLP4 68
+ADDP4
+CNSTI1 0
+ASGNI1
+line 301
+;301:	return Com_Filter( new_filter, new_name );
+ADDRLP4 4
+ARGP4
+ADDRLP4 68
+ARGP4
+ADDRLP4 140
+ADDRGP4 Com_Filter
+CALLI4
+ASGNI4
+ADDRLP4 140
+INDIRI4
+RETI4
+LABELV $151
+endproc Com_FilterPath 144 8
+export Com_HasPatterns
+proc Com_HasPatterns 12 0
+line 305
+;302:}
+;303:
+;304:qboolean Com_HasPatterns( const char *str )
+;305:{
+ADDRGP4 $170
+JUMPV
+LABELV $169
+line 308
+;306:	int c;
+;307:
+;308:	while ( (c = *str++) != '\0' ) {
+line 309
+;309:		if ( c == '*' || c == '?' ) {
+ADDRLP4 0
+INDIRI4
+CNSTI4 42
+EQI4 $174
+ADDRLP4 0
+INDIRI4
+CNSTI4 63
+NEI4 $172
+LABELV $174
+line 310
+;310:			return qtrue;
+CNSTI4 1
+RETI4
+ADDRGP4 $168
+JUMPV
+LABELV $172
+line 312
+;311:		}
+;312:	}
+LABELV $170
+line 308
+ADDRLP4 4
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRFP4 0
+ADDRLP4 4
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 8
+ADDRLP4 4
+INDIRP4
+INDIRI1
+CVII4 1
+ASGNI4
+ADDRLP4 0
+ADDRLP4 8
+INDIRI4
+ASGNI4
+ADDRLP4 8
+INDIRI4
+CNSTI4 0
+NEI4 $169
+line 314
+;313:
+;314:	return qfalse;
+CNSTI4 0
+RETI4
+LABELV $168
+endproc Com_HasPatterns 12 0
+export COM_DefaultExtension
+proc COM_DefaultExtension 16 12
+line 326
+;315:}
+;316:
+;317:/*
+;318:==================
+;319:COM_DefaultExtension
+;320:
+;321:if path doesn't have an extension, then append
+;322: the specified one (which should include the .)
+;323:==================
+;324:*/
+;325:void COM_DefaultExtension( char *path, uint64_t maxSize, const char *extension )
+;326:{
+line 327
+;327:	const char *dot = strrchr(path, '.'), *slash;
+ADDRFP4 0
+INDIRP4
+ARGP4
+CNSTI4 46
+ARGI4
+ADDRLP4 8
+ADDRGP4 strrchr
+CALLP4
+ASGNP4
+ADDRLP4 0
+ADDRLP4 8
+INDIRP4
+ASGNP4
+line 328
+;328:	if (dot && ((slash = strrchr(path, '/')) == NULL || slash < dot))
+ADDRLP4 0
+INDIRP4
+CVPU4 4
+CNSTU4 0
+EQU4 $176
+ADDRFP4 0
+INDIRP4
+ARGP4
+CNSTI4 47
+ARGI4
+ADDRLP4 12
+ADDRGP4 strrchr
+CALLP4
+ASGNP4
+ADDRLP4 4
+ADDRLP4 12
+INDIRP4
+ASGNP4
+ADDRLP4 12
+INDIRP4
+CVPU4 4
+CNSTU4 0
+EQU4 $178
+ADDRLP4 4
+INDIRP4
+CVPU4 4
+ADDRLP4 0
+INDIRP4
+CVPU4 4
+GEU4 $176
+LABELV $178
+line 329
+;329:		return;
+ADDRGP4 $175
+JUMPV
+LABELV $176
+line 331
+;330:	else
+;331:		N_strcat(path, maxSize, extension);
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRFP4 4
+INDIRU4
+ARGU4
+ADDRFP4 8
+INDIRP4
+ARGP4
+ADDRGP4 N_strcat
+CALLV
+pop
+line 332
+;332:}
+LABELV $175
+endproc COM_DefaultExtension 16 12
+export COM_StripExtension
+proc COM_StripExtension 20 12
+line 336
+;333:
+;334:
+;335:void COM_StripExtension(const char *in, char *out, uint64_t destsize)
+;336:{
+line 337
+;337:	const char *dot = (char *)strrchr(in, '.'), *slash;
+ADDRFP4 0
+INDIRP4
+ARGP4
+CNSTI4 46
+ARGI4
+ADDRLP4 8
+ADDRGP4 strrchr
+CALLP4
+ASGNP4
+ADDRLP4 0
+ADDRLP4 8
+INDIRP4
+ASGNP4
+line 339
+;338:
+;339:	if (dot && ((slash = (char *)strrchr(in, '/')) == NULL || slash < dot))
+ADDRLP4 0
+INDIRP4
+CVPU4 4
+CNSTU4 0
+EQU4 $180
+ADDRFP4 0
+INDIRP4
+ARGP4
+CNSTI4 47
+ARGI4
+ADDRLP4 12
+ADDRGP4 strrchr
+CALLP4
+ASGNP4
+ADDRLP4 4
+ADDRLP4 12
+INDIRP4
+ASGNP4
+ADDRLP4 12
+INDIRP4
+CVPU4 4
+CNSTU4 0
+EQU4 $182
+ADDRLP4 4
+INDIRP4
+CVPU4 4
+ADDRLP4 0
+INDIRP4
+CVPU4 4
+GEU4 $180
+LABELV $182
+line 340
+;340:		destsize = (destsize < dot-in+1 ? destsize : dot-in+1);
+ADDRFP4 8
+INDIRU4
+ADDRLP4 0
+INDIRP4
+CVPU4 4
+ADDRFP4 0
+INDIRP4
+CVPU4 4
+SUBU4
+CVUI4 4
+CNSTI4 1
+ADDI4
+CVIU4 4
+GEU4 $184
+ADDRLP4 16
+ADDRFP4 8
+INDIRU4
+ASGNU4
+ADDRGP4 $185
+JUMPV
+LABELV $184
+ADDRLP4 16
+ADDRLP4 0
+INDIRP4
+CVPU4 4
+ADDRFP4 0
+INDIRP4
+CVPU4 4
+SUBU4
+CVUI4 4
+CNSTI4 1
+ADDI4
+CVIU4 4
+ASGNU4
+LABELV $185
+ADDRFP4 8
+ADDRLP4 16
+INDIRU4
+ASGNU4
+LABELV $180
+line 342
+;341:
+;342:	if ( in == out && destsize > 1 )
+ADDRFP4 0
+INDIRP4
+CVPU4 4
+ADDRFP4 4
+INDIRP4
+CVPU4 4
+NEU4 $186
+ADDRFP4 8
+INDIRU4
+CNSTU4 1
+LEU4 $186
+line 343
+;343:		out[destsize-1] = '\0';
+ADDRFP4 8
+INDIRU4
+CNSTU4 1
+SUBU4
+ADDRFP4 4
+INDIRP4
+ADDP4
+CNSTI1 0
+ASGNI1
+ADDRGP4 $187
+JUMPV
+LABELV $186
+line 345
+;344:	else
+;345:		N_strncpy(out, in, destsize);
+ADDRFP4 4
+INDIRP4
+ARGP4
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRFP4 8
+INDIRU4
+ARGU4
+ADDRGP4 N_strncpy
+CALLV
+pop
+LABELV $187
+line 346
+;346:}
+LABELV $179
+endproc COM_StripExtension 20 12
+export CopyShortSwap
+proc CopyShortSwap 8 0
+line 349
+;347:
+;348:void CopyShortSwap(void *dest, void *src)
+;349:{
+line 350
+;350:	byte *to = (byte *)dest, *from = (byte *)src;
+ADDRLP4 0
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 4
+ADDRFP4 4
+INDIRP4
+ASGNP4
+line 352
+;351:
+;352:	to[0] = from[1];
+ADDRLP4 0
+INDIRP4
+ADDRLP4 4
+INDIRP4
+CNSTI4 1
+ADDP4
+INDIRU1
+ASGNU1
+line 353
+;353:	to[1] = from[0];
+ADDRLP4 0
+INDIRP4
+CNSTI4 1
+ADDP4
+ADDRLP4 4
+INDIRP4
+INDIRU1
+ASGNU1
+line 354
+;354:}
+LABELV $188
+endproc CopyShortSwap 8 0
+export CopyIntSwap
+proc CopyIntSwap 8 0
+line 357
+;355:
+;356:void CopyIntSwap(void *dest, void *src)
+;357:{
+line 358
+;358:	byte *to = (byte *)dest, *from = (byte *)src;
+ADDRLP4 0
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 4
+ADDRFP4 4
+INDIRP4
+ASGNP4
+line 360
+;359:
+;360:	to[0] = from[3];
+ADDRLP4 0
+INDIRP4
+ADDRLP4 4
+INDIRP4
+CNSTI4 3
+ADDP4
+INDIRU1
+ASGNU1
+line 361
+;361:	to[1] = from[2];
+ADDRLP4 0
+INDIRP4
+CNSTI4 1
+ADDP4
+ADDRLP4 4
+INDIRP4
+CNSTI4 2
+ADDP4
+INDIRU1
+ASGNU1
+line 362
+;362:	to[2] = from[1];
+ADDRLP4 0
+INDIRP4
+CNSTI4 2
+ADDP4
+ADDRLP4 4
+INDIRP4
+CNSTI4 1
+ADDP4
+INDIRU1
+ASGNU1
+line 363
+;363:	to[3] = from[0];
+ADDRLP4 0
+INDIRP4
+CNSTI4 3
+ADDP4
+ADDRLP4 4
+INDIRP4
+INDIRU1
+ASGNU1
+line 364
+;364:}
+LABELV $189
+endproc CopyIntSwap 8 0
+export CopyLongSwap
+proc CopyLongSwap 8 0
+line 367
+;365:
+;366:void CopyLongSwap(void *dest, void *src)
+;367:{
+line 368
+;368:	byte *to = (byte *)dest, *from = (byte *)src;
+ADDRLP4 0
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 4
+ADDRFP4 4
+INDIRP4
+ASGNP4
+line 370
+;369:
+;370:	to[0] = from[7];
+ADDRLP4 0
+INDIRP4
+ADDRLP4 4
+INDIRP4
+CNSTI4 7
+ADDP4
+INDIRU1
+ASGNU1
+line 371
+;371:	to[1] = from[6];
+ADDRLP4 0
+INDIRP4
+CNSTI4 1
+ADDP4
+ADDRLP4 4
+INDIRP4
+CNSTI4 6
+ADDP4
+INDIRU1
+ASGNU1
+line 372
+;372:	to[2] = from[5];
+ADDRLP4 0
+INDIRP4
+CNSTI4 2
+ADDP4
+ADDRLP4 4
+INDIRP4
+CNSTI4 5
+ADDP4
+INDIRU1
+ASGNU1
+line 373
+;373:	to[3] = from[4];
+ADDRLP4 0
+INDIRP4
+CNSTI4 3
+ADDP4
+ADDRLP4 4
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRU1
+ASGNU1
+line 374
+;374:	to[4] = from[3];
+ADDRLP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+ADDRLP4 4
+INDIRP4
+CNSTI4 3
+ADDP4
+INDIRU1
+ASGNU1
+line 375
+;375:	to[5] = from[2];
+ADDRLP4 0
+INDIRP4
+CNSTI4 5
+ADDP4
+ADDRLP4 4
+INDIRP4
+CNSTI4 2
+ADDP4
+INDIRU1
+ASGNU1
+line 376
+;376:	to[6] = from[1];
+ADDRLP4 0
+INDIRP4
+CNSTI4 6
+ADDP4
+ADDRLP4 4
+INDIRP4
+CNSTI4 1
+ADDP4
+INDIRU1
+ASGNU1
+line 377
+;377:	to[7] = from[0];
+ADDRLP4 0
+INDIRP4
+CNSTI4 7
+ADDP4
+ADDRLP4 4
+INDIRP4
+INDIRU1
+ASGNU1
+line 378
+;378:}
+LABELV $190
+endproc CopyLongSwap 8 0
+export N_memset
+proc N_memset 8 0
+line 389
+;379:
+;380:/*
+;381:=====================================================================
+;382:
+;383:Library Replacement Functions
+;384:
+;385:=====================================================================
+;386:*/
+;387:
+;388:void* N_memset (void *dest, int fill, size_t count)
+;389:{
+line 392
+;390:	size_t i;
+;391:	
+;392:	if ( (((long)dest | count) & 3) == 0) {
+ADDRFP4 0
+INDIRP4
+CVPU4 4
+CVUI4 4
+CVIU4 4
+ADDRFP4 8
+INDIRU4
+BORU4
+CNSTU4 3
+BANDU4
+CNSTU4 0
+NEU4 $192
+line 393
+;393:		count >>= 2;
+ADDRFP4 8
+ADDRFP4 8
+INDIRU4
+CNSTI4 2
+RSHU4
+ASGNU4
+line 394
+;394:		fill = fill | (fill<<8) | (fill<<16) | (fill<<24);
+ADDRLP4 4
+ADDRFP4 4
+INDIRI4
+ASGNI4
+ADDRFP4 4
+ADDRLP4 4
+INDIRI4
+ADDRLP4 4
+INDIRI4
+CNSTI4 8
+LSHI4
+BORI4
+ADDRLP4 4
+INDIRI4
+CNSTI4 16
+LSHI4
+BORI4
+ADDRLP4 4
+INDIRI4
+CNSTI4 24
+LSHI4
+BORI4
+ASGNI4
+line 395
+;395:		for (i = 0; i < count; i++)
+ADDRLP4 0
+CNSTU4 0
+ASGNU4
+ADDRGP4 $197
+JUMPV
+LABELV $194
+line 396
+;396:			((int *)dest)[i] = fill;
+ADDRLP4 0
+INDIRU4
+CNSTI4 2
+LSHU4
+ADDRFP4 0
+INDIRP4
+ADDP4
+ADDRFP4 4
+INDIRI4
+ASGNI4
+LABELV $195
+line 395
+ADDRLP4 0
+ADDRLP4 0
+INDIRU4
+CNSTU4 1
+ADDU4
+ASGNU4
+LABELV $197
+ADDRLP4 0
+INDIRU4
+ADDRFP4 8
+INDIRU4
+LTU4 $194
+line 397
+;397:	}
+ADDRGP4 $193
+JUMPV
+LABELV $192
+line 399
+;398:	else
+;399:		for (i = 0; i < count; i++)
+ADDRLP4 0
+CNSTU4 0
+ASGNU4
+ADDRGP4 $201
+JUMPV
+LABELV $198
+line 400
+;400:			((char *)dest)[i] = fill;
+ADDRLP4 0
+INDIRU4
+ADDRFP4 0
+INDIRP4
+ADDP4
+ADDRFP4 4
+INDIRI4
+CVII1 4
+ASGNI1
+LABELV $199
+line 399
+ADDRLP4 0
+ADDRLP4 0
+INDIRU4
+CNSTU4 1
+ADDU4
+ASGNU4
+LABELV $201
+ADDRLP4 0
+INDIRU4
+ADDRFP4 8
+INDIRU4
+LTU4 $198
+LABELV $193
+line 402
+;401:    
+;402:    return dest;
+ADDRFP4 0
+INDIRP4
+RETP4
+LABELV $191
+endproc N_memset 8 0
+export N_memchr
+proc N_memchr 4 0
+line 406
+;403:}
+;404:
+;405:void* N_memchr (void *ptr, int c, size_t count)
+;406:{
+ADDRGP4 $204
+JUMPV
+LABELV $203
+line 407
+;407:	while (--count) {
+line 408
+;408:		if (((char *)ptr)[count] == c)
+ADDRFP4 8
+INDIRU4
+ADDRFP4 0
+INDIRP4
+ADDP4
+INDIRI1
+CVII4 1
+ADDRFP4 4
+INDIRI4
+NEI4 $206
+line 409
+;409:			return (void *)&((char *)ptr)[count];
+ADDRFP4 8
+INDIRU4
+ADDRFP4 0
+INDIRP4
+ADDP4
+RETP4
+ADDRGP4 $202
+JUMPV
+LABELV $206
+line 410
+;410:	}
+LABELV $204
+line 407
+ADDRLP4 0
+ADDRFP4 8
+INDIRU4
+CNSTU4 1
+SUBU4
+ASGNU4
+ADDRFP4 8
+ADDRLP4 0
+INDIRU4
+ASGNU4
+ADDRLP4 0
+INDIRU4
+CNSTU4 0
+NEU4 $203
+line 411
+;411:	return NULL;
+CNSTP4 0
+RETP4
+LABELV $202
+endproc N_memchr 4 0
+export N_memcpy
+proc N_memcpy 8 0
+line 415
+;412:}
+;413:
+;414:void N_memcpy (void *dest, const void *src, size_t count)
+;415:{
+line 417
+;416:	size_t i;
+;417:	if (( ( (long)dest | (long)src | count) & 7) == 0) {
+ADDRFP4 0
+INDIRP4
+CVPU4 4
+CVUI4 4
+ADDRFP4 4
+INDIRP4
+CVPU4 4
+CVUI4 4
+BORI4
+CVIU4 4
+ADDRFP4 8
+INDIRU4
+BORU4
+CNSTU4 7
+BANDU4
+CNSTU4 0
+NEU4 $209
+ADDRGP4 $212
+JUMPV
+LABELV $211
+line 418
+;418:		while (count >= 4) {
+line 419
+;419:			((long *)dest)[count] = ((long *)src)[count];
+ADDRLP4 4
+ADDRFP4 8
+INDIRU4
+CNSTI4 2
+LSHU4
+ASGNU4
+ADDRLP4 4
+INDIRU4
+ADDRFP4 0
+INDIRP4
+ADDP4
+ADDRLP4 4
+INDIRU4
+ADDRFP4 4
+INDIRP4
+ADDP4
+INDIRI4
+ASGNI4
+line 420
+;420:			count -= 4;
+ADDRFP4 8
+ADDRFP4 8
+INDIRU4
+CNSTU4 4
+SUBU4
+ASGNU4
+line 421
+;421:		}
+LABELV $212
+line 418
+ADDRFP4 8
+INDIRU4
+CNSTU4 4
+GEU4 $211
+line 422
+;422:	}
+ADDRGP4 $210
+JUMPV
+LABELV $209
+line 423
+;423:	else if (( ( (long)dest | (long)src | count) & 3) == 0 ) {
+ADDRFP4 0
+INDIRP4
+CVPU4 4
+CVUI4 4
+ADDRFP4 4
+INDIRP4
+CVPU4 4
+CVUI4 4
+BORI4
+CVIU4 4
+ADDRFP4 8
+INDIRU4
+BORU4
+CNSTU4 3
+BANDU4
+CNSTU4 0
+NEU4 $214
+line 424
+;424:		count>>=2;
+ADDRFP4 8
+ADDRFP4 8
+INDIRU4
+CNSTI4 2
+RSHU4
+ASGNU4
+line 425
+;425:		for (i = 0; i < count; i++)
+ADDRLP4 0
+CNSTU4 0
+ASGNU4
+ADDRGP4 $219
+JUMPV
+LABELV $216
+line 426
+;426:			((int *)dest)[i] = ((int *)src)[i];
+ADDRLP4 4
+ADDRLP4 0
+INDIRU4
+CNSTI4 2
+LSHU4
+ASGNU4
+ADDRLP4 4
+INDIRU4
+ADDRFP4 0
+INDIRP4
+ADDP4
+ADDRLP4 4
+INDIRU4
+ADDRFP4 4
+INDIRP4
+ADDP4
+INDIRI4
+ASGNI4
+LABELV $217
+line 425
+ADDRLP4 0
+ADDRLP4 0
+INDIRU4
+CNSTU4 1
+ADDU4
+ASGNU4
+LABELV $219
+ADDRLP4 0
+INDIRU4
+ADDRFP4 8
+INDIRU4
+LTU4 $216
+line 427
+;427:	}
+ADDRGP4 $215
+JUMPV
+LABELV $214
+line 429
+;428:	else
+;429:		for (i = 0; i < count; i++)
+ADDRLP4 0
+CNSTU4 0
+ASGNU4
+ADDRGP4 $223
+JUMPV
+LABELV $220
+line 430
+;430:			((char *)dest)[i] = ((char *)src)[i];
+ADDRLP4 0
+INDIRU4
+ADDRFP4 0
+INDIRP4
+ADDP4
+ADDRLP4 0
+INDIRU4
+ADDRFP4 4
+INDIRP4
+ADDP4
+INDIRI1
+ASGNI1
+LABELV $221
+line 429
+ADDRLP4 0
+ADDRLP4 0
+INDIRU4
+CNSTU4 1
+ADDU4
+ASGNU4
+LABELV $223
+ADDRLP4 0
+INDIRU4
+ADDRFP4 8
+INDIRU4
+LTU4 $220
+LABELV $215
+LABELV $210
+line 431
+;431:}
+LABELV $208
+endproc N_memcpy 8 0
+export N_memcmp
+proc N_memcmp 4 0
+line 434
+;432:
+;433:int N_memcmp (const void *ptr1, const void *ptr2, size_t count)
+;434:{
+ADDRGP4 $226
+JUMPV
+LABELV $225
+line 435
+;435:	while (count--) {
+line 436
+;436:		if (((char *)ptr1)[count] != ((char *)ptr2)[count])
+ADDRLP4 0
+ADDRFP4 8
+INDIRU4
+ASGNU4
+ADDRLP4 0
+INDIRU4
+ADDRFP4 0
+INDIRP4
+ADDP4
+INDIRI1
+CVII4 1
+ADDRLP4 0
+INDIRU4
+ADDRFP4 4
+INDIRP4
+ADDP4
+INDIRI1
+CVII4 1
+EQI4 $228
+line 437
+;437:			return -1;
+CNSTI4 -1
+RETI4
+ADDRGP4 $224
+JUMPV
+LABELV $228
+line 438
+;438:	}
+LABELV $226
+line 435
+ADDRLP4 0
+ADDRFP4 8
+INDIRU4
+ASGNU4
+ADDRFP4 8
+ADDRLP4 0
+INDIRU4
+CNSTU4 1
+SUBU4
+ASGNU4
+ADDRLP4 0
+INDIRU4
+CNSTU4 0
+NEU4 $225
+line 439
+;439:	return 1;
+CNSTI4 1
+RETI4
+LABELV $224
+endproc N_memcmp 4 0
+export N_isprint
+proc N_isprint 4 0
+line 475
+;440:}
+;441:
+;442:
+;443:#ifdef _WIN32
+;444:/*
+;445:=============
+;446:N_vsnprintf
+;447: 
+;448:Special wrapper function for Microsoft's broken _vsnprintf() function. mingw-w64
+;449:however, uses Microsoft's broken _vsnprintf() function.
+;450:=============
+;451:*/
+;452:int N_vsnprintf( char *str, size_t size, const char *format, va_list ap )
+;453:{
+;454:	int retval;
+;455:	
+;456:	retval = _vsnprintf( str, size, format, ap );
+;457:
+;458:	if ( retval < 0 || (size_t)retval == size ) {
+;459:		// Microsoft doesn't adhere to the C99 standard of vsnprintf,
+;460:		// which states that the return value must be the number of
+;461:		// bytes written if the output string had sufficient length.
+;462:		//
+;463:		// Obviously we cannot determine that value from Microsoft's
+;464:		// implementation, so we have no choice but to return size.
+;465:		
+;466:		str[size - 1] = '\0';
+;467:		return size;
+;468:	}
+;469:	
+;470:	return retval;
+;471:}
+;472:#endif
+;473:
+;474:int N_isprint( int c )
+;475:{
+line 476
+;476:	if ( c >= 0x20 && c <= 0x7E )
+ADDRLP4 0
+ADDRFP4 0
+INDIRI4
+ASGNI4
+ADDRLP4 0
+INDIRI4
+CNSTI4 32
+LTI4 $231
+ADDRLP4 0
+INDIRI4
+CNSTI4 126
+GTI4 $231
+line 477
+;477:		return ( 1 );
+CNSTI4 1
+RETI4
+ADDRGP4 $230
+JUMPV
+LABELV $231
+line 478
+;478:	return ( 0 );
+CNSTI4 0
+RETI4
+LABELV $230
+endproc N_isprint 4 0
+export N_islower
+proc N_islower 4 0
+line 483
+;479:}
+;480:
+;481:
+;482:int N_islower( int c )
+;483:{
+line 484
+;484:	if (c >= 'a' && c <= 'z')
+ADDRLP4 0
+ADDRFP4 0
+INDIRI4
+ASGNI4
+ADDRLP4 0
+INDIRI4
+CNSTI4 97
+LTI4 $234
+ADDRLP4 0
+INDIRI4
+CNSTI4 122
+GTI4 $234
+line 485
+;485:		return ( 1 );
+CNSTI4 1
+RETI4
+ADDRGP4 $233
+JUMPV
+LABELV $234
+line 486
+;486:	return ( 0 );
+CNSTI4 0
+RETI4
+LABELV $233
+endproc N_islower 4 0
+export N_isupper
+proc N_isupper 4 0
+line 491
+;487:}
+;488:
+;489:
+;490:int N_isupper( int c )
+;491:{
+line 492
+;492:	if (c >= 'A' && c <= 'Z')
+ADDRLP4 0
+ADDRFP4 0
+INDIRI4
+ASGNI4
+ADDRLP4 0
+INDIRI4
+CNSTI4 65
+LTI4 $237
+ADDRLP4 0
+INDIRI4
+CNSTI4 90
+GTI4 $237
+line 493
+;493:		return ( 1 );
+CNSTI4 1
+RETI4
+ADDRGP4 $236
+JUMPV
+LABELV $237
+line 494
+;494:	return ( 0 );
+CNSTI4 0
+RETI4
+LABELV $236
+endproc N_isupper 4 0
+export N_isalpha
+proc N_isalpha 8 0
+line 499
+;495:}
+;496:
+;497:
+;498:int N_isalpha( int c )
+;499:{
+line 500
+;500:	if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
+ADDRLP4 0
+ADDRFP4 0
+INDIRI4
+ASGNI4
+ADDRLP4 0
+INDIRI4
+CNSTI4 97
+LTI4 $243
+ADDRLP4 0
+INDIRI4
+CNSTI4 122
+LEI4 $242
+LABELV $243
+ADDRLP4 4
+ADDRFP4 0
+INDIRI4
+ASGNI4
+ADDRLP4 4
+INDIRI4
+CNSTI4 65
+LTI4 $240
+ADDRLP4 4
+INDIRI4
+CNSTI4 90
+GTI4 $240
+LABELV $242
+line 501
+;501:		return ( 1 );
+CNSTI4 1
+RETI4
+ADDRGP4 $239
+JUMPV
+LABELV $240
+line 502
+;502:	return ( 0 );
+CNSTI4 0
+RETI4
+LABELV $239
+endproc N_isalpha 8 0
+export N_isintegral
+proc N_isintegral 8 0
+line 506
+;503:}
+;504:
+;505:qboolean N_isintegral(float f)
+;506:{
+line 507
+;507:	return (qboolean)((int)f == f);
+ADDRLP4 4
+ADDRFP4 0
+INDIRF4
+ASGNF4
+ADDRLP4 4
+INDIRF4
+CVFI4 4
+CVIF4 4
+ADDRLP4 4
+INDIRF4
+NEF4 $246
+ADDRLP4 0
+CNSTI4 1
+ASGNI4
+ADDRGP4 $247
+JUMPV
+LABELV $246
+ADDRLP4 0
+CNSTI4 0
+ASGNI4
+LABELV $247
+ADDRLP4 0
+INDIRI4
+RETI4
+LABELV $244
+endproc N_isintegral 8 0
+export N_isanumber
+proc N_isanumber 0 0
+line 512
+;508:}
+;509:
+;510:
+;511:qboolean N_isanumber( const char *s )
+;512:{
+line 515
+;513:#ifdef Q3_VM
+;514:    //FIXME: implement
+;515:    return qfalse;
+CNSTI4 0
+RETI4
+LABELV $248
+endproc N_isanumber 0 0
+export N_strcpy
+proc N_strcpy 24 0
+line 541
+;516:#else
+;517:    char *p;
+;518:
+;519:	if( *s == '\0' )
+;520:        return qfalse;
+;521:
+;522:	strtod( s, &p );
+;523:
+;524:    return (qboolean)(*p == '\0');
+;525:#endif
+;526:}
+;527:
+;528:#ifndef Q3_VM
+;529:void N_itoa(char *buf, uint64_t bufsize, int i)
+;530:{
+;531:	snprintf(buf, bufsize, "%i", i);
+;532:}
+;533:
+;534:void N_ftoa(char *buf, uint64_t bufsize, float f)
+;535:{
+;536:	snprintf(buf, bufsize, "%f", f);
+;537:}
+;538:#endif
+;539:
+;540:void N_strcpy (char *dest, const char *src)
+;541:{
+line 542
+;542:	char *d = dest;
+ADDRLP4 4
+ADDRFP4 0
+INDIRP4
+ASGNP4
+line 543
+;543:	const char *s = src;
+ADDRLP4 0
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRGP4 $251
+JUMPV
+LABELV $250
+line 545
+;544:	while (*s)
+;545:		*d++ = *s++;
+ADDRLP4 8
+ADDRLP4 4
+INDIRP4
+ASGNP4
+ADDRLP4 16
+CNSTI4 1
+ASGNI4
+ADDRLP4 4
+ADDRLP4 8
+INDIRP4
+ADDRLP4 16
+INDIRI4
+ADDP4
+ASGNP4
+ADDRLP4 12
+ADDRLP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 0
+ADDRLP4 12
+INDIRP4
+ADDRLP4 16
+INDIRI4
+ADDP4
+ASGNP4
+ADDRLP4 8
+INDIRP4
+ADDRLP4 12
+INDIRP4
+INDIRI1
+ASGNI1
+LABELV $251
+line 544
+ADDRLP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 0
+NEI4 $250
+line 547
+;546:	
+;547:	*d++ = 0;
+ADDRLP4 20
+ADDRLP4 4
+INDIRP4
+ASGNP4
+ADDRLP4 4
+ADDRLP4 20
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 20
+INDIRP4
+CNSTI1 0
+ASGNI1
+line 548
+;548:}
+LABELV $249
+endproc N_strcpy 24 0
+export Com_TruncateLongString
+proc Com_TruncateLongString 8 12
+line 551
+;549:
+;550:void Com_TruncateLongString( char *buffer, const char *s )
+;551:{
+line 552
+;552:	uint64_t length = strlen( s );
+ADDRFP4 4
+INDIRP4
+ARGP4
+ADDRLP4 4
+ADDRGP4 strlen
+CALLU4
+ASGNU4
+ADDRLP4 0
+ADDRLP4 4
+INDIRU4
+ASGNU4
+line 554
+;553:
+;554:	if( length <= TRUNCATE_LENGTH )
+ADDRLP4 0
+INDIRU4
+CNSTU4 64
+GTU4 $254
+line 555
+;555:		N_strncpyz( buffer, s, TRUNCATE_LENGTH );
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRFP4 4
+INDIRP4
+ARGP4
+CNSTU4 64
+ARGU4
+ADDRGP4 N_strncpyz
+CALLV
+pop
+ADDRGP4 $255
+JUMPV
+LABELV $254
+line 556
+;556:	else {
+line 557
+;557:		N_strncpyz( buffer, s, ( TRUNCATE_LENGTH / 2 ) - 3 );
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRFP4 4
+INDIRP4
+ARGP4
+CNSTU4 29
+ARGU4
+ADDRGP4 N_strncpyz
+CALLV
+pop
+line 558
+;558:		N_strcat( buffer, TRUNCATE_LENGTH, " ... " );
+ADDRFP4 0
+INDIRP4
+ARGP4
+CNSTU4 64
+ARGU4
+ADDRGP4 $256
+ARGP4
+ADDRGP4 N_strcat
+CALLV
+pop
+line 559
+;559:		N_strcat( buffer, TRUNCATE_LENGTH, s + length - ( TRUNCATE_LENGTH / 2 ) + 3 );
+ADDRFP4 0
+INDIRP4
+ARGP4
+CNSTU4 64
+ARGU4
+ADDRLP4 0
+INDIRU4
+ADDRFP4 4
+INDIRP4
+ADDP4
+CNSTI4 -29
+ADDP4
+ARGP4
+ADDRGP4 N_strcat
+CALLV
+pop
+line 560
+;560:	}
+LABELV $255
+line 561
+;561:}
+LABELV $253
+endproc Com_TruncateLongString 8 12
+export N_strncpyz
+proc N_strncpyz 17 4
+line 565
+;562:
+;563:
+;564:void N_strncpyz (char *dest, const char *src, size_t count)
+;565:{
+line 567
+;566:#if defined(Q3_VM) || !defined(__cplusplus)
+;567:	if (!dest)
+ADDRFP4 0
+INDIRP4
+CVPU4 4
+CNSTU4 0
+NEU4 $258
+line 568
+;568:		SG_Error( "N_strncpyz: NULL dest");
+ADDRGP4 $260
+ARGP4
+ADDRGP4 SG_Error
+CALLI4
+pop
+LABELV $258
+line 569
+;569:	if (!src)
+ADDRFP4 4
+INDIRP4
+CVPU4 4
+CNSTU4 0
+NEU4 $261
+line 570
+;570:		SG_Error( "N_strncpyz: NULL src");
+ADDRGP4 $263
+ARGP4
+ADDRGP4 SG_Error
+CALLI4
+pop
+LABELV $261
+line 571
+;571:	if (count < 1)
+ADDRFP4 8
+INDIRU4
+CNSTU4 1
+GEU4 $268
+line 572
+;572:		SG_Error( "N_strncpyz: bad count");
+ADDRGP4 $266
+ARGP4
+ADDRGP4 SG_Error
+CALLI4
+pop
+LABELV $267
+line 594
+;573:#elif defined(GDR_DLLCOMPILE)
+;574:	if (!dest)
+;575:		ri.N_Error("N_strncpyz: NULL dest");
+;576:	if (!src)
+;577:		ri.N_Error("N_strncpyz: NULL src");
+;578:	if (count < 1)
+;579:		ri.N_Error("N_strncpyz: bad count");
+;580:#else
+;581:	if (!dest)
+;582:		N_Error("N_strncpyz: NULL dest");
+;583:	if (!src)
+;584:		N_Error("N_strncpyz: NULL src");
+;585:	if (count < 1)
+;586:		N_Error("N_strncpyz: bad count");
+;587:#endif
+;588:	
+;589:#if 1 
+;590:	// do not fill whole remaining buffer with zeros
+;591:	// this is obvious behavior change but actually it may affect only buggy QVMs
+;592:	// which passes overlapping or short buffers to cvar reading routines
+;593:	// what is rather good than bad because it will no longer cause overwrites, maybe
+;594:	while ( --count > 0 && (*dest++ = *src++) != '\0' );
+LABELV $268
+ADDRLP4 8
+ADDRFP4 8
+INDIRU4
+CNSTU4 1
+SUBU4
+ASGNU4
+ADDRFP4 8
+ADDRLP4 8
+INDIRU4
+ASGNU4
+ADDRLP4 8
+INDIRU4
+CNSTU4 0
+EQU4 $270
+ADDRLP4 0
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 12
+CNSTI4 1
+ASGNI4
+ADDRFP4 0
+ADDRLP4 0
+INDIRP4
+ADDRLP4 12
+INDIRI4
+ADDP4
+ASGNP4
+ADDRLP4 4
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRFP4 4
+ADDRLP4 4
+INDIRP4
+ADDRLP4 12
+INDIRI4
+ADDP4
+ASGNP4
+ADDRLP4 16
+ADDRLP4 4
+INDIRP4
+INDIRI1
+ASGNI1
+ADDRLP4 0
+INDIRP4
+ADDRLP4 16
+INDIRI1
+ASGNI1
+ADDRLP4 16
+INDIRI1
+CVII4 1
+CNSTI4 0
+NEI4 $267
+LABELV $270
+line 595
+;595:	*dest = '\0';
+ADDRFP4 0
+INDIRP4
+CNSTI1 0
+ASGNI1
+line 600
+;596:#else
+;597:	strncpy( dest, src, count-1 );
+;598:	dest[ count-1 ] = '\0';
+;599:#endif
+;600:}
+LABELV $257
+endproc N_strncpyz 17 4
+export N_strncpy
+proc N_strncpy 20 0
+line 603
+;601:
+;602:void N_strncpy (char *dest, const char *src, size_t count)
+;603:{
+ADDRGP4 $273
+JUMPV
+LABELV $272
+line 605
+;604:	while (*src && count--)
+;605:		*dest++ = *src++;
+ADDRLP4 0
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 8
+CNSTI4 1
+ASGNI4
+ADDRFP4 0
+ADDRLP4 0
+INDIRP4
+ADDRLP4 8
+INDIRI4
+ADDP4
+ASGNP4
+ADDRLP4 4
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRFP4 4
+ADDRLP4 4
+INDIRP4
+ADDRLP4 8
+INDIRI4
+ADDP4
+ASGNP4
+ADDRLP4 0
+INDIRP4
+ADDRLP4 4
+INDIRP4
+INDIRI1
+ASGNI1
+LABELV $273
+line 604
+ADDRFP4 4
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 0
+EQI4 $275
+ADDRLP4 12
+ADDRFP4 8
+INDIRU4
+ASGNU4
+ADDRFP4 8
+ADDRLP4 12
+INDIRU4
+CNSTU4 1
+SUBU4
+ASGNU4
+ADDRLP4 12
+INDIRU4
+CNSTU4 0
+NEU4 $272
+LABELV $275
+line 607
+;606:
+;607:	if (count)
+ADDRFP4 8
+INDIRU4
+CNSTU4 0
+EQU4 $276
+line 608
+;608:		*dest++ = 0;
+ADDRLP4 16
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRFP4 0
+ADDRLP4 16
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 16
+INDIRP4
+CNSTI1 0
+ASGNI1
+LABELV $276
+line 609
+;609:}
+LABELV $271
+endproc N_strncpy 20 0
+proc Com_CharIsOneOfCharset 12 4
+ADDRFP4 0
+ADDRFP4 0
+INDIRI4
+CVII1 4
+ASGNI1
+line 617
+;610:
+;611:/*
+;612:==================
+;613:Com_CharIsOneOfCharset
+;614:==================
+;615:*/
+;616:static qboolean Com_CharIsOneOfCharset( char c, const char *set )
+;617:{
+line 618
+;618:	uint64_t i, n = (uint64_t)(strlen(set));
+ADDRFP4 4
+INDIRP4
+ARGP4
+ADDRLP4 8
+ADDRGP4 strlen
+CALLU4
+ASGNU4
+ADDRLP4 4
+ADDRLP4 8
+INDIRU4
+ASGNU4
+line 620
+;619:
+;620:	for( i = 0; i < n; i++ ) {
+ADDRLP4 0
+CNSTU4 0
+ASGNU4
+ADDRGP4 $282
+JUMPV
+LABELV $279
+line 621
+;621:		if( set[ i ] == c )
+ADDRLP4 0
+INDIRU4
+ADDRFP4 4
+INDIRP4
+ADDP4
+INDIRI1
+CVII4 1
+ADDRFP4 0
+INDIRI1
+CVII4 1
+NEI4 $283
+line 622
+;622:			return qtrue;
+CNSTI4 1
+RETI4
+ADDRGP4 $278
+JUMPV
+LABELV $283
+line 623
+;623:	}
+LABELV $280
+line 620
+ADDRLP4 0
+ADDRLP4 0
+INDIRU4
+CNSTU4 1
+ADDU4
+ASGNU4
+LABELV $282
+ADDRLP4 0
+INDIRU4
+ADDRLP4 4
+INDIRU4
+LTU4 $279
+line 625
+;624:
+;625:	return qfalse;
+CNSTI4 0
+RETI4
+LABELV $278
+endproc Com_CharIsOneOfCharset 12 4
+export Com_SkipCharset
+proc Com_SkipCharset 8 8
+line 634
+;626:}
+;627:
+;628:/*
+;629:==================
+;630:Com_SkipCharset
+;631:==================
+;632:*/
+;633:const char *Com_SkipCharset( const char *s, const char *sep )
+;634:{
+line 635
+;635:	const char	*p = s;
+ADDRLP4 0
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRGP4 $287
+JUMPV
+LABELV $286
+line 637
+;636:
+;637:	while( p ) {
+line 638
+;638:		if( Com_CharIsOneOfCharset( *p, sep ) )
+ADDRLP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+ARGI4
+ADDRFP4 4
+INDIRP4
+ARGP4
+ADDRLP4 4
+ADDRGP4 Com_CharIsOneOfCharset
+CALLI4
+ASGNI4
+ADDRLP4 4
+INDIRI4
+CNSTI4 0
+EQI4 $288
+line 639
+;639:			p++;
+ADDRLP4 0
+ADDRLP4 0
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+line 641
+;640:		else
+;641:			break;
+LABELV $290
+line 642
+;642:	}
+LABELV $287
+line 637
+ADDRLP4 0
+INDIRP4
+CVPU4 4
+CNSTU4 0
+NEU4 $286
+LABELV $288
+line 644
+;643:
+;644:	return p;
+ADDRLP4 0
+INDIRP4
+RETP4
+LABELV $285
+endproc Com_SkipCharset 8 8
+data
+align 4
+LABELV $292
+byte 4 0
+bss
+align 1
+LABELV $293
+skip 64000
+export va
+code
+proc va 12 12
+line 652
+;645:}
+;646:
+;647:
+;648:/*
+;649:Not thread safe
+;650:*/
+;651:const char* GDR_DECL va(const char *format, ...)
+;652:{
+line 658
+;653:	char *buf;
+;654:	va_list argptr;
+;655:	static uint32_t index = 0;
+;656:	static char string[2][32000];	// in case va is called by nested functions
+;657:
+;658:	buf = string[ index ];
+ADDRLP4 0
+CNSTU4 32000
+ADDRGP4 $292
+INDIRU4
+MULU4
+ADDRGP4 $293
+ADDP4
+ASGNP4
+line 659
+;659:	index ^= 1;
+ADDRLP4 8
+ADDRGP4 $292
+ASGNP4
+ADDRLP4 8
+INDIRP4
+ADDRLP4 8
+INDIRP4
+INDIRU4
+CNSTU4 1
+BXORU4
+ASGNU4
+line 661
+;660:
+;661:	va_start( argptr, format );
+ADDRLP4 4
+ADDRFP4 0+4
+ASGNP4
+line 663
+;662:#ifdef Q3_VM
+;663:	vsprintf( buf, format, argptr );
+ADDRLP4 0
+INDIRP4
+ARGP4
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRLP4 4
+INDIRP4
+ARGP4
+ADDRGP4 vsprintf
+CALLI4
+pop
+line 667
+;664:#else
+;665:	N_vsnprintf( buf, sizeof(*string), format, argptr );
+;666:#endif
+;667:	va_end( argptr );
+ADDRLP4 4
+CNSTP4 0
+ASGNP4
+line 669
+;668:
+;669:	return buf;
+ADDRLP4 0
+INDIRP4
+RETP4
+LABELV $291
+endproc va 12 12
+export Com_SkipTokens
+proc Com_SkipTokens 20 8
+line 678
+;670:}
+;671:
+;672:/*
+;673:==================
+;674:Com_SkipTokens
+;675:==================
+;676:*/
+;677:const char *Com_SkipTokens( const char *s, uint64_t numTokens, const char *sep )
+;678:{
+line 679
+;679:	uint64_t sepCount = 0;
+ADDRLP4 4
+CNSTU4 0
+ASGNU4
+line 680
+;680:	const char	*p = s;
+ADDRLP4 0
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRGP4 $297
+JUMPV
+LABELV $296
+line 682
+;681:
+;682:	while( sepCount < numTokens ) {
+line 683
+;683:		if( Com_CharIsOneOfCharset( *p++, sep ) ) {
+ADDRLP4 8
+ADDRLP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 0
+ADDRLP4 8
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 8
+INDIRP4
+INDIRI1
+CVII4 1
+ARGI4
+ADDRFP4 8
+INDIRP4
+ARGP4
+ADDRLP4 12
+ADDRGP4 Com_CharIsOneOfCharset
+CALLI4
+ASGNI4
+ADDRLP4 12
+INDIRI4
+CNSTI4 0
+EQI4 $299
+line 684
+;684:			sepCount++;
+ADDRLP4 4
+ADDRLP4 4
+INDIRU4
+CNSTU4 1
+ADDU4
+ASGNU4
+ADDRGP4 $302
+JUMPV
+LABELV $301
+line 686
+;685:			while( Com_CharIsOneOfCharset( *p, sep ) )
+;686:				p++;
+ADDRLP4 0
+ADDRLP4 0
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+LABELV $302
+line 685
+ADDRLP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+ARGI4
+ADDRFP4 8
+INDIRP4
+ARGP4
+ADDRLP4 16
+ADDRGP4 Com_CharIsOneOfCharset
+CALLI4
+ASGNI4
+ADDRLP4 16
+INDIRI4
+CNSTI4 0
+NEI4 $301
+line 687
+;687:		}
+ADDRGP4 $300
+JUMPV
+LABELV $299
+line 688
+;688:		else if( *p == '\0' )
+ADDRLP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 0
+NEI4 $304
+line 689
+;689:			break;
+ADDRGP4 $298
+JUMPV
+LABELV $304
+LABELV $300
+line 690
+;690:	}
+LABELV $297
+line 682
+ADDRLP4 4
+INDIRU4
+ADDRFP4 4
+INDIRU4
+LTU4 $296
+LABELV $298
+line 692
+;691:
+;692:	if( sepCount == numTokens )
+ADDRLP4 4
+INDIRU4
+ADDRFP4 4
+INDIRU4
+NEU4 $306
+line 693
+;693:		return p;
+ADDRLP4 0
+INDIRP4
+RETP4
+ADDRGP4 $295
+JUMPV
+LABELV $306
+line 695
+;694:	else
+;695:		return s;
+ADDRFP4 0
+INDIRP4
+RETP4
+LABELV $295
+endproc Com_SkipTokens 20 8
+export N_strlwr
+proc N_strlwr 8 0
+line 700
+;696:}
+;697:
+;698:
+;699:char *N_strlwr(char *s1)
+;700:{
+line 703
+;701:	char	*s;
+;702:
+;703:	s = s1;
+ADDRLP4 0
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRGP4 $310
+JUMPV
+LABELV $309
+line 704
+;704:	while ( *s ) {
+line 705
+;705:		*s = locase[(byte)*s];
+ADDRLP4 0
+INDIRP4
+ADDRLP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CVIU4 4
+CVUU1 4
+CVUI4 1
+ADDRGP4 locase
+ADDP4
+INDIRU1
+CVUI4 1
+CVII1 4
+ASGNI1
+line 706
+;706:		s++;
+ADDRLP4 0
+ADDRLP4 0
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+line 707
+;707:	}
+LABELV $310
+line 704
+ADDRLP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 0
+NEI4 $309
+line 708
+;708:	return s1;
+ADDRFP4 0
+INDIRP4
+RETP4
+LABELV $308
+endproc N_strlwr 8 0
+export N_strupr
+proc N_strupr 12 0
+line 712
+;709:}
+;710:
+;711:char *N_strupr(char *s1)
+;712:{
+line 715
+;713:	char *s;
+;714:
+;715:	s = s1;
+ADDRLP4 0
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRGP4 $314
+JUMPV
+LABELV $313
+line 716
+;716:	while (*s) {
+line 717
+;717:		if (*s >= 'a' && *s <= 'z')
+ADDRLP4 4
+ADDRLP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+ASGNI4
+ADDRLP4 4
+INDIRI4
+CNSTI4 97
+LTI4 $316
+ADDRLP4 4
+INDIRI4
+CNSTI4 122
+GTI4 $316
+line 718
+;718:			*s = *s - 'a' + 'A';
+ADDRLP4 0
+INDIRP4
+ADDRLP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 97
+SUBI4
+CNSTI4 65
+ADDI4
+CVII1 4
+ASGNI1
+LABELV $316
+line 719
+;719:		s++;
+ADDRLP4 0
+ADDRLP4 0
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+line 720
+;720:	}
+LABELV $314
+line 716
+ADDRLP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 0
+NEI4 $313
+line 721
+;721:	return s1;
+ADDRFP4 0
+INDIRP4
+RETP4
+LABELV $312
+endproc N_strupr 12 0
+export N_strcat
+proc N_strcat 12 12
+line 726
+;722:}
+;723:
+;724:// never goes past bounds or leaves without a terminating 0
+;725:void N_strcat(char *dest, size_t size, const char *src)
+;726:{
+line 729
+;727:	size_t l1;
+;728:
+;729:	l1 = strlen(dest);
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRLP4 4
+ADDRGP4 strlen
+CALLU4
+ASGNU4
+ADDRLP4 0
+ADDRLP4 4
+INDIRU4
+ASGNU4
+line 730
+;730:	if (l1 >= size)
+ADDRLP4 0
+INDIRU4
+ADDRFP4 4
+INDIRU4
+LTU4 $319
+line 732
+;731:#if defined(Q3_VM) || !defined(__cplusplus)
+;732:		SG_Error( "N_strcat: already overflowed" );
+ADDRGP4 $321
+ARGP4
+ADDRGP4 SG_Error
+CALLI4
+pop
+LABELV $319
+line 739
+;733:#elif defined(GDR_DLLCOMPILE)
+;734:		ri.N_Error("N_strcat: already overflowed");
+;735:#else
+;736:		N_Error("N_strcat: already overflowed");
+;737:#endif
+;738:	
+;739:	N_strncpy( dest + l1, src, size - l1 );
+ADDRLP4 0
+INDIRU4
+ADDRFP4 0
+INDIRP4
+ADDP4
+ARGP4
+ADDRFP4 8
+INDIRP4
+ARGP4
+ADDRFP4 4
+INDIRU4
+ADDRLP4 0
+INDIRU4
+SUBU4
+ARGU4
+ADDRGP4 N_strncpy
+CALLV
+pop
+line 740
+;740:}
+LABELV $318
+endproc N_strcat 12 12
+export N_stradd
+proc N_stradd 13 0
+line 743
+;741:
+;742:char *N_stradd(char *dst, const char *src)
+;743:{
+ADDRGP4 $324
+JUMPV
+LABELV $323
+line 746
+;744:	char c;
+;745:	while ( (c = *src++) != '\0' )
+;746:		*dst++ = c;
+ADDRLP4 4
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRFP4 0
+ADDRLP4 4
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 4
+INDIRP4
+ADDRLP4 0
+INDIRI1
+ASGNI1
+LABELV $324
+line 745
+ADDRLP4 8
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRFP4 4
+ADDRLP4 8
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 12
+ADDRLP4 8
+INDIRP4
+INDIRI1
+ASGNI1
+ADDRLP4 0
+ADDRLP4 12
+INDIRI1
+ASGNI1
+ADDRLP4 12
+INDIRI1
+CVII4 1
+CNSTI4 0
+NEI4 $323
+line 747
+;747:	*dst = '\0';
+ADDRFP4 0
+INDIRP4
+CNSTI1 0
+ASGNI1
+line 748
+;748:	return dst;
+ADDRFP4 0
+INDIRP4
+RETP4
+LABELV $322
+endproc N_stradd 13 0
+export N_stristr
+proc N_stristr 36 12
+line 756
+;749:}
+;750:
+;751:
+;752:/*
+;753:* Find the first occurrence of find in s.
+;754:*/
+;755:const char *N_stristr(const char *s, const char *find)
+;756:{
+line 760
+;757:	char c, sc;
+;758:	size_t len;
+;759:
+;760:	if ((c = *find++) != 0) {
+ADDRLP4 8
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRFP4 4
+ADDRLP4 8
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 12
+ADDRLP4 8
+INDIRP4
+INDIRI1
+ASGNI1
+ADDRLP4 1
+ADDRLP4 12
+INDIRI1
+ASGNI1
+ADDRLP4 12
+INDIRI1
+CVII4 1
+CNSTI4 0
+EQI4 $327
+line 761
+;761:		if (c >= 'a' && c <= 'z') {
+ADDRLP4 16
+ADDRLP4 1
+INDIRI1
+CVII4 1
+ASGNI4
+ADDRLP4 16
+INDIRI4
+CNSTI4 97
+LTI4 $329
+ADDRLP4 16
+INDIRI4
+CNSTI4 122
+GTI4 $329
+line 762
+;762:	    	c -= ('a' - 'A');
+ADDRLP4 1
+ADDRLP4 1
+INDIRI1
+CVII4 1
+CNSTI4 32
+SUBI4
+CVII1 4
+ASGNI1
+line 763
+;763:		}
+LABELV $329
+line 764
+;764: 	   	len = strlen(find);
+ADDRFP4 4
+INDIRP4
+ARGP4
+ADDRLP4 20
+ADDRGP4 strlen
+CALLU4
+ASGNU4
+ADDRLP4 4
+ADDRLP4 20
+INDIRU4
+ASGNU4
+LABELV $331
+line 765
+;765:    	do {
+LABELV $334
+line 766
+;766:    		do {
+line 767
+;767:        		if ((sc = *s++) == 0)
+ADDRLP4 24
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRFP4 0
+ADDRLP4 24
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 28
+ADDRLP4 24
+INDIRP4
+INDIRI1
+ASGNI1
+ADDRLP4 0
+ADDRLP4 28
+INDIRI1
+ASGNI1
+ADDRLP4 28
+INDIRI1
+CVII4 1
+CNSTI4 0
+NEI4 $337
+line 768
+;768:          			return NULL;
+CNSTP4 0
+RETP4
+ADDRGP4 $326
+JUMPV
+LABELV $337
+line 769
+;769:        		if (sc >= 'a' && sc <= 'z') {
+ADDRLP4 32
+ADDRLP4 0
+INDIRI1
+CVII4 1
+ASGNI4
+ADDRLP4 32
+INDIRI4
+CNSTI4 97
+LTI4 $339
+ADDRLP4 32
+INDIRI4
+CNSTI4 122
+GTI4 $339
+line 770
+;770:          			sc -= ('a' - 'A');
+ADDRLP4 0
+ADDRLP4 0
+INDIRI1
+CVII4 1
+CNSTI4 32
+SUBI4
+CVII1 4
+ASGNI1
+line 771
+;771:        		}
+LABELV $339
+line 772
+;772:      		} while (sc != c);
+LABELV $335
+ADDRLP4 0
+INDIRI1
+CVII4 1
+ADDRLP4 1
+INDIRI1
+CVII4 1
+NEI4 $334
+line 773
+;773:    	} while (N_stricmpn(s, find, len) != 0);
+LABELV $332
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRFP4 4
+INDIRP4
+ARGP4
+ADDRLP4 4
+INDIRU4
+ARGU4
+ADDRLP4 24
+ADDRGP4 N_stricmpn
+CALLI4
+ASGNI4
+ADDRLP4 24
+INDIRI4
+CNSTI4 0
+NEI4 $331
+line 774
+;774:   		s--;
+ADDRFP4 0
+ADDRFP4 0
+INDIRP4
+CNSTI4 -1
+ADDP4
+ASGNP4
+line 775
+;775:  	}
+LABELV $327
+line 776
+;776:  	return s;
+ADDRFP4 0
+INDIRP4
+RETP4
+LABELV $326
+endproc N_stristr 36 12
+export N_replace
+proc N_replace 84 8
+line 780
+;777:}
+;778:
+;779:int N_replace(const char *str1, const char *str2, char *src, size_t max_len)
+;780:{
+line 786
+;781:	size_t len1, len2, count;
+;782:	ssize_t d;
+;783:	const char *s0, *s1, *s2, *max;
+;784:	char *match, *dst;
+;785:
+;786:	match = strstr(src, str1);
+ADDRFP4 8
+INDIRP4
+ARGP4
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRLP4 40
+ADDRGP4 strstr
+CALLP4
+ASGNP4
+ADDRLP4 4
+ADDRLP4 40
+INDIRP4
+ASGNP4
+line 788
+;787:
+;788:	if (!match)
+ADDRLP4 4
+INDIRP4
+CVPU4 4
+CNSTU4 0
+NEU4 $342
+line 789
+;789:		return 0;
+CNSTI4 0
+RETI4
+ADDRGP4 $341
+JUMPV
+LABELV $342
+line 791
+;790:
+;791:	count = 0; // replace count
+ADDRLP4 20
+CNSTU4 0
+ASGNU4
+line 793
+;792:
+;793:    len1 = strlen(str1);
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRLP4 44
+ADDRGP4 strlen
+CALLU4
+ASGNU4
+ADDRLP4 24
+ADDRLP4 44
+INDIRU4
+ASGNU4
+line 794
+;794:    len2 = strlen(str2);
+ADDRFP4 4
+INDIRP4
+ARGP4
+ADDRLP4 48
+ADDRGP4 strlen
+CALLU4
+ASGNU4
+ADDRLP4 36
+ADDRLP4 48
+INDIRU4
+ASGNU4
+line 795
+;795:    d = len2 - len1;
+ADDRLP4 28
+ADDRLP4 36
+INDIRU4
+ADDRLP4 24
+INDIRU4
+SUBU4
+CVUI4 4
+ASGNI4
+line 797
+;796:
+;797:    if (d > 0) { // expand and replace mode
+ADDRLP4 28
+INDIRI4
+CNSTI4 0
+LEI4 $344
+line 798
+;798:        max = src + max_len;
+ADDRLP4 32
+ADDRFP4 12
+INDIRU4
+ADDRFP4 8
+INDIRP4
+ADDP4
+ASGNP4
+line 799
+;799:        src += strlen(src);
+ADDRFP4 8
+INDIRP4
+ARGP4
+ADDRLP4 52
+ADDRGP4 strlen
+CALLU4
+ASGNU4
+ADDRFP4 8
+ADDRLP4 52
+INDIRU4
+ADDRFP4 8
+INDIRP4
+ADDP4
+ASGNP4
+LABELV $346
+line 801
+;800:
+;801:        do { // expand source string
+line 802
+;802:			s1 = src;
+ADDRLP4 8
+ADDRFP4 8
+INDIRP4
+ASGNP4
+line 803
+;803:            src += d;
+ADDRFP4 8
+ADDRLP4 28
+INDIRI4
+ADDRFP4 8
+INDIRP4
+ADDP4
+ASGNP4
+line 804
+;804:            if (src >= max)
+ADDRFP4 8
+INDIRP4
+CVPU4 4
+ADDRLP4 32
+INDIRP4
+CVPU4 4
+LTU4 $349
+line 805
+;805:                return count;
+ADDRLP4 20
+INDIRU4
+CVUI4 4
+RETI4
+ADDRGP4 $341
+JUMPV
+LABELV $349
+line 806
+;806:            dst = src;
+ADDRLP4 12
+ADDRFP4 8
+INDIRP4
+ASGNP4
+line 808
+;807:            
+;808:            s0 = match + len1;
+ADDRLP4 16
+ADDRLP4 24
+INDIRU4
+ADDRLP4 4
+INDIRP4
+ADDP4
+ASGNP4
+ADDRGP4 $352
+JUMPV
+LABELV $351
+line 811
+;809:
+;810:            while (s1 >= s0)
+;811:                *dst-- = *s1--;
+ADDRLP4 56
+ADDRLP4 12
+INDIRP4
+ASGNP4
+ADDRLP4 64
+CNSTI4 -1
+ASGNI4
+ADDRLP4 12
+ADDRLP4 56
+INDIRP4
+ADDRLP4 64
+INDIRI4
+ADDP4
+ASGNP4
+ADDRLP4 60
+ADDRLP4 8
+INDIRP4
+ASGNP4
+ADDRLP4 8
+ADDRLP4 60
+INDIRP4
+ADDRLP4 64
+INDIRI4
+ADDP4
+ASGNP4
+ADDRLP4 56
+INDIRP4
+ADDRLP4 60
+INDIRP4
+INDIRI1
+ASGNI1
+LABELV $352
+line 810
+ADDRLP4 8
+INDIRP4
+CVPU4 4
+ADDRLP4 16
+INDIRP4
+CVPU4 4
+GEU4 $351
+line 814
+;812:			
+;813:			// replace match
+;814:            s2 = str2;
+ADDRLP4 0
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRGP4 $355
+JUMPV
+LABELV $354
+line 816
+;815:			while (*s2)
+;816:                *match++ = *s2++;
+ADDRLP4 68
+ADDRLP4 4
+INDIRP4
+ASGNP4
+ADDRLP4 76
+CNSTI4 1
+ASGNI4
+ADDRLP4 4
+ADDRLP4 68
+INDIRP4
+ADDRLP4 76
+INDIRI4
+ADDP4
+ASGNP4
+ADDRLP4 72
+ADDRLP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 0
+ADDRLP4 72
+INDIRP4
+ADDRLP4 76
+INDIRI4
+ADDP4
+ASGNP4
+ADDRLP4 68
+INDIRP4
+ADDRLP4 72
+INDIRP4
+INDIRI1
+ASGNI1
+LABELV $355
+line 815
+ADDRLP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 0
+NEI4 $354
+line 818
+;817:			
+;818:            match = strstr(match, str1);
+ADDRLP4 4
+INDIRP4
+ARGP4
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRLP4 80
+ADDRGP4 strstr
+CALLP4
+ASGNP4
+ADDRLP4 4
+ADDRLP4 80
+INDIRP4
+ASGNP4
+line 820
+;819:
+;820:            count++;
+ADDRLP4 20
+ADDRLP4 20
+INDIRU4
+CNSTU4 1
+ADDU4
+ASGNU4
+line 821
+;821:		} while (match);
+LABELV $347
+ADDRLP4 4
+INDIRP4
+CVPU4 4
+CNSTU4 0
+NEU4 $346
+line 823
+;822:
+;823:        return count;
+ADDRLP4 20
+INDIRU4
+CVUI4 4
+RETI4
+ADDRGP4 $341
+JUMPV
+LABELV $344
+line 825
+;824:    } 
+;825:    else if (d < 0) { // shrink and replace mode
+ADDRLP4 28
+INDIRI4
+CNSTI4 0
+GEI4 $357
+LABELV $359
+line 826
+;826:        do  { // shrink source string
+line 827
+;827:            s1 = match + len1;
+ADDRLP4 8
+ADDRLP4 24
+INDIRU4
+ADDRLP4 4
+INDIRP4
+ADDP4
+ASGNP4
+line 828
+;828:            dst = match + len2;
+ADDRLP4 12
+ADDRLP4 36
+INDIRU4
+ADDRLP4 4
+INDIRP4
+ADDP4
+ASGNP4
+LABELV $362
+line 829
+;829:            while ( (*dst++ = *s1++) != '\0' );
+LABELV $363
+ADDRLP4 52
+ADDRLP4 12
+INDIRP4
+ASGNP4
+ADDRLP4 60
+CNSTI4 1
+ASGNI4
+ADDRLP4 12
+ADDRLP4 52
+INDIRP4
+ADDRLP4 60
+INDIRI4
+ADDP4
+ASGNP4
+ADDRLP4 56
+ADDRLP4 8
+INDIRP4
+ASGNP4
+ADDRLP4 8
+ADDRLP4 56
+INDIRP4
+ADDRLP4 60
+INDIRI4
+ADDP4
+ASGNP4
+ADDRLP4 64
+ADDRLP4 56
+INDIRP4
+INDIRI1
+ASGNI1
+ADDRLP4 52
+INDIRP4
+ADDRLP4 64
+INDIRI1
+ASGNI1
+ADDRLP4 64
+INDIRI1
+CVII4 1
+CNSTI4 0
+NEI4 $362
+line 832
+;830:			
+;831:			//replace match
+;832:            s2 = str2;
+ADDRLP4 0
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRGP4 $366
+JUMPV
+LABELV $365
+line 833
+;833:			while ( *s2 ) {
+line 834
+;834:				*match++ = *s2++;
+ADDRLP4 68
+ADDRLP4 4
+INDIRP4
+ASGNP4
+ADDRLP4 76
+CNSTI4 1
+ASGNI4
+ADDRLP4 4
+ADDRLP4 68
+INDIRP4
+ADDRLP4 76
+INDIRI4
+ADDP4
+ASGNP4
+ADDRLP4 72
+ADDRLP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 0
+ADDRLP4 72
+INDIRP4
+ADDRLP4 76
+INDIRI4
+ADDP4
+ASGNP4
+ADDRLP4 68
+INDIRP4
+ADDRLP4 72
+INDIRP4
+INDIRI1
+ASGNI1
+line 835
+;835:			}
+LABELV $366
+line 833
+ADDRLP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 0
+NEI4 $365
+line 837
+;836:
+;837:            match = strstr( match, str1 );
+ADDRLP4 4
+INDIRP4
+ARGP4
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRLP4 68
+ADDRGP4 strstr
+CALLP4
+ASGNP4
+ADDRLP4 4
+ADDRLP4 68
+INDIRP4
+ASGNP4
+line 839
+;838:
+;839:            count++;
+ADDRLP4 20
+ADDRLP4 20
+INDIRU4
+CNSTU4 1
+ADDU4
+ASGNU4
+line 840
+;840:        } 
+LABELV $360
+line 841
+;841:        while ( match );
+ADDRLP4 4
+INDIRP4
+CVPU4 4
+CNSTU4 0
+NEU4 $359
+line 843
+;842:
+;843:        return count;
+ADDRLP4 20
+INDIRU4
+CVUI4 4
+RETI4
+ADDRGP4 $341
+JUMPV
+LABELV $357
+line 845
+;844:    }
+;845:    else {
+LABELV $368
+line 846
+;846:	    do { // just replace match
+line 847
+;847:    	    s2 = str2;
+ADDRLP4 0
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRGP4 $372
+JUMPV
+LABELV $371
+line 849
+;848:			while (*s2)
+;849:				*match++ = *s2++;
+ADDRLP4 52
+ADDRLP4 4
+INDIRP4
+ASGNP4
+ADDRLP4 60
+CNSTI4 1
+ASGNI4
+ADDRLP4 4
+ADDRLP4 52
+INDIRP4
+ADDRLP4 60
+INDIRI4
+ADDP4
+ASGNP4
+ADDRLP4 56
+ADDRLP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 0
+ADDRLP4 56
+INDIRP4
+ADDRLP4 60
+INDIRI4
+ADDP4
+ASGNP4
+ADDRLP4 52
+INDIRP4
+ADDRLP4 56
+INDIRP4
+INDIRI1
+ASGNI1
+LABELV $372
+line 848
+ADDRLP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 0
+NEI4 $371
+line 851
+;850:
+;851:    	    match = strstr(match, str1);
+ADDRLP4 4
+INDIRP4
+ARGP4
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRLP4 64
+ADDRGP4 strstr
+CALLP4
+ASGNP4
+ADDRLP4 4
+ADDRLP4 64
+INDIRP4
+ASGNP4
+line 852
+;852:    	    count++;
+ADDRLP4 20
+ADDRLP4 20
+INDIRU4
+CNSTU4 1
+ADDU4
+ASGNU4
+line 853
+;853:		}  while (match);
+LABELV $369
+ADDRLP4 4
+INDIRP4
+CVPU4 4
+CNSTU4 0
+NEU4 $368
+line 854
+;854:	}
+line 856
+;855:
+;856:	return count;
+ADDRLP4 20
+INDIRU4
+CVUI4 4
+RETI4
+LABELV $341
+endproc N_replace 84 8
+export N_strlen
+proc N_strlen 4 0
+line 860
+;857:}
+;858:
+;859:size_t N_strlen (const char *str)
+;860:{
+line 861
+;861:	size_t count = 0;
+ADDRLP4 0
+CNSTU4 0
+ASGNU4
+ADDRGP4 $376
+JUMPV
+LABELV $375
+line 862
+;862:    while (str[count]) {
+line 863
+;863:        ++count;
+ADDRLP4 0
+ADDRLP4 0
+INDIRU4
+CNSTU4 1
+ADDU4
+ASGNU4
+line 864
+;864:    }
+LABELV $376
+line 862
+ADDRLP4 0
+INDIRU4
+ADDRFP4 0
+INDIRP4
+ADDP4
+INDIRI1
+CVII4 1
+CNSTI4 0
+NEI4 $375
+line 865
+;865:	return count;
+ADDRLP4 0
+INDIRU4
+RETU4
+LABELV $374
+endproc N_strlen 4 0
+export N_strrchr
+proc N_strrchr 20 4
+ADDRFP4 4
+ADDRFP4 4
+INDIRI4
+CVII1 4
+ASGNI1
+line 869
+;866:}
+;867:
+;868:char *N_strrchr(char *str, char c)
+;869:{
+line 870
+;870:    char *s = str;
+ADDRLP4 0
+ADDRFP4 0
+INDIRP4
+ASGNP4
+line 871
+;871:    size_t len = N_strlen(s);
+ADDRLP4 0
+INDIRP4
+ARGP4
+ADDRLP4 8
+ADDRGP4 N_strlen
+CALLU4
+ASGNU4
+ADDRLP4 4
+ADDRLP4 8
+INDIRU4
+ASGNU4
+line 872
+;872:    s += len;
+ADDRLP4 0
+ADDRLP4 4
+INDIRU4
+ADDRLP4 0
+INDIRP4
+ADDP4
+ASGNP4
+ADDRGP4 $380
+JUMPV
+LABELV $379
+line 874
+;873:    while (len--)
+;874:    	if (*--s == c) return s;
+ADDRLP4 12
+ADDRLP4 0
+INDIRP4
+CNSTI4 -1
+ADDP4
+ASGNP4
+ADDRLP4 0
+ADDRLP4 12
+INDIRP4
+ASGNP4
+ADDRLP4 12
+INDIRP4
+INDIRI1
+CVII4 1
+ADDRFP4 4
+INDIRI1
+CVII4 1
+NEI4 $382
+ADDRLP4 0
+INDIRP4
+RETP4
+ADDRGP4 $378
+JUMPV
+LABELV $382
+LABELV $380
+line 873
+ADDRLP4 16
+ADDRLP4 4
+INDIRU4
+ASGNU4
+ADDRLP4 4
+ADDRLP4 16
+INDIRU4
+CNSTU4 1
+SUBU4
+ASGNU4
+ADDRLP4 16
+INDIRU4
+CNSTU4 0
+NEU4 $379
+line 875
+;875:    return 0;
+CNSTP4 0
+RETP4
+LABELV $378
+endproc N_strrchr 20 4
+export N_strcmp
+proc N_strcmp 8 0
+line 879
+;876:}
+;877:
+;878:int N_strcmp (const char *str1, const char *str2)
+;879:{
+line 880
+;880:    const char *s1 = str1;
+ADDRLP4 0
+ADDRFP4 0
+INDIRP4
+ASGNP4
+line 881
+;881:    const char *s2 = str2;
+ADDRLP4 4
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRGP4 $386
+JUMPV
+LABELV $385
+line 882
+;882:	while (1) {
+line 883
+;883:		if (*s1 != *s2)
+ADDRLP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+ADDRLP4 4
+INDIRP4
+INDIRI1
+CVII4 1
+EQI4 $388
+line 884
+;884:			return -1;              // strings not equal    
+CNSTI4 -1
+RETI4
+ADDRGP4 $384
+JUMPV
+LABELV $388
+line 885
+;885:		if (!*s1)
+ADDRLP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 0
+NEI4 $390
+line 886
+;886:			return 1;               // strings are equal
+CNSTI4 1
+RETI4
+ADDRGP4 $384
+JUMPV
+LABELV $390
+line 887
+;887:		s1++;
+ADDRLP4 0
+ADDRLP4 0
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+line 888
+;888:		s2++;
+ADDRLP4 4
+ADDRLP4 4
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+line 889
+;889:	}
+LABELV $386
+line 882
+ADDRGP4 $385
+JUMPV
+line 891
+;890:	
+;891:	return 0;
+CNSTI4 0
+RETI4
+LABELV $384
+endproc N_strcmp 8 0
+export N_streq
+proc N_streq 20 0
+line 895
+;892:}
+;893:
+;894:qboolean N_streq(const char *str1, const char *str2)
+;895:{
+line 896
+;896:	const char *s1 = str1;
+ADDRLP4 0
+ADDRFP4 0
+INDIRP4
+ASGNP4
+line 897
+;897:	const char *s2 = str2;
+ADDRLP4 4
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRGP4 $394
+JUMPV
+LABELV $393
+line 899
+;898:	
+;899:	while (*s2 && *s1) {
+line 900
+;900:		if (*s1++ != *s2++)
+ADDRLP4 8
+ADDRLP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 16
+CNSTI4 1
+ASGNI4
+ADDRLP4 0
+ADDRLP4 8
+INDIRP4
+ADDRLP4 16
+INDIRI4
+ADDP4
+ASGNP4
+ADDRLP4 12
+ADDRLP4 4
+INDIRP4
+ASGNP4
+ADDRLP4 4
+ADDRLP4 12
+INDIRP4
+ADDRLP4 16
+INDIRI4
+ADDP4
+ASGNP4
+ADDRLP4 8
+INDIRP4
+INDIRI1
+CVII4 1
+ADDRLP4 12
+INDIRP4
+INDIRI1
+CVII4 1
+EQI4 $396
+line 901
+;901:			return qfalse;
+CNSTI4 0
+RETI4
+ADDRGP4 $392
+JUMPV
+LABELV $396
+line 902
+;902:	}
+LABELV $394
+line 899
+ADDRLP4 8
+CNSTI4 0
+ASGNI4
+ADDRLP4 4
+INDIRP4
+INDIRI1
+CVII4 1
+ADDRLP4 8
+INDIRI4
+EQI4 $398
+ADDRLP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+ADDRLP4 8
+INDIRI4
+NEI4 $393
+LABELV $398
+line 903
+;903:	return qtrue;
+CNSTI4 1
+RETI4
+LABELV $392
+endproc N_streq 20 0
+export N_strneq
+proc N_strneq 20 0
+line 907
+;904:}
+;905:
+;906:qboolean N_strneq(const char *str1, const char *str2, size_t n)
+;907:{
+line 908
+;908:	const char *s1 = str1;
+ADDRLP4 0
+ADDRFP4 0
+INDIRP4
+ASGNP4
+line 909
+;909:	const char *s2 = str2;
+ADDRLP4 4
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRGP4 $401
+JUMPV
+LABELV $400
+line 911
+;910:
+;911:	while (*s1 && n) {
+line 912
+;912:		if (*s1++ != *s2++)
+ADDRLP4 8
+ADDRLP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 16
+CNSTI4 1
+ASGNI4
+ADDRLP4 0
+ADDRLP4 8
+INDIRP4
+ADDRLP4 16
+INDIRI4
+ADDP4
+ASGNP4
+ADDRLP4 12
+ADDRLP4 4
+INDIRP4
+ASGNP4
+ADDRLP4 4
+ADDRLP4 12
+INDIRP4
+ADDRLP4 16
+INDIRI4
+ADDP4
+ASGNP4
+ADDRLP4 8
+INDIRP4
+INDIRI1
+CVII4 1
+ADDRLP4 12
+INDIRP4
+INDIRI1
+CVII4 1
+EQI4 $403
+line 913
+;913:			return qfalse;
+CNSTI4 0
+RETI4
+ADDRGP4 $399
+JUMPV
+LABELV $403
+line 914
+;914:		n--;
+ADDRFP4 8
+ADDRFP4 8
+INDIRU4
+CNSTU4 1
+SUBU4
+ASGNU4
+line 915
+;915:	}
+LABELV $401
+line 911
+ADDRLP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 0
+EQI4 $405
+ADDRFP4 8
+INDIRU4
+CNSTU4 0
+NEU4 $400
+LABELV $405
+line 916
+;916:	return qtrue;
+CNSTI4 1
+RETI4
+LABELV $399
+endproc N_strneq 20 0
+export N_strncmp
+proc N_strncmp 24 0
+line 920
+;917:}
+;918:
+;919:int N_strncmp( const char *s1, const char *s2, size_t n )
+;920:{
+LABELV $407
+line 923
+;921:	int c1, c2;
+;922:	
+;923:	do {
+line 924
+;924:		c1 = *s1++;
+ADDRLP4 8
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRFP4 0
+ADDRLP4 8
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 0
+ADDRLP4 8
+INDIRP4
+INDIRI1
+CVII4 1
+ASGNI4
+line 925
+;925:		c2 = *s2++;
+ADDRLP4 12
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRFP4 4
+ADDRLP4 12
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 4
+ADDRLP4 12
+INDIRP4
+INDIRI1
+CVII4 1
+ASGNI4
+line 927
+;926:
+;927:		if (!n--) {
+ADDRLP4 16
+ADDRFP4 8
+INDIRU4
+ASGNU4
+ADDRFP4 8
+ADDRLP4 16
+INDIRU4
+CNSTU4 1
+SUBU4
+ASGNU4
+ADDRLP4 16
+INDIRU4
+CNSTU4 0
+NEU4 $410
+line 928
+;928:			return 0;		// strings are equal until end point
+CNSTI4 0
+RETI4
+ADDRGP4 $406
+JUMPV
+LABELV $410
+line 931
+;929:		}
+;930:		
+;931:		if (c1 != c2) {
+ADDRLP4 0
+INDIRI4
+ADDRLP4 4
+INDIRI4
+EQI4 $412
+line 932
+;932:			return c1 < c2 ? -1 : 1;
+ADDRLP4 0
+INDIRI4
+ADDRLP4 4
+INDIRI4
+GEI4 $415
+ADDRLP4 20
+CNSTI4 -1
+ASGNI4
+ADDRGP4 $416
+JUMPV
+LABELV $415
+ADDRLP4 20
+CNSTI4 1
+ASGNI4
+LABELV $416
+ADDRLP4 20
+INDIRI4
+RETI4
+ADDRGP4 $406
+JUMPV
+LABELV $412
+line 934
+;933:		}
+;934:	} while (c1);
+LABELV $408
+ADDRLP4 0
+INDIRI4
+CNSTI4 0
+NEI4 $407
+line 936
+;935:	
+;936:	return 0;		// strings are equal
+CNSTI4 0
+RETI4
+LABELV $406
+endproc N_strncmp 24 0
+export N_stricmpn
+proc N_stricmpn 32 0
+line 940
+;937:}
+;938:
+;939:int N_stricmpn (const char *str1, const char *str2, size_t n)
+;940:{
+line 944
+;941:	int c1, c2;
+;942:
+;943:	// bk001129 - moved in 1.17 fix not in id codebase
+;944:    if (str1 == NULL) {
+ADDRFP4 0
+INDIRP4
+CVPU4 4
+CNSTU4 0
+NEU4 $418
+line 945
+;945:    	if (str2 == NULL )
+ADDRFP4 4
+INDIRP4
+CVPU4 4
+CNSTU4 0
+NEU4 $420
+line 946
+;946:            return 0;
+CNSTI4 0
+RETI4
+ADDRGP4 $417
+JUMPV
+LABELV $420
+line 948
+;947:        else
+;948:            return -1;
+CNSTI4 -1
+RETI4
+ADDRGP4 $417
+JUMPV
+LABELV $418
+line 950
+;949:    }
+;950:    else if (str2 == NULL)
+ADDRFP4 4
+INDIRP4
+CVPU4 4
+CNSTU4 0
+NEU4 $422
+line 951
+;951:        return 1;
+CNSTI4 1
+RETI4
+ADDRGP4 $417
+JUMPV
+LABELV $422
+LABELV $424
+line 955
+;952:
+;953:
+;954:	
+;955:	do {
+line 956
+;956:		c1 = *str1++;
+ADDRLP4 8
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRFP4 0
+ADDRLP4 8
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 0
+ADDRLP4 8
+INDIRP4
+INDIRI1
+CVII4 1
+ASGNI4
+line 957
+;957:		c2 = *str2++;
+ADDRLP4 12
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRFP4 4
+ADDRLP4 12
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 4
+ADDRLP4 12
+INDIRP4
+INDIRI1
+CVII4 1
+ASGNI4
+line 959
+;958:
+;959:		if (!n--) {
+ADDRLP4 16
+ADDRFP4 8
+INDIRU4
+ASGNU4
+ADDRFP4 8
+ADDRLP4 16
+INDIRU4
+CNSTU4 1
+SUBU4
+ASGNU4
+ADDRLP4 16
+INDIRU4
+CNSTU4 0
+NEU4 $427
+line 960
+;960:			return 0;		// strings are equal until end point
+CNSTI4 0
+RETI4
+ADDRGP4 $417
+JUMPV
+LABELV $427
+line 963
+;961:		}
+;962:		
+;963:		if (c1 != c2) {
+ADDRLP4 0
+INDIRI4
+ADDRLP4 4
+INDIRI4
+EQI4 $429
+line 964
+;964:			if (c1 >= 'a' && c1 <= 'z') {
+ADDRLP4 0
+INDIRI4
+CNSTI4 97
+LTI4 $431
+ADDRLP4 0
+INDIRI4
+CNSTI4 122
+GTI4 $431
+line 965
+;965:				c1 -= ('a' - 'A');
+ADDRLP4 0
+ADDRLP4 0
+INDIRI4
+CNSTI4 32
+SUBI4
+ASGNI4
+line 966
+;966:			}
+LABELV $431
+line 967
+;967:			if (c2 >= 'a' && c2 <= 'z') {
+ADDRLP4 4
+INDIRI4
+CNSTI4 97
+LTI4 $433
+ADDRLP4 4
+INDIRI4
+CNSTI4 122
+GTI4 $433
+line 968
+;968:				c2 -= ('a' - 'A');
+ADDRLP4 4
+ADDRLP4 4
+INDIRI4
+CNSTI4 32
+SUBI4
+ASGNI4
+line 969
+;969:			}
+LABELV $433
+line 970
+;970:			if (c1 != c2) {
+ADDRLP4 0
+INDIRI4
+ADDRLP4 4
+INDIRI4
+EQI4 $435
+line 971
+;971:				return c1 < c2 ? -1 : 1;
+ADDRLP4 0
+INDIRI4
+ADDRLP4 4
+INDIRI4
+GEI4 $438
+ADDRLP4 28
+CNSTI4 -1
+ASGNI4
+ADDRGP4 $439
+JUMPV
+LABELV $438
+ADDRLP4 28
+CNSTI4 1
+ASGNI4
+LABELV $439
+ADDRLP4 28
+INDIRI4
+RETI4
+ADDRGP4 $417
+JUMPV
+LABELV $435
+line 973
+;972:			}
+;973:		}
+LABELV $429
+line 974
+;974:	} while (c1);
+LABELV $425
+ADDRLP4 0
+INDIRI4
+CNSTI4 0
+NEI4 $424
+line 976
+;975:	
+;976:	return 0;		// strings are equal
+CNSTI4 0
+RETI4
+LABELV $417
+endproc N_stricmpn 32 0
+export N_stricmp
+proc N_stricmp 24 0
+line 980
+;977:}
+;978:
+;979:int N_stricmp( const char *s1, const char *s2 ) 
+;980:{
+line 983
+;981:	unsigned char c1, c2;
+;982:
+;983:	if (s1 == NULL)  {
+ADDRFP4 0
+INDIRP4
+CVPU4 4
+CNSTU4 0
+NEU4 $441
+line 984
+;984:		if (s2 == NULL)
+ADDRFP4 4
+INDIRP4
+CVPU4 4
+CNSTU4 0
+NEU4 $443
+line 985
+;985:			return 0;
+CNSTI4 0
+RETI4
+ADDRGP4 $440
+JUMPV
+LABELV $443
+line 987
+;986:		else
+;987:			return -1;
+CNSTI4 -1
+RETI4
+ADDRGP4 $440
+JUMPV
+LABELV $441
+line 989
+;988:	}
+;989:	else if (s2 == NULL)
+ADDRFP4 4
+INDIRP4
+CVPU4 4
+CNSTU4 0
+NEU4 $445
+line 990
+;990:		return 1;
+CNSTI4 1
+RETI4
+ADDRGP4 $440
+JUMPV
+LABELV $445
+LABELV $447
+line 992
+;991:	
+;992:	do {
+line 993
+;993:		c1 = *s1++;
+ADDRLP4 4
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRFP4 0
+ADDRLP4 4
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 0
+ADDRLP4 4
+INDIRP4
+INDIRI1
+CVII4 1
+CVIU4 4
+CVUU1 4
+ASGNU1
+line 994
+;994:		c2 = *s2++;
+ADDRLP4 8
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRFP4 4
+ADDRLP4 8
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 1
+ADDRLP4 8
+INDIRP4
+INDIRI1
+CVII4 1
+CVIU4 4
+CVUU1 4
+ASGNU1
+line 996
+;995:
+;996:		if (c1 != c2) {
+ADDRLP4 0
+INDIRU1
+CVUI4 1
+ADDRLP4 1
+INDIRU1
+CVUI4 1
+EQI4 $450
+line 997
+;997:			if ( c1 <= 'Z' && c1 >= 'A' )
+ADDRLP4 12
+ADDRLP4 0
+INDIRU1
+CVUI4 1
+ASGNI4
+ADDRLP4 12
+INDIRI4
+CNSTI4 90
+GTI4 $452
+ADDRLP4 12
+INDIRI4
+CNSTI4 65
+LTI4 $452
+line 998
+;998:				c1 += ('a' - 'A');
+ADDRLP4 0
+ADDRLP4 0
+INDIRU1
+CVUI4 1
+CNSTI4 32
+ADDI4
+CVIU4 4
+CVUU1 4
+ASGNU1
+LABELV $452
+line 1000
+;999:
+;1000:			if ( c2 <= 'Z' && c2 >= 'A' )
+ADDRLP4 16
+ADDRLP4 1
+INDIRU1
+CVUI4 1
+ASGNI4
+ADDRLP4 16
+INDIRI4
+CNSTI4 90
+GTI4 $454
+ADDRLP4 16
+INDIRI4
+CNSTI4 65
+LTI4 $454
+line 1001
+;1001:				c2 += ('a' - 'A');
+ADDRLP4 1
+ADDRLP4 1
+INDIRU1
+CVUI4 1
+CNSTI4 32
+ADDI4
+CVIU4 4
+CVUU1 4
+ASGNU1
+LABELV $454
+line 1003
+;1002:
+;1003:			if ( c1 != c2 ) 
+ADDRLP4 0
+INDIRU1
+CVUI4 1
+ADDRLP4 1
+INDIRU1
+CVUI4 1
+EQI4 $456
+line 1004
+;1004:				return c1 < c2 ? -1 : 1;
+ADDRLP4 0
+INDIRU1
+CVUI4 1
+ADDRLP4 1
+INDIRU1
+CVUI4 1
+GEI4 $459
+ADDRLP4 20
+CNSTI4 -1
+ASGNI4
+ADDRGP4 $460
+JUMPV
+LABELV $459
+ADDRLP4 20
+CNSTI4 1
+ASGNI4
+LABELV $460
+ADDRLP4 20
+INDIRI4
+RETI4
+ADDRGP4 $440
+JUMPV
+LABELV $456
+line 1005
+;1005:		}
+LABELV $450
+line 1006
+;1006:	} while ( c1 != '\0' );
+LABELV $448
+ADDRLP4 0
+INDIRU1
+CVUI4 1
+CNSTI4 0
+NEI4 $447
+line 1008
+;1007:
+;1008:	return 0;
+CNSTI4 0
+RETI4
+LABELV $440
+endproc N_stricmp 24 0
+export N_atoi
+proc N_atoi 40 0
+line 1012
+;1009:}
+;1010:
+;1011:int N_atoi (const char *s)
+;1012:{
+line 1016
+;1013:	int val;
+;1014:	int sign;
+;1015:	int c;
+;1016:    const char* str = s;
+ADDRLP4 8
+ADDRFP4 0
+INDIRP4
+ASGNP4
+line 1018
+;1017:	
+;1018:	if (*str == '-') {
+ADDRLP4 8
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 45
+NEI4 $462
+line 1019
+;1019:		sign = -1;
+ADDRLP4 12
+CNSTI4 -1
+ASGNI4
+line 1020
+;1020:		str++;
+ADDRLP4 8
+ADDRLP4 8
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+line 1021
+;1021:	}
+ADDRGP4 $463
+JUMPV
+LABELV $462
+line 1023
+;1022:	else
+;1023:		sign = 1;
+ADDRLP4 12
+CNSTI4 1
+ASGNI4
+LABELV $463
+line 1025
+;1024:		
+;1025:	val = 0;
+ADDRLP4 4
+CNSTI4 0
+ASGNI4
+line 1030
+;1026:
+;1027:    //
+;1028:    // check for hex
+;1029:    //
+;1030:	if (str[0] == '0' && (str[1] == 'x' || str[1] == 'X') ) {
+ADDRLP4 8
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 48
+NEI4 $464
+ADDRLP4 20
+ADDRLP4 8
+INDIRP4
+CNSTI4 1
+ADDP4
+INDIRI1
+CVII4 1
+ASGNI4
+ADDRLP4 20
+INDIRI4
+CNSTI4 120
+EQI4 $466
+ADDRLP4 20
+INDIRI4
+CNSTI4 88
+NEI4 $464
+LABELV $466
+line 1031
+;1031:		str += 2;
+ADDRLP4 8
+ADDRLP4 8
+INDIRP4
+CNSTI4 2
+ADDP4
+ASGNP4
+ADDRGP4 $468
+JUMPV
+LABELV $467
+line 1032
+;1032:		while (1) {
+line 1033
+;1033:			c = *str++;
+ADDRLP4 24
+ADDRLP4 8
+INDIRP4
+ASGNP4
+ADDRLP4 8
+ADDRLP4 24
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 0
+ADDRLP4 24
+INDIRP4
+INDIRI1
+CVII4 1
+ASGNI4
+line 1034
+;1034:			if (c >= '0' && c <= '9')
+ADDRLP4 0
+INDIRI4
+CNSTI4 48
+LTI4 $470
+ADDRLP4 0
+INDIRI4
+CNSTI4 57
+GTI4 $470
+line 1035
+;1035:				val = (val<<4) + c - '0';
+ADDRLP4 4
+ADDRLP4 4
+INDIRI4
+CNSTI4 4
+LSHI4
+ADDRLP4 0
+INDIRI4
+ADDI4
+CNSTI4 48
+SUBI4
+ASGNI4
+ADDRGP4 $471
+JUMPV
+LABELV $470
+line 1036
+;1036:			else if (c >= 'a' && c <= 'f')
+ADDRLP4 0
+INDIRI4
+CNSTI4 97
+LTI4 $472
+ADDRLP4 0
+INDIRI4
+CNSTI4 102
+GTI4 $472
+line 1037
+;1037:				val = (val<<4) + c - 'a' + 10;
+ADDRLP4 4
+ADDRLP4 4
+INDIRI4
+CNSTI4 4
+LSHI4
+ADDRLP4 0
+INDIRI4
+ADDI4
+CNSTI4 97
+SUBI4
+CNSTI4 10
+ADDI4
+ASGNI4
+ADDRGP4 $473
+JUMPV
+LABELV $472
+line 1038
+;1038:			else if (c >= 'A' && c <= 'F')
+ADDRLP4 0
+INDIRI4
+CNSTI4 65
+LTI4 $474
+ADDRLP4 0
+INDIRI4
+CNSTI4 70
+GTI4 $474
+line 1039
+;1039:				val = (val<<4) + c - 'A' + 10;
+ADDRLP4 4
+ADDRLP4 4
+INDIRI4
+CNSTI4 4
+LSHI4
+ADDRLP4 0
+INDIRI4
+ADDI4
+CNSTI4 65
+SUBI4
+CNSTI4 10
+ADDI4
+ASGNI4
+ADDRGP4 $475
+JUMPV
+LABELV $474
+line 1041
+;1040:			else
+;1041:				return val*sign;
+ADDRLP4 4
+INDIRI4
+ADDRLP4 12
+INDIRI4
+MULI4
+RETI4
+ADDRGP4 $461
+JUMPV
+LABELV $475
+LABELV $473
+LABELV $471
+line 1042
+;1042:		}
+LABELV $468
+line 1032
+ADDRGP4 $467
+JUMPV
+line 1043
+;1043:	}
+LABELV $464
+line 1048
+;1044:	
+;1045:    //
+;1046:    // check for character
+;1047:    //
+;1048:	if (str[0] == '\'')
+ADDRLP4 8
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 39
+NEI4 $479
+line 1049
+;1049:		return sign * str[1];
+ADDRLP4 12
+INDIRI4
+ADDRLP4 8
+INDIRP4
+CNSTI4 1
+ADDP4
+INDIRI1
+CVII4 1
+MULI4
+RETI4
+ADDRGP4 $461
+JUMPV
+LABELV $478
+line 1054
+;1050:	
+;1051:    //
+;1052:    // assume decimal
+;1053:    //
+;1054:	while (1) {
+line 1055
+;1055:		c = *str++;
+ADDRLP4 24
+ADDRLP4 8
+INDIRP4
+ASGNP4
+ADDRLP4 8
+ADDRLP4 24
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 0
+ADDRLP4 24
+INDIRP4
+INDIRI1
+CVII4 1
+ASGNI4
+line 1056
+;1056:		if (c <'0' || c > '9')
+ADDRLP4 0
+INDIRI4
+CNSTI4 48
+LTI4 $483
+ADDRLP4 0
+INDIRI4
+CNSTI4 57
+LEI4 $481
+LABELV $483
+line 1057
+;1057:			return val*sign;
+ADDRLP4 4
+INDIRI4
+ADDRLP4 12
+INDIRI4
+MULI4
+RETI4
+ADDRGP4 $461
+JUMPV
+LABELV $481
+line 1058
+;1058:		val = val*10 + c - '0';
+ADDRLP4 4
+CNSTI4 10
+ADDRLP4 4
+INDIRI4
+MULI4
+ADDRLP4 0
+INDIRI4
+ADDI4
+CNSTI4 48
+SUBI4
+ASGNI4
+line 1059
+;1059:	}
+LABELV $479
+line 1054
+ADDRGP4 $478
+JUMPV
+line 1061
+;1060:	
+;1061:	return 0;
+CNSTI4 0
+RETI4
+LABELV $461
+endproc N_atoi 40 0
+export N_isnan
+proc N_isnan 4 0
+line 1072
+;1062:}
+;1063:
+;1064:/*
+;1065:================
+;1066:N_isnan
+;1067:
+;1068:Don't pass doubles to this
+;1069:================
+;1070:*/
+;1071:int N_isnan( float x )
+;1072:{
+line 1075
+;1073:	floatint_t fi;
+;1074:
+;1075:	fi.f = x;
+ADDRLP4 0
+ADDRFP4 0
+INDIRF4
+ASGNF4
+line 1076
+;1076:	fi.u &= 0x7FFFFFFF;
+ADDRLP4 0
+ADDRLP4 0
+INDIRU4
+CNSTU4 2147483647
+BANDU4
+ASGNU4
+line 1077
+;1077:	fi.u = 0x7F800000 - fi.u;
+ADDRLP4 0
+CNSTU4 2139095040
+ADDRLP4 0
+INDIRU4
+SUBU4
+ASGNU4
+line 1079
+;1078:
+;1079:	return (int)( fi.u >> 31 );
+ADDRLP4 0
+INDIRU4
+CNSTI4 31
+RSHU4
+CVUI4 4
+RETI4
+LABELV $484
+endproc N_isnan 4 0
+proc N_isfinite 8 0
+line 1090
+;1080:}
+;1081://------------------------------------------------------------------------
+;1082:
+;1083:
+;1084:/*
+;1085:================
+;1086:N_isfinite
+;1087:================
+;1088:*/
+;1089:static int N_isfinite( float f )
+;1090:{
+line 1092
+;1091:	floatint_t fi;
+;1092:	fi.f = f;
+ADDRLP4 0
+ADDRFP4 0
+INDIRF4
+ASGNF4
+line 1094
+;1093:
+;1094:	if ( fi.u == 0xFF800000 || fi.u == 0x7F800000 )
+ADDRLP4 4
+ADDRLP4 0
+INDIRU4
+ASGNU4
+ADDRLP4 4
+INDIRU4
+CNSTU4 4286578688
+EQU4 $488
+ADDRLP4 4
+INDIRU4
+CNSTU4 2139095040
+NEU4 $486
+LABELV $488
+line 1095
+;1095:		return 0; // -INF or +INF
+CNSTI4 0
+RETI4
+ADDRGP4 $485
+JUMPV
+LABELV $486
+line 1097
+;1096:
+;1097:	fi.u = 0x7F800000 - (fi.u & 0x7FFFFFFF);
+ADDRLP4 0
+CNSTU4 2139095040
+ADDRLP4 0
+INDIRU4
+CNSTU4 2147483647
+BANDU4
+SUBU4
+ASGNU4
+line 1098
+;1098:	if ( (int)( fi.u >> 31 ) )
+ADDRLP4 0
+INDIRU4
+CNSTI4 31
+RSHU4
+CVUI4 4
+CNSTI4 0
+EQI4 $489
+line 1099
+;1099:		return 0; // -NAN or +NAN
+CNSTI4 0
+RETI4
+ADDRGP4 $485
+JUMPV
+LABELV $489
+line 1101
+;1100:
+;1101:	return 1;
+CNSTI4 1
+RETI4
+LABELV $485
+endproc N_isfinite 8 0
+export N_atof
+proc N_atof 12 4
+line 1111
+;1102:}
+;1103:
+;1104:
+;1105:/*
+;1106:================
+;1107:N_atof
+;1108:================
+;1109:*/
+;1110:float N_atof( const char *str )
+;1111:{
+line 1114
+;1112:	float f;
+;1113:
+;1114:	f = atof( str );
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRLP4 4
+ADDRGP4 atof
+CALLF4
+ASGNF4
+ADDRLP4 0
+ADDRLP4 4
+INDIRF4
+ASGNF4
+line 1119
+;1115:
+;1116:	// modern C11-like implementations of atof() may return INF or NAN
+;1117:	// which breaks all FP code where such values getting passed
+;1118:	// and effectively corrupts range checks for cvars as well
+;1119:	if ( !N_isfinite( f ) )
+ADDRLP4 0
+INDIRF4
+ARGF4
+ADDRLP4 8
+ADDRGP4 N_isfinite
+CALLI4
+ASGNI4
+ADDRLP4 8
+INDIRI4
+CNSTI4 0
+NEI4 $492
+line 1120
+;1120:		return 0.0f;
+CNSTF4 0
+RETF4
+ADDRGP4 $491
+JUMPV
+LABELV $492
+line 1122
+;1121:
+;1122:	return f;
+ADDRLP4 0
+INDIRF4
+RETF4
+LABELV $491
+endproc N_atof 12 4
+export AddInt
+proc AddInt 56 0
+line 1194
+;1123:}
+;1124:
+;1125:
+;1126:#ifndef Q3_VM
+;1127:/*
+;1128:================
+;1129:N_log2f
+;1130:================
+;1131:*/
+;1132:float N_log2f( float f )
+;1133:{
+;1134:	const float v = logf( f );
+;1135:	return v / M_LN2;
+;1136:}
+;1137:
+;1138:
+;1139:/*
+;1140:================
+;1141:N_exp2f
+;1142:================
+;1143:*/
+;1144:float N_exp2f( float f )
+;1145:{
+;1146:	return powf( 2.0f, f );
+;1147:}
+;1148:
+;1149:
+;1150:/*
+;1151:=====================
+;1152:N_acos
+;1153:
+;1154:the msvc acos doesn't always return a value between -PI and PI:
+;1155:
+;1156:int i;
+;1157:i = 1065353246;
+;1158:acos(*(float*) &i) == -1.#IND0
+;1159:
+;1160:=====================
+;1161:*/
+;1162:float N_acos(float c)
+;1163:{
+;1164:	float angle;
+;1165:
+;1166:	angle = acos(c);
+;1167:
+;1168:	if (angle > M_PI) {
+;1169:		return (float)M_PI;
+;1170:	}
+;1171:	if (angle < -M_PI) {
+;1172:		return (float)M_PI;
+;1173:	}
+;1174:	return angle;
+;1175:}
+;1176:#endif
+;1177:
+;1178:#ifdef Q3_VM
+;1179:#define ALT 0x00000001       /* alternate form */
+;1180:#define HEXPREFIX 0x00000002 /* add 0x or 0X prefix */
+;1181:#define LADJUST 0x00000004   /* left adjustment */
+;1182:#define LONGDBL 0x00000008   /* long double */
+;1183:#define LONGINT 0x00000010   /* long integer */
+;1184:#define QUADINT 0x00000020   /* quad integer */
+;1185:#define SHORTINT 0x00000040  /* short integer */
+;1186:#define ZEROPAD 0x00000080   /* zero (as opposed to blank) pad */
+;1187:#define FPT 0x00000100       /* floating point number */
+;1188:
+;1189:#define to_digit(c) ((c) - '0')
+;1190:#define is_digit(c) ((unsigned)to_digit(c) <= 9)
+;1191:#define to_char(n) ((n) + '0')
+;1192:
+;1193:void AddInt(char** buf_p, int val, int width, int flags)
+;1194:{
+line 1200
+;1195:    char  text[32];
+;1196:    int   digits;
+;1197:    int   signedVal;
+;1198:    char* buf;
+;1199:
+;1200:    digits    = 0;
+ADDRLP4 0
+CNSTI4 0
+ASGNI4
+line 1201
+;1201:    signedVal = val;
+ADDRLP4 40
+ADDRFP4 4
+INDIRI4
+ASGNI4
+line 1202
+;1202:    if (val < 0)
+ADDRFP4 4
+INDIRI4
+CNSTI4 0
+GEI4 $495
+line 1203
+;1203:    {
+line 1204
+;1204:        val = -val;
+ADDRFP4 4
+ADDRFP4 4
+INDIRI4
+NEGI4
+ASGNI4
+line 1205
+;1205:    }
+LABELV $495
+LABELV $497
+line 1207
+;1206:    do
+;1207:    {
+line 1208
+;1208:        text[digits++] = '0' + val % 10;
+ADDRLP4 44
+ADDRLP4 0
+INDIRI4
+ASGNI4
+ADDRLP4 0
+ADDRLP4 44
+INDIRI4
+CNSTI4 1
+ADDI4
+ASGNI4
+ADDRLP4 44
+INDIRI4
+ADDRLP4 8
+ADDP4
+ADDRFP4 4
+INDIRI4
+CNSTI4 10
+MODI4
+CNSTI4 48
+ADDI4
+CVII1 4
+ASGNI1
+line 1209
+;1209:        val /= 10;
+ADDRFP4 4
+ADDRFP4 4
+INDIRI4
+CNSTI4 10
+DIVI4
+ASGNI4
+line 1210
+;1210:    } while (val);
+LABELV $498
+ADDRFP4 4
+INDIRI4
+CNSTI4 0
+NEI4 $497
+line 1212
+;1211:
+;1212:    if (signedVal < 0)
+ADDRLP4 40
+INDIRI4
+CNSTI4 0
+GEI4 $500
+line 1213
+;1213:    {
+line 1214
+;1214:        text[digits++] = '-';
+ADDRLP4 44
+ADDRLP4 0
+INDIRI4
+ASGNI4
+ADDRLP4 0
+ADDRLP4 44
+INDIRI4
+CNSTI4 1
+ADDI4
+ASGNI4
+ADDRLP4 44
+INDIRI4
+ADDRLP4 8
+ADDP4
+CNSTI1 45
+ASGNI1
+line 1215
+;1215:    }
+LABELV $500
+line 1217
+;1216:
+;1217:    buf = *buf_p;
+ADDRLP4 4
+ADDRFP4 0
+INDIRP4
+INDIRP4
+ASGNP4
+line 1219
+;1218:
+;1219:    if (!(flags & LADJUST))
+ADDRFP4 12
+INDIRI4
+CNSTI4 4
+BANDI4
+CNSTI4 0
+NEI4 $511
+line 1220
+;1220:    {
+ADDRGP4 $505
+JUMPV
+LABELV $504
+line 1222
+;1221:        while (digits < width)
+;1222:        {
+line 1223
+;1223:            *buf++ = (flags & ZEROPAD) ? '0' : ' ';
+ADDRLP4 48
+ADDRLP4 4
+INDIRP4
+ASGNP4
+ADDRLP4 4
+ADDRLP4 48
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRFP4 12
+INDIRI4
+CNSTI4 128
+BANDI4
+CNSTI4 0
+EQI4 $508
+ADDRLP4 44
+CNSTI4 48
+ASGNI4
+ADDRGP4 $509
+JUMPV
+LABELV $508
+ADDRLP4 44
+CNSTI4 32
+ASGNI4
+LABELV $509
+ADDRLP4 48
+INDIRP4
+ADDRLP4 44
+INDIRI4
+CVII1 4
+ASGNI1
+line 1224
+;1224:            width--;
+ADDRFP4 8
+ADDRFP4 8
+INDIRI4
+CNSTI4 1
+SUBI4
+ASGNI4
+line 1225
+;1225:        }
+LABELV $505
+line 1221
+ADDRLP4 0
+INDIRI4
+ADDRFP4 8
+INDIRI4
+LTI4 $504
+line 1226
+;1226:    }
+ADDRGP4 $511
+JUMPV
+LABELV $510
+line 1229
+;1227:
+;1228:    while (digits--)
+;1229:    {
+line 1230
+;1230:        *buf++ = text[digits];
+ADDRLP4 44
+ADDRLP4 4
+INDIRP4
+ASGNP4
+ADDRLP4 4
+ADDRLP4 44
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 44
+INDIRP4
+ADDRLP4 0
+INDIRI4
+ADDRLP4 8
+ADDP4
+INDIRI1
+ASGNI1
+line 1231
+;1231:        width--;
+ADDRFP4 8
+ADDRFP4 8
+INDIRI4
+CNSTI4 1
+SUBI4
+ASGNI4
+line 1232
+;1232:    }
+LABELV $511
+line 1228
+ADDRLP4 44
+ADDRLP4 0
+INDIRI4
+ASGNI4
+ADDRLP4 0
+ADDRLP4 44
+INDIRI4
+CNSTI4 1
+SUBI4
+ASGNI4
+ADDRLP4 44
+INDIRI4
+CNSTI4 0
+NEI4 $510
+line 1234
+;1233:
+;1234:    if (flags & LADJUST)
+ADDRFP4 12
+INDIRI4
+CNSTI4 4
+BANDI4
+CNSTI4 0
+EQI4 $513
+line 1235
+;1235:    {
+ADDRGP4 $516
+JUMPV
+LABELV $515
+line 1237
+;1236:        while (width--)
+;1237:        {
+line 1238
+;1238:            *buf++ = (flags & ZEROPAD) ? '0' : ' ';
+ADDRLP4 52
+ADDRLP4 4
+INDIRP4
+ASGNP4
+ADDRLP4 4
+ADDRLP4 52
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRFP4 12
+INDIRI4
+CNSTI4 128
+BANDI4
+CNSTI4 0
+EQI4 $519
+ADDRLP4 48
+CNSTI4 48
+ASGNI4
+ADDRGP4 $520
+JUMPV
+LABELV $519
+ADDRLP4 48
+CNSTI4 32
+ASGNI4
+LABELV $520
+ADDRLP4 52
+INDIRP4
+ADDRLP4 48
+INDIRI4
+CVII1 4
+ASGNI1
+line 1239
+;1239:        }
+LABELV $516
+line 1236
+ADDRLP4 48
+ADDRFP4 8
+INDIRI4
+ASGNI4
+ADDRFP4 8
+ADDRLP4 48
+INDIRI4
+CNSTI4 1
+SUBI4
+ASGNI4
+ADDRLP4 48
+INDIRI4
+CNSTI4 0
+NEI4 $515
+line 1240
+;1240:    }
+LABELV $513
+line 1242
+;1241:
+;1242:    *buf_p = buf;
+ADDRFP4 0
+INDIRP4
+ADDRLP4 4
+INDIRP4
+ASGNP4
+line 1243
+;1243:}
+LABELV $494
+endproc AddInt 56 0
+export AddFloat
+proc AddFloat 60 0
+line 1246
+;1244:
+;1245:void AddFloat(char** buf_p, float fval, int width, int prec)
+;1246:{
+line 1254
+;1247:    char  text[32];
+;1248:    int   digits;
+;1249:    float signedVal;
+;1250:    char* buf;
+;1251:    int   val;
+;1252:
+;1253:    // get the sign
+;1254:    signedVal = fval;
+ADDRLP4 44
+ADDRFP4 4
+INDIRF4
+ASGNF4
+line 1255
+;1255:    if (fval < 0)
+ADDRFP4 4
+INDIRF4
+CNSTF4 0
+GEF4 $522
+line 1256
+;1256:    {
+line 1257
+;1257:        fval = -fval;
+ADDRFP4 4
+ADDRFP4 4
+INDIRF4
+NEGF4
+ASGNF4
+line 1258
+;1258:    }
+LABELV $522
+line 1261
+;1259:
+;1260:    // write the float number
+;1261:    digits = 0;
+ADDRLP4 0
+CNSTI4 0
+ASGNI4
+line 1262
+;1262:    val    = (int)fval;
+ADDRLP4 4
+ADDRFP4 4
+INDIRF4
+CVFI4 4
+ASGNI4
+LABELV $524
+line 1264
+;1263:    do
+;1264:    {
+line 1265
+;1265:        text[digits++] = '0' + val % 10;
+ADDRLP4 48
+ADDRLP4 0
+INDIRI4
+ASGNI4
+ADDRLP4 0
+ADDRLP4 48
+INDIRI4
+CNSTI4 1
+ADDI4
+ASGNI4
+ADDRLP4 48
+INDIRI4
+ADDRLP4 8
+ADDP4
+ADDRLP4 4
+INDIRI4
+CNSTI4 10
+MODI4
+CNSTI4 48
+ADDI4
+CVII1 4
+ASGNI1
+line 1266
+;1266:        val /= 10;
+ADDRLP4 4
+ADDRLP4 4
+INDIRI4
+CNSTI4 10
+DIVI4
+ASGNI4
+line 1267
+;1267:    } while (val);
+LABELV $525
+ADDRLP4 4
+INDIRI4
+CNSTI4 0
+NEI4 $524
+line 1269
+;1268:
+;1269:    if (signedVal < 0)
+ADDRLP4 44
+INDIRF4
+CNSTF4 0
+GEF4 $527
+line 1270
+;1270:    {
+line 1271
+;1271:        text[digits++] = '-';
+ADDRLP4 48
+ADDRLP4 0
+INDIRI4
+ASGNI4
+ADDRLP4 0
+ADDRLP4 48
+INDIRI4
+CNSTI4 1
+ADDI4
+ASGNI4
+ADDRLP4 48
+INDIRI4
+ADDRLP4 8
+ADDP4
+CNSTI1 45
+ASGNI1
+line 1272
+;1272:    }
+LABELV $527
+line 1274
+;1273:
+;1274:    buf = *buf_p;
+ADDRLP4 40
+ADDRFP4 0
+INDIRP4
+INDIRP4
+ASGNP4
+ADDRGP4 $530
+JUMPV
+LABELV $529
+line 1277
+;1275:
+;1276:    while (digits < width)
+;1277:    {
+line 1278
+;1278:        *buf++ = ' ';
+ADDRLP4 48
+ADDRLP4 40
+INDIRP4
+ASGNP4
+ADDRLP4 40
+ADDRLP4 48
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 48
+INDIRP4
+CNSTI1 32
+ASGNI1
+line 1279
+;1279:        width--;
+ADDRFP4 8
+ADDRFP4 8
+INDIRI4
+CNSTI4 1
+SUBI4
+ASGNI4
+line 1280
+;1280:    }
+LABELV $530
+line 1276
+ADDRLP4 0
+INDIRI4
+ADDRFP4 8
+INDIRI4
+LTI4 $529
+ADDRGP4 $533
+JUMPV
+LABELV $532
+line 1283
+;1281:
+;1282:    while (digits--)
+;1283:    {
+line 1284
+;1284:        *buf++ = text[digits];
+ADDRLP4 48
+ADDRLP4 40
+INDIRP4
+ASGNP4
+ADDRLP4 40
+ADDRLP4 48
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 48
+INDIRP4
+ADDRLP4 0
+INDIRI4
+ADDRLP4 8
+ADDP4
+INDIRI1
+ASGNI1
+line 1285
+;1285:    }
+LABELV $533
+line 1282
+ADDRLP4 48
+ADDRLP4 0
+INDIRI4
+ASGNI4
+ADDRLP4 0
+ADDRLP4 48
+INDIRI4
+CNSTI4 1
+SUBI4
+ASGNI4
+ADDRLP4 48
+INDIRI4
+CNSTI4 0
+NEI4 $532
+line 1287
+;1286:
+;1287:    *buf_p = buf;
+ADDRFP4 0
+INDIRP4
+ADDRLP4 40
+INDIRP4
+ASGNP4
+line 1289
+;1288:
+;1289:    if (prec < 0)
+ADDRFP4 12
+INDIRI4
+CNSTI4 0
+GEI4 $535
+line 1290
+;1290:        prec = 6;
+ADDRFP4 12
+CNSTI4 6
+ASGNI4
+LABELV $535
+line 1292
+;1291:    // write the fraction
+;1292:    digits = 0;
+ADDRLP4 0
+CNSTI4 0
+ASGNI4
+ADDRGP4 $538
+JUMPV
+LABELV $537
+line 1294
+;1293:    while (digits < prec)
+;1294:    {
+line 1295
+;1295:        fval -= (int)fval;
+ADDRLP4 52
+ADDRFP4 4
+INDIRF4
+ASGNF4
+ADDRFP4 4
+ADDRLP4 52
+INDIRF4
+ADDRLP4 52
+INDIRF4
+CVFI4 4
+CVIF4 4
+SUBF4
+ASGNF4
+line 1296
+;1296:        fval *= 10.0;
+ADDRFP4 4
+CNSTF4 1092616192
+ADDRFP4 4
+INDIRF4
+MULF4
+ASGNF4
+line 1297
+;1297:        val            = (int)fval;
+ADDRLP4 4
+ADDRFP4 4
+INDIRF4
+CVFI4 4
+ASGNI4
+line 1298
+;1298:        text[digits++] = '0' + val % 10;
+ADDRLP4 56
+ADDRLP4 0
+INDIRI4
+ASGNI4
+ADDRLP4 0
+ADDRLP4 56
+INDIRI4
+CNSTI4 1
+ADDI4
+ASGNI4
+ADDRLP4 56
+INDIRI4
+ADDRLP4 8
+ADDP4
+ADDRLP4 4
+INDIRI4
+CNSTI4 10
+MODI4
+CNSTI4 48
+ADDI4
+CVII1 4
+ASGNI1
+line 1299
+;1299:    }
+LABELV $538
+line 1293
+ADDRLP4 0
+INDIRI4
+ADDRFP4 12
+INDIRI4
+LTI4 $537
+line 1301
+;1300:
+;1301:    if (digits > 0)
+ADDRLP4 0
+INDIRI4
+CNSTI4 0
+LEI4 $540
+line 1302
+;1302:    {
+line 1303
+;1303:        buf    = *buf_p;
+ADDRLP4 40
+ADDRFP4 0
+INDIRP4
+INDIRP4
+ASGNP4
+line 1304
+;1304:        *buf++ = '.';
+ADDRLP4 52
+ADDRLP4 40
+INDIRP4
+ASGNP4
+ADDRLP4 40
+ADDRLP4 52
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 52
+INDIRP4
+CNSTI1 46
+ASGNI1
+line 1305
+;1305:        for (prec = 0; prec < digits; prec++)
+ADDRFP4 12
+CNSTI4 0
+ASGNI4
+ADDRGP4 $545
+JUMPV
+LABELV $542
+line 1306
+;1306:        {
+line 1307
+;1307:            *buf++ = text[prec];
+ADDRLP4 56
+ADDRLP4 40
+INDIRP4
+ASGNP4
+ADDRLP4 40
+ADDRLP4 56
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 56
+INDIRP4
+ADDRFP4 12
+INDIRI4
+ADDRLP4 8
+ADDP4
+INDIRI1
+ASGNI1
+line 1308
+;1308:        }
+LABELV $543
+line 1305
+ADDRFP4 12
+ADDRFP4 12
+INDIRI4
+CNSTI4 1
+ADDI4
+ASGNI4
+LABELV $545
+ADDRFP4 12
+INDIRI4
+ADDRLP4 0
+INDIRI4
+LTI4 $542
+line 1309
+;1309:        *buf_p = buf;
+ADDRFP4 0
+INDIRP4
+ADDRLP4 40
+INDIRP4
+ASGNP4
+line 1310
+;1310:    }
+LABELV $540
+line 1311
+;1311:}
+LABELV $521
+endproc AddFloat 60 0
+export AddString
+proc AddString 20 4
+line 1314
+;1312:
+;1313:void AddString(char** buf_p, char* string, int width, int prec)
+;1314:{
+line 1318
+;1315:    int   size;
+;1316:    char* buf;
+;1317:
+;1318:    buf = *buf_p;
+ADDRLP4 4
+ADDRFP4 0
+INDIRP4
+INDIRP4
+ASGNP4
+line 1320
+;1319:
+;1320:    if (string == NULL)
+ADDRFP4 4
+INDIRP4
+CVPU4 4
+CNSTU4 0
+NEU4 $547
+line 1321
+;1321:    {
+line 1322
+;1322:        string = "(null)";
+ADDRFP4 4
+ADDRGP4 $549
+ASGNP4
+line 1323
+;1323:        prec   = -1;
+ADDRFP4 12
+CNSTI4 -1
+ASGNI4
+line 1324
+;1324:    }
+LABELV $547
+line 1326
+;1325:
+;1326:    if (prec >= 0)
+ADDRFP4 12
+INDIRI4
+CNSTI4 0
+LTI4 $550
+line 1327
+;1327:    {
+line 1328
+;1328:        for (size = 0; size < prec; size++)
+ADDRLP4 0
+CNSTI4 0
+ASGNI4
+ADDRGP4 $555
+JUMPV
+LABELV $552
+line 1329
+;1329:        {
+line 1330
+;1330:            if (string[size] == '\0')
+ADDRLP4 0
+INDIRI4
+ADDRFP4 4
+INDIRP4
+ADDP4
+INDIRI1
+CVII4 1
+CNSTI4 0
+NEI4 $556
+line 1331
+;1331:            {
+line 1332
+;1332:                break;
+ADDRGP4 $551
+JUMPV
+LABELV $556
+line 1334
+;1333:            }
+;1334:        }
+LABELV $553
+line 1328
+ADDRLP4 0
+ADDRLP4 0
+INDIRI4
+CNSTI4 1
+ADDI4
+ASGNI4
+LABELV $555
+ADDRLP4 0
+INDIRI4
+ADDRFP4 12
+INDIRI4
+LTI4 $552
+line 1335
+;1335:    }
+ADDRGP4 $551
+JUMPV
+LABELV $550
+line 1337
+;1336:    else
+;1337:    {
+line 1338
+;1338:        size = strlen(string);
+ADDRFP4 4
+INDIRP4
+ARGP4
+ADDRLP4 8
+ADDRGP4 strlen
+CALLU4
+ASGNU4
+ADDRLP4 0
+ADDRLP4 8
+INDIRU4
+CVUI4 4
+ASGNI4
+line 1339
+;1339:    }
+LABELV $551
+line 1341
+;1340:
+;1341:    width -= size;
+ADDRFP4 8
+ADDRFP4 8
+INDIRI4
+ADDRLP4 0
+INDIRI4
+SUBI4
+ASGNI4
+ADDRGP4 $559
+JUMPV
+LABELV $558
+line 1344
+;1342:
+;1343:    while (size--)
+;1344:    {
+line 1345
+;1345:        *buf++ = *string++;
+ADDRLP4 8
+ADDRLP4 4
+INDIRP4
+ASGNP4
+ADDRLP4 16
+CNSTI4 1
+ASGNI4
+ADDRLP4 4
+ADDRLP4 8
+INDIRP4
+ADDRLP4 16
+INDIRI4
+ADDP4
+ASGNP4
+ADDRLP4 12
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRFP4 4
+ADDRLP4 12
+INDIRP4
+ADDRLP4 16
+INDIRI4
+ADDP4
+ASGNP4
+ADDRLP4 8
+INDIRP4
+ADDRLP4 12
+INDIRP4
+INDIRI1
+ASGNI1
+line 1346
+;1346:    }
+LABELV $559
+line 1343
+ADDRLP4 8
+ADDRLP4 0
+INDIRI4
+ASGNI4
+ADDRLP4 0
+ADDRLP4 8
+INDIRI4
+CNSTI4 1
+SUBI4
+ASGNI4
+ADDRLP4 8
+INDIRI4
+CNSTI4 0
+NEI4 $558
+ADDRGP4 $562
+JUMPV
+LABELV $561
+line 1349
+;1347:
+;1348:    while (width-- > 0)
+;1349:    {
+line 1350
+;1350:        *buf++ = ' ';
+ADDRLP4 12
+ADDRLP4 4
+INDIRP4
+ASGNP4
+ADDRLP4 4
+ADDRLP4 12
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 12
+INDIRP4
+CNSTI1 32
+ASGNI1
+line 1351
+;1351:    }
+LABELV $562
+line 1348
+ADDRLP4 12
+ADDRFP4 8
+INDIRI4
+ASGNI4
+ADDRFP4 8
+ADDRLP4 12
+INDIRI4
+CNSTI4 1
+SUBI4
+ASGNI4
+ADDRLP4 12
+INDIRI4
+CNSTI4 0
+GTI4 $561
+line 1353
+;1352:
+;1353:    *buf_p = buf;
+ADDRFP4 0
+INDIRP4
+ADDRLP4 4
+INDIRP4
+ASGNP4
+line 1354
+;1354:}
+LABELV $546
+endproc AddString 20 4
+export vsprintf
+proc vsprintf 72 16
+line 1357
+;1355:
+;1356:int vsprintf(char* buffer, const char* fmt, va_list argptr)
+;1357:{
+line 1367
+;1358:    int*  arg;
+;1359:    char* buf_p;
+;1360:    char  ch;
+;1361:    int   flags;
+;1362:    int   width;
+;1363:    int   prec;
+;1364:    int   n;
+;1365:    char  sign;
+;1366:
+;1367:    buf_p = buffer;
+ADDRLP4 4
+ADDRFP4 0
+INDIRP4
+ASGNP4
+line 1368
+;1368:    arg   = (int*)argptr;
+ADDRLP4 24
+ADDRFP4 8
+INDIRP4
+ASGNP4
+ADDRGP4 $566
+JUMPV
+LABELV $565
+line 1371
+;1369:
+;1370:    while (1)
+;1371:    {
+line 1373
+;1372:        // run through the format string until we hit a '%' or '\0'
+;1373:        for (ch = *fmt; (ch = *fmt) != '\0' && ch != '%'; fmt++)
+ADDRLP4 0
+ADDRFP4 4
+INDIRP4
+INDIRI1
+ASGNI1
+ADDRGP4 $571
+JUMPV
+LABELV $568
+line 1374
+;1374:        {
+line 1375
+;1375:            *buf_p++ = ch;
+ADDRLP4 32
+ADDRLP4 4
+INDIRP4
+ASGNP4
+ADDRLP4 4
+ADDRLP4 32
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 32
+INDIRP4
+ADDRLP4 0
+INDIRI1
+ASGNI1
+line 1376
+;1376:        }
+LABELV $569
+line 1373
+ADDRFP4 4
+ADDRFP4 4
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+LABELV $571
+ADDRLP4 29
+ADDRFP4 4
+INDIRP4
+INDIRI1
+ASGNI1
+ADDRLP4 0
+ADDRLP4 29
+INDIRI1
+ASGNI1
+ADDRLP4 29
+INDIRI1
+CVII4 1
+CNSTI4 0
+EQI4 $572
+ADDRLP4 0
+INDIRI1
+CVII4 1
+CNSTI4 37
+NEI4 $568
+LABELV $572
+line 1377
+;1377:        if (ch == '\0')
+ADDRLP4 0
+INDIRI1
+CVII4 1
+CNSTI4 0
+NEI4 $573
+line 1378
+;1378:        {
+line 1379
+;1379:            goto done;
+ADDRGP4 $575
+JUMPV
+LABELV $573
+line 1383
+;1380:        }
+;1381:
+;1382:        // skip over the '%'
+;1383:        fmt++;
+ADDRFP4 4
+ADDRFP4 4
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+line 1386
+;1384:
+;1385:        // reset formatting state
+;1386:        flags = 0;
+ADDRLP4 16
+CNSTI4 0
+ASGNI4
+line 1387
+;1387:        width = 0;
+ADDRLP4 12
+CNSTI4 0
+ASGNI4
+line 1388
+;1388:        prec  = -1;
+ADDRLP4 20
+CNSTI4 -1
+ASGNI4
+line 1389
+;1389:        sign  = '\0';
+ADDRLP4 28
+CNSTI1 0
+ASGNI1
+LABELV $576
+line 1392
+;1390:
+;1391:    rflag:
+;1392:        ch = *fmt++;
+ADDRLP4 32
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRFP4 4
+ADDRLP4 32
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 0
+ADDRLP4 32
+INDIRP4
+INDIRI1
+ASGNI1
+LABELV $577
+line 1394
+;1393:    reswitch:
+;1394:        switch (ch)
+ADDRLP4 36
+ADDRLP4 0
+INDIRI1
+CVII4 1
+ASGNI4
+ADDRLP4 36
+INDIRI4
+CNSTI4 99
+LTI4 $599
+ADDRLP4 36
+INDIRI4
+CNSTI4 105
+GTI4 $600
+ADDRLP4 36
+INDIRI4
+CNSTI4 2
+LSHI4
+ADDRGP4 $601-396
+ADDP4
+INDIRP4
+JUMPV
+lit
+align 4
+LABELV $601
+address $594
+address $595
+address $578
+address $596
+address $578
+address $578
+address $595
+code
+LABELV $599
+ADDRLP4 36
+INDIRI4
+CNSTI4 37
+LTI4 $578
+ADDRLP4 36
+INDIRI4
+CNSTI4 57
+GTI4 $578
+ADDRLP4 36
+INDIRI4
+CNSTI4 2
+LSHI4
+ADDRGP4 $603-148
+ADDP4
+INDIRP4
+JUMPV
+lit
+align 4
+LABELV $603
+address $598
+address $578
+address $578
+address $578
+address $578
+address $578
+address $578
+address $578
+address $581
+address $582
+address $578
+address $589
+address $590
+address $590
+address $590
+address $590
+address $590
+address $590
+address $590
+address $590
+address $590
+code
+LABELV $600
+ADDRLP4 36
+INDIRI4
+CNSTI4 115
+EQI4 $597
+ADDRGP4 $578
+JUMPV
+line 1395
+;1395:        {
+LABELV $581
+line 1397
+;1396:        case '-':
+;1397:            flags |= LADJUST;
+ADDRLP4 16
+ADDRLP4 16
+INDIRI4
+CNSTI4 4
+BORI4
+ASGNI4
+line 1398
+;1398:            goto rflag;
+ADDRGP4 $576
+JUMPV
+LABELV $582
+line 1400
+;1399:        case '.':
+;1400:            n = 0;
+ADDRLP4 8
+CNSTI4 0
+ASGNI4
+ADDRGP4 $584
+JUMPV
+LABELV $583
+line 1402
+;1401:            while (is_digit((ch = *fmt++)))
+;1402:            {
+line 1403
+;1403:                n = 10 * n + (ch - '0');
+ADDRLP4 8
+CNSTI4 10
+ADDRLP4 8
+INDIRI4
+MULI4
+ADDRLP4 0
+INDIRI1
+CVII4 1
+CNSTI4 48
+SUBI4
+ADDI4
+ASGNI4
+line 1404
+;1404:            }
+LABELV $584
+line 1401
+ADDRLP4 48
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRFP4 4
+ADDRLP4 48
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 52
+ADDRLP4 48
+INDIRP4
+INDIRI1
+ASGNI1
+ADDRLP4 0
+ADDRLP4 52
+INDIRI1
+ASGNI1
+ADDRLP4 52
+INDIRI1
+CVII4 1
+CNSTI4 48
+SUBI4
+CVIU4 4
+CNSTU4 9
+LEU4 $583
+line 1405
+;1405:            prec = n < 0 ? -1 : n;
+ADDRLP4 8
+INDIRI4
+CNSTI4 0
+GEI4 $587
+ADDRLP4 56
+CNSTI4 -1
+ASGNI4
+ADDRGP4 $588
+JUMPV
+LABELV $587
+ADDRLP4 56
+ADDRLP4 8
+INDIRI4
+ASGNI4
+LABELV $588
+ADDRLP4 20
+ADDRLP4 56
+INDIRI4
+ASGNI4
+line 1406
+;1406:            goto reswitch;
+ADDRGP4 $577
+JUMPV
+LABELV $589
+line 1408
+;1407:        case '0':
+;1408:            flags |= ZEROPAD;
+ADDRLP4 16
+ADDRLP4 16
+INDIRI4
+CNSTI4 128
+BORI4
+ASGNI4
+line 1409
+;1409:            goto rflag;
+ADDRGP4 $576
+JUMPV
+LABELV $590
+line 1419
+;1410:        case '1':
+;1411:        case '2':
+;1412:        case '3':
+;1413:        case '4':
+;1414:        case '5':
+;1415:        case '6':
+;1416:        case '7':
+;1417:        case '8':
+;1418:        case '9':
+;1419:            n = 0;
+ADDRLP4 8
+CNSTI4 0
+ASGNI4
+LABELV $591
+line 1421
+;1420:            do
+;1421:            {
+line 1422
+;1422:                n  = 10 * n + (ch - '0');
+ADDRLP4 8
+CNSTI4 10
+ADDRLP4 8
+INDIRI4
+MULI4
+ADDRLP4 0
+INDIRI1
+CVII4 1
+CNSTI4 48
+SUBI4
+ADDI4
+ASGNI4
+line 1423
+;1423:                ch = *fmt++;
+ADDRLP4 60
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRFP4 4
+ADDRLP4 60
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 0
+ADDRLP4 60
+INDIRP4
+INDIRI1
+ASGNI1
+line 1424
+;1424:            } while (is_digit(ch));
+LABELV $592
+ADDRLP4 0
+INDIRI1
+CVII4 1
+CNSTI4 48
+SUBI4
+CVIU4 4
+CNSTU4 9
+LEU4 $591
+line 1425
+;1425:            width = n;
+ADDRLP4 12
+ADDRLP4 8
+INDIRI4
+ASGNI4
+line 1426
+;1426:            goto reswitch;
+ADDRGP4 $577
+JUMPV
+LABELV $594
+line 1428
+;1427:        case 'c':
+;1428:            *buf_p++ = (char)*arg;
+ADDRLP4 60
+ADDRLP4 4
+INDIRP4
+ASGNP4
+ADDRLP4 4
+ADDRLP4 60
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 60
+INDIRP4
+ADDRLP4 24
+INDIRP4
+INDIRI4
+CVII1 4
+ASGNI1
+line 1429
+;1429:            arg++;
+ADDRLP4 24
+ADDRLP4 24
+INDIRP4
+CNSTI4 4
+ADDP4
+ASGNP4
+line 1430
+;1430:            break;
+ADDRGP4 $579
+JUMPV
+LABELV $595
+line 1433
+;1431:        case 'd':
+;1432:        case 'i':
+;1433:            AddInt(&buf_p, *arg, width, flags);
+ADDRLP4 4
+ARGP4
+ADDRLP4 24
+INDIRP4
+INDIRI4
+ARGI4
+ADDRLP4 12
+INDIRI4
+ARGI4
+ADDRLP4 16
+INDIRI4
+ARGI4
+ADDRGP4 AddInt
+CALLV
+pop
+line 1434
+;1434:            arg++;
+ADDRLP4 24
+ADDRLP4 24
+INDIRP4
+CNSTI4 4
+ADDP4
+ASGNP4
+line 1435
+;1435:            break;
+ADDRGP4 $579
+JUMPV
+LABELV $596
+line 1437
+;1436:        case 'f':
+;1437:            AddFloat(&buf_p, *(double*)arg, width, prec);
+ADDRLP4 4
+ARGP4
+ADDRLP4 24
+INDIRP4
+INDIRF4
+ARGF4
+ADDRLP4 12
+INDIRI4
+ARGI4
+ADDRLP4 20
+INDIRI4
+ARGI4
+ADDRGP4 AddFloat
+CALLV
+pop
+line 1439
+;1438:#ifdef __LCC__
+;1439:            arg += 1; // everything is 32 bit in my compiler
+ADDRLP4 24
+ADDRLP4 24
+INDIRP4
+CNSTI4 4
+ADDP4
+ASGNP4
+line 1443
+;1440:#else
+;1441:            arg += 2;
+;1442:#endif
+;1443:            break;
+ADDRGP4 $579
+JUMPV
+LABELV $597
+line 1445
+;1444:        case 's':
+;1445:            AddString(&buf_p, (char*)*arg, width, prec);
+ADDRLP4 4
+ARGP4
+ADDRLP4 24
+INDIRP4
+INDIRI4
+CVIU4 4
+CVUP4 4
+ARGP4
+ADDRLP4 12
+INDIRI4
+ARGI4
+ADDRLP4 20
+INDIRI4
+ARGI4
+ADDRGP4 AddString
+CALLV
+pop
+line 1446
+;1446:            arg++;
+ADDRLP4 24
+ADDRLP4 24
+INDIRP4
+CNSTI4 4
+ADDP4
+ASGNP4
+line 1447
+;1447:            break;
+ADDRGP4 $579
+JUMPV
+LABELV $598
+line 1449
+;1448:        case '%':
+;1449:            *buf_p++ = ch;
+ADDRLP4 64
+ADDRLP4 4
+INDIRP4
+ASGNP4
+ADDRLP4 4
+ADDRLP4 64
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 64
+INDIRP4
+ADDRLP4 0
+INDIRI1
+ASGNI1
+line 1450
+;1450:            break;
+ADDRGP4 $579
+JUMPV
+LABELV $578
+line 1452
+;1451:        default:
+;1452:            *buf_p++ = (char)*arg;
+ADDRLP4 68
+ADDRLP4 4
+INDIRP4
+ASGNP4
+ADDRLP4 4
+ADDRLP4 68
+INDIRP4
+CNSTI4 1
+ADDP4
+ASGNP4
+ADDRLP4 68
+INDIRP4
+ADDRLP4 24
+INDIRP4
+INDIRI4
+CVII1 4
+ASGNI1
+line 1453
+;1453:            arg++;
+ADDRLP4 24
+ADDRLP4 24
+INDIRP4
+CNSTI4 4
+ADDP4
+ASGNP4
+line 1454
+;1454:            break;
+LABELV $579
+line 1456
+;1455:        }
+;1456:    }
+LABELV $566
+line 1370
+ADDRGP4 $565
+JUMPV
+LABELV $575
+line 1459
+;1457:
+;1458:done:
+;1459:    *buf_p = 0;
+ADDRLP4 4
+INDIRP4
+CNSTI1 0
+ASGNI1
+line 1460
+;1460:    return buf_p - buffer;
+ADDRLP4 4
+INDIRP4
+CVPU4 4
+ADDRFP4 0
+INDIRP4
+CVPU4 4
+SUBU4
+CVUI4 4
+RETI4
+LABELV $564
+endproc vsprintf 72 16
+import SG_Error
+import RE_DrawRect
+import RE_SetColor
+import RE_AddDrawEntity
+import RE_RegisterShader
+import RE_RegisterTexture
+import G_LoadBFF
+import BFF_FetchTexture
+import BFF_FetchLevel
+import BFF_FetchScript
+import BFF_FreeInfo
+import BFF_FetchInfo
+import BFF_OpenArchive
+import BFF_CloseArchive
+import B_GetChunk
+import I_GetParm
+import CPU_flags
+import FS_ReadLine
+import FS_ListFiles
+import FS_FreeFile
+import FS_SetBFFIndex
+import FS_GetCurrentChunkList
+import FS_Initialized
+import FS_FileIsInBFF
+import FS_StripExt
+import FS_AllowedExtension
+import FS_LoadLibrary
+import FS_CopyString
+import FS_BuildOSPath
+import FS_FilenameCompare
+import FS_FileTell
+import FS_FileLength
+import FS_FileSeek
+import FS_FileExists
+import FS_LastBFFIndex
+import FS_LoadStack
+import FS_Rename
+import FS_FOpenFileRead
+import FS_FOpenRW
+import FS_FOpenWrite
+import FS_FOpenRead
+import FS_FOpenFileWithMode
+import FS_FOpenWithMode
+import FS_FileToFileno
+import FS_Printf
+import FS_GetGamePath
+import FS_GetHomePath
+import FS_GetBasePath
+import FS_GetBaseGameDir
+import FS_GetCurrentGameDir
+import FS_Flush
+import FS_ForceFlush
+import FS_FClose
+import FS_LoadFile
+import FS_WriteFile
+import FS_Write
+import FS_Read
+import FS_Remove
+import FS_Restart
+import FS_Shutdown
+import FS_InitFilesystem
+import FS_Init
+import FS_VM_CloseFiles
+import FS_VM_FOpenFileWrite
+import FS_VM_FileSeek
+import FS_VM_FOpenFileRead
+import FS_VM_CreateTmp
+import FS_VM_WriteFile
+import FS_VM_Write
+import FS_VM_Read
+import FS_VM_FClose
+import FS_VM_FOpenRead
+import FS_VM_FOpenWrite
+import Con_HistoryGetNext
+import Con_HistoryGetPrev
+import Con_SaveField
+import Con_ResetHistory
+import Field_CompleteCommand
+import Field_CompleteFilename
+import Field_CompleteKeyBind
+import Field_CompleteKeyname
+import Field_AutoComplete
+import Field_Clear
+import Cbuf_Init
+import Cbuf_Clear
+import Cbuf_AddText
+import Cbuf_Execute
+import Cbuf_InsertText
+import Cbuf_ExecuteText
+import Cmd_CompleteArgument
+import Cmd_CommandCompletion
+import Cmd_Clear
+import Cmd_Argv
+import Cmd_ArgsFrom
+import Cmd_SetCommandCompletionFunc
+import Cmd_TokenizeStringIgnoreQuotes
+import Cmd_TokenizeString
+import Cmd_ArgvBuffer
+import Cmd_Argc
+import Cmd_ExecuteString
+import Cmd_ExecuteText
+import Cmd_ArgsBuffer
+import Cmd_ExecuteCommand
+import Cmd_RemoveCommand
+import Cmd_AddCommand
+import Cmd_Init
+import keys
+import Key_GetKey
+import Key_GetCatcher
+import Key_SetCatcher
+import Key_ClearStates
+import Key_GetBinding
+import Key_IsDown
+import Key_KeynumToString
+import Key_StringToKeynum
+import Key_KeynameCompletion
+import Com_EventLoop
+import Com_KeyEvent
+import Com_SendKeyEvents
+import Com_QueueEvent
+import Com_InitKeyCommands
+import Parse3DMatrix
+import Parse2DMatrix
+import Parse1DMatrix
+import ParseHex
+import SkipRestOfLine
+import SkipBracedSection
+import com_tokentype
+import COM_ParseComplex
+import Com_BlockChecksum
+import COM_ParseWarning
+import COM_ParseError
+import COM_Compress
+import COM_ParseExt
+import COM_Parse
+import COM_GetCurrentParseLine
+import COM_BeginParseSession
+import Com_SortFileList
+import Com_Base64Decode
+import Com_HexStrToInt
+import Com_WriteConfig
+import Con_RenderConsole
+import Com_Shutdown
+import Com_Init
+import I_NomadInit
+import ColorIndexFromChar
+import g_color_table
+import Cvar_SetBooleanValue
+import Cvar_SetStringValue
+import Cvar_SetFloatValue
+import Cvar_SetIntegerValue
+import Cvar_SetModified
+import Cvar_SetValueSafe
+import Cvar_Set
+import Cvar_SetSafe
+import Cvar_SetDescription
+import Cvar_SetGroup
+import Cvar_Reset
+import Cvar_Command
+import Cvar_Get
+import Cvar_Update
+import Cvar_Flags
+import Cvar_CheckRange
+import Cvar_VariableString
+import Cvar_VariableBoolean
+import Cvar_VariableFloat
+import Cvar_VariableInteger
+import Cvar_VariableStringBufferSafe
+import Cvar_VariableStringBuffer
+import Cvar_Set2
+import Cvar_CommandCompletion
+import Cvar_CompleteCvarName
+import Cvar_Register
+import Cvar_Restart
+import Com_Clamp
+import PerpendicularVector
+import AngleVectors
+import MatrixMultiply
+import MakeNormalVectors
+import RotateAroundDirection
+import RotatePointAroundVector
+import ProjectPointOnPlane
+import PlaneFromPoints
+import AngleDelta
+import AngleNormalize180
+import AngleNormalize360
+import AnglesSubtract
+import AngleSubtract
+import LerpAngle
+import AngleMod
+import BoundsIntersectPoint
+import BoundsIntersectSphere
+import BoundsIntersect
+import AxisCopy
+import AxisClear
+import AnglesToAxis
+import vectoangles
+import N_crandom
+import N_random
+import N_rand
+import N_acos
+import N_log2
+import VectorRotate
+import Vector4Scale
+import VectorNormalize2
+import VectorNormalize
+import CrossProduct
+import VectorInverse
+import VectorNormalizeFast
+import DistanceSquared
+import Distance
+import VectorLengthSquared
+import VectorLength
+import VectorCompare
+import AddPointToBounds
+import ClearBounds
+import RadiusFromBounds
+import NormalizeColor
+import ColorBytes4
+import ColorBytes3
+import _VectorMA
+import _VectorScale
+import _VectorCopy
+import _VectorAdd
+import _VectorSubtract
+import _DotProduct
+import ByteToDir
+import DirToByte
+import ClampShort
+import ClampCharMove
+import ClampChar
+import Q_exp2f
+import Q_log2f
+import Q_rsqrt
+import Q_fabs
+import colorDkGrey
+import colorMdGrey
+import colorLtGrey
+import colorWhite
+import colorCyan
+import colorMagenta
+import colorYellow
+import colorBlue
+import colorGreen
+import colorRed
+import colorBlack
+import vec2_origin
+import vec3_origin
+import mat4_identity
+import Com_Error
+import Com_Printf
+import G_Printf
+import fabs
+import abs
+import _atoi
+import atoi
+import _atof
+import atof
+import rand
+import srand
+import qsort
+import toupper
+import tolower
+import strncmp
+import strcmp
+import strstr
+import strchr
+import strrchr
+import strcat
+import strncpy
+import strcpy
+import memmove
+import memset
+import memccpy
+import strlen
+import memchr
+import memcpy
+lit
+align 1
+LABELV $549
+byte 1 40
+byte 1 110
+byte 1 117
+byte 1 108
+byte 1 108
+byte 1 41
+byte 1 0
+align 1
+LABELV $321
+byte 1 78
+byte 1 95
+byte 1 115
+byte 1 116
+byte 1 114
+byte 1 99
+byte 1 97
+byte 1 116
+byte 1 58
+byte 1 32
+byte 1 97
+byte 1 108
+byte 1 114
+byte 1 101
+byte 1 97
+byte 1 100
+byte 1 121
+byte 1 32
+byte 1 111
+byte 1 118
+byte 1 101
+byte 1 114
+byte 1 102
+byte 1 108
+byte 1 111
+byte 1 119
+byte 1 101
+byte 1 100
+byte 1 0
+align 1
+LABELV $266
+byte 1 78
+byte 1 95
+byte 1 115
+byte 1 116
+byte 1 114
+byte 1 110
+byte 1 99
+byte 1 112
+byte 1 121
+byte 1 122
+byte 1 58
+byte 1 32
+byte 1 98
+byte 1 97
+byte 1 100
+byte 1 32
+byte 1 99
+byte 1 111
+byte 1 117
+byte 1 110
+byte 1 116
+byte 1 0
+align 1
+LABELV $263
+byte 1 78
+byte 1 95
+byte 1 115
+byte 1 116
+byte 1 114
+byte 1 110
+byte 1 99
+byte 1 112
+byte 1 121
+byte 1 122
+byte 1 58
+byte 1 32
+byte 1 78
+byte 1 85
+byte 1 76
+byte 1 76
+byte 1 32
+byte 1 115
+byte 1 114
+byte 1 99
+byte 1 0
+align 1
+LABELV $260
+byte 1 78
+byte 1 95
+byte 1 115
+byte 1 116
+byte 1 114
+byte 1 110
+byte 1 99
+byte 1 112
+byte 1 121
+byte 1 122
+byte 1 58
+byte 1 32
+byte 1 78
+byte 1 85
+byte 1 76
+byte 1 76
+byte 1 32
+byte 1 100
+byte 1 101
+byte 1 115
+byte 1 116
+byte 1 0
+align 1
+LABELV $256
+byte 1 32
+byte 1 46
+byte 1 46
+byte 1 46
+byte 1 32
+byte 1 0
+align 1
+LABELV $56
+byte 1 102
+byte 1 97
+byte 1 108
+byte 1 115
+byte 1 101
+byte 1 0
+align 1
+LABELV $51
+byte 1 116
+byte 1 114
+byte 1 117
+byte 1 101
+byte 1 0
