@@ -234,21 +234,15 @@ typedef enum {
 	TRAP_MEMSET = 101,
 	TRAP_MEMCPY,
 	TRAP_STRNCPY,
-	TRAP_STRNCMP,
 	TRAP_FLOOR,
 	TRAP_ACOS,
 	TRAP_SIN,
 	TRAP_COS,
 	TRAP_ATAN2,
 	TRAP_CEIL,
-	TRAP_TAN,
     TRAP_SQRT,
     TRAP_POW,
-    TRAP_STRLEN,
-    TRAP_ATOF,
     TRAP_STRSTR,
-    TRAP_STRRCHR,
-    TRAP_VSPRINTF,
 } sharedTraps_t;
 
 typedef struct vm_s

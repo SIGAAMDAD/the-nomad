@@ -1,40 +1,44 @@
 #include "../engine/n_shared.h"
 
-#ifndef Q3_VM
+#ifdef __cplusplus
     #error Never include this in engine builds
 #endif
 
-
 void *memset(void *dst, int fill, size_t n)
 {
-    char *d = dst;
-    while (n--) {
-        *d++ = fill;
+    size_t i;
+
+    if ((((long)dst | n) & 3) == 0) {
+        n >>= 2;
+        fill = fill | (fill << 8) | (fill << 16) | (fill << 24);
+
+        for (i = 0; i < n; i++) {
+            ((int *)dst)[i] = fill;
+        }
+    }
+    else {
+        for (i = 0; i < n; i++) {
+            ((char *)dst)[i] = fill;
+        }
     }
     return dst;
 }
 
-typedef struct {
-    int i0;
-    int i1;
-} qint64;
-typedef struct {
-    unsigned int i0;
-    unsigned int i1;
-} quint64;
-typedef struct {
-    qint64 i0;
-    qint64 i1;
-} qint128;
-typedef struct {
-    quint64 i0;
-    quint64 i1;
-} quint128;
-
 void *memcpy(void *dst, const void *src, size_t n)
 {
-    while (n--) {
-        *d++ = *s++;
+    size_t i;
+
+    if ((((long)dst | (long)src | n) & 3) == 0) {
+        n >>= 2;
+
+        for (i = 0; i < n; i++) {
+            ((int *)dst)[i] = ((const int *)src)[i];
+        }
+    }
+    else {
+        for (i = 0; i < n; i++) {
+            ((char *)dst)[i] = ((const int *)src)[i];
+        }
     }
     return dst;
 }
@@ -67,123 +71,85 @@ void *memmove(void *dst, const void *src, size_t n)
     return dst;
 }
 
+// bk001211 - gcc errors on compiling strcpy:  parse error before `__extension__'
+#ifdef Q3_VM
+
 size_t strlen(const char *str)
 {
-    const char* s;
-
-    s = str;
+    const char *s = str;
     while (*s) {
         s++;
     }
-    return (size_t)s - (size_t)str;
+    return (size_t)(s - str);
 }
 
-char *strcat(char *dst, const char *src)
+char *strcat( char *strDestination, const char *strSource ) {
+	char	*s;
+
+	s = strDestination;
+	while ( *s ) {
+		s++;
+	}
+	while ( *strSource ) {
+		*s++ = *strSource++;
+	}
+	*s = 0;
+	return strDestination;
+}
+
+
+char* strchr(const char* str, int c)
 {
-    char *d = dst;
-    const char *s = src;
-    while (*d) {
-        d++;
-    }
+    while ( *string ) {
+		if ( *string == c ) {
+			return ( char * )string;
+		}
+		string++;
+	}
+	return (char *)0;
+}
+
+
+char *strstr( const char *string, const char *strCharSet ) {
+	while ( *string ) {
+		int		i;
+
+		for ( i = 0 ; strCharSet[i] ; i++ ) {
+			if ( string[i] != strCharSet[i] ) {
+				break;
+			}
+		}
+		if ( !strCharSet[i] ) {
+			return (char *)string;
+		}
+		string++;
+	}
+	return (char *)0;
+}
+
+int strcmp(const char* s1, const char* s2)
+{
+    while ( *string1 == *string2 && *string1 && *string2 ) {
+		string1++;
+		string2++;
+	}
+	return *string1 - *string2;
+}
+
+char* strcpy(char *dst, const char *src)
+{
+    char *d;
+
+    d = dst;
     while (*src) {
         *d++ = *src++;
     }
     *d = 0;
     return dst;
 }
+#endif
 
-char* strrchr(const char *str, int c)
-{
-    const char *found, *p;
-
-    c = (unsigned char)c;
-
-    if (!c)
-        return strchr(str, 0);
-    
-    found = NULL;
-    while ((p = strchr(str, c)) != NULL) {
-        found = p;
-        str = p + 1;
-    }
-    return (char *)found;
-}
-
-char* strchr(const char* str, int c)
-{
-    const char *s = str;
-    while (*s) {
-        if (*s == c) {
-            return (char*)s;
-        }
-        s++;
-    }
-    return (char*)NULL;
-}
-
-char* strstr(const char* needle, const char* haystack)
-{
-    const char *str1 = needle;
-    const char *str2 = haystack;
-    while (*str1) {
-        int i;
-        for (i = 0; str2[i]; i++) {
-            if (str1[i] != str2[i]) {
-                break;
-            }
-        }
-        if (!str2[i]) {
-            return (char*)str1;
-        }
-        str1++;
-    }
-    return (char*)NULL;
-}
-
-int strcmp(const char* s1, const char* s2)
-{
-    const char *str1 = s1;
-    const char *str2 = s2;
-    while (*str1 == *str2 && *str1 && *str2) {
-        str1++;
-        str2++;
-    }
-    return *str1 - *str2;
-}
-
-int strncmp(const char* s1, const char* s2, size_t n)
-{
-    const char *str1 = s1;
-    const char *str2 = s2;
-    while (*str1 == *str2 && *str1 && *str2 && n--) {
-        str1++;
-        str2++;
-    }
-    return *str1 - *str2;
-}
-
-char* strncpy(char *dst, const char *src, size_t n)
-{
-    char *d = dst;
-    const char *s = src;
-    while (*s != '\0' && n--) {
-        *d++ = *s++;
-    }
-    *d = 0;
-    return dst;
-}
-
-char* strcpy(char *dst, const char *src)
-{
-    char *d = dst;
-    const char *s = src;
-    while (*s != '\0') {
-        *d++ = *s++;
-    }
-    *d = 0;
-    return dst;
-}
-
+#ifdef Q3_VM
 int tolower(int c)
 {
     if (c >= 'A' && c <= 'Z') {
@@ -199,6 +165,7 @@ int toupper(int c)
     }
     return c;
 }
+#endif
 
 static char* med3(char*, char*, char*, cmp_t*);
 static void  swapfunc(char*, char*, int, int);
@@ -509,6 +476,8 @@ double _atof(const char** stringPtr)
     return value * sign;
 }
 
+#ifdef Q3_VM
+
 int atoi(const char* string)
 {
     int sign;
@@ -613,6 +582,27 @@ int _atoi(const char** stringPtr)
 
     return value * sign;
 }
+
+#ifdef Q3_VM
+double tan(double x)
+{
+    return sin(x) / cos(x);
+}
+#endif
+
+static int randSeed = 0;
+
+void srand(unsigned seed)
+{
+    randSeed = seed;
+}
+
+int rand(void)
+{
+    randSeed = (69069 * randSeed + 1);
+    return randSeed & 0x7fff;
+}
+
 
 int abs(int n)
 {
@@ -908,41 +898,39 @@ done:
     return buf_p - buffer;
 }
 
-void VM_Com_Printf(const char *string);
-void VM_Com_Error(int level, const char *string);
+/* this is really crappy */
+int sscanf( const char *buffer, const char *fmt, ... ) {
+	int		cmd;
+	int		**arg;
+	int		count;
 
-void GDR_DECL G_Printf(const char *fmt, ...)
-{
-    va_list argptr;
-    char msg[1024];
+	arg = (int **)&fmt + 1;
+	count = 0;
 
-    va_start(argptr, fmt);
-    vsprintf(msg, fmt, argptr);
-    va_end(argptr);
+	while ( *fmt ) {
+		if ( fmt[0] != '%' ) {
+			fmt++;
+			continue;
+		}
 
-    VM_Com_Printf(msg);
+		cmd = fmt[1];
+		fmt += 2;
+
+		switch ( cmd ) {
+		case 'i':
+		case 'd':
+		case 'u':
+			**arg = _atoi( &buffer );
+			break;
+		case 'f':
+			*(float *)*arg = _atof( &buffer );
+			break;
+		}
+		arg++;
+	}
+
+	return count;
 }
 
-void GDR_DECL Com_Printf(const char *fmt, ...)
-{
-    va_list argptr;
-    char msg[1024];
 
-    va_start(argptr, fmt);
-    vsprintf(msg, fmt, argptr);
-    va_end(argptr);
-
-    VM_Com_Printf(msg);
-}
-
-void GDR_DECL Com_Error(int level, const char *fmt, ...)
-{
-    va_list argptr;
-    char msg[1024];
-
-    va_start(argptr, fmt);
-    vsprintf(msg, fmt, argptr);
-    va_end(argptr);
-
-    VM_Com_Error(level, msg);
-}
+#endif

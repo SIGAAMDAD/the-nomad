@@ -1860,6 +1860,13 @@ static void FS_ListBFF_f(void)
 			Con_Printf("Filename: %s", bff->bffFilename);
 			Con_Printf("Checksum: %i", bff->checksum);
 			Con_Printf(" ");
+
+			for (uint32_t i = 0; i < bff->numfiles; i++) {
+				Con_Printf("<Chunk #%i>", i);
+				Con_Printf("Name: %s", bff->chunkList[i].chunkName);
+				Con_Printf("Size: %lu", bff->chunkList[i].chunkSize);
+				Con_Printf(" ");
+			}
 		}
 	}
 }
@@ -1869,7 +1876,7 @@ static void FS_ShowDir_f(void)
 	char **list;
 	uint64_t numfiles;
 
-	list = Sys_ListFiles(fs_basepath->s, NULL, NULL, &numfiles, qfalse);
+	list = Sys_ListFiles(fs_basegame->s, NULL, NULL, &numfiles, qfalse);
 
 	Con_Printf("<-------------------- Directory %s -------------------->", fs_basepath->s);
 	for (uint64_t i = 0; i < numfiles; i++) {
@@ -1999,6 +2006,23 @@ void FS_InitFilesystem(void)
 #endif
 
 	Con_Printf("============ FS_InitFilesystem ============");
+
+	// create the mod directories
+	if (!Sys_mkdir("TEXTURES")) {
+		N_Error("Failed to create directory TEXTURES/");
+	}
+	if (!Sys_mkdir("SFX")) {
+		N_Error("Failed to create directory SFX/");
+	}
+	if (!Sys_mkdir("MUSIC")) {
+		N_Error("Failed to create directory MUSIC/");
+	}
+	if (!Sys_mkdir("LEVELS")) {
+		N_Error("Failed to create directory LEVELS/");
+	}
+	if (!Sys_mkdir("SCRIPTS")) {
+		N_Error("Failed to create directory SCRIPTS/");
+	}
 
 	fs_basepath = Cvar_Get("fs_basepath", Sys_DefaultBasePath(), CVAR_INIT);
 	Cvar_SetDescription(fs_basepath, "Write-protected CVar specifying the path to the installation folder of the game.");

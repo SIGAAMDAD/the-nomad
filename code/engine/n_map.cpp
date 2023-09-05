@@ -86,30 +86,37 @@ static qboolean Map_LoadSprites(const json_string& source, nmap_t *mapData, json
     }
     FS_FreeFile(buffer);
 
-    const uint64_t numTiles = mapData->tileCountX * mapData->tileCountY + mapData->firstGid;
-    uint32_t *tiles = mapData->tilesetData;
-    for (uint64_t i = mapData->firstGid; i < numTiles; ++i)
-        tiles[i] = i;
+    uint64_t tileIndex = 0;
+    for (uint32_t y = 0; y < mapData->tileCountY; y++) {
+        for (uint32_t x = 0; x < mapData->tileCountX; x++) {
+            mapData->tilesetData[y * mapData->tileCountX + x] = tileIndex;
+            printf("%i ", mapData->tilesetData[y * mapData->tileCountX + x]);
+            tileIndex++;
+        }
+        printf("\n");
+    }
     
     return qtrue;
 }
 
-static void Map_GenTextureCoords(const glm::vec2& sheetDims, const glm::vec2& spriteDims, const glm::vec2& coords, texcoord_t tex)
+
+static void Map_GenTextureCoords(const glm::vec2& sheetDims, const glm::vec2& spriteDims, const glm::vec2& coords, texcoord_t *tex)
 {
+    const float size = sheetDims.x * sheetDims.y;
     const glm::vec2 min = { (coords.x * spriteDims.x) / sheetDims.x, (coords.y * spriteDims.y) / sheetDims.x };
     const glm::vec2 max = { ((coords.x + 1) * spriteDims.x) / sheetDims.y, ((coords.y + 1) * spriteDims.y) / sheetDims.y };
 
-    tex[0][0] = min.x;
-    tex[0][1] = min.y;
+    tex->v[0][0] = min.x;
+    tex->v[0][1] = min.y;
 
-    tex[1][0] = max.x;
-    tex[1][1] = max.y;
+    tex->v[1][0] = max.x;
+    tex->v[1][1] = min.y;
     
-    tex[2][0] = max.x;
-    tex[2][1] = max.y;
+    tex->v[2][0] = max.x;
+    tex->v[2][1] = max.y;
 
-    tex[3][0] = min.x;
-    tex[3][1] = max.y;
+    tex->v[3][0] = min.x;
+    tex->v[3][1] = max.y;
 }
 
 static void Map_LoadTileset(nmap_t *mapData)
@@ -120,15 +127,41 @@ static void Map_LoadTileset(nmap_t *mapData)
     for (uint64_t y = 0; y < mapData->tileCountY; y++) {
         for (uint64_t x = 0; x < mapData->tileCountX; x++) {
             Map_GenTextureCoords({ mapData->imageWidth, mapData->imageHeight }, { mapData->tileWidth, mapData->tileHeight },
-                { x, y }, mapData->tileCoords[tileIndex]);
-            tileIndex++;
+                { x, y }, &mapData->tileCoords[y * mapData->tileCountX + x]);
         }
     }
+}
+
+static uint32_t CalcGID(uint32_t gid, nmap_t *m, uint32_t y, uint32_t x)
+{
+    const uint32_t index = y * m->mapWidth + x;
+
+    // get the flags
+    bool flippedHorz = gid & TILE_FLIPPED_HORZ;
+    bool flippedDiag = gid & TILE_FLIPPED_DIAG;
+    bool flippedVert = gid & TILE_FLIPPED_VERT;
+
+    // clear the flags
+    gid &= ~(TILE_FLIPPED_HORZ | TILE_FLIPPED_DIAG | TILE_FLIPPED_VERT);
+    m->tilemapData[index][0] = gid;
+
+    m->tilemapData[index][1] = 0;
+    if (flippedHorz)
+        m->tilemapData[index][1] |= TILE_FLIPPED_HORZ;
+    if (flippedDiag)
+        m->tilemapData[index][1] |= TILE_FLIPPED_DIAG;
+    if (flippedVert)
+        m->tilemapData[index][1] |= TILE_FLIPPED_VERT;
+    
+    return gid;
 }
 
 static qboolean Map_LoadTiles(nmap_t *mapData, const json *tilelayer, const json *tileset)
 {
     uint32_t *tileData, tileIndex;
+    uint32_t tileCountX, tileCountY;
+    uint32_t mapWidth, mapHeight;
+    uint64_t size;
     json *tsj;
 
     tsj = (json *)Hunk_Alloc(sizeof(json), "JSONtsj", h_low);
@@ -152,11 +185,11 @@ static qboolean Map_LoadTiles(nmap_t *mapData, const json *tilelayer, const json
     mapData->imageWidth = tileset->at("imagewidth");
     mapData->imageHeight = tileset->at("imageheight");
     mapData->tileCountX = mapData->imageWidth / mapData->tileWidth;
-    mapData->tileCountY = mapData->imageHeight / mapData->tileHeight;
+    mapData->tileCountY = mapData->imageHeight / mapData->tileHeight;  
 
     mapData->tilemapData = (tile_t *)Hunk_Alloc(sizeof(*mapData->tilemapData) * mapData->mapWidth * mapData->mapHeight, "tilemapData", h_low);
     mapData->tilesetData = (uint32_t *)Hunk_Alloc(sizeof(*mapData->tilesetData) * mapData->tileCountX * mapData->tileCountY, "tilesetData", h_low);
-    mapData->tileCoords = (texcoord_t *)Hunk_Alloc(sizeof(texcoord_t) * mapData->tileCountX * mapData->tileCountY, "tileCoords", h_low);
+    mapData->tileCoords = (texcoord_t *)Hunk_Alloc(sizeof(*mapData->tileCoords) * mapData->tileCountX * mapData->tileCountY, "tileCoords", h_low);
 
     //
     // load the tiles
@@ -175,33 +208,13 @@ static qboolean Map_LoadTiles(nmap_t *mapData, const json *tilelayer, const json
     tileIndex = 0;
     for (uint64_t y = 0; y < mapData->mapHeight; y++) {
         for (uint64_t x = 0; x < mapData->mapWidth; x++) {
-            uint32_t gid = tileData[y * mapData->mapWidth + x] - mapData->firstGid;
-
-            // get the flags
-            bool flippedHorz = gid & TILE_FLIPPED_HORZ;
-            bool flippedDiag = gid & TILE_FLIPPED_DIAG;
-            bool flippedVert = gid & TILE_FLIPPED_VERT;
-
-            // clear the flags
-            gid &= ~(TILE_FLIPPED_HORZ | TILE_FLIPPED_DIAG | TILE_FLIPPED_VERT);
-            mapData->tilemapData[tileIndex][0] = gid;
-
-            mapData->tilemapData[tileIndex][1] = 0;
-            if (flippedHorz)
-                mapData->tilemapData[tileIndex][1] |= TILE_FLIPPED_HORZ;
-            if (flippedDiag)
-                mapData->tilemapData[tileIndex][1] |= TILE_FLIPPED_DIAG;
-            if (flippedVert)
-                mapData->tilemapData[tileIndex][1] |= TILE_FLIPPED_VERT;
-
-            tileIndex++;
+            uint32_t gid = CalcGID(tileData[y * mapData->mapWidth + x], mapData, y, x);
             printf("%i ", gid);
         }
         printf("\n");
     }
     // give it back to the zone
     Hunk_FreeTempMemory(tileData);
-    Map_LoadTileset(mapData);
 
     Con_Printf(
         "imageWidth: %lu\n"
@@ -283,6 +296,7 @@ nmap_t *LVL_LoadMap(const char *tmjFile)
         Hunk_Clear();
         return NULL;
     }
+    Map_LoadTileset(mapData);
 
     return mapData;
 }

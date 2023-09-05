@@ -284,6 +284,14 @@ typedef struct
     float zoomLevel;
 } camera_t;
 
+typedef struct
+{
+    texture_t *image;
+    vec2_t sheetDims;
+    vec2_t spriteDims;
+    uint32_t numSprites;
+} spritesheet_t;
+
 #define RS_DRAWING          0x0000
 #define RS_IN_FRAMBUFFER    0x2000
 

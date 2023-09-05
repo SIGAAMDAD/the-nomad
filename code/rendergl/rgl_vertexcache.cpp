@@ -154,8 +154,7 @@ extern "C" void R_DrawFrameCache(vertexCache_t *cache)
 		nglTexCoordPointer(2, GL_FLOAT, sizeof(*cache->vertices), cache->vertices[0].texcoords);
 		nglColorPointer(4, GL_FLOAT, sizeof(*cache->vertices), cache->vertices[0].color);
 
-//		nglDrawElements(GL_TRIANGLES, cache->usedIndices, GL_UNSIGNED_INT, cache->indices);
-		nglDrawArrays(GL_TRIANGLE_FAN, 0, cache->usedVertices);
+		nglDrawElements(GL_TRIANGLES, cache->usedIndices, GL_UNSIGNED_INT, cache->indices);
 
 		nglDisableClientState(GL_VERTEX_ARRAY);
 		nglDisableClientState(GL_COLOR_ARRAY);
@@ -198,17 +197,17 @@ extern "C" void R_DrawCache(vertexCache_t *cache)
 				nglTexCoordPointer(2, GL_FLOAT, sizeof(*cache->vertices), cache->vertices[0].texcoords);
 				nglColorPointer(4, GL_FLOAT, sizeof(*cache->vertices), cache->vertices[0].color);
 
-				nglDrawArrays(GL_TRIANGLE_FAN, 0, cache->usedVertices);
+				nglDrawArrays(GL_TRIANGLES, 0, cache->usedVertices);
 
 				nglDisableClientState(GL_VERTEX_ARRAY);
 				nglDisableClientState(GL_COLOR_ARRAY);
 				nglDisableClientState(GL_TEXTURE_COORD_ARRAY);
 			}
 			else if (r_enableBuffers->i) {
-				nglDrawArrays(GL_TRIANGLE_FAN, 0, cache->usedVertices);
+				nglDrawArrays(GL_TRIANGLES, 0, cache->usedVertices);
 			}
 			else {
-				nglBegin(GL_TRIANGLE_FAN);
+				nglBegin(GL_TRIANGLES);
 				for (uint32_t i = 0; i < cache->usedIndices; i++) {
 					nglVertex2fv(cache->vertices[i].pos);
 					nglTexCoord2fv(cache->vertices[i].texcoords);

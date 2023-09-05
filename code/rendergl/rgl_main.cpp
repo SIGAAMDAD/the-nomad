@@ -607,7 +607,7 @@ extern "C" void R_GetVars(void)
         "    FXAA = use fast-approximate (not yet supported)\n"
         "    SSAA = use super-sampling");
     
-    r_flipTextureVertically = ri.Cvar_Get("r_flipTextureVertically", "0", CVAR_SAVE | CVAR_LATCH);
+    r_flipTextureVertically = ri.Cvar_Get("r_flipTextureVertically", "1", CVAR_SAVE | CVAR_LATCH);
     ri.Cvar_SetGroup(r_flipTextureVertically, CVG_RENDERER);
 
     r_enableClientState = ri.Cvar_Get("r_enableClientState", "0", CVAR_PRIVATE | CVAR_SAVE | CVAR_LATCH);

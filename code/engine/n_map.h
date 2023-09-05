@@ -3,15 +3,19 @@
 
 #pragma once
 
+// 4 gpu-style texture coordinates
+typedef struct
+{
+    vec2_t v[4];
+} texcoord_t;
+
 // gid, flags
 typedef uint32_t tile_t[2];
-// 4 gpu-style texture coordinates
-typedef vec2_t texcoord_t[4];
 // x, y
 typedef uint32_t checkpoint_t[2];
 // x, y, entity type, specific entity id
 typedef uint32_t spawn_t[4];
-
+// an entity id
 typedef uint32_t sprite_t;
 
 #ifdef __cplusplus

@@ -32,7 +32,7 @@ extern "C" void RB_DrawVertices(const drawVert_t *vertices, uint32_t numVertices
         return;
     }
 
-    nglBegin(GL_TRIANGLE_FAN);
+    nglBegin(GL_TRIANGLES);
     for (i = 0; i < numVertices; ++i) {
         v = (const float *)vertices[i].pos;
         c = (const float *)vertices[i].color;
@@ -53,10 +53,7 @@ extern "C" void RB_PushRect(const drawVert_t *vertices)
 
 extern "C" void RB_DrawTile(const drawTileCmd_t *cmd)
 {
-    if (!r_enableBuffers->i)
-        RB_DrawVertices(cmd->vertices, 4);
-    else
-        RB_PushRect(cmd->vertices);
+    RB_DrawVertices(cmd->vertices, 4);
 }
 
 extern "C" void RB_DrawEntity(const drawRefCmd_t *cmd)

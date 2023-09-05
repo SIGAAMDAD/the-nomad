@@ -5,3 +5,4 @@ sg_main
 sg_mem
 n_shared
 n_math
+../bg_lib

@@ -612,6 +612,16 @@ void *Sys_LoadDLL(const char *name)
     return libHandle;
 }
 
+qboolean Sys_mkdir(const char *name)
+{
+    if (mkdir(name, 0750) == 0) {
+        return qtrue;
+    }
+    else {
+        return (qboolean)(errno == EEXIST);
+    }
+}
+
 void *Sys_GetProcAddress(void *handle, const char *name)
 {
     void *proc;

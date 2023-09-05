@@ -117,12 +117,8 @@ static intptr_t G_SgameSystemCalls(intptr_t *args)
 	case TRAP_STRNCPY:
         OUT_OF_BOUNDS(sgvm, args[1], args[3]);
         return (intptr_t)strncpy((char *)VMA(1), (const char *)VMA(2), args[3]);
-	case TRAP_STRNCMP:
-        return strncmp((const char *)VMA(1), (const char *)VMA(2), args[3]);
 	case TRAP_FLOOR:
         return FloatToInt(floor(VMF(1)));
-	case TRAP_ACOS:
-        return FloatToInt(N_acos(VMF(1)));
 	case TRAP_SIN:
         return FloatToInt(sin(VMF(1)));
 	case TRAP_COS:
@@ -131,20 +127,10 @@ static intptr_t G_SgameSystemCalls(intptr_t *args)
         return FloatToInt(atan2(VMF(1), VMF(2)));
 	case TRAP_CEIL:
         return FloatToInt(ceil(VMF(1)));
-	case TRAP_TAN:
-        return FloatToInt(tan(VMF(1)));
     case TRAP_SQRT:
         return FloatToInt(sqrt(VMF(1)));
     case TRAP_POW:
         return FloatToInt(pow(VMF(1), VMF(2)));
-    case TRAP_STRLEN:
-        return (intptr_t)strlen((const char *)VMA(1));
-    case TRAP_ATOF:
-        return FloatToInt(atof((const char *)VMA(1)));
-    case TRAP_STRSTR:
-        return (intptr_t)strstr((const char *)VMA(1), (const char *)VMA(2));
-    case TRAP_STRRCHR:
-        return (intptr_t)strrchr((const char *)VMA(1), args[2]);
     default:
         Con_Printf(ERROR, "G_SgameSyscalls: bad call: %i", (int32_t)args[0]);
     };

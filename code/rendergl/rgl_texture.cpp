@@ -6,24 +6,20 @@ extern "C" {
 
 void *Malloc(uint64_t size)
 {
-    return ri.Mem_Alloc(size);
+    return malloc(size);
 }
 void Free(void *p)
 {
-    ri.Mem_Free(p);
+    free(p);
 }
 void *Realloc(void *p, uint64_t nsize)
 {
-    void *ptr = ri.Mem_Alloc(nsize);
-    if (p) {
-        memcpy(ptr, p, ri.Mem_Msize(p));
-        ri.Mem_Free(p);
-    }
-    return ptr;
+    return realloc(p, nsize);
 }
 
 #define MAX_FILE_HASH 1024
 static texture_t* textures[MAX_FILE_HASH];
+static spritesheet_t* spritesheets[MAX_FILE_HASH];
 
 typedef struct
 {
@@ -188,7 +184,7 @@ extern "C" texture_t *R_InitTexture(const char *filename)
         return textures[hash];
     }
 
-    t = (texture_t *)ri.Hunk_Alloc(sizeof(texture_t), "GLtexture", h_low);
+    t = (texture_t *)ri.Malloc(sizeof(texture_t), &t, "GLtexture");
     t->minFilter = R_TexMinFilter();
     t->magFilter = R_TexMagFilter();
     t->wrapS = GL_REPEAT;
@@ -201,8 +197,8 @@ extern "C" texture_t *R_InitTexture(const char *filename)
     nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, t->magFilter);
     nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, t->wrapS);
     nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, t->wrapT);
-//    if (r_ARB_texture_filter_anisotropic->i)
-//        nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, glContext.maxAnisotropy);
+    if (r_ARB_texture_filter_anisotropic->i)
+        nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, glContext.maxAnisotropy);
 
     bufferLen = ri.FS_LoadFile(filename, (void **)&buffer);
     if (!buffer) {
@@ -217,7 +213,7 @@ extern "C" texture_t *R_InitTexture(const char *filename)
 
     nglTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, t->width, t->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
 
-    t->data = (byte *)ri.Hunk_Alloc(t->width * t->height * t->channels, "GLtexbuffer", h_low);
+    t->data = (byte *)ri.Malloc(t->width * t->height * t->channels, &t->data, "GLtexbuffer");
     memcpy(t->data, image, t->width * t->height * t->channels);
     ri.Mem_Free(image);
 

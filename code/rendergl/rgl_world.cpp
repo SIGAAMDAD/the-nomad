@@ -55,66 +55,72 @@ extern "C" void RE_DrawTileSurf(const tileSurf_t *surf)
 {
     uint32_t y, x, i;
     uint32_t gid;
-//    drawVert_t vertices[6];
+    drawVert_t vertices[6], *v, *vert;
     qboolean warning = qfalse;
     const texcoord_t *texcoords;
 
-    if (r_enableBuffers->i)
-        RB_FlushVertices();
-
     R_BindTexture(rg.textures[rg.mapData->texHandle]);
-    drawVert_t vertices[6] = {
-        {{0.0f, 0.0f, 0.0f, 0.0f}, { 0.5f,  0.5f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f}},
-        {{0.0f, 0.0f, 0.0f, 0.0f}, { 0.5f, -0.5f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}},
-        {{0.0f, 0.0f, 0.0f, 0.0f}, {-0.5f, -0.5f, 0.0f}, {1.0f, 1.0f}, {0.0f, 0.0f}},
-        {{0.0f, 0.0f, 0.0f, 0.0f}, {-0.5f,  0.5f, 0.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}},
+    const uint32_t indices[] = {
+        0, 1, 2,
+        2, 3, 0
     };
 
-#if 0
-    nglBegin(GL_TRIANGLE_FAN);
-
-    nglVertex3f( 1.0f,  1.0f, 0.0f); nglTexCoord2f(1.0f, 1.0f);
-    nglVertex3f( 1.0f, -1.0f, 0.0f); nglTexCoord2f(0.0f, 1.0f);
-    nglVertex3f(-1.0f, -1.0f, 0.0f); nglTexCoord2f(0.0f, 0.0f);
-    nglVertex3f(-1.0f,  1.0f, 0.0f); nglTexCoord2f(1.0f, 0.0f);
-
-    nglEnd();
+    /*
+    DONT MODIFY THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    */
+#if 0 // works
+    drawVert_t vertices[4] = {
+        {{0.0f, 0.0f, 0.0f, 0.0f}, { 0.5f,  0.5f, 0.0f}, {1.0f, 1.0f}, {0.0f, 0.0f}},
+        {{0.0f, 0.0f, 0.0f, 0.0f}, { 0.5f, -0.5f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}},
+        {{0.0f, 0.0f, 0.0f, 0.0f}, {-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f}},
+        {{0.0f, 0.0f, 0.0f, 0.0f}, {-0.5f,  0.5f, 0.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}},
+    };
+//#else
+    drawVert_t vertices[4] = {
+        {{0.0f, 0.0f, 0.0f, 0.0f}, { 0.5f,  0.5f, 0.0f}, {1.0f, 0.0f}, {0.0f, 0.0f}},
+        {{0.0f, 0.0f, 0.0f, 0.0f}, { 0.5f, -0.5f, 0.0f}, {1.0f, 1.0f}, {0.0f, 0.0f}},
+        {{0.0f, 0.0f, 0.0f, 0.0f}, {-0.5f, -0.5f, 0.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}},
+        {{0.0f, 0.0f, 0.0f, 0.0f}, {-0.5f,  0.5f, 0.0f}, {0.0f, 0.0f}, {0.0f, 0.0f}},
+    };
 #endif
-    R_PushVertices(backend.frameCache, vertices, 4);
-    backend.frameCache->usedIndices = 6;
-    R_DrawCache(backend.frameCache);
-#if 0
-    for (y = 0; y < surf->numTilesY; ++y) {
-        for (x = 0; x < surf->numTilesX; ++x) {
+
+    nglBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    backend.frameCache->indices = backend.indices;
+    v = (drawVert_t *)R_FrameAlloc(sizeof(*v) * rg.mapData->mapWidth * rg.mapData->mapHeight * 4);
+    vert = v;
+
+    R_BindCache(backend.frameCache);
+    for (y = 0; y < rg.mapData->mapHeight; ++y) {
+        for (x = 0; x < rg.mapData->mapWidth; ++x) {
             // convert the world/tilemap coordinates to OpenGL screen coordinates
-            RB_ConvertCoords(vertices, glm::vec3( x - (rg.mapData->tileWidth * 0.5f), rg.mapData->tileHeight - y, 0.0f ), 6);
+            RB_ConvertCoords(vert, glm::vec3( x - (rg.mapData->mapWidth * 0.5f), rg.mapData->mapHeight - y, 0.0f ), 4);
 
             // fetch the gid
-            gid = rg.mapData->firstGid + rg.mapData->tilemapData[y * rg.mapData->mapWidth + x][0];
-            texcoords = ri.Map_GetSpriteCoords(gid);
-            if (!texcoords) { // uh oh...
-                for (i = 0; i < 6; ++i) {
-                    memset(vertices[i].texcoords, 0, sizeof(vertices[i].texcoords));
-                }
-                if (!warning) {
-                    warning = qtrue;
-                    Con_Printf(WARNING, "Bad gid: %i", gid);
-                }
+//            gid = rg.mapData->tilemapData[y * rg.mapData->mapWidth + x][0];
+
+
+//            texcoords = ri.Map_GetSpriteCoords(gid);
+//            if (!texcoords) { // uh oh...
+//                for (i = 0; i < 4; ++i) {
+//                    memset(vert[i].texcoords, 0, sizeof(vert[i].texcoords));
+//                }
+//                Con_Printf(WARNING, "Bad gid: %i", gid);
 //              if (r_debug)
 //                  Con_Printf(WARNING, "Bad gid: %i", rg.);
-            }
-            else {
-                for (i = 0; i < 6; ++i) {
-                    memcpy(vertices[i].texcoords, texcoords[i][0], sizeof(vec2_t));
+//            }
+//            else {
+                for (i = 0; i < 4; ++i) {
+                    memcpy(vert[i].texcoords, rg.mapData->tileCoords[rg.mapData->tilemapData[y * rg.mapData->mapWidth + x]].v[i], sizeof(vec2_t));
                 }
-            }
-            RE_AddTile(vertices);
+//            }
+            vert += 4;
         }
     }
-#endif
-    if (r_enableBuffers->i)
-        RB_FlushVertices();
-    
+    nglBufferSubDataARB(GL_ARRAY_BUFFER_ARB, 0, sizeof(*v) * rg.mapData->mapWidth * rg.mapData->mapHeight * 4, v);
+    nglBufferSubDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0, sizeof(uint32_t) * rg.mapData->mapWidth * rg.mapData->mapHeight * 6, backend.indices);
+    nglDrawElements(GL_TRIANGLES, rg.mapData->mapHeight * rg.mapData->mapWidth * 6, GL_UNSIGNED_INT, NULL);
+    R_UnbindCache();
     R_UnbindTexture();
 }
 
@@ -131,13 +137,11 @@ extern "C" void RB_ConvertCoords(drawVert_t *v, const glm::vec3& pos, uint32_t c
     glm::mat4 model, mvp, identity = glm::mat4(1.0f);
     const glm::vec4 *positions;
 
-    constexpr glm::vec4 p[6] = {
+    constexpr glm::vec4 p[4] = {
         { 0.5f,  0.5f, 0.0f, 1.0f},
         { 0.5f, -0.5f, 0.0f, 1.0f},
         {-0.5f, -0.5f, 0.0f, 1.0f},
-        {-0.5f, -0.5f, 0.0f, 1.0f},
         {-0.5f,  0.5f, 0.0f, 1.0f},
-        { 0.5f,  0.5f, 0.0f, 1.0f}
     };
     positions = p;
 

@@ -42,14 +42,11 @@ typedef int cmp_t(const void *, const void *);
 /* standard library replacement functions */
 void *memcpy(void *dst, const void *src, size_t n);
 void *memchr(void *ptr, int delegate, size_t n);
-size_t strlen(const char *str);
-void *memccpy(void *dst, const void *src, int c, size_t n);
 void *memset(void *dst, int fill, size_t n);
 void *memmove(void *dst, const void *src, size_t n);
 char *strcpy(char *dst, const char *src);
-char *strncpy(char *dst, const char *src, size_t n);
 char *strcat(char *dst, const char *src);
-char *strrchr(const char *str, int c);
+size_t strlen(const char *str);
 char *strchr(const char *str, int c);
 char *strstr(const char *needle, const char *haystack);
 int strcmp(const char *str1, const char *str2);
@@ -59,16 +56,20 @@ int toupper(int c);
 void qsort(void *a, size_t n, size_t es, cmp_t *cmp);
 void srand(unsigned seed);
 int rand(void);
-double atof(const char *string);
-double _atof(const char **stringPtr);
-int atoi(const char *string);
-int _atoi(const char **stringPtr);
-int abs(int n);
-double fabs(double x);
 int vsprintf(char *buffer, const char *fmt, va_list argptr);
-void GDR_DECL G_Printf(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
-void GDR_DECL Com_Printf(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
-void GDR_DECL Com_Error(int level, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
+void sscanf(const char *buffer, const char *fmt, ...);
+
+// Math functions
+double ceil( double x );
+double floor( double x );
+double sqrt( double x );
+double sin( double x );
+double cos( double x );
+double atan2( double y, double x );
+double tan( double x );
+int abs( int n );
+double fabs( double x );
+double acos( double x );
 
 #define CHAR_BIT 8       /* number of bits in a char */
 #define SCHAR_MIN (-128) /* minimum signed char value */

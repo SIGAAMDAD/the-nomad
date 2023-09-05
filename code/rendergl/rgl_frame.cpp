@@ -161,7 +161,6 @@ extern "C" void RE_BeginFrame(void)
     backend.frameCache->usedVertices = 0;
     backend.frameCache->usedIndices = 0;
     backend.frameCache->indices = frame.indices;
-    R_ReserveFrameMemory(backend.frameCache, backend.numVertices + 64);
     backend.commandList.usedBytes = 0;
 
     RB_MakeViewMatrix();

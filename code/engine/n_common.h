@@ -419,6 +419,8 @@ uint64_t Sys_ReadMappedFile(void *buffer, uint64_t size, memoryMap_t *file);
 void *Sys_GetMappedFileBuffer(memoryMap_t *file);
 void Sys_UnmapFile(memoryMap_t *file);
 
+qboolean Sys_mkdir(const char *name);
+
 void Sys_Print(const char *str);
 void GDR_DECL Sys_Printf(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
 const char *Sys_pwd(void);

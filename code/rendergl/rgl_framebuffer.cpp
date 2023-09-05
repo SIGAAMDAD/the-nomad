@@ -211,14 +211,15 @@ extern "C" void RE_EndFramebuffer(void)
     nglDisable(GL_DEPTH_TEST);
 
     // the intermediate fbo's texture isn't an engine texture, so binding it manually is the only option
+    
     R_UnbindTexture();
     nglBindTexture(GL_TEXTURE_2D, intermediate->colorIds[0]);
 
     nglBegin(GL_TRIANGLE_FAN);
 
-    nglVertex3f( 1.0f,  1.0f, 0.0f); nglTexCoord2f(1.0f, 1.0f);
+    nglVertex3f( 1.0f,  1.0f, 0.0f); nglTexCoord2f(0.0f, 0.0f);
     nglVertex3f( 1.0f, -1.0f, 0.0f); nglTexCoord2f(0.0f, 1.0f);
-    nglVertex3f(-1.0f, -1.0f, 0.0f); nglTexCoord2f(0.0f, 0.0f);
+    nglVertex3f(-1.0f, -1.0f, 0.0f); nglTexCoord2f(1.0f, 1.0f);
     nglVertex3f(-1.0f,  1.0f, 0.0f); nglTexCoord2f(1.0f, 0.0f);
 
     nglEnd();
