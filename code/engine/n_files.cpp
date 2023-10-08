@@ -43,7 +43,7 @@ typedef struct
 	int64_t index;
 	qboolean touched;
 
-	eastl::unordered_map<const char *, fileInBFF_t> hashTable;
+	fileInBFF_t **hashTable;
 	bff_chunk_t *chunkList;
 	memoryMap_t *mapping;
 	FILE *file;
@@ -147,10 +147,10 @@ static void FS_FixPath(char *path)
 static FILE *FS_FileForHandle(file_t f)
 {
 	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
-		N_Error("FS_FileForHandle: out of range");
+		N_Error(ERR_DROP, "FS_FileForHandle: out of range");
 	}
 	if (!handles[f].used) {
-		N_Error("FS_FileForHandle: invalid handle");
+		N_Error(ERR_DROP, "FS_FileForHandle: invalid handle");
 	}
 
 	return handles[f].data.fp;
@@ -173,7 +173,7 @@ static file_t FS_HandleForFile(void)
 			return i;
 		}
 	}
-	Con_Error(false, "FS_HandleForFile: not enough handles");
+	N_Error(ERR_DROP, "FS_HandleForFile: not enough handles");
 	return FS_INVALID_HANDLE;
 }
 
@@ -330,7 +330,7 @@ void FS_VM_CloseFiles(handleOwner_t owner)
 		if (handles[i].owner != owner)
 			continue;
 		
-		Con_Printf(WARNING, "%s:%i:%s leaked filehandle", FS_OwnerName(owner), i, handles[i].name);
+		Con_Printf(COLOR_YELLOW "%s:%i:%s leaked filehandle\n", FS_OwnerName(owner), i, handles[i].name);
 		FS_FClose(i);
 	}
 }
@@ -398,7 +398,7 @@ static void FS_CheckFilenameIsNotAllowed( const char *filename, const char *func
 
 	// Check if the filename ends with the library extension
 	if ( FS_AllowedExtension( filename, allowBFFs, &extension ) == qfalse )  {
-		N_Error( "%s: Not allowed to manipulate '%s' due "
+		N_Error( ERR_FATAL, "%s: Not allowed to manipulate '%s' due "
 			"to %s extension", function, filename, extension );
 	}
 }
@@ -530,7 +530,7 @@ static fileInBFF_t *FS_GetChunkHandle(const char *path, int64_t *bffIndex)
 		// is the element a bff file?
 		if (sp->bff) {
 			// look through all the bff chunks
-			file = sp->bff->hashTable.begin();
+			file = sp->bff->hashTable;
 			while (file != sp->bff->hashTable.end()) {
 				if (FS_FilenameCompare(path, file->first)) {
 					// found it!
@@ -545,6 +545,13 @@ static fileInBFF_t *FS_GetChunkHandle(const char *path, int64_t *bffIndex)
 	return NULL;
 }
 
+file_t FS_FOpenAppend(const char *path)
+{
+	file_t f;
+	FS_FOpenFileWithMode(path, &f, FS_OPEN_APPEND);
+	return f;
+}
+
 file_t FS_OpenFileMapping(const char *path, qboolean temp)
 {
 	boost::lock_guard<boost::recursive_mutex> lock{fs_lock};
@@ -555,10 +562,10 @@ file_t FS_OpenFileMapping(const char *path, qboolean temp)
 	FILE *fp;
 
 	if (!fs_initialized) {
-		N_Error("Filesystem call made without initialization");
+		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 	if (!path || !*path) {
-		N_Error("FS_OpenFileMapping: NULL or empty path");
+		N_Error(ERR_FATAL, "FS_OpenFileMapping: NULL or empty path");
 	}
 
 	fd = FS_HandleForFile();
@@ -673,7 +680,7 @@ static char **FS_ListFilteredFiles(const char *path, const char *extension, cons
 	const searchpath_t *sp;
 
 	if (!fs_initialized) {
-		N_Error("Filesystem call made without initialization");
+		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 
 	if (!path) {
@@ -777,7 +784,7 @@ static char **FS_ListFilteredFiles(const char *path, const char *extension, cons
 		return NULL;
 	}
 
-	listCopy = (char **)Z_Malloc((nfiles + 1) * sizeof(*listCopy), TAG_STATIC, &listCopy, "fsListCopy");
+	listCopy = (char **)Z_Malloc((nfiles + 1) * sizeof(*listCopy), TAG_STATIC);
 	for (i = 0; i < nfiles; i++) {
 		listCopy[i] = list[i];
 	}
@@ -801,7 +808,7 @@ void FS_FreeFileList( char **list )
 	uint64_t i;
 
 	if ( !fs_searchpaths ) {
-		N_Error( "Filesystem call made without initialization" );
+		N_Error( ERR_FATAL, "Filesystem call made without initialization" );
 	}
 
 	if ( !list ) {
@@ -894,7 +901,7 @@ static bffFile_t *bffHashTable[MAX_BFF_HASH];
 static void FS_FreeBFF(bffFile_t *bff)
 {
 	if (!bff) {
-		N_Error("FS_FreeBFF(NULL)");
+		N_Error(ERR_FATAL, "FS_FreeBFF(NULL)");
 	}
 
 	if (bff->file) {
@@ -916,7 +923,7 @@ static qboolean FS_SaveCache(void)
 		return qfalse;
 	}
 	if (!fs_cacheLoaded) {
-		Con_Printf("BFF cache synced on initalization");
+		Con_Printf("BFF cache synced on initalization\n");
 		fs_cacheSynced = qfalse;
 		fs_cacheLoaded = qtrue;
 	}
@@ -995,7 +1002,7 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 	baseNameLen = strlen(basename) + 1;
 
 	if (!Sys_GetFileStats(&stats, bffpath)) {
-		Con_Printf(ERROR, "FS_LoadBFF: failed to load bff %s", bffpath);
+		N_Error(ERR_DROP, "FS_LoadBFF: failed to load bff %s\n", bffpath);
 		return NULL;
 	}
 
@@ -1007,7 +1014,7 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 	if (stats.size >= BFF_MAPFILE_SIZE) {
 		file = Sys_MapFile(bffpath, qtrue); // create a temporary file mapping, don't save it to disk
 		if (!file) {
-			Con_Printf(ERROR, "FS_LoadBFF: failed to create a memory mapping of bff %s", bffpath);
+			N_Error(ERR_DROP, "FS_LoadBFF: failed to create a memory mapping of bff %s", bffpath);
 			return NULL;
 		}
 		stream = BFF_STREAM_MAPPED;
@@ -1016,7 +1023,7 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 	else {
 		fp = Sys_FOpen(bffpath, "rb");
 		if (!fp) {
-			Con_Printf(ERROR, "FS_LoadBFF: failed to open bff %s in readonly mode", bffpath);
+			N_Error(ERR_DROP, "FS_LoadBFF: failed to open bff %s in readonly mode", bffpath);
 			return NULL;
 		}
 		stream = BFF_STREAM_FILE;
@@ -1025,7 +1032,7 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 
 	if (FS_ReadFromBFF(stream, streamPtr, &header, sizeof(header)) != sizeof(header)) {
 		FS_CloseBFFStream(fp, file);
-		N_Error("FS_LoadBFF: failed to read header");
+		N_Error(ERR_FATAL, "FS_LoadBFF: failed to read header");
 	}
 
 	if (header.ident != BFF_IDENT) {
@@ -1045,12 +1052,12 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 	// version gap is large enough
 	if (header.version != BFF_VERSION) {
 		Con_Printf(
-			C_YELLOW "==== WARNING: bff version found in header isn't the same as this program's ====\n" C_RESET
-			"\tHeader Version: %hi\n\tProgram BFF Version: %hi", header.version, BFF_VERSION);
+			COLOR_YELLOW "==== WARNING: bff version found in header isn't the same as this program's ====\n" COLOR_RESET
+			"\tHeader Version: %hi\n\tProgram BFF Version: %hi\n", header.version, BFF_VERSION);
 	}
 	if (FS_ReadFromBFF(stream, streamPtr, gameName, MAX_BFF_PATH) != MAX_BFF_PATH) {
 		FS_CloseBFFStream(fp, file);
-		N_Error("FS_LoadBFF: failed to read gameName");
+		N_Error(ERR_FATAL, "FS_LoadBFF: failed to read gameName");
 	}
 
 	size = 0;
@@ -1058,7 +1065,7 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 	size += PAD(fileNameLen, sizeof(uintptr_t));
 	size += PAD(baseNameLen, sizeof(uintptr_t));
 
-	bff = (bffFile_t *)Z_Malloc(size, TAG_BFF, &bff, "BFFfile");
+	bff = (bffFile_t *)Z_Malloc(size, TAG_BFF);
 	memset(bff, 0, size);
 
 	bff->file = fp;
@@ -1085,19 +1092,19 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 	for (i = 0; i < bff->numfiles; i++) {
 		if (FS_ReadFromBFF(stream, streamPtr, curChunk->chunkName, sizeof(curChunk->chunkName)) != sizeof(curChunk->chunkName)) {
 			FS_CloseBFFStream(fp, file);
-			N_Error("FS_LoadBFF: failed to read chunk name at %lu", i);
+			N_Error(ERR_FATAL, "FS_LoadBFF: failed to read chunk name at %lu", i);
 		}
 		if (FS_ReadFromBFF(stream, streamPtr, &curChunk->chunkSize, sizeof(curChunk->chunkSize)) != sizeof(curChunk->chunkSize)) {
 			FS_CloseBFFStream(fp, file);
-			N_Error("FS_LoadBFF: failed to read chunk size at %lu", i);
+			N_Error(ERR_FATAL, "FS_LoadBFF: failed to read chunk size at %lu", i);
 		}
 
 		if (!curChunk->chunkSize) {
 			FS_CloseBFFStream(fp, file);
-			N_Error("FS_LoadBFF: bad chunk size at %lu", i);
+			N_Error(ERR_FATAL, "FS_LoadBFF: bad chunk size at %lu", i);
 		}
 
-		Con_Printf(DEBUG, "chunk stats: (name) %s, (size) %lu", curChunk->chunkName, curChunk->chunkSize);
+		Con_DPrintf( "chunk stats: (name) %s, (size) %lu", curChunk->chunkName, curChunk->chunkSize);
 
 		bff->hashTable.try_emplace(curChunk->chunkName);
 		curFile = &bff->hashTable.at(curChunk->chunkName);
@@ -1109,7 +1116,7 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 		curChunk->chunkBuffer = (char *)Hunk_AllocateTempMemory(curChunk->chunkSize);
 		if (FS_ReadFromBFF(stream, streamPtr, curChunk->chunkBuffer, curChunk->chunkSize) != curChunk->chunkSize) {
 			FS_CloseBFFStream(fp, file);
-			N_Error("FS_LoadBFF: failed to read chunk buffer at %lu", i);
+			N_Error(ERR_FATAL, "FS_LoadBFF: failed to read chunk buffer at %lu", i);
 		}
 
 		curFile++;
@@ -1131,7 +1138,7 @@ fileOffset_t FS_FileTell(file_t f)
 	fileHandle_t *p;
 
 	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
-		N_Error("FS_FileTell: out of range");
+		N_Error(ERR_FATAL, "FS_FileTell: out of range");
 	}
 
 	p = &handles[f];
@@ -1151,10 +1158,10 @@ fileOffset_t FS_FileSeek(file_t f, fileOffset_t offset, uint32_t whence)
 	uint32_t fwhence;
 	
 	if (!fs_initialized) {
-		N_Error("Filesystem call made without initialization");
+		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
-		N_Error("FS_FileSeek: out of range");
+		N_Error(ERR_FATAL, "FS_FileSeek: out of range");
 	}
 	
 	file = &handles[f];
@@ -1182,7 +1189,7 @@ fileOffset_t FS_FileSeek(file_t f, fileOffset_t offset, uint32_t whence)
 			file->data.chunk->bytesRead = file->data.chunk->handle->chunkSize;
 			break;
 		default:
-			N_Error("FS_FileSeek: invalid seek");
+			N_Error(ERR_FATAL, "FS_FileSeek: invalid seek");
 		};
 		return (fileOffset_t)(file->data.chunk->handle->chunkSize - file->data.chunk->bytesRead);
 	}
@@ -1198,7 +1205,7 @@ fileOffset_t FS_FileSeek(file_t f, fileOffset_t offset, uint32_t whence)
 		fwhence = SEEK_END;
 		break;
 	default:
-		N_Error("FS_FileSeek: invalid seek");
+		N_Error(ERR_FATAL, "FS_FileSeek: invalid seek");
 	};
 	return (fileOffset_t)fseek(file->data.fp, (long)offset, (int)fwhence);
 }
@@ -1209,7 +1216,7 @@ uint64_t FS_FileLength(file_t f)
 	uint64_t curPos, length;
 
 	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
-		N_Error("FS_FileLength: out of range");
+		N_Error(ERR_FATAL, "FS_FileLength: out of range");
 	}
 
 	curPos = FS_FileTell(f);
@@ -1231,7 +1238,7 @@ uint64_t FS_Write(const void *buffer, uint64_t size, file_t f)
 	FILE *fp;
 
 	if (!fs_initialized) {
-		N_Error("Filesystem call made without initialization");
+		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
 		return 0;
@@ -1251,13 +1258,13 @@ uint64_t FS_Write(const void *buffer, uint64_t size, file_t f)
 				tries = 1;
 			}
 			else {
-				Con_Printf("FS_Write: 0 bytes written");
+				Con_Printf("FS_Write: 0 bytes written\n");
 				return 0;
 			}
 		}
 
 		if (writeCount == -1) {
-			Con_Printf("FS_Write: -1 bytes written");
+			Con_Printf("FS_Write: -1 bytes written\n");
 			return 0;
 		}
 
@@ -1277,7 +1284,7 @@ static uint64_t FS_ReadFromChunk(void *buffer, uint64_t size, file_t f)
 
 	// this should never happen, if it does, no questioning, just crash
 	if (handle->data.chunk->bytesRead + size > handle->data.chunk->handle->chunkSize) {
-		N_Error("FS_ReadFromChunk: overread");
+		N_Error(ERR_FATAL, "FS_ReadFromChunk: overread");
 	}
 
 	memcpy(buffer, handle->data.chunk->handle->chunkBuffer + handle->data.chunk->bytesRead, size);
@@ -1296,7 +1303,7 @@ uint64_t FS_Read(void *buffer, uint64_t size, file_t f)
 	int tries;
 
 	if (!fs_initialized) {
-		N_Error("Filesystem call made without initialization");
+		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
 		return 0;
@@ -1324,7 +1331,7 @@ uint64_t FS_Read(void *buffer, uint64_t size, file_t f)
 			}
 
 			if (readCount == -1) {
-				N_Error("FS_Read: -1 bytes read");
+				N_Error(ERR_FATAL, "FS_Read: -1 bytes read");
 			}
 
 			remaining -= readCount;
@@ -1359,10 +1366,10 @@ file_t FS_FOpenWrite(const char *path)
 	const char *ospath;
 
 	if (!fs_initialized) {
-		N_Error("Filesystem call made without initialization");
+		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 	if (!path || !*path) {
-		N_Error("FS_FOpenWrite: NULL or empty path");
+		N_Error(ERR_FATAL, "FS_FOpenWrite: NULL or empty path");
 	}
 
 	// write streams aren't allowed for chunks
@@ -1383,7 +1390,7 @@ file_t FS_FOpenWrite(const char *path)
 
 	fp = Sys_FOpen(ospath, "wb");
 	if (!fp) {
-		N_Error("FS_FOpenWrite: failed to create write-only stream for %s", path);
+		N_Error(ERR_FATAL, "FS_FOpenWrite: failed to create write-only stream for %s", path);
 	}
 
 	f->used = qtrue;
@@ -1401,10 +1408,10 @@ file_t FS_FOpenRW(const char *path)
 	const char *ospath;
 
 	if (!fs_initialized) {
-		N_Error("Filesystem call made without initialization");
+		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 	if (!path || !*path) {
-		N_Error("FS_FOpenRW: NULL or empty path");
+		N_Error(ERR_FATAL, "FS_FOpenRW: NULL or empty path");
 	}
 
 	// write streams aren't allowed for chunks
@@ -1425,7 +1432,7 @@ file_t FS_FOpenRW(const char *path)
 
 	fp = Sys_FOpen(ospath, "wb+");
 	if (!fp) {
-		N_Error("FS_FOpenRW: failed to create read/write stream for %s", path);
+		N_Error(ERR_FATAL, "FS_FOpenRW: failed to create read/write stream for %s", path);
 	}
 
 	f->used = qtrue;
@@ -1447,10 +1454,10 @@ file_t FS_FOpenRead(const char *path)
 	const char *ospath;
 
 	if (!fs_initialized) {
-		N_Error("Filesystem call made without initialization");
+		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 	if (!path || !*path) {
-		N_Error("FS_FOpenRead: NULL or empty path");
+		N_Error(ERR_FATAL, "FS_FOpenRead: NULL or empty path");
 	}
 
 	fd = FS_HandleForFile();
@@ -1474,7 +1481,7 @@ file_t FS_FOpenRead(const char *path)
 		}
 		else if (sp->dir && sp->access != DIR_CONST) {
 			ospath = FS_BuildOSPath(sp->dir->path, sp->dir->gamedir, path);
-			Con_Printf(DEBUG, "FS_FOpenRead: %s", ospath);
+			Con_DPrintf("FS_FOpenRead: %s\n", ospath);
 			fp = Sys_FOpen(ospath, "rb");
 			if (!fp) {
 				continue;
@@ -1502,10 +1509,10 @@ uint64_t FS_FOpenFileRead(const char *path, file_t *fd)
 	int64_t unused;
 
 	if (!fs_initialized) {
-		N_Error("Filesystem call made without initialization");
+		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 	if (!path || !*path) {
-		N_Error("FS_FOpenFileRead: NULL or empty path");
+		N_Error(ERR_FATAL, "FS_FOpenFileRead: NULL or empty path");
 	}
 
 	// we just want the file's size
@@ -1582,10 +1589,10 @@ uint64_t FS_LoadFile(const char *npath, void **buffer)
 	uint64_t size;
 
 	if (!fs_initialized) {
-		N_Error("Filesystem call made without initialization");
+		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 	if (!npath || !*npath) {
-		N_Error("FS_LoadFile: NULL or empty path");
+		N_Error(ERR_FATAL, "FS_LoadFile: NULL or empty path");
 	}
 
 	buf = NULL; // go away warnings
@@ -1624,10 +1631,10 @@ void FS_FreeFile(void *buffer)
 {
 	boost::lock_guard<boost::recursive_mutex> lock{fs_lock};
 	if (!fs_initialized) {
-		N_Error("Filesystem call made without initialization");
+		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 	if (!buffer) {
-		N_Error("FS_FreeFile(NULL)");
+		N_Error(ERR_FATAL, "FS_FreeFile(NULL)");
 	}
 	fs_loadStack--;
 
@@ -1643,10 +1650,10 @@ void FS_FClose(file_t f)
 {
 	boost::lock_guard<boost::recursive_mutex> lock{fs_lock};
 	if (!fs_initialized) {
-		N_Error("Filesystem call made without initialization");
+		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
-		N_Error("FS_FClose: out of range");
+		N_Error(ERR_FATAL, "FS_FClose: out of range");
 	}
 	fileHandle_t *p = &handles[f];
 	
@@ -1711,7 +1718,7 @@ static void FS_AddGameDirectory(const char *path, const char *dir)
 	dir_len = PAD(strlen(dir) + 1, sizeof(uintptr_t));
 	size = sizeof(*search) + sizeof(*search->dir) + path_len + dir_len;
 
-	search = (searchpath_t *)Z_Malloc(size, TAG_SEARCH_PATH, &search, "searchpath");
+	search = (searchpath_t *)Z_Malloc(size, TAG_SEARCH_PATH);
 	memset(search, 0, size);
 	search->dir = (directory_t *)(search + 1);
 	search->dir->path = (char *)(search->dir + 1);
@@ -1738,7 +1745,7 @@ static void FS_AddGameDirectory(const char *path, const char *dir)
 
 		bff->index = fs_bffCount;
 
-		search = (searchpath_t *)Z_Malloc(sizeof(*search), TAG_SEARCH_PATH, &search, "searchpath");
+		search = (searchpath_t *)Z_Malloc(sizeof(*search), TAG_SEARCH_PATH);
 		memset(search, 0, sizeof(*search));
 		search->bff = bff;
 		search->access = DIR_STATIC;
@@ -1812,7 +1819,7 @@ static void FS_ReorderSearchPaths(void)
 	// relink path chains in the following order:
 	// 1. files
 	// 2. directories
-	list = (searchpath_t **)Z_Malloc(cnt * sizeof(*list), TAG_SEARCH_PATH, &list, "searchpaths");
+	list = (searchpath_t **)Z_Malloc(cnt * sizeof(*list), TAG_SEARCH_PATH);
 	bffs = list;
 	dirs = list + fs_dirCount + fs_bffCount;
 
@@ -1843,29 +1850,29 @@ static void FS_ThePurge_f(void)
 
 static void FS_ListBFF_f(void)
 {
-	Con_Printf("<-------------------- BFF List -------------------->");
-	Con_Printf("fs_bffCount: %lu", fs_bffCount);
-	Con_Printf("fs_bffChunks; %lu", fs_bffChunks);
-	Con_Printf("fs_dirCount: %lu", fs_dirCount);
-	Con_Printf("====================================================");
+	Con_Printf("<-------------------- BFF List -------------------->\n");
+	Con_Printf("fs_bffCount: %lu\n", fs_bffCount);
+	Con_Printf("fs_bffChunks; %lu\n", fs_bffChunks);
+	Con_Printf("fs_dirCount: %lu\n", fs_dirCount);
+	Con_Printf("====================================================\n");
 	
 	for (searchpath_t *sp = fs_searchpaths; sp; sp = sp->next) {
 		if (sp->bff) {
 			const bffFile_t *bff = sp->bff;
 
-			Con_Printf("[BFF #%lu]", bff->index);
-			Con_Printf("Chunk count: %lu", bff->numfiles);
-			Con_Printf("Basename: %s", bff->bffBasename);
-			Con_Printf("Gamename: %s", bff->bffGamename);
-			Con_Printf("Filename: %s", bff->bffFilename);
-			Con_Printf("Checksum: %i", bff->checksum);
-			Con_Printf(" ");
+			Con_Printf("[BFF #%lu]\n", bff->index);
+			Con_Printf("Chunk count: %lu\n", bff->numfiles);
+			Con_Printf("Basename: %s\n", bff->bffBasename);
+			Con_Printf("Gamename: %s\n", bff->bffGamename);
+			Con_Printf("Filename: %s\n", bff->bffFilename);
+			Con_Printf("Checksum: %i\n", bff->checksum);
+			Con_Printf("\n");
 
 			for (uint32_t i = 0; i < bff->numfiles; i++) {
-				Con_Printf("<Chunk #%i>", i);
-				Con_Printf("Name: %s", bff->chunkList[i].chunkName);
-				Con_Printf("Size: %lu", bff->chunkList[i].chunkSize);
-				Con_Printf(" ");
+				Con_Printf("<Chunk #%i>\n", i);
+				Con_Printf("Name: %s\n", bff->chunkList[i].chunkName);
+				Con_Printf("Size: %lu\n", bff->chunkList[i].chunkSize);
+				Con_Printf("\n");
 			}
 		}
 	}
@@ -1878,9 +1885,9 @@ static void FS_ShowDir_f(void)
 
 	list = Sys_ListFiles(fs_basegame->s, NULL, NULL, &numfiles, qfalse);
 
-	Con_Printf("<-------------------- Directory %s -------------------->", fs_basepath->s);
+	Con_Printf("<-------------------- Directory %s -------------------->\n", fs_basepath->s);
 	for (uint64_t i = 0; i < numfiles; i++) {
-		Con_Printf("%s", list[i]);
+		Con_Printf("%s\n", list[i]);
 	}
 
 	Sys_FreeFileList(list);
@@ -1891,7 +1898,7 @@ static void FS_AddMod_f(void)
 	const char *moddir, *modname;
 	
 	if (Cmd_Argc() != 2) {
-		Con_Printf("usage: addmod <directory>");
+		Con_Printf("usage: addmod <directory>\n");
 		return;
 	}
 
@@ -1972,10 +1979,10 @@ void FS_Restart(void)
 			Cvar_Set( "fs_restrict", "0" );
 			execConfig = qtrue;
 			FS_Restart();
-			Con_Printf( ERROR, "Invalid game folder" );
+			N_Error( ERR_DROP, "Invalid game folder" );
 			return;
 		}
-		N_Error( "Couldn't load default.cfg" );
+		N_Error( ERR_FATAL, "Couldn't load default.cfg" );
 	}
 
 	if (execConfig) {
@@ -2005,33 +2012,16 @@ void FS_InitFilesystem(void)
 	_setmaxstdio(2048);
 #endif
 
-	Con_Printf("============ FS_InitFilesystem ============");
-
-	// create the mod directories
-	if (!Sys_mkdir("TEXTURES")) {
-		N_Error("Failed to create directory TEXTURES/");
-	}
-	if (!Sys_mkdir("SFX")) {
-		N_Error("Failed to create directory SFX/");
-	}
-	if (!Sys_mkdir("MUSIC")) {
-		N_Error("Failed to create directory MUSIC/");
-	}
-	if (!Sys_mkdir("LEVELS")) {
-		N_Error("Failed to create directory LEVELS/");
-	}
-	if (!Sys_mkdir("SCRIPTS")) {
-		N_Error("Failed to create directory SCRIPTS/");
-	}
+	Con_Printf("\n============ FS_InitFilesystem ============\n");
 
 	fs_basepath = Cvar_Get("fs_basepath", Sys_DefaultBasePath(), CVAR_INIT);
 	Cvar_SetDescription(fs_basepath, "Write-protected CVar specifying the path to the installation folder of the game.");
 	fs_basegame = Cvar_Get("fs_basegame", BASEGAME_DIR, CVAR_PRIVATE | CVAR_LATCH);
-	Cvar_SetDescription(fs_basegame, "Cvar specifying the path to the base game folder.");
+	Cvar_SetDescription(fs_basegame, "CVar specifying the path to the base game folder.");
 //	fs_steampath = Cvar_Get("fs_steampath", Sys_GetSteamPath(), CVAR_PRIVATE | CVAR_ROM);
 
 	if (!fs_basegame->s[0])
-		N_Error("* fs_basegame not set *");
+		N_Error(ERR_FATAL, "* fs_basegame not set *");
 
 #if 0	
 	homepath = Sys_DefaultHomePath();
@@ -2088,12 +2078,12 @@ void FS_InitFilesystem(void)
 	Con_Printf(
 		"fs_gamedir: %s\n"
 		"fs_basepath: %s\n"
-		"fs_basegame: %s",
+		"fs_basegame: %s\n",
 	fs_gamedirvar->s, fs_basepath->s, fs_basegame->s);
 
-	Con_Printf( "...loaded in %lu milliseconds", end - start );
+	Con_Printf( "...loaded in %lu milliseconds\n", end - start );
 
-	Con_Printf( "----------------------" );
+	Con_Printf( "----------------------\n" );
 	Con_Printf( "%lu chunks in %lu bff files\n", fs_bffChunks, fs_bffCount );
 
 	for (uint64_t i = 0; i < MAX_FILE_HANDLES; i++) {
@@ -2147,7 +2137,7 @@ qboolean FS_FilenameCompare( const char *s1, const char *s2 )
 char *FS_CopyString(const char *s)
 {
 	char *out;
-	out = (char *)Z_Malloc(strlen(s) + 1, TAG_STATIC, &out, "fsCopyString");
+	out = (char *)Z_Malloc(strlen(s) + 1, TAG_STATIC);
 	strcpy( out, s );
 	return out;
 }
@@ -2217,7 +2207,7 @@ static char** Sys_ConcatenateFileLists( char **list0, char **list1 )
 	totalLength += Sys_CountFileList( list1 );
 
 	/* Create new list. */
-	dst = cat = (char **)Z_Malloc( ( totalLength + 1 ) * sizeof( char* ), TAG_STATIC, NULL, "fileList");
+	dst = cat = (char **)Z_Malloc( ( totalLength + 1 ) * sizeof( char* ), TAG_STATIC);
 
 	/* Copy over lists. */
 	if ( list0 ) {

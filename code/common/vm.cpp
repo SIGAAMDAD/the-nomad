@@ -234,16 +234,16 @@ static void VM_LoadSymbols(vm_t* vm);
 static uint8_t* loadImage(const char* filepath, int* imageSize);
 static void VM_StackTrace(vm_t* vm, int programCounter, int programStack);
 
-void VM_Error(vm_t *vm, const char *fmt, ...)
+void GDR_ATTRIBUTE((format(printf, 2, 3))) VM_Error(vm_t *vm, const char *fmt, ...)
 {
     va_list argptr;
     char msg[MAX_MSG_SIZE];
 
     va_start(argptr, fmt);
-    stbsp_vsnprintf(msg, sizeof(msg), fmt, argptr);
+    N_vsnprintf(msg, sizeof(msg), fmt, argptr);
     va_end(argptr);
 
-    Con_Error(false, "%s", msg);
+    N_Error(ERR_DROP, "%s", msg);
     VM_Restart(vm);
 }
 
@@ -271,7 +271,7 @@ static void VM_LoadSymbols( vm_t *vm )
 	int		numInstructions;
 
 	// don't load symbols if not developer
-	if ( !Cvar_VariableInteger("c_devmode") ) {
+	if ( !com_devmode->i ) {
 		return;
 	}
 
@@ -279,7 +279,7 @@ static void VM_LoadSymbols( vm_t *vm )
 	snprintf( symbols, sizeof( symbols ), "%s.map", name );
 	FS_LoadFile( symbols, &mapfile.v );
 	if ( !mapfile.c ) {
-		Con_Printf( "Couldn't load symbol file: %s", symbols );
+		N_Error( ERR_DROP, "Couldn't load symbol file: %s", symbols );
 		return;
 	}
 
@@ -304,18 +304,18 @@ static void VM_LoadSymbols( vm_t *vm )
 
 		token = COM_Parse( &text_p );
 		if ( !token[0] ) {
-			Con_Printf( "WARNING: incomplete line at end of file" );
+			Con_DPrintf( COLOR_YELLOW "WARNING: incomplete line at end of file\n" );
 			break;
 		}
 		value = ParseHex( token );
 
 		token = COM_Parse( &text_p );
 		if ( !token[0] ) {
-			Con_Printf( "WARNING: incomplete line at end of file" );
+			Con_DPrintf( COLOR_YELLOW "WARNING: incomplete line at end of file\n" );
 			break;
 		}
 		chars = strlen( token );
-		sym = (vmSymbol_t *)Hunk_Alloc( sizeof( *sym ) + chars, "vmSymbol", h_high );
+		sym = (vmSymbol_t *)Hunk_Alloc( sizeof( *sym ) + chars, h_high );
 		*prev = sym;
 		prev = &sym->next;
 		sym->next = NULL;
@@ -332,7 +332,7 @@ static void VM_LoadSymbols( vm_t *vm )
 	}
 
 	vm->numSymbols = count;
-	Con_Printf( "%i symbols parsed from %s", count, symbols );
+	Con_DPrintf( "%i symbols parsed from %s\n", count, symbols );
 	FS_FreeFile( mapfile.v );
 }
 
@@ -360,11 +360,11 @@ vm_t *VM_Restart(vm_t *vm)
 
     // load the image
     if ((header = VM_LoadQVM(vm, qfalse)) == NULL) {
-        Con_Printf(ERROR, "VM_Restart() failed");
+        N_Error(ERR_DROP, "VM_Restart() failed");
         return vm;
     }
 
-    Con_Printf("VM_Restart: restarting vm %s", vm->name);
+    Con_Printf("VM_Restart: restarting vm %s\n", vm->name);
 
     // free the original file
     FS_FreeFile(header);
@@ -382,17 +382,22 @@ static void *GDR_DECL VM_LoadDLL(const char *name, vmMainFunc_t *entryPoint, dll
     void *libHandle;
     dllEntry_t dllEntry;
 
+	if (!com_devmode->i) {
+		Con_Printf("Not in developer mode, not loading dll.\n");
+		return NULL;
+	}
+
     if (!*gamedir) {
         gamedir = Cvar_VariableString("fs_basegame");
     }
 
     libHandle = Sys_LoadDLL(name);
     if (!libHandle) {
-        Con_Printf("VM_LoadDLL '%s' failed", name);
+        Con_DPrintf("VM_LoadDLL '%s' failed\n", name);
         return NULL;
     }
 
-    Con_Printf("VM_LoadDLL '%s' ok", name);
+    Con_DPrintf("VM_LoadDLL '%s' ok\n", name);
 
     dllEntry = (dllEntry_t)Sys_GetProcAddress(libHandle, "dllEntry");
     *entryPoint = (vmMainFunc_t)Sys_GetProcAddress(libHandle, "vmMain");
@@ -401,9 +406,9 @@ static void *GDR_DECL VM_LoadDLL(const char *name, vmMainFunc_t *entryPoint, dll
         return NULL;
     }
 
-    Con_Printf("VM_LoadDLL(%s) found **vmMain** at %p", name, (void *)*entryPoint);
+    Con_DPrintf("VM_LoadDLL(%s) found **vmMain** at %p\n", name, (void *)*entryPoint);
     dllEntry(systemcalls);
-    Con_Printf("VM_LoadDLL(%s) succeeded!", name);
+    Con_DPrintf("VM_LoadDLL(%s) succeeded!\n", name);
 
     return libHandle;
 }
@@ -416,11 +421,11 @@ vm_t *VM_Create(vmIndex_t index, syscall_t systemCalls, dllSyscall_t dllSyscalls
     vm_t *vm;
 
     if (!systemCalls) {
-        N_Error("VM_Create: bad parms");
+        N_Error(ERR_FATAL, "VM_Create: bad parms");
     }
 
     if (index >= MAX_VM_COUNT) {
-        N_Error("VM_Create: bad vm index %i", index);
+        N_Error(ERR_FATAL, "VM_Create: bad vm index %i", index);
     }
     remaining = Hunk_MemoryRemaining();
 
@@ -429,7 +434,7 @@ vm_t *VM_Create(vmIndex_t index, syscall_t systemCalls, dllSyscall_t dllSyscalls
     // see if we already have the vm
     if (vm->name) {
         if (vm->index != index) {
-            Con_Printf(ERROR, "VM_Create: bad allocated vm index %i", vm->index);
+            N_Error(ERR_DROP, "VM_Create: bad allocated vm index %i", vm->index);
             return NULL;
         }
         return vm;
@@ -451,7 +456,7 @@ vm_t *VM_Create(vmIndex_t index, syscall_t systemCalls, dllSyscall_t dllSyscalls
 
     if (interpret == VMI_NATIVE) {
         // try to load as a system dll
-        Con_Printf("Loading dll file %s.", name);
+        Con_Printf("Loading dll file %s.\n", name);
         vm->dllHandle = VM_LoadDLL(name, &vm->entryPoint, dllSyscalls);
         if (vm->dllHandle) {
             vm->privateFlag = 0; // allow reading private cvars
@@ -460,7 +465,7 @@ vm_t *VM_Create(vmIndex_t index, syscall_t systemCalls, dllSyscall_t dllSyscalls
             vm->dataBase = 0;
             return vm;
         }
-        Con_Printf("Failed to load dll, looking for qvm.");
+        Con_Printf("Failed to load dll, looking for qvm.\n");
         interpret = VMI_COMPILED;
     }
 
@@ -485,7 +490,7 @@ vm_t *VM_Create(vmIndex_t index, syscall_t systemCalls, dllSyscall_t dllSyscalls
 
 #ifdef NO_VM_COMPILED
 	if ( interpret >= VMI_COMPILED ) {
-		Con_Printf( "Architecture doesn't have a bytecode compiler, using interpreter" );
+		Con_Printf( "Architecture doesn't have a bytecode compiler, using interpreter\n" );
 		interpret = VMI_BYTECODE;
 	}
 #else
@@ -510,7 +515,7 @@ vm_t *VM_Create(vmIndex_t index, syscall_t systemCalls, dllSyscall_t dllSyscalls
 	// load the map file
 	VM_LoadSymbols( vm );
 
-	Con_Printf( "%s loaded in %lu bytes on the hunk", vm->name, remaining - Hunk_MemoryRemaining() );
+	Con_Printf( "%s loaded in %lu bytes on the hunk\n", vm->name, remaining - Hunk_MemoryRemaining() );
 
 	return vm;
 }
@@ -543,11 +548,11 @@ void VM_Free( vm_t *vm )
 
 	if ( vm->callLevel ) {
 		if ( !forced_unload ) {
-			N_Error( "VM_Free(%s) on running vm", vm->name );
+			N_Error( ERR_FATAL, "VM_Free(%s) on running vm", vm->name );
 			return;
 		}
 		else {
-			Con_Printf( "forcefully unloading %s vm", vm->name );
+			Con_Printf( COLOR_RED "forcefully unloading %s vm\n", vm->name );
 		}
 	}
 
@@ -601,9 +606,9 @@ static vmHeader_t* VM_LoadQVM(vm_t* vm, qboolean alloc)
     // load the buffer
     snprintf(filename, sizeof(filename), "%s.qvm", vm->name);
     length = FS_LoadFile(filename, (void **)&header);
-    Con_Printf("Loading vm file %s...", filename);
+    Con_Printf("Loading vm file %s...\n", filename);
     if (!header) {
-        Con_Printf("Failed.");
+        Con_Printf("Failed.\n");
         VM_Free(vm);
         return NULL;
     }
@@ -614,7 +619,7 @@ static vmHeader_t* VM_LoadQVM(vm_t* vm, qboolean alloc)
 
 #if 0
     if (header->vmMagic == VM_MAGIC_VER2) {
-        Con_Printf("...which has vmMagic VM_MAGIC");
+        Con_Printf("...which has vmMagic VM_MAGIC\n");
     }
     else {
 #endif
@@ -643,7 +648,7 @@ static vmHeader_t* VM_LoadQVM(vm_t* vm, qboolean alloc)
 		// dataLenth is negative int32
 		VM_Free( vm );
 		FS_FreeFile( header );
-		Con_Printf( ERROR, "%s: data segment is too large", __func__ );
+		N_Error( ERR_DROP, "%s: data segment is too large", __func__ );
 		return NULL;
 	}
 
@@ -658,8 +663,8 @@ static vmHeader_t* VM_LoadQVM(vm_t* vm, qboolean alloc)
 		if ( vm->dataAlloc != dataAlloc ) {
 			VM_Free( vm );
 			FS_FreeFile( header );
-			Con_Printf( WARNING, "Data region size of %s not matching after "
-					"VM_Restart()", filename );
+			Con_Printf( COLOR_YELLOW "Data region size of %s not matching after "
+					"VM_Restart()\n", filename );
 			return NULL;
 		}
 		memset( vm->dataBase, 0, vm->dataAlloc );
@@ -678,7 +683,7 @@ static vmHeader_t* VM_LoadQVM(vm_t* vm, qboolean alloc)
 		header->jtrgLength &= ~0x03;
 
 		vm->numJumpTableTargets = header->jtrgLength >> 2;
-		Con_Printf( "Loading %i jump table targets", vm->numJumpTableTargets );
+		Con_Printf( "Loading %i jump table targets\n", vm->numJumpTableTargets );
 
 		if ( alloc ) {
 			vm->jumpTableTargets = (int32_t *) Hunk_Alloc( header->jtrgLength, "jtrgLength", h_high );
@@ -688,8 +693,8 @@ static vmHeader_t* VM_LoadQVM(vm_t* vm, qboolean alloc)
 				VM_Free( vm );
 				FS_FreeFile( header );
 
-				Con_Printf( WARNING, "Jump table size of %s not matching after "
-					"VM_Restart()", filename );
+				Con_Printf( COLOR_YELLOW "Jump table size of %s not matching after "
+					"VM_Restart()\n", filename );
 				return NULL;
 			}
 
@@ -708,12 +713,12 @@ static vmHeader_t* VM_LoadQVM(vm_t* vm, qboolean alloc)
 	if ( tryjts == qtrue && (length = Load_JTS( vm, crc32sum, NULL, vmPakIndex )) >= 0 ) {
 		// we are trying to load newer file?
 		if ( vm->jumpTableTargets && vm->numJumpTableTargets != length >> 2 ) {
-			Con_Printf( WARNING, "Reload jts file" );
+			Con_Printf( COLOR_YELLOW "Reload jts file\n" );
 			vm->jumpTableTargets = NULL;
 			alloc = qtrue;
 		}
 		vm->numJumpTableTargets = length >> 2;
-		Con_Printf( "Loading %i external jump table targets", vm->numJumpTableTargets );
+		Con_Printf( "Loading %i external jump table targets\n", vm->numJumpTableTargets );
 		if ( alloc == qtrue ) {
 			vm->jumpTableTargets = (int32_t *) Hunk_Alloc( length, "jumpTables", h_high );
 		} else {
@@ -757,12 +762,11 @@ intptr_t GDR_DECL VM_Call(vm_t *vm, uint32_t numArgs, int32_t command, ...)
     int i;
 
     if (!vm) {
-        N_Error("VM_Call with NULL vm");
+        N_Error(ERR_FATAL, "VM_Call with NULL vm");
     }
 #ifdef _NOMAD_DEBUG
     if (numArgs >= MAX_VMMAIN_ARGS) {
-        Con_Printf(ERROR, "VM_Call: numArgs >= MAX_VMMAIN_ARGS");
-        return -1;
+        N_Error(ERR_FATAL, "VM_Call: numArgs >= MAX_VMMAIN_ARGS");
     }
 #endif
 
@@ -823,7 +827,7 @@ int VM_MemoryRangeValid(intptr_t vmAddr, size_t len, vm_t* vm)
     const unsigned dest     = vmAddr;
     const unsigned dataMask = vm->dataMask;
     if ((dest & dataMask) != dest || ((dest + len) & dataMask) != dest + len) {
-        VM_Error(vm, "Memory access out of range");
+		N_Error(ERR_DROP, "out of range memory access violation for vm '%s'", vm->name);
         return -1;
     }
     else {
@@ -839,8 +843,7 @@ static void VM_BlockCopy(unsigned int dest, unsigned int src, size_t n,
     if ((dest & dataMask) != dest || (src & dataMask) != src ||
         ((dest + n) & dataMask) != dest + n ||
         ((src + n) & dataMask) != src + n) {
-        VM_Error(vm,
-                  "OP_BLOCK_COPY out of range");
+        VM_Error(vm, "OP_BLOCK_COPY out of range");
         return;
     }
 
@@ -885,7 +888,7 @@ static int InvertCondition( int op )
 		case OP_GEF: return OP_LTF;
 
 		default: 
-			Con_Printf( ERROR, "incorrect condition opcode %i", op );
+			Con_Printf( COLOR_RED "incorrect condition opcode %i", op );
 			return op;
 	}
 }
@@ -1451,7 +1454,7 @@ const char *VM_CheckInstructions( instruction_t *buf, uint32_t instructionCount,
 	}
 
 	if ( ( safe_stores + unsafe_stores ) > 0 ) {
-		Con_Printf( DEBUG, "%s: safe stores - %i (%i%%)", __func__, safe_stores, safe_stores * 100 / ( safe_stores + unsafe_stores ) );
+		Con_DPrintf( "%s: safe stores - %i (%i%%)\n", __func__, safe_stores, safe_stores * 100 / ( safe_stores + unsafe_stores ) );
 	}
 
 	if ( op1 != OP_UNDEF && op1 != OP_LEAVE ) {
@@ -1465,12 +1468,12 @@ const char *VM_CheckInstructions( instruction_t *buf, uint32_t instructionCount,
 		for( i = 0; i < numJumpTableTargets; i++ ) {
 			n = jumpTableTargets[ i ];
 			if ( n < 0 || n >= instructionCount ) {
-				Con_Printf( WARNING, "jump target %i set on instruction %i that is out of range [0..%i]",
+				Con_Printf( COLOR_YELLOW "jump target %i set on instruction %i that is out of range [0..%i]\n",
 					i, n, instructionCount - 1 );
 				break;
 			}
 			if ( buf[n].opStack != 0 ) {
-				Con_Printf( WARNING, "jump target %i set on instruction %i (%s) with bad opStack %i",
+				Con_Printf( COLOR_YELLOW "jump target %i set on instruction %i (%s) with bad opStack %i\n",
 					i, n, opnames[ buf[n].op ], buf[n].opStack );
 				break;
 			}
@@ -1517,7 +1520,7 @@ void VM_StackTrace( vm_t *vm, int programCounter, int programStack )
 
 	count = 0;
 	do {
-		Con_Printf( "%s", VM_ValueToSymbol( vm, programCounter ) );
+		Con_Printf( "%s\n", VM_ValueToSymbol( vm, programCounter ) );
 		programStack =  *(int *)&vm->dataBase[programStack+4];
 		programCounter = *(int *)&vm->dataBase[programStack];
 	} while ( programCounter != -1 && ++count < 32 );
@@ -1603,7 +1606,7 @@ qboolean VM_PrepareInterpreter2(vm_t* vm, vmHeader_t* header)
     }
 #endif
     if (errMsg) {
-        Con_Printf("VM_PrepareIntepreter2 error: %s", errMsg);
+        Con_Printf("VM_PrepareIntepreter2 error: %s\n", errMsg);
         return qfalse;
     }
 
@@ -1709,11 +1712,11 @@ void VM_VmProfile_f(const vm_t* vm)
         sym = sorted[i];
 
         perc = (int)(100 * (float)sym->profileCount / total);
-        Con_Printf("%2i%% %9i %s", perc, sym->profileCount, sym->symName);
+        Con_Printf("%2i%% %9i %s\n", perc, sym->profileCount, sym->symName);
         sym->profileCount = 0;
     }
 
-    Con_Printf("    %9.0f total", total);
+    Con_Printf("    %9.0f total\n", total);
 
     Z_Free(sorted);
 }

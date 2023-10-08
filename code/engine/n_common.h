@@ -10,13 +10,12 @@
 Common functionality for the engine and vm alike
 */
 
-#ifndef Q3_VM
-void Com_PushToPool(void (*work)(int));
-#endif
-
-void I_NomadInit(void);
+int Com_Milliseconds( void );
+qboolean Com_EarlyParseCmdLine( char *commandLine, char *con_title, int title_size, int *vid_xpos, int *vid_ypos );
 uint32_t crc32_buffer(const byte *buf, uint32_t len);
-void Com_Init(void);
+qboolean Com_EarlyParseCmdLine( char *commandLine, char *con_title, int title_size, int *vid_xpos, int *vid_ypos );
+void Com_StartupVariable( const char *match );
+void Com_Init(char *commandLine);
 void Com_Shutdown(void);
 void GDR_DECL Com_Printf(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
 uint64_t Com_GenerateHashValue(const char *fname, const uint64_t size);
@@ -37,7 +36,7 @@ void COM_BeginParseSession( const char *name );
 uint64_t COM_GetCurrentParseLine( void );
 const char *COM_Parse( const char **data_p );
 const char *COM_ParseExt( const char **data_p, qboolean allowLineBreak );
-int COM_Compress( char *data_p );
+uintptr_t COM_Compress( char *data_p );
 void COM_ParseError( const char *format, ... ) GDR_ATTRIBUTE((format(printf, 1, 2)));
 void COM_ParseWarning( const char *format, ... ) GDR_ATTRIBUTE((format(printf, 1, 2)));
 
@@ -153,8 +152,8 @@ uint64_t Com_EventLoop(void);
 #include "keycodes.h"
 
 #define KEYCATCH_SGAME	0x2000
-#define KEYCATCH_SCRIPT	0x0400
 #define KEYCATCH_UI		0x0080
+#define KEYCATCH_CONSOLE 0x0001
 
 void Key_KeynameCompletion( void(*callback)(const char *s) );
 uint32_t Key_StringToKeynum( const char *str );
@@ -178,10 +177,6 @@ extern nkey_t keys[NUMKEYS];
 
 #define MAXPRINTMSG			8192
 
-/* vm error codes for Com_Error/G_Error */
-#define ERR_RESTART			0x0000 // restart the vm, don't stop the game though
-#define ERR_FATAL			0x2000 // restart the vm and cancel the game loop, don't crash, only the engine can do that
-#define ERR_FRAME			0x4000 // don't run the next vm frame
 
 void Cmd_Init(void);
 void Cmd_AddCommand(const char* name, cmdfunc_t function);
@@ -198,10 +193,7 @@ void Cmd_SetCommandCompletionFunc(const char *name, completionFunc_t fn);
 char* Cmd_ArgsFrom(int32_t index);
 const char* Cmd_Argv(uint32_t index);
 void Cmd_Clear(void);
-const char* GDR_DECL va(const char *format, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
-#ifdef __cplusplus
-void GDR_DECL Com_Error(vm_t *vm, int level, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 3, 4)));
-#endif
+const char* GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL va(const char *format, ...);
 void Cmd_CommandCompletion( void(*callback)(const char *s) );
 qboolean Cmd_CompleteArgument(const char *command, const char *args, uint32_t argnum);
 
@@ -289,6 +281,7 @@ typedef long fileOffset_t;
 typedef enum {
 	FS_OPEN_READ,
 	FS_OPEN_WRITE,
+	FS_OPEN_APPEND,
 	FS_OPEN_RW = FS_OPEN_READ | FS_OPEN_WRITE
 } fileMode_t;
 
@@ -298,9 +291,20 @@ typedef enum {
 
 #define FS_SEEK_SET FS_SEEK_BEGIN
 
-#ifndef Q3_VM
-extern file_t logfile;
-#endif
+#define JOURNAL_NONE	 0		// no event journal
+#define JOURNAL_WRITE	1		// write an event journal
+#define JOURNAL_PLAYBACK 2		// replay the event journal
+
+extern cvar_t *com_demo;
+extern cvar_t *com_journal;
+extern cvar_t *com_logfile;
+extern cvar_t *com_version;
+extern cvar_t *com_devmode;
+extern cvar_t *sys_cpuString;
+extern uint64_t com_frameTime;
+extern uint64_t com_cacheLine;
+extern qboolean com_errorEntered;
+extern char com_errorMessage[MAXPRINTMSG];
 
 /* vm specific file handling */
 file_t FS_VM_FOpenWrite(const char *path, file_t *f, handleOwner_t owner);
@@ -335,7 +339,7 @@ const char *FS_GetBasePath( void );
 const char *FS_GetHomePath( void );
 const char *FS_GetGamePath( void );
 
-void GDR_DECL FS_Printf(file_t f, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
+void GDR_DECL GDR_ATTRIBUTE((format(printf, 2, 3))) FS_Printf(file_t f, const char *fmt, ...);
 
 int FS_FileToFileno(file_t f);
 file_t FS_FOpenWithMode(const char *path, fileMode_t mode);
@@ -344,6 +348,7 @@ uint64_t FS_FOpenFileWithMode(const char *path, file_t *f, fileMode_t mode);
 file_t FS_FOpenRead(const char *path);
 file_t FS_FOpenWrite(const char *path);
 file_t FS_FOpenRW(const char *path);
+file_t FS_FOpenAppend(const char *path);
 uint64_t FS_FOpenFileRead(const char *path, file_t *fd);
 void FS_Rename(const char *from, const char *to);
 uint64_t FS_LoadStack(void);
@@ -364,6 +369,7 @@ qboolean FS_Initialized(void);
 char **FS_GetCurrentChunkList(uint64_t *numchunks);
 void FS_SetBFFIndex(uint64_t index);
 void FS_FreeFile(void *buffer);
+void FS_FreeFileList(char **list);
 char **FS_ListFiles(const char *path, const char *extension, uint64_t *numfiles);
 char *FS_ReadLine(char *buf, uint64_t size, file_t f);
 
@@ -381,13 +387,16 @@ extern int CPU_flags;
 System calls, engine only stuff
 */
 
-#ifdef __cplusplus
 typedef struct {
 	time_t mtime;
 	time_t ctime;
 	uint64_t size;
 	qboolean exists;
 } fileStats_t;
+
+#define MUTEX_TYPE_STANDARD 0
+#define MUTEX_TYPE_SHARED 1
+#define MUTEX_TYPE_RECURSIVE 2
 
 typedef struct memoryMap_s memoryMap_t;
 
@@ -402,13 +411,13 @@ memoryMap_t *Sys_MapMemory(FILE *fp, qboolean temp, file_t fd);
 // like Sys_MapMemory but frees the mapped file, doesn't close it though
 void Sys_UnmapMemory(memoryMap_t *file);
 
-#define Sys_GetFreeRAM_Physical() (uint64_t)(Sys_GetTotalRAM_Physical() - Sys_GetUsedRAM_Physical())
-#define Sys_GetFreeRAM_Virtual() (uint64_t)(Sys_GetTotalRAM_Virtual() - Sys_GetUsedRAM_Virtual())
-
 uint64_t Sys_GetUsedRAM_Physical(void);
 uint64_t Sys_GetUsedRAM_Virtual(void);
 uint64_t Sys_GetTotalRAM_Virtual(void);
 uint64_t Sys_GetTotalRAM_Physical(void);
+
+uint64_t Sys_GetCacheLine(void);
+uint64_t Sys_GetPageSize(void);
 
 uint64_t Sys_EventSubtime(uint64_t time);
 
@@ -421,8 +430,10 @@ void Sys_UnmapFile(memoryMap_t *file);
 
 qboolean Sys_mkdir(const char *name);
 
-void Sys_Print(const char *str);
-void GDR_DECL Sys_Printf(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
+void Sys_Print(const char *msg);
+void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error(const char *fmt, ...);
+char *Sys_GetClipoardData(void);
+
 const char *Sys_pwd(void);
 void *Sys_LoadDLL(const char *name);
 void Sys_CloseDLL(void *handle);
@@ -436,6 +447,5 @@ char **Sys_ListFiles(const char *directory, const char *extension, const char *f
 const char *Sys_DefaultHomePath(void);
 const char *Sys_DefaultBasePath(void);
 qboolean Sys_RandomBytes(byte *s, uint64_t len);
-#endif
 
 #endif

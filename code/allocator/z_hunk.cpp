@@ -58,6 +58,9 @@ void Hunk_Clear(void)
 {
 	boost::lock_guard<boost::recursive_mutex> lock{hunkLock};
 
+	G_ShutdownSGame();
+	G_ShutdownUI();
+
 	hunk_low.highWater = 0;
 	hunk_low.mark = 0;
 	hunk_low.temp = 0;
@@ -71,7 +74,8 @@ void Hunk_Clear(void)
 	hunk_permanent = &hunk_low;
 	hunk_temp = &hunk_high;
 
-	Con_Printf("Hunk_Clear: reset the hunk ok");
+	Con_Printf("Hunk_Clear: reset the hunk ok\n");
+	VM_Clear();
 
 	hunkblocks = NULL;
 }
@@ -114,9 +118,9 @@ void Hunk_Check (void)
 	
 	for (h = hunkblocks; h; h = h->next) {
 		if (h->id != HUNKID)
-			N_Error ("Hunk_Check: hunk id isn't correct");
+			N_Error (ERR_FATAL, "Hunk_Check: hunk id isn't correct");
 		if (h->size < 16 || h->size + (byte *)h - hunkbase > hunksize)
-			N_Error ("Hunk_Check: bad size");
+			N_Error (ERR_FATAL, "Hunk_Check: bad size");
 	}
 }
 #endif
@@ -145,23 +149,23 @@ void Hunk_Stats(void)
 {
 	uint64_t unused;
 
-	Con_Printf( "%8lu bytes total hunk", hunksize );
-	Con_Printf( " " );
-	Con_Printf( "%8lu low mark", hunk_low.mark );
-	Con_Printf( "%8lu low permanent", hunk_low.permanent );
+	Con_Printf( "%8lu bytes total hunk\n", hunksize );
+	Con_Printf( "\n" );
+	Con_Printf( "%8lu low mark\n", hunk_low.mark );
+	Con_Printf( "%8lu low permanent\n", hunk_low.permanent );
 	if ( hunk_low.temp != hunk_low.permanent ) {
-		Con_Printf( "%8lu low temp", hunk_low.temp );
+		Con_Printf( "%8lu low temp\n", hunk_low.temp );
 	}
-	Con_Printf( "%8lu low highWater", hunk_low.highWater );
-	Con_Printf( " " );
-	Con_Printf( "%8lu high mark", hunk_high.mark );
-	Con_Printf( "%8lu high permanent", hunk_high.permanent );
+	Con_Printf( "%8lu low highWater\n", hunk_low.highWater );
+	Con_Printf( "\n" );
+	Con_Printf( "%8lu high mark\n", hunk_high.mark );
+	Con_Printf( "%8lu high permanent\n", hunk_high.permanent );
 	if ( hunk_high.temp != hunk_high.permanent ) {
-		Con_Printf( "%8lu high temp", hunk_high.temp );
+		Con_Printf( "%8lu high temp\n", hunk_high.temp );
 	}
-	Con_Printf( "%8lu high highWater", hunk_high.highWater );
-	Con_Printf( " " );
-	Con_Printf( "%8lu total hunk in use", hunk_low.permanent + hunk_high.permanent );
+	Con_Printf( "%8lu high highWater\n", hunk_high.highWater );
+	Con_Printf( "\n" );
+	Con_Printf( "%8lu total hunk in use\n", hunk_low.permanent + hunk_high.permanent );
 
 	unused = 0;
 	if ( hunk_low.highWater > hunk_low.permanent ) {
@@ -170,8 +174,8 @@ void Hunk_Stats(void)
 	if ( hunk_high.highWater > hunk_high.permanent ) {
 		unused += hunk_high.highWater - hunk_high.permanent;
 	}
-	Con_Printf( "%8lu unused highWater", unused );
-	Con_Printf( " " );
+	Con_Printf( "%8lu unused highWater\n", unused );
+	Con_Printf( "\n" );
 }
 
 
@@ -184,7 +188,7 @@ void *Hunk_AllocateTempMemory(uint64_t size)
 	// if the hunk hasn't been initialized yet, but there are filesystem calls
 	// being made, then just allocate with Z_Malloc
 	if (hunkbase == NULL) {
-		return Z_Malloc(size, TAG_HUNK, NULL, "temp");
+		return Z_Malloc(size, TAG_HUNK);
 	}
 
 	Hunk_SwapBanks();
@@ -192,9 +196,7 @@ void *Hunk_AllocateTempMemory(uint64_t size)
 	size = PAD(size, sizeof(intptr_t)) + sizeof(hunkHeader_t);
 
 	if (hunk_temp->temp + hunk_permanent->permanent + size > hunksize) {
-		Hunk_Stats();
-		Con_Printf(ERROR, "Hunk_AllocateTempMemory: failed on %lu", size);
-		return NULL;
+		N_Error(ERR_DROP, "Hunk_AllocateTempMemory: failed on %lu", size);
 	}
 
 	if ( hunk_temp == &hunk_low ) {
@@ -228,7 +230,7 @@ void *Hunk_ReallocateTempMemory(void *ptr, uint64_t nsize)
 
 	// if hunk hasn't been initialized yet, just Z_Realloc it
 	if (hunkbase == NULL) {
-		return Z_Realloc(ptr, nsize, TAG_HUNK, NULL, "temp");
+		return Z_Realloc(ptr, nsize, TAG_HUNK);
 	}
 
 	if (ptr) {
@@ -256,7 +258,7 @@ void Hunk_FreeTempMemory(void *p)
 
 	h = ((hunkHeader_t *)p) - 1;
 	if (h->id != HUNKID) {
-		N_Error ("Hunk_FreeTempMemory: hunk id isn't correct");
+		N_Error (ERR_FATAL, "Hunk_FreeTempMemory: hunk id isn't correct");
 	}
 
 	h->id = HUNKFREE;
@@ -267,13 +269,13 @@ void Hunk_FreeTempMemory(void *p)
 		if ( h == (void *)(hunkbase + hunk_temp->temp - h->size ) )
 			hunk_temp->temp -= h->size;
 		else
-			Con_Printf( "Hunk_FreeTempMemory: not the final block" );
+			Con_Printf( "Hunk_FreeTempMemory: not the final block\n" );
 	}
 	else {
 		if ( h == (void *)(hunkbase + hunksize - hunk_temp->temp ) )
 			hunk_temp->temp -= h->size;
 		else
-			Con_Printf( "Hunk_FreeTempMemory: not the final block" );
+			Con_Printf( "Hunk_FreeTempMemory: not the final block\n" );
 	}
 }
 
@@ -310,8 +312,12 @@ void *Hunk_Alloc (uint64_t size, const char *name, ha_pref where)
 	boost::lock_guard<boost::recursive_mutex> lock{allocLock};
 	void *buf;
 
+	if (!hunkbase) {
+		N_Error(ERR_FATAL, "Hunk_Alloc: Hunk memory system not initialized");
+	}
+
 	if (!size)
-		N_Error("Hunk_Alloc: bad size");
+		N_Error(ERR_FATAL, "Hunk_Alloc: bad size");
 	
 	if (where == h_dontcare || hunk_temp->temp != hunk_temp->permanent) {
 		Hunk_SwapBanks();
@@ -337,9 +343,9 @@ void *Hunk_Alloc (uint64_t size, const char *name, ha_pref where)
 		Hunk_Log();
 		Hunk_SmallLog();
 
-		Con_Printf(ERROR, "Hunk_Alloc failed on %lu: %s, line: %lu (%s)", size, file, line, name);
+		N_Error(ERR_DROP, "Hunk_Alloc failed on %lu: %s, line: %lu (%s)", size, file, line, name);
 #else
-		Con_Printf(ERROR, "Hunk_Alloc failed on %lu", size);
+		N_Error(ERR_DROP, "Hunk_Alloc failed on %lu", size);
 #endif
 	}
 
@@ -372,52 +378,6 @@ void *Hunk_Alloc (uint64_t size, const char *name, ha_pref where)
 
 	return buf;
 }
-
-void Hunk_Print(void)
-{
-    hunkblock_t *h, *prev;
-	uint64_t count, sum;
-	uint64_t totalblocks;
-
-	if (!hunkblocks)
-		return;
-
-	count = 0;
-	sum = 0;
-	totalblocks = 0;
-
-	h = hunkblocks;
-	prev = h;
-
-    Con_Printf("\n\n<----- Hunk Heap Report ----->");
-	Con_Printf("          :%8lu total hunk size", hunksize);
-	Con_Printf("-------------------------");
-
-	while (1) {
-		prev = h;
-		h = h->next;
-		// we've scanned around the list
-		if (!h)
-			break;
-		
-		count++;
-		totalblocks++;
-		sum += h->size;
-
-		// print the single block
-		Con_Printf("%8p : %8lu   %8s", h, h->size, h->name);
-	}
-	Con_Printf("-------------------------");
-	Con_Printf("          :%8lu REMAINING", Hunk_MemoryRemaining());
-	Con_Printf("-------------------------");
-	Con_Printf("          :%8lu (TOTAL)", sum);
-	count = 0;
-	sum = 0;
-
-	Con_Printf("-------------------------");
-	Con_Printf("%8lu total allocations\n\n", totalblocks);
-}
-
 
 void Hunk_SmallLog(void)
 {

@@ -252,21 +252,21 @@ static void Key_Bind_f( void )
 	c = Cmd_Argc();
 
 	if ( c < 2 ) {
-		Con_Printf( "bind <key> [command] : attach a command to a key" );
+		Con_Printf( "bind <key> [command] : attach a command to a key\n" );
 		return;
 	}
 
 	b = Key_StringToKeynum( Cmd_Argv( 1 ) );
 	if ( b == -1 ) {
-		Con_Printf( "\"%s\" isn't a valid key", Cmd_Argv( 1 ) );
+		Con_Printf( "\"%s\" isn't a valid key\n", Cmd_Argv( 1 ) );
 		return;
 	}
 
 	if ( c == 2 ) {
 		if ( keys[b].binding && keys[b].binding[0] )
-			Con_Printf( "\"%s\" = \"%s\"", Cmd_Argv( 1 ), keys[b].binding );
+			Con_Printf( "\"%s\" = \"%s\"\n", Cmd_Argv( 1 ), keys[b].binding );
 		else
-			Con_Printf( "\"%s\" is not bound", Cmd_Argv( 1 ) );
+			Con_Printf( "\"%s\" is not bound\n", Cmd_Argv( 1 ) );
 		
 		return;
 	}
@@ -298,7 +298,7 @@ static void Key_Bindlist_f( void )
 
 	for ( i = 0 ; i < NUMKEYS ; i++ ) {
 		if ( keys[i].binding && keys[i].binding[0] ) {
-			Con_Printf( "%s \"%s\"", Key_KeynumToString(i), keys[i].binding );
+			Con_Printf( "%s \"%s\"\n", Key_KeynumToString(i), keys[i].binding );
 		}
 	}
 }
@@ -370,12 +370,17 @@ static void Com_KeyDownEvent(uint32_t key, uint32_t time)
 
 	// console key is hardcoded, so the user can never unbind it
 	if (key == KEY_CONSOLE || (keys[KEY_LSHIFT].down && key == KEY_ESCAPE)) {
-		RE_ToggleConsole();
+		if (Key_GetCatcher() & KEYCATCH_CONSOLE) {
+			Key_SetCatcher(Key_GetCatcher() & ~KEYCATCH_CONSOLE);
+		}
+		else {
+			Key_SetCatcher(Key_GetCatcher() | KEYCATCH_CONSOLE);
+		}
 		return;
 	}
 
 	// only let the console process the event if its open
-	if (RE_ConsoleIsOpen()) {
+	if (Key_GetCatcher() & KEYCATCH_CONSOLE) {
 		keys[key].down = qfalse;
 		keys[key].repeats--;
 		return;
@@ -405,10 +410,7 @@ static void Com_KeyDownEvent(uint32_t key, uint32_t time)
 		VM_Call(sgvm, 2, SGAME_KEY_EVENT, key, qtrue);
 	}
 	if (Key_GetCatcher() & KEYCATCH_UI) {
-
-	}
-	if (Key_GetCatcher() & KEYCATCH_SCRIPT) {
-
+		VM_Call(uivm, 2, UI_KEY_EVENT, key, qtrue);
 	}
 }
 
@@ -436,13 +438,13 @@ static void Key_Unbind_f( void )
 	uint32_t b;
 
 	if ( Cmd_Argc() != 2 ) {
-		Con_Printf( "unbind <key> : remove commands from a key" );
+		Con_Printf( "unbind <key> : remove commands from a key\n" );
 		return;
 	}
 
 	b = Key_StringToKeynum( Cmd_Argv( 1 ) );
 	if ( b == -1 ) {
-		Con_Printf( "\"%s\" isn't a valid key", Cmd_Argv( 1 ) );
+		Con_Printf( "\"%s\" isn't a valid key\n", Cmd_Argv( 1 ) );
 		return;
 	}
 

@@ -6,6 +6,11 @@
 #include "../sgame/sg_public.h"
 #include "../engine/n_sound.h"
 
+static void G_AddSGameCommand(const char *name)
+{
+    Cmd_AddCommand(name, NULL);
+}
+
 static int FloatToInt(float f)
 {
     floatint_t fi;
@@ -38,27 +43,21 @@ static void *VM_ArgPtr(intptr_t addr)
         return (void *)(sgvm->dataBase + (addr & sgvm->dataMask));
 }
 
-static intptr_t G_SgameSystemCalls(intptr_t *args)
+static intptr_t G_SGameSystemCalls(intptr_t *args)
 {
     switch (args[0]) {
     case SG_PRINT:
         Com_Printf("%s", (const char *)VMA(1));
         return 0;
     case SG_ERROR:
-        Com_Error(sgvm, ERR_FRAME, "%s", (const char *)VMA(1));
+        N_Error(ERR_DROP, "%s", (const char *)VMA(1));
         return 0;
     case SG_RE_ADDENTITY:
-        OUT_OF_BOUNDS(sgvm, args[1], sizeof(renderEntityRef_t));
-        RE_AddDrawEntity((renderEntityRef_t *)VMA(1));
         return 0;
     case SG_SND_REGISTERSFX:
-        return Snd_RegisterSfx((const char *)VMA(1));
-    case SG_SND_PLAYSFX:
-        Snd_PlaySfx(args[1]);
         return 0;
-//    case SG_SND_STOPSFX:
-//        Snd_StopSfx(args[1]);
-//        return 0;
+    case SG_SND_PLAYSFX:
+        return 0;
     case SG_KEY_SETCATCHER:
         Key_SetCatcher(Key_GetCatcher() & args[1]);
         return 0;
@@ -67,11 +66,8 @@ static intptr_t G_SgameSystemCalls(intptr_t *args)
     case SG_KEY_ISDOWN:
         return (intptr_t)Key_IsDown(args[1]);
     case SG_RE_SETCOLOR:
-        RE_SetColor((const float *)VMA(1), args[2]);
         return 0;
     case SG_RE_DRAWRECT:
-        OUT_OF_BOUNDS(sgvm, args[1], sizeof(renderRect_t));
-        RE_DrawRect((renderRect_t *)VMA(1));
         return 0;
     case SG_ADDCOMMAND:
         Cmd_AddCommand((const char *)VMA(1), NULL);
@@ -132,7 +128,7 @@ static intptr_t G_SgameSystemCalls(intptr_t *args)
     case TRAP_POW:
         return FloatToInt(pow(VMF(1), VMF(2)));
     default:
-        Con_Printf(ERROR, "G_SgameSyscalls: bad call: %i", (int32_t)args[0]);
+        N_Error(ERR_DROP, "G_SgameSyscalls: bad call: %i", (int32_t)args[0]);
     };
     return -1;
 }
@@ -151,10 +147,24 @@ static intptr_t GDR_DECL G_DllSyscall(intptr_t arg, ...)
     }
     va_end(argptr);
 
-    return G_SgameSystemCalls(args);
+    return G_SGameSystemCalls(args);
 #else
-    return G_SgameSystemCalls(&arg);
+    return G_SGameSystemCalls(&arg);
 #endif
+}
+
+void G_ShutdownSGame(void)
+{
+    Key_SetCatcher(Key_GetCatcher() & ~KEYCATCH_SGAME);
+
+    if (!sgvm) {
+        return;
+    }
+
+    VM_Call(sgvm, 0, SGAME_SHUTDOWN);
+    VM_Free(sgvm);
+    sgvm = NULL;
+    FS_VM_CloseFiles(H_SGAME);
 }
 
 void G_InitSGame(void)
@@ -162,9 +172,9 @@ void G_InitSGame(void)
     vmInterpret_t interpret;
 
     interpret = (vmInterpret_t)Cvar_VariableInteger("vm_sgame");
-    sgvm = VM_Create(VM_SGAME, G_SgameSystemCalls, G_DllSyscall, interpret);
+    sgvm = VM_Create(VM_SGAME, G_SGameSystemCalls, G_DllSyscall, interpret);
     if (!sgvm) {
-        N_Error("G_InitSGame: failed to load vm!");
+        N_Error(ERR_DROP, "G_InitSGame: failed to load vm");
     }
 
     // run a quick initialization

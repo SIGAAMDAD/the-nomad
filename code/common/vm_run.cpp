@@ -14,7 +14,7 @@ void VM_Init(void)
     uint8_t *bytecode;
 
     Z_CheckHeap();
-    Con_Printf("VM_Init: initializing virtual bytecode interpreters");
+    Con_Printf("VM_Init: initializing virtual bytecode interpreters\n");
 
     bytecodeLen = FS_LoadFile("sgame.qvm", (void **)&bytecode);
     sgvm = &vmTable[SGAME_VM];

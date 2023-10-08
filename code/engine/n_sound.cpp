@@ -10,11 +10,12 @@
 
 static ALCdevice* device;
 static ALCcontext* context;
+static qboolean clearedQueue;
 
-static cvar_t *snd_musicvol;
-static cvar_t *snd_sfxvol;
-static cvar_t *snd_musicon;
-static cvar_t *snd_sfxon;
+cvar_t *snd_musicvol;
+cvar_t *snd_sfxvol;
+cvar_t *snd_musicon;
+cvar_t *snd_sfxon;
 
 #define Snd_HashFileName(x) Com_GenerateHashValue((x),MAX_SND_HASH)
 
@@ -56,15 +57,42 @@ static uint32_t Snd_Format(const nomadsnd_t *snd)
     return AL_FORMAT_STEREO16;
 }
 
-static nomadsnd_t *Snd_LoadFile(const char *path, sfxHandle_t *sfx)
+#define SND_SFX 0
+#define SND_MUSIC 1
+
+static sf_count_t SndFile_Read(void *data, sf_count_t size, void *file) {
+    return FS_Read(data, size, *(file_t *)f);
+}
+
+static sf_count_t SndFile_Tell(void *file) {
+    return FS_FileTell(*(file_t *)file);
+}
+
+static sf_count_t SndFile_GetFileLen(void *file) {
+    return FS_FileLength(*(file_t *)file);
+}
+
+static sf_count_t SndFile_Seek(sf_count_t offset, int whence, void *file) {
+    file_t f = *(file_t *)file;
+    switch (whence) {
+    case SEEK_SET:
+        return FS_FileSeek(f, (fileOffset_t)offset, FS_SEEK_SET);
+    case SEEK_CUR:
+        return FS_FileSeek(f, (fileOffset_t)offset, FS_SEEK_CUR);
+    case SEEK_END:
+        return FS_FileSeek(f, (fileOffset_t)offset, FS_SEEK_END);
+    };
+}
+
+static nomadsnd_t *Snd_LoadFile(const char *path, sfxHandle_t *sfx, int type)
 {
-    FILE *fp;
+    file_t f;
     SF_INFO fdata;
+    SF_VIRTUAL_IO vio;
     SNDFILE *sf;
-    char *buffer;
     nomadsnd_t *snd;
     sf_count_t readCount;
-    uint64_t fileLen, hash;
+    uint64_t hash;
 
     // check if the sound already exists
     hash = Snd_HashFileName(path);
@@ -73,33 +101,39 @@ static nomadsnd_t *Snd_LoadFile(const char *path, sfxHandle_t *sfx)
     }
     *sfx = (sfxHandle_t)hash;
 
-    snd = (nomadsnd_t *)Hunk_Alloc(sizeof(*snd), "snd", h_low);
+    if (type == SND_SFX) {
+        snd = (nomadsnd_t *)Z_Malloc(sizeof(*snd), TAG_SFX);
+    }
+    else if (type == SND_MUSIC) {
+        snd = (nomadsnd_t *)Z_Malloc(sizeof(*snd), TAG_MUSIC);
+    }
+    memset(snd, 0, sizeof(*snd));
+
     sndhash[hash] = snd;
     snd->failed = qtrue;
+    N_strncpyz(snd->name, path, sizeof(snd->name));
 
-    fileLen = FS_LoadFile(path, (void **)&buffer);
-    if (!buffer) {
-        Con_Printf(WARNING, "Failed to load sound file %s", path);
+    f = FS_FOpenRead(path);
+    if (f == FS_INVALID_HANDLE) {
+        Con_Printf(COLOR_YELLOW "WARNING: Failed to load sound file %s", path);
         return NULL;
     }
 
-    fp = tmpfile();
-    if (!fp) {
-        N_Error("Snd_LoadAudio: tmpfile() failed");
-    }
-    fwrite(buffer, fileLen, 1, fp);
-    fseek(fp, 0L, SEEK_SET);
+    vio.read = SndFile_Read;
+    vio.write = NULL; // not needed in this case
+    vio.get_filelen = SndFile_GetFileLen;
+    vio.seek = SndFile_Seek;
+    vio.tell = SndFile_Tell;
 
-    sf = sf_open_fd(fileno(fp), SFM_READ, &fdata, SF_TRUE);
+    sf = sf_open_virtual(&vio, SFM_READ, &fdata, &f);
     if (!sf) {
-        N_Error("Snd_LoadAudio: sf_open_fd failed, error: %s", sf_strerror(sf));
+        N_Error(ERR_FATAL, "Snd_LoadFile: sf_open_virtual failed, error: %s", sf_strerror(sf));
     }
 
-    // NOTE: perhaps use the hunk for this
-    snd->sndbuf = (short *)Hunk_Alloc(sizeof(*snd->sndbuf) * snd->length, "sndbuf", h_low);
+    snd->sndbuf = (short *)Hunk_Alloc(sizeof(*snd->sndbuf) * snd->length, h_low);
     readCount = sf_read_short(sf, snd->sndbuf, sizeof(*snd->sndbuf) * fdata.frames * fdata.channels);
     if (readCount != fileLen) {
-        N_Error("Snd_LoadAudio: sf_read_short failed, error: %s", sf_strerror(sf));
+        N_Error(ERR_FATAL, "Snd_LoadFile: sf_read_short failed, error: %s", sf_strerror(sf));
     }
     sf_close(sf);
 
@@ -107,6 +141,8 @@ static nomadsnd_t *Snd_LoadFile(const char *path, sfxHandle_t *sfx)
     alGenBuffers(1, (ALuint *)&snd->buffer);
     alBufferData(snd->buffer, Snd_Format(snd), snd->sndbuf, sizeof(*snd->sndbuf) * snd->length, snd->samplerate);
     alSourcei(snd->source, AL_BUFFER, snd->buffer);
+
+    FS_FClose(f);
 
     snd->failed = qfalse;
     
@@ -119,103 +155,66 @@ sfxHandle_t Snd_RegisterSfx(const char *npath)
     sfxHandle_t sfx;
 
     if (strlen(npath) >= MAX_GDR_PATH) {
-        Con_Printf(WARNING, "Snd_RegisterSfx: name too long");
+        Con_Printf(COLOR_YELLOW "Snd_RegisterSfx: name '%s' too long", npath);
         return -1;
     }
 
-    snd = Snd_LoadFile(npath, &sfx);
+    snd = Snd_LoadFile(npath, &sfx, SND_SFX);
     if (!snd) {
         return -1;
     }
     return sfx;
 }
 
-
-/*
-Snd_LoadAudio: loads a list of audio files into the audio cache
-*/
-static void Snd_LoadAudio(char **list, uint64_t numfiles)
+sfxHandle_t Snd_RegisterTrack(const char *npath)
 {
-    nomadsnd_t *snd;
-    sf_count_t readCount;
-    uint64_t fileLen, hash;
-    char *buffer;
-    SF_INFO fdata;
-    SNDFILE *sf;
-    FILE *fp;
+    nomadsnd_t *track;
+    sfxHandle_t id;
 
-    if (!numfiles) {
-        return;
+    if (strlen(npath) >= MAX_GDR_PATH) {
+        Con_Printf(COLOR_YELLOW "Snd_RegisterTrack: name '%s' too long\n", npath);
+        return -1;
     }
 
-    for (uint64_t i = 0; i < numfiles; i++) {
-        snd = (nomadsnd_t *)Hunk_Alloc(sizeof(*snd), "snd", h_low);
-        hash = Snd_HashFileName(list[i]);
-        sndhash[hash] = snd;
-        snd->failed = qtrue;
-
-        fileLen = FS_LoadFile(list[i], (void **)&buffer);
-        if (!buffer) {
-            Con_Printf(ERROR, "Failed to load sound file %s", list[i]);
-            continue;
-        }
-
-        fp = tmpfile();
-        if (!fp) {
-            N_Error("Snd_LoadAudio: tmpfile() failed");
-        }
-        fwrite(buffer, fileLen, 1, fp);
-        fseek(fp, 0L, SEEK_SET);
-
-        sf = sf_open_fd(fileno(fp), SFM_READ, &fdata, SF_TRUE);
-        if (!sf) {
-            N_Error("Snd_LoadAudio: sf_open_fd failed, error: %s", sf_strerror(sf));
-        }
-
-        // NOTE: perhaps use the hunk for this
-        snd->sndbuf = (short *)Hunk_Alloc(sizeof(*snd->sndbuf) * snd->length, "sndbuf", h_low);
-        readCount = sf_read_short(sf, snd->sndbuf, sizeof(*snd->sndbuf) * fdata.frames * fdata.channels);
-        if (readCount != fileLen) {
-            N_Error("Snd_LoadAudio: sf_read_short failed, error: %s", sf_strerror(sf));
-        }
-        sf_close(sf);
-
-        alGenSources(1, (ALuint *)&snd->source);
-        alGenBuffers(1, (ALuint *)&snd->buffer);
-        alBufferData(snd->buffer, Snd_Format(snd), snd->sndbuf, sizeof(*snd->sndbuf) * snd->length, snd->samplerate);
-        alSourcei(snd->source, AL_BUFFER, snd->buffer);
-
-        snd->failed = qfalse;
+    track = Snd_LoadFile(npath, &id, SND_MUSIC);
+    if (!track) {
+        return -1;
     }
-}
-
-void I_CacheAudio(void)
-{
-    uint64_t OGGchunks, WAVchunks;
-    char **ogglist, **wavlist;
-
-    ogglist = FS_ListFiles("", ".ogg", &OGGchunks);
-    wavlist = FS_ListFiles("", ".wav", &WAVchunks);
-
-    Snd_LoadAudio(ogglist, OGGchunks);
-    Snd_LoadAudio(wavlist, WAVchunks);
-
-    Sys_FreeFileList(ogglist);
-    Sys_FreeFileList(wavlist);
+    return id;
 }
 
 void Snd_Restart(void)
 {
     Snd_Shutdown(qfalse);
-    I_CacheAudio();
+
+    // reinitialize
+    for (uint32_t i = 0; i < arraylen(sndhash); ++i) {
+        if (sndhash[i] && !sndhash[i]->failed) {
+            alGenSources(1, (ALuint *)&sndhash[i]->source);
+            alGenBuffers(1, (ALuint *)&sndhash[i]->buffer);
+            alBufferData(sndhash[i]->buffer, Snd_Format(sndhash[i]), sndhash[i]->sndbuf,
+                sizeof(*sndhash[i]->sndbuf) * sndhash[i]->length, sndhash[i]->samplerate);
+            alSourcei(sndhash[i]->source, AL_BUFFER, sndhash[i]->buffer);
+        }
+    }
+}
+
+//
+// Snd_ClearMem: clears all memory allocated to sound stuff
+//
+void Snd_ClearMem(void)
+{
+    Snd_Shutdown(qfalse);
+    Z_FreeTags(TAG_SFX, TAG_MUSIC);
 }
 
 void Snd_Shutdown(qboolean destroyContext)
 {
-    Con_Printf("Snd_Shutdown: deallocating and freeing OpenAL sources and buffers");
+    Con_Printf("Snd_Shutdown: deallocating and freeing OpenAL sources and buffers\n");
     if ((!device || !context) || !snd_cache)
         return;
     
+    Snd_StopAll();
     for (uint32_t i = 0; i < arraylen(sndhash); ++i) {
         if (sndhash[i] && !sndhash[i]->failed) {
             if (snd_cache[i].source)
@@ -298,11 +297,15 @@ void Snd_PlayTrack(const char *name)
     uint64_t hash;
     nomadsnd_t *mus;
 
+    if (!snd_musicon->i) {
+        Con_DPrintf("snd_musicon->i != 1\n");
+        return;
+    }
+
     hash = Snd_HashFileName(name);
     mus = sndhash[hash];
     if (!mus) {
-        Con_Printf(WARNING, "track '%s' deosn't exist, canceling track", name);
-        return;
+        N_Error(ERR_DROP, "track '%s' deosn't exist, canceling track\n", name);
     }
 
     if (mus->failed) {
@@ -310,7 +313,7 @@ void Snd_PlayTrack(const char *name)
     }
 
     if (musicTrack) {
-        Con_Printf(DEV, "Snd_PlayTrack: overwriting current music track");
+        Con_DPrintf("Snd_PlayTrack: overwriting current music track\n");
         Snd_StopSound(musicTrack);
         musicTrack = NULL;
     }
@@ -325,11 +328,15 @@ void Snd_PlaySfx(const char *name)
     uint64_t hash;
     nomadsnd_t *sfx;
 
+    if (!snd_sfxon->i) {
+        Con_DPrintf("snd_sfxon->i != 1\n");
+        return;
+    }
+
     hash = Snd_HashFileName(name);
     sfx = sndhash[hash];
     if (!sfx) {
-        Con_Printf(WARNING, "sfx '%s' doesn't exist", name);
-        return;
+        N_Error(ERR_DROP, "sfx '%s' doesn't exist", name);
     }
 
     if (sfx->failed) {
@@ -337,7 +344,7 @@ void Snd_PlaySfx(const char *name)
     }
 
     if (!Snd_QueueSfx(sfx)) {
-        Con_Printf(DEV, "not playing '%s'", name);
+        Con_DPrintf("not playing '%s'\n", name);
     }
 }
 
@@ -348,10 +355,14 @@ void Snd_PlayTrack(sfxHandle_t sfx)
     uint64_t hash;
     nomadsnd_t *mus;
 
+    if (!snd_musicon->i) {
+        Con_DPrintf("snd_musicon->i != 1\n");
+        return;
+    }
+
     mus = sndhash[sfx];
     if (!mus) {
-        Con_Printf(WARNING, "Snd_PlayTrack: invalid handle, canceling track");
-        return;
+        N_Error(ERR_DROP, "Snd_PlayTrack: invalid handle, canceling track\n");
     }
 
     if (mus->failed) {
@@ -359,7 +370,7 @@ void Snd_PlayTrack(sfxHandle_t sfx)
     }
 
     if (musicTrack) {
-        Con_Printf(DEV, "Snd_PlayTrack: overwriting current music track");
+        Con_DPrintf("Snd_PlayTrack: overwriting current music track\n");
         Snd_StopSound(musicTrack);
         musicTrack = NULL;
     }
@@ -370,12 +381,16 @@ void Snd_PlayTrack(sfxHandle_t sfx)
 void Snd_PlaySfx(sfxHandle_t sfx)
 {
     boost::unique_lock<boost::shared_mutex> lock{sndLock};
-
     nomadsnd_t *snd;
+
+    if (!snd_sfxon->i) {
+        Con_DPrintf("snd_sfxon->i != 1\n");
+        return;
+    }
+
     snd = sndhash[sfx];
     if (!snd) {
-        Con_Printf(WARNING, "Snd_PlaySfx: bad handle");
-        return;
+        N_Error(ERR_DROP, "Snd_PlaySfx: bad handle");
     }
 
     if (snd->failed) {
@@ -383,19 +398,51 @@ void Snd_PlaySfx(sfxHandle_t sfx)
     }
 
     if (!Snd_QueueSfx(snd)) {
-        Con_Printf(DEV, "Snd_PlaySfx: playing '%s'", snd->name);
+        Con_DPrintf("Snd_PlaySfx: playing '%s'\n", snd->name);
     }
 }
 
 
 void Snd_Submit(void)
 {
+    // update any parameters if the cvars have been changed
+    if (Cvar_CheckGroup(CVG_SOUND)) {
+    }
+
+    if (!snd_musicon->i && !snd_sfxon->i) {
+        if (!clearedQueue) {
+            memset(sfxqueue, NULL, sizeof(sfxqueue));
+            clearedQueue = qtrue;
+        }
+        Snd_StopAll();
+    }
+
     for (uint32_t i = 0; i < sfx_queuedCount; i++) {
         if (Snd_PlaySound(sfxqueue[i])) {
             sfx_queuedCount--;
             sfxqueue[i] = NULL;
         }
     }
+}
+
+void Snd_StopAll(void)
+{
+    static qboolean stoppedAll = qfalse;
+    if (stoppedAll) {
+        return; // already called
+    }
+    for (uint32_t i = 0; i < arraylen(sndhash); ++i) {
+        if (sndhash[i] && Snd_SoundIsPlaying(sndhash[i])) {
+            Snd_StopSound(sndhash[i]);
+        }
+    }
+    stoppedAll = qtrue;
+}
+
+void Snd_DisableSounds(void)
+{
+    Snd_StopAll();
+    Snd_ClearMem();
 }
 
 void Snd_Init(void)
@@ -408,12 +455,12 @@ void Snd_Init(void)
     if (!snd_sfxon->i || !snd_musicon->i)
         return;
 
-    Con_Printf("Snd_Init: initializing OpenAL and libsndfile");
+    Con_Printf("Snd_Init: initializing OpenAL and libsndfile\n");
     device = alcOpenDevice(NULL);
     if (!device) {
         Cvar_Set("snd_sfxon", "0");
         Cvar_Set("snd_musicon", "0");
-        Con_Printf(ERROR, "Snd_Init: alcOpenDevice returned NULL, turning off sound");
+        Con_Printf(COLOR_RED "Snd_Init: alcOpenDevice returned NULL, turning off sound\n");
         return;
     }
 
@@ -421,7 +468,7 @@ void Snd_Init(void)
     if (!context) {
         Cvar_Set("snd_sfxon", "0");
         Cvar_Set("snd_musicon", "0");
-        Con_Printf("Snd_Init: alcCreateContext returned NULL, turning off sound, error message: %s",
+        Con_Printf(COLOR_RED "Snd_Init: alcCreateContext returned NULL, turning off sound, error message: %s\n",
             alcGetString(device, alcGetError(device)));
         alcCloseDevice(device);
         return;
@@ -429,5 +476,6 @@ void Snd_Init(void)
     alcMakeContextCurrent(context);
 
     memset(sfxqueue, NULL, sizeof(sfxqueue));
+    clearedQueue = qfalse;
     sfx_queuedCount = 0;
 }

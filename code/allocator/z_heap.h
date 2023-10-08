@@ -35,9 +35,9 @@ GO_AWAY_MANGLE void Memory_Shutdown(void);
 
 #ifdef _NOMAD_DEBUG
 GO_AWAY_MANGLE void *Hunk_AllocDebug( uint64_t size, ha_pref preference, const char *name, const char *file, uint64_t line );
-#define Hunk_Alloc(size,name,preference) Hunk_AllocDebug(size,preference,name,__FILE__,__LINE__)
+#define Hunk_Alloc(size,name,preference) Hunk_AllocDebug(size,preference,#size,__FILE__,__LINE__)
 #else
-GO_AWAY_MANGLE void *Hunk_Alloc( uint64_t size, const char *name, ha_pref preference );
+GO_AWAY_MANGLE void *Hunk_Alloc( uint64_t size, ha_pref preference );
 #endif
 GO_AWAY_MANGLE void Hunk_Clear(void);
 GO_AWAY_MANGLE void *Hunk_AllocateTempMemory(uint64_t size);
@@ -47,6 +47,7 @@ GO_AWAY_MANGLE uint64_t Hunk_MemoryRemaining(void);
 GO_AWAY_MANGLE void Hunk_Log(void);
 GO_AWAY_MANGLE void Hunk_SmallLog(void);
 GO_AWAY_MANGLE qboolean Hunk_CheckMark(void);
+GO_AWAY_MANGLE void Hunk_ClearToMark( void );
 GO_AWAY_MANGLE void Hunk_Print(void);
 GO_AWAY_MANGLE void Hunk_Check(void);
 GO_AWAY_MANGLE void Hunk_InitMemory(void);
@@ -55,17 +56,15 @@ GO_AWAY_MANGLE void *Hunk_ReallocateTempMemory(void *ptr, uint64_t nsize);
 
 GO_AWAY_MANGLE uint64_t Com_TouchMemory(void);
 
-GO_AWAY_MANGLE void* Z_Malloc(uint32_t size, int tag, void *user, const char *name);
-GO_AWAY_MANGLE void* Z_Calloc(uint32_t size, int tag, void *user, const char *name);
-GO_AWAY_MANGLE void* Z_Realloc(void *ptr, uint32_t nsize, int tag, void *user, const char *name);
-GO_AWAY_MANGLE char* Z_Strdup(const char *str);
+GO_AWAY_MANGLE void* Z_SMalloc(uint32_t size);
+GO_AWAY_MANGLE void* Z_Malloc(uint32_t size, int tag);
+GO_AWAY_MANGLE void* Z_Calloc(uint32_t size, int tag);
+GO_AWAY_MANGLE void* Z_Realloc(void *ptr, uint32_t nsize, int tag);
+GO_AWAY_MANGLE char* Z_Strdup(const char *str, int tag = TAG_STATIC);
 GO_AWAY_MANGLE void Z_Free(void *ptr);
-GO_AWAY_MANGLE char* Z_StrdupTag(const char *str, int tag);
 
 GO_AWAY_MANGLE void Z_FreeTags(int lowtag, int hightag);
 GO_AWAY_MANGLE void Z_ChangeTag(void* user, int tag);
-GO_AWAY_MANGLE void Z_ChangeUser(void* newuser, void* olduser);
-GO_AWAY_MANGLE void Z_ChangeName(void* user, const char* name);
 GO_AWAY_MANGLE void Z_CleanCache(void);
 GO_AWAY_MANGLE void Z_CheckHeap(void);
 GO_AWAY_MANGLE void Z_ClearZone(void);
@@ -79,53 +78,6 @@ GO_AWAY_MANGLE uint32_t Z_NumBlocks(int tag);
 GO_AWAY_MANGLE void Z_TouchMemory(uint64_t *sum);
 
 GO_AWAY_MANGLE void Mem_Info(void);
-
-template<class T>
-struct zone_allocator
-{
-	constexpr zone_allocator(void) noexcept { }
-	constexpr zone_allocator(const char* name = "zallocator") noexcept { }
-
-	typedef T value_type;
-	template<class U>
-	constexpr zone_allocator(const zone_allocator<U> &) noexcept { }
-
-	constexpr GDR_INLINE bool operator!=(const eastl::allocator) { return true; }
-	constexpr GDR_INLINE bool operator!=(const zone_allocator) { return false; }
-	constexpr GDR_INLINE bool operator==(const eastl::allocator) { return false; }
-	constexpr GDR_INLINE bool operator==(const zone_allocator) { return true; }
-
-	GDR_INLINE void* allocate(size_t n) const
-	{ return Z_Malloc(n, TAG_STATIC, NULL, "zallocator"); }
-	GDR_INLINE void* allocate(size_t& n, size_t& alignment, size_t& offset) const
-	{ return Z_Malloc(n, TAG_STATIC, NULL, "zallocator"); }
-	GDR_INLINE void* allocate(size_t n, size_t alignment, size_t alignmentOffset, int flags) const
-	{ return Z_Malloc(n, TAG_STATIC, NULL, "zallocator"); }
-	GDR_INLINE void deallocate(void *p, size_t) const noexcept
-	{ Z_Free(p); }
-};
-
-class zone_allocator_notemplate
-{
-public:
-	zone_allocator_notemplate(const char* name = "zallocator") noexcept { }
-
-	constexpr zone_allocator_notemplate(const zone_allocator_notemplate &) noexcept { }
-
-	GDR_INLINE bool operator!=(const eastl::allocator) { return true; }
-	GDR_INLINE bool operator!=(const zone_allocator_notemplate) { return false; }
-	GDR_INLINE bool operator==(const eastl::allocator) { return false; }
-	GDR_INLINE bool operator==(const zone_allocator_notemplate) { return true; }
-
-	GDR_INLINE void* allocate(size_t n) const
-	{ return Z_Malloc(n, TAG_STATIC, NULL, "zallocator"); }
-	GDR_INLINE void* allocate(size_t& n, size_t& alignment, size_t& offset) const
-	{ return Z_Malloc(n, TAG_STATIC, NULL, "zallocator"); }
-	GDR_INLINE void* allocate(size_t n, size_t alignment, size_t alignmentOffset, int flags) const
-	{ return Z_Malloc(n, TAG_STATIC, NULL, "zallocator"); }
-	GDR_INLINE void deallocate(void *p, size_t) const noexcept
-	{ Z_Free(p); }
-};
 
 typedef struct
 {
@@ -150,8 +102,6 @@ GO_AWAY_MANGLE void Mem_Free(void *ptr);
 GO_AWAY_MANGLE char* Mem_CopyString(const char *in);
 GO_AWAY_MANGLE void* Mem_Alloc16(const uint32_t size);
 GO_AWAY_MANGLE void Mem_Free16(void *ptr);
-
-#include <GDRLib/threadpool.hpp>
 
 
 #endif

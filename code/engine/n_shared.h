@@ -3,13 +3,256 @@
 
 #pragma once
 
-#ifdef __LCC__
-#ifndef Q3_VM
-#define Q3_VM
-#endif
+#define GLN_VERSION "GLNomad 1.0 Alpha"
+#define WINDOW_TITLE "The Nomad"
+
+/*
+=========================================
+
+Platform Specific Preprocessors
+
+=========================================
+*/
+
+#define GDRx64  0
+#define GDRi386 0
+#define arm64   0
+#define arm32   0
+
+#define MAX_GDR_PATH 64
+
+#ifdef _WIN32
+	#define DLL_EXT ".dll"
+	#define PATH_SEP '\\'
+	#define PATH_SEP_FOREIGN '/'
+	#define GDR_DECL __cdecl
+	#define GDR_NEWLINE "\r\n"
+	
+	#if defined(_MSVC_VER) && _MSVC_VER >= 1400
+		#define COMPILER_STRING "msvc"
+	#elif defined(__MINGW32__)
+		#define COMPILER_STRING "mingw64"
+	#elif defined(__MINGW64__)
+		#define COMPILER_STRING "mingw32"
+	#else
+		#error "unsupported windows compiler"
+	#endif
+	#ifdef _WIN64
+		#define OS_STRING "win64 " COMPILER_STRING
+	#else
+		#define OS_STRING "win32 " COMPILER_STRING
+	#endif
+	#if defined(_M_IX86)
+		#define ARCH_STRING "x86"
+		#define GDR_LITTLE_ENDIAN
+		#undef GDRi386
+		#define GDRi386 1
+		#ifndef __WORDSIZE
+			#define __WORDSIZE 32
+		#endif
+	#endif
+	#if defined(_M_AMD64)
+		#define ARCH_STRING "x86_64"
+		#define GDR_LITTLE_ENDIAN
+		#undef GDRx64
+		#define GDRx64 1
+		#ifndef __WORDSIZE
+			#define __WORDSIZE 64
+		#endif
+	#endif
+	#if defined(_M_ARM64)
+		#define ARCH_STRING "arm64"
+		#define GDR_LITTLE_ENDIAN
+		#undef arm64
+		#define arm64 1
+		#ifndef __WORDSIZE
+			#define __WORDSIZE 64
+		#endif
+	#endif
+#elif defined(__unix__) // !defined _WIN32
+	// common unix platform stuff
+	#define DLL_EXT ".so"
+	#define PATH_SEP '/'
+	#define PATH_SEP_FOREIGN '\\'
+	#define GDR_DECL
+	#define GDR_NEWLINE "\n"
+	#if defined(__i386__)
+		#define ARCH_STRING "i386"
+		#define GDR_LITTLE_ENDIAN
+		#undef GDRi386
+		#define GDRi386 1
+	#endif
+	#if defined(__x86_64__) || defined(__amd64__)
+		#define ARCH_STRING "x86-64"
+		#define GDR_LITTLE_ENDIAN
+		#undef GDRx64
+		#define GDRx64 1
+	#endif
+	#if defined(__arm__)
+		#define ARCH_STRING "arm"
+		#define GDR_LITTLE_ENDIAN
+		#undef arm32
+		#define arm32 1
+	#endif
+	#if defined(__aarch64__)
+		#define ARCH_STRING "aarch64"
+		#define GDR_LITTLE_ENDIAN
+		#undef arm64
+		#define arm64 1
+	#endif
+#else
+	#error "WTF are u compiling on?" // seriously
 #endif
 
-#include "n_platform.h"
+// linux is defined on android before __ANDROID__
+#if defined(__ANDROID__)
+	#define OS_STRING "android"
+	#error "android isn't yet supported"
+#endif
+#if defined(__linux__)
+	#include <endian.h>
+	#define OS_STRING "linux"
+#endif
+#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__NetBSD__)
+	#include <sys/types.h>
+	#include <machine/endian.h>
+	#ifdef __FreeBSD__
+		#define OS_STRING "freebsd"
+	#elif defined(__OpenBSD__)
+		#define OS_STRING "openbsd"
+	#elif defined(__NetBSD__)
+		#define OS_STRING "netbsd"
+	#endif
+	#if BYTE_ORDER == BIG_ENDIAN
+		#define GDR_BIG_ENDIAN
+	#else
+		#define GDR_LITTLE_ENDIAN
+	#endif
+#endif
+
+#ifdef __APPLE__
+	#define OS_STRING "macos"
+	#undef DLL_EXT
+	#define DLL_EXT ".dylib"
+#endif
+
+#ifdef Q3_VM
+	#define OS_STRING "q3vm"
+	#define ARCH_STRING "bytecode"
+	#define GDR_LITTLE_ENDIAN
+	#undef DLL_EXT
+	#define DLL_EXT ".qvm"
+#endif
+
+#if !defined( OS_STRING )
+#error "Operating system not supported"
+#endif
+
+#if !defined( ARCH_STRING )
+#error "Architecture not supported"
+#endif
+
+#ifndef PATH_SEP
+#error "PATH_SEP not defined"
+#endif
+
+#ifndef PATH_SEP_FOREIGN
+#error "PATH_SEP_FOREIGN not defined"
+#endif
+
+#ifndef DLL_EXT
+#error "DLL_EXT not defined"
+#endif
+
+#if defined( GDR_BIG_ENDIAN ) && defined( GDR_LITTLE_ENDIAN )
+#error "Endianness defined as both big and little"
+#elif defined( GDR_BIG_ENDIAN )
+
+#define CopyLittleShort(dest, src) CopyShortSwap(dest, src)
+#define CopyLitteInt(dest, src) CopyIntSwap(dest, src)
+#define CopyLittleLong(dest, src) CopyLongSwap(dest, src)
+#define LittleShort(x) SDL_SwapLE16(x)
+#define LittleInt(x) SDL_SwapLE32(x)
+#define LittleLong(x) SDL_SwapLE64(x)
+#define LittleFloat(x) SDL_SwapFloatLE(x)
+#define BigShort(x) x
+#define BigInt(x) x
+#define BigLong(x) x
+#define BigFloat(x) x
+
+#elif defined( GDR_LITTLE_ENDIAN )
+
+#define CopyLittleShort(dest, src) memcpy(dest, src, 2)
+#define CopyLittleInt(dest, src) memcpy(dest, src, 4)
+#define CopyLittleLong(dest, src) memcpy(dest, src, 8)
+#define LittleShort(x) x
+#define LittleInt(x) x
+#define LittleLong(x) x
+#define LittleFloat(x) x
+#define BigShort(x) SDL_SwapBE16(x)
+#define BigInt(x) SDL_SwapBE32(x)
+#define BigLong(x) SDL_SwapBE64(x)
+#define BigFloat(x) SDL_SwapFloatBE(x)
+
+#else
+#error "Endianness not defined"
+#endif
+
+
+/*
+=========================================
+
+Compiler Macro Abstraction
+
+=========================================
+*/
+#if defined(__GNUC__) || defined(__MINGW32__) || defined(__MINGW64__)
+	#define GDR_INLINE __attribute__((always_inline)) inline
+	#define GDR_WARN_UNUSED __attribute__((warn_unused_result))
+	#define GDR_NORETURN __attribute__((noreturn))
+	#define GDR_ALIGN(x) __attribute__((align((x))))
+	#define GDR_ATTRIBUTE(x) __attribute__(x)
+
+	#ifdef __GNUC__
+		#define GDR_EXPORT __attribute__((visibility("default")))
+	#else
+		#ifdef GDR_DLLCOMPILE
+			#define GDR_EXPORT __declspec(dllexport)
+		#else
+			#define GDR_EXPORT __declspec(dllimport)
+		#endif
+	#endif
+#elif defined(_MSC_VER)
+	#define GDR_INLINE __forceinline
+	#define GDR_WARN_UNUSED _Check_return
+	#define GDR_NORETURN __declspec(noreturn)
+	#define GDR_ALIGN(x) __declspec(align((x)))
+	#define GDR_ATTRIBUTE(x)
+
+	#ifdef GDR_DLLCOMPILE
+		#define GDR_EXPORT __declspec(dllexport)
+	#else
+		#define GDR_EXPORT __declspec(dllimport)
+	#endif
+#endif
+
+// stack based version of strdup
+#ifndef strdup_a
+	// strdupa is defined in gcc
+	#ifdef strdupa
+		#define strdup_a strdupa
+	#else
+		#define strdup_a(str) (char*)memcpy(memset(alloca(strlen((str))+1),0,strlen(str)+1),str,strlen(str))
+	#endif
+#endif
+
+// make sure Q3_VM is defined
+#ifdef __LCC__
+	#ifndef Q3_VM
+		#define Q3_VM
+	#endif
+#endif
+
 #ifndef _NOMAD_VERSION
 #   error a version must be supplied when compiling the engine or a mod
 #endif
@@ -54,38 +297,6 @@
 
 #include "n_pch.h"
 
-#ifndef Q3_VM
-#include <GDRLib/config.hpp>
-#else
-#define GDR_ATTRIBUTE(x)
-#define GDR_ASSERT(x)
-#define GDR_ASSERT_MSG(x)
-#define GDR_ASSERT_FAIL(x)
-#define GDR_INLINE
-#define GDR_WARN_UNUSED
-#define MAX_GDR_PATH 64
-#define GDR_NORETURN
-#define GDR_EXPORT
-#endif
-
-#undef assert
-#define assert(x)
-#if defined(_NOMAD_DEBUG) && !defined(Q3_VM) && !defined(GDR_DLLCOMPILE) && defined(__cplusplus)
-#undef assert
-inline void __nomad_assert_fail(const char* expression, const char* file, const char* func, unsigned line)
-{
-	N_Error(
-		"Assertion '%s' failed (Main Engine):\n"
-		"  \\file: %s\n"
-		"  \\function: %s\n"
-		"  \\line: %u\n\nIf this is an SDL2 error, here is the message string: %s\n",
-	expression, file, func, line, SDL_GetError());
-}
-#define assert(x) (((x)) ? void(0) : __nomad_assert_fail(#x,__FILE__,__func__,__LINE__))
-#else
-#define assert(x)
-#endif
-
 #ifdef Q3_VM
 #include "../game/bg_lib.h"
 #else
@@ -105,7 +316,16 @@ inline void __nomad_assert_fail(const char* expression, const char* file, const 
 #define M_PI		3.14159265358979323846f	// matches value in gcc v2 math.h
 #endif
 
+#ifndef __BYTEBOOL__
+#define __BYTEBOOL__
+#ifdef __cplusplus
+typedef uint32_t qboolean;
+#define qtrue 1
+#define qfalse 0
+#else
 typedef enum { qfalse = 0, qtrue = 1 } qboolean;
+#endif
+#endif
 
 const char *Com_SkipTokens( const char *s, uint64_t numTokens, const char *sep );
 const char *Com_SkipCharset( const char *s, const char *sep );
@@ -124,11 +344,6 @@ char *N_strupr(char *s1);
 void N_strcat(char *dest, size_t size, const char *src);
 const char *N_stristr(const char *s, const char *find);
 float N_fmaxf(float a, float b);
-#ifdef _WIN32
-int N_vsnprintf(char *str, size_t size, const char *format, va_list ap);
-#else
-#define N_vsnprintf vsnprintf
-#endif
 int N_atoi(const char *s);
 float N_atof(const char *s);
 size_t N_strlen(const char *str);
@@ -158,7 +373,6 @@ typedef int32_t sfxHandle_t;
 #endif
 
 #include "../allocator/z_heap.h"
-#include "../game/string.hpp"
 
 #ifndef MIN
 #define MIN(a,b) ((a)<(b)?(a):(b))
@@ -199,7 +413,63 @@ extern	const vec4_t		colorDkGrey;
 
 extern const byte locase[256];
 
-#define arraylen(arr) (sizeof(arr)/sizeof(*arr))
+#ifdef Q3_VM
+	typedef int intptr_t;
+#else
+	#if defined (_MSC_VER) && !defined(__clang__)
+		typedef __int64 int64_t;
+		typedef __int32 int32_t;
+		typedef __int16 int16_t;
+		typedef __int8 int8_t;
+		typedef unsigned __int64 uint64_t;
+		typedef unsigned __int32 uint32_t;
+		typedef unsigned __int16 uint16_t;
+		typedef unsigned __int8 uint8_t;
+	#else
+		#include <stdint.h>
+	#endif
+
+	#ifdef _WIN32
+		// vsnprintf is ISO/IEC 9899:1999
+		// abstracting this to make it portable
+		int N_vsnprintf( char *str, size_t size, const char *format, va_list ap );
+	#else
+		#define N_vsnprintf vsnprintf
+	#endif
+#endif
+
+#if defined (_WIN32)
+#if !defined(_MSC_VER)
+// use GCC/Clang functions
+#define Q_setjmp __builtin_setjmp
+#define Q_longjmp __builtin_longjmp
+#elif GDRx64 && (_MSC_VER >= 1910)
+// use custom setjmp()/longjmp() implementations
+#define Q_setjmp Q_setjmp_c
+#define Q_longjmp Q_longjmp_c
+int Q_setjmp_c(void *);
+int Q_longjmp_c(void *, int);
+#else // !GDRx64 || MSVC<2017
+#define Q_setjmp setjmp
+#define Q_longjmp longjmp
+#endif
+#else // !_WIN32
+#define Q_setjmp setjmp
+#define Q_longjmp longjmp
+#endif
+
+#ifdef ERR_FATAL
+	#undef ERR_FATAL // this is defined in malloc.h
+#endif
+
+// error codes
+typedef enum {
+	ERR_FATAL,		// exit the entire game with a popup window
+	ERR_DROP,		// print to console and go to title screen
+} errorCode_t;
+void GDR_ATTRIBUTE((format(printf, 2, 3))) N_Error(errorCode_t code, const char *fmt, ...);
+
+#define arraylen(arr) (sizeof((arr))/sizeof(*(arr)))
 #define zeroinit(x,size) memset((x),0,(size))
 
 #define	nanmask (255<<23)
@@ -250,6 +520,12 @@ void ByteToDir( int b, vec3_t dir );
 #define	VectorScale(v, s, o)	_VectorScale(v,s,o)
 #define	VectorMA(v, s, b, o)	_VectorMA(v,s,b,o)
 
+#endif
+
+#ifdef PATH_MAX
+#define MAX_OSPATH			PATH_MAX
+#else
+#define	MAX_OSPATH			256		// max length of a filesystem pathname
 #endif
 
 #define	MAX_INT			0x7fffffff
@@ -430,11 +706,6 @@ int N_isnan( float x );
 
 float Com_Clamp( float min, float max, float value );
 
-#ifndef __cplusplus
-qboolean N_strtobool(const char* s);
-const char* N_booltostr(qboolean b);
-#endif
-
 #include "n_console.h"
 #include "n_common.h"
 
@@ -474,6 +745,14 @@ typedef enum
     R_VULKAN
 } renderapi_t;
 
-#include "n_shared_cpp.h"
+#ifdef __cplusplus
+template<typename type, typename alignment>
+inline type* PADP(type *base, alignment align)
+{
+	return (type *)((void *)PAD((intptr_t)base, align));
+}
+#else
+#define PADP(base,align) ((void *)PAD((intptr_t)(base),(align)))
+#endif
 
 #endif

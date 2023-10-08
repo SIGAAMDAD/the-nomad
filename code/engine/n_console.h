@@ -3,7 +3,19 @@
 
 #pragma once
 
+/*
+==========================================================
+
+CVARS (console variables)
+
+Many variables can be used for cheating purposes, so when
+cheats is zero, force all unspecified variables to their
+default values.
+==========================================================
+*/
+
 typedef int cvartype_t;
+
 enum
 {
     CVT_NONE = 0,
@@ -20,8 +32,9 @@ typedef enum {
 	CVG_ENGINE,
 	CVG_RENDERER,
 	CVG_ALLOCATOR,
+	CVG_SOUND,
+	CVG_FILESYSTEM,
     CVG_NONE,
-    CVG_FILESYSTEM,
 
     CVG_MAX
 } cvarGroup_t;
@@ -100,10 +113,14 @@ typedef struct {
     int i;
     qboolean b;
 
-    int modificationCount;
+    unsigned int modificationCount;
     cvarHandle_t handle;
 } vmCvar_t;
 
+void Cvar_ResetGroup( cvarGroup_t group, qboolean resetModifiedFlags );
+int Cvar_CheckGroup(cvarGroup_t group);
+void Cvar_ForceReset(const char *name);
+void Cvar_Init(void);
 void Cvar_Restart(qboolean unsetVM);
 void Cvar_Register(vmCvar_t *vmCvar, const char *varName, const char *defaultValue, uint32_t flags, uint32_t privateFlag);
 void Cvar_CompleteCvarName(const char *args, uint32_t argNum);
@@ -132,21 +149,8 @@ void Cvar_SetFloatValue(const char *name, float value);
 void Cvar_SetStringValue(const char *name, const char *value);
 void Cvar_SetBooleanValue(const char *name, qboolean value);
 
-#ifndef Q3_VM
-typedef enum {
-    DEV = 0,
-    INFO,
-    DEBUG,
-    ERROR,
-    WARNING,
-    
-    NONE // reserved for Con_Printf without the level specified, don't use
-} loglevel_t;
-void GDR_DECL Con_Printf(loglevel_t level, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
-#endif
-
-#define N_COLOR_ESCAPE	'^'
-#define N_IsColorString(p) ( *(p) == Q_COLOR_ESCAPE && *((p)+1) && *((p)+1) != Q_COLOR_ESCAPE )
+#define Q_COLOR_ESCAPE	'^'
+#define Q_IsColorString(p) ( *(p) == Q_COLOR_ESCAPE && *((p)+1) && *((p)+1) != Q_COLOR_ESCAPE )
 
 #define ColorIndex(c)	( ( (c) - '0' ) & 7 )
 
@@ -176,136 +180,13 @@ extern int ColorIndexFromChar( char ccode );
 #define	MAKERGB( v, r, g, b ) v[0]=r;v[1]=g;v[2]=b
 #define	MAKERGBA( v, r, g, b, a ) v[0]=r;v[1]=g;v[2]=b;v[3]=a
 
-#ifdef __cplusplus
-
-#define MAX_MSG_SIZE (1*1024*1024)
-#define MAX_BUFFER_SIZE (3*1024*1024)
-
-extern bool imgui_window_open;
-
-void Cvar_Init(void);
+void Con_AddText(const char *msg);
+void Con_DrawConsole(void);
 void Con_Init(void);
 void Con_Shutdown(void);
-void Con_GetInput(void);
-void GDR_DECL Con_Printf(loglevel_t level, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
+
 void GDR_DECL Con_Printf(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
-void GDR_DECL Con_Error(bool exit, const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 2, 3)));
-eastl::vector<char>& Con_GetBuffer(void);
-#endif
-
-// credits to michaelfm1211 for writing this
-// use a SGR parameter not supported by colors.h. ex: alternate fonts
-#define SGR_N(n) "\x1b["#n"m"
-
-#define SGR_RESET "\x1b[m"
-#define SGR_BOLD "\x1b[1m"
-#define SGR_FAINT "\x1b[2m"
-#define SGR_ITALIC "\x1b[3m"
-#define SGR_UNDER "\x1b[4m"
-#define SGR_BLINK "\x1b[5m"
-#define SGR_BLINK_RAPID "\x1b[6m"
-#define SGR_INVERT "\x1b[7m"
-#define SGR_HIDE "\x1b[8m"
-#define SGR_STRIKE "\x1b[9m"
-#define SGR_DEF_FONT "\x1b[10m"
-#define SGR_GOTHIC "\x1b[20m"
-#define SGR_2UNDER "\x1b[21m"
-#define SGR_DEF_WEIGHT "\x1b[22m"
-#define SGR_NO_ITALIC "\x1b[23m"
-#define SGR_NO_GOTHIC "\x1b[23m"
-#define SGR_NO_UNDER "\x1b[24m"
-#define SGR_NO_BLINK "\x1b[25m"
-#define SGR_MONOSPACE "\x1b[26m"
-#define SGR_NO_INVERT "\x1b[27m"
-#define SGR_NO_HIDE "\x1b[28m"
-#define SGR_NO_STRIKE "\x1b[29m"
-// there's a bunch of color related SGRs. they're under the C_ instead, but
-// everyting under here is already obscure anyway
-#define SGR_NO_MONOSPACE "\x1b[50m"
-#define SGR_FRAME "\x1b[51m"
-#define SGR_CIRCLE "\x1b[52m"
-#define SGR_OVER "\x1b[53m"
-#define SGR_NO_FRAME "\x1b[54m"
-#define SGR_NO_CIRCLE "\x1b[54m"
-#define SGR_NO_OVER "\x1b[55m"
-#define SGR_NO_FRAME "\x1b[54m"
-#define SGR_IDEO_UNDER "\x1b[60m"
-#define SGR_R_SIDE "\x1b[60m"
-#define SGR_IDEO_2UNDER "\x1b[61m"
-#define SGR_R_2SIDE "\x1b[61m"
-#define SGR_IDEO_OVER "\x1b[62m"
-#define SGR_L_SIDE "\x1b[62m"
-#define SGR_IDEO_2OVER "\x1b[63m"
-#define SGR_L_2SIDE "\x1b[63m"
-#define SGR_IDEO_STRESS "\x1b[64m"
-#define SGR_NO_IDEO "\x1b[65m"
-#define SGR_NO_SIDE "\x1b[65m"
-#define SGR_SUPER "\x1b[73m"
-#define SGR_SUB "\x1b[74m"
-#define SGR_NO_SUPER "\x1b[75m"
-#define SGR_NO_SUB "\x1b[75m"
-
-
-/*
- * Colors
- * Key:
- * C_{color} = text color
- * C_BR_{color} = bright text color
- * C_BG_{color} = background color
- * C_BG_BR_{color} = bright background color
- */
-
-#define C_RESET "\x1b[0m"
-
-#define C_DEF "\x1b[39m"
-#define C_BG_DEF "\x1b[49m"
-
-#define C_BLACK "\x1b[30m"
-#define C_RED "\x1b[31m"
-#define C_GREEN "\x1b[32m"
-#define C_YELLOW "\x1b[33m"
-#define C_BLUE "\x1b[34m"
-#define C_MAGENTA "\x1b[35m"
-#define C_CYAN "\x1b[36m"
-#define C_WHITE "\x1b[37m"
-
-#define C_BR_BLACK "\x1b[90m"
-#define C_GRAY "\x1b[90m"
-#define C_BR_RED "\x1b[91m"
-#define C_BR_GREEN "\x1b[92m"
-#define C_BR_YELLOW "\x1b[93m"
-#define C_BR_BLUE "\x1b[94m"
-#define C_BR_MAGENTA "\x1b[95m"
-#define C_BR_CYAN "\x1b[96m"
-#define C_BR_WHITE "\x1b[97m"
-
-#define C_BG_BLACK "\x1b[40m"
-#define C_BG_RED "\x1b[41m"
-#define C_BG_GREEN "\x1b[42m"
-#define C_BG_YELLOW "\x1b[43m"
-#define C_BG_BLUE "\x1b[44m"
-#define C_BG_MAGENTA "\x1b[45m"
-#define C_BG_CYAN "\x1b[46m"
-#define C_BG_WHITE "\x1b[47m"
-
-#define C_BG_BR_BLACK "\x1b[100m"
-#define C_BG_GRAY "\x1b[100m"
-#define C_BG_BR_RED "\x1b[101m"
-#define C_BG_BR_GREEN "\x1b[102m"
-#define C_BG_BR_YELLOW "\x1b[103m"
-#define C_BG_BR_BLUE "\x1b[104m"
-#define C_BG_BR_MAGENTA "\x1b[105m"
-#define C_BG_BR_CYAN "\x1b[106m"
-#define C_BG_BR_WHITE "\x1b[107m"
-
-// select from the 256-color table. see table at:
-// https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit
-#define C_256(n) "\x1b[38;5;"#n"m"
-#define C_BG_256(n) "\x1b[48;5;"#n"m"
-
-// enter a RGB value
-#define C_RGB(r, g, b) "\x1b[38;2;"#r";"#g";"#b"m"
-#define C_BG_RGB(r, g, b) "\x1b[48;2;"#r";"#g";"#b"m"
+void GDR_DECL Con_DPrintf(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
 
 #endif
 

@@ -592,7 +592,7 @@ done:
 	//vm->currentlyInterpreting = qfalse;
 
 	if ( opStack != &stack[2] ) {
-		N_Error( "Interpreter error: opStack = %ld", (long int) (opStack - stack) );
+		N_Error( ERR_FATAL, "Interpreter error: opStack = %ld", (long int) (opStack - stack) );
 	}
 
 	vm->programStack = stackOnEntry;

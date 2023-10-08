@@ -80,7 +80,7 @@ void Cbuf_AddText( const char *text )
 	const uint64_t l = strlen( text );
 
 	if (cmd_text.cursize + l >= cmd_text.maxsize) {
-		Con_Printf ("Cbuf_AddText: overflow");
+		Con_Printf ("Cbuf_AddText: overflow\n");
 		return;
 	}
 
@@ -120,7 +120,7 @@ uint64_t Cbuf_Add( const char *text, uint64_t pos )
 	}
 
 	if ( len + cmd_text.cursize > cmd_text.maxsize ) {
-		Con_Printf( WARNING, "%s(%lu) overflowed", __func__, pos );
+		Con_Printf( WARNING, "%s(%lu) overflowed\n", __func__, pos );
 		return cmd_text.cursize;
 	}
 
@@ -160,7 +160,7 @@ void Cbuf_InsertText( const char *text )
 	len = strlen( text ) + 1;
 
 	if ( len + cmd_text.cursize > cmd_text.maxsize ) {
-		Con_Printf( "Cbuf_InsertText overflowed" );
+		Con_Printf( "Cbuf_InsertText overflowed\n" );
 		return;
 	}
 
@@ -194,12 +194,12 @@ void Cbuf_ExecuteText( cbufExec_t exec_when, const char *text )
 	switch (exec_when) {
 	case EXEC_NOW:
 		if ( text && text[0] != '\0' ) {
-			Con_Printf(DEBUG, "EXEC_NOW %s", text);
+			Con_DPrintf("EXEC_NOW %s\n", text);
 			Cmd_ExecuteString (text);
 		}
 		else {
 			Cbuf_Execute();
-			Con_Printf(DEBUG, "EXEC_NOW %s", cmd_text.data);
+			Con_DPrintf("EXEC_NOW %s\n", cmd_text.data);
 		}
 		break;
 	case EXEC_INSERT:
@@ -209,7 +209,7 @@ void Cbuf_ExecuteText( cbufExec_t exec_when, const char *text )
 		Cbuf_AddText (text);
 		break;
 	default:
-		N_Error ( "Cbuf_ExecuteText: bad exec_when");
+		N_Error ( ERR_FATAL, "Cbuf_ExecuteText: bad exec_when");
 	}
 }
 
@@ -335,11 +335,11 @@ static void Cmd_Exec_f( void )
 	COM_DefaultExtension( filename, sizeof( filename ), ".cfg" );
 	FS_LoadFile(filename, &f.v);
 	if ( f.v == NULL ) {
-		Con_Printf( "couldn't exec %s", filename );
+		Con_Printf( "couldn't exec %s\n", filename );
 		return;
 	}
 	if (!quiet)
-		Con_Printf ("execing %s", filename);
+		Con_Printf ("execing %s\n", filename);
 
 	Cbuf_InsertText(f.c);
 	FS_FreeFile(f.v);
@@ -363,7 +363,7 @@ static void Cmd_Vstr_f( void )
 	const char *v;
 
 	if ( Cmd_Argc () != 2 ) {
-		Con_Printf( "vstr <variablename> : execute a variable command" );
+		Con_Printf( "vstr <variablename> : execute a variable command\n" );
 		return;
 	}
 
@@ -572,7 +572,7 @@ void Cmd_ExecuteString(const char *str)
 		return;
 	}
 	else {
-		Con_Printf("Command '%s' doesn't exist", Cmd_Argv(0));
+		Con_Printf("Command '%s' doesn't exist\n", Cmd_Argv(0));
 	}
 	// check cvars
 	if ( Cvar_Command() ) {
@@ -604,7 +604,7 @@ void Cmd_ExecuteText(const char *str)
 		return;
 	}
 	else {
-		Con_Printf("Command '%s' doesn't exist", cmdstr);
+		Con_Printf("Command '%s' doesn't exist\n", cmdstr);
 		return;
 	}
 
@@ -633,12 +633,12 @@ void Cmd_AddCommand(const char *name, cmdfunc_t func)
     cmd_t* cmd;
     if (Cmd_FindCommand(name)) {
         if (func)
-            Con_Printf("Cmd_AddCommand: %s already defined", name);
+            Con_Printf("Cmd_AddCommand: %s already defined\n", name);
         return;
     }
-    Con_Printf("Registered command %s", name);
+    Con_DPrintf("Registered command %s\n", name);
 
-    cmd = (cmd_t *)Z_Malloc(sizeof(*cmd), TAG_STATIC, &cmd, "cmd");
+    cmd = (cmd_t *)Z_SMalloc(sizeof(*cmd), TAG_STATIC);
     cmd->name = Z_Strdup(name);
     cmd->function = func;
 	cmd->complete = NULL;

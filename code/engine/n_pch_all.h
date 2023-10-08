@@ -118,8 +118,6 @@ Dependencies
 // speed is key
 #include "../game/stb_sprintf.h"
 
-#include <GDRLib/lib.hpp>
-
 #endif
 
 #endif

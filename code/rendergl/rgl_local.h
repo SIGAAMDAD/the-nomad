@@ -8,27 +8,33 @@
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_opengl3.h"
-
-#define RENDER_MAX_UNIFORMS 1024
-
-#define TEXTURE_FILTER_NEAREST 0
-#define TEXTURE_FILTER_LINEAR 1
-#define TEXTURE_FILTER_BILLINEAR 2
-#define TEXTURE_FILTER_TRILINEAR 3
-
-#ifdef _NOMAD_DEBUG
-#define RENDER_ASSERT(x,...) if (!(x)) ri.N_Error("%s: %s",__func__,va(__VA_ARGS__))
-#else
-#define RENDER_ASSERT(x,...)
-#endif
-
 #include <SDL2/SDL_opengl.h>
+
+#define GLN_INDEX_TYPE GL_UNSIGNED_INT
+typedef uint32_t glIndex_t;
+
+#define MAX_UNIFORM_BUFFERS 512
+#define MAX_VERTEX_BUFFERS 1024
+#define MAX_FRAMEBUFFERS 64
+#define MAX_GLSL_OBJECTS 128
+#define MAX_SHADERS 1024
+#define MAX_TEXTURES 1024
+
+// maximum amount of quads per batch buffer
+#define MAX_FRAME_QUADS 8192
+#define MAX_FRAME_VERTICES (MAX_FRAME_QUADS*4)
+#define MAX_FRAME_INDICES (MAX_FRAME_QUADS*6)
 
 typedef enum {
     TC_NONE,
     TC_S3TC, // for the GL_S3_s3tc extension
     TC_S3TC_ARB // for the GL_EXT_texture_compression_s3tc extension
 } glTextureCompression_t;
+
+typedef struct
+{
+    int GL_ARB_vertex_buffer_object;
+} gpuInfo_t;
 
 typedef struct
 {
@@ -42,76 +48,129 @@ typedef struct
     glTextureCompression_t textureCompression;
     qboolean nonPowerOfTwoTextures;
     qboolean stereo;
-
-    int maxViewportDims[2];
-    float maxAnisotropy;
-    int maxTextureUnits;
-    int maxTextureSize;
-    int maxBufferSize;
-    int maxVertexAttribs;
-    int maxTextureSamples;
-    int maxVertexAttribStride;
-
-    int maxVertexShaderUniforms;
-    int maxVertexShaderVectors;
-    int maxVertexShaderAtomicCounters;
-    int maxVertexShaderAtomicBuffers;
-    
-    int maxFragmentShaderUniforms;
-    int maxFragmentShaderTextures;
-    int maxFragmentShaderVectors;
-    int maxFragmentShaderAtomicCounters;
-    int maxFragmentShaderAtomicBuffers;
-
-    int maxMultisampleSamples;
-
-    int maxFramebufferColorAttachments;    
-    int maxFramebufferWidth;
-    int maxFramebufferHeight;
-    int maxFramebufferSamples;
-
-    int maxRenderbufferSize;
-    int maxProgramTexelOffset;
-
-    int maxTextureLOD;
-
-    int maxVaryingVectors;
-    int maxVaryingVars;
-    int maxUniformLocations;
-    int maxUniformBufferBindings;
 } glContext_t;
 
-typedef struct
+typedef enum
 {
-    uint32_t magFilter;
-    uint32_t minFilter;
-    uint32_t wrapS;
-    uint32_t wrapT;
-    uint32_t slot;
-    
-    uint32_t width;
-    uint32_t height;
-    uint32_t channels;
-    uint32_t id;
+	IMGTYPE_COLORALPHA, // for color, lightmap, diffuse, and specular
+	IMGTYPE_NORMAL,
+	IMGTYPE_NORMALHEIGHT,
+	IMGTYPE_DELUXE, // normals are swizzled, deluxe are not
+} imgType_t;
 
-    byte* data;
+typedef enum
+{
+	IMGFLAG_NONE           = 0x0000,
+	IMGFLAG_MIPMAP         = 0x0001,
+	IMGFLAG_PICMIP         = 0x0002,
+	IMGFLAG_CUBEMAP        = 0x0004,
+	IMGFLAG_NO_COMPRESSION = 0x0010,
+	IMGFLAG_NOLIGHTSCALE   = 0x0020,
+	IMGFLAG_CLAMPTOEDGE    = 0x0040,
+	IMGFLAG_GENNORMALMAP   = 0x0080,
+	IMGFLAG_LIGHTMAP       = 0x0100,
+	IMGFLAG_NOSCALE        = 0x0200,
+	IMGFLAG_CLAMPTOBORDER  = 0x0400,
+} imgFlags_t;
+
+typedef struct texture_s
+{
+    char *imgName;              // image path, including extension
+    struct texture_s *next;     // for hash search
+    struct texture_s *list;     // for listing
+
+    uint32_t width, height;     // source image
+    uint32_t uploadWidth;       // adter power of two but not including clamp to MAX_TEXTURE_SIZE
+    uint32_t uploadHeight;
+    uint32_t id;                // GL texture binding
+
+    uint32_t internalFormat;
+    imgType_t type;
+    imgFlags_t flags;
 } texture_t;
 
+enum {
+	ATTRIB_INDEX_POSITION       = 0,
+	ATTRIB_INDEX_TEXCOORD       = 1,
+    ATTRIB_INDEX_COLOR          = 2,
+    ATTRIB_INDEX_ALPHA          = 3,
+    ATTRIB_INDEX_NORMAL         = 4,
+    ATTRIB_INDEX_TANGENT        = 5,
+	
+	ATTRIB_INDEX_COUNT
+};
+
+enum
+{
+    ATTRIB_POSITION             = BIT(ATTRIB_INDEX_POSITION),
+	ATTRIB_TEXCOORD             = BIT(ATTRIB_INDEX_TEXCOORD),
+    ATTRIB_COLOR                = BIT(ATTRIB_INDEX_COLOR),
+    ATTRIB_ALPHA                = BIT(ATTRIB_INDEX_ALPHA),
+    ATTRIB_NORMAL               = BIT(ATTRIB_INDEX_NORMAL),
+    ATTRIB_TANGENT              = BIT(ATTRIB_INDEX_TANGENT),
+
+	ATTRIB_BITS =
+        ATTRIB_POSITION |
+        ATTRIB_TEXCOORD | 
+        ATTRIB_COLOR |
+        ATTRIB_ALPHA |
+        ATTRIB_NORMAL |
+        ATTRIB_TANGENT
+};
+
+typedef enum {
+    GLSL_INT = 0,
+    GLSL_FLOAT,
+    GLSL_VEC2,
+    GLSL_VEC3,
+    GLSL_VEC4,
+    GLSL_MAT16,
+} glslType_t;
+
+typedef enum {
+    UNIFORM_MODELVIEWPROJECTION = 0,
+
+    UNIFORM_DIFFUSE_MAP,
+
+    UNIFORM_BASECOLOR,
+    UNIFORM_VERTCOLOR,
+    UNIFORM_COLOR,
+
+    UNIFORM_AMBIENT_LIGHT,
+    UNIFORM_NUM_LIGHTS,
+    UNIFORM_LIGHTS,
+
+    UNIFORM_COUNT
+} uniform_t;
+
 typedef struct
 {
-    int32_t uniformCache[RENDER_MAX_UNIFORMS];
+    char name[MAX_GDR_PATH];
 
-    char *vertexBuf;
-    char *fragmentBuf;
-
-    char *vertexFile;
-    char *fragmentFile;
+    char *compressedVSCode;
+    char *compressedFSCode;
 
     uint32_t vertexBufLen;
     uint32_t fragmentBufLen;
 
     uint32_t programId;
-} shader_t;
+    uint32_t vertexId;
+    uint32_t fragmentId;
+    uint32_t attribBits; // vertex array attribute flags
+
+    // uniforms
+    GLint uniforms[UNIFORM_COUNT];
+    int16_t uniformBufferOffsets[UNIFORM_COUNT]; // max 32767/64=511 uniforms
+    char *uniformBuffer;
+} shaderProgram_t;
+
+typedef struct
+{
+    shaderProgram_t *shader;
+    uint32_t id;
+    uint32_t binding;
+    uint64_t size;
+} uniformBuffer_t;
 
 typedef enum
 {
@@ -167,30 +226,19 @@ typedef struct
 typedef struct
 {
     uint32_t fboId;
-    uint32_t colorIds[32];
-    uint32_t depthId;
+    uint32_t colorBuffers[32];
+    uint32_t depthBuffer;
+    uint32_t packedStencilDepthBuffer;
 
     uint32_t width;
     uint32_t height;
 } framebuffer_t;
 
-#pragma pack(push, 1)
-typedef struct
-{
-    uint32_t bufferSize;
-    uint32_t target;
-    uint32_t bindingId;
-    uint32_t index;
-    uint32_t bufferId;
-} shaderBuffer_t;
-#pragma pack(pop)
-
 typedef enum
 {
     RC_SET_COLOR = 0,
-    RC_DRAW_RECT,
+    RC_SWAP_BUFFERS,
     RC_DRAW_REF,
-    RC_DRAW_TILE,
 
     RC_END_LIST
 } renderCmdType_t;
@@ -205,7 +253,21 @@ typedef struct
 
 typedef struct
 {
+    vec4_t color[MAX_FRAME_VERTICES] GDR_ALIGN(16);
+    vec3_t xyz[MAX_FRAME_VERTICES] GDR_ALIGN(16);
+    vec2_t texCoords[MAX_FRAME_VERTICES] GDR_ALIGN(16);
+    glIndex_t indices[MAX_FRAME_INDICES] GDR_ALIGN(16);
+
+    void *attribPointers[ATTRIB_INDEX_COUNT];
+
+    uint64_t numVertices;
+    uint64_t numIndices;
+} drawBuffer_t;
+
+typedef struct
+{
     renderCommandList_t commandList;
+    drawBuffer_t dbuf;
 
     drawVert_t *vertices;
     uint32_t usedVertices;
@@ -217,7 +279,7 @@ typedef struct
 
     uint32_t numDLights;
 
-    uint32_t texId;
+    uint32_t boundTexId;
     uint32_t vaoId;
     uint32_t vboId;
     uint32_t iboId;
@@ -226,60 +288,18 @@ typedef struct
     shader_t *frameShader;
     vertexCache_t *frameCache;
 
-    boost::thread renderThread;
-    boost::mutex renderMutex;
-    boost::condition_variable renderCondVar;
-    eastl::atomic<bool> renderReady;
-    eastl::atomic<bool> renderDone;
+    nhandle_t cmdThread;
 } renderBackend_t;
 
-extern renderBackend_t backend;
+extern renderBackend_t *backend;
 
 typedef struct
 {
-    renderCmdType_t id;
-    vec4_t color;
-} setColorCmd_t;
+    mat4_t projection;
+    mat4_t viewMatrix;
+    mat4_t modelViewProjection;
 
-typedef struct
-{
-    renderCmdType_t id;
-    vec4_t color;
-    vec3_t pos;
-    float rotation;
-    float size;
-    qboolean filled;
-    nhandle_t texture;
-} drawRectCmd_t;
-
-typedef struct
-{
-    renderCmdType_t id;
-    drawVert_t vertices[6];
-} drawTileCmd_t;
-
-typedef struct
-{
-    renderCmdType_t id;
-    vec3_t pos;
-    float length;
-    float width;
-} drawLineCmd_t;
-
-typedef struct
-{
-    renderCmdType_t id;
-    renderEntityRef_t *ref;
-} drawRefCmd_t;
-
-
-typedef struct
-{
-    glm::mat4 projection;
-    glm::mat4 viewMatrix;
-    glm::mat4 vpm;
-
-    glm::vec3 cameraPos;
+    vec3_t cameraPos;
     float rotation;
     float zoomLevel;
 } camera_t;

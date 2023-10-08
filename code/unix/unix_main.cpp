@@ -3,55 +3,60 @@
 #include "sys_unix.h"
 #include "code/engine/n_scf.h"
 #include "code/engine/n_sound.h"
-#include <execinfo.h>
-#include <sys/sysinfo.h>
 
 #define SYS_BACKTRACE_MAX 1024
 
-GDR_INLINE void Sys_DoBacktrace(int amount)
-{
-    if (!FS_Initialized()) {
-        return;
-    }
-    if (amount > SYS_BACKTRACE_MAX) {
-        Con_Printf(WARNING, "Attempted to stacktrace > %i, aborting", SYS_BACKTRACE_MAX);
-        return;
-    }
+static field_t tty_con;
+static int stdin_flags;
+static struct termios tty_tc;
+static qboolean stdin_active;
+static qboolean ttycon_active;
+static int ttycon_hide;
+static int tty_erase;
+static int tty_eof;
+static qboolean ttycon_on = qfalse;
+static qboolean ttycon_color_on = qfalse;
+static cvar_t *ttycon;
+static cvar_t *ttycon_ansicolor;
 
-    void **arr;
-    char *buffer;
-    FILE *tempfp;
-    const char *ospath;
-    int size;
-    uint64_t fileLength;
-    {
-        arr = (void **)alloca(sizeof(void *) * amount);
-        size = backtrace(arr, amount);
-        ospath = FS_BuildOSPath(Cvar_VariableString("fs_basepath"), NULL, "backtrace.dat");
-        tempfp = Sys_FOpen(ospath, "w+");
-        if (!tempfp) {
-            FS_Printf(logfile, C_RED "ERROR:" C_RESET " Failed to open a backtrace file");
-            fprintf(stderr, C_RED "ERROR:" C_RESET " Failed to open a backtrace file\n");
-            Con_Shutdown();
-            Com_Shutdown();
-            exit(-1);
-        }
-
-        // write the backtrace
-        backtrace_symbols_fd(arr, size, fileno(tempfp));
-    }
-
-    fseek(tempfp, 0L, SEEK_END);
-    fileLength = ftell(tempfp);
-    fseek(tempfp, 0L, SEEK_SET);
-
-    buffer = (char *)alloca(fileLength);
-    fread(buffer, fileLength, 1, tempfp);
-
-    Con_Printf("Successfully obtained %i stack frames", size);
-    Con_Printf("Stack List:\n%s", buffer);
-
-    fclose(tempfp);
+#define BACKTRACE(amount) \
+{ \
+    if (!FS_Initialized()) { \
+        return; \
+    } \
+    if (amount > SYS_BACKTRACE_MAX) { \
+        Con_Printf(COLOR_RED "Attempted to stacktrace > %i, aborting\n", SYS_BACKTRACE_MAX); \
+    } \
+    else { \
+        void **arr; \
+        char *buffer; \
+        FILE *tempfp; \
+        const char *ospath; \
+        int size; \
+        uint64_t fileLength; \
+        { \
+            arr = (void **)alloca(sizeof(void *) * amount); \
+            size = backtrace(arr, amount); \
+            ospath = FS_BuildOSPath(Cvar_VariableString("fs_basepath"), NULL, "backtrace.dat"); \
+            tempfp = Sys_FOpen(ospath, "w+"); \
+            if (!tempfp) { \
+                FS_Printf(logfile, C_RED "ERROR:" C_RESET " Failed to open a backtrace file" GDR_NEWLINE); \
+                fprintf(stderr, C_RED "ERROR:" C_RESET " Failed to open a backtrace file\n"); \
+                Com_Shutdown(); \
+                exit(-1); \
+            } \
+            /* write the backtrace */ \
+            backtrace_symbols_fd(arr, size, fileno(tempfp)); \
+        } \
+        fseek(tempfp, 0L, SEEK_END); \
+        fileLength = ftell(tempfp); \
+        fseek(tempfp, 0L, SEEK_SET); \
+        buffer = (char *)alloca(fileLength); \
+        fread(buffer, fileLength, 1, tempfp); \
+        Con_Printf("Successfully obtained %i stack frames\n", size); \
+        Con_Printf("Stack List:\n%s\n", buffer); \
+        fclose(tempfp); \
+    } \
 }
 
 typedef struct
@@ -64,7 +69,6 @@ typedef struct
 static const exittype_t signals[] = {
     {SIGSEGV,  qfalse, "segmentation violation"},
     {SIGBUS,   qfalse, "bus error"},
-    {SIGFPE,   qfalse, "floating point exception"},
     {SIGABRT,  qfalse, "abnormal program termination"},
     {SIGSTOP,  qtrue,  "pausing program"},
     {SIGTERM,  qtrue,  "program termination"},
@@ -74,6 +78,39 @@ static const exittype_t signals[] = {
 };
 
 static const exittype_t *exit_type;
+
+void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error(const char *fmt, ...)
+{
+    va_list argptr;
+	char text[MAXPRINTMSG];
+    const char *msg;
+
+	// change stdin to non blocking
+	// NOTE TTimo not sure how well that goes with tty console mode
+	if ( stdin_active )
+	{
+//		fcntl( STDIN_FILENO, F_SETFL, fcntl( STDIN_FILENO, F_GETFL, 0) & ~FNDELAY );
+		fcntl( STDIN_FILENO, F_SETFL, stdin_flags );
+	}
+
+	// don't bother do a show on this one heh
+	if ( ttycon_on )
+	{
+		tty_Hide();
+	}
+
+	va_start( argptr, format );
+	N_vsnprintf( text, sizeof( text ), format, argptr );
+	va_end( argptr );
+
+    msg = va("Sys_Error: %s\n", text);
+    write(STDERR_FILENO, msg, strlen(msg));
+    
+    // fprintf COULD call malloc
+//	fprintf( stderr, "Sys_Error: %s\n", text );
+
+	Sys_Exit( -1 ); // bk010104 - use single exit point.
+}
 
 void GDR_NORETURN Sys_Exit(int code)
 {
@@ -86,7 +123,7 @@ void GDR_NORETURN Sys_Exit(int code)
 
     // we're in developer mode and/or debug mode, print a stacktrace
     if ((Cvar_VariableInteger("c_devmode") || debug) && code == -1) {
-        Sys_DoBacktrace(SYS_BACKTRACE_MAX);
+        BACKTRACE(SYS_BACKTRACE_MAX);
     }
 
     if (code == -1) {
@@ -95,12 +132,13 @@ void GDR_NORETURN Sys_Exit(int code)
         else
             err = "No System Error";
         if (N_stricmp("No System Error", err) != 0)
-            Con_Printf(ERROR, "Exiting With System Error: %s", err);
+            Con_Printf(COLOR_RED "Exiting With System Error: %s", err);
         else
-            Con_Printf(ERROR, "Exiting With Engine Error");
+            Con_Printf(COLOR_RED "Exiting With Engine Error");
     }
-    
-    Con_Shutdown();
+    if (exit_type && !exit_type->safe)
+        _Exit(EXIT_FAILURE); // kill the program, don't care about anything else, this is probably a segfault
+
     Com_Shutdown();
 
     if (code == -1)
@@ -109,584 +147,9 @@ void GDR_NORETURN Sys_Exit(int code)
     exit(EXIT_SUCCESS);
 }
 
-qboolean Sys_RandomBytes(byte *s, uint64_t len)
+void fpe_exception_handler(int signum)
 {
-    FILE *fp;
-
-    fp = fopen("/dev/urandom", "r");
-    if (!fp)
-        return qfalse;
-    
-    setvbuf(fp, NULL, _IONBF, 0); // don't buffer reads from /dev/urandom
-
-    if (fread(s, sizeof(byte), len, fp) != len) {
-        fclose(fp);
-        return qfalse;
-    }
-
-    fclose(fp);
-    return qtrue;
-}
-
-void Sys_ListFilteredFiles(const char *basedir, const char *subdirs, const char *filter, char **list, uint64_t *numfiles)
-{
-    char search[MAX_OSPATH*2+1];
-    char newsubdirs[MAX_OSPATH*2];
-    char filename[MAX_OSPATH*2];
-    DIR *fdir;
-    struct dirent *d;
-    struct stat st;
-
-    if (*numfiles >= MAX_FOUND_FILES - 1)
-        return;
-
-    if (*subdirs)
-        snprintf(search, sizeof(search), "%s/%s", basedir, subdirs);
-    else
-        snprintf(search, sizeof(search), "%s", basedir);
-    
-    if ((fdir = opendir(search)) == NULL)
-        return;
-    
-    while ((d = readdir(fdir)) != NULL) {
-        snprintf(filename, sizeof(filename), "%s/%s", search, d->d_name);
-        if (stat(filename, &st) == -1)
-            continue;
-        
-        if (st.st_mode & S_IFDIR) {
-            if (!N_streq(d->d_name, ".") && !N_streq(d->d_name, "..")) {
-                if (*subdirs)
-                    snprintf(newsubdirs, sizeof(newsubdirs), "%s/%s", subdirs, d->d_name);
-                else
-                    snprintf(newsubdirs, sizeof(newsubdirs), "%s", d->d_name);
-                
-                Sys_ListFilteredFiles(basedir, newsubdirs, filter, list, numfiles);
-            }
-        }
-        if (*numfiles >= MAX_FOUND_FILES - 1)
-            break;
-
-        snprintf(filename, sizeof(filename), "%s/%s", subdirs, d->d_name);
-        if (!Com_FilterPath(filter, filename))
-            continue;
-        
-        list[*numfiles] = FS_CopyString(filename);
-        (*numfiles)++;
-    }
-    closedir(fdir);
-}
-
-char **Sys_ListFiles(const char *directory, const char *extension, const char *filter, uint64_t *numfiles, qboolean wantsubs)
-{
-    struct dirent *d;
-    DIR *fdir;
-    qboolean dironly = wantsubs;
-    char search[MAX_OSPATH*2+MAX_GDR_PATH+1];
-    uint64_t nfiles;
-    uint64_t extLen;
-    uint64_t length;
-    char **listCopy;
-    char *list[MAX_FOUND_FILES];
-    uint64_t i;
-    struct stat st;
-    qboolean hasPatterns;
-    const char *x;
-
-    if (filter) {
-        nfiles = 0;
-        Sys_ListFilteredFiles(directory, "", filter, list, &nfiles);
-
-        list[nfiles] = NULL;
-        *numfiles = nfiles;
-
-        if (!nfiles)
-            return NULL;
-        
-        listCopy = (char **)Z_Malloc((nfiles + 1) * sizeof(*listCopy), TAG_STATIC, &listCopy, "fileList");
-        for (i = 0; i < nfiles; i++) {
-            listCopy[i] = list[i];
-        }
-        listCopy[i] = NULL;
-
-        return listCopy;
-    }
-
-    if (!extension)
-        extension = "";
-    
-    if (extension[0] == '/' && extension[1] == 0) {
-        extension = "";
-        dironly = qtrue;
-    }
-
-    if ((fdir = opendir(directory)) == NULL) {
-        *numfiles = 0;
-        return NULL;
-    }
-
-    extLen = strlen(extension);
-    hasPatterns = Com_HasPatterns(extension);
-
-    if (hasPatterns && extension[0] == '.' && extension[1] != '\0')
-        extension++;
-    
-    // search
-    nfiles = 0;
-
-    while ((d = readdir(fdir)) != NULL) {
-        if (nfiles >= MAX_FOUND_FILES - 1)
-            break;
-        
-        snprintf(search, sizeof(search), "%s/%s", directory, d->d_name);
-        if (stat(search, &st) == -1)
-            continue;
-        
-        if ((dironly && !(st.st_mode & S_IFDIR)) || (!dironly && (st.st_mode & S_IFDIR)))
-            continue;
-        
-        if (*extension) {
-            if (hasPatterns) {
-                x = strrchr(d->d_name, '.');
-                if (!x || !Com_FilterExt(extension, x + 1)) {
-                    continue;
-                }
-            }
-            else {
-                length = strlen(d->d_name);
-                if (length < extLen || N_stricmp(d->d_name + length - extLen, extension)) {
-                    continue;
-                }
-            }
-        }
-        list[nfiles] = FS_CopyString(d->d_name);
-        nfiles++;
-    }
-
-    list[nfiles] = NULL;
-
-    closedir(fdir);
-
-    // return a copy of the list
-    *numfiles = nfiles;
-
-    if (!nfiles)
-        return NULL;
-    
-    listCopy = (char **)Z_Malloc((nfiles + 1) * sizeof(*listCopy), TAG_STATIC, &listCopy, "fileList");
-    for (i = 0; i < nfiles; i++) {
-        listCopy[i] = list[i];
-    }
-    listCopy[i] = NULL;
-
-    Com_SortFileList(listCopy, nfiles, extension[0] != '\0');
-
-    return listCopy;
-}
-
-void Sys_FreeFileList(char **list)
-{
-    if (!list)
-        return;
-    
-    for (uint64_t i = 0; list[i]; i++) {
-        Z_Free(list[i]);
-    }
-    Z_Free(list);
-}
-
-const char *Sys_DefaultBasePath(void)
-{
-    return Sys_pwd();
-}
-
-const char *Sys_DefaultHomePath(void)
-{
-    // used to determine where to store user-specific files
-    static char homePath[MAX_OSPATH];
-
-    const char *p;
-
-    if (*homePath)
-        return homePath;
-    
-    if ((p = getenv("HOME")) != NULL) {
-        N_strncpyz(homePath, p, sizeof(homePath));
-#ifdef MACOS_X
-        N_strcat(homePath, sizeof(homePath), "/Library/Application Support/TheNomad");
-#else
-        N_strcat(homePath, sizeof(homePath), "/.thenomad");
-#endif
-        if (mkdir(homePath, 0750)) {
-            if (errno != EEXIST)
-                N_Error("Unable to create directory \"%s\", error is %s(%d)", homePath, strerror(errno), errno);
-        }
-        return homePath;
-    }
-    return ""; // assume current directory
-}
-
-/*
-Sys_GetFileStats: returns qtrue if the file exists
-*/
-qboolean Sys_GetFileStats(fileStats_t *stats, const char *path)
-{
-    struct stat fdata;
-
-    if (stat(path, &fdata) != -1) {
-        stats->mtime = fdata.st_mtime;
-        stats->ctime = fdata.st_ctime;
-        stats->exists = qtrue;
-        stats->size = fdata.st_size;
-
-        return qtrue;
-    }
-
-    stats->mtime = 0;
-    stats->ctime = 0;
-    stats->exists = qfalse;
-    stats->size = 0;
-
-    return qfalse;
-}
-
-
-/*
-================
-Sys_Milliseconds
-================
-*/
-/* base time in seconds, that's our origin
-   timeval:tv_sec is an int: 
-   assuming this wraps every 0x7fffffff - ~68 years since the Epoch (1970) - we're safe till 2038
-   using unsigned long data type to work right with Sys_XTimeToSysTime */
-static uint64_t sys_timeBase = 0;
-/* current time in ms, using sys_timeBase as origin
-   NOTE: sys_timeBase*1000 + curtime -> ms since the Epoch
-     0x7fffffff ms - ~24 days
-   although timeval:tv_usec is an int, I'm not sure whether it is actually used as an unsigned int
-     (which would affect the wrap period) */
-
-// [glnomad] changed unsigned long to a uint64_t
-uint64_t Sys_Milliseconds(void)
-{
-    struct timeval tp;
-    uint64_t curtime;
-
-    gettimeofday(&tp, NULL);
-
-    if (!sys_timeBase) {
-        sys_timeBase = tp.tv_sec;
-        return tp.tv_sec / 1000;
-    }
-
-    curtime = (tp.tv_sec - sys_timeBase) * 1000 + tp.tv_usec / 1000;
-    return curtime;
-}
-
-uint64_t Sys_EventSubtime(uint64_t time)
-{
-    uint64_t ret, t, test;
-
-	ret = Cvar_VariableInteger("com_frameTime") - (uint64_t)(sys_timeBase * 1000);
-    t = Sys_Milliseconds();
-    test = t - ret;
-
-    if (test < 0 || test > 30) {
-        return t;
-    }
-
-    return ret;
-}
-
-void Sys_Print(const char *str)
-{
-    const uint64_t len = strlen(str);
-    if (write(STDOUT_FILENO, str, len) != len) {
-        N_Error("Sys_Print: bad write");
-    }
-}
-
-void GDR_DECL Sys_Printf(const char *fmt, ...)
-{
-    va_list argptr;
-    char msg[MAX_MSG_SIZE];
-    int32_t length;
-
-    va_start(argptr, fmt);
-    length = stbsp_vsnprintf(msg, sizeof(msg), fmt, argptr);
-    va_end(argptr);
-
-    if (length >= sizeof(msg)) {
-        N_Error("Sys_Printf: overflow of %i bytes where buffer is %lu bytes", length, sizeof(msg));
-    }
-
-    write(STDOUT_FILENO, msg, length);
-}
-
-struct memoryMap_s
-{
-    void *addr;
-    file_t file;
-    int fd;
-};
-
-memoryMap_t *Sys_MapFile(const char *path, qboolean temp)
-{
-    memoryMap_t *file;
-    
-    file = (memoryMap_t *)Z_Malloc(sizeof(*file), TAG_STATIC, &file, "mappedFile");
-
-    file->file = FS_FOpenRW(path);
-    if (file->file == FS_INVALID_HANDLE) {
-        Z_Free(file);
-        return NULL;
-    }
-
-    file->fd = FS_FileToFileno(file->file);
-    file->addr = mmap(NULL, FS_FileLength(file->file), PROT_READ | PROT_WRITE, temp ? MAP_PRIVATE : MAP_SHARED, file->fd, 0);
-    if (!file->addr || file->addr == (void *)-1) { // mmap failed
-        Z_Free(file);
-        return NULL;
-    }
-
-    return file;
-}
-
-memoryMap_t *Sys_MapMemory(FILE *fp, qboolean temp, file_t fd)
-{
-    memoryMap_t *file;
-
-    if (fd == FS_INVALID_HANDLE) {
-        N_Error("Sys_MapMemory: invalid file handle given");
-    }
-
-    file = (memoryMap_t *)Z_Malloc(sizeof(*file), TAG_STATIC, &file, "mappedFile");
-
-    file->file = fd;
-    file->fd = fileno(fp);
-    file->addr = mmap(NULL, FS_FileLength(fd), PROT_READ | PROT_WRITE, temp ? MAP_PRIVATE : MAP_SHARED, file->fd, 0);
-    if (!file->addr || file->addr == (void *)-1) { // mmap failed
-        Z_Free(file);
-        return NULL;
-    }
-
-    return file;
-}
-
-void *Sys_GetMappedFileBuffer(memoryMap_t *file)
-{
-    return file->addr;
-}
-
-uint64_t Sys_ReadMappedFile(void *buffer, uint64_t size, memoryMap_t *file)
-{
-    int64_t readCount;
-    uint64_t remaining;
-    int tries;
-    byte *buf;
-
-    buf = (byte *)buffer;
-    remaining = size;
-    tries = 0;
-
-    while (remaining) {
-        readCount = read(file->fd, buf, remaining);
-        if (readCount == 0) {
-            if (!tries) {
-                tries = 1;
-            }
-            else {
-                return size - remaining;
-            }
-        }
-        if (readCount == -1) {
-            N_Error("Sys_ReadMappedFile: read -1 bytes");
-        }
-
-        buf += readCount;
-        remaining -= readCount;
-    }
-    return size;
-}
-
-void Sys_UnmapMemory(memoryMap_t *file)
-{
-    munmap(file->addr, FS_FileLength(file->file));
-}
-
-void Sys_UnmapFile(memoryMap_t *file)
-{
-    munmap(file->addr, FS_FileLength(file->file));    
-    FS_FClose(file->file);
-    Z_Free(file);
-}
-
-fileOffset_t Sys_TellMappedFile(memoryMap_t *file)
-{
-    return (fileOffset_t)lseek(file->fd, 0, SEEK_CUR);
-}
-
-/*
-Sys_SeekMappedFile: use SEEK_SET, SEEK_END, and SEEK_CUR instead of custom filesystem seekers
-*/
-fileOffset_t Sys_SeekMappedFile(fileOffset_t offset, uint32_t whence, memoryMap_t *file)
-{
-    return (fileOffset_t)lseek(file->fd, offset, whence);
-}
-
-/*
-Sys_GetTotalRAM_Physical: returns the total amount of physical RAM in the system
-*/
-uint64_t Sys_GetTotalRAM_Physical(void)
-{
-    uint64_t pageSize, pageCount;
-
-    pageSize = (uint64_t)sysconf(_SC_PAGESIZE);
-    pageCount = (uint64_t)sysconf(_SC_PHYS_PAGES);
-
-    return pageSize * pageCount;
-}
-
-/*
-Sys_GetTotalRAM_Virtual: returns the total amount of virtual RAM in the system
-*/
-uint64_t Sys_GetTotalRAM_Virtual(void)
-{
-    struct sysinfo info;
-
-    if (sysinfo(&info) == -1) {
-        N_Error("Sys_GetTotalRAM_Virtual: sysinfo() failed, error: %s", strerror(errno));
-    }
-
-    return info.totalram + info.totalswap * info.mem_unit;
-}
-
-/*
-Sys_GetUsedRAM_Virtual: returns the total used virtual RAM in the system
-*/
-uint64_t Sys_GetUsedRAM_Virtual(void)
-{
-    struct sysinfo info;
-
-    if (sysinfo(&info) == -1) {
-        N_Error("Sys_GetFreeRAM_Virtual: sysinfo() failed, error: %s", strerror(errno));
-    }
-
-    return ((info.totalram - info.freeram) + info.totalswap - info.freeswap) * info.mem_unit;
-}
-
-/*
-Sys_GetUsedRAM_Physical: returns the total used physical RAM in the system
-*/
-uint64_t Sys_GetUsedRAM_Physical(void)
-{
-    struct sysinfo info;
-
-    if (sysinfo(&info) == -1) {
-        N_Error("Sys_GetUsedRAM_Physical: sysinfo() failed, error: %s", strerror(errno));
-    }
-
-    return (info.totalram - info.freeram) * info.mem_unit;
-}
-
-/*
-Sys_LoadDLL: all paths given to this are assumed to be absolute paths that won't be modified
-*/
-void *Sys_LoadDLL(const char *name)
-{
-    void *libHandle;
-    char ospath[MAX_OSPATH*2];
-
-    // allow a little bit of pedanticity
-    GDR_ASSERT(name);
-
-    if (name[0] == '/')
-        snprintf(ospath, sizeof(ospath), ".%s" ARCH_STRING DLL_EXT, name);
-    else
-        snprintf(ospath, sizeof(ospath), "./%s" ARCH_STRING DLL_EXT, name);
-
-    libHandle = dlopen(ospath, RTLD_NOW);
-    if (!libHandle) {
-        Con_Printf(ERROR, "Sys_LoadDLL: failed, dlerror(): %s", dlerror());
-    }
-    return libHandle;
-}
-
-qboolean Sys_mkdir(const char *name)
-{
-    if (mkdir(name, 0750) == 0) {
-        return qtrue;
-    }
-    else {
-        return (qboolean)(errno == EEXIST);
-    }
-}
-
-void *Sys_GetProcAddress(void *handle, const char *name)
-{
-    void *proc;
-    const char *err;
-    char buf[1024];
-    uint64_t nlen;
-
-    if (!handle || !name || *name == '\0')
-        return NULL;
-    
-    dlerror(); // clear the old error state
-    proc = dlsym(handle, name);
-    err = dlerror();
-    if (err) {
-        nlen = strlen(name);
-        if (nlen >= sizeof(buf))
-            return NULL;
-        
-        buf[0] = '_';
-        strcpy(buf+1, name);
-        dlerror(); // clear the old error state
-        proc = dlsym(handle, name);
-    }
-
-    return proc;
-}
-
-void Sys_CloseDLL(void *handle)
-{
-    if (handle)
-        dlclose(handle);
-}
-
-FILE *Sys_FOpen(const char *filepath, const char *mode)
-{
-    if (!filepath)
-        N_Error("Sys_FOpen: no filepath given");
-    if (!mode)
-        N_Error("Sys_FOpen: no mode given");
-    
-    if (!*filepath)
-        N_Error("Sys_FOpen: empty filepath");
-    
-    return fopen(filepath, mode);
-}
-
-const char *Sys_pwd(void)
-{
-    static char pwd[MAX_OSPATH];
-
-    if (*pwd)
-        return pwd;
-
-    // more reliable, linux-specific
-    if (readlink("/proc/self/exe", pwd, sizeof(pwd) - 1) != -1) {
-        pwd[sizeof(pwd) - 1] = '\0';
-        dirname(pwd);
-        return pwd;
-    }
-    
-    if (!getcwd(pwd, sizeof(pwd))) {
-        *pwd = '\0';
-    }
-
-    return pwd;
+    signal(SIGFPE, fpe_exception_handler);
 }
 
 void Catch_Signal(int signum)
@@ -701,20 +164,482 @@ void Catch_Signal(int signum)
     Sys_Exit(-1);
 }
 
+static const struct Q3ToAnsiColorTable_s
+{
+	const char Q3color;
+	const char *ANSIcolor;
+} tty_colorTable[ ] = {
+	{ COLOR_BLACK,    "30" },
+	{ COLOR_RED,      "31" },
+	{ COLOR_GREEN,    "32" },
+	{ COLOR_YELLOW,   "33" },
+	{ COLOR_BLUE,     "34" },
+	{ COLOR_CYAN,     "36" },
+	{ COLOR_MAGENTA,  "35" },
+	{ COLOR_WHITE,    "0" }
+};
+
+static const char *getANSIcolor( char Q3color ) {
+	int i;
+	for ( i = 0; i < arraylen( tty_colorTable ); i++ ) {
+		if ( Q3color == tty_colorTable[ i ].Q3color ) {
+			return tty_colorTable[ i ].ANSIcolor;
+		}
+	}
+	return NULL;
+}
+
+// flush stdin, I suspect some terminals are sending a LOT of shit
+static void tty_FlushIn(void)
+{
+    tcflush(STDIN_FILENO, TCIFLUSH);
+}
+
+// do a backspace
+// TTimo NOTE: it seems on some terminals just sending '\b' is not enough
+//   so for now, in any case we send "\b \b" .. yeah well ..
+//   (there may be a way to find out if '\b' alone would work though)
+static void tty_Back( void )
+{
+	write( STDOUT_FILENO, "\b \b", 3 );
+}
+
+
+// clear the display of the line currently edited
+// bring cursor back to beginning of line
+void tty_Hide( void )
+{
+	int i;
+
+	if ( !ttycon_on )
+		return;
+
+	if ( ttycon_hide ) {
+		ttycon_hide++;
+		return;
+	}
+
+	if ( tty_con.cursor > 0 ) {
+		for ( i = 0; i < tty_con.cursor; i++ ) {
+			tty_Back();
+		}
+	}
+	tty_Back(); // delete "]" ? -EC-
+	ttycon_hide++;
+}
+
+
+// show the current line
+// FIXME TTimo need to position the cursor if needed??
+void tty_Show( void )
+{
+	if ( !ttycon_on )
+		return;
+
+	if ( ttycon_hide > 0 ) {
+		ttycon_hide--;
+		if ( ttycon_hide == 0 ) {
+			write( STDOUT_FILENO, "]", 1 ); // -EC-
+			if ( tty_con.cursor > 0 ) {
+				write( STDOUT_FILENO, tty_con.buffer, tty_con.cursor );
+			}
+		}
+	}
+}
+
+void Sys_ConsoleShutdown(void)
+{
+    if (ttycon_on) {
+        tty_Back();
+        tcsetattr(STDIN_FILENO, TCSADRAIN, &tty_tc);
+    }
+
+    // restore stdin blocking mode
+    if (stdin_active) {
+        fcntl(STDIN_FILENO, F_SETFL, stdin_flags);
+    }
+
+    memset(&tty_con, 0, sizeof(tty_con));
+
+    stdin_active = qfalse;
+    ttycon_on = qfalse;
+
+    ttycon_hide = 0;
+}
+
+void Sys_SigCont(int signum)
+{
+    Sys_ConsoleInit();
+}
+
+void Sys_SigTStp(int signum)
+{
+    sigset_t mask;
+
+    tty_FlushIn();
+    Sys_ConsoleShutdown();
+
+    sigemptyset(&mask);
+    sigaddset(&mask, SIGTSTP);
+    sigprocmask(SIG_UNBLOCK, &mask, NULL);
+
+    signal(SIGTSTP, SIG_DFL);
+
+    kill(getpid(), SIGTSTP);
+}
+
+static qboolean printableChar( char c ) {
+	if ( ( c >= ' ' && c <= '~' ) || c == '\n' || c == '\r' || c == '\t' )
+		return qtrue;
+	else
+		return qfalse;
+}
+
+void Sys_ANSIColorMsg(const char *msg, char *buffer, uint64_t bufSize)
+{
+    uint64_t msgLength;
+    uint64_t i;
+    char tmpbuf[8];
+    const char *ANSIcolor;
+
+    if (!msg || !buffer)
+        return;
+
+    msgLength = strlen(msg);
+    i = 0;
+    buffer[0] = '\0';
+
+    while (i < msgLength) {
+        if (msg[i] == '\n') {
+            snprintf(tmpbuf, sizeof(tmpbuf), "%c[0m\n", 0x1B);
+            strncat(buffer, tmpbuf, bufSize - 1);
+            i += 1;
+        }
+        else if (msg[i] == Q_COLOR_ESCAPE && (ANSIcolor = getANSIcolor(msg[i+1])) != NULL) {
+            snprintf(tmpbuf, sizeof(tmpbuf), "%c[%sm", 0x1B, ANSIcolor);
+            strncat(buffer, tmpbuf, bufSize - 1);
+            i += 2;
+        }
+        else {
+            if (printableChar(msg[i])) {
+                snprintf(tmpbuf, sizeof(tmpbuf), "%c", msg[i]);
+                strncat(buffer, tmpbuf, bufSize - 1);
+            }
+            i += 1;
+        }
+    }
+}
+
+void Sys_Print(const char *msg)
+{
+    char printmsg[MAXPRINTMSG];
+    size_t len;
+
+    if (ttycon_on) {
+        tty_Hide();
+    }
+    if (ttycon_on && ttycon_color_on) {
+        Sys_ANSIColorMsg(msg, printmsg, sizeof(printmsg));
+        len = strlen(printmsg);
+    }
+    else {
+        char *out = printmsg;
+        while (*msg != '\0' && out < printmsg + sizeof(printmsg)) {
+            if (printableChar(*msg))
+                *out++ = *msg;
+            msg++;
+        }
+        len = out - printmsg;
+    }
+
+    write(STDERR_FILENO, printmsg, len);
+    if (ttycon_on) {
+        tty_Show();
+    }
+}
+
+const char *Sys_GetError(void)
+{
+    return strerror(errno);
+}
+
+#if 0
+#define PTHREAD_CHECK_FAIL(func,...) if (func(__VA_ARGS__) != 0) N_Error(ERR_FATAL, "%s: " #func " failed, error string: %s", Sys_GetError())
+#define MAX_THREADS 64
+typedef struct {
+    qboolean running;
+    pthread_t id;
+    pthread_attr_t attrib;
+    const char *name;
+} thread_t;
+thread_t threadData[MAX_THREADS];
+
+nhandle_t Sys_RegisterThread(const char *name)
+{
+    thread_t *thread;
+    nhandle_t hash;
+
+    hash = (nhandle_t)Com_GenerateHashValue(name, MAX_THREADS);
+    if (threadData[hash].name) {
+        N_Error(ERR_FATAL, "Sys_RegisterThread: thread '%s' registered twice", name);
+    }
+    thread = &threadData[hash];
+    memset(thread, 0, sizeof(*thread));
+    thread->name = name;
+
+    PTHREAD_CHECK_FAIL(pthread_attr_init, &thread->attrib);
+
+    return hash;
+}
+
+void Sys_StartThread(nhandle_t id, void (*func)(void))
+{
+    thread_t *thread;
+
+    if (!threadData[id].name) {
+        N_Error(ERR_FATAL, "%s: bad thread id (%i)", __func__, id);
+    }
+
+    thread = &threadData[id];
+    thread->running = qtrue;
+
+    PTHREAD_CHECK_FAIL(pthread_create, &thread->id, &thread->attrib, (void *(*)(void *))func, NULL);
+}
+
+void Sys_JoinThread(nhandle_t id)
+{
+    thread_t *thread;
+
+    if (!threadData[id].name) {
+        N_Error(ERR_FATAL, "%s: bad thread id (%i)", __func__, id);
+    }
+    if (!threadData[id].running) {
+        Con_DPrintf("%s(%i), not running\n", __func__, id);
+    }
+
+    thread = &threadData[id];
+    PTHREAD_CHECK_FAIL(pthread_join, thread->id, (void **)NULL);
+    thread->running = qfalse;
+}
+
+typedef struct {
+    qboolean locked;
+    pthread_mutex_t mutex;
+    pthread_mutexattr_t attrib;
+    pthread_rwlock_t rwlock;
+    uint32_t type;
+} mutex_t;
+
+mutex_t *Sys_CreateMutex(int type)
+{
+    mutex_t *m;
+
+    m = (mutex_t *)Z_Malloc(sizeof(*m), TAG_STATIC);
+    memset(m, 0, sizeof(*m));
+
+    PTHREAD_CHECK_FAIL(pthread_mutexattr_init, &m->attrib);
+
+    switch (type) {
+    case MUTEX_TYPE_RECURSIVE:
+        PTHREAD_CHECK_FAIL(pthread_mutexattr_settype, &m->attrib, PTHREAD_MUTEX_RECURSIVE);
+        break;
+    case MUTEX_TYPE_SHARED:
+        PTHREAD_CHECK_FAIL(pthread_rwlock_init, &m->rwlock, NULL);
+        break;
+    };
+
+    PTHREAD_CHECK_FAIL(pthread_mutex_init, &m->mutex, &m->attrib);
+    m->type = type;
+
+    return m;
+}
+
+void Sys_LockMutex(mutex_t *m)
+{
+    if (m->locked) {
+        N_Error(ERR_FATAL, "Sys_LockMutex on a locked mutex");
+    }
+}
+#endif
+
+int Sys_InitConsole(void)
+{
+    struct termios tc;
+    const char *term;
+
+    signal(SIGTTIN, SIG_IGN);
+    signal(SIGTTOU, SIG_IGN);
+
+    // if SIGCONT is recieved, reinitialize the console
+    signal(SIGCONT, Sys_SigCont);
+
+    if (signal(SIGTSTP, SIG_IGN) == SIG_DFL) {
+        signal(SIGTSTP, Con_SigTStp);
+    }
+
+    stdin_flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+    if (stdin_flags == -1) {
+        stdin_active = qfalse;
+        return -1;
+    }
+
+    // set non-blocking mode
+    fcntl(STDIN_FILENO, F_SETFL, stdin_flags | O_NONBLOCK);
+    stdin_active = qtrue;
+
+    term = getenv("TERM");
+    if (isatty(STDIN_FILENO) != -1 || !term || !strcmp(term, "dumb") || !strcmp(term, "raw")) {
+        ttycon_on = qfalse;
+        return -1;
+    }
+
+    Field_Clear(&tty_con);
+    tcgetattr(STDIN_FILENO, &tty_tc);
+    tty_erase = tty_tc.c_cc[VERASE];
+    tty_eof = tty_tc.c_cc[VEOF];
+    tc = tty_tc;
+
+    tc.c_lflag &= ~(ECHO | ICANON);
+    tc.c_iflag &= ~(ISTRIP | INPCK);
+    tc.c_cc[VMIN] = 1;
+    tc.c_cc[VTIME] = 0;
+    tcsetattr(STDIN_FILENO, TCSADRAIN, &tc);
+
+    ttycon_color_on = qtrue;
+    ttycon_on = qtrue;
+
+    tty_Hide();
+    tty_Show();
+    
+    return 1;
+}
+
+void Sys_PrintBinVersion( const char* name )
+{
+	const char *date = __DATE__;
+	const char *time = __TIME__;
+	const char *sep = "==============================================================";
+
+	fprintf( stdout, "\n\n%s\n", sep );
+	fprintf( stdout, "Linux GLNomad Full Executable  [%s %s]\n", date, time );
+	fprintf( stdout, " local install: %s\n", name );
+	fprintf( stdout, "%s\n\n", sep );
+}
+
+/*
+=================
+Sys_BinName
+
+This resolves any symlinks to the binary. It's disabled for debug
+builds because there are situations where you are likely to want
+to symlink to binaries and /not/ have the links resolved.
+=================
+*/
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
+const char *Sys_BinName( const char *arg0 )
+{
+	static char dst[ PATH_MAX ];
+
+#ifdef _NOMAD_DEBUG
+
+#if defined (__linux__)
+	int n = readlink( "/proc/self/exe", dst, PATH_MAX - 1 );
+
+	if ( n >= 0 && n < PATH_MAX )
+		dst[ n ] = '\0';
+	else
+		N_strncpyz( dst, arg0, PATH_MAX );
+#elif defined (__APPLE__)
+	uint32_t bufsize = sizeof( dst );
+
+	if ( _NSGetExecutablePath( dst, &bufsize ) == -1 )
+	{
+		N_strncpyz( dst, arg0, PATH_MAX );
+	}
+#else
+
+#warning Sys_BinName not implemented
+	N_strncpyz( dst, arg0, PATH_MAX );
+#endif
+
+#else // DEBUG
+	N_strncpyz( dst, arg0, PATH_MAX );
+#endif
+	return dst;
+}
+
+int Sys_ParseArgs(int argc, const char *argv[])
+{
+    if (argc == 2) {
+        if ((!strcmp(argv[1], "--version")) || (!strcmp(argv[1], "-v"))) {
+            Sys_PrintBinVersion(Sys_BinName(argv[0]));
+            return 1;
+        }
+    }
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
-    Con_Printf("Working directory: %s", Sys_pwd());
+    char con_title[MAX_CVAR_VALUE];
+    int xpos, ypos;
+    char *cmdline;
+    int len, i;
 
-    signal(SIGSEGV, Catch_Signal);
-    signal(SIGBUS, Catch_Signal);
-    signal(SIGFPE, Catch_Signal);
-    signal(SIGABRT, Catch_Signal);
-    signal(SIGTERM, Catch_Signal);
-    signal(SIGILL, Catch_Signal);
-    signal(SIGSTOP, Catch_Signal);
-    signal(SIGKILL, Catch_Signal);
+#ifdef __APPLE__
+	// This is passed if we are launched by double-clicking
+	if ( argc >= 2 && N_strncmp( argv[1], "-psn", 4 ) == 0 )
+		argc = 1;
+#endif
 
-    I_NomadInit();
+    // merge the command line, this is kinda silly
+	for ( len = 1, i = 1; i < argc; i++ )
+		len += strlen( argv[i] ) + 1;
 
-    return 0;
+	cmdline = (char *)malloc( len );
+    if (!cmdline) { // oh shit
+        write(STDERR_FILENO, "malloc() failed, out of memory\n", strlen("malloc() failed, out of memory\n"));
+        _Exit(EXIT_FAILURE);
+    }
+	*cmdline = '\0';
+	for ( i = 1; i < argc; i++ ) {
+		if ( i > 1 )
+			strcat( cmdline, " " );
+        
+		strcat( cmdline, argv[i] );
+	}
+
+	/*useXYpos = */ Com_EarlyParseCmdLine( cmdline, con_title, sizeof( con_title ), &xpos, &ypos );
+
+	// get the initial time base
+	Sys_Milliseconds();
+    
+    Com_Init(cmdline);
+
+    // Sys_ConsoleInputInit() might be called in signal handler
+	// so modify/init any cvars here
+	ttycon = Cvar_Get( "ttycon", "1", 0 );
+	Cvar_SetDescription(ttycon, "Enable access to input/output console terminal.");
+	ttycon_ansicolor = Cvar_Get( "ttycon_ansicolor", "0", CVAR_ARCHIVE );
+	Cvar_SetDescription(ttycon_ansicolor, "Convert in-game color codes to ANSI color codes in console terminal.");
+
+	err = Sys_ConsoleInputInit();
+	if ( err == TTY_ENABLED ) {
+		Con_Printf( "Started tty console (use +set ttycon 0 to disable)\n" );
+	}
+	else {
+		if ( err == TTY_ERROR ) {
+			Con_Printf( "stdin is not a tty, tty console mode failed\n" );
+			Cvar_Set( "ttycon", "0" );
+		}
+	}
+
+	while (1) {
+		// run the game
+		Com_Frame();
+	}
+	// never gets here
+	return 0;
 }

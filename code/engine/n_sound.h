@@ -3,11 +3,9 @@
 
 #pragma once
 
-void I_CacheAudio(void);
-#ifdef __cplusplus
-void Snd_PlayTrack(const char *name);
-void Snd_PlaySfx(const char *name);
-#endif
+void Snd_DisableSounds(void);
+void Snd_StopAll(void);
+void Snd_ClearMem(void);
 void Snd_PlayTrack(sfxHandle_t sfx);
 void Snd_PlaySfx(sfxHandle_t sfx);
 void Snd_Init(void);

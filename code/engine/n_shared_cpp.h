@@ -190,12 +190,6 @@ namespace eastl {
 	};
 };
 
-template<typename type, typename alignment>
-inline type* PADP(type *base, alignment align)
-{
-	return (type *)((void *)PAD((intptr_t)base, align));
-}
-
 #define MAX_TICRATE 333
 #define MIN_TICRATE 10
 #define MAX_VERT_FOV 100

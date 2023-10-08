@@ -1,4 +1,4 @@
-#include "Common.hpp"
+#include "gln.h"
 
 #ifndef USE_LIBC_MALLOC
 	#define USE_LIBC_MALLOC		0
@@ -219,7 +219,7 @@ void GDRHeap::AllocDefragBlock(void)
 		}
 		size >>= 1;
 	}
-	Printf("Allocated a %i mb defrag block", size / (1024*1024) );
+	Con_DPrintf("Allocated a %i mb defrag block\n", size / (1024*1024) );
 }
 
 /*
@@ -276,7 +276,7 @@ void GDRHeap::Free( void *p )
 			break;
 		}
 		default: {
-			Error( "GDRHeap::Free: invalid memory block" );
+			N_Error( ERR_FATAL "GDRHeap::Free: invalid memory block" );
 			break;
 		}
 	}
@@ -295,14 +295,15 @@ void *GDRHeap::Allocate16( const uint32_t bytes )
 	ptr = (byte *) (malloc)( bytes + 16 + sizeof(uintptr_t) );
 	if ( !ptr ) {
 		if ( defragBlock ) {
-			Printf("Freeing defragBlock on alloc of %i.", bytes );
+			Con_DPrintf("Freeing defragBlock on alloc of %i.\n", bytes );
 			(free)( defragBlock );
 			defragBlock = NULL;
 			ptr = (byte *) (malloc)( bytes + 16 + sizeof(uintptr_t) );
 			AllocDefragBlock();
 		}
 		if ( !ptr ) {
-			Error( "malloc failure for %i", bytes );
+			// no recovery from malloc issues
+			Sys_Error( "malloc failure for %i", bytes );
 		}
 	}
 	alignedPtr = (byte *) ( ( ( (uintptr_t) ptr ) + 15) & ~15 );
@@ -358,7 +359,7 @@ uint32_t GDRHeap::Msize( void *p )
 			return ((GDRHeap::page_t*)(*((uintptr_t *)(((byte *)p) - ALIGN_SIZE( LARGE_HEADER_SIZE )))))->dataSize - ALIGN_SIZE( LARGE_HEADER_SIZE );
 		}
 		default: {
-			Error( "GDRHeap::Msize: invalid memory block" );
+			N_Error( ERR_FATAL "GDRHeap::Msize: invalid memory block" );
 			return 0;
 		}
 	}
@@ -377,27 +378,27 @@ void GDRHeap::Dump( void )
 	GDRHeap::page_t	*pg;
 
 	for ( pg = smallFirstUsedPage; pg; pg = pg->next ) {
-		Printf("%p  bytes %-8d  (in use by small heap)", pg->data, pg->dataSize);
+		Con_Printf("%p  bytes %-8d  (in use by small heap)\n", pg->data, pg->dataSize);
 	}
 
 	if ( smallCurPage ) {
 		pg = smallCurPage;
-		Printf("%p  bytes %-8d  (small heap active page)", pg->data, pg->dataSize );
+		Con_Printf("%p  bytes %-8d  (small heap active page)\n", pg->data, pg->dataSize );
 	}
 
 	for ( pg = mediumFirstUsedPage; pg; pg = pg->next ) {
-		Printf("%p  bytes %-8d  (completely used by medium heap)", pg->data, pg->dataSize );
+		Con_Printf("%p  bytes %-8d  (completely used by medium heap)\n", pg->data, pg->dataSize );
 	}
 
 	for ( pg = mediumFirstFreePage; pg; pg = pg->next ) {
-		Printf("%p  bytes %-8d  (partially used by medium heap)", pg->data, pg->dataSize );
+		Con_Printf("%p  bytes %-8d  (partially used by medium heap)\n", pg->data, pg->dataSize );
 	}
 
 	for ( pg = largeFirstUsedPage; pg; pg = pg->next ) {
-		Printf("%p  bytes %-8d  (fully used by large heap)", pg->data, pg->dataSize );
+		Con_Printf("%p  bytes %-8d  (fully used by large heap)\n", pg->data, pg->dataSize );
 	}
 
-	Printf("pages allocated : %d", pagesAllocated );
+	Con_Printf("pages allocated : %d\n", pagesAllocated );
 }
 
 /*
@@ -411,7 +412,7 @@ GDRHeap::FreePageReal
 void GDRHeap::FreePageReal( GDRHeap::page_t *p )
 {
 	if (!p)
-		Error("GDRHeap::FreePageReal: NULL page");
+		N_Error(ERR_FATAL, "GDRHeap::FreePageReal: NULL page");
 	
 	(free)( p );
 }
@@ -458,14 +459,15 @@ GDRHeap::page_t* GDRHeap::AllocatePage( uint32_t bytes )
 		p = (GDRHeap::page_t *) (malloc)( size + ALIGN - 1 );
 		if ( !p ) {
 			if ( defragBlock ) {
-				Printf("Freeing defragBlock on alloc of %i.\n", size + ALIGN - 1 );
+				Con_DPrintf("Freeing defragBlock on alloc of %i.\n", size + ALIGN - 1 );
 				(free)( defragBlock );
 				defragBlock = NULL;
 				p = (GDRHeap::page_t *) (malloc)( size + ALIGN - 1 );
 				AllocDefragBlock();
 			}
 			if ( !p ) {
-				Error( "malloc failure for %i", bytes );
+				// can't really recover from malloc issues
+				Sys_Error( "malloc failure for %i", bytes );
 			}
 		}
 
@@ -495,7 +497,7 @@ GDRHeap::FreePage
 void GDRHeap::FreePage( GDRHeap::page_t *p )
 {
 	if (!p)
-		Error("GDRHeap::FreePage: NULL page");
+		N_Error(ERR_FATAL, "GDRHeap::FreePage: NULL page");
 
 	if ( p->dataSize == pageSize && !swapPage ) {			// add to swap list?
 		swapPage = p;
@@ -580,7 +582,7 @@ void GDRHeap::SmallFree( void *ptr )
 
 	// check if the index is correct
 	if ( ix > (256 / ALIGN) ) {
-		Error( "SmallFree: invalid memory block" );
+		N_Error( ERR_FATAL "SmallFree: invalid memory block" );
 	}
 
 	*link = (uintptr_t)smallFirstFree[ix];	// write next index
@@ -986,6 +988,25 @@ uint32_t Mem_Msize(void *ptr)
 	return mem_heap->Msize(ptr);
 }
 
+void *Mem_Realloc(void *ptr, uint64_t nsize)
+{
+	if (!nsize) {
+		return NULL;
+	}
+	if (!mem_heap) {
+#ifdef CRASH_ON_STATIC_ALLOCATION
+		*((uint32_t*)0x0) = 1;
+#endif
+		return (malloc)(nsize);
+	}
+	void *p = Mem_Alloc(nsize);
+	if (ptr) {
+		memcpy(p, ptr, mem_heap->Msize(ptr));
+		Mem_Free(ptr);
+	}
+	return p;
+}
+
 #ifndef ID_DEBUG_MEMORY
 
 /*
@@ -1116,7 +1137,7 @@ Mem_Shutdown
 */
 void Mem_Shutdown( void )
 {
-	delete mem_heap;
+	free(mem_heap);
 }
 
 /*
@@ -1126,7 +1147,8 @@ Mem_Init
 */
 void Mem_Init(void)
 {
-	mem_heap = new GDRHeap;
+	mem_heap = (GDRHeap *)malloc(sizeof(*mem_heap));
+	::new (mem_heap) GDRHeap();
 }
 
 /*
@@ -1450,7 +1472,7 @@ void Mem_FreeDebugMemory( void *p, const char *fileName, const uint32_t lineNumb
 	m = (debugMemory_t *) ( ( (byte *) p ) - sizeof( debugMemory_t ) );
 
 	if ( m->size < 0 ) {
-		Error( "memory freed twice" );
+		N_Error( ERR_FATAL "memory freed twice" );
 	}
 
 	Mem_UpdateFreeStats( m->size );

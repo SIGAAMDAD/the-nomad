@@ -125,12 +125,8 @@ LDLIBS=-L/usr/lib/x86_64-linux-gnu/ \
 		$(LIB_PREFIX)/libzstd.a \
 		$(LIB_PREFIX)/libopenal.a \
 		-L$(LIB_PREFIX) \
-		-lxallocator \
 		-lSDL2 \
-		-lSDL2_image \
-		-lSDL2_ttf \
 		-lsndfile \
-		-lglad \
 		-leasy_profiler
 SYS=\
 	$(O)/sys/unix_main.o
@@ -140,16 +136,12 @@ LDLIBS=-L$(LIB_PREFIX) \
 		-lSDL2 \
 		-lz \
 		-lbz2 \
-		-lSDL2_image \
-		-lSDL2_ttf \
 		-lopenal \
 		-lGL \
 		-lsndfile \
-		-lxallocator \
 		-lzstd \
 		-lsteam_api \
 		-lboost_thread \
-		-lglad \
 		-leasy_profiler
 SYS=\
 	$(O)/sys/win_main.o
@@ -170,17 +162,14 @@ COMMON=\
 	$(O)/common/vm_interpreted.o \
 	$(O)/common/vm_x86.o
 SRC=\
-	$(O)/game/g_rng.o \
-	$(O)/game/g_init.o \
-	$(O)/game/g_bff.o \
 	$(O)/game/g_game.o \
 	$(O)/game/g_sgame.o \
+	$(O)/game/g_ui.o \
 	\
 	$(O)/engine/n_console.o \
 	$(O)/engine/n_scf.o \
 	$(O)/engine/n_common.o \
 	$(O)/engine/n_files.o \
-	$(O)/engine/n_map.o \
 	$(O)/engine/n_shared.o \
 	$(O)/engine/n_cmd.o \
 	$(O)/engine/n_cvar.o \

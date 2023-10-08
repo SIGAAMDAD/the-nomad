@@ -69,6 +69,9 @@ typedef enum
     SGAME_STARTLEVEL,
     SGAME_ENDLEVEL,
     SGAME_KEY_EVENT,
+    SGAME_FINISH_FRAME,
+
+    NUM_SGAME_EXPORT
 } sgameExport_t;
 
 
