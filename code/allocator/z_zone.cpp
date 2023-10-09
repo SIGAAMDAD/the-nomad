@@ -399,7 +399,7 @@ char *Z_Strdup(const char *str)
 	}
 #endif
 	len = strlen(str) + 1;
-	s = (char *)Z_SMalloc(len, TAG_STATIC);
+	s = (char *)Z_SMalloc(len);
 	N_strncpyz(s, str, len);
 	return s;
 }
@@ -649,7 +649,6 @@ static void *Z_SmallAlloc(uint32_t size, int tag)
 	if (extra >= MIN_FRAGMENT) {
 		newblock = (memblock_t *)((byte *)base + size);
 		newblock->size = extra;
-		newblock->user = NULL;
 		newblock->prev = base;
 		newblock->next = base->next;
 		newblock->next->prev = newblock;
@@ -674,6 +673,21 @@ __error:
 	N_Error(ERR_FATAL, "Z_SmallAlloc: failed on %i bytes because smallzone wasn't big enough", size);
 }
 
+void *Z_SMalloc(uint32_t size)
+{
+#ifdef _NOMAD_DEBUG
+	Z_CheckHeap();
+#endif
+	if (!size)
+		N_Error(ERR_FATAL, "Z_SMalloc: bad size");
+	
+	// round to alignment
+	size += sizeof(memblock_t);
+	size = PAD(size, MEM_ALIGN);
+
+	return Z_SmallAlloc(size, TAG_STATIC);
+}
+
 
 /*
 Z_Malloc: garbage collection and zone block allocater that returns a block of free memory
@@ -687,7 +701,7 @@ void *Z_Malloc(uint32_t size, int tag)
 	if (!size)
 		N_Error(ERR_FATAL, "Z_Malloc: bad size");
 	
-	// round to the cacheline
+	// round to the alignment
 	size += sizeof(memblock_t);
 	size = PAD(size, MEM_ALIGN);
 
@@ -698,15 +712,15 @@ void Z_ChangeTag(void *user, int tag)
 {
 	// sanity
 	if (!user)
-		N_Error("Z_ChangeTag: user is NULL");
+		N_Error(ERR_FATAL, "Z_ChangeTag: user is NULL");
 	if (!tag || tag >= NUMTAGS)
-		N_Error("Z_ChangeTag: invalid tag");
+		N_Error(ERR_FATAL, "Z_ChangeTag: invalid tag");
 	
 	memblock_t* block;
 	
 	block = (memblock_t *)((byte *)user - sizeof(memblock_t));
 	if (block->id != ZONEID)
-		N_Error("Z_ChangeTag: block id isn't ZONEID");
+		N_Error(ERR_FATAL, "Z_ChangeTag: block id isn't ZONEID");
 	
 	block->tag = tag;
 }

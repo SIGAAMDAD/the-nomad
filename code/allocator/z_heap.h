@@ -35,7 +35,7 @@ GO_AWAY_MANGLE void Memory_Shutdown(void);
 
 #ifdef _NOMAD_DEBUG
 GO_AWAY_MANGLE void *Hunk_AllocDebug( uint64_t size, ha_pref preference, const char *name, const char *file, uint64_t line );
-#define Hunk_Alloc(size,name,preference) Hunk_AllocDebug(size,preference,#size,__FILE__,__LINE__)
+#define Hunk_Alloc(size,preference) Hunk_AllocDebug(size,preference,#size,__FILE__,__LINE__)
 #else
 GO_AWAY_MANGLE void *Hunk_Alloc( uint64_t size, ha_pref preference );
 #endif
@@ -60,7 +60,7 @@ GO_AWAY_MANGLE void* Z_SMalloc(uint32_t size);
 GO_AWAY_MANGLE void* Z_Malloc(uint32_t size, int tag);
 GO_AWAY_MANGLE void* Z_Calloc(uint32_t size, int tag);
 GO_AWAY_MANGLE void* Z_Realloc(void *ptr, uint32_t nsize, int tag);
-GO_AWAY_MANGLE char* Z_Strdup(const char *str, int tag = TAG_STATIC);
+GO_AWAY_MANGLE char* Z_Strdup(const char *str);
 GO_AWAY_MANGLE void Z_Free(void *ptr);
 
 GO_AWAY_MANGLE void Z_FreeTags(int lowtag, int hightag);

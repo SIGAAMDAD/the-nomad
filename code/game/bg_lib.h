@@ -4,7 +4,7 @@
 #pragma once
 
 // safeguard
-#ifdef __cplusplus
+#ifndef Q3_VM
     #error Never include this in engine builds
 #endif
 
@@ -26,6 +26,11 @@ typedef signed int ssize_t;
 typedef unsigned int ptrdiff_t;
 typedef unsigned int uintptr_t;
 typedef int intptr_t;
+
+// same as one found in math.h
+#define NAN (0.0f / 0.0f)
+// from dhwem3
+#define INFINITY 1e30f
 
 #define NULL ((void *)0)
 typedef char* va_list;

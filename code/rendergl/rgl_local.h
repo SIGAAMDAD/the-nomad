@@ -8,6 +8,7 @@
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_opengl3.h"
+#include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 
 #define GLN_INDEX_TYPE GL_UNSIGNED_INT
@@ -41,9 +42,10 @@ typedef struct
     char vendor[1024];
     char renderer[1024];
     char version_str[1024];
+    char glsl_version_str[1024];
     char extensions[8192];
     float version_f;
-    int version_i;
+    int versionMajor, versionMinor;
     int numExtensions;
     glTextureCompression_t textureCompression;
     qboolean nonPowerOfTwoTextures;

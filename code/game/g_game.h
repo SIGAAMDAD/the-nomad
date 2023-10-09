@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include "g_bff.h"
-#include "../engine/n_map.h"
+#include "../sgame/sg_public.h"
+#include "../ui/ui_public.h"
 #include "../rendergl/rgl_public.h"
 
 #ifndef O_BINARY
@@ -46,15 +46,38 @@ typedef struct {
 
 extern gameInfo_t gi;
 
+// logging parameters
 #define PRINT_INFO 0
 #define PRINT_DEVELOPER 1
+
+// non api specific renderer cvars
+extern cvar_t *cl_title;
+extern cvar_t *vid_xpos;
+extern cvar_t *vid_ypos;
+extern cvar_t *r_allowSoftwareGL;
+extern cvar_t *g_renderer; // current rendering api
+extern cvar_t *r_fullscreen;
+extern cvar_t *r_customWidth;
+extern cvar_t *r_customHeight;
+extern cvar_t *r_aspectRatio;
+extern cvar_t *r_driver;
+extern cvar_t *r_noborder;
+extern cvar_t *r_drawFPS;
+extern cvar_t *r_swapInterval;
+extern cvar_t *r_mode;
+extern cvar_t *r_customPixelAspect;
+extern cvar_t *r_colorBits;
+extern cvar_t *r_multisample;
+extern cvar_t *g_stencilBits;
+extern cvar_t *g_depthBits;
+extern cvar_t *r_stereoEnabled;
 
 //
 // g_game
 //
 void G_Init(void);
 void G_StartHunkUsers(void);
-void G_Shutdown(void);
+void G_Shutdown(qboolean quit);
 void G_ClearMem(void);
 void G_Restart(void);
 qboolean G_GameCommand(void);
@@ -80,8 +103,5 @@ void G_InitSGame(void);
 extern vm_t *sgvm;
 extern vm_t *uivm;
 extern renderExport_t re;
-
-void I_NomadInit(int argc, char** argv);
-void N_MainLoop();
 
 #endif

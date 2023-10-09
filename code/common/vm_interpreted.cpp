@@ -207,10 +207,10 @@ int VM_CallInterpreted2( vm_t *vm, uint32_t nargs, int32_t *args )
 			// get size of stack frame
 			programStack -= v0;
 			if ( programStack < vm->stackBottom ) {
-				VM_Error( vm, "VM programStack overflow" );
+				N_Error( ERR_DROP, "VM programStack overflow" );
 			}
 			if ( opStack + ((ci-1)->opStack/4) >= opStackTop ) {
-				VM_Error( vm, "VM opStack overflow" );
+				N_Error( ERR_DROP, "VM opStack overflow" );
 			}
 			break;
 
@@ -225,7 +225,7 @@ int VM_CallInterpreted2( vm_t *vm, uint32_t nargs, int32_t *args )
 				goto done;
 			}
             else if ( (unsigned)v1 >= vm->instructionCount ) {
-				VM_Error( vm, "VM program counter out of range in OP_LEAVE" );
+				N_Error( ERR_DROP, "VM program counter out of range in OP_LEAVE" );
             }
 			ci = inst + v1;
 			break;
@@ -267,7 +267,7 @@ int VM_CallInterpreted2( vm_t *vm, uint32_t nargs, int32_t *args )
 				opStack--;
 			}
             else {
-				VM_Error( vm, "VM program counter out of range in OP_CALL" );
+				N_Error( ERR_DROP, "VM program counter out of range in OP_CALL" );
 			}
 			break;
 
@@ -294,7 +294,7 @@ int VM_CallInterpreted2( vm_t *vm, uint32_t nargs, int32_t *args )
 
 		case OP_JUMP:
 			if ( r0.u >= vm->instructionCount ) {
-				VM_Error( vm, "VM program counter out of range in OP_JUMP" );
+				N_Error( ERR_DROP, "VM program counter out of range in OP_JUMP" );
 			}
 			ci = inst + r0.i;
 			opStack--;

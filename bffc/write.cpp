@@ -159,9 +159,10 @@ void StripExtension(const char *in, char* out, uint32_t destsize)
 void WriteBFF(const char *outfile, const char *jsonfile, int compression)
 {
 	bff_t *archive;
-	FILE *fp;
+	FILE *fp, *jsonfp;
 
-	FILE *jsonfp = SafeOpen(jsonfile, "r");
+	nameLen = 0;
+	jsonfp = SafeOpen(jsonfile, "r");
 	const json data = json::parse(jsonfp);
 	fclose(jsonfp);
 
@@ -196,17 +197,13 @@ void WriteBFF(const char *outfile, const char *jsonfile, int compression)
 	for (const auto& i : data.at("files")) {
 		bff_chunk_t *chunk = &archive->chunkList[index];
 
-		strncpy(chunk->chunkName, i.get<std::string>().c_str(), sizeof(chunk->chunkName));
+		chunk->chunkNameLen = i.get<std::string>().size() + 1;
+		chunk->chunkName = strdup(i.get<std::string>().c_str());
+
+		nameLen += chunk->chunkNameLen;
 
 		FILE *tempfp = SafeOpen(i.get<std::string>().c_str(), "rb");
-
-		fseek(tempfp, 0L, SEEK_END);
-		chunk->chunkSize = ftell(tempfp);
-		fseek(tempfp, 0L, SEEK_SET);
-
-		chunk->chunkBuffer = new char[chunk->chunkSize];
-
-		fread(chunk->chunkBuffer, chunk->chunkSize, 1, tempfp);
+		LoadFile(tempfp, (void **)&chunk->chunkBuffer, &chunk->chunkSize);
 		fclose(tempfp);
 
 		BFF_Report(index, chunk->chunkSize, chunk->chunkName);
@@ -216,13 +213,16 @@ void WriteBFF(const char *outfile, const char *jsonfile, int compression)
 	for (uint64_t i = 0; i < archive->numChunks; i++) {
 		bff_chunk_t *chunk = &archive->chunkList[i];
 
-		SafeWrite(fp, chunk, sizeof(*chunk) - sizeof(char *));
+		SafeWrite(fp, &chunk->chunkNameLen, sizeof(int64_t));
+		SafeWrite(fp, chunk->chunkName, chunk->chunkNameLen);
+		SafeWrite(fp, &chunk->chunkSize, sizeof(int64_t));
 		SafeWrite(fp, chunk->chunkBuffer, chunk->chunkSize);
 
-		delete[] chunk->chunkBuffer;
+		free(chunk->chunkBuffer);
 	}
 
 	delete archive->chunkList;
+
 	free(archive);
 	fclose(fp);
 }

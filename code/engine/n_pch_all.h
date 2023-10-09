@@ -77,18 +77,11 @@ Dependencies
 #include <EASTL/internal/atomic/atomic_standalone.h>
 #include <EASTL/internal/function.h>
 
-
-// GDRLib, my custom stuff, specific to game development, some of the meat of the engine
-#include <GDRLib/allocator.hpp>
-
 // glm, funmathgames
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/type_trait.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
-#include <xalloc/Allocator.h>
-#include <xalloc/xallocator.h>
 
 #include <nlohmann/json.hpp>
 
@@ -96,7 +89,13 @@ Dependencies
 #include <easy/profiler.h>
 #endif
 
-// SDL2, i don't trust SDL3
+// speed is key
+#include "../game/stb_sprintf.h"
+
+#endif
+
+#ifndef Q3_VM
+// SDL2, I don't trust SDL3
 #include <SDL2/SDL_syswm.h>
 #include <SDL2/SDL_video.h>
 #include <SDL2/SDL_keyboard.h>
@@ -114,10 +113,6 @@ Dependencies
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_thread.h>
 #include <SDL2/SDL_mutex.h>
-
-// speed is key
-#include "../game/stb_sprintf.h"
-
 #endif
 
 #endif

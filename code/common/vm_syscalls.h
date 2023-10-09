@@ -17,6 +17,6 @@ typedef int32_t qvm_intptr_t;
 typedef uint32_t qvm_uintptr_t;
 typedef int qvm_int_t;
 
-#define OUT_OF_BOUNDS(vm,addr,len) if (VM_MemoryRangeValid(addr,len,vm) != 0) VM_Error(vm, "%s: out-of-bounds segmentation violation",__func__)
+#define OUT_OF_BOUNDS(vm,addr,len) if (VM_MemoryRangeValid(addr,len,vm) != 0) N_Error(ERR_DROP, "%s: out-of-bounds segmentation violation",__func__)
 
 #endif

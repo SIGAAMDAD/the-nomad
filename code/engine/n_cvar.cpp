@@ -505,26 +505,6 @@ int Cvar_CheckGroup(cvarGroup_t group)
         return 0;
 }
 
-void Cvar_ResetGroup( cvarGroup_t group, qboolean resetModifiedFlags )
-{
-	if ( group < CVG_MAX ) {
-		cvar_group[ group ] = 0;
-		if ( resetModifiedFlags ) {
-			int i;
-			for ( i = 0; i < cvar_numIndexes; i++ ) {
-				if ( cvar_indexes[ i ].group == group && cvar_indexes[ i ].name ) {
-					cvar_indexes[ i ].modified = qfalse;
-				}
-			}
-		}
-	}
-}
-
-void Cvar_ForceReset(const char *name)
-{
-    Cvar_Set2(name, NULL, qtrue);
-}
-
 static void Cvar_QSortByName(cvar_t **a, uint64_t n)
 {
     cvar_t *temp;
@@ -803,10 +783,10 @@ void Cvar_SetFloatValue(const char *var_name, float value)
     char val[32];
 
     if (value == (int32_t)value) {
-        stbsp_snprintf(val, sizeof(val), "%i", (int32_t)value);
+        Com_snprintf(val, sizeof(val), "%i", (int32_t)value);
     }
     else {
-        stbsp_snprintf(val, sizeof(val), "%f", value);
+        Com_snprintf(val, sizeof(val), "%f", value);
     }
     Cvar_Set(var_name, val);
 }
@@ -829,11 +809,6 @@ void Cvar_SetStringValue(const char *name, const char *value)
     Cvar_Set(name, value);
 }
 
-void Cvar_SetBooleanValue(const char *name, qboolean value)
-{
-    Cvar_Set(name, N_booltostr(value));
-}
-
 /*
 ============
 Cvar_SetValueSafe
@@ -844,9 +819,9 @@ void Cvar_SetValueSafe(const char *var_name, float value)
     char val[32];
 
     if (N_isintegral(value))
-        stbsp_snprintf(val, sizeof(val), "%i", (int32_t)value);
+        Com_snprintf(val, sizeof(val), "%i", (int32_t)value);
     else
-        stbsp_snprintf(val, sizeof(val), "%f", value);
+        Com_snprintf(val, sizeof(val), "%f", value);
     
     Cvar_SetSafe(var_name, val);
 }
@@ -1264,7 +1239,7 @@ static void Cvar_Func_f(void)
     if (Cmd_Argc() < 3) {
         Con_Printf("usage: \n"
                    "  \\varfunc <add|sub|mul|div|mod|sin|cos> <cvar> <value> [lo.cap] [hi.cap]\n"
-                   "  \\varfunc rand <cvar> [base] [modulus]"\n);
+                   "  \\varfunc rand <cvar> [base] [modulus]\n");
         return;
     }
 
@@ -1354,7 +1329,7 @@ void Cvar_WriteVariables(file_t f)
             if ((var->flags & CVAR_NODEFAULT) && !strcmp(value, var->resetString)) {
                 continue;
             }
-            len = stbsp_snprintf(buffer, sizeof(buffer), "sets %s \"%s\"" GDR_NEWLINE, var->name, value);
+            len = Com_snprintf(buffer, sizeof(buffer), "sets %s \"%s\"" GDR_NEWLINE, var->name, value);
 
             FS_Write(buffer, len, f);
         }
@@ -1415,7 +1390,7 @@ static void Cvar_List_f(void)
 		} else {
 			Con_Printf(" ");
 		}
-		if (var->flags & CVAR_ARCHIVE) {
+		if (var->flags & CVAR_SAVE) {
 			Con_Printf("A");
 		} else {
 			Con_Printf(" ");
@@ -1436,7 +1411,7 @@ static void Cvar_List_f(void)
 			Con_Printf(" ");
 		}
 
-		Con_Printf (" %s \"%s\"\n", var->name, var->string);
+		Con_Printf (" %s \"%s\"\n", var->name, var->s);
     }
 
     Con_Printf("\n%i total cvars\n", i);
@@ -1465,7 +1440,7 @@ static void Cvar_ListModified_f( void ) {
 		if ( !var->name || !var->modificationCount )
 			continue;
 
-		value = var->latchedString ? var->latchedString : var->string;
+		value = var->latchedString ? var->latchedString : var->s;
 		if ( !strcmp( value, var->resetString ) )
 			continue;
 
@@ -1499,7 +1474,7 @@ static void Cvar_ListModified_f( void ) {
 		} else {
 			Con_Printf(" ");
 		}
-		if (var->flags & CVAR_ARCHIVE) {
+		if (var->flags & CVAR_SAVE) {
 			Con_Printf("A");
 		} else {
 			Con_Printf(" ");
@@ -1855,21 +1830,6 @@ void Cvar_SetGroup(cvar_t *var, cvarGroup_t group)
     }
     else {
         N_Error(ERR_DROP, "Bad group index %i for %s", group, var->name);
-    }
-}
-
-/*
-=====================
-Cvar_CheckGroup
-=====================
-*/
-uint32_t Cvar_CheckGroup(cvarGroup_t group)
-{
-    if (group < CVG_MAX) {
-        return cvar_group[group];
-    }
-    else {
-        return 0;
     }
 }
 

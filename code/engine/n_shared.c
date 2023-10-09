@@ -1,13 +1,4 @@
-#if defined(GDR_DLLCOMPILE) || defined(__cplusplus)
-#include "../engine/n_shared.h"
-#else
 #include "n_shared.h"
-#endif
-#include "../rendergl/rgl_public.h"
-
-#ifdef __cplusplus
-extern renderImport_t ri;
-#endif
 
 const byte locase[ 256 ] = {
 	0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
@@ -70,18 +61,6 @@ uint32_t crc32_buffer(const byte *buf, uint32_t len)
 
 	return crc ^ UINT_MAX;
 }
-
-
-#ifndef __cplusplus
-qboolean N_strtobool(const char* s)
-{
-	return N_stricmp(s, "true") ? qtrue : qfalse;
-}
-const char* N_booltostr(qboolean b)
-{
-	return b ? "true" : "false";
-}
-#endif
 
 qboolean Key_IsPressed(qboolean **keys, uint32_t code)
 {
@@ -563,28 +542,12 @@ void Com_TruncateLongString( char *buffer, const char *s )
 
 void N_strncpyz (char *dest, const char *src, size_t count)
 {
-#if defined(Q3_VM) || !defined(__cplusplus)
 	if (!dest)
-		SG_Error( "N_strncpyz: NULL dest");
+		N_Error(ERR_FATAL, "N_strncpyz: NULL dest");
 	if (!src)
-		SG_Error( "N_strncpyz: NULL src");
+		N_Error(ERR_FATAL, "N_strncpyz: NULL src");
 	if (count < 1)
-		SG_Error( "N_strncpyz: bad count");
-#elif defined(GDR_DLLCOMPILE)
-	if (!dest)
-		ri.N_Error("N_strncpyz: NULL dest");
-	if (!src)
-		ri.N_Error("N_strncpyz: NULL src");
-	if (count < 1)
-		ri.N_Error("N_strncpyz: bad count");
-#else
-	if (!dest)
-		N_Error("N_strncpyz: NULL dest");
-	if (!src)
-		N_Error("N_strncpyz: NULL src");
-	if (count < 1)
-		N_Error("N_strncpyz: bad count");
-#endif
+		N_Error(ERR_FATAL, "N_strncpyz: bad count");
 	
 #if 1 
 	// do not fill whole remaining buffer with zeros
@@ -648,7 +611,7 @@ const char *Com_SkipCharset( const char *s, const char *sep )
 /*
 Not thread safe
 */
-const char* GDR_DECL va(const char *format, ...)
+const char* GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL va(const char *format, ...)
 {
 	char *buf;
 	va_list argptr;
@@ -659,11 +622,7 @@ const char* GDR_DECL va(const char *format, ...)
 	index ^= 1;
 
 	va_start( argptr, format );
-#ifdef Q3_VM
 	vsprintf( buf, format, argptr );
-#else
-	N_vsnprintf( buf, sizeof(*string), format, argptr );
-#endif
 	va_end( argptr );
 
 	return buf;
@@ -728,13 +687,7 @@ void N_strcat(char *dest, size_t size, const char *src)
 
 	l1 = strlen(dest);
 	if (l1 >= size)
-#if defined(Q3_VM) || !defined(__cplusplus)
-		SG_Error( "N_strcat: already overflowed" );
-#elif defined(GDR_DLLCOMPILE)
-		ri.N_Error("N_strcat: already overflowed");
-#else
-		N_Error("N_strcat: already overflowed");
-#endif
+		N_Error( ERR_FATAL, "N_strcat: already overflowed" );
 	
 	N_strncpy( dest + l1, src, size - l1 );
 }
@@ -1175,292 +1128,761 @@ float N_acos(float c)
 }
 #endif
 
-#ifdef Q3_VM
-#define ALT 0x00000001       /* alternate form */
-#define HEXPREFIX 0x00000002 /* add 0x or 0X prefix */
-#define LADJUST 0x00000004   /* left adjustment */
-#define LONGDBL 0x00000008   /* long double */
-#define LONGINT 0x00000010   /* long integer */
-#define QUADINT 0x00000020   /* quad integer */
-#define SHORTINT 0x00000040  /* short integer */
-#define ZEROPAD 0x00000080   /* zero (as opposed to blank) pad */
-#define FPT 0x00000100       /* floating point number */
-
-#define to_digit(c) ((c) - '0')
-#define is_digit(c) ((unsigned)to_digit(c) <= 9)
-#define to_char(n) ((n) + '0')
-
-void AddInt(char** buf_p, int val, int width, int flags)
-{
-    char  text[32];
-    int   digits;
-    int   signedVal;
-    char* buf;
-
-    digits    = 0;
-    signedVal = val;
-    if (val < 0)
-    {
-        val = -val;
-    }
-    do
-    {
-        text[digits++] = '0' + val % 10;
-        val /= 10;
-    } while (val);
-
-    if (signedVal < 0)
-    {
-        text[digits++] = '-';
-    }
-
-    buf = *buf_p;
-
-    if (!(flags & LADJUST))
-    {
-        while (digits < width)
-        {
-            *buf++ = (flags & ZEROPAD) ? '0' : ' ';
-            width--;
-        }
-    }
-
-    while (digits--)
-    {
-        *buf++ = text[digits];
-        width--;
-    }
-
-    if (flags & LADJUST)
-    {
-        while (width--)
-        {
-            *buf++ = (flags & ZEROPAD) ? '0' : ' ';
-        }
-    }
-
-    *buf_p = buf;
-}
-
-void AddFloat(char** buf_p, float fval, int width, int prec)
-{
-    char  text[32];
-    int   digits;
-    float signedVal;
-    char* buf;
-    int   val;
-
-    // get the sign
-    signedVal = fval;
-    if (fval < 0)
-    {
-        fval = -fval;
-    }
-
-    // write the float number
-    digits = 0;
-    val    = (int)fval;
-    do
-    {
-        text[digits++] = '0' + val % 10;
-        val /= 10;
-    } while (val);
-
-    if (signedVal < 0)
-    {
-        text[digits++] = '-';
-    }
-
-    buf = *buf_p;
-
-    while (digits < width)
-    {
-        *buf++ = ' ';
-        width--;
-    }
-
-    while (digits--)
-    {
-        *buf++ = text[digits];
-    }
-
-    *buf_p = buf;
-
-    if (prec < 0)
-        prec = 6;
-    // write the fraction
-    digits = 0;
-    while (digits < prec)
-    {
-        fval -= (int)fval;
-        fval *= 10.0;
-        val            = (int)fval;
-        text[digits++] = '0' + val % 10;
-    }
-
-    if (digits > 0)
-    {
-        buf    = *buf_p;
-        *buf++ = '.';
-        for (prec = 0; prec < digits; prec++)
-        {
-            *buf++ = text[prec];
-        }
-        *buf_p = buf;
-    }
-}
-
-void AddString(char** buf_p, char* string, int width, int prec)
-{
-    int   size;
-    char* buf;
-
-    buf = *buf_p;
-
-    if (string == NULL)
-    {
-        string = "(null)";
-        prec   = -1;
-    }
-
-    if (prec >= 0)
-    {
-        for (size = 0; size < prec; size++)
-        {
-            if (string[size] == '\0')
-            {
-                break;
-            }
-        }
-    }
-    else
-    {
-        size = strlen(string);
-    }
-
-    width -= size;
-
-    while (size--)
-    {
-        *buf++ = *string++;
-    }
-
-    while (width-- > 0)
-    {
-        *buf++ = ' ';
-    }
-
-    *buf_p = buf;
-}
-
-int vsprintf(char* buffer, const char* fmt, va_list argptr)
-{
-    int*  arg;
-    char* buf_p;
-    char  ch;
-    int   flags;
-    int   width;
-    int   prec;
-    int   n;
-    char  sign;
-
-    buf_p = buffer;
-    arg   = (int*)argptr;
-
-    while (1)
-    {
-        // run through the format string until we hit a '%' or '\0'
-        for (ch = *fmt; (ch = *fmt) != '\0' && ch != '%'; fmt++)
-        {
-            *buf_p++ = ch;
-        }
-        if (ch == '\0')
-        {
-            goto done;
-        }
-
-        // skip over the '%'
-        fmt++;
-
-        // reset formatting state
-        flags = 0;
-        width = 0;
-        prec  = -1;
-        sign  = '\0';
-
-    rflag:
-        ch = *fmt++;
-    reswitch:
-        switch (ch)
-        {
-        case '-':
-            flags |= LADJUST;
-            goto rflag;
-        case '.':
-            n = 0;
-            while (is_digit((ch = *fmt++)))
-            {
-                n = 10 * n + (ch - '0');
-            }
-            prec = n < 0 ? -1 : n;
-            goto reswitch;
-        case '0':
-            flags |= ZEROPAD;
-            goto rflag;
-        case '1':
-        case '2':
-        case '3':
-        case '4':
-        case '5':
-        case '6':
-        case '7':
-        case '8':
-        case '9':
-            n = 0;
-            do
-            {
-                n  = 10 * n + (ch - '0');
-                ch = *fmt++;
-            } while (is_digit(ch));
-            width = n;
-            goto reswitch;
-        case 'c':
-            *buf_p++ = (char)*arg;
-            arg++;
-            break;
-        case 'd':
-        case 'i':
-            AddInt(&buf_p, *arg, width, flags);
-            arg++;
-            break;
-        case 'f':
-            AddFloat(&buf_p, *(double*)arg, width, prec);
-#ifdef __LCC__
-            arg += 1; // everything is 32 bit in my compiler
-#else
-            arg += 2;
-#endif
-            break;
-        case 's':
-            AddString(&buf_p, (char*)*arg, width, prec);
-            arg++;
-            break;
-        case '%':
-            *buf_p++ = ch;
-            break;
-        default:
-            *buf_p++ = (char)*arg;
-            arg++;
-            break;
-        }
-    }
-
-done:
-    *buf_p = 0;
-    return buf_p - buffer;
-}
+#if	defined(_DEBUG) && defined(_WIN32)
+#include <windows.h>
 #endif
 
+int GDR_ATTRIBUTE((format(printf, 3, 4))) GDR_DECL Com_snprintf( char *dest, uint32_t size, const char *fmt, ...)
+{
+	int		len;
+	va_list	argptr;
+	char	bigbuffer[32000];	// big, but small enough to fit in PPC stack
+
+	if ( !dest )  {
+		N_Error( ERR_FATAL, "Com_snprintf: NULL dest" );
+#if	defined(_DEBUG) && defined(_WIN32)
+		DebugBreak();
+#endif
+		return 0;
+	}
+
+	va_start( argptr, fmt );
+	len = vsprintf( bigbuffer, fmt, argptr );
+	va_end( argptr );
+
+	if ( len >= sizeof( bigbuffer ) || len < 0 )  {
+		N_Error( ERR_FATAL, "Com_smprintf: overflowed bigbuffer" );
+#if	defined(_DEBUG) && defined(_WIN32)
+		DebugBreak();
+#endif
+		return 0;
+	}
+
+	if ( len >= size )  {
+		Con_Printf( COLOR_YELLOW "Com_snprintf: overflow of %i in %u\n", len, size );
+#if	defined(_DEBUG) && defined(_WIN32)
+		DebugBreak();
+#endif
+		len = size - 1;
+	}
+
+	//Q_strncpyz( dest, bigbuffer, size );
+	//strncpy( dest, bigbuffer, len );
+	memcpy( dest, bigbuffer, len );
+	dest[ len ] = '\0';
+
+	return len;
+}
+
+/*
+===============================================================
+
+Parsing
+
+===============================================================
+*/
+
+static	char	com_token[MAX_TOKEN_CHARS];
+static	char	com_parsename[MAX_TOKEN_CHARS];
+static	uint64_t com_lines;
+static  uint64_t com_tokenline;
+
+// for complex parser
+tokenType_t		com_tokentype;
+
+void COM_BeginParseSession( const char *name )
+{
+	com_lines = 1;
+	com_tokenline = 0;
+	snprintf(com_parsename, sizeof(com_parsename), "%s", name);
+}
+
+
+uint64_t COM_GetCurrentParseLine( void )
+{
+	if ( com_tokenline )
+	{
+		return com_tokenline;
+	}
+
+	return com_lines;
+}
+
+
+const char *COM_Parse( const char **data_p )
+{
+	return COM_ParseExt( data_p, qtrue );
+}
+
+void COM_ParseError( const char *format, ... )
+{
+	va_list argptr;
+	static char string[4096];
+
+	va_start( argptr, format );
+	N_vsnprintf (string, sizeof(string), format, argptr);
+	va_end( argptr );
+
+	Con_Printf( COLOR_RED "WARNING: %s, line %lu: %s\n", com_parsename, COM_GetCurrentParseLine(), string );
+}
+
+void COM_ParseWarning( const char *format, ... )
+{
+	va_list argptr;
+	static char string[4096];
+
+	va_start( argptr, format );
+	N_vsnprintf (string, sizeof(string), format, argptr);
+	va_end( argptr );
+
+	Con_Printf( COLOR_RED "%s, line %lu: %s\n", com_parsename, COM_GetCurrentParseLine(), string );
+}
+
+
+/*
+==============
+COM_Parse
+
+Parse a token out of a string
+Will never return NULL, just empty strings
+
+If "allowLineBreaks" is qtrue then an empty
+string will be returned if the next token is
+a newline.
+==============
+*/
+const char *SkipWhitespace( const char *data, qboolean *hasNewLines ) {
+	int c;
+
+	while( (c = *data) <= ' ') {
+		if( !c ) {
+			return NULL;
+		}
+		if( c == '\n' ) {
+			com_lines++;
+			*hasNewLines = qtrue;
+		}
+		data++;
+	}
+
+	return data;
+}
+
+uintptr_t COM_Compress( char *data_p ) {
+	const char *in;
+	char *out;
+	int c;
+	qboolean newline = qfalse, whitespace = qfalse;
+
+	in = out = data_p;
+	while ((c = *in) != '\0') {
+		// skip double slash comments
+		if ( c == '/' && in[1] == '/' ) {
+			while (*in && *in != '\n') {
+				in++;
+			}
+		// skip /* */ comments
+		} else if ( c == '/' && in[1] == '*' ) {
+			while ( *in && ( *in != '*' || in[1] != '/' ) ) 
+				in++;
+			if ( *in ) 
+				in += 2;
+			// record when we hit a newline
+		} else if ( c == '\n' || c == '\r' ) {
+			newline = qtrue;
+			in++;
+			// record when we hit whitespace
+		} else if ( c == ' ' || c == '\t') {
+			whitespace = qtrue;
+			in++;
+			// an actual token
+		} else {
+			// if we have a pending newline, emit it (and it counts as whitespace)
+			if (newline) {
+				*out++ = '\n';
+				newline = qfalse;
+				whitespace = qfalse;
+			} else if (whitespace) {
+				*out++ = ' ';
+				whitespace = qfalse;
+			}
+			// copy quoted strings unmolested
+			if (c == '"') {
+				*out++ = c;
+				in++;
+				while (1) {
+					c = *in;
+					if (c && c != '"') {
+						*out++ = c;
+						in++;
+					} else {
+						break;
+					}
+				}
+				if (c == '"') {
+					*out++ = c;
+					in++;
+				}
+			} else {
+				*out++ = c;
+				in++;
+			}
+		}
+	}
+
+	*out = '\0';
+
+	return (uintptr_t)(out - data_p);
+}
+
+const char *COM_ParseExt( const char **data_p, qboolean allowLineBreaks )
+{
+	int c = 0, len;
+	qboolean hasNewLines = qfalse;
+	const char *data;
+
+	data = *data_p;
+	len = 0;
+	com_token[0] = '\0';
+	com_tokenline = 0;
+
+	// make sure incoming data is valid
+	if ( !data ) {
+		*data_p = NULL;
+		return com_token;
+	}
+
+	while ( 1 ) {
+		// skip whitespace
+		data = SkipWhitespace( data, &hasNewLines );
+		if ( !data ) {
+			*data_p = NULL;
+			return com_token;
+		}
+		if ( hasNewLines && !allowLineBreaks ) {
+			*data_p = data;
+			return com_token;
+		}
+
+		c = *data;
+
+		// skip double slash comments
+		if ( c == '/' && data[1] == '/' ) {
+			data += 2;
+			while (*data && *data != '\n') {
+				data++;
+			}
+		}
+		// skip /* */ comments
+		else if ( c == '/' && data[1] == '*' ) {
+			data += 2;
+			while ( *data && ( *data != '*' || data[1] != '/' ) ) {
+				if ( *data == '\n' ) {
+					com_lines++;
+				}
+				data++;
+			}
+			if ( *data ) {
+				data += 2;
+			}
+		}
+		else {
+			break;
+		}
+	}
+
+	// token starts on this line
+	com_tokenline = com_lines;
+
+	// handle quoted strings
+	if ( c == '"' )
+	{
+		data++;
+		while ( 1 )
+		{
+			c = *data;
+			if ( c == '"' || c == '\0' )
+			{
+				if ( c == '"' )
+					data++;
+				com_token[ len ] = '\0';
+				*data_p = data;
+				return com_token;
+			}
+			data++;
+			if ( c == '\n' )
+			{
+				com_lines++;
+			}
+			if ( len < arraylen( com_token )-1 )
+			{
+				com_token[ len ] = c;
+				len++;
+			}
+		}
+	}
+
+	// parse a regular word
+	do
+	{
+		if ( len < arraylen( com_token )-1 )
+		{
+			com_token[ len ] = c;
+			len++;
+		}
+		data++;
+		c = *data;
+	} while ( c > ' ' );
+
+	com_token[ len ] = '\0';
+
+	*data_p = data;
+	return com_token;
+}
+	
+
+/*
+==============
+COM_ParseComplex
+==============
+*/
+char *COM_ParseComplex( const char **data_p, qboolean allowLineBreaks )
+{
+	static const byte is_separator[ 256 ] =
+	{
+	// \0 . . . . . . .\b\t\n . .\r . .
+		1,0,0,0,0,0,0,0,0,1,1,0,0,1,0,0,
+	//  . . . . . . . . . . . . . . . .
+		0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	//    ! " # $ % & ' ( ) * + , - . /
+		1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0, // excl. '-' '.' '/'
+	//  0 1 2 3 4 5 6 7 8 9 : ; < = > ?
+		0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,
+	//  @ A B C D E F G H I J K L M N O
+		1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	//  P Q R S T U V W X Y Z [ \ ] ^ _
+		0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,0, // excl. '\\' '_'
+	//  ` a b c d e f g h i j k l m n o
+		1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+	//  p q r s t u v w x y z { | } ~ 
+		0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1
+	};
+
+	int c, len, shift;
+	const byte *str;
+
+	str = (byte*)*data_p;
+	len = 0; 
+	shift = 0; // token line shift relative to com_lines
+	com_tokentype = TK_GENEGIC;
+	
+__reswitch:
+	switch ( *str )
+	{
+	case '\0':
+		com_tokentype = TK_EOF;
+		break;
+
+	// whitespace
+	case ' ':
+	case '\t':
+		str++;
+		while ( (c = *str) == ' ' || c == '\t' )
+			str++;
+		goto __reswitch;
+
+	// newlines
+	case '\n':
+	case '\r':
+	com_lines++;
+		if ( *str == '\r' && str[1] == '\n' )
+			str += 2; // CR+LF
+		else
+			str++;
+		if ( !allowLineBreaks ) {
+			com_tokentype = TK_NEWLINE;
+			break;
+		}
+		goto __reswitch;
+
+	// comments, single slash
+	case '/':
+		// until end of line
+		if ( str[1] == '/' ) {
+			str += 2;
+			while ( (c = *str) != '\0' && c != '\n' && c != '\r' )
+				str++;
+			goto __reswitch;
+		}
+
+		// comment
+		if ( str[1] == '*' ) {
+			str += 2;
+			while ( (c = *str) != '\0' && ( c != '*' || str[1] != '/' ) ) {
+				if ( c == '\n' || c == '\r' ) {
+					com_lines++;
+					if ( c == '\r' && str[1] == '\n' ) // CR+LF?
+						str++;
+				}
+				str++;
+			}
+			if ( c != '\0' && str[1] != '\0' ) {
+				str += 2;
+			} else {
+				// FIXME: unterminated comment?
+			}
+			goto __reswitch;
+		}
+
+		// single slash
+		com_token[ len++ ] = *str++;
+		break;
+	
+	// quoted string?
+	case '"':
+		str++; // skip leading '"'
+		//com_tokenline = com_lines;
+		while ( (c = *str) != '\0' && c != '"' ) {
+			if ( c == '\n' || c == '\r' ) {
+				com_lines++; // FIXME: unterminated quoted string?
+				shift++;
+			}
+			if ( len < MAX_TOKEN_CHARS-1 ) // overflow check
+				com_token[ len++ ] = c;
+			str++;
+		}
+		if ( c != '\0' ) {
+			str++; // skip ending '"'
+		} else {
+			// FIXME: unterminated quoted string?
+		}
+		com_tokentype = TK_QUOTED;
+		break;
+
+	// single tokens:
+	case '+': case '`':
+	/*case '*':*/ case '~':
+	case '{': case '}':
+	case '[': case ']':
+	case '?': case ',':
+	case ':': case ';':
+	case '%': case '^':
+		com_token[ len++ ] = *str++;
+		break;
+
+	case '*':
+		com_token[ len++ ] = *str++;
+		com_tokentype = TK_MATCH;
+		break;
+
+	case '(':
+		com_token[ len++ ] = *str++;
+		com_tokentype = TK_SCOPE_OPEN;
+		break;
+
+	case ')':
+		com_token[ len++ ] = *str++;
+		com_tokentype = TK_SCOPE_CLOSE;
+		break;
+
+	// !, !=
+	case '!':
+		com_token[ len++ ] = *str++;
+		if ( *str == '=' ) {
+			com_token[ len++ ] = *str++;
+			com_tokentype = TK_NEQ;
+		}
+		break;
+
+	// =, ==
+	case '=':
+		com_token[ len++ ] = *str++;
+		if ( *str == '=' ) {
+			com_token[ len++ ] = *str++;
+			com_tokentype = TK_EQ;
+		}
+		break;
+
+	// >, >=
+	case '>':
+		com_token[ len++ ] = *str++;
+		if ( *str == '=' ) {
+			com_token[ len++ ] = *str++;
+			com_tokentype = TK_GTE;
+		} else {
+			com_tokentype = TK_GT;
+		}
+		break;
+
+	//  <, <=
+	case '<':
+		com_token[ len++ ] = *str++;
+		if ( *str == '=' ) {
+			com_token[ len++ ] = *str++;
+			com_tokentype = TK_LTE;
+		} else {
+			com_tokentype = TK_LT;
+		}
+		break;
+
+	// |, ||
+	case '|':
+		com_token[ len++ ] = *str++;
+		if ( *str == '|' ) {
+			com_token[ len++ ] = *str++;
+			com_tokentype = TK_OR;
+		}
+		break;
+
+	// &, &&
+	case '&':
+		com_token[ len++ ] = *str++;
+		if ( *str == '&' ) {
+			com_token[ len++ ] = *str++;
+			com_tokentype = TK_AND;
+		}
+		break;
+
+	// rest of the charset
+	default:
+		com_token[ len++ ] = *str++;
+		while ( !is_separator[ (c = *str) ] ) {
+			if ( len < MAX_TOKEN_CHARS-1 )
+				com_token[ len++ ] = c;
+			str++;
+		}
+		com_tokentype = TK_STRING;
+		break;
+
+	} // switch ( *str )
+
+	com_tokenline = com_lines - shift;
+	com_token[ len ] = '\0';
+	*data_p = ( char * )str;
+	return com_token;
+}
+
+
+/*
+==================
+COM_MatchToken
+==================
+*/
+void COM_MatchToken( const char **buf_p, const char *match ) {
+	const char *token;
+
+	token = COM_Parse( buf_p );
+	if ( strcmp( token, match ) ) {
+		N_Error( ERR_DROP, "MatchToken: %s != %s", token, match );
+	}
+}
+
+
+/*
+=================
+SkipBracedSection
+
+The next token should be an open brace or set depth to 1 if already parsed it.
+Skips until a matching close brace is found.
+Internal brace depths are properly skipped.
+=================
+*/
+qboolean SkipBracedSection( const char **program, int depth ) {
+	const char			*token;
+
+	do {
+		token = COM_ParseExt( program, qtrue );
+		if( token[1] == 0 ) {
+			if( token[0] == '{' ) {
+				depth++;
+			}
+			else if( token[0] == '}' ) {
+				depth--;
+			}
+		}
+	} while( depth && *program );
+
+	return (qboolean)( depth == 0 );
+}
+
+
+/*
+=================
+SkipRestOfLine
+=================
+*/
+void SkipRestOfLine( const char **data ) {
+	const char *p;
+	int		c;
+
+	p = *data;
+
+	if ( !*p )
+		return;
+
+	while ( (c = *p) != '\0' ) {
+		p++;
+		if ( c == '\n' ) {
+			com_lines++;
+			break;
+		}
+	}
+
+	*data = p;
+}
+
+int ParseHex(const char *text)
+{
+    int value;
+    int c;
+
+    value = 0;
+    while ((c = *text++) != 0) {
+        if (c >= '0' && c <= '9') {
+            value = value * 16 + c - '0';
+            continue;
+        }
+        if (c >= 'a' && c <= 'f') {
+            value = value * 16 + 10 + c - 'a';
+            continue;
+        }
+        if (c >= 'A' && c <= 'F') {
+            value = value * 16 + 10 + c - 'A';
+            continue;
+        }
+    }
+
+    return value;
+}
+
+void Parse1DMatrix( const char **buf_p, int x, float *m ) {
+	const char	*token;
+	int		i;
+
+	COM_MatchToken( buf_p, "(" );
+
+	for (i = 0 ; i < x; i++) {
+		token = COM_Parse( buf_p );
+		m[i] = N_atof( token );
+	}
+
+	COM_MatchToken( buf_p, ")" );
+}
+
+void Parse2DMatrix( const char **buf_p, int y, int x, float *m ) {
+	int		i;
+
+	COM_MatchToken( buf_p, "(" );
+
+	for (i = 0 ; i < y ; i++) {
+		Parse1DMatrix (buf_p, x, m + i * x);
+	}
+
+	COM_MatchToken( buf_p, ")" );
+}
+
+void Parse3DMatrix( const char **buf_p, int z, int y, int x, float *m ) {
+	int		i;
+
+	COM_MatchToken( buf_p, "(" );
+
+	for (i = 0 ; i < z ; i++) {
+		Parse2DMatrix (buf_p, y, x, m + i * x*y);
+	}
+
+	COM_MatchToken( buf_p, ")" );
+}
+
+int Hex( char c )
+{
+	if ( c >= '0' && c <= '9' ) {
+		return c - '0';
+	}
+	else
+	if ( c >= 'A' && c <= 'F' ) {
+		return 10 + c - 'A';
+	}
+	else
+	if ( c >= 'a' && c <= 'f' ) {
+		return 10 + c - 'a';
+	}
+
+	return -1;
+}
+
+
+/*
+===================
+Com_HexStrToInt
+===================
+*/
+int32_t Com_HexStrToInt(const char *str)
+{
+	if (!str)
+		return -1;
+
+	// check for hex code
+	if (str[ 0 ] == '0' && str[ 1 ] == 'x' && str[ 2 ] != '\0') {
+	    int32_t i, digit, n = 0, len = strlen( str );
+
+		for (i = 2; i < len; i++) {
+			n *= 16;
+
+			digit = Hex( str[ i ] );
+
+			if ( digit < 0 )
+				return -1;
+
+			n += digit;
+		}
+
+		return n;
+	}
+
+	return -1;
+}
+
+qboolean Com_GetHashColor(const char *str, byte *color)
+{
+	int32_t i, len, hex[6];
+
+	color[0] = color[1] = color[2] = 0;
+
+	if ( *str++ != '#' ) {
+		return qfalse;
+	}
+
+	len = (int)strlen( str );
+	if ( len <= 0 || len > 6 ) {
+		return qfalse;
+	}
+
+	for ( i = 0; i < len; i++ ) {
+		hex[i] = Hex( str[i] );
+		if ( hex[i] < 0 ) {
+			return qfalse;
+		}
+	}
+
+	switch ( len ) {
+		case 3: // #rgb
+			color[0] = hex[0] << 4 | hex[0];
+			color[1] = hex[1] << 4 | hex[1];
+			color[2] = hex[2] << 4 | hex[2];
+			break;
+		case 6: // #rrggbb
+			color[0] = hex[0] << 4 | hex[1];
+			color[1] = hex[2] << 4 | hex[3];
+			color[2] = hex[4] << 4 | hex[5];
+			break;
+		default: // unsupported format
+			return qfalse;
+	}
+
+	return qtrue;
+}
+
+#if 0
 float N_fmaxf(float a, float b)
 {
     if (N_isnan(a) || N_isnan(b)) {
@@ -1477,3 +1899,4 @@ float N_fmaxf(float a, float b)
     }
     return (a > b) ? a : b;
 }
+#endif

@@ -4,6 +4,7 @@
 #pragma once
 
 #include "../engine/n_shared.h"
+#include "../rendercommon/r_types.h"
 
 typedef enum {
     REF_KEEP_CONTEXT, // don't destroy window and context, just deallocate buffers and shaders
@@ -72,6 +73,12 @@ typedef struct {
     char **(*FS_ListFiles)(const char *path, const char *extension, uint64_t *numfiles);
     void (*FS_WriteFile)(const char *npath, const void *buffer, uint64_t size);
 
+    int (*ImGui_Init)(void *renderData, const char *renderName, SDL_Window *window, void *renderContext);
+    void (*ImGui_Shutdown)(void);
+    void (*ImGui_Render)(void);
+    void (*ImGui_NewFrame)(void);
+    void *(*ImGui_GetDrawData)(void);
+
     // most of this stuff is for imgui's usage
     SDL_bool (*SDL_SetHint)(const char *name, const char *value);
     void (*SDL_FreeCursor)(SDL_Cursor *cursor);
@@ -139,6 +146,7 @@ typedef struct {
 	// a scene is built up by calls to R_ClearScene and the various R_Add functions.
 	// Nothing is drawn until R_RenderScene is called.
 	void (*ClearScene)( void );
+    void (*AddPolyAndIndicesToScene)(uint32_t numVerts, const polyVert_t *verts, uint32_t numIndices, const uint32_t *indices);
 //	void (*AddRefEntityToScene)( const refEntity_t *re, qboolean intShaderTime );
 //	void (*AddPolyToScene)( nhandle_t hShader , int numVerts, const polyVert_t *verts, int num );
 //	int (*LightForPoint)( vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir );
@@ -171,7 +179,6 @@ typedef struct {
 } renderExport_t;
 
 extern refimport_t ri;
-
 typedef renderExport_t *(GDR_DECL *GetRenderAPI_t)(uint32_t version, refimport_t *import);
 
 #endif

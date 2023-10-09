@@ -1,6 +1,6 @@
 #include "../engine/n_shared.h"
 
-#ifdef __cplusplus
+#ifndef Q3_VM
     #error Never include this in engine builds
 #endif
 

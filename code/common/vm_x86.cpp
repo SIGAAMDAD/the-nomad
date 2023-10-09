@@ -227,7 +227,7 @@ static void Emit8( int64_t v );
 #define DROP( reason, args... ) \
 	do { \
 		VM_FreeBuffers(); \
-        Con_Printf( ERROR, "%s: " reason, __func__, ##args ); \
+        N_Error( ERR_DROP, "%s: " reason, __func__, ##args ); \
 	} while(0)
 
 #define SWAP_INT( X, Y ) do { int T = X; X = Y; Y = T; } while ( 0 )
@@ -2727,37 +2727,37 @@ static uint32_t load_sx_opstack( uint32_t pref )
 
 static void ErrJump( void )
 {
-	Con_Printf( ERROR, "program tried to execute code outside VM" );
+	N_Error( ERR_DROP, "program tried to execute code outside VM" );
 }
 
 
 static void BadJump( void )
 {
-	Con_Printf( ERROR, "program tried to execute code at bad location inside VM" );
+	N_Error( ERR_DROP, "program tried to execute code at bad location inside VM" );
 }
 
 
 static void BadStack( void )
 {
-	Con_Printf( ERROR, "program tried to overflow program stack" );
+	N_Error( ERR_DROP, "program tried to overflow program stack" );
 }
 
 
 static void BadOpStack( void )
 {
-	Con_Printf( ERROR, "program tried to overflow opcode stack" );
+	N_Error( ERR_DROP, "program tried to overflow opcode stack" );
 }
 
 
 static void BadDataRead( void )
 {
-	Con_Printf( ERROR, "program tried to read out of data segment" );
+	N_Error( ERR_DROP, "program tried to read out of data segment" );
 }
 
 
 static void BadDataWrite( void )
 {
-	Con_Printf( ERROR, "program tried to write out of data segment" );
+	N_Error( ERR_DROP, "program tried to write out of data segment" );
 }
 
 
@@ -2849,7 +2849,7 @@ static int Hex( int c )
 	}
 
 	VM_FreeBuffers();
-	Con_Printf( ERROR, "Hex: bad char '%c'", c );
+	N_Error( ERR_DROP, "Hex: bad char '%c'", c );
 
 	return 0;
 }
@@ -2917,7 +2917,7 @@ static const char *NearJumpStr( int op )
 		case OP_JUMP: return "EB";   // jmp
 
 		//default:
-		//	Con_Printf( ERROR, "Bad opcode %i", op );
+		//	N_Error( ERR_DROP, "Bad opcode %i", op );
 	};
 	return NULL;
 }
@@ -3030,7 +3030,7 @@ static void EmitJump( instruction_t *i, int op, int addr )
 
 	str = FarJumpStr( op, &jump_size );
 	if ( jump_size == 0 ) {
-		Con_Printf( ERROR, "VM_CompileX86 error: %s", "bad jump size" );
+		N_Error( ERR_DROP, "VM_CompileX86 error: %s", "bad jump size" );
 		return;
 	}
 	if ( shouldNaNCheck ) {
@@ -3893,8 +3893,8 @@ qboolean VM_Compile( vm_t *vm, vmHeader_t *header )
 	int num_compress;
 #endif
 
-	inst = (instruction_t*)Z_Malloc( (header->instructionCount + 8 ) * sizeof( instruction_t ), TAG_STATIC, &inst, "instructions" );
-	instructionOffsets = (int*)Z_Malloc( header->instructionCount * sizeof( int ), TAG_STATIC, &instructionOffsets, "instrOff" );
+	inst = (instruction_t*)Z_Malloc( (header->instructionCount + 8 ) * sizeof( instruction_t ), TAG_STATIC );
+	instructionOffsets = (int*)Z_Malloc( header->instructionCount * sizeof( int ), TAG_STATIC );
 
 	errMsg = VM_LoadInstructions( (byte *) header + header->codeOffset, header->codeLength, header->instructionCount, inst );
 	if ( !errMsg ) {
@@ -3902,7 +3902,7 @@ qboolean VM_Compile( vm_t *vm, vmHeader_t *header )
 	}
 	if ( errMsg ) {
 		VM_FreeBuffers();
-		Con_Printf( WARNING, "VM_CompileX86 error: %s", errMsg );
+		Con_Printf( COLOR_YELLOW "VM_CompileX86 error: %s\n", errMsg );
 		return qfalse;
 	}
 
@@ -4623,11 +4623,11 @@ __compile:
 			case MOP_BOR:
 			case MOP_BXOR:
 				if ( !EmitMOPs( vm, ci, ci->op ) )
-				    N_Error( "VM_CompileX86: bad opcode %02X", ci->op );
+				    N_Error( ERR_FATAL "VM_CompileX86: bad opcode %02X", ci->op );
 				break;
 #endif
 			default:
-				N_Error( "VM_CompileX86: bad opcode %02X", ci->op );
+				N_Error( ERR_FATAL, "VM_CompileX86: bad opcode %02X", ci->op );
 				VM_FreeBuffers();
 				return qfalse;
 			}
@@ -4725,7 +4725,7 @@ __compile:
 #ifdef VM_X86_MMAP
 	if ( mprotect( vm->codeBase.ptr, vm->codeSize, PROT_READ|PROT_EXEC ) ) {
 		VM_Destroy_Compiled( vm );
-		Con_Printf( WARNING, "VM_CompileX86: mprotect failed" );
+		Con_Printf( COLOR_YELLOW "VM_CompileX86: mprotect failed\n" );
 		return qfalse;
 	}
 #elif _WIN32
@@ -4735,7 +4735,7 @@ __compile:
 		// remove write permissions.
 		if ( !VirtualProtect( vm->codeBase.ptr, vm->codeSize, PAGE_EXECUTE_READ, &oldProtect ) ) {
 			VM_Destroy_Compiled( vm );
-			Con_Printf( WARNING, "%s(%s): VirtualProtect failed", __func__, vm->name );
+			Con_Printf( COLOR_YELLOW "%s(%s): VirtualProtect failed\n", __func__, vm->name );
 			return qfalse;
 		}
 	}
@@ -4743,7 +4743,7 @@ __compile:
 
 	vm->destroy = VM_Destroy_Compiled;
 
-	Con_Printf( "VM file %s compiled to %i bytes of code", vm->name, compiledOfs );
+	Con_Printf( "VM file %s compiled to %i bytes of code\n", vm->name, compiledOfs );
 
 	return qtrue;
 }
@@ -4763,20 +4763,20 @@ static void *VM_Alloc_Compiled( vm_t *vm, int codeLength, int tableLength )
 #ifdef VM_X86_MMAP
 	ptr = mmap( NULL, length, PROT_READ|PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0 );
 	if ( ptr == MAP_FAILED || !ptr ) {
-		N_Error( "VM_CompileX86: mmap failed" );
+		N_Error( ERR_FATAL, "VM_CompileX86: mmap failed" );
 		return NULL;
 	}
 #elif _WIN32
 	// allocate memory with EXECUTE permissions under windows.
 	ptr = VirtualAlloc( NULL, length, MEM_COMMIT, PAGE_EXECUTE_READWRITE );
 	if ( !ptr ) {
-		N_Error( "VM_CompileX86: VirtualAlloc failed" );
+		N_Error( ERR_FATAL, "VM_CompileX86: VirtualAlloc failed" );
 		return NULL;
 	}
 #else
 	ptr = malloc( length );
 	if ( !ptr ) {
-		N_Error( "VM_CompileX86: malloc failed" );
+		N_Error( ERR_FATAL, "VM_CompileX86: malloc failed" );
 		return NULL;
 	}
 #endif
@@ -4857,11 +4857,11 @@ int32_t VM_CallCompiled( vm_t *vm, uint32_t nargs, int32_t *args )
 
 #ifdef DEBUG_VM
 	if ( opStack[0] != 0xDEADC0DE ) {
-		Con_Printf( ERROR, "%s(%s): opStack corrupted in compiled code", __func__, vm->name );
+		N_Error( ERR_DROP, "%s(%s): opStack corrupted in compiled code", __func__, vm->name );
 	}
 
 	if ( vm->programStack != (int32_t)( stackOnEntry - ( MAX_VMMAIN_ARGS + 2 ) * sizeof( int32_t ) ) ) {
-		Con_Printf( ERROR, "%s(%s): programStack corrupted in compiled code", __func__, vm->name );
+		N_Error( ERR_DROP, "%s(%s): programStack corrupted in compiled code", __func__, vm->name );
 	}
 #endif
 

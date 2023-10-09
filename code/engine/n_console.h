@@ -23,6 +23,7 @@ enum
     CVT_STRING,
     CVT_FLOAT,
     CVT_BOOL,
+	CVT_FSPATH,
 
     CVT_MAX
 };
@@ -40,7 +41,7 @@ typedef enum {
 } cvarGroup_t;
 
 // cvar flags
-#define	CVAR_SAVE		0x0001	// set to cause it to be saved to vars.rc
+#define	CVAR_SAVE		0x0001	// set to cause it to be saved to default.cfg
 					// used for system variables, not for player
 					// specific configurations
 #define	CVAR_USERINFO		0x0002	// sent to server on connect or change

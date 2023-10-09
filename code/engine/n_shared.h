@@ -309,6 +309,8 @@ Compiler Macro Abstraction
 #include <stdbool.h>
 #endif
 
+int GDR_ATTRIBUTE((format(printf, 3, 4))) GDR_DECL Com_snprintf(char *dest, uint32_t size, const char *format, ...);
+
 #ifndef M_LN2
 #define M_LN2          0.69314718055994530942  /* log_e 2 */
 #endif
@@ -510,6 +512,8 @@ void ByteToDir( int b, vec3_t dir );
 
 #define DotProduct4(a,b)		((a)[0]*(b)[0] + (a)[1]*(b)[1] + (a)[2]*(b)[2] + (a)[3]*(b)[3])
 #define VectorScale4(a,b,c)		((c)[0]=(a)[0]*(b),(c)[1]=(a)[1]*(b),(c)[2]=(a)[2]*(b),(c)[3]=(a)[3]*(b))
+#define VectorCopy2(dst,src)	((dst)[0]=(src)[0],(dst)[1]=(src)[1])
+#define VectorSet2(dst,a,b)		((dst)[0]=(a),(dst)[1]=(b))
 
 #else
 

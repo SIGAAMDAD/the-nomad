@@ -1,4 +1,5 @@
 #include "../engine/n_shared.h"
+#include "../game/g_game.h"
 
 /*
 ===============================
@@ -10,6 +11,7 @@ for the entirety of runtime. ONLY MEANT FOR MAIN ENGINE ALLOCATIONS
 
 extern uint64_t hunksize;
 extern byte* hunkbase;
+extern file_t logfile;
 
 static cvar_t *z_hunkDebug;
 static cvar_t *z_hunkMegs;
@@ -390,17 +392,17 @@ void Hunk_SmallLog(void)
 	
 	size = 0;
 	numBlocks = 0;
-	stbsp_snprintf(buf, sizeof(buf), "\r\n================\r\nHunk Small log\r\n================\r\n");
+	Com_snprintf(buf, sizeof(buf), "\r\n================\r\nHunk Small log\r\n================\r\n");
 	FS_Write(buf, strlen(buf), logfile);
 	for (h = hunkblocks; h; h = h->next) {
 		size += h->size;
 		numBlocks++;
-		stbsp_snprintf(buf, sizeof(buf), "size = %8lu: %s\r\n", h->size, h->name);
+		Com_snprintf(buf, sizeof(buf), "size = %8lu: %s\r\n", h->size, h->name);
 		FS_Write(buf, strlen(buf), logfile);
 	}
-	stbsp_snprintf(buf, sizeof(buf), "%lu total hunk memory\r\n", size);
+	Com_snprintf(buf, sizeof(buf), "%lu total hunk memory\r\n", size);
 	FS_Write(buf, strlen(buf), logfile);
-	stbsp_snprintf(buf, sizeof(buf), "%lu total hunk blocks\r\n", numBlocks);
+	Com_snprintf(buf, sizeof(buf), "%lu total hunk blocks\r\n", numBlocks);
 }
 
 void Hunk_Log(void)

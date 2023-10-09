@@ -1,6 +1,10 @@
 #include "n_shared.h"
 #include "n_scf.h"
-#include "../rendergl/imgui.h"
+#define STB_RECT_PACK_IMPLEMENTATION
+#include "../rendercommon/imstb_rectpack.h"
+#define STB_TRUETYPE_IMPLEMENTATION
+#include "../rendercommon/imstb_truetype.h"
+#include "../rendercommon/imgui.h"
 #include "../rendergl/rgl_public.h"
 
 #define  CON_TEXTSIZE   65536
@@ -73,9 +77,16 @@ void Con_DrawConsole(void)
 
     {
         // quake3 style console
-        ImGui::Text("%72^");
+        for (used = 0; used < ImGui::GetWindowSize().x; used++)
+            msg[used] = '^';
+        
+        msg[used] = 0;
+        ImGui::Text("%s", msg);
         ImGui::NewLine();
         ImGui::NewLine();
+
+        memset(msg, 0, used);
+        used = 0;
     }
 
     currentColorIndex = ColorIndex(S_COLOR_WHITE);

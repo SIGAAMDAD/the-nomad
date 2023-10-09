@@ -147,7 +147,8 @@ typedef struct bffinfo_s
 
 typedef struct
 {
-	char chunkName[MAX_BFF_CHUNKNAME];
+	char *chunkName;
+	int64_t chunkNameLen;
 	int64_t chunkSize;
 	char *chunkBuffer;
 } bff_chunk_t;

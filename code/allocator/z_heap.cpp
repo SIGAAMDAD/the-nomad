@@ -24,7 +24,6 @@ void Memory_Shutdown(void)
 		free(hunkorig);
 	
 	Z_Shutdown();
-    Mem_Shutdown();
 }
 
 void Zone_Stats(void);
@@ -85,33 +84,23 @@ void Hunk_InitMemory(void)
 		N_Error(ERR_FATAL, "Hunk initialization failed. File system load stack not zero");
 	}
 
-	i = I_GetParm("-ram");
-	if (i != -1) {
-        if (i+1 >= myargc)
-            N_Error(ERR_FATAL, "Hunk_InitMemory: you must specify the amount of ram in MB after -ram");
-        else
-            hunksize = N_atoi(myargv[i+1]) * 1024 * 1024;
-    }
-    else {
-        hunksize = DEFAULT_HEAP_SIZE;
-    }
-
 	// allocate stack based hunk allocator
-	cv = Cvar_Get("z_hunkMegs", "1024", CVAR_PRIVATE | CVAR_ROM | CVAR_SAVE | CVAR_LATCH);
+	Com_StartupVariable("hunkRAM");
+	cv = Cvar_Get("z_hunkMegs", "1024", CVAR_PRIVATE | CVAR_ROM | CVAR_INIT | CVAR_PROTECTED);
 	if ((cv->i * 1024 * 1024) != hunksize) {
 		hunksize = cv->i * 1024 * 1024;
 	}
 	Cvar_SetDescription(cv, "The size of the hunk heap memory segment.");
 
-	hunkbase = (byte *)malloc(hunksize + 63);
+	hunkbase = (byte *)malloc(hunksize + com_cacheLine);
     if (!hunkbase) {
-        Sys_Error("Hunk_InitMemory: malloc() failed on %lu bytes when allocating the hunk", hunksize);
+        N_Error(ERR_FATAL, "Hunk_InitMemory: malloc() failed on %lu bytes when allocating the hunk", hunksize);
 	}
 	memset(hunkbase, 0, hunksize + com_cacheLine);
 	hunkorig = hunkbase;
 
 	// cacheline align
-	hunkbase = PADP(hunkbase, 64);
+	hunkbase = PADP(hunkbase, com_cacheLine);
 	
 	// initialize it all
 	Hunk_Clear();
@@ -120,57 +109,8 @@ void Hunk_InitMemory(void)
 
 	Cmd_AddCommand("meminfo", Com_Meminfo_f);
 	Cmd_AddCommand("touchmemory", Com_TouchMemory_f);
-
 	Cmd_AddCommand("hunklogsmall", Hunk_SmallLog);
 	Cmd_AddCommand("hunklog", Hunk_Log);
-}
-
-void Memory_Init(void)
-{
-	Con_Printf("Memory_Init: initializing allocation daemons");
-
-	// make sure the file system has allocated and "not" freed any temp blocks
-	// this allows the config and product id files ( journal files too ) to be loaded
-	// by the file system without redundant routines in the file system utilizing different
-	// memory systems
-    if ( FS_LoadStack() != 0 ) {
-		N_Error( "Hunk initialization failed. File system load stack not zero" );
-	}
-
-	Mem_Init();
-	uint64_t zonesize;
-
-    int i = I_GetParm("-ram");
-    if (i != -1) {
-        if (i+1 >= myargc)
-            N_Error("Memory_Init: you must specify the amount of ram in MB after -ram");
-        else
-            hunksize = N_atoi(myargv[i+1]) * 1024 * 1024;
-    }
-    else {
-        hunksize = DEFAULT_HEAP_SIZE;
-    }
-	
-    hunkbase = (byte *)memset(malloc(hunksize + 63), 0, hunksize);
-    if (!hunkbase) {
-        N_Error("Memory_Init: malloc() failed on %lu bytes when allocating the hunk", hunksize);
-	}
-	hunkorig = hunkbase;
-	hunkbase = PADP(hunkbase, 64);
-	// initialize it all
-	Hunk_Clear();
-
-	Con_Printf("Initialized heap from %p -> %p (%lu MiB)", (void *)hunkbase, (void *)(hunkbase + hunksize), hunksize >> 20);
-	
-	// initialize the zone heap
-	Z_Init();
-
-	Cmd_AddCommand("meminfo", Com_Meminfo_f);
-	Cmd_AddCommand("touchmemory", Com_TouchMemory_f);
-#if 0
-	Cmd_AddCommand("hunklogsmall", Hunk_SmallLog);
-	Cmd_AddCommand("hunklog", Hunk_Log);
-#endif
 }
 
 void Mem_Info(void)

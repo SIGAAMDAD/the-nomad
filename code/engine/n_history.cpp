@@ -96,7 +96,7 @@ static qboolean Field_Complete( void )
 		return qtrue;
 	}
 
-	Con_Printf( "]%s", completionField->buffer );
+	Con_Printf( "]%s\n", completionField->buffer );
 
 	return qfalse;
 }
@@ -391,7 +391,7 @@ static void Con_LoadHistory( void )
     f = FS_FOpenRead(CONSOLE_HISTORY_FILE);
 	if ( f == FS_INVALID_HANDLE )
 	{
-		Con_Printf( "Couldn't read %s.", CONSOLE_HISTORY_FILE );
+		Con_Printf( "Couldn't read %s.\n", CONSOLE_HISTORY_FILE );
 		return;
 	}
     consoleSaveBufferSize = FS_FileLength( f );
@@ -420,7 +420,7 @@ static void Con_LoadHistory( void )
 			numChars = atoi( token );
 			text_p++;
 			if ( numChars > ( consoleSaveBufferSize - ( text_p - consoleSaveBuffer ) ) || numChars >= sizeof( edit->buffer ) ) {
-				Con_Printf(DEBUG, "WARNING: probable corrupt history" );
+				Con_DPrintf( "WARNING: probable corrupt history\n" );
 				break;
 			}
 
@@ -449,7 +449,7 @@ static void Con_LoadHistory( void )
 		historyLine = nextHistoryLine = numLines;
 	}
 	else
-		Con_Printf( "Couldn't read %s.", CONSOLE_HISTORY_FILE );
+		Con_Printf( "Couldn't read %s.\n", CONSOLE_HISTORY_FILE );
 
 	FS_FClose( f );
 }
@@ -492,12 +492,12 @@ static void Con_SaveHistory( void )
 
 	f = FS_FOpenWrite( CONSOLE_HISTORY_FILE );
 	if ( f == FS_INVALID_HANDLE ) {
-		Con_Printf( "Couldn't write %s.", CONSOLE_HISTORY_FILE );
+		Con_Printf( "Couldn't write %s.\n", CONSOLE_HISTORY_FILE );
 		return;
 	}
 
 	if ( FS_Write( consoleSaveBuffer, consoleSaveBufferSize, f ) < consoleSaveBufferSize )
-		Con_Printf( "Couldn't write %s.", CONSOLE_HISTORY_FILE );
+		Con_Printf( "Couldn't write %s.\n", CONSOLE_HISTORY_FILE );
 
 	FS_FClose( f );
 }

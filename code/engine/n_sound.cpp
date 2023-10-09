@@ -61,7 +61,7 @@ static uint32_t Snd_Format(const nomadsnd_t *snd)
 #define SND_MUSIC 1
 
 static sf_count_t SndFile_Read(void *data, sf_count_t size, void *file) {
-    return FS_Read(data, size, *(file_t *)f);
+    return FS_Read(data, size, *(file_t *)file);
 }
 
 static sf_count_t SndFile_Tell(void *file) {
@@ -81,7 +81,11 @@ static sf_count_t SndFile_Seek(sf_count_t offset, int whence, void *file) {
         return FS_FileSeek(f, (fileOffset_t)offset, FS_SEEK_CUR);
     case SEEK_END:
         return FS_FileSeek(f, (fileOffset_t)offset, FS_SEEK_END);
+    default:
+        break;
     };
+    N_Error(ERR_FATAL, "SndFile_Seek: bad whence");
+    return 0; // quiet compiler warning
 }
 
 static nomadsnd_t *Snd_LoadFile(const char *path, sfxHandle_t *sfx, int type)
@@ -92,7 +96,8 @@ static nomadsnd_t *Snd_LoadFile(const char *path, sfxHandle_t *sfx, int type)
     SNDFILE *sf;
     nomadsnd_t *snd;
     sf_count_t readCount;
-    uint64_t hash;
+    uint64_t hash, fileLen;
+    int tag;
 
     // check if the sound already exists
     hash = Snd_HashFileName(path);
@@ -102,11 +107,12 @@ static nomadsnd_t *Snd_LoadFile(const char *path, sfxHandle_t *sfx, int type)
     *sfx = (sfxHandle_t)hash;
 
     if (type == SND_SFX) {
-        snd = (nomadsnd_t *)Z_Malloc(sizeof(*snd), TAG_SFX);
+        tag = TAG_SFX;
     }
     else if (type == SND_MUSIC) {
-        snd = (nomadsnd_t *)Z_Malloc(sizeof(*snd), TAG_MUSIC);
+        tag = TAG_MUSIC;
     }
+    snd = (nomadsnd_t *)Z_Malloc(sizeof(*snd), tag);
     memset(snd, 0, sizeof(*snd));
 
     sndhash[hash] = snd;
@@ -118,6 +124,7 @@ static nomadsnd_t *Snd_LoadFile(const char *path, sfxHandle_t *sfx, int type)
         Con_Printf(COLOR_YELLOW "WARNING: Failed to load sound file %s", path);
         return NULL;
     }
+    fileLen = FS_FileLength(f);
 
     vio.read = SndFile_Read;
     vio.write = NULL; // not needed in this case
@@ -130,7 +137,8 @@ static nomadsnd_t *Snd_LoadFile(const char *path, sfxHandle_t *sfx, int type)
         N_Error(ERR_FATAL, "Snd_LoadFile: sf_open_virtual failed, error: %s", sf_strerror(sf));
     }
 
-    snd->sndbuf = (short *)Hunk_Alloc(sizeof(*snd->sndbuf) * snd->length, h_low);
+    snd->length = fdata.frames * fdata.channels;
+    snd->sndbuf = (short *)Z_Malloc(sizeof(*snd->sndbuf) * snd->length, tag);
     readCount = sf_read_short(sf, snd->sndbuf, sizeof(*snd->sndbuf) * fdata.frames * fdata.channels);
     if (readCount != fileLen) {
         N_Error(ERR_FATAL, "Snd_LoadFile: sf_read_short failed, error: %s", sf_strerror(sf));
@@ -249,11 +257,11 @@ static int Snd_SoundIsPlaying(nomadsnd_t *snd)
 static qboolean Snd_QueueSfx(nomadsnd_t *snd)
 {
     if (Snd_SoundIsPlaying(snd) == 1) {
-        Con_Printf(DEV, "Snd_QueueSfx: %s is already playing", snd->name);
+        Con_DPrintf("Snd_QueueSfx: %s is already playing\n", snd->name);
         return qfalse;
     }
     if (sfx_queuedCount + 1 >= MAX_SND_QUEUE) {
-        Con_Printf("Snd_QueueSfx: overflow");
+        Con_Printf("Snd_QueueSfx: overflow\n");
         return qfalse;
     }
 

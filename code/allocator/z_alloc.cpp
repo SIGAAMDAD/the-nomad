@@ -1,4 +1,4 @@
-#include "gln.h"
+#include "../engine/n_shared.h"
 
 #ifndef USE_LIBC_MALLOC
 	#define USE_LIBC_MALLOC		0

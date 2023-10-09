@@ -47,7 +47,7 @@ static intptr_t G_SGameSystemCalls(intptr_t *args)
 {
     switch (args[0]) {
     case SG_PRINT:
-        Com_Printf("%s", (const char *)VMA(1));
+        Con_Printf("%s", (const char *)VMA(1));
         return 0;
     case SG_ERROR:
         N_Error(ERR_DROP, "%s", (const char *)VMA(1));

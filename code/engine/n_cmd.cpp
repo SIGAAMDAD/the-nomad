@@ -120,7 +120,7 @@ uint64_t Cbuf_Add( const char *text, uint64_t pos )
 	}
 
 	if ( len + cmd_text.cursize > cmd_text.maxsize ) {
-		Con_Printf( WARNING, "%s(%lu) overflowed\n", __func__, pos );
+		Con_Printf( COLOR_YELLOW "%s(%lu) overflowed\n", __func__, pos );
 		return cmd_text.cursize;
 	}
 
@@ -160,7 +160,7 @@ void Cbuf_InsertText( const char *text )
 	len = strlen( text ) + 1;
 
 	if ( len + cmd_text.cursize > cmd_text.maxsize ) {
-		Con_Printf( "Cbuf_InsertText overflowed\n" );
+		Con_Printf( COLOR_YELLOW "Cbuf_InsertText overflowed\n" );
 		return;
 	}
 
@@ -638,7 +638,7 @@ void Cmd_AddCommand(const char *name, cmdfunc_t func)
     }
     Con_DPrintf("Registered command %s\n", name);
 
-    cmd = (cmd_t *)Z_SMalloc(sizeof(*cmd), TAG_STATIC);
+    cmd = (cmd_t *)Z_SMalloc(sizeof(*cmd));
     cmd->name = Z_Strdup(name);
     cmd->function = func;
 	cmd->complete = NULL;

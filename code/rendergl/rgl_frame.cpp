@@ -43,8 +43,6 @@ extern "C" void RE_CommandConsoleFrame(void)
 {
     if (console_open) {
         R_UnbindShader();
-        ImGui::Render();
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     }
 }
 
@@ -62,21 +60,6 @@ extern "C" void R_UpdateEvents(void)
         RB_ZoomOut();
     if (ri.Key_IsDown(KEY_N))
         RB_ZoomIn();
-}
-
-extern "C" void RE_ProcessConsoleEvents(SDL_Event *event)
-{
-    if (!console_open)
-        return;
-    
-    ImGui_ImplSDL2_ProcessEvent(event);
-}
-
-extern "C" void R_BeginImGui(void)
-{
-    ImGui_ImplSDL2_NewFrame();
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui::NewFrame();
 }
 
 extern "C" qboolean RE_ConsoleIsOpen(void)

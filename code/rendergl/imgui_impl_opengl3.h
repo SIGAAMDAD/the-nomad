@@ -23,19 +23,18 @@
 //  Only override if your GL version doesn't handle this GLSL version. See GLSL version table at the top of imgui_impl_opengl3.cpp.
 
 #pragma once
-#include "imgui.h"      // IMGUI_IMPL_API
 
 // Backend API
-extern "C" IMGUI_IMPL_API bool     ImGui_ImplOpenGL3_Init(const char* glsl_version = NULL);
-extern "C" IMGUI_IMPL_API void     ImGui_ImplOpenGL3_Shutdown();
-extern "C" IMGUI_IMPL_API void     ImGui_ImplOpenGL3_NewFrame();
-extern "C" IMGUI_IMPL_API void     ImGui_ImplOpenGL3_RenderDrawData(ImDrawData* draw_data);
+GO_AWAY_MANGLE GDR_EXPORT void *ImGui_ImplOpenGL3_Init(const char* glsl_version = NULL);
+GO_AWAY_MANGLE GDR_EXPORT void ImGui_ImplOpenGL3_Shutdown(void);
+GO_AWAY_MANGLE GDR_EXPORT void ImGui_ImplOpenGL3_NewFrame(void);
+GO_AWAY_MANGLE GDR_EXPORT void ImGui_ImplOpenGL3_RenderDrawData(void *draw_data);
 
 // (Optional) Called by Init/NewFrame/Shutdown
-extern "C" IMGUI_IMPL_API bool     ImGui_ImplOpenGL3_CreateFontsTexture();
-extern "C" IMGUI_IMPL_API void     ImGui_ImplOpenGL3_DestroyFontsTexture();
-extern "C" IMGUI_IMPL_API bool     ImGui_ImplOpenGL3_CreateDeviceObjects();
-extern "C" IMGUI_IMPL_API void     ImGui_ImplOpenGL3_DestroyDeviceObjects();
+GO_AWAY_MANGLE GDR_EXPORT qboolean ImGui_ImplOpenGL3_CreateFontsTexture();
+GO_AWAY_MANGLE GDR_EXPORT void ImGui_ImplOpenGL3_DestroyFontsTexture();
+GO_AWAY_MANGLE GDR_EXPORT qboolean ImGui_ImplOpenGL3_CreateDeviceObjects();
+GO_AWAY_MANGLE GDR_EXPORT void ImGui_ImplOpenGL3_DestroyDeviceObjects();
 
 // Specific OpenGL ES versions
 //#define IMGUI_IMPL_OPENGL_ES2     // Auto-detected on Emscripten

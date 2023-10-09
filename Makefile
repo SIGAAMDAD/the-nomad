@@ -102,7 +102,7 @@ OPTIMIZERS    =\
 			-rdynamic -export-dynamic \
 			-mfma -msse3 -msse2 -msse -mavx -mavx2 -mmmx -mfpmath=sse
 
-CFLAGS        =-std=c++17 $(FTYPE) $(DEFINES) $(INCLUDE) $(OPTIMIZERS)
+CFLAGS        =-std=c++17 $(FTYPE) -Wno-unused-result $(DEFINES) $(INCLUDE) $(OPTIMIZERS)
 CC            =$(COMPILER)
 O             = obj
 QVM           = qvm
@@ -117,34 +117,30 @@ endif
 
 ifndef win32
 LDLIBS=-L/usr/lib/x86_64-linux-gnu/ \
-		-lz \
-		-lbz2 \
 		-lGL \
 		-lboost_thread \
 		$(LIB_PREFIX)/libEASTL.a \
-		$(LIB_PREFIX)/libzstd.a \
 		$(LIB_PREFIX)/libopenal.a \
 		-L$(LIB_PREFIX) \
 		-lSDL2 \
 		-lsndfile \
 		-leasy_profiler
 SYS=\
-	$(O)/sys/unix_main.o
+	$(O)/sys/unix_main.o \
+	$(O)/sys/unix_shared.o
 SYS_DIR=$(SDIR)/unix
 else
 LDLIBS=-L$(LIB_PREFIX) \
 		-lSDL2 \
-		-lz \
-		-lbz2 \
 		-lopenal \
 		-lGL \
 		-lsndfile \
 		-lzstd \
-		-lsteam_api \
 		-lboost_thread \
 		-leasy_profiler
 SYS=\
-	$(O)/sys/win_main.o
+	$(O)/sys/win_main.o \
+	$(O)/sys/win_shared.o
 SYS_DIR=$(SDIR)/win32
 endif
 
@@ -176,13 +172,17 @@ SRC=\
 	$(O)/engine/n_history.o \
 	$(O)/engine/n_event.o \
 	$(O)/engine/n_sound.o \
+	$(O)/engine/n_math.o \
 	$(O)/engine/md4.o \
+	\
+	$(O)/rendercommon/imgui.o \
+	$(O)/rendercommon/imgui_draw.o \
+	$(O)/rendercommon/imgui_widgets.o \
+	$(O)/rendercommon/imgui_tables.o \
 	\
 	$(O)/allocator/z_heap.o \
 	$(O)/allocator/z_hunk.o \
 	$(O)/allocator/z_zone.o \
-	$(O)/allocator/z_alloc.o \
-
 
 MAKE=make
 
@@ -199,12 +199,15 @@ makedirs:
 	@if [ ! -d $(O)/allocator ];then $(MKDIR) $(O)/allocator;fi
 	@if [ ! -d $(O)/common ];then $(MKDIR) $(O)/common;fi
 	@if [ ! -d $(O)/engine ];then $(MKDIR) $(O)/engine;fi
+	@if [ ! -d $(O)/rendercommon ];then $(MKDIR) $(O)/rendercommon;fi
 	@if [ ! -d $(O)/sys ];then $(MKDIR) $(O)/sys;fi
 	@if [ ! -d $(O)/nmap ];then $(MKDIR) $(O)/nmap;fi
 
 targets: makedirs
 	$(MAKE) $(EXE)
 
+$(O)/rendercommon/%.o: $(SDIR)/rendercommon/%.cpp
+	$(COMPILE_SRC)
 $(O)/common/%.o: $(SDIR)/common/%.cpp
 	$(COMPILE_SRC)
 $(O)/common/%.o: $(SDIR)/common/%.c
@@ -223,10 +226,10 @@ $(O)/sys/%.o: $(SYS_DIR)/%.cpp
 	$(COMPILE_SRC)
 
 $(EXE): $(SRC) $(COMMON) $(SYS)
-	$(CC) $(CFLAGS) $(SRC) $(COMMON) $(SYS) -o $(EXE) $(LDLIBS) -Wl,-rpath=. rendergl.$(DLL_EXT)
+	$(CC) $(CFLAGS) $(SRC) $(COMMON) $(SYS) -o $(EXE) $(LDLIBS) libimgui.a
 
 clean.pch:
-	rm $(SDIR)/src/n_pch_all.h.gch
+	rm $(SDIR)/engine/n_pch_all.h.gch
 clean.exe:
 	rm $(EXE)
 clean.objs:

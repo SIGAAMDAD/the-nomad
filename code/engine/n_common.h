@@ -10,6 +10,7 @@
 Common functionality for the engine and vm alike
 */
 
+void Com_Frame(void);
 int Com_Milliseconds( void );
 qboolean Com_EarlyParseCmdLine( char *commandLine, char *con_title, int title_size, int *vid_xpos, int *vid_ypos );
 uint32_t crc32_buffer(const byte *buf, uint32_t len);
@@ -282,7 +283,7 @@ typedef enum {
 	FS_OPEN_READ,
 	FS_OPEN_WRITE,
 	FS_OPEN_APPEND,
-	FS_OPEN_RW = FS_OPEN_READ | FS_OPEN_WRITE
+	FS_OPEN_RW
 } fileMode_t;
 
 #define FS_SEEK_END 0
@@ -319,7 +320,7 @@ fileOffset_t FS_VM_FileSeek(file_t f, fileOffset_t offset, uint32_t whence, hand
 uint64_t FS_VM_FOpenFileWrite(const char *path, file_t *f, handleOwner_t owner);
 void FS_VM_CloseFiles(handleOwner_t owner);
 
-void FS_Init(void);
+void FS_Startup(void);
 void FS_InitFilesystem(void);
 void FS_Shutdown(qboolean closeFiles);
 void FS_Restart(void);
@@ -402,8 +403,6 @@ typedef struct memoryMap_s memoryMap_t;
 
 const char *Sys_GetSteamPath(void);
 uint64_t Sys_Milliseconds(void);
-void Sys_InitConsole(void);
-void Sys_FreeConsole(void);
 FILE *Sys_FOpen(const char *filepath, const char *mode);
 
 // Sys_MapMemory should only be called by the filesystem

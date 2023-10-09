@@ -3,6 +3,7 @@
 #include "sys_unix.h"
 #include "code/engine/n_scf.h"
 #include "code/engine/n_sound.h"
+#include <execinfo.h>
 
 #define SYS_BACKTRACE_MAX 1024
 
@@ -18,15 +19,26 @@ static qboolean ttycon_on = qfalse;
 static qboolean ttycon_color_on = qfalse;
 static cvar_t *ttycon;
 static cvar_t *ttycon_ansicolor;
+extern file_t logfile;
 
+typedef enum {
+	TTY_ENABLED,
+	TTY_DISABLED,
+	TTY_ERROR
+} tty_err;
+
+void Sys_ShutdownConsole(void);
+tty_err Sys_InitConsole( void );
+
+/*
+Forcing an inline because the backtrace traces the call to the backtrace... (irony)
+*/
 #define BACKTRACE(amount) \
 { \
-    if (!FS_Initialized()) { \
-        return; \
-    } \
     if (amount > SYS_BACKTRACE_MAX) { \
         Con_Printf(COLOR_RED "Attempted to stacktrace > %i, aborting\n", SYS_BACKTRACE_MAX); \
     } \
+    else if (!FS_Initialized()) {} \
     else { \
         void **arr; \
         char *buffer; \
@@ -40,8 +52,8 @@ static cvar_t *ttycon_ansicolor;
             ospath = FS_BuildOSPath(Cvar_VariableString("fs_basepath"), NULL, "backtrace.dat"); \
             tempfp = Sys_FOpen(ospath, "w+"); \
             if (!tempfp) { \
-                FS_Printf(logfile, C_RED "ERROR:" C_RESET " Failed to open a backtrace file" GDR_NEWLINE); \
-                fprintf(stderr, C_RED "ERROR:" C_RESET " Failed to open a backtrace file\n"); \
+                FS_Printf(logfile, "ERROR: Failed to open a backtrace file" GDR_NEWLINE); \
+                fprintf(stderr, "ERROR: Failed to open a backtrace file\n"); \
                 Com_Shutdown(); \
                 exit(-1); \
             } \
@@ -57,6 +69,70 @@ static cvar_t *ttycon_ansicolor;
         Con_Printf("Stack List:\n%s\n", buffer); \
         fclose(tempfp); \
     } \
+}
+
+// flush stdin, I suspect some terminals are sending a LOT of shit
+static void tty_FlushIn(void)
+{
+    tcflush(STDIN_FILENO, TCIFLUSH);
+}
+
+// do a backspace
+// TTimo NOTE: it seems on some terminals just sending '\b' is not enough
+//   so for now, in any case we send "\b \b" .. yeah well ..
+//   (there may be a way to find out if '\b' alone would work though)
+static void tty_Back( void )
+{
+	write( STDOUT_FILENO, "\b \b", 3 );
+}
+
+// clear the display of the line currently edited
+// bring cursor back to beginning of line
+void tty_Hide( void )
+{
+	int i;
+
+	if ( !ttycon_on )
+		return;
+
+	if ( ttycon_hide )
+	{
+		ttycon_hide++;
+		return;
+	}
+
+	if ( tty_con.cursor > 0 )
+	{
+		for ( i = 0; i < tty_con.cursor; i++ )
+		{
+			tty_Back();
+		}
+	}
+	tty_Back(); // delete "]" ? -EC-
+	ttycon_hide++;
+}
+
+
+// show the current line
+// FIXME TTimo need to position the cursor if needed??
+void tty_Show( void )
+{
+	if ( !ttycon_on )
+		return;
+
+	if ( ttycon_hide > 0 )
+	{
+		ttycon_hide--;
+		if ( ttycon_hide == 0 )
+		{
+			write( STDOUT_FILENO, "]", 1 ); // -EC-
+
+			if ( tty_con.cursor > 0 )
+			{
+				write( STDOUT_FILENO, tty_con.buffer, tty_con.cursor );
+			}
+		}
+	}
 }
 
 typedef struct
@@ -99,8 +175,8 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error(const
 		tty_Hide();
 	}
 
-	va_start( argptr, format );
-	N_vsnprintf( text, sizeof( text ), format, argptr );
+	va_start( argptr, fmt );
+	N_vsnprintf( text, sizeof( text ), fmt, argptr );
 	va_end( argptr );
 
     msg = va("Sys_Error: %s\n", text);
@@ -140,12 +216,14 @@ void GDR_NORETURN Sys_Exit(int code)
         _Exit(EXIT_FAILURE); // kill the program, don't care about anything else, this is probably a segfault
 
     Com_Shutdown();
+    Sys_ShutdownConsole();
 
     if (code == -1)
         exit(EXIT_FAILURE);
     
     exit(EXIT_SUCCESS);
 }
+
 
 void fpe_exception_handler(int signum)
 {
@@ -169,14 +247,14 @@ static const struct Q3ToAnsiColorTable_s
 	const char Q3color;
 	const char *ANSIcolor;
 } tty_colorTable[ ] = {
-	{ COLOR_BLACK,    "30" },
-	{ COLOR_RED,      "31" },
-	{ COLOR_GREEN,    "32" },
-	{ COLOR_YELLOW,   "33" },
-	{ COLOR_BLUE,     "34" },
-	{ COLOR_CYAN,     "36" },
-	{ COLOR_MAGENTA,  "35" },
-	{ COLOR_WHITE,    "0" }
+	{ S_COLOR_BLACK,    "30" },
+	{ S_COLOR_RED,      "31" },
+	{ S_COLOR_GREEN,    "32" },
+	{ S_COLOR_YELLOW,   "33" },
+	{ S_COLOR_BLUE,     "34" },
+	{ S_COLOR_CYAN,     "36" },
+	{ S_COLOR_MAGENTA,  "35" },
+	{ S_COLOR_WHITE,    "0" }
 };
 
 static const char *getANSIcolor( char Q3color ) {
@@ -189,65 +267,7 @@ static const char *getANSIcolor( char Q3color ) {
 	return NULL;
 }
 
-// flush stdin, I suspect some terminals are sending a LOT of shit
-static void tty_FlushIn(void)
-{
-    tcflush(STDIN_FILENO, TCIFLUSH);
-}
-
-// do a backspace
-// TTimo NOTE: it seems on some terminals just sending '\b' is not enough
-//   so for now, in any case we send "\b \b" .. yeah well ..
-//   (there may be a way to find out if '\b' alone would work though)
-static void tty_Back( void )
-{
-	write( STDOUT_FILENO, "\b \b", 3 );
-}
-
-
-// clear the display of the line currently edited
-// bring cursor back to beginning of line
-void tty_Hide( void )
-{
-	int i;
-
-	if ( !ttycon_on )
-		return;
-
-	if ( ttycon_hide ) {
-		ttycon_hide++;
-		return;
-	}
-
-	if ( tty_con.cursor > 0 ) {
-		for ( i = 0; i < tty_con.cursor; i++ ) {
-			tty_Back();
-		}
-	}
-	tty_Back(); // delete "]" ? -EC-
-	ttycon_hide++;
-}
-
-
-// show the current line
-// FIXME TTimo need to position the cursor if needed??
-void tty_Show( void )
-{
-	if ( !ttycon_on )
-		return;
-
-	if ( ttycon_hide > 0 ) {
-		ttycon_hide--;
-		if ( ttycon_hide == 0 ) {
-			write( STDOUT_FILENO, "]", 1 ); // -EC-
-			if ( tty_con.cursor > 0 ) {
-				write( STDOUT_FILENO, tty_con.buffer, tty_con.cursor );
-			}
-		}
-	}
-}
-
-void Sys_ConsoleShutdown(void)
+void Sys_ShutdownConsole(void)
 {
     if (ttycon_on) {
         tty_Back();
@@ -269,7 +289,7 @@ void Sys_ConsoleShutdown(void)
 
 void Sys_SigCont(int signum)
 {
-    Sys_ConsoleInit();
+    Sys_InitConsole();
 }
 
 void Sys_SigTStp(int signum)
@@ -277,7 +297,7 @@ void Sys_SigTStp(int signum)
     sigset_t mask;
 
     tty_FlushIn();
-    Sys_ConsoleShutdown();
+    Sys_ShutdownConsole();
 
     sigemptyset(&mask);
     sigaddset(&mask, SIGTSTP);
@@ -462,7 +482,7 @@ void Sys_LockMutex(mutex_t *m)
 }
 #endif
 
-int Sys_InitConsole(void)
+tty_err Sys_InitConsole(void)
 {
     struct termios tc;
     const char *term;
@@ -474,13 +494,13 @@ int Sys_InitConsole(void)
     signal(SIGCONT, Sys_SigCont);
 
     if (signal(SIGTSTP, SIG_IGN) == SIG_DFL) {
-        signal(SIGTSTP, Con_SigTStp);
+        signal(SIGTSTP, Sys_SigTStp);
     }
 
     stdin_flags = fcntl(STDIN_FILENO, F_GETFL, 0);
     if (stdin_flags == -1) {
         stdin_active = qfalse;
-        return -1;
+        return TTY_ERROR;
     }
 
     // set non-blocking mode
@@ -490,7 +510,7 @@ int Sys_InitConsole(void)
     term = getenv("TERM");
     if (isatty(STDIN_FILENO) != -1 || !term || !strcmp(term, "dumb") || !strcmp(term, "raw")) {
         ttycon_on = qfalse;
-        return -1;
+        return TTY_DISABLED;
     }
 
     Field_Clear(&tty_con);
@@ -511,7 +531,7 @@ int Sys_InitConsole(void)
     tty_Hide();
     tty_Show();
     
-    return 1;
+    return TTY_ENABLED;
 }
 
 void Sys_PrintBinVersion( const char* name )
@@ -581,12 +601,51 @@ int Sys_ParseArgs(int argc, const char *argv[])
     return 0;
 }
 
+static void SignalHandle(int signum)
+{
+    if (signum == SIGSEGV) {
+        exit_type = &signals[0];
+        Sys_Error("recieved SIGSEGV");
+    } else if (signum == SIGABRT) {
+        exit_type = &signals[2];
+        Sys_Error("recieved SIGABRT");
+    } else if (signum == SIGTERM) {
+        signal(SIGTERM, SignalHandle);
+    } else if (signum == SIGBUS) {
+        exit_type = &signals[1];
+        Sys_Error("recieved SIGBUS");
+    } else if (signum == SIGILL) {
+        exit_type = &signals[5];
+        Sys_Error("recieved SIGILL");
+    } else if (signum == SIGFPE) {
+        Con_DPrintf("recieved SIGFPE, floating point exception, continuing...\n");
+        signal(SIGFPE, SignalHandle);
+    } else if (signum == SIGTRAP) {
+        Con_DPrintf("DebugBreak Triggered...\n");
+        signal(SIGTRAP, SignalHandle);
+    } else {
+        Con_DPrintf("Unknown signal (%i)... Wtf?\n", signum);
+    }
+}
+
+void Sys_Init(void)
+{
+    signal(SIGTERM, SignalHandle);
+    signal(SIGSEGV, SignalHandle);
+    signal(SIGFPE, SignalHandle);
+    signal(SIGABRT, SignalHandle);
+    signal(SIGBUS, SignalHandle);
+    signal(SIGTRAP, SignalHandle);
+    signal(SIGILL, SignalHandle);
+}
+
 int main(int argc, char **argv)
 {
     char con_title[MAX_CVAR_VALUE];
     int xpos, ypos;
     char *cmdline;
     int len, i;
+    tty_err err;
 
 #ifdef __APPLE__
 	// This is passed if we are launched by double-clicking
@@ -611,10 +670,9 @@ int main(int argc, char **argv)
 		strcat( cmdline, argv[i] );
 	}
 
-	/*useXYpos = */ Com_EarlyParseCmdLine( cmdline, con_title, sizeof( con_title ), &xpos, &ypos );
-
 	// get the initial time base
 	Sys_Milliseconds();
+    Sys_Init();
     
     Com_Init(cmdline);
 
@@ -622,10 +680,10 @@ int main(int argc, char **argv)
 	// so modify/init any cvars here
 	ttycon = Cvar_Get( "ttycon", "1", 0 );
 	Cvar_SetDescription(ttycon, "Enable access to input/output console terminal.");
-	ttycon_ansicolor = Cvar_Get( "ttycon_ansicolor", "0", CVAR_ARCHIVE );
+	ttycon_ansicolor = Cvar_Get( "ttycon_ansicolor", "0", CVAR_SAVE );
 	Cvar_SetDescription(ttycon_ansicolor, "Convert in-game color codes to ANSI color codes in console terminal.");
 
-	err = Sys_ConsoleInputInit();
+	err = Sys_InitConsole();
 	if ( err == TTY_ENABLED ) {
 		Con_Printf( "Started tty console (use +set ttycon 0 to disable)\n" );
 	}

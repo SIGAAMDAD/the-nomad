@@ -374,7 +374,7 @@ static void Com_KeyDownEvent(uint32_t key, uint32_t time)
 			Key_SetCatcher(Key_GetCatcher() & ~KEYCATCH_CONSOLE);
 		}
 		else {
-			Key_SetCatcher(Key_GetCatcher() | KEYCATCH_CONSOLE);
+			Key_SetCatcher(KEYCATCH_CONSOLE);
 		}
 		return;
 	}
@@ -403,9 +403,6 @@ static void Com_KeyDownEvent(uint32_t key, uint32_t time)
         return;
     }
 
-//	if (Key_GetCatcher() & KEYCATCH_SCRIPT) {
-//		G_CallVM(VM_UI, 2, UI_KEY_EVENT, key, qfalse);
-//	}
 	if (Key_GetCatcher() & KEYCATCH_SGAME) {
 		VM_Call(sgvm, 2, SGAME_KEY_EVENT, key, qtrue);
 	}

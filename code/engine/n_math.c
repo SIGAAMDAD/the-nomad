@@ -14,8 +14,6 @@
 #endif
 #endif
 
-int CPU_flags;
-
 const vec2_t vec2_origin = {0, 0};
 const vec3_t vec3_origin = {0, 0};
 

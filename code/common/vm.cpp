@@ -234,6 +234,7 @@ static void VM_LoadSymbols(vm_t* vm);
 static uint8_t* loadImage(const char* filepath, int* imageSize);
 static void VM_StackTrace(vm_t* vm, int programCounter, int programStack);
 
+#if 0
 void GDR_ATTRIBUTE((format(printf, 2, 3))) VM_Error(vm_t *vm, const char *fmt, ...)
 {
     va_list argptr;
@@ -246,7 +247,7 @@ void GDR_ATTRIBUTE((format(printf, 2, 3))) VM_Error(vm_t *vm, const char *fmt, .
     N_Error(ERR_DROP, "%s", msg);
     VM_Restart(vm);
 }
-
+#endif
 
 
 /*
@@ -654,7 +655,7 @@ static vmHeader_t* VM_LoadQVM(vm_t* vm, qboolean alloc)
 
 	if ( alloc ) {
 		// allocate zero filled space for initialized and uninitialized data
-		vm->dataBase = (byte *)Hunk_Alloc( dataAlloc, "VMdataBase", h_high );
+		vm->dataBase = (byte *)Hunk_Alloc( dataAlloc, h_high );
 		vm->dataMask = dataLength - 1;
 		vm->dataAlloc = dataAlloc;
 	}
@@ -686,7 +687,7 @@ static vmHeader_t* VM_LoadQVM(vm_t* vm, qboolean alloc)
 		Con_Printf( "Loading %i jump table targets\n", vm->numJumpTableTargets );
 
 		if ( alloc ) {
-			vm->jumpTableTargets = (int32_t *) Hunk_Alloc( header->jtrgLength, "jtrgLength", h_high );
+			vm->jumpTableTargets = (int32_t *) Hunk_Alloc( header->jtrgLength, h_high );
 		}
         else {
 			if ( vm->numJumpTableTargets != previousNumJumpTableTargets ) {
@@ -720,7 +721,7 @@ static vmHeader_t* VM_LoadQVM(vm_t* vm, qboolean alloc)
 		vm->numJumpTableTargets = length >> 2;
 		Con_Printf( "Loading %i external jump table targets\n", vm->numJumpTableTargets );
 		if ( alloc == qtrue ) {
-			vm->jumpTableTargets = (int32_t *) Hunk_Alloc( length, "jumpTables", h_high );
+			vm->jumpTableTargets = (int32_t *) Hunk_Alloc( length, h_high );
 		} else {
 		    memset( vm->jumpTableTargets, 0, length );
 		}
@@ -843,7 +844,7 @@ static void VM_BlockCopy(unsigned int dest, unsigned int src, size_t n,
     if ((dest & dataMask) != dest || (src & dataMask) != src ||
         ((dest + n) & dataMask) != dest + n ||
         ((src + n) & dataMask) != src + n) {
-        VM_Error(vm, "OP_BLOCK_COPY out of range");
+        N_Error(ERR_DROP, "OP_BLOCK_COPY out of range");
         return;
     }
 
@@ -1597,7 +1598,7 @@ qboolean VM_PrepareInterpreter2(vm_t* vm, vmHeader_t* header)
     const char *errMsg;
     instruction_t *buf;
 
-    buf = (instruction_t *)Hunk_Alloc((vm->instructionCount + 8) * sizeof(instruction_t), "VMinstruct", h_low);
+    buf = (instruction_t *)Hunk_Alloc((vm->instructionCount + 8) * sizeof(instruction_t), h_low);
 
     errMsg = VM_LoadInstructions((byte *)header + header->codeOffset, header->codeLength, header->instructionCount, buf);
 #if 0
@@ -1696,7 +1697,7 @@ void VM_VmProfile_f(const vm_t* vm)
     if (vm->numSymbols < 1)
         return;
 
-    sorted = (vmSymbol_t **)Z_Malloc(vm->numSymbols * sizeof(*sorted), TAG_STATIC, &sorted, "dbgSymbols");
+    sorted = (vmSymbol_t **)Z_Malloc(vm->numSymbols * sizeof(*sorted), TAG_STATIC);
     sorted[0] = vm->symbols;
     total     = (float)sorted[0]->profileCount;
     for (i = 1; i < vm->numSymbols; i++) {
