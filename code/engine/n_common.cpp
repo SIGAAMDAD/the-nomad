@@ -1,11 +1,9 @@
 #include "n_shared.h"
-#include "n_scf.h"
+#include "n_common.h"
 #include "../game/g_game.h"
-#include "../rendergl/rgl_public.h"
-#include "n_sound.h"
-#include "n_map.h"
-#include "../common/vm.h"
+#include "../rendercommon/r_public.h"
 #include "../rendercommon/imgui_impl_sdl2.h"
+#include "vm_local.h"
 
 namespace EA::StdC {
 	int Vsnprintf(char* EA_RESTRICT pDestination, size_t n, const char* EA_RESTRICT pFormat, va_list arguments)
@@ -28,7 +26,10 @@ int CPU_flags;
 cvar_t *com_demo;
 cvar_t *com_journal;
 cvar_t *com_logfile;
-cvar_t *com_errorCode;
+errorCode_t com_errorCode;
+#ifdef USE_AFFINITY_MASK
+cvar_t *com_affinityMask;
+#endif
 cvar_t *sys_cpuString;
 cvar_t *com_devmode;
 cvar_t *com_version;
@@ -37,7 +38,7 @@ uint64_t com_frameTime;
 uint64_t com_cacheLine; // L1 cacheline
 char com_errorMessage[MAXPRINTMSG];
 static jmp_buf abortframe;
-qboolean com_errorEntered;
+qboolean com_errorEntered = qfalse;
 
 /*
 ===============================================================
@@ -84,6 +85,7 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Con_Printf(const char *fmt, 
     char msg[MAXPRINTMSG];
     static qboolean opening_console = qfalse;
 
+	memset(msg, 0, sizeof(msg));
     va_start(argptr, fmt);
     length = N_vsnprintf(msg, sizeof(msg), fmt, argptr);
     va_end(argptr);
@@ -179,8 +181,6 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error(errorCo
 	}
 	com_errorEntered = qtrue;
 
-	Cvar_Set("com_errorCode", va("%i", code));
-
 	// if we are getting a solid stream of ERR_DROP, do an ERR_FATAL
 	currentTime = Sys_Milliseconds();
 	if ( currentTime - lastErrorTime < 100 ) {
@@ -196,6 +196,7 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error(errorCo
     N_vsnprintf(com_errorMessage, sizeof(com_errorMessage), err, argptr);
     va_end(argptr);
 
+	com_errorCode = code;
 	Cbuf_Init();
 
 	if (code == ERR_DROP) {
@@ -212,7 +213,8 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error(errorCo
 		Q_longjmp( abortframe, 1 );
 	} else { // ERR_FATAL
 		VM_Forced_Unload_Start();
-		G_Shutdown(qtrue);
+		G_ShutdownVMs();
+		G_ShutdownRenderer(REF_UNLOAD_DLL);
 		Com_EndRedirect();
 		VM_Forced_Unload_Done();
 	}
@@ -253,7 +255,7 @@ EVENT LOOP
 */
 
 
-static void Com_InitEvents(void)
+static void Com_InitPushEvent(void)
 {
 	// clear the static buffer array
 	// this requires SE_NONE to be accepted as a valid but NOP event
@@ -478,7 +480,7 @@ uint64_t Com_EventLoop(void)
 
 		switch (ev.evType) {
 		case SE_KEY:
-			Com_KeyEvent(ev.evValue, (qboolean)ev.evValue2, ev.evTime);
+			G_KeyEvent(ev.evValue, (qboolean)ev.evValue2, ev.evTime);
 			break;
 		case SE_WINDOW:
 			Com_WindowEvent(ev.evValue);
@@ -487,7 +489,7 @@ uint64_t Com_EventLoop(void)
 //			Com_MouseEvent(ev.evValue, ev.evValue2);
 //			break;
 		case SE_CONSOLE:
-			Com_KeyEvent(KEY_CONSOLE, 1, ev.evTime);
+			G_KeyEvent(KEY_CONSOLE, 1, ev.evTime);
 			break;
 		default:
 			N_Error(ERR_FATAL, "Com_EventLoop: bad event type %i", ev.evType);
@@ -538,6 +540,17 @@ static void Com_Freeze_f( void ) {
 			break;
 		}
 	}
+}
+
+#define NOMAD_CONFIG "default.cfg"
+
+//
+// Com_LoadConfig: loads the default configuration file
+//
+void Com_LoadConfig(void)
+{
+    Cbuf_ExecuteText(EXEC_NOW, "exec " NOMAD_CONFIG);
+    Cbuf_Execute();
 }
 
 //
@@ -624,12 +637,8 @@ Com_Shutdown: shuts down all the engine's systems
 */
 void Com_Shutdown(void)
 {
-	Con_Printf("Com_Shutdown: shutting down engine\n");
-
 	Con_Shutdown();
 	FS_Shutdown(qtrue);
-	G_Shutdown(qtrue);
-	Memory_Shutdown();
 }
 
 #ifdef USE_AFFINITY_MASK
@@ -893,6 +902,100 @@ static void Sys_GetProcessorId( char *vendor )
 
 #endif // non-x86
 
+
+#ifdef USE_AFFINITY_MASK
+
+static int hex_code( const int code ) {
+	if ( code >= '0' && code <= '9' ) {
+		return code - '0';
+	}
+	if ( code >= 'A' && code <= 'F' ) {
+		return code - 'A' + 10;
+	}
+	if ( code >= 'a' && code <= 'f' ) {
+		return code - 'a' + 10;
+	}
+	return -1;
+}
+
+
+static const char *parseAffinityMask( const char *str, uint64_t *outv, int level ) {
+	uint64_t v, mask = 0;
+
+	while ( *str != '\0' ) {
+		if ( *str == 'A' || *str == 'a' ) {
+			mask = affinityMask;
+			++str;
+			continue;
+		}
+		else if ( *str == 'P' || *str == 'p' ) {
+			mask = pCoreMask;
+			++str;
+			continue;
+		}
+		else if ( *str == 'E' || *str == 'e' ) {
+			mask = eCoreMask;
+			++str;
+			continue;
+		}
+		else if ( *str == '0' && (str[1] == 'x' || str[1] == 'X') && (v = hex_code( str[2] )) >= 0 ) {
+			int hex;
+			str += 3; // 0xH
+			while ( (hex = hex_code( *str )) >= 0 ) {
+				v = v * 16 + hex;
+				str++;
+			}
+			mask = v;
+			continue;
+		}
+		else if ( *str >= '0' && *str <= '9' ) {
+			mask = *str++ - '0';
+			while ( *str >= '0' && *str <= '9' ) {
+				mask = mask * 10 + *str - '0';
+				++str;
+			}
+			continue;
+		}
+
+		if ( level == 0 ) {
+			while ( *str == '+' || *str == '-' ) {
+				str = parseAffinityMask( str + 1, &v, level + 1 );
+				switch ( *str ) {
+					case '+': mask |= v; break;
+					case '-': mask &= ~v; break;
+					default: str = ""; break;
+				}
+			}
+			if ( *str != '\0' ) {
+				++str; // skip unknown characters
+			}
+		} else {
+			break;
+		}
+	}
+
+	*outv = mask;
+	return str;
+}
+
+
+// parse and set affinity mask
+static void Com_SetAffinityMask( const char *str )
+{
+	uint64_t mask = 0;
+
+	parseAffinityMask( str, &mask, 0 );
+
+	if ( ( mask & affinityMask ) == 0 ) {
+		mask = affinityMask; // reset to default
+	}
+
+	if ( mask != 0 ) {
+		Sys_SetAffinityMask( mask );
+	}
+}
+#endif // USE_AFFINITY_MASK
+
 const char *Com_VersionString(void)
 {
 	const char *versionType;
@@ -916,6 +1019,7 @@ static void Com_GameRestart_f(void)
 	Cvar_Set("fs_game", Cmd_Argv(1));
 	Com_RestartGame();
 }
+
 
 
 /*
@@ -1121,7 +1225,9 @@ void Com_Init(char *commandLine)
 {
 	uint64_t lastTime;
 
-	Con_Init();
+	// get the cacheline for optimized allocations and memory management
+	com_cacheLine = SDL_GetCPUCacheLineSize();
+
 	Con_Printf(
 		"================================================\n"
 		"\"The Nomad\" is free software distributed under\n"
@@ -1135,21 +1241,25 @@ void Com_Init(char *commandLine)
 	if (Q_setjmp(abortframe)) {
 		Sys_Error("Error during initialization");
 	}
-	Con_Printf("Com_Init: initializing systems\n");
 
-	// get the cacheline for optimized allocations and memory management
-	com_cacheLine = SDL_GetCPUCacheLineSize();
+	Com_InitPushEvent();
 
-	Z_Init();
+	Z_InitSmallZoneMemory();
 	Cvar_Init();
-	Cbuf_Init();
-	Cmd_Init();
 
+	// prepare enough of the subsystems to handle
+	// cvar and command buffer management
 	Com_ParseCommandLine(commandLine);
+
+	Cbuf_Init();
 
 	// override anything from the config files with command line args
 	Com_StartupVariable( NULL );
 
+	Z_InitMemory();
+	Cmd_Init();
+
+	// get the developer cvar set as early as possible
 	Com_StartupVariable("com_devmode");
 #ifdef _NOMAD_DEBUG
 	com_devmode = Cvar_Get("com_devmode", "1", CVAR_INIT | CVAR_PROTECTED);
@@ -1178,6 +1288,7 @@ void Com_Init(char *commandLine)
 
 	com_frameTime = 0;
 
+	// done early so bind command exists
 	Com_InitKeyCommands();
 
 	FS_InitFilesystem();
@@ -1186,10 +1297,20 @@ void Com_Init(char *commandLine)
 	com_logfile = Cvar_Get("com_logfile", "1", CVAR_TEMP);
 	Cvar_CheckRange(com_logfile, "0", "1", CVT_INT);
 	Cvar_SetDescription(com_logfile, "System console logging");
+#ifdef USE_AFFINITY_MASK
+	com_affinityMask = Cvar_Get("com_affinityMask", "", CVAR_ARCHIVE_ND);
+	Cvar_SetDescription( com_affinityMask, "Bind game process to bitmask-specified CPU core(s), special characters:\n A or a - all default cores\n P or p - performance cores\n E or e - efficiency cores\n 0x<value> - use hexadecimal notation\n + or - can be used to add or exclude particular cores" );
+	com_affinityMask->modified = qfalse;
+#endif
 
 	Com_InitJournals();
-	Com_InitEvents();
 
+	Com_LoadConfig();
+
+	// override anything from the config files with command line args
+	Com_StartupVariable( NULL );
+
+	// allocate the stack based hunk allocator
 	Hunk_InitMemory();
 
 	Cmd_AddCommand("shutdown", Com_Shutdown_f);
@@ -1209,6 +1330,20 @@ void Com_Init(char *commandLine)
 		Cvar_Set("sys_cpuString", vendor);
 	}
 	Con_Printf("%s\n", Cvar_VariableString("sys_cpuString"));
+
+#ifdef USE_AFFINITY_MASK
+	// get initial process affinity - we will respect it when setting custom affinity masks
+	eCoreMask = pCoreMask = affinityMask = Sys_GetAffinityMask();
+#if (GDRx64 || GDRi386)
+	DetectCPUCoresConfig();
+#endif
+	if (com_affinityMask->s[0] != '\0') {
+		Com_SetAffinityMask(com_affinityMask->s);
+		com_affinityMask->modified = qfalse;
+	}
+#endif
+
+	VM_Init();
 
 	G_Init();
 

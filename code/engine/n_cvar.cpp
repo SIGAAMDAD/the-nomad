@@ -691,7 +691,7 @@ cvar_t *Cvar_Set2(const char *var_name, const char *value, qboolean force)
                     return var;
             }
 
-            Con_Printf("%s will be changed upon restarting.", var_name);
+            Con_Printf("%s will be changed upon restarting.\n", var_name);
             var->latchedString = Z_Strdup(value);
             var->modified = qtrue;
             var->modificationCount++;

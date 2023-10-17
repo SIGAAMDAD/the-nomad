@@ -165,15 +165,15 @@ void Cvar_SetBooleanValue(const char *name, qboolean value);
 #define S_COLOR_WHITE		'7'
 #define S_COLOR_RESET		'8'
 
-#define COLOR_BLACK		"\\^0"
-#define COLOR_RED		"\\^1"
-#define COLOR_GREEN		"\\^2"
-#define COLOR_YELLOW	"\\^3"
-#define COLOR_BLUE		"\\^4"
-#define COLOR_CYAN		"\\^5"
-#define COLOR_MAGENTA	"\\^6"
-#define COLOR_WHITE		"\\^7"
-#define COLOR_RESET		"\\^8"
+#define COLOR_BLACK		"^0"
+#define COLOR_RED		"^1"
+#define COLOR_GREEN		"^2"
+#define COLOR_YELLOW	"^3"
+#define COLOR_BLUE		"^4"
+#define COLOR_CYAN		"^5"
+#define COLOR_MAGENTA	"^6"
+#define COLOR_WHITE		"^7"
+#define COLOR_RESET		"^8"
 
 extern const vec4_t	g_color_table[ 64 ];
 extern int ColorIndexFromChar( char ccode );

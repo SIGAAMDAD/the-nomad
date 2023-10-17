@@ -123,13 +123,22 @@ static inline const char *BFF_CompressionString(int compression)
 	return "None";
 }
 
+#ifdef PATH_MAX
+#define MAX_OSPATH PATH_MAX
+#else
+#define MAX_OSPATH 256
+#endif
 
 void DecompileBFF(const char *filepath)
 {
-	FILE* fp = SafeOpen(filepath, "rb");
-
-	bff_t* archive = (bff_t *)SafeMalloc(sizeof(bff_t), "bffArchive");
+	uint64_t offset, nameLen, size;
 	bffheader_t header;
+	char name[MAX_OSPATH];
+	char gameName[MAX_BFF_PATH];
+	FILE *fp;
+
+	fp = SafeOpen(filepath, "rb");
+
 	SafeRead(fp, &header, sizeof(bffheader_t));
 	if (header.ident != BFF_IDENT) {
 		BFF_Error("DecompileBFF: file isn't a bff archive");
@@ -144,35 +153,31 @@ void DecompileBFF(const char *filepath)
 		Con_Printf("======== WARNING: Version found in header isn't the same as this application's ========\n");
 	}
 	
-	SafeRead(fp, archive->bffGamename, sizeof(archive->bffGamename));
+	SafeRead(fp, gameName, sizeof(gameName));
 
 	Con_Printf(
 		"<-------- HEADER -------->\n"
+		"name: %s\n"
 		"total chunks: %lu\n"
 		"compression: %s\n"
 		"version: %hu\n",
-	header.numChunks, BFF_CompressionString(header.compression), header.version);
+	gameName, header.numChunks, BFF_CompressionString(header.compression), header.version);
 
-	archive->numChunks = header.numChunks;
-	archive->chunkList = (bff_chunk_t *)SafeMalloc(sizeof(bff_chunk_t) * header.numChunks, "chunkList");
+	for (int64_t i = 0; i < header.numChunks; i++) {
+		offset = ftell(fp);
 
-	for (int64_t i = 0; i < archive->numChunks; i++) {
-		size_t offset = ftell(fp);
-
-		SafeRead(fp, archive->chunkList[i].chunkName, MAX_BFF_CHUNKNAME);
-		SafeRead(fp, &archive->chunkList[i].chunkSize, sizeof(int64_t));
+		SafeRead(fp, &nameLen, sizeof(uint64_t));
+		SafeRead(fp, name, nameLen);
+		SafeRead(fp, &size, sizeof(int64_t));
 		Con_Printf(
 			"<-------- CHUNK %li -------->\n"
 			"size: %3.03f KiB\n"
 			"name: %s\n"
 			"offset: %lu\n",
-		i, ((float)archive->chunkList[i].chunkSize / 1024), archive->chunkList[i].chunkName, offset);
+		i, ((float)size / 1024), name, offset);
 
-		archive->chunkList[i].chunkBuffer = (char *)SafeMalloc(archive->chunkList[i].chunkSize, "chunkBuffer");
-		SafeRead(fp, archive->chunkList[i].chunkBuffer, sizeof(char) * archive->chunkList[i].chunkSize);
-		free(archive->chunkList[i].chunkBuffer);
+		offset = ftell(fp);
+		fseek(fp, offset + size, SEEK_SET);
 	}
 	fclose(fp);
-	free(archive->chunkList);
-	free(archive);
 }

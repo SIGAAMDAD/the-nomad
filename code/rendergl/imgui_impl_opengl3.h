@@ -24,8 +24,21 @@
 
 #pragma once
 
+typedef struct {
+    texture_t       *fontTexture;
+    shaderProgram_t *shader;
+    GLint           AttribLocationTex;       // Uniforms location
+    GLint           AttribLocationProjMtx;
+    GLuint          AttribLocationVtxPos;    // Vertex attributes location
+    GLuint          AttribLocationVtxUV;
+    GLuint          AttribLocationVtxColor;
+
+    vertexBuffer_t *buffer;
+    qboolean        HasClipOrigin;
+} imguiData_t;
+
 // Backend API
-GO_AWAY_MANGLE GDR_EXPORT void *ImGui_ImplOpenGL3_Init(const char* glsl_version = NULL);
+GO_AWAY_MANGLE GDR_EXPORT void *ImGui_ImplOpenGL3_Init(const char* glsl_version);
 GO_AWAY_MANGLE GDR_EXPORT void ImGui_ImplOpenGL3_Shutdown(void);
 GO_AWAY_MANGLE GDR_EXPORT void ImGui_ImplOpenGL3_NewFrame(void);
 GO_AWAY_MANGLE GDR_EXPORT void ImGui_ImplOpenGL3_RenderDrawData(void *draw_data);

@@ -64,6 +64,14 @@ typedef enum
     NUM_UI_IMPORT
 } uiImport_t;
 
+typedef enum {
+    UI_MENU_TITLE,
+    UI_MENU_MAIN,
+    UI_MENU_SELECT_LEVEL,
+    UI_MENU_SETTINGS,
+    UI_MENU_PAUSE
+} uiMenu_t;
+
 typedef enum
 {
     UI_INIT,
@@ -73,6 +81,9 @@ typedef enum
     UI_CONSOLE_COMMAND,
     UI_GETAPIVERSION,
     UI_FINISH_FRAME,
+    UI_IS_FULLSCREEN,
+    UI_DRAW_MENU,
+    UI_SET_ACTIVE_MENU,
 
     NUM_UIEXPORT
 } uiExport_t;

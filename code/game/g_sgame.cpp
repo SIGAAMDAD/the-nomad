@@ -1,10 +1,10 @@
-#include "../engine/n_shared.h"
 #include "g_game.h"
-#include "../rendergl/rgl_public.h"
-#include "../common/vm_syscalls.h"
-#include "../common/vm.h"
+#include "../rendercommon/r_public.h"
 #include "../sgame/sg_public.h"
-#include "../engine/n_sound.h"
+#include "../engine/vm_local.h"
+
+#define VM_CHECKBOUNDS(addr1,len) VM_CheckBounds(sgvm,(addr1),(len))
+#define VM_CHECKBOUNDS2(addr1,addr2,len) VM_CheckBounds2(sgvm,(addr1),(addr2),(len))
 
 static void G_AddSGameCommand(const char *name)
 {
@@ -78,11 +78,11 @@ static intptr_t G_SGameSystemCalls(intptr_t *args)
     case SG_ARGC:
         return Cmd_Argc();
     case SG_ARGV:
-        OUT_OF_BOUNDS(sgvm, args[2], args[3]);
+        VM_CHECKBOUNDS(args[2], args[3]);
         Cmd_ArgvBuffer(args[1], (char *)VMA(2), args[3]);
         return 0;
     case SG_ARGS:
-        OUT_OF_BOUNDS(sgvm, args[1], args[2]);
+        VM_CHECKBOUNDS(args[1], args[2]);
         Cmd_ArgsBuffer((char *)VMA(1), args[2]);
         break;
     case SG_CVAR_UPDATE:
@@ -107,11 +107,13 @@ static intptr_t G_SGameSystemCalls(intptr_t *args)
     case SG_FS_FILETELL:
         return (intptr_t)FS_FileTell(args[1]);
     case TRAP_MEMSET:
+        VM_CHECKBOUNDS(args[1], args[3]);
         return (intptr_t)memset(VMA(1), args[2], args[3]);
 	case TRAP_MEMCPY:
+        VM_CHECKBOUNDS2(args[1], args[2], args[3]);
         return (intptr_t)memcpy(VMA(1), VMA(2), args[3]);
 	case TRAP_STRNCPY:
-        OUT_OF_BOUNDS(sgvm, args[1], args[3]);
+        VM_CHECKBOUNDS(args[1], args[3]);
         return (intptr_t)strncpy((char *)VMA(1), (const char *)VMA(2), args[3]);
 	case TRAP_FLOOR:
         return FloatToInt(floor(VMF(1)));

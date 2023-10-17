@@ -3,20 +3,22 @@
 
 #pragma once
 
+#define MAX_VIDEO_HANDLES	16
+
 typedef struct {
     vec3_t xyz;
-    vec3_t color;
     vec2_t uv;
+	color4ub_t modulate;
 } polyVert_t;
 
-typedef enum {
-	STEREO_CENTER,
-	STEREO_LEFT,
-	STEREO_RIGHT
-} stereoFrame_t;
+typedef struct {
+	nhandle_t hShader;
+	uint32_t numVerts;
+	polyVert_t *verts;
+} poly_t;
 
 /*
-** glconfig_t
+** gpuConfig_t
 **
 ** Contains variables specific to the OpenGL configuration
 ** being run right now.  These are constant once the OpenGL
@@ -26,7 +28,7 @@ typedef enum {
 	TC_NONE,
 	TC_S3TC,  // this is for the GL_S3_s3tc extension.
 	TC_S3TC_ARB  // this is for the GL_EXT_texture_compression_s3tc extension.
-} textureCompression_t;
+} glTextureCompression_t;
 
 typedef enum {
 	GLDRV_ICD,					// driver is integrated with window system
@@ -47,6 +49,12 @@ typedef enum {
 	GLHW_RAGEPRO,			// where you can't modulate alpha on alpha textures
 	GLHW_PERMEDIA2			// where you don't have src*dst
 } glHardwareType_t;
+
+typedef enum {
+	STEREO_CENTER,
+	STEREO_LEFT,
+	STEREO_RIGHT
+} stereoFrame_t;
 
 typedef struct {
     int maxTextureSize; // queried from GL
@@ -73,5 +81,13 @@ typedef struct {
 #else
 #define OPENGL_DRIVER_NAME	"libGL.so.1"
 #endif
+
+enum {
+	RF_LIGHTING_ORIGIN,
+};
+
+typedef struct {
+	vec3_t origin;
+} refEntity_t;
 
 #endif

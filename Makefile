@@ -146,43 +146,36 @@ endif
 
 .PHONY: all clean targets clean.objs clean.exe clean.pch pch makedirs default
 
-COMMON_DIR=$(O)/common
 ENGINE_DIR=$(O)/engine
-ALLOCATOR_DIR=$(O)/allocator
 GAME_DIR=$(O)/game
 
 COMPILE_SRC=$(CC) $(CFLAGS) -o $@ -c $<
 
-COMMON=\
-	$(O)/common/vm.o \
-	$(O)/common/vm_interpreted.o \
-	$(O)/common/vm_x86.o
 SRC=\
 	$(O)/game/g_game.o \
 	$(O)/game/g_sgame.o \
 	$(O)/game/g_ui.o \
+	$(O)/game/g_event.o \
+	$(O)/game/g_sound.o \
+	$(O)/game/g_console.o \
 	\
-	$(O)/engine/n_console.o \
-	$(O)/engine/n_scf.o \
+	$(O)/engine/vm.o \
+	$(O)/engine/vm_interpreted.o \
+	$(O)/engine/vm_x86.o \
 	$(O)/engine/n_common.o \
 	$(O)/engine/n_files.o \
 	$(O)/engine/n_shared.o \
 	$(O)/engine/n_cmd.o \
 	$(O)/engine/n_cvar.o \
 	$(O)/engine/n_history.o \
-	$(O)/engine/n_event.o \
-	$(O)/engine/n_sound.o \
 	$(O)/engine/n_math.o \
+	$(O)/engine/n_memory.o \
 	$(O)/engine/md4.o \
 	\
 	$(O)/rendercommon/imgui.o \
 	$(O)/rendercommon/imgui_draw.o \
 	$(O)/rendercommon/imgui_widgets.o \
 	$(O)/rendercommon/imgui_tables.o \
-	\
-	$(O)/allocator/z_heap.o \
-	$(O)/allocator/z_hunk.o \
-	$(O)/allocator/z_zone.o \
 
 MAKE=make
 
@@ -196,21 +189,14 @@ MKDIR=mkdir -p
 makedirs:
 	@if [ ! -d $(O) ];then mkdir $(O);fi
 	@if [ ! -d $(O)/game ];then $(MKDIR) $(O)/game;fi
-	@if [ ! -d $(O)/allocator ];then $(MKDIR) $(O)/allocator;fi
-	@if [ ! -d $(O)/common ];then $(MKDIR) $(O)/common;fi
 	@if [ ! -d $(O)/engine ];then $(MKDIR) $(O)/engine;fi
 	@if [ ! -d $(O)/rendercommon ];then $(MKDIR) $(O)/rendercommon;fi
 	@if [ ! -d $(O)/sys ];then $(MKDIR) $(O)/sys;fi
-	@if [ ! -d $(O)/nmap ];then $(MKDIR) $(O)/nmap;fi
 
 targets: makedirs
 	$(MAKE) $(EXE)
 
 $(O)/rendercommon/%.o: $(SDIR)/rendercommon/%.cpp
-	$(COMPILE_SRC)
-$(O)/common/%.o: $(SDIR)/common/%.cpp
-	$(COMPILE_SRC)
-$(O)/common/%.o: $(SDIR)/common/%.c
 	$(COMPILE_SRC)
 $(O)/game/%.o: $(SDIR)/game/%.cpp
 	$(COMPILE_SRC)
@@ -219,8 +205,6 @@ $(O)/game/%.o: $(SDIR)/game/%.c
 $(O)/engine/%.o: $(SDIR)/engine/%.cpp
 	$(COMPILE_SRC)
 $(O)/engine/%.o: $(SDIR)/engine/%.c
-	$(COMPILE_SRC)
-$(O)/allocator/%.o: $(SDIR)/allocator/%.cpp
 	$(COMPILE_SRC)
 $(O)/sys/%.o: $(SYS_DIR)/%.cpp
 	$(COMPILE_SRC)

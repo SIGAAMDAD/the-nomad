@@ -1,4 +1,4 @@
-#include "n_shared.h"
+#include "code/engine/n_shared.h"
 
 const byte locase[ 256 ] = {
 	0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
@@ -549,7 +549,7 @@ void N_strncpyz (char *dest, const char *src, size_t count)
 	if (count < 1)
 		N_Error(ERR_FATAL, "N_strncpyz: bad count");
 	
-#if 1 
+#if 0 // [glnomad] this ain't quake 3
 	// do not fill whole remaining buffer with zeros
 	// this is obvious behavior change but actually it may affect only buggy QVMs
 	// which passes overlapping or short buffers to cvar reading routines
@@ -1172,6 +1172,38 @@ int GDR_ATTRIBUTE((format(printf, 3, 4))) GDR_DECL Com_snprintf( char *dest, uin
 	dest[ len ] = '\0';
 
 	return len;
+}
+
+/*
+============
+COM_SkipPath
+============
+*/
+char *COM_SkipPath (char *pathname)
+{
+	char	*last;
+	
+	last = pathname;
+	while (*pathname) {
+		if (*pathname=='/')
+			last = pathname+1;
+		pathname++;
+	}
+	return last;
+}
+
+/*
+============
+COM_GetExtension
+============
+*/
+const char *COM_GetExtension( const char *name )
+{
+	const char *dot = strrchr(name, '.'), *slash;
+	if (dot && ((slash = strrchr(name, '/')) == NULL || slash < dot))
+		return dot + 1;
+	else
+		return "";
 }
 
 /*

@@ -97,6 +97,9 @@ Index of this file:
 #include <stdint.h>         // intptr_t
 #endif
 
+#define STB_SPRINTF_IMPLEMENTATION
+#include "stb_sprintf.h"
+
 // Visual Studio warnings
 #ifdef _MSC_VER
 #pragma warning (disable: 4127)     // condition expression is constant

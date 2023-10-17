@@ -19,6 +19,7 @@ enum {
 	TAG_SEARCH_PATH	= 6, // a filesystem searchpath
 	TAG_BFF			= 7, // a bff archive file
 	TAG_HUNK		= 8, // allocated with temp hunk
+	TAG_SMALL		= 9, // special smallzone tag
 	TAG_PURGELEVEL	= 100, // purgeable block
 	TAG_CACHE		= 101, // cached block, migh be used in the future, but can also be purged
 };
@@ -58,8 +59,6 @@ GO_AWAY_MANGLE uint64_t Com_TouchMemory(void);
 
 GO_AWAY_MANGLE void* Z_SMalloc(uint32_t size);
 GO_AWAY_MANGLE void* Z_Malloc(uint32_t size, int tag);
-GO_AWAY_MANGLE void* Z_Calloc(uint32_t size, int tag);
-GO_AWAY_MANGLE void* Z_Realloc(void *ptr, uint32_t nsize, int tag);
 GO_AWAY_MANGLE char* Z_Strdup(const char *str);
 GO_AWAY_MANGLE void Z_Free(void *ptr);
 
@@ -67,7 +66,7 @@ GO_AWAY_MANGLE void Z_FreeTags(int lowtag, int hightag);
 GO_AWAY_MANGLE void Z_ChangeTag(void* user, int tag);
 GO_AWAY_MANGLE void Z_CleanCache(void);
 GO_AWAY_MANGLE void Z_CheckHeap(void);
-GO_AWAY_MANGLE void Z_ClearZone(void);
+GO_AWAY_MANGLE void Z_ClearZone(memzone_t *zone);
 GO_AWAY_MANGLE void Z_Print(bool all);
 GO_AWAY_MANGLE void Z_Init(void);
 GO_AWAY_MANGLE uint64_t Z_FreeMemory(void);

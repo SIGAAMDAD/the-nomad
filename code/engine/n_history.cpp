@@ -1,4 +1,5 @@
 #include "n_shared.h"
+#include "n_common.h"
 
 void Field_Clear( field_t *edit )
 {

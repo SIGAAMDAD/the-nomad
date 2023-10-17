@@ -32,7 +32,6 @@ typedef int intptr_t;
 // from dhwem3
 #define INFINITY 1e30f
 
-#define NULL ((void *)0)
 typedef char* va_list;
 #define _INTSIZEOF(n) ((sizeof(n) + sizeof(int) - 1) & ~(sizeof(int) - 1))
 #define va_start(ap, v) (ap = (va_list)&v + _INTSIZEOF(v))

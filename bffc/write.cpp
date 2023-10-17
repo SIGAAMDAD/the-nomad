@@ -160,6 +160,7 @@ void WriteBFF(const char *outfile, const char *jsonfile, int compression)
 {
 	bff_t *archive;
 	FILE *fp, *jsonfp;
+	uint64_t nameLen;
 
 	nameLen = 0;
 	jsonfp = SafeOpen(jsonfile, "r");

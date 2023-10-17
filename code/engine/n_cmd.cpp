@@ -1,4 +1,6 @@
 #include "n_shared.h"
+#include "n_common.h"
+
 /*
 ==================================================
 Commands:
@@ -580,40 +582,6 @@ void Cmd_ExecuteString(const char *str)
 	}
 }
 
-#if 0
-void Cmd_ExecuteText(const char *str)
-{
-	boost::lock_guard<boost::recursive_mutex> lock{cmdLock};
-    cmd_t *cmd;
-	const char *cmdstr;
-
-    if (!*str) {
-        return; // nothing to do
-    }
-	if (*str == '/' || *str == '\\') {
-		str++;
-	}
-	Cmd_TokenizeString(str);
-	if (!Cmd_Argc()) {
-		return; // no tokens
-	}
-	cmdstr = cmd_argv[0];
-    cmd = Cmd_FindCommand(cmdstr);
-	if (cmd && cmd->function) {
-		cmd->function();
-		return;
-	}
-	else {
-		Con_Printf("Command '%s' doesn't exist\n", cmdstr);
-		return;
-	}
-
-//	if (Cvar_Command()) {
-//		return;
-//	}
-}
-#endif
-
 void Cmd_SetHelpString(const char *name, const char *help)
 {
 	cmd_t *cmd;
@@ -631,6 +599,7 @@ void Cmd_SetHelpString(const char *name, const char *help)
 void Cmd_AddCommand(const char *name, cmdfunc_t func)
 {
     cmd_t* cmd;
+	
     if (Cmd_FindCommand(name)) {
         if (func)
             Con_Printf("Cmd_AddCommand: %s already defined\n", name);

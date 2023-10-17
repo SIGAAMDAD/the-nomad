@@ -1,8 +1,7 @@
-#include "code/rendergl/rgl_public.h"
-#include "code/engine/n_shared.h"
+#include "../engine/n_shared.h"
+#include "../engine/n_common.h"
+#include "../game/g_game.h"
 #include "sys_unix.h"
-#include "code/engine/n_scf.h"
-#include "code/engine/n_sound.h"
 #include <execinfo.h>
 
 #define SYS_BACKTRACE_MAX 1024
@@ -197,25 +196,16 @@ void GDR_NORETURN Sys_Exit(int code)
     const bool debug = false;
 #endif
 
-    // we're in developer mode and/or debug mode, print a stacktrace
-    if ((Cvar_VariableInteger("c_devmode") || debug) && code == -1) {
-        BACKTRACE(SYS_BACKTRACE_MAX);
-    }
-
     if (code == -1) {
         if (exit_type)
             err = exit_type->str;
         else
             err = "No System Error";
         if (N_stricmp("No System Error", err) != 0)
-            Con_Printf(COLOR_RED "Exiting With System Error: %s", err);
+            fprintf(stderr, "Exiting With System Error: %s\n", err);
         else
-            Con_Printf(COLOR_RED "Exiting With Engine Error");
+            fprintf(stderr, "Exiting With Engine Error\n");
     }
-    if (exit_type && !exit_type->safe)
-        _Exit(EXIT_FAILURE); // kill the program, don't care about anything else, this is probably a segfault
-
-    Com_Shutdown();
     Sys_ShutdownConsole();
 
     if (code == -1)
@@ -355,10 +345,12 @@ void Sys_Print(const char *msg)
     char printmsg[MAXPRINTMSG];
     size_t len;
 
+    memset(printmsg, 0, sizeof(printmsg));
+
     if (ttycon_on) {
         tty_Hide();
     }
-    if (ttycon_on && ttycon_color_on) {
+    if (ttycon_color_on) {
         Sys_ANSIColorMsg(msg, printmsg, sizeof(printmsg));
         len = strlen(printmsg);
     }
@@ -490,6 +482,8 @@ tty_err Sys_InitConsole(void)
     signal(SIGTTIN, SIG_IGN);
     signal(SIGTTOU, SIG_IGN);
 
+    Con_Printf("Sys_InitConsole: initializing logging\n");
+
     // if SIGCONT is recieved, reinitialize the console
     signal(SIGCONT, Sys_SigCont);
 
@@ -506,6 +500,8 @@ tty_err Sys_InitConsole(void)
     // set non-blocking mode
     fcntl(STDIN_FILENO, F_SETFL, stdin_flags | O_NONBLOCK);
     stdin_active = qtrue;
+
+    ttycon_color_on = qtrue;
 
     term = getenv("TERM");
     if (isatty(STDIN_FILENO) != -1 || !term || !strcmp(term, "dumb") || !strcmp(term, "raw")) {
@@ -618,10 +614,12 @@ static void SignalHandle(int signum)
         exit_type = &signals[5];
         Sys_Error("recieved SIGILL");
     } else if (signum == SIGFPE) {
-        Con_DPrintf("recieved SIGFPE, floating point exception, continuing...\n");
+        Con_DPrintf("recieved SIGFPE, floating point exception, don't really care... continuing...\n");
+        BACKTRACE(128); // do a stack dump
         signal(SIGFPE, SignalHandle);
     } else if (signum == SIGTRAP) {
         Con_DPrintf("DebugBreak Triggered...\n");
+        BACKTRACE(128); // do a stack dump
         signal(SIGTRAP, SignalHandle);
     } else {
         Con_DPrintf("Unknown signal (%i)... Wtf?\n", signum);
@@ -673,26 +671,19 @@ int main(int argc, char **argv)
 	// get the initial time base
 	Sys_Milliseconds();
     Sys_Init();
-    
-    Com_Init(cmdline);
 
-    // Sys_ConsoleInputInit() might be called in signal handler
-	// so modify/init any cvars here
-	ttycon = Cvar_Get( "ttycon", "1", 0 );
-	Cvar_SetDescription(ttycon, "Enable access to input/output console terminal.");
-	ttycon_ansicolor = Cvar_Get( "ttycon_ansicolor", "0", CVAR_SAVE );
-	Cvar_SetDescription(ttycon_ansicolor, "Convert in-game color codes to ANSI color codes in console terminal.");
-
-	err = Sys_InitConsole();
+    err = Sys_InitConsole();
 	if ( err == TTY_ENABLED ) {
 		Con_Printf( "Started tty console (use +set ttycon 0 to disable)\n" );
 	}
 	else {
 		if ( err == TTY_ERROR ) {
 			Con_Printf( "stdin is not a tty, tty console mode failed\n" );
-			Cvar_Set( "ttycon", "0" );
+            ttycon_on = qfalse;
 		}
 	}
+    
+    Com_Init(cmdline);
 
 	while (1) {
 		// run the game

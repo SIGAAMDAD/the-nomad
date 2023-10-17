@@ -3,8 +3,7 @@
 
 #pragma once
 
-#include "../common/n_vm.h"
-#include "../sgame/sg_public.h"
+#include <sys/types.h>
 
 /*
 Common functionality for the engine and vm alike
@@ -18,7 +17,6 @@ qboolean Com_EarlyParseCmdLine( char *commandLine, char *con_title, int title_si
 void Com_StartupVariable( const char *match );
 void Com_Init(char *commandLine);
 void Com_Shutdown(void);
-void GDR_DECL Com_Printf(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
 uint64_t Com_GenerateHashValue(const char *fname, const uint64_t size);
 void Con_RenderConsole(void);
 void Com_WriteConfig(void);
@@ -32,6 +30,7 @@ const char* Com_Base64Decode(void);
 void Com_SortFileList( char **list, uint64_t nfiles, uint64_t fastSort );
 void Com_TruncateLongString( char *buffer, const char *s );
 int Com_HexStrToInt(const char *str);
+const char *COM_GetExtension(const char *name);
 void COM_StripExtension(const char *in, char *out, uint64_t destsize);
 void COM_BeginParseSession( const char *name );
 uint64_t COM_GetCurrentParseLine( void );
@@ -254,6 +253,10 @@ typedef enum {
 	H_RENDERER
 } handleOwner_t;
 
+#define FS_GENERAL_REF 0x01
+#define FS_UI_REF 0x02
+#define FS_SGAME_REF 0x04
+
 #define NUM_GDR_BFFS 1
 
 #define FS_MATCH_BASEDIR	(1<<0)
@@ -383,6 +386,72 @@ extern int CPU_flags;
 #define CPU_SSE3	0x10
 #define CPU_SSE41	0x20
 
+enum {
+	TAG_FREE,
+	TAG_STATIC,
+	TAG_BFF,
+	TAG_SEARCH_PATH,
+	TAG_RENDERER,
+	TAG_GAME,
+	TAG_SMALL,
+	TAG_SFX,
+	TAG_MUSIC,
+	TAG_HUNK,
+
+	TAG_COUNT
+};
+
+typedef enum {
+	h_low,
+	h_high,
+	h_dontcare
+} ha_pref;
+
+#ifdef _NOMAD_DEBUG
+#define Z_Realloc(ptr, nsize, tag)	Z_ReallocDebug(ptr, nsize, tag, #nsize, __FILE__, __LINE__)
+#define Z_Malloc(size, tag)			Z_MallocDebug(size, tag, #size, __FILE__, __LINE__)
+#define Z_SMalloc(size)				Z_SMallocDebug(size, #size, __FILE__, __LINE__)
+void *Z_ReallocDebug(void *ptr, uint32_t nsize, int tag, const char *label, const char *file, unsigned line);
+void *Z_MallocDebug(uint32_t size, int tag, const char *label, const char *file, unsigned line);
+void *Z_SMallocDebug(uint32_t size, const char *label, const char *file, unsigned line);
+#else
+void *Z_Realloc(void *ptr, uint32_t nsize, int tag);
+void *Z_Malloc(uint32_t size, int tag);
+void *Z_SMalloc(uint32_t size);
+#endif
+void Z_Free(void *ptr);
+uint64_t Z_FreeTags(int lowtag, int hightag);
+uint64_t Z_AvailableMemory(void);
+char *Z_Strdup(const char *str);
+
+void Z_InitSmallZoneMemory(void);
+void Z_InitMemory(void);
+void Hunk_InitMemory(void);
+
+#ifdef _NOMAD_DEBUG
+void *Hunk_AllocDebug( uint64_t size, ha_pref preference, const char *name, const char *file, uint64_t line );
+#define Hunk_Alloc(size,preference) Hunk_AllocDebug(size,preference,#size,__FILE__,__LINE__)
+#else
+void *Hunk_Alloc( uint64_t size, ha_pref preference );
+#endif
+void Hunk_Clear(void);
+void *Hunk_AllocateTempMemory(uint64_t size);
+void Hunk_FreeTempMemory(void *buffer);
+void Hunk_ClearTempMemory(void);
+uint64_t Hunk_MemoryRemaining(void);
+void Hunk_Log(void);
+void Hunk_SmallLog(void);
+qboolean Hunk_CheckMark(void);
+void Hunk_ClearToMark( void );
+void Hunk_Print(void);
+void Hunk_Check(void);
+void Hunk_InitMemory(void);
+qboolean Hunk_TempIsClear(void);
+
+uint64_t Com_TouchMemory(void);
+
+typedef struct vm_s vm_t;
+
 
 /*
 System calls, engine only stuff
@@ -431,7 +500,7 @@ qboolean Sys_mkdir(const char *name);
 
 void Sys_Print(const char *msg);
 void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error(const char *fmt, ...);
-char *Sys_GetClipoardData(void);
+char *Sys_GetClipboardData(void);
 
 const char *Sys_pwd(void);
 void *Sys_LoadDLL(const char *name);

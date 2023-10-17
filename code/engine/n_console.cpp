@@ -5,7 +5,7 @@
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "../rendercommon/imstb_truetype.h"
 #include "../rendercommon/imgui.h"
-#include "../rendergl/rgl_public.h"
+#include "../rendercommon/r_public.h"
 
 #define  CON_TEXTSIZE   65536
 
@@ -14,7 +14,37 @@
 static char conBuffer[CON_TEXTSIZE];
 static uint64_t usedBytes;
 
-file_t logfile;
+typedef struct {
+	qboolean	initialized;
+
+	short	text[CON_TEXTSIZE];
+	int		current;		// line where next message will be printed
+	int		x;				// offset in current line for next print
+	int		display;		// bottom of console displays this line
+
+	int 	linewidth;		// characters across screen
+	int		totallines;		// total lines in console scrollback
+
+	float	xadjust;		// for wide aspect screens
+
+	float	displayFrac;	// aproaches finalFrac at scr_conspeed
+	float	finalFrac;		// 0.0 to 1.0 lines of console to display
+
+	int		vislines;		// in scanlines
+
+	int		times[NUM_CON_TIMES];	// cls.realtime time the line was generated
+								// for transparent notify lines
+	vec4_t	color;
+
+	int		viswidth;
+	int		vispage;		
+
+	qboolean newline;
+
+} console_t;
+
+static console_t con;
+file_t logfile = FS_INVALID_HANDLE;
 field_t con_field;
 cvar_t *con_noprint;
 cvar_t *con_color;
@@ -74,6 +104,8 @@ void Con_DrawConsole(void)
         return;
     }
     ImGui::PushStyleColor(ImGuiCol_WindowBg, { conColor[0], conColor[1], conColor[2], conColor[3] });
+    ImGui::SetScrollY(con.current);
+    ImGui::SetScrollX(con.x);
 
     {
         // quake3 style console
