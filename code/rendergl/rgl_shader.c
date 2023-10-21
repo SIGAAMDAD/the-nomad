@@ -176,7 +176,7 @@ static shader_t *FinishShader(void)
     uint64_t hash;
 	
 	if (shader.defaultShader) {
-		sh = &rg.defaultShader;
+		sh = rg.defaultShader;
 		return sh;
 	}
 
@@ -229,6 +229,15 @@ static const char *FindShaderInShaderText( const char *shadername )
 	}
 
 	return NULL;
+}
+
+/*
+InitShader
+*/
+static void InitShader(const char *name)
+{
+	memset(&shader, 0, sizeof(shader));
+	N_strncpyz(shader.name, name, sizeof(shader.name));
 }
 
 
@@ -293,7 +302,7 @@ shader_t *R_FindShader(const char *name)
     for (sh = hashTable[hash]; sh; sh = sh->next) {
         if (sh->defaultShader || !N_stricmp(sh->name, name)) {
             // match found
-            return sh->index;
+            return sh;
         }
     }
 
@@ -436,9 +445,9 @@ static int loadShaderBuffers( char **shaderFiles, const uint64_t numShaderFiles,
 			token = COM_ParseExt( &p, qtrue );
 			if ( token[0] != '{' || token[1] != '\0' ) {
 				ri.Printf( PRINT_DEVELOPER, "File %s: shader \"%s\" " \
-					"on line %d missing opening brace", filename, shaderName, shaderLine );
+					"on line %lu missing opening brace", filename, shaderName, shaderLine );
 				if ( token[0] )
-					ri.Printf( PRINT_DEVELOPER, " (found \"%s\" on line %d)\n", token, COM_GetCurrentParseLine() );
+					ri.Printf( PRINT_DEVELOPER, " (found \"%s\" on line %lu)\n", token, COM_GetCurrentParseLine() );
 				else
 					ri.Printf( PRINT_DEVELOPER, "\n" );
 
@@ -457,7 +466,7 @@ static int loadShaderBuffers( char **shaderFiles, const uint64_t numShaderFiles,
 
 			if ( !SkipBracedSection( &p, 1 ) ) {
 				ri.Printf(PRINT_INFO, COLOR_YELLOW "WARNING: Ignoring shader file %s. Shader \"%s\" " \
-					"on line %d missing closing brace.\n", filename, shaderName, shaderLine );
+					"on line %lu missing closing brace.\n", filename, shaderName, shaderLine );
 				ri.FS_FreeFile( buffers[i] );
 				buffers[i] = NULL;
 				break;
@@ -605,7 +614,8 @@ static void CreateInternalShaders( void )
 R_InitShaders
 ==================
 */
-void R_InitShaders( void ) {
+void R_InitShaders( void )
+{
 	ri.Printf( PRINT_INFO, "Initializing Shaders\n" );
 
     memset(hashTable, 0, sizeof(hashTable));

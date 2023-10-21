@@ -361,7 +361,7 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
 	N_strcat(dest, size, "#line 0\n");
 }
 
-static int GLSL_InitGPUShader2(shaderProgram_t *program, const char *name, uint32_t attribs, uint64_t size, const char *vsCode, const char *fsCode)
+static int GLSL_InitGPUShader2(shaderProgram_t *program, const char *name, uint32_t attribs, const char *vsCode, const char *fsCode)
 {
     ri.Printf(PRINT_DEVELOPER, "---------- GPU Shader ----------\n");
 
@@ -412,6 +412,9 @@ static int GLSL_InitGPUShader(shaderProgram_t *program, const char *name, uint32
     char *postHeader;
     uint64_t size;
 
+    rg.programs[rg.numPrograms] = program;
+    rg.numPrograms++;
+
     size = sizeof(vsCode);
 
     if (addHeader) {
@@ -431,7 +434,7 @@ static int GLSL_InitGPUShader(shaderProgram_t *program, const char *name, uint32
 		size = sizeof(fsCode);
 
 		if (addHeader) {
-			GLSL_GetShaderHeader(GL_FRAGMENT_SHADER, extra, fsCode, size);
+			GLSL_PrepareHeader(GL_FRAGMENT_SHADER, extra, fsCode, size);
 			postHeader = &fsCode[strlen(fsCode)];
 			size -= strlen(fsCode);
 		}
@@ -444,7 +447,7 @@ static int GLSL_InitGPUShader(shaderProgram_t *program, const char *name, uint32
 		}
 	}
 
-    return qtrue;
+    return GLSL_InitGPUShader2(program, name, attribs, vsCode, fsCode);
 }
 
 static void GLSL_InitUniforms(shaderProgram_t *program)
@@ -614,7 +617,7 @@ void GLSL_SetUniformVec4(shaderProgram_t *program, uint32_t uniformNum, const ve
     if (VectorCompare4(v, compare))
         return;
     
-    Vector4Copy(compare, v);
+    VectorCopy4(compare, v);
     nglUniform4fARB(uniforms[uniformNum], v[0], v[1], v[2], v[3]);
 }
 
@@ -647,7 +650,10 @@ enum {
 void GLSL_InitGPUShaders(void)
 {
     uint64_t start, end;
+    uint64_t i;
     uint32_t attribs;
+
+    rg.numPrograms = 0;
 
     ri.Printf(PRINT_INFO, "---- GLSL_InitGPUShaders ----\n");
 
@@ -679,10 +685,10 @@ void GLSL_ShutdownGPUShaders(void)
     GL_BindNullProgram();
 
     for (i = 0; i < NUM_SHADER_DEFS; i++)
-        GLSL_DeleteGPUShader(&rg.programs[i]);
+        GLSL_DeleteGPUShader(rg.programs[i]);
 }
 
-void GLSL_BindProgram(shaderProgram_t *program)
+void GLSL_UseProgram(shaderProgram_t *program)
 {
     GLuint programObject = program ? program->programId : 0;
 

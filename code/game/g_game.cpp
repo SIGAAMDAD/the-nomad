@@ -141,7 +141,6 @@ static void G_RefImGuiNewFrame(void) {
 static void G_RefImGuiRender(void) {
     ImGui::Render();
 }
-#include <dlfcn.h>
 
 static void G_InitRenderRef(void)
 {
@@ -153,18 +152,10 @@ static void G_InitRenderRef(void)
 
     Con_Printf( "----- Initializing Renderer ----\n" );
 
-    Con_Printf("Getting rendering API...\n");
-    if (!N_stricmp(g_renderer->s, "OpenGL")) {
-        Con_Printf("using OpenGL rendering\n");
-#ifdef __unix__
-        dllPrefix = "./rendergl";
-#else
-        dllPrefix = "rendergl";
-#endif
-    }
-    else if (!N_stricmp(g_renderer->s, "Vulkan")) {
+    dllPrefix = g_renderer->s;
+
+    if (!N_stricmp(g_renderer->s, "vulkan")) {
         N_Error(ERR_FATAL, "Vulkan rendering not available yet, will be tho in the future... ;)");
-        dllPrefix = "rendervk"; // dead code for now...
     }
 #if defined (__linux__) && defined(__i386__)
 #define REND_ARCH_STRING "x86"
@@ -172,14 +163,14 @@ static void G_InitRenderRef(void)
 #define REND_ARCH_STRING ARCH_STRING
 #endif
 
-    snprintf(dllName, sizeof(dllName), "%s_" REND_ARCH_STRING DLL_EXT, dllPrefix);
+    snprintf(dllName, sizeof(dllName), DLL_PREFIX "glnomad_%s_" REND_ARCH_STRING DLL_EXT, dllPrefix);
     renderLib = Sys_LoadDLL(dllName);
     if (!renderLib) {
         Cvar_ForceReset("g_renderer");
-        snprintf(dllName, sizeof(dllName), "%s_" REND_ARCH_STRING DLL_EXT, dllPrefix);
+        snprintf(dllName, sizeof(dllName), DLL_PREFIX "glnomad_%s_" REND_ARCH_STRING DLL_EXT, dllPrefix);
         renderLib = Sys_LoadDLL(dllName);
         if (!renderLib) {
-            N_Error(ERR_FATAL, "Failed to load rendering library '%s', System Error: %s", dllName, dlerror());
+            N_Error(ERR_FATAL, "Failed to load rendering library '%s'", dllName);
         }
     }
 
@@ -515,9 +506,9 @@ static void G_InitRef_Cvars(void)
     g_drawBuffer = Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
 	Cvar_SetDescription( g_drawBuffer, "Specifies buffer to draw from: GL_FRONT or GL_BACK." );
 
-    g_renderer = Cvar_Get("g_renderer", "OpenGL", CVAR_SAVE | CVAR_LATCH);
+    g_renderer = Cvar_Get("g_renderer", "opengl", CVAR_SAVE | CVAR_LATCH);
     Cvar_SetDescription(g_renderer,
-                        "Set your desired renderer, valid options: OpenGL, Vulkan\n"
+                        "Set your desired renderer, valid options: opengl, vulkan\n"
                         "NOTICE: Vulkan rendering not supported yet...\n"
                         "requires \\vid_restart when changed"
                         );
@@ -928,10 +919,13 @@ static int GLimp_CreateBaseWindow(gpuConfig_t *config)
             SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
         }
 
-        if ((r_window = SDL_CreateWindow(cl_title->s, x, y, config->vidWidth, config->vidHeight, windowFlags)) == NULL) {
-            Con_DPrintf("SDL_CreateWindow(%s, %i, %i, %i, %i, %x) failed: %s",
-                cl_title->s, x, y, config->vidWidth, config->vidHeight, windowFlags, SDL_GetError());
-            return -1;
+        // [glnomad] make sure we only create ONE window
+        if (!r_window) {
+            if ((r_window = SDL_CreateWindow(cl_title->s, x, y, config->vidWidth, config->vidHeight, windowFlags)) == NULL) {
+                Con_DPrintf("SDL_CreateWindow(%s, %i, %i, %i, %i, %x) failed: %s",
+                    cl_title->s, x, y, config->vidWidth, config->vidHeight, windowFlags, SDL_GetError());
+                return -1;
+            }
         }
         if (r_fullscreen->i) {
             SDL_DisplayMode mode;
@@ -1008,6 +1002,7 @@ static int GLimp_CreateBaseWindow(gpuConfig_t *config)
         return -1;
     }
 
+    SDL_GL_MakeCurrent(r_window, r_GLcontext);
     SDL_GL_GetDrawableSize(r_window, &config->vidWidth, &config->vidHeight);
 
     return 1;
@@ -1027,20 +1022,21 @@ void GLimp_Init(gpuConfig_t *config)
     Con_Printf("---------- GLimp_Init ----------\n");
 
     if (!SDL_WasInit(SDL_INIT_VIDEO)) {
-        const char *driverName;
-
         if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-            Con_Printf("SDL_Init(SDL_INIT_VIDEO) Failed (%s)\n", SDL_GetError());
+            N_Error(ERR_FATAL, "SDL_Init(SDL_INIT_VIDEO) Failed: %s", SDL_GetError());
+            return;
         }
-
-        if (!GLimp_CreateBaseWindow(config)) {
-            N_Error(ERR_FATAL, "Failed to init OpenGL\n");
-        }
-
-        driverName = SDL_GetCurrentVideoDriver();
-
-        Con_Printf("SDL using driver \"%s\"\n", driverName);
     }
+
+    const char *driverName;
+
+    if (!GLimp_CreateBaseWindow(config)) {
+        N_Error(ERR_FATAL, "Failed to init OpenGL\n");
+    }
+
+    driverName = SDL_GetCurrentVideoDriver();
+
+    Con_Printf("SDL using driver \"%s\"\n", driverName);
 
     // These values force the UI to disable driver selection
 	config->driverType = GLDRV_ICD;
@@ -1086,8 +1082,16 @@ void G_InitDisplay(gpuConfig_t *config)
 {
     SDL_DisplayMode mode;
 
+    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+        N_Error(ERR_FATAL, "SDL_Init(SDL_INIT_VIDEO) Failed: %s", SDL_GetError());
+    }
     if (SDL_GetDesktopDisplayMode(0, &mode) != 0) {
-        N_Error(ERR_FATAL, "SDL_GetDesktopDisplayMode failed: %s", SDL_GetError());
+        Con_Printf(COLOR_YELLOW "SDL_GetDesktopDisplayMode() Failed: %s\n", SDL_GetError());
+        Con_Printf(COLOR_YELLOW "Setting mode to default of 1920x1080\n");
+
+        mode.refresh_rate = 60;
+        mode.w = 1920;
+        mode.h = 1080;
     }
 
     if (!G_GetModeInfo(&config->vidWidth, &config->vidHeight, &config->windowAspect, r_mode->i,
@@ -1098,12 +1102,16 @@ void G_InitDisplay(gpuConfig_t *config)
         if (!G_GetModeInfo(&config->vidWidth, &config->vidHeight, &config->windowAspect, r_mode->i,
             "", mode.w, mode.h, r_fullscreen->i))
         {
-            N_Error(ERR_FATAL, "G_GetModeInfo failed... wtf...?");
+            Con_Printf(COLOR_YELLOW "Could not determine video mode, setting to default of 1920x1080\n");
+
+            config->vidWidth = 1920;
+            config->vidHeight = 1080;
+            config->windowAspect = 1;
         }
     }
 
     Con_Printf("Setting up display\n");
-    Con_Printf("...setting mode %i:", r_mode->i);
+    Con_Printf("...setting mode %i\n", r_mode->i);
     
     // init OpenGL
     GLimp_Init(config);

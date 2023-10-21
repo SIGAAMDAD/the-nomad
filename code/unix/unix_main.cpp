@@ -6,6 +6,8 @@
 
 #define SYS_BACKTRACE_MAX 1024
 
+extern int dll_error_count;
+
 static field_t tty_con;
 static int stdin_flags;
 static struct termios tty_tc;
@@ -205,6 +207,9 @@ void GDR_NORETURN Sys_Exit(int code)
             fprintf(stderr, "Exiting With System Error: %s\n", err);
         else
             fprintf(stderr, "Exiting With Engine Error\n");
+    }
+    if (dll_error_count) {
+        fprintf(stderr, "Sys_Error: dll_error_count > 0, possible dlerror(): %s\n", dlerror());
     }
     Sys_ShutdownConsole();
 

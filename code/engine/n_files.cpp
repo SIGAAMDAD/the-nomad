@@ -2065,6 +2065,8 @@ static void FS_AddGameDirectory(const char *path, const char *dir)
 	const char *bffpath;
 	uint64_t numBFFs, i;
 	uint64_t path_len, dir_len, size;
+	uint64_t bffDirsI, bffFilesI;
+	int bffWhich;
 
 	for (sp = fs_searchpaths; sp; sp = sp->next) {
 		if (sp->dir && sp->dir->path && sp->dir->gamedir && !N_stricmp(sp->dir->path, path) && !N_stricmp(sp->dir->gamedir, dir)) {

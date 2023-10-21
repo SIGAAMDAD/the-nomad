@@ -45,7 +45,7 @@ CC       =$(COMPILER) -std=c99
 CFLAGS   =$(FTYPE) $(DEFINES) $(INCLUDE) $(OPTIMIZERS)
 O        =obj
 SDIR     =code
-LIB      =rendergl_x86-64.$(DLL_EXT)
+LIB      =glnomad_opengl_x86-64.$(DLL_EXT)
 
 all: $(LIB)
 

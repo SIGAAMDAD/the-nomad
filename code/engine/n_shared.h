@@ -27,6 +27,7 @@ Platform Specific Preprocessors
 	#define PATH_SEP_FOREIGN '/'
 	#define GDR_DECL __cdecl
 	#define GDR_NEWLINE "\r\n"
+	#define DLL_PREFIX ""
 	
 	#if defined(_MSVC_VER) && _MSVC_VER >= 1400
 		#define COMPILER_STRING "msvc"
@@ -76,6 +77,8 @@ Platform Specific Preprocessors
 	#define PATH_SEP_FOREIGN '\\'
 	#define GDR_DECL
 	#define GDR_NEWLINE "\n"
+	#define DLL_PREFIX "./"
+
 	#if defined(__i386__)
 		#define ARCH_STRING "i386"
 		#define GDR_LITTLE_ENDIAN
@@ -309,6 +312,7 @@ Compiler Macro Abstraction
 #include <math.h>
 #include <stddef.h>
 #include <time.h>
+#include <assert.h>
 #endif
 
 #ifndef Q3_VM
@@ -491,11 +495,10 @@ void GDR_ATTRIBUTE((format(printf, 2, 3))) N_Error(errorCode_t code, const char 
 
 #define	IS_NAN(x) (((*(int *)&x)&nanmask)==nanmask)
 
-float Q_fabs( float f );
 float Q_rsqrt( float f );		// reciprocal square root
 
-float Q_log2f( float f );
-float Q_exp2f( float f );
+float N_log2f( float f );
+float N_exp2f( float f );
 
 #define SQRTFAST( x ) ( (x) * Q_rsqrt( x ) )
 
@@ -664,6 +667,7 @@ void VectorRotate( const vec3_t in, const vec3_t matrix[3], vec3_t out );
 int N_log2(int val);
 
 float N_acos(float c);
+float N_fabs( float f );
 
 int N_rand( int *seed );
 float N_random( int *seed );
@@ -719,9 +723,17 @@ int N_isnan( float x );
 #define MIN(x,y) ((x)<(y)?(x):(y))
 #endif
 
+#define NUMVERTEXNORMALS	162
+extern	vec3_t	bytedirs[NUMVERTEXNORMALS];
+
 //=============================================
 
 float Com_Clamp( float min, float max, float value );
+
+// angle indexes
+#define	PITCH				0		// up / down
+#define	YAW					1		// left / right
+#define	ROLL				2		// fall over
 
 
 /*

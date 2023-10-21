@@ -8,6 +8,9 @@
     #error Never include this in engine builds
 #endif
 
+#define NULL ((void *)0)
+#define offsetof(type,member) ((size_t)&(((type*)0)->(member)))
+
 typedef unsigned char uint8_t;
 typedef unsigned short int uint16_t;
 typedef unsigned int uint32_t;

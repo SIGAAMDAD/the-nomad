@@ -497,7 +497,7 @@ static void GpuInfo_f( void )
 	}
 }
 
-static void R_RegisterCvars(void)
+static void R_Register(void)
 {
     //
     // latched and archived variables
@@ -831,9 +831,7 @@ static void R_InitGLContext(void)
             ri.Error(ERR_FATAL, "OpenGL interface is not initialized");
         }
 
-        R_RegisterCvars();
         ri.GLimp_Init(&glConfig);
-        R_InitExtensions();
     }
 
     // GL function loader, based on https://gist.github.com/rygorous/16796a0c876cf8a5f542caddb55bce8a
@@ -902,32 +900,53 @@ static void R_InitGLContext(void)
     glContext->intelGraphics = qfalse;
     if (strstr((const char *)nglGetString(GL_RENDERER), "Intel"))
         glContext->intelGraphics = qtrue;
+    
+    R_InitExtensions();
 }
 
 
 void R_Init(void)
 {
+    GLenum error;
+
     ri.Printf(PRINT_INFO, "---------- RE_Init ----------\n");
 
     if (backend == NULL)
-        backend = ri.Malloc(sizeof(*backend));
-    if (backendData == NULL)
-        backendData = ri.Malloc(sizeof(*backendData));
+        backend = memset(ri.Malloc(sizeof(*backend)), 0, sizeof(*backend));
     if (glContext == NULL)
-        glContext = ri.Malloc(sizeof(*glContext));
+        glContext = memset(ri.Malloc(sizeof(*glContext)), 0, sizeof(*glContext));
 
     // clear all globals
     memset(&rg, 0, sizeof(rg));
-    memset(backend, 0, sizeof(*backend));
-    memset(backendData, 0, sizeof(*backendData));
-    memset(glContext, 0, sizeof(*glContext));
     memset(&glState, 0, sizeof(glState));
 
-    R_InitGLContext();
-    FBO_Init();
+    R_Register();
 
-    backendData->polys = ri.Malloc(sizeof(srfPoly_t) * r_maxPolys->i);
-    backendData->polyVerts = ri.Malloc(sizeof(polyVert_t) * r_maxPolyVerts->i);
+    backendData = ri.Hunk_Alloc(sizeof(*backendData) + sizeof(srfPoly_t) * r_maxPolys->i + sizeof(polyVert_t) * r_maxPolyVerts->i, h_low);
+    backendData->polys = (srfPoly_t *)(backendData + 1);
+    backendData->polyVerts = (polyVert_t *)(backendData->polys + r_maxPolys->i);
+    R_InitNextFrame();
+
+    R_InitGLContext();
+
+    R_InitTextures();
+
+    if (glContext->ARB_framebuffer_object || NGL_VERSION_ATLEAST(3, 0))
+        FBO_Init();
+    
+    GLSL_InitGPUShaders();
+
+    R_InitGPUBuffers();
+
+    R_InitShaders();
+
+    error = nglGetError();
+    if (error != GL_NO_ERROR)
+        ri.Printf(PRINT_INFO, COLOR_RED "glGetError() = 0x%x\n", error);
+    
+    // print info
+    GpuInfo_f();
+    ri.Printf(PRINT_INFO, "---------- finished RE_Init ----------\n");
 }
 
 GDR_EXPORT void RE_BeginRegistration(void)
@@ -938,26 +957,33 @@ GDR_EXPORT void RE_BeginRegistration(void)
 
 void RE_Shutdown(refShutdownCode_t code)
 {
-    ImGui_ImplOpenGL3_Shutdown();
-
     ri.Printf(PRINT_INFO, "RE_Shutdown( %i )\n", code);
 
     ri.Cmd_RemoveCommand("texturelist");
-    ri.Cmd_RemoveCommand("shaderlist");
     ri.Cmd_RemoveCommand("screenshot");
     ri.Cmd_RemoveCommand("gpuinfo");
     ri.Cmd_RemoveCommand("gpumeminfo");
 
     if (rg.registered) {
         R_IssuePendingRenderCommands();
+
         R_DeleteTextures();
         FBO_Shutdown();
         R_ShutdownBuffers();
         GLSL_ShutdownGPUShaders();
     }
 
+    // shutdown platform specific OpenGL thingies
+    if (code != REF_KEEP_CONTEXT) {
+        ri.GLimp_Shutdown(code == REF_UNLOAD_DLL ? qtrue : qfalse);
+
+        memset(&glConfig, 0, sizeof(glConfig));
+        memset(&glState, 0, sizeof(glState));
+    }
+
     // free everything
     ri.FreeAll();
+    rg.registered = qfalse;
     backend = NULL;
     glContext = NULL;
 }
@@ -972,6 +998,7 @@ Touch all images to make sure they are resident (probably obsolete on modern sys
 GDR_EXPORT void RE_EndRegistration(void)
 {
     FBO_Bind(rg.renderFbo);
+
     R_IssuePendingRenderCommands();
     RB_ShowImages();
 }
@@ -990,16 +1017,21 @@ GDR_EXPORT renderExport_t *GDR_DECL GetRenderAPI(uint32_t version, refimport_t *
     re.Shutdown = RE_Shutdown;
     re.BeginRegistration = RE_BeginRegistration;
     re.RegisterShader = RE_RegisterShader;
+
     re.ClearScene = RE_ClearScene;
+
     re.BeginFrame = RE_BeginFrame;
     re.EndFrame = RE_EndFrame;
+
     re.RegisterShader = RE_RegisterShader;
 //    re.RegisterSpriteSheet = RE_RegisterSpriteSheet;
-    re.DrawImage = RE_DrawImage;
-    re.AddPolyListToScene = RE_AddPolyListToScene;
-    re.AddPolyToScene = RE_AddPolyToScene;
     re.LoadWorld = RE_LoadWorldMap;
     re.EndRegistration = RE_EndRegistration;
+    
+    re.AddPolyListToScene = RE_AddPolyListToScene;
+    re.AddPolyToScene = RE_AddPolyToScene;
+    re.SetColor = RE_SetColor;
+    re.DrawImage = RE_DrawImage;
 
     return &re;
 }

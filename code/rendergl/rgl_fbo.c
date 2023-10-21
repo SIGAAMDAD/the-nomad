@@ -221,7 +221,7 @@ void FBO_Shutdown(void)
 	
 	ri.Printf(PRINT_INFO, "---------- FBO_Shutdown ----------\n");
 
-	if (!glContext->ARB_framebuffer_object)
+	if (!glContext->ARB_framebuffer_object || !(NGL_VERSION_ATLEAST(3, 0)))
 		return;
 	
 	FBO_Bind(NULL);

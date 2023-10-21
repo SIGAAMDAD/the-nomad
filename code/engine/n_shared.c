@@ -1,5 +1,15 @@
 #include "code/engine/n_shared.h"
 
+float Com_Clamp( float min, float max, float value ) {
+	if ( value < min ) {
+		return min;
+	}
+	if ( value > max ) {
+		return max;
+	}
+	return value;
+}
+
 const byte locase[ 256 ] = {
 	0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
 	0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
@@ -504,17 +514,6 @@ qboolean N_isanumber( const char *s )
 #endif
 }
 
-#ifndef Q3_VM
-void N_itoa(char *buf, uint64_t bufsize, int i)
-{
-	snprintf(buf, bufsize, "%i", i);
-}
-
-void N_ftoa(char *buf, uint64_t bufsize, float f)
-{
-	snprintf(buf, bufsize, "%f", f);
-}
-#endif
 
 void N_strcpy (char *dest, const char *src)
 {
@@ -1013,120 +1012,6 @@ int N_atoi (const char *s)
 	
 	return 0;
 }
-
-/*
-================
-N_isnan
-
-Don't pass doubles to this
-================
-*/
-int N_isnan( float x )
-{
-	floatint_t fi;
-
-	fi.f = x;
-	fi.u &= 0x7FFFFFFF;
-	fi.u = 0x7F800000 - fi.u;
-
-	return (int)( fi.u >> 31 );
-}
-//------------------------------------------------------------------------
-
-
-/*
-================
-N_isfinite
-================
-*/
-static int N_isfinite( float f )
-{
-	floatint_t fi;
-	fi.f = f;
-
-	if ( fi.u == 0xFF800000 || fi.u == 0x7F800000 )
-		return 0; // -INF or +INF
-
-	fi.u = 0x7F800000 - (fi.u & 0x7FFFFFFF);
-	if ( (int)( fi.u >> 31 ) )
-		return 0; // -NAN or +NAN
-
-	return 1;
-}
-
-
-/*
-================
-N_atof
-================
-*/
-float N_atof( const char *str )
-{
-	float f;
-
-	f = atof( str );
-
-	// modern C11-like implementations of atof() may return INF or NAN
-	// which breaks all FP code where such values getting passed
-	// and effectively corrupts range checks for cvars as well
-	if ( !N_isfinite( f ) )
-		return 0.0f;
-
-	return f;
-}
-
-
-#ifndef Q3_VM
-/*
-================
-N_log2f
-================
-*/
-float N_log2f( float f )
-{
-	const float v = logf( f );
-	return v / M_LN2;
-}
-
-
-/*
-================
-N_exp2f
-================
-*/
-float N_exp2f( float f )
-{
-	return powf( 2.0f, f );
-}
-
-
-/*
-=====================
-N_acos
-
-the msvc acos doesn't always return a value between -PI and PI:
-
-int i;
-i = 1065353246;
-acos(*(float*) &i) == -1.#IND0
-
-=====================
-*/
-float N_acos(float c)
-{
-	float angle;
-
-	angle = acos(c);
-
-	if (angle > M_PI) {
-		return (float)M_PI;
-	}
-	if (angle < -M_PI) {
-		return (float)M_PI;
-	}
-	return angle;
-}
-#endif
 
 #if	defined(_DEBUG) && defined(_WIN32)
 #include <windows.h>
@@ -1913,22 +1798,3 @@ qboolean Com_GetHashColor(const char *str, byte *color)
 
 	return qtrue;
 }
-
-#if 0
-float N_fmaxf(float a, float b)
-{
-    if (N_isnan(a) || N_isnan(b)) {
-        return NAN; // Return NaN if any input is NaN
-    }
-    if (N_isinf(a) || N_isinf(b)) {
-        if (a > 0 && b > 0) {
-            return INFINITY; // Return positive infinity if both inputs are positive infinity
-        } else if (a < 0 && b < 0) {
-            return -INFINITY; // Return negative infinity if both inputs are negative infinity
-        } else {
-            return NAN; // Return NaN if inputs are different signs of infinity
-        }
-    }
-    return (a > b) ? a : b;
-}
-#endif

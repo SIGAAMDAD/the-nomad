@@ -47,12 +47,12 @@ static qboolean R_BufferExists(const char *name)
     return hashTable[Com_GenerateHashValue(name, MAX_RENDER_BUFFERS)] != NULL;
 }
 
-static void R_SetVertexPointers(const vertexAttrib_t attribs[ATTRIB_INDEX_COUNT], uintptr_t vertexStride)
+static void R_SetVertexPointers(const vertexAttrib_t attribs[ATTRIB_INDEX_COUNT])
 {
     for (uint64_t i = 0; i < ATTRIB_INDEX_COUNT; i++) {
         if (attribs[i].enabled) {
             nglEnableVertexAttribArray(attribs[i].index);
-            nglVertexAttribPointer(attribs[i].index, attribs[i].count, attribs[i].type, attribs[i].normalized, vertexStride, (const void *)attribs[i].offset);
+            nglVertexAttribPointer(attribs[i].index, attribs[i].count, attribs[i].type, attribs[i].normalized, attribs[i].stride, (const void *)attribs[i].offset);
         }
         else {
             nglDisableVertexAttribArray(attribs[i].index);
@@ -70,18 +70,126 @@ static void R_ClearVertexPointers(void)
     }
 }
 
-vertexBuffer_t *R_AllocateBuffer(const char *name, uint32_t numVertices, uint32_t numIndices, uint32_t attribBits, bufferType_t type)
+void R_InitGPUBuffers(void)
+{
+	uint64_t verticesSize, indicesSize;
+	uintptr_t offset;
+
+	ri.Printf(PRINT_INFO, "---------- R_InitGPUBuffers ----------\n");
+
+	rg.numBuffers = 0;
+
+	verticesSize  = sizeof(backend->dbuf.xyz[0]);
+	verticesSize += sizeof(backend->dbuf.normal[0]);
+//	verticesSize += sizeof(backend->dbuf.tangent[0]);
+	verticesSize += sizeof(backend->dbuf.color[0]);
+	verticesSize += sizeof(backend->dbuf.texCoords[0]);
+//	verticesSize += sizeof(backend->dbuf.lightCoords[0]);
+//	verticesSize += sizeof(backend->dbuf.lightdir[0]);
+	verticesSize *= MAX_BATCH_VERTICES;
+
+	indicesSize = sizeof(backend->dbuf.indices[0]) * MAX_BATCH_INDICES;
+
+	backend->dbuf.buf = R_AllocateBuffer("drawBuffer_VBO", NULL, verticesSize, NULL, indicesSize, BUFFER_FRAME);
+
+	backend->dbuf.buf->attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
+	backend->dbuf.buf->attribs[ATTRIB_INDEX_TEXCOORD].enabled		= qtrue;
+	backend->dbuf.buf->attribs[ATTRIB_INDEX_COLOR].enabled			= qtrue;
+	backend->dbuf.buf->attribs[ATTRIB_INDEX_NORMAL].enabled			= qtrue;
+
+	backend->dbuf.buf->attribs[ATTRIB_INDEX_POSITION].count			= 3;
+	backend->dbuf.buf->attribs[ATTRIB_INDEX_TEXCOORD].count			= 2;
+	backend->dbuf.buf->attribs[ATTRIB_INDEX_COLOR].count			= 4;
+	backend->dbuf.buf->attribs[ATTRIB_INDEX_NORMAL].count			= 4;
+
+	backend->dbuf.buf->attribs[ATTRIB_INDEX_POSITION].stride		= sizeof(backend->dbuf.xyz[0]);
+	backend->dbuf.buf->attribs[ATTRIB_INDEX_TEXCOORD].stride		= sizeof(backend->dbuf.texCoords[0]);
+	backend->dbuf.buf->attribs[ATTRIB_INDEX_COLOR].stride			= sizeof(backend->dbuf.color[0]);
+	backend->dbuf.buf->attribs[ATTRIB_INDEX_NORMAL].stride			= sizeof(backend->dbuf.normal[0]);
+
+	backend->dbuf.buf->attribs[ATTRIB_INDEX_POSITION].type			= GL_FLOAT;
+	backend->dbuf.buf->attribs[ATTRIB_INDEX_TEXCOORD].type			= GL_FLOAT;
+	backend->dbuf.buf->attribs[ATTRIB_INDEX_COLOR].type				= GL_UNSIGNED_SHORT;
+	backend->dbuf.buf->attribs[ATTRIB_INDEX_NORMAL].type			= GL_SHORT;
+
+	backend->dbuf.buf->attribs[ATTRIB_INDEX_POSITION].normalized	= GL_FALSE;
+	backend->dbuf.buf->attribs[ATTRIB_INDEX_TEXCOORD].normalized	= GL_FALSE;
+	backend->dbuf.buf->attribs[ATTRIB_INDEX_COLOR].normalized		= GL_TRUE;
+	backend->dbuf.buf->attribs[ATTRIB_INDEX_NORMAL].normalized		= GL_TRUE;
+
+	offset = 0;
+	backend->dbuf.buf->attribs[ATTRIB_INDEX_POSITION].offset		= offset; offset += sizeof(backend->dbuf.xyz[0])		* MAX_BATCH_VERTICES;
+	backend->dbuf.buf->attribs[ATTRIB_INDEX_TEXCOORD].offset		= offset; offset += sizeof(backend->dbuf.texCoords[0])	* MAX_BATCH_VERTICES;
+	backend->dbuf.buf->attribs[ATTRIB_INDEX_COLOR].offset			= offset; offset += sizeof(backend->dbuf.color[0])		* MAX_BATCH_VERTICES;
+	backend->dbuf.buf->attribs[ATTRIB_INDEX_NORMAL].offset			= offset;
+
+	backend->dbuf.attribPointers[ATTRIB_INDEX_POSITION]		= backend->dbuf.xyz;
+	backend->dbuf.attribPointers[ATTRIB_INDEX_TEXCOORD]		= backend->dbuf.texCoords;
+	backend->dbuf.attribPointers[ATTRIB_INDEX_COLOR]		= backend->dbuf.color;
+	backend->dbuf.attribPointers[ATTRIB_INDEX_NORMAL]		= backend->dbuf.normal;
+
+	R_SetVertexPointers(backend->dbuf.buf->attribs);
+
+	VBO_BindNull();
+
+	VaoCache_Init();
+
+	GL_CheckErrors();
+}
+
+void R_ShutdownGPUBuffers(void)
+{
+	uint64_t i;
+	vertexBuffer_t *vbo;
+
+	ri.Printf(PRINT_INFO, "---------- R_ShutdownGPUBuffers -----------\n");
+
+	VBO_BindNull();
+
+	for (i = 0; i < rg.numBuffers; i++) {
+		vbo = rg.buffers[i];
+
+		if (vbo->vaoId)
+			nglDeleteVertexArrays(1, (const GLuint *)&vbo->vaoId);
+		
+		if (vbo->vboId)
+			nglDeleteBuffers(1, (const GLuint *)&vbo->vboId);
+		
+		if (vbo->iboId)
+			nglDeleteBuffers(1, (const GLuint *)&vbo->iboId);
+	}
+
+	rg.numBuffers = 0;
+}
+
+vertexBuffer_t *R_AllocateBuffer(const char *name, void *vertices, uint32_t verticesSize, void *indices, uint32_t indicesSize, bufferType_t type)
 {
     vertexBuffer_t *buf;
     uint64_t hash;
+	GLenum usage;
 
     if (r_drawMode->i != DRAW_GPU_BUFFERED) {
         return NULL;
     }
 
+	switch (type) {
+	case BUFFER_STATIC:
+		usage = GL_STATIC_DRAW;
+		break;
+	case BUFFER_FRAME:
+		usage = GL_DYNAMIC_DRAW;
+		break;
+	default:
+		ri.Error(ERR_FATAL, "Bad glUsage %i", type);
+	};
+
     if (R_BufferExists(name)) {
         ri.Error(ERR_DROP, "R_AllocateBuffer: buffer '%s' already exists", name);
     }
+
+	if (rg.numBuffers == MAX_RENDER_BUFFERS) {
+		ri.Error(ERR_DROP, "R_AllocateBuffer: MAX_RENDER_BUFFERS hit");
+	}
 
     hash = Com_GenerateHashValue(name, MAX_RENDER_BUFFERS);
 
@@ -93,46 +201,6 @@ vertexBuffer_t *R_AllocateBuffer(const char *name, uint32_t numVertices, uint32_
 
     buf->type = type;
 
-    memset(buf, 0, sizeof(*buf));
-    buf->vertices.size = sizeof(drawVert_t) * numVertices;
-    buf->vertices.dataSize = sizeof(drawVert_t);
-
-    buf->indices.size = sizeof(glIndex_t) * numIndices;
-    buf->indices.dataSize = sizeof(glIndex_t);
-
-    buf->attribs[ATTRIB_INDEX_POSITION].enabled     = attribBits & ATTRIB_POSITION;
-    buf->attribs[ATTRIB_INDEX_COLOR].enabled        = attribBits & ATTRIB_COLOR;
-    buf->attribs[ATTRIB_INDEX_NORMAL].enabled       = attribBits & ATTRIB_NORMAL;
-    buf->attribs[ATTRIB_INDEX_TEXCOORD].enabled     = attribBits & ATTRIB_TEXCOORD;
-    buf->attribs[ATTRIB_INDEX_ALPHA].enabled        = attribBits & ATTRIB_ALPHA;
-
-    buf->attribs[ATTRIB_INDEX_POSITION].offset      = offsetof(drawVert_t, xyz);
-    buf->attribs[ATTRIB_INDEX_COLOR].offset         = offsetof(drawVert_t, color);
-    buf->attribs[ATTRIB_INDEX_NORMAL].offset        = offsetof(drawVert_t, normal);
-    buf->attribs[ATTRIB_INDEX_TEXCOORD].offset      = offsetof(drawVert_t, uv);
-
-    buf->attribs[ATTRIB_INDEX_POSITION].count       = 3;
-    buf->attribs[ATTRIB_INDEX_COLOR].count          = 4;
-    buf->attribs[ATTRIB_INDEX_NORMAL].count         = 4;
-    buf->attribs[ATTRIB_INDEX_TEXCOORD].count       = 2;
-
-    buf->attribs[ATTRIB_INDEX_POSITION].type        = GL_FLOAT;
-    buf->attribs[ATTRIB_INDEX_COLOR].type           = GL_UNSIGNED_SHORT;
-    buf->attribs[ATTRIB_INDEX_NORMAL].type          = GL_SHORT;
-    buf->attribs[ATTRIB_INDEX_TEXCOORD].type        = GL_FLOAT;
-
-    buf->attribs[ATTRIB_INDEX_POSITION].index       = 0;
-    buf->attribs[ATTRIB_INDEX_COLOR].index          = 1;
-    buf->attribs[ATTRIB_INDEX_NORMAL].index         = 2;
-    buf->attribs[ATTRIB_INDEX_TEXCOORD].index       = 3;
-    buf->attribs[ATTRIB_INDEX_ALPHA].index          = 4;
-
-    buf->attribs[ATTRIB_INDEX_POSITION].normalized  = GL_FALSE;
-    buf->attribs[ATTRIB_INDEX_COLOR].normalized     = GL_FALSE;
-    buf->attribs[ATTRIB_INDEX_NORMAL].normalized    = GL_FALSE;
-    buf->attribs[ATTRIB_INDEX_TEXCOORD].normalized  = GL_FALSE;
-    buf->attribs[ATTRIB_INDEX_ALPHA].normalized     = GL_FALSE;
-
     if (r_drawMode->i == DRAW_GPU_BUFFERED) {
         // allocate gpu buffers
         nglGenVertexArrays(1, (GLuint *)&buf->vaoId);
@@ -142,17 +210,11 @@ vertexBuffer_t *R_AllocateBuffer(const char *name, uint32_t numVertices, uint32_
         // make sure nothing is bound
         VBO_BindNull();
 
-        nglBindVertexArray(buf->vaoId);
-        nglBindBuffer(GL_ARRAY_BUFFER, buf->vboId);
-        nglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buf->iboId);
+		nglBindBuffer(GL_ARRAY_BUFFER, buf->vboId);
+		nglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buf->iboId);
 
-        R_SetVertexPointers(buf->attribs, sizeof(drawVert_t));
-
-        nglBufferData(GL_ARRAY_BUFFER, sizeof(drawVert_t) * numVertices, NULL, GL_DYNAMIC_DRAW);
-        nglBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(glIndex_t) * numIndices, NULL, GL_DYNAMIC_DRAW);
-
-        memset(buf->vertices.data, 0, sizeof(drawVert_t) * numVertices);
-        memset(buf->indices.data, 0, sizeof(glIndex_t) * numIndices);
+		nglBufferData(GL_ARRAY_BUFFER, verticesSize, vertices, usage);
+		nglBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesSize, indices, usage);
         
         nglBindVertexArray(0);
         nglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -286,6 +348,71 @@ void VBO_FlushAll(void)
     }
 }
 
+/*
+==============
+RB_UpdateCache
+
+Adapted from Tess_UpdateVBOs from xreal
+
+Update the default VAO to replace the client side vertex arrays
+==============
+*/
+void RB_UpdateCache(uint32_t attribBits)
+{
+//	GLimp_LogComment("--- RB_UpdateTessVao ---\n");
+
+	backend->pc.c_dynamicBufferDraws++;
+
+	// update the default VAO
+	if (backend->dbuf.numVertices > 0 && backend->dbuf.numVertices <= MAX_BATCH_VERTICES
+	&& backend->dbuf.numIndices > 0 && backend->dbuf.numIndices <= MAX_BATCH_INDICES) {
+		uint32_t attribIndex;
+		uint32_t attribUpload;
+
+		VBO_Bind(backend->dbuf.buf);
+
+		// orphan old vertex buffer so we don't stall on it
+		nglBufferData(GL_ARRAY_BUFFER, backend->dbuf.buf->vertices.size, NULL, GL_DYNAMIC_DRAW);
+
+		// if nothing to set, set everything
+		if (!(attribBits & ATTRIB_BITS))
+			attribBits = ATTRIB_BITS;
+
+		attribUpload = attribBits;
+
+		for (attribIndex = 0; attribIndex < ATTRIB_INDEX_COUNT; attribIndex++) {
+			uint32_t attribBit = 1 << attribIndex;
+			vertexAttrib_t *vAtb = &backend->dbuf.buf->attribs[attribIndex];
+
+			if (attribUpload & attribBit) {
+				// note: tess has a VBO where stride == size
+				nglBufferSubData(GL_ARRAY_BUFFER, vAtb->offset, backend->dbuf.numVertices * vAtb->stride, backend->dbuf.attribPointers[attribIndex]);
+			}
+
+			if (attribBits & attribBit) {
+				if (glContext->ARB_vertex_array_object || NGL_VERSION_ATLEAST(3, 0))
+					nglVertexAttribPointer(attribIndex, vAtb->count, vAtb->type, vAtb->normalized, vAtb->stride, (const void *)vAtb->offset);
+
+				if (!(glState.vertexAttribsEnabled & attribBit)) {
+					nglEnableVertexAttribArray(attribIndex);
+					glState.vertexAttribsEnabled |= attribBit;
+				}
+			}
+			else {
+				if ((glState.vertexAttribsEnabled & attribBit)) {
+					nglDisableVertexAttribArray(attribIndex);
+					glState.vertexAttribsEnabled &= ~attribBit;
+				}
+			}
+		}
+
+		// orphan old index buffer so we don't stall on it
+		nglBufferData(GL_ELEMENT_ARRAY_BUFFER, backend->dbuf.buf->indices.size, NULL, GL_DYNAMIC_DRAW);
+
+		nglBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, backend->dbuf.numIndices * sizeof(backend->dbuf.indices[0]), backend->dbuf.indices);
+	}
+}
+
 
 // FIXME: This sets a limit of 65536 verts/262144 indexes per static surface
 // This is higher than the old vq3 limits but is worth noting
@@ -298,7 +425,7 @@ typedef struct queuedSurface_s
 	drawVert_t *vertexes;
 	int numVerts;
 	glIndex_t *indexes;
-	int numIndexes;
+	int numIndices;
 } queuedSurface_t;
 
 static struct
@@ -363,7 +490,7 @@ void VaoCache_Commit(void)
 		if (*batchLength == vcq.numSurfaces) {
 			buffered_t *indexSet2 = indexSet;
 			for (surf = vcq.surfaces; surf < end; surf++, indexSet2++) {
-				if (surf->indexes != indexSet2->data || (surf->numIndexes * sizeof(glIndex_t)) != indexSet2->size)
+				if (surf->indexes != indexSet2->data || (surf->numIndices * sizeof(glIndex_t)) != indexSet2->size)
 					break;
 			}
 
@@ -377,7 +504,7 @@ void VaoCache_Commit(void)
 	// If found, use it
 	if (indexSet < vc.surfaceIndexSets + vc.numSurfaces) {
 		backend->dbuf.firstIndex = indexSet->bufferOffset / sizeof(glIndex_t);
-		//ri.Printf(PRINT_ALL, "firstIndex %d numIndexes %d as %d\n", tess.firstIndex, tess.numIndexes, (int)(batchLength - vc.batchLengths));
+		//ri.Printf(PRINT_ALL, "firstIndex %d numIndices %d as %d\n", backend->dbuf.firstIndex, backend->dbuf.numIndices, (int)(batchLength - vc.batchLengths));
 		//ri.Printf(PRINT_ALL, "vc.numSurfaces %d vc.numBatches %d\n", vc.numSurfaces, vc.numBatches);
 	}
 	// If not, rebuffer the batch
@@ -397,7 +524,7 @@ void VaoCache_Commit(void)
 		for (surf = vcq.surfaces; surf < end; surf++) {
 			glIndex_t *srcIndex = surf->indexes;
 			uint32_t vertexesSize = surf->numVerts * sizeof(drawVert_t);
-			uint32_t indexesSize = surf->numIndexes * sizeof(glIndex_t);
+			uint32_t indexesSize = surf->numIndices * sizeof(glIndex_t);
 			uint32_t i, indexOffset = (vc.vertexOffset + vcq.vertexCommitSize) / sizeof(drawVert_t);
 
 			memcpy(dstVertex, surf->vertexes, vertexesSize);
@@ -411,7 +538,7 @@ void VaoCache_Commit(void)
 			indexSet->bufferOffset = vc.indexOffset + vcq.indexCommitSize;
 			vc.numSurfaces++;
 
-			for (i = 0; i < surf->numIndexes; i++)
+			for (i = 0; i < surf->numIndices; i++)
 				*dstIndex++ = *srcIndex++ + indexOffset;
 
 			vcq.indexCommitSize += indexesSize;
@@ -435,8 +562,7 @@ void VaoCache_Commit(void)
 
 void VaoCache_Init(void)
 {
-	vc.vao = R_AllocateBuffer("VaoCache",  VAOCACHE_VERTEX_BUFFER_SIZE, VAOCACHE_INDEX_BUFFER_SIZE,
-        ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_NORMAL | ATTRIB_COLOR | ATTRIB_ALPHA, BUFFER_FRAME);
+	vc.vao = R_AllocateBuffer("VaoCache",  NULL, VAOCACHE_VERTEX_BUFFER_SIZE, NULL, VAOCACHE_INDEX_BUFFER_SIZE, BUFFER_FRAME);
 
 	vc.vao->attribs[ATTRIB_INDEX_POSITION].enabled       = qtrue;
 	vc.vao->attribs[ATTRIB_INDEX_TEXCOORD].enabled       = qtrue;
@@ -478,7 +604,12 @@ void VaoCache_Init(void)
 //	vc.vao->attribs[ATTRIB_INDEX_LIGHTDIRECTION].offset = offsetof(drawVert_t, lightdir);
 	vc.vao->attribs[ATTRIB_INDEX_COLOR].offset          = offsetof(drawVert_t, color);
 
-	R_SetVertexPointers(vc.vao->attribs, sizeof(drawVert_t));
+	vc.vao->attribs[ATTRIB_INDEX_POSITION].stride		= sizeof(drawVert_t);
+	vc.vao->attribs[ATTRIB_INDEX_TEXCOORD].stride		= sizeof(drawVert_t);
+	vc.vao->attribs[ATTRIB_INDEX_COLOR].stride			= sizeof(drawVert_t);
+	vc.vao->attribs[ATTRIB_INDEX_NORMAL].stride			= sizeof(drawVert_t);
+
+	R_SetVertexPointers(vc.vao->attribs);
 
 	vc.numSurfaces = 0;
 	vc.numBatches = 0;
@@ -494,10 +625,10 @@ void VaoCache_BindVao(void)
     VBO_Bind(vc.vao);
 }
 
-void VaoCache_CheckAdd(qboolean *endSurface, qboolean *recycleVertexBuffer, qboolean *recycleIndexBuffer, uint32_t numVerts, uint32_t numIndexes)
+void VaoCache_CheckAdd(qboolean *endSurface, qboolean *recycleVertexBuffer, qboolean *recycleIndexBuffer, uint32_t numVerts, uint32_t numIndices)
 {
 	uint64_t vertexesSize = sizeof(drawVert_t) * numVerts;
-	uint64_t indexesSize = sizeof(glIndex_t) * numIndexes;
+	uint64_t indexesSize = sizeof(glIndex_t) * numIndices;
 
 	if (vc.vao->vertices.size < vc.vertexOffset + vcq.vertexCommitSize + vertexesSize) {
 		//ri.Printf(PRINT_ALL, "out of space in vertex cache: %d < %d + %d + %d\n", vc.vao->vertexesSize, vc.vertexOffset, vcq.vertexCommitSize, vertexesSize);
@@ -563,16 +694,16 @@ void VaoCache_InitQueue(void)
 	vcq.numSurfaces = 0;
 }
 
-void VaoCache_AddSurface(drawVert_t *verts, uint32_t numVerts, glIndex_t *indexes, uint32_t numIndexes)
+void VaoCache_AddSurface(drawVert_t *verts, uint32_t numVerts, glIndex_t *indexes, uint32_t numIndices)
 {
 	queuedSurface_t *queueEntry = vcq.surfaces + vcq.numSurfaces;
 	queueEntry->vertexes = verts;
 	queueEntry->numVerts = numVerts;
 	queueEntry->indexes = indexes;
-	queueEntry->numIndexes = numIndexes;
+	queueEntry->numIndices = numIndices;
 	vcq.numSurfaces++;
 
 	vcq.vertexCommitSize += sizeof(drawVert_t) * numVerts;
-	vcq.indexCommitSize += sizeof(glIndex_t) * numIndexes;
+	vcq.indexCommitSize += sizeof(glIndex_t) * numIndices;
 }
 

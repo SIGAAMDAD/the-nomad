@@ -332,6 +332,7 @@ typedef struct {
     uint32_t type;
     uint32_t enabled;
     uint32_t normalized;
+    uintptr_t stride;
     uintptr_t offset;
 } vertexAttrib_t;
 
@@ -339,7 +340,6 @@ typedef struct {
 typedef struct {
     void *data;
     uint64_t size;
-    uintptr_t dataSize;
     uintptr_t offset;
     qboolean mapped; // glMapBuffer used?
 } buffer_t;
@@ -976,6 +976,7 @@ nhandle_t RE_RegisterShader(const char *name);
 shader_t *R_GetShaderByHandle(nhandle_t hShader);
 shader_t *R_FindShaderByName( const char *name );
 shader_t *R_FindShader(const char *name);
+void R_InitShaders( void );
 
 //
 // rgl_program.c
@@ -1026,6 +1027,7 @@ void R_GammaCorrect( byte *buffer, uint64_t bufSize );
 void *R_GetCommandBufferReserved( uint32_t bytes, uint32_t reservedBytes );
 void *R_GetCommandBuffer( uint32_t bytes );
 void R_IssueRenderCommands( qboolean runPerformanceCounters );
+void R_IssuePendingRenderCommands( void );
 
 //
 // rgl_backend.c
@@ -1041,7 +1043,7 @@ void GL_PushTexture(texture_t *texture);
 void GL_PopTexture(void);
 void GL_BindTexture(GLenum unit, texture_t *texture);
 void GL_BindNullRenderbuffer(void);
-int GL_UseProgram(shaderProgram_t *program);
+int GL_UseProgram(GLuint program);
 void GL_BindNullProgram(void);
 void GL_BindFramebuffer(GLenum target, GLuint fbo);
 void GL_BindNullFramebuffer(GLenum target);
@@ -1053,7 +1055,7 @@ void GL_ClientState( int unit, unsigned stateBits );
 void GL_SetDefaultState(void);
 void RE_BeginFrame(stereoFrame_t stereoFrame);
 void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec);
-void R_IssuePendingRenderCommands( void );
+void RB_ExecuteRenderCommands(const void *data);
 
 //
 // rgl_init.c
@@ -1109,14 +1111,18 @@ void FBO_FastBlit(fbo_t *src, ivec4_t srcBox, fbo_t *dst, ivec4_t dstBox, uint32
 //
 void VBO_Bind(vertexBuffer_t *vbo);
 void VBO_BindNull(void);
-vertexBuffer_t *R_AllocateBuffer(const char *name, uint32_t numVertices, uint32_t numIndices, uint32_t attribBits, bufferType_t type);
+vertexBuffer_t *R_AllocateBuffer(const char *name, void *vertices, uint32_t verticesSize, void *indices, uint32_t indicesSize, bufferType_t type);
 void VBO_Flush(vertexBuffer_t *buf);
 void R_ShutdownBuffers(void);
 void R_VaoPackColor(uint16_t *out, const vec4_t c);
 void R_VaoPackNormal(int16_t *out, vec3_t v);
 void R_VaoUnpackNormal(vec3_t v, int16_t *pack);
 
+void R_InitGPUBuffers(void);
+void R_ShutdownGPUBuffers(void);
+
 // per frame functions
+void VaoCache_Init(void);
 void VaoCache_InitQueue(void);
 void VaoCache_AddSurface(drawVert_t *verts, uint32_t numVerts, glIndex_t *indexes, uint32_t numIndexes);
 void VaoCache_BindVao(void);

@@ -10,7 +10,7 @@ void GL_PopTexture(void)
 
 void GL_PushTexture(texture_t *texture)
 {
-	if (glState.textureStackPtr > glState.textureStack[MAX_TEXTURE_UNITS - 1]) {
+	if (glState.textureStackPtr > &glState.textureStack[MAX_TEXTURE_UNITS - 1]) {
 		ri.Error(ERR_DROP, "Texture stack overflow");
 	}
 
@@ -259,14 +259,13 @@ void GL_BindTexture(GLenum unit, texture_t *texture)
     glState.currenttmu = unit;
 }
 
-int GL_UseProgram(shaderProgram_t *program)
+int GL_UseProgram(GLuint program)
 {
-    if (glState.shaderId == program->programId)
+    if (glState.shaderId == program)
         return 0;
     
-    nglUseProgram(program->programId);
-	glState.currentShader = program;
-    glState.shaderId = program->programId;
+    nglUseProgram(program);
+    glState.shaderId = program;
 	return 1;
 }
 
