@@ -1,7 +1,7 @@
 #include "rgl_local.h"
 #include "imgui_impl_opengl3.h"
 
-#define NGL( ret, name, ... ) PFN##name n##name = NULL;
+#define NGL( ret, name, ... ) PFN ## name n ## name = NULL;
 NGL_Core_Procs
 NGL_Debug_Procs
 NGL_Buffer_Procs
@@ -13,10 +13,23 @@ NGL_VertexArray_Procs
 NGL_BufferARB_Procs
 NGL_VertexArrayARB_Procs
 NGL_VertexShaderARB_Procs
+
+NGL_ARB_buffer_storage
+NGL_ARB_map_buffer_range
 #undef NGL
+
+// because they're edgy...
+static void R_GLDebug_Callback_AMD(GLuint id, GLenum category, GLenum severity, GLsizei length, const GLchar *message, GLvoid *userParam);
+// the normal stuff
+static void R_GLDebug_Callback_ARB(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const GLvoid *userParam);
 
 char gl_extensions[32768];
 
+cvar_t *r_experimental; // do we want experimental features?
+cvar_t *r_colorMipLevels;
+cvar_t *r_glDebug;
+cvar_t *r_genNormalMaps;
+cvar_t *r_printShaders;
 cvar_t *vid_xpos;
 cvar_t *vid_ypos;
 cvar_t *r_allowSoftwareGL;
@@ -71,15 +84,24 @@ cvar_t *r_picmip;
 cvar_t *r_overBrightBits;
 cvar_t *r_intensity;
 cvar_t *r_normalMapping;
+cvar_t *r_specularMapping;
 cvar_t *r_showImages;
+cvar_t *r_fullbright;
+cvar_t *r_singleShader;
+cvar_t *r_baseGloss;
+cvar_t *r_baseSpecular;
+cvar_t *r_baseNormalX;
+cvar_t *r_baseNormalY;
+cvar_t *r_baseParallax;
 
-cvar_t *r_arb_framebuffer_object;
-cvar_t *r_arb_texture_compression;
+// GL extensions
 cvar_t *r_arb_texture_filter_anisotropic;
-cvar_t *r_arb_texture_float;
-cvar_t *r_arb_vertex_array_object;
 cvar_t *r_arb_vertex_buffer_object;
+cvar_t *r_arb_vertex_array_object;
+cvar_t *r_arb_texture_float;
+cvar_t *r_arb_framebuffer_object;
 cvar_t *r_arb_vertex_shader;
+cvar_t *r_arb_texture_compression;
 
 renderGlobals_t rg;
 glstate_t glState;
@@ -97,13 +119,19 @@ qboolean R_HasExtension(const char *ext)
 	return ((*ptr == ' ') || (*ptr == '\0'));  // verify its complete string.
 }
 
-static qboolean R_CheckExtBatch(qboolean procsNotLoaded, const char *name)
+static qboolean R_CheckExtBatch(qboolean procsNotLoaded, const char *name, int major, int minor)
 {
     if (procsNotLoaded) {
         if (r_crashOnFailedProc->i) {
+            if ((major && minor) && NGL_VERSION_ATLEAST(major, minor)) {
+                ri.Printf(PRINT_INFO, COLOR_RED "ERROR: Failed to load %s even though core context has it (v%i.%i)\n", name, major, minor);
+            }
             ri.Error(ERR_FATAL, "...%s failed to load", name);
         }
         else {
+            if ((major && minor) && NGL_VERSION_ATLEAST(major, minor)) {
+                ri.Error(ERR_FATAL, "Failed to load %s even though core context has it (v%i.%i)\n", name, major, minor);
+            }
             ri.Printf(PRINT_INFO, "...%s failed to load\n", name);
             return qtrue;
         }
@@ -450,6 +478,9 @@ static void GpuInfo_f( void )
 
 		nglGetIntegerv( GL_NUM_EXTENSIONS, &numExtensions );
 		for ( i = 0; i < numExtensions; i++ ) {
+            if (i > 64) {
+                break;
+            }
 			ri.Printf( PRINT_INFO, "%s ", nglGetStringi( GL_EXTENSIONS, i ) );
 		}
 	}
@@ -504,14 +535,26 @@ static void R_Register(void)
     //
     r_useExtensions = ri.Cvar_Get("r_useExtensions", "1", CVAR_SAVE | CVAR_LATCH);
     ri.Cvar_SetDescription(r_useExtensions, "Use all of the OpenGL extensions your card is capable of.");
+
     r_arb_texture_compression = ri.Cvar_Get("r_arb_texture_compression", "0", CVAR_SAVE | CVAR_LATCH);
-    ri.Cvar_SetDescription(r_arb_texture_compression, "Enables texture compression/");
+    ri.Cvar_SetDescription(r_arb_texture_compression, "Enables texture compression.");
     r_arb_framebuffer_object = ri.Cvar_Get("r_arb_framebuffer_object", "1", CVAR_SAVE | CVAR_LATCH);
     ri.Cvar_SetDescription(r_arb_framebuffer_object, "Enables post-processing via multiple framebuffers.\n");
     r_arb_vertex_array_object = ri.Cvar_Get("r_arb_vertex_array_object", "0", CVAR_SAVE | CVAR_LATCH);
     ri.Cvar_SetDescription(r_arb_vertex_array_object, "Enables use of vertex array object extensions.\nNOTE: only really matters if OpenGL version < 3.3");
     r_arb_vertex_buffer_object = ri.Cvar_Get("r_arb_vertex_buffer_object", "1", CVAR_SAVE | CVAR_LATCH);
     ri.Cvar_SetDescription(r_arb_vertex_buffer_object, "Enables use of hardware accelerated vertex and index rendering.");
+
+    r_baseNormalX = ri.Cvar_Get( "r_baseNormalX", "1.0", CVAR_SAVE | CVAR_LATCH );
+	r_baseNormalY = ri.Cvar_Get( "r_baseNormalY", "1.0", CVAR_SAVE | CVAR_LATCH );
+	r_baseParallax = ri.Cvar_Get( "r_baseParallax", "0.05", CVAR_SAVE | CVAR_LATCH );
+	r_baseSpecular = ri.Cvar_Get( "r_baseSpecular", "0.04", CVAR_SAVE | CVAR_LATCH );
+	r_baseGloss = ri.Cvar_Get( "r_baseGloss", "0.3", CVAR_SAVE | CVAR_LATCH );
+
+    r_arb_texture_filter_anisotropic = ri.Cvar_Get("r_arb_texture_filter_anisotropic", "1", CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetDescription(r_arb_texture_filter_anisotropic, "Enabled anisotropic filtering.");
+    r_arb_texture_float = ri.Cvar_Get("r_arb_texture_float", "1", CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetDescription(r_arb_texture_float, "Enables HDR framebuffer.");
 
     r_allowLegacy = ri.Cvar_Get("r_allowLegacy", "0", CVAR_SAVE | CVAR_LATCH);
     ri.Cvar_SetDescription(r_allowLegacy, "Allow the use of old OpenGL API versions, requires \\r_drawMode 0 or 1 and \\r_allowShaders 0");
@@ -526,6 +569,23 @@ static void R_Register(void)
                             "   2 - SSAA, super-sampling");
     r_multisampleAmount = ri.Cvar_Get("r_multisampleAmount", "4", CVAR_SAVE | CVAR_LATCH);
     ri.Cvar_SetDescription(r_multisampleAmount, "Set multisampling amount per pixel, requires \\r_multisampleType > 0");
+
+    r_overBrightBits = ri.Cvar_Get("r_overBrightBits", "1", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_overBrightBits, "Sets the intensity of overall brightness of texture pixels." );
+	r_ignorehwgamma = ri.Cvar_Get( "r_ignorehwgamma", "0", CVAR_SAVE | CVAR_LATCH);
+    ri.Cvar_SetDescription( r_ignorehwgamma, "Overrides hardware gamma capabilities." );
+
+    r_normalMapping = ri.Cvar_Get( "r_normalMapping", "1", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_normalMapping, "Enable normal maps for materials that support it." );
+    r_specularMapping = ri.Cvar_Get( "r_specularMapping", "1", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_specularMapping, "Enable specular maps for materials that support it." );
+
+    r_imageUpsample = ri.Cvar_Get( "r_imageUpsample", "0", CVAR_SAVE | CVAR_LATCH );
+	r_imageUpsampleMaxSize = ri.Cvar_Get( "r_imageUpsampleMaxSize", "1024", CVAR_SAVE | CVAR_LATCH );
+	r_imageUpsampleType = ri.Cvar_Get( "r_imageUpsampleType", "1", CVAR_SAVE | CVAR_LATCH );
+    r_genNormalMaps = ri.Cvar_Get( "r_genNormalMaps", "0", CVAR_SAVE | CVAR_LATCH );
+    r_colorMipLevels = ri.Cvar_Get("r_colorMipLevels", "0", CVAR_LATCH );
+	ri.Cvar_SetDescription( r_colorMipLevels, "Debugging tool to artificially color different mipmap levels so that they are more apparent." );
 
     r_drawMode = ri.Cvar_Get("r_drawMode", "2", CVAR_SAVE | CVAR_LATCH);
     ri.Cvar_SetDescription(r_drawMode,
@@ -545,24 +605,55 @@ static void R_Register(void)
 	ri.Cvar_CheckRange( r_greyscale, "0", "1", CVT_FLOAT );
 	ri.Cvar_SetDescription( r_greyscale, "Desaturates rendered frame." );
 
-	r_externalGLSL = ri.Cvar_Get( "r_externalGLSL", "1", CVAR_LATCH );
+	r_externalGLSL = ri.Cvar_Get( "r_externalGLSL", "0", CVAR_LATCH );
+    ri.Cvar_SetDescription(r_externalGLSL, "Enables loading glsl from external files instead of just built-in shaders.");
+
+    r_ignoreDstAlpha = ri.Cvar_Get( "r_ignoreDstAlpha", "1", CVAR_SAVE | CVAR_LATCH );
+
+    //
+    // temporary latched variables that can only change over a restart
+    //
+    r_fullbright = ri.Cvar_Get("r_fullbright", "0", CVAR_LATCH | CVAR_CHEAT );
+	ri.Cvar_SetDescription( r_fullbright, "Debugging tool to render the entire level without lighting." );
+//	r_mapOverBrightBits = ri.Cvar_Get ("r_mapOverBrightBits", "2", CVAR_LATCH );
+//	ri.Cvar_SetDescription( r_mapOverBrightBits, "Sets the number of overbright bits baked into all lightmaps and map data." );
+	r_intensity = ri.Cvar_Get("r_intensity", "1", CVAR_LATCH );
+	ri.Cvar_SetDescription( r_intensity, "Global texture lighting scale." );
+	r_singleShader = ri.Cvar_Get("r_singleShader", "0", CVAR_CHEAT | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_singleShader, "Debugging tool that only uses the default shader for all rendering." );
+
 
     //
     // archived variables that can change any time
     //
+    r_glDebug = ri.Cvar_Get( "r_glDebug", "1", CVAR_SAVE | CVAR_LATCH );
+    ri.Cvar_SetDescription( r_glDebug, "Toggles OpenGL driver debug logging." );
     r_textureBits = ri.Cvar_Get( "r_textureBits", "0", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_textureBits, "Number of texture bits per texture." );
 	r_stencilBits = ri.Cvar_Get( "r_stencilBits", "8", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_stencilBits, "Stencil buffer size, value decreases Z-buffer depth." );
+
     r_finish = ri.Cvar_Get("r_finish", "0", CVAR_SAVE | CVAR_LATCH);
 	ri.Cvar_SetDescription( r_finish, "Force a glFinish call after rendering a scene." );
+
+    r_picmip = ri.Cvar_Get("r_picmip", "0", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_CheckRange( r_picmip, "0", "16", CVT_INT );
+	ri.Cvar_SetDescription( r_picmip, "Set texture quality, lower is better." );
+	r_roundImagesDown = ri.Cvar_Get("r_roundImagesDown", "1", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_roundImagesDown, "When images are scaled, round images down instead of up." );
+
     r_gammaAmount = ri.Cvar_Get("r_gammaAmount", "1", CVAR_SAVE | CVAR_LATCH);
     ri.Cvar_CheckRange(r_gammaAmount, "0.5", "3", CVT_FLOAT);
     ri.Cvar_SetDescription(r_gammaAmount, "Gamma correction factor.");
+
+    r_printShaders = ri.Cvar_Get( "r_printShaders", "0", 0 );
+	ri.Cvar_SetDescription( r_printShaders, "Debugging tool to print on console of the number of shaders used." );
+
     r_textureDetail = ri.Cvar_Get("r_textureDetail", va("%i", TexDetail_Normie), CVAR_SAVE | CVAR_LATCH);
     ri.Cvar_CheckRange(r_textureDetail, va("%i", TexDetail_MSDOS), va("%i", TexDetail_GPUvsGod), CVT_INT);
     r_textureFiltering = ri.Cvar_Get("r_textureFiltering", va("%i", TexFilter_Trilinear), CVAR_SAVE | CVAR_LATCH);
-    ri.Cvar_CheckRange(r_textureFiltering, va("%i", TexFilter_Bilinear), va("%i", TexFilter_Trilinear), CVT_INT);
+    ri.Cvar_CheckRange(r_textureFiltering, va("%i", TexFilter_Linear), va("%i", TexFilter_Trilinear), CVT_INT);
+
     r_speeds = ri.Cvar_Get("r_speeds", "0", CVAR_SAVE | CVAR_LATCH);
 	ri.Cvar_SetDescription( r_speeds,
                             "Prints out various debugging stats from renderer:\n"
@@ -574,9 +665,20 @@ static void R_Register(void)
     //
     // temporary variables that can change at any time
     //
+    r_showImages = ri.Cvar_Get( "r_showImages", "0", CVAR_TEMP );
+	ri.Cvar_SetDescription( r_showImages,
+                                        "Draw all images currently loaded into memory:\n"
+                                        " 0: Disabled\n"
+                                        " 1: Show images set to uniform size\n"
+                                        " 2: Show images with scaled relative to largest image" );
+
+    r_skipBackEnd = ri.Cvar_Get("r_skipBackEnd", "0", CVAR_CHEAT);
+	ri.Cvar_SetDescription( r_skipBackEnd, "Skips loading rendering backend." );
+
     r_znear = ri.Cvar_Get( "r_znear", "4", CVAR_CHEAT );
 	ri.Cvar_CheckRange( r_znear, "0.001", "200", CVT_FLOAT );
 	ri.Cvar_SetDescription( r_znear, "Viewport distance from view origin (how close objects can be to the player before they're clipped out of the scene)." );
+
     r_measureOverdraw = ri.Cvar_Get("r_measureOverdraw", "0", CVAR_DEV);
     r_ignoreGLErrors = ri.Cvar_Get("r_ignoreGLErrors", "1", CVAR_LATCH);
     r_clear = ri.Cvar_Get("r_clear", "0", CVAR_DEV);
@@ -599,7 +701,11 @@ static void R_Register(void)
 
 static void R_InitExtensions(void)
 {
-#define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress("n" #name);
+#ifdef _NOMAD_DEBUG
+#define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress(#name);
+#else
+#define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress(#name);
+#endif
     enum { IGNORE, USING, NOTFOUND };
     const char *ext;
     const char *result[4] = { "...ignoring %s\n", "...using %s\n", "...%s not found\n" };
@@ -622,6 +728,42 @@ static void R_InitExtensions(void)
     }
 
     //
+    // ARB_buffer_storage
+    //
+    ext = "GL_ARB_buffer_storage";
+    glContext->ARB_buffer_storage = qfalse;
+    if (NGL_VERSION_ATLEAST(4, 5) || R_HasExtension(ext)) {
+        glContext->ARB_buffer_storage = qtrue;
+
+        NGL_ARB_buffer_storage
+        if (!R_CheckExtBatch(!nglBufferStorage, ext, 4, 5)) {
+            ri.Printf(PRINT_INFO, result[NOTFOUND], ext);
+            glContext->ARB_buffer_storage = qfalse;
+        }
+    }
+    else {
+        ri.Printf(PRINT_INFO, result[NOTFOUND], ext);
+    }
+
+    //
+    // ARB_map_buffer_range
+    //
+    ext = "GL_ARB_map_buffer_range";
+    glContext->ARB_map_buffer_range = qfalse;
+    if (NGL_VERSION_ATLEAST(4, 5) || R_HasExtension(ext)) {
+        glContext->ARB_map_buffer_range = qtrue;
+
+        NGL_ARB_map_buffer_range
+        if (!R_CheckExtBatch(!nglMapBufferRange || !nglFlusMappedBufferRange, ext, 4, 5)) {
+            ri.Printf(PRINT_INFO, result[NOTFOUND], ext);
+            glContext->ARB_map_buffer_range = qfalse;
+        }
+    }
+    else {
+        ri.Printf(PRINT_INFO, result[NOTFOUND], ext);
+    }
+
+    //
     // ARB_vertex_array_object
     //
     ext = "GL_ARB_vertex_array_object";
@@ -636,15 +778,15 @@ static void R_InitExtensions(void)
         }
 
         NGL_VertexArrayARB_Procs
-        if (!R_CheckExtBatch(!nglVertexAttribPointerARB || !nglEnableVertexArrayAttribARB || !nglDisableVertexAttribArrayARB, ext)) {
-            ri.Printf(PRINT_INFO, result[glContext->ARB_vertex_array_object], ext);
-        }
-        else { // make extra sure we don't segfault
+        if (!R_CheckExtBatch(!nglVertexAttribPointerARB || !nglEnableVertexArrayAttribARB || !nglDisableVertexAttribArrayARB, ext, 3, 0)) {
+            ri.Printf(PRINT_INFO, result[NOTFOUND], ext);
+            glContext->ARB_vertex_array_object = qfalse;
+
+            // make extra sure we don't segfault
+            nglVertexAttribPointerARB = nglVertexAttribPointer;
             nglEnableVertexArrayAttribARB = nglEnableVertexArrayAttrib;
             nglDisableVertexAttribArrayARB = nglDisableVertexAttribArray;
-            nglVertexAttribPointerARB = nglVertexAttribPointer;
         }
-        
     }
     else {
         ri.Printf(PRINT_INFO, result[NOTFOUND], ext);
@@ -669,12 +811,11 @@ static void R_InitExtensions(void)
     if (NGL_VERSION_ATLEAST(3, 0) || R_HasExtension(ext)) {
         NGL_BufferARB_Procs
 
-        if (!R_CheckExtBatch(!nglBufferDataARB || !nglBufferSubDataARB || !nglGenBuffersARB || !nglDeleteBuffersARB, ext)) {
+        if (!R_CheckExtBatch(!nglBufferDataARB || !nglBufferSubDataARB || !nglGenBuffersARB || !nglDeleteBuffersARB, ext, 3, 0)) {
             ri.Printf(PRINT_INFO, result[USING], ext);
-            glContext->vboTarget = GL_ARRAY_BUFFER_ARB;
-            glContext->iboTarget = GL_ELEMENT_ARRAY_BUFFER_ARB;
-        }
-        else { // make extra sure we don't segfault
+            glContext->vboTarget = GL_ARRAY_BUFFER;
+            glContext->iboTarget = GL_ELEMENT_ARRAY_BUFFER;
+
             nglBufferSubDataARB = nglBufferSubData;
             nglGenBuffersARB = nglGenBuffers;
             nglDeleteBuffersARB = nglDeleteBuffers;
@@ -696,18 +837,17 @@ static void R_InitExtensions(void)
         nglGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &glContext->maxAnisotropy);
 
         if (glContext->maxAnisotropy <= 0) {
-            ri.Printf(PRINT_INFO, "... GL_ARB_texture_filter_anisotropic not property supported");
+            ri.Printf(PRINT_INFO, "... GL_ARB_texture_filter_anisotropic not property supported\n");
         }
         else {
-            ri.Printf(PRINT_INFO, "...using GL_ARB_texture_filter_anisotropic (max: %f)", glContext->maxAnisotropy);
-            ri.Cvar_Set("r_ARB_texture_filter_anisotropic", va("%f", glContext->maxAnisotropy));
+            ri.Printf(PRINT_INFO, "...using GL_ARB_texture_filter_anisotropic (max: %f)\n", glContext->maxAnisotropy);
         }
     }
     else {
         ri.Printf(PRINT_INFO, result[NOTFOUND], ext);
     }
 
-    r_arb_texture_filter_anisotropic->i = glContext->maxAnisotropy > 0;
+    ri.Cvar_Set("r_arb_texture_filter_anisotropic", va("%i", glContext->maxAnisotropy > 0));
 
     //
     // ARB_texture_float
@@ -774,6 +914,8 @@ static void R_InitExtensions(void)
         ri.Printf(PRINT_INFO, result[NOTFOUND], ext);
     }
 
+    glContext->swizzleNormalmap = r_arb_texture_compression->i && !(glContext->textureCompressionRef & TCR_RGTC);
+
     //
     // ARB_texture_compression_bptc
     //
@@ -813,6 +955,28 @@ static void R_InitExtensions(void)
     else {
         ri.Printf(PRINT_INFO, result[NOTFOUND], ext);
     }
+    
+    //
+    // GL_ARB_debug_output
+    //
+    if (R_HasExtension("GL_ARB_debug_output")) {
+        glContext->debugType = GL_DBG_ARB;
+
+        nglEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS_ARB);
+        nglEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+        nglEnable(GL_DEBUG_OUTPUT);
+
+        NGL_Debug_Procs;
+            
+        nglDebugMessageControlARB(GL_DEBUG_SOURCE_API_ARB, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
+        nglDebugMessageControlARB(GL_DEBUG_SOURCE_APPLICATION_ARB, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
+        nglDebugMessageControlARB(GL_DEBUG_SOURCE_SHADER_COMPILER_ARB, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
+        nglDebugMessageControlARB(GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
+        nglDebugMessageControlARB(GL_DEBUG_SOURCE_OTHER_ARB, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
+        nglDebugMessageControlARB(GL_DEBUG_SOURCE_THIRD_PARTY_ARB, GL_DONT_CARE, GL_DONT_CARE, 0, NULL, GL_TRUE);
+
+        nglDebugMessageCallbackARB(R_GLDebug_Callback_ARB, NULL);
+    }
 
     // determine GLSL version
     N_strncpyz(glContext->glsl_version_str, (const char *)nglGetString(GL_SHADING_LANGUAGE_VERSION), sizeof(glContext->glsl_version_str));
@@ -832,10 +996,19 @@ static void R_InitGLContext(void)
         }
 
         ri.GLimp_Init(&glConfig);
+        ri.G_SetScaling(1.0, glConfig.vidWidth, glConfig.vidHeight);
     }
 
     // GL function loader, based on https://gist.github.com/rygorous/16796a0c876cf8a5f542caddb55bce8a
-#define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress("n" #name);
+#ifdef _NOMAD_DEBUG
+#define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress(#name); \
+                            if (!n ## name) ri.Error(ERR_FATAL, "Failed to load OpenGL proc '" #name "'");
+#elif defined(_NOMAD_EXPERIMENTAL)
+#define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress(#name); \
+                            if (!n ## name) ri.Printf(PRINT_INFO, COLOR_YELLOW "Failed to load OpenGL proc '" #name "'\n");
+#else
+#define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress(#name);
+#endif
     NGL_Core_Procs
     NGL_Shader_Procs
     NGL_Texture_Procs
@@ -882,14 +1055,26 @@ static void R_InitGLContext(void)
     //
 
     if (!glContext->numExtensions) {
-        ri.Error(ERR_FATAL, "Broken OpenGL installation, GL_NUM_EXTENSIONS returned <= 0");
+        ri.Error(ERR_FATAL, "Broken OpenGL installation, GL_NUM_EXTENSIONS <= 0");
     }
+    if (!glContext->maxTextureUnits) {
+        ri.Error(ERR_FATAL, "Broken OpenGL installation, GL_MAX_TEXTURE_UNITS <= 0");
+    }
+
     if (glContext->maxTextureUnits < 16) {
-        ri.Error(ERR_FATAL, "Broken OpenGL installation, GL_MAX_TEXTURE_UNITS < 16: %i", glContext->maxTextureUnits);
+        ri.Printf(PRINT_INFO, COLOR_YELLOW "WARNING: GL_MAX_TEXTURE_UNITS < 16 (%i)\n", glContext->maxTextureUnits);
     }
 
     if (NGL_VERSION_ATLEAST(3, 0)) { // force the loading of specific procs
-#define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress("n" #name);
+#ifdef _NOMAD_DEBUG
+#define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress(#name); \
+                            if (!n ## name) ri.Error(ERR_FATAL, "Failed to load OpenGL proc '" #name "'");
+#elif defined(_NOMAD_EXPERIMENTAL)
+#define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress(#name); \
+                            if (!n ## name) ri.Printf(PRINT_INFO, COLOR_YELLOW "Failed to load OpenGL proc '" #name "'\n");
+#else
+#define NGL( ret, name, ... ) n ## name = (PFN ## name) ri.GL_GetProcAddress(#name);
+#endif
         NGL_VertexArray_Procs
         NGL_Buffer_Procs
         NGL_FBO_Procs
@@ -932,11 +1117,11 @@ void R_Init(void)
     R_InitTextures();
 
     if (glContext->ARB_framebuffer_object || NGL_VERSION_ATLEAST(3, 0))
-        FBO_Init();
+//        FBO_Init();
     
-    GLSL_InitGPUShaders();
-
     R_InitGPUBuffers();
+
+    GLSL_InitGPUShaders();
 
     R_InitShaders();
 
@@ -946,13 +1131,15 @@ void R_Init(void)
     
     // print info
     GpuInfo_f();
+    GpuMemInfo_f();
     ri.Printf(PRINT_INFO, "---------- finished RE_Init ----------\n");
 }
 
-GDR_EXPORT void RE_BeginRegistration(void)
+GDR_EXPORT void RE_BeginRegistration(gpuConfig_t *config)
 {
     R_Init();
     rg.registered = qtrue;
+    *config = glConfig;
 }
 
 void RE_Shutdown(refShutdownCode_t code)
@@ -968,8 +1155,8 @@ void RE_Shutdown(refShutdownCode_t code)
         R_IssuePendingRenderCommands();
 
         R_DeleteTextures();
-        FBO_Shutdown();
-        R_ShutdownBuffers();
+//        FBO_Shutdown();
+        R_ShutdownGPUBuffers();
         GLSL_ShutdownGPUShaders();
     }
 
@@ -1003,6 +1190,11 @@ GDR_EXPORT void RE_EndRegistration(void)
     RB_ShowImages();
 }
 
+GDR_EXPORT void RE_GetConfig(gpuConfig_t *config)
+{
+    *config = glConfig;
+}
+
 GDR_EXPORT renderExport_t *GDR_DECL GetRenderAPI(uint32_t version, refimport_t *import)
 {
     static renderExport_t re;
@@ -1017,6 +1209,7 @@ GDR_EXPORT renderExport_t *GDR_DECL GetRenderAPI(uint32_t version, refimport_t *
     re.Shutdown = RE_Shutdown;
     re.BeginRegistration = RE_BeginRegistration;
     re.RegisterShader = RE_RegisterShader;
+    re.GetConfig = RE_GetConfig;
 
     re.ClearScene = RE_ClearScene;
 
@@ -1033,5 +1226,100 @@ GDR_EXPORT renderExport_t *GDR_DECL GetRenderAPI(uint32_t version, refimport_t *
     re.SetColor = RE_SetColor;
     re.DrawImage = RE_DrawImage;
 
+    re.RegisterAnimation = NULL;
+    re.CanMinimize = NULL;
+    re.ThrottleBackend = NULL;
+    re.FinishBloom = NULL;
+
     return &re;
+}
+
+static void R_GLDebug_Callback_AMD(GLuint id, GLenum category, GLenum severity, GLsizei length, const GLchar *message, GLvoid *userParam)
+{
+
+}
+
+static void R_GLDebug_Callback_ARB(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const GLvoid *userParam)
+{
+    static const char *color;
+
+    if (!r_glDebug->i)
+        return; // we don't want to confuse non-developers...
+
+    if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) {
+        ri.Printf(PRINT_INFO, COLOR_MAGENTA "[GLDebug Log]:" COLOR_WHITE " %s\n", message);
+        return;
+    }
+
+    if (!color) {
+        if (type == GL_DEBUG_TYPE_ERROR_ARB || type == GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB) {
+            color = COLOR_RED;
+        }
+        else if (type == GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB) {
+            color = COLOR_YELLOW;
+        }
+        else if (type == GL_DEBUG_TYPE_PERFORMANCE_ARB || type == GL_DEBUG_TYPE_PORTABILITY_ARB) {
+            color = COLOR_CYAN;
+        }
+        else {
+            color = COLOR_WHITE;
+        }
+    }
+
+    ri.Printf(PRINT_INFO, "%s[GLDebug Log]:" COLOR_WHITE" %s\n", color, message);
+
+    switch (source) {
+    case GL_DEBUG_SOURCE_API_ARB:
+        ri.Printf(PRINT_INFO, "\tSource: GL_DEBUG_SOURCE_API_ARB\n");
+        break;
+    case GL_DEBUG_SOURCE_APPLICATION_ARB:
+        ri.Printf(PRINT_INFO, "\tSource: GL_DEBUG_SOURCE_APPLICATION_ARB\n");
+        break;
+    case GL_DEBUG_SOURCE_OTHER_ARB:
+        ri.Printf(PRINT_INFO, "\tSource: GL_DEBUG_SOURCE_OTHER_ARB\n");
+        break;
+    case GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB:
+        ri.Printf(PRINT_INFO, "\tSource: GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB\n");
+        break;
+    case GL_DEBUG_SOURCE_THIRD_PARTY_ARB:
+        ri.Printf(PRINT_INFO, "\tSource: GL_DEBUG_SOURCE_THIRD_PARTY_ARB\n");
+        break;
+    case GL_DEBUG_SOURCE_SHADER_COMPILER_ARB:
+        ri.Printf(PRINT_INFO, "\tSource: GL_DEBUG_SOURCE_SHADER_COMPILER_ARB\n");
+        break;
+    };
+
+    switch (type) {
+    case GL_DEBUG_TYPE_ERROR_ARB:
+        ri.Printf(PRINT_INFO, "\tType: GL_DEBUG_TYPE_ERROR_ARB\n");
+        break;
+    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB:
+        ri.Printf(PRINT_INFO, "\tType: GL_DEBUG_TYPE_DEPRECATED_BEHAVIOUR_ARB\n");
+        break;
+    case GL_DEBUG_TYPE_PERFORMANCE_ARB:
+        ri.Printf(PRINT_INFO, "\tType: GL_DEBUG_TYPE_PERFORMANCE_ARB\n");
+        break;
+    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB:
+        ri.Printf(PRINT_INFO, "\tType: GL_DEBUG_TYPE_UNDEFINED_BEHAVIOUR_ARB\n");
+        break;
+    case GL_DEBUG_TYPE_PORTABILITY_ARB:
+        ri.Printf(PRINT_INFO, "\tType: GL_DEBUG_TYPE_PORTABILITY_ARB\n");
+        break;
+    case GL_DEBUG_TYPE_OTHER_ARB:
+        ri.Printf(PRINT_INFO, "\tType: GL_DEBUG_TYPE_OTHER_ARB\n");
+        break;
+    };
+
+    switch (severity) {
+    case GL_DEBUG_SEVERITY_HIGH_ARB:
+        ri.Printf(PRINT_INFO, "\tSeverity: GL_DEBUG_SEVERITY_HIGH_ARB\n");
+        break;
+    case GL_DEBUG_SEVERITY_MEDIUM_ARB:
+        ri.Printf(PRINT_INFO, "\tSeverity: GL_DEBUG_SEVERITY_MEDIUM_ARB\n");
+        break;
+    case GL_DEBUG_SEVERITY_LOW_ARB:
+        ri.Printf(PRINT_INFO, "\tSeverity: GL_DEBUG_SEVERITY_LOW_ARB\n");
+        break;
+    };
+    ri.Printf(PRINT_INFO, "\n");
 }

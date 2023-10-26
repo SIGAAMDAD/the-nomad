@@ -9,11 +9,13 @@ renderExport_t re;
 gameInfo_t gi;
 
 // only one gl context is allowed at a time
-static void *r_GLcontext;
-static SDL_Window *r_window;
-static SDL_Renderer *r_context;
+static void *r_GLcontext = NULL;
+static SDL_Window *r_window = NULL;
+static SDL_Renderer *r_context = NULL;
 
 static cvar_t *cl_title;
+cvar_t *r_glDebug;
+cvar_t *r_allowLegacy;
 cvar_t *r_displayRefresh;
 cvar_t *r_allowSoftwareGL;
 cvar_t *vid_xpos;
@@ -142,6 +144,20 @@ static void G_RefImGuiRender(void) {
     ImGui::Render();
 }
 
+static void G_SetScaling(float factor, uint32_t captureWidth, uint32_t captureHeight)
+{
+    if (gi.con_factor != factor) {
+        // rescale console
+        con_scale->modified = qtrue;
+    }
+
+    gi.con_factor = factor;
+    
+    // set custom capture resolution
+    gi.captureWidth = captureWidth;
+    gi.captureHeight = captureHeight;
+}
+
 static void G_InitRenderRef(void)
 {
     refimport_t import;
@@ -213,6 +229,8 @@ static void G_InitRenderRef(void)
     import.GLimp_HideFullscreenWindow = GLimp_HideFullscreenWindow;
     import.GL_GetProcAddress = GL_GetProcAddress;
 
+    import.G_SetScaling = G_SetScaling;
+
     import.Milliseconds = Sys_Milliseconds;
 
     import.FS_LoadFile = FS_LoadFile;
@@ -237,11 +255,13 @@ static void G_InitRenderRef(void)
     import.Cvar_CheckGroup = Cvar_CheckGroup;
     import.Cvar_ResetGroup = Cvar_ResetGroup;
 
+#if 0
     import.ImGui_Init = G_RefImGuiInit;
     import.ImGui_Shutdown = G_RefImGuiShutdown;
     import.ImGui_Render = G_RefImGuiRender;
     import.ImGui_NewFrame = G_RefImGuiNewFrame;
     import.ImGui_GetDrawData = (void *(*)())ImGui::GetDrawData;
+#endif
 
     ret = GetRenderAPI(NOMAD_VERSION_FULL, &import);
 
@@ -259,7 +279,30 @@ static void G_InitRenderer(void)
         G_InitRenderRef();
     }
 
-    re.BeginRegistration();
+    re.BeginRegistration(&gi.gpuConfig);
+
+    // load the character sets
+    gi.charSetShader = re.RegisterShader("gfx/bigchars");
+    gi.whiteShader = re.RegisterShader("white");
+    gi.consoleShader = re.RegisterShader("console");
+
+    Con_CheckResize();
+
+    g_console_field_width = ((gi.gpuConfig.vidWidth / smallchar_width)) - 2;
+    g_consoleField.widthInChars = g_console_field_width;
+
+    // for 640x480 virtualized screen
+    gi.biasX = 0;
+    gi.biasY = 0;
+    if ( gi.gpuConfig.vidWidth * 480 > gi.gpuConfig.vidHeight * 640 ) {
+		// wide screen, scale by height
+		gi.scale = gi.gpuConfig.vidHeight * (1.0/480.0);
+		gi.biasX = 0.5 * ( gi.gpuConfig.vidWidth - ( gi.gpuConfig.vidHeight * (640.0/480.0) ) );
+	} else {
+		// no wide screen, scale by width
+		gi.scale = gi.gpuConfig.vidWidth * (1.0/640.0);
+		gi.biasY = 0.5 * ( gi.gpuConfig.vidHeight - ( gi.gpuConfig.vidWidth * (480.0/640) ) );
+	}
 }
 
 void G_ShutdownRenderer(refShutdownCode_t code)
@@ -330,13 +373,6 @@ static void G_Snd_Restart_f(void)
 
 }
 
-void G_Frame(void)
-{
-    if (Key_GetCatcher() & KEYCATCH_UI) {
-
-    }
-}
-
 typedef struct {
 	const char	*description;
 	uint32_t    width, height;
@@ -372,7 +408,7 @@ static const vidmode_t r_vidModes[] =
 	{ "Mode 23: 3840x2160",			3840,	2160,	1 },
 	{ "Mode 24: 4096x2160 (4K)",	4096,	2160,	1 }
 };
-static const uint64_t numVidModes = arraylen( r_vidModes );
+static const int64_t numVidModes = (int64_t)arraylen( r_vidModes );
 
 qboolean G_GetModeInfo( int *width, int *height, float *windowAspect, int mode, const char *modeFS, uint32_t dw, uint32_t dh, qboolean fullscreen )
 {
@@ -436,8 +472,20 @@ static qboolean isValidRenderer( const char *s )
 
 static void G_InitRef_Cvars(void)
 {
+    r_allowLegacy = Cvar_Get("r_allowLegacy", "0", CVAR_SAVE | CVAR_LATCH);
+    Cvar_SetDescription(r_allowLegacy, "Allow the use of old OpenGL API versions, requires \\r_drawMode 0 or 1 and \\r_allowShaders 0");
+
+    r_glDebug = Cvar_Get( "r_glDebug", "1", CVAR_SAVE | CVAR_LATCH );
+    Cvar_SetDescription( r_glDebug, "Toggles OpenGL driver debug logging." );
+
+    cl_title = Cvar_Get( "g_title", WINDOW_TITLE, CVAR_INIT | CVAR_PROTECTED );
+    Cvar_SetDescription( cl_title, "Sets the name of the application's window." );
+
     r_allowSoftwareGL = Cvar_Get( "r_allowSoftwareGL", "0", CVAR_LATCH );
 	Cvar_SetDescription( r_allowSoftwareGL, "Toggle the use of the default software OpenGL driver supplied by the Operating System." );
+
+    r_stereoEnabled = Cvar_Get( "r_stereoEnabled", "0", CVAR_SAVE | CVAR_LATCH );
+	Cvar_SetDescription( r_stereoEnabled, "Enable stereo rendering for techniques like shutter glasses." );
 
 	r_swapInterval = Cvar_Get( "r_swapInterval", "0", CVAR_ARCHIVE_ND );
 	Cvar_SetDescription( r_swapInterval,
@@ -528,6 +576,8 @@ void G_Init(void)
     G_ClearState();
     G_InitRef_Cvars();
 
+    Con_Init();
+
     // clear the hunk before anything
     Hunk_Clear();
 
@@ -569,6 +619,8 @@ void G_Shutdown(qboolean quit)
 
     // clear and mute all sounds until next registration
     Snd_StopAll();
+
+    Con_Shutdown();
 
     G_ShutdownVMs();
     G_ShutdownRenderer(quit ? REF_UNLOAD_DLL : REF_DESTROY_WINDOW);
@@ -663,76 +715,21 @@ void G_ClearMem(void)
     }
 }
 
-static void G_DrawScreenField(stereoFrame_t stereoFrame)
-{
-    qboolean uiFullscreen;
-
-    re.BeginFrame(stereoFrame);
-
-    uiFullscreen = (uivm && VM_Call(uivm, 0, UI_IS_FULLSCREEN));
-
-    // if the menu is going to cover the entire screen,
-    // we don't need to render anything under it
-    if (uivm && !uiFullscreen) {
-        switch (gi.state) {
-        default:
-            N_Error(ERR_FATAL, "G_DrawScreenField: bad gi.state");
-            break;
-        case GS_MENU:
-            VM_Call(uivm, 0, UI_DRAW_MENU);
-            break;
-        case GS_LEVEL:
-            // always supply STEREO_CENTER as vieworg offset is now done by the engine.
-            VM_Call(sgvm, 2, SGAME_FINISH_FRAME, gi.frametime, stereoFrame);
-            VM_Call(uivm, 0, UI_FINISH_FRAME);
-            break;
-        };
-    }
-}
-
-static void G_UpdateScreen(void)
-{
-    static int recursive;
-    static uint64_t framecount;
-    static int64_t next_frametime;
-
-    if (framecount == gi.framecount) {
-        int64_t ms = Sys_Milliseconds();
-
-        if (next_frametime && ms - next_frametime < 0) {
-            re.ThrottleBackend();
-        }
-        else {
-            next_frametime = ms + 16; // limit to 60 FPS
-        }
-    }
-    else {
-        next_frametime = 0;
-        framecount = gi.framecount;
-    }
-
-    // if there is no VM, there are also no rendering comamnds. Stop the renderer in
-    // that case
-    if (uivm) {
-        if (gi.gpuConfig.stereoEnabled) {
-
-        }
-    }
-}
-
 void G_Frame(uint64_t msec, uint64_t realMsec)
 {
     gi.frametime = msec;
     gi.realtime += msec;
 
-    // update audio
-    Snd_Submit();
+    re.BeginFrame(STEREO_CENTER);
 
     // update the screen
     gi.framecount++;
-    G_UpdateScreen();
 
-    Con_DrawConsole();
+    // update audio
+    Snd_Submit();
+
+    SCR_UpdateScreen();
+    Con_RunConsole();
 }
 
 
@@ -781,12 +778,12 @@ void GLimp_Minimize( void )
 
 void GLimp_LogComment(const char *comment)
 {
-    Con_DPrintf("%s", comment);
 }
 
 static int GLimp_CreateBaseWindow(gpuConfig_t *config)
 {
-    uint32_t windowFlags;
+    unsigned windowFlags;
+    unsigned contextFlags;
     int depthBits, stencilBits, colorBits;
     int perChannelColorBits;
     int x, y;
@@ -906,6 +903,25 @@ static int GLimp_CreateBaseWindow(gpuConfig_t *config)
         SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 0);
         SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 0);
 
+        contextFlags = 0;
+        if (r_glDebug->i) {
+            contextFlags |= SDL_GL_CONTEXT_DEBUG_FLAG;
+        }
+        if (!r_allowLegacy->i) {
+            contextFlags |= SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG;
+        }
+
+        // set the recommended version, this is not mandatory,
+        // however if your driver isn't >= 3.3, that'll be
+        // deprecated stuff
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+
+        if (contextFlags) {
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, contextFlags);
+        }
+
         if (r_stereoEnabled->i) {
             SDL_GL_SetAttribute(SDL_GL_STEREO, 1);
         }
@@ -921,9 +937,10 @@ static int GLimp_CreateBaseWindow(gpuConfig_t *config)
 
         // [glnomad] make sure we only create ONE window
         if (!r_window) {
-            if ((r_window = SDL_CreateWindow(cl_title->s, x, y, config->vidWidth, config->vidHeight, windowFlags)) == NULL) {
-                Con_DPrintf("SDL_CreateWindow(%s, %i, %i, %i, %i, %x) failed: %s",
-                    cl_title->s, x, y, config->vidWidth, config->vidHeight, windowFlags, SDL_GetError());
+            if ((r_window = SDL_CreateWindow(cl_title->s, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+            config->vidWidth, config->vidHeight, windowFlags)) == NULL) {
+                Con_DPrintf("SDL_CreateWindow(%s, %i, %i, %x) failed: %s",
+                    cl_title->s, config->vidWidth, config->vidHeight, windowFlags, SDL_GetError());
                 return -1;
             }
         }
@@ -1002,7 +1019,7 @@ static int GLimp_CreateBaseWindow(gpuConfig_t *config)
         return -1;
     }
 
-    SDL_GL_MakeCurrent(r_window, r_GLcontext);
+//    SDL_GL_MakeCurrent(r_window, r_GLcontext);
     SDL_GL_GetDrawableSize(r_window, &config->vidWidth, &config->vidHeight);
 
     return 1;

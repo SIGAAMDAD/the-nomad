@@ -101,7 +101,7 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Con_Printf(const char *fmt, 
     }
 
     // append to the debug console buffer
-    Con_AddText(msg);
+	G_ConsolePrint(msg);
 
     // echo to the actual console
     Sys_Print(msg);
@@ -317,9 +317,6 @@ static void Com_PumpKeyEvents(void)
 	SDL_PumpEvents();
 
 	while (SDL_PollEvent(&event)) {
-		if (Key_GetCatcher() & KEYCATCH_CONSOLE)
-			ImGui_ImplSDL2_ProcessEvent(&event);
-
 		switch (event.type) {
 		case SDL_KEYDOWN:
 			Com_QueueEvent(com_frameTime, SE_KEY, event.key.keysym.scancode, qtrue, 0, NULL);
@@ -1197,6 +1194,31 @@ qboolean Com_EarlyParseCmdLine( char *commandLine, char *con_title, int title_si
 }
 
 /*
+=============
+Com_Quit_f
+
+provided as a command so that it can be used
+from the VMs
+=============
+*/
+void Com_Quit_f( void ) {
+	const char *p = Cmd_ArgsFrom( 1 );
+	// don't try to shutdown if we are in a recursive error
+	if ( !com_errorEntered ) {
+		// Some VMs might execute "quit" command directly,
+		// which would trigger an unload of active VM error.
+		// Sys_Quit will kill this process anyways, so
+		// a corrupt call stack makes no difference
+		VM_Forced_Unload_Start();
+		G_Shutdown(qtrue);
+		VM_Forced_Unload_Done();
+		Com_Shutdown();
+		FS_Shutdown( qtrue );
+	}
+	Sys_Exit(EXIT_SUCCESS);
+}
+
+/*
 ================
 Com_Milliseconds
 
@@ -1315,6 +1337,7 @@ void Com_Init(char *commandLine)
 
 	Cmd_AddCommand("shutdown", Com_Shutdown_f);
 	Cmd_AddCommand("restart", Com_GameRestart_f);
+	Cmd_AddCommand("quit", Com_Quit_f);
 
 	if (com_devmode->i) {
 		Cmd_AddCommand("freeze", Com_Freeze_f);

@@ -54,6 +54,7 @@ INTERNAL_OBJS=\
 	$(O)/rendergl/rgl_scene.o \
 	$(O)/rendergl/rgl_backend.o \
 	$(O)/rendergl/rgl_shader.o \
+	$(O)/rendergl/rgl_shade.o \
 	$(O)/rendergl/rgl_cmd.o \
 	$(O)/rendergl/rgl_math.o \
 	$(O)/rendergl/rgl_glsl_fallback.o \

@@ -66,7 +66,7 @@ typedef struct {
     float windowAspect;
     int vidWidth, vidHeight;
     int colorBits, depthBits, stencilBits;
-    int displayFrequency;;
+    int displayFrequency;
 
     qboolean isFullscreen;
     qboolean deviceSupportsGamma;

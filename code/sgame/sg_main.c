@@ -1,15 +1,16 @@
 #include "../engine/n_shared.h"
-#include "../engine/n_scf.h"
 #include "sg_local.h"
-
-world_t sg_world;
-playr_t playrs[MAX_PLAYR_COUNT];
-mobj_t mobs[MAX_MOBS_ACTIVE];
 
 int SG_Init(void);
 int SG_Shutdown(void);
 int SG_RunLoop(void);
 
+/*
+vmMain
+
+this is the only way control passes into the module.
+this must be the very first function compiled into the .qvm file
+*/
 int vmMain(int command, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7,
     int arg8, int arg9, int arg10)
 {
@@ -26,7 +27,7 @@ int vmMain(int command, int arg0, int arg1, int arg2, int arg3, int arg4, int ar
 void GDR_DECL SG_Printf(const char *fmt, ...)
 {
     va_list argptr;
-    char msg[1024];
+    char msg[4096];
 
     va_start(argptr, fmt);
     vsprintf(msg, fmt, argptr);
@@ -38,8 +39,9 @@ void GDR_DECL SG_Printf(const char *fmt, ...)
 void GDR_DECL SG_Error(const char *fmt, ...)
 {
     va_list argptr;
-    char msg[1024];
+    char msg[4096];
 
+    memset(msg, 0, sizeof(msg));
     va_start(argptr, fmt);
     vsprintf(msg, fmt, argptr);
     va_end(argptr);
@@ -47,48 +49,40 @@ void GDR_DECL SG_Error(const char *fmt, ...)
     trap_Error(msg);
 }
 
-const mobj_t mobinfo[NUMMOBS] = {
-    {"Zurgut Hulk"},
-    {"Ravager"},
-    {"Grunt"},
-    {"Shotty"},
-};
+void GDR_DECL GDR_ATTRIBUTE((format(printf, 2, 3))) N_Error(errorCode_t code, const char *err, ...)
+{
+    va_list argptr;
+    char msg[4096];
+
+    va_start(argptr, err);
+    vsprintf(msg, err, argptr);
+    va_end(argptr);
+
+    SG_Error("%s", msg);
+}
+
+#ifndef SGAME_HARD_LINKED
+// this is only here so the functions in n_shared.c and bg_*.c can link
+
+void GDR_DECL GDR_ATTRIBUTE((format(printf, 1, 2))) Con_Printf(const char *fmt, ...)
+{
+    va_list argptr;
+    char msg[4096];
+
+    va_start(argptr, fmt);
+    vsprintf(msg, fmt, argptr);
+    va_end(argptr);
+
+    SG_Printf("%s", msg);
+}
+
+#endif
 
 int SG_Init(void)
 {
-    playr_t* p;
-
-    SG_Printf("SG_Init: initializing solo-player campaign variables");
-
-    sg_world.state = GS_LEVEL;
-    
-    sg_world.playr = &playrs[0];
-    sg_world.numPlayrs = 0;
-    sg_world.playrs = playrs;
-    p = &playrs[0];
-    memset(playrs, 0, MAX_PLAYR_COUNT * sizeof(*playrs));
-
-    p->alive = qtrue;
-    p->dir = D_NORTH;
-    p->health = 100;
-    memset(p->inventory, 0, MAX_PLAYR_INVENTORY * sizeof(*p->inventory));
-    VectorCopy(p->to, vec2_origin);
-    VectorCopy(p->thrust, vec2_origin);
-    VectorCopy(p->pos, vec2_origin);
-
-    sg_world.numMobs = 0;
-    sg_world.mobs = mobs;
-    memset(mobs, 0, MAX_MOBS_ACTIVE * sizeof(*mobs));
-
-    SG_InitMem();
-
-    sg_world.mapwidth = 0;
-    sg_world.mapheight = 0;
-    sg_world.spritemap = (sprite_t **)SG_AllocMem(sizeof(sprite_t *) * sg_world.mapwidth);
-
-    if (!trap_Key_GetCatcher() & KEYCATCH_SGAME) {
-        trap_Key_SetCatcher(trap_Key_GetCatcher() & KEYCATCH_SGAME);
-    }
+//    if (!trap_Key_GetCatcher() & KEYCATCH_SGAME) {
+//        trap_Key_SetCatcher(trap_Key_GetCatcher() & KEYCATCH_SGAME);
+//    }
 
     return 0;
 }

@@ -600,6 +600,18 @@ float disBetweenOBJ(const vec3_t src, const vec3_t tar)
 		return Q_root((pow((src[0] - tar[0]), 2) + pow((src[1] - tar[1]), 2)));
 }
 
+#if defined(Q3_VM) && !defined(__Q3_VM_MATH)
+void CrossProduct(const vec3_t v1, const vec3_t v2, vec3_t cross)
+{
+	cross[0] = v1[1]*v2[2] - v1[2]*v2[1];
+	cross[1] = v1[2]*v2[0] - v1[0]*v2[2];
+	cross[2] = v1[0]*v2[1] - v1[1]*v2[0];
+}
+
+vec_t VectorLength(const vec3_t v) {
+	return (vec_t)sqrtf (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+}
+#endif
 
 /*
 =================

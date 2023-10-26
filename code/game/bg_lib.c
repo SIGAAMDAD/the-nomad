@@ -4,6 +4,7 @@
     #error Never include this in engine builds
 #endif
 
+#if 0
 void *memset(void *dst, int fill, size_t n)
 {
     size_t i;
@@ -70,6 +71,7 @@ void *memmove(void *dst, const void *src, size_t n)
     }
     return dst;
 }
+#endif
 
 // bk001211 - gcc errors on compiling strcpy:  parse error before `__extension__'
 #ifdef Q3_VM
@@ -98,7 +100,7 @@ char *strcat( char *strDestination, const char *strSource ) {
 }
 
 
-char* strchr(const char* str, int c)
+char* strchr(const char* string, int c)
 {
     while ( *string ) {
 		if ( *string == c ) {
@@ -109,6 +111,22 @@ char* strchr(const char* str, int c)
 	return (char *)0;
 }
 
+char *strrchr(const char *string, int c)
+{
+    const char *found, *p;
+
+    c = (unsigned char)c;
+
+    if (c == '\0')
+        return strchr(string, '\0');
+    
+    found = NULL;
+    while ((p = strchr(string, c)) != NULL) {
+        found = p;
+        string = p + 1;
+    }
+    return (char *)found;
+}
 
 char *strstr( const char *string, const char *strCharSet ) {
 	while ( *string ) {
@@ -127,7 +145,7 @@ char *strstr( const char *string, const char *strCharSet ) {
 	return (char *)0;
 }
 
-int strcmp(const char* s1, const char* s2)
+int strcmp(const char* string1, const char* string2)
 {
     while ( *string1 == *string2 && *string1 && *string2 ) {
 		string1++;
@@ -147,9 +165,8 @@ char* strcpy(char *dst, const char *src)
     *d = 0;
     return dst;
 }
-#endif
 
-#ifdef Q3_VM
+
 int tolower(int c)
 {
     if (c >= 'A' && c <= 'Z') {
@@ -308,19 +325,6 @@ loop:
     /*      qsort(pn - r, r / es, es, cmp);*/
 }
 
-
-static int randSeed = 0;
-
-void srand(unsigned seed)
-{
-    randSeed = seed;
-}
-
-int rand(void)
-{
-    randSeed = (69069 * randSeed + 1);
-    return randSeed & 0x7fff;
-}
 
 double atof(const char* string)
 {
@@ -931,6 +935,5 @@ int sscanf( const char *buffer, const char *fmt, ... ) {
 
 	return count;
 }
-
 
 #endif

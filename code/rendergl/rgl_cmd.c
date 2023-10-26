@@ -131,7 +131,7 @@ void RE_AddPostProcessCmd(void)
 	cmd->viewData = rg.viewData;
 }
 
-GDR_EXPORT void RE_DrawImage( uint32_t x, uint32_t y, uint32_t w, uint32_t h, float u1, float v1, float u2, float v2, nhandle_t hShader )
+GDR_EXPORT void RE_DrawImage( float x, float y, float w, float h, float u1, float v1, float u2, float v2, nhandle_t hShader )
 {
 	drawImageCmd_t *cmd;
 

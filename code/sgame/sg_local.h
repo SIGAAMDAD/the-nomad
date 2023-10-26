@@ -5,8 +5,8 @@
 
 #include "../engine/n_shared.h"
 #include "../game/g_game.h"
-#include "../engine/n_map.h"
-#include "../rendergl/rgl_public.h"
+#include "../rendercommon/r_types.h"
+#include "../rendercommon/r_public.h"
 #include "sg_public.h"
 
 // everything is globally or statically allocated within the vm, unless its using the G_AllocMem stuff, but the vm doesn't like it
@@ -129,10 +129,7 @@ void trap_Snd_PlaySfx(sfxHandle_t sfx);
 // force stop an sfx
 void trap_Snd_StopSfx(sfxHandle_t sfx);
 
-// register a texture
-nhandle_t trap_RE_RegisterTexture(const char *npath);
-
-// register a shader
+// register a shader (technically a texture)
 nhandle_t trap_RE_RegisterShader(const char *npath);
 
 int trap_Key_GetCatcher(void);
@@ -140,20 +137,15 @@ void trap_Key_SetCatcher(int catcher);
 int trap_Key_GetKey(const char *binding);
 qboolean trap_Key_IsDown(unsigned int keynum);
 
-// add a render entity to the current scene
-void trap_RE_AddEntity(renderEntityRef_t *ref);
-
-// draw a rectangle to the current scene
-void trap_RE_DrawRect(renderRect_t *rect);
+// drawing functions
+void trap_RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
+void trap_RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys );
 
 // set the rendering color
-void trap_RE_SetColor(const float *color, unsigned int count);
+void trap_RE_SetColor(const float *rgba);
 
 // attains to the current gamestate
 void trap_GetGameState(gamestate_t *state);
 
-#include "sg_playr.h"
-#include "sg_mob.h"
-#include "sg_game.h"
 
 #endif

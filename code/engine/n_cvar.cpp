@@ -232,12 +232,11 @@ static const char *Cvar_Validate(cvar_t *var, const char *value, qboolean warn)
         return value;
 
     limit = NULL;
-
-    char buffer[4096];
+    
     if (var->type == CVT_INT || var->type == CVT_FLOAT) {
         if (!N_isanumber(value)) {
             if (warn)
-                snprintf(buffer, sizeof(buffer), "WARNING: cvar '%s' must be numeric", var->name);
+                Con_Printf("WARNING: cvar '%s' must be numeric", var->name);
 
             limit = var->resetString;
         }
@@ -245,7 +244,7 @@ static const char *Cvar_Validate(cvar_t *var, const char *value, qboolean warn)
             if (var->type == CVT_INT) {
                 if (!Cvar_IsIntegral(value)) {
                     if (warn)
-                        snprintf(buffer, sizeof(buffer), "WARNING: cvar '%s' must be integral", var->name);
+                        Con_Printf("WARNING: cvar '%s' must be integral", var->name);
 
                     sprintf(intbuf, "%i", atoi(value));
                     value = intbuf; // new value
@@ -271,12 +270,12 @@ static const char *Cvar_Validate(cvar_t *var, const char *value, qboolean warn)
             if (warn) {
                 if (limit && (limit == var->mins || limit == var->maxs)) {
                     if (value == intbuf) { // cast to integer
-                        N_strcat(buffer, sizeof(buffer), " and");
+                        Con_Printf(" and");
+                    } else {
+                        Con_Printf("WARNING: cvar '%s'", var->name);
                     }
-                    else {
-                        N_strcat(buffer, sizeof(buffer), va("WARNING: cvar '%s'", var->name));
-                    }
-                    N_strcat(buffer, sizeof(buffer), va(" is out of range (%s '%s')", (limit == var->mins) ? "min" : "max", limit));
+
+                    Con_Printf(" is out of range (%s '%s')", (limit == var->mins) ? "min" : "max", limit);
                 }
             }
         } // N_isanumber
@@ -305,18 +304,11 @@ static const char *Cvar_Validate(cvar_t *var, const char *value, qboolean warn)
         if (!limit)
             limit = value;
         if (warn)
-            N_strcat(buffer, sizeof(buffer), va(", setting to '%s'", limit));
-
-        if (warn) {
-            Con_Printf("%s\n", buffer);
-        }
+            Con_Printf(", setting to '%s'\n", limit);
 
         return limit;
     }
     else {
-        if (warn) {
-            Con_Printf("%s\n", buffer);
-        }
         return value;
     }
 }

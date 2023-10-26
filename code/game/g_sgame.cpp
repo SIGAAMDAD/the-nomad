@@ -52,12 +52,12 @@ static intptr_t G_SGameSystemCalls(intptr_t *args)
     case SG_ERROR:
         N_Error(ERR_DROP, "%s", (const char *)VMA(1));
         return 0;
-    case SG_RE_ADDENTITY:
-        return 0;
     case SG_SND_REGISTERSFX:
         return 0;
     case SG_SND_PLAYSFX:
         return 0;
+    case SG_KEY_GETCATCHER:
+        return Key_GetCatcher();
     case SG_KEY_SETCATCHER:
         Key_SetCatcher(Key_GetCatcher() & args[1]);
         return 0;
@@ -66,9 +66,18 @@ static intptr_t G_SGameSystemCalls(intptr_t *args)
     case SG_KEY_ISDOWN:
         return (intptr_t)Key_IsDown(args[1]);
     case SG_RE_SETCOLOR:
+        re.SetColor((const float *)VMA(1));
         return 0;
-    case SG_RE_DRAWRECT:
+    case SG_RE_ADDPOLYLISTTOSCENE:
+        VM_CHECKBOUNDS(args[1], sizeof(poly_t) * args[2]);
+        re.AddPolyListToScene((const poly_t *)VMA(1), args[2]);
         return 0;
+    case SG_RE_ADDPOLYTOSCENE:
+        VM_CHECKBOUNDS(args[2], sizeof(polyVert_t) * args[3]);
+        re.AddPolyToScene(args[1], (const polyVert_t *)VMA(2), args[3]);
+        return 0;
+    case SG_RE_REGISTERSHADER:
+        return re.RegisterShader((const char *)VMA(1));
     case SG_ADDCOMMAND:
         Cmd_AddCommand((const char *)VMA(1), NULL);
         return 0;
@@ -84,7 +93,7 @@ static intptr_t G_SGameSystemCalls(intptr_t *args)
     case SG_ARGS:
         VM_CHECKBOUNDS(args[1], args[2]);
         Cmd_ArgsBuffer((char *)VMA(1), args[2]);
-        break;
+        return 0;
     case SG_CVAR_UPDATE:
         Cvar_Update((vmCvar_t *)VMA(1), sgvm->privateFlag);
         return 0;
@@ -129,19 +138,25 @@ static intptr_t G_SGameSystemCalls(intptr_t *args)
         return FloatToInt(sqrt(VMF(1)));
     case TRAP_POW:
         return FloatToInt(pow(VMF(1), VMF(2)));
+    case TRAP_LOGF:
+        return FloatToInt(logf(VMF(1)));
+    case TRAP_POWF:
+        return FloatToInt(powf(VMF(1), VMF(2)));
+    case TRAP_SQRTF:
+        return FloatToInt(sqrtf(VMF(1)));
     default:
-        N_Error(ERR_DROP, "G_SgameSyscalls: bad call: %i", (int32_t)args[0]);
+        N_Error(ERR_DROP, "G_SGameSystemCalls: bad call: %lu\n", args[0]);
     };
     return -1;
 }
 
-static intptr_t GDR_DECL G_DllSyscall(intptr_t arg, ...)
+static intptr_t GDR_DECL G_SGameDllSyscall(intptr_t arg, ...)
 {
 #if !defined(GDRi386) || defined(__clang__)
     intptr_t args[10];
     va_list argptr;
 
-    args[0] = args;
+    args[0] = arg;
 
     va_start(argptr, arg);
     for (uint32_t i = 0; i < arraylen(args); i++) {
@@ -174,7 +189,7 @@ void G_InitSGame(void)
     vmInterpret_t interpret;
 
     interpret = (vmInterpret_t)Cvar_VariableInteger("vm_sgame");
-    sgvm = VM_Create(VM_SGAME, G_SGameSystemCalls, G_DllSyscall, interpret);
+    sgvm = VM_Create(VM_SGAME, G_SGameSystemCalls, G_SGameDllSyscall, interpret);
     if (!sgvm) {
         N_Error(ERR_DROP, "G_InitSGame: failed to load vm");
     }
@@ -202,8 +217,8 @@ qboolean G_GameCommand(void)
     return bRes;
 }
 
-void G_SGameRender(void)
+void G_SGameRender(stereoFrame_t stereo)
 {
-    VM_Call(sgvm, 0, SGAME_DRAW);
+    VM_Call(sgvm, 2, SGAME_DRAW, gi.frametime, stereo);
 }
 

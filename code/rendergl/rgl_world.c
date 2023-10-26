@@ -145,10 +145,13 @@ void GDR_EXPORT RE_LoadWorldMap(const char *filename)
     lvlheader_t *header;
     mapheader_t *mheader;
     tile2d_header_t *theader;
+    char texture[MAX_GDR_PATH];
     union {
         byte *b;
         void *v;
     } buffer;
+
+    ri.Printf(PRINT_INFO, "------ RE_LoadWorldMap(%s) ------\n", filename);
 
     if (strlen(filename) >= MAX_GDR_PATH) {
         ri.Error(ERR_DROP, "RE_LoadWorldMap: name '%s' too long", filename);
@@ -204,9 +207,14 @@ void GDR_EXPORT RE_LoadWorldMap(const char *filename)
 
     R_GenerateDrawData();
 
-    rg.world->shader = R_FindShader(theader->info.texture);
+    rg.world->tileset = R_FindImageFile(theader->info.texture, 0, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE);
+
+    COM_StripExtension(theader->info.texture, texture, sizeof(texture));
+    rg.world->shader = R_FindShader(texture, LIGHTMAP_2D, qfalse);
     if (rg.world->shader == rg.defaultShader) {
         ri.Error(ERR_DROP, "RE_LoadWorldMap: failed to load shader for '%s'", filename);
     }
-    rg.world->tileset = rg.world->shader->texture;
+    if (rg.world->tileset != rg.world->shader->stages[0]->bundle[0].image[0]) {
+        ri.Printf(PRINT_INFO, COLOR_YELLOW "WARNING: tileset texture is not equal to shader texture\n");
+    }
 }

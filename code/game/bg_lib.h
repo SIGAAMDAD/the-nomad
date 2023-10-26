@@ -64,7 +64,7 @@ void qsort(void *a, size_t n, size_t es, cmp_t *cmp);
 void srand(unsigned seed);
 int rand(void);
 int vsprintf(char *buffer, const char *fmt, va_list argptr);
-void sscanf(const char *buffer, const char *fmt, ...);
+int sscanf( const char *buffer, const char *fmt, ... );
 
 // Math functions
 double ceil( double x );

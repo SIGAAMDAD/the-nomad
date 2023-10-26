@@ -24,15 +24,24 @@ typedef uint32_t glIndex_t;
 #define PRINT_INFO 0
 #define PRINT_DEVELOPER 1
 
+#define PSHADOW_MAP_SIZE 512
+
 #define NGL_VERSION_ATLEAST(major,minor) (glContext->versionMajor > major || (glContext->versionMajor == major && glContext->versionMinor >= minor))
 
 #define MAX_DRAW_VERTICES (MAX_INT/sizeof(drawVert_t))
 #define MAX_DRAW_INDICES (MAX_INT/sizeof(glIndex_t))
 
 // per drawcall batch
-#define MAX_BATCH_QUADS 8192
+#define MAX_BATCH_QUADS 4096
 #define MAX_BATCH_VERTICES (MAX_BATCH_QUADS*4)
 #define MAX_BATCH_INDICES (MAX_BATCH_QUADS*6)
+
+// any change in the LIGHTMAP_* defines here MUST be reflected in
+// R_FindShader() in tr_bsp.c
+#define LIGHTMAP_2D         -4	// shader is for 2D rendering
+#define LIGHTMAP_BY_VERTEX  -3	// pre-lit triangle models
+#define LIGHTMAP_WHITEIMAGE -2
+#define LIGHTMAP_NONE       -1
 
 typedef enum {
     MI_NONE,
@@ -45,6 +54,12 @@ typedef enum {
 	TCR_RGTC = 0x0001,
 	TCR_BPTC = 0x0002,
 } textureCompressionRef_t;
+
+typedef enum {
+    GL_DBG_KHR,
+    GL_DBG_AMD,
+    GL_DBG_ARB,
+} glDebugType_t;
 
 typedef struct
 {
@@ -60,9 +75,11 @@ typedef struct
     glTextureCompression_t textureCompression;
     textureCompressionRef_t textureCompressionRef;
     gpuMemInfo_t memInfo;
+    glDebugType_t debugType;
     qboolean nonPowerOfTwoTextures;
     qboolean stereo;
     qboolean intelGraphics;
+    qboolean swizzleNormalmap;
 
     int maxTextureUnits;
     int maxTextureSize;
@@ -77,6 +94,8 @@ typedef struct
     qboolean ARB_gl_spirv;
     qboolean ARB_texture_filter_anisotropic;
     qboolean ARB_vertex_buffer_object;
+    qboolean ARB_buffer_storage;
+    qboolean ARB_map_buffer_range;
     qboolean ARB_texture_float;
     qboolean ARB_vertex_array_object;
     qboolean ARB_framebuffer_object;
@@ -139,9 +158,7 @@ enum {
 	ATTRIB_INDEX_POSITION       = 0,
 	ATTRIB_INDEX_TEXCOORD       = 1,
     ATTRIB_INDEX_COLOR          = 2,
-    ATTRIB_INDEX_ALPHA          = 3,
-    ATTRIB_INDEX_NORMAL         = 4,
-    ATTRIB_INDEX_TANGENT        = 5,
+    ATTRIB_INDEX_NORMAL         = 3,
 	
 	ATTRIB_INDEX_COUNT
 };
@@ -149,19 +166,15 @@ enum {
 enum
 {
     ATTRIB_POSITION             = BIT(ATTRIB_INDEX_POSITION),
+    ATTRIB_NORMAL               = BIT(ATTRIB_INDEX_NORMAL),
 	ATTRIB_TEXCOORD             = BIT(ATTRIB_INDEX_TEXCOORD),
     ATTRIB_COLOR                = BIT(ATTRIB_INDEX_COLOR),
-    ATTRIB_ALPHA                = BIT(ATTRIB_INDEX_ALPHA),
-    ATTRIB_NORMAL               = BIT(ATTRIB_INDEX_NORMAL),
-    ATTRIB_TANGENT              = BIT(ATTRIB_INDEX_TANGENT),
 
 	ATTRIB_BITS =
         ATTRIB_POSITION |
         ATTRIB_TEXCOORD | 
         ATTRIB_COLOR |
-        ATTRIB_ALPHA |
-        ATTRIB_NORMAL |
-        ATTRIB_TANGENT
+        ATTRIB_NORMAL
 };
 
 typedef enum {
@@ -175,18 +188,31 @@ typedef enum {
 } glslType_t;
 
 typedef enum {
-    UNIFORM_MODELVIEWPROJECTION,
-
-    UNIFORM_DIFFUSE_MAP,
+    UNIFORM_DIFFUSE_MAP = 0,
+    UNIFORM_LIGHT_MAP,
     UNIFORM_NORMAL_MAP,
+    UNIFORM_SPECULAR_MAP,
 
-    UNIFORM_BASECOLOR,
-    UNIFORM_VERTCOLOR,
-    UNIFORM_COLOR,
-
-    UNIFORM_AMBIENT_LIGHT,
     UNIFORM_NUM_LIGHTS,
-    UNIFORM_LIGHTS,
+    UNIFORM_LIGHT_INFO,
+    UNIFORM_AMBIENT_LIGHT,
+
+    UNIFORM_MODELVIEWPROJECTION,
+    UNIFORM_MODELMATRIX,
+
+    UNIFORM_SPECULAR_SCALE,
+    UNIFORM_NORMAL_SCALE,
+
+    UNIFORM_COLOR_GEN,
+    UNIFORM_ALPHA_GEN,
+    UNIFORM_COLOR,
+    UNIFORM_BASE_COLOR,
+    UNIFORM_VERT_COLOR,
+
+    // random stuff
+    UNIFORM_ALPHA_TEST,
+    UNIFORM_TCGEN,
+	UNIFORM_VIEWINFO, // znear, zfar, width/2, height/2
 
     UNIFORM_COUNT
 } uniform_t;
@@ -337,29 +363,37 @@ typedef struct {
 } vertexAttrib_t;
 
 // not meant to be used by anything other than the vbo backend
-typedef struct {
-    void *data;
-    uint64_t size;
-    uintptr_t offset;
-    qboolean mapped; // glMapBuffer used?
-} buffer_t;
 
 typedef enum {
-    BUFFER_STATIC, // read only buffer (for cpu data, not gpu, cuz matrices)
-    BUFFER_FRAME, // update on a per-frame basis
+    BUFFER_STATIC,      // data is constant throughout buffer lifetime
+    BUFFER_DYNAMIC,     // expected to be updated once in a while, but not every frame
+    BUFFER_FRAME,       // expected to be update on a per-frame basis
 } bufferType_t;
+
+typedef enum {
+    BUF_GL_MAPPED,
+    BUF_GL_BUFFER,
+    BUF_GL_CLIENT
+} bufMemType_t;
+
+typedef struct {
+    void *data;
+    uint32_t target;
+    uint32_t id;
+    uint32_t size;
+    bufMemType_t usage;
+    uintptr_t offset;
+} buffer_t;
 
 typedef struct vertexBuffer_s
 {
     char name[MAX_GDR_PATH];
     
     uint32_t vaoId;
-    uint32_t iboId;
-    uint32_t vboId;
     bufferType_t type;
 
-    buffer_t vertices;
-    buffer_t indices;
+    buffer_t vertex;
+    buffer_t index;
 
     vertexAttrib_t attribs[ATTRIB_INDEX_COUNT];
 
@@ -474,9 +508,8 @@ typedef enum {
 	CGEN_EXACT_VERTEX_LIT,	// like CGEN_EXACT_VERTEX but takes a light direction from the lightgrid
 	CGEN_VERTEX_LIT,		// like CGEN_VERTEX but takes a light direction from the lightgrid
 	CGEN_ONE_MINUS_VERTEX,
-	CGEN_WAVEFORM,			// programmatically generated
+//	CGEN_WAVEFORM,			// programmatically generated
 	CGEN_LIGHTING_DIFFUSE,
-	CGEN_FOG,				// standard fog
 	CGEN_CONST				// fixed color
 } colorGen_t;
 
@@ -488,7 +521,7 @@ typedef enum {
 	TCGEN_ENVIRONMENT_MAPPED,
 	TCGEN_ENVIRONMENT_MAPPED_FP, // with correct first-person mapping
 	TCGEN_FOG,
-	TCGEN_VECTOR			// S and T from world coordinates
+	TCGEN_VECTOR,			// S and T from world coordinates
 } texCoordGen_t;
 
 typedef enum {
@@ -497,15 +530,6 @@ typedef enum {
 	ACFF_MODULATE_RGBA,
 	ACFF_MODULATE_ALPHA
 } acff_t;
-
-typedef struct {
-	float base;
-	float amplitude;
-	float phase;
-	float frequency;
-
-	genFunc_t	func;
-} waveForm_t;
 
 #define TR_MAX_TEXMODS 4
 
@@ -520,20 +544,55 @@ typedef enum {
 	TMOD_ENTITY_TRANSLATE
 } texMod_t;
 
+typedef struct {
+	texMod_t		type;
+
+	// used for TMOD_TURBULENT and TMOD_STRETCH
+//	waveForm_t		wave;
+
+	// used for TMOD_TRANSFORM
+	float			matrix[2][2];		// s' = s * m[0][0] + t * m[1][0] + trans[0]
+	float			translate[2];		// t' = s * m[0][1] + t * m[0][1] + trans[1]
+
+	// used for TMOD_SCALE
+	float			scale[2];			// s *= scale[0]
+	                                    // t *= scale[1]
+
+	// used for TMOD_SCROLL
+	float			scroll[2];			// s' = s + scroll[0] * time
+										// t' = t + scroll[1] * time
+
+	// + = clockwise
+	// - = counterclockwise
+	float			rotateSpeed;
+
+} texModInfo_t;
+
+#define MAX_IMAGE_ANIMATIONS 24
+
+typedef struct {
+	texture_t		*image[MAX_IMAGE_ANIMATIONS];
+	uint32_t		numImageAnimations;
+	double			imageAnimationSpeed;
+
+	texCoordGen_t	tcGen;
+	vec3_t			tcGenVectors[2];
+
+	uint32_t		numTexMods;
+	texModInfo_t	*texMods;
+
+	uint32_t		videoMapHandle;
+	qboolean		isLightmap;
+	qboolean		isVideoMap;
+} textureBundle_t;
+
 enum
 {
 	TB_COLORMAP    = 0,
 	TB_DIFFUSEMAP  = 0,
 	TB_LIGHTMAP    = 1,
-	TB_LEVELSMAP   = 1,
-	TB_SHADOWMAP3  = 1,
 	TB_NORMALMAP   = 2,
-	TB_DELUXEMAP   = 3,
-	TB_SHADOWMAP2  = 3,
 	TB_SPECULARMAP = 4,
-	TB_SHADOWMAP   = 5,
-	TB_CUBEMAP     = 6,
-	TB_SHADOWMAP4  = 6,
 	NUM_TEXTURE_BUNDLES = 7
 };
 
@@ -548,9 +607,29 @@ typedef enum
 	ST_GLSL
 } stageType_t;
 
-//
-// ahh... shaders... 90% of the stuff here'll be used the future, just not yet
-//
+typedef struct {
+    qboolean active;
+
+    textureBundle_t bundle[NUM_TEXTURE_BUNDLES];
+
+    colorGen_t rgbGen;
+    alphaGen_t alphaGen;
+
+    byte constantColor[4]; // for CGEN_CONST and AGEN_CONST
+
+    uint32_t stateBits; // GLSL_xxxx mask
+
+    qboolean isLightmap;
+
+    shaderProgram_t *glslShaderGroup;
+    uint32_t glslShaderIndex;
+
+    stageType_t type;
+
+    vec4_t normalScale;
+    vec4_t specularScale;
+} shaderStage_t;
+
 typedef struct shader_s {
 	char		name[MAX_GDR_PATH];		// game path, including extension
 
@@ -570,7 +649,15 @@ typedef struct shader_s {
 	uint32_t	surfaceFlags;			// if explicitlyDefined, this will have SURF_* flags
 	uint32_t	contentFlags;
 
-    texture_t   *texture;
+    uint32_t vertexAttribs;
+
+    shaderStage_t *stages[MAX_SHADER_STAGES];
+
+    qboolean noPicMips;
+    qboolean noMipMaps;
+    qboolean polygonOffset;
+    int32_t lightmapIndex;
+    int32_t lightmapSearchIndex;
 
 	struct shader_s	*next;
 } shader_t;
@@ -636,6 +723,12 @@ typedef struct {
     shader_t *shader;
 } world_t;
 
+typedef struct stageVars
+{
+	color4ub_t	colors[MAX_BATCH_VERTICES];
+	vec2_t		texcoords[NUM_TEXTURE_BUNDLES][MAX_BATCH_VERTICES];
+} stageVars_t;
+
 typedef struct
 {
     // silence the compiler warning
@@ -648,6 +741,8 @@ typedef struct
     int16_t normal[MAX_BATCH_VERTICES] GDR_ALIGN(16);
     vec2_t texCoords[MAX_BATCH_VERTICES] GDR_ALIGN(16);
     uint16_t color[MAX_BATCH_VERTICES][4] GDR_ALIGN(16);
+
+    stageVars_t svars GDR_ALIGN(16);
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif
@@ -659,7 +754,14 @@ typedef struct
     uint64_t firstIndex;
 
     shader_t *shader;
+    shaderStage_t **stages;
     vertexBuffer_t *buf;
+
+    double shaderTime;
+
+    qboolean useInternalVao;
+    qboolean useCacheVao;
+    qboolean updated;
 } drawBuffer_t;
 
 /*
@@ -754,6 +856,7 @@ typedef struct renderGlobals_s
     performanceCounters_t pc;
 
     shader_t *shaders[MAX_RENDER_SHADERS];
+    shader_t *sortedShaders[MAX_RENDER_SHADERS];
     uint64_t numShaders;
 
     texture_t *textures[MAX_RENDER_TEXTURES];
@@ -767,6 +870,9 @@ typedef struct renderGlobals_s
 
     shaderProgram_t *programs[MAX_RENDER_PROGRAMS];
     uint64_t numPrograms;
+
+    uint32_t numLightmaps;
+    texture_t **lightmaps;
 
     world_t *world;
     qboolean worldLoaded;
@@ -797,6 +903,8 @@ typedef struct renderGlobals_s
 
     uint64_t frameCount;
 
+    file_t logFile;
+
     float identityLight;
 
     uint32_t overbrightBits;
@@ -804,11 +912,11 @@ typedef struct renderGlobals_s
 } renderGlobals_t;
 
 typedef enum {
-    TexDetail_GPUvsGod,
-    TexDetail_ExpensiveShitWeveGotHere,
-    TexDetail_Normie,
+    TexDetail_MSDOS,
     TexDetail_IntegratedGPU,
-    TexDetail_MSDOS
+    TexDetail_Normie,
+    TexDetail_ExpensiveShitWeveGotHere,
+    TexDetail_GPUvsGod
 } textureDetail_t;
 
 typedef enum {              // [min, mag]
@@ -878,6 +986,23 @@ extern gpuConfig_t glConfig;
 #define DRAW_CLIENT_BUFFERED 1
 #define DRAW_GPU_BUFFERED 2
 
+#define TEXUNIT_COLORMAP    (GL_TEXTURE0+TB_COLORMAP)
+#define TEXUNIT_DIFFUSEMAP  (GL_TEXTURE0+TB_DIFFUSEMAP)
+#define TEXUNIT_LIGHTMAP    (GL_TEXTURE0+TB_LIGHTMAP)
+#define TEXUNIT_NORMALMAP   (GL_TEXTURE0+TB_NORMALMAP)
+#define TEXUNIT_SPECULARMAP (GL_TEXTURE0+TB_SPECULARMAP)
+#define TEXUNIT_TB(x) (GL_TEXTURE0+(x))
+
+extern cvar_t *r_experimental; // do we want experimental features?
+extern cvar_t *r_colorMipLevels;
+extern cvar_t *r_glDebug;
+extern cvar_t *r_genNormalMaps;
+extern cvar_t *r_printShaders;
+extern cvar_t *r_baseNormalX;
+extern cvar_t *r_baseNormalY;
+extern cvar_t *r_baseParallax;
+extern cvar_t *r_baseSpecular;
+extern cvar_t *r_baseGloss;
 extern cvar_t *vid_xpos;
 extern cvar_t *vid_ypos;
 extern cvar_t *r_allowSoftwareGL;
@@ -932,7 +1057,10 @@ extern cvar_t *r_picmip;
 extern cvar_t *r_overBrightBits;
 extern cvar_t *r_intensity;
 extern cvar_t *r_normalMapping;
+extern cvar_t *r_specularMapping;
 extern cvar_t *r_showImages;
+extern cvar_t *r_fullbright;
+extern cvar_t *r_singleShader;
 
 // GL extensions
 extern cvar_t *r_arb_texture_filter_anisotropic;
@@ -972,11 +1100,19 @@ static GDR_INLINE int VectorCompare4(const vec4_t v1, const vec4_t v2)
 // rgl_shader.c
 //
 void R_ShaderList_f(void);
+nhandle_t RE_RegisterShaderFromTexture(const char *name, texture_t *image, int32_t lightmapIndex, qboolean mipRawImage);
 nhandle_t RE_RegisterShader(const char *name);
 shader_t *R_GetShaderByHandle(nhandle_t hShader);
 shader_t *R_FindShaderByName( const char *name );
-shader_t *R_FindShader(const char *name);
+shader_t *R_FindShader(const char *name, int32_t lightmapIndex, qboolean mipRawImage);
 void R_InitShaders( void );
+
+//
+// rgl_shade.c
+//
+void RB_BeginSurface(shader_t *shader);
+void RB_EndSurface(void);
+void RB_StageIterator(void);
 
 //
 // rgl_program.c
@@ -1032,9 +1168,10 @@ void R_IssuePendingRenderCommands( void );
 //
 // rgl_backend.c
 //
+void GDR_ATTRIBUTE((format(printf, 1, 2))) GL_LogComment(const char *fmt, ...);
+void GDR_ATTRIBUTE((format(printf, 1, 2))) GL_LogError(const char *fmt, ...);
+void GL_SetObjectDebugName(GLenum target, GLuint id, const char *name, const char *add);
 void RB_ShowImages(void);
-void RB_BeginSurface(shader_t *shader);
-void RB_EndSurface(void);
 void GL_SetModelViewMatrix(const mat4_t m);
 void GL_SetProjectionMatrix(const mat4_t m);
 void GL_CheckErrors(void);
@@ -1066,11 +1203,12 @@ void R_Init(void);
 //
 // rgl_main.c
 //
+uint32_t R_GenDrawSurfSort(const shader_t *sh);
 void RB_MakeModelViewProjection(void);
 void GL_CameraResize(void);
 void R_SortDrawSurfs(drawSurf_t *drawSurfs, uint32_t numDrawSurfs);
 void R_AddDrawSurf(surfaceType_t *surface, shader_t *shader);
-void RE_BeginRegistration(void);
+void RE_BeginRegistration(gpuConfig_t *config);
 
 //
 // rgl_scene.c
@@ -1081,6 +1219,8 @@ extern uint64_t r_firstSceneEntity;
 extern uint64_t r_numPolys;
 extern uint64_t r_firstScenePoly;
 extern uint64_t r_numPolyVerts;
+void R_ConvertCoords(vec3_t verts[4], vec3_t pos);
+qboolean RB_SurfaceVaoCached(uint32_t numVerts, drawVert_t *verts, uint32_t numIndices, glIndex_t *indices);
 void GDR_EXPORT RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
 void GDR_EXPORT RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys );
 void GDR_EXPORT RE_ClearScene(void);
@@ -1121,6 +1261,7 @@ void R_VaoUnpackNormal(vec3_t v, int16_t *pack);
 void R_InitGPUBuffers(void);
 void R_ShutdownGPUBuffers(void);
 
+#if 0
 // per frame functions
 void VaoCache_Init(void);
 void VaoCache_InitQueue(void);
@@ -1130,6 +1271,7 @@ void VaoCache_Commit(void);
 void VaoCache_RecycleVertexBuffer(void);
 void VaoCache_RecycleIndexBuffer(void);
 void VaoCache_CheckAdd(qboolean *endSurface, qboolean *recycleVertexBuffer, qboolean *recycleIndexBuffer, uint32_t numVerts, uint32_t numIndexes);
+#endif
 void RB_UpdateCache(uint32_t attribBits);
 
 
@@ -1193,8 +1335,8 @@ typedef struct {
 typedef struct {
     renderCmdType_t commandId;
     shader_t *shader;
-    uint32_t x, y;
-    uint32_t w, h;
+    float x, y;
+    float w, h;
     float u1, v1;
     float u2, v2;
 } drawImageCmd_t;
@@ -1220,7 +1362,7 @@ typedef struct {
 
 extern renderBackendData_t *backendData;
 
-GDR_EXPORT void RE_DrawImage( uint32_t x, uint32_t y, uint32_t w, uint32_t h, float u1, float v1, float u2, float v2, nhandle_t hShader );
+GDR_EXPORT void RE_DrawImage( float x, float y, float w, float h, float u1, float v1, float u2, float v2, nhandle_t hShader );
 GDR_EXPORT void RE_LoadWorldMap(const char *filename);
 GDR_EXPORT void RE_SetColor(const float *rgba);
 

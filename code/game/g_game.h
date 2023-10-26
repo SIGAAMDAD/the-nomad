@@ -8,12 +8,10 @@
 #include "../sgame/sg_public.h"
 #include "../ui/ui_public.h"
 #include "../rendercommon/r_public.h"
-#include "../engine/vm_local.h"
 
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
-
 typedef enum
 {
     GS_MENU,
@@ -33,6 +31,10 @@ enum
     OCC_THANKSGIVING
 };
 
+#ifndef Q3_VM
+
+#include "../engine/vm_local.h"
+
 typedef struct {
     char currentmap[MAX_GDR_PATH];
 
@@ -46,6 +48,17 @@ typedef struct {
     uint64_t frametime;
     uint64_t framecount;
     uint64_t realtime;
+
+    uiMenu_t menuIndex;
+    nhandle_t consoleShader;
+    nhandle_t whiteShader;
+    nhandle_t charSetShader;
+    uint32_t captureWidth;
+    uint32_t captureHeight;
+    float con_factor;
+    float biasX;
+    float biasY;
+    float scale;
     
     gpuConfig_t gpuConfig;
 } gameInfo_t;
@@ -56,6 +69,12 @@ extern gameInfo_t gi;
 // logging parameters
 #define PRINT_INFO 0
 #define PRINT_DEVELOPER 1
+
+extern uint32_t g_console_field_width;
+extern uint32_t bigchar_width;
+extern uint32_t bigchar_height;
+extern uint32_t smallchar_width;
+extern uint32_t smallchar_height;
 
 // non api specific renderer cvars
 extern cvar_t *vid_xpos;
@@ -80,8 +99,16 @@ extern cvar_t *g_depthBits;
 extern cvar_t *r_stereoEnabled;
 extern cvar_t *g_drawBuffer;
 
+extern cvar_t *con_conspeed;
+extern cvar_t *con_autoclear;
+extern cvar_t *con_notifytime;
+extern cvar_t *con_scale;
+extern cvar_t *con_color;
+extern cvar_t *con_noprint;
+extern cvar_t *g_conXOffset;
+
 //
-// g_game
+// g_game.cpp
 //
 void G_Init(void);
 void G_StartHunkUsers(void);
@@ -99,30 +126,65 @@ void G_Frame(uint64_t msec, uint64_t realMsec);
 void G_InitDisplay(gpuConfig_t *config);
 
 //
-// g_console
+// g_screen.cpp
 //
-void Console_Key(uint32_t key);
-void Field_CharEvent( field_t *edit, int ch );
+uint32_t SCR_GetBigStringWidth( const char *str ); // returns in virtual 640x480 coordinates
+void SCR_AdjustFrom640( float *x, float *y, float *w, float *h );
+void SCR_FillRect( float x, float y, float width, float height,  const float *color );
+void SCR_DrawPic( float x, float y, float width, float height, nhandle_t hShader );
+void SCR_DrawNamedPic( float x, float y, float width, float height, const char *picname );
+
+void SCR_DrawBigString( uint32_t x, uint32_t y, const char *s, float alpha, qboolean noColorEscape );			// draws a string with embedded color control characters with fade
+void SCR_DrawStringExt( uint32_t x, uint32_t y, float size, const char *string, const float *setColor,
+    qboolean forceColor, qboolean noColorEscape );
+void	SCR_DrawSmallStringExt( uint32_t x, uint32_t y, const char *string, const float *setColor,
+    qboolean forceColor, qboolean noColorEscape );
+void SCR_DrawSmallChar( uint32_t x, uint32_t y, int ch );
+void SCR_DrawSmallString( uint32_t x, uint32_t y, const char *s, uint64_t len );
+void SCR_UpdateScreen( void );
 
 //
-// g_event
+// g_console.cpp
+//
+void Con_DrawConsole( void );
+void Con_RunConsole( void );
+void Con_PageUp( uint32_t lines );
+void Con_PageDown( uint32_t lines );
+void Con_Top( void );
+void Con_Bottom( void );
+void Con_Close( void );
+void G_ConsolePrint( const char *txt );
+void Con_CheckResize( void );
+void Con_ClearNotify( void );
+void Con_ToggleConsole_f( void );
+
+extern qboolean key_overstrikeMode;
+
+//
+// g_event.cpp
 //
 void G_KeyEvent(uint32_t keynum, qboolean down, uint32_t time);
+void Field_Draw( field_t *edit, uint32_t x, uint32_t y, uint32_t width, qboolean showCursor, qboolean noColorEscape );
+void Field_BigDraw( field_t *edit, uint32_t x, uint32_t y, uint32_t width, qboolean showCursor, qboolean noColorEscape );
+qboolean Key_AnyDown(void);
 
 //
-// g_ui
+// g_ui.cpp
 //
 void G_ShutdownUI(void);
 void G_InitUI(void);
 
 //
-// g_sgame
+// g_sgame.cpp
 //
 void G_ShutdownSGame(void);
 void G_InitSGame(void);
+void G_SGameRender(stereoFrame_t stereo);
 
 extern vm_t *sgvm;
 extern vm_t *uivm;
 extern renderExport_t re;
+
+#endif
 
 #endif

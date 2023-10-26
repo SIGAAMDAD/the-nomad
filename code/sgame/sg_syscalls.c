@@ -1,6 +1,6 @@
 
 // sg_syscalls.c: this file is only included in development dll builds, the .asm file is used instead when building the VM file
-#include "../rendergl/rgl_public.h"
+#include "../rendercommon/r_public.h"
 #include "sg_local.h"
 
 #ifdef Q3_VM
@@ -96,7 +96,7 @@ int trap_Key_GetKey(const char *binding)
     return syscall(SG_KEY_GETKEY, binding);
 }
 
-qboolean trap_Key_IsDown(unsigned int keynum)
+qboolean trap_Key_IsDown(uint32_t keynum)
 {
     return syscall(SG_KEY_ISDOWN, keynum);
 }
@@ -106,19 +106,19 @@ int trap_MemoryRemaining(void)
     return syscall(SG_MEMORY_REMAINING);
 }
 
-void trap_RE_AddEntity(renderEntityRef_t *ref)
+void trap_RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts )
 {
-    syscall(SG_RE_ADDENTITY, ref);
+    syscall(SG_RE_ADDPOLYTOSCENE, hShader, verts, numVerts);
 }
 
-void trap_RE_DrawRect(renderRect_t *rect)
+void trap_RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys )
 {
-    syscall(SG_RE_DRAWRECT, rect);
+    syscall(SG_RE_ADDPOLYLISTTOSCENE, polys, numPolys);
 }
 
-void trap_RE_SetColor(const float *color, unsigned int count)
+void trap_RE_SetColor(const float *rgba)
 {
-    syscall(SG_RE_SETCOLOR, color, count);
+    syscall(SG_RE_SETCOLOR, rgba);
 }
 
 void trap_Snd_PlaySfx(sfxHandle_t sfx)
@@ -134,11 +134,6 @@ sfxHandle_t trap_Snd_RegisterSfx(const char *npath)
 void trap_Snd_StopSfx(sfxHandle_t sfx)
 {
     syscall(SG_SND_STOPSFX, sfx);
-}
-
-nhandle_t trap_RE_RegisterTexture(const char *npath)
-{
-    return syscall(SG_RE_REGISTERTEXTURE, npath);
 }
 
 nhandle_t trap_RE_RegisterShader(const char *npath)

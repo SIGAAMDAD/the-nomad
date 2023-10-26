@@ -157,6 +157,7 @@ SRC=\
 	$(O)/game/g_ui.o \
 	$(O)/game/g_event.o \
 	$(O)/game/g_sound.o \
+	$(O)/game/g_screen.o \
 	$(O)/game/g_console.o \
 	\
 	$(O)/engine/vm.o \

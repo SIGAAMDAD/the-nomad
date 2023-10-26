@@ -1,4 +1,9 @@
+#ifdef Q3_VM
+#include "../engine/n_shared.h"
+#else
 #include "code/engine/n_shared.h"
+#endif
+
 
 float Com_Clamp( float min, float max, float value ) {
 	if ( value < min ) {
@@ -313,8 +318,8 @@ if path doesn't have an extension, then append
 */
 void COM_DefaultExtension( char *path, uint64_t maxSize, const char *extension )
 {
-	const char *dot = strrchr(path, '.'), *slash;
-	if (dot && ((slash = strrchr(path, '/')) == NULL || slash < dot))
+	const char *dot = (const char *)strrchr(path, '.'), *slash;
+	if (dot && ((slash = (const char *)strrchr(path, '/')) == NULL || slash < dot))
 		return;
 	else
 		N_strcat(path, maxSize, extension);
@@ -333,6 +338,52 @@ void COM_StripExtension(const char *in, char *out, uint64_t destsize)
 	else
 		N_strncpy(out, in, destsize);
 }
+
+/*
+============
+Com_Split
+============
+*/
+int Com_Split( char *in, char **out, uint64_t outsz, int delim )
+{
+	int c;
+	char **o = out, **end = out + outsz;
+	// skip leading spaces
+	if ( delim >= ' ' ) {
+		while( (c = *in) != '\0' && c <= ' ' )
+			in++; 
+	}
+	*out = in; out++;
+	while( out < end ) {
+		while( (c = *in) != '\0' && c != delim )
+			in++; 
+		*in = '\0';
+		if ( !c ) {
+			// don't count last null value
+			if ( out[-1][0] == '\0' )
+				out--;
+			break;
+		}
+		in++;
+		// skip leading spaces
+		if ( delim >= ' ' ) {
+			while( (c = *in) != '\0' && c <= ' ' )
+				in++; 
+		}
+		*out = in; out++;
+	}
+	// sanitize last value
+	while( (c = *in) != '\0' && c != delim )
+		in++; 
+	*in = '\0';
+	c = out - o;
+	// set remaining out pointers
+	while( out < end ) {
+		*out = in; out++;
+	}
+	return c;
+}
+
 
 void CopyShortSwap(void *dest, void *src)
 {
@@ -1084,8 +1135,8 @@ COM_GetExtension
 */
 const char *COM_GetExtension( const char *name )
 {
-	const char *dot = strrchr(name, '.'), *slash;
-	if (dot && ((slash = strrchr(name, '/')) == NULL || slash < dot))
+	const char *dot = (const char *)strrchr(name, '.'), *slash;
+	if (dot && ((slash = (const char *)strrchr(name, '/')) == NULL || slash < dot))
 		return dot + 1;
 	else
 		return "";
@@ -1111,7 +1162,7 @@ void COM_BeginParseSession( const char *name )
 {
 	com_lines = 1;
 	com_tokenline = 0;
-	snprintf(com_parsename, sizeof(com_parsename), "%s", name);
+	Com_snprintf(com_parsename, sizeof(com_parsename), "%s", name);
 }
 
 
@@ -1137,7 +1188,7 @@ void COM_ParseError( const char *format, ... )
 	static char string[4096];
 
 	va_start( argptr, format );
-	N_vsnprintf (string, sizeof(string), format, argptr);
+	vsprintf (string, format, argptr);
 	va_end( argptr );
 
 	Con_Printf( COLOR_RED "WARNING: %s, line %lu: %s\n", com_parsename, COM_GetCurrentParseLine(), string );
@@ -1149,7 +1200,7 @@ void COM_ParseWarning( const char *format, ... )
 	static char string[4096];
 
 	va_start( argptr, format );
-	N_vsnprintf (string, sizeof(string), format, argptr);
+	vsprintf (string, format, argptr);
 	va_end( argptr );
 
 	Con_Printf( COLOR_RED "%s, line %lu: %s\n", com_parsename, COM_GetCurrentParseLine(), string );

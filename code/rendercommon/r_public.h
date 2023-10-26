@@ -6,6 +6,8 @@
 #include "../engine/n_shared.h"
 #include "../rendercommon/r_types.h"
 
+#ifndef Q3_VM
+
 typedef enum {
     REF_KEEP_CONTEXT, // don't destroy window and context, just deallocate buffers and shaders
     REF_KEEP_WINDOW, // destroy context, keep window
@@ -75,11 +77,7 @@ typedef struct {
     char **(*FS_ListFiles)(const char *path, const char *extension, uint64_t *numfiles);
     void (*FS_WriteFile)(const char *npath, const void *buffer, uint64_t size);
 
-    int (*ImGui_Init)(void *renderData, const char *renderName);
-    void (*ImGui_Shutdown)(void);
-    void (*ImGui_Render)(void);
-    void (*ImGui_NewFrame)(void);
-    void *(*ImGui_GetDrawData)(void);
+    void (*G_SetScaling)(float factor, uint32_t captureWidth, uint32_t captureHeight);
 
     void (*GLimp_Init)(gpuConfig_t *config);
     void (*GLimp_SetGamma)(const unsigned short r[256], const unsigned short g[256], const unsigned short b[256]);
@@ -106,10 +104,10 @@ typedef struct {
 	// and returns the current gl configuration, including screen width
 	// and height, which can be used by the client to intelligently
 	// size display elements
-	void (*BeginRegistration)( void );
+	void (*BeginRegistration)( gpuConfig_t *config );
     nhandle_t (*RegisterSpriteSheet)( const char *name, uint32_t spriteX, uint32_t spriteY );
 	nhandle_t (*RegisterShader)( const char *name );
-    nhandle_t (*RegsterAnimation)( const char *name );
+    nhandle_t (*RegisterAnimation)( const char *name );
 	void (*LoadWorld)( const char *name );
 
 	// EndRegistration will draw a tiny polygon with each texture, forcing
@@ -121,8 +119,10 @@ typedef struct {
 	void (*ClearScene)( void );
     void (*AddPolyToScene)( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
     void (*AddPolyListToScene)( const poly_t *polys, uint32_t numPolys );
-    void (*DrawImage)( uint32_t x, uint32_t y, uint32_t w, uint32_t h, float u1, float v1, float u2, float v2, nhandle_t hShader );
+    void (*DrawImage)( float x, float y, float w, float h, float u1, float v1, float u2, float v2, nhandle_t hShader );
 	void (*RenderScene)( void );
+
+    void (*GetConfig)( gpuConfig_t *config );
 
 	void (*SetColor)( const float *rgba );	// NULL = 1,1,1,1
 
@@ -147,5 +147,7 @@ typedef struct {
 
 extern refimport_t ri;
 typedef renderExport_t *(GDR_DECL *GetRenderAPI_t)(uint32_t version, refimport_t *import);
+
+#endif
 
 #endif

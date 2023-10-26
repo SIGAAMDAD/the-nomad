@@ -14,15 +14,25 @@ typedef struct {
 
 // these must in the same order as in uniform_t in rgl_local.h
 static uniformInfo_t uniformsInfo[] = {
-    {"u_ModelViewProjection", GLSL_MAT16},
     {"u_DiffuseMap", GLSL_INT},
+    {"u_LightMap", GLSL_INT},
     {"u_NormalMap", GLSL_INT},
+    {"u_SpecularMap", GLSL_INT},
+    {"u_NumLights", GLSL_INT},
+    {"u_LightInfo", GLSL_BUFFER},
+    {"u_AmbientLight", GLSL_FLOAT},
+    {"u_ModelViewProjection", GLSL_MAT16},
+    {"u_ModelMatrix", GLSL_MAT16},
+    {"u_SpecularScale", GLSL_VEC4},
+    {"u_NormalScale", GLSL_VEC4},
+    {"u_ColorGen", GLSL_INT},
+    {"u_AlphaGen", GLSL_INT},
+    {"u_Color", GLSL_VEC4},
     {"u_BaseColor", GLSL_VEC4},
     {"u_VertColor", GLSL_VEC4},
-    {"u_Color", GLSL_VEC4},
-    {"u_AmbientLight", GLSL_FLOAT},
-    {"u_NumLights", GLSL_INT},
-    {"u_Lights", GLSL_BUFFER},
+    {"u_AlphaTest", GLSL_INT},
+    {"u_TCGen", GLSL_VEC4},
+    {"u_ViewInfo", GLSL_VEC4}
 };
 
 static shaderProgram_t *hashTable[MAX_RENDER_SHADERS];
@@ -145,11 +155,11 @@ typedef enum {
 
 static void GLSL_PrintLog(GLuint programOrShader, glslPrintLog_t type, qboolean developerOnly)
 {
-	char           *msg;
-	static char     msgPart[1024];
-	uint32_t        maxLength = 0;
+    char            *msg;
+	static char     msgPart[8192];
+	GLsizei         maxLength = 0;
 	uint32_t        i;
-	uint32_t        printLevel = developerOnly ? PRINT_DEVELOPER : PRINT_INFO;
+	const int       printLevel = developerOnly ? PRINT_DEVELOPER : PRINT_INFO;
 
 	switch (type) {
 	case GLSL_PRINTLOG_PROGRAM_INFO:
@@ -188,6 +198,8 @@ static void GLSL_PrintLog(GLuint programOrShader, glslPrintLog_t type, qboolean 
 		break;
 	};
 
+    ri.Printf(printLevel, "%s", msg);
+
 	if (maxLength < 1023) {
 		msgPart[maxLength + 1] = '\0';
 
@@ -202,11 +214,10 @@ static void GLSL_PrintLog(GLuint programOrShader, glslPrintLog_t type, qboolean 
 
 		ri.Printf(printLevel, "\n");
 		ri.Free(msg);
-	}
-
+    }
 }
 
-static int GLSL_CompileGPUShader(GLuint program, GLuint *prevShader, const GLchar *buffer, uint64_t size, GLenum shaderType)
+static int GLSL_CompileGPUShader(GLuint program, GLuint *prevShader, const GLchar *buffer, uint64_t size, GLenum shaderType, const char *programName)
 {
     GLuint compiled;
     GLuint shader;
@@ -214,13 +225,23 @@ static int GLSL_CompileGPUShader(GLuint program, GLuint *prevShader, const GLcha
     // create shader
     shader = nglCreateShader(shaderType);
 
-    // compile shader
+    if (shaderType == GL_VERTEX_SHADER)
+        GL_SetObjectDebugName(GL_SHADER, shader, programName, "_vertexShader");
+    else if (shaderType == GL_FRAGMENT_SHADER)
+        GL_SetObjectDebugName(GL_SHADER, shader, programName, "_fragmentShader");
+    else if (shaderType == GL_GEOMETRY_SHADER)
+        GL_SetObjectDebugName(GL_SHADER, shader, programName, "_geometryShader");
+    
+
+    // give it the source
     nglShaderSource(shader, 1, (const GLchar **)&buffer, (const GLint *)&size);
+
+    // compile
+    nglCompileShader(shader);
 
     // check if shader compiled
     nglGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
     if (!compiled) {
-        GLSL_PrintLog(shader, GLSL_PRINTLOG_SHADER_SOURCE, qfalse);
         GLSL_PrintLog(shader, GLSL_PRINTLOG_SHADER_INFO, qfalse);
         ri.Error(ERR_DROP, "Failed to compiled shader");
         return qfalse;
@@ -260,10 +281,10 @@ static int GLSL_LoadGPUShaderText(const char *name, const char *fallback, GLenum
     uint64_t size;
 
     if (shaderType == GL_VERTEX_SHADER) {
-        Com_snprintf(filename, sizeof(filename), "glsl/%s.vs.glsl", name);
+        Com_snprintf(filename, sizeof(filename), "glsl/%s_vs.glsl", name);
     }
     else {
-        Com_snprintf(filename, sizeof(filename), "glsl/f%s.fs.glsl", name);
+        Com_snprintf(filename, sizeof(filename), "glsl/%s_fs.glsl", name);
     }
 
     if (r_externalGLSL->i) {
@@ -323,9 +344,9 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
 {
     dest[0] = '\0';
 
-        // OpenGL version from 3.3 and up have corresponding glsl versions
+    // OpenGL version from 3.3 and up have corresponding glsl versions
     if (NGL_VERSION_ATLEAST(3, 30)) {
-        N_strcat(dest, size, va("#version %s core", glContext->glsl_version_str));
+        N_strcat(dest, size, va("#version %i%i core\n", glContext->glslVersionMajor, glContext->glslVersionMinor));
     }
     // otherwise, do the Quake3e method
     else if (GLSL_VERSION_ATLEAST(1, 30)) {
@@ -341,16 +362,15 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
         N_strcat(dest, size, "#version 120\n");
     }
 
-    if (NGL_VERSION_ATLEAST(1, 30)) {
+    if (!(NGL_VERSION_ATLEAST(1, 30))) {
         if (shaderType == GL_VERTEX_SHADER) {
-            N_strcat(dest, size, "#define attribute in\n");
-            N_strcat(dest, size, "#define varying out\n");
+            N_strcat(dest, size, "#define in attribute\n");
+            N_strcat(dest, size, "#define out varying\n");
         }
         else {
-            N_strcat(dest, size, "out vec4 a_Color\n");
-            N_strcat(dest, size, "#define gl_FragColor a_Color\n");
-            N_strcat(dest, size, "#define varying in\n");
-            N_strcat(dest, size, "#define texture2D texture\n"); // texture2D is deprecated in modern OpenGL
+            N_strcat(dest, size, "#define a_Color gl_FragColor\n");
+            N_strcat(dest, size, "#define in varying\n");
+            N_strcat(dest, size, "#define texture texture2D\n"); // texture2D is deprecated in modern GLSL
         }
     }
 
@@ -359,6 +379,15 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
     // OK we added a lot of stuff but if we do something bad in the GLSL shaders then we want the proper line
 	// so we have to reset the line counting
 	N_strcat(dest, size, "#line 0\n");
+}
+
+static void GLSL_CheckAttribLocation(GLuint id, const char *name, const char *attribName, int index)
+{
+    GLint location;
+
+    location = nglGetAttribLocation(id, name);
+    if (location != index)
+        ri.Error(ERR_FATAL, "GetAttribLocation(%s):%i != %s (%i)", name, location, attribName, index);
 }
 
 static int GLSL_InitGPUShader2(shaderProgram_t *program, const char *name, uint32_t attribs, const char *vsCode, const char *fsCode)
@@ -374,33 +403,40 @@ static int GLSL_InitGPUShader2(shaderProgram_t *program, const char *name, uint3
     program->programId = nglCreateProgram();
     program->attribBits = attribs;
 
-    if (!(GLSL_CompileGPUShader(program->programId, &program->vertexId, vsCode, strlen(vsCode), GL_VERTEX_SHADER))) {
+    GL_SetObjectDebugName(GL_PROGRAM, program->programId, name, "_program");
+
+    if (!(GLSL_CompileGPUShader(program->programId, &program->vertexId, vsCode, strlen(vsCode), GL_VERTEX_SHADER, name))) {
         ri.Printf(PRINT_INFO, "GLSL_InitGPUShader2: Unable to load \"%s\" as GL_VERTEX_SHADER\n", name);
         nglDeleteProgram(program->programId);
         return qfalse;
     }
 
     if (fsCode) {
-        if (!(GLSL_CompileGPUShader(program->programId, &program->fragmentId, fsCode, strlen(fsCode), GL_FRAGMENT_SHADER))) {
+        if (!(GLSL_CompileGPUShader(program->programId, &program->fragmentId, fsCode, strlen(fsCode), GL_FRAGMENT_SHADER, name))) {
             ri.Printf(PRINT_INFO, "GLSL_InitGPUShader2: Unable to load \"%s\" as GL_FRAGMENT_SHADER\n", name);
             nglDeleteProgram(program->programId);
             return qfalse;
         }
     }
 
-    if (attribs & ATTRIB_POSITION)
-        nglBindAttribLocation(program->programId, ATTRIB_INDEX_POSITION, "a_Position");
-    if (attribs & ATTRIB_TEXCOORD)
-        nglBindAttribLocation(program->programId, ATTRIB_INDEX_TEXCOORD, "a_TexCoords");
-    if (attribs & ATTRIB_COLOR)
-        nglBindAttribLocation(program->programId, ATTRIB_INDEX_COLOR, "a_Color");
-    if (attribs & ATTRIB_ALPHA)
-        nglBindAttribLocation(program->programId, ATTRIB_INDEX_ALPHA, "a_Alpha");
+//    if (attribs & ATTRIB_POSITION)
+//        nglBindAttribLocation(program->programId, ATTRIB_INDEX_POSITION, "a_Position");
+//    if (attribs & ATTRIB_TEXCOORD)
+//        nglBindAttribLocation(program->programId, ATTRIB_INDEX_TEXCOORD, "a_TexCoords");
+//    if (attribs & ATTRIB_COLOR)
+//        nglBindAttribLocation(program->programId, ATTRIB_INDEX_COLOR, "a_Color");
 //    if (attribs & ATTRIB_NORMAL)
 //        nglBindAttribLocation(program->programId, ATTRIB_INDEX_NORMAL, "a_Normal");
-//    
-    GLSL_LinkProgram(program->programId);
     
+    GLSL_LinkProgram(program->programId);
+
+#if 0    
+    GLSL_CheckAttribLocation(program->programId, "a_Position", "ATTRIB_INDEX_POSITION", ATTRIB_INDEX_POSITION);
+    GLSL_CheckAttribLocation(program->programId, "a_TexCoords", "ATTRIB_INDEX_TEXCOORD", ATTRIB_INDEX_TEXCOORD);
+    GLSL_CheckAttribLocation(program->programId, "a_Normal", "ATTRIB_INDEX_NORMAL", ATTRIB_INDEX_NORMAL);
+    GLSL_CheckAttribLocation(program->programId, "a_Color", "ATTRIB_INDEX_COLOR", ATTRIB_INDEX_COLOR);
+#endif
+
     return qtrue;
 }
 
@@ -416,6 +452,7 @@ static int GLSL_InitGPUShader(shaderProgram_t *program, const char *name, uint32
     rg.numPrograms++;
 
     size = sizeof(vsCode);
+    addHeader = qfalse;
 
     if (addHeader) {
         GLSL_PrepareHeader(GL_VERTEX_SHADER, extra, vsCode, size);
@@ -629,7 +666,7 @@ void GLSL_SetUniformMatrix4(shaderProgram_t *program, uint32_t uniformNum, const
     if (uniforms[uniformNum] == -1)
         return;
     
-    if (uniformsInfo[uniformNum].type != GLSL_VEC4) {
+    if (uniformsInfo[uniformNum].type != GLSL_MAT16) {
         ri.Printf(PRINT_INFO, COLOR_YELLOW "WARNING: GLSL_SetUniformMatrix4: wrong type for uniform %i in program %s\n", uniformNum, program->name);
         return;
     }
@@ -661,11 +698,12 @@ void GLSL_InitGPUShaders(void)
 
     start = ri.Milliseconds();
 
-    attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_ALPHA | ATTRIB_COLOR;
+    attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_COLOR | ATTRIB_NORMAL;
     if (!GLSL_InitGPUShader(&rg.basicShader, "basic", attribs, qtrue, NULL, qtrue, fallbackShader_basic_vs, fallbackShader_basic_fs)) {
         ri.Error(ERR_FATAL, "Could not load basic shader");
     }
     GLSL_InitUniforms(&rg.basicShader);
+    GLSL_FinishGPUShader(&rg.basicShader);
 
     end = ri.Milliseconds();
 
@@ -680,7 +718,7 @@ void GLSL_ShutdownGPUShaders(void)
     ri.Printf(PRINT_INFO, "---------- GLSL_ShutdownGPUShaders -----------\n");
 
     for (i = 0; i < ATTRIB_INDEX_COUNT; i++)
-        nglDisableVertexAttribArrayARB(i);
+        nglDisableVertexAttribArray(i);
     
     GL_BindNullProgram();
 

@@ -190,6 +190,18 @@ static FILE *FS_FileForHandle(file_t f)
 	return handles[f].data.fp;
 }
 
+static uint64_t FS_FileLength(FILE *fp)
+{
+	uint64_t pos, end;
+
+	pos = ftell(fp);
+	fseek(fp, 0L, SEEK_END);
+	end = ftell(fp);
+	fseek(fp, pos, SEEK_SET);
+
+	return end;
+}
+
 static void FS_InitHandle(fileHandle_t *f)
 {
 	f->used = qfalse;
@@ -486,6 +498,105 @@ static qboolean FS_CheckDirTraversal( const char *checkdir )
 	return qfalse;
 }
 
+/*
+============
+FS_CreatePath
+
+Creates any directories needed to store the given filename
+============
+*/
+static qboolean FS_CreatePath( const char *OSPath ) {
+	char	path[MAX_OSPATH*2+1];
+	char	*ofs;
+	
+	// make absolutely sure that it can't back up the path
+	// FIXME: is c: allowed???
+	if ( FS_CheckDirTraversal( OSPath ) ) {
+		Con_Printf( "WARNING: refusing to create relative path \"%s\"\n", OSPath );
+		return qtrue;
+	}
+
+	N_strncpyz( path, OSPath, sizeof( path ) );
+	// Make sure we have OS correct slashes
+	FS_ReplaceSeparators( path );
+	for ( ofs = path + 1; *ofs; ofs++ ) {
+		if ( *ofs == PATH_SEP ) {
+			// create the directory
+			*ofs = '\0';
+			Sys_mkdir( path );
+			*ofs = PATH_SEP;
+		}
+	}
+	return qfalse;
+}
+
+
+/*
+=================
+FS_CopyFile
+
+Copy a fully specified file from one place to another
+=================
+*/
+static void FS_CopyFile( const char *fromOSPath, const char *toOSPath )
+{
+	FILE	*f;
+	size_t	len;
+	byte	*buf;
+
+	Con_Printf( "copy %s to %s\n", fromOSPath, toOSPath );
+
+	if (strstr(fromOSPath, "journal.dat")) {
+		Con_Printf( "Ignoring journal files\n");
+		return;
+	}
+
+	f = Sys_FOpen( fromOSPath, "rb" );
+	if ( !f ) {
+		return;
+	}
+
+	len = FS_FileLength( f );
+
+	// we are using direct malloc instead of Z_Malloc here, so it
+	// probably won't work on a mac... It's only for developers anyway...
+	buf = (byte *)malloc( len );
+	if ( !buf ) {
+		fclose( f );
+		N_Error( ERR_FATAL, "Memory alloc error in FS_Copyfiles()\n" );
+	}
+
+	if (fread( buf, 1, len, f ) != len) {
+		free( buf );
+		fclose( f );
+		N_Error( ERR_FATAL, "Short read in FS_Copyfiles()" );
+	}
+	fclose( f );
+
+	f = Sys_FOpen( toOSPath, "wb" );
+	if ( !f ) {
+		if ( FS_CreatePath( toOSPath ) ) {
+			free( buf );
+			return;
+		}
+		f = Sys_FOpen( toOSPath, "wb" );
+		if ( !f ) {
+			free( buf );
+			return;
+		}
+	}
+
+	if ( fwrite( buf, 1, len, f ) != len ) {
+		free( buf );
+		fclose( f );
+		N_Error( ERR_FATAL, "Short write in FS_Copyfiles()" );
+	}
+	fclose( f );
+	free( buf );
+}
+
+
+
 qboolean FS_FileIsInBFF(const char *filename)
 {
 	boost::lock_guard<boost::recursive_mutex> lock{fs_lock};
@@ -575,8 +686,7 @@ static fileInBFF_t *FS_GetChunkHandle(const char *path, int64_t *bffIndex)
 	fileInBFF_t *file;
 	searchpath_t *sp;
 	bffFile_t *bff;
-	uint64_t hash;
-	uint64_t fullHash;
+	uint64_t i;
 
 	if (!fs_searchpaths) {
 		N_Error(ERR_FATAL, "Filesystem call made without initialization");
@@ -585,28 +695,17 @@ static fileInBFF_t *FS_GetChunkHandle(const char *path, int64_t *bffIndex)
 		N_Error(ERR_FATAL, "FS_GetChunkHandle: NULL filename");
 	}
 
-	// npaths are not supposed to have a leading slash
-	while (path[0] == '/' || path[0] == '\\')
-		path++;
-	
-	if (FS_CheckDirTraversal(path)) {
-		return qfalse;
-	}
-
-	fullHash = FS_HashFileName(path, 0U);
-
 	for (sp = fs_searchpaths; sp; sp = sp->next) {
-		if (sp->bff && sp->bff->hashTable[(hash = fullHash & (sp->bff->hashSize - 1))]) {
+		if (sp->bff) {
 			bff = sp->bff;
-			file = sp->bff->hashTable[hash];
-			do {
+			
+			for (i = 0; i < bff->numfiles; i++) {
+				file = &bff->buildBuffer[i];
 				if (!FS_FilenameCompare(file->name, path)) {
 					// found it!
-					*bffIndex = bff->index;
 					return file;
 				}
-				file = file->next;
-			} while (file != NULL);
+			}
 		}
 	}
 	return NULL;
@@ -625,7 +724,7 @@ uint64_t FS_FOpenFileWithMode(const char *npath, file_t *f, fileMode_t mode)
 	{
 		*f = FS_FOpenWrite(npath);
 		if (*f == FS_INVALID_HANDLE) {
-			N_Error(ERR_DROP, "FS_FOpenFileWithMode: failed to open '%s' in write mode");
+			N_Error(ERR_DROP, "FS_FOpenFileWithMode: failed to open '%s' in write mode", npath);
 		}
 		len = 0;
 		break;
@@ -634,7 +733,7 @@ uint64_t FS_FOpenFileWithMode(const char *npath, file_t *f, fileMode_t mode)
 	{
 		len = FS_FOpenFileRead(npath, f);
 		if (!len || *f == FS_INVALID_HANDLE) {
-			Con_DPrintf("FS_FOpenFileWithMode: !len || *f == FS_INVALID_HANDLE (r), failure\n");
+			Con_DPrintf("FS_FOpenFileWithMode(%s): !len || *f == FS_INVALID_HANDLE (r), failure\n", npath);
 			len = 0;
 		}
 		break;
@@ -643,7 +742,7 @@ uint64_t FS_FOpenFileWithMode(const char *npath, file_t *f, fileMode_t mode)
 	{
 		*f = FS_FOpenAppend(npath);
 		if (*f == FS_INVALID_HANDLE) {
-			N_Error(ERR_DROP, "FS_FOpenFileWithMode: failed to open '%s' in append mode");
+			N_Error(ERR_DROP, "FS_FOpenFileWithMode: failed to open '%s' in append mode", npath);
 		}
 		len = FS_FileLength(*f);
 		break;
@@ -652,7 +751,7 @@ uint64_t FS_FOpenFileWithMode(const char *npath, file_t *f, fileMode_t mode)
 	{
 		*f = FS_FOpenRW(npath);
 		if (*f == FS_INVALID_HANDLE) {
-			N_Error(ERR_DROP, "FS_FOpenFileWithMode: failed to open '%s' in read-write mode");
+			N_Error(ERR_DROP, "FS_FOpenFileWithMode: failed to open '%s' in read-write mode", npath);
 		}
 		len = FS_FileLength(*f);
 		break;
@@ -666,9 +765,52 @@ uint64_t FS_FOpenFileWithMode(const char *npath, file_t *f, fileMode_t mode)
 
 file_t FS_FOpenAppend(const char *path)
 {
-	file_t f;
-	FS_FOpenFileWithMode(path, &f, FS_OPEN_APPEND);
-	return f;
+	boost::lock_guard<boost::recursive_mutex> lock{fs_lock};
+	file_t fd;
+	fileHandle_t *f;
+	FILE *fp;
+	const char *ospath;
+
+	if (!fs_initialized) {
+		N_Error(ERR_FATAL, "Filesystem call made without initialization");
+	}
+	if (!path || !*path) {
+		return FS_INVALID_HANDLE;
+	}
+
+	// write streams aren't allowed for chunks
+	if (FS_FileIsInBFF(path)) {
+		return FS_INVALID_HANDLE;
+	}
+
+	ospath = FS_BuildOSPath(fs_basepath->s, fs_gamedir, path);
+
+	// validate the file is actually write-enabled
+	FS_CheckFilenameIsNotAllowed(ospath, __func__, qfalse);
+
+	fd = FS_HandleForFile();
+	if (fd == FS_INVALID_HANDLE)
+		return fd;
+	
+	f = &handles[fd];
+	FS_InitHandle(f);
+
+	fp = Sys_FOpen(ospath, "wb");
+	if (!fp) {
+		if (FS_CreatePath(ospath)) {
+			return FS_INVALID_HANDLE;
+		}
+		fp = Sys_FOpen(ospath, "wb");
+		if (!fp) {
+			return FS_INVALID_HANDLE;
+		}
+	}
+
+	N_strncpyz(f->name, path, sizeof(f->name));
+	f->used = qtrue;
+	f->data.fp = fp;
+
+	return fd;
 }
 
 file_t FS_OpenFileMapping(const char *path, qboolean temp)
@@ -823,6 +965,27 @@ int64_t FS_LastBFFIndex(void)
 	return fs_lastBFFIndex;
 }
 
+static uint64_t FS_ReturnPath( const char *bffname, char *bffpath, uint64_t *depth ) {
+	uint64_t len, at, newdep;
+
+	newdep = 0;
+	bffpath[0] = '\0';
+	len = 0;
+	at = 0;
+
+	while (bffname[at] != 0) {
+		if (bffname[at]=='/' || bffname[at]=='\\') {
+			len = at;
+			newdep++;
+		}
+		at++;
+	}
+	strcpy(bffpath, bffname);
+	bffpath[len] = '\0';
+	*depth = newdep;
+
+	return len;
+}
 
 /*
 FS_ListFilteredFiles: returns a unique list of files that match the given criteria
@@ -836,9 +999,9 @@ static char **FS_ListFilteredFiles(const char *path, const char *extension, cons
 	uint64_t i;
 	uint64_t pathLength;
 	uint64_t extLen;
+	char bffpath[MAX_BFF_PATH];
 	uint64_t length, pathDepth, temp;
 	const bffFile_t *bff;
-	fileInBFF_t *file;
 	qboolean hasPatterns;
 	const char *x;
 	const searchpath_t *sp;
@@ -867,31 +1030,37 @@ static char **FS_ListFilteredFiles(const char *path, const char *extension, cons
 		pathLength--;
 	}
 	nfiles = 0;
-//	FS_ReturnPath(path, );
+	FS_ReturnPath(path, bffpath, &pathDepth);
 
 	// search through the path, one element at a time, adding to the list
 	for (sp = fs_searchpaths; sp; sp = sp->next) {
 		// is the element a bff archive?
-		if (sp->bff && (flags & FS_MATCH_BFFs)) {
+		if (sp->bff) {
 			
 			// look through all the bff chunks
 			bff = sp->bff;
-			file = bff->buildBuffer;
 			for (i = 0; i < bff->numfiles; i++) {
 				const char *name;
-				uint64_t depth;
+				uint64_t depth, bffPathLen;
 
 				// check for directory match
-				name = file->name;
+				name = bff->buildBuffer[i].name;
 
 				if (filter) {
 					// case insensitive
 					if (!Com_FilterPath(filter, name))
 						continue;
+					
 					// unique the match
 					nfiles = FS_AddFileToList(name, list, nfiles);
 				}
 				else {
+					bffPathLen = FS_ReturnPath(name, bffpath, &depth);
+
+					if ( (depth-pathDepth)>2 || pathLength > bffPathLen || N_stricmpn( name, path, pathLength ) ) {
+						continue;
+					}
+
 					length = strlen(name);
 
 					if (length < extLen)
@@ -910,7 +1079,6 @@ static char **FS_ListFilteredFiles(const char *path, const char *extension, cons
 							}
 						}
 					}
-					
 					// unique the match
 					temp = pathLength;
 					if (pathLength) {
@@ -919,10 +1087,9 @@ static char **FS_ListFilteredFiles(const char *path, const char *extension, cons
 
 					nfiles = FS_AddFileToList(name + temp, list, nfiles);
 				}
-				file++;
 			}
 		}
-		else if (sp->dir && (flags & FS_MATCH_EXTERN) && sp->access != DIR_CONST) {
+		else if (sp->dir) {
 			char **sysFiles;
 			uint64_t numSysFiles;
 			const char *name;
@@ -944,7 +1111,7 @@ static char **FS_ListFilteredFiles(const char *path, const char *extension, cons
 	// return a copy of the list
 	*numfiles = nfiles;
 
-	if (nfiles) {
+	if (!nfiles) {
 		return NULL;
 	}
 
@@ -1384,7 +1551,7 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 			return NULL;
 		}
 		curFile->name = (char *)Z_SMalloc(curFile->nameLen);
-		if (FS_ReadFromBFF(stream, streamPtr, curFile->name, curFile->nameLen) != sizeof(curFile->nameLen)) {
+		if (!FS_ReadFromBFF(stream, streamPtr, curFile->name, curFile->nameLen)) {
 			FS_CloseBFFStream(fp, file);
 			Con_DPrintf("Error reading chunk name at %lu\n", i);
 			return NULL;
@@ -1513,7 +1680,7 @@ fileOffset_t FS_FileSeek(file_t f, fileOffset_t offset, uint32_t whence)
 		return (fileOffset_t)ftell(file->data.fp);
 	}
 
-	if (FS_FileIsInBFF(file->name)) {
+	if (file->bffFile) {
 		if (whence == FS_SEEK_END && offset) {
 			return -1;
 		}
@@ -1712,7 +1879,7 @@ file_t FS_FOpenWrite(const char *path)
 		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 	if (!path || !*path) {
-		N_Error(ERR_FATAL, "FS_FOpenWrite: NULL or empty path");
+		return FS_INVALID_HANDLE;
 	}
 
 	// write streams aren't allowed for chunks
@@ -1720,8 +1887,10 @@ file_t FS_FOpenWrite(const char *path)
 		return FS_INVALID_HANDLE;
 	}
 
+	ospath = FS_BuildOSPath(fs_basepath->s, fs_gamedir, path);
+
 	// validate the file is actually write-enabled
-	FS_CheckFilenameIsNotAllowed(path, __func__, qfalse);
+	FS_CheckFilenameIsNotAllowed(ospath, __func__, qfalse);
 
 	fd = FS_HandleForFile();
 	if (fd == FS_INVALID_HANDLE)
@@ -1729,13 +1898,19 @@ file_t FS_FOpenWrite(const char *path)
 	
 	f = &handles[fd];
 	FS_InitHandle(f);
-	ospath = FS_BuildOSPath(fs_basepath->s, NULL, path);
 
 	fp = Sys_FOpen(ospath, "wb");
 	if (!fp) {
-		N_Error(ERR_FATAL, "FS_FOpenWrite: failed to create write-only stream for %s", path);
+		if (FS_CreatePath(ospath)) {
+			return FS_INVALID_HANDLE;
+		}
+		fp = Sys_FOpen(ospath, "wb");
+		if (!fp) {
+			return FS_INVALID_HANDLE;
+		}
 	}
 
+	N_strncpyz(f->name, path, sizeof(f->name));
 	f->used = qtrue;
 	f->data.fp = fp;
 
@@ -1792,7 +1967,6 @@ file_t FS_FOpenRead(const char *path)
 	fileInBFF_t *chunk;
 	int64_t unused;
 	searchpath_t *sp;
-	qboolean inBFF;
 	FILE *fp;
 	const char *ospath;
 
@@ -1809,11 +1983,10 @@ file_t FS_FOpenRead(const char *path)
 	
 	f = &handles[fd];
 	FS_InitHandle(f);
-	inBFF = FS_FileIsInBFF(path);
 
 	for (sp = fs_searchpaths; sp; sp = sp->next) {
 		// is the element a bff file?
-		if (sp->bff && inBFF) {
+		if (sp->bff) {
 			// look through all the chunks
 			chunk = FS_GetChunkHandle(path, &unused);
 			if (chunk) {
@@ -1822,7 +1995,7 @@ file_t FS_FOpenRead(const char *path)
 				return fd;
 			}
 		}
-		else if (sp->dir && sp->access != DIR_CONST) {
+		else if (sp->dir) {
 			ospath = FS_BuildOSPath(sp->dir->path, sp->dir->gamedir, path);
 			Con_DPrintf("FS_FOpenRead: %s\n", ospath);
 			fp = Sys_FOpen(ospath, "rb");
@@ -1850,7 +2023,9 @@ uint64_t FS_FOpenFileRead(const char *path, file_t *fd)
 	FILE *fp;
 	searchpath_t *sp;
 	fileInBFF_t *chunk;
-	int64_t unused;
+	int64_t index;
+	uint64_t length;
+	uint64_t fullHash, hash;
 
 	if (!fs_initialized) {
 		N_Error(ERR_FATAL, "Filesystem call made without initialization");
@@ -1859,60 +2034,98 @@ uint64_t FS_FOpenFileRead(const char *path, file_t *fd)
 		N_Error(ERR_FATAL, "FS_FOpenFileRead: NULL or empty path");
 	}
 
+	// npaths are not supposed to have a leading slash
+	if ( path[0] == '/' || path[0] == '\\' ) {
+		path++;
+	}
+
+	// make absolutely sure that it can't back up the path.
+	// The searchpaths do guarantee that something will always
+	// be prepended, so we don't need to worry about "c:" or "//limbo"
+	if ( FS_CheckDirTraversal( path ) ) {
+		*fd = FS_INVALID_HANDLE;
+		return -1;
+	}
+
+	// we will calculate full hash only once then just mask it by current pack->hashSize
+	// we can do that as long as we know properties of our hash function
+	fullHash = FS_HashFileName( path, 0U );
+
 	// we just want the file's size
 	if (fd == NULL) {
 		for (sp = fs_searchpaths; sp; sp = sp->next) {
 			// is the element a bff file?
-			if (sp->bff) {
-				// look through all the chunks
-				chunk = FS_GetChunkHandle(path, &unused);
-				if (chunk) {
-					// found it!
-					return chunk->size;
-				}
+			if (sp->bff && sp->bff->hashTable[(hash = fullHash & (sp->bff->hashSize-1))]) {
+				// look through all the bff chunks
+				chunk = sp->bff->hashTable[hash];
+				do {
+					// case and separator insensitive comparisons
+					if (FS_FilenameCompare(chunk->name, path)) {
+						// found it!
+						return chunk->size;
+					}
+					chunk = chunk->next;
+				} while (chunk != NULL);
 			}
-			else if (sp->dir && sp->access != DIR_CONST) {
+			else if (sp->dir) {
 				ospath = FS_BuildOSPath(sp->dir->path, sp->dir->gamedir, path);
 				fp = Sys_FOpen(ospath, "rb");
 				if (fp) {
-					fseek(fp, 0L, SEEK_END);
-					uint64_t size = ftell(fp);
+					length = FS_FileLength(fp);
 					fclose(fp);
-					return size;
+					return length;
 				}
 			}
 		}
+		return 0;
 	}
-	else {
-		*fd = FS_HandleForFile();
-		if (*fd == FS_INVALID_HANDLE)
-			return 0;
 
-		f = &handles[*fd];
-		FS_InitHandle(f);
-		for (sp = fs_searchpaths; sp; sp = sp->next) {
-			// is the element a bff file?
-			if (sp->bff) {
-				// look through all the chunks
-				chunk = FS_GetChunkHandle(path, &unused);
-				if (chunk) {
+	//
+	// search through the paths, one element at a time
+	//
+	for (sp = fs_searchpaths; sp; sp = sp->next) {
+		// is the element a bff file?
+		if (sp->bff && sp->bff->hashTable[(hash = fullHash & (sp->bff->hashSize-1))]) {
+			// look through all the bff chunks
+			chunk = sp->bff->hashTable[hash];
+			do {
+				// case and separator insensitive comparisons
+				if (FS_FilenameCompare(chunk->name, path)) {
 					// found it!
+					*fd = FS_HandleForFile();
+					if (*fd == FS_INVALID_HANDLE) {
+						return 0;
+					}
+					f = &handles[*fd];
+					FS_InitHandle(f);
+
 					FS_OpenChunk(path, chunk, f, sp->bff);
 					return chunk->size;
 				}
+				chunk = chunk->next;
+			} while (chunk != NULL);
+		}
+		else if (sp->dir) {
+			// check a file in the directory tree
+			ospath = FS_BuildOSPath(sp->dir->path, sp->dir->gamedir, path);
+			fp = Sys_FOpen(ospath, "rb");
+			if (!fp) {
+				continue;
 			}
-			else if (sp->dir && sp->access != DIR_CONST) {
-				ospath = FS_BuildOSPath(sp->dir->path, sp->dir->gamedir, path);
-				fp = Sys_FOpen(ospath, "rb");
-				if (!fp) {
-					continue;
-				}
 
-				f->data.fp = fp;
-				f->used = qtrue;
-				N_strncpyz(f->name, path, sizeof(f->name));
-				return FS_FileLength(*fd);
+			*fd = FS_HandleForFile();
+			if (*fd == FS_INVALID_HANDLE) {
+				return 0;
 			}
+
+			f = &handles[*fd];
+			FS_InitHandle(f);
+
+			f->data.fp = fp;
+			N_strncpyz(f->name, path, sizeof(f->name));
+			f->bffFile = qfalse;
+
+			return FS_FileLength(fp);
 		}
 	}
 
@@ -1946,9 +2159,10 @@ uint64_t FS_LoadFile(const char *npath, void **buffer)
 	if (fd == FS_INVALID_HANDLE) {
 		if (buffer)
 			*buffer = NULL;
+		
+		return 0;
 	}
 	if (!buffer) {
-		FS_FClose(fd);
 		return size;
 	}
 
@@ -2512,7 +2726,7 @@ void FS_Startup(void)
 	}
 	fs_initialized = qtrue;
 
-	FS_ReorderSearchPaths();
+//	FS_ReorderSearchPaths();
 
 	end = Sys_Milliseconds();
 

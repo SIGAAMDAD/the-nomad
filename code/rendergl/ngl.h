@@ -6,9 +6,18 @@
 #include <GL/glext.h>
 #include <KHR/khrplatform.h>
 
+/*
+Possible things to add:
+[GL_ARB_sparse_buffer]
+glBufferPageCommitmentARB (GLenum target, GLintptr offset, GLsizeiptr size, GLboolean commit)
+
+
+
+*/
+
 #pragma once
 
-typedef void (APIENTRY *GLDEBUGPROC)(GLenum source,GLenum type,GLuint id,GLenum severity,GLsizei length,const GLchar *message,const void *userParam);
+typedef void (APIENTRY *GLDEBUGPROC)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam);
 typedef void (APIENTRY *GLDEBUGPROCAMD)(GLuint id, GLenum category, GLenum severity, GLsizei length, const GLchar *message, GLvoid *userParam);
 typedef void (APIENTRY *GLDEBUGPROCKHR)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const GLvoid *userParam);
 typedef void (APIENTRY *GLDEBUGPROCARB)(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const GLvoid *userParam);
@@ -113,6 +122,9 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glDebugMessageControl, GLenum source, GLenum type, GLenum severity, GLsizei count, const GLuint *ids, GLboolean enabled ) \
     NGL( void, glDebugMessageCallback, GLDEBUGPROC callback, const void *userParam ) \
     NGL( void, glDebugMessageInsert, GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *buf ) \
+    NGL( void, glObjectLabel, GLenum identifier, GLuint name, GLsizei length, const GLchar *label ) \
+    NGL( void, glPushDebugGroup, GLenum source, GLuint id, GLsizei length, const GLchar *label ) \
+    NGL( void, glPopDebugGroup, void ) \
 
 #define NGL_GLSL_SPIRV_Procs \
     NGL( void, glShaderBinary, GLsizei count, const GLuint *shaders, GLenum binaryformat, const void *binary, GLsizei length ) \
@@ -179,7 +191,8 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glTexParameterf, GLenum target, GLenum pname, GLfloat param ) \
     NGL( void, glCompressedTexImage2D,GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const GLvoid *data ) \
     NGL( void, glCompressedTexSubImage2D, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const GLvoid *data ) \
-    NGL( void, glTexSubImage2D, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid * data )
+    NGL( void, glTexSubImage2D, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid * data ) \
+    NGL( void, glGenerateMipmap, GLenum target )
 
 #define NGL_FBO_Procs \
     NGL( void, glGenFramebuffers, GLsizei n, GLuint *buffers ) \
@@ -230,12 +243,23 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glBufferSubData, GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data ) \
     NGL( void*, glMapBuffer, GLenum target, GLbitfield access ) \
     NGL( void, glUnmapBuffer, GLenum target ) \
-    NGL( void*, glMapBufferRange, GLenum target, GLintptr offset, GLsizeiptr length, GLbitfield access ) \
+    NGL( void, glBindBufferBase, GLenum target, GLuint first, GLsizei count, const GLuint *buffers ) \
+    NGL( void, glBindBufferRange, GLenum target, GLuint first, GLsizei count, const GLuint *buffers, const GLintptr *offsets, const GLsizeiptr *sizes ) \
 
 #define NGL_VertexShaderARB_Procs \
     NGL( void, glBindAttribLocationARB, GLhandleARB programObj, GLuint index, const GLcharARB *name) \
     NGL( void, glGetActiveAttribARB, GLhandleARB programObj, GLuint index, GLsizei maxLength, GLsizei *length, GLint *size, GLenum *type, GLcharARB *name) \
     NGL( GLint, glGetAttribLocationARB, GLhandleARB programObj, const GLcharARB *name)
+
+/*
+* GL_EXT, GL_ARB procs
+*/
+#define NGL_ARB_map_buffer_range \
+    NGL( void*, glMapBufferRange, GLenum target, GLintptr offset, GLsizeiptr length, GLbitfield access ) \
+    NGL( void, glFlusMappedBufferRange, GLenum target, GLintptr offset, GLsizeiptr length ) \
+
+#define NGL_ARB_buffer_storage \
+    NGL( void, glBufferStorage, GLenum target, GLsizeiptr size, const void *data, GLbitfield flags )
 
 #define NGL_Procs \
     NGL_Core_Procs \
@@ -249,9 +273,15 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL_VertexShaderARB_Procs \
     NGL_BufferARB_Procs \
 
+#ifdef _NOMAD_DEBUG
 #define NGL( ret, name, ... )\
     typedef ret (APIENTRYP PFN ## name) (__VA_ARGS__); \
     extern PFN ## name n ## name;
+#else
+#define NGL( ret, name, ... )\
+    typedef ret (APIENTRYP PFN ## name) (__VA_ARGS__); \
+    extern PFN ## name n ## name;
+#endif
 NGL_Core_Procs
 NGL_Debug_Procs
 NGL_Shader_Procs
@@ -263,6 +293,9 @@ NGL_VertexShaderARB_Procs
 NGL_BufferARB_Procs
 NGL_Buffer_Procs
 NGL_Texture_Procs
+
+NGL_ARB_map_buffer_range
+NGL_ARB_buffer_storage
 #undef NGL
 
 #define LOAD_GL_PROCS( procs ) procs

@@ -41,7 +41,7 @@ void RE_ClearScene( void ) {
 
 void R_DrawElements(uint32_t numIndices, uintptr_t offset)
 {
-	nglDrawElements(GL_TRIANGLES, numIndices, GLN_INDEX_TYPE, (const void *)offset);
+	nglDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, NULL);
 }
 
 void RB_CheckOverflow( uint32_t verts, uint32_t indexes )
@@ -71,6 +71,8 @@ static void RB_CheckVao(vertexBuffer_t *buf)
 
 		VBO_Bind(buf);
 	}
+	if (buf != backend->dbuf.buf)
+		backend->dbuf.useInternalVao = qfalse;
 }
 
 void R_AddPolySurfs(void)
@@ -138,7 +140,7 @@ void GDR_EXPORT RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys )
 	}
 }
 
-static void R_ConvertCoords(drawVert_t verts[4], vec3_t pos)
+void R_ConvertCoords(vec3_t verts[4], vec3_t pos)
 {
 	mat4_t model, mvp;
 	vec4_t p;
@@ -155,18 +157,18 @@ static void R_ConvertCoords(drawVert_t verts[4], vec3_t pos)
     Mat4Multiply(glState.modelViewProjectionMatrix, model, mvp);
 
 	Mat4Transform(mvp, positions[0], p);
-	VectorCopy(verts[0].xyz, p);
+	VectorCopy(verts[0], p);
 	Mat4Transform(mvp, positions[1], p);
-	VectorCopy(verts[1].xyz, p);
+	VectorCopy(verts[1], p);
 	Mat4Transform(mvp, positions[2], p);
-	VectorCopy(verts[2].xyz, p);
+	VectorCopy(verts[2], p);
 	Mat4Transform(mvp, positions[3], p);
-	VectorCopy(verts[3].xyz, p);
+	VectorCopy(verts[3], p);
 }
 
 static void R_AddWorldSurfs(void)
 {
-	drawVert_t verts[4];
+	vec3_t verts[4];
 	const maptile_t *tiles;
 	vec3_t pos;
 	uint32_t i;
@@ -193,21 +195,6 @@ void R_GenerateDrawSurfs(void)
 	R_AddPolySurfs();
 
 	R_SortDrawSurfs(backendData->drawSurfs, backendData->numDrawSurfs);
-}
-
-void R_FinishBatch(const drawBuffer_t *input)
-{
-	// setup state
-	GL_BindTexture(GL_TEXTURE0, input->shader->texture);
-	GLSL_UseProgram(&rg.basicShader);
-	GLSL_SetUniformMatrix4(&rg.basicShader, UNIFORM_MODELVIEWPROJECTION, glState.modelViewProjectionMatrix);
-	GLSL_SetUniformInt(&rg.basicShader, UNIFORM_DIFFUSE_MAP, input->shader->texture->id);
-	GL_State(input->shader->stateBits);
-
-	//
-	// draw
-	//
-	R_DrawElements(input->numIndices, input->firstIndex);
 }
 
 void RB_AddQuad(const drawVert_t verts[4])
@@ -298,13 +285,13 @@ void RB_InstantQuad(vec4_t quadVerts[4])
 	GLSL_UseProgram(&rg.basicShader);
 	
 	GLSL_SetUniformMatrix4(&rg.basicShader, UNIFORM_MODELVIEWPROJECTION, glState.modelViewProjectionMatrix);
-	GLSL_SetUniformInt(&rg.basicShader, UNIFORM_DIFFUSE_MAP, backend->dbuf.shader->texture->id);
 	GLSL_SetUniformVec4(&rg.basicShader, UNIFORM_COLOR, colorWhite);
 
 	RB_InstantQuad2(quadVerts, texCoords);
 }
 
-static qboolean RB_SurfaceVaoCached(uint32_t numVerts, drawVert_t *verts, uint32_t numIndices, glIndex_t *indices)
+#if 0
+qboolean RB_SurfaceVaoCached(uint32_t numVerts, drawVert_t *verts, uint32_t numIndices, glIndex_t *indices)
 {
 	qboolean recycleVertexBuffer = qfalse;
 	qboolean recycleIndexBuffer = qfalse;
@@ -335,46 +322,54 @@ static qboolean RB_SurfaceVaoCached(uint32_t numVerts, drawVert_t *verts, uint32
 
 	backend->dbuf.numIndices += numIndices;
 	backend->dbuf.numVertices += numVerts;
+	backend->dbuf.useCacheVao = qtrue;
+	backend->dbuf.useInternalVao = qfalse;
 
 	return qtrue;
 }
+#endif
 
 static void RB_SurfacePolychain(const srfPoly_t *p)
 {
-	uint32_t i, numv;
+	uint64_t i, numv, numIdx, idxCount, vtxCount;
 
 	RB_CheckVao(backend->dbuf.buf);
 	RB_CheckOverflow(p->numVerts, 3*(p->numVerts - 2));
 	
 	// fan triangles into the draw buffer
 	numv = backend->dbuf.numVertices;
+	vtxCount = 0;
 	for (i = 0; i < p->numVerts; i++) {
 		VectorCopy(backend->dbuf.xyz[numv], p->verts[i].xyz);
 
 		backend->dbuf.texCoords[numv][0] = p->verts[i].uv[0];
 		backend->dbuf.texCoords[numv][1] = p->verts[i].uv[1];
-//		tess.color[numv][0] = (int)p->verts[i].modulate.rgba[0] * 257;
-//		tess.color[numv][1] = (int)p->verts[i].modulate.rgba[1] * 257;
-//		tess.color[numv][2] = (int)p->verts[i].modulate.rgba[2] * 257;
-//		tess.color[numv][3] = (int)p->verts[i].modulate.rgba[3] * 257;
+		backend->dbuf.color[numv][0] = (int)p->verts[i].modulate.rgba[0] * 257;
+		backend->dbuf.color[numv][1] = (int)p->verts[i].modulate.rgba[1] * 257;
+		backend->dbuf.color[numv][2] = (int)p->verts[i].modulate.rgba[2] * 257;
+		backend->dbuf.color[numv][3] = (int)p->verts[i].modulate.rgba[3] * 257;
 
 		numv++;
+		vtxCount++;
 	}
 
 	// generate fan indices into the draw buffer
+	numIdx = backend->dbuf.numIndices;
 	for (i = 0; i < p->numVerts; i++) {
-		backend->dbuf.indices[backend->dbuf.numIndices + 0] = backend->dbuf.numVertices;
-		backend->dbuf.indices[backend->dbuf.numIndices + 1] = backend->dbuf.numVertices + i + 1;
-		backend->dbuf.indices[backend->dbuf.numIndices + 2] = backend->dbuf.numVertices + i + 2;
-		backend->dbuf.numIndices += 3;
+		backend->dbuf.indices[numIdx + 0] = backend->dbuf.numVertices;
+		backend->dbuf.indices[numIdx + 1] = backend->dbuf.numVertices + i + 1;
+		backend->dbuf.indices[numIdx + 2] = backend->dbuf.numVertices + i + 2;
+		numIdx += 3;
+		idxCount++;
 	}
 
+	backend->dbuf.numIndices = numIdx;
 	backend->dbuf.numVertices = numv;
 }
 
 static void RB_SurfaceTile(const srfTile_t *tile)
 {
-	RB_SurfaceVaoCached(4, tile->verts, 6, tile->indices);
+//	RB_SurfaceVaoCached(4, tile->verts, 6, tile->indices);
 }
 
 static void RB_SurfaceBad(void *) {

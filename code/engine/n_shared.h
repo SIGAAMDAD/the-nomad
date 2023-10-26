@@ -70,7 +70,7 @@ Platform Specific Preprocessors
 			#define __WORDSIZE 64
 		#endif
 	#endif
-#elif defined(__unix__) // !defined _WIN32
+#elif defined(Q3_VM) || defined(__unix__) // !defined _WIN32
 	// common unix platform stuff
 	#define DLL_EXT ".so"
 	#define PATH_SEP '/'
@@ -213,7 +213,7 @@ Compiler Macro Abstraction
 	#define GDR_INLINE __attribute__((always_inline)) inline
 	#define GDR_WARN_UNUSED __attribute__((warn_unused_result))
 	#define GDR_NORETURN __attribute__((noreturn))
-	#define GDR_ALIGN(x) __attribute__((alignment((x))))
+	#define GDR_ALIGN(x) __attribute__((alignment(x)))
 	#define GDR_ATTRIBUTE(x) __attribute__(x)
 
 	#ifdef __GNUC__
@@ -237,6 +237,13 @@ Compiler Macro Abstraction
 	#else
 		#define GDR_EXPORT __declspec(dllimport)
 	#endif
+#elif defined(__LCC__)
+	#define GDR_INLINE
+	#define GDR_WARN_UNUSED
+	#define GDR_NORETURN
+	#define GDR_ALIGN(x)
+	#define GDR_ATTRIBUTE(x)
+	#define GDR_EXPORT
 #endif
 
 // stack based version of strdup
@@ -358,6 +365,45 @@ typedef enum { qfalse = 0, qtrue = 1 } qboolean;
 #endif
 #endif
 
+// font rendering values used by ui and cgame
+
+#define PROP_GAP_WIDTH			3
+#define PROP_SPACE_WIDTH		8
+#define PROP_HEIGHT				27
+#define PROP_SMALL_SIZE_SCALE	0.75
+
+#define BLINK_DIVISOR			200
+#define PULSE_DIVISOR			75
+
+#define UI_LEFT			0x00000000	// default
+#define UI_CENTER		0x00000001
+#define UI_RIGHT		0x00000002
+#define UI_FORMATMASK	0x00000007
+#define UI_SMALLFONT	0x00000010
+#define UI_BIGFONT		0x00000020	// default
+#define UI_GIANTFONT	0x00000040
+#define UI_DROPSHADOW	0x00000800
+#define UI_BLINK		0x00001000
+#define UI_INVERSE		0x00002000
+#define UI_PULSE		0x00004000
+
+// all drawing is done to a 640*480 virtual screen size
+// and will be automatically scaled to the real resolution
+#define	SCREEN_WIDTH		640
+#define	SCREEN_HEIGHT		480
+
+#define TINYCHAR_WIDTH		(SMALLCHAR_WIDTH)
+#define TINYCHAR_HEIGHT		(SMALLCHAR_HEIGHT/2)
+
+#define SMALLCHAR_WIDTH		8
+#define SMALLCHAR_HEIGHT	16
+
+#define BIGCHAR_WIDTH		16
+#define BIGCHAR_HEIGHT		16
+
+#define	GIANTCHAR_WIDTH		32
+#define	GIANTCHAR_HEIGHT	48
+
 const char *Com_SkipTokens( const char *s, uint64_t numTokens, const char *sep );
 const char *Com_SkipCharset( const char *s, const char *sep );
 int N_isprint(int c);
@@ -389,9 +435,19 @@ void N_memcpy(void *dest, const void *src, size_t count);
 void* N_memchr(void *ptr, int c, size_t count);
 int N_memcmp(const void *ptr1, const void *ptr2, size_t count);
 int N_replace(const char *str1, const char *str2, char *src, size_t max_len);
+int Com_Split( char *in, char **out, uint64_t outsz, int delim );
 
 typedef int32_t nhandle_t;
 typedef int32_t sfxHandle_t;
+
+#ifdef Q3_VM
+#ifdef _NOMAD_DEBUG
+extern void __assert_failure(const char *expr, const char *file, unsigned line);
+#define assert(x) ((int)(x) ? (void )(0) : __assert_failure(#x, __FILE__, __LINE__))
+#else
+#define assert(x)
+#endif
+#endif
 
 #define CLOCK_TO_MILLISECONDS(ticks) (((ticks)/(double)CLOCKS_PER_SEC)*1000.0)
 

@@ -352,6 +352,15 @@ void GL_BindNullFramebuffer(GLenum target)
     nglBindFramebuffer(target, 0);
 }
 
+void GL_SetObjectDebugName(GLenum target, GLuint id, const char *name, const char *add)
+{
+	if (r_glDebug->i) {
+		static char newName[1024];
+		Com_snprintf(newName, sizeof(newName), "%s%s", name, add);
+		nglObjectLabel(target, id, strlen(newName), newName);
+	}
+}
+
 void GL_BindRenderbuffer(GLuint rbo)
 {
     if (glState.rboId == rbo)
@@ -368,40 +377,6 @@ void GL_BindNullRenderbuffer(void)
     
     glState.rboId = 0;
     nglBindRenderbuffer(GL_RENDERBUFFER, 0);
-}
-
-/*
-RB_BeginSurface:
-called whenever we start rendering through a new texture binding
-*/
-void RB_BeginSurface(shader_t *shader)
-{
-	// if we are still rendering to the
-	// shader given, don't switch up
-	if (backend->dbuf.shader == shader) {
-		return;
-	}
-	// finish up anything previously rendering
-	else if (backend->dbuf.numIndices) {
-		RB_EndSurface();
-	}
-
-	backend->dbuf.shader = shader;
-}
-
-/*
-RB_EndSurface:
-called whenever we must switch texture binding by shader sort
-*/
-void RB_EndSurface(void)
-{
-	// flush if there's anything there
-	R_FinishBatch(&backend->dbuf);
-
-	// clear out the old data
-	backend->dbuf.numIndices = 0;
-	backend->dbuf.numVertices = 0;
-	backend->dbuf.firstIndex = 0;
 }
 
 static void RB_RenderDrawSurfList(const drawSurf_t *surfList, uint32_t numSurfs)
@@ -483,13 +458,59 @@ void GL_CheckErrors(void)
         return;
     
     if (!r_ignoreGLErrors->i) {
+		ri.Printf(PRINT_INFO, COLOR_RED "GL_CheckErrors: 0x%04x -- %s\n", error, GL_ErrorString(error));
         ri.Error(ERR_FATAL, "GL_CheckErrors: OpenGL error occured (0x%x): %s", error, GL_ErrorString(error));
     }
 }
 
-static void R_SetDefaultState(void)
+void GDR_ATTRIBUTE((format(printf, 1, 2))) GL_LogComment(const char *fmt, ...)
 {
+	va_list argptr;
+	char msg[MAXPRINTMSG];
+	int length;
+
+	va_start(argptr, fmt);
+	length = N_vsnprintf(msg, sizeof(msg), fmt, argptr);
+	va_end(argptr);
+
+	nglDebugMessageInsertARB(GL_DEBUG_SOURCE_APPLICATION_ARB, GL_DEBUG_TYPE_OTHER_ARB, 0, GL_DEBUG_SEVERITY_NOTIFICATION, length, msg);
+}
+
+void GDR_ATTRIBUTE((format(printf, 1, 2))) GL_LogError(const char *fmt, ...)
+{
+	va_list argptr;
+	char msg[MAXPRINTMSG];
+	int length;
+
+	va_start(argptr, fmt);
+	length = N_vsnprintf(msg, sizeof(msg), fmt, argptr);
+	va_end(argptr);
+
+	nglDebugMessageInsertARB(GL_DEBUG_SOURCE_APPLICATION_ARB, GL_DEBUG_TYPE_ERROR_ARB, 0, GL_DEBUG_SEVERITY_HIGH_ARB, length, msg);
+}
+
+void RE_BeginFrame(stereoFrame_t stereoFrame)
+{
+    drawBufferCmd_t *cmd = NULL;
+	colorMaskCmd_t *colorCmd = NULL;
+
+    if (!rg.registered) {
+        return;
+    }
+
+    // check for errors
+    GL_CheckErrors();
+
+    if ((cmd = R_GetCommandBuffer(sizeof(*cmd))) == NULL)
+        return;
+    
+    cmd->commandId = RC_DRAW_BUFFER;
+
+	//
+	// setup gl state for frame
+	//
 	nglClear(GL_COLOR_BUFFER_BIT);
+	nglClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 
 	//
     // do overdraw measurement
@@ -527,29 +548,8 @@ static void R_SetDefaultState(void)
 
 	// calculate matrices
 	RB_MakeModelViewProjection();
-}
 
-void RE_BeginFrame(stereoFrame_t stereoFrame)
-{
-    drawBufferCmd_t *cmd = NULL;
-	colorMaskCmd_t *colorCmd = NULL;
-
-    if (!rg.registered) {
-        return;
-    }
-
-    // check for errors
-    GL_CheckErrors();
-
-    if ((cmd = R_GetCommandBuffer(sizeof(*cmd))) == NULL)
-        return;
-    
-    cmd->commandId = RC_DRAW_BUFFER;
-
-	//
-	// setup gl state for frame
-	//
-	R_SetDefaultState();
+	nglViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
 
     //
     // texture filtering
@@ -620,6 +620,11 @@ void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec)
 
 	R_IssueRenderCommands(qtrue);
 
+	// flush anything
+	if (backend->dbuf.numIndices || backend->dbuf.numVertices) {
+		RB_EndSurface();
+	}
+
 	R_InitNextFrame();
 
 	if (frontEndMsec) {
@@ -636,7 +641,7 @@ static const void *RB_DrawBuffer(const void *data)
 
     cmd = (const drawBufferCmd_t *)data;
 
-    nglDrawBuffer(cmd->buffer);
+//    nglDrawBuffer(cmd->buffer);
 
     // clear screen for debugging
     if (r_clear->i) {
@@ -688,7 +693,7 @@ static const void *RB_SwapBuffers(const void *data)
 		nglFinish();
 	}
 
-	ri.GLimp_LogComment( "***************** RB_SwapBuffers *****************\n\n\n" );
+	ri.GLimp_LogComment( "***************** RB_SwapBuffers *****************\n" );
 
 	ri.GLimp_EndFrame();
 
@@ -719,8 +724,6 @@ static void SetViewportAndScissor(void)
 
 static void RB_BeginDrawingView(void)
 {
-	unsigned clearBits = 0;
-
 	// sync with gl if needed
 	if (r_finish->i && !glState.finishCalled) {
 		nglFinish();
@@ -746,14 +749,6 @@ static void RB_BeginDrawingView(void)
 
 	// ensures that depth writes are enabled for the depth clear
 	GL_State(GLS_DEFAULT);
-	// clear relevant buffers
-	clearBits = GL_DEPTH_BUFFER_BIT;
-
-	if (r_measureOverdraw->i) {
-		clearBits |= GL_STENCIL_BUFFER_BIT;
-	}
-
-	nglClear(clearBits);
 }
 
 //
@@ -925,8 +920,6 @@ void RB_ShowImages(void)
 
 	RB_SetGLRaw2D();
 
-	nglClear(GL_COLOR_BUFFER_BIT);
-
 	nglFinish();
 
 	start = ri.Milliseconds();
@@ -970,6 +963,11 @@ static const void *RB_DrawImage(const void *data)
 {
 	const drawImageCmd_t *cmd;
 	shader_t *shader;
+	glIndex_t indices[6];
+	drawVert_t verts[4];
+	vec3_t pos;
+	vec4_t p;
+	mat4_t model, mvp;
 	uint32_t numVerts, numIndices;
 
 	cmd = (const drawImageCmd_t *)data;
@@ -991,22 +989,22 @@ static const void *RB_DrawImage(const void *data)
 	backend->dbuf.numVertices += 4;
 	backend->dbuf.numIndices += 6;
 
-	backend->dbuf.indices[ numIndices ] = numVerts + 3;
-	backend->dbuf.indices[ numIndices + 1 ] = numVerts + 0;
+	backend->dbuf.indices[ numIndices ] = numVerts + 0;
+	backend->dbuf.indices[ numIndices + 1 ] = numVerts + 1;
 	backend->dbuf.indices[ numIndices + 2 ] = numVerts + 2;
-	backend->dbuf.indices[ numIndices + 3 ] = numVerts + 2;
-	backend->dbuf.indices[ numIndices + 4 ] = numVerts + 0;
-	backend->dbuf.indices[ numIndices + 5 ] = numVerts + 1;
+	backend->dbuf.indices[ numIndices + 3 ] = numVerts + 3;
+	backend->dbuf.indices[ numIndices + 4 ] = numVerts + 2;
+	backend->dbuf.indices[ numIndices + 5 ] = numVerts + 0;
 
 	{
 		uint16_t color[4];
 
 		VectorScale4(backend->color2D, 257, color);
 
-		VectorCopy4(color, backend->dbuf.color[ numVerts ]);
-		VectorCopy4(color, backend->dbuf.color[ numVerts + 1]);
-		VectorCopy4(color, backend->dbuf.color[ numVerts + 2]);
-		VectorCopy4(color, backend->dbuf.color[ numVerts + 3 ]);
+		VectorCopy4(backend->dbuf.color[ numVerts ], color);
+		VectorCopy4(backend->dbuf.color[ numVerts + 1], color);
+		VectorCopy4(backend->dbuf.color[ numVerts + 2], color);
+		VectorCopy4(backend->dbuf.color[ numVerts + 3], color);
 	}
 
 	backend->dbuf.xyz[ numVerts ][0] = cmd->x;
@@ -1036,6 +1034,12 @@ static const void *RB_DrawImage(const void *data)
 
 	backend->dbuf.texCoords[ numVerts + 3 ][0] = cmd->u1;
 	backend->dbuf.texCoords[ numVerts + 3 ][1] = cmd->v2;
+
+	// convert the coordinates to opengl coordinates from screen-space coordinates
+	for (int i = 0; i < 4; i++) {
+		backend->dbuf.xyz[ numVerts + i ][0] = 2.0f * backend->dbuf.xyz[ numVerts + i ][0] / glConfig.vidWidth - 1.0f;
+		backend->dbuf.xyz[ numVerts + i ][1] = 1.0f - 2.0f * backend->dbuf.xyz[ numVerts + i ][1] / glConfig.vidHeight;
+	}
 
 	return (const void *)(cmd + 1);
 }

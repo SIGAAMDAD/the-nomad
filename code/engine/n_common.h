@@ -3,7 +3,9 @@
 
 #pragma once
 
+#ifndef Q3_VM
 #include <sys/types.h>
+#endif
 
 /*
 Common functionality for the engine and vm alike
@@ -262,7 +264,7 @@ typedef enum {
 #define FS_MATCH_BASEDIR	(1<<0)
 #define FS_MATCH_EXTERN		(2<<0)
 #define FS_MATCH_BFFs		(FS_MATCH_EXTERN | FS_MATCH_BASEDIR)
-#define FS_MATCH_ANY		(FS_MATCH_EXTERN | FS_MATCH_BASEDIR)
+#define FS_MATCH_ANY		(FS_MATCH_BFFs)
 
 #define MAX_FOUND_FILES 0x8000
 
@@ -458,11 +460,13 @@ System calls, engine only stuff
 */
 
 typedef struct {
-	time_t mtime;
-	time_t ctime;
+	fileTime_t mtime;
+	fileTime_t ctime;
 	uint64_t size;
 	qboolean exists;
 } fileStats_t;
+
+#ifndef Q3_VM
 
 #define MUTEX_TYPE_STANDARD 0
 #define MUTEX_TYPE_SHARED 1
@@ -515,5 +519,7 @@ char **Sys_ListFiles(const char *directory, const char *extension, const char *f
 const char *Sys_DefaultHomePath(void);
 const char *Sys_DefaultBasePath(void);
 qboolean Sys_RandomBytes(byte *s, uint64_t len);
+
+#endif
 
 #endif

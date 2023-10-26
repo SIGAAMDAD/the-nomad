@@ -97,6 +97,9 @@ void RB_MakeModelViewProjection(void)
 	rotate[1] = 0;
 	rotate[2] = 1;
 
+    rg.viewData.camera.angle = 0.0f;
+
+    VectorClear(rg.viewData.camera.origin);
     Mat4Zero(temp);
 	Mat4Translation(rg.viewData.camera.origin, transform);
 	Mat4Rotate(rotate, (float)DEG2RAD(rg.viewData.camera.angle), transform, transform);
@@ -111,6 +114,8 @@ void GL_CameraResize(void)
 {
     float aspect, zoom;
     mat4_t matrix;
+
+    rg.viewData.camera.zoom = 1.0f;
 
     aspect = rg.viewData.camera.aspect = glConfig.vidWidth / glConfig.vidHeight;
     zoom = rg.viewData.camera.zoom;
@@ -211,6 +216,13 @@ void R_SortDrawSurfs(drawSurf_t *drawSurfs, uint32_t numDrawSurfs)
 {
     // sort the drawsurfs by texture/shader index
     R_RadixSort(drawSurfs, numDrawSurfs);
+}
+
+uint32_t R_GenDrawSurfSort(const shader_t *sh)
+{
+    uint32_t sort = sh->sort;
+    sort += sh->sortedIndex << 2;
+    return sort;
 }
 
 #ifdef _NOMAD_DEBUG
