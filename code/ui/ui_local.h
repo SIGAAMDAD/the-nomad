@@ -332,14 +332,19 @@ void trap_Snd_PlaySfx(sfxHandle_t sfx);
 void trap_Snd_StopSfx(sfxHandle_t sfx);
 
 // console variable interaction
-void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, unsigned int flags );
+void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, uint32_t flags );
 void trap_Cvar_Update( vmCvar_t *vmCvar );
 void trap_Cvar_Set( const char *var_name, const char *value );
-void trap_Cvar_VariableStringBuffer( const char *var_name, char *buffer, unsigned int bufsize );
+void trap_Cvar_VariableStringBuffer( const char *var_name, char *buffer, uint32_t bufsize );
 
 // ConsoleCommand parameter access
 int trap_Argc( void );
-void trap_Argv( unsigned int n, char *buffer, unsigned int bufferLength );
-void trap_Args( char *buffer, unsigned int bufferLength );
+void trap_Argv( unsigned int n, char *buffer, uint32_t bufferLength );
+void trap_Args( char *buffer, uint32_t bufferLength );
+
+// rendering engine menu api
+void ImGui_MenuBegin( const char *name );
+void ImGui_MenuEnd( void );
+void ImGui_MenuText( const char *text );
 
 #endif

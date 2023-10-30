@@ -210,6 +210,8 @@ typedef void*(*NGLloadproc)(const char *name);
 
 #define NGL_VertexArrayARB_Procs \
     NGL( void, glEnableVertexArrayAttribARB, GLuint vao, GLuint index ) \
+    NGL( void, glDisableVertexArrayAttribARB, GLuint vao, GLuint index ) \
+    NGL( void, glEnableVertexAttribArrayARB, GLuint index ) \
     NGL( void, glDisableVertexAttribArrayARB, GLuint index ) \
     NGL( void, glVertexAttribPointerARB, GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid *pointer ) \
     NGL( void, glGetVertexAttribivARB, GLuint index, GLenum pname, GLint *params ) \
@@ -256,7 +258,7 @@ typedef void*(*NGLloadproc)(const char *name);
 */
 #define NGL_ARB_map_buffer_range \
     NGL( void*, glMapBufferRange, GLenum target, GLintptr offset, GLsizeiptr length, GLbitfield access ) \
-    NGL( void, glFlusMappedBufferRange, GLenum target, GLintptr offset, GLsizeiptr length ) \
+    NGL( void, glFlushMappedBufferRange, GLenum target, GLintptr offset, GLsizeiptr length ) \
 
 #define NGL_ARB_buffer_storage \
     NGL( void, glBufferStorage, GLenum target, GLsizeiptr size, const void *data, GLbitfield flags )

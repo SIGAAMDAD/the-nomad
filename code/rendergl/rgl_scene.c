@@ -1,43 +1,166 @@
+// rgl_scene.c -- only one scene per frame. All rendering data submissions must come through here or rgl_cmd.c
+
 #include "rgl_local.h"
 
-uint64_t r_firstSceneDrawSurf;
 uint64_t r_numEntities;
 uint64_t r_firstSceneEntity;
+
+uint64_t r_numDLights;
+uint64_t r_firstSceneDLight;
+
 uint64_t r_numPolys;
 uint64_t r_firstScenePoly;
+
 uint64_t r_numPolyVerts;
 
-/*
-====================
-R_InitNextFrame
+uint64_t r_firstSceneDrawSurf;
 
-====================
-*/
-void R_InitNextFrame( void ) {
-	backendData->commandList.usedBytes = 0;
+void R_InitNextFrame(void)
+{
+    backendData->commandList.usedBytes = 0;
 
-	r_firstSceneDrawSurf = 0;
+    r_firstSceneDrawSurf = 0;
 
-	r_numEntities = 0;
-	r_firstSceneEntity = 0;
+    r_firstSceneDLight = 0;
+    r_numDLights = 0;
 
-	r_numPolys = 0;
-	r_firstScenePoly = 0;
+    r_firstSceneEntity = 0;
+    r_numEntities = 0;
 
-	r_numPolyVerts = 0;
+    r_firstScenePoly = 0;
+    r_numPolys = 0;
+
+    r_numPolyVerts = 0;
 }
 
+GDR_EXPORT void RE_AddPolyToScene(nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts)
+{
+    uint32_t i;
+    polyVert_t *vt;
 
-/*
-====================
-RE_ClearScene
+    if (!rg.registered) {
+        return;
+    }
 
-====================
-*/
-void RE_ClearScene( void ) {
-	r_firstSceneEntity = r_numEntities;
-	r_firstScenePoly = r_numPolys;
+    if (r_numPolyVerts + numVerts >= r_maxPolyVerts->i) {
+        ri.Printf(PRINT_DEVELOPER, "RE_AddPolyToScene: r_maxPolyVerts hit, dropping %i vertices\n", numVerts);
+        return;
+    }
+
+    vt = &backendData->polyVerts[r_numPolyVerts];
+    memcpy(vt, verts, sizeof(*vt) * numVerts);
+
+    r_numPolyVerts += numVerts;
+    r_numPolys++;
 }
+
+GDR_EXPORT void RE_AddPolyListToScene(const poly_t *polys, uint32_t numPolys)
+{
+    uint32_t i;
+
+    if (!rg.registered) {
+        return;
+    }
+
+    if (r_numPolys + numPolys >= r_maxPolys->i) {
+        ri.Printf(PRINT_DEVELOPER, "RE_AddPolyListToScene: r_maxPolys hit, dropping %i polys\n", numPolys);
+        return;
+    }
+
+    for (i = 0; i < numPolys; i++) {
+        RE_AddPolyToScene(polys[i].hShader, polys[i].verts, polys[i].numVerts);
+    }
+}
+
+GDR_EXPORT void RE_AddEntityToScene( const renderEntityRef_t *ent )
+{
+    if (!rg.registered) {
+        return;
+    }
+
+    if (r_numEntities >= MAX_RENDER_ENTITIES) {
+        ri.Printf(PRINT_DEVELOPER, "RE_AddEntityToScene: MAX_RENDER_ENTITIES hit, dropping entity\n");
+        return;
+    }
+    if ( N_isnan(ent->origin[0]) || N_isnan(ent->origin[1]) || N_isnan(ent->origin[2]) ) {
+		static qboolean firstTime = qtrue;
+		if (firstTime) {
+			firstTime = qfalse;
+			ri.Printf( PRINT_INFO, COLOR_YELLOW "RE_AddEntityToScene passed a refEntity which has an origin with a NaN component\n");
+		}
+		return;
+	}
+
+    backendData->entities[r_numEntities].e = *ent;
+
+    r_numEntities++;
+}
+
+GDR_EXPORT void RE_BeginScene(const renderSceneRef_t *fd)
+{
+    assert(fd);
+
+    if (!rg.world && !(fd->flags & RSF_NOWORLDMODEL)) {
+        ri.Error(ERR_DROP, "RE_RenderScene: no world loaded");
+    }
+
+    rg.refdef.x = fd->x;
+    rg.refdef.y = fd->y;
+    rg.refdef.width = fd->width;
+    rg.refdef.height = fd->height;
+    rg.refdef.flags = fd->flags;
+
+    rg.refdef.numDLights = r_numDLights;
+    rg.refdef.dlights = r_numDLights;
+    
+    rg.refdef.numEntities = r_numEntities;
+    rg.refdef.entities = backendData->entities;
+
+    rg.refdef.drawn = qfalse;
+}
+
+GDR_EXPORT void RE_ClearScene(void)
+{
+    r_firstSceneDLight = r_numDLights;
+    r_firstSceneEntity = r_numEntities;
+    r_firstScenePoly = r_numPolys;
+}
+
+GDR_EXPORT void RE_EndScene(void)
+{
+    r_firstSceneDLight = rg.refdef.numDLights;
+    r_firstSceneEntity = r_numEntities;
+    r_firstScenePoly = r_numPolys;
+}
+
+GDR_EXPORT void RE_RenderScene(const renderSceneRef_t *fd)
+{
+    viewData_t parms;
+    uint64_t startTime;
+
+    if (!rg.registered) {
+        return;
+    }
+
+    startTime = ri.Milliseconds();
+
+    if (!rg.world && !(fd->flags & RSF_NOWORLDMODEL)) {
+        ri.Error(ERR_DROP, "RE_RenderScene: no world loaded");
+    }
+
+    RE_BeginScene(fd);
+
+    memset(&parms, 0, sizeof(parms));
+    parms.viewportX = rg.refdef.x;
+    parms.viewportY = rg.refdef.y;
+    parms.viewportWidth = rg.refdef.width;
+    parms.viewportHeight = rg.refdef.height;
+
+    R_RenderView(&parms);
+
+    RE_EndScene();
+}
+
 
 void R_DrawElements(uint32_t numIndices, uintptr_t offset)
 {
@@ -46,8 +169,8 @@ void R_DrawElements(uint32_t numIndices, uintptr_t offset)
 
 void RB_CheckOverflow( uint32_t verts, uint32_t indexes )
 {
-	if (backend->dbuf.numVertices + verts < MAX_BATCH_VERTICES
-		&& backend->dbuf.numIndices + indexes < MAX_BATCH_INDICES) {
+	if (drawBuf.numVertices + verts < MAX_BATCH_VERTICES
+		&& drawBuf.numIndices + indexes < MAX_BATCH_INDICES) {
 		return;
 	}
 
@@ -60,19 +183,19 @@ void RB_CheckOverflow( uint32_t verts, uint32_t indexes )
 		ri.Error(ERR_DROP, "RB_CheckOverflow: indices > MAX (%d > %d)", indexes, MAX_BATCH_INDICES );
 	}
 
-	RB_BeginSurface(backend->dbuf.shader);
+	RB_BeginSurface(drawBuf.shader);
 }
 
 static void RB_CheckVao(vertexBuffer_t *buf)
 {
 	if (buf != glState.currentVao) {
 		RB_EndSurface();
-		RB_BeginSurface(backend->dbuf.shader);
+		RB_BeginSurface(drawBuf.shader);
 
 		VBO_Bind(buf);
 	}
-	if (buf != backend->dbuf.buf)
-		backend->dbuf.useInternalVao = qfalse;
+	if (buf != drawBuf.buf)
+		drawBuf.useInternalVao = qfalse;
 }
 
 void R_AddPolySurfs(void)
@@ -84,59 +207,6 @@ void R_AddPolySurfs(void)
 	for (i = 0, poly = backendData->polys; i < backendData->numPolys; i++, poly++) {
 		sh = R_GetShaderByHandle(poly->hShader);
 		R_AddDrawSurf((void *)poly, sh);
-	}
-}
-
-void GDR_EXPORT RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts )
-{
-	srfPoly_t *poly;
-
-	if (!rg.registered) {
-		return;
-	}
-	if (hShader < -1) {
-		hShader = 0; // default shader
-	}
-
-	if (!verts) { // should never happen
-		ri.Error(ERR_FATAL, "RE_AddPolyToScene: invalid vertices");
-	}
-	if (r_numPolys >= r_maxPolys->i || r_numPolyVerts + numVerts >= r_maxPolyVerts->i) {
-		ri.Printf(PRINT_DEVELOPER, "WARNING: RE_AddPolyToScene: r_max_polys or r_max_polyverts reached\n");
-		return;
-	}
-
-	poly = &backendData->polys[r_numPolys];
-	poly->surfaceType = SF_POLY;
-	poly->hShader = hShader;
-	poly->numVerts = numVerts;
-	poly->verts = &backendData->polyVerts[r_numPolyVerts];
-	memcpy(poly->verts, verts, numVerts * sizeof(*verts));
-
-	// done.
-	r_numPolyVerts += numVerts;
-	r_numPolys++;
-}
-
-void GDR_EXPORT RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys )
-{
-	const poly_t *p;
-	uint32_t i;
-
-	if (!rg.registered) {
-		return;
-	}
-
-	if (!polys) { // should never happen
-		ri.Error(ERR_FATAL, "RE_AddPolyListToScene: bad polylist!");
-	}
-	if (!numPolys) {
-		ri.Printf(PRINT_DEVELOPER, COLOR_YELLOW "RE_AddPolyListToScene: no polys\n");
-		return;
-	}
-
-	for (i = 0, p = polys; i < numPolys; i++, p++) {
-		RE_AddPolyToScene(p->hShader, p->verts, p->numVerts);
 	}
 }
 
@@ -154,7 +224,7 @@ void R_ConvertCoords(vec3_t verts[4], vec3_t pos)
 
     Mat4Identity(model);
     Mat4Translation(pos, model);
-    Mat4Multiply(glState.modelViewProjectionMatrix, model, mvp);
+    Mat4Multiply(rg.viewData.camera.transformMatrix, model, mvp);
 
 	Mat4Transform(mvp, positions[0], p);
 	VectorCopy(verts[0], p);
@@ -166,64 +236,33 @@ void R_ConvertCoords(vec3_t verts[4], vec3_t pos)
 	VectorCopy(verts[3], p);
 }
 
-static void R_AddWorldSurfs(void)
-{
-	vec3_t verts[4];
-	const maptile_t *tiles;
-	vec3_t pos;
-	uint32_t i;
-
-	if (!r_drawWorld->i) {
-		return;
-	}
-
-	VectorClear(pos);
-	GL_BindTexture(GL_TEXTURE3, rg.world->tileset);
-	tiles = rg.world->tiles;
-
-	for (i = 0; i < rg.world->numSurfs; i++) {
-		VectorCopy(pos, tiles[i].pos);
-		R_ConvertCoords(verts, pos);
-		R_AddDrawSurf((void *)rg.world->tileSurfs, rg.world->shader);
-	}
-}
-
-void R_GenerateDrawSurfs(void)
-{
-	R_AddWorldSurfs();
-
-	R_AddPolySurfs();
-
-	R_SortDrawSurfs(backendData->drawSurfs, backendData->numDrawSurfs);
-}
-
 void RB_AddQuad(const drawVert_t verts[4])
 {
 	uint32_t idx;
 
-	idx = backend->dbuf.numVertices;
+	idx = drawBuf.numVertices;
 
 	// triangle indices for a simple quad
-	backend->dbuf.indices[backend->dbuf.numIndices] = idx;
-	backend->dbuf.indices[backend->dbuf.numIndices + 1] = idx + 1;
-	backend->dbuf.indices[backend->dbuf.numIndices + 2] = idx + 2;
+	drawBuf.indices[drawBuf.numIndices] = idx;
+	drawBuf.indices[drawBuf.numIndices + 1] = idx + 1;
+	drawBuf.indices[drawBuf.numIndices + 2] = idx + 2;
 
-	backend->dbuf.indices[backend->dbuf.numIndices + 3] = idx + 3;
-	backend->dbuf.indices[backend->dbuf.numIndices + 4] = idx + 2;
-	backend->dbuf.indices[backend->dbuf.numIndices + 5] = idx + 0;
+	drawBuf.indices[drawBuf.numIndices + 3] = idx + 3;
+	drawBuf.indices[drawBuf.numIndices + 4] = idx + 2;
+	drawBuf.indices[drawBuf.numIndices + 5] = idx + 0;
 
-	VectorCopy(backend->dbuf.xyz[idx], verts[0].xyz);
-	VectorCopy(backend->dbuf.xyz[idx+1], verts[1].xyz);
-	VectorCopy(backend->dbuf.xyz[idx+2], verts[2].xyz);
-	VectorCopy(backend->dbuf.xyz[idx+3], verts[3].xyz);
+	VectorCopy(drawBuf.xyz[idx], verts[0].xyz);
+	VectorCopy(drawBuf.xyz[idx+1], verts[1].xyz);
+	VectorCopy(drawBuf.xyz[idx+2], verts[2].xyz);
+	VectorCopy(drawBuf.xyz[idx+3], verts[3].xyz);
 
-	VectorCopy2(backend->dbuf.texCoords[idx], verts[0].uv);
-	VectorCopy2(backend->dbuf.texCoords[idx+1], verts[1].uv);
-	VectorCopy2(backend->dbuf.texCoords[idx+2], verts[2].uv);
-	VectorCopy2(backend->dbuf.texCoords[idx+3], verts[3].uv);
+	VectorCopy2(drawBuf.texCoords[idx], verts[0].uv);
+	VectorCopy2(drawBuf.texCoords[idx+1], verts[1].uv);
+	VectorCopy2(drawBuf.texCoords[idx+2], verts[2].uv);
+	VectorCopy2(drawBuf.texCoords[idx+3], verts[3].uv);
 
-	backend->dbuf.numVertices += 4;
-	backend->dbuf.numIndices += 6;
+	drawBuf.numVertices += 4;
+	drawBuf.numIndices += 6;
 }
 
 /*
@@ -237,40 +276,40 @@ void RB_InstantQuad2(vec4_t quadVerts[4], vec2_t texCoords[4])
 {
 //	GLimp_LogComment("--- RB_InstantQuad2 ---\n");
 
-	backend->dbuf.numVertices = 0;
-	backend->dbuf.numIndices = 0;
-	backend->dbuf.firstIndex = 0;
+	drawBuf.numVertices = 0;
+	drawBuf.numIndices = 0;
+	drawBuf.firstIndex = 0;
 
-	VectorCopy(backend->dbuf.xyz[backend->dbuf.numVertices], quadVerts[0]);
-	VectorCopy2(backend->dbuf.texCoords[backend->dbuf.numVertices], texCoords[0]);
-	backend->dbuf.numVertices++;
+	VectorCopy(drawBuf.xyz[drawBuf.numVertices], quadVerts[0]);
+	VectorCopy2(drawBuf.texCoords[drawBuf.numVertices], texCoords[0]);
+	drawBuf.numVertices++;
 
-	VectorCopy(backend->dbuf.xyz[backend->dbuf.numVertices], quadVerts[1]);
-	VectorCopy2(backend->dbuf.texCoords[backend->dbuf.numVertices], texCoords[1]);
-	backend->dbuf.numVertices++;
+	VectorCopy(drawBuf.xyz[drawBuf.numVertices], quadVerts[1]);
+	VectorCopy2(drawBuf.texCoords[drawBuf.numVertices], texCoords[1]);
+	drawBuf.numVertices++;
 
-	VectorCopy(backend->dbuf.xyz[backend->dbuf.numVertices], quadVerts[2]);
-	VectorCopy2(backend->dbuf.texCoords[backend->dbuf.numVertices], texCoords[2]);
-	backend->dbuf.numVertices++;
+	VectorCopy(drawBuf.xyz[drawBuf.numVertices], quadVerts[2]);
+	VectorCopy2(drawBuf.texCoords[drawBuf.numVertices], texCoords[2]);
+	drawBuf.numVertices++;
 
-	VectorCopy(backend->dbuf.xyz[backend->dbuf.numVertices], quadVerts[3]);
-	VectorCopy2(backend->dbuf.texCoords[backend->dbuf.numVertices], texCoords[3]);
-	backend->dbuf.numVertices++;
+	VectorCopy(drawBuf.xyz[drawBuf.numVertices], quadVerts[3]);
+	VectorCopy2(drawBuf.texCoords[drawBuf.numVertices], texCoords[3]);
+	drawBuf.numVertices++;
 
-	backend->dbuf.indices[backend->dbuf.numIndices++] = 0;
-	backend->dbuf.indices[backend->dbuf.numIndices++] = 1;
-	backend->dbuf.indices[backend->dbuf.numIndices++] = 2;
-	backend->dbuf.indices[backend->dbuf.numIndices++] = 0;
-	backend->dbuf.indices[backend->dbuf.numIndices++] = 2;
-	backend->dbuf.indices[backend->dbuf.numIndices++] = 3;
+	drawBuf.indices[drawBuf.numIndices++] = 0;
+	drawBuf.indices[drawBuf.numIndices++] = 1;
+	drawBuf.indices[drawBuf.numIndices++] = 2;
+	drawBuf.indices[drawBuf.numIndices++] = 0;
+	drawBuf.indices[drawBuf.numIndices++] = 2;
+	drawBuf.indices[drawBuf.numIndices++] = 3;
 
 	RB_UpdateCache(ATTRIB_POSITION | ATTRIB_TEXCOORD);
 
-	R_DrawElements(backend->dbuf.numIndices, backend->dbuf.firstIndex);
+	R_DrawElements(drawBuf.numIndices, drawBuf.firstIndex);
 
-	backend->dbuf.numIndices = 0;
-	backend->dbuf.numVertices = 0;
-	backend->dbuf.firstIndex = 0;
+	drawBuf.numIndices = 0;
+	drawBuf.numVertices = 0;
+	drawBuf.firstIndex = 0;
 }
 
 void RB_InstantQuad(vec4_t quadVerts[4])
@@ -284,7 +323,7 @@ void RB_InstantQuad(vec4_t quadVerts[4])
 
 	GLSL_UseProgram(&rg.basicShader);
 	
-	GLSL_SetUniformMatrix4(&rg.basicShader, UNIFORM_MODELVIEWPROJECTION, glState.modelViewProjectionMatrix);
+	GLSL_SetUniformMatrix4(&rg.basicShader, UNIFORM_MODELVIEWPROJECTION, glState.modelviewProjection);
 	GLSL_SetUniformVec4(&rg.basicShader, UNIFORM_COLOR, colorWhite);
 
 	RB_InstantQuad2(quadVerts, texCoords);
@@ -306,7 +345,7 @@ qboolean RB_SurfaceVaoCached(uint32_t numVerts, drawVert_t *verts, uint32_t numI
 
 	if (endSurface) {
 		RB_EndSurface();
-		RB_BeginSurface(backend->dbuf.shader);
+		RB_BeginSurface(drawBuf.shader);
 	}
 
 	if (recycleVertexBuffer)
@@ -315,15 +354,15 @@ qboolean RB_SurfaceVaoCached(uint32_t numVerts, drawVert_t *verts, uint32_t numI
 	if (recycleIndexBuffer)
 		VaoCache_RecycleIndexBuffer();
 	
-	if (!backend->dbuf.numVertices)
+	if (!drawBuf.numVertices)
 		VaoCache_InitQueue();
 	
 	VaoCache_AddSurface(verts, numVerts, indices, numIndices);
 
-	backend->dbuf.numIndices += numIndices;
-	backend->dbuf.numVertices += numVerts;
-	backend->dbuf.useCacheVao = qtrue;
-	backend->dbuf.useInternalVao = qfalse;
+	drawBuf.numIndices += numIndices;
+	drawBuf.numVertices += numVerts;
+	drawBuf.useCacheVao = qtrue;
+	drawBuf.useInternalVao = qfalse;
 
 	return qtrue;
 }
@@ -333,38 +372,38 @@ static void RB_SurfacePolychain(const srfPoly_t *p)
 {
 	uint64_t i, numv, numIdx, idxCount, vtxCount;
 
-	RB_CheckVao(backend->dbuf.buf);
+	RB_CheckVao(drawBuf.buf);
 	RB_CheckOverflow(p->numVerts, 3*(p->numVerts - 2));
 	
 	// fan triangles into the draw buffer
-	numv = backend->dbuf.numVertices;
+	numv = drawBuf.numVertices;
 	vtxCount = 0;
 	for (i = 0; i < p->numVerts; i++) {
-		VectorCopy(backend->dbuf.xyz[numv], p->verts[i].xyz);
+		VectorCopy(drawBuf.xyz[numv], p->verts[i].xyz);
 
-		backend->dbuf.texCoords[numv][0] = p->verts[i].uv[0];
-		backend->dbuf.texCoords[numv][1] = p->verts[i].uv[1];
-		backend->dbuf.color[numv][0] = (int)p->verts[i].modulate.rgba[0] * 257;
-		backend->dbuf.color[numv][1] = (int)p->verts[i].modulate.rgba[1] * 257;
-		backend->dbuf.color[numv][2] = (int)p->verts[i].modulate.rgba[2] * 257;
-		backend->dbuf.color[numv][3] = (int)p->verts[i].modulate.rgba[3] * 257;
+		drawBuf.texCoords[numv][0] = p->verts[i].uv[0];
+		drawBuf.texCoords[numv][1] = p->verts[i].uv[1];
+		drawBuf.color[numv][0] = (int)p->verts[i].modulate.rgba[0] * 257;
+		drawBuf.color[numv][1] = (int)p->verts[i].modulate.rgba[1] * 257;
+		drawBuf.color[numv][2] = (int)p->verts[i].modulate.rgba[2] * 257;
+		drawBuf.color[numv][3] = (int)p->verts[i].modulate.rgba[3] * 257;
 
 		numv++;
 		vtxCount++;
 	}
 
 	// generate fan indices into the draw buffer
-	numIdx = backend->dbuf.numIndices;
+	numIdx = drawBuf.numIndices;
 	for (i = 0; i < p->numVerts; i++) {
-		backend->dbuf.indices[numIdx + 0] = backend->dbuf.numVertices;
-		backend->dbuf.indices[numIdx + 1] = backend->dbuf.numVertices + i + 1;
-		backend->dbuf.indices[numIdx + 2] = backend->dbuf.numVertices + i + 2;
+		drawBuf.indices[numIdx + 0] = drawBuf.numVertices;
+		drawBuf.indices[numIdx + 1] = drawBuf.numVertices + i + 1;
+		drawBuf.indices[numIdx + 2] = drawBuf.numVertices + i + 2;
 		numIdx += 3;
 		idxCount++;
 	}
 
-	backend->dbuf.numIndices = numIdx;
-	backend->dbuf.numVertices = numv;
+	drawBuf.numIndices = numIdx;
+	drawBuf.numVertices = numv;
 }
 
 static void RB_SurfaceTile(const srfTile_t *tile)
@@ -385,3 +424,5 @@ void (*rb_surfaceTable[SF_NUM_SURFACE_TYPES])(void *) = {
 	(void(*)(void*))RB_SurfacePolychain,
 	(void(*)(void*))RB_SurfaceTile
 };
+
+

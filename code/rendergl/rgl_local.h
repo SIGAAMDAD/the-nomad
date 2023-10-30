@@ -1,15 +1,20 @@
-#ifndef _RGL_LOCAL_
-#define _RGL_LOCAL_
+#ifndef __RGL_LOCAL__
+#define __RGL_LOCAL__
 
 #pragma once
 
 #include "../engine/n_shared.h"
-#include "../engine/gln_files.h"
-#include "ngl.h"
 #include "../rendercommon/r_public.h"
 #include "../rendercommon/r_types.h"
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_opengl.h>
+#include "../engine/gln_files.h"
+#include "ngl.h"
+
+#define MAX_RENDER_BUFFERS 2048
+#define MAX_RENDER_PROGRAMS 2048
+#define MAX_RENDER_TEXTURES 2048
+#define MAX_RENDER_SHADERS 2048
+#define MAX_RENDER_FBOs 64
+
 
 #define GLN_INDEX_TYPE GL_UNSIGNED_INT
 typedef uint32_t glIndex_t;
@@ -20,13 +25,19 @@ typedef uint32_t glIndex_t;
 #define MAX_GLSL_OBJECTS 128
 #define MAX_SHADERS 1024
 #define MAX_TEXTURES 1024
+#define MAX_RENDER_SPRITESHEETS 1024
+
+#define MAX_DLIGHTS 1024
+#define MAX_RENDER_ENTITIES 1024
+
+#define MAX_TEXTURE_UNITS 16
 
 #define PRINT_INFO 0
 #define PRINT_DEVELOPER 1
 
 #define PSHADOW_MAP_SIZE 512
 
-#define NGL_VERSION_ATLEAST(major,minor) (glContext->versionMajor > major || (glContext->versionMajor == major && glContext->versionMinor >= minor))
+#define NGL_VERSION_ATLEAST(major,minor) (glContext.versionMajor > major || (glContext.versionMajor == major && glContext.versionMinor >= minor))
 
 #define MAX_DRAW_VERTICES (MAX_INT/sizeof(drawVert_t))
 #define MAX_DRAW_INDICES (MAX_INT/sizeof(glIndex_t))
@@ -43,6 +54,16 @@ typedef uint32_t glIndex_t;
 #define LIGHTMAP_WHITEIMAGE -2
 #define LIGHTMAP_NONE       -1
 
+enum
+{
+    TB_COLORMAP = 0,
+    TB_NORMALMAP,
+    TB_SPECULARMAP,
+    TB_LIGHTMAP,
+
+    NUM_TEXTURE_BINDINGS
+};
+
 typedef enum {
     MI_NONE,
     MI_NVX,
@@ -56,9 +77,11 @@ typedef enum {
 } textureCompressionRef_t;
 
 typedef enum {
+    GL_DBG_NONE = 0,
+
     GL_DBG_KHR,
     GL_DBG_AMD,
-    GL_DBG_ARB,
+    GL_DBG_ARB
 } glDebugType_t;
 
 typedef struct
@@ -107,7 +130,7 @@ typedef struct
 } glContext_t;
 
 typedef struct {
-    refEntity_t e;
+    renderEntityRef_t e;
     vec3_t ambientLight;
     vec3_t lightDir;
     vec3_t directedLight;
@@ -270,33 +293,6 @@ typedef struct dlight_s
     struct dlight_s *prev;
 } dlight_t;
 
-typedef struct
-{
-    char name[MAX_GDR_PATH];
-
-    uint32_t fboId;
-
-    uint32_t colorBuffers[16];
-    uint32_t colorFormat;
-    texture_t *colorImage[16];
-
-    uint32_t depthBuffer;
-    uint32_t depthFormat;
-
-    uint32_t stencilBuffer;
-    uint32_t stencilFormat;
-
-    uint32_t packedDepthStencilBuffer;
-    uint32_t packedDepthStencilFormat;
-
-    uint32_t width;
-    uint32_t height;
-    
-    // if we're only rendering to a chunk of the screen
-    uint32_t x;
-    uint32_t y;
-} fbo_t;
-
 // normal and light are unused
 typedef struct
 {
@@ -317,6 +313,9 @@ SURFACES
 ==============================================================================
 */
 
+#define MAX_DRAWSURFS 0x10000
+#define DRAWSURF_MASK (0x20000-1)
+
 // any changes in surfaceType must be mirrored in rb_surfaceTable[]
 typedef enum {
     SF_BAD,
@@ -328,18 +327,10 @@ typedef enum {
     SF_MAX = 0x7fffffff			// ensures that sizeof( surfaceType_t ) == sizeof( int )
 } surfaceType_t;
 
-typedef struct drawSurf_s {
-    uint32_t sort;
-    surfaceType_t *surface; // any of surface*_t
-} drawSurf_t;
-
 typedef struct {
-    surfaceType_t surface;
-
-    // a single quad
-    drawVert_t *verts;
-    glIndex_t *indices;
-} srfTile_t;
+    uint32_t sort;
+    surfaceType_t *surface;
+} drawSurf_t;
 
 // when sgame directly specifies a polygon, it becomes a srfPoly_t
 // as soon as it is called
@@ -350,7 +341,38 @@ typedef struct {
     polyVert_t      *verts; // later becomes a drawVert_t
 } srfPoly_t;
 
-extern void (*rb_surfaceTable[SF_NUM_SURFACE_TYPES])(void *);
+typedef struct {
+    surfaceType_t surfaceType;
+    uint32_t numTiles;
+    drawVert_t *verts;
+} srfTile_t;
+
+//==================================================================
+
+typedef enum
+{
+    BUF_GL_MAPPED,
+    BUF_GL_BUFFER,
+    BUF_GL_CLIENT,
+} bufferMemType_t;
+
+// not meant to be used by anything other than the vbo backend
+
+typedef enum {
+    BUFFER_STATIC,      // data is constant throughout buffer lifetime
+    BUFFER_DYNAMIC,     // expected to be updated once in a while, but not every frame
+    BUFFER_FRAME,       // expected to be update on a per-frame basis
+} bufferType_t;
+
+typedef struct {
+    void *data;
+    uint64_t size;
+    uintptr_t offset;
+    bufferMemType_t usage;
+    uint32_t id;
+    uint32_t target;
+    uint32_t glUsage;
+} buffer_t;
 
 typedef struct {
     uint32_t index;
@@ -362,33 +384,9 @@ typedef struct {
     uintptr_t offset;
 } vertexAttrib_t;
 
-// not meant to be used by anything other than the vbo backend
-
-typedef enum {
-    BUFFER_STATIC,      // data is constant throughout buffer lifetime
-    BUFFER_DYNAMIC,     // expected to be updated once in a while, but not every frame
-    BUFFER_FRAME,       // expected to be update on a per-frame basis
-} bufferType_t;
-
-typedef enum {
-    BUF_GL_MAPPED,
-    BUF_GL_BUFFER,
-    BUF_GL_CLIENT
-} bufMemType_t;
-
 typedef struct {
-    void *data;
-    uint32_t target;
-    uint32_t id;
-    uint32_t size;
-    bufMemType_t usage;
-    uintptr_t offset;
-} buffer_t;
-
-typedef struct vertexBuffer_s
-{
     char name[MAX_GDR_PATH];
-    
+
     uint32_t vaoId;
     bufferType_t type;
 
@@ -396,93 +394,23 @@ typedef struct vertexBuffer_s
     buffer_t index;
 
     vertexAttrib_t attribs[ATTRIB_INDEX_COUNT];
-
-    struct vertexBuffer_s *next;
 } vertexBuffer_t;
 
-//===============================================================================
+//==================================================================
+
+/*
+* Shaders
+*/
 
 typedef enum {
-	SS_BAD,
-	SS_PORTAL,			// mirrors, portals, viewscreens
-	SS_ENVIRONMENT,		// sky box
-	SS_OPAQUE,			// opaque
+    SS_BAD,             // throw error
 
-	SS_DECAL,			// scorch marks, etc.
-	SS_SEE_THROUGH,		// ladders, grates, grills that may have small blended edges
-						// in addition to alpha test
-	SS_BANNER,
+    SS_OPAQUE,          // opaque stuff
+    SS_DECAL,           // scorch marks, blood splats, etc.
+    SS_SEE_THROUGH,     // ladders, grates, grills that may have small blended edges
 
-	SS_FOG,
-
-	SS_UNDERWATER,		// for items that should be drawn in front of the water plane
-
-	SS_BLEND0,			// regular transparency and filters
-	SS_BLEND1,			// generally only used for additive type effects
-	SS_BLEND2,
-	SS_BLEND3,
-
-	SS_BLEND6,
-	SS_STENCIL_SHADOW,
-	SS_ALMOST_NEAREST,	// gun smoke puffs
-
-	SS_NEAREST			// blood blobs
+    SS_BLEND,           // the standard
 } shaderSort_t;
-
-
-#define MAX_SHADER_STAGES 8
-
-typedef enum {
-	GF_NONE,
-
-	GF_SIN,
-	GF_SQUARE,
-	GF_TRIANGLE,
-	GF_SAWTOOTH, 
-	GF_INVERSE_SAWTOOTH, 
-
-	GF_NOISE
-
-} genFunc_t;
-
-
-typedef enum {
-	DEFORM_NONE,
-	DEFORM_WAVE,
-	DEFORM_NORMALS,
-	DEFORM_BULGE,
-	DEFORM_MOVE,
-	DEFORM_PROJECTION_SHADOW,
-	DEFORM_AUTOSPRITE,
-	DEFORM_AUTOSPRITE2,
-	DEFORM_TEXT0,
-	DEFORM_TEXT1,
-	DEFORM_TEXT2,
-	DEFORM_TEXT3,
-	DEFORM_TEXT4,
-	DEFORM_TEXT5,
-	DEFORM_TEXT6,
-	DEFORM_TEXT7
-} deform_t;
-
-// deformVertexes types that can be handled by the GPU
-typedef enum
-{
-	// do not edit: same as genFunc_t
-
-	DGEN_NONE,
-	DGEN_WAVE_SIN,
-	DGEN_WAVE_SQUARE,
-	DGEN_WAVE_TRIANGLE,
-	DGEN_WAVE_SAWTOOTH,
-	DGEN_WAVE_INVERSE_SAWTOOTH,
-	DGEN_WAVE_NOISE,
-
-	// do not edit until this line
-
-	DGEN_BULGE,
-	DGEN_MOVE
-} deformGen_t;
 
 typedef enum {
 	AGEN_IDENTITY,
@@ -508,190 +436,113 @@ typedef enum {
 	CGEN_EXACT_VERTEX_LIT,	// like CGEN_EXACT_VERTEX but takes a light direction from the lightgrid
 	CGEN_VERTEX_LIT,		// like CGEN_VERTEX but takes a light direction from the lightgrid
 	CGEN_ONE_MINUS_VERTEX,
-//	CGEN_WAVEFORM,			// programmatically generated
+	CGEN_WAVEFORM,			// programmatically generated
 	CGEN_LIGHTING_DIFFUSE,
+	CGEN_FOG,				// standard fog
 	CGEN_CONST				// fixed color
 } colorGen_t;
 
-typedef enum {
-	TCGEN_BAD,
-	TCGEN_IDENTITY,			// clear to 0,0
-	TCGEN_LIGHTMAP,
-	TCGEN_TEXTURE,
-	TCGEN_ENVIRONMENT_MAPPED,
-	TCGEN_ENVIRONMENT_MAPPED_FP, // with correct first-person mapping
-	TCGEN_FOG,
-	TCGEN_VECTOR,			// S and T from world coordinates
-} texCoordGen_t;
+typedef struct shader_s {
+    char name[MAX_GDR_PATH];
 
-typedef enum {
-	ACFF_NONE,
-	ACFF_MODULATE_RGB,
-	ACFF_MODULATE_RGBA,
-	ACFF_MODULATE_ALPHA
-} acff_t;
+    texture_t *image;
 
-#define TR_MAX_TEXMODS 4
+    byte constantColor[4];      // for CGEN_CONST and AGEN_CONST
 
-typedef enum {
-	TMOD_NONE,
-	TMOD_TRANSFORM,
-	TMOD_TURBULENT,
-	TMOD_SCROLL,
-	TMOD_SCALE,
-	TMOD_STRETCH,
-	TMOD_ROTATE,
-	TMOD_ENTITY_TRANSLATE
-} texMod_t;
+    uint32_t sortedIndex;       // this shader == rg.sortedShaders[sortedIndex]
+    uint32_t index;             // this shader == rg.shaders[index]
+    shaderSort_t sort;
 
-typedef struct {
-	texMod_t		type;
+    uint32_t surfaceFlags;      // if explicitly defined this will have SURFPARM_* flags
 
-	// used for TMOD_TURBULENT and TMOD_STRETCH
-//	waveForm_t		wave;
+    qboolean polygonOffset;     // set for decals and other items that must be offset
 
-	// used for TMOD_TRANSFORM
-	float			matrix[2][2];		// s' = s * m[0][0] + t * m[1][0] + trans[0]
-	float			translate[2];		// t' = s * m[0][1] + t * m[0][1] + trans[1]
+    qboolean defaultShader;		// we want to return index 0 if the shader failed to
+								// load for some reason, but R_FindShader should
+								// still keep a name allocated for it, so if
+								// something calls RE_RegisterShader again with
+								// the same name, we don't try looking for it again
 
-	// used for TMOD_SCALE
-	float			scale[2];			// s *= scale[0]
-	                                    // t *= scale[1]
+    uint32_t stateBits;         // GLS_xxxx mask
 
-	// used for TMOD_SCROLL
-	float			scroll[2];			// s' = s + scroll[0] * time
-										// t' = t + scroll[1] * time
-
-	// + = clockwise
-	// - = counterclockwise
-	float			rotateSpeed;
-
-} texModInfo_t;
-
-#define MAX_IMAGE_ANIMATIONS 24
-
-typedef struct {
-	texture_t		*image[MAX_IMAGE_ANIMATIONS];
-	uint32_t		numImageAnimations;
-	double			imageAnimationSpeed;
-
-	texCoordGen_t	tcGen;
-	vec3_t			tcGenVectors[2];
-
-	uint32_t		numTexMods;
-	texModInfo_t	*texMods;
-
-	uint32_t		videoMapHandle;
-	qboolean		isLightmap;
-	qboolean		isVideoMap;
-} textureBundle_t;
-
-enum
-{
-	TB_COLORMAP    = 0,
-	TB_DIFFUSEMAP  = 0,
-	TB_LIGHTMAP    = 1,
-	TB_NORMALMAP   = 2,
-	TB_SPECULARMAP = 4,
-	NUM_TEXTURE_BUNDLES = 7
-};
-
-typedef enum
-{
-	// material shader stage types
-	ST_COLORMAP = 0,			// vanilla Q3A style shader treatening
-	ST_DIFFUSEMAP = 0,          // treat color and diffusemap the same
-	ST_NORMALMAP,
-	ST_NORMALPARALLAXMAP,
-	ST_SPECULARMAP,
-	ST_GLSL
-} stageType_t;
-
-typedef struct {
-    qboolean active;
-
-    textureBundle_t bundle[NUM_TEXTURE_BUNDLES];
-
+//    tcGen_t texCoord;
     colorGen_t rgbGen;
     alphaGen_t alphaGen;
 
-    byte constantColor[4]; // for CGEN_CONST and AGEN_CONST
-
-    uint32_t stateBits; // GLSL_xxxx mask
-
     qboolean isLightmap;
 
-    shaderProgram_t *glslShaderGroup;
-    uint32_t glslShaderIndex;
-
-    stageType_t type;
-
-    vec4_t normalScale;
-    vec4_t specularScale;
-} shaderStage_t;
-
-typedef struct shader_s {
-	char		name[MAX_GDR_PATH];		// game path, including extension
-
-	uint32_t	index;					// this shader == rg.shaders[index]
-    shaderSort_t sort;
-	uint32_t	sortedIndex;			// based on texture hash
-    uint32_t    stateBits;              // depthMask, srcFactor, dstFactor (GLstate essentially)
-
-	qboolean	defaultShader;			// we want to return index 0 if the shader failed to
-										// load for some reason, but R_FindShader should
-										// still keep a name allocated for it, so if
-										// something calls RE_RegisterShader again with
-										// the same name, we don't try looking for it again
-
-	qboolean	explicitlyDefined;		// found in a .shader file
-
-	uint32_t	surfaceFlags;			// if explicitlyDefined, this will have SURF_* flags
-	uint32_t	contentFlags;
-
-    uint32_t vertexAttribs;
-
-    shaderStage_t *stages[MAX_SHADER_STAGES];
-
-    qboolean noPicMips;
-    qboolean noMipMaps;
-    qboolean polygonOffset;
-    int32_t lightmapIndex;
-    int32_t lightmapSearchIndex;
-
-	struct shader_s	*next;
+    struct shader_s *next;
 } shader_t;
+
+//==================================================================
+
+
+typedef struct {
+    uint32_t x, y, width, height;
+    stereoFrame_t stereoFrame;
+    mat4_t transformMatrix;
+
+    qboolean drawn;
+
+    uint64_t time;
+    uint64_t flags;
+
+    double floatTime;
+
+    uint64_t numDrawSurfs;
+    drawSurf_t *drawSurfs;
+
+    uint64_t numEntities;
+    renderEntityDef_t *entities;
+
+    uint64_t numDLights;
+    dlight_t *dlights;
+
+    uint64_t numPolys;
+    srfPoly_t *polys;
+} renderSceneDef_t;
 
 typedef struct {
     vec3_t origin;
     float angle;
     float zoom;
     float aspect;
+    mat4_t projectionMatrix;
     mat4_t modelMatrix;
+    mat4_t transformMatrix;
 } cameraData_t;
 
 typedef struct {
     cameraData_t camera;
 
-    fbo_t *targetFbo;
-
     uint32_t viewportX, viewportY, viewportWidth, viewportHeight;
-    mat4_t projectionMatrix;
 
     float zFar;
     float zNear;
 
     stereoFrame_t stereoFrame;
+
+    uint64_t frameSceneNum;
+    uint64_t frameCount;
 } viewData_t;
 
+typedef vec2_t refSprite_t[4];
+
 typedef struct {
-    char name[MAX_GDR_PATH]; // ie: maps/example.bmf
-    char baseName[MAX_GDR_PATH]; // ie: example
+    char name[MAX_GDR_PATH];
 
-    uint64_t dataSize;
+    shader_t *shader;
+    nhandle_t hShader;
 
-    texture_t *tileset;
-    vertexBuffer_t *buf;
+    uint32_t numSprites;
+    refSprite_t *texCoords;
+    uint32_t spriteWidth, spriteHeight;
+    uint32_t spriteCountX, spriteCountY;
+} refSpriteSheet_t;
+
+typedef struct {
+    char baseName[MAX_GDR_PATH];
+    char name[MAX_GDR_PATH];
 
     uint32_t width;
     uint32_t height;
@@ -708,25 +559,26 @@ typedef struct {
     mapspawn_t *spawns;
     uint32_t numSpawns;
 
-    glIndex_t *indices;
-    uint32_t numIndices;
+    uint64_t numIndices;
+    uint64_t numVertices;
 
-    drawVert_t *vertices;
-    uint32_t numVertices;
-
-    srfTile_t *tileSurfs;
-    uint32_t numSurfs;
+    srfTile_t *surface;
 
     tile2d_sprite_t *sprites;
     uint32_t numTilesetSprites;
 
     shader_t *shader;
+
+    glIndex_t *indices;
+    drawVert_t *vertices;
+
+    refSpriteSheet_t *tileset;
 } world_t;
 
 typedef struct stageVars
 {
-	color4ub_t	colors[MAX_BATCH_VERTICES];
-	vec2_t		texcoords[NUM_TEXTURE_BUNDLES][MAX_BATCH_VERTICES];
+//	color4ub_t	colors[MAX_BATCH_VERTICES];
+//	vec2_t		texcoords[NUM_TEXTURE_BUNDLES][MAX_BATCH_VERTICES];
 } stageVars_t;
 
 typedef struct
@@ -742,19 +594,19 @@ typedef struct
     vec2_t texCoords[MAX_BATCH_VERTICES] GDR_ALIGN(16);
     uint16_t color[MAX_BATCH_VERTICES][4] GDR_ALIGN(16);
 
-    stageVars_t svars GDR_ALIGN(16);
+//    stageVars_t svars GDR_ALIGN(16);
 #ifdef __GNUC__
 #pragma GCC diagnostic pop
 #endif
 
     void *attribPointers[ATTRIB_INDEX_COUNT];
 
-    uint64_t numVertices;
-    uint64_t numIndices;
-    uint64_t firstIndex;
+    uint32_t numVertices;
+    uint32_t numIndices;
+    uint32_t firstIndex;
 
     shader_t *shader;
-    shaderStage_t **stages;
+//    shaderStage_t **stages;
     vertexBuffer_t *buf;
 
     double shaderTime;
@@ -762,52 +614,32 @@ typedef struct
     qboolean useInternalVao;
     qboolean useCacheVao;
     qboolean updated;
-} drawBuffer_t;
+} shaderDrawCommands_t;
 
-/*
-** performanceCounters_t
-*/
 typedef struct {
-    float c_overDraw;
-
-    uint32_t c_bufferBinds;
-    uint32_t c_bufferVertices;
-    uint32_t c_bufferIndices;
-
-    uint32_t c_staticBufferDraws;
-    uint32_t c_dynamicBufferDraws;
-
-    uint32_t c_texturesUsed;
+    uint64_t msec;
 
     uint32_t c_glslShaderBinds;
-    uint32_t c_vaoBinds;
-    uint32_t c_vboBinds;
-    uint32_t c_iboBinds;
+    uint32_t c_bufferIndices, c_bufferVertices;
+    uint32_t c_iboBinds, c_vboBinds, c_vaoBinds;
+    uint32_t c_dynamicBufferDraws;
+    uint32_t c_staticBufferDraws;
+    uint32_t c_bufferBinds;
+    uint32_t c_surfaces;
+    uint32_t c_overDraw;
+} backendCounters_t;
 
-    uint64_t msec; // total msec for backend run
-} performanceCounters_t;
-
-typedef struct
-{
-    drawBuffer_t dbuf;
-
-    performanceCounters_t pc;
-
-    qboolean framePostProcessed;
-    qboolean depthFill;
-    qboolean colorMask[4];
+typedef struct {
+    viewData_t viewData;
+    renderSceneDef_t refdef;
 
     byte color2D[4];
 
-    shader_t *frameShader;
-    vertexBuffer_t *frameCache;
+    qboolean depthFill;
+    qboolean colorMask[4];
 
-    nhandle_t cmdThread;
+    backendCounters_t pc;
 } renderBackend_t;
-
-extern renderBackend_t *backend;
-
-#define MAX_TEXTURE_UNITS 16
 
 // the renderer front end should never modify glstate_t
 typedef struct {
@@ -816,15 +648,16 @@ typedef struct {
 	qboolean	finishCalled;
 	GLint		texEnv[2];
 	unsigned	glStateBits;
+    unsigned    storedGlState;
     int         currentArray;
 	unsigned	glClientStateBits[ MAX_TEXTURE_UNITS ];
 
     GLuint      textureStack[MAX_TEXTURE_UNITS];
     GLuint      *textureStackPtr;
 
-    mat4_t modelViewProjectionMatrix;
+    mat4_t modelviewProjection;
     mat4_t projection;
-    mat4_t modelView;
+    mat4_t modelview;
 
     uint32_t vertexAttribsEnabled;
 
@@ -837,78 +670,54 @@ typedef struct {
     uint32_t    rboId;
     uint32_t    shaderId;
 
-    fbo_t *currentFbo;
+    void *currentFbo; // unused
     vertexBuffer_t *currentVao;
     texture_t *currentTexture;
     shaderProgram_t *currentShader;
 } glstate_t;
 
-#define MAX_RENDER_TEXTURES 1024
-#define MAX_RENDER_PROGRAMS 128
-#define MAX_RENDER_SHADERS 1024
-#define MAX_RENDER_BUFFERS 1024
-#define MAX_RENDER_FBOS 64
-
-typedef struct renderGlobals_s
+typedef struct
 {
-    qboolean registered;
+    texture_t *defaultImage;
+    texture_t *whiteImage;
 
-    performanceCounters_t pc;
+    shader_t *defaultShader;
+
+    refSpriteSheet_t *spriteSheets[MAX_RENDER_SPRITESHEETS];
+    uint64_t numSpriteSheets;
+
+    vertexBuffer_t *buffers[MAX_RENDER_BUFFERS];
+    uint64_t numBuffers;
 
     shader_t *shaders[MAX_RENDER_SHADERS];
     shader_t *sortedShaders[MAX_RENDER_SHADERS];
     uint64_t numShaders;
 
-    texture_t *textures[MAX_RENDER_TEXTURES];
-    uint64_t numTextures;
-
-    vertexBuffer_t *buffers[MAX_RENDER_BUFFERS];
-    uint64_t numBuffers;
-
-    fbo_t *fbos[MAX_RENDER_FBOS];
-    uint64_t numFBOs;
-
     shaderProgram_t *programs[MAX_RENDER_PROGRAMS];
     uint64_t numPrograms;
 
-    uint32_t numLightmaps;
-    texture_t **lightmaps;
+    texture_t *textures[MAX_RENDER_TEXTURES];
+    uint64_t numTextures;
+
+    viewData_t viewData;
+    renderSceneDef_t refdef;
 
     world_t *world;
     qboolean worldLoaded;
 
-    viewData_t viewData;
+    uint64_t viewCount;
 
-    fbo_t *renderFbo;
-    fbo_t *msaaResolveFbo;
+    qboolean registered;
 
-    fbo_t *currentFBO;
-    vertexBuffer_t *currentBuffer;
-
-    shader_t *defaultShader;
-
-    shaderProgram_t basicShader;
-    shaderProgram_t textureColorShader;
-
-    texture_t *defaultImage;
-    texture_t *whiteImage;
-    texture_t *identityLightImage;
-    texture_t *scratchImage[MAX_VIDEO_HANDLES];
-    texture_t *renderImage;
-    texture_t *screenScratchImage;
-    texture_t *hdrDepthImage;
-    texture_t *renderDepthImage;
-    texture_t *textureDepthImage;
-    texture_t *screenSsaoImage;
-
+    uint64_t frameSceneNum;
     uint64_t frameCount;
 
-    file_t logFile;
-
     float identityLight;
-
-    uint32_t overbrightBits;
     uint32_t identityLightByte;
+
+    uint64_t frontEndMsec;
+
+    shaderProgram_t basicShader;
 } renderGlobals_t;
 
 typedef enum {
@@ -926,10 +735,12 @@ typedef enum {              // [min, mag]
     TexFilter_Trilinear     // GL_LINEAR GL_NEAREST
 };
 
+extern shaderDrawCommands_t drawBuf;
 extern renderGlobals_t rg;
-extern glContext_t *glContext;
+extern glContext_t glContext;
 extern glstate_t glState;
 extern gpuConfig_t glConfig;
+extern renderBackend_t backend;
 
 #define OffsetByteToFloat(a)    ((float)(a) * 1.0f/127.5f - 1.0f)
 #define FloatToOffsetByte(a)    (byte)((a) * 127.5f + 128.0f)
@@ -986,91 +797,6 @@ extern gpuConfig_t glConfig;
 #define DRAW_CLIENT_BUFFERED 1
 #define DRAW_GPU_BUFFERED 2
 
-#define TEXUNIT_COLORMAP    (GL_TEXTURE0+TB_COLORMAP)
-#define TEXUNIT_DIFFUSEMAP  (GL_TEXTURE0+TB_DIFFUSEMAP)
-#define TEXUNIT_LIGHTMAP    (GL_TEXTURE0+TB_LIGHTMAP)
-#define TEXUNIT_NORMALMAP   (GL_TEXTURE0+TB_NORMALMAP)
-#define TEXUNIT_SPECULARMAP (GL_TEXTURE0+TB_SPECULARMAP)
-#define TEXUNIT_TB(x) (GL_TEXTURE0+(x))
-
-extern cvar_t *r_experimental; // do we want experimental features?
-extern cvar_t *r_colorMipLevels;
-extern cvar_t *r_glDebug;
-extern cvar_t *r_genNormalMaps;
-extern cvar_t *r_printShaders;
-extern cvar_t *r_baseNormalX;
-extern cvar_t *r_baseNormalY;
-extern cvar_t *r_baseParallax;
-extern cvar_t *r_baseSpecular;
-extern cvar_t *r_baseGloss;
-extern cvar_t *vid_xpos;
-extern cvar_t *vid_ypos;
-extern cvar_t *r_allowSoftwareGL;
-extern cvar_t *r_displayRefresh;
-extern cvar_t *r_fullscreen;
-extern cvar_t *r_customWidth;
-extern cvar_t *r_customHeight;
-extern cvar_t *r_aspectRatio;
-extern cvar_t *r_driver;
-extern cvar_t *r_drawFPS;
-extern cvar_t *r_swapInterval;
-extern cvar_t *r_mode;
-extern cvar_t *r_customPixelAspect;
-extern cvar_t *r_colorBits;
-extern cvar_t *r_stencilBits;
-extern cvar_t *r_depthBits;
-extern cvar_t *r_stereoEnabled;
-extern cvar_t *r_allowShaders;
-extern cvar_t *r_clear;
-extern cvar_t *r_ignoreGLErrors;
-extern cvar_t *r_ignorehwgamma;
-extern cvar_t *r_gammaAmount;
-extern cvar_t *r_drawMode;
-extern cvar_t *r_allowLegacy;
-extern cvar_t *r_useExtensions;
-extern cvar_t *r_crashOnFailedProc;
-extern cvar_t *r_measureOverdraw;
-extern cvar_t *r_finish;
-extern cvar_t *r_textureFiltering;
-extern cvar_t *r_textureDetail;
-extern cvar_t *r_multisampleType;
-extern cvar_t *r_multisampleAmount;
-extern cvar_t *r_hdr;
-extern cvar_t *r_ssao; // screen space ambient occlusion
-extern cvar_t *r_drawBuffer;
-extern cvar_t *r_speeds;
-extern cvar_t *r_maxPolyVerts;
-extern cvar_t *r_maxPolys;
-extern cvar_t *r_drawWorld;
-extern cvar_t *r_externalGLSL;
-extern cvar_t *r_skipBackEnd;
-extern cvar_t *r_ignoreDstAlpha;
-extern cvar_t *r_znear;
-extern cvar_t *r_depthPrepass;
-extern cvar_t *r_textureBits;
-extern cvar_t *r_greyscale;
-extern cvar_t *r_roundImagesDown;
-extern cvar_t *r_imageUpsampleMaxSize;
-extern cvar_t *r_imageUpsample;
-extern cvar_t *r_imageUpsampleType;
-extern cvar_t *r_picmip;
-extern cvar_t *r_overBrightBits;
-extern cvar_t *r_intensity;
-extern cvar_t *r_normalMapping;
-extern cvar_t *r_specularMapping;
-extern cvar_t *r_showImages;
-extern cvar_t *r_fullbright;
-extern cvar_t *r_singleShader;
-
-// GL extensions
-extern cvar_t *r_arb_texture_filter_anisotropic;
-extern cvar_t *r_arb_vertex_buffer_object;
-extern cvar_t *r_arb_vertex_array_object;
-extern cvar_t *r_arb_texture_float;
-extern cvar_t *r_arb_framebuffer_object;
-extern cvar_t *r_arb_vertex_shader;
-extern cvar_t *r_arb_texture_compression;
-
 #ifndef SGN
 #define SGN(x) (((x) >= 0) ? !!(x) : -1)
 #endif
@@ -1087,6 +813,59 @@ extern cvar_t *r_arb_texture_compression;
 #define CLAMP(a,b,c) MIN(MAX((a),(b)),(c))
 #endif
 
+extern cvar_t *r_useExtensions;
+extern cvar_t *r_allowLegacy;
+extern cvar_t *r_allowShaders;
+extern cvar_t *r_multisampleType;
+extern cvar_t *r_multisampleAmount;
+extern cvar_t *r_overBrightBits;
+extern cvar_t *r_ignorehwgamma;
+extern cvar_t *r_normalMapping;
+extern cvar_t *r_specularMapping;
+extern cvar_t *r_genNormalMaps;
+extern cvar_t *r_drawMode;
+extern cvar_t *r_hdr;
+extern cvar_t *r_ssao;
+extern cvar_t *r_greyscale;
+extern cvar_t *r_externalGLSL;
+extern cvar_t *r_ignoreDstAlpha;
+extern cvar_t *r_fullbright;
+extern cvar_t *r_intensity;
+extern cvar_t *r_singleShader;
+extern cvar_t *r_glDebug;
+extern cvar_t *r_textureBits;
+extern cvar_t *r_stencilBits;
+extern cvar_t *r_finish;
+extern cvar_t *r_picmip;
+extern cvar_t *r_roundImagesDown;
+extern cvar_t *r_gammaAmount;
+extern cvar_t *r_printShaders;
+extern cvar_t *r_textureDetail;
+extern cvar_t *r_textureFiltering;
+extern cvar_t *r_speeds;
+extern cvar_t *r_showImages;
+extern cvar_t *r_skipBackEnd;
+extern cvar_t *r_znear;
+extern cvar_t *r_measureOverdraw;
+extern cvar_t *r_ignoreGLErrors;
+extern cvar_t *r_clear;
+extern cvar_t *r_drawBuffer;
+extern cvar_t *r_maxPolys;
+extern cvar_t *r_maxPolyVerts;
+
+extern cvar_t *r_imageUpsampleType;
+extern cvar_t *r_imageUpsample;
+extern cvar_t *r_imageUpsampleMaxSize;
+extern cvar_t *r_colorMipLevels;
+
+// OpenGL extensions
+extern cvar_t *r_arb_texture_compression;
+extern cvar_t *r_arb_framebuffer_object;
+extern cvar_t *r_arb_vertex_array_object;
+extern cvar_t *r_arb_vertex_buffer_object;
+extern cvar_t *r_arb_texture_filter_anisotropic;
+extern cvar_t *r_arb_texture_float;
+
 static GDR_INLINE int VectorCompare4(const vec4_t v1, const vec4_t v2)
 {
 	if(v1[0] != v2[0] || v1[1] != v2[1] || v1[2] != v2[2] || v1[3] != v2[3])
@@ -1097,22 +876,38 @@ static GDR_INLINE int VectorCompare4(const vec4_t v1, const vec4_t v2)
 }
 
 //
-// rgl_shader.c
+// rgl_backend.c
 //
-void R_ShaderList_f(void);
-nhandle_t RE_RegisterShaderFromTexture(const char *name, texture_t *image, int32_t lightmapIndex, qboolean mipRawImage);
-nhandle_t RE_RegisterShader(const char *name);
-shader_t *R_GetShaderByHandle(nhandle_t hShader);
-shader_t *R_FindShaderByName( const char *name );
-shader_t *R_FindShader(const char *name, int32_t lightmapIndex, qboolean mipRawImage);
-void R_InitShaders( void );
+void GDR_ATTRIBUTE((format(printf, 1, 2))) GL_LogComment(const char *fmt, ...);
+void GDR_ATTRIBUTE((format(printf, 1, 2))) GL_LogError(const char *fmt, ...);
+void GL_SetObjectDebugName(GLenum target, GLuint id, const char *name, const char *add);
+void RB_ShowImages(void);
+void GL_SetModelViewMatrix(const mat4_t m);
+void GL_SetProjectionMatrix(const mat4_t m);
+void GL_CheckErrors(void);
+void GL_BindNullTextures(void);
+void GL_PushTexture(texture_t *texture);
+void GL_PopTexture(void);
+void GL_BindTexture(int tmu, texture_t *texture);
+void GL_BindNullRenderbuffer(void);
+int GL_UseProgram(GLuint program);
+void GL_BindNullProgram(void);
+void GL_BindFramebuffer(GLenum target, GLuint fbo);
+void GL_BindNullFramebuffer(GLenum target);
+void GL_BIndNullFramebuffers(void);
+void GL_BindRenderbuffer(GLuint rbo);
+void GL_BindNullRenderbuffer(void);
+void GL_State(unsigned stateBits);
+void GL_ClientState( int unit, unsigned stateBits );
+void GL_SetDefaultState(void);
+void RE_BeginFrame(stereoFrame_t stereoFrame);
+void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec);
+void RB_ExecuteRenderCommands(const void *data);
 
 //
-// rgl_shade.c
+// rgl_extensions.c
 //
-void RB_BeginSurface(shader_t *shader);
-void RB_EndSurface(void);
-void RB_StageIterator(void);
+void R_InitExtensions(void);
 
 //
 // rgl_program.c
@@ -1126,6 +921,16 @@ void GLSL_SetUniformVec2(shaderProgram_t *program, uint32_t uniformNum, const ve
 void GLSL_SetUniformVec3(shaderProgram_t *program, uint32_t uniformNum, const vec3_t v);
 void GLSL_SetUniformVec4(shaderProgram_t *program, uint32_t uniformNum, const vec4_t v);
 void GLSL_SetUniformMatrix4(shaderProgram_t *program, uint32_t uniformNum, const mat4_t m);
+
+//
+// rgl_texture.c
+//
+void R_ImageList_f(void);
+void R_DeleteTextures(void);
+texture_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags );
+void R_GammaCorrect( byte *buffer, uint64_t bufSize );
+void R_UpdateTextures( void );
+void R_InitTextures(void);
 
 //
 // rgl_math.c
@@ -1147,133 +952,72 @@ int NextPowerOfTwo(int in);
 unsigned short FloatToHalf(float in);
 float HalfToFloat(unsigned short in);
 
-
-//
-// rgl_texture.c
-//
-void R_ImageList_f(void);
-nhandle_t RE_RegisterSpriteSheet(const char *name, uint32_t spriteX, uint32_t spriteY);
-void R_DeleteTextures(void);
-texture_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags );
-void R_GammaCorrect( byte *buffer, uint64_t bufSize );
-
-//
-// rgl_cmd.c
-//
-void *R_GetCommandBufferReserved( uint32_t bytes, uint32_t reservedBytes );
-void *R_GetCommandBuffer( uint32_t bytes );
-void R_IssueRenderCommands( qboolean runPerformanceCounters );
-void R_IssuePendingRenderCommands( void );
-
-//
-// rgl_backend.c
-//
-void GDR_ATTRIBUTE((format(printf, 1, 2))) GL_LogComment(const char *fmt, ...);
-void GDR_ATTRIBUTE((format(printf, 1, 2))) GL_LogError(const char *fmt, ...);
-void GL_SetObjectDebugName(GLenum target, GLuint id, const char *name, const char *add);
-void RB_ShowImages(void);
-void GL_SetModelViewMatrix(const mat4_t m);
-void GL_SetProjectionMatrix(const mat4_t m);
-void GL_CheckErrors(void);
-void GL_BindNullTextures(void);
-void GL_PushTexture(texture_t *texture);
-void GL_PopTexture(void);
-void GL_BindTexture(GLenum unit, texture_t *texture);
-void GL_BindNullRenderbuffer(void);
-int GL_UseProgram(GLuint program);
-void GL_BindNullProgram(void);
-void GL_BindFramebuffer(GLenum target, GLuint fbo);
-void GL_BindNullFramebuffer(GLenum target);
-void GL_BIndNullFramebuffers(void);
-void GL_BindRenderbuffer(GLuint rbo);
-void GL_BindNullRenderbuffer(void);
-void GL_State(unsigned stateBits);
-void GL_ClientState( int unit, unsigned stateBits );
-void GL_SetDefaultState(void);
-void RE_BeginFrame(stereoFrame_t stereoFrame);
-void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec);
-void RB_ExecuteRenderCommands(const void *data);
-
-//
-// rgl_init.c
-//
-qboolean R_HasExtension(const char *ext);
-void R_Init(void);
-
 //
 // rgl_main.c
 //
-uint32_t R_GenDrawSurfSort(const shader_t *sh);
-void RB_MakeModelViewProjection(void);
+GDR_EXPORT nhandle_t RE_RegisterSpriteSheet(const char *shaderName, uint32_t numSprites, uint32_t spriteWidth, uint32_t spriteHeight,
+    uint32_t sheetWidth, uint32_t sheetHeight);
+void R_SortDrawSurfs(drawSurf_t *drawSurfs, uint32_t numDrawSurfs);
+void RB_MakeViewMatrix(void);
+void R_RenderView(const viewData_t *parms);
 void GL_CameraResize(void);
+qboolean R_HasExtension(const char *ext);
 void R_SortDrawSurfs(drawSurf_t *drawSurfs, uint32_t numDrawSurfs);
 void R_AddDrawSurf(surfaceType_t *surface, shader_t *shader);
-void RE_BeginRegistration(gpuConfig_t *config);
+GDR_EXPORT void RE_BeginRegistration(gpuConfig_t *config);
 
 //
 // rgl_scene.c
 //
-extern uint64_t r_firstSceneDrawSurf;
-extern uint64_t r_numEntities;
-extern uint64_t r_firstSceneEntity;
-extern uint64_t r_numPolys;
-extern uint64_t r_firstScenePoly;
-extern uint64_t r_numPolyVerts;
-void R_ConvertCoords(vec3_t verts[4], vec3_t pos);
-qboolean RB_SurfaceVaoCached(uint32_t numVerts, drawVert_t *verts, uint32_t numIndices, glIndex_t *indices);
-void GDR_EXPORT RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
-void GDR_EXPORT RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys );
-void GDR_EXPORT RE_ClearScene(void);
-void RB_CheckOverflow(uint32_t verts, uint32_t indexes);
-void R_InitNextFrame(void);
-void R_FinishBatch(const drawBuffer_t *input);
 void R_DrawElements(uint32_t numIndices, uintptr_t offset);
-void RB_InstantQuad2(vec4_t quadVerts[4], vec2_t texCoords[4]);
 void RB_InstantQuad(vec4_t quadVerts[4]);
+GDR_EXPORT void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
+GDR_EXPORT void RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys );
+GDR_EXPORT void RE_RenderScene( const renderSceneRef_t *fd );
+GDR_EXPORT void RE_AddEntityToScene( const renderEntityRef_t *ent );
+GDR_EXPORT void RE_BeginScene( const renderSceneRef_t *fd );
+GDR_EXPORT void RE_EndScene( void );
+GDR_EXPORT void RE_ClearScene( void );
+void R_InitNextFrame( void );
+void RB_CheckOverflow( uint32_t verts, uint32_t indexes );
+
+extern void (*rb_surfaceTable[SF_NUM_SURFACE_TYPES])(void *);
 
 //
-// rgl_texture.c
+// rgl_shader.c
 //
-void R_UpdateTextures(void);
-void R_InitTextures(void);
-void R_ShutdownTextures(void);
+void R_ShaderList_f(void);
+nhandle_t RE_RegisterShaderFromTexture(const char *name, texture_t *image);
+nhandle_t RE_RegisterShader(const char *name);
+shader_t *R_GetShaderByHandle(nhandle_t hShader);
+shader_t *R_FindShaderByName( const char *name );
+shader_t *R_FindShader(const char *name);
+void R_InitShaders( void );
 
 //
-// rgl_fbo.c
+// rgl_draw.c
 //
-void FBO_Bind(fbo_t *fbo);
-void FBO_Shutdown(void);
-void FBO_Init(void);
-void FBO_FastBlit(fbo_t *src, ivec4_t srcBox, fbo_t *dst, ivec4_t dstBox, uint32_t buffers, uint32_t filter);
+void RB_BeginSurface(shader_t *shader);
+void RB_EndSurface(void);
 
 //
 // rgl_cache.c
 //
-void VBO_Bind(vertexBuffer_t *vbo);
-void VBO_BindNull(void);
-vertexBuffer_t *R_AllocateBuffer(const char *name, void *vertices, uint32_t verticesSize, void *indices, uint32_t indicesSize, bufferType_t type);
-void VBO_Flush(vertexBuffer_t *buf);
-void R_ShutdownBuffers(void);
-void R_VaoPackColor(uint16_t *out, const vec4_t c);
-void R_VaoPackNormal(int16_t *out, vec3_t v);
-void R_VaoUnpackNormal(vec3_t v, int16_t *pack);
+void R_VaoPackTangent( int16_t *out, vec4_t v );
+void R_VaoPackNormal( int16_t *out, vec3_t v );
+void R_VaoPackColor( uint16_t *out, const vec4_t c );
+void R_VaoUnpackNormal( vec3_t v, int16_t *pack );
+void R_VaoUnpackTangent( vec4_t v, int16_t *pack );
+vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t verticesSize, void *indices, uint32_t indicesSize,
+    bufferType_t type );
+void VBO_BindNull( void );
+void R_InitGPUBuffers( void );
+void R_ShutdownGPUBuffers( void );
+void VBO_Bind( vertexBuffer_t *vbo );
+void RB_UpdateCache( uint32_t attribBits );
 
-void R_InitGPUBuffers(void);
-void R_ShutdownGPUBuffers(void);
-
-#if 0
-// per frame functions
-void VaoCache_Init(void);
-void VaoCache_InitQueue(void);
-void VaoCache_AddSurface(drawVert_t *verts, uint32_t numVerts, glIndex_t *indexes, uint32_t numIndexes);
-void VaoCache_BindVao(void);
-void VaoCache_Commit(void);
-void VaoCache_RecycleVertexBuffer(void);
-void VaoCache_RecycleIndexBuffer(void);
-void VaoCache_CheckAdd(qboolean *endSurface, qboolean *recycleVertexBuffer, qboolean *recycleIndexBuffer, uint32_t numVerts, uint32_t numIndexes);
-#endif
-void RB_UpdateCache(uint32_t attribBits);
-
+GDR_EXPORT void RE_BeginFrame(stereoFrame_t stereoFrame);
+GDR_EXPORT void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec);
 
 /*
 =============================================================
@@ -1303,7 +1047,7 @@ typedef enum
     RC_DRAW_IMAGE,
     RC_SET_COLOR,
 
-    RC_END_LIST
+    RC_END_OF_LIST
 } renderCmdType_t;
 
 typedef struct {
@@ -1311,7 +1055,8 @@ typedef struct {
     drawSurf_t *drawSurfs;
     uint32_t numDrawSurfs;
     viewData_t viewData;
-} drawSurfCmd_t;
+    renderSceneDef_t refdef;
+} drawSurfsCmd_t;
 
 typedef struct {
     renderCmdType_t commandId;
@@ -1346,11 +1091,10 @@ typedef struct {
     viewData_t viewData;
 } postProcessCmd_t;
 
-#define MAX_DRAWSURFS 0x10000
-#define DRAWSURF_MASK (0x20000-1)
-
 typedef struct {
     drawSurf_t drawSurfs[MAX_DRAWSURFS];
+    dlight_t dlights[MAX_DLIGHTS];
+    renderEntityDef_t entities[MAX_RENDER_ENTITIES];
     polyVert_t *polyVerts;
     srfPoly_t *polys;
 
@@ -1365,5 +1109,7 @@ extern renderBackendData_t *backendData;
 GDR_EXPORT void RE_DrawImage( float x, float y, float w, float h, float u1, float v1, float u2, float v2, nhandle_t hShader );
 GDR_EXPORT void RE_LoadWorldMap(const char *filename);
 GDR_EXPORT void RE_SetColor(const float *rgba);
+void R_AddDrawSurfCmd( drawSurf_t *drawSurfs, uint32_t numDrawSurfs );
+void R_IssuePendingRenderCommands(void);
 
 #endif

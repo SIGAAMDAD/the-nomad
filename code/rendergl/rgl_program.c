@@ -5,7 +5,7 @@ extern const char *fallbackShader_basic_fs;
 extern const char *fallbackShader_ssao_vs;
 extern const char *fallbackShader_ssao_fs;
 
-#define GLSL_VERSION_ATLEAST(major,minor) (glContext->glslVersionMajor > (major) || (glContext->versionMajor == (major) && glContext->glslVersionMinor >= minor))
+#define GLSL_VERSION_ATLEAST(major,minor) (glContext.glslVersionMajor > (major) || (glContext.versionMajor == (major) && glContext.glslVersionMinor >= minor))
 
 typedef struct {
     const char *name;
@@ -120,7 +120,7 @@ static void R_SaveShaderToCache(const shaderProgram_t *program, file_t cacheFile
     GLint length;
     GLenum fmt;
 
-    if (glContext->ARB_gl_spirv) {
+    if (glContext.ARB_gl_spirv) {
         return;
     }
 
@@ -346,7 +346,7 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
 
     // OpenGL version from 3.3 and up have corresponding glsl versions
     if (NGL_VERSION_ATLEAST(3, 30)) {
-        N_strcat(dest, size, va("#version %i%i core\n", glContext->glslVersionMajor, glContext->glslVersionMinor));
+        N_strcat(dest, size, va("#version %i%i core\n", glContext.glslVersionMajor, glContext.glslVersionMinor));
     }
     // otherwise, do the Quake3e method
     else if (GLSL_VERSION_ATLEAST(1, 30)) {
@@ -731,7 +731,7 @@ void GLSL_UseProgram(shaderProgram_t *program)
     GLuint programObject = program ? program->programId : 0;
 
     if (GL_UseProgram(programObject)) {
-        backend->pc.c_glslShaderBinds++;
+        backend.pc.c_glslShaderBinds++;
         glState.currentShader = program;
     }
 }

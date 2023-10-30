@@ -87,6 +87,11 @@ typedef struct {
     void (*GLimp_LogComment)(const char *comment);
     void (*GLimp_Minimize)( void );
     void *(*GL_GetProcAddress)(const char *name);
+
+    void (*ImGui_Init)(void *renderData, const char *renderName);
+    void (*ImGui_Shutdown)(void);
+    void (*ImGui_NewFrame)(void);
+    void (*ImGui_Draw)(void(*drawFunc)(void *draw_data));
 } refimport_t;
 
 typedef struct {
@@ -105,7 +110,8 @@ typedef struct {
 	// and height, which can be used by the client to intelligently
 	// size display elements
 	void (*BeginRegistration)( gpuConfig_t *config );
-    nhandle_t (*RegisterSpriteSheet)( const char *name, uint32_t spriteX, uint32_t spriteY );
+    nhandle_t (*RegisterSpriteSheet)( const char *shaderName, uint32_t numSprites, uint32_t spriteWidth, uint32_t spriteHeight,
+        uint32_t sheetWidth, uint32_t sheetHeight );
 	nhandle_t (*RegisterShader)( const char *name );
     nhandle_t (*RegisterAnimation)( const char *name );
 	void (*LoadWorld)( const char *name );
@@ -117,10 +123,13 @@ typedef struct {
 	// a scene is built up by calls to R_ClearScene and the various R_Add functions.
 	// Nothing is drawn until R_RenderScene is called.
 	void (*ClearScene)( void );
+    void (*BeginScene)( const renderSceneRef_t *fd );
+    void (*EndScene)( void );
     void (*AddPolyToScene)( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
     void (*AddPolyListToScene)( const poly_t *polys, uint32_t numPolys );
+    void (*AddEntityToScene)( const renderEntityRef_t *ent );
     void (*DrawImage)( float x, float y, float w, float h, float u1, float v1, float u2, float v2, nhandle_t hShader );
-	void (*RenderScene)( void );
+	void (*RenderScene)( const renderSceneRef_t *fd );
 
     void (*GetConfig)( gpuConfig_t *config );
 

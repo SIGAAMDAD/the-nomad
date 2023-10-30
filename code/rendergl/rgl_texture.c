@@ -1,4 +1,5 @@
 #include "rgl_local.h"
+#include <ctype.h>
 
 static void *Image_Malloc(size_t size) {
 	return ri.Malloc(size);
@@ -17,9 +18,9 @@ static void Image_Free(void *ptr) {
 #include "stb_image.h"
 
 static byte s_intensitytable[256];
-static uint16_t s_gammatable[256];
+static unsigned char s_gammatable[256];
 
-int		gl_filter_min = GL_LINEAR_MIPMAP_NEAREST;
+int		gl_filter_min = GL_NEAREST;
 int		gl_filter_max = GL_LINEAR;
 
 #define FILE_HASH_SIZE 1024
@@ -1582,10 +1583,10 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 
 	if (normalmap) {
 		if ((type == IMGTYPE_NORMALHEIGHT) && RawImage_HasAlpha(data, numPixels)) {
-			if (!forceNoCompression && glContext->textureCompressionRef & TCR_BPTC) {
+			if (!forceNoCompression && glContext.textureCompressionRef & TCR_BPTC) {
 				internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
 			}
-			else if (!forceNoCompression && glContext->textureCompression == TC_S3TC_ARB) {
+			else if (!forceNoCompression && glContext.textureCompression == TC_S3TC_ARB) {
 				internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 			}
 			else if ( r_textureBits->i == 16 ) {
@@ -1599,13 +1600,13 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 			}
 		}
 		else {
-			if (!forceNoCompression && glContext->textureCompressionRef & TCR_RGTC) {
+			if (!forceNoCompression && glContext.textureCompressionRef & TCR_RGTC) {
 				internalFormat = GL_COMPRESSED_RG_RGTC2;
 			}
-			else if (!forceNoCompression && glContext->textureCompressionRef & TCR_BPTC) {
+			else if (!forceNoCompression && glContext.textureCompressionRef & TCR_BPTC) {
 				internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
 			}
-			else if (!forceNoCompression && glContext->textureCompression == TC_S3TC_ARB) {
+			else if (!forceNoCompression && glContext.textureCompression == TC_S3TC_ARB) {
 				internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 			}
 			else if (r_textureBits->i == 16) {
@@ -1639,13 +1640,13 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 					internalFormat = GL_LUMINANCE;
 			}
 			else {
-				if ( !forceNoCompression && (glContext->textureCompressionRef & TCR_BPTC) ) {
+				if ( !forceNoCompression && (glContext.textureCompressionRef & TCR_BPTC) ) {
 					internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
 				}
-				else if ( !forceNoCompression && glContext->textureCompression == TC_S3TC_ARB ) {
+				else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC_ARB ) {
 					internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
 				}
-				else if ( !forceNoCompression && glContext->textureCompression == TC_S3TC ) {
+				else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC ) {
 					internalFormat = GL_RGB4_S3TC;
 				}
 				else if ( r_textureBits->i == 16 ) {
@@ -1667,10 +1668,10 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 					internalFormat = GL_LUMINANCE_ALPHA;
 			}
 			else {
-				if ( !forceNoCompression && (glContext->textureCompressionRef & TCR_BPTC) ) {
+				if ( !forceNoCompression && (glContext.textureCompressionRef & TCR_BPTC) ) {
 					internalFormat = GL_COMPRESSED_RGBA_BPTC_UNORM_ARB;
 				}
-				else if ( !forceNoCompression && glContext->textureCompression == TC_S3TC_ARB ) {
+				else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC_ARB ) {
 					internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 				}
 				else if ( r_textureBits->i == 16 ) {
@@ -1900,14 +1901,14 @@ static void RawImage_UploadTexture(GLuint texture, byte *data, uint32_t x, uint3
 		}
 
 		if (!lastMip && numMips < 2) {
-			if (glContext->ARB_framebuffer_object) {
+			if (glContext.ARB_framebuffer_object) {
 				nglBindTexture(target, texture);
 				nglGenerateMipmap(target);
 				break;
 			}
 			else if (rgba8) {
 //				if (type == IMGTYPE_NORMAL || type == IMGTYPE_NORMALHEIGHT)
-//					R_MipMapNormalHeight(data, data, width, height, glContext->swizzleNormalmap);
+//					R_MipMapNormalHeight(data, data, width, height, glContext.swizzleNormalmap);
 //				else
 //					R_MipMapsRGB(data, width, height);
 			}
@@ -2122,9 +2123,9 @@ static texture_t *R_CreateImage2( const char *name, byte *pic, uint32_t width, u
 	if (cubemap)
 		nglTexParameterf(textureTarget, GL_TEXTURE_WRAP_R, glWrapClampMode);
 
-	if (glContext->ARB_texture_filter_anisotropic && !cubemap)
+	if (glContext.ARB_texture_filter_anisotropic && !cubemap)
 		nglTexParameterf(textureTarget, GL_TEXTURE_MAX_ANISOTROPY_EXT,
-			mipmap ? (GLint)Com_Clamp(1, glContext->maxAnisotropy, r_arb_texture_filter_anisotropic->i) : 1);
+			mipmap ? (GLint)Com_Clamp(1, glContext.maxAnisotropy, r_arb_texture_filter_anisotropic->i) : 1);
 
 	switch(internalFormat) {
 	case GL_DEPTH_COMPONENT:
@@ -2527,6 +2528,7 @@ static void R_CreateBuiltinTextures(void)
 	memset( data, 255, sizeof( data ) );
 	rg.whiteImage = R_CreateImage("*white", (byte *)data, 8, 8, IMGTYPE_COLORALPHA, IMGFLAG_NONE | IMGFLAG_NO_COMPRESSION, 0);
 
+#if 0
 	// with overbright bits active, we need an image which is some fraction of full color,
 	// for default lightmaps, etc
 	for (x=0 ; x<DEFAULT_SIZE ; x++) {
@@ -2545,31 +2547,31 @@ static void R_CreateBuiltinTextures(void)
 		rg.scratchImage[x] = R_CreateImage("*scratch", (byte *)data, DEFAULT_SIZE, DEFAULT_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_PICMIP | IMGFLAG_CLAMPTOEDGE, 0);
 	}
 
-//	R_CreateDlightImage();
-//	R_CreateFogImage();
+	R_CreateDlightImage();
+	R_CreateFogImage();
 
-	if (glContext->ARB_framebuffer_object) {
+	if (glContext.ARB_framebuffer_object) {
 		uint32_t width, height, hdrFormat, rgbFormat;
 
 		width = glConfig.vidWidth;
 		height = glConfig.vidHeight;
 
 		hdrFormat = GL_RGBA8;
-		if (r_hdr->i && glContext->ARB_texture_float)
+		if (r_hdr->i && glContext.ARB_texture_float)
 			hdrFormat = GL_RGBA16F_ARB;
 
 		rgbFormat = GL_RGBA8;
 
 		rg.renderImage = R_CreateImage("_render", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat);
 
-//		if (r_shadowBlur->integer)
-//			tr.screenScratchImage = R_CreateImage("screenScratch", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat);
-//
+		if (r_shadowBlur->integer)
+			tr.screenScratchImage = R_CreateImage("screenScratch", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat);
+
 		if ( /* r_shadowBlur->integer || */ r_ssao->i)
 			rg.hdrDepthImage = R_CreateImage("*hdrDepth", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_R32F);
 
-//		if (r_drawSunRays->integer)
-//			tr.sunRaysImage = R_CreateImage("*sunRays", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat);
+		if (r_drawSunRays->integer)
+			tr.sunRaysImage = R_CreateImage("*sunRays", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat);
 
 		rg.renderDepthImage  = R_CreateImage("*renderdepth",  NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24);
 		rg.textureDepthImage = R_CreateImage("*texturedepth", NULL, PSHADOW_MAP_SIZE, PSHADOW_MAP_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24);
@@ -2583,14 +2585,11 @@ static void R_CreateBuiltinTextures(void)
 			data[0][0][3] = 255;
 			p = data;
 
-#if 0
 			tr.calcLevelsImage =   R_CreateImage("*calcLevels",    p, 1, 1, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat);
 			tr.targetLevelsImage = R_CreateImage("*targetLevels",  p, 1, 1, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat);
 			tr.fixedLevelsImage =  R_CreateImage("*fixedLevels",   p, 1, 1, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat);
-#endif
 		}
 
-#if 0
 		for (x = 0; x < 2; x++)
 		{
 			rg.textureScratchImage[x] = R_CreateImage(va("*textureScratch%d", x), NULL, 256, 256, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8);
@@ -2599,13 +2598,12 @@ static void R_CreateBuiltinTextures(void)
 		{
 			tr.quarterImage[x] = R_CreateImage(va("*quarter%d", x), NULL, width / 2, height / 2, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8);
 		}
-#endif
+
 		if (r_ssao->i)
 		{
 			rg.screenSsaoImage = R_CreateImage("*screenSsao", NULL, width / 2, height / 2, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA8);
 		}
 
-#if 0
 		if (r_sunlightMode->integer)
 		{
 			for ( x = 0; x < 4; x++)
@@ -2621,8 +2619,8 @@ static void R_CreateBuiltinTextures(void)
 		{
 			tr.renderCubeImage = R_CreateImage("*renderCube", NULL, r_cubemapSize->integer, r_cubemapSize->integer, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE | IMGFLAG_MIPMAP | IMGFLAG_CUBEMAP, rgbFormat);
 		}
-#endif
 	}
+#endif
 }
 
 /*
@@ -2636,6 +2634,7 @@ void R_SetColorMappings( void )
 	float g;
 	int inf;
 
+#if 0
 	// setup the overbright lighting
 	rg.overbrightBits = r_overBrightBits->i;
 
@@ -2645,8 +2644,8 @@ void R_SetColorMappings( void )
 	} else if ( rg.overbrightBits < 0 ) {
 		rg.overbrightBits = 0;
 	}
-
-	rg.identityLight = 1.0f / ( 1 << rg.overbrightBits );
+#endif
+	rg.identityLight = 1.0f / ( 1 << 2 );
 	rg.identityLightByte = 255 * rg.identityLight;
 
 
@@ -2682,7 +2681,7 @@ void R_SetColorMappings( void )
 
 	if ( glConfig.deviceSupportsGamma )
 	{
-		ri.GLimp_SetGamma( s_gammatable, s_gammatable, s_gammatable );
+//		ri.GLimp_SetGamma( s_gammatable, s_gammatable, s_gammatable );
 	}
 }
 

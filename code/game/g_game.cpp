@@ -1,6 +1,7 @@
 #include "g_game.h"
 #include "g_sound.h"
 #include "../rendercommon/imgui.h"
+#include "../rendercommon/imgui_impl_opengl3.h"
 #include "../rendercommon/imgui_impl_sdl2.h"
 
 vm_t *sgvm;
@@ -140,8 +141,9 @@ static void G_RefImGuiNewFrame(void) {
     ImGui::NewFrame();
 }
 
-static void G_RefImGuiRender(void) {
+static void G_RefImGuiDraw(void(*drawFunc)(ImDrawData *data)) {
     ImGui::Render();
+    drawFunc(ImGui::GetDrawData());
 }
 
 static void G_SetScaling(float factor, uint32_t captureWidth, uint32_t captureHeight)
@@ -255,13 +257,10 @@ static void G_InitRenderRef(void)
     import.Cvar_CheckGroup = Cvar_CheckGroup;
     import.Cvar_ResetGroup = Cvar_ResetGroup;
 
-#if 0
     import.ImGui_Init = G_RefImGuiInit;
     import.ImGui_Shutdown = G_RefImGuiShutdown;
-    import.ImGui_Render = G_RefImGuiRender;
     import.ImGui_NewFrame = G_RefImGuiNewFrame;
-    import.ImGui_GetDrawData = (void *(*)())ImGui::GetDrawData;
-#endif
+    import.ImGui_Draw = G_RefImGuiDraw;
 
     ret = GetRenderAPI(NOMAD_VERSION_FULL, &import);
 
@@ -432,6 +431,11 @@ qboolean G_GetModeInfo( int *width, int *height, float *windowAspect, int mode, 
 	if ( mode == -2 ) { // desktop resolution
 		*width = dw;
 		*height = dh;
+
+        // set the width & height for aspect ratios
+        Cvar_Set("r_customWidth", va("%i", dw));
+        Cvar_Set("r_customHeight", va("%i", dh));
+
 		pixelAspect = r_customPixelAspect->f;
 	} else if ( mode == -1 ) { // custom resolution
 		*width = r_customWidth->i;

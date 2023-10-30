@@ -1,163 +1,21 @@
 #include "rgl_local.h"
-#define STB_RECT_PACK_IMPLEMENTATION
-#include "code/rendercommon/imstb_rectpack.h"
-#define STB_TRUETYPE_IMPLEMENTATION
-#include "code/rendercommon/imstb_truetype.h"
-#define STB_SPRINTF_IMPLEMENTATION
-#include "code/game/stb_sprintf.h"
 
-#ifdef _NOMAD_DEBUG
-static void DBG_GL_ErrorCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const GLvoid *userParam);
-#endif
 
-void GDR_DECL N_Error(errorCode_t errCode, const char *fmt, ...)
-{
-    va_list argptr;
-    char buf[4096];
+/*
+RB_MakeViewMatrix:
 
-    va_start(argptr, fmt);
-    N_vsnprintf(buf, sizeof(buf), fmt, argptr);
-    va_end(argptr);
-
-    ri.Error(errCode, "%s", buf);
-}
-void GDR_DECL Con_Printf(const char *fmt, ...)
-{
-    va_list argptr;
-    char msg[4096];
-
-    va_start(argptr, fmt);
-    N_vsnprintf(msg, sizeof(msg), fmt, argptr);
-    va_end(argptr);
-
-    ri.Printf(PRINT_INFO, "%s", msg);
-}
-
-GDR_EXPORT void RE_BeginRegisteration(gpuConfig_t *configOut)
-{
-    R_Init();
-
-    *configOut = glConfig;
-
-    RE_ClearScene();
-
-    rg.registered = qtrue;
-}
-
-void GL_CameraZoomIn(void)
-{
-    if (rg.viewData.camera.zoom < 0.1f)
-        return;
-    
-    rg.viewData.camera.zoom -= 0.05f;
-    RB_MakeModelViewProjection();
-}
-
-void GL_CameraZoomOut(void)
-{
-    if (rg.viewData.camera.zoom > 15.0f)
-        return;
-    
-    rg.viewData.camera.zoom += 0.05f;
-    RB_MakeModelViewProjection();
-}
-
-void RB_RotateRight(void)
-{
-    rg.viewData.camera.angle += 0.75f;
-    if (rg.viewData.camera.angle > 180.0f) {
-        rg.viewData.camera.angle -= 360.0f;
-    }
-    else if (rg.viewData.camera.angle <= -180.0f) {
-        rg.viewData.camera.angle += 360.0f;
-    }
-}
-
-void RB_RotateLeft(void)
-{
-    rg.viewData.camera.angle -= 0.75f;
-    if (rg.viewData.camera.angle > 180.0f) {
-        rg.viewData.camera.angle -= 360.0f;
-    }
-    else if (rg.viewData.camera.angle <= -180.0f) {
-        rg.viewData.camera.angle += 360.0f;
-    }
-}
-
-void RB_MakeModelViewProjection(void)
-{
-    mat4_t transform, temp;
-	vec3_t rotate;
-
-    // adjust for camera resizing
-    GL_CameraResize();
-
-    // calculate the view matrix
-    rotate[0] = 0;
-	rotate[1] = 0;
-	rotate[2] = 1;
-
-    rg.viewData.camera.angle = 0.0f;
-
-    VectorClear(rg.viewData.camera.origin);
-    Mat4Zero(temp);
-	Mat4Translation(rg.viewData.camera.origin, transform);
-	Mat4Rotate(rotate, (float)DEG2RAD(rg.viewData.camera.angle), transform, transform);
-	Mat4Scale(rg.viewData.camera.zoom, transform, transform);
-    Mat4SimpleInverse(transform, temp);
-
-    // finish it up
-    GL_SetModelViewMatrix(temp);
-}
-
-void GL_CameraResize(void)
+FIXME: this can only make a matrix that can render for the tile-based stuff
+*/
+void RB_MakeViewMatrix(void)
 {
     float aspect, zoom;
-    mat4_t matrix;
 
-    rg.viewData.camera.zoom = 1.0f;
-
-    aspect = rg.viewData.camera.aspect = glConfig.vidWidth / glConfig.vidHeight;
     zoom = rg.viewData.camera.zoom;
+    aspect = rg.viewData.camera.aspect = glConfig.vidWidth / glConfig.vidHeight;
 
-    Mat4Ortho(-aspect * zoom, aspect * zoom, -aspect, aspect, -1.0f, 1.0f, matrix);
-    GL_SetProjectionMatrix(glState.projection);
-}
-
-void GL_CameraMove(dirtype_t dir)
-{
-    switch (dir) {
-    case D_NORTH:
-        rg.viewData.camera.origin[0] += -sin(DEG2RAD(rg.viewData.camera.angle)) * 0.25f;
-        rg.viewData.camera.origin[1] += cos(DEG2RAD(rg.viewData.camera.angle)) * 0.25f;
-        break;
-    case D_EAST:
-        rg.viewData.camera.origin[0] += cos(DEG2RAD(rg.viewData.camera.angle)) * 0.25f;
-        rg.viewData.camera.origin[1] += sin(DEG2RAD(rg.viewData.camera.angle)) * 0.25f;
-        break;
-    case D_SOUTH:
-        rg.viewData.camera.origin[0] -= -sin(DEG2RAD(rg.viewData.camera.angle)) * 0.25f;
-        rg.viewData.camera.origin[1] -= cos(DEG2RAD(rg.viewData.camera.angle)) * 0.25f;
-        break;
-    case D_WEST:
-        rg.viewData.camera.origin[0] -= cos(DEG2RAD(rg.viewData.camera.angle)) * 0.25f;
-        rg.viewData.camera.origin[1] -= sin(DEG2RAD(rg.viewData.camera.angle)) * 0.25f;
-        break;
-    };
-}
-
-void R_AddDrawSurf(surfaceType_t *surface, shader_t *shader)
-{
-    uint32_t index;
-
-    // instead of check for overflow, we just mask the index
-    // so it wraps around
-    index = backendData->numDrawSurfs & DRAWSURF_MASK;
-    // the sort data is packed into a single 32 bit value so it can be
-    // compared quickly during the qsorting process
-    backendData->drawSurfs[index].sort = shader->index + *surface;
-    backendData->drawSurfs[index].surface = surface;
-    backendData->numDrawSurfs++;
+    Mat4Ortho(-aspect * zoom, aspect * zoom, -aspect, aspect, -1.0f, 1.0f, rg.viewData.camera.projectionMatrix);
+    Mat4Identity(rg.viewData.camera.modelMatrix);
+    Mat4Multiply(rg.viewData.camera.projectionMatrix, rg.viewData.camera.modelMatrix, rg.viewData.camera.transformMatrix);
 }
 
 /*
@@ -198,101 +56,164 @@ Radix sort with 4 byte size buckets
 */
 static void R_RadixSort( drawSurf_t *source, uint32_t size )
 {
-  static drawSurf_t scratch[ MAX_DRAWSURFS ];
+    static drawSurf_t scratch[ MAX_DRAWSURFS ];
 #ifdef GDR_LITTLE_ENDIAN
-  R_Radix( 0, size, source, scratch );
-  R_Radix( 1, size, scratch, source );
-  R_Radix( 2, size, source, scratch );
-  R_Radix( 3, size, scratch, source );
+    R_Radix( 0, size, source, scratch );
+    R_Radix( 1, size, scratch, source );
+    R_Radix( 2, size, source, scratch );
+    R_Radix( 3, size, scratch, source );
 #else
-  R_Radix( 3, size, source, scratch );
-  R_Radix( 2, size, scratch, source );
-  R_Radix( 1, size, source, scratch );
-  R_Radix( 0, size, scratch, source );
+    R_Radix( 3, size, source, scratch );
+    R_Radix( 2, size, scratch, source );
+    R_Radix( 1, size, source, scratch );
+    R_Radix( 0, size, scratch, source );
 #endif //Q3_LITTLE_ENDIAN
 }
 
 void R_SortDrawSurfs(drawSurf_t *drawSurfs, uint32_t numDrawSurfs)
 {
-    // sort the drawsurfs by texture/shader index
+    shader_t *shader;
+
+    // sort by integers first
     R_RadixSort(drawSurfs, numDrawSurfs);
-}
 
-uint32_t R_GenDrawSurfSort(const shader_t *sh)
-{
-    uint32_t sort = sh->sort;
-    sort += sh->sortedIndex << 2;
-    return sort;
-}
+    for (uint32_t i = 0; i < numDrawSurfs; i++) {
+        shader = rg.sortedShaders[drawSurfs[i].sort];
 
-#ifdef _NOMAD_DEBUG
-
-const char *DBG_GL_SourceToStr(GLenum source)
-{
-    switch (source) {
-    case GL_DEBUG_SOURCE_API: return "API";
-    case GL_DEBUG_SOURCE_WINDOW_SYSTEM: return "Window System";
-    case GL_DEBUG_SOURCE_SHADER_COMPILER: return "Shader Compiler";
-    case GL_DEBUG_SOURCE_THIRD_PARTY: return "Third Party";
-    case GL_DEBUG_SOURCE_APPLICATION: return "Application User";
-    case GL_DEBUG_SOURCE_OTHER: return "Other";
-    };
-    return "Unknown Source";
-}
-
-const char *DBG_GL_TypeToStr(GLenum type)
-{
-    switch (type) {
-    case GL_DEBUG_TYPE_ERROR: return "Error";
-    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: return "Deprecated Behaviour";
-    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: return "Undefined Behaviour";
-    case GL_DEBUG_TYPE_PORTABILITY: return "Portability";
-    case GL_DEBUG_TYPE_PERFORMANCE: return "Performance";
-    case GL_DEBUG_TYPE_MARKER: return "Marker";
-    case GL_DEBUG_TYPE_PUSH_GROUP: return "Debug Push group";
-    case GL_DEBUG_TYPE_POP_GROUP: return "Debug Pop Group";
-    case GL_DEBUG_TYPE_OTHER: return "Other";
-    };
-    return "Unknown Type";
-}
-
-const char *DBG_GL_SeverityToStr(GLenum severity)
-{
-    switch (severity) {
-    case GL_DEBUG_SEVERITY_HIGH: return "High";
-    case GL_DEBUG_SEVERITY_MEDIUM: return "Medium";
-    case GL_DEBUG_SEVERITY_LOW: return "Low";
-    case GL_DEBUG_SEVERITY_NOTIFICATION: return "Notification";
-    };
-    return "Unknown Severity";
-}
-
-static void DBG_GL_ErrorCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const GLvoid *userParam)
-{
-    // nothing massive or useless
-    if (length >= 300 || severity == GL_DEBUG_SEVERITY_NOTIFICATION) {
-        return;
+        // no shader should ever have this sort type
+        if (shader->sort == SS_BAD) {
+            ri.Error(ERR_DROP, "Shader '%s' with sort == SS_BAD", shader->name);
+        }
     }
-    switch (type) {
-    case GL_DEBUG_TYPE_ERROR:
-        ri.Error(ERR_DROP, "[OpenGL Error: %i] %s", id, message);
-        break;
-    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-        ri.Printf(PRINT_INFO, COLOR_YELLOW "WARNING: [OpenGL Debug Log] %s Deprecated Behaviour, Id: %i", message, id);
-        break;
-    case GL_DEBUG_TYPE_PORTABILITY:
-        ri.Printf(PRINT_INFO, COLOR_YELLOW "WARNING: [OpenGL Debug Log] %s Portability, Id: %i", message, id);
-        break;
-    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
-        ri.Printf(PRINT_INFO, COLOR_YELLOW "WARNING: [OpenGL Debug Log] %s Undefined Behaviour, Id: %i", message, id);
-        break;
-    case GL_DEBUG_TYPE_PERFORMANCE:
-        ri.Printf(PRINT_INFO, "[OpenGL Debug Log (Performance)] %s Id: %i", message, id);
-        break;
-    default:
-        ri.Printf(PRINT_INFO, "[OpenGL Debug Log] %s Id: %i", message, id);
-        break;
-    };
+
+    R_AddDrawSurfCmd(drawSurfs, numDrawSurfs);
 }
 
-#endif
+void R_AddDrawSurf(surfaceType_t *surface, shader_t *shader)
+{
+    uint32_t index;
+
+    // instead of checking for overflow, we just mask the index
+	// so it wraps around
+	index = rg.refdef.numDrawSurfs & DRAWSURF_MASK;
+	// the sort data is packed into a single 32 bit value so it can be
+	// compared quickly during the qsorting process
+    rg.refdef.drawSurfs[index].sort = shader->sortedIndex;
+    rg.refdef.drawSurfs[index].surface = surface;
+
+    rg.refdef.numDrawSurfs++;
+}
+
+static void R_AddWorldSurfaces(void)
+{
+    uint32_t y, x;
+}
+
+void R_GenerateDrawSurfs(void)
+{
+    R_AddWorldSurfaces();
+}
+
+void R_RenderView(const viewData_t *parms)
+{
+    uint64_t firstDrawSurf;
+    uint64_t numDrawSurfs;
+
+    if (!parms->viewportX || !parms->viewportY)
+        return;
+    
+    rg.viewCount++;
+    memcpy(&rg.viewData, parms, sizeof(*parms));
+    rg.viewData.frameSceneNum = rg.frameSceneNum;
+    rg.viewData.frameCount = rg.frameCount;
+
+    firstDrawSurf = rg.refdef.numDrawSurfs;
+
+    RB_MakeViewMatrix();
+
+    R_GenerateDrawSurfs();
+
+    // if we overflowed MAX_DRAWSURFS, the drawsurfs
+	// wrapped around in the buffer and we will be missing
+	// the first surfaces, not the last ones
+	numDrawSurfs = rg.refdef.numDrawSurfs;
+	if ( numDrawSurfs > MAX_DRAWSURFS ) {
+		numDrawSurfs = MAX_DRAWSURFS;
+	}
+
+    R_SortDrawSurfs(rg.refdef.drawSurfs + firstDrawSurf, numDrawSurfs - firstDrawSurf);
+}
+
+
+static void R_CalcSpriteTextureCoords(uint32_t x, uint32_t y, uint32_t spriteWidth, uint32_t spriteHeight,
+    uint32_t sheetWidth, uint32_t sheetHeight, vec2_t *texCoords)
+{
+    const vec2_t min = { (((float)x + 1) * spriteWidth) / sheetWidth, (((float)y + 1) * spriteHeight) / sheetHeight };
+    const vec2_t max = { ((float)x * spriteWidth) / sheetWidth, ((float)y * spriteHeight) / sheetHeight };
+
+    texCoords[0][0] = min[0];
+    texCoords[0][1] = max[1];
+
+    texCoords[1][0] = min[0];
+    texCoords[1][1] = min[1];
+
+    texCoords[2][0] = max[0];
+    texCoords[2][1] = min[1];
+        
+    texCoords[3][0] = max[0];
+    texCoords[3][1] = max[1];
+}
+
+nhandle_t RE_RegisterSpriteSheet(const char *shaderName, uint32_t numSprites, uint32_t spriteWidth, uint32_t spriteHeight,
+    uint32_t sheetWidth, uint32_t sheetHeight)
+{
+    refSpriteSheet_t *sheet;
+    shader_t *shader;
+    uint64_t hash, size;
+
+    shader = R_FindShaderByName(shaderName);
+    if (!shader) {
+        ri.Error(ERR_DROP, "RE_RegisterSpriteSheet: invalid shader file '%s'", shaderName);
+    }
+
+    size = 0;
+    size += PAD(sizeof(*sheet), sizeof(uintptr_t));
+    size += PAD(sizeof(*sheet->texCoords) * numSprites, sizeof(uintptr_t));
+    sheet = rg.spriteSheets[rg.numSpriteSheets] = ri.Malloc(size);
+    memset(sheet, 0, size);
+
+    sheet->texCoords = (refSprite_t *)(sheet + 1);
+    sheet->numSprites = numSprites;
+    sheet->spriteHeight = spriteHeight;
+    sheet->spriteWidth = spriteWidth;
+    sheet->shader = shader;
+    sheet->hShader = Com_GenerateHashValue(shaderName, MAX_RENDER_SHADERS);
+    sheet->spriteCountX = sheetWidth / spriteWidth;
+    sheet->spriteCountY = sheetHeight / spriteHeight;
+
+    N_strncpyz(sheet->name, shaderName, sizeof(sheet->name));
+    hash = Com_GenerateHashValue(shaderName, MAX_RENDER_SPRITESHEETS);
+
+    for (uint32_t y = 0; y < sheet->spriteCountY; y++) {
+        for (uint32_t x = 0; x < sheet->spriteCountX; x++) {
+            R_CalcSpriteTextureCoords(x, y, spriteWidth, spriteHeight, sheetWidth, sheetHeight, sheet->texCoords[y * sheetWidth + x]);
+        }
+    }
+
+    return (nhandle_t)hash;
+}
+
+void R_ScreenToGL(vec3_t *xyz)
+{
+    xyz[0][0] = 2.0f * xyz[0][0] / glConfig.vidWidth - 1.0f;
+	xyz[0][1] = 1.0f - 2.0f * xyz[0][1] / glConfig.vidHeight;
+
+    xyz[1][0] = 2.0f * xyz[1][0] / glConfig.vidWidth - 1.0f;
+	xyz[1][1] = 1.0f - 2.0f * xyz[1][1] / glConfig.vidHeight;
+
+    xyz[2][0] = 2.0f * xyz[2][0] / glConfig.vidWidth - 1.0f;
+	xyz[2][1] = 1.0f - 2.0f * xyz[2][1] / glConfig.vidHeight;
+
+    xyz[3][0] = 2.0f * xyz[3][0] / glConfig.vidWidth - 1.0f;
+	xyz[3][1] = 1.0f - 2.0f * xyz[3][1] / glConfig.vidHeight;
+}

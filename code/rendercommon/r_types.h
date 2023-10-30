@@ -5,6 +5,8 @@
 
 #define MAX_VIDEO_HANDLES	16
 
+#define RSF_NOWORLDMODEL 0x0001
+
 typedef struct {
     vec3_t xyz;
     vec2_t uv;
@@ -16,6 +18,24 @@ typedef struct {
 	uint32_t numVerts;
 	polyVert_t *verts;
 } poly_t;
+
+typedef struct {
+	vec3_t origin;
+	vec2_t texCoords[4];
+	color4ub_t modulate;
+
+	uint32_t flags;
+} renderEntityRef_t;
+
+typedef struct {
+	uint32_t x, y;
+	uint32_t width, height;
+
+	uint32_t flags;
+	uint32_t time;
+} renderSceneRef_t;
+
+typedef renderSceneRef_t refdef_t;
 
 /*
 ** gpuConfig_t

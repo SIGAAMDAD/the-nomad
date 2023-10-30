@@ -107,7 +107,7 @@ static void R_LoadTileset(const lump_t *sprites, const tile2d_header_t *theader)
 
 void R_GenerateDrawData(void)
 {
-    srfTile_t *surfs, *surf;
+    srfTile_t *surf;
     drawVert_t *vert;
     glIndex_t *idx;
     uint32_t numSurfs, i;
@@ -118,7 +118,8 @@ void R_GenerateDrawData(void)
 
     r_worldData.indices = ri.Hunk_Alloc(sizeof(glIndex_t) * r_worldData.numIndices, h_low);
     r_worldData.vertices = ri.Hunk_Alloc(sizeof(drawVert_t) * r_worldData.numVertices, h_low);
-    surfs = ri.Hunk_Alloc(sizeof(*surfs) * r_worldData.width * r_worldData.height, h_low);
+
+    surf = ri.Hunk_Alloc(sizeof(*surf), h_low);
 
     idx = r_worldData.indices;
     vert = r_worldData.vertices;
@@ -131,12 +132,6 @@ void R_GenerateDrawData(void)
         idx[i + 3] = offset + 3;
         idx[i + 4] = offset + 2;
         idx[i + 5] = offset + 0;
-    }
-
-    for (i = 0, surf = surfs, vert = r_worldData.vertices; i < numSurfs; surf++, i++, idx += 6, vert += 4) {
-        surf->surface = SF_TILE;
-        surf->indices = idx;
-        surf->verts = vert;
     }
 }
 
@@ -207,14 +202,12 @@ void GDR_EXPORT RE_LoadWorldMap(const char *filename)
 
     R_GenerateDrawData();
 
-    rg.world->tileset = R_FindImageFile(theader->info.texture, 0, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE);
-
     COM_StripExtension(theader->info.texture, texture, sizeof(texture));
-    rg.world->shader = R_FindShader(texture, LIGHTMAP_2D, qfalse);
+    rg.world->shader = R_FindShader(texture);
     if (rg.world->shader == rg.defaultShader) {
         ri.Error(ERR_DROP, "RE_LoadWorldMap: failed to load shader for '%s'", filename);
     }
-    if (rg.world->tileset != rg.world->shader->stages[0]->bundle[0].image[0]) {
-        ri.Printf(PRINT_INFO, COLOR_YELLOW "WARNING: tileset texture is not equal to shader texture\n");
-    }
+
+    rg.world->tileset = RE_RegisterSpriteSheet(texture, theader->info.numTiles, theader->info.tileWidth, theader->info.tileHeight,
+        (theader->info.tileWidth * theader->info.tileCountX), (theader->info.tileHeight * theader->info.tileCountY));
 }
