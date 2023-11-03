@@ -251,6 +251,8 @@ typedef void    (*ImGuiMemFreeFunc)(void* ptr, void* user_data);                
 // ImVec2: 2D vector used to store positions, sizes etc. [Compile-time configurable type]
 // This is a frequently used type in the API. Consider using IM_VEC2_CLASS_EXTRA to create implicit cast from/to our preferred type.
 IM_MSVC_RUNTIME_CHECKS_OFF
+struct ImVec3;
+
 struct ImVec2
 {
     float                                   x, y;
@@ -258,15 +260,37 @@ struct ImVec2
     constexpr ImVec2(float _x, float _y)    : x(_x), y(_y) { }
     float& operator[] (size_t idx)          { IM_ASSERT(idx == 0 || idx == 1); return ((float*)(void*)(char*)this)[idx]; } // We very rarely use this [] operator, so the assert overhead is fine.
     float  operator[] (size_t idx) const    { IM_ASSERT(idx == 0 || idx == 1); return ((const float*)(const void*)(const char*)this)[idx]; }
+    const ImVec2& operator=(const ImVec3 &other);
 #ifdef IM_VEC2_CLASS_EXTRA
     IM_VEC2_CLASS_EXTRA     // Define additional constructors and implicit cast operators in imconfig.h to convert back and forth between your math types and ImVec2.
 #endif
 };
 
+struct ImVec3
+{
+    float                                   x, y, z;
+    constexpr ImVec3()                      : x(0.0f), y(0.0f), z(0.0f) { }
+    constexpr ImVec3(float _x, float _y)    : x(_x), y(_y), z(0.0f) { }
+    float& operator[] (size_t idx)          { IM_ASSERT(idx == 0 || idx == 1); return ((float*)(void*)(char*)this)[idx]; } // We very rarely use this [] operator, so the assert overhead is fine.
+    float  operator[] (size_t idx) const    { IM_ASSERT(idx == 0 || idx == 1); return ((const float*)(const void*)(const char*)this)[idx]; }
+    const ImVec3& operator=(const ImVec2 &other) { x = other.x; y = other.y; return *this; }
+#ifdef IM_VEC3_CLASS_EXTRA
+    IM_VEC3_CLASS_EXTRA
+#endif
+};
+
+inline const ImVec2& ImVec2::operator=(const ImVec3& other) { x = other.x; y = other.y; return *this; }
+
+inline ImVec2 operator-(const ImVec3& a, const ImVec2& b)
+{ return ImVec2( a.x - b.x, a.y - b.y ); }
+inline ImVec2 operator+(const ImVec2& a, const ImVec3& b)
+{ return ImVec2( a.x - b.x, a.y - b.y ); }
+
 // ImVec4: 4D vector used to store clipping rectangles, colors etc. [Compile-time configurable type]
 struct ImVec4
 {
     float                                                     x, y, z, w;
+    ImVec4(const float *rgba)                                 : x(rgba[0]), y(rgba[1]), z(rgba[2]), w(rgba[3]) { }
     constexpr ImVec4()                                        : x(0.0f), y(0.0f), z(0.0f), w(0.0f) { }
     constexpr ImVec4(float _x, float _y, float _z, float _w)  : x(_x), y(_y), z(_z), w(_w) { }
 #ifdef IM_VEC4_CLASS_EXTRA
@@ -2475,7 +2499,12 @@ struct ImDrawCmd
 #ifndef IMGUI_OVERRIDE_DRAWVERT_STRUCT_LAYOUT
 struct ImDrawVert
 {
-    ImVec2  pos;
+    ImDrawVert(void)
+        : pos(0.0f, 0.0f), uv(), col{ 0 }
+    {
+    }
+
+    ImVec3  pos;
     ImVec2  uv;
     ImU32   col;
 };

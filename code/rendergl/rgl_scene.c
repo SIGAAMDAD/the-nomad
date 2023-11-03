@@ -161,12 +161,6 @@ GDR_EXPORT void RE_RenderScene(const renderSceneRef_t *fd)
     RE_EndScene();
 }
 
-
-void R_DrawElements(uint32_t numIndices, uintptr_t offset)
-{
-	nglDrawElements(GL_TRIANGLES, numIndices, GL_UNSIGNED_INT, NULL);
-}
-
 void RB_CheckOverflow( uint32_t verts, uint32_t indexes )
 {
 	if (drawBuf.numVertices + verts < MAX_BATCH_VERTICES

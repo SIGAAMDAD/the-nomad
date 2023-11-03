@@ -302,7 +302,7 @@ Compiler Macro Abstraction
 #ifdef __cplusplus
 #define GO_AWAY_MANGLE extern "C"
 #else
-#define GO_AWAY_MANGLE
+#define GO_AWAY_MANGLE extern
 #endif
 
 #include "n_pch.h"

@@ -17,6 +17,8 @@ int vmMain(int command, int arg0, int arg1, int arg2, int arg3, int arg4, int ar
     switch (command) {
     case SGAME_INIT:
         return SG_Init();
+    case SGAME_SHUTDOWN:
+        return SG_Shutdown();
     default:
         SG_Error("vmMain: invalid command id: %i", command);
         break;
@@ -61,7 +63,7 @@ void GDR_DECL GDR_ATTRIBUTE((format(printf, 2, 3))) N_Error(errorCode_t code, co
     SG_Error("%s", msg);
 }
 
-#ifndef SGAME_HARD_LINKED
+//#ifndef SGAME_HARD_LINKED
 // this is only here so the functions in n_shared.c and bg_*.c can link
 
 void GDR_DECL GDR_ATTRIBUTE((format(printf, 1, 2))) Con_Printf(const char *fmt, ...)
@@ -76,7 +78,7 @@ void GDR_DECL GDR_ATTRIBUTE((format(printf, 1, 2))) Con_Printf(const char *fmt, 
     SG_Printf("%s", msg);
 }
 
-#endif
+//#endif
 
 int SG_Init(void)
 {

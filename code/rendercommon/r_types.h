@@ -24,6 +24,8 @@ typedef struct {
 	vec2_t texCoords[4];
 	color4ub_t modulate;
 
+	nhandle_t hShader;
+
 	uint32_t flags;
 } renderEntityRef_t;
 

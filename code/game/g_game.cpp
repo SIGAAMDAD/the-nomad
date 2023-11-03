@@ -1,7 +1,6 @@
 #include "g_game.h"
 #include "g_sound.h"
 #include "../rendercommon/imgui.h"
-#include "../rendercommon/imgui_impl_opengl3.h"
 #include "../rendercommon/imgui_impl_sdl2.h"
 
 vm_t *sgvm;
@@ -78,6 +77,11 @@ static void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL G_RefPrintf(int level
     case PRINT_DEVELOPER:
         Con_DPrintf("%s", msg);
         break;
+    case PRINT_WARNING:
+        Con_Printf(COLOR_YELLOW "WARNING: %s", msg);
+        break;
+    default:
+        N_Error(ERR_FATAL, "G_RefPrintf: Bad print level");
     };
 }
 
@@ -93,35 +97,25 @@ static void G_RefFreeAll(void) {
     Z_FreeTags(TAG_RENDERER, TAG_RENDERER);
 }
 
+static void G_RefImGuiFree(void *ptr, void *) {
+    if (ptr != NULL) {
+        Z_Free(ptr);
+    }
+}
+
 //
 // G_RefImGuiInit: called during internal renderer initialization
 // renderContext can be either a SDL_GLContext or SDL_Renderer, or NULL if using D3D11, Vulkan, or Metal
 //
 static int G_RefImGuiInit(void *renderData, const char *renderName) {
-    IMGUI_CHECKVERSION();
-    ImGui::SetAllocatorFunctions((ImGuiMemAllocFunc)G_RefMalloc, (ImGuiMemFreeFunc)Z_Free);
-    ImGui::CreateContext();
-
     ImGuiIO& io = ImGui::GetIO();
+    io.DisplaySize.x = gi.gpuConfig.vidWidth;
+    io.DisplaySize.y = gi.gpuConfig.vidHeight;
     io.BackendRendererUserData = renderData;
     io.BackendRendererName = renderName;
+    io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
 
-    if (!N_stricmp(g_renderer->s, "OpenGL")) {
-        return ImGui_ImplSDL2_InitForOpenGL(r_window, r_GLcontext);
-    }
-    else if (!N_stricmp(g_renderer->s, "SDL2")) {
-        return ImGui_ImplSDL2_InitForSDLRenderer(r_window, r_context);
-    }
-    else if (!N_stricmp(g_renderer->s, "D3D11")) {
-        return ImGui_ImplSDL2_InitForD3D(r_window);
-    }
-    else if (!N_stricmp(g_renderer->s, "Vulkan")) {
-        return ImGui_ImplSDL2_InitForVulkan(r_window);
-    }
-    else if (!N_stricmp(g_renderer->s, "Metal")) {
-        return ImGui_ImplSDL2_InitForMetal(r_window);
-    }
-    return -1;
+    return 1;
 }
 
 static void G_RefImGuiShutdown(void) {
@@ -130,7 +124,6 @@ static void G_RefImGuiShutdown(void) {
     io.BackendRendererUserData = NULL;
 
     ImGui_ImplSDL2_Shutdown();
-
     ImGui::DestroyContext();
 
     // deleting backend data is automatically done with G_RefFreeAll
@@ -141,9 +134,88 @@ static void G_RefImGuiNewFrame(void) {
     ImGui::NewFrame();
 }
 
-static void G_RefImGuiDraw(void(*drawFunc)(ImDrawData *data)) {
+static imguiDrawData_t drawData;
+
+static void G_RefImGuiDraw(void(*drawFunc)(imguiDrawData_t *)) {
+    ImDrawData *data;
+    imguiDrawVert_t *vtx, *vertices;
+    int i;
+    imguiDrawList_t *drawLists;
+
     ImGui::Render();
-    drawFunc(ImGui::GetDrawData());
+    data = ImGui::GetDrawData();
+
+    /*
+    * no we convert it
+    */
+
+    drawData.Valid = data->Valid;
+
+    //
+    // reallocate?
+    //
+
+#if 0
+    if (CmdListsCount < data->CmdListsCount) {
+        if (drawData.CmdLists) {
+            Z_Free(drawData.CmdLists);
+        }
+        drawData.CmdLists = (imguiDrawList_t **)Z_Malloc(sizeof(*drawData.CmdLists) * data->CmdListsCount, TAG_RENDERER);
+
+        CmdListsCount = data->CmdListsCount;
+    }
+#endif
+
+    // hopefully this doesn't cause a stack overflow
+    drawData.CmdLists = (imguiDrawList_t **)alloca(sizeof(imguiDrawList_t *) * data->CmdListsCount);
+    drawData.CmdListsCount = data->CmdListsCount;
+    drawData.TotalIdxCount = data->TotalIdxCount;
+    drawData.TotalVtxCount = data->TotalVtxCount;
+
+    drawLists = (imguiDrawList_t *)alloca(sizeof(*drawLists) * data->CmdListsCount);
+
+    VectorCopy2(drawData.DisplayPos, data->DisplayPos);
+    VectorCopy2(drawData.DisplaySize, data->DisplaySize);
+    VectorCopy2(drawData.FramebufferScale, data->FramebufferScale);
+
+    for (i = 0; i < data->CmdListsCount; i++) {
+        imguiDrawList_t *drawList = &drawLists[i];
+
+        drawList->CmdBuffer.Size = data->CmdLists[i]->CmdBuffer.Size;
+        drawList->CmdBuffer.Data = (void *)data->CmdLists[i]->CmdBuffer.Data;
+
+        drawList->VtxBuffer.Size = data->CmdLists[i]->VtxBuffer.Size;
+        drawList->VtxBuffer.Data = (void *)data->CmdLists[i]->VtxBuffer.Data;
+
+        drawList->IdxBuffer.Size = data->CmdLists[i]->IdxBuffer.Size;
+        drawList->IdxBuffer.Data = (void *)data->CmdLists[i]->IdxBuffer.Data;
+
+        drawList->Flags = data->CmdLists[i]->Flags;
+
+        drawData.CmdLists[i] = drawList;
+    }
+
+    drawFunc(&drawData);
+}
+
+static void G_RefImGuiGetTexDataAsRGBA32(unsigned char** out_pixels, int* out_width, int* out_height, int* out_bytes_per_pixel) {
+    ImGui::GetIO().Fonts->GetTexDataAsRGBA32(out_pixels, out_width, out_height, out_bytes_per_pixel);
+}
+
+static void G_RefImGuiSetTexID(void *texId) {
+    ImGui::GetIO().Fonts->SetTexID((ImTextureID)texId);
+}
+
+static void G_RefImGuiInit_SDL2(void) {
+    if (!N_stricmp(g_renderer->s, "opengl")) {
+        ImGui_ImplSDL2_InitForOpenGL(r_window, r_GLcontext);
+    }
+    else if (!N_stricmp(g_renderer->s, "vulkan")) {
+        ImGui_ImplSDL2_InitForVulkan(r_window);
+    }
+    else {
+        N_Error(ERR_FATAL, "Unknown renderer: '%s'", g_renderer->s);
+    }
 }
 
 static void G_SetScaling(float factor, uint32_t captureWidth, uint32_t captureHeight)
@@ -197,6 +269,11 @@ static void G_InitRenderRef(void)
         N_Error(ERR_FATAL, "Can't load symbol GetRenderAPI");
         return;
     }
+
+    // init imgui
+    IMGUI_CHECKVERSION();
+    ImGui::SetAllocatorFunctions((ImGuiMemAllocFunc)G_RefMalloc, (ImGuiMemFreeFunc)G_RefImGuiFree, NULL);
+    ImGui::CreateContext();
 
     g_renderer->modified = qfalse;
 
@@ -261,6 +338,13 @@ static void G_InitRenderRef(void)
     import.ImGui_Shutdown = G_RefImGuiShutdown;
     import.ImGui_NewFrame = G_RefImGuiNewFrame;
     import.ImGui_Draw = G_RefImGuiDraw;
+    import.ImGui_GetTexDataAsRGBA32 = G_RefImGuiGetTexDataAsRGBA32;
+    import.ImGui_SetTexID = G_RefImGuiSetTexID;
+    import.ImGui_InitSDL2 = G_RefImGuiInit_SDL2;
+
+    import.Sys_LoadDLL = Sys_LoadDLL;
+    import.Sys_CloseDLL = Sys_CloseDLL;
+    import.Sys_GetProcAddress = Sys_GetProcAddress;
 
     ret = GetRenderAPI(NOMAD_VERSION_FULL, &import);
 
@@ -647,7 +731,6 @@ void G_FlushMemory(void)
 
 void G_ShutdownVMs(void)
 {
-    G_ShutdownUI();
     G_ShutdownSGame();
 }
 
@@ -912,7 +995,7 @@ static int GLimp_CreateBaseWindow(gpuConfig_t *config)
             contextFlags |= SDL_GL_CONTEXT_DEBUG_FLAG;
         }
         if (!r_allowLegacy->i) {
-            contextFlags |= SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG;
+//            contextFlags |= SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG;
         }
 
         // set the recommended version, this is not mandatory,
@@ -1023,7 +1106,7 @@ static int GLimp_CreateBaseWindow(gpuConfig_t *config)
         return -1;
     }
 
-//    SDL_GL_MakeCurrent(r_window, r_GLcontext);
+    SDL_GL_MakeCurrent(r_window, r_GLcontext);
     SDL_GL_GetDrawableSize(r_window, &config->vidWidth, &config->vidHeight);
 
     return 1;

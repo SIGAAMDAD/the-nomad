@@ -55,6 +55,7 @@ INTERNAL_OBJS=\
 	$(O)/rendergl/rgl_backend.o \
 	$(O)/rendergl/rgl_shader.o \
 	$(O)/rendergl/rgl_cmd.o \
+	$(O)/rendergl/rgl_shade.o \
 	$(O)/rendergl/rgl_math.o \
 	$(O)/rendergl/rgl_extensions.o \
 	$(O)/rendergl/rgl_glsl_fallback.o \
@@ -65,16 +66,15 @@ INTERNAL_OBJS=\
 	$(O)/rendergl/rgl_main.o \
 	$(O)/rendergl/n_shared.o \
 	$(O)/rendergl/n_math.o \
+	$(O)/rendergl/imgui_impl_opengl3.o
 
-$(O)/rendergl/%.o: $(SDIR)/game/%.c
-	$(CC) $(CFLAGS) -shared -fPIC -o $@ -c $<
-$(O)/rendergl/%.o: $(SDIR)/rendergl/%.c
+$(O)/rendergl/%.o: $(SDIR)/engine/%.c
 	$(CC) $(CFLAGS) -shared -fPIC -o $@ -c $<
 $(O)/rendergl/%.o: $(SDIR)/rendergl/%.c
 	$(CC) $(CFLAGS) -shared -fPIC -o $@ -c $<
 
 $(LIB): $(INTERNAL_OBJS)
-	$(CC) $(CFLAGS) $(INTERNAL_OBJS) -shared -fPIC -o $(LIB) $(LIB_PREFIX)/libEASTL.a
+	$(CC) $(CFLAGS) $(INTERNAL_OBJS) -shared -fPIC -o $(LIB)
 
 clean:
 	rm -rf $(INTERNAL_OBJS)

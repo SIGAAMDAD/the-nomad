@@ -1,6 +1,7 @@
 #include "rgl_local.h"
 #include <ctype.h>
 
+#if 0
 static void *Image_Malloc(size_t size) {
 	return ri.Malloc(size);
 }
@@ -14,14 +15,15 @@ static void Image_Free(void *ptr) {
 #define STBI_MALLOC(size) Image_Malloc(size)
 #define STBI_REALLOC(ptr,nsize) Image_Realloc(ptr,nsize)
 #define STBI_FREE(ptr) Image_Free(ptr)
+#endif
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 static byte s_intensitytable[256];
 static unsigned char s_gammatable[256];
 
-int		gl_filter_min = GL_NEAREST;
-int		gl_filter_max = GL_LINEAR;
+int		gl_filter_min = GL_LINEAR;
+int		gl_filter_max = GL_NEAREST;
 
 #define FILE_HASH_SIZE 1024
 static texture_t *hashTable[FILE_HASH_SIZE];
@@ -40,9 +42,9 @@ void R_GammaCorrect( byte *buffer, uint64_t bufSize ) {
 typedef struct {
     const char *filter;
     int min, mag;
-} textureFilter_t;
+} textureFilterMode_t;
 
-static const textureFilter_t filters[] = {
+static const textureFilterMode_t filters[] = {
     {"Linear", GL_LINEAR, GL_LINEAR},
     {"Nearest", GL_NEAREST, GL_NEAREST},
     {"Bilinear", GL_NEAREST, GL_LINEAR},
@@ -1410,7 +1412,7 @@ static const byte	mipBlendColors[16][4] = {
 	{0,0,255,128},
 };
 
-
+#if 0
 
 /*
 ===============
@@ -1770,10 +1772,15 @@ static void RawImage_UploadToRgtc2Texture(uint32_t mipLevel, uint32_t x, uint32_
 	}
 
 	// FIXME: Won't work for x/y that aren't multiples of 4.
-	if (subImage)
+	if (subImage) {
+		GL_LogComment("glCompressedTexSubImage2D(GL_TEXTURE_2D, %i, %i, %i, %i, %i, GL_COMPRESSED_RG_RGTC2, %lu, %p)",
+			mipLevel, x, y, width, height, size, compressedData);
 		nglCompressedTexSubImage2D(GL_TEXTURE_2D, mipLevel, x, y, width, height, GL_COMPRESSED_RG_RGTC2, size, compressedData);
-	else
+	}
+	else {
+		GL_LogComment("glCompressedTexImage2D(GL_TEXTURE_2D, %i, GL_COMPRESSED_RG_RGTC2, %i, %i, 0, %lu, %p)", mipLevel, width, height, size, compressedData);
 		nglCompressedTexImage2D(GL_TEXTURE_2D, mipLevel, GL_COMPRESSED_RG_RGTC2, width, height, 0, size, compressedData);
+	}
 
 	ri.Hunk_FreeTempMemory(compressedData);
 }
@@ -1891,19 +1898,20 @@ static void RawImage_UploadTexture(GLuint texture, byte *data, uint32_t x, uint3
 			if (rgba8 && rgtc)
 				RawImage_UploadToRgtc2Texture(miplevel, x, y, width, height, data, subtexture);
 			else if (subtexture) {
-				GL_LogComment("glTexSubImage2D(GL_TEXTURE_2D, %lu, %i, %i, %i, %i, %i, %i, %p)", miplevel, x, y, width, height, dataFormat, dataType, data);
+				GL_LogComment("glTexSubImage2D(GL_TEXTURE_2D, %lu, %i, %i, %i, %i, 0x%04x, %i, %p)", miplevel, x, y, width, height, dataFormat, dataType, data);
 				nglTexSubImage2D(target, miplevel, x, y, width, height, dataFormat, dataType, data);
 			}
 			else {
-				GL_LogComment("glTexImage(GL_TEXTURE_2D, %lu, %i, %i, %i, %i, %i, %i, %p)", miplevel, internalFormat, width, height, 0, dataFormat, dataType, data);
+				GL_LogComment("glTexImage2D(GL_TEXTURE_2D, %lu, %i, %i, %i, %i, 0x%04x, %i, %p)", miplevel, internalFormat, width, height, 0, dataFormat, dataType, data);
 				nglTexImage2D(target, miplevel, internalFormat, width, height, 0, dataFormat, dataType, data);
 			}
 		}
 
 		if (!lastMip && numMips < 2) {
 			if (glContext.ARB_framebuffer_object) {
-				nglBindTexture(target, texture);
-				nglGenerateMipmap(target);
+				GL_LogComment("Generating mipmap for texture object %i", texture);
+//				nglBindTexture(target, texture);
+//				nglGenerateMipmap(target);
 				break;
 			}
 			else if (rgba8) {
@@ -1997,7 +2005,7 @@ static void Upload32(byte *data, uint32_t x, uint32_t y, uint32_t width, uint32_
 
 /*
 ================
-R_CreateImage2
+R_CreateImage
 
 This is the only way any texture_t are created
 ================
@@ -2062,6 +2070,7 @@ static texture_t *R_CreateImage2( const char *name, byte *pic, uint32_t width, u
 
 	// Possibly scale image before uploading.
 	// if not rgba8 and uploading an image, skip picmips.
+#if 0
 	if (!cubemap)
 	{
 		if (rgba8)
@@ -2077,6 +2086,7 @@ static texture_t *R_CreateImage2( const char *name, byte *pic, uint32_t width, u
 			}
 		}
 	}
+#endif
 
 	image->uploadWidth = width;
 	image->uploadHeight = height;
@@ -2087,7 +2097,9 @@ static texture_t *R_CreateImage2( const char *name, byte *pic, uint32_t width, u
 	mipHeight = height;
 	miplevel = 0;
 
-	GL_BindTexture(GL_TEXTURE0, image);
+	GL_BindTexture(TB_COLORMAP, image);
+	GL_SetObjectDebugName(GL_TEXTURE, image->id, image->imgName, "");
+#if 0
 	do
 	{
 		lastMip = !mipmap || (mipWidth == 1 && mipHeight == 1);
@@ -2095,11 +2107,15 @@ static texture_t *R_CreateImage2( const char *name, byte *pic, uint32_t width, u
 		{
 			int i;
 
-			for (i = 0; i < 6; i++)
+			for (i = 0; i < 6; i++) {
+				GL_LogComment("glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + %i, %i, %i, %i, %i, 0, 0x%04x, GL_UNSIGNED_BYTE, NULL)",
+					i, miplevel, internalFormat, mipWidth, mipHeight, dataFormat);
 				nglTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, miplevel, internalFormat, mipWidth, mipHeight, 0, dataFormat, GL_UNSIGNED_BYTE, NULL);
+			}
 		}
 		else
 		{
+			GL_LogComment("glTexImage2D(GL_TEXTURE_2D, %i, %i, %i, %i, 0, 0x%04x, GL_UNSIGNED_BYTE, NULL)", miplevel, internalFormat, mipWidth, mipHeight, dataFormat);
 			nglTexImage2D(GL_TEXTURE_2D, miplevel, internalFormat, mipWidth, mipHeight, 0, dataFormat, GL_UNSIGNED_BYTE, NULL);
 		}
 
@@ -2108,17 +2124,19 @@ static texture_t *R_CreateImage2( const char *name, byte *pic, uint32_t width, u
 		miplevel++;
 	}
 	while (!lastMip);
+#endif
 
 	// Upload data.
 	if (pic)
-		Upload32(pic, 0, 0, width, height, picFormat, numMips, image, scaled);
+		RawImage_UploadTexture(image->id, pic, 0, 0, width, height, textureTarget, picFormat, 0, internalFormat, type, flags, qfalse);
+//		Upload32(pic, 0, 0, width, height, picFormat, numMips, image, scaled);
 
 	if (resampledBuffer != NULL)
 		ri.Hunk_FreeTempMemory(resampledBuffer);
 
 	// Set all necessary texture parameters.
-	nglTexParameterf(textureTarget, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	nglTexParameterf(textureTarget, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	nglTexParameteri(textureTarget, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	nglTexParameteri(textureTarget, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 	if (cubemap)
 		nglTexParameterf(textureTarget, GL_TEXTURE_WRAP_R, glWrapClampMode);
@@ -2139,12 +2157,10 @@ static texture_t *R_CreateImage2( const char *name, byte *pic, uint32_t width, u
 		nglTexParameterf(textureTarget, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		break;
 	default:
-		nglTexParameterf(textureTarget, GL_TEXTURE_MIN_FILTER, mipmap ? gl_filter_min : GL_LINEAR);
-		nglTexParameterf(textureTarget, GL_TEXTURE_MAG_FILTER, mipmap ? gl_filter_max : GL_LINEAR);
+		nglTexParameteri(textureTarget, GL_TEXTURE_MIN_FILTER, gl_filter_min);
+		nglTexParameteri(textureTarget, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 		break;
 	};
-
-	GL_BindTexture(GL_TEXTURE0, NULL);
 
 	GL_CheckErrors();
 
@@ -2160,18 +2176,188 @@ static texture_t *R_CreateImage2( const char *name, byte *pic, uint32_t width, u
 ================
 R_CreateImage
 
-Wrapper for R_CreateImage2(), for the old parameters.
 ================
 */
-texture_t *R_CreateImage(const char *name, byte *pic, uint32_t width, uint32_t height, imgType_t type, imgFlags_t flags, int internalFormat )
+texture_t *R_CreateImage( const char *name, byte *pic, uint32_t width, uint32_t height, imgType_t type, imgFlags_t flags, int internalFormat )
 {
+#if 0
+	texture_t *image;
+	uint64_t hash, namelen;
+	GLenum glWrapClampMode;
+	qboolean isLightmap = qfalse, scaled = qfalse;
+	qboolean rgba8 = picFormat == GL_RGBA8 || picFormat == GL_SRGB8_ALPHA8;
+	byte *resampledBuffer;
+
+	namelen = strlen(name);
+	if (namelen >= MAX_GDR_PATH) {
+		ri.Error(ERR_DROP, "R_CreateImage: name \"%s\" too long", name);
+	}
+	if (!strncmp(name, "*lightmap", 9)) {
+		isLightmap = qtrue;
+	}
+
+	if (rg.numTextures == MAX_RENDER_TEXTURES) {
+		ri.Error(ERR_DROP, "R_CreateImage: MAX_RENDER_TEXTURES hit");
+	}
+
+
+	image = rg.textures[rg.numTextures] = ri.Hunk_Alloc(sizeof(*image) + namelen, h_low);
+	nglGenTextures(1, (GLuint *)&image->id);
+	rg.numTextures++;
+
+	image->imgName = (char *)(image + 1);
+	strcpy(image->imgName, name);
+
+	image->flags = flags;
+	image->type = type;
+
+	image->width = width;
+	image->height = height;
+	if (flags & IMGFLAG_CLAMPTOEDGE)
+		glWrapClampMode = GL_CLAMP_TO_EDGE;
+	else
+		glWrapClampMode = GL_REPEAT;
+	
+	if (!internalFormat)
+		internalFormat = RawImage_GetFormat(pic, width * height, GL_RGBA8, isLightmap, image->type, image->flags);
+	
+	image->internalFormat = internalFormat;
+
+	if (glContext.ARB_texture_filter_anisotropic || r_arb_texture_filter_anisotropic->i) {
+		nglTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, glContext.maxAnisotropy);
+	}
+
+	nglActiveTexture(GL_TEXTURE0);
+	nglBindTexture(GL_TEXTURE0, image->id);
+	
+	// Upload data.
+	if (pic)
+		Upload32(pic, 0, 0, width, height, GL_RGBA8, 0, image, scaled);
+
+	if (resampledBuffer != NULL)
+		ri.Hunk_FreeTempMemory(resampledBuffer);
+
+	// Set all necessary texture parameters.
+	nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glWrapClampMode);
+	nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, glWrapClampMode);
+
+	switch (internalFormat) {
+	case GL_DEPTH_COMPONENT:
+	case GL_DEPTH_COMPONENT16_ARB:
+	case GL_DEPTH_COMPONENT24_ARB:
+	case GL_DEPTH_COMPONENT32_ARB:
+		// Fix for sampling depth buffer on old nVidia cards.
+		// from http://www.idevgames.com/forums/thread-4141-post-34844.html#pid34844
+		nglTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_LUMINANCE);
+		nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		break;
+	default:
+		nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
+		nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
+	};
+
+	nglBindTexture(GL_TEXTURE, 0);
+
+	GL_CheckErrors();
+
+	hash = generateHashValue(name);
+	image->next = hashTable[hash];
+	hashTable[hash] = image;
+
+	return image;
+#endif
 	return R_CreateImage2(name, pic, width, height, GL_RGBA8, 0, type, flags, internalFormat);
 }
-
 
 void R_UpdateSubImage( texture_t *image, byte *pic, uint32_t x, uint32_t y, uint32_t width, uint32_t height, GLenum picFormat )
 {
 	Upload32(pic, x, y, width, height, picFormat, 0, image, qfalse);
+}
+#endif
+
+static GLenum PixelDataFormatFromInternalFormat(GLenum internalFormat)
+{
+	switch (internalFormat) {
+	case GL_DEPTH_COMPONENT:
+	case GL_DEPTH_COMPONENT16_ARB:
+	case GL_DEPTH_COMPONENT24_ARB:
+	case GL_DEPTH_COMPONENT32_ARB:
+		return GL_DEPTH_COMPONENT;
+	default:
+		return GL_RGBA;
+	};
+}
+
+texture_t *R_CreateImage(  const char *name, byte *pic, uint32_t width, uint32_t height, imgType_t type, imgFlags_t flags, int internalFormat, GLenum picFormat )
+{
+	texture_t *image;
+	uint64_t namelen, hash;
+	GLenum glWrapClampMode;
+	GLenum dataType;
+
+	namelen = strlen(name);
+	if (namelen >= MAX_GDR_PATH) {
+		ri.Error(ERR_DROP, "R_CreateImage: name \"%s\" too long", name);
+	}
+	/*
+	if (!strncmp(name, "*lightmap", 9)) {
+		isLightmap = qtrue;
+	}
+	*/
+
+	if (rg.numTextures == MAX_RENDER_TEXTURES) {
+		ri.Error(ERR_DROP, "R_CreateImage: MAX_RENDER_TEXTURES hit");
+	}
+
+	image = rg.textures[rg.numTextures] = ri.Hunk_Alloc(sizeof(*image) + namelen, h_low);
+	nglGenTextures(1, (GLuint *)&image->id);
+	rg.numTextures++;
+
+	image->imgName = (char *)(image + 1);
+	strcpy(image->imgName, name);
+
+	image->flags = flags;
+	image->type = type;
+
+	if (flags & IMGFLAG_CLAMPTOBORDER) {
+		glWrapClampMode = GL_CLAMP_TO_BORDER;
+	}
+	else if (flags & IMGFLAG_CLAMPTOEDGE) {
+		glWrapClampMode = GL_CLAMP_TO_EDGE;
+	}
+	else {
+		glWrapClampMode = GL_REPEAT;
+	}
+
+	dataType = picFormat == GL_RGBA16 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_BYTE;
+	picFormat = PixelDataFormatFromInternalFormat(internalFormat);
+
+	// generate the base image
+	GL_BindTexture(TB_COLORMAP, image);
+
+	if (!(flags & IMGFLAG_NOWRAP)) {
+		nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, glWrapClampMode);
+		nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, glWrapClampMode);
+	}
+
+	nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
+	nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
+
+	GL_LogComment("-- (%s) -- glTexImage2D(GL_TEXTURE_2D, 0, 0x%04x, %i, %i, 0, 0x%04x, 0x%04x, %p)", name, internalFormat, width, height, picFormat, dataType, pic);
+	nglTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, picFormat, dataType, pic);
+
+	GL_BindTexture(TB_COLORMAP, NULL);
+
+	GL_CheckErrors();
+
+	hash = generateHashValue(name);
+
+	// link it in
+	image->next = hashTable[hash];
+	hashTable[hash] = image;
+	
+	return image;
 }
 
 //===================================================================
@@ -2461,7 +2647,7 @@ texture_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags )
 			}
 #endif
 
-			R_CreateImage( normalName, normalPic, normalWidth, normalHeight, IMGTYPE_NORMAL, normalFlags, 0 );
+			R_CreateImage( normalName, normalPic, normalWidth, normalHeight, IMGTYPE_NORMAL, normalFlags, GL_RGBA, picFormat);
 			ri.Free( normalPic );	
 		}
 	}
@@ -2480,8 +2666,12 @@ texture_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags )
 			flags &= ~IMGFLAG_MIPMAP;
 	}
 
-	image = R_CreateImage2( ( char * ) name, pic, width, height, picFormat, picNumMips, type, flags, 0 );
+	image = R_CreateImage( ( char * ) name, pic, width, height, type, flags, GL_RGBA, picFormat );
+#if 0
 	ri.Free( pic );
+#else
+	free( pic ); // not in the zone heap
+#endif
 	return image;
 }
 
@@ -2514,7 +2704,7 @@ static void R_CreateDefaultTexture(void)
 		data[x][DEFAULT_SIZE-1][2] =
 		data[x][DEFAULT_SIZE-1][3] = 255;
 	}
-	rg.defaultImage = R_CreateImage("*default", (byte *)data, DEFAULT_SIZE, DEFAULT_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_MIPMAP | IMGFLAG_NO_COMPRESSION, 0);
+	rg.defaultImage = R_CreateImage("*default", (byte *)data, DEFAULT_SIZE, DEFAULT_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_MIPMAP, GL_RGBA, GL_RGBA8);
 }
 
 static void R_CreateBuiltinTextures(void)
@@ -2526,7 +2716,7 @@ static void R_CreateBuiltinTextures(void)
 
 	// we use a solid white image instead of disabling texturing
 	memset( data, 255, sizeof( data ) );
-	rg.whiteImage = R_CreateImage("*white", (byte *)data, 8, 8, IMGTYPE_COLORALPHA, IMGFLAG_NONE | IMGFLAG_NO_COMPRESSION, 0);
+	rg.whiteImage = R_CreateImage("*white", (byte *)data, 8, 8, IMGTYPE_COLORALPHA, IMGFLAG_NONE, GL_RGBA, GL_RGBA8);
 
 #if 0
 	// with overbright bits active, we need an image which is some fraction of full color,
@@ -2688,7 +2878,6 @@ void R_SetColorMappings( void )
 void R_InitTextures(void)
 {
 	memset(hashTable, 0, sizeof(hashTable));
-
 	switch (r_textureFiltering->i) {
 	case TexFilter_Linear:
 		gl_filter_max = GL_LINEAR;

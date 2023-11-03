@@ -15,7 +15,7 @@
 #define MAX_RENDER_SHADERS 2048
 #define MAX_RENDER_FBOs 64
 
-
+typedef struct ImDrawData ImDrawData;
 #define GLN_INDEX_TYPE GL_UNSIGNED_INT
 typedef uint32_t glIndex_t;
 
@@ -26,6 +26,9 @@ typedef uint32_t glIndex_t;
 #define MAX_SHADERS 1024
 #define MAX_TEXTURES 1024
 #define MAX_RENDER_SPRITESHEETS 1024
+#define MAX_SHADER_STAGES 8
+
+#define BUFFER_OFFSET(x) ((char *)NULL + (x))
 
 #define MAX_DLIGHTS 1024
 #define MAX_RENDER_ENTITIES 1024
@@ -34,6 +37,7 @@ typedef uint32_t glIndex_t;
 
 #define PRINT_INFO 0
 #define PRINT_DEVELOPER 1
+#define PRINT_WARNING 2
 
 #define PSHADOW_MAP_SIZE 512
 
@@ -57,6 +61,7 @@ typedef uint32_t glIndex_t;
 enum
 {
     TB_COLORMAP = 0,
+    TB_DIFFUSEMAP,
     TB_NORMALMAP,
     TB_SPECULARMAP,
     TB_LIGHTMAP,
@@ -150,14 +155,20 @@ typedef enum
 	IMGFLAG_MIPMAP         = 0x0001,
 	IMGFLAG_PICMIP         = 0x0002,
 	IMGFLAG_CUBEMAP        = 0x0004,
-	IMGFLAG_NO_COMPRESSION = 0x0010,
-	IMGFLAG_NOLIGHTSCALE   = 0x0020,
-	IMGFLAG_CLAMPTOEDGE    = 0x0040,
-	IMGFLAG_GENNORMALMAP   = 0x0080,
-	IMGFLAG_LIGHTMAP       = 0x0100,
-	IMGFLAG_NOSCALE        = 0x0200,
-	IMGFLAG_CLAMPTOBORDER  = 0x0400,
+	IMGFLAG_NO_COMPRESSION = 0x0008,
+	IMGFLAG_NOLIGHTSCALE   = 0x0010,
+	IMGFLAG_CLAMPTOEDGE    = 0x0020,
+	IMGFLAG_GENNORMALMAP   = 0x0040,
+	IMGFLAG_LIGHTMAP       = 0x0080,
+	IMGFLAG_NOSCALE        = 0x0100,
+	IMGFLAG_CLAMPTOBORDER  = 0x0200,
+    IMGFLAG_NOWRAP         = 0x0400
 } imgFlags_t;
+
+typedef struct {
+    GLuint id;
+    GLuint texunit;
+} sampler_t;
 
 typedef struct texture_s
 {
@@ -362,6 +373,7 @@ typedef enum {
     BUFFER_STATIC,      // data is constant throughout buffer lifetime
     BUFFER_DYNAMIC,     // expected to be updated once in a while, but not every frame
     BUFFER_FRAME,       // expected to be update on a per-frame basis
+    BUFFER_STREAM,      // use GL_STREAM_DRAW -- only really used by the imgui backend
 } bufferType_t;
 
 typedef struct {
@@ -442,18 +454,35 @@ typedef enum {
 	CGEN_CONST				// fixed color
 } colorGen_t;
 
-typedef struct shader_s {
-    char name[MAX_GDR_PATH];
+typedef struct {
+    qboolean active;
+    qboolean isLightmap;
 
     texture_t *image;
 
+    colorGen_t rgbGen;
+    alphaGen_t alphaGen;
+
+    uint32_t stateBits;         // GLS_xxxx mask
+
     byte constantColor[4];      // for CGEN_CONST and AGEN_CONST
+
+    vec4_t normalScale;
+    vec4_t specularScale;
+} shaderStage_t;
+
+typedef struct shader_s {
+    char name[MAX_GDR_PATH];
+
+    shaderStage_t *stages[MAX_SHADER_STAGES];
 
     uint32_t sortedIndex;       // this shader == rg.sortedShaders[sortedIndex]
     uint32_t index;             // this shader == rg.shaders[index]
     shaderSort_t sort;
 
     uint32_t surfaceFlags;      // if explicitly defined this will have SURFPARM_* flags
+
+    uint32_t vertexAttribs;
 
     qboolean polygonOffset;     // set for decals and other items that must be offset
 
@@ -462,12 +491,6 @@ typedef struct shader_s {
 								// still keep a name allocated for it, so if
 								// something calls RE_RegisterShader again with
 								// the same name, we don't try looking for it again
-
-    uint32_t stateBits;         // GLS_xxxx mask
-
-//    tcGen_t texCoord;
-    colorGen_t rgbGen;
-    alphaGen_t alphaGen;
 
     qboolean isLightmap;
 
@@ -717,7 +740,10 @@ typedef struct
 
     uint64_t frontEndMsec;
 
+    GLuint samplers[MAX_TEXTURE_UNITS];
+
     shaderProgram_t basicShader;
+    shaderProgram_t imguiShader;
 } renderGlobals_t;
 
 typedef enum {
@@ -733,7 +759,7 @@ typedef enum {              // [min, mag]
     TexFilter_Nearest,      // GL_NEAREST GL_NEAREST
     TexFilter_Bilinear,     // GL_NEAREST GL_LINEAR
     TexFilter_Trilinear     // GL_LINEAR GL_NEAREST
-};
+} textureFilter_t;
 
 extern shaderDrawCommands_t drawBuf;
 extern renderGlobals_t rg;
@@ -931,6 +957,9 @@ texture_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags )
 void R_GammaCorrect( byte *buffer, uint64_t bufSize );
 void R_UpdateTextures( void );
 void R_InitTextures(void);
+texture_t *R_CreateImage(  const char *name, byte *pic, uint32_t width, uint32_t height, imgType_t type, imgFlags_t flags, int internalFormat, GLenum picFormat );
+
+extern int gl_filter_min, gl_filter_max;
 
 //
 // rgl_math.c
@@ -965,11 +994,11 @@ qboolean R_HasExtension(const char *ext);
 void R_SortDrawSurfs(drawSurf_t *drawSurfs, uint32_t numDrawSurfs);
 void R_AddDrawSurf(surfaceType_t *surface, shader_t *shader);
 GDR_EXPORT void RE_BeginRegistration(gpuConfig_t *config);
+void R_InitSamplers(void);
 
 //
 // rgl_scene.c
 //
-void R_DrawElements(uint32_t numIndices, uintptr_t offset);
 void RB_InstantQuad(vec4_t quadVerts[4]);
 GDR_EXPORT void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
 GDR_EXPORT void RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys );
@@ -995,8 +1024,9 @@ shader_t *R_FindShader(const char *name);
 void R_InitShaders( void );
 
 //
-// rgl_draw.c
+// rgl_shade.c
 //
+void R_DrawElements(uint32_t numIndices, glIndex_t firstIndex);
 void RB_BeginSurface(shader_t *shader);
 void RB_EndSurface(void);
 
@@ -1014,7 +1044,9 @@ void VBO_BindNull( void );
 void R_InitGPUBuffers( void );
 void R_ShutdownGPUBuffers( void );
 void VBO_Bind( vertexBuffer_t *vbo );
+void VBO_SetVertexPointers(vertexBuffer_t *vbo, uint32_t attribBits);
 void RB_UpdateCache( uint32_t attribBits );
+void R_ShutdownBuffer( vertexBuffer_t *vbo );
 
 GDR_EXPORT void RE_BeginFrame(stereoFrame_t stereoFrame);
 GDR_EXPORT void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec);

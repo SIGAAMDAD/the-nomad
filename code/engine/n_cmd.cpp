@@ -1,5 +1,6 @@
 #include "n_shared.h"
 #include "n_common.h"
+#include <EASTL/internal/atomic/atomic.h>
 
 /*
 ==================================================
@@ -541,6 +542,7 @@ qboolean Cmd_CompleteArgument(const char *command, const char *args, uint32_t ar
 			return qtrue;
 		}
 	}
+	return qfalse;
 }
 
 void Cmd_TokenizeStringIgnoreQuotes(const char *text_p)

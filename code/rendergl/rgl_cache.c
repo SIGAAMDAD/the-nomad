@@ -71,6 +71,25 @@ static void R_SetVertexPointers(const vertexAttrib_t attribs[ATTRIB_INDEX_COUNT]
     }
 }
 
+void VBO_SetVertexPointers(vertexBuffer_t *vbo, uint32_t attribBits)
+{
+	// if nothing is set, set everything
+	if (!(attribBits & ATTRIB_BITS))
+		attribBits = ATTRIB_BITS;
+	
+	if (attribBits & ATTRIB_POSITION) {
+		vbo->attribs[ATTRIB_INDEX_POSITION].enabled = qtrue;
+	}
+	if (attribBits & ATTRIB_TEXCOORD) {
+		vbo->attribs[ATTRIB_INDEX_TEXCOORD].enabled = qtrue;
+	}
+	if (attribBits & ATTRIB_COLOR) {
+		vbo->attribs[ATTRIB_INDEX_COLOR].enabled = qtrue;
+	}
+
+	R_SetVertexPointers(vbo->attribs);
+}
+
 /*
 R_ClearVertexPointers: clears all vertex pointers in the current GL state
 */
@@ -79,6 +98,7 @@ static void R_ClearVertexPointers(void)
     for (uint64_t i = 0; i < ATTRIB_INDEX_COUNT; i++) {
         nglDisableVertexAttribArray(i);
     }
+	glState.vertexAttribsEnabled = 0;
 }
 
 void R_InitGPUBuffers(void)
@@ -99,46 +119,46 @@ void R_InitGPUBuffers(void)
 
 	drawBuf.buf = R_AllocateBuffer("drawBuffer_VBO", NULL, verticesSize, NULL, indicesSize, BUFFER_FRAME);
 
-	drawBuf.buf->attribs[ATTRIB_INDEX_POSITION].index			= ATTRIB_INDEX_POSITION;
+	drawBuf.buf->attribs[ATTRIB_INDEX_POSITION].index		= ATTRIB_INDEX_POSITION;
 	drawBuf.buf->attribs[ATTRIB_INDEX_NORMAL].index			= ATTRIB_INDEX_NORMAL;
-	drawBuf.buf->attribs[ATTRIB_INDEX_TEXCOORD].index			= ATTRIB_INDEX_TEXCOORD;
+	drawBuf.buf->attribs[ATTRIB_INDEX_TEXCOORD].index		= ATTRIB_INDEX_TEXCOORD;
 	drawBuf.buf->attribs[ATTRIB_INDEX_COLOR].index			= ATTRIB_INDEX_COLOR;
 
 	drawBuf.buf->attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
 	drawBuf.buf->attribs[ATTRIB_INDEX_TEXCOORD].enabled		= qtrue;
-	drawBuf.buf->attribs[ATTRIB_INDEX_COLOR].enabled			= qtrue;
-	drawBuf.buf->attribs[ATTRIB_INDEX_NORMAL].enabled			= qtrue;
+	drawBuf.buf->attribs[ATTRIB_INDEX_COLOR].enabled		= qtrue;
+	drawBuf.buf->attribs[ATTRIB_INDEX_NORMAL].enabled		= qfalse;
 
-	drawBuf.buf->attribs[ATTRIB_INDEX_POSITION].count			= 3;
-	drawBuf.buf->attribs[ATTRIB_INDEX_TEXCOORD].count			= 2;
+	drawBuf.buf->attribs[ATTRIB_INDEX_POSITION].count		= 3;
+	drawBuf.buf->attribs[ATTRIB_INDEX_TEXCOORD].count		= 2;
 	drawBuf.buf->attribs[ATTRIB_INDEX_COLOR].count			= 4;
 	drawBuf.buf->attribs[ATTRIB_INDEX_NORMAL].count			= 4;
 
 	drawBuf.buf->attribs[ATTRIB_INDEX_POSITION].stride		= sizeof(drawBuf.xyz[0]);
-	drawBuf.buf->attribs[ATTRIB_INDEX_NORMAL].stride			= sizeof(drawBuf.normal[0]);
+	drawBuf.buf->attribs[ATTRIB_INDEX_NORMAL].stride		= sizeof(drawBuf.normal[0]);
 	drawBuf.buf->attribs[ATTRIB_INDEX_TEXCOORD].stride		= sizeof(drawBuf.texCoords[0]);
 	drawBuf.buf->attribs[ATTRIB_INDEX_COLOR].stride			= sizeof(drawBuf.color[0]);
 
-	drawBuf.buf->attribs[ATTRIB_INDEX_POSITION].type			= GL_FLOAT;
+	drawBuf.buf->attribs[ATTRIB_INDEX_POSITION].type		= GL_FLOAT;
 	drawBuf.buf->attribs[ATTRIB_INDEX_NORMAL].type			= GL_SHORT;
-	drawBuf.buf->attribs[ATTRIB_INDEX_TEXCOORD].type			= GL_FLOAT;
-	drawBuf.buf->attribs[ATTRIB_INDEX_COLOR].type				= GL_UNSIGNED_SHORT;
+	drawBuf.buf->attribs[ATTRIB_INDEX_TEXCOORD].type		= GL_FLOAT;
+	drawBuf.buf->attribs[ATTRIB_INDEX_COLOR].type			= GL_UNSIGNED_SHORT;
 
 	drawBuf.buf->attribs[ATTRIB_INDEX_POSITION].normalized	= GL_FALSE;
-	drawBuf.buf->attribs[ATTRIB_INDEX_NORMAL].normalized		= GL_TRUE;
+	drawBuf.buf->attribs[ATTRIB_INDEX_NORMAL].normalized	= GL_TRUE;
 	drawBuf.buf->attribs[ATTRIB_INDEX_TEXCOORD].normalized	= GL_FALSE;
 	drawBuf.buf->attribs[ATTRIB_INDEX_COLOR].normalized		= GL_TRUE;
 
 	offset = 0;
 	drawBuf.buf->attribs[ATTRIB_INDEX_POSITION].offset		= offset; offset += sizeof(drawBuf.xyz[0])		* MAX_BATCH_VERTICES;
-	drawBuf.buf->attribs[ATTRIB_INDEX_NORMAL].offset			= offset; offset += sizeof(drawBuf.normal[0])		* MAX_BATCH_VERTICES;
+	drawBuf.buf->attribs[ATTRIB_INDEX_NORMAL].offset		= offset; offset += sizeof(drawBuf.normal[0])		* MAX_BATCH_VERTICES;
 	drawBuf.buf->attribs[ATTRIB_INDEX_TEXCOORD].offset		= offset; offset += sizeof(drawBuf.texCoords[0])	* MAX_BATCH_VERTICES;
 	drawBuf.buf->attribs[ATTRIB_INDEX_COLOR].offset			= offset;
 
-	drawBuf.attribPointers[ATTRIB_INDEX_POSITION]		= drawBuf.xyz;
-	drawBuf.attribPointers[ATTRIB_INDEX_TEXCOORD]		= drawBuf.texCoords;
-	drawBuf.attribPointers[ATTRIB_INDEX_COLOR]		= drawBuf.color;
-	drawBuf.attribPointers[ATTRIB_INDEX_NORMAL]		= drawBuf.normal;
+	drawBuf.attribPointers[ATTRIB_INDEX_POSITION]			= drawBuf.xyz;
+	drawBuf.attribPointers[ATTRIB_INDEX_TEXCOORD]			= drawBuf.texCoords;
+	drawBuf.attribPointers[ATTRIB_INDEX_COLOR]				= drawBuf.color;
+	drawBuf.attribPointers[ATTRIB_INDEX_NORMAL]				= drawBuf.normal;
 
 	R_SetVertexPointers(drawBuf.buf->attribs);
 
@@ -244,6 +264,9 @@ vertexBuffer_t *R_AllocateBuffer(const char *name, void *vertices, uint32_t vert
 	case BUFFER_DYNAMIC:
 		usage = GL_DYNAMIC_DRAW;
 		break;
+	case BUFFER_STREAM:
+		usage = GL_STREAM_DRAW;
+		break;
 	default:
 		ri.Error(ERR_FATAL, "Bad glUsage %i", type);
 	};
@@ -339,6 +362,30 @@ void VBO_BindNull(void)
 	}
 
 	GL_CheckErrors();
+}
+
+void R_ShutdownBuffer( vertexBuffer_t *vbo )
+{
+	if (vbo->vaoId)
+		nglDeleteVertexArrays(1, (const GLuint *)&vbo->vaoId);
+
+	if (vbo->vertex.id) {
+		if (vbo->vertex.usage == BUF_GL_MAPPED) {
+			nglBindBuffer(GL_ARRAY_BUFFER, vbo->vertex.id);
+			nglUnmapBuffer(GL_ARRAY_BUFFER);
+			nglBindBuffer(GL_ARRAY_BUFFER, 0);
+		}
+		nglDeleteBuffers(1, (const GLuint *)&vbo->vertex.id);
+	}
+	
+	if (vbo->index.id) {
+		if (vbo->index.usage == BUF_GL_MAPPED) {
+			nglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo->index.id);
+			nglUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+			nglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		}
+		nglDeleteBuffers(1, (const GLuint *)&vbo->index.id);
+	}
 }
 
 /*

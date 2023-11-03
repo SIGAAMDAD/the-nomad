@@ -5,11 +5,6 @@
 #include "../rendercommon/imgui_impl_sdl2.h"
 #include "vm_local.h"
 
-namespace EA::StdC {
-	int Vsnprintf(char* EA_RESTRICT pDestination, size_t n, const char* EA_RESTRICT pFormat, va_list arguments)
-	{ return vsnprintf(pDestination, n, pFormat, arguments); }
-};
-
 #define MAX_EVENT_QUEUE 256
 #define MASK_QUEUED_EVENTS (MAX_EVENT_QUEUE - 1)
 #define MAX_PUSHED_EVENTS 256
@@ -317,6 +312,9 @@ static void Com_PumpKeyEvents(void)
 	SDL_PumpEvents();
 
 	while (SDL_PollEvent(&event)) {
+		if (Key_GetCatcher() & KEYCATCH_CONSOLE || Key_GetCatcher() & KEYCATCH_UI)
+			ImGui_ImplSDL2_ProcessEvent(&event);
+
 		switch (event.type) {
 		case SDL_KEYDOWN:
 			Com_QueueEvent(com_frameTime, SE_KEY, event.key.keysym.scancode, qtrue, 0, NULL);

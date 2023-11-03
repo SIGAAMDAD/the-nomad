@@ -500,6 +500,8 @@ uint64_t Sys_ReadMappedFile(void *buffer, uint64_t size, memoryMap_t *file);
 void *Sys_GetMappedFileBuffer(memoryMap_t *file);
 void Sys_UnmapFile(memoryMap_t *file);
 
+uint64_t Sys_StackMemoryRemaining(void);
+
 qboolean Sys_mkdir(const char *name);
 
 void Sys_Print(const char *msg);

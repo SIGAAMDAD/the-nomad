@@ -1,9 +1,11 @@
 #include "rgl_local.h"
 
-extern const char *fallbackShader_basic_vs;
-extern const char *fallbackShader_basic_fs;
-extern const char *fallbackShader_ssao_vs;
-extern const char *fallbackShader_ssao_fs;
+extern const char *fallbackShader_basic_vp;
+extern const char *fallbackShader_basic_fp;
+extern const char *fallbackShader_imgui_vp;
+extern const char *fallbackShader_imgui_fp;
+extern const char *fallbackShader_ssao_vp;
+extern const char *fallbackShader_ssao_fp;
 
 #define GLSL_VERSION_ATLEAST(major,minor) (glContext.glslVersionMajor > (major) || (glContext.versionMajor == (major) && glContext.glslVersionMinor >= minor))
 
@@ -232,6 +234,7 @@ static int GLSL_CompileGPUShader(GLuint program, GLuint *prevShader, const GLcha
     else if (shaderType == GL_GEOMETRY_SHADER)
         GL_SetObjectDebugName(GL_SHADER, shader, programName, "_geometryShader");
     
+    ri.Printf(PRINT_DEVELOPER, "Shader Source (%s):\n%s", programName, buffer);
 
     // give it the source
     nglShaderSource(shader, 1, (const GLchar **)&buffer, (const GLint *)&size);
@@ -386,8 +389,9 @@ static void GLSL_CheckAttribLocation(GLuint id, const char *name, const char *at
     GLint location;
 
     location = nglGetAttribLocation(id, name);
-    if (location != index)
+    if (location != index) {
         ri.Error(ERR_FATAL, "GetAttribLocation(%s):%i != %s (%i)", name, location, attribName, index);
+    }
 }
 
 static int GLSL_InitGPUShader2(shaderProgram_t *program, const char *name, uint32_t attribs, const char *vsCode, const char *fsCode)
@@ -419,23 +423,21 @@ static int GLSL_InitGPUShader2(shaderProgram_t *program, const char *name, uint3
         }
     }
 
-//    if (attribs & ATTRIB_POSITION)
-//        nglBindAttribLocation(program->programId, ATTRIB_INDEX_POSITION, "a_Position");
-//    if (attribs & ATTRIB_TEXCOORD)
-//        nglBindAttribLocation(program->programId, ATTRIB_INDEX_TEXCOORD, "a_TexCoords");
-//    if (attribs & ATTRIB_COLOR)
-//        nglBindAttribLocation(program->programId, ATTRIB_INDEX_COLOR, "a_Color");
+    if (attribs & ATTRIB_POSITION)
+        nglBindAttribLocation(program->programId, ATTRIB_INDEX_POSITION, "a_Position");
+    if (attribs & ATTRIB_TEXCOORD)
+        nglBindAttribLocation(program->programId, ATTRIB_INDEX_TEXCOORD, "a_TexCoord");
+    if (attribs & ATTRIB_COLOR)
+        nglBindAttribLocation(program->programId, ATTRIB_INDEX_COLOR, "a_Color");
 //    if (attribs & ATTRIB_NORMAL)
 //        nglBindAttribLocation(program->programId, ATTRIB_INDEX_NORMAL, "a_Normal");
     
     GLSL_LinkProgram(program->programId);
 
-#if 0    
     GLSL_CheckAttribLocation(program->programId, "a_Position", "ATTRIB_INDEX_POSITION", ATTRIB_INDEX_POSITION);
-    GLSL_CheckAttribLocation(program->programId, "a_TexCoords", "ATTRIB_INDEX_TEXCOORD", ATTRIB_INDEX_TEXCOORD);
-    GLSL_CheckAttribLocation(program->programId, "a_Normal", "ATTRIB_INDEX_NORMAL", ATTRIB_INDEX_NORMAL);
+    GLSL_CheckAttribLocation(program->programId, "a_TexCoord", "ATTRIB_INDEX_TEXCOORD", ATTRIB_INDEX_TEXCOORD);
+//    GLSL_CheckAttribLocation(program->programId, "a_Normal", "ATTRIB_INDEX_NORMAL", ATTRIB_INDEX_NORMAL);
     GLSL_CheckAttribLocation(program->programId, "a_Color", "ATTRIB_INDEX_COLOR", ATTRIB_INDEX_COLOR);
-#endif
 
     return qtrue;
 }
@@ -452,7 +454,6 @@ static int GLSL_InitGPUShader(shaderProgram_t *program, const char *name, uint32
     rg.numPrograms++;
 
     size = sizeof(vsCode);
-    addHeader = qfalse;
 
     if (addHeader) {
         GLSL_PrepareHeader(GL_VERTEX_SHADER, extra, vsCode, size);
@@ -578,7 +579,7 @@ void GLSL_SetUniformInt(shaderProgram_t *program, uint32_t uniformNum, GLint val
         return;
     
     *compare = value;
-    nglUniform1iARB(uniforms[uniformNum], value);
+    nglUniform1i(uniforms[uniformNum], value);
 }
 
 void GLSL_SetUniformFloat(shaderProgram_t *program, uint32_t uniformNum, GLfloat value)
@@ -597,7 +598,7 @@ void GLSL_SetUniformFloat(shaderProgram_t *program, uint32_t uniformNum, GLfloat
         return;
     
     *compare = value;
-    nglUniform1fARB(uniforms[uniformNum], value);
+    nglUniform1f(uniforms[uniformNum], value);
 }
 
 void GLSL_SetUniformVec2(shaderProgram_t *program, uint32_t uniformNum, const vec2_t v)
@@ -617,7 +618,7 @@ void GLSL_SetUniformVec2(shaderProgram_t *program, uint32_t uniformNum, const ve
     
     compare[0] = v[0];
     compare[1] = v[1];
-    nglUniform2fARB(uniforms[uniformNum], v[0], v[1]);
+    nglUniform2f(uniforms[uniformNum], v[0], v[1]);
 }
 
 void GLSL_SetUniformVec3(shaderProgram_t *program, uint32_t uniformNum, const vec3_t v)
@@ -636,7 +637,7 @@ void GLSL_SetUniformVec3(shaderProgram_t *program, uint32_t uniformNum, const ve
         return;
     
     VectorCopy(compare, v);
-    nglUniform3fARB(uniforms[uniformNum], v[0], v[1], v[2]);
+    nglUniform3f(uniforms[uniformNum], v[0], v[1], v[2]);
 }
 
 void GLSL_SetUniformVec4(shaderProgram_t *program, uint32_t uniformNum, const vec4_t v)
@@ -655,7 +656,7 @@ void GLSL_SetUniformVec4(shaderProgram_t *program, uint32_t uniformNum, const ve
         return;
     
     VectorCopy4(compare, v);
-    nglUniform4fARB(uniforms[uniformNum], v[0], v[1], v[2], v[3]);
+    nglUniform4f(uniforms[uniformNum], v[0], v[1], v[2], v[3]);
 }
 
 void GLSL_SetUniformMatrix4(shaderProgram_t *program, uint32_t uniformNum, const mat4_t m)
@@ -674,7 +675,7 @@ void GLSL_SetUniformMatrix4(shaderProgram_t *program, uint32_t uniformNum, const
         return;
     
     Mat4Copy(m, compare);
-    nglUniformMatrix4fvARB(uniforms[uniformNum], 1, GL_FALSE, (const GLfloat *)m);
+    nglUniformMatrix4fv(uniforms[uniformNum], 1, GL_FALSE, (const GLfloat *)m);
 }
 
 
@@ -699,11 +700,18 @@ void GLSL_InitGPUShaders(void)
     start = ri.Milliseconds();
 
     attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_COLOR | ATTRIB_NORMAL;
-    if (!GLSL_InitGPUShader(&rg.basicShader, "basic", attribs, qtrue, NULL, qtrue, fallbackShader_basic_vs, fallbackShader_basic_fs)) {
+    if (!GLSL_InitGPUShader(&rg.basicShader, "basic", attribs, qtrue, NULL, qtrue, fallbackShader_basic_vp, fallbackShader_basic_fp)) {
         ri.Error(ERR_FATAL, "Could not load basic shader");
     }
     GLSL_InitUniforms(&rg.basicShader);
     GLSL_FinishGPUShader(&rg.basicShader);
+
+    attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_COLOR;
+    if (!GLSL_InitGPUShader(&rg.imguiShader, "imgui", attribs, qtrue, NULL, qtrue, fallbackShader_imgui_vp, fallbackShader_imgui_fp)) {
+        ri.Error(ERR_FATAL, "Could not load imgui shader");
+    }
+    GLSL_InitUniforms(&rg.imguiShader);
+    GLSL_FinishGPUShader(&rg.imguiShader);
 
     end = ri.Milliseconds();
 

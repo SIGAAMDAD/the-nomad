@@ -1,4 +1,5 @@
 #include "rgl_local.h"
+#include "../rendercommon/imgui_impl_opengl3.h"
 
 #define NGL( ret, name, ... ) PFN ## name n ## name = NULL;
 NGL_Core_Procs
@@ -820,6 +821,19 @@ static void R_InitGLContext(void)
         glContext.intelGraphics = qtrue;
     
     R_InitExtensions();
+    R_InitSamplers();
+}
+
+static void R_InitImGui(void)
+{
+    void *imguiData;
+
+    ri.ImGui_InitSDL2();
+
+    // init imgui opengl3
+    imguiData = ImGui_ImplOpenGL3_Init(NULL);
+    assert(imguiData); // this should never fail
+    ri.ImGui_Init(imguiData, "imgui_impl_opengl3");
 }
 
 void R_Init(void)
@@ -847,12 +861,16 @@ void R_Init(void)
 
     GLSL_InitGPUShaders();
 
+//    R_InitSamplers();
+
     R_InitShaders();
 
     error = nglGetError();
     if (error != GL_NO_ERROR)
         ri.Printf(PRINT_INFO, COLOR_RED "glGetError() = 0x%x\n", error);
-    
+
+    R_InitImGui();
+
     // print info
     GpuInfo_f();
     GpuMemInfo_f();
@@ -881,6 +899,8 @@ void RE_Shutdown(refShutdownCode_t code)
         R_DeleteTextures();
         R_ShutdownGPUBuffers();
         GLSL_ShutdownGPUShaders();
+        ImGui_ImplOpenGL3_Shutdown();
+        ri.ImGui_Shutdown();
     }
 
     // shutdown platform specific OpenGL thingies
@@ -916,6 +936,19 @@ GDR_EXPORT void RE_GetConfig(gpuConfig_t *config)
     *config = glConfig;
 }
 
+GDR_EXPORT void *RE_GetTexDataFromShader(nhandle_t hShader)
+{
+    shader_t *sh;
+
+    sh = R_GetShaderByHandle(hShader);
+    if (!sh) {
+        ri.Printf(PRINT_WARNING, "RE_GetTexDataFromShader: invalid handle\n");
+        return NULL;
+    }
+
+    return (void *)(intptr_t)sh->stages[0]->image->id;
+}
+
 GDR_EXPORT renderExport_t *GDR_DECL GetRenderAPI(uint32_t version, refimport_t *import)
 {
     static renderExport_t re;
@@ -931,11 +964,13 @@ GDR_EXPORT renderExport_t *GDR_DECL GetRenderAPI(uint32_t version, refimport_t *
     re.BeginRegistration = RE_BeginRegistration;
     re.RegisterShader = RE_RegisterShader;
     re.GetConfig = RE_GetConfig;
+    re.GetTexDateFromShader = RE_GetTexDataFromShader;
 
     re.ClearScene = RE_ClearScene;
     re.BeginScene = RE_BeginScene;
     re.EndScene = RE_EndScene;
     re.RenderScene = RE_RenderScene;
+
 
     re.BeginFrame = RE_BeginFrame;
     re.EndFrame = RE_EndFrame;
@@ -947,6 +982,7 @@ GDR_EXPORT renderExport_t *GDR_DECL GetRenderAPI(uint32_t version, refimport_t *
     
     re.AddPolyListToScene = RE_AddPolyListToScene;
     re.AddPolyToScene = RE_AddPolyToScene;
+    re.AddEntityToScene = RE_AddEntityToScene;
     re.SetColor = RE_SetColor;
     re.DrawImage = RE_DrawImage;
 
@@ -963,12 +999,32 @@ void R_GLDebug_Callback_AMD(GLuint id, GLenum category, GLenum severity, GLsizei
 
 }
 
+#define MAX_CACHED_GL_MESSAGES 8192
+static char *cachedGLMessages[MAX_CACHED_GL_MESSAGES];
+static int numCachedGLMessages = 0;
+
 void R_GLDebug_Callback_ARB(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const GLvoid *userParam)
 {
     static const char *color;
+    int i;
+    uint64_t len;
 
     if (!r_glDebug->i)
         return; // we don't want to confuse non-developers...
+
+    // save the messages so OpenGL can't spam us with useless shit
+    for (i = 0; i < numCachedGLMessages; i++) {
+        if (!N_stricmp(cachedGLMessages[i], message)) {
+            return;
+        }
+    }
+
+    // allocate it on the hunk so we don't need to clean it up
+    len = strlen(message) + 1;
+    cachedGLMessages[numCachedGLMessages] = (char *)ri.Hunk_Alloc(len, h_low);
+    cachedGLMessages[numCachedGLMessages][len - 1] = '\0';
+    strcpy(cachedGLMessages[numCachedGLMessages], message);
+    numCachedGLMessages++;
 
     if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) {
         ri.Printf(PRINT_INFO, COLOR_MAGENTA "[GLDebug Log]:" COLOR_WHITE " %s\n", message);

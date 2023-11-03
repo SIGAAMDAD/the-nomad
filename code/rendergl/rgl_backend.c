@@ -1,45 +1,97 @@
 #include "rgl_local.h"
 
-shaderDrawCommands_t drawBuf;
+void GL_SetObjectDebugName(GLenum target, GLuint id, const char *name, const char *add)
+{
+	if (r_glDebug->i) {
+		static char newName[1024];
+		Com_snprintf(newName, sizeof(newName), "%s%s", name, add);
+		nglObjectLabel(target, id, strlen(newName), newName);
+	}
+}
+
+static GLuint textureStack[MAX_TEXTURE_UNITS];
+static GLint textureStackP;
+
+void GL_PushTexture(texture_t *image)
+{
+	uint32_t i;
+	GLuint id = image ? image->id : 0;
+
+	// do we need to pop one?
+	if (textureStackP == MAX_TEXTURE_UNITS - 1) {
+		GL_PopTexture();
+	}
+
+	// check if it's already bound
+	for (i = 0; i < textureStackP; i++) {
+		if (textureStack[i] == id) {
+			textureStackP = i;
+			break;
+		}
+	}
+
+	if (i == textureStackP) {
+		if (textureStackP >= MAX_TEXTURE_UNITS)
+			ri.Error(ERR_DROP, "GL_PushTexture: texture stack overflow");
+
+		textureStack[textureStackP++] = id;
+		
+		nglActiveTexture(GL_TEXTURE0 + textureStackP);
+		nglBindTexture(GL_TEXTURE_2D, id);
+	}
+}
+
+void GL_PopTexture(void)
+{
+	textureStackP--;
+
+	if (textureStackP < 0)
+		ri.Error(ERR_DROP, "GL_PopTexture: texture stack underflow");
+
+	if (textureStackP) {
+		nglActiveTexture(GL_TEXTURE + textureStackP);
+		nglBindTexture(GL_TEXTURE_2D, textureStack[textureStackP - 1]);
+	}
+}
 
 void GL_BindTexture(int tmu, texture_t *image)
 {
-    GLuint slot;
-    GLuint id;
+	GLuint texunit = GL_TEXTURE0 + tmu;
+	GLuint id = image ? image->id : 0;
 
-    id = image ? image->id : 0;
-    
-    switch (tmu) {
-    case TB_COLORMAP:
-        slot = GL_TEXTURE0;
-        break;
-    default:
-        ri.Error(ERR_DROP, "Bad tmu: %i", tmu);
-    };
+	if (glState.currenttextures[tmu] == id) {
+		return;
+	}
 
-    tmu = slot - GL_TEXTURE0;
+	if (glState.currenttmu != texunit) {
+		nglActiveTexture(texunit);
+		glState.currenttmu = texunit;
+	}
 
-    if (glState.currenttextures[tmu] == id)
-        return;
-
-    nglActiveTexture(slot);
-    nglBindTexture(GL_TEXTURE_2D, id);
-
-    glState.currentTexture = image;
-    glState.currenttmu = slot;
-    glState.currenttextures[tmu] = id;
+	nglBindTexture(GL_TEXTURE_2D, id);
 }
 
 void GL_BindNullTextures(void)
 {
+	for (uint32_t i = 0; i < MAX_TEXTURE_UNITS; i++) {
+		nglActiveTexture(GL_TEXTURE0 + i);
+		nglBindTexture(GL_TEXTURE_2D, 0);
+	}
+
+	memset(textureStack, 0, sizeof(GLuint) * textureStackP);
+	textureStackP = 0;
+
+#if 0
     for (uint32_t i = 0; i < NUM_TEXTURE_BINDINGS; i++) {
         if (glState.currenttextures[i] != 0) {
             nglActiveTexture(GL_TEXTURE0 + i);
             nglBindTexture(GL_TEXTURE_2D, 0);
         }
     }
+#endif
     nglActiveTexture(GL_TEXTURE0);
     glState.currenttmu = GL_TEXTURE0;
+	glState.currentTexture = NULL;
 }
 
 int GL_UseProgram(GLuint program)
@@ -496,7 +548,7 @@ static const void	*RB_DrawBuffer( const void *data ) {
 //	if (glConfig.ARB_framebuffer_object)
 //		FBO_Bind(NULL);
 
-	nglDrawBuffer( cmd->buffer );
+//	nglDrawBuffer( cmd->buffer );
 
 	// clear screen for debugging
 #if 0

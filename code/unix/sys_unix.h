@@ -16,5 +16,6 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <sys/sysinfo.h>
+#include <sys/resource.h>
 
 #endif

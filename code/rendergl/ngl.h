@@ -52,9 +52,6 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glLineWidth, GLfloat width ) \
     NGL( void, glCullFace, GLenum mode ) \
     NGL( void, glGetBooleanv, GLenum pname, GLboolean *params ) \
-    NGL( void, glBindSampler, GLuint unit, GLuint sampler ) \
-    NGL( void, glGenSamplers, GLsizei n, GLuint *samplers ) \
-    NGL( void, glDeleteSamplers, GLsizei n, const GLuint *samplers ) \
     NGL( void, glBlendEquation, GLenum mode ) \
     NGL( void, glBlendFuncSeparate, GLenum sfactorRGB, GLenum dfactorRGB, GLenum sfactorAlpha, GLenum dfactorAlpha ) \
     NGL( void, glBlendEquationSeparate, GLenum modeRGB, GLenum modeAlpha ) \
@@ -145,32 +142,32 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glGetProgramiv, GLuint program, GLenum pname, GLint *params ) \
     NGL( void, glGetShaderInfoLog, GLuint shader, GLsizei bufSize, GLsizei *length, GLchar *infoLog ) \
     NGL( GLint, glGetUniformLocation, GLuint program, const GLchar *name ) \
-    NGL( void, glUniform1fARB, GLint location, GLfloat v0 ) \
-    NGL( void, glUniform2fARB, GLint location, GLfloat v0, GLfloat v1 ) \
-    NGL( void, glUniform3fARB, GLint location, GLfloat v0, GLfloat v1, GLfloat v2 ) \
-    NGL( void, glUniform4fARB, GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3 ) \
-    NGL( void, glUniform1fvARB, GLint location, GLsizei count, const GLfloat *value ) \
-    NGL( void, glUniform2fvARB, GLint location, GLsizei count, const GLfloat *value ) \
-    NGL( void, glUniform3fvARB, GLint location, GLsizei count, const GLfloat *value ) \
-    NGL( void, glUniform4fvARB, GLint location, GLsizei count, const GLfloat *value ) \
-    NGL( void, glUniform1iARB, GLint location, GLint v0 ) \
-    NGL( void, glUniform2iARB, GLint location, GLint v0, GLint v1 ) \
-    NGL( void, glUniform3iARB, GLint location, GLint v0, GLint v1, GLint v2 ) \
-    NGL( void, glUniform4iARB, GLint location, GLint v0, GLint v1, GLint v2, GLint v3 ) \
-    NGL( void, glUniform1ivARB, GLint location, GLsizei count, const GLint *value ) \
-    NGL( void, glUniform2ivARB, GLint location, GLsizei count, const GLint *value ) \
-    NGL( void, glUniform3ivARB, GLint location, GLsizei count, const GLint *value ) \
-    NGL( void, glUniform4ivARB, GLint location, GLsizei count, const GLint *value ) \
-    NGL( void, glUniform1uiARB, GLint location, GLuint v0 ) \
-    NGL( void, glUniform2uiARB, GLint location, GLuint v0, GLuint v1 ) \
-    NGL( void, glUniform3uiARB, GLint location, GLuint v0, GLuint v1, GLuint v2 ) \
-    NGL( void, glUniform4uiARB, GLint location, GLuint v0, GLuint v1, GLuint v2, GLuint v3 ) \
-    NGL( void, glUniform1uivARB, GLint location, GLsizei count, const GLuint *value ) \
-    NGL( void, glUniform2uivARB, GLint location, GLsizei count, const GLuint *value ) \
-    NGL( void, glUniform3uivARB, GLint location, GLsizei count, const GLuint *value ) \
-    NGL( void, glUniform4uivARB, GLint location, GLsizei count, const GLuint *value ) \
-    NGL( void, glUniformMatrix3fvARB, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value ) \
-    NGL( void, glUniformMatrix4fvARB, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value ) \
+    NGL( void, glUniform1f, GLint location, GLfloat v0 ) \
+    NGL( void, glUniform2f, GLint location, GLfloat v0, GLfloat v1 ) \
+    NGL( void, glUniform3f, GLint location, GLfloat v0, GLfloat v1, GLfloat v2 ) \
+    NGL( void, glUniform4f, GLint location, GLfloat v0, GLfloat v1, GLfloat v2, GLfloat v3 ) \
+    NGL( void, glUniform1fv, GLint location, GLsizei count, const GLfloat *value ) \
+    NGL( void, glUniform2fv, GLint location, GLsizei count, const GLfloat *value ) \
+    NGL( void, glUniform3fv, GLint location, GLsizei count, const GLfloat *value ) \
+    NGL( void, glUniform4fv, GLint location, GLsizei count, const GLfloat *value ) \
+    NGL( void, glUniform1i, GLint location, GLint v0 ) \
+    NGL( void, glUniform2i, GLint location, GLint v0, GLint v1 ) \
+    NGL( void, glUniform3i, GLint location, GLint v0, GLint v1, GLint v2 ) \
+    NGL( void, glUniform4i, GLint location, GLint v0, GLint v1, GLint v2, GLint v3 ) \
+    NGL( void, glUniform1iv, GLint location, GLsizei count, const GLint *value ) \
+    NGL( void, glUniform2iv, GLint location, GLsizei count, const GLint *value ) \
+    NGL( void, glUniform3iv, GLint location, GLsizei count, const GLint *value ) \
+    NGL( void, glUniform4iv, GLint location, GLsizei count, const GLint *value ) \
+    NGL( void, glUniform1ui, GLint location, GLuint v0 ) \
+    NGL( void, glUniform2ui, GLint location, GLuint v0, GLuint v1 ) \
+    NGL( void, glUniform3ui, GLint location, GLuint v0, GLuint v1, GLuint v2 ) \
+    NGL( void, glUniform4ui, GLint location, GLuint v0, GLuint v1, GLuint v2, GLuint v3 ) \
+    NGL( void, glUniform1uiv, GLint location, GLsizei count, const GLuint *value ) \
+    NGL( void, glUniform2uiv, GLint location, GLsizei count, const GLuint *value ) \
+    NGL( void, glUniform3uiv, GLint location, GLsizei count, const GLuint *value ) \
+    NGL( void, glUniform4uiv, GLint location, GLsizei count, const GLuint *value ) \
+    NGL( void, glUniformMatrix3fv, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value ) \
+    NGL( void, glUniformMatrix4fv, GLint location, GLsizei count, GLboolean transpose, const GLfloat *value ) \
     NGL( void, glGetProgramInfoLog, GLuint program, GLsizei bufSize, GLsizei *length, GLchar *infoLog ) \
     NGL( void, glCompileShader, GLuint shader ) \
     NGL( void, glAttachShader, GLuint program, GLuint shader ) \
@@ -192,7 +189,12 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glCompressedTexImage2D,GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const GLvoid *data ) \
     NGL( void, glCompressedTexSubImage2D, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const GLvoid *data ) \
     NGL( void, glTexSubImage2D, GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const GLvoid * data ) \
-    NGL( void, glGenerateMipmap, GLenum target )
+    NGL( void, glGenSamplers, GLsizei n, GLuint *samplers ) \
+    NGL( void, glBindSampler, GLuint unit, GLuint sampler ) \
+    NGL( void, glDeleteSamplers, GLsizei n, const GLuint *samplers ) \
+    NGL( void, glSamplerParameteri, GLuint sampler, GLenum pname, GLint param ) \
+    NGL( void, glSamplerParameterf, GLuint sampler, GLenum pname, GLfloat param ) \
+//    NGL( void, glGenerateMipmap, GLenum target ) \
 
 #define NGL_FBO_Procs \
     NGL( void, glGenFramebuffers, GLsizei n, GLuint *buffers ) \

@@ -82,9 +82,6 @@ typedef struct bffFile_s
 	qboolean touched;
 } bffFile_t;
 
-typedef eastl::unordered_map<const char *, fileInBFF_t>::const_iterator const_chunk_iterator;
-typedef eastl::unordered_map<const char *, fileInBFF_t>::iterator chunk_iterator;
-
 typedef union
 {
 	FILE *fp;

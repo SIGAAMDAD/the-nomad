@@ -1,5 +1,5 @@
 #include "rgl_local.h"
-
+#include "../rendercommon/imgui_impl_opengl3.h"
 
 renderBackendData_t *backendData;
 
@@ -194,11 +194,7 @@ GDR_EXPORT void RE_BeginFrame(stereoFrame_t stereoFrame)
         height = glConfig.vidHeight;
     }
 
-    // set 2D virtual screen size
-    nglViewport(0, 0, width, height);
-    nglScissor(0, 0, width, height);
-
-    clearBits = GL_COLOR_BUFFER_BIT;
+	clearBits = GL_COLOR_BUFFER_BIT;
 
     if (r_measureOverdraw->i) {
         clearBits |= GL_STENCIL_BUFFER_BIT;
@@ -206,6 +202,19 @@ GDR_EXPORT void RE_BeginFrame(stereoFrame_t stereoFrame)
 
     // clear relevant buffers
     nglClear(clearBits);
+	nglClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+
+	GL_BindNullTextures();
+
+	ImGui_ImplOpenGL3_NewFrame();
+	ri.ImGui_NewFrame();
+
+	// setup basic state
+	nglEnable(GL_BLEND);
+
+    // set 2D virtual screen size
+    nglViewport(0, 0, width, height);
+    nglScissor(0, 0, width, height);
 
     // check for camera resize
     rg.viewData.camera.aspect = glConfig.vidWidth / glConfig.vidHeight;
@@ -329,8 +338,9 @@ GDR_EXPORT void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec)
 	}
 	cmd->commandId = RC_SWAP_BUFFERS;
 
-	R_IssueRenderCommands(qtrue);
+	ri.ImGui_Draw(ImGui_ImplOpenGL3_RenderDrawData);
 
+	R_IssueRenderCommands(qtrue);
 	R_InitNextFrame();
 
 	if (frontEndMsec) {

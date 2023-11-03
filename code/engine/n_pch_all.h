@@ -54,6 +54,7 @@ Dependencies
 #include <boost/thread/condition_variable.hpp>
 
 // EASTL, a salute to EA where they suck everywhere else but do good with c++ libraries
+#if 0
 #include <EASTL/array.h>
 #include <EASTL/vector.h>
 #include <EASTL/string.h>
@@ -76,6 +77,7 @@ Dependencies
 #include <EASTL/internal/atomic/atomic.h>
 #include <EASTL/internal/atomic/atomic_standalone.h>
 #include <EASTL/internal/function.h>
+#endif
 
 // glm, funmathgames
 #include <glm/glm.hpp>
@@ -83,7 +85,7 @@ Dependencies
 #include <glm/gtx/type_trait.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <nlohmann/json.hpp>
+//#include <nlohmann/json.hpp>
 
 #define USING_EASY_PROFILER
 #include <easy/profiler.h>

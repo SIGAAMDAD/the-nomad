@@ -94,26 +94,26 @@ void trap_Error(const char *fmt);
 
 // milliseconds should only be used for performance tuning, never
 // for anything game related
-unsigned int trap_Milliseconds( void );
+uint32_t trap_Milliseconds( void );
 
 // console variable interaction
-void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, unsigned int flags );
+void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, uint32_t flags );
 void trap_Cvar_Update( vmCvar_t *vmCvar );
 void trap_Cvar_Set( const char *var_name, const char *value );
-void trap_Cvar_VariableStringBuffer( const char *var_name, char *buffer, unsigned int bufsize );
+void trap_Cvar_VariableStringBuffer( const char *var_name, char *buffer, uint32_t bufsize );
 
 // ConsoleCommand parameter access
-int trap_Argc( void );
-void trap_Argv( unsigned int n, char *buffer, unsigned int bufferLength );
-void trap_Args( char *buffer, unsigned int bufferLength );
+uint32_t trap_Argc( void );
+void trap_Argv( uint32_t n, char *buffer, uint32_t bufferLength );
+void trap_Args( char *buffer, uint32_t bufferLength );
 
 // filesystem access
 file_t trap_FS_FOpenRead(const char *npath, file_t *f);
 file_t trap_FS_FOpenWrite(const char *npath, file_t *f);
-unsigned int trap_FS_FileLength(file_t f);
-unsigned int trap_FS_Write(const void *buffer, unsigned int len, file_t f);
-unsigned int trap_FS_Read(void *buffer, unsigned int len, file_t f);
-fileOffset_t trap_FS_FileSeek(file_t f, fileOffset_t offset, unsigned int whence);
+uint32_t trap_FS_FileLength(file_t f);
+uint32_t trap_FS_Write(const void *buffer, uint32_t len, file_t f);
+uint32_t trap_FS_Read(void *buffer, uint32_t len, file_t f);
+fileOffset_t trap_FS_FileSeek(file_t f, fileOffset_t offset, uint32_t whence);
 fileOffset_t trap_FS_FileTell(file_t f);
 void trap_FS_FClose(file_t f);
 
@@ -132,20 +132,21 @@ void trap_Snd_StopSfx(sfxHandle_t sfx);
 // register a shader (technically a texture)
 nhandle_t trap_RE_RegisterShader(const char *npath);
 
-int trap_Key_GetCatcher(void);
-void trap_Key_SetCatcher(int catcher);
-int trap_Key_GetKey(const char *binding);
-qboolean trap_Key_IsDown(unsigned int keynum);
+uint32_t trap_Key_GetCatcher(void);
+void trap_Key_SetCatcher(uint32_t catcher);
+uint32_t trap_Key_GetKey(const char *binding);
+qboolean trap_Key_IsDown(uint32_t keynum);
 
 // drawing functions
 void trap_RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
 void trap_RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys );
+void trap_RE_ClearScene( void );
+void trap_RE_RenderScene( const renderSceneRef_t *fd );
 
 // set the rendering color
 void trap_RE_SetColor(const float *rgba);
 
 // attains to the current gamestate
 void trap_GetGameState(gamestate_t *state);
-
 
 #endif

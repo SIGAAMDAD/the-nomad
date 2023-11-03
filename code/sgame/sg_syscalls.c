@@ -1,18 +1,28 @@
 
 // sg_syscalls.c: this file is only included in development dll builds, the .asm file is used instead when building the VM file
 #include "../rendercommon/r_public.h"
+#include "../game/g_game.h"
 #include "sg_local.h"
 
 #ifdef Q3_VM
     #error Never use is VM build
 #endif
 
-static int (GDR_DECL *syscall)(int arg, ...) = (int (GDR_DECL *)(int, ...)) - 1;
+vmRefImport_t vmi;
 
-void dllEntry(int (GDR_DECL *syscallptr)(int arg, ...))
+//static intptr_t (GDR_DECL *syscall)(intptr_t arg, uint32_t, ...) = (intptr_t (GDR_DECL *)(intptr_t, uint32_t, ...)) - 1;
+
+void dllEntry(const vmRefImport_t *import)
+{
+    memcpy(&vmi, import, sizeof(vmi));
+}
+
+#if 0
+void dllEntry(intptr_t (GDR_DECL *syscallptr)(intptr_t arg, uint32_t numArgs, ...))
 {
     syscall = syscallptr;
 }
+#endif
 
 int PASSFLOAT(float x)
 {
@@ -21,127 +31,202 @@ int PASSFLOAT(float x)
     return *(int *)&floatTemp;
 }
 
-void trap_Print(const char *fmt)
+void trap_GetGPUConfig(gpuConfig_t *config)
 {
-    syscall(SG_PRINT, fmt);
+    vmi.trap_GetGPUConfig(config);
 }
 
-void trap_Error(const char *fmt)
+void trap_Cmd_ExecuteText(cbufExec_t exec, const char *text)
 {
-    syscall(SG_ERROR, fmt);
+    vmi.trap_Cmd_ExecuteText(exec, text);
 }
 
-void trap_Cvar_Update(vmCvar_t *vmCvar)
+void trap_RE_ClearScene(void)
 {
-    syscall(SG_CVAR_UPDATE, vmCvar);
+    vmi.trap_RE_ClearScene();
 }
 
-void trap_Cvar_Set(const char *var_name, const char *value)
+void trap_GetClipboardData( char *buf, uint32_t bufsize )
 {
-    syscall(SG_CVAR_SET, var_name, value);
+    vmi.trap_GetClipboardData(buf, bufsize);
 }
 
-void trap_Cvar_VariableStringBuffer(const char *var_name, char *buffer, unsigned int bufLen)
+uint32_t trap_Key_GetCatcher(void)
 {
-    syscall(SG_CVAR_VARIABLESTRINBUFFER, var_name, buffer, bufLen);
+    return vmi.trap_Key_GetCatcher();
 }
 
-void trap_Cvar_Register(vmCvar_t *vmCvar, const char *varName, const char *defaultValue, unsigned int flags)
+void trap_Key_SetCatcher(uint32_t catcher)
 {
-    syscall(SG_CVAR_REGISTER, vmCvar, varName, defaultValue, flags);
+    vmi.trap_Key_SetCatcher(catcher);
 }
 
-int trap_FS_FOpenWrite(const char *npath, file_t *f)
+uint32_t trap_Key_GetKey(const char *binding)
 {
-    return syscall(SG_FS_FOPENWRITE, npath, f);
-}
-
-int trap_FS_FOpenRead(const char *npath, file_t *f)
-{
-    return syscall(SG_FS_FOPENREAD, npath, f);
-}
-
-unsigned int trap_FS_Write(const void *buffer, unsigned int len, file_t f)
-{
-    return syscall(SG_FS_WRITE, buffer, len, f);
-}
-
-unsigned int trap_FS_Read(void *buffer, unsigned int len, file_t f)
-{
-    return syscall(SG_FS_READ, buffer, len, f);
-}
-
-void trap_FS_WriteFile(const void *buffer, unsigned int len, file_t f)
-{
-    syscall(SG_FS_WRITEFILE, buffer, len, f);
-}
-
-void trap_FS_FClose(file_t f)
-{
-    syscall(SG_FS_FCLOSE, f);
-}
-
-int trap_Key_GetCatcher(void)
-{
-    return syscall(SG_KEY_GETCATCHER);
-}
-
-void trap_Key_SetCatcher(int catcher)
-{
-    syscall(SG_KEY_SETCATCHER, catcher);
-}
-
-int trap_Key_GetKey(const char *binding)
-{
-    return syscall(SG_KEY_GETKEY, binding);
+    return vmi.trap_Key_GetKey(binding);
 }
 
 qboolean trap_Key_IsDown(uint32_t keynum)
 {
-    return syscall(SG_KEY_ISDOWN, keynum);
+    return vmi.trap_Key_IsDown(keynum);
 }
 
-int trap_MemoryRemaining(void)
+void trap_Key_ClearStates(void)
 {
-    return syscall(SG_MEMORY_REMAINING);
+    vmi.trap_Key_ClearStates();
 }
 
-void trap_RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts )
+qboolean trap_Key_AnyDown(void)
 {
-    syscall(SG_RE_ADDPOLYTOSCENE, hShader, verts, numVerts);
+    return vmi.trap_Key_AnyDown();
 }
 
-void trap_RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys )
+void trap_Print(const char *str)
 {
-    syscall(SG_RE_ADDPOLYLISTTOSCENE, polys, numPolys);
+    vmi.trap_Print(str);
+}
+
+void trap_Error(const char *str)
+{
+    vmi.trap_Error(str);
 }
 
 void trap_RE_SetColor(const float *rgba)
 {
-    syscall(SG_RE_SETCOLOR, rgba);
+    vmi.trap_RE_SetColor(rgba);
 }
 
-void trap_Snd_PlaySfx(sfxHandle_t sfx)
+void trap_RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts )
 {
-    syscall(SG_SND_PLAYSFX, sfx);
+    vmi.trap_RE_AddPolyToScene(hShader, verts, numVerts);
+}
+
+void trap_RE_AddEntityToScene( const renderEntityRef_t *ent )
+{
+    vmi.trap_RE_AddEntityToScene(ent);
+}
+
+void trap_RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys )
+{
+    vmi.trap_RE_AddPolyListToScene(polys, numPolys);
+}
+
+void trap_RE_DrawImage( float x, float y, float w, float h, float u1, float v1, float u2, float v2, nhandle_t hShader )
+{
+    vmi.trap_RE_DrawImage(x, y, w, h, u1, v1, u2, v2, hShader);
+}
+
+void trap_RE_RenderScene( const renderSceneRef_t *fd )
+{
+    vmi.trap_RE_RenderScene(fd);
+}
+
+nhandle_t trap_RE_RegisterShader(const char *name)
+{
+    return vmi.trap_RE_RegisterShader(name);
 }
 
 sfxHandle_t trap_Snd_RegisterSfx(const char *npath)
 {
-    return syscall(SG_SND_REGISTERSFX, npath);
+    return vmi.trap_Snd_RegisterSfx(npath);
+}
+
+void trap_Snd_PlaySfx(sfxHandle_t sfx)
+{
+    vmi.trap_Snd_PlaySfx(sfx);
 }
 
 void trap_Snd_StopSfx(sfxHandle_t sfx)
 {
-    syscall(SG_SND_STOPSFX, sfx);
+    vmi.trap_Snd_StopSfx(sfx);
 }
 
-nhandle_t trap_RE_RegisterShader(const char *npath)
+void trap_UpdateScreen(void)
 {
-    return syscall(SG_RE_REGISTERSHADER, npath);
+    vmi.trap_UpdateScreen();
 }
 
-void trap_GetGameState(gamestate_t *state)
+void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, uint32_t flags )
 {
-    syscall(SG_GETGAMESTATE, state);
+    vmi.trap_Cvar_Register(vmCvar, varName, defaultValue, flags);
+}
+
+void trap_Cvar_Update( vmCvar_t *vmCvar )
+{
+    vmi.trap_Cvar_Update(vmCvar);
+}
+
+void trap_Cvar_Set( const char *var_name, const char *value )
+{
+    vmi.trap_Cvar_Set(var_name, value);
+}
+
+void trap_Cvar_VariableStringBuffer( const char *var_name, char *buffer, uint32_t bufsize )
+{
+    vmi.trap_Cvar_VariableStringBuffer(var_name, buffer, bufsize);
+}
+
+uint32_t trap_Argc( void )
+{
+    return vmi.trap_Argc();
+}
+
+void trap_Argv( uint32_t n, char *buffer, uint32_t bufferLength )
+{
+    vmi.trap_Argv(n, buffer, bufferLength);
+}
+
+void trap_Args( char *buffer, uint32_t bufferLength )
+{
+    return; // not meant to called
+}
+
+file_t trap_FS_FOpenWrite( const char *path, file_t *f )
+{
+    return vmi.trap_FS_FOpenWrite(path, f, H_SGAME);
+}
+
+file_t trap_FS_FOpenRead( const char *path, file_t *f )
+{
+    return vmi.trap_FS_FOpenRead(path, f, H_SGAME);
+}
+
+void trap_FS_FClose(file_t f)
+{
+    vmi.trap_FS_FClose(f);
+}
+
+uint32_t trap_FS_Read( void *buffer, uint32_t len, file_t f )
+{
+    return vmi.trap_FS_Read(buffer, len, f, H_SGAME);
+}
+
+uint32_t trap_FS_Write( const void *buffer, uint32_t len, file_t f)
+{
+    return vmi.trap_FS_Write(buffer, len, f, H_SGAME);
+}
+
+void trap_FS_WriteFile( const void *buffer, uint32_t len, file_t f )
+{
+    vmi.trap_FS_WriteFile(buffer, len, f, H_SGAME);
+}
+
+uint64_t trap_FS_FOpenFileRead( const char *path, file_t *f )
+{
+    return vmi.trap_FS_FOpenFileRead(path, f, H_SGAME);
+}
+
+fileOffset_t trap_FS_FileSeek( file_t f, fileOffset_t offset, uint32_t whence )
+{
+    return vmi.trap_FS_FileSeek(f, offset, whence, H_SGAME);
+}
+
+uint64_t trap_FS_FOpenFileWrite( const char *path, file_t *f )
+{
+    return vmi.trap_FS_FOpenFileWrite(path, f, H_SGAME);
+}
+
+fileOffset_t trap_FS_FileTell( file_t f )
+{
+    return vmi.trap_FS_FileTell(f);
 }

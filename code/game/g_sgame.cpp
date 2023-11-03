@@ -150,24 +150,19 @@ static intptr_t G_SGameSystemCalls(intptr_t *args)
     return -1;
 }
 
-static intptr_t GDR_DECL G_SGameDllSyscall(intptr_t arg, ...)
+static intptr_t GDR_DECL G_SGameDllSyscall(intptr_t arg, uint32_t numArgs, ...)
 {
-#if !defined(GDRi386) || defined(__clang__)
-    intptr_t args[10];
     va_list argptr;
-
+    intptr_t args[MAX_VMSYSCALL_ARGS + 1];
     args[0] = arg;
 
-    va_start(argptr, arg);
-    for (uint32_t i = 0; i < arraylen(args); i++) {
+    va_start(argptr, numArgs);
+    for (uint32_t i = 1; i < numArgs; i++) {
         args[i] = va_arg(argptr, intptr_t);
     }
     va_end(argptr);
 
     return G_SGameSystemCalls(args);
-#else
-    return G_SGameSystemCalls(&arg);
-#endif
 }
 
 void G_ShutdownSGame(void)

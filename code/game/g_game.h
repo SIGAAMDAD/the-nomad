@@ -6,7 +6,6 @@
 #include "../engine/n_shared.h"
 #include "../engine/n_common.h"
 #include "../sgame/sg_public.h"
-#include "../ui/ui_public.h"
 #include "../rendercommon/r_public.h"
 
 #ifndef O_BINARY
@@ -31,6 +30,72 @@ enum
     OCC_THANKSGIVING
 };
 
+#if !defined(Q3_VM) || (defined(UI_HARD_LINKED) || defined(SGAME_HARD_LINKED))
+typedef struct vmRefImport_s vmRefImport_t;
+struct vmRefImport_s
+{
+    void (*trap_Cmd_ExecuteText)( cbufExec_t exec, const char *text );
+    void (*trap_UpdateScreen)( void );
+    void (*trap_GetClipboardData)( char *buf, uint32_t bufsize );
+    void (*trap_GetGPUConfig)( gpuConfig_t *config );
+
+    uint32_t (*trap_Key_GetCatcher)( void );
+    void (*trap_Key_SetCatcher)( uint32_t catcher );
+    uint32_t (*trap_Key_GetKey)( const char *binding );
+    qboolean (*trap_Key_IsDown)( uint32_t keynum );
+    void (*trap_Key_ClearStates)( void );
+    qboolean (*trap_Key_AnyDown)( void );
+
+    void (*trap_Print)( const char *str );
+    void (*trap_Error)( const char *str );
+
+    file_t (*trap_FS_FOpenWrite)( const char *path, file_t *f, handleOwner_t owner );
+    file_t (*trap_FS_FOpenRead)( const char *path, file_t *f, handleOwner_t owner );
+    void (*trap_FS_FClose)( file_t f );
+    uint32_t (*trap_FS_Read)( void *buffer, uint32_t len, file_t f, handleOwner_t owner );
+    uint32_t (*trap_FS_Write)( const void *buffer, uint32_t len, file_t f, handleOwner_t owner );
+    void (*trap_FS_WriteFile)( const void *buffer, uint32_t len, file_t f, handleOwner_t owner );
+    void (*trap_FS_CreateTmp)( char *name, const char *ext, file_t *f, handleOwner_t owner );
+    uint64_t (*trap_FS_FOpenFileRead)( const char *path, file_t *f, handleOwner_t owner );
+    fileOffset_t (*trap_FS_FileSeek)( file_t f, fileOffset_t offset, uint32_t whence, handleOwner_t owner );
+    uint64_t (*trap_FS_FOpenFileWrite)( const char *path, file_t *f, handleOwner_t owner );
+    fileOffset_t (*trap_FS_FileTell)( file_t f );
+    uint64_t (*trap_FS_FileLength)( file_t f );
+
+    void (*trap_RE_ClearScene)( void );
+    void (*trap_RE_SetColor)( const float *rgba );
+    void (*trap_RE_AddPolyToScene)( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
+    void (*trap_RE_AddPolyListToScene)( const poly_t *polys, uint32_t numPolys );
+    void (*trap_RE_AddEntityToScene)( const renderEntityRef_t *ent );
+    void (*trap_RE_DrawImage)( float x, float y, float w, float h, float u1, float v1, float u2, float v2, nhandle_t hShader );
+    nhandle_t (*trap_RE_RegisterShader)( const char *name );
+    void (*trap_RE_RenderScene)( const renderSceneRef_t *fd );
+
+    sfxHandle_t (*trap_Snd_RegisterSfx)( const char *npath );
+    void (*trap_Snd_PlaySfx)( sfxHandle_t sfx );
+    void (*trap_Snd_StopSfx)( sfxHandle_t sfx );
+
+    void (*trap_Cvar_Register)( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, uint32_t flags );
+    void (*trap_Cvar_Update)( vmCvar_t *vmCvar );
+    void (*trap_Cvar_Set)( const char *var_name, const char *value );
+    void (*trap_Cvar_VariableStringBuffer)( const char *var_name, char *buffer, uint32_t bufsize );
+    uint32_t (*trap_Argc)( void );
+    void (*trap_Argv)( uint32_t n, char *buffer, uint32_t bufferLength );
+    void (*trap_Args)( char *buffer, uint32_t bufferLength );
+};
+#endif
+
+#if 0
+class CGame
+{
+public:
+    CGame(void);
+    ~CGame();
+
+    void Init(void);
+};
+#endif
+
 #ifndef Q3_VM
 
 #include "../engine/vm_local.h"
@@ -49,7 +114,7 @@ typedef struct {
     uint64_t framecount;
     uint64_t realtime;
 
-    uiMenu_t menuIndex;
+//    uiMenu_t menuIndex;
     nhandle_t consoleShader;
     nhandle_t whiteShader;
     nhandle_t charSetShader;
@@ -69,6 +134,7 @@ extern gameInfo_t gi;
 // logging parameters
 #define PRINT_INFO 0
 #define PRINT_DEVELOPER 1
+#define PRINT_WARNING 2
 
 extern uint32_t g_console_field_width;
 extern uint32_t bigchar_width;
@@ -173,6 +239,7 @@ qboolean Key_AnyDown(void);
 //
 void G_ShutdownUI(void);
 void G_InitUI(void);
+void G_DrawUI(void);
 
 //
 // g_sgame.cpp

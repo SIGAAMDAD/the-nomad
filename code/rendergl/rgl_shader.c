@@ -7,6 +7,7 @@ static const char *r_extensionOffset;
 static uint64_t r_extendedShader;
 
 static shader_t shader;
+static shaderStage_t stages[MAX_SHADER_STAGES];
 
 static shader_t *hashTable[MAX_RENDER_SHADERS];
 
@@ -19,14 +20,20 @@ static void ParseSort(const char **text)
 
 	tok = COM_ParseExt(text, qfalse);
 	if (tok[0] == 0) {
-		ri.Printf(PRINT_INFO, COLOR_YELLOW "WARNING: missing sort in shader '%s'\n", shader.name);
+		ri.Printf(PRINT_WARNING, "missing sort in shader '%s'\n", shader.name);
 		return;
 	}
+
+	shader.sort = SS_BAD;
 
 	if (!N_stricmp(tok, "opaque")) {
 		shader.sort = SS_OPAQUE;
 	} else if (!N_stricmp(tok, "decal")) {
 		shader.sort = SS_DECAL;
+	} else if (!N_stricmp(tok, "blend")) {
+		shader.sort = SS_BLEND;
+	} else {
+		ri.Printf(PRINT_WARNING, "invalid shaderSort name '%s' in shader '%s'\n", tok, shader.name);
 	}
 }
 
@@ -50,7 +57,7 @@ static unsigned NameToAFunc( const char *funcname )
 		return GLS_ATEST_GE_80;
 	}
 
-	ri.Printf( PRINT_INFO, COLOR_YELLOW "WARNING: invalid alphaFunc name '%s' in shader '%s'\n", funcname, shader.name );
+	ri.Printf( PRINT_WARNING, "invalid alphaFunc name '%s' in shader '%s'\n", funcname, shader.name );
 	return 0;
 }
 
@@ -95,7 +102,7 @@ static int NameToSrcBlendMode( const char *name )
 		return GLS_SRCBLEND_ALPHA_SATURATE;
 	}
 
-	ri.Printf( PRINT_INFO, COLOR_YELLOW "WARNING: unknown blend mode '%s' in shader '%s', substituting GL_ONE\n", name, shader.name );
+	ri.Printf( PRINT_WARNING, "unknown blend mode '%s' in shader '%s', substituting GL_ONE\n", name, shader.name );
 	return GLS_SRCBLEND_ONE;
 }
 
@@ -137,7 +144,7 @@ static int NameToDstBlendMode( const char *name )
 		return GLS_DSTBLEND_ONE_MINUS_SRC_COLOR;
 	}
 
-	ri.Printf( PRINT_INFO, COLOR_YELLOW "WARNING: unknown blend mode '%s' in shader '%s', substituting GL_ONE\n", name, shader.name );
+	ri.Printf( PRINT_WARNING, "unknown blend mode '%s' in shader '%s', substituting GL_ONE\n", name, shader.name );
 	return GLS_DSTBLEND_ONE;
 }
 
@@ -153,14 +160,14 @@ static qboolean ParseVector( const char **text, int count, float *v ) {
 	// FIXME: spaces are currently required after parens, should change parseext...
 	token = COM_ParseExt( text, qfalse );
 	if ( strcmp( token, "(" ) ) {
-		ri.Printf( PRINT_INFO, COLOR_YELLOW "WARNING: missing parenthesis in shader '%s'\n", shader.name );
+		ri.Printf( PRINT_WARNING, "missing parenthesis in shader '%s'\n", shader.name );
 		return qfalse;
 	}
 
 	for ( i = 0 ; i < count ; i++ ) {
 		token = COM_ParseExt( text, qfalse );
 		if ( !token[0] ) {
-			ri.Printf( PRINT_INFO, COLOR_YELLOW "WARNING: missing vector element in shader '%s'\n", shader.name );
+			ri.Printf( PRINT_WARNING, "missing vector element in shader '%s'\n", shader.name );
 			return qfalse;
 		}
 		v[i] = N_atof( token );
@@ -168,11 +175,301 @@ static qboolean ParseVector( const char **text, int count, float *v ) {
 
 	token = COM_ParseExt( text, qfalse );
 	if ( strcmp( token, ")" ) ) {
-		ri.Printf( PRINT_INFO, COLOR_YELLOW "WARNING: missing parenthesis in shader '%s'\n", shader.name );
+		ri.Printf( PRINT_WARNING, "missing parenthesis in shader '%s'\n", shader.name );
 		return qfalse;
 	}
 
 	return qtrue;
+}
+
+static qboolean ParseStage(shaderStage_t *stage, const char **text)
+{
+    const char *tok;
+    uint32_t depthMaskBits = GLS_DEPTHMASK_TRUE, blendSrcBits = 0, blendDstBits = 0, atestBits = 0, depthFuncBits = 0;
+	qboolean depthMaskExplicit = qfalse;
+
+	stage->active = qtrue;
+
+    while (1) {
+        tok = COM_ParseExt(text, qtrue);
+        if (!tok[0]) {
+            ri.Printf(PRINT_WARNING, "no matching '}' found\n");
+            return qfalse;
+        }
+
+        if (tok[0] == '}') {
+            break;
+        }
+        //
+        // map <name>
+        //
+        else if (!N_stricmp(tok, "map")) {
+            tok = COM_ParseExt(text, qfalse);
+			if (!tok[0]) {
+				ri.Printf(PRINT_WARNING, "missing parameter for 'map' keyword in shader '%s'\n", shader.name);
+				return qfalse;
+			}
+
+			if (!N_stricmp(tok, "$whiteimage")) {
+				stage->image = rg.whiteImage;
+				continue;
+			}
+			else if (!N_stricmp(tok, "$lightmap")) {
+				stage->isLightmap = qtrue;
+				stage->image = rg.whiteImage;
+			}
+			else {
+				imgType_t type = IMGTYPE_COLORALPHA;
+				imgFlags_t flags = IMGFLAG_NONE;
+                
+                stage->image = R_FindImageFile( tok, type, flags );
+
+				if ( !stage->image ) {
+					ri.Printf( PRINT_WARNING, "R_FindImageFile could not find '%s' in shader '%s'\n", tok, shader.name );
+					return qfalse;
+				}
+			}
+        }
+        //
+		// alphafunc <func>
+		//
+		else if ( !N_stricmp( tok, "alphaFunc" ) ) {
+			tok = COM_ParseExt( text, qfalse );
+			if ( !tok[0] ) {
+				ri.Printf( PRINT_WARNING, "missing parameter for 'alphaFunc' keyword in shader '%s'\n", shader.name );
+				return qfalse;
+			}
+
+			atestBits = NameToAFunc( tok );
+		}
+		//
+		// depthFunc <func>
+		//
+		else if ( !N_stricmp( tok, "depthfunc" ) ) {
+			tok = COM_ParseExt( text, qfalse );
+
+			if ( !tok[0] ) {
+				ri.Printf( PRINT_WARNING, "missing parameter for 'depthfunc' keyword in shader '%s'\n", shader.name );
+				return qfalse;
+			}
+
+			if ( !N_stricmp( tok, "lequal" ) ) {
+				depthFuncBits = 0;
+			}
+			else if ( !N_stricmp( tok, "equal" ) ) {
+				depthFuncBits = GLS_DEPTHFUNC_EQUAL;
+			}
+			else {
+				ri.Printf( PRINT_WARNING, "unknown depthfunc '%s' in shader '%s'\n", tok, shader.name );
+				continue;
+			}
+		}
+		//
+		// blendfunc <srcFactor> <dstFactor>
+		// or blendfunc <add|filter|blend>
+		//
+		else if ( !N_stricmp( tok, "blendfunc" ) ) {
+			tok = COM_ParseExt( text, qfalse );
+			if ( tok[0] == 0 ) {
+				ri.Printf( PRINT_WARNING, "missing parm for blendFunc in shader '%s'\n", shader.name );
+				continue;
+			}
+			// check for "simple" blends first
+			if ( !N_stricmp( tok, "add" ) ) {
+				blendSrcBits = GLS_SRCBLEND_ONE;
+				blendDstBits = GLS_DSTBLEND_ONE;
+			} else if ( !N_stricmp( tok, "filter" ) ) {
+				blendSrcBits = GLS_SRCBLEND_DST_COLOR;
+				blendDstBits = GLS_DSTBLEND_ZERO;
+			} else if ( !N_stricmp( tok, "blend" ) ) {
+				blendSrcBits = GLS_SRCBLEND_SRC_ALPHA;
+				blendDstBits = GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA;
+			} else {
+				// complex double blends
+				blendSrcBits = NameToSrcBlendMode( tok );
+
+				tok = COM_ParseExt( text, qfalse );
+				if ( tok[0] == 0 ) {
+					ri.Printf( PRINT_WARNING, "missing parm for blendFunc in shader '%s'\n", shader.name );
+					continue;
+				}
+				blendDstBits = NameToDstBlendMode( tok );
+			}
+
+			// clear depth mask for blended surfaces
+			if ( !depthMaskExplicit ) {
+				depthMaskBits = 0;
+			}
+		}
+		//
+		// rgbGen
+		//
+		else if ( !N_stricmp( tok, "rgbGen" ) )
+		{
+			tok = COM_ParseExt( text, qfalse );
+			if ( tok[0] == 0 )
+			{
+				ri.Printf( PRINT_WARNING, "missing parameters for rgbGen in shader '%s'\n", shader.name );
+				continue;
+			}
+			if ( !N_stricmp( tok, "const" ) )
+			{
+				vec3_t	color;
+
+				VectorClear( color );
+
+				ParseVector( text, 3, color );
+				stage->constantColor[0] = 255 * color[0];
+				stage->constantColor[1] = 255 * color[1];
+				stage->constantColor[2] = 255 * color[2];
+
+				stage->rgbGen = CGEN_CONST;
+			}
+			else if ( !N_stricmp( tok, "identity" ) )
+			{
+				stage->rgbGen = CGEN_IDENTITY;
+			}
+			else if ( !N_stricmp( tok, "identityLighting" ) )
+			{
+				stage->rgbGen = CGEN_IDENTITY_LIGHTING;
+			}
+			else if ( !N_stricmp( tok, "entity" ) )
+			{
+				stage->rgbGen = CGEN_ENTITY;
+			}
+			else if ( !N_stricmp( tok, "oneMinusEntity" ) )
+			{
+				stage->rgbGen = CGEN_ONE_MINUS_ENTITY;
+			}
+			else if ( !N_stricmp( tok, "vertex" ) )
+			{
+				stage->rgbGen = CGEN_VERTEX;
+				if ( stage->alphaGen == 0 ) {
+					stage->alphaGen = AGEN_VERTEX;
+				}
+			}
+			else if ( !N_stricmp( tok, "exactVertex" ) )
+			{
+				stage->rgbGen = CGEN_EXACT_VERTEX;
+			}
+			else if ( !N_stricmp( tok, "vertexLit" ) )
+			{
+				stage->rgbGen = CGEN_VERTEX_LIT;
+				if ( stage->alphaGen == 0 ) {
+					stage->alphaGen = AGEN_VERTEX;
+				}
+			}
+			else if ( !N_stricmp( tok, "exactVertexLit" ) )
+			{
+				stage->rgbGen = CGEN_EXACT_VERTEX_LIT;
+			}
+			else if ( !N_stricmp( tok, "lightingDiffuse" ) )
+			{
+				stage->rgbGen = CGEN_LIGHTING_DIFFUSE;
+			}
+			else if ( !N_stricmp( tok, "oneMinusVertex" ) )
+			{
+				stage->rgbGen = CGEN_ONE_MINUS_VERTEX;
+			}
+			else
+			{
+				ri.Printf( PRINT_WARNING, "unknown rgbGen parameter '%s' in shader '%s'\n", tok, shader.name );
+				continue;
+			}
+		}
+        //
+		// alphaGen
+		//
+		else if ( !N_stricmp( tok, "alphaGen" ) )
+		{
+			tok = COM_ParseExt( text, qfalse );
+			if ( tok[0] == 0 )
+			{
+				ri.Printf( PRINT_WARNING, "missing parameters for alphaGen in shader '%s'\n", shader.name );
+				continue;
+			}
+			if ( !N_stricmp( tok, "const" ) )
+			{
+				tok = COM_ParseExt( text, qfalse );
+				stage->constantColor[3] = 255 * N_atof( tok );
+				stage->alphaGen = AGEN_CONST;
+			}
+			else if ( !N_stricmp( tok, "identity" ) )
+			{
+				stage->alphaGen = AGEN_IDENTITY;
+			}
+			else if ( !N_stricmp( tok, "entity" ) )
+			{
+				stage->alphaGen = AGEN_ENTITY;
+			}
+			else if ( !N_stricmp( tok, "oneMinusEntity" ) )
+			{
+				stage->alphaGen = AGEN_ONE_MINUS_ENTITY;
+			}
+			else if ( !N_stricmp( tok, "vertex" ) )
+			{
+				stage->alphaGen = AGEN_VERTEX;
+			}
+			else if ( !N_stricmp( tok, "lightingSpecular" ) )
+			{
+				stage->alphaGen = AGEN_LIGHTING_SPECULAR;
+			}
+			else if ( !N_stricmp( tok, "oneMinusVertex" ) )
+			{
+				stage->alphaGen = AGEN_ONE_MINUS_VERTEX;
+			}
+			else
+			{
+				ri.Printf( PRINT_WARNING, "unknown alphaGen parameter '%s' in shader '%s'\n", tok, shader.name );
+				continue;
+			}
+		}
+        else {
+            ri.Printf( PRINT_WARNING, "unrecognized parameter in shader '%s' stage %i: '%s'\n", shader.name, (int)(stage - stages), tok);
+        }
+    }
+
+    //
+	// if cgen isn't explicitly specified, use either identity or identitylighting
+	//
+	if ( stage->rgbGen == CGEN_BAD ) {
+		if ( blendSrcBits == 0 ||
+			blendSrcBits == GLS_SRCBLEND_ONE ||
+			blendSrcBits == GLS_SRCBLEND_SRC_ALPHA ) {
+			stage->rgbGen = CGEN_IDENTITY_LIGHTING;
+		} else {
+			stage->rgbGen = CGEN_IDENTITY;
+		}
+	}
+
+
+	//
+	// implicitly assume that a GL_ONE GL_ZERO blend mask disables blending
+	//
+	if ( ( blendSrcBits == GLS_SRCBLEND_ONE ) &&
+		 ( blendDstBits == GLS_DSTBLEND_ZERO ) )
+	{
+		blendDstBits = blendSrcBits = 0;
+		depthMaskBits = GLS_DEPTHMASK_TRUE;
+	}
+
+	// decide which agens we can skip
+	if ( stage->alphaGen == AGEN_IDENTITY ) {
+		if ( stage->rgbGen == CGEN_IDENTITY
+			|| stage->rgbGen == CGEN_LIGHTING_DIFFUSE ) {
+			stage->alphaGen = AGEN_SKIP;
+		}
+	}
+
+	//
+	// compute state bits
+	//
+	stage->stateBits = depthMaskBits |
+		                blendSrcBits | blendDstBits |
+		                atestBits |
+		                depthFuncBits;
+
+    return qtrue;
 }
 
 static qboolean ParseShader( const char **text )
@@ -192,7 +489,7 @@ static qboolean ParseShader( const char **text )
 
 	tok = COM_ParseExt(text, qtrue);
 	if (tok[0] != '{') {
-		ri.Printf(PRINT_INFO, COLOR_YELLOW "WARNING: expecting '{', found '%s' instead in shader '%s'\n", tok, shader.name);
+		ri.Printf(PRINT_WARNING, "expecting '{', found '%s' instead in shader '%s'\n", tok, shader.name);
 		return qfalse;
 	}
 
@@ -200,7 +497,7 @@ static qboolean ParseShader( const char **text )
         tok = COM_ParseComplex(text, qtrue);
 
         if (!tok[0]) {
-            ri.Printf(PRINT_INFO, COLOR_YELLOW "WARNING: no concluding '}' in shader %s\n", shader.name);
+            ri.Printf(PRINT_WARNING, "no concluding '}' in shader %s\n", shader.name);
             return qfalse;
         }
 
@@ -208,182 +505,27 @@ static qboolean ParseShader( const char **text )
         if (tok[0] == '}') {
             break;
         }
-        //
-        // map <name>
-        //
-        else if (!N_stricmp(tok, "map")) {
-            tok = COM_ParseExt(text, qfalse);
-			if (!tok[0]) {
-				ri.Printf(PRINT_INFO, COLOR_YELLOW "WARNING: missing parameter for 'map' keyword in shader '%s'\n", shader.name);
-				return qfalse;
-			}
-
-			if (!N_stricmp(tok, "$whiteimage")) {
-				shader.image = rg.whiteImage;
-				continue;
-			}
-			else if (!N_stricmp(tok, "$lightmap")) {
-				shader.isLightmap = qtrue;
-				shader.image = rg.whiteImage;
-			}
-			else {
-				imgType_t type = IMGTYPE_COLORALPHA;
-				imgFlags_t flags = IMGFLAG_NONE;
-                
-                shader.image = R_FindImageFile( tok, type, flags );
-
-				if ( !shader.image ) {
-					ri.Printf( PRINT_INFO, COLOR_YELLOW "WARNING: R_FindImageFile could not find '%s' in shader '%s'\n", tok, shader.name );
-					return qfalse;
-				}
-			}
+        // stage definition
+        if (tok[0] == '{') {
+            if (s >= MAX_SHADER_STAGES) {
+                ri.Printf(PRINT_WARNING, "too many stages in shader %s (max is %i)\n", shader.name, MAX_SHADER_STAGES);
+                return qfalse;
+            }
+            if (!ParseStage(&stages[s], text)) {
+                return qfalse;
+            }
+            stages[s].active = qtrue;
+            s++;
+            
+            continue;
         }
-        //
-		// alphafunc <func>
-		//
-		else if ( !N_stricmp( tok, "alphaFunc" ) ) {
-			tok = COM_ParseExt( text, qfalse );
-			if ( !tok[0] ) {
-				ri.Printf( PRINT_INFO, COLOR_YELLOW "WARNING: missing parameter for 'alphaFunc' keyword in shader '%s'\n", shader.name );
-				return qfalse;
-			}
-
-			atestBits = NameToAFunc( tok );
+		// disable picmipping
+		else if ( !N_stricmp( tok, "nopicmip" )) {
+			continue;
 		}
-		//
-		// depthFunc <func>
-		//
-		else if ( !N_stricmp( tok, "depthfunc" ) ) {
-			tok = COM_ParseExt( text, qfalse );
-
-			if ( !tok[0] ) {
-				ri.Printf( PRINT_INFO, COLOR_YELLOW "WARNING: missing parameter for 'depthfunc' keyword in shader '%s'\n", shader.name );
-				return qfalse;
-			}
-
-			if ( !N_stricmp( tok, "lequal" ) ) {
-				depthFuncBits = 0;
-			}
-			else if ( !N_stricmp( tok, "equal" ) ) {
-				depthFuncBits = GLS_DEPTHFUNC_EQUAL;
-			}
-			else {
-				ri.Printf( PRINT_INFO, COLOR_YELLOW "WARNING: unknown depthfunc '%s' in shader '%s'\n", tok, shader.name );
-				continue;
-			}
-		}
-		//
-		// blendfunc <srcFactor> <dstFactor>
-		// or blendfunc <add|filter|blend>
-		//
-		else if ( !N_stricmp( tok, "blendfunc" ) ) {
-			tok = COM_ParseExt( text, qfalse );
-			if ( tok[0] == 0 ) {
-				ri.Printf( PRINT_INFO, COLOR_YELLOW "WARNING: missing parm for blendFunc in shader '%s'\n", shader.name );
-				continue;
-			}
-			// check for "simple" blends first
-			if ( !N_stricmp( tok, "add" ) ) {
-				blendSrcBits = GLS_SRCBLEND_ONE;
-				blendDstBits = GLS_DSTBLEND_ONE;
-			} else if ( !N_stricmp( tok, "filter" ) ) {
-				blendSrcBits = GLS_SRCBLEND_DST_COLOR;
-				blendDstBits = GLS_DSTBLEND_ZERO;
-			} else if ( !N_stricmp( tok, "blend" ) ) {
-				blendSrcBits = GLS_SRCBLEND_SRC_ALPHA;
-				blendDstBits = GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA;
-			} else {
-				// complex double blends
-				blendSrcBits = NameToSrcBlendMode( tok );
-
-				tok = COM_ParseExt( text, qfalse );
-				if ( tok[0] == 0 ) {
-					ri.Printf( PRINT_INFO, COLOR_YELLOW "WARNING: missing parm for blendFunc in shader '%s'\n", shader.name );
-					continue;
-				}
-				blendDstBits = NameToDstBlendMode( tok );
-			}
-
-			// clear depth mask for blended surfaces
-			if ( !depthMaskExplicit ) {
-				depthMaskBits = 0;
-			}
-		}
-		//
-		// rgbGen
-		//
-		else if ( !N_stricmp( tok, "rgbGen" ) )
-		{
-			tok = COM_ParseExt( text, qfalse );
-			if ( tok[0] == 0 )
-			{
-				ri.Printf( PRINT_INFO, COLOR_YELLOW "WARNING: missing parameters for rgbGen in shader '%s'\n", shader.name );
-				continue;
-			}
-			if ( !N_stricmp( tok, "const" ) )
-			{
-				vec3_t	color;
-
-				VectorClear( color );
-
-				ParseVector( text, 3, color );
-				shader.constantColor[0] = 255 * color[0];
-				shader.constantColor[1] = 255 * color[1];
-				shader.constantColor[2] = 255 * color[2];
-
-				shader.rgbGen = CGEN_CONST;
-			}
-			else if ( !N_stricmp( tok, "identity" ) )
-			{
-				shader.rgbGen = CGEN_IDENTITY;
-			}
-			else if ( !N_stricmp( tok, "identityLighting" ) )
-			{
-				shader.rgbGen = CGEN_IDENTITY_LIGHTING;
-			}
-			else if ( !N_stricmp( tok, "entity" ) )
-			{
-				shader.rgbGen = CGEN_ENTITY;
-			}
-			else if ( !N_stricmp( tok, "oneMinusEntity" ) )
-			{
-				shader.rgbGen = CGEN_ONE_MINUS_ENTITY;
-			}
-			else if ( !N_stricmp( tok, "vertex" ) )
-			{
-				shader.rgbGen = CGEN_VERTEX;
-				if ( shader.alphaGen == 0 ) {
-					shader.alphaGen = AGEN_VERTEX;
-				}
-			}
-			else if ( !N_stricmp( tok, "exactVertex" ) )
-			{
-				shader.rgbGen = CGEN_EXACT_VERTEX;
-			}
-			else if ( !N_stricmp( tok, "vertexLit" ) )
-			{
-				shader.rgbGen = CGEN_VERTEX_LIT;
-				if ( shader.alphaGen == 0 ) {
-					shader.alphaGen = AGEN_VERTEX;
-				}
-			}
-			else if ( !N_stricmp( tok, "exactVertexLit" ) )
-			{
-				shader.rgbGen = CGEN_EXACT_VERTEX_LIT;
-			}
-			else if ( !N_stricmp( tok, "lightingDiffuse" ) )
-			{
-				shader.rgbGen = CGEN_LIGHTING_DIFFUSE;
-			}
-			else if ( !N_stricmp( tok, "oneMinusVertex" ) )
-			{
-				shader.rgbGen = CGEN_ONE_MINUS_VERTEX;
-			}
-			else
-			{
-				ri.Printf( PRINT_INFO, COLOR_YELLOW "WARNING: unknown rgbGen parameter '%s' in shader '%s'\n", tok, shader.name );
-				continue;
-			}
+		// disable mipmapping
+		else if ( !N_stricmp( tok, "nomipmaps")) {
+			continue;
 		}
         //
         // shaderSort <sort>
@@ -392,107 +534,40 @@ static qboolean ParseShader( const char **text )
         {
             tok = COM_ParseExt( text, qfalse );
             if ( tok[0] == 0 ) {
-                ri.Printf( PRINT_INFO, COLOR_YELLOW "WARNING: missing parameter for shaderSort in shader '%s'\n", shader.name);
+                ri.Printf( PRINT_WARNING, "missing parameter for shaderSort in shader '%s'\n", shader.name);
                 continue;
             }
             ParseSort( text );
         }
-		//
-		// alphaGen
-		//
-		else if ( !N_stricmp( tok, "alphaGen" ) )
-		{
-			tok = COM_ParseExt( text, qfalse );
-			if ( tok[0] == 0 )
-			{
-				ri.Printf( PRINT_INFO, COLOR_YELLOW "WARNING: missing parameters for alphaGen in shader '%s'\n", shader.name );
-				continue;
-			}
-			if ( !N_stricmp( tok, "const" ) )
-			{
-				tok = COM_ParseExt( text, qfalse );
-				shader.constantColor[3] = 255 * N_atof( tok );
-				shader.alphaGen = AGEN_CONST;
-			}
-			else if ( !N_stricmp( tok, "identity" ) )
-			{
-				shader.alphaGen = AGEN_IDENTITY;
-			}
-			else if ( !N_stricmp( tok, "entity" ) )
-			{
-				shader.alphaGen = AGEN_ENTITY;
-			}
-			else if ( !N_stricmp( tok, "oneMinusEntity" ) )
-			{
-				shader.alphaGen = AGEN_ONE_MINUS_ENTITY;
-			}
-			else if ( !N_stricmp( tok, "vertex" ) )
-			{
-				shader.alphaGen = AGEN_VERTEX;
-			}
-			else if ( !N_stricmp( tok, "lightingSpecular" ) )
-			{
-				shader.alphaGen = AGEN_LIGHTING_SPECULAR;
-			}
-			else if ( !N_stricmp( tok, "oneMinusVertex" ) )
-			{
-				shader.alphaGen = AGEN_ONE_MINUS_VERTEX;
-			}
-			else
-			{
-				ri.Printf( PRINT_INFO, COLOR_YELLOW "WARNING: unknown alphaGen parameter '%s' in shader '%s'\n", tok, shader.name );
-				continue;
-			}
-		}
 		// polygonOffset
 		else if (!N_stricmp(tok, "polygonOffset")) {
 			shader.polygonOffset = qtrue;
 			continue;
 		}
+        else {
+            ri.Printf(PRINT_WARNING, "unrecognized parameter in shader '%s': '%s'\n", shader.name, tok);
+            continue;
+        }
     }
 
-    //
-	// if cgen isn't explicitly specified, use either identity or identitylighting
-	//
-	if ( shader.rgbGen == CGEN_BAD ) {
-		if ( blendSrcBits == 0 ||
-			blendSrcBits == GLS_SRCBLEND_ONE ||
-			blendSrcBits == GLS_SRCBLEND_SRC_ALPHA ) {
-			shader.rgbGen = CGEN_IDENTITY_LIGHTING;
-		} else {
-			shader.rgbGen = CGEN_IDENTITY;
-		}
-	}
-
-
-	//
-	// implicitly assume that a GL_ONE GL_ZERO blend mask disables blending
-	//
-	if ( ( blendSrcBits == GLS_SRCBLEND_ONE ) &&
-		 ( blendDstBits == GLS_DSTBLEND_ZERO ) )
-	{
-		blendDstBits = blendSrcBits = 0;
-		depthMaskBits = GLS_DEPTHMASK_TRUE;
-	}
-
-	// decide which agens we can skip
-	if ( shader.alphaGen == AGEN_IDENTITY ) {
-		if ( shader.rgbGen == CGEN_IDENTITY
-			|| shader.rgbGen == CGEN_LIGHTING_DIFFUSE ) {
-			shader.alphaGen = AGEN_SKIP;
-		}
-	}
-
-	//
-	// compute state bits
-	//
-	shader.stateBits = depthMaskBits |
-		                blendSrcBits | blendDstBits |
-		                atestBits |
-		                depthFuncBits;
-
-
     return qtrue;
+}
+
+//====================================================
+
+
+static void ComputeVertexAttribs(void)
+{
+    uint32_t i, stage;
+
+    // dlights always need ATTRIB_NORMAL
+    shader.vertexAttribs = ATTRIB_POSITION | ATTRIB_NORMAL;
+
+    if (shader.defaultShader) {
+        shader.vertexAttribs |= ATTRIB_TEXCOORD;
+    }
+
+    
 }
 
 static void SortNewShader( void )
@@ -532,6 +607,15 @@ static shader_t *GeneratePermanentShader( void )
     newShader->sortedIndex = rg.numShaders;
 
     rg.numShaders++;
+
+	for (uint32_t i = 0; i < MAX_SHADER_STAGES; i++) {
+		if (!stages[i].active) {
+			break;
+		}
+
+		newShader->stages[i] = ri.Hunk_Alloc(sizeof(stages[i]), h_low);
+		*newShader->stages[i] = stages[i];
+	}
 
     SortNewShader();
 
@@ -586,6 +670,8 @@ static void InitShader(const char *name)
 
 static shader_t *FinishShader(void)
 {
+	uint32_t stage;
+
     //
     // set polygon offset
     //
@@ -594,6 +680,91 @@ static shader_t *FinishShader(void)
     }
 
     // there are times when you will need to manually apply a sort to
+	// opaque alpha tested shaders that have later blend passes
+	if ( shader.sort == SS_BAD ) {
+		shader.sort = SS_OPAQUE;
+	}
+
+	for (stage = 0; stage < MAX_SHADER_STAGES; ) {
+		shaderStage_t *stageP = &stages[stage];
+
+		if (!stageP->active) {
+			break;
+		}
+
+		// check for a missing texture
+		if (!stageP->image) {
+			ri.Printf(PRINT_WARNING, "Shader %s has a stage with no image\n", shader.name);
+			stageP->active = qfalse;
+			stage++;
+			continue;
+		}
+
+		//
+		// default texture coordinate generation
+		//
+		if (stageP->isLightmap) {
+		}
+
+
+		//
+		// determine sort order and [nope...]fog color adjustment
+		//
+		if ( ( stageP->stateBits & ( GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS ) ) &&
+			 ( stages[0].stateBits & ( GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS ) ) ) {
+			int blendSrcBits = stageP->stateBits & GLS_SRCBLEND_BITS;
+			int blendDstBits = stageP->stateBits & GLS_DSTBLEND_BITS;
+
+			// fog color adjustment only works for blend modes that have a contribution
+			// that aproaches 0 as the modulate values aproach 0 --
+			// GL_ONE, GL_ONE
+			// GL_ZERO, GL_ONE_MINUS_SRC_COLOR
+			// GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
+
+#if 0
+			// modulate, additive
+			if ( ( ( blendSrcBits == GLS_SRCBLEND_ONE ) && ( blendDstBits == GLS_DSTBLEND_ONE ) ) ||
+				( ( blendSrcBits == GLS_SRCBLEND_ZERO ) && ( blendDstBits == GLS_DSTBLEND_ONE_MINUS_SRC_COLOR ) ) ) {
+				pStage->adjustColorsForFog = ACFF_MODULATE_RGB;
+			}
+			// strict blend
+			else if ( ( blendSrcBits == GLS_SRCBLEND_SRC_ALPHA ) && ( blendDstBits == GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA ) )
+			{
+				pStage->adjustColorsForFog = ACFF_MODULATE_ALPHA;
+			}
+			// premultiplied alpha
+			else if ( ( blendSrcBits == GLS_SRCBLEND_ONE ) && ( blendDstBits == GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA ) )
+			{
+				pStage->adjustColorsForFog = ACFF_MODULATE_RGBA;
+			} else {
+				// we can't adjust this one correctly, so it won't be exactly correct in fog
+			}
+#endif
+			// don't screw with sort order if this is a portal or environment
+			if ( shader.sort == SS_BAD ) {
+				// see through item, like a grill or grate
+				if ( stageP->stateBits & GLS_DEPTHMASK_TRUE ) {
+					shader.sort = SS_SEE_THROUGH;
+				} else {
+					shader.sort = SS_BLEND;
+				}
+			}
+		}
+
+		// don't screw with sort order if this is environment
+		if (shader.sort == SS_BAD) {
+			// see through item, like a grill or grate
+			if (stageP->stateBits & GLS_DEPTHMASK_TRUE) {
+				shader.sort = SS_SEE_THROUGH;
+			} else {
+				shader.sort = SS_BLEND;
+			}
+		}
+
+		stage++;
+	}
+
+	// there are times when you will need to manually apply a sort to
 	// opaque alpha tested shaders that have later blend passes
 	if ( shader.sort == SS_BAD ) {
 		shader.sort = SS_OPAQUE;
@@ -692,7 +863,7 @@ shader_t *R_FindShader( const char *name ) {
 		// then a default shader is created with lightmapIndex == LIGHTMAP_NONE, so we
 		// have to check all default shaders otherwise for every call to R_FindShader
 		// with that same strippedName a new default shader is created.
-		if ( (sh->defaultShader) &&	!N_stricmp(sh->name, strippedName)) {
+		if (!N_stricmp(sh->name, strippedName)) {
 			// match found
 			return sh;
 		}
@@ -715,6 +886,7 @@ shader_t *R_FindShader( const char *name ) {
 			// had errors, so use default shader
 			shader.defaultShader = qtrue;
 		}
+		sh = FinishShader();
 		return sh;
 	}
 
@@ -739,10 +911,10 @@ shader_t *R_FindShader( const char *name ) {
 	//
 	// create the default shading commands
 	//
-	shader.image = image;
-	shader.rgbGen = CGEN_VERTEX;
-	shader.alphaGen = AGEN_VERTEX;
-	shader.stateBits = GLS_DEPTHTEST_DISABLE |
+	stages[0].image = image;
+	stages[0].rgbGen = CGEN_VERTEX;
+	stages[0].alphaGen = AGEN_VERTEX;
+	stages[0].stateBits = GLS_DEPTHTEST_DISABLE |
 		                GLS_SRCBLEND_SRC_ALPHA |
 		                GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA;
 
@@ -758,22 +930,22 @@ nhandle_t RE_RegisterShaderFromTexture(const char *name, texture_t *image)
 
 	//
 	// see if the shader is already loaded
-	//
+	//(sh->defaultShader) ||
 	for (sh=hashTable[hash]; sh; sh=sh->next) {
 		// NOTE: if there was no shader or image available with the name strippedName
 		// then a default shader is created with lightmapIndex == LIGHTMAP_NONE, so we
 		// have to check all default shaders otherwise for every call to R_FindShader
 		// with that same strippedName a new default shader is created.
-		if ( (sh->defaultShader) && !N_stricmp(sh->name, name)) {
+		if (!N_stricmp(sh->name, name)) {
 			// match found
 			return sh->index;
 		}
 	}
 
-    shader.image = image;
-	shader.rgbGen = CGEN_VERTEX;
-	shader.alphaGen = AGEN_VERTEX;
-	shader.stateBits = GLS_DEPTHTEST_DISABLE |
+    stages[0].image = image;
+	stages[0].rgbGen = CGEN_VERTEX;
+	stages[0].alphaGen = AGEN_VERTEX;
+	stages[0].stateBits = GLS_DEPTHTEST_DISABLE |
 		                GLS_SRCBLEND_SRC_ALPHA |
 		                GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA;
 
@@ -869,11 +1041,11 @@ it and returns a valid (possibly default) shader_t to be used internally.
 */
 shader_t *R_GetShaderByHandle( nhandle_t hShader ) {
 	if ( hShader < 0 ) {
-	    ri.Printf( PRINT_INFO, COLOR_YELLOW "WARNING: R_GetShaderByHandle: out of range hShader '%d'\n", hShader );
+	    ri.Printf( PRINT_WARNING, "R_GetShaderByHandle: out of range hShader '%d'\n", hShader );
 		return rg.defaultShader;
 	}
 	if ( hShader >= rg.numShaders ) {
-		ri.Printf( PRINT_INFO, COLOR_YELLOW "WARNING: R_GetShaderByHandle: out of range hShader '%d'\n", hShader );
+		ri.Printf( PRINT_WARNING, "R_GetShaderByHandle: out of range hShader '%d'\n", hShader );
 		return rg.defaultShader;
 	}
 	return rg.shaders[hShader];
@@ -940,7 +1112,7 @@ static int loadShaderBuffers( char **shaderFiles, const uint64_t numShaderFiles,
 			}
 
 			if ( !SkipBracedSection( &p, 1 ) ) {
-				ri.Printf(PRINT_INFO, COLOR_YELLOW "WARNING: Ignoring shader file %s. Shader \"%s\" " \
+				ri.Printf(PRINT_WARNING, "Ignoring shader file %s. Shader \"%s\" " \
 					"on line %lu missing closing brace.\n", filename, shaderName, shaderLine );
 				ri.FS_FreeFile( buffers[i] );
 				buffers[i] = NULL;
@@ -997,7 +1169,7 @@ static void ScanAndLoadShaderFiles( void )
 	ri.Printf(PRINT_DEVELOPER, "Found %lu shader files.\n", numShaderFiles);
 
 	if (!shaderFiles || !numShaderFiles) {
-		ri.Printf( PRINT_INFO, COLOR_YELLOW "WARNING: no shader files found\n" );
+		ri.Printf( PRINT_WARNING, "no shader files found\n" );
 		return;
 	}
 
@@ -1086,7 +1258,7 @@ static void CreateInternalShaders( void )
 
 	// init the default shader
 	InitShader( "<default>" );
-    shader.stateBits = GLS_DEFAULT;
+    stages[0].stateBits = GLS_DEFAULT;
 	rg.defaultShader = FinishShader();
 }
 

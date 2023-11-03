@@ -1,5 +1,30 @@
 #include "rgl_local.h"
 
+// this is here to that functions in n_shared.c can link
+
+void GDR_DECL N_Error(errorCode_t code, const char *err, ...)
+{
+    va_list argptr;
+    char msg[MAXPRINTMSG];
+
+    va_start(argptr, err);
+    N_vsnprintf(msg, sizeof(msg), err, argptr);
+    va_end(argptr);
+
+    ri.Error(code, "%s", msg);
+}
+
+void GDR_DECL Con_Printf(const char *fmt, ...)
+{
+    va_list argptr;
+    char msg[MAXPRINTMSG];
+
+    va_start(argptr, fmt);
+    N_vsnprintf(msg, sizeof(msg), fmt, argptr);
+    va_end(argptr);
+
+    ri.Printf(PRINT_INFO, "%s", msg);
+}
 
 /*
 RB_MakeViewMatrix:
@@ -16,6 +41,22 @@ void RB_MakeViewMatrix(void)
     Mat4Ortho(-aspect * zoom, aspect * zoom, -aspect, aspect, -1.0f, 1.0f, rg.viewData.camera.projectionMatrix);
     Mat4Identity(rg.viewData.camera.modelMatrix);
     Mat4Multiply(rg.viewData.camera.projectionMatrix, rg.viewData.camera.modelMatrix, rg.viewData.camera.transformMatrix);
+}
+
+void R_InitSamplers(void)
+{
+    nglGenSamplers(MAX_TEXTURE_UNITS, rg.samplers);
+
+    for (int i = 0; i < MAX_TEXTURE_UNITS; i++) {
+        nglBindSampler(i, rg.samplers[i]);
+        nglSamplerParameteri(rg.samplers[i], GL_TEXTURE_MIN_FILTER, gl_filter_min);
+        nglSamplerParameteri(rg.samplers[i], GL_TEXTURE_MAG_FILTER, gl_filter_max);
+    }
+}
+
+void R_ShutdownSamplers(void)
+{
+    nglDeleteSamplers(MAX_TEXTURE_UNITS, rg.samplers);
 }
 
 /*
