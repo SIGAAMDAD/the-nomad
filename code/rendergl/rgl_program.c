@@ -349,7 +349,7 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
 
     // OpenGL version from 3.3 and up have corresponding glsl versions
     if (NGL_VERSION_ATLEAST(3, 30)) {
-        N_strcat(dest, size, va("#version %i%i core\n", glContext.glslVersionMajor, glContext.glslVersionMinor));
+        N_strcat(dest, size, "#version 330 core\n");
     }
     // otherwise, do the Quake3e method
     else if (GLSL_VERSION_ATLEAST(1, 30)) {

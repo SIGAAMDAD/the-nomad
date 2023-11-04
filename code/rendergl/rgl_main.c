@@ -28,12 +28,26 @@ void GDR_DECL Con_Printf(const char *fmt, ...)
 
 /*
 RB_MakeViewMatrix:
-
-FIXME: this can only make a matrix that can render for the tile-based stuff
 */
-void RB_MakeViewMatrix(void)
+void RB_MakeViewMatrix( qboolean useOrthoUI )
 {
     float aspect, zoom;
+
+    if (useOrthoUI) {
+        const float L = 0;
+        const float R = glConfig.vidWidth;
+        const float T = 0;
+        const float B = glConfig.vidHeight;
+
+        float *ortho = rg.viewData.camera.transformMatrix;
+
+        ortho[ 0] = 2.0f/(R-L);     ortho[ 4] = 0.0f;           ortho[ 8] = 0.0f;   ortho[12] = 0.0f;
+        ortho[ 1] = 0.0f;           ortho[ 5] = 2.0f/(T-B);     ortho[ 9] = 0.0f;   ortho[13] = 0.0f;
+        ortho[ 2] = 0.0f;           ortho[ 6] = 0.0f;           ortho[10] = -1.0f;  ortho[14] = 0.0f;
+        ortho[ 3] = (R+L)/(L-R);    ortho[ 7] = (T+B)/(B-T);    ortho[11] = 0.0f;   ortho[15] = 1.0f;
+
+        return;
+    }
 
     zoom = rg.viewData.camera.zoom;
     aspect = rg.viewData.camera.aspect = glConfig.vidWidth / glConfig.vidHeight;
@@ -150,12 +164,34 @@ static void R_AddWorldSurfaces(void)
     uint32_t y, x;
 }
 
+
+static surfaceType_t entitySurface = SF_POLY;
+static void R_AddEntitySurface(uint32_t entityNum)
+{
+    renderEntityDef_t *ent;
+
+    ent = &rg.refdef.entities[entityNum];
+
+    R_AddDrawSurf(&entitySurface, R_GetShaderByHandle(ent->e.hShader));
+}
+
+static void R_AddEntitySurfaces(void)
+{
+    uint32_t i;
+
+    for (i = 0; i < rg.refdef.numEntities; i++) {
+        R_AddEntitySurface(i);
+    }
+}
+
 void R_GenerateDrawSurfs(void)
 {
     R_AddWorldSurfaces();
+    
+    R_AddEntitySurfaces();
 }
 
-void R_RenderView(const viewData_t *parms)
+void R_RenderView(const viewData_t *parms, qboolean useOrthoUI)
 {
     uint64_t firstDrawSurf;
     uint64_t numDrawSurfs;
@@ -170,7 +206,7 @@ void R_RenderView(const viewData_t *parms)
 
     firstDrawSurf = rg.refdef.numDrawSurfs;
 
-    RB_MakeViewMatrix();
+    RB_MakeViewMatrix( useOrthoUI );
 
     R_GenerateDrawSurfs();
 

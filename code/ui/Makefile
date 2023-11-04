@@ -1,6 +1,6 @@
 ifndef win32
 OS_INCLUDE=-I/usr/include/ -I/usr/local/include/
-COMPILER  =distcc gcc
+COMPILER  =distcc g++
 LIB_PREFIX=dependencies/libs/linux
 DLL_EXT   =so
 else
@@ -27,7 +27,7 @@ VERSION_DEFINE=-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPD
 
 .PHONY: all clean
 
-DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -DGDR_DLLCOMPILE -Werror=implicit-function-declaration -Werror=incompatible-pointer-types
+DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -DGDR_DLLCOMPILE
 OPTIMIZERS    =\
 				-fexpensive-optimizations \
 				-funroll-loops \
@@ -41,35 +41,24 @@ ifeq ($(build),debug)
 	OPTIMIZERS +=-fvar-tracking
 endif
 
-CC       =$(COMPILER) -std=c99
+CC       =$(COMPILER) -std=c++17
 CFLAGS   =$(FTYPE) $(DEFINES) $(INCLUDE) $(OPTIMIZERS)
 O        =obj
 SDIR     =code
-LIB      =glnomad_opengl_x86-64.$(DLL_EXT)
+LIB      =glnomad_ui.$(DLL_EXT)
 
 all: $(LIB)
 
 INTERNAL_OBJS=\
-	$(O)/rendergl/rgl_cache.o \
-	$(O)/rendergl/rgl_scene.o \
-	$(O)/rendergl/rgl_backend.o \
-	$(O)/rendergl/rgl_shader.o \
-	$(O)/rendergl/rgl_cmd.o \
-	$(O)/rendergl/rgl_shade.o \
-	$(O)/rendergl/rgl_math.o \
-	$(O)/rendergl/rgl_extensions.o \
-	$(O)/rendergl/rgl_glsl_fallback.o \
-	$(O)/rendergl/rgl_init.o \
-	$(O)/rendergl/rgl_program.o \
-	$(O)/rendergl/rgl_texture.o \
-	$(O)/rendergl/rgl_world.o \
-	$(O)/rendergl/rgl_main.o \
-	$(O)/rendergl/n_shared.o \
-	$(O)/rendergl/n_math.o \
+	$(O)/ui/ui_lib.o \
+	$(O)/ui/ui_main.o \
+	$(O)/ui/ui_menu.o \
+	$(O)/ui/n_shared.o \
+	$(O)/ui/n_math.o \
 
-$(O)/rendergl/%.o: $(SDIR)/engine/%.c
-	$(CC) $(CFLAGS) -shared -fPIC -o $@ -c $<
-$(O)/rendergl/%.o: $(SDIR)/rendergl/%.c
+$(O)/ui/%.o: $(SDIR)/engine/%.c
+	distcc gcc $(CFLAGS) -shared -fPIC -o $@ -c $<
+$(O)/ui/%.o: $(SDIR)/ui/%.cpp
 	$(CC) $(CFLAGS) -shared -fPIC -o $@ -c $<
 
 $(LIB): $(INTERNAL_OBJS)

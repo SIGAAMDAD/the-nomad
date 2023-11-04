@@ -110,11 +110,14 @@ GDR_EXPORT void RE_BeginScene(const renderSceneRef_t *fd)
     rg.refdef.height = fd->height;
     rg.refdef.flags = fd->flags;
 
+	rg.refdef.numDrawSurfs = r_firstSceneDrawSurf;
+	rg.refdef.drawSurfs = backendData->drawSurfs;
+
     rg.refdef.numDLights = r_numDLights;
-    rg.refdef.dlights = r_numDLights;
+    rg.refdef.dlights = backendData->dlights;
     
-    rg.refdef.numEntities = r_numEntities;
-    rg.refdef.entities = backendData->entities;
+    rg.refdef.numEntities = r_firstSceneEntity - r_numEntities;
+    rg.refdef.entities = &backendData->entities[r_firstSceneEntity];
 
     rg.refdef.drawn = qfalse;
 }
@@ -156,7 +159,7 @@ GDR_EXPORT void RE_RenderScene(const renderSceneRef_t *fd)
     parms.viewportWidth = rg.refdef.width;
     parms.viewportHeight = rg.refdef.height;
 
-    R_RenderView(&parms);
+    R_RenderView(&parms, rg.refdef.flags & RSF_USE_ORTHO_UI);
 
     RE_EndScene();
 }

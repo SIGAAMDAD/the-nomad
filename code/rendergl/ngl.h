@@ -129,7 +129,7 @@ typedef void*(*NGLloadproc)(const char *name);
 
 #define NGL_Shader_Procs \
     NGL( void, glBindAttribLocation, GLhandleARB programObj, GLuint index, const GLcharARB *name ) \
-    NGL( GLint, glGetAttribLocation, GLuint program, const GLchar *name) \
+    NGL( GLint, glGetAttribLocation, GLuint program, const GLchar *name ) \
     NGL( void, glShaderSource, GLuint shader, GLsizei count, const GLchar *const *string, const GLint *length ) \
     NGL( GLuint, glCreateProgram, void ) \
     NGL( void, glLinkProgram, GLuint program ) \

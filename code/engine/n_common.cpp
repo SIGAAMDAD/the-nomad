@@ -312,8 +312,9 @@ static void Com_PumpKeyEvents(void)
 	SDL_PumpEvents();
 
 	while (SDL_PollEvent(&event)) {
-		if (Key_GetCatcher() & KEYCATCH_CONSOLE || Key_GetCatcher() & KEYCATCH_UI)
+		if (Key_GetCatcher() & KEYCATCH_CONSOLE || Key_GetCatcher() & KEYCATCH_UI) {
 			ImGui_ImplSDL2_ProcessEvent(&event);
+		}
 
 		switch (event.type) {
 		case SDL_KEYDOWN:

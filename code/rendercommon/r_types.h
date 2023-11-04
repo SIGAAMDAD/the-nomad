@@ -5,7 +5,9 @@
 
 #define MAX_VIDEO_HANDLES	16
 
-#define RSF_NOWORLDMODEL 0x0001
+#define RSF_USE_ORTHO_ASPECT	0x0001 // rendering to the tilemap?
+#define RSF_USE_ORTHO_UI		0x0002 // rendering to the ui?
+#define RSF_NOWORLDMODEL		0x0004 // used when rendering the ui, but can be used with sgame
 
 typedef struct {
     vec3_t xyz;

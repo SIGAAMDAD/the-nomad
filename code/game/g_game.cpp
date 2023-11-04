@@ -2,6 +2,7 @@
 #include "g_sound.h"
 #include "../rendercommon/imgui.h"
 #include "../rendercommon/imgui_impl_sdl2.h"
+#include "../rendercommon/imgui_impl_opengl3.h"
 
 vm_t *sgvm;
 vm_t *uivm;
@@ -99,7 +100,8 @@ static void G_RefFreeAll(void) {
 
 static void G_RefImGuiFree(void *ptr, void *) {
     if (ptr != NULL) {
-        Z_Free(ptr);
+//        Z_Free(ptr);
+        free(ptr);
     }
 }
 
@@ -107,15 +109,19 @@ static void G_RefImGuiFree(void *ptr, void *) {
 // G_RefImGuiInit: called during internal renderer initialization
 // renderContext can be either a SDL_GLContext or SDL_Renderer, or NULL if using D3D11, Vulkan, or Metal
 //
-static int G_RefImGuiInit(void *renderData, const char *renderName) {
+static void G_RefImGuiInit(void *shaderData, const void *importData) {
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize.x = gi.gpuConfig.vidWidth;
     io.DisplaySize.y = gi.gpuConfig.vidHeight;
-    io.BackendRendererUserData = renderData;
-    io.BackendRendererName = renderName;
-    io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
+    io.WantCaptureMouse = true;
 
-    return 1;
+    if (!N_stricmp( g_renderer->s, "opengl" )) {
+        ImGui_ImplSDL2_InitForOpenGL( r_window, r_GLcontext );
+        ImGui_ImplOpenGL3_Init( shaderData, NULL, (const imguiGL3Import_t *)importData);
+    }
+    else if (!N_stricmp( g_renderer->s, "vulkan" )) {
+        ImGui_ImplSDL2_InitForVulkan( r_window );
+    }
 }
 
 static void G_RefImGuiShutdown(void) {
@@ -123,6 +129,7 @@ static void G_RefImGuiShutdown(void) {
     io.BackendRendererName = NULL;
     io.BackendRendererUserData = NULL;
 
+    ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
 
@@ -130,92 +137,21 @@ static void G_RefImGuiShutdown(void) {
 }
 
 static void G_RefImGuiNewFrame(void) {
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableSetMousePos;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    io.DisplaySize.x = gi.gpuConfig.vidWidth;
+    io.DisplaySize.y = gi.gpuConfig.vidHeight;
+
+    ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
 }
 
-static imguiDrawData_t drawData;
-
-static void G_RefImGuiDraw(void(*drawFunc)(imguiDrawData_t *)) {
-    ImDrawData *data;
-    imguiDrawVert_t *vtx, *vertices;
-    int i;
-    imguiDrawList_t *drawLists;
-
+static void G_RefImGuiDraw(void) {
     ImGui::Render();
-    data = ImGui::GetDrawData();
-
-    /*
-    * no we convert it
-    */
-
-    drawData.Valid = data->Valid;
-
-    //
-    // reallocate?
-    //
-
-#if 0
-    if (CmdListsCount < data->CmdListsCount) {
-        if (drawData.CmdLists) {
-            Z_Free(drawData.CmdLists);
-        }
-        drawData.CmdLists = (imguiDrawList_t **)Z_Malloc(sizeof(*drawData.CmdLists) * data->CmdListsCount, TAG_RENDERER);
-
-        CmdListsCount = data->CmdListsCount;
-    }
-#endif
-
-    // hopefully this doesn't cause a stack overflow
-    drawData.CmdLists = (imguiDrawList_t **)alloca(sizeof(imguiDrawList_t *) * data->CmdListsCount);
-    drawData.CmdListsCount = data->CmdListsCount;
-    drawData.TotalIdxCount = data->TotalIdxCount;
-    drawData.TotalVtxCount = data->TotalVtxCount;
-
-    drawLists = (imguiDrawList_t *)alloca(sizeof(*drawLists) * data->CmdListsCount);
-
-    VectorCopy2(drawData.DisplayPos, data->DisplayPos);
-    VectorCopy2(drawData.DisplaySize, data->DisplaySize);
-    VectorCopy2(drawData.FramebufferScale, data->FramebufferScale);
-
-    for (i = 0; i < data->CmdListsCount; i++) {
-        imguiDrawList_t *drawList = &drawLists[i];
-
-        drawList->CmdBuffer.Size = data->CmdLists[i]->CmdBuffer.Size;
-        drawList->CmdBuffer.Data = (void *)data->CmdLists[i]->CmdBuffer.Data;
-
-        drawList->VtxBuffer.Size = data->CmdLists[i]->VtxBuffer.Size;
-        drawList->VtxBuffer.Data = (void *)data->CmdLists[i]->VtxBuffer.Data;
-
-        drawList->IdxBuffer.Size = data->CmdLists[i]->IdxBuffer.Size;
-        drawList->IdxBuffer.Data = (void *)data->CmdLists[i]->IdxBuffer.Data;
-
-        drawList->Flags = data->CmdLists[i]->Flags;
-
-        drawData.CmdLists[i] = drawList;
-    }
-
-    drawFunc(&drawData);
-}
-
-static void G_RefImGuiGetTexDataAsRGBA32(unsigned char** out_pixels, int* out_width, int* out_height, int* out_bytes_per_pixel) {
-    ImGui::GetIO().Fonts->GetTexDataAsRGBA32(out_pixels, out_width, out_height, out_bytes_per_pixel);
-}
-
-static void G_RefImGuiSetTexID(void *texId) {
-    ImGui::GetIO().Fonts->SetTexID((ImTextureID)texId);
-}
-
-static void G_RefImGuiInit_SDL2(void) {
-    if (!N_stricmp(g_renderer->s, "opengl")) {
-        ImGui_ImplSDL2_InitForOpenGL(r_window, r_GLcontext);
-    }
-    else if (!N_stricmp(g_renderer->s, "vulkan")) {
-        ImGui_ImplSDL2_InitForVulkan(r_window);
-    }
-    else {
-        N_Error(ERR_FATAL, "Unknown renderer: '%s'", g_renderer->s);
-    }
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
 static void G_SetScaling(float factor, uint32_t captureWidth, uint32_t captureHeight)
@@ -230,6 +166,10 @@ static void G_SetScaling(float factor, uint32_t captureWidth, uint32_t captureHe
     // set custom capture resolution
     gi.captureWidth = captureWidth;
     gi.captureHeight = captureHeight;
+}
+
+static void *G_RefImGuiMalloc(size_t size) {
+    return calloc(size, 1);
 }
 
 static void G_InitRenderRef(void)
@@ -270,12 +210,11 @@ static void G_InitRenderRef(void)
         return;
     }
 
-    // init imgui
-    IMGUI_CHECKVERSION();
-    ImGui::SetAllocatorFunctions((ImGuiMemAllocFunc)G_RefMalloc, (ImGuiMemFreeFunc)G_RefImGuiFree, NULL);
-    ImGui::CreateContext();
-
     g_renderer->modified = qfalse;
+
+    IMGUI_CHECKVERSION();
+    ImGui::SetAllocatorFunctions((ImGuiMemAllocFunc)G_RefImGuiMalloc, (ImGuiMemFreeFunc)G_RefImGuiFree);
+    ImGui::CreateContext();
 
     memset(&import, 0, sizeof(import));
 
@@ -338,9 +277,6 @@ static void G_InitRenderRef(void)
     import.ImGui_Shutdown = G_RefImGuiShutdown;
     import.ImGui_NewFrame = G_RefImGuiNewFrame;
     import.ImGui_Draw = G_RefImGuiDraw;
-    import.ImGui_GetTexDataAsRGBA32 = G_RefImGuiGetTexDataAsRGBA32;
-    import.ImGui_SetTexID = G_RefImGuiSetTexID;
-    import.ImGui_InitSDL2 = G_RefImGuiInit_SDL2;
 
     import.Sys_LoadDLL = Sys_LoadDLL;
     import.Sys_CloseDLL = Sys_CloseDLL;
@@ -721,6 +657,12 @@ void G_Shutdown(qboolean quit)
     Con_Printf( "-------------------------------\n");
 }
 
+void G_InitUI( void )
+{
+    Key_SetCatcher(KEYCATCH_UI);
+    UI_Init();
+}
+
 void G_FlushMemory(void)
 {
     // shutdown all game state stuff
@@ -807,8 +749,6 @@ void G_Frame(uint64_t msec, uint64_t realMsec)
     gi.frametime = msec;
     gi.realtime += msec;
 
-    re.BeginFrame(STEREO_CENTER);
-
     // update the screen
     gi.framecount++;
 
@@ -816,7 +756,7 @@ void G_Frame(uint64_t msec, uint64_t realMsec)
     Snd_Submit();
 
     SCR_UpdateScreen();
-    Con_RunConsole();
+//    Con_RunConsole();
 }
 
 
@@ -1077,7 +1017,7 @@ static int GLimp_CreateBaseWindow(gpuConfig_t *config)
     }
     Con_Printf( "Using %d color bits, %d depth, %d stencil display.\n",
         config->colorBits, config->depthBits, config->stencilBits );
-    
+
     if (r_window) {
 #ifdef GLNOMAD_ICON_INCLUDE
         SDL_Surface *icon = SDL_CreateRGBSurfaceFrom(
@@ -1105,7 +1045,6 @@ static int GLimp_CreateBaseWindow(gpuConfig_t *config)
         Con_Printf("Failed video initialization\n");
         return -1;
     }
-
     SDL_GL_MakeCurrent(r_window, r_GLcontext);
     SDL_GL_GetDrawableSize(r_window, &config->vidWidth, &config->vidHeight);
 

@@ -826,14 +826,53 @@ static void R_InitGLContext(void)
 
 static void R_InitImGui(void)
 {
-    void *imguiData;
+    imguiGL3Import_t import;
 
-    ri.ImGui_InitSDL2();
+    import.glGetString = nglGetString;
+    import.glGetStringi = nglGetStringi;
+    import.glBindSampler = nglBindSampler;
+    import.glScissor = nglScissor;
+    import.glViewport = nglViewport;
+    import.glUniform1i = nglUniform1i;
+    import.glGetAttribLocation = nglGetAttribLocation;
+    import.glGetUniformLocation = nglGetUniformLocation;
+    import.glUniformMatrix4fv = nglUniformMatrix4fv;
+    import.glEnable = nglEnable;
+    import.glDisable = nglDisable;
+    import.glGetIntegerv = nglGetIntegerv;
+    import.glBlendEquation = nglBlendEquation;
+    import.glBlendFuncSeparate = nglBlendFuncSeparate;
+    import.glBlendEquationSeparate = nglBlendEquationSeparate;
+    import.glPolygonMode = nglPolygonMode;
+    import.glPixelStorei = nglPixelStorei;
+    import.glIsEnabled = nglIsEnabled;
+    import.glIsDisabled = nglIsDisabled;
+    import.glIsProgram = nglIsProgram;
+    import.glIsShader = nglIsShader;
+    import.glDrawElementsBaseVertex = nglDrawElementsBaseVertex;
+    import.glDrawElements = nglDrawElements;
+    import.glGetVertexAttribPointerv = nglGetVertexAttribPointerv;
+    import.glVertexAttribPointer = nglVertexAttribPointer;
+    import.glEnableVertexAttribArray = nglEnableVertexAttribArray;
+    import.glDisableVertexAttribArray = nglDisableVertexAttribArray;
+    import.glBufferData = nglBufferData;
+    import.glBufferSubData = nglBufferSubData;
+    import.glGetVertexAttribiv = nglGetVertexAttribiv;
+    import.glBindTexture = nglBindTexture;
+    import.glUseProgram = nglUseProgram;
+    import.glBindBuffer = nglBindBuffer;
+    import.glBindVertexArray = nglBindVertexArray;
+    import.glGenBuffers = nglGenBuffers;
+    import.glGenVertexArrays = nglGenVertexArrays;
+    import.glDeleteBuffers = nglDeleteBuffers;
+    import.glDeleteVertexArrays = nglDeleteVertexArrays;
+    import.glGenTextures = nglGenTextures;
+    import.glDeleteTextures = nglDeleteTextures;
+    import.glTexParameteri = nglTexParameteri;
+    import.glTexImage2D = nglTexImage2D;
+    import.glActiveTexture = nglActiveTexture;
 
-    // init imgui opengl3
-    imguiData = ImGui_ImplOpenGL3_Init(NULL);
-    assert(imguiData); // this should never fail
-    ri.ImGui_Init(imguiData, "imgui_impl_opengl3");
+    ri.ImGui_Init((void *)(uintptr_t)rg.imguiShader.programId, &import);
 }
 
 void R_Init(void)
@@ -899,7 +938,6 @@ void RE_Shutdown(refShutdownCode_t code)
         R_DeleteTextures();
         R_ShutdownGPUBuffers();
         GLSL_ShutdownGPUShaders();
-        ImGui_ImplOpenGL3_Shutdown();
         ri.ImGui_Shutdown();
     }
 

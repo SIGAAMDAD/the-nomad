@@ -202,28 +202,20 @@ GDR_EXPORT void RE_BeginFrame(stereoFrame_t stereoFrame)
 
     // clear relevant buffers
     nglClear(clearBits);
+	nglActiveTexture(GL_TEXTURE0);
 	nglClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-
-	GL_BindNullTextures();
-
-	ImGui_ImplOpenGL3_NewFrame();
-	ri.ImGui_NewFrame();
 
 	// setup basic state
 	nglEnable(GL_BLEND);
+	nglEnable(GL_SCISSOR_TEST);
+	nglDisable(GL_CULL_FACE);
+	nglDisable(GL_DEPTH_TEST);
 
     // set 2D virtual screen size
     nglViewport(0, 0, width, height);
     nglScissor(0, 0, width, height);
 
-    // check for camera resize
-    rg.viewData.camera.aspect = glConfig.vidWidth / glConfig.vidHeight;
-    Mat4Ortho(-rg.viewData.camera.aspect * rg.viewData.camera.zoom, rg.viewData.camera.aspect * rg.viewData.camera.zoom,
-        -rg.viewData.camera.aspect, rg.viewData.camera.aspect, -1.0f, 1.0f, rg.viewData.camera.projectionMatrix);
-    GL_SetProjectionMatrix(rg.viewData.camera.projectionMatrix);
-
-    Mat4Translation(rg.viewData.camera.origin, rg.viewData.camera.modelMatrix);
-    Mat4Multiply(rg.viewData.camera.projectionMatrix, rg.viewData.camera.modelMatrix, rg.viewData.camera.transformMatrix);
+	ri.ImGui_NewFrame();
 
 	rg.frameCount++;
 	rg.frameSceneNum = 0;
@@ -338,7 +330,7 @@ GDR_EXPORT void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec)
 	}
 	cmd->commandId = RC_SWAP_BUFFERS;
 
-	ri.ImGui_Draw(ImGui_ImplOpenGL3_RenderDrawData);
+	ri.ImGui_Draw();
 
 	R_IssueRenderCommands(qtrue);
 	R_InitNextFrame();

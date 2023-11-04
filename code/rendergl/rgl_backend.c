@@ -527,7 +527,10 @@ static const void *RB_SwapBuffers(const void *data)
 
 static const void *RB_DrawSurfs(const void *data)
 {
+	backend.refdef = rg.refdef;
+	backend.viewData = rg.viewData;
 
+	Mat4Copy(backend.viewData.camera.transformMatrix, glState.modelviewProjection);
 }
 
 /*

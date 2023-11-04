@@ -987,8 +987,8 @@ float HalfToFloat(unsigned short in);
 GDR_EXPORT nhandle_t RE_RegisterSpriteSheet(const char *shaderName, uint32_t numSprites, uint32_t spriteWidth, uint32_t spriteHeight,
     uint32_t sheetWidth, uint32_t sheetHeight);
 void R_SortDrawSurfs(drawSurf_t *drawSurfs, uint32_t numDrawSurfs);
-void RB_MakeViewMatrix(void);
-void R_RenderView(const viewData_t *parms);
+void RB_MakeViewMatrix( qboolean useOrthoUI );
+void R_RenderView(const viewData_t *parms, qboolean useOrthoUI);
 void GL_CameraResize(void);
 qboolean R_HasExtension(const char *ext);
 void R_SortDrawSurfs(drawSurf_t *drawSurfs, uint32_t numDrawSurfs);

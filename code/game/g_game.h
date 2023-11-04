@@ -6,6 +6,7 @@
 #include "../engine/n_shared.h"
 #include "../engine/n_common.h"
 #include "../sgame/sg_public.h"
+#include "../ui/ui_public.h"
 #include "../rendercommon/r_public.h"
 
 #ifndef O_BINARY

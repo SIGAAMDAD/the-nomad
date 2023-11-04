@@ -39,6 +39,8 @@ static void RB_IterateStages( const shaderDrawCommands_t *input )
 
         GL_State(stageP->stateBits);
 
+        GLSL_SetUniformInt(sp, UNIFORM_DIFFUSE_MAP, 0);
+
         GL_BindTexture(TB_COLORMAP, stageP->image);
 
         GLSL_SetUniformMatrix4(sp, UNIFORM_MODELVIEWPROJECTION, glState.modelviewProjection);
@@ -110,6 +112,7 @@ void RB_EndSurface( void )
     if (input->xyz[MAX_BATCH_VERTICES - 1][0] != 0) {
         ri.Error(ERR_DROP, "RB_EndSurface() - MAX_BATCH_VERTICES hit");
     }
+    RB_UpdateCache(ATTRIB_BITS);
 
     backend.pc.c_bufferIndices += input->numIndices;
     backend.pc.c_bufferVertices += input->numVertices;

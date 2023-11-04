@@ -166,6 +166,8 @@ void Key_ClearStates(void);
 void Key_SetCatcher(uint32_t catcher);
 uint32_t Key_GetCatcher(void);
 uint32_t Key_GetKey( const char *binding );
+qboolean Key_GetOverstrikeMode( void );
+void Key_SetOverstrikeMode( qboolean overstrike );
 
 typedef struct
 {

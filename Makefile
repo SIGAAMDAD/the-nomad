@@ -177,6 +177,15 @@ SRC=\
 	$(O)/rendercommon/imgui_draw.o \
 	$(O)/rendercommon/imgui_widgets.o \
 	$(O)/rendercommon/imgui_tables.o \
+	$(O)/rendercommon/imgui_impl_sdl2.o \
+	$(O)/rendercommon/imgui_impl_opengl3.o \
+	$(O)/rendercommon/imgui_demo.o \
+	\
+	$(O)/ui/ui_main.o \
+	$(O)/ui/ui_lib.o \
+	$(O)/ui/ui_menu.o \
+	$(O)/ui/ui_mfield.o \
+	$(O)/ui/ui_window.o \
 
 MAKE=make
 
@@ -193,6 +202,7 @@ makedirs:
 	@if [ ! -d $(O)/engine ];then $(MKDIR) $(O)/engine;fi
 	@if [ ! -d $(O)/rendercommon ];then $(MKDIR) $(O)/rendercommon;fi
 	@if [ ! -d $(O)/sys ];then $(MKDIR) $(O)/sys;fi
+	@if [ ! -d $(O)/ui ];then $(MKDIR) $(O)/ui;fi
 
 targets: makedirs
 	$(MAKE) $(EXE)
@@ -207,11 +217,13 @@ $(O)/engine/%.o: $(SDIR)/engine/%.cpp
 	$(COMPILE_SRC)
 $(O)/engine/%.o: $(SDIR)/engine/%.c
 	$(COMPILE_SRC)
+$(O)/ui/%.o: $(SDIR)/ui/%.cpp
+	$(COMPILE_SRC)
 $(O)/sys/%.o: $(SYS_DIR)/%.cpp
 	$(COMPILE_SRC)
 
 $(EXE): $(SRC) $(COMMON) $(SYS)
-	$(CC) $(CFLAGS) $(SRC) $(COMMON) $(SYS) -o $(EXE) $(LDLIBS) libimgui.a
+	$(CC) $(CFLAGS) $(SRC) $(COMMON) $(SYS) -o $(EXE) $(LDLIBS)
 
 clean.pch:
 	rm $(SDIR)/engine/n_pch_all.h.gch

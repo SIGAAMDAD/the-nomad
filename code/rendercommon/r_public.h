@@ -146,13 +146,10 @@ typedef struct {
     void *(*Sys_GetProcAddress)(void *handle, const char *name);
     void (*Sys_CloseDLL)(void *handle);
 
-    void (*ImGui_InitSDL2)(void);
-    int (*ImGui_Init)(void *renderData, const char *renderName);
-    void (*ImGui_SetTexID)(void *id);
+    void (*ImGui_Init)(void *shaderData, const void *importData);
     void (*ImGui_Shutdown)(void);
     void (*ImGui_NewFrame)(void);
-    void (*ImGui_Draw)(void(*drawFunc)(imguiDrawData_t *draw_data));
-    void (*ImGui_GetTexDataAsRGBA32)(unsigned char** out_pixels, int* out_width, int* out_height, int* out_bytes_per_pixel);
+    void (*ImGui_Draw)(void);
 } refimport_t;
 
 typedef struct {

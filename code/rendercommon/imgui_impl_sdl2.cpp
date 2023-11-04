@@ -87,8 +87,7 @@
 #endif
 
 // SDL
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_syswm.h>
+#include "../engine/n_shared.h"
 #if defined(__APPLE__)
 #include <TargetConditionals.h>
 #endif
@@ -121,28 +120,29 @@ struct ImGui_ImplSDL2_Data
 // It is STRONGLY preferred that you use docking branch with multi-viewports (== single Dear ImGui context + multiple windows) instead of multiple Dear ImGui contexts.
 // FIXME: multi-context support is not well tested and probably dysfunctional in this backend.
 // FIXME: some shared resources (mouse cursor shape, gamepad) are mishandled when using multi-context.
-extern "C" ImGui_ImplSDL2_Data* ImGui_ImplSDL2_GetBackendData()
+static ImGui_ImplSDL2_Data* ImGui_ImplSDL2_GetBackendData()
 {
     return ImGui::GetCurrentContext() ? (ImGui_ImplSDL2_Data*)ImGui::GetIO().BackendPlatformUserData : nullptr;
 }
 
 // Functions
-extern "C" const char* ImGui_ImplSDL2_GetClipboardText(void*)
+static const char* ImGui_ImplSDL2_GetClipboardText(void*)
 {
     ImGui_ImplSDL2_Data* bd = ImGui_ImplSDL2_GetBackendData();
     if (bd->ClipboardTextData)
         SDL_free(bd->ClipboardTextData);
-    bd->ClipboardTextData = SDL_GetClipboardText();
+    
+    bd->ClipboardTextData = Sys_GetClipboardData();
     return bd->ClipboardTextData;
 }
 
-extern "C" void ImGui_ImplSDL2_SetClipboardText(void*, const char* text)
+static void ImGui_ImplSDL2_SetClipboardText(void*, const char* text)
 {
     SDL_SetClipboardText(text);
 }
 
 // Note: native IME will only display if user calls SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1") _before_ SDL_CreateWindow().
-extern "C" void ImGui_ImplSDL2_SetPlatformImeData(ImGuiViewport*, ImGuiPlatformImeData* data)
+static void ImGui_ImplSDL2_SetPlatformImeData(ImGuiViewport*, ImGuiPlatformImeData* data)
 {
     if (data->WantVisible)
     {
@@ -264,11 +264,25 @@ extern "C" ImGuiKey ImGui_ImplSDL2_KeycodeToImGuiKey(int keycode)
         case SDLK_F10: return ImGuiKey_F10;
         case SDLK_F11: return ImGuiKey_F11;
         case SDLK_F12: return ImGuiKey_F12;
+        case SDLK_F13: return ImGuiKey_F13;
+        case SDLK_F14: return ImGuiKey_F14;
+        case SDLK_F15: return ImGuiKey_F15;
+        case SDLK_F16: return ImGuiKey_F16;
+        case SDLK_F17: return ImGuiKey_F17;
+        case SDLK_F18: return ImGuiKey_F18;
+        case SDLK_F19: return ImGuiKey_F19;
+        case SDLK_F20: return ImGuiKey_F20;
+        case SDLK_F21: return ImGuiKey_F21;
+        case SDLK_F22: return ImGuiKey_F22;
+        case SDLK_F23: return ImGuiKey_F23;
+        case SDLK_F24: return ImGuiKey_F24;
+        case SDLK_AC_BACK: return ImGuiKey_AppBack;
+        case SDLK_AC_FORWARD: return ImGuiKey_AppForward;
     }
     return ImGuiKey_None;
 }
 
-extern "C" void ImGui_ImplSDL2_UpdateKeyModifiers(SDL_Keymod sdl_key_mods)
+static void ImGui_ImplSDL2_UpdateKeyModifiers(SDL_Keymod sdl_key_mods)
 {
     ImGuiIO& io = ImGui::GetIO();
     io.AddKeyEvent(ImGuiMod_Ctrl, (sdl_key_mods & KMOD_CTRL) != 0);
@@ -282,7 +296,7 @@ extern "C" void ImGui_ImplSDL2_UpdateKeyModifiers(SDL_Keymod sdl_key_mods)
 // - When io.WantCaptureKeyboard is true, do not dispatch keyboard input data to your main application, or clear/overwrite your copy of the keyboard data.
 // Generally you may always pass all inputs to dear imgui, and hide them from your application based on those two flags.
 // If you have multiple SDL events and some of them are not meant to be used by dear imgui, you may need to filter events based on their windowID field.
-GDR_EXPORT extern "C" int ImGui_ImplSDL2_ProcessEvent(const SDL_Event* event)
+extern "C" int ImGui_ImplSDL2_ProcessEvent(const SDL_Event* event)
 {
     ImGuiIO& io = ImGui::GetIO();
     ImGui_ImplSDL2_Data* bd = ImGui_ImplSDL2_GetBackendData();
@@ -368,7 +382,7 @@ GDR_EXPORT extern "C" int ImGui_ImplSDL2_ProcessEvent(const SDL_Event* event)
     return false;
 }
 
-extern "C" int ImGui_ImplSDL2_Init(SDL_Window* window, SDL_Renderer* renderer)
+static int ImGui_ImplSDL2_Init(SDL_Window* window, SDL_Renderer* renderer)
 {
     ImGuiIO& io = ImGui::GetIO();
     IM_ASSERT(io.BackendPlatformUserData == nullptr && "Already initialized a platform backend!");
@@ -385,7 +399,8 @@ extern "C" int ImGui_ImplSDL2_Init(SDL_Window* window, SDL_Renderer* renderer)
 #endif
 
     // Setup backend capabilities flags
-    ImGui_ImplSDL2_Data* bd = IM_NEW(ImGui_ImplSDL2_Data)();
+    ImGui_ImplSDL2_Data* bd = (ImGui_ImplSDL2_Data *)Hunk_Alloc(sizeof(*bd), h_low);
+    memset(bd, 0, sizeof(*bd));
     io.BackendPlatformUserData = (void*)bd;
     io.BackendPlatformName = "imgui_impl_sdl2";
     io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;       // We can honor GetMouseCursor() values (optional)
@@ -450,13 +465,13 @@ extern "C" int ImGui_ImplSDL2_Init(SDL_Window* window, SDL_Renderer* renderer)
     return true;
 }
 
-GDR_EXPORT extern "C" int ImGui_ImplSDL2_InitForOpenGL(SDL_Window* window, void* sdl_gl_context)
+extern "C" int ImGui_ImplSDL2_InitForOpenGL(SDL_Window* window, void* sdl_gl_context)
 {
     IM_UNUSED(sdl_gl_context); // Viewport branch will need this.
     return ImGui_ImplSDL2_Init(window, nullptr);
 }
 
-GDR_EXPORT extern "C" int ImGui_ImplSDL2_InitForVulkan(SDL_Window* window)
+extern "C" int ImGui_ImplSDL2_InitForVulkan(SDL_Window* window)
 {
 #if !SDL_HAS_VULKAN
     IM_ASSERT(0 && "Unsupported");
@@ -464,7 +479,7 @@ GDR_EXPORT extern "C" int ImGui_ImplSDL2_InitForVulkan(SDL_Window* window)
     return ImGui_ImplSDL2_Init(window, nullptr);
 }
 
-GDR_EXPORT extern "C" int ImGui_ImplSDL2_InitForD3D(SDL_Window* window)
+extern "C" int ImGui_ImplSDL2_InitForD3D(SDL_Window* window)
 {
 #if !defined(_WIN32)
     IM_ASSERT(0 && "Unsupported");
@@ -472,23 +487,22 @@ GDR_EXPORT extern "C" int ImGui_ImplSDL2_InitForD3D(SDL_Window* window)
     return ImGui_ImplSDL2_Init(window, nullptr);
 }
 
-GDR_EXPORT extern "C" int ImGui_ImplSDL2_InitForMetal(SDL_Window* window)
+extern "C" int ImGui_ImplSDL2_InitForMetal(SDL_Window* window)
 {
     return ImGui_ImplSDL2_Init(window, nullptr);
 }
 
-int ImGui_ImplSDL2_InitForSDLRenderer(SDL_Window* window, SDL_Renderer* renderer)
+extern "C" int ImGui_ImplSDL2_InitForSDLRenderer(SDL_Window* window, SDL_Renderer* renderer)
 {
     return ImGui_ImplSDL2_Init(window, renderer);
 }
 
-int ImGui_ImplSDL2_InitForOther(SDL_Window* window)
+extern "C" int ImGui_ImplSDL2_InitForOther(SDL_Window* window)
 {
     return ImGui_ImplSDL2_Init(window, nullptr);
 }
 
-// [glnomad] modified to suit zone allocation
-void ImGui_ImplSDL2_Shutdown()
+extern "C" void ImGui_ImplSDL2_Shutdown(void)
 {
     ImGui_ImplSDL2_Data* bd = ImGui_ImplSDL2_GetBackendData();
     IM_ASSERT(bd != nullptr && "No platform backend to shutdown, or already shutdown?");
@@ -505,7 +519,7 @@ void ImGui_ImplSDL2_Shutdown()
     io.BackendFlags &= ~(ImGuiBackendFlags_HasMouseCursors | ImGuiBackendFlags_HasSetMousePos | ImGuiBackendFlags_HasGamepad);
 }
 
-extern "C" void ImGui_ImplSDL2_UpdateMouseData()
+static void ImGui_ImplSDL2_UpdateMouseData(void)
 {
     ImGui_ImplSDL2_Data* bd = ImGui_ImplSDL2_GetBackendData();
     ImGuiIO& io = ImGui::GetIO();
@@ -536,7 +550,7 @@ extern "C" void ImGui_ImplSDL2_UpdateMouseData()
     }
 }
 
-extern "C" void ImGui_ImplSDL2_UpdateMouseCursor()
+static void ImGui_ImplSDL2_UpdateMouseCursor(void)
 {
     ImGuiIO& io = ImGui::GetIO();
     if (io.ConfigFlags & ImGuiConfigFlags_NoMouseCursorChange)
@@ -562,7 +576,7 @@ extern "C" void ImGui_ImplSDL2_UpdateMouseCursor()
     }
 }
 
-extern "C" void ImGui_ImplSDL2_UpdateGamepads()
+static void ImGui_ImplSDL2_UpdateGamepads(void)
 {
     ImGuiIO& io = ImGui::GetIO();
     if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0) // FIXME: Technically feeding gamepad shouldn't depend on this now that they are regular inputs.
@@ -608,7 +622,7 @@ extern "C" void ImGui_ImplSDL2_UpdateGamepads()
     #undef MAP_ANALOG
 }
 
-void ImGui_ImplSDL2_NewFrame()
+extern "C" void ImGui_ImplSDL2_NewFrame(void)
 {
     ImGui_ImplSDL2_Data* bd = ImGui_ImplSDL2_GetBackendData();
     IM_ASSERT(bd != nullptr && "Did you call ImGui_ImplSDL2_Init()?");
@@ -630,7 +644,7 @@ void ImGui_ImplSDL2_NewFrame()
 
     // Setup time step (we don't use SDL_GetTicks() because it is using millisecond resolution)
     // (Accept SDL_GetPerformanceCounter() not returning a monotonically increasing value. Happens in VMs and Emscripten, see #6189, #6114, #3644)
-    extern "C" Uint64 frequency = SDL_GetPerformanceFrequency();
+    static Uint64 frequency = SDL_GetPerformanceFrequency();
     Uint64 current_time = SDL_GetPerformanceCounter();
     if (current_time <= bd->Time)
         current_time = bd->Time + 1;
