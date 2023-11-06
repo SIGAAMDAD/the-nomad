@@ -111,9 +111,9 @@ typedef struct {
     qboolean mapLoaded;
 
     gamestate_t state;
-    uint64_t frametime;
-    uint64_t framecount;
-    uint64_t realtime;
+    int frametime;
+    int framecount;
+    int realtime;
 
 //    uiMenu_t menuIndex;
     nhandle_t consoleShader;
@@ -189,7 +189,7 @@ void G_FlushMemory(void);
 void G_StartHunkUsers(void);
 void G_ShutdownAll(void);
 void G_ShutdownVMs(void);
-void G_Frame(uint64_t msec, uint64_t realMsec);
+void G_Frame(int msec, int realMsec);
 void G_InitDisplay(gpuConfig_t *config);
 
 //

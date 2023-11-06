@@ -21,6 +21,7 @@ int CPU_flags;
 cvar_t *com_demo;
 cvar_t *com_journal;
 cvar_t *com_logfile;
+cvar_t *com_maxfps;
 errorCode_t com_errorCode;
 #ifdef USE_AFFINITY_MASK
 cvar_t *com_affinityMask;
@@ -29,7 +30,9 @@ cvar_t *sys_cpuString;
 cvar_t *com_devmode;
 cvar_t *com_version;
 file_t com_journalFile = FS_INVALID_HANDLE;
-uint64_t com_frameTime;
+static int lastTime;
+int com_frameTime;
+static uint64_t com_frameNumber = 0;
 uint64_t com_cacheLine; // L1 cacheline
 char com_errorMessage[MAXPRINTMSG];
 static jmp_buf abortframe;
@@ -339,7 +342,7 @@ static sysEvent_t Com_GetSystemEvent(void)
 {
 	sysEvent_t ev;
 	const char *s;
-	uint32_t evTime;
+	int evTime;
 
 	// return if we have data
 	if (eventHead - eventTail > 0)
@@ -350,6 +353,16 @@ static sysEvent_t Com_GetSystemEvent(void)
 	evTime = Sys_Milliseconds();
 
 	// check for console commands
+	s = Sys_ConsoleInput();
+	if (s) {
+		char *b;
+		uint64_t len;
+
+		len = strlen(s) + 1;
+		b = (char *)Z_Malloc(len, TAG_STATIC);
+		strcpy(b, s);
+		Com_QueueEvent( evTime, SE_CONSOLE, 0, 0, len, b );
+	}
 
 	// return if we have data
 	if (eventHead - eventTail > 0)
@@ -485,7 +498,8 @@ uint64_t Com_EventLoop(void)
 //			Com_MouseEvent(ev.evValue, ev.evValue2);
 //			break;
 		case SE_CONSOLE:
-			G_KeyEvent(KEY_CONSOLE, 1, ev.evTime);
+			Cbuf_AddText((char *)ev.evPtr);
+			Cbuf_AddText("\n");
 			break;
 		default:
 			N_Error(ERR_FATAL, "Com_EventLoop: bad event type %i", ev.evType);
@@ -1244,8 +1258,6 @@ Com_Init: initializes all the engine's systems
 */
 void Com_Init(char *commandLine)
 {
-	uint64_t lastTime;
-
 	// get the cacheline for optimized allocations and memory management
 	com_cacheLine = SDL_GetCPUCacheLineSize();
 
@@ -1307,8 +1319,6 @@ void Com_Init(char *commandLine)
 	com_version = Cvar_Get("com_version", Com_VersionString(), CVAR_PROTECTED | CVAR_ROM);
 	Cvar_SetDescription(com_version, "Read-only CVar to see the version of the game.");
 
-	com_frameTime = 0;
-
 	// done early so bind command exists
 	Com_InitKeyCommands();
 
@@ -1318,6 +1328,7 @@ void Com_Init(char *commandLine)
 	com_logfile = Cvar_Get("com_logfile", "1", CVAR_TEMP);
 	Cvar_CheckRange(com_logfile, "0", "1", CVT_INT);
 	Cvar_SetDescription(com_logfile, "System console logging");
+	com_maxfps = Cvar_Get("com_maxfp", "60", 0);
 #ifdef USE_AFFINITY_MASK
 	com_affinityMask = Cvar_Get("com_affinityMask", "", CVAR_ARCHIVE_ND);
 	Cvar_SetDescription( com_affinityMask, "Bind game process to bitmask-specified CPU core(s), special characters:\n A or a - all default cores\n P or p - performance cores\n E or e - efficiency cores\n 0x<value> - use hexadecimal notation\n + or - can be used to add or exclude particular cores" );
@@ -1367,6 +1378,8 @@ void Com_Init(char *commandLine)
 
 	VM_Init();
 
+	lastTime = com_frameTime = Com_Milliseconds();
+
 	G_Init();
 
 	// set com_frameTime so that if a map is started on the
@@ -1377,16 +1390,108 @@ void Com_Init(char *commandLine)
 	Con_Printf("==== Common Initialization Done ====\n");
 }
 
+static int Com_ModifyMsec( int msec )
+{
+	int clampTime;
+
+	// for local single player gaming
+	// we may want to clamp the time to prevent players from
+	// flying off edges when something hitches.
+	clampTime = 200;
+
+	if (msec > clampTime) {
+		msec = clampTime;
+	}
+
+	return msec;
+}
+
+static int Com_TimeVal( int minMsec )
+{
+	int timeVal;
+
+	timeVal = Com_Milliseconds() - com_frameTime;
+
+	if (timeVal >= minMsec) {
+		timeVal = 0;
+	}
+	else {
+		timeVal = minMsec - timeVal;
+	}
+
+	return timeVal;
+}
+
 /*
 Com_Frame: runs a single frame for the game
 */
-void Com_Frame(void)
+void Com_Frame( qboolean noDelay )
 {
-	uint64_t msec, realMsec, lastTime;
+	static int bias = 0;
+	int msec, realMsec, minMsec;
+	int sleepMsec;
+	int timeVal;
+	int timeBeforeFirstEvents;
+	int timeBeforeEvents;
+	int timeAfter;
 
 	if (Q_setjmp(abortframe)) {
 		return; // an ERR_DROP was thrown
 	}
+
+	minMsec = 0; // silence compiler warning
+
+	timeBeforeFirstEvents = 0;
+	timeBeforeEvents = 0;
+	timeAfter = 0;
+
+
+#ifdef USE_AFFINITY_MASK
+	if (com_affinityMask->modified) {
+		Com_SetAffinityMask( com_affinityMask->s );
+		com_affinityMask->modified = qfalse;
+	}
+#endif
+
+	//
+	// main event loop
+	//
+	if (noDelay) {
+		minMsec = 0;
+		bias = 0;
+	}
+	else {
+		if (com_maxfps->i > 0) {
+			minMsec = 1000 / com_maxfps->i;
+		}
+		else {
+			minMsec = 1;
+		}
+		timeVal = com_frameTime - lastTime;
+		bias += timeVal - minMsec;
+
+		if (bias > minMsec)
+			bias = minMsec;
+		
+		// Adjust minMsec if previous frame took too long to render so
+		// that framerate is stable at the requested value.
+		minMsec -= bias;
+	}
+
+#if 0
+	// waiting for incoming events
+	if (!noDelay) {
+		do {
+			timeVal = Com_TimeVal( minMsec );
+
+			sleepMsec = timeVal;
+
+			if (timeVal > sleepMsec) {
+				Com_EventLoop();
+			}
+		} while (Com_TimeVal( minMsec ));
+	}
+#endif
 
 	lastTime = com_frameTime;
 	com_frameTime = Com_EventLoop();
@@ -1394,10 +1499,18 @@ void Com_Frame(void)
 
 	Cbuf_Execute();
 
-	// run it again
+	// mess with msec if needed
+	msec = Com_ModifyMsec( realMsec );
+
+	//
+	// run the game loop
+	//
 	Com_EventLoop();
+	Cbuf_Execute();
 
 	G_Frame(msec, realMsec);
+
+	com_frameNumber++;
 }
 
 /*

@@ -363,7 +363,7 @@ static void SCR_DrawScreenField(stereoFrame_t stereoFrame)
 	UI_Refresh(gi.realtime);
 
     // console draws next
-//    Con_DrawConsole();
+    Con_DrawConsole();
 }
 
 static uint64_t time_frontend, time_backend;

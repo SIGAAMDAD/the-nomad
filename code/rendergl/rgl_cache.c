@@ -183,20 +183,10 @@ void R_ShutdownGPUBuffers(void)
 			nglDeleteVertexArrays(1, (const GLuint *)&vbo->vaoId);
 
 		if (vbo->vertex.id) {
-			if (vbo->vertex.usage == BUF_GL_MAPPED) {
-				nglBindBuffer(GL_ARRAY_BUFFER, vbo->vertex.id);
-				nglUnmapBuffer(GL_ARRAY_BUFFER);
-				nglBindBuffer(GL_ARRAY_BUFFER, 0);
-			}
 			nglDeleteBuffers(1, (const GLuint *)&vbo->vertex.id);
 		}
 		
 		if (vbo->index.id) {
-			if (vbo->index.usage == BUF_GL_MAPPED) {
-				nglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo->index.id);
-				nglUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
-				nglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-			}
 			nglDeleteBuffers(1, (const GLuint *)&vbo->index.id);
 		}
 	}

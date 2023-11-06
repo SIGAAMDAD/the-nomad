@@ -1191,7 +1191,7 @@ void COM_ParseError( const char *format, ... )
 	vsprintf (string, format, argptr);
 	va_end( argptr );
 
-	Con_Printf( COLOR_RED "WARNING: %s, line %lu: %s\n", com_parsename, COM_GetCurrentParseLine(), string );
+	Con_Printf( COLOR_RED "ERROR: %s, line %lu: %s\n", com_parsename, COM_GetCurrentParseLine(), string );
 }
 
 void COM_ParseWarning( const char *format, ... )
@@ -1203,7 +1203,7 @@ void COM_ParseWarning( const char *format, ... )
 	vsprintf (string, format, argptr);
 	va_end( argptr );
 
-	Con_Printf( COLOR_RED "%s, line %lu: %s\n", com_parsename, COM_GetCurrentParseLine(), string );
+	Con_Printf( COLOR_YELLOW "WARNING: %s, line %lu: %s\n", com_parsename, COM_GetCurrentParseLine(), string );
 }
 
 

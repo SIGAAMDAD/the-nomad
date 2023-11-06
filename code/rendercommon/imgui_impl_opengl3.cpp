@@ -396,6 +396,10 @@ void ImGui_ImplOpenGL3_Shutdown(void)
 {
     ImGui_ImplOpenGL3_Data *bd = ImGui_ImplOpenGL3_GetBackendData();
 
+    if (!bd) {
+        return;
+    }
+
     ImGui_ImplOpenGL3_DestroyDeviceObjects();
     ImGui_ImplOpenGL3_DestroyFontsTexture();
 }

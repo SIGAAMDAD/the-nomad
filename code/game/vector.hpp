@@ -32,6 +32,14 @@ private:
 };
 
 template<typename T, int tag>
+CVector<T, tag>::CVector( void )
+{
+	mData = NULL;
+	mSize = 0;
+	mAllocated = 0;
+}
+
+template<typename T, int tag>
 void CVector<T, tag>::doRealloc( uint64_t addSize )
 {
 	T *tmp;
@@ -74,5 +82,16 @@ void CVector<T, tag>::Resize( uint64_t size )
 	}
 	mData = tmp;
 }
+
+template<typename T, int tag>
+void CVector<T, tag>::Clear( void )
+{
+	if (mData) {
+		Z_Free(mData);
+	}
+	mSize = 0;
+	mAllocated = 0;
+}
+
 
 #endif

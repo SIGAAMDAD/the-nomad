@@ -715,7 +715,7 @@ Console_Key
 Handles history and console scrollback
 ====================
 */
-static void Console_Key( uint32_t key ) {
+void Console_Key( uint32_t key ) {
 	// ctrl-L clears screen
 	if ( key == 'l' && keys[KEY_LCTRL].down ) {
 		Cbuf_AddText( "clear\n" );
@@ -891,46 +891,12 @@ static void G_KeyDownEvent(uint32_t key, uint32_t time)
 		}
 	}
 	else if (Key_GetCatcher() & KEYCATCH_UI) {
-		switch (key) {
-		case KEY_MOUSE_LEFT:
-			ImGui::GetIO().AddMouseButtonEvent(ImGuiMouseButton_Left, false);
-			break;
-		case KEY_MOUSE_RIGHT:
-			ImGui::GetIO().AddMouseButtonEvent(ImGuiMouseButton_Right, false);
-			break;
-		case KEY_MOUSE_MIDDLE:
-			ImGui::GetIO().AddMouseButtonEvent(ImGuiMouseButton_Middle, false);
-			break;
-		case KEY_WHEEL_DOWN:
-		case KEY_WHEEL_UP:
-			return;
-		default:
-			ImGui::GetIO().AddKeyEvent(EngineKeyToImGuiKey(key), false);
-			break;
-		};
 		if (uivm) {
 //			VM_Call(uivm, 2, UI_KEY_EVENT, key, qtrue);
 		}
 	}
 	else if (Key_GetCatcher() & KEYCATCH_CONSOLE) {
-		switch (key) {
-		case KEY_MOUSE_LEFT:
-			ImGui::GetIO().AddMouseButtonEvent(ImGuiMouseButton_Left, false);
-			break;
-		case KEY_MOUSE_RIGHT:
-			ImGui::GetIO().AddMouseButtonEvent(ImGuiMouseButton_Right, false);
-			break;
-		case KEY_MOUSE_MIDDLE:
-			ImGui::GetIO().AddMouseButtonEvent(ImGuiMouseButton_Middle, false);
-			break;
-		case KEY_WHEEL_DOWN:
-		case KEY_WHEEL_UP:
-			return;
-		default:
-			ImGui::GetIO().AddKeyEvent(EngineKeyToImGuiKey(key), false);
-			break;
-		};
-		Console_Key(key);
+//		Console_Key(key);
 	}
 }
 

@@ -744,7 +744,7 @@ void G_ClearMem(void)
     }
 }
 
-void G_Frame(uint64_t msec, uint64_t realMsec)
+void G_Frame(int msec, int realMsec)
 {
     gi.frametime = msec;
     gi.realtime += msec;
@@ -755,8 +755,8 @@ void G_Frame(uint64_t msec, uint64_t realMsec)
     // update audio
     Snd_Submit();
 
+    Con_RunConsole();
     SCR_UpdateScreen();
-//    Con_RunConsole();
 }
 
 

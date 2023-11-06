@@ -6,6 +6,10 @@
 
 qboolean m_entersound;
 
+void CUILib::Shutdown( void ) {
+	// nothing for now
+}
+
 /*
 =================
 UI_Init
@@ -876,8 +880,8 @@ void CUILib::DrawHandlePic( float x, float y, float w, float h, nhandle_t hShade
 		s1 = 0;
 	}
 	else {
-		s0 = 0;
-		s1 = 1;
+		s0 = 1;
+		s1 = 0;
 	}
 
 	if( h < 0 ) {	// flip about horizontal

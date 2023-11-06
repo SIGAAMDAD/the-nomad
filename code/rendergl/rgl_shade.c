@@ -28,8 +28,8 @@ static void RB_IterateStages( const shaderDrawCommands_t *input )
 
     VBO_Bind(input->buf);
 
-    for (stage = 0; stage < 1; stage++) {
-        shaderStage_t *stageP = input->shader->stages[0];
+    for (stage = 0; stage < MAX_SHADER_STAGES; stage++) {
+        shaderStage_t *stageP = input->shader->stages[stage];
 
         if (!stageP) {
             break;
@@ -41,7 +41,7 @@ static void RB_IterateStages( const shaderDrawCommands_t *input )
 
         GLSL_SetUniformInt(sp, UNIFORM_DIFFUSE_MAP, 0);
 
-        GL_BindTexture(TB_COLORMAP, stageP->image);
+        nglBindTexture(GL_TEXTURE_2D, stageP->image->id);
 
         GLSL_SetUniformMatrix4(sp, UNIFORM_MODELVIEWPROJECTION, glState.modelviewProjection);
 
@@ -60,6 +60,7 @@ static void RB_ShaderIterateStages( void )
     const shaderDrawCommands_t *input;
 
     input = &drawBuf;
+    drawBuf.useInternalVao = qtrue;
 
     if (drawBuf.useInternalVao) {
         RB_UpdateCache(glState.vertexAttribsEnabled ^ ATTRIB_BITS);
@@ -112,7 +113,6 @@ void RB_EndSurface( void )
     if (input->xyz[MAX_BATCH_VERTICES - 1][0] != 0) {
         ri.Error(ERR_DROP, "RB_EndSurface() - MAX_BATCH_VERTICES hit");
     }
-    RB_UpdateCache(ATTRIB_BITS);
 
     backend.pc.c_bufferIndices += input->numIndices;
     backend.pc.c_bufferVertices += input->numVertices;

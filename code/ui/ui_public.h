@@ -16,6 +16,6 @@ typedef enum : uint64_t {
 
 extern "C" void UI_Init( void );
 extern "C" void UI_Shutdown( void );
-extern "C" void UI_Refresh( uint64_t realtime );
+extern "C" void UI_Refresh( int realtime );
 
 #endif

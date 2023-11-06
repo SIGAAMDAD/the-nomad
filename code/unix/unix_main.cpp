@@ -375,6 +375,148 @@ void Sys_Print(const char *msg)
     }
 }
 
+char *Sys_ConsoleInput( void )
+{
+    // we use this when sending back commands
+    static char text[ sizeof(tty_con.buffer) ];
+    int avail;
+    char key;
+    char *s;
+    field_t history;
+
+    if ( ttycon_on ) {
+		avail = read( STDIN_FILENO, &key, 1 );
+		if (avail != -1) {
+			// we have something
+			// backspace?
+			// NOTE TTimo testing a lot of values .. seems it's the only way to get it to work everywhere
+			if ((key == tty_erase) || (key == 127) || (key == 8)) {
+				if (tty_con.cursor > 0) {
+					tty_con.cursor--;
+					tty_con.buffer[tty_con.cursor] = '\0';
+					tty_Back();
+				}
+				return NULL;
+			}
+
+			// check if this is a control char
+			if (key && key < ' ') {
+				if (key == '\n') {
+					// push it in history
+					Con_SaveField( &tty_con );
+					s = tty_con.buffer;
+					while ( *s == '\\' || *s == '/' ) // skip leading slashes
+						s++;
+					N_strncpyz( text, s, sizeof( text ) );
+					Field_Clear( &tty_con );
+					write( STDOUT_FILENO, "\n]", 2 );
+					return text;
+				}
+
+				if (key == '\t') {
+					tty_Hide();
+					Field_AutoComplete( &tty_con );
+					tty_Show();
+					return NULL;
+				}
+
+				avail = read( STDIN_FILENO, &key, 1 );
+				if (avail != -1) {
+					// VT 100 keys
+					if (key == '[' || key == 'O') {
+						avail = read( STDIN_FILENO, &key, 1 );
+						if (avail != -1) {
+							switch (key) {
+							case 'A':
+								if ( Con_HistoryGetPrev( &history ) ) {
+									tty_Hide();
+									tty_con = history;
+									tty_Show();
+								}
+								tty_FlushIn();
+								return NULL;
+								break;
+							case 'B':
+								if ( Con_HistoryGetNext( &history ) ) {
+									tty_Hide();
+									tty_con = history;
+									tty_Show();
+								}
+								tty_FlushIn();
+								return NULL;
+								break;
+							case 'C': // right
+							case 'D': // left
+							//case 'H': // home
+							//case 'F': // end
+								return NULL;
+							};
+						}
+					}
+				}
+
+				if ( key == 12 ) { // clear teaminal
+					write( STDOUT_FILENO, "\ec]", 3 );
+					if ( tty_con.cursor ) {
+						write( STDOUT_FILENO, tty_con.buffer, tty_con.cursor );
+					}
+					tty_FlushIn();
+					return NULL;
+				}
+
+				Con_DPrintf( "dropping ISCTL sequence: %d, tty_erase: %d\n", key, tty_erase );
+				tty_FlushIn();
+				return NULL;
+			}
+			if ( tty_con.cursor >= sizeof( text ) - 1 ) {
+				return NULL;
+            }
+
+			// push regular character
+			tty_con.buffer[ tty_con.cursor ] = key;
+			tty_con.cursor++;
+			// print the current line (this is differential)
+			write( STDOUT_FILENO, &key, 1 );
+		}
+		return NULL;
+	}
+	else if ( stdin_active ) {
+		int len;
+		fd_set fdset;
+		struct timeval timeout;
+
+		FD_ZERO( &fdset );
+		FD_SET( STDIN_FILENO, &fdset ); // stdin
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 0;
+		if ( select( STDIN_FILENO + 1, &fdset, NULL, NULL, &timeout) == -1 || !FD_ISSET( STDIN_FILENO, &fdset ) ) {
+			return NULL;
+		}
+
+		len = read( STDIN_FILENO, text, sizeof( text ) );
+		if ( len == 0 ) { // eof!
+			fcntl( STDIN_FILENO, F_SETFL, stdin_flags );
+			stdin_active = qfalse;
+			return NULL;
+		}
+
+		if ( len < 1 ) {
+			return NULL;
+        }
+
+		text[len-1] = '\0'; // rip off the /n and terminate
+		s = text;
+
+		while ( *s == '\\' || *s == '/' ) { // skip leading slashes
+			s++;
+        }
+
+		return s;
+	}
+
+	return NULL;
+}
+
 const char *Sys_GetError(void)
 {
     return strerror(errno);
@@ -692,7 +834,7 @@ int main(int argc, char **argv)
 
 	while (1) {
 		// run the game
-		Com_Frame();
+		Com_Frame(qfalse);
 	}
 	// never gets here
 	return 0;

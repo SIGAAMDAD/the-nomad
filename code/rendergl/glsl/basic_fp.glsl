@@ -48,5 +48,5 @@ void applyLighting() {
 #endif
 
 void main() {
-    a_Color = texture(u_DiffuseMap, v_TexCoord) + v_Color;
+    a_Color = texture(u_DiffuseMap, v_TexCoord);
 }

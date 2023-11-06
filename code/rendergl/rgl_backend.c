@@ -498,6 +498,9 @@ static const void *RB_SwapBuffers(const void *data)
     
     cmd = (const swapBuffersCmd_t *)data;
 
+	// only draw imgui data after everything else has finished
+	ri.ImGui_Draw();
+
     // we measure overdraw by reading back the stencil buffer and
 	// counting up the number of increments that have happened
 	if ( r_measureOverdraw->i ) {
@@ -551,7 +554,7 @@ static const void	*RB_DrawBuffer( const void *data ) {
 //	if (glConfig.ARB_framebuffer_object)
 //		FBO_Bind(NULL);
 
-//	nglDrawBuffer( cmd->buffer );
+	nglDrawBuffer( cmd->buffer );
 
 	// clear screen for debugging
 #if 0

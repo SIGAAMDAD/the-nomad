@@ -674,9 +674,9 @@ char* Cmd_ArgsFrom(int32_t arg)
 
 static void Cmd_List_f(void)
 {
-    Con_Printf("Total number of commands: %i", numCommands);
+    Con_Printf("Total number of commands: %i\n", numCommands);
     for (const cmd_t *cmd = cmd_functions; cmd; cmd = cmd->next) {
-        Con_Printf("%s", cmd->name);
+        Con_Printf("%s\n", cmd->name);
     }
 }
 

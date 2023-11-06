@@ -33,27 +33,13 @@ void RB_MakeViewMatrix( qboolean useOrthoUI )
 {
     float aspect, zoom;
 
-    if (useOrthoUI) {
-        const float L = 0;
-        const float R = glConfig.vidWidth;
-        const float T = 0;
-        const float B = glConfig.vidHeight;
-
-        float *ortho = rg.viewData.camera.transformMatrix;
-
-        ortho[ 0] = 2.0f/(R-L);     ortho[ 4] = 0.0f;           ortho[ 8] = 0.0f;   ortho[12] = 0.0f;
-        ortho[ 1] = 0.0f;           ortho[ 5] = 2.0f/(T-B);     ortho[ 9] = 0.0f;   ortho[13] = 0.0f;
-        ortho[ 2] = 0.0f;           ortho[ 6] = 0.0f;           ortho[10] = -1.0f;  ortho[14] = 0.0f;
-        ortho[ 3] = (R+L)/(L-R);    ortho[ 7] = (T+B)/(B-T);    ortho[11] = 0.0f;   ortho[15] = 1.0f;
-
-        return;
-    }
-
-    zoom = rg.viewData.camera.zoom;
+    zoom = rg.viewData.camera.zoom = 1.0f;
     aspect = rg.viewData.camera.aspect = glConfig.vidWidth / glConfig.vidHeight;
 
+    VectorClear(rg.viewData.camera.origin);
     Mat4Ortho(-aspect * zoom, aspect * zoom, -aspect, aspect, -1.0f, 1.0f, rg.viewData.camera.projectionMatrix);
     Mat4Identity(rg.viewData.camera.modelMatrix);
+    Mat4Translation(rg.viewData.camera.origin, rg.viewData.camera.modelMatrix);
     Mat4Multiply(rg.viewData.camera.projectionMatrix, rg.viewData.camera.modelMatrix, rg.viewData.camera.transformMatrix);
 }
 

@@ -58,6 +58,7 @@ public:
     ~CUILib() = default;
 
     void Init( void );
+    void Shutdown( void );
     
     void PushMenu( CUIMenu *menu );
     void PopMenu( void );
@@ -93,10 +94,10 @@ public:
         return curmenu;
     }
 
-    uint64_t GetFrameTime( void ) const {
+    int GetFrameTime( void ) const {
         return frametime;
     }
-    uint64_t GetRealTime( void ) const {
+    int GetRealTime( void ) const {
         return realtime;
     }
 
@@ -159,14 +160,20 @@ private:
     int cursorx;
     int cursory;
 
-    uint64_t frametime;
-    uint64_t realtime;
+    int frametime;
+    int realtime;
 
     gpuConfig_t gpuConfig;
 };
 
 extern CUILib *ui;
 extern qboolean m_entersound;
+
+// cvars
+extern cvar_t *ui_language;
+extern cvar_t *ui_printStrings;
+
+extern const char *UI_LangToString( int32_t lang );
 
 extern void			Menu_Cache( void );
 extern void			Menu_Focus( CUIMenuWidget *m );
@@ -220,7 +227,17 @@ extern void			MenuField_Init( mfield_t *m );
 extern void			MenuField_Draw( mfield_t *f );
 extern sfxHandle_t	MenuField_Key( mfield_t* m, uint32_t* key );
 
+//
+// ui_title.cpp
+//
 extern void         UI_TitleMenu( void );
+extern void         TitleMenu_Cache( void );
+
+//
+// ui_settings.cpp
+//
+extern void         UI_SettingsMenu( void );
+extern void         SettingsMenu_Cache( void );
 
 #include "ui_defs.h"
 

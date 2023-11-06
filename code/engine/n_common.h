@@ -11,7 +11,7 @@
 Common functionality for the engine and vm alike
 */
 
-void Com_Frame(void);
+void Com_Frame( qboolean noDelay );
 int Com_Milliseconds( void );
 qboolean Com_EarlyParseCmdLine( char *commandLine, char *con_title, int title_size, int *vid_xpos, int *vid_ypos );
 uint32_t crc32_buffer(const byte *buf, uint32_t len);
@@ -309,7 +309,7 @@ extern cvar_t *com_logfile;
 extern cvar_t *com_version;
 extern cvar_t *com_devmode;
 extern cvar_t *sys_cpuString;
-extern uint64_t com_frameTime;
+extern int com_frameTime;
 extern uint64_t com_cacheLine;
 extern qboolean com_errorEntered;
 extern char com_errorMessage[MAXPRINTMSG];
@@ -493,6 +493,7 @@ uint64_t Sys_GetTotalRAM_Physical(void);
 uint64_t Sys_GetCacheLine(void);
 uint64_t Sys_GetPageSize(void);
 
+char *Sys_ConsoleInput( void );
 uint64_t Sys_EventSubtime(uint64_t time);
 
 fileOffset_t Sys_SeekMappedFile(fileOffset_t offset, uint32_t whence, memoryMap_t *file);

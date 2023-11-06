@@ -44,7 +44,7 @@ static void FindMatches( const char *s )
 static void PrintMatches( const char *s )
 {
 	if ( !N_stricmpn( s, shortestMatch, strlen( shortestMatch ) ) ) {
-		Con_Printf( "    %s", s );
+		Con_Printf( "    %s\n", s );
 	}
 }
 
@@ -54,7 +54,7 @@ static void PrintCvarMatches( const char *s )
 
 	if ( !N_stricmpn( s, shortestMatch, strlen( shortestMatch ) ) ) {
 		Com_TruncateLongString( value, Cvar_VariableString( s ) );
-		Con_Printf( "    %s = \"%s\"", s, value );
+		Con_Printf( "    %s = \"%s\"\n", s, value );
 	}
 }
 

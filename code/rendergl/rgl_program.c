@@ -233,8 +233,6 @@ static int GLSL_CompileGPUShader(GLuint program, GLuint *prevShader, const GLcha
         GL_SetObjectDebugName(GL_SHADER, shader, programName, "_fragmentShader");
     else if (shaderType == GL_GEOMETRY_SHADER)
         GL_SetObjectDebugName(GL_SHADER, shader, programName, "_geometryShader");
-    
-    ri.Printf(PRINT_DEVELOPER, "Shader Source (%s):\n%s", programName, buffer);
 
     // give it the source
     nglShaderSource(shader, 1, (const GLchar **)&buffer, (const GLint *)&size);
@@ -434,10 +432,10 @@ static int GLSL_InitGPUShader2(shaderProgram_t *program, const char *name, uint3
     
     GLSL_LinkProgram(program->programId);
 
-    GLSL_CheckAttribLocation(program->programId, "a_Position", "ATTRIB_INDEX_POSITION", ATTRIB_INDEX_POSITION);
-    GLSL_CheckAttribLocation(program->programId, "a_TexCoord", "ATTRIB_INDEX_TEXCOORD", ATTRIB_INDEX_TEXCOORD);
+//    GLSL_CheckAttribLocation(program->programId, "a_Position", "ATTRIB_INDEX_POSITION", ATTRIB_INDEX_POSITION);
+//    GLSL_CheckAttribLocation(program->programId, "a_TexCoord", "ATTRIB_INDEX_TEXCOORD", ATTRIB_INDEX_TEXCOORD);
 //    GLSL_CheckAttribLocation(program->programId, "a_Normal", "ATTRIB_INDEX_NORMAL", ATTRIB_INDEX_NORMAL);
-    GLSL_CheckAttribLocation(program->programId, "a_Color", "ATTRIB_INDEX_COLOR", ATTRIB_INDEX_COLOR);
+//    GLSL_CheckAttribLocation(program->programId, "a_Color", "ATTRIB_INDEX_COLOR", ATTRIB_INDEX_COLOR);
 
     return qtrue;
 }
