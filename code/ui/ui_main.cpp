@@ -141,7 +141,7 @@ extern "C" void UI_Refresh( int realtime )
             ui->DrawHandlePic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, ui->menubackShader );
 		}
 
-        if (Key_IsDown( KEY_ESCAPE )) {
+        if (ImGui::IsKeyPressed( ImGuiKey_Escape, false )) {
             ui->PopMenu();
         }
 
