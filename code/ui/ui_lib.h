@@ -3,6 +3,13 @@
 
 #pragma once
 
+#include "../engine/n_shared.h"
+#include "../game/g_game.h"
+#include "ui_menu.h"
+#include "ui_string_manager.h"
+#include "ui_window.h"
+#include "ui_font.h"
+
 #define MAX_MENU_DEPTH 8
 
 #define RCOLUMN_OFFSET			( BIGCHAR_WIDTH )
@@ -73,6 +80,8 @@ public:
     void Refresh( uint64_t realtime );
     qboolean CursorInRect( int x, int y, int width, int height ) const;
     void DrawTextBox( int x, int y, int width, int lines ) const;
+    void DrawString( const char *str ) const;
+    void DrawStringBlink( const char *str, int ticker, int mult ) const;
     void DrawString( int x, int y, const char *str, int style, vec4_t color ) const;
     void DrawMenu( void ) const;
     void DrawChar( int x, int y, int ch, int style, vec4_t color ) const;
@@ -142,6 +151,9 @@ public:
     nhandle_t charset;
     nhandle_t rb_on;
     nhandle_t rb_off;
+
+    float scale;
+    float bias;
 private:
     void DrawString2( int x, int y, const char* str, vec4_t color, int charw, int charh ) const;
     void DrawBannerString2( int x, int y, const char* str, vec4_t color ) const;
@@ -153,9 +165,6 @@ private:
     int menusp;
     qboolean firstdraw;
     int debug;
-
-    float scale;
-    float bias;
 
     int cursorx;
     int cursory;
@@ -234,10 +243,16 @@ extern void         UI_TitleMenu( void );
 extern void         TitleMenu_Cache( void );
 
 //
-// ui_settings.cpp
+// ui_intro.cpp
 //
-extern void         UI_SettingsMenu( void );
-extern void         SettingsMenu_Cache( void );
+extern void         UI_IntroMenu( void );
+extern void         IntroMenu_Cache( void );
+
+//
+// ui_main.cpp
+//
+extern void         UI_MainMenu( void );
+extern void         MainMenu_Cache( void );
 
 #include "ui_defs.h"
 

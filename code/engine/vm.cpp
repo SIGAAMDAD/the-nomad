@@ -475,7 +475,6 @@ static void VM_FillImport(vmRefImport_t *import, const char *name)
 	import->trap_FS_FileLength = FS_FileLength;
 }
 
-#include <dlfcn.h>
 /*
 VM_LoadDLL: used to load a development dll instead of a virtual machine
 */
@@ -501,7 +500,7 @@ static void *GDR_DECL VM_LoadDLL(const char *name, vmMainFunc_t *entryPoint, dll
 	
     libHandle = Sys_LoadDLL(filename);
     if (!libHandle) {
-        Con_DPrintf("VM_LoadDLL '%s' failed, error(): %s\n", name, dlerror());
+        Con_DPrintf("VM_LoadDLL '%s' failed, error(): %s\n", name, Sys_GetDLLError());
         return NULL;
     }
 

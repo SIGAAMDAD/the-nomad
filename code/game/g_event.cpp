@@ -1175,7 +1175,6 @@ static ImGuiKey EngineKeyToImGuiKey(uint32_t key)
     case KEY_F22:
     case KEY_F23:
     case KEY_F24:
-	case KEY_EXECUTE:
 	case KEY_HELP:
 	case KEY_SELECT:
 	case KEY_STOP:

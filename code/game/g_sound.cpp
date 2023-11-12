@@ -1,92 +1,312 @@
 #include "g_game.h"
 #include "g_sound.h"
+#include "../system/sys_thread.h"
 
 #include <ALsoft/al.h>
 #include <ALsoft/alc.h>
+#include <ALsoft/alext.h>
 #include <sndfile.h>
 #include <ogg/ogg.h>
 #include <vorbis/vorbisfile.h>
 
-class CSoundBase
-{
-public:
-    CSoundBase(void);
-    ~CSoundBase();
-
-    void LoadFile(const char *npath);
-};
-
-class CSoundManager
-{
-public:
-    CSoundManager(void);
-    ~CSoundManager();
-
-    void Init(void);
-    void Shutdown(void);
-private:
-    ALCdevice *mDevice;
-    ALCcontext *mContext;
-
-    qboolean mClearedQueue;
-    qboolean mRegistered;
-};
-
-static ALCdevice* device;
-static ALCcontext* context;
-static qboolean clearedQueue;
+#define MAX_SOUND_SOURCES 1024
 
 cvar_t *snd_musicvol;
 cvar_t *snd_sfxvol;
 cvar_t *snd_musicon;
 cvar_t *snd_sfxon;
+static cvar_t *snd_frequency;
 
-#define Snd_HashFileName(x) Com_GenerateHashValue((x),MAX_SND_HASH)
+#define Snd_HashFileName(x) Com_GenerateHashValue((x),MAX_SOUND_SOURCES)
 
-typedef struct nomadsnd_s
+#define SNDBUF_FLOAT 0
+#define SNDBUF_DOUBLE 1
+#define SNDBUF_16BIT 2
+#define SNDBUF_8BIT 3
+
+class CSoundSource
 {
-    char name[MAX_GDR_PATH];
+public:
+    CSoundSource( void );
+    ~CSoundSource();
 
-    uint32_t source;
-    uint32_t buffer;
-    uint32_t samplerate;
-    uint32_t channels;
-    uint32_t length;
-    uint32_t frames;
+    void Init( void );
+    void Shutdown( void );
+    bool LoadFile(const char *npath);
 
-    short *sndbuf;
+    void Update( void ) const;
+    void SetVolume( int tag );
 
-    qboolean track;
-    qboolean looping;
-    qboolean failed;
+    bool IsPlaying( void ) const;
+    bool IsPaused( void ) const;
+    bool IsLooping( void ) const;
 
-    struct nomadsnd_s *next;
-} nomadsnd_t;
+    const char *GetName( void ) const;
 
-#define SND_STATE_NOTPLAYING    0x0000
-#define SND_STATE_PLAYING       0x2000
+    void Play( bool loop = false ) const;
+    void Stop( void ) const;
+    void Pause( void ) const;
 
-static uint64_t sndcache_size;
-static nomadsnd_t* snd_cache;
-static boost::shared_mutex sndLock;
+    CSoundSource *m_pNext;
+private:
+    int FileFormat( const char *ext ) const;
+    void Alloc( void );
+    ALenum Format( void ) const;
 
-#define MAX_SND_HASH 1024
-static nomadsnd_t *sndhash[MAX_SND_HASH];
-#define MAX_SND_QUEUE 256
-static nomadsnd_t *sfxqueue[MAX_SND_QUEUE];
-static uint32_t sfx_queuedCount;
-static nomadsnd_t *musicTrack;
+    char m_pName[MAX_GDR_PATH];
 
-static uint32_t Snd_Format(const nomadsnd_t *snd)
+    void *m_pData;
+    uint32_t m_nSize;
+    uint32_t m_iType;
+    uint32_t m_iTag;
+
+    // AL data
+    uint32_t m_iSource;
+    uint32_t m_iBuffer;
+
+    SF_INFO m_hFData;
+};
+
+class CSoundManager
 {
-    if (snd->channels == 1)
-        return AL_FORMAT_MONO16;
-    
-    return AL_FORMAT_STEREO16;
+public:
+    CSoundManager( void );
+    ~CSoundManager();
+
+    void Init( void );
+    void Shutdown( void );
+    void Restart( void );
+
+    void PlaySound( CSoundSource *snd );
+    void StopSound( CSoundSource *snd );
+    void LoopTrack( CSoundSource *snd );
+    void DisableSounds( void );
+    void Update( int msec );
+
+    void AddSourceToHash( CSoundSource *src );
+    CSoundSource *InitSource( const char *filename, int tag );
+
+    GDR_INLINE uint64_t NumSources( void ) const { return m_nSources; }
+    GDR_INLINE CSoundSource *GetSource( sfxHandle_t handle ) { return m_pSources[handle]; }
+    GDR_INLINE const CSoundSource *GetSource( sfxHandle_t handle ) const { return m_pSources[handle]; }
+
+    CSoundSource *m_pCurrentTrack;
+private:
+    CSoundSource *m_pSources[MAX_SOUND_SOURCES];
+    uint64_t m_nSources;
+
+    ALCdevice *m_pDevice;
+    ALCcontext *m_pContext;
+
+    bool m_bClearedQueue;
+    bool m_bRegistered;
+
+    CThread m_hThread;
+    CThreadMutex m_hAllocLock;
+    CThreadSpinRWLock m_hQueueLock;
+};
+
+static CSoundManager *sndManager;
+
+
+CSoundSource::CSoundSource( void ) {
+    Init();
 }
 
-#define SND_SFX 0
-#define SND_MUSIC 1
+CSoundSource::~CSoundSource() {
+    Shutdown();
+}
+
+const char *CSoundSource::GetName( void ) const {
+    return m_pName;
+}
+
+bool CSoundSource::IsPaused( void ) const {
+    ALint i;
+    alGetSourcei( m_iSource, AL_PAUSED, &i );
+    return (bool)i;
+}
+
+bool CSoundSource::IsPlaying( void ) const {
+    ALint i;
+    alGetSourcei( m_iSource, AL_PLAYING, &i );
+    return (bool)i;
+}
+
+bool CSoundSource::IsLooping( void ) const {
+    ALint i;
+    alGetSourcei( m_iSource, AL_LOOPING, &i );
+    return (bool)i;
+}
+
+void CSoundSource::Init( void )
+{
+    memset( m_pName, 0, sizeof(m_pName) );
+    memset( &m_hFData, 0, sizeof(m_hFData) );
+    if (!m_iSource) {
+        alGenSources( 1, (ALuint *)&m_iSource );
+    }
+    if (!m_iBuffer) {
+        alGenBuffers( 1, (ALuint *)&m_iBuffer );
+    }
+    m_pData = NULL;
+    m_nSize = 0;
+    m_iType = 0;
+}
+
+void CSoundSource::Shutdown( void )
+{
+    if (m_iSource) {
+        {
+            // stop the source if we're playing anything
+            ALint playing;
+            alGetSourcei( m_iSource, AL_PLAYING, &playing );
+            if (playing) {
+                alSourceStop( m_iSource );
+            }
+        }
+
+        alSourcei( m_iSource, AL_BUFFER, AL_NONE );
+        alDeleteSources( 1, (const ALuint *)&m_iSource );
+    }
+    if (m_iBuffer) {
+        alDeleteBuffers( 1, (const ALuint *)&m_iBuffer );
+    }
+
+    m_pData = NULL;
+    m_nSize = 0;
+    m_iBuffer = 0;
+    m_iSource = 0;
+    m_iType = 0;
+}
+
+void CSoundSource::Update( void ) const {
+    switch (m_iTag) {
+    case TAG_MUSIC:
+        alSourcef( m_iSource, AL_GAIN, snd_musicvol->f );
+        break;
+    case TAG_SFX:
+        alSourcef( m_iSource, AL_GAIN, snd_sfxvol->f );
+        break;
+    };
+}
+
+void CSoundSource::SetVolume( int tag )
+{
+    m_iTag = tag;
+    if (tag == TAG_MUSIC) {
+        alSourcef( m_iSource, AL_GAIN, snd_musicvol->f );
+    } else if (tag == TAG_SFX) {
+        alSourcef( m_iSource, AL_GAIN, snd_sfxvol->f );
+    }
+}
+
+ALenum CSoundSource::Format( void ) const
+{
+    switch (m_hFData.format & SF_FORMAT_SUBMASK) {
+    case SF_FORMAT_PCM_U8:
+    case SF_FORMAT_PCM_S8:
+    case SF_FORMAT_DPCM_8:
+        return m_hFData.channels == 1 ? AL_FORMAT_MONO8 : AL_FORMAT_STEREO8;
+    case SF_FORMAT_ALAC_16:
+    case SF_FORMAT_PCM_16:
+    case SF_FORMAT_DPCM_16:
+    case SF_FORMAT_DWVW_16:
+    case SF_FORMAT_NMS_ADPCM_16:
+        return m_hFData.channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
+    case SF_FORMAT_DOUBLE:
+        return AL_FORMAT_MONO_DOUBLE_EXT;
+    case SF_FORMAT_FLOAT:
+        return m_hFData.channels == 1 ? AL_FORMAT_MONO_FLOAT32 : AL_FORMAT_STEREO_FLOAT32;
+    case SF_FORMAT_ALAW:
+        return m_hFData.channels == 1 ? AL_FORMAT_MONO_ALAW_EXT : AL_FORMAT_STEREO_ALAW_EXT;
+    case SF_FORMAT_ALAC_20:
+    case SF_FORMAT_ALAC_24:
+    case SF_FORMAT_ALAC_32:
+    case SF_FORMAT_ULAW:
+    case SF_FORMAT_DWVW_12:
+    case SF_FORMAT_DWVW_24:
+        Con_Printf( COLOR_YELLOW "WARNING: unsupported audio subformat 0x%04x\n", m_hFData.format & SF_FORMAT_SUBMASK );
+        return 0;
+    };
+}
+
+int CSoundSource::FileFormat( const char *ext ) const
+{
+    if (!N_stricmp( ext, "wav" )) {
+        return SF_FORMAT_WAV;
+    } else if (!N_stricmp( ext, "aiff" )) {
+        return SF_FORMAT_AIFF;
+    } else if (!N_stricmp( ext, "mp3")) {
+        // mp3 copyright laws and all that stuff
+        Con_Printf( COLOR_YELLOW "WARNING: loading an mp3 audio file, this could lead to some legal shit...\n" );
+        return SF_FORMAT_MPEG;
+    } else if (!N_stricmp( ext, "ogg" )) {
+        return SF_FORMAT_OGG;
+    } else if (!N_stricmp( ext, "opus" )) {
+        return SF_FORMAT_OPUS;
+    } else if (!N_stricmp( ext, "flac" )) {
+        return SF_FORMAT_FLAC;
+    } else if (!N_stricmp( ext, "sd2" )) {
+        return SF_FORMAT_SD2;
+    } else {
+        Con_Printf( COLOR_YELLOW "WARNING: unknown audio file format extension '%s', refusing to load\n", ext );
+        return 0;
+    }
+}
+
+void CSoundSource::Alloc( void )
+{
+    switch (m_hFData.format & SF_FORMAT_SUBMASK) {
+    case SF_FORMAT_ALAW:
+        break;
+    case SF_FORMAT_ULAW:
+        break;
+    case SF_FORMAT_FLOAT:
+        m_iType = SNDBUF_FLOAT;
+        m_nSize = sizeof(float) * m_hFData.frames * m_hFData.channels;
+        break;
+    case SF_FORMAT_DOUBLE:
+        m_iType = SNDBUF_DOUBLE;
+        m_nSize = sizeof(double) * m_hFData.frames * m_hFData.channels;
+        break;
+    case SF_FORMAT_PCM_S8:
+    case SF_FORMAT_PCM_U8:
+    case SF_FORMAT_DPCM_8:
+        m_iType = SNDBUF_8BIT;
+        m_nSize = sizeof(char) * m_hFData.frames * m_hFData.channels;
+        break;
+    case SF_FORMAT_ALAC_16:
+    case SF_FORMAT_PCM_16:
+    case SF_FORMAT_DPCM_16:
+    case SF_FORMAT_DWVW_16:
+    case SF_FORMAT_NMS_ADPCM_16:
+        m_iType = SNDBUF_16BIT;
+        m_nSize = sizeof(int16_t) * m_hFData.frames * m_hFData.channels;
+        break;
+    };
+
+    m_pData = Hunk_AllocateTempMemory( m_nSize );
+}
+
+void CSoundSource::Play( bool loop ) const
+{
+    if (IsPlaying() || (IsLooping() && loop)) {
+        return;
+    }
+    if (loop) {
+        alSourcei( m_iSource, AL_LOOPING, AL_TRUE );
+    }
+    alSourcePlay( m_iSource );
+}
+
+void CSoundSource::Stop( void ) const {
+    if (!IsPlaying() && !IsLooping()) {
+        return; // nothing's playing
+    }
+
+    alSourceStop( m_iSource );
+}
 
 static sf_count_t SndFile_Read(void *data, sf_count_t size, void *file) {
     return FS_Read(data, size, *(file_t *)file);
@@ -116,477 +336,259 @@ static sf_count_t SndFile_Seek(sf_count_t offset, int whence, void *file) {
     return 0; // quiet compiler warning
 }
 
-static int Snd_GetFileFormat(const char *ext)
-{
-    if (!ext)
-        return -1;
-    if (!N_stricmp(ext, "wav"))
-        return SF_FORMAT_WAV;
-    else if (!N_stricmp(ext, "flac"))
-        return SF_FORMAT_FLAC;
-    else if (!N_stricmp(ext, "ogg"))
-        return SF_FORMAT_OGG;
-    else if (!N_stricmp(ext, "aiff"))
-        return SF_FORMAT_AIFF;
-    else if (!N_stricmp(ext, "pcm"))
-        return SF_FORMAT_PCM_16;
-    
-    // just a raw guess
-    return SF_FORMAT_WAV;
-}
-
-static nomadsnd_t *Snd_LoadFile(const char *path, sfxHandle_t *sfx, int tag)
+bool CSoundSource::LoadFile( const char *npath )
 {
     file_t f;
-    SF_INFO fdata;
-    SF_VIRTUAL_IO vio;
     SNDFILE *sf;
-    nomadsnd_t *snd;
     sf_count_t readCount;
-    uint64_t hash, fileLen;
+    SF_VIRTUAL_IO vio;
+    ALenum format;
 
-    // check if the sound already exists
-    hash = Snd_HashFileName(path);
-    if (sndhash[hash]) {
-        return sndhash[hash];
-    }
-    *sfx = (sfxHandle_t)hash;
+    // clear audio file data before anything
+    memset( &m_hFData, 0, sizeof(m_hFData) );
 
-    f = FS_FOpenRead(path);
+    memset( &vio, 0, sizeof(vio) );
+
+    N_strncpyz( m_pName, npath, sizeof(m_pName) );
+
+    // hash it so that if we try loading it
+    // even if it's failed, we won't try loading
+    // it again
+    sndManager->AddSourceToHash( this );
+
+    f = FS_FOpenRead( npath );
     if (f == FS_INVALID_HANDLE) {
-        return NULL;
+        return false;
+    }
+    m_hFData.format = FileFormat( COM_GetExtension( npath ) );
+    if (m_hFData.format == 0) {
+        // unsupported or invalid file format
+        return false;
     }
 
-    snd = (nomadsnd_t *)Z_Malloc(sizeof(*snd), tag);
-    memset(snd, 0, sizeof(*snd));
-
-    if (tag == TAG_MUSIC) {
-        snd->track = qtrue;
-    }
-
-    snd->next = sndhash[hash];
-    sndhash[hash] = snd;
-    snd->failed = qtrue;
-    N_strncpyz(snd->name, path, sizeof(snd->name));
-
-    fileLen = FS_FileLength(f);
-
-    vio.read = SndFile_Read;
-    vio.write = NULL; // not needed in this case
     vio.get_filelen = SndFile_GetFileLen;
-    vio.seek = SndFile_Seek;
+    vio.write = NULL; // no need for this
+    vio.read = SndFile_Read;
     vio.tell = SndFile_Tell;
+    vio.seek = SndFile_Seek;
 
-    memset(&fdata, 0, sizeof(fdata));
+    sf = sf_open_virtual( &vio, SFM_READ, &m_hFData, &f );
+    if (!sf) {
+        Con_Printf(COLOR_YELLOW "WARNING: libsndfile sf_open_virtual failed on '%s', sf_sterror(): %s\n", npath, sf_strerror( sf ));
+        return false;
+    }
 
-    fdata.format = Snd_GetFileFormat(COM_GetExtension(path));
-    if (fdata.format == -1) {
-        Con_Printf(COLOR_YELLOW "'%s' doesn't contain an extension, invalid file\n", path);
+    // allocate the buffer
+    Alloc();
+
+    readCount = sf_read_raw( sf, m_pData, m_nSize );
+    if (!readCount) {
+        N_Error(ERR_FATAL, "Failed to read sound file data from '%s' even when loaded", npath);
+    }
+
+    FS_FClose( f );
+
+    format = Format();
+    if (format == 0) {
+        Con_Printf("Bad soundfile format for '%s', refusing to load\n", npath);
+        return false;
+    }
+
+    alBufferData( m_iBuffer, format, m_pData, m_nSize, m_hFData.samplerate );
+    alSourcei( m_iSource, AL_BUFFER, m_iBuffer );
+
+    Hunk_FreeTempMemory( m_pData );
+
+    return true;
+}
+
+void CSoundManager::Init( void )
+{
+    m_pDevice = alcOpenDevice( NULL );
+    if (!m_pDevice) {
+        N_Error(ERR_FATAL, "Snd_Init: failed to open OpenAL device");
+    }
+
+    m_pContext = alcCreateContext( m_pDevice, NULL );
+    if (!m_pContext) {
+        N_Error(ERR_FATAL, "Snd_Init: failed to create OpenAL context, reason: %s", alcGetString( m_pDevice, alcGetError( m_pDevice ) ) );
+    }
+
+    alcMakeContextCurrent( m_pContext );
+    m_bRegistered = true;
+}
+
+void CSoundManager::PlaySound( CSoundSource *snd ) {
+    snd->Play();
+}
+
+void CSoundManager::StopSound( CSoundSource *snd ) {
+    snd->Stop();
+}
+
+void CSoundManager::LoopTrack( CSoundSource *snd ) {
+    if (m_pCurrentTrack) {
+        // we're playing something rn
+        m_pCurrentTrack->Stop();
+    }
+    m_pCurrentTrack = snd;
+}
+
+void CSoundManager::Shutdown( void )
+{
+    for (uint64_t i = 0; i < m_nSources; i++) {
+        m_pSources[i]->Shutdown();
+    }
+
+    alcMakeContextCurrent( NULL );
+    alcDestroyContext( m_pContext );
+    alcCloseDevice( m_pDevice );
+}
+
+void CSoundManager::AddSourceToHash( CSoundSource *src )
+{
+    nhandle_t hash;
+
+    hash = Snd_HashFileName( src->GetName() );
+
+    src->m_pNext = m_pSources[hash];
+    m_pSources[hash] = src;
+}
+
+void CSoundManager::Restart( void )
+{
+    // shutdown everything
+    Shutdown();
+    
+    // re-init
+    Init();
+
+    // reload all sources
+    for (uint64_t i = 0; i < m_nSources; i++) {
+        m_pSources[i]->LoadFile( m_pSources[i]->GetName() );
+    }
+}
+
+CSoundSource *CSoundManager::InitSource( const char *filename, int tag )
+{
+    CSoundSource *src;
+
+    if (strlen(filename) >= MAX_GDR_PATH) {
+        Con_Printf("CSoundManager::InitSource: name '%s' too long\n", filename);
+        return NULL;
+    }
+    if (m_nSources == MAX_SOUND_SOURCES) {
+        N_Error(ERR_DROP, "CSoundManager::InitSource: MAX_SOUND_SOURCES hit");
+    }
+
+    m_hAllocLock.Lock();
+
+    if ((!snd_sfxon->i && tag == TAG_SFX) || (!snd_musicon->i && tag == TAG_MUSIC)) {
         return NULL;
     }
 
-    sf = sf_open_virtual(&vio, SFM_READ, &fdata, &f);
-    if (!sf) {
-        N_Error(ERR_FATAL, "Snd_LoadFile: sf_open_virtual failed, error: %s", sf_strerror(sf));
+    src = (CSoundSource *)Hunk_Alloc( sizeof(*src), h_low );
+    memset(src, 0, sizeof(*src));
+    src->Init();
+
+    if (!src->LoadFile( filename )) {
+        Con_Printf(COLOR_YELLOW "WARNING: failed to load sound file '%s'\n", filename);
+        m_hAllocLock.Unlock();
+        return NULL;
     }
 
-    snd->length = fdata.frames * fdata.channels;
-    snd->sndbuf = (short *)Hunk_AllocateTempMemory(sizeof(*snd->sndbuf) * snd->length);
-    readCount = sf_read_short(sf, snd->sndbuf, sizeof(*snd->sndbuf) * fdata.frames * fdata.channels);
-    if (readCount != fileLen) {
-        N_Error(ERR_FATAL, "Snd_LoadFile: sf_read_short failed, error: %s", sf_strerror(sf));
-    }
-    sf_close(sf);
+    src->SetVolume( tag );
 
-    alGenSources(1, (ALuint *)&snd->source);
-    alGenBuffers(1, (ALuint *)&snd->buffer);
-    alBufferData(snd->buffer, Snd_Format(snd), snd->sndbuf, sizeof(*snd->sndbuf) * snd->length, snd->samplerate);
-    alSourcei(snd->source, AL_BUFFER, snd->buffer);
+    m_hAllocLock.Unlock();
 
-    Hunk_FreeTempMemory(snd->sndbuf);
-    FS_FClose(f);
-
-    snd->failed = qfalse;
-    
-    return snd;
+    return src;
 }
 
-sfxHandle_t Snd_RegisterSfx(const char *npath)
-{
-    nomadsnd_t *snd;
-    sfxHandle_t sfx;
-
-    if (strlen(npath) >= MAX_GDR_PATH) {
-        Con_Printf(COLOR_YELLOW "Snd_RegisterSfx: name '%s' too long\n", npath);
-        return -1;
-    }
-
-    snd = Snd_LoadFile(npath, &sfx, TAG_SFX);
-    if (!snd) {
-        Con_Printf("Couldn't load sfx '%s'\n", npath);
-        return -1;
-    }
-    return sfx;
-}
-
-sfxHandle_t Snd_RegisterTrack(const char *npath)
-{
-    nomadsnd_t *track;
-    sfxHandle_t id;
-
-    if (strlen(npath) >= MAX_GDR_PATH) {
-        Con_Printf(COLOR_YELLOW "Snd_RegisterTrack: name '%s' too long\n", npath);
-        return -1;
-    }
-
-    track = Snd_LoadFile(npath, &id, TAG_MUSIC);
-    if (!track) {
-        return -1;
-    }
-    return id;
-}
-
-void Snd_Restart(void)
-{
-    Snd_Shutdown(qfalse);
-
-    // reinitialize
-    for (uint32_t i = 0; i < arraylen(sndhash); ++i) {
-        if (sndhash[i] && !sndhash[i]->failed) {
-            alGenSources(1, (ALuint *)&sndhash[i]->source);
-            alGenBuffers(1, (ALuint *)&sndhash[i]->buffer);
-            alBufferData(sndhash[i]->buffer, Snd_Format(sndhash[i]), sndhash[i]->sndbuf,
-                sizeof(*sndhash[i]->sndbuf) * sndhash[i]->length, sndhash[i]->samplerate);
-            alSourcei(sndhash[i]->source, AL_BUFFER, sndhash[i]->buffer);
-        }
+void CSoundManager::DisableSounds( void ) {
+    for (uint64_t i = 0; i < m_nSources; i++) {
+        m_pSources[i]->Stop();
     }
 }
 
-//
-// Snd_ClearMem: clears all memory allocated to sound stuff
-//
-void Snd_ClearMem(void)
-{
-    Snd_Shutdown(qfalse);
-    Z_FreeTags(TAG_SFX, TAG_MUSIC);
+
+void Snd_DisableSounds(void) {
+    sndManager->DisableSounds();
+    alListenerf( AL_GAIN, 0.0f );
 }
 
-void Snd_Shutdown(qboolean destroyContext)
-{
-    if ((!device || !context) || !snd_cache)
-        return;
-    
-    Snd_StopAll();
-    for (uint32_t i = 0; i < arraylen(sndhash); ++i) {
-        if (sndhash[i] && !sndhash[i]->failed) {
-            if (snd_cache[i].source)
-               alSourcei(snd_cache[i].source, AL_BUFFER, 0);
-            if (snd_cache[i].buffer)
-                alDeleteBuffers(1, (const ALuint *)&snd_cache[i].buffer);
-            if (snd_cache[i].source)
-                alDeleteSources(1, (const ALuint *)&snd_cache[i].source);
-        }
-    }
-    if (destroyContext) {
-        alcMakeContextCurrent(NULL);
-        alcDestroyContext(context);
-        alcCloseDevice(device);
-    }
+void Snd_StopAll(void) {
+    sndManager->DisableSounds();
 }
 
-static int Snd_SoundIsPlaying(nomadsnd_t *snd)
-{
-    ALint state;
-
-    if (snd->failed)
-        return -1;
-    
-    alGetSourcei(snd->source, AL_SOURCE_STATE, &state);
-    if (state == AL_PLAYING)
-        return 1;
-    else
-        return 0;
-}
-
-static qboolean Snd_QueueSfx(nomadsnd_t *snd)
-{
-    if (Snd_SoundIsPlaying(snd) == 1) {
-        Con_DPrintf("Snd_QueueSfx: %s is already playing\n", snd->name);
-        return qfalse;
-    }
-    if (sfx_queuedCount + 1 >= MAX_SND_QUEUE) {
-        Con_Printf("Snd_QueueSfx: overflow\n");
-        return qfalse;
-    }
-
-    sfxqueue[sfx_queuedCount++] = snd;
-    return qtrue;
-}
-
-static qboolean Snd_PlaySound(nomadsnd_t *snd)
-{
-    int state;
-
-    state = Snd_SoundIsPlaying(snd);
-    if (state == -1 || state == 1)
-        return qfalse;
-    else
-        alSourcePlay(snd->source);
-    
-    return qtrue;
-}
-
-static void Snd_StopSound(nomadsnd_t *snd)
-{
-    int state;
-
-    state = Snd_SoundIsPlaying(snd);
-    if (state == -1 || state == 0)
-        return;
-    else
-        alSourceStop(snd->source);
-}
-
-nomadsnd_t* Snd_FetchSnd(const char *name)
-{
-    return sndhash[Com_GenerateHashValue(name, MAX_SND_HASH)];
-}
-
-void Snd_PlayTrack(const char *name)
-{
-    boost::unique_lock<boost::shared_mutex> lock{sndLock};
-
-    uint64_t hash;
-    nomadsnd_t *mus;
-
-    if (!snd_musicon->i) {
-        Con_DPrintf("snd_musicon->i != 1\n");
-        return;
-    }
-
-    hash = Snd_HashFileName(name);
-    mus = sndhash[hash];
-    if (!mus) {
-        N_Error(ERR_DROP, "track '%s' deosn't exist, canceling track\n", name);
-    }
-
-    if (mus->failed) {
-        return;
-    }
-
-    if (musicTrack) {
-        Con_DPrintf("Snd_PlayTrack: overwriting current music track\n");
-        Snd_StopSound(musicTrack);
-        musicTrack = NULL;
-    }
-    musicTrack = mus;
-    Snd_PlaySound(mus);
-}
-
-void Snd_PlaySfx(const char *name)
-{
-    boost::unique_lock<boost::shared_mutex> lock{sndLock};
-
-    uint64_t hash;
-    nomadsnd_t *sfx;
-
-    if (!snd_sfxon->i) {
-        Con_DPrintf("snd_sfxon->i != 1\n");
-        return;
-    }
-
-    hash = Snd_HashFileName(name);
-    sfx = sndhash[hash];
-    if (!sfx) {
-        N_Error(ERR_DROP, "sfx '%s' doesn't exist", name);
-    }
-
-    if (sfx->failed) {
-        return;
-    }
-
-    if (!Snd_QueueSfx(sfx)) {
-        Con_DPrintf("not playing '%s'\n", name);
-    }
-}
-
-void Snd_StopSfx(sfxHandle_t sfx)
-{
-    nomadsnd_t *snd;
-
-    if (sfx == FS_INVALID_HANDLE || !sndhash[sfx]) {
-        N_Error(ERR_DROP, "Bad sfx handle %i", sfx);
-    }
-
-    snd = sndhash[sfx];
-    Snd_StopSound(snd);
-}
-
-void Snd_Update(void)
-{
-    if (!snd_musicon->modified && !snd_sfxon->modified && !snd_musicvol->modified && !snd_sfxvol->modified)
-        return;
-
-    if (!snd_musicon->i && musicTrack) {
-        Snd_StopSound(musicTrack);
-    }
-    if (!snd_sfxon->i) {
-        Snd_StopAll();
-    }
-
-    for (uint32_t i = 0; i < arraylen(sndhash); i++) {
-        if (sndhash[i] && !sndhash[i]->failed && (snd_musicvol->modified || snd_sfxvol->modified)) {
-            if (sndhash[i]->track)
-                alSourcef(sndhash[i]->source, AL_GAIN, snd_musicvol->f);
-            else
-                alSourcef(sndhash[i]->source, AL_GAIN, snd_sfxvol->f);
-        }
-    }
-}
-
-void Snd_AddLoopingTrack(sfxHandle_t handle)
-{
-    boost::unique_lock<boost::shared_mutex> lock{sndLock};
-    nomadsnd_t *track;
-
-    if (!snd_musicon->i) {
-        Con_DPrintf("snd_musicon->i != 1\n");
-        return;
-    }
-    if (handle == FS_INVALID_HANDLE) {
-        return;
-    }
-
-    track = sndhash[handle];
-    if (!track) {
-        N_Error(ERR_DROP, "Snd_AddLoopingTrack: invalid handle, canceling track");
-    }
-
-    if (track->failed) {
-        return;
-    }
-
-    if (musicTrack) {
-        Con_DPrintf("Snd_AddLoopingTrack: overwriting current music track\n");
-        Snd_StopSound(musicTrack);
-        musicTrack = NULL;
-    }
-    musicTrack = track;
-    Snd_PlaySound(track);
-    alSourcei(track->source, AL_LOOPING, AL_TRUE);
-}
-
-void Snd_ClearLoopingTrack(sfxHandle_t sfx)
-{
-    nomadsnd_t *track;
-
+void Snd_PlaySfx(sfxHandle_t sfx) {
     if (sfx == FS_INVALID_HANDLE) {
         return;
     }
-    if (!musicTrack) {
-        return; // nothing's playing
-    }
 
-    if (track->failed)
-        return;
-    
-    musicTrack = NULL;
-    Snd_StopSound(track);
+    sndManager->PlaySound( sndManager->GetSource( sfx ) );
 }
 
-void Snd_PlayTrack(sfxHandle_t sfx)
-{
-    boost::unique_lock<boost::shared_mutex> lock{sndLock};
-    nomadsnd_t *mus;
-
-    if (!snd_musicon->i) {
-        Con_DPrintf("snd_musicon->i != 1\n");
+void Snd_StopSfx(sfxHandle_t sfx) {
+    if (sfx == FS_INVALID_HANDLE) {
         return;
     }
 
-    mus = sndhash[sfx];
-    if (!mus) {
-        N_Error(ERR_DROP, "Snd_PlayTrack: invalid handle, canceling track");
-    }
+    sndManager->StopSound( sndManager->GetSource( sfx ) );
+}
 
-    if (mus->failed) {
+void Snd_Restart(void) {
+    if (!sndManager) {
         return;
     }
-
-    if (musicTrack) {
-        Con_DPrintf("Snd_PlayTrack: overwriting current music track\n");
-        Snd_StopSound(musicTrack);
-        musicTrack = NULL;
-    }
-    musicTrack = mus;
-    Snd_PlaySound(mus);
+    sndManager->Restart();
 }
 
-void Snd_PlaySfx(sfxHandle_t sfx)
-{
-    boost::unique_lock<boost::shared_mutex> lock{sndLock};
-    nomadsnd_t *snd;
-
-    if (!snd_sfxon->i) {
-        Con_DPrintf("snd_sfxon->i != 1\n");
+void Snd_Shutdown( void ) {
+    if (!sndManager) {
         return;
     }
-
-    snd = sndhash[sfx];
-    if (!snd) {
-        N_Error(ERR_DROP, "Snd_PlaySfx: bad handle");
-    }
-
-    if (snd->failed) {
-        return;
-    }
-
-    if (!Snd_QueueSfx(snd)) {
-        Con_DPrintf("Snd_PlaySfx: playing '%s'\n", snd->name);
-    }
+    sndManager->Shutdown();
 }
 
+sfxHandle_t Snd_RegisterTrack(const char *npath) {
+    CSoundSource *track;
 
-void Snd_Submit(void)
-{
-    // update any parameters if the cvars have been changed
-    if (Cvar_CheckGroup(CVG_SOUND)) {
+    track = sndManager->InitSource( npath, TAG_MUSIC );
+    if (!track) {
+        return FS_INVALID_HANDLE;
     }
 
-    if (!snd_musicon->i && !snd_sfxon->i) {
-        if (!clearedQueue) {
-            memset(sfxqueue, 0, sizeof(sfxqueue));
-            clearedQueue = qtrue;
-        }
-        Snd_StopAll();
-    }
-
-    for (uint32_t i = 0; i < sfx_queuedCount; i++) {
-        if (Snd_PlaySound(sfxqueue[i])) {
-            sfx_queuedCount--;
-            sfxqueue[i] = NULL;
-        }
-    }
+    return Snd_HashFileName( track->GetName() );
 }
 
-void Snd_StopAll(void)
-{
-    static qboolean stoppedAll = qfalse;
-    if (stoppedAll) {
-        return; // already called
+sfxHandle_t Snd_RegisterSfx(const char *npath) {
+    CSoundSource *sfx;
+
+    sfx = sndManager->InitSource( npath, TAG_SFX );
+    if (!sfx) {
+        return FS_INVALID_HANDLE;
     }
-    for (uint32_t i = 0; i < arraylen(sndhash); ++i) {
-        if (sndhash[i] && Snd_SoundIsPlaying(sndhash[i])) {
-            Snd_StopSound(sndhash[i]);
-        }
-    }
-    stoppedAll = qtrue;
+
+    return Snd_HashFileName( sfx->GetName() );
 }
 
-void Snd_DisableSounds(void)
+void Snd_SetLoopingTrack(sfxHandle_t handle) {
+    sndManager->LoopTrack( sndManager->GetSource( handle ) );
+}
+
+void Snd_ClearLoopingTrack(sfxHandle_t handle) {
+    if (sndManager->m_pCurrentTrack) {
+        sndManager->m_pCurrentTrack->Stop();
+    }
+    sndManager->m_pCurrentTrack = NULL;
+}
+
+static void Snd_AudioInfo_f( void )
 {
-    Snd_StopAll();
-    Snd_ClearMem();
+    Con_Printf("\n----- Audio Info -----\n");
+    Con_Printf("Audio Driver: %s\n", SDL_GetCurrentAudioDriver());
+    Con_Printf("Current Track: %s\n", sndManager->m_pCurrentTrack ? sndManager->m_pCurrentTrack->GetName() : "None");
+    Con_Printf("Number of Sound Sources: %lu\n", sndManager->NumSources());
 }
 
 void Snd_Init(void)
@@ -599,27 +601,14 @@ void Snd_Init(void)
     if (!snd_sfxon->i || !snd_musicon->i)
         return;
 
-    Con_Printf("Snd_Init: initializing OpenAL and libsndfile\n");
-    device = alcOpenDevice(NULL);
-    if (!device) {
-        Cvar_Set("snd_sfxon", "0");
-        Cvar_Set("snd_musicon", "0");
-        Con_Printf(COLOR_RED "Snd_Init: alcOpenDevice returned NULL, turning off sound\n");
-        return;
-    }
+    Con_Printf("---------- Snd_Init ----------\n");
 
-    context = alcCreateContext(device, NULL);
-    if (!context) {
-        Cvar_Set("snd_sfxon", "0");
-        Cvar_Set("snd_musicon", "0");
-        Con_Printf(COLOR_RED "Snd_Init: alcCreateContext returned NULL, turning off sound, error message: %s\n",
-            alcGetString(device, alcGetError(device)));
-        alcCloseDevice(device);
-        return;
-    }
-    alcMakeContextCurrent(context);
+    // init sound manager
+    sndManager = (CSoundManager *)Hunk_Alloc( sizeof(*sndManager), h_low );
+    memset( sndManager, 0, sizeof(*sndManager) );
+    sndManager->Init();
 
-    memset(sfxqueue, 0, sizeof(sfxqueue));
-    clearedQueue = qfalse;
-    sfx_queuedCount = 0;
+    Con_Printf("SDL2 audio driver: %s\n", SDL_GetCurrentAudioDriver());
+
+    Cmd_AddCommand( "snd_restart", Snd_Restart );
 }

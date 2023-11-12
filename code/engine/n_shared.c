@@ -4,6 +4,10 @@
 #include "code/engine/n_shared.h"
 #endif
 
+// undefined symbol: CPU_flags when compiling dlls
+#if defined(GDR_DLLCOMPILE) || defined(UI_HARD_LINKED) || defined(SGAME_HARD_LINKED)
+int CPU_flags;
+#endif
 
 float Com_Clamp( float min, float max, float value ) {
 	if ( value < min ) {
@@ -77,10 +81,6 @@ uint32_t crc32_buffer(const byte *buf, uint32_t len)
 	return crc ^ UINT_MAX;
 }
 
-qboolean Key_IsPressed(qboolean **keys, uint32_t code)
-{
-	return (*keys)[code];
-}
 
 /*
 Com_GenerateHashValue: used in renderer and filesystem
@@ -429,7 +429,7 @@ void* N_memset (void *dest, int fill, size_t count)
 {
 	size_t i;
 	
-	if ( (((long)dest | count) & 3) == 0) {
+	if ( (((uintptr_t)dest | count) & 3) == 0) {
 		count >>= 2;
 		fill = fill | (fill<<8) | (fill<<16) | (fill<<24);
 		for (i = 0; i < count; i++)
@@ -454,13 +454,13 @@ void* N_memchr (void *ptr, int c, size_t count)
 void N_memcpy (void *dest, const void *src, size_t count)
 {
 	size_t i;
-	if (( ( (long)dest | (long)src | count) & 7) == 0) {
+	if (( ( (uintptr_t)dest | (uintptr_t)src | count) & 7) == 0) {
 		while (count >= 4) {
-			((long *)dest)[count] = ((long *)src)[count];
+			((intptr_t *)dest)[count] = ((intptr_t *)src)[count];
 			count -= 4;
 		}
 	}
-	else if (( ( (long)dest | (long)src | count) & 3) == 0 ) {
+	else if (( ( (uintptr_t)dest | (uintptr_t)src | count) & 3) == 0 ) {
 		count>>=2;
 		for (i = 0; i < count; i++)
 			((int *)dest)[i] = ((int *)src)[i];

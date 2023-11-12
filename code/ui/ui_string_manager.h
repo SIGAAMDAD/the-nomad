@@ -7,21 +7,21 @@
 
 typedef enum : uint64_t
 {
-    LANG_ENGLISH,
+    LANGUAGE_ENGLISH,
     
     //
     // these will be added later
     //
 
-    LANG_SPANISH,
-    LANG_GERMAN,
+    LANGUAGE_SPANISH,
+    LANGUAGE_GERMAN,
 
     NUMLANGS
 } language_t;
 
 typedef struct stringHash_s {
     const char *name;
-    char value[64];
+    char value[MAX_STRING_CHARS];
     language_t lang;
 } stringHash_t;
 

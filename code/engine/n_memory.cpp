@@ -258,6 +258,7 @@ static freeblock_t *NewBlock( memzone_t *zone, int size )
 
 	sep = (memblock_t *) calloc( alloc_size, 1 );
 	if ( sep == NULL ) {
+		Sys_SetError( ERR_OUT_OF_MEMORY );
 		N_Error( ERR_FATAL, "Z_Malloc: failed on allocation of %i bytes from the %s zone",
 			size, zone == smallzone ? "small" : "main" );
 		return NULL;
@@ -921,6 +922,7 @@ void Z_InitMemory(void)
 
 	mainzone = (memzone_t *)calloc(mainsize, 1);
 	if (!mainzone) {
+		Sys_SetError( ERR_OUT_OF_MEMORY );
 		N_Error(ERR_FATAL, "Main zone memory segment failed to allocate %lu megs", mainsize / (1024*1024));
 	}
 	Z_ClearZone(mainzone, mainzone, mainsize, 1);
@@ -1459,6 +1461,7 @@ void Hunk_InitMemory(void)
 	hunksize = cv->i * 1024 * 1024;
 	hunkbase = (byte *)calloc( hunksize + (com_cacheLine - 1), 1 );
 	if ( !hunkbase ) {
+		Sys_SetError( ERR_OUT_OF_MEMORY );
 		N_Error( ERR_FATAL, "Hunk data failed to allocate %lu megs", hunksize / (1024*1024) );
 	}
 

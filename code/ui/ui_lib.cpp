@@ -631,6 +631,51 @@ void CUILib::DrawString2( int x, int y, const char* str, vec4_t color, int charw
 	re.SetColor( NULL );
 }
 
+void CUILib::DrawStringBlink( const char *str, int ticker, int mult) const
+{
+	if ((ticker % mult) != 0) {
+		return;
+	}
+
+	DrawString( str );
+}
+
+void CUILib::DrawString( const char *str ) const
+{
+	char s[2];
+    int currentColorIndex, colorIndex;
+    uint32_t i, length;
+    qboolean useColor = qfalse;
+
+    // if it's got multiple lines, we need to
+    // print with a drop-down
+    if (strstr(str, "\\n") != NULL) {
+    }
+
+    length = (uint32_t)strlen(str);
+    s[1] = 0;
+    currentColorIndex = ColorIndex(S_COLOR_WHITE);
+
+    for (i = 0; i < length; i++) {
+        if (Q_IsColorString(str) && *(str+1) != '\n') {
+            colorIndex = ColorIndexFromChar( *(str+1) );
+            if (currentColorIndex != colorIndex) {
+                currentColorIndex = colorIndex;
+                if (useColor) {
+                    ImGui::PopStyleColor();
+                    useColor = qfalse;
+                }
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4( g_color_table[ colorIndex ] ));
+                useColor = qtrue;
+            }
+            i += 2;
+        }
+
+        s[0] = str[i];
+        ImGui::TextUnformatted(s);
+    }
+}
+
 /*
 =================
 UI_DrawString
@@ -738,7 +783,11 @@ void CUILib::SetActiveMenu( uiMenu_t menu )
 		ForceMenuOff();
 		return;
 	case UI_MENU_MAIN:
-		return;		
+		UI_MainMenu();
+		return;
+	case UI_MENU_INTRO:
+		UI_IntroMenu();
+		break;
     case UI_MENU_TITLE:
         UI_TitleMenu();
         return;

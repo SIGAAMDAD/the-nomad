@@ -21,6 +21,29 @@ Platform Specific Preprocessors
 
 #define MAX_GDR_PATH 64
 
+#if defined(__cplusplus) && !defined(__GNUC__) && !defined(__MINGW64__) && !defined(__MINGW32__)
+    #define CallBeforeMain(f) \
+        static void f(void); \
+        struct f##_t_ { f##_t_(void) { f(); } }; static f##_t_ f##_; \
+        static void f(void)
+#elif defined(_MSC_VER)
+    #pragma section(".CRT$XCU",read)
+    #define CallBeforeMain_(f,p) \
+        static void f(void); \
+        __declspec(allocate(".CRT$XCU")) void (*f##_)(void) = f; \
+        __pragma(comment(linker,"/include:" p #f "_")) \
+        static void f(void)
+    #ifdef _WIN64
+        #define CallBeforeMain(f) CallBeforeMain_(f,"")
+    #else
+        #define CallBeforeMain(f) CallBeforeMain_(f,"_")
+    #endif
+#else
+    #define CallBeforeMain(f) \
+        static void f(void) __attribute__((constructor)); \
+        static void f(void)
+#endif
+
 #ifdef _WIN32
 	#define DLL_EXT ".dll"
 	#define PATH_SEP '\\'
@@ -28,13 +51,25 @@ Platform Specific Preprocessors
 	#define GDR_DECL __cdecl
 	#define GDR_NEWLINE "\r\n"
 	#define DLL_PREFIX ""
+
+	#ifdef _MSC_VER
+		#ifdef _WIN64
+			#define MSVC_64
+		#else
+			#define MSVC_32
+		#endif
+	#endif
 	
-	#if defined(_MSVC_VER) && _MSVC_VER >= 1400
+	#if defined(_MSC_VER) && _MSVC_VER >= 1400
 		#define COMPILER_STRING "msvc"
 	#elif defined(__MINGW32__)
 		#define COMPILER_STRING "mingw64"
+		#define ARCH_STRING "x86"
+		#define GDR_LITTLE_ENDIAN
 	#elif defined(__MINGW64__)
 		#define COMPILER_STRING "mingw32"
+		#define ARCH_STRING "x64"
+		#define GDR_LITTLE_ENDIAN
 	#else
 		#error "unsupported windows compiler"
 	#endif
@@ -44,7 +79,9 @@ Platform Specific Preprocessors
 		#define OS_STRING "win32 " COMPILER_STRING
 	#endif
 	#if defined(_M_IX86)
-		#define ARCH_STRING "x86"
+		#ifndef ARCH_STRING
+			#define ARCH_STRING "x86"
+		#endif
 		#define GDR_LITTLE_ENDIAN
 		#undef GDRi386
 		#define GDRi386 1
@@ -53,7 +90,9 @@ Platform Specific Preprocessors
 		#endif
 	#endif
 	#if defined(_M_AMD64)
-		#define ARCH_STRING "x86_64"
+		#ifndef ARCH_STRING
+			#define ARCH_STRING "x86_64"
+		#endif
 		#define GDR_LITTLE_ENDIAN
 		#undef GDRx64
 		#define GDRx64 1
@@ -78,6 +117,7 @@ Platform Specific Preprocessors
 	#define GDR_DECL
 	#define GDR_NEWLINE "\n"
 	#define DLL_PREFIX "./"
+	#define POSIX
 
 	#if defined(__i386__)
 		#define ARCH_STRING "i386"
@@ -167,6 +207,10 @@ Platform Specific Preprocessors
 #error "DLL_EXT not defined"
 #endif
 
+#if defined(GDRx64) || defined(arm64)
+#define PLATFORM_64BITS
+#endif
+
 #if defined( GDR_BIG_ENDIAN ) && defined( GDR_LITTLE_ENDIAN )
 #error "Endianness defined as both big and little"
 #elif defined( GDR_BIG_ENDIAN )
@@ -215,6 +259,7 @@ Compiler Macro Abstraction
 	#define GDR_NORETURN __attribute__((noreturn))
 	#define GDR_ALIGN(x) __attribute__((alignment(x)))
 	#define GDR_ATTRIBUTE(x) __attribute__(x)
+	#define GDR_NOINLINE __attribute__((noinline))
 
 	#ifdef __GNUC__
 		#define GDR_EXPORT __attribute__((visibility("default")))
@@ -231,6 +276,7 @@ Compiler Macro Abstraction
 	#define GDR_NORETURN __declspec(noreturn)
 	#define GDR_ALIGN(x) __declspec(alignment((x)))
 	#define GDR_ATTRIBUTE(x)
+	#define GDR_NOINLINE __declspec(noinline)
 
 	#ifdef GDR_DLLCOMPILE
 		#define GDR_EXPORT __declspec(dllexport)
@@ -244,6 +290,7 @@ Compiler Macro Abstraction
 	#define GDR_ALIGN(x)
 	#define GDR_ATTRIBUTE(x)
 	#define GDR_EXPORT
+	#define GDR_NOINLINE
 #endif
 
 // stack based version of strdup
@@ -266,6 +313,10 @@ Compiler Macro Abstraction
 #ifndef _NOMAD_VERSION
 #   error a version must be supplied when compiling the engine or a mod
 #endif
+
+#define PLATFORM_CLASS
+#define PLATFORM_INTERFACE
+#define PLATFORM_OVERLOAD
 
 #ifdef __GNUG__
 #pragma GCC diagnostic ignored "-Wold-style-cast" // c style stuff, its more readable without the syntax sugar
@@ -346,6 +397,8 @@ Compiler Macro Abstraction
 #endif
 
 int GDR_ATTRIBUTE((format(printf, 3, 4))) GDR_DECL Com_snprintf(char *dest, uint32_t size, const char *format, ...);
+
+#define TICRATE 60
 
 #ifndef M_LN2
 #define M_LN2          0.69314718055994530942  /* log_e 2 */
@@ -994,7 +1047,9 @@ typedef enum
     DIF_BLACKDEATH,
     DIF_MINORINCONVENIECE,
 
-    DIF_HARDEST = DIF_MINORINCONVENIECE
+    DIF_HARDEST = DIF_MINORINCONVENIECE,
+
+	NUMDIFS
 } gamedif_t;
 
 typedef enum
@@ -1029,5 +1084,7 @@ inline type* PADP(type *base, alignment align)
 #define LERP( a, b, w ) ( ( a ) * ( 1.0f - ( w ) ) + ( b ) * ( w ) )
 #define LUMA( red, green, blue ) ( 0.2126f * ( red ) + 0.7152f * ( green ) + 0.0722f * ( blue ) )
 
+// extra debug stuff
+#include "n_debug.h"
 
 #endif

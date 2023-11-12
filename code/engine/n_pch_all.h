@@ -6,12 +6,6 @@
 #ifndef Q3_VM
 
 /*
-OS-specific stuff
-*/
-#include <sys/types.h>
-#include <sys/errno.h>
-
-/*
 Standard Library
 */
 #include <stdlib.h>
@@ -39,22 +33,19 @@ Standard Library
 /*
 Dependencies
 */
-
 // boost, nuff said
 #define BOOST_THREAD_PROVIDES_EXECUTORS
 #define BOOST_THREAD_PROVIDES_FUTURE_CONTINUATION
 #define BOOST_THREAD_USES_MOVE
 #define BOOST_DISABLE_ASSERTS
-#include <boost/asio/io_service.hpp>
-#include <boost/asio/thread_pool.hpp>
-#include <boost/asio/post.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 #include <boost/thread/condition_variable.hpp>
+#include <boost/thread/sync_queue.hpp>
+#include <boost/thread/barrier.hpp>
 
 // EASTL, a salute to EA where they suck everywhere else but do good with c++ libraries
-#if 0
 #include <EASTL/array.h>
 #include <EASTL/vector.h>
 #include <EASTL/string.h>
@@ -77,7 +68,6 @@ Dependencies
 #include <EASTL/internal/atomic/atomic.h>
 #include <EASTL/internal/atomic/atomic_standalone.h>
 #include <EASTL/internal/function.h>
-#endif
 
 // glm, funmathgames
 #include <glm/glm.hpp>

@@ -125,7 +125,6 @@ typedef enum {
     KEY_F22,
     KEY_F23,
     KEY_F24,
-    KEY_EXECUTE,
     KEY_HELP,
     KEY_MENU,
     KEY_SELECT,

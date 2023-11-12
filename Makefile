@@ -99,7 +99,6 @@ VERSION_DEFINE=-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPD
 DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF)
 OPTIMIZERS    =\
 			-ffast-math \
-			-rdynamic -export-dynamic \
 			-mfma -msse3 -msse2 -msse -mavx -mavx2 -mmmx -mfpmath=sse
 
 CFLAGS        =-std=c++17 $(FTYPE) -Wno-unused-result $(DEFINES) $(INCLUDE) $(OPTIMIZERS)
@@ -118,6 +117,7 @@ endif
 ifndef win32
 LDLIBS=-L/usr/lib/x86_64-linux-gnu/ \
 		-lGL \
+		-lbacktrace \
 		-lboost_thread \
 		$(LIB_PREFIX)/libEASTL.a \
 		$(LIB_PREFIX)/libopenal.a \
@@ -140,8 +140,10 @@ LDLIBS=-L$(LIB_PREFIX) \
 		-leasy_profiler
 SYS=\
 	$(O)/sys/win_main.o \
-	$(O)/sys/win_shared.o
+	$(O)/sys/win_shared.o \
+	$(O)/sys/win_syscon.o \
 SYS_DIR=$(SDIR)/win32
+INCLUDE+=-Idependencies/include/libsndfile -Idependencies/include/boost
 endif
 
 .PHONY: all clean targets clean.objs clean.exe clean.pch pch makedirs default
@@ -159,6 +161,7 @@ SRC=\
 	$(O)/game/g_sound.o \
 	$(O)/game/g_screen.o \
 	$(O)/game/g_console.o \
+	$(O)/game/g_archive.o \
 	\
 	$(O)/engine/vm.o \
 	$(O)/engine/vm_interpreted.o \
@@ -171,6 +174,7 @@ SRC=\
 	$(O)/engine/n_history.o \
 	$(O)/engine/n_math.o \
 	$(O)/engine/n_memory.o \
+	$(O)/engine/n_debug.o \
 	$(O)/engine/md4.o \
 	\
 	$(O)/rendercommon/imgui.o \
@@ -185,10 +189,13 @@ SRC=\
 	$(O)/ui/ui_lib.o \
 	$(O)/ui/ui_menu.o \
 	$(O)/ui/ui_mfield.o \
+	$(O)/ui/ui_font.o \
 	$(O)/ui/ui_string_manager.o \
 	$(O)/ui/ui_window.o \
 	$(O)/ui/ui_title.o \
 	$(O)/ui/ui_settings.o \
+	$(O)/ui/ui_intro.o \
+	$(O)/ui/ui_main_menu.o \
 
 MAKE=make
 

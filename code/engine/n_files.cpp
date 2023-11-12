@@ -21,10 +21,6 @@ the basepath is the path to the user's current working directory.
 #define MAX_FILEHASH_SIZE 256
 #define BASEGAME_DIR "gamedata"
 
-#define MAX_BFF_PATH 256
-#define BFF_VERSION_MAJOR 0
-#define BFF_VERSION_MINOR 1
-#define BFF_VERSION ((BFF_VERSION_MAJOR<<8)+BFF_VERSION_MINOR)
 
 #define HEADER_MAGIC 0x5f3759df
 #define BFF_IDENT (('B'<<24)+('F'<<16)+('F'<<8)+'I')
@@ -996,7 +992,7 @@ static char **FS_ListFilteredFiles(const char *path, const char *extension, cons
 	uint64_t i;
 	uint64_t pathLength;
 	uint64_t extLen;
-	char bffpath[MAX_BFF_PATH];
+	char bffpath[MAX_GDR_PATH];
 	uint64_t length, pathDepth, temp;
 	const bffFile_t *bff;
 	qboolean hasPatterns;
@@ -1457,6 +1453,7 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 	file = NULL;
 
 	// if the file is really heavy, map it, otherwise, open it normally
+#if 0
 	if (stats.size >= BFF_MAPFILE_SIZE) {
 		file = Sys_MapFile(bffpath, qtrue); // create a temporary file mapping, don't save it to disk
 		if (!file) {
@@ -1466,7 +1463,9 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 		stream = BFF_STREAM_MAPPED;
 		streamPtr = (void *)file;
 	}
-	else {
+	else
+#endif
+	{
 		fp = Sys_FOpen(bffpath, "rb");
 		if (!fp) {
 			N_Error(ERR_FATAL, "FS_LoadBFF: failed to open bff %s in readonly mode", bffpath);
@@ -1476,21 +1475,24 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 		streamPtr = (void *)fp;
 	}
 
-	if (FS_ReadFromBFF(stream, streamPtr, &header, sizeof(header)) != sizeof(header)) {
-		FS_CloseBFFStream(fp, file);
-		N_Error(ERR_FATAL, "FS_LoadBFF: failed to read header");
+	if (!fread( &header, sizeof(header), 1, fp )) {
+		fclose( fp );
+		N_Error(ERR_FATAL, "FS_LoadBFF: failed to read header for '%s'", bffpath);
 	}
 
 	if (header.ident != BFF_IDENT) {
-		FS_CloseBFFStream(fp, file);
+		Con_DPrintf( "FS_LoadBFF: bad identifier, '%s'\n", bffpath );
+		fclose( fp );
 		return NULL;
 	}
 	if (header.magic != HEADER_MAGIC) {
-		FS_CloseBFFStream(fp, file);
+		Con_DPrintf( "FS_LoadBFF: bad header magic, '%s'\n", bffpath );
+		fclose( fp );
 		return NULL;
 	}
 	if (!header.numChunks) {
-		FS_CloseBFFStream(fp, file);
+		Con_DPrintf( "FS_LoadBFF: funny chunk count, '%s'\n", bffpath );
+		fclose( fp );
 		return NULL;
 	}
 
@@ -1501,8 +1503,8 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 			COLOR_YELLOW "==== WARNING: bff version found in header isn't the same as this program's ====\n" COLOR_RESET
 			"\tHeader Version: %hi\n\tProgram BFF Version: %hi\n", header.version, BFF_VERSION);
 	}
-	if (FS_ReadFromBFF(stream, streamPtr, gameName, MAX_BFF_PATH) != MAX_BFF_PATH) {
-		FS_CloseBFFStream(fp, file);
+	if (!fread( gameName, sizeof(gameName), 1, fp )) {
+		fclose( fp );
 		N_Error(ERR_FATAL, "FS_LoadBFF: failed to read gameName");
 	}
 
@@ -1523,12 +1525,6 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 	// setup memory layout
 	bff->hashTable = (fileInBFF_t **)(bff + 1);
 	bff->buildBuffer = (fileInBFF_t *)(bff->hashTable + bff->hashSize);
-#if 0
-	bff->hashTable.clear();
-	bff->hashTable = eastl::unordered_map<const char *, fileInBFF_t>((const eastl::allocator &)alloc);
-	bff->hashTable.reserve(bff->numfiles);
-	bff->chunkList = (bff_chunk_t *)(bff + 1);
-#endif
 
 	bff->bffFilename = (char *)(bff->buildBuffer + header.numChunks);
 	bff->bffBasename = (char *)(bff->bffFilename + PAD(fileNameLen, sizeof(uintptr_t)));
@@ -1542,25 +1538,25 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 	
 	curFile = bff->buildBuffer;
 	for (i = 0; i < bff->numfiles; i++) {
-		if (FS_ReadFromBFF(stream, streamPtr, &curFile->nameLen, sizeof(curFile->nameLen)) != sizeof(curFile->nameLen)) {
-			FS_CloseBFFStream(fp, file);
+		if (!fread( &curFile->nameLen, sizeof(curFile->nameLen), 1, fp )) {
+			fclose( fp );
 			Con_DPrintf("Error reading chunk nameLen at %lu\n", i);
 			return NULL;
 		}
 		curFile->name = (char *)Z_SMalloc(curFile->nameLen);
-		if (!FS_ReadFromBFF(stream, streamPtr, curFile->name, curFile->nameLen)) {
-			FS_CloseBFFStream(fp, file);
+		if (!fread( curFile->name, curFile->nameLen, 1, fp )) {
+			fclose( fp );
 			Con_DPrintf("Error reading chunk name at %lu\n", i);
 			return NULL;
 		}
-		if (FS_ReadFromBFF(stream, streamPtr, &curFile->size, sizeof(curFile->size)) != sizeof(curFile->size)) {
-			FS_CloseBFFStream(fp, file);
+		if (!fread( &curFile->size, sizeof(curFile->size), 1, fp )) {
+			fclose( fp );
 			Con_DPrintf("Error reading read chunk size at %lu\n", i);
 			return NULL;
 		}
 
 		if (!curFile->size) {
-			FS_CloseBFFStream(fp, file);
+			fclose( fp );
 			Con_DPrintf("Bad chunk size at %lu\n", i);
 			return NULL;
 		}
@@ -1574,8 +1570,8 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 
 		// read the chunk data
 		curFile->buf = (char *)Z_Malloc(curFile->size, TAG_STATIC);
-		if (FS_ReadFromBFF(stream, streamPtr, curFile->buf, curFile->size) != curFile->size) {
-			FS_CloseBFFStream(fp, file);
+		if (!fread( curFile->buf, curFile->size, 1, fp )) {
+			fclose( fp );
 			Con_DPrintf("Error reading chunk buffer at %lu\n", i);
 			return NULL;
 		}
@@ -1590,7 +1586,7 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 	FS_InsertBFFToCache(bff);
 #endif
 
-	FS_CloseBFFStream(fp, file);
+	fclose( fp );
 
 	return bff;
 }
@@ -2272,11 +2268,15 @@ static void FS_AddGameDirectory(const char *path, const char *dir)
 	searchpath_t *search;
 	bffFile_t *bff;
 	char curpath[MAX_OSPATH*2+1];
-	char **bffList;
+	char **bffDirs, **bffFiles;
 	const char *bffpath;
+	const char *gamedir;
+	char *bffFile;
 	uint64_t numBFFs, i;
 	uint64_t path_len, dir_len, size;
+	uint64_t numdirs, numfiles;
 	uint64_t bffDirsI, bffFilesI;
+	uint64_t len;
 	int bffWhich;
 
 	for (sp = fs_searchpaths; sp; sp = sp->next) {
@@ -2298,37 +2298,175 @@ static void FS_AddGameDirectory(const char *path, const char *dir)
 
 	strcpy(search->dir->path, path);
 	strcpy(search->dir->gamedir, dir);
+	gamedir = search->dir->gamedir;
 
 	search->next = fs_searchpaths;
 	fs_searchpaths = search;
 
+	bffFilesI = 0;
+	bffDirsI = 0;
+
 	N_strncpyz(curpath, FS_BuildOSPath(path, dir, NULL), sizeof(curpath));
-	bffList = Sys_ListFiles(curpath, ".bff", NULL, &numBFFs, qfalse);
 
-	for (i = 0; i < numBFFs; i++) {
-		size = strlen(bffList[i]) + 1;
+	// get .bff files
+	bffFiles = Sys_ListFiles( curpath, ".bff", NULL, &numfiles, qfalse );
+	if (numfiles >= 2) {
+		FS_SortFileList( bffFiles, numfiles - 1 );
+	}
 
-		bffpath = FS_BuildOSPath(path, dir, bffList[i]);
-		if ((bff = FS_LoadBFF(bffpath)) == NULL) {
-			// this isn't a .bff! NeXT!
+	bffDirs = Sys_ListFiles(curpath, "/", NULL, &numdirs, qfalse);
+	if (numdirs >= 2) {
+		FS_SortFileList( bffDirs, numdirs - 1 );
+	}
+
+#if 0
+	for (bffFilesI = 0; bffFilesI < numfiles; bffFilesI++) {
+		len = strlen( bffFiles[bffFilesI] );
+		if (!FS_IsExt( bffFiles[bffFilesI], ".bff", len )) {
+			// not a bff file
+			bffFilesI++;
 			continue;
 		}
 
+		// the next .bff file is before the next directory
+		bffFile = FS_BuildOSPath( path, dir, bffFiles[bffFilesI] );
+		bff = FS_LoadBFF( bffFile );
+		if (bff == NULL) {
+			// this isn't a .bff file! NeXT!
+			bffFilesI++;
+			continue;
+		}
+
+		// store the game name
+		N_strncpyz(bff->bffGamename, gamedir, sizeof(bff->bffGamename));
+
 		bff->index = fs_bffCount;
-
-		search = (searchpath_t *)Z_Malloc(sizeof(*search), TAG_SEARCH_PATH);
-		memset(search, 0, sizeof(*search));
-		search->bff = bff;
-		search->access = DIR_STATIC;
-
-		search->next = fs_searchpaths;
-		fs_searchpaths = search;
+		bff->referenced = 0;
 
 		fs_bffChunks += bff->numfiles;
 		fs_bffCount++;
+
+		search = (searchpath_t *)Z_Malloc( sizeof(*search), TAG_SEARCH_PATH );
+		memset( search, 0, sizeof(*search) );
+		search->bff = bff;
+
+		search->next = fs_searchpaths;
+		fs_searchpaths = search;
 	}
-	
-	Sys_FreeFileList(bffList);
+
+	for (bffDirsI = 0; bffDirsI < numdirs; bffDirsI++) {
+		len = strlen( bffDirs[bffDirsI] );
+
+		//
+		// the next directory is before the next .bff file
+		//
+
+		// add the directory to the search path
+		path_len = strlen( curpath ) + 2;
+		path_len = PAD(path_len, sizeof(uintptr_t));
+		dir_len = PAD(len + 1, sizeof(uintptr_t));
+		len = sizeof(*search) + sizeof(*search->dir) + path_len + dir_len;
+
+		search = (searchpath_t *)Z_Malloc( len, TAG_SEARCH_DIR );
+		memset( search, 0, sizeof(*search) );
+		search->dir = (directory_t *)(search  + 1);
+		search->dir->path = (char *)(search->dir + 1);
+		search->dir->gamedir = (char *)(search->dir->path + path_len);
+
+		strcpy( search->dir->path, curpath ); // /home/user/glnomad/gamedata
+		strcpy( search->dir->gamedir, bffDirs[ bffDirsI ] ); // mydir
+			
+		search->next = fs_searchpaths;
+		fs_searchpaths = search;
+		fs_dirCount++;
+	}
+#endif
+	while (( bffFilesI < numfiles ) || ( bffDirsI < numdirs )) {
+		// check if a bff or directory comes next
+		if (bffFilesI >= numfiles) {
+			// we've used all the bff files, it must be a directory
+			bffWhich = 0;
+		}
+		else if (bffDirsI >= numdirs) {
+			// we've used all the directories, it must be a bff file
+			bffWhich = 1;
+		}
+		else {
+			// could be either, compare to see which name comes first
+			bffWhich = (FS_PathCmp( bffFiles[bffFilesI], bffDirs[bffDirsI] ) < 0);
+		}
+		
+		if (bffWhich) {
+			len = strlen( bffFiles[bffFilesI] );
+			if (!FS_IsExt( bffFiles[bffFilesI], ".bff", len )) {
+				// not a bff file
+				bffFilesI++;
+				continue;
+			}
+
+			// the next .bff file is before the next directory
+			bffFile = FS_BuildOSPath( path, dir, bffFiles[bffFilesI] );
+			if ((bff = FS_LoadBFF( bffFile )) == NULL) {
+				// this isn't a .bff file! NeXT!
+				bffFilesI++;
+				continue;
+			}
+
+			// store the game name
+			N_strncpyz(bff->bffGamename, gamedir, sizeof(bff->bffGamename));
+
+			bff->index = fs_bffCount;
+			bff->referenced = 0;
+
+			fs_bffChunks += bff->numfiles;
+			fs_bffCount++;
+
+			search = (searchpath_t *)Z_Malloc( sizeof(*search), TAG_SEARCH_PATH );
+			memset( search, 0, sizeof(*search) );
+			search->bff = bff;
+
+			search->next = fs_searchpaths;
+			fs_searchpaths = search;
+
+			bffFilesI++;
+		} else {
+
+			len = strlen( bffDirs[bffDirsI] );
+
+			// the next directory is before the next .bff file
+			// But wait, this could be any directory, we're filtering to only ending with ".bffdir" here.
+			if (!FS_IsExt(bffDirs[bffDirsI], ".bffdir", len)) {
+				// This isn't a .bffdir! NeXT!
+				bffDirsI++;
+				continue;
+			}
+
+			// add the directory to the search path
+			path_len = strlen( curpath ) + 2;
+			path_len = PAD(path_len, sizeof(uintptr_t));
+			dir_len = PAD(len + 1, sizeof(uintptr_t));
+			len = sizeof(*search) + sizeof(*search->dir) + path_len + dir_len;
+
+			search = (searchpath_t *)Z_Malloc( len, TAG_SEARCH_DIR );
+			memset( search, 0, sizeof(*search) );
+			search->dir = (directory_t *)(search  + 1);
+			search->dir->path = (char *)(search->dir + 1);
+			search->dir->gamedir = (char *)(search->dir->path + path_len);
+
+			strcpy( search->dir->path, curpath ); // /home/user/glnomad/gamedata
+			strcpy( search->dir->gamedir, bffDirs[ bffDirsI ] ); // mydir
+			
+			search->next = fs_searchpaths;
+			fs_searchpaths = search;
+			fs_dirCount++;
+
+			bffDirsI++;
+		}
+	}
+
+	// done
+	Sys_FreeFileList(bffDirs);
+	Sys_FreeFileList(bffFiles);
 }
 
 /*

@@ -6,7 +6,6 @@
 #include "../engine/n_shared.h"
 #include "../engine/n_common.h"
 #include "../sgame/sg_public.h"
-#include "../ui/ui_public.h"
 #include "../rendercommon/r_public.h"
 
 #ifndef O_BINARY
@@ -97,8 +96,9 @@ public:
 };
 #endif
 
-#ifndef Q3_VM
+#if !defined(UI_HARD_LINKED) && !defined(SGAME_HARD_LINKED) && !defined(Q3_VM)
 
+#include "../ui/ui_public.h"
 #include "../engine/vm_local.h"
 
 typedef struct {
@@ -184,6 +184,7 @@ void G_ClearMem(void);
 void G_Restart(void);
 void G_ShutdownRenderer(refShutdownCode_t code);
 qboolean G_GameCommand(void);
+qboolean G_WindowMinimized( void );
 void G_ClearState(void);
 void G_FlushMemory(void);
 void G_StartHunkUsers(void);
@@ -191,6 +192,8 @@ void G_ShutdownAll(void);
 void G_ShutdownVMs(void);
 void G_Frame(int msec, int realMsec);
 void G_InitDisplay(gpuConfig_t *config);
+SDL_Window *G_GetSDLWindow(void);
+void GLimp_Minimize( void );
 
 //
 // g_screen.cpp

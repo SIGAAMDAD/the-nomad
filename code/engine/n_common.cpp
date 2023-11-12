@@ -17,6 +17,7 @@ static uint32_t com_pushedEventsHead;
 static uint32_t com_pushedEventsTail;
 static sysEvent_t com_pushedEvents[MAX_PUSHED_EVENTS];
 
+uint32_t com_fps;
 int CPU_flags;
 cvar_t *com_demo;
 cvar_t *com_journal;
@@ -221,26 +222,6 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error(errorCo
 
 	calledSystemError = qtrue;
 	Sys_Error("%s", com_errorMessage);
-}
-
-char *Sys_GetClipboardData( void )
-{
-	char *data = NULL;
-	char *cliptext;
-
-	if ( ( cliptext = SDL_GetClipboardText() ) != NULL ) {
-		if ( cliptext[0] != '\0' ) {
-			size_t bufsize = strlen( cliptext ) + 1;
-
-			data = (char *)Z_Malloc( bufsize, TAG_STATIC );
-			N_strncpyz( data, cliptext, bufsize );
-
-			// find first listed char and set to '\0'
-			strtok( data, "\n\r\b" );
-		}
-		SDL_free( cliptext );
-	}
-	return data;
 }
 
 
@@ -849,7 +830,7 @@ static void DetectCPUCoresConfig( void )
 
 static void Sys_GetProcessorId( char *vendor )
 {
-	Com_sprintf( vendor, 100, "%s", ARCH_STRING );
+	Com_snprintf( vendor, 100, "%s", ARCH_STRING );
 }
 
 #else // __linux__

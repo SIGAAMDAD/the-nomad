@@ -39,6 +39,7 @@ public:
 
     void DrawString( const char *str ) const;
     void DrawStringCentered( const char *str ) const;
+    void DrawStringBlink( const char *str, int ticker, int mult ) const;
 
     // input functions
     void TextInput( const char *label, char *buffer, uint64_t size ) const;

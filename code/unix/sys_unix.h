@@ -17,5 +17,13 @@
 #include <termios.h>
 #include <sys/sysinfo.h>
 #include <sys/resource.h>
+#include <signal.h>
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#include <sched.h>
+
+extern int dll_err_count;
 
 #endif

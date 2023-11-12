@@ -41,6 +41,21 @@ typedef struct {
 
 typedef renderSceneRef_t refdef_t;
 
+typedef enum {
+    TexDetail_MSDOS,
+    TexDetail_IntegratedGPU,
+    TexDetail_Normie,
+    TexDetail_ExpensiveShitWeveGotHere,
+    TexDetail_GPUvsGod
+} textureDetail_t;
+
+typedef enum {              // [min, mag]
+    TexFilter_Linear,       // GL_LINEAR GL_LINEAR
+    TexFilter_Nearest,      // GL_NEAREST GL_NEAREST
+    TexFilter_Bilinear,     // GL_NEAREST GL_LINEAR
+    TexFilter_Trilinear     // GL_LINEAR GL_NEAREST
+} textureFilter_t;
+
 /*
 ** gpuConfig_t
 **

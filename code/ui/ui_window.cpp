@@ -144,15 +144,61 @@ void CUIWindow::DrawStringCentered( const char *str ) const
 //
 void CUIWindow::DrawString( const char *str ) const
 {
-    const char *s;
-    char buffer[MAXPRINTMSG], *bufp;
+    char s[2];
+    int currentColorIndex, colorIndex;
+    uint32_t i, length;
+    qboolean useColor = qfalse;
 
     // if it's got multiple lines, we need to
     // print with a drop-down
     if (strstr(str, "\\n") != NULL) {
     }
 
-    bufp = buffer;
-    for (s = str; *s; s++) {
+    length = (uint32_t)strlen(str);
+    currentColorIndex = ColorIndex(S_COLOR_WHITE);
+
+    for (i = 0; i < length; i++) {
+        if (Q_IsColorString(str+i) && str[i+1] != '\n') {
+            colorIndex = ColorIndexFromChar( str[i+1] );
+            if (currentColorIndex != colorIndex) {
+                currentColorIndex = colorIndex;
+                if (useColor) {
+                    ImGui::PopStyleColor();
+                    useColor = qfalse;
+                }
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4( g_color_table[ colorIndex ] ));
+                useColor = qtrue;
+            }
+            i += 2;
+        }
+
+        switch (str[i]) {
+        case '\n':
+            if (useColor) {
+                ImGui::PopStyleColor();
+                currentColorIndex = ColorIndexFromChar( S_COLOR_WHITE );
+                ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( g_color_table[ colorIndex ] ) );
+            }
+            ImGui::NewLine();
+            break;
+        case '\r':
+            ImGui::SameLine();
+            break;
+        default:
+            s[0] = str[i];
+            s[1] = 0;
+            ImGui::TextUnformatted(s);
+            break;
+        };
     }
+}
+
+
+void CUIWindow::DrawStringBlink( const char *str, int ticker, int mult ) const
+{
+    if ((ticker % mult) != 0) {
+        return;
+    }
+
+    DrawString( str );
 }

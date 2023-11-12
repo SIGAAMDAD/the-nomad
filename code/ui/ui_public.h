@@ -7,6 +7,7 @@
 #include "../game/g_sound.h"
 
 typedef enum : uint64_t {
+    UI_MENU_INTRO,
     UI_MENU_TITLE,
     UI_MENU_MAIN,
     UI_MENU_NONE,

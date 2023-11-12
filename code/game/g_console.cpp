@@ -13,18 +13,45 @@
 
 #define  NUM_CON_TIMES  4
 
-#define  CON_TEXTSIZE   65536
+#define  CON_TEXTSIZE   65536*2
 
 uint32_t bigchar_width;
 uint32_t bigchar_height;
 uint32_t smallchar_width;
 uint32_t smallchar_height;
 
+#if 0
+class CConsole
+{
+public:
+	CConsole( void );
+	~CConsole();
+
+	void Print( const char *txt );
+	void Draw( void );
+	void Run( void );
+private:
+	void DrawNotify( void );
+	void DrawSolidConsole( void ) const;
+	void DrawInput( void ) const;
+
+	qboolean initialized;
+	char *buffer;
+	uint64_t used;
+
+	uint32_t notify[NUM_CON_TIMES];
+
+	float displayFrac;
+	float finalFrac;
+	vec4_t color;
+};
+#endif
+
 typedef struct {
 	qboolean	initialized;
 
-	int16_t text[CON_TEXTSIZE];
-	uint32_t bytesUsed;
+	char text[CON_TEXTSIZE];
+	uint32_t used;
 	uint32_t current;		// line where next message will be printed
 	uint32_t x;				// offset in current line for next print
 	uint32_t display;		// bottom of console displays this line
@@ -100,7 +127,7 @@ Con_Clear_f
 */
 static void Con_Clear_f( void ) {
 	memset(con.text, 0, sizeof(con.text));
-	con.bytesUsed = 0;
+	con.used = 0;
 }
 
 						
@@ -467,24 +494,14 @@ void G_ConsolePrint( const char *txt ) {
 		//Con_CheckResize();
 		con.initialized = qtrue;
 	}
-
-	while ((c = *txt) != 0) {
-		if (Q_IsColorString( txt) && *(txt+1) != '\n') {
-			colorIndex = ColorIndexFromChar(*(txt+1));
-			txt += 2;
-			continue;
-		}
-
-		txt++;
-
-		if (con.bytesUsed + 1 >= CON_TEXTSIZE) {
-			Con_Clear_f();
-		}
-
-		// display character and advance
-		con.text[con.bytesUsed] = (colorIndex << 8) | (c & 255);
-		con.bytesUsed++;
+	
+	len = strlen(txt);
+	if (con.used + len >= CON_TEXTSIZE) {
+		Con_Clear_f();
 	}
+
+	memcpy(&con.text[con.used], txt, len);
+	con.used += len;
 }
 
 
@@ -610,7 +627,8 @@ static void Con_DrawInput( void ) {
 	ImGui::SameLine();
 
 	if (ImGui::InputText("", g_consoleField.buffer, sizeof(g_consoleField.buffer),
-	ImGuiInputTextFlags_CallbackAlways | ImGuiInputTextFlags_CtrlEnterForNewLine | ImGuiInputTextFlags_EnterReturnsTrue,
+	ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackEdit | ImGuiInputTextFlags_CallbackHistory |
+	ImGuiInputTextFlags_CtrlEnterForNewLine | ImGuiInputTextFlags_EnterReturnsTrue,
 	Con_TextCallback)) {
 		
 		// enter finishes the line
@@ -653,6 +671,7 @@ static void Con_DrawInput( void ) {
 			SCR_UpdateScreen ();	// force an update, because the command
 		}							// may take some time
 	}
+	ImGui::NewLine();
 
 //	Field_Draw( &g_consoleField, con.xadjust + 2 * smallchar_width, y,
 //		SCREEN_WIDTH - 3 * smallchar_width, qtrue, qtrue );
@@ -677,7 +696,7 @@ static void Con_DrawSolidConsole( float frac )
 	uint32_t lines, row, rows;
 	char s[2];
 	qboolean usedColor = qfalse;
-	int16_t *text;
+	char *text;
 	char buf[ MAX_CVAR_VALUE ], *v[4];
 
 	lines = gi.gpuConfig.vidHeight * 0.5f;
@@ -686,7 +705,6 @@ static void Con_DrawSolidConsole( float frac )
 	ImGui::SetWindowPos({ 0.0f, 0.0f });
 	ImGui::SetWindowSize({ gi.gpuConfig.vidWidth, gi.gpuConfig.vidHeight * 0.5f });
 	ImGui::SetWindowFontScale( 1.0f );
-	ImGui::PushStyleVar(ImGuiStyleVar_SeparatorTextPadding, ImVec2( 1.0f, 1.0f ));
 
 	// custom console background color
 	if ( con_color->s[0] ) {
@@ -724,25 +742,28 @@ static void Con_DrawSolidConsole( float frac )
 
 	currentColorIndex = ColorIndex(S_COLOR_WHITE);
 
-	for (i = 0, text = con.text; i < con.bytesUsed; text++, i++) {
+	for (i = 0, text = con.text; i < con.used; i++, text++) {
 		// track color changes
-		colorIndex = (text[i] >> 8) & 63;
-		if (currentColorIndex != colorIndex) {
-			currentColorIndex = colorIndex;
-			if (usedColor) {
-				ImGui::PopStyleColor();
-				usedColor = qfalse;
+		if (Q_IsColorString(text) && *(text+1) != '\n') {
+			colorIndex = ColorIndexFromChar(*(text+1));
+			if (currentColorIndex != colorIndex) {
+				currentColorIndex = colorIndex;
+				if (usedColor) {
+					ImGui::PopStyleColor();
+					usedColor = qfalse;
+				}
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4( g_color_table[ colorIndex ] ));
+				usedColor = qtrue;
 			}
-			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4( g_color_table[ colorIndex ] ));
-			usedColor = qtrue;
+			text += 2;
 		}
-		text += 2;
-
+		
 		switch (*text) {
 		case '\n':
 			if (usedColor) {
 				ImGui::PopStyleColor();
 				currentColorIndex = ColorIndex(S_COLOR_WHITE);
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4( g_color_table[ currentColorIndex ] ));
 			}
 			ImGui::NewLine();
 			break;
@@ -764,7 +785,7 @@ static void Con_DrawSolidConsole( float frac )
 	
 	Con_DrawInput();
 
-	ImGui::PopStyleVar();
+	ImGui::PopStyleColor();
 	ImGui::End();
 }
 

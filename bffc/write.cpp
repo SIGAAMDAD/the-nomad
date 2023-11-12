@@ -197,9 +197,10 @@ void WriteBFF(const char *outfile, const char *jsonfile, int compression)
 	uint64_t index = 0;
 	for (const auto& i : data.at("files")) {
 		bff_chunk_t *chunk = &archive->chunkList[index];
+		const std::string& name = i.get<std::string>();
 
-		chunk->chunkNameLen = i.get<std::string>().size() + 1;
-		chunk->chunkName = strdup(i.get<std::string>().c_str());
+		chunk->chunkNameLen = name.size() + 1;
+		chunk->chunkName = strdup(name.c_str());
 
 		nameLen += chunk->chunkNameLen;
 

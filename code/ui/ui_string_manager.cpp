@@ -27,14 +27,14 @@ static language_t StringToLanguage( const char *tok )
 {
     if (!N_stricmp(tok, "English")) {
         Con_Printf("Language selected: English\n");
-        return LANG_ENGLISH;
+        return LANGUAGE_ENGLISH;
     } else if (!N_stricmp(tok, "Spanish")) {
         Con_Printf("Language selected: Spanish\n");
-        return LANG_SPANISH;
+        return LANGUAGE_SPANISH;
     }
 
     COM_ParseWarning("unknown language parameter '%s', setting default of english", tok);
-    return LANG_ENGLISH;
+    return LANGUAGE_ENGLISH;
 }
 
 static int IsOnStringList( const char *tok )

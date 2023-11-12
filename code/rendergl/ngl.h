@@ -1,10 +1,29 @@
 #ifndef __NGL_H__
 #define __NGL_H__
 
+#if defined( _WIN32 )
+#if _MSC_VER
+#pragma warning (disable: 4201)
+#pragma warning (disable: 4214)
+#pragma warning (disable: 4514)
+#pragma warning (disable: 4032)
+#pragma warning (disable: 4201)
+#pragma warning (disable: 4214)
+#endif
+#include <windows.h>
+#include <GL/gl.h>
+#include <GL/glcorearb.h>
+#include <GL/glext.h>
+#elif defined( __linux__ ) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined( __sun )
 #include <GL/gl.h>
 #include <GL/glcorearb.h>
 #include <GL/glext.h>
 #include <KHR/khrplatform.h>
+#elif defined(__APPLE__)
+#define GL_NUM_EXTENSIONS                 0x821D
+#include <OpenGL/gl.h>
+#include <OpenGL/glext.h>
+#endif
 
 /*
 Possible things to add:

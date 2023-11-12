@@ -100,8 +100,8 @@ static void G_RefFreeAll(void) {
 
 static void G_RefImGuiFree(void *ptr, void *) {
     if (ptr != NULL) {
-//        Z_Free(ptr);
-        free(ptr);
+        Z_Free(ptr);
+        //free(ptr);
     }
 }
 
@@ -169,7 +169,7 @@ static void G_SetScaling(float factor, uint32_t captureWidth, uint32_t captureHe
 }
 
 static void *G_RefImGuiMalloc(size_t size) {
-    return calloc(size, 1);
+    return Z_Malloc(size, TAG_STATIC);
 }
 
 static void G_InitRenderRef(void)
@@ -200,7 +200,7 @@ static void G_InitRenderRef(void)
         snprintf(dllName, sizeof(dllName), DLL_PREFIX "glnomad_%s_" REND_ARCH_STRING DLL_EXT, dllPrefix);
         renderLib = Sys_LoadDLL(dllName);
         if (!renderLib) {
-            N_Error(ERR_FATAL, "Failed to load rendering library '%s'", dllName);
+            N_Error(ERR_FATAL, "Failed to load rendering library '%s', possible system error: %s", dllName, Sys_GetDLLError());
         }
     }
 
@@ -333,7 +333,7 @@ void G_ShutdownRenderer(refShutdownCode_t code)
     if (code >= REF_DESTROY_WINDOW) { // +REF_UNLOAD_DLL
         // shutdown sound system before renderer
 		// because it may depend from window handle
-		Snd_Shutdown(qtrue);
+		Snd_Shutdown();
     }
 
     if (re.Shutdown) {
@@ -752,9 +752,6 @@ void G_Frame(int msec, int realMsec)
     // update the screen
     gi.framecount++;
 
-    // update audio
-    Snd_Submit();
-
     Con_RunConsole();
     SCR_UpdateScreen();
 }
@@ -772,6 +769,7 @@ to move them somewhere else
 typedef struct {
     FILE *logfile;
     qboolean isFullscreen;
+    qboolean minimized;
     gpuConfig_t *config;
     uint32_t desktop_width;
     uint32_t desktop_height;
@@ -805,6 +803,10 @@ void GLimp_Minimize( void )
 
 void GLimp_LogComment(const char *comment)
 {
+}
+
+SDL_Window *G_GetSDLWindow(void) {
+    return r_window;
 }
 
 static int GLimp_CreateBaseWindow(gpuConfig_t *config)
@@ -977,6 +979,7 @@ static int GLimp_CreateBaseWindow(gpuConfig_t *config)
 	    	switch ( testColorBits ) {
 	    	case 16: mode.format = SDL_PIXELFORMAT_RGB565; break;
 	    	case 24: mode.format = SDL_PIXELFORMAT_RGB24;  break;
+            case 32: mode.format = SDL_PIXELFORMAT_RGBA32; break;
 	    	default: Con_DPrintf( "testColorBits is %d, can't fullscreen\n", testColorBits ); continue;
 	    	};
 
@@ -1005,6 +1008,8 @@ static int GLimp_CreateBaseWindow(gpuConfig_t *config)
 			}
 		}
 		if ( SDL_GL_SetSwapInterval( r_swapInterval->i ) == -1 ) {
+            // NOTE: if you get negative swap isn't supported, that just means dynamic
+            // vsync isn't available
 			Con_DPrintf( "SDL_GL_SetSwapInterval failed: %s\n", SDL_GetError( ) );
 		}
 		SDL_GL_GetAttribute( SDL_GL_RED_SIZE, &realColorBits[0] );
@@ -1116,6 +1121,10 @@ void GLimp_InitGamma(gpuConfig_t *config)
 void GLimp_SetGamma(const unsigned short r[256], const unsigned short g[256], const unsigned short b[256])
 {
     SDL_SetWindowGammaRamp(r_window, r, g, b);
+}
+
+qboolean G_WindowMinimized( void ) {
+    return (qboolean)(SDL_GetWindowFlags( r_window ) & SDL_WINDOW_MINIMIZED);
 }
 
 //

@@ -17,23 +17,34 @@ static titlemenu_t title;
 static void TitleMenu_Draw( void )
 {
     float font_scale;
+    int i;
 
     font_scale = ImGui::GetFont()->Scale;
 
     // setup window
     CUIWindow window( "TitleMenu" );
     {
-        window.SetFontScale(4);
+        window.SetFontScale(font_scale * 6);
         window.DrawStringCentered(title.thenomad->value);
     }
-    window.SetFontScale(font_scale);
-    {
-        window.DrawString(title.enterGame->value);
+
+    for (i = 0; i < 10; i++) {
+        ImGui::NewLine();
+    }
+
+    window.SetFontScale(font_scale * 2.5f);
+    window.DrawStringCentered( "Press Any Key" );
+
+    // exit?
+    if (Key_IsDown( KEY_ESCAPE )) {
+        Sys_Exit(1);
     }
 
     // is a key down?
-    if (Key_AnyDown()) {
-        ui->SetActiveMenu(UI_MENU_MAIN);
+    for (i = 0; i < NUMKEYS; i++) {
+        if (Key_IsDown( i )) {
+            ui->SetActiveMenu(UI_MENU_MAIN);
+        }
     }
 }
 

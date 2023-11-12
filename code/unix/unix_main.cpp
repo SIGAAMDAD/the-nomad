@@ -4,9 +4,8 @@
 #include "sys_unix.h"
 #include <execinfo.h>
 
-#define SYS_BACKTRACE_MAX 1024
 
-extern int dll_error_count;
+#define SYS_BACKTRACE_MAX 1024
 
 static field_t tty_con;
 static int stdin_flags;
@@ -31,45 +30,37 @@ typedef enum {
 void Sys_ShutdownConsole(void);
 tty_err Sys_InitConsole( void );
 
-/*
-Forcing an inline because the backtrace traces the call to the backtrace... (irony)
-*/
-#define BACKTRACE(amount) \
-{ \
-    if (amount > SYS_BACKTRACE_MAX) { \
-        Con_Printf(COLOR_RED "Attempted to stacktrace > %i, aborting\n", SYS_BACKTRACE_MAX); \
-    } \
-    else if (!FS_Initialized()) {} \
-    else { \
-        void **arr; \
-        char *buffer; \
-        FILE *tempfp; \
-        const char *ospath; \
-        int size; \
-        uint64_t fileLength; \
-        { \
-            arr = (void **)alloca(sizeof(void *) * amount); \
-            size = backtrace(arr, amount); \
-            ospath = FS_BuildOSPath(Cvar_VariableString("fs_basepath"), NULL, "backtrace.dat"); \
-            tempfp = Sys_FOpen(ospath, "w+"); \
-            if (!tempfp) { \
-                FS_Printf(logfile, "ERROR: Failed to open a backtrace file" GDR_NEWLINE); \
-                fprintf(stderr, "ERROR: Failed to open a backtrace file\n"); \
-                Com_Shutdown(); \
-                exit(-1); \
-            } \
-            /* write the backtrace */ \
-            backtrace_symbols_fd(arr, size, fileno(tempfp)); \
-        } \
-        fseek(tempfp, 0L, SEEK_END); \
-        fileLength = ftell(tempfp); \
-        fseek(tempfp, 0L, SEEK_SET); \
-        buffer = (char *)alloca(fileLength); \
-        fread(buffer, fileLength, 1, tempfp); \
-        Con_Printf("Successfully obtained %i stack frames\n", size); \
-        Con_Printf("Stack List:\n%s\n", buffer); \
-        fclose(tempfp); \
-    } \
+bool Sys_IsInDebugSession( void )
+{
+    char buf[4096];
+    int status_fd;
+    ssize_t readCount;
+    constexpr const char tracerPidString[] = "TracerPid:";
+    const char *tracer_pid_ptr, *characterPtr;
+
+    status_fd = open("/proc/self/status", O_RDONLY);
+    if (status_fd == -1)
+        return false;
+
+    readCount = read(status_fd, buf, sizeof(buf) - 1);
+    close(status_fd);
+
+    if (readCount <= 0)
+        return false;
+
+    buf[readCount] = '\0';
+    tracer_pid_ptr = strstr(buf, tracerPidString);
+    if (!tracer_pid_ptr)
+        return false;
+
+    for (characterPtr = tracer_pid_ptr + sizeof(tracerPidString) - 1; characterPtr <= buf + readCount; ++characterPtr) {
+        if (isspace(*characterPtr))
+            continue;
+        else
+            return isdigit(*characterPtr) != 0 && *characterPtr != '0';
+    }
+
+    return false;
 }
 
 // flush stdin, I suspect some terminals are sending a LOT of shit
@@ -156,6 +147,28 @@ static const exittype_t signals[] = {
 
 static const exittype_t *exit_type;
 
+//
+// Sys_MessageBox: adapted slightly from the source engine
+//
+int Sys_MessageBox(const char *title, const char *text, bool ShowOkAndCancelButton)
+{
+    int buttonid = 0;
+    SDL_MessageBoxData boxData = { 0 };
+    SDL_MessageBoxButtonData buttonData[] = {
+        { SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 1, "OK"      },
+        { SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 0, "Cancel"  },
+    };
+
+    boxData.window = G_GetSDLWindow();
+    boxData.title = title;
+    boxData.message = text;
+    boxData.numbuttons = ShowOkAndCancelButton ? 2 : 1;
+    boxData.buttons = buttonData;
+
+    SDL_ShowMessageBox( &boxData, &buttonid );
+    return ( buttonid == 1 );
+}
+
 void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error(const char *fmt, ...)
 {
     va_list argptr;
@@ -179,6 +192,9 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error(const
 	va_start( argptr, fmt );
 	N_vsnprintf( text, sizeof( text ), fmt, argptr );
 	va_end( argptr );
+
+    Sys_DebugStacktrace( MAX_STACKTRACE_FRAMES );
+    Sys_MessageBox( "Engine Error", text, false );
 
     msg = va("Sys_Error: %s\n", text);
     write(STDERR_FILENO, msg, strlen(msg));
@@ -208,10 +224,11 @@ void GDR_NORETURN Sys_Exit(int code)
         else
             fprintf(stderr, "Exiting With Engine Error\n");
     }
-    if (dll_error_count) {
-        fprintf(stderr, "Sys_Error: dll_error_count > 0, possible dlerror(): %s\n", dlerror());
-    }
     Sys_ShutdownConsole();
+    if (code == 0) {
+        Com_Shutdown(); // its a save and manual exit, we can shutdown securely
+        G_Shutdown(qtrue);
+    }
 
     if (code == -1)
         exit(EXIT_FAILURE);
@@ -522,105 +539,6 @@ const char *Sys_GetError(void)
     return strerror(errno);
 }
 
-#if 0
-#define PTHREAD_CHECK_FAIL(func,...) if (func(__VA_ARGS__) != 0) N_Error(ERR_FATAL, "%s: " #func " failed, error string: %s", Sys_GetError())
-#define MAX_THREADS 64
-typedef struct {
-    qboolean running;
-    pthread_t id;
-    pthread_attr_t attrib;
-    const char *name;
-} thread_t;
-thread_t threadData[MAX_THREADS];
-
-nhandle_t Sys_RegisterThread(const char *name)
-{
-    thread_t *thread;
-    nhandle_t hash;
-
-    hash = (nhandle_t)Com_GenerateHashValue(name, MAX_THREADS);
-    if (threadData[hash].name) {
-        N_Error(ERR_FATAL, "Sys_RegisterThread: thread '%s' registered twice", name);
-    }
-    thread = &threadData[hash];
-    memset(thread, 0, sizeof(*thread));
-    thread->name = name;
-
-    PTHREAD_CHECK_FAIL(pthread_attr_init, &thread->attrib);
-
-    return hash;
-}
-
-void Sys_StartThread(nhandle_t id, void (*func)(void))
-{
-    thread_t *thread;
-
-    if (!threadData[id].name) {
-        N_Error(ERR_FATAL, "%s: bad thread id (%i)", __func__, id);
-    }
-
-    thread = &threadData[id];
-    thread->running = qtrue;
-
-    PTHREAD_CHECK_FAIL(pthread_create, &thread->id, &thread->attrib, (void *(*)(void *))func, NULL);
-}
-
-void Sys_JoinThread(nhandle_t id)
-{
-    thread_t *thread;
-
-    if (!threadData[id].name) {
-        N_Error(ERR_FATAL, "%s: bad thread id (%i)", __func__, id);
-    }
-    if (!threadData[id].running) {
-        Con_DPrintf("%s(%i), not running\n", __func__, id);
-    }
-
-    thread = &threadData[id];
-    PTHREAD_CHECK_FAIL(pthread_join, thread->id, (void **)NULL);
-    thread->running = qfalse;
-}
-
-typedef struct {
-    qboolean locked;
-    pthread_mutex_t mutex;
-    pthread_mutexattr_t attrib;
-    pthread_rwlock_t rwlock;
-    uint32_t type;
-} mutex_t;
-
-mutex_t *Sys_CreateMutex(int type)
-{
-    mutex_t *m;
-
-    m = (mutex_t *)Z_Malloc(sizeof(*m), TAG_STATIC);
-    memset(m, 0, sizeof(*m));
-
-    PTHREAD_CHECK_FAIL(pthread_mutexattr_init, &m->attrib);
-
-    switch (type) {
-    case MUTEX_TYPE_RECURSIVE:
-        PTHREAD_CHECK_FAIL(pthread_mutexattr_settype, &m->attrib, PTHREAD_MUTEX_RECURSIVE);
-        break;
-    case MUTEX_TYPE_SHARED:
-        PTHREAD_CHECK_FAIL(pthread_rwlock_init, &m->rwlock, NULL);
-        break;
-    };
-
-    PTHREAD_CHECK_FAIL(pthread_mutex_init, &m->mutex, &m->attrib);
-    m->type = type;
-
-    return m;
-}
-
-void Sys_LockMutex(mutex_t *m)
-{
-    if (m->locked) {
-        N_Error(ERR_FATAL, "Sys_LockMutex on a locked mutex");
-    }
-}
-#endif
-
 tty_err Sys_InitConsole(void)
 {
     struct termios tc;
@@ -748,7 +666,8 @@ static void SignalHandle(int signum)
 {
     if (signum == SIGSEGV) {
         exit_type = &signals[0];
-        Sys_Error("recieved SIGSEGV");
+        Sys_SetError( ERR_SEGGY );
+        Sys_Error("Memory Access Violation (SIGSEGV)");
     } else if (signum == SIGABRT) {
         exit_type = &signals[2];
         Sys_Error("recieved SIGABRT");
@@ -756,17 +675,18 @@ static void SignalHandle(int signum)
         signal(SIGTERM, SignalHandle);
     } else if (signum == SIGBUS) {
         exit_type = &signals[1];
-        Sys_Error("recieved SIGBUS");
+        Sys_SetError( ERR_BUS );
+        Sys_Error("Cannot Address Memory (SIGBUS)");
     } else if (signum == SIGILL) {
         exit_type = &signals[5];
-        Sys_Error("recieved SIGILL");
+        Sys_DebugStacktrace(1024);
+        Sys_Error("Illegal Instruction (SIGILL)");
     } else if (signum == SIGFPE) {
-        Con_DPrintf("recieved SIGFPE, floating point exception, don't really care... continuing...\n");
-        BACKTRACE(128); // do a stack dump
-        signal(SIGFPE, SignalHandle);
+        Sys_DebugStacktrace(1024); // do a stack dump
+        Sys_Error("Floating Point Exception (SIGFPE)");
     } else if (signum == SIGTRAP) {
         Con_DPrintf("DebugBreak Triggered...\n");
-        BACKTRACE(128); // do a stack dump
+        Sys_DebugStacktrace(1024); // do a stack dump
         signal(SIGTRAP, SignalHandle);
     } else {
         Con_DPrintf("Unknown signal (%i)... Wtf?\n", signum);

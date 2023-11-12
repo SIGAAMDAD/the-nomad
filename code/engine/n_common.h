@@ -128,6 +128,7 @@ typedef void (*cmdfunc_t)(void);
 typedef enum {
   // bk001129 - make sure SE_NONE is zero
 	SE_NONE = 0,		// evTime is still valid
+	SE_CHAR,			// evValue is an ascii char
 	SE_KEY,				// evValue is a key code, evValue2 is whether its pressed or not
 	SE_MOUSE,			// evValue and evValue2 are relative signed x / y moves
 	SE_JOYSTICK_AXIS,	// evValue is an axis number and evValue2 is the current state (-127 to 127)
@@ -303,12 +304,19 @@ typedef enum {
 #define JOURNAL_WRITE	1		// write an event journal
 #define JOURNAL_PLAYBACK 2		// replay the event journal
 
+#define MAX_BFF_PATH 256
+#define BFF_VERSION_MAJOR 0
+#define BFF_VERSION_MINOR 1
+#define BFF_VERSION ((BFF_VERSION_MAJOR<<8)+BFF_VERSION_MINOR)
+
 extern cvar_t *com_demo;
 extern cvar_t *com_journal;
 extern cvar_t *com_logfile;
 extern cvar_t *com_version;
 extern cvar_t *com_devmode;
 extern cvar_t *sys_cpuString;
+extern cvar_t *com_maxfps;
+extern uint32_t com_fps;
 extern int com_frameTime;
 extern uint64_t com_cacheLine;
 extern qboolean com_errorEntered;
@@ -395,6 +403,7 @@ enum {
 	TAG_STATIC,
 	TAG_BFF,
 	TAG_SEARCH_PATH,
+	TAG_SEARCH_DIR,
 	TAG_RENDERER,
 	TAG_GAME,
 	TAG_SMALL,
@@ -524,6 +533,10 @@ char **Sys_ListFiles(const char *directory, const char *extension, const char *f
 const char *Sys_DefaultHomePath(void);
 const char *Sys_DefaultBasePath(void);
 qboolean Sys_RandomBytes(byte *s, uint64_t len);
+
+void Sys_ClearDLLError( void );
+int Sys_GetDLLErrorCount( void );
+const char *Sys_GetDLLError( void );
 
 #endif
 

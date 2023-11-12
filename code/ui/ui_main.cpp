@@ -12,7 +12,7 @@ cvar_t *ui_printStrings;
 const char *UI_LangToString( int32_t lang )
 {
     switch ((language_t)lang) {
-    case LANG_ENGLISH:
+    case LANGUAGE_ENGLISH:
         return "english";
     default:
         break;
@@ -27,7 +27,7 @@ static void UI_RegisterCvars( void )
                         "Sets the game's language:\n"
                         "  0 - English\n"
                         "  1 - Spanish (Not Supported Yet)\n" );
-    Cvar_CheckRange( ui_language, va("%lu", LANG_ENGLISH), va("%lu", NUMLANGS), CVT_INT );
+    Cvar_CheckRange( ui_language, va("%lu", LANGUAGE_ENGLISH), va("%lu", NUMLANGS), CVT_INT );
 
     ui_printStrings = Cvar_Get( "ui_printStrings", "1", CVAR_LATCH | CVAR_SAVE | CVAR_PRIVATE);
     Cvar_SetDescription( ui_printStrings, "Print value strings set by the language ui file" );
@@ -52,7 +52,8 @@ UI_Cache
 static void UI_Cache_f( void )
 {
     TitleMenu_Cache();
-    SettingsMenu_Cache();
+    IntroMenu_Cache();
+    MainMenu_Cache();
 }
 
 extern "C" void UI_Shutdown( void )
@@ -87,6 +88,11 @@ extern "C" void UI_Init( void )
     memset(strManager, 0, sizeof(*strManager));
     strManager->Init();
 
+    // init the font manager
+    fontManager = (CUIFontManager *)Hunk_Alloc(sizeof(*fontManager), h_low);
+    memset(fontManager, 0, sizeof(*fontManager));
+    ::new ((void *)fontManager) CUIFontManager();
+
     // load the language string file
     strManager->LoadFile(va("scripts/ui_strings_%s.txt", UI_LangToString(ui_language->i)));
     if (!strManager->NumLangsLoaded()) {
@@ -95,8 +101,13 @@ extern "C" void UI_Init( void )
 
     ui->SetActiveMenu( UI_MENU_TITLE );
 
+    UI_Cache_f();
+
     // add commands
     Cmd_AddCommand( "ui_cache", UI_Cache_f );
+
+    // build the font texture
+//    fontManager->BuildAltas();
 }
 
 void Menu_Cache( void )
@@ -129,6 +140,10 @@ extern "C" void UI_Refresh( int realtime )
 		if (ui->GetCurrentMenu()->fullscreen) {
             ui->DrawHandlePic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, ui->menubackShader );
 		}
+
+        if (Key_IsDown( KEY_ESCAPE )) {
+            ui->PopMenu();
+        }
 
 		if (ui->GetCurrentMenu()->Draw)
 			ui->GetCurrentMenu()->Draw();

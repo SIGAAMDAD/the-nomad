@@ -1,9 +1,6 @@
 #include "../engine/n_shared.h"
 #include "sys_unix.h"
 
-#define _GNU_SOURCE
-#include <sched.h>
-
 qboolean Sys_RandomBytes(byte *s, uint64_t len)
 {
     FILE *fp;
@@ -150,6 +147,10 @@ char **Sys_ListFiles(const char *directory, const char *extension, const char *f
         
         if ((dironly && !(st.st_mode & S_IFDIR)) || (!dironly && (st.st_mode & S_IFDIR)))
             continue;
+        
+        if (d->d_name[0] == '.' || (d->d_name[0] == '.' && d->d_name[1] == '.')) {
+            continue;
+        }
         
         if (*extension) {
             if (hasPatterns) {
@@ -477,7 +478,18 @@ uint64_t Sys_GetUsedRAM_Physical(void)
     return (info.totalram - info.freeram) * info.mem_unit;
 }
 
-int dll_error_count = 0;
+qboolean Sys_mkdir(const char *name)
+{
+    if (mkdir(name, 0750) == 0) {
+        return qtrue;
+    }
+    else {
+        return (qboolean)(errno == EEXIST);
+    }
+}
+
+
+int dll_err_count = 0;
 
 /*
 Sys_LoadDLL: all paths given to this are assumed to be absolute paths that won't be modified
@@ -493,19 +505,31 @@ void *Sys_LoadDLL(const char *name)
 
     libHandle = dlopen(name, RTLD_NOW);
     if (!libHandle) {
-        dll_error_count++;
+        dll_err_count++;
     }
     return libHandle;
 }
 
-qboolean Sys_mkdir(const char *name)
-{
-    if (mkdir(name, 0750) == 0) {
-        return qtrue;
+int Sys_GetDLLErrorCount( void ) {
+    return dll_err_count;
+}
+
+const char *Sys_GetDLLError( void ) {
+    if (dll_err_count) {
+        dll_err_count--;
+        return (const char *)dlerror();
     }
-    else {
-        return (qboolean)(errno == EEXIST);
+    return "no error";
+}
+
+void Sys_ClearDLLError( void ) {
+    if (dll_err_count) {
+        Con_DPrintf( COLOR_YELLOW "WARNING: clearing dll_err_count, but there's errors, listing them:\n" );
+        for (int i = 0; i < dll_err_count; i++) {
+            Con_DPrintf( COLOR_YELLOW "dll_error[%i]: %s\n", i, dlerror() );
+        }
     }
+    dll_err_count = 0;
 }
 
 void *Sys_GetProcAddress(void *handle, const char *name)
@@ -532,7 +556,7 @@ void *Sys_GetProcAddress(void *handle, const char *name)
         proc = dlsym(handle, name);
     }
     if (!proc) {
-        dll_error_count++;
+        dll_err_count++;
     }
 
     return proc;
@@ -576,4 +600,24 @@ const char *Sys_pwd(void)
     }
 
     return pwd;
+}
+
+char *Sys_GetClipboardData( void )
+{
+	char *data = NULL;
+	char *cliptext;
+
+	if ( ( cliptext = SDL_GetClipboardText() ) != NULL ) {
+		if ( cliptext[0] != '\0' ) {
+			size_t bufsize = strlen( cliptext ) + 1;
+
+			data = (char *)Z_Malloc( bufsize, TAG_STATIC );
+			N_strncpyz( data, cliptext, bufsize );
+
+			// find first listed char and set to '\0'
+			strtok( data, "\n\r\b" );
+		}
+		SDL_free( cliptext );
+	}
+	return data;
 }

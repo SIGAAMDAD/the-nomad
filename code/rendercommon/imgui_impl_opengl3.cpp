@@ -108,6 +108,8 @@
 #endif
 
 #include "../engine/n_shared.h"
+#include "../rendergl/ngl.h"
+#include "../rendergl/glext.h"
 #include "imgui.h"
 // #ifndef IMGUI_DISABLE
 #include "imgui_impl_opengl3.h"
@@ -465,6 +467,7 @@ static void ImGui_ImplOpenGL3_SetupRenderState(ImDrawData *draw_data, int fb_wid
     };
     ri.glUseProgram(imguiShader);
     ri.glUniform1i(bd->AttribLocationTex, 0);
+
     ri.glUniformMatrix4fv(bd->AttribLocationProjMtx, 1, GL_FALSE, &ortho_projection[0][0]);
 
 #ifdef IMGUI_IMPL_OPENGL_MAY_HAVE_BIND_SAMPLER
