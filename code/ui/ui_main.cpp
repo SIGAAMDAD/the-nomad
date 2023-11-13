@@ -125,11 +125,12 @@ void Menu_Cache( void )
 UI_Refresh
 =================
 */
+
 extern "C" void UI_Refresh( int realtime )
 {
 	ui->SetFrameTime( ui->GetRealTime() - realtime );
 	ui->SetRealTime( realtime );
-
+    
 	if ( !( Key_GetCatcher() & KEYCATCH_UI ) ) {
 		return;
 	}
@@ -140,10 +141,6 @@ extern "C" void UI_Refresh( int realtime )
 		if (ui->GetCurrentMenu()->fullscreen) {
             ui->DrawHandlePic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, ui->menubackShader );
 		}
-
-        if (ImGui::IsKeyPressed( ImGuiKey_Escape, false )) {
-            ui->PopMenu();
-        }
 
 		if (ui->GetCurrentMenu()->Draw)
 			ui->GetCurrentMenu()->Draw();

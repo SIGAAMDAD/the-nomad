@@ -581,6 +581,8 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
     ri.glGenVertexArrays(1, &vertex_array_object);
 #endif
     ImGui_ImplOpenGL3_SetupRenderState(draw_data, fb_width, fb_height, vertex_array_object);
+    ri.glEnable(GL_ALPHA_TEST);
+    ri.glAlphaFunc( GL_ALWAYS, 0.5f );
 
     // Will project scissor/clipping rectangles into framebuffer space
     clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports

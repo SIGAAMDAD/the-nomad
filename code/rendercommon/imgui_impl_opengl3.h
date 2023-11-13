@@ -68,6 +68,7 @@ typedef struct
     GLboolean (*glIsDisabled)( GLenum cap );
     GLboolean (*glIsProgram)( GLenum program );
     GLboolean (*glIsShader)( GLenum shader );
+    void (*glAlphaFunc)( GLenum func, GLclampf ref );
     void (*glDrawElementsBaseVertex)( GLenum mode, GLsizei count, GLenum type, const void *indices, GLint basevertex );
     void (*glDrawElements)( GLenum mode, GLsizei count, GLenum type, const void *indices );
     void (*glGetVertexAttribPointerv)( GLuint index, GLenum pname, void **pointer );

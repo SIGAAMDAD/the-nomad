@@ -31,6 +31,8 @@ typedef struct {
 
 typedef struct
 {
+    CUIMenu menu;
+
     keybind_t keybinds[NUMBINDS];
 
     bool mouseAccelerate;
@@ -38,6 +40,11 @@ typedef struct
 
     uint32_t rebindIndex;
     qboolean rebinding;
+
+    bool musicOn;
+    bool sfxOn;
+    float musicVol;
+    float sfxVol;
 
     renderapi_t api;
 
@@ -54,6 +61,10 @@ typedef struct {
 } saveinfo_t;
 
 typedef struct {
+    CUIMenu menu;
+    CUIMenu newgame;
+    CUIMenu loadgame;
+
     // load game data
     saveinfo_t *saveList;
     uint64_t numSaves;
@@ -236,9 +247,17 @@ static void SettingsMenu_RebindKey( void )
     }
 }
 
-static void Menu_Title( const char *label )
+static bool Menu_Title( const char *label )
 {
     const float font_scale = ImGui::GetFont()->Scale;
+
+    ImGui::SetWindowFontScale( font_scale * menu.drawScale );
+    if (ImGui::ArrowButton( "##BACK", ImGuiDir_Left )) {
+        ui->PopMenu();
+        return true;
+    }
+    ImGui::SameLine();
+    ImGui::TextUnformatted( "BACK" );
 
     ImGui::SetWindowFontScale( font_scale * 3.75f * menu.drawScale );
     ImGui::TextUnformatted( label );
@@ -246,6 +265,8 @@ static void Menu_Title( const char *label )
 
     ImGui::NewLine();
     ImGui::NewLine();
+
+    return false;
 }
 
 static bool Menu_Option( const char *label )
@@ -258,11 +279,14 @@ static bool Menu_Option( const char *label )
 static void MainMenu_Draw( void )
 {
     uint64_t i;
-    const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar;
+    const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
+                            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground;
 
     if (Key_IsDown( KEY_F2 )) {
         menu.noMenu = qtrue;
     }
+
+    Snd_SetLoopingTrack( menu.ambience );
 
     if (menu.noMenu) {
         return; // just the scenery & the music (a bit like Halo 3: ODST, check out halome.nu)...
@@ -270,15 +294,17 @@ static void MainMenu_Draw( void )
 
     ImGui::Begin( "MainMenu", NULL, windowFlags );
     ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-    ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth / 4, (float)menu.menuHeight ) );
+    ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth / 2, (float)menu.menuHeight ) );
     if (menu.state == STATE_MAIN) {
         Menu_Title( "MAIN MENU" );
 
         if (Menu_Option( "Single Player" )) {
             menu.state = STATE_SINGLEPLAYER;
+            ui->PushMenu( &menu.sp.menu );
         }
         if (Menu_Option( "Settings" )) {
-            menu.state = STATE_SETTINGS;
+            menu.state = STATE_GRAPHICS;
+            ui->PushMenu( &menu.settings.menu );
         }
         if (Menu_Option( "Exit To Title Screen" )) {
             ui->PopMenu();
@@ -288,28 +314,33 @@ static void MainMenu_Draw( void )
             Sys_Exit( 1 );
         }
     }
-    else if (menu.state >= STATE_SINGLEPLAYER) {
+    else if (menu.state >= STATE_SINGLEPLAYER && menu.state <= STATE_PLAYMISSION) {
         switch (menu.state) {
         case STATE_SINGLEPLAYER:
-            Menu_Title( "SINGLE PLAYER" );
-            
+            if (Menu_Title( "SINGLE PLAYER" )) {
+                menu.state = STATE_MAIN;
+            }
             
             if (Menu_Option( "New Game" )) {
                 menu.state = STATE_NEWGAME;
                 menu.sp.hardestIndex = rand() % arraylen(difHardestTitles);
+                ui->PushMenu( &menu.sp.newgame );
             }
             if (Menu_Option( "Load Game" )) {
                 menu.state = STATE_LOADGAME;
+                ui->PushMenu( &menu.sp.loadgame );
             }
-            if (Menu_Option( "Play Mission" )) { // play any mission found inside the current BFF loaded
-                menu.state = STATE_PLAYMISSION;
+            if (Menu_Option( "Play Mission (COMING SOON!)" )) { // play any mission found inside the current BFF loaded
+//                menu.state = STATE_PLAYMISSION;
             }
 
             break;
         case STATE_NEWGAME: {
             const char *difName;
 
-            Menu_Title( "SINGLE PLAYER -> NEW GAME" );
+            if (Menu_Title( "NEW GAME" )) {
+                menu.state = STATE_SINGLEPLAYER;
+            }
 
             ImGui::TextUnformatted( "Save Name: " );
             ImGui::SameLine();
@@ -349,7 +380,9 @@ static void MainMenu_Draw( void )
 
             break; }
         case STATE_LOADGAME: {
-            Menu_Title( "SINGLE PLAYER -> LOAD GAME" );
+            if (Menu_Title( "LOAD GAME" )) {
+                menu.state = STATE_SINGLEPLAYER;
+            }
 
             if (menu.sp.numSaves) {
                 ImGui::BeginTable( "Save Slots", 5 );
@@ -379,8 +412,49 @@ static void MainMenu_Draw( void )
             break; }
         };
     }
-    else if (menu.state >= STATE_SETTINGS) {
-        Menu_Title( "SETTINGS" );
+    else if (menu.state >= STATE_SETTINGS && menu.state <= STATE_AUDIO) {
+        if (Menu_Title( "SETTINGS" )) {
+            menu.state = STATE_MAIN;
+        }
+
+        if (ImGui::BeginTabBar( " " )) {
+            if (ImGui::BeginTabItem( "GRAPHICS" )) {
+                menu.state = STATE_GRAPHICS;
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem( "AUDIO" )) {
+                menu.state = STATE_AUDIO;
+                ImGui::EndTabItem();
+            }
+            ImGui::EndTabBar();
+        }
+        switch (menu.state) {
+        case STATE_GRAPHICS:
+            ImGui::BeginTable( " ", 2 );
+            {
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted( "Anti-Aliasing" );
+                ImGui::TableNextColumn();
+                if (ImGui::BeginMenu( "Select Anti-Aliasing Type" )) {
+                    ImGui::EndMenu();
+                }
+            }
+            ImGui::EndTable();
+            break;
+        case STATE_AUDIO:
+            ImGui::SeparatorText( "Sound Effects" );
+            ImGui::Checkbox( "ON##SfxOn", &menu.settings.sfxOn );
+            ImGui::SameLine();
+            ImGui::SliderFloat( "VOLUME##SfxVolume", &menu.settings.sfxVol, 0.0f, 100.0f );
+
+            ImGui::SeparatorText( "Music" );
+            ImGui::Checkbox( "ON##MusicOn", &menu.settings.musicOn );
+            ImGui::SameLine();
+            ImGui::SliderFloat( "VOLUME##MusicVolume", &menu.settings.musicVol, 0.0f, 100.0f );
+            break;
+        case STATE_CONTROLS:
+            break;
+        };
     }
     else if (menu.state == STATE_CREDITS) {
         Menu_Title( "CREDITS" );
@@ -440,7 +514,17 @@ void MainMenu_Cache( void )
     SinglePlayerMenu_Cache();
 
     menu.menu.Draw = MainMenu_Draw;
+    menu.settings.menu.Draw = MainMenu_Draw;
+    menu.sp.menu.Draw = MainMenu_Draw;
+    menu.sp.loadgame.Draw = MainMenu_Draw;
+    menu.sp.newgame.Draw = MainMenu_Draw;
+
     menu.drawScale = Cvar_VariableFloat( "r_customWidth" ) / Cvar_VariableFloat( "r_customHeight" );
+
+    menu.settings.sfxOn = Cvar_VariableInteger( "snd_sfxon" );
+    menu.settings.musicOn = Cvar_VariableInteger( "snd_musicon" );
+    menu.settings.sfxVol = Cvar_VariableFloat( "snd_sfxvol" );
+    menu.settings.musicVol = Cvar_VariableFloat( "snd_musicvol" );
 
     menu.spString = strManager->ValueForKey("MENU_MAIN_SP_STRING");
     menu.settingsString = strManager->ValueForKey("MENU_MAIN_SETTINGS_STRING");
@@ -449,7 +533,7 @@ void MainMenu_Cache( void )
     menu.settings.mouseAccelerate = Cvar_VariableInteger("g_mouseAcceleration");
     menu.settings.mouseInvert = Cvar_VariableInteger("g_mouseInvert");
 
-//    menu.ambience = Snd_RegisterTrack( "music/track00.ogg" );
+    menu.ambience = Snd_RegisterTrack( "track00.ogg" );
 
     menu.noMenu = qfalse;
     menu.menuHeight = ui->GetConfig().vidHeight;

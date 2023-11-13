@@ -871,6 +871,7 @@ static void R_InitImGui(void)
     import.glTexParameteri = nglTexParameteri;
     import.glTexImage2D = nglTexImage2D;
     import.glActiveTexture = nglActiveTexture;
+    import.glAlphaFunc = nglAlphaFunc;
 
     ri.ImGui_Init((void *)(uintptr_t)rg.imguiShader.programId, &import);
 }

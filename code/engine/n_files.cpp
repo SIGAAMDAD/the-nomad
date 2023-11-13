@@ -1787,7 +1787,7 @@ static uint64_t FS_ReadFromChunk(void *buffer, uint64_t size, file_t f)
 
 	// this should never happen, if it does, no questioning, just crash
 	if (handle->data.chunk->bytesRead + size > handle->data.chunk->size) {
-		N_Error(ERR_FATAL, "FS_ReadFromChunk: overread");
+		Con_DPrintf( "WARNING: chunk overread of %lu bytes\n", handle->data.chunk->size - size );
 	}
 
 	memcpy(buffer, handle->data.chunk->buf + handle->data.chunk->bytesRead, size);

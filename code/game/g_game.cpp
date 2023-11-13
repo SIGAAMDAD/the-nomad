@@ -100,8 +100,7 @@ static void G_RefFreeAll(void) {
 
 static void G_RefImGuiFree(void *ptr, void *) {
     if (ptr != NULL) {
-        Z_Free(ptr);
-        //free(ptr);
+        free(ptr);
     }
 }
 
@@ -113,6 +112,9 @@ static void G_RefImGuiInit(void *shaderData, const void *importData) {
     ImGuiIO& io = ImGui::GetIO();
     io.DisplaySize.x = gi.gpuConfig.vidWidth;
     io.DisplaySize.y = gi.gpuConfig.vidHeight;
+    ImGui::GetStyle().AntiAliasedFill = true;
+    ImGui::GetStyle().AntiAliasedLines = true;
+    ImGui::GetStyle().AntiAliasedLinesUseTex = true;
     io.WantCaptureMouse = true;
 
     if (!N_stricmp( g_renderer->s, "opengl" )) {
@@ -169,7 +171,7 @@ static void G_SetScaling(float factor, uint32_t captureWidth, uint32_t captureHe
 }
 
 static void *G_RefImGuiMalloc(size_t size) {
-    return Z_Malloc(size, TAG_STATIC);
+    return calloc( size, 1 );
 }
 
 static void G_InitRenderRef(void)
