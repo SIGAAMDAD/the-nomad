@@ -206,6 +206,15 @@ static void SettingsMenu_ApplyChanges( void )
 
     if (ImGui::Button( "APPLY CHANGES" )) {
         if (menu.settings.modified) {
+            if (Cvar_VariableInteger( "g_mouseAcceleration" ) != (int32_t)menu.settings.mouseAccelerate) {
+                Cvar_Set( "g_mouseAcceleration", va( "%i", menu.settings.mouseAccelerate ) );
+            }
+            if (Cvar_VariableInteger( "g_mouseInvert" ) != (int32_t)menu.settings.mouseInvert) {
+                Cvar_Set( "g_mouseInvert", va( "%i", menu.settings.mouseInvert ) );
+            }
+            if (Cvar_VariableInteger( "r_textureFiltering" ) != (int32_t)3) {
+                Cvar_Set( "r_textureFiltering", va( "%i", 3 ) );
+            }
         }
     }
 
@@ -274,6 +283,75 @@ static bool Menu_Option( const char *label )
     ImGui::TextUnformatted( label );
     ImGui::SameLine();
     return ImGui::ArrowButton( label, ImGuiDir_Right );
+}
+
+static void SettingsMenu_Draw( void )
+{
+    if (ImGui::BeginTabBar( " " )) {
+        if (ImGui::BeginTabItem( "GRAPHICS" )) {
+            menu.state = STATE_GRAPHICS;
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem( "AUDIO" )) {
+            menu.state = STATE_AUDIO;
+            ImGui::EndTabItem();
+        }
+        ImGui::EndTabBar();
+    }
+    switch (menu.state) {
+    case STATE_GRAPHICS:
+        ImGui::BeginTable( " ", 2 );
+        {
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted( "Anti-Aliasing" );
+            ImGui::TableNextColumn();
+            if (ImGui::BeginMenu( "Select Anti-Aliasing Type" )) {
+                ImGui::EndMenu();
+            }
+
+            ImGui::TableNextRow();
+            
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted( "Texture Filtering" );
+            ImGui::TableNextColumn();
+            if (ImGui::BeginMenu( "Select Texture Filtering" )) {
+                if (ImGui::MenuItem( "Linear" )) {
+                }
+                if (ImGui::MenuItem( "Nearest" )) {
+                }
+                if (ImGui::MenuItem( "Bilinear" )) {
+                }
+                if (ImGui::MenuItem( "Trilinear" )) {
+                }
+                ImGui::EndMenu();
+            }
+        }
+        ImGui::EndTable();
+        break;
+    case STATE_AUDIO:
+        ImGui::SeparatorText( "Sound Effects" );
+        if (ImGui::Checkbox( "ON##SfxOn", &menu.settings.sfxOn )) {
+            menu.settings.modified = qtrue;
+        }
+        ImGui::SameLine();
+        if (ImGui::SliderFloat( "VOLUME##SfxVolume", &menu.settings.sfxVol, 0.0f, 100.0f )) {
+            menu.settings.modified = qtrue;
+        }
+
+        ImGui::SeparatorText( "Music" );
+        if (ImGui::Checkbox( "ON##MusicOn", &menu.settings.musicOn )) {
+            menu.settings.modified = qtrue;
+        }
+        ImGui::SameLine();
+        if (ImGui::SliderFloat( "VOLUME##MusicVolume", &menu.settings.musicVol, 0.0f, 100.0f )) {
+            menu.settings.modified = qtrue;
+        }
+        break;
+    case STATE_CONTROLS:
+        break;
+    };
+
+    SettingsMenu_ApplyChanges();
 }
 
 static void MainMenu_Draw( void )
@@ -416,45 +494,9 @@ static void MainMenu_Draw( void )
         if (Menu_Title( "SETTINGS" )) {
             menu.state = STATE_MAIN;
         }
-
-        if (ImGui::BeginTabBar( " " )) {
-            if (ImGui::BeginTabItem( "GRAPHICS" )) {
-                menu.state = STATE_GRAPHICS;
-                ImGui::EndTabItem();
-            }
-            if (ImGui::BeginTabItem( "AUDIO" )) {
-                menu.state = STATE_AUDIO;
-                ImGui::EndTabItem();
-            }
-            ImGui::EndTabBar();
+        else {
+            SettingsMenu_Draw();
         }
-        switch (menu.state) {
-        case STATE_GRAPHICS:
-            ImGui::BeginTable( " ", 2 );
-            {
-                ImGui::TableNextColumn();
-                ImGui::TextUnformatted( "Anti-Aliasing" );
-                ImGui::TableNextColumn();
-                if (ImGui::BeginMenu( "Select Anti-Aliasing Type" )) {
-                    ImGui::EndMenu();
-                }
-            }
-            ImGui::EndTable();
-            break;
-        case STATE_AUDIO:
-            ImGui::SeparatorText( "Sound Effects" );
-            ImGui::Checkbox( "ON##SfxOn", &menu.settings.sfxOn );
-            ImGui::SameLine();
-            ImGui::SliderFloat( "VOLUME##SfxVolume", &menu.settings.sfxVol, 0.0f, 100.0f );
-
-            ImGui::SeparatorText( "Music" );
-            ImGui::Checkbox( "ON##MusicOn", &menu.settings.musicOn );
-            ImGui::SameLine();
-            ImGui::SliderFloat( "VOLUME##MusicVolume", &menu.settings.musicVol, 0.0f, 100.0f );
-            break;
-        case STATE_CONTROLS:
-            break;
-        };
     }
     else if (menu.state == STATE_CREDITS) {
         Menu_Title( "CREDITS" );

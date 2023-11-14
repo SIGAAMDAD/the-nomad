@@ -1785,9 +1785,15 @@ static uint64_t FS_ReadFromChunk(void *buffer, uint64_t size, file_t f)
 	boost::lock_guard<boost::recursive_mutex> lock{fs_lock};
 	fileHandle_t *handle = &handles[f];
 
-	// this should never happen, if it does, no questioning, just crash
 	if (handle->data.chunk->bytesRead + size > handle->data.chunk->size) {
-		Con_DPrintf( "WARNING: chunk overread of %lu bytes\n", handle->data.chunk->size - size );
+		if (size >= handle->data.chunk->size) {
+			N_Error( ERR_FATAL, "FS_ReadFromChunk: size >= chunk size" );
+		}
+		else {
+			uint64_t amount = (handle->data.chunk->bytesRead + size) - handle->data.chunk->size;
+			Con_DPrintf( "WARNING: chunk overread of %lu bytes\n", amount );
+			size = amount;
+		}
 	}
 
 	memcpy(buffer, handle->data.chunk->buf + handle->data.chunk->bytesRead, size);

@@ -171,7 +171,7 @@ static void G_SetScaling(float factor, uint32_t captureWidth, uint32_t captureHe
 }
 
 static void *G_RefImGuiMalloc(size_t size) {
-    return calloc( size, 1 );
+    return malloc( size );
 }
 
 static void G_InitRenderRef(void)
