@@ -41,19 +41,33 @@ typedef struct {
 
 typedef renderSceneRef_t refdef_t;
 
-typedef enum {
+#ifdef __cplusplus
+typedef enum : uint32_t
+#else
+typedef enum
+#endif
+{
     TexDetail_MSDOS,
     TexDetail_IntegratedGPU,
     TexDetail_Normie,
     TexDetail_ExpensiveShitWeveGotHere,
-    TexDetail_GPUvsGod
+    TexDetail_GPUvsGod,
+
+	NumTexDetails
 } textureDetail_t;
 
-typedef enum {              // [min, mag]
+#ifdef __cplusplus
+typedef enum : uint32_t
+#else
+typedef enum
+#endif
+{							// [min, mag]
     TexFilter_Linear,       // GL_LINEAR GL_LINEAR
     TexFilter_Nearest,      // GL_NEAREST GL_NEAREST
     TexFilter_Bilinear,     // GL_NEAREST GL_LINEAR
-    TexFilter_Trilinear     // GL_LINEAR GL_NEAREST
+    TexFilter_Trilinear,    // GL_LINEAR GL_NEAREST
+
+	NumTexFilters
 } textureFilter_t;
 
 /*

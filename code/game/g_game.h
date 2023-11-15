@@ -174,6 +174,29 @@ extern cvar_t *con_color;
 extern cvar_t *con_noprint;
 extern cvar_t *g_conXOffset;
 
+typedef struct {
+	const char	*description;
+	uint32_t    width, height;
+	float		pixelAspect;		// pixel width / height
+} vidmode_t;
+
+typedef enum : uint32_t
+{
+    VIDMODE_320x240,
+    VIDMODE_640x480,
+    VIDMODE_800x600,
+    VIDMODE_1024x768,
+    VIDMODE_2048x1536,
+    VIDMODE_1280x720,
+    VIDMODE_1600x900,
+    VIDMODE_1920x1080,
+    VIDMODE_3840x2160,
+
+    NUMVIDMODES
+} vidmodeNum_t;
+
+extern const vidmode_t r_vidModes[NUMVIDMODES];
+
 //
 // g_game.cpp
 //

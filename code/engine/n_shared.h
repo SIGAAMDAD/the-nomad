@@ -19,6 +19,8 @@ Platform Specific Preprocessors
 #define arm64   0
 #define arm32   0
 
+#define CLAMP(x,min,max) ((x)<=(min)?(x)=(min):(x)>=(max)?(x)=(max):(x))
+
 #define MAX_GDR_PATH 64
 
 #if defined(__cplusplus) && !defined(__GNUC__) && !defined(__MINGW64__) && !defined(__MINGW32__)

@@ -394,40 +394,19 @@ static void G_Snd_Restart_f(void)
 
 }
 
-typedef struct {
-	const char	*description;
-	uint32_t    width, height;
-	float		pixelAspect;		// pixel width / height
-} vidmode_t;
-
-static const vidmode_t r_vidModes[] =
+const vidmode_t r_vidModes[NUMVIDMODES] =
 {
 	{ "Mode  0: 320x240",			320,	240,	1 },
-	{ "Mode  1: 400x300",			400,	300,	1 },
-	{ "Mode  2: 512x384",			512,	384,	1 },
-	{ "Mode  3: 640x480",			640,	480,	1 },
-	{ "Mode  4: 800x600",			800,	600,	1 },
-	{ "Mode  5: 960x720",			960,	720,	1 },
-	{ "Mode  6: 1024x768",			1024,	768,	1 },
-	{ "Mode  7: 1152x864",			1152,	864,	1 },
-	{ "Mode  8: 1280x1024 (5:4)",	1280,	1024,	1 },
-	{ "Mode  9: 1600x1200",			1600,	1200,	1 },
-	{ "Mode 10: 2048x1536",			2048,	1536,	1 },
-	{ "Mode 11: 856x480 (wide)",	856,	480,	1 },
+	{ "Mode  1: 640x480",			640,	480,	1 },
+	{ "Mode  2: 800x600",			800,	600,	1 },
+	{ "Mode  3: 1024x768",			1024,	768,	1 },
+	{ "Mode  4: 2048x1536",			2048,	1536,	1 },
 	// extra modes:
-	{ "Mode 12: 1280x960",			1280,	960,	1 },
-	{ "Mode 13: 1280x720",			1280,	720,	1 },
-	{ "Mode 14: 1280x800 (16:10)",	1280,	800,	1 },
-	{ "Mode 15: 1366x768",			1366,	768,	1 },
-	{ "Mode 16: 1440x900 (16:10)",	1440,	900,	1 },
-	{ "Mode 17: 1600x900",			1600,	900,	1 },
-	{ "Mode 18: 1680x1050 (16:10)",	1680,	1050,	1 },
-	{ "Mode 19: 1920x1080",			1920,	1080,	1 },
-	{ "Mode 20: 1920x1200 (16:10)",	1920,	1200,	1 },
-	{ "Mode 21: 2560x1080 (21:9)",	2560,	1080,	1 },
-	{ "Mode 22: 3440x1440 (21:9)",	3440,	1440,	1 },
-	{ "Mode 23: 3840x2160",			3840,	2160,	1 },
-	{ "Mode 24: 4096x2160 (4K)",	4096,	2160,	1 }
+	{ "Mode  5: 1280x720",			1280,	720,	1 },
+	{ "Mode  6: 1600x900",			1600,	900,	1 },
+	{ "Mode  7: 1920x1080",			1920,	1080,	1 },
+	{ "Mode  8: 3840x2160",			3840,	2160,	1 },
+//	{ "Mode  9: 4096x2160 (4K)",	4096,	2160,	1 }
 };
 static const int64_t numVidModes = (int64_t)arraylen( r_vidModes );
 
@@ -753,6 +732,9 @@ void G_Frame(int msec, int realMsec)
 
     // update the screen
     gi.framecount++;
+
+    // update sound
+    Snd_Update( gi.realtime );
 
     Con_RunConsole();
     SCR_UpdateScreen();

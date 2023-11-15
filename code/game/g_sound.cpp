@@ -1,7 +1,7 @@
 #include "g_game.h"
 #include "g_sound.h"
 #include "../system/sys_thread.h"
-#include "../system/n_buffer.h"
+#include <EASTL/stack.h>
 
 #include <ALsoft/al.h>
 #include <ALsoft/alc.h>
@@ -11,6 +11,7 @@
 #include <vorbis/vorbisfile.h>
 
 #define MAX_SOUND_SOURCES 1024
+#define MAX_MUSIC_QUEUE 8
 
 cvar_t *snd_musicvol;
 cvar_t *snd_sfxvol;
@@ -73,6 +74,10 @@ public:
     const char *GetName( void ) const;
     uint32_t GetTag( void ) const { return m_iTag; }
 
+    GDR_INLINE uint32_t GetSource( void ) const { return m_iSource; }
+    GDR_INLINE uint32_t GetBuffer( void ) const { return m_iBuffer; }
+    GDR_INLINE void SetSource( uint32_t source ) { m_iSource = source; }
+
     void Play( bool loop = false );
     void Stop( void );
     void Pause( void );
@@ -98,6 +103,8 @@ private:
     uint32_t m_iSource;
     uint32_t m_iBuffer;
 
+    bool m_bLoop;
+
     SF_INFO m_hFData;
 };
 
@@ -117,6 +124,8 @@ public:
     void DisableSounds( void );
     void Update( int msec );
 
+    void UpdateParm( int tag );
+
     void AddSourceToHash( CSoundSource *src );
     CSoundSource *InitSource( const char *filename, int tag );
 
@@ -125,6 +134,10 @@ public:
     GDR_INLINE const CSoundSource *GetSource( sfxHandle_t handle ) const { return m_pSources[handle]; }
 
     CSoundSource *m_pCurrentTrack;
+    eastl::vector<CSoundSource *> m_TrackQueue;
+
+    CThreadMutex m_hAllocLock;
+    CThreadSpinRWLock m_hQueueLock;
 private:
     CSoundSource *m_pSources[MAX_SOUND_SOURCES];
     uint64_t m_nSources;
@@ -132,12 +145,12 @@ private:
     ALCdevice *m_pDevice;
     ALCcontext *m_pContext;
 
+    uint32_t m_iMusicSource;
+
     bool m_bClearedQueue;
     bool m_bRegistered;
 
     CThread m_hThread;
-    CThreadMutex m_hAllocLock;
-    CThreadSpinRWLock m_hQueueLock;
 };
 
 static CSoundManager *sndManager;
@@ -177,27 +190,25 @@ void CSoundSource::Init( void )
 {
     memset( m_pName, 0, sizeof(m_pName) );
     memset( &m_hFData, 0, sizeof(m_hFData) );
-    if (!m_iSource) {
-        ALCall(alGenSources( 1, (ALuint *)&m_iSource ));
-    }
-    if (!m_iBuffer) {
-        ALCall(alGenBuffers( 1, (ALuint *)&m_iBuffer ));
-    }
+
+    // this could be the music source, so don't allocate a new redundant source just yet
+    m_iSource = 0;
+
+    ALCall(alGenBuffers( 1, &m_iBuffer));
 #ifdef USE_ZONE_SOUND_ALLOC
     m_nSize = 0;
     m_pData = NULL;
 #endif
     m_iType = 0;
+    m_bLoop = false;
 }
 
 void CSoundSource::Shutdown( void )
 {
     if (m_iSource) {
-        {
-            // stop the source if we're playing anything
-            if (IsPlaying()) {
-                ALCall(alSourceStop( m_iSource ));
-            }
+        // stop the source if we're playing anything
+        if (IsPlaying()) {
+            ALCall(alSourceStop( m_iSource ));
         }
 
         ALCall(alSourcei( m_iSource, AL_BUFFER, AL_NONE ));
@@ -425,6 +436,11 @@ bool CSoundSource::LoadFile( const char *npath, int tag )
         return false;
     }
 
+    // generate a brand new source for each individual sfx
+    if (tag == TAG_SFX) {
+        ALCall(alGenSources( 1, &m_iSource ));
+    }
+
 #ifdef USE_ZONE_SOUND_ALLOC
     ALCall(alBufferData( m_iBuffer, format, m_p, m_nSize * sizeof(short), m_hFData.samplerate ));
 #else
@@ -451,6 +467,9 @@ void CSoundManager::Init( void )
 
     alcMakeContextCurrent( m_pContext );
     m_bRegistered = true;
+
+    // generate the recyclable music source
+    ALCall(alGenSources( 1, &m_iMusicSource ));
 }
 
 void CSoundManager::PlaySound( CSoundSource *snd ) {
@@ -468,9 +487,13 @@ void CSoundManager::LoopTrack( CSoundSource *snd ) {
     if (m_pCurrentTrack) {
         // we're playing something rn
         m_pCurrentTrack->Stop();
+        ALCall(alSourcei( m_iMusicSource, AL_BUFFER, AL_NONE )); // clear the source buffer
     }
     m_pCurrentTrack = snd;
     m_pCurrentTrack->SetVolume();
+
+    // set the buffer
+    ALCall(alSourcei( m_iMusicSource, AL_BUFFER, m_pCurrentTrack->GetBuffer() ));
     m_pCurrentTrack->Play( true );
 }
 
@@ -479,6 +502,8 @@ void CSoundManager::Shutdown( void )
     for (uint64_t i = 0; i < m_nSources; i++) {
         m_pSources[i]->Shutdown();
     }
+
+    ALCall(alDeleteSources( 1, &m_iMusicSource ));
 
     alcMakeContextCurrent( NULL );
     alcDestroyContext( m_pContext );
@@ -509,6 +534,11 @@ void CSoundManager::Restart( void )
     }
 }
 
+//
+// CSoundManager::InitSource: allocates a new sound source with openal
+// NOTE: even if sound and music is disabled, we'll still allocate the memory,
+// we just won't play any of the sources
+//
 CSoundSource *CSoundManager::InitSource( const char *filename, int tag )
 {
     CSoundSource *src;
@@ -543,6 +573,10 @@ CSoundSource *CSoundManager::InitSource( const char *filename, int tag )
     memset(src, 0, sizeof(*src));
     src->Init();
 
+    if (tag == TAG_MUSIC) {
+        src->SetSource( m_iMusicSource );
+    }
+
     if (!src->LoadFile( filename, tag )) {
         Con_Printf(COLOR_YELLOW "WARNING: failed to load sound file '%s'\n", filename);
         m_hAllocLock.Unlock();
@@ -554,6 +588,15 @@ CSoundSource *CSoundManager::InitSource( const char *filename, int tag )
     m_hAllocLock.Unlock();
 
     return src;
+}
+
+void CSoundManager::UpdateParm( int tag )
+{
+    for (uint64_t i = 0; i < m_nSources; i++) {
+        if (m_pSources[i]->GetTag() == tag) {
+            m_pSources[i]->SetVolume();
+        }
+    }
 }
 
 void CSoundManager::DisableSounds( void ) {
@@ -573,7 +616,7 @@ void Snd_StopAll(void) {
 }
 
 void Snd_PlaySfx(sfxHandle_t sfx) {
-    if (sfx == FS_INVALID_HANDLE) {
+    if (sfx == FS_INVALID_HANDLE || !snd_sfxon->i) {
         return;
     }
 
@@ -581,7 +624,7 @@ void Snd_PlaySfx(sfxHandle_t sfx) {
 }
 
 void Snd_StopSfx(sfxHandle_t sfx) {
-    if (sfx == FS_INVALID_HANDLE) {
+    if (sfx == FS_INVALID_HANDLE || !snd_sfxon->i) {
         return;
     }
 
@@ -593,6 +636,43 @@ void Snd_Restart(void) {
         return;
     }
     sndManager->Restart();
+}
+
+static void Snd_QueueTrack_r( sfxHandle_t handle, bool loop )
+{
+    CSoundSource *track;
+    CThreadAutoLock<CThreadSpinRWLock> lock( sndManager->m_hQueueLock );
+
+    if (!snd_musicon->i) {
+        return;
+    }
+    else if (handle == FS_INVALID_HANDLE) {
+        Con_DPrintf( COLOR_RED "Snd_QueueTrack: invalid handle\n" );
+        return;
+    }
+
+    track = sndManager->GetSource( handle );
+    if (!track) {
+        Con_DPrintf( COLOR_RED "Snd_QueueTrack: invalid handle" );
+        return;
+    }
+    else if (sndManager->m_pCurrentTrack == track) {
+        return; // already playing
+    }
+
+    if (!((ssize_t)sndManager->m_TrackQueue.capacity() - 1)) {
+        sndManager->m_TrackQueue.reserve( MAX_MUSIC_QUEUE ); // lets try to be efficient with our memory
+    }
+
+    sndManager->m_TrackQueue.emplace_back( track );
+    track->Play( loop );
+}
+
+//
+// Snd_QueueTrack: simple wrapper for non-looping sounds
+//
+void Snd_QueueTrack( sfxHandle_t handle ) {
+    Snd_QueueTrack_r( handle, false );
 }
 
 void Snd_Shutdown( void ) {
@@ -624,15 +704,28 @@ sfxHandle_t Snd_RegisterSfx(const char *npath) {
     return Snd_HashFileName( sfx->GetName() );
 }
 
-void Snd_SetLoopingTrack(sfxHandle_t handle) {
-    sndManager->LoopTrack( sndManager->GetSource( handle ) );
+void Snd_SetLoopingTrack( sfxHandle_t handle ) {
+    if (!snd_musicon->i) {
+        return;
+    }
+
+    Snd_QueueTrack_r( handle, true );
 }
 
-void Snd_ClearLoopingTrack(sfxHandle_t handle) {
-    if (sndManager->m_pCurrentTrack) {
-        sndManager->m_pCurrentTrack->Stop();
+void Snd_ClearLoopingTrack( void ) {
+    if (!snd_musicon->i || !sndManager->m_pCurrentTrack || !sndManager->m_pCurrentTrack->IsLooping()) {
+        return;
     }
-    sndManager->m_pCurrentTrack = NULL;
+
+    // stop the track and pop it
+    sndManager->m_pCurrentTrack->Stop();
+    sndManager->m_TrackQueue.pop_back();
+
+    // play the next sound
+    if (sndManager->m_TrackQueue.size()) {
+        sndManager->m_pCurrentTrack = sndManager->m_TrackQueue.back();
+        sndManager->m_pCurrentTrack->Play();
+    }
 }
 
 static void Snd_AudioInfo_f( void )
@@ -641,6 +734,88 @@ static void Snd_AudioInfo_f( void )
     Con_Printf("Audio Driver: %s\n", SDL_GetCurrentAudioDriver());
     Con_Printf("Current Track: %s\n", sndManager->m_pCurrentTrack ? sndManager->m_pCurrentTrack->GetName() : "None");
     Con_Printf("Number of Sound Sources: %lu\n", sndManager->NumSources());
+}
+
+static void Snd_Toggle_f( void )
+{
+    const char *var;
+    const char *toggle;
+    bool option;
+
+    if (Cmd_Argc() < 3) {
+        Con_Printf( "usage: sndtoggle <sfx|music> <on|off, 1|0>\n" );
+        return;
+    }
+
+    var = Cmd_Argv(1);
+    toggle = Cmd_Argv(2);
+
+    if ((toggle[0] == '1' && toggle[1] == '\0') || !N_stricmp( toggle, "on" )) {
+        option = true;
+    }
+    else if ((toggle[0] == '0' && toggle[1] == '\0') || !N_stricmp( toggle, "off" )) {
+        option = false;
+    }
+
+    if (!N_stricmp( var, "sfx" )) {
+        Cvar_Set( "snd_sfxon", va("%i", option) );
+    }
+    else if (!N_stricmp( var, "music" )) {
+        Cvar_Set( "snd_musicon", va("%i", option) );
+    }
+    else {
+        Con_Printf( "sndtoggle: unknown parameter '%s', use either 'sfx' or 'music'\n", var );
+        return;
+    }
+}
+
+static void Snd_SetVolume_f( void )
+{
+    float vol;
+    const char *change;
+
+    if (Cmd_Argc() < 3) {
+        Con_Printf( "usage: setvolume <sfx|music> <volume>\n" );
+        return;
+    }
+
+    vol = N_atof(Cmd_Argv(1));
+    vol = CLAMP(vol, 0.0f, 100.0f);
+
+    change = Cmd_Argv(2);
+    if (!N_stricmp( change, "sfx" )) {
+        if (snd_sfxvol->f != vol) {
+            Cvar_Set( "snd_sfxvol", va("%f", vol) );
+            sndManager->UpdateParm( TAG_SFX );
+        }
+    }
+    else if (!N_stricmp( change, "music" )) {
+        if (snd_musicvol->f != vol) {
+            Cvar_Set( "snd_musicvol", va("%f", vol) );
+            sndManager->UpdateParm( TAG_MUSIC );
+        }
+    }
+    else {
+        Con_Printf( "setvolume: unknown parameter '%s', use either 'sfx' or 'music'\n", change );
+        return;
+    }
+}
+
+void Snd_Update( int msec )
+{
+    if (!sndManager->m_TrackQueue.size()) {
+        // nothings queued and nothing's playing
+        return;
+    }
+    if (!sndManager->m_TrackQueue.back()->IsPlaying()) {
+        // pop the finished track, then begin the next one in the queue  
+        sndManager->m_TrackQueue.pop_back();
+        sndManager->m_pCurrentTrack = sndManager->m_TrackQueue.back();
+
+        if (sndManager->m_pCurrentTrack) {
+            sndManager->m_pCurrentTrack->Play();
+        }
+    }
 }
 
 void Snd_Init(void)
@@ -663,4 +838,6 @@ void Snd_Init(void)
     sndManager->Init();
 
     Cmd_AddCommand( "snd_restart", Snd_Restart );
+    Cmd_AddCommand( "setvolume", Snd_SetVolume_f );
+    Cmd_AddCommand( "sndtoggle", Snd_Toggle_f );
 }

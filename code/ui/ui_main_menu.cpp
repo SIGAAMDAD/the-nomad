@@ -29,24 +29,69 @@ typedef struct {
     const char *binding;
 } keybind_t;
 
+class CToggleKey
+{
+public:
+    CToggleKey( void )
+        : toggleOn( qtrue )
+    {
+    }
+    ~CToggleKey() { }
+
+    void Toggle( uint32_t key, qboolean& toggleVar ) {
+        if (Key_IsDown( key )) {
+            if (toggleOn) {
+                toggleOn = qfalse;
+                toggleVar = ~toggleVar;
+            }
+        }
+        else {
+            toggleOn = qtrue;
+        }
+    }
+    void Toggle( uint32_t key ) {
+        if (Key_IsDown( key )) {
+            if (toggleOn) {
+                toggleOn = qfalse;
+            }
+        }
+        else {
+            toggleOn = qtrue;
+        }
+    }
+    qboolean On( void ) const { return toggleOn; }
+    void Set( qboolean toggle ) { toggleOn = toggle; }
+private:
+    qboolean toggleOn;
+};
+
 typedef struct
 {
     CUIMenu menu;
 
-    keybind_t keybinds[NUMBINDS];
+    const char *texdetailString;
+    const char *texfilterString;
 
+    // temp cvar data
+    keybind_t keybinds[NUMBINDS];
     bool mouseAccelerate;
     bool mouseInvert;
-
+    float mouseSensitivity;
     uint32_t rebindIndex;
     qboolean rebinding;
-
     bool musicOn;
     bool sfxOn;
     float musicVol;
     float sfxVol;
-
     renderapi_t api;
+    bool fullscreen;
+    bool extensions;
+    textureFilter_t texfilter;
+    textureDetail_t texdetail;
+    uint32_t texquality;
+    uint32_t geometrydetail;
+    int32_t videoMode;
+    uint32_t lighting;
 
     qboolean confirmation;
     qboolean modified;
@@ -73,6 +118,7 @@ typedef struct {
     char name[MAX_GDR_PATH];
     gamedif_t diff;
     uint64_t hardestIndex;
+    qboolean nameIssuePopup;
 
     const stringHash_t *newGame;
     const stringHash_t *loadGame;
@@ -98,8 +144,11 @@ typedef struct
     int menuWidth;
     int menuHeight;
 
+    CToggleKey noMenuToggle;
+
     menustate_t state;
 
+    qboolean escapeToggle;
     qboolean noMenu; // do we just want the scenery?
 } mainmenu_t;
 
@@ -194,29 +243,53 @@ static void SettingsMeun_DrawConfirmation( void )
 
 }
 
+const char *RenderAPIString( renderapi_t api )
+{
+    switch (api) {
+    case R_OPENGL: return "OpenGL";
+    case R_SDL2: return "SDL2 (Software Rendering)";
+    case R_VULKAN: return "Vulkan";
+    default:
+        break;
+    };
+    N_Error( ERR_FATAL, "Invalid render api %i", (int)api );
+
+    // silence compiler warning
+    return NULL;
+}
+
 static void SettingsMenu_ApplyChanges( void )
 {
-    ImGui::NewLine();
-    ImGui::NewLine();
-    ImGui::NewLine();
+    const ImVec2 mousePos = ImGui::GetCursorScreenPos();
+    char *comingSoonList[256];
+    uint32_t comingSoonListSize;
 
     if (!menu.settings.modified) {
         ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4( 0.1f, 0.1f, 0.1f, 1.0f ));
     }
 
+    comingSoonListSize = 0;
+    ImGui::SetCursorScreenPos(ImVec2( 0, (float)ui->GetConfig().vidHeight - 22 ));
     if (ImGui::Button( "APPLY CHANGES" )) {
         if (menu.settings.modified) {
             if (Cvar_VariableInteger( "g_mouseAcceleration" ) != (int32_t)menu.settings.mouseAccelerate) {
-                Cvar_Set( "g_mouseAcceleration", va( "%i", menu.settings.mouseAccelerate ) );
+                Cvar_Set( "g_mouseAcceleration", va( "%i", (int32_t)menu.settings.mouseAccelerate ) );
             }
             if (Cvar_VariableInteger( "g_mouseInvert" ) != (int32_t)menu.settings.mouseInvert) {
-                Cvar_Set( "g_mouseInvert", va( "%i", menu.settings.mouseInvert ) );
+                Cvar_Set( "g_mouseInvert", va( "%i", (int32_t)menu.settings.mouseInvert ) );
             }
-            if (Cvar_VariableInteger( "r_textureFiltering" ) != (int32_t)3) {
-                Cvar_Set( "r_textureFiltering", va( "%i", 3 ) );
+            if (Cvar_VariableInteger( "r_textureFiltering" ) != (int32_t)menu.settings.texfilter) {
+                Cvar_Set( "r_textureFiltering", va( "%i", (int32_t)menu.settings.texfilter ) );
+            }
+            if (Cvar_VariableInteger( "r_textureDetail" ) != (int32_t)menu.settings.texdetail) {
+                Cvar_Set( "r_textureDetail", va( "%i", (int32_t)menu.settings.texdetail ) );
+            }
+            if (Cvar_VariableInteger( "r_fullscreen" ) != (int32_t)menu.settings.fullscreen) {
+                Cvar_Set( "r_fullscreen", va( "%i", (int32_t)menu.settings.fullscreen ) );
             }
         }
     }
+    ImGui::SetCursorScreenPos( mousePos );
 
     if (!menu.settings.modified) {
         ImGui::PopStyleColor();
@@ -280,13 +353,58 @@ static bool Menu_Title( const char *label )
 
 static bool Menu_Option( const char *label )
 {
+    bool retn;
+
+    ImGui::TableNextColumn();
     ImGui::TextUnformatted( label );
+    ImGui::TableNextColumn();
     ImGui::SameLine();
-    return ImGui::ArrowButton( label, ImGuiDir_Right );
+    retn = ImGui::ArrowButton( label, ImGuiDir_Right );
+
+    return retn;
 }
+
+const char *TexDetailString( textureDetail_t detail )
+{
+    switch (detail) {
+    case TexDetail_MSDOS: return "MS-DOS (VGA)";
+    case TexDetail_IntegratedGPU: return "Integrated GPU";
+    case TexDetail_Normie: return "Normie";
+    case TexDetail_ExpensiveShitWeveGotHere: return "Expensive Shit We've Got Here";
+    case TexDetail_GPUvsGod: return "GPU vs God";
+    default:
+        break;
+    };
+    N_Error( ERR_FATAL, "Invalid texture detail %i", (int)detail );
+
+    // silence compiler warning
+    return NULL;
+}
+
+const char *TexFilterString( textureFilter_t filter )
+{
+    switch (filter) {
+    case TexFilter_Linear: return "Linear";
+    case TexFilter_Nearest: return "Nearest";
+    case TexFilter_Bilinear: return "Bilinear";
+    case TexFilter_Trilinear: return "Trilinear";
+    default:
+        break;
+    };
+    N_Error( ERR_FATAL, "Invalid texture filter %i", (int)filter );
+    
+    // silence compiler warning
+    return NULL;
+}
+
+typedef struct {
+
+} vidmodeSetting_t;
 
 static void SettingsMenu_Draw( void )
 {
+    uint64_t i;
+
     if (ImGui::BeginTabBar( " " )) {
         if (ImGui::BeginTabItem( "GRAPHICS" )) {
             menu.state = STATE_GRAPHICS;
@@ -294,6 +412,10 @@ static void SettingsMenu_Draw( void )
         }
         if (ImGui::BeginTabItem( "AUDIO" )) {
             menu.state = STATE_AUDIO;
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem( "CONTROLS" )) {
+            menu.state = STATE_CONTROLS;
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
@@ -314,17 +436,81 @@ static void SettingsMenu_Draw( void )
             ImGui::TableNextColumn();
             ImGui::TextUnformatted( "Texture Filtering" );
             ImGui::TableNextColumn();
-            if (ImGui::BeginMenu( "Select Texture Filtering" )) {
-                if (ImGui::MenuItem( "Linear" )) {
-                }
-                if (ImGui::MenuItem( "Nearest" )) {
-                }
-                if (ImGui::MenuItem( "Bilinear" )) {
-                }
-                if (ImGui::MenuItem( "Trilinear" )) {
+            if (ImGui::BeginMenu( menu.settings.texfilterString )) {
+                for (i = 0; i < NumTexFilters; i++) {
+                    if (ImGui::MenuItem( TexFilterString( (textureFilter_t)((int)TexFilter_Linear + i) ) )) {
+                        menu.settings.modified = qtrue;
+                        menu.settings.texfilter = (textureFilter_t)((int)TexFilter_Linear + i);
+                    }
                 }
                 ImGui::EndMenu();
             }
+
+            ImGui::TableNextRow();
+
+            ImGui::TableNextColumn();
+            if (ImGui::BeginMenu( menu.settings.texdetailString )) {
+                for (i = 0; i < NumTexFilters; i++) {
+                    if (ImGui::MenuItem( TexFilterString( (textureFilter_t)((int)TexFilter_Linear + i) ) )) {
+                        menu.settings.modified = qtrue;
+                        menu.settings.texfilter = (textureFilter_t)((int)TexFilter_Linear + i);
+                    }
+                }
+                ImGui::EndMenu();
+            }
+
+            ImGui::TableNextRow();
+
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted( "Video Mode" );
+            ImGui::TableNextColumn();
+
+            if (ImGui::BeginMenu( r_vidModes[ menu.settings.videoMode ].description )) {
+                for (i = 0; i < NUMVIDMODES; i++) {
+                    if (ImGui::MenuItem( r_vidModes[ i ].description )) {
+                        menu.settings.modified = menu.settings.videoMode != i;
+                        menu.settings.videoMode = i;
+                    }
+                }
+                ImGui::EndMenu();
+            }
+
+            ImGui::TableNextRow();
+
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted( "Rendering API" );
+            ImGui::TableNextColumn();
+            if (ImGui::BeginMenu( RenderAPIString( menu.settings.api ) )) {
+                if (ImGui::MenuItem( RenderAPIString( R_OPENGL ) )) {
+                    menu.settings.modified = menu.settings.api != R_OPENGL;
+                    menu.settings.api = R_OPENGL;
+                }
+                if (ImGui::MenuItem( va("%s (COMING SOON!)", RenderAPIString( R_SDL2 )) )) {
+                    menu.settings.modified = menu.settings.api != R_SDL2;
+                    menu.settings.api = R_SDL2;
+                }
+                if (ImGui::MenuItem( va("%s (COMING SOON!)", RenderAPIString( R_VULKAN )) )) {
+                    menu.settings.modified = menu.settings.api != R_VULKAN;
+                    menu.settings.api = R_VULKAN;
+                }
+                ImGui::EndMenu();
+            }
+
+            ImGui::TableNextRow();
+
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted( "Fullscreen" );
+            ImGui::TableNextColumn();
+            if (ImGui::Checkbox( menu.settings.fullscreen ? "ON" : "OFF", &menu.settings.fullscreen )) {
+                menu.settings.modified = qtrue;
+            }
+
+            ImGui::TableNextRow();
+            
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted( "Lighting" );
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted( "COMING SOON!" );
         }
         ImGui::EndTable();
         break;
@@ -348,10 +534,77 @@ static void SettingsMenu_Draw( void )
         }
         break;
     case STATE_CONTROLS:
+        // mouse options
+        ImGui::SeparatorText( "MOUSE" );
+        ImGui::BeginTable( " ", 2 );
+        {
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted( "Sensitivity" );
+            ImGui::TableNextColumn();
+            if (ImGui::SliderFloat( " ", &menu.settings.mouseSensitivity, 0, 100.0f )) {
+            }
+
+            ImGui::TableNextRow();
+
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted( "Invert Mouse" );
+            ImGui::TableNextColumn();
+            if (ImGui::Checkbox( menu.settings.mouseInvert ? "ON" : "OFF", &menu.settings.mouseInvert )) {
+                menu.settings.modified = qtrue;
+            }
+
+            ImGui::TableNextRow();
+
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted( "Mouse Acceleration" );
+            ImGui::TableNextColumn();
+            if (ImGui::Checkbox( menu.settings.mouseAccelerate ? "ON" : "OFF", &menu.settings.mouseAccelerate )) {
+                menu.settings.modified = qtrue;
+            }
+        }
+        ImGui::EndTable();
+
+        // keybinding options
         break;
     };
 
     SettingsMenu_ApplyChanges();
+}
+
+static void EscapeMenuToggle( menustate_t newstate )
+{
+    if (Key_IsDown( KEY_ESCAPE )) {
+        if (menu.escapeToggle) {
+            menu.escapeToggle = qfalse;
+            menu.state = newstate;
+            ui->PopMenu();
+        }
+    }
+    else {
+        menu.escapeToggle = qtrue;
+    }
+}
+
+static void NewGame_DrawNameIssue( void )
+{
+    if (ImGui::BeginPopupModal( "Save Slot Name Issue" )) {
+        ImGui::Text(
+            "Sorry, but it looks like your save file name is either too long or already exists\n"
+            "if its too long, it must be less than or equal to %lu characters in length, please\n"
+            "shorten your save's name.\n"
+            "if it already exists, then please rename the save slot.\n"
+            "\n"
+            "Sorry for the inconvenience. :)\n"
+            "\n"
+            "Your Resident Fiend,\n"
+            "Noah Van Til\n"
+        , sizeof(menu.sp.name) - 1);
+
+        if (ImGui::Button( "OK" )) {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
 }
 
 static void MainMenu_Draw( void )
@@ -360,14 +613,16 @@ static void MainMenu_Draw( void )
     const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
                             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground;
 
-    if (Key_IsDown( KEY_F2 )) {
-        menu.noMenu = qtrue;
-    }
+    menu.noMenuToggle.Toggle( KEY_F2, menu.noMenu );
 
     Snd_SetLoopingTrack( menu.ambience );
 
     if (menu.noMenu) {
         return; // just the scenery & the music (a bit like Halo 3: ODST, check out halome.nu)...
+    }
+
+    if (menu.sp.nameIssuePopup) {
+        NewGame_DrawNameIssue();
     }
 
     ImGui::Begin( "MainMenu", NULL, windowFlags );
@@ -376,57 +631,78 @@ static void MainMenu_Draw( void )
     if (menu.state == STATE_MAIN) {
         Menu_Title( "MAIN MENU" );
 
+        const ImVec2 mousePos = ImGui::GetCursorScreenPos();
+        ImGui::SetCursorScreenPos( ImVec2( mousePos.x, mousePos.y + 10 ) );
+
+        ImGui::BeginTable( " ", 2 );
         if (Menu_Option( "Single Player" )) {
             menu.state = STATE_SINGLEPLAYER;
             ui->PushMenu( &menu.sp.menu );
         }
+        ImGui::TableNextRow();
         if (Menu_Option( "Settings" )) {
             menu.state = STATE_GRAPHICS;
             ui->PushMenu( &menu.settings.menu );
         }
+        ImGui::TableNextRow();
+        if (Menu_Option( "Credits" )) {
+            menu.state = STATE_CREDITS;
+        }
+        ImGui::TableNextRow();
         if (Menu_Option( "Exit To Title Screen" )) {
             ui->PopMenu();
         }
+        ImGui::TableNextRow();
         if (Menu_Option( "Exit To Desktop" )) {
             // TODO: possibly add in a DOOM-like exit popup?
             Sys_Exit( 1 );
         }
+        ImGui::EndTable();
     }
     else if (menu.state >= STATE_SINGLEPLAYER && menu.state <= STATE_PLAYMISSION) {
+        ImVec2 mousePos;
+
         switch (menu.state) {
         case STATE_SINGLEPLAYER:
+            EscapeMenuToggle( STATE_MAIN );
+
             if (Menu_Title( "SINGLE PLAYER" )) {
                 menu.state = STATE_MAIN;
+                ui->PopMenu();
             }
+
+            mousePos = ImGui::GetCursorScreenPos();
+            ImGui::SetCursorScreenPos( ImVec2( mousePos.x, mousePos.y + 10 ) );
             
+            ImGui::BeginTable( " ", 2 );
             if (Menu_Option( "New Game" )) {
                 menu.state = STATE_NEWGAME;
                 menu.sp.hardestIndex = rand() % arraylen(difHardestTitles);
                 ui->PushMenu( &menu.sp.newgame );
             }
+            ImGui::TableNextRow();
             if (Menu_Option( "Load Game" )) {
                 menu.state = STATE_LOADGAME;
                 ui->PushMenu( &menu.sp.loadgame );
             }
+            ImGui::TableNextRow();
             if (Menu_Option( "Play Mission (COMING SOON!)" )) { // play any mission found inside the current BFF loaded
 //                menu.state = STATE_PLAYMISSION;
             }
+            ImGui::EndTable();
 
             break;
         case STATE_NEWGAME: {
+            EscapeMenuToggle( STATE_SINGLEPLAYER );
+
             const char *difName;
 
             if (Menu_Title( "NEW GAME" )) {
                 menu.state = STATE_SINGLEPLAYER;
             }
 
-            ImGui::TextUnformatted( "Save Name: " );
-            ImGui::SameLine();
-            ImGui::InputText( " ", menu.sp.name, sizeof(menu.sp.name) );
-
-            if (strchr( menu.sp.name, '/' ) || strchr( menu.sp.name, '\\' )) {
-                N_strncpyz( menu.sp.name, COM_SkipPath( menu.sp.name ), sizeof(menu.sp.name) );
-            }
+            mousePos = ImGui::GetCursorScreenPos();
+            ImGui::SetCursorScreenPos( ImVec2( mousePos.x, mousePos.y + 10 ) );
 
             if (menu.sp.diff == DIF_HARDEST) {
                 difName = difHardestTitles[ menu.sp.hardestIndex ];
@@ -435,32 +711,73 @@ static void MainMenu_Draw( void )
                 difName = difficultyTable[ menu.sp.diff ].name;
             }
 
-            if (ImGui::BeginMenu( va("Select Difficulty (Current: %s)", difName) )) {
-                for (i = 0; i < NUMDIFS; i++) {
-                    if (i != DIF_HARDEST) {
-                        if (ImGui::MenuItem( difficultyTable[ i ].name )) {
-                            menu.sp.diff = (gamedif_t)i;
-                        }
-                    }
-                    else {
-                        if (ImGui::MenuItem( difHardestTitles[ menu.sp.hardestIndex ] )) {
-                            menu.sp.diff = (gamedif_t)i;
-                        }
+            ImGui::BeginTable( " ", 2 );
+            {
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted( "Save Name" );
+                ImGui::TableNextColumn();
+                if (ImGui::InputText( " ", menu.sp.name, sizeof(menu.sp.name), ImGuiInputTextFlags_EscapeClearsAll )) {
+                    // make sure it's an absolute path
+                    if (strchr( menu.sp.name, '/' ) || strchr( menu.sp.name, '\\' )) {
+                        N_strncpyz( menu.sp.name, COM_SkipPath( menu.sp.name ), sizeof(menu.sp.name) );
                     }
 
-                    if (ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled )) {
-                        ImGui::SetItemTooltip( difficultyTable[i].tooltip );
+                    // make sure its a unique name, so we don't get filename collisions
+                    for (i = 0; i < menu.sp.numSaves; i++) {
+                        if (!N_stricmp( menu.sp.name, menu.sp.saveList[i].name )) {
+                            menu.sp.nameIssuePopup = qtrue;
+                            ImGui::OpenPopup( "Save Slot Name Issue" );
+                        }
                     }
                 }
+                
+                ImGui::TableNextRow();
 
-                ImGui::EndMenu();
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted( "Difficulty" );
+                ImGui::TableNextColumn();
+                if (ImGui::BeginMenu( va("%s", difName) )) {
+                    for (i = 0; i < NUMDIFS; i++) {
+                        if (i != DIF_HARDEST) {
+                            if (ImGui::MenuItem( difficultyTable[ i ].name )) {
+                                menu.sp.diff = (gamedif_t)i;
+                            }
+                        }
+                        else {
+                            if (ImGui::MenuItem( difHardestTitles[ menu.sp.hardestIndex ] )) {
+                                menu.sp.diff = (gamedif_t)i;
+                            }
+                        }
+
+                        if (ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled )) {
+                            ImGui::BeginTooltip();
+                            ImGui::TextUnformatted( difficultyTable[i].tooltip );
+                            ImGui::EndTooltip();
+                        }
+                    }
+                    ImGui::EndMenu();
+                }
             }
+            ImGui::EndTable();
 
+            ImGui::NewLine();
+            ImGui::NewLine();
+            ImGui::NewLine();
+            ImGui::NewLine();
+            ImGui::NewLine();
+
+            if (ImGui::Button( "Open To a Fresh Chapter" )) {
+
+            }
             break; }
         case STATE_LOADGAME: {
+            EscapeMenuToggle( STATE_SINGLEPLAYER );
             if (Menu_Title( "LOAD GAME" )) {
                 menu.state = STATE_SINGLEPLAYER;
             }
+
+            mousePos = ImGui::GetCursorScreenPos();
+            ImGui::SetCursorScreenPos( ImVec2( mousePos.x, mousePos.y + 10 ) );
 
             if (menu.sp.numSaves) {
                 ImGui::BeginTable( "Save Slots", 5 );
@@ -491,14 +808,17 @@ static void MainMenu_Draw( void )
         };
     }
     else if (menu.state >= STATE_SETTINGS && menu.state <= STATE_AUDIO) {
+        EscapeMenuToggle( STATE_MAIN );
         if (Menu_Title( "SETTINGS" )) {
             menu.state = STATE_MAIN;
+            ui->PopMenu();
         }
         else {
             SettingsMenu_Draw();
         }
     }
     else if (menu.state == STATE_CREDITS) {
+        EscapeMenuToggle( STATE_MAIN );
         Menu_Title( "CREDITS" );
 
         ImGui::TextUnformatted( creditsString );
@@ -562,6 +882,12 @@ void MainMenu_Cache( void )
     menu.sp.newgame.Draw = MainMenu_Draw;
 
     menu.drawScale = Cvar_VariableFloat( "r_customWidth" ) / Cvar_VariableFloat( "r_customHeight" );
+
+    menu.settings.texdetail = (textureDetail_t)Cvar_VariableInteger( "r_textureDetail" );
+    menu.settings.texfilter = (textureFilter_t)Cvar_VariableInteger( "r_textureFiltering" );
+    menu.settings.texdetailString = TexDetailString( menu.settings.texdetail );
+    menu.settings.texfilterString = TexFilterString( menu.settings.texfilter );
+    menu.settings.videoMode = Cvar_VariableInteger( "r_mode" );
 
     menu.settings.sfxOn = Cvar_VariableInteger( "snd_sfxon" );
     menu.settings.musicOn = Cvar_VariableInteger( "snd_musicon" );
