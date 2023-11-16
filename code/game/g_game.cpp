@@ -1050,6 +1050,7 @@ void GLimp_Init(gpuConfig_t *config)
     uint32_t width, height;
     uint32_t windowFlags;
     float windowAspect;
+    SDL_DisplayMode dm;
 
     Con_Printf("---------- GLimp_Init ----------\n");
 
@@ -1059,6 +1060,13 @@ void GLimp_Init(gpuConfig_t *config)
             return;
         }
     }
+
+    if (SDL_GetDesktopDisplayMode( 0, &dm ) != 0) {
+        N_Error( ERR_FATAL, "SDL_GetDesktopDisplayMode failed: %s", SDL_GetError() );
+    }
+
+    gi.desktopWidth = dm.w;
+    gi.desktopHeight = dm.h;
 
     const char *driverName;
 

@@ -18,12 +18,20 @@
 void GDR_DECL SG_Error(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
 void GDR_DECL SG_Printf(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
 
-void* SG_AllocMem(int size);
-void SG_ClearMem(void);
-void SG_FreeMem(void *ptr);
-void SG_InitMem(void);
+void* SG_AllocMem( uint32_t size );
+void SG_ClearMem( void );
 
-enum
+//
+// sg_player.c
+//
+void SG_MouseEvent();
+void SG_KeyEvent( uint32_t key, qboolean down );
+
+//======================================================================
+// enums
+//
+
+typedef enum
 {
     // ignore the EF_SOLID flag if entity has this one, cheat code
     EF_NOCLIP = 1,
@@ -45,12 +53,29 @@ enum
     EF_KILLABLE = 256,
     // mob/merc specific, buffed stats
     EF_LEADER = 528,
-};
+
+    NUMENTITYFLAGS
+} entityflags_t;
+
+typedef enum
+{
+    ET_PLAYR,
+    ET_MOB,
+    ET_BOT,
+    ET_ITEM,
+    ET_WEAPON,
+
+    NUMENTITYTYPES
+} entitytype_t;
 
 typedef enum
 {
     ST_NULL,
 } statenum_t;
+
+//======================================================================
+// common sgame data structures
+//
 
 typedef struct sgentity_s sgentity_t;
 typedef void (*actionp_t)(sgentity_t *);
@@ -67,16 +92,42 @@ struct sgentity_s
 {
     void *e; // entity-specific data
 
-    vec2_t pos;
-    vec2_t thrust;
+    vec3_t origin;
+    vec3_t thrust;
     dirtype_t facing;
     state_t state;
 
-    int flags; // general flags
-    int ticker; // the count of how many frames into a state the entity is
+    entitytype_t type;
+    entityflags_t flags;
+
+    uint32_t ticker; // the count of how many frames into a state the entity is
 
     struct sgentity_s* target; // only really applies to mobs and homing attacks
 };
+
+typedef struct {
+    uint32_t range;
+    uint32_t dmg;
+} weapon_t;
+
+typedef struct {
+
+} player_t;
+
+//
+// sgameMedia_t: if you change any resource names or add resources, add them to here as well
+//
+typedef struct {
+    sfxHandle_t player_hurt;
+} sgameMedia_t;
+
+typedef struct
+{
+    sgameMedia_t media;
+} sgGlobals_t;
+
+extern sgGlobals_t sg;
+
 
 //===============================================
 

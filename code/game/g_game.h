@@ -125,6 +125,9 @@ typedef struct {
     float biasX;
     float biasY;
     float scale;
+
+    int desktopWidth;
+    int desktopHeight;
     
     gpuConfig_t gpuConfig;
 } gameInfo_t;
@@ -180,7 +183,7 @@ typedef struct {
 	float		pixelAspect;		// pixel width / height
 } vidmode_t;
 
-typedef enum : uint32_t
+typedef enum
 {
     VIDMODE_320x240,
     VIDMODE_640x480,

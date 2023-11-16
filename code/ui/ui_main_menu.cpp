@@ -92,6 +92,10 @@ typedef struct
     uint32_t geometrydetail;
     int32_t videoMode;
     uint32_t lighting;
+    int customWidth;
+    int customHeight;
+    uint32_t anisotropicFilteringTmp;
+    uint32_t anisotropicFiltering;
 
     qboolean confirmation;
     qboolean modified;
@@ -129,6 +133,7 @@ typedef struct {
 typedef struct
 {
     CUIMenu menu;
+    CUIMenu creditsMenu;
 
     settingsmenu_t settings;
     singleplayer_t sp;
@@ -238,6 +243,33 @@ static const dif_t difficultyTable[NUMDIFS] = {
     }
 };
 
+typedef struct {
+    const char *label;
+    const vidmode_t *mode;
+} vidmodeSetting_t;
+
+static const char *vidmodeSettings[NUMVIDMODES+2] = {
+    { "Native Resolution (%ix%i)",  }, //NULL },
+    { "Custom Resolution (%ix%i)",  }, //NULL },
+    { "320x240",                    }, //&r_vidModes[ VIDMODE_320x240 ] },
+    { "640x480",                    }, //&r_vidModes[ VIDMODE_640x480 ] },
+    { "800x600",                    }, //&r_vidModes[ VIDMODE_800x600 ] },
+    { "1024x768",                   }, //&r_vidModes[ VIDMODE_1024x768 ] },
+    { "2048x1536",                  }, //&r_vidModes[ VIDMODE_2048x1536 ] },
+    { "1280x720",                   }, //&r_vidModes[ VIDMODE_1280x720 ] },
+    { "1600x900",                   }, //&r_vidModes[ VIDMODE_1600x900 ] },
+    { "1920x1080",                  }, //&r_vidModes[ VIDMODE_1920x1080 ] },
+    { "3840x2160",                  }, //&r_vidModes[ VIDMODE_3840x2160 ] },
+};
+
+static const char *anisotropicFilters[] = {
+    "2x",
+    "4x",
+    "8x",
+    "16x",
+    "32x"
+};
+
 static void SettingsMeun_DrawConfirmation( void )
 {
 
@@ -269,24 +301,24 @@ static void SettingsMenu_ApplyChanges( void )
     }
 
     comingSoonListSize = 0;
-    ImGui::SetCursorScreenPos(ImVec2( 0, (float)ui->GetConfig().vidHeight - 22 ));
+    ImGui::SetCursorScreenPos(ImVec2( 0, (float)ui->GetConfig().vidHeight - 20 ));
     if (ImGui::Button( "APPLY CHANGES" )) {
         if (menu.settings.modified) {
-            if (Cvar_VariableInteger( "g_mouseAcceleration" ) != (int32_t)menu.settings.mouseAccelerate) {
-                Cvar_Set( "g_mouseAcceleration", va( "%i", (int32_t)menu.settings.mouseAccelerate ) );
-            }
-            if (Cvar_VariableInteger( "g_mouseInvert" ) != (int32_t)menu.settings.mouseInvert) {
-                Cvar_Set( "g_mouseInvert", va( "%i", (int32_t)menu.settings.mouseInvert ) );
-            }
-            if (Cvar_VariableInteger( "r_textureFiltering" ) != (int32_t)menu.settings.texfilter) {
-                Cvar_Set( "r_textureFiltering", va( "%i", (int32_t)menu.settings.texfilter ) );
-            }
-            if (Cvar_VariableInteger( "r_textureDetail" ) != (int32_t)menu.settings.texdetail) {
-                Cvar_Set( "r_textureDetail", va( "%i", (int32_t)menu.settings.texdetail ) );
-            }
-            if (Cvar_VariableInteger( "r_fullscreen" ) != (int32_t)menu.settings.fullscreen) {
-                Cvar_Set( "r_fullscreen", va( "%i", (int32_t)menu.settings.fullscreen ) );
-            }
+            Cvar_Set( "r_mode", va("%i", menu.settings.videoMode) );
+            switch (menu.settings.videoMode) {
+            case -2:
+                Cvar_Set( "r_customWidth", va( "%i", gi.desktopWidth ) );
+                Cvar_Set( "r_customHeight", va( "%i", gi.desktopHeight ) );
+                break;
+            case -1:
+                Cvar_Set( "r_customWidth", va( "%i", menu.settings.customWidth ) );
+                Cvar_Set( "r_customHeight", va( "%i", menu.settings.customHeight ) );
+                break;
+            default:
+                Cvar_Set( "r_customWidth", va( "%i", r_vidModes[ menu.settings.videoMode ].width ) );
+                Cvar_Set( "r_customWidth", va( "%i", r_vidModes[ menu.settings.videoMode ].height ) );
+                break;
+            };
         }
     }
     ImGui::SetCursorScreenPos( mousePos );
@@ -334,8 +366,7 @@ static bool Menu_Title( const char *label )
     const float font_scale = ImGui::GetFont()->Scale;
 
     ImGui::SetWindowFontScale( font_scale * menu.drawScale );
-    if (ImGui::ArrowButton( "##BACK", ImGuiDir_Left )) {
-        ui->PopMenu();
+    if (ImGui::ArrowButton( va("##BACK%s", label), ImGuiDir_Left )) {
         return true;
     }
     ImGui::SameLine();
@@ -344,9 +375,6 @@ static bool Menu_Title( const char *label )
     ImGui::SetWindowFontScale( font_scale * 3.75f * menu.drawScale );
     ImGui::TextUnformatted( label );
     ImGui::SetWindowFontScale( font_scale * 1.5f * menu.drawScale );
-
-    ImGui::NewLine();
-    ImGui::NewLine();
 
     return false;
 }
@@ -397,187 +425,48 @@ const char *TexFilterString( textureFilter_t filter )
     return NULL;
 }
 
-typedef struct {
-
-} vidmodeSetting_t;
-
-static void SettingsMenu_Draw( void )
-{
-    uint64_t i;
-
-    if (ImGui::BeginTabBar( " " )) {
-        if (ImGui::BeginTabItem( "GRAPHICS" )) {
-            menu.state = STATE_GRAPHICS;
-            ImGui::EndTabItem();
-        }
-        if (ImGui::BeginTabItem( "AUDIO" )) {
-            menu.state = STATE_AUDIO;
-            ImGui::EndTabItem();
-        }
-        if (ImGui::BeginTabItem( "CONTROLS" )) {
-            menu.state = STATE_CONTROLS;
-            ImGui::EndTabItem();
-        }
-        ImGui::EndTabBar();
-    }
-    switch (menu.state) {
-    case STATE_GRAPHICS:
-        ImGui::BeginTable( " ", 2 );
-        {
-            ImGui::TableNextColumn();
-            ImGui::TextUnformatted( "Anti-Aliasing" );
-            ImGui::TableNextColumn();
-            if (ImGui::BeginMenu( "Select Anti-Aliasing Type" )) {
-                ImGui::EndMenu();
-            }
-
-            ImGui::TableNextRow();
-            
-            ImGui::TableNextColumn();
-            ImGui::TextUnformatted( "Texture Filtering" );
-            ImGui::TableNextColumn();
-            if (ImGui::BeginMenu( menu.settings.texfilterString )) {
-                for (i = 0; i < NumTexFilters; i++) {
-                    if (ImGui::MenuItem( TexFilterString( (textureFilter_t)((int)TexFilter_Linear + i) ) )) {
-                        menu.settings.modified = qtrue;
-                        menu.settings.texfilter = (textureFilter_t)((int)TexFilter_Linear + i);
-                    }
-                }
-                ImGui::EndMenu();
-            }
-
-            ImGui::TableNextRow();
-
-            ImGui::TableNextColumn();
-            if (ImGui::BeginMenu( menu.settings.texdetailString )) {
-                for (i = 0; i < NumTexFilters; i++) {
-                    if (ImGui::MenuItem( TexFilterString( (textureFilter_t)((int)TexFilter_Linear + i) ) )) {
-                        menu.settings.modified = qtrue;
-                        menu.settings.texfilter = (textureFilter_t)((int)TexFilter_Linear + i);
-                    }
-                }
-                ImGui::EndMenu();
-            }
-
-            ImGui::TableNextRow();
-
-            ImGui::TableNextColumn();
-            ImGui::TextUnformatted( "Video Mode" );
-            ImGui::TableNextColumn();
-
-            if (ImGui::BeginMenu( r_vidModes[ menu.settings.videoMode ].description )) {
-                for (i = 0; i < NUMVIDMODES; i++) {
-                    if (ImGui::MenuItem( r_vidModes[ i ].description )) {
-                        menu.settings.modified = menu.settings.videoMode != i;
-                        menu.settings.videoMode = i;
-                    }
-                }
-                ImGui::EndMenu();
-            }
-
-            ImGui::TableNextRow();
-
-            ImGui::TableNextColumn();
-            ImGui::TextUnformatted( "Rendering API" );
-            ImGui::TableNextColumn();
-            if (ImGui::BeginMenu( RenderAPIString( menu.settings.api ) )) {
-                if (ImGui::MenuItem( RenderAPIString( R_OPENGL ) )) {
-                    menu.settings.modified = menu.settings.api != R_OPENGL;
-                    menu.settings.api = R_OPENGL;
-                }
-                if (ImGui::MenuItem( va("%s (COMING SOON!)", RenderAPIString( R_SDL2 )) )) {
-                    menu.settings.modified = menu.settings.api != R_SDL2;
-                    menu.settings.api = R_SDL2;
-                }
-                if (ImGui::MenuItem( va("%s (COMING SOON!)", RenderAPIString( R_VULKAN )) )) {
-                    menu.settings.modified = menu.settings.api != R_VULKAN;
-                    menu.settings.api = R_VULKAN;
-                }
-                ImGui::EndMenu();
-            }
-
-            ImGui::TableNextRow();
-
-            ImGui::TableNextColumn();
-            ImGui::TextUnformatted( "Fullscreen" );
-            ImGui::TableNextColumn();
-            if (ImGui::Checkbox( menu.settings.fullscreen ? "ON" : "OFF", &menu.settings.fullscreen )) {
-                menu.settings.modified = qtrue;
-            }
-
-            ImGui::TableNextRow();
-            
-            ImGui::TableNextColumn();
-            ImGui::TextUnformatted( "Lighting" );
-            ImGui::TableNextColumn();
-            ImGui::TextUnformatted( "COMING SOON!" );
-        }
-        ImGui::EndTable();
-        break;
-    case STATE_AUDIO:
-        ImGui::SeparatorText( "Sound Effects" );
-        if (ImGui::Checkbox( "ON##SfxOn", &menu.settings.sfxOn )) {
-            menu.settings.modified = qtrue;
-        }
-        ImGui::SameLine();
-        if (ImGui::SliderFloat( "VOLUME##SfxVolume", &menu.settings.sfxVol, 0.0f, 100.0f )) {
-            menu.settings.modified = qtrue;
-        }
-
-        ImGui::SeparatorText( "Music" );
-        if (ImGui::Checkbox( "ON##MusicOn", &menu.settings.musicOn )) {
-            menu.settings.modified = qtrue;
-        }
-        ImGui::SameLine();
-        if (ImGui::SliderFloat( "VOLUME##MusicVolume", &menu.settings.musicVol, 0.0f, 100.0f )) {
-            menu.settings.modified = qtrue;
-        }
-        break;
-    case STATE_CONTROLS:
-        // mouse options
-        ImGui::SeparatorText( "MOUSE" );
-        ImGui::BeginTable( " ", 2 );
-        {
-            ImGui::TableNextColumn();
-            ImGui::TextUnformatted( "Sensitivity" );
-            ImGui::TableNextColumn();
-            if (ImGui::SliderFloat( " ", &menu.settings.mouseSensitivity, 0, 100.0f )) {
-            }
-
-            ImGui::TableNextRow();
-
-            ImGui::TableNextColumn();
-            ImGui::TextUnformatted( "Invert Mouse" );
-            ImGui::TableNextColumn();
-            if (ImGui::Checkbox( menu.settings.mouseInvert ? "ON" : "OFF", &menu.settings.mouseInvert )) {
-                menu.settings.modified = qtrue;
-            }
-
-            ImGui::TableNextRow();
-
-            ImGui::TableNextColumn();
-            ImGui::TextUnformatted( "Mouse Acceleration" );
-            ImGui::TableNextColumn();
-            if (ImGui::Checkbox( menu.settings.mouseAccelerate ? "ON" : "OFF", &menu.settings.mouseAccelerate )) {
-                menu.settings.modified = qtrue;
-            }
-        }
-        ImGui::EndTable();
-
-        // keybinding options
-        break;
-    };
-
-    SettingsMenu_ApplyChanges();
-}
-
 static void EscapeMenuToggle( menustate_t newstate )
 {
     if (Key_IsDown( KEY_ESCAPE )) {
         if (menu.escapeToggle) {
             menu.escapeToggle = qfalse;
             menu.state = newstate;
-            ui->PopMenu();
+
+            const char *menuName;
+
+            switch (newstate) {
+            case STATE_MAIN:
+                menuName = "MAIN";
+                break;
+            case STATE_SINGLEPLAYER:
+                menuName = "SINGLEPLAYER";
+                break;
+            case STATE_NEWGAME:
+                menuName = "NEWGAME";
+                break;
+            case STATE_LOADGAME:
+                menuName = "LOADGAME";
+                break;
+            case STATE_PLAYMISSION:
+                menuName = "PLAYMISSION";
+                break;
+            case STATE_SETTINGS:
+                menuName = "SETTINGS";
+                break;
+            case STATE_GRAPHICS:
+                menuName = "GRAPHICS";
+                break;
+            case STATE_CONTROLS:
+                menuName = "CONTROLS";
+                break;
+            case STATE_AUDIO:
+                menuName = "AUDIO";
+                break;
+            case STATE_CREDITS:
+                menuName = "CREDITS";
+                break;
+            };
+            Con_Printf( "Setting menu state to %s\n", menuName );
         }
     }
     else {
@@ -637,12 +526,10 @@ static void MainMenu_Draw( void )
         ImGui::BeginTable( " ", 2 );
         if (Menu_Option( "Single Player" )) {
             menu.state = STATE_SINGLEPLAYER;
-            ui->PushMenu( &menu.sp.menu );
         }
         ImGui::TableNextRow();
         if (Menu_Option( "Settings" )) {
-            menu.state = STATE_GRAPHICS;
-            ui->PushMenu( &menu.settings.menu );
+            menu.state = STATE_SETTINGS;
         }
         ImGui::TableNextRow();
         if (Menu_Option( "Credits" )) {
@@ -668,7 +555,6 @@ static void MainMenu_Draw( void )
 
             if (Menu_Title( "SINGLE PLAYER" )) {
                 menu.state = STATE_MAIN;
-                ui->PopMenu();
             }
 
             mousePos = ImGui::GetCursorScreenPos();
@@ -678,12 +564,10 @@ static void MainMenu_Draw( void )
             if (Menu_Option( "New Game" )) {
                 menu.state = STATE_NEWGAME;
                 menu.sp.hardestIndex = rand() % arraylen(difHardestTitles);
-                ui->PushMenu( &menu.sp.newgame );
             }
             ImGui::TableNextRow();
             if (Menu_Option( "Load Game" )) {
                 menu.state = STATE_LOADGAME;
-                ui->PushMenu( &menu.sp.loadgame );
             }
             ImGui::TableNextRow();
             if (Menu_Option( "Play Mission (COMING SOON!)" )) { // play any mission found inside the current BFF loaded
@@ -808,18 +692,272 @@ static void MainMenu_Draw( void )
         };
     }
     else if (menu.state >= STATE_SETTINGS && menu.state <= STATE_AUDIO) {
-        EscapeMenuToggle( STATE_MAIN );
-        if (Menu_Title( "SETTINGS" )) {
-            menu.state = STATE_MAIN;
-            ui->PopMenu();
-        }
-        else {
-            SettingsMenu_Draw();
-        }
+        /*
+        if (ImGui::BeginTabBar( " " )) {
+            if (ImGui::BeginTabItem( "GRAPHICS" )) {
+                menu.state = STATE_GRAPHICS;
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem( "AUDIO" )) {
+                menu.state = STATE_AUDIO;
+                ImGui::EndTabItem();
+            }
+            if (ImGui::BeginTabItem( "CONTROLS" )) {
+                menu.state = STATE_CONTROLS;
+                ImGui::EndTabItem();
+            }
+            ImGui::EndTabBar();
+        } */
+        switch (menu.state) {
+        case STATE_SETTINGS:
+            EscapeMenuToggle( STATE_MAIN );
+            if (menu.state != STATE_SETTINGS) {
+                break;
+            }
+            else if (Menu_Title( "SETTINGS" )) {
+                menu.state = STATE_MAIN;
+                break;
+            }
+            ImGui::BeginTable( " ", 2 );
+            ImGui::TableNextRow();
+            if (Menu_Option( "Graphics" )) {
+                menu.state = STATE_GRAPHICS;
+            }
+            ImGui::TableNextRow();
+            if (Menu_Option( "Audio" )) {
+                menu.state = STATE_AUDIO;
+            }
+            ImGui::TableNextRow();
+            if (Menu_Option( "Controls" )) {
+                menu.state = STATE_CONTROLS;
+            }
+            ImGui::EndTable();
+            break;
+        case STATE_GRAPHICS:
+            EscapeMenuToggle( STATE_SETTINGS );
+            if (menu.state != STATE_GRAPHICS) {
+                break;
+            }
+            else if (Menu_Title( "GRAPHICS" )) {
+                menu.state = STATE_SETTINGS;
+                break;
+            }
+
+            ImGui::BeginTable( " ", 2 );
+            {
+                const char *vidMode;
+
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted( "Anti-Aliasing" );
+                ImGui::TableNextColumn();
+                if (ImGui::BeginMenu( "Select Anti-Aliasing Type" )) {
+                    ImGui::EndMenu();
+                }
+
+                ImGui::TableNextRow();
+
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted( "Texture Filtering" );
+                ImGui::TableNextColumn();
+                if (ImGui::BeginMenu( menu.settings.texfilterString )) {
+                    for (i = 0; i < NumTexFilters; i++) {
+                        if (ImGui::MenuItem( TexFilterString( (textureFilter_t)((int)TexFilter_Linear + i) ) )) {
+                            menu.settings.modified = qtrue;
+                            menu.settings.texfilter = (textureFilter_t)((int)TexFilter_Linear + i);
+                        }
+                    }
+                    ImGui::EndMenu();
+                }
+
+                ImGui::TableNextRow();
+
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted( "Texture Detail" );
+                ImGui::TableNextColumn();
+                if (ImGui::BeginMenu( menu.settings.texdetailString )) {
+                    for (i = 0; i < NumTexFilters; i++) {
+                        if (ImGui::MenuItem( TexFilterString( (textureFilter_t)((int)TexFilter_Linear + i) ) )) {
+                            menu.settings.modified = qtrue;
+                            menu.settings.texfilter = (textureFilter_t)((int)TexFilter_Linear + i);
+                        }
+                    }
+                    ImGui::EndMenu();
+                }
+
+                ImGui::TableNextRow();
+
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted( "Anisotropic Filtering" );
+                ImGui::TableNextColumn();
+                if (ImGui::ArrowButton( "##ANIFILTER_LEFT", ImGuiDir_Left )) {
+                    menu.settings.anisotropicFiltering = (int32_t)menu.settings.anisotropicFiltering - 1 == -1 ? arraylen(anisotropicFilters) - 1
+                        : menu.settings.anisotropicFiltering - 1;
+                    if (Cvar_VariableInteger( "r_anistropicFiltering" ) != (int32_t)menu.settings.anisotropicFiltering) {
+                        menu.settings.modified = qtrue;
+                    }
+                }
+                ImGui::SameLine();
+                ImGui::TextUnformatted( anisotropicFilters[ menu.settings.anisotropicFiltering ] );
+                ImGui::SameLine();
+                if (ImGui::ArrowButton( "##ANIFILTER_RIGHT", ImGuiDir_Right )) {
+                    menu.settings.anisotropicFiltering = menu.settings.anisotropicFiltering + 1 >= arraylen(anisotropicFilters) ? 0 : menu.settings.anisotropicFiltering + 1;
+                    if (Cvar_VariableInteger( "r_anistropicFiltering" ) != (int32_t)menu.settings.anisotropicFiltering) {
+                        menu.settings.modified = qtrue;
+                    }
+                }
+
+                ImGui::TableNextRow();
+
+                switch (menu.settings.videoMode) {
+                case -2:
+                    vidMode = vidmodeSettings[0];
+                    break;
+                case -1:
+                    vidMode = vidmodeSettings[1];
+                    break;
+                default:
+                    vidMode = r_vidModes[ menu.settings.videoMode ].description;
+                    break;
+                };
+
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted( "Video Mode" );
+                ImGui::TableNextColumn();
+                if (ImGui::BeginMenu( va("%s##VIDMODE", vidMode) )) {
+                    for (i = 0; i < NUMVIDMODES; i++) {
+                        if (i == 0 || i == 1) {
+                            if (ImGui::MenuItem( va( vidmodeSettings[i], r_customWidth->i, r_customHeight->i ) )) {
+                                menu.settings.modified = menu.settings.videoMode != i;
+                                menu.settings.videoMode = i;
+                            }
+                            continue;
+                        }
+                        if (ImGui::MenuItem( vidmodeSettings[ i ] )) {
+                            menu.settings.modified = menu.settings.videoMode != i;
+                            menu.settings.videoMode = i;
+                        }
+                    }
+                    ImGui::EndMenu();
+                }
+
+                ImGui::TableNextRow();
+
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted( "Rendering API" );
+                ImGui::TableNextColumn();
+                if (ImGui::BeginMenu( RenderAPIString( menu.settings.api ) )) {
+                    if (ImGui::MenuItem( RenderAPIString( R_OPENGL ) )) {
+                        menu.settings.modified = menu.settings.api != R_OPENGL;
+                        menu.settings.api = R_OPENGL;
+                    }
+                    if (ImGui::MenuItem( va("%s (COMING SOON!)", RenderAPIString( R_SDL2 )) )) {
+                        menu.settings.modified = menu.settings.api != R_SDL2;
+                        menu.settings.api = R_SDL2;
+                    }
+                    if (ImGui::MenuItem( va("%s (COMING SOON!)", RenderAPIString( R_VULKAN )) )) {
+                        menu.settings.modified = menu.settings.api != R_VULKAN;
+                        menu.settings.api = R_VULKAN;
+                    }
+                    ImGui::EndMenu();
+                }
+
+                ImGui::TableNextRow();
+
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted( "Fullscreen" );
+                ImGui::TableNextColumn();
+                if (ImGui::Checkbox( menu.settings.fullscreen ? "ON" : "OFF", &menu.settings.fullscreen )) {
+                    menu.settings.modified = qtrue;
+                }
+
+                ImGui::TableNextRow();
+
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted( "Lighting" );
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted( "COMING SOON!" );
+            }
+            ImGui::EndTable();
+            break;
+        case STATE_AUDIO:
+            EscapeMenuToggle( STATE_SETTINGS );
+            if (menu.state != STATE_AUDIO) {
+                break;
+            }
+            else if (Menu_Title( "AUDIO" )) {
+                menu.state = STATE_SETTINGS;
+                break;
+            }
+
+            ImGui::SeparatorText( "Sound Effects" );
+            if (ImGui::Checkbox( "ON##SfxOn", &menu.settings.sfxOn )) {
+                menu.settings.modified = qtrue;
+            }
+            ImGui::SameLine();
+            if (ImGui::SliderFloat( "VOLUME##SfxVolume", &menu.settings.sfxVol, 0.0f, 100.0f )) {
+                menu.settings.modified = qtrue;
+            }
+
+            ImGui::SeparatorText( "Music" );
+            if (ImGui::Checkbox( "ON##MusicOn", &menu.settings.musicOn )) {
+                menu.settings.modified = qtrue;
+            }
+            ImGui::SameLine();
+            if (ImGui::SliderFloat( "VOLUME##MusicVolume", &menu.settings.musicVol, 0.0f, 100.0f )) {
+                menu.settings.modified = qtrue;
+            }
+            break;
+        case STATE_CONTROLS: {
+            EscapeMenuToggle( STATE_SETTINGS );
+            if (menu.state != STATE_CONTROLS) {
+                break;
+            }
+            else if (Menu_Title( "CONTROLS" )) {
+                menu.state = STATE_SETTINGS;
+                break;
+            }
+
+            // mouse options
+            ImGui::SeparatorText( "MOUSE" );
+            ImGui::BeginTable( " ", 2 );
+            {
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted( "Sensitivity" );
+                ImGui::TableNextColumn();
+                if (ImGui::SliderFloat( " ", &menu.settings.mouseSensitivity, 0, 100.0f )) {
+                }
+
+                ImGui::TableNextRow();
+
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted( "Invert Mouse" );
+                ImGui::TableNextColumn();
+                if (ImGui::Checkbox( menu.settings.mouseInvert ? "ON" : "OFF", &menu.settings.mouseInvert )) {
+                    menu.settings.modified = qtrue;
+                }
+
+                ImGui::TableNextRow();
+
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted( "Mouse Acceleration" );
+                ImGui::TableNextColumn();
+                if (ImGui::Checkbox( menu.settings.mouseAccelerate ? "ON" : "OFF", &menu.settings.mouseAccelerate )) {
+                    menu.settings.modified = qtrue;
+                }
+            }
+            ImGui::EndTable();
+
+            // keybinding options
+            break; }
+        };
+
+        SettingsMenu_ApplyChanges();
     }
     else if (menu.state == STATE_CREDITS) {
         EscapeMenuToggle( STATE_MAIN );
-        Menu_Title( "CREDITS" );
+        if (Menu_Title( "CREDITS" )) {
+            menu.state = STATE_MAIN;
+        }
 
         ImGui::TextUnformatted( creditsString );
     }
@@ -880,6 +1018,7 @@ void MainMenu_Cache( void )
     menu.sp.menu.Draw = MainMenu_Draw;
     menu.sp.loadgame.Draw = MainMenu_Draw;
     menu.sp.newgame.Draw = MainMenu_Draw;
+    menu.creditsMenu.Draw = MainMenu_Draw;
 
     menu.drawScale = Cvar_VariableFloat( "r_customWidth" ) / Cvar_VariableFloat( "r_customHeight" );
 

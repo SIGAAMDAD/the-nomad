@@ -519,6 +519,7 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 	if (Key_IsDown(KEY_LCTRL) && Key_IsDown(KEY_A)) {
 		data->SelectAll();
 	}
+
 	if (Key_IsDown(KEY_DELETE)) {
 		if (data->HasSelection()) {
 			data->DeleteChars(data->SelectionStart, data->SelectionEnd - data->SelectionStart);
@@ -626,11 +627,9 @@ static void Con_DrawInput( void ) {
 	ImGui::PopStyleColor();
 	ImGui::SameLine();
 
-	if (ImGui::InputText("", g_consoleField.buffer, sizeof(g_consoleField.buffer),
-	ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackEdit | ImGuiInputTextFlags_CallbackHistory |
-	ImGuiInputTextFlags_CtrlEnterForNewLine | ImGuiInputTextFlags_EnterReturnsTrue,
+	if (ImGui::InputText("", g_consoleField.buffer, sizeof(g_consoleField.buffer) - 1,
+	ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackEdit | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_EnterReturnsTrue,
 	Con_TextCallback)) {
-		
 		// enter finishes the line
 		// if not in the game explicitly prepend a slash if needed
 		if ( gi.state == GS_LEVEL
@@ -671,7 +670,6 @@ static void Con_DrawInput( void ) {
 			SCR_UpdateScreen ();	// force an update, because the command
 		}							// may take some time
 	}
-	ImGui::NewLine();
 
 //	Field_Draw( &g_consoleField, con.xadjust + 2 * smallchar_width, y,
 //		SCREEN_WIDTH - 3 * smallchar_width, qtrue, qtrue );
@@ -724,6 +722,8 @@ static void Con_DrawSolidConsole( float frac )
 		}
 		ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( conColorValue ) );
 		customColor = qtrue;
+	} else {
+		ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( 0.45f, 0.0f, 0.0f, 1.0f ) );
 	}
 
 	// draw from the bottom up
@@ -786,7 +786,10 @@ static void Con_DrawSolidConsole( float frac )
 	Con_DrawInput();
 
 	ImGui::PopStyleColor();
-	ImGui::End();
+	ImGui::PopStyleColor();
+
+	// segfaults
+// 	ImGui::End();
 }
 
 static void Con_DrawNotify( void ) {

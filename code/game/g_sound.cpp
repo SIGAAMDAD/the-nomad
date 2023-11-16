@@ -18,6 +18,7 @@ cvar_t *snd_sfxvol;
 cvar_t *snd_musicon;
 cvar_t *snd_sfxon;
 static cvar_t *snd_frequency;
+static CThread snd_thread
 
 #define Snd_HashFileName(x) Com_GenerateHashValue((x),MAX_SOUND_SOURCES)
 

@@ -17,4 +17,7 @@ sfxHandle_t Snd_RegisterSfx( const char *npath );
 void Snd_SetLoopingTrack( sfxHandle_t handle );
 void Snd_ClearLoopingTrack( void );
 
+void Snd_StartupThread( int msec );
+void Snd_JoinThread( void );
+
 #endif

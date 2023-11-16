@@ -183,7 +183,6 @@ SRC=\
 	$(O)/rendercommon/imgui_tables.o \
 	$(O)/rendercommon/imgui_impl_sdl2.o \
 	$(O)/rendercommon/imgui_impl_opengl3.o \
-	$(O)/rendercommon/imgui_demo.o \
 	\
 	$(O)/ui/ui_main.o \
 	$(O)/ui/ui_lib.o \

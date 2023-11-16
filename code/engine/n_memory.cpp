@@ -1,5 +1,6 @@
 #include "n_shared.h"
 #include "../game/g_game.h"
+#include "../system/sys_thread.h"
 
 /*
 ===============================
@@ -103,7 +104,7 @@ typedef struct memzone_s {
 #endif
 } memzone_t;
 
-static boost::mutex commonLock;
+static CThreadMutex commonLock;
 
 static uint64_t hunksize;
 static byte* hunkbase;
@@ -136,7 +137,7 @@ typedef struct
 	uint64_t tempHighwater;
 } hunkUsed_t;
 
-boost::recursive_mutex hunkLock, allocLock;
+CThreadMutex hunkLock, allocLock;
 uint64_t hunk_low_used = 0;
 uint64_t hunk_high_used = 0;
 uint64_t hunk_temp_used = 0;
@@ -527,6 +528,7 @@ void Z_Free( void *ptr ) {
 		zone = mainzone;
 	}
 
+	CThreadAutoLock lock( allocLock );
 	zone->used -= block->size;
 
 	// set the block to something that should cause problems
@@ -650,6 +652,8 @@ void *Z_Alloc( uint32_t size, int tag ) {
 #endif
 
 	size = PAD(size, sizeof(uintptr_t));		// align to 32/64 bit boundary
+
+	CThreadAutoLock lock( allocLock );
 
 #ifdef USE_MULTI_SEGMENT
 	base = SearchFree( zone, size );
@@ -1142,7 +1146,7 @@ Hunk_Clear: gets called whenever a new level is loaded or is being shutdown
 */
 void Hunk_Clear(void)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{hunkLock};
+	CThreadAutoLocK lock( hunkLock );
 
 	G_ShutdownSGame();
 	G_ShutdownUI();
@@ -1181,45 +1185,28 @@ Hunk_SetMark: gets called after the level and game vm have been loaded
 */
 void Hunk_SetMark( void )
 {
-	boost::lock_guard<boost::recursive_mutex> lock{hunkLock};
+	CThreadAutoLocK lock( hunkLock );
 	hunk_low.mark = hunk_low.permanent;
 	hunk_high.mark = hunk_high.permanent;
 }
 
 void Hunk_ClearToMark( void )
 {
-	boost::lock_guard<boost::recursive_mutex> lock{hunkLock};
+	CThreadAutoLocK lock( hunkLock );
 	hunk_low.permanent = hunk_low.temp = hunk_low.mark;
 	hunk_high.permanent = hunk_high.temp = hunk_high.mark;
 }
 
-// broken
-#if 0
-/*
-Hunk_Check: Run consistancy and id checks
-*/
-void Hunk_Check (void)
-{
-	hunkblock_t *h;
-	
-	for (h = hunkblocks; h; h = h->next) {
-		if (h->id != HUNKID)
-			N_Error (ERR_FATAL, "Hunk_Check: hunk id isn't correct");
-		if (h->size < 16 || h->size + (byte *)h - hunkbase > hunksize)
-			N_Error (ERR_FATAL, "Hunk_Check: bad size");
-	}
-}
-#endif
-
 static void Hunk_SwapBanks(void)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{hunkLock};
 	hunkUsed_t	*swap;
 
 	// can't swap banks if there is any temp already allocated
 	if ( hunk_temp->temp != hunk_temp->permanent ) {
 		return;
 	}
+
+	CThreadAutoLocK lock( hunkLock );
 
 	// if we have a larger highwater mark on this side, start making
 	// our permanent allocations here and use the other side for temp
@@ -1233,7 +1220,6 @@ static void Hunk_SwapBanks(void)
 
 void *Hunk_AllocateTempMemory(uint64_t size)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{hunkLock};
 	void *buf;
 	hunkHeader_t *h;
 
@@ -1250,6 +1236,8 @@ void *Hunk_AllocateTempMemory(uint64_t size)
 	if (hunk_temp->temp + hunk_permanent->permanent + size > hunksize) {
 		N_Error(ERR_DROP, "Hunk_AllocateTempMemory: failed on %lu", size);
 	}
+
+	CThreadAutoLocK lock( hunkLock );
 
 	if ( hunk_temp == &hunk_low ) {
 		buf = (void *)(hunkbase + hunk_temp->temp);
@@ -1276,7 +1264,6 @@ void *Hunk_AllocateTempMemory(uint64_t size)
 
 void Hunk_FreeTempMemory(void *p)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{hunkLock};
 	hunkHeader_t *h;
 
 	// if hunk hasn't been initialized yet, just Z_Free the data
@@ -1291,6 +1278,8 @@ void Hunk_FreeTempMemory(void *p)
 	}
 
 	h->id = HUNKFREE;
+
+	CThreadAutoLocK lock( hunkLock );
 
 	// this only works if the files are freed in the stack order,
 	// otherwise the memory will stay around until Hunk_ClearTempMemory
@@ -1310,7 +1299,7 @@ void Hunk_FreeTempMemory(void *p)
 
 void Hunk_ClearTempMemory(void)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{hunkLock};
+	CThreadAutoLocK lock( hunkLock );
 	if (hunkbase) {
 		hunk_temp->temp = hunk_temp->permanent;
 	}
@@ -1338,7 +1327,6 @@ void *Hunk_AllocDebug (uint64_t size, ha_pref where, const char *name, const cha
 void *Hunk_Alloc (uint64_t size, const char *name, ha_pref where)
 #endif
 {
-	boost::lock_guard<boost::recursive_mutex> lock{allocLock};
 	void *buf;
 
 	if (!hunkbase) {
@@ -1348,6 +1336,7 @@ void *Hunk_Alloc (uint64_t size, const char *name, ha_pref where)
 	if (!size)
 		N_Error(ERR_FATAL, "Hunk_Alloc: bad size");
 	
+	CThreadAutoLocK lock( hunkLock );
 	if (where == h_dontcare || hunk_temp->temp != hunk_temp->permanent) {
 		Hunk_SwapBanks();
 	}

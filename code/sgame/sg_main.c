@@ -82,9 +82,9 @@ void GDR_DECL GDR_ATTRIBUTE((format(printf, 1, 2))) Con_Printf(const char *fmt, 
 
 int SG_Init(void)
 {
-//    if (!trap_Key_GetCatcher() & KEYCATCH_SGAME) {
-//        trap_Key_SetCatcher(trap_Key_GetCatcher() & KEYCATCH_SGAME);
-//    }
+    if (!trap_Key_GetCatcher() & KEYCATCH_SGAME) {
+        trap_Key_SetCatcher(trap_Key_GetCatcher() & KEYCATCH_SGAME);
+    }
 
     return 0;
 }
