@@ -176,14 +176,32 @@ BOOL Win_CheckHotkeyMod( void ) {
 
 
 //
-// Sys_MessageBox: the only time I will prefer the win32 api over unix
+// Sys_MessageBox: adapted slightly from the source engine
 //
 int Sys_MessageBox(const char *title, const char *text, bool ShowOkAndCancelButton)
 {
+#if 0
     if (MessageBox( NULL, title, text, MB_ICONEXCLAMATION | ( ShowOkAndCancelButton ? MB_OKCANCEL : MB_OK )) == IDOK) {
         return true;
     }
     return false;
+#else
+	int buttonid = 0;
+    SDL_MessageBoxData boxData = { 0 };
+    SDL_MessageBoxButtonData buttonData[] = {
+        { SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 1, "OK"      },
+        { SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 0, "Cancel"  },
+    };
+
+    boxData.window = G_GetSDLWindow();
+    boxData.title = title;
+    boxData.message = text;
+    boxData.numbuttons = ShowOkAndCancelButton ? 2 : 1;
+    boxData.buttons = buttonData;
+
+    SDL_ShowMessageBox( &boxData, &buttonid );
+    return ( buttonid == 1 );
+#endif
 }
 
 qboolean Sys_LowPhysicalMemory( void )
