@@ -118,23 +118,47 @@ typedef struct {
 // sgameMedia_t: if you change any resource names or add resources, add them to here as well
 //
 typedef struct {
-    sfxHandle_t player_hurt;
+    sfxHandle_t player_hurt0;
+    sfxHandle_t player_hurt1;
+    sfxHandle_t player_hurt2;
+
+    sfxHandle_t player_die0;
+    sfxHandle_t player_die1;
+    sfxHandle_t player_die2;
+
+    sfxHandle_t noammo;
 } sgameMedia_t;
 
 typedef struct
 {
     sgameMedia_t media;
+
+    mapinfo_t mapInfo;
 } sgGlobals_t;
 
 extern sgGlobals_t sg;
 
+//
+// sg_level.c
+//
+int32_t SG_InitLevel( int32_t levelIndex );
+int32_t SG_EndLevel( void );
+
+//
+// sg_mem.c
+//
+void *SG_MemAlloc( uint32_t size );
+void SG_ClearMem( void );
+uint32_t SG_MemoryRemaining( void );
 
 //===============================================
 
 //
 // system traps
-// These functions are how the cgame communicates with the main game system
+// These functions are how the sgame communicates with the main game system
 //
+
+int32_t G_LoadMap( int32_t index, mapinfo_t *info );
 
 // print a message to the console
 void trap_Print(const char *fmt);

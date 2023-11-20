@@ -3,515 +3,528 @@
 
 #pragma once
 
-// NOTE: unless you want a stream of useless warnings, don't enable -Wpedantic for any module that includes EASTL/atomic.h or anything like that
-#include <EASTL/atomic.h>
-
-// using boost threads until I implement custom, much more engine-focused and personalized threading stuff
-typedef boost::recursive_mutex CThreadRecursiveLock;
-
-class CThreadMutex
-{
-public:
-	CThreadMutex( void );
-	~CThreadMutex();
-
-	void Lock( void );
-	void Lock( void ) const { const_cast<CThreadMutex *>(this)->Lock(); }
-	void Unlock( void );
-	void Unlock( void ) const { const_cast<CThreadMutex *>(this)->Unlock(); }
-	bool TryLock( void );
-	bool TryLock( void ) const { const_cast<CThreadMutex *>(this)->TryLock(); }
-private:
-#if 0
-
 #ifdef _WIN32
-	SRWLOCK m_hLock;
+#include <winnt.h>
+#include <processthreadsapi.h>
+#include <synchapi.h> //  For InitializeCriticalSection, etc.
+#include <errhandlingapi.h> //  For GetLastError
+#include <handleapi.h>
 #elif defined(POSIX)
-	pthread_mutex_t m_hLock;
-	pthread_mutexattr_t m_hAttrib;
+#include <signal.h>
+#include <pthread.h>
+#include <errno.h>
 #endif
 
+#include "../engine/n_shared.h"
+
+/*
+template<typename T>
+class CThreadAtomicInt
+{
+public:
+	CThreadAtomicInt( void );
+	~CThreadAtomicInt() { }
+	
+	void Store( const T& value );
+	void Add( const T& value );
+	void Subtract( const T& value );
+	void Increment( const T& value );
+	void Decrement( const T& value );
+	void Store( const T& value );
+	const T& Load( void ) const;
+	LONG& Load( void );
+private:
+#ifndef USE_EASTL_ATOMIC
+	uint64_t m_Value;
+#else
+	eastl::atomic<uint64_t> m_Value;
 #endif
-	boost::recursive_mutex m_hLock;
 };
 
-GDR_INLINE CThreadMutex::CThreadMutex( void ) {
+template<typename T>
+GDR_INLINE CThreadAtomic<T>::CThreadAtomic( void )
+	: m_Value( 0 )
+{
 }
 
-GDR_INLINE CThreadMutex::~CThreadMutex() {
-}
-
-GDR_INLINE void CThreadMutex::Lock( void ) {
-#if 0
-
+template<typename T>
+GDR_INLINE void CThreadAtomic<T>::Store( T value ) {
+#ifdef USE_EASTL_ATOMIC
+	m_Value.store( value );
+#else
 #ifdef _WIN32
-	AcquireSRWExclusive( &m_hLock );
+	InterlockedExchange( (volatile LONG *)&m_Value, *(LONG *)&value );
 #elif defined(POSIX)
-	pthread_mutex_lock( &m_hLock );
 #endif
-
 #endif
-	m_hLock.lock();
 }
 
-GDR_INLINE void CThreadMutex::Unlock( void ) {
-	m_hLock.unlock();
+template<typename T>
+GDR_INLINE void CThreadAtomic<T>::Add( T value ) {
+#ifdef USE_EASTL_ATOMIC
+#else
+#ifdef _WIN32
+	InterlockedExchangeAdd( (volatile LONG *)&m_Value, *(LONG *)&value );
+#else
+	__atomic_();
+#endif
+#endif
 }
 
-GDR_INLINE bool CThreadMutex::TryLock( void ) {
-	return m_hLock.try_lock();
-}
+*/
 
-typedef void (*threadfunc_t)( void );
-
-class CThread
-{
-public:
-	CThread( void ) { }
-	~CThread() { }
-
-	void Join( void );
-	bool Joinable( void ) const;
-
-	bool Run( threadfunc_t fn );
-private:
-	boost::thread m_hThread;
-};
-
-GDR_INLINE void CThread::Join( void ) {
-	m_hThread.join();
-}
-
-GDR_INLINE bool CThread::Joinable( void ) const {
-	return m_hThread.joinable();
-}
-
-GDR_INLINE bool CThread::Run( threadfunc_t fn ) {
-	m_hThread = boost::thread( [&]( void ) -> void { fn(); } );
-
-	return true;
-}
-
-class CThreadSpinRWLock
-{
-public:
-	CThreadSpinRWLock( void );
-	~CThreadSpinRWLock();
-
-	void Lock( void );
-	void Unlock( void );
-	bool TryLock( void );
-private:
-	eastl::atomic_flag m_hFlag;
-};
-
-GDR_INLINE CThreadSpinRWLock::CThreadSpinRWLock( void ) {
-}
-
-GDR_INLINE CThreadSpinRWLock::~CThreadSpinRWLock() {
-}
-
-GDR_INLINE void CThreadSpinRWLock::Lock( void ) {
-	while (m_hFlag.test_and_set( eastl::memory_order_acquire ));
-}
-
-GDR_INLINE void CThreadSpinRWLock::Unlock( void ) {
-	m_hFlag.clear( eastl::memory_order_release );
-}
-
-GDR_INLINE bool CThreadSpinRWLock::TryLock( void ) {
-	return !m_hFlag.test_and_set( eastl::memory_order_acquire );
-}
-
-//
-// CThreadAutoLock: used for scope based mutex locks
-//
 template<typename Mutex>
 class CThreadAutoLock
 {
 public:
-	GDR_INLINE CThreadAutoLock( Mutex& lock )
-		: m_pLock( lock )
-	{
-		m_pLock.Lock();
-	}
-	GDR_INLINE ~CThreadAutoLock()
-	{
-		m_pLock.Unlock();
-	}
-
-	GDR_INLINE void Lock( void ) { m_pLock.Lock(); }
-	GDR_INLINE void Unlock( void ) { m_pLock.Unlock(); }
-	GDR_INLINE bool TryLock( void ) { return m_pLock.TryLock(); }
+    GDR_INLINE CThreadAutoLock( Mutex& lock )
+        : m_Lock( lock )
+    {
+        m_Lock.Lock();
+    }
+    GDR_INLINE ~CThreadAutoLock() {
+        m_Lock.Unlock();
+    }
 private:
-	Mutex& m_pLock;
+    Mutex& m_Lock;
 };
-
-#if 0
-#ifdef _WIN32
-typedef HANDLE sys_thread_t;
-typedef SRWLOCK sys_mutex_t;
-typedef CRITICAL_SECTION sys_recursive_mutex_t;
-typedef DWORD sys_thread_id_t;
-#else
-typedef pthread_t sys_thread_t;
-typedef pthread_mutex_t sys_mutex_t;
-typedef pthread_mutex_t sys_recursive_mutex_t;
-typedef pthread_t sys_thread_id_t;
-#endif
-
-#if defined(_NOMAD_DEBUG)
-typedef struct ownerThread_s
-{
-	eastl::atomic<sys_thread_id_t> m_OwnerThread;
-	constexpr ownerThread_s( void ) {
-		m_OwnerThread = 0;
-	}
-
-	static void on_deadlock( void ) {
-		N_Error( ERR_FATAL, "[Thread Debug]: recursive locking on a non-rescursive mutex!" );
-	}
-	sys_thread_id_t checkOwnerBeforeLock( void ) const {
-		sys_thread_id_t self;
-	#ifdef _WIN32
-		self = GetCurrentThreadId();
-	#else
-		self = pthread_self();
-	#endif
-		if (m_OwnerThread.load( eastl::memory_order_relaxed ) == self) {
-			on_deadlock();
-		}
-		return self;
-	}
-	void setOwnerAfterLock( sys_thread_id_t id ) {
-		m_OwnerThread.store( id, eastl::memory_order_relaxed );
-	}
-	void checkSetOwnerBeforeUnlock( void ) {
-		sys_thread_id_t self;
-	#ifdef _WIN32
-		self = GetCurrentThreadId();
-	#else
-		self = pthread_self();
-	#endif
-		if (m_OwnerThread.load( eastl::memory_order_relaxed ) != self) {
-			on_deadlock();
-		}
-		m_OwnerThread.store( 0, eastl::memory_order_relaxed );
-	}
-} ownerThread_t;
-#endif
-
-#if 0
-class CThreadSharedRWLock
-{
-public:
-	CThreadSharedRWLock( void );
-	~CThreadSharedRWLock();
-
-	void *GetNative( void );
-	const void *GetNative( void ) const;
-
-	void Lock( void );
-	void Lock( void ) const;
-	void Unlock( void );
-	void Unlock( void ) const;
-	bool TryLock( void );
-	bool TryLock( void ) const;
-private:
-#ifdef POSIX
-	sys_mutex_t m_hLock;
-	pthread_mutexattr_t m_hLockAttrib;
-#endif
-	eastl::atomic<uint_fast16_t> m_nCounter;
-#ifdef _NOMAD_DEBUG
-	ownerThread_t m_hOwnerThread;
-#endif
-};
-
-GDR_INLINE CThreadSharedRWLock::CThreadSharedRWLock( void )
-{
-#ifdef POSIX
-	pthread_mutex_init( &m_hLock );
-	pthread_mutexattr_init( &m_hLockAttrib );
-#endif
-}
-
-GDR_INLINE CThreadSharedRWLock::~CThreadSharedRWLock() {
-	// terminate if someone tries to destroy an owned mutex
-	Assert( m_nCounter.load( eastl::memory_order_relaxed ) == 0 );
-}
-#endif
-
-
-class CThreadRecursiveMutex
-{
-public:
-	CThreadRecursiveMutex( void );
-	~CThreadRecursiveMutex();
-
-	void *GetNative( void );
-	const void *GetNative( void ) const;
-
-	void Lock( void );
-	void Lock( void ) const;
-	void Unlock( void );
-	void Unlock( void ) const;
-	bool TryLock( void );
-	bool TryLock( void ) const;
-private:
-	sys_recursive_mutex_t m_hLock;
-#ifdef POSIX
-	pthread_mutexattr_t m_hLockAttrib;
-#endif
-};
-
-GDR_INLINE CThreadRecursiveMutex::CThreadRecursiveMutex( void )
-{
-#ifdef _WIN32
-	InitializeCriticalSection( &m_hLock );
-#else
-	pthread_mutexattr_init( &m_hLockAttrib );
-	pthread_mutexattr_settype( &m_hLockAttrib, PTHREAD_MUTEX_RECURSIVE );
-
-	pthread_mutex_init( &m_hLock, &m_hLockAttrib );
-#endif
-}
-
-GDR_INLINE CThreadRecursiveMutex::~CThreadRecursiveMutex( void )
-{
-#ifdef _WIN32
-	DeleteCriticalSection( &m_hLock );
-#else
-	pthread_mutex_destroy( &m_hLock );
-	pthread_mutexattr_destroy( &m_hLockAttrib );
-#endif
-}
-
-GDR_INLINE void *CThreadRecursiveMutex::GetNative( void ) {
-	return &m_hLock;
-}
-
-GDR_INLINE const void *CThreadRecursiveMutex::GetNative( void ) const {
-	return &m_hLock;
-}
-
-GDR_INLINE void CThreadRecursiveMutex::Lock( void )
-{
-#ifdef _WIN32
-	EnterCriticalSection( &m_hLock );
-#else
-	pthread_mutex_lock( &m_hLock );
-#endif
-}
-
-GDR_INLINE void CThreadRecursiveMutex::Lock( void ) const
-{
-#ifdef _WIN32
-	EnterCriticalSection( &const_cast<CThreadRecursiveMutex *>(this)->m_hLock );
-#else
-	pthread_mutex_lock( &const_cast<CThreadRecursiveMutex *>(this)->m_hLock );
-#endif
-}
-
-GDR_INLINE void CThreadRecursiveMutex::Unlock( void )
-{
-#ifdef _WIN32
-	LeaveCriticalSection( &m_hLock );
-#else
-	pthread_mutex_unlock( &m_hLock );
-#endif
-}
-
-GDR_INLINE void CThreadRecursiveMutex::Unlock( void ) const
-{
-#ifdef _WIN32
-	LeaveCriticalSection( &const_cast<CThreadRecursiveMutex *>(this)->m_hLock );
-#else
-	pthread_mutex_unlock( &const_cast<CThreadRecursiveMutex *>(this)->m_hLock );
-#endif
-}
-
-GDR_INLINE bool CThreadRecursiveMutex::TryLock( void )
-{
-#ifdef _WIN32
-	return (TryCriticalSection( &m_hLock ) != 0);
-#else
-	return pthread_mutex_trylock( &m_hLock ) == 0;
-#endif
-}
-
-GDR_INLINE void CThreadRecursiveMutex::TryLock( void ) const
-{
-#ifdef _WIN32
-	return (TryCriticalSection( &const_cast<CThreadRecursiveMutex *>(this)->m_hLock ) != 0);
-#else
-	return pthread_mutex_trylock( &const_cast<CThreadRecursiveMutex *>(this)->m_hLock ) == 0;
-#endif
-}
 
 class CThreadMutex
 {
 public:
 	CThreadMutex( void );
 	~CThreadMutex();
-
-	void *GetNative( void );
-	const void *GetNative( void ) const;
-
+	
 	void Lock( void );
 	void Lock( void ) const;
 	void Unlock( void );
 	void Unlock( void ) const;
+	
 	bool TryLock( void );
 	bool TryLock( void ) const;
 private:
-	sys_mutex_t m_hLock;
-#ifdef _NOMAD_DEBUG
-	ownerThread_t m_hOwnerThread;
-#endif
 #ifdef _WIN32
+//	SRWLOCK m_hLock;
+	CRITICAL_SECTION m_hLock;
+	DWORD m_OwnerThreadId;
+	uint32_t m_nLockCount;
 #elif defined(POSIX)
-	pthread_mutexattr_t m_hLockAttrib;
+	pthread_mutex_t m_hLock;
+	pthread_mutexattr_t m_hAttrib;
 #endif
 };
 
 GDR_INLINE CThreadMutex::CThreadMutex( void )
 {
-#ifdef POSIX
-	pthread_mutexattr_init( &m_hLockAttrib );
-	pthread_mutexattr_settype( &m_hLockAttrib, PTHREAD_MUTEX_NORMAL );
-
-	pthread_mutex_init( &m_hLock, &m_hLockAttrib );
+#ifdef _WIN32
+//	InitializeSRWLock( &m_hLock );
+	InitializeCriticalSection( &m_hLock );
+	m_OwnerThreadId = 0;
+	m_nLockCount = 0;
+#elif defined(POSIX)
+	pthread_mutexattr_init( &m_hAttrib );
+	pthread_mutexattr_settype( &m_hAttrib, PTHREAD_MUTEX_RECURSIVE );
+	pthread_mutex_init( &m_hLock, &m_hAttrib );
 #endif
 }
 
 GDR_INLINE CThreadMutex::~CThreadMutex()
 {
-#ifdef POSIX
-	pthread_mutexattr_destroy( &m_hLockAttrib );
+#ifdef _WIN32
+	DeleteCriticalSection( &m_hLock );
+#elif defined(POSIX)
+	pthread_mutexattr_destroy( &m_hAttrib );
 	pthread_mutex_destroy( &m_hLock );
-#endif
-}
-
-GDR_INLINE void *CThreadMutex::GetNative( void ) {
-	return &m_hLock;
-}
-
-GDR_INLINE const void *CThreadMutex::GetNative( void ) const {
-	return &m_hLock;
-}
-
-GDR_INLINE void CThreadMutex::Lock( void )
-{
-#ifdef _NOMAD_DEBUG
-	const sys_thread_id_t self = m_hOwnerThread.checkOwnerBeforeLock();
-#endif
-#ifdef _WIN32
-	AcquireSRWLockExclusive( &m_hLock );
-#elif defined(POSIX)
-	pthread_mutex_lock( &m_hLock );
-#endif
-#ifdef _NOMAD_DEBUG
-	m_hOwnerThread.setOwnerAfterLock( self );
-#endif
-}
-
-GDR_INLINE void CThreadMutex::Lock( void ) const
-{
-#ifdef _NOMAD_DEBUG
-	const sys_thread_id_t self = m_hOwnerThread.checkOwnerBeforeLock();
-#endif
-#ifdef _WIN32
-	AcquireSRWLockExclusive( &const_cast<CThreadMutex *>(this)->m_hLock );
-#elif defined(POSIX)
-	pthread_mutex_lock( &const_cast<CThreadMutex *>(this)->m_hLock );
-#endif
-#ifdef _NOMAD_DEBUG
-	const_cast<CThreadMutex *>(this)->m_hOwnerThread.setOwnerAfterLock( self );
 #endif
 }
 
 GDR_INLINE void CThreadMutex::Unlock( void )
 {
-#ifdef _NOMAD_DEBUG
-	m_hOwnerThread.checkSetOwnerBeforeUnlock();
-#endif
 #ifdef _WIN32
-	ReleaseSRWLockExclusive( &m_hLock );
+	if (m_OwnerThreadId == GetCurrentThreadId()) {
+		m_nLockCount--;
+		
+		if (!m_nLockCount) {
+			m_OwnerThreadId = 0;
+			EnterCriticalSection( &m_hLock );
+//			ReleaseSRWLockExclusive( &m_hLock );
+		}
+	}
 #elif defined(POSIX)
-	pthread_mutex_unlock( &m_hLock );
+    pthread_mutex_unlock( &m_hLock );
 #endif
 }
 
-GDR_INLINE void CThreadMutex::Unlock( void ) const
+GDR_INLINE void CThreadMutex::Lock( void )
 {
-#ifdef _NOMAD_DEBUG
-	const_cast<CThreadMutex *>(this)->m_hOwnerThread.checkSetOwnerBeforeUnlock();
-#endif
 #ifdef _WIN32
-	ReleaseSRWLockExclusive( &const_cast<CThreadMutex *>(this)->m_hLock );
+	const DWORD currentThread = GetCurrentThreadId();
+	if (m_OwnerThreadId == currentThread) {
+		// already locked
+		m_nLockCount++;
+	}
+	else {
+//		AcquireSRWLockExclusive( &m_hLock );
+		LeaveCriticalSection( &m_hLock );
+		m_OwnerThreadId = currentThread;
+		m_nLockCount = 1;
+	}
 #elif defined(POSIX)
-	pthread_mutex_unlock( &const_cast<CThreadMutex *>(this)->m_hLock );
+	pthread_mutex_lock( &m_hLock );
 #endif
 }
 
-GDR_INLINE bool CThreadMutex::TryLock( void )
+/*
+class CThreadSpinRWLock
 {
-#ifdef _NOMAD_DEBUG
-	const sys_thread_id_t self = m_hOwnerThread.checkOwnerBeforeLock();
-#endif
+public:
+	CThreadSpinRWLock( void );
+	~CThreadSpinRWLock();
+	
+	void ReadLock( void );
+	void ReadUnlock( void );
+	void WriteLock( void );
+	void Lock( void );
+	void Unlock( void );
+	
+private:
 #ifdef _WIN32
-	const BOOL ret = TryAcquireSRWLockExclusive( &m_hLock );
-#else
-	const int ret = pthread_mutex_trylock( &m_hLock );
+	
+#elif defined(POSIX)
+	pthread_spinlock_t m_SpinLock;
+	int64_t m_nReadCount;
 #endif
-#ifdef _NOMAD_DEBUG
-	if (ret) {
-		m_hOwnerThread.setOwnerAfterLock( self );
+};
+
+GDR_INLINE void CThreadSpinRWLock::Unlock( void )
+{
+#ifdef _WIN32
+
+#elif defined(POSIX)
+	pthread_spin_unlock( &m_SpinLock );
+#endif
+}
+
+GDR_INLINE void CThreadSpinRWLock::Lock( void )
+{
+#ifdef _WIN32
+	
+#elif defined(POSIX)
+	while (1) {
+		pthread_spin_lock( &m_SpinLock );
+		if (m_nSpinCount == 0) {
+			m_nSpinCount = -1;
+			pthread_spin_unlock( &m_SpinLock );
+			break;
+		}
+		pthread_spin_unlock( &m_SpinLock );
 	}
 #endif
-	return (bool)ret;
 }
 
-typedef struct {
-	uint32_t numArgs;
-	void *threadArgs;
-} threadResult_t;
+GDR_INLINE void CThreadSpinRWLock::ReadUnlock( void )
+{
+#ifdef _WIN32
 
-typedef void (*threadfunc_t)( void *args );
+#elif defined(POSIX)
+	m_nReaders--;
+	pthread_spin_unlock( &m_hLock );
+#endif
+}
+
+GDR_INLINE void CThreadSpinRWLock::ReadLock( void )
+{
+#ifdef _WIN32
+
+#elif defined(POSIX)
+	while (1) {
+		pthread_spin_lock( &m_SpinLock );
+		if (m_nSpinCount >= 0) {
+			m_nSpinCount++;
+			pthread_spin_unlock( &m_SpinLock );
+			break;
+		}
+		pthread_spin_unlock( &m_SpinLock );
+	}
+#endif
+}
+*/
+
+#if 0
+class CThreadCondVar
+{
+public:
+	CThreadCondVar( void );
+	~CThreadCondVar();
+	
+	void Wait( CThreadMutex *pMutex );
+	void TimedWait( CThreadMutex *pMutex, uint64_t nTimeout );
+	void Signal( void );
+	void Broadcast( void );
+private:
+#ifdef _WIN32
+	CONDITION_VARIABLE m_hCondVar;
+#elif defined(POSIX)
+	pthread_cond_t m_hCondVar;
+	pthread_condattr_t m_hAttrib;
+#endif
+};
+
+GDR_INLINE CThreadCondVar::CThreadCondVar( void )
+{
+#ifdef _WIN32
+	InitializeConditionVariable( &m_hCondVar );
+#elif defined(POSIX)
+	pthread_condattr_init( &m_hAttrib );
+	pthread_cond_init( &m_hCondVar, &m_hAttrib );
+#endif
+}
+
+GDR_INLINE CThreadCondVar::~CThreadCondVar()
+{
+#ifdef POSIX
+	pthread_condattr_destroy( &m_hAttrib );
+	pthread_cond_destroy( &m_hCondVar );
+#endif
+}
+
+GDR_INLINE void CThreadCondVar::Signal( void )
+{
+#ifdef _WIN32
+	WakeConditionVariable( &m_hCondVar );
+#elif defined(POSIX)
+	const int ret = pthread_cond_signal( &m_hCondVar );
+#endif
+}
+
+class CThreadRWLock
+{
+public:
+private:
+	CThreadMutex m_Lock;
+	CThreadCondVar m_ReadersDone;
+	
+	int64_t m_nReaders;
+	int64_t m_nActiveWriters;
+	int64_t m_nWaitingWriters;
+};
+#endif
 
 class CThread
 {
 public:
 	CThread( void );
-	~CThread();
-
-	void SetName( const char *name );
-	void Join( void );
-	bool Joinable( void ) const;
+	virtual ~CThread();
 	
+	bool IsAlive( void ) const;
+	
+	void SetName( const char *name );
 	const char *GetName( void ) const;
+	
+	bool Join( uint64_t nTimeout = 0 );
+	
+	bool Terminate( int iExitCode );
+	void Stop( int iExitCode );
 
-	bool Run( threadfunc_t fn, uint32_t numArgs, void *threadArgs );
+	void Sleep( uint64_t nDuration );
+
+	#ifdef Yield
+	#undef Yield
+	#endif
+	void Yield( void );
+	
+	virtual bool Start( uint64_t nBytesStack = 0 );
+
+#ifdef _WIN32
+	friend uint64_t __stdcall ThreadProc( void *arg );
+#else
+	friend void *ThreadProc( void *arg );
+#endif
+protected:
+	// optional init with extra stuff
+	virtual bool Init( void ) = 0;
+	
+	// thread will run this, must be supplied by the derived class
+	virtual int32_t Run( void ) = 0;
+	
+	// called when the thread exits
+	virtual void OnExit( void );
+	
+#ifdef _WIN32
+	typedef uint64_t (__stdcall *ThreadProc_t)( void *arg );
+#else
+	typedef void *(*ThreadProc_t)( void *arg );
+#endif
+	
+	virtual ThreadProc_t GetThreadProc( void );
+	CThreadMutex m_hLock;
 private:
-	char name[MAX_GDR_PATH];
-
-	sys_thread_t m_hThread;
-	sys_thread_id_t m_iThreadId;
+#ifdef _WIN32
+	HANDLE m_hThread;
+#elif defined(POSIX)
+	pthread_t m_ThreadId;
+	pthread_attr_t m_hAttrib;
+#endif
+	int32_t m_iResult;
+	char m_szName[MAX_GDR_PATH];
 };
 
-GDR_INLINE CThread::CThread( void )
+class CWorkerThread : public CThread
 {
-	memset( name, 0, sizeof(name) );
+public:
+	CWorkerThread( void );
+	virtual ~CWorkerThread() override;
+private:
+};
 
-	m_iThreadId = 0;
-	m_hThread = (sys_thread_t)0;
-}
+#include "sys_thread.inl"
 
-GDR_INLINE CThread::~CThread()
-{
-
-}
 #endif
 
-#endif
+// various win32 implementations of a mutex
+/*
+class CThreadMutex
+{
+public:
+	CThreadMutex()
+	{
+		m_hMutex = CreateMutex( NULL, FALSE, NULL );
+		m_iOwnerThreadId = 0;
+		m_nLockCount = 0;
+	}
+	
+	~CThreadMutex()
+	{
+		CloseHandle( m_hMutex );
+	}
+	
+	void Lock( void )
+	{
+		const DWORD currentThreadId = GetCurrentThreadId();
+		
+		if (m_iOwnerThreadId == currentThreadId) {
+			// already locked
+			m_nLockCount++;
+		}
+		else {
+			WaitForSingleObject( m_hMutex, INFINITE );
+			m_iOwnerThreadId = currentThreadId;
+			m_nLockCount = 1;
+		}
+	}
+	
+	void Unlock( void )
+	{
+		if (m_iOwnerThreadId == GetCurrentThreadId()) {
+			m_nLockCount--;
+			
+			if (!m_nLockCount) {
+				m_iOnwerThreadId = 0;
+				ReleaseMutex( m_hMutex );
+			}
+		}
+	}
+private:
+	HANDLE m_hMutex;
+	DWORD m_iOwnerThreadId;
+	uint32_t m_nLockCount;
+};
+
+class CThreadMutex
+{
+public:
+	CThreadMutex( void )
+	{
+		InitializeSRWLock( &m_hLock );
+		m_iOwnerThreadId = 0;
+		m_nLockCount = 0;
+	}
+	
+	~CThreadMutex()
+	{}
+	
+	
+	void Lock( void )
+	{
+		const DWORD currentThreadId = GetCurrentThreadId();
+		
+		if (m_iOwnerThreadId == currentThreadId) {
+			// already locked
+			m_nLockCount++;
+		}
+		else {
+			AcquireSRWLockExclusive( &m_hLock );
+			m_iOwnerThreadId = currentThreadId;
+			m_nLockCount = 1;
+		}
+	}
+	
+	void Unlock( void )
+	{
+		if (m_iOwnerThreadId == GetCurrentThreadId()) {
+			m_nLockCount--;
+			
+			if (!m_nLockCount) {
+				m_iOnwerThreadId = 0;
+				ReleaseSRWLockExclusive( &m_hLock );
+			}
+		}
+	}
+	
+	
+private:
+	SRWLOCK m_hLock;
+	DWORD m_iOwnerThreadId;
+	uint32_t m_nLockCount;
+};
+
+class CThreadMutex
+{
+public:
+	CThreadMutex( void )
+	{
+		InitializeCriticalSection( &m_hLock );
+		m_iOwnerThreadId = 0;
+		m_nLockCount = 0;
+	}
+	
+	~CThreadMutex()
+	{
+		DeleteCriticalSection( &m_hLock );
+	}
+	
+	
+	void Lock( void )
+	{
+		const DWORD currentThreadId = GetCurrentThreadId();
+		
+		if (m_iOwnerThreadId == currentThreadId) {
+			// already locked
+			m_nLockCount++;
+		}
+		else {
+			EnterCriticalSection( &m_hLock );
+			m_iOwnerThreadId = currentThreadId;
+			m_nLockCount = 1;
+		}
+	}
+	
+	void Unlock( void )
+	{
+		if (m_iOwnerThreadId == GetCurrentThreadId()) {
+			m_nLockCount--;
+			
+			if (!m_nLockCount) {
+				m_iOnwerThreadId = 0;
+				LeaveCriticalSection( &m_hLock );
+			}
+		}
+	}
+	
+	
+private:
+	CRITICAL_SECTION m_hLock;
+	DWORD m_iOwnerThreadId;
+	uint32_t m_nLockCount;
+};
+*/

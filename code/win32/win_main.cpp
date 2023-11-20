@@ -28,11 +28,11 @@ static HHOOK WinHook;
 static HWINEVENTHOOK hWinEventHook;
 
 const char *Sys_GetError( void ) {
-	return GetLastError();
+	return strerror(::GetLastError());
 }
 
 bool Sys_IsInDebugSession( void ) {
-	return (IsDebuggerPresent() != 0);
+	return (::IsDebuggerPresent() != 0);
 }
 
 static VOID CALLBACK WinEventProc( HWINEVENTHOOK h_WinEventHook, DWORD dwEvent, HWND hWnd, LONG idObject, LONG idChild, DWORD dwEventThread, DWORD dwmsEventTime )
@@ -198,26 +198,30 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error( cons
     va_list argptr;
     char text[MAXPRINTMSG];
     MSG msg;
+	const char *str;
 
     va_start( argptr, err );
     N_vsnprintf( text, sizeof(text), err, argptr );
     va_end( argptr );
 
-	_write(STDERR_FILENO, text, strlen(text));
+	str = va("Sys_Error: %s\n", text);
+	Sys_Print( str );
 
+	Sys_DebugStacktrace( MAX_STACKTRACE_FRAMES );
 	Sys_MessageBox( "Engine Error", text, false );
 
-    G_Shutdown( qtrue );
+	Com_Shutdown();
 
     // wait for the user to quit
+	#if 0
     while (1) {
-        if (GetMessage( &msg, NULL, 0, 0 ) <= 0) {
+        if (!GetMessage( &msg, NULL, 0, 0 )) {
             Cmd_Clear();
-            Com_Shutdown();
         }
         TranslateMessage( &msg );
         DispatchMessage( &msg );
     }
+	#endif
 
     Sys_Exit( -1 );
 }
@@ -231,9 +235,125 @@ void GDR_NORETURN Sys_Exit( int code )
     exit( EXIT_SUCCESS );
 }
 
-void Sys_Print( const char *msg )
+static const struct Q3ToAnsiColorTable_s
 {
-    Conbuf_AppendText( msg );
+	const char Q3color;
+	const char *ANSIcolor;
+} tty_colorTable[ ] = {
+	{ S_COLOR_BLACK,    "30" },
+	{ S_COLOR_RED,      "31" },
+	{ S_COLOR_GREEN,    "32" },
+	{ S_COLOR_YELLOW,   "33" },
+	{ S_COLOR_BLUE,     "34" },
+	{ S_COLOR_CYAN,     "36" },
+	{ S_COLOR_MAGENTA,  "35" },
+	{ S_COLOR_WHITE,    "0" }
+};
+
+static const char *getANSIcolor( char Q3color ) {
+	int i;
+	for ( i = 0; i < arraylen( tty_colorTable ); i++ ) {
+		if ( Q3color == tty_colorTable[ i ].Q3color ) {
+			return tty_colorTable[ i ].ANSIcolor;
+		}
+	}
+	return NULL;
+}
+
+static qboolean printableChar( char c ) {
+	if ( ( c >= ' ' && c <= '~' ) || c == '\n' || c == '\r' || c == '\t' )
+		return qtrue;
+	else
+		return qfalse;
+}
+
+void Sys_ANSIColorMsg(const char *msg, char *buffer, uint64_t bufSize)
+{
+    uint64_t msgLength;
+    uint64_t i;
+    char tmpbuf[8];
+    const char *ANSIcolor;
+
+    if (!msg || !buffer)
+        return;
+
+    msgLength = strlen(msg);
+    i = 0;
+    buffer[0] = '\0';
+
+    while (i < msgLength) {
+        if (msg[i] == '\n') {
+            snprintf(tmpbuf, sizeof(tmpbuf), "%c[0m\n", 0x1B);
+            strncat(buffer, tmpbuf, bufSize - 1);
+            i += 1;
+        }
+        else if (msg[i] == Q_COLOR_ESCAPE && (ANSIcolor = getANSIcolor(msg[i+1])) != NULL) {
+            snprintf(tmpbuf, sizeof(tmpbuf), "%c[%sm", 0x1B, ANSIcolor);
+            strncat(buffer, tmpbuf, bufSize - 1);
+            i += 2;
+        }
+        else {
+            if (printableChar(msg[i])) {
+                snprintf(tmpbuf, sizeof(tmpbuf), "%c", msg[i]);
+                strncat(buffer, tmpbuf, bufSize - 1);
+            }
+            i += 1;
+        }
+    }
+}
+
+static qboolean isInConsole;
+static HANDLE hStdOutConsole;
+static HANDLE hConsole;
+void Sys_InitConsole( void )
+{
+//	HWND consoleWnd = GetConsoleWindow();
+//	DWORD dwProcessId;
+//	GetWindowProcessId( consoleWnd, &dwProcessId );
+//	if (GetCurrentProcessId() == dwProcessId) {
+//		isInConsole = qtrue;
+//		Con_Printf( "using system console.\n" );
+//	}
+//	else {
+//		Con_Printf( "using engine console only\n" );
+//	}
+
+	DWORD dwMode;
+
+	hStdOutConsole = GetStdHandle( STD_OUTPUT_HANDLE );
+	hConsole = CreateConsoleScreenBuffer( GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL );
+	SetConsoleActiveScreenBuffer( hConsole );
+	dwMode = 0;
+	GetConsoleMode( hConsole, &dwMode );
+	dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+	SetConsoleMode( hConsole, dwMode );
+}
+
+void Sys_Print(const char *msg)
+{
+    char printmsg[MAXPRINTMSG];
+    size_t len;
+	DWORD dwBytesWritten;
+
+    memset(printmsg, 0, sizeof(printmsg));
+
+    if (hConsole) {
+        Sys_ANSIColorMsg(msg, printmsg, sizeof(printmsg));
+        len = strlen(printmsg);
+		::WriteConsole( hConsole, printmsg, len, &dwBytesWritten, NULL );
+    }
+
+/*    else {
+        char *out = printmsg;
+        while (*msg != '\0' && out < printmsg + sizeof(printmsg)) {
+            if (printableChar(*msg))
+                *out++ = *msg;
+            msg++;
+        }
+        len = out - printmsg;
+    } */
+
+//    _write(STDERR_FILENO, printmsg, len);
 }
 
 /*
@@ -244,7 +364,7 @@ DIRECTORY SCANNING
 ==============================================================
 */
 
-void Sys_ListFilteredFiles( const char *basedir, const char *subdirs, const char *filter, char **list, int *numfiles ) {
+void Sys_ListFilteredFiles( const char *basedir, const char *subdirs, const char *filter, char **list, uint64_t *numfiles ) {
 	char		search[MAX_OSPATH*2+1];
 	char		newsubdirs[MAX_OSPATH*2];
 	char		filename[MAX_OSPATH*2];
@@ -323,17 +443,17 @@ void Sys_Sleep( uint64_t msec )
 Sys_ListFiles
 =============
 */
-char **Sys_ListFiles( const char *directory, const char *extension, const char *filter, int *numfiles, qboolean wantsubs ) {
+char **Sys_ListFiles( const char *directory, const char *extension, const char *filter, uint64_t *numfiles, qboolean wantsubs ) {
 	char		search[MAX_OSPATH*2+MAX_GDR_PATH+1];
-	int			nfiles;
+	uint64_t	nfiles;
 	char		**listCopy;
 	char		*list[MAX_FOUND_FILES];
 	struct _finddata_t findinfo;
 	intptr_t	findhandle;
 	int			flag;
-	int			extLen;
-	int			length;
-	int			i;
+	uint64_t	extLen;
+	uint64_t	length;
+	uint32_t	i;
 	const char	*x;
 	qboolean	hasPatterns;
 
@@ -387,6 +507,10 @@ char **Sys_ListFiles( const char *directory, const char *extension, const char *
 	nfiles = 0;
 
 	do {
+		// skip pwd '.' and '..', those'll cause a segfault in FS_PathCmp after FS_SortFileList
+		if (findinfo.name[0] == '.' || (findinfo.name[0] == '.' && findinfo.name[1] == '.')) {
+            continue;
+        }
 		if ( (!wantsubs && flag ^ ( findinfo.attrib & _A_SUBDIR )) || (wantsubs && findinfo.attrib & _A_SUBDIR) ) {
 			if ( nfiles == MAX_FOUND_FILES - 1 ) {
 				break;
@@ -545,16 +669,16 @@ static LONG WINAPI ExceptionFilter( struct _EXCEPTION_POINTERS *ExceptionInfo )
 		}
 
 		if ( basename && *basename ) {
-			Com_snprintf( msg, sizeof( msg ), "Exception Code: %s\nException Address: %s@%x",
+			Com_snprintf( msg, sizeof( msg ), "Exception Code: %s\nException Address: %s@%x\n",
 				GetExceptionName( ExceptionInfo->ExceptionRecord->ExceptionCode ),
 				basename, (uint32_t)(addr - (byte*)hModule) );
 		} else {
-			Com_snprintf( msg, sizeof( msg ), "Exception Code: %s\nException Address: %p",
+			Com_snprintf( msg, sizeof( msg ), "Exception Code: %s\nException Address: %p\n",
 				GetExceptionName( ExceptionInfo->ExceptionRecord->ExceptionCode ),
 				addr );
 		}
 
-		N_Error( ERR_DROP, "Unhandled exception caught\n%s", msg );
+		N_Error( ERR_FATAL, "Unhandled exception caught\n%s", msg );
 	}
 
 	return EXCEPTION_EXECUTE_HANDLER;
@@ -771,7 +895,7 @@ LRESULT WINAPI MainWndProc( HWND hWnd, UINT uMsg, WPARAM  wParam, LPARAM lParam 
 			GetWindowRect( hWnd, &g_wv.winRect );
 			g_wv.winRectValid = qtrue;
 			UpdateMonitorInfo( &g_wv.winRect );
-			IN_UpdateWindow( NULL, qtrue );
+//			IN_UpdateWindow( NULL, qtrue );
 		}
 		break;
 	case WM_WINDOWPOSCHANGING:
@@ -886,7 +1010,7 @@ static void VID_AppActivate( qboolean active )
 {
 	Key_ClearStates();
 
-	IN_Activate( active );
+//	IN_Activate( active );
 
 	if ( active ) {
 		WIN_EnableHook();
@@ -1094,7 +1218,8 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	useXYpos = Com_EarlyParseCmdLine( sys_cmdline, con_title, sizeof( con_title ), &xpos, &ypos );
 
 	// done before Com/Sys_Init since we need this for error output
-	Sys_CreateConsole( con_title, xpos, ypos, useXYpos );
+	Sys_InitConsole();
+//	Sys_CreateConsole( con_title, xpos, ypos, useXYpos );
 
 	// no abort/retry/fail errors
 	SetErrorMode( SEM_FAILCRITICALERRORS );

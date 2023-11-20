@@ -1146,7 +1146,7 @@ Hunk_Clear: gets called whenever a new level is loaded or is being shutdown
 */
 void Hunk_Clear(void)
 {
-	CThreadAutoLocK lock( hunkLock );
+	CThreadAutoLock lock( hunkLock );
 
 	G_ShutdownSGame();
 	G_ShutdownUI();
@@ -1185,14 +1185,14 @@ Hunk_SetMark: gets called after the level and game vm have been loaded
 */
 void Hunk_SetMark( void )
 {
-	CThreadAutoLocK lock( hunkLock );
+	CThreadAutoLock lock( hunkLock );
 	hunk_low.mark = hunk_low.permanent;
 	hunk_high.mark = hunk_high.permanent;
 }
 
 void Hunk_ClearToMark( void )
 {
-	CThreadAutoLocK lock( hunkLock );
+	CThreadAutoLock lock( hunkLock );
 	hunk_low.permanent = hunk_low.temp = hunk_low.mark;
 	hunk_high.permanent = hunk_high.temp = hunk_high.mark;
 }
@@ -1206,7 +1206,7 @@ static void Hunk_SwapBanks(void)
 		return;
 	}
 
-	CThreadAutoLocK lock( hunkLock );
+	CThreadAutoLock lock( hunkLock );
 
 	// if we have a larger highwater mark on this side, start making
 	// our permanent allocations here and use the other side for temp
@@ -1237,7 +1237,7 @@ void *Hunk_AllocateTempMemory(uint64_t size)
 		N_Error(ERR_DROP, "Hunk_AllocateTempMemory: failed on %lu", size);
 	}
 
-	CThreadAutoLocK lock( hunkLock );
+	CThreadAutoLock lock( hunkLock );
 
 	if ( hunk_temp == &hunk_low ) {
 		buf = (void *)(hunkbase + hunk_temp->temp);
@@ -1279,7 +1279,7 @@ void Hunk_FreeTempMemory(void *p)
 
 	h->id = HUNKFREE;
 
-	CThreadAutoLocK lock( hunkLock );
+	CThreadAutoLock lock( hunkLock );
 
 	// this only works if the files are freed in the stack order,
 	// otherwise the memory will stay around until Hunk_ClearTempMemory
@@ -1299,7 +1299,7 @@ void Hunk_FreeTempMemory(void *p)
 
 void Hunk_ClearTempMemory(void)
 {
-	CThreadAutoLocK lock( hunkLock );
+	CThreadAutoLock lock( hunkLock );
 	if (hunkbase) {
 		hunk_temp->temp = hunk_temp->permanent;
 	}
@@ -1336,7 +1336,7 @@ void *Hunk_Alloc (uint64_t size, const char *name, ha_pref where)
 	if (!size)
 		N_Error(ERR_FATAL, "Hunk_Alloc: bad size");
 	
-	CThreadAutoLocK lock( hunkLock );
+	CThreadAutoLock lock( hunkLock );
 	if (where == h_dontcare || hunk_temp->temp != hunk_temp->permanent) {
 		Hunk_SwapBanks();
 	}

@@ -3,7 +3,11 @@ COMPILE_PLATFORM=$(shell uname | sed -e 's/_.*//' | tr '[:upper:]' '[:lower:]' |
 
 ifndef release
 DEBUGDEF  =-D_NOMAD_DEBUG
+ifdef win32
+FTYPE     =-Og -g3
+else
 FTYPE     =-Og -g
+endif
 else
 DEBUGDEF  =
 FTYPE     =-Ofast -s
@@ -82,11 +86,13 @@ OS_INCLUDE=-I/usr/include/ -I/usr/local/include/
 COMPILER  =distcc g++
 LIB_PREFIX=dependencies/libs/linux
 DLL_EXT   =so
+EXE		  =glnomad
 else
 OS_INCLUDE=-I/usr/x86_64-w64-mingw32/include/
 COMPILER  =distcc x86_64-w64-mingw32-g++
 LIB_PREFIX=dependencies/libs/windows
 DLL_EXT   =dll
+EXE		  =glnomad.exe
 endif
 
 VERSION       = 1
@@ -106,7 +112,6 @@ CC            =$(COMPILER)
 O             = obj
 QVM           = qvm
 SDIR          = code
-EXE           = glnomad
 COMPILE_SRC   =$(CC) $(CFLAGS) -o $@ -c $<
 COMPILE_LIBSRC=$(CC) -fPIC -shared $(CFLAGS) -o $@ -c $<
 
@@ -130,20 +135,30 @@ SYS=\
 	$(O)/sys/unix_shared.o
 SYS_DIR=$(SDIR)/unix
 else
-LDLIBS=-L$(LIB_PREFIX) \
+LDLIBS=-L. \
 		-lSDL2 \
-		-lopenal \
-		-lGL \
+		-lOpenAL32 \
+		-lopengl32 \
 		-lsndfile \
-		-lzstd \
 		-lboost_thread \
-		-leasy_profiler
+		-lgdi32 \
+		-lmingw32 \
+		-lwinmm \
+		-lcomctl32 \
+		-limagehlp \
+		-static-libgcc -static-libstdc++
+
+ifndef release
+LDLIBS+=-ldbghelp
+endif
+
 SYS=\
 	$(O)/sys/win_main.o \
 	$(O)/sys/win_shared.o \
 	$(O)/sys/win_syscon.o \
+
 SYS_DIR=$(SDIR)/win32
-INCLUDE+=-Idependencies/include/libsndfile -Idependencies/include/boost
+INCLUDE+=-Idependencies/include/libsndfile -Idependencies/include/boost -I./mingw32/include
 endif
 
 .PHONY: all clean targets clean.objs clean.exe clean.pch pch makedirs default
@@ -162,6 +177,7 @@ SRC=\
 	$(O)/game/g_screen.o \
 	$(O)/game/g_console.o \
 	$(O)/game/g_archive.o \
+	$(O)/game/g_imgui.o \
 	\
 	$(O)/engine/vm.o \
 	$(O)/engine/vm_interpreted.o \
@@ -195,6 +211,7 @@ SRC=\
 	$(O)/ui/ui_settings.o \
 	$(O)/ui/ui_intro.o \
 	$(O)/ui/ui_main_menu.o \
+	$(O)/ui/ui_single_player.o \
 
 MAKE=make
 
@@ -224,6 +241,8 @@ $(O)/game/%.o: $(SDIR)/game/%.c
 	$(COMPILE_SRC)
 $(O)/engine/%.o: $(SDIR)/engine/%.cpp
 	$(COMPILE_SRC)
+$(O)/engine/%.o: $(SDIR)/system/%.cpp
+	$(COMPILE_SRC)
 $(O)/engine/%.o: $(SDIR)/engine/%.c
 	$(COMPILE_SRC)
 $(O)/ui/%.o: $(SDIR)/ui/%.cpp
@@ -231,15 +250,19 @@ $(O)/ui/%.o: $(SDIR)/ui/%.cpp
 $(O)/sys/%.o: $(SYS_DIR)/%.cpp
 	$(COMPILE_SRC)
 
+ifdef win32
+ADD=-flinker-output=exec
+endif
+
 $(EXE): $(SRC) $(COMMON) $(SYS)
-	$(CC) $(CFLAGS) $(SRC) $(COMMON) $(SYS) -o $(EXE) $(LDLIBS)
+	$(CC) $(CFLAGS) $(SRC) $(COMMON) $(SYS) $(ADD) -o $(EXE) $(LDLIBS)
 
 clean.pch:
 	rm $(SDIR)/engine/n_pch_all.h.gch
 clean.exe:
 	rm $(EXE)
-clean.objs:
-	rm -rf $(O)
-clean:
+clean.all:
 	rm -rf $(O)
 	rm $(EXE)
+clean:
+	rm -rf $(O)

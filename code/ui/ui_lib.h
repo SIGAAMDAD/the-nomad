@@ -10,6 +10,23 @@
 #include "ui_window.h"
 #include "ui_font.h"
 
+typedef enum : uint64_t
+{
+    STATE_MAIN,
+        STATE_SINGLEPLAYER,
+            STATE_NAMEISSUE,
+            STATE_NEWGAME,
+            STATE_LOADGAME,
+            STATE_PLAYMISSION,
+
+    STATE_SETTINGS,
+        STATE_GRAPHICS,
+        STATE_CONTROLS,
+        STATE_AUDIO,
+    
+    STATE_CREDITS,
+} menustate_t;
+
 #define MAX_MENU_DEPTH 8
 
 #define RCOLUMN_OFFSET			( BIGCHAR_WIDTH )
@@ -93,8 +110,18 @@ public:
     void DrawBannerString( int x, int y, const char* str, int style, vec4_t color ) const;
     void SetActiveMenu( uiMenu_t menu );
 
+    bool Menu_Option( const char *label );
+    bool Menu_Title( const char *label );
+
+    GDR_INLINE menustate_t GetState( void ) const { return state; }
+    GDR_INLINE void SetState( menustate_t _state) { state = _state; }
+    void EscapeMenuToggle( menustate_t newstate );
+
     void MouseEvent( uint32_t dx, uint32_t dy );
     void KeyEvent( uint32_t key, qboolean down );
+    void CalcDrawScale( void ) {
+        drawScale = Cvar_VariableInteger( "r_customWidth" ) / Cvar_VariableInteger( "r_customHeight" );
+    }
 
     CUIMenu *GetCurrentMenu( void ) {
         return curmenu;
@@ -172,7 +199,11 @@ private:
     int frametime;
     int realtime;
 
+    float drawScale;
+
     gpuConfig_t gpuConfig;
+    menustate_t state;
+    qboolean escapeToggle;
 };
 
 extern CUILib *ui;
@@ -253,6 +284,22 @@ extern void         IntroMenu_Cache( void );
 //
 extern void         UI_MainMenu( void );
 extern void         MainMenu_Cache( void );
+extern void         MainMenu_Draw( void );
+
+//
+// ui_settings.cpp
+//
+extern void         UI_SettingsMenu( void );
+extern void         SettingsMenu_Cache( void );
+extern void         SettingsMenu_Draw( void );
+
+//
+// ui_single_player.cpp
+//
+extern void         UI_SinglePlayerMenu( void );
+extern void         SinglePlayerMenu_Cache( void );
+extern void         NewGame_DrawNameIssue( void );
+extern void         SinglePlayerMenu_Draw( void );
 
 #include "ui_defs.h"
 

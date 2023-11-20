@@ -39,6 +39,10 @@ static void TitleMenu_Draw( void )
     if (Key_IsDown( KEY_ESCAPE )) {
         Sys_Exit(1);
     }
+    // if the console's open, don't catch
+    if (Key_GetCatcher() & KEYCATCH_CONSOLE) {
+        return;
+    }
 
     // is a key down?
     for (i = 0; i < NUMKEYS; i++) {

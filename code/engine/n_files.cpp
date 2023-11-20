@@ -856,7 +856,7 @@ file_t FS_OpenFileMapping(const char *path, qboolean temp)
 		return FS_INVALID_HANDLE;
 	}
 
-	f->mapping = Sys_MapMemory(f->data.fp, temp, fd);
+//	f->mapping = Sys_MapMemory(f->data.fp, temp, fd);
 	if (!f->mapping) {
 		// cleanup, file mapping failed
 		f->data.stream = NULL;
@@ -1263,6 +1263,12 @@ static void FS_FreeBFF(bffFile_t *bff)
 		N_Error(ERR_FATAL, "FS_FreeBFF(NULL)");
 	}
 
+	for (uint64_t i = 0; i < bff->numfiles; i++) {
+		if (bff->buildBuffer[i].buf) {
+			Z_Free( bff->buildBuffer[i].buf );
+		}
+	}
+
 	Z_Free(bff);
 }
 
@@ -1381,7 +1387,7 @@ BFF FILE LOADING
 static uint64_t FS_ReadFromBFF(uint32_t stream, void *fp, void *buffer, uint64_t size)
 {
 	if (stream == BFF_STREAM_MAPPED) {
-		return Sys_ReadMappedFile(buffer, size, (memoryMap_t *)fp);
+//		return Sys_ReadMappedFile(buffer, size, (memoryMap_t *)fp);
 	}
 	return fread(buffer, 1, size, (FILE *)fp);
 }
@@ -1389,7 +1395,7 @@ static uint64_t FS_ReadFromBFF(uint32_t stream, void *fp, void *buffer, uint64_t
 static fileOffset_t FS_SeekBFF(uint32_t stream, void *fp, fileOffset_t offset, uint32_t whence)
 {
 	if (stream == BFF_STREAM_MAPPED) {
-		return Sys_SeekMappedFile(offset, whence, (memoryMap_t *)fp);
+//		return Sys_SeekMappedFile(offset, whence, (memoryMap_t *)fp);
 	}
 	return fseek((FILE *)fp, offset, whence);
 }
@@ -1397,16 +1403,16 @@ static fileOffset_t FS_SeekBFF(uint32_t stream, void *fp, fileOffset_t offset, u
 static fileOffset_t FS_TellBFF(uint32_t stream, void *fp)
 {
 	if (stream == BFF_STREAM_MAPPED) {
-		return Sys_TellMappedFile((memoryMap_t *)fp);
+//		return Sys_TellMappedFile((memoryMap_t *)fp);
 	}
 	return ftell((FILE *)fp);
 }
 
 static void FS_CloseBFFStream(FILE *fp, memoryMap_t *file)
 {
-	if (file)
-		Sys_UnmapFile(file);
-	else
+//	if (file)
+//		Sys_UnmapFile(file);
+//	else
 		fclose(fp);
 }
 
@@ -1786,6 +1792,7 @@ static uint64_t FS_ReadFromChunk(void *buffer, uint64_t size, file_t f)
 	fileHandle_t *handle = &handles[f];
 
 	if (handle->data.chunk->bytesRead + size > handle->data.chunk->size) {
+#if 0
 		if (size >= handle->data.chunk->size) {
 			N_Error( ERR_FATAL, "FS_ReadFromChunk: size >= chunk size" );
 		}
@@ -1794,6 +1801,9 @@ static uint64_t FS_ReadFromChunk(void *buffer, uint64_t size, file_t f)
 			Con_DPrintf( "WARNING: chunk overread of %lu bytes\n", amount );
 			size = amount;
 		}
+#else
+		N_Error( ERR_FATAL, "FS_ReadFromChunk: overread of %lu bytes", (handle->data.chunk->bytesRead + size) - handle->data.chunk->size );
+#endif
 	}
 
 	memcpy(buffer, handle->data.chunk->buf + handle->data.chunk->bytesRead, size);
@@ -1878,11 +1888,6 @@ file_t FS_FOpenWrite(const char *path)
 		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 	if (!path || !*path) {
-		return FS_INVALID_HANDLE;
-	}
-
-	// write streams aren't allowed for chunks
-	if (FS_FileIsInBFF(path)) {
 		return FS_INVALID_HANDLE;
 	}
 
@@ -2219,7 +2224,7 @@ void FS_FClose(file_t f)
 	p = &handles[f];
 
 	if (p->bff && p->bffFile) {
-		Z_Free(p->data.chunk->buf);
+		p->data.chunk->bytesRead = 0;
 		p->data.stream = NULL;
 		p->bffFile = qfalse;
 		p->bff->handlesUsed--;

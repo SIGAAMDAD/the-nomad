@@ -18,7 +18,6 @@ cvar_t *snd_sfxvol;
 cvar_t *snd_musicon;
 cvar_t *snd_sfxon;
 static cvar_t *snd_frequency;
-static CThread snd_thread
 
 #define Snd_HashFileName(x) Com_GenerateHashValue((x),MAX_SOUND_SOURCES)
 
@@ -137,8 +136,8 @@ public:
     CSoundSource *m_pCurrentTrack;
     eastl::vector<CSoundSource *> m_TrackQueue;
 
-    CThreadMutex m_hAllocLock;
-    CThreadSpinRWLock m_hQueueLock;
+//    CThreadMutex m_hAllocLock;
+//    CThreadMutex m_hQueueLock;
 private:
     CSoundSource *m_pSources[MAX_SOUND_SOURCES];
     uint64_t m_nSources;
@@ -150,8 +149,6 @@ private:
 
     bool m_bClearedQueue;
     bool m_bRegistered;
-
-    CThread m_hThread;
 };
 
 static CSoundManager *sndManager;
@@ -195,7 +192,9 @@ void CSoundSource::Init( void )
     // this could be the music source, so don't allocate a new redundant source just yet
     m_iSource = 0;
 
-    ALCall(alGenBuffers( 1, &m_iBuffer));
+    if (m_iBuffer == 0) {
+        ALCall(alGenBuffers( 1, &m_iBuffer));
+    }
 #ifdef USE_ZONE_SOUND_ALLOC
     m_nSize = 0;
     m_pData = NULL;
@@ -214,9 +213,13 @@ void CSoundSource::Shutdown( void )
 
         ALCall(alSourcei( m_iSource, AL_BUFFER, AL_NONE ));
         ALCall(alDeleteSources( 1, (const ALuint *)&m_iSource ));
+
+        m_iSource = 0;
     }
     if (m_iBuffer) {
         ALCall(alDeleteBuffers( 1, (const ALuint *)&m_iBuffer ));
+
+        m_iBuffer = 0;
     }
     m_iBuffer = 0;
     m_iSource = 0;
@@ -438,7 +441,7 @@ bool CSoundSource::LoadFile( const char *npath, int tag )
     }
 
     // generate a brand new source for each individual sfx
-    if (tag == TAG_SFX) {
+    if (tag == TAG_SFX && m_iSource == 0) {
         ALCall(alGenSources( 1, &m_iSource ));
     }
 
@@ -471,6 +474,8 @@ void CSoundManager::Init( void )
 
     // generate the recyclable music source
     ALCall(alGenSources( 1, &m_iMusicSource ));
+
+    m_TrackQueue.reserve( MAX_MUSIC_QUEUE );
 }
 
 void CSoundManager::PlaySound( CSoundSource *snd ) {
@@ -564,29 +569,28 @@ CSoundSource *CSoundManager::InitSource( const char *filename, int tag )
         N_Error(ERR_DROP, "CSoundManager::InitSource: MAX_SOUND_SOURCES hit");
     }
 
-    m_hAllocLock.Lock();
-
-    if ((!snd_sfxon->i && tag == TAG_SFX) || (!snd_musicon->i && tag == TAG_MUSIC)) {
-        return NULL;
-    }
+//    m_hAllocLock.Lock();
 
     src = (CSoundSource *)Hunk_Alloc( sizeof(*src), h_low );
     memset(src, 0, sizeof(*src));
     src->Init();
 
     if (tag == TAG_MUSIC) {
+        if (!alIsSource( m_iMusicSource )) { // make absolutely sure its a valid source
+            ALCall( alGenSources( 1, &m_iMusicSource ));
+        }
         src->SetSource( m_iMusicSource );
     }
 
     if (!src->LoadFile( filename, tag )) {
         Con_Printf(COLOR_YELLOW "WARNING: failed to load sound file '%s'\n", filename);
-        m_hAllocLock.Unlock();
+//        m_hAllocLock.Unlock();
         return NULL;
     }
 
     src->SetVolume();
 
-    m_hAllocLock.Unlock();
+//    m_hAllocLock.Unlock();
 
     return src;
 }
@@ -642,7 +646,7 @@ void Snd_Restart(void) {
 static void Snd_QueueTrack_r( sfxHandle_t handle, bool loop )
 {
     CSoundSource *track;
-    CThreadAutoLock<CThreadSpinRWLock> lock( sndManager->m_hQueueLock );
+//    CThreadAutoLock<CThreadMutex> lock( sndManager->m_hQueueLock );
 
     if (!snd_musicon->i) {
         return;
@@ -825,9 +829,6 @@ void Snd_Init(void)
     snd_musicon = Cvar_Get("snd_musicon", "1", CVAR_SAVE | CVAR_PRIVATE | CVAR_LATCH);
     snd_sfxvol = Cvar_Get("snd_sfxvol", "1.1f", CVAR_SAVE | CVAR_PRIVATE | CVAR_LATCH);
     snd_musicvol = Cvar_Get("snd_musicvol", "0.8f", CVAR_SAVE | CVAR_PRIVATE | CVAR_LATCH);
-
-    if (!snd_sfxon->i || !snd_musicon->i)
-        return;
 
     alListenerf( AL_GAIN,  50.0f );
 

@@ -42,6 +42,8 @@
 #define ERROR_COLOR_1   RGB(0xFF,0xFF,0x00)
 #define ERROR_COLOR_2   RGB(0xF0,0x00,0x00)
 
+void GDR_DECL Sys_SetStatus( const char *format, ... );
+
 static field_t console;
 
 typedef struct
@@ -146,7 +148,7 @@ static LRESULT WINAPI ConWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 		}
 		break;
 	case WM_ACTIVATE:
-
+#if 0
 		if ( com_viewlog && ( com_dedicated && !com_dedicated->integer ) )
 		{
 			// if the viewlog is open, check to see if it's being minimized
@@ -165,13 +167,14 @@ static LRESULT WINAPI ConWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 				}
 			}
 		}
+#endif
 		break;
 
 	case WM_QUERYENDSESSION:
-		if ( com_dedicated && com_dedicated->integer && !com_errorEntered )
+		if ( !com_errorEntered )
 		{
-			cmdString = CopyString( "quit" );
-			Sys_QueEvent( 0, SE_CONSOLE, 0, 0, strlen( cmdString ) + 1, cmdString );
+			cmdString = Z_Strdup( "quit" );
+			Com_QueueEvent( 0, SE_CONSOLE, 0, 0, strlen( cmdString ) + 1, cmdString );
 		}
 		else
 		{
@@ -180,10 +183,10 @@ static LRESULT WINAPI ConWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 		return TRUE;
 
 	case WM_CLOSE:
-		if ( com_dedicated && com_dedicated->integer && !com_errorEntered )
+		if ( !com_errorEntered )
 		{
-			cmdString = CopyString( "quit" );
-			Sys_QueEvent( 0, SE_CONSOLE, 0, 0, strlen( cmdString ) + 1, cmdString );
+			cmdString = Z_Strdup( "quit" );
+			Com_QueueEvent( 0, SE_CONSOLE, 0, 0, strlen( cmdString ) + 1, cmdString );
 		}
 		else if ( s_wcd.quitOnClose )
 		{
@@ -191,8 +194,8 @@ static LRESULT WINAPI ConWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 		}
 		else
 		{
-			Sys_ShowConsole( 0, qfalse );
-			Cvar_Set( "viewlog", "0" );
+//			Sys_ShowConsole( 0, qfalse );
+//			Cvar_Set( "viewlog", "0" );
 		}
 		return 0;
 
@@ -656,7 +659,7 @@ void Sys_CreateConsole( const char *title, int xPos, int yPos, qboolean useXYpos
 	HDC hDC;
 	WNDCLASS wc;
 	RECT rect;
-	const TCHAR *DEDCLASS = T("Q3 WinConsole");
+	const TCHAR *DEDCLASS = T("GLNomad WinConsole");
 
 	int DEDSTYLE = WS_POPUPWINDOW | WS_CAPTION | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SIZEBOX;
 	int	fontWidth, fontHeight, statusFontHeight;
@@ -741,7 +744,7 @@ void Sys_CreateConsole( const char *title, int xPos, int yPos, qboolean useXYpos
 	}
 
 	s_wcd.hWnd = CreateWindowEx( 0, DEDCLASS,
-		T(CONSOLE_WINDOW_TITLE), DEDSTYLE, con_x, con_y,
+		T(WINDOW_TITLE), DEDSTYLE, con_x, con_y,
 		s_wcd.windowWidth, s_wcd.windowHeight,
 		NULL, NULL, g_wv.hInstance, NULL );
 
@@ -849,7 +852,7 @@ void Sys_CreateConsole( const char *title, int xPos, int yPos, qboolean useXYpos
 
 	ConClear();
 
-	Sys_SetStatus( "Server is not running" );
+	Sys_SetStatus( "Running Game" );
 
 	s_wcd.visLevel = 1;
 }
@@ -913,7 +916,7 @@ void Sys_ShowConsole( int visLevel, qboolean quitOnClose )
 Sys_SetStatus
 =============
 */
-void QDECL Sys_SetStatus( const char *format, ... )
+void GDR_DECL Sys_SetStatus( const char *format, ... )
 {
 	va_list		argptr;
 	char		text[256];
@@ -932,25 +935,6 @@ void QDECL Sys_SetStatus( const char *format, ... )
 
 /*
  =================
- Sys_ConsoleInput
- =================
-*/
-char *Sys_ConsoleInput( void )
-{
-	if ( s_wcd.consoleText[0] == '\0' )
-	{
-		return NULL;
-	}
-
-	strcpy( s_wcd.returnedText, s_wcd.consoleText );
-	s_wcd.consoleText[0] = '\0';
-
-	return s_wcd.returnedText;
-}
-
-
-/*
- =================
  Conbuf_AppendText
  =================
 */
@@ -958,7 +942,8 @@ void Conbuf_AppendText( const char *msg )
 {
 	char buffer[MAXPRINTMSG*2]; // reserve space for CR-LF expansion
 	char *b = buffer;
-	int bufLen, n;
+	int64_t bufLen, n;
+	DWORD dwWritten;
 
 	n = strlen( msg );
 
@@ -1009,6 +994,15 @@ void Conbuf_AppendText( const char *msg )
 
 	*b = '\0';
 	bufLen = b - buffer;
+
+	#ifdef _NOMAD_DEBUG
+	if (1)
+#else
+	if (com_devmode->i)
+#endif
+	{
+		_write( STDOUT_FILENO, buffer, bufLen );
+	}
 
 	// not enough space in buffer -> flush
 	if ( bufLen + conBufPos >= sizeof( conBuffer )-1 ) {
@@ -1073,7 +1067,23 @@ static void AddBufferText( const char *text, int textLength )
 	curConSize += textLength;
 }
 
+/*
+ =================
+ Sys_ConsoleInput
+ =================
+*/
+char *Sys_ConsoleInput( void )
+{
+	if ( s_wcd.consoleText[0] == '\0' )
+	{
+		return NULL;
+	}
 
+	strcpy( s_wcd.returnedText, s_wcd.consoleText );
+	s_wcd.consoleText[0] = '\0';
+
+	return s_wcd.returnedText;
+}
 
 /*
 ** Sys_SetErrorText
@@ -1121,7 +1131,7 @@ void HandleConsoleEvents( void ) {
 	while ( PeekMessage( &msg, NULL, 0, 0, PM_NOREMOVE ) ) {
 		if ( GetMessage( &msg, NULL, 0, 0 ) <= 0 ) {
 			Cmd_Clear();
-			Com_Quit_f();
+			Cbuf_ExecuteText( EXEC_NOW, "quit\n" );
 		}
 
 		TranslateMessage( &msg );

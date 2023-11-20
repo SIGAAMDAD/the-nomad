@@ -244,7 +244,7 @@ struct ImGui_ImplOpenGL3_Data
 
 static GLuint imguiShader;
 static ImGui_ImplOpenGL3_Data *bd;
-static imguiGL3Import_t ri;
+imguiGL3Import_t renderImport;
 
 // Backend data stored in io.BackendRendererUserData to allow support for multiple Dear ImGui contexts
 // It is STRONGLY preferred that you use docking branch with multi-viewports (== single Dear ImGui context + multiple windows) instead of multiple Dear ImGui contexts.
@@ -262,23 +262,23 @@ struct ImGui_ImplOpenGL3_VtxAttribState
 
     void GetState(GLint index)
     {
-        ri.glGetVertexAttribiv(index, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &Enabled);
-        ri.glGetVertexAttribiv(index, GL_VERTEX_ATTRIB_ARRAY_SIZE, &Size);
-        ri.glGetVertexAttribiv(index, GL_VERTEX_ATTRIB_ARRAY_TYPE, &Type);
-        ri.glGetVertexAttribiv(index, GL_VERTEX_ATTRIB_ARRAY_NORMALIZED, &Normalized);
-        ri.glGetVertexAttribiv(index, GL_VERTEX_ATTRIB_ARRAY_STRIDE, &Stride);
-        ri.glGetVertexAttribPointerv(index, GL_VERTEX_ATTRIB_ARRAY_POINTER, &Ptr);
+        renderImport.glGetVertexAttribiv(index, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &Enabled);
+        renderImport.glGetVertexAttribiv(index, GL_VERTEX_ATTRIB_ARRAY_SIZE, &Size);
+        renderImport.glGetVertexAttribiv(index, GL_VERTEX_ATTRIB_ARRAY_TYPE, &Type);
+        renderImport.glGetVertexAttribiv(index, GL_VERTEX_ATTRIB_ARRAY_NORMALIZED, &Normalized);
+        renderImport.glGetVertexAttribiv(index, GL_VERTEX_ATTRIB_ARRAY_STRIDE, &Stride);
+        renderImport.glGetVertexAttribPointerv(index, GL_VERTEX_ATTRIB_ARRAY_POINTER, &Ptr);
     }
     void SetState(GLint index)
     {
-        ri.glVertexAttribPointer(index, Size, Type, (GLintean)Normalized, Stride, Ptr);
+        renderImport.glVertexAttribPointer(index, Size, Type, (GLintean)Normalized, Stride, Ptr);
         if (Enabled)
         {
-            ri.glEnableVertexAttribArray(index);
+            renderImport.glEnableVertexAttribArray(index);
         }
         else
         {
-            ri.glDisableVertexAttribArray(index);
+            renderImport.glDisableVertexAttribArray(index);
         }
     }
 };
@@ -295,7 +295,7 @@ void ImGui_ImplOpenGL3_Init(void *shaderData, const char *glsl_version, const im
     const char *gl_version;
     ImGui_ImplOpenGL3_Data *bd;
 
-    ri = *import;
+    renderImport = *import;
     imguiShader = (GLuint)(uintptr_t)shaderData;
 
     ImGuiIO &io = ImGui::GetIO();
@@ -316,19 +316,19 @@ void ImGui_ImplOpenGL3_Init(void *shaderData, const char *glsl_version, const im
     // Desktop or GLES 3
     major = 0;
     minor = 0;
-    ri.glGetIntegerv(GL_MAJOR_VERSION, &major);
-    ri.glGetIntegerv(GL_MINOR_VERSION, &minor);
+    renderImport.glGetIntegerv(GL_MAJOR_VERSION, &major);
+    renderImport.glGetIntegerv(GL_MINOR_VERSION, &minor);
     if (major == 0 && minor == 0)
     {
         // Query GL_VERSION in desktop GL 2.x, the string will start with "<major>.<minor>"
-        gl_version = (const char *)ri.glGetString(GL_VERSION);
+        gl_version = (const char *)renderImport.glGetString(GL_VERSION);
         sscanf(gl_version, "%d.%d", &major, &minor);
     }
     bd->GlVersion = (GLuint)(major * 100 + minor * 10);
 #if defined(GL_CONTEXT_PROFILE_MASK)
     if (bd->GlVersion >= 320)
     {
-        ri.glGetIntegerv(GL_CONTEXT_PROFILE_MASK, &bd->GlProfileMask);
+        renderImport.glGetIntegerv(GL_CONTEXT_PROFILE_MASK, &bd->GlProfileMask);
     }
     bd->GlProfileIsCompat = (bd->GlProfileMask & GL_CONTEXT_COMPATIBILITY_PROFILE_BIT) != 0;
 #endif
@@ -375,16 +375,16 @@ void ImGui_ImplOpenGL3_Init(void *shaderData, const char *glsl_version, const im
 
     // Make an arbitrary GL call (we don't actually need the result)
     // IF YOU GET A CRASH HERE: it probably means the OpenGL function loader didn't do its job. Let us know!
-    ri.glGetIntegerv(GL_TEXTURE_BINDING_2D, &current_texture);
+    renderImport.glGetIntegerv(GL_TEXTURE_BINDING_2D, &current_texture);
 
     // Detect extensions we support
     bd->HasClipOrigin = (bd->GlVersion >= 450);
 #ifdef IMGUI_IMPL_OPENGL_MAY_HAVE_EXTENSIONS
     GLint num_extensions = 0;
-    ri.glGetIntegerv(GL_NUM_EXTENSIONS, &num_extensions);
+    renderImport.glGetIntegerv(GL_NUM_EXTENSIONS, &num_extensions);
     for (GLint i = 0; i < num_extensions; i++)
     {
-        const char *extension = (const char *)ri.glGetStringi(GL_EXTENSIONS, i);
+        const char *extension = (const char *)renderImport.glGetStringi(GL_EXTENSIONS, i);
         if (extension != nullptr && strcmp(extension, "GL_ARB_clip_control") == 0)
             bd->HasClipOrigin = true;
     }
@@ -414,19 +414,19 @@ static void ImGui_ImplOpenGL3_SetupRenderState(ImDrawData *draw_data, int fb_wid
     ImGui_ImplOpenGL3_Data *bd = ImGui_ImplOpenGL3_GetBackendData();
 
     // Setup render state: alpha-blending enabled, no face culling, no depth testing, scissor enabled, polygon fill
-    ri.glEnable(GL_BLEND);
-    ri.glBlendEquation(GL_FUNC_ADD);
-    ri.glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-    ri.glDisable(GL_CULL_FACE);
-    ri.glDisable(GL_DEPTH_TEST);
-    ri.glDisable(GL_STENCIL_TEST);
-    ri.glEnable(GL_SCISSOR_TEST);
+    renderImport.glEnable(GL_BLEND);
+    renderImport.glBlendEquation(GL_FUNC_ADD);
+    renderImport.glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    renderImport.glDisable(GL_CULL_FACE);
+    renderImport.glDisable(GL_DEPTH_TEST);
+    renderImport.glDisable(GL_STENCIL_TEST);
+    renderImport.glEnable(GL_SCISSOR_TEST);
 #ifdef IMGUI_IMPL_OPENGL_MAY_HAVE_PRIMITIVE_RESTART
     if (bd->GlVersion >= 310)
-        ri.glDisable(GL_PRIMITIVE_RESTART);
+        renderImport.glDisable(GL_PRIMITIVE_RESTART);
 #endif
 #ifdef IMGUI_IMPL_HAS_POLYGON_MODE
-    ri.glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    renderImport.glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 #endif
 
     // Support for GL 4.5 rarely used glClipControl(GL_UPPER_LEFT)
@@ -435,7 +435,7 @@ static void ImGui_ImplOpenGL3_SetupRenderState(ImDrawData *draw_data, int fb_wid
     if (bd->HasClipOrigin)
     {
         GLint current_clip_origin = 0;
-        ri.glGetIntegerv(GL_CLIP_ORIGIN, &current_clip_origin);
+        renderImport.glGetIntegerv(GL_CLIP_ORIGIN, &current_clip_origin);
         if (current_clip_origin == GL_UPPER_LEFT)
         {
             clip_origin_lower_left = false;
@@ -445,7 +445,7 @@ static void ImGui_ImplOpenGL3_SetupRenderState(ImDrawData *draw_data, int fb_wid
 
     // Setup viewport, orthographic projection matrix
     // Our visible imgui space lies from draw_data->DisplayPos (top left) to draw_data->DisplayPos+data_data->DisplaySize (bottom right). DisplayPos is (0,0) for single viewport apps.
-    ri.glViewport(0, 0, (GLsizei)fb_width, (GLsizei)fb_height);
+    renderImport.glViewport(0, 0, (GLsizei)fb_width, (GLsizei)fb_height);
     float L = draw_data->DisplayPos.x;
     float R = draw_data->DisplayPos.x + draw_data->DisplaySize.x;
     float T = draw_data->DisplayPos.y;
@@ -465,30 +465,30 @@ static void ImGui_ImplOpenGL3_SetupRenderState(ImDrawData *draw_data, int fb_wid
         {0.0f, 0.0f, -1.0f, 0.0f},
         {(R + L) / (L - R), (T + B) / (B - T), 0.0f, 1.0f},
     };
-    ri.glUseProgram(imguiShader);
-    ri.glUniform1i(bd->AttribLocationTex, 0);
+    renderImport.glUseProgram(imguiShader);
+    renderImport.glUniform1i(bd->AttribLocationTex, 0);
 
-    ri.glUniformMatrix4fv(bd->AttribLocationProjMtx, 1, GL_FALSE, &ortho_projection[0][0]);
+    renderImport.glUniformMatrix4fv(bd->AttribLocationProjMtx, 1, GL_FALSE, &ortho_projection[0][0]);
 
 #ifdef IMGUI_IMPL_OPENGL_MAY_HAVE_BIND_SAMPLER
     if (bd->GlVersion >= 330 || bd->GlProfileIsES3)
-        ri.glBindSampler(0, 0); // We use combined texture/sampler state. Applications using GL 3.3 and GL ES 3.0 may set that otherwise.
+        renderImport.glBindSampler(0, 0); // We use combined texture/sampler state. Applications using GL 3.3 and GL ES 3.0 may set that otherwise.
 #endif
 
     (void)vertex_array_object;
 #ifdef IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
-    ri.glBindVertexArray(vertex_array_object);
+    renderImport.glBindVertexArray(vertex_array_object);
 #endif
 
     // Bind vertex/index buffers and setup attributes for ImDrawVert
-    ri.glBindBuffer(GL_ARRAY_BUFFER, bd->VboHandle);
-    ri.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bd->ElementsHandle);
-    ri.glEnableVertexAttribArray(bd->AttribLocationVtxPos);
-    ri.glEnableVertexAttribArray(bd->AttribLocationVtxUV);
-    ri.glEnableVertexAttribArray(bd->AttribLocationVtxColor);
-    ri.glVertexAttribPointer(bd->AttribLocationVtxPos, 3, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid *)IM_OFFSETOF(ImDrawVert, pos));
-    ri.glVertexAttribPointer(bd->AttribLocationVtxUV, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid *)IM_OFFSETOF(ImDrawVert, uv));
-    ri.glVertexAttribPointer(bd->AttribLocationVtxColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid *)IM_OFFSETOF(ImDrawVert, col));
+    renderImport.glBindBuffer(GL_ARRAY_BUFFER, bd->VboHandle);
+    renderImport.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bd->ElementsHandle);
+    renderImport.glEnableVertexAttribArray(bd->AttribLocationVtxPos);
+    renderImport.glEnableVertexAttribArray(bd->AttribLocationVtxUV);
+    renderImport.glEnableVertexAttribArray(bd->AttribLocationVtxColor);
+    renderImport.glVertexAttribPointer(bd->AttribLocationVtxPos, 3, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid *)IM_OFFSETOF(ImDrawVert, pos));
+    renderImport.glVertexAttribPointer(bd->AttribLocationVtxUV, 2, GL_FLOAT, GL_FALSE, sizeof(ImDrawVert), (GLvoid *)IM_OFFSETOF(ImDrawVert, uv));
+    renderImport.glVertexAttribPointer(bd->AttribLocationVtxColor, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(ImDrawVert), (GLvoid *)IM_OFFSETOF(ImDrawVert, col));
 }
 
 // OpenGL3 Render function.
@@ -526,24 +526,24 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
     bd = ImGui_ImplOpenGL3_GetBackendData();
 
     // Backup GL state
-    ri.glGetIntegerv(GL_ACTIVE_TEXTURE, &last_active_texture);
-    ri.glActiveTexture(GL_TEXTURE0);
-    ri.glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
-    ri.glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
+    renderImport.glGetIntegerv(GL_ACTIVE_TEXTURE, &last_active_texture);
+    renderImport.glActiveTexture(GL_TEXTURE0);
+    renderImport.glGetIntegerv(GL_CURRENT_PROGRAM, &last_program);
+    renderImport.glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
 #ifdef IMGUI_IMPL_OPENGL_MAY_HAVE_BIND_SAMPLER
     if (bd->GlVersion >= 330 || bd->GlProfileIsES3)
     {
-        ri.glGetIntegerv(GL_SAMPLER_BINDING, &last_sampler);
+        renderImport.glGetIntegerv(GL_SAMPLER_BINDING, &last_sampler);
     }
     else
     {
         last_sampler = 0;
     }
 #endif
-    ri.glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);
+    renderImport.glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);
 #ifndef IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
     // This is part of VAO on OpenGL 3.0+ and OpenGL ES 3.0+.
-    ri.glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &last_element_array_buffer);
+    renderImport.glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &last_element_array_buffer);
     ImGui_ImplOpenGL3_VtxAttribState last_vtx_attrib_state_pos;
     last_vtx_attrib_state_pos.GetState(bd->AttribLocationVtxPos);
     ImGui_ImplOpenGL3_VtxAttribState last_vtx_attrib_state_uv;
@@ -552,37 +552,37 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
     last_vtx_attrib_state_color.GetState(bd->AttribLocationVtxColor);
 #endif
 #ifdef IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
-    ri.glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array_object);
+    renderImport.glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array_object);
 #endif
 #ifdef IMGUI_IMPL_HAS_POLYGON_MODE
-    ri.glGetIntegerv(GL_POLYGON_MODE, last_polygon_mode);
+    renderImport.glGetIntegerv(GL_POLYGON_MODE, last_polygon_mode);
 #endif
-    ri.glGetIntegerv(GL_VIEWPORT, last_viewport);
-    ri.glGetIntegerv(GL_SCISSOR_BOX, last_scissor_box);
-    ri.glGetIntegerv(GL_BLEND_SRC_RGB, &last_blend_src_rgb);
-    ri.glGetIntegerv(GL_BLEND_DST_RGB, &last_blend_dst_rgb);
-    ri.glGetIntegerv(GL_BLEND_SRC_ALPHA, &last_blend_src_alpha);
-    ri.glGetIntegerv(GL_BLEND_DST_ALPHA, &last_blend_dst_alpha);
-    ri.glGetIntegerv(GL_BLEND_EQUATION_RGB, &last_blend_equation_rgb);
-    ri.glGetIntegerv(GL_BLEND_EQUATION_ALPHA, &last_blend_equation_alpha);
-    last_enable_blend = ri.glIsEnabled(GL_BLEND);
-    last_enable_cull_face = ri.glIsEnabled(GL_CULL_FACE);
-    last_enable_depth_test = ri.glIsEnabled(GL_DEPTH_TEST);
-    last_enable_stencil_test = ri.glIsEnabled(GL_STENCIL_TEST);
-    last_enable_scissor_test = ri.glIsEnabled(GL_SCISSOR_TEST);
+    renderImport.glGetIntegerv(GL_VIEWPORT, last_viewport);
+    renderImport.glGetIntegerv(GL_SCISSOR_BOX, last_scissor_box);
+    renderImport.glGetIntegerv(GL_BLEND_SRC_RGB, &last_blend_src_rgb);
+    renderImport.glGetIntegerv(GL_BLEND_DST_RGB, &last_blend_dst_rgb);
+    renderImport.glGetIntegerv(GL_BLEND_SRC_ALPHA, &last_blend_src_alpha);
+    renderImport.glGetIntegerv(GL_BLEND_DST_ALPHA, &last_blend_dst_alpha);
+    renderImport.glGetIntegerv(GL_BLEND_EQUATION_RGB, &last_blend_equation_rgb);
+    renderImport.glGetIntegerv(GL_BLEND_EQUATION_ALPHA, &last_blend_equation_alpha);
+    last_enable_blend = renderImport.glIsEnabled(GL_BLEND);
+    last_enable_cull_face = renderImport.glIsEnabled(GL_CULL_FACE);
+    last_enable_depth_test = renderImport.glIsEnabled(GL_DEPTH_TEST);
+    last_enable_stencil_test = renderImport.glIsEnabled(GL_STENCIL_TEST);
+    last_enable_scissor_test = renderImport.glIsEnabled(GL_SCISSOR_TEST);
 #ifdef IMGUI_IMPL_OPENGL_MAY_HAVE_PRIMITIVE_RESTART
-    last_enable_primitive_restart = (bd->GlVersion >= 310) ? ri.glIsEnabled(GL_PRIMITIVE_RESTART) : GL_FALSE;
+    last_enable_primitive_restart = (bd->GlVersion >= 310) ? renderImport.glIsEnabled(GL_PRIMITIVE_RESTART) : GL_FALSE;
 #endif
 
     // Setup desired GL state
     // Recreate the VAO every time (this is to easily allow multiple GL contexts to be rendered to. VAO are not shared among GL contexts)
     // The renderer would actually work without any VAO bound, but then our VertexAttrib calls would overwrite the default one currently bound.
 #ifdef IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
-    ri.glGenVertexArrays(1, &vertex_array_object);
+    renderImport.glGenVertexArrays(1, &vertex_array_object);
 #endif
     ImGui_ImplOpenGL3_SetupRenderState(draw_data, fb_width, fb_height, vertex_array_object);
-    ri.glEnable(GL_ALPHA_TEST);
-    ri.glAlphaFunc( GL_ALWAYS, 0.5f );
+    renderImport.glEnable(GL_ALPHA_TEST);
+    renderImport.glAlphaFunc( GL_ALWAYS, 0.5f );
 
     // Will project scissor/clipping rectangles into framebuffer space
     clip_off = draw_data->DisplayPos;         // (0,0) unless using multi-viewports
@@ -608,20 +608,20 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
             if (bd->VertexBufferSize < vtx_buffer_size)
             {
                 bd->VertexBufferSize = vtx_buffer_size;
-                ri.glBufferData(GL_ARRAY_BUFFER, bd->VertexBufferSize, nullptr, GL_STREAM_DRAW);
+                renderImport.glBufferData(GL_ARRAY_BUFFER, bd->VertexBufferSize, nullptr, GL_STREAM_DRAW);
             }
             if (bd->IndexBufferSize < idx_buffer_size)
             {
                 bd->IndexBufferSize = idx_buffer_size;
-                ri.glBufferData(GL_ELEMENT_ARRAY_BUFFER, bd->IndexBufferSize, nullptr, GL_STREAM_DRAW);
+                renderImport.glBufferData(GL_ELEMENT_ARRAY_BUFFER, bd->IndexBufferSize, nullptr, GL_STREAM_DRAW);
             }
-            ri.glBufferSubData(GL_ARRAY_BUFFER, 0, vtx_buffer_size, (const GLvoid *)cmd_list->VtxBuffer.Data);
-            ri.glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, idx_buffer_size, (const GLvoid *)cmd_list->IdxBuffer.Data);
+            renderImport.glBufferSubData(GL_ARRAY_BUFFER, 0, vtx_buffer_size, (const GLvoid *)cmd_list->VtxBuffer.Data);
+            renderImport.glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, idx_buffer_size, (const GLvoid *)cmd_list->IdxBuffer.Data);
         }
         else
         {
-            ri.glBufferData(GL_ARRAY_BUFFER, vtx_buffer_size, (const GLvoid *)cmd_list->VtxBuffer.Data, GL_STREAM_DRAW);
-            ri.glBufferData(GL_ELEMENT_ARRAY_BUFFER, idx_buffer_size, (const GLvoid *)cmd_list->IdxBuffer.Data, GL_STREAM_DRAW);
+            renderImport.glBufferData(GL_ARRAY_BUFFER, vtx_buffer_size, (const GLvoid *)cmd_list->VtxBuffer.Data, GL_STREAM_DRAW);
+            renderImport.glBufferData(GL_ELEMENT_ARRAY_BUFFER, idx_buffer_size, (const GLvoid *)cmd_list->IdxBuffer.Data, GL_STREAM_DRAW);
         }
 
         for (int cmd_i = 0; cmd_i < cmd_list->CmdBuffer.Size; cmd_i++)
@@ -647,87 +647,87 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
                 }
 
                 // Apply scissor/clipping rectangle (Y is inverted in OpenGL)
-                ri.glScissor((int)clip_min.x, (int)((float)fb_height - clip_max.y), (int)(clip_max.x - clip_min.x), (int)(clip_max.y - clip_min.y));
+                renderImport.glScissor((int)clip_min.x, (int)((float)fb_height - clip_max.y), (int)(clip_max.x - clip_min.x), (int)(clip_max.y - clip_min.y));
 
                 // Bind texture, Draw
-                ri.glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)pcmd->GetTexID());
+                renderImport.glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)pcmd->GetTexID());
 #ifdef IMGUI_IMPL_OPENGL_MAY_HAVE_VTX_OFFSET
                 if (bd->GlVersion >= 320)
-                    ri.glDrawElementsBaseVertex(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, (void *)(intptr_t)(pcmd->IdxOffset * sizeof(ImDrawIdx)), (GLint)pcmd->VtxOffset);
+                    renderImport.glDrawElementsBaseVertex(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, (void *)(intptr_t)(pcmd->IdxOffset * sizeof(ImDrawIdx)), (GLint)pcmd->VtxOffset);
                 else
 #endif
-                    ri.glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, (void *)(intptr_t)(pcmd->IdxOffset * sizeof(ImDrawIdx)));
+                    renderImport.glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, (void *)(intptr_t)(pcmd->IdxOffset * sizeof(ImDrawIdx)));
             }
         }
     }
 
     // Destroy the temporary VAO
 #ifdef IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
-    ri.glDeleteVertexArrays(1, &vertex_array_object);
+    renderImport.glDeleteVertexArrays(1, &vertex_array_object);
 #endif
 
     // Restore modified GL state
     // This "glIsProgram()" check is required because if the program is "pending deletion" at the time of binding backup, it will have been deleted by now and will cause an OpenGL error. See #6220.
-    if (last_program == 0 || ri.glIsProgram(last_program)) {
-        ri.glUseProgram(last_program);
+    if (last_program == 0 || renderImport.glIsProgram(last_program)) {
+        renderImport.glUseProgram(last_program);
     }
 
-    ri.glBindTexture(GL_TEXTURE_2D, last_texture);
+    renderImport.glBindTexture(GL_TEXTURE_2D, last_texture);
 #ifdef IMGUI_IMPL_OPENGL_MAY_HAVE_BIND_SAMPLER
     if (bd->GlVersion >= 330 || bd->GlProfileIsES3) {
-        ri.glBindSampler(0, last_sampler);
+        renderImport.glBindSampler(0, last_sampler);
     }
 #endif
-    ri.glActiveTexture(last_active_texture);
+    renderImport.glActiveTexture(last_active_texture);
 #ifdef IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
-    ri.glBindVertexArray(last_vertex_array_object);
+    renderImport.glBindVertexArray(last_vertex_array_object);
 #endif
-    ri.glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
+    renderImport.glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
 #ifndef IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
-    ri.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer);
+    renderImport.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, last_element_array_buffer);
     last_vtx_attrib_state_pos.SetState(bd->AttribLocationVtxPos);
     last_vtx_attrib_state_uv.SetState(bd->AttribLocationVtxUV);
     last_vtx_attrib_state_color.SetState(bd->AttribLocationVtxColor);
 #endif
-    ri.glBlendEquationSeparate(last_blend_equation_rgb, last_blend_equation_alpha);
-    ri.glBlendFuncSeparate(last_blend_src_rgb, last_blend_dst_rgb, last_blend_src_alpha, last_blend_dst_alpha);
+    renderImport.glBlendEquationSeparate(last_blend_equation_rgb, last_blend_equation_alpha);
+    renderImport.glBlendFuncSeparate(last_blend_src_rgb, last_blend_dst_rgb, last_blend_src_alpha, last_blend_dst_alpha);
     if (last_enable_blend) {
-        ri.glEnable(GL_BLEND);
+        renderImport.glEnable(GL_BLEND);
     } else {
-        ri.glDisable(GL_BLEND);
+        renderImport.glDisable(GL_BLEND);
     }
 
     if (last_enable_cull_face) {
-        ri.glEnable(GL_CULL_FACE);
+        renderImport.glEnable(GL_CULL_FACE);
     } else {
-        ri.glDisable(GL_CULL_FACE);
+        renderImport.glDisable(GL_CULL_FACE);
     }
 
     if (last_enable_depth_test) {
-        ri.glEnable(GL_DEPTH_TEST);
+        renderImport.glEnable(GL_DEPTH_TEST);
     } else {
-        ri.glDisable(GL_DEPTH_TEST);
+        renderImport.glDisable(GL_DEPTH_TEST);
     }
 
     if (last_enable_stencil_test) {
-        ri.glEnable(GL_STENCIL_TEST);
+        renderImport.glEnable(GL_STENCIL_TEST);
     } else {
-        ri.glDisable(GL_STENCIL_TEST);
+        renderImport.glDisable(GL_STENCIL_TEST);
     }
 
     if (last_enable_scissor_test) {
-        ri.glEnable(GL_SCISSOR_TEST);
+        renderImport.glEnable(GL_SCISSOR_TEST);
     } else {
-        ri.glDisable(GL_SCISSOR_TEST);
+        renderImport.glDisable(GL_SCISSOR_TEST);
     }
 
 #ifdef IMGUI_IMPL_OPENGL_MAY_HAVE_PRIMITIVE_RESTART
     if (bd->GlVersion >= 310) {
         if (last_enable_primitive_restart) {
-            ri.glEnable(GL_PRIMITIVE_RESTART);
+            renderImport.glEnable(GL_PRIMITIVE_RESTART);
         }
         else {
-            ri.glDisable(GL_PRIMITIVE_RESTART);
+            renderImport.glDisable(GL_PRIMITIVE_RESTART);
         }
     }
 #endif
@@ -735,16 +735,16 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
 #ifdef IMGUI_IMPL_HAS_POLYGON_MODE
     // Desktop OpenGL 3.0 and OpenGL 3.1 had separate polygon draw modes for front-facing and back-facing faces of polygons
     if (bd->GlVersion <= 310 || bd->GlProfileIsCompat) {
-        ri.glPolygonMode(GL_FRONT, (GLenum)last_polygon_mode[0]);
-        ri.glPolygonMode(GL_BACK, (GLenum)last_polygon_mode[1]);
+        renderImport.glPolygonMode(GL_FRONT, (GLenum)last_polygon_mode[0]);
+        renderImport.glPolygonMode(GL_BACK, (GLenum)last_polygon_mode[1]);
     }
     else {
-        ri.glPolygonMode(GL_FRONT_AND_BACK, (GLenum)last_polygon_mode[0]);
+        renderImport.glPolygonMode(GL_FRONT_AND_BACK, (GLenum)last_polygon_mode[0]);
     }
 #endif // IMGUI_IMPL_HAS_POLYGON_MODE
 
-    ri.glViewport(last_viewport[0], last_viewport[1], (GLsizei)last_viewport[2], (GLsizei)last_viewport[3]);
-    ri.glScissor(last_scissor_box[0], last_scissor_box[1], (GLsizei)last_scissor_box[2], (GLsizei)last_scissor_box[3]);
+    renderImport.glViewport(last_viewport[0], last_viewport[1], (GLsizei)last_viewport[2], (GLsizei)last_viewport[3]);
+    renderImport.glScissor(last_scissor_box[0], last_scissor_box[1], (GLsizei)last_scissor_box[2], (GLsizei)last_scissor_box[3]);
     (void)bd; // Not all compilation paths use this
 }
 
@@ -761,21 +761,21 @@ int ImGui_ImplOpenGL3_CreateFontsTexture(void)
 
     // Upload texture to graphics system
     // (Bilinear sampling is required by default. Set 'io.Fonts->Flags |= ImFontAtlasFlags_NoBakedLines' or 'style.AntiAliasedLinesUseTex = false' to allow point/nearest sampling)
-    ri.glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
-    ri.glGenTextures(1, &bd->FontTexture);
-    ri.glBindTexture(GL_TEXTURE_2D, bd->FontTexture);
-    ri.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    ri.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    renderImport.glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
+    renderImport.glGenTextures(1, &bd->FontTexture);
+    renderImport.glBindTexture(GL_TEXTURE_2D, bd->FontTexture);
+    renderImport.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    renderImport.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 #ifdef GL_UNPACK_ROW_LENGTH // Not on WebGL/ES
-    ri.glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+    renderImport.glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
 #endif
-    ri.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+    renderImport.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
     // Store our identifier
     io.Fonts->SetTexID((ImTextureID)(intptr_t)bd->FontTexture);
 
     // Restore state
-    ri.glBindTexture(GL_TEXTURE_2D, last_texture);
+    renderImport.glBindTexture(GL_TEXTURE_2D, last_texture);
 
     return true;
 }
@@ -786,7 +786,7 @@ void ImGui_ImplOpenGL3_DestroyFontsTexture(void)
     ImGui_ImplOpenGL3_Data *bd = ImGui_ImplOpenGL3_GetBackendData();
     if (bd->FontTexture)
     {
-        ri.glDeleteTextures(1, &bd->FontTexture);
+        renderImport.glDeleteTextures(1, &bd->FontTexture);
         io.Fonts->SetTexID(0);
         bd->FontTexture = 0;
     }
@@ -799,29 +799,29 @@ int ImGui_ImplOpenGL3_CreateDeviceObjects(void)
     GLint last_vertex_array;
 
     // Backup GL state
-    ri.glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
-    ri.glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);
+    renderImport.glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
+    renderImport.glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &last_array_buffer);
 #ifdef IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
-    ri.glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array);
+    renderImport.glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &last_vertex_array);
 #endif
 
-    bd->AttribLocationTex = ri.glGetUniformLocation(imguiShader, "u_DiffuseMap");
-    bd->AttribLocationProjMtx = ri.glGetUniformLocation(imguiShader, "u_ModelViewProjection");
-    bd->AttribLocationVtxPos = (GLuint)ri.glGetAttribLocation(imguiShader, "a_Position");
-    bd->AttribLocationVtxUV = (GLuint)ri.glGetAttribLocation(imguiShader, "a_TexCoord");
-    bd->AttribLocationVtxColor = (GLuint)ri.glGetAttribLocation(imguiShader, "a_Color");
+    bd->AttribLocationTex = renderImport.glGetUniformLocation(imguiShader, "u_DiffuseMap");
+    bd->AttribLocationProjMtx = renderImport.glGetUniformLocation(imguiShader, "u_ModelViewProjection");
+    bd->AttribLocationVtxPos = (GLuint)renderImport.glGetAttribLocation(imguiShader, "a_Position");
+    bd->AttribLocationVtxUV = (GLuint)renderImport.glGetAttribLocation(imguiShader, "a_TexCoord");
+    bd->AttribLocationVtxColor = (GLuint)renderImport.glGetAttribLocation(imguiShader, "a_Color");
 
     // Create buffers
-    ri.glGenBuffers(1, &bd->VboHandle);
-    ri.glGenBuffers(1, &bd->ElementsHandle);
+    renderImport.glGenBuffers(1, &bd->VboHandle);
+    renderImport.glGenBuffers(1, &bd->ElementsHandle);
 
     ImGui_ImplOpenGL3_CreateFontsTexture();
 
     // Restore modified GL state
-    ri.glBindTexture(GL_TEXTURE_2D, last_texture);
-    ri.glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
+    renderImport.glBindTexture(GL_TEXTURE_2D, last_texture);
+    renderImport.glBindBuffer(GL_ARRAY_BUFFER, last_array_buffer);
 #ifdef IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
-    ri.glBindVertexArray(last_vertex_array);
+    renderImport.glBindVertexArray(last_vertex_array);
 #endif
 
     return true;
@@ -832,12 +832,12 @@ void ImGui_ImplOpenGL3_DestroyDeviceObjects(void)
     ImGui_ImplOpenGL3_Data *bd = ImGui_ImplOpenGL3_GetBackendData();
     if (bd->VboHandle)
     {
-        ri.glDeleteBuffers(1, &bd->VboHandle);
+        renderImport.glDeleteBuffers(1, &bd->VboHandle);
         bd->VboHandle = 0;
     }
     if (bd->ElementsHandle)
     {
-        ri.glDeleteBuffers(1, &bd->ElementsHandle);
+        renderImport.glDeleteBuffers(1, &bd->ElementsHandle);
         bd->ElementsHandle = 0;
     }
     ImGui_ImplOpenGL3_DestroyFontsTexture();

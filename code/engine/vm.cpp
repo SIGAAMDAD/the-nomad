@@ -473,6 +473,8 @@ static void VM_FillImport(vmRefImport_t *import, const char *name)
 	import->trap_FS_FileSeek = FS_VM_FileSeek;
 	import->trap_FS_FileTell = FS_FileTell;
 	import->trap_FS_FileLength = FS_FileLength;
+
+	import->G_LoadMap = G_LoadMap;
 }
 
 /*
@@ -1660,7 +1662,7 @@ void VM_StackTrace( vm_t *vm, int programCounter, int programStack )
 
 	count = 0;
 	do {
-		Con_Printf( "%s\n", VM_ValueToSymbol( vm, programCounter ) );
+//		Con_Printf( "%s\n", VM_ValueToSymbol( vm, programCounter ) );
 		programStack =  *(int *)&vm->dataBase[programStack+4];
 		programCounter = *(int *)&vm->dataBase[programStack];
 	} while ( programCounter != -1 && ++count < 32 );
@@ -1668,7 +1670,7 @@ void VM_StackTrace( vm_t *vm, int programCounter, int programStack )
 }
 
 char *VM_Indent( vm_t *vm ) {
-	static char	*string = "                                        ";
+	static char string[41] = { 0 };
 	if ( vm->callLevel > 20 ) {
 		return string;
 	}

@@ -6,6 +6,9 @@
 #include "../rendercommon/imstb_truetype.h"
 #include "../rendercommon/imgui.h"
 #include "../rendercommon/r_public.h"
+#include "../rendercommon/imgui_impl_opengl3.h"
+#include "../rendercommon/imgui_impl_sdlrenderer2.h"
+#include "../rendercommon/imgui_impl_sdl2.h"
 
 
 #define  DEFAULT_CONSOLE_WIDTH 78
@@ -66,7 +69,7 @@ typedef struct {
 
 	uint32_t vislines;		// in scanlines
 
-	uint32_t times[NUM_CON_TIMES];	// gi.realtime time the line was generated
+	char *times[NUM_CON_TIMES];	// gi.realtime time the line was generated
 								// for transparent notify lines
 	vec4_t	color;
 
@@ -74,6 +77,12 @@ typedef struct {
 	uint32_t vispage;		
 
 	qboolean newline;
+
+//	SDL_Window *externalConsole;
+//	uint32_t windowId;
+//	qboolean minimized;
+//	uint32_t windowWidth;
+//	uint32_t windowHeight;
 } console_t;
 
 console_t con;
@@ -89,6 +98,9 @@ cvar_t *con_noprint;
 cvar_t *g_conXOffset;
 
 uint32_t g_console_field_width;
+
+static void Con_DrawSolidConsole( float frac );
+
 
 /*
 ================
@@ -111,12 +123,13 @@ void Con_ToggleConsole_f( void ) {
 
 	if (Key_GetCatcher() & KEYCATCH_CONSOLE) {
 		Key_SetCatcher(Key_GetCatcher() & ~KEYCATCH_CONSOLE);
-		Con_DPrintf("Toggle Console OFF\n");
 	}
 	else {
 		Key_SetCatcher(Key_GetCatcher() | KEYCATCH_CONSOLE);
-		Con_DPrintf("Toggle Console ON\n");
 	}
+
+	Con_DrawSolidConsole( con.displayFrac );
+	ImGui::SetScrollHereY();
 }
 
 
@@ -323,7 +336,6 @@ static void Cmd_CompleteTxtName(const char *args, uint32_t argNum ) {
 		Field_CompleteFilename( "", "txt", qfalse, FS_MATCH_EXTERN );
 	}
 }
-
 
 /*
 ================
@@ -554,6 +566,15 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 			g_consoleField.cursor = data->CursorPos;
 		}
 	}
+	// copy function
+	if (Key_IsDown(KEY_LCTRL) && Key_IsDown(KEY_C)) {
+		char buffer[MAX_EDIT_LINE];
+
+		memset( buffer, 0, sizeof(buffer) );
+		memcpy( buffer, data->Buf + data->SelectionStart, data->SelectionEnd - data->SelectionStart );
+
+		SDL_SetClipboardText( buffer );
+	}
 
 	// ctrl-L clears screen
 	if ( Key_IsDown(KEY_L) && Key_IsDown(KEY_LCTRL) ) {
@@ -565,9 +586,9 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 
 	if (Key_IsDown(KEY_TAB)) {
 		Field_AutoComplete(&g_consoleField);
-		if (g_consoleField.cursor != data->CursorPos) {
-			N_strncpyz(data->Buf, g_consoleField.buffer, sizeof(g_consoleField.buffer));
-			data->CursorPos = strlen(g_consoleField.buffer);
+		if (data->CursorPos != g_consoleField.cursor) {
+			memcpy(data->Buf, g_consoleField.buffer, sizeof(g_consoleField.buffer));
+			data->BufTextLen = data->CursorPos;
 		}
 		return 1;
 	}
@@ -575,7 +596,7 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 	// command history (ctrl-p ctrl-n for unix style)
 
 	if ( (Key_IsDown(KEY_WHEEL_UP) && Key_IsDown(KEY_LSHIFT) ) || ( Key_IsDown(KEY_UP) ) ||
-		 ( ( Key_IsDown(KEY_P) ) && Key_IsDown(KEY_LCTRL) ) ) {
+		 ( ( Key_IsDown(KEY_P) ) && Key_IsDown(KEY_LCTRL) )) {
 		if (data->HasSelection()) {
 			data->ClearSelection();
 			g_consoleField.cursor = data->CursorPos;
@@ -622,13 +643,14 @@ static void Con_DrawInput( void ) {
 	y = con.vislines - ( smallchar_height * 2 );
 
 	ImGui::NewLine();
-	ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( con.color ) );
+	ImGui::PushStyleColor( ImGuiCol_FrameBg, ImVec4( con.color ) );
 	ImGui::TextUnformatted( "] " );
 	ImGui::PopStyleColor();
 	ImGui::SameLine();
 
 	if (ImGui::InputText("", g_consoleField.buffer, sizeof(g_consoleField.buffer) - 1,
-	ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackEdit | ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_EnterReturnsTrue,
+	ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackEdit | ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_CallbackHistory |
+	ImGuiInputTextFlags_EnterReturnsTrue,
 	Con_TextCallback)) {
 		// enter finishes the line
 		// if not in the game explicitly prepend a slash if needed
@@ -676,6 +698,8 @@ static void Con_DrawInput( void ) {
 }
 
 
+static void Con_DrawExternalConsole( void );
+
 /*
 ================
 Con_DrawSolidConsole
@@ -696,12 +720,13 @@ static void Con_DrawSolidConsole( float frac )
 	qboolean usedColor = qfalse;
 	char *text;
 	char buf[ MAX_CVAR_VALUE ], *v[4];
+	const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar;
 
 	lines = gi.gpuConfig.vidHeight * 0.5f;
 
-	ImGui::Begin("Command Console", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
+	ImGui::Begin("Command Console", NULL, windowFlags);
 	ImGui::SetWindowPos({ 0.0f, 0.0f });
-	ImGui::SetWindowSize({ gi.gpuConfig.vidWidth, gi.gpuConfig.vidHeight * 0.5f });
+	ImGui::SetWindowSize({ (float)gi.gpuConfig.vidWidth, (float)gi.gpuConfig.vidHeight });
 	ImGui::SetWindowFontScale( 1.0f );
 
 	// custom console background color
@@ -723,7 +748,7 @@ static void Con_DrawSolidConsole( float frac )
 		ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( conColorValue ) );
 		customColor = qtrue;
 	} else {
-		ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( 0.45f, 0.0f, 0.0f, 1.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( 0.0f, 0.0f, 0.35, 1.0f ) );
 	}
 
 	// draw from the bottom up
@@ -773,7 +798,7 @@ static void Con_DrawSolidConsole( float frac )
 		default:
 			s[0] = *text;
 			s[1] = 0;
-			ImGui::TextWrapped(s);
+			ImGui::TextUnformatted(s);
 			ImGui::SameLine();
 			break;
 		};
@@ -786,13 +811,98 @@ static void Con_DrawSolidConsole( float frac )
 	Con_DrawInput();
 
 	ImGui::PopStyleColor();
-	ImGui::PopStyleColor();
 
 	// segfaults
 // 	ImGui::End();
 }
 
 static void Con_DrawNotify( void ) {
+/*
+	const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove
+							| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBackground;
+	uint32_t i;
+	uint32_t colorIndex, currentColorIndex;
+	char *text;
+	
+	currentColorIndex = ColorIndex( S_COLOR_WHITE );
+	ImGui::Begin( "NotifyWindow", NULL, windowFlags );
+	for (uint32_t i = 0, text = con.text + CON_; i < NUM_CON_TIMES; i++) {
+		ImGui::Text(" ", );
+	}
+	ImGui::End();
+
+
+	int		x, v;
+	short	*text;
+	int		i;
+	int		time;
+	int		skip;
+	int		currentColorIndex;
+	int		colorIndex;
+
+	currentColorIndex = ColorIndex( COLOR_WHITE );
+	re.SetColor( g_color_table[ currentColorIndex ] );
+
+	v = 0;
+	for (i= con.current-NUM_CON_TIMES+1 ; i<=con.current ; i++)
+	{
+		if (i < 0)
+			continue;
+		time = con.times[i % NUM_CON_TIMES];
+		if (time == 0)
+			continue;
+		time = gi.realtime - time;
+		if ( time >= con_notifytime->f*1000 )
+			continue;
+		
+		text = con.text + (i;
+
+//		if (cl.snap.ps.pm_type != PM_INTERMISSION && Key_GetCatcher( ) & (KEYCATCH_UI | KEYCATCH_CGAME) ) {
+//			continue;
+//		}
+
+		for (x = 0 ; x < con.linewidth ; x++) {
+			if ( ( text[x] & 0xff ) == ' ' ) {
+				continue;
+			}
+			colorIndex = ( text[x] >> 8 ) & 63;
+			if ( currentColorIndex != colorIndex ) {
+				currentColorIndex = colorIndex;
+				re.SetColor( g_color_table[ colorIndex ] );
+			}
+			SCR_DrawSmallChar( cl_conXOffset->integer + con.xadjust + (x+1)*smallchar_width, v, text[x] & 0xff );
+		}
+
+		v += smallchar_height;
+	}
+
+	re.SetColor( NULL );
+
+	if ( Key_GetCatcher() & (KEYCATCH_UI | KEYCATCH_CGAME) ) {
+		return;
+	}
+
+	// draw the chat line
+	if ( Key_GetCatcher( ) & KEYCATCH_MESSAGE )
+	{
+		// rescale to virtual 640x480 space
+		v /= cls.glconfig.vidHeight / 480.0;
+
+		if (chat_team)
+		{
+			SCR_DrawBigString( SMALLCHAR_WIDTH, v, "say_team:", 1.0f, qfalse );
+			skip = 10;
+		}
+		else
+		{
+			SCR_DrawBigString( SMALLCHAR_WIDTH, v, "say:", 1.0f, qfalse );
+			skip = 5;
+		}
+
+		Field_BigDraw( &chatField, skip * BIGCHAR_WIDTH, v,
+			SCREEN_WIDTH - ( skip + 1 ) * BIGCHAR_WIDTH, qtrue, qtrue );
+	}
+*/
 }
 
 /*
@@ -813,6 +923,8 @@ void Con_DrawConsole( void ) {
 			Con_DrawNotify();
 		}
 	}
+
+//	Con_DrawExternalConsole();
 }
 
 //================================================================
@@ -899,3 +1011,91 @@ void Con_Close( void )
 	con.finalFrac = 0.0;			// none visible
 	con.displayFrac = 0.0;
 }
+
+/*
+static void Con_DrawExternalConsole( void )
+{
+	uint32_t i, currentColorIndex, colorIndex;
+	qboolean usedColor = qfalse;
+	char *text;
+	char s[2];
+
+	if (con.minimized) {
+		return;
+	}
+
+	// we're drawing to a 2nd window
+	SDL_GL_MakeCurrent( con.externalConsole, G_GetGLContext() );
+
+	ImGui_ImplSDL2_NewFrame();
+	renderImport.glClear( GL_COLOR_BUFFER_BIT );
+
+	ImGui::Begin( "Command Console", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings );
+	ImGui::SetWindowSize(ImVec2( (float)con.windowWidth, (float)con.windowHeight ));
+	ImGui::SetWindowPos(ImVec2( 0.0f, 0.0f ));
+
+	// draw from the bottom up
+	{
+		// draw arrows to show the buffer is backscrolled
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4( g_color_table[ ColorIndex(S_COLOR_RED) ] ));
+		for (i = 0; i < 80; i++) {
+			ImGui::TextUnformatted("^");
+			ImGui::SameLine();
+		}
+		ImGui::PopStyleColor();
+
+		ImGui::NewLine();
+		ImGui::NewLine();
+	}
+
+	currentColorIndex = ColorIndex(S_COLOR_WHITE);
+
+	for (i = 0, text = con.text; i < con.used; i++, text++) {
+		// track color changes
+		if (Q_IsColorString(text) && *(text+1) != '\n') {
+			colorIndex = ColorIndexFromChar(*(text+1));
+			if (currentColorIndex != colorIndex) {
+				currentColorIndex = colorIndex;
+				if (usedColor) {
+					ImGui::PopStyleColor();
+					usedColor = qfalse;
+				}
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4( g_color_table[ colorIndex ] ));
+				usedColor = qtrue;
+			}
+			text += 2;
+		}
+		
+		switch (*text) {
+		case '\n':
+			if (usedColor) {
+				ImGui::PopStyleColor();
+				currentColorIndex = ColorIndex(S_COLOR_WHITE);
+				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4( g_color_table[ currentColorIndex ] ));
+			}
+			ImGui::NewLine();
+			break;
+		case '\r':
+			ImGui::SameLine();
+			break;
+		default:
+			s[0] = *text;
+			s[1] = 0;
+			ImGui::TextUnformatted(s);
+			ImGui::SameLine();
+			break;
+		};
+	}
+	
+	Con_DrawInput();
+
+	ImGui::PopStyleColor();
+	ImGui::End();
+
+	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
+	SDL_GL_SwapWindow( con.externalConsole );
+
+	SDL_GL_MakeCurrent( G_GetSDLWindow(), G_GetGLContext() );
+}
+*/

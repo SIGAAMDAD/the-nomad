@@ -155,7 +155,7 @@ qboolean Sys_SetAffinityMask( const uint64_t mask )
 
 
 
-qboolean Sys_GetFileStats( const char *filename, fileStats_t *stats)
+qboolean Sys_GetFileStats( fileStats_t *stats, const char *filename )
 {
     struct _stat fdata;
 
@@ -288,7 +288,7 @@ int Sys_GetDLLErrorCount( void ) {
 const char *Sys_GetDLLError( void ) {
     if (dll_err_count) {
         dll_err_count--;
-        return (const char *)GetLastError();
+        return Sys_GetError();
     }
     return "no error";
 }
@@ -297,7 +297,7 @@ void Sys_ClearDLLError( void ) {
     if (dll_err_count) {
         Con_DPrintf( COLOR_YELLOW "WARNING: clearing dll_err_count, but there's errors, listing them:\n" );
         for (int i = 0; i < dll_err_count; i++) {
-            Con_DPrintf( COLOR_YELLOW "dll_error[%i]: %s\n", i, GetLastError() );
+            Con_DPrintf( COLOR_YELLOW "dll_error[%i]: %s\n", i, Sys_GetError() );
         }
     }
     dll_err_count = 0;
@@ -345,4 +345,8 @@ void Sys_CloseDLL( void *handle ) {
     if (handle) {
         FreeLibrary( (HMODULE)handle );
     }
+}
+
+
+void UpdateMonitorInfo( const RECT *target ) {
 }

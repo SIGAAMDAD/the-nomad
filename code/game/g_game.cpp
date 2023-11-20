@@ -332,12 +332,6 @@ void G_ShutdownRenderer(refShutdownCode_t code)
         code = REF_UNLOAD_DLL;
     }
 
-    if (code >= REF_DESTROY_WINDOW) { // +REF_UNLOAD_DLL
-        // shutdown sound system before renderer
-		// because it may depend from window handle
-		Snd_Shutdown();
-    }
-
     if (re.Shutdown) {
         re.Shutdown(code);
     }
@@ -396,9 +390,9 @@ static void G_Snd_Restart_f(void)
 
 const vidmode_t r_vidModes[NUMVIDMODES] =
 {
-	{ "Mode  0: 320x240",			320,	240,	1 },
-	{ "Mode  1: 640x480",			640,	480,	1 },
-	{ "Mode  2: 800x600",			800,	600,	1 },
+//	{ "Mode  0: 320x240",			320,	240,	1 },
+//	{ "Mode  1: 640x480",			640,	480,	1 },
+//	{ "Mode  2: 800x600",			800,	600,	1 },
 	{ "Mode  3: 1024x768",			1024,	768,	1 },
 	{ "Mode  4: 2048x1536",			2048,	1536,	1 },
 	// extra modes:
@@ -588,6 +582,7 @@ void G_Init(void)
 
     // init sound
     Snd_Init();
+    gi.soundStarted = qtrue;
     
     // init rendering engine
     G_InitRenderer();
@@ -1113,6 +1108,10 @@ void GLimp_InitGamma(gpuConfig_t *config)
 void GLimp_SetGamma(const unsigned short r[256], const unsigned short g[256], const unsigned short b[256])
 {
     SDL_SetWindowGammaRamp(r_window, r, g, b);
+}
+
+SDL_GLContext G_GetGLContext( void ) {
+    return r_GLcontext;
 }
 
 qboolean G_WindowMinimized( void ) {

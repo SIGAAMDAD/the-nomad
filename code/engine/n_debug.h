@@ -19,6 +19,7 @@ extern void Sys_SetError( errorReason_t reason );
 extern void Sys_AssertionFailure( const char *expr, const char *file, const char *func, unsigned line );
 extern void GDR_ATTRIBUTE((format(printf, 5, 6))) Sys_AssertionFailureMsg( const char *expr, const char *file, const char *func, unsigned line, const char *msg, ... );
 extern void Sys_DebugString( const char *str );
+void Sys_DebugMessageBox( const char *title, const char *message );
 
 #ifdef _NOMAD_DEBUG
 #define AssertMsg( x, msg ) ((bool)(x) ? (void)0 : Sys_AssertionFailureMsg( #x, __FILE__, __func__, __LINE__, msg ) )

@@ -133,7 +133,7 @@ void CUIStringManager::LoadFile( const char *filename )
         // language <language>
         //
         else if (!N_stricmp( tok, "language" )) {
-            tok = COM_ParseExt( text, qfalse );
+            tok = COM_ParseExt( text, qtrue );
             if (!tok[0]) {
                 COM_ParseError("missing parameter for language in ui file");
                 return;

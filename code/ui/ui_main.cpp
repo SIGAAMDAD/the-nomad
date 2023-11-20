@@ -51,9 +51,13 @@ UI_Cache
 */
 static void UI_Cache_f( void )
 {
+    Con_Printf( "Caching ui resources...\n" );
+
     TitleMenu_Cache();
     IntroMenu_Cache();
     MainMenu_Cache();
+    SettingsMenu_Cache();
+    SinglePlayerMenu_Cache();
 }
 
 extern "C" void UI_Shutdown( void )

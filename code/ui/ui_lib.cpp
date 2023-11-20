@@ -10,6 +10,79 @@ void CUILib::Shutdown( void ) {
 	// nothing for now
 }
 
+bool CUILib::Menu_Option( const char *label )
+{
+    ImGui::TableNextColumn();
+    ImGui::TextUnformatted( label );
+    ImGui::TableNextColumn();
+    ImGui::SameLine();
+    return ImGui::ArrowButton( label, ImGuiDir_Right );
+}
+
+//
+// GetTextScale: this isn't implemented very well...
+//
+static float GetTextScale( void )
+{
+	int32_t width, height;
+	float scale;
+	
+	width = Cvar_VariableInteger( "r_customWidth" );
+	height = Cvar_VariableInteger( "r_customHeight" );
+
+	scale = 1.5f;
+
+	if (width == 1024 && height == 768) {
+		return scale;
+	}
+	else if (width == 2048 && height == 1536) {
+		scale += .5f;
+	}
+	else if (width == 1280 && height == 720) {
+
+	}
+	else if (width == 1600 && height == 900) {
+
+	}
+	else if (width == 1980 && height == 1080) {
+		
+	}
+	else if (width == 3840 && height == 2160) {
+
+	}
+}
+
+bool CUILib::Menu_Title( const char *label )
+{
+	const float font_scale = ImGui::GetFont()->Scale;
+
+    ImGui::SetWindowFontScale( font_scale * drawScale );
+    if (ImGui::ArrowButton( va("##BACK%s", label), ImGuiDir_Left )) {
+        return true;
+    }
+    ImGui::SameLine();
+    ImGui::TextUnformatted( "BACK" );
+
+    ImGui::SetWindowFontScale( font_scale * 3.75f );
+    ImGui::TextUnformatted( label );
+    ImGui::SetWindowFontScale( font_scale * drawScale );
+
+    return false;
+}
+
+void CUILib::EscapeMenuToggle( menustate_t newstate )
+{
+    if (Key_IsDown( KEY_ESCAPE )) {
+        if (escapeToggle) {
+            escapeToggle = qfalse;
+            state = newstate;
+        }
+    }
+    else {
+        escapeToggle = qtrue;
+    }
+}
+
 /*
 =================
 UI_Init
@@ -33,6 +106,10 @@ void CUILib::Init( void )
 
 	curmenu = NULL;
 	menusp = 0;
+	
+	escapeToggle = qfalse;
+	state = STATE_MAIN;
+	drawScale = GetTextScale();
 }
 
 void CUILib::PushMenu( CUIMenu *menu )

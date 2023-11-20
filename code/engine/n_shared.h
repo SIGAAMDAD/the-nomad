@@ -19,7 +19,9 @@ Platform Specific Preprocessors
 #define arm64   0
 #define arm32   0
 
-#define CLAMP(x,min,max) ((x)<=(min)?(x)=(min):(x)>=(max)?(x)=(max):(x))
+#ifndef CLAMP
+#define CLAMP(a,b,c) MIN(MAX((a),(b)),(c))
+#endif
 
 #define MAX_GDR_PATH 64
 
@@ -47,6 +49,16 @@ Platform Specific Preprocessors
 #endif
 
 #ifdef _WIN32
+	// dlls
+	#pragma comment(lib, "comctl32")
+	#pragma comment(lib, "gdi32")
+	#pragma comment(lib, "winmm")
+
+	#pragma intrinsic(memcpy)
+	#pragma intrinsic(memset)
+	#pragma intrinsic(fabs)
+	#pragma intrinsic(labs)
+
 	#define DLL_EXT ".dll"
 	#define PATH_SEP '\\'
 	#define PATH_SEP_FOREIGN '/'

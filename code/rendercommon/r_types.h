@@ -47,6 +47,17 @@ typedef enum : uint32_t
 typedef enum
 #endif
 {
+	AntiAlias_MSAA,
+	AntiAlias_SSAA,
+	AntiAlias_FXAA,
+} antialiasType_t;
+
+#ifdef __cplusplus
+typedef enum : uint32_t
+#else
+typedef enum
+#endif
+{
     TexDetail_MSDOS,
     TexDetail_IntegratedGPU,
     TexDetail_Normie,

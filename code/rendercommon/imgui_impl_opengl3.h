@@ -58,6 +58,7 @@ typedef struct
     void (*glUniformMatrix4fv)( GLint location, GLsizei count, GLboolean transpose, const GLfloat *value );
     void (*glEnable)( GLenum mode );
     void (*glDisable)( GLenum mode );
+    void (*glClear)( GLenum mask );
     void (*glGetIntegerv)( GLenum pname, GLint *data );
     void (*glBlendEquation)( GLenum mode );
     void (*glBlendFuncSeparate)( GLenum sfactorRGB, GLenum dfactorRGB, GLenum sfactorAlpha, GLenum dfactorAlpha );
@@ -93,6 +94,7 @@ typedef struct
     void (*glTexImage2D)( GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels );
 } imguiGL3Import_t;
 
+extern imguiGL3Import_t renderImport;
 
 // Backend API
 void ImGui_ImplOpenGL3_Init(void *shaderData, const char* glsl_version, const imguiGL3Import_t *import);

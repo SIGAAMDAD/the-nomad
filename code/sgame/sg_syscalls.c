@@ -24,11 +24,16 @@ void dllEntry(intptr_t (GDR_DECL *syscallptr)(intptr_t arg, uint32_t numArgs, ..
 }
 #endif
 
-int PASSFLOAT(float x)
+int32_t PASSFLOAT(float x)
 {
     float floatTemp;
     floatTemp = x;
-    return *(int *)&floatTemp;
+    return *(int32_t *)&floatTemp;
+}
+
+int32_t G_LoadMap( int32_t index, mapinfo_t *info )
+{
+    return vmi.G_LoadMap( index, info );
 }
 
 void trap_GetGPUConfig(gpuConfig_t *config)

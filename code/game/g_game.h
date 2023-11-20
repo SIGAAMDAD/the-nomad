@@ -7,6 +7,7 @@
 #include "../engine/n_common.h"
 #include "../sgame/sg_public.h"
 #include "../rendercommon/r_public.h"
+#include "../engine/gln_files.h"
 
 #ifndef O_BINARY
 #define O_BINARY 0
@@ -20,6 +21,27 @@ typedef enum
 
     NUM_GAME_STATES
 } gamestate_t;
+
+
+//
+// mapinfo_t
+// This is the only way that the engine and vm may communicate about
+// the current map loaded or to be loaded
+//
+typedef struct {
+    size_t dataSize;
+
+    char name[MAX_GDR_PATH];
+    uint32_t width;
+    uint32_t height;
+    uint32_t numSpawns;
+    uint32_t numCheckpoints;
+    uint32_t numTiles;
+
+    mapcheckpoint_t checkpoints[MAX_MAP_CHECKPOINTS];
+    mapspawn_t spawns[MAX_MAP_SPAWNS];
+    maptile_t tiles[MAX_MAP_TILES];
+} mapinfo_t;
 
 enum
 {
@@ -82,6 +104,8 @@ struct vmRefImport_s
     uint32_t (*trap_Argc)( void );
     void (*trap_Argv)( uint32_t n, char *buffer, uint32_t bufferLength );
     void (*trap_Args)( char *buffer, uint32_t bufferLength );
+
+    int32_t (*G_LoadMap)( int32_t index, mapinfo_t *info );
 };
 #endif
 
@@ -100,6 +124,14 @@ public:
 
 #include "../ui/ui_public.h"
 #include "../engine/vm_local.h"
+
+typedef struct {
+    char **mapList;
+    mapinfo_t *infoList;
+    uint64_t numMapFiles;
+
+    int32_t currentMapLoaded;
+} mapCache_t;
 
 typedef struct {
     char currentmap[MAX_GDR_PATH];
@@ -130,6 +162,8 @@ typedef struct {
     int desktopHeight;
     
     gpuConfig_t gpuConfig;
+
+    mapCache_t mapCache;
 } gameInfo_t;
 
 extern field_t g_consoleField;
@@ -185,9 +219,10 @@ typedef struct {
 
 typedef enum
 {
-    VIDMODE_320x240,
-    VIDMODE_640x480,
-    VIDMODE_800x600,
+//    VIDMODE_640x480,
+//    VIDMODE_800x600,
+
+    // minimum result needed to run
     VIDMODE_1024x768,
     VIDMODE_2048x1536,
     VIDMODE_1280x720,
@@ -219,6 +254,7 @@ void G_ShutdownVMs(void);
 void G_Frame(int msec, int realMsec);
 void G_InitDisplay(gpuConfig_t *config);
 SDL_Window *G_GetSDLWindow(void);
+SDL_GLContext G_GetGLContext( void );
 void GLimp_Minimize( void );
 
 //
@@ -253,6 +289,8 @@ void G_ConsolePrint( const char *txt );
 void Con_CheckResize( void );
 void Con_ClearNotify( void );
 void Con_ToggleConsole_f( void );
+uint32_t Con_ExternalWindowID( void );
+void Con_ExternalWindowEvent( uint32_t value );
 
 extern qboolean key_overstrikeMode;
 
@@ -277,6 +315,7 @@ void G_DrawUI(void);
 void G_ShutdownSGame(void);
 void G_InitSGame(void);
 void G_SGameRender(stereoFrame_t stereo);
+int32_t G_LoadMap( int32_t index, mapinfo_t *info );
 
 extern vm_t *sgvm;
 extern vm_t *uivm;

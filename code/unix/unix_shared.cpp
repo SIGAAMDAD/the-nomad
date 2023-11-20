@@ -148,6 +148,7 @@ char **Sys_ListFiles(const char *directory, const char *extension, const char *f
         if ((dironly && !(st.st_mode & S_IFDIR)) || (!dironly && (st.st_mode & S_IFDIR)))
             continue;
         
+        // skip pwd '.' and '..', those'll cause a segfault in FS_PathCmp after FS_SortFileList
         if (d->d_name[0] == '.' || (d->d_name[0] == '.' && d->d_name[1] == '.')) {
             continue;
         }

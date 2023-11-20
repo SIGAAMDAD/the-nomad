@@ -189,6 +189,8 @@ typedef struct {
 typedef struct {
 	uint32_t ident;
 	uint32_t version;
+    uint32_t mapWidth;
+    uint32_t mapHeight;
     lump_t lumps[NUMLUMPS];
 } mapheader_t;
 
