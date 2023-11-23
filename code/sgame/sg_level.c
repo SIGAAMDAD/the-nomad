@@ -14,7 +14,6 @@ typedef struct
 
 typedef struct
 {
-
     int32_t index;
 
     // save data
@@ -24,8 +23,33 @@ typedef struct
 
 static levelinfo_t *linfo;
 
-int32_t SG_InitLevel( int32_t levelIndex )
+//
+// SG_SpawnLevelEntities
+//
+static void SG_SpawnLevelEntities( void )
 {
+    uint32_t i;
+    const mapspawn_t *spawn;
+
+    spawn = sg.mapInfo.spawns;
+    for (i = 0; i < sg.mapInfo.numSpawns; i++, spawn++) {
+        switch (spawn->entitytype) {
+        case ET_MOB:
+            SG_SpawnMobOnMap( spawn->entityid, spawn->xyz[0], spawn->xyz[1], spawn->xyz[2] );
+            break;
+        case ET_PLAYR:
+        case ET_ITEM:
+        case ET_WEAPON:
+            break;
+        };
+    }
+}
+
+qboolean SG_InitLevel( int32_t levelIndex )
+{
+    G_Printf( "Starting up level at index %i\n", levelIndex );
+    G_Printf( "Allocating resources...\n" );
+
     linfo = SG_MemAlloc( sizeof(*linfo) );
     if (!linfo) {
         trap_Error( "SG_InitLevel: not enough vm memory" );
@@ -34,14 +58,21 @@ int32_t SG_InitLevel( int32_t levelIndex )
 
     memset( linfo, 0, sizeof(*linfo) );
 
+    G_Printf( "Loading map from internal cache...\n" );
+
     if (!G_LoadMap( levelIndex, &sg.mapInfo )) {
         SG_Printf( "SG_InitLevel: failed to load map file at index %i\n", levelIndex );
-        return -1;
+        return qfalse;
     }
 
+    G_Printf( "All done.\n" );
 
+    // spawn everything
+    SG_SpawnLevelEntities();
 
-    return 1;
+    sg.state = SGAME_IN_LEVEL;
+
+    return qtrue;
 }
 
 typedef struct {
@@ -61,6 +92,7 @@ static void SG_DrawLevelStats( void )
         ImGui_SetWindowFontScale( font_scale * 6 );
         ImGui_TextUnformatted( "Level Statistics" );
         ImGui_SetWindowFontScale( font_scale * 3.5f );
+        ImGui_NewLine();
 
         ImGui_GetCursorScreenPos( &cursorPos[0], &cursorPos[1] );
 
@@ -72,12 +104,16 @@ static void SG_DrawLevelStats( void )
 
 int32_t SG_EndLevel( void )
 {
+    // setup the window
     memset( &endLevel, 0, sizeof(endLevel) );
 
     endLevel.window.m_Flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar;
     endLevel.window.m_pTitle = "endLevel";
     endLevel.window.m_bOpen = qtrue;
     endLevel.window.m_bClosable = qfalse;
-    
+
+    // set the state
+    sg.state = SGAME_SHOW_LEVEL_STATS;
+
     return 1;
 }

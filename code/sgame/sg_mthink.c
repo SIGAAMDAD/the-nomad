@@ -1,48 +1,55 @@
-#include "../src/n_shared.h"
 #include "sg_local.h"
-#include "sg_entity.h"
-#include "sg_mob.h"
-#include "sg_game.h"
 
-void G_SpawnMob(mobtype_t type, const vec2_t pos)
+//======================================================
+
+mobj_t *SG_SpawnMob( mobtype_t type )
 {
-    mobj_t* mob;
-    int i;
+	mobj_t *m;
+	sgentity_t *e;
+	
+	if (type >= NUMMOBS) {
+		SG_Error("SG_SpawnMob: bad mob index");
+	}
+	
+	e = SG_AllocEntity( ET_MOB );
+	if (!e) {
+		SG_Error("SG_SpawnMob: failed to allocate entity");
+    }
 
-    mob = NULL;
-    if (type >= NUMMOBS) {
-        Con_Printf("WARNING: attempted to spawn a mob with an invalid type");
-        return;
-    }
-    for (i = 0; i < MAX_MOBS_ACTIVE; i++) {
-        if (!sg_world.mobs[i].alive) {
-            mob = &sg_world.mobs[i];
-            break;
-        }
-    }
-    mob->dir = D_NORTH;
-    mob->health = mobinfo[type].health;
-    mob->alive = qtrue;
-    strncpy(mob->name, mobinfo[type].name, sizeof(mob->name) - 1);
-    VectorCopy(mob->pos, pos);
-    VectorCopy(mob->thrust, vec2_origin);
-    VectorCopy(mob->to, vec2_origin);
+    m = e->entPtr;
+	memcpy(m, &mobinfo, sizeof(*m));
+
+    switch (type) {
+    case MT_CHAINSAW:
+        e->stateOffset = 0;
+        break;
+    case MT_SHOTTY:
+        e->stateOffset = ST_SHOTTY_IDLE;
+        break;
+    case MT_GRUNT:
+        e->stateOffset = ST_GRUNT_IDLE;
+        break;
+    case MT_HULK:
+        break;
+    };
+    e->state = &stateinfo[ ST_IDLE + e->stateOffset ];
+    e->ticker = e->state->ticcount;
+	
+	return m;
 }
 
-void M_KillMob(mobj_t* mob)
+void SG_KillMob( mobj_t *m )
 {
-    mob->alive = qfalse;
+	SG_FreeEntity( m->ent );
 }
 
-void M_RunThinkers(void)
+void SG_SpawnMobOnMap( mobtype_t id, float x, float y, float elevation )
 {
-    mobj_t* mob;
-    int i;
-
-    for (i = 0; i < MAX_MOBS_ACTIVE; i++) {
-        if (sg_world.mobs[i].alive) {
-            mob = &sg_world.mobs[i];
-            (*mob->think)(mob);
-        }
-    }
+	mobj_t *m;
+	
+	m = SG_SpawnMob( id );
+	
+	m->ent->origin[0] = x;
+	m->ent->origin[1] = y;
+	m->ent->origin[2] = elevation;
 }

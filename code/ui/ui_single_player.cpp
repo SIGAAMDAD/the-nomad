@@ -112,6 +112,7 @@ void NewGame_DrawNameIssue( void )
         , sizeof(sp.name) - 1);
 
         if (ImGui::Button( "OK" )) {
+            ui->PlaySelected();
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
@@ -182,7 +183,8 @@ void SinglePlayerMenu_Draw( void )
             ImGui::TableNextColumn();
             ImGui::TextUnformatted( "Save Name" );
             ImGui::TableNextColumn();
-            if (ImGui::InputText( " ", sp.name, sizeof(sp.name), ImGuiInputTextFlags_EscapeClearsAll )) {
+            if (ImGui::InputText( " ", sp.name, sizeof(sp.name), ImGuiInputTextFlags_EscapeClearsAll | ImGuiInputTextFlags_EnterReturnsTrue )) {
+                ui->PlaySelected();
                 // make sure it's an absolute path
                 if (strchr( sp.name, '/' ) || strchr( sp.name, '\\' )) {
                     N_strncpyz( sp.name, COM_SkipPath( sp.name ), sizeof(sp.name) );
@@ -205,11 +207,13 @@ void SinglePlayerMenu_Draw( void )
                     if (i != DIF_HARDEST) {
                         if (ImGui::MenuItem( difficultyTable[ i ].name )) {
                             sp.diff = (gamedif_t)i;
+                            ui->PlaySelected();
                         }
                     }
                     else {
                         if (ImGui::MenuItem( difHardestTitles[ sp.hardestIndex ] )) {
                             sp.diff = (gamedif_t)i;
+                            ui->PlaySelected();
                         }
                     }
                     if (ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled )) {
@@ -228,6 +232,8 @@ void SinglePlayerMenu_Draw( void )
         ImGui::NewLine();
         ImGui::NewLine();
         if (ImGui::Button( "Open To a Fresh Chapter" )) {
+            ui->PlaySelected();
+            VM_Call( sgvm, 1, SGAME_STARTLEVEL, 0 ); // start a new game
         }
         break; }
     case STATE_LOADGAME: {
@@ -264,6 +270,8 @@ void SinglePlayerMenu_Draw( void )
         }
         break; }
     };
+
+    ImGui::End();
 }
 
 void SinglePlayerMenu_Cache( void )

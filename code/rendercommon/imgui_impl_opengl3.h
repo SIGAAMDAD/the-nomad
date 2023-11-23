@@ -53,6 +53,7 @@ typedef struct
     void (*glScissor)( GLint x, GLint y, GLsizei width, GLsizei height );
     void (*glViewport)( GLint x, GLint y, GLsizei width, GLsizei height );
     void (*glUniform1i)( GLint location, GLint v0 );
+    void (*glUniform1f)( GLint location, GLfloat v0 );
     GLint (*glGetAttribLocation)( GLuint program, const GLchar *name );
     GLint (*glGetUniformLocation)( GLuint program, const GLchar *name );
     void (*glUniformMatrix4fv)( GLint location, GLsizei count, GLboolean transpose, const GLfloat *value );

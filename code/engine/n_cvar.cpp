@@ -1,4 +1,6 @@
 #include "n_shared.h"
+#include "n_allocator.h"
+#include <EASTL/fixed_vector.h>
 
 static cvar_t *cvar_vars = NULL;
 static cvar_t *c_cheatsAllowed;
@@ -6,7 +8,8 @@ static cvar_t *c_devmode;
 uint32_t cvar_modifiedFlags;
 
 #define MAX_CVARS 2048
-static cvar_t cvar_indexes[MAX_CVARS];
+//static cvar_t cvar_indexes[MAX_CVARS];
+static eastl::fixed_vector<cvar_t, MAX_CVARS, true, CZoneAllocator> cvar_indexes;
 static uint64_t cvar_numIndexes;
 
 static int cvar_group[CVG_MAX];
@@ -434,15 +437,16 @@ cvar_t *Cvar_Get(const char *var_name, const char *var_value, uint32_t flags)
     //
 
     // find a free cvar
-    for (index = 0; index < MAX_CVARS; index++) {
-        if (!cvar_indexes[index].name)
+    for (index = 0; index < cvar_indexes.capacity(); index++) {
+        if (!cvar_indexes[index].name) {
             break;
+        }
     }
 
-    if (index >= MAX_CVARS) {
-        N_Error(ERR_FATAL, "Error: Too many cvars, cannot create a new one!");
-        return NULL;
-    }
+//    if (index >= MAX_CVARS) {
+//        N_Error(ERR_FATAL, "Error: Too many cvars, cannot create a new one!");
+//        return NULL;
+//    }
 
     var = &cvar_indexes[index];
 
@@ -1897,7 +1901,7 @@ void Cvar_Register(vmCvar_t *vmCvar, const char *varName, const char *defaultVal
     if (!vmCvar)
         return;
 
-    vmCvar->handle = cv - cvar_indexes;
+    vmCvar->handle = cv - cvar_indexes.data();
     vmCvar->modificationCount = -1;
 
     Cvar_Update(vmCvar, 0);
@@ -1920,7 +1924,7 @@ void Cvar_Update(vmCvar_t *vmCvar, uint32_t privateFlag)
         N_Error(ERR_DROP, "Cvar_Update: handle out of range");
     }
 
-    cv = cvar_indexes + vmCvar->handle;
+    cv = cvar_indexes.data() + vmCvar->handle;
 
     if (cv->modificationCount == vmCvar->modificationCount) {
         return;
@@ -1989,8 +1993,8 @@ Reads in all archived cvars
 */
 void Cvar_Init(void)
 {
-    memset(cvar_indexes, '\0', sizeof(cvar_indexes));
-    memset(hashTable, '\0', sizeof(hashTable));
+    memset(cvar_indexes.data(), 0, sizeof(cvar_indexes));
+    memset(hashTable, 0, sizeof(hashTable));
 
     c_cheatsAllowed = Cvar_Get("c_cheatsAllowed", "1", CVAR_ROM | CVAR_SYSTEMINFO);
     Cvar_SetDescription(c_cheatsAllowed, "Enable cheating commands.");

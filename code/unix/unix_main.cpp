@@ -3,9 +3,10 @@
 #include "../game/g_game.h"
 #include "sys_unix.h"
 #include <execinfo.h>
-
+#include <sys/vfs.h>
 
 #define SYS_BACKTRACE_MAX 1024
+#define MEM_THRESHOLD (96*1024*1024)
 
 static field_t tty_con;
 static int stdin_flags;
@@ -109,8 +110,8 @@ void tty_Hide( void )
 // FIXME TTimo need to position the cursor if needed??
 void tty_Show( void )
 {
-	if ( !ttycon_on )
-		return;
+//	if ( !ttycon_on )
+//		return;
 
 	if ( ttycon_hide > 0 )
 	{
@@ -125,6 +126,23 @@ void tty_Show( void )
 			}
 		}
 	}
+}
+
+qboolean Sys_LowPhysicalMemory( void )
+{
+#if 1
+    uint64_t pageSize = sysconf( _SC_PAGESIZE );
+    uint64_t numPhysPages = sysconf( _SC_AVPHYS_PAGES );
+    return (pageSize * numPhysPages) < MEM_THRESHOLD ? qtrue : qfalse;
+#else
+    struct statfs buf;
+    size_t memLeft;
+
+    if (statfs( "/", &buf ) == -1) {
+        N_Error( ERR_FATAL, "statfs() failed, strerror(): %s", strerror( errno ) );
+    }
+    return (buf.f_bsize * buf.f_bfree) > MEM_THRESHOLD ? qtrue : qfalse;
+#endif
 }
 
 typedef struct

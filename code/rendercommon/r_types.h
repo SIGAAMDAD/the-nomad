@@ -32,11 +32,23 @@ typedef struct {
 } renderEntityRef_t;
 
 typedef struct {
+	vec3_t origin;
+
+	float width;
+	float height;
+
+	float realWidth;
+	float realHeight;
+} renderCameraDef_t;
+
+typedef struct {
 	uint32_t x, y;
 	uint32_t width, height;
 
 	uint32_t flags;
 	uint32_t time;
+
+	renderCameraDef_t *camera; // only used when rendering with tilemaps
 } renderSceneRef_t;
 
 typedef renderSceneRef_t refdef_t;
@@ -47,9 +59,14 @@ typedef enum : uint32_t
 typedef enum
 #endif
 {
-	AntiAlias_MSAA,
-	AntiAlias_SSAA,
-	AntiAlias_FXAA,
+	AntiAlias_2xMSAA,
+	AntiAlias_4xMSAA,
+	AntiAlias_8xMSAA,
+	AntiAlias_16xMSAA,
+	AntiAlias_32xMSAA,
+	AntiAlias_2xSSAA,
+	AntiAlias_4xSSAA,
+	AntiAlias_DSSAA
 } antialiasType_t;
 
 #ifdef __cplusplus

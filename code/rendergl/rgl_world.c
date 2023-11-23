@@ -1,15 +1,5 @@
 #include "rgl_local.h"
 
-/*
-bmf files get really funky
-*/
-typedef struct {
-    uint32_t ident;
-    uint32_t version;
-    tile2d_header_t tileHeader;
-    mapheader_t mapData;
-} lvlheader_t;
-
 static world_t r_worldData;
 static byte *fileBase;
 
@@ -101,15 +91,12 @@ static void R_LoadTileset(const lump_t *sprites, const tile2d_header_t *theader)
     r_worldData.numTilesetSprites = count;
 
     memcpy(out, in, count*sizeof(*out));
-
-    r_worldData.tileset;
 }
 
 void R_GenerateDrawData(void)
 {
     srfTile_t *surf;
-    drawVert_t *vert;
-    glIndex_t *idx;
+    maptile_t *tile;
     uint32_t numSurfs, i;
     uint32_t offset;
 
@@ -117,27 +104,38 @@ void R_GenerateDrawData(void)
     r_worldData.numVertices = r_worldData.width * r_worldData.height * 4;
 
     r_worldData.indices = ri.Hunk_Alloc(sizeof(glIndex_t) * r_worldData.numIndices, h_low);
-    r_worldData.vertices = ri.Hunk_Alloc(sizeof(drawVert_t) * r_worldData.numVertices, h_low);
+    r_worldData.vertices = ri.Hunk_Alloc( sizeof(drawVert_t) * r_worldData.numVertices, h_low );
 
     surf = ri.Hunk_Alloc(sizeof(*surf), h_low);
 
-    idx = r_worldData.indices;
-    vert = r_worldData.vertices;
+    surf->numTiles = r_worldData.numTiles;
+    surf->surfaceType = SF_TILE;
+    surf->indices = r_worldData.indices;
+    surf->vertices = r_worldData.vertices;
+
+    r_worldData.surface = surf;
 
     for (i = 0, offset = 0; i < r_worldData.numIndices; i += 6, offset += 4) {
-        idx[i + 0] = offset + 0;
-        idx[i + 1] = offset + 1;
-        idx[i + 2] = offset + 2;
+        surf->indices[i + 0] = offset + 0;
+        surf->indices[i + 1] = offset + 1;
+        surf->indices[i + 2] = offset + 2;
 
-        idx[i + 3] = offset + 3;
-        idx[i + 4] = offset + 2;
-        idx[i + 5] = offset + 0;
+        surf->indices[i + 3] = offset + 3;
+        surf->indices[i + 4] = offset + 2;
+        surf->indices[i + 5] = offset + 0;
+    }
+
+    for (i = 0; i < r_worldData.numTiles; i++) {
+        VectorCopy2( surf->vertices[i + 0].uv, r_worldData.tiles[i].texcoords[i + 0] );
+        VectorCopy2( surf->vertices[i + 1].uv, r_worldData.tiles[i].texcoords[i + 1] );
+        VectorCopy2( surf->vertices[i + 2].uv, r_worldData.tiles[i].texcoords[i + 2] );
+        VectorCopy2( surf->vertices[i + 3].uv, r_worldData.tiles[i].texcoords[i + 3] );
     }
 }
 
 void GDR_EXPORT RE_LoadWorldMap(const char *filename)
 {
-    lvlheader_t *header;
+    bmf_t *header;
     mapheader_t *mheader;
     tile2d_header_t *theader;
     char texture[MAX_GDR_PATH];
@@ -174,7 +172,7 @@ void GDR_EXPORT RE_LoadWorldMap(const char *filename)
 
     COM_StripExtension(r_worldData.baseName, r_worldData.baseName, sizeof(r_worldData.baseName));
 
-    header = (lvlheader_t *)buffer.b;
+    header = (bmf_t *)buffer.b;
     if (LittleInt(header->version) != LEVEL_VERSION) {
         ri.Error(ERR_DROP, "RE_LoadWorldMap: %s has the wrong version number (%i should be %i)",
             filename, LittleInt(header->version), LEVEL_VERSION);
@@ -182,15 +180,17 @@ void GDR_EXPORT RE_LoadWorldMap(const char *filename)
 
     fileBase = (byte *)header;
 
+    mheader = &header->map;
+    theader = &header->tileset;
+
     // swap all the lumps
-    mheader = (mapheader_t *)((byte *)header + offsetof(lvlheader_t, mapData));
-    for (uint64_t i = 0; i < sizeof(mapheader_t)/4; i++) {
-        ((int *)mheader)[i] = LittleInt(((int *)mheader)[i]);
+    for (uint32_t i = 0; i < sizeof(bmf_t)/4; i++) {
+        ((int32_t *)header)[i] = LittleInt( ((int32_t *)header)[i] );
     }
-    theader = (tile2d_header_t *)((byte *)header + offsetof(lvlheader_t, tileHeader));
-    for (uint64_t i = 0; i < sizeof(tile2d_header_t)/4; i++) {
-        ((int *)theader)[i] = LittleInt(((int *)theader)[i]);
-    }
+
+    r_worldData.width = mheader->mapWidth;
+    r_worldData.height = mheader->mapHeight;
+    r_worldData.numTiles = r_worldData.width * r_worldData.height;
 
     // load into heap
     R_LoadTiles(&mheader->lumps[LUMP_TILES]);
@@ -202,12 +202,13 @@ void GDR_EXPORT RE_LoadWorldMap(const char *filename)
 
     R_GenerateDrawData();
 
+    rg.world = &r_worldData;
+
     COM_StripExtension(theader->info.texture, texture, sizeof(texture));
     rg.world->shader = R_FindShader(texture);
     if (rg.world->shader == rg.defaultShader) {
         ri.Error(ERR_DROP, "RE_LoadWorldMap: failed to load shader for '%s'", filename);
     }
 
-    rg.world->tileset = RE_RegisterSpriteSheet(texture, theader->info.numTiles, theader->info.tileWidth, theader->info.tileHeight,
-        (theader->info.tileWidth * theader->info.tileCountX), (theader->info.tileHeight * theader->info.tileCountY));
+    ri.FS_FreeFile( buffer.v );
 }

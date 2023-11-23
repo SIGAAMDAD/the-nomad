@@ -1,16 +1,18 @@
 
 const char *fallbackShader_imgui_fp =
 "#if !defined(GLSL_LEGACY)\n"
-"out vec4 a_Color;\n"
+"layout(location = 0) out vec4 a_Color;\n"
 "#endif\n"
 "\n"
 "in vec2 v_TexCoord;\n"
 "in vec4 v_Color;\n"
 "\n"
 "uniform sampler2D u_DiffuseMap;\n"
+"uniform float u_GammaAmount;\n"
 "\n"
 "void main() {\n"
-"    a_Color = v_Color * texture2D(u_DiffuseMap, v_TexCoord);\n"
+"    a_Color = v_Color * texture(u_DiffuseMap, v_TexCoord);\n"
+"    a_Color.rgb = pow(a_Color.rgb, vec3( 1.0 / u_GammaAmount ));\n"
 "}\n"
 ;
 
@@ -132,7 +134,7 @@ const char *fallbackShader_basic_fp =
 "#endif\n"
 "\n"
 "void main() {\n"
-"    a_Color = texture2D(u_DiffuseMap, v_TexCoord);\n"
+"    a_Color = texture(u_DiffuseMap, v_TexCoord);\n"
 "}\n"
 ;
 

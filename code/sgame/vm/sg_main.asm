@@ -1,50 +1,119 @@
 export vmMain
 code
-proc vmMain 4 8
+proc vmMain 20 8
 file "../sg_main.c"
-line 16
+line 18
 ;1:#include "../engine/n_shared.h"
 ;2:#include "sg_local.h"
 ;3:
-;4:int SG_Init(void);
-;5:int SG_Shutdown(void);
-;6:int SG_RunLoop(void);
+;4:int32_t SG_Init(void);
+;5:int32_t SG_Shutdown(void);
+;6:int32_t SG_RunLoop(void);
 ;7:
-;8:/*
-;9:vmMain
-;10:
-;11:this is the only way control passes into the module.
-;12:this must be the very first function compiled into the .qvm file
-;13:*/
-;14:int vmMain(int command, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7,
-;15:    int arg8, int arg9, int arg10)
-;16:{
-line 17
-;17:    switch (command) {
+;8:sgGlobals_t sg;
+;9:
+;10:/*
+;11:vmMain
+;12:
+;13:this is the only way control passes into the module.
+;14:this must be the very first function compiled into the .qvm file
+;15:*/
+;16:int32_t vmMain(int32_t command, int32_t arg0, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg5, int32_t arg6, int32_t arg7,
+;17:    int32_t arg8, int32_t arg9, int32_t arg10)
+;18:{
+line 19
+;19:    switch (command) {
+ADDRLP4 0
 ADDRFP4 0
 INDIRI4
-CNSTI4 0
-EQI4 $46
-ADDRGP4 $44
-JUMPV
-LABELV $46
-line 19
-;18:    case SGAME_INIT:
-;19:        return SG_Init();
-ADDRLP4 0
-ADDRGP4 SG_Init
-CALLI4
 ASGNI4
 ADDRLP4 0
 INDIRI4
-RETI4
-ADDRGP4 $43
+CNSTI4 0
+LTI4 $81
+ADDRLP4 0
+INDIRI4
+CNSTI4 6
+GTI4 $81
+ADDRLP4 0
+INDIRI4
+CNSTI4 2
+LSHI4
+ADDRGP4 $88
+ADDP4
+INDIRP4
 JUMPV
-LABELV $44
+lit
+align 4
+LABELV $88
+address $83
+address $81
+address $84
+address $81
+address $81
+address $85
+address $86
+code
+LABELV $83
 line 21
-;20:    default:
-;21:        SG_Error("vmMain: invalid command id: %i", command);
-ADDRGP4 $47
+;20:    case SGAME_INIT:
+;21:        return SG_Init();
+ADDRLP4 4
+ADDRGP4 SG_Init
+CALLI4
+ASGNI4
+ADDRLP4 4
+INDIRI4
+RETI4
+ADDRGP4 $80
+JUMPV
+LABELV $84
+line 23
+;22:    case SGAME_SHUTDOWN:
+;23:        return SG_Shutdown();
+ADDRLP4 8
+ADDRGP4 SG_Shutdown
+CALLI4
+ASGNI4
+ADDRLP4 8
+INDIRI4
+RETI4
+ADDRGP4 $80
+JUMPV
+LABELV $85
+line 25
+;24:    case SGAME_STARTLEVEL:
+;25:        return SG_InitLevel( arg0 );
+ADDRFP4 4
+INDIRI4
+ARGI4
+ADDRLP4 12
+ADDRGP4 SG_InitLevel
+CALLI4
+ASGNI4
+ADDRLP4 12
+INDIRI4
+RETI4
+ADDRGP4 $80
+JUMPV
+LABELV $86
+line 27
+;26:    case SGAME_ENDLEVEL:
+;27:        return SG_EndLevel();
+ADDRLP4 16
+ADDRGP4 SG_EndLevel
+CALLI4
+ASGNI4
+ADDRLP4 16
+INDIRI4
+RETI4
+ADDRGP4 $80
+JUMPV
+LABELV $81
+line 29
+;28:    default:
+;29:        SG_Error("vmMain: invalid command id: %i", command);
+ADDRGP4 $87
 ARGP4
 ADDRFP4 0
 INDIRI4
@@ -52,34 +121,35 @@ ARGI4
 ADDRGP4 SG_Error
 CALLV
 pop
-line 22
-;22:        break;
-LABELV $45
-line 23
-;23:    };
-line 24
-;24:    return -1;
+line 30
+;30:        break;
+LABELV $82
+line 31
+;31:    };
+line 32
+;32:    return -1;
 CNSTI4 -1
 RETI4
-LABELV $43
-endproc vmMain 4 8
-export SG_Printf
-proc SG_Printf 4100 12
-line 28
-;25:}
-;26:
-;27:void GDR_DECL SG_Printf(const char *fmt, ...)
-;28:{
-line 32
-;29:    va_list argptr;
-;30:    char msg[4096];
-;31:
-;32:    va_start(argptr, fmt);
+LABELV $80
+endproc vmMain 20 8
+export G_Printf
+proc G_Printf 4108 12
+line 36
+;33:}
+;34:
+;35:void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL G_Printf(const char *fmt, ...)
+;36:{
+line 41
+;37:    va_list argptr;
+;38:    char msg[4096];
+;39:    int32_t length;
+;40:
+;41:    va_start(argptr, fmt);
 ADDRLP4 0
 ADDRFP4 0+4
 ASGNP4
-line 33
-;33:    vsprintf(msg, fmt, argptr);
+line 42
+;42:    length = vsprintf(msg, fmt, argptr);
 ADDRLP4 4
 ARGP4
 ADDRFP4 0
@@ -88,97 +158,234 @@ ARGP4
 ADDRLP4 0
 INDIRP4
 ARGP4
+ADDRLP4 4104
 ADDRGP4 vsprintf
 CALLI4
-pop
-line 34
-;34:    va_end(argptr);
+ASGNI4
+ADDRLP4 4100
+ADDRLP4 4104
+INDIRI4
+ASGNI4
+line 43
+;43:    va_end(argptr);
 ADDRLP4 0
 CNSTP4 0
 ASGNP4
-line 36
-;35:
-;36:    trap_Print(msg);
+line 45
+;44:
+;45:    trap_Print(msg);
 ADDRLP4 4
 ARGP4
 ADDRGP4 trap_Print
 CALLV
 pop
-line 37
-;37:}
-LABELV $48
-endproc SG_Printf 4100 12
-export SG_Error
-proc SG_Error 4100 12
-line 40
-;38:
-;39:void GDR_DECL SG_Error(const char *fmt, ...)
-;40:{
-line 44
-;41:    va_list argptr;
-;42:    char msg[4096];
-;43:
-;44:    memset(msg, 0, sizeof(msg));
+line 46
+;46:}
+LABELV $89
+endproc G_Printf 4108 12
+export G_Error
+proc G_Error 4108 12
+line 49
+;47:
+;48:void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL G_Error(const char *err, ...)
+;49:{
+line 54
+;50:    va_list argptr;
+;51:    char msg[4096];
+;52:    int32_t length;
+;53:
+;54:    va_start(argptr, err);
 ADDRLP4 0
-ARGP4
-CNSTI4 0
-ARGI4
-CNSTU4 4096
-ARGU4
-ADDRGP4 memset
-CALLP4
-pop
-line 45
-;45:    va_start(argptr, fmt);
-ADDRLP4 4096
 ADDRFP4 0+4
 ASGNP4
-line 46
-;46:    vsprintf(msg, fmt, argptr);
-ADDRLP4 0
+line 55
+;55:    length = vsprintf(msg, err, argptr);
+ADDRLP4 4
 ARGP4
 ADDRFP4 0
 INDIRP4
 ARGP4
-ADDRLP4 4096
+ADDRLP4 0
 INDIRP4
 ARGP4
+ADDRLP4 4104
 ADDRGP4 vsprintf
 CALLI4
-pop
-line 47
-;47:    va_end(argptr);
-ADDRLP4 4096
+ASGNI4
+ADDRLP4 4100
+ADDRLP4 4104
+INDIRI4
+ASGNI4
+line 56
+;56:    va_end(argptr);
+ADDRLP4 0
 CNSTP4 0
 ASGNP4
-line 49
-;48:
-;49:    trap_Error(msg);
-ADDRLP4 0
+line 58
+;57:
+;58:    trap_Error(msg);
+ADDRLP4 4
 ARGP4
 ADDRGP4 trap_Error
 CALLV
 pop
-line 50
-;50:}
-LABELV $50
-endproc SG_Error 4100 12
+line 59
+;59:}
+LABELV $91
+endproc G_Error 4108 12
+export SG_Printf
+proc SG_Printf 4108 12
+line 62
+;60:
+;61:void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL SG_Printf(const char *fmt, ...)
+;62:{
+line 67
+;63:    va_list argptr;
+;64:    char msg[4096];
+;65:    int32_t length;
+;66:
+;67:    va_start(argptr, fmt);
+ADDRLP4 0
+ADDRFP4 0+4
+ASGNP4
+line 68
+;68:    length = vsprintf(msg, fmt, argptr);
+ADDRLP4 4
+ARGP4
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRLP4 0
+INDIRP4
+ARGP4
+ADDRLP4 4104
+ADDRGP4 vsprintf
+CALLI4
+ASGNI4
+ADDRLP4 4100
+ADDRLP4 4104
+INDIRI4
+ASGNI4
+line 69
+;69:    va_end(argptr);
+ADDRLP4 0
+CNSTP4 0
+ASGNP4
+line 71
+;70:
+;71:    if (length >= sizeof(msg)) {
+ADDRLP4 4100
+INDIRI4
+CVIU4 4
+CNSTU4 4096
+LTU4 $95
+line 72
+;72:        trap_Error( "SG_Printf: buffer overflow" );
+ADDRGP4 $97
+ARGP4
+ADDRGP4 trap_Error
+CALLV
+pop
+line 73
+;73:    }
+LABELV $95
+line 75
+;74:
+;75:    trap_Print(msg);
+ADDRLP4 4
+ARGP4
+ADDRGP4 trap_Print
+CALLV
+pop
+line 76
+;76:}
+LABELV $93
+endproc SG_Printf 4108 12
+export SG_Error
+proc SG_Error 4108 12
+line 79
+;77:
+;78:void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL SG_Error(const char *err, ...)
+;79:{
+line 84
+;80:    va_list argptr;
+;81:    char msg[4096];
+;82:    int32_t length;
+;83:
+;84:    va_start(argptr, err);
+ADDRLP4 0
+ADDRFP4 0+4
+ASGNP4
+line 85
+;85:    length = vsprintf(msg, err, argptr);
+ADDRLP4 4
+ARGP4
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRLP4 0
+INDIRP4
+ARGP4
+ADDRLP4 4104
+ADDRGP4 vsprintf
+CALLI4
+ASGNI4
+ADDRLP4 4100
+ADDRLP4 4104
+INDIRI4
+ASGNI4
+line 86
+;86:    va_end(argptr);
+ADDRLP4 0
+CNSTP4 0
+ASGNP4
+line 88
+;87:
+;88:    if (length >= sizeof(msg)) {
+ADDRLP4 4100
+INDIRI4
+CVIU4 4
+CNSTU4 4096
+LTU4 $100
+line 89
+;89:        trap_Error( "SG_Printf: buffer overflow" );
+ADDRGP4 $97
+ARGP4
+ADDRGP4 trap_Error
+CALLV
+pop
+line 90
+;90:    }
+LABELV $100
+line 92
+;91:
+;92:    trap_Error(msg);
+ADDRLP4 4
+ARGP4
+ADDRGP4 trap_Error
+CALLV
+pop
+line 93
+;93:}
+LABELV $98
+endproc SG_Error 4108 12
 export N_Error
-proc N_Error 4100 12
-line 53
-;51:
-;52:void GDR_DECL GDR_ATTRIBUTE((format(printf, 2, 3))) N_Error(errorCode_t code, const char *err, ...)
-;53:{
-line 57
-;54:    va_list argptr;
-;55:    char msg[4096];
-;56:
-;57:    va_start(argptr, err);
+proc N_Error 4108 12
+line 96
+;94:
+;95:void GDR_DECL GDR_ATTRIBUTE((format(printf, 2, 3))) N_Error(errorCode_t code, const char *err, ...)
+;96:{
+line 101
+;97:    va_list argptr;
+;98:    char msg[4096];
+;99:    int32_t length;
+;100:
+;101:    va_start(argptr, err);
 ADDRLP4 0
 ADDRFP4 4+4
 ASGNP4
-line 58
-;58:    vsprintf(msg, err, argptr);
+line 102
+;102:    length = vsprintf(msg, err, argptr);
 ADDRLP4 4
 ARGP4
 ADDRFP4 4
@@ -187,47 +394,71 @@ ARGP4
 ADDRLP4 0
 INDIRP4
 ARGP4
+ADDRLP4 4104
 ADDRGP4 vsprintf
 CALLI4
-pop
-line 59
-;59:    va_end(argptr);
+ASGNI4
+ADDRLP4 4100
+ADDRLP4 4104
+INDIRI4
+ASGNI4
+line 103
+;103:    va_end(argptr);
 ADDRLP4 0
 CNSTP4 0
 ASGNP4
-line 61
-;60:
-;61:    SG_Error("%s", msg);
-ADDRGP4 $54
+line 105
+;104:
+;105:    if (length >= sizeof(msg)) {
+ADDRLP4 4100
+INDIRI4
+CVIU4 4
+CNSTU4 4096
+LTU4 $104
+line 106
+;106:        trap_Error( "SG_Printf: buffer overflow" );
+ADDRGP4 $97
+ARGP4
+ADDRGP4 trap_Error
+CALLV
+pop
+line 107
+;107:    }
+LABELV $104
+line 109
+;108:
+;109:    SG_Error("%s", msg);
+ADDRGP4 $106
 ARGP4
 ADDRLP4 4
 ARGP4
 ADDRGP4 SG_Error
 CALLV
 pop
-line 62
-;62:}
-LABELV $52
-endproc N_Error 4100 12
+line 110
+;110:}
+LABELV $102
+endproc N_Error 4108 12
 export Con_Printf
-proc Con_Printf 4100 12
-line 68
-;63:
-;64:#ifndef SGAME_HARD_LINKED
-;65:// this is only here so the functions in n_shared.c and bg_*.c can link
-;66:
-;67:void GDR_DECL GDR_ATTRIBUTE((format(printf, 1, 2))) Con_Printf(const char *fmt, ...)
-;68:{
-line 72
-;69:    va_list argptr;
-;70:    char msg[4096];
-;71:
-;72:    va_start(argptr, fmt);
+proc Con_Printf 4108 12
+line 116
+;111:
+;112://#ifndef SGAME_HARD_LINKED
+;113:// this is only here so the functions in n_shared.c and bg_*.c can link
+;114:
+;115:void GDR_DECL GDR_ATTRIBUTE((format(printf, 1, 2))) Con_Printf(const char *fmt, ...)
+;116:{
+line 121
+;117:    va_list argptr;
+;118:    char msg[4096];
+;119:    int32_t length;
+;120:
+;121:    va_start(argptr, fmt);
 ADDRLP4 0
 ADDRFP4 0+4
 ASGNP4
-line 73
-;73:    vsprintf(msg, fmt, argptr);
+line 122
+;122:    length = vsprintf(msg, fmt, argptr);
 ADDRLP4 4
 ARGP4
 ADDRFP4 0
@@ -236,98 +467,274 @@ ARGP4
 ADDRLP4 0
 INDIRP4
 ARGP4
+ADDRLP4 4104
 ADDRGP4 vsprintf
 CALLI4
-pop
-line 74
-;74:    va_end(argptr);
+ASGNI4
+ADDRLP4 4100
+ADDRLP4 4104
+INDIRI4
+ASGNI4
+line 123
+;123:    va_end(argptr);
 ADDRLP4 0
 CNSTP4 0
 ASGNP4
-line 76
-;75:
-;76:    SG_Printf("%s", msg);
-ADDRGP4 $54
+line 125
+;124:
+;125:    if (length >= sizeof(msg)) {
+ADDRLP4 4100
+INDIRI4
+CVIU4 4
+CNSTU4 4096
+LTU4 $109
+line 126
+;126:        trap_Error( "SG_Printf: buffer overflow" );
+ADDRGP4 $97
+ARGP4
+ADDRGP4 trap_Error
+CALLV
+pop
+line 127
+;127:    }
+LABELV $109
+line 129
+;128:
+;129:    SG_Printf("%s", msg);
+ADDRGP4 $106
 ARGP4
 ADDRLP4 4
 ARGP4
 ADDRGP4 SG_Printf
 CALLV
 pop
-line 77
-;77:}
-LABELV $55
-endproc Con_Printf 4100 12
-export SG_Init
-proc SG_Init 0 0
-line 82
-;78:
-;79:#endif
-;80:
-;81:int SG_Init(void)
-;82:{
-line 87
-;83://    if (!trap_Key_GetCatcher() & KEYCATCH_SGAME) {
-;84://        trap_Key_SetCatcher(trap_Key_GetCatcher() & KEYCATCH_SGAME);
-;85://    }
-;86:
-;87:    return 0;
+line 130
+;130:}
+LABELV $107
+endproc Con_Printf 4108 12
+proc SG_LoadMedia 12 4
+line 135
+;131:
+;132://#endif
+;133:
+;134:static qboolean SG_LoadMedia( void )
+;135:{
+line 136
+;136:    if ((sg.media.player_pain0 = trap_Snd_RegisterSfx( "sfx/player/pain0.wav" )) == FS_INVALID_HANDLE)
+ADDRGP4 $114
+ARGP4
+ADDRLP4 0
+ADDRGP4 trap_Snd_RegisterSfx
+CALLI4
+ASGNI4
+ADDRGP4 sg
+ADDRLP4 0
+INDIRI4
+ASGNI4
+ADDRLP4 0
+INDIRI4
+CNSTI4 -1
+NEI4 $112
+line 137
+;137:        return qfalse;
 CNSTI4 0
 RETI4
-LABELV $57
-endproc SG_Init 0 0
-export SG_Shutdown
-proc SG_Shutdown 8 4
-line 91
-;88:}
-;89:
-;90:int SG_Shutdown(void)
-;91:{
-line 92
-;92:    SG_ClearMem();
-ADDRGP4 SG_ClearMem
-CALLV
-pop
-line 94
-;93:
-;94:    if (trap_Key_GetCatcher() & KEYCATCH_SGAME) {
-ADDRLP4 0
-ADDRGP4 trap_Key_GetCatcher
+ADDRGP4 $111
+JUMPV
+LABELV $112
+line 139
+;138:    
+;139:    if ((sg.media.player_pain1 = trap_Snd_RegisterSfx( "sfx/player/pain1.wav" )) == FS_INVALID_HANDLE)
+ADDRGP4 $118
+ARGP4
+ADDRLP4 4
+ADDRGP4 trap_Snd_RegisterSfx
 CALLI4
 ASGNI4
-ADDRLP4 0
+ADDRGP4 sg+4
+ADDRLP4 4
 INDIRI4
-CNSTI4 8192
-BANDI4
+ASGNI4
+ADDRLP4 4
+INDIRI4
+CNSTI4 -1
+NEI4 $115
+line 140
+;140:        return qfalse;
 CNSTI4 0
-EQI4 $59
-line 95
-;95:        trap_Key_SetCatcher(trap_Key_GetCatcher() & ~KEYCATCH_SGAME);
-ADDRLP4 4
-ADDRGP4 trap_Key_GetCatcher
+RETI4
+ADDRGP4 $111
+JUMPV
+LABELV $115
+line 142
+;141:    
+;142:    if ((sg.media.player_pain2 = trap_Snd_RegisterSfx( "sfx/player/pain2.wav" )) == FS_INVALID_HANDLE)
+ADDRGP4 $122
+ARGP4
+ADDRLP4 8
+ADDRGP4 trap_Snd_RegisterSfx
 CALLI4
 ASGNI4
-ADDRLP4 4
+ADDRGP4 sg+8
+ADDRLP4 8
 INDIRI4
-CNSTI4 -8193
-BANDI4
-ARGI4
+ASGNI4
+ADDRLP4 8
+INDIRI4
+CNSTI4 -1
+NEI4 $119
+line 143
+;143:        return qfalse;
+CNSTI4 0
+RETI4
+ADDRGP4 $111
+JUMPV
+LABELV $119
+line 145
+;144:
+;145:    return qtrue;
+CNSTI4 1
+RETI4
+LABELV $111
+endproc SG_LoadMedia 12 4
+export SG_Init
+proc SG_Init 12 4
+line 149
+;146:}
+;147:
+;148:int32_t SG_Init(void)
+;149:{
+line 150
+;150:    if (!trap_Key_GetCatcher() & KEYCATCH_SGAME) {
+ADDRLP4 4
+ADDRGP4 trap_Key_GetCatcher
+CALLU4
+ASGNU4
+ADDRLP4 4
+INDIRU4
+CNSTU4 0
+NEU4 $127
+ADDRLP4 0
+CNSTI4 1
+ASGNI4
+ADDRGP4 $128
+JUMPV
+LABELV $127
+ADDRLP4 0
+CNSTI4 0
+ASGNI4
+LABELV $128
+ADDRLP4 0
+INDIRI4
+CVIU4 4
+CNSTU4 8192
+BANDU4
+CNSTU4 0
+EQU4 $124
+line 151
+;151:        trap_Key_SetCatcher(trap_Key_GetCatcher() & KEYCATCH_SGAME);
+ADDRLP4 8
+ADDRGP4 trap_Key_GetCatcher
+CALLU4
+ASGNU4
+ADDRLP4 8
+INDIRU4
+CNSTU4 8192
+BANDU4
+ARGU4
 ADDRGP4 trap_Key_SetCatcher
 CALLV
 pop
-line 96
-;96:    }
-LABELV $59
-line 98
-;97:
-;98:    return 0;
+line 152
+;152:    }
+LABELV $124
+line 154
+;153:
+;154:    if (!SG_LoadMedia()) {
+ADDRLP4 8
+ADDRGP4 SG_LoadMedia
+CALLI4
+ASGNI4
+ADDRLP4 8
+INDIRI4
+CNSTI4 0
+NEI4 $129
+line 155
+;155:        G_Printf( COLOR_RED "SG_LoadMedia: failed!\n" );
+ADDRGP4 $131
+ARGP4
+ADDRGP4 G_Printf
+CALLV
+pop
+line 156
+;156:        return -1; // did we fail to load the required resources?
+CNSTI4 -1
+RETI4
+ADDRGP4 $123
+JUMPV
+LABELV $129
+line 159
+;157:    }
+;158:
+;159:    SG_MemInit();
+ADDRGP4 SG_MemInit
+CALLV
+pop
+line 161
+;160:
+;161:    return 1;
+CNSTI4 1
+RETI4
+LABELV $123
+endproc SG_Init 12 4
+export SG_Shutdown
+proc SG_Shutdown 8 4
+line 165
+;162:}
+;163:
+;164:int32_t SG_Shutdown(void)
+;165:{
+line 167
+;166:
+;167:    if (trap_Key_GetCatcher() & KEYCATCH_SGAME) {
+ADDRLP4 0
+ADDRGP4 trap_Key_GetCatcher
+CALLU4
+ASGNU4
+ADDRLP4 0
+INDIRU4
+CNSTU4 8192
+BANDU4
+CNSTU4 0
+EQU4 $133
+line 168
+;168:        trap_Key_SetCatcher(trap_Key_GetCatcher() & ~KEYCATCH_SGAME);
+ADDRLP4 4
+ADDRGP4 trap_Key_GetCatcher
+CALLU4
+ASGNU4
+ADDRLP4 4
+INDIRU4
+CNSTU4 4294959103
+BANDU4
+ARGU4
+ADDRGP4 trap_Key_SetCatcher
+CALLV
+pop
+line 169
+;169:    }
+LABELV $133
+line 171
+;170:
+;171:    return 0;
 CNSTI4 0
 RETI4
-LABELV $58
+LABELV $132
 endproc SG_Shutdown 8 4
 import SG_RunLoop
-import trap_GetGameState
 import trap_RE_SetColor
+import trap_RE_RenderScene
+import trap_RE_ClearScene
 import trap_RE_AddPolyListToScene
 import trap_RE_AddPolyToScene
 import trap_Key_IsDown
@@ -357,10 +764,30 @@ import trap_Cvar_Register
 import trap_Milliseconds
 import trap_Error
 import trap_Print
-import SG_InitMem
-import SG_FreeMem
-import SG_ClearMem
-import SG_AllocMem
+import G_LoadMap
+import P_GiveWeapon
+import P_GiveItem
+import SG_MouseEvent
+import SG_KeyEvent
+import SG_MemInit
+import SG_MemAlloc
+import String_Alloc
+import Lvl_AddKillEntity
+import SG_EndLevel
+import SG_InitLevel
+import sg_pmAccel
+import stateinfo
+import ammoCaps
+import mobinfo
+import iteminfo
+import weaponinfo
+bss
+export sg
+align 4
+LABELV sg
+skip 41966784
+import inversedirs
+import dirvectors
 import I_GetParm
 import Com_TouchMemory
 import Hunk_TempIsClear
@@ -449,6 +876,8 @@ import com_errorMessage
 import com_errorEntered
 import com_cacheLine
 import com_frameTime
+import com_fps
+import com_maxfps
 import sys_cpuString
 import com_devmode
 import com_version
@@ -490,6 +919,8 @@ import Cmd_RemoveCommand
 import Cmd_AddCommand
 import Cmd_Init
 import keys
+import Key_SetOverstrikeMode
+import Key_GetOverstrikeMode
 import Key_GetKey
 import Key_GetCatcher
 import Key_SetCatcher
@@ -721,12 +1152,137 @@ import memchr
 import memcpy
 lit
 align 1
-LABELV $54
+LABELV $131
+byte 1 94
+byte 1 49
+byte 1 83
+byte 1 71
+byte 1 95
+byte 1 76
+byte 1 111
+byte 1 97
+byte 1 100
+byte 1 77
+byte 1 101
+byte 1 100
+byte 1 105
+byte 1 97
+byte 1 58
+byte 1 32
+byte 1 102
+byte 1 97
+byte 1 105
+byte 1 108
+byte 1 101
+byte 1 100
+byte 1 33
+byte 1 10
+byte 1 0
+align 1
+LABELV $122
+byte 1 115
+byte 1 102
+byte 1 120
+byte 1 47
+byte 1 112
+byte 1 108
+byte 1 97
+byte 1 121
+byte 1 101
+byte 1 114
+byte 1 47
+byte 1 112
+byte 1 97
+byte 1 105
+byte 1 110
+byte 1 50
+byte 1 46
+byte 1 119
+byte 1 97
+byte 1 118
+byte 1 0
+align 1
+LABELV $118
+byte 1 115
+byte 1 102
+byte 1 120
+byte 1 47
+byte 1 112
+byte 1 108
+byte 1 97
+byte 1 121
+byte 1 101
+byte 1 114
+byte 1 47
+byte 1 112
+byte 1 97
+byte 1 105
+byte 1 110
+byte 1 49
+byte 1 46
+byte 1 119
+byte 1 97
+byte 1 118
+byte 1 0
+align 1
+LABELV $114
+byte 1 115
+byte 1 102
+byte 1 120
+byte 1 47
+byte 1 112
+byte 1 108
+byte 1 97
+byte 1 121
+byte 1 101
+byte 1 114
+byte 1 47
+byte 1 112
+byte 1 97
+byte 1 105
+byte 1 110
+byte 1 48
+byte 1 46
+byte 1 119
+byte 1 97
+byte 1 118
+byte 1 0
+align 1
+LABELV $106
 byte 1 37
 byte 1 115
 byte 1 0
 align 1
-LABELV $47
+LABELV $97
+byte 1 83
+byte 1 71
+byte 1 95
+byte 1 80
+byte 1 114
+byte 1 105
+byte 1 110
+byte 1 116
+byte 1 102
+byte 1 58
+byte 1 32
+byte 1 98
+byte 1 117
+byte 1 102
+byte 1 102
+byte 1 101
+byte 1 114
+byte 1 32
+byte 1 111
+byte 1 118
+byte 1 101
+byte 1 114
+byte 1 102
+byte 1 108
+byte 1 111
+byte 1 119
+byte 1 0
+align 1
+LABELV $87
 byte 1 118
 byte 1 109
 byte 1 77

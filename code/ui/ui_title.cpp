@@ -8,6 +8,8 @@
 typedef struct {
     CUIMenu menu;
 
+    uint32_t newLineHeight;
+
     const stringHash_t *thenomad;
     const stringHash_t *enterGame;
 } titlemenu_t;
@@ -17,22 +19,21 @@ static titlemenu_t title;
 static void TitleMenu_Draw( void )
 {
     float font_scale;
-    int i;
+    uint32_t i;
 
     font_scale = ImGui::GetFont()->Scale;
 
     // setup window
-    CUIWindow window( "TitleMenu" );
-    {
-        window.SetFontScale(font_scale * 6);
-        window.DrawStringCentered(title.thenomad->value);
-    }
+    CUIWindow window("TitleMenu");
 
-    for (i = 0; i < 10; i++) {
+    ImGui::SetWindowFontScale( font_scale * 6.5f * ui->scale );
+    window.DrawStringCentered( title.thenomad->value );
+
+    for (i = 0; i < title.newLineHeight; i++) {
         ImGui::NewLine();
     }
 
-    window.SetFontScale(font_scale * 2.5f);
+    ImGui::SetWindowFontScale( font_scale * 1.5f * ui->scale );
     window.DrawStringCentered( "Press Any Key" );
 
     // exit?
@@ -57,6 +58,27 @@ void TitleMenu_Cache( void )
     memset(&title, 0, sizeof(title));
 
     title.menu.Draw = TitleMenu_Draw;
+
+    switch (ui->GetConfig().vidHeight) {
+    case 768:
+        title.newLineHeight = 6;
+        break;
+    case 1536:
+        title.newLineHeight = 7;
+        break;
+    case 720:
+        title.newLineHeight = 6;
+        break;
+    case 900:
+        title.newLineHeight = 6;
+        break;
+    case 1080:  
+        title.newLineHeight = 6;
+        break;
+    case 2160:
+        title.newLineHeight = 8;
+        break;
+    };
 
     title.thenomad = strManager->ValueForKey("MENU_LOGO_STRING");
     title.enterGame = strManager->ValueForKey("MENU_TITLE_ENTER_GAME");

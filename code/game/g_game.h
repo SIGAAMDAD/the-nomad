@@ -8,6 +8,10 @@
 #include "../sgame/sg_public.h"
 #include "../rendercommon/r_public.h"
 #include "../engine/gln_files.h"
+#if defined(__cplusplus)
+#include "../rendercommon/imgui.h"
+#include "g_vmimgui.h"
+#endif
 
 #ifndef O_BINARY
 #define O_BINARY 0
@@ -21,6 +25,13 @@ typedef enum
 
     NUM_GAME_STATES
 } gamestate_t;
+
+typedef struct {
+    byte sides[5]; // for physics
+    vec4_t color;
+    uvec3_t pos;
+    uint32_t flags;
+} tileinfo_t;
 
 
 //
@@ -40,7 +51,7 @@ typedef struct {
 
     mapcheckpoint_t checkpoints[MAX_MAP_CHECKPOINTS];
     mapspawn_t spawns[MAX_MAP_SPAWNS];
-    maptile_t tiles[MAX_MAP_TILES];
+    tileinfo_t tiles[MAX_MAP_TILES];
 } mapinfo_t;
 
 enum
@@ -106,6 +117,59 @@ struct vmRefImport_s
     void (*trap_Args)( char *buffer, uint32_t bufferLength );
 
     int32_t (*G_LoadMap)( int32_t index, mapinfo_t *info );
+
+    void (*ImGui_EndWindow)( void );
+    void (*ImGui_SetWindowCollapsed)( int bCollapsed );
+    void (*ImGui_SetWindowPos)( float x, float y );
+    void (*ImGui_SetWindowSize)( float w, float h );
+    void (*ImGui_SetWindowFontScale)( float scale );
+    void (*ImGui_EndMenu)( void );
+    void (*ImGui_SetItemTooltipUnformatted)( const char *pTooltip );
+    void (*ImGui_TableNextRow)( void );
+    void (*ImGui_TableNextColumn)( void );
+    void (*ImGui_EndTable)( void );
+    void (*ImGui_SetCursorPos)( float x, float y );
+    void (*ImGui_GetCursorPos)( float *x, float *y );
+    void (*ImGui_SetCursorScreenPos)( float x, float y );
+    void (*ImGui_GetCursorScreenPos)( float *x, float *y );
+    void (*ImGui_PushColor)( ImGuiCol index, const vec4_t color );
+    void (*ImGui_PopColor)( void );
+    void (*ImGui_NewLine)( void );
+    void (*ImGui_SeparatorText)( const char *pText );
+    void (*ImGui_Separator)( void );
+    void (*ImGui_ProgressBar)( float fraction );
+    void (*ImGui_TextUnformatted)( const char *pText );
+    void (*ImGui_ColoredTextUnformatted)( const vec4_t pColor, const char *pText );
+    float (*ImGui_GetFontScale)( void );
+    int (*ImGui_InputText)( ImGuiInputText *pInput );
+    int (*ImGui_InputTextMultiline)( ImGuiInputText *pInput );
+    int (*ImGui_InputTextWithHint)( ImGuiInputTextWithHint *pInput );
+    int (*ImGui_InputFloat)( ImGuiInputFloat *pInput );
+    int (*ImGui_InputFloat2)( ImGuiInputFloat2 *pInput );
+    int (*ImGui_InputFloat3)( ImGuiInputFloat3 *pInput );
+    int (*ImGui_InputFloat4)( ImGuiInputFloat4 *pInput );
+    int (*ImGui_InputInt)( ImGuiInputInt *pInput );
+    int (*ImGui_InputInt2)( ImGuiInputInt2 *pInput );
+    int (*ImGui_InputInt3)( ImGuiInputInt3 *pInput );
+    int (*ImGui_InputInt4)( ImGuiInputInt4 *pInput );
+    int (*ImGui_SliderFloat)( ImGuiSliderFloat *pSlider );
+    int (*ImGui_SliderFloat2)( ImGuiSliderFloat2 *pSlider );
+    int (*ImGui_SliderFloat3)( ImGuiSliderFloat3 *pSlider );
+    int (*ImGui_SliderFloat4)( ImGuiSliderFloat4 *pSlider );
+    int (*ImGui_SliderInt)( ImGuiSliderInt *pSlider );
+    int (*ImGui_SliderInt2)( ImGuiSliderInt2 *pSlider );
+    int (*ImGui_SliderInt3)( ImGuiSliderInt3 *pSlider );
+    int (*ImGui_SliderInt4)( ImGuiSliderInt4 *pSlider );
+    int (*ImGui_ColorEdit3)( ImGuiColorEdit3 *pEdit );
+    int (*ImGui_ColorEdit4)( ImGuiColorEdit4 *pEdit );
+    int (*ImGui_ArrowButton)( const char *pLabel, ImGuiDir dir );
+    int (*ImGui_Checkbox)( ImGuiCheckbox *pCheckbox );
+    int (*ImGui_Button)( const char *pLabel );
+    int (*ImGui_IsWindowCollapsed)( void );
+    int (*ImGui_MenuItem)( ImGuiMenuItem *pItem );
+    int (*ImGui_BeginWindow)( ImGuiWindow *pWindow );
+    int (*ImGui_BeginTable)( const char *pLabel, uint32_t nColumns );
+    int (*ImGui_BeginMenu)( const char *pLabel );
 };
 #endif
 
@@ -222,12 +286,12 @@ typedef enum
 //    VIDMODE_640x480,
 //    VIDMODE_800x600,
 
-    // minimum result needed to run
+    // minimum resolution needed to run
     VIDMODE_1024x768,
-    VIDMODE_2048x1536,
     VIDMODE_1280x720,
     VIDMODE_1600x900,
     VIDMODE_1920x1080,
+    VIDMODE_2048x1536,
     VIDMODE_3840x2160,
 
     NUMVIDMODES
@@ -256,6 +320,7 @@ void G_InitDisplay(gpuConfig_t *config);
 SDL_Window *G_GetSDLWindow(void);
 SDL_GLContext G_GetGLContext( void );
 void GLimp_Minimize( void );
+int32_t G_LoadMap( int32_t index, mapinfo_t *info );
 
 //
 // g_screen.cpp

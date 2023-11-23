@@ -7,65 +7,43 @@
 qboolean m_entersound;
 
 void CUILib::Shutdown( void ) {
-	// nothing for now
+	curmenu = NULL;
+	memset( stack, 0, sizeof(stack) );
+	menusp = 0;
 }
 
 bool CUILib::Menu_Option( const char *label )
 {
+	bool retn;
+
     ImGui::TableNextColumn();
     ImGui::TextUnformatted( label );
     ImGui::TableNextColumn();
     ImGui::SameLine();
-    return ImGui::ArrowButton( label, ImGuiDir_Right );
-}
+    retn = ImGui::ArrowButton( label, ImGuiDir_Right );
 
-//
-// GetTextScale: this isn't implemented very well...
-//
-static float GetTextScale( void )
-{
-	int32_t width, height;
-	float scale;
-	
-	width = Cvar_VariableInteger( "r_customWidth" );
-	height = Cvar_VariableInteger( "r_customHeight" );
+	if (retn) {
+		Snd_PlaySfx( sfx_select );
+	}
 
-	scale = 1.5f;
-
-	if (width == 1024 && height == 768) {
-		return scale;
-	}
-	else if (width == 2048 && height == 1536) {
-		scale += .5f;
-	}
-	else if (width == 1280 && height == 720) {
-
-	}
-	else if (width == 1600 && height == 900) {
-
-	}
-	else if (width == 1980 && height == 1080) {
-		
-	}
-	else if (width == 3840 && height == 2160) {
-
-	}
+	return retn;
 }
 
 bool CUILib::Menu_Title( const char *label )
 {
 	const float font_scale = ImGui::GetFont()->Scale;
 
-    ImGui::SetWindowFontScale( font_scale * drawScale );
+    ImGui::SetWindowFontScale( font_scale * 1.5f * scale );
     if (ImGui::ArrowButton( va("##BACK%s", label), ImGuiDir_Left )) {
+		Snd_PlaySfx( sfx_back );
         return true;
     }
     ImGui::SameLine();
     ImGui::TextUnformatted( "BACK" );
 
-    ImGui::SetWindowFontScale( font_scale * 3.75f );
+    ImGui::SetWindowFontScale( font_scale * 3.75f * scale );
     ImGui::TextUnformatted( label );
-    ImGui::SetWindowFontScale( font_scale * drawScale );
+    ImGui::SetWindowFontScale( font_scale * 1.5f * scale );
 
     return false;
 }
@@ -76,6 +54,8 @@ void CUILib::EscapeMenuToggle( menustate_t newstate )
         if (escapeToggle) {
             escapeToggle = qfalse;
             state = newstate;
+
+			Snd_PlaySfx( sfx_back );
         }
     }
     else {
@@ -93,11 +73,11 @@ void CUILib::Init( void )
 	// cache redundant calulations
 	re.GetConfig( &gpuConfig );
 
-	// for 640x480 virtualized screen
-	scale = gpuConfig.vidHeight * (1.0/480.0);
-	if ( gpuConfig.vidWidth * 480 > gpuConfig.vidHeight * 640 ) {
+	// for 1024x768 virtualized screen
+	scale = gpuConfig.vidHeight * (1.0/768.0);
+	if ( gpuConfig.vidWidth * 768 > gpuConfig.vidHeight * 1024 ) {
 		// wide screen
-		bias = 0.5 * ( gpuConfig.vidWidth - ( gpuConfig.vidHeight * (640.0/480.0) ) );
+		bias = 0.5 * ( gpuConfig.vidWidth - ( gpuConfig.vidHeight * (1024.0/768.0) ) );
 	}
 	else {
 		// no wide screen
@@ -108,13 +88,18 @@ void CUILib::Init( void )
 	menusp = 0;
 	
 	escapeToggle = qfalse;
+	sfx_scroll_toggle = qfalse;
 	state = STATE_MAIN;
-	drawScale = GetTextScale();
+
+	sfx_select = Snd_RegisterSfx( "sfx/menu1.wav" );
+    sfx_scroll = Snd_RegisterSfx( "sfx/menu2.wav" );
+    sfx_back = Snd_RegisterSfx( "sfx/menu3.wav" );
+    sfx_null = Snd_RegisterSfx( "sfx/menu4.wav" );
 }
 
 void CUILib::PushMenu( CUIMenu *menu )
 {
-    int i;
+	uint32_t i;
 
     // avoid stacking meuns invoked by hotkeys
     for (i = 0; i < menusp; i++) {

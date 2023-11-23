@@ -12,15 +12,7 @@ void CUIStringManager::Init( void )
     memset(stringHash, 0, sizeof(stringHash));
 }
 
-void CUIStringManager::Shutdown( void )
-{
-    uint64_t i;
-
-    for (i = 0; i < NUMLANGS; i++) {
-        if (stringHash[i]) {
-            Z_Free(stringHash[i]);
-        }
-    }
+void CUIStringManager::Shutdown( void ) {
 }
 
 static language_t StringToLanguage( const char *tok )
@@ -53,7 +45,7 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
     uint64_t hash, i;
     const char *tok;
 
-    hashTable = (stringHash_t *)Z_Malloc(sizeof(*hashTable) * NUM_UI_STRINGS, TAG_STATIC);
+    hashTable = (stringHash_t *)Hunk_Alloc( sizeof(*hashTable) * NUM_UI_STRINGS, h_low );
     memset(hashTable, 0, sizeof(*hashTable));
 
     for (i = 0; i < NUM_UI_STRINGS; i++) {

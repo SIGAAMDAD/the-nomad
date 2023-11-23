@@ -661,14 +661,14 @@ void ImGui_PushColor( ImGuiCol index, const vec4_t color );
 void ImGui_PopColor( void );
 
 void ImGui_NewLine( void );
-void ImGui_TextUnformatted( const char *pText );
-void ImGui_ColoredTextUnformatted( const vec4_t pColor, const char *pText );
 void ImGui_SeparatorText( const char *pText );
 void ImGui_Separator( void );
 void ImGui_ProgressBar( float fraction );
 
+void ImGui_TextUnformatted( const char *pText );
+void ImGui_ColoredTextUnformatted( const vec4_t pColor, const char *pText );
+
 void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL ImGui_Text( const char *fmt, ... );
 void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL ImGui_ColoredText( const vec4_t pColor, const char *fmt, ... );
-
 
 #endif

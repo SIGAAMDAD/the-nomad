@@ -344,23 +344,14 @@ static void SCR_DrawScreenField(stereoFrame_t stereoFrame)
 
     re.BeginFrame(stereoFrame);
 
-
-    // if the menu is going to cover the entire screen,
-    // we don't need to render anything under it
-    if (uivm && !uiFullscreen) {
-        switch (gi.state) {
-        default:
-            N_Error(ERR_FATAL, "G_DrawScreenField: bad gi.state");
-            break;
-        case GS_MENU:
-            break;
-        case GS_LEVEL:
-            // always supply STEREO_CENTER as vieworg offset is now done by the engine.
-            break;
-        };
-    }
-
-	UI_Refresh(gi.realtime);
+	// we're in a level
+	if (gi.mapLoaded) {
+		VM_Call( sgvm, 1, SGAME_RUNTIC, gi.frametime );
+		VM_Call( sgvm, 0, SGAME_FINISH_FRAME );
+	}
+	else {
+		UI_Refresh( gi.frametime );
+	}
 
     // console draws next
     Con_DrawConsole();

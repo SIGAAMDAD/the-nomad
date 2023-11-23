@@ -1,9 +1,10 @@
-#include "g_game.h"
+
 #include "../rendercommon/imgui.h"
+#include "g_game.h"
 #include "g_vmimgui.h"
 
-#ifdef __GCC__
-#pragma GCC diagnostic ignore "-Wformat"
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wformat-security"
 #endif
 
 typedef struct imguiState_s
@@ -20,7 +21,7 @@ typedef struct imguiState_s
 
 static imguiState_t imgui;
 
-bool ImGui_BeginWindow( ImGuiWindow *pWindow )
+int ImGui_BeginWindow( ImGuiWindow *pWindow )
 {
     bool bOpen, bResult;
 
@@ -48,7 +49,7 @@ void ImGui_EndWindow( void )
     ImGui::End();
 }
 
-bool ImGui_BeginTable( const char *pLabel, uint32_t nColumns ) {
+int ImGui_BeginTable( const char *pLabel, uint32_t nColumns ) {
     return ImGui::BeginTable( pLabel, nColumns );
 }
 
@@ -64,7 +65,7 @@ void ImGui_TableNextColumn( void ) {
     ImGui::TableNextColumn();
 }
 
-bool ImGui_BeginMenu( const char *pTitle ) {
+int ImGui_BeginMenu( const char *pTitle ) {
     imgui.m_bMenuOpen = ImGui::BeginMenu( pTitle );
     return imgui.m_bMenuOpen;
 }
@@ -78,14 +79,14 @@ void ImGui_EndMenu( void ) {
     ImGui::EndMenu();
 }
 
-bool ImGui_MenuItem( ImGuiMenuItem *pItem ) {
+int ImGui_MenuItem( ImGuiMenuItem *pItem ) {
     if (!imgui.m_bMenuOpen) {
         N_Error( ERR_DROP, "%s: no menu active", __func__ );
     }
     return (pItem->m_bUsed = ImGui::MenuItem( pItem->m_pLabel, pItem->m_pShortcut ));
 }
 
-bool ImGui_InputText( ImGuiInputText *pInput )
+int ImGui_InputText( ImGuiInputText *pInput )
 {
     if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
@@ -98,14 +99,14 @@ bool ImGui_InputText( ImGuiInputText *pInput )
     return (pInput->m_bUsed = ImGui::InputText( pInput->m_pLabel, pInput->m_Data, sizeof(pInput->m_Data), pInput->m_Flags ));
 }
 
-bool ImGui_IsWindowCollapsed( void ) {
+int ImGui_IsWindowCollapsed( void ) {
     if (!imgui.m_bWindowOpen) {
         N_Error( ERR_DROP, "%s: no window active", __func__ );
     }
     return ImGui::IsWindowCollapsed();
 }
 
-void ImGui_SetWindowCollapsed( bool bCollapsed ) {
+void ImGui_SetWindowCollapsed( int bCollapsed ) {
     if (!imgui.m_bWindowOpen) {
         N_Error( ERR_DROP, "%s: no window active", __func__ );
     }
@@ -140,7 +141,7 @@ void ImGui_SetItemTooltip( const char *pTooltip )
     }
 }
 
-bool ImGui_InputTextMultiline( ImGuiInputText *pInput ) {
+int ImGui_InputTextMultiline( ImGuiInputText *pInput ) {
     if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
@@ -153,7 +154,7 @@ bool ImGui_InputTextMultiline( ImGuiInputText *pInput ) {
     return (pInput->m_bUsed = ImGui::InputTextMultiline( pInput->m_pLabel, pInput->m_Data, sizeof(pInput->m_Data), ImVec2( 0, 0 ), pInput->m_Flags ));
 }
 
-bool ImGui_InputTextWithHint( ImGuiInputTextWithHint *pInput ) {
+int ImGui_InputTextWithHint( ImGuiInputTextWithHint *pInput ) {
     if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
@@ -166,7 +167,7 @@ bool ImGui_InputTextWithHint( ImGuiInputTextWithHint *pInput ) {
     return (pInput->m_bUsed = ImGui::InputTextWithHint( pInput->m_pLabel, pInput->m_pHint, pInput->m_Data, sizeof(pInput->m_Data), pInput->m_Flags ));
 }
 
-bool ImGui_InputFloat( ImGuiInputFloat *pInput ) {
+int ImGui_InputFloat( ImGuiInputFloat *pInput ) {
     if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
@@ -179,7 +180,7 @@ bool ImGui_InputFloat( ImGuiInputFloat *pInput ) {
     return (pInput->m_bUsed = ImGui::InputFloat( pInput->m_pLabel, &pInput->m_Data, 0.0f, 0.0f, "%.3f", pInput->m_Flags ));
 }
 
-bool ImGui_InputFloat2( ImGuiInputFloat2 *pInput ) {
+int ImGui_InputFloat2( ImGuiInputFloat2 *pInput ) {
     if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
@@ -192,7 +193,7 @@ bool ImGui_InputFloat2( ImGuiInputFloat2 *pInput ) {
     return (pInput->m_bUsed = ImGui::InputFloat2( pInput->m_pLabel, pInput->m_Data, "%.3f", pInput->m_Flags ));
 }
 
-bool ImGui_InputFloat3( ImGuiInputFloat3 *pInput ) {
+int ImGui_InputFloat3( ImGuiInputFloat3 *pInput ) {
     if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
@@ -205,7 +206,7 @@ bool ImGui_InputFloat3( ImGuiInputFloat3 *pInput ) {
     return (pInput->m_bUsed = ImGui::InputFloat3( pInput->m_pLabel, pInput->m_Data, "%.3f", pInput->m_Flags ));
 }
 
-bool ImGui_InputFloat4( ImGuiInputFloat4 *pInput ) {
+int ImGui_InputFloat4( ImGuiInputFloat4 *pInput ) {
     if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
@@ -218,7 +219,7 @@ bool ImGui_InputFloat4( ImGuiInputFloat4 *pInput ) {
     return (pInput->m_bUsed = ImGui::InputFloat4( pInput->m_pLabel, pInput->m_Data, "%.3f", pInput->m_Flags ));
 }
 
-bool ImGui_InputInt( ImGuiInputInt *pInput ) {
+int ImGui_InputInt( ImGuiInputInt *pInput ) {
     if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
@@ -231,7 +232,7 @@ bool ImGui_InputInt( ImGuiInputInt *pInput ) {
     return (pInput->m_bUsed = ImGui::InputInt( pInput->m_pLabel, &pInput->m_Data, 1, 100, pInput->m_Flags ));
 }
 
-bool ImGui_InputInt2( ImGuiInputInt2 *pInput ) {
+int ImGui_InputInt2( ImGuiInputInt2 *pInput ) {
     if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
@@ -244,7 +245,7 @@ bool ImGui_InputInt2( ImGuiInputInt2 *pInput ) {
     return (pInput->m_bUsed = ImGui::InputInt2( pInput->m_pLabel, pInput->m_Data, pInput->m_Flags ));
 }
 
-bool ImGui_InputInt3( ImGuiInputInt3 *pInput ) {
+int ImGui_InputInt3( ImGuiInputInt3 *pInput ) {
     if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
@@ -257,7 +258,7 @@ bool ImGui_InputInt3( ImGuiInputInt3 *pInput ) {
     return (pInput->m_bUsed = ImGui::InputInt3( pInput->m_pLabel, pInput->m_Data, pInput->m_Flags ));
 }
 
-bool ImGui_InputInt4( ImGuiInputInt4 *pInput ) {
+int ImGui_InputInt4( ImGuiInputInt4 *pInput ) {
     if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
@@ -270,57 +271,57 @@ bool ImGui_InputInt4( ImGuiInputInt4 *pInput ) {
     return (pInput->m_bUsed = ImGui::InputInt4( pInput->m_pLabel, pInput->m_Data, pInput->m_Flags ));
 }
 
-bool ImGui_SliderFloat( ImGuiSliderFloat *pSlider ) {
+int ImGui_SliderFloat( ImGuiSliderFloat *pSlider ) {
     return ImGui::SliderFloat( pSlider->m_pLabel, &pSlider->m_Data, pSlider->m_nMin, pSlider->m_nMax );
 }
 
-bool ImGui_SliderFloat2( ImGuiSliderFloat2 *pSlider ) {
+int ImGui_SliderFloat2( ImGuiSliderFloat2 *pSlider ) {
     return ImGui::SliderFloat2( pSlider->m_pLabel, pSlider->m_Data, pSlider->m_nMin, pSlider->m_nMax );
 }
 
-bool ImGui_SliderFloat3( ImGuiSliderFloat3 *pSlider ) {
+int ImGui_SliderFloat3( ImGuiSliderFloat3 *pSlider ) {
     return ImGui::SliderFloat3( pSlider->m_pLabel, pSlider->m_Data, pSlider->m_nMin, pSlider->m_nMax );
 }
 
-bool ImGui_SliderFloat4( ImGuiSliderFloat4 *pSlider ) {
+int ImGui_SliderFloat4( ImGuiSliderFloat4 *pSlider ) {
     return ImGui::SliderFloat4( pSlider->m_pLabel, pSlider->m_Data, pSlider->m_nMin, pSlider->m_nMax );
 }
 
-bool ImGui_SliderInt( ImGuiSliderInt *pSlider ) {
+int ImGui_SliderInt( ImGuiSliderInt *pSlider ) {
     return ImGui::SliderInt( pSlider->m_pLabel, &pSlider->m_Data, pSlider->m_nMin, pSlider->m_nMax );
 }
 
-bool ImGui_SliderInt2( ImGuiSliderInt2 *pSlider ) {
+int ImGui_SliderInt2( ImGuiSliderInt2 *pSlider ) {
     return ImGui::SliderInt2( pSlider->m_pLabel, pSlider->m_Data, pSlider->m_nMin, pSlider->m_nMax );
 }
 
-bool ImGui_SliderInt3( ImGuiSliderInt3 *pSlider ) {
+int ImGui_SliderInt3( ImGuiSliderInt3 *pSlider ) {
     return ImGui::SliderInt3( pSlider->m_pLabel, pSlider->m_Data, pSlider->m_nMin, pSlider->m_nMax );
 }
 
-bool ImGui_SliderInt4( ImGuiSliderInt4 *pSlider ) {
+int ImGui_SliderInt4( ImGuiSliderInt4 *pSlider ) {
     return ImGui::SliderInt4( pSlider->m_pLabel, pSlider->m_Data, pSlider->m_nMin, pSlider->m_nMax );
 }
 
-bool ImGui_ColorEdit3( ImGuiColorEdit3 *pEdit ) {
+int ImGui_ColorEdit3( ImGuiColorEdit3 *pEdit ) {
     return ImGui::ColorEdit3( pEdit->m_pLabel, pEdit->m_pColor, pEdit->m_Flags );
 }
 
-bool ImGui_ColorEdit4( ImGuiColorEdit4 *pEdit ) {
+int ImGui_ColorEdit4( ImGuiColorEdit4 *pEdit ) {
     return ImGui::ColorEdit4( pEdit->m_pLabel, pEdit->m_pColor, pEdit->m_Flags );
 }
 
-bool ImGui_ArrowButton( const char *pLabel, ImGuiDir dir ) {
+int ImGui_ArrowButton( const char *pLabel, ImGuiDir dir ) {
     return ImGui::ArrowButton( pLabel, dir );
 }
 
-bool ImGui_Checkbox( ImGuiCheckbox *pCheckbox ) {
+int ImGui_Checkbox( ImGuiCheckbox *pCheckbox ) {
     bool bPressed = pCheckbox->m_bPressed;
     pCheckbox->m_bPressed = ImGui::Checkbox( pCheckbox->m_pLabel, &bPressed );
     return pCheckbox->m_bPressed;
 }
 
-bool ImGui_Button( const char *pLabel ) {
+int ImGui_Button( const char *pLabel ) {
     return ImGui::Button( pLabel );
 }
 

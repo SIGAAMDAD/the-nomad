@@ -154,9 +154,9 @@ uint64_t Com_EventLoop(void);
 
 #include "keycodes.h"
 
-#define KEYCATCH_SGAME	0x2000
-#define KEYCATCH_UI		0x0080
-#define KEYCATCH_CONSOLE 0x0001
+#define KEYCATCH_SGAME		(unsigned)0x2000
+#define KEYCATCH_UI			(unsigned)0x0080
+#define KEYCATCH_CONSOLE	(unsigned)0x0001
 
 void Key_KeynameCompletion( void(*callback)(const char *s) );
 uint32_t Key_StringToKeynum( const char *str );

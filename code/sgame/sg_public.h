@@ -3,13 +3,6 @@
 
 #pragma once
 
-typedef struct sgameBuffer_s
-{
-    nhandle_t m_BufferId;
-    uint32_t m_nSize;
-    uint32_t m_Flags;
-} sgameBuffer_t;
-
 typedef enum
 {
     SG_CVAR_UPDATE,
@@ -66,8 +59,10 @@ typedef enum
     SG_CMD_EXECUTETEXT,
     SG_MEMORY_REMAINING,
 
+    SG_G_LOADMAP,
+
     // imgui api into the vm
-    IMGUI_BEGIN_WINDOW,
+    IMGUI_BEGIN_WINDOW = 400,
     IMGUI_END_WINDOW,
     IMGUI_IS_WINDOW_COLLAPSED,
     IMGUI_SET_WINDOW_COLLAPSED,
@@ -120,11 +115,9 @@ typedef enum
     IMGUI_TABLE_NEXTROW,
     IMGUI_TABLE_NEXTCOLUMN,
 
-    SG_G_LOADMAP,
-
-    SG_FLOOR = 904,
-    SG_CEIL = 908,
-    SG_ACOS = 905,
+    SG_FLOOR = 900,
+    SG_CEIL,
+    SG_ACOS,
 
     NUM_SGAME_IMPORT
 } sgameImport_t;

@@ -1973,6 +1973,7 @@ file_t FS_FOpenRead(const char *path)
 	searchpath_t *sp;
 	FILE *fp;
 	const char *ospath;
+	uint64_t fullHash, hash;
 
 	if (!fs_initialized) {
 		N_Error(ERR_FATAL, "Filesystem call made without initialization");
@@ -1987,6 +1988,10 @@ file_t FS_FOpenRead(const char *path)
 	
 	f = &handles[fd];
 	FS_InitHandle(f);
+
+	// we will calculate full hash only once then just mask it by current pack->hashSize
+	// we can do that as long as we know properties of our hash function
+	fullHash = FS_HashFileName( path, 0U );
 
 	for (sp = fs_searchpaths; sp; sp = sp->next) {
 		// is the element a bff file?

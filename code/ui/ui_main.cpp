@@ -156,6 +156,9 @@ extern "C" void UI_Refresh( int realtime )
 			ui->SetFirstDraw( qfalse );
 		}
 	}
+    else {
+        ui->SetActiveMenu( UI_MENU_TITLE );
+    }
 
 	// draw cursor
 //	ui->SetColor( NULL );

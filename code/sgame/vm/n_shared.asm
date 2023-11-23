@@ -2,49 +2,53 @@ export Com_Clamp
 code
 proc Com_Clamp 0 0
 file "../../engine/n_shared.c"
-line 8
+line 12
 ;1:#ifdef Q3_VM
 ;2:#include "../engine/n_shared.h"
 ;3:#else
 ;4:#include "code/engine/n_shared.h"
 ;5:#endif
 ;6:
-;7:
-;8:float Com_Clamp( float min, float max, float value ) {
-line 9
-;9:	if ( value < min ) {
+;7:// undefined symbol: CPU_flags when compiling dlls
+;8:#if defined(GDR_DLLCOMPILE) || defined(UI_HARD_LINKED) || defined(SGAME_HARD_LINKED)
+;9:int CPU_flags;
+;10:#endif
+;11:
+;12:float Com_Clamp( float min, float max, float value ) {
+line 13
+;13:	if ( value < min ) {
 ADDRFP4 8
 INDIRF4
 ADDRFP4 0
 INDIRF4
 GEF4 $25
-line 10
-;10:		return min;
+line 14
+;14:		return min;
 ADDRFP4 0
 INDIRF4
 RETF4
 ADDRGP4 $24
 JUMPV
 LABELV $25
-line 12
-;11:	}
-;12:	if ( value > max ) {
+line 16
+;15:	}
+;16:	if ( value > max ) {
 ADDRFP4 8
 INDIRF4
 ADDRFP4 4
 INDIRF4
 LEF4 $27
-line 13
-;13:		return max;
+line 17
+;17:		return max;
 ADDRFP4 4
 INDIRF4
 RETF4
 ADDRGP4 $24
 JUMPV
 LABELV $27
-line 15
-;14:	}
-;15:	return value;
+line 19
+;18:	}
+;19:	return value;
 ADDRFP4 8
 INDIRF4
 RETF4
@@ -321,85 +325,85 @@ byte 4 0
 export crc32_buffer
 code
 proc crc32_buffer 20 0
-line 54
-;16:}
-;17:
-;18:const byte locase[ 256 ] = {
-;19:	0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
-;20:	0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
-;21:	0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
-;22:	0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,
-;23:	0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27,
-;24:	0x28,0x29,0x2a,0x2b,0x2c,0x2d,0x2e,0x2f,
-;25:	0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,
-;26:	0x38,0x39,0x3a,0x3b,0x3c,0x3d,0x3e,0x3f,
-;27:	0x40,0x61,0x62,0x63,0x64,0x65,0x66,0x67,
-;28:	0x68,0x69,0x6a,0x6b,0x6c,0x6d,0x6e,0x6f,
-;29:	0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,
-;30:	0x78,0x79,0x7a,0x5b,0x5c,0x5d,0x5e,0x5f,
-;31:	0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67,
+line 58
+;20:}
+;21:
+;22:const byte locase[ 256 ] = {
+;23:	0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,
+;24:	0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
+;25:	0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,
+;26:	0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f,
+;27:	0x20,0x21,0x22,0x23,0x24,0x25,0x26,0x27,
+;28:	0x28,0x29,0x2a,0x2b,0x2c,0x2d,0x2e,0x2f,
+;29:	0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,
+;30:	0x38,0x39,0x3a,0x3b,0x3c,0x3d,0x3e,0x3f,
+;31:	0x40,0x61,0x62,0x63,0x64,0x65,0x66,0x67,
 ;32:	0x68,0x69,0x6a,0x6b,0x6c,0x6d,0x6e,0x6f,
 ;33:	0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,
-;34:	0x78,0x79,0x7a,0x7b,0x7c,0x7d,0x7e,0x7f,
-;35:	0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,
-;36:	0x88,0x89,0x8a,0x8b,0x8c,0x8d,0x8e,0x8f,
-;37:	0x90,0x91,0x92,0x93,0x94,0x95,0x96,0x97,
-;38:	0x98,0x99,0x9a,0x9b,0x9c,0x9d,0x9e,0x9f,
-;39:	0xa0,0xa1,0xa2,0xa3,0xa4,0xa5,0xa6,0xa7,
-;40:	0xa8,0xa9,0xaa,0xab,0xac,0xad,0xae,0xaf,
-;41:	0xb0,0xb1,0xb2,0xb3,0xb4,0xb5,0xb6,0xb7,
-;42:	0xb8,0xb9,0xba,0xbb,0xbc,0xbd,0xbe,0xbf,
-;43:	0xc0,0xc1,0xc2,0xc3,0xc4,0xc5,0xc6,0xc7,
-;44:	0xc8,0xc9,0xca,0xcb,0xcc,0xcd,0xce,0xcf,
-;45:	0xd0,0xd1,0xd2,0xd3,0xd4,0xd5,0xd6,0xd7,
-;46:	0xd8,0xd9,0xda,0xdb,0xdc,0xdd,0xde,0xdf,
-;47:	0xe0,0xe1,0xe2,0xe3,0xe4,0xe5,0xe6,0xe7,
-;48:	0xe8,0xe9,0xea,0xeb,0xec,0xed,0xee,0xef,
-;49:	0xf0,0xf1,0xf2,0xf3,0xf4,0xf5,0xf6,0xf7,
-;50:	0xf8,0xf9,0xfa,0xfb,0xfc,0xfd,0xfe,0xff
-;51:};
-;52:
-;53:uint32_t crc32_buffer(const byte *buf, uint32_t len)
-;54:{
-line 58
-;55:	static uint32_t crc32_table[256];
-;56:	static qboolean crc32_inited = qfalse;
-;57:
-;58:	uint32_t crc = UINT_MAX;
+;34:	0x78,0x79,0x7a,0x5b,0x5c,0x5d,0x5e,0x5f,
+;35:	0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67,
+;36:	0x68,0x69,0x6a,0x6b,0x6c,0x6d,0x6e,0x6f,
+;37:	0x70,0x71,0x72,0x73,0x74,0x75,0x76,0x77,
+;38:	0x78,0x79,0x7a,0x7b,0x7c,0x7d,0x7e,0x7f,
+;39:	0x80,0x81,0x82,0x83,0x84,0x85,0x86,0x87,
+;40:	0x88,0x89,0x8a,0x8b,0x8c,0x8d,0x8e,0x8f,
+;41:	0x90,0x91,0x92,0x93,0x94,0x95,0x96,0x97,
+;42:	0x98,0x99,0x9a,0x9b,0x9c,0x9d,0x9e,0x9f,
+;43:	0xa0,0xa1,0xa2,0xa3,0xa4,0xa5,0xa6,0xa7,
+;44:	0xa8,0xa9,0xaa,0xab,0xac,0xad,0xae,0xaf,
+;45:	0xb0,0xb1,0xb2,0xb3,0xb4,0xb5,0xb6,0xb7,
+;46:	0xb8,0xb9,0xba,0xbb,0xbc,0xbd,0xbe,0xbf,
+;47:	0xc0,0xc1,0xc2,0xc3,0xc4,0xc5,0xc6,0xc7,
+;48:	0xc8,0xc9,0xca,0xcb,0xcc,0xcd,0xce,0xcf,
+;49:	0xd0,0xd1,0xd2,0xd3,0xd4,0xd5,0xd6,0xd7,
+;50:	0xd8,0xd9,0xda,0xdb,0xdc,0xdd,0xde,0xdf,
+;51:	0xe0,0xe1,0xe2,0xe3,0xe4,0xe5,0xe6,0xe7,
+;52:	0xe8,0xe9,0xea,0xeb,0xec,0xed,0xee,0xef,
+;53:	0xf0,0xf1,0xf2,0xf3,0xf4,0xf5,0xf6,0xf7,
+;54:	0xf8,0xf9,0xfa,0xfb,0xfc,0xfd,0xfe,0xff
+;55:};
+;56:
+;57:uint32_t crc32_buffer(const byte *buf, uint32_t len)
+;58:{
+line 62
+;59:	static uint32_t crc32_table[256];
+;60:	static qboolean crc32_inited = qfalse;
+;61:
+;62:	uint32_t crc = UINT_MAX;
 ADDRLP4 0
 CNSTU4 4294967295
 ASGNU4
-line 60
-;59:
-;60:	if (!crc32_inited) {
+line 64
+;63:
+;64:	if (!crc32_inited) {
 ADDRGP4 $31
 INDIRI4
 CNSTI4 0
 NEI4 $46
-line 64
-;61:		uint32_t c;
-;62:		int i, j;
-;63:
-;64:		for (i = 0; i < 256; i++) {
+line 68
+;65:		uint32_t c;
+;66:		int i, j;
+;67:
+;68:		for (i = 0; i < 256; i++) {
 ADDRLP4 12
 CNSTI4 0
 ASGNI4
 LABELV $34
-line 65
-;65:			c = i;
+line 69
+;69:			c = i;
 ADDRLP4 4
 ADDRLP4 12
 INDIRI4
 CVIU4 4
 ASGNU4
-line 66
-;66:			for (j = 0; j < 8; j++)
+line 70
+;70:			for (j = 0; j < 8; j++)
 ADDRLP4 8
 CNSTI4 0
 ASGNI4
 LABELV $38
-line 67
-;67:				c = (c & 1) ? (c >> 1) ^ 0xEDB88320UL : c >> 1;
+line 71
+;71:				c = (c & 1) ? (c >> 1) ^ 0xEDB88320UL : c >> 1;
 ADDRLP4 4
 INDIRU4
 CNSTU4 1
@@ -429,7 +433,7 @@ ADDRLP4 16
 INDIRU4
 ASGNU4
 LABELV $39
-line 66
+line 70
 ADDRLP4 8
 ADDRLP4 8
 INDIRI4
@@ -440,9 +444,9 @@ ADDRLP4 8
 INDIRI4
 CNSTI4 8
 LTI4 $38
-line 69
-;68:			
-;69:			crc32_table[i] = c;
+line 73
+;72:			
+;73:			crc32_table[i] = c;
 ADDRLP4 12
 INDIRI4
 CNSTI4 2
@@ -452,10 +456,10 @@ ADDP4
 ADDRLP4 4
 INDIRU4
 ASGNU4
-line 70
-;70:		}
+line 74
+;74:		}
 LABELV $35
-line 64
+line 68
 ADDRLP4 12
 ADDRLP4 12
 INDIRI4
@@ -466,20 +470,20 @@ ADDRLP4 12
 INDIRI4
 CNSTI4 256
 LTI4 $34
-line 71
-;71:		crc32_inited = qtrue;
+line 75
+;75:		crc32_inited = qtrue;
 ADDRGP4 $31
 CNSTI4 1
 ASGNI4
-line 72
-;72:	}
+line 76
+;76:	}
 ADDRGP4 $46
 JUMPV
 LABELV $45
-line 75
-;73:
-;74:	while (len--)
-;75:		crc = crc32_table[(crc ^ *buf++) & 0xFF] ^ (crc >> 8);
+line 79
+;77:
+;78:	while (len--)
+;79:		crc = crc32_table[(crc ^ *buf++) & 0xFF] ^ (crc >> 8);
 ADDRLP4 4
 ADDRFP4 0
 INDIRP4
@@ -513,7 +517,7 @@ RSHU4
 BXORU4
 ASGNU4
 LABELV $46
-line 74
+line 78
 ADDRLP4 12
 ADDRFP4 4
 INDIRU4
@@ -528,9 +532,9 @@ ADDRLP4 12
 INDIRU4
 CNSTU4 0
 NEU4 $45
-line 77
-;76:
-;77:	return crc ^ UINT_MAX;
+line 81
+;80:
+;81:	return crc ^ UINT_MAX;
 ADDRLP4 0
 INDIRU4
 CNSTU4 4294967295
@@ -538,27 +542,6 @@ BXORU4
 RETU4
 LABELV $29
 endproc crc32_buffer 20 0
-export Key_IsPressed
-proc Key_IsPressed 0 0
-line 81
-;78:}
-;79:
-;80:qboolean Key_IsPressed(qboolean **keys, uint32_t code)
-;81:{
-line 82
-;82:	return (*keys)[code];
-ADDRFP4 4
-INDIRU4
-CNSTI4 2
-LSHU4
-ADDRFP4 0
-INDIRP4
-INDIRP4
-ADDP4
-INDIRI4
-RETI4
-LABELV $48
-endproc Key_IsPressed 0 0
 lit
 align 1
 LABELV hash_locase
@@ -826,7 +809,8 @@ ADDRFP4 4
 INDIRU4
 ASGNU4
 line 126
-;83:}
+;82:}
+;83:
 ;84:
 ;85:/*
 ;86:Com_GenerateHashValue: used in renderer and filesystem
@@ -885,9 +869,9 @@ line 132
 ADDRLP4 0
 CNSTU4 0
 ASGNU4
-ADDRGP4 $51
+ADDRGP4 $50
 JUMPV
-LABELV $50
+LABELV $49
 line 134
 ;133:	
 ;134:	while ( (c = hash_locase[(byte)*s++]) != '\0' ) {
@@ -905,7 +889,7 @@ ADDU4
 ASGNU4
 line 136
 ;136:	}
-LABELV $51
+LABELV $50
 line 134
 ADDRLP4 12
 ADDRLP4 8
@@ -934,7 +918,7 @@ ASGNI4
 ADDRLP4 16
 INDIRI4
 CNSTI4 0
-NEI4 $50
+NEI4 $49
 line 138
 ;137:	
 ;138:	hash = (hash ^ (hash >> 10) ^ (hash >> 20));
@@ -969,7 +953,7 @@ line 141
 ADDRLP4 0
 INDIRU4
 RETU4
-LABELV $49
+LABELV $48
 endproc Com_GenerateHashValue 24 0
 export Com_StringContains
 proc Com_StringContains 24 4
@@ -1002,17 +986,17 @@ line 149
 ADDRLP4 4
 CNSTI4 0
 ASGNI4
-ADDRGP4 $57
+ADDRGP4 $56
 JUMPV
-LABELV $54
+LABELV $53
 line 150
 ;150:		for (j = 0; str2[j]; j++) {
 ADDRLP4 0
 CNSTI4 0
 ASGNI4
-ADDRGP4 $61
+ADDRGP4 $60
 JUMPV
-LABELV $58
+LABELV $57
 line 151
 ;151:			if (locase[(byte)str1[j]] != locase[(byte)str2[j]]) {
 ADDRLP4 20
@@ -1048,16 +1032,16 @@ INDIRP4
 ADDP4
 INDIRU1
 CVUI4 1
-EQI4 $62
+EQI4 $61
 line 152
 ;152:				break;
-ADDRGP4 $60
+ADDRGP4 $59
 JUMPV
-LABELV $62
+LABELV $61
 line 154
 ;153:			}
 ;154:		}
-LABELV $59
+LABELV $58
 line 150
 ADDRLP4 0
 ADDRLP4 0
@@ -1065,7 +1049,7 @@ INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-LABELV $61
+LABELV $60
 ADDRLP4 0
 INDIRI4
 ADDRFP4 4
@@ -1074,8 +1058,8 @@ ADDP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $58
-LABELV $60
+NEI4 $57
+LABELV $59
 line 155
 ;155:		if (!str2[j]) {
 ADDRLP4 0
@@ -1086,19 +1070,19 @@ ADDP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $64
+NEI4 $63
 line 156
 ;156:			return str1;
 ADDRFP4 0
 INDIRP4
 RETP4
-ADDRGP4 $53
+ADDRGP4 $52
 JUMPV
-LABELV $64
+LABELV $63
 line 158
 ;157:		}
 ;158:	}
-LABELV $55
+LABELV $54
 line 149
 ADDRLP4 4
 ADDRLP4 4
@@ -1112,17 +1096,17 @@ INDIRP4
 CNSTI4 1
 ADDP4
 ASGNP4
-LABELV $57
+LABELV $56
 ADDRLP4 4
 INDIRI4
 ADDRLP4 8
 INDIRI4
-LEI4 $54
+LEI4 $53
 line 159
 ;159:	return NULL;
 CNSTP4 0
 RETP4
-LABELV $53
+LABELV $52
 endproc Com_StringContains 24 4
 export Com_FilterExt
 proc Com_FilterExt 1040 12
@@ -1131,9 +1115,9 @@ line 163
 ;161:
 ;162:qboolean Com_FilterExt( const char *filter, const char *name )
 ;163:{
-ADDRGP4 $68
+ADDRGP4 $67
 JUMPV
-LABELV $67
+LABELV $66
 line 168
 ;164:	char buf[ MAX_TOKEN_CHARS ];
 ;165:	const char *ptr;
@@ -1147,7 +1131,7 @@ INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 42
-NEI4 $70
+NEI4 $69
 line 170
 ;170:			filter++;
 ADDRFP4 0
@@ -1161,9 +1145,9 @@ line 171
 ADDRLP4 0
 CNSTU4 0
 ASGNU4
-ADDRGP4 $75
+ADDRGP4 $74
 JUMPV
-LABELV $72
+LABELV $71
 line 172
 ;172:				if ( *filter == '*' || *filter == '?' )
 ADDRLP4 1032
@@ -1175,17 +1159,17 @@ ASGNI4
 ADDRLP4 1032
 INDIRI4
 CNSTI4 42
-EQI4 $78
+EQI4 $77
 ADDRLP4 1032
 INDIRI4
 CNSTI4 63
-NEI4 $76
-LABELV $78
+NEI4 $75
+LABELV $77
 line 173
 ;173:					break;
-ADDRGP4 $74
+ADDRGP4 $73
 JUMPV
-LABELV $76
+LABELV $75
 line 174
 ;174:				buf[i] = *filter++;
 ADDRLP4 1036
@@ -1208,7 +1192,7 @@ INDIRI1
 ASGNI1
 line 175
 ;175:			}
-LABELV $73
+LABELV $72
 line 171
 ADDRLP4 0
 ADDRLP4 0
@@ -1216,19 +1200,19 @@ INDIRU4
 CNSTU4 1
 ADDU4
 ASGNU4
-LABELV $75
+LABELV $74
 ADDRFP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-EQI4 $79
+EQI4 $78
 ADDRLP4 0
 INDIRU4
 CNSTU4 1023
-LTU4 $72
-LABELV $79
-LABELV $74
+LTU4 $71
+LABELV $78
+LABELV $73
 line 176
 ;176:			buf[ i ] = '\0';
 ADDRLP4 0
@@ -1242,7 +1226,7 @@ line 177
 ADDRLP4 0
 INDIRU4
 CNSTU4 0
-EQU4 $80
+EQU4 $79
 line 178
 ;178:				ptr = Com_StringContains( name, buf, i );
 ADDRFP4 4
@@ -1267,14 +1251,14 @@ ADDRLP4 1028
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $82
+NEU4 $81
 line 180
 ;180:					return qfalse;
 CNSTI4 0
 RETI4
-ADDRGP4 $66
+ADDRGP4 $65
 JUMPV
-LABELV $82
+LABELV $81
 line 181
 ;181:				name = ptr + i;
 ADDRFP4 4
@@ -1286,25 +1270,25 @@ ADDP4
 ASGNP4
 line 182
 ;182:			} else if ( *filter == '\0' ) {
-ADDRGP4 $71
+ADDRGP4 $70
 JUMPV
-LABELV $80
+LABELV $79
 ADDRFP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $71
+NEI4 $70
 line 183
 ;183:				return qtrue;
 CNSTI4 1
 RETI4
-ADDRGP4 $66
+ADDRGP4 $65
 JUMPV
 line 185
 ;184:			}
 ;185:		}
-LABELV $70
+LABELV $69
 line 186
 ;186:		else if ( *filter == '?' ) {
 ADDRFP4 0
@@ -1312,7 +1296,7 @@ INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 63
-NEI4 $86
+NEI4 $85
 line 187
 ;187:			if ( *name == '\0' )
 ADDRFP4 4
@@ -1320,14 +1304,14 @@ INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $88
+NEI4 $87
 line 188
 ;188:				return qfalse;
 CNSTI4 0
 RETI4
-ADDRGP4 $66
+ADDRGP4 $65
 JUMPV
-LABELV $88
+LABELV $87
 line 189
 ;189:			filter++;
 ADDRFP4 0
@@ -1346,9 +1330,9 @@ ADDP4
 ASGNP4
 line 191
 ;191:		}
-ADDRGP4 $87
+ADDRGP4 $86
 JUMPV
-LABELV $86
+LABELV $85
 line 192
 ;192:		else {
 line 193
@@ -1380,14 +1364,14 @@ INDIRP4
 ADDP4
 INDIRU1
 CVUI4 1
-EQI4 $90
+EQI4 $89
 line 194
 ;194:				return qfalse;
 CNSTI4 0
 RETI4
-ADDRGP4 $66
+ADDRGP4 $65
 JUMPV
-LABELV $90
+LABELV $89
 line 195
 ;195:			filter++;
 ADDRFP4 0
@@ -1406,18 +1390,18 @@ ADDP4
 ASGNP4
 line 197
 ;197:		}
-LABELV $87
-LABELV $71
+LABELV $86
+LABELV $70
 line 198
 ;198:	}
-LABELV $68
+LABELV $67
 line 168
 ADDRFP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $67
+NEI4 $66
 line 199
 ;199:	if ( *name ) {
 ADDRFP4 4
@@ -1425,20 +1409,20 @@ INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-EQI4 $92
+EQI4 $91
 line 200
 ;200:		return qfalse;
 CNSTI4 0
 RETI4
-ADDRGP4 $66
+ADDRGP4 $65
 JUMPV
-LABELV $92
+LABELV $91
 line 202
 ;201:	}
 ;202:	return qtrue;
 CNSTI4 1
 RETI4
-LABELV $66
+LABELV $65
 endproc Com_FilterExt 1040 12
 export Com_Filter
 proc Com_Filter 1076 12
@@ -1448,9 +1432,9 @@ line 207
 ;205:
 ;206:int Com_Filter( const char *filter, const char *name )
 ;207:{
-ADDRGP4 $96
+ADDRGP4 $95
 JUMPV
-LABELV $95
+LABELV $94
 line 212
 ;208:	char buf[ MAX_TOKEN_CHARS ];
 ;209:	const char *ptr;
@@ -1464,7 +1448,7 @@ INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 42
-NEI4 $98
+NEI4 $97
 line 214
 ;214:			filter++;
 ADDRFP4 0
@@ -1478,9 +1462,9 @@ line 215
 ADDRLP4 0
 CNSTI4 0
 ASGNI4
-ADDRGP4 $103
+ADDRGP4 $102
 JUMPV
-LABELV $100
+LABELV $99
 line 216
 ;216:				if (*filter == '*' || *filter == '?')
 ADDRLP4 1036
@@ -1492,17 +1476,17 @@ ASGNI4
 ADDRLP4 1036
 INDIRI4
 CNSTI4 42
-EQI4 $106
+EQI4 $105
 ADDRLP4 1036
 INDIRI4
 CNSTI4 63
-NEI4 $104
-LABELV $106
+NEI4 $103
+LABELV $105
 line 217
 ;217:					break;
-ADDRGP4 $102
+ADDRGP4 $101
 JUMPV
-LABELV $104
+LABELV $103
 line 218
 ;218:				buf[i] = *filter;
 ADDRLP4 0
@@ -1523,7 +1507,7 @@ ADDP4
 ASGNP4
 line 220
 ;220:			}
-LABELV $101
+LABELV $100
 line 215
 ADDRLP4 0
 ADDRLP4 0
@@ -1531,14 +1515,14 @@ INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-LABELV $103
+LABELV $102
 ADDRFP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $100
-LABELV $102
+NEI4 $99
+LABELV $101
 line 221
 ;221:			buf[i] = '\0';
 ADDRLP4 0
@@ -1552,7 +1536,7 @@ line 222
 ADDRLP4 0
 INDIRI4
 CNSTI4 0
-EQI4 $99
+EQI4 $98
 line 223
 ;223:				ptr = Com_StringContains( name, buf, i );
 ADDRFP4 4
@@ -1578,14 +1562,14 @@ ADDRLP4 1032
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $109
+NEU4 $108
 line 225
 ;225:					return qfalse;
 CNSTI4 0
 RETI4
-ADDRGP4 $94
+ADDRGP4 $93
 JUMPV
-LABELV $109
+LABELV $108
 line 226
 ;226:				name = ptr + i;
 ADDRFP4 4
@@ -1599,9 +1583,9 @@ line 227
 ;227:			}
 line 228
 ;228:		}
-ADDRGP4 $99
+ADDRGP4 $98
 JUMPV
-LABELV $98
+LABELV $97
 line 229
 ;229:		else if (*filter == '?') {
 ADDRFP4 0
@@ -1609,7 +1593,7 @@ INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 63
-NEI4 $111
+NEI4 $110
 line 230
 ;230:			filter++;
 ADDRFP4 0
@@ -1628,9 +1612,9 @@ ADDP4
 ASGNP4
 line 232
 ;232:		}
-ADDRGP4 $112
+ADDRGP4 $111
 JUMPV
-LABELV $111
+LABELV $110
 line 233
 ;233:		else if (*filter == '[' && *(filter+1) == '[') {
 ADDRLP4 1036
@@ -1646,7 +1630,7 @@ INDIRI1
 CVII4 1
 ADDRLP4 1040
 INDIRI4
-NEI4 $113
+NEI4 $112
 ADDRLP4 1036
 INDIRP4
 CNSTI4 1
@@ -1655,7 +1639,7 @@ INDIRI1
 CVII4 1
 ADDRLP4 1040
 INDIRI4
-NEI4 $113
+NEI4 $112
 line 234
 ;234:			filter++;
 ADDRFP4 0
@@ -1666,9 +1650,9 @@ ADDP4
 ASGNP4
 line 235
 ;235:		}
-ADDRGP4 $114
+ADDRGP4 $113
 JUMPV
-LABELV $113
+LABELV $112
 line 236
 ;236:		else if (*filter == '[') {
 ADDRFP4 0
@@ -1676,7 +1660,7 @@ INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 91
-NEI4 $115
+NEI4 $114
 line 237
 ;237:			filter++;
 ADDRFP4 0
@@ -1690,9 +1674,9 @@ line 238
 ADDRLP4 1028
 CNSTI4 0
 ASGNI4
-ADDRGP4 $118
+ADDRGP4 $117
 JUMPV
-LABELV $117
+LABELV $116
 line 239
 ;239:			while(*filter && !found) {
 line 240
@@ -1710,7 +1694,7 @@ INDIRI1
 CVII4 1
 ADDRLP4 1048
 INDIRI4
-NEI4 $120
+NEI4 $119
 ADDRLP4 1044
 INDIRP4
 CNSTI4 1
@@ -1719,10 +1703,10 @@ INDIRI1
 CVII4 1
 ADDRLP4 1048
 INDIRI4
-EQI4 $120
-ADDRGP4 $119
+EQI4 $119
+ADDRGP4 $118
 JUMPV
-LABELV $120
+LABELV $119
 line 241
 ;241:				if (*(filter+1) == '-' && *(filter+2) && (*(filter+2) != ']' || *(filter+3) == ']')) {
 ADDRLP4 1052
@@ -1736,7 +1720,7 @@ ADDP4
 INDIRI1
 CVII4 1
 CNSTI4 45
-NEI4 $122
+NEI4 $121
 ADDRLP4 1056
 ADDRLP4 1052
 INDIRP4
@@ -1748,7 +1732,7 @@ ASGNI4
 ADDRLP4 1056
 INDIRI4
 CNSTI4 0
-EQI4 $122
+EQI4 $121
 ADDRLP4 1060
 CNSTI4 93
 ASGNI4
@@ -1756,7 +1740,7 @@ ADDRLP4 1056
 INDIRI4
 ADDRLP4 1060
 INDIRI4
-NEI4 $124
+NEI4 $123
 ADDRLP4 1052
 INDIRP4
 CNSTI4 3
@@ -1765,8 +1749,8 @@ INDIRI1
 CVII4 1
 ADDRLP4 1060
 INDIRI4
-NEI4 $122
-LABELV $124
+NEI4 $121
+LABELV $123
 line 242
 ;242:					if (locase[(byte)*name] >= locase[(byte)*filter] &&
 ADDRLP4 1064
@@ -1804,7 +1788,7 @@ INDIRP4
 ADDP4
 INDIRU1
 CVUI4 1
-LTI4 $125
+LTI4 $124
 ADDRLP4 1068
 INDIRI4
 ADDRLP4 1072
@@ -1821,14 +1805,14 @@ INDIRP4
 ADDP4
 INDIRU1
 CVUI4 1
-GTI4 $125
+GTI4 $124
 line 244
 ;243:						locase[(byte)*name] <= locase[(byte)*(filter+2)])
 ;244:							found = qtrue;
 ADDRLP4 1028
 CNSTI4 1
 ASGNI4
-LABELV $125
+LABELV $124
 line 245
 ;245:					filter += 3;
 ADDRFP4 0
@@ -1839,9 +1823,9 @@ ADDP4
 ASGNP4
 line 246
 ;246:				}
-ADDRGP4 $123
+ADDRGP4 $122
 JUMPV
-LABELV $122
+LABELV $121
 line 247
 ;247:				else {
 line 248
@@ -1873,13 +1857,13 @@ INDIRP4
 ADDP4
 INDIRU1
 CVUI4 1
-NEI4 $127
+NEI4 $126
 line 249
 ;249:						found = qtrue;
 ADDRLP4 1028
 CNSTI4 1
 ASGNI4
-LABELV $127
+LABELV $126
 line 250
 ;250:					filter++;
 ADDRFP4 0
@@ -1890,10 +1874,10 @@ ADDP4
 ASGNP4
 line 251
 ;251:				}
-LABELV $123
+LABELV $122
 line 252
 ;252:			}
-LABELV $118
+LABELV $117
 line 239
 ADDRLP4 1044
 CNSTI4 0
@@ -1904,25 +1888,25 @@ INDIRI1
 CVII4 1
 ADDRLP4 1044
 INDIRI4
-EQI4 $129
+EQI4 $128
 ADDRLP4 1028
 INDIRI4
 ADDRLP4 1044
 INDIRI4
-EQI4 $117
-LABELV $129
-LABELV $119
+EQI4 $116
+LABELV $128
+LABELV $118
 line 253
 ;253:			if (!found) return qfalse;
 ADDRLP4 1028
 INDIRI4
 CNSTI4 0
-NEI4 $133
+NEI4 $132
 CNSTI4 0
 RETI4
-ADDRGP4 $94
+ADDRGP4 $93
 JUMPV
-LABELV $132
+LABELV $131
 line 254
 ;254:			while (*filter) {
 line 255
@@ -1940,7 +1924,7 @@ INDIRI1
 CVII4 1
 ADDRLP4 1052
 INDIRI4
-NEI4 $135
+NEI4 $134
 ADDRLP4 1048
 INDIRP4
 CNSTI4 1
@@ -1949,10 +1933,10 @@ INDIRI1
 CVII4 1
 ADDRLP4 1052
 INDIRI4
-EQI4 $135
-ADDRGP4 $134
+EQI4 $134
+ADDRGP4 $133
 JUMPV
-LABELV $135
+LABELV $134
 line 256
 ;256:				filter++;
 ADDRFP4 0
@@ -1963,15 +1947,15 @@ ADDP4
 ASGNP4
 line 257
 ;257:			}
-LABELV $133
+LABELV $132
 line 254
 ADDRFP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $132
-LABELV $134
+NEI4 $131
+LABELV $133
 line 258
 ;258:			filter++;
 ADDRFP4 0
@@ -1990,9 +1974,9 @@ ADDP4
 ASGNP4
 line 260
 ;260:		}
-ADDRGP4 $116
+ADDRGP4 $115
 JUMPV
-LABELV $115
+LABELV $114
 line 261
 ;261:		else {
 line 262
@@ -2024,14 +2008,14 @@ INDIRP4
 ADDP4
 INDIRU1
 CVUI4 1
-EQI4 $137
+EQI4 $136
 line 263
 ;263:				return qfalse;
 CNSTI4 0
 RETI4
-ADDRGP4 $94
+ADDRGP4 $93
 JUMPV
-LABELV $137
+LABELV $136
 line 264
 ;264:			filter++;
 ADDRFP4 0
@@ -2050,25 +2034,25 @@ ADDP4
 ASGNP4
 line 266
 ;266:		}
-LABELV $116
-LABELV $114
-LABELV $112
-LABELV $99
+LABELV $115
+LABELV $113
+LABELV $111
+LABELV $98
 line 267
 ;267:	}
-LABELV $96
+LABELV $95
 line 212
 ADDRFP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $95
+NEI4 $94
 line 268
 ;268:	return qtrue;
 CNSTI4 1
 RETI4
-LABELV $94
+LABELV $93
 endproc Com_Filter 1076 12
 export Com_FilterPath
 proc Com_FilterPath 144 8
@@ -2086,9 +2070,9 @@ line 277
 ADDRLP4 0
 CNSTI4 0
 ASGNI4
-ADDRGP4 $143
+ADDRGP4 $142
 JUMPV
-LABELV $140
+LABELV $139
 line 278
 ;278:		if ( filter[i] == '\\' || filter[i] == ':' ) {
 ADDRLP4 132
@@ -2103,12 +2087,12 @@ ASGNI4
 ADDRLP4 132
 INDIRI4
 CNSTI4 92
-EQI4 $146
+EQI4 $145
 ADDRLP4 132
 INDIRI4
 CNSTI4 58
-NEI4 $144
-LABELV $146
+NEI4 $143
+LABELV $145
 line 279
 ;279:			new_filter[i] = '/';
 ADDRLP4 0
@@ -2119,9 +2103,9 @@ CNSTI1 47
 ASGNI1
 line 280
 ;280:		}
-ADDRGP4 $145
+ADDRGP4 $144
 JUMPV
-LABELV $144
+LABELV $143
 line 281
 ;281:		else {
 line 282
@@ -2139,10 +2123,10 @@ INDIRI1
 ASGNI1
 line 283
 ;283:		}
-LABELV $145
+LABELV $144
 line 284
 ;284:	}
-LABELV $141
+LABELV $140
 line 277
 ADDRLP4 0
 ADDRLP4 0
@@ -2150,11 +2134,11 @@ INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-LABELV $143
+LABELV $142
 ADDRLP4 0
 INDIRI4
 CNSTI4 63
-GEI4 $147
+GEI4 $146
 ADDRLP4 0
 INDIRI4
 ADDRFP4 0
@@ -2163,8 +2147,8 @@ ADDP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $140
-LABELV $147
+NEI4 $139
+LABELV $146
 line 285
 ;285:	new_filter[i] = '\0';
 ADDRLP4 0
@@ -2178,9 +2162,9 @@ line 286
 ADDRLP4 0
 CNSTI4 0
 ASGNI4
-ADDRGP4 $151
+ADDRGP4 $150
 JUMPV
-LABELV $148
+LABELV $147
 line 287
 ;287:		if ( name[i] == '\\' || name[i] == ':' ) {
 ADDRLP4 136
@@ -2195,12 +2179,12 @@ ASGNI4
 ADDRLP4 136
 INDIRI4
 CNSTI4 92
-EQI4 $154
+EQI4 $153
 ADDRLP4 136
 INDIRI4
 CNSTI4 58
-NEI4 $152
-LABELV $154
+NEI4 $151
+LABELV $153
 line 288
 ;288:			new_name[i] = '/';
 ADDRLP4 0
@@ -2211,9 +2195,9 @@ CNSTI1 47
 ASGNI1
 line 289
 ;289:		}
-ADDRGP4 $153
+ADDRGP4 $152
 JUMPV
-LABELV $152
+LABELV $151
 line 290
 ;290:		else {
 line 291
@@ -2231,10 +2215,10 @@ INDIRI1
 ASGNI1
 line 292
 ;292:		}
-LABELV $153
+LABELV $152
 line 293
 ;293:	}
-LABELV $149
+LABELV $148
 line 286
 ADDRLP4 0
 ADDRLP4 0
@@ -2242,11 +2226,11 @@ INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-LABELV $151
+LABELV $150
 ADDRLP4 0
 INDIRI4
 CNSTI4 63
-GEI4 $155
+GEI4 $154
 ADDRLP4 0
 INDIRI4
 ADDRFP4 4
@@ -2255,8 +2239,8 @@ ADDP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $148
-LABELV $155
+NEI4 $147
+LABELV $154
 line 294
 ;294:	new_name[i] = '\0';
 ADDRLP4 0
@@ -2278,7 +2262,7 @@ ASGNI4
 ADDRLP4 140
 INDIRI4
 RETI4
-LABELV $139
+LABELV $138
 endproc Com_FilterPath 144 8
 export Com_HasPatterns
 proc Com_HasPatterns 12 0
@@ -2287,9 +2271,9 @@ line 299
 ;297:
 ;298:qboolean Com_HasPatterns( const char *str )
 ;299:{
-ADDRGP4 $158
+ADDRGP4 $157
 JUMPV
-LABELV $157
+LABELV $156
 line 302
 ;300:	int c;
 ;301:
@@ -2299,23 +2283,23 @@ line 303
 ADDRLP4 0
 INDIRI4
 CNSTI4 42
-EQI4 $162
+EQI4 $161
 ADDRLP4 0
 INDIRI4
 CNSTI4 63
-NEI4 $160
-LABELV $162
+NEI4 $159
+LABELV $161
 line 304
 ;304:			return qtrue;
 CNSTI4 1
 RETI4
-ADDRGP4 $156
+ADDRGP4 $155
 JUMPV
-LABELV $160
+LABELV $159
 line 306
 ;305:		}
 ;306:	}
-LABELV $158
+LABELV $157
 line 302
 ADDRLP4 4
 ADDRFP4 0
@@ -2340,13 +2324,13 @@ ASGNI4
 ADDRLP4 8
 INDIRI4
 CNSTI4 0
-NEI4 $157
+NEI4 $156
 line 308
 ;307:
 ;308:	return qfalse;
 CNSTI4 0
 RETI4
-LABELV $156
+LABELV $155
 endproc Com_HasPatterns 12 0
 export COM_DefaultExtension
 proc COM_DefaultExtension 20 12
@@ -2386,7 +2370,7 @@ ADDRLP4 0
 INDIRP4
 CVPU4 4
 CNSTU4 0
-EQU4 $164
+EQU4 $163
 ADDRFP4 0
 INDIRP4
 ARGP4
@@ -2410,20 +2394,20 @@ ADDRLP4 16
 INDIRP4
 CVPU4 4
 CNSTU4 0
-EQU4 $166
+EQU4 $165
 ADDRLP4 4
 INDIRP4
 CVPU4 4
 ADDRLP4 0
 INDIRP4
 CVPU4 4
-GEU4 $164
-LABELV $166
+GEU4 $163
+LABELV $165
 line 323
 ;323:		return;
-ADDRGP4 $163
+ADDRGP4 $162
 JUMPV
-LABELV $164
+LABELV $163
 line 325
 ;324:	else
 ;325:		N_strcat(path, maxSize, extension);
@@ -2441,7 +2425,7 @@ CALLV
 pop
 line 326
 ;326:}
-LABELV $163
+LABELV $162
 endproc COM_DefaultExtension 20 12
 export COM_StripExtension
 proc COM_StripExtension 24 12
@@ -2474,7 +2458,7 @@ ADDRLP4 0
 INDIRP4
 CVPU4 4
 CNSTU4 0
-EQU4 $168
+EQU4 $167
 ADDRFP4 0
 INDIRP4
 ARGP4
@@ -2498,15 +2482,15 @@ ADDRLP4 16
 INDIRP4
 CVPU4 4
 CNSTU4 0
-EQU4 $170
+EQU4 $169
 ADDRLP4 4
 INDIRP4
 CVPU4 4
 ADDRLP4 0
 INDIRP4
 CVPU4 4
-GEU4 $168
-LABELV $170
+GEU4 $167
+LABELV $169
 line 334
 ;334:		destsize = (destsize < dot-in+1 ? destsize : dot-in+1);
 ADDRFP4 8
@@ -2522,14 +2506,14 @@ CVUI4 4
 CNSTI4 1
 ADDI4
 CVIU4 4
-GEU4 $172
+GEU4 $171
 ADDRLP4 20
 ADDRFP4 8
 INDIRU4
 ASGNU4
-ADDRGP4 $173
+ADDRGP4 $172
 JUMPV
-LABELV $172
+LABELV $171
 ADDRLP4 20
 ADDRLP4 0
 INDIRP4
@@ -2543,12 +2527,12 @@ CNSTI4 1
 ADDI4
 CVIU4 4
 ASGNU4
-LABELV $173
+LABELV $172
 ADDRFP4 8
 ADDRLP4 20
 INDIRU4
 ASGNU4
-LABELV $168
+LABELV $167
 line 336
 ;335:
 ;336:	if ( in == out && destsize > 1 )
@@ -2558,11 +2542,11 @@ CVPU4 4
 ADDRFP4 4
 INDIRP4
 CVPU4 4
-NEU4 $174
+NEU4 $173
 ADDRFP4 8
 INDIRU4
 CNSTU4 1
-LEU4 $174
+LEU4 $173
 line 337
 ;337:		out[destsize-1] = '\0';
 ADDRFP4 8
@@ -2574,9 +2558,9 @@ INDIRP4
 ADDP4
 CNSTI1 0
 ASGNI1
-ADDRGP4 $175
+ADDRGP4 $174
 JUMPV
-LABELV $174
+LABELV $173
 line 339
 ;338:	else
 ;339:		N_strncpy(out, in, destsize);
@@ -2592,10 +2576,10 @@ ARGU4
 ADDRGP4 N_strncpy
 CALLV
 pop
-LABELV $175
+LABELV $174
 line 340
 ;340:}
-LABELV $167
+LABELV $166
 endproc COM_StripExtension 24 12
 export Com_Split
 proc Com_Split 20 0
@@ -2630,10 +2614,10 @@ line 352
 ADDRFP4 12
 INDIRI4
 CNSTI4 32
-LTI4 $177
-ADDRGP4 $180
+LTI4 $176
+ADDRGP4 $179
 JUMPV
-LABELV $179
+LABELV $178
 line 354
 ;353:		while( (c = *in) != '\0' && c <= ' ' )
 ;354:			in++; 
@@ -2643,7 +2627,7 @@ INDIRP4
 CNSTI4 1
 ADDP4
 ASGNP4
-LABELV $180
+LABELV $179
 line 353
 ADDRLP4 12
 ADDRFP4 0
@@ -2658,15 +2642,15 @@ ASGNI4
 ADDRLP4 12
 INDIRI4
 CNSTI4 0
-EQI4 $182
+EQI4 $181
 ADDRLP4 0
 INDIRI4
 CNSTI4 32
-LEI4 $179
-LABELV $182
+LEI4 $178
+LABELV $181
 line 355
 ;355:	}
-LABELV $177
+LABELV $176
 line 356
 ;356:	*out = in; out++;
 ADDRFP4 4
@@ -2680,11 +2664,11 @@ INDIRP4
 CNSTI4 4
 ADDP4
 ASGNP4
-ADDRGP4 $184
+ADDRGP4 $183
 JUMPV
 line 357
 ;357:	while( out < end ) {
-LABELV $186
+LABELV $185
 line 359
 ;358:		while( (c = *in) != '\0' && c != delim )
 ;359:			in++; 
@@ -2694,7 +2678,7 @@ INDIRP4
 CNSTI4 1
 ADDP4
 ASGNP4
-LABELV $187
+LABELV $186
 line 358
 ADDRLP4 12
 ADDRFP4 0
@@ -2709,13 +2693,13 @@ ASGNI4
 ADDRLP4 12
 INDIRI4
 CNSTI4 0
-EQI4 $189
+EQI4 $188
 ADDRLP4 0
 INDIRI4
 ADDRFP4 12
 INDIRI4
-NEI4 $186
-LABELV $189
+NEI4 $185
+LABELV $188
 line 360
 ;360:		*in = '\0';
 ADDRFP4 0
@@ -2727,7 +2711,7 @@ line 361
 ADDRLP4 0
 INDIRI4
 CNSTI4 0
-NEI4 $190
+NEI4 $189
 line 363
 ;362:			// don't count last null value
 ;363:			if ( out[-1][0] == '\0' )
@@ -2739,7 +2723,7 @@ INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $201
+NEI4 $200
 line 364
 ;364:				out--;
 ADDRFP4 4
@@ -2750,9 +2734,9 @@ ADDP4
 ASGNP4
 line 365
 ;365:			break;
-ADDRGP4 $201
+ADDRGP4 $200
 JUMPV
-LABELV $190
+LABELV $189
 line 367
 ;366:		}
 ;367:		in++;
@@ -2768,10 +2752,10 @@ line 369
 ADDRFP4 12
 INDIRI4
 CNSTI4 32
-LTI4 $194
-ADDRGP4 $197
+LTI4 $193
+ADDRGP4 $196
 JUMPV
-LABELV $196
+LABELV $195
 line 371
 ;370:			while( (c = *in) != '\0' && c <= ' ' )
 ;371:				in++; 
@@ -2781,7 +2765,7 @@ INDIRP4
 CNSTI4 1
 ADDP4
 ASGNP4
-LABELV $197
+LABELV $196
 line 370
 ADDRLP4 16
 ADDRFP4 0
@@ -2796,15 +2780,15 @@ ASGNI4
 ADDRLP4 16
 INDIRI4
 CNSTI4 0
-EQI4 $199
+EQI4 $198
 ADDRLP4 0
 INDIRI4
 CNSTI4 32
-LEI4 $196
-LABELV $199
+LEI4 $195
+LABELV $198
 line 372
 ;372:		}
-LABELV $194
+LABELV $193
 line 373
 ;373:		*out = in; out++;
 ADDRFP4 4
@@ -2820,7 +2804,7 @@ ADDP4
 ASGNP4
 line 374
 ;374:	}
-LABELV $184
+LABELV $183
 line 357
 ADDRFP4 4
 INDIRP4
@@ -2828,10 +2812,10 @@ CVPU4 4
 ADDRLP4 4
 INDIRP4
 CVPU4 4
-LTU4 $187
-ADDRGP4 $201
+LTU4 $186
+ADDRGP4 $200
 JUMPV
-LABELV $200
+LABELV $199
 line 377
 ;375:	// sanitize last value
 ;376:	while( (c = *in) != '\0' && c != delim )
@@ -2842,7 +2826,7 @@ INDIRP4
 CNSTI4 1
 ADDP4
 ASGNP4
-LABELV $201
+LABELV $200
 line 376
 ADDRLP4 12
 ADDRFP4 0
@@ -2857,13 +2841,13 @@ ASGNI4
 ADDRLP4 12
 INDIRI4
 CNSTI4 0
-EQI4 $203
+EQI4 $202
 ADDRLP4 0
 INDIRI4
 ADDRFP4 12
 INDIRI4
-NEI4 $200
-LABELV $203
+NEI4 $199
+LABELV $202
 line 378
 ;378:	*in = '\0';
 ADDRFP4 0
@@ -2884,9 +2868,9 @@ CVUI4 4
 CNSTI4 4
 DIVI4
 ASGNI4
-ADDRGP4 $205
+ADDRGP4 $204
 JUMPV
-LABELV $204
+LABELV $203
 line 381
 ;380:	// set remaining out pointers
 ;381:	while( out < end ) {
@@ -2905,7 +2889,7 @@ ADDP4
 ASGNP4
 line 383
 ;383:	}
-LABELV $205
+LABELV $204
 line 381
 ADDRFP4 4
 INDIRP4
@@ -2913,13 +2897,13 @@ CVPU4 4
 ADDRLP4 4
 INDIRP4
 CVPU4 4
-LTU4 $204
+LTU4 $203
 line 384
 ;384:	return c;
 ADDRLP4 0
 INDIRI4
 RETI4
-LABELV $176
+LABELV $175
 endproc Com_Split 20 0
 export CopyShortSwap
 proc CopyShortSwap 8 0
@@ -2962,7 +2946,7 @@ INDIRU1
 ASGNU1
 line 394
 ;394:}
-LABELV $207
+LABELV $206
 endproc CopyShortSwap 8 0
 export CopyIntSwap
 proc CopyIntSwap 8 0
@@ -3027,7 +3011,7 @@ INDIRU1
 ASGNU1
 line 404
 ;404:}
-LABELV $208
+LABELV $207
 endproc CopyIntSwap 8 0
 export CopyLongSwap
 proc CopyLongSwap 8 0
@@ -3140,7 +3124,7 @@ INDIRU1
 ASGNU1
 line 418
 ;418:}
-LABELV $209
+LABELV $208
 endproc CopyLongSwap 8 0
 export N_memset
 proc N_memset 8 0
@@ -3159,19 +3143,17 @@ line 429
 line 432
 ;430:	size_t i;
 ;431:	
-;432:	if ( (((long)dest | count) & 3) == 0) {
+;432:	if ( (((uintptr_t)dest | count) & 3) == 0) {
 ADDRFP4 0
 INDIRP4
 CVPU4 4
-CVUI4 4
-CVIU4 4
 ADDRFP4 8
 INDIRU4
 BORU4
 CNSTU4 3
 BANDU4
 CNSTU4 0
-NEU4 $211
+NEU4 $210
 line 433
 ;433:		count >>= 2;
 ADDRFP4 8
@@ -3210,9 +3192,9 @@ line 435
 ADDRLP4 0
 CNSTU4 0
 ASGNU4
-ADDRGP4 $216
+ADDRGP4 $215
 JUMPV
-LABELV $213
+LABELV $212
 line 436
 ;436:			((int *)dest)[i] = fill;
 ADDRLP4 0
@@ -3225,7 +3207,7 @@ ADDP4
 ADDRFP4 4
 INDIRI4
 ASGNI4
-LABELV $214
+LABELV $213
 line 435
 ADDRLP4 0
 ADDRLP4 0
@@ -3233,26 +3215,26 @@ INDIRU4
 CNSTU4 1
 ADDU4
 ASGNU4
-LABELV $216
+LABELV $215
 ADDRLP4 0
 INDIRU4
 ADDRFP4 8
 INDIRU4
-LTU4 $213
+LTU4 $212
 line 437
 ;437:	}
-ADDRGP4 $212
+ADDRGP4 $211
 JUMPV
-LABELV $211
+LABELV $210
 line 439
 ;438:	else
 ;439:		for (i = 0; i < count; i++)
 ADDRLP4 0
 CNSTU4 0
 ASGNU4
-ADDRGP4 $220
+ADDRGP4 $219
 JUMPV
-LABELV $217
+LABELV $216
 line 440
 ;440:			((char *)dest)[i] = fill;
 ADDRLP4 0
@@ -3264,7 +3246,7 @@ ADDRFP4 4
 INDIRI4
 CVII1 4
 ASGNI1
-LABELV $218
+LABELV $217
 line 439
 ADDRLP4 0
 ADDRLP4 0
@@ -3272,20 +3254,20 @@ INDIRU4
 CNSTU4 1
 ADDU4
 ASGNU4
-LABELV $220
+LABELV $219
 ADDRLP4 0
 INDIRU4
 ADDRFP4 8
 INDIRU4
-LTU4 $217
-LABELV $212
+LTU4 $216
+LABELV $211
 line 442
 ;441:    
 ;442:    return dest;
 ADDRFP4 0
 INDIRP4
 RETP4
-LABELV $210
+LABELV $209
 endproc N_memset 8 0
 export N_memchr
 proc N_memchr 4 0
@@ -3294,9 +3276,9 @@ line 446
 ;444:
 ;445:void* N_memchr (void *ptr, int c, size_t count)
 ;446:{
-ADDRGP4 $223
+ADDRGP4 $222
 JUMPV
-LABELV $222
+LABELV $221
 line 447
 ;447:	while (--count) {
 line 448
@@ -3310,7 +3292,7 @@ INDIRI1
 CVII4 1
 ADDRFP4 4
 INDIRI4
-NEI4 $225
+NEI4 $224
 line 449
 ;449:			return (void *)&((char *)ptr)[count];
 ADDRFP4 8
@@ -3319,12 +3301,12 @@ ADDRFP4 0
 INDIRP4
 ADDP4
 RETP4
-ADDRGP4 $221
+ADDRGP4 $220
 JUMPV
-LABELV $225
+LABELV $224
 line 450
 ;450:	}
-LABELV $223
+LABELV $222
 line 447
 ADDRLP4 0
 ADDRFP4 8
@@ -3339,12 +3321,12 @@ ASGNU4
 ADDRLP4 0
 INDIRU4
 CNSTU4 0
-NEU4 $222
+NEU4 $221
 line 451
 ;451:	return NULL;
 CNSTP4 0
 RETP4
-LABELV $221
+LABELV $220
 endproc N_memchr 4 0
 export N_memcpy
 proc N_memcpy 8 0
@@ -3355,31 +3337,28 @@ line 455
 ;455:{
 line 457
 ;456:	size_t i;
-;457:	if (( ( (long)dest | (long)src | count) & 7) == 0) {
+;457:	if (( ( (uintptr_t)dest | (uintptr_t)src | count) & 7) == 0) {
 ADDRFP4 0
 INDIRP4
 CVPU4 4
-CVUI4 4
 ADDRFP4 4
 INDIRP4
 CVPU4 4
-CVUI4 4
-BORI4
-CVIU4 4
+BORU4
 ADDRFP4 8
 INDIRU4
 BORU4
 CNSTU4 7
 BANDU4
 CNSTU4 0
-NEU4 $228
-ADDRGP4 $231
+NEU4 $227
+ADDRGP4 $230
 JUMPV
-LABELV $230
+LABELV $229
 line 458
 ;458:		while (count >= 4) {
 line 459
-;459:			((long *)dest)[count] = ((long *)src)[count];
+;459:			((intptr_t *)dest)[count] = ((intptr_t *)src)[count];
 ADDRLP4 4
 ADDRFP4 8
 INDIRU4
@@ -3408,36 +3387,33 @@ SUBU4
 ASGNU4
 line 461
 ;461:		}
-LABELV $231
+LABELV $230
 line 458
 ADDRFP4 8
 INDIRU4
 CNSTU4 4
-GEU4 $230
+GEU4 $229
 line 462
 ;462:	}
-ADDRGP4 $229
+ADDRGP4 $228
 JUMPV
-LABELV $228
+LABELV $227
 line 463
-;463:	else if (( ( (long)dest | (long)src | count) & 3) == 0 ) {
+;463:	else if (( ( (uintptr_t)dest | (uintptr_t)src | count) & 3) == 0 ) {
 ADDRFP4 0
 INDIRP4
 CVPU4 4
-CVUI4 4
 ADDRFP4 4
 INDIRP4
 CVPU4 4
-CVUI4 4
-BORI4
-CVIU4 4
+BORU4
 ADDRFP4 8
 INDIRU4
 BORU4
 CNSTU4 3
 BANDU4
 CNSTU4 0
-NEU4 $233
+NEU4 $232
 line 464
 ;464:		count>>=2;
 ADDRFP4 8
@@ -3451,9 +3427,9 @@ line 465
 ADDRLP4 0
 CNSTU4 0
 ASGNU4
-ADDRGP4 $238
+ADDRGP4 $237
 JUMPV
-LABELV $235
+LABELV $234
 line 466
 ;466:			((int *)dest)[i] = ((int *)src)[i];
 ADDRLP4 4
@@ -3474,7 +3450,7 @@ INDIRP4
 ADDP4
 INDIRI4
 ASGNI4
-LABELV $236
+LABELV $235
 line 465
 ADDRLP4 0
 ADDRLP4 0
@@ -3482,26 +3458,26 @@ INDIRU4
 CNSTU4 1
 ADDU4
 ASGNU4
-LABELV $238
+LABELV $237
 ADDRLP4 0
 INDIRU4
 ADDRFP4 8
 INDIRU4
-LTU4 $235
+LTU4 $234
 line 467
 ;467:	}
-ADDRGP4 $234
+ADDRGP4 $233
 JUMPV
-LABELV $233
+LABELV $232
 line 469
 ;468:	else
 ;469:		for (i = 0; i < count; i++)
 ADDRLP4 0
 CNSTU4 0
 ASGNU4
-ADDRGP4 $242
+ADDRGP4 $241
 JUMPV
-LABELV $239
+LABELV $238
 line 470
 ;470:			((char *)dest)[i] = ((char *)src)[i];
 ADDRLP4 0
@@ -3516,7 +3492,7 @@ INDIRP4
 ADDP4
 INDIRI1
 ASGNI1
-LABELV $240
+LABELV $239
 line 469
 ADDRLP4 0
 ADDRLP4 0
@@ -3524,17 +3500,17 @@ INDIRU4
 CNSTU4 1
 ADDU4
 ASGNU4
-LABELV $242
+LABELV $241
 ADDRLP4 0
 INDIRU4
 ADDRFP4 8
 INDIRU4
-LTU4 $239
-LABELV $234
-LABELV $229
+LTU4 $238
+LABELV $233
+LABELV $228
 line 471
 ;471:}
-LABELV $227
+LABELV $226
 endproc N_memcpy 8 0
 export N_memcmp
 proc N_memcmp 4 0
@@ -3542,9 +3518,9 @@ line 474
 ;472:
 ;473:int N_memcmp (const void *ptr1, const void *ptr2, size_t count)
 ;474:{
-ADDRGP4 $245
+ADDRGP4 $244
 JUMPV
-LABELV $244
+LABELV $243
 line 475
 ;475:	while (count--) {
 line 476
@@ -3567,17 +3543,17 @@ INDIRP4
 ADDP4
 INDIRI1
 CVII4 1
-EQI4 $247
+EQI4 $246
 line 477
 ;477:			return -1;
 CNSTI4 -1
 RETI4
-ADDRGP4 $243
+ADDRGP4 $242
 JUMPV
-LABELV $247
+LABELV $246
 line 478
 ;478:	}
-LABELV $245
+LABELV $244
 line 475
 ADDRLP4 0
 ADDRFP4 8
@@ -3592,12 +3568,12 @@ ASGNU4
 ADDRLP4 0
 INDIRU4
 CNSTU4 0
-NEU4 $244
+NEU4 $243
 line 479
 ;479:	return 1;
 CNSTI4 1
 RETI4
-LABELV $243
+LABELV $242
 endproc N_memcmp 4 0
 export N_isprint
 proc N_isprint 4 0
@@ -3647,23 +3623,23 @@ ASGNI4
 ADDRLP4 0
 INDIRI4
 CNSTI4 32
-LTI4 $250
+LTI4 $249
 ADDRLP4 0
 INDIRI4
 CNSTI4 126
-GTI4 $250
+GTI4 $249
 line 517
 ;517:		return ( 1 );
 CNSTI4 1
 RETI4
-ADDRGP4 $249
+ADDRGP4 $248
 JUMPV
-LABELV $250
+LABELV $249
 line 518
 ;518:	return ( 0 );
 CNSTI4 0
 RETI4
-LABELV $249
+LABELV $248
 endproc N_isprint 4 0
 export N_islower
 proc N_islower 4 0
@@ -3682,23 +3658,23 @@ ASGNI4
 ADDRLP4 0
 INDIRI4
 CNSTI4 97
-LTI4 $253
+LTI4 $252
 ADDRLP4 0
 INDIRI4
 CNSTI4 122
-GTI4 $253
+GTI4 $252
 line 525
 ;525:		return ( 1 );
 CNSTI4 1
 RETI4
-ADDRGP4 $252
+ADDRGP4 $251
 JUMPV
-LABELV $253
+LABELV $252
 line 526
 ;526:	return ( 0 );
 CNSTI4 0
 RETI4
-LABELV $252
+LABELV $251
 endproc N_islower 4 0
 export N_isupper
 proc N_isupper 4 0
@@ -3717,23 +3693,23 @@ ASGNI4
 ADDRLP4 0
 INDIRI4
 CNSTI4 65
-LTI4 $256
+LTI4 $255
 ADDRLP4 0
 INDIRI4
 CNSTI4 90
-GTI4 $256
+GTI4 $255
 line 533
 ;533:		return ( 1 );
 CNSTI4 1
 RETI4
-ADDRGP4 $255
+ADDRGP4 $254
 JUMPV
-LABELV $256
+LABELV $255
 line 534
 ;534:	return ( 0 );
 CNSTI4 0
 RETI4
-LABELV $255
+LABELV $254
 endproc N_isupper 4 0
 export N_isalpha
 proc N_isalpha 8 0
@@ -3752,12 +3728,12 @@ ASGNI4
 ADDRLP4 0
 INDIRI4
 CNSTI4 97
-LTI4 $262
+LTI4 $261
 ADDRLP4 0
 INDIRI4
 CNSTI4 122
-LEI4 $261
-LABELV $262
+LEI4 $260
+LABELV $261
 ADDRLP4 4
 ADDRFP4 0
 INDIRI4
@@ -3765,24 +3741,24 @@ ASGNI4
 ADDRLP4 4
 INDIRI4
 CNSTI4 65
-LTI4 $259
+LTI4 $258
 ADDRLP4 4
 INDIRI4
 CNSTI4 90
-GTI4 $259
-LABELV $261
+GTI4 $258
+LABELV $260
 line 541
 ;541:		return ( 1 );
 CNSTI4 1
 RETI4
-ADDRGP4 $258
+ADDRGP4 $257
 JUMPV
-LABELV $259
+LABELV $258
 line 542
 ;542:	return ( 0 );
 CNSTI4 0
 RETI4
-LABELV $258
+LABELV $257
 endproc N_isalpha 8 0
 export N_isintegral
 proc N_isintegral 8 0
@@ -3803,21 +3779,21 @@ CVFI4 4
 CVIF4 4
 ADDRLP4 4
 INDIRF4
-NEF4 $265
+NEF4 $264
 ADDRLP4 0
 CNSTI4 1
 ASGNI4
-ADDRGP4 $266
+ADDRGP4 $265
 JUMPV
-LABELV $265
+LABELV $264
 ADDRLP4 0
 CNSTI4 0
 ASGNI4
-LABELV $266
+LABELV $265
 ADDRLP4 0
 INDIRI4
 RETI4
-LABELV $263
+LABELV $262
 endproc N_isintegral 8 0
 export N_isanumber
 proc N_isanumber 0 0
@@ -3833,7 +3809,7 @@ line 555
 ;555:    return qfalse;
 CNSTI4 0
 RETI4
-LABELV $267
+LABELV $266
 endproc N_isanumber 0 0
 export N_strcpy
 proc N_strcpy 24 0
@@ -3865,9 +3841,9 @@ ADDRLP4 0
 ADDRFP4 4
 INDIRP4
 ASGNP4
-ADDRGP4 $270
+ADDRGP4 $269
 JUMPV
-LABELV $269
+LABELV $268
 line 574
 ;573:	while (*s)
 ;574:		*d++ = *s++;
@@ -3902,14 +3878,14 @@ ADDRLP4 12
 INDIRP4
 INDIRI1
 ASGNI1
-LABELV $270
+LABELV $269
 line 573
 ADDRLP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $269
+NEI4 $268
 line 576
 ;575:	
 ;576:	*d++ = 0;
@@ -3929,7 +3905,7 @@ CNSTI1 0
 ASGNI1
 line 577
 ;577:}
-LABELV $268
+LABELV $267
 endproc N_strcpy 24 0
 export Com_TruncateLongString
 proc Com_TruncateLongString 8 12
@@ -3956,7 +3932,7 @@ line 583
 ADDRLP4 0
 INDIRU4
 CNSTU4 64
-GTU4 $273
+GTU4 $272
 line 584
 ;584:		N_strncpyz( buffer, s, TRUNCATE_LENGTH );
 ADDRFP4 0
@@ -3970,9 +3946,9 @@ ARGU4
 ADDRGP4 N_strncpyz
 CALLV
 pop
-ADDRGP4 $274
+ADDRGP4 $273
 JUMPV
-LABELV $273
+LABELV $272
 line 585
 ;585:	else {
 line 586
@@ -3995,7 +3971,7 @@ INDIRP4
 ARGP4
 CNSTU4 64
 ARGU4
-ADDRGP4 $275
+ADDRGP4 $274
 ARGP4
 ADDRGP4 N_strcat
 CALLV
@@ -4020,10 +3996,10 @@ CALLV
 pop
 line 589
 ;589:	}
-LABELV $274
+LABELV $273
 line 590
 ;590:}
-LABELV $272
+LABELV $271
 endproc Com_TruncateLongString 8 12
 export N_strncpyz
 proc N_strncpyz 0 12
@@ -4038,50 +4014,50 @@ ADDRFP4 0
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $277
+NEU4 $276
 line 596
 ;596:		N_Error(ERR_FATAL, "N_strncpyz: NULL dest");
 CNSTI4 0
 ARGI4
-ADDRGP4 $279
+ADDRGP4 $278
 ARGP4
 ADDRGP4 N_Error
 CALLV
 pop
-LABELV $277
+LABELV $276
 line 597
 ;597:	if (!src)
 ADDRFP4 4
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $280
+NEU4 $279
 line 598
 ;598:		N_Error(ERR_FATAL, "N_strncpyz: NULL src");
 CNSTI4 0
 ARGI4
-ADDRGP4 $282
+ADDRGP4 $281
 ARGP4
 ADDRGP4 N_Error
 CALLV
 pop
-LABELV $280
+LABELV $279
 line 599
 ;599:	if (count < 1)
 ADDRFP4 8
 INDIRU4
 CNSTU4 1
-GEU4 $283
+GEU4 $282
 line 600
 ;600:		N_Error(ERR_FATAL, "N_strncpyz: bad count");
 CNSTI4 0
 ARGI4
-ADDRGP4 $285
+ADDRGP4 $284
 ARGP4
 ADDRGP4 N_Error
 CALLV
 pop
-LABELV $283
+LABELV $282
 line 610
 ;601:	
 ;602:#if 0 // [glnomad] this ain't quake 3
@@ -4121,7 +4097,7 @@ ASGNI1
 line 613
 ;612:#endif
 ;613:}
-LABELV $276
+LABELV $275
 endproc N_strncpyz 0 12
 export N_strncpy
 proc N_strncpy 20 0
@@ -4129,9 +4105,9 @@ line 616
 ;614:
 ;615:void N_strncpy (char *dest, const char *src, size_t count)
 ;616:{
-ADDRGP4 $288
+ADDRGP4 $287
 JUMPV
-LABELV $287
+LABELV $286
 line 618
 ;617:	while (*src && count--)
 ;618:		*dest++ = *src++;
@@ -4166,14 +4142,14 @@ ADDRLP4 4
 INDIRP4
 INDIRI1
 ASGNI1
-LABELV $288
+LABELV $287
 line 617
 ADDRFP4 4
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-EQI4 $290
+EQI4 $289
 ADDRLP4 12
 ADDRFP4 8
 INDIRU4
@@ -4187,15 +4163,15 @@ ASGNU4
 ADDRLP4 12
 INDIRU4
 CNSTU4 0
-NEU4 $287
-LABELV $290
+NEU4 $286
+LABELV $289
 line 620
 ;619:
 ;620:	if (count)
 ADDRFP4 8
 INDIRU4
 CNSTU4 0
-EQU4 $291
+EQU4 $290
 line 621
 ;621:		*dest++ = 0;
 ADDRLP4 16
@@ -4212,10 +4188,10 @@ ADDRLP4 16
 INDIRP4
 CNSTI1 0
 ASGNI1
-LABELV $291
+LABELV $290
 line 622
 ;622:}
-LABELV $286
+LABELV $285
 endproc N_strncpy 20 0
 proc Com_CharIsOneOfCharset 12 4
 ADDRFP4 0
@@ -4251,9 +4227,9 @@ line 633
 ADDRLP4 0
 CNSTU4 0
 ASGNU4
-ADDRGP4 $297
+ADDRGP4 $296
 JUMPV
-LABELV $294
+LABELV $293
 line 634
 ;634:		if( set[ i ] == c )
 ADDRLP4 0
@@ -4266,17 +4242,17 @@ CVII4 1
 ADDRFP4 0
 INDIRI1
 CVII4 1
-NEI4 $298
+NEI4 $297
 line 635
 ;635:			return qtrue;
 CNSTI4 1
 RETI4
-ADDRGP4 $293
+ADDRGP4 $292
 JUMPV
-LABELV $298
+LABELV $297
 line 636
 ;636:	}
-LABELV $295
+LABELV $294
 line 633
 ADDRLP4 0
 ADDRLP4 0
@@ -4284,18 +4260,18 @@ INDIRU4
 CNSTU4 1
 ADDU4
 ASGNU4
-LABELV $297
+LABELV $296
 ADDRLP4 0
 INDIRU4
 ADDRLP4 4
 INDIRU4
-LTU4 $294
+LTU4 $293
 line 638
 ;637:
 ;638:	return qfalse;
 CNSTI4 0
 RETI4
-LABELV $293
+LABELV $292
 endproc Com_CharIsOneOfCharset 12 4
 export Com_SkipCharset
 proc Com_SkipCharset 8 8
@@ -4315,9 +4291,9 @@ ADDRLP4 0
 ADDRFP4 0
 INDIRP4
 ASGNP4
-ADDRGP4 $302
+ADDRGP4 $301
 JUMPV
-LABELV $301
+LABELV $300
 line 650
 ;649:
 ;650:	while( p ) {
@@ -4338,7 +4314,7 @@ ASGNI4
 ADDRLP4 4
 INDIRI4
 CNSTI4 0
-EQI4 $303
+EQI4 $302
 line 652
 ;652:			p++;
 ADDRLP4 0
@@ -4350,32 +4326,32 @@ ASGNP4
 line 654
 ;653:		else
 ;654:			break;
-LABELV $305
+LABELV $304
 line 655
 ;655:	}
-LABELV $302
+LABELV $301
 line 650
 ADDRLP4 0
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $301
-LABELV $303
+NEU4 $300
+LABELV $302
 line 657
 ;656:
 ;657:	return p;
 ADDRLP4 0
 INDIRP4
 RETP4
-LABELV $300
+LABELV $299
 endproc Com_SkipCharset 8 8
 data
 align 4
-LABELV $307
+LABELV $306
 byte 4 0
 bss
 align 1
-LABELV $308
+LABELV $307
 skip 64000
 export va
 code
@@ -4398,16 +4374,16 @@ line 671
 ;671:	buf = string[ index ];
 ADDRLP4 0
 CNSTU4 32000
-ADDRGP4 $307
+ADDRGP4 $306
 INDIRU4
 MULU4
-ADDRGP4 $308
+ADDRGP4 $307
 ADDP4
 ASGNP4
 line 672
 ;672:	index ^= 1;
 ADDRLP4 8
-ADDRGP4 $307
+ADDRGP4 $306
 ASGNP4
 ADDRLP4 8
 INDIRP4
@@ -4448,7 +4424,7 @@ line 678
 ADDRLP4 0
 INDIRP4
 RETP4
-LABELV $306
+LABELV $305
 endproc va 12 12
 export Com_SkipTokens
 proc Com_SkipTokens 20 8
@@ -4473,9 +4449,9 @@ ADDRLP4 0
 ADDRFP4 0
 INDIRP4
 ASGNP4
-ADDRGP4 $312
+ADDRGP4 $311
 JUMPV
-LABELV $311
+LABELV $310
 line 691
 ;690:
 ;691:	while( sepCount < numTokens ) {
@@ -4506,7 +4482,7 @@ ASGNI4
 ADDRLP4 12
 INDIRI4
 CNSTI4 0
-EQI4 $314
+EQI4 $313
 line 693
 ;693:			sepCount++;
 ADDRLP4 4
@@ -4515,9 +4491,9 @@ INDIRU4
 CNSTU4 1
 ADDU4
 ASGNU4
-ADDRGP4 $317
+ADDRGP4 $316
 JUMPV
-LABELV $316
+LABELV $315
 line 695
 ;694:			while( Com_CharIsOneOfCharset( *p, sep ) )
 ;695:				p++;
@@ -4527,7 +4503,7 @@ INDIRP4
 CNSTI4 1
 ADDP4
 ASGNP4
-LABELV $317
+LABELV $316
 line 694
 ADDRLP4 0
 INDIRP4
@@ -4544,12 +4520,12 @@ ASGNI4
 ADDRLP4 16
 INDIRI4
 CNSTI4 0
-NEI4 $316
+NEI4 $315
 line 696
 ;696:		}
-ADDRGP4 $315
+ADDRGP4 $314
 JUMPV
-LABELV $314
+LABELV $313
 line 697
 ;697:		else if( *p == '\0' )
 ADDRLP4 0
@@ -4557,23 +4533,23 @@ INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $319
+NEI4 $318
 line 698
 ;698:			break;
-ADDRGP4 $313
+ADDRGP4 $312
 JUMPV
-LABELV $319
-LABELV $315
+LABELV $318
+LABELV $314
 line 699
 ;699:	}
-LABELV $312
+LABELV $311
 line 691
 ADDRLP4 4
 INDIRU4
 ADDRFP4 4
 INDIRU4
-LTU4 $311
-LABELV $313
+LTU4 $310
+LABELV $312
 line 701
 ;700:
 ;701:	if( sepCount == numTokens )
@@ -4581,22 +4557,22 @@ ADDRLP4 4
 INDIRU4
 ADDRFP4 4
 INDIRU4
-NEU4 $321
+NEU4 $320
 line 702
 ;702:		return p;
 ADDRLP4 0
 INDIRP4
 RETP4
-ADDRGP4 $310
+ADDRGP4 $309
 JUMPV
-LABELV $321
+LABELV $320
 line 704
 ;703:	else
 ;704:		return s;
 ADDRFP4 0
 INDIRP4
 RETP4
-LABELV $310
+LABELV $309
 endproc Com_SkipTokens 20 8
 export N_strlwr
 proc N_strlwr 8 0
@@ -4614,9 +4590,9 @@ ADDRLP4 0
 ADDRFP4 0
 INDIRP4
 ASGNP4
-ADDRGP4 $325
+ADDRGP4 $324
 JUMPV
-LABELV $324
+LABELV $323
 line 713
 ;713:	while ( *s ) {
 line 714
@@ -4646,20 +4622,20 @@ ADDP4
 ASGNP4
 line 716
 ;716:	}
-LABELV $325
+LABELV $324
 line 713
 ADDRLP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $324
+NEI4 $323
 line 717
 ;717:	return s1;
 ADDRFP4 0
 INDIRP4
 RETP4
-LABELV $323
+LABELV $322
 endproc N_strlwr 8 0
 export N_strupr
 proc N_strupr 12 0
@@ -4676,9 +4652,9 @@ ADDRLP4 0
 ADDRFP4 0
 INDIRP4
 ASGNP4
-ADDRGP4 $329
+ADDRGP4 $328
 JUMPV
-LABELV $328
+LABELV $327
 line 725
 ;725:	while (*s) {
 line 726
@@ -4692,11 +4668,11 @@ ASGNI4
 ADDRLP4 4
 INDIRI4
 CNSTI4 97
-LTI4 $331
+LTI4 $330
 ADDRLP4 4
 INDIRI4
 CNSTI4 122
-GTI4 $331
+GTI4 $330
 line 727
 ;727:			*s = *s - 'a' + 'A';
 ADDRLP4 0
@@ -4711,7 +4687,7 @@ CNSTI4 65
 ADDI4
 CVII1 4
 ASGNI1
-LABELV $331
+LABELV $330
 line 728
 ;728:		s++;
 ADDRLP4 0
@@ -4722,20 +4698,20 @@ ADDP4
 ASGNP4
 line 729
 ;729:	}
-LABELV $329
+LABELV $328
 line 725
 ADDRLP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $328
+NEI4 $327
 line 730
 ;730:	return s1;
 ADDRFP4 0
 INDIRP4
 RETP4
-LABELV $327
+LABELV $326
 endproc N_strupr 12 0
 export N_strcat
 proc N_strcat 12 12
@@ -4766,17 +4742,17 @@ ADDRLP4 0
 INDIRU4
 ADDRFP4 4
 INDIRU4
-LTU4 $334
+LTU4 $333
 line 740
 ;740:		N_Error( ERR_FATAL, "N_strcat: already overflowed" );
 CNSTI4 0
 ARGI4
-ADDRGP4 $336
+ADDRGP4 $335
 ARGP4
 ADDRGP4 N_Error
 CALLV
 pop
-LABELV $334
+LABELV $333
 line 742
 ;741:	
 ;742:	N_strncpy( dest + l1, src, size - l1 );
@@ -4800,7 +4776,7 @@ CALLV
 pop
 line 743
 ;743:}
-LABELV $333
+LABELV $332
 endproc N_strcat 12 12
 export N_stradd
 proc N_stradd 13 0
@@ -4808,9 +4784,9 @@ line 746
 ;744:
 ;745:char *N_stradd(char *dst, const char *src)
 ;746:{
-ADDRGP4 $339
+ADDRGP4 $338
 JUMPV
-LABELV $338
+LABELV $337
 line 749
 ;747:	char c;
 ;748:	while ( (c = *src++) != '\0' )
@@ -4830,7 +4806,7 @@ INDIRP4
 ADDRLP4 0
 INDIRI1
 ASGNI1
-LABELV $339
+LABELV $338
 line 748
 ADDRLP4 8
 ADDRFP4 4
@@ -4855,7 +4831,7 @@ ADDRLP4 12
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $338
+NEI4 $337
 line 750
 ;750:	*dst = '\0';
 ADDRFP4 0
@@ -4867,7 +4843,7 @@ line 751
 ADDRFP4 0
 INDIRP4
 RETP4
-LABELV $337
+LABELV $336
 endproc N_stradd 13 0
 export N_stristr
 proc N_stristr 36 12
@@ -4908,7 +4884,7 @@ ADDRLP4 12
 INDIRI1
 CVII4 1
 CNSTI4 0
-EQI4 $342
+EQI4 $341
 line 764
 ;764:		if (c >= 'a' && c <= 'z') {
 ADDRLP4 16
@@ -4919,11 +4895,11 @@ ASGNI4
 ADDRLP4 16
 INDIRI4
 CNSTI4 97
-LTI4 $344
+LTI4 $343
 ADDRLP4 16
 INDIRI4
 CNSTI4 122
-GTI4 $344
+GTI4 $343
 line 765
 ;765:	    	c -= ('a' - 'A');
 ADDRLP4 1
@@ -4936,7 +4912,7 @@ CVII1 4
 ASGNI1
 line 766
 ;766:		}
-LABELV $344
+LABELV $343
 line 767
 ;767: 	   	len = strlen(find);
 ADDRFP4 4
@@ -4950,10 +4926,10 @@ ADDRLP4 4
 ADDRLP4 20
 INDIRU4
 ASGNU4
-LABELV $346
+LABELV $345
 line 768
 ;768:    	do {
-LABELV $349
+LABELV $348
 line 769
 ;769:    		do {
 line 770
@@ -4981,14 +4957,14 @@ ADDRLP4 28
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $352
+NEI4 $351
 line 771
 ;771:          			return NULL;
 CNSTP4 0
 RETP4
-ADDRGP4 $341
+ADDRGP4 $340
 JUMPV
-LABELV $352
+LABELV $351
 line 772
 ;772:        		if (sc >= 'a' && sc <= 'z') {
 ADDRLP4 32
@@ -4999,11 +4975,11 @@ ASGNI4
 ADDRLP4 32
 INDIRI4
 CNSTI4 97
-LTI4 $354
+LTI4 $353
 ADDRLP4 32
 INDIRI4
 CNSTI4 122
-GTI4 $354
+GTI4 $353
 line 773
 ;773:          			sc -= ('a' - 'A');
 ADDRLP4 0
@@ -5016,20 +4992,20 @@ CVII1 4
 ASGNI1
 line 774
 ;774:        		}
-LABELV $354
+LABELV $353
 line 775
 ;775:      		} while (sc != c);
-LABELV $350
+LABELV $349
 ADDRLP4 0
 INDIRI1
 CVII4 1
 ADDRLP4 1
 INDIRI1
 CVII4 1
-NEI4 $349
+NEI4 $348
 line 776
 ;776:    	} while (N_stricmpn(s, find, len) != 0);
-LABELV $347
+LABELV $346
 ADDRFP4 0
 INDIRP4
 ARGP4
@@ -5046,7 +5022,7 @@ ASGNI4
 ADDRLP4 24
 INDIRI4
 CNSTI4 0
-NEI4 $346
+NEI4 $345
 line 777
 ;777:   		s--;
 ADDRFP4 0
@@ -5057,13 +5033,13 @@ ADDP4
 ASGNP4
 line 778
 ;778:  	}
-LABELV $342
+LABELV $341
 line 779
 ;779:  	return s;
 ADDRFP4 0
 INDIRP4
 RETP4
-LABELV $341
+LABELV $340
 endproc N_stristr 36 12
 export N_replace
 proc N_replace 84 8
@@ -5100,14 +5076,14 @@ ADDRLP4 4
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $357
+NEU4 $356
 line 792
 ;792:		return 0;
 CNSTI4 0
 RETI4
-ADDRGP4 $356
+ADDRGP4 $355
 JUMPV
-LABELV $357
+LABELV $356
 line 794
 ;793:
 ;794:	count = 0; // replace count
@@ -5157,7 +5133,7 @@ line 800
 ADDRLP4 28
 INDIRI4
 CNSTI4 0
-LEI4 $359
+LEI4 $358
 line 801
 ;801:        max = src + max_len;
 ADDRLP4 32
@@ -5183,7 +5159,7 @@ ADDRFP4 8
 INDIRP4
 ADDP4
 ASGNP4
-LABELV $361
+LABELV $360
 line 804
 ;803:
 ;804:        do { // expand source string
@@ -5210,16 +5186,16 @@ CVPU4 4
 ADDRLP4 32
 INDIRP4
 CVPU4 4
-LTU4 $364
+LTU4 $363
 line 808
 ;808:                return count;
 ADDRLP4 20
 INDIRU4
 CVUI4 4
 RETI4
-ADDRGP4 $356
+ADDRGP4 $355
 JUMPV
-LABELV $364
+LABELV $363
 line 809
 ;809:            dst = src;
 ADDRLP4 12
@@ -5236,9 +5212,9 @@ ADDRLP4 4
 INDIRP4
 ADDP4
 ASGNP4
-ADDRGP4 $367
+ADDRGP4 $366
 JUMPV
-LABELV $366
+LABELV $365
 line 814
 ;812:
 ;813:            while (s1 >= s0)
@@ -5274,7 +5250,7 @@ ADDRLP4 60
 INDIRP4
 INDIRI1
 ASGNI1
-LABELV $367
+LABELV $366
 line 813
 ADDRLP4 8
 INDIRP4
@@ -5282,7 +5258,7 @@ CVPU4 4
 ADDRLP4 16
 INDIRP4
 CVPU4 4
-GEU4 $366
+GEU4 $365
 line 817
 ;815:			
 ;816:			// replace match
@@ -5291,9 +5267,9 @@ ADDRLP4 0
 ADDRFP4 4
 INDIRP4
 ASGNP4
-ADDRGP4 $370
+ADDRGP4 $369
 JUMPV
-LABELV $369
+LABELV $368
 line 819
 ;818:			while (*s2)
 ;819:                *match++ = *s2++;
@@ -5328,14 +5304,14 @@ ADDRLP4 72
 INDIRP4
 INDIRI1
 ASGNI1
-LABELV $370
+LABELV $369
 line 818
 ADDRLP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $369
+NEI4 $368
 line 821
 ;820:			
 ;821:            match = strstr(match, str1);
@@ -5364,12 +5340,12 @@ ADDU4
 ASGNU4
 line 824
 ;824:		} while (match);
-LABELV $362
+LABELV $361
 ADDRLP4 4
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $361
+NEU4 $360
 line 826
 ;825:
 ;826:        return count;
@@ -5377,17 +5353,17 @@ ADDRLP4 20
 INDIRU4
 CVUI4 4
 RETI4
-ADDRGP4 $356
+ADDRGP4 $355
 JUMPV
-LABELV $359
+LABELV $358
 line 828
 ;827:    } 
 ;828:    else if (d < 0) { // shrink and replace mode
 ADDRLP4 28
 INDIRI4
 CNSTI4 0
-GEI4 $372
-LABELV $374
+GEI4 $371
+LABELV $373
 line 829
 ;829:        do  { // shrink source string
 line 830
@@ -5408,10 +5384,10 @@ ADDRLP4 4
 INDIRP4
 ADDP4
 ASGNP4
-LABELV $377
+LABELV $376
 line 832
 ;832:            while ( (*dst++ = *s1++) != '\0' );
-LABELV $378
+LABELV $377
 ADDRLP4 52
 ADDRLP4 12
 INDIRP4
@@ -5451,7 +5427,7 @@ ADDRLP4 64
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $377
+NEI4 $376
 line 835
 ;833:			
 ;834:			//replace match
@@ -5460,9 +5436,9 @@ ADDRLP4 0
 ADDRFP4 4
 INDIRP4
 ASGNP4
-ADDRGP4 $381
+ADDRGP4 $380
 JUMPV
-LABELV $380
+LABELV $379
 line 836
 ;836:			while ( *s2 ) {
 line 837
@@ -5500,14 +5476,14 @@ INDIRI1
 ASGNI1
 line 838
 ;838:			}
-LABELV $381
+LABELV $380
 line 836
 ADDRLP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $380
+NEI4 $379
 line 840
 ;839:
 ;840:            match = strstr( match, str1 );
@@ -5536,14 +5512,14 @@ ADDU4
 ASGNU4
 line 843
 ;843:        } 
-LABELV $375
+LABELV $374
 line 844
 ;844:        while ( match );
 ADDRLP4 4
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $374
+NEU4 $373
 line 846
 ;845:
 ;846:        return count;
@@ -5551,13 +5527,13 @@ ADDRLP4 20
 INDIRU4
 CVUI4 4
 RETI4
-ADDRGP4 $356
+ADDRGP4 $355
 JUMPV
-LABELV $372
+LABELV $371
 line 848
 ;847:    }
 ;848:    else {
-LABELV $383
+LABELV $382
 line 849
 ;849:	    do { // just replace match
 line 850
@@ -5566,9 +5542,9 @@ ADDRLP4 0
 ADDRFP4 4
 INDIRP4
 ASGNP4
-ADDRGP4 $387
+ADDRGP4 $386
 JUMPV
-LABELV $386
+LABELV $385
 line 852
 ;851:			while (*s2)
 ;852:				*match++ = *s2++;
@@ -5603,14 +5579,14 @@ ADDRLP4 56
 INDIRP4
 INDIRI1
 ASGNI1
-LABELV $387
+LABELV $386
 line 851
 ADDRLP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $386
+NEI4 $385
 line 854
 ;853:
 ;854:    	    match = strstr(match, str1);
@@ -5638,12 +5614,12 @@ ADDU4
 ASGNU4
 line 856
 ;856:		}  while (match);
-LABELV $384
+LABELV $383
 ADDRLP4 4
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $383
+NEU4 $382
 line 857
 ;857:	}
 line 859
@@ -5653,7 +5629,7 @@ ADDRLP4 20
 INDIRU4
 CVUI4 4
 RETI4
-LABELV $356
+LABELV $355
 endproc N_replace 84 8
 export N_strlen
 proc N_strlen 4 0
@@ -5667,9 +5643,9 @@ line 864
 ADDRLP4 0
 CNSTU4 0
 ASGNU4
-ADDRGP4 $391
+ADDRGP4 $390
 JUMPV
-LABELV $390
+LABELV $389
 line 865
 ;865:    while (str[count]) {
 line 866
@@ -5682,7 +5658,7 @@ ADDU4
 ASGNU4
 line 867
 ;867:    }
-LABELV $391
+LABELV $390
 line 865
 ADDRLP4 0
 INDIRU4
@@ -5692,13 +5668,13 @@ ADDP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $390
+NEI4 $389
 line 868
 ;868:	return count;
 ADDRLP4 0
 INDIRU4
 RETU4
-LABELV $389
+LABELV $388
 endproc N_strlen 4 0
 export N_strrchr
 proc N_strrchr 20 4
@@ -5740,9 +5716,9 @@ ADDRLP4 0
 INDIRP4
 ADDP4
 ASGNP4
-ADDRGP4 $395
+ADDRGP4 $394
 JUMPV
-LABELV $394
+LABELV $393
 line 877
 ;876:    while (len--)
 ;877:    	if (*--s == c) return s;
@@ -5763,14 +5739,14 @@ CVII4 1
 ADDRFP4 4
 INDIRI1
 CVII4 1
-NEI4 $397
+NEI4 $396
 ADDRLP4 0
 INDIRP4
 RETP4
-ADDRGP4 $393
+ADDRGP4 $392
 JUMPV
-LABELV $397
-LABELV $395
+LABELV $396
+LABELV $394
 line 876
 ADDRLP4 16
 ADDRLP4 4
@@ -5785,12 +5761,12 @@ ASGNU4
 ADDRLP4 16
 INDIRU4
 CNSTU4 0
-NEU4 $394
+NEU4 $393
 line 878
 ;878:    return 0;
 CNSTP4 0
 RETP4
-LABELV $393
+LABELV $392
 endproc N_strrchr 20 4
 export N_strcmp
 proc N_strcmp 8 0
@@ -5811,9 +5787,9 @@ ADDRLP4 4
 ADDRFP4 4
 INDIRP4
 ASGNP4
-ADDRGP4 $401
+ADDRGP4 $400
 JUMPV
-LABELV $400
+LABELV $399
 line 885
 ;885:	while (1) {
 line 886
@@ -5826,14 +5802,14 @@ ADDRLP4 4
 INDIRP4
 INDIRI1
 CVII4 1
-EQI4 $403
+EQI4 $402
 line 887
 ;887:			return -1;              // strings not equal    
 CNSTI4 -1
 RETI4
-ADDRGP4 $399
+ADDRGP4 $398
 JUMPV
-LABELV $403
+LABELV $402
 line 888
 ;888:		if (!*s1)
 ADDRLP4 0
@@ -5841,14 +5817,14 @@ INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $405
+NEI4 $404
 line 889
 ;889:			return 1;               // strings are equal
 CNSTI4 1
 RETI4
-ADDRGP4 $399
+ADDRGP4 $398
 JUMPV
-LABELV $405
+LABELV $404
 line 890
 ;890:		s1++;
 ADDRLP4 0
@@ -5867,16 +5843,16 @@ ADDP4
 ASGNP4
 line 892
 ;892:	}
-LABELV $401
+LABELV $400
 line 885
-ADDRGP4 $400
+ADDRGP4 $399
 JUMPV
 line 894
 ;893:	
 ;894:	return 0;
 CNSTI4 0
 RETI4
-LABELV $399
+LABELV $398
 endproc N_strcmp 8 0
 export N_streq
 proc N_streq 20 0
@@ -5897,9 +5873,9 @@ ADDRLP4 4
 ADDRFP4 4
 INDIRP4
 ASGNP4
-ADDRGP4 $409
+ADDRGP4 $408
 JUMPV
-LABELV $408
+LABELV $407
 line 902
 ;901:	
 ;902:	while (*s2 && *s1) {
@@ -5938,17 +5914,17 @@ ADDRLP4 12
 INDIRP4
 INDIRI1
 CVII4 1
-EQI4 $411
+EQI4 $410
 line 904
 ;904:			return qfalse;
 CNSTI4 0
 RETI4
-ADDRGP4 $407
+ADDRGP4 $406
 JUMPV
-LABELV $411
+LABELV $410
 line 905
 ;905:	}
-LABELV $409
+LABELV $408
 line 902
 ADDRLP4 8
 CNSTI4 0
@@ -5959,20 +5935,20 @@ INDIRI1
 CVII4 1
 ADDRLP4 8
 INDIRI4
-EQI4 $413
+EQI4 $412
 ADDRLP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 ADDRLP4 8
 INDIRI4
-NEI4 $408
-LABELV $413
+NEI4 $407
+LABELV $412
 line 906
 ;906:	return qtrue;
 CNSTI4 1
 RETI4
-LABELV $407
+LABELV $406
 endproc N_streq 20 0
 export N_strneq
 proc N_strneq 20 0
@@ -5993,9 +5969,9 @@ ADDRLP4 4
 ADDRFP4 4
 INDIRP4
 ASGNP4
-ADDRGP4 $416
+ADDRGP4 $415
 JUMPV
-LABELV $415
+LABELV $414
 line 914
 ;913:
 ;914:	while (*s1 && n) {
@@ -6034,14 +6010,14 @@ ADDRLP4 12
 INDIRP4
 INDIRI1
 CVII4 1
-EQI4 $418
+EQI4 $417
 line 916
 ;916:			return qfalse;
 CNSTI4 0
 RETI4
-ADDRGP4 $414
+ADDRGP4 $413
 JUMPV
-LABELV $418
+LABELV $417
 line 917
 ;917:		n--;
 ADDRFP4 8
@@ -6052,24 +6028,24 @@ SUBU4
 ASGNU4
 line 918
 ;918:	}
-LABELV $416
+LABELV $415
 line 914
 ADDRLP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-EQI4 $420
+EQI4 $419
 ADDRFP4 8
 INDIRU4
 CNSTU4 0
-NEU4 $415
-LABELV $420
+NEU4 $414
+LABELV $419
 line 919
 ;919:	return qtrue;
 CNSTI4 1
 RETI4
-LABELV $414
+LABELV $413
 endproc N_strneq 20 0
 export N_strncmp
 proc N_strncmp 24 0
@@ -6078,7 +6054,7 @@ line 923
 ;921:
 ;922:int N_strncmp( const char *s1, const char *s2, size_t n )
 ;923:{
-LABELV $422
+LABELV $421
 line 926
 ;924:	int c1, c2;
 ;925:	
@@ -6135,14 +6111,14 @@ ASGNU4
 ADDRLP4 16
 INDIRU4
 CNSTU4 0
-NEU4 $425
+NEU4 $424
 line 931
 ;931:			return 0;		// strings are equal until end point
 CNSTI4 0
 RETI4
-ADDRGP4 $421
+ADDRGP4 $420
 JUMPV
-LABELV $425
+LABELV $424
 line 934
 ;932:		}
 ;933:		
@@ -6151,44 +6127,44 @@ ADDRLP4 0
 INDIRI4
 ADDRLP4 4
 INDIRI4
-EQI4 $427
+EQI4 $426
 line 935
 ;935:			return c1 < c2 ? -1 : 1;
 ADDRLP4 0
 INDIRI4
 ADDRLP4 4
 INDIRI4
-GEI4 $430
+GEI4 $429
 ADDRLP4 20
 CNSTI4 -1
 ASGNI4
-ADDRGP4 $431
+ADDRGP4 $430
 JUMPV
-LABELV $430
+LABELV $429
 ADDRLP4 20
 CNSTI4 1
 ASGNI4
-LABELV $431
+LABELV $430
 ADDRLP4 20
 INDIRI4
 RETI4
-ADDRGP4 $421
+ADDRGP4 $420
 JUMPV
-LABELV $427
+LABELV $426
 line 937
 ;936:		}
 ;937:	} while (c1);
-LABELV $423
+LABELV $422
 ADDRLP4 0
 INDIRI4
 CNSTI4 0
-NEI4 $422
+NEI4 $421
 line 939
 ;938:	
 ;939:	return 0;		// strings are equal
 CNSTI4 0
 RETI4
-LABELV $421
+LABELV $420
 endproc N_strncmp 24 0
 export N_stricmpn
 proc N_stricmpn 32 0
@@ -6206,29 +6182,29 @@ ADDRFP4 0
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $433
+NEU4 $432
 line 948
 ;948:    	if (str2 == NULL )
 ADDRFP4 4
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $435
+NEU4 $434
 line 949
 ;949:            return 0;
 CNSTI4 0
 RETI4
-ADDRGP4 $432
+ADDRGP4 $431
 JUMPV
-LABELV $435
+LABELV $434
 line 951
 ;950:        else
 ;951:            return -1;
 CNSTI4 -1
 RETI4
-ADDRGP4 $432
+ADDRGP4 $431
 JUMPV
-LABELV $433
+LABELV $432
 line 953
 ;952:    }
 ;953:    else if (str2 == NULL)
@@ -6236,15 +6212,15 @@ ADDRFP4 4
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $437
+NEU4 $436
 line 954
 ;954:        return 1;
 CNSTI4 1
 RETI4
-ADDRGP4 $432
+ADDRGP4 $431
 JUMPV
-LABELV $437
-LABELV $439
+LABELV $436
+LABELV $438
 line 958
 ;955:
 ;956:
@@ -6302,14 +6278,14 @@ ASGNU4
 ADDRLP4 16
 INDIRU4
 CNSTU4 0
-NEU4 $442
+NEU4 $441
 line 963
 ;963:			return 0;		// strings are equal until end point
 CNSTI4 0
 RETI4
-ADDRGP4 $432
+ADDRGP4 $431
 JUMPV
-LABELV $442
+LABELV $441
 line 966
 ;964:		}
 ;965:		
@@ -6318,17 +6294,17 @@ ADDRLP4 0
 INDIRI4
 ADDRLP4 4
 INDIRI4
-EQI4 $444
+EQI4 $443
 line 967
 ;967:			if (c1 >= 'a' && c1 <= 'z') {
 ADDRLP4 0
 INDIRI4
 CNSTI4 97
-LTI4 $446
+LTI4 $445
 ADDRLP4 0
 INDIRI4
 CNSTI4 122
-GTI4 $446
+GTI4 $445
 line 968
 ;968:				c1 -= ('a' - 'A');
 ADDRLP4 0
@@ -6339,17 +6315,17 @@ SUBI4
 ASGNI4
 line 969
 ;969:			}
-LABELV $446
+LABELV $445
 line 970
 ;970:			if (c2 >= 'a' && c2 <= 'z') {
 ADDRLP4 4
 INDIRI4
 CNSTI4 97
-LTI4 $448
+LTI4 $447
 ADDRLP4 4
 INDIRI4
 CNSTI4 122
-GTI4 $448
+GTI4 $447
 line 971
 ;971:				c2 -= ('a' - 'A');
 ADDRLP4 4
@@ -6360,54 +6336,54 @@ SUBI4
 ASGNI4
 line 972
 ;972:			}
-LABELV $448
+LABELV $447
 line 973
 ;973:			if (c1 != c2) {
 ADDRLP4 0
 INDIRI4
 ADDRLP4 4
 INDIRI4
-EQI4 $450
+EQI4 $449
 line 974
 ;974:				return c1 < c2 ? -1 : 1;
 ADDRLP4 0
 INDIRI4
 ADDRLP4 4
 INDIRI4
-GEI4 $453
+GEI4 $452
 ADDRLP4 28
 CNSTI4 -1
 ASGNI4
-ADDRGP4 $454
+ADDRGP4 $453
 JUMPV
-LABELV $453
+LABELV $452
 ADDRLP4 28
 CNSTI4 1
 ASGNI4
-LABELV $454
+LABELV $453
 ADDRLP4 28
 INDIRI4
 RETI4
-ADDRGP4 $432
+ADDRGP4 $431
 JUMPV
-LABELV $450
+LABELV $449
 line 976
 ;975:			}
 ;976:		}
-LABELV $444
+LABELV $443
 line 977
 ;977:	} while (c1);
-LABELV $440
+LABELV $439
 ADDRLP4 0
 INDIRI4
 CNSTI4 0
-NEI4 $439
+NEI4 $438
 line 979
 ;978:	
 ;979:	return 0;		// strings are equal
 CNSTI4 0
 RETI4
-LABELV $432
+LABELV $431
 endproc N_stricmpn 32 0
 export N_stricmp
 proc N_stricmp 24 0
@@ -6424,29 +6400,29 @@ ADDRFP4 0
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $456
+NEU4 $455
 line 987
 ;987:		if (s2 == NULL)
 ADDRFP4 4
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $458
+NEU4 $457
 line 988
 ;988:			return 0;
 CNSTI4 0
 RETI4
-ADDRGP4 $455
+ADDRGP4 $454
 JUMPV
-LABELV $458
+LABELV $457
 line 990
 ;989:		else
 ;990:			return -1;
 CNSTI4 -1
 RETI4
-ADDRGP4 $455
+ADDRGP4 $454
 JUMPV
-LABELV $456
+LABELV $455
 line 992
 ;991:	}
 ;992:	else if (s2 == NULL)
@@ -6454,15 +6430,15 @@ ADDRFP4 4
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $460
+NEU4 $459
 line 993
 ;993:		return 1;
 CNSTI4 1
 RETI4
-ADDRGP4 $455
+ADDRGP4 $454
 JUMPV
-LABELV $460
-LABELV $462
+LABELV $459
+LABELV $461
 line 995
 ;994:	
 ;995:	do {
@@ -6515,7 +6491,7 @@ CVUI4 1
 ADDRLP4 1
 INDIRU1
 CVUI4 1
-EQI4 $465
+EQI4 $464
 line 1000
 ;1000:			if ( c1 <= 'Z' && c1 >= 'A' )
 ADDRLP4 12
@@ -6526,11 +6502,11 @@ ASGNI4
 ADDRLP4 12
 INDIRI4
 CNSTI4 90
-GTI4 $467
+GTI4 $466
 ADDRLP4 12
 INDIRI4
 CNSTI4 65
-LTI4 $467
+LTI4 $466
 line 1001
 ;1001:				c1 += ('a' - 'A');
 ADDRLP4 0
@@ -6542,7 +6518,7 @@ ADDI4
 CVIU4 4
 CVUU1 4
 ASGNU1
-LABELV $467
+LABELV $466
 line 1003
 ;1002:
 ;1003:			if ( c2 <= 'Z' && c2 >= 'A' )
@@ -6554,11 +6530,11 @@ ASGNI4
 ADDRLP4 16
 INDIRI4
 CNSTI4 90
-GTI4 $469
+GTI4 $468
 ADDRLP4 16
 INDIRI4
 CNSTI4 65
-LTI4 $469
+LTI4 $468
 line 1004
 ;1004:				c2 += ('a' - 'A');
 ADDRLP4 1
@@ -6570,7 +6546,7 @@ ADDI4
 CVIU4 4
 CVUU1 4
 ASGNU1
-LABELV $469
+LABELV $468
 line 1006
 ;1005:
 ;1006:			if ( c1 != c2 ) 
@@ -6580,7 +6556,7 @@ CVUI4 1
 ADDRLP4 1
 INDIRU1
 CVUI4 1
-EQI4 $471
+EQI4 $470
 line 1007
 ;1007:				return c1 < c2 ? -1 : 1;
 ADDRLP4 0
@@ -6589,40 +6565,40 @@ CVUI4 1
 ADDRLP4 1
 INDIRU1
 CVUI4 1
-GEI4 $474
+GEI4 $473
 ADDRLP4 20
 CNSTI4 -1
 ASGNI4
-ADDRGP4 $475
+ADDRGP4 $474
 JUMPV
-LABELV $474
+LABELV $473
 ADDRLP4 20
 CNSTI4 1
 ASGNI4
-LABELV $475
+LABELV $474
 ADDRLP4 20
 INDIRI4
 RETI4
-ADDRGP4 $455
+ADDRGP4 $454
 JUMPV
-LABELV $471
+LABELV $470
 line 1008
 ;1008:		}
-LABELV $465
+LABELV $464
 line 1009
 ;1009:	} while ( c1 != '\0' );
-LABELV $463
+LABELV $462
 ADDRLP4 0
 INDIRU1
 CVUI4 1
 CNSTI4 0
-NEI4 $462
+NEI4 $461
 line 1011
 ;1010:
 ;1011:	return 0;
 CNSTI4 0
 RETI4
-LABELV $455
+LABELV $454
 endproc N_stricmp 24 0
 export N_atoi
 proc N_atoi 40 0
@@ -6648,7 +6624,7 @@ INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 45
-NEI4 $477
+NEI4 $476
 line 1022
 ;1022:		sign = -1;
 ADDRLP4 12
@@ -6664,16 +6640,16 @@ ADDP4
 ASGNP4
 line 1024
 ;1024:	}
-ADDRGP4 $478
+ADDRGP4 $477
 JUMPV
-LABELV $477
+LABELV $476
 line 1026
 ;1025:	else
 ;1026:		sign = 1;
 ADDRLP4 12
 CNSTI4 1
 ASGNI4
-LABELV $478
+LABELV $477
 line 1028
 ;1027:		
 ;1028:	val = 0;
@@ -6691,7 +6667,7 @@ INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 48
-NEI4 $479
+NEI4 $478
 ADDRLP4 20
 ADDRLP4 8
 INDIRP4
@@ -6703,12 +6679,12 @@ ASGNI4
 ADDRLP4 20
 INDIRI4
 CNSTI4 120
-EQI4 $481
+EQI4 $480
 ADDRLP4 20
 INDIRI4
 CNSTI4 88
-NEI4 $479
-LABELV $481
+NEI4 $478
+LABELV $480
 line 1034
 ;1034:		str += 2;
 ADDRLP4 8
@@ -6717,9 +6693,9 @@ INDIRP4
 CNSTI4 2
 ADDP4
 ASGNP4
-ADDRGP4 $483
+ADDRGP4 $482
 JUMPV
-LABELV $482
+LABELV $481
 line 1035
 ;1035:		while (1) {
 line 1036
@@ -6745,11 +6721,11 @@ line 1037
 ADDRLP4 0
 INDIRI4
 CNSTI4 48
-LTI4 $485
+LTI4 $484
 ADDRLP4 0
 INDIRI4
 CNSTI4 57
-GTI4 $485
+GTI4 $484
 line 1038
 ;1038:				val = (val<<4) + c - '0';
 ADDRLP4 4
@@ -6763,19 +6739,19 @@ ADDI4
 CNSTI4 48
 SUBI4
 ASGNI4
-ADDRGP4 $486
+ADDRGP4 $485
 JUMPV
-LABELV $485
+LABELV $484
 line 1039
 ;1039:			else if (c >= 'a' && c <= 'f')
 ADDRLP4 0
 INDIRI4
 CNSTI4 97
-LTI4 $487
+LTI4 $486
 ADDRLP4 0
 INDIRI4
 CNSTI4 102
-GTI4 $487
+GTI4 $486
 line 1040
 ;1040:				val = (val<<4) + c - 'a' + 10;
 ADDRLP4 4
@@ -6791,19 +6767,19 @@ SUBI4
 CNSTI4 10
 ADDI4
 ASGNI4
-ADDRGP4 $488
+ADDRGP4 $487
 JUMPV
-LABELV $487
+LABELV $486
 line 1041
 ;1041:			else if (c >= 'A' && c <= 'F')
 ADDRLP4 0
 INDIRI4
 CNSTI4 65
-LTI4 $489
+LTI4 $488
 ADDRLP4 0
 INDIRI4
 CNSTI4 70
-GTI4 $489
+GTI4 $488
 line 1042
 ;1042:				val = (val<<4) + c - 'A' + 10;
 ADDRLP4 4
@@ -6819,9 +6795,9 @@ SUBI4
 CNSTI4 10
 ADDI4
 ASGNI4
-ADDRGP4 $490
+ADDRGP4 $489
 JUMPV
-LABELV $489
+LABELV $488
 line 1044
 ;1043:			else
 ;1044:				return val*sign;
@@ -6831,20 +6807,20 @@ ADDRLP4 12
 INDIRI4
 MULI4
 RETI4
-ADDRGP4 $476
+ADDRGP4 $475
 JUMPV
-LABELV $490
-LABELV $488
-LABELV $486
+LABELV $489
+LABELV $487
+LABELV $485
 line 1045
 ;1045:		}
-LABELV $483
+LABELV $482
 line 1035
-ADDRGP4 $482
+ADDRGP4 $481
 JUMPV
 line 1046
 ;1046:	}
-LABELV $479
+LABELV $478
 line 1051
 ;1047:	
 ;1048:    //
@@ -6856,7 +6832,7 @@ INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 39
-NEI4 $494
+NEI4 $493
 line 1052
 ;1052:		return sign * str[1];
 ADDRLP4 12
@@ -6869,9 +6845,9 @@ INDIRI1
 CVII4 1
 MULI4
 RETI4
-ADDRGP4 $476
+ADDRGP4 $475
 JUMPV
-LABELV $493
+LABELV $492
 line 1057
 ;1053:	
 ;1054:    //
@@ -6901,12 +6877,12 @@ line 1059
 ADDRLP4 0
 INDIRI4
 CNSTI4 48
-LTI4 $498
+LTI4 $497
 ADDRLP4 0
 INDIRI4
 CNSTI4 57
-LEI4 $496
-LABELV $498
+LEI4 $495
+LABELV $497
 line 1060
 ;1060:			return val*sign;
 ADDRLP4 4
@@ -6915,9 +6891,9 @@ ADDRLP4 12
 INDIRI4
 MULI4
 RETI4
-ADDRGP4 $476
+ADDRGP4 $475
 JUMPV
-LABELV $496
+LABELV $495
 line 1061
 ;1061:		val = val*10 + c - '0';
 ADDRLP4 4
@@ -6933,16 +6909,16 @@ SUBI4
 ASGNI4
 line 1062
 ;1062:	}
-LABELV $494
+LABELV $493
 line 1057
-ADDRGP4 $493
+ADDRGP4 $492
 JUMPV
 line 1064
 ;1063:	
 ;1064:	return 0;
 CNSTI4 0
 RETI4
-LABELV $476
+LABELV $475
 endproc N_atoi 40 0
 export Com_snprintf
 proc Com_snprintf 32016 12
@@ -6965,12 +6941,12 @@ ADDRFP4 0
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $500
+NEU4 $499
 line 1078
 ;1078:		N_Error( ERR_FATAL, "Com_snprintf: NULL dest" );
 CNSTI4 0
 ARGI4
-ADDRGP4 $502
+ADDRGP4 $501
 ARGP4
 ADDRGP4 N_Error
 CALLV
@@ -6982,9 +6958,9 @@ line 1082
 ;1082:		return 0;
 CNSTI4 0
 RETI4
-ADDRGP4 $499
+ADDRGP4 $498
 JUMPV
-LABELV $500
+LABELV $499
 line 1085
 ;1083:	}
 ;1084:
@@ -7022,17 +6998,17 @@ ADDRLP4 0
 INDIRI4
 CVIU4 4
 CNSTU4 32000
-GEU4 $506
+GEU4 $505
 ADDRLP4 0
 INDIRI4
 CNSTI4 0
-GEI4 $504
-LABELV $506
+GEI4 $503
+LABELV $505
 line 1090
 ;1090:		N_Error( ERR_FATAL, "Com_smprintf: overflowed bigbuffer" );
 CNSTI4 0
 ARGI4
-ADDRGP4 $507
+ADDRGP4 $506
 ARGP4
 ADDRGP4 N_Error
 CALLV
@@ -7044,9 +7020,9 @@ line 1094
 ;1094:		return 0;
 CNSTI4 0
 RETI4
-ADDRGP4 $499
+ADDRGP4 $498
 JUMPV
-LABELV $504
+LABELV $503
 line 1097
 ;1095:	}
 ;1096:
@@ -7056,10 +7032,10 @@ INDIRI4
 CVIU4 4
 ADDRFP4 4
 INDIRU4
-LTU4 $508
+LTU4 $507
 line 1098
 ;1098:		Con_Printf( COLOR_YELLOW "Com_snprintf: overflow of %i in %u\n", len, size );
-ADDRGP4 $510
+ADDRGP4 $509
 ARGP4
 ADDRLP4 0
 INDIRI4
@@ -7084,7 +7060,7 @@ CVUI4 4
 ASGNI4
 line 1103
 ;1103:	}
-LABELV $508
+LABELV $507
 line 1107
 ;1104:
 ;1105:	//Q_strncpyz( dest, bigbuffer, size );
@@ -7117,7 +7093,7 @@ line 1110
 ADDRLP4 0
 INDIRI4
 RETI4
-LABELV $499
+LABELV $498
 endproc Com_snprintf 32016 12
 export COM_SkipPath
 proc COM_SkipPath 4 0
@@ -7139,9 +7115,9 @@ ADDRLP4 0
 ADDRFP4 0
 INDIRP4
 ASGNP4
-ADDRGP4 $513
+ADDRGP4 $512
 JUMPV
-LABELV $512
+LABELV $511
 line 1123
 ;1123:	while (*pathname) {
 line 1124
@@ -7151,7 +7127,7 @@ INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 47
-NEI4 $515
+NEI4 $514
 line 1125
 ;1125:			last = pathname+1;
 ADDRLP4 0
@@ -7160,7 +7136,7 @@ INDIRP4
 CNSTI4 1
 ADDP4
 ASGNP4
-LABELV $515
+LABELV $514
 line 1126
 ;1126:		pathname++;
 ADDRFP4 0
@@ -7171,20 +7147,20 @@ ADDP4
 ASGNP4
 line 1127
 ;1127:	}
-LABELV $513
+LABELV $512
 line 1123
 ADDRFP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $512
+NEI4 $511
 line 1128
 ;1128:	return last;
 ADDRLP4 0
 INDIRP4
 RETP4
-LABELV $511
+LABELV $510
 endproc COM_SkipPath 4 0
 export COM_GetExtension
 proc COM_GetExtension 20 8
@@ -7221,7 +7197,7 @@ ADDRLP4 0
 INDIRP4
 CVPU4 4
 CNSTU4 0
-EQU4 $518
+EQU4 $517
 ADDRFP4 0
 INDIRP4
 ARGP4
@@ -7245,15 +7221,15 @@ ADDRLP4 16
 INDIRP4
 CVPU4 4
 CNSTU4 0
-EQU4 $520
+EQU4 $519
 ADDRLP4 4
 INDIRP4
 CVPU4 4
 ADDRLP4 0
 INDIRP4
 CVPU4 4
-GEU4 $518
-LABELV $520
+GEU4 $517
+LABELV $519
 line 1140
 ;1140:		return dot + 1;
 ADDRLP4 0
@@ -7261,15 +7237,15 @@ INDIRP4
 CNSTI4 1
 ADDP4
 RETP4
-ADDRGP4 $517
+ADDRGP4 $516
 JUMPV
-LABELV $518
+LABELV $517
 line 1142
 ;1141:	else
 ;1142:		return "";
-ADDRGP4 $521
+ADDRGP4 $520
 RETP4
-LABELV $517
+LABELV $516
 endproc COM_GetExtension 20 8
 export COM_BeginParseSession
 proc COM_BeginParseSession 0 16
@@ -7310,7 +7286,7 @@ ADDRGP4 com_parsename
 ARGP4
 CNSTU4 1024
 ARGU4
-ADDRGP4 $523
+ADDRGP4 $522
 ARGP4
 ADDRFP4 0
 INDIRP4
@@ -7320,7 +7296,7 @@ CALLI4
 pop
 line 1166
 ;1166:}
-LABELV $522
+LABELV $521
 endproc COM_BeginParseSession 0 16
 export COM_GetCurrentParseLine
 proc COM_GetCurrentParseLine 0 0
@@ -7334,7 +7310,7 @@ line 1171
 ADDRGP4 com_tokenline
 INDIRU4
 CNSTU4 0
-EQU4 $525
+EQU4 $524
 line 1172
 ;1172:	{
 line 1173
@@ -7342,9 +7318,9 @@ line 1173
 ADDRGP4 com_tokenline
 INDIRU4
 RETU4
-ADDRGP4 $524
+ADDRGP4 $523
 JUMPV
-LABELV $525
+LABELV $524
 line 1176
 ;1174:	}
 ;1175:
@@ -7352,7 +7328,7 @@ line 1176
 ADDRGP4 com_lines
 INDIRU4
 RETU4
-LABELV $524
+LABELV $523
 endproc COM_GetCurrentParseLine 0 0
 export COM_Parse
 proc COM_Parse 4 8
@@ -7376,11 +7352,11 @@ ASGNP4
 ADDRLP4 0
 INDIRP4
 RETP4
-LABELV $527
+LABELV $526
 endproc COM_Parse 4 8
 bss
 align 1
-LABELV $529
+LABELV $528
 skip 4096
 export COM_ParseError
 code
@@ -7400,7 +7376,7 @@ ADDRFP4 0+4
 ASGNP4
 line 1191
 ;1191:	vsprintf (string, format, argptr);
-ADDRGP4 $529
+ADDRGP4 $528
 ARGP4
 ADDRFP4 0
 INDIRP4
@@ -7418,30 +7394,30 @@ CNSTP4 0
 ASGNP4
 line 1194
 ;1193:
-;1194:	Con_Printf( COLOR_RED "WARNING: %s, line %lu: %s\n", com_parsename, COM_GetCurrentParseLine(), string );
+;1194:	Con_Printf( COLOR_RED "ERROR: %s, line %lu: %s\n", com_parsename, COM_GetCurrentParseLine(), string );
 ADDRLP4 4
 ADDRGP4 COM_GetCurrentParseLine
 CALLU4
 ASGNU4
-ADDRGP4 $531
+ADDRGP4 $530
 ARGP4
 ADDRGP4 com_parsename
 ARGP4
 ADDRLP4 4
 INDIRU4
 ARGU4
-ADDRGP4 $529
+ADDRGP4 $528
 ARGP4
 ADDRGP4 Con_Printf
 CALLV
 pop
 line 1195
 ;1195:}
-LABELV $528
+LABELV $527
 endproc COM_ParseError 8 16
 bss
 align 1
-LABELV $533
+LABELV $532
 skip 4096
 export COM_ParseWarning
 code
@@ -7460,7 +7436,7 @@ ADDRFP4 0+4
 ASGNP4
 line 1203
 ;1203:	vsprintf (string, format, argptr);
-ADDRGP4 $533
+ADDRGP4 $532
 ARGP4
 ADDRFP4 0
 INDIRP4
@@ -7478,26 +7454,26 @@ CNSTP4 0
 ASGNP4
 line 1206
 ;1205:
-;1206:	Con_Printf( COLOR_RED "%s, line %lu: %s\n", com_parsename, COM_GetCurrentParseLine(), string );
+;1206:	Con_Printf( COLOR_YELLOW "WARNING: %s, line %lu: %s\n", com_parsename, COM_GetCurrentParseLine(), string );
 ADDRLP4 4
 ADDRGP4 COM_GetCurrentParseLine
 CALLU4
 ASGNU4
-ADDRGP4 $535
+ADDRGP4 $534
 ARGP4
 ADDRGP4 com_parsename
 ARGP4
 ADDRLP4 4
 INDIRU4
 ARGU4
-ADDRGP4 $533
+ADDRGP4 $532
 ARGP4
 ADDRGP4 Con_Printf
 CALLV
 pop
 line 1207
 ;1207:}
-LABELV $532
+LABELV $531
 endproc COM_ParseWarning 8 16
 export SkipWhitespace
 proc SkipWhitespace 8 0
@@ -7517,9 +7493,9 @@ line 1222
 ;1220:==============
 ;1221:*/
 ;1222:const char *SkipWhitespace( const char *data, qboolean *hasNewLines ) {
-ADDRGP4 $538
+ADDRGP4 $537
 JUMPV
-LABELV $537
+LABELV $536
 line 1225
 ;1223:	int c;
 ;1224:
@@ -7529,21 +7505,21 @@ line 1226
 ADDRLP4 0
 INDIRI4
 CNSTI4 0
-NEI4 $540
+NEI4 $539
 line 1227
 ;1227:			return NULL;
 CNSTP4 0
 RETP4
-ADDRGP4 $536
+ADDRGP4 $535
 JUMPV
-LABELV $540
+LABELV $539
 line 1229
 ;1228:		}
 ;1229:		if( c == '\n' ) {
 ADDRLP4 0
 INDIRI4
 CNSTI4 10
-NEI4 $542
+NEI4 $541
 line 1230
 ;1230:			com_lines++;
 ADDRLP4 4
@@ -7565,7 +7541,7 @@ CNSTI4 1
 ASGNI4
 line 1232
 ;1232:		}
-LABELV $542
+LABELV $541
 line 1233
 ;1233:		data++;
 ADDRFP4 0
@@ -7576,7 +7552,7 @@ ADDP4
 ASGNP4
 line 1234
 ;1234:	}
-LABELV $538
+LABELV $537
 line 1225
 ADDRLP4 4
 ADDRFP4 0
@@ -7591,14 +7567,14 @@ ASGNI4
 ADDRLP4 4
 INDIRI4
 CNSTI4 32
-LEI4 $537
+LEI4 $536
 line 1236
 ;1235:
 ;1236:	return data;
 ADDRFP4 0
 INDIRP4
 RETP4
-LABELV $536
+LABELV $535
 endproc SkipWhitespace 8 0
 export COM_Compress
 proc COM_Compress 48 0
@@ -7632,9 +7608,9 @@ ADDRLP4 0
 ADDRLP4 20
 INDIRP4
 ASGNP4
-ADDRGP4 $546
+ADDRGP4 $545
 JUMPV
-LABELV $545
+LABELV $544
 line 1246
 ;1246:	while ((c = *in) != '\0') {
 line 1248
@@ -7647,7 +7623,7 @@ ADDRLP4 4
 INDIRI4
 ADDRLP4 24
 INDIRI4
-NEI4 $548
+NEI4 $547
 ADDRLP4 0
 INDIRP4
 CNSTI4 1
@@ -7656,10 +7632,10 @@ INDIRI1
 CVII4 1
 ADDRLP4 24
 INDIRI4
-NEI4 $548
-ADDRGP4 $551
+NEI4 $547
+ADDRGP4 $550
 JUMPV
-LABELV $550
+LABELV $549
 line 1249
 ;1249:			while (*in && *in != '\n') {
 line 1250
@@ -7672,7 +7648,7 @@ ADDP4
 ASGNP4
 line 1251
 ;1251:			}
-LABELV $551
+LABELV $550
 line 1249
 ADDRLP4 28
 ADDRLP4 0
@@ -7683,22 +7659,22 @@ ASGNI4
 ADDRLP4 28
 INDIRI4
 CNSTI4 0
-EQI4 $553
+EQI4 $552
 ADDRLP4 28
 INDIRI4
 CNSTI4 10
-NEI4 $550
-LABELV $553
+NEI4 $549
+LABELV $552
 line 1253
 ;1252:		// skip /* */ comments
 ;1253:		} else if ( c == '/' && in[1] == '*' ) {
-ADDRGP4 $549
+ADDRGP4 $548
 JUMPV
-LABELV $548
+LABELV $547
 ADDRLP4 4
 INDIRI4
 CNSTI4 47
-NEI4 $554
+NEI4 $553
 ADDRLP4 0
 INDIRP4
 CNSTI4 1
@@ -7706,10 +7682,10 @@ ADDP4
 INDIRI1
 CVII4 1
 CNSTI4 42
-NEI4 $554
-ADDRGP4 $557
+NEI4 $553
+ADDRGP4 $556
 JUMPV
-LABELV $556
+LABELV $555
 line 1255
 ;1254:			while ( *in && ( *in != '*' || in[1] != '/' ) ) 
 ;1255:				in++;
@@ -7719,7 +7695,7 @@ INDIRP4
 CNSTI4 1
 ADDP4
 ASGNP4
-LABELV $557
+LABELV $556
 line 1254
 ADDRLP4 32
 ADDRLP4 0
@@ -7730,11 +7706,11 @@ ASGNI4
 ADDRLP4 32
 INDIRI4
 CNSTI4 0
-EQI4 $559
+EQI4 $558
 ADDRLP4 32
 INDIRI4
 CNSTI4 42
-NEI4 $556
+NEI4 $555
 ADDRLP4 0
 INDIRP4
 CNSTI4 1
@@ -7742,8 +7718,8 @@ ADDP4
 INDIRI1
 CVII4 1
 CNSTI4 47
-NEI4 $556
-LABELV $559
+NEI4 $555
+LABELV $558
 line 1256
 ;1256:			if ( *in ) 
 ADDRLP4 0
@@ -7751,7 +7727,7 @@ INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-EQI4 $555
+EQI4 $554
 line 1257
 ;1257:				in += 2;
 ADDRLP4 0
@@ -7763,18 +7739,18 @@ ASGNP4
 line 1259
 ;1258:			// record when we hit a newline
 ;1259:		} else if ( c == '\n' || c == '\r' ) {
-ADDRGP4 $555
+ADDRGP4 $554
 JUMPV
-LABELV $554
+LABELV $553
 ADDRLP4 4
 INDIRI4
 CNSTI4 10
-EQI4 $564
+EQI4 $563
 ADDRLP4 4
 INDIRI4
 CNSTI4 13
-NEI4 $562
-LABELV $564
+NEI4 $561
+LABELV $563
 line 1260
 ;1260:			newline = qtrue;
 ADDRLP4 12
@@ -7791,18 +7767,18 @@ ASGNP4
 line 1263
 ;1262:			// record when we hit whitespace
 ;1263:		} else if ( c == ' ' || c == '\t') {
-ADDRGP4 $563
+ADDRGP4 $562
 JUMPV
-LABELV $562
+LABELV $561
 ADDRLP4 4
 INDIRI4
 CNSTI4 32
-EQI4 $567
+EQI4 $566
 ADDRLP4 4
 INDIRI4
 CNSTI4 9
-NEI4 $565
-LABELV $567
+NEI4 $564
+LABELV $566
 line 1264
 ;1264:			whitespace = qtrue;
 ADDRLP4 16
@@ -7819,16 +7795,16 @@ ASGNP4
 line 1267
 ;1266:			// an actual token
 ;1267:		} else {
-ADDRGP4 $566
+ADDRGP4 $565
 JUMPV
-LABELV $565
+LABELV $564
 line 1269
 ;1268:			// if we have a pending newline, emit it (and it counts as whitespace)
 ;1269:			if (newline) {
 ADDRLP4 12
 INDIRI4
 CNSTI4 0
-EQI4 $568
+EQI4 $567
 line 1270
 ;1270:				*out++ = '\n';
 ADDRLP4 36
@@ -7857,13 +7833,13 @@ CNSTI4 0
 ASGNI4
 line 1273
 ;1273:			} else if (whitespace) {
-ADDRGP4 $569
+ADDRGP4 $568
 JUMPV
-LABELV $568
+LABELV $567
 ADDRLP4 16
 INDIRI4
 CNSTI4 0
-EQI4 $570
+EQI4 $569
 line 1274
 ;1274:				*out++ = ' ';
 ADDRLP4 36
@@ -7887,15 +7863,15 @@ CNSTI4 0
 ASGNI4
 line 1276
 ;1276:			}
-LABELV $570
 LABELV $569
+LABELV $568
 line 1278
 ;1277:			// copy quoted strings unmolested
 ;1278:			if (c == '"') {
 ADDRLP4 4
 INDIRI4
 CNSTI4 34
-NEI4 $572
+NEI4 $571
 line 1279
 ;1279:				*out++ = c;
 ADDRLP4 36
@@ -7922,9 +7898,9 @@ INDIRP4
 CNSTI4 1
 ADDP4
 ASGNP4
-ADDRGP4 $575
+ADDRGP4 $574
 JUMPV
-LABELV $574
+LABELV $573
 line 1281
 ;1281:				while (1) {
 line 1282
@@ -7940,11 +7916,11 @@ line 1283
 ADDRLP4 4
 INDIRI4
 CNSTI4 0
-EQI4 $576
+EQI4 $575
 ADDRLP4 4
 INDIRI4
 CNSTI4 34
-EQI4 $576
+EQI4 $575
 line 1284
 ;1284:						*out++ = c;
 ADDRLP4 44
@@ -7975,21 +7951,21 @@ line 1286
 ;1286:					} else {
 line 1287
 ;1287:						break;
-LABELV $578
+LABELV $577
 line 1289
 ;1288:					}
 ;1289:				}
-LABELV $575
+LABELV $574
 line 1281
-ADDRGP4 $574
+ADDRGP4 $573
 JUMPV
-LABELV $576
+LABELV $575
 line 1290
 ;1290:				if (c == '"') {
 ADDRLP4 4
 INDIRI4
 CNSTI4 34
-NEI4 $573
+NEI4 $572
 line 1291
 ;1291:					*out++ = c;
 ADDRLP4 40
@@ -8020,9 +7996,9 @@ line 1293
 ;1293:				}
 line 1294
 ;1294:			} else {
-ADDRGP4 $573
+ADDRGP4 $572
 JUMPV
-LABELV $572
+LABELV $571
 line 1295
 ;1295:				*out++ = c;
 ADDRLP4 36
@@ -8051,16 +8027,16 @@ ADDP4
 ASGNP4
 line 1297
 ;1297:			}
-LABELV $573
+LABELV $572
 line 1298
 ;1298:		}
-LABELV $566
-LABELV $563
-LABELV $555
-LABELV $549
+LABELV $565
+LABELV $562
+LABELV $554
+LABELV $548
 line 1299
 ;1299:	}
-LABELV $546
+LABELV $545
 line 1246
 ADDRLP4 24
 ADDRLP4 0
@@ -8075,7 +8051,7 @@ ASGNI4
 ADDRLP4 24
 INDIRI4
 CNSTI4 0
-NEI4 $545
+NEI4 $544
 line 1301
 ;1300:
 ;1301:	*out = '\0';
@@ -8096,7 +8072,7 @@ SUBU4
 CVUI4 4
 CVIU4 4
 RETU4
-LABELV $544
+LABELV $543
 endproc COM_Compress 48 0
 export COM_ParseExt
 proc COM_ParseExt 36 8
@@ -8147,7 +8123,7 @@ ADDRLP4 0
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $585
+NEU4 $584
 line 1319
 ;1319:		*data_p = NULL;
 ADDRFP4 0
@@ -8158,9 +8134,9 @@ line 1320
 ;1320:		return com_token;
 ADDRGP4 com_token
 RETP4
-ADDRGP4 $581
+ADDRGP4 $580
 JUMPV
-LABELV $584
+LABELV $583
 line 1323
 ;1321:	}
 ;1322:
@@ -8187,7 +8163,7 @@ ADDRLP4 0
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $587
+NEU4 $586
 line 1327
 ;1327:			*data_p = NULL;
 ADDRFP4 0
@@ -8198,9 +8174,9 @@ line 1328
 ;1328:			return com_token;
 ADDRGP4 com_token
 RETP4
-ADDRGP4 $581
+ADDRGP4 $580
 JUMPV
-LABELV $587
+LABELV $586
 line 1330
 ;1329:		}
 ;1330:		if ( hasNewLines && !allowLineBreaks ) {
@@ -8211,12 +8187,12 @@ ADDRLP4 12
 INDIRI4
 ADDRLP4 20
 INDIRI4
-EQI4 $589
+EQI4 $588
 ADDRFP4 4
 INDIRI4
 ADDRLP4 20
 INDIRI4
-NEI4 $589
+NEI4 $588
 line 1331
 ;1331:			*data_p = data;
 ADDRFP4 0
@@ -8228,9 +8204,9 @@ line 1332
 ;1332:			return com_token;
 ADDRGP4 com_token
 RETP4
-ADDRGP4 $581
+ADDRGP4 $580
 JUMPV
-LABELV $589
+LABELV $588
 line 1335
 ;1333:		}
 ;1334:
@@ -8252,7 +8228,7 @@ ADDRLP4 4
 INDIRI4
 ADDRLP4 24
 INDIRI4
-NEI4 $591
+NEI4 $590
 ADDRLP4 0
 INDIRP4
 CNSTI4 1
@@ -8261,7 +8237,7 @@ INDIRI1
 CVII4 1
 ADDRLP4 24
 INDIRI4
-NEI4 $591
+NEI4 $590
 line 1339
 ;1339:			data += 2;
 ADDRLP4 0
@@ -8270,9 +8246,9 @@ INDIRP4
 CNSTI4 2
 ADDP4
 ASGNP4
-ADDRGP4 $594
+ADDRGP4 $593
 JUMPV
-LABELV $593
+LABELV $592
 line 1340
 ;1340:			while (*data && *data != '\n') {
 line 1341
@@ -8285,7 +8261,7 @@ ADDP4
 ASGNP4
 line 1342
 ;1342:			}
-LABELV $594
+LABELV $593
 line 1340
 ADDRLP4 28
 ADDRLP4 0
@@ -8296,24 +8272,24 @@ ASGNI4
 ADDRLP4 28
 INDIRI4
 CNSTI4 0
-EQI4 $596
+EQI4 $595
 ADDRLP4 28
 INDIRI4
 CNSTI4 10
-NEI4 $593
-LABELV $596
+NEI4 $592
+LABELV $595
 line 1343
 ;1343:		}
-ADDRGP4 $592
+ADDRGP4 $591
 JUMPV
-LABELV $591
+LABELV $590
 line 1345
 ;1344:		// skip /* */ comments
 ;1345:		else if ( c == '/' && data[1] == '*' ) {
 ADDRLP4 4
 INDIRI4
 CNSTI4 47
-NEI4 $586
+NEI4 $585
 ADDRLP4 0
 INDIRP4
 CNSTI4 1
@@ -8321,7 +8297,7 @@ ADDP4
 INDIRI1
 CVII4 1
 CNSTI4 42
-NEI4 $586
+NEI4 $585
 line 1346
 ;1346:			data += 2;
 ADDRLP4 0
@@ -8330,9 +8306,9 @@ INDIRP4
 CNSTI4 2
 ADDP4
 ASGNP4
-ADDRGP4 $600
+ADDRGP4 $599
 JUMPV
-LABELV $599
+LABELV $598
 line 1347
 ;1347:			while ( *data && ( *data != '*' || data[1] != '/' ) ) {
 line 1348
@@ -8342,7 +8318,7 @@ INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 10
-NEI4 $602
+NEI4 $601
 line 1349
 ;1349:					com_lines++;
 ADDRLP4 28
@@ -8358,7 +8334,7 @@ ADDU4
 ASGNU4
 line 1350
 ;1350:				}
-LABELV $602
+LABELV $601
 line 1351
 ;1351:				data++;
 ADDRLP4 0
@@ -8369,7 +8345,7 @@ ADDP4
 ASGNP4
 line 1352
 ;1352:			}
-LABELV $600
+LABELV $599
 line 1347
 ADDRLP4 32
 ADDRLP4 0
@@ -8380,11 +8356,11 @@ ASGNI4
 ADDRLP4 32
 INDIRI4
 CNSTI4 0
-EQI4 $604
+EQI4 $603
 ADDRLP4 32
 INDIRI4
 CNSTI4 42
-NEI4 $599
+NEI4 $598
 ADDRLP4 0
 INDIRP4
 CNSTI4 1
@@ -8392,8 +8368,8 @@ ADDP4
 INDIRI1
 CVII4 1
 CNSTI4 47
-NEI4 $599
-LABELV $604
+NEI4 $598
+LABELV $603
 line 1353
 ;1353:			if ( *data ) {
 ADDRLP4 0
@@ -8401,7 +8377,7 @@ INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-EQI4 $598
+EQI4 $597
 line 1354
 ;1354:				data += 2;
 ADDRLP4 0
@@ -8418,16 +8394,16 @@ line 1357
 ;1357:		else {
 line 1358
 ;1358:			break;
-LABELV $598
-LABELV $592
+LABELV $597
+LABELV $591
 line 1360
 ;1359:		}
 ;1360:	}
-LABELV $585
+LABELV $584
 line 1323
-ADDRGP4 $584
+ADDRGP4 $583
 JUMPV
-LABELV $586
+LABELV $585
 line 1363
 ;1361:
 ;1362:	// token starts on this line
@@ -8443,7 +8419,7 @@ line 1366
 ADDRLP4 4
 INDIRI4
 CNSTI4 34
-NEI4 $607
+NEI4 $606
 line 1367
 ;1367:	{
 line 1368
@@ -8454,9 +8430,9 @@ INDIRP4
 CNSTI4 1
 ADDP4
 ASGNP4
-ADDRGP4 $610
+ADDRGP4 $609
 JUMPV
-LABELV $609
+LABELV $608
 line 1370
 ;1369:		while ( 1 )
 ;1370:		{
@@ -8473,12 +8449,12 @@ line 1372
 ADDRLP4 4
 INDIRI4
 CNSTI4 34
-EQI4 $614
+EQI4 $613
 ADDRLP4 4
 INDIRI4
 CNSTI4 0
-NEI4 $612
-LABELV $614
+NEI4 $611
+LABELV $613
 line 1373
 ;1373:			{
 line 1374
@@ -8486,7 +8462,7 @@ line 1374
 ADDRLP4 4
 INDIRI4
 CNSTI4 34
-NEI4 $615
+NEI4 $614
 line 1375
 ;1375:					data++;
 ADDRLP4 0
@@ -8495,7 +8471,7 @@ INDIRP4
 CNSTI4 1
 ADDP4
 ASGNP4
-LABELV $615
+LABELV $614
 line 1376
 ;1376:				com_token[ len ] = '\0';
 ADDRLP4 8
@@ -8515,9 +8491,9 @@ line 1378
 ;1378:				return com_token;
 ADDRGP4 com_token
 RETP4
-ADDRGP4 $581
+ADDRGP4 $580
 JUMPV
-LABELV $612
+LABELV $611
 line 1380
 ;1379:			}
 ;1380:			data++;
@@ -8532,7 +8508,7 @@ line 1381
 ADDRLP4 4
 INDIRI4
 CNSTI4 10
-NEI4 $617
+NEI4 $616
 line 1382
 ;1382:			{
 line 1383
@@ -8550,14 +8526,14 @@ ADDU4
 ASGNU4
 line 1384
 ;1384:			}
-LABELV $617
+LABELV $616
 line 1385
 ;1385:			if ( len < arraylen( com_token )-1 )
 ADDRLP4 8
 INDIRI4
 CVIU4 4
 CNSTU4 1023
-GEU4 $619
+GEU4 $618
 line 1386
 ;1386:			{
 line 1387
@@ -8580,17 +8556,17 @@ ADDI4
 ASGNI4
 line 1389
 ;1389:			}
-LABELV $619
+LABELV $618
 line 1390
 ;1390:		}
-LABELV $610
+LABELV $609
 line 1369
-ADDRGP4 $609
+ADDRGP4 $608
 JUMPV
 line 1391
 ;1391:	}
-LABELV $607
-LABELV $621
+LABELV $606
+LABELV $620
 line 1395
 ;1392:
 ;1393:	// parse a regular word
@@ -8602,7 +8578,7 @@ ADDRLP4 8
 INDIRI4
 CVIU4 4
 CNSTU4 1023
-GEU4 $624
+GEU4 $623
 line 1397
 ;1397:		{
 line 1398
@@ -8625,7 +8601,7 @@ ADDI4
 ASGNI4
 line 1400
 ;1400:		}
-LABELV $624
+LABELV $623
 line 1401
 ;1401:		data++;
 ADDRLP4 0
@@ -8644,11 +8620,11 @@ CVII4 1
 ASGNI4
 line 1403
 ;1403:	} while ( c > ' ' );
-LABELV $622
+LABELV $621
 ADDRLP4 4
 INDIRI4
 CNSTI4 32
-GTI4 $621
+GTI4 $620
 line 1405
 ;1404:
 ;1405:	com_token[ len ] = '\0';
@@ -8670,11 +8646,11 @@ line 1408
 ;1408:	return com_token;
 ADDRGP4 com_token
 RETP4
-LABELV $581
+LABELV $580
 endproc COM_ParseExt 36 8
 lit
 align 1
-LABELV $627
+LABELV $626
 byte 1 1
 byte 1 0
 byte 1 0
@@ -8863,7 +8839,7 @@ line 1445
 ADDRGP4 com_tokentype
 CNSTI4 0
 ASGNI4
-LABELV $628
+LABELV $627
 line 1448
 ;1446:	
 ;1447:__reswitch:
@@ -8877,56 +8853,56 @@ ASGNI4
 ADDRLP4 16
 INDIRI4
 CNSTI4 32
-LTI4 $702
+LTI4 $701
 ADDRLP4 16
 INDIRI4
 CNSTI4 63
-GTI4 $703
+GTI4 $702
 ADDRLP4 16
 INDIRI4
 CNSTI4 2
 LSHI4
-ADDRGP4 $704-128
+ADDRGP4 $703-128
 ADDP4
 INDIRP4
 JUMPV
 lit
 align 4
-LABELV $704
-address $633
-address $679
-address $663
-address $629
-address $629
-address $675
-address $694
-address $629
-address $677
+LABELV $703
+address $632
 address $678
+address $662
+address $628
+address $628
+address $674
+address $693
+address $628
 address $676
+address $677
 address $675
-address $675
-address $629
-address $629
-address $642
-address $629
-address $629
-address $629
-address $629
-address $629
-address $629
-address $629
-address $629
-address $629
-address $629
-address $675
-address $675
-address $688
-address $682
-address $685
-address $675
+address $674
+address $674
+address $628
+address $628
+address $641
+address $628
+address $628
+address $628
+address $628
+address $628
+address $628
+address $628
+address $628
+address $628
+address $628
+address $674
+address $674
+address $687
+address $681
+address $684
+address $674
 code
-LABELV $702
+LABELV $701
 ADDRLP4 28
 CNSTI4 0
 ASGNI4
@@ -8934,82 +8910,82 @@ ADDRLP4 16
 INDIRI4
 ADDRLP4 28
 INDIRI4
-EQI4 $632
+EQI4 $631
 ADDRLP4 16
 INDIRI4
 ADDRLP4 28
 INDIRI4
-LTI4 $629
-LABELV $706
+LTI4 $628
+LABELV $705
 ADDRLP4 16
 INDIRI4
 CNSTI4 9
-EQI4 $633
+EQI4 $632
 ADDRLP4 16
 INDIRI4
 CNSTI4 10
-EQI4 $637
+EQI4 $636
 ADDRLP4 16
 INDIRI4
 CNSTI4 13
-EQI4 $637
-ADDRGP4 $629
+EQI4 $636
+ADDRGP4 $628
 JUMPV
-LABELV $703
+LABELV $702
 ADDRLP4 16
 INDIRI4
 CNSTI4 91
-LTI4 $629
+LTI4 $628
 ADDRLP4 16
 INDIRI4
 CNSTI4 96
-GTI4 $707
+GTI4 $706
 ADDRLP4 16
 INDIRI4
 CNSTI4 2
 LSHI4
-ADDRGP4 $708-364
+ADDRGP4 $707-364
 ADDP4
 INDIRP4
 JUMPV
 lit
 align 4
-LABELV $708
-address $675
-address $629
-address $675
-address $675
-address $629
-address $675
-code
 LABELV $707
+address $674
+address $628
+address $674
+address $674
+address $628
+address $674
+code
+LABELV $706
 ADDRLP4 16
 INDIRI4
 CNSTI4 123
-LTI4 $629
+LTI4 $628
 ADDRLP4 16
 INDIRI4
 CNSTI4 126
-GTI4 $629
+GTI4 $628
 ADDRLP4 16
 INDIRI4
 CNSTI4 2
 LSHI4
-ADDRGP4 $710-492
+ADDRGP4 $709-492
 ADDP4
 INDIRP4
 JUMPV
 lit
 align 4
-LABELV $710
-address $675
-address $691
-address $675
-address $675
+LABELV $709
+address $674
+address $690
+address $674
+address $674
 code
 line 1449
 ;1449:	{
-LABELV $632
+LABELV $631
 line 1451
 ;1450:	case '\0':
 ;1451:		com_tokentype = TK_EOF;
@@ -9018,9 +8994,9 @@ CNSTI4 15
 ASGNI4
 line 1452
 ;1452:		break;
-ADDRGP4 $630
+ADDRGP4 $629
 JUMPV
-LABELV $633
+LABELV $632
 line 1457
 ;1453:
 ;1454:	// whitespace
@@ -9033,9 +9009,9 @@ INDIRP4
 CNSTI4 1
 ADDP4
 ASGNP4
-ADDRGP4 $635
+ADDRGP4 $634
 JUMPV
-LABELV $634
+LABELV $633
 line 1459
 ;1458:		while ( (c = *str) == ' ' || c == '\t' )
 ;1459:			str++;
@@ -9045,7 +9021,7 @@ INDIRP4
 CNSTI4 1
 ADDP4
 ASGNP4
-LABELV $635
+LABELV $634
 line 1458
 ADDRLP4 44
 ADDRLP4 0
@@ -9060,16 +9036,16 @@ ASGNI4
 ADDRLP4 44
 INDIRI4
 CNSTI4 32
-EQI4 $634
+EQI4 $633
 ADDRLP4 4
 INDIRI4
 CNSTI4 9
-EQI4 $634
+EQI4 $633
 line 1460
 ;1460:		goto __reswitch;
-ADDRGP4 $628
+ADDRGP4 $627
 JUMPV
-LABELV $637
+LABELV $636
 line 1465
 ;1461:
 ;1462:	// newlines
@@ -9094,7 +9070,7 @@ INDIRP4
 INDIRU1
 CVUI4 1
 CNSTI4 13
-NEI4 $638
+NEI4 $637
 ADDRLP4 0
 INDIRP4
 CNSTI4 1
@@ -9102,7 +9078,7 @@ ADDP4
 INDIRU1
 CVUI4 1
 CNSTI4 10
-NEI4 $638
+NEI4 $637
 line 1467
 ;1467:			str += 2; // CR+LF
 ADDRLP4 0
@@ -9111,9 +9087,9 @@ INDIRP4
 CNSTI4 2
 ADDP4
 ASGNP4
-ADDRGP4 $639
+ADDRGP4 $638
 JUMPV
-LABELV $638
+LABELV $637
 line 1469
 ;1468:		else
 ;1469:			str++;
@@ -9123,13 +9099,13 @@ INDIRP4
 CNSTI4 1
 ADDP4
 ASGNP4
-LABELV $639
+LABELV $638
 line 1470
 ;1470:		if ( !allowLineBreaks ) {
 ADDRFP4 4
 INDIRI4
 CNSTI4 0
-NEI4 $628
+NEI4 $627
 line 1471
 ;1471:			com_tokentype = TK_NEWLINE;
 ADDRGP4 com_tokentype
@@ -9137,12 +9113,12 @@ CNSTI4 14
 ASGNI4
 line 1472
 ;1472:			break;
-ADDRGP4 $630
+ADDRGP4 $629
 JUMPV
 line 1474
 ;1473:		}
 ;1474:		goto __reswitch;
-LABELV $642
+LABELV $641
 line 1479
 ;1475:
 ;1476:	// comments, single slash
@@ -9156,7 +9132,7 @@ ADDP4
 INDIRU1
 CVUI4 1
 CNSTI4 47
-NEI4 $643
+NEI4 $642
 line 1480
 ;1480:			str += 2;
 ADDRLP4 0
@@ -9165,9 +9141,9 @@ INDIRP4
 CNSTI4 2
 ADDP4
 ASGNP4
-ADDRGP4 $646
+ADDRGP4 $645
 JUMPV
-LABELV $645
+LABELV $644
 line 1482
 ;1481:			while ( (c = *str) != '\0' && c != '\n' && c != '\r' )
 ;1482:				str++;
@@ -9177,7 +9153,7 @@ INDIRP4
 CNSTI4 1
 ADDP4
 ASGNP4
-LABELV $646
+LABELV $645
 line 1481
 ADDRLP4 56
 ADDRLP4 0
@@ -9192,21 +9168,21 @@ ASGNI4
 ADDRLP4 56
 INDIRI4
 CNSTI4 0
-EQI4 $649
+EQI4 $648
 ADDRLP4 4
 INDIRI4
 CNSTI4 10
-EQI4 $649
+EQI4 $648
 ADDRLP4 4
 INDIRI4
 CNSTI4 13
-NEI4 $645
-LABELV $649
+NEI4 $644
+LABELV $648
 line 1483
 ;1483:			goto __reswitch;
-ADDRGP4 $628
+ADDRGP4 $627
 JUMPV
-LABELV $643
+LABELV $642
 line 1487
 ;1484:		}
 ;1485:
@@ -9219,7 +9195,7 @@ ADDP4
 INDIRU1
 CVUI4 1
 CNSTI4 42
-NEI4 $650
+NEI4 $649
 line 1488
 ;1488:			str += 2;
 ADDRLP4 0
@@ -9228,9 +9204,9 @@ INDIRP4
 CNSTI4 2
 ADDP4
 ASGNP4
-ADDRGP4 $653
+ADDRGP4 $652
 JUMPV
-LABELV $652
+LABELV $651
 line 1489
 ;1489:			while ( (c = *str) != '\0' && ( c != '*' || str[1] != '/' ) ) {
 line 1490
@@ -9238,12 +9214,12 @@ line 1490
 ADDRLP4 4
 INDIRI4
 CNSTI4 10
-EQI4 $657
+EQI4 $656
 ADDRLP4 4
 INDIRI4
 CNSTI4 13
-NEI4 $655
-LABELV $657
+NEI4 $654
+LABELV $656
 line 1491
 ;1491:					com_lines++;
 ADDRLP4 60
@@ -9262,7 +9238,7 @@ line 1492
 ADDRLP4 4
 INDIRI4
 CNSTI4 13
-NEI4 $658
+NEI4 $657
 ADDRLP4 0
 INDIRP4
 CNSTI4 1
@@ -9270,7 +9246,7 @@ ADDP4
 INDIRU1
 CVUI4 1
 CNSTI4 10
-NEI4 $658
+NEI4 $657
 line 1493
 ;1493:						str++;
 ADDRLP4 0
@@ -9279,10 +9255,10 @@ INDIRP4
 CNSTI4 1
 ADDP4
 ASGNP4
-LABELV $658
+LABELV $657
 line 1494
 ;1494:				}
-LABELV $655
+LABELV $654
 line 1495
 ;1495:				str++;
 ADDRLP4 0
@@ -9293,7 +9269,7 @@ ADDP4
 ASGNP4
 line 1496
 ;1496:			}
-LABELV $653
+LABELV $652
 line 1489
 ADDRLP4 60
 ADDRLP4 0
@@ -9308,11 +9284,11 @@ ASGNI4
 ADDRLP4 60
 INDIRI4
 CNSTI4 0
-EQI4 $660
+EQI4 $659
 ADDRLP4 4
 INDIRI4
 CNSTI4 42
-NEI4 $652
+NEI4 $651
 ADDRLP4 0
 INDIRP4
 CNSTI4 1
@@ -9320,8 +9296,8 @@ ADDP4
 INDIRU1
 CVUI4 1
 CNSTI4 47
-NEI4 $652
-LABELV $660
+NEI4 $651
+LABELV $659
 line 1497
 ;1497:			if ( c != '\0' && str[1] != '\0' ) {
 ADDRLP4 64
@@ -9331,7 +9307,7 @@ ADDRLP4 4
 INDIRI4
 ADDRLP4 64
 INDIRI4
-EQI4 $628
+EQI4 $627
 ADDRLP4 0
 INDIRP4
 CNSTI4 1
@@ -9340,7 +9316,7 @@ INDIRU1
 CVUI4 1
 ADDRLP4 64
 INDIRI4
-EQI4 $628
+EQI4 $627
 line 1498
 ;1498:				str += 2;
 ADDRLP4 0
@@ -9356,9 +9332,9 @@ line 1501
 ;1501:			}
 line 1502
 ;1502:			goto __reswitch;
-ADDRGP4 $628
+ADDRGP4 $627
 JUMPV
-LABELV $650
+LABELV $649
 line 1506
 ;1503:		}
 ;1504:
@@ -9401,9 +9377,9 @@ CVII1 4
 ASGNI1
 line 1507
 ;1507:		break;
-ADDRGP4 $630
+ADDRGP4 $629
 JUMPV
-LABELV $663
+LABELV $662
 line 1511
 ;1508:	
 ;1509:	// quoted string?
@@ -9415,9 +9391,9 @@ INDIRP4
 CNSTI4 1
 ADDP4
 ASGNP4
-ADDRGP4 $665
+ADDRGP4 $664
 JUMPV
-LABELV $664
+LABELV $663
 line 1513
 ;1512:		//com_tokenline = com_lines;
 ;1513:		while ( (c = *str) != '\0' && c != '"' ) {
@@ -9426,12 +9402,12 @@ line 1514
 ADDRLP4 4
 INDIRI4
 CNSTI4 10
-EQI4 $669
+EQI4 $668
 ADDRLP4 4
 INDIRI4
 CNSTI4 13
-NEI4 $667
-LABELV $669
+NEI4 $666
+LABELV $668
 line 1515
 ;1515:				com_lines++; // FIXME: unterminated quoted string?
 ADDRLP4 72
@@ -9455,13 +9431,13 @@ ADDI4
 ASGNI4
 line 1517
 ;1517:			}
-LABELV $667
+LABELV $666
 line 1518
 ;1518:			if ( len < MAX_TOKEN_CHARS-1 ) // overflow check
 ADDRLP4 8
 INDIRI4
 CNSTI4 1023
-GEI4 $670
+GEI4 $669
 line 1519
 ;1519:				com_token[ len++ ] = c;
 ADDRLP4 72
@@ -9482,7 +9458,7 @@ ADDRLP4 4
 INDIRI4
 CVII1 4
 ASGNI1
-LABELV $670
+LABELV $669
 line 1520
 ;1520:			str++;
 ADDRLP4 0
@@ -9493,7 +9469,7 @@ ADDP4
 ASGNP4
 line 1521
 ;1521:		}
-LABELV $665
+LABELV $664
 line 1513
 ADDRLP4 68
 ADDRLP4 0
@@ -9508,18 +9484,18 @@ ASGNI4
 ADDRLP4 68
 INDIRI4
 CNSTI4 0
-EQI4 $672
+EQI4 $671
 ADDRLP4 4
 INDIRI4
 CNSTI4 34
-NEI4 $664
-LABELV $672
+NEI4 $663
+LABELV $671
 line 1522
 ;1522:		if ( c != '\0' ) {
 ADDRLP4 4
 INDIRI4
 CNSTI4 0
-EQI4 $673
+EQI4 $672
 line 1523
 ;1523:			str++; // skip ending '"'
 ADDRLP4 0
@@ -9530,11 +9506,11 @@ ADDP4
 ASGNP4
 line 1524
 ;1524:		} else {
-LABELV $673
+LABELV $672
 line 1526
 ;1525:			// FIXME: unterminated quoted string?
 ;1526:		}
-LABELV $674
+LABELV $673
 line 1527
 ;1527:		com_tokentype = TK_QUOTED;
 ADDRGP4 com_tokentype
@@ -9542,9 +9518,9 @@ CNSTI4 2
 ASGNI4
 line 1528
 ;1528:		break;
-ADDRGP4 $630
+ADDRGP4 $629
 JUMPV
-LABELV $675
+LABELV $674
 line 1538
 ;1529:
 ;1530:	// single tokens:
@@ -9593,9 +9569,9 @@ CVII1 4
 ASGNI1
 line 1539
 ;1539:		break;
-ADDRGP4 $630
+ADDRGP4 $629
 JUMPV
-LABELV $676
+LABELV $675
 line 1542
 ;1540:
 ;1541:	case '*':
@@ -9642,9 +9618,9 @@ CNSTI4 9
 ASGNI4
 line 1544
 ;1544:		break;
-ADDRGP4 $630
+ADDRGP4 $629
 JUMPV
-LABELV $677
+LABELV $676
 line 1547
 ;1545:
 ;1546:	case '(':
@@ -9691,9 +9667,9 @@ CNSTI4 12
 ASGNI4
 line 1549
 ;1549:		break;
-ADDRGP4 $630
+ADDRGP4 $629
 JUMPV
-LABELV $678
+LABELV $677
 line 1552
 ;1550:
 ;1551:	case ')':
@@ -9740,9 +9716,9 @@ CNSTI4 13
 ASGNI4
 line 1554
 ;1554:		break;
-ADDRGP4 $630
+ADDRGP4 $629
 JUMPV
-LABELV $679
+LABELV $678
 line 1558
 ;1555:
 ;1556:	// !, !=
@@ -9790,7 +9766,7 @@ INDIRP4
 INDIRU1
 CVUI4 1
 CNSTI4 61
-NEI4 $630
+NEI4 $629
 line 1560
 ;1560:			com_token[ len++ ] = *str++;
 ADDRLP4 132
@@ -9837,9 +9813,9 @@ line 1562
 ;1562:		}
 line 1563
 ;1563:		break;
-ADDRGP4 $630
+ADDRGP4 $629
 JUMPV
-LABELV $682
+LABELV $681
 line 1567
 ;1564:
 ;1565:	// =, ==
@@ -9887,7 +9863,7 @@ INDIRP4
 INDIRU1
 CVUI4 1
 CNSTI4 61
-NEI4 $630
+NEI4 $629
 line 1569
 ;1569:			com_token[ len++ ] = *str++;
 ADDRLP4 144
@@ -9934,9 +9910,9 @@ line 1571
 ;1571:		}
 line 1572
 ;1572:		break;
-ADDRGP4 $630
+ADDRGP4 $629
 JUMPV
-LABELV $685
+LABELV $684
 line 1576
 ;1573:
 ;1574:	// >, >=
@@ -9984,7 +9960,7 @@ INDIRP4
 INDIRU1
 CVUI4 1
 CNSTI4 61
-NEI4 $686
+NEI4 $685
 line 1578
 ;1578:			com_token[ len++ ] = *str++;
 ADDRLP4 156
@@ -10029,9 +10005,9 @@ CNSTI4 6
 ASGNI4
 line 1580
 ;1580:		} else {
-ADDRGP4 $630
+ADDRGP4 $629
 JUMPV
-LABELV $686
+LABELV $685
 line 1581
 ;1581:			com_tokentype = TK_GT;
 ADDRGP4 com_tokentype
@@ -10041,9 +10017,9 @@ line 1582
 ;1582:		}
 line 1583
 ;1583:		break;
-ADDRGP4 $630
+ADDRGP4 $629
 JUMPV
-LABELV $688
+LABELV $687
 line 1587
 ;1584:
 ;1585:	//  <, <=
@@ -10091,7 +10067,7 @@ INDIRP4
 INDIRU1
 CVUI4 1
 CNSTI4 61
-NEI4 $689
+NEI4 $688
 line 1589
 ;1589:			com_token[ len++ ] = *str++;
 ADDRLP4 168
@@ -10136,9 +10112,9 @@ CNSTI4 8
 ASGNI4
 line 1591
 ;1591:		} else {
-ADDRGP4 $630
+ADDRGP4 $629
 JUMPV
-LABELV $689
+LABELV $688
 line 1592
 ;1592:			com_tokentype = TK_LT;
 ADDRGP4 com_tokentype
@@ -10148,9 +10124,9 @@ line 1593
 ;1593:		}
 line 1594
 ;1594:		break;
-ADDRGP4 $630
+ADDRGP4 $629
 JUMPV
-LABELV $691
+LABELV $690
 line 1598
 ;1595:
 ;1596:	// |, ||
@@ -10198,7 +10174,7 @@ INDIRP4
 INDIRU1
 CVUI4 1
 CNSTI4 124
-NEI4 $630
+NEI4 $629
 line 1600
 ;1600:			com_token[ len++ ] = *str++;
 ADDRLP4 180
@@ -10245,9 +10221,9 @@ line 1602
 ;1602:		}
 line 1603
 ;1603:		break;
-ADDRGP4 $630
+ADDRGP4 $629
 JUMPV
-LABELV $694
+LABELV $693
 line 1607
 ;1604:
 ;1605:	// &, &&
@@ -10295,7 +10271,7 @@ INDIRP4
 INDIRU1
 CVUI4 1
 CNSTI4 38
-NEI4 $630
+NEI4 $629
 line 1609
 ;1609:			com_token[ len++ ] = *str++;
 ADDRLP4 192
@@ -10342,9 +10318,9 @@ line 1611
 ;1611:		}
 line 1612
 ;1612:		break;
-ADDRGP4 $630
+ADDRGP4 $629
 JUMPV
-LABELV $629
+LABELV $628
 line 1616
 ;1613:
 ;1614:	// rest of the charset
@@ -10385,9 +10361,9 @@ INDIRU1
 CVUI4 1
 CVII1 4
 ASGNI1
-ADDRGP4 $698
+ADDRGP4 $697
 JUMPV
-LABELV $697
+LABELV $696
 line 1617
 ;1617:		while ( !is_separator[ (c = *str) ] ) {
 line 1618
@@ -10395,7 +10371,7 @@ line 1618
 ADDRLP4 8
 INDIRI4
 CNSTI4 1023
-GEI4 $700
+GEI4 $699
 line 1619
 ;1619:				com_token[ len++ ] = c;
 ADDRLP4 204
@@ -10416,7 +10392,7 @@ ADDRLP4 4
 INDIRI4
 CVII1 4
 ASGNI1
-LABELV $700
+LABELV $699
 line 1620
 ;1620:			str++;
 ADDRLP4 0
@@ -10427,7 +10403,7 @@ ADDP4
 ASGNP4
 line 1621
 ;1621:		}
-LABELV $698
+LABELV $697
 line 1617
 ADDRLP4 204
 ADDRLP4 0
@@ -10441,12 +10417,12 @@ INDIRI4
 ASGNI4
 ADDRLP4 204
 INDIRI4
-ADDRGP4 $627
+ADDRGP4 $626
 ADDP4
 INDIRU1
 CVUI4 1
 CNSTI4 0
-EQI4 $697
+EQI4 $696
 line 1622
 ;1622:		com_tokentype = TK_STRING;
 ADDRGP4 com_tokentype
@@ -10454,7 +10430,7 @@ CNSTI4 1
 ASGNI4
 line 1623
 ;1623:		break;
-LABELV $630
+LABELV $629
 line 1627
 ;1624:
 ;1625:	} // switch ( *str )
@@ -10487,7 +10463,7 @@ line 1630
 ;1630:	return com_token;
 ADDRGP4 com_token
 RETP4
-LABELV $626
+LABELV $625
 endproc COM_ParseComplex 208 0
 export COM_MatchToken
 proc COM_MatchToken 12 16
@@ -10531,12 +10507,12 @@ ASGNI4
 ADDRLP4 8
 INDIRI4
 CNSTI4 0
-EQI4 $713
+EQI4 $712
 line 1644
 ;1644:		N_Error( ERR_DROP, "MatchToken: %s != %s", token, match );
 CNSTI4 1
 ARGI4
-ADDRGP4 $715
+ADDRGP4 $714
 ARGP4
 ADDRLP4 0
 INDIRP4
@@ -10549,10 +10525,10 @@ CALLV
 pop
 line 1645
 ;1645:	}
-LABELV $713
+LABELV $712
 line 1646
 ;1646:}
-LABELV $712
+LABELV $711
 endproc COM_MatchToken 12 16
 export SkipBracedSection
 proc SkipBracedSection 8 8
@@ -10569,7 +10545,7 @@ line 1658
 ;1656:=================
 ;1657:*/
 ;1658:qboolean SkipBracedSection( const char **program, int depth ) {
-LABELV $717
+LABELV $716
 line 1661
 ;1659:	const char			*token;
 ;1660:
@@ -10598,7 +10574,7 @@ ADDP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $720
+NEI4 $719
 line 1664
 ;1664:			if( token[0] == '{' ) {
 ADDRLP4 0
@@ -10606,7 +10582,7 @@ INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 123
-NEI4 $722
+NEI4 $721
 line 1665
 ;1665:				depth++;
 ADDRFP4 4
@@ -10617,9 +10593,9 @@ ADDI4
 ASGNI4
 line 1666
 ;1666:			}
-ADDRGP4 $723
+ADDRGP4 $722
 JUMPV
-LABELV $722
+LABELV $721
 line 1667
 ;1667:			else if( token[0] == '}' ) {
 ADDRLP4 0
@@ -10627,7 +10603,7 @@ INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 125
-NEI4 $724
+NEI4 $723
 line 1668
 ;1668:				depth--;
 ADDRFP4 4
@@ -10638,46 +10614,46 @@ SUBI4
 ASGNI4
 line 1669
 ;1669:			}
-LABELV $724
 LABELV $723
+LABELV $722
 line 1670
 ;1670:		}
-LABELV $720
+LABELV $719
 line 1671
 ;1671:	} while( depth && *program );
-LABELV $718
+LABELV $717
 ADDRFP4 4
 INDIRI4
 CNSTI4 0
-EQI4 $726
+EQI4 $725
 ADDRFP4 0
 INDIRP4
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $717
-LABELV $726
+NEU4 $716
+LABELV $725
 line 1673
 ;1672:
 ;1673:	return (qboolean)( depth == 0 );
 ADDRFP4 4
 INDIRI4
 CNSTI4 0
-NEI4 $728
+NEI4 $727
 ADDRLP4 4
 CNSTI4 1
 ASGNI4
-ADDRGP4 $729
+ADDRGP4 $728
 JUMPV
-LABELV $728
+LABELV $727
 ADDRLP4 4
 CNSTI4 0
 ASGNI4
-LABELV $729
+LABELV $728
 ADDRLP4 4
 INDIRI4
 RETI4
-LABELV $716
+LABELV $715
 endproc SkipBracedSection 8 8
 export SkipRestOfLine
 proc SkipRestOfLine 12 0
@@ -10709,12 +10685,12 @@ INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $734
+NEI4 $733
 line 1689
 ;1689:		return;
-ADDRGP4 $730
+ADDRGP4 $729
 JUMPV
-LABELV $733
+LABELV $732
 line 1691
 ;1690:
 ;1691:	while ( (c = *p) != '\0' ) {
@@ -10731,7 +10707,7 @@ line 1693
 ADDRLP4 4
 INDIRI4
 CNSTI4 10
-NEI4 $736
+NEI4 $735
 line 1694
 ;1694:			com_lines++;
 ADDRLP4 8
@@ -10747,13 +10723,13 @@ ADDU4
 ASGNU4
 line 1695
 ;1695:			break;
-ADDRGP4 $735
+ADDRGP4 $734
 JUMPV
-LABELV $736
+LABELV $735
 line 1697
 ;1696:		}
 ;1697:	}
-LABELV $734
+LABELV $733
 line 1691
 ADDRLP4 8
 ADDRLP4 0
@@ -10768,8 +10744,8 @@ ASGNI4
 ADDRLP4 8
 INDIRI4
 CNSTI4 0
-NEI4 $733
-LABELV $735
+NEI4 $732
+LABELV $734
 line 1699
 ;1698:
 ;1699:	*data = p;
@@ -10780,7 +10756,7 @@ INDIRP4
 ASGNP4
 line 1700
 ;1700:}
-LABELV $730
+LABELV $729
 endproc SkipRestOfLine 12 0
 export ParseHex
 proc ParseHex 20 0
@@ -10796,9 +10772,9 @@ line 1707
 ADDRLP4 4
 CNSTI4 0
 ASGNI4
-ADDRGP4 $740
+ADDRGP4 $739
 JUMPV
-LABELV $739
+LABELV $738
 line 1708
 ;1708:    while ((c = *text++) != 0) {
 line 1709
@@ -10806,11 +10782,11 @@ line 1709
 ADDRLP4 0
 INDIRI4
 CNSTI4 48
-LTI4 $742
+LTI4 $741
 ADDRLP4 0
 INDIRI4
 CNSTI4 57
-GTI4 $742
+GTI4 $741
 line 1710
 ;1710:            value = value * 16 + c - '0';
 ADDRLP4 4
@@ -10826,20 +10802,20 @@ SUBI4
 ASGNI4
 line 1711
 ;1711:            continue;
-ADDRGP4 $740
+ADDRGP4 $739
 JUMPV
-LABELV $742
+LABELV $741
 line 1713
 ;1712:        }
 ;1713:        if (c >= 'a' && c <= 'f') {
 ADDRLP4 0
 INDIRI4
 CNSTI4 97
-LTI4 $744
+LTI4 $743
 ADDRLP4 0
 INDIRI4
 CNSTI4 102
-GTI4 $744
+GTI4 $743
 line 1714
 ;1714:            value = value * 16 + 10 + c - 'a';
 ADDRLP4 4
@@ -10857,20 +10833,20 @@ SUBI4
 ASGNI4
 line 1715
 ;1715:            continue;
-ADDRGP4 $740
+ADDRGP4 $739
 JUMPV
-LABELV $744
+LABELV $743
 line 1717
 ;1716:        }
 ;1717:        if (c >= 'A' && c <= 'F') {
 ADDRLP4 0
 INDIRI4
 CNSTI4 65
-LTI4 $746
+LTI4 $745
 ADDRLP4 0
 INDIRI4
 CNSTI4 70
-GTI4 $746
+GTI4 $745
 line 1718
 ;1718:            value = value * 16 + 10 + c - 'A';
 ADDRLP4 4
@@ -10888,11 +10864,11 @@ SUBI4
 ASGNI4
 line 1719
 ;1719:            continue;
-LABELV $746
+LABELV $745
 line 1721
 ;1720:        }
 ;1721:    }
-LABELV $740
+LABELV $739
 line 1708
 ADDRLP4 8
 ADDRFP4 0
@@ -10917,14 +10893,14 @@ ASGNI4
 ADDRLP4 12
 INDIRI4
 CNSTI4 0
-NEI4 $739
+NEI4 $738
 line 1723
 ;1722:
 ;1723:    return value;
 ADDRLP4 4
 INDIRI4
 RETI4
-LABELV $738
+LABELV $737
 endproc ParseHex 20 0
 export Parse1DMatrix
 proc Parse1DMatrix 16 8
@@ -10940,7 +10916,7 @@ line 1730
 ADDRFP4 0
 INDIRP4
 ARGP4
-ADDRGP4 $749
+ADDRGP4 $748
 ARGP4
 ADDRGP4 COM_MatchToken
 CALLV
@@ -10951,9 +10927,9 @@ line 1732
 ADDRLP4 0
 CNSTI4 0
 ASGNI4
-ADDRGP4 $753
+ADDRGP4 $752
 JUMPV
-LABELV $750
+LABELV $749
 line 1733
 ;1733:		token = COM_Parse( buf_p );
 ADDRFP4 0
@@ -10988,7 +10964,7 @@ INDIRF4
 ASGNF4
 line 1735
 ;1735:	}
-LABELV $751
+LABELV $750
 line 1732
 ADDRLP4 0
 ADDRLP4 0
@@ -10996,26 +10972,26 @@ INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-LABELV $753
+LABELV $752
 ADDRLP4 0
 INDIRI4
 ADDRFP4 4
 INDIRI4
-LTI4 $750
+LTI4 $749
 line 1737
 ;1736:
 ;1737:	COM_MatchToken( buf_p, ")" );
 ADDRFP4 0
 INDIRP4
 ARGP4
-ADDRGP4 $754
+ADDRGP4 $753
 ARGP4
 ADDRGP4 COM_MatchToken
 CALLV
 pop
 line 1738
 ;1738:}
-LABELV $748
+LABELV $747
 endproc Parse1DMatrix 16 8
 export Parse2DMatrix
 proc Parse2DMatrix 8 12
@@ -11029,7 +11005,7 @@ line 1743
 ADDRFP4 0
 INDIRP4
 ARGP4
-ADDRGP4 $749
+ADDRGP4 $748
 ARGP4
 ADDRGP4 COM_MatchToken
 CALLV
@@ -11040,9 +11016,9 @@ line 1745
 ADDRLP4 0
 CNSTI4 0
 ASGNI4
-ADDRGP4 $759
+ADDRGP4 $758
 JUMPV
-LABELV $756
+LABELV $755
 line 1746
 ;1746:		Parse1DMatrix (buf_p, x, m + i * x);
 ADDRFP4 0
@@ -11071,7 +11047,7 @@ CALLV
 pop
 line 1747
 ;1747:	}
-LABELV $757
+LABELV $756
 line 1745
 ADDRLP4 0
 ADDRLP4 0
@@ -11079,26 +11055,26 @@ INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-LABELV $759
+LABELV $758
 ADDRLP4 0
 INDIRI4
 ADDRFP4 4
 INDIRI4
-LTI4 $756
+LTI4 $755
 line 1749
 ;1748:
 ;1749:	COM_MatchToken( buf_p, ")" );
 ADDRFP4 0
 INDIRP4
 ARGP4
-ADDRGP4 $754
+ADDRGP4 $753
 ARGP4
 ADDRGP4 COM_MatchToken
 CALLV
 pop
 line 1750
 ;1750:}
-LABELV $755
+LABELV $754
 endproc Parse2DMatrix 8 12
 export Parse3DMatrix
 proc Parse3DMatrix 12 16
@@ -11112,7 +11088,7 @@ line 1755
 ADDRFP4 0
 INDIRP4
 ARGP4
-ADDRGP4 $749
+ADDRGP4 $748
 ARGP4
 ADDRGP4 COM_MatchToken
 CALLV
@@ -11123,9 +11099,9 @@ line 1757
 ADDRLP4 0
 CNSTI4 0
 ASGNI4
-ADDRGP4 $764
+ADDRGP4 $763
 JUMPV
-LABELV $761
+LABELV $760
 line 1758
 ;1758:		Parse2DMatrix (buf_p, y, x, m + i * x*y);
 ADDRFP4 0
@@ -11164,7 +11140,7 @@ CALLV
 pop
 line 1759
 ;1759:	}
-LABELV $762
+LABELV $761
 line 1757
 ADDRLP4 0
 ADDRLP4 0
@@ -11172,26 +11148,26 @@ INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-LABELV $764
+LABELV $763
 ADDRLP4 0
 INDIRI4
 ADDRFP4 4
 INDIRI4
-LTI4 $761
+LTI4 $760
 line 1761
 ;1760:
 ;1761:	COM_MatchToken( buf_p, ")" );
 ADDRFP4 0
 INDIRP4
 ARGP4
-ADDRGP4 $754
+ADDRGP4 $753
 ARGP4
 ADDRGP4 COM_MatchToken
 CALLV
 pop
 line 1762
 ;1762:}
-LABELV $760
+LABELV $759
 endproc Parse3DMatrix 12 16
 export Hex
 proc Hex 12 0
@@ -11214,11 +11190,11 @@ ASGNI4
 ADDRLP4 0
 INDIRI4
 CNSTI4 48
-LTI4 $766
+LTI4 $765
 ADDRLP4 0
 INDIRI4
 CNSTI4 57
-GTI4 $766
+GTI4 $765
 line 1767
 ;1767:		return c - '0';
 ADDRFP4 0
@@ -11227,9 +11203,9 @@ CVII4 1
 CNSTI4 48
 SUBI4
 RETI4
-ADDRGP4 $765
+ADDRGP4 $764
 JUMPV
-LABELV $766
+LABELV $765
 line 1770
 ;1768:	}
 ;1769:	else
@@ -11242,11 +11218,11 @@ ASGNI4
 ADDRLP4 4
 INDIRI4
 CNSTI4 65
-LTI4 $768
+LTI4 $767
 ADDRLP4 4
 INDIRI4
 CNSTI4 70
-GTI4 $768
+GTI4 $767
 line 1771
 ;1771:		return 10 + c - 'A';
 ADDRFP4 0
@@ -11257,9 +11233,9 @@ ADDI4
 CNSTI4 65
 SUBI4
 RETI4
-ADDRGP4 $765
+ADDRGP4 $764
 JUMPV
-LABELV $768
+LABELV $767
 line 1774
 ;1772:	}
 ;1773:	else
@@ -11272,11 +11248,11 @@ ASGNI4
 ADDRLP4 8
 INDIRI4
 CNSTI4 97
-LTI4 $770
+LTI4 $769
 ADDRLP4 8
 INDIRI4
 CNSTI4 102
-GTI4 $770
+GTI4 $769
 line 1775
 ;1775:		return 10 + c - 'a';
 ADDRFP4 0
@@ -11287,16 +11263,16 @@ ADDI4
 CNSTI4 97
 SUBI4
 RETI4
-ADDRGP4 $765
+ADDRGP4 $764
 JUMPV
-LABELV $770
+LABELV $769
 line 1778
 ;1776:	}
 ;1777:
 ;1778:	return -1;
 CNSTI4 -1
 RETI4
-LABELV $765
+LABELV $764
 endproc Hex 12 0
 export Com_HexStrToInt
 proc Com_HexStrToInt 28 4
@@ -11317,14 +11293,14 @@ ADDRFP4 0
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $773
+NEU4 $772
 line 1790
 ;1790:		return -1;
 CNSTI4 -1
 RETI4
-ADDRGP4 $772
+ADDRGP4 $771
 JUMPV
-LABELV $773
+LABELV $772
 line 1793
 ;1791:
 ;1792:	// check for hex code
@@ -11338,7 +11314,7 @@ INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 48
-NEI4 $775
+NEI4 $774
 ADDRLP4 0
 INDIRP4
 CNSTI4 1
@@ -11346,7 +11322,7 @@ ADDP4
 INDIRI1
 CVII4 1
 CNSTI4 120
-NEI4 $775
+NEI4 $774
 ADDRLP4 0
 INDIRP4
 CNSTI4 2
@@ -11354,7 +11330,7 @@ ADDP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-EQI4 $775
+EQI4 $774
 line 1794
 ;1794:	    int32_t i, digit, n = 0, len = strlen( str );
 ADDRLP4 12
@@ -11378,9 +11354,9 @@ line 1796
 ADDRLP4 4
 CNSTI4 2
 ASGNI4
-ADDRGP4 $780
+ADDRGP4 $779
 JUMPV
-LABELV $777
+LABELV $776
 line 1797
 ;1797:			n *= 16;
 ADDRLP4 12
@@ -11414,14 +11390,14 @@ line 1801
 ADDRLP4 8
 INDIRI4
 CNSTI4 0
-GEI4 $781
+GEI4 $780
 line 1802
 ;1802:				return -1;
 CNSTI4 -1
 RETI4
-ADDRGP4 $772
+ADDRGP4 $771
 JUMPV
-LABELV $781
+LABELV $780
 line 1804
 ;1803:
 ;1804:			n += digit;
@@ -11434,7 +11410,7 @@ ADDI4
 ASGNI4
 line 1805
 ;1805:		}
-LABELV $778
+LABELV $777
 line 1796
 ADDRLP4 4
 ADDRLP4 4
@@ -11442,28 +11418,28 @@ INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-LABELV $780
+LABELV $779
 ADDRLP4 4
 INDIRI4
 ADDRLP4 16
 INDIRI4
-LTI4 $777
+LTI4 $776
 line 1807
 ;1806:
 ;1807:		return n;
 ADDRLP4 12
 INDIRI4
 RETI4
-ADDRGP4 $772
+ADDRGP4 $771
 JUMPV
-LABELV $775
+LABELV $774
 line 1810
 ;1808:	}
 ;1809:
 ;1810:	return -1;
 CNSTI4 -1
 RETI4
-LABELV $772
+LABELV $771
 endproc Com_HexStrToInt 28 4
 export Com_GetHashColor
 proc Com_GetHashColor 60 4
@@ -11520,14 +11496,14 @@ INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 35
-EQI4 $784
+EQI4 $783
 line 1820
 ;1820:		return qfalse;
 CNSTI4 0
 RETI4
-ADDRGP4 $783
+ADDRGP4 $782
 JUMPV
-LABELV $784
+LABELV $783
 line 1823
 ;1821:	}
 ;1822:
@@ -11549,19 +11525,19 @@ line 1824
 ADDRLP4 28
 INDIRI4
 CNSTI4 0
-LEI4 $788
+LEI4 $787
 ADDRLP4 28
 INDIRI4
 CNSTI4 6
-LEI4 $786
-LABELV $788
+LEI4 $785
+LABELV $787
 line 1825
 ;1825:		return qfalse;
 CNSTI4 0
 RETI4
-ADDRGP4 $783
+ADDRGP4 $782
 JUMPV
-LABELV $786
+LABELV $785
 line 1828
 ;1826:	}
 ;1827:
@@ -11569,9 +11545,9 @@ line 1828
 ADDRLP4 0
 CNSTI4 0
 ASGNI4
-ADDRGP4 $792
+ADDRGP4 $791
 JUMPV
-LABELV $789
+LABELV $788
 line 1829
 ;1829:		hex[i] = Hex( str[i] );
 ADDRLP4 0
@@ -11605,18 +11581,18 @@ ADDRLP4 4
 ADDP4
 INDIRI4
 CNSTI4 0
-GEI4 $793
+GEI4 $792
 line 1831
 ;1831:			return qfalse;
 CNSTI4 0
 RETI4
-ADDRGP4 $783
+ADDRGP4 $782
 JUMPV
-LABELV $793
+LABELV $792
 line 1833
 ;1832:		}
 ;1833:	}
-LABELV $790
+LABELV $789
 line 1828
 ADDRLP4 0
 ADDRLP4 0
@@ -11624,26 +11600,26 @@ INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-LABELV $792
+LABELV $791
 ADDRLP4 0
 INDIRI4
 ADDRLP4 28
 INDIRI4
-LTI4 $789
+LTI4 $788
 line 1835
 ;1834:
 ;1835:	switch ( len ) {
 ADDRLP4 28
 INDIRI4
 CNSTI4 3
-EQI4 $797
+EQI4 $796
 ADDRLP4 28
 INDIRI4
 CNSTI4 6
-EQI4 $802
-ADDRGP4 $795
+EQI4 $801
+ADDRGP4 $794
 JUMPV
-LABELV $797
+LABELV $796
 line 1837
 ;1836:		case 3: // #rgb
 ;1837:			color[0] = hex[0] << 4 | hex[0];
@@ -11697,9 +11673,9 @@ CVUU1 4
 ASGNU1
 line 1840
 ;1840:			break;
-ADDRGP4 $796
+ADDRGP4 $795
 JUMPV
-LABELV $802
+LABELV $801
 line 1842
 ;1841:		case 6: // #rrggbb
 ;1842:			color[0] = hex[0] << 4 | hex[1];
@@ -11749,24 +11725,24 @@ CVUU1 4
 ASGNU1
 line 1845
 ;1845:			break;
-ADDRGP4 $796
+ADDRGP4 $795
 JUMPV
-LABELV $795
+LABELV $794
 line 1847
 ;1846:		default: // unsupported format
 ;1847:			return qfalse;
 CNSTI4 0
 RETI4
-ADDRGP4 $783
+ADDRGP4 $782
 JUMPV
-LABELV $796
+LABELV $795
 line 1850
 ;1848:	}
 ;1849:
 ;1850:	return qtrue;
 CNSTI4 1
 RETI4
-LABELV $783
+LABELV $782
 endproc Com_GetHashColor 60 4
 import strncpy
 import strrchr
@@ -11871,6 +11847,8 @@ import com_errorMessage
 import com_errorEntered
 import com_cacheLine
 import com_frameTime
+import com_fps
+import com_maxfps
 import sys_cpuString
 import com_devmode
 import com_version
@@ -11911,6 +11889,8 @@ import Cmd_RemoveCommand
 import Cmd_AddCommand
 import Cmd_Init
 import keys
+import Key_SetOverstrikeMode
+import Key_GetOverstrikeMode
 import Key_GetKey
 import Key_GetCatcher
 import Key_SetCatcher
@@ -12088,15 +12068,15 @@ import memchr
 import memcpy
 lit
 align 1
-LABELV $754
+LABELV $753
 byte 1 41
 byte 1 0
 align 1
-LABELV $749
+LABELV $748
 byte 1 40
 byte 1 0
 align 1
-LABELV $715
+LABELV $714
 byte 1 77
 byte 1 97
 byte 1 116
@@ -12119,31 +12099,9 @@ byte 1 37
 byte 1 115
 byte 1 0
 align 1
-LABELV $535
+LABELV $534
 byte 1 94
-byte 1 49
-byte 1 37
-byte 1 115
-byte 1 44
-byte 1 32
-byte 1 108
-byte 1 105
-byte 1 110
-byte 1 101
-byte 1 32
-byte 1 37
-byte 1 108
-byte 1 117
-byte 1 58
-byte 1 32
-byte 1 37
-byte 1 115
-byte 1 10
-byte 1 0
-align 1
-LABELV $531
-byte 1 94
-byte 1 49
+byte 1 51
 byte 1 87
 byte 1 65
 byte 1 82
@@ -12172,15 +12130,44 @@ byte 1 115
 byte 1 10
 byte 1 0
 align 1
-LABELV $523
+LABELV $530
+byte 1 94
+byte 1 49
+byte 1 69
+byte 1 82
+byte 1 82
+byte 1 79
+byte 1 82
+byte 1 58
+byte 1 32
+byte 1 37
+byte 1 115
+byte 1 44
+byte 1 32
+byte 1 108
+byte 1 105
+byte 1 110
+byte 1 101
+byte 1 32
+byte 1 37
+byte 1 108
+byte 1 117
+byte 1 58
+byte 1 32
+byte 1 37
+byte 1 115
+byte 1 10
+byte 1 0
+align 1
+LABELV $522
 byte 1 37
 byte 1 115
 byte 1 0
 align 1
-LABELV $521
+LABELV $520
 byte 1 0
 align 1
-LABELV $510
+LABELV $509
 byte 1 94
 byte 1 51
 byte 1 67
@@ -12220,7 +12207,7 @@ byte 1 117
 byte 1 10
 byte 1 0
 align 1
-LABELV $507
+LABELV $506
 byte 1 67
 byte 1 111
 byte 1 109
@@ -12257,7 +12244,7 @@ byte 1 101
 byte 1 114
 byte 1 0
 align 1
-LABELV $502
+LABELV $501
 byte 1 67
 byte 1 111
 byte 1 109
@@ -12283,7 +12270,7 @@ byte 1 115
 byte 1 116
 byte 1 0
 align 1
-LABELV $336
+LABELV $335
 byte 1 78
 byte 1 95
 byte 1 115
@@ -12314,7 +12301,7 @@ byte 1 101
 byte 1 100
 byte 1 0
 align 1
-LABELV $285
+LABELV $284
 byte 1 78
 byte 1 95
 byte 1 115
@@ -12338,7 +12325,7 @@ byte 1 110
 byte 1 116
 byte 1 0
 align 1
-LABELV $282
+LABELV $281
 byte 1 78
 byte 1 95
 byte 1 115
@@ -12361,7 +12348,7 @@ byte 1 114
 byte 1 99
 byte 1 0
 align 1
-LABELV $279
+LABELV $278
 byte 1 78
 byte 1 95
 byte 1 115
@@ -12385,7 +12372,7 @@ byte 1 115
 byte 1 116
 byte 1 0
 align 1
-LABELV $275
+LABELV $274
 byte 1 32
 byte 1 46
 byte 1 46

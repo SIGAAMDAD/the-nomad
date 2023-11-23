@@ -21,7 +21,7 @@ typedef enum : uint64_t
 
 typedef struct stringHash_s {
     const char *name;
-    char value[MAX_STRING_CHARS];
+    char value[1024];
     language_t lang;
 } stringHash_t;
 

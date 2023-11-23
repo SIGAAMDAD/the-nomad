@@ -1,6 +1,7 @@
 
 // sg_syscalls.c: this file is only included in development dll builds, the .asm file is used instead when building the VM file
 #include "../rendercommon/r_public.h"
+#include "sg_imgui.h"
 #include "../game/g_game.h"
 #include "sg_local.h"
 
@@ -235,3 +236,264 @@ fileOffset_t trap_FS_FileTell( file_t f )
 {
     return vmi.trap_FS_FileTell(f);
 }
+
+int ImGui_BeginWindow( ImGuiWindow *pWindow )
+{
+    return vmi.ImGui_BeginWindow( pWindow );
+}
+
+void ImGui_EndWindow( void )
+{
+    vmi.ImGui_EndWindow();
+}
+
+int ImGui_IsWindowCollapsed( void )
+{
+    return vmi.ImGui_IsWindowCollapsed();
+}
+
+void ImGui_SetWindowCollapsed( int bCollapsed )
+{
+    vmi.ImGui_SetWindowCollapsed( bCollapsed );
+}
+
+void ImGui_SetWindowPos( float x, float y )
+{
+    vmi.ImGui_SetWindowPos( x, y );
+}
+
+void ImGui_SetWindowSize( float w, float h )
+{
+    vmi.ImGui_SetWindowSize( w, h );
+}
+
+void ImGui_SetWindowFontScale( float scale )
+{
+    vmi.ImGui_SetWindowFontScale( scale );
+}
+
+int ImGui_BeginMenu( const char *pLabel )
+{
+    return vmi.ImGui_BeginMenu( pLabel );
+}
+
+void ImGui_EndMenu( void )
+{
+    vmi.ImGui_EndMenu();
+}
+
+int ImGui_MenuItem( ImGuiMenuItem *pItem )
+{
+    return vmi.ImGui_MenuItem( pItem );
+}
+
+void ImGui_SetItemTooltipUnformatted( const char *pTooltip )
+{
+    vmi.ImGui_SetItemTooltipUnformatted( pTooltip );
+}
+
+int ImGui_BeginTable( const char *pLabel, uint32_t nColumns )
+{
+    return vmi.ImGui_BeginTable( pLabel, nColumns );
+}
+
+void ImGui_TableNextRow( void )
+{
+    vmi.ImGui_TableNextRow();
+}
+
+void ImGui_TableNextColumn( void )
+{
+    vmi.ImGui_TableNextColumn();
+}
+
+void ImGui_EndTable( void )
+{
+    vmi.ImGui_EndTable();
+}
+
+int ImGui_InputText( ImGuiInputText *pInput )
+{
+    return vmi.ImGui_InputText( pInput );
+}
+
+int ImGui_InputTextMultiline( ImGuiInputText *pInput )
+{
+    return vmi.ImGui_InputTextMultiline( pInput );
+}
+
+int ImGui_InputTextWithHint( ImGuiInputTextWithHint *pInput )
+{
+    return vmi.ImGui_InputTextWithHint( pInput );
+}
+
+int ImGui_InputFloat( ImGuiInputFloat *pInput )
+{
+    return vmi.ImGui_InputFloat( pInput );
+}
+
+int ImGui_InputFloat2( ImGuiInputFloat2 *pInput )
+{
+    return vmi.ImGui_InputFloat2( pInput );
+}
+
+int ImGui_InputFloat3( ImGuiInputFloat3 *pInput )
+{
+    return vmi.ImGui_InputFloat3( pInput );
+}
+
+int ImGui_InputFloat4( ImGuiInputFloat4 *pInput )
+{
+    return vmi.ImGui_InputFloat4( pInput );
+}
+
+int ImGui_InputInt( ImGuiInputInt *pInput )
+{
+    return vmi.ImGui_InputInt( pInput );
+}
+
+int ImGui_InputInt2( ImGuiInputInt2 *pInput )
+{
+    return vmi.ImGui_InputInt2( pInput );
+}
+
+int ImGui_InputInt3( ImGuiInputInt3 *pInput )
+{
+    return vmi.ImGui_InputInt3( pInput );
+}
+
+int ImGui_InputInt4( ImGuiInputInt4 *pInput )
+{
+    return vmi.ImGui_InputInt4( pInput );
+}
+
+int ImGui_SliderFloat( ImGuiSliderFloat *pSlider )
+{
+    return vmi.ImGui_SliderFloat( pSlider );
+}
+
+int ImGui_SliderFloat2( ImGuiSliderFloat2 *pSlider )
+{
+    return vmi.ImGui_SliderFloat2( pSlider );
+}
+
+int ImGui_SliderFloat3( ImGuiSliderFloat3 *pSlider )
+{
+    return vmi.ImGui_SliderFloat3( pSlider );
+}
+
+int ImGui_SliderFloat4( ImGuiSliderFloat4 *pSlider )
+{
+    return vmi.ImGui_SliderFloat4( pSlider );
+}
+
+int ImGui_SliderInt( ImGuiSliderInt *pSlider )
+{
+    return vmi.ImGui_SliderInt( pSlider );
+}
+
+int ImGui_SliderInt2( ImGuiSliderInt2 *pSlider )
+{
+    return vmi.ImGui_SliderInt2( pSlider );
+}
+
+int ImGui_SliderInt3( ImGuiSliderInt3 *pSlider )
+{
+    return vmi.ImGui_SliderInt3( pSlider );
+}
+
+int ImGui_SliderInt4( ImGuiSliderInt4 *pSlider )
+{
+    return vmi.ImGui_SliderInt4( pSlider );
+}
+
+int ImGui_ColorEdit3( ImGuiColorEdit3 *pEdit )
+{
+    return vmi.ImGui_ColorEdit3( pEdit );
+}
+
+int ImGui_ColorEdit4( ImGuiColorEdit4 *pEdit )
+{
+    return vmi.ImGui_ColorEdit4( pEdit );
+}
+
+int ImGui_ArrowButton( const char *pLabel, ImGuiDir dir )
+{
+    return vmi.ImGui_ArrowButton( pLabel, dir );
+}
+
+int ImGui_Checkbox( ImGuiCheckbox *pCheckbox )
+{
+    return vmi.ImGui_Checkbox( pCheckbox );
+}
+
+int ImGui_Button( const char *pLabel )
+{
+    return vmi.ImGui_Button( pLabel );
+}
+
+float ImGui_GetFontScale( void )
+{
+    return vmi.ImGui_GetFontScale();
+}
+
+void ImGui_SetCursorPos( float x, float y )
+{
+    vmi.ImGui_SetCursorPos( x, y );
+}
+
+void ImGui_GetCursorPos( float *x, float *y )
+{
+    vmi.ImGui_GetCursorPos( x, y );
+}
+
+void ImGui_SetCursorScreenPos( float x, float y )
+{
+    vmi.ImGui_SetCursorScreenPos( x, y );
+}
+
+void ImGui_GetCursorScreenPos( float *x, float *y )
+{
+    vmi.ImGui_GetCursorScreenPos( x, y );
+}
+
+void ImGui_PushColor( ImGuiCol index, const vec4_t color )
+{
+    vmi.ImGui_PushColor( index, color );
+}
+
+void ImGui_PopColor( void )
+{
+    vmi.ImGui_PopColor();
+}
+
+void ImGui_NewLine( void )
+{
+    vmi.ImGui_NewLine();
+}
+
+void ImGui_SeparatorText( const char *pText )
+{
+    vmi.ImGui_SeparatorText( pText );
+}
+
+void ImGui_Separator( void )
+{
+    vmi.ImGui_Separator();
+}
+
+void ImGui_ProgressBar( float fraction )
+{
+    vmi.ImGui_ProgressBar( fraction );
+}
+
+void ImGui_TextUnformatted( const char *pText )
+{
+    vmi.ImGui_TextUnformatted( pText );
+}
+
+void ImGui_ColoredTextUnformatted( const vec4_t pColor, const char *pText )
+{
+    vmi.ImGui_ColoredTextUnformatted( pColor, pText );
+}
+

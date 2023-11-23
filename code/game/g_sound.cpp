@@ -63,7 +63,7 @@ public:
 
     void Init( void );
     void Shutdown( void );
-    bool LoadFile( const char *npath, int tag );
+    bool LoadFile( const char *npath, int64_t tag );
 
     void SetVolume( void );
 
@@ -84,7 +84,7 @@ public:
 
     CSoundSource *m_pNext;
 private:
-    int FileFormat( const char *ext ) const;
+    int64_t FileFormat( const char *ext ) const;
     void Alloc( void );
     ALenum Format( void ) const;
 
@@ -122,12 +122,14 @@ public:
     void StopSound( CSoundSource *snd );
     void LoopTrack( CSoundSource *snd );
     void DisableSounds( void );
-    void Update( int msec );
+    void Update( int64_t msec );
 
-    void UpdateParm( int tag );
+    GDR_INLINE CSoundSource **GetSources( void ) { return m_pSources; }
+
+    void UpdateParm( int64_t tag );
 
     void AddSourceToHash( CSoundSource *src );
-    CSoundSource *InitSource( const char *filename, int tag );
+    CSoundSource *InitSource( const char *filename, int64_t tag );
 
     GDR_INLINE uint64_t NumSources( void ) const { return m_nSources; }
     GDR_INLINE CSoundSource *GetSource( sfxHandle_t handle ) { return m_pSources[handle]; }
@@ -212,12 +214,12 @@ void CSoundSource::Shutdown( void )
         }
 
         ALCall(alSourcei( m_iSource, AL_BUFFER, AL_NONE ));
-        ALCall(alDeleteSources( 1, (const ALuint *)&m_iSource ));
+        ALCall(alDeleteSources( 1, &m_iSource ));
 
         m_iSource = 0;
     }
     if (m_iBuffer) {
-        ALCall(alDeleteBuffers( 1, (const ALuint *)&m_iBuffer ));
+        ALCall(alDeleteBuffers( 1, &m_iBuffer ));
 
         m_iBuffer = 0;
     }
@@ -247,7 +249,7 @@ ALenum CSoundSource::Format( void ) const
     return m_hFData.channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
 }
 
-int CSoundSource::FileFormat( const char *ext ) const
+int64_t CSoundSource::FileFormat( const char *ext ) const
 {
     if (!N_stricmp( ext, "wav" )) {
         return SF_FORMAT_WAV;
@@ -344,7 +346,7 @@ static sf_count_t SndFile_GetFileLen(void *file) {
     return FS_FileLength(*(file_t *)file);
 }
 
-static sf_count_t SndFile_Seek(sf_count_t offset, int whence, void *file) {
+static sf_count_t SndFile_Seek(sf_count_t offset, int64_t whence, void *file) {
     file_t f = *(file_t *)file;
     switch (whence) {
     case SEEK_SET:
@@ -360,7 +362,7 @@ static sf_count_t SndFile_Seek(sf_count_t offset, int whence, void *file) {
     return 0; // quiet compiler warning
 }
 
-bool CSoundSource::LoadFile( const char *npath, int tag )
+bool CSoundSource::LoadFile( const char *npath, int64_t tag )
 {
     SNDFILE *sf;
     SF_VIRTUAL_IO vio;
@@ -381,7 +383,7 @@ bool CSoundSource::LoadFile( const char *npath, int tag )
     N_strncpyz( m_pName, npath, sizeof(m_pName) );
 
     length = FS_LoadFile( npath, &buffer );
-
+    
     // hash it so that if we try loading it
     // even if it's failed, we won't try loading
     // it again
@@ -390,7 +392,7 @@ bool CSoundSource::LoadFile( const char *npath, int tag )
     fp = tmpfile();
     AssertMsg( fp, "Failed to open temprorary file!" );
 
-#if 0
+/*
     vio.get_filelen = SndFile_GetFileLen;
     vio.write = NULL; // no need for this
     vio.read = SndFile_Read;
@@ -402,17 +404,16 @@ bool CSoundSource::LoadFile( const char *npath, int tag )
         Con_Printf(COLOR_YELLOW "WARNING: libsndfile sf_open_virtual failed on '%s', sf_sterror(): %s\n", npath, sf_strerror( sf ));
         return false;
     }
-#else
+*/
     fwrite( buffer, length, 1, fp );
     fseek( fp, 0L, SEEK_SET );
-
+    
     sf = sf_open_fd( fileno(fp), SFM_READ, &m_hFData, SF_FALSE );
     if (!sf) {
         Con_Printf( COLOR_YELLOW "WARNING: libsndfile sf_open_fd failed on '%s', sf_strerror(): %s\n", npath, sf_strerror( sf ) );
         return false;
     }
-#endif
-
+    
     // allocate the buffer
     Alloc();
 
@@ -536,6 +537,7 @@ void CSoundManager::Restart( void )
 
     // reload all sources
     for (uint64_t i = 0; i < m_nSources; i++) {
+        m_pSources[i]->Init();
         m_pSources[i]->LoadFile( m_pSources[i]->GetName(), m_pSources[i]->GetTag() );
     }
 }
@@ -545,7 +547,7 @@ void CSoundManager::Restart( void )
 // NOTE: even if sound and music is disabled, we'll still allocate the memory,
 // we just won't play any of the sources
 //
-CSoundSource *CSoundManager::InitSource( const char *filename, int tag )
+CSoundSource *CSoundManager::InitSource( const char *filename, int64_t tag )
 {
     CSoundSource *src;
     nhandle_t hash;
@@ -595,7 +597,7 @@ CSoundSource *CSoundManager::InitSource( const char *filename, int tag )
     return src;
 }
 
-void CSoundManager::UpdateParm( int tag )
+void CSoundManager::UpdateParm( int64_t tag )
 {
     for (uint64_t i = 0; i < m_nSources; i++) {
         if (m_pSources[i]->GetTag() == tag) {
@@ -613,7 +615,7 @@ void CSoundManager::DisableSounds( void ) {
 
 void Snd_DisableSounds(void) {
     sndManager->DisableSounds();
-//    ALCall(alListenerf( AL_GAIN, 0.0f ));
+    ALCall(alListenerf( AL_GAIN, 0.0f ));
 }
 
 void Snd_StopAll(void) {
@@ -823,14 +825,23 @@ void Snd_Update( int msec )
     }
 }
 
+static void Snd_ListFiles_f( void )
+{
+    Con_Printf( "\n---------- Snd_ListFiles_f ----------\n" );
+    Con_Printf( "Total sound files loaded: %lu\n", sndManager->NumSources() );
+
+    for (uint64_t i = 0; i < sndManager->NumSources(); i++) {
+        Con_Printf( "[Sound File #%lu]\n", i );
+        Con_Printf( "path: %s\n", sndManager->GetSources()[i]->GetName() );
+    }
+}
+
 void Snd_Init(void)
 {
     snd_sfxon = Cvar_Get("snd_sfxon", "1", CVAR_SAVE | CVAR_PRIVATE | CVAR_LATCH);
     snd_musicon = Cvar_Get("snd_musicon", "1", CVAR_SAVE | CVAR_PRIVATE | CVAR_LATCH);
     snd_sfxvol = Cvar_Get("snd_sfxvol", "1.1f", CVAR_SAVE | CVAR_PRIVATE | CVAR_LATCH);
     snd_musicvol = Cvar_Get("snd_musicvol", "0.8f", CVAR_SAVE | CVAR_PRIVATE | CVAR_LATCH);
-
-    alListenerf( AL_GAIN,  50.0f );
 
     Con_Printf("---------- Snd_Init ----------\n");
 

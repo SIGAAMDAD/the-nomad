@@ -109,6 +109,7 @@ GDR_EXPORT void RE_BeginScene(const renderSceneRef_t *fd)
     rg.refdef.width = fd->width;
     rg.refdef.height = fd->height;
     rg.refdef.flags = fd->flags;
+	rg.refdef.camData = fd->camera;
 
 	rg.refdef.numDrawSurfs = r_firstSceneDrawSurf;
 	rg.refdef.drawSurfs = backendData->drawSurfs;
@@ -159,7 +160,7 @@ GDR_EXPORT void RE_RenderScene(const renderSceneRef_t *fd)
     parms.viewportWidth = rg.refdef.width;
     parms.viewportHeight = rg.refdef.height;
 
-    R_RenderView(&parms, rg.refdef.flags & RSF_USE_ORTHO_UI);
+    R_RenderView(&parms);
 
     RE_EndScene();
 }
@@ -191,8 +192,9 @@ static void RB_CheckVao(vertexBuffer_t *buf)
 
 		VBO_Bind(buf);
 	}
-	if (buf != drawBuf.buf)
+	if (buf != drawBuf.buf) {
 		drawBuf.useInternalVao = qfalse;
+	}
 }
 
 void R_AddPolySurfs(void)
@@ -326,7 +328,6 @@ void RB_InstantQuad(vec4_t quadVerts[4])
 	RB_InstantQuad2(quadVerts, texCoords);
 }
 
-#if 0
 qboolean RB_SurfaceVaoCached(uint32_t numVerts, drawVert_t *verts, uint32_t numIndices, glIndex_t *indices)
 {
 	qboolean recycleVertexBuffer = qfalse;
@@ -363,7 +364,6 @@ qboolean RB_SurfaceVaoCached(uint32_t numVerts, drawVert_t *verts, uint32_t numI
 
 	return qtrue;
 }
-#endif
 
 static void RB_SurfacePolychain(const srfPoly_t *p)
 {
@@ -405,7 +405,33 @@ static void RB_SurfacePolychain(const srfPoly_t *p)
 
 static void RB_SurfaceTile(const srfTile_t *tile)
 {
-//	RB_SurfaceVaoCached(4, tile->verts, 6, tile->indices);
+	glIndex_t *idx;
+	float *xyz, *texcoords;
+	drawVert_t *dv;
+	uint64_t i, numVerts, numIndices;
+
+	numVerts = tile->numTiles * 4;
+	numIndices = tile->numTiles * 6;
+
+	if (RB_SurfaceVaoCached( numVerts, tile->vertices, numIndices, tile->indices )) {
+		return;
+	}
+
+	RB_CheckVao( drawBuf.buf );
+	RB_CheckOverflow( tile->numTiles * 4, tile->numTiles * 6 );
+
+	drawBuf.numIndices += numIndices;
+
+	dv = tile->vertices;
+	xyz = drawBuf.xyz[drawBuf.numVertices];
+	texcoords = drawBuf.texCoords[drawBuf.numVertices];
+
+	for (i = 0; i < numVerts; i++, dv++, xyz += 3, texcoords += 2) {
+		VectorCopy( xyz, dv->xyz );
+		VectorCopy2( texcoords, dv->uv );
+	}
+
+	drawBuf.numVertices += numVerts;
 }
 
 static void RB_SurfaceBad(void *) {

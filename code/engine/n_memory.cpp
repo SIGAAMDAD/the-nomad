@@ -27,8 +27,8 @@ meant for temp engine system allocations. Used by allocation callbacks. Blocks c
 
 #define GB(x) (1024*1024*1024*((x)*0.5))
 
-#define HUNK_DEFSIZE 64
-#define HUNK_MINSIZE 48
+#define HUNK_DEFSIZE 1024
+#define HUNK_MINSIZE 72
 
 // tunables
 #define USE_MEMSTATIC
@@ -1181,7 +1181,7 @@ uint64_t Hunk_MemoryRemaining( void )
 }
 
 /*
-Hunk_SetMark: gets called after the level and game vm have been loaded
+Hunk_SetMark: gets called after level and game vm have been loaded
 */
 void Hunk_SetMark( void )
 {

@@ -808,6 +808,7 @@ void AxisCopy( vec3_t in[3], vec3_t out[3] );
 //void SetPlaneSignbits( struct cplane_s *out );
 //int BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, struct cplane_s *plane);
 
+float disBetweenOBJ(const vec3_t src, const vec3_t tar);
 qboolean BoundsIntersect(const vec3_t mins, const vec3_t maxs,
 		const vec3_t mins2, const vec3_t maxs2);
 qboolean BoundsIntersectSphere(const vec3_t mins, const vec3_t maxs,
@@ -831,7 +832,6 @@ void RotateAroundDirection( vec3_t axis[3], float yaw );
 void MakeNormalVectors( const vec3_t forward, vec3_t right, vec3_t up );
 // perpendicular vector could be replaced by this
 
-//int	PlaneTypeForNormal (vec3_t normal);
 char *COM_SkipPath (char *pathname);
 void MatrixMultiply(float in1[3][3], float in2[3][3], float out[3][3]);
 void AngleVectors( const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
@@ -1099,6 +1099,8 @@ inline type* PADP(type *base, alignment align)
 #define LUMA( red, green, blue ) ( 0.2126f * ( red ) + 0.7152f * ( green ) + 0.0722f * ( blue ) )
 
 // extra debug stuff
+#ifndef Q3_VM
 #include "n_debug.h"
+#endif
 
 #endif

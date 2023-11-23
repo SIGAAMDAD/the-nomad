@@ -43,7 +43,7 @@ typedef struct
 
     nhandle_t background0;
     nhandle_t background1;
-    nhandle_t ambience;
+    sfxHandle_t ambience;
 
     const stringHash_t *spString;
     const stringHash_t *settingsString;
@@ -95,10 +95,10 @@ void MainMenu_Draw( void )
         NewGame_DrawNameIssue();
     }
 
-    ImGui::Begin( "MainMenu", NULL, windowFlags );
-    ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-    ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth / 2, (float)menu.menuHeight ) );
     if (ui->GetState() == STATE_MAIN) {
+        ImGui::Begin( "MainMenu", NULL, windowFlags );
+        ImGui::SetWindowPos( ImVec2( 0, 0 ) );
+        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth / 2, (float)menu.menuHeight ) );
         ui->Menu_Title( "MAIN MENU" );
 
         const ImVec2 mousePos = ImGui::GetCursorScreenPos();
@@ -126,26 +126,39 @@ void MainMenu_Draw( void )
             Sys_Exit( 1 );
         }
         ImGui::EndTable();
+
+        ImGui::End();
     }
     else if (ui->GetState() >= STATE_SINGLEPLAYER && ui->GetState() <= STATE_PLAYMISSION) {
+        ImGui::Begin( "MainMenu", NULL, windowFlags );
+        ImGui::SetWindowPos( ImVec2( 0, 0 ) );
+        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth / 2, (float)menu.menuHeight ) );
         SinglePlayerMenu_Draw();
+        ImGui::End();
     }
     else if (ui->GetState() >= STATE_SETTINGS && ui->GetState() <= STATE_AUDIO) {
+        ImGui::Begin( "MainMenu", NULL, windowFlags );
+        ImGui::SetWindowPos( ImVec2( 0, 0 ) );
+        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth / 2, (float)menu.menuHeight ) );
         SettingsMenu_Draw();
+        ImGui::End();
     }
     else if (ui->GetState() == STATE_CREDITS) {
+        ImGui::Begin( "MainMenu", NULL, windowFlags );
+        ImGui::SetWindowPos( ImVec2( 0, 0 ) );
+        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth / 2, (float)menu.menuHeight ) );
         ui->EscapeMenuToggle( STATE_MAIN );
         if (ui->Menu_Title( "CREDITS" )) {
             ui->SetState( STATE_MAIN );
         }
         else {
             ImGui::TextUnformatted( creditsString );
+            ImGui::End();
         }
     }
     else {
-        N_Error(ERR_DROP, "Inavlid UI State"); // should NEVER happen
+        N_Error(ERR_FATAL, "Invalid UI State"); // should NEVER happen
     }
-    ImGui::End();
 }
 
 void MainMenu_Cache( void )
@@ -161,7 +174,7 @@ void MainMenu_Cache( void )
 
     menu.menu.Draw = MainMenu_Draw;
 
-    menu.ambience = Snd_RegisterTrack( "track00.ogg" );
+    menu.ambience = Snd_RegisterTrack( "music/track00.ogg" );
 
     menu.settingsString = strManager->ValueForKey("MENU_MAIN_SETTINGS");
 

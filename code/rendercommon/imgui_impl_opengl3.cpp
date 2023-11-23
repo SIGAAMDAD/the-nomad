@@ -229,6 +229,7 @@ struct ImGui_ImplOpenGL3_Data
     GLuint FontTexture;
     GLuint ShaderHandle;
     GLint AttribLocationTex; // Uniforms location
+    GLint AttribLocationGamma;
     GLint AttribLocationProjMtx;
     GLuint AttribLocationVtxPos; // Vertex attributes location
     GLuint AttribLocationVtxUV;
@@ -245,6 +246,7 @@ struct ImGui_ImplOpenGL3_Data
 static GLuint imguiShader;
 static ImGui_ImplOpenGL3_Data *bd;
 imguiGL3Import_t renderImport;
+static cvar_t *r_gammaAmount;
 
 // Backend data stored in io.BackendRendererUserData to allow support for multiple Dear ImGui contexts
 // It is STRONGLY preferred that you use docking branch with multi-viewports (== single Dear ImGui context + multiple windows) instead of multiple Dear ImGui contexts.
@@ -306,6 +308,8 @@ void ImGui_ImplOpenGL3_Init(void *shaderData, const char *glsl_version, const im
     memset(bd, 0, sizeof(*bd));
     io.BackendRendererUserData = (void *)bd;
     io.BackendRendererName = "imgui_impl_opengl3";
+
+    r_gammaAmount = Cvar_Get("r_gammaAmount", "1", CVAR_SAVE | CVAR_LATCH);
 
     // Query for GL version (e.g. 320 for GL 3.2)
 #if defined(IMGUI_IMPL_OPENGL_ES2)
@@ -467,6 +471,7 @@ static void ImGui_ImplOpenGL3_SetupRenderState(ImDrawData *draw_data, int fb_wid
     };
     renderImport.glUseProgram(imguiShader);
     renderImport.glUniform1i(bd->AttribLocationTex, 0);
+    renderImport.glUniform1f(bd->AttribLocationGamma, r_gammaAmount->f);
 
     renderImport.glUniformMatrix4fv(bd->AttribLocationProjMtx, 1, GL_FALSE, &ortho_projection[0][0]);
 
@@ -807,6 +812,7 @@ int ImGui_ImplOpenGL3_CreateDeviceObjects(void)
 
     bd->AttribLocationTex = renderImport.glGetUniformLocation(imguiShader, "u_DiffuseMap");
     bd->AttribLocationProjMtx = renderImport.glGetUniformLocation(imguiShader, "u_ModelViewProjection");
+    bd->AttribLocationGamma = renderImport.glGetUniformLocation(imguiShader, "u_GammaAmount");
     bd->AttribLocationVtxPos = (GLuint)renderImport.glGetAttribLocation(imguiShader, "a_Position");
     bd->AttribLocationVtxUV = (GLuint)renderImport.glGetAttribLocation(imguiShader, "a_TexCoord");
     bd->AttribLocationVtxColor = (GLuint)renderImport.glGetAttribLocation(imguiShader, "a_Color");

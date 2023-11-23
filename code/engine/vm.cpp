@@ -23,6 +23,7 @@
 #include "vm_local.h"
 #include "../game/g_game.h"
 #include "../game/g_sound.h"
+#include "../game/g_vmimgui.h"
 
 /******************************************************************************
  * DEFINES
@@ -475,6 +476,60 @@ static void VM_FillImport(vmRefImport_t *import, const char *name)
 	import->trap_FS_FileLength = FS_FileLength;
 
 	import->G_LoadMap = G_LoadMap;
+
+	import->ImGui_BeginWindow = ImGui_BeginWindow;
+	import->ImGui_EndWindow = ImGui_EndWindow;
+    import->ImGui_SetWindowCollapsed = ImGui_SetWindowCollapsed;
+    import->ImGui_SetWindowPos = ImGui_SetWindowPos;
+    import->ImGui_SetWindowSize = ImGui_SetWindowSize;
+    import->ImGui_SetWindowFontScale = ImGui_SetWindowFontScale;
+    import->ImGui_EndMenu = ImGui_EndMenu;
+    import->ImGui_SetItemTooltipUnformatted = ImGui_SetItemTooltip;
+    import->ImGui_TableNextRow = ImGui_TableNextRow;
+    import->ImGui_TableNextColumn = ImGui_TableNextColumn;
+    import->ImGui_EndTable = ImGui_EndTable;
+    import->ImGui_SetCursorPos = ImGui_SetCursorPos;
+    import->ImGui_GetCursorPos = ImGui_GetCursorPos;
+    import->ImGui_SetCursorScreenPos = ImGui_SetCursorScreenPos;
+    import->ImGui_GetCursorScreenPos = ImGui_GetCursorScreenPos;
+    import->ImGui_PushColor = ImGui_PushColor;
+    import->ImGui_PopColor = ImGui_PopColor;
+    import->ImGui_NewLine = ImGui_NewLine;
+    import->ImGui_SeparatorText = ImGui_SeparatorText;
+    import->ImGui_Separator = ImGui_Separator;
+    import->ImGui_ProgressBar = ImGui_ProgressBar;
+    import->ImGui_TextUnformatted = ImGui_Text;
+    import->ImGui_ColoredTextUnformatted = ImGui_ColoredText;
+    import->ImGui_GetFontScale = ImGui_GetFontScale;
+    import->ImGui_InputText = ImGui_InputText;
+    import->ImGui_InputTextMultiline = ImGui_InputTextMultiline;
+    import->ImGui_InputTextWithHint = ImGui_InputTextWithHint;
+    import->ImGui_InputFloat = ImGui_InputFloat;
+    import->ImGui_InputFloat2 = ImGui_InputFloat2;
+    import->ImGui_InputFloat3 = ImGui_InputFloat3;
+    import->ImGui_InputFloat4 = ImGui_InputFloat4;
+    import->ImGui_InputInt = ImGui_InputInt;
+    import->ImGui_InputInt2 = ImGui_InputInt2;
+    import->ImGui_InputInt3 = ImGui_InputInt3;
+    import->ImGui_InputInt4 = ImGui_InputInt4;
+    import->ImGui_SliderFloat = ImGui_SliderFloat;
+    import->ImGui_SliderFloat2 = ImGui_SliderFloat2;
+    import->ImGui_SliderFloat3 = ImGui_SliderFloat3;
+    import->ImGui_SliderFloat4 = ImGui_SliderFloat4;
+    import->ImGui_SliderInt = ImGui_SliderInt;
+    import->ImGui_SliderInt2 = ImGui_SliderInt2;
+    import->ImGui_SliderInt3 = ImGui_SliderInt3;
+    import->ImGui_SliderInt4 = ImGui_SliderInt4;
+    import->ImGui_ColorEdit3 = ImGui_ColorEdit3;
+    import->ImGui_ColorEdit4 = ImGui_ColorEdit4;
+    import->ImGui_ArrowButton = ImGui_ArrowButton;
+    import->ImGui_Checkbox = ImGui_Checkbox;
+    import->ImGui_Button = ImGui_Button;
+    import->ImGui_IsWindowCollapsed = ImGui_IsWindowCollapsed;
+    import->ImGui_MenuItem = ImGui_MenuItem;
+    import->ImGui_BeginWindow = ImGui_BeginWindow;
+    import->ImGui_BeginTable = ImGui_BeginTable;
+    import->ImGui_BeginMenu = ImGui_BeginMenu;
 }
 
 /*

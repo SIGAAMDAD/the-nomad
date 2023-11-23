@@ -25,86 +25,10 @@ void R_GLDebug_Callback_ARB(GLenum source, GLenum type, GLuint id, GLenum severi
 
 char gl_extensions[32768];
 
-#if 0
-cvar_t *r_experimental; // do we want experimental features?
-cvar_t *r_colorMipLevels;
-cvar_t *r_glDebug;
-cvar_t *r_genNormalMaps;
-cvar_t *r_printShaders;
-cvar_t *vid_xpos;
-cvar_t *vid_ypos;
-cvar_t *r_allowSoftwareGL;
-cvar_t *r_displayRefresh;
-cvar_t *r_fullscreen;
-cvar_t *r_customWidth;
-cvar_t *r_customHeight;
-cvar_t *r_aspectRatio;
-cvar_t *r_driver;
-cvar_t *r_drawFPS;
-cvar_t *r_swapInterval;
-cvar_t *r_mode;
-cvar_t *r_customPixelAspect;
-cvar_t *r_colorBits;
-cvar_t *r_stencilBits;
-cvar_t *r_depthBits;
-cvar_t *r_stereoEnabled;
-cvar_t *r_allowShaders;
-cvar_t *r_clear;
-cvar_t *r_ignoreGLErrors;
-cvar_t *r_ignorehwgamma;
-cvar_t *r_gammaAmount;
-cvar_t *r_drawMode;
-cvar_t *r_allowLegacy;
-cvar_t *r_useExtensions;
-cvar_t *r_crashOnFailedProc;
-cvar_t *r_measureOverdraw;
-cvar_t *r_finish;
-cvar_t *r_textureFiltering;
-cvar_t *r_textureDetail;
-cvar_t *r_multisampleType;
-cvar_t *r_multisampleAmount;
-cvar_t *r_hdr;
-cvar_t *r_ssao; // screen space ambient occlusion
-cvar_t *r_drawBuffer;
-cvar_t *r_speeds;
-cvar_t *r_maxPolyVerts;
-cvar_t *r_maxPolys;
-cvar_t *r_drawWorld;
-cvar_t *r_externalGLSL;
-cvar_t *r_skipBackEnd;
-cvar_t *r_ignoreDstAlpha;
-cvar_t *r_znear;
-cvar_t *r_depthPrepass;
-cvar_t *r_textureBits;
-cvar_t *r_greyscale;
-cvar_t *r_roundImagesDown;
-cvar_t *r_imageUpsampleMaxSize;
-cvar_t *r_imageUpsample;
-cvar_t *r_imageUpsampleType;
-cvar_t *r_picmip;
-cvar_t *r_overBrightBits;
-cvar_t *r_intensity;
-cvar_t *r_normalMapping;
-cvar_t *r_specularMapping;
-cvar_t *r_showImages;
-cvar_t *r_fullbright;
-cvar_t *r_singleShader;
-
-// GL extensions
-cvar_t *r_arb_texture_filter_anisotropic;
-cvar_t *r_arb_vertex_buffer_object;
-cvar_t *r_arb_vertex_array_object;
-cvar_t *r_arb_texture_float;
-cvar_t *r_arb_framebuffer_object;
-cvar_t *r_arb_vertex_shader;
-cvar_t *r_arb_texture_compression;
-#endif
-
 cvar_t *r_useExtensions;
 cvar_t *r_allowLegacy;
 cvar_t *r_allowShaders;
-cvar_t *r_multisampleType;
-cvar_t *r_multisampleAmount;
+cvar_t *r_multisample;
 cvar_t *r_overBrightBits;
 cvar_t *r_ignorehwgamma;
 cvar_t *r_normalMapping;
@@ -586,14 +510,7 @@ static void R_Register(void)
     r_allowShaders = ri.Cvar_Get("r_allowShaders", "1", CVAR_SAVE | CVAR_LATCH);
     ri.Cvar_SetDescription(r_allowShaders, "Allow the use of GLSL shaders, requires \\r_allowLegacy 0.");
 
-    r_multisampleType = ri.Cvar_Get("r_multisampleType", "1", CVAR_SAVE | CVAR_LATCH);
-    ri.Cvar_SetDescription(r_multisampleType,
-                            "Set multisampling type (requires \\r_arb_framebuffer_object 1):\n"
-                            "   0 - no multisampling\n"
-                            "   1 - MSAA, classic multisampling\n"
-                            "   2 - SSAA, super-sampling");
-    r_multisampleAmount = ri.Cvar_Get("r_multisampleAmount", "4", CVAR_SAVE | CVAR_LATCH);
-    ri.Cvar_SetDescription(r_multisampleAmount, "Set multisampling amount per pixel, requires \\r_multisampleType > 0");
+    r_multisample = ri.Cvar_Get("r_multisample", "0", CVAR_SAVE | CVAR_LATCH);
 
     r_overBrightBits = ri.Cvar_Get("r_overBrightBits", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_overBrightBits, "Sets the intensity of overall brightness of texture pixels." );
@@ -835,6 +752,7 @@ static void R_InitImGui(void)
     import.glScissor = nglScissor;
     import.glViewport = nglViewport;
     import.glUniform1i = nglUniform1i;
+    import.glUniform1f = nglUniform1f;
     import.glGetAttribLocation = nglGetAttribLocation;
     import.glGetUniformLocation = nglGetUniformLocation;
     import.glUniformMatrix4fv = nglUniformMatrix4fv;

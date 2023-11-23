@@ -233,22 +233,28 @@ typedef enum {
 } vmInterpret_t;
 
 typedef enum {
-	TRAP_MEMSET = 900,
-	TRAP_MEMCPY,
-	TRAP_STRNCPY,
-	TRAP_FLOOR,
-	TRAP_ACOS,
-	TRAP_SIN,
-	TRAP_COS,
-	TRAP_ATAN2,
-	TRAP_CEIL,
+    TRAP_MEMSET = 900,
+    TRAP_MEMCPY,
+    TRAP_MEMMOVE,
+    TRAP_MEMCHR,
+    TRAP_STRCPY,
+    TRAP_STRCHR,
+    TRAP_STRSTR,
+    TRAP_STRCMP,
+    TRAP_STRLEN,
+    TRAP_FLOOR,
+    TRAP_CEIL,
+    TRAP_ACOS,
+    TRAP_SIN,
+    TRAP_COS,
+    TRAP_ATAN2,
     TRAP_SQRT,
     TRAP_POW,
-    TRAP_STRSTR,
     TRAP_LOGF,
     TRAP_POWF,
     TRAP_SQRTF,
-    TRAP_MEMMOVE
+    TRAP_STRNCPY,
+    TRAP_STRRCHR,
 } sharedTraps_t;
 
 typedef struct vm_s

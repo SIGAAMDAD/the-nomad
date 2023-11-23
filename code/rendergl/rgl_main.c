@@ -29,14 +29,22 @@ void GDR_DECL Con_Printf(const char *fmt, ...)
 /*
 RB_MakeViewMatrix:
 */
-void RB_MakeViewMatrix( qboolean useOrthoUI )
+void RB_MakeViewMatrix( void )
 {
     float aspect, zoom;
 
-    zoom = rg.viewData.camera.zoom = 1.0f;
+    if (rg.refdef.camData) {
+        rg.viewData.camera.zoom = rg.refdef.camData->origin[2];
+        VectorCopy2( rg.viewData.camera.origin, rg.refdef.camData->origin );
+    }
+    else {
+        rg.viewData.camera.zoom = 1.0f;
+        VectorClear( rg.viewData.camera.origin );
+    }
+
+    zoom = rg.viewData.camera.zoom;
     aspect = rg.viewData.camera.aspect = glConfig.vidWidth / glConfig.vidHeight;
 
-    VectorClear(rg.viewData.camera.origin);
     Mat4Ortho(-aspect * zoom, aspect * zoom, -aspect, aspect, -1.0f, 1.0f, rg.viewData.camera.projectionMatrix);
     Mat4Identity(rg.viewData.camera.modelMatrix);
     Mat4Translation(rg.viewData.camera.origin, rg.viewData.camera.modelMatrix);
@@ -145,9 +153,61 @@ void R_AddDrawSurf(surfaceType_t *surface, shader_t *shader)
     rg.refdef.numDrawSurfs++;
 }
 
+static void R_ConvertCoords( drawVert_t *verts, vec3_t pos )
+{
+    static mat4_t model, mvp;
+    vec4_t p;
+
+    Mat4Translation( pos, model );
+    Mat4Scale( rg.viewData.camera.zoom, model, model );
+
+    Mat4Multiply( rg.viewData.camera.transformMatrix, model, mvp );
+
+    static const vec4_t positions[4] = {
+        { 0.5f,  0.5f, 0.0f, 1.0f },
+        { 0.5f, -0.5f, 0.0f, 1.0f },
+        {-0.5f, -0.5f, 0.0f, 1.0f },
+        {-0.5f,  0.5f, 0.0f, 1.0f }
+    };
+
+    VectorCopy( p, pos );
+    for (uint32_t i = 0; i < arraylen(positions); i++) {
+        Mat4Transform( mvp, positions[i], p );
+        VectorCopy( verts[i].xyz, p );
+    }
+}
+
 static void R_AddWorldSurfaces(void)
 {
     uint32_t y, x;
+    uint32_t i;
+    vec3_t p;
+    drawVert_t *verts;
+
+    if ((rg.refdef.flags & RSF_NOWORLDMODEL)) {
+        return;
+    }
+    if (!rg.world) {
+        N_Error( ERR_DROP, "R_AddWorldSurfaces: no map loaded" );
+    }
+
+    p[2] = 0;
+    verts = rg.world->surface->vertices;
+
+    for (y = 0; y < rg.world->height; y++) {
+        for (x = 0; x < rg.world->width; x++) {
+            p[0] = x - (rg.world->width * 0.5f);
+            p[1] = rg.world->height - y;
+            R_ConvertCoords( verts, p );
+
+            for (i = 0; i < 4; i++) {
+                VectorCopy2( verts[i].uv, rg.world->tiles[y * rg.world->width + x].texcoords[i] );
+            }
+
+            verts += 4;
+        }
+    }
+    R_AddDrawSurf( &rg.world->surface->surfaceType, rg.world->shader );
 }
 
 
@@ -177,7 +237,7 @@ void R_GenerateDrawSurfs(void)
     R_AddEntitySurfaces();
 }
 
-void R_RenderView(const viewData_t *parms, qboolean useOrthoUI)
+void R_RenderView(const viewData_t *parms)
 {
     uint64_t firstDrawSurf;
     uint64_t numDrawSurfs;
@@ -192,7 +252,7 @@ void R_RenderView(const viewData_t *parms, qboolean useOrthoUI)
 
     firstDrawSurf = rg.refdef.numDrawSurfs;
 
-    RB_MakeViewMatrix( useOrthoUI );
+    RB_MakeViewMatrix();
 
     R_GenerateDrawSurfs();
 

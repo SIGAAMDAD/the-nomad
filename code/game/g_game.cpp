@@ -49,6 +49,126 @@ void GLimp_Minimize( void );
 void *GL_GetProcAddress(const char *name);
 void GLimp_SetGamma(const unsigned short r[256], const unsigned short g[256], const unsigned short b[256]);
 
+static uint32_t CopyLump( void *dest, uint32_t lump, uint64_t size, mapheader_t *header )
+{
+    uint64_t length, fileofs;
+
+    length = header->lumps[lump].length;
+    fileofs = header->lumps[lump].fileofs;
+
+    if (length % size) {
+        N_Error( ERR_DROP, "CopyLump: funny lump size" );
+    }
+    memcpy( dest, (byte *)header + fileofs, length );
+
+    return length / size;
+}
+
+static qboolean G_LoadLevelFile( const char *filename, mapinfo_t *info )
+{
+    union {
+        char *b;
+        void *v;
+    } f;
+    bmf_t *header;
+    uint64_t size;
+    maptile_t *tbuf;
+    char realpath[MAX_GDR_PATH];
+
+    Com_snprintf( realpath, sizeof(realpath), "maps/%s", filename );
+
+    size = FS_LoadFile( realpath, &f.v );
+    if (!size || !f.v) {
+        Con_Printf( COLOR_YELLOW "WARNING: failed to load map file '%s'\n", filename );
+        return qfalse;
+    }
+
+    header = (bmf_t *)f.b;
+    if (size < sizeof(*header)) {
+        Con_Printf( COLOR_YELLOW "WARNING: map file '%s' isn't big enough to be a map file\n", filename );
+        return qfalse;
+    }
+    
+    if (header->ident != LEVEL_IDENT) {
+        Con_Printf( COLOR_YELLOW "WARNING: map file '%s' has bad ident\n", filename );
+        return qfalse;
+    }
+    if (header->version != LEVEL_VERSION) {
+        Con_Printf( COLOR_YELLOW "WARNING: bad map version (%i (it) != %i (this)) in file '%s'\n", header->version, LEVEL_VERSION, filename );
+        return qfalse;
+    }
+    
+    N_strncpyz( info->name, COM_SkipPath( const_cast<char *>(filename) ), sizeof(info->name) );
+
+    info->width = header->map.mapWidth;
+    info->height = header->map.mapHeight;
+
+    info->numCheckpoints = CopyLump( info->checkpoints, LUMP_CHECKPOINTS, sizeof(mapcheckpoint_t), &header->map );
+    info->numSpawns = CopyLump( info->spawns, LUMP_SPAWNS, sizeof(mapspawn_t), &header->map );
+
+    if (header->map.lumps[LUMP_TILES].length % sizeof(maptile_t)) {
+        N_Error( ERR_DROP, "G_LoadLevelFile: weird tile lump size" );
+    }
+
+    info->numTiles = header->map.lumps[LUMP_TILES].length / sizeof(maptile_t);
+    tbuf = (maptile_t *)Hunk_AllocateTempMemory( header->map.lumps[LUMP_TILES].length );
+
+    for (uint64_t i = 0; i < info->numTiles; i++) {
+        VectorCopy( info->tiles[i].pos, tbuf[i].pos );
+        VectorCopy4( info->tiles[i].color, tbuf[i].color );
+        memcpy( info->tiles[i].sides, tbuf[i].sides, sizeof(info->tiles[i].sides) );
+        info->tiles[i].flags = tbuf[i].flags;
+    }
+
+    Hunk_FreeTempMemory( tbuf );
+    Hunk_FreeTempMemory( f.v );
+
+    return qtrue;
+}
+
+static void G_InitMapCache( void )
+{
+    bmf_t header;
+    nhandle_t file;
+    mapinfo_t *info;
+
+    Con_Printf( "Caching map files...\n" );
+
+    memset( &gi.mapCache, 0, sizeof(gi.mapCache) );
+    gi.mapCache.mapList = FS_ListFiles( "maps/", ".bmf", &gi.mapCache.numMapFiles );
+
+    if (!gi.mapCache.numMapFiles) {
+        Con_Printf( "no map files to load.\n" );
+        return;
+    }
+
+    Con_Printf( "Got %lu map files\n", gi.mapCache.numMapFiles );
+
+    // allocate the info
+    gi.mapCache.infoList = (mapinfo_t *)Z_Malloc( sizeof(mapinfo_t) * gi.mapCache.numMapFiles, TAG_GAME );
+    memset( gi.mapCache.infoList, 0, sizeof(mapinfo_t) * gi.mapCache.numMapFiles );
+
+    info = gi.mapCache.infoList;
+    for (uint64_t i = 0; i < gi.mapCache.numMapFiles; i++, info++) {
+        if (!G_LoadLevelFile( gi.mapCache.mapList[i], info )) {
+            N_Error( ERR_DROP, "G_InitMapCache: failed to load map file '%s'", gi.mapCache.mapList[i] );
+        }
+    }
+}
+
+int32_t G_LoadMap( int32_t index, mapinfo_t *info )
+{
+    if (index >= gi.mapCache.numMapFiles) {
+        Con_Printf( COLOR_RED "G_LoadMap: invalid map index %i\n", index );
+        return -1;
+    }
+
+    memcpy( info, &gi.mapCache.infoList[index], sizeof(*info) );
+    gi.mapLoaded = qtrue;
+
+    return 1;
+}
+
 #if 0
 #if defined(__OS2__) || defined(_WIN32)
 static SDL_Thread *PFN_SDL_CreateThread(SDL_ThreadFunction fn, const char *name, void *data)
@@ -393,13 +513,12 @@ const vidmode_t r_vidModes[NUMVIDMODES] =
 //	{ "Mode  0: 320x240",			320,	240,	1 },
 //	{ "Mode  1: 640x480",			640,	480,	1 },
 //	{ "Mode  2: 800x600",			800,	600,	1 },
-	{ "Mode  3: 1024x768",			1024,	768,	1 },
-	{ "Mode  4: 2048x1536",			2048,	1536,	1 },
-	// extra modes:
-	{ "Mode  5: 1280x720",			1280,	720,	1 },
-	{ "Mode  6: 1600x900",			1600,	900,	1 },
-	{ "Mode  7: 1920x1080",			1920,	1080,	1 },
-	{ "Mode  8: 3840x2160",			3840,	2160,	1 },
+	{ "Mode  0: 1024x768",			1024,	768,	1 },
+	{ "Mode  1: 1280x720",			1280,	720,	1 },
+	{ "Mode  2: 1600x900",			1600,	900,	1 },
+	{ "Mode  3: 1920x1080",			1920,	1080,	1 },
+    { "Mode  4: 2048x1536",			2048,	1536,	1 },
+	{ "Mode  5: 3840x2160",			3840,	2160,	1 },
 //	{ "Mode  9: 4096x2160 (4K)",	4096,	2160,	1 }
 };
 static const int64_t numVidModes = (int64_t)arraylen( r_vidModes );
@@ -489,7 +608,7 @@ static void G_InitRef_Cvars(void)
 	r_swapInterval = Cvar_Get( "r_swapInterval", "0", CVAR_ARCHIVE_ND );
 	Cvar_SetDescription( r_swapInterval,
                         "V-blanks to wait before swapping buffers."
-                        "\n 0: No V-Sync\n 1: Synced to the monitor's refresh rate." );
+                        "\n 0: No V-Sync\n 1: Synced to the monitor's refresh rate.\n -1: Adaptive V-Sync" );
     
 	r_displayRefresh = Cvar_Get( "r_displayRefresh", "0", CVAR_LATCH );
 	Cvar_CheckRange( r_displayRefresh, "0", "500", CVT_INT );
@@ -506,9 +625,19 @@ static void G_InitRef_Cvars(void)
 	Cvar_CheckRange( vid_ypos, NULL, NULL, CVT_INT );
 	Cvar_SetDescription( vid_ypos, "Saves/sets window Y-coordinate when windowed, requires \\vid_restart." );
 
-    r_multisample = Cvar_Get("r_multisample", "2", CVAR_SAVE | CVAR_LATCH);
-    Cvar_CheckRange(r_multisample, "0", "32", CVT_INT);
-    Cvar_SetDescription(r_multisample, "Setting this to anything higher than 0 will enable anti-aliasing, must be a power of two, requires \\vid_restart.");
+    r_multisample = Cvar_Get( "r_multisample", "0", CVAR_SAVE | CVAR_LATCH );
+    Cvar_CheckRange( r_multisample, va( "%i", AntiAlias_2xMSAA ), va( "%i", AntiAlias_DSSAA ), CVT_INT );
+    Cvar_SetDescription( r_multisample,
+                            "Sets the anti-aliasing type to the desired:\n"
+                            "   0 - 2x MSAA\n"
+                            "   1 - 4x MSAA\n"
+                            "   2 - 8x MSAA\n"
+                            "   3 - 16x MSAA\n"
+                            "   4 - 32x MSAA\n"
+                            "   5 - 2x SSAA\n"
+                            "   6 - 4x SSAA\n"
+                            "   7 - Dynamic SSAA\n"
+                            "requires \\vid_restart." );
 
 	r_noborder = Cvar_Get( "r_noborder", "0", CVAR_ARCHIVE_ND | CVAR_LATCH );
 	Cvar_CheckRange( r_noborder, "0", "1", CVT_INT );
@@ -587,6 +716,9 @@ void G_Init(void)
     // init rendering engine
     G_InitRenderer();
 
+    // cache all maps
+    G_InitMapCache();
+
     // load in the VMs
     G_InitSGame();
     G_InitUI();
@@ -597,7 +729,6 @@ void G_Init(void)
 
     Cmd_AddCommand("demo", G_PlayDemo_f);
     Cmd_AddCommand("vid_restart", G_Vid_Restart_f);
-    Cmd_AddCommand("snd_restart", G_Snd_Restart_f);
     Cmd_AddCommand("modelist", G_ModeList_f);
 
     Con_Printf( "----- Game State Initialization Complete ----\n" );
@@ -650,6 +781,9 @@ void G_FlushMemory(void)
 void G_ShutdownVMs(void)
 {
     G_ShutdownSGame();
+    G_ShutdownUI();
+
+    gi.uiStarted = qfalse;
 }
 
 void G_StartHunkUsers(void)
@@ -803,7 +937,7 @@ static int GLimp_CreateBaseWindow(gpuConfig_t *config)
         if (r_mode->i == -2) {
             windowFlags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
         }
-        else if (r_mode->i == -1) {
+        else {
             windowFlags |= SDL_WINDOW_FULLSCREEN;
         }
     }

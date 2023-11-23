@@ -116,12 +116,12 @@ public:
     GDR_INLINE menustate_t GetState( void ) const { return state; }
     GDR_INLINE void SetState( menustate_t _state) { state = _state; }
     void EscapeMenuToggle( menustate_t newstate );
+    GDR_INLINE void SetFontSize( float size ) const { ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * size * scale ); }
+
+    void PlaySelected( void ) const { Snd_PlaySfx( sfx_select ); }
 
     void MouseEvent( uint32_t dx, uint32_t dy );
     void KeyEvent( uint32_t key, qboolean down );
-    void CalcDrawScale( void ) {
-        drawScale = Cvar_VariableInteger( "r_customWidth" ) / Cvar_VariableInteger( "r_customHeight" );
-    }
 
     CUIMenu *GetCurrentMenu( void ) {
         return curmenu;
@@ -172,6 +172,8 @@ public:
         return gpuConfig;
     }
 
+    void ItemHandleSfx( void ) const;
+
 public:
     nhandle_t whiteShader;
     nhandle_t menubackShader;
@@ -199,7 +201,11 @@ private:
     int frametime;
     int realtime;
 
-    float drawScale;
+    sfxHandle_t sfx_scroll;
+    sfxHandle_t sfx_back;
+    sfxHandle_t sfx_select;
+    sfxHandle_t sfx_null;
+    qboolean sfx_scroll_toggle;
 
     gpuConfig_t gpuConfig;
     menustate_t state;

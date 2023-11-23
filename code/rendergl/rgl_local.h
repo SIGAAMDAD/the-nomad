@@ -355,7 +355,9 @@ typedef struct {
 typedef struct {
     surfaceType_t surfaceType;
     uint32_t numTiles;
-    drawVert_t *verts;
+
+    drawVert_t *vertices;
+    glIndex_t *indices;
 } srfTile_t;
 
 //==================================================================
@@ -523,6 +525,8 @@ typedef struct {
 
     uint64_t numPolys;
     srfPoly_t *polys;
+
+    renderCameraDef_t *camData;
 } renderSceneDef_t;
 
 typedef struct {
@@ -585,17 +589,15 @@ typedef struct {
     uint64_t numIndices;
     uint64_t numVertices;
 
-    srfTile_t *surface;
-
     tile2d_sprite_t *sprites;
     uint32_t numTilesetSprites;
 
+    // frame based draw data
+    srfTile_t *surface;
     shader_t *shader;
-
-    glIndex_t *indices;
     drawVert_t *vertices;
-
-    refSpriteSheet_t *tileset;
+    glIndex_t *indices;
+    nhandle_t tileset;
 } world_t;
 
 typedef struct stageVars
@@ -827,8 +829,7 @@ extern renderBackend_t backend;
 extern cvar_t *r_useExtensions;
 extern cvar_t *r_allowLegacy;
 extern cvar_t *r_allowShaders;
-extern cvar_t *r_multisampleType;
-extern cvar_t *r_multisampleAmount;
+extern cvar_t *r_multisample;
 extern cvar_t *r_overBrightBits;
 extern cvar_t *r_ignorehwgamma;
 extern cvar_t *r_normalMapping;
@@ -972,8 +973,8 @@ float HalfToFloat(unsigned short in);
 GDR_EXPORT nhandle_t RE_RegisterSpriteSheet(const char *shaderName, uint32_t numSprites, uint32_t spriteWidth, uint32_t spriteHeight,
     uint32_t sheetWidth, uint32_t sheetHeight);
 void R_SortDrawSurfs(drawSurf_t *drawSurfs, uint32_t numDrawSurfs);
-void RB_MakeViewMatrix( qboolean useOrthoUI );
-void R_RenderView(const viewData_t *parms, qboolean useOrthoUI);
+void RB_MakeViewMatrix( void );
+void R_RenderView(const viewData_t *parms);
 void GL_CameraResize(void);
 qboolean R_HasExtension(const char *ext);
 void R_SortDrawSurfs(drawSurf_t *drawSurfs, uint32_t numDrawSurfs);
@@ -1032,6 +1033,15 @@ void VBO_Bind( vertexBuffer_t *vbo );
 void VBO_SetVertexPointers(vertexBuffer_t *vbo, uint32_t attribBits);
 void RB_UpdateCache( uint32_t attribBits );
 void R_ShutdownBuffer( vertexBuffer_t *vbo );
+
+void VaoCache_Init(void);
+void VaoCache_AddSurface(drawVert_t *verts, uint64_t numVerts, glIndex_t *indexes, uint64_t numIndexes);
+void VaoCache_RecycleIndexBuffer(void);
+void VaoCache_RecycleVertexBuffer(void);
+void VaoCache_InitQueue(void);
+void VaoCache_Commit(void);
+void VaoCache_BindVao(void);
+void VaoCache_CheckAdd(qboolean *endSurface, qboolean *recycleVertexBuffer, qboolean *recycleIndexBuffer, uint32_t numVerts, uint32_t numIndexes);
 
 GDR_EXPORT void RE_BeginFrame(stereoFrame_t stereoFrame);
 GDR_EXPORT void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec);

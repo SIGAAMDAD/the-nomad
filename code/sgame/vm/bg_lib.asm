@@ -5473,6 +5473,8 @@ import com_errorMessage
 import com_errorEntered
 import com_cacheLine
 import com_frameTime
+import com_fps
+import com_maxfps
 import sys_cpuString
 import com_devmode
 import com_version
@@ -5514,6 +5516,8 @@ import Cmd_RemoveCommand
 import Cmd_AddCommand
 import Cmd_Init
 import keys
+import Key_SetOverstrikeMode
+import Key_GetOverstrikeMode
 import Key_GetKey
 import Key_GetCatcher
 import Key_SetCatcher

@@ -5,7 +5,7 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL ImGui_SetItemTooltip( const 
 {
     va_list argptr;
     char msg[4096];
-    int length;
+    int32_t length;
 
     va_start( argptr, fmt );
     length = vsprintf( msg, fmt, argptr );
@@ -22,7 +22,7 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL ImGui_Text( const char *fmt,
 {
     va_list argptr;
     char msg[4096];
-    int length;
+    int32_t length;
 
     va_start( argptr, fmt );
     length = vsprintf( msg, fmt, argptr );
@@ -39,7 +39,7 @@ void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL ImGui_ColoredText( const vec
 {
     va_list argptr;
     char msg[4096];
-    int length;
+    int32_t length;
 
     va_start( argptr, fmt );
     length = vsprintf( msg, fmt, argptr );
