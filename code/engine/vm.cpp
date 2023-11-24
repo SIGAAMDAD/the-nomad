@@ -465,17 +465,24 @@ static void VM_FillImport(vmRefImport_t *import, const char *name)
 	import->trap_GetClipboardData = VM_trap_GetClipboardData;
 	import->trap_GetGPUConfig = VM_trap_GetGPUConfig;
 
-	import->trap_FS_FClose = FS_VM_FClose;
-	import->trap_FS_FOpenRead = FS_VM_FOpenRead;
-	import->trap_FS_FOpenWrite = FS_VM_FOpenWrite;
-	import->trap_FS_Read = FS_VM_Read;
-	import->trap_FS_Write = FS_VM_Write;
-	import->trap_FS_WriteFile = FS_VM_WriteFile;
-	import->trap_FS_FileSeek = FS_VM_FileSeek;
-	import->trap_FS_FileTell = FS_FileTell;
-	import->trap_FS_FileLength = FS_FileLength;
+	import->FS_FOpenRead = FS_VM_FOpenRead;
+    import->FS_FOpenWrite = FS_VM_FOpenWrite;
+    import->FS_FOpenAppend = FS_VM_FOpenAppend;
+    import->FS_FOpenRW = FS_VM_FOpenRW;
+    import->FS_FileSeek = FS_VM_FileSeek;
+    import->FS_FileTell = FS_VM_FileTell;
+    import->FS_FOpenFile = FS_VM_FOpenFile;
+    import->FS_FOpenFileWrite = FS_VM_FOpenFileWrite;
+    import->FS_FOpenFileRead = FS_VM_FOpenFileRead;
+    import->FS_FClose = FS_VM_FClose;
+    import->FS_WriteFile = FS_VM_WriteFile;
+    import->FS_Write = FS_VM_Write;
+    import->FS_Read = FS_VM_Read;
+    import->FS_FileLength = FS_VM_FileLength;
+	import->FS_GetFileList = FS_GetFileList;
 
 	import->G_LoadMap = G_LoadMap;
+	import->trap_RE_LoadWorldMap = re.LoadWorld;
 
 	import->ImGui_BeginWindow = ImGui_BeginWindow;
 	import->ImGui_EndWindow = ImGui_EndWindow;

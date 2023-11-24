@@ -22,6 +22,8 @@ OBJS=\
 	$(O)/sg_info.o \
 	$(O)/sg_playr.o \
 	$(O)/sg_mthink.o \
+	$(O)/sg_archive.o \
+	$(O)/sg_gameinfo.o \
 	$(O)/sg_draw.o \
 	$(O)/n_math.o \
 	$(O)/n_shared.o \

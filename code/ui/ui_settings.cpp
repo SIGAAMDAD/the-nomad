@@ -39,10 +39,12 @@ typedef struct {
     bool mouseAccelerate;
     bool mouseInvert;
     int32_t mouseSensitivity;
+
     bool musicOn;
     bool sfxOn;
     int32_t musicVol;
     int32_t sfxVol;
+    int32_t masterVol;
 } initialSettings_t;
 
 typedef struct
@@ -59,6 +61,7 @@ typedef struct
     qboolean rebinding;
     bool musicOn;
     bool sfxOn;
+    int32_t masterVol;
     int32_t musicVol;
     int32_t sfxVol;
     renderapi_t api;
@@ -86,6 +89,7 @@ typedef struct
     qboolean confirmation;
     qboolean confirmreset;
     qboolean modified;
+    qboolean paused; // did we get here from the pause menu?
 } settingsmenu_t;
 
 static initialSettings_t initial;
@@ -264,8 +268,6 @@ static void SettingsMenu_ApplyGraphicsChanges( void )
     Cvar_Set( "r_gammaAmount", va( "%f", settings.gamma ) );
 
     Cvar_Set( "g_renderer", RenderAPIString2( settings.api ) );
-
-    Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n" );
 }
 
 static void SettingsMenu_ApplyAudioChanges( void )
@@ -310,13 +312,14 @@ static void SettingsMenu_SetDefault( void )
     settings.multisamplingIndex = Cvar_VariableInteger( "r_multisample" );
     settings.allowSoftwareGL = Cvar_VariableInteger( "r_allowSoftwareGL" );
     settings.vsync = Cvar_VariableInteger( "r_swapInterval" );
-    settings.gamma = Cvar_VariableFloat( "r_gammeAmount" );
+    settings.gamma = Cvar_VariableFloat( "r_gammaAmount" );
     settings.advancedGraphics = false;
 
     settings.sfxOn = Cvar_VariableInteger( "snd_sfxon" );
     settings.musicOn = Cvar_VariableInteger( "snd_musicon" );
     settings.sfxVol = Cvar_VariableInteger( "snd_sfxvol" );
     settings.musicVol = Cvar_VariableInteger( "snd_musicvol" );
+    settings.masterVol = Cvar_VariableInteger( "snd_mastervol" );
     
     settings.mouseAccelerate = Cvar_VariableInteger("g_mouseAcceleration");
     settings.mouseInvert = Cvar_VariableInteger("g_mouseInvert");
@@ -330,11 +333,13 @@ static void SettingsMenu_ConfirmReset( void )
             SettingsMenu_SetDefault();
             settings.confirmreset = qfalse;
             settings.modified = qfalse;
+            ui->PlaySelected();
             ImGui::CloseCurrentPopup();
         }
         ImGui::SameLine();
         if (ImGui::Button( "CANCEL" )) {
             settings.confirmreset = qfalse;
+            ui->PlaySelected();
             ImGui::CloseCurrentPopup();
         }
 
@@ -347,7 +352,6 @@ static void SettingsMenu_ApplyChanges( void )
     ImGui::BeginChild( 0xff, ImVec2( 0, 0 ), ImGuiChildFlags_AlwaysAutoResize );
 
     ImGui::SetWindowPos(ImVec2( 8 * ui->scale, 720 * ui->scale ));
-    ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * 1.5f * ui->scale );
 
     if (ImGui::Button( "RESET TO DEFAULT" )) {
         settings.confirmreset = qtrue;
@@ -360,7 +364,7 @@ static void SettingsMenu_ApplyChanges( void )
         return;
     }
 
-    ImGui::SameLine( 248 );
+    ImGui::SetCursorScreenPos( ImVec2( 240 * ui->scale, 720 * ui->scale ) );
     
     if (ImGui::Button( "APPLY CHANGES" )) {
         SettingsMenu_ApplyGraphicsChanges();
@@ -376,6 +380,9 @@ static void SettingsMenu_Update( void )
 {
     settings.modified = false;
 
+    if (initial.masterVol != settings.masterVol) {
+        settings.modified = true;
+    }
     if (initial.sfxOn != settings.sfxOn) {
         settings.modified = true;
     }
@@ -449,6 +456,7 @@ static void SettingsMenu_RebindKey( void )
         }
         if (ImGui::Button("CANCEL")) {
             settings.rebinding = qfalse;
+            ui->PlaySelected();
             ImGui::CloseCurrentPopup();
         }
 
@@ -462,26 +470,27 @@ static GDR_INLINE void SettingsMenu_Bar( void )
     if (ImGui::BeginTabBar( " " )) {
         if (ImGui::BeginTabItem( "GRAPHICS" )) {
             ui->SetState( STATE_GRAPHICS );
+//            ui->PlaySelected();
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem( "AUDIO" )) {
             ui->SetState( STATE_AUDIO );
+//            ui->PlaySelected();
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem( "CONTROLS" )) {
             ui->SetState( STATE_CONTROLS );
+//            ui->PlaySelected();
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
     }
 }
 
-static void SettingsMenuGraphics_Draw( void )
+static GDR_INLINE void SettingsMenu_ExitChild( menustate_t childstate )
 {
-    uint64_t i;
-
-    ui->EscapeMenuToggle( STATE_MAIN );
-    if (ui->GetState() != STATE_GRAPHICS) {
+    ui->EscapeMenuToggle( settings.paused ? STATE_PAUSE :  STATE_MAIN );
+    if (ui->GetState() != childstate) {
         if (settings.modified) {
             ImGui::OpenPopup( "Save Changes" );
             settings.confirmation = qtrue;
@@ -496,11 +505,18 @@ static void SettingsMenuGraphics_Draw( void )
             settings.confirmation = qtrue;
         }
         else {
-            ui->SetState( STATE_MAIN );
+            ui->SetState( settings.paused ? STATE_PAUSE :  STATE_MAIN );
             return;
         }
     }
     SettingsMenu_Bar();
+}
+
+static void SettingsMenuGraphics_Draw( void )
+{
+    uint64_t i;
+
+    SettingsMenu_ExitChild( STATE_GRAPHICS );
 
     ImGui::BeginTable( " ", 2 );
     {
@@ -698,27 +714,12 @@ static void SettingsMenuGraphics_Draw( void )
 
 static void SettingsMenuAudio_Draw( void )
 {
-    ui->EscapeMenuToggle( STATE_SETTINGS );
-    if (ui->GetState() != STATE_AUDIO) {
-        if (settings.modified) {
-            ImGui::OpenPopup( "Save Changes" );
-            settings.confirmation = qtrue;
-        }
-        else {
-            return;
-        }
+    SettingsMenu_ExitChild( STATE_AUDIO );
+
+    ImGui::SeparatorText( "Master Volume" );
+    if (ImGui::SliderInt( " ", &settings.masterVol, 0, 100 )) {
+        ui->PlaySelected();
     }
-    else if (ui->Menu_Title( "SETTINGS" )) {
-        if (settings.modified) {
-            ImGui::OpenPopup( "Save Changes" );
-            settings.confirmation = qtrue;
-        }
-        else {
-            ui->SetState( STATE_MAIN );
-            return;
-        }
-    }
-    SettingsMenu_Bar();
 
     ImGui::SeparatorText( "Sound Effects" );
     if (ImGui::RadioButton( "ON##SfxOn", settings.sfxOn )) {
@@ -726,7 +727,7 @@ static void SettingsMenuAudio_Draw( void )
         ui->PlaySelected();
     }
     ImGui::SameLine();
-    if (ImGui::SliderInt( "VOLUME##SfxVolume", &settings.sfxVol, 0.0f, 100.0f )) {
+    if (ImGui::SliderInt( "VOLUME##SfxVolume", &settings.sfxVol, 0, 100 )) {
         ui->PlaySelected();
     }
 
@@ -736,34 +737,14 @@ static void SettingsMenuAudio_Draw( void )
         ui->PlaySelected();
     }
     ImGui::SameLine();
-    if (ImGui::SliderInt( "VOLUME##MusicVolume", &settings.musicVol, 0.0f, 100.0f )) {
+    if (ImGui::SliderInt( "VOLUME##MusicVolume", &settings.musicVol, 0, 100 )) {
         ui->PlaySelected();
     }
 }
 
 static void SettingsMenuControls_Draw( void )
 {
-    ui->EscapeMenuToggle( STATE_SETTINGS );
-    if (ui->GetState() != STATE_CONTROLS) {
-        if (settings.modified) {
-            ImGui::OpenPopup( "Save Changes" );
-            settings.confirmation = qtrue;
-        }
-        else {
-            return;
-        }
-    }
-    else if (ui->Menu_Title( "SETTINGS" )) {
-        if (settings.modified) {
-            ImGui::OpenPopup( "Save Changes" );
-            settings.confirmation = qtrue;
-        }
-        else {
-            ui->SetState( STATE_MAIN );
-            return;
-        }
-    }
-    SettingsMenu_Bar();
+    SettingsMenu_ExitChild( STATE_CONTROLS );
 
     // mouse options
     ImGui::SeparatorText( "MOUSE" );
@@ -810,15 +791,7 @@ void SettingsMenu_Draw( void )
 
     switch (ui->GetState()) {
     case STATE_SETTINGS:
-        ui->EscapeMenuToggle( STATE_MAIN );
-        if (ui->GetState() != STATE_SETTINGS) {
-            break;
-        }
-        else if (ui->Menu_Title( "SETTINGS" )) {
-            ui->SetState( STATE_MAIN );
-            break;
-        }
-        SettingsMenu_Bar();
+        SettingsMenu_ExitChild( STATE_SETTINGS );
         break;
     case STATE_GRAPHICS:
         SettingsMenuGraphics_Draw();
@@ -848,19 +821,19 @@ static void SettingsMenu_GetInitial( void ) {
     initial.multisamplingIndex = Cvar_VariableInteger( "r_multisample" );
     initial.allowSoftwareGL = Cvar_VariableInteger( "r_allowSoftwareGL" );
     initial.vsync = Cvar_VariableInteger( "r_swapInterval" );
-    initial.gamma = Cvar_VariableFloat( "r_gammeAmount" );
+    initial.gamma = Cvar_VariableFloat( "r_gammaAmount" );
 
     initial.sfxOn = Cvar_VariableInteger( "snd_sfxon" );
     initial.musicOn = Cvar_VariableInteger( "snd_musicon" );
     initial.sfxVol = Cvar_VariableInteger( "snd_sfxvol" );
     initial.musicVol = Cvar_VariableInteger( "snd_musicvol" );
+    initial.masterVol = Cvar_VariableFloat( "snd_mastervol" );
     
     initial.mouseAccelerate = Cvar_VariableInteger("g_mouseAcceleration");
     initial.mouseInvert = Cvar_VariableInteger("g_mouseInvert");
 }
 
-void SettingsMenu_Cache( void )
-{
+void SettingsMenu_Cache( void ) {
     memset(&settings, 0, sizeof(settings));
 
     SettingsMenu_GetInitial();
@@ -868,4 +841,5 @@ void SettingsMenu_Cache( void )
 
     settings.confirmation = qfalse;
     settings.modified = qfalse;
+    settings.paused = Cvar_VariableInteger( "sg_paused" );
 }

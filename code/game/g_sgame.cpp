@@ -105,18 +105,41 @@ static intptr_t G_SGameSystemCalls(intptr_t *args)
     case SG_CVAR_REGISTER:
         Cvar_Register((vmCvar_t *)VMA(1), (const char *)VMA(2), (const char *)VMA(2), args[3], sgvm->privateFlag);
     case SG_FS_FOPENREAD:
-        return FS_VM_FOpenRead((const char *)VMA(1), (file_t *)VMA(2), H_SGAME);
+        return FS_VM_FOpenRead( (const char *)VMA(1), H_SGAME );
     case SG_FS_FOPENWRITE:
-        return FS_VM_FOpenWrite((const char *)VMA(1), (file_t *)VMA(2), H_SGAME);
-    case SG_FS_FCLOSE:
-        FS_VM_FClose(args[1]);
-        return 0;
-    case SG_FS_FILELENGTH:
-        return (intptr_t)FS_FileLength(args[1]);
+        return FS_VM_FOpenWrite( (const char *)VMA(1), H_SGAME );
+    case SG_FS_FOPENAPPEND:
+        return FS_VM_FOpenAppend( (const char *)VMA(1), H_SGAME );
+    case SG_FS_FOPENRW:
+        return FS_VM_FOpenRW( (const char *)VMA(1), H_SGAME );
     case SG_FS_FILESEEK:
-        return (intptr_t)FS_VM_FileSeek(args[1], args[2], args[3], H_SGAME);
+        return FS_VM_FileSeek( (file_t)args[1], (fileOffset_t)args[2], args[3], H_SGAME );
     case SG_FS_FILETELL:
-        return (intptr_t)FS_FileTell(args[1]);
+        return FS_VM_FileTell( (file_t)args[1], H_SGAME );
+    case SG_FS_FOPENFILE:
+        VM_CHECKBOUNDS( args[2], sizeof(file_t) );
+        return FS_VM_FOpenFile( (const char *)VMA(1), (file_t *)VMA(2), (fileMode_t)args[3], H_SGAME );
+    case SG_FS_FOPENFILEWRITE:
+        VM_CHECKBOUNDS( args[2], sizeof(file_t) );
+        return FS_VM_FOpenFileWrite( (const char *)VMA(1), (file_t *)VMA(2), H_SGAME );
+    case SG_FS_FOPENFILEREAD:
+        VM_CHECKBOUNDS( args[2], sizeof(file_t) );
+        return FS_VM_FOpenFileRead( (const char *)VMA(1), (file_t *)VMA(2), H_SGAME );
+    case SG_FS_FCLOSE:
+        FS_VM_FClose( (file_t)args[1], H_SGAME );
+        return 0;
+    case SG_FS_WRITEFILE:
+        return FS_VM_WriteFile( (const char *)VMA(1), args[2], (file_t)args[3], H_SGAME );
+    case SG_FS_WRITE:
+        VM_CHECKBOUNDS( args[1], args[2] );
+        return FS_VM_Write( VMA(1), args[2], (file_t)args[3], H_SGAME );
+    case SG_FS_READ:
+        VM_CHECKBOUNDS( args[1], args[2] );
+        return FS_VM_Read( VMA(1), args[2], (file_t)args[3], H_SGAME );
+    case SG_FS_FILELENGTH:
+        return FS_VM_FileLength( (file_t)args[1], H_SGAME );
+    case SG_FS_GETFILELIST:
+        return FS_GetFileList( (const char *)VMA(1), (const char *)VMA(2), (char *)VMA(3), args[4] );
     case IMGUI_BEGIN_WINDOW:
         VM_CHECKBOUNDS( args[1], sizeof(ImGuiWindow) );
         return ImGui_BeginWindow( (ImGuiWindow *)VMA(1) );
@@ -259,6 +282,9 @@ static intptr_t G_SGameSystemCalls(intptr_t *args)
     case IMGUI_PROGRESSBAR:
         ImGui_ProgressBar( VMF(1) );
         return 0;
+    case SG_RE_LOADWORLDMAP:
+        re.LoadWorld( (const char *)VMA(1) );
+        return 0;
     case SG_G_LOADMAP:
         VM_CHECKBOUNDS( args[2], sizeof(mapinfo_t) );
         return G_LoadMap( args[1], (mapinfo_t *)VMA(2) );
@@ -329,7 +355,9 @@ void G_ShutdownSGame(void)
 void G_InitSGame(void)
 {
     vmInterpret_t interpret;
+    CTimer timer;
 
+    timer.Run();
     interpret = (vmInterpret_t)Cvar_VariableInteger("vm_sgame");
     sgvm = VM_Create(VM_SGAME, G_SGameSystemCalls, G_SGameDllSyscall, interpret);
     if (!sgvm) {
@@ -339,8 +367,20 @@ void G_InitSGame(void)
     // run a quick initialization
     VM_Call(sgvm, 0, SGAME_INIT);
 
+    timer.Stop();
+    Con_Printf( "G_InitSGame: %5.5lf milliseconds\n", (double)timer.ElapsedMilliseconds().count() );
+
+    // have the renderer touch all its images, so they are present
+    // on the card even if the driver does deferred loading
+//    re.EndRegistration();
+
     // make sure everything is paged in
-    Com_TouchMemory();
+    if (!Sys_LowPhysicalMemory()) {
+        Com_TouchMemory();
+    }
+
+    // do not allow vid_restart for the first time
+    gi.lastVidRestart = Sys_Milliseconds();
 }
 
 /*

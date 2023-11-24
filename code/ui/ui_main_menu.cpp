@@ -150,6 +150,7 @@ void MainMenu_Draw( void )
         ui->EscapeMenuToggle( STATE_MAIN );
         if (ui->Menu_Title( "CREDITS" )) {
             ui->SetState( STATE_MAIN );
+            return;
         }
         else {
             ImGui::TextUnformatted( creditsString );

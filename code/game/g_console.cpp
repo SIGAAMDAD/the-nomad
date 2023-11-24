@@ -87,7 +87,6 @@ typedef struct {
 
 console_t con;
 
-file_t logfile = FS_INVALID_HANDLE;
 field_t g_consoleField;
 cvar_t *con_conspeed;
 cvar_t *con_autoclear;
@@ -528,6 +527,8 @@ DRAWING
 
 static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 {
+	memcpy( g_consoleField.buffer, data->Buf, sizeof(g_consoleField.buffer) );
+
 	if (Key_IsDown(KEY_LCTRL) && Key_IsDown(KEY_A)) {
 		data->SelectAll();
 	}
@@ -541,6 +542,8 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 		}
 		g_consoleField.cursor = data->CursorPos;
 	}
+
+#if 0
 	// paste function
 	if (Key_IsDown(KEY_LCTRL) && Key_IsDown(KEY_V)) {
 		char *buf = Sys_GetClipboardData();
@@ -575,6 +578,7 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 
 		SDL_SetClipboardText( buffer );
 	}
+#endif
 
 	// ctrl-L clears screen
 	if ( Key_IsDown(KEY_L) && Key_IsDown(KEY_LCTRL) ) {
@@ -649,7 +653,7 @@ static void Con_DrawInput( void ) {
 	ImGui::SameLine();
 
 	if (ImGui::InputText("", g_consoleField.buffer, sizeof(g_consoleField.buffer) - 1,
-	ImGuiInputTextFlags_CallbackCompletion | ImGuiInputTextFlags_CallbackEdit | ImGuiInputTextFlags_CallbackResize | ImGuiInputTextFlags_CallbackHistory |
+	ImGuiInputTextFlags_CallbackAlways |
 	ImGuiInputTextFlags_EnterReturnsTrue,
 	Con_TextCallback)) {
 		// enter finishes the line

@@ -437,11 +437,11 @@ void IntroMenu_Cache( void )
 {
 	memset(&intro, 0, sizeof(intro));
 	
-	intro.osString = strManager->ValueForKey("INTRO_OS_STRING");
-	intro.statusBooting = strManager->ValueForKey("INTRO_STATUS_BOOTING");
-	intro.statusString0 = strManager->ValueForKey("INTRO_STATUS_STRING0");
-	intro.statusString1 = strManager->ValueForKey("INTRO_STATUS_STRING1");
-	intro.statusString2 = strManager->ValueForKey("INTRO_STATUS_STRING2");
+//	intro.osString = strManager->ValueForKey("INTRO_OS_STRING");
+//	intro.statusBooting = strManager->ValueForKey("INTRO_STATUS_BOOTING");
+//	intro.statusString0 = strManager->ValueForKey("INTRO_STATUS_STRING0");
+//	intro.statusString1 = strManager->ValueForKey("INTRO_STATUS_STRING1");
+//	intro.statusString2 = strManager->ValueForKey("INTRO_STATUS_STRING2");
 	
 //	intro.audioPrompt = strManager->ValueForKey("INTRO_AUDIO_STRING");
 //	intro.inputPrompt = strManager->ValueForKey("INTRO_INPUT_STRING");
@@ -454,9 +454,9 @@ void IntroMenu_Cache( void )
 //	intro.runningString = strManager->ValueForKey("INTRO_RUNNING_STRING");
 //	intro.doneString = strManager->ValueForKey("INTRO_DONE_STRING");
 	
-	intro.bootString = strManager->ValueForKey("INTRO_BOOT_STRING");
-	intro.finishingString = strManager->ValueForKey("INTRO_FINISHING");
-	intro.completedString = strManager->ValueForKey("INTRO_COMPLETED");
+//	intro.bootString = strManager->ValueForKey("INTRO_BOOT_STRING");
+//	intro.finishingString = strManager->ValueForKey("INTRO_FINISHING");
+//	intro.completedString = strManager->ValueForKey("INTRO_COMPLETED");
 	
 	intro.ticker = CALC_TICS( BOOT_TIME );
 	intro.updateStatus = STATUS_BOOTING;

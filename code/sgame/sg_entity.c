@@ -60,10 +60,6 @@ void SG_InitEntities(void)
 	sg_activeEnts.next = &sg_activeEnts;
 	sg_activeEnts.prev = &sg_activeEnts;
 	sg_freeEnts = sg_entList;
-	
-	for (i = 0; i < MAXENTITIES; i++) {
-		sg_entList[i].next = &sg_entList[i+1];
-	}
 }
 
 sgentity_t *SG_FindEntityAt(const vec3_t pos)
@@ -87,21 +83,6 @@ void SG_FreeEntity(sgentity_t *e)
 	// remove from the doubly linked active list
 	e->prev->next = e->next;
 	e->next->prev = e->prev;
-
-	switch (e->type) {
-	case ET_MOB:
-		memset( e->entPtr, 0, sizeof(mobj_t) );
-		sg.numMobs--;
-		break;
-	case ET_ITEM:
-		memset( e->entPtr, 0, sizeof(item_t) );
-		sg.numItems--;
-		break;
-	case ET_WEAPON:
-		memset( e->entPtr, 0, sizeof(weapon_t) );
-		sg.numWeapons--;
-		break;
-	};
 	
 	e->next = sg_freeEnts;
 	sg_freeEnts = e;
@@ -146,6 +127,7 @@ sgentity_t *SG_AllocEntity(entitytype_t type)
 	};
 
 	e->type = type;
+	e->hShader = FS_INVALID_HANDLE;
 
 	// link into the active list
 	e->next = sg_activeEnts.next;
@@ -200,14 +182,13 @@ void Ent_RunTic( void )
 {
 	sgentity_t *ent;
 
-	for (ent = &sg_activeEnts; ent; ent = ent->next) {
+	for (ent = sg_activeEnts.next; ent != &sg_activeEnts; ent = ent->next) {
 		ent->ticker--;
 		if (!ent->ticker) {
 			Ent_SetState( ent, ent->state->next );
 		}
-
-		if (ent->state->action.acp1 == (actionf_p1)-1) {
-			// remove it now
+		// time to free it
+		if (ent->state == (state_t *)ST_NULL || ent->state->action.acp1 == (actionf_p1)NULL) {
 			SG_FreeEntity( ent );
 		}
 		else {

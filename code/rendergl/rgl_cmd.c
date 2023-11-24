@@ -330,7 +330,7 @@ GDR_EXPORT void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec)
 	}
 	cmd->commandId = RC_SWAP_BUFFERS;
 
-	RB_MakeViewMatrix( qfalse );
+	RB_MakeViewMatrix();
 	Mat4Copy( rg.viewData.camera.transformMatrix, glState.modelviewProjection );
 
 	R_IssueRenderCommands(qtrue);

@@ -100,9 +100,24 @@ void Parse1DMatrix( const char **buf_p, int x, float *m);
 void Parse2DMatrix( const char **buf_p, int y, int x, float *m);
 void Parse3DMatrix( const char **buf_p, int z, int y, int x, float *m);
 
-/*
-commands, shouldn't be called by the vm
-*/
+
+
+#define FS_INVALID_HANDLE 0
+
+typedef int32_t file_t;
+#ifdef Q3_VM
+typedef unsigned long int fileTime_t;
+#else
+typedef time_t fileTime_t;
+#endif
+#if defined(_MSVC_VER) || defined(__clang__)
+typedef _off_t fileOffset_t;
+#elif !defined(Q3_VM)
+typedef off_t fileOffset_t;
+#else
+typedef long fileOffset_t;
+#endif
+
 
 typedef void (*completionFunc_t)(const char* args, uint32_t argnum);
 typedef void (*cmdfunc_t)(void);
@@ -169,6 +184,7 @@ uint32_t Key_GetCatcher(void);
 uint32_t Key_GetKey( const char *binding );
 qboolean Key_GetOverstrikeMode( void );
 void Key_SetOverstrikeMode( qboolean overstrike );
+void Key_WriteBindings( file_t f );
 
 typedef struct
 {
@@ -271,22 +287,6 @@ typedef enum {
 
 #define MAX_FOUND_FILES 0x8000
 
-#define FS_INVALID_HANDLE -1
-
-typedef int32_t file_t;
-#ifdef Q3_VM
-typedef unsigned long int fileTime_t;
-#else
-typedef time_t fileTime_t;
-#endif
-#if defined(_MSVC_VER) || defined(__clang__)
-typedef _off_t fileOffset_t;
-#elif !defined(Q3_VM)
-typedef off_t fileOffset_t;
-#else
-typedef long fileOffset_t;
-#endif
-
 typedef enum {
 	FS_OPEN_READ,
 	FS_OPEN_WRITE,
@@ -320,19 +320,25 @@ extern uint32_t com_fps;
 extern int com_frameTime;
 extern uint64_t com_cacheLine;
 extern qboolean com_errorEntered;
+extern qboolean com_fullyInitialized;
 extern char com_errorMessage[MAXPRINTMSG];
 
 /* vm specific file handling */
-file_t FS_VM_FOpenWrite(const char *path, file_t *f, handleOwner_t owner);
-file_t FS_VM_FOpenRead(const char *path, file_t *f, handleOwner_t owner);
-void FS_VM_FClose(file_t f);
-uint32_t FS_VM_Read(void *buffer, uint32_t len, file_t f, handleOwner_t owner);
-uint32_t FS_VM_Write(const void *buffer, uint32_t len, file_t f, handleOwner_t owner);
-void FS_VM_WriteFile(const void *buffer, uint32_t len, file_t f, handleOwner_t owner);
-void FS_VM_CreateTmp(char *name, const char *ext, file_t *f, handleOwner_t owner);
-uint64_t FS_VM_FOpenFileRead(const char *path, file_t *f, handleOwner_t owner);
-fileOffset_t FS_VM_FileSeek(file_t f, fileOffset_t offset, uint32_t whence, handleOwner_t owner);
-uint64_t FS_VM_FOpenFileWrite(const char *path, file_t *f, handleOwner_t owner);
+file_t FS_VM_FOpenRead( const char *npath, handleOwner_t owner );
+file_t FS_VM_FOpenWrite( const char *npath, handleOwner_t owner );
+file_t FS_VM_FOpenAppend( const char *npath, handleOwner_t owner );
+file_t FS_VM_FOpenRW( const char *npath, handleOwner_t owner );
+fileOffset_t FS_VM_FileSeek( file_t file, fileOffset_t offset, uint32_t whence, handleOwner_t owner );
+fileOffset_t FS_VM_FileTell( file_t file, handleOwner_t owner );
+uint64_t FS_VM_FOpenFile( const char *npath, file_t *file, fileMode_t mode, handleOwner_t owner );
+file_t FS_VM_FOpenFileWrite( const char *npath, file_t *file, handleOwner_t owner );
+uint64_t FS_VM_FOpenFileRead( const char *npath, file_t *file, handleOwner_t owner );
+void FS_VM_FClose( file_t file, handleOwner_t owner );
+uint64_t FS_VM_WriteFile( const void *buffer, uint64_t len, file_t file, handleOwner_t owner );
+uint64_t FS_VM_Write( const void *buffer, uint64_t len, file_t file, handleOwner_t owner );
+uint64_t FS_VM_Read( void *buffer, uint64_t len, file_t file, handleOwner_t owner );
+uint64_t FS_VM_FileLength( file_t file, handleOwner_t owner );
+
 void FS_VM_CloseFiles(handleOwner_t owner);
 
 void FS_Startup(void);
@@ -377,6 +383,7 @@ qboolean FS_FilenameCompare(const char *s1, const char *s2);
 char *FS_BuildOSPath(const char *base, const char *game, const char *npath);
 char *FS_CopyString(const char *s);
 void *FS_LoadLibrary(const char *filename);
+uint64_t FS_GetFileList( const char *path, const char *extension, char *listbuf, uint64_t bufsize );
 
 qboolean FS_AllowedExtension(const char *fileName, qboolean allowBFFs, const char **ext);
 qboolean FS_StripExt(char *filename, const char *ext);
@@ -456,6 +463,7 @@ void Hunk_Log(void);
 void Hunk_SmallLog(void);
 qboolean Hunk_CheckMark(void);
 void Hunk_ClearToMark( void );
+void Hunk_SetMark( void );
 void Hunk_Print(void);
 void Hunk_Check(void);
 void Hunk_InitMemory(void);
@@ -533,6 +541,8 @@ char **Sys_ListFiles(const char *directory, const char *extension, const char *f
 const char *Sys_DefaultHomePath(void);
 const char *Sys_DefaultBasePath(void);
 qboolean Sys_RandomBytes(byte *s, uint64_t len);
+
+qboolean Sys_LowPhysicalMemory( void );
 
 void Sys_ClearDLLError( void );
 int Sys_GetDLLErrorCount( void );

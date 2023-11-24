@@ -53,6 +53,7 @@ INTERNAL_OBJS=\
 	$(O)/ui/ui_lib.o \
 	$(O)/ui/ui_main.o \
 	$(O)/ui/ui_menu.o \
+	$(O)/ui/ui_pause.o \
 	$(O)/ui/n_shared.o \
 	$(O)/ui/n_math.o \
 

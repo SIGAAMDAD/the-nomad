@@ -44,7 +44,6 @@ typedef struct {
 } console_t;
 
 static console_t con;
-file_t logfile = FS_INVALID_HANDLE;
 field_t con_field;
 cvar_t *con_noprint;
 cvar_t *con_color;

@@ -858,6 +858,19 @@ float Com_Clamp( float min, float max, float value );
 #define	YAW					1		// left / right
 #define	ROLL				2		// fall over
 
+//
+// key / value info strings
+//
+const char *Info_ValueForKey( const char *s, const char *key );
+void Info_Tokenize( const char *s );
+const char *Info_ValueForKeyToken( const char *key );
+#define Info_SetValueForKey( buf, key, value ) Info_SetValueForKey_s( (buf), MAX_INFO_STRING, (key), (value) )
+qboolean Info_SetValueForKey_s( char *s, uint32_t slen, const char *key, const char *value );
+qboolean Info_Validate( const char *s );
+qboolean Info_ValidateKeyValue( const char *s );
+const char *Info_NextPair( const char *s, char *key, char *value );
+size_t Info_RemoveKey( char *s, const char *key );
+
 
 /*
 ==========================================================
@@ -973,38 +986,6 @@ typedef struct {
     unsigned int modificationCount;
     cvarHandle_t handle;
 } vmCvar_t;
-
-void Cvar_ResetGroup( cvarGroup_t group, qboolean resetModifiedFlags );
-int Cvar_CheckGroup(cvarGroup_t group);
-void Cvar_ForceReset(const char *name);
-void Cvar_Init(void);
-void Cvar_Restart(qboolean unsetVM);
-void Cvar_Register(vmCvar_t *vmCvar, const char *varName, const char *defaultValue, uint32_t flags, uint32_t privateFlag);
-void Cvar_CompleteCvarName(const char *args, uint32_t argNum);
-void Cvar_CommandCompletion( void (*callback)(const char *s) );
-cvar_t *Cvar_Set2(const char *var_name, const char *value, qboolean force);
-void Cvar_VariableStringBuffer(const char *name, char *buffer, uint64_t bufferSize);
-void Cvar_VariableStringBufferSafe(const char *name, char *buffer, uint64_t bufferSize, uint32_t flag);
-int32_t Cvar_VariableInteger(const char *name);
-float Cvar_VariableFloat(const char *name);
-qboolean Cvar_VariableBoolean(const char *name);
-const char *Cvar_VariableString(const char *name);
-void Cvar_CheckRange(cvar_t *var, const char *mins, const char *maxs, cvartype_t type);
-uint32_t Cvar_Flags(const char *name);
-void Cvar_Update(vmCvar_t *vmCvar, uint32_t privateFlag);
-cvar_t *Cvar_Get(const char *name, const char *value, uint32_t flags);
-qboolean Cvar_Command(void);
-void Cvar_Reset(const char *name);
-void Cvar_SetGroup(cvar_t *cv, cvarGroup_t group);
-void Cvar_SetDescription(cvar_t *cv, const char *description);
-void Cvar_SetSafe(const char *name, const char *value);
-void Cvar_Set(const char *name, const char *value);
-void Cvar_SetValueSafe(const char *name, float value);
-qboolean Cvar_SetModified(const char *name, qboolean modified);
-void Cvar_SetIntegerValue(const char *name, int32_t value);
-void Cvar_SetFloatValue(const char *name, float value);
-void Cvar_SetStringValue(const char *name, const char *value);
-void Cvar_SetBooleanValue(const char *name, qboolean value);
 
 #define Q_COLOR_ESCAPE	'^'
 #define Q_IsColorString(p) ( *(p) == Q_COLOR_ESCAPE && *((p)+1) && *((p)+1) != Q_COLOR_ESCAPE )

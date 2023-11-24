@@ -1,5 +1,7 @@
 #include "n_shared.h"
 #include "n_common.h"
+#include "n_cvar.h"
+#include "../system/sys_timer.h"
 
 /*
 ======================================================================================================
@@ -147,7 +149,6 @@ static uint64_t		fs_bffChunks;
 static uint64_t		fs_dirCount;
 
 int64_t		fs_lastBFFIndex;
-static qboolean		fs_initialized;
 
 static fileHandle_t handles[MAX_FILE_HANDLES];
 
@@ -207,7 +208,7 @@ static void FS_InitHandle(fileHandle_t *f)
 
 static file_t FS_HandleForFile(void)
 {
-	for (file_t i = 0; i < MAX_FILE_HANDLES; i++) {
+	for (file_t i = 1; i < MAX_FILE_HANDLES; i++) {
 		if (!handles[i].used || !handles[i].data.stream) {
 			return i;
 		}
@@ -288,79 +289,227 @@ static const char *FS_OwnerName(handleOwner_t owner)
 	return "UNKOWN";
 }
 
-file_t FS_VM_FOpenRead(const char *path, file_t *f, handleOwner_t owner)
+static inline qboolean FS_VM_ValidateParms( const char *func, file_t file, handleOwner_t owner )
 {
-	int32_t r;
-
-	r = FS_FOpenRead(path);
-	if (f && r != FS_INVALID_HANDLE) {
-		handles[*f].owner = owner;
-		*f = r;
+	if (file <= FS_INVALID_HANDLE || file >= MAX_FILE_HANDLES) {
+		Con_Printf( COLOR_RED "%s: invalid handle\n", func );
+		return qfalse;
 	}
-	return r;
-}
-
-file_t FS_VM_FOpenWrite(const char *path, file_t *f, handleOwner_t owner)
-{
-	int32_t r;
-	
-	r = FS_FOpenWrite(path);
-	if (f && r != FS_INVALID_HANDLE) {
-		handles[*f].owner = owner;
-		*f = r;
+	else if (handles[file].owner != owner) {
+		Con_Printf( COLOR_RED "%s: owner isn't correct (should be '%s', is '%s')\n", func, FS_OwnerName( owner ), FS_OwnerName( handles[file].owner ) );
+		return qfalse;
 	}
-	return r;
+	else if (!handles[file].data.fp) {
+		Con_Printf( COLOR_RED "%s: engine file isn't open yet!\n", func );
+		return qfalse;
+	}
+
+	return qtrue;
 }
 
-uint32_t FS_VM_Read(void *buffer, uint32_t len, file_t f, handleOwner_t owner)
+static inline qboolean FS_VM_ValidateParms( const char *func, const char *npath, file_t *file, handleOwner_t owner )
 {
-	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES)
-		return 0;
-	
-	if (handles[f].owner != owner || !handles[f].data.fp)
-		return 0;
-	
-	return (uint32_t)FS_Read(buffer, len, f);
+	if (!npath || !*npath) {
+		Con_Printf( COLOR_RED "%s: empty path\n", func );
+		return qfalse;
+	}
+	else if (!file) {
+		Con_Printf( COLOR_RED "%s: NULL file handle\n", func );
+		return qfalse;
+	}
+
+	return qtrue;
 }
 
-uint32_t FS_VM_Write(const void *buffer, uint32_t len, file_t f, handleOwner_t owner)
+static inline qboolean FS_VM_ValidateParms( const char *func, const void *buffer, file_t file, handleOwner_t owner )
 {
-	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES)
-		return 0;
-	
-	if (handles[f].owner != owner || !handles[f].data.fp)
-		return 0;
-	
-	return (uint32_t)FS_Write(buffer, len, f);
+	if (!buffer) {
+		Con_Printf( COLOR_RED "%s: NULL buffer\n", func );
+		return qfalse;
+	}
+	else if (file <= FS_INVALID_HANDLE || file >= MAX_FILE_HANDLES) {
+		Con_Printf( COLOR_RED "%s: invalid handle\n", func );
+		return qfalse;
+	}
+	else if (handles[file].owner != owner) {
+		Con_Printf( COLOR_RED "%s: owner isn't correct (should be '%s', is '%s')\n", func, FS_OwnerName( owner ), FS_OwnerName( handles[file].owner ) );
+		return qfalse;
+	}
+	else if (!handles[file].data.fp) {
+		Con_Printf( COLOR_RED "%s: engine file isn't open yet!\n", func );
+		return qfalse;
+	}
+
+	return qtrue;
 }
 
-void FS_VM_WriteFile(const void *buffer, uint32_t len, file_t f, handleOwner_t owner)
+uint64_t FS_VM_WriteFile( const void *buffer, uint64_t len, file_t file, handleOwner_t owner )
 {
-	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES)
-		return;
-	
-	if (handles[f].owner != owner || !handles[f].data.fp)
-		return;
-	
-	FS_Write(buffer, len, f);
+	if (!FS_VM_ValidateParms( __func__, buffer, file, owner )) {
+		return 0;
+	}
+
+	return FS_Write( buffer, len, file );
 }
 
-void FS_VM_CreateTmp(char *name, const char *ext, file_t *f, handleOwner_t owner);
-uint64_t FS_VM_FOpenFileRead(const char *path, file_t *f, handleOwner_t owner);
-uint64_t FS_VM_FOpenFileWrite(const char *path, file_t *f, handleOwner_t owner);
-
-fileOffset_t FS_VM_FileSeek(file_t f, fileOffset_t offset, uint32_t whence, handleOwner_t owner)
+fileOffset_t FS_VM_FileSeek( file_t file, fileOffset_t offset, uint32_t whence, handleOwner_t owner )
 {
-	fileOffset_t r;
+	if (!FS_VM_ValidateParms( __func__, file, owner )) {
+		return 0;
+	}
+	
+	return FS_FileSeek( file, offset, whence );
+}
 
-	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES)
-		return -1;
+fileOffset_t FS_VM_FileTell( file_t file, handleOwner_t owner )
+{
+	if (!FS_VM_ValidateParms( __func__, file, owner )) {
+		return 0;
+	}
+
+	return FS_FileTell( file );
+}
+
+uint64_t FS_VM_Write( const void *buffer, uint64_t len, file_t file, handleOwner_t owner )
+{
+	if (!FS_VM_ValidateParms( __func__, buffer, file, owner )) {
+		return 0;
+	}
+
+	return FS_Write( buffer, len, file );
+}
+
+uint64_t FS_VM_Read( void *buffer, uint64_t len, file_t file, handleOwner_t owner )
+{
+	if (!FS_VM_ValidateParms( __func__, buffer, file, owner )) {
+		return 0;
+	}
+
+	return FS_Read( buffer, len, file );
+}
+
+uint64_t FS_VM_FOpenFile( const char *npath, file_t *f, fileMode_t mode, handleOwner_t owner )
+{
+	uint64_t len;
+
+	if (!FS_VM_ValidateParms( __func__, npath, f, owner )) {
+		return 0;
+	}
+
+	len = FS_FOpenFileWithMode( npath, f, mode );
+
+	if (*f != FS_INVALID_HANDLE) {
+		handles[*f].owner = owner;
+	}
+
+	return len;
+}
+
+file_t FS_VM_FOpenAppend( const char *path, handleOwner_t owner )
+{
+	file_t f;
+
+	if (!path || !*path) {
+		Con_Printf( COLOR_RED "%s: empty path\n", __func__ );
+		return FS_INVALID_HANDLE;
+	}
+
+	f = FS_FOpenAppend( path );
+	if (f != FS_INVALID_HANDLE) {
+		handles[f].owner = owner;
+	}
+
+	return f;
+}
+
+file_t FS_VM_FOpenRW( const char *path, handleOwner_t owner )
+{
+	file_t f;
+
+	if (!path || !*path) {
+		Con_Printf( COLOR_RED "%s: empty path\n", __func__ );
+		return FS_INVALID_HANDLE;
+	}
+
+	f = FS_FOpenRW( path );
+	if (f != FS_INVALID_HANDLE) {
+		handles[f].owner = owner;
+	}
+
+	return f;
+}
+
+file_t FS_VM_FOpenRead(const char *path, handleOwner_t owner)
+{
+	file_t f;
+
+	if (!path || !*path) {
+		Con_Printf( COLOR_RED "%s: empty path\n", __func__ );
+		return FS_INVALID_HANDLE;
+	}
+
+	f = FS_FOpenRead( path );
+	if (f != FS_INVALID_HANDLE) {
+		handles[f].owner = owner;
+	}
 	
-	if (handles[f].owner != owner || !handles[f].data.fp)
-		return -1;
-	
-	r = FS_FileSeek(f, offset, whence);
-	return r;
+	return f;
+}
+
+file_t FS_VM_FOpenWrite(const char *path, handleOwner_t owner)
+{
+	file_t f;
+
+	if (!path || !*path) {
+		Con_Printf( COLOR_RED "%s: empty path\n", __func__ );
+		return FS_INVALID_HANDLE;
+	}
+
+	f = FS_FOpenWrite( path );
+	if (f != FS_INVALID_HANDLE) {
+		handles[f].owner = owner;
+	}
+
+	return f;
+}
+
+uint64_t FS_VM_FileLength( file_t file, handleOwner_t owner )
+{
+	if (!FS_VM_ValidateParms( __func__, file, owner )) {
+		return 0;
+	}
+
+	return FS_FileLength( file );
+}
+
+file_t FS_VM_FOpenFileWrite( const char *npath, file_t *file, handleOwner_t owner )
+{
+	if (!FS_VM_ValidateParms( __func__, npath, file, owner )) {
+		return 0;
+	}
+
+	*file = FS_FOpenWrite( npath );
+	if (*file != FS_INVALID_HANDLE) {
+		handles[*file].owner = owner;
+	}
+
+	return *file;
+}
+
+uint64_t FS_VM_FOpenFileRead( const char *npath, file_t *file, handleOwner_t owner )
+{
+	uint64_t len;
+
+	if (!FS_VM_ValidateParms( __func__, npath, file, owner )) {
+		return 0;
+	}
+
+	len = FS_FOpenFileRead( npath, file );
+	if (len) {
+		handles[*file].owner = owner;
+	}
+
+	return len;
 }
 
 void FS_VM_CloseFiles(handleOwner_t owner)
@@ -374,17 +523,18 @@ void FS_VM_CloseFiles(handleOwner_t owner)
 	}
 }
 
-void FS_VM_FClose(file_t f)
+void FS_VM_FClose(file_t f, handleOwner_t owner)
 {
-	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES)
+	if (!FS_VM_ValidateParms( __func__, f, owner )) {
 		return;
+	}
 	
 	FS_FClose(f);
 }
 
 qboolean FS_Initialized(void)
 {
-	return fs_initialized;
+	return fs_searchpaths != NULL;
 }
 
 /*
@@ -764,7 +914,7 @@ file_t FS_FOpenAppend(const char *path)
 	FILE *fp;
 	const char *ospath;
 
-	if (!fs_initialized) {
+	if (!fs_searchpaths) {
 		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 	if (!path || !*path) {
@@ -815,7 +965,7 @@ file_t FS_OpenFileMapping(const char *path, qboolean temp)
 	searchpath_t *sp;
 	FILE *fp;
 
-	if (!fs_initialized) {
+	if (!fs_searchpaths) {
 		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 	if (!path || !*path) {
@@ -999,7 +1149,7 @@ static char **FS_ListFilteredFiles(const char *path, const char *extension, cons
 	const char *x;
 	const searchpath_t *sp;
 
-	if (!fs_initialized) {
+	if (!fs_searchpaths) {
 		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 
@@ -1665,7 +1815,7 @@ fileOffset_t FS_FileSeek(file_t f, fileOffset_t offset, uint32_t whence)
 	fileHandle_t* file;
 	uint32_t fwhence;
 	
-	if (!fs_initialized) {
+	if (!fs_searchpaths) {
 		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
@@ -1746,7 +1896,7 @@ uint64_t FS_Write(const void *buffer, uint64_t size, file_t f)
 	int tries;
 	FILE *fp;
 
-	if (!fs_initialized) {
+	if (!fs_searchpaths) {
 		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
@@ -1821,7 +1971,7 @@ uint64_t FS_Read(void *buffer, uint64_t size, file_t f)
 	byte *buf;
 	int tries;
 
-	if (!fs_initialized) {
+	if (!fs_searchpaths) {
 		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
@@ -1884,7 +2034,7 @@ file_t FS_FOpenWrite(const char *path)
 	FILE *fp;
 	const char *ospath;
 
-	if (!fs_initialized) {
+	if (!fs_searchpaths) {
 		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 	if (!path || !*path) {
@@ -1929,7 +2079,7 @@ file_t FS_FOpenRW(const char *path)
 	FILE *fp;
 	const char *ospath;
 
-	if (!fs_initialized) {
+	if (!fs_searchpaths) {
 		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 	if (!path || !*path) {
@@ -1975,7 +2125,7 @@ file_t FS_FOpenRead(const char *path)
 	const char *ospath;
 	uint64_t fullHash, hash;
 
-	if (!fs_initialized) {
+	if (!fs_searchpaths) {
 		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 	if (!path || !*path) {
@@ -2036,7 +2186,7 @@ uint64_t FS_FOpenFileRead(const char *path, file_t *fd)
 	uint64_t length;
 	uint64_t fullHash, hash;
 
-	if (!fs_initialized) {
+	if (!fs_searchpaths) {
 		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 	if (!path || !*path) {
@@ -2154,7 +2304,7 @@ uint64_t FS_LoadFile(const char *npath, void **buffer)
 	byte *buf;
 	uint64_t size;
 
-	if (!fs_initialized) {
+	if (!fs_searchpaths) {
 		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 	if (!npath || !*npath) {
@@ -2197,7 +2347,7 @@ int FS_FileToFileno(file_t f)
 void FS_FreeFile(void *buffer)
 {
 	boost::lock_guard<boost::recursive_mutex> lock{fs_lock};
-	if (!fs_initialized) {
+	if (!fs_searchpaths) {
 		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 	if (!buffer) {
@@ -2219,7 +2369,7 @@ void FS_FClose(file_t f)
 	fileHandle_t *p;
 //	fileStats_t stats;
 
-	if (!fs_initialized) {
+	if (!fs_searchpaths) {
 		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
 	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
@@ -2451,11 +2601,11 @@ static void FS_AddGameDirectory(const char *path, const char *dir)
 
 			// the next directory is before the next .bff file
 			// But wait, this could be any directory, we're filtering to only ending with ".bffdir" here.
-			if (!FS_IsExt(bffDirs[bffDirsI], ".bffdir", len)) {
-				// This isn't a .bffdir! NeXT!
-				bffDirsI++;
-				continue;
-			}
+//			if (!FS_IsExt(bffDirs[bffDirsI], ".bffdir", len)) {
+//				// This isn't a .bffdir! NeXT!
+//				bffDirsI++;
+//				continue;
+//			}
 
 			// add the directory to the search path
 			path_len = strlen( curpath ) + 2;
@@ -2665,6 +2815,8 @@ void FS_Shutdown(qboolean closeFiles)
 	}
 
 	if (fs_searchpaths) {
+		Cbuf_ExecuteText(EXEC_APPEND, va("exec %s", Cvar_VariableString( "com_defaultcfg" )));
+    	Cbuf_Execute();
 	}
 
 #ifdef USE_BFF_CACHE_FILE
@@ -2692,6 +2844,8 @@ void FS_Shutdown(qboolean closeFiles)
 	Cmd_RemoveCommand("ls");
 	Cmd_RemoveCommand("list");
 	Cmd_RemoveCommand("fs_restart");
+	Cmd_RemoveCommand("lsof");
+	Cmd_RemoveCommand("addmod");
 }
 
 void FS_Restart(void)
@@ -2699,6 +2853,7 @@ void FS_Restart(void)
 	// last valid game folder
 	static char lastValidBase[MAX_OSPATH];
 	static char lastValidGame[MAX_OSPATH];
+	const char *defaultcfg;
 
 	static qboolean execConfig = qfalse;
 
@@ -2708,26 +2863,28 @@ void FS_Restart(void)
 	// try to start up normally
 	FS_Startup();
 
+	defaultcfg = Cvar_VariableString( "com_defaultcfg" );
+
 	// if we can't find default.cfg, assume that the paths are
 	// busted and error out now, rather than getting an unreadable
 	// graphics screen when the font fails to load
-	if ( FS_LoadFile( "default.cfg", NULL ) <= 0 ) {
+	if ( FS_LoadFile( defaultcfg, NULL ) <= 0 ) {
 		if (lastValidBase[0]) {
 			Cvar_Set( "fs_basepath", lastValidBase );
 			Cvar_Set( "fs_game", lastValidGame );
 			lastValidBase[0] = '\0';
 			lastValidGame[0] = '\0';
-//			Cvar_Set( "fs_restrict", "0" );
+			Cvar_Set( "fs_restrict", "0" );
 			execConfig = qtrue;
 			FS_Restart();
 			N_Error( ERR_DROP, "Invalid game folder" );
 			return;
 		}
-		N_Error( ERR_FATAL, "Couldn't load default.cfg" );
+		N_Error( ERR_FATAL, "Couldn't load %s", defaultcfg );
 	}
 
 	if (!N_stricmp(fs_gamedirvar->s, lastValidGame) && execConfig) {
-		Cbuf_AddText("exec default.cfg\n");
+		Cbuf_AddText( va( "exec %s\n", defaultcfg ) );
 	}
 
 	execConfig = qfalse;
@@ -2786,9 +2943,7 @@ void FS_InitFilesystem( void )
 void FS_Startup(void)
 {
 	const char *homepath;
-	uint64_t start, end;
-
-	fs_initialized = qfalse;
+	CTimer timer;
 
 	fs_bffCount = 0;
 	fs_loadStack = 0;
@@ -2820,8 +2975,9 @@ void FS_Startup(void)
 		" 1 - keep file handle locked, more consistent, total bff files count limited to ~1k-4k\n");
 #endif
 
-	if (!fs_basegame->s[0])
+	if (!fs_basegame->s[0]) {
 		N_Error(ERR_FATAL, "* fs_basegame not set *");
+	}
 
 //	homepath = Sys_DefaultHomePath();
 //	if (!homepath || !homepath[0]) {
@@ -2839,7 +2995,7 @@ void FS_Startup(void)
 		Cvar_ForceReset("fs_gamedir");
 	}
 
-	start = Sys_Milliseconds();
+	timer.Run();
 
 #ifdef USE_BFF_CACHE_FILE
 	FS_LoadCache();
@@ -2875,11 +3031,10 @@ void FS_Startup(void)
 			FS_AddGameDirectory(fs_homepath->s, fs_gamedirvar->s);
 		}
 	}
-	fs_initialized = qtrue;
 
 //	FS_ReorderSearchPaths();
 
-	end = Sys_Milliseconds();
+	timer.Stop();
 
 	Con_Printf(
 		"fs_gamedir: %s\n"
@@ -2887,7 +3042,7 @@ void FS_Startup(void)
 		"fs_basegame: %s\n",
 	fs_gamedirvar->s, fs_basepath->s, fs_basegame->s);
 
-	Con_Printf( "...loaded in %lu milliseconds\n", end - start );
+	Con_Printf( "...loaded in %5.5lf milliseconds\n", (double)timer.ElapsedMilliseconds().count() );
 
 	Con_Printf( "----------------------\n" );
 	Con_Printf( "%lu chunks in %lu bff files\n", fs_bffChunks, fs_bffCount );
@@ -2910,8 +3065,6 @@ void FS_Startup(void)
 	Cmd_AddCommand("addmod", FS_AddMod_f);
 	Cmd_AddCommand("fs_restart", FS_Restart);
 	Cmd_AddCommand("lsof", FS_ListOpenFiles_f);
-
-	fs_initialized = qtrue;
 }
 
 
@@ -3045,6 +3198,47 @@ static char** Sys_ConcatenateFileLists( char **list0, char **list1 )
 	if ( list1 ) Z_Free( list1 );
 
 	return cat;
+}
+
+
+/*
+================
+FS_GetFileList
+================
+*/
+uint64_t FS_GetFileList( const char *path, const char *extension, char *listbuf, uint64_t bufsize )
+{
+	uint64_t nFiles, i, nTotal, nLen;
+	char **pFiles = NULL;
+
+	*listbuf = 0;
+	nFiles = 0;
+	nTotal = 0;
+
+/*
+	if (N_stricmp(path, "$modlist") == 0) {
+		return FS_GetModList(listbuf, bufsize);
+	}
+*/
+
+	pFiles = FS_ListFiles(path, extension, &nFiles);
+
+	for (i =0; i < nFiles; i++) {
+		nLen = strlen(pFiles[i]) + 1;
+		if (nTotal + nLen + 1 < bufsize) {
+			strcpy(listbuf, pFiles[i]);
+			listbuf += nLen;
+			nTotal += nLen;
+		}
+		else {
+			nFiles = i;
+			break;
+		}
+	}
+
+	FS_FreeFileList(pFiles);
+
+	return nFiles;
 }
 
 /*

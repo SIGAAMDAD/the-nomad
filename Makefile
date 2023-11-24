@@ -212,6 +212,7 @@ SRC=\
 	$(O)/ui/ui_intro.o \
 	$(O)/ui/ui_main_menu.o \
 	$(O)/ui/ui_single_player.o \
+	$(O)/ui/ui_pause.o \
 
 MAKE=make
 

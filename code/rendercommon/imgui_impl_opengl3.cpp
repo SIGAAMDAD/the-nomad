@@ -108,6 +108,7 @@
 #endif
 
 #include "../engine/n_shared.h"
+#include "../engine/n_cvar.h"
 #include "../rendergl/ngl.h"
 #include "../rendergl/glext.h"
 #include "imgui.h"

@@ -191,6 +191,8 @@ void R_ShutdownGPUBuffers(void)
 		}
 	}
 
+	memset( rg.buffers, 0, sizeof(rg.buffers) );
+	memset( hashTable, 0, sizeof(hashTable) );
 	rg.numBuffers = 0;
 }
 
@@ -261,10 +263,9 @@ vertexBuffer_t *R_AllocateBuffer(const char *name, void *vertices, uint32_t vert
 		ri.Error(ERR_FATAL, "Bad glUsage %i", type);
 	};
 
-    if (R_BufferExists(name)) {
-        ri.Error(ERR_DROP, "R_AllocateBuffer: buffer '%s' already exists", name);
-    }
-
+	if (R_BufferExists( name )) {
+		ri.Error( ERR_DROP, "R_AllocateBuffer: buffer '%s' already exists", name );
+	}
 	if (rg.numBuffers == MAX_RENDER_BUFFERS) {
 		ri.Error(ERR_DROP, "R_AllocateBuffer: MAX_RENDER_BUFFERS hit");
 	}

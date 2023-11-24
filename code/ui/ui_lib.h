@@ -25,6 +25,12 @@ typedef enum : uint64_t
         STATE_AUDIO,
     
     STATE_CREDITS,
+
+    STATE_PAUSE,
+        STATE_HELP,
+            STATE_HELP_SHOW,
+    
+    STATE_NONE,
 } menustate_t;
 
 #define MAX_MENU_DEPTH 8
@@ -218,6 +224,7 @@ extern qboolean m_entersound;
 // cvars
 extern cvar_t *ui_language;
 extern cvar_t *ui_printStrings;
+extern cvar_t *ui_active;
 
 extern const char *UI_LangToString( int32_t lang );
 
@@ -272,6 +279,12 @@ extern void			MField_Draw( mfield_t *edit, int x, int y, int style, vec4_t color
 extern void			MenuField_Init( mfield_t *m );
 extern void			MenuField_Draw( mfield_t *f );
 extern sfxHandle_t	MenuField_Key( mfield_t* m, uint32_t* key );
+
+//
+// ui_pause.cpp
+//
+extern void         UI_PauseMenu( void );
+extern void         PauseMenu_Cache( void );
 
 //
 // ui_title.cpp

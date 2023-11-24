@@ -1,6 +1,8 @@
 #include "n_shared.h"
 #include "n_common.h"
 #include <EASTL/internal/atomic/atomic.h>
+#include "n_cvar.h"
+
 
 /*
 ==================================================

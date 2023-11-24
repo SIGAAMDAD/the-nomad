@@ -38,6 +38,11 @@ static void SG_SpawnLevelEntities( void )
             SG_SpawnMobOnMap( spawn->entityid, spawn->xyz[0], spawn->xyz[1], spawn->xyz[2] );
             break;
         case ET_PLAYR:
+            if (sg.playrReady) {
+                G_Error( "SG_InitLevel: there can be only one player spawn per map, make those checkpoints" );
+            }
+            SG_InitPlayer();
+            break;
         case ET_ITEM:
         case ET_WEAPON:
             break;
@@ -72,7 +77,25 @@ qboolean SG_InitLevel( int32_t levelIndex )
 
     sg.state = SGAME_IN_LEVEL;
 
+    if (sg_printLevelStats.i) {
+        G_Printf( "\n---------- Level Info ----------\n" );
+        G_Printf( "Map Name: %s\n", sg.mapInfo.name );
+        G_Printf( "Checkpoint Count: %i\n", sg.mapInfo.numCheckpoints );
+        G_Printf( "Spawn Count: %i\n", sg.mapInfo.numSpawns );
+        G_Printf( "Map Width: %i\n", sg.mapInfo.width );
+        G_Printf( "Map Height: %i\n", sg.mapInfo.height );
+    }
+
+    RE_LoadWorldMap( sg.mapInfo.name );
+
+    trap_Cvar_Set( "sg_levelIndex", va( "%i", levelIndex ) );
+
     return qtrue;
+}
+
+void SG_SaveLevelData( void )
+{
+    
 }
 
 typedef struct {

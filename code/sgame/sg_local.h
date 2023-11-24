@@ -19,6 +19,9 @@
 #define MAXITEMS 1024
 #define MAXWEAPONS 1024
 
+#define ARCHIVE_SAVEGAME 0
+#define ARCHIVE_LOADGAME 1
+
 #define DMG_EXPLOSION 16
 
 #define MAXPLAYERWEAPONS 6
@@ -298,21 +301,24 @@ typedef struct
 	float cameraWidth;
 	float cameraHeight;
 
-	mobj_t *mobs;
+	mobj_t mobs[MAXMOBS];
 	uint32_t numMobs;
 
-	item_t *items;
+	item_t items[MAXITEMS];
 	uint32_t numItems;
 
-	weapon_t *weapons;
+	weapon_t weapons[MAXWEAPONS];
 	uint32_t numWeapons;
 
 	playr_t playr;
+	qboolean playrReady;
 
 	// for rendering to screen based coordinates
 	gpuConfig_t gpuConfig;
 	float scale;
 	float bias;
+
+	int32_t checkpointIndex;
 	
     mapinfo_t mapInfo; // this structure's pretty big, so only 1 instance in the vm
 	int32_t leveltime;
@@ -321,6 +327,8 @@ typedef struct
 //==============================================================
 // globals
 //
+
+extern uint32_t sg_numLevels;
 
 extern const vec3_t dirvectors[NUMDIRS];
 extern const dirtype_t inversedirs[NUMDIRS];
@@ -353,6 +361,10 @@ extern vmCvar_t sg_printLevelStats;
 extern vmCvar_t sg_decalDetail;
 extern vmCvar_t sg_gibs;
 extern vmCvar_t sg_drawFPS;
+extern vmCvar_t sg_levelInfoFile;
+extern vmCvar_t sg_levelIndex;
+extern vmCvar_t sg_levelDataFile;
+extern vmCvar_t sg_savename;
 
 //==============================================================
 // functions
@@ -365,6 +377,7 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL SG_Error( const char *err, .
 void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL SG_Printf( const char *fmt, ... );
 void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL G_Error( const char *err, ... );
 void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL G_Printf( const char *fmt, ... );
+void SG_UpdateCvars( void );
 
 //
 // sg_level.c
@@ -383,6 +396,14 @@ void SG_BuildBounds( bbox_t *bounds, const vec3_t origin, float w, float h );
 void SG_InitEntities(void);
 
 //
+// sg_archive.c
+//
+typedef void (*archiveFunc_t)( file_t, int );
+void SG_SaveGame( void );
+void SG_LoadGame( const char *filename );
+void SG_AddArchiveHandle( archiveFunc_t pFunc );
+
+//
 // sg_mthink.c
 //
 mobj_t *SG_SpawnMob( mobtype_t type );
@@ -394,10 +415,12 @@ void SG_SpawnMobOnMap( mobtype_t id, float x, float y, float elevation );
 const char *String_Alloc( const char *str );
 void *SG_MemAlloc( uint32_t size );
 void SG_MemInit( void );
+qboolean SG_OutOfMemory( void );
 
 //
 // sg_playr.c
 //
+void SG_InitPlayer( void );
 void P_Thinker( sgentity_t *self );
 void SG_KeyEvent( int32_t key, qboolean down );
 void SG_MouseEvent(  );
@@ -436,15 +459,22 @@ void trap_Argv( uint32_t n, char *buffer, uint32_t bufferLength );
 void trap_Args( char *buffer, uint32_t bufferLength );
 
 // filesystem access
-file_t trap_FS_FOpenRead(const char *npath, file_t *f);
-file_t trap_FS_FOpenWrite(const char *npath, file_t *f);
-uint32_t trap_FS_FileLength(file_t f);
-uint32_t trap_FS_Write(const void *buffer, uint32_t len, file_t f);
-uint32_t trap_FS_Read(void *buffer, uint32_t len, file_t f);
-fileOffset_t trap_FS_FileSeek(file_t f, fileOffset_t offset, uint32_t whence);
-fileOffset_t trap_FS_FileTell(file_t f);
-void trap_FS_FClose(file_t f);
-
+file_t trap_FS_FOpenRead( const char *npath );
+file_t trap_FS_FOpenWrite( const char *npath );
+file_t trap_FS_FOpenAppend( const char *npath );
+file_t trap_FS_FOpenRW( const char *npath );
+fileOffset_t trap_FS_FileSeek( file_t file, fileOffset_t offset, uint32_t whence );
+fileOffset_t trap_FS_FileTell( file_t file );
+uint64_t trap_FS_FOpenFile( const char *npath, file_t *file, fileMode_t mode );
+file_t trap_FS_FOpenFileWrite( const char *npath, file_t *file );
+uint64_t trap_FS_FOpenFileRead( const char *npath, file_t *file );
+void trap_FS_FClose( file_t file );
+uint64_t trap_FS_WriteFile( const void *buffer, uint64_t len, file_t file );
+uint64_t trap_FS_Write( const void *buffer, uint64_t len, file_t file );
+uint64_t trap_FS_Read( void *buffer, uint64_t len, file_t file );
+uint64_t trap_FS_FileLength( file_t file );
+uint64_t trap_FS_GetFileList( const char *path, const char *extension, char *listbuf, uint64_t bufsize );
+void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL trap_FS_Printf( file_t f, const char *fmt, ... );
 
 void trap_GetGPUConfig( gpuConfig_t *config );
 
@@ -461,7 +491,7 @@ void trap_Snd_PlaySfx(sfxHandle_t sfx);
 void trap_Snd_StopSfx(sfxHandle_t sfx);
 
 // register a shader (technically a texture)
-nhandle_t trap_RE_RegisterShader(const char *npath);
+nhandle_t RE_RegisterShader(const char *npath);
 
 uint32_t trap_Key_GetCatcher(void);
 void trap_Key_SetCatcher(uint32_t catcher);
@@ -469,12 +499,15 @@ uint32_t trap_Key_GetKey(const char *binding);
 qboolean trap_Key_IsDown(uint32_t keynum);
 
 // drawing functions
-void trap_RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
-void trap_RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys );
-void trap_RE_ClearScene( void );
-void trap_RE_RenderScene( const renderSceneRef_t *fd );
+void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
+void RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys );
+void RE_ClearScene( void );
+void RE_RenderScene( const renderSceneRef_t *fd );
+
+// load a level map
+void RE_LoadWorldMap( const char *filename );
 
 // set the rendering color
-void trap_RE_SetColor(const float *rgba);
+void RE_SetColor(const float *rgba);
 
 #endif

@@ -40,7 +40,7 @@ static void SG_DrawEntity( const sgentity_t *ent )
 
     verts[0].xyz[0] = ent->origin[0];
 
-    trap_RE_AddPolyToScene( ent->hShader, verts, 4 );
+    RE_AddPolyToScene( ent->hShader, verts, 4 );
 }
 
 static void SG_AddSpritesToFrame( void )
@@ -49,7 +49,7 @@ static void SG_AddSpritesToFrame( void )
     uint32_t numActiveEnts;
 
     numActiveEnts = 0;
-    for (ent = &sg_activeEnts; ent; ent = ent->next) {
+    for (ent = sg_activeEnts.next; ent != &sg_activeEnts; ent = ent->next) {
         SG_DrawEntity( ent );
         numActiveEnts++;
     }
@@ -84,8 +84,8 @@ int32_t SG_DrawFrame( void )
 
 
     // draw everything
-    trap_RE_ClearScene();
+    RE_ClearScene();
 
-    trap_RE_RenderScene( &refdef );
+    RE_RenderScene( &refdef );
 }
 

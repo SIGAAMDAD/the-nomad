@@ -1849,3 +1849,366 @@ qboolean Com_GetHashColor(const char *str, byte *color)
 
 	return qtrue;
 }
+
+void Com_PrintStartupBegin( const char *func ) {
+	Con_Printf( "%*c %s %*c", 10, '-', func, 10, '-' );
+}
+
+void Com_PrintStartupEnd( void ) {
+	Con_Printf( "%*c", 20, '-' );
+}
+
+/*
+=====================================================================
+
+  INFO STRINGS
+
+=====================================================================
+*/
+
+static qboolean Q_strkey( const char *str, const char *key, uint32_t key_len )
+{
+	uint32_t i;
+
+	for ( i = 0; i < key_len; i++ )
+	{
+		if ( locase[ (byte)str[i] ] != locase[ (byte)key[i] ] )
+		{
+			return qfalse;
+		}
+	}
+
+	return qtrue;
+}
+
+
+/*
+===============
+Info_ValueForKey
+
+Searches the string for the given
+key and returns the associated value, or an empty string.
+===============
+*/
+const char *Info_ValueForKey( const char *s, const char *key )
+{
+	static	char value[2][BIG_INFO_VALUE];	// use two buffers so compares
+											// work without stomping on each other
+	static uint32_t valueindex = 0;
+	const char *v, *pkey;
+	char	*o, *o2;
+	uint32_t klen, len;
+	
+	if ( !s || !key || !*key )
+		return "";
+
+	klen = strlen( key );
+
+	if ( *s == '\\' )
+		s++;
+
+	while (1)
+	{
+		pkey = s;
+		while ( *s != '\\' )
+		{
+			if ( *s == '\0' )
+				return "";
+			++s;
+		}
+		len = (s - pkey);
+		s++; // skip '\\'
+
+		v = s;
+		while ( *s != '\\' && *s !='\0' )
+			s++;
+
+		if ( len == klen && Q_strkey( pkey, key, klen ) )
+		{
+			o = o2 = value[ valueindex ^= 1 ];
+			if ( (s - v) >= BIG_INFO_VALUE )
+			{
+				N_Error( ERR_DROP, "Info_ValueForKey: oversize infostring" );
+			}
+			else 
+			{
+				while ( v < s )
+					*o++ = *v++;
+			}
+			*o = '\0';
+			return o2;
+		}
+
+		if ( *s == '\0' )
+			break;
+
+		s++;
+	}
+
+	return "";
+}
+
+
+#define MAX_INFO_TOKENS ((MAX_INFO_STRING/3)+2)
+
+static const char *info_keys[ MAX_INFO_TOKENS ];
+static const char *info_values[ MAX_INFO_TOKENS ];
+static uint32_t info_tokens;
+
+/*
+===================
+Info_Tokenize
+
+Tokenizes all key/value pairs from specified infostring
+NOT suitable for big infostrings
+===================
+*/
+void Info_Tokenize( const char *s )
+{
+	static char tokenBuffer[ MAX_INFO_STRING ];
+	char *o = tokenBuffer;
+
+	info_tokens = 0;
+	*o = '\0';
+
+	for ( ;; )
+	{
+		while ( *s == '\\' ) // skip leading/trailing separators
+			s++;
+
+		if ( *s == '\0' )
+			break;
+
+		info_keys[ info_tokens ] = o;
+		while ( *s != '\\' )
+		{
+			if ( *s == '\0' )
+			{
+				*o = '\0'; // terminate key
+				info_values[ info_tokens++ ] = o;
+				return;
+			}
+			*o++ = *s++;
+		}
+		*o++ = '\0'; // terminate key
+		s++; // skip '\\'
+
+		info_values[ info_tokens++ ] = o;
+		while ( *s != '\\' && *s != '\0' )
+		{
+			*o++ = *s++;
+		}
+		*o++ = '\0';
+	}
+}
+
+
+/*
+===================
+Info_ValueForKeyToken
+
+Fast lookup from tokenized infostring
+===================
+*/
+const char *Info_ValueForKeyToken( const char *key )
+{
+	uint32_t i;
+
+	for ( i = 0; i < info_tokens; i++ )  {
+		if ( N_stricmp( info_keys[ i ], key ) == 0 )
+		{
+			return info_values[ i ];
+		}
+	}
+
+	return "";
+}
+
+
+/*
+===================
+Info_NextPair
+
+Used to iterate through all the key/value pairs in an info string
+===================
+*/
+const char *Info_NextPair( const char *s, char *key, char *value )
+{
+	char	*o;
+
+	if ( *s == '\\' ) {
+		s++;
+	}
+
+	key[0] = '\0';
+	value[0] = '\0';
+
+	o = key;
+	while ( *s != '\\' ) {
+		if ( !*s ) {
+			*o = '\0';
+			return s;
+		}
+		*o++ = *s++;
+	}
+	*o = '\0';
+	s++;
+
+	o = value;
+	while ( *s != '\\' && *s ) {
+		*o++ = *s++;
+	}
+	*o = '\0';
+
+	return s;
+}
+
+
+/*
+===================
+Info_RemoveKey
+
+return removed character count
+===================
+*/
+size_t Info_RemoveKey( char *s, const char *key )
+{
+	char *start;
+	const char *pkey;
+	size_t key_len, len, ret;
+
+	key_len = strlen( key );
+	ret = 0;
+
+	while ( 1 ) {
+		start = s;
+		if ( *s == '\\' ) {
+			++s;
+		}
+		pkey = s;
+		while ( *s != '\\' ) {
+			if ( *s == '\0' ) {
+				if ( s != start ) {
+					// remove any trailing empty keys
+					*start = '\0';
+					ret += (int)(s - start);
+				}
+				return ret;
+			}
+			++s;
+		}
+		len = (s - pkey);
+		++s; // skip '\\'
+
+		while ( *s != '\\' && *s != '\0' ) {
+			++s;
+		}
+
+		if ( len == key_len && Q_strkey( pkey, key, key_len ) ) {
+			memmove( start, s, strlen( s ) + 1 ); // remove this part
+			ret += (int)(s - start);
+			s = start;
+		}
+
+		if ( *s == '\0' ) {
+			break;
+		}
+	}
+
+	return ret;
+}
+
+
+/*
+==================
+Info_Validate
+
+Some characters are illegal in info strings because they
+can mess up the server's parsing
+==================
+*/
+qboolean Info_Validate( const char *s )
+{
+	for ( ;; ) {
+		switch ( *s++ ) {
+		case '\0':
+			return qtrue;
+		case '\"':
+		case ';':
+			return qfalse;
+		default:
+			break;
+		};
+	}
+}
+
+
+/*
+==================
+Info_ValidateKeyValue
+
+Some characters are illegal in key values because they
+can mess up the server's parsing
+==================
+*/
+qboolean Info_ValidateKeyValue( const char *s )
+{
+	for ( ;; ) {
+		switch ( *s++ ) {
+		case '\0':
+			return qtrue;
+		case '\\':
+		case '\"':
+		case ';':
+			return qfalse;
+		default:
+			break;
+		};
+	}
+}
+
+
+/*
+==================
+Info_SetValueForKey_s
+
+Changes or adds a key/value pair
+==================
+*/
+qboolean Info_SetValueForKey_s( char *s, uint32_t slen, const char *key, const char *value )
+{
+	char		newi[BIG_INFO_STRING+2];
+	uint32_t	len1, len2;
+
+	len1 = strlen( s );
+
+	if ( len1 >= slen ) {
+		Con_Printf( COLOR_YELLOW "Info_SetValueForKey(%s): oversize infostring\n", key );
+		return qfalse;
+	}
+
+	if ( !key || !Info_ValidateKeyValue( key ) || *key == '\0' ) {
+		Con_Printf( COLOR_YELLOW "Invalid key name: '%s'\n", key );
+		return qfalse;
+	}
+
+	if ( value && !Info_ValidateKeyValue( value ) ) {
+		Con_Printf( COLOR_YELLOW "Invalid value name: '%s'\n", value );
+		return qfalse;
+	}
+
+	len1 -= Info_RemoveKey( s, key );
+	if ( value == NULL || *value == '\0' ) {
+		return qtrue;
+	}
+
+	len2 = Com_snprintf( newi, sizeof( newi ), "\\%s\\%s", key, value );
+
+	if ( len1 + len2 >= slen ) {
+		Con_Printf( COLOR_YELLOW "Info string length exceeded for key '%s'\n", key );
+		return qfalse;
+	}
+
+	strcpy( s + len1, newi );
+	return qtrue;
+}

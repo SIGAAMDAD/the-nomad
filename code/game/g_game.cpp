@@ -121,7 +121,7 @@ static qboolean G_LoadLevelFile( const char *filename, mapinfo_t *info )
     }
 
     Hunk_FreeTempMemory( tbuf );
-    Hunk_FreeTempMemory( f.v );
+    FS_FreeFile( f.v );
 
     return qtrue;
 }
@@ -220,42 +220,20 @@ static void G_RefFreeAll(void) {
 
 static void G_RefImGuiFree(void *ptr, void *) {
     if (ptr != NULL) {
-        free(ptr);
-    }
-}
-
-//
-// G_RefImGuiInit: called during internal renderer initialization
-// renderContext can be either a SDL_GLContext or SDL_Renderer, or NULL if using D3D11, Vulkan, or Metal
-//
-static void G_RefImGuiInit(void *shaderData, const void *importData) {
-    ImGuiIO& io = ImGui::GetIO();
-    io.DisplaySize.x = gi.gpuConfig.vidWidth;
-    io.DisplaySize.y = gi.gpuConfig.vidHeight;
-    ImGui::GetStyle().AntiAliasedFill = true;
-    ImGui::GetStyle().AntiAliasedLines = true;
-    ImGui::GetStyle().AntiAliasedLinesUseTex = true;
-    io.WantCaptureMouse = true;
-
-    if (!N_stricmp( g_renderer->s, "opengl" )) {
-        ImGui_ImplSDL2_InitForOpenGL( r_window, r_GLcontext );
-        ImGui_ImplOpenGL3_Init( shaderData, NULL, (const imguiGL3Import_t *)importData);
-    }
-    else if (!N_stricmp( g_renderer->s, "vulkan" )) {
-        ImGui_ImplSDL2_InitForVulkan( r_window );
+        Z_Free( ptr );
     }
 }
 
 static void G_RefImGuiShutdown(void) {
     ImGuiIO& io = ImGui::GetIO();
     io.BackendRendererName = NULL;
-    io.BackendRendererUserData = NULL;
+    io.BackendLanguageUserData = NULL;
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
 
-    // deleting backend data is automatically done with G_RefFreeAll
+    // G_RefFreeAll will clean all the imgui stuff up
 }
 
 static void G_RefImGuiNewFrame(void) {
@@ -263,8 +241,13 @@ static void G_RefImGuiNewFrame(void) {
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableSetMousePos;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-    io.DisplaySize.x = gi.gpuConfig.vidWidth;
-    io.DisplaySize.y = gi.gpuConfig.vidHeight;
+    io.DisplaySize.x = r_customWidth->i;
+    io.DisplaySize.y = r_customHeight->i;
+
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.AntiAliasedFill = true;
+    style.AntiAliasedLines = true;
+    style.AntiAliasedLinesUseTex = true;
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL2_NewFrame();
@@ -291,7 +274,37 @@ static void G_SetScaling(float factor, uint32_t captureWidth, uint32_t captureHe
 }
 
 static void *G_RefImGuiMalloc(size_t size) {
-    return malloc( size );
+    return Z_Malloc( size, TAG_RENDERER );
+}
+
+//
+// G_RefImGuiInit: called during internal renderer initialization
+// renderContext can be either a SDL_GLContext or SDL_Renderer, or NULL if using D3D11, Vulkan, or Metal
+//
+static void G_RefImGuiInit(void *shaderData, const void *importData) {
+    IMGUI_CHECKVERSION();
+    ImGui::SetAllocatorFunctions((ImGuiMemAllocFunc)G_RefImGuiMalloc, (ImGuiMemFreeFunc)G_RefImGuiFree);
+    ImGui::CreateContext();
+
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableSetMousePos;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    io.DisplaySize.x = gi.gpuConfig.vidWidth;
+    io.DisplaySize.y = gi.gpuConfig.vidHeight;
+
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.AntiAliasedFill = true;
+    style.AntiAliasedLines = true;
+    style.AntiAliasedLinesUseTex = true;
+
+    if (!N_stricmp( g_renderer->s, "opengl" )) {
+        ImGui_ImplSDL2_InitForOpenGL( r_window, r_GLcontext );
+        ImGui_ImplOpenGL3_Init( shaderData, NULL, (const imguiGL3Import_t *)importData);
+    }
+    else if (!N_stricmp( g_renderer->s, "vulkan" )) {
+        ImGui_ImplSDL2_InitForVulkan( r_window );
+    }
 }
 
 static void G_InitRenderRef(void)
@@ -333,10 +346,6 @@ static void G_InitRenderRef(void)
     }
 
     g_renderer->modified = qfalse;
-
-    IMGUI_CHECKVERSION();
-    ImGui::SetAllocatorFunctions((ImGuiMemAllocFunc)G_RefImGuiMalloc, (ImGuiMemFreeFunc)G_RefImGuiFree);
-    ImGui::CreateContext();
 
     memset(&import, 0, sizeof(import));
 
@@ -468,19 +477,24 @@ void G_ShutdownRenderer(refShutdownCode_t code)
 
 static void G_Vid_Restart(refShutdownCode_t code)
 {
-    // clear and mute all sounds until next registration
-    Snd_DisableSounds();
-
     // shutdown VMs
     G_ShutdownVMs();
 
     // shutdown the renderer and clear the renderer interface
     G_ShutdownRenderer(code);
 
+    gi.soundStarted = qfalse;
+
     G_ClearMem();
 
     // startup all the gamestate memory
     G_StartHunkUsers();
+
+    G_InitSGame();
+    gi.sgameStarted = qtrue;
+
+    // make sure all sounds have updated volumes
+    Cbuf_ExecuteText( EXEC_APPEND, "updatevolume\n" );
 }
 
 static void G_PlayDemo_f(void)
@@ -499,13 +513,27 @@ static void G_Vid_Restart_f(void)
         G_Vid_Restart(REF_KEEP_CONTEXT);
     }
     else {
+        if (gi.lastVidRestart) {
+            if (abs((long)(gi.lastVidRestart - Sys_Milliseconds())) < 500) {
+                // don't allow vid restart too quickly after a first one
+                return;
+            }
+        }
         G_Vid_Restart(REF_DESTROY_WINDOW);
     }
 }
 
+//
+// G_Snd_Restart_f: Restarts the sound subsystem
+// The sgame and ui must also be forced to restart
+// because the handles will be invalid
+//
 static void G_Snd_Restart_f(void)
 {
+    Snd_Shutdown();
 
+    // sound will be reinitialized by vid restart
+    G_Vid_Restart( REF_KEEP_CONTEXT );
 }
 
 const vidmode_t r_vidModes[NUMVIDMODES] =
@@ -588,8 +616,18 @@ static qboolean isValidRenderer( const char *s )
 	return qtrue;
 }
 
-static void G_InitRef_Cvars(void)
+//
+// G_Init: called every time a new level is loaded
+//
+void G_Init(void)
 {
+    Con_Printf( "----- Game State Initialization ----\n" );
+
+    // clear the hunk before anything
+    Hunk_Clear();
+
+    G_ClearState();
+
     r_allowLegacy = Cvar_Get("r_allowLegacy", "0", CVAR_SAVE | CVAR_LATCH);
     Cvar_SetDescription(r_allowLegacy, "Allow the use of old OpenGL API versions, requires \\r_drawMode 0 or 1 and \\r_allowShaders 0");
 
@@ -692,43 +730,24 @@ static void G_InitRef_Cvars(void)
     if (!isValidRenderer(g_renderer->s)) {
         Cvar_ForceReset("g_renderer");
     }
-}
-
-//
-// G_Init: called every time a new level is loaded
-//
-void G_Init(void)
-{
-    Con_Printf( "----- Game State Initialization ----\n" );
-
-    G_ClearState();
-    G_InitRef_Cvars();
 
     Con_Init();
-
-    // clear the hunk before anything
-    Hunk_Clear();
 
     // init sound
     Snd_Init();
     gi.soundStarted = qtrue;
-    
-    // init rendering engine
+
+    // init renderer
     G_InitRenderer();
-
-    // cache all maps
-    G_InitMapCache();
-
-    // load in the VMs
-    G_InitSGame();
-    G_InitUI();
+    gi.rendererStarted = qtrue;
 
     //
-    // register system commands
+    // register game commands
     //
 
     Cmd_AddCommand("demo", G_PlayDemo_f);
     Cmd_AddCommand("vid_restart", G_Vid_Restart_f);
+    Cmd_AddCommand("snd_restart", G_Snd_Restart_f);
     Cmd_AddCommand("modelist", G_ModeList_f);
 
     Con_Printf( "----- Game State Initialization Complete ----\n" );
@@ -739,7 +758,7 @@ void G_Shutdown(qboolean quit)
     static qboolean recursive = qfalse;
 
     if (!com_errorEntered) {
-        Con_Printf("----- Game State Shutdown ----\n");
+        Con_Printf("----- Game State Shutdown (%s) ----\n", quit ? "quit" : "restart");
     }
 
     if (recursive) {
@@ -774,8 +793,10 @@ void G_FlushMemory(void)
 {
     // shutdown all game state stuff
     G_ShutdownAll();
+
     G_ClearMem();
-    G_Init();
+
+    G_StartHunkUsers();
 }
 
 void G_ShutdownVMs(void)
@@ -784,10 +805,17 @@ void G_ShutdownVMs(void)
     G_ShutdownUI();
 
     gi.uiStarted = qfalse;
+    gi.sgameStarted = qfalse;
 }
 
 void G_StartHunkUsers(void)
 {
+    // set the marker before loading any assets
+    Hunk_SetMark();
+
+    // cache all maps
+    G_InitMapCache();
+
     if (!gi.rendererStarted) {
         gi.rendererStarted = qtrue;
         G_InitRenderer();
@@ -799,6 +827,10 @@ void G_StartHunkUsers(void)
     if (!gi.uiStarted) {
         gi.uiStarted = qtrue;
         G_InitUI();
+    }
+    if (!gi.sgameStarted) {
+        gi.sgameStarted = qtrue;
+        G_InitSGame();
     }
 }
 

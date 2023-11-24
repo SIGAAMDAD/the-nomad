@@ -11,6 +11,8 @@
 #if defined(__cplusplus)
 #include "../rendercommon/imgui.h"
 #include "g_vmimgui.h"
+#include "../engine/n_cvar.h"
+#include "../system/sys_timer.h"
 #endif
 
 #ifndef O_BINARY
@@ -82,18 +84,21 @@ struct vmRefImport_s
     void (*trap_Print)( const char *str );
     void (*trap_Error)( const char *str );
 
-    file_t (*trap_FS_FOpenWrite)( const char *path, file_t *f, handleOwner_t owner );
-    file_t (*trap_FS_FOpenRead)( const char *path, file_t *f, handleOwner_t owner );
-    void (*trap_FS_FClose)( file_t f );
-    uint32_t (*trap_FS_Read)( void *buffer, uint32_t len, file_t f, handleOwner_t owner );
-    uint32_t (*trap_FS_Write)( const void *buffer, uint32_t len, file_t f, handleOwner_t owner );
-    void (*trap_FS_WriteFile)( const void *buffer, uint32_t len, file_t f, handleOwner_t owner );
-    void (*trap_FS_CreateTmp)( char *name, const char *ext, file_t *f, handleOwner_t owner );
-    uint64_t (*trap_FS_FOpenFileRead)( const char *path, file_t *f, handleOwner_t owner );
-    fileOffset_t (*trap_FS_FileSeek)( file_t f, fileOffset_t offset, uint32_t whence, handleOwner_t owner );
-    uint64_t (*trap_FS_FOpenFileWrite)( const char *path, file_t *f, handleOwner_t owner );
-    fileOffset_t (*trap_FS_FileTell)( file_t f );
-    uint64_t (*trap_FS_FileLength)( file_t f );
+    file_t (*FS_FOpenRead)( const char *npath, handleOwner_t owner );
+    file_t (*FS_FOpenWrite)( const char *npath, handleOwner_t owner );
+    file_t (*FS_FOpenAppend)( const char *npath, handleOwner_t owner );
+    file_t (*FS_FOpenRW)( const char *npath, handleOwner_t owner );
+    fileOffset_t (*FS_FileSeek)( file_t file, fileOffset_t offset, uint32_t whence, handleOwner_t owner );
+    fileOffset_t (*FS_FileTell)( file_t file, handleOwner_t owner );
+    uint64_t (*FS_FOpenFile)( const char *npath, file_t *file, fileMode_t mode, handleOwner_t owner );
+    file_t (*FS_FOpenFileWrite)( const char *npath, file_t *file, handleOwner_t owner );
+    uint64_t (*FS_FOpenFileRead)( const char *npath, file_t *file, handleOwner_t owner );
+    void (*FS_FClose)( file_t file, handleOwner_t owner );
+    uint64_t (*FS_WriteFile)( const void *buffer, uint64_t len, file_t file, handleOwner_t owner );
+    uint64_t (*FS_Write)( const void *buffer, uint64_t len, file_t file, handleOwner_t owner );
+    uint64_t (*FS_Read)( void *buffer, uint64_t len, file_t file, handleOwner_t owner );
+    uint64_t (*FS_FileLength)( file_t file, handleOwner_t owner );
+    uint64_t (*FS_GetFileList)( const char *path, const char *extension, char *listbuf, uint64_t bufsize );
 
     void (*trap_RE_ClearScene)( void );
     void (*trap_RE_SetColor)( const float *rgba );
@@ -103,6 +108,7 @@ struct vmRefImport_s
     void (*trap_RE_DrawImage)( float x, float y, float w, float h, float u1, float v1, float u2, float v2, nhandle_t hShader );
     nhandle_t (*trap_RE_RegisterShader)( const char *name );
     void (*trap_RE_RenderScene)( const renderSceneRef_t *fd );
+    void (*trap_RE_LoadWorldMap)( const char *filename );
 
     sfxHandle_t (*trap_Snd_RegisterSfx)( const char *npath );
     void (*trap_Snd_PlaySfx)( sfxHandle_t sfx );
@@ -207,9 +213,11 @@ typedef struct {
     qboolean mapLoaded;
 
     gamestate_t state;
-    int frametime;
-    int framecount;
-    int realtime;
+    int32_t frametime;
+    int32_t framecount;
+    int32_t realtime;
+    
+    uint64_t lastVidRestart;
 
 //    uiMenu_t menuIndex;
     nhandle_t consoleShader;

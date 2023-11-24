@@ -841,6 +841,9 @@ void CUILib::SetActiveMenu( uiMenu_t menu )
 	Menu_Cache();
 
 	switch ( menu ) {
+	case UI_MENU_PAUSE:
+		UI_PauseMenu();
+		break;
 	case UI_MENU_NONE:
 		ForceMenuOff();
 		return;

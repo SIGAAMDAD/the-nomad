@@ -9,6 +9,9 @@
 #define MASK_QUEUED_EVENTS (MAX_EVENT_QUEUE - 1)
 #define MAX_PUSHED_EVENTS 256
 
+file_t logfile = FS_INVALID_HANDLE;
+static file_t com_journalFile = FS_INVALID_HANDLE;
+
 static sysEvent_t eventQueue[MAX_EVENT_QUEUE];
 static sysEvent_t *lastEvent = eventQueue + MAX_EVENT_QUEUE - 1;
 static uint32_t eventHead = 0;
@@ -30,7 +33,6 @@ cvar_t *com_affinityMask;
 cvar_t *sys_cpuString;
 cvar_t *com_devmode;
 cvar_t *com_version;
-file_t com_journalFile = FS_INVALID_HANDLE;
 static int lastTime;
 int com_frameTime;
 static uint64_t com_frameNumber = 0;
@@ -38,6 +40,7 @@ uint64_t com_cacheLine; // L1 cacheline
 char com_errorMessage[MAXPRINTMSG];
 static jmp_buf abortframe;
 qboolean com_errorEntered = qfalse;
+qboolean com_fullyInitialized;
 
 /*
 ===============================================================
@@ -107,7 +110,6 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Con_Printf(const char *fmt, 
 
     // slap that shit into the logfile
     if (com_logfile && com_logfile->i) {
-		extern file_t logfile;
         if (logfile == FS_INVALID_HANDLE && FS_Initialized() && !opening_console) {
             const char *logName = "debug.log";
             int mode;
@@ -180,6 +182,8 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error(errorCo
 	}
 	com_errorEntered = qtrue;
 
+	Cvar_Set( "com_errorCode", va( "%i" , code) );
+
 	// if we are getting a solid stream of ERR_DROP, do an ERR_FATAL
 	currentTime = Sys_Milliseconds();
 	if ( currentTime - lastErrorTime < 100 ) {
@@ -195,7 +199,6 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error(errorCo
     N_vsnprintf(com_errorMessage, sizeof(com_errorMessage), err, argptr);
     va_end(argptr);
 
-	com_errorCode = code;
 	Cbuf_Init();
 
 	if (code == ERR_DROP) {
@@ -206,7 +209,6 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error(errorCo
 		G_FlushMemory();
 		VM_Forced_Unload_Done();
 
-		FS_Restart();
 		com_errorEntered = qfalse;
 
 		Q_longjmp( abortframe, 1 );
@@ -533,14 +535,14 @@ static void Com_Freeze_f( void ) {
 	}
 }
 
-#define NOMAD_CONFIG "default.cfg"
+#define NOMAD_CONFIG "glnomad.cfg"
 
 //
 // Com_LoadConfig: loads the default configuration file
 //
 void Com_LoadConfig(void)
 {
-    Cbuf_ExecuteText(EXEC_NOW, "exec " NOMAD_CONFIG);
+    Cbuf_ExecuteText(EXEC_APPEND, va("exec %s", Cvar_VariableString( "com_defaultcfg" )));
     Cbuf_Execute();
 }
 
@@ -549,7 +551,7 @@ void Com_LoadConfig(void)
 //
 static void Com_Crash_f(void)
 {
-    *((volatile int *)0) = 0x1234;
+    *((volatile int *)0) = 0x12346789;
 }
 
 //
@@ -578,16 +580,20 @@ void Com_InitJournals(void)
 		return;
 	}
 
-	if (com_journal->i == JOURNAL_WRITE) {
-		Con_Printf("writing an event journal\n");
-		com_journalFile = FS_FOpenWrite("journal.dat");
-		if (com_journalFile == FS_INVALID_HANDLE) {
-			Con_Printf(COLOR_YELLOW "Failed to open event journal\n");
-		}
+	Con_Printf( "Checking for jounaling...\n" );
+	if (com_journal->i == 1) {
+		Con_Printf( "Journaling events.\n" );
+
+		com_journalFile = FS_FOpenWrite( "journal.dat" );
+	} else if (com_journal->i == 2) {
+		Con_Printf( "Replaying journaled events.\n" );
+
+		FS_FOpenFileRead( "journal.dat", &com_journalFile );
 	}
-	else if (com_journal->i == JOURNAL_PLAYBACK) {
-		Con_Printf("replaying event journal\n");
-		FS_FOpenFileRead("journal.dat", &com_journalFile);
+
+	if (com_journalFile == FS_INVALID_HANDLE) {
+		Cvar_Set( "com_journal", "0" );
+		Con_Printf( "Couldn't open journal file.\n" );
 	}
 }
 
@@ -596,15 +602,19 @@ void Com_RestartGame(void)
 	static qboolean gameRestarting = qfalse;
 
 	// make sure no recursion is possible
-	if (!gameRestarting) {
+	if (!gameRestarting && com_fullyInitialized) {
 		gameRestarting = qtrue;
 
 		Con_Printf("Com_RestartGame: restarting all engine systems\n");
 
+		G_ShutdownAll();
 		G_ClearMem();
 
 		// reset console history
 		Con_ResetHistory();
+
+		// close the logfile if it's open
+		Com_Shutdown();
 
 		// clear the filesystem before restarting the cvars
 		FS_Shutdown(qtrue);
@@ -617,19 +627,25 @@ void Com_RestartGame(void)
 		// reload the config file
 		Com_LoadConfig();
 
-		G_Restart();
+		G_StartHunkUsers();
 
-		gameRestarting = qtrue;
+		gameRestarting = qfalse;
 	}
 }
 
 /*
-Com_Shutdown: shuts down all the engine's systems
+* Com_Shutdown: closes logging files
 */
 void Com_Shutdown(void)
 {
-	Con_Shutdown();
-	FS_Shutdown(qtrue);
+	if (logfile != FS_INVALID_HANDLE) {
+		FS_FClose( logfile );
+		logfile = FS_INVALID_HANDLE;
+	}
+	if (com_journalFile != FS_INVALID_HANDLE) {
+		FS_FClose( com_journalFile );
+		com_journalFile = FS_INVALID_HANDLE;
+	}
 }
 
 #ifdef USE_AFFINITY_MASK
@@ -1134,8 +1150,8 @@ returns qtrue if both vid_xpos and vid_ypos was set
 */
 qboolean Com_EarlyParseCmdLine( char *commandLine, char *con_title, int title_size, int *vid_xpos, int *vid_ypos )
 {
-	int		flags = 0;
-	int		i;
+	uint32_t flags = 0;
+	uint32_t i;
 
 	*con_title = '\0';
 	Com_ParseCommandLine( commandLine );
@@ -1234,23 +1250,90 @@ int Com_Milliseconds( void )
 	return ev.evTime;
 }
 
+static void Com_WriteConfig_f( void );
+
+static void Com_PrintDivider( void ) {
+	for (uint32_t i = 0; i < 75; ++i) {
+		Con_Printf( "=" );
+	}
+	Con_Printf("\n");
+}
+
+static void Com_PrintBanner( const char *msg ) {
+	uint32_t spaces = 35 - (strlen( msg ) / 2);
+
+	for (uint32_t i = 0; i < spaces; ++i) {
+		Con_Printf( " " );
+	}
+	Con_Printf( "%s\n", msg );
+}
+
+static void Com_PrintVersionStrings( const char *commandLine )
+{
+	SDL_version sdl_version;
+	char version_str[1024];
+	char gamedesc[1024];
+
+	//
+	// print program version and exit
+	//
+	if (strstr( commandLine, "--version" ) || strstr( commandLine, "-version" )) {
+		Sys_Print( GLN_VERSION "\n" );
+		Sys_Exit(1);
+	}
+
+	SDL_GetVersion( &sdl_version );
+	Com_snprintf( version_str, sizeof(version_str), "%i.%i.%i", sdl_version.major, sdl_version.minor, sdl_version.patch );
+
+#ifdef _NOMAD_DEBUG
+	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad (Debug)" );
+#elif defined(_NOMAD_EXPERIMENTAL)
+	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad (Experimental)" ):
+#elif defined(_NOMAD_DEMO)
+	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad (Demo)" );
+#elif _NOMAD_VERSION_UPDATE == 2
+	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad (Alpha Test)" );
+#elif _NOMAD_VERSION_UPDATE == 3
+	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad (Beta Test)" );
+#elif _NOMAD_VERSION == 2
+	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad (Early Access)" );
+#else
+	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad" );
+#endif
+	
+	Com_PrintDivider();
+	Com_PrintBanner( gamedesc );
+	Com_PrintDivider();
+	Con_Printf(
+		" The Nomad is free software, covered by the GNU General Public\n"
+	    " License v2.0. There is NO warranty; not even for MERCHANTABILITY or\n"
+		" FITNESS FOR A PARTICULAR PURPOSE. You are welcome to change and\n"
+		" distribute copies under certain conditions. See the source for\n"
+		" more information.\n"
+	);
+	Com_PrintDivider();
+
+	Con_Printf(
+		COLOR_BLUE "game version: %s\n"
+		COLOR_BLUE "sdl version: %s\n"
+		COLOR_BLUE "platform: " OS_STRING ", " ARCH_STRING "\n"
+		COLOR_BLUE "date compiled: " __DATE__ "\n",
+	Com_VersionString(), version_str);
+}
+
 /*
-Com_Init: initializes all the engine's systems
+* Com_Init: initializes all the engine's systems
 */
 void Com_Init(char *commandLine)
 {
+	cvar_t *cv;
+
+	com_fullyInitialized = qfalse;
+
+	Com_PrintVersionStrings( commandLine );
+
 	// get the cacheline for optimized allocations and memory management
 	com_cacheLine = SDL_GetCPUCacheLineSize();
-
-	Con_Printf(
-		"================================================\n"
-		"\"The Nomad\" is free software distributed under\n"
-		"the terms of the GNU General Public License v2.0\n"
-		"================================================\n"
-		COLOR_BLUE "version: %s\n"
-		COLOR_BLUE "platform: " OS_STRING ", " ARCH_STRING "\n"
-		COLOR_BLUE "date compiled: " __DATE__ "\n",
-	Com_VersionString());
 
 	if (Q_setjmp(abortframe)) {
 		Sys_Error("Error during initialization");
@@ -1273,7 +1356,7 @@ void Com_Init(char *commandLine)
 	Z_InitMemory();
 	Cmd_Init();
 
-	// get the developer cvar set as early as possible
+// get the developer cvar set as early as possible
 	Com_StartupVariable("com_devmode");
 #ifdef _NOMAD_DEBUG
 	com_devmode = Cvar_Get("com_devmode", "1", CVAR_INIT | CVAR_PROTECTED);
@@ -1282,6 +1365,12 @@ void Com_Init(char *commandLine)
 #endif
 	Cvar_CheckRange(com_devmode, "0", "1", CVT_INT);
 	Cvar_SetDescription(com_devmode, "Enables a bunch of extra diagnostics for developers.");
+
+	cv = Cvar_Get( "com_version", GLN_VERSION, CVAR_INIT | CVAR_ROM | CVAR_CHEAT );
+	Cvar_SetDescription( cv, "The current game binary's version." );
+
+	Com_StartupVariable( "com_defaultcfg" );
+	Cvar_Get( "com_defaultcfg", NOMAD_CONFIG, CVAR_TEMP | CVAR_INIT );
 
 	Com_StartupVariable("vm_rtChecks");
 	vm_rtChecks = Cvar_Get("vm_rtChecks", "15", CVAR_INIT | CVAR_PROTECTED);
@@ -1296,28 +1385,23 @@ void Com_Init(char *commandLine)
 	com_journal = Cvar_Get("com_journal", "0", CVAR_INIT | CVAR_PROTECTED);
 	Cvar_CheckRange(com_journal, "0", "2", CVT_INT);
 	Cvar_SetDescription(com_journal, "When enabled, writes events and its data to 'journal.dat'");
-	
-	com_version = Cvar_Get("com_version", Com_VersionString(), CVAR_PROTECTED | CVAR_ROM);
-	Cvar_SetDescription(com_version, "Read-only CVar to see the version of the game.");
 
 	// done early so bind command exists
 	Com_InitKeyCommands();
 
 	FS_InitFilesystem();
 
-	Com_StartupVariable("com_logfile");
-	com_logfile = Cvar_Get("com_logfile", "1", CVAR_TEMP);
-	Cvar_CheckRange(com_logfile, "0", "1", CVT_INT);
-	Cvar_SetDescription(com_logfile, "System console logging");
-	com_maxfps = Cvar_Get("com_maxfp", "60", 0);
-#ifdef USE_AFFINITY_MASK
-	com_affinityMask = Cvar_Get("com_affinityMask", "", CVAR_ARCHIVE_ND);
-	Cvar_SetDescription( com_affinityMask, "Bind game process to bitmask-specified CPU core(s), special characters:\n A or a - all default cores\n P or p - performance cores\n E or e - efficiency cores\n 0x<value> - use hexadecimal notation\n + or - can be used to add or exclude particular cores" );
-	com_affinityMask->modified = qfalse;
-#endif
+	Com_StartupVariable("logfile");
+	com_logfile = Cvar_Get("logfile", "1", CVAR_TEMP);
+	Cvar_CheckRange(com_logfile, "0", "4", CVT_INT);
+	Cvar_SetDescription(com_logfile, "System console logging:\n"
+									" 0 - disabled\n"
+									" 1 - overwrite mode, buffered\n"
+									" 2 - overwrite mode, synced\n"
+									" 3 - append mode, buffered\n"
+									" 4 - append mode, synced\n");
 
 	Com_InitJournals();
-
 	Com_LoadConfig();
 
 	// override anything from the config files with command line args
@@ -1326,15 +1410,26 @@ void Com_Init(char *commandLine)
 	// allocate the stack based hunk allocator
 	Hunk_InitMemory();
 
-	Cmd_AddCommand("shutdown", Com_Shutdown_f);
-	Cmd_AddCommand("restart", Com_GameRestart_f);
-	Cmd_AddCommand("quit", Com_Quit_f);
+	// if any archived cvars are modified after this, we will trigger a writing
+	// of the config file
+	cvar_modifiedFlags &= ~CVAR_SAVE;
+
+	//
+	// init commands and vars
+	//
 
 	if (com_devmode->i) {
 		Cmd_AddCommand("freeze", Com_Freeze_f);
 		Cmd_AddCommand("error", Com_Error_f);
 		Cmd_AddCommand("crash", Com_Crash_f);
 	}
+
+	com_maxfps = Cvar_Get("com_maxfps", "60", 0);
+#ifdef USE_AFFINITY_MASK
+	com_affinityMask = Cvar_Get("com_affinityMask", "", CVAR_ARCHIVE_ND);
+	Cvar_SetDescription( com_affinityMask, "Bind game process to bitmask-specified CPU core(s), special characters:\n A or a - all default cores\n P or p - performance cores\n E or e - efficiency cores\n 0x<value> - use hexadecimal notation\n + or - can be used to add or exclude particular cores" );
+	com_affinityMask->modified = qfalse;
+#endif
 
 	sys_cpuString = Cvar_Get("sys_cpuString", "detect", CVAR_PROTECTED | CVAR_ROM | CVAR_NORESTART);
 	if (!N_stricmp(Cvar_VariableString("sys_cpuString"), "detect")) {
@@ -1357,18 +1452,106 @@ void Com_Init(char *commandLine)
 	}
 #endif
 
+	Cmd_AddCommand("shutdown", Com_Shutdown_f);
+	Cmd_AddCommand("restart", Com_GameRestart_f);
+	Cmd_AddCommand("quit", Com_Quit_f);
+	Cmd_AddCommand( "writecfg", Com_WriteConfig_f );
+
 	VM_Init();
 
-	lastTime = com_frameTime = Com_Milliseconds();
-
 	G_Init();
+	G_StartHunkUsers();
 
 	// set com_frameTime so that if a map is started on the
 	// command line it will still be able to count on com_frameTime
 	// being random enough for a serverid
 	lastTime = com_frameTime = Com_Milliseconds();
 
+	com_fullyInitialized = qtrue;
+
 	Con_Printf("==== Common Initialization Done ====\n");
+}
+
+//==================================================================
+
+static void Com_WriteConfigToFile( const char *filename ) {
+	file_t f;
+
+	f = FS_FOpenWrite( filename );
+	if ( f == FS_INVALID_HANDLE ) {
+		if ( ( f = FS_FOpenWrite( filename ) ) == FS_INVALID_HANDLE ) {
+			Con_Printf( "Couldn't write %s.\n", filename );
+			return;
+		}
+	}
+
+	FS_Printf( f, "// generated by glnomad, modify at your own risk" GDR_NEWLINE );
+	Key_WriteBindings( f );
+	Cvar_WriteVariables( f );
+	FS_FClose( f );
+}
+
+
+/*
+===============
+Com_WriteConfiguration
+
+Writes key bindings and archived cvars to config file if modified
+===============
+*/
+void Com_WriteConfiguration( void ) {
+	const char *basegame;
+	const char *gamedir;
+
+	// if we are quitting without fully initializing, make sure
+	// we don't write out anything
+	if ( !com_fullyInitialized ) {
+		return;
+	}
+
+	if ( !(cvar_modifiedFlags & CVAR_SAVE ) ) {
+		return;
+	}
+	cvar_modifiedFlags &= ~CVAR_SAVE;
+
+	Com_WriteConfigToFile( NOMAD_CONFIG );
+
+	gamedir = Cvar_VariableString( "fs_game" );
+	basegame = Cvar_VariableString( "fs_basegame" );
+//	if ( UI_usesUniqueCDKey() && gamedir[0] && Q_stricmp( basegame, gamedir ) ) {
+//		Com_WriteCDKey( gamedir, &cl_cdkey[16] );
+//	} else {
+//		Com_WriteCDKey( basegame, cl_cdkey );
+//	}
+}
+
+
+/*
+===============
+Com_WriteConfig_f
+
+Write the config file to a specific name
+===============
+*/
+static void Com_WriteConfig_f( void ) {
+	char	filename[MAX_GDR_PATH];
+	const char *ext;
+
+	if ( Cmd_Argc() != 2 ) {
+		Con_Printf( "Usage: writeconfig <filename>\n" );
+		return;
+	}
+
+	N_strncpyz( filename, Cmd_Argv(1), sizeof( filename ) );
+	COM_DefaultExtension( filename, sizeof( filename ), ".cfg" );
+
+	if ( !FS_AllowedExtension( filename, qfalse, &ext ) ) {
+		Con_Printf( "%s: Invalid filename extension: '%s'.\n", __func__, ext );
+		return;
+	}
+
+	Con_Printf( "Writing %s.\n", filename );
+	Com_WriteConfigToFile( filename );
 }
 
 static int Com_ModifyMsec( int msec )

@@ -1,18 +1,18 @@
 #include "n_shared.h"
 #include "n_allocator.h"
+#include "n_cvar.h"
 #include <EASTL/fixed_vector.h>
 
 static cvar_t *cvar_vars = NULL;
 static cvar_t *c_cheatsAllowed;
-static cvar_t *c_devmode;
 uint32_t cvar_modifiedFlags;
 
 #define MAX_CVARS 2048
 //static cvar_t cvar_indexes[MAX_CVARS];
-static eastl::fixed_vector<cvar_t, MAX_CVARS, true, CZoneAllocator> cvar_indexes;
+static eastl::fixed_vector<cvar_t, MAX_CVARS, true> cvar_indexes;
 static uint64_t cvar_numIndexes;
 
-static int cvar_group[CVG_MAX];
+static int32_t cvar_group[CVG_MAX];
 
 #define FILE_HASH_SIZE 256
 static cvar_t *hashTable[FILE_HASH_SIZE];
@@ -648,7 +648,7 @@ cvar_t *Cvar_Set2(const char *var_name, const char *value, qboolean force)
             return var;
         }
 
-        if ((var->flags & CVAR_DEV) && !c_devmode->i) {
+        if ((var->flags & CVAR_DEV) && !com_devmode->i) {
             Con_Printf("%s can be set only in developer mode.\n", var_name);
             return var;
         }

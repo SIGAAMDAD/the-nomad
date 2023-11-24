@@ -7,6 +7,7 @@
 #include "../rendercommon/r_public.h"
 #include "../rendercommon/r_types.h"
 #include "../engine/gln_files.h"
+#include "../engine/n_cvar.h"
 #include "ngl.h"
 
 #define MAX_RENDER_BUFFERS 2048

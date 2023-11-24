@@ -349,9 +349,7 @@ static void SCR_DrawScreenField(stereoFrame_t stereoFrame)
 		VM_Call( sgvm, 1, SGAME_RUNTIC, gi.frametime );
 		VM_Call( sgvm, 0, SGAME_FINISH_FRAME );
 	}
-	else {
-		UI_Refresh( gi.frametime );
-	}
+	UI_Refresh( gi.realtime );
 
     // console draws next
     Con_DrawConsole();

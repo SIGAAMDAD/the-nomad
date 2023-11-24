@@ -8,6 +8,7 @@
 CUILib *ui;
 cvar_t *ui_language;
 cvar_t *ui_printStrings;
+cvar_t *ui_active;
 
 const char *UI_LangToString( int32_t lang )
 {
@@ -23,15 +24,21 @@ const char *UI_LangToString( int32_t lang )
 static void UI_RegisterCvars( void )
 {
     ui_language = Cvar_Get( "ui_language", "0", CVAR_LATCH | CVAR_SAVE );
+    Cvar_CheckRange( ui_language, va("%lu", LANGUAGE_ENGLISH), va("%lu", NUMLANGS), CVT_INT );
     Cvar_SetDescription( ui_language,
                         "Sets the game's language:\n"
                         "  0 - English\n"
-                        "  1 - Spanish (Not Supported Yet)\n" );
-    Cvar_CheckRange( ui_language, va("%lu", LANGUAGE_ENGLISH), va("%lu", NUMLANGS), CVT_INT );
+                        "  1 - Spanish (Not Supported Yet)\n"
+                        "  2 - German (Not Supported Yet)\n"
+                    );
 
     ui_printStrings = Cvar_Get( "ui_printStrings", "1", CVAR_LATCH | CVAR_SAVE | CVAR_PRIVATE);
-    Cvar_SetDescription( ui_printStrings, "Print value strings set by the language ui file" );
     Cvar_CheckRange( ui_printStrings, "0", "1", CVT_INT );
+    Cvar_SetDescription( ui_printStrings, "Print value strings set by the language ui file" );
+
+    ui_active = Cvar_Get( "ui_active", "1", CVAR_LATCH | CVAR_TEMP );
+    Cvar_CheckRange( ui_active, "0", "1", CVT_INT );
+    Cvar_SetDescription( ui_active, "Set to 0 if the gamestate is not in a menu, otherwise 1" );
 }
 
 void UI_UpdateCvars( void )
@@ -79,6 +86,8 @@ void G_ShutdownUI( void ) {
 
 extern "C" void UI_Init( void )
 {
+    Con_Printf( "UI_Init: initializing UI...\n" );
+
     // register cvars
     UI_RegisterCvars();
 
@@ -134,6 +143,17 @@ extern "C" void UI_Refresh( int realtime )
 {
 	ui->SetFrameTime( ui->GetRealTime() - realtime );
 	ui->SetRealTime( realtime );
+
+    // check for pause menu
+    if (ui->GetState() == STATE_NONE) {
+        ui->EscapeMenuToggle( STATE_PAUSE );
+
+        if (ui->GetState() == STATE_PAUSE) {
+            Cvar_Set( "ui_active", "1" );
+            ui->SetActiveMenu( UI_MENU_PAUSE );
+            Key_SetCatcher( KEYCATCH_UI );
+        }
+    }
     
 	if ( !( Key_GetCatcher() & KEYCATCH_UI ) ) {
 		return;

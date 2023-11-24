@@ -153,6 +153,8 @@ void CUIStringManager::LoadFile( const char *filename )
             }
         }
     }
+
+    FS_FreeFile( f.v );
     numLanguages++;
 
     if (ui_printStrings->i) {
@@ -176,7 +178,7 @@ uint64_t CUIStringManager::NumLangsLoaded( void ) const {
 const stringHash_t *CUIStringManager::ValueForKey( const char *name ) const
 {
     if (!name || !name[0]) {
-        N_Error(ERR_FATAL, "ValueForKey: NULL or empty name");
+        N_Error(ERR_FATAL, "CUIStringManager::ValueForKey: NULL or empty name");
     }
 
     for (uint64_t i = 0; i < NUM_UI_STRINGS; i++) {
@@ -184,5 +186,6 @@ const stringHash_t *CUIStringManager::ValueForKey( const char *name ) const
             return &stringHash[ui_language->i][i];
         }
     }
+    N_Error( ERR_FATAL, "CUIStringManager: failed to load value string for key \"%s\"", name );
     return NULL;
 }

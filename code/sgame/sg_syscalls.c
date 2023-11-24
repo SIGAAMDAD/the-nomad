@@ -47,7 +47,7 @@ void trap_Cmd_ExecuteText(cbufExec_t exec, const char *text)
     vmi.trap_Cmd_ExecuteText(exec, text);
 }
 
-void trap_RE_ClearScene(void)
+void RE_ClearScene(void)
 {
     vmi.trap_RE_ClearScene();
 }
@@ -97,37 +97,42 @@ void trap_Error(const char *str)
     vmi.trap_Error(str);
 }
 
-void trap_RE_SetColor(const float *rgba)
+void RE_SetColor(const float *rgba)
 {
     vmi.trap_RE_SetColor(rgba);
 }
 
-void trap_RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts )
+void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts )
 {
     vmi.trap_RE_AddPolyToScene(hShader, verts, numVerts);
 }
 
-void trap_RE_AddEntityToScene( const renderEntityRef_t *ent )
+void RE_AddEntityToScene( const renderEntityRef_t *ent )
 {
     vmi.trap_RE_AddEntityToScene(ent);
 }
 
-void trap_RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys )
+void RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys )
 {
     vmi.trap_RE_AddPolyListToScene(polys, numPolys);
 }
 
-void trap_RE_DrawImage( float x, float y, float w, float h, float u1, float v1, float u2, float v2, nhandle_t hShader )
+void RE_DrawImage( float x, float y, float w, float h, float u1, float v1, float u2, float v2, nhandle_t hShader )
 {
     vmi.trap_RE_DrawImage(x, y, w, h, u1, v1, u2, v2, hShader);
 }
 
-void trap_RE_RenderScene( const renderSceneRef_t *fd )
+void RE_RenderScene( const renderSceneRef_t *fd )
 {
     vmi.trap_RE_RenderScene(fd);
 }
 
-nhandle_t trap_RE_RegisterShader(const char *name)
+void RE_LoadWorldMap( const char *filename )
+{
+    vmi.trap_RE_LoadWorldMap( filename );
+}
+
+nhandle_t RE_RegisterShader(const char *name)
 {
     return vmi.trap_RE_RegisterShader(name);
 }
@@ -187,54 +192,81 @@ void trap_Args( char *buffer, uint32_t bufferLength )
     return; // not meant to called
 }
 
-file_t trap_FS_FOpenWrite( const char *path, file_t *f )
+
+file_t trap_FS_FOpenRead( const char *npath )
 {
-    return vmi.trap_FS_FOpenWrite(path, f, H_SGAME);
+    return vmi.FS_FOpenRead( npath, H_SGAME );
 }
 
-file_t trap_FS_FOpenRead( const char *path, file_t *f )
+file_t trap_FS_FOpenWrite( const char *npath )
 {
-    return vmi.trap_FS_FOpenRead(path, f, H_SGAME);
+    return vmi.FS_FOpenWrite( npath, H_SGAME );
 }
 
-void trap_FS_FClose(file_t f)
+file_t trap_FS_FOpenAppend( const char *npath )
 {
-    vmi.trap_FS_FClose(f);
+    return vmi.FS_FOpenAppend( npath, H_SGAME );
 }
 
-uint32_t trap_FS_Read( void *buffer, uint32_t len, file_t f )
+file_t trap_FS_FOpenRW( const char *npath )
 {
-    return vmi.trap_FS_Read(buffer, len, f, H_SGAME);
+    return vmi.FS_FOpenRW( npath, H_SGAME );
 }
 
-uint32_t trap_FS_Write( const void *buffer, uint32_t len, file_t f)
+fileOffset_t trap_FS_FileSeek( file_t file, fileOffset_t offset, uint32_t whence )
 {
-    return vmi.trap_FS_Write(buffer, len, f, H_SGAME);
+    return vmi.FS_FileSeek( file, offset, whence, H_SGAME );
+
 }
 
-void trap_FS_WriteFile( const void *buffer, uint32_t len, file_t f )
+fileOffset_t trap_FS_FileTell( file_t file )
 {
-    vmi.trap_FS_WriteFile(buffer, len, f, H_SGAME);
+    return vmi.FS_FileTell( file, H_SGAME );
 }
 
-uint64_t trap_FS_FOpenFileRead( const char *path, file_t *f )
+uint64_t trap_FS_FOpenFile( const char *npath, file_t *file, fileMode_t mode )
 {
-    return vmi.trap_FS_FOpenFileRead(path, f, H_SGAME);
+    return vmi.FS_FOpenFile( npath, file, mode, H_SGAME );
 }
 
-fileOffset_t trap_FS_FileSeek( file_t f, fileOffset_t offset, uint32_t whence )
+file_t trap_FS_FOpenFileWrite( const char *npath, file_t *file )
 {
-    return vmi.trap_FS_FileSeek(f, offset, whence, H_SGAME);
+    return vmi.FS_FOpenFileWrite( npath, file, H_SGAME );
 }
 
-uint64_t trap_FS_FOpenFileWrite( const char *path, file_t *f )
+uint64_t trap_FS_FOpenFileRead( const char *npath, file_t *file )
 {
-    return vmi.trap_FS_FOpenFileWrite(path, f, H_SGAME);
+    return vmi.FS_FOpenFileRead( npath, file, H_SGAME );
 }
 
-fileOffset_t trap_FS_FileTell( file_t f )
+void trap_FS_FClose( file_t file )
 {
-    return vmi.trap_FS_FileTell(f);
+    vmi.FS_FClose( file, H_SGAME );
+}
+
+uint64_t trap_FS_WriteFile( const void *buffer, uint64_t len, file_t file )
+{
+    return vmi.FS_WriteFile( buffer, len, file, H_SGAME );
+}
+
+uint64_t trap_FS_Write( const void *buffer, uint64_t len, file_t file )
+{
+    return vmi.FS_Write( buffer, len, file, H_SGAME );
+}
+
+uint64_t trap_FS_Read( void *buffer, uint64_t len, file_t file )
+{
+    return vmi.FS_Read( buffer, len, file, H_SGAME );
+}
+
+uint64_t trap_FS_FileLength( file_t file )
+{
+    return vmi.FS_FileLength( file, H_SGAME );
+}
+
+uint64_t trap_FS_GetFileList( const char *path, const char *extension, char *listbuf, uint64_t bufsize )
+{
+    return vmi.FS_GetFileList( path, extension, listbuf, bufsize );
 }
 
 int ImGui_BeginWindow( ImGuiWindow *pWindow )
