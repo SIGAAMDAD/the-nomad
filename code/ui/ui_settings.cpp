@@ -9,17 +9,12 @@
 #include "../rendercommon/imgui_impl_opengl3.h"
 #include <EASTL/fixed_string.h>
 #include <EASTL/fixed_vector.h>
-
-enum
-{
-    kbMoveForward,
-
-    NUMBINDS
-};
+#include <EASTL/array.h>
 
 typedef struct {
-    uint32_t key;
-    const char *binding;
+    uint32_t keynum;
+    char bindname[64];
+    char keyname[24];
 } keybind_t;
 
 typedef struct {
@@ -39,6 +34,7 @@ typedef struct {
     uint32_t anisotropicFiltering;
     int32_t vsync;
     bool allowSoftwareGL;
+    bool allowLegacyGL;
     float gamma;
 
     bool mouseAccelerate;
@@ -57,8 +53,15 @@ typedef struct
     const char *texdetailString;
     const char *texfilterString;
 
+    char extensionsMenuStr[64];
+    eastl::array<const char *, 2> fullscreenStr;
+    eastl::array<const char *, 2> useExtensionsStr;
+    eastl::array<const char *, 2> allowSoftwareGLStr;
+    eastl::array<const char *, 2> advancedGraphicsStr;
+    eastl::array<const char *, 2> allowLegacyGLStr;
+
     // temp cvar data
-    keybind_t keybinds[NUMBINDS];
+    keybind_t *keybinds;
     bool mouseAccelerate;
     bool mouseInvert;
     int32_t mouseSensitivity;
@@ -84,6 +87,7 @@ typedef struct
     uint32_t anisotropicFilteringTmp;
     uint32_t anisotropicFiltering;
     int32_t vsync;
+    bool allowLegacyGL;
     bool allowSoftwareGL;
     float gamma;
 
@@ -100,7 +104,6 @@ typedef struct
 
 static initialSettings_t initial;
 static settingsmenu_t settings;
-
 
 static const char *KeyToString( uint32_t key )
 {
@@ -284,22 +287,6 @@ static void SettingsMenu_ApplyAudioChanges( void )
     Cvar_Set( "snd_musicon", va("%i", settings.musicOn) );
 }
 
-
-static void SettingsMenu_DrawConfirmation( void )
-{
-    if (ImGui::BeginPopupModal( "Save Changes", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse )) {
-        ImGui::TextUnformatted( "You made some changes to your settings, would you like to apply them?" );
-        if (ImGui::Button( "SAVE CHANGES" )) {
-            SettingsMenu_ApplyGraphicsChanges();
-            settings.confirmation = qfalse;
-            settings.modified = qfalse;
-            ImGui::CloseCurrentPopup();
-        }
-
-        ImGui::EndPopup();
-    }
-}
-
 static void SettingsMenu_SetDefault( void )
 {
     settings.anisotropicFiltering = Cvar_VariableInteger( "r_anisotropicFiltering" );
@@ -315,6 +302,7 @@ static void SettingsMenu_SetDefault( void )
     settings.api = StringToRenderAPI( Cvar_VariableString( "g_renderer" ) );
     settings.multisamplingIndex = Cvar_VariableInteger( "r_multisample" );
     settings.allowSoftwareGL = Cvar_VariableInteger( "r_allowSoftwareGL" );
+    settings.allowLegacyGL = Cvar_VariableInteger( "r_allowLegacy" );
     settings.vsync = Cvar_VariableInteger( "r_swapInterval" );
     settings.gamma = Cvar_VariableFloat( "r_gammaAmount" );
     settings.advancedGraphics = false;
@@ -325,15 +313,47 @@ static void SettingsMenu_SetDefault( void )
     settings.musicVol = Cvar_VariableInteger( "snd_musicvol" );
     settings.masterVol = Cvar_VariableInteger( "snd_mastervol" );
     
+    settings.mouseSensitivity = Cvar_VariableInteger( "g_mouseSensitivity" );
     settings.mouseAccelerate = Cvar_VariableInteger("g_mouseAcceleration");
     settings.mouseInvert = Cvar_VariableInteger("g_mouseInvert");
+
+    settings.keybinds = (keybind_t *)Hunk_Alloc( sizeof(keybind_t) * gi.numBindNames, h_low );
+    for (uint32_t i = 0; i < gi.numBindNames; i++) {
+        settings.keybinds[i].keynum = Key_GetKey( gi.bindNames[i] );
+        N_strncpyz( settings.keybinds[i].keyname, Key_KeynumToString( settings.keybinds[i].keynum ), sizeof(settings.keybinds[i].keyname) );
+        N_strncpyz( settings.keybinds[i].bindname, gi.bindNames[i], sizeof(settings.keybinds[i].bindname) );
+    }
 }
 
-static void SettingsMenu_ConfirmReset( void )
+static void SettingsMenuPopup( void )
 {
-    if (ImGui::BeginPopupModal( "Confirm Reset To Default", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse )) {
+    const char *title;
+    if (settings.confirmation) {
+        title = "Save Changes";
+    } else if (settings.confirmreset) {
+        title = "Reset To Default";
+    } else if (settings.rebinding) {
+        title = "Rebind Key";
+    } else {
+        return;
+    }
+
+    ImGui::Begin( va( "%s##SETTINGSMENUPOPUP", title ), NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
+                                                            | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse );
+    ImGui::SetWindowPos( ImVec2( 480 * ui->scale, 340 * ui->scale ) );
+    ImGui::SetWindowFontScale( 2.5f * ui->scale );
+    if (settings.confirmation) {
+        ImGui::TextUnformatted( "You made some changes to your settings, would you like to apply them?" );
+        if (ImGui::Button( "SAVE CHANGES##SETTINGSMENUPOPUP" )) {
+            SettingsMenu_ApplyGraphicsChanges();
+            settings.confirmation = qfalse;
+            settings.modified = qfalse;
+            ImGui::CloseCurrentPopup();
+        }
+    }
+    else if (settings.confirmreset) {
         ImGui::TextUnformatted( "Are you want to reset all your settings to their defaults?" );
-        if (ImGui::Button( "YES" )) {
+        if (ImGui::Button( "YES##SETTINGSMENUPOPUP" )) {
             SettingsMenu_SetDefault();
             settings.confirmreset = qfalse;
             settings.modified = qfalse;
@@ -341,14 +361,31 @@ static void SettingsMenu_ConfirmReset( void )
             ImGui::CloseCurrentPopup();
         }
         ImGui::SameLine();
-        if (ImGui::Button( "CANCEL" )) {
+        if (ImGui::Button( "CANCEL##SETTINGSMENUPOPUP" )) {
             settings.confirmreset = qfalse;
             ui->PlaySelected();
             ImGui::CloseCurrentPopup();
         }
-
-        ImGui::EndPopup();
     }
+    else if (settings.rebinding) {
+        ImGui::TextUnformatted( "Press Any Key..." );
+        for (uint32_t i = 0; i < NUMKEYS; i++) {
+            if (Key_IsDown( i )) {
+                settings.rebinding = qfalse;
+                settings.keybinds[settings.rebindIndex].keynum = i;
+                strcpy( settings.keybinds[settings.rebindIndex].keyname, Key_KeynumToString( i ) );
+                Cbuf_ExecuteText( EXEC_APPEND, va( "bind %s \"%s\"\n",
+                    settings.keybinds[settings.rebindIndex].keyname, settings.keybinds[settings.rebindIndex].bindname ) );
+            }
+        }
+        if (ImGui::Button("CANCEL##SETTINGSMENUPOPUP")) {
+            settings.rebinding = qfalse;
+            settings.rebindIndex = 0;
+            ui->PlaySelected();
+            ImGui::CloseCurrentPopup();
+        }
+    }
+    ImGui::End();
 }
 
 static void SettingsMenu_ApplyChanges( void )
@@ -359,7 +396,7 @@ static void SettingsMenu_ApplyChanges( void )
 
     if (ImGui::Button( "RESET TO DEFAULT" )) {
         settings.confirmreset = qtrue;
-        ImGui::OpenPopup( "Confirm Reset To Default" );
+        ImGui::OpenPopup( "Reset To Default##SETTINGSMENUPOPUP" );
         ui->PlaySelected();
     }
 
@@ -445,27 +482,8 @@ static void SettingsMenu_Update( void )
     if (initial.gamma != settings.gamma) {
         settings.modified = true;
     }
-}
-
-static void SettingsMenu_RebindKey( void )
-{
-    if (ImGui::BeginPopupModal( "Rebind Key" )) {
-        ImGui::TextUnformatted( "Press Any Key..." );
-
-        for (uint32_t i = 0; i < NUMKEYS; i++) {
-            if (Key_IsDown( i )) {
-                settings.rebinding = qtrue;
-                settings.rebindIndex = i;
-                ImGui::CloseCurrentPopup();
-            }
-        }
-        if (ImGui::Button("CANCEL")) {
-            settings.rebinding = qfalse;
-            ui->PlaySelected();
-            ImGui::CloseCurrentPopup();
-        }
-
-        ImGui::EndPopup();
+    if (initial.allowLegacyGL != settings.allowLegacyGL) {
+        settings.modified = true;
     }
 }
 
@@ -497,7 +515,6 @@ static GDR_INLINE void SettingsMenu_ExitChild( menustate_t childstate )
     ui->EscapeMenuToggle( settings.paused ? STATE_PAUSE :  STATE_MAIN );
     if (ui->GetState() != childstate) {
         if (settings.modified) {
-            ImGui::OpenPopup( "Save Changes" );
             settings.confirmation = qtrue;
         }
         else {
@@ -506,7 +523,6 @@ static GDR_INLINE void SettingsMenu_ExitChild( menustate_t childstate )
     }
     else if (ui->Menu_Title( "SETTINGS" )) {
         if (settings.modified) {
-            ImGui::OpenPopup( "Save Changes" );
             settings.confirmation = qtrue;
         }
         else {
@@ -650,7 +666,7 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Fullscreen" );
         ImGui::TableNextColumn();
-        if (ImGui::RadioButton( settings.fullscreen ? "ON" : "OFF", settings.fullscreen )) {
+        if (ImGui::RadioButton( settings.fullscreenStr[settings.fullscreen], settings.fullscreen )) {
             settings.fullscreen = !settings.fullscreen;
             ui->PlaySelected();
         }
@@ -712,6 +728,60 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextColumn();
         if (ImGui::SliderFloat( " ", &settings.gamma, 1.0f, 5.0f )) {
             ui->PlaySelected();
+        }
+
+        ImGui::TableNextRow();
+
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted( "Settings For NERDS" );
+        ImGui::TableNextColumn();
+        if (ImGui::RadioButton( settings.advancedGraphicsStr[settings.advancedGraphics], settings.advancedGraphics )) {
+            settings.advancedGraphics = !settings.advancedGraphics;
+            ui->PlaySelected();
+        }
+
+        if (settings.advancedGraphics) {
+            ImGui::TableNextRow();
+
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted( "Allow Software GL Driver" );
+            ImGui::TableNextColumn();
+            if (ImGui::RadioButton( settings.allowSoftwareGLStr[settings.allowSoftwareGL], settings.allowSoftwareGL )) {
+                settings.allowSoftwareGL = !settings.allowSoftwareGL;
+                ui->PlaySelected();
+            }
+
+            ImGui::TableNextRow();
+
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted( "Enable GL Extensions" );
+            ImGui::TableNextColumn();
+            if (ImGui::RadioButton( settings.useExtensionsStr[settings.extensions], settings.extensions )) {
+                settings.extensions = !settings.extensions;
+                ui->PlaySelected();
+            }
+
+            ImGui::TableNextRow();
+
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted( "Allow Legacy GL Functionality" );
+            ImGui::TableNextColumn();
+            if (ImGui::RadioButton( settings.allowLegacyGLStr[settings.allowLegacyGL], settings.allowLegacyGL )) {
+                settings.allowLegacyGL = !settings.allowLegacyGL;
+                ui->PlaySelected();
+            }
+
+            ImGui::TableNextRow();
+            
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted( "GL Extensions" );
+            ImGui::TableNextColumn();
+            if (ImGui::BeginMenu( settings.extensionsMenuStr )) {
+                for (const auto& it : settings.extensionStrings) {
+                    ImGui::MenuItem( it.c_str() );
+                }
+                ImGui::EndMenu();
+            }
         }
     }
     ImGui::EndTable();
@@ -784,16 +854,45 @@ static void SettingsMenuControls_Draw( void )
         }
     }
     ImGui::EndTable();
+
+    // key bindings
+    ImGui::SeparatorText( "KEY BINDS" );
+
+    ImGui::BeginTable( " ", 2 );
+    {
+        // draw the legend
+        const float font_scale = ImGui::GetFont()->Scale;
+        ImGui::SetWindowFontScale( 3.5f * ui->scale );
+
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted( "Key" );
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted( "Binding" );
+        ImGui::TableNextRow();
+
+        ImGui::SetWindowFontScale( font_scale );
+
+        for (uint32_t i = 0; i < gi.numBindNames; i++) {
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted( settings.keybinds[i].keyname );
+            ImGui::TableNextColumn();
+            if (ImGui::Button( settings.keybinds[i].bindname )) {
+                settings.rebinding = qtrue;
+                settings.rebindIndex = i;
+                ui->PlaySelected();
+            }
+
+            if (i != gi.numBindNames - 1) {
+                ImGui::TableNextRow();
+            }
+        }
+    }
+    ImGui::EndTable();
 }
 
 void SettingsMenu_Draw( void )
 {
-    if (settings.confirmreset) {
-        SettingsMenu_ConfirmReset();
-    }
-    else if (settings.confirmation) {
-        SettingsMenu_DrawConfirmation();
-    }
+    SettingsMenuPopup();
 
     switch (ui->GetState()) {
     case STATE_SETTINGS:
@@ -835,9 +934,12 @@ static void SettingsMenu_GetInitial( void ) {
     initial.musicVol = Cvar_VariableInteger( "snd_musicvol" );
     initial.masterVol = Cvar_VariableFloat( "snd_mastervol" );
     
+    initial.mouseSensitivity = Cvar_VariableInteger( "g_mouseSensitivity" );
     initial.mouseAccelerate = Cvar_VariableInteger("g_mouseAcceleration");
     initial.mouseInvert = Cvar_VariableInteger("g_mouseInvert");
 }
+
+#define RADIOBUTTON_STR(x) { "OFF##" #x, "ON##" #x };
 
 void SettingsMenu_Cache( void ) {
     int32_t numExtensions;
@@ -847,6 +949,13 @@ void SettingsMenu_Cache( void ) {
 
     SettingsMenu_GetInitial();
     SettingsMenu_SetDefault();
+
+    // cache redundant calculations
+    settings.allowSoftwareGLStr = RADIOBUTTON_STR( settings.allowSoftwareGL );
+    settings.useExtensionsStr = RADIOBUTTON_STR( settings.extensions );
+    settings.fullscreenStr = RADIOBUTTON_STR( settings.fullscreen );
+    settings.advancedGraphicsStr = RADIOBUTTON_STR( settings.advancedGraphics );
+    settings.allowLegacyGLStr = RADIOBUTTON_STR( settings.allowLegacyGL );
 
     settings.confirmation = qfalse;
     settings.modified = qfalse;
@@ -860,4 +969,6 @@ void SettingsMenu_Cache( void ) {
             settings.extensionStrings.emplace_back( (const char *)renderImport.glGetStringi( GL_EXTENSIONS, i ) );
         }
     }
+
+    N_strncpyz( settings.extensionsMenuStr, va("%lu Extensions", settings.extensionStrings.size()), sizeof(settings.extensionsMenuStr) );
 }

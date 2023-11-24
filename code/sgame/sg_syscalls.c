@@ -152,6 +152,11 @@ void trap_Snd_StopSfx(sfxHandle_t sfx)
     vmi.trap_Snd_StopSfx(sfx);
 }
 
+void G_SetBindNames( const char **bindnames, uint32_t numbindnames )
+{
+    vmi.G_SetBindNames( bindnames, numbindnames );
+}
+
 void trap_UpdateScreen(void)
 {
     vmi.trap_UpdateScreen();

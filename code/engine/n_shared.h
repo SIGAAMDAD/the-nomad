@@ -1066,6 +1066,13 @@ typedef enum
     R_VULKAN
 } renderapi_t;
 
+#define BUTTON_WALKING		1
+#define BUTTON_ATTACK		2
+#define	BUTTON_ANY			2048			// any key whatsoever
+
+#define	ANGLE2SHORT(x)	((int)((x)*65536/360) & 65535)
+#define	SHORT2ANGLE(x)	((x)*(360.0/65536))
+
 #ifdef __cplusplus
 template<typename type, typename alignment>
 inline type* PADP(type *base, alignment align)

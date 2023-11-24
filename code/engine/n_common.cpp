@@ -478,9 +478,9 @@ uint64_t Com_EventLoop(void)
 		case SE_WINDOW:
 			Com_WindowEvent(ev.evValue);
 			break;
-//		case SE_MOUSE:
-//			Com_MouseEvent(ev.evValue, ev.evValue2);
-//			break;
+		case SE_MOUSE:
+			G_MouseEvent(ev.evValue, ev.evValue2);
+			break;
 		case SE_CONSOLE:
 			Cbuf_AddText((char *)ev.evPtr);
 			Cbuf_AddText("\n");

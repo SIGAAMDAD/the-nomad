@@ -205,6 +205,10 @@ void GDR_EXPORT RE_LoadWorldMap(const char *filename)
     rg.world = &r_worldData;
 
     COM_StripExtension(theader->info.texture, texture, sizeof(texture));
+    if (texture[ strlen(texture) - 1 ] == '.') {
+        texture[ strlen(texture) - 1 ] = '\0';
+    }
+
     rg.world->shader = R_FindShader(texture);
     if (rg.world->shader == rg.defaultShader) {
         ri.Error(ERR_DROP, "RE_LoadWorldMap: failed to load shader for '%s'", filename);

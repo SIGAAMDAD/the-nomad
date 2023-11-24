@@ -35,7 +35,6 @@ typedef struct {
     uint32_t flags;
 } tileinfo_t;
 
-
 //
 // mapinfo_t
 // This is the only way that the engine and vm may communicate about
@@ -124,6 +123,8 @@ struct vmRefImport_s
 
     int32_t (*G_LoadMap)( int32_t index, mapinfo_t *info );
 
+    void (*G_SetBindNames)( const char **bindnames, uint32_t numbindnames );
+
     void (*ImGui_EndWindow)( void );
     void (*ImGui_SetWindowCollapsed)( int bCollapsed );
     void (*ImGui_SetWindowPos)( float x, float y );
@@ -179,6 +180,9 @@ struct vmRefImport_s
 };
 #endif
 
+#define CMD_BACKUP 64
+#define	CMD_MASK			(CMD_BACKUP - 1)
+
 #if 0
 class CGame
 {
@@ -189,6 +193,13 @@ public:
     void Init(void);
 };
 #endif
+
+typedef struct usercmd_s {
+	int32_t			angles[3];
+	int32_t			buttons;
+	byte			weapon;           // weapon 
+	int8_t	        forwardmove, rightmove, upmove;
+} usercmd_t;
 
 #if !defined(UI_HARD_LINKED) && !defined(SGAME_HARD_LINKED) && !defined(Q3_VM)
 
@@ -218,6 +229,13 @@ typedef struct {
     int32_t realtime;
     
     uint64_t lastVidRestart;
+
+    int32_t mouseDx[2], mouseDy[2];	// added to by mouse events
+	int32_t mouseIndex;
+    vec3_t viewangles;
+
+    const char **bindNames;
+    uint32_t numBindNames;
 
 //    uiMenu_t menuIndex;
     nhandle_t consoleShader;
@@ -274,6 +292,8 @@ extern cvar_t *g_stencilBits;
 extern cvar_t *g_depthBits;
 extern cvar_t *r_stereoEnabled;
 extern cvar_t *g_drawBuffer;
+
+extern cvar_t *g_paused;
 
 extern cvar_t *con_conspeed;
 extern cvar_t *con_autoclear;
@@ -364,6 +384,11 @@ void Con_ClearNotify( void );
 void Con_ToggleConsole_f( void );
 uint32_t Con_ExternalWindowID( void );
 void Con_ExternalWindowEvent( uint32_t value );
+
+//
+// g_input.cpp
+//
+void G_MouseEvent( int32_t dx, int32_t dy /*, int time*/ );
 
 extern qboolean key_overstrikeMode;
 

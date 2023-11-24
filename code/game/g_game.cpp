@@ -38,6 +38,7 @@ cvar_t *g_depthBits;
 cvar_t *r_multisample;
 cvar_t *r_stereoEnabled;
 cvar_t *g_drawBuffer;
+cvar_t *g_paused;
 
 static void *renderLib;
 
@@ -548,6 +549,14 @@ static void G_Snd_Restart_f(void)
     G_Vid_Restart( REF_KEEP_CONTEXT );
 }
 
+static void G_VM_Restart_f( void )
+{
+    G_ShutdownVMs();
+
+    G_InitSGame();
+    G_InitUI();
+}
+
 const vidmode_t r_vidModes[NUMVIDMODES] =
 {
 //	{ "Mode  0: 320x240",			320,	240,	1 },
@@ -732,6 +741,9 @@ void G_Init(void)
     g_drawBuffer = Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
 	Cvar_SetDescription( g_drawBuffer, "Specifies buffer to draw from: GL_FRONT or GL_BACK." );
 
+    g_paused = Cvar_Get( "g_paused", "0", CVAR_PRIVATE | CVAR_TEMP );
+    Cvar_SetDescription( g_paused, "Set to 1 when in the pause menu." );
+
     g_renderer = Cvar_Get("g_renderer", "opengl", CVAR_SAVE | CVAR_LATCH);
     Cvar_SetDescription(g_renderer,
                         "Set your desired renderer, valid options: opengl, vulkan\n"
@@ -762,6 +774,7 @@ void G_Init(void)
     Cmd_AddCommand("snd_restart", G_Snd_Restart_f);
     Cmd_AddCommand("modelist", G_ModeList_f);
     Cmd_AddCommand("maplist", G_MapInfo_f);
+    Cmd_AddCommand("vm_restart", G_VM_Restart_f);
 
     Con_Printf( "----- Game State Initialization Complete ----\n" );
 }
@@ -793,6 +806,7 @@ void G_Shutdown(qboolean quit)
     Cmd_RemoveCommand("snd_restart");
     Cmd_RemoveCommand("modelist");
     Cmd_RemoveCommand("maplist");
+    Cmd_RemoveCommand("vm_restart");
 
     Key_SetCatcher(0);
     Con_Printf( "-------------------------------\n");
@@ -836,13 +850,13 @@ void G_StartHunkUsers(void)
         gi.soundStarted = qtrue;
         Snd_Init();
     }
-    if (!gi.uiStarted) {
-        gi.uiStarted = qtrue;
-        G_InitUI();
-    }
     if (!gi.sgameStarted) {
         gi.sgameStarted = qtrue;
         G_InitSGame();
+    }
+    if (!gi.uiStarted) {
+        gi.uiStarted = qtrue;
+        G_InitUI();
     }
 
     // cache all maps

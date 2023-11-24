@@ -424,6 +424,14 @@ static void VM_trap_CvarRegister_SGame(vmCvar_t *cvar, const char *varName, cons
 	Cvar_Register(cvar, varName, defaultValue, flags, sgvm->privateFlag);
 }
 
+static void VM_trap_G_SetBindNames( const char **bindnames, uint32_t numbindnames ) {
+	if (!bindnames) {
+		N_Error( ERR_FATAL, "bindnames is NULL, DUDE USE THE ENGINE HOW ITS MEAN TO BE USED, UR A DEV!!!!!" );
+	}
+	gi.bindNames = bindnames;
+	gi.numBindNames = numbindnames;
+}
+
 static void VM_FillImport(vmRefImport_t *import, const char *name)
 {
 	import->trap_Argc = Cmd_Argc;
@@ -480,6 +488,8 @@ static void VM_FillImport(vmRefImport_t *import, const char *name)
     import->FS_Read = FS_VM_Read;
     import->FS_FileLength = FS_VM_FileLength;
 	import->FS_GetFileList = FS_GetFileList;
+
+	import->G_SetBindNames = VM_trap_G_SetBindNames;
 
 	import->G_LoadMap = G_LoadMap;
 	import->trap_RE_LoadWorldMap = re.LoadWorld;

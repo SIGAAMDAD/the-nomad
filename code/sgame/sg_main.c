@@ -27,6 +27,25 @@ vmCvar_t sg_levelIndex;
 vmCvar_t sg_levelDataFile;
 vmCvar_t sg_savename;
 
+static const char *bindnames[] = {
+    "forward",
+    "back",
+    "left",
+    "right",
+    "up",
+    "down",
+    "button0",
+    "button1",
+    "button2",
+    "button3",
+    "button4",
+    "button5",
+    "button6",
+    "button7",
+    "button8",
+    "button9"
+};
+
 typedef struct {
     const char *name;
     const char *defaultValue;
@@ -274,6 +293,9 @@ int32_t SG_Init(void)
     sg.state = SGAME_INACTIVE;
 
     SG_InitEntities();
+
+    // give the keybinding info to the engine
+    G_SetBindNames( bindnames, arraylen(bindnames) );
 
     return 1;
 }

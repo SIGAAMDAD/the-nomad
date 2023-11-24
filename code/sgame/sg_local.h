@@ -478,6 +478,8 @@ void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL trap_FS_Printf( file_t f, co
 
 void trap_GetGPUConfig( gpuConfig_t *config );
 
+void G_SetBindNames( const char **bindnames, uint32_t numbindings );
+
 // register a command name so the console can perform command completion.
 void trap_AddCommand( const char *cmdName );
 

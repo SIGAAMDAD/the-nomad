@@ -68,6 +68,8 @@ typedef enum
     SG_FS_GETFILELIST,
 
     SG_RE_LOADWORLDMAP,
+    
+    SG_G_SETBINDNAMES,
 
     // imgui api into the vm
     IMGUI_BEGIN_WINDOW = 400,

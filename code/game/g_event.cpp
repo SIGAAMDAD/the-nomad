@@ -50,6 +50,7 @@ static const keyname_t keynames[] = {
 	{"TAB", KEY_TAB},
 	{"ENTER", KEY_ENTER},
 	{"BACKSPACE", KEY_BACKSPACE},
+	{"SPACE", KEY_SPACE},
 
 	{"CONSOLE", KEY_CONSOLE},
 	{"PRINTSCREEN", KEY_SCREENSHOT},
@@ -191,6 +192,52 @@ const char *Key_KeynumToString(uint32_t keynum)
 	if (keynum >= NUMKEYS) {
 		return "<OUT OF RANGE>";
 	}
+
+	// manual overrides for keys that show up as ASCII but really shouldn't show up as ASCII
+	switch (keynum) {
+    case KEY_TAB: // shows up as '+'
+        return "TAB";
+    case KEY_LSHIFT:
+        return "LSHIFT";
+    case KEY_RSHIFT:
+        return "RSHIFT";
+    case KEY_LALT:
+        return "LALT";
+    case KEY_RALT:
+        return "RALT";
+    case KEY_LCTRL:
+        return "LCTRL";
+    case KEY_RCTRL:
+        return "RCTRL";
+    case KEY_HOME:
+        return "HOME";
+    case KEY_SPACE:
+        return "SPACE";
+    case KEY_BACKSPACE:
+        return "BACKSPACE";
+    case KEY_ENTER:
+        return "ENTER";
+    case KEY_PAGEUP:
+        return "PAGEUP";
+    case KEY_PAGEDOWN:
+        return "PAGEDOWN";
+    case KEY_END:
+        return "END";
+    case KEY_DELETE:
+        return "DELETE";
+    case KEY_INSERT:
+        return "INSERT";
+    case KEY_UP:
+        return "UPARROW";
+    case KEY_DOWN:
+        return "DOWNARROW";
+    case KEY_LEFT:
+        return "LEFTARROW";
+    case KEY_RIGHT:
+        return "RIGHTARROW";
+    default:
+        break;
+	};
 
 	// check for printable ascii (don't use quote)
 	if (keynum > ' ' && keynum < '~' && keynum != '"' && keynum != ';') {

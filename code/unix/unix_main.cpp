@@ -247,7 +247,7 @@ void GDR_NORETURN Sys_Exit(int code)
         if (N_stricmp("No System Error", err) != 0)
             Con_Printf( "Exiting with System Error: %s\n", err );
         else
-            Con_Printf( "Exiting with Engine Error" );
+            Con_Printf( "Exiting with Engine Error\n" );
     }
     Sys_ShutdownConsole();
     if ( code == 0 || code == 1 ) {

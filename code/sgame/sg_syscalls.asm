@@ -54,6 +54,7 @@ equ trap_FS_Read                        -49
 equ trap_FS_FileLength                  -50
 equ trap_FS_GetFileList                 -51
 equ RE_LoadWorldMap                     -52
+equ G_SetBindNames                      -53
 
 ; 401-601 for imgui calls
 equ ImGui_BeginWindow                   -401

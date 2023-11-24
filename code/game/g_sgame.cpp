@@ -288,6 +288,12 @@ static intptr_t G_SGameSystemCalls(intptr_t *args)
     case SG_G_LOADMAP:
         VM_CHECKBOUNDS( args[2], sizeof(mapinfo_t) );
         return G_LoadMap( args[1], (mapinfo_t *)VMA(2) );
+    case SG_G_SETBINDNAMES:
+        // we can't validate valid strings, but we can make sure they're passing in a valid pointer array
+        VM_CHECKBOUNDS( args[1], sizeof(const char *) * args[2] );
+        gi.bindNames = (const char **)VMA(1);
+        gi.numBindNames = args[2];
+        return 0;
     case TRAP_MEMSET:
         VM_CHECKBOUNDS(args[1], args[3]);
         return (intptr_t)memset(VMA(1), args[2], args[3]);
