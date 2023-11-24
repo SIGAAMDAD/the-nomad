@@ -112,7 +112,7 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Con_Printf(const char *fmt, 
     if (com_logfile && com_logfile->i) {
         if (logfile == FS_INVALID_HANDLE && FS_Initialized() && !opening_console) {
             const char *logName = "debug.log";
-            int mode;
+            int32_t mode;
             opening_console = qtrue;
 
             mode = com_logfile->i - 1;
@@ -145,7 +145,7 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Con_Printf(const char *fmt, 
             opening_console = qfalse;
         }
         if (logfile != FS_INVALID_HANDLE && FS_Initialized()) {
-            FS_Write(msg, length, logfile);
+			FS_Write( msg, strlen(msg), logfile );
         }
     }
 }
@@ -454,7 +454,8 @@ static sysEvent_t Com_GetEvent(void)
 static void Com_WindowEvent(uint32_t value)
 {
 	if (value == SDL_QUIT) {
-		Sys_Exit(1);
+		Cbuf_ExecuteText( EXEC_APPEND, "quit\n" );
+		Cbuf_Execute();
 	}
 }
 
@@ -613,11 +614,8 @@ void Com_RestartGame(void)
 		// reset console history
 		Con_ResetHistory();
 
-		// close the logfile if it's open
-		Com_Shutdown();
-
 		// clear the filesystem before restarting the cvars
-		FS_Shutdown(qtrue);
+//		FS_Shutdown(qtrue);
 
 		// reset all cvars
 		Cvar_Restart(qtrue);
@@ -1453,7 +1451,7 @@ void Com_Init(char *commandLine)
 #endif
 
 	Cmd_AddCommand("shutdown", Com_Shutdown_f);
-	Cmd_AddCommand("restart", Com_GameRestart_f);
+//	Cmd_AddCommand("restart", Com_GameRestart_f); // broken
 	Cmd_AddCommand("quit", Com_Quit_f);
 	Cmd_AddCommand( "writecfg", Com_WriteConfig_f );
 
@@ -1538,7 +1536,7 @@ static void Com_WriteConfig_f( void ) {
 	const char *ext;
 
 	if ( Cmd_Argc() != 2 ) {
-		Con_Printf( "Usage: writeconfig <filename>\n" );
+		Con_Printf( "Usage: writecfg <filename>\n" );
 		return;
 	}
 

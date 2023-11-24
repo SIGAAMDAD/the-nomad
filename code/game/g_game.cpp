@@ -169,6 +169,18 @@ int32_t G_LoadMap( int32_t index, mapinfo_t *info )
     return 1;
 }
 
+static void G_MapInfo_f( void ) {
+    Con_Printf( "---------- Map Info ----------\n" );
+    for (uint64_t i = 0; i < gi.mapCache.numMapFiles; i++) {
+        Con_Printf( "[Map %lu] >\n", i );
+        Con_Printf( "Name: %s\n", gi.mapCache.infoList[i].name );
+        Con_Printf( "Checkpoint Count: %i\n", gi.mapCache.infoList[i].numCheckpoints );
+        Con_Printf( "Spawn Count: %i\n", gi.mapCache.infoList[i].numSpawns );
+        Con_Printf( "Map Width: %i\n", gi.mapCache.infoList[i].width );
+        Con_Printf( "Map Height: %i\n", gi.mapCache.infoList[i].height );
+    }
+}
+
 #if 0
 #if defined(__OS2__) || defined(_WIN32)
 static SDL_Thread *PFN_SDL_CreateThread(SDL_ThreadFunction fn, const char *name, void *data)
@@ -643,7 +655,7 @@ void G_Init(void)
     r_stereoEnabled = Cvar_Get( "r_stereoEnabled", "0", CVAR_SAVE | CVAR_LATCH );
 	Cvar_SetDescription( r_stereoEnabled, "Enable stereo rendering for techniques like shutter glasses." );
 
-	r_swapInterval = Cvar_Get( "r_swapInterval", "0", CVAR_ARCHIVE_ND );
+	r_swapInterval = Cvar_Get( "r_swapInterval", "1", CVAR_SAVE | CVAR_LATCH );
 	Cvar_SetDescription( r_swapInterval,
                         "V-blanks to wait before swapping buffers."
                         "\n 0: No V-Sync\n 1: Synced to the monitor's refresh rate.\n -1: Adaptive V-Sync" );
@@ -749,6 +761,7 @@ void G_Init(void)
     Cmd_AddCommand("vid_restart", G_Vid_Restart_f);
     Cmd_AddCommand("snd_restart", G_Snd_Restart_f);
     Cmd_AddCommand("modelist", G_ModeList_f);
+    Cmd_AddCommand("maplist", G_MapInfo_f);
 
     Con_Printf( "----- Game State Initialization Complete ----\n" );
 }
@@ -778,6 +791,8 @@ void G_Shutdown(qboolean quit)
     Cmd_RemoveCommand("demo");
     Cmd_RemoveCommand("vid_restart");
     Cmd_RemoveCommand("snd_restart");
+    Cmd_RemoveCommand("modelist");
+    Cmd_RemoveCommand("maplist");
 
     Key_SetCatcher(0);
     Con_Printf( "-------------------------------\n");
@@ -813,9 +828,6 @@ void G_StartHunkUsers(void)
     // set the marker before loading any assets
     Hunk_SetMark();
 
-    // cache all maps
-    G_InitMapCache();
-
     if (!gi.rendererStarted) {
         gi.rendererStarted = qtrue;
         G_InitRenderer();
@@ -832,6 +844,9 @@ void G_StartHunkUsers(void)
         gi.sgameStarted = qtrue;
         G_InitSGame();
     }
+
+    // cache all maps
+    G_InitMapCache();
 }
 
 void G_ShutdownAll(void)

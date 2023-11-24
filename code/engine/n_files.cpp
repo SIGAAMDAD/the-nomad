@@ -177,6 +177,9 @@ static FILE *FS_FileForHandle(file_t f)
 	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
 		N_Error(ERR_DROP, "FS_FileForHandle: out of range");
 	}
+	if (handles[f].bffFile) {
+		N_Error(ERR_DROP, "FS_FileForHandle: can't get FILE on bff file");
+	}
 	if (!handles[f].data.fp) {
 		N_Error(ERR_DROP, "FS_FileForHandle: invalid handle");
 	}
@@ -1917,13 +1920,13 @@ uint64_t FS_Write(const void *buffer, uint64_t size, file_t f)
 				tries = 1;
 			}
 			else {
-				N_Error(ERR_FATAL, "FS_Write: 0, bytes written");
+				Con_Printf( COLOR_RED "FS_Write: 0 bytes written\n" );
 				return 0;
 			}
 		}
 
 		if (writeCount == -1) {
-			N_Error(ERR_FATAL, "FS_Write: -1 bytes written");
+			Con_Printf( COLOR_RED "FS_Write: -1 bytes written\n" );
 			return 0;
 		}
 
@@ -2369,9 +2372,6 @@ void FS_FClose(file_t f)
 	fileHandle_t *p;
 //	fileStats_t stats;
 
-	if (!fs_searchpaths) {
-		N_Error(ERR_FATAL, "Filesystem call made without initialization");
-	}
 	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
 		N_Error(ERR_FATAL, "FS_FClose: out of range");
 	}
@@ -2806,17 +2806,12 @@ void FS_Shutdown(qboolean closeFiles)
 	searchpath_t *p, *next;
 
 	if (closeFiles) {
-		for (uint64_t i = 0; i < MAX_FILE_HANDLES; i++) {
+		for (uint64_t i = 1; i < MAX_FILE_HANDLES; i++) {
 			if (!handles[i].data.stream)
 				continue;
 			
 			FS_FClose(i);
 		}
-	}
-
-	if (fs_searchpaths) {
-		Cbuf_ExecuteText(EXEC_APPEND, va("exec %s", Cvar_VariableString( "com_defaultcfg" )));
-    	Cbuf_Execute();
 	}
 
 #ifdef USE_BFF_CACHE_FILE

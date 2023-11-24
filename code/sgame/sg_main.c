@@ -43,7 +43,7 @@ static cvarTable_t cvarTable[] = {
     { "sg_pmBaseSpeed",                 "1.0",          &sg_pmBaseSpeed,            CVAR_LATCH | CVAR_SAVE },
     { "g_mouseInvert",                  "0",            &sg_mouseInvert,            CVAR_LATCH | CVAR_SAVE },
     { "g_mouseAcceleration",            "0",            &sg_mouseAcceleration,      CVAR_LATCH | CVAR_SAVE },
-    { "sg_printLevelStats",             "0",            &sg_printLevelStats,        CVAR_LATCH | CVAR_TEMP },
+    { "sg_printLevelStats",             "1",            &sg_printLevelStats,        CVAR_LATCH | CVAR_TEMP },
     { "sg_decalDetail",                 "3",            &sg_decalDetail,            CVAR_LATCH | CVAR_SAVE },
     { "sg_gibs",                        "0",            &sg_gibs,                   CVAR_LATCH | CVAR_SAVE },
     { "sg_drawFPS",                     "0",            &sg_drawFPS,                CVAR_LATCH | CVAR_SAVE },

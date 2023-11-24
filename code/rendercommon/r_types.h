@@ -138,6 +138,12 @@ typedef enum {
 } stereoFrame_t;
 
 typedef struct {
+	char vendor[1024];
+    char renderer[1024];
+    char version_str[1024];
+    char glsl_version_str[1024];
+    char extensions[8192];
+
     int maxTextureSize; // queried from GL
     int maxTextureUnits; // can only be 16 for the forseeable future
 

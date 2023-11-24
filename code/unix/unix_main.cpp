@@ -212,12 +212,19 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error(const
 	va_end( argptr );
 
     Sys_DebugStacktrace( MAX_STACKTRACE_FRAMES );
-    Sys_MessageBox( "Engine Error", text, false );
+
+    if (exit_type) {
+        Sys_MessageBox( "System Error", text, false );
+    }
+    else {
+        Sys_MessageBox( "Engine Error", text, false );
+    }
 
     msg = va("Sys_Error: %s\n", text);
     write(STDERR_FILENO, msg, strlen(msg));
     
-    // fprintf COULD call malloc
+    // fprintf COULD call malloc, and if we're out of memory, this would not do anything
+    // but make even more problems
 //	fprintf( stderr, "Sys_Error: %s\n", text );
 
 	Sys_Exit( -1 ); // bk010104 - use single exit point.
@@ -238,14 +245,13 @@ void GDR_NORETURN Sys_Exit(int code)
         else
             err = "No System Error";
         if (N_stricmp("No System Error", err) != 0)
-            fprintf(stderr, "Exiting With System Error: %s\n", err);
+            Con_Printf( "Exiting with System Error: %s\n", err );
         else
-            fprintf(stderr, "Exiting With Engine Error\n");
+            Con_Printf( "Exiting with Engine Error" );
     }
     Sys_ShutdownConsole();
-    if (code == 0) {
-        Com_Shutdown(); // its a save and manual exit, we can shutdown securely
-        G_Shutdown(qtrue);
+    if ( code == 0 || code == 1 ) {
+        Con_Printf( "Exiting App (EXIT_SUCCESS)\n" );
     }
 
     if (code == -1)
@@ -288,7 +294,7 @@ static const struct Q3ToAnsiColorTable_s
 };
 
 static const char *getANSIcolor( char Q3color ) {
-	int i;
+	uint32_t i;
 	for ( i = 0; i < arraylen( tty_colorTable ); i++ ) {
 		if ( Q3color == tty_colorTable[ i ].Q3color ) {
 			return tty_colorTable[ i ].ANSIcolor;
@@ -552,9 +558,8 @@ char *Sys_ConsoleInput( void )
 	return NULL;
 }
 
-const char *Sys_GetError(void)
-{
-    return strerror(errno);
+const char *Sys_GetError(void) {
+    return strerror( errno );
 }
 
 tty_err Sys_InitConsole(void)
@@ -587,7 +592,7 @@ tty_err Sys_InitConsole(void)
     ttycon_color_on = qtrue;
 
     term = getenv("TERM");
-    if (isatty(STDIN_FILENO) != -1 || !term || !strcmp(term, "dumb") || !strcmp(term, "raw")) {
+    if (isatty(STDIN_FILENO) != 1 || !term || !strcmp(term, "dumb") || !strcmp(term, "raw")) {
         ttycon_on = qfalse;
         return TTY_DISABLED;
     }

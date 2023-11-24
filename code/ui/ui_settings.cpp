@@ -4,6 +4,11 @@
 #include "ui_lib.h"
 #include "ui_window.h"
 #include "ui_string_manager.h"
+#include "ui_table.h"
+#include <GL/gl.h>
+#include "../rendercommon/imgui_impl_opengl3.h"
+#include <EASTL/fixed_string.h>
+#include <EASTL/fixed_vector.h>
 
 enum
 {
@@ -80,8 +85,9 @@ typedef struct
     uint32_t anisotropicFiltering;
     int32_t vsync;
     bool allowSoftwareGL;
-    bool gammaOn;
     float gamma;
+
+    eastl::fixed_vector<eastl::fixed_string<char, 64, true>, 1024, true> extensionStrings;
 
     uint32_t newLineCount;
 
@@ -276,8 +282,6 @@ static void SettingsMenu_ApplyAudioChanges( void )
     Cvar_Set( "snd_musicvol", va("%i", settings.musicVol) );
     Cvar_Set( "snd_sfxon", va("%i", settings.sfxOn) );
     Cvar_Set( "snd_musicon", va("%i", settings.musicOn) );
-
-    Cbuf_ExecuteText( EXEC_APPEND, "snd_restart\n" );
 }
 
 
@@ -369,7 +373,8 @@ static void SettingsMenu_ApplyChanges( void )
     if (ImGui::Button( "APPLY CHANGES" )) {
         SettingsMenu_ApplyGraphicsChanges();
         SettingsMenu_ApplyAudioChanges();
-        Cbuf_ExecuteText( EXEC_APPEND, "writecfg\n" );
+        Cbuf_ExecuteText( EXEC_APPEND, va( "writecfg %s\n", Cvar_VariableString( "com_defaultcfg" ) ) );
+        Cbuf_ExecuteText( EXEC_APPEND, "snd_restart\n" );
         settings.modified = qfalse;
         ui->PlaySelected();
     }
@@ -622,7 +627,7 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextRow();
         
         ImGui::TableNextColumn();
-        ImGui::TextUnformatted( "Rendering API" );
+        ImGui::TextUnformatted( "Renderer" );
         ImGui::TableNextColumn();
         if (ImGui::BeginMenu( RenderAPIString( settings.api ) )) {
             if (ImGui::MenuItem( RenderAPIString( R_OPENGL ) )) {
@@ -748,19 +753,20 @@ static void SettingsMenuControls_Draw( void )
 
     // mouse options
     ImGui::SeparatorText( "MOUSE" );
+
     ImGui::BeginTable( " ", 2 );
     {
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Sensitivity" );
         ImGui::TableNextColumn();
-        if (ImGui::SliderInt( " ", &settings.mouseSensitivity, 0, 100.0f )) {
+        if (ImGui::SliderInt( " ", &settings.mouseSensitivity, 0, 100 )) {
             ui->PlaySelected();
         }
-        
+
         ImGui::TableNextRow();
-        
+
         ImGui::TableNextColumn();
-        ImGui::TextUnformatted( "Invert Mouse" );
+        ImGui::TextUnformatted( "Mouse Invert" );
         ImGui::TableNextColumn();
         if (ImGui::RadioButton( settings.mouseInvert ? "ON" : "OFF", settings.mouseInvert )) {
             settings.mouseInvert = !settings.mouseInvert;
@@ -768,7 +774,7 @@ static void SettingsMenuControls_Draw( void )
         }
 
         ImGui::TableNextRow();
-        
+
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Mouse Acceleration" );
         ImGui::TableNextColumn();
@@ -834,6 +840,9 @@ static void SettingsMenu_GetInitial( void ) {
 }
 
 void SettingsMenu_Cache( void ) {
+    int32_t numExtensions;
+    int32_t i;
+
     memset(&settings, 0, sizeof(settings));
 
     SettingsMenu_GetInitial();
@@ -842,4 +851,13 @@ void SettingsMenu_Cache( void ) {
     settings.confirmation = qfalse;
     settings.modified = qfalse;
     settings.paused = Cvar_VariableInteger( "sg_paused" );
+
+    // get extensions list
+    if (settings.api == R_OPENGL) {
+        renderImport.glGetIntegerv( GL_NUM_EXTENSIONS, &numExtensions );
+        settings.extensionStrings.reserve( numExtensions );
+        for (i = 0; i < numExtensions; i++) {
+            settings.extensionStrings.emplace_back( (const char *)renderImport.glGetStringi( GL_EXTENSIONS, i ) );
+        }
+    }
 }

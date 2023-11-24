@@ -678,6 +678,12 @@ static void R_InitGLContext(void)
     N_strncpyz(glContext.version_str, (const char *)nglGetString(GL_VERSION), sizeof(glContext.version_str));
     N_strncpyz(gl_extensions, (const char *)nglGetString(GL_EXTENSIONS), sizeof(gl_extensions));
 
+    N_strncpyz( glConfig.renderer, glContext.renderer, sizeof(glConfig.renderer) );
+    N_strncpyz( glConfig.version_str, glContext.version_str, sizeof(glConfig.version_str) );
+    N_strncpyz( glConfig.vendor, glContext.vendor, sizeof(glConfig.vendor) );
+    N_strncpyz( glConfig.glsl_version_str, (const char *)nglGetString(GL_SHADING_LANGUAGE_VERSION), sizeof(glConfig.glsl_version_str) );
+    N_strncpyz( glConfig.extensions, gl_extensions, sizeof(glConfig.extensions) );
+
     nglGetIntegerv(GL_NUM_EXTENSIONS, &glContext.numExtensions);
     nglGetIntegerv(GL_STEREO, (GLint *)&glContext.stereo);
     nglGetIntegerv(GL_MAX_TEXTURE_UNITS, &glContext.maxTextureUnits);
