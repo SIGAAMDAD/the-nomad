@@ -2,6 +2,7 @@
 #include "../game/g_game.h"
 #include "sys_win32.h"
 #include "win_local.h"
+#include <signal.h>
 
 #define MEM_THRESHOLD (96*1024*1024)
 
@@ -1202,6 +1203,20 @@ void Sys_SetClipboadBitmap( const byte *bitmap, uint64_t length )
 	CloseClipboard();
 }
 
+static void Sys_SignalHandle( int signum )
+{
+	switch (signum) {
+	case SIGSEGV:
+		Sys_Error( "Segmentation Violation (SIGSEGV)" );
+		break;
+	};
+}
+
+static void Sys_InitSignals( void )
+{
+	signal( SIGSEGV, Sys_SignalHandle );
+}
+
 /*
 ==================
 WinMain
@@ -1228,6 +1243,8 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 		SetPriorityClass( hProcess, HIGH_PRIORITY_CLASS );
 	}
 
+	Sys_InitSignals();
+
 	//SetDPIAwareness();
 
 	g_wv.hInstance = hInstance;
@@ -1240,9 +1257,9 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 //	Sys_CreateConsole( con_title, xpos, ypos, useXYpos );
 
 	// no abort/retry/fail errors
-	SetErrorMode( SEM_FAILCRITICALERRORS );
+//	SetErrorMode( SEM_FAILCRITICALERRORS );
 
-	SetUnhandledExceptionFilter( ExceptionFilter );
+//	SetUnhandledExceptionFilter( ExceptionFilter );
 
 	// get the initial time base
 	Sys_Milliseconds();

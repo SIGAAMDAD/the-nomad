@@ -11,6 +11,9 @@ typedef struct {
 } keyname_t;
 
 static const keyname_t keynames[] = {
+	{"WHEEL_DOWN", KEY_WHEEL_DOWN},
+	{"WHEEL_UP", KEY_WHEEL_UP},
+
 	{"MOUSE_LEFT", KEY_MOUSE_LEFT},
 	{"MOUSE_MIDDLE", KEY_MOUSE_MIDDLE},
 	{"MOUSE_RIGHT", KEY_MOUSE_RIGHT},
@@ -195,6 +198,16 @@ const char *Key_KeynumToString(uint32_t keynum)
 
 	// manual overrides for keys that show up as ASCII but really shouldn't show up as ASCII
 	switch (keynum) {
+	case KEY_MOUSE_LEFT:
+		return "MOUSE_LEFT";
+	case KEY_MOUSE_RIGHT:
+		return "MOUSE_RIGHT";
+	case KEY_MOUSE_MIDDLE:
+		return "MOUSE_MIDDLE";
+	case KEY_WHEEL_DOWN:
+		return "WHEEL_DOWN";
+	case KEY_WHEEL_UP:
+		return "WHEEL_UP";
     case KEY_TAB: // shows up as '+'
         return "TAB";
     case KEY_LSHIFT:
@@ -278,7 +291,7 @@ void Key_SetBinding(uint32_t keynum, const char *binding)
 	}
 
 	// allocate new memory for new binding
-	keys[keynum].binding = Z_Strdup(binding);
+	keys[keynum].binding = CopyString(binding);
 }
 
 const char *Key_GetBinding(uint32_t keynum)

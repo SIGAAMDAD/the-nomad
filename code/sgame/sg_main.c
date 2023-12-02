@@ -6,6 +6,41 @@ int32_t SG_Shutdown(void);
 int32_t SG_RunLoop( int32_t msec );
 int32_t SG_DrawFrame( void );
 
+/*
+vmMain
+
+this is the only way control passes into the module.
+this must be the very first function compiled into the .qvm file
+*/
+int32_t vmMain(int32_t command, int32_t arg0, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg5, int32_t arg6, int32_t arg7,
+    int32_t arg8, int32_t arg9, int32_t arg10)
+{
+    switch (command) {
+    case SGAME_INIT:
+        return SG_Init();
+    case SGAME_SHUTDOWN:
+        return SG_Shutdown();
+    case SGAME_RUNTIC:
+        return SG_RunLoop( arg0 );
+    case SGAME_FINISH_FRAME:
+        return SG_DrawFrame();
+    case SGAME_STARTLEVEL:
+        return SG_InitLevel( arg0 );
+    case SGAME_ENDLEVEL:
+        return SG_EndLevel();
+    case SGAME_KEY_EVENT:
+    case SGAME_MOUSE_EVENT:
+    case SGAME_EVENT_HANDLING:
+    case SGAME_EVENT_NONE:
+    case SGAME_REWIND_TO_LAST_CHECKPOINT:
+        return 1;
+    default:
+        SG_Error("vmMain: invalid command id: %i", command);
+        break;
+    };
+    return -1;
+}
+
 sgGlobals_t sg;
 
 uint32_t sg_numLevels;
@@ -21,7 +56,6 @@ vmCvar_t sg_mouseAcceleration;
 vmCvar_t sg_printLevelStats;
 vmCvar_t sg_decalDetail;
 vmCvar_t sg_gibs;
-vmCvar_t sg_drawFPS;
 vmCvar_t sg_levelInfoFile;
 vmCvar_t sg_levelIndex;
 vmCvar_t sg_levelDataFile;
@@ -65,41 +99,9 @@ static cvarTable_t cvarTable[] = {
     { "sg_printLevelStats",             "1",            &sg_printLevelStats,        CVAR_LATCH | CVAR_TEMP },
     { "sg_decalDetail",                 "3",            &sg_decalDetail,            CVAR_LATCH | CVAR_SAVE },
     { "sg_gibs",                        "0",            &sg_gibs,                   CVAR_LATCH | CVAR_SAVE },
-    { "sg_drawFPS",                     "0",            &sg_drawFPS,                CVAR_LATCH | CVAR_SAVE },
     { "sg_levelInfoFile",               "levels.txt",   &sg_levelInfoFile,          CVAR_INIT | CVAR_ROM },
     { "sg_savename",                    "savedata.ngd", &sg_savename,               CVAR_LATCH | CVAR_TEMP },
 };
-
-/*
-vmMain
-
-this is the only way control passes into the module.
-this must be the very first function compiled into the .qvm file
-*/
-int32_t vmMain(int32_t command, int32_t arg0, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg5, int32_t arg6, int32_t arg7,
-    int32_t arg8, int32_t arg9, int32_t arg10)
-{
-    switch (command) {
-    case SGAME_INIT:
-        return SG_Init();
-    case SGAME_SHUTDOWN:
-        return SG_Shutdown();
-    case SGAME_RUNTIC:
-        return SG_RunLoop( arg0 );
-    case SGAME_FINISH_FRAME:
-        return SG_DrawFrame();
-    case SGAME_STARTLEVEL:
-        return SG_InitLevel( arg0 );
-    case SGAME_ENDLEVEL:
-        return SG_EndLevel();
-    case SGAME_REWIND_TO_LAST_CHECKPOINT:
-        return 1;
-    default:
-        SG_Error("vmMain: invalid command id: %i", command);
-        break;
-    };
-    return -1;
-}
 
 static uint32_t cvarTableSize = arraylen(cvarTable);
 
@@ -109,7 +111,7 @@ static void SG_RegisterCvars( void )
     cvarTable_t *cv;
 
     for (i = 0, cv = cvarTable; i < cvarTableSize; i++, cv++) {
-        trap_Cvar_Register( cv->cvar, cv->name, cv->defaultValue, cv->flags );
+        Cvar_Register( cv->cvar, cv->name, cv->defaultValue, cv->flags );
     }
 }
 
@@ -119,7 +121,7 @@ void SG_UpdateCvars( void )
     cvarTable_t *cv;
 
     for (i = 0, cv = cvarTable; i < cvarTableSize; i++, cv++) {
-        trap_Cvar_Update( cv->cvar );
+        Cvar_Update( cv->cvar );
     }
 }
 
@@ -235,25 +237,20 @@ static qboolean SG_LoadMedia( void )
 {
     G_Printf( "Loading sgame sfx...\n" );
 
-    if ((sg.media.player_pain0 = trap_Snd_RegisterSfx( "sfx/player/pain0.wav" )) == FS_INVALID_HANDLE)
-        return qfalse;
-    
-    if ((sg.media.player_pain1 = trap_Snd_RegisterSfx( "sfx/player/pain1.wav" )) == FS_INVALID_HANDLE)
-        return qfalse;
-    
-    if ((sg.media.player_pain2 = trap_Snd_RegisterSfx( "sfx/player/pain2.wav" )) == FS_INVALID_HANDLE)
-        return qfalse;
-    
-    if ((sg.media.player_death0 = trap_Snd_RegisterSfx( "sfx/player/death1.wav" )) == FS_INVALID_HANDLE)
-        return qfalse;
-    
-    if ((sg.media.player_death1 = trap_Snd_RegisterSfx( "sfx/player/death2.wav" )) == FS_INVALID_HANDLE)
-        return qfalse;
-    
-    if ((sg.media.player_death2 = trap_Snd_RegisterSfx( "sfx/player/death3.wav" )) == FS_INVALID_HANDLE)
-        return qfalse;
-    
+    sg.media.player_death0 = trap_Snd_RegisterSfx( "sfx/player/death1.wav" );
+    sg.media.player_death1 = trap_Snd_RegisterSfx( "sfx/player/death2.wav" );
+    sg.media.player_death2 = trap_Snd_RegisterSfx( "sfx/player/death3.wav" ); 
+    sg.media.player_pain0 = trap_Snd_RegisterSfx( "sfx/player/pain0.wav" );
+    sg.media.player_pain1 = trap_Snd_RegisterSfx( "sfx/player/pain1.wav" );
+    sg.media.player_pain2 = trap_Snd_RegisterSfx( "sfx/player/pain2.wav" );
+
     G_Printf( "Finished loading sfx.\n" );
+
+    G_Printf( "Loading sgame sprites...\n" );
+
+    sg.media.raio_shader = RE_RegisterShader( "textures/raio.png" );
+
+    G_Printf( "Finished loading sprites.\n" );
 
     return qtrue;
 }

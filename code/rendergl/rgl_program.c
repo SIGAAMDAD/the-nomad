@@ -432,7 +432,7 @@ static int GLSL_InitGPUShader2(shaderProgram_t *program, const char *name, uint3
     
     GLSL_LinkProgram(program->programId);
 
-//    GLSL_CheckAttribLocation(program->programId, "a_Position", "ATTRIB_INDEX_POSITION", ATTRIB_INDEX_POSITION);
+    GLSL_CheckAttribLocation(program->programId, "a_Position", "ATTRIB_INDEX_POSITION", ATTRIB_INDEX_POSITION);
 //    GLSL_CheckAttribLocation(program->programId, "a_TexCoord", "ATTRIB_INDEX_TEXCOORD", ATTRIB_INDEX_TEXCOORD);
 //    GLSL_CheckAttribLocation(program->programId, "a_Normal", "ATTRIB_INDEX_NORMAL", ATTRIB_INDEX_NORMAL);
 //    GLSL_CheckAttribLocation(program->programId, "a_Color", "ATTRIB_INDEX_COLOR", ATTRIB_INDEX_COLOR);
@@ -488,10 +488,10 @@ static int GLSL_InitGPUShader(shaderProgram_t *program, const char *name, uint32
 
 static void GLSL_InitUniforms(shaderProgram_t *program)
 {
-	uint32_t i, size;
+	uint32_t i, uniformBufferSize;
 
 	GLint *uniforms = program->uniforms;
-	size = 0;
+	uniformBufferSize = 0;
 
 	for (i = 0; i < UNIFORM_COUNT; i++) {
 		uniforms[i] = nglGetUniformLocation(program->programId, uniformsInfo[i].name);
@@ -499,33 +499,33 @@ static void GLSL_InitUniforms(shaderProgram_t *program)
 		if (uniforms[i] == -1)
 			continue;
 		 
-		program->uniformBufferOffsets[i] = size;
+		program->uniformBufferOffsets[i] = uniformBufferSize;
 
 		switch(uniformsInfo[i].type) {
 		case GLSL_INT:
-			size += sizeof(GLint);
+			uniformBufferSize += sizeof(GLint);
 			break;
 		case GLSL_FLOAT:
-			size += sizeof(GLfloat);
+			uniformBufferSize += sizeof(GLfloat);
 			break;
 		case GLSL_VEC2:
-			size += sizeof(vec_t) * 2;
+			uniformBufferSize += sizeof(vec_t) * 2;
 			break;
 		case GLSL_VEC3:
-			size += sizeof(vec_t) * 3;
+			uniformBufferSize += sizeof(vec_t) * 3;
 			break;
 		case GLSL_VEC4:
-			size += sizeof(vec_t) * 4;
+			uniformBufferSize += sizeof(vec_t) * 4;
 			break;
 		case GLSL_MAT16:
-			size += sizeof(vec_t) * 16;
+			uniformBufferSize += sizeof(vec_t) * 16;
 			break;
 		default:
 			break;
 		};
 	}
 
-	program->uniformBuffer = ri.Malloc(size);
+	program->uniformBuffer = ri.Hunk_Alloc( uniformBufferSize, h_low );
 }
 
 static void GLSL_FinishGPUShader(shaderProgram_t *program)
@@ -541,21 +541,11 @@ static void GLSL_DeleteGPUShader(shaderProgram_t *program)
             nglDetachShader(program->programId, program->vertexId);
             nglDeleteShader(program->vertexId);
         }
-        if (program->compressedVSCode) {
-            ri.Free(program->compressedVSCode);
-        }
         if (program->fragmentId) {
             nglDetachShader(program->programId, program->fragmentId);
             nglDeleteShader(program->fragmentId);
         }
-        if (program->compressedFSCode) {
-            ri.Free(program->compressedFSCode);
-        }
         nglDeleteProgram(program->programId);
-
-        if (program->uniformBuffer) {
-            ri.Free(program->uniformBuffer);
-        }
 
         memset(program, 0, sizeof(*program));
     }
@@ -660,7 +650,7 @@ void GLSL_SetUniformVec4(shaderProgram_t *program, uint32_t uniformNum, const ve
 void GLSL_SetUniformMatrix4(shaderProgram_t *program, uint32_t uniformNum, const mat4_t m)
 {
     GLint *uniforms = program->uniforms;
-    vec_t *compare = (vec_t *)(program->uniformBuffer + program->uniformBuffer[uniformNum]);
+    mat4_t *compare = (mat4_t *)(program->uniformBuffer + program->uniformBuffer[uniformNum]);
 
     if (uniforms[uniformNum] == -1)
         return;
@@ -669,11 +659,11 @@ void GLSL_SetUniformMatrix4(shaderProgram_t *program, uint32_t uniformNum, const
         ri.Printf(PRINT_INFO, COLOR_YELLOW "WARNING: GLSL_SetUniformMatrix4: wrong type for uniform %i in program %s\n", uniformNum, program->name);
         return;
     }
-    if (Mat4Compare(m, compare))
+    if (Mat4Compare(m, *compare))
         return;
     
-    Mat4Copy(m, compare);
-    nglUniformMatrix4fv(uniforms[uniformNum], 1, GL_FALSE, (const GLfloat *)m);
+    memcpy( *compare, m, sizeof(mat4_t) );
+    nglUniformMatrix4fv(uniforms[uniformNum], 1, GL_FALSE, &m[0][0]);
 }
 
 

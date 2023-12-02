@@ -82,6 +82,7 @@ struct vmRefImport_s
 
     void (*trap_Print)( const char *str );
     void (*trap_Error)( const char *str );
+    uint32_t (*trap_Milliseconds)( void );
 
     file_t (*FS_FOpenRead)( const char *npath, handleOwner_t owner );
     file_t (*FS_FOpenWrite)( const char *npath, handleOwner_t owner );
@@ -225,8 +226,11 @@ typedef struct {
 
     gamestate_t state;
     int32_t frametime;
+    int32_t oldframetime;
     int32_t framecount;
     int32_t realtime;
+    int32_t realFrameTime;
+    int32_t sendtime;
     
     uint64_t lastVidRestart;
 
@@ -248,8 +252,8 @@ typedef struct {
     float biasY;
     float scale;
 
-    int desktopWidth;
-    int desktopHeight;
+    int32_t desktopWidth;
+    int32_t desktopHeight;
     
     gpuConfig_t gpuConfig;
 

@@ -107,6 +107,8 @@ Con_ToggleConsole_f
 ================
 */
 void Con_ToggleConsole_f( void ) {
+	const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar;
+
 	// Can't toggle the console when it's the only thing available
     if ( Key_GetCatcher() == KEYCATCH_CONSOLE ) {
 		return;
@@ -128,7 +130,10 @@ void Con_ToggleConsole_f( void ) {
 	}
 
 	Con_DrawSolidConsole( con.displayFrac );
+
+	ImGui::Begin( "Command Console", NULL, windowFlags );
 	ImGui::SetScrollHereY();
+	ImGui::End();
 }
 
 
@@ -533,7 +538,7 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 		data->SelectAll();
 	}
 
-	if (Key_IsDown(KEY_DELETE)) {
+	if (Key_IsDown(KEY_BACKSPACE)) {
 		if (data->HasSelection()) {
 			data->DeleteChars(data->SelectionStart, data->SelectionEnd - data->SelectionStart);
 		}
@@ -647,9 +652,9 @@ static void Con_DrawInput( void ) {
 	y = con.vislines - ( smallchar_height * 2 );
 
 	ImGui::NewLine();
-	ImGui::PushStyleColor( ImGuiCol_FrameBg, ImVec4( con.color ) );
+//	ImGui::GetStyle().Colors[ImGuiCol_FrameBgActive] = ImVec4( con.color );
 	ImGui::TextUnformatted( "] " );
-	ImGui::PopStyleColor();
+//	ImGui::PopStyleColor();
 	ImGui::SameLine();
 
 	if (ImGui::InputText("", g_consoleField.buffer, sizeof(g_consoleField.buffer) - 1,
@@ -691,10 +696,6 @@ static void Con_DrawInput( void ) {
 
 		Field_Clear( &g_consoleField );
 		g_consoleField.widthInChars = g_console_field_width;
-
-		if ( gi.state == GS_MENU ) {
-			SCR_UpdateScreen ();	// force an update, because the command
-		}							// may take some time
 	}
 
 //	Field_Draw( &g_consoleField, con.xadjust + 2 * smallchar_width, y,
@@ -749,16 +750,16 @@ static void Con_DrawSolidConsole( float frac )
 				}
 			}
 		}
-		ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( conColorValue ) );
+//		ImGui::GetStyle().Colors[ImGuiCol_WindowBg] = ImVec4( conColorValue );
 		customColor = qtrue;
 	} else {
-		ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( 0.0f, 0.0f, 0.35, 1.0f ) );
+//		ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( 0.0f, 0.0f, 0.35f, 1.0f ) );
 	}
 
 	// draw from the bottom up
 	{
 		// draw arrows to show the buffer is backscrolled
-		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4( g_color_table[ ColorIndex(S_COLOR_RED) ] ));
+		ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( g_color_table[ ColorIndex(S_COLOR_RED) ] ) );
 		for (i = 0; i < 80; i++) {
 			ImGui::TextUnformatted("^");
 			ImGui::SameLine();
@@ -779,9 +780,8 @@ static void Con_DrawSolidConsole( float frac )
 				currentColorIndex = colorIndex;
 				if (usedColor) {
 					ImGui::PopStyleColor();
-					usedColor = qfalse;
 				}
-				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4( g_color_table[ colorIndex ] ));
+				ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( g_color_table[ colorIndex ] ) );
 				usedColor = qtrue;
 			}
 			text += 2;
@@ -792,7 +792,7 @@ static void Con_DrawSolidConsole( float frac )
 			if (usedColor) {
 				ImGui::PopStyleColor();
 				currentColorIndex = ColorIndex(S_COLOR_WHITE);
-				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4( g_color_table[ currentColorIndex ] ));
+				ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( g_color_table[currentColorIndex] ) );
 			}
 			ImGui::NewLine();
 			break;
@@ -802,22 +802,15 @@ static void Con_DrawSolidConsole( float frac )
 		default:
 			s[0] = *text;
 			s[1] = 0;
-			ImGui::TextUnformatted(s);
+			ImGui::TextUnformatted( s );
 			ImGui::SameLine();
 			break;
 		};
 	}
-
-	if (customColor) {
-		ImGui::PopStyleColor();
-	}
 	
 	Con_DrawInput();
-
-	ImGui::PopStyleColor();
-
-	// segfaults
-// 	ImGui::End();
+	
+	ImGui::End();
 }
 
 static void Con_DrawNotify( void ) {

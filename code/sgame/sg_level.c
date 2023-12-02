@@ -88,7 +88,7 @@ qboolean SG_InitLevel( int32_t levelIndex )
 
     RE_LoadWorldMap( va( "maps/%s", sg.mapInfo.name ) );
 
-    trap_Cvar_Set( "sg_levelIndex", va( "%i", levelIndex ) );
+    Cvar_Set( "sg_levelIndex", va( "%i", levelIndex ) );
 
     return qtrue;
 }

@@ -2546,6 +2546,7 @@ texture_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags )
 		return NULL;
 	}
 
+#if 0
 	checkFlagsTrue = IMGFLAG_PICMIP | IMGFLAG_MIPMAP | IMGFLAG_GENNORMALMAP;
 	checkFlagsFalse = IMGFLAG_CUBEMAP;
 	if (r_normalMapping->i && (picFormat == GL_RGBA8) && (type == IMGTYPE_COLORALPHA) &&
@@ -2665,6 +2666,7 @@ texture_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags )
 		if (neededMips > picNumMips)
 			flags &= ~IMGFLAG_MIPMAP;
 	}
+#endif
 
 	image = R_CreateImage( ( char * ) name, pic, width, height, type, flags, GL_RGBA, picFormat );
 #if 0

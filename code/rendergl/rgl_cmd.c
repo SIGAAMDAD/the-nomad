@@ -98,28 +98,6 @@ void *R_GetCommandBuffer( uint32_t bytes ) {
 
 /*
 =============
-R_AddDrawSurfCmd
-=============
-*/
-void R_AddDrawSurfCmd( drawSurf_t *drawSurfs, uint32_t numDrawSurfs )
-{
-	drawSurfsCmd_t *cmd;
-
-	cmd = R_GetCommandBuffer( sizeof( *cmd ) );
-	if ( !cmd ) {
-		return;
-	}
-	cmd->commandId = RC_DRAW_SURFS;
-
-	cmd->drawSurfs = drawSurfs;
-	cmd->numDrawSurfs = numDrawSurfs;
-
-	cmd->refdef = rg.refdef;
-	cmd->viewData = rg.viewData;
-}
-
-/*
-=============
 RE_SetColor
 
 Passing NULL will set the color to white
@@ -210,6 +188,8 @@ GDR_EXPORT void RE_BeginFrame(stereoFrame_t stereoFrame)
 	nglEnable(GL_SCISSOR_TEST);
 	nglDisable(GL_CULL_FACE);
 	nglDisable(GL_DEPTH_TEST);
+
+	nglBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
     // set 2D virtual screen size
     nglViewport(0, 0, width, height);
@@ -310,7 +290,7 @@ GDR_EXPORT void RE_BeginFrame(stereoFrame_t stereoFrame)
 		}
     }
 
-	rg.refdef.stereoFrame = stereoFrame;
+	backend.refdef.stereoFrame = stereoFrame;
 }
 /*
 =============
@@ -329,9 +309,6 @@ GDR_EXPORT void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec)
 		return;
 	}
 	cmd->commandId = RC_SWAP_BUFFERS;
-
-	RB_MakeViewMatrix();
-	Mat4Copy( rg.viewData.camera.transformMatrix, glState.modelviewProjection );
 
 	R_IssueRenderCommands(qtrue);
 	R_InitNextFrame();

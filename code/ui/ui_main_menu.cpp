@@ -48,8 +48,8 @@ typedef struct
     const stringHash_t *spString;
     const stringHash_t *settingsString;
 
-    int menuWidth;
-    int menuHeight;
+    int32_t menuWidth;
+    int32_t menuHeight;
 
     CToggleKey noMenuToggle;
 
@@ -59,9 +59,12 @@ typedef struct
 static mainmenu_t menu;
 
 static const char *creditsString =
-"As Always, I would not have gotten to this point without the help of many\n"
+"As always, I would not have gotten to this point without the help of many\n"
 "I would like to take the time to thank the following people for contributing\n"
 "to this massive project\n";
+
+static const char *signingOffString =
+"Sincerely,\nYour Resident Fiend,\nNoah Van Til";
 
 typedef struct {
     const char *name;
@@ -79,6 +82,7 @@ static const collaborator_t collaborators[] = {
 
 void MainMenu_Draw( void )
 {
+    renderSceneRef_t refdef;
     uint64_t i;
     const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
                             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground;
@@ -86,6 +90,22 @@ void MainMenu_Draw( void )
     menu.noMenuToggle.Toggle( KEY_F2, menu.noMenu );
 
     Snd_SetLoopingTrack( menu.ambience );
+
+    // setup a scene to render the background
+    memset( &refdef, 0, sizeof(refdef) );
+    refdef.flags |= RSF_NOWORLDMODEL;
+    refdef.x = 0;
+    refdef.y = 0;
+    refdef.width = ui->GetConfig().vidWidth;
+    refdef.height = ui->GetConfig().vidHeight;
+
+    /*
+    ImGui::Begin( "MainMenu##BACKGROUND", NULL, windowFlags | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoBringToFrontOnFocus );
+    ImGui::SetWindowPos( ImVec2( 0, 0 ) );
+    ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth, (float)menu.menuHeight ) );
+    ImGui::Image( re.ImGui_TextureData( menu.background0 ), ImVec2( (float)menu.menuWidth, (float)menu.menuHeight ) );
+    ImGui::End();
+    */
 
     if (menu.noMenu) {
         return; // just the scenery & the music (a bit like Halo 3: ODST, check out halome.nu)...
@@ -146,14 +166,21 @@ void MainMenu_Draw( void )
     else if (ui->GetState() == STATE_CREDITS) {
         ImGui::Begin( "MainMenu", NULL, windowFlags );
         ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth / 2, (float)menu.menuHeight ) );
+        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth, (float)menu.menuHeight ) );
         ui->EscapeMenuToggle( STATE_MAIN );
         if (ui->Menu_Title( "CREDITS" )) {
             ui->SetState( STATE_MAIN );
             return;
         }
         else {
-            ImGui::TextUnformatted( creditsString );
+            ImGui::TextWrapped( "%s", creditsString );
+            ImGui::NewLine();
+            for (const auto& it : collaborators) {
+                ImGui::Bullet();
+                ImGui::TextWrapped( "%-24s %s", it.name, it.reason );
+            }
+            ImGui::TextUnformatted( signingOffString );
+
             ImGui::End();
         }
     }
@@ -176,6 +203,7 @@ void MainMenu_Cache( void )
     menu.menu.Draw = MainMenu_Draw;
 
     menu.ambience = Snd_RegisterTrack( "music/track00.ogg" );
+    menu.background0 = re.RegisterShader( "textures/desertbkgd.jpg" );
 
     menu.settingsString = strManager->ValueForKey("MENU_MAIN_SETTINGS");
 

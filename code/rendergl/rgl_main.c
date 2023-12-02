@@ -26,45 +26,33 @@ void GDR_DECL Con_Printf(const char *fmt, ...)
     ri.Printf(PRINT_INFO, "%s", msg);
 }
 
-/*
-RB_MakeViewMatrix:
-*/
 void RB_MakeViewMatrix( void )
 {
-    float aspect, zoom;
+    float aspect;
 
-    if (rg.refdef.camData) {
-        rg.viewData.camera.zoom = rg.refdef.camData->origin[2];
-        VectorCopy2( rg.viewData.camera.origin, rg.refdef.camData->origin );
-    }
-    else {
-        rg.viewData.camera.zoom = 1.0f;
-        VectorClear( rg.viewData.camera.origin );
-    }
+    aspect = glConfig.vidWidth / glConfig.vidHeight;
 
-    zoom = rg.viewData.camera.zoom;
-    aspect = rg.viewData.camera.aspect = glConfig.vidWidth / glConfig.vidHeight;
+    VectorSet( glState.viewData.camera.origin, 0.0f, 0.0f, 0.0f );
 
-    Mat4Ortho(-aspect * zoom, aspect * zoom, -aspect, aspect, -1.0f, 1.0f, rg.viewData.camera.projectionMatrix);
-    Mat4Identity(rg.viewData.camera.modelMatrix);
-    Mat4Translation(rg.viewData.camera.origin, rg.viewData.camera.modelMatrix);
-    Mat4Multiply(rg.viewData.camera.projectionMatrix, rg.viewData.camera.modelMatrix, rg.viewData.camera.transformMatrix);
-}
+    glState.viewData.zFar = -1.0f;
+    glState.viewData.zNear = 1.0f;
 
-void R_InitSamplers(void)
-{
-    nglGenSamplers(MAX_TEXTURE_UNITS, rg.samplers);
+    ri.GLM_MakeVPM( aspect, &glState.viewData.camera.zoom, glState.viewData.camera.origin, glState.viewData.camera.viewProjectionMatrix,
+        glState.viewData.camera.projectionMatrix, glState.viewData.camera.viewMatrix );
 
-    for (int i = 0; i < MAX_TEXTURE_UNITS; i++) {
-        nglBindSampler(i, rg.samplers[i]);
-        nglSamplerParameteri(rg.samplers[i], GL_TEXTURE_MIN_FILTER, gl_filter_min);
-        nglSamplerParameteri(rg.samplers[i], GL_TEXTURE_MAG_FILTER, gl_filter_max);
-    }
-}
+#if 0
+    // setup ortho projection matrix
+    glm_ortho( -aspect * zoom, aspect * zoom, -aspect, aspect, glState.viewData.zNear, glState.viewData.zFar, glState.viewData.camera.projectionMatrix );
 
-void R_ShutdownSamplers(void)
-{
-    nglDeleteSamplers(MAX_TEXTURE_UNITS, rg.samplers);
+    // create the view matrix
+    glm_mat4_identity( transpose );
+    glm_translate( transpose, glState.viewData.camera.origin );
+    glm_mat4_inv( transpose, transpose );
+    glm_mat4_copy( glState.viewData.camera.viewMatrix, transpose );
+
+    // make the final thinga-majig
+    glm_mat4_mul( glState.viewData.camera.projectionMatrix, glState.viewData.camera.viewMatrix, glState.viewData.camera.viewProjectionMatrix );
+#endif
 }
 
 /*
@@ -72,17 +60,17 @@ void R_ShutdownSamplers(void)
 R_Radix
 ===============
 */
-static GDR_INLINE void R_Radix( int byte, uint32_t size, const drawSurf_t *source, drawSurf_t *dest )
+static GDR_INLINE void R_Radix( int32_t byte, uint32_t size, const srfPoly_t *source, srfPoly_t *dest )
 {
     uint32_t       count[ 256 ] = { 0 };
     uint32_t       index[ 256 ];
     uint32_t       i;
-    unsigned char *sortKey;
-    unsigned char *end;
+    uint8_t        *sortKey;
+    uint8_t        *end;
 
-    sortKey = ( (unsigned char *)&source[ 0 ].sort ) + byte;
-    end = sortKey + ( size * sizeof( drawSurf_t ) );
-    for ( ; sortKey < end; sortKey += sizeof( drawSurf_t ) )
+    sortKey = ( (uint8_t *)&source[ 0 ].hShader ) + byte;
+    end = sortKey + ( size * sizeof( srfPoly_t ) );
+    for ( ; sortKey < end; sortKey += sizeof( srfPoly_t ) )
         ++count[ *sortKey ];
 
     index[ 0 ] = 0;
@@ -90,8 +78,8 @@ static GDR_INLINE void R_Radix( int byte, uint32_t size, const drawSurf_t *sourc
     for ( i = 1; i < 256; ++i )
       index[ i ] = index[ i - 1 ] + count[ i - 1 ];
 
-    sortKey = ( (unsigned char *)&source[ 0 ].sort ) + byte;
-    for ( i = 0; i < size; ++i, sortKey += sizeof( drawSurf_t ) )
+    sortKey = ( (uint8_t *)&source[ 0 ].hShader ) + byte;
+    for ( i = 0; i < size; ++i, sortKey += sizeof( srfPoly_t ) )
         dest[ index[ *sortKey ]++ ] = source[ i ];
 }
 
@@ -103,9 +91,9 @@ R_RadixSort
 Radix sort with 4 byte size buckets
 ===============
 */
-static void R_RadixSort( drawSurf_t *source, uint32_t size )
+static void R_RadixSort( srfPoly_t *source, uint32_t size )
 {
-    static drawSurf_t scratch[ MAX_DRAWSURFS ];
+    srfPoly_t scratch[MAX_BATCH_QUADS];
 #ifdef GDR_LITTLE_ENDIAN
     R_Radix( 0, size, source, scratch );
     R_Radix( 1, size, scratch, source );
@@ -119,152 +107,156 @@ static void R_RadixSort( drawSurf_t *source, uint32_t size )
 #endif //Q3_LITTLE_ENDIAN
 }
 
-void R_SortDrawSurfs(drawSurf_t *drawSurfs, uint32_t numDrawSurfs)
+
+extern uint64_t r_numPolys, r_numPolyVerts;
+
+static int SortPoly( const void *a, const void *b ) {
+    return (int)(((srfPoly_t *)a)->hShader - ((srfPoly_t *)b)->hShader);
+}
+
+void R_WorldToGL( drawVert_t *verts, vec3_t pos )
 {
-    shader_t *shader;
+    vec3_t xyz[4];
 
-    // sort by integers first
-    R_RadixSort(drawSurfs, numDrawSurfs);
+    ri.GLM_TransformToGL( pos, xyz, glState.viewData.camera.viewProjectionMatrix );
 
-    for (uint32_t i = 0; i < numDrawSurfs; i++) {
-        shader = rg.sortedShaders[drawSurfs[i].sort];
+    for (uint32_t i = 0; i < 4; ++i)
+        VectorCopy( verts[i].xyz, xyz[i] );
+}
 
-        // no shader should ever have this sort type
-        if (shader->sort == SS_BAD) {
-            ri.Error(ERR_DROP, "Shader '%s' with sort == SS_BAD", shader->name);
+void R_DrawPolys( void )
+{
+    uint64_t i;
+    srfPoly_t *poly;
+    nhandle_t oldShader;
+    glIndex_t *idx;
+    drawVert_t vtx[4];
+    vec3_t pos;
+    uint32_t numVerts;
+    uint32_t numIndices;
+
+    // no polygon submissions this frame
+    if (!r_numPolys || !r_numPolyVerts) {
+        return;
+    }
+
+    RB_SetBatchBuffer( backend.drawBuffer, backendData->polyVerts, sizeof(polyVert_t), backendData->indices, sizeof(glIndex_t) );
+
+    // sort the polys to be more efficient with our shaders
+//    R_RadixSort( backendData->polys, r_numPolys ); // segfaults, dunno why rn
+    qsort( backendData->polys, backendData->numPolys, sizeof(srfPoly_t), SortPoly );
+
+    // submit all the indices
+    RB_CommitDrawData( NULL, 0, backendData->indices, backendData->numIndices );
+
+    poly = backendData->polys;
+    oldShader = poly->hShader;
+
+    for (i = 0; i < r_numPolys; i++, poly++) {
+        if (oldShader != poly->hShader) {
+            // if we have a new shader, flush the current batch
+            RB_FlushBatchBuffer();
+            oldShader = poly->hShader;
+
+            GL_BindTexture( 0,  R_GetShaderByHandle( oldShader )->stages[0]->image );
+            GLSL_SetUniformInt( &rg.basicShader, UNIFORM_DIFFUSE_MAP, 0 );
         }
+
+        // convert local world coordinates to opengl world coordinates
+        for (uint32_t a = 0; a < 4; a++) {
+            vtx[a].xyz[0] = poly->verts[a].xyz[0] - (rg.world->width * 0.5f);
+            vtx[a].xyz[1] = rg.world->height - poly->verts[a].xyz[1];
+            vtx[a].xyz[2] = 0.0f;
+
+            pos[0] += vtx[a].xyz[0];
+            pos[1] += vtx[a].xyz[1];
+            pos[2] += vtx[a].xyz[2];
+        }
+        // average them out
+        pos[0] /= 4;
+        pos[1] /= 4;
+
+        R_WorldToGL( vtx, pos );
+
+        // submit to draw buffer
+        RB_CommitDrawData( poly->verts, poly->numVerts, NULL, 0 );
     }
 
-    R_AddDrawSurfCmd(drawSurfs, numDrawSurfs);
+    RB_FlushBatchBuffer();
 }
 
-void R_AddDrawSurf(surfaceType_t *surface, shader_t *shader)
-{
-    uint32_t index;
-
-    // instead of checking for overflow, we just mask the index
-	// so it wraps around
-	index = rg.refdef.numDrawSurfs & DRAWSURF_MASK;
-	// the sort data is packed into a single 32 bit value so it can be
-	// compared quickly during the qsorting process
-    rg.refdef.drawSurfs[index].sort = shader->sortedIndex;
-    rg.refdef.drawSurfs[index].surface = surface;
-
-    rg.refdef.numDrawSurfs++;
-}
-
-static void R_ConvertCoords( drawVert_t *verts, vec3_t pos )
-{
-    static mat4_t model, mvp;
-    vec4_t p;
-
-    Mat4Translation( pos, model );
-    Mat4Scale( rg.viewData.camera.zoom, model, model );
-
-    Mat4Multiply( rg.viewData.camera.transformMatrix, model, mvp );
-
-    static const vec4_t positions[4] = {
-        { 0.5f,  0.5f, 0.0f, 1.0f },
-        { 0.5f, -0.5f, 0.0f, 1.0f },
-        {-0.5f, -0.5f, 0.0f, 1.0f },
-        {-0.5f,  0.5f, 0.0f, 1.0f }
-    };
-
-    VectorCopy( p, pos );
-    for (uint32_t i = 0; i < arraylen(positions); i++) {
-        Mat4Transform( mvp, positions[i], p );
-        VectorCopy( verts[i].xyz, p );
-    }
-}
-
-static void R_AddWorldSurfaces(void)
+static void R_DrawWorld( void )
 {
     uint32_t y, x;
     uint32_t i;
-    vec3_t p;
-    drawVert_t *verts;
+    vec3_t pos;
+    drawVert_t *vtx;
 
-    if ((rg.refdef.flags & RSF_NOWORLDMODEL)) {
+    if ((backend.refdef.flags & RSF_NOWORLDMODEL)) {
+        // nothing to draw
         return;
     }
+
     if (!rg.world) {
-        N_Error( ERR_DROP, "R_AddWorldSurfaces: no map loaded" );
+        ri.Error( ERR_FATAL, "R_DrawWorld: no world model loaded" );
     }
 
-    p[2] = 0;
-    verts = rg.world->surface->vertices;
+    // prepare the batch
+    RB_SetBatchBuffer( rg.world->buffer, rg.world->vertices, sizeof(drawVert_t), rg.world->indices, sizeof(glIndex_t) );
+
+    // submit the indices, we won't be ever changing those
+    RB_CommitDrawData( NULL, 0, rg.world->indices, rg.world->numIndices );
+
+    GL_BindTexture( 0, rg.world->shader->stages[0]->image );
+    GLSL_SetUniformInt( &rg.basicShader, UNIFORM_DIFFUSE_MAP, 0 );
+
+    vtx = rg.world->vertices;
 
     for (y = 0; y < rg.world->height; y++) {
         for (x = 0; x < rg.world->width; x++) {
-            p[0] = x - (rg.world->width * 0.5f);
-            p[1] = rg.world->height - y;
-            R_ConvertCoords( verts, p );
+            pos[0] = x - (rg.world->width * 0.5f);
+            pos[1] = rg.world->height - y;
+            pos[2] = 0.0f;
+
+            // convert the local world coordinates to OpenGL screen coordinates
+            R_WorldToGL( vtx, pos );
 
             for (i = 0; i < 4; i++) {
-                VectorCopy2( verts[i].uv, rg.world->tiles[y * rg.world->width + x].texcoords[i] );
+                VectorCopy2( vtx[i].uv, rg.world->tiles[y * rg.world->width + x].texcoords[i] );
             }
 
-            verts += 4;
+            // submit the processed vertices
+            RB_CommitDrawData( vtx, 4, NULL, 0 );
+
+            vtx += 4;
         }
     }
-    R_AddDrawSurf( &rg.world->surface->surfaceType, rg.world->shader );
+
+    // flush it we have anything left in there
+    RB_FlushBatchBuffer();
 }
 
-
-static surfaceType_t entitySurface = SF_POLY;
-static void R_AddEntitySurface(uint32_t entityNum)
+void R_RenderView( const viewData_t *parms )
 {
-    renderEntityDef_t *ent;
-
-    ent = &rg.refdef.entities[entityNum];
-
-    R_AddDrawSurf(&entitySurface, R_GetShaderByHandle(ent->e.hShader));
-}
-
-static void R_AddEntitySurfaces(void)
-{
-    uint32_t i;
-
-    for (i = 0; i < rg.refdef.numEntities; i++) {
-        R_AddEntitySurface(i);
-    }
-}
-
-void R_GenerateDrawSurfs(void)
-{
-    R_AddWorldSurfaces();
-    
-    R_AddEntitySurfaces();
-}
-
-void R_RenderView(const viewData_t *parms)
-{
-    uint64_t firstDrawSurf;
-    uint64_t numDrawSurfs;
-
-    if (!parms->viewportX || !parms->viewportY)
-        return;
-    
     rg.viewCount++;
-    memcpy(&rg.viewData, parms, sizeof(*parms));
-    rg.viewData.frameSceneNum = rg.frameSceneNum;
-    rg.viewData.frameCount = rg.frameCount;
+    polyVert_t verts[4];
 
-    firstDrawSurf = rg.refdef.numDrawSurfs;
+    memcpy( &glState.viewData, parms, sizeof(*parms) );
 
+    GLSL_UseProgram( &rg.basicShader );
+
+    // setup the correct matrices
     RB_MakeViewMatrix();
 
-    R_GenerateDrawSurfs();
+    GLSL_SetUniformMatrix4( &rg.basicShader, UNIFORM_MODELVIEWPROJECTION, glState.viewData.camera.viewProjectionMatrix );
 
-    // if we overflowed MAX_DRAWSURFS, the drawsurfs
-	// wrapped around in the buffer and we will be missing
-	// the first surfaces, not the last ones
-	numDrawSurfs = rg.refdef.numDrawSurfs;
-	if ( numDrawSurfs > MAX_DRAWSURFS ) {
-		numDrawSurfs = MAX_DRAWSURFS;
-	}
+    // render all submitted sgame polygons
+    R_DrawPolys();
 
-    R_SortDrawSurfs(rg.refdef.drawSurfs + firstDrawSurf, numDrawSurfs - firstDrawSurf);
+    // draw the tilemap
+    R_DrawWorld();
+
+    GLSL_UseProgram( NULL );
 }
 
 
@@ -285,45 +277,6 @@ static void R_CalcSpriteTextureCoords(uint32_t x, uint32_t y, uint32_t spriteWid
         
     texCoords[3][0] = max[0];
     texCoords[3][1] = max[1];
-}
-
-nhandle_t RE_RegisterSpriteSheet(const char *shaderName, uint32_t numSprites, uint32_t spriteWidth, uint32_t spriteHeight,
-    uint32_t sheetWidth, uint32_t sheetHeight)
-{
-    refSpriteSheet_t *sheet;
-    shader_t *shader;
-    uint64_t hash, size;
-
-    shader = R_FindShaderByName(shaderName);
-    if (!shader) {
-        ri.Error(ERR_DROP, "RE_RegisterSpriteSheet: invalid shader file '%s'", shaderName);
-    }
-
-    size = 0;
-    size += PAD(sizeof(*sheet), sizeof(uintptr_t));
-    size += PAD(sizeof(*sheet->texCoords) * numSprites, sizeof(uintptr_t));
-    sheet = rg.spriteSheets[rg.numSpriteSheets] = ri.Malloc(size);
-    memset(sheet, 0, size);
-
-    sheet->texCoords = (refSprite_t *)(sheet + 1);
-    sheet->numSprites = numSprites;
-    sheet->spriteHeight = spriteHeight;
-    sheet->spriteWidth = spriteWidth;
-    sheet->shader = shader;
-    sheet->hShader = Com_GenerateHashValue(shaderName, MAX_RENDER_SHADERS);
-    sheet->spriteCountX = sheetWidth / spriteWidth;
-    sheet->spriteCountY = sheetHeight / spriteHeight;
-
-    N_strncpyz(sheet->name, shaderName, sizeof(sheet->name));
-    hash = Com_GenerateHashValue(shaderName, MAX_RENDER_SPRITESHEETS);
-
-    for (uint32_t y = 0; y < sheet->spriteCountY; y++) {
-        for (uint32_t x = 0; x < sheet->spriteCountX; x++) {
-            R_CalcSpriteTextureCoords(x, y, spriteWidth, spriteHeight, sheetWidth, sheetHeight, sheet->texCoords[y * sheetWidth + x]);
-        }
-    }
-
-    return (nhandle_t)hash;
 }
 
 void R_ScreenToGL(vec3_t *xyz)

@@ -4,6 +4,7 @@
 // Some matrix helper functions
 // FIXME: do these already exist in ioq3 and I don't know about them?
 
+/*
 void Mat4Zero( mat4_t out )
 {
 #if 1
@@ -66,11 +67,15 @@ void Mat4Transform( const mat4_t in1, const vec4_t in2, vec4_t out )
 	out[ 2] = in1[ 2] * in2[ 0] + in1[ 6] * in2[ 1] + in1[10] * in2[ 2] + in1[14] * in2[ 3];
 	out[ 3] = in1[ 3] * in2[ 0] + in1[ 7] * in2[ 1] + in1[11] * in2[ 2] + in1[15] * in2[ 3];
 }
+*/
 
+//
+// Mat4Compare: returns qfalse if not equal, qtrue otherwise
+//
 qboolean Mat4Compare( const mat4_t a, const mat4_t b )
 {
 #if 1
-	return !memcmp(a, b, sizeof(mat4_t));
+	return memcmp(a, b, sizeof(mat4_t)) == 0;
 #else
 	return !(a[ 0] != b[ 0] || a[ 4] != b[ 4] || a[ 8] != b[ 8] || a[12] != b[12] ||
              a[ 1] != b[ 1] || a[ 5] != b[ 5] || a[ 9] != b[ 9] || a[13] != b[13] ||
@@ -81,18 +86,19 @@ qboolean Mat4Compare( const mat4_t a, const mat4_t b )
 
 void Mat4Dump( const mat4_t in )
 {
-	ri.Printf(PRINT_INFO, "%3.5f %3.5f %3.5f %3.5f\n", in[ 0], in[ 4], in[ 8], in[12]);
-	ri.Printf(PRINT_INFO, "%3.5f %3.5f %3.5f %3.5f\n", in[ 1], in[ 5], in[ 9], in[13]);
-	ri.Printf(PRINT_INFO, "%3.5f %3.5f %3.5f %3.5f\n", in[ 2], in[ 6], in[10], in[14]);
-	ri.Printf(PRINT_INFO, "%3.5f %3.5f %3.5f %3.5f\n", in[ 3], in[ 7], in[11], in[15]);
+	ri.Printf(PRINT_INFO, "%5.5f %5.5f %5.5f %5.5f\n", in[0][0], in[1][0], in[2][0], in[3][0]);
+	ri.Printf(PRINT_INFO, "%5.5f %5.5f %5.5f %5.5f\n", in[0][1], in[1][1], in[2][1], in[3][1]);
+	ri.Printf(PRINT_INFO, "%5.5f %5.5f %5.5f %5.5f\n", in[0][2], in[1][2], in[2][2], in[3][2]);
+	ri.Printf(PRINT_INFO, "%5.5f %5.5f %5.5f %5.5f\n", in[0][3], in[1][3], in[2][3], in[3][3]);
 }
 
+/*
 void Mat4Translation( vec3_t vec, mat4_t out )
 {
-	out[ 0] = 1.0f; out[ 4] = 0.0f; out[ 8] = 0.0f; out[12] = vec[0];
-	out[ 1] = 0.0f; out[ 5] = 1.0f; out[ 9] = 0.0f; out[13] = vec[1];
-	out[ 2] = 0.0f; out[ 6] = 0.0f; out[10] = 1.0f; out[14] = vec[2];
-	out[ 3] = 0.0f; out[ 7] = 0.0f; out[11] = 0.0f; out[15] = 1.0f;
+	out[0][0] = 1.0f; out[1][0] = 0.0f; out[2][0] = 0.0f; out[3][0] = vec[0];
+	out[0][1] = 0.0f; out[1][1] = 1.0f; out[2][1] = 0.0f; out[3][1] = vec[1];
+	out[0][2] = 0.0f; out[1][2] = 0.0f; out[2][2] = 1.0f; out[3][2] = vec[2];
+	out[0][3] = 0.0f; out[1][3] = 0.0f; out[2][3] = 0.0f; out[3][3] = 1.0f;
 }
 
 void Mat4Ortho( float left, float right, float bottom, float top, float znear, float zfar, mat4_t out )
@@ -103,10 +109,10 @@ void Mat4Ortho( float left, float right, float bottom, float top, float znear, f
 	out[ 3] = 0.0f;                  out[ 7] = 0.0f;                  out[11] = 0.0f;                  out[15] = 1.0f;
 }
 
-/*
-Mat4Scale: scale is technically meant to be a vec3_t, but for simplicity's sake its just a float
-adapted from glm::scale(glm::mat4, glm::vec3) to Quake-III-Arena style matrices
-*/
+//
+// Mat4Scale: scale is technically meant to be a vec3_t, but for simplicity's sake its just a float
+// adapted from glm::scale(glm::mat4, glm::vec3) to Quake-III-Arena style matrices
+//
 void Mat4Scale(float scale, const mat4_t in, mat4_t out)
 {
 	out[ 0] = in[ 0] * scale;
@@ -131,10 +137,10 @@ void Mat4Scale(float scale, const mat4_t in, mat4_t out)
 	out[15] = in[15];
 }
 
-/*
-Mat4Rotate: angle should always be given in radians
-adapted from glm::rotate(glm::mat4, float, glm::vec3) to Quake-III-Arena style matrices
-*/
+//
+// Mat4Rotate: angle should always be given in radians
+// adapted from glm::rotate(glm::mat4, float, glm::vec3) to Quake-III-Arena style matrices
+//
 void Mat4Rotate(const vec3_t v, float angle, const mat4_t in, mat4_t out)
 {
 	float c, s;
@@ -228,8 +234,9 @@ void Mat4SimpleInverse( const mat4_t in, mat4_t out)
 
 	out[ 3] = 0.0f; out[ 7] = 0.0f; out[11] = 0.0f; out[15] = 1.0f;
 }
+*/
 
-void VectorLerp( vec3_t a, vec3_t b, float lerp, vec3_t c)
+void VectorLerp( vec3_t a, vec3_t b, float lerp, vec3_t c )
 {
 	c[0] = a[0] * (1.0f - lerp) + b[0] * lerp;
 	c[1] = a[1] * (1.0f - lerp) + b[1] * lerp;
@@ -262,9 +269,9 @@ void BoundingSphereOfSpheres(vec3_t origin1, float radius1, vec3_t origin2, floa
 	*radius3 = VectorLength(diff) * 0.5f + MAX(radius1, radius2);
 }
 
-int NextPowerOfTwo(int in)
+int32_t NextPowerOfTwo(int32_t in)
 {
-	int out;
+	int32_t out;
 
 	for (out = 1; out < in; out <<= 1)
 		;
@@ -276,18 +283,18 @@ union f32_u {
 	float f;
 	uint32_t ui;
 	struct {
-		unsigned int fraction:23;
-		unsigned int exponent:8;
-		unsigned int sign:1;
+		uint32_t fraction:23;
+		uint32_t exponent:8;
+		uint32_t sign:1;
 	} pack;
 };
 
 union f16_u {
 	uint16_t ui;
 	struct {
-		unsigned int fraction:10;
-		unsigned int exponent:5;
-		unsigned int sign:1;
+		uint32_t fraction:10;
+		uint32_t exponent:5;
+		uint32_t sign:1;
 	} pack;
 };
 

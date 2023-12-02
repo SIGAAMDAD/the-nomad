@@ -20,6 +20,10 @@ qboolean Sys_RandomBytes(byte *s, uint64_t len)
     return qtrue;
 }
 
+void Sys_Sleep( double msec ) {
+    usleep( msec * 1000.0f );
+}
+
 //
 // Sys_StackMemoryRemaining: returns the amount of stack we have left
 //

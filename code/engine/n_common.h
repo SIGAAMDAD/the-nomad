@@ -316,6 +316,7 @@ extern cvar_t *com_version;
 extern cvar_t *com_devmode;
 extern cvar_t *sys_cpuString;
 extern cvar_t *com_maxfps;
+extern uint64_t com_frameNumber;
 extern uint32_t com_fps;
 extern int com_frameTime;
 extern uint64_t com_cacheLine;
@@ -405,7 +406,7 @@ extern int CPU_flags;
 #define CPU_SSE3	0x10
 #define CPU_SSE41	0x20
 
-enum {
+typedef enum {
 	TAG_FREE,
 	TAG_STATIC,
 	TAG_BFF,
@@ -419,7 +420,7 @@ enum {
 	TAG_HUNK,
 
 	TAG_COUNT
-};
+} memtag_t;
 
 typedef enum {
 	h_low,
@@ -430,19 +431,19 @@ typedef enum {
 #ifdef _NOMAD_DEBUG
 #define Z_Realloc(ptr, nsize, tag)	Z_ReallocDebug(ptr, nsize, tag, #nsize, __FILE__, __LINE__)
 #define Z_Malloc(size, tag)			Z_MallocDebug(size, tag, #size, __FILE__, __LINE__)
-#define Z_SMalloc(size)				Z_SMallocDebug(size, #size, __FILE__, __LINE__)
-void *Z_ReallocDebug(void *ptr, uint32_t nsize, int tag, const char *label, const char *file, unsigned line);
-void *Z_MallocDebug(uint32_t size, int tag, const char *label, const char *file, unsigned line);
-void *Z_SMallocDebug(uint32_t size, const char *label, const char *file, unsigned line);
+#define S_Malloc(size)				S_MallocDebug(size, #size, __FILE__, __LINE__)
+void *Z_ReallocDebug(void *ptr, uint64_t nsize, memtag_t tag, const char *label, const char *file, uint32_t line);
+void *Z_MallocDebug(uint64_t size, memtag_t tag, const char *label, const char *file, uint32_t line);
+void *S_MallocDebug(uint64_t size, const char *label, const char *file, uint32_t line);
 #else
-void *Z_Realloc(void *ptr, uint32_t nsize, int tag);
-void *Z_Malloc(uint32_t size, int tag);
-void *Z_SMalloc(uint32_t size);
+void *Z_Realloc(void *ptr, uint64_t nsize, memtag_t tag);
+void *Z_Malloc(uint64_t size, memtag_t tag);
+void *S_Malloc(uint64_t size);
 #endif
 void Z_Free(void *ptr);
-uint64_t Z_FreeTags(int lowtag, int hightag);
+uint64_t Z_FreeTags(memtag_t lowtag, memtag_t hightag);
 uint64_t Z_AvailableMemory(void);
-char *Z_Strdup(const char *str);
+char *CopyString(const char *str);
 
 void Z_InitSmallZoneMemory(void);
 void Z_InitMemory(void);
@@ -543,6 +544,7 @@ const char *Sys_DefaultBasePath(void);
 qboolean Sys_RandomBytes(byte *s, uint64_t len);
 
 qboolean Sys_LowPhysicalMemory( void );
+void Sys_Sleep( double msec );
 
 void Sys_ClearDLLError( void );
 int Sys_GetDLLErrorCount( void );

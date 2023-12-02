@@ -173,7 +173,7 @@ static LRESULT WINAPI ConWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 	case WM_QUERYENDSESSION:
 		if ( !com_errorEntered )
 		{
-			cmdString = Z_Strdup( "quit" );
+			cmdString = CopyString( "quit" );
 			Com_QueueEvent( 0, SE_CONSOLE, 0, 0, strlen( cmdString ) + 1, cmdString );
 		}
 		else
@@ -185,7 +185,7 @@ static LRESULT WINAPI ConWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 	case WM_CLOSE:
 		if ( !com_errorEntered )
 		{
-			cmdString = Z_Strdup( "quit" );
+			cmdString = CopyString( "quit" );
 			Com_QueueEvent( 0, SE_CONSOLE, 0, 0, strlen( cmdString ) + 1, cmdString );
 		}
 		else if ( s_wcd.quitOnClose )

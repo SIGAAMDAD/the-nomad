@@ -1,10 +1,10 @@
 code
 
 ; 1-201 are engine calls
-equ trap_Cvar_Update                    -1
-equ trap_Cvar_Register                  -2
-equ trap_Cvar_Set                       -3
-equ trap_Cvar_VariableStringBuffer      -4
+equ Cvar_Update                         -1
+equ Cvar_Register                       -2
+equ Cvar_Set                            -3
+equ Cvar_VariableStringBuffer           -4
 equ trap_Milliseconds                   -5
 equ trap_Print                          -6
 equ trap_Error                          -7

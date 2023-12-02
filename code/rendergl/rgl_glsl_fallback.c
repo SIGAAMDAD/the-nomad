@@ -134,7 +134,9 @@ const char *fallbackShader_basic_fp =
 "#endif\n"
 "\n"
 "void main() {\n"
-"    a_Color = texture(u_DiffuseMap, v_TexCoord);\n"
+"    vec4 color = v_Color;\n"
+"    color = vec4(1.0);\n"
+"    a_Color = texture2D( u_DiffuseMap, v_TexCoord.st ) * color;\n"
 "}\n"
 ;
 

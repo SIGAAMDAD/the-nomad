@@ -60,7 +60,6 @@ static void RB_ShaderIterateStages( void )
     const shaderDrawCommands_t *input;
 
     input = &drawBuf;
-    drawBuf.useInternalVao = qtrue;
 
     if (drawBuf.useInternalVao) {
         RB_UpdateCache(glState.vertexAttribsEnabled ^ ATTRIB_BITS);

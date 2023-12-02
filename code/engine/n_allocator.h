@@ -137,12 +137,12 @@ private:
 
 GDR_INLINE void *CSmallZoneAllocator::allocate( size_t n, int flags )
 {
-	return Z_SMalloc( n );
+	return S_Malloc( n );
 }
 
 GDR_INLINE void *CSmallZoneAllocator::allocate( size_t n, size_t alignment, size_t offset, int flags )
 {
-	return Z_SMalloc( n );
+	return S_Malloc( n );
 }
 
 GDR_INLINE void CSmallZoneAllocator::deallocate( void *ptr, size_t )

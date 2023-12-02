@@ -55,7 +55,9 @@ static const char *difHardestTitles[] = {
     "The Ultimate Bitch-Slap",
     "GIT REKT",
     "GET PWNED",
-    "Wish U Had A BFG?"
+    "Wish U Had A BFG?",
+    "Sounds Like a Skill Issue",
+    "DAKKA",
 };
 
 static const dif_t difficultyTable[NUMDIFS] = {
@@ -233,6 +235,8 @@ void SinglePlayerMenu_Draw( void )
         ImGui::NewLine();
         if (ImGui::Button( "Open To a Fresh Chapter" )) {
             ui->PlaySelected();
+            ui->SetState( STATE_NONE );
+            Cvar_Set( "ui_active", "0" ); // turn off the ui menu system
             VM_Call( sgvm, 1, SGAME_STARTLEVEL, 0 ); // start a new game
         }
         break; }
@@ -279,6 +283,7 @@ void SinglePlayerMenu_Cache( void )
     char **fileList;
     saveinfo_t *info;
 
+    // free anything we currently have allocated
     if (sp.saveList) {
         Z_Free( sp.saveList );
     }
@@ -288,7 +293,7 @@ void SinglePlayerMenu_Cache( void )
     fileList = FS_ListFiles( "savedata/", ".ngd", &sp.numSaves );
 
     if (sp.numSaves) {
-        sp.saveList = (saveinfo_t *)Z_Malloc( sizeof(saveinfo_t) * sp.numSaves, TAG_STATIC );
+        sp.saveList = (saveinfo_t *)Z_Malloc( sizeof(saveinfo_t) * sp.numSaves, TAG_GAME );
         memset( sp.saveList, 0, sizeof(saveinfo_t) * sp.numSaves );
         info = sp.saveList;
     }

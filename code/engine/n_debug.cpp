@@ -1,6 +1,7 @@
 #include "n_shared.h"
 #include <backtrace.h>
 #include <cxxabi.h>
+
 #ifdef POSIX
 #include <dlfcn.h>
 #include <execinfo.h>
@@ -102,9 +103,16 @@ static void bt_syminfo_callback( void *data, uintptr_t pc, const char *symname,
 		if (name[0]) {
 			symname = name;
 		}
-		fprintf( stdout, "  %zu %s\n", pc, symname );
+
+		if (logfile != FS_INVALID_HANDLE) {
+			FS_Printf( logfile, "  %-8zu %s\n", pc, symname );
+		}
+		fprintf( stdout, "  %-8zu %s\n", pc, symname );
 	} else {
-		fprintf( stdout, "  %zu (unknown symbol)\n", pc );
+		if (logfile != FS_INVALID_HANDLE) {
+			FS_Printf( logfile, "%-8zu (unknown symbol)\n", pc );
+		}
+		fprintf( stdout, "  %-8zu (unknown symbol)\n", pc );
 	}
 }
 
@@ -134,7 +142,10 @@ static int bt_pcinfo_callback( void *data, uintptr_t pc, const char *filename, i
 		if (fileNameSrc != NULL) {
 			filename = fileNameSrc+1; // I want "src/bla/blub.cpp:42"
 		}
-		fprintf( stdout, "  %zu %s:%d %s\n", pc, filename, lineno, function );
+		if (logfile != FS_INVALID_HANDLE) {
+			FS_Printf( logfile,  "  %-8zu %-16s:%-8d %s\n", pc, filename, lineno, function );
+		}
+		fprintf( stdout, "  %-8zu %-16s:%-8d %s\n", pc, filename, lineno, function );
 	}
 
 	return 0;
@@ -182,11 +193,7 @@ CDebugSession::CDebugSession( void )
 #ifdef POSIX
     m_pBTState = backtrace_create_state( m_pExePath, 0, bt_error_callback, NULL );
 
-    if (m_pBTState) {
-        int skip = 1; // skip this function in backtrace
-		backtrace_simple(m_pBTState, skip, bt_simple_callback, bt_error_callback, NULL);
-    }
-    else {
+    if (!m_pBTState) {
         Con_DPrintf( COLOR_YELLOW "WARNING: failed to init libbacktrace, the symbols outputted will look very weird...\n" );
     }
 #endif
@@ -212,6 +219,8 @@ CDebugSession::CDebugSession( void )
 	if (!m_pSymbolBuffer) {
 		Sys_Error( "Failed to allocate sufficient memory for stacktrace buffer" );
 	}
+
+	AllocConsole();
 #endif
 	m_pSymbolArray = (void **)malloc( sizeof(void *) * MAX_STACKTRACE_FRAMES );
     if (!m_pSymbolArray) {
@@ -224,6 +233,9 @@ CDebugSession::CDebugSession( void )
 
 CDebugSession::~CDebugSession()
 {
+#ifdef _WIN32
+	FreeConsole();
+#endif
     if (m_iErrorReason != ERR_NONE) {
         if (!m_bDoneErrorStackdump) {
             Sys_DebugStacktrace( MAX_STACKTRACE_FRAMES );
@@ -431,9 +443,17 @@ void Sys_DebugString( const char *str )
 #endif
 }
 
+#include <iostream>
+
 void Sys_DebugStacktrace( uint32_t frames )
 {
 #ifdef _WIN32
+	if (com_errorEntered && g_debugSession.m_iErrorReason != ERR_NONE) {
+        g_debugSession.m_bDoneErrorStackdump = true;
+    }
+
+	std::cout << boost::stacktrace::stacktrace() << std::endl;
+#elif 0
 	uint32_t i;
 	uint32_t numFrames;
 
@@ -441,9 +461,9 @@ void Sys_DebugStacktrace( uint32_t frames )
         g_debugSession.m_bDoneErrorStackdump = true;
     }
 
-	numFrames = CaptureStackBackTrace( 0, frames, g_debugSession.m_pSymbolArray, NULL );
-	g_debugSession.m_pSymbolBuffer->MaxNameLen = MAX_SYMBOL_LENGTH;
-	g_debugSession.m_pSymbolBuffer->SizeOfStruct = sizeof(SYMBOL_INFO);
+	numFrames = CaptureStackBackTrace( 1, frames, g_debugSession.m_pSymbolArray, NULL );
+	g_debugSession.m_pSymbolBuffer->MaxNameLen = MAX_SYMBOL_LENGTH - 1;
+	g_debugSession.m_pSymbolBuffer->SizeOfStruct = sizeof(SYMBOL_INFO) + (MAX_SYMBOL_LENGTH - 1) * sizeof(TCHAR);
 
 	for (i = 0; i < numFrames; i++) {
 		SymFromAddr( g_debugSession.m_hProcess, (DWORD64)(g_debugSession.m_pSymbolArray[i]), 0,  g_debugSession.m_pSymbolBuffer );

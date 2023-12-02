@@ -101,19 +101,19 @@ public:
     void DrawRect( float x, float y, float width, float height, const float *color ) const;
     void SetColor( const float *rgba ) const;
     void Refresh( uint64_t realtime );
-    qboolean CursorInRect( int x, int y, int width, int height ) const;
-    void DrawTextBox( int x, int y, int width, int lines ) const;
+    qboolean CursorInRect( int32_t x, int32_t y, int32_t width, int32_t height ) const;
+    void DrawTextBox( int32_t x, int32_t y, int32_t width, int32_t lines ) const;
     void DrawString( const char *str ) const;
-    void DrawStringBlink( const char *str, int ticker, int mult ) const;
-    void DrawString( int x, int y, const char *str, int style, vec4_t color ) const;
+    void DrawStringBlink( const char *str, int32_t ticker, int32_t mult ) const;
+    void DrawString( int32_t x, int32_t y, const char *str, int32_t style, vec4_t color ) const;
     void DrawMenu( void ) const;
-    void DrawChar( int x, int y, int ch, int style, vec4_t color ) const;
-    void DrawProportionalString_AutoWrapped( int x, int y, int xmax, int ystep, const char* str, int style, vec4_t color ) const;
-    void DrawProportionalString( int x, int y, const char* str, int style, vec4_t color ) const;
+    void DrawChar( int32_t x, int32_t y, int32_t ch, int32_t style, vec4_t color ) const;
+    void DrawProportionalString_AutoWrapped( int32_t x, int32_t y, int32_t xmax, int32_t ystep, const char* str, int32_t style, vec4_t color ) const;
+    void DrawProportionalString( int32_t x, int32_t y, const char* str, int32_t style, vec4_t color ) const;
     qboolean IsFullscreen( void ) const;
-    int ProportionalStringWidth( const char* str ) const;
-    float ProportionalSizeScale( int style ) const;
-    void DrawBannerString( int x, int y, const char* str, int style, vec4_t color ) const;
+    int32_t ProportionalStringWidth( const char* str ) const;
+    float ProportionalSizeScale( int32_t style ) const;
+    void DrawBannerString( int32_t x, int32_t y, const char* str, int32_t style, vec4_t color ) const;
     void SetActiveMenu( uiMenu_t menu );
 
     bool Menu_Option( const char *label );
@@ -136,10 +136,10 @@ public:
         return curmenu;
     }
 
-    int GetFrameTime( void ) const {
+    int32_t GetFrameTime( void ) const {
         return frametime;
     }
-    int GetRealTime( void ) const {
+    int32_t GetRealTime( void ) const {
         return realtime;
     }
 
@@ -157,20 +157,20 @@ public:
         firstdraw = yas;
     }
 
-    int GetCursorX( void ) const {
+    int32_t GetCursorX( void ) const {
         return cursorx;
     }
-    int GetCursorY( void ) const {
+    int32_t GetCursorY( void ) const {
         return cursory;
     }
 
-    int GetDebug( void ) const {
+    int32_t GetDebug( void ) const {
         return debug;
     }
-    int IsDebug( void ) const {
+    int32_t IsDebug( void ) const {
         return debug;
     }
-    void SetDebug( int i ) {
+    void SetDebug( int32_t i ) {
         debug = i;
     }
 
@@ -190,22 +190,22 @@ public:
     float scale;
     float bias;
 private:
-    void DrawString2( int x, int y, const char* str, vec4_t color, int charw, int charh ) const;
-    void DrawBannerString2( int x, int y, const char* str, vec4_t color ) const;
-    void DrawProportionalString2( int x, int y, const char* str, vec4_t color, float sizeScale, nhandle_t charset ) const;
+    void DrawString2( int32_t x, int32_t y, const char* str, vec4_t color, int32_t charw, int32_t charh ) const;
+    void DrawBannerString2( int32_t x, int32_t y, const char* str, vec4_t color ) const;
+    void DrawProportionalString2( int32_t x, int32_t y, const char* str, vec4_t color, float sizeScale, nhandle_t charset ) const;
 
     CUIMenu *stack[MAX_MENU_DEPTH];
     CUIMenu *curmenu;
 
-    int menusp;
+    int32_t menusp;
     qboolean firstdraw;
-    int debug;
+    int32_t debug;
 
-    int cursorx;
-    int cursory;
+    int32_t cursorx;
+    int32_t cursory;
 
-    int frametime;
-    int realtime;
+    int32_t frametime;
+    int32_t realtime;
 
     sfxHandle_t sfx_scroll;
     sfxHandle_t sfx_back;
@@ -231,11 +231,11 @@ extern const char *UI_LangToString( int32_t lang );
 extern void			Menu_Cache( void );
 extern void			Menu_Focus( CUIMenuWidget *m );
 extern void			Menu_AddItem( CUIMenuWidget *menu, void *item );
-extern void			Menu_AdjustCursor( CUIMenuWidget *menu, int dir );
+extern void			Menu_AdjustCursor( CUIMenuWidget *menu, int32_t dir );
 extern void			Menu_Draw( CUIMenu *menu );
 extern void			*Menu_ItemAtCursor( CUIMenu *m );
 extern sfxHandle_t	Menu_ActivateItem( CUIMenuWidget *s, CUIMenuWidget* item );
-extern void			Menu_SetCursor( CUIMenu *m, int cursor );
+extern void			Menu_SetCursor( CUIMenu *m, int32_t cursor );
 extern void			Menu_SetCursorToItem( CUIMenu  *m, void* ptr );
 extern sfxHandle_t	Menu_DefaultKey( CUIMenu *s, uint32_t key );
 extern void			Bitmap_Init( mbitmap_t *b );
@@ -274,8 +274,8 @@ extern vec4_t		text_color_highlight;
 //
 extern void			MField_Clear( mfield_t *edit );
 extern void			MField_KeyDownEvent( mfield_t *edit, uint32_t key );
-extern void			MField_CharEvent( mfield_t *edit, int ch );
-extern void			MField_Draw( mfield_t *edit, int x, int y, int style, vec4_t color );
+extern void			MField_CharEvent( mfield_t *edit, int32_t ch );
+extern void			MField_Draw( mfield_t *edit, int32_t x, int32_t y, int32_t style, vec4_t color );
 extern void			MenuField_Init( mfield_t *m );
 extern void			MenuField_Draw( mfield_t *f );
 extern sfxHandle_t	MenuField_Key( mfield_t* m, uint32_t* key );

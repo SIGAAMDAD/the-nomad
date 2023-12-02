@@ -45,6 +45,8 @@ void SG_InitPlayer( void )
 {
     sgentity_t *ent;
 
+    G_Printf ( "Allocating player...\n" );
+
     ent = SG_AllocEntity( ET_PLAYR );
 
     playr = &sg.playr;
@@ -53,6 +55,7 @@ void SG_InitPlayer( void )
     memset( playr, 0, sizeof(*playr) );
     
     ent->stateOffset = ST_PLAYR_IDLE;
+    ent->hShader = sg.media.raio_shader;
 
     // mark as allocated
     sg.playrReady = qtrue;

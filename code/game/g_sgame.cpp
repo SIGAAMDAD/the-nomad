@@ -78,6 +78,10 @@ static intptr_t G_SGameSystemCalls(intptr_t *args)
         VM_CHECKBOUNDS(args[2], sizeof(polyVert_t) * args[3]);
         re.AddPolyToScene(args[1], (const polyVert_t *)VMA(2), args[3]);
         return 0;
+    case SG_RE_RENDERSCENE:
+        VM_CHECKBOUNDS( args[1], sizeof(renderSceneRef_t) );
+        re.RenderScene( (const renderSceneRef_t *)VMA(1) );
+        return 0;
     case SG_RE_REGISTERSHADER:
         return re.RegisterShader((const char *)VMA(1));
     case SG_ADDCOMMAND:

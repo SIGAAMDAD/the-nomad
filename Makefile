@@ -146,6 +146,7 @@ LDLIBS=-L. \
 		-lwinmm \
 		-lcomctl32 \
 		-limagehlp \
+		/usr/x86_64-w64-mingw32/lib/libmsvcrt.a \
 		-static-libgcc -static-libstdc++
 
 ifndef release

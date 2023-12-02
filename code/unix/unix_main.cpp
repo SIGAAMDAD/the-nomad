@@ -110,8 +110,8 @@ void tty_Hide( void )
 // FIXME TTimo need to position the cursor if needed??
 void tty_Show( void )
 {
-//	if ( !ttycon_on )
-//		return;
+	if ( !ttycon_on )
+		return;
 
 	if ( ttycon_hide > 0 )
 	{
@@ -565,6 +565,8 @@ const char *Sys_GetError(void) {
 tty_err Sys_InitConsole(void)
 {
     struct termios tc;
+    struct rlimit limit;
+    int err;
     const char *term;
 
     signal(SIGTTIN, SIG_IGN);
@@ -614,7 +616,16 @@ tty_err Sys_InitConsole(void)
 
     tty_Hide();
     tty_Show();
-    
+
+    err = getrlimit( RLIMIT_CORE, &limit );
+    if (err != 0) {
+        Con_Printf( "WARNING: failed to set core dump file limit.\n" );
+    }
+
+    if (limit.rlim_max < 1) {
+        limit.rlim_max = 1;
+    }
+
     return TTY_ENABLED;
 }
 

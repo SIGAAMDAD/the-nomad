@@ -3,6 +3,7 @@
 #include "../rendercommon/imgui.h"
 #include "../rendercommon/imgui_impl_sdl2.h"
 #include "../rendercommon/imgui_impl_opengl3.h"
+#include <glm/glm.hpp>
 
 vm_t *sgvm;
 vm_t *uivm;
@@ -39,6 +40,8 @@ cvar_t *r_multisample;
 cvar_t *r_stereoEnabled;
 cvar_t *g_drawBuffer;
 cvar_t *g_paused;
+cvar_t *r_debugCamera;
+cvar_t *r_debugCameraSpeed;
 
 static void *renderLib;
 
@@ -146,7 +149,7 @@ static void G_InitMapCache( void )
     Con_Printf( "Got %lu map files\n", gi.mapCache.numMapFiles );
 
     // allocate the info
-    gi.mapCache.infoList = (mapinfo_t *)Z_Malloc( sizeof(mapinfo_t) * gi.mapCache.numMapFiles, TAG_GAME );
+    gi.mapCache.infoList = (mapinfo_t *)Hunk_Alloc( sizeof(mapinfo_t) * gi.mapCache.numMapFiles, h_low );
     memset( gi.mapCache.infoList, 0, sizeof(mapinfo_t) * gi.mapCache.numMapFiles );
 
     info = gi.mapCache.infoList;
@@ -219,11 +222,11 @@ static void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL G_RefPrintf(int level
     };
 }
 
-static void *G_RefMalloc(uint32_t size) {
+static void *G_RefMalloc( uint64_t size ) {
     return Z_Malloc(size, TAG_RENDERER);
 }
 
-static void *G_RefRealloc(void *ptr, uint32_t nsize) {
+static void *G_RefRealloc(void *ptr, uint64_t nsize) {
     return Z_Realloc(ptr, nsize, TAG_RENDERER);
 }
 
@@ -256,11 +259,29 @@ static void G_RefImGuiNewFrame(void) {
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     io.DisplaySize.x = r_customWidth->i;
     io.DisplaySize.y = r_customHeight->i;
+    io.DeltaTime = com_maxfps->i;
 
     ImGuiStyle& style = ImGui::GetStyle();
-    style.AntiAliasedFill = true;
-    style.AntiAliasedLines = true;
-    style.AntiAliasedLinesUseTex = true;
+
+    switch ((antialiasType_t)r_multisample->i) {
+    case AntiAlias_2xMSAA:
+        style.AntiAliasedLinesUseTex = true;
+        break;
+    case AntiAlias_4xMSAA:
+    case AntiAlias_8xMSAA:
+        style.AntiAliasedFill = true;
+        style.AntiAliasedLinesUseTex = true;
+        break;
+    case AntiAlias_16xMSAA:
+    case AntiAlias_32xMSAA:
+        style.AntiAliasedLines = true;
+        style.AntiAliasedFill = true;
+        style.AntiAliasedLinesUseTex = true;
+        break;
+    default:
+        // its ssaa
+        break;
+    };
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL2_NewFrame();
@@ -286,7 +307,7 @@ static void G_SetScaling(float factor, uint32_t captureWidth, uint32_t captureHe
     gi.captureHeight = captureHeight;
 }
 
-static void *G_RefImGuiMalloc(size_t size) {
+static void *G_RefImGuiMalloc( size_t size ) {
     return Z_Malloc( size, TAG_RENDERER );
 }
 
@@ -299,24 +320,73 @@ static void G_RefImGuiInit(void *shaderData, const void *importData) {
     ImGui::SetAllocatorFunctions((ImGuiMemAllocFunc)G_RefImGuiMalloc, (ImGuiMemFreeFunc)G_RefImGuiFree);
     ImGui::CreateContext();
 
-    ImGuiIO& io = ImGui::GetIO();
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableSetMousePos;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-    io.DisplaySize.x = gi.gpuConfig.vidWidth;
-    io.DisplaySize.y = gi.gpuConfig.vidHeight;
-
-    ImGuiStyle& style = ImGui::GetStyle();
-    style.AntiAliasedFill = true;
-    style.AntiAliasedLines = true;
-    style.AntiAliasedLinesUseTex = true;
-
     if (!N_stricmp( g_renderer->s, "opengl" )) {
         ImGui_ImplSDL2_InitForOpenGL( r_window, r_GLcontext );
         ImGui_ImplOpenGL3_Init( shaderData, NULL, (const imguiGL3Import_t *)importData);
     }
     else if (!N_stricmp( g_renderer->s, "vulkan" )) {
         ImGui_ImplSDL2_InitForVulkan( r_window );
+    }
+}
+
+static glm::vec3 pos;
+
+static void GLM_MakeVPM( float aspect, float *zoom, vec3_t origin, mat4_t vpm, mat4_t projection, mat4_t view )
+{
+    glm::mat4 viewProjectionMatrix, viewMatrix, projectionMatrix;
+
+    if (!r_debugCamera->i) {
+        VectorCopy( pos, origin );
+    }
+
+    *zoom = pos.z;
+    projectionMatrix = glm::ortho( -aspect, aspect, -aspect, aspect, -1.0f, 1.0f );
+    const glm::mat4 transpose = glm::translate( glm::mat4(1.0f), glm::vec3( pos[0], pos[1], 0.0f ) )
+                                * glm::scale( glm::mat4(1.0f), glm::vec3( *zoom ));
+    viewMatrix = glm::inverse( transpose );
+
+    VectorCopy( origin, pos );
+
+    viewProjectionMatrix = projectionMatrix * viewMatrix;
+
+    memcpy( &projection[0][0], &projectionMatrix[0][0], sizeof(mat4_t) );
+    memcpy( &view[0][0], &viewMatrix[0][0], sizeof(mat4_t) );
+    memcpy( &vpm[0][0], &viewProjectionMatrix[0][0], sizeof(mat4_t) );
+}
+
+static float *GLM_Mat4Transform( const mat4_t m, const vec4_t p ) {
+    static vec4_t out;
+    glm::vec4 p0;
+    glm::mat4 m0;
+
+    memcpy( &m0[0][0], &m[0][0], sizeof(mat4_t) );
+    p0 = m0 * glm::vec4( p[0], p[1], p[2], p[3] );
+    VectorCopy4( out, p0 );
+
+    return out;
+}
+
+static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, mat4_t vpm )
+{
+    glm::mat4 viewProjection;
+    glm::mat4 mvp, model;
+    glm::vec4 pos;
+
+    memcpy( &viewProjection[0][0], &vpm[0][0], sizeof(mat4_t) );
+
+    model = glm::translate( glm::mat4(viewProjection), glm::vec3( world[0], world[1], world[2] ) );
+    mvp = viewProjection * model;
+
+    const glm::vec4 positions[4] = {
+        { 0.5f,  0.5f, 0.0f, 1.0f},
+        { 0.5f, -0.5f, 0.0f, 1.0f},
+        {-0.5f, -0.5f, 0.0f, 1.0f},
+        {-0.5f,  0.5f, 0.0f, 1.0f},
+    };
+
+    for (uint32_t i = 0; i < arraylen(positions); i++) {
+        pos = mvp * positions[i];
+        VectorCopy( xyz[i], pos );
     }
 }
 
@@ -380,7 +450,7 @@ static void G_InitRenderRef(void)
     import.Realloc = G_RefRealloc;
     import.Free = Z_Free;
     import.FreeAll = G_RefFreeAll;
-    import.Strdup = Z_Strdup;
+    import.CopyString = CopyString;
 
     import.GLimp_Init = G_InitDisplay;
     import.GLimp_EndFrame = GLimp_EndFrame;
@@ -393,7 +463,12 @@ static void G_InitRenderRef(void)
 
     import.G_SetScaling = G_SetScaling;
 
+    import.GLM_TransformToGL = GLM_TransformToGL;
+    import.GLM_MakeVPM = GLM_MakeVPM;
+
     import.Milliseconds = Sys_Milliseconds;
+
+    import.Key_IsDown = Key_IsDown;
 
     import.FS_LoadFile = FS_LoadFile;
     import.FS_FreeFile = FS_FreeFile;
@@ -684,6 +759,15 @@ void G_Init(void)
 	Cvar_CheckRange( vid_ypos, NULL, NULL, CVT_INT );
 	Cvar_SetDescription( vid_ypos, "Saves/sets window Y-coordinate when windowed, requires \\vid_restart." );
 
+#ifdef _NOMAD_DEBUG
+    r_debugCamera = Cvar_Get( "r_debugCamera", "1", CVAR_TEMP | CVAR_PROTECTED | CVAR_LATCH );
+#else
+    r_debugCamera = Cvar_Get( "r_debugCamera", "0", CVAR_TEMP | CVAR_PROTECTED | CVAR_LATCH );
+#endif
+    Cvar_SetDescription( r_debugCamera, "Overrides the camera controller for renderer debugging." );
+    r_debugCameraSpeed = Cvar_Get( "r_debugCameraSpeed", "1.15", CVAR_TEMP | CVAR_PROTECTED | CVAR_LATCH );
+    Cvar_SetDescription( r_debugCameraSpeed, "Sets the movement speed of the debugger camera." );
+
     r_multisample = Cvar_Get( "r_multisample", "0", CVAR_SAVE | CVAR_LATCH );
     Cvar_CheckRange( r_multisample, va( "%i", AntiAlias_2xMSAA ), va( "%i", AntiAlias_DSSAA ), CVT_INT );
     Cvar_SetDescription( r_multisample,
@@ -839,9 +923,6 @@ void G_ShutdownVMs(void)
 
 void G_StartHunkUsers(void)
 {
-    // set the marker before loading any assets
-    Hunk_SetMark();
-
     if (!gi.rendererStarted) {
         gi.rendererStarted = qtrue;
         G_InitRenderer();
@@ -858,6 +939,9 @@ void G_StartHunkUsers(void)
         gi.uiStarted = qtrue;
         G_InitUI();
     }
+
+    // set the marker before loading any map assets
+    Hunk_SetMark();
 
     // cache all maps
     G_InitMapCache();
@@ -885,8 +969,7 @@ void G_ShutdownAll(void)
     gi.soundStarted = qfalse;
 }
 
-void G_ClearState(void)
-{
+void G_ClearState(void) {
     memset(&gi, 0, sizeof(gi));
 }
 
@@ -910,24 +993,59 @@ void G_ClearMem(void)
         Hunk_Clear();
     }
     else {
-        // clear all the gamestate data on the hunk
+        // clear all the map data
         Hunk_ClearToMark();
     }
 }
 
-void G_Frame(int msec, int realMsec)
+static void G_MoveCamera( void )
 {
-    gi.frametime = msec;
-    gi.realtime += msec;
+    if (!r_debugCamera->i) {
+        return;
+    }
 
-    // update the screen
-    gi.framecount++;
+    if (Key_IsDown( KEY_W )) {
+        pos.y += 0.05f;
+    }
+    if (Key_IsDown( KEY_S )) {
+        pos.y -= 0.05f;
+    }
+    if (Key_IsDown( KEY_A )) {
+        pos.x -= 0.05f;
+    }
+    if (Key_IsDown( KEY_D )) {
+        pos.x += 0.05f;
+    }
+    if (Key_IsDown( KEY_N )) {
+        pos.z += 0.05f;
+    }
+    if (Key_IsDown( KEY_M )) {
+        pos.z -= 0.05f;
+    }
+}
+
+void G_Frame(int32_t msec, int32_t realMsec)
+{
+    // save the msec before checking pause
+    gi.realFrameTime = msec;
+
+    gi.frametime = msec;
+
+    gi.realtime += gi.frametime;
+
+    gi.sendtime = gi.realtime;
 
     // update sound
     Snd_Update( gi.realtime );
 
+    G_MoveCamera();
+
     Con_RunConsole();
+
+    // update the screen
     SCR_UpdateScreen();
+
+    gi.framecount++;
 }
 
 

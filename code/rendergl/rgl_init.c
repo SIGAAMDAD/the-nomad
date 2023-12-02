@@ -61,8 +61,12 @@ cvar_t *r_measureOverdraw;
 cvar_t *r_ignoreGLErrors;
 cvar_t *r_clear;
 cvar_t *r_drawBuffer;
+cvar_t *r_customWidth;
+cvar_t *r_customHeight;
+
 cvar_t *r_maxPolys;
-cvar_t *r_maxPolyVerts;
+cvar_t *r_maxDLights;
+cvar_t *r_maxEntities;
 
 cvar_t *r_imageUpsampleType;
 cvar_t *r_imageUpsample;
@@ -565,6 +569,9 @@ static void R_Register(void)
     //
     // archived variables that can change any time
     //
+    r_customWidth = ri.Cvar_Get( "r_customWidth", "1980", CVAR_SAVE | CVAR_LATCH );
+	r_customHeight = ri.Cvar_Get( "r_customHeight", "1080", CVAR_SAVE | CVAR_LATCH );
+
     r_glDebug = ri.Cvar_Get( "r_glDebug", "1", CVAR_SAVE | CVAR_LATCH );
     ri.Cvar_SetDescription( r_glDebug, "Toggles OpenGL driver debug logging." );
     r_textureBits = ri.Cvar_Get( "r_textureBits", "0", CVAR_SAVE | CVAR_LATCH );
@@ -625,9 +632,14 @@ static void R_Register(void)
     ri.Cvar_SetDescription( r_drawBuffer, "Sets which frame buffer to draw into." );
 
     r_maxPolys = ri.Cvar_Get("r_maxPolys", va("%lu", (uint64_t)MAX_BATCH_QUADS), CVAR_LATCH | CVAR_PROTECTED);
-    ri.Cvar_SetDescription(r_maxPolys, "Sets the maximum amount of quads that can be rendered per draw batch.");
-    r_maxPolyVerts = ri.Cvar_Get("r_maxPolyVerts", va("%lu", (uint64_t)MAX_BATCH_VERTICES), CVAR_LATCH | CVAR_PROTECTED);
-    ri.Cvar_SetDescription(r_maxPolyVerts, "Sets the maximum amount of quad vertices that can be rendered per draw batch.");
+    ri.Cvar_SetDescription(r_maxPolys, "Sets the maximum amount of polygons that can be processed per scene.\n"
+                                            "NOTE: there can be multiple scenes rendered in a single frame.");
+    r_maxDLights = ri.Cvar_Get( "r_maxDLights", va("%lu", (uint64_t)MAX_DLIGHTS), CVAR_LATCH | CVAR_PROTECTED );
+    ri.Cvar_SetDescription( r_maxDLights, "Sets the maximum amount of dynamic lights that can be processed per scene.\n"
+                                            "NOTE: there can be multiple scenes rendered in a single frame." );
+    r_maxEntities = ri.Cvar_Get( "r_maxEntities", va("%lu", (uint64_t)MAX_RENDER_ENTITIES), CVAR_LATCH | CVAR_PROTECTED );
+    ri.Cvar_SetDescription( r_maxEntities, "Sets the maximum amount of dynamic entities that can be processed per scene.\n"
+                                            "NOTE: there can be multiple scenes rendered in a single frame." );
 
     // make sure all commands added here are also
     // removed in R_Shutdown
@@ -686,7 +698,7 @@ static void R_InitGLContext(void)
 
     nglGetIntegerv(GL_NUM_EXTENSIONS, &glContext.numExtensions);
     nglGetIntegerv(GL_STEREO, (GLint *)&glContext.stereo);
-    nglGetIntegerv(GL_MAX_TEXTURE_UNITS, &glContext.maxTextureUnits);
+    nglGetIntegerv(GL_MAX_IMAGE_UNITS, &glContext.maxTextureUnits);
     nglGetIntegerv(GL_MAX_TEXTURE_SIZE, &glContext.maxTextureSize);
     nglGetIntegerv(GL_MAX_SAMPLES, &glContext.maxSamples);
 
@@ -745,7 +757,6 @@ static void R_InitGLContext(void)
         glContext.intelGraphics = qtrue;
     
     R_InitExtensions();
-    R_InitSamplers();
 }
 
 static void R_InitImGui(void)
@@ -802,6 +813,41 @@ static void R_InitImGui(void)
     ri.ImGui_Init((void *)(uintptr_t)rg.imguiShader.programId, &import);
 }
 
+static void R_AllocBackend( void ) {
+    uint64_t size;
+
+    size = 0;
+    size += PAD( sizeof(*backendData), sizeof(uintptr_t) );
+    size += PAD( sizeof(srfPoly_t) * r_maxPolys->i, sizeof(uintptr_t) );
+    size += PAD( sizeof(polyVert_t) * r_maxPolys->i * 4, sizeof(uintptr_t) );
+    size += PAD( sizeof(glIndex_t) * r_maxPolys->i * 6, sizeof(uintptr_t) );
+    size += PAD( sizeof(renderEntityDef_t) * r_maxEntities->i, sizeof(uintptr_t) );
+    size += PAD( sizeof(dlight_t) * r_maxEntities->i, sizeof(uintptr_t) );
+    
+    backendData = ri.Malloc( size );
+    backendData->polys = (srfPoly_t *)(backendData + 1);
+    backendData->polyVerts = (polyVert_t *)(backendData->polys + r_maxPolys->i);
+    backendData->indices = (glIndex_t *)(backendData->polyVerts + (r_maxPolys->i * 4));
+    backendData->dlights = (dlight_t *)(backendData->indices + (r_maxPolys->i * 6));
+    backendData->entities = (renderEntityDef_t *)(backendData->entities + r_maxDLights->i);
+}
+
+static void R_CameraInfo_f( void ) {
+    ri.Printf( PRINT_INFO, "\n---------- Camera Info ----------\n" );
+    ri.Printf( PRINT_INFO, "** Matrix Dump: Projection Matrix **\n" );
+    Mat4Dump( glState.viewData.camera.projectionMatrix );
+    ri.Printf( PRINT_INFO, "** Matrix Dump: View Matrix **\n" );
+    Mat4Dump( glState.viewData.camera.viewMatrix );
+    ri.Printf( PRINT_INFO, "** Matrix Dump: View Projection Matrix **\n" );
+    Mat4Dump( glState.viewData.camera.viewProjectionMatrix );
+
+    ri.Printf( PRINT_INFO, "\n" );
+    ri.Printf( PRINT_INFO, "Origin: %f, %f\n", glState.viewData.camera.origin[0], glState.viewData.camera.origin[1] );
+    ri.Printf( PRINT_INFO, "Zoom: %f\n", glState.viewData.camera.origin[2] );
+    ri.Printf( PRINT_INFO, "Aspect: %f\n", glState.viewData.camera.aspect );
+    
+}
+
 void R_Init(void)
 {
     GLenum error;
@@ -809,33 +855,44 @@ void R_Init(void)
     ri.Printf(PRINT_INFO, "---------- RE_Init ----------\n");
 
     // clear all globals
-    memset(&rg, 0, sizeof(rg));
-    memset(&glState, 0, sizeof(glState));
+    memset( &rg, 0, sizeof(rg) );
+    memset( &glState, 0, sizeof(glState) );
+    memset( &backend, 0, sizeof(backend) );
+    memset( &glConfig, 0, sizeof(glConfig) );
+    memset( &glContext, 0, sizeof(glContext) );
+
+    glState.viewData.camera.zoom = 1.0f;
 
     R_Register();
 
-    backendData = ri.Hunk_Alloc(sizeof(*backendData) + sizeof(srfPoly_t) * r_maxPolys->i + sizeof(polyVert_t) * r_maxPolyVerts->i, h_low);
-    backendData->polys = (srfPoly_t *)(backendData + 1);
-    backendData->polyVerts = (polyVert_t *)(backendData->polys + r_maxPolys->i);
+    // allocate backend memory buffers
+    R_AllocBackend();
+
     R_InitNextFrame();
 
+    // initialize OpenGL
     R_InitGLContext();
 
+    // init texture manager
     R_InitTextures();
     
+    // init vao manager
     R_InitGPUBuffers();
 
+    // init glsl manager
     GLSL_InitGPUShaders();
 
-//    R_InitSamplers();
-
+    // init shader manager
     R_InitShaders();
 
     error = nglGetError();
     if (error != GL_NO_ERROR)
         ri.Printf(PRINT_INFO, COLOR_RED "glGetError() = 0x%x\n", error);
 
+    // init imgui
     R_InitImGui();
+
+    ri.Cmd_AddCommand( "camerainfo", R_CameraInfo_f );
 
     // print info
     GpuInfo_f();
@@ -875,6 +932,7 @@ void RE_Shutdown(refShutdownCode_t code)
         memset(&glConfig, 0, sizeof(glConfig));
         memset(&glState, 0, sizeof(glState));
         memset(&backend, 0, sizeof(backend));
+        memset(&glContext, 0, sizeof(glContext));
     }
 
     // free everything
@@ -890,24 +948,21 @@ RE_EndRegistration
 Touch all images to make sure they are resident (probably obsolete on modern systems)
 =============
 */
-GDR_EXPORT void RE_EndRegistration(void)
-{
+GDR_EXPORT void RE_EndRegistration(void) {
     R_IssuePendingRenderCommands();
     RB_ShowImages();
 }
 
-GDR_EXPORT void RE_GetConfig(gpuConfig_t *config)
-{
+GDR_EXPORT void RE_GetConfig(gpuConfig_t *config) {
     *config = glConfig;
 }
 
-GDR_EXPORT void *RE_GetTexDataFromShader(nhandle_t hShader)
-{
+GDR_EXPORT void *RE_GetTextureImGuiData( nhandle_t hShader ) {
     shader_t *sh;
 
-    sh = R_GetShaderByHandle(hShader);
+    sh = R_GetShaderByHandle( hShader );
     if (!sh) {
-        ri.Printf(PRINT_WARNING, "RE_GetTexDataFromShader: invalid handle\n");
+        ri.Printf( PRINT_WARNING, "no shader found when getting imgui shader texture data.\n" );
         return NULL;
     }
 
@@ -929,7 +984,7 @@ GDR_EXPORT renderExport_t *GDR_DECL GetRenderAPI(uint32_t version, refimport_t *
     re.BeginRegistration = RE_BeginRegistration;
     re.RegisterShader = RE_RegisterShader;
     re.GetConfig = RE_GetConfig;
-    re.GetTexDateFromShader = RE_GetTexDataFromShader;
+    re.ImGui_TextureData = RE_GetTextureImGuiData;
 
     re.ClearScene = RE_ClearScene;
     re.BeginScene = RE_BeginScene;
@@ -941,7 +996,6 @@ GDR_EXPORT renderExport_t *GDR_DECL GetRenderAPI(uint32_t version, refimport_t *
     re.EndFrame = RE_EndFrame;
 
     re.RegisterShader = RE_RegisterShader;
-    re.RegisterSpriteSheet = RE_RegisterSpriteSheet;
     re.LoadWorld = RE_LoadWorldMap;
     re.EndRegistration = RE_EndRegistration;
     

@@ -1,15 +1,13 @@
 #include "n_shared.h"
 #include "n_allocator.h"
 #include "n_cvar.h"
-#include <EASTL/fixed_vector.h>
 
 static cvar_t *cvar_vars = NULL;
 static cvar_t *c_cheatsAllowed;
 uint32_t cvar_modifiedFlags;
 
 #define MAX_CVARS 2048
-//static cvar_t cvar_indexes[MAX_CVARS];
-static eastl::fixed_vector<cvar_t, MAX_CVARS, true> cvar_indexes;
+static cvar_t cvar_indexes[MAX_CVARS];
 static uint64_t cvar_numIndexes;
 
 static int32_t cvar_group[CVG_MAX];
@@ -367,7 +365,7 @@ cvar_t *Cvar_Get(const char *var_name, const char *var_value, uint32_t flags)
         if (var->flags & CVAR_USER_CREATED) {
             var->flags &= ~CVAR_USER_CREATED;
             Z_Free(var->resetString);
-            var->resetString = Z_Strdup(var_value);
+            var->resetString = CopyString(var_value);
 
             if (flags & CVAR_ROM || ((flags & CVAR_DEV) && !com_devmode->i)) {
                 // this variable was set by the user,
@@ -375,7 +373,7 @@ cvar_t *Cvar_Get(const char *var_name, const char *var_value, uint32_t flags)
                 if (var->latchedString)
                     Z_Free(var->latchedString);
                 
-                var->latchedString = Z_Strdup(var_value);
+                var->latchedString = CopyString(var_value);
             }
         }
 
@@ -388,12 +386,12 @@ cvar_t *Cvar_Get(const char *var_name, const char *var_value, uint32_t flags)
                     // reset to state requested by local VM module
                     var->flags &= ~CVAR_ROM;
                     Z_Free(var->resetString);
-                    var->resetString = Z_Strdup(var_value);
+                    var->resetString = CopyString(var_value);
 
                     if (var->latchedString)
                         Z_Free(var->latchedString);
                     
-                    var->latchedString = Z_Strdup(var_value);
+                    var->latchedString = CopyString(var_value);
                 }
             }
         }
@@ -408,7 +406,7 @@ cvar_t *Cvar_Get(const char *var_name, const char *var_value, uint32_t flags)
         if (!var->resetString[0]) {
             // we don't have a reset string yet
             Z_Free(var->resetString);
-            var->resetString = Z_Strdup(var_value);
+            var->resetString = CopyString(var_value);
         }
         else if (var_value[0] && strcmp(var->resetString, var_value)) {
             Con_DPrintf(COLOR_YELLOW "Warning: cvar \"%s\" given initial values: \"%s\" and \"%s\"\n",
@@ -437,29 +435,29 @@ cvar_t *Cvar_Get(const char *var_name, const char *var_value, uint32_t flags)
     //
 
     // find a free cvar
-    for (index = 0; index < cvar_indexes.capacity(); index++) {
+    for (index = 0; index < MAX_CVARS; index++) {
         if (!cvar_indexes[index].name) {
             break;
         }
     }
 
-//    if (index >= MAX_CVARS) {
-//        N_Error(ERR_FATAL, "Error: Too many cvars, cannot create a new one!");
-//        return NULL;
-//    }
+    if (index >= MAX_CVARS) {
+        N_Error( ERR_FATAL, "Cvar_Get: out of cvar memory!" );
+        return NULL;
+    }
 
     var = &cvar_indexes[index];
 
     if (index >= cvar_numIndexes)
         cvar_numIndexes = index + 1;
 
-    var->name = Z_Strdup(var_name);
-    var->s = Z_Strdup(var_value);
+    var->name = CopyString(var_name);
+    var->s = CopyString(var_value);
     var->modified = qtrue;
     var->modificationCount = 1;
     var->f = N_atof(var->s);
     var->i = atoi(var->s);
-    var->resetString = Z_Strdup(var_value);
+    var->resetString = CopyString(var_value);
     var->type = CVT_NONE;
     var->description = NULL;
     var->group = CVG_NONE;
@@ -688,7 +686,7 @@ cvar_t *Cvar_Set2(const char *var_name, const char *value, qboolean force)
             }
 
             Con_Printf("%s will be changed upon restarting.\n", var_name);
-            var->latchedString = Z_Strdup(value);
+            var->latchedString = CopyString(value);
             var->modified = qtrue;
             var->modificationCount++;
             cvar_group[var->group] = 1;
@@ -707,7 +705,7 @@ cvar_t *Cvar_Set2(const char *var_name, const char *value, qboolean force)
     var->modified = qtrue;
     var->modificationCount++;
     cvar_group[var->group] = 1;
-    var->s = Z_Strdup(value);
+    var->s = CopyString(value);
     var->f = N_atof(var->s);
     var->i = atoi(var->s);
 
@@ -750,10 +748,10 @@ void Cvar_SetSafe(const char *var_name, const char *value)
         }
 
         // don't let VMs or server change engine latched cvars instantly
-        // if ( ( flags & CVAR_LATCH ) && !( flags & CVAR_VM_CREATED ) )
-        //{
-        //	force = qfalse;
-        //}
+        if ( ( flags & CVAR_LATCH ) && !( flags & CVAR_VM_CREATED ) )
+        {
+        	force = qfalse;
+        }
     }
 
     Cvar_Set2(var_name, value, force);
@@ -1623,7 +1621,12 @@ Resets all cvars to their hardcoded values
 */
 static void Cvar_Restart_f(void)
 {
-    Cvar_Restart(qfalse);
+    if (Cmd_Argc() == 2 && !N_stricmp( "forcevm", Cmd_Argv( 1 ) )) {
+        Cvar_Restart(qtrue);
+    }
+    else {
+        Cvar_Restart(qfalse);
+    }
 }
 
 /*
@@ -1790,10 +1793,10 @@ void Cvar_CheckRange(cvar_t *var, const char *mins, const char *maxs, cvartype_t
         return;
 
     if (mins)
-        var->mins = Z_Strdup(mins);
+        var->mins = CopyString(mins);
 
     if (maxs)
-        var->maxs = Z_Strdup(maxs);
+        var->maxs = CopyString(maxs);
 
     // Force an initial range check
     Cvar_Set(var->name, var->s);
@@ -1810,7 +1813,7 @@ void Cvar_SetDescription(cvar_t *var, const char *var_description)
         if (var->description != NULL) {
             Z_Free(var->description);
         }
-        var->description = Z_Strdup(var_description);
+        var->description = CopyString(var_description);
     }
 }
 
@@ -1901,7 +1904,7 @@ void Cvar_Register(vmCvar_t *vmCvar, const char *varName, const char *defaultVal
     if (!vmCvar)
         return;
 
-    vmCvar->handle = cv - cvar_indexes.data();
+    vmCvar->handle = cv - cvar_indexes;
     vmCvar->modificationCount = -1;
 
     Cvar_Update(vmCvar, 0);
@@ -1924,7 +1927,7 @@ void Cvar_Update(vmCvar_t *vmCvar, uint32_t privateFlag)
         N_Error(ERR_DROP, "Cvar_Update: handle out of range");
     }
 
-    cv = cvar_indexes.data() + vmCvar->handle;
+    cv = cvar_indexes + vmCvar->handle;
 
     if (cv->modificationCount == vmCvar->modificationCount) {
         return;
@@ -1993,7 +1996,7 @@ Reads in all archived cvars
 */
 void Cvar_Init(void)
 {
-    memset(cvar_indexes.data(), 0, sizeof(cvar_indexes));
+    memset(cvar_indexes, 0, sizeof(cvar_indexes));
     memset(hashTable, 0, sizeof(hashTable));
 
     c_cheatsAllowed = Cvar_Get("c_cheatsAllowed", "1", CVAR_ROM | CVAR_SYSTEMINFO);

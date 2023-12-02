@@ -945,15 +945,16 @@ int N_stricmpn (const char *str1, const char *str2, size_t n)
 
 	// bk001129 - moved in 1.17 fix not in id codebase
     if (str1 == NULL) {
-    	if (str2 == NULL )
+    	if (str2 == NULL) {
             return 0;
-        else
+		}
+        else {
             return -1;
+		}
     }
-    else if (str2 == NULL)
+    else if (str2 == NULL) {
         return 1;
-
-
+	}
 	
 	do {
 		c1 = *str1++;

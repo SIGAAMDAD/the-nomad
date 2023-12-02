@@ -18,11 +18,11 @@ typedef enum {
 // refimport_t: for use with external engine system libraries
 //
 typedef struct {
-	void *(*Malloc)(uint32_t size);
-    void *(*Realloc)(void *ptr, uint32_t nsize); // really just for stb_image.h
+	void *(*Malloc)(uint64_t size);
+    void *(*Realloc)(void *ptr, uint64_t nsize); // really just for stb_image.h
     void (*FreeAll)(void);
 	void (*Free)(void *ptr);
-    char *(*Strdup)(const char *str);
+    char *(*CopyString)(const char *str);
 #ifdef _NOMAD_DEBUG
     void *(*Hunk_AllocDebug)(uint64_t size, ha_pref where, const char *label, const char *file, uint64_t line);
 #else
@@ -48,6 +48,9 @@ typedef struct {
     void (*Cvar_ResetGroup)( cvarGroup_t group, qboolean resetModifiedFlags );
     void (*Cvar_Reset)(const char *name);
     const char *(*Cvar_VariableString)(const char *name);
+
+    void (*GLM_MakeVPM)( float aspect, float *zoom, vec3_t origin, mat4_t vpm, mat4_t projection, mat4_t view );
+    void (*GLM_TransformToGL)( const vec3_t world, vec3_t *xyz, mat4_t vpm );
 
     void (*Cmd_AddCommand)(const char* name, cmdfunc_t function);
     void (*Cmd_RemoveCommand)(const char* name);
@@ -113,13 +116,9 @@ typedef struct {
 	// and height, which can be used by the client to intelligently
 	// size display elements
 	void (*BeginRegistration)( gpuConfig_t *config );
-    nhandle_t (*RegisterSpriteSheet)( const char *shaderName, uint32_t numSprites, uint32_t spriteWidth, uint32_t spriteHeight,
-        uint32_t sheetWidth, uint32_t sheetHeight );
 	nhandle_t (*RegisterShader)( const char *name );
     nhandle_t (*RegisterAnimation)( const char *name );
 	void (*LoadWorld)( const char *name );
-
-    void *(*GetTexDateFromShader)( nhandle_t hShader );
 
 	// EndRegistration will draw a tiny polygon with each texture, forcing
 	// them to be loaded into card memory
@@ -135,6 +134,8 @@ typedef struct {
     void (*AddEntityToScene)( const renderEntityRef_t *ent );
     void (*DrawImage)( float x, float y, float w, float h, float u1, float v1, float u2, float v2, nhandle_t hShader );
 	void (*RenderScene)( const renderSceneRef_t *fd );
+
+    void *(*ImGui_TextureData)( nhandle_t hShader );
 
     void (*GetConfig)( gpuConfig_t *config );
 

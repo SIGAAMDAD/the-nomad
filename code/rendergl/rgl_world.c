@@ -95,10 +95,10 @@ static void R_LoadTileset(const lump_t *sprites, const tile2d_header_t *theader)
 
 void R_GenerateDrawData(void)
 {
-    srfTile_t *surf;
     maptile_t *tile;
     uint32_t numSurfs, i;
     uint32_t offset;
+    vertexAttrib_t *attribs;
 
     r_worldData.numIndices = r_worldData.width * r_worldData.height * 6;
     r_worldData.numVertices = r_worldData.width * r_worldData.height * 4;
@@ -106,34 +106,67 @@ void R_GenerateDrawData(void)
     r_worldData.indices = ri.Hunk_Alloc(sizeof(glIndex_t) * r_worldData.numIndices, h_low);
     r_worldData.vertices = ri.Hunk_Alloc( sizeof(drawVert_t) * r_worldData.numVertices, h_low );
 
-    surf = ri.Hunk_Alloc(sizeof(*surf), h_low);
+    r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, r_worldData.numVertices * sizeof(drawVert_t), NULL,
+                                        r_worldData.numIndices * sizeof(glIndex_t), BUFFER_FRAME );
+    attribs = r_worldData.buffer->attribs;
 
-    surf->numTiles = r_worldData.numTiles;
-    surf->surfaceType = SF_TILE;
-    surf->indices = r_worldData.indices;
-    surf->vertices = r_worldData.vertices;
+    attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
+	attribs[ATTRIB_INDEX_TEXCOORD].enabled		= qtrue;
+	attribs[ATTRIB_INDEX_COLOR].enabled			= qtrue;
+	attribs[ATTRIB_INDEX_NORMAL].enabled		= qfalse;
 
-    r_worldData.surface = surf;
+	attribs[ATTRIB_INDEX_POSITION].count		= 3;
+	attribs[ATTRIB_INDEX_TEXCOORD].count		= 2;
+	attribs[ATTRIB_INDEX_COLOR].count			= 4;
+	attribs[ATTRIB_INDEX_NORMAL].count			= 4;
+
+	attribs[ATTRIB_INDEX_POSITION].type			= GL_FLOAT;
+	attribs[ATTRIB_INDEX_TEXCOORD].type			= GL_FLOAT;
+	attribs[ATTRIB_INDEX_COLOR].type			= GL_UNSIGNED_SHORT;
+	attribs[ATTRIB_INDEX_NORMAL].type			= GL_SHORT;
+
+	attribs[ATTRIB_INDEX_POSITION].index		= ATTRIB_INDEX_POSITION;
+	attribs[ATTRIB_INDEX_TEXCOORD].index		= ATTRIB_INDEX_TEXCOORD;
+	attribs[ATTRIB_INDEX_COLOR].index			= ATTRIB_INDEX_COLOR;
+	attribs[ATTRIB_INDEX_NORMAL].index			= ATTRIB_INDEX_NORMAL;
+
+	attribs[ATTRIB_INDEX_POSITION].normalized	= GL_FALSE;
+	attribs[ATTRIB_INDEX_TEXCOORD].normalized	= GL_FALSE;
+	attribs[ATTRIB_INDEX_COLOR].normalized		= GL_TRUE;
+	attribs[ATTRIB_INDEX_NORMAL].normalized		= GL_TRUE;
+
+	attribs[ATTRIB_INDEX_POSITION].offset		= offsetof( drawVert_t, xyz );
+	attribs[ATTRIB_INDEX_TEXCOORD].offset		= offsetof( drawVert_t, uv );
+	attribs[ATTRIB_INDEX_COLOR].offset			= offsetof( drawVert_t, color );
+	attribs[ATTRIB_INDEX_NORMAL].offset			= 0;
+
+	attribs[ATTRIB_INDEX_POSITION].stride		= sizeof(drawVert_t);
+	attribs[ATTRIB_INDEX_TEXCOORD].stride		= sizeof(drawVert_t);
+	attribs[ATTRIB_INDEX_COLOR].stride			= sizeof(drawVert_t);
+	attribs[ATTRIB_INDEX_NORMAL].stride			= sizeof(drawVert_t);
+
 
     for (i = 0, offset = 0; i < r_worldData.numIndices; i += 6, offset += 4) {
-        surf->indices[i + 0] = offset + 0;
-        surf->indices[i + 1] = offset + 1;
-        surf->indices[i + 2] = offset + 2;
+        r_worldData.indices[i + 0] = offset + 0;
+        r_worldData.indices[i + 1] = offset + 1;
+        r_worldData.indices[i + 2] = offset + 2;
 
-        surf->indices[i + 3] = offset + 3;
-        surf->indices[i + 4] = offset + 2;
-        surf->indices[i + 5] = offset + 0;
+        r_worldData.indices[i + 3] = offset + 3;
+        r_worldData.indices[i + 4] = offset + 2;
+        r_worldData.indices[i + 5] = offset + 0;
     }
 
-    for (i = 0; i < r_worldData.numTiles; i++) {
-        VectorCopy2( surf->vertices[i + 0].uv, r_worldData.tiles[i].texcoords[i + 0] );
-        VectorCopy2( surf->vertices[i + 1].uv, r_worldData.tiles[i].texcoords[i + 1] );
-        VectorCopy2( surf->vertices[i + 2].uv, r_worldData.tiles[i].texcoords[i + 2] );
-        VectorCopy2( surf->vertices[i + 3].uv, r_worldData.tiles[i].texcoords[i + 3] );
+    for (uint32_t y = 0; y < r_worldData.height; y++) {
+        for (uint32_t x = 0; x < r_worldData.width; x++) {
+            VectorCopy2( r_worldData.vertices[(y * r_worldData.width + x) + 0].uv, r_worldData.tiles[y * r_worldData.width + x].texcoords[0] );
+            VectorCopy2( r_worldData.vertices[(y * r_worldData.width + x) + 1].uv, r_worldData.tiles[y * r_worldData.width + x].texcoords[1] );
+            VectorCopy2( r_worldData.vertices[(y * r_worldData.width + x) + 2].uv, r_worldData.tiles[y * r_worldData.width + x].texcoords[2] );
+            VectorCopy2( r_worldData.vertices[(y * r_worldData.width + x) + 3].uv, r_worldData.tiles[y * r_worldData.width + x].texcoords[3] );
+        }
     }
 }
 
-void GDR_EXPORT RE_LoadWorldMap(const char *filename)
+GDR_EXPORT void RE_LoadWorldMap(const char *filename)
 {
     bmf_t *header;
     mapheader_t *mheader;
@@ -215,4 +248,10 @@ void GDR_EXPORT RE_LoadWorldMap(const char *filename)
     }
 
     ri.FS_FreeFile( buffer.v );
+
+    // setup the camera
+    glState.viewData.camera.origin[0] = rg.world->spawns[0].xyz[0];
+    glState.viewData.camera.origin[1] = rg.world->spawns[0].xyz[1];
+    glState.viewData.camera.origin[2] = 0.0f;
+    glState.viewData.camera.zoom = 2.0f;
 }

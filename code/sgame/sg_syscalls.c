@@ -37,6 +37,11 @@ int32_t G_LoadMap( int32_t index, mapinfo_t *info )
     return vmi.G_LoadMap( index, info );
 }
 
+uint32_t trap_Milliseconds( void )
+{
+    return vmi.trap_Milliseconds();
+}
+
 void trap_GetGPUConfig(gpuConfig_t *config)
 {
     vmi.trap_GetGPUConfig(config);
@@ -47,7 +52,7 @@ void trap_Cmd_ExecuteText(cbufExec_t exec, const char *text)
     vmi.trap_Cmd_ExecuteText(exec, text);
 }
 
-void RE_ClearScene(void)
+void RE_ClearScene( void )
 {
     vmi.trap_RE_ClearScene();
 }
@@ -109,7 +114,7 @@ void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t num
 
 void RE_AddEntityToScene( const renderEntityRef_t *ent )
 {
-    vmi.trap_RE_AddEntityToScene(ent);
+//    vmi.trap_RE_AddEntityToScene(ent);
 }
 
 void RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys )
@@ -162,22 +167,22 @@ void trap_UpdateScreen(void)
     vmi.trap_UpdateScreen();
 }
 
-void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, uint32_t flags )
+void Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, uint32_t flags )
 {
     vmi.trap_Cvar_Register(vmCvar, varName, defaultValue, flags);
 }
 
-void trap_Cvar_Update( vmCvar_t *vmCvar )
+void Cvar_Update( vmCvar_t *vmCvar )
 {
     vmi.trap_Cvar_Update(vmCvar);
 }
 
-void trap_Cvar_Set( const char *var_name, const char *value )
+void Cvar_Set( const char *var_name, const char *value )
 {
     vmi.trap_Cvar_Set(var_name, value);
 }
 
-void trap_Cvar_VariableStringBuffer( const char *var_name, char *buffer, uint32_t bufsize )
+void Cvar_VariableStringBuffer( const char *var_name, char *buffer, uint32_t bufsize )
 {
     vmi.trap_Cvar_VariableStringBuffer(var_name, buffer, bufsize);
 }

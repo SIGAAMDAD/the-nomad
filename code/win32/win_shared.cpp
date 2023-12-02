@@ -20,6 +20,10 @@ uint64_t Sys_Milliseconds( void )
     return sys_curtime;
 }
 
+void Sys_Sleep( double msec ) {
+	Sleep( msec );
+}
+
 /*
 ================
 Sys_RandomBytes

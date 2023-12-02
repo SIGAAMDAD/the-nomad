@@ -5,7 +5,7 @@
 #include "ui_window.h"
 #include "ui_string_manager.h"
 #include "ui_table.h"
-#include <GL/gl.h>
+#include "../rendergl/ngl.h"
 #include "../rendercommon/imgui_impl_opengl3.h"
 #include <EASTL/fixed_string.h>
 #include <EASTL/fixed_vector.h>
@@ -317,6 +317,9 @@ static void SettingsMenu_SetDefault( void )
     settings.mouseAccelerate = Cvar_VariableInteger("g_mouseAcceleration");
     settings.mouseInvert = Cvar_VariableInteger("g_mouseInvert");
 
+    if (!gi.numBindNames) {
+        N_Error( ERR_FATAL, "SettingsMenu_SetDefault: no key bindings given to the engine from the vm" );
+    }
     settings.keybinds = (keybind_t *)Hunk_Alloc( sizeof(keybind_t) * gi.numBindNames, h_low );
     for (uint32_t i = 0; i < gi.numBindNames; i++) {
         settings.keybinds[i].keynum = Key_GetKey( gi.bindNames[i] );

@@ -596,7 +596,7 @@ void Cmd_SetHelpString(const char *name, const char *help)
 		if (cmd->helpString)
 			Z_Free(cmd->helpString);
 		
-		cmd->helpString = Z_Strdup(help);
+		cmd->helpString = CopyString(help);
 	}
 }
 
@@ -611,8 +611,8 @@ void Cmd_AddCommand(const char *name, cmdfunc_t func)
     }
     Con_DPrintf("Registered command %s\n", name);
 
-    cmd = (cmd_t *)Z_SMalloc(sizeof(*cmd));
-    cmd->name = Z_Strdup(name);
+    cmd = (cmd_t *)S_Malloc(sizeof(*cmd));
+    cmd->name = CopyString(name);
     cmd->function = func;
 	cmd->complete = NULL;
     cmd->next = cmd_functions;

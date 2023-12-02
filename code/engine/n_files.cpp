@@ -2,6 +2,7 @@
 #include "n_common.h"
 #include "n_cvar.h"
 #include "../system/sys_timer.h"
+#include "../system/sys_thread.h"
 
 /*
 ======================================================================================================
@@ -35,8 +36,6 @@ typedef struct
 	int64_t compression;
 	int16_t version;
 } bffheader_t;
-
-constexpr file_t invalid_handle = FS_INVALID_HANDLE;
 
 // tunables
 //#define USE_BFF_CACHE_FILE // cache the bff archives into a file for faster load times
@@ -125,7 +124,7 @@ typedef struct searchpath_s
 
 #define FS_HashFileName(name,len) Com_GenerateHashValue((name),(len))
 
-static boost::recursive_mutex fs_lock;
+static CThreadMutex	fs_mutex;
 static bffFile_t	**fs_archives;
 
 static searchpath_t *fs_searchpaths;
@@ -745,7 +744,7 @@ static void FS_CopyFile( const char *fromOSPath, const char *toOSPath )
 
 qboolean FS_FileIsInBFF(const char *filename)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{fs_lock};
+	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
 	const fileInBFF_t *file;
 	const searchpath_t *sp;
 	const bffFile_t *bff;
@@ -828,7 +827,7 @@ static void FS_SortFileList( char **list, uint64_t n )
 
 static fileInBFF_t *FS_GetChunkHandle(const char *path, int64_t *bffIndex)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{fs_lock};
+	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
 	fileInBFF_t *file;
 	searchpath_t *sp;
 	bffFile_t *bff;
@@ -911,7 +910,7 @@ uint64_t FS_FOpenFileWithMode(const char *npath, file_t *f, fileMode_t mode)
 
 file_t FS_FOpenAppend(const char *path)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{fs_lock};
+	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
 	file_t fd;
 	fileHandle_t *f;
 	FILE *fp;
@@ -961,7 +960,7 @@ file_t FS_FOpenAppend(const char *path)
 
 file_t FS_OpenFileMapping(const char *path, qboolean temp)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{fs_lock};
+	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
 	file_t fd;
 	fileHandle_t *f;
 	const char *ospath;
@@ -1412,13 +1411,20 @@ uint64_t FS_BFFHashSize(uint32_t fileCount)
 
 static void FS_FreeBFF(bffFile_t *bff)
 {
+	fileInBFF_t *file;
+
 	if (!bff) {
 		N_Error(ERR_FATAL, "FS_FreeBFF(NULL)");
 	}
 
 	for (uint64_t i = 0; i < bff->numfiles; i++) {
-		if (bff->buildBuffer[i].buf) {
-			Z_Free( bff->buildBuffer[i].buf );
+		file = &bff->buildBuffer[i];
+
+		if (file->buf) {
+			Z_Free( file->buf );
+		}
+		if (file->name) {
+			Z_Free( file->name );
 		}
 	}
 
@@ -1574,7 +1580,7 @@ FS_LoadBFF: creates a new bffFile_t in the search chain for the contents of a bf
 */
 static bffFile_t *FS_LoadBFF(const char *bffpath)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{fs_lock};
+	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
 	fileInBFF_t *curFile;
 	bffFile_t *bff;
 	bffheader_t header;
@@ -1702,7 +1708,8 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 			Con_DPrintf("Error reading chunk nameLen at %lu\n", i);
 			return NULL;
 		}
-		curFile->name = (char *)Z_SMalloc(curFile->nameLen);
+
+		curFile->name = (char *)Z_Malloc(curFile->nameLen, TAG_BFF);
 		if (!fread( curFile->name, curFile->nameLen, 1, fp )) {
 			fclose( fp );
 			Con_DPrintf("Error reading chunk name at %lu\n", i);
@@ -1728,7 +1735,7 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 		curFile->bytesRead = 0;
 
 		// read the chunk data
-		curFile->buf = (char *)Z_Malloc(curFile->size, TAG_STATIC);
+		curFile->buf = (char *)Z_Malloc(curFile->size, TAG_BFF);
 		if (!fread( curFile->buf, curFile->size, 1, fp )) {
 			fclose( fp );
 			Con_DPrintf("Error reading chunk buffer at %lu\n", i);
@@ -1795,7 +1802,7 @@ void FS_ForceFlush(file_t f)
 
 fileOffset_t FS_FileTell(file_t f)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{fs_lock};
+	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
 	fileHandle_t *p;
 
 	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
@@ -1814,7 +1821,7 @@ fileOffset_t FS_FileTell(file_t f)
 
 fileOffset_t FS_FileSeek(file_t f, fileOffset_t offset, uint32_t whence)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{fs_lock};
+	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
 	fileHandle_t* file;
 	uint32_t fwhence;
 	
@@ -1874,7 +1881,7 @@ fileOffset_t FS_FileSeek(file_t f, fileOffset_t offset, uint32_t whence)
 
 uint64_t FS_FileLength(file_t f)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{fs_lock};
+	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
 	uint64_t curPos, length;
 
 	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
@@ -1893,7 +1900,7 @@ FS_Write: properly handles partial writes
 */
 uint64_t FS_Write(const void *buffer, uint64_t size, file_t f)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{fs_lock};
+	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
 	int64_t writeCount, remaining, block;
 	const byte *buf;
 	int tries;
@@ -1912,6 +1919,9 @@ uint64_t FS_Write(const void *buffer, uint64_t size, file_t f)
 	remaining = size;
 	tries = 0;
 
+#ifdef _WIN32
+	return size;
+#else
 	while (remaining) {
 		block = remaining;
 		writeCount = fwrite(buf, 1, block, fp);
@@ -1937,11 +1947,12 @@ uint64_t FS_Write(const void *buffer, uint64_t size, file_t f)
 	// fflush(fp);
 
 	return size;
+#endif
 }
 
 static uint64_t FS_ReadFromChunk(void *buffer, uint64_t size, file_t f)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{fs_lock};
+	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
 	fileHandle_t *handle = &handles[f];
 
 	if (handle->data.chunk->bytesRead + size > handle->data.chunk->size) {
@@ -1969,7 +1980,7 @@ FS_Read: properly handles partial reads
 */
 uint64_t FS_Read(void *buffer, uint64_t size, file_t f)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{fs_lock};
+	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
 	int64_t readCount, remaining, block;
 	byte *buf;
 	int tries;
@@ -2031,7 +2042,7 @@ void GDR_DECL FS_Printf(file_t f, const char *fmt, ...)
 
 file_t FS_FOpenWrite(const char *path)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{fs_lock};
+	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
 	file_t fd;
 	fileHandle_t *f;
 	FILE *fp;
@@ -2076,7 +2087,7 @@ file_t FS_FOpenWrite(const char *path)
 
 file_t FS_FOpenRW(const char *path)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{fs_lock};
+	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
 	file_t fd;
 	fileHandle_t *f;
 	FILE *fp;
@@ -2118,7 +2129,7 @@ file_t FS_FOpenRW(const char *path)
 
 file_t FS_FOpenRead(const char *path)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{fs_lock};
+	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
 	file_t fd;
 	fileHandle_t *f;
 	fileInBFF_t *chunk;
@@ -2179,7 +2190,7 @@ file_t FS_FOpenRead(const char *path)
 
 uint64_t FS_FOpenFileRead(const char *path, file_t *fd)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{fs_lock};
+	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
 	fileHandle_t *f;
 	const char *ospath;
 	FILE *fp;
@@ -2301,7 +2312,7 @@ A null buffer will just return the file length without loading
 */
 uint64_t FS_LoadFile(const char *npath, void **buffer)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{fs_lock};
+	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
 	file_t fd;
 	fileHandle_t *f;
 	byte *buf;
@@ -2349,7 +2360,7 @@ int FS_FileToFileno(file_t f)
 
 void FS_FreeFile(void *buffer)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{fs_lock};
+	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
 	if (!fs_searchpaths) {
 		N_Error(ERR_FATAL, "Filesystem call made without initialization");
 	}
@@ -2368,7 +2379,7 @@ void FS_FreeFile(void *buffer)
 
 void FS_FClose(file_t f)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{fs_lock};
+	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
 	fileHandle_t *p;
 //	fileStats_t stats;
 
@@ -2835,6 +2846,12 @@ void FS_Shutdown(qboolean closeFiles)
 	fs_bffChunks = 0;
 	fs_dirCount = 0;
 
+	// only fixes fs_restart
+	if (com_logfile && com_logfile->i) {
+		extern file_t logfile;
+		logfile = FS_INVALID_HANDLE;
+	}
+
 	Cmd_RemoveCommand("dir");
 	Cmd_RemoveCommand("ls");
 	Cmd_RemoveCommand("list");
@@ -3101,7 +3118,7 @@ char *FS_CopyString(const char *s)
 {
 	char *out;
 
-	out = (char *)Z_SMalloc(strlen(s) + 1);
+	out = (char *)S_Malloc(strlen(s) + 1);
 	strcpy( out, s );
 	return out;
 }

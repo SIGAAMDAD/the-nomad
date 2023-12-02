@@ -385,6 +385,11 @@ Compiler Macro Abstraction
 #include <stddef.h>
 #include <time.h>
 #include <assert.h>
+#ifdef _WIN32
+#include <malloc.h>
+#else
+#include <alloca.h>
+#endif
 #endif
 
 #ifndef Q3_VM
@@ -537,8 +542,8 @@ typedef float vec_t;
 typedef vec_t vec2_t[2];
 typedef vec_t vec3_t[3];
 typedef vec_t vec4_t[4];
-typedef vec_t mat3_t[12];
-typedef vec_t mat4_t[16];
+typedef vec_t mat3_t[3][3];
+typedef vec_t mat4_t[4][4];
 typedef unsigned char byte;
 
 typedef uint32_t uvec_t;
@@ -1073,15 +1078,7 @@ typedef enum
 #define	ANGLE2SHORT(x)	((int)((x)*65536/360) & 65535)
 #define	SHORT2ANGLE(x)	((x)*(360.0/65536))
 
-#ifdef __cplusplus
-template<typename type, typename alignment>
-inline type* PADP(type *base, alignment align)
-{
-	return (type *)((void *)PAD((intptr_t)base, align));
-}
-#else
 #define PADP(base,align) ((void *)PAD((intptr_t)(base),(align)))
-#endif
 
 #define LERP( a, b, w ) ( ( a ) * ( 1.0f - ( w ) ) + ( b ) * ( w ) )
 #define LUMA( red, green, blue ) ( 0.2126f * ( red ) + 0.7152f * ( green ) + 0.0722f * ( blue ) )

@@ -10,6 +10,15 @@
 #include "../engine/n_cvar.h"
 #include "ngl.h"
 
+// cglm -- because moi am stupid
+/*
+#include <cglm/types.h>
+#include <cglm/simd/sse2/mat4.h>
+#include <cglm/cglm.h>
+#include <cglm/affine-mat.h>
+#include <cglm/affine.h>
+*/
+
 #define MAX_RENDER_BUFFERS 2048
 #define MAX_RENDER_PROGRAMS 2048
 #define MAX_RENDER_TEXTURES 2048
@@ -48,7 +57,7 @@ typedef uint32_t glIndex_t;
 #define MAX_DRAW_INDICES (MAX_INT/sizeof(glIndex_t))
 
 // per drawcall batch
-#define MAX_BATCH_QUADS 4096
+#define MAX_BATCH_QUADS (1024*1024)
 #define MAX_BATCH_VERTICES (MAX_BATCH_QUADS*4)
 #define MAX_BATCH_INDICES (MAX_BATCH_QUADS*6)
 
@@ -305,61 +314,22 @@ typedef struct dlight_s
     struct dlight_s *prev;
 } dlight_t;
 
-// normal and light are unused
+// normal is unused
 typedef struct
 {
     vec3_t xyz;
     vec2_t uv;
-    vec2_t lightmap;
     int16_t normal[4];
-    int16_t tangent[4];
-    int16_t lightdir[4];
     uint16_t color[4];
 } drawVert_t;
-
-/*
-==============================================================================
-
-SURFACES
-
-==============================================================================
-*/
-
-#define MAX_DRAWSURFS 0x10000
-#define DRAWSURF_MASK (0x20000-1)
-
-// any changes in surfaceType must be mirrored in rb_surfaceTable[]
-typedef enum {
-    SF_BAD,
-    SF_SKIP,    // ignore
-    SF_POLY,
-    SF_TILE,
-
-    SF_NUM_SURFACE_TYPES,
-    SF_MAX = 0x7fffffff			// ensures that sizeof( surfaceType_t ) == sizeof( int )
-} surfaceType_t;
-
-typedef struct {
-    uint32_t sort;
-    surfaceType_t *surface;
-} drawSurf_t;
 
 // when sgame directly specifies a polygon, it becomes a srfPoly_t
 // as soon as it is called
 typedef struct {
-    surfaceType_t   surfaceType;
     nhandle_t       hShader;
     uint32_t        numVerts;
     polyVert_t      *verts; // later becomes a drawVert_t
 } srfPoly_t;
-
-typedef struct {
-    surfaceType_t surfaceType;
-    uint32_t numTiles;
-
-    drawVert_t *vertices;
-    glIndex_t *indices;
-} srfTile_t;
 
 //==================================================================
 
@@ -506,7 +476,6 @@ typedef struct shader_s {
 typedef struct {
     uint32_t x, y, width, height;
     stereoFrame_t stereoFrame;
-    mat4_t transformMatrix;
 
     qboolean drawn;
 
@@ -514,9 +483,6 @@ typedef struct {
     uint64_t flags;
 
     double floatTime;
-
-    uint64_t numDrawSurfs;
-    drawSurf_t *drawSurfs;
 
     uint64_t numEntities;
     renderEntityDef_t *entities;
@@ -526,8 +492,6 @@ typedef struct {
 
     uint64_t numPolys;
     srfPoly_t *polys;
-
-    renderCameraDef_t *camData;
 } renderSceneDef_t;
 
 typedef struct {
@@ -536,14 +500,15 @@ typedef struct {
     float zoom;
     float aspect;
     mat4_t projectionMatrix;
-    mat4_t modelMatrix;
-    mat4_t transformMatrix;
+    mat4_t viewMatrix;
+    mat4_t viewProjectionMatrix;
 } cameraData_t;
 
 typedef struct {
     cameraData_t camera;
 
-    uint32_t viewportX, viewportY, viewportWidth, viewportHeight;
+    uint32_t viewportX, viewportY;
+    uint32_t viewportWidth, viewportHeight;
 
     float zFar;
     float zNear;
@@ -553,20 +518,6 @@ typedef struct {
     uint64_t frameSceneNum;
     uint64_t frameCount;
 } viewData_t;
-
-typedef vec2_t refSprite_t[4];
-
-typedef struct {
-    char name[MAX_GDR_PATH];
-
-    shader_t *shader;
-    nhandle_t hShader;
-
-    uint32_t numSprites;
-    refSprite_t *texCoords;
-    uint32_t spriteWidth, spriteHeight;
-    uint32_t spriteCountX, spriteCountY;
-} refSpriteSheet_t;
 
 typedef struct {
     char baseName[MAX_GDR_PATH];
@@ -594,53 +545,12 @@ typedef struct {
     uint32_t numTilesetSprites;
 
     // frame based draw data
-    srfTile_t *surface;
     shader_t *shader;
     drawVert_t *vertices;
     glIndex_t *indices;
+    vertexBuffer_t *buffer;
     nhandle_t tileset;
 } world_t;
-
-typedef struct stageVars
-{
-//	color4ub_t	colors[MAX_BATCH_VERTICES];
-//	vec2_t		texcoords[NUM_TEXTURE_BUNDLES][MAX_BATCH_VERTICES];
-} stageVars_t;
-
-typedef struct
-{
-    // silence the compiler warning
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wattributes"
-#endif
-    glIndex_t indices[MAX_BATCH_INDICES] GDR_ALIGN(16);
-    vec3_t xyz[MAX_BATCH_VERTICES] GDR_ALIGN(16);
-    int16_t normal[MAX_BATCH_VERTICES] GDR_ALIGN(16);
-    vec2_t texCoords[MAX_BATCH_VERTICES] GDR_ALIGN(16);
-    uint16_t color[MAX_BATCH_VERTICES][4] GDR_ALIGN(16);
-
-//    stageVars_t svars GDR_ALIGN(16);
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif
-
-    void *attribPointers[ATTRIB_INDEX_COUNT];
-
-    uint32_t numVertices;
-    uint32_t numIndices;
-    uint32_t firstIndex;
-
-    shader_t *shader;
-//    shaderStage_t **stages;
-    vertexBuffer_t *buf;
-
-    double shaderTime;
-
-    qboolean useInternalVao;
-    qboolean useCacheVao;
-    qboolean updated;
-} shaderDrawCommands_t;
 
 typedef struct {
     uint64_t msec;
@@ -655,16 +565,36 @@ typedef struct {
     uint32_t c_overDraw;
 } backendCounters_t;
 
-typedef struct {
-    viewData_t viewData;
-    renderSceneDef_t refdef;
 
+typedef struct {
+    uintptr_t vtxOffset;        // current offset in vertex buffer
+    uintptr_t idxOffset;        // current offset in index buffer
+    
+    uintptr_t vtxDataSize;      // size in bytes of each vertex
+    uintptr_t idxDataSize;      // size in bytes of each index
+
+    uint32_t maxVertices;       // total allocated vertices with glBufferData
+    uint32_t maxIndices;        // total allocated indices with glBufferData
+
+    void *vertices;             // address of the client vertices
+    void *indices;              // address of the client indices
+
+    vertexBuffer_t *buffer;     // the buffer handle we're using for this batch
+} batch_t;
+
+typedef struct {
     byte color2D[4];
 
     qboolean depthFill;
     qboolean colorMask[4];
 
     backendCounters_t pc;
+
+    vertexBuffer_t *drawBuffer;
+
+    renderSceneDef_t refdef;
+
+    batch_t drawBatch;
 } renderBackend_t;
 
 // the renderer front end should never modify glstate_t
@@ -681,9 +611,7 @@ typedef struct {
     GLuint      textureStack[MAX_TEXTURE_UNITS];
     GLuint      *textureStackPtr;
 
-    mat4_t modelviewProjection;
-    mat4_t projection;
-    mat4_t modelview;
+    viewData_t viewData;
 
     uint32_t vertexAttribsEnabled;
 
@@ -709,9 +637,6 @@ typedef struct
 
     shader_t *defaultShader;
 
-    refSpriteSheet_t *spriteSheets[MAX_RENDER_SPRITESHEETS];
-    uint64_t numSpriteSheets;
-
     vertexBuffer_t *buffers[MAX_RENDER_BUFFERS];
     uint64_t numBuffers;
 
@@ -724,9 +649,6 @@ typedef struct
 
     texture_t *textures[MAX_RENDER_TEXTURES];
     uint64_t numTextures;
-
-    viewData_t viewData;
-    renderSceneDef_t refdef;
 
     world_t *world;
     qboolean worldLoaded;
@@ -743,13 +665,10 @@ typedef struct
 
     uint64_t frontEndMsec;
 
-    GLuint samplers[MAX_TEXTURE_UNITS];
-
     shaderProgram_t basicShader;
     shaderProgram_t imguiShader;
 } renderGlobals_t;
 
-extern shaderDrawCommands_t drawBuf;
 extern renderGlobals_t rg;
 extern glContext_t glContext;
 extern glstate_t glState;
@@ -863,8 +782,12 @@ extern cvar_t *r_measureOverdraw;
 extern cvar_t *r_ignoreGLErrors;
 extern cvar_t *r_clear;
 extern cvar_t *r_drawBuffer;
+extern cvar_t *r_customWidth;
+extern cvar_t *r_customHeight;
+
 extern cvar_t *r_maxPolys;
-extern cvar_t *r_maxPolyVerts;
+extern cvar_t *r_maxEntities;
+extern cvar_t *r_maxDLights;
 
 extern cvar_t *r_imageUpsampleType;
 extern cvar_t *r_imageUpsample;
@@ -907,12 +830,11 @@ int GL_UseProgram(GLuint program);
 void GL_BindNullProgram(void);
 void GL_BindFramebuffer(GLenum target, GLuint fbo);
 void GL_BindNullFramebuffer(GLenum target);
-void GL_BIndNullFramebuffers(void);
+void GL_BindNullFramebuffers(void);
 void GL_BindRenderbuffer(GLuint rbo);
 void GL_BindNullRenderbuffer(void);
 void GL_State(unsigned stateBits);
 void GL_ClientState( int unit, unsigned stateBits );
-void GL_SetDefaultState(void);
 void RE_BeginFrame(stereoFrame_t stereoFrame);
 void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec);
 void RB_ExecuteRenderCommands(const void *data);
@@ -936,6 +858,18 @@ void GLSL_SetUniformVec4(shaderProgram_t *program, uint32_t uniformNum, const ve
 void GLSL_SetUniformMatrix4(shaderProgram_t *program, uint32_t uniformNum, const mat4_t m);
 
 //
+// rgl_math.c
+//
+qboolean Mat4Compare( const mat4_t a, const mat4_t b );
+void Mat4Dump( const mat4_t in );
+void VectorLerp( vec3_t a, vec3_t b, float lerp, vec3_t c );
+qboolean SpheresIntersect(vec3_t origin1, float radius1, vec3_t origin2, float radius2);
+void BoundingSphereOfSpheres(vec3_t origin1, float radius1, vec3_t origin2, float radius2, vec3_t origin3, float *radius3);
+int32_t NextPowerOfTwo(int32_t in);
+uint16_t FloatToHalf( float in );
+float HalfToFloat( uint16_t in );
+
+//
 // rgl_texture.c
 //
 void R_ImageList_f(void);
@@ -946,42 +880,16 @@ void R_UpdateTextures( void );
 void R_InitTextures(void);
 texture_t *R_CreateImage(  const char *name, byte *pic, uint32_t width, uint32_t height, imgType_t type, imgFlags_t flags, int internalFormat, GLenum picFormat );
 
-extern int gl_filter_min, gl_filter_max;
-
-//
-// rgl_math.c
-//
-void Mat4Scale( float scale, const mat4_t in, mat4_t out );
-void Mat4Rotate( const vec3_t v, float angle, const mat4_t in, mat4_t out );
-void Mat4Zero( mat4_t out );
-void Mat4Identity( mat4_t out );
-void Mat4Copy( const mat4_t in, mat4_t out );
-void Mat4Multiply( const mat4_t in1, const mat4_t in2, mat4_t out );
-void Mat4Transform( const mat4_t in1, const vec4_t in2, vec4_t out );
-qboolean Mat4Compare( const mat4_t a, const mat4_t b );
-void Mat4Dump( const mat4_t in );
-void Mat4Translation( vec3_t vec, mat4_t out );
-void Mat4Ortho( float left, float right, float bottom, float top, float znear, float zfar, mat4_t out );
-void Mat4View(vec3_t axes[3], vec3_t origin, mat4_t out);
-void Mat4SimpleInverse( const mat4_t in, mat4_t out);
-int NextPowerOfTwo(int in);
-unsigned short FloatToHalf(float in);
-float HalfToFloat(unsigned short in);
+extern int32_t gl_filter_min, gl_filter_max;
 
 //
 // rgl_main.c
 //
-GDR_EXPORT nhandle_t RE_RegisterSpriteSheet(const char *shaderName, uint32_t numSprites, uint32_t spriteWidth, uint32_t spriteHeight,
-    uint32_t sheetWidth, uint32_t sheetHeight);
-void R_SortDrawSurfs(drawSurf_t *drawSurfs, uint32_t numDrawSurfs);
 void RB_MakeViewMatrix( void );
-void R_RenderView(const viewData_t *parms);
+void R_RenderView( const viewData_t *parms );
 void GL_CameraResize(void);
 qboolean R_HasExtension(const char *ext);
-void R_SortDrawSurfs(drawSurf_t *drawSurfs, uint32_t numDrawSurfs);
-void R_AddDrawSurf(surfaceType_t *surface, shader_t *shader);
 GDR_EXPORT void RE_BeginRegistration(gpuConfig_t *config);
-void R_InitSamplers(void);
 
 //
 // rgl_scene.c
@@ -995,9 +903,6 @@ GDR_EXPORT void RE_BeginScene( const renderSceneRef_t *fd );
 GDR_EXPORT void RE_EndScene( void );
 GDR_EXPORT void RE_ClearScene( void );
 void R_InitNextFrame( void );
-void RB_CheckOverflow( uint32_t verts, uint32_t indexes );
-
-extern void (*rb_surfaceTable[SF_NUM_SURFACE_TYPES])(void *);
 
 //
 // rgl_shader.c
@@ -1011,11 +916,12 @@ shader_t *R_FindShader(const char *name);
 void R_InitShaders( void );
 
 //
-// rgl_shade.c
+// rgl_draw.c
 //
-void R_DrawElements(uint32_t numIndices, glIndex_t firstIndex);
-void RB_BeginSurface(shader_t *shader);
-void RB_EndSurface(void);
+void R_DrawElements( uint32_t numElements, uintptr_t nOffset );
+void R_DrawPolys( void );
+void RB_InstantQuad(vec4_t quadVerts[4]);
+void RB_InstantQuad2(vec4_t quadVerts[4], vec2_t texCoords[4]);
 
 //
 // rgl_cache.c
@@ -1032,17 +938,13 @@ void R_InitGPUBuffers( void );
 void R_ShutdownGPUBuffers( void );
 void VBO_Bind( vertexBuffer_t *vbo );
 void VBO_SetVertexPointers(vertexBuffer_t *vbo, uint32_t attribBits);
-void RB_UpdateCache( uint32_t attribBits );
 void R_ShutdownBuffer( vertexBuffer_t *vbo );
 
-void VaoCache_Init(void);
-void VaoCache_AddSurface(drawVert_t *verts, uint64_t numVerts, glIndex_t *indexes, uint64_t numIndexes);
-void VaoCache_RecycleIndexBuffer(void);
-void VaoCache_RecycleVertexBuffer(void);
-void VaoCache_InitQueue(void);
-void VaoCache_Commit(void);
-void VaoCache_BindVao(void);
-void VaoCache_CheckAdd(qboolean *endSurface, qboolean *recycleVertexBuffer, qboolean *recycleIndexBuffer, uint32_t numVerts, uint32_t numIndexes);
+// for batch drawing
+void RB_SetBatchBuffer( vertexBuffer_t *buffer, void *vertexBuffer, uintptr_t vtxSize, void *indexBuffer, uintptr_t idxSize );
+void RB_FlushBatchBuffer( void );
+void RB_CommitDrawData( const void *verts, uint32_t numVerts, const void *indices, uint32_t numIndices );
+
 
 GDR_EXPORT void RE_BeginFrame(stereoFrame_t stereoFrame);
 GDR_EXPORT void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec);
@@ -1068,7 +970,6 @@ typedef enum
     RC_POSTPROCESS,
     RC_SWAP_BUFFERS,
     RC_DRAW_BUFFER,
-    RC_DRAW_SURFS,
     RC_COLORMASK,
 
     // mainly called from the vm
@@ -1077,14 +978,6 @@ typedef enum
 
     RC_END_OF_LIST
 } renderCmdType_t;
-
-typedef struct {
-    renderCmdType_t commandId;
-    drawSurf_t *drawSurfs;
-    uint32_t numDrawSurfs;
-    viewData_t viewData;
-    renderSceneDef_t refdef;
-} drawSurfsCmd_t;
 
 typedef struct {
     renderCmdType_t commandId;
@@ -1120,14 +1013,15 @@ typedef struct {
 } postProcessCmd_t;
 
 typedef struct {
-    drawSurf_t drawSurfs[MAX_DRAWSURFS];
-    dlight_t dlights[MAX_DLIGHTS];
-    renderEntityDef_t entities[MAX_RENDER_ENTITIES];
+    dlight_t *dlights;
+    renderEntityDef_t *entities;
+
+    glIndex_t *indices;
     polyVert_t *polyVerts;
     srfPoly_t *polys;
 
     uint64_t numPolys;
-    uint64_t numDrawSurfs;
+    uint64_t numIndices;
 
     renderCommandList_t commandList;
 } renderBackendData_t;
@@ -1137,7 +1031,6 @@ extern renderBackendData_t *backendData;
 GDR_EXPORT void RE_DrawImage( float x, float y, float w, float h, float u1, float v1, float u2, float v2, nhandle_t hShader );
 GDR_EXPORT void RE_LoadWorldMap(const char *filename);
 GDR_EXPORT void RE_SetColor(const float *rgba);
-void R_AddDrawSurfCmd( drawSurf_t *drawSurfs, uint32_t numDrawSurfs );
 void R_IssuePendingRenderCommands(void);
 
 #endif

@@ -1,6 +1,6 @@
 #include "sg_lib.h"
 
-#ifdef Q3VM_LIB_NO_INTRINSICS
+#ifdef Q3VM_LIB_USE_DEBUG_FUNCS
 size_t strlen(const char *str)
 {
     const char *s = str;

@@ -32,7 +32,7 @@ OPTIMIZERS    =\
 				-fexpensive-optimizations \
 				-funroll-loops \
 				-ffast-math \
-				-mfma -msse3 -msse2 -msse -mavx -mavx2
+				-mfma -msse3 -msse2 -mno-avx2 -mno-avx
 #				-ftree-vectorize \
 				-finline-functions \
 				-finline-small-functions \
@@ -55,8 +55,7 @@ INTERNAL_OBJS=\
 	$(O)/rendergl/rgl_backend.o \
 	$(O)/rendergl/rgl_shader.o \
 	$(O)/rendergl/rgl_cmd.o \
-	$(O)/rendergl/rgl_shade.o \
-	$(O)/rendergl/rgl_math.o \
+	$(O)/rendergl/rgl_draw.o \
 	$(O)/rendergl/rgl_extensions.o \
 	$(O)/rendergl/rgl_glsl_fallback.o \
 	$(O)/rendergl/rgl_init.o \
@@ -64,6 +63,7 @@ INTERNAL_OBJS=\
 	$(O)/rendergl/rgl_texture.o \
 	$(O)/rendergl/rgl_world.o \
 	$(O)/rendergl/rgl_main.o \
+	$(O)/rendergl/rgl_math.o \
 	$(O)/rendergl/n_shared.o \
 	$(O)/rendergl/n_math.o \
 

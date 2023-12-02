@@ -432,6 +432,10 @@ static void VM_trap_G_SetBindNames( const char **bindnames, uint32_t numbindname
 	gi.numBindNames = numbindnames;
 }
 
+static uint32_t VM_trap_Milliseconds( void ) {
+	return (uint32_t)Sys_Milliseconds();
+}
+
 static void VM_FillImport(vmRefImport_t *import, const char *name)
 {
 	import->trap_Argc = Cmd_Argc;
@@ -491,6 +495,7 @@ static void VM_FillImport(vmRefImport_t *import, const char *name)
 
 	import->G_SetBindNames = VM_trap_G_SetBindNames;
 
+	import->trap_Milliseconds = VM_trap_Milliseconds;
 	import->G_LoadMap = G_LoadMap;
 	import->trap_RE_LoadWorldMap = re.LoadWorld;
 

@@ -25,6 +25,8 @@
 #include <OpenGL/glext.h>
 #endif
 
+#include "glext.h"
+
 /*
 Possible things to add:
 [GL_ARB_sparse_buffer]

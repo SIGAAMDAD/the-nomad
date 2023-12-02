@@ -383,18 +383,6 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GL_LogError(const char *fmt, ...)
 	nglDebugMessageInsertARB(GL_DEBUG_SOURCE_APPLICATION_ARB, GL_DEBUG_TYPE_ERROR_ARB, 0, GL_DEBUG_SEVERITY_HIGH_ARB, length, msg);
 }
 
-void GL_SetProjectionMatrix(const mat4_t m)
-{
-    Mat4Copy(m, glState.projection);
-    Mat4Multiply(glState.projection, glState.modelview, glState.modelviewProjection);
-}
-
-void GL_SetModelviewMatrix(const mat4_t m)
-{
-    Mat4Copy(m, glState.modelview);
-    Mat4Multiply(glState.projection, glState.modelview, glState.modelviewProjection);
-}
-
 /*
 ===============
 RB_ShowImages
@@ -451,46 +439,9 @@ void RB_ShowImages( void ) {
 	ri.Printf( PRINT_INFO, "%lu msec to draw all images\n", end - start );
 }
 
-static void R_SortShaderByDrawSurf(shader_t **shader, uint32_t sort)
-{
-	*shader = rg.sortedShaders[sort];
-}
-
-void RB_RenderDrawSurfList(const drawSurf_t *drawSurfs, uint32_t numDrawSurfs)
-{
-    shader_t *shader, *oldShader;
-    uint32_t i;
-    uint32_t oldSort;
-    const drawSurf_t *surf;
-    double originalTime;
-
-    originalTime = backend.refdef.floatTime;
-
-    shader = NULL;
-    oldShader = NULL;
-
-	backend.pc.c_surfaces += numDrawSurfs;
-
-    for (i = 0, surf = drawSurfs; i < numDrawSurfs; i++, surf++) {
-        if (surf->sort == oldSort) {
-            if (backend.depthFill && shader && shader->sort != SS_OPAQUE)
-				continue;
-			
-			// fast path, same as previous sort
-			rb_surfaceTable[*surf->surface](surf->surface);
-			continue;
-        }
-		oldSort = surf->sort;
-    }
-}
-
 static const void *RB_SwapBuffers(const void *data)
 {
     const swapBuffersCmd_t *cmd;
-
-    // finish any drawing if needed
-    if (drawBuf.numIndices)
-        RB_EndSurface();
     
     // texture swapping test
     if (r_showImages->i)
@@ -528,14 +479,6 @@ static const void *RB_SwapBuffers(const void *data)
     return (const void *)(cmd + 1);
 }
 
-static const void *RB_DrawSurfs(const void *data)
-{
-	backend.refdef = rg.refdef;
-	backend.viewData = rg.viewData;
-
-	Mat4Copy(backend.viewData.camera.transformMatrix, glState.modelviewProjection);
-}
-
 /*
 =============
 RB_DrawBuffer
@@ -547,9 +490,8 @@ static const void	*RB_DrawBuffer( const void *data ) {
 
 	cmd = (const drawBufferCmd_t *)data;
 
-	// finish any 2D drawing if needed
-	if(drawBuf.numIndices)
-		RB_EndSurface();
+	// finish any drawing if needed
+	RB_FlushBatchBuffer();
 
 //	if (glConfig.ARB_framebuffer_object)
 //		FBO_Bind(NULL);
@@ -586,8 +528,7 @@ static const void *RB_ColorMask(const void *data) {
 	cmd = (const colorMaskCmd_t *)data;
 
 	// finish any drawing if needed
-	if (drawBuf.numIndices)
-		RB_EndSurface();
+	RB_FlushBatchBuffer();
 	
 #if 0
 	if (glConfig.ARB_framebuffer_object) {
@@ -607,70 +548,88 @@ static const void *RB_ColorMask(const void *data) {
 static const void *RB_DrawImage(const void *data) {
 	const drawImageCmd_t *cmd;
 	shader_t *shader;
+	vec3_t oldPos;
 	uint32_t numVerts, numIndices;
 
 	cmd = (const drawImageCmd_t *)data;
 
 	shader = cmd->shader;
-	if ( shader != drawBuf.shader ) {
-		if ( drawBuf.numIndices ) {
-			RB_EndSurface();
-		}
-		RB_BeginSurface( shader );
-	}
 
-	RB_CheckOverflow( 4, 6 );
-	numVerts = drawBuf.numVertices;
-	numIndices = drawBuf.numIndices;
+	RB_SetBatchBuffer( backend.drawBuffer, backendData->polyVerts, sizeof(polyVert_t), backendData->indices, sizeof(glIndex_t) );
 
-	drawBuf.numVertices += 4;
-	drawBuf.numIndices += 6;
+	// flush it since we might have already had it bound
+	RB_FlushBatchBuffer();
 
-	drawBuf.indices[ numIndices ] = numVerts + 3;
-	drawBuf.indices[ numIndices + 1 ] = numVerts + 0;
-	drawBuf.indices[ numIndices + 2 ] = numVerts + 2;
-	drawBuf.indices[ numIndices + 3 ] = numVerts + 2;
-	drawBuf.indices[ numIndices + 4 ] = numVerts + 0;
-	drawBuf.indices[ numIndices + 5 ] = numVerts + 1;
+	numVerts = backend.drawBatch.vtxOffset;
+	numIndices = backend.drawBatch.idxOffset;
+
+	backendData->indices[ numIndices ] = numVerts + 0;
+	backendData->indices[ numIndices + 1 ] = numVerts + 1;
+	backendData->indices[ numIndices + 2 ] = numVerts + 2;
+	backendData->indices[ numIndices + 3 ] = numVerts + 3;
+	backendData->indices[ numIndices + 4 ] = numVerts + 2;
+	backendData->indices[ numIndices + 5 ] = numVerts + 0;
 
 	{
-		uint16_t color[4];
-
-		VectorScale4(backend.color2D, 257, color);
-
-		VectorCopy4(color, drawBuf.color[ numVerts ]);
-		VectorCopy4(color, drawBuf.color[ numVerts + 1]);
-		VectorCopy4(color, drawBuf.color[ numVerts + 2]);
-		VectorCopy4(color, drawBuf.color[ numVerts + 3 ]);
+		VectorCopy4(backendData->polyVerts[numVerts].modulate.rgba, backend.color2D);
+		VectorCopy4(backendData->polyVerts[numVerts + 1].modulate.rgba, backend.color2D);
+		VectorCopy4(backendData->polyVerts[numVerts + 2].modulate.rgba, backend.color2D);
+		VectorCopy4(backendData->polyVerts[numVerts + 3].modulate.rgba, backend.color2D);
 	}
 
-	drawBuf.xyz[ numVerts ][0] = cmd->x;
-	drawBuf.xyz[ numVerts ][1] = cmd->y;
-	drawBuf.xyz[ numVerts ][2] = 0;
+	backendData->polyVerts[numVerts].xyz[0] = cmd->x;
+	backendData->polyVerts[numVerts].xyz[1] = cmd->y;
+	backendData->polyVerts[numVerts].xyz[2] = 0;
 
-	drawBuf.texCoords[ numVerts ][0] = cmd->u1;
-	drawBuf.texCoords[ numVerts ][1] = cmd->v1;
+	backendData->polyVerts[numVerts + 1].xyz[0] = cmd->x + cmd->w;
+	backendData->polyVerts[numVerts + 1].xyz[1] = cmd->y;
+	backendData->polyVerts[numVerts + 1].xyz[2] = 0;
 
-	drawBuf.xyz[ numVerts + 1 ][0] = cmd->x + cmd->w;
-	drawBuf.xyz[ numVerts + 1 ][1] = cmd->y;
-	drawBuf.xyz[ numVerts + 1 ][2] = 0;
+	backendData->polyVerts[numVerts + 2].xyz[0] = cmd->x + cmd->w;
+	backendData->polyVerts[numVerts + 2].xyz[1] = cmd->y + cmd->h;
+	backendData->polyVerts[numVerts + 2].xyz[2] = 0;
 
-	drawBuf.texCoords[ numVerts + 1 ][0] = cmd->u2;
-	drawBuf.texCoords[ numVerts + 1 ][1] = cmd->v1;
+	backendData->polyVerts[numVerts + 3].xyz[0] = cmd->x;
+	backendData->polyVerts[numVerts + 3].xyz[1] = cmd->y + cmd->h;
+	backendData->polyVerts[numVerts + 3].xyz[2] = 0;
 
-	drawBuf.xyz[ numVerts + 2 ][0] = cmd->x + cmd->w;
-	drawBuf.xyz[ numVerts + 2 ][1] = cmd->y + cmd->h;
-	drawBuf.xyz[ numVerts + 2 ][2] = 0;
+	backendData->polyVerts[numVerts].uv[0] = cmd->u1;
+	backendData->polyVerts[numVerts].uv[1] = cmd->v1;
 
-	drawBuf.texCoords[ numVerts + 2 ][0] = cmd->u2;
-	drawBuf.texCoords[ numVerts + 2 ][1] = cmd->v2;
+	backendData->polyVerts[numVerts + 1].uv[0] = cmd->u2;
+	backendData->polyVerts[numVerts + 1].uv[1] = cmd->v1;
 
-	drawBuf.xyz[ numVerts + 3 ][0] = cmd->x;
-	drawBuf.xyz[ numVerts + 3 ][1] = cmd->y + cmd->h;
-	drawBuf.xyz[ numVerts + 3 ][2] = 0;
+	backendData->polyVerts[numVerts + 2].uv[0] = cmd->u2;
+	backendData->polyVerts[numVerts + 2].uv[1] = cmd->v2;
 
-	drawBuf.texCoords[ numVerts + 3 ][0] = cmd->u1;
-	drawBuf.texCoords[ numVerts + 3 ][1] = cmd->v2;
+	backendData->polyVerts[numVerts + 3].uv[0] = cmd->u1;
+	backendData->polyVerts[numVerts + 3].uv[1] = cmd->v2;
+
+#if 0
+	RB_CommitDrawData( &backendData->polyVerts[numVerts], 4, &backendData->indices[numIndices], 6 );
+
+	VectorCopy( oldPos, glState.viewData.camera.origin );
+	glState.viewData.camera.origin[0] = 0.0f;
+	glState.viewData.camera.origin[1] = 0.0f;
+	RB_MakeViewMatrix();
+	VectorCopy( glState.viewData.camera.origin, oldPos );
+
+	GLSL_UseProgram( &rg.basicShader );
+	GLSL_SetUniformMatrix4( &rg.basicShader, UNIFORM_MODELVIEWPROJECTION, glState.viewData.camera.viewProjectionMatrix );
+	GLSL_SetUniformInt( &rg.basicShader, UNIFORM_DIFFUSE_MAP, 0 );
+	GL_BindTexture( 0, shader->stages[0]->image );
+
+	RB_FlushBatchBuffer();
+#endif
+	GLSL_UseProgram( NULL );
+
+	nglBegin( GL_TRIANGLES );
+	for (uint32_t i = 0; i < 6; i++) {
+		GL_BindTexture( 0, shader->stages[0]->image );
+		nglVertex2fv( backendData->polyVerts[backendData->indices[numIndices + i]].xyz );
+		nglTexCoord2fv( backendData->polyVerts[backendData->indices[numIndices + i]].uv );
+	}
+	nglEnd();
 
 	return (const void *)(cmd + 1);
 }
@@ -692,9 +651,6 @@ void RB_ExecuteRenderCommands( const void *data )
 		case RC_DRAW_IMAGE:
 			data = RB_DrawImage( data );
 			break;
-		case RC_DRAW_SURFS:
-			data = RB_DrawSurfs( data );
-			break;
 		case RC_DRAW_BUFFER:
 			data = RB_DrawBuffer( data );
 			break;
@@ -713,14 +669,10 @@ void RB_ExecuteRenderCommands( const void *data )
 //		case RC_POSTPROCESS:
 //			data = RB_PostProcess(data);
 //			break;
-//		case RC_EXPORT_CUBEMAPS:
-//			data = RB_ExportCubemaps(data);
-//			break;
 		case RC_END_OF_LIST:
 		default:
 			// finish any drawing if needed
-			if (drawBuf.numIndices)
-				RB_EndSurface();
+			RB_FlushBatchBuffer();
 
 			// stop rendering
 			t2 = ri.Milliseconds();

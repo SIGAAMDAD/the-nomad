@@ -143,18 +143,8 @@ typedef enum {
 //typedef enum
 //{} playrflags_t;
 
+#include "sg_sprites.h"
 #include "sg_state.h"
-
-typedef enum
-{
-	SPR_NULL = 0,
-
-	SPR_PLAYR_IDLE,
-	SPR_PLAYR_MOVE,
-	SPR_PLAYR_KNOCKBACK,
-	
-	NUMSPRITES
-} spritenum_t;
 
 //==============================================================
 // data types
@@ -180,6 +170,13 @@ typedef struct {
 	uint32_t damage;
 	uint32_t range;
 } weapon_t;
+
+typedef vec2_t spriteCoords_t[4];
+
+typedef struct {
+	uint32_t numSprites;
+	spriteCoords_t *texCoords;
+} spritesheet_t;
 
 typedef struct sgentity_s sgentity_t;
 
@@ -225,6 +222,8 @@ struct sgentity_s
 	statenum_t stateOffset;
 	spritenum_t sprite;
 	state_t *state;
+
+	spritesheet_t *sheet;
 	
 	sgentity_t *next;
 	sgentity_t *prev;
@@ -280,6 +279,8 @@ typedef struct
     sfxHandle_t player_death0;
     sfxHandle_t player_death1;
     sfxHandle_t player_death2;
+
+	nhandle_t raio_shader;
 
 	stringHash_t *pickupShotgun;
 } sgameMedia_t;
@@ -339,6 +340,8 @@ extern sgentity_t sg_activeEnts;
 // single-linked list of unused entities
 extern sgentity_t *sg_freeEnts;
 
+extern spritesheet_t sprites_thenomad;
+
 extern sgGlobals_t sg;
 
 // there may be weapon mods in the future, if that does happen, we'll just may a copy in the
@@ -360,7 +363,6 @@ extern vmCvar_t sg_mouseAcceleration;
 extern vmCvar_t sg_printLevelStats;
 extern vmCvar_t sg_decalDetail;
 extern vmCvar_t sg_gibs;
-extern vmCvar_t sg_drawFPS;
 extern vmCvar_t sg_levelInfoFile;
 extern vmCvar_t sg_levelIndex;
 extern vmCvar_t sg_levelDataFile;
@@ -448,10 +450,10 @@ void trap_Error(const char *fmt);
 uint32_t trap_Milliseconds( void );
 
 // console variable interaction
-void trap_Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, uint32_t flags );
-void trap_Cvar_Update( vmCvar_t *vmCvar );
-void trap_Cvar_Set( const char *var_name, const char *value );
-void trap_Cvar_VariableStringBuffer( const char *var_name, char *buffer, uint32_t bufsize );
+void Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, uint32_t flags );
+void Cvar_Update( vmCvar_t *vmCvar );
+void Cvar_Set( const char *var_name, const char *value );
+void Cvar_VariableStringBuffer( const char *var_name, char *buffer, uint32_t bufsize );
 
 // ConsoleCommand parameter access
 uint32_t trap_Argc( void );

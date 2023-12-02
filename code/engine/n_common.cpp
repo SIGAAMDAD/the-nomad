@@ -35,12 +35,12 @@ cvar_t *com_devmode;
 cvar_t *com_version;
 static int lastTime;
 int com_frameTime;
-static uint64_t com_frameNumber = 0;
+uint64_t com_frameNumber = 0;
 uint64_t com_cacheLine; // L1 cacheline
 char com_errorMessage[MAXPRINTMSG];
 static jmp_buf abortframe;
 qboolean com_errorEntered = qfalse;
-qboolean com_fullyInitialized;
+qboolean com_fullyInitialized = qfalse;
 
 /*
 ===============================================================
@@ -108,6 +108,7 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Con_Printf(const char *fmt, 
     // echo to the actual console
     Sys_Print(msg);
 
+#ifndef _WIN32
     // slap that shit into the logfile
     if (com_logfile && com_logfile->i) {
         if (logfile == FS_INVALID_HANDLE && FS_Initialized() && !opening_console) {
@@ -148,6 +149,7 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Con_Printf(const char *fmt, 
 			FS_Write( msg, strlen(msg), logfile );
         }
     }
+#endif
 }
 
 void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Con_DPrintf(const char *fmt, ...)
@@ -309,13 +311,42 @@ static void Com_PumpKeyEvents(void)
 		case SDL_KEYUP:
 			Com_QueueEvent(com_frameTime, SE_KEY, event.key.keysym.scancode, qfalse, 0, NULL);
 			break;
+		case SDL_WINDOWEVENT:
+			switch (event.window.event) {
+			case SDL_WINDOWEVENT_MOVED:
+				if (!((SDL_GetWindowFlags(G_GetSDLWindow()) & SDL_WINDOW_FULLSCREEN) && (SDL_GetWindowFlags(G_GetSDLWindow()) & SDL_WINDOW_FULLSCREEN_DESKTOP))
+				&& G_GetSDLWindow() && !(SDL_GetWindowFlags(G_GetSDLWindow()) & SDL_WINDOW_MINIMIZED)) {
+//					Cvar_SetIntegerValue( "vid_xpos", event.window.data1 );
+//					Cvar_SetIntegerValue( "vid_ypos", event.window.data2 );
+				}
+				break;
+			case SDL_WINDOWEVENT_FOCUS_LOST: Key_ClearStates(); break;
+			};
+			break;
 		case SDL_QUIT:
-			Com_QueueEvent(com_frameTime, SE_WINDOW, event.type, 0, 0, NULL);
+			Cbuf_ExecuteText( EXEC_NOW, "quit\n" );
 			break;
 		case SDL_MOUSEMOTION:
+			if (!event.motion.xrel && !event.motion.yrel) {
+				break;
+			}
+			Com_QueueEvent( com_frameTime, SE_MOUSE, event.motion.xrel, event.motion.yrel, 0, NULL );
+			break;
 		case SDL_MOUSEBUTTONUP:
 		case SDL_MOUSEBUTTONDOWN:
+			Com_QueueEvent( com_frameTime, SE_KEY, event.button.button, (event.type == SDL_MOUSEBUTTONDOWN ? qtrue : qfalse), 0, NULL );
+			break;
 		case SDL_MOUSEWHEEL:
+			if (event.wheel.y > 0) {
+				Com_QueueEvent( com_frameTime, SE_KEY, KEY_WHEEL_UP, qtrue, 0, NULL );
+				Com_QueueEvent( com_frameTime, SE_KEY, KEY_WHEEL_UP, qfalse, 0, NULL );
+			}
+			else if (event.wheel.y < 0) {
+				Com_QueueEvent( com_frameTime, SE_KEY, KEY_WHEEL_DOWN, qtrue, 0, NULL );
+				Com_QueueEvent( com_frameTime, SE_KEY, KEY_WHEEL_DOWN, qtrue, 0, NULL );
+			}
+			break;
+		default:
 			break;
 		};
 	}
@@ -451,14 +482,6 @@ static sysEvent_t Com_GetEvent(void)
 	return Com_GetRealEvent();
 }
 
-static void Com_WindowEvent(uint32_t value)
-{
-	if (value == SDL_QUIT) {
-		Cbuf_ExecuteText( EXEC_APPEND, "quit\n" );
-		Cbuf_Execute();
-	}
-}
-
 uint64_t Com_EventLoop(void)
 {
 	sysEvent_t ev;
@@ -474,9 +497,6 @@ uint64_t Com_EventLoop(void)
 		switch (ev.evType) {
 		case SE_KEY:
 			G_KeyEvent(ev.evValue, (qboolean)ev.evValue2, ev.evTime);
-			break;
-		case SE_WINDOW:
-			Com_WindowEvent(ev.evValue);
 			break;
 		case SE_MOUSE:
 			G_MouseEvent(ev.evValue, ev.evValue2);
@@ -615,7 +635,7 @@ void Com_RestartGame(void)
 		Con_ResetHistory();
 
 		// clear the filesystem before restarting the cvars
-//		FS_Shutdown(qtrue);
+		FS_Shutdown(qtrue);
 
 		// reset all cvars
 		Cvar_Restart(qtrue);
@@ -1422,7 +1442,7 @@ void Com_Init(char *commandLine)
 		Cmd_AddCommand("crash", Com_Crash_f);
 	}
 
-	com_maxfps = Cvar_Get("com_maxfps", "60", 0);
+	com_maxfps = Cvar_Get("com_maxfps", "60", CVAR_LATCH | CVAR_SAVE | CVAR_PROTECTED);
 #ifdef USE_AFFINITY_MASK
 	com_affinityMask = Cvar_Get("com_affinityMask", "", CVAR_ARCHIVE_ND);
 	Cvar_SetDescription( com_affinityMask, "Bind game process to bitmask-specified CPU core(s), special characters:\n A or a - all default cores\n P or p - performance cores\n E or e - efficiency cores\n 0x<value> - use hexadecimal notation\n + or - can be used to add or exclude particular cores" );
@@ -1451,7 +1471,7 @@ void Com_Init(char *commandLine)
 #endif
 
 	Cmd_AddCommand("shutdown", Com_Shutdown_f);
-//	Cmd_AddCommand("restart", Com_GameRestart_f); // broken
+//	Cmd_AddCommand("game_restart", Com_GameRestart_f);
 	Cmd_AddCommand("quit", Com_Quit_f);
 	Cmd_AddCommand( "writecfg", Com_WriteConfig_f );
 
@@ -1552,9 +1572,9 @@ static void Com_WriteConfig_f( void ) {
 	Com_WriteConfigToFile( filename );
 }
 
-static int Com_ModifyMsec( int msec )
+static int32_t Com_ModifyMsec( int32_t msec )
 {
-	int clampTime;
+	int32_t clampTime;
 
 	// for local single player gaming
 	// we may want to clamp the time to prevent players from
@@ -1584,29 +1604,33 @@ static int Com_TimeVal( int minMsec )
 	return timeVal;
 }
 
+static double Com_ClockToMilliseconds( clock_t ticks ) {
+	return (ticks / (double)CLOCKS_PER_SEC) * 1000.0f;
+}
+
+static int32_t com_frameMsec;
+
 /*
 Com_Frame: runs a single frame for the game
 */
 void Com_Frame( qboolean noDelay )
 {
-	static int bias = 0;
-	int msec, realMsec, minMsec;
-	int sleepMsec;
-	int timeVal;
-	int timeBeforeFirstEvents;
-	int timeBeforeEvents;
-	int timeAfter;
+	static int32_t bias = 0;
+	static int32_t lastTime;
+	int32_t msec, minMsec;
+	int32_t key;
+
+	eastl::chrono::system_clock::time_point startCap, endCap;
+	eastl::chrono::duration<double, eastl::milli> workTime, deltaCap;
+	clock_t start, end, delta;
+	double frameRate = 0, avg = 0;
 
 	if (Q_setjmp(abortframe)) {
 		return; // an ERR_DROP was thrown
 	}
 
-	minMsec = 0; // silence compiler warning
-
-	timeBeforeFirstEvents = 0;
-	timeBeforeEvents = 0;
-	timeAfter = 0;
-
+	// silence compiler warning
+	minMsec = 0;
 
 #ifdef USE_AFFINITY_MASK
 	if (com_affinityMask->modified) {
@@ -1615,54 +1639,24 @@ void Com_Frame( qboolean noDelay )
 	}
 #endif
 
-	//
-	// main event loop
-	//
-	if (noDelay) {
-		minMsec = 0;
-		bias = 0;
+	// we may want to spin here if things are going too fast
+	if ( com_maxfps->i > 0 ) {
+		minMsec = 1000 / com_maxfps->i;
+	} else {
+		minMsec = 1;
 	}
-	else {
-		if (com_maxfps->i > 0) {
-			minMsec = 1000 / com_maxfps->i;
+	do {
+		com_frameTime = Com_EventLoop();
+		if ( lastTime > com_frameTime ) {
+			lastTime = com_frameTime;		// possible on first frame
 		}
-		else {
-			minMsec = 1;
-		}
-		timeVal = com_frameTime - lastTime;
-		bias += timeVal - minMsec;
-
-		if (bias > minMsec)
-			bias = minMsec;
-		
-		// Adjust minMsec if previous frame took too long to render so
-		// that framerate is stable at the requested value.
-		minMsec -= bias;
-	}
-
-#if 0
-	// waiting for incoming events
-	if (!noDelay) {
-		do {
-			timeVal = Com_TimeVal( minMsec );
-
-			sleepMsec = timeVal;
-
-			if (timeVal > sleepMsec) {
-				Com_EventLoop();
-			}
-		} while (Com_TimeVal( minMsec ));
-	}
-#endif
-
-	lastTime = com_frameTime;
-	com_frameTime = Com_EventLoop();
-	realMsec = com_frameTime - lastTime;
-
-	Cbuf_Execute();
+		msec = com_frameTime - lastTime;
+	} while ( msec < minMsec );
+	Cbuf_Execute ();
 
 	// mess with msec if needed
-	msec = Com_ModifyMsec( realMsec );
+	com_frameMsec = msec;
+	msec = Com_ModifyMsec( msec );
 
 	//
 	// run the game loop
@@ -1670,9 +1664,19 @@ void Com_Frame( qboolean noDelay )
 	Com_EventLoop();
 	Cbuf_Execute();
 
-	G_Frame(msec, realMsec);
+	G_Frame( msec, 0 );
+
+	// run framerate diagnostics
 
 	com_frameNumber++;
+	/*
+	end = clock();
+	delta = end - start;
+
+	if (delta > 0) {
+		com_fps = CLOCKS_PER_SEC / delta;
+	}
+	*/
 }
 
 /*
