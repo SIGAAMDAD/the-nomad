@@ -208,9 +208,9 @@ int Sys_MessageBox(const char *title, const char *text, bool ShowOkAndCancelButt
 
 qboolean Sys_LowPhysicalMemory( void )
 {
-    MEMORYSTATUS stat;
-    GlobalMemoryStatus( &stat );
-    return (stat.dwTotalPhys <= MEM_THRESHOLD) ? qtrue : qfalse;
+    MEMORYSTATUSEX stat;
+    GlobalMemoryStatusEx( &stat );
+    return (stat.ullTotalPhys <= MEM_THRESHOLD) ? qtrue : qfalse;
 }
 
 void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error( const char *err, ... )

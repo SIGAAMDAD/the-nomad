@@ -293,6 +293,14 @@ typedef struct
 	// general game state
 	sgameState_t state;
 
+	uint32_t numLevels;
+	uint32_t numEntities;
+	int32_t numSaves;
+
+	int32_t previousTime;
+	int32_t levelTime;
+	int32_t framenum;
+
 	sgentity_t wallEntity; // for raycasts
 
 	// current map's name
@@ -322,23 +330,16 @@ typedef struct
 	int32_t checkpointIndex;
 	
     mapinfo_t mapInfo; // this structure's pretty big, so only 1 instance in the vm
-	int32_t leveltime;
 } sgGlobals_t;
 
 //==============================================================
 // globals
 //
 
-extern uint32_t sg_numLevels;
-
 extern const vec3_t dirvectors[NUMDIRS];
 extern const dirtype_t inversedirs[NUMDIRS];
 
-extern sgentity_t sg_entList[MAXENTITIES];
-// doubly-linked list of allocated entities
-extern sgentity_t sg_activeEnts;
-// single-linked list of unused entities
-extern sgentity_t *sg_freeEnts;
+extern sgentity_t sg_entities[MAXENTITIES];
 
 extern spritesheet_t sprites_thenomad;
 
@@ -367,6 +368,7 @@ extern vmCvar_t sg_levelInfoFile;
 extern vmCvar_t sg_levelIndex;
 extern vmCvar_t sg_levelDataFile;
 extern vmCvar_t sg_savename;
+extern vmCvar_t sg_numSaves;
 
 //==============================================================
 // functions
@@ -458,7 +460,6 @@ void Cvar_VariableStringBuffer( const char *var_name, char *buffer, uint32_t buf
 // ConsoleCommand parameter access
 uint32_t trap_Argc( void );
 void trap_Argv( uint32_t n, char *buffer, uint32_t bufferLength );
-void trap_Args( char *buffer, uint32_t bufferLength );
 
 // filesystem access
 file_t trap_FS_FOpenRead( const char *npath );

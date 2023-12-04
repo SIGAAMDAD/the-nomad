@@ -43,8 +43,6 @@ int32_t vmMain(int32_t command, int32_t arg0, int32_t arg1, int32_t arg2, int32_
 
 sgGlobals_t sg;
 
-uint32_t sg_numLevels;
-
 vmCvar_t sg_debugPrint;
 vmCvar_t sg_paused;
 vmCvar_t sg_pmAirAcceleration;
@@ -60,6 +58,7 @@ vmCvar_t sg_levelInfoFile;
 vmCvar_t sg_levelIndex;
 vmCvar_t sg_levelDataFile;
 vmCvar_t sg_savename;
+vmCvar_t sg_numSaves;
 
 static const char *bindnames[] = {
     "forward",
@@ -99,8 +98,9 @@ static cvarTable_t cvarTable[] = {
     { "sg_printLevelStats",             "1",            &sg_printLevelStats,        CVAR_LATCH | CVAR_TEMP },
     { "sg_decalDetail",                 "3",            &sg_decalDetail,            CVAR_LATCH | CVAR_SAVE },
     { "sg_gibs",                        "0",            &sg_gibs,                   CVAR_LATCH | CVAR_SAVE },
-    { "sg_levelInfoFile",               "levels.txt",   &sg_levelInfoFile,          CVAR_INIT | CVAR_ROM },
+    { "sg_levelInfoFile",               "levels.txt",   &sg_levelInfoFile,          CVAR_INIT | CVAR_LATCH },
     { "sg_savename",                    "savedata.ngd", &sg_savename,               CVAR_LATCH | CVAR_TEMP },
+    { "sg_numSaves",                    "0",            &sg_numSaves,               CVAR_LATCH | CVAR_TEMP },
 };
 
 static uint32_t cvarTableSize = arraylen(cvarTable);
@@ -120,9 +120,7 @@ void SG_UpdateCvars( void )
     uint32_t i;
     cvarTable_t *cv;
 
-    for (i = 0, cv = cvarTable; i < cvarTableSize; i++, cv++) {
-        Cvar_Update( cv->cvar );
-    }
+    Cvar_Update( &sg_paused );
 }
 
 void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL G_Printf(const char *fmt, ...)
@@ -224,12 +222,34 @@ void GDR_DECL GDR_ATTRIBUTE((format(printf, 1, 2))) Con_Printf(const char *fmt, 
 
 //#endif
 
-int32_t SG_RunLoop( int32_t msec )
+int32_t SG_RunLoop( int32_t levelTime )
 {
-    // increment the ticker
-    sg.leveltime++;
+    int32_t i;
+    int32_t start, end;
+    int32_t msec;
+    sgentity_t *ent;
 
-    Ent_RunTic();
+    sg.framenum++;
+    sg.previousTime = sg.framenum;
+    sg.levelTime = levelTime;
+    msec = sg.levelTime - sg.previousTime;
+
+    // get any cvar changes
+    SG_UpdateCvars();
+
+    //
+    // go through all allocated entities
+    //
+    start = trap_Milliseconds();
+    ent = &sg_entities[0];
+    for ( i = 0; i < sg.numEntities; i++) {
+        if ( !ent->health ) {
+            continue;
+        }
+
+        
+    }
+    end = trap_Milliseconds();
 }
 
 
