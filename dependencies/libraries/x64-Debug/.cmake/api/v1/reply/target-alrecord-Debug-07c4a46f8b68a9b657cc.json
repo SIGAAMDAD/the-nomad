@@ -1,0 +1,234 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "alrecord.exe"
+		},
+		{
+			"path" : "alrecord.pdb"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_executable",
+			"install",
+			"target_link_libraries",
+			"set_target_properties"
+		],
+		"files" : 
+		[
+			"CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 1709,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 1825,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 1710,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 1701,
+				"parent" : 0
+			},
+			{
+				"command" : 3,
+				"file" : 0,
+				"line" : 1711,
+				"parent" : 0
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "/DWIN32 /D_WINDOWS /MDd /Zi /Ob0 /Od /RTC1 -std:c11"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "/W4"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "/w14640"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "/wd4065"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "/wd4127"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "/wd4268"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "/wd4324"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "/wd5030"
+				},
+				{
+					"backtrace" : 3,
+					"fragment" : "/wd5051"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 3,
+					"define" : "NOMINMAX"
+				},
+				{
+					"backtrace" : 3,
+					"define" : "RESTRICT=__restrict"
+				},
+				{
+					"backtrace" : 3,
+					"define" : "_CRT_SECURE_NO_WARNINGS"
+				},
+				{
+					"backtrace" : 3,
+					"define" : "_WIN32"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 3,
+					"path" : "C:/Users/Noah/source/repos/openal-soft/common"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "C:/Users/Noah/source/repos/openal-soft/include"
+				},
+				{
+					"backtrace" : 3,
+					"path" : "C:/Users/Noah/source/repos/openal-soft/include/AL"
+				}
+			],
+			"language" : "C",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					5
+				],
+				"standard" : "11"
+			},
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 3,
+			"id" : "OpenAL::@6890427a1f51a3e7e1df"
+		},
+		{
+			"backtrace" : 3,
+			"id" : "al-excommon::@6890427a1f51a3e7e1df"
+		}
+	],
+	"id" : "alrecord::@6890427a1f51a3e7e1df",
+	"install" : 
+	{
+		"destinations" : 
+		[
+			{
+				"backtrace" : 2,
+				"path" : "bin"
+			}
+		],
+		"prefix" : 
+		{
+			"path" : "C:/Users/Noah/Source/Repos/openal-soft/out/install/x64-Debug"
+		}
+	},
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "/DWIN32 /D_WINDOWS /MDd /Zi /Ob0 /Od /RTC1",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "/machine:x64 /debug /INCREMENTAL /subsystem:console",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 3,
+				"fragment" : "al-excommon.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 4,
+				"fragment" : "OpenAL32.lib",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
+				"role" : "libraries"
+			}
+		],
+		"language" : "C"
+	},
+	"name" : "alrecord",
+	"nameOnDisk" : "alrecord.exe",
+	"paths" : 
+	{
+		"build" : ".",
+		"source" : "."
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "examples/alrecord.c",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "EXECUTABLE"
+}

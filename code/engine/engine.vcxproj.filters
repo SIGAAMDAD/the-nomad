@@ -1,0 +1,248 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\game">
+      <UniqueIdentifier>{19af83b5-fc95-4573-bf5c-77f0fce25485}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\engine">
+      <UniqueIdentifier>{55416314-40bd-429e-af46-9ddc07d12355}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ui">
+      <UniqueIdentifier>{a2e60679-71e3-4394-998c-008338f2eb7a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\imgui">
+      <UniqueIdentifier>{8f1b2aa8-f055-4c4c-b072-b00711ddd323}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\game">
+      <UniqueIdentifier>{8f8a845d-7b6f-4f6a-a5ef-9103a0b56ada}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\engine">
+      <UniqueIdentifier>{43ce81b0-6ace-41d5-958f-ec492c3309b4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ui">
+      <UniqueIdentifier>{93d8c63c-a199-404b-b4db-346fbe101600}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\imgui">
+      <UniqueIdentifier>{1c24ac8b-87bd-4a24-9204-ad05ebee5b06}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\game\g_archive.h">
+      <Filter>Header Files\game</Filter>
+    </ClInclude>
+    <ClInclude Include="..\game\g_game.h">
+      <Filter>Header Files\game</Filter>
+    </ClInclude>
+    <ClInclude Include="..\game\g_sound.h">
+      <Filter>Header Files\game</Filter>
+    </ClInclude>
+    <ClInclude Include="..\game\g_vmimgui.h">
+      <Filter>Header Files\game</Filter>
+    </ClInclude>
+    <ClInclude Include="gln_files.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="keycodes.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="n_cvar.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="n_common.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="n_debug.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="n_shared.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="n_steam.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\system\sys_thread.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\system\sys_timer.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="vm_local.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ui\ui_defs.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ui\ui_menu.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ui\ui_lib.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ui\ui_public.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ui\ui_string_manager.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ui\ui_string_table.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ui\ui_strings.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ui\ui_window.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rendercommon\r_public.h">
+      <Filter>Header Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rendercommon\r_types.h">
+      <Filter>Header Files\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sgame\sg_public.h">
+      <Filter>Header Files\game</Filter>
+    </ClInclude>
+    <ClInclude Include="..\win32\resource.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\win32\win_local.h">
+      <Filter>Header Files\engine</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\game\g_event.cpp">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\game\g_game.cpp">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\game\g_console.cpp">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\game\g_imgui.cpp">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\game\g_archive.cpp">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\game\g_sound.cpp">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\game\g_sgame.cpp">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\game\g_ui.cpp">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\game\g_screen.cpp">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
+    <ClCompile Include="n_cmd.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="md4.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="n_debug.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="n_math.c">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="n_common.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="n_memory.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="n_shared.c">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="vm_interpreted.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="vm.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="vm_x86.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ui\ui_main.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ui\ui_main_menu.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ui\ui_pause.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ui\ui_settings.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ui\ui_single_player.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ui\ui_string_manager.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ui\ui_title.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ui\ui_window.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_impl_sdl2.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_tables.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_widgets.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_draw.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_impl_opengl3.cpp">
+      <Filter>Source Files\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\win32\win_main.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\win32\win_shared.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="n_history.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="n_cvar.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="n_files.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\win32\win_syscon.cpp">
+      <Filter>Source Files\engine</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\system\sys_thread.inl">
+      <Filter>Header Files\engine</Filter>
+    </None>
+  </ItemGroup>
+</Project>

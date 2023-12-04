@@ -1,0 +1,13 @@
+prefix=C:/Users/Noah/Source/Repos/libsndfile/out/install/x64-Debug
+exec_prefix=${prefix}
+libdir=C:/Users/Noah/Source/Repos/libsndfile/out/install/x64-Debug/lib
+includedir=C:/Users/Noah/Source/Repos/libsndfile/out/install/x64-Debug/include
+
+Name: sndfile
+Description: A library for reading and writing audio files
+Requires:
+Requires.private:  
+Version: 1.2.2
+Libs: -L${libdir} -lsndfile
+Libs.private: 
+Cflags: -I${includedir}

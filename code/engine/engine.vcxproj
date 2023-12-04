@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{5a15cb1b-ce4d-4171-a700-6b54cc26df40}</ProjectGuid>
+    <RootNamespace>engine</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>glnomad</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>.\Debug\</OutDir>
+    <TargetName>glnomad</TargetName>
+    <IncludePath>C:\Users\Noah\source\repos\gl-nomad\code\EASTL;C:\Users\Noah\source\repos\gl-nomad\code\;C:\Users\Noah\source\repos\gl-nomad\code\glm\;C:\Users\Noah\source\repos\gl-nomad\dependencies\include\;$(IncludePath)</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);C:\Users\Noah\source\repos\gl-nomad\dependencies\libraries;C:\Users\Noah\source\repos\gl-nomad\dependencies\libraries\x64-Debug\</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>C:\Users\Noah\source\repos\gl-nomad\code\EASTL;C:\Users\Noah\source\repos\gl-nomad\code\;C:\Users\Noah\source\repos\gl-nomad\code\glm\;C:\Users\Noah\source\repos\gl-nomad\dependencies\include\;$(IncludePath)</IncludePath>
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);C:\Users\Noah\source\repos\gl-nomad\dependencies\libraries;C:\Users\Noah\source\repos\gl-nomad\dependencies\libraries\x64-Debug\</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level1</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);_NOMAD_DEBUG;_NOMAD_VERSION=1;_NOMAD_VERSION_UPDATE=1;_NOMAD_VERSION_PATCH=0</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <Optimization>Disabled</Optimization>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>false</OmitFramePointers>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <CompileAs>CompileAsCpp</CompileAs>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OutputFile>.\Debug\glnomad.exe</OutputFile>
+      <ShowProgress>LinkVerbose</ShowProgress>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level1</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);_NOMAD_VERSION=1;_NOMAD_VERSION_UPDATE=1;_NOMAD_VERSION_PATCH=0;_NOMAD_VERSION=1;_NOMAD_VERSION_UPDATE=1;_NOMAD_VERSION_PATCH=0;_NOMAD_VERSION=1;_NOMAD_VERSION_UPDATE=1;_NOMAD_VERSION_PATCH=0</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <Optimization>Disabled</Optimization>
+      <OmitFramePointers>false</OmitFramePointers>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <CompileAs>CompileAsCpp</CompileAs>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\game\g_archive.h" />
+    <ClInclude Include="..\game\g_game.h" />
+    <ClInclude Include="..\game\g_sound.h" />
+    <ClInclude Include="..\game\g_vmimgui.h" />
+    <ClInclude Include="..\rendercommon\r_public.h" />
+    <ClInclude Include="..\rendercommon\r_types.h" />
+    <ClInclude Include="..\sgame\sg_public.h" />
+    <ClInclude Include="..\system\sys_thread.h" />
+    <ClInclude Include="..\system\sys_timer.h" />
+    <ClInclude Include="..\ui\ui_defs.h" />
+    <ClInclude Include="..\ui\ui_lib.h" />
+    <ClInclude Include="..\ui\ui_menu.h" />
+    <ClInclude Include="..\ui\ui_public.h" />
+    <ClInclude Include="..\ui\ui_strings.h" />
+    <ClInclude Include="..\ui\ui_string_manager.h" />
+    <ClInclude Include="..\ui\ui_string_table.h" />
+    <ClInclude Include="..\ui\ui_window.h" />
+    <ClInclude Include="..\win32\resource.h" />
+    <ClInclude Include="..\win32\win_local.h" />
+    <ClInclude Include="gln_files.h" />
+    <ClInclude Include="keycodes.h" />
+    <ClInclude Include="n_common.h" />
+    <ClInclude Include="n_cvar.h" />
+    <ClInclude Include="n_debug.h" />
+    <ClInclude Include="n_shared.h" />
+    <ClInclude Include="n_steam.h" />
+    <ClInclude Include="vm_local.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\game\g_archive.cpp" />
+    <ClCompile Include="..\game\g_console.cpp" />
+    <ClCompile Include="..\game\g_event.cpp" />
+    <ClCompile Include="..\game\g_game.cpp" />
+    <ClCompile Include="..\game\g_imgui.cpp" />
+    <ClCompile Include="..\game\g_screen.cpp" />
+    <ClCompile Include="..\game\g_sgame.cpp" />
+    <ClCompile Include="..\game\g_sound.cpp" />
+    <ClCompile Include="..\game\g_ui.cpp" />
+    <ClCompile Include="..\ui\ui_main.cpp" />
+    <ClCompile Include="..\ui\ui_main_menu.cpp" />
+    <ClCompile Include="..\ui\ui_pause.cpp" />
+    <ClCompile Include="..\ui\ui_settings.cpp" />
+    <ClCompile Include="..\ui\ui_single_player.cpp" />
+    <ClCompile Include="..\ui\ui_string_manager.cpp" />
+    <ClCompile Include="..\ui\ui_title.cpp" />
+    <ClCompile Include="..\ui\ui_window.cpp" />
+    <ClCompile Include="..\win32\win_main.cpp" />
+    <ClCompile Include="..\win32\win_shared.cpp" />
+    <ClCompile Include="..\win32\win_syscon.cpp" />
+    <ClCompile Include="imgui.cpp" />
+    <ClCompile Include="imgui_draw.cpp" />
+    <ClCompile Include="imgui_impl_opengl3.cpp" />
+    <ClCompile Include="imgui_impl_sdl2.cpp" />
+    <ClCompile Include="imgui_tables.cpp" />
+    <ClCompile Include="imgui_widgets.cpp" />
+    <ClCompile Include="md4.cpp" />
+    <ClCompile Include="n_cmd.cpp" />
+    <ClCompile Include="n_common.cpp" />
+    <ClCompile Include="n_cvar.cpp" />
+    <ClCompile Include="n_debug.cpp" />
+    <ClCompile Include="n_files.cpp" />
+    <ClCompile Include="n_history.cpp" />
+    <ClCompile Include="n_math.c" />
+    <ClCompile Include="n_memory.cpp" />
+    <ClCompile Include="n_shared.c" />
+    <ClCompile Include="vm.cpp" />
+    <ClCompile Include="vm_interpreted.cpp" />
+    <ClCompile Include="vm_x86.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\system\sys_thread.inl" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,0 +1,12 @@
+prefix=C:/Users/Noah/Source/Repos/openal-soft/out/install/x64-Debug
+exec_prefix=${prefix}
+libdir=C:/Users/Noah/Source/Repos/openal-soft/out/install/x64-Debug/lib
+includedir=C:/Users/Noah/Source/Repos/openal-soft/out/install/x64-Debug/include
+
+Name: OpenAL
+Description: OpenAL is a cross-platform 3D audio API
+Requires: 
+Version: 1.23.1
+Libs: -L${libdir} -lOpenAL32 
+Libs.private:
+Cflags: -I${includedir} -I${includedir}/AL 

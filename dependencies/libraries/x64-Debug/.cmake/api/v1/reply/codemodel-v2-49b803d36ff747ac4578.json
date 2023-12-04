@@ -1,0 +1,133 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1
+					],
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-dac2871e3e40658f58d5.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.13"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5
+					]
+				},
+				{
+					"build" : "utils/alsoft-config",
+					"jsonFile" : "directory-utils.alsoft-config-Debug-f0fefb299cdc29ff3351.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.13"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "utils/alsoft-config"
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1
+					],
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "OpenAL",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						1
+					],
+					"name" : "alsoft-config",
+					"parentIndex" : 0
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "OpenAL::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-OpenAL-Debug-7e6f1cf8ab12b1ae78ca.json",
+					"name" : "OpenAL",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "al-excommon::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-al-excommon-Debug-fb4cbe6abb2a9ec11a4a.json",
+					"name" : "al-excommon",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "alcommon::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-alcommon-Debug-defa69aee0aae0c09e71.json",
+					"name" : "alcommon",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "alrecord::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-alrecord-Debug-07c4a46f8b68a9b657cc.json",
+					"name" : "alrecord",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "altonegen::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-altonegen-Debug-418b4373ae62b4f41ec5.json",
+					"name" : "altonegen",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "openal-info::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-openal-info-Debug-dd2a8cc81108d02d1320.json",
+					"name" : "openal-info",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug",
+		"source" : "C:/Users/Noah/source/repos/openal-soft"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 6
+	}
+}

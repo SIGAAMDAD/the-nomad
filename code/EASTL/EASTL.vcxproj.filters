@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files\config">
+      <UniqueIdentifier>{062878ee-7a28-4a2a-a024-028dfe7b7b31}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="eahave.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EABase\eabase.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EABase\earesult.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EABase\eastdarg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EABase\eaunits.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EABase\int128.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EABase\nullptr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EABase\version.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EABase\config\eacompilertraits.h">
+      <Filter>Header Files\config</Filter>
+    </ClInclude>
+    <ClInclude Include="EABase\config\eacompiler.h">
+      <Filter>Header Files\config</Filter>
+    </ClInclude>
+    <ClInclude Include="EABase\config\eaplatform.h">
+      <Filter>Header Files\config</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="allocator_eastl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="assert.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="thread_support.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="string.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="red_black_tree.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="numeric_limits.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="fixed_pool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="intrusive_list.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="hashtable.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

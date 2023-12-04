@@ -1,0 +1,854 @@
+
+---
+events:
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CMakeDetermineSystem.cmake:211 (message)"
+      - "CMakeLists.txt:65 (project)"
+    message: |
+      The system is: Windows - 10.0.22621 - AMD64
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:65 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+      Compiler: C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.38.33130/bin/Hostx64/x64/cl.exe 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      Microsoft (R) C/C++ Optimizing Compiler Version 19.38.33130 for x64
+      Copyright (C) Microsoft Corporation.  All rights reserved.
+      
+      CMakeCCompilerId.c
+      Microsoft (R) Incremental Linker Version 14.38.33130.0
+      Copyright (C) Microsoft Corporation.  All rights reserved.
+      
+      /out:CMakeCCompilerId.exe 
+      CMakeCCompilerId.obj 
+      
+      
+      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CMakeCCompilerId.exe"
+      
+      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "CMakeCCompilerId.obj"
+      
+      The C compiler identification is MSVC, found in:
+        C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/3.27.2-msvc1/CompilerIdC/CMakeCCompilerId.exe
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CMakeDetermineCompilerId.cmake:1158 (message)"
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CMakeDetermineCompilerId.cmake:221 (CMAKE_DETERMINE_MSVC_SHOWINCLUDES_PREFIX)"
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:65 (project)"
+    message: |
+      Detecting C compiler /showIncludes prefix:
+        main.c
+        Note: including file: C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\ShowIncludes\\foo.h
+        
+      Found prefix "Note: including file: "
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:65 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+      Compiler: C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.38.33130/bin/Hostx64/x64/cl.exe 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      Microsoft (R) C/C++ Optimizing Compiler Version 19.38.33130 for x64
+      Copyright (C) Microsoft Corporation.  All rights reserved.
+      
+      CMakeCXXCompilerId.cpp
+      Microsoft (R) Incremental Linker Version 14.38.33130.0
+      Copyright (C) Microsoft Corporation.  All rights reserved.
+      
+      /out:CMakeCXXCompilerId.exe 
+      CMakeCXXCompilerId.obj 
+      
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CMakeCXXCompilerId.exe"
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "CMakeCXXCompilerId.obj"
+      
+      The CXX compiler identification is MSVC, found in:
+        C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/3.27.2-msvc1/CompilerIdCXX/CMakeCXXCompilerId.exe
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CMakeDetermineCompilerId.cmake:1158 (message)"
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CMakeDetermineCompilerId.cmake:221 (CMAKE_DETERMINE_MSVC_SHOWINCLUDES_PREFIX)"
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:65 (project)"
+    message: |
+      Detecting CXX compiler /showIncludes prefix:
+        main.c
+        Note: including file: C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\ShowIncludes\\foo.h
+        
+      Found prefix "Note: including file: "
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CMakeDetermineCompilerABI.cmake:57 (try_compile)"
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:65 (project)"
+    checks:
+      - "Detecting C compiler ABI info"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-v8g52y"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-v8g52y"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "CMAKE_C_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-v8g52y'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_7b990
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_7b990.dir\\CMakeCCompilerABI.c.obj /FdCMakeFiles\\cmTC_7b990.dir\\ /FS -c "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\share\\cmake-3.27\\Modules\\CMakeCCompilerABI.c"
+        [2/2] cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_7b990.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_7b990.dir\\CMakeCCompilerABI.c.obj  /out:cmTC_7b990.exe /implib:cmTC_7b990.lib /pdb:cmTC_7b990.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CMakeDetermineCompilerABI.cmake:57 (try_compile)"
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:65 (project)"
+    checks:
+      - "Detecting CXX compiler ABI info"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-nkhldm"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-nkhldm"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+    buildResult:
+      variable: "CMAKE_CXX_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-nkhldm'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_543a4
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP   /DWIN32 /D_WINDOWS /EHsc  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_543a4.dir\\CMakeCXXCompilerABI.cpp.obj /FdCMakeFiles\\cmTC_543a4.dir\\ /FS -c "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\share\\cmake-3.27\\Modules\\CMakeCXXCompilerABI.cpp"
+        [2/2] cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_543a4.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_543a4.dir\\CMakeCXXCompilerABI.cpp.obj  /out:cmTC_543a4.exe /implib:cmTC_543a4.lib /pdb:cmTC_543a4.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckCXXSourceCompiles.cmake:52 (cmake_check_source_compiles)"
+      - "CMakeLists.txt:194 (check_cxx_source_compiles)"
+    checks:
+      - "Performing Test HAVE_STDC_FORMAT_MACROS"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-2j43ay"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-2j43ay"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Noah/source/repos/openal-soft/cmake"
+    buildResult:
+      variable: "HAVE_STDC_FORMAT_MACROS"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-2j43ay'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_2aa65
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DHAVE_STDC_FORMAT_MACROS  /DWIN32 /D_WINDOWS /EHsc  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_2aa65.dir\\src.cxx.obj /FdCMakeFiles\\cmTC_2aa65.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-2j43ay\\src.cxx
+        [2/2] cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_2aa65.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_2aa65.dir\\src.cxx.obj  /out:cmTC_2aa65.exe /implib:cmTC_2aa65.lib /pdb:cmTC_2aa65.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckCXXSourceCompiles.cmake:52 (cmake_check_source_compiles)"
+      - "CMakeLists.txt:223 (check_cxx_source_compiles)"
+    checks:
+      - "Performing Test HAVE___RESTRICT"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-xjz4g2"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-xjz4g2"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Noah/source/repos/openal-soft/cmake"
+    buildResult:
+      variable: "HAVE___RESTRICT"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-xjz4g2'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_fdcf3
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DHAVE___RESTRICT  /DWIN32 /D_WINDOWS /EHsc  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_fdcf3.dir\\src.cxx.obj /FdCMakeFiles\\cmTC_fdcf3.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-xjz4g2\\src.cxx
+        [2/2] cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_fdcf3.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_fdcf3.dir\\src.cxx.obj  /out:cmTC_fdcf3.exe /implib:cmTC_fdcf3.lib /pdb:cmTC_fdcf3.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckCXXSourceCompiles.cmake:52 (cmake_check_source_compiles)"
+      - "CMakeLists.txt:234 (check_cxx_source_compiles)"
+    checks:
+      - "Performing Test HAVE_LIBATOMIC"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-fw3k9u"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-fw3k9u"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Noah/source/repos/openal-soft/cmake"
+    buildResult:
+      variable: "HAVE_LIBATOMIC"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-fw3k9u'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_c3dd3
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DHAVE_LIBATOMIC  /DWIN32 /D_WINDOWS /EHsc  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_c3dd3.dir\\src.cxx.obj /FdCMakeFiles\\cmTC_c3dd3.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-fw3k9u\\src.cxx
+        [2/2] cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_c3dd3.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_c3dd3.dir\\src.cxx.obj  /out:cmTC_c3dd3.exe /implib:cmTC_c3dd3.lib /pdb:cmTC_c3dd3.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  atomic.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        FAILED: cmTC_c3dd3.exe 
+        cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_c3dd3.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_c3dd3.dir\\src.cxx.obj  /out:cmTC_c3dd3.exe /implib:cmTC_c3dd3.lib /pdb:cmTC_c3dd3.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  atomic.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        LINK Pass 1: command "C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_c3dd3.dir\\src.cxx.obj /out:cmTC_c3dd3.exe /implib:cmTC_c3dd3.lib /pdb:cmTC_c3dd3.pdb /version:0.0 /machine:x64 /debug /INCREMENTAL /subsystem:console atomic.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTFILE:CMakeFiles\\cmTC_c3dd3.dir/intermediate.manifest CMakeFiles\\cmTC_c3dd3.dir/manifest.res" failed (exit code 1104) with the following output:
+        LINK : fatal error LNK1104: cannot open file 'atomic.lib'\x0d
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckCXXCompilerFlag.cmake:34 (cmake_check_compiler_flag)"
+      - "CMakeLists.txt:256 (check_cxx_compiler_flag)"
+    checks:
+      - "Performing Test HAVE_PERMISSIVE_SWITCH"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-yapvl3"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-yapvl3"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: "/DWIN32 /D_WINDOWS /EHsc"
+      CMAKE_CXX_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Noah/source/repos/openal-soft/cmake"
+    buildResult:
+      variable: "HAVE_PERMISSIVE_SWITCH"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-yapvl3'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_fcca0
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo /TP -DHAVE_PERMISSIVE_SWITCH  /DWIN32 /D_WINDOWS /EHsc  /MDd /Zi /Ob0 /Od /RTC1   /permissive- /showIncludes /FoCMakeFiles\\cmTC_fcca0.dir\\src.cxx.obj /FdCMakeFiles\\cmTC_fcca0.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-yapvl3\\src.cxx
+        [2/2] cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_fcca0.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_fcca0.dir\\src.cxx.obj  /out:cmTC_fcca0.exe /implib:cmTC_fcca0.lib /pdb:cmTC_fcca0.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckIncludeFile.cmake:90 (try_compile)"
+      - "CMakeLists.txt:404 (check_include_file)"
+    checks:
+      - "Looking for xmmintrin.h"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-ww3mnp"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-ww3mnp"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Noah/source/repos/openal-soft/cmake"
+    buildResult:
+      variable: "HAVE_XMMINTRIN_H"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-ww3mnp'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_1401c
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_1401c.dir\\CheckIncludeFile.c.obj /FdCMakeFiles\\cmTC_1401c.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-ww3mnp\\CheckIncludeFile.c
+        [2/2] cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_1401c.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_1401c.dir\\CheckIncludeFile.c.obj  /out:cmTC_1401c.exe /implib:cmTC_1401c.lib /pdb:cmTC_1401c.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckIncludeFile.cmake:90 (try_compile)"
+      - "CMakeLists.txt:405 (check_include_file)"
+    checks:
+      - "Looking for emmintrin.h"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-vh9qyh"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-vh9qyh"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Noah/source/repos/openal-soft/cmake"
+    buildResult:
+      variable: "HAVE_EMMINTRIN_H"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-vh9qyh'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_7493c
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_7493c.dir\\CheckIncludeFile.c.obj /FdCMakeFiles\\cmTC_7493c.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-vh9qyh\\CheckIncludeFile.c
+        [2/2] cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_7493c.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_7493c.dir\\CheckIncludeFile.c.obj  /out:cmTC_7493c.exe /implib:cmTC_7493c.lib /pdb:cmTC_7493c.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckIncludeFile.cmake:90 (try_compile)"
+      - "CMakeLists.txt:406 (check_include_file)"
+    checks:
+      - "Looking for pmmintrin.h"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-e7fy5e"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-e7fy5e"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Noah/source/repos/openal-soft/cmake"
+    buildResult:
+      variable: "HAVE_PMMINTRIN_H"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-e7fy5e'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_3ce38
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_3ce38.dir\\CheckIncludeFile.c.obj /FdCMakeFiles\\cmTC_3ce38.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-e7fy5e\\CheckIncludeFile.c
+        [2/2] cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_3ce38.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_3ce38.dir\\CheckIncludeFile.c.obj  /out:cmTC_3ce38.exe /implib:cmTC_3ce38.lib /pdb:cmTC_3ce38.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckIncludeFile.cmake:90 (try_compile)"
+      - "CMakeLists.txt:407 (check_include_file)"
+    checks:
+      - "Looking for smmintrin.h"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-j3bscb"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-j3bscb"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Noah/source/repos/openal-soft/cmake"
+    buildResult:
+      variable: "HAVE_SMMINTRIN_H"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-j3bscb'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_af7ac
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_af7ac.dir\\CheckIncludeFile.c.obj /FdCMakeFiles\\cmTC_af7ac.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-j3bscb\\CheckIncludeFile.c
+        [2/2] cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_af7ac.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_af7ac.dir\\CheckIncludeFile.c.obj  /out:cmTC_af7ac.exe /implib:cmTC_af7ac.lib /pdb:cmTC_af7ac.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckIncludeFile.cmake:90 (try_compile)"
+      - "CMakeLists.txt:408 (check_include_file)"
+    checks:
+      - "Looking for arm_neon.h"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-v5ahra"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-v5ahra"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Noah/source/repos/openal-soft/cmake"
+    buildResult:
+      variable: "HAVE_ARM_NEON_H"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-v5ahra'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_45a54
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_45a54.dir\\CheckIncludeFile.c.obj /FdCMakeFiles\\cmTC_45a54.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-v5ahra\\CheckIncludeFile.c
+        FAILED: CMakeFiles/cmTC_45a54.dir/CheckIncludeFile.c.obj 
+        C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_45a54.dir\\CheckIncludeFile.c.obj /FdCMakeFiles\\cmTC_45a54.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-v5ahra\\CheckIncludeFile.c
+        C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.38.33130\\include\\arm_neon.h(21): fatal error C1189: #error:  This header is specific to ARM targets
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckCSourceCompiles.cmake:52 (cmake_check_source_compiles)"
+      - "CMakeLists.txt:508 (check_c_source_compiles)"
+    checks:
+      - "Performing Test HAVE_SSE_INTRINSICS"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-1d7sc1"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-1d7sc1"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Noah/source/repos/openal-soft/cmake"
+    buildResult:
+      variable: "HAVE_SSE_INTRINSICS"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-1d7sc1'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_42c21
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo -DHAVE_SSE_INTRINSICS  /DWIN32 /D_WINDOWS  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_42c21.dir\\src.c.obj /FdCMakeFiles\\cmTC_42c21.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-1d7sc1\\src.c
+        [2/2] cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_42c21.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_42c21.dir\\src.c.obj  /out:cmTC_42c21.exe /implib:cmTC_42c21.lib /pdb:cmTC_42c21.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckIncludeFile.cmake:90 (try_compile)"
+      - "CMakeLists.txt:515 (check_include_file)"
+    checks:
+      - "Looking for malloc.h"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-yjvm1e"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-yjvm1e"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Noah/source/repos/openal-soft/cmake"
+    buildResult:
+      variable: "HAVE_MALLOC_H"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-yjvm1e'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_de764
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_de764.dir\\CheckIncludeFile.c.obj /FdCMakeFiles\\cmTC_de764.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-yjvm1e\\CheckIncludeFile.c
+        [2/2] cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_de764.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_de764.dir\\CheckIncludeFile.c.obj  /out:cmTC_de764.exe /implib:cmTC_de764.lib /pdb:cmTC_de764.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckIncludeFile.cmake:90 (try_compile)"
+      - "CMakeLists.txt:516 (check_include_file)"
+    checks:
+      - "Looking for cpuid.h"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-6jqrys"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-6jqrys"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Noah/source/repos/openal-soft/cmake"
+    buildResult:
+      variable: "HAVE_CPUID_H"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-6jqrys'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_807aa
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_807aa.dir\\CheckIncludeFile.c.obj /FdCMakeFiles\\cmTC_807aa.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-6jqrys\\CheckIncludeFile.c
+        FAILED: CMakeFiles/cmTC_807aa.dir/CheckIncludeFile.c.obj 
+        C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_807aa.dir\\CheckIncludeFile.c.obj /FdCMakeFiles\\cmTC_807aa.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-6jqrys\\CheckIncludeFile.c
+        C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-6jqrys\\CheckIncludeFile.c(1): fatal error C1083: Cannot open include file: 'cpuid.h': No such file or directory
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckIncludeFile.cmake:90 (try_compile)"
+      - "CMakeLists.txt:517 (check_include_file)"
+    checks:
+      - "Looking for intrin.h"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-b9948z"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-b9948z"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Noah/source/repos/openal-soft/cmake"
+    buildResult:
+      variable: "HAVE_INTRIN_H"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-b9948z'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_7408b
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_7408b.dir\\CheckIncludeFile.c.obj /FdCMakeFiles\\cmTC_7408b.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-b9948z\\CheckIncludeFile.c
+        [2/2] cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_7408b.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_7408b.dir\\CheckIncludeFile.c.obj  /out:cmTC_7408b.exe /implib:cmTC_7408b.lib /pdb:cmTC_7408b.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckIncludeFile.cmake:90 (try_compile)"
+      - "CMakeLists.txt:518 (check_include_file)"
+    checks:
+      - "Looking for guiddef.h"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-yhy86l"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-yhy86l"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Noah/source/repos/openal-soft/cmake"
+    buildResult:
+      variable: "HAVE_GUIDDEF_H"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-yhy86l'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_f2e6b
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_f2e6b.dir\\CheckIncludeFile.c.obj /FdCMakeFiles\\cmTC_f2e6b.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-yhy86l\\CheckIncludeFile.c
+        [2/2] cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_f2e6b.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_f2e6b.dir\\CheckIncludeFile.c.obj  /out:cmTC_f2e6b.exe /implib:cmTC_f2e6b.lib /pdb:cmTC_f2e6b.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckLibraryExists.cmake:69 (try_compile)"
+      - "CMakeLists.txt:525 (check_library_exists)"
+    checks:
+      - "Looking for pow in m"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-as5s55"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-as5s55"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Noah/source/repos/openal-soft/cmake"
+    buildResult:
+      variable: "HAVE_LIBM"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-as5s55'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_26f52
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS -DCHECK_FUNCTION_EXISTS=pow /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_26f52.dir\\CheckFunctionExists.c.obj /FdCMakeFiles\\cmTC_26f52.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-as5s55\\CheckFunctionExists.c
+        [2/2] cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_26f52.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_26f52.dir\\CheckFunctionExists.c.obj  /out:cmTC_26f52.exe /implib:cmTC_26f52.lib /pdb:cmTC_26f52.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  m.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        FAILED: cmTC_26f52.exe 
+        cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_26f52.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_26f52.dir\\CheckFunctionExists.c.obj  /out:cmTC_26f52.exe /implib:cmTC_26f52.lib /pdb:cmTC_26f52.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  m.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        LINK Pass 1: command "C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_26f52.dir\\CheckFunctionExists.c.obj /out:cmTC_26f52.exe /implib:cmTC_26f52.lib /pdb:cmTC_26f52.pdb /version:0.0 /machine:x64 /debug /INCREMENTAL /subsystem:console m.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTFILE:CMakeFiles\\cmTC_26f52.dir/intermediate.manifest CMakeFiles\\cmTC_26f52.dir/manifest.res" failed (exit code 1104) with the following output:
+        LINK : fatal error LNK1104: cannot open file 'm.lib'\x0d
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckLibraryExists.cmake:69 (try_compile)"
+      - "CMakeLists.txt:534 (check_library_exists)"
+    checks:
+      - "Looking for clock_gettime in rt"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-vn3d58"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-vn3d58"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Noah/source/repos/openal-soft/cmake"
+    buildResult:
+      variable: "HAVE_LIBRT"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-vn3d58'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_22ec2
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS -DCHECK_FUNCTION_EXISTS=clock_gettime /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_22ec2.dir\\CheckFunctionExists.c.obj /FdCMakeFiles\\cmTC_22ec2.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-vn3d58\\CheckFunctionExists.c
+        [2/2] cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_22ec2.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_22ec2.dir\\CheckFunctionExists.c.obj  /out:cmTC_22ec2.exe /implib:cmTC_22ec2.lib /pdb:cmTC_22ec2.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  rt.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        FAILED: cmTC_22ec2.exe 
+        cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_22ec2.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_22ec2.dir\\CheckFunctionExists.c.obj  /out:cmTC_22ec2.exe /implib:cmTC_22ec2.lib /pdb:cmTC_22ec2.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  rt.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        LINK Pass 1: command "C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_22ec2.dir\\CheckFunctionExists.c.obj /out:cmTC_22ec2.exe /implib:cmTC_22ec2.lib /pdb:cmTC_22ec2.pdb /version:0.0 /machine:x64 /debug /INCREMENTAL /subsystem:console rt.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTFILE:CMakeFiles\\cmTC_22ec2.dir/intermediate.manifest CMakeFiles\\cmTC_22ec2.dir/manifest.res" failed (exit code 1104) with the following output:
+        LINK : fatal error LNK1104: cannot open file 'rt.lib'\x0d
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckIncludeFile.cmake:90 (try_compile)"
+      - "CMakeLists.txt:541 (check_include_file)"
+    checks:
+      - "Looking for dlfcn.h"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-vj9hdu"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-vj9hdu"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Noah/source/repos/openal-soft/cmake"
+    buildResult:
+      variable: "HAVE_DLFCN_H"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-vj9hdu'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_30dd7
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_30dd7.dir\\CheckIncludeFile.c.obj /FdCMakeFiles\\cmTC_30dd7.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-vj9hdu\\CheckIncludeFile.c
+        FAILED: CMakeFiles/cmTC_30dd7.dir/CheckIncludeFile.c.obj 
+        C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_30dd7.dir\\CheckIncludeFile.c.obj /FdCMakeFiles\\cmTC_30dd7.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-vj9hdu\\CheckIncludeFile.c
+        C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-vj9hdu\\CheckIncludeFile.c(1): fatal error C1083: Cannot open include file: 'dlfcn.h': No such file or directory
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckLibraryExists.cmake:69 (try_compile)"
+      - "CMakeLists.txt:542 (check_library_exists)"
+    checks:
+      - "Looking for dlopen in dl"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-02spj4"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-02spj4"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Noah/source/repos/openal-soft/cmake"
+    buildResult:
+      variable: "HAVE_LIBDL"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-02spj4'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_04a32
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS -DCHECK_FUNCTION_EXISTS=dlopen /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_04a32.dir\\CheckFunctionExists.c.obj /FdCMakeFiles\\cmTC_04a32.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-02spj4\\CheckFunctionExists.c
+        [2/2] cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_04a32.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_04a32.dir\\CheckFunctionExists.c.obj  /out:cmTC_04a32.exe /implib:cmTC_04a32.lib /pdb:cmTC_04a32.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  dl.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        FAILED: cmTC_04a32.exe 
+        cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_04a32.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_04a32.dir\\CheckFunctionExists.c.obj  /out:cmTC_04a32.exe /implib:cmTC_04a32.lib /pdb:cmTC_04a32.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  dl.lib  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        LINK Pass 1: command "C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_04a32.dir\\CheckFunctionExists.c.obj /out:cmTC_04a32.exe /implib:cmTC_04a32.lib /pdb:cmTC_04a32.pdb /version:0.0 /machine:x64 /debug /INCREMENTAL /subsystem:console dl.lib kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib /MANIFEST /MANIFESTFILE:CMakeFiles\\cmTC_04a32.dir/intermediate.manifest CMakeFiles\\cmTC_04a32.dir/manifest.res" failed (exit code 1104) with the following output:
+        LINK : fatal error LNK1104: cannot open file 'dl.lib'\x0d
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/Internal/CheckSourceCompiles.cmake:101 (try_compile)"
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckCSourceCompiles.cmake:52 (cmake_check_source_compiles)"
+      - "CMakeLists.txt:559 (check_c_source_compiles)"
+    checks:
+      - "Performing Test HAVE_CPUID_INTRINSIC"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-4ypbfq"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-4ypbfq"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Noah/source/repos/openal-soft/cmake"
+    buildResult:
+      variable: "HAVE_CPUID_INTRINSIC"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-4ypbfq'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_ae8b0
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo -DHAVE_CPUID_INTRINSIC  /DWIN32 /D_WINDOWS  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_ae8b0.dir\\src.c.obj /FdCMakeFiles\\cmTC_ae8b0.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-4ypbfq\\src.c
+        [2/2] cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_ae8b0.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_ae8b0.dir\\src.c.obj  /out:cmTC_ae8b0.exe /implib:cmTC_ae8b0.lib /pdb:cmTC_ae8b0.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckSymbolExists.cmake:140 (try_compile)"
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckSymbolExists.cmake:66 (__CHECK_SYMBOL_EXISTS_IMPL)"
+      - "CMakeLists.txt:568 (check_symbol_exists)"
+    checks:
+      - "Looking for posix_memalign"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-v9rc3q"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-v9rc3q"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Noah/source/repos/openal-soft/cmake"
+    buildResult:
+      variable: "HAVE_POSIX_MEMALIGN"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-v9rc3q'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_e9eec
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_e9eec.dir\\CheckSymbolExists.c.obj /FdCMakeFiles\\cmTC_e9eec.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-v9rc3q\\CheckSymbolExists.c
+        FAILED: CMakeFiles/cmTC_e9eec.dir/CheckSymbolExists.c.obj 
+        C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_e9eec.dir\\CheckSymbolExists.c.obj /FdCMakeFiles\\cmTC_e9eec.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-v9rc3q\\CheckSymbolExists.c
+        C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-v9rc3q\\CheckSymbolExists.c(8): error C2065: 'posix_memalign': undeclared identifier
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckSymbolExists.cmake:140 (try_compile)"
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckSymbolExists.cmake:66 (__CHECK_SYMBOL_EXISTS_IMPL)"
+      - "CMakeLists.txt:569 (check_symbol_exists)"
+    checks:
+      - "Looking for _aligned_malloc"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-bbhmnb"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-bbhmnb"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Noah/source/repos/openal-soft/cmake"
+    buildResult:
+      variable: "HAVE__ALIGNED_MALLOC"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-bbhmnb'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_783ca
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_783ca.dir\\CheckSymbolExists.c.obj /FdCMakeFiles\\cmTC_783ca.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-bbhmnb\\CheckSymbolExists.c
+        [2/2] cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_783ca.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_783ca.dir\\CheckSymbolExists.c.obj  /out:cmTC_783ca.exe /implib:cmTC_783ca.lib /pdb:cmTC_783ca.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckSymbolExists.cmake:140 (try_compile)"
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckSymbolExists.cmake:66 (__CHECK_SYMBOL_EXISTS_IMPL)"
+      - "CMakeLists.txt:570 (check_symbol_exists)"
+    checks:
+      - "Looking for proc_pidpath"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-2wi1rc"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-2wi1rc"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Noah/source/repos/openal-soft/cmake"
+    buildResult:
+      variable: "HAVE_PROC_PIDPATH"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-2wi1rc'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_dbdad
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_dbdad.dir\\CheckSymbolExists.c.obj /FdCMakeFiles\\cmTC_dbdad.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-2wi1rc\\CheckSymbolExists.c
+        FAILED: CMakeFiles/cmTC_dbdad.dir/CheckSymbolExists.c.obj 
+        C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_dbdad.dir\\CheckSymbolExists.c.obj /FdCMakeFiles\\cmTC_dbdad.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-2wi1rc\\CheckSymbolExists.c
+        C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-2wi1rc\\CheckSymbolExists.c(2): fatal error C1083: Cannot open include file: 'libproc.h': No such file or directory
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckSymbolExists.cmake:140 (try_compile)"
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckSymbolExists.cmake:66 (__CHECK_SYMBOL_EXISTS_IMPL)"
+      - "CMakeLists.txt:604 (check_symbol_exists)"
+    checks:
+      - "Looking for getopt"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-pn66u9"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-pn66u9"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Noah/source/repos/openal-soft/cmake"
+    buildResult:
+      variable: "HAVE_GETOPT"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-pn66u9'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_635f0
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_635f0.dir\\CheckSymbolExists.c.obj /FdCMakeFiles\\cmTC_635f0.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-pn66u9\\CheckSymbolExists.c
+        FAILED: CMakeFiles/cmTC_635f0.dir/CheckSymbolExists.c.obj 
+        C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_635f0.dir\\CheckSymbolExists.c.obj /FdCMakeFiles\\cmTC_635f0.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-pn66u9\\CheckSymbolExists.c
+        C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-pn66u9\\CheckSymbolExists.c(2): fatal error C1083: Cannot open include file: 'unistd.h': No such file or directory
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckIncludeFile.cmake:90 (try_compile)"
+      - "CMakeLists.txt:1039 (check_include_file)"
+    checks:
+      - "Looking for dsound.h"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-mrfny0"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-mrfny0"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Noah/source/repos/openal-soft/cmake"
+    buildResult:
+      variable: "HAVE_DSOUND_H"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-mrfny0'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_34d16
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_34d16.dir\\CheckIncludeFile.c.obj /FdCMakeFiles\\cmTC_34d16.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-mrfny0\\CheckIncludeFile.c
+        [2/2] cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_34d16.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_34d16.dir\\CheckIncludeFile.c.obj  /out:cmTC_34d16.exe /implib:cmTC_34d16.lib /pdb:cmTC_34d16.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/CMake/share/cmake-3.27/Modules/CheckIncludeFile.cmake:90 (try_compile)"
+      - "CMakeLists.txt:1061 (check_include_file)"
+    checks:
+      - "Looking for mmdeviceapi.h"
+    directories:
+      source: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-jcqcvx"
+      binary: "C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-jcqcvx"
+    cmakeVariables:
+      CMAKE_C_FLAGS: "/DWIN32 /D_WINDOWS"
+      CMAKE_C_FLAGS_DEBUG: "/MDd /Zi /Ob0 /Od /RTC1"
+      CMAKE_EXE_LINKER_FLAGS: "/machine:x64"
+      CMAKE_MODULE_PATH: "C:/Users/Noah/source/repos/openal-soft/cmake"
+    buildResult:
+      variable: "HAVE_MMDEVICEAPI_H"
+      cached: true
+      stdout: |
+        Change Dir: 'C:/Users/Noah/source/repos/openal-soft/out/build/x64-Debug/CMakeFiles/CMakeScratch/TryCompile-jcqcvx'
+        
+        Run Build Command(s): "C:/Program Files/Microsoft Visual Studio/2022/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe" -v cmTC_e011c
+        [1/2] C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\cl.exe  /nologo   /DWIN32 /D_WINDOWS  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\\cmTC_e011c.dir\\CheckIncludeFile.c.obj /FdCMakeFiles\\cmTC_e011c.dir\\ /FS -c C:\\Users\\Noah\\source\\repos\\openal-soft\\out\\build\\x64-Debug\\CMakeFiles\\CMakeScratch\\TryCompile-jcqcvx\\CheckIncludeFile.c
+        [2/2] cmd.exe /C "cd . && "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\CMake\\CMake\\bin\\cmake.exe" -E vs_link_exe --intdir=CMakeFiles\\cmTC_e011c.dir --rc=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\rc.exe --mt=C:\\PROGRA~2\\WI3CF2~1\\10\\bin\\100226~1.0\\x64\\mt.exe --manifests  -- C:\\PROGRA~1\\MICROS~3\\2022\\COMMUN~1\\VC\\Tools\\MSVC\\1438~1.331\\bin\\Hostx64\\x64\\link.exe /nologo CMakeFiles\\cmTC_e011c.dir\\CheckIncludeFile.c.obj  /out:cmTC_e011c.exe /implib:cmTC_e011c.lib /pdb:cmTC_e011c.pdb /version:0.0 /machine:x64  /debug /INCREMENTAL /subsystem:console  kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib && cd ."
+        
+      exitCode: 0
+...

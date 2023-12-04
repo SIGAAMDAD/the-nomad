@@ -1,0 +1,104 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="basic_fp.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="basic_vp.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="imgui_fp.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="imgui_vp.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="rgl_texture.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rgl_cache.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rgl_extensions.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rgl_draw.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rgl_backend.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rgl_cmd.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rgl_glsl_fallback.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rgl_init.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rgl_main.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rgl_program.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rgl_math.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rgl_shader.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rgl_world.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\n_shared.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\engine\n_math.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="rgl_scene.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="rgl_local.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rendercommon\r_types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\rendercommon\r_public.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ngl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stb_image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\engine\n_shared.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="glext.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

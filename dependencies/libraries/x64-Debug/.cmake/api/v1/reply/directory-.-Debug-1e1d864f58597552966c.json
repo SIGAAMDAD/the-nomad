@@ -1,0 +1,349 @@
+{
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"install"
+		],
+		"files" : 
+		[
+			"CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 792,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 796,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 840,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 844,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 849,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 881,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 882,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 883,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 911,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 914,
+				"parent" : 0
+			}
+		]
+	},
+	"installers" : 
+	[
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "bin",
+			"paths" : 
+			[
+				"sndfile-info.exe"
+			],
+			"targetId" : "sndfile-info::@6890427a1f51a3e7e1df",
+			"targetIndex" : 68,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "bin",
+			"paths" : 
+			[
+				"sndfile-play.exe"
+			],
+			"targetId" : "sndfile-play::@6890427a1f51a3e7e1df",
+			"targetIndex" : 73,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "bin",
+			"paths" : 
+			[
+				"sndfile-convert.exe"
+			],
+			"targetId" : "sndfile-convert::@6890427a1f51a3e7e1df",
+			"targetIndex" : 66,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "bin",
+			"paths" : 
+			[
+				"sndfile-cmp.exe"
+			],
+			"targetId" : "sndfile-cmp::@6890427a1f51a3e7e1df",
+			"targetIndex" : 64,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "bin",
+			"paths" : 
+			[
+				"sndfile-metadata-set.exe"
+			],
+			"targetId" : "sndfile-metadata-set::@6890427a1f51a3e7e1df",
+			"targetIndex" : 72,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "bin",
+			"paths" : 
+			[
+				"sndfile-metadata-get.exe"
+			],
+			"targetId" : "sndfile-metadata-get::@6890427a1f51a3e7e1df",
+			"targetIndex" : 71,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "bin",
+			"paths" : 
+			[
+				"sndfile-interleave.exe"
+			],
+			"targetId" : "sndfile-interleave::@6890427a1f51a3e7e1df",
+			"targetIndex" : 69,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "bin",
+			"paths" : 
+			[
+				"sndfile-deinterleave.exe"
+			],
+			"targetId" : "sndfile-deinterleave::@6890427a1f51a3e7e1df",
+			"targetIndex" : 67,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "bin",
+			"paths" : 
+			[
+				"sndfile-concat.exe"
+			],
+			"targetId" : "sndfile-concat::@6890427a1f51a3e7e1df",
+			"targetIndex" : 65,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 1,
+			"component" : "Unspecified",
+			"destination" : "bin",
+			"paths" : 
+			[
+				"sndfile-salvage.exe"
+			],
+			"targetId" : "sndfile-salvage::@6890427a1f51a3e7e1df",
+			"targetIndex" : 74,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "Unspecified",
+			"destination" : "lib",
+			"paths" : 
+			[
+				"sndfile.lib"
+			],
+			"targetId" : "sndfile::@6890427a1f51a3e7e1df",
+			"targetIndex" : 63,
+			"type" : "target"
+		},
+		{
+			"backtrace" : 2,
+			"component" : "Unspecified",
+			"destination" : "include",
+			"paths" : 
+			[
+				"include/sndfile.h",
+				"include/sndfile.hh"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 3,
+			"component" : "Unspecified",
+			"destination" : "cmake",
+			"exportName" : "SndFileTargets",
+			"exportTargets" : 
+			[
+				{
+					"id" : "sndfile::@6890427a1f51a3e7e1df",
+					"index" : 63
+				}
+			],
+			"paths" : 
+			[
+				"CMakeFiles/Export/272ceadb8458515b2ae4b5630a6029cc/SndFileTargets.cmake"
+			],
+			"type" : "export"
+		},
+		{
+			"backtrace" : 4,
+			"component" : "Unspecified",
+			"destination" : "cmake",
+			"paths" : 
+			[
+				{
+					"from" : "out/build/x64-Debug/SndFileConfig2.cmake",
+					"to" : "SndFileConfig.cmake"
+				}
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 5,
+			"component" : "Unspecified",
+			"destination" : "cmake",
+			"paths" : 
+			[
+				"out/build/x64-Debug/SndFileConfigVersion.cmake"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 6,
+			"component" : "Unspecified",
+			"destination" : "share/man/man1",
+			"paths" : 
+			[
+				"man/sndfile-info.1",
+				"man/sndfile-play.1",
+				"man/sndfile-convert.1",
+				"man/sndfile-cmp.1",
+				"man/sndfile-metadata-get.1",
+				"man/sndfile-concat.1",
+				"man/sndfile-interleave.1",
+				"man/sndfile-salvage.1"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 7,
+			"component" : "Unspecified",
+			"destination" : "share/man/man1",
+			"paths" : 
+			[
+				{
+					"from" : "man/sndfile-metadata-get.1",
+					"to" : "sndfile-metadata-set.1"
+				}
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 8,
+			"component" : "Unspecified",
+			"destination" : "share/man/man1",
+			"paths" : 
+			[
+				{
+					"from" : "man/sndfile-interleave.1",
+					"to" : "sndfile-deinterleave.1"
+				}
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 9,
+			"component" : "Unspecified",
+			"destination" : "share/doc/libsndfile",
+			"paths" : 
+			[
+				"docs/index.md",
+				"docs/libsndfile.jpg",
+				"docs/libsndfile.css",
+				"docs/print.css",
+				"docs/api.md",
+				"docs/command.md",
+				"docs/bugs.md",
+				"docs/formats.md",
+				"docs/sndfile_info.md",
+				"docs/new_file_type_howto.md",
+				"docs/win32.md",
+				"docs/FAQ.md",
+				"docs/lists.md",
+				"docs/embedded_files.md",
+				"docs/octave.md",
+				"docs/tutorial.md"
+			],
+			"type" : "file"
+		},
+		{
+			"backtrace" : 10,
+			"component" : "Unspecified",
+			"destination" : "lib/pkgconfig",
+			"paths" : 
+			[
+				"out/build/x64-Debug/sndfile.pc"
+			],
+			"type" : "file"
+		}
+	],
+	"paths" : 
+	{
+		"build" : ".",
+		"source" : "."
+	}
+}

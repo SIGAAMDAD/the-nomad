@@ -1,0 +1,26 @@
+{
+  "configurations": [
+    {
+      "inheritEnvironments": [
+        "msvc_x64"
+      ],
+      "name": "x64-Debug",
+      "includePath": [
+        "${env.INCLUDE}",
+        "${workspaceRoot}\\**"
+      ],
+      "defines": [
+        "WIN32",
+        "_DEBUG",
+        "UNICODE",
+        "_UNICODE",
+        "_WIN32",
+        "_NOMAD_DEBUG",
+        "_NOMAD_VERSION=1",
+        "_NOMAD_VERSION_UPDATE=1",
+        "_NOMAD_VERSION_PATCH=0"
+      ],
+      "intelliSenseMode": "windows-msvc-x64"
+    }
+  ]
+}
