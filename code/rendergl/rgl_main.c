@@ -250,11 +250,11 @@ void R_RenderView( const viewData_t *parms )
 
     GLSL_SetUniformMatrix4( &rg.basicShader, UNIFORM_MODELVIEWPROJECTION, glState.viewData.camera.viewProjectionMatrix );
 
-    // render all submitted sgame polygons
-    R_DrawPolys();
-
     // draw the tilemap
     R_DrawWorld();
+
+    // render all submitted sgame polygons
+    R_DrawPolys();
 
     GLSL_UseProgram( NULL );
 }

@@ -3,6 +3,7 @@
 #include "win_local.h"
 #include "sys_win32.h"
 #include <errhandlingapi.h>
+#include <processthreadsapi.h>
 
 uint64_t Sys_Milliseconds( void )
 {
@@ -22,6 +23,12 @@ uint64_t Sys_Milliseconds( void )
 
 void Sys_Sleep( double msec ) {
 	Sleep( msec );
+}
+
+uint64_t Sys_StackMemoryRemaining( void )
+{
+	// FIXME: implement
+	return (1*1024*1024); // return a guess of 1 MiB
 }
 
 /*

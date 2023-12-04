@@ -3,6 +3,7 @@
 #include "sys_win32.h"
 #include "win_local.h"
 #include <signal.h>
+#include <excpt.h>
 
 #define MEM_THRESHOLD (96*1024*1024)
 
@@ -687,6 +688,7 @@ static LONG WINAPI ExceptionFilter( struct _EXCEPTION_POINTERS *ExceptionInfo )
 			}
 		}
 
+#if 0
 		if ( basename && *basename ) {
 			Com_snprintf( msg, sizeof( msg ), "Exception Code: %s\nException Address: %s@%x\n",
 				GetExceptionName( ExceptionInfo->ExceptionRecord->ExceptionCode ),
@@ -696,7 +698,7 @@ static LONG WINAPI ExceptionFilter( struct _EXCEPTION_POINTERS *ExceptionInfo )
 				GetExceptionName( ExceptionInfo->ExceptionRecord->ExceptionCode ),
 				addr );
 		}
-
+#endif
 		N_Error( ERR_FATAL, "Unhandled exception caught\n%s", msg );
 	}
 
@@ -1203,20 +1205,6 @@ void Sys_SetClipboadBitmap( const byte *bitmap, uint64_t length )
 	CloseClipboard();
 }
 
-static void Sys_SignalHandle( int signum )
-{
-	switch (signum) {
-	case SIGSEGV:
-		Sys_Error( "Segmentation Violation (SIGSEGV)" );
-		break;
-	};
-}
-
-static void Sys_InitSignals( void )
-{
-	signal( SIGSEGV, Sys_SignalHandle );
-}
-
 /*
 ==================
 WinMain
@@ -1243,8 +1231,6 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 		SetPriorityClass( hProcess, HIGH_PRIORITY_CLASS );
 	}
 
-	Sys_InitSignals();
-
 	//SetDPIAwareness();
 
 	g_wv.hInstance = hInstance;
@@ -1259,7 +1245,7 @@ int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	// no abort/retry/fail errors
 //	SetErrorMode( SEM_FAILCRITICALERRORS );
 
-//	SetUnhandledExceptionFilter( ExceptionFilter );
+	SetUnhandledExceptionFilter( ExceptionFilter );
 
 	// get the initial time base
 	Sys_Milliseconds();

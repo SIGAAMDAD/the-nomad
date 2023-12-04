@@ -32,6 +32,9 @@ void Sys_DebugMessageBox( const char *title, const char *message );
 #define AssertMsg1( x, msg, ... ) if (!(x)) Con_Printf( COLOR_YELLOW "WARNING: " #msg  " " __VA_ARGS__ )
 #endif
 
+#ifdef _WIN32
+DWORD DumpStackTraceWindows( EXCEPTION_POINTERS *pException );
+#endif
 
 // NOTE: if you see Illegal Instruction (Core Dumped), that's __builtin_trap()'s fault, its not very pretty
 

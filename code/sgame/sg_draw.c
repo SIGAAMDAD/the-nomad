@@ -84,7 +84,6 @@ int32_t SG_DrawFrame( void )
     refdef.height = data.realCamHeight;
     refdef.x = 0;
     refdef.y = 0;
-    refdef.flags = RSF_USE_ORTHO_ASPECT;
     refdef.time = sg.leveltime;
 
     SG_BuildBounds( &data.frustum, sg.cameraPos, data.realCamWidth, data.realCamHeight );

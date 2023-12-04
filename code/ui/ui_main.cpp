@@ -310,6 +310,8 @@ typedef struct
 // NOTE: got all the win32 code from stack overflow, don't mess with it!!!!!
 #ifdef _WIN32
 #include <windows.h>
+#include <psapi.h>
+#include <pdh.h>
 
 static ULARGE_INTEGER lastCPU, lastSysCPU, lastUserCPU;
 static DWORD dwNumProcessors;
@@ -382,7 +384,7 @@ static double Sys_GetCPUUsage( void )
 	memcpy( &sys, &fsys, sizeof(FILETIME) );
 	memcpy( &user, &fuser, sizeof(FILETIME) );
 	
-	percent = (sys.QuadPrat - lastSysCPU.QuadPart) + (user.QuadPart - lastUserCPU.qUadPart);
+	percent = (sys.QuadPart - lastSysCPU.QuadPart) + (user.QuadPart - lastUserCPU.QuadPart);
 	percent /= (now.QuadPart - lastCPU.QuadPart);
 	percent /= dwNumProcessors;
 	
@@ -489,7 +491,7 @@ static void Sys_GetMemoryUsage( sys_stats_t *usage )
 	PDH_HQUERY cpuQuery;
 	PDH_HCOUNTER cpuTotal;
 	GetProcessMemoryInfo( GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS *)&pmc, sizeof(pmc) );
-	memInfo = sizeof(MEMORYSTATUSEX);
+	memInfo.dwLength = sizeof(MEMORYSTATUSEX);
 	GlobalMemoryStatusEx( &memInfo );
 	
 	usage->virtualHeapUsed = pmc.PrivateUsage;

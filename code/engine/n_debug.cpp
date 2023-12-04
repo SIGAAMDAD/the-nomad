@@ -7,8 +7,12 @@
 #include <execinfo.h>
 #elif defined(_WIN32)
 #include <dbghelp.h>
+#include <windows.h>
+#include <excpt.h>
 #endif
 #include <malloc.h>
+#include "../system/sys_thread.h"
+#include "../system/sys_thread.inl"
 
 #define MEMHEADER 0xff1daf022
 
@@ -233,14 +237,15 @@ CDebugSession::CDebugSession( void )
 
 CDebugSession::~CDebugSession()
 {
-#ifdef _WIN32
-	FreeConsole();
-#endif
     if (m_iErrorReason != ERR_NONE) {
         if (!m_bDoneErrorStackdump) {
             Sys_DebugStacktrace( MAX_STACKTRACE_FRAMES );
         }
     }
+#ifdef _WIN32
+	FreeConsole();
+	SymCleanup( m_hProcess );
+#endif
 
     if (m_iErrorReason == ERR_NONE) { // could lead to more recursive errors
         if (m_pBacktraceFile) {
@@ -283,90 +288,6 @@ GDR_INLINE bool ValidStackAddress( void *pAddress, const void *pNoLessThan, cons
 
 	return true;
 }
-
-#ifdef _WIN32
-#pragma auto_inline( off )
-int GetCallStack_Fast( void **pReturnAddressesOut, int iArrayCount, int iSkipCount )
-{
-	//Only tested in windows. This function won't work with frame pointer omission enabled. "vpc /nofpo" all projects
-#if (defined( TIER0_FPO_DISABLED ) || defined( _DEBUG )) &&\
-	(defined( WIN32 ) && !defined( _X360 ))
-	void *pStackCrawlEBP;
-	__asm
-	{
-		mov [pStackCrawlEBP], ebp;
-	}
-
-	/*
-	With frame pointer omission disabled, this should be the pattern all the way up the stack
-	[ebp+00]   Old ebp value
-	[ebp+04]   Return address
-	*/
-
-	void *pNoLessThan = pStackCrawlEBP; //impossible for a valid stack to traverse before this address
-	int i;
-
-	CStackTop_FriendFuncs *pTop = (CStackTop_FriendFuncs *)(CStackTop_Base *)g_StackTop;
-	if( pTop != NULL ) //we can do fewer error checks if we have a valid reference point for the top of the stack
-	{		
-		void *pNoGreaterThan = pTop->m_pStackBase;
-
-		//skips
-		for( i = 0; i != iSkipCount; ++i )
-		{
-			if( (pStackCrawlEBP < pNoLessThan) || (pStackCrawlEBP > pNoGreaterThan) )
-				return AppendParentStackTrace( pReturnAddressesOut, iArrayCount, 0 );
-
-			pNoLessThan = pStackCrawlEBP;
-			pStackCrawlEBP = *(void **)pStackCrawlEBP; //should be pointing at old ebp value
-		}
-
-		//store
-		for( i = 0; i != iArrayCount; ++i ) {
-			if( (pStackCrawlEBP < pNoLessThan) || (pStackCrawlEBP > pNoGreaterThan) )
-				break;
-
-			pReturnAddressesOut[i] = *((void **)pStackCrawlEBP + 1);
-
-			pNoLessThan = pStackCrawlEBP;
-			pStackCrawlEBP = *(void **)pStackCrawlEBP; //should be pointing at old ebp value
-		}
-
-		return AppendParentStackTrace( pReturnAddressesOut, iArrayCount, i );
-	}
-	else {
-		void *pNoGreaterThan = ((unsigned char *)pNoLessThan) + (1024 * 1024); //standard stack is 1MB. TODO: Get actual stack end address if available since this check isn't foolproof	
-
-		//skips
-		for( i = 0; i != iSkipCount; ++i )
-		{
-			if( !ValidStackAddress( pStackCrawlEBP, pNoLessThan, pNoGreaterThan ) )
-				return AppendParentStackTrace( pReturnAddressesOut, iArrayCount, 0 );
-
-			pNoLessThan = pStackCrawlEBP;
-			pStackCrawlEBP = *(void **)pStackCrawlEBP; //should be pointing at old ebp value
-		}
-
-		//store
-		for( i = 0; i != iArrayCount; ++i ) {
-			if( !ValidStackAddress( pStackCrawlEBP, pNoLessThan, pNoGreaterThan ) )
-				break;
-
-			pReturnAddressesOut[i] = *((void **)pStackCrawlEBP + 1);
-
-			pNoLessThan = pStackCrawlEBP;
-			pStackCrawlEBP = *(void **)pStackCrawlEBP; //should be pointing at old ebp value
-		}
-
-		return AppendParentStackTrace( pReturnAddressesOut, iArrayCount, i );
-	}
-#endif
-
-	return 0;
-}
-#pragma auto_inline( on )
-#endif
-
 
 void Sys_DebugMessageBox( const char *title, const char *message )
 {
@@ -443,33 +364,55 @@ void Sys_DebugString( const char *str )
 #endif
 }
 
-#include <iostream>
-
 void Sys_DebugStacktrace( uint32_t frames )
 {
 #ifdef _WIN32
+	DWORD i;
+	USHORT nFrames;
+	IMAGEHLP_LINE64 SymLine;
+	IMAGEHLP_MODULE64 ModuleInfo;
+	PSYMBOL_INFO pSymbol;
+	HMODULE hModule;
+	HANDLE hProcess;
+	DWORD dwDisplacement;
+	DWORD64 dwAddr;
+	DWORD64 dwModuleBase;
+
 	if (com_errorEntered && g_debugSession.m_iErrorReason != ERR_NONE) {
         g_debugSession.m_bDoneErrorStackdump = true;
     }
 
-	std::cout << boost::stacktrace::stacktrace() << std::endl;
-#elif 0
-	uint32_t i;
-	uint32_t numFrames;
+	memset( g_debugSession.m_pSymbolArray, 0, sizeof(void *) * MAX_STACKTRACE_FRAMES );
+	nFrames = CaptureStackBackTrace( 2, frames, g_debugSession.m_pSymbolArray, NULL );
 
-	if (com_errorEntered && g_debugSession.m_iErrorReason != ERR_NONE) {
-        g_debugSession.m_bDoneErrorStackdump = true;
-    }
+	hModule = GetModuleHandle( NULL );
+	hProcess = GetCurrentProcess();
 
-	numFrames = CaptureStackBackTrace( 1, frames, g_debugSession.m_pSymbolArray, NULL );
-	g_debugSession.m_pSymbolBuffer->MaxNameLen = MAX_SYMBOL_LENGTH - 1;
-	g_debugSession.m_pSymbolBuffer->SizeOfStruct = sizeof(SYMBOL_INFO) + (MAX_SYMBOL_LENGTH - 1) * sizeof(TCHAR);
+	ModuleInfo.SizeOfStruct = sizeof(IMAGEHLP_MODULE64);
+	SymLine.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
 
-	for (i = 0; i < numFrames; i++) {
-		SymFromAddr( g_debugSession.m_hProcess, (DWORD64)(g_debugSession.m_pSymbolArray[i]), 0,  g_debugSession.m_pSymbolBuffer );
+	pSymbol = g_debugSession.m_pSymbolBuffer;
+	pSymbol->SizeOfStruct = sizeof(SYMBOL_INFO) + (MAX_SYMBOL_LENGTH - 1) * sizeof(TCHAR);
+	pSymbol->MaxNameLen = MAX_SYMBOL_LENGTH - 1;
 
-		Sys_Print( va("  %i: 0x%04x %s\n", numFrames - i - 1, g_debugSession.m_pSymbolBuffer->Address,  g_debugSession.m_pSymbolBuffer->Name) );
+	for ( i = 0; i < nFrames; i++ ) {
+		dwAddr = (DWORD64)g_debugSession.m_pSymbolArray[i];
+
+		dwModuleBase = SymGetModuleBase64( hProcess, dwAddr );
+		SymGetLineFromAddr( hProcess, dwAddr, &dwDisplacement, &SymLine );
+		SymFromAddr( hProcess, dwAddr, NULL, pSymbol );
+		SymGetModuleInfo( hProcess, dwModuleBase, &ModuleInfo );
+
+		Con_Printf( "[Frame #%i]\n"
+					"  Module Name: %s\n"
+					"  Address: 0x%04lx\n"
+					"  Line: %i\n"
+					"  Name: %s\n"
+					"  File: %s\n"
+				, i, ModuleInfo.ModuleName, dwAddr, SymLine.LineNumber, (char *)pSymbol->Name, SymLine.FileName );
+
 	}
+
 #elif defined(POSIX)
 	char *buffer;
     int numframes;
@@ -480,7 +423,7 @@ void Sys_DebugStacktrace( uint32_t frames )
     }
 
     if (g_debugSession.m_pBTState) {
-        int skip = 3; // skip this function in backtrace
+        int skip = 2; // skip this function in backtrace
 		backtrace_simple( g_debugSession.m_pBTState, skip, bt_simple_callback, bt_error_callback, NULL );
     }
     else {
