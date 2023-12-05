@@ -5,16 +5,14 @@
 The currently release version of the game is a Demo Alpha Test, so expect lots of bugs. If you do find a bug, please do me a favor and report it, after all, I can only fix bugs that I know about.
 
 ## Requirements
---- Minimum ---
+### Minimum
 CPU		: Intel i5 or better
 GPU		: IGPU is fine
 RAM		: 8 Gb
+OS		: Windows 10 or Ubuntu
 
 ## The Technical Details
 Unless you're interested in programming, this won't really be interesting...
-
-Supported Platforms:
-	- 
 
 Graphics:
 	- OpenGL	: implemented
