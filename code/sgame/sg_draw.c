@@ -64,12 +64,11 @@ static void SG_DrawEntity( const sgentity_t *ent )
 static void SG_AddSpritesToFrame( void )
 {
     const sgentity_t *ent;
-    uint32_t numActiveEnts;
+    uint32_t i;
 
-    numActiveEnts = 0;
-    for (ent = sg_activeEnts.next; ent != &sg_activeEnts; ent = ent->next) {
+    ent = &sg_entities[0];
+    for ( i = 0; i < sg.numEntities; i++, ent++ ) {
         SG_DrawEntity( ent );
-        numActiveEnts++;
     }
 }
 
@@ -84,7 +83,7 @@ int32_t SG_DrawFrame( void )
     refdef.height = data.realCamHeight;
     refdef.x = 0;
     refdef.y = 0;
-    refdef.time = sg.leveltime;
+    refdef.time = sg.levelTime;
 
     SG_BuildBounds( &data.frustum, sg.cameraPos, data.realCamWidth, data.realCamHeight );
 

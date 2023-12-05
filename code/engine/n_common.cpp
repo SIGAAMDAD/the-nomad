@@ -730,7 +730,7 @@ static void CPUID_EX( int func, int param, unsigned int *regs )
 
 #endif
 
-static void Sys_GetProccesorInfo(void)
+static void Sys_GetProcessorId( char *vendor )
 {
 	uint32_t regs[4];; // eax, ebx, ecx, edx
 	uint32_t cpuid_level_ex;
@@ -758,8 +758,10 @@ static void Sys_GetProccesorInfo(void)
 	CPUID( 0x1, regs );
 
 	// bit 15 of EDX denotes CMOV/FCMOV/FCOMI existence
-//	if ( regs[3] & ( 1 << 15 ) )
-//		CPU_flags |= CPU_FCOM;
+#ifdef CPU_FCOM
+	if ( regs[3] & ( 1 << 15 ) )
+		CPU_flags |= CPU_FCOM;
+#endif
 
 	// bit 23 of EDX denotes MMX existence
 	if ( regs[3] & ( 1 << 23 ) )
@@ -800,8 +802,10 @@ static void Sys_GetProccesorInfo(void)
 			if (print_flags) {
 				// print features
 				strcat(vendor, " w/");
+			#ifdef CPU_FCOM
 				if (print_flags & CPU_FCOM)
 					strcat(vendor, " CMOV");
+			#endif
 				if (print_flags & CPU_MMX)
 					strcat(vendor, " MMX");
 				if (print_flags & CPU_SSE)

@@ -80,7 +80,7 @@ static void SG_LoadLevelInfoFromFile( const char *filename )
     buf[len] = 0;
     trap_FS_FClose( f );
 
-    sg_numLevels += SG_ParseInfos( buf, MAX_LEVELS - sg_numLevels, &sg_levelInfos[sg_numLevels] );
+    sg.numLevels += SG_ParseInfos( buf, MAX_LEVELS - sg.numLevels, &sg_levelInfos[sg.numLevels] );
 }
 
 static void SG_LoadLevelInfos( void )
@@ -92,7 +92,7 @@ static void SG_LoadLevelInfos( void )
     uint32_t i, dirlen;
     uint32_t n;
 
-    sg_numLevels = 0;
+    sg.numLevels = 0;
 
     if (*sg_levelInfoFile.s) {
         SG_LoadLevelInfoFromFile( sg_levelInfoFile.s );
@@ -113,10 +113,10 @@ static void SG_LoadLevelInfos( void )
         strcat( filename, dirptr );
         SG_LoadLevelInfoFromFile( filename );
     }
-    G_Printf( "%i levels parsed\n", sg_numLevels );
+    G_Printf( "%i levels parsed\n", sg.numLevels );
 
     // set initial numbers
-    for (n = 0; n < sg_numLevels; n++) {
+    for (n = 0; n < sg.numLevels; n++) {
         Info_SetValueForKey( sg_levelInfos[n], "num", va( "%i", n ) );
     }
 }
@@ -126,12 +126,12 @@ const char *SG_GetLevelInfoByIndex( int32_t index )
     uint32_t n;
     const char *value;
 
-    if (index < 0 || index >= sg_numLevels) {
+    if (index < 0 || index >= sg.numLevels) {
         G_Printf( COLOR_RED "Invalid level index: %i\n", index );
         return NULL;
     }
 
-    for (n = 0; n < sg_numLevels; n++) {
+    for (n = 0; n < sg.numLevels; n++) {
         value = Info_ValueForKey( sg_levelInfos[n], "num" );
         if (*value && atoi(value) == index) {
             return sg_levelInfos[n];
@@ -145,7 +145,7 @@ const char *SG_GetLevelInfoByMap( const char *mapname )
 {
     uint32_t n;
 
-    for (n = 0; n < sg_numLevels; n++) {
+    for (n = 0; n < sg.numLevels; n++) {
         if (N_stricmp( Info_ValueForKey( sg_levelInfos[n], "map" ), mapname ) == 0) {
             return sg_levelInfos[n];
         }
