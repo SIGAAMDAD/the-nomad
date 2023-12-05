@@ -16,14 +16,18 @@ __CPU__ | __GPU__ | __RAM__ | __OS__
 Intel i7 or better | NVidia GTX 1050 Ti or better | 16 Gb | Windows 10 or Ubuntu
 
 ## The Technical Details
-Unless you're interested in programming, this won't really be interesting...
+Unless you're into programming, this won't really be interesting...
 
 ### Graphics APIs
-[X] OpenGL: implemented
-[ ] Vulkan: coming soon
-[ ] D3D11: in the far future
-[ ] Metal: unless OSX forces you to use it, probably never
+__Name__ | __Status__
+---------|------------
+OpenGL   | Implemented
+Vulkan   | Coming soon
+D3D11    | In the far future
+Metal    | Unless OSX forces you to use it, probably never
 
 Audio: OpenAL Soft
 
 Everything else that's system specific is either handled by SDL2 or the engine
+
+Future Features: custom simd implementations for standard library functions
