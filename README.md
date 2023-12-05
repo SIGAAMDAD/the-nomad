@@ -6,19 +6,23 @@ The currently release version of the game is a Demo Alpha Test, so expect lots o
 
 ## Requirements
 ### Minimum
-CPU		: Intel i5 or better
-GPU		: IGPU is fine
-RAM		: 8 Gb
-OS		: Windows 10 or Ubuntu
+__CPU__ | __GPU__ | __RAM__ | __OS__
+--------|---------|---------|-------
+Intel i5 or better | IGPU is fine | 8 Gb | Windows 10 or Ubuntu
+
+### Recommended
+__CPU__ | __GPU__ | __RAM__ | __OS__
+--------|---------|---------|-------
+Intel i7 or better | NVidia GTX 1050 Ti or better | 16 Gb | Windows 10 or Ubuntu
 
 ## The Technical Details
 Unless you're interested in programming, this won't really be interesting...
 
-Graphics:
-	- OpenGL	: implemented
-	- Vulkan	: coming soon
-	- D3D11		: in the far future
-	- Metal		: unless OSX forces you to use it, probably never
+### Graphics APIs
+[X] OpenGL: implemented
+[ ] Vulkan: coming soon
+[ ] D3D11: in the far future
+[ ] Metal: unless OSX forces you to use it, probably never
 
 Audio: OpenAL Soft
 
