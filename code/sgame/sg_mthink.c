@@ -1,5 +1,7 @@
 #include "sg_local.h"
 
+static mobj_t sg_mobs[MAXMOBS];
+
 //======================================================
 
 mobj_t *SG_SpawnMob( mobtype_t type )
@@ -7,33 +9,19 @@ mobj_t *SG_SpawnMob( mobtype_t type )
 	mobj_t *m;
 	sgentity_t *e;
 	
-	if (type >= NUMMOBS) {
-		SG_Error("SG_SpawnMob: bad mob index");
+	if ( type >= NUMMOBS ) {
+		trap_Error("SG_SpawnMob: bad mob index");
 	}
-	
-	e = SG_AllocEntity( ET_MOB );
-	if (!e) {
-		SG_Error("SG_SpawnMob: failed to allocate entity");
-    }
 
-    m = e->entPtr;
-	memcpy(m, &mobinfo, sizeof(*m));
+    e = SG_AllocEntity( ET_MOB );
 
-    switch (type) {
-    case MT_CHAINSAW:
-        e->stateOffset = 0;
-        break;
-    case MT_SHOTTY:
-        e->stateOffset = ST_SHOTTY_IDLE;
-        break;
-    case MT_GRUNT:
-        e->stateOffset = ST_GRUNT_IDLE;
-        break;
-    case MT_HULK:
-        break;
-    };
-    e->state = &stateinfo[ ST_IDLE + e->stateOffset ];
-    e->ticker = e->state->ticcount;
+    m = &sg_mobs[sg.numMobs];
+    memset( m, 0, sizeof(*m) );
+
+    memcpy( m, &mobinfo[type], sizeof(*m) );
+    m->ent = e;
+
+    sg.numMobs++;
 	
 	return m;
 }

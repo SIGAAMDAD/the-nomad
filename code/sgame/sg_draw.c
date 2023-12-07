@@ -72,6 +72,16 @@ static void SG_AddSpritesToFrame( void )
     }
 }
 
+static void SG_DrawPlayer( void )
+{
+    const sgentity_t *ent;
+
+    ent = sg.playr.ent;
+
+    if ( ent->state == ST_PLAYR_MOVE ) {
+    }
+}
+
 int32_t SG_DrawFrame( void )
 {
     renderSceneRef_t refdef;

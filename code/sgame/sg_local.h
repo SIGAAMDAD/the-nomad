@@ -156,21 +156,6 @@ typedef struct {
 	vec3_t maxs;
 } bbox_t;
 
-typedef struct {
-	const char *name;
-	uint32_t cost; // in the market, not implemented yet
-	itemtype_t type;
-} item_t;
-
-typedef struct {
-	item_t base; // weapons ARE techinally items
-	
-	ammotype_t ammo;
-	uint32_t addammo;
-	uint32_t damage;
-	uint32_t range;
-} weapon_t;
-
 typedef vec2_t spriteCoords_t[4];
 
 typedef struct {
@@ -214,6 +199,8 @@ struct sgentity_s
 
 	nhandle_t hShader;
 
+	float width;
+	float height;
 	float angle;
 	dirtype_t dir;
 
@@ -228,6 +215,23 @@ struct sgentity_s
 	sgentity_t *next;
 	sgentity_t *prev;
 };
+
+typedef struct {
+	sgentity_t *ent;
+
+	const char *name;
+	uint32_t cost; // in the market, not implemented yet
+	itemtype_t type;
+} item_t;
+
+typedef struct {
+	item_t base; // weapons ARE techinally items
+	
+	ammotype_t ammo;
+	uint32_t addammo;
+	uint32_t damage;
+	uint32_t range;
+} weapon_t;
 
 typedef struct
 {
@@ -396,7 +400,7 @@ void Lvl_AddKillEntity( entitytype_t type, causeofdeath_t cod );
 void Ent_RunTic( void );
 sgentity_t *SG_AllocEntity( entitytype_t type );
 void SG_FreeEntity( sgentity_t *e );
-void SG_BuildBounds( bbox_t *bounds, const vec3_t origin, float w, float h );
+void SG_BuildBounds( sgentity_t *ent );
 void SG_InitEntities(void);
 
 //
