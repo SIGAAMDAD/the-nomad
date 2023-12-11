@@ -22,12 +22,12 @@ int32_t vmMain(int32_t command, int32_t arg0, int32_t arg1, int32_t arg2, int32_
         return SG_Shutdown();
     case SGAME_RUNTIC:
         return SG_RunLoop( arg0 );
-    case SGAME_FINISH_FRAME:
-        return SG_DrawFrame();
     case SGAME_STARTLEVEL:
         return SG_InitLevel( arg0 );
     case SGAME_ENDLEVEL:
         return SG_EndLevel();
+    case SGAME_GET_STATE:
+        return sg.state;
     case SGAME_KEY_EVENT:
     case SGAME_MOUSE_EVENT:
     case SGAME_EVENT_HANDLING:
@@ -88,7 +88,7 @@ typedef struct {
 
 static cvarTable_t cvarTable[] = {
     { "sg_debugPrint",                  "0",            &sg_debugPrint,             CVAR_LATCH },
-    { "sg_paused",                      "0",            &sg_paused,                 CVAR_LATCH | CVAR_TEMP },
+    { "g_paused",                       "1",            &sg_paused,                 CVAR_LATCH | CVAR_TEMP },
     { "sg_pmAirAcceleration",           "1.5",          &sg_pmAirAcceleration,      CVAR_LATCH | CVAR_SAVE },
     { "sg_pmWaterAcceleratino",         "0.5",          &sg_pmWaterAcceleration,    CVAR_LATCH | CVAR_SAVE },
     { "sg_pmBaseAcceleration",          "1.2",          &sg_pmBaseAcceleration,     CVAR_LATCH | CVAR_SAVE },
@@ -229,13 +229,32 @@ int32_t SG_RunLoop( int32_t levelTime )
     int32_t msec;
     sgentity_t *ent;
 
+    if ( sg.state == SGAME_INACTIVE ) {
+        return 0;
+    }
+
+    // get any cvar changes
+    SG_UpdateCvars();
+
+    // even if the game is paused, we still render everything in the background
+    if ( sg.state == SGAME_SHOW_LEVEL_STATS ) {
+        SG_DrawLevelStats();
+        return 1; // we don't draw the level if we're ending it
+    } else if ( sg.state == SGAME_ABORT_LEVEL ) {
+        SG_DrawFrame();
+        return SG_DrawAbortMission();
+    }
+
+    SG_DrawFrame();
+
+    if ( sg_paused.i ) {
+        return 0;
+    }
+
     sg.framenum++;
     sg.previousTime = sg.framenum;
     sg.levelTime = levelTime;
     msec = sg.levelTime - sg.previousTime;
-
-    // get any cvar changes
-    SG_UpdateCvars();
 
     //
     // go through all allocated entities
@@ -250,6 +269,8 @@ int32_t SG_RunLoop( int32_t levelTime )
         
     }
     end = trap_Milliseconds();
+
+    return 1;
 }
 
 
@@ -263,12 +284,15 @@ static qboolean SG_LoadMedia( void )
     sg.media.player_pain0 = trap_Snd_RegisterSfx( "sfx/player/pain0.wav" );
     sg.media.player_pain1 = trap_Snd_RegisterSfx( "sfx/player/pain1.wav" );
     sg.media.player_pain2 = trap_Snd_RegisterSfx( "sfx/player/pain2.wav" );
+    sg.media.revolver_fire = trap_Snd_RegisterSfx( "sfx/weapons/revolver_fire.wav" );
+    sg.media.revolver_rld = trap_Snd_RegisterSfx( "sfx/weapons/revolver_rld.wav" );
 
     G_Printf( "Finished loading sfx.\n" );
 
     G_Printf( "Loading sgame sprites...\n" );
 
-    sg.media.raio_shader = RE_RegisterShader( "textures/raio.png" );
+    sg.media.raio_shader = RE_RegisterShader( "textures/sprites/glnomad_raio_base.png" );
+    sg.media.grunt_shader = RE_RegisterShader( "textures/sprites/glnomad_grunt.png" );
 
     G_Printf( "Finished loading sprites.\n" );
 
@@ -309,8 +333,6 @@ int32_t SG_Init(void)
 
     sg.state = SGAME_INACTIVE;
 
-    SG_InitEntities();
-
     // give the keybinding info to the engine
     G_SetBindNames( bindnames, arraylen(bindnames) );
 
@@ -319,10 +341,13 @@ int32_t SG_Init(void)
 
 int32_t SG_Shutdown(void)
 {
+    G_Printf( "Shutting down sgame...\n" );
 
-    if (trap_Key_GetCatcher() & KEYCATCH_SGAME) {
-        trap_Key_SetCatcher(trap_Key_GetCatcher() & ~KEYCATCH_SGAME);
-    }
+    trap_Key_SetCatcher( trap_Key_GetCatcher() & ~KEYCATCH_SGAME );
+
+    memset( &sg, 0, sizeof(sg) );
+
+    sg.state = SGAME_INACTIVE;
 
     return 0;
 }

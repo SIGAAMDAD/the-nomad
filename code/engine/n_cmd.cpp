@@ -2,6 +2,7 @@
 #include "n_common.h"
 #include <EASTL/internal/atomic/atomic.h>
 #include "n_cvar.h"
+#include "../system/sys_thread.h"
 
 
 /*
@@ -386,7 +387,7 @@ typedef struct cmd_s
     struct cmd_s* next;
 } cmd_t;
 
-static boost::recursive_mutex cmdLock;
+static CThreadMutex cmdLock;
 static cmd_t* cmd_functions;
 static uint32_t numCommands = 0;
 static eastl::atomic<uint32_t> cmd_argc;
@@ -399,18 +400,18 @@ static eastl::atomic<uint32_t> cmd_historyused;
 
 uint32_t Cmd_Argc(void)
 {
-	return cmd_argc.load();
+	return cmd_argc;
 }
 
 void Cmd_Clear(void)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{cmdLock};
+	cmd_argc.store( 0 );
+
+	CThreadAutoLock<CThreadMutex> lock( cmdLock );
 
 	// exec command breaks if this isn't done
 	memset(cmd_cmd, 0, sizeof(cmd_cmd));
 	memset(cmd_tokenized, 0, sizeof(cmd_tokenized));
-
-	cmd_argc.store(0);
 }
 
 const char *Cmd_Argv(uint32_t index)
@@ -441,7 +442,7 @@ void Cmd_ArgsBuffer( char *buffer, uint32_t bufferLength )
 
 static cmd_t* Cmd_FindCommand(const char *name)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{cmdLock};
+	CThreadAutoLock<CThreadMutex> lock( cmdLock );
     for (cmd_t *cmd = cmd_functions; cmd; cmd = cmd->next) {
         if (!N_stricmp(name, cmd->name)) {
             return cmd;
@@ -452,7 +453,7 @@ static cmd_t* Cmd_FindCommand(const char *name)
 
 void Cmd_TokenizeString2(const char *str, qboolean ignoreQuotes)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{cmdLock};
+	CThreadAutoLock<CThreadMutex> lock( cmdLock );
 	const char *p;
 	char *tok;
 
@@ -533,7 +534,7 @@ void Cmd_CommandCompletion( void(*callback)(const char *s) )
 
 qboolean Cmd_CompleteArgument(const char *command, const char *args, uint32_t argnum)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{cmdLock};
+	CThreadAutoLock<CThreadMutex> lock( cmdLock );
 	const cmd_t *cmd;
 
 	for (cmd = cmd_functions; cmd; cmd = cmd->next) {
@@ -559,7 +560,7 @@ void Cmd_TokenizeString(const char *text_p)
 
 void Cmd_ExecuteString(const char *str)
 {
-	boost::lock_guard<boost::recursive_mutex> lock{cmdLock};
+	CThreadAutoLock<CThreadMutex> lock( cmdLock );
 	cmd_t *cmd, **prev;
 
 	if (*str == '/' || *str == '\\') {

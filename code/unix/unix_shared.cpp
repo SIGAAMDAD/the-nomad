@@ -1,5 +1,6 @@
 #include "../engine/n_shared.h"
 #include "sys_unix.h"
+#include <SDL2/SDL.h>
 
 qboolean Sys_RandomBytes(byte *s, uint64_t len)
 {

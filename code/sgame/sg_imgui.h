@@ -664,11 +664,17 @@ void ImGui_NewLine( void );
 void ImGui_SeparatorText( const char *pText );
 void ImGui_Separator( void );
 void ImGui_ProgressBar( float fraction );
+void ImGui_SameLine( float offset_from_x );
 
 void ImGui_TextUnformatted( const char *pText );
 void ImGui_ColoredTextUnformatted( const vec4_t pColor, const char *pText );
 
 void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL ImGui_Text( const char *fmt, ... );
 void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL ImGui_ColoredText( const vec4_t pColor, const char *fmt, ... );
+
+int ImGui_BeginPopupModal( const char *pName, ImGuiWindowFlags flags );
+void ImGui_EndPopup( void );
+void ImGui_OpenPopup( const char *pName );
+void ImGui_CloseCurrentPopup( void );
 
 #endif

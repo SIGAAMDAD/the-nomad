@@ -841,21 +841,26 @@ void CUILib::SetActiveMenu( uiMenu_t menu )
 	Menu_Cache();
 
 	switch ( menu ) {
+	case UI_MENU_NONE:
+		Key_SetCatcher( Key_GetCatcher() & ~KEYCATCH_UI );
+		Key_ClearStates();
+		Cvar_Set( "g_paused", "0" );
+		ui->ForceMenuOff();
+		break;
 	case UI_MENU_PAUSE:
+		Cvar_Set( "g_paused", "1" );
+		Key_SetCatcher( KEYCATCH_UI );
 		UI_PauseMenu();
 		break;
-	case UI_MENU_NONE:
-		ForceMenuOff();
-		return;
 	case UI_MENU_MAIN:
 		UI_MainMenu();
-		return;
+		break;
 	case UI_MENU_INTRO:
 		UI_IntroMenu();
 		break;
     case UI_MENU_TITLE:
         UI_TitleMenu();
-        return;
+		break;
 	default:
 #ifdef _NOMAD_DEBUG
 	    Con_Printf("UI_SetActiveMenu: bad enum %lu\n", menu );

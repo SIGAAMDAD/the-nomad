@@ -4,6 +4,7 @@
 #pragma once
 
 #include "../rendercommon/imgui.h"
+#include <glm/glm.hpp>
 
 typedef struct {
     const char *name;

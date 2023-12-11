@@ -524,6 +524,10 @@ void ImGui_Separator( void )
     vmi.ImGui_Separator();
 }
 
+void ImGui_SameLine( float offset_from_x ) {
+    vmi.ImGui_SameLine( offset_from_x );
+}
+
 void ImGui_ProgressBar( float fraction )
 {
     vmi.ImGui_ProgressBar( fraction );
@@ -537,5 +541,25 @@ void ImGui_TextUnformatted( const char *pText )
 void ImGui_ColoredTextUnformatted( const vec4_t pColor, const char *pText )
 {
     vmi.ImGui_ColoredTextUnformatted( pColor, pText );
+}
+
+int ImGui_BeginPopupModal( const char *pName, ImGuiWindowFlags flags )
+{
+    return vmi.ImGui_BeginPopupModal( pName, flags );
+}
+
+void ImGui_CloseCurrentPopup( void )
+{
+    vmi.ImGui_CloseCurrentPopup();
+}
+
+void ImGui_EndPopup( void )
+{
+    vmi.ImGui_EndPopup();
+}
+
+void ImGui_OpenPopup( const char *pName )
+{
+    vmi.ImGui_OpenPopup( pName );
 }
 

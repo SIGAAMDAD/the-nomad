@@ -13,6 +13,7 @@
 #include "g_vmimgui.h"
 #include "../engine/n_cvar.h"
 #include "../system/sys_timer.h"
+#include <SDL2/SDL.h>
 #endif
 
 #ifndef O_BINARY
@@ -148,7 +149,12 @@ struct vmRefImport_s
     void (*ImGui_ProgressBar)( float fraction );
     void (*ImGui_TextUnformatted)( const char *pText );
     void (*ImGui_ColoredTextUnformatted)( const vec4_t pColor, const char *pText );
+    void (*ImGui_OpenPopup)( const char *pName );
+    void (*ImGui_CloseCurrentPopup)( void );
+    void (*ImGui_EndPopup)( void );
+    void (*ImGui_SameLine)( float offset_from_x );
     float (*ImGui_GetFontScale)( void );
+    int (*ImGui_BeginPopupModal)( const char *pName, ImGuiWindowFlags flags );
     int (*ImGui_InputText)( ImGuiInputText *pInput );
     int (*ImGui_InputTextMultiline)( ImGuiInputText *pInput );
     int (*ImGui_InputTextWithHint)( ImGuiInputTextWithHint *pInput );
@@ -353,6 +359,7 @@ SDL_Window *G_GetSDLWindow(void);
 SDL_GLContext G_GetGLContext( void );
 void GLimp_Minimize( void );
 int32_t G_LoadMap( int32_t index, mapinfo_t *info );
+qboolean G_CheckPaused( void );
 
 //
 // g_screen.cpp

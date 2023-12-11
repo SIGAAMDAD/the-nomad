@@ -552,6 +552,11 @@ static void VM_FillImport(vmRefImport_t *import, const char *name)
     import->ImGui_BeginWindow = ImGui_BeginWindow;
     import->ImGui_BeginTable = ImGui_BeginTable;
     import->ImGui_BeginMenu = ImGui_BeginMenu;
+	import->ImGui_BeginPopupModal = ImGui_BeginPopupModal;
+	import->ImGui_CloseCurrentPopup = ImGui_CloseCurrentPopup;
+	import->ImGui_OpenPopup = ImGui_OpenPopup;
+	import->ImGui_EndPopup = ImGui_EndPopup;
+	import->ImGui_SameLine = ImGui_SameLine;
 }
 
 /*

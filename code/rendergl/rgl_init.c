@@ -900,7 +900,7 @@ void R_Init(void)
     ri.Printf(PRINT_INFO, "---------- finished RE_Init ----------\n");
 }
 
-GDR_EXPORT void RE_BeginRegistration(gpuConfig_t *config)
+void RE_BeginRegistration(gpuConfig_t *config)
 {
     R_Init();
     rg.registered = qtrue;
@@ -937,7 +937,7 @@ void RE_Shutdown(refShutdownCode_t code)
 
     // free everything
     ri.FreeAll();
-    rg.registered = qfalse;
+    memset( &rg, 0, sizeof(rg) );
     backendData = NULL;
 }
 
@@ -948,16 +948,16 @@ RE_EndRegistration
 Touch all images to make sure they are resident (probably obsolete on modern systems)
 =============
 */
-GDR_EXPORT void RE_EndRegistration(void) {
+void RE_EndRegistration(void) {
     R_IssuePendingRenderCommands();
     RB_ShowImages();
 }
 
-GDR_EXPORT void RE_GetConfig(gpuConfig_t *config) {
+void RE_GetConfig(gpuConfig_t *config) {
     *config = glConfig;
 }
 
-GDR_EXPORT void *RE_GetTextureImGuiData( nhandle_t hShader ) {
+void *RE_GetTextureImGuiData( nhandle_t hShader ) {
     shader_t *sh;
 
     sh = R_GetShaderByHandle( hShader );
@@ -990,7 +990,6 @@ GDR_EXPORT renderExport_t *GDR_DECL GetRenderAPI(uint32_t version, refimport_t *
     re.BeginScene = RE_BeginScene;
     re.EndScene = RE_EndScene;
     re.RenderScene = RE_RenderScene;
-
 
     re.BeginFrame = RE_BeginFrame;
     re.EndFrame = RE_EndFrame;

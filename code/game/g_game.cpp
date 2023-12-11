@@ -4,6 +4,8 @@
 #include "../rendercommon/imgui_impl_sdl2.h"
 #include "../rendercommon/imgui_impl_opengl3.h"
 #include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 vm_t *sgvm;
 vm_t *uivm;
@@ -571,6 +573,7 @@ static void G_Vid_Restart(refShutdownCode_t code)
     // shutdown the renderer and clear the renderer interface
     G_ShutdownRenderer(code);
 
+    Snd_Shutdown();
     gi.soundStarted = qfalse;
 
     G_ClearMem();
@@ -618,8 +621,6 @@ static void G_Vid_Restart_f(void)
 //
 static void G_Snd_Restart_f(void)
 {
-    Snd_Shutdown();
-
     // sound will be reinitialized by vid restart
     G_Vid_Restart( REF_KEEP_CONTEXT );
 }
@@ -825,7 +826,8 @@ void G_Init(void)
     g_drawBuffer = Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
 	Cvar_SetDescription( g_drawBuffer, "Specifies buffer to draw from: GL_FRONT or GL_BACK." );
 
-    g_paused = Cvar_Get( "g_paused", "0", CVAR_PRIVATE | CVAR_TEMP );
+    g_paused = Cvar_Get( "g_paused", "1", CVAR_PRIVATE | CVAR_TEMP );
+    Cvar_CheckRange( g_paused, "0", "1", CVT_INT );
     Cvar_SetDescription( g_paused, "Set to 1 when in the pause menu." );
 
     g_renderer = Cvar_Get("g_renderer", "opengl", CVAR_SAVE | CVAR_LATCH);
@@ -971,6 +973,13 @@ void G_ShutdownAll(void)
 
 void G_ClearState(void) {
     memset(&gi, 0, sizeof(gi));
+}
+
+qboolean G_CheckPaused( void ) {
+    if ( g_paused->i || g_paused->modified ) {
+        return qtrue;
+    }
+    return qfalse;
 }
 
 /*

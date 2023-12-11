@@ -4,6 +4,7 @@
 #pragma once
 
 #include <EASTL/allocator.h>
+#include <EASTL/vector.h>
 
 class CHunkTempAllocator
 {

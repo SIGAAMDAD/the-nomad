@@ -736,7 +736,21 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextRow();
 
         ImGui::TableNextColumn();
-        ImGui::TextUnformatted( "Settings For NERDS" );
+        ImGui::TextUnformatted( "HDR" );
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted( "COMING SOON!" );
+
+        ImGui::TableNextRow();
+
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted( "Ambient Occlusion" );
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted( "COMING SOON!" );
+
+        ImGui::TableNextRow();
+
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted( "Stuff For The NERDS" );
         ImGui::TableNextColumn();
         if (ImGui::RadioButton( settings.advancedGraphicsStr[settings.advancedGraphics], settings.advancedGraphics )) {
             settings.advancedGraphics = !settings.advancedGraphics;

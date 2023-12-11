@@ -12,6 +12,7 @@ typedef struct imguiState_s
     uint32_t m_bWindowOpen;
     uint32_t m_bMenuOpen;
     uint32_t m_nColorStack;
+    uint32_t m_bPopupOpen;
 
     imguiState_s( void )
     {
@@ -20,6 +21,34 @@ typedef struct imguiState_s
 } imguiState_t;
 
 static imguiState_t imgui;
+
+void ImGui_OpenPopup( const char *pName ) {
+    ImGui::OpenPopup( pName );
+    imgui.m_bPopupOpen = true;
+}
+
+int ImGui_BeginPopupModal( const char *pName, ImGuiWindowFlags flags )
+{
+    if ( !imgui.m_bPopupOpen ) {
+        N_Error( ERR_DROP, "%s: no popup is open", __func__ );
+    }
+
+    return (int)ImGui::BeginPopupModal( pName, NULL, flags );
+}
+
+void ImGui_CloseCurrentPopup( void ) {
+    if ( !imgui.m_bPopupOpen ) {
+        N_Error( ERR_DROP, "%s: no popup is open", __func__ );
+    }
+    ImGui::CloseCurrentPopup();
+}
+
+void ImGui_EndPopup( void ) {
+    if ( !imgui.m_bPopupOpen ) {
+        N_Error( ERR_DROP, "%s: no popup is open", __func__ );
+    }
+    ImGui::EndPopup();
+}
 
 int ImGui_BeginWindow( ImGuiWindow *pWindow )
 {

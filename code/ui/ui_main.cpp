@@ -40,9 +40,7 @@ static void UI_RegisterCvars( void )
     Cvar_CheckRange( ui_printStrings, "0", "1", CVT_INT );
     Cvar_SetDescription( ui_printStrings, "Print value strings set by the language ui file" );
 
-    ui_active = Cvar_Get( "ui_active", "1", CVAR_LATCH | CVAR_TEMP );
-    Cvar_CheckRange( ui_active, "0", "1", CVT_INT );
-    Cvar_SetDescription( ui_active, "Set to 0 if the gamestate is not in a menu, otherwise 1" );
+    ui_active = Cvar_Get( "g_paused", "1", CVAR_LATCH | CVAR_TEMP );
 
 #ifdef _NOMAD_DEBUG
 	ui_diagnostics = Cvar_Get( "ui_diagnostics", "3", CVAR_LATCH | CVAR_PROTECTED | CVAR_SAVE );
@@ -223,25 +221,16 @@ extern "C" void UI_Refresh( int32_t realtime )
 	ui->SetFrameTime( realtime - ui->GetRealTime() );
 	ui->SetRealTime( realtime );
 
-    // check for pause menu
-    if (ui->GetState() == STATE_NONE) {
-        if (!ui_active->i) {
-            ui->EscapeMenuToggle( STATE_PAUSE );
-        }
+	UI_DrawDiagnositics();
 
-        if (!ui_active->i && ui->GetState() != STATE_PAUSE) {
-            return;
-        }
+	if ( !ui_active->i ) {
+		ui->EscapeMenuToggle( STATE_PAUSE );
+		if ( ui->GetState() != STATE_NONE ) {
+			ui->SetActiveMenu( UI_MENU_PAUSE );
+		}
+		return;
+	}
 
-        if (ui->GetState() == STATE_PAUSE) {
-            Cvar_Set( "ui_active", "1" );
-            Cvar_Set( "sg_paused", "1" );
-            Cvar_Set( "g_paused", "1" );
-            ui->SetActiveMenu( UI_MENU_PAUSE );
-            Key_SetCatcher( KEYCATCH_UI );
-        }
-    }
-    
 	if ( !( Key_GetCatcher() & KEYCATCH_UI ) ) {
 		return;
 	}
@@ -253,10 +242,11 @@ extern "C" void UI_Refresh( int32_t realtime )
             ui->DrawHandlePic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, ui->menubackShader );
 		}
 
-		if (ui->GetCurrentMenu()->Draw)
+		if (ui->GetCurrentMenu()->Draw) {
 			ui->GetCurrentMenu()->Draw();
-		else
+		} else {
 			Menu_Draw( ui->GetCurrentMenu() );
+		}
 
 		if( ui->GetFirstDraw() ) {
 			ui->MouseEvent( 0, 0 );
@@ -266,7 +256,7 @@ extern "C" void UI_Refresh( int32_t realtime )
     else {
         ui->SetActiveMenu( UI_MENU_TITLE );
     }
-
+/*
 	// draw cursor
 //	ui->SetColor( NULL );
 //	ui->DrawHandlePic( ui->GetCursorX() - 16, ui->GetCursorY() - 16, 32, 32, cursor);
@@ -285,8 +275,7 @@ extern "C" void UI_Refresh( int32_t realtime )
 		Snd_PlaySfx( menu_in_sound );
 		m_entersound = qfalse;
 	}
-
-    UI_DrawDiagnositics();
+	*/
 }
 
 
@@ -443,7 +432,7 @@ static int64_t GetValue( const char *name ) {
 	char line[128];
 	int64_t result;
 	size_t len = strlen( name );
-	
+
 	while ( fgets( line, sizeof(line), selfStatus ) != NULL) {
 		if (strncmp( line, name, len ) == 0) {
 			result = ParseLine( line );
@@ -572,7 +561,8 @@ static void Sys_DrawCPUUsage( void )
 
 void Sys_DisplayEngineStats( void )
 {
-	const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse;
+	const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse
+						| ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoMove;
 	
 	if (!ui_diagnostics->i) {
 		return;
@@ -622,6 +612,7 @@ void Sys_DisplayEngineStats( void )
 	
 	ImGui::Text( "%ix%i", gi.gpuConfig.vidWidth, gi.gpuConfig.vidHeight );
 	ImGui::Text( "%s", ui->GetConfig().version_str );
+	ImGui::Text( "%s", ui->GetConfig().vendor );
 	ImGui::Text( "%s", ui->GetConfig().renderer );
     ImGui::Text( "%s", ui_cpuString->s );
 	

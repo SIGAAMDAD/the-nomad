@@ -370,8 +370,6 @@ Compiler Macro Abstraction
 #define GO_AWAY_MANGLE extern
 #endif
 
-#include "n_pch.h"
-
 #ifdef Q3_VM
 #include "../game/bg_lib.h"
 #else
@@ -1054,14 +1052,18 @@ typedef enum
 
 typedef enum
 {
-	D_NORTH,
-	D_WEST,
-	D_SOUTH,
-	D_EAST,
+    DIR_NORTH = 0,
+    DIR_NORTH_EAST,
+    DIR_EAST,
+    DIR_SOUTH_EAST,
+    DIR_SOUTH,
+    DIR_SOUTH_WEST,
+    DIR_WEST,
+    DIR_NORTH_WEST,
+    
+    NUMDIRS,
 
-	NUMDIRS,
-
-	D_NULL
+	DIR_NULL
 } dirtype_t;
 
 typedef enum

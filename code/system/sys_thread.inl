@@ -224,7 +224,7 @@ GDR_INLINE void CThread::Yield( void )
 	// sys_ppu_thread_yield doesn't seem to function properly, so sleep instead.
 	sys_timer_usleep( 60 );
 #elif defined(POSIX)
-	pthread_yield();
+	sched_yield();
 #endif
 }
 

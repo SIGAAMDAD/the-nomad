@@ -249,4 +249,9 @@ void ImGui_SeparatorText( const char *pText );
 void ImGui_Separator( void );
 void ImGui_ProgressBar( float fraction );
 
+void ImGui_OpenPopup( const char *pName );
+int ImGui_BeginPopupModal( const char *pName, ImGuiWindowFlags flags );
+void ImGui_CloseCurrentPopup( void );
+void ImGui_EndPopup( void );
+
 #endif

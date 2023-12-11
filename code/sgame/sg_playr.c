@@ -9,7 +9,6 @@ static playr_t* playr;
 
 void P_Thinker( sgentity_t *self )
 {
-
 }
 
 qboolean P_GiveWeapon( weapontype_t type )
@@ -54,7 +53,7 @@ void SG_InitPlayer( void )
     // initialize player state
     memset( playr, 0, sizeof(*playr) );
     
-    ent->stateOffset = ST_PLAYR_IDLE;
+    ent->stateOffset = S_PLAYR_IDLE;
     ent->hShader = sg.media.raio_shader;
 
     // mark as allocated

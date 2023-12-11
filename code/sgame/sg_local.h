@@ -30,12 +30,6 @@
 // enums
 //
 
-typedef enum {
-	SGAME_INACTIVE,
-	SGAME_IN_LEVEL,
-	SGAME_SHOW_LEVEL_STATS,
-} sgameState_t;
-
 //
 // weapontype_t: enumerations for weapons, feel free to add your own
 // NOTE: you will have to customize the weapon code in sg_combat to
@@ -107,10 +101,10 @@ typedef enum
 
 typedef enum
 {
-	MT_HULK,
 	MT_GRUNT,
-	MT_CHAINSAW,
 	MT_SHOTTY,
+	MT_HULK,
+	MT_DEATH,
 	
 	NUMMOBS
 } mobtype_t;
@@ -143,9 +137,6 @@ typedef enum {
 //typedef enum
 //{} playrflags_t;
 
-#include "sg_sprites.h"
-#include "sg_state.h"
-
 //==============================================================
 // data types
 //
@@ -174,14 +165,7 @@ typedef union {
 	actionf_p1 acp1;
 } actionp_t;
 
-typedef struct
-{
-	statenum_t id;
-	statenum_t next;
-	actionp_t action;
-	spritenum_t sprite;
-	int32_t ticcount;
-} state_t;
+#include "sg_info.h"
 
 //
 // sgentity: the base entity data type
@@ -196,6 +180,9 @@ struct sgentity_s
 	
 	int32_t health;
 	int32_t ticker;
+	int32_t frame;
+
+	uint32_t facing;
 
 	nhandle_t hShader;
 
@@ -207,7 +194,7 @@ struct sgentity_s
 	void *entPtr;
 	
 	statenum_t stateOffset;
-	spritenum_t sprite;
+	uint32_t sprite;
 	state_t *state;
 
 	spritesheet_t *sheet;
@@ -243,12 +230,17 @@ typedef struct
 	uint32_t ammocounts[NUMAMMOTYPES];
 	const weapon_t *curwpn;
 	
+	spritenum_t foot_sprite;
+	int32_t foot_frame;
 	uint32_t flags;
 } playr_t;
 
 typedef struct
 {
 	sgentity_t *ent;
+	sgentity_t *target;
+
+	mobtype_t type;
 	
 	float sight_range;
 	float melee_range;
@@ -284,7 +276,12 @@ typedef struct
     sfxHandle_t player_death1;
     sfxHandle_t player_death2;
 
+	sfxHandle_t revolver_fire;
+	sfxHandle_t revolver_rld;
+
 	nhandle_t raio_shader;
+	nhandle_t grunt_shader;
+	nhandle_t shotty_shader;
 
 	stringHash_t *pickupShotgun;
 } sgameMedia_t;
@@ -346,6 +343,8 @@ extern const dirtype_t inversedirs[NUMDIRS];
 extern sgentity_t sg_entities[MAXENTITIES];
 
 extern spritesheet_t sprites_thenomad;
+extern spritesheet_t sprites_grunt;
+extern spritesheet_t sprites_shotty;
 
 extern sgGlobals_t sg;
 
@@ -379,6 +378,13 @@ extern vmCvar_t sg_numSaves;
 //
 
 //
+// sg_draw.c
+//
+int32_t SG_DrawFrame( void );
+void SG_GenerateSpriteSheetTexCoords( spritesheet_t *sheet, uint32_t spriteWidth, uint32_t spriteHeight,
+    uint32_t sheetWidth, uint32_t sheetHeight );
+
+//
 // sg_main.c
 //
 void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL SG_Error( const char *err, ... );
@@ -393,6 +399,8 @@ void SG_UpdateCvars( void );
 qboolean SG_InitLevel( int32_t index );
 int32_t SG_EndLevel( void );
 void Lvl_AddKillEntity( entitytype_t type, causeofdeath_t cod );
+int32_t SG_DrawAbortMission( void );
+void SG_DrawLevelStats( void );
 
 //
 // sg_entity.c
@@ -429,7 +437,6 @@ qboolean SG_OutOfMemory( void );
 // sg_playr.c
 //
 void SG_InitPlayer( void );
-void P_Thinker( sgentity_t *self );
 void SG_KeyEvent( int32_t key, qboolean down );
 void SG_MouseEvent(  );
 qboolean P_GiveItem( itemtype_t item );

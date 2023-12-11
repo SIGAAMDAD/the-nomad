@@ -8,28 +8,32 @@ sgentity_t sg_entities[MAXENTITIES];
 
 #define ENTITY_CYCLE_LIMIT 100000
 
-qboolean Ent_SetState(sgentity_t *self, statenum_t state)
+qboolean Ent_SetState( sgentity_t *self, statenum_t state )
 {
 	state_t *st;
 	uint32_t counter;
 	
+	counter = 0;
 	do {
-		if (state == ST_NULL) {
-			self->state = &stateinfo[ ST_NULL ];
+		if ( state == S_NULL ) {
+			self->state = &stateinfo[S_NULL];
 			SG_FreeEntity(self);
 			return qfalse;
 		}
 		
 		st = &stateinfo[state];
 		self->state = st;
-		self->ticker = st->ticcount;
-		self->sprite = st->sprite;
+		self->ticker = st->tics;
+		self->sprite = st->sprite + self->facing;
+
+		// does this state have more than one frame?
+		self->frame = st->frames ? 0 : -1;
 		
-		state = st->next;
-		if (counter++ > ENTITY_CYCLE_LIMIT) {
+		state = st->nextstate;
+		if ( counter++ > ENTITY_CYCLE_LIMIT ) {
 			G_Error("Ent_SetState: infinite state cycle detected!");
 		}
-	} while (!self->ticker);
+	} while ( !self->ticker );
 	
 	return qtrue;
 }
@@ -72,10 +76,5 @@ sgentity_t *SG_AllocEntity( entitytype_t type )
 	ent->width = ent->height = 0;
 
 	SG_BuildBounds( ent );
-}
-
-void SG_InitEntities( void ) {
-	memset( sg_entities, 0, sizeof(sg_entities) );
-	sg.numEntities = 0;
 }
 

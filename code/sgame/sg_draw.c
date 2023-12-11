@@ -15,13 +15,44 @@ static qboolean EntityIsInView( const bbox_t *bounds ) {
     return BoundsIntersect( bounds->mins, bounds->maxs, data.frustum.mins, data.frustum.maxs );
 }
 
-static void SG_DetermineEntitySprite( const sgentity_t *ent, polyVert_t *verts ) {
+static void SG_DetermineEntitySprite( const state_t *state, uint32_t facing, int32_t frame, polyVert_t *verts, const spritesheet_t *sheet ) {
     uint32_t i;
+    spritenum_t sprite;
+
+    sprite = state->sprite + facing;
+
+    // more than a single frame for this sprite
+    if ( state->frames ) {
+        sprite = state->sprite + frame;
+    }
 
     for (i = 0; i < 4; i++) {
-        verts[i].uv[0] = ent->sheet->texCoords[ent->sprite][i][0];
-        verts[i].uv[1] = ent->sheet->texCoords[ent->sprite][i][1];
+        verts[i].uv[0] = sheet->texCoords[ent->sprite][i][0];
+        verts[i].uv[1] = sheet->texCoords[ent->sprite][i][1];
     }
+}
+
+static void SG_CalcVerts( const sgentity_t *ent, polyVert_t *verts )
+{
+    // top right
+    verts[0].xyz[0] = ent->bounds.mins[0] + ent->origin[0];
+    verts[0].xyz[1] = ent->bounds.mins[1];
+    verts[0].xyz[2] = 0.0f;
+
+    // bottom right
+    verts[1].xyz[0] = ent->bounds.mins[0];
+    verts[1].xyz[1] = ent->bounds.mins[1];
+    verts[1].xyz[2] = 0.0f;
+
+    // top left
+    verts[2].xyz[0] = ent->bounds.mins[0];
+    verts[2].xyz[1] = ent->bounds.mins[1];
+    verts[2].xyz[2] = 0.0f;
+
+    // bottom left
+    verts[3].xyz[0] = ent->bounds.mins[0] - ent->origin[0];
+    verts[3].xyz[1] = ent->bounds.mins[1];
+    verts[3].xyz[2] = 0.0f;
 }
 
 static void SG_DrawEntity( const sgentity_t *ent )
@@ -29,34 +60,16 @@ static void SG_DrawEntity( const sgentity_t *ent )
     polyVert_t verts[4];
 
     // is it visible?
-    if (!EntityIsInView( &ent->bounds )) {
-        return;
-    }
+//    if ( !EntityIsInView( &ent->bounds ) ) {
+//        return;
+//    }
 
     data.polyCount++;
     data.vertexCount += 4;
 
-    // top right
-    verts[0].xyz[0] = ent->origin[0] + ent->bounds.mins[0];
-    verts[0].xyz[1] = ent->origin[1] + ent->bounds.mins[1];
-    verts[0].xyz[2] = 0.0f;
+    SG_CalcVerts( ent, verts );
 
-    // bottom right
-    verts[1].xyz[0] = ent->origin[0] + ent->bounds.mins[0];
-    verts[1].xyz[1] = ent->origin[1] - ent->bounds.mins[1];
-    verts[1].xyz[2] = 0.0f;
-
-    // top left
-    verts[2].xyz[0] = ent->origin[0] - ent->bounds.mins[0];
-    verts[2].xyz[1] = ent->origin[1] - ent->bounds.mins[1];
-    verts[2].xyz[2] = 0.0f;
-
-    // bottom left
-    verts[3].xyz[0] = ent->origin[0] - ent->bounds.mins[0];
-    verts[3].xyz[1] = ent->origin[1] + ent->bounds.mins[1];
-    verts[3].xyz[2] = 0.0f;
-
-    SG_DetermineEntitySprite( ent, verts );
+    SG_DetermineEntitySprite( ent->state, ent->facing, ent->frame, verts, ent->sheet );
 
     RE_AddPolyToScene( ent->hShader, verts, 4 );
 }
@@ -74,11 +87,18 @@ static void SG_AddSpritesToFrame( void )
 
 static void SG_DrawPlayer( void )
 {
+    spritenum_t base_sprite;
     const sgentity_t *ent;
+    polyVert_t verts[4];
+    uint32_t i;
 
     ent = sg.playr.ent;
 
-    if ( ent->state == ST_PLAYR_MOVE ) {
+    SG_CalcVerts( verts, ent );
+
+    for ( i = 0; i < 4; i++ ) {
+        verts[i].uv[0] = ent->sheet->texCoords[sg.playr.foot_sprite + sg.playr.foot_frame][i][0];
+        verts[i].uv[1] = ent->sheet->texCoords[sg.playr.foot_sprite + sg.playr.foot_frame][i][1];
     }
 }
 
@@ -95,8 +115,6 @@ int32_t SG_DrawFrame( void )
     refdef.y = 0;
     refdef.time = sg.levelTime;
 
-    SG_BuildBounds( &data.frustum, sg.cameraPos, data.realCamWidth, data.realCamHeight );
-
     // draw everything
     RE_ClearScene();
 
@@ -107,7 +125,8 @@ int32_t SG_DrawFrame( void )
 // SG_GenerateSpriteSheetTexCoords: generates a sprite sheet's texture coordinates to reduce redundant calculations when drawing
 // NOTE: I'm pretty sure this will only work with OpenGL texture coords
 //
-void SG_GenerateSpriteSheetTexCoords( spritesheet_t *sheet, uint32_t spriteWidth, uint32_t spriteHeight, uint32_t sheetWidth, uint32_t sheetHeight )
+void SG_GenerateSpriteSheetTexCoords( spritesheet_t *sheet, uint32_t spriteWidth, uint32_t spriteHeight,
+    uint32_t sheetWidth, uint32_t sheetHeight )
 {
     uint32_t y, x;
     uint32_t spriteCountX, spriteCountY;
@@ -118,10 +137,7 @@ void SG_GenerateSpriteSheetTexCoords( spritesheet_t *sheet, uint32_t spriteWidth
     sheet->texCoords = SG_MemAlloc( sizeof(*sheet->texCoords) * sheet->numSprites );
     texCoords = sheet->texCoords;
 
-    if (spriteWidth % sheetWidth) {
-        G_Error( "SG_GenerateSpriteSheetTexCoords: please ensure your sprite dimensions and sheet dimensions are powers of two" );
-    }
-    if (spriteHeight % sheetHeight) {
+    if (spriteWidth % sheetWidth || spriteHeight % sheetHeight) {
         G_Error( "SG_GenerateSpriteSheetTexCoords: please ensure your sprite dimensions and sheet dimensions are powers of two" );
     }
 

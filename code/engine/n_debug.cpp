@@ -1,18 +1,19 @@
 #include "n_shared.h"
-#include <backtrace.h>
-#include <cxxabi.h>
 
 #ifdef POSIX
 #include <dlfcn.h>
 #include <execinfo.h>
+#include <backtrace.h>
+#include <cxxabi.h>
+#include <malloc.h>
 #elif defined(_WIN32)
 #include <dbghelp.h>
 #include <windows.h>
 #include <excpt.h>
 #endif
-#include <malloc.h>
 #include "../system/sys_thread.h"
 #include "../system/sys_thread.inl"
+#include <SDL2/SDL.h>
 
 #define MEMHEADER 0xff1daf022
 

@@ -2,6 +2,15 @@
 
 static mobj_t sg_mobs[MAXMOBS];
 
+static qboolean SG_CheckSight( mobj_t *m )
+{
+	float dis = disBetweenOBJ( m->ent->origin, m->target->origin );
+
+	if ( dis <= m->sight_range ) {
+		
+	}
+}
+
 //======================================================
 
 mobj_t *SG_SpawnMob( mobtype_t type )

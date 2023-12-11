@@ -286,6 +286,17 @@ static intptr_t G_SGameSystemCalls(intptr_t *args)
     case IMGUI_PROGRESSBAR:
         ImGui_ProgressBar( VMF(1) );
         return 0;
+    case IMGUI_OPEN_POPUP:
+        ImGui_OpenPopup( (const char *)VMA(1) );
+        return 0;
+    case IMGUI_CLOSE_CURRENT_POPUP:
+        ImGui_CloseCurrentPopup();
+        return 0;
+    case IMGUI_BEGIN_POPUP_MODAL:
+        return ImGui_BeginPopupModal( (const char *)VMA(1), args[2] );
+    case IMGUI_END_POPUP:
+        ImGui_EndPopup();
+        return 0;
     case SG_RE_LOADWORLDMAP:
         re.LoadWorld( (const char *)VMA(1) );
         return 0;

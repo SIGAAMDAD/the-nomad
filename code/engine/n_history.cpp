@@ -1,6 +1,7 @@
 #include "n_shared.h"
 #include "n_common.h"
 #include "n_cvar.h"
+#include <ctype.h>
 
 void Field_Clear( field_t *edit )
 {

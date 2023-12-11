@@ -21,7 +21,7 @@ typedef struct
     uint32_t checkpointIndex;
 } levelinfo_t;
 
-static levelinfo_t *linfo;
+static levelinfo_t level;
 
 //
 // SG_SpawnLevelEntities
@@ -55,13 +55,8 @@ qboolean SG_InitLevel( int32_t levelIndex )
     G_Printf( "Starting up level at index %i\n", levelIndex );
     G_Printf( "Allocating resources...\n" );
 
-    linfo = SG_MemAlloc( sizeof(*linfo) );
-    if (!linfo) {
-        trap_Error( "SG_InitLevel: not enough vm memory" );
-    }
-    assert( linfo );
-
-    memset( linfo, 0, sizeof(*linfo) );
+    // clear the old level
+    memset( &level, 0, sizeof(level) );
 
     G_Printf( "Loading map from internal cache...\n" );
 
@@ -104,7 +99,7 @@ typedef struct {
 
 static endlevelScreen_t endLevel;
 
-static void SG_DrawLevelStats( void )
+void SG_DrawLevelStats( void )
 {
     float font_scale;
     vec2_t cursorPos;
@@ -125,6 +120,35 @@ static void SG_DrawLevelStats( void )
     ImGui_EndWindow();
 }
 
+//
+// SG_DrawAbortMission: returns qtrue if the user wants to end the current level
+// via the pause menu
+//
+int32_t SG_DrawAbortMission( void )
+{
+    float font_scale;
+
+    font_scale = ImGui_GetFontScale();
+
+    if ( ImGui_BeginPopupModal( "Abort Mission", endLevel.window.m_Flags ) ) {
+        ImGui_SetWindowFontScale( font_scale * 3.5f );
+
+        ImGui_TextUnformatted( "Are You Sure Want To End The Current Level? Your Most Recent Checkpoint Will Be Saved." );
+
+        if ( ImGui_Button( "Yes" ) ) {
+            ImGui_CloseCurrentPopup();
+            return qtrue;
+        }
+        ImGui_SameLine( 0.0f );
+        if ( ImGui_Button( "No" ) ) {
+            ImGui_CloseCurrentPopup();
+            return qfalse;
+        }
+
+        ImGui_EndPopup();
+    }
+}
+
 int32_t SG_EndLevel( void )
 {
     // setup the window
@@ -135,8 +159,14 @@ int32_t SG_EndLevel( void )
     endLevel.window.m_bOpen = qtrue;
     endLevel.window.m_bClosable = qfalse;
 
-    // set the state
-    sg.state = SGAME_SHOW_LEVEL_STATS;
+    // are we aborting this mission?
+    if ( level.checkpointIndex != sg.mapInfo.numCheckpoints - 1 ) {
+        sg.state = SGAME_ABORT_LEVEL;
+        ImGui_OpenPopup( "Abort Mission" );
+    }
+    else {
+        sg.state = SGAME_SHOW_LEVEL_STATS;
+    }
 
     return 1;
 }

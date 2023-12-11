@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include <EASTL/functional.h>
+
 class CUITable
 {
 public:

@@ -538,16 +538,6 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 		data->SelectAll();
 	}
 
-	if (Key_IsDown(KEY_BACKSPACE)) {
-		if (data->HasSelection()) {
-			data->DeleteChars(data->SelectionStart, data->SelectionEnd - data->SelectionStart);
-		}
-		else {
-			data->DeleteChars(data->SelectionEnd, 1);
-		}
-		g_consoleField.cursor = data->CursorPos;
-	}
-
 #if 0
 	// paste function
 	if (Key_IsDown(KEY_LCTRL) && Key_IsDown(KEY_V)) {

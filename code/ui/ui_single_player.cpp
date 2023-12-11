@@ -16,7 +16,7 @@ typedef struct {
 
 typedef struct {
     // load game data
-    saveinfo_t *saveList = NULL;
+    saveinfo_t *saveList;
     uint64_t numSaves;
 
     // new game data
@@ -236,7 +236,7 @@ void SinglePlayerMenu_Draw( void )
         if (ImGui::Button( "Open To a Fresh Chapter" )) {
             ui->PlaySelected();
             ui->SetState( STATE_NONE );
-            Cvar_Set( "ui_active", "0" ); // turn off the ui menu system
+            ui->SetActiveMenu( UI_MENU_NONE );
             VM_Call( sgvm, 1, SGAME_STARTLEVEL, 0 ); // start a new game
         }
         break; }

@@ -9,12 +9,13 @@ typedef enum {
 typedef struct
 {
     CUIMenu menu;
-
+    
     const char *tipOfTheDay;
     qboolean helpMenu;
     helpstate_t helpstate;
 
     qboolean exitToMM;
+    qboolean settingsMenu;
 
     const stringHash_t *title;
     const stringHash_t *help;
@@ -41,11 +42,6 @@ static const char *helpStrings[NUMHELPSTRINGS][2] = {
 
 // PAUSE. REWIND. PLAY.
 static pausemenu_t menu;
-
-static void PauseMenuResume( void ) {
-    Cvar_Set( "sg_paused", "0" );
-    Cvar_Set( "ui_active", "0" );
-}
 
 static void PauseMenu_Help( void )
 {
@@ -81,6 +77,30 @@ static void PauseMenu_Help( void )
     };
 }
 
+static void PauseMenu_DrawTitle( void ) {
+    const float font_scale = ImGui::GetFont()->Scale;
+
+    ImGui::SetWindowFontScale( font_scale * 3.75f * ui->scale );
+    ImGui::TextUnformatted( menu.title->value );
+    ImGui::SetWindowFontScale( font_scale * 1.5f * ui->scale );
+}
+
+static void PauseMenu_ExitToMainMenu( void )
+{
+    // verify with the user that they actually want to end the level
+    if ( VM_Call( sgvm, 0, SGAME_RUNTIC ) ) {
+        // restart everything
+        Cbuf_ExecuteText( EXEC_NOW, "vid_restart fast\n" );
+        
+        // clear all menus, then restack them
+        ui->ForceMenuOff();
+        Key_SetCatcher( KEYCATCH_UI );
+        ui->SetActiveMenu( UI_MENU_TITLE );
+        ui->SetState( STATE_MAIN );
+        ui->SetActiveMenu( UI_MENU_MAIN );
+    }
+}
+
 static void PauseMenu_Draw( void )
 {
     const int windowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysAutoResize
@@ -93,26 +113,30 @@ static void PauseMenu_Draw( void )
     if (menu.helpMenu) {
         PauseMenu_Help();
         return;
+    } else if ( menu.exitToMM ) {
+        PauseMenu_ExitToMainMenu();
+        return;
+    } else if ( menu.settingsMenu ) {
+        // we don't want to be drawing everything else behind the settings menu
+        // otherwise its very hard to see the options
+        ui->SetActiveMenu( UI_MENU_MAIN );
+        ui->SetState( STATE_SETTINGS );
+        return;
     }
 
     ui->EscapeMenuToggle( STATE_NONE );
-    if (ui->GetState() != STATE_PAUSE) {
-        PauseMenuResume();
-        ui->PopMenu();
-        Key_SetCatcher( KEYCATCH_SGAME );
+    if ( ui->GetState() == STATE_NONE ) {
+        ui->SetActiveMenu( UI_MENU_NONE );
         return;
     }
-    else if (ui->Menu_Title( menu.title->value )) {
-        PauseMenuResume();
-        ui->PopMenu();
-        Key_SetCatcher( KEYCATCH_SGAME );
-        return;
-    }
+
+    PauseMenu_DrawTitle();
 
     ImGui::BeginTable( " ", 2 );
     {
         if (ui->Menu_Option( menu.resume->value )) {
-            PauseMenuResume();
+            ui->SetState( STATE_NONE );
+            ui->SetActiveMenu( UI_MENU_NONE );
         }
         ImGui::TableNextRow();
         if (ui->Menu_Option( menu.help->value )) {
@@ -124,13 +148,12 @@ static void PauseMenu_Draw( void )
         }
         ImGui::TableNextRow();
         if (ui->Menu_Option( menu.settings->value )) {
-            UI_MainMenu();
-            SettingsMenu_Cache();
-            ui->SetState( STATE_SETTINGS );
+            menu.settingsMenu = qtrue;
         }
         ImGui::TableNextRow();
         if (ui->Menu_Option( menu.exitToMainMenu->value )) {
             menu.exitToMM = qtrue;
+            VM_Call( sgvm, 0, SGAME_ENDLEVEL );
         }
     }
     ImGui::EndTable();
@@ -150,17 +173,15 @@ void PauseMenu_Cache( void )
     menu.resume = strManager->ValueForKey( "MENU_PAUSE_RESUME" );
     menu.settings = strManager->ValueForKey( "MENU_PAUSE_SETTINGS" );
     menu.exitToMainMenu = strManager->ValueForKey( "MENU_PAUSE_ETMM" );
+
+    ui->PushMenu( &menu.menu );
 }
 
 void UI_PauseMenu( void )
 {
-    PauseMenu_Cache();
-
-    // set sgame to paused
-    Cvar_Set( "sg_paused", "1" );
-
+    // force as top level menu
+    ui->ForceMenuOff();
     Key_SetCatcher( KEYCATCH_UI );
 
-    ui->SetState( STATE_PAUSE );
-    ui->PushMenu( &menu.menu );
+    PauseMenu_Cache();
 }

@@ -719,9 +719,18 @@ static void SignalHandle(int signum)
         Sys_DebugStacktrace(1024); // do a stack dump
         Sys_Error("Floating Point Exception (SIGFPE)");
     } else if (signum == SIGTRAP) {
+        static qboolean recursive = qfalse;
         Con_DPrintf("DebugBreak Triggered...\n");
         Sys_DebugStacktrace(1024); // do a stack dump
-        signal(SIGTRAP, SignalHandle);
+
+        if ( !recursive ) {
+            Sys_MessageBox( "DebugBreak Triggered", "A DebugBreak was triggered", false );
+            recursive = qtrue;
+            signal(SIGTRAP, SignalHandle);
+        }
+        else {
+            Sys_Error( "DebugBreak triggered twice!" );
+        }
     } else {
         Con_DPrintf("Unknown signal (%i)... Wtf?\n", signum);
     }
@@ -729,6 +738,8 @@ static void SignalHandle(int signum)
 
 void Sys_Init(void)
 {
+    tty_err err;
+
     signal(SIGTERM, SignalHandle);
     signal(SIGSEGV, SignalHandle);
     signal(SIGFPE, SignalHandle);
@@ -736,6 +747,20 @@ void Sys_Init(void)
     signal(SIGBUS, SignalHandle);
     signal(SIGTRAP, SignalHandle);
     signal(SIGILL, SignalHandle);
+
+    // get the initial time base
+	Sys_Milliseconds();
+
+    err = Sys_InitConsole();
+	if ( err == TTY_ENABLED ) {
+		Con_Printf( "Started tty console (use +set ttycon 0 to disable)\n" );
+	}
+	else {
+		if ( err == TTY_ERROR ) {
+			Con_Printf( "stdin is not a tty, tty console mode failed\n" );
+            ttycon_on = qfalse;
+		}
+	}
 }
 
 int main(int argc, char **argv)
@@ -744,7 +769,6 @@ int main(int argc, char **argv)
     int xpos, ypos;
     char *cmdline;
     int len, i;
-    tty_err err;
 
 #ifdef __APPLE__
 	// This is passed if we are launched by double-clicking
@@ -769,20 +793,7 @@ int main(int argc, char **argv)
 		strcat( cmdline, argv[i] );
 	}
 
-	// get the initial time base
-	Sys_Milliseconds();
     Sys_Init();
-
-    err = Sys_InitConsole();
-	if ( err == TTY_ENABLED ) {
-		Con_Printf( "Started tty console (use +set ttycon 0 to disable)\n" );
-	}
-	else {
-		if ( err == TTY_ERROR ) {
-			Con_Printf( "stdin is not a tty, tty console mode failed\n" );
-            ttycon_on = qfalse;
-		}
-	}
     
     Com_Init(cmdline);
 

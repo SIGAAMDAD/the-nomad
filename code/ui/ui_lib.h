@@ -9,6 +9,8 @@
 #include "ui_string_manager.h"
 #include "ui_window.h"
 #include "ui_font.h"
+#include <new>
+#include <fstream>
 
 typedef enum : uint64_t
 {

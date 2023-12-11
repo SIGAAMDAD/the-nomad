@@ -4,6 +4,7 @@
 #include "../rendercommon/r_public.h"
 #include "../rendercommon/imgui_impl_sdl2.h"
 #include "vm_local.h"
+#include <setjmp.h>
 
 #define MAX_EVENT_QUEUE 256
 #define MASK_QUEUED_EVENTS (MAX_EVENT_QUEUE - 1)

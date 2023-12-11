@@ -934,8 +934,10 @@ static void G_KeyDownEvent(uint32_t key, uint32_t time)
 			}
 			else if (gi.state == GS_MENU) {
 				Cmd_Clear();
-				Cvar_Set("com_errorMessage", "");
-				G_FlushMemory();
+				if ( com_errorEntered ) {
+					Cvar_Set("com_errorMessage", "");
+					G_FlushMemory();
+				}
 //				VM_Call(uivm, 1, UI_SET_ACTIVE_MENU, UI_MENU_MAIN);
 			}
 		}

@@ -109,6 +109,11 @@ equ ImGui_BeginTable                    -450
 equ ImGui_EndTable                      -451
 equ ImGui_TableNextRow                  -452
 equ ImGui_TableNextColumn               -453
+equ ImGui_OpenPopup                     -454
+equ ImGui_CloseCurrentPopup             -455
+equ ImGui_BeginPopupModal               -456
+equ ImGui_EndPopup                      -457
+
 
 ; 901-1001 are dedicated standard library calls
 equ memset                              -901

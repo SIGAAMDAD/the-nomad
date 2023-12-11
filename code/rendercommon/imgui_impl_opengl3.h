@@ -40,9 +40,7 @@ typedef float GLfloat;
 typedef float GLclampf;
 typedef char GLchar;
 typedef ssize_t GLsizeiptr;
-#ifdef _WIN32
 typedef intptr_t GLintptr;
-#endif
 #endif
 
 typedef struct
