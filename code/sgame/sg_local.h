@@ -449,81 +449,12 @@ qboolean P_GiveWeapon( weapontype_t weapon );
 // These functions are how the sgame communicates with the main game system
 //
 
-int32_t G_LoadMap( int32_t index, mapinfo_t *info );
 
-// print a message to the console
-void trap_Print(const char *fmt);
+void Sys_GetGPUConfig( gpuConfig_t *config );
 
-// abort the vm
-void trap_Error(const char *fmt);
-
-
-// milliseconds should only be used for performance tuning, never
-// for anything game related
-uint32_t trap_Milliseconds( void );
-
-// console variable interaction
-void Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, uint32_t flags );
-void Cvar_Update( vmCvar_t *vmCvar );
-void Cvar_Set( const char *var_name, const char *value );
-void Cvar_VariableStringBuffer( const char *var_name, char *buffer, uint32_t bufsize );
-
-// ConsoleCommand parameter access
-uint32_t trap_Argc( void );
-void trap_Argv( uint32_t n, char *buffer, uint32_t bufferLength );
-
-// filesystem access
-file_t trap_FS_FOpenRead( const char *npath );
-file_t trap_FS_FOpenWrite( const char *npath );
-file_t trap_FS_FOpenAppend( const char *npath );
-file_t trap_FS_FOpenRW( const char *npath );
-fileOffset_t trap_FS_FileSeek( file_t file, fileOffset_t offset, uint32_t whence );
-fileOffset_t trap_FS_FileTell( file_t file );
-uint64_t trap_FS_FOpenFile( const char *npath, file_t *file, fileMode_t mode );
-file_t trap_FS_FOpenFileWrite( const char *npath, file_t *file );
-uint64_t trap_FS_FOpenFileRead( const char *npath, file_t *file );
-void trap_FS_FClose( file_t file );
-uint64_t trap_FS_WriteFile( const void *buffer, uint64_t len, file_t file );
-uint64_t trap_FS_Write( const void *buffer, uint64_t len, file_t file );
-uint64_t trap_FS_Read( void *buffer, uint64_t len, file_t file );
-uint64_t trap_FS_FileLength( file_t file );
-uint64_t trap_FS_GetFileList( const char *path, const char *extension, char *listbuf, uint64_t bufsize );
-void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL trap_FS_Printf( file_t f, const char *fmt, ... );
-
-void trap_GetGPUConfig( gpuConfig_t *config );
-
-void G_SetBindNames( const char **bindnames, uint32_t numbindings );
-
-// register a command name so the console can perform command completion.
-void trap_AddCommand( const char *cmdName );
-
-// register a sound effect
-sfxHandle_t trap_Snd_RegisterSfx(const char *npath);
-
-// queue a sound effect
-void trap_Snd_PlaySfx(sfxHandle_t sfx);
-
-// force stop an sfx
-void trap_Snd_StopSfx(sfxHandle_t sfx);
-
-// register a shader (technically a texture)
-nhandle_t RE_RegisterShader(const char *npath);
-
-uint32_t trap_Key_GetCatcher(void);
-void trap_Key_SetCatcher(uint32_t catcher);
-uint32_t trap_Key_GetKey(const char *binding);
-qboolean trap_Key_IsDown(uint32_t keynum);
-
-// drawing functions
-void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
-void RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys );
-void RE_ClearScene( void );
-void RE_RenderScene( const renderSceneRef_t *fd );
-
-// load a level map
-void RE_LoadWorldMap( const char *filename );
-
-// set the rendering color
-void RE_SetColor(const float *rgba);
+uint64_t trap_FS_FOpenFile( const char *npath, file_t *f, fileMode_t mode );
+void trap_FS_FClose( file_t f );
+uint32_t trap_FS_Write( const void *data, uint32_t size, file_t f );
+uint32_t trap_FS_Read( void *data, uint32_t size, file_t f );
 
 #endif

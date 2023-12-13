@@ -27,8 +27,8 @@ static void SG_DetermineEntitySprite( const state_t *state, uint32_t facing, int
     }
 
     for (i = 0; i < 4; i++) {
-        verts[i].uv[0] = sheet->texCoords[ent->sprite][i][0];
-        verts[i].uv[1] = sheet->texCoords[ent->sprite][i][1];
+        verts[i].uv[0] = sheet->texCoords[state->sprite][i][0];
+        verts[i].uv[1] = sheet->texCoords[state->sprite][i][1];
     }
 }
 
@@ -94,7 +94,7 @@ static void SG_DrawPlayer( void )
 
     ent = sg.playr.ent;
 
-    SG_CalcVerts( verts, ent );
+    SG_CalcVerts( ent, verts );
 
     for ( i = 0; i < 4; i++ ) {
         verts[i].uv[0] = ent->sheet->texCoords[sg.playr.foot_sprite + sg.playr.foot_frame][i][0];
@@ -119,6 +119,8 @@ int32_t SG_DrawFrame( void )
     RE_ClearScene();
 
     RE_RenderScene( &refdef );
+
+    return 1;
 }
 
 //

@@ -6,7 +6,7 @@
 #include "sg_local.h"
 
 #ifdef Q3_VM
-    #error Never use is VM build
+    #error NEVER use is VM build
 #endif
 
 vmRefImport_t vmi;
@@ -259,22 +259,22 @@ uint64_t trap_FS_WriteFile( const void *buffer, uint64_t len, file_t file )
     return vmi.FS_WriteFile( buffer, len, file, H_SGAME );
 }
 
-uint64_t trap_FS_Write( const void *buffer, uint64_t len, file_t file )
+uint32_t trap_FS_Write( const void *buffer, uint32_t len, file_t file )
 {
     return vmi.FS_Write( buffer, len, file, H_SGAME );
 }
 
-uint64_t trap_FS_Read( void *buffer, uint64_t len, file_t file )
+uint32_t trap_FS_Read( void *buffer, uint32_t len, file_t file )
 {
     return vmi.FS_Read( buffer, len, file, H_SGAME );
 }
 
-uint64_t trap_FS_FileLength( file_t file )
+uint32_t trap_FS_FileLength( file_t file )
 {
     return vmi.FS_FileLength( file, H_SGAME );
 }
 
-uint64_t trap_FS_GetFileList( const char *path, const char *extension, char *listbuf, uint64_t bufsize )
+uint32_t trap_FS_GetFileList( const char *path, const char *extension, char *listbuf, uint64_t bufsize )
 {
     return vmi.FS_GetFileList( path, extension, listbuf, bufsize );
 }

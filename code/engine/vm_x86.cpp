@@ -24,14 +24,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // load time compiler and execution environment for x86_64
 // with dynamic register allocation and various optimizations
 
-#define MAX_OPSTACK_SIZE 512
-#define PROC_OPSTACK_SIZE 30
-
 #include "n_shared.h"
-#include "n_common.h"
 #include "vm_local.h"
-#include "../sgame/sg_public.h"
 //#include "../ui/ui_public.h"
+#include "../sgame/sg_public.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -51,9 +47,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #endif
 
 #define DEBUG_VM
-#define DEBUG_INT
-#define DUMP_CODE
-#define VM_LOG_SYSCALLS
+
+//#define DEBUG_INT
+
+//#define DUMP_CODE
+
+//#define VM_LOG_SYSCALLS
 #define JUMP_OPTIMIZE 1
 
 #if JUMP_OPTIMIZE
@@ -150,7 +149,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
   | loc4 | +24  \ - locals, accessible only from local scope
   | loc8 | +28  /
   | lc12 | +32 /
-  |------| vm->programStack -= 24 ( 8 + MAX_VMMAIN_ARGS*4 ) // set by VM_CallCompiled()
+  |------| vm->programStack -= 24 ( 8 + MAX_VMMAIN_CALL_ARGS*4 ) // set by VM_CallCompiled()
   | ???? | +0 - unused, reserved for interpreter
   | ???? | +4 - unused, reserved for interpreter
   | arg0 | +8  \
@@ -222,11 +221,19 @@ static void Emit4( int32_t v );
 static void Emit8( int64_t v );
 #endif
 
+#ifdef _MSC_VER
+#define DROP( reason, ... ) \
+	do { \
+		VM_FreeBuffers(); \
+		N_Error( ERR_DROP, "%s: " reason, __func__, __VA_ARGS__ ); \
+	} while(0)
+#else
 #define DROP( reason, args... ) \
 	do { \
 		VM_FreeBuffers(); \
-        N_Error( ERR_DROP, "%s: " reason, __func__, ##args ); \
+		N_Error( ERR_DROP, "%s: " reason, __func__, ##args ); \
 	} while(0)
+#endif
 
 #define SWAP_INT( X, Y ) do { int T = X; X = Y; Y = T; } while ( 0 )
 
@@ -2778,7 +2785,7 @@ static void VM_FreeBuffers( void )
 static const GDR_INLINE qboolean HasFCOM( void )
 {
 #if GDRi386
-	return ( CPU_flags & CPU_FCOM );
+	return ( CPU_lags & CPU_FCOM );
 #else
 	return qtrue; // assume GDRx64
 #endif
@@ -3028,7 +3035,7 @@ static void EmitJump( instruction_t *i, int op, int addr )
 
 	str = FarJumpStr( op, &jump_size );
 	if ( jump_size == 0 ) {
-		N_Error( ERR_DROP, "VM_CompileX86 error: %s", "bad jump size" );
+		N_Error( ERR_DROP, "VM_CompileX86 error: %s\n", "bad jump size" );
 		return;
 	}
 	if ( shouldNaNCheck ) {
@@ -3419,7 +3426,7 @@ static qboolean IsFloorTrap( const vm_t *vm, const int trap )
 
 //	if ( trap == ~UI_FLOOR && vm->index == VM_UI )
 //		return qtrue;
-	
+
 	return qfalse;
 }
 
@@ -3428,7 +3435,7 @@ static qboolean IsCeilTrap( const vm_t *vm, const int trap )
 {
 	if ( trap == ~SG_CEIL && vm->index == VM_SGAME )
 		return qtrue;
-	
+
 //	if ( trap == ~UI_CEIL && vm->index == VM_UI )
 //		return qtrue;
 
@@ -3845,7 +3852,7 @@ static qboolean EmitMOPs( vm_t *vm, instruction_t *ci, macro_op_t op )
 static void dump_code( const char *vmname, uint8_t *c, int32_t code_len )
 {
 	const char *filename = va( "vm-%s.hex", vmname );
-	file_t fh = FS_FOpenWrite( filename );
+	fileHandle_t fh = FS_FOpenFileWrite( filename );
 	if ( fh != FS_INVALID_HANDLE ) {
 		while ( code_len >= 8 ) {
 			FS_Printf( fh, "%02x %02x %02x %02x %02x %02x %02x %02x\n", c[0], c[1], c[2], c[3], c[4], c[5], c[6], c[7] );
@@ -3859,7 +3866,7 @@ static void dump_code( const char *vmname, uint8_t *c, int32_t code_len )
 			code_len -= 1;
 			c += 1;
 		}
-		FS_FClose( fh );
+		FS_FCloseFile( fh );
 	}
 }
 #endif
@@ -3870,8 +3877,7 @@ static void dump_code( const char *vmname, uint8_t *c, int32_t code_len )
 VM_Compile
 =================
 */
-qboolean VM_Compile( vm_t *vm, vmHeader_t *header )
-{
+qboolean VM_Compile( vm_t *vm, vmHeader_t *header ) {
 	const char	*errMsg;
 	int		instructionCount;
 	instruction_t *ci;
@@ -3900,7 +3906,7 @@ qboolean VM_Compile( vm_t *vm, vmHeader_t *header )
 	}
 	if ( errMsg ) {
 		VM_FreeBuffers();
-		Con_Printf( COLOR_YELLOW "VM_CompileX86 error: %s\n", errMsg );
+		Con_Printf( "VM_CompileX86 error: %s\n", errMsg );
 		return qfalse;
 	}
 
@@ -4621,7 +4627,7 @@ __compile:
 			case MOP_BOR:
 			case MOP_BXOR:
 				if ( !EmitMOPs( vm, ci, ci->op ) )
-				    N_Error( ERR_FATAL "VM_CompileX86: bad opcode %02X", ci->op );
+					N_Error( ERR_FATAL, "VM_CompileX86: bad opcode %02X", ci->op );
 				break;
 #endif
 			default:
@@ -4760,7 +4766,7 @@ static void *VM_Alloc_Compiled( vm_t *vm, int codeLength, int tableLength )
 	length = codeLength + tableLength;
 #ifdef VM_X86_MMAP
 	ptr = mmap( NULL, length, PROT_READ|PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0 );
-	if ( ptr == MAP_FAILED || !ptr ) {
+	if ( ptr == MAP_FAILED ) {
 		N_Error( ERR_FATAL, "VM_CompileX86: mmap failed" );
 		return NULL;
 	}
@@ -4819,7 +4825,7 @@ int32_t VM_CallCompiled( vm_t *vm, uint32_t nargs, int32_t *args )
 #if GDRi386
 	int32_t	*oldOpTop;
 #endif
-	int		i;
+	uint32_t i;
 
 	// we might be called recursively, so this might not be the very top
 	stackOnEntry = vm->programStack;

@@ -29,31 +29,20 @@ typedef enum
     NUM_GAME_STATES
 } gamestate_t;
 
-typedef struct {
-    byte sides[5]; // for physics
-    vec4_t color;
-    uvec3_t pos;
-    uint32_t flags;
-} tileinfo_t;
-
 //
 // mapinfo_t
 // This is the only way that the engine and vm may communicate about
 // the current map loaded or to be loaded
 //
 typedef struct {
-    size_t dataSize;
+    mapspawn_t spawns[MAX_MAP_SPAWNS];
+    mapcheckpoint_t checkpoints[MAX_MAP_CHECKPOINTS];
 
     char name[MAX_GDR_PATH];
     uint32_t width;
     uint32_t height;
     uint32_t numSpawns;
     uint32_t numCheckpoints;
-    uint32_t numTiles;
-
-    mapcheckpoint_t checkpoints[MAX_MAP_CHECKPOINTS];
-    mapspawn_t spawns[MAX_MAP_SPAWNS];
-    tileinfo_t tiles[MAX_MAP_TILES];
 } mapinfo_t;
 
 enum
@@ -210,12 +199,19 @@ typedef struct usercmd_s {
 
 #if !defined(UI_HARD_LINKED) && !defined(SGAME_HARD_LINKED) && !defined(Q3_VM)
 
+typedef struct {
+    mapinfo_t info;
+
+    uint32_t numTiles;
+    maptile_t *tiles;
+} mapinfoReal_t;
+
 #include "../ui/ui_public.h"
 #include "../engine/vm_local.h"
 
 typedef struct {
     char **mapList;
-    mapinfo_t *infoList;
+    mapinfoReal_t *infoList;
     uint64_t numMapFiles;
 
     int32_t currentMapLoaded;
@@ -244,7 +240,7 @@ typedef struct {
 	int32_t mouseIndex;
     vec3_t viewangles;
 
-    const char **bindNames;
+    char **bindNames;
     uint32_t numBindNames;
 
 //    uiMenu_t menuIndex;

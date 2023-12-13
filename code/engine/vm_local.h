@@ -203,6 +203,16 @@ typedef struct {
 	unsigned njump:1;  // near jump
 } instruction_t;
 
+#define PROGRAM_STACK_EXTRA (32*1024)
+#define VM_DATA_GUARD_SIZE 1024
+#define OPCODE_TABLE_SIZE 64
+#define OPCODE_TABLE_MASK (OPCODE_TABLE_SIZE - 1)
+#define PROC_OPSTACK_SIZE 30
+#define PROGRAM_STACK_SIZE VM_PROGRAM_STACK_SIZE
+
+#define MAX_OPSTACK_SIZE 512
+
+
 #if !defined(Q3_VM) || (defined(Q3_VM) && defined(_NOMAD_DEBUG))
 typedef intptr_t (GDR_DECL *vmMainFunc_t)(int command, int arg0, int arg1, int arg2);
 typedef intptr_t (*syscall_t)(intptr_t *parms);
@@ -214,8 +224,7 @@ typedef void (GDR_DECL *dllEntry_t)(const vmRefImport_t *import);
 
 typedef enum
 {
-    VM_UI = 0,
-    VM_SGAME,
+    VM_SGAME = 0,
     VM_COUNT
 } vmIndex_t;
 

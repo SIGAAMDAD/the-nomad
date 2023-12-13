@@ -347,7 +347,7 @@ static void SCR_DrawScreenField(stereoFrame_t stereoFrame)
 	// we're in a level
 	// if the user is ending a level through the pause menu,
 	// we let the ui handle the sgame call
-	if ( gi.mapLoaded && VM_Call( sgvm, 0, SGAME_GET_STATE ) != SGAME_ABORT_LEVEL ) {
+	if ( gi.mapLoaded && VM_Call( sgvm, 0, SGAME_GET_STATE ) != SG_ABORT_LEVEL ) {
 		VM_Call( sgvm, 1, SGAME_RUNTIC, gi.frametime );
 	}
 	UI_Refresh( gi.realtime );

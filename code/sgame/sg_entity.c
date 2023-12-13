@@ -76,5 +76,7 @@ sgentity_t *SG_AllocEntity( entitytype_t type )
 	ent->width = ent->height = 0;
 
 	SG_BuildBounds( ent );
+
+	return ent;
 }
 

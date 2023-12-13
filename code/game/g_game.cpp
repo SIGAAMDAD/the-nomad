@@ -70,7 +70,7 @@ static uint32_t CopyLump( void *dest, uint32_t lump, uint64_t size, mapheader_t 
     return length / size;
 }
 
-static qboolean G_LoadLevelFile( const char *filename, mapinfo_t *info )
+static qboolean G_LoadLevelFile( const char *filename, mapinfoReal_t *info )
 {
     union {
         char *b;
@@ -78,7 +78,6 @@ static qboolean G_LoadLevelFile( const char *filename, mapinfo_t *info )
     } f;
     bmf_t *header;
     uint64_t size;
-    maptile_t *tbuf;
     char realpath[MAX_GDR_PATH];
 
     Com_snprintf( realpath, sizeof(realpath), "maps/%s", filename );
@@ -104,29 +103,23 @@ static qboolean G_LoadLevelFile( const char *filename, mapinfo_t *info )
         return qfalse;
     }
     
-    N_strncpyz( info->name, COM_SkipPath( const_cast<char *>(filename) ), sizeof(info->name) );
+    N_strncpyz( info->info.name, COM_SkipPath( const_cast<char *>(filename) ), sizeof(info->info.name) );
 
-    info->width = header->map.mapWidth;
-    info->height = header->map.mapHeight;
+    info->info.width = header->map.mapWidth;
+    info->info.height = header->map.mapHeight;
 
-    info->numCheckpoints = CopyLump( info->checkpoints, LUMP_CHECKPOINTS, sizeof(mapcheckpoint_t), &header->map );
-    info->numSpawns = CopyLump( info->spawns, LUMP_SPAWNS, sizeof(mapspawn_t), &header->map );
+    info->info.numCheckpoints = CopyLump( info->info.checkpoints, LUMP_CHECKPOINTS, sizeof(mapcheckpoint_t), &header->map );
+    info->info.numSpawns = CopyLump( info->info.spawns, LUMP_SPAWNS, sizeof(mapspawn_t), &header->map );
 
     if (header->map.lumps[LUMP_TILES].length % sizeof(maptile_t)) {
         N_Error( ERR_DROP, "G_LoadLevelFile: weird tile lump size" );
     }
 
     info->numTiles = header->map.lumps[LUMP_TILES].length / sizeof(maptile_t);
-    tbuf = (maptile_t *)Hunk_AllocateTempMemory( header->map.lumps[LUMP_TILES].length );
+    info->tiles = (maptile_t *)Hunk_Alloc( header->map.lumps[LUMP_TILES].length, h_low );
 
-    for (uint64_t i = 0; i < info->numTiles; i++) {
-        VectorCopy( info->tiles[i].pos, tbuf[i].pos );
-        VectorCopy4( info->tiles[i].color, tbuf[i].color );
-        memcpy( info->tiles[i].sides, tbuf[i].sides, sizeof(info->tiles[i].sides) );
-        info->tiles[i].flags = tbuf[i].flags;
-    }
+    memcpy( info->tiles, (byte *)header + header->map.lumps[LUMP_TILES].fileofs, sizeof(maptile_t) * info->numTiles );
 
-    Hunk_FreeTempMemory( tbuf );
     FS_FreeFile( f.v );
 
     return qtrue;
@@ -136,7 +129,7 @@ static void G_InitMapCache( void )
 {
     bmf_t header;
     nhandle_t file;
-    mapinfo_t *info;
+    mapinfoReal_t *info;
 
     Con_Printf( "Caching map files...\n" );
 
@@ -151,8 +144,7 @@ static void G_InitMapCache( void )
     Con_Printf( "Got %lu map files\n", gi.mapCache.numMapFiles );
 
     // allocate the info
-    gi.mapCache.infoList = (mapinfo_t *)Hunk_Alloc( sizeof(mapinfo_t) * gi.mapCache.numMapFiles, h_low );
-    memset( gi.mapCache.infoList, 0, sizeof(mapinfo_t) * gi.mapCache.numMapFiles );
+    gi.mapCache.infoList = (mapinfoReal_t *)Hunk_Alloc( sizeof(mapinfoReal_t) * gi.mapCache.numMapFiles, h_low );
 
     info = gi.mapCache.infoList;
     for (uint64_t i = 0; i < gi.mapCache.numMapFiles; i++, info++) {
@@ -169,7 +161,7 @@ int32_t G_LoadMap( int32_t index, mapinfo_t *info )
         return -1;
     }
 
-    memcpy( info, &gi.mapCache.infoList[index], sizeof(*info) );
+    memcpy( info, &gi.mapCache.infoList[index].info, sizeof(*info) );
     gi.mapLoaded = qtrue;
 
     return 1;
@@ -179,11 +171,11 @@ static void G_MapInfo_f( void ) {
     Con_Printf( "---------- Map Info ----------\n" );
     for (uint64_t i = 0; i < gi.mapCache.numMapFiles; i++) {
         Con_Printf( "[Map %lu] >\n", i );
-        Con_Printf( "Name: %s\n", gi.mapCache.infoList[i].name );
-        Con_Printf( "Checkpoint Count: %i\n", gi.mapCache.infoList[i].numCheckpoints );
-        Con_Printf( "Spawn Count: %i\n", gi.mapCache.infoList[i].numSpawns );
-        Con_Printf( "Map Width: %i\n", gi.mapCache.infoList[i].width );
-        Con_Printf( "Map Height: %i\n", gi.mapCache.infoList[i].height );
+        Con_Printf( "Name: %s\n", gi.mapCache.infoList[i].info.name );
+        Con_Printf( "Checkpoint Count: %i\n", gi.mapCache.infoList[i].info.numCheckpoints );
+        Con_Printf( "Spawn Count: %i\n", gi.mapCache.infoList[i].info.numSpawns );
+        Con_Printf( "Map Width: %i\n", gi.mapCache.infoList[i].info.width );
+        Con_Printf( "Map Height: %i\n", gi.mapCache.infoList[i].info.height );
     }
 }
 
@@ -238,7 +230,7 @@ static void G_RefFreeAll(void) {
 
 static void G_RefImGuiFree(void *ptr, void *) {
     if (ptr != NULL) {
-        Z_Free( ptr );
+        free( ptr );
     }
 }
 
@@ -251,7 +243,7 @@ static void G_RefImGuiShutdown(void) {
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
 
-    // G_RefFreeAll will clean all the imgui stuff up
+    // G_RefFreeAll will clean all the imgui stuff up -- nope
 }
 
 static void G_RefImGuiNewFrame(void) {
@@ -310,7 +302,7 @@ static void G_SetScaling(float factor, uint32_t captureWidth, uint32_t captureHe
 }
 
 static void *G_RefImGuiMalloc( size_t size ) {
-    return Z_Malloc( size, TAG_RENDERER );
+    return malloc( size );
 }
 
 //

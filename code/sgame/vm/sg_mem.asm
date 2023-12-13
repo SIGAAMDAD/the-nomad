@@ -1,16 +1,16 @@
 data
 align 4
-LABELV $81
-address $82
+LABELV $83
+address $84
 export String_Alloc
 code
 proc String_Alloc 44 8
 file "../sg_mem.c"
-line 26
+line 25
 ;1:#include "sg_local.h"
 ;2:
-;3:// 20 MiB of static memory for the vm to use
-;4:#define MEMPOOL_SIZE (20*1024*1024)
+;3:// 10 MiB of static memory for the vm to use
+;4:#define MEMPOOL_SIZE (10*1024*1024)
 ;5:static char mempool[MEMPOOL_SIZE];
 ;6:static uint32_t allocPoint;
 ;7:
@@ -30,50 +30,49 @@ line 26
 ;21:static uint32_t strHandleCount;
 ;22:static stringDef_t *strHandle[HASH_TABLE_SIZE];
 ;23:
-;24:
-;25:const char *String_Alloc( const char *p )
-;26:{
-line 32
-;27:	uint32_t len;
-;28:	uint64_t hash;
-;29:	stringDef_t *str, *last;
-;30:	static const char *staticNULL = "";
-;31:
-;32:	if (p == NULL) {
+;24:const char *String_Alloc( const char *p )
+;25:{
+line 31
+;26:	uint32_t len;
+;27:	uint64_t hash;
+;28:	stringDef_t *str, *last;
+;29:	static const char *staticNULL = "";
+;30:
+;31:	if (p == NULL) {
 ADDRFP4 0
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $83
-line 33
-;33:		return NULL;
+NEU4 $85
+line 32
+;32:		return NULL;
 CNSTP4 0
 RETP4
-ADDRGP4 $80
+ADDRGP4 $82
 JUMPV
-LABELV $83
-line 36
-;34:	}
-;35:
-;36:	if (*p == 0) {
+LABELV $85
+line 35
+;33:	}
+;34:
+;35:	if (*p == 0) {
 ADDRFP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $85
-line 37
-;37:		return staticNULL;
-ADDRGP4 $81
+NEI4 $87
+line 36
+;36:		return staticNULL;
+ADDRGP4 $83
 INDIRP4
 RETP4
-ADDRGP4 $80
+ADDRGP4 $82
 JUMPV
-LABELV $85
-line 40
-;38:	}
-;39:
-;40:	hash = Com_GenerateHashValue( p, HASH_TABLE_SIZE );
+LABELV $87
+line 39
+;37:	}
+;38:
+;39:	hash = Com_GenerateHashValue( p, HASH_TABLE_SIZE );
 ADDRFP4 0
 INDIRP4
 ARGP4
@@ -87,9 +86,9 @@ ADDRLP4 8
 ADDRLP4 16
 INDIRU4
 ASGNU4
-line 42
-;41:
-;42:	str = strHandle[hash];
+line 41
+;40:
+;41:	str = strHandle[hash];
 ADDRLP4 0
 ADDRLP4 8
 INDIRU4
@@ -99,13 +98,13 @@ ADDRGP4 strHandle
 ADDP4
 INDIRP4
 ASGNP4
-ADDRGP4 $88
+ADDRGP4 $90
 JUMPV
-LABELV $87
+LABELV $89
+line 42
+;42:	while (str) {
 line 43
-;43:	while (str) {
-line 44
-;44:		if (strcmp(p, str->str) == 0) {
+;43:		if (strcmp(p, str->str) == 0) {
 ADDRFP4 0
 INDIRP4
 ARGP4
@@ -122,38 +121,38 @@ ASGNI4
 ADDRLP4 20
 INDIRI4
 CNSTI4 0
-NEI4 $90
-line 45
-;45:			return str->str;
+NEI4 $92
+line 44
+;44:			return str->str;
 ADDRLP4 0
 INDIRP4
 CNSTI4 4
 ADDP4
 INDIRP4
 RETP4
-ADDRGP4 $80
+ADDRGP4 $82
 JUMPV
-LABELV $90
-line 47
-;46:		}
-;47:		str = str->next;
+LABELV $92
+line 46
+;45:		}
+;46:		str = str->next;
 ADDRLP4 0
 ADDRLP4 0
 INDIRP4
 INDIRP4
 ASGNP4
-line 48
-;48:	}
-LABELV $88
-line 43
+line 47
+;47:	}
+LABELV $90
+line 42
 ADDRLP4 0
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $87
-line 50
-;49:
-;50:	len = strlen(p);
+NEU4 $89
+line 49
+;48:
+;49:	len = strlen(p);
 ADDRFP4 0
 INDIRP4
 ARGP4
@@ -165,8 +164,8 @@ ADDRLP4 12
 ADDRLP4 20
 INDIRU4
 ASGNU4
-line 51
-;51:	if (len + strPoolIndex + 1 < STRINGPOOL_SIZE) {
+line 50
+;50:	if (len + strPoolIndex + 1 < STRINGPOOL_SIZE) {
 ADDRLP4 12
 INDIRU4
 ADDRGP4 strPoolIndex
@@ -175,15 +174,15 @@ ADDU4
 CNSTU4 1
 ADDU4
 CNSTU4 8192
-GEU4 $92
-line 52
-;52:		uint32_t ph = strPoolIndex;
+GEU4 $94
+line 51
+;51:		uint32_t ph = strPoolIndex;
 ADDRLP4 24
 ADDRGP4 strPoolIndex
 INDIRU4
 ASGNU4
-line 53
-;53:		strcpy(&strPool[strPoolIndex], p);
+line 52
+;52:		strcpy(&strPool[strPoolIndex], p);
 ADDRGP4 strPoolIndex
 INDIRU4
 ADDRGP4 strPool
@@ -195,8 +194,8 @@ ARGP4
 ADDRGP4 strcpy
 CALLP4
 pop
-line 54
-;54:		strPoolIndex += len + 1;
+line 53
+;53:		strPoolIndex += len + 1;
 ADDRLP4 28
 ADDRGP4 strPoolIndex
 ASGNP4
@@ -211,9 +210,9 @@ CNSTU4 1
 ADDU4
 ADDU4
 ASGNU4
-line 56
-;55:
-;56:		str = strHandle[hash];
+line 55
+;54:
+;55:		str = strHandle[hash];
 ADDRLP4 0
 ADDRLP4 8
 INDIRU4
@@ -223,34 +222,34 @@ ADDRGP4 strHandle
 ADDP4
 INDIRP4
 ASGNP4
-line 57
-;57:		last = str;
+line 56
+;56:		last = str;
 ADDRLP4 4
 ADDRLP4 0
 INDIRP4
 ASGNP4
-ADDRGP4 $95
+ADDRGP4 $97
 JUMPV
-LABELV $94
+LABELV $96
+line 57
+;57:		while (str && str->next) {
 line 58
-;58:		while (str && str->next) {
-line 59
-;59:			last = str;
+;58:			last = str;
 ADDRLP4 4
 ADDRLP4 0
+INDIRP4
+ASGNP4
+line 59
+;59:			str = str->next;
+ADDRLP4 0
+ADDRLP4 0
+INDIRP4
 INDIRP4
 ASGNP4
 line 60
-;60:			str = str->next;
-ADDRLP4 0
-ADDRLP4 0
-INDIRP4
-INDIRP4
-ASGNP4
-line 61
-;61:		}
-LABELV $95
-line 58
+;60:		}
+LABELV $97
+line 57
 ADDRLP4 36
 CNSTU4 0
 ASGNU4
@@ -259,18 +258,18 @@ INDIRP4
 CVPU4 4
 ADDRLP4 36
 INDIRU4
-EQU4 $97
+EQU4 $99
 ADDRLP4 0
 INDIRP4
 INDIRP4
 CVPU4 4
 ADDRLP4 36
 INDIRU4
-NEU4 $94
-LABELV $97
-line 63
-;62:
-;63:		str = (stringDef_t *)SG_MemAlloc( sizeof(stringDef_t) );
+NEU4 $96
+LABELV $99
+line 62
+;61:
+;62:		str = (stringDef_t *)SG_MemAlloc( sizeof(stringDef_t) );
 CNSTU4 8
 ARGU4
 ADDRLP4 40
@@ -281,14 +280,14 @@ ADDRLP4 0
 ADDRLP4 40
 INDIRP4
 ASGNP4
-line 64
-;64:		str->next = NULL;
+line 63
+;63:		str->next = NULL;
 ADDRLP4 0
 INDIRP4
 CNSTP4 0
 ASGNP4
-line 65
-;65:		str->str = &strPool[ph];
+line 64
+;64:		str->str = &strPool[ph];
 ADDRLP4 0
 INDIRP4
 CNSTI4 4
@@ -298,27 +297,27 @@ INDIRU4
 ADDRGP4 strPool
 ADDP4
 ASGNP4
-line 66
-;66:		if (last) {
+line 65
+;65:		if (last) {
 ADDRLP4 4
 INDIRP4
 CVPU4 4
 CNSTU4 0
-EQU4 $98
-line 67
-;67:			last->next = str;
+EQU4 $100
+line 66
+;66:			last->next = str;
 ADDRLP4 4
 INDIRP4
 ADDRLP4 0
 INDIRP4
 ASGNP4
-line 68
-;68:		} else {
-ADDRGP4 $99
+line 67
+;67:		} else {
+ADDRGP4 $101
 JUMPV
-LABELV $98
-line 69
-;69:			strHandle[hash] = str;
+LABELV $100
+line 68
+;68:			strHandle[hash] = str;
 ADDRLP4 8
 INDIRU4
 CNSTI4 2
@@ -328,43 +327,44 @@ ADDP4
 ADDRLP4 0
 INDIRP4
 ASGNP4
+line 69
+;69:		}
+LABELV $101
 line 70
-;70:		}
-LABELV $99
-line 71
-;71:		return &strPool[ph];
+;70:		return &strPool[ph];
 ADDRLP4 24
 INDIRU4
 ADDRGP4 strPool
 ADDP4
 RETP4
-ADDRGP4 $80
+ADDRGP4 $82
 JUMPV
-LABELV $92
-line 73
-;72:	}
-;73:	return NULL;
+LABELV $94
+line 72
+;71:	}
+;72:	return NULL;
 CNSTP4 0
 RETP4
-LABELV $80
+LABELV $82
 endproc String_Alloc 44 8
 export String_Report
 proc String_Report 12 16
 line 76
-;74:}
-;75:
-;76:void String_Report() {
+;73:}
+;74:
+;75:void String_Report( void )
+;76:{
 line 78
 ;77:	float f;
 ;78:	Con_Printf("Memory/String Pool Info\n");
-ADDRGP4 $101
+ADDRGP4 $103
 ARGP4
 ADDRGP4 Con_Printf
 CALLV
 pop
 line 79
 ;79:	Con_Printf("----------------\n");
-ADDRGP4 $102
+ADDRGP4 $104
 ARGP4
 ADDRGP4 Con_Printf
 CALLV
@@ -411,7 +411,7 @@ MULF4
 ASGNF4
 line 84
 ;84:	Con_Printf("String Pool is %.1f%% full, %i bytes out of %i used.\n", f, strPoolIndex, STRINGPOOL_SIZE);
-ADDRGP4 $103
+ADDRGP4 $105
 ARGP4
 ADDRLP4 0
 INDIRF4
@@ -453,7 +453,7 @@ line 87
 ADDRLP4 0
 ADDRLP4 0
 INDIRF4
-CNSTF4 1268776960
+CNSTF4 1260388352
 DIVF4
 ASGNF4
 line 88
@@ -466,7 +466,7 @@ MULF4
 ASGNF4
 line 89
 ;89:	Con_Printf("Memory Pool is %.1f%% full, %i bytes out of %i used.\n", f, allocPoint, MEMPOOL_SIZE);
-ADDRGP4 $104
+ADDRGP4 $106
 ARGP4
 ADDRLP4 0
 INDIRF4
@@ -474,14 +474,14 @@ ARGF4
 ADDRGP4 allocPoint
 INDIRU4
 ARGU4
-CNSTI4 20971520
+CNSTI4 10485760
 ARGI4
 ADDRGP4 Con_Printf
 CALLV
 pop
 line 90
 ;90:}
-LABELV $100
+LABELV $102
 endproc String_Report 12 16
 export SG_MemAlloc
 proc SG_MemAlloc 8 12
@@ -496,17 +496,17 @@ line 96
 ADDRFP4 0
 INDIRU4
 CNSTU4 0
-NEU4 $106
+NEU4 $108
 line 97
 ;97:        G_Error( "SG_MemAlloc: bad size" );
-ADDRGP4 $108
+ADDRGP4 $110
 ARGP4
 ADDRGP4 G_Error
 CALLV
 pop
 line 98
 ;98:    }
-LABELV $106
+LABELV $108
 line 100
 ;99:
 ;100:    size = PAD(size, (unsigned)16); // round to 16-byte alignment
@@ -528,11 +528,11 @@ INDIRU4
 ADDRFP4 0
 INDIRU4
 ADDU4
-CNSTU4 20971520
-LTU4 $109
+CNSTU4 10485760
+LTU4 $111
 line 103
 ;103:        G_Error( "SG_MemAlloc: not enough vm memory" );
-ADDRGP4 $111
+ADDRGP4 $113
 ARGP4
 ADDRGP4 G_Error
 CALLV
@@ -541,9 +541,9 @@ line 104
 ;104:        return NULL;
 CNSTP4 0
 RETP4
-ADDRGP4 $105
+ADDRGP4 $107
 JUMPV
-LABELV $109
+LABELV $111
 line 107
 ;105:    }
 ;106:
@@ -589,7 +589,7 @@ line 113
 ADDRLP4 0
 INDIRP4
 RETP4
-LABELV $105
+LABELV $107
 endproc SG_MemAlloc 8 12
 export SG_MemoryRemaining
 proc SG_MemoryRemaining 0 0
@@ -599,12 +599,12 @@ line 116
 ;116:uint32_t SG_MemoryRemaining( void ) {
 line 117
 ;117:    return sizeof(mempool) - allocPoint;
-CNSTU4 20971520
+CNSTU4 10485760
 ADDRGP4 allocPoint
 INDIRU4
 SUBU4
 RETU4
-LABELV $112
+LABELV $114
 endproc SG_MemoryRemaining 0 0
 export SG_MemInit
 proc SG_MemInit 4 12
@@ -621,7 +621,7 @@ ADDRGP4 mempool
 ARGP4
 CNSTI4 0
 ARGI4
-CNSTU4 20971520
+CNSTU4 10485760
 ARGU4
 ADDRGP4 memset
 CALLP4
@@ -643,9 +643,9 @@ line 127
 ADDRLP4 0
 CNSTU4 0
 ASGNU4
-ADDRGP4 $117
+ADDRGP4 $119
 JUMPV
-LABELV $114
+LABELV $116
 line 128
 ;128:		strHandle[i] = 0;
 ADDRLP4 0
@@ -658,7 +658,7 @@ CNSTP4 0
 ASGNP4
 line 129
 ;129:	}
-LABELV $115
+LABELV $117
 line 127
 ADDRLP4 0
 ADDRLP4 0
@@ -666,11 +666,11 @@ INDIRU4
 CNSTU4 1
 ADDU4
 ASGNU4
-LABELV $117
+LABELV $119
 ADDRLP4 0
 INDIRU4
 CNSTU4 2048
-LTU4 $114
+LTU4 $116
 line 130
 ;130:	strHandleCount = 0;
 ADDRGP4 strHandleCount
@@ -683,7 +683,7 @@ CNSTU4 0
 ASGNU4
 line 132
 ;132:}
-LABELV $113
+LABELV $115
 endproc SG_MemInit 4 12
 bss
 align 4
@@ -703,65 +703,134 @@ LABELV allocPoint
 skip 4
 align 1
 LABELV mempool
-skip 20971520
-import trap_RE_SetColor
-import trap_RE_RenderScene
-import trap_RE_ClearScene
-import trap_RE_AddPolyListToScene
-import trap_RE_AddPolyToScene
-import trap_Key_IsDown
-import trap_Key_GetKey
-import trap_Key_SetCatcher
-import trap_Key_GetCatcher
-import trap_RE_RegisterShader
-import trap_Snd_StopSfx
-import trap_Snd_PlaySfx
-import trap_Snd_RegisterSfx
-import trap_AddCommand
-import trap_FS_FClose
-import trap_FS_FileTell
-import trap_FS_FileSeek
+skip 10485760
 import trap_FS_Read
 import trap_FS_Write
-import trap_FS_FileLength
-import trap_FS_FOpenWrite
-import trap_FS_FOpenRead
-import trap_Args
-import trap_Argv
-import trap_Argc
-import trap_Cvar_VariableStringBuffer
-import trap_Cvar_Set
-import trap_Cvar_Update
-import trap_Cvar_Register
-import trap_Milliseconds
-import trap_Error
-import trap_Print
-import G_LoadMap
+import trap_FS_FClose
+import trap_FS_FOpenFile
+import Sys_GetGPUConfig
 import P_GiveWeapon
 import P_GiveItem
 import SG_MouseEvent
 import SG_KeyEvent
+import SG_InitPlayer
+import SG_OutOfMemory
+import SG_SpawnMobOnMap
+import SG_SpawnMob
+import SG_AddArchiveHandle
+import SG_LoadGame
+import SG_SaveGame
+import SG_InitEntities
+import SG_BuildBounds
+import SG_FreeEntity
+import SG_AllocEntity
+import Ent_RunTic
+import SG_DrawLevelStats
+import SG_DrawAbortMission
 import Lvl_AddKillEntity
 import SG_EndLevel
 import SG_InitLevel
+import SG_UpdateCvars
 import G_Printf
 import G_Error
 import SG_Printf
 import SG_Error
-import sg_pmAccel
-import stateinfo
+import SG_GenerateSpriteSheetTexCoords
+import SG_DrawFrame
+import sg_numSaves
+import sg_savename
+import sg_levelDataFile
+import sg_levelIndex
+import sg_levelInfoFile
+import sg_gibs
+import sg_decalDetail
+import sg_printLevelStats
+import sg_mouseAcceleration
+import sg_mouseInvert
+import sg_pmBaseSpeed
+import sg_pmBaseAcceleration
+import sg_pmWaterAcceleration
+import sg_pmAirAcceleration
+import sg_paused
+import sg_debugPrint
 import ammoCaps
 import mobinfo
 import iteminfo
 import weaponinfo
 import sg
+import sprites_shotty
+import sprites_grunt
+import sprites_thenomad
+import sg_entities
 import inversedirs
 import dirvectors
+import stateinfo
+import ImGui_CloseCurrentPopup
+import ImGui_OpenPopup
+import ImGui_EndPopup
+import ImGui_BeginPopupModal
+import ImGui_ColoredText
+import ImGui_Text
+import ImGui_ColoredTextUnformatted
+import ImGui_TextUnformatted
+import ImGui_SameLine
+import ImGui_ProgressBar
+import ImGui_Separator
+import ImGui_SeparatorText
+import ImGui_NewLine
+import ImGui_PopColor
+import ImGui_PushColor
+import ImGui_GetCursorScreenPos
+import ImGui_SetCursorScreenPos
+import ImGui_GetCursorPos
+import ImGui_SetCursorPos
+import ImGui_GetFontScale
+import ImGui_Button
+import ImGui_Checkbox
+import ImGui_ArrowButton
+import ImGui_ColorEdit4
+import ImGui_ColorEdit3
+import ImGui_SliderInt4
+import ImGui_SliderInt3
+import ImGui_SliderInt2
+import ImGui_SliderInt
+import ImGui_SliderFloat4
+import ImGui_SliderFloat3
+import ImGui_SliderFloat2
+import ImGui_SliderFloat
+import ImGui_InputInt4
+import ImGui_InputInt3
+import ImGui_InputInt2
+import ImGui_InputInt
+import ImGui_InputFloat4
+import ImGui_InputFloat3
+import ImGui_InputFloat2
+import ImGui_InputFloat
+import ImGui_InputTextWithHint
+import ImGui_InputTextMultiline
+import ImGui_InputText
+import ImGui_EndTable
+import ImGui_TableNextColumn
+import ImGui_TableNextRow
+import ImGui_BeginTable
+import ImGui_SetItemTooltip
+import ImGui_SetItemTooltipUnformatted
+import ImGui_MenuItem
+import ImGui_EndMenu
+import ImGui_BeginMenu
+import ImGui_SetWindowFontScale
+import ImGui_SetWindowSize
+import ImGui_SetWindowPos
+import ImGui_SetWindowCollapsed
+import ImGui_IsWindowCollapsed
+import ImGui_EndWindow
+import ImGui_BeginWindow
 import I_GetParm
 import Com_TouchMemory
 import Hunk_TempIsClear
 import Hunk_Check
 import Hunk_Print
+import Hunk_SetMark
 import Hunk_ClearToMark
 import Hunk_CheckMark
 import Hunk_SmallLog
@@ -775,11 +844,11 @@ import Hunk_Alloc
 import Hunk_InitMemory
 import Z_InitMemory
 import Z_InitSmallZoneMemory
-import Z_Strdup
+import CopyString
 import Z_AvailableMemory
 import Z_FreeTags
 import Z_Free
-import Z_SMalloc
+import S_Malloc
 import Z_Malloc
 import Z_Realloc
 import CPU_flags
@@ -793,6 +862,7 @@ import FS_Initialized
 import FS_FileIsInBFF
 import FS_StripExt
 import FS_AllowedExtension
+import FS_GetFileList
 import FS_LoadLibrary
 import FS_CopyString
 import FS_BuildOSPath
@@ -831,21 +901,27 @@ import FS_Shutdown
 import FS_InitFilesystem
 import FS_Startup
 import FS_VM_CloseFiles
-import FS_VM_FOpenFileWrite
-import FS_VM_FileSeek
-import FS_VM_FOpenFileRead
-import FS_VM_CreateTmp
-import FS_VM_WriteFile
-import FS_VM_Write
+import FS_VM_FileLength
 import FS_VM_Read
+import FS_VM_Write
+import FS_VM_WriteFile
 import FS_VM_FClose
-import FS_VM_FOpenRead
+import FS_VM_FOpenFileRead
+import FS_VM_FOpenFileWrite
+import FS_VM_FOpenFile
+import FS_VM_FileTell
+import FS_VM_FileSeek
+import FS_VM_FOpenRW
+import FS_VM_FOpenAppend
 import FS_VM_FOpenWrite
+import FS_VM_FOpenRead
 import com_errorMessage
+import com_fullyInitialized
 import com_errorEntered
 import com_cacheLine
 import com_frameTime
 import com_fps
+import com_frameNumber
 import com_maxfps
 import sys_cpuString
 import com_devmode
@@ -888,6 +964,7 @@ import Cmd_RemoveCommand
 import Cmd_AddCommand
 import Cmd_Init
 import keys
+import Key_WriteBindings
 import Key_SetOverstrikeMode
 import Key_GetOverstrikeMode
 import Key_GetKey
@@ -949,37 +1026,14 @@ import Con_DrawConsole
 import Con_AddText
 import ColorIndexFromChar
 import g_color_table
-import Cvar_SetBooleanValue
-import Cvar_SetStringValue
-import Cvar_SetFloatValue
-import Cvar_SetIntegerValue
-import Cvar_SetModified
-import Cvar_SetValueSafe
-import Cvar_Set
-import Cvar_SetSafe
-import Cvar_SetDescription
-import Cvar_SetGroup
-import Cvar_Reset
-import Cvar_Command
-import Cvar_Get
-import Cvar_Update
-import Cvar_Flags
-import Cvar_CheckRange
-import Cvar_VariableString
-import Cvar_VariableBoolean
-import Cvar_VariableFloat
-import Cvar_VariableInteger
-import Cvar_VariableStringBufferSafe
-import Cvar_VariableStringBuffer
-import Cvar_Set2
-import Cvar_CommandCompletion
-import Cvar_CompleteCvarName
-import Cvar_Register
-import Cvar_Restart
-import Cvar_Init
-import Cvar_ForceReset
-import Cvar_CheckGroup
-import Cvar_ResetGroup
+import Info_RemoveKey
+import Info_NextPair
+import Info_ValidateKeyValue
+import Info_Validate
+import Info_SetValueForKey_s
+import Info_ValueForKeyToken
+import Info_Tokenize
+import Info_ValueForKey
 import Com_Clamp
 import bytedirs
 import N_isnan
@@ -1002,6 +1056,7 @@ import AngleMod
 import BoundsIntersectPoint
 import BoundsIntersectSphere
 import BoundsIntersect
+import disBetweenOBJ
 import AxisCopy
 import AxisClear
 import AnglesToAxis
@@ -1123,7 +1178,7 @@ import memchr
 import memcpy
 lit
 align 1
-LABELV $111
+LABELV $113
 byte 1 83
 byte 1 71
 byte 1 95
@@ -1159,7 +1214,7 @@ byte 1 114
 byte 1 121
 byte 1 0
 align 1
-LABELV $108
+LABELV $110
 byte 1 83
 byte 1 71
 byte 1 95
@@ -1183,7 +1238,7 @@ byte 1 122
 byte 1 101
 byte 1 0
 align 1
-LABELV $104
+LABELV $106
 byte 1 77
 byte 1 101
 byte 1 109
@@ -1239,7 +1294,7 @@ byte 1 46
 byte 1 10
 byte 1 0
 align 1
-LABELV $103
+LABELV $105
 byte 1 83
 byte 1 116
 byte 1 114
@@ -1295,7 +1350,7 @@ byte 1 46
 byte 1 10
 byte 1 0
 align 1
-LABELV $102
+LABELV $104
 byte 1 45
 byte 1 45
 byte 1 45
@@ -1315,7 +1370,7 @@ byte 1 45
 byte 1 10
 byte 1 0
 align 1
-LABELV $101
+LABELV $103
 byte 1 77
 byte 1 101
 byte 1 109
@@ -1342,5 +1397,5 @@ byte 1 111
 byte 1 10
 byte 1 0
 align 1
-LABELV $82
+LABELV $84
 byte 1 0

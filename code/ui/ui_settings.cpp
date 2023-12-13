@@ -149,6 +149,25 @@ static const anistropicSetting_t anisotropicFilters[] = {
     { "32x",    32}
 };
 
+static const char *bindNames[] = {
+    "button0",
+    "button1",
+    "button2",
+    "button3",
+    "button4",
+    "button5",
+    "button6",
+    "button7",
+    "button8",
+    "button9",
+    "forward",
+    "back",
+    "left",
+    "right",
+    "jump",
+    "melee"
+};
+
 typedef struct {
     const char *label;
     antialiasType_t type;
@@ -317,14 +336,11 @@ static void SettingsMenu_SetDefault( void )
     settings.mouseAccelerate = Cvar_VariableInteger("g_mouseAcceleration");
     settings.mouseInvert = Cvar_VariableInteger("g_mouseInvert");
 
-    if (!gi.numBindNames) {
-        N_Error( ERR_FATAL, "SettingsMenu_SetDefault: no key bindings given to the engine from the vm" );
-    }
-    settings.keybinds = (keybind_t *)Hunk_Alloc( sizeof(keybind_t) * gi.numBindNames, h_low );
-    for (uint32_t i = 0; i < gi.numBindNames; i++) {
-        settings.keybinds[i].keynum = Key_GetKey( gi.bindNames[i] );
-        N_strncpyz( settings.keybinds[i].keyname, Key_KeynumToString( settings.keybinds[i].keynum ), sizeof(settings.keybinds[i].keyname) );
-        N_strncpyz( settings.keybinds[i].bindname, gi.bindNames[i], sizeof(settings.keybinds[i].bindname) );
+    settings.keybinds = (keybind_t *)Hunk_Alloc( sizeof(keybind_t) * arraylen( bindNames ), h_low );
+
+    for ( uint32_t i = 0; i < arraylen( bindNames); i++ ) {
+        N_strncpyz( settings.keybinds[i].bindname, bindNames[i], sizeof(settings.keybinds[i].bindname) );
+        settings.keybinds[i].keynum = Key_GetKey( bindNames[i] );
     }
 }
 

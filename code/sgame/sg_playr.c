@@ -38,6 +38,8 @@ qboolean P_GiveWeapon( weapontype_t type )
         slot = WEAPON_SLOT_ARM;
         break;
     };
+
+    return qtrue;
 }
 
 void SG_InitPlayer( void )

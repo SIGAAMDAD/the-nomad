@@ -1,10 +1,10 @@
 #include "../engine/n_shared.h"
 #include "sg_local.h"
 
-int32_t SG_Init(void);
-int32_t SG_Shutdown(void);
-int32_t SG_RunLoop( int32_t msec );
-int32_t SG_DrawFrame( void );
+void SG_Init( void );
+void SG_Shutdown( void );
+int SG_RunLoop( int msec );
+int SG_DrawFrame( void );
 
 /*
 vmMain
@@ -12,32 +12,34 @@ vmMain
 this is the only way control passes into the module.
 this must be the very first function compiled into the .qvm file
 */
-int32_t vmMain(int32_t command, int32_t arg0, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg5, int32_t arg6, int32_t arg7,
-    int32_t arg8, int32_t arg9, int32_t arg10)
+int vmMain( int command, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7,
+    int arg8, int arg9, int arg10 )
 {
-    switch (command) {
+    switch ( command ) {
     case SGAME_INIT:
-        return SG_Init();
+        SG_Init();
+        return 0;
     case SGAME_SHUTDOWN:
-        return SG_Shutdown();
-    case SGAME_RUNTIC:
-        return SG_RunLoop( arg0 );
-    case SGAME_STARTLEVEL:
-        return SG_InitLevel( arg0 );
-    case SGAME_ENDLEVEL:
-        return SG_EndLevel();
+        SG_Shutdown();
+        return 0;
     case SGAME_GET_STATE:
         return sg.state;
-    case SGAME_KEY_EVENT:
-    case SGAME_MOUSE_EVENT:
+    case SGAME_ENDLEVEL:
+        return SG_EndLevel();
     case SGAME_EVENT_HANDLING:
     case SGAME_EVENT_NONE:
-    case SGAME_REWIND_TO_LAST_CHECKPOINT:
-        return 1;
+        return 0;
+    case SGAME_LOADLEVEL:
+        return SG_InitLevel( arg0 );
+    case SGAME_CONSOLE_COMMAND:
+        return 0;
+    case SGAME_RUNTIC:
+        return SG_RunLoop( arg0 );
     default:
-        SG_Error("vmMain: invalid command id: %i", command);
         break;
     };
+
+    SG_Error( "vmMain: unrecognized command %i", command );
     return -1;
 }
 
@@ -60,24 +62,6 @@ vmCvar_t sg_levelDataFile;
 vmCvar_t sg_savename;
 vmCvar_t sg_numSaves;
 
-static const char *bindnames[] = {
-    "forward",
-    "back",
-    "left",
-    "right",
-    "up",
-    "down",
-    "button0",
-    "button1",
-    "button2",
-    "button3",
-    "button4",
-    "button5",
-    "button6",
-    "button7",
-    "button8",
-    "button9"
-};
 
 typedef struct {
     const char *name;
@@ -111,7 +95,7 @@ static void SG_RegisterCvars( void )
     cvarTable_t *cv;
 
     for (i = 0, cv = cvarTable; i < cvarTableSize; i++, cv++) {
-        Cvar_Register( cv->cvar, cv->name, cv->defaultValue, cv->flags );
+       Cvar_Register( cv->cvar, cv->name, cv->defaultValue, cv->flags );
     }
 }
 
@@ -127,7 +111,7 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL G_Printf(const char *fmt, ..
 {
     va_list argptr;
     char msg[4096];
-    int32_t length;
+    int length;
 
     va_start(argptr, fmt);
     length = vsprintf(msg, fmt, argptr);
@@ -140,7 +124,7 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL G_Error(const char *err, ...
 {
     va_list argptr;
     char msg[4096];
-    int32_t length;
+    int length;
 
     va_start(argptr, err);
     length = vsprintf(msg, err, argptr);
@@ -153,7 +137,7 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL SG_Printf(const char *fmt, .
 {
     va_list argptr;
     char msg[4096];
-    int32_t length;
+    int length;
 
     va_start(argptr, fmt);
     length = vsprintf(msg, fmt, argptr);
@@ -170,7 +154,7 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL SG_Error(const char *err, ..
 {
     va_list argptr;
     char msg[4096];
-    int32_t length;
+    int length;
 
     va_start(argptr, err);
     length = vsprintf(msg, err, argptr);
@@ -187,7 +171,7 @@ void GDR_DECL GDR_ATTRIBUTE((format(printf, 2, 3))) N_Error(errorCode_t code, co
 {
     va_list argptr;
     char msg[4096];
-    int32_t length;
+    int length;
 
     va_start(argptr, err);
     length = vsprintf(msg, err, argptr);
@@ -207,7 +191,7 @@ void GDR_DECL GDR_ATTRIBUTE((format(printf, 1, 2))) Con_Printf(const char *fmt, 
 {
     va_list argptr;
     char msg[4096];
-    int32_t length;
+    int length;
 
     va_start(argptr, fmt);
     length = vsprintf(msg, fmt, argptr);
@@ -222,14 +206,14 @@ void GDR_DECL GDR_ATTRIBUTE((format(printf, 1, 2))) Con_Printf(const char *fmt, 
 
 //#endif
 
-int32_t SG_RunLoop( int32_t levelTime )
+int SG_RunLoop( int levelTime )
 {
-    int32_t i;
-    int32_t start, end;
-    int32_t msec;
+    int i;
+    int start, end;
+    int msec;
     sgentity_t *ent;
 
-    if ( sg.state == SGAME_INACTIVE ) {
+    if ( sg.state == SG_INACTIVE ) {
         return 0;
     }
 
@@ -237,10 +221,10 @@ int32_t SG_RunLoop( int32_t levelTime )
     SG_UpdateCvars();
 
     // even if the game is paused, we still render everything in the background
-    if ( sg.state == SGAME_SHOW_LEVEL_STATS ) {
+    if ( sg.state == SG_SHOW_LEVEL_STATS ) {
         SG_DrawLevelStats();
         return 1; // we don't draw the level if we're ending it
-    } else if ( sg.state == SGAME_ABORT_LEVEL ) {
+    } else if ( sg.state == SG_ABORT_LEVEL ) {
         SG_DrawFrame();
         return SG_DrawAbortMission();
     }
@@ -274,7 +258,7 @@ int32_t SG_RunLoop( int32_t levelTime )
 }
 
 
-static qboolean SG_LoadMedia( void )
+static void SG_LoadMedia( void )
 {
     G_Printf( "Loading sgame sfx...\n" );
 
@@ -295,21 +279,15 @@ static qboolean SG_LoadMedia( void )
     sg.media.grunt_shader = RE_RegisterShader( "textures/sprites/glnomad_grunt.png" );
 
     G_Printf( "Finished loading sprites.\n" );
-
-    return qtrue;
 }
 
-int32_t SG_Init(void)
+void SG_Init( void )
 {
-    if (!trap_Key_GetCatcher() & KEYCATCH_SGAME) {
-        trap_Key_SetCatcher(trap_Key_GetCatcher() & KEYCATCH_SGAME);
-    }
-
     // clear sgame state
     memset( &sg, 0, sizeof(sg) );
     
     // cache redundant calculations
-    trap_GetGPUConfig( &sg.gpuConfig );
+    Sys_GetGPUConfig( &sg.gpuConfig );
 
     // for 1024x768 virtualized screen
 	sg.scale = sg.gpuConfig.vidHeight * (1.0/768.0);
@@ -322,24 +300,18 @@ int32_t SG_Init(void)
 		sg.bias = 0;
 	}
 
+    // register sgame cvars
     SG_RegisterCvars();
 
-    if (!SG_LoadMedia()) {
-        G_Printf( COLOR_RED "SG_LoadMedia: failed!\n" );
-        return -1; // did we fail to load the required resources?
-    }
+    // load assets/resources
+    SG_LoadMedia();
 
     SG_MemInit();
 
-    sg.state = SGAME_INACTIVE;
-
-    // give the keybinding info to the engine
-    G_SetBindNames( bindnames, arraylen(bindnames) );
-
-    return 1;
+    sg.state = SG_INACTIVE;
 }
 
-int32_t SG_Shutdown(void)
+void SG_Shutdown( void )
 {
     G_Printf( "Shutting down sgame...\n" );
 
@@ -347,9 +319,7 @@ int32_t SG_Shutdown(void)
 
     memset( &sg, 0, sizeof(sg) );
 
-    sg.state = SGAME_INACTIVE;
-
-    return 0;
+    sg.state = SG_INACTIVE;
 }
 
 void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL trap_FS_Printf( file_t f, const char *fmt, ... )

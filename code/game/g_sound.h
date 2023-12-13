@@ -5,7 +5,7 @@
 
 void Snd_DisableSounds( void );
 void Snd_StopAll( void );
-void Snd_PlayTrack( sfxHandle_t sfx );
+void Snd_QueueTrack( sfxHandle_t sfx );
 void Snd_PlaySfx( sfxHandle_t sfx );
 void Snd_StopSfx( sfxHandle_t sfx );
 void Snd_Init( void );

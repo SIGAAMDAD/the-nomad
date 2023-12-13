@@ -1,5 +1,6 @@
 #include "sg_local.h"
 
+/*
 const weapon_t weaponinfo[NUMWEAPONTYPES] = {
 
 };
@@ -7,6 +8,7 @@ const weapon_t weaponinfo[NUMWEAPONTYPES] = {
 const item_t iteminfo[NUMITEMS] = {
 
 };
+*/
 
 const mobj_t mobinfo[NUMMOBS] = {
     // ent, target, type, sight range, melee range, missile range

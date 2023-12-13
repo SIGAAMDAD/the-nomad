@@ -1,15 +1,5 @@
 #include "sg_lib.h"
 
-#ifdef Q3VM_LIB_USE_DEBUG_FUNCS
-size_t strlen(const char *str)
-{
-    const char *s = str;
-    while (*s) {
-        s++;
-    }
-    return (size_t)(s - str);
-}
-
 char *strcat( char *strDestination, const char *strSource )
 {
 	char	*s;
@@ -25,6 +15,15 @@ char *strcat( char *strDestination, const char *strSource )
 	return strDestination;
 }
 
+#ifdef Q3VM_USE_DEBUG_FUNCS
+size_t strlen(const char *str)
+{
+    const char *s = str;
+    while (*s) {
+        s++;
+    }
+    return (size_t)(s - str);
+}
 
 char* strchr(const char* string, int c)
 {
@@ -577,6 +576,47 @@ void AddInt(char** buf_p, int32_t val, int32_t width, int32_t flags)
     {
         text[digits++] = '-';
     }
+
+    buf = *buf_p;
+
+    if (!(flags & LADJUST))
+    {
+        while (digits < width)
+        {
+            *buf++ = (flags & ZEROPAD) ? '0' : ' ';
+            width--;
+        }
+    }
+
+    while (digits--)
+    {
+        *buf++ = text[digits];
+        width--;
+    }
+
+    if (flags & LADJUST)
+    {
+        while (width--)
+        {
+            *buf++ = (flags & ZEROPAD) ? '0' : ' ';
+        }
+    }
+
+    *buf_p = buf;
+}
+
+void AddUInt(char** buf_p, uint32_t val, int32_t width, int32_t flags)
+{
+    char  text[32];
+    uint32_t   digits;
+    char* buf;
+
+    digits    = 0;
+    do
+    {
+        text[digits++] = '0' + val % 10;
+        val /= 10;
+    } while (val);
 
     buf = *buf_p;
 

@@ -47,17 +47,17 @@ ADDRLP4 4100
 INDIRI4
 CVIU4 4
 CNSTU4 4096
-LTU4 $82
+LTU4 $84
 line 15
 ;15:        trap_Error( "ImGui_SetItemTooltip: buffer overflow" );
-ADDRGP4 $84
+ADDRGP4 $86
 ARGP4
 ADDRGP4 trap_Error
-CALLV
+CALLI4
 pop
 line 16
 ;16:    }
-LABELV $82
+LABELV $84
 line 18
 ;17:
 ;18:    ImGui_SetItemTooltipUnformatted( msg );
@@ -68,7 +68,7 @@ CALLV
 pop
 line 19
 ;19:}
-LABELV $80
+LABELV $82
 endproc ImGui_SetItemTooltip 4108 12
 export ImGui_Text
 proc ImGui_Text 4108 12
@@ -115,17 +115,17 @@ ADDRLP4 4100
 INDIRI4
 CVIU4 4
 CNSTU4 4096
-LTU4 $87
+LTU4 $89
 line 32
 ;32:        trap_Error( "ImGui_Text: buffer overflow" );
-ADDRGP4 $89
+ADDRGP4 $91
 ARGP4
 ADDRGP4 trap_Error
-CALLV
+CALLI4
 pop
 line 33
 ;33:    }
-LABELV $87
+LABELV $89
 line 35
 ;34:
 ;35:    ImGui_TextUnformatted( msg );
@@ -136,7 +136,7 @@ CALLV
 pop
 line 36
 ;36:}
-LABELV $85
+LABELV $87
 endproc ImGui_Text 4108 12
 export ImGui_ColoredText
 proc ImGui_ColoredText 4108 12
@@ -183,17 +183,17 @@ ADDRLP4 4100
 INDIRI4
 CVIU4 4
 CNSTU4 4096
-LTU4 $92
+LTU4 $94
 line 49
 ;49:        trap_Error( "ImGui_Text: buffer overflow" );
-ADDRGP4 $89
+ADDRGP4 $91
 ARGP4
 ADDRGP4 trap_Error
-CALLV
+CALLI4
 pop
 line 50
 ;50:    }
-LABELV $92
+LABELV $94
 line 52
 ;51:
 ;52:    ImGui_ColoredTextUnformatted( pColor, msg );
@@ -207,10 +207,80 @@ CALLV
 pop
 line 53
 ;53:}
-LABELV $90
+LABELV $92
 endproc ImGui_ColoredText 4108 12
+import trap_Error
+import trap_FS_Read
+import trap_FS_Write
+import trap_FS_FClose
+import trap_FS_FOpenFile
+import Sys_GetGPUConfig
+import P_GiveWeapon
+import P_GiveItem
+import SG_MouseEvent
+import SG_KeyEvent
+import SG_InitPlayer
+import SG_OutOfMemory
+import SG_MemInit
+import SG_MemAlloc
+import String_Alloc
+import SG_SpawnMobOnMap
+import SG_SpawnMob
+import SG_AddArchiveHandle
+import SG_LoadGame
+import SG_SaveGame
+import SG_InitEntities
+import SG_BuildBounds
+import SG_FreeEntity
+import SG_AllocEntity
+import Ent_RunTic
+import SG_DrawLevelStats
+import SG_DrawAbortMission
+import Lvl_AddKillEntity
+import SG_EndLevel
+import SG_InitLevel
+import SG_UpdateCvars
+import G_Printf
+import G_Error
+import SG_Printf
+import SG_Error
+import SG_GenerateSpriteSheetTexCoords
+import SG_DrawFrame
+import sg_numSaves
+import sg_savename
+import sg_levelDataFile
+import sg_levelIndex
+import sg_levelInfoFile
+import sg_gibs
+import sg_decalDetail
+import sg_printLevelStats
+import sg_mouseAcceleration
+import sg_mouseInvert
+import sg_pmBaseSpeed
+import sg_pmBaseAcceleration
+import sg_pmWaterAcceleration
+import sg_pmAirAcceleration
+import sg_paused
+import sg_debugPrint
+import ammoCaps
+import mobinfo
+import iteminfo
+import weaponinfo
+import sg
+import sprites_shotty
+import sprites_grunt
+import sprites_thenomad
+import sg_entities
+import inversedirs
+import dirvectors
+import stateinfo
+import ImGui_CloseCurrentPopup
+import ImGui_OpenPopup
+import ImGui_EndPopup
+import ImGui_BeginPopupModal
 import ImGui_ColoredTextUnformatted
 import ImGui_TextUnformatted
+import ImGui_SameLine
 import ImGui_ProgressBar
 import ImGui_Separator
 import ImGui_SeparatorText
@@ -261,67 +331,12 @@ import ImGui_SetWindowCollapsed
 import ImGui_IsWindowCollapsed
 import ImGui_EndWindow
 import ImGui_BeginWindow
-import trap_RE_SetColor
-import trap_RE_RenderScene
-import trap_RE_ClearScene
-import trap_RE_AddPolyListToScene
-import trap_RE_AddPolyToScene
-import trap_Key_IsDown
-import trap_Key_GetKey
-import trap_Key_SetCatcher
-import trap_Key_GetCatcher
-import trap_RE_RegisterShader
-import trap_Snd_StopSfx
-import trap_Snd_PlaySfx
-import trap_Snd_RegisterSfx
-import trap_AddCommand
-import trap_FS_FClose
-import trap_FS_FileTell
-import trap_FS_FileSeek
-import trap_FS_Read
-import trap_FS_Write
-import trap_FS_FileLength
-import trap_FS_FOpenWrite
-import trap_FS_FOpenRead
-import trap_Args
-import trap_Argv
-import trap_Argc
-import trap_Cvar_VariableStringBuffer
-import trap_Cvar_Set
-import trap_Cvar_Update
-import trap_Cvar_Register
-import trap_Milliseconds
-import trap_Error
-import trap_Print
-import G_LoadMap
-import P_GiveWeapon
-import P_GiveItem
-import SG_MouseEvent
-import SG_KeyEvent
-import SG_MemInit
-import SG_MemAlloc
-import String_Alloc
-import Lvl_AddKillEntity
-import SG_EndLevel
-import SG_InitLevel
-import G_Printf
-import G_Error
-import SG_Printf
-import SG_Error
-import sg_pmAccel
-import stateinfo
-import ammoCaps
-import mobinfo
-import iteminfo
-import weaponinfo
-import sg
-import inversedirs
-import dirvectors
 import I_GetParm
 import Com_TouchMemory
 import Hunk_TempIsClear
 import Hunk_Check
 import Hunk_Print
+import Hunk_SetMark
 import Hunk_ClearToMark
 import Hunk_CheckMark
 import Hunk_SmallLog
@@ -335,11 +350,11 @@ import Hunk_Alloc
 import Hunk_InitMemory
 import Z_InitMemory
 import Z_InitSmallZoneMemory
-import Z_Strdup
+import CopyString
 import Z_AvailableMemory
 import Z_FreeTags
 import Z_Free
-import Z_SMalloc
+import S_Malloc
 import Z_Malloc
 import Z_Realloc
 import CPU_flags
@@ -353,6 +368,7 @@ import FS_Initialized
 import FS_FileIsInBFF
 import FS_StripExt
 import FS_AllowedExtension
+import FS_GetFileList
 import FS_LoadLibrary
 import FS_CopyString
 import FS_BuildOSPath
@@ -391,21 +407,27 @@ import FS_Shutdown
 import FS_InitFilesystem
 import FS_Startup
 import FS_VM_CloseFiles
-import FS_VM_FOpenFileWrite
-import FS_VM_FileSeek
-import FS_VM_FOpenFileRead
-import FS_VM_CreateTmp
-import FS_VM_WriteFile
-import FS_VM_Write
+import FS_VM_FileLength
 import FS_VM_Read
+import FS_VM_Write
+import FS_VM_WriteFile
 import FS_VM_FClose
-import FS_VM_FOpenRead
+import FS_VM_FOpenFileRead
+import FS_VM_FOpenFileWrite
+import FS_VM_FOpenFile
+import FS_VM_FileTell
+import FS_VM_FileSeek
+import FS_VM_FOpenRW
+import FS_VM_FOpenAppend
 import FS_VM_FOpenWrite
+import FS_VM_FOpenRead
 import com_errorMessage
+import com_fullyInitialized
 import com_errorEntered
 import com_cacheLine
 import com_frameTime
 import com_fps
+import com_frameNumber
 import com_maxfps
 import sys_cpuString
 import com_devmode
@@ -448,6 +470,7 @@ import Cmd_RemoveCommand
 import Cmd_AddCommand
 import Cmd_Init
 import keys
+import Key_WriteBindings
 import Key_SetOverstrikeMode
 import Key_GetOverstrikeMode
 import Key_GetKey
@@ -509,37 +532,14 @@ import Con_DrawConsole
 import Con_AddText
 import ColorIndexFromChar
 import g_color_table
-import Cvar_SetBooleanValue
-import Cvar_SetStringValue
-import Cvar_SetFloatValue
-import Cvar_SetIntegerValue
-import Cvar_SetModified
-import Cvar_SetValueSafe
-import Cvar_Set
-import Cvar_SetSafe
-import Cvar_SetDescription
-import Cvar_SetGroup
-import Cvar_Reset
-import Cvar_Command
-import Cvar_Get
-import Cvar_Update
-import Cvar_Flags
-import Cvar_CheckRange
-import Cvar_VariableString
-import Cvar_VariableBoolean
-import Cvar_VariableFloat
-import Cvar_VariableInteger
-import Cvar_VariableStringBufferSafe
-import Cvar_VariableStringBuffer
-import Cvar_Set2
-import Cvar_CommandCompletion
-import Cvar_CompleteCvarName
-import Cvar_Register
-import Cvar_Restart
-import Cvar_Init
-import Cvar_ForceReset
-import Cvar_CheckGroup
-import Cvar_ResetGroup
+import Info_RemoveKey
+import Info_NextPair
+import Info_ValidateKeyValue
+import Info_Validate
+import Info_SetValueForKey_s
+import Info_ValueForKeyToken
+import Info_Tokenize
+import Info_ValueForKey
 import Com_Clamp
 import bytedirs
 import N_isnan
@@ -562,6 +562,7 @@ import AngleMod
 import BoundsIntersectPoint
 import BoundsIntersectSphere
 import BoundsIntersect
+import disBetweenOBJ
 import AxisCopy
 import AxisClear
 import AnglesToAxis
@@ -683,7 +684,7 @@ import memchr
 import memcpy
 lit
 align 1
-LABELV $89
+LABELV $91
 byte 1 73
 byte 1 109
 byte 1 71
@@ -713,7 +714,7 @@ byte 1 111
 byte 1 119
 byte 1 0
 align 1
-LABELV $84
+LABELV $86
 byte 1 73
 byte 1 109
 byte 1 71

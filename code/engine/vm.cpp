@@ -40,17 +40,9 @@
 #endif
 #endif
 
-#define PROGRAM_STACK_EXTRA (32*1024)
-#define VM_DATA_GUARD_SIZE 1024
-#define OPCODE_TABLE_SIZE 64
-#define OPCODE_TABLE_MASK (OPCODE_TABLE_SIZE - 1)
-#define PROC_OPSTACK_SIZE 30
-#define PROGRAM_STACK_SIZE VM_PROGRAM_STACK_SIZE
-
 #define VM_MAX_BSS_LENGTH 10485760
 
 const char *vmNames[VM_COUNT] = {
-	"ui",
 	"sgame"
 };
 
@@ -1872,11 +1864,11 @@ static vm_t *VM_NameToVM( const char *name )
 {
 	vmIndex_t index;
 	
-	if ( !N_stricmp( name, "sgame" ) )
+	if ( !N_stricmp( name, "sgame" ) ) {
 		index = VM_SGAME;
-	else if ( !N_stricmp( name, "ui" ) )
-		index = VM_UI;
-	else {
+	} else if ( !N_stricmp( name, "ui" ) ) {
+//		index = VM_UI;
+	} else {
 		Con_Printf( " unknown VM name '%s'\n", name );
 		return NULL;
 	}

@@ -2,7 +2,6 @@
 #include "../rendercommon/r_public.h"
 #include "../sgame/sg_public.h"
 #include "../engine/vm_local.h"
-#include "../rendercommon/imgui.h"
 #include "g_vmimgui.h"
 
 #define VM_CHECKBOUNDS(addr1,len) VM_CheckBounds(sgvm,(addr1),(len))
@@ -48,102 +47,160 @@ static void *VM_ArgPtr(intptr_t addr)
 static intptr_t G_SGameSystemCalls(intptr_t *args)
 {
     switch (args[0]) {
+    case SG_CVAR_UPDATE:
+        VM_CHECKBOUNDS( args[1], sizeof(vmCvar_t) );
+        Cvar_Update( (vmCvar_t *)VMA( 1 ), args[2] );
+        return 0;
+    case SG_CVAR_REGISTER:
+        VM_CHECKBOUNDS( args[1], sizeof(vmCvar_t) );
+        Cvar_Register( (vmCvar_t *)VMA( 1 ), (const char *)VMA( 2 ), (const char *)VMA( 3 ), args[4], args[5] );
+        return 0;
+    case SG_CVAR_SET:
+        Cvar_Set( (const char *)VMA( 1 ), (const char *)VMA( 2 ) );
+        return 0;
+    case SG_CVAR_VARIABLESTRINGBUFFER:
+        VM_CHECKBOUNDS( args[2], args[3] );
+        Cvar_VariableStringBuffer( (const char *)VMA( 1 ), (char *)VMA( 2 ), args[3] );
+        return 0;
+    case SG_MILLISECONDS:
+        return Sys_Milliseconds();
     case SG_PRINT:
-        Con_Printf("%s", (const char *)VMA(1));
+        Con_Printf( "%s", (const char *)VMA( 1 ) );
         return 0;
     case SG_ERROR:
-        N_Error(ERR_DROP, "%s", (const char *)VMA(1));
+        N_Error( ERR_DROP, "%s", (const char *)VMA( 1 ) );
         return 0;
-    case SG_SND_REGISTERSFX:
-        return 0;
-    case SG_SND_PLAYSFX:
-        return 0;
-    case SG_KEY_GETCATCHER:
-        return Key_GetCatcher();
-    case SG_KEY_SETCATCHER:
-        Key_SetCatcher(Key_GetCatcher() & args[1]);
-        return 0;
-    case SG_KEY_GETKEY:
-        return Key_GetKey((const char *)VMA(1));
-    case SG_KEY_ISDOWN:
-        return (intptr_t)Key_IsDown(args[1]);
+    /*
     case SG_RE_SETCOLOR:
-        re.SetColor((const float *)VMA(1));
+        re.SetColor( (const float *)VMA( 1 ) );
         return 0;
-    case SG_RE_ADDPOLYLISTTOSCENE:
-        VM_CHECKBOUNDS(args[1], sizeof(poly_t) * args[2]);
-        re.AddPolyListToScene((const poly_t *)VMA(1), args[2]);
+    case SG_RE_DRAWIMAGE:
+        re.DrawImage( VMF( 1 ), VMF( 2 ), VMF( 3 ), VMF( 4 ), VMF( 5 ), VMF( 6 ), VMF( 7 ), VMF( 8 ), args[9]);
+        return 0;
+    */
+    case SG_RE_ADDLIGHTOSCENE:
         return 0;
     case SG_RE_ADDPOLYTOSCENE:
-        VM_CHECKBOUNDS(args[2], sizeof(polyVert_t) * args[3]);
-        re.AddPolyToScene(args[1], (const polyVert_t *)VMA(2), args[3]);
+        VM_CHECKBOUNDS( args[2], sizeof(polyVert_t) * args[3] );
+        re.AddPolyToScene( args[1], (const polyVert_t *)VMA( 2 ), args[3] );
+        return 0;
+    case SG_RE_ADDPOLYLISTTOSCENE:
+        VM_CHECKBOUNDS( args[1], sizeof(poly_t) * args[2] );
+        re.AddPolyListToScene( (const poly_t *)VMA( 1 ), args[2] );
+        return 0;
+    case SG_RE_ADDENTITYTOSCENE:
+        VM_CHECKBOUNDS( args[1], sizeof(renderEntityRef_t) );
+        re.AddEntityToScene( (const renderEntityRef_t *)VMA( 1 ) );
+        return 0;
+    case SG_RE_REGISTERSHADER:
+        return re.RegisterShader( (const char *)VMA( 1 ) );
+    case SG_RE_CLEARSCENE:
+        re.ClearScene();
         return 0;
     case SG_RE_RENDERSCENE:
         VM_CHECKBOUNDS( args[1], sizeof(renderSceneRef_t) );
-        re.RenderScene( (const renderSceneRef_t *)VMA(1) );
+        re.RenderScene( (const renderSceneRef_t *)VMA( 1 ) );
         return 0;
-    case SG_RE_REGISTERSHADER:
-        return re.RegisterShader((const char *)VMA(1));
+    case SG_SND_REGISTERSFX:
+        return Snd_RegisterSfx( (const char *)VMA( 1 ) );
+    case SG_SND_PLAYSFX:
+        Snd_PlaySfx( args[1] );
+        return 0;
+    case SG_SND_STOPSFX:
+        Snd_StopSfx( args[1] );
+        return 0;
+    case SG_SND_REGISTERTRACK:
+        return Snd_RegisterTrack( (const char *)VMA( 1 ) );
+    case SG_SND_SETLOOPINGTRACK:
+        Snd_SetLoopingTrack( args[1] );
+        return 0;
+    case SG_SND_CLEARLOOPINGTRACK:
+        Snd_ClearLoopingTrack();
+        return 0;
+    case SG_SND_QUEUETRACK:
+        Snd_QueueTrack( args[1] );
+        return 0;
     case SG_ADDCOMMAND:
-        Cmd_AddCommand((const char *)VMA(1), NULL);
         return 0;
     case SG_REMOVECOMMAND:
-        Cmd_RemoveCommand((const char *)VMA(1));
         return 0;
     case SG_ARGC:
         return Cmd_Argc();
     case SG_ARGV:
-        VM_CHECKBOUNDS(args[2], args[3]);
-        Cmd_ArgvBuffer(args[1], (char *)VMA(2), args[3]);
+        VM_CHECKBOUNDS( args[2], args[3] );
+        Cmd_ArgvBuffer( args[1], (char *)VMA( 2 ), args[3] );
         return 0;
     case SG_ARGS:
-        VM_CHECKBOUNDS(args[1], args[2]);
-        Cmd_ArgsBuffer((char *)VMA(1), args[2]);
         return 0;
-    case SG_CVAR_UPDATE:
-        Cvar_Update((vmCvar_t *)VMA(1), sgvm->privateFlag);
+    case SG_KEY_GETCATCHER:
+        return Key_GetCatcher();
+    case SG_KEY_SETCATCHER:
+        Key_SetCatcher( args[1] );
         return 0;
-    case SG_CVAR_SET:
-        Cvar_SetSafe((const char *)VMA(1), (const char *)VMA(2));
+    case SG_KEY_ISDOWN:
+        return Key_IsDown( args[1] );
+    case SG_KEY_GETKEY:
+        return Key_GetKey( (const char *)VMA(1) );
+    case SG_KEY_CLEARSTATES:
+        Key_ClearStates();
         return 0;
-    case SG_CVAR_REGISTER:
-        Cvar_Register((vmCvar_t *)VMA(1), (const char *)VMA(2), (const char *)VMA(2), args[3], sgvm->privateFlag);
+    case SG_KEY_ANYDOWN:
+        return Key_AnyDown();
+    case SG_GETGPUCONFIG:
+        VM_CHECKBOUNDS( args[1], sizeof(gpuConfig_t) );
+        memcpy( (gpuConfig_t *)VMA( 1 ), &gi.gpuConfig, sizeof(gpuConfig_t) );
+        return 0;
+    case SG_GETCLIPBOARDDATA:
+        return 0;
+    case SG_SENDCONSOLECOMMAND:
+        Cbuf_ExecuteText( EXEC_APPEND, (const char *)VMA( 1 ) );
+        return 0;
+    case SG_MEMORY_REMAINING:
+        return Hunk_MemoryRemaining();
+    case SG_G_LOADMAP:
+        VM_CHECKBOUNDS( args[2], sizeof(mapinfo_t) );
+        return G_LoadMap( args[1], (mapinfo_t *)VMA( 2 ) );
     case SG_FS_FOPENREAD:
-        return FS_VM_FOpenRead( (const char *)VMA(1), H_SGAME );
+        return FS_VM_FOpenRead( (const char *)VMA( 1 ), H_SGAME );
     case SG_FS_FOPENWRITE:
-        return FS_VM_FOpenWrite( (const char *)VMA(1), H_SGAME );
+        return FS_VM_FOpenWrite( (const char *)VMA( 1 ), H_SGAME );
     case SG_FS_FOPENAPPEND:
-        return FS_VM_FOpenAppend( (const char *)VMA(1), H_SGAME );
+        return FS_VM_FOpenAppend( (const char *)VMA( 1 ), H_SGAME );
     case SG_FS_FOPENRW:
-        return FS_VM_FOpenRW( (const char *)VMA(1), H_SGAME );
+        return FS_VM_FOpenRW( (const char *)VMA( 1 ), H_SGAME );
     case SG_FS_FILESEEK:
-        return FS_VM_FileSeek( (file_t)args[1], (fileOffset_t)args[2], args[3], H_SGAME );
+        return FS_VM_FileSeek( args[1], args[2], args[3], H_SGAME );
     case SG_FS_FILETELL:
-        return FS_VM_FileTell( (file_t)args[1], H_SGAME );
+        return FS_VM_FileTell( args[1], H_SGAME );
     case SG_FS_FOPENFILE:
         VM_CHECKBOUNDS( args[2], sizeof(file_t) );
-        return FS_VM_FOpenFile( (const char *)VMA(1), (file_t *)VMA(2), (fileMode_t)args[3], H_SGAME );
+        return FS_VM_FOpenFile( (const char *)VMA( 1 ), (file_t *)VMA( 2 ), (fileMode_t)args[3], H_SGAME );
     case SG_FS_FOPENFILEWRITE:
         VM_CHECKBOUNDS( args[2], sizeof(file_t) );
-        return FS_VM_FOpenFileWrite( (const char *)VMA(1), (file_t *)VMA(2), H_SGAME );
+        return FS_VM_FOpenFileWrite( (const char *)VMA( 1 ), (file_t *)VMA( 2 ), H_SGAME );
     case SG_FS_FOPENFILEREAD:
         VM_CHECKBOUNDS( args[2], sizeof(file_t) );
-        return FS_VM_FOpenFileRead( (const char *)VMA(1), (file_t *)VMA(2), H_SGAME );
+        return FS_VM_FOpenFileRead( (const char *)VMA( 1 ), (file_t *)VMA( 2 ), H_SGAME );
     case SG_FS_FCLOSE:
-        FS_VM_FClose( (file_t)args[1], H_SGAME );
+        FS_VM_FClose( args[1], H_SGAME );
         return 0;
     case SG_FS_WRITEFILE:
-        return FS_VM_WriteFile( (const char *)VMA(1), args[2], (file_t)args[3], H_SGAME );
+        VM_CHECKBOUNDS( args[1], args[2] );
+        return FS_VM_WriteFile( VMA( 1 ), args[2], args[3], H_SGAME );
     case SG_FS_WRITE:
         VM_CHECKBOUNDS( args[1], args[2] );
-        return FS_VM_Write( VMA(1), args[2], (file_t)args[3], H_SGAME );
+        return FS_VM_Write( VMA( 1 ), args[2], args[3], H_SGAME );
     case SG_FS_READ:
         VM_CHECKBOUNDS( args[1], args[2] );
-        return FS_VM_Read( VMA(1), args[2], (file_t)args[3], H_SGAME );
+        return FS_VM_Read( VMA( 1 ), args[2], args[3], H_SGAME );
     case SG_FS_FILELENGTH:
-        return FS_VM_FileLength( (file_t)args[1], H_SGAME );
+        return FS_VM_FileLength( args[1], H_SGAME );
     case SG_FS_GETFILELIST:
-        return FS_GetFileList( (const char *)VMA(1), (const char *)VMA(2), (char *)VMA(3), args[4] );
+        VM_CHECKBOUNDS( args[3], args[4] );
+        return FS_GetFileList( (const char *)VMA( 1 ), (const char *)VMA( 2 ), (char *)VMA( 3 ), args[4] );
+    case SG_RE_LOADWORLDMAP:
+        re.LoadWorld( (const char *)VMA( 1 ) );
+        return 0;
     case IMGUI_BEGIN_WINDOW:
         VM_CHECKBOUNDS( args[1], sizeof(ImGuiWindow) );
         return ImGui_BeginWindow( (ImGuiWindow *)VMA(1) );
@@ -297,18 +354,8 @@ static intptr_t G_SGameSystemCalls(intptr_t *args)
     case IMGUI_END_POPUP:
         ImGui_EndPopup();
         return 0;
-    case SG_RE_LOADWORLDMAP:
-        re.LoadWorld( (const char *)VMA(1) );
-        return 0;
-    case SG_G_LOADMAP:
-        VM_CHECKBOUNDS( args[2], sizeof(mapinfo_t) );
-        return G_LoadMap( args[1], (mapinfo_t *)VMA(2) );
-    case SG_G_SETBINDNAMES:
-        // we can't validate valid strings, but we can make sure they're passing in a valid pointer array
-        VM_CHECKBOUNDS( args[1], sizeof(const char *) * args[2] );
-        gi.bindNames = (const char **)VMA(1);
-        gi.numBindNames = args[2];
-        return 0;
+    case IMGUI_BUTTON:
+        return ImGui_Button( (const char *)VMA(1) );
     case TRAP_MEMSET:
         VM_CHECKBOUNDS(args[1], args[3]);
         return (intptr_t)memset(VMA(1), args[2], args[3]);
@@ -420,8 +467,4 @@ qboolean G_GameCommand(void)
     return bRes;
 }
 
-void G_SGameRender(stereoFrame_t stereo)
-{
-    VM_Call(sgvm, 2, SGAME_DRAW, gi.frametime, stereo);
-}
 
