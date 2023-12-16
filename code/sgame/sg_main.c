@@ -3,8 +3,8 @@
 
 void SG_Init( void );
 void SG_Shutdown( void );
-int SG_RunLoop( int msec );
-int SG_DrawFrame( void );
+int32_t SG_RunLoop( int32_t msec );
+int32_t SG_DrawFrame( void );
 
 /*
 vmMain
@@ -12,8 +12,8 @@ vmMain
 this is the only way control passes into the module.
 this must be the very first function compiled into the .qvm file
 */
-int vmMain( int command, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7,
-    int arg8, int arg9, int arg10 )
+int32_t vmMain( int32_t command, int32_t arg0, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg5, int32_t arg6, int32_t arg7,
+    int32_t arg8, int32_t arg9, int32_t arg10 )
 {
     switch ( command ) {
     case SGAME_INIT:
@@ -26,6 +26,9 @@ int vmMain( int command, int arg0, int arg1, int arg2, int arg3, int arg4, int a
         return sg.state;
     case SGAME_ENDLEVEL:
         return SG_EndLevel();
+    case SGAME_SEND_USER_CMD:
+
+        return 0;
     case SGAME_EVENT_HANDLING:
     case SGAME_EVENT_NONE:
         return 0;
@@ -45,12 +48,34 @@ int vmMain( int command, int arg0, int arg1, int arg2, int arg3, int arg4, int a
 
 sgGlobals_t sg;
 
+spritesheet_t sprites_thenomad;
+spritesheet_t sprites_grunt;
+spritesheet_t sprites_shotty;
+
+const vec3_t dirvectors[NUMDIRS] = {
+    { -1.0f, -1.0f, 0.0f },
+    {  0.0f, -1.0f, 0.0f },
+    {  1.0f, -1.0f, 0.0f },
+    {  1.0f,  0.0f, 0.0f },
+    {  1.0f,  1.0f, 0.0f },
+    {  0.0f,  1.0f, 0.0f },
+    { -1.0f,  1.0f, 0.0f },
+    { -1.0f,  0.0f, 0.0f }
+};
+
+const dirtype_t inversedirs[NUMDIRS] = {
+    DIR_SOUTH_EAST,
+    DIR_SOUTH,
+    DIR_SOUTH_WEST,
+    DIR_WEST,
+    DIR_NORTH_WEST,
+    DIR_NORTH,
+    DIR_NORTH_EAST,
+    DIR_EAST
+};
+
 vmCvar_t sg_debugPrint;
 vmCvar_t sg_paused;
-vmCvar_t sg_pmAirAcceleration;
-vmCvar_t sg_pmWaterAcceleration;
-vmCvar_t sg_pmBaseAcceleration;
-vmCvar_t sg_pmBaseSpeed;
 vmCvar_t sg_mouseInvert;
 vmCvar_t sg_mouseAcceleration;
 vmCvar_t sg_printLevelStats;
@@ -61,7 +86,13 @@ vmCvar_t sg_levelIndex;
 vmCvar_t sg_levelDataFile;
 vmCvar_t sg_savename;
 vmCvar_t sg_numSaves;
-
+vmCvar_t pm_waterAccel;
+vmCvar_t pm_baseAccel;
+vmCvar_t pm_baseSpeed;
+vmCvar_t pm_airAccel;
+vmCvar_t pm_wallrunAccelVertical;
+vmCvar_t pm_wallrunAccelMove;
+vmCvar_t pm_wallTime;
 
 typedef struct {
     const char *name;
@@ -73,10 +104,10 @@ typedef struct {
 static cvarTable_t cvarTable[] = {
     { "sg_debugPrint",                  "0",            &sg_debugPrint,             CVAR_LATCH },
     { "g_paused",                       "1",            &sg_paused,                 CVAR_LATCH | CVAR_TEMP },
-    { "sg_pmAirAcceleration",           "1.5",          &sg_pmAirAcceleration,      CVAR_LATCH | CVAR_SAVE },
-    { "sg_pmWaterAcceleratino",         "0.5",          &sg_pmWaterAcceleration,    CVAR_LATCH | CVAR_SAVE },
-    { "sg_pmBaseAcceleration",          "1.2",          &sg_pmBaseAcceleration,     CVAR_LATCH | CVAR_SAVE },
-    { "sg_pmBaseSpeed",                 "1.0",          &sg_pmBaseSpeed,            CVAR_LATCH | CVAR_SAVE },
+    { "pm_airAccel",                    "1.5",          &pm_airAccel,               CVAR_LATCH | CVAR_SAVE },
+    { "pm_waterAccel",                  "0.5",          &pm_waterAccel,             CVAR_LATCH | CVAR_SAVE },
+    { "pm_baseAccel",                   "1.2",          &pm_baseAccel,              CVAR_LATCH | CVAR_SAVE },
+    { "pm_baseSpeed",                   "1.0",          &pm_baseSpeed,              CVAR_LATCH | CVAR_SAVE },
     { "g_mouseInvert",                  "0",            &sg_mouseInvert,            CVAR_LATCH | CVAR_SAVE },
     { "g_mouseAcceleration",            "0",            &sg_mouseAcceleration,      CVAR_LATCH | CVAR_SAVE },
     { "sg_printLevelStats",             "1",            &sg_printLevelStats,        CVAR_LATCH | CVAR_TEMP },
@@ -111,7 +142,7 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL G_Printf(const char *fmt, ..
 {
     va_list argptr;
     char msg[4096];
-    int length;
+    int32_t length;
 
     va_start(argptr, fmt);
     length = vsprintf(msg, fmt, argptr);
@@ -124,7 +155,7 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL G_Error(const char *err, ...
 {
     va_list argptr;
     char msg[4096];
-    int length;
+    int32_t length;
 
     va_start(argptr, err);
     length = vsprintf(msg, err, argptr);
@@ -137,7 +168,7 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL SG_Printf(const char *fmt, .
 {
     va_list argptr;
     char msg[4096];
-    int length;
+    int32_t length;
 
     va_start(argptr, fmt);
     length = vsprintf(msg, fmt, argptr);
@@ -154,7 +185,7 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL SG_Error(const char *err, ..
 {
     va_list argptr;
     char msg[4096];
-    int length;
+    int32_t length;
 
     va_start(argptr, err);
     length = vsprintf(msg, err, argptr);
@@ -171,7 +202,7 @@ void GDR_DECL GDR_ATTRIBUTE((format(printf, 2, 3))) N_Error(errorCode_t code, co
 {
     va_list argptr;
     char msg[4096];
-    int length;
+    int32_t length;
 
     va_start(argptr, err);
     length = vsprintf(msg, err, argptr);
@@ -191,7 +222,7 @@ void GDR_DECL GDR_ATTRIBUTE((format(printf, 1, 2))) Con_Printf(const char *fmt, 
 {
     va_list argptr;
     char msg[4096];
-    int length;
+    int32_t length;
 
     va_start(argptr, fmt);
     length = vsprintf(msg, fmt, argptr);
@@ -206,11 +237,11 @@ void GDR_DECL GDR_ATTRIBUTE((format(printf, 1, 2))) Con_Printf(const char *fmt, 
 
 //#endif
 
-int SG_RunLoop( int levelTime )
+int32_t SG_RunLoop( int32_t levelTime )
 {
-    int i;
-    int start, end;
-    int msec;
+    int32_t i;
+    int32_t start, end;
+    int32_t msec;
     sgentity_t *ent;
 
     if ( sg.state == SG_INACTIVE ) {
@@ -224,9 +255,6 @@ int SG_RunLoop( int levelTime )
     if ( sg.state == SG_SHOW_LEVEL_STATS ) {
         SG_DrawLevelStats();
         return 1; // we don't draw the level if we're ending it
-    } else if ( sg.state == SG_ABORT_LEVEL ) {
-        SG_DrawFrame();
-        return SG_DrawAbortMission();
     }
 
     SG_DrawFrame();

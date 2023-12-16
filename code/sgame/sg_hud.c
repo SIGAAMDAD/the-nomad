@@ -12,7 +12,7 @@ void Hud_Draw( void )
 {
     ImGui_BeginWindow( &hud->health );
     ImGui_SetWindowPos( 16 * sg.scale, 16 * sg.scale );
-    ImGui_Text( "Health: %lu", sg.playr->ent->health );
+    ImGui_Text( "Health: %lu", sg.playr.ent->health );
     ImGui_EndWindow();
 
     ImGui_BeginWindow( &hud->weapons );

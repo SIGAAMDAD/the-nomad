@@ -297,8 +297,11 @@ static void Com_PushEvent(const sysEvent_t *event)
 static void Com_PumpKeyEvents(void)
 {
 	SDL_Event event;
+	uint32_t in_eventTime;
 
 	SDL_PumpEvents();
+
+	in_eventTime = Sys_Milliseconds();
 
 	while (SDL_PollEvent(&event)) {
 		if (Key_GetCatcher() & KEYCATCH_CONSOLE || Key_GetCatcher() & KEYCATCH_UI) {
@@ -307,10 +310,10 @@ static void Com_PumpKeyEvents(void)
 
 		switch (event.type) {
 		case SDL_KEYDOWN:
-			Com_QueueEvent(com_frameTime, SE_KEY, event.key.keysym.scancode, qtrue, 0, NULL);
+			Com_QueueEvent( in_eventTime, SE_KEY, event.key.keysym.scancode, qtrue, 0, NULL );
 			break;
 		case SDL_KEYUP:
-			Com_QueueEvent(com_frameTime, SE_KEY, event.key.keysym.scancode, qfalse, 0, NULL);
+			Com_QueueEvent( in_eventTime, SE_KEY, event.key.keysym.scancode, qfalse, 0, NULL );
 			break;
 		case SDL_WINDOWEVENT:
 			switch (event.window.event) {

@@ -57,6 +57,10 @@ equ RE_AddEntityToScene                     -54
 equ RE_AddLightToScene                      -55
 equ RE_RegisterShader                       -56
 equ RE_LoadWorldMap                         -57
+equ G_LinkEntity                            -58
+equ G_UnlinkEntity                          -59
+equ G_SoundRecursive                        -60
+equ trap_CheckWallHit                       -61
 
 equ ImGui_BeginWindow                       -401
 equ ImGui_EndWindow                         -402

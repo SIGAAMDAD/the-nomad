@@ -1,4 +1,5 @@
 #include "g_game.h"
+#include "g_world.h"
 #include "../rendercommon/r_public.h"
 #include "../sgame/sg_public.h"
 #include "../engine/vm_local.h"
@@ -44,9 +45,23 @@ static void *VM_ArgPtr(intptr_t addr)
         return (void *)(sgvm->dataBase + (addr & sgvm->dataMask));
 }
 
-static intptr_t G_SGameSystemCalls(intptr_t *args)
+static intptr_t G_SGameSystemCalls( intptr_t *args )
 {
     switch (args[0]) {
+    case SG_CASTRAY:
+        g_world.CastRay( (ray_t *)VMA( 1 ) );
+        return 0;
+    case SG_G_CHECK_WALL_COLLISION:
+        return g_world.CheckWallHit( (const float *)VMA( 1 ), (dirtype_t)args[2] );
+    case SG_G_SOUND_RECURSIVE:
+        g_world.SoundRecursive( args[1], args[2], VMF( 3 ), (const float *)VMA( 4 ) );
+        return 0;
+    case SG_G_LINK_ENTITY:
+        g_world.LinkEntity( (linkEntity_t *)VMA( 1 ) );
+        return 0;
+    case SG_G_UNLINK_ENTITY:
+        g_world.UnlinkEntity( (linkEntity_t *)VMA( 1 ) );
+        return 0;
     case SG_CVAR_UPDATE:
         VM_CHECKBOUNDS( args[1], sizeof(vmCvar_t) );
         Cvar_Update( (vmCvar_t *)VMA( 1 ), args[2] );
@@ -159,7 +174,9 @@ static intptr_t G_SGameSystemCalls(intptr_t *args)
         return Hunk_MemoryRemaining();
     case SG_G_LOADMAP:
         VM_CHECKBOUNDS( args[2], sizeof(mapinfo_t) );
-        return G_LoadMap( args[1], (mapinfo_t *)VMA( 2 ) );
+        VM_CHECKBOUNDS( args[3], sizeof(uint32_t) * MAX_MAP_WIDTH * MAX_MAP_HEIGHT );
+        VM_CHECKBOUNDS( args[4], sizeof(linkEntity_t) );
+        return G_LoadMap( args[1], (mapinfo_t *)VMA( 2 ), (uint32_t *)VMA( 3 ), (linkEntity_t *)VMA( 4 ) );
     case SG_FS_FOPENREAD:
         return FS_VM_FOpenRead( (const char *)VMA( 1 ), H_SGAME );
     case SG_FS_FOPENWRITE:
@@ -365,6 +382,18 @@ static intptr_t G_SGameSystemCalls(intptr_t *args)
 	case TRAP_STRNCPY:
         VM_CHECKBOUNDS(args[1], args[3]);
         return (intptr_t)strncpy((char *)VMA(1), (const char *)VMA(2), args[3]);
+    case TRAP_STRLEN:
+        return (int32_t)strlen( (const char *)VMA( 1 ) );
+    case TRAP_STRCHR:
+        return (intptr_t)strchr( (const char *)VMA( 1 ), args[2] );
+    case TRAP_STRRCHR:
+        return (intptr_t)strrchr( (const char *)VMA( 1 ), args[2] );
+    case TRAP_ACOS:
+        return FloatToInt( acos( VMF( 1 ) ) );
+    case TRAP_MEMCHR:
+        return (intptr_t)memchr( VMA( 1 ), args[2], args[3] );
+    case TRAP_STRSTR:
+        return (intptr_t)strstr( (const char *)VMA( 1 ), (const char *)VMA( 2 ) );
 	case TRAP_FLOOR:
         return FloatToInt(floor(VMF(1)));
 	case TRAP_SIN:
@@ -449,6 +478,9 @@ void G_InitSGame(void)
 
     // do not allow vid_restart for the first time
     gi.lastVidRestart = Sys_Milliseconds();
+
+    // set state to active
+    gi.state = GS_MENU;
 }
 
 /*

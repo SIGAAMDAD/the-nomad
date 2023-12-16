@@ -37,6 +37,13 @@ private:
     qboolean toggleOn;
 };
 
+typedef struct {
+    CUIMenu menu;
+    char message[MAXPRINTMSG];
+} errorMessage_t;
+
+static errorMessage_t errorMenu;
+
 typedef struct
 {
     CUIMenu menu;
@@ -82,7 +89,6 @@ static const collaborator_t collaborators[] = {
 
 void MainMenu_Draw( void )
 {
-    renderSceneRef_t refdef;
     uint64_t i;
     const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
                             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground;
@@ -91,13 +97,16 @@ void MainMenu_Draw( void )
 
     Snd_SetLoopingTrack( menu.ambience );
 
-    // setup a scene to render the background
-    memset( &refdef, 0, sizeof(refdef) );
-    refdef.flags |= RSF_NOWORLDMODEL;
-    refdef.x = 0;
-    refdef.y = 0;
-    refdef.width = ui->GetConfig().vidWidth;
-    refdef.height = ui->GetConfig().vidHeight;
+    if ( ui->GetState() == STATE_ERROR ) {
+        if ( ImGui::BeginPopup( "Engine Error", windowFlags & ~( ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground ) ) ) {
+            ImGui::TextUnformatted( errorMenu.message );
+            if ( Key_AnyDown() ) {
+                Snd_PlaySfx( ui->sfx_null );
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+    }
 
     /*
     ImGui::Begin( "MainMenu##BACKGROUND", NULL, windowFlags | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoBringToFrontOnFocus );
@@ -192,13 +201,30 @@ void MainMenu_Draw( void )
 void MainMenu_Cache( void )
 {
     memset( &menu, 0, sizeof(menu) );
+    memset( &errorMenu, 0, sizeof(errorMenu) );
 
     // only use of rand() is determining DIF_HARDEST title
-    srand(time(NULL));
+    srand( time( NULL ) );
 
     // setup base values
     Cvar_Get( "g_mouseAcceleration", "0", CVAR_LATCH | CVAR_SAVE );
     Cvar_Get( "g_mouseInvert", "0", CVAR_LATCH | CVAR_SAVE );
+
+    // check for errors
+    Cvar_VariableStringBuffer( "com_errorMessage", errorMenu.message, sizeof(errorMenu.message) );
+    if ( errorMenu.message[0] ) {
+        errorMenu.menu.Draw = MainMenu_Draw;
+
+        ui->SetState( STATE_ERROR );
+
+        Key_SetCatcher( KEYCATCH_UI );
+        ui->ForceMenuOff();
+        ui->PushMenu( &errorMenu.menu );
+
+        ImGui::OpenPopup( "Engine Error" );
+
+        return;
+    }
 
     menu.menu.Draw = MainMenu_Draw;
 

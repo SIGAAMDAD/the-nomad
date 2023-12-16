@@ -13888,6 +13888,7 @@ import Com_StartupVariable
 import Com_EarlyParseCmdLine
 import Com_Milliseconds
 import Com_Frame
+import Sys_SnapVector
 import Con_DPrintf
 import Con_Printf
 import Con_Shutdown

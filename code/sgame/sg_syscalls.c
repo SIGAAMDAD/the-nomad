@@ -32,252 +32,54 @@ int32_t PASSFLOAT(float x)
     return *(int32_t *)&floatTemp;
 }
 
-int32_t G_LoadMap( int32_t index, mapinfo_t *info )
-{
-    return vmi.G_LoadMap( index, info );
-}
+void trap_Print( const char *str );
+void trap_Error( const char *str );
+uint32_t trap_Argc( void );
+void trap_Argv( uint32_t n, char *buf, uint32_t bufferLength );
+void trap_Args( char *buf, uint32_t bufferLength );
+void trap_SendConsoleCommand( const char *text );
+void trap_AddCommand( const char *cmdName );
+void trap_RemoveCommand( const char *cmdName );
+uint32_t trap_MemoryRemaining( void );
+void Sys_SnapVector( float *v );
+int G_LoadMap( int levelIndex, mapinfo_t *info, uint32_t *soundBits, linkEntity_t *activeEnts );
+void G_CastRay( ray_t *ray );
+void G_SoundRecursive( int width, int height, float volume, const vec3_t origin );
+int trap_Milliseconds( void );
 
-uint32_t trap_Milliseconds( void )
-{
-    return vmi.trap_Milliseconds();
-}
+void trap_Key_SetCatcher( uint32_t catcher );
+uint32_t trap_Key_GetCatcher( void );
+uint32_t trap_Key_GetKey( const char *key );
+void trap_Key_ClearStates( void );
 
-void trap_GetGPUConfig(gpuConfig_t *config)
-{
-    vmi.trap_GetGPUConfig(config);
-}
+sfxHandle_t trap_Snd_RegisterSfx( const char *npath );
+sfxHandle_t trap_Snd_RegisterTrack( const char *npath );
+void trap_Snd_QueueTrack( sfxHandle_t track );
+void trap_Snd_PlaySfx( sfxHandle_t sfx );
+void trap_Snd_StopSfx( sfxHandle_t sfx );
+void trap_Snd_SetLoopingTrack( sfxHandle_t track );
+void trap_Snd_ClearLoopingTrack( void );
 
-void trap_Cmd_ExecuteText(cbufExec_t exec, const char *text)
-{
-    vmi.trap_Cmd_ExecuteText(exec, text);
-}
+nhandle_t RE_RegisterShader( const char *npath );
+void RE_LoadWorldMap( const char *npath );
+void RE_ClearScene( void );
+void RE_RenderScene( const renderSceneRef_t *fd );
+void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
 
-void RE_ClearScene( void )
-{
-    vmi.trap_RE_ClearScene();
-}
+void Sys_GetGPUConfig( gpuConfig_t *config );
+uint32_t trap_FS_FOpenFile( const char *npath, file_t *f, fileMode_t mode );
+file_t trap_FS_FOpenWrite( const char *npath );
+void trap_FS_FClose( file_t f );
+uint32_t trap_FS_Write( const void *data, uint32_t size, file_t f );
+uint32_t trap_FS_Read( void *data, uint32_t size, file_t f );
+uint32_t trap_FS_GetFileList( const char *path, const char *extension, char *listbuf, uint32_t bufsize ); 
+uint32_t trap_FS_FileSeek( file_t f, fileOffset_t offset, uint32_t whence );
+uint32_t trap_FS_FileTell( file_t f );
+void Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, uint32_t flags );
+void Cvar_Update( vmCvar_t *vmCvar );
+void Cvar_Set( const char *varName, const char *value );
+void Cvar_VariableStringBuffer( const char *var_name, char *buffer, uint32_t bufsize );
 
-void trap_GetClipboardData( char *buf, uint32_t bufsize )
-{
-    vmi.trap_GetClipboardData(buf, bufsize);
-}
-
-uint32_t trap_Key_GetCatcher(void)
-{
-    return vmi.trap_Key_GetCatcher();
-}
-
-void trap_Key_SetCatcher(uint32_t catcher)
-{
-    vmi.trap_Key_SetCatcher(catcher);
-}
-
-uint32_t trap_Key_GetKey(const char *binding)
-{
-    return vmi.trap_Key_GetKey(binding);
-}
-
-qboolean trap_Key_IsDown(uint32_t keynum)
-{
-    return vmi.trap_Key_IsDown(keynum);
-}
-
-void trap_Key_ClearStates(void)
-{
-    vmi.trap_Key_ClearStates();
-}
-
-qboolean trap_Key_AnyDown(void)
-{
-    return vmi.trap_Key_AnyDown();
-}
-
-void trap_Print(const char *str)
-{
-    vmi.trap_Print(str);
-}
-
-void trap_Error(const char *str)
-{
-    vmi.trap_Error(str);
-}
-
-void RE_SetColor(const float *rgba)
-{
-    vmi.trap_RE_SetColor(rgba);
-}
-
-void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts )
-{
-    vmi.trap_RE_AddPolyToScene(hShader, verts, numVerts);
-}
-
-void RE_AddEntityToScene( const renderEntityRef_t *ent )
-{
-//    vmi.trap_RE_AddEntityToScene(ent);
-}
-
-void RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys )
-{
-    vmi.trap_RE_AddPolyListToScene(polys, numPolys);
-}
-
-void RE_DrawImage( float x, float y, float w, float h, float u1, float v1, float u2, float v2, nhandle_t hShader )
-{
-    vmi.trap_RE_DrawImage(x, y, w, h, u1, v1, u2, v2, hShader);
-}
-
-void RE_RenderScene( const renderSceneRef_t *fd )
-{
-    vmi.trap_RE_RenderScene(fd);
-}
-
-void RE_LoadWorldMap( const char *filename )
-{
-    vmi.trap_RE_LoadWorldMap( filename );
-}
-
-nhandle_t RE_RegisterShader(const char *name)
-{
-    return vmi.trap_RE_RegisterShader(name);
-}
-
-sfxHandle_t trap_Snd_RegisterSfx(const char *npath)
-{
-    return vmi.trap_Snd_RegisterSfx(npath);
-}
-
-void trap_Snd_PlaySfx(sfxHandle_t sfx)
-{
-    vmi.trap_Snd_PlaySfx(sfx);
-}
-
-void trap_Snd_StopSfx(sfxHandle_t sfx)
-{
-    vmi.trap_Snd_StopSfx(sfx);
-}
-
-void G_SetBindNames( const char **bindnames, uint32_t numbindnames )
-{
-    vmi.G_SetBindNames( bindnames, numbindnames );
-}
-
-void trap_UpdateScreen(void)
-{
-    vmi.trap_UpdateScreen();
-}
-
-void Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, uint32_t flags )
-{
-    vmi.trap_Cvar_Register(vmCvar, varName, defaultValue, flags);
-}
-
-void Cvar_Update( vmCvar_t *vmCvar )
-{
-    vmi.trap_Cvar_Update(vmCvar);
-}
-
-void Cvar_Set( const char *var_name, const char *value )
-{
-    vmi.trap_Cvar_Set(var_name, value);
-}
-
-void Cvar_VariableStringBuffer( const char *var_name, char *buffer, uint32_t bufsize )
-{
-    vmi.trap_Cvar_VariableStringBuffer(var_name, buffer, bufsize);
-}
-
-uint32_t trap_Argc( void )
-{
-    return vmi.trap_Argc();
-}
-
-void trap_Argv( uint32_t n, char *buffer, uint32_t bufferLength )
-{
-    vmi.trap_Argv(n, buffer, bufferLength);
-}
-
-void trap_Args( char *buffer, uint32_t bufferLength )
-{
-    return; // not meant to called
-}
-
-
-file_t trap_FS_FOpenRead( const char *npath )
-{
-    return vmi.FS_FOpenRead( npath, H_SGAME );
-}
-
-file_t trap_FS_FOpenWrite( const char *npath )
-{
-    return vmi.FS_FOpenWrite( npath, H_SGAME );
-}
-
-file_t trap_FS_FOpenAppend( const char *npath )
-{
-    return vmi.FS_FOpenAppend( npath, H_SGAME );
-}
-
-file_t trap_FS_FOpenRW( const char *npath )
-{
-    return vmi.FS_FOpenRW( npath, H_SGAME );
-}
-
-fileOffset_t trap_FS_FileSeek( file_t file, fileOffset_t offset, uint32_t whence )
-{
-    return vmi.FS_FileSeek( file, offset, whence, H_SGAME );
-
-}
-
-fileOffset_t trap_FS_FileTell( file_t file )
-{
-    return vmi.FS_FileTell( file, H_SGAME );
-}
-
-uint64_t trap_FS_FOpenFile( const char *npath, file_t *file, fileMode_t mode )
-{
-    return vmi.FS_FOpenFile( npath, file, mode, H_SGAME );
-}
-
-file_t trap_FS_FOpenFileWrite( const char *npath, file_t *file )
-{
-    return vmi.FS_FOpenFileWrite( npath, file, H_SGAME );
-}
-
-uint64_t trap_FS_FOpenFileRead( const char *npath, file_t *file )
-{
-    return vmi.FS_FOpenFileRead( npath, file, H_SGAME );
-}
-
-void trap_FS_FClose( file_t file )
-{
-    vmi.FS_FClose( file, H_SGAME );
-}
-
-uint64_t trap_FS_WriteFile( const void *buffer, uint64_t len, file_t file )
-{
-    return vmi.FS_WriteFile( buffer, len, file, H_SGAME );
-}
-
-uint32_t trap_FS_Write( const void *buffer, uint32_t len, file_t file )
-{
-    return vmi.FS_Write( buffer, len, file, H_SGAME );
-}
-
-uint32_t trap_FS_Read( void *buffer, uint32_t len, file_t file )
-{
-    return vmi.FS_Read( buffer, len, file, H_SGAME );
-}
-
-uint32_t trap_FS_FileLength( file_t file )
-{
-    return vmi.FS_FileLength( file, H_SGAME );
-}
-
-uint32_t trap_FS_GetFileList( const char *path, const char *extension, char *listbuf, uint64_t bufsize )
-{
-    return vmi.FS_GetFileList( path, extension, listbuf, bufsize );
-}
 
 int ImGui_BeginWindow( ImGuiWindow *pWindow )
 {

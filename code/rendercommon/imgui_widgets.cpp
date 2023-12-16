@@ -3628,10 +3628,10 @@ bool ImGui::InputDouble(const char* label, double* v, double step, double step_f
 // - DebugNodeInputTextState() [Internal]
 //-------------------------------------------------------------------------
 
-bool ImGui::InputText(const char* label, char* buf, size_t buf_size, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* user_data)
+bool ImGui::InputText(const char* label, char* buf, size_t buf_size, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* user_data, ImGuiInputTextCallbackData *callbackData)
 {
     IM_ASSERT(!(flags & ImGuiInputTextFlags_Multiline)); // call InputTextMultiline()
-    return InputTextEx(label, NULL, buf, (int)buf_size, ImVec2(0, 0), flags, callback, user_data);
+    return InputTextEx(label, NULL, buf, (int)buf_size, ImVec2(0, 0), flags, callback, user_data, callbackData);
 }
 
 bool ImGui::InputTextMultiline(const char* label, char* buf, size_t buf_size, const ImVec2& size, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* user_data)
@@ -4089,7 +4089,8 @@ void ImGui::InputTextDeactivateHook(ImGuiID id)
 // - If you want to use ImGui::InputText() with std::string, see misc/cpp/imgui_stdlib.h
 // (FIXME: Rather confusing and messy function, among the worse part of our codebase, expecting to rewrite a V2 at some point.. Partly because we are
 //  doing UTF8 > U16 > UTF8 conversions on the go to easily interface with stb_textedit. Ideally should stay in UTF-8 all the time. See https://github.com/nothings/stb/issues/188)
-bool ImGui::InputTextEx(const char* label, const char* hint, char* buf, int buf_size, const ImVec2& size_arg, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* callback_user_data)
+bool ImGui::InputTextEx(const char* label, const char* hint, char* buf, int buf_size, const ImVec2& size_arg, ImGuiInputTextFlags flags, ImGuiInputTextCallback callback, void* callback_user_data,
+    ImGuiInputTextCallbackData *callbackData)
 {
     ImGuiWindow* window = GetCurrentWindow();
     if (window->SkipItems)
@@ -4684,17 +4685,28 @@ bool ImGui::InputTextEx(const char* label, const char* hint, char* buf, int buf_
                 if (event_flag)
                 {
                     ImGuiInputTextCallbackData callback_data;
-                    callback_data.Ctx = &g;
-                    callback_data.EventFlag = event_flag;
-                    callback_data.Flags = flags;
-                    callback_data.UserData = callback_user_data;
 
-                    char* callback_buf = is_readonly ? buf : state->TextA.Data;
-                    callback_data.EventKey = event_key;
-                    callback_data.Buf = callback_buf;
-                    callback_data.BufTextLen = state->CurLenA;
-                    callback_data.BufSize = state->BufCapacityA;
-                    callback_data.BufDirty = false;
+                    if ( !callbackData ) {
+                        callback_data.Ctx = &g;
+                        callback_data.EventFlag = event_flag;
+                        callback_data.Flags = flags;
+                        callback_data.UserData = callback_user_data;
+
+                        char* callback_buf = is_readonly ? buf : state->TextA.Data;
+                        callback_data.EventKey = event_key;
+                        callback_data.Buf = callback_buf;
+                        callback_data.BufTextLen = state->CurLenA;
+                        callback_data.BufSize = state->BufCapacityA;
+                        callback_data.BufDirty = false;
+                    } else {
+                        callback_data.Buf = callbackData->Buf;
+                        callback_data.BufTextLen = callbackData->BufTextLen;
+                        callback_data.EventFlag = callbackData->EventFlag;
+                        callback_data.EventKey = callbackData->EventKey;
+                        callback_data.UserData = callbackData->UserData;
+                        callback_data.BufDirty = callbackData->BufDirty;
+                        callback_data.BufSize = callbackData->BufSize;
+                    }
 
                     // We have to convert from wchar-positions to UTF-8-positions, which can be pretty slow (an incentive to ditch the ImWchar buffer, see https://github.com/nothings/stb/issues/188)
                     ImWchar* text = state->TextW.Data;

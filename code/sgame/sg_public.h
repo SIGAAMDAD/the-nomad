@@ -5,12 +5,32 @@
 
 #include "../engine/n_shared.h"
 #include "../rendercommon/r_types.h"
-#include "../game/g_game.h"
+
+typedef struct linkEntity_s {
+    vec3_t mins;
+    vec3_t maxs;
+    uint32_t type;
+    uint32_t id;
+
+    struct linkEntity_s *next;
+    struct linkEntity_s *prev;
+} linkEntity_t;
+
+typedef struct
+{
+	vec3_t start;
+	vec3_t end;
+	vec3_t origin;
+	float speed;
+	float length;
+	float angle;
+    void *hitData;
+} ray_t;
+
 typedef enum
 {
     SG_INACTIVE,
     SG_IN_LEVEL,
-    SG_ABORT_LEVEL,
     SG_SHOW_LEVEL_STATS,
 } sgameState_t;
 
@@ -93,6 +113,11 @@ typedef enum
     SG_RE_ADDLIGHTOSCENE,
     SG_RE_REGISTERSHADER,
     SG_RE_LOADWORLDMAP,
+
+    SG_G_LINK_ENTITY,
+    SG_G_UNLINK_ENTITY,
+    SG_G_SOUND_RECURSIVE,
+    SG_G_CHECK_WALL_COLLISION,
 
     IMGUI_BEGIN_WINDOW = 400,
     IMGUI_END_WINDOW,
@@ -192,6 +217,8 @@ typedef enum
 
     SGAME_MOUSE_EVENT,
     // void (*SG_MouseEvent)( int dx, int dy );
+
+    SGAME_SEND_USER_CMD,
 
     SGAME_EVENT_HANDLING,
 

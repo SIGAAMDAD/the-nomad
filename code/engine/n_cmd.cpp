@@ -428,7 +428,7 @@ pointers returned to them
 */
 void Cmd_ArgvBuffer(uint32_t arg, char *buffer, uint32_t bufLen)
 {
-	N_strncpyz(buffer, Cmd_Argv(arg), bufLen);
+	N_strncpyz( buffer, Cmd_Argv(arg), bufLen );
 }
 
 /*

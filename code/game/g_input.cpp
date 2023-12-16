@@ -32,8 +32,8 @@ typedef struct {
 	qboolean	wasPressed;		// set when down, not cleared when up
 } kbutton_t;
 
-static kbutton_t in_forward, in_left, in_right, in_back;
-static kbutton_t in_up, in_down;
+static kbutton_t in_forward, in_left, in_right, in_backward;
+static kbutton_t in_up;
 static kbutton_t in_buttons[16];
 
 static cvar_t *g_mouseAcceleration;
@@ -162,16 +162,14 @@ static float G_KeyState( kbutton_t *key ) {
 
 static void IN_ForwardDown( void ) {IN_KeyDown(&in_forward);}
 static void IN_ForwardUp( void ) {IN_KeyUp(&in_forward);}
-static void IN_BackDown( void ) {IN_KeyDown(&in_back);}
-static void IN_BackUp( void ) {IN_KeyUp(&in_back);}
+static void IN_BackDown( void ) {IN_KeyDown(&in_backward);}
+static void IN_BackUp( void ) {IN_KeyUp(&in_backward);}
 static void IN_LeftDown( void ) {IN_KeyDown(&in_left);}
 static void IN_LeftUp( void ) {IN_KeyUp(&in_left);}
 static void IN_RightDown( void ) {IN_KeyDown(&in_right);}
 static void IN_RightUp( void )  {IN_KeyUp(&in_right);}
 static void IN_UpDown( void ) {IN_KeyDown(&in_up);}
 static void IN_UpUp( void ) {IN_KeyUp(&in_up);}
-static void IN_DownDown( void ) {IN_KeyDown(&in_down);}
-static void IN_DownUp( void ) {IN_KeyUp(&in_down);}
 
 static void IN_Button0Down( void ) {IN_KeyDown(&in_buttons[0]);}
 static void IN_Button0Up( void ) {IN_KeyUp(&in_buttons[0]);}
@@ -240,12 +238,10 @@ static void G_KeyMove( usercmd_t *cmd )
 	side += movespeed * G_KeyState (&in_right);
 	side -= movespeed * G_KeyState (&in_left);
 
-
 	up += movespeed * G_KeyState (&in_up);
-	up -= movespeed * G_KeyState (&in_down);
 
 	forward += movespeed * G_KeyState (&in_forward);
-	forward -= movespeed * G_KeyState (&in_back);
+	forward -= movespeed * G_KeyState (&in_backward);
 
 	cmd->forwardmove = ClampCharMove( forward );
 	cmd->rightmove = ClampCharMove( side );
@@ -427,10 +423,6 @@ static void G_CmdButtons( usercmd_t *cmd ) {
 		in_buttons[i].wasPressed = qfalse;
 	}
 
-//	if ( Key_GetCatcher() ) {
-//		cmd->buttons |= BUTTON_TALK;
-//	}
-
 	// allow the game to know if any key at all is
 	// currently pressed, even if it isn't bound to anything
 //	if ( anykeydown && Key_GetCatcher() == 0 ) {
@@ -458,68 +450,6 @@ static void G_FinishMove( usercmd_t *cmd ) {
 		cmd->angles[i] = ANGLE2SHORT(gi.viewangles[i]);
 	}
 }
-
-/*
-===============================================================================
-
-DEBUG GRAPH
-
-===============================================================================
-*/
-
-static	int32_t		current;
-static	float		values[1024];
-
-/*
-==============
-SCR_DebugGraph
-==============
-*/
-void SCR_DebugGraph( float value )
-{
-	values[current] = value;
-	current = (current + 1) % arraylen(values);
-}
-
-/*
-==============
-SCR_DrawDebugGraph
-==============
-*/
-static void SCR_DrawDebugGraph( void )
-{
-	int32_t a, x, y, w, i, h;
-	float	v;
-
-	//
-	// draw the graph
-	//
-	w = gi.gpuConfig.vidWidth;
-	x = 0;
-	y = gi.gpuConfig.vidHeight;
-
-    ImGui::Begin( "Mouse Debug Graph", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove );
-    ImGui::SetWindowSize( ImVec2( w, 64 * gi.scale ) );
-    ImGui::SetWindowPos( ImVec2( x, y ) );
-
-    ImGui::PushStyleColor( ImGuiCol_Text, g_color_table[ ColorIndex( S_COLOR_BLACK ) ] );
-
-	for (a=0 ; a<w ; a++)
-	{
-		i = (arraylen(values)+current-1-(a % arraylen(values))) % arraylen(values);
-		v = values[i];
-		v = v * 1 + 0;
-		
-		if (v < 0)
-			v += 64 * (1+(int)(-v / 64));
-		h = (int)v % 64;
-
-        ImGui::PlotLines( " ", values, a );
-//		re.DrawStretchPic( x+w-1-a, y - h, 1, h, 0, 0, 0, 0, cls.whiteShader );
-	}
-    ImGui::End();
-}
-
 
 /*
 =================
@@ -560,11 +490,6 @@ static usercmd_t G_CreateCmd( void ) {
 
 	// draw debug graphs of turning for mouse testing
 	if ( g_debugMove->i ) {
-		if ( g_debugMove->i == 1 ) {
-			SCR_DebugGraph( fabsf( gi.viewangles[YAW] - oldAngles[YAW] ) );
-		} else if ( g_debugMove->i == 2 ) {
-			SCR_DebugGraph( fabsf( gi.viewangles[PITCH] - oldAngles[PITCH] ) );
-		}
 	}
 
 	return cmd;
@@ -572,18 +497,19 @@ static usercmd_t G_CreateCmd( void ) {
 
 /*
 =================
-G_CreateNewCommands
+G_CreateNewCommand
 
 Create a new usercmd_t structure for this frame
 =================
 */
-static void G_CreateNewCommands( void ) {
+usercmd_t G_CreateNewCommand( void ) {
 	uint32_t	cmdNum;
 
 	// no need to create usercmds until we have a gamestate
-//	if ( gi.state < CA_PRIMED ) {
-//		return;
-//	}
+	if ( gi.state < GS_LEVEL ) {
+		usercmd_t cmd{};
+		return cmd; // return an empty command
+	}
 
 	frame_msec = com_frameTime - old_com_frameTime;
 
@@ -602,11 +528,11 @@ static void G_CreateNewCommands( void ) {
 
 
 	// generate a command for this frame
-//	gi.cmdNumber++;
-//	cmdNum = gi.cmdNumber & CMD_MASK;
-//	gi.cmds[cmdNum] = G_CreateCmd();
+	gi.cmdNumber++;
+	return G_CreateCmd();
 }
 
+/*
 void G_SendCmd( void ) {
     // dont't send the usercmd to the vm if we aren't running anything
     if (gi.state != GS_LEVEL) {
@@ -621,21 +547,20 @@ void G_SendCmd( void ) {
     // create a new command
     G_CreateNewCommands();
 }
+*/
 
 void G_InitInput( void )
 {
     Cmd_AddCommand( "+forward", IN_ForwardDown );
     Cmd_AddCommand( "-forward", IN_ForwardUp );
-    Cmd_AddCommand( "+back", IN_BackDown );
-    Cmd_AddCommand( "-back", IN_BackUp );
-    Cmd_AddCommand( "+left", IN_LeftDown );
-    Cmd_AddCommand( "-left", IN_LeftUp );
-    Cmd_AddCommand( "+right", IN_RightDown );
-    Cmd_AddCommand( "-right", IN_RightUp );
+    Cmd_AddCommand( "+backward", IN_BackDown );
+    Cmd_AddCommand( "-backward", IN_BackUp );
+    Cmd_AddCommand( "+moveleft", IN_LeftDown );
+    Cmd_AddCommand( "-moveleft", IN_LeftUp );
+    Cmd_AddCommand( "+moveright", IN_RightDown );
+    Cmd_AddCommand( "-moveright", IN_RightUp );
     Cmd_AddCommand( "+moveup", IN_UpDown );
     Cmd_AddCommand( "-moveup", IN_UpUp );
-    Cmd_AddCommand( "+movedown", IN_DownDown );
-    Cmd_AddCommand( "-movedown", IN_DownUp );
     Cmd_AddCommand( "+button0", IN_Button0Down );
     Cmd_AddCommand( "-button0", IN_Button0Up );
     Cmd_AddCommand( "+button1", IN_Button1Down );

@@ -24,6 +24,7 @@
 #include "../game/g_game.h"
 #include "../game/g_sound.h"
 #include "../game/g_vmimgui.h"
+#include "../game/g_world.h"
 
 /******************************************************************************
  * DEFINES
@@ -416,80 +417,90 @@ static void VM_trap_CvarRegister_SGame(vmCvar_t *cvar, const char *varName, cons
 	Cvar_Register(cvar, varName, defaultValue, flags, sgvm->privateFlag);
 }
 
-static void VM_trap_G_SetBindNames( const char **bindnames, uint32_t numbindnames ) {
-	if (!bindnames) {
-		N_Error( ERR_FATAL, "bindnames is NULL, DUDE USE THE ENGINE HOW ITS MEAN TO BE USED, UR A DEV!!!!!" );
-	}
-	gi.bindNames = bindnames;
-	gi.numBindNames = numbindnames;
+static int32_t VM_trap_Milliseconds( void ) {
+	return (int32_t)Sys_Milliseconds();
 }
 
-static uint32_t VM_trap_Milliseconds( void ) {
-	return (uint32_t)Sys_Milliseconds();
+static void VM_trap_AddCommand( const char *cmdName ) {
+	Cmd_AddCommand( cmdName, NULL );
+}
+
+static uint32_t VM_trap_MemoryRemaining( void ) {
+	return (uint32_t)Hunk_MemoryRemaining();
+}
+
+static void VM_trap_G_CastRay( ray_t *ray ) {
+	g_world.CastRay( ray );
+}
+
+static void VM_trap_G_SoundRecursive( int32_t width, int32_t height, float volume, const vec3_t origin ) {
+	g_world.SoundRecursive( width, height, volume, origin );
 }
 
 static void VM_FillImport(vmRefImport_t *import, const char *name)
 {
-	import->trap_Argc = Cmd_Argc;
-	import->trap_Argv = Cmd_ArgvBuffer;
-	import->trap_Cmd_ExecuteText = VM_trap_CmdExecuteText;
-	import->trap_Cvar_Set = Cvar_Set;
-	if (!strncmp(name, "ui", 2)) {
-		import->trap_Cvar_Update = VM_trap_CvarUpdate_UI;
-		import->trap_Cvar_Register = VM_trap_CvarRegister_UI;
-	} else if (!strncmp(name, "sgame", 5)) {
-		import->trap_Cvar_Update = VM_trap_CvarUpdate_SGame;
-		import->trap_Cvar_Register = VM_trap_CvarRegister_SGame;
+	import->Cvar_Set = Cvar_Set;
+	import->Cvar_VariableStringBuffer = VM_trap_CvarVariableStringBuffer;
+	if ( !strncmp( name, "ui", 2 ) ) {
+		import->Cvar_Update = VM_trap_CvarUpdate_UI;
+		import->Cvar_Register = VM_trap_CvarRegister_UI;
+	} else if ( !strncmp( name, "sgame", 5 ) ) {
+		import->Cvar_Update = VM_trap_CvarUpdate_SGame;
+		import->Cvar_Register = VM_trap_CvarRegister_SGame;
 	}
-	import->trap_Cvar_VariableStringBuffer = VM_trap_CvarVariableStringBuffer;
-	import->trap_Error = VM_trap_Error;
-	import->trap_Print = VM_trap_Print;
-	import->trap_UpdateScreen = SCR_UpdateScreen;
-	
+
+	import->FS_FClose = FS_VM_FClose;
+	import->FS_FOpenAppend = FS_VM_FOpenAppend;
+	import->FS_FileLength = FS_VM_FileLength;
+	import->FS_FileSeek = FS_VM_FileSeek;
+	import->FS_FOpenFile = FS_VM_FOpenFile;
+	import->FS_FOpenWrite = FS_VM_FOpenWrite;
+	import->FS_FOpenRead = FS_VM_FOpenRead;
+	import->FS_FOpenFileRead = FS_VM_FOpenFileRead;
+	import->FS_FOpenFileWrite = FS_VM_FOpenFileWrite;
+	import->FS_FOpenRW = FS_VM_FOpenRW;
+	import->FS_Write = FS_VM_Write;
+	import->FS_Read = FS_VM_Read;
+	import->FS_FileTell = FS_VM_FileTell;
+	import->FS_WriteFile = FS_VM_WriteFile;
+
 	import->trap_Snd_StopSfx = Snd_StopSfx;
 	import->trap_Snd_PlaySfx = Snd_PlaySfx;
+	import->trap_Snd_ClearLoopingTrack = Snd_ClearLoopingTrack;
+	import->trap_Snd_SetLoopingTrack = Snd_SetLoopingTrack;
 	import->trap_Snd_RegisterSfx = Snd_RegisterSfx;
+	import->trap_Snd_RegisterTrack = Snd_RegisterTrack;
+	import->trap_Snd_QueueTrack = Snd_QueueTrack;
 
-	import->trap_RE_SetColor = re.SetColor;
-	import->trap_RE_AddPolyListToScene = re.AddPolyListToScene;
-	import->trap_RE_AddPolyToScene = re.AddPolyToScene;
-	import->trap_RE_ClearScene = re.ClearScene;
-	import->trap_RE_DrawImage = re.DrawImage;
-	import->trap_RE_AddEntityToScene = re.AddEntityToScene;
-	import->trap_RE_RegisterShader = re.RegisterShader;
-	import->trap_RE_RenderScene = re.RenderScene;
+	import->trap_Print = VM_trap_Print;
+	import->trap_Error = VM_trap_Error;
 
-	import->trap_Key_SetCatcher = Key_SetCatcher;
-	import->trap_Key_IsDown = Key_IsDown;
-	import->trap_Key_AnyDown = Key_AnyDown;
+	import->trap_AddCommand = VM_trap_AddCommand;
+	import->trap_RemoveCommand = Cmd_RemoveCommand;
+	import->trap_SendConsoleCommand = Cbuf_AddText;
+	import->trap_Argc = Cmd_Argc;
+	import->trap_Args = Cmd_ArgsBuffer;
+	import->trap_Argv = Cmd_ArgvBuffer;
+
+	import->trap_Key_GetKey = Key_GetKey;
 	import->trap_Key_ClearStates = Key_ClearStates;
 	import->trap_Key_GetCatcher = Key_GetCatcher;
-	import->trap_Key_GetKey = Key_GetKey;
+	import->trap_Key_SetCatcher = Key_SetCatcher;
 
-	import->trap_GetClipboardData = VM_trap_GetClipboardData;
-	import->trap_GetGPUConfig = VM_trap_GetGPUConfig;
+	import->trap_MemoryRemaining = VM_trap_MemoryRemaining;
 
-	import->FS_FOpenRead = FS_VM_FOpenRead;
-    import->FS_FOpenWrite = FS_VM_FOpenWrite;
-    import->FS_FOpenAppend = FS_VM_FOpenAppend;
-    import->FS_FOpenRW = FS_VM_FOpenRW;
-    import->FS_FileSeek = FS_VM_FileSeek;
-    import->FS_FileTell = FS_VM_FileTell;
-    import->FS_FOpenFile = FS_VM_FOpenFile;
-    import->FS_FOpenFileWrite = FS_VM_FOpenFileWrite;
-    import->FS_FOpenFileRead = FS_VM_FOpenFileRead;
-    import->FS_FClose = FS_VM_FClose;
-    import->FS_WriteFile = FS_VM_WriteFile;
-    import->FS_Write = FS_VM_Write;
-    import->FS_Read = FS_VM_Read;
-    import->FS_FileLength = FS_VM_FileLength;
-	import->FS_GetFileList = FS_GetFileList;
+	import->Sys_GetGPUConfig = VM_trap_GetGPUConfig;
+	import->Sys_SnapVector = Sys_SnapVector;
 
-	import->G_SetBindNames = VM_trap_G_SetBindNames;
+	import->RE_AddPolyToScene = re.AddPolyToScene;
+	import->RE_ClearScene = re.ClearScene;
+	import->RE_RenderScene = re.RenderScene;
+	import->RE_LoadWorldMap = re.LoadWorld;
+	import->RE_RegisterShader = re.RegisterShader;
 
-	import->trap_Milliseconds = VM_trap_Milliseconds;
+	import->G_CastRay = VM_trap_G_CastRay;
 	import->G_LoadMap = G_LoadMap;
-	import->trap_RE_LoadWorldMap = re.LoadWorld;
+	import->G_SoundRecursive = VM_trap_G_SoundRecursive;
 
 	import->ImGui_BeginWindow = ImGui_BeginWindow;
 	import->ImGui_EndWindow = ImGui_EndWindow;
@@ -972,7 +983,9 @@ intptr_t GDR_DECL VM_Call(vm_t *vm, uint32_t numArgs, int32_t command, ...)
         r = vm->entryPoint(command, args[0], args[1], args[2]);
     }
     else {
-#if defined(GDRi386) && !defined(__clang__)
+		// GDRi386 was defined for some reason... screws up the args
+#if 0 && !defined(__clang__)
+//#if defined(GDRi386) && !defined(__clang__)
 #ifndef NO_VM_COMPILED
         if (vm->compiled)
             r = VM_CallCompiled(vm, numArgs + 1, &command);
@@ -983,20 +996,20 @@ intptr_t GDR_DECL VM_Call(vm_t *vm, uint32_t numArgs, int32_t command, ...)
 
 		int32_t args[MAX_VMMAIN_ARGS];
         va_list argptr;
+
 		args[0] = command;
-        
         va_start(argptr, command);
         for (i = 0; i < numArgs; i++) {
-            args[i] = va_arg(argptr, int32_t);
+            args[i+1] = va_arg(argptr, int32_t);
         }
         va_end(argptr);
 
 #ifndef NO_VM_COMPILED
 		if (vm->compiled)
-			r = VM_CallCompiled(vm, numArgs + 1, args);
+			r = VM_CallCompiled(vm, numArgs + 1, &args[0]);
 		else
 #endif
-			r = VM_CallInterpreted2(vm, numArgs + 1, args);
+			r = VM_CallInterpreted2(vm, numArgs + 1, &args[0]);
 #endif
     }
 	--vm->callLevel;
@@ -1806,28 +1819,6 @@ static void VM_FindMOps( instruction_t *buf, uint32_t instructionCount )
 		ci++;
 		i++;
 	}
-}
-
-qboolean VM_PrepareInterpreter2(vm_t* vm, vmHeader_t* header)
-{
-    const char *errMsg;
-    instruction_t *buf;
-
-    buf = (instruction_t *)Hunk_Alloc((vm->instructionCount + 8) * sizeof(instruction_t), h_low);
-
-    errMsg = VM_LoadInstructions((byte *)header + header->codeOffset, header->codeLength, header->instructionCount, buf);
-    if (!errMsg) {
-        errMsg = VM_CheckInstructions(buf, vm->instructionCount,  vm->jumpTableTargets, vm->numJumpTableTargets, vm->exactDataLength);
-    }
-    if (errMsg) {
-        Con_Printf("VM_PrepareIntepreter2 error: %s\n", errMsg);
-        return qfalse;
-    }
-
-    VM_FindMOps(buf, vm->instructionCount);
-
-    vm->codeBase.ptr = (byte *)buf;
-    return qtrue;
 }
 
 /* DEBUG FUNCTIONS */

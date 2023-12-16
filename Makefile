@@ -181,6 +181,7 @@ SRC=\
 	$(O)/game/g_archive.o \
 	$(O)/game/g_imgui.o \
 	$(O)/game/g_input.o \
+	$(O)/game/g_world.o \
 	\
 	$(O)/engine/vm.o \
 	$(O)/engine/vm_interpreted.o \

@@ -237,6 +237,7 @@ void SinglePlayerMenu_Draw( void )
             ui->PlaySelected();
             ui->SetState( STATE_NONE );
             ui->SetActiveMenu( UI_MENU_NONE );
+            gi.state = GS_LEVEL;
             VM_Call( sgvm, 1, SGAME_LOADLEVEL, 0 ); // start a new game
         }
         break; }

@@ -389,7 +389,7 @@ static void Key_Bindlist_f( void )
 
 void Key_KeynameCompletion( void(*callback)(const char *s) )
 {
-	int	i;
+	uint32_t i;
 
 	for( i = 0; keynames[ i ].name != NULL; i++ )
 		callback( keynames[ i ].name );
@@ -422,10 +422,11 @@ void Key_ParseBinding(uint32_t key, qboolean down, uint32_t time)
 			// so that multiple sources can be discriminated and
 			// subframe corrected
 			char cmd[1024];
-			snprintf(cmd, sizeof(cmd), "%c%s %i %i\n", (down) ? '+' : '-', p +1, key, time);
+			snprintf(cmd, sizeof(cmd), "%c%s %i %i\n", (down) ? '+' : '-', p + 1, key, time);
 			Cbuf_AddText(cmd);
-			if (down)
+			if (down) {
 				keys[key].bound = qtrue;
+			}
 		}
 		else if (down) {
 			// normal commands only execute on key press
@@ -440,136 +441,11 @@ void Key_ParseBinding(uint32_t key, qboolean down, uint32_t time)
 	}
 }
 
-/*
-===================
-Field_Draw
+extern ImGuiInputTextCallbackData conCallbackData;
 
-Handles horizontal scrolling and cursor blinking
-x, y, and width are in pixels
-===================
-*/
-static void Field_VariableSizeDraw( field_t *edit, uint32_t x, uint32_t y, uint32_t width, uint32_t size, qboolean showCursor,
-		qboolean noColorEscape ) {
-	uint32_t len;
-	uint32_t drawLen;
-	uint32_t prestep;
-	uint32_t cursorChar;
-	char	str[MAX_STRING_CHARS], *s;
-	char	text[2];
-	uint32_t i;
-	uint32_t curColor;
-
-	drawLen = edit->widthInChars - 1; // - 1 so there is always a space for the cursor
-	len = strlen( edit->buffer );
-
-	// guarantee that cursor will be visible
-	if ( len <= drawLen ) {
-		prestep = 0;
-	} else {
-		if ( edit->scroll + drawLen > len ) {
-			edit->scroll = len - drawLen;
-			if ( edit->scroll < 0 ) {
-				edit->scroll = 0;
-			}
-		}
-		prestep = edit->scroll;
-	}
-
-	if ( prestep + drawLen > len ) {
-		drawLen = len - prestep;
-	}
-
-	// extract <drawLen> characters from the field at <prestep>
-	if ( drawLen >= MAX_STRING_CHARS ) {
-		N_Error( ERR_DROP, "drawLen >= MAX_STRING_CHARS" );
-	}
-
-	memcpy( str, edit->buffer + prestep, drawLen );
-	str[ drawLen ] = '\0';
-
-	// color tracking
-	curColor = S_COLOR_WHITE;
-
-	if ( prestep > 0 ) {
-		// we need to track last actual color because we cut some text before
-		s = edit->buffer;
-		for ( i = 0; i < prestep + 1; i++, s++ ) {
-			if ( Q_IsColorString( s ) ) {
-				curColor = *(s+1);
-				s++;
-			}
-		}
-		// scroll marker
-		// FIXME: force white color?
-		if ( str[0] ) {
-			str[0] = '<';
-		}
-	}
-
-	// draw it
-	ImGui::TextColored( ImVec4( g_color_table[ ColorIndexFromChar( curColor ) ] ), "%s", str );
-	if ( len > drawLen + prestep ) {
-		ImGui::SameLine();
-		text[0] = ' ';
-		text[1] = 0;
-		for (int a = 0; a < edit->widthInChars; a++) {
-			ImGui::TextUnformatted( text, text + 1 );
-			ImGui::SameLine();
-		}
-		text[0] = '>';
-		ImGui::TextUnformatted( text, text + 1 );
-		ImGui::SameLine();
-	}
-
-	// draw the cursor
-	if ( showCursor ) {
-		if ( gi.realtime & 256 ) {
-			return;		// off blink
-		}
-
-		if ( key_overstrikeMode ) {
-			cursorChar = 11;
-		} else {
-			cursorChar = 10;
-		}
-
-		i = drawLen - strlen( str );
-
-		str[0] = cursorChar;
-		str[1] = '\0';
-
-		text[0] = ' ';
-		text[1] = 0;
-		for (int a = 0; a < edit->cursor - prestep - i; a++) {
-			ImGui::TextUnformatted( text, text + 1 );
-			ImGui::SameLine();
-		}
-
-		ImGui::TextUnformatted( str, str + 1 );
-//		SCR_DrawBigString( x + ( edit->cursor - prestep - i ) * BIGCHAR_WIDTH, y, str, 1.0, qfalse );
-	}
-}
-
-
-void Field_Draw( field_t *edit, uint32_t x, uint32_t y, uint32_t width, qboolean showCursor, qboolean noColorEscape )
+void Field_Paste( field_t *edit )
 {
-	Field_VariableSizeDraw( edit, x, y, width, smallchar_width, showCursor, noColorEscape );
-}
-
-
-void Field_BigDraw( field_t *edit, uint32_t x, uint32_t y, uint32_t width, qboolean showCursor, qboolean noColorEscape )
-{
-	Field_VariableSizeDraw( edit, x, y, width, bigchar_width, showCursor, noColorEscape );
-}
-
-
-/*
-================
-Field_Paste
-================
-*/
-static void Field_Paste( field_t *edit ) {
-	char	*cbd;
+	char *cbd;
 	uint32_t pasteLen, i;
 
 	cbd = Sys_GetClipboardData();
@@ -587,13 +463,12 @@ static void Field_Paste( field_t *edit ) {
 	Z_Free( cbd );
 }
 
-
 /*
 =================
 Field_NextWord
 =================
 */
-static void Field_SeekWord( field_t *edit, uint32_t direction )
+static void Field_SeekWord( field_t *edit, int direction )
 {
 	if ( direction > 0 ) {
 		while ( edit->buffer[ edit->cursor ] == ' ' )
@@ -612,82 +487,13 @@ static void Field_SeekWord( field_t *edit, uint32_t direction )
 	}
 }
 
-
-/*
-=================
-Field_KeyDownEvent
-
-Performs the basic line editing functions for the console,
-in-game talk, and menu fields
-
-Key events are used for non-printable characters, others are gotten from char events.
-=================
-*/
-static void Field_KeyDownEvent( field_t *edit, uint32_t key ) {
-	uint64_t len;
-
-	// shift-insert is paste
-	if ( ( ( key == KEY_INSERT ) ) && keys[KEY_LSHIFT].down ) {
-		Field_Paste( edit );
-		return;
-	}
-
-	len = strlen( edit->buffer );
-
-	switch ( key ) {
-	case KEY_DELETE:
-		if ( edit->cursor < len ) {
-			memmove( edit->buffer + edit->cursor,
-				edit->buffer + edit->cursor + 1, len - edit->cursor );
-		}
-		break;
-	case KEY_RIGHT:
-		if ( edit->cursor < len ) {
-			if ( keys[ KEY_LCTRL ].down ) {
-				Field_SeekWord( edit, 1 );
-			} else {
-				edit->cursor++;
-			}
-		}
-		break;
-	case KEY_LEFT:
-		if ( edit->cursor > 0 ) {
-			if ( keys[ KEY_LCTRL ].down ) {
-				Field_SeekWord( edit, -1 );
-			} else {
-				edit->cursor--;
-			}
-		}
-		break;
-	case KEY_HOME:
-		edit->cursor = 0;
-		break;
-	case KEY_END:
-		edit->cursor = len;
-		break;
-	case KEY_INSERT:
-		key_overstrikeMode = !key_overstrikeMode;
-		break;
-	default:
-		break;
-	};
-
-	// Change scroll if cursor is no longer visible
-	if ( edit->cursor < edit->scroll ) {
-		edit->scroll = edit->cursor;
-	} else if ( edit->cursor >= edit->scroll + edit->widthInChars && edit->cursor <= len ) {
-		edit->scroll = edit->cursor - edit->widthInChars + 1;
-	}
-}
-
-
 /*
 ==================
 Field_CharEvent
 ==================
 */
 static void Field_CharEvent( field_t *edit, uint32_t ch ) {
-	uint64_t len;
+	uint32_t len;
 
 	if ( ch == 'v' - 'a' + 1 ) {	// ctrl-v is paste
 		Field_Paste( edit );
@@ -735,8 +541,9 @@ static void Field_CharEvent( field_t *edit, uint32_t ch ) {
 
 	if ( key_overstrikeMode ) {
 		// - 2 to leave room for the leading slash and trailing \0
-		if ( edit->cursor == MAX_EDIT_LINE - 2 )
+		if ( edit->cursor == MAX_EDIT_LINE - 2 ) {
 			return;
+		}
 		edit->buffer[edit->cursor] = ch;
 		edit->cursor++;
 	} else {	// insert mode
@@ -761,23 +568,77 @@ static void Field_CharEvent( field_t *edit, uint32_t ch ) {
 }
 
 /*
-=============================================================================
+=================
+Field_KeyDownEvent
 
-CONSOLE LINE EDITING
+Performs the basic line editing functions for the console,
+in-game talk, and menu fields
 
-==============================================================================
+Key events are used for non-printable characters, others are gotten from char events.
+=================
 */
+static void Field_KeyDownEvent( field_t *edit, int key ) {
+	uint32_t len;
 
-/*
-====================
-Console_Key
+	// shift-insert is paste
+	if ( ( ( key == KEY_INSERT ) /* || ( key == K_KP_INS ) ) */ ) && keys[KEY_LSHIFT].down ) {
+		Field_Paste( edit );
+		return;
+	}
 
-Handles history and console scrollback
-====================
-*/
-void Console_Key( uint32_t key ) {
+	len = strlen( edit->buffer );
+
+	switch ( key ) {
+/*	case KEY_BACKSPACE:
+		if ( edit->cursor < len ) {
+			memmove( edit->buffer + edit->cursor,
+				edit->buffer + edit->cursor + 1, len - edit->cursor );
+		}
+		break; */
+	case KEY_RIGHT:
+		if ( edit->cursor < len ) {
+			if ( keys[ KEY_LCTRL ].down ) {
+				Field_SeekWord( edit, 1 );
+			} else {
+				edit->cursor++;
+			}
+		}
+		break;
+	case KEY_LEFT:
+		if ( edit->cursor > 0 ) {
+			if ( keys[ KEY_LCTRL ].down ) {
+				Field_SeekWord( edit, -1 );
+			} else {
+				edit->cursor--;
+			}
+		}
+		break;
+	case KEY_HOME:
+		edit->cursor = 0;
+		break;
+	case KEY_END:
+		edit->cursor = len;
+		break;
+	case KEY_INSERT:
+		key_overstrikeMode = !key_overstrikeMode;
+		break;
+	default:
+		break;
+	};
+
+	// Change scroll if cursor is no longer visible
+	if ( edit->cursor < edit->scroll ) {
+		edit->scroll = edit->cursor;
+	} else if ( edit->cursor >= edit->scroll + edit->widthInChars && edit->cursor <= len ) {
+		edit->scroll = edit->cursor - edit->widthInChars + 1;
+	}
+}
+
+
+static void Console_Key( int key )
+{
 	// ctrl-L clears screen
-	if ( key == 'l' && keys[KEY_LCTRL].down ) {
+	if ( key == KEY_L && keys[ KEY_LCTRL ].down ) {
 		Cbuf_AddText( "clear\n" );
 		return;
 	}
@@ -807,9 +668,9 @@ void Console_Key( uint32_t key ) {
 			if ( !g_consoleField.buffer[0] ) {
 				return;	// empty lines just scroll the console without adding to history
 			} else {
-//				Cbuf_AddText( "cmd say " );
-//				Cbuf_AddText( g_consoleField.buffer );
-//				Cbuf_AddText( "\n" );
+	//			Cbuf_AddText( "cmd say " );
+	//			Cbuf_AddText( g_consoleField.buffer );
+	//			Cbuf_AddText( "\n" );
 			}
 		}
 
@@ -818,65 +679,27 @@ void Console_Key( uint32_t key ) {
 
 		Field_Clear( &g_consoleField );
 		g_consoleField.widthInChars = g_console_field_width;
-
-		if ( gi.state == GS_MENU ) {
-			SCR_UpdateScreen ();	// force an update, because the command
-		}							// may take some time
-		return;
 	}
 
 	// command completion
 
-	if (key == KEY_TAB) {
-		Field_AutoComplete(&g_consoleField);
+	if ( key == KEY_TAB || key == KEY_KP_TAB ) {
+		Field_AutoComplete( &g_consoleField );
 		return;
 	}
 
 	// command history (ctrl-p ctrl-n for unix style)
 
-	if ( (key == KEY_WHEEL_UP && keys[KEY_LSHIFT].down) || ( key == KEY_UP ) ||
-		 ( ( tolower(key) == 'p' ) && keys[KEY_LCTRL].down ) ) {
+	if ( ( key == KEY_WHEEL_UP && keys[KEY_LSHIFT].down ) || key == KEY_UP
+		|| ( ( tolower( key ) == 'p' ) && keys[KEY_LCTRL].down ) )
+	{
 		Con_HistoryGetPrev( &g_consoleField );
-		g_consoleField.widthInChars = g_console_field_width;
-		return;
 	}
 
-	if ( (key == KEY_WHEEL_DOWN && keys[KEY_LSHIFT].down) || ( key == KEY_DOWN ) ||
-		 ( ( tolower(key) == 'n' ) && keys[KEY_LCTRL].down ) ) {
+	if ( ( key == KEY_WHEEL_DOWN && keys[KEY_LSHIFT].down ) || key == KEY_DOWN
+		|| ( ( tolower( key ) == 'n' ) && keys[KEY_LCTRL].down ) )
+	{
 		Con_HistoryGetNext( &g_consoleField );
-		g_consoleField.widthInChars = g_console_field_width;
-		return;
-	}
-
-	// console scrolling
-	if ( key == KEY_PAGEUP || key == KEY_WHEEL_UP ) {
-		if ( keys[KEY_LCTRL].down ) {	// hold <ctrl> to accelerate scrolling
-			Con_PageUp( 0 );		// by one visible page
-		} else {
-			Con_PageUp( 1 );
-		}
-		return;
-	}
-
-	if ( key == KEY_PAGEDOWN || key == KEY_WHEEL_DOWN ) {
-		if ( keys[KEY_LCTRL].down ) {	// hold <ctrl> to accelerate scrolling
-			Con_PageDown( 0 );		// by one visible page
-		} else {
-			Con_PageDown( 1 );
-		}
-		return;
-	}
-
-	// ctrl-home = top of console
-	if ( key == KEY_HOME && keys[KEY_LCTRL].down ) {
-		Con_Top();
-		return;
-	}
-
-	// ctrl-end = bottom of console
-	if ( key == KEY_END && keys[KEY_LCTRL].down ) {
-		Con_Bottom();
-		return;
 	}
 
 	// pass to the normal editline routine
@@ -898,7 +721,7 @@ static void G_KeyDownEvent(uint32_t key, uint32_t time)
 #endif
 
 	// console key is hardcoded, so the user can never unbind it
-	if (key == KEY_CONSOLE || (keys[KEY_LSHIFT].down && key == KEY_ESCAPE)) {
+	if ( key == KEY_CONSOLE || (keys[KEY_LSHIFT].down && key == KEY_ESCAPE ) ) {
 		Con_ToggleConsole_f();
 		return;
 	}
@@ -916,23 +739,24 @@ static void G_KeyDownEvent(uint32_t key, uint32_t time)
 
 	// escape is always handled special
 	if ( key == KEY_ESCAPE ) {
-		if (Key_GetCatcher() & KEYCATCH_CONSOLE) {
+		if ( Key_GetCatcher() & KEYCATCH_CONSOLE ) {
 			// escape always closes console
 			Con_ToggleConsole_f();
+			Key_ClearStates();
 		}
 		// escape always gets out of SGAME stuff
-		if (Key_GetCatcher() & KEYCATCH_SGAME) {
-			Key_SetCatcher(Key_GetCatcher() & ~KEYCATCH_SGAME);
+		if ( Key_GetCatcher() & KEYCATCH_SGAME ) {
+			Key_SetCatcher( Key_GetCatcher() & ~KEYCATCH_SGAME );
 			VM_Call(sgvm, 1, SGAME_EVENT_HANDLING, SGAME_EVENT_NONE);
 			return;
 		}
 
-		if (!(Key_GetCatcher() & KEYCATCH_UI)) {
-			if (gi.state == GS_LEVEL) {
+		if ( !( Key_GetCatcher() & KEYCATCH_UI ) ) {
+			if ( gi.state == GS_LEVEL ) {
 //				VM_Call(uivm, 1, UI_, UI_MENU_PAUSE);
 				gi.state = GS_PAUSE;
 			}
-			else if (gi.state == GS_MENU) {
+			else if ( gi.state == GS_MENU ) {
 				Cmd_Clear();
 				if ( com_errorEntered ) {
 					Cvar_Set("com_errorMessage", "");
@@ -947,18 +771,16 @@ static void G_KeyDownEvent(uint32_t key, uint32_t time)
 	}
 
 	// distribute the key down event to the appropriate handler
-	if (Key_GetCatcher() & KEYCATCH_SGAME) {
+	if ( Key_GetCatcher() & KEYCATCH_SGAME ) {
 		if (sgvm) {
-			VM_Call(sgvm, 2, SGAME_KEY_EVENT, key, qtrue);
+			VM_Call( sgvm, 2, SGAME_KEY_EVENT, key, qtrue );
 		}
 	}
-	else if (Key_GetCatcher() & KEYCATCH_UI) {
-		if (uivm) {
-//			VM_Call(uivm, 2, UI_KEY_EVENT, key, qtrue);
-		}
+	else if ( Key_GetCatcher() & KEYCATCH_CONSOLE ) {
+		Console_Key( key );
 	}
-	else if (Key_GetCatcher() & KEYCATCH_CONSOLE) {
-//		Console_Key(key);
+	else {
+		Key_ParseBinding( key, qtrue, time );
 	}
 }
 
@@ -980,32 +802,13 @@ static void G_KeyUpEvent(uint32_t key, uint32_t time)
 		return;
 	}
 
-	if (Key_GetCatcher() & KEYCATCH_UI) {
-		if (uivm) {
-//			VM_Call(uivm, 2, UI_KEY_EVENT, key, qfalse);
-		}
-	}
 	else if (Key_GetCatcher() & KEYCATCH_SGAME) {
 		if (sgvm) {
-			VM_Call(sgvm, 2, SGAME_KEY_EVENT, key, qfalse);
+			VM_Call( sgvm, 2, SGAME_KEY_EVENT, key, qfalse );
 		}
 	}
-}
-
-void G_CharEvent(uint32_t key)
-{
-	// delete is not a printable character and is
-	// otherwise handled by Field_KeyDownEvent
-	if (key == KEY_DELETE) {
-		return;
-	}
-
-	// distribute the key down event to the appropriate handler
-	if (Key_GetCatcher() & KEYCATCH_CONSOLE) {
-		Field_CharEvent(&g_consoleField, key);
-	}
-	else if (Key_GetCatcher() & KEYCATCH_UI) {
-//		VM_Call(uivm, 2, UI_KEY_EVENT, key | K_CHAR_FLAG, qtrue);
+	else {
+		Key_ParseBinding( key, qfalse, time );
 	}
 }
 

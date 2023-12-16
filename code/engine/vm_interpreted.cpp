@@ -1,7 +1,80 @@
+/*
+===========================================================================
+Copyright (C) 1999-2005 Id Software, Inc.
+Copyright (C) 2012-2020 Quake3e project
+
+This file is part of Quake III Arena source code.
+
+Quake III Arena source code is free software; you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation; either version 2 of the License,
+or (at your option) any later version.
+
+Quake III Arena source code is distributed in the hope that it will be
+useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Quake III Arena source code; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+===========================================================================
+*/
 #include "n_shared.h"
 #include "vm_local.h"
+#include "../sgame/sg_public.h"
 
-#define MAX_OPSTACK_SIZE 512
+/*
+===============
+VM_ValueToSymbol
+
+Assumes a program counter value
+===============
+*/
+const char *VM_ValueToSymbol( vm_t *vm, int value ) {
+	vmSymbol_t	*sym;
+	static char		text[MAX_TOKEN_CHARS];
+
+	sym = vm->symbols;
+	if ( !sym ) {
+		return "NO SYMBOLS";
+	}
+
+	// find the symbol
+	while ( sym->next && sym->next->symValue <= value ) {
+		sym = sym->next;
+	}
+
+	if ( value == sym->symValue ) {
+		return sym->symName;
+	}
+
+	Com_snprintf( text, sizeof( text ), "%s+%i", sym->symName, value - sym->symValue );
+
+	return text;
+}
+
+
+char *VM_Indent( vm_t *vm ) {
+	static char	*string = "                                        ";
+	if ( vm->callLevel > 20 ) {
+		return string;
+	}
+	return string + 2 * ( 20 - vm->callLevel );
+}
+
+
+void VM_StackTrace( vm_t *vm, int programCounter, int programStack ) {
+	int		count;
+
+	count = 0;
+	do {
+		Con_Printf( "%s\n", VM_ValueToSymbol( vm, programCounter ) );
+		programStack =  *(int *)&vm->dataBase[programStack+4];
+		programCounter = *(int *)&vm->dataBase[programStack];
+	} while ( programCounter != -1 && ++count < 32 );
+
+}
 
 // macro opcode sequences
 typedef enum {
@@ -11,99 +84,108 @@ typedef enum {
 	MOP_LOCAL_LOCAL_LOAD4,
 } macro_op_t;
 
-#ifndef USE_COMPUTED_GOTOS
-/* for the the computed gotos we need labels,
- * but for the normal switch case we need the cases */
-#define goto_OP_UNDEF case OP_UNDEF
-#define goto_OP_IGNORE case OP_IGNORE
-#define goto_OP_BREAK case OP_BREAK
-#define goto_OP_ENTER case OP_ENTER
-#define goto_OP_LEAVE case OP_LEAVE
-#define goto_OP_CALL case OP_CALL
-#define goto_OP_PUSH case OP_PUSH
-#define goto_OP_POP case OP_POP
-#define goto_OP_CONST case OP_CONST
-#define goto_OP_LOCAL case OP_LOCAL
-#define goto_OP_JUMP case OP_JUMP
-#define goto_OP_EQ case OP_EQ
-#define goto_OP_NE case OP_NE
-#define goto_OP_LTI case OP_LTI
-#define goto_OP_LEI case OP_LEI
-#define goto_OP_GTI case OP_GTI
-#define goto_OP_GEI case OP_GEI
-#define goto_OP_LTU case OP_LTU
-#define goto_OP_LEU case OP_LEU
-#define goto_OP_GTU case OP_GTU
-#define goto_OP_GEU case OP_GEU
-#define goto_OP_EQF case OP_EQF
-#define goto_OP_NEF case OP_NEF
-#define goto_OP_LTF case OP_LTF
-#define goto_OP_LEF case OP_LEF
-#define goto_OP_GTF case OP_GTF
-#define goto_OP_GEF case OP_GEF
-#define goto_OP_LOAD1 case OP_LOAD1
-#define goto_OP_LOAD2 case OP_LOAD2
-#define goto_OP_LOAD4 case OP_LOAD4
-#define goto_OP_STORE1 case OP_STORE1
-#define goto_OP_STORE2 case OP_STORE2
-#define goto_OP_STORE4 case OP_STORE4
-#define goto_OP_ARG case OP_ARG
-#define goto_OP_BLOCK_COPY case OP_BLOCK_COPY
-#define goto_OP_SEX8 case OP_SEX8
-#define goto_OP_SEX16 case OP_SEX16
-#define goto_OP_NEGI case OP_NEGI
-#define goto_OP_ADD case OP_ADD
-#define goto_OP_SUB case OP_SUB
-#define goto_OP_DIVI case OP_DIVI
-#define goto_OP_DIVU case OP_DIVU
-#define goto_OP_MODI case OP_MODI
-#define goto_OP_MODU case OP_MODU
-#define goto_OP_MULI case OP_MULI
-#define goto_OP_MULU case OP_MULU
-#define goto_OP_BAND case OP_BAND
-#define goto_OP_BOR case OP_BOR
-#define goto_OP_BXOR case OP_BXOR
-#define goto_OP_BCOM case OP_BCOM
-#define goto_OP_LSH case OP_LSH
-#define goto_OP_RSHI case OP_RSHI
-#define goto_OP_RSHU case OP_RSHU
-#define goto_OP_NEGF case OP_NEGF
-#define goto_OP_ADDF case OP_ADDF
-#define goto_OP_SUBF case OP_SUBF
-#define goto_OP_DIVF case OP_DIVF
-#define goto_OP_MULF case OP_MULF
-#define goto_OP_CVIF case OP_CVIF
-#define goto_OP_CVFI case OP_CVFI
-#endif
 
+/*
+=================
+VM_FindMOps
+
+Search for known macro-op sequences
+=================
+*/
+static void VM_FindMOps( instruction_t *buf, int instructionCount )
+{
+	int i, op0;
+	instruction_t *ci;
+
+	ci = buf;
+	i = 0;
+
+	while ( i < instructionCount )
+	{
+		op0 = ci->op;
+
+		if ( op0 == OP_LOCAL ) {
+			if ( (ci+1)->op == OP_LOAD4 && (ci+2)->op == OP_CONST ) {
+				ci->op = MOP_LOCAL_LOAD4_CONST;
+				ci += 3; i += 3;
+				continue;
+			}
+			if ( (ci+1)->op == OP_LOAD4 ) {
+				ci->op = MOP_LOCAL_LOAD4;
+				ci += 2; i += 2;
+				continue;
+			}
+
+			if ( (ci+1)->op == OP_LOCAL && (ci+2)->op == OP_LOAD4 ) {
+				ci->op = MOP_LOCAL_LOCAL_LOAD4;
+				ci += 3; i += 3;
+				continue;
+			}
+			if ( (ci+1)->op == OP_LOCAL ) {
+				ci->op = MOP_LOCAL_LOCAL;
+				ci += 2; i += 2;
+				continue;
+			}
+		}
+
+		ci++;
+		i++;
+	}
+}
+
+
+/*
+====================
+VM_PrepareInterpreter2
+====================
+*/
+qboolean VM_PrepareInterpreter2( vm_t *vm, vmHeader_t *header )
+{
+	const char *errMsg;
+	instruction_t *buf;
+	buf = ( instruction_t *) Hunk_Alloc( (vm->instructionCount + 8) * sizeof( instruction_t ), h_high );
+
+	errMsg = VM_LoadInstructions( (byte *) header + header->codeOffset, header->codeLength, header->instructionCount, buf );
+	if ( !errMsg ) {
+		errMsg = VM_CheckInstructions( buf, vm->instructionCount, vm->jumpTableTargets, vm->numJumpTableTargets, vm->exactDataLength );
+	}
+	if ( errMsg ) {
+		Con_Printf( "VM_PrepareInterpreter2 error: %s\n", errMsg );
+		return qfalse;
+	}
+
+	VM_FindMOps( buf, vm->instructionCount );
+
+	vm->codeBase.ptr = (byte *)buf;
+	return qtrue;
+}
 
 
 /*
 ==============
 VM_CallInterpreted2
 
+
 Upon a system call, the stack will look like:
 
-sp+32   parm1
-sp+28   parm0
-sp+24   return stack
-sp+20   return address
-sp+16   local1
-sp+14   local0
-sp+12   arg1
-sp+8    arg0
-sp+4    return stack
-sp      return address
+sp+32	parm1
+sp+28	parm0
+sp+24	return stack
+sp+20	return address
+sp+16	local1
+sp+14	local0
+sp+12	arg1
+sp+8	arg0
+sp+4	return stack
+sp		return address
 
 An interpreted function will immediately execute
 an OP_ENTER instruction, which will subtract space for
 locals from sp
 ==============
 */
-
-int VM_CallInterpreted2( vm_t *vm, uint32_t nargs, int32_t *args )
-{
-    int32_t	stack[MAX_OPSTACK_SIZE];
+int VM_CallInterpreted2( vm_t *vm, uint32_t nargs, int32_t *args ) {
+	int32_t	stack[MAX_OPSTACK_SIZE];
 	int32_t	*opStack, *opStackTop;
 	int32_t	programStack;
 	int32_t	stackOnEntry;
@@ -134,7 +216,7 @@ int VM_CallInterpreted2( vm_t *vm, uint32_t nargs, int32_t *args )
 	opStackTop = stack + arraylen( stack ) - 1;
 
 	programStack -= (MAX_VMMAIN_ARGS + 2) * sizeof( int32_t );
-	img = (int*)&image[ programStack ];
+	img = (int32_t *)&image[ programStack ];
 	for ( i = 0; i < nargs; i++ ) {
 		img[ i + 2 ] = args[ i ];
 	}
@@ -143,58 +225,30 @@ int VM_CallInterpreted2( vm_t *vm, uint32_t nargs, int32_t *args )
 
 	ci = inst;
 
-#ifdef USE_COMPUTED_GOTOS
-    static const void* dispatch_table[OPCODE_TABLE_SIZE] = {
-        &&goto_OP_UNDEF,  &&goto_OP_IGNORE,     &&goto_OP_BREAK,
-        &&goto_OP_ENTER,  &&goto_OP_LEAVE,      &&goto_OP_CALL,
-        &&goto_OP_PUSH,   &&goto_OP_POP,        &&goto_OP_CONST,
-        &&goto_OP_LOCAL,  &&goto_OP_JUMP,       &&goto_OP_EQ,
-        &&goto_OP_NE,     &&goto_OP_LTI,        &&goto_OP_LEI,
-        &&goto_OP_GTI,    &&goto_OP_GEI,        &&goto_OP_LTU,
-        &&goto_OP_LEU,    &&goto_OP_GTU,        &&goto_OP_GEU,
-        &&goto_OP_EQF,    &&goto_OP_NEF,        &&goto_OP_LTF,
-        &&goto_OP_LEF,    &&goto_OP_GTF,        &&goto_OP_GEF,
-        &&goto_OP_LOAD1,  &&goto_OP_LOAD2,      &&goto_OP_LOAD4,
-        &&goto_OP_STORE1, &&goto_OP_STORE2,     &&goto_OP_STORE4,
-        &&goto_OP_ARG,    &&goto_OP_BLOCK_COPY, &&goto_OP_SEX8,
-        &&goto_OP_SEX16,  &&goto_OP_NEGI,       &&goto_OP_ADD,
-        &&goto_OP_SUB,    &&goto_OP_DIVI,       &&goto_OP_DIVU,
-        &&goto_OP_MODI,   &&goto_OP_MODU,       &&goto_OP_MULI,
-        &&goto_OP_MULU,   &&goto_OP_BAND,       &&goto_OP_BOR,
-        &&goto_OP_BXOR,   &&goto_OP_BCOM,       &&goto_OP_LSH,
-        &&goto_OP_RSHI,   &&goto_OP_RSHU,       &&goto_OP_NEGF,
-        &&goto_OP_ADDF,   &&goto_OP_SUBF,       &&goto_OP_DIVF,
-        &&goto_OP_MULF,   &&goto_OP_CVIF,       &&goto_OP_CVFI,
-        &&goto_OP_UNDEF, /* Invalid OP CODE for opcode_table_mask */
-        &&goto_OP_UNDEF, /* Invalid OP CODE for opcode_table_mask */
-        &&goto_OP_UNDEF, /* Invalid OP CODE for opcode_table_mask */
-        &&goto_OP_UNDEF, /* Invalid OP CODE for opcode_table_mask */
-    };
-#define DISPATCH2()                                                            \
-    opcode = codeImage[programCounter++];                                      \
-    goto* dispatch_table[opcode & OPCODE_TABLE_MASK]
-#define DISPATCH()                                                             \
-    r0 = opStack[opStackOfs];                                                  \
-    r1 = opStack[(uint8_t)(opStackOfs - 1)];                                   \
-    DISPATCH2()
-    DISPATCH(); /* initial jump into the loop */
-#else
-#define DISPATCH2() goto nextInstruction2
-#define DISPATCH() goto nextInstruction
-#endif
-
 	// main interpreter loop, will exit when a LEAVE instruction
 	// grabs the -1 program counter
 
+	if ( img[2] == SGAME_LOADLEVEL ) {
+		Con_Printf( "[opstack]\n"
+					"command: %i\n"
+					"arg0 (img): %i\n"
+					"arg0 (args): %i\n"
+				, img[ 2 ], img[ 3 ], args[ 1 ] );
+	}
+
 	while ( 1 ) {
+
 		r0.i = opStack[0];
 		r1.i = opStack[-1];
-    nextInstruction2:
+
+nextInstruction2:
+
 		v0 = ci->value;
 		opcode = ci->op;
 		ci++;
 
 		switch ( opcode ) {
+
 		case OP_IGNORE:
 			ci += v0;
 			goto nextInstruction2;
@@ -223,10 +277,9 @@ int VM_CallInterpreted2( vm_t *vm, uint32_t nargs, int32_t *args )
 			// check for leaving the VM
 			if ( v1 == -1 ) {
 				goto done;
-			}
-            else if ( (unsigned)v1 >= vm->instructionCount ) {
+			} else if ( (unsigned)v1 >= vm->instructionCount ) {
 				N_Error( ERR_DROP, "VM program counter out of range in OP_LEAVE" );
-            }
+			}
 			ci = inst + v1;
 			break;
 
@@ -260,13 +313,11 @@ int VM_CallInterpreted2( vm_t *vm, uint32_t nargs, int32_t *args )
 				//opStack++;
 				ci = inst + *(int32_t *)&image[ programStack ];
 				*opStack = v0;
-			}
-            else if ( r0.u < vm->instructionCount ) {
+			} else if ( r0.u < vm->instructionCount ) {
 				// vm call
 				ci = inst + r0.i;
 				opStack--;
-			}
-            else {
+			} else {
 				N_Error( ERR_DROP, "VM program counter out of range in OP_CALL" );
 			}
 			break;
@@ -592,7 +643,7 @@ done:
 	//vm->currentlyInterpreting = qfalse;
 
 	if ( opStack != &stack[2] ) {
-		N_Error( ERR_FATAL, "Interpreter error: opStack = %ld", (long int) (opStack - stack) );
+		N_Error( ERR_DROP, "Interpreter error: opStack = %ld", (long int) (opStack - stack) );
 	}
 
 	vm->programStack = stackOnEntry;

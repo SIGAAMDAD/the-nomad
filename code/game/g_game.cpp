@@ -1,5 +1,6 @@
 #include "g_game.h"
 #include "g_sound.h"
+#include "g_world.h"
 #include "../rendercommon/imgui.h"
 #include "../rendercommon/imgui_impl_sdl2.h"
 #include "../rendercommon/imgui_impl_opengl3.h"
@@ -46,6 +47,8 @@ cvar_t *r_debugCamera;
 cvar_t *r_debugCameraSpeed;
 
 static void *renderLib;
+static glm::vec3 pos;
+
 
 void GLimp_HideFullscreenWindow(void);
 void GLimp_EndFrame(void);
@@ -154,19 +157,6 @@ static void G_InitMapCache( void )
     }
 }
 
-int32_t G_LoadMap( int32_t index, mapinfo_t *info )
-{
-    if (index >= gi.mapCache.numMapFiles) {
-        Con_Printf( COLOR_RED "G_LoadMap: invalid map index %i\n", index );
-        return -1;
-    }
-
-    memcpy( info, &gi.mapCache.infoList[index].info, sizeof(*info) );
-    gi.mapLoaded = qtrue;
-
-    return 1;
-}
-
 static void G_MapInfo_f( void ) {
     Con_Printf( "---------- Map Info ----------\n" );
     for (uint64_t i = 0; i < gi.mapCache.numMapFiles; i++) {
@@ -230,7 +220,7 @@ static void G_RefFreeAll(void) {
 
 static void G_RefImGuiFree(void *ptr, void *) {
     if (ptr != NULL) {
-        free( ptr );
+        Z_Free( ptr );
     }
 }
 
@@ -243,7 +233,7 @@ static void G_RefImGuiShutdown(void) {
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
 
-    // G_RefFreeAll will clean all the imgui stuff up -- nope
+    // G_RefFreeAll will clean all the imgui stuff up
 }
 
 static void G_RefImGuiNewFrame(void) {
@@ -302,7 +292,7 @@ static void G_SetScaling(float factor, uint32_t captureWidth, uint32_t captureHe
 }
 
 static void *G_RefImGuiMalloc( size_t size ) {
-    return malloc( size );
+    return Z_Malloc( size, TAG_RENDERER );
 }
 
 //
@@ -323,15 +313,9 @@ static void G_RefImGuiInit(void *shaderData, const void *importData) {
     }
 }
 
-static glm::vec3 pos;
-
 static void GLM_MakeVPM( float aspect, float *zoom, vec3_t origin, mat4_t vpm, mat4_t projection, mat4_t view )
 {
     glm::mat4 viewProjectionMatrix, viewMatrix, projectionMatrix;
-
-    if (!r_debugCamera->i) {
-        VectorCopy( pos, origin );
-    }
 
     *zoom = pos.z;
     projectionMatrix = glm::ortho( -aspect, aspect, -aspect, aspect, -1.0f, 1.0f );
@@ -382,6 +366,30 @@ static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, mat4_t vpm )
         pos = mvp * positions[i];
         VectorCopy( xyz[i], pos );
     }
+}
+
+int32_t G_LoadMap( int32_t index, mapinfo_t *info, uint32_t *soundBits, linkEntity_t *activeEnts )
+{
+    if (index >= gi.mapCache.numMapFiles) {
+        Con_Printf( COLOR_RED "G_LoadMap: invalid map index %i\n", index );
+        return -1;
+    }
+
+    memcpy( info, &gi.mapCache.infoList[index].info, sizeof(*info) );
+    gi.mapLoaded = qtrue;
+
+    // put the camera at the player's spawn point
+    VectorCopy( pos, info->spawns[0].xyz );
+    pos[2] = 1.0f;
+
+    // init local world data
+    g_world.Init( &gi.mapCache.infoList[index], soundBits, activeEnts );
+
+    return 1;
+}
+
+qboolean G_CheckWallHit( const vec3_t origin, dirtype_t dir ) {
+    return g_world.CheckWallHit( origin, dir );
 }
 
 static void G_InitRenderRef(void)
@@ -861,7 +869,7 @@ void G_Shutdown(qboolean quit)
 {
     static qboolean recursive = qfalse;
 
-    if (!com_errorEntered) {
+    if ( !recursive ) {
         Con_Printf("----- Game State Shutdown (%s) ----\n", quit ? "quit" : "restart");
     }
 
@@ -886,7 +894,7 @@ void G_Shutdown(qboolean quit)
     Cmd_RemoveCommand("maplist");
     Cmd_RemoveCommand("vm_restart");
 
-    Key_SetCatcher(0);
+    Key_SetCatcher( 0 );
     Con_Printf( "-------------------------------\n");
 }
 
@@ -1027,19 +1035,24 @@ static void G_MoveCamera( void )
 
 void G_Frame(int32_t msec, int32_t realMsec)
 {
+    uint32_t i, j;
+
     // save the msec before checking pause
     gi.realFrameTime = msec;
-
     gi.frametime = msec;
-
     gi.realtime += gi.frametime;
-
     gi.sendtime = gi.realtime;
 
     // update sound
     Snd_Update( gi.realtime );
 
     G_MoveCamera();
+
+    // generate a new user command for the frame
+    if ( gi.state == GS_LEVEL && sgvm ) {
+        const usercmd_t cmd = G_CreateNewCommand();
+        VM_Call( sgvm, 4, SGAME_SEND_USER_CMD, cmd.forwardmove, cmd.rightmove, cmd.upmove, cmd.buttons );
+    }
 
     Con_RunConsole();
 

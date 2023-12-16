@@ -24,10 +24,8 @@ qboolean Ent_SetState( sgentity_t *self, statenum_t state )
 		st = &stateinfo[state];
 		self->state = st;
 		self->ticker = st->tics;
+		self->frame = st->frames;
 		self->sprite = st->sprite + self->facing;
-
-		// does this state have more than one frame?
-		self->frame = st->frames ? 0 : -1;
 		
 		state = st->nextstate;
 		if ( counter++ > ENTITY_CYCLE_LIMIT ) {
@@ -38,7 +36,73 @@ qboolean Ent_SetState( sgentity_t *self, statenum_t state )
 	return qtrue;
 }
 
-void SG_BuildBounds( sgentity_t *ent )
+sgentity_t *Ent_CheckEntityCollision( const sgentity_t *ent )
+{
+	sgentity_t *it;
+	uint32_t i;
+
+	it = &sg_entities[0];
+	for ( i = 0; i < sg.numEntities; i++, it++ ) {
+		if ( BoundsIntersect( it->bounds.mins, it->bounds.maxs, ent->bounds.mins, ent->bounds.maxs ) ) {
+			return it;
+		}
+	}
+
+	return NULL;
+}
+
+/*
+* Ent_CheckWallCollision: returns true if there's a wall in the way
+*/
+qboolean Ent_CheckWallCollision( const sgentity_t *e )
+{
+	ray_t ray;
+	const float *moveDir;
+	vec3_t origin;
+	sgentity_t *it;
+	dirtype_t d;
+	
+	moveDir = dirvectors[ e->dir ];
+	VectorAdd( e->origin, moveDir, origin );
+	
+	origin[0] += e->vel[0];
+	origin[1] += e->vel[1];
+	
+	switch ( e->dir ) {
+	case DIR_NORTH:
+	case DIR_SOUTH:
+	case DIR_EAST:
+	case DIR_WEST:
+		d = inversedirs[e->dir];
+		break;
+	case DIR_NORTH_WEST:
+	case DIR_NORTH_EAST:
+	case DIR_SOUTH_WEST:
+	case DIR_SOUTH_EAST:
+		return qtrue;
+	};
+	
+	// check for a wall collision
+	// if we're touching a wall with the side marked for collision, return true
+	if ( trap_CheckWallHit( origin, d ) ) {
+		return qtrue;
+	}
+	
+	return qfalse;
+}
+
+void SG_BuildBounds( bbox_t *bounds, float width, float height, const vec3_t origin )
+{
+	bounds->mins[0] = origin[0] - height;
+	bounds->mins[1] = origin[1] - width;
+	bounds->mins[2] = origin[2];
+
+	bounds->maxs[0] = origin[0] + height;
+	bounds->maxs[1] = origin[1] + width;
+	bounds->maxs[2] = origin[2];
+}
+
+void Ent_BuildBounds( sgentity_t *ent )
 {
 	ent->bounds.mins[0] = ent->origin[0] - ent->height;
 	ent->bounds.mins[1] = ent->origin[1] - ent->width;
@@ -75,7 +139,7 @@ sgentity_t *SG_AllocEntity( entitytype_t type )
 	ent->ticker = -1;
 	ent->width = ent->height = 0;
 
-	SG_BuildBounds( ent );
+	Ent_BuildBounds( ent );
 
 	return ent;
 }

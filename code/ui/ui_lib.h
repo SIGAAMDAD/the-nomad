@@ -33,6 +33,7 @@ typedef enum : uint64_t
             STATE_HELP_SHOW,
     
     STATE_NONE,
+    STATE_ERROR
 } menustate_t;
 
 #define MAX_MENU_DEPTH 8
@@ -188,6 +189,7 @@ public:
     nhandle_t charset;
     nhandle_t rb_on;
     nhandle_t rb_off;
+    sfxHandle_t sfx_null;
 
     float scale;
     float bias;
@@ -212,7 +214,6 @@ private:
     sfxHandle_t sfx_scroll;
     sfxHandle_t sfx_back;
     sfxHandle_t sfx_select;
-    sfxHandle_t sfx_null;
     qboolean sfx_scroll_toggle;
 
     gpuConfig_t gpuConfig;

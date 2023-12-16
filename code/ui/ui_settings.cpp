@@ -61,7 +61,7 @@ typedef struct
     eastl::array<const char *, 2> allowLegacyGLStr;
 
     // temp cvar data
-    keybind_t *keybinds;
+    keybind_t keybinds[21];
     bool mouseAccelerate;
     bool mouseInvert;
     int32_t mouseSensitivity;
@@ -161,11 +161,9 @@ static const char *bindNames[] = {
     "button8",
     "button9",
     "forward",
-    "back",
-    "left",
+    "backward",
     "right",
-    "jump",
-    "melee"
+    "left"
 };
 
 typedef struct {
@@ -336,9 +334,7 @@ static void SettingsMenu_SetDefault( void )
     settings.mouseAccelerate = Cvar_VariableInteger("g_mouseAcceleration");
     settings.mouseInvert = Cvar_VariableInteger("g_mouseInvert");
 
-    settings.keybinds = (keybind_t *)Hunk_Alloc( sizeof(keybind_t) * arraylen( bindNames ), h_low );
-
-    for ( uint32_t i = 0; i < arraylen( bindNames); i++ ) {
+    for ( uint32_t i = 0; i < arraylen( bindNames ); i++ ) {
         N_strncpyz( settings.keybinds[i].bindname, bindNames[i], sizeof(settings.keybinds[i].bindname) );
         settings.keybinds[i].keynum = Key_GetKey( bindNames[i] );
     }
@@ -905,7 +901,7 @@ static void SettingsMenuControls_Draw( void )
 
         ImGui::SetWindowFontScale( font_scale );
 
-        for (uint32_t i = 0; i < gi.numBindNames; i++) {
+        for (uint32_t i = 0; i < arraylen( bindNames ); i++) {
             ImGui::TableNextColumn();
             ImGui::TextUnformatted( settings.keybinds[i].keyname );
             ImGui::TableNextColumn();
@@ -915,7 +911,7 @@ static void SettingsMenuControls_Draw( void )
                 ui->PlaySelected();
             }
 
-            if (i != gi.numBindNames - 1) {
+            if (i != arraylen( bindNames ) - 1) {
                 ImGui::TableNextRow();
             }
         }

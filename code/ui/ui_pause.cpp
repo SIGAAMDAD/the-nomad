@@ -85,21 +85,6 @@ static void PauseMenu_DrawTitle( void ) {
     ImGui::SetWindowFontScale( font_scale * 1.5f * ui->scale );
 }
 
-static void PauseMenu_ExitToMainMenu( void )
-{
-    // verify with the user that they actually want to end the level
-    if ( VM_Call( sgvm, 0, SGAME_RUNTIC ) ) {
-        // restart everything
-        Cbuf_ExecuteText( EXEC_NOW, "vid_restart fast\n" );
-        
-        // clear all menus, then restack them
-        ui->ForceMenuOff();
-        Key_SetCatcher( KEYCATCH_UI );
-        ui->SetActiveMenu( UI_MENU_TITLE );
-        ui->SetState( STATE_MAIN );
-        ui->SetActiveMenu( UI_MENU_MAIN );
-    }
-}
 
 static void PauseMenu_Draw( void )
 {
@@ -112,9 +97,6 @@ static void PauseMenu_Draw( void )
 
     if (menu.helpMenu) {
         PauseMenu_Help();
-        return;
-    } else if ( menu.exitToMM ) {
-        PauseMenu_ExitToMainMenu();
         return;
     } else if ( menu.settingsMenu ) {
         // we don't want to be drawing everything else behind the settings menu
@@ -152,8 +134,8 @@ static void PauseMenu_Draw( void )
         }
         ImGui::TableNextRow();
         if (ui->Menu_Option( menu.exitToMainMenu->value )) {
-            menu.exitToMM = qtrue;
-            VM_Call( sgvm, 0, SGAME_ENDLEVEL );
+            ui->SetState( STATE_MAIN );
+            ui->SetActiveMenu( UI_MENU_MAIN );
         }
     }
     ImGui::EndTable();

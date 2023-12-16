@@ -11,6 +11,8 @@
 Common functionality for the engine and vm alike
 */
 
+void Sys_SnapVector( float *vector );
+
 void Com_Frame( qboolean noDelay );
 int Com_Milliseconds( void );
 qboolean Com_EarlyParseCmdLine( char *commandLine, char *con_title, int title_size, int *vid_xpos, int *vid_ypos );
@@ -331,14 +333,14 @@ file_t FS_VM_FOpenAppend( const char *npath, handleOwner_t owner );
 file_t FS_VM_FOpenRW( const char *npath, handleOwner_t owner );
 fileOffset_t FS_VM_FileSeek( file_t file, fileOffset_t offset, uint32_t whence, handleOwner_t owner );
 fileOffset_t FS_VM_FileTell( file_t file, handleOwner_t owner );
-uint64_t FS_VM_FOpenFile( const char *npath, file_t *file, fileMode_t mode, handleOwner_t owner );
+uint32_t FS_VM_FOpenFile( const char *npath, file_t *file, fileMode_t mode, handleOwner_t owner );
 file_t FS_VM_FOpenFileWrite( const char *npath, file_t *file, handleOwner_t owner );
-uint64_t FS_VM_FOpenFileRead( const char *npath, file_t *file, handleOwner_t owner );
+uint32_t FS_VM_FOpenFileRead( const char *npath, file_t *file, handleOwner_t owner );
 void FS_VM_FClose( file_t file, handleOwner_t owner );
-uint64_t FS_VM_WriteFile( const void *buffer, uint64_t len, file_t file, handleOwner_t owner );
-uint64_t FS_VM_Write( const void *buffer, uint64_t len, file_t file, handleOwner_t owner );
-uint64_t FS_VM_Read( void *buffer, uint64_t len, file_t file, handleOwner_t owner );
-uint64_t FS_VM_FileLength( file_t file, handleOwner_t owner );
+uint32_t FS_VM_WriteFile( const void *buffer, uint32_t len, file_t file, handleOwner_t owner );
+uint32_t FS_VM_Write( const void *buffer, uint32_t len, file_t file, handleOwner_t owner );
+uint32_t FS_VM_Read( void *buffer, uint32_t len, file_t file, handleOwner_t owner );
+uint32_t FS_VM_FileLength( file_t file, handleOwner_t owner );
 
 void FS_VM_CloseFiles(handleOwner_t owner);
 

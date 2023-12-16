@@ -21,6 +21,8 @@
 #endif
 typedef enum
 {
+    GS_INACTIVE,
+    GS_READY,
     GS_MENU,
     GS_LEVEL,
     GS_PAUSE,
@@ -58,21 +60,52 @@ enum
 typedef struct vmRefImport_s vmRefImport_t;
 struct vmRefImport_s
 {
-    void (*trap_Cmd_ExecuteText)( cbufExec_t exec, const char *text );
-    void (*trap_UpdateScreen)( void );
-    void (*trap_GetClipboardData)( char *buf, uint32_t bufsize );
-    void (*trap_GetGPUConfig)( gpuConfig_t *config );
-
-    uint32_t (*trap_Key_GetCatcher)( void );
-    void (*trap_Key_SetCatcher)( uint32_t catcher );
-    uint32_t (*trap_Key_GetKey)( const char *binding );
-    qboolean (*trap_Key_IsDown)( uint32_t keynum );
-    void (*trap_Key_ClearStates)( void );
-    qboolean (*trap_Key_AnyDown)( void );
-
     void (*trap_Print)( const char *str );
     void (*trap_Error)( const char *str );
-    uint32_t (*trap_Milliseconds)( void );
+
+    uint32_t (*trap_Argc)( void );
+    void (*trap_Argv)( uint32_t n, char *buf, uint32_t bufferLength );
+    void (*trap_Args)( char *buf, uint32_t bufferLength );
+    void (*trap_SendConsoleCommand)( const char *text );
+    void (*trap_AddCommand)( const char *cmdName );
+    void (*trap_RemoveCommand)( const char *cmdName );
+
+    uint32_t (*trap_MemoryRemaining)( void );
+
+    void (*Sys_SnapVector)( float *v );
+
+    int (*G_LoadMap)( int32_t levelIndex, mapinfo_t *info, uint32_t *soundBits, linkEntity_t *activeEnts );
+    void (*G_CastRay)( ray_t *ray );
+    void (*G_SoundRecursive)( int32_t width, int32_t height, float volume, const vec3_t origin );
+    qboolean (*trap_CheckWallHit)( const vec3_t origin, dirtype_t dir );
+
+    int (*trap_Milliseconds)( void );
+
+    void (*trap_Key_SetCatcher)( uint32_t catcher );
+    uint32_t (*trap_Key_GetCatcher)( void );
+    uint32_t (*trap_Key_GetKey)( const char *key );
+    void (*trap_Key_ClearStates)( void );
+
+    sfxHandle_t (*trap_Snd_RegisterSfx)( const char *npath );
+    sfxHandle_t (*trap_Snd_RegisterTrack)( const char *npath );
+    void (*trap_Snd_QueueTrack)( sfxHandle_t track );
+    void (*trap_Snd_PlaySfx)( sfxHandle_t sfx );
+    void (*trap_Snd_StopSfx)( sfxHandle_t sfx );
+    void (*trap_Snd_SetLoopingTrack)( sfxHandle_t track );
+    void (*trap_Snd_ClearLoopingTrack)( void );
+
+    nhandle_t (*RE_RegisterShader)( const char *npath );
+    void (*RE_LoadWorldMap)( const char *npath );
+    void (*RE_ClearScene)( void );
+    void (*RE_RenderScene)( const renderSceneRef_t *fd );
+    void (*RE_AddPolyToScene)( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
+
+    void (*Sys_GetGPUConfig)( gpuConfig_t *config );
+
+    void (*Cvar_Register)( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, uint32_t flags );
+    void (*Cvar_Update)( vmCvar_t *vmCvar );
+    void (*Cvar_Set)( const char *varName, const char *value );
+    void (*Cvar_VariableStringBuffer)( const char *var_name, char *buffer, uint32_t bufsize );
 
     file_t (*FS_FOpenRead)( const char *npath, handleOwner_t owner );
     file_t (*FS_FOpenWrite)( const char *npath, handleOwner_t owner );
@@ -80,41 +113,14 @@ struct vmRefImport_s
     file_t (*FS_FOpenRW)( const char *npath, handleOwner_t owner );
     fileOffset_t (*FS_FileSeek)( file_t file, fileOffset_t offset, uint32_t whence, handleOwner_t owner );
     fileOffset_t (*FS_FileTell)( file_t file, handleOwner_t owner );
-    uint64_t (*FS_FOpenFile)( const char *npath, file_t *file, fileMode_t mode, handleOwner_t owner );
+    uint32_t (*FS_FOpenFile)( const char *npath, file_t *file, fileMode_t mode, handleOwner_t owner );
     file_t (*FS_FOpenFileWrite)( const char *npath, file_t *file, handleOwner_t owner );
-    uint64_t (*FS_FOpenFileRead)( const char *npath, file_t *file, handleOwner_t owner );
+    uint32_t (*FS_FOpenFileRead)( const char *npath, file_t *file, handleOwner_t owner );
     void (*FS_FClose)( file_t file, handleOwner_t owner );
-    uint64_t (*FS_WriteFile)( const void *buffer, uint64_t len, file_t file, handleOwner_t owner );
-    uint64_t (*FS_Write)( const void *buffer, uint64_t len, file_t file, handleOwner_t owner );
-    uint64_t (*FS_Read)( void *buffer, uint64_t len, file_t file, handleOwner_t owner );
-    uint64_t (*FS_FileLength)( file_t file, handleOwner_t owner );
-    uint64_t (*FS_GetFileList)( const char *path, const char *extension, char *listbuf, uint64_t bufsize );
-
-    void (*trap_RE_ClearScene)( void );
-    void (*trap_RE_SetColor)( const float *rgba );
-    void (*trap_RE_AddPolyToScene)( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
-    void (*trap_RE_AddPolyListToScene)( const poly_t *polys, uint32_t numPolys );
-    void (*trap_RE_AddEntityToScene)( const renderEntityRef_t *ent );
-    void (*trap_RE_DrawImage)( float x, float y, float w, float h, float u1, float v1, float u2, float v2, nhandle_t hShader );
-    nhandle_t (*trap_RE_RegisterShader)( const char *name );
-    void (*trap_RE_RenderScene)( const renderSceneRef_t *fd );
-    void (*trap_RE_LoadWorldMap)( const char *filename );
-
-    sfxHandle_t (*trap_Snd_RegisterSfx)( const char *npath );
-    void (*trap_Snd_PlaySfx)( sfxHandle_t sfx );
-    void (*trap_Snd_StopSfx)( sfxHandle_t sfx );
-
-    void (*trap_Cvar_Register)( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, uint32_t flags );
-    void (*trap_Cvar_Update)( vmCvar_t *vmCvar );
-    void (*trap_Cvar_Set)( const char *var_name, const char *value );
-    void (*trap_Cvar_VariableStringBuffer)( const char *var_name, char *buffer, uint32_t bufsize );
-    uint32_t (*trap_Argc)( void );
-    void (*trap_Argv)( uint32_t n, char *buffer, uint32_t bufferLength );
-    void (*trap_Args)( char *buffer, uint32_t bufferLength );
-
-    int32_t (*G_LoadMap)( int32_t index, mapinfo_t *info );
-
-    void (*G_SetBindNames)( const char **bindnames, uint32_t numbindnames );
+    uint32_t (*FS_WriteFile)( const void *buffer, uint32_t len, file_t file, handleOwner_t owner );
+    uint32_t (*FS_Write)( const void *buffer, uint32_t len, file_t file, handleOwner_t owner );
+    uint32_t (*FS_Read)( void *buffer, uint32_t len, file_t file, handleOwner_t owner );
+    uint32_t (*FS_FileLength)( file_t file, handleOwner_t owner );
 
     void (*ImGui_EndWindow)( void );
     void (*ImGui_SetWindowCollapsed)( int bCollapsed );
@@ -192,7 +198,7 @@ public:
 
 typedef struct usercmd_s {
 	int32_t			angles[3];
-	int32_t			buttons;
+	uint32_t		buttons;
 	byte			weapon;           // weapon 
 	int8_t	        forwardmove, rightmove, upmove;
 } usercmd_t;
@@ -240,8 +246,8 @@ typedef struct {
 	int32_t mouseIndex;
     vec3_t viewangles;
 
-    char **bindNames;
-    uint32_t numBindNames;
+    uint32_t cmdNumber;
+    usercmd_t cmds[CMD_BACKUP];
 
 //    uiMenu_t menuIndex;
     nhandle_t consoleShader;
@@ -354,8 +360,9 @@ void G_InitDisplay(gpuConfig_t *config);
 SDL_Window *G_GetSDLWindow(void);
 SDL_GLContext G_GetGLContext( void );
 void GLimp_Minimize( void );
-int32_t G_LoadMap( int32_t index, mapinfo_t *info );
+int32_t G_LoadMap( int32_t index, mapinfo_t *info, uint32_t *soundBits, linkEntity_t *activeEnts );
 qboolean G_CheckPaused( void );
+qboolean G_CheckWallHit( const vec3_t origin, dirtype_t dir );
 
 //
 // g_screen.cpp
@@ -396,6 +403,9 @@ void Con_ExternalWindowEvent( uint32_t value );
 // g_input.cpp
 //
 void G_MouseEvent( int32_t dx, int32_t dy /*, int time*/ );
+void G_InitInput( void );
+void G_ShutdownInput( void );
+usercmd_t G_CreateNewCommand( void );
 
 extern qboolean key_overstrikeMode;
 

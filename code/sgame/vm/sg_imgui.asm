@@ -53,7 +53,7 @@ line 15
 ADDRGP4 $86
 ARGP4
 ADDRGP4 trap_Error
-CALLI4
+CALLV
 pop
 line 16
 ;16:    }
@@ -121,7 +121,7 @@ line 32
 ADDRGP4 $91
 ARGP4
 ADDRGP4 trap_Error
-CALLI4
+CALLV
 pop
 line 33
 ;33:    }
@@ -189,7 +189,7 @@ line 49
 ADDRGP4 $91
 ARGP4
 ADDRGP4 trap_Error
-CALLI4
+CALLV
 pop
 line 50
 ;50:    }
@@ -209,14 +209,55 @@ line 53
 ;53:}
 LABELV $92
 endproc ImGui_ColoredText 4108 12
-import trap_Error
+import Cvar_VariableStringBuffer
+import Cvar_Set
+import Cvar_Update
+import Cvar_Register
+import trap_FS_FileTell
+import trap_FS_FileSeek
+import trap_FS_GetFileList
 import trap_FS_Read
 import trap_FS_Write
 import trap_FS_FClose
+import trap_FS_FOpenWrite
 import trap_FS_FOpenFile
 import Sys_GetGPUConfig
+import RE_AddPolyToScene
+import RE_RenderScene
+import RE_ClearScene
+import RE_LoadWorldMap
+import RE_RegisterShader
+import trap_Snd_ClearLoopingTrack
+import trap_Snd_SetLoopingTrack
+import trap_Snd_StopSfx
+import trap_Snd_PlaySfx
+import trap_Snd_QueueTrack
+import trap_Snd_RegisterTrack
+import trap_Snd_RegisterSfx
+import trap_Key_ClearStates
+import trap_Key_GetKey
+import trap_Key_GetCatcher
+import trap_Key_SetCatcher
+import trap_Milliseconds
+import trap_CheckWallHit
+import G_SoundRecursive
+import G_CastRay
+import G_LoadMap
+import trap_MemoryRemaining
+import trap_RemoveCommand
+import trap_AddCommand
+import trap_SendConsoleCommand
+import trap_Args
+import trap_Argv
+import trap_Argc
+import trap_Error
+import trap_Print
 import P_GiveWeapon
 import P_GiveItem
+import P_ParryTicker
+import P_MeleeTicker
+import P_Ticker
+import SG_SendUserCmd
 import SG_MouseEvent
 import SG_KeyEvent
 import SG_InitPlayer
@@ -229,11 +270,15 @@ import SG_SpawnMob
 import SG_AddArchiveHandle
 import SG_LoadGame
 import SG_SaveGame
+import Ent_SetState
 import SG_InitEntities
+import Ent_BuildBounds
 import SG_BuildBounds
 import SG_FreeEntity
 import SG_AllocEntity
 import Ent_RunTic
+import Ent_CheckEntityCollision
+import Ent_CheckWallCollision
 import SG_DrawLevelStats
 import SG_DrawAbortMission
 import Lvl_AddKillEntity
@@ -246,6 +291,13 @@ import SG_Printf
 import SG_Error
 import SG_GenerateSpriteSheetTexCoords
 import SG_DrawFrame
+import pm_wallTime
+import pm_wallrunAccelMove
+import pm_wallrunAccelVertical
+import pm_airAccel
+import pm_baseSpeed
+import pm_baseAccel
+import pm_waterAccel
 import sg_numSaves
 import sg_savename
 import sg_levelDataFile
@@ -256,10 +308,6 @@ import sg_decalDetail
 import sg_printLevelStats
 import sg_mouseAcceleration
 import sg_mouseInvert
-import sg_pmBaseSpeed
-import sg_pmBaseAcceleration
-import sg_pmWaterAcceleration
-import sg_pmAirAcceleration
 import sg_paused
 import sg_debugPrint
 import ammoCaps
@@ -524,6 +572,7 @@ import crc32_buffer
 import Com_EarlyParseCmdLine
 import Com_Milliseconds
 import Com_Frame
+import Sys_SnapVector
 import Con_DPrintf
 import Con_Printf
 import Con_Shutdown

@@ -9,8 +9,8 @@ file "../sg_mem.c"
 line 25
 ;1:#include "sg_local.h"
 ;2:
-;3:// 10 MiB of static memory for the vm to use
-;4:#define MEMPOOL_SIZE (10*1024*1024)
+;3:// 8 MiB of static memory for the vm to use
+;4:#define MEMPOOL_SIZE (8*1024*1024)
 ;5:static char mempool[MEMPOOL_SIZE];
 ;6:static uint32_t allocPoint;
 ;7:
@@ -453,7 +453,7 @@ line 87
 ADDRLP4 0
 ADDRLP4 0
 INDIRF4
-CNSTF4 1260388352
+CNSTF4 1258291200
 DIVF4
 ASGNF4
 line 88
@@ -474,7 +474,7 @@ ARGF4
 ADDRGP4 allocPoint
 INDIRU4
 ARGU4
-CNSTI4 10485760
+CNSTI4 8388608
 ARGI4
 ADDRGP4 Con_Printf
 CALLV
@@ -528,7 +528,7 @@ INDIRU4
 ADDRFP4 0
 INDIRU4
 ADDU4
-CNSTU4 10485760
+CNSTU4 8388608
 LTU4 $111
 line 103
 ;103:        G_Error( "SG_MemAlloc: not enough vm memory" );
@@ -599,7 +599,7 @@ line 116
 ;116:uint32_t SG_MemoryRemaining( void ) {
 line 117
 ;117:    return sizeof(mempool) - allocPoint;
-CNSTU4 10485760
+CNSTU4 8388608
 ADDRGP4 allocPoint
 INDIRU4
 SUBU4
@@ -621,7 +621,7 @@ ADDRGP4 mempool
 ARGP4
 CNSTI4 0
 ARGI4
-CNSTU4 10485760
+CNSTU4 8388608
 ARGU4
 ADDRGP4 memset
 CALLP4
@@ -703,14 +703,56 @@ LABELV allocPoint
 skip 4
 align 1
 LABELV mempool
-skip 10485760
+skip 8388608
+import Cvar_VariableStringBuffer
+import Cvar_Set
+import Cvar_Update
+import Cvar_Register
+import trap_FS_FileTell
+import trap_FS_FileSeek
+import trap_FS_GetFileList
 import trap_FS_Read
 import trap_FS_Write
 import trap_FS_FClose
+import trap_FS_FOpenWrite
 import trap_FS_FOpenFile
 import Sys_GetGPUConfig
+import RE_AddPolyToScene
+import RE_RenderScene
+import RE_ClearScene
+import RE_LoadWorldMap
+import RE_RegisterShader
+import trap_Snd_ClearLoopingTrack
+import trap_Snd_SetLoopingTrack
+import trap_Snd_StopSfx
+import trap_Snd_PlaySfx
+import trap_Snd_QueueTrack
+import trap_Snd_RegisterTrack
+import trap_Snd_RegisterSfx
+import trap_Key_ClearStates
+import trap_Key_GetKey
+import trap_Key_GetCatcher
+import trap_Key_SetCatcher
+import trap_Milliseconds
+import trap_CheckWallHit
+import G_SoundRecursive
+import G_CastRay
+import G_LoadMap
+import trap_MemoryRemaining
+import trap_RemoveCommand
+import trap_AddCommand
+import trap_SendConsoleCommand
+import trap_Args
+import trap_Argv
+import trap_Argc
+import trap_Error
+import trap_Print
 import P_GiveWeapon
 import P_GiveItem
+import P_ParryTicker
+import P_MeleeTicker
+import P_Ticker
+import SG_SendUserCmd
 import SG_MouseEvent
 import SG_KeyEvent
 import SG_InitPlayer
@@ -720,11 +762,15 @@ import SG_SpawnMob
 import SG_AddArchiveHandle
 import SG_LoadGame
 import SG_SaveGame
+import Ent_SetState
 import SG_InitEntities
+import Ent_BuildBounds
 import SG_BuildBounds
 import SG_FreeEntity
 import SG_AllocEntity
 import Ent_RunTic
+import Ent_CheckEntityCollision
+import Ent_CheckWallCollision
 import SG_DrawLevelStats
 import SG_DrawAbortMission
 import Lvl_AddKillEntity
@@ -737,6 +783,13 @@ import SG_Printf
 import SG_Error
 import SG_GenerateSpriteSheetTexCoords
 import SG_DrawFrame
+import pm_wallTime
+import pm_wallrunAccelMove
+import pm_wallrunAccelVertical
+import pm_airAccel
+import pm_baseSpeed
+import pm_baseAccel
+import pm_waterAccel
 import sg_numSaves
 import sg_savename
 import sg_levelDataFile
@@ -747,10 +800,6 @@ import sg_decalDetail
 import sg_printLevelStats
 import sg_mouseAcceleration
 import sg_mouseInvert
-import sg_pmBaseSpeed
-import sg_pmBaseAcceleration
-import sg_pmWaterAcceleration
-import sg_pmAirAcceleration
 import sg_paused
 import sg_debugPrint
 import ammoCaps
@@ -1018,6 +1067,7 @@ import crc32_buffer
 import Com_EarlyParseCmdLine
 import Com_Milliseconds
 import Com_Frame
+import Sys_SnapVector
 import Con_DPrintf
 import Con_Printf
 import Con_Shutdown

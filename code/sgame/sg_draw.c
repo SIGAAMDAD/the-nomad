@@ -85,12 +85,15 @@ static void SG_AddSpritesToFrame( void )
     }
 }
 
+/*
+* SG_DrawPlayer: draws the player, the player's sprite is special
+* because it has two parts to draw
+*/
 static void SG_DrawPlayer( void )
 {
-    spritenum_t base_sprite;
     const sgentity_t *ent;
     polyVert_t verts[4];
-    uint32_t i;
+    int i;
 
     ent = sg.playr.ent;
 
@@ -100,6 +103,16 @@ static void SG_DrawPlayer( void )
         verts[i].uv[0] = ent->sheet->texCoords[sg.playr.foot_sprite + sg.playr.foot_frame][i][0];
         verts[i].uv[1] = ent->sheet->texCoords[sg.playr.foot_sprite + sg.playr.foot_frame][i][1];
     }
+
+    RE_AddPolyToScene( sg.media.raio_shader, verts, 4 );
+
+    for ( i = 0; i < 4; i++ ) {
+        verts[i].uv[0] = ent->sheet->texCoords[ent->state->sprite + ent->frame][i][0];
+        verts[i].uv[1] = ent->sheet->texCoords[ent->state->sprite + ent->frame][i][1];
+    }
+
+    RE_AddPolyToScene( sg.media.raio_shader, verts, 4 );
+
 }
 
 int32_t SG_DrawFrame( void )
@@ -115,6 +128,9 @@ int32_t SG_DrawFrame( void )
     refdef.y = 0;
     refdef.time = sg.levelTime;
 
+    // draw the player
+//    SG_DrawPlayer();
+
     // draw everything
     RE_ClearScene();
 
@@ -123,10 +139,10 @@ int32_t SG_DrawFrame( void )
     return 1;
 }
 
-//
-// SG_GenerateSpriteSheetTexCoords: generates a sprite sheet's texture coordinates to reduce redundant calculations when drawing
-// NOTE: I'm pretty sure this will only work with OpenGL texture coords
-//
+/*
+* SG_GenerateSpriteSheetTexCoords: generates a sprite sheet's texture coordinates to reduce redundant calculations when drawing
+* NOTE: I'm pretty sure this will only work with OpenGL texture coords
+*/
 void SG_GenerateSpriteSheetTexCoords( spritesheet_t *sheet, uint32_t spriteWidth, uint32_t spriteHeight,
     uint32_t sheetWidth, uint32_t sheetHeight )
 {

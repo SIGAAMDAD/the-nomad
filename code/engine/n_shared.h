@@ -77,11 +77,11 @@ Platform Specific Preprocessors
 	#if defined(_MSC_VER) && _MSVC_VER >= 1400
 		#define COMPILER_STRING "msvc"
 	#elif defined(__MINGW32__)
-		#define COMPILER_STRING "mingw64"
+		#define COMPILER_STRING "mingw32"
 		#define ARCH_STRING "x86"
 		#define GDR_LITTLE_ENDIAN
 	#elif defined(__MINGW64__)
-		#define COMPILER_STRING "mingw32"
+		#define COMPILER_STRING "mingw64"
 		#define ARCH_STRING "x64"
 		#define GDR_LITTLE_ENDIAN
 	#else

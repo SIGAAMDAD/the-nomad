@@ -31,6 +31,12 @@ mobj_t *SG_SpawnMob( mobtype_t type )
     memcpy( m, &mobinfo[type], sizeof(*m) );
     m->ent = e;
 
+	switch ( type ) {
+	case MT_GRUNT:
+		Ent_SetState( e, S_GRUNT_IDLE );
+		break;
+	};
+
     sg.numMobs++;
 	
 	return m;
