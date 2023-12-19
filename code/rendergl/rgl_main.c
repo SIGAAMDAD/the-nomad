@@ -181,8 +181,8 @@ void R_DrawPolys( void )
             GLSL_SetUniformInt( &rg.basicShader, UNIFORM_DIFFUSE_MAP, 0 );
         }
 
-        pos[0] = quad->origin[0] - ( rg.world->width * 0.5f );
-        pos[1] = rg.world->height - quad->origin[1];
+        pos[0] = quad->origin[0] - ( glState.viewData.camera.origin[0] * 0.5f );
+        pos[1] = glState.viewData.camera.origin[1] - quad->origin[1];
         pos[2] = 0.5f;
 
         // convert local world coordinates to opengl screen coordinates
@@ -251,8 +251,10 @@ static void R_DrawWorld( void )
 
     for (y = 0; y < rg.world->height; y++) {
         for (x = 0; x < rg.world->width; x++) {
-            pos[0] = x - (rg.world->width * 0.5f);
-            pos[1] = rg.world->height - y;
+            pos[0] = x - ( glState.viewData.camera.origin[0] * 0.5f );
+            pos[1] = glState.viewData.camera.origin[1] - y;
+//            pos[0] = x - (rg.world->width * 0.5f);
+//            pos[1] = rg.world->height - y;
             pos[2] = 0.0f;
 
             // convert the local world coordinates to OpenGL screen coordinates
