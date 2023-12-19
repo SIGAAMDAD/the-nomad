@@ -111,7 +111,11 @@ static void R_RadixSort( srfPoly_t *source, uint32_t size )
 extern uint64_t r_numPolys, r_numPolyVerts, r_numQuads;
 
 static int SortPoly( const void *a, const void *b ) {
-    return (int)(((srfPoly_t *)a)->hShader - ((srfPoly_t *)b)->hShader);
+    return (int)( ( (srfPoly_t *)a )->hShader - ( (srfPoly_t *)b )->hShader );
+}
+
+static int SortQuad( const void *a, const void *b ) {
+    return (int)( ( (srfQuad_t *)a )->hSpriteSheet - ( (srfQuad_t *)b )->hSpriteSheet );
 }
 
 void R_WorldToGL( drawVert_t *verts, vec3_t pos )
