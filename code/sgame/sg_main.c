@@ -27,7 +27,7 @@ int32_t vmMain( int32_t command, int32_t arg0, int32_t arg1, int32_t arg2, int32
     case SGAME_ENDLEVEL:
         return SG_EndLevel();
     case SGAME_SEND_USER_CMD:
-
+        SG_SendUserCmd( arg0, arg1, arg2, arg3 );
         return 0;
     case SGAME_EVENT_HANDLING:
     case SGAME_EVENT_NONE:
@@ -47,10 +47,6 @@ int32_t vmMain( int32_t command, int32_t arg0, int32_t arg1, int32_t arg2, int32
 }
 
 sgGlobals_t sg;
-
-spritesheet_t sprites_thenomad;
-spritesheet_t sprites_grunt;
-spritesheet_t sprites_shotty;
 
 const vec3_t dirvectors[NUMDIRS] = {
     { -1.0f, -1.0f, 0.0f },
@@ -305,6 +301,8 @@ static void SG_LoadMedia( void )
 
     sg.media.raio_shader = RE_RegisterShader( "textures/sprites/glnomad_raio_base.png" );
     sg.media.grunt_shader = RE_RegisterShader( "textures/sprites/glnomad_grunt.png" );
+
+    sg.media.raio_sprites = RE_RegisterSpriteSheet( "textures/sprites/glnomad_raio_base.png", 512, 512, 32, 32 );
 
     G_Printf( "Finished loading sprites.\n" );
 }

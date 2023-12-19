@@ -437,6 +437,10 @@ static void VM_trap_G_SoundRecursive( int32_t width, int32_t height, float volum
 	g_world.SoundRecursive( width, height, volume, origin );
 }
 
+static uint32_t VM_trap_FS_GetFileList( const char *path, const char *extension, char *listbuf, uint32_t bufferLength ) {
+	return (uint32_t)FS_GetFileList( path, extension, listbuf, bufferLength );
+}
+
 static void VM_FillImport(vmRefImport_t *import, const char *name)
 {
 	import->Cvar_Set = Cvar_Set;
@@ -463,6 +467,7 @@ static void VM_FillImport(vmRefImport_t *import, const char *name)
 	import->FS_Read = FS_VM_Read;
 	import->FS_FileTell = FS_VM_FileTell;
 	import->FS_WriteFile = FS_VM_WriteFile;
+	import->FS_GetFileList = VM_trap_FS_GetFileList;
 
 	import->trap_Snd_StopSfx = Snd_StopSfx;
 	import->trap_Snd_PlaySfx = Snd_PlaySfx;
@@ -474,6 +479,7 @@ static void VM_FillImport(vmRefImport_t *import, const char *name)
 
 	import->trap_Print = VM_trap_Print;
 	import->trap_Error = VM_trap_Error;
+	import->trap_Milliseconds = VM_trap_Milliseconds;
 
 	import->trap_AddCommand = VM_trap_AddCommand;
 	import->trap_RemoveCommand = Cmd_RemoveCommand;
@@ -497,10 +503,15 @@ static void VM_FillImport(vmRefImport_t *import, const char *name)
 	import->RE_RenderScene = re.RenderScene;
 	import->RE_LoadWorldMap = re.LoadWorld;
 	import->RE_RegisterShader = re.RegisterShader;
+	import->RE_RegisterSprite = re.RegisterSprite;
+	import->RE_RegisterSpriteSheet = re.RegisterSpriteSheet;
+	import->RE_AddSpriteToScene = re.AddSpriteToScene;
 
+	import->G_SetCameraData = G_SetCameraData;
 	import->G_CastRay = VM_trap_G_CastRay;
 	import->G_LoadMap = G_LoadMap;
 	import->G_SoundRecursive = VM_trap_G_SoundRecursive;
+	import->trap_CheckWallHit = G_CheckWallHit;
 
 	import->ImGui_BeginWindow = ImGui_BeginWindow;
 	import->ImGui_EndWindow = ImGui_EndWindow;

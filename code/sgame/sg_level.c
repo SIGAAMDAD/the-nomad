@@ -47,6 +47,9 @@ static void SG_SpawnLevelEntities(void)
 
 qboolean SG_InitLevel( int levelIndex )
 {
+    vec2_t cameraPos;
+    float zoom;
+
     G_Printf( "Starting up level at index %i\n", levelIndex );
     G_Printf( "Loadng resources...\n" );
 
@@ -63,6 +66,8 @@ qboolean SG_InitLevel( int levelIndex )
     G_Printf( "Loading map %s...\n", sg.mapInfo.name );
 
     G_Printf( "All done.\n" );
+
+    SG_InitPlayer();
 
     // spawn everything
     SG_SpawnLevelEntities();
@@ -83,6 +88,11 @@ qboolean SG_InitLevel( int levelIndex )
     Cvar_Set( "sg_levelIndex", va( "%i", levelIndex ) );
 
     level.stats.timeStart = trap_Milliseconds();
+
+    VectorCopy2( cameraPos, sg.mapInfo.spawns[0].xyz );
+    zoom = 1.6f;
+
+//    G_SetCameraData( cameraPos, zoom, 0.0f );
 
     return qtrue;
 }
@@ -118,7 +128,7 @@ void SG_DrawLevelStats( void )
     ImGui_EndWindow();
 }
 
-int32_t SG_EndLevel( void )
+int SG_EndLevel( void )
 {
     // setup the window
     memset( &endLevel, 0, sizeof(endLevel) );

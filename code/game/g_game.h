@@ -79,6 +79,8 @@ struct vmRefImport_s
     void (*G_SoundRecursive)( int32_t width, int32_t height, float volume, const vec3_t origin );
     qboolean (*trap_CheckWallHit)( const vec3_t origin, dirtype_t dir );
 
+    void (*G_SetCameraData)( const vec2_t origin, float zoom, float rotation );
+
     int (*trap_Milliseconds)( void );
 
     void (*trap_Key_SetCatcher)( uint32_t catcher );
@@ -95,9 +97,12 @@ struct vmRefImport_s
     void (*trap_Snd_ClearLoopingTrack)( void );
 
     nhandle_t (*RE_RegisterShader)( const char *npath );
+    nhandle_t (*RE_RegisterSpriteSheet)( const char *npath, uint32_t sheetWidth, uint32_t sheetHeight, uint32_t spriteWidth, uint32_t spriteHeight );
+    nhandle_t (*RE_RegisterSprite)( nhandle_t hSpriteSheet, uint32_t index );
     void (*RE_LoadWorldMap)( const char *npath );
     void (*RE_ClearScene)( void );
     void (*RE_RenderScene)( const renderSceneRef_t *fd );
+    void (*RE_AddSpriteToScene)( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t hSprite );
     void (*RE_AddPolyToScene)( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
 
     void (*Sys_GetGPUConfig)( gpuConfig_t *config );
@@ -121,6 +126,7 @@ struct vmRefImport_s
     uint32_t (*FS_Write)( const void *buffer, uint32_t len, file_t file, handleOwner_t owner );
     uint32_t (*FS_Read)( void *buffer, uint32_t len, file_t file, handleOwner_t owner );
     uint32_t (*FS_FileLength)( file_t file, handleOwner_t owner );
+    uint32_t (*FS_GetFileList)( const char *path, const char *extension, char *listbuf, uint32_t bufsize );
 
     void (*ImGui_EndWindow)( void );
     void (*ImGui_SetWindowCollapsed)( int bCollapsed );
@@ -231,6 +237,8 @@ typedef struct {
     qboolean soundStarted;
     qboolean rendererStarted;
     qboolean mapLoaded;
+
+    qboolean togglePhotomode;
 
     gamestate_t state;
     int32_t frametime;
@@ -363,6 +371,7 @@ void GLimp_Minimize( void );
 int32_t G_LoadMap( int32_t index, mapinfo_t *info, uint32_t *soundBits, linkEntity_t *activeEnts );
 qboolean G_CheckPaused( void );
 qboolean G_CheckWallHit( const vec3_t origin, dirtype_t dir );
+void G_SetCameraData( const vec2_t origin, float zoom, float rotation );
 
 //
 // g_screen.cpp
@@ -430,7 +439,6 @@ void G_DrawUI(void);
 void G_ShutdownSGame(void);
 void G_InitSGame(void);
 void G_SGameRender(stereoFrame_t stereo);
-int32_t G_LoadMap( int32_t index, mapinfo_t *info );
 
 extern vm_t *sgvm;
 extern vm_t *uivm;

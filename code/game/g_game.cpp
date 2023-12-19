@@ -47,7 +47,7 @@ cvar_t *r_debugCamera;
 cvar_t *r_debugCameraSpeed;
 
 static void *renderLib;
-static glm::vec3 pos;
+static glm::vec3 pos, worldCameraPos;
 
 
 void GLimp_HideFullscreenWindow(void);
@@ -119,7 +119,7 @@ static qboolean G_LoadLevelFile( const char *filename, mapinfoReal_t *info )
     }
 
     info->numTiles = header->map.lumps[LUMP_TILES].length / sizeof(maptile_t);
-    info->tiles = (maptile_t *)Hunk_Alloc( header->map.lumps[LUMP_TILES].length, h_low );
+    info->tiles = (maptile_t *)Z_Malloc( header->map.lumps[LUMP_TILES].length, TAG_GAME );
 
     memcpy( info->tiles, (byte *)header + header->map.lumps[LUMP_TILES].fileofs, sizeof(maptile_t) * info->numTiles );
 
@@ -147,7 +147,7 @@ static void G_InitMapCache( void )
     Con_Printf( "Got %lu map files\n", gi.mapCache.numMapFiles );
 
     // allocate the info
-    gi.mapCache.infoList = (mapinfoReal_t *)Hunk_Alloc( sizeof(mapinfoReal_t) * gi.mapCache.numMapFiles, h_low );
+    gi.mapCache.infoList = (mapinfoReal_t *)Z_Malloc( sizeof(mapinfoReal_t) * gi.mapCache.numMapFiles, TAG_GAME );
 
     info = gi.mapCache.infoList;
     for (uint64_t i = 0; i < gi.mapCache.numMapFiles; i++, info++) {
@@ -207,11 +207,11 @@ static void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL G_RefPrintf(int level
 }
 
 static void *G_RefMalloc( uint64_t size ) {
-    return Z_Malloc(size, TAG_RENDERER);
+    return Z_Malloc( size, TAG_RENDERER );
 }
 
 static void *G_RefRealloc(void *ptr, uint64_t nsize) {
-    return Z_Realloc(ptr, nsize, TAG_RENDERER);
+    return Z_Realloc( ptr, nsize, TAG_RENDERER );
 }
 
 static void G_RefFreeAll(void) {
@@ -292,7 +292,7 @@ static void G_SetScaling(float factor, uint32_t captureWidth, uint32_t captureHe
 }
 
 static void *G_RefImGuiMalloc( size_t size ) {
-    return Z_Malloc( size, TAG_RENDERER );
+    return Z_Malloc( size, TAG_IMGUI );
 }
 
 //
@@ -315,16 +315,21 @@ static void G_RefImGuiInit(void *shaderData, const void *importData) {
 
 static void GLM_MakeVPM( float aspect, float *zoom, vec3_t origin, mat4_t vpm, mat4_t projection, mat4_t view )
 {
-    glm::mat4 viewProjectionMatrix, viewMatrix, projectionMatrix;
+    glm::mat4 viewProjectionMatrix, projectionMatrix, viewMatrix, transpose;
 
     *zoom = pos.z;
     projectionMatrix = glm::ortho( -aspect, aspect, -aspect, aspect, -1.0f, 1.0f );
-    const glm::mat4 transpose = glm::translate( glm::mat4(1.0f), glm::vec3( pos[0], pos[1], 0.0f ) )
-                                * glm::scale( glm::mat4(1.0f), glm::vec3( *zoom ));
+    transpose = glm::translate( glm::mat4( 1.0f ), glm::vec3( pos[0], pos[1], 0.0f ) )
+                                * glm::scale( glm::mat4( 1.0f ), glm::vec3( *zoom ));
     viewMatrix = glm::inverse( transpose );
 
-    VectorCopy( origin, pos );
+    // convert world camera position to opengl coordinates
+    const glm::vec3 v0 = {  0.5f, 0.0f, 0.0f };
+    const glm::vec3 v1 = { -0.5f, 0.0f, 0.0f };
+//    const float middle = ;
 
+    VectorCopy( origin, pos );
+    
     viewProjectionMatrix = projectionMatrix * viewMatrix;
 
     memcpy( &projection[0][0], &projectionMatrix[0][0], sizeof(mat4_t) );
@@ -344,16 +349,21 @@ static float *GLM_Mat4Transform( const mat4_t m, const vec4_t p ) {
     return out;
 }
 
+/*
+const glm::mat4 model = glm::translate( viewProjectionMatrix, glm::vec3( worldCameraPosition[0], worldCameraPosition[1], 0.0f ) );
+const glm::mat4 mvp = viewProjectionMatrix * model;
+*/
+
 static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, mat4_t vpm )
 {
-    glm::mat4 viewProjection;
+    glm::mat4 viewProjectionMatrix;
     glm::mat4 mvp, model;
     glm::vec4 pos;
 
-    memcpy( &viewProjection[0][0], &vpm[0][0], sizeof(mat4_t) );
+    memcpy( &viewProjectionMatrix[0][0], &vpm[0][0], sizeof(mat4_t) );
 
-    model = glm::translate( glm::mat4(viewProjection), glm::vec3( world[0], world[1], world[2] ) );
-    mvp = viewProjection * model;
+    model = glm::translate( glm::mat4( viewProjectionMatrix ), glm::vec3( world[0], world[1], world[2] ) );
+    mvp = viewProjectionMatrix * model;
 
     const glm::vec4 positions[4] = {
         { 0.5f,  0.5f, 0.0f, 1.0f},
@@ -362,7 +372,31 @@ static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, mat4_t vpm )
         {-0.5f,  0.5f, 0.0f, 1.0f},
     };
 
-    for (uint32_t i = 0; i < arraylen(positions); i++) {
+    for ( uint32_t i = 0; i < 4; i++ ) {
+        pos = mvp * positions[i];
+        VectorCopy( xyz[i], pos );
+    }
+}
+
+static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, const glm::mat4& vpm )
+{
+    glm::mat4 viewProjectionMatrix;
+    glm::mat4 mvp, model;
+    glm::vec4 pos;
+
+    viewProjectionMatrix = vpm;
+
+    model = glm::translate( viewProjectionMatrix, glm::vec3( world[0], world[1], world[2] ) );
+    mvp = viewProjectionMatrix * model;
+
+    const glm::vec4 positions[4] = {
+        { 0.5f,  0.5f, 0.0f, 1.0f},
+        { 0.5f, -0.5f, 0.0f, 1.0f},
+        {-0.5f, -0.5f, 0.0f, 1.0f},
+        {-0.5f,  0.5f, 0.0f, 1.0f},
+    };
+
+    for ( uint32_t i = 0; i < 4; i++ ) {
         pos = mvp * positions[i];
         VectorCopy( xyz[i], pos );
     }
@@ -370,7 +404,7 @@ static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, mat4_t vpm )
 
 int32_t G_LoadMap( int32_t index, mapinfo_t *info, uint32_t *soundBits, linkEntity_t *activeEnts )
 {
-    if (index >= gi.mapCache.numMapFiles) {
+    if ( index >= gi.mapCache.numMapFiles ) {
         Con_Printf( COLOR_RED "G_LoadMap: invalid map index %i\n", index );
         return -1;
     }
@@ -378,9 +412,7 @@ int32_t G_LoadMap( int32_t index, mapinfo_t *info, uint32_t *soundBits, linkEnti
     memcpy( info, &gi.mapCache.infoList[index].info, sizeof(*info) );
     gi.mapLoaded = qtrue;
 
-    // put the camera at the player's spawn point
-    VectorCopy( pos, info->spawns[0].xyz );
-    pos[2] = 1.0f;
+    pos[2] = 1.6f;
 
     // init local world data
     g_world.Init( &gi.mapCache.infoList[index], soundBits, activeEnts );
@@ -390,6 +422,11 @@ int32_t G_LoadMap( int32_t index, mapinfo_t *info, uint32_t *soundBits, linkEnti
 
 qboolean G_CheckWallHit( const vec3_t origin, dirtype_t dir ) {
     return g_world.CheckWallHit( origin, dir );
+}
+
+void G_SetCameraData( const vec2_t origin, float zoom, float rotation ) {
+    VectorCopy2( pos, origin );
+    pos[2] = zoom;
 }
 
 static void G_InitRenderRef(void)
@@ -503,7 +540,7 @@ static void G_InitRenderRef(void)
     import.Sys_CloseDLL = Sys_CloseDLL;
     import.Sys_GetProcAddress = Sys_GetProcAddress;
 
-    ret = GetRenderAPI(NOMAD_VERSION_FULL, &import);
+    ret = GetRenderAPI( NOMAD_VERSION_FULL, &import );
 
     Con_Printf( "-------------------------------\n");
 	if ( !ret ) {
@@ -713,6 +750,12 @@ static qboolean isValidRenderer( const char *s )
 	return qtrue;
 }
 
+static void G_TogglePhotoMode_f( void ) {
+    gi.togglePhotomode = !gi.togglePhotomode;
+    Cvar_Set2( "r_debugCamera", va( "%i", gi.togglePhotomode ), qtrue );
+    Con_Printf( "Toggle Photo Mode: %s\n", gi.togglePhotomode ? "on" : "off" );
+}
+
 //
 // G_Init: called every time a new level is loaded
 //
@@ -760,11 +803,7 @@ void G_Init(void)
 	Cvar_CheckRange( vid_ypos, NULL, NULL, CVT_INT );
 	Cvar_SetDescription( vid_ypos, "Saves/sets window Y-coordinate when windowed, requires \\vid_restart." );
 
-#ifdef _NOMAD_DEBUG
-    r_debugCamera = Cvar_Get( "r_debugCamera", "1", CVAR_TEMP | CVAR_PROTECTED | CVAR_LATCH );
-#else
     r_debugCamera = Cvar_Get( "r_debugCamera", "0", CVAR_TEMP | CVAR_PROTECTED | CVAR_LATCH );
-#endif
     Cvar_SetDescription( r_debugCamera, "Overrides the camera controller for renderer debugging." );
     r_debugCameraSpeed = Cvar_Get( "r_debugCameraSpeed", "1.15", CVAR_TEMP | CVAR_PROTECTED | CVAR_LATCH );
     Cvar_SetDescription( r_debugCameraSpeed, "Sets the movement speed of the debugger camera." );
@@ -855,12 +894,15 @@ void G_Init(void)
     // register game commands
     //
 
-    Cmd_AddCommand("demo", G_PlayDemo_f);
-    Cmd_AddCommand("vid_restart", G_Vid_Restart_f);
-    Cmd_AddCommand("snd_restart", G_Snd_Restart_f);
-    Cmd_AddCommand("modelist", G_ModeList_f);
-    Cmd_AddCommand("maplist", G_MapInfo_f);
-    Cmd_AddCommand("vm_restart", G_VM_Restart_f);
+    Cmd_AddCommand( "demo", G_PlayDemo_f );
+    Cmd_AddCommand( "vid_restart", G_Vid_Restart_f );
+    Cmd_AddCommand( "snd_restart", G_Snd_Restart_f );
+    Cmd_AddCommand( "modelist", G_ModeList_f );
+    Cmd_AddCommand( "maplist", G_MapInfo_f );
+    Cmd_AddCommand( "vm_restart", G_VM_Restart_f );
+    Cmd_AddCommand( "togglephotomode", G_TogglePhotoMode_f );
+
+    G_InitInput();
 
     Con_Printf( "----- Game State Initialization Complete ----\n" );
 }
@@ -887,12 +929,15 @@ void G_Shutdown(qboolean quit)
     G_ShutdownVMs();
     G_ShutdownRenderer(quit ? REF_UNLOAD_DLL : REF_DESTROY_WINDOW);
 
-    Cmd_RemoveCommand("demo");
-    Cmd_RemoveCommand("vid_restart");
-    Cmd_RemoveCommand("snd_restart");
-    Cmd_RemoveCommand("modelist");
-    Cmd_RemoveCommand("maplist");
-    Cmd_RemoveCommand("vm_restart");
+    Cmd_RemoveCommand( "demo" );
+    Cmd_RemoveCommand( "vid_restart" );
+    Cmd_RemoveCommand( "snd_restart" );
+    Cmd_RemoveCommand( "modelist" );
+    Cmd_RemoveCommand( "maplist" );
+    Cmd_RemoveCommand( "vm_restart" );
+    Cmd_RemoveCommand( "togglephotomode" );
+
+    G_ShutdownInput();
 
     Key_SetCatcher( 0 );
     Con_Printf( "-------------------------------\n");
@@ -1013,23 +1058,25 @@ static void G_MoveCamera( void )
         return;
     }
 
+    glm::vec3& p = pos;
+
     if (Key_IsDown( KEY_W )) {
-        pos.y += 0.05f;
+        p.y += 0.05f;
     }
     if (Key_IsDown( KEY_S )) {
-        pos.y -= 0.05f;
+        p.y -= 0.05f;
     }
     if (Key_IsDown( KEY_A )) {
-        pos.x -= 0.05f;
+        p.x -= 0.05f;
     }
     if (Key_IsDown( KEY_D )) {
-        pos.x += 0.05f;
+        p.x += 0.05f;
     }
     if (Key_IsDown( KEY_N )) {
-        pos.z += 0.05f;
+        p.z += 0.05f;
     }
     if (Key_IsDown( KEY_M )) {
-        pos.z -= 0.05f;
+        p.z -= 0.05f;
     }
 }
 

@@ -1260,7 +1260,7 @@ static char **FS_ListFilteredFiles(const char *path, const char *extension, cons
 		return NULL;
 	}
 
-	listCopy = (char **)Z_Malloc((nfiles + 1) * sizeof(*listCopy), TAG_STATIC);
+	listCopy = (char **)Z_Malloc( (nfiles + 1) * sizeof(*listCopy), TAG_STATIC );
 	for (i = 0; i < nfiles; i++) {
 		listCopy[i] = list[i];
 	}

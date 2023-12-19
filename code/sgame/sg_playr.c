@@ -85,11 +85,6 @@ static void P_SetLegsAnim( int anim )
 	sg.playr.foot_frame = anim;
 }
 
-void P_Thinker( sgentity_t *self )
-{
-
-}
-
 static void PM_Friction( pmove_t *pm )
 {
 	float speed;
@@ -284,6 +279,10 @@ static void PM_WallMove( pmove_t *pm )
 	pm->wallTime++;
 }
 
+static void PM_WalkMove( pmove_t *pm )
+{
+}
+
 static pmove_t pm;
 
 void P_MeleeThink( sgentity_t *self )
@@ -342,6 +341,11 @@ static void P_SetMovementDir( int rightmove, int forwardmove )
 	}
 }
 
+void P_Thinker( sgentity_t *self )
+{
+
+}
+
 void SG_SendUserCmd( int forwardmove, int rightmove, int upmove, uint32_t buttons )
 {
     P_SetMovementDir( rightmove, forwardmove );
@@ -362,16 +366,23 @@ void SG_InitPlayer( void )
     
     // initialize player state
     memset( &sg.playr, 0, sizeof(sg.playr) );
-    memset( &sprites_thenomad, 0, sizeof(spritesheet_t) );
 
+	sg.playr.foot_frame = 0;
+	sg.playr.foot_sprite = SPR_PLAYR_LEGS0_7_R;
+	sg.playr.ent = ent;
+
+	ent->facing = 0;
     ent->hShader = sg.media.raio_shader;
-    ent->sheet = &sprites_thenomad;
+	ent->hSpriteSheet = sg.media.raio_sprites;
+	ent->sprite = SPR_PLAYR_IDLE_R;
+	ent->frame = 0;
     ent->entPtr = &sg.playr;
 
-    Ent_SetState( ent, S_PLAYR_IDLE );
+	ent->width = 0.5f;
+	ent->height = 0.5f;
 
-    // generatic the sprite sheet
-    SG_GenerateSpriteSheetTexCoords( &sprites_thenomad, 32, 32, 512, 512 );
+    Ent_SetState( ent, S_PLAYR_IDLE );
+	Ent_BuildBounds( ent );
 
     // mark as allocated
     sg.playrReady = qtrue;

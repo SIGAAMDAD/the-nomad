@@ -117,7 +117,8 @@ typedef struct {
 	// size display elements
 	void (*BeginRegistration)( gpuConfig_t *config );
 	nhandle_t (*RegisterShader)( const char *name );
-    nhandle_t (*RegisterAnimation)( const char *name );
+    nhandle_t (*RegisterSpriteSheet)( const char *npath, uint32_t sheetWidth, uint32_t sheetHeight, uint32_t spriteWidth, uint32_t spriteHeight );
+    nhandle_t (*RegisterSprite)( nhandle_t hSpriteSheet, uint32_t index );
 	void (*LoadWorld)( const char *name );
 
 	// EndRegistration will draw a tiny polygon with each texture, forcing
@@ -129,6 +130,7 @@ typedef struct {
 	void (*ClearScene)( void );
     void (*BeginScene)( const renderSceneRef_t *fd );
     void (*EndScene)( void );
+    void (*AddSpriteToScene)( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t hSprite );
     void (*AddPolyToScene)( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
     void (*AddPolyListToScene)( const poly_t *polys, uint32_t numPolys );
     void (*AddEntityToScene)( const renderEntityRef_t *ent );

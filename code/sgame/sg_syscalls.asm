@@ -9,7 +9,7 @@ equ trap_Key_GetCatcher                     -6
 equ trap_Key_ClearStates                    -7
 equ trap_Key_GetKey                         -8
 equ G_CastRay                               -9
-equ G_SetCameraInfo                         -10
+equ G_SetCameraData                         -10
 equ G_LoadMap                               -11
 equ G_SetBindNames                          -12
 equ Sys_GetGPUConfig                        -13
@@ -61,6 +61,9 @@ equ G_LinkEntity                            -58
 equ G_UnlinkEntity                          -59
 equ G_SoundRecursive                        -60
 equ trap_CheckWallHit                       -61
+equ RE_RegisterSpriteSheet                  -62
+equ RE_RegisterSprite                       -63
+equ RE_AddSpriteToScene                     -64
 
 equ ImGui_BeginWindow                       -401
 equ ImGui_EndWindow                         -402

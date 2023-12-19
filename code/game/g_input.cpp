@@ -43,7 +43,7 @@ static cvar_t *g_debugMove;
 
 static void IN_KeyDown( kbutton_t *b ) {
 	const char *c;
-    uint32_t k;
+    int32_t k;
 
 	c = Cmd_Argv( 1 );
 	if ( c[0] ) {
@@ -81,7 +81,7 @@ static void IN_KeyDown( kbutton_t *b ) {
 static void IN_KeyUp( kbutton_t *b ) {
 	unsigned uptime;
 	const char *c;
-	uint32_t k;
+	int32_t k;
 
 	c = Cmd_Argv( 1 );
 	if ( c[0] ) {
@@ -529,6 +529,7 @@ usercmd_t G_CreateNewCommand( void ) {
 
 	// generate a command for this frame
 	gi.cmdNumber++;
+	
 	return G_CreateCmd();
 }
 

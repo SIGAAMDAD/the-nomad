@@ -343,7 +343,7 @@ qboolean Con_HistoryGetPrev(field_t *field)
     else
         bresult = qfalse;
 
-	*field = historyEditLines[historyLine % COMMAND_HISTORY];
+	memcpy( field, &historyEditLines[historyLine % COMMAND_HISTORY], sizeof(*field) );
 
     return bresult;
 }
@@ -373,7 +373,7 @@ qboolean Con_HistoryGetNext( field_t *field )
 		return bresult;
 	}
 
-	*field = historyEditLines[historyLine % COMMAND_HISTORY];
+	memcpy( field, &historyEditLines[historyLine % COMMAND_HISTORY], sizeof(*field) );
 
 	return qtrue;
 }

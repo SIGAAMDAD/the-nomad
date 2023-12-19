@@ -62,6 +62,18 @@ static intptr_t G_SGameSystemCalls( intptr_t *args )
     case SG_G_UNLINK_ENTITY:
         g_world.UnlinkEntity( (linkEntity_t *)VMA( 1 ) );
         return 0;
+    case SG_RE_ADDSPRITETOSCENE:
+        VM_CHECKBOUNDS( args[1], sizeof(vec3_t) );
+        re.AddSpriteToScene( (const float *)VMA( 1 ), args[2], args[3] );
+        return 0;
+    case SG_RE_REGISTERSPRITESHEET:
+        return re.RegisterSpriteSheet( (const char *)VMA( 1 ), args[2], args[3], args[4], args[5] );
+    case SG_RE_REGISTERSPRITE:
+        return re.RegisterSprite( args[1], args[2] );
+    case SG_SETCAMERAINFO:
+        VM_CHECKBOUNDS( args[1], sizeof(vec2_t) );
+        G_SetCameraData( (const float *)VMA( 1 ), VMF( 2 ), VMF( 3 ) );
+        return 0;
     case SG_CVAR_UPDATE:
         VM_CHECKBOUNDS( args[1], sizeof(vmCvar_t) );
         Cvar_Update( (vmCvar_t *)VMA( 1 ), args[2] );

@@ -13,9 +13,12 @@ uint64_t r_firstScenePoly;
 
 uint64_t r_numPolyVerts;
 
+uint64_t r_numQuads;
+
 void R_InitNextFrame(void)
 {
     backendData->commandList.usedBytes = 0;
+    backendData->numIndices = 0;
 
     r_firstSceneDLight = 0;
     r_numDLights = 0;
@@ -27,12 +30,61 @@ void R_InitNextFrame(void)
     r_numPolys = 0;
 
     r_numPolyVerts = 0;
+
+    r_numQuads = 0;
 }
 
-GDR_EXPORT void RE_AddPolyToScene(nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts)
+void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t hSprite )
+{
+    srfQuad_t *quad;
+    glIndex_t *idx;
+
+    if ( !rg.registered ) {
+        return;
+    }
+
+    if ( r_numQuads + 1 >= r_maxQuads->i ) {
+        ri.Printf( PRINT_DEVELOPER, "RE_AddQuadToScene: r_maxQuads hit, dropping 4 vertices\n" );
+        return;
+    }
+
+    quad = &backendData->quads[r_numQuads];
+
+    VectorCopy( quad->origin, origin );
+    quad->hSprite = hSprite;
+    quad->hSpriteSheet = hSpriteSheet;
+
+#if 0
+    idx = backendData->indices;
+
+    idx[backendData->numIndices + 0] = r_numPolyVerts + 0;
+    idx[backendData->numIndices + 1] = r_numPolyVerts + 1;
+    idx[backendData->numIndices + 2] = r_numPolyVerts + 2;
+
+    idx[backendData->numIndices + 3] = r_numPolyVerts + 3;
+    idx[backendData->numIndices + 4] = r_numPolyVerts + 2;
+    idx[backendData->numIndices + 5] = r_numPolyVerts + 0;
+
+    backendData->numIndices += 6;
+#else
+    // generate fan indexes into the buffer
+    for ( uint32_t i = 0; i < 2; i++ ) {
+        backendData->indices[backendData->numIndices + 0] = r_numPolyVerts;
+        backendData->indices[backendData->numIndices + 1] = r_numPolyVerts + i + 1;
+        backendData->indices[backendData->numIndices + 2] = r_numPolyVerts + i + 2;
+        backendData->numIndices += 3;
+    }
+#endif
+
+    r_numQuads++;
+}
+
+void RE_AddPolyToScene(nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts)
 {
     uint32_t i, offset;
+    uint32_t *idx;
     polyVert_t *vt;
+    srfPoly_t *poly;
 
     if (!rg.registered) {
         return;
@@ -43,22 +95,40 @@ GDR_EXPORT void RE_AddPolyToScene(nhandle_t hShader, const polyVert_t *verts, ui
         return;
     }
 
+    poly = &backendData->polys[r_numPolys];
     vt = &backendData->polyVerts[r_numPolyVerts];
-    memcpy(vt, verts, sizeof(*vt) * numVerts);
+
+    poly->verts = vt;
+    poly->hShader = hShader;
+    poly->numVerts = numVerts;
+
+    memcpy( vt, verts, sizeof(*vt) * numVerts );
+
+    idx = backendData->indices;
+
+    idx[backendData->numIndices + 0] = r_numPolyVerts;
+    idx[backendData->numIndices + 1] = r_numPolyVerts + 1;
+    idx[backendData->numIndices + 2] = r_numPolyVerts + 2;
+
+    idx[backendData->numIndices + 3] = r_numPolyVerts + 3;
+    idx[backendData->numIndices + 4] = r_numPolyVerts + 2;
+    idx[backendData->numIndices + 5] = r_numPolyVerts + 1;
+
+    backendData->numIndices += 6;
 
     // generate fan indexes into the buffer
-    for (i = 0; i < numVerts - 2; i++) {
+/*    for (i = 0; i < numVerts - 2; i++) {
         backendData->indices[backendData->numIndices + 0] = r_numPolyVerts;
         backendData->indices[backendData->numIndices + 1] = r_numPolyVerts + i + 1;
         backendData->indices[backendData->numIndices + 2] = r_numPolyVerts + i + 2;
         backendData->numIndices += 3;
-    }
+    }*/
 
     r_numPolyVerts += numVerts;
     r_numPolys++;
 }
 
-GDR_EXPORT void RE_AddPolyListToScene(const poly_t *polys, uint32_t numPolys)
+void RE_AddPolyListToScene(const poly_t *polys, uint32_t numPolys)
 {
     uint32_t i;
 
@@ -76,7 +146,7 @@ GDR_EXPORT void RE_AddPolyListToScene(const poly_t *polys, uint32_t numPolys)
     }
 }
 
-GDR_EXPORT void RE_AddEntityToScene( const renderEntityRef_t *ent )
+void RE_AddEntityToScene( const renderEntityRef_t *ent )
 {
     if (!rg.registered) {
         return;
@@ -100,7 +170,7 @@ GDR_EXPORT void RE_AddEntityToScene( const renderEntityRef_t *ent )
     r_numEntities++;
 }
 
-GDR_EXPORT void RE_BeginScene(const renderSceneRef_t *fd)
+void RE_BeginScene(const renderSceneRef_t *fd)
 {
     assert(fd);
 
@@ -123,21 +193,21 @@ GDR_EXPORT void RE_BeginScene(const renderSceneRef_t *fd)
     backend.refdef.drawn = qfalse;
 }
 
-GDR_EXPORT void RE_ClearScene(void)
+void RE_ClearScene(void)
 {
     r_firstSceneDLight = r_numDLights;
     r_firstSceneEntity = r_numEntities;
     r_firstScenePoly = r_numPolys;
 }
 
-GDR_EXPORT void RE_EndScene(void)
+void RE_EndScene(void)
 {
     r_firstSceneDLight = r_numDLights;
     r_firstSceneEntity = r_numEntities;
     r_firstScenePoly = r_numPolys;
 }
 
-GDR_EXPORT void RE_RenderScene( const renderSceneRef_t *fd )
+void RE_RenderScene( const renderSceneRef_t *fd )
 {
     viewData_t parms;
     uint64_t startTime;

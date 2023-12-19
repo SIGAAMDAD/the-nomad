@@ -64,6 +64,7 @@ cvar_t *r_drawBuffer;
 cvar_t *r_customWidth;
 cvar_t *r_customHeight;
 
+cvar_t *r_maxQuads;
 cvar_t *r_maxPolys;
 cvar_t *r_maxDLights;
 cvar_t *r_maxEntities;
@@ -631,9 +632,12 @@ static void R_Register(void)
     r_drawBuffer = ri.Cvar_Get("r_drawBuffer", "GL_BACK", CVAR_DEV);
     ri.Cvar_SetDescription( r_drawBuffer, "Sets which frame buffer to draw into." );
 
+    r_maxQuads = ri.Cvar_Get( "r_maxQuads", va("%lu", (uint64_t)MAX_BATCH_QUADS), CVAR_LATCH | CVAR_PROTECTED );
+    ri.Cvar_SetDescription( r_maxQuads, "Sets the maximum amount of quad polygons that can be processed per scene.\n"
+                                        "NOTE: tehree can be multiple scenes rendered in a single frame." );
     r_maxPolys = ri.Cvar_Get("r_maxPolys", va("%lu", (uint64_t)MAX_BATCH_QUADS), CVAR_LATCH | CVAR_PROTECTED);
     ri.Cvar_SetDescription(r_maxPolys, "Sets the maximum amount of polygons that can be processed per scene.\n"
-                                            "NOTE: there can be multiple scenes rendered in a single frame.");
+                                        "NOTE: there can be multiple scenes rendered in a single frame.");
     r_maxDLights = ri.Cvar_Get( "r_maxDLights", va("%lu", (uint64_t)MAX_DLIGHTS), CVAR_LATCH | CVAR_PROTECTED );
     ri.Cvar_SetDescription( r_maxDLights, "Sets the maximum amount of dynamic lights that can be processed per scene.\n"
                                             "NOTE: there can be multiple scenes rendered in a single frame." );
@@ -823,6 +827,7 @@ static void R_AllocBackend( void ) {
     size += PAD( sizeof(glIndex_t) * r_maxPolys->i * 6, sizeof(uintptr_t) );
     size += PAD( sizeof(renderEntityDef_t) * r_maxEntities->i, sizeof(uintptr_t) );
     size += PAD( sizeof(dlight_t) * r_maxEntities->i, sizeof(uintptr_t) );
+    size += PAD( sizeof(srfQuad_t) * r_maxQuads->i, sizeof(uintptr_t) );
     
     backendData = ri.Malloc( size );
     backendData->polys = (srfPoly_t *)(backendData + 1);
@@ -830,6 +835,7 @@ static void R_AllocBackend( void ) {
     backendData->indices = (glIndex_t *)(backendData->polyVerts + (r_maxPolys->i * 4));
     backendData->dlights = (dlight_t *)(backendData->indices + (r_maxPolys->i * 6));
     backendData->entities = (renderEntityDef_t *)(backendData->entities + r_maxDLights->i);
+    backendData->quads = (srfQuad_t *)( backendData->entities + r_maxEntities->i );
 }
 
 static void R_CameraInfo_f( void ) {
@@ -845,7 +851,14 @@ static void R_CameraInfo_f( void ) {
     ri.Printf( PRINT_INFO, "Origin: %f, %f\n", glState.viewData.camera.origin[0], glState.viewData.camera.origin[1] );
     ri.Printf( PRINT_INFO, "Zoom: %f\n", glState.viewData.camera.origin[2] );
     ri.Printf( PRINT_INFO, "Aspect: %f\n", glState.viewData.camera.aspect );
-    
+}
+
+static void R_UnloadWorld_f( void ) {
+    ri.Printf( PRINT_INFO, "Unloading world...\n" );
+    R_ShutdownBuffer( rg.world->buffer );
+
+    rg.world = NULL;
+    rg.worldLoaded = qfalse;
 }
 
 void R_Init(void)
@@ -893,6 +906,7 @@ void R_Init(void)
     R_InitImGui();
 
     ri.Cmd_AddCommand( "camerainfo", R_CameraInfo_f );
+    ri.Cmd_AddCommand( "unloadworld", R_UnloadWorld_f );
 
     // print info
     GpuInfo_f();
@@ -911,10 +925,12 @@ void RE_Shutdown(refShutdownCode_t code)
 {
     ri.Printf(PRINT_INFO, "RE_Shutdown( %i )\n", code);
 
-    ri.Cmd_RemoveCommand("texturelist");
-    ri.Cmd_RemoveCommand("screenshot");
-    ri.Cmd_RemoveCommand("gpuinfo");
-    ri.Cmd_RemoveCommand("gpumeminfo");
+    ri.Cmd_RemoveCommand( "texturelist" );
+    ri.Cmd_RemoveCommand( "screenshot" );
+    ri.Cmd_RemoveCommand( "gpuinfo" );
+    ri.Cmd_RemoveCommand( "gpumeminfo" );
+    ri.Cmd_RemoveCommand( "camerainfo" );
+    ri.Cmd_RemoveCommand( "unloadworld" );
 
     if (rg.registered) {
         R_IssuePendingRenderCommands();
@@ -929,10 +945,10 @@ void RE_Shutdown(refShutdownCode_t code)
     if (code != REF_KEEP_CONTEXT) {
         ri.GLimp_Shutdown(code == REF_UNLOAD_DLL ? qtrue : qfalse);
 
-        memset(&glConfig, 0, sizeof(glConfig));
-        memset(&glState, 0, sizeof(glState));
-        memset(&backend, 0, sizeof(backend));
-        memset(&glContext, 0, sizeof(glContext));
+        memset( &glConfig, 0, sizeof(glConfig) );
+        memset( &glState, 0, sizeof(glState) );
+        memset( &backend, 0, sizeof(backend) );
+        memset( &glContext, 0, sizeof(glContext) );
     }
 
     // free everything
@@ -994,17 +1010,20 @@ GDR_EXPORT renderExport_t *GDR_DECL GetRenderAPI(uint32_t version, refimport_t *
     re.BeginFrame = RE_BeginFrame;
     re.EndFrame = RE_EndFrame;
 
+    re.RegisterSprite = RE_RegisterSprite;
+    re.RegisterSpriteSheet = RE_RegisterSpriteSheet;
     re.RegisterShader = RE_RegisterShader;
+
     re.LoadWorld = RE_LoadWorldMap;
     re.EndRegistration = RE_EndRegistration;
     
     re.AddPolyListToScene = RE_AddPolyListToScene;
+    re.AddSpriteToScene = RE_AddSpriteToScene;
     re.AddPolyToScene = RE_AddPolyToScene;
     re.AddEntityToScene = RE_AddEntityToScene;
     re.SetColor = RE_SetColor;
     re.DrawImage = RE_DrawImage;
 
-    re.RegisterAnimation = NULL;
     re.CanMinimize = NULL;
     re.ThrottleBackend = NULL;
     re.FinishBloom = NULL;

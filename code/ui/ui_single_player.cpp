@@ -238,6 +238,10 @@ void SinglePlayerMenu_Draw( void )
             ui->SetState( STATE_NONE );
             ui->SetActiveMenu( UI_MENU_NONE );
             gi.state = GS_LEVEL;
+            Key_SetCatcher( 0 );
+            Key_ClearStates();
+
+            VM_Call( sgvm, 0, SGAME_INIT );
             VM_Call( sgvm, 1, SGAME_LOADLEVEL, 0 ); // start a new game
         }
         break; }

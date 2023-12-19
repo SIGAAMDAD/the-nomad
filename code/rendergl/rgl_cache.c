@@ -39,11 +39,14 @@ void R_VaoUnpackNormal(vec3_t v, int16_t *pack)
 	v[2] = pack[2] / 32767.0f;
 }
 
-static vertexBuffer_t *hashTable[MAX_RENDER_BUFFERS];
-
 static qboolean R_BufferExists(const char *name)
 {
-    return hashTable[Com_GenerateHashValue(name, MAX_RENDER_BUFFERS)] != NULL;
+	for ( uint64_t i = 0; i < rg.numBuffers; i++ ) {
+		if ( !N_stricmp( name, rg.buffers[i]->name ) ) {
+			return qtrue;
+		}
+	}
+	return qfalse;
 }
 
 static void R_SetVertexPointers(const vertexAttrib_t attribs[ATTRIB_INDEX_COUNT])
@@ -171,7 +174,6 @@ void R_ShutdownGPUBuffers(void)
 	}
 
 	memset( rg.buffers, 0, sizeof(rg.buffers) );
-	memset( hashTable, 0, sizeof(hashTable) );
 	rg.numBuffers = 0;
 }
 
@@ -222,7 +224,6 @@ static void R_InitGPUMemory(GLenum target, GLuint id, void *data, uint32_t size,
 vertexBuffer_t *R_AllocateBuffer(const char *name, void *vertices, uint32_t verticesSize, void *indices, uint32_t indicesSize, bufferType_t type)
 {
     vertexBuffer_t *buf;
-    uint64_t hash;
 	GLenum usage;
 	uint32_t namelen;
 
@@ -248,12 +249,10 @@ vertexBuffer_t *R_AllocateBuffer(const char *name, void *vertices, uint32_t vert
 		ri.Error(ERR_DROP, "R_AllocateBuffer: MAX_RENDER_BUFFERS hit");
 	}
 
-    hash = Com_GenerateHashValue(name, MAX_RENDER_BUFFERS);
-
     // these buffers are only allocated on a per vm
     // and map basis, so use the hunk
-    buf = rg.buffers[rg.numBuffers] = ri.Hunk_Alloc(sizeof(*buf), h_low);
-    hashTable[hash] = buf;
+    buf = rg.buffers[rg.numBuffers] = ri.Malloc( sizeof(*buf) );
+	memset( buf, 0, sizeof(*buf) );
     rg.numBuffers++;
 
     buf->type = type;
@@ -359,6 +358,9 @@ void R_ShutdownBuffer( vertexBuffer_t *vbo )
 		}
 		nglDeleteBuffers(1, (const GLuint *)&vbo->index.id);
 	}
+
+	rg.numBuffers--;
+	ri.Free( vbo );
 }
 
 

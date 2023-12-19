@@ -136,6 +136,10 @@ static void PauseMenu_Draw( void )
         if (ui->Menu_Option( menu.exitToMainMenu->value )) {
             ui->SetState( STATE_MAIN );
             ui->SetActiveMenu( UI_MENU_MAIN );
+            gi.mapLoaded = qfalse;
+            VM_Call( sgvm, 0, SGAME_ENDLEVEL );
+            VM_Call( sgvm, 0, SGAME_SHUTDOWN );
+            Cbuf_ExecuteText( EXEC_APPEND, "unloadworld\n" );
         }
     }
     ImGui::EndTable();

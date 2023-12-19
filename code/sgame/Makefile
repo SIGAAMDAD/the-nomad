@@ -5,7 +5,7 @@ else
 CC			= distcc x86_64-w64-mingw32-gcc
 endif
 
-CFLAGS		= -Ofast -shared -fPIC -std=c99
+CFLAGS		= -Ofast -shared -fPIC -std=c99 -g -Og
 INCLUDE		= -I.
 COMPILE		= $(CC) $(CFLAGS) $(INCLUDE) -DSGAME -DSGAME_HARD_LINKED -D_NOMAD_VERSION=1 -D_NOMAD_VERSION_UPDATE=1 -D_NOMAD_VERSION_PATCH=0 -o $@ -c $< \
 			-Werror=implicit-function-declaration -Werror=incompatible-pointer-types -Wpedantic

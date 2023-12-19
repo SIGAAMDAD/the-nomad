@@ -441,271 +441,6 @@ void Key_ParseBinding(uint32_t key, qboolean down, uint32_t time)
 	}
 }
 
-extern ImGuiInputTextCallbackData conCallbackData;
-
-void Field_Paste( field_t *edit )
-{
-	char *cbd;
-	uint32_t pasteLen, i;
-
-	cbd = Sys_GetClipboardData();
-
-	if ( !cbd ) {
-		return;
-	}
-
-	// send as if typed, so insert / overstrike works properly
-	pasteLen = strlen( cbd );
-	for ( i = 0 ; i < pasteLen ; i++ ) {
-		Field_CharEvent( edit, cbd[i] );
-	}
-
-	Z_Free( cbd );
-}
-
-/*
-=================
-Field_NextWord
-=================
-*/
-static void Field_SeekWord( field_t *edit, int direction )
-{
-	if ( direction > 0 ) {
-		while ( edit->buffer[ edit->cursor ] == ' ' )
-			edit->cursor++;
-		while ( edit->buffer[ edit->cursor ] != '\0' && edit->buffer[ edit->cursor ] != ' ' )
-			edit->cursor++;
-		while ( edit->buffer[ edit->cursor ] == ' ' )
-			edit->cursor++;
-	} else {
-		while ( edit->cursor > 0 && edit->buffer[ edit->cursor-1 ] == ' ' )
-			edit->cursor--;
-		while ( edit->cursor > 0 && edit->buffer[ edit->cursor-1 ] != ' ' )
-			edit->cursor--;
-		if ( edit->cursor == 0 && ( edit->buffer[ 0 ] == '/' || edit->buffer[ 0 ] == '\\' ) )
-			edit->cursor++;
-	}
-}
-
-/*
-==================
-Field_CharEvent
-==================
-*/
-static void Field_CharEvent( field_t *edit, uint32_t ch ) {
-	uint32_t len;
-
-	if ( ch == 'v' - 'a' + 1 ) {	// ctrl-v is paste
-		Field_Paste( edit );
-		return;
-	}
-
-	if ( ch == 'c' - 'a' + 1 ) {	// ctrl-c clears the field
-		Field_Clear( edit );
-		return;
-	}
-
-	len = strlen( edit->buffer );
-
-	if ( ch == 'h' - 'a' + 1 )	{	// ctrl-h is backspace
-		if ( edit->cursor > 0 ) {
-			memmove( edit->buffer + edit->cursor - 1,
-				edit->buffer + edit->cursor, len + 1 - edit->cursor );
-			edit->cursor--;
-			if ( edit->cursor < edit->scroll )
-			{
-				edit->scroll--;
-			}
-		}
-		return;
-	}
-
-	if ( ch == 'a' - 'a' + 1 ) {	// ctrl-a is home
-		edit->cursor = 0;
-		edit->scroll = 0;
-		return;
-	}
-
-	if ( ch == 'e' - 'a' + 1 ) {	// ctrl-e is end
-		edit->cursor = len;
-		edit->scroll = edit->cursor - edit->widthInChars;
-		return;
-	}
-
-	//
-	// ignore any other non printable chars
-	//
-	if ( ch < ' ' ) {
-		return;
-	}
-
-	if ( key_overstrikeMode ) {
-		// - 2 to leave room for the leading slash and trailing \0
-		if ( edit->cursor == MAX_EDIT_LINE - 2 ) {
-			return;
-		}
-		edit->buffer[edit->cursor] = ch;
-		edit->cursor++;
-	} else {	// insert mode
-		// - 2 to leave room for the leading slash and trailing \0
-		if ( len == MAX_EDIT_LINE - 2 ) {
-			return; // all full
-		}
-		memmove( edit->buffer + edit->cursor + 1,
-			edit->buffer + edit->cursor, len + 1 - edit->cursor );
-		edit->buffer[edit->cursor] = ch;
-		edit->cursor++;
-	}
-
-
-	if ( edit->cursor >= edit->widthInChars ) {
-		edit->scroll++;
-	}
-
-	if ( edit->cursor == len + 1) {
-		edit->buffer[edit->cursor] = '\0';
-	}
-}
-
-/*
-=================
-Field_KeyDownEvent
-
-Performs the basic line editing functions for the console,
-in-game talk, and menu fields
-
-Key events are used for non-printable characters, others are gotten from char events.
-=================
-*/
-static void Field_KeyDownEvent( field_t *edit, int key ) {
-	uint32_t len;
-
-	// shift-insert is paste
-	if ( ( ( key == KEY_INSERT ) /* || ( key == K_KP_INS ) ) */ ) && keys[KEY_LSHIFT].down ) {
-		Field_Paste( edit );
-		return;
-	}
-
-	len = strlen( edit->buffer );
-
-	switch ( key ) {
-/*	case KEY_BACKSPACE:
-		if ( edit->cursor < len ) {
-			memmove( edit->buffer + edit->cursor,
-				edit->buffer + edit->cursor + 1, len - edit->cursor );
-		}
-		break; */
-	case KEY_RIGHT:
-		if ( edit->cursor < len ) {
-			if ( keys[ KEY_LCTRL ].down ) {
-				Field_SeekWord( edit, 1 );
-			} else {
-				edit->cursor++;
-			}
-		}
-		break;
-	case KEY_LEFT:
-		if ( edit->cursor > 0 ) {
-			if ( keys[ KEY_LCTRL ].down ) {
-				Field_SeekWord( edit, -1 );
-			} else {
-				edit->cursor--;
-			}
-		}
-		break;
-	case KEY_HOME:
-		edit->cursor = 0;
-		break;
-	case KEY_END:
-		edit->cursor = len;
-		break;
-	case KEY_INSERT:
-		key_overstrikeMode = !key_overstrikeMode;
-		break;
-	default:
-		break;
-	};
-
-	// Change scroll if cursor is no longer visible
-	if ( edit->cursor < edit->scroll ) {
-		edit->scroll = edit->cursor;
-	} else if ( edit->cursor >= edit->scroll + edit->widthInChars && edit->cursor <= len ) {
-		edit->scroll = edit->cursor - edit->widthInChars + 1;
-	}
-}
-
-
-static void Console_Key( int key )
-{
-	// ctrl-L clears screen
-	if ( key == KEY_L && keys[ KEY_LCTRL ].down ) {
-		Cbuf_AddText( "clear\n" );
-		return;
-	}
-
-	// enter finishes the line
-	if ( key == KEY_ENTER || key == KEY_KP_ENTER ) {
-		// if not in the game explicitly prepend a slash if needed
-		if ( gi.state == GS_LEVEL
-			&& g_consoleField.buffer[0] != '\0'
-			&& g_consoleField.buffer[0] != '\\'
-			&& g_consoleField.buffer[0] != '/' ) {
-			char	temp[MAX_EDIT_LINE-1];
-
-			N_strncpyz( temp, g_consoleField.buffer, sizeof( temp ) );
-			Com_snprintf( g_consoleField.buffer, sizeof( g_consoleField.buffer ), "\\%s", temp );
-			g_consoleField.cursor++;
-		}
-
-		Con_Printf( "]%s\n", g_consoleField.buffer );
-
-		// leading slash is an explicit command
-		if ( g_consoleField.buffer[0] == '\\' || g_consoleField.buffer[0] == '/' ) {
-			Cbuf_AddText( g_consoleField.buffer+1 );	// valid command
-			Cbuf_AddText( "\n" );
-		} else {
-			// other text will be chat messages
-			if ( !g_consoleField.buffer[0] ) {
-				return;	// empty lines just scroll the console without adding to history
-			} else {
-	//			Cbuf_AddText( "cmd say " );
-	//			Cbuf_AddText( g_consoleField.buffer );
-	//			Cbuf_AddText( "\n" );
-			}
-		}
-
-		// copy line to history buffer
-		Con_SaveField( &g_consoleField );
-
-		Field_Clear( &g_consoleField );
-		g_consoleField.widthInChars = g_console_field_width;
-	}
-
-	// command completion
-
-	if ( key == KEY_TAB || key == KEY_KP_TAB ) {
-		Field_AutoComplete( &g_consoleField );
-		return;
-	}
-
-	// command history (ctrl-p ctrl-n for unix style)
-
-	if ( ( key == KEY_WHEEL_UP && keys[KEY_LSHIFT].down ) || key == KEY_UP
-		|| ( ( tolower( key ) == 'p' ) && keys[KEY_LCTRL].down ) )
-	{
-		Con_HistoryGetPrev( &g_consoleField );
-	}
-
-	if ( ( key == KEY_WHEEL_DOWN && keys[KEY_LSHIFT].down ) || key == KEY_DOWN
-		|| ( ( tolower( key ) == 'n' ) && keys[KEY_LCTRL].down ) )
-	{
-		Con_HistoryGetNext( &g_consoleField );
-	}
-
-	// pass to the normal editline routine
-	Field_KeyDownEvent( &g_consoleField, key );
-}
-
 static void G_KeyDownEvent(uint32_t key, uint32_t time)
 {
 	keys[key].down = qtrue;
@@ -776,9 +511,6 @@ static void G_KeyDownEvent(uint32_t key, uint32_t time)
 			VM_Call( sgvm, 2, SGAME_KEY_EVENT, key, qtrue );
 		}
 	}
-	else if ( Key_GetCatcher() & KEYCATCH_CONSOLE ) {
-		Console_Key( key );
-	}
 	else {
 		Key_ParseBinding( key, qtrue, time );
 	}
@@ -838,6 +570,29 @@ void G_KeyEvent(uint32_t key, qboolean down, uint32_t time)
 		G_KeyUpEvent(key, time);
 }
 
+static void Key_PrintCatchers_f( void )
+{
+	Con_Printf( "Key Catcher(s): " );
+	
+	if ( Key_GetCatcher() & KEYCATCH_CONSOLE ) {
+		Con_Printf( "Console " );
+	}
+	
+	if ( Key_GetCatcher() & KEYCATCH_SGAME ) {
+		Con_Printf( "SGame " );
+	}
+
+	if ( Key_GetCatcher() & KEYCATCH_UI ) {
+		Con_Printf( "UI" );
+	}
+
+	if ( !Key_GetCatcher() ) {
+		Con_Printf( "None" );
+	}
+
+	Con_Printf( "\n" );
+}
+
 void Com_InitKeyCommands( void )
 {
 	// register client functions
@@ -847,6 +602,7 @@ void Com_InitKeyCommands( void )
 	Cmd_SetCommandCompletionFunc( "unbind", Key_CompleteUnbind );
 	Cmd_AddCommand( "unbindall", Key_Unbindall_f );
 	Cmd_AddCommand( "bindlist", Key_Bindlist_f );
+	Cmd_AddCommand( "printcatchers", Key_PrintCatchers_f );
 }
 
 /*
@@ -864,7 +620,6 @@ void Key_ClearStates( void )
 		keys[i].repeats = 0;
 	}
 }
-
 
 static uint32_t keyCatchers = 0;
 

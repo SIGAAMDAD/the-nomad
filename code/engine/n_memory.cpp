@@ -953,6 +953,11 @@ typedef struct zone_stats_s {
 	uint64_t zoneBlocks;
 	uint64_t zoneBytes;
 	uint64_t rendererBytes;
+	uint64_t gameBytes;
+	uint64_t imguiBytes;
+	uint64_t resourceBytes;
+	uint64_t filesystemBytes;
+	uint64_t hunkLeftOverBytes;
 	uint64_t freeBytes;
 	uint64_t freeBlocks;
 	uint64_t freeSmallest;
@@ -983,9 +988,27 @@ static void Zone_Stats( const char *name, const memzone_t *z, qboolean printDeta
 		if ( block->tag != TAG_FREE ) {
 			st.zoneBytes += block->size;
 			st.zoneBlocks++;
-			if ( block->tag == TAG_RENDERER ) {
+			switch ( block->tag ) {
+			case TAG_RENDERER:
 				st.rendererBytes += block->size;
-			}
+				break;
+			case TAG_BFF:
+				st.resourceBytes += block->size;
+				break;
+			case TAG_SEARCH_DIR:
+			case TAG_SEARCH_PATH:
+				st.filesystemBytes += block->size;
+				break;
+			case TAG_GAME:
+				st.gameBytes += block->size;
+				break;
+			case TAG_HUNK:
+				st.hunkLeftOverBytes += block->size;
+				break;
+			case TAG_IMGUI:
+				st.imguiBytes += block->size;
+				break;
+			};
 		} else {
 			st.freeBytes += block->size;
 			st.freeBlocks++;
@@ -1068,7 +1091,13 @@ static void Com_Meminfo_f( void )
 	Con_Printf( "%8lu bytes in %lu main zone blocks%s\n", st.zoneBytes, st.zoneBlocks,
 		st.zoneSegments > 1 ? va( " and %lu segments", st.zoneSegments ) : "" );
 	Con_Printf( "        %8lu bytes in renderer\n", st.rendererBytes );
-	Con_Printf( "        %8lu bytes in other\n", st.zoneBytes - ( st.rendererBytes ) );
+	Con_Printf( "        %8lu bytes in game\n", st.gameBytes );
+	Con_Printf( "        %8lu bytes in imgui\n", st.imguiBytes );
+	Con_Printf( "        %8lu bytes in filesystem\n", st.filesystemBytes );
+	Con_Printf( "        %8lu bytes in resources\n", st.resourceBytes );
+	Con_Printf( "        %8lu bytes in leaked hunk memory\n", st.hunkLeftOverBytes );
+	Con_Printf( "        %8lu bytes in other\n", st.zoneBytes - ( st.rendererBytes + st.gameBytes + st.imguiBytes + st.filesystemBytes +
+																	st.hunkLeftOverBytes + st.resourceBytes ) );
 	Con_Printf( "        %8lu bytes in %lu free blocks\n", st.freeBytes, st.freeBlocks );
 	if ( st.freeBlocks > 1 ) {
 		Con_Printf( "        (largest: %lu bytes, smallest: %lu bytes)\n\n", st.freeLargest, st.freeSmallest );

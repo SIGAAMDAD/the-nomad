@@ -23,8 +23,6 @@ uint32_t bigchar_height;
 uint32_t smallchar_width;
 uint32_t smallchar_height;
 
-ImGuiInputTextCallbackData conCallbackData;
-
 #if 0
 class CConsole
 {
@@ -112,9 +110,9 @@ void Con_ToggleConsole_f( void ) {
 	const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar;
 
 	// Can't toggle the console when it's the only thing available
-    if ( Key_GetCatcher() == KEYCATCH_CONSOLE ) {
-		return;
-	}
+//    if ( Key_GetCatcher() == KEYCATCH_CONSOLE ) {
+//		return;
+//	}
 
 	if ( con_autoclear->i ) {
 		Field_Clear( &g_consoleField );
@@ -123,8 +121,14 @@ void Con_ToggleConsole_f( void ) {
 	g_consoleField.widthInChars = g_console_field_width;
 
 	Con_ClearNotify();
-	Key_SetCatcher( Key_GetCatcher() ^ KEYCATCH_CONSOLE );
 
+	if ( Key_GetCatcher() & KEYCATCH_CONSOLE ) {
+		Key_SetCatcher( Key_GetCatcher() & ~KEYCATCH_CONSOLE );
+	} else {
+		Key_SetCatcher( Key_GetCatcher() | KEYCATCH_CONSOLE );
+	}
+
+	// set the scroll to the absolute bottom
 	if ( Key_GetCatcher() & KEYCATCH_CONSOLE ) {
 		Con_DrawSolidConsole( con.displayFrac );
 
@@ -536,15 +540,53 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 
 	edit = &g_consoleField;
 
-	data->CursorPos = edit->cursor;
-	data->BufTextLen = strlen( edit->buffer );
-
-	//
-	// text editing
-	//
+	len = strlen( edit->buffer );
 
 	if ( Key_IsDown( KEY_LCTRL ) && Key_IsDown( KEY_A ) ) {
 		data->SelectAll();
+	}
+
+	// ctrl-L clears screen
+	if ( keys[KEY_L].down && keys[ KEY_LCTRL ].down ) {
+		Cbuf_AddText( "clear\n" );
+		return 1;
+	}
+
+	// command completion
+
+	if ( keys[KEY_TAB].down || keys[KEY_KP_TAB].down ) {
+		Field_AutoComplete( &g_consoleField );
+		data->InsertChars( data->CursorPos, edit->buffer + data->CursorPos, edit->buffer + edit->cursor );
+	}
+
+	// command history (ctrl-p ctrl-n for unix style)
+
+	if ( ( keys[KEY_WHEEL_UP].down && keys[KEY_LSHIFT].down ) || keys[KEY_UP].down
+		|| ( keys[KEY_P].down && keys[KEY_LCTRL].down ) )
+	{
+		if ( Con_HistoryGetPrev( &g_consoleField ) ) {
+			data->CursorPos = 0;
+			data->BufTextLen = 0;
+			data->InsertChars( data->CursorPos, edit->buffer + data->CursorPos, edit->buffer + edit->cursor );
+		} else {
+			edit->cursor = data->CursorPos = 0;
+		}
+	}
+
+	if ( ( keys[KEY_WHEEL_DOWN].down && keys[KEY_LSHIFT].down ) || keys[KEY_DOWN].down
+		|| ( keys[KEY_N].down && keys[KEY_LCTRL].down ) )
+	{
+		if ( Con_HistoryGetNext( &g_consoleField ) ) {
+			data->CursorPos = 0;
+			data->BufTextLen = 0;
+			data->InsertChars( data->CursorPos, edit->buffer + data->CursorPos, edit->buffer + edit->cursor );
+		} else {
+			edit->cursor = data->CursorPos = len;
+		}
+	}
+
+	if ( keys[KEY_INSERT].down ) {
+		key_overstrikeMode = !key_overstrikeMode;
 	}
 
 	if ( Key_IsDown( KEY_BACKSPACE ) ) {
@@ -557,19 +599,13 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 		edit->cursor = data->CursorPos;
 	}
 
-	// shit-insert to paste
-	if ( Key_IsDown( KEY_INSERT ) && Key_IsDown( KEY_LSHIFT ) ) {
-		if ( data->HasSelection() ) {
-			data->DeleteChars( data->CursorPos, data->SelectionEnd - data->SelectionStart );
-			edit->cursor = data->CursorPos;
-		}
-		Field_Paste( edit );
-		return 1;
+	if ( keys[KEY_HOME].down ) {
+		edit->cursor = data->CursorPos = 0;
 	}
 
-	//
-	// the fancy stuff
-	//
+	if ( keys[KEY_END].down ) {
+		edit->cursor = data->CursorPos = len;
+	}
 
 	// ctrl-home = top of console
 	if ( Key_IsDown( KEY_HOME ) && Key_IsDown( KEY_LCTRL ) ) {
@@ -582,7 +618,6 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 		ImGui::SetScrollX( 0.0f );
 		ImGui::SetScrollY( ImGui::GetScrollMaxY() );
 	}
-
 
 	ImGui::SetScrollHereY();
 	
@@ -611,8 +646,48 @@ static void Con_DrawInput( void ) {
 //	ImGui::PopStyleColor();
 	ImGui::SameLine();
 
-	ImGui::InputText( "", g_consoleField.buffer, sizeof(g_consoleField.buffer) - 1, ImGuiInputTextFlags_CallbackAlways,
-		Con_TextCallback, NULL, &conCallbackData );
+	if ( ImGui::InputText( "", g_consoleField.buffer, sizeof(g_consoleField.buffer) - 1,
+		ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackCompletion |
+		ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CtrlEnterForNewLine |
+		( key_overstrikeMode ? ImGuiInputTextFlags_AlwaysOverwrite : 0 ),
+		Con_TextCallback, NULL ) )
+	{
+		// enter finishes the line
+		// if not in the game explicitly prepend a slash if needed
+		if ( gi.state == GS_LEVEL
+			&& g_consoleField.buffer[0] != '\0'
+			&& g_consoleField.buffer[0] != '\\'
+			&& g_consoleField.buffer[0] != '/' ) {
+			char	temp[MAX_EDIT_LINE-1];
+
+			N_strncpyz( temp, g_consoleField.buffer, sizeof( temp ) );
+			Com_snprintf( g_consoleField.buffer, sizeof( g_consoleField.buffer ), "\\%s", temp );
+			g_consoleField.cursor++;
+		}
+
+		Con_Printf( "]%s\n", g_consoleField.buffer );
+
+		// leading slash is an explicit command
+		if ( g_consoleField.buffer[0] == '\\' || g_consoleField.buffer[0] == '/' ) {
+			Cbuf_AddText( g_consoleField.buffer+1 );	// valid command
+			Cbuf_AddText( "\n" );
+		} else {
+			// other text will be chat messages
+			if ( !g_consoleField.buffer[0] ) {
+				return;	// empty lines just scroll the console without adding to history
+			} else {
+	//			Cbuf_AddText( "cmd say " );
+	//			Cbuf_AddText( g_consoleField.buffer );
+	//			Cbuf_AddText( "\n" );
+			}
+		}
+
+		// copy line to history buffer
+		Con_SaveField( &g_consoleField );
+
+		Field_Clear( &g_consoleField );
+		g_consoleField.widthInChars = g_console_field_width;
+	}
 }
 
 /*

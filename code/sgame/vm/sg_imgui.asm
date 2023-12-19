@@ -47,17 +47,17 @@ ADDRLP4 4100
 INDIRI4
 CVIU4 4
 CNSTU4 4096
-LTU4 $84
+LTU4 $83
 line 15
 ;15:        trap_Error( "ImGui_SetItemTooltip: buffer overflow" );
-ADDRGP4 $86
+ADDRGP4 $85
 ARGP4
 ADDRGP4 trap_Error
 CALLV
 pop
 line 16
 ;16:    }
-LABELV $84
+LABELV $83
 line 18
 ;17:
 ;18:    ImGui_SetItemTooltipUnformatted( msg );
@@ -68,7 +68,7 @@ CALLV
 pop
 line 19
 ;19:}
-LABELV $82
+LABELV $81
 endproc ImGui_SetItemTooltip 4108 12
 export ImGui_Text
 proc ImGui_Text 4108 12
@@ -115,17 +115,17 @@ ADDRLP4 4100
 INDIRI4
 CVIU4 4
 CNSTU4 4096
-LTU4 $89
+LTU4 $88
 line 32
 ;32:        trap_Error( "ImGui_Text: buffer overflow" );
-ADDRGP4 $91
+ADDRGP4 $90
 ARGP4
 ADDRGP4 trap_Error
 CALLV
 pop
 line 33
 ;33:    }
-LABELV $89
+LABELV $88
 line 35
 ;34:
 ;35:    ImGui_TextUnformatted( msg );
@@ -136,7 +136,7 @@ CALLV
 pop
 line 36
 ;36:}
-LABELV $87
+LABELV $86
 endproc ImGui_Text 4108 12
 export ImGui_ColoredText
 proc ImGui_ColoredText 4108 12
@@ -183,17 +183,17 @@ ADDRLP4 4100
 INDIRI4
 CVIU4 4
 CNSTU4 4096
-LTU4 $94
+LTU4 $93
 line 49
 ;49:        trap_Error( "ImGui_Text: buffer overflow" );
-ADDRGP4 $91
+ADDRGP4 $90
 ARGP4
 ADDRGP4 trap_Error
 CALLV
 pop
 line 50
 ;50:    }
-LABELV $94
+LABELV $93
 line 52
 ;51:
 ;52:    ImGui_ColoredTextUnformatted( pColor, msg );
@@ -207,7 +207,7 @@ CALLV
 pop
 line 53
 ;53:}
-LABELV $92
+LABELV $91
 endproc ImGui_ColoredText 4108 12
 import Cvar_VariableStringBuffer
 import Cvar_Set
@@ -222,10 +222,13 @@ import trap_FS_FClose
 import trap_FS_FOpenWrite
 import trap_FS_FOpenFile
 import Sys_GetGPUConfig
+import RE_AddSpriteToScene
 import RE_AddPolyToScene
 import RE_RenderScene
 import RE_ClearScene
 import RE_LoadWorldMap
+import RE_RegisterSprite
+import RE_RegisterSpriteSheet
 import RE_RegisterShader
 import trap_Snd_ClearLoopingTrack
 import trap_Snd_SetLoopingTrack
@@ -243,6 +246,7 @@ import trap_CheckWallHit
 import G_SoundRecursive
 import G_CastRay
 import G_LoadMap
+import G_SetCameraData
 import trap_MemoryRemaining
 import trap_RemoveCommand
 import trap_AddCommand
@@ -289,7 +293,6 @@ import G_Printf
 import G_Error
 import SG_Printf
 import SG_Error
-import SG_GenerateSpriteSheetTexCoords
 import SG_DrawFrame
 import pm_wallTime
 import pm_wallrunAccelMove
@@ -315,9 +318,6 @@ import mobinfo
 import iteminfo
 import weaponinfo
 import sg
-import sprites_shotty
-import sprites_grunt
-import sprites_thenomad
 import sg_entities
 import inversedirs
 import dirvectors
@@ -733,7 +733,7 @@ import memchr
 import memcpy
 lit
 align 1
-LABELV $91
+LABELV $90
 byte 1 73
 byte 1 109
 byte 1 71
@@ -763,7 +763,7 @@ byte 1 111
 byte 1 119
 byte 1 0
 align 1
-LABELV $86
+LABELV $85
 byte 1 73
 byte 1 109
 byte 1 71

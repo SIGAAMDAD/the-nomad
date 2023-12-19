@@ -108,7 +108,7 @@ static void R_RadixSort( srfPoly_t *source, uint32_t size )
 }
 
 
-extern uint64_t r_numPolys, r_numPolyVerts;
+extern uint64_t r_numPolys, r_numPolyVerts, r_numQuads;
 
 static int SortPoly( const void *a, const void *b ) {
     return (int)(((srfPoly_t *)a)->hShader - ((srfPoly_t *)b)->hShader);
@@ -124,19 +124,33 @@ void R_WorldToGL( drawVert_t *verts, vec3_t pos )
         VectorCopy( verts[i].xyz, xyz[i] );
 }
 
+void R_WorldToGL2( polyVert_t *verts, vec3_t pos )
+{
+    vec3_t xyz[4];
+
+    ri.GLM_TransformToGL( pos, xyz, glState.viewData.camera.viewProjectionMatrix );
+
+    for (uint32_t i = 0; i < 4; ++i)
+        VectorCopy( verts[i].xyz, xyz[i] );
+}
+
+/*
+* R_DrawPolys: draws all sprites and polygons submitted into the current scene
+*/
 void R_DrawPolys( void )
 {
     uint64_t i;
-    srfPoly_t *poly;
+    const srfPoly_t *poly;
+    const srfQuad_t *quad;
+    const glIndex_t *idx;
     nhandle_t oldShader;
-    glIndex_t *idx;
-    drawVert_t vtx[4];
+    polyVert_t *vtx;
     vec3_t pos;
     uint32_t numVerts;
     uint32_t numIndices;
 
     // no polygon submissions this frame
-    if (!r_numPolys || !r_numPolyVerts) {
+    if (!r_numPolys && !r_numPolyVerts && !r_numQuads) {
         return;
     }
 
@@ -149,10 +163,46 @@ void R_DrawPolys( void )
     // submit all the indices
     RB_CommitDrawData( NULL, 0, backendData->indices, backendData->numIndices );
 
+    vtx = backendData->polyVerts;
     poly = backendData->polys;
-    oldShader = poly->hShader;
+    quad = backendData->quads;
+    oldShader = rg.sheets[quad->hSpriteSheet]->hShader;
 
-    for (i = 0; i < r_numPolys; i++, poly++) {
+    GL_BindTexture( 0, R_GetShaderByHandle( oldShader )->stages[0]->image );
+    GLSL_SetUniformInt( &rg.basicShader, UNIFORM_DIFFUSE_MAP, 0 );
+
+    for ( i = 0; i < r_numQuads; i++, quad++ ) {
+        if ( oldShader != rg.sheets[quad->hSpriteSheet]->hShader ) {
+            // if we have a new shader, flush the current batch
+            RB_FlushBatchBuffer();
+            oldShader = rg.sheets[quad->hSpriteSheet]->hShader;
+
+            GL_BindTexture( 0,  R_GetShaderByHandle( oldShader )->stages[0]->image );
+            GLSL_SetUniformInt( &rg.basicShader, UNIFORM_DIFFUSE_MAP, 0 );
+        }
+
+        pos[0] = quad->origin[0] - ( rg.world->width * 0.5f );
+        pos[1] = rg.world->height - quad->origin[1];
+        pos[2] = 0.5f;
+
+        // convert local world coordinates to opengl screen coordinates
+        R_WorldToGL2( vtx, pos );
+
+        for ( uint32_t a = 0; a < 4; a++ ) {
+            VectorCopy2( vtx[a].uv, rg.sheets[quad->hSpriteSheet]->sprites[quad->hSprite].texCoords[a] );
+        }
+
+        // submit to draw buffer
+        RB_CommitDrawData( vtx, 4, NULL, 0 );
+
+        vtx += 4;
+    }
+
+    RB_FlushBatchBuffer();
+
+/*
+    oldShader = poly->hShader;
+    for ( i = 0; i < r_numPolys; i++, poly++ ) {
         if (oldShader != poly->hShader) {
             // if we have a new shader, flush the current batch
             RB_FlushBatchBuffer();
@@ -162,27 +212,14 @@ void R_DrawPolys( void )
             GLSL_SetUniformInt( &rg.basicShader, UNIFORM_DIFFUSE_MAP, 0 );
         }
 
-        // convert local world coordinates to opengl world coordinates
-        for (uint32_t a = 0; a < 4; a++) {
-            vtx[a].xyz[0] = poly->verts[a].xyz[0] - (rg.world->width * 0.5f);
-            vtx[a].xyz[1] = rg.world->height - poly->verts[a].xyz[1];
-            vtx[a].xyz[2] = 0.0f;
-
-            pos[0] += vtx[a].xyz[0];
-            pos[1] += vtx[a].xyz[1];
-            pos[2] += vtx[a].xyz[2];
-        }
-        // average them out
-        pos[0] /= 4;
-        pos[1] /= 4;
-
-        R_WorldToGL( vtx, pos );
+        R_WorldToGL2( vtx, pos );
 
         // submit to draw buffer
         RB_CommitDrawData( poly->verts, poly->numVerts, NULL, 0 );
     }
 
     RB_FlushBatchBuffer();
+*/
 }
 
 static void R_DrawWorld( void )
@@ -260,8 +297,8 @@ void R_RenderView( const viewData_t *parms )
 }
 
 
-static void R_CalcSpriteTextureCoords(uint32_t x, uint32_t y, uint32_t spriteWidth, uint32_t spriteHeight,
-    uint32_t sheetWidth, uint32_t sheetHeight, vec2_t *texCoords)
+static void R_CalcSpriteTextureCoords( uint32_t x, uint32_t y, uint32_t spriteWidth, uint32_t spriteHeight,
+    uint32_t sheetWidth, uint32_t sheetHeight, spriteCoord_t texCoords )
 {
     const vec2_t min = { (((float)x + 1) * spriteWidth) / sheetWidth, (((float)y + 1) * spriteHeight) / sheetHeight };
     const vec2_t max = { ((float)x * spriteWidth) / sheetWidth, ((float)y * spriteHeight) / sheetHeight };
@@ -274,7 +311,7 @@ static void R_CalcSpriteTextureCoords(uint32_t x, uint32_t y, uint32_t spriteWid
 
     texCoords[2][0] = max[0];
     texCoords[2][1] = min[1];
-        
+    
     texCoords[3][0] = max[0];
     texCoords[3][1] = max[1];
 }
@@ -292,4 +329,95 @@ void R_ScreenToGL(vec3_t *xyz)
 
     xyz[3][0] = 2.0f * xyz[3][0] / glConfig.vidWidth - 1.0f;
 	xyz[3][1] = 1.0f - 2.0f * xyz[3][1] / glConfig.vidHeight;
+}
+
+nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32_t sheetHeight, uint32_t spriteWidth, uint32_t spriteHeight )
+{
+    spriteSheet_t *sheet;
+    uint64_t len;
+    uint64_t size;
+    nhandle_t handle;
+    uint32_t numSprites, spriteCountY, spriteCountX;
+    sprite_t *sprite;
+
+    len = strlen( npath );
+
+    if ( ( (float)sheetWidth / (float)spriteWidth ) != (int)( (float)sheetWidth / (float)spriteWidth )
+        ||  ( (float)sheetHeight / (float)spriteHeight ) != (int)( (float)sheetHeight / (float)spriteHeight ) )
+    {
+        ri.Error( ERR_DROP, "RE_RegisterSpriteSheet: please ensure your sprite dimensions and sheet dimensions are powers of two" );
+    }
+    if ( len >= MAX_GDR_PATH ) {
+        ri.Error( ERR_DROP, "RE_RegisterSpriteSheet: name '%s' too long", npath );
+    }
+
+    //
+    // check if we already have it
+    //
+    for ( uint64_t i = 0; i < rg.numSpriteSheets; i++ ) {
+        if ( !N_stricmp( npath, rg.sheets[i]->name ) ) {
+            return (nhandle_t)i;
+        }
+    }
+
+    len = PAD( len, sizeof(uintptr_t) );
+
+    numSprites = ( sheetWidth / spriteWidth ) * ( sheetHeight / spriteHeight );
+
+    size = 0;
+    size += PAD( sizeof(*sheet), sizeof(uintptr_t) );
+    size += PAD( sizeof(*sheet->sprites) * numSprites, sizeof(uintptr_t) );
+    size += PAD( len, sizeof(uintptr_t) );
+
+    handle = rg.numSpriteSheets;
+    sheet = rg.sheets[rg.numSpriteSheets] = (spriteSheet_t *)ri.Hunk_Alloc( size, h_low );
+    sheet->name = (char *)( sheet + 1 );
+    sheet->sprites = (sprite_t *)( sheet->name + len );
+
+    strcpy( sheet->name, npath );
+
+    sheet->numSprites = numSprites;
+    sheet->sheetWidth = sheetWidth;
+    sheet->sheetHeight = sheetHeight;
+    sheet->spriteWidth = spriteWidth;
+    sheet->spriteHeight = spriteHeight;
+
+    spriteCountX = sheetWidth / spriteWidth;
+    spriteCountY = sheetHeight / spriteHeight;
+
+    sheet->hShader = RE_RegisterShader( npath );
+    if ( sheet->hShader == FS_INVALID_HANDLE ) {
+        ri.Printf( PRINT_WARNING, "RE_RegisterSpriteSheet: failed to find shader '%s'.\n", npath );
+        return FS_INVALID_HANDLE;
+    }
+
+    sprite = sheet->sprites;
+    for ( uint32_t y = 0; y < spriteCountY; y++ ) {
+        for ( uint32_t x = 0; x < spriteCountX; x++ ) {
+            R_CalcSpriteTextureCoords( x, y, spriteWidth, spriteHeight, sheetWidth, sheetHeight, sheet->sprites[y * spriteCountX + x].texCoords );
+            sprite->hSpriteSheet = handle;
+        }
+    }
+
+    rg.numSpriteSheets++;
+
+    return handle;
+}
+
+nhandle_t RE_RegisterSprite( nhandle_t hSpriteSheet, uint32_t index )
+{
+    spriteSheet_t *sheet;
+
+    if ( hSpriteSheet == FS_INVALID_HANDLE ) {
+        ri.Printf( PRINT_WARNING, "RE_RegisterSprite: bad sprite sheet given.\n" );
+        return FS_INVALID_HANDLE;
+    }
+
+    sheet = rg.sheets[hSpriteSheet];
+
+    if ( index >= sheet->numSprites ) {
+        ri.Printf( PRINT_WARNING, "RE_RegisterSprite: invalid index given.\n" );
+    }
+
+    return (nhandle_t)index; // nothing too fancy...
 }

@@ -4685,27 +4685,24 @@ bool ImGui::InputTextEx(const char* label, const char* hint, char* buf, int buf_
                 if (event_flag)
                 {
                     ImGuiInputTextCallbackData callback_data;
+                    char* callback_buf = is_readonly ? buf : state->TextA.Data;
+                    
+                    callback_data.BufSize = state->BufCapacityA;
+                    callback_data.BufDirty = false;
+                    callback_data.Ctx = &g;
+                    callback_data.EventFlag = event_flag;
+                    callback_data.Flags = flags;
+                    callback_data.UserData = callback_user_data;
+
+                    callback_data.EventKey = event_key;
 
                     if ( !callbackData ) {
-                        callback_data.Ctx = &g;
-                        callback_data.EventFlag = event_flag;
-                        callback_data.Flags = flags;
-                        callback_data.UserData = callback_user_data;
-
-                        char* callback_buf = is_readonly ? buf : state->TextA.Data;
-                        callback_data.EventKey = event_key;
                         callback_data.Buf = callback_buf;
                         callback_data.BufTextLen = state->CurLenA;
-                        callback_data.BufSize = state->BufCapacityA;
-                        callback_data.BufDirty = false;
                     } else {
+                        callback_data.CursorPos = callbackData->CursorPos;
                         callback_data.Buf = callbackData->Buf;
                         callback_data.BufTextLen = callbackData->BufTextLen;
-                        callback_data.EventFlag = callbackData->EventFlag;
-                        callback_data.EventKey = callbackData->EventKey;
-                        callback_data.UserData = callbackData->UserData;
-                        callback_data.BufDirty = callbackData->BufDirty;
-                        callback_data.BufSize = callbackData->BufSize;
                     }
 
                     // We have to convert from wchar-positions to UTF-8-positions, which can be pretty slow (an incentive to ditch the ImWchar buffer, see https://github.com/nothings/stb/issues/188)
@@ -4776,10 +4773,18 @@ bool ImGui::InputTextEx(const char* label, const char* hint, char* buf, int buf_
             callback_data.Ctx = &g;
             callback_data.EventFlag = ImGuiInputTextFlags_CallbackResize;
             callback_data.Flags = flags;
-            callback_data.Buf = buf;
-            callback_data.BufTextLen = apply_new_text_length;
             callback_data.BufSize = ImMax(buf_size, apply_new_text_length + 1);
             callback_data.UserData = callback_user_data;
+
+            if ( !callbackData ) {
+                callback_data.Buf = buf;
+                callback_data.BufTextLen = apply_new_text_length;
+            } else {
+                callback_data.CursorPos = callbackData->CursorPos;
+                callback_data.Buf = callbackData->Buf;
+                callback_data.BufTextLen = callbackData->BufTextLen;
+            }
+
             callback(&callback_data);
             buf = callback_data.Buf;
             buf_size = callback_data.BufSize;

@@ -26,6 +26,8 @@
 
 #define MAXPLAYERWEAPONS 6
 
+#define NUMLEVELS 1
+
 //==============================================================
 // enums
 //
@@ -149,13 +151,6 @@ typedef struct {
 	vec3_t maxs;
 } bbox_t;
 
-typedef vec2_t spriteCoords_t[4];
-
-typedef struct {
-	uint32_t numSprites;
-	spriteCoords_t *texCoords;
-} spritesheet_t;
-
 typedef struct sgentity_s sgentity_t;
 
 //
@@ -175,16 +170,20 @@ typedef union {
 struct sgentity_s
 {
 	linkEntity_t link;
+	bbox_t bounds;
+	vec3_t origin;
+	vec3_t vel;
+	void *entPtr;
+	state_t *state;
+
+	sgentity_t *next;
+	sgentity_t *prev;
 
 	entitytype_t type;
 	
-	vec3_t origin;
-	vec3_t vel;
-	bbox_t bounds;
-	
-	int32_t health;
-	int32_t ticker;
-	int32_t frame;
+	int health;
+	int ticker;
+	int frame;
 
 	uint32_t facing;
 
@@ -196,15 +195,8 @@ struct sgentity_s
 	dirtype_t dir;
 	entityflags_t flags;
 
-	void *entPtr;
-	
-	uint32_t sprite;
-	state_t *state;
-
-	spritesheet_t *sheet;
-	
-	sgentity_t *next;
-	sgentity_t *prev;
+	int sprite;
+	nhandle_t hSpriteSheet;
 };
 
 typedef struct {
@@ -235,7 +227,7 @@ typedef struct
 	const weapon_t *curwpn;
 	
 	spritenum_t foot_sprite;
-	int32_t foot_frame;
+	int foot_frame;
 	uint32_t flags;
 } playr_t;
 
@@ -277,6 +269,10 @@ typedef struct
 	nhandle_t grunt_shader;
 	nhandle_t shotty_shader;
 
+	nhandle_t raio_sprites;
+	nhandle_t grunt_sprites;
+	nhandle_t shotty_sprites;
+
 	stringHash_t *pickupShotgun;
 } sgameMedia_t;
 
@@ -299,7 +295,6 @@ typedef struct
 	// current map's name
 	char mapname[MAX_GDR_PATH];
 
-	vec3_t cameraPos;
 	float cameraWidth;
 	float cameraHeight;
 
@@ -324,6 +319,8 @@ typedef struct
 	linkEntity_t activeEnts;
 
 	uint32_t soundBits[MAX_MAP_WIDTH*MAX_MAP_HEIGHT];
+
+	vec2_t cameraPos;
 	
     mapinfo_t mapInfo; // this structure's pretty big, so only 1 instance in the vm
 } sgGlobals_t;
@@ -336,10 +333,6 @@ extern const vec3_t dirvectors[NUMDIRS];
 extern const dirtype_t inversedirs[NUMDIRS];
 
 extern sgentity_t sg_entities[MAXENTITIES];
-
-extern spritesheet_t sprites_thenomad;
-extern spritesheet_t sprites_grunt;
-extern spritesheet_t sprites_shotty;
 
 extern sgGlobals_t sg;
 
@@ -379,9 +372,7 @@ extern vmCvar_t pm_wallTime;
 //
 // sg_draw.c
 //
-int32_t SG_DrawFrame( void );
-void SG_GenerateSpriteSheetTexCoords( spritesheet_t *sheet, uint32_t spriteWidth, uint32_t spriteHeight,
-    uint32_t sheetWidth, uint32_t sheetHeight );
+int SG_DrawFrame( void );
 
 //
 // sg_main.c
@@ -396,9 +387,9 @@ void SG_UpdateCvars( void );
 // sg_level.c
 //
 qboolean SG_InitLevel( int32_t index );
-int32_t SG_EndLevel( void );
+int SG_EndLevel( void );
 void Lvl_AddKillEntity( entitytype_t type, causeofdeath_t cod );
-int32_t SG_DrawAbortMission( void );
+int SG_DrawAbortMission( void );
 void SG_DrawLevelStats( void );
 
 //
@@ -483,6 +474,9 @@ uint32_t trap_MemoryRemaining( void );
 
 void Sys_SnapVector( float *v );
 
+// sets the desired camera position, zoom, rotation, etc.
+void G_SetCameraData( const vec2_t origin, float zoom, float rotation );
+
 int G_LoadMap( int levelIndex, mapinfo_t *info, uint32_t *soundBits, linkEntity_t *activeEnts );
 void G_CastRay( ray_t *ray );
 void G_SoundRecursive( int width, int height, float volume, const vec3_t origin );
@@ -504,10 +498,13 @@ void trap_Snd_SetLoopingTrack( sfxHandle_t track );
 void trap_Snd_ClearLoopingTrack( void );
 
 nhandle_t RE_RegisterShader( const char *npath );
+nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32_t sheetHeight, uint32_t spriteWidth, uint32_t spriteHeight );
+nhandle_t RE_RegisterSprite( nhandle_t hSpriteSheet, uint32_t index );
 void RE_LoadWorldMap( const char *npath );
 void RE_ClearScene( void );
 void RE_RenderScene( const renderSceneRef_t *fd );
 void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
+void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t hSprite );
 
 void Sys_GetGPUConfig( gpuConfig_t *config );
 

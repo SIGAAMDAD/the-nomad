@@ -331,6 +331,12 @@ typedef struct {
     polyVert_t      *verts; // later becomes a drawVert_t
 } srfPoly_t;
 
+typedef struct {
+    nhandle_t hSpriteSheet;
+    nhandle_t hSprite;
+    vec3_t origin;
+} srfQuad_t;
+
 //==================================================================
 
 typedef enum
@@ -380,6 +386,7 @@ typedef struct {
 
     vertexAttrib_t attribs[ATTRIB_INDEX_COUNT];
 } vertexBuffer_t;
+
 
 //==================================================================
 
@@ -472,6 +479,30 @@ typedef struct shader_s {
 
 //==================================================================
 
+/*
+* Sprite Sheets
+*/
+
+typedef vec2_t spriteCoord_t[4];
+
+typedef struct {
+    spriteCoord_t texCoords;
+    nhandle_t hSpriteSheet;
+} sprite_t;
+
+typedef struct {
+    char *name;
+    sprite_t *sprites;
+    nhandle_t hShader;
+    uint32_t sheetWidth;
+    uint32_t sheetHeight;
+    uint32_t spriteWidth;
+    uint32_t spriteHeight;
+    uint32_t numSprites;
+} spriteSheet_t;
+
+
+//==================================================================
 
 typedef struct {
     uint32_t x, y, width, height;
@@ -637,6 +668,9 @@ typedef struct
 
     shader_t *defaultShader;
 
+    spriteSheet_t *sheets[MAX_RENDER_SPRITESHEETS];
+    uint64_t numSpriteSheets;
+
     vertexBuffer_t *buffers[MAX_RENDER_BUFFERS];
     uint64_t numBuffers;
 
@@ -785,6 +819,7 @@ extern cvar_t *r_drawBuffer;
 extern cvar_t *r_customWidth;
 extern cvar_t *r_customHeight;
 
+extern cvar_t *r_maxQuads;
 extern cvar_t *r_maxPolys;
 extern cvar_t *r_maxEntities;
 extern cvar_t *r_maxDLights;
@@ -889,19 +924,22 @@ void RB_MakeViewMatrix( void );
 void R_RenderView( const viewData_t *parms );
 void GL_CameraResize(void);
 qboolean R_HasExtension(const char *ext);
-GDR_EXPORT void RE_BeginRegistration(gpuConfig_t *config);
+void RE_BeginRegistration(gpuConfig_t *config);
+nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32_t sheetHeight, uint32_t spriteWidth, uint32_t spriteHeight );
+nhandle_t RE_RegisterSprite( nhandle_t hSpriteSheet, uint32_t index );
 
 //
 // rgl_scene.c
 //
 void RB_InstantQuad(vec4_t quadVerts[4]);
-GDR_EXPORT void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
-GDR_EXPORT void RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys );
-GDR_EXPORT void RE_RenderScene( const renderSceneRef_t *fd );
-GDR_EXPORT void RE_AddEntityToScene( const renderEntityRef_t *ent );
-GDR_EXPORT void RE_BeginScene( const renderSceneRef_t *fd );
-GDR_EXPORT void RE_EndScene( void );
-GDR_EXPORT void RE_ClearScene( void );
+void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t hSprite );
+void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
+void RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys );
+void RE_RenderScene( const renderSceneRef_t *fd );
+void RE_AddEntityToScene( const renderEntityRef_t *ent );
+void RE_BeginScene( const renderSceneRef_t *fd );
+void RE_EndScene( void );
+void RE_ClearScene( void );
 void R_InitNextFrame( void );
 
 //
@@ -946,8 +984,8 @@ void RB_FlushBatchBuffer( void );
 void RB_CommitDrawData( const void *verts, uint32_t numVerts, const void *indices, uint32_t numIndices );
 
 
-GDR_EXPORT void RE_BeginFrame(stereoFrame_t stereoFrame);
-GDR_EXPORT void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec);
+void RE_BeginFrame(stereoFrame_t stereoFrame);
+void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec);
 
 /*
 =============================================================
@@ -1019,6 +1057,7 @@ typedef struct {
     glIndex_t *indices;
     polyVert_t *polyVerts;
     srfPoly_t *polys;
+    srfQuad_t *quads;
 
     uint64_t numPolys;
     uint64_t numIndices;
@@ -1028,9 +1067,9 @@ typedef struct {
 
 extern renderBackendData_t *backendData;
 
-GDR_EXPORT void RE_DrawImage( float x, float y, float w, float h, float u1, float v1, float u2, float v2, nhandle_t hShader );
-GDR_EXPORT void RE_LoadWorldMap(const char *filename);
-GDR_EXPORT void RE_SetColor(const float *rgba);
+void RE_DrawImage( float x, float y, float w, float h, float u1, float v1, float u2, float v2, nhandle_t hShader );
+void RE_LoadWorldMap(const char *filename);
+void RE_SetColor(const float *rgba);
 void R_IssuePendingRenderCommands(void);
 
 #endif
