@@ -13,6 +13,7 @@ $CC ../sg_info.c
 $CC ../sg_playr.c
 $CC ../sg_mthink.c
 $CC ../sg_archive.c
+$CC ../sg_cmds.c
 $CC ../sg_gameinfo.c
 $CC ../sg_draw.c
 $CC ../sg_imgui.c

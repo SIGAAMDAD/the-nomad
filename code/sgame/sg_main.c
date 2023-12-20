@@ -3,8 +3,8 @@
 
 void SG_Init( void );
 void SG_Shutdown( void );
-int32_t SG_RunLoop( int32_t msec );
-int32_t SG_DrawFrame( void );
+int SG_RunLoop( int levelTime, int frameTime );
+int SG_DrawFrame( void );
 
 /*
 vmMain
@@ -27,7 +27,12 @@ int32_t vmMain( int32_t command, int32_t arg0, int32_t arg1, int32_t arg2, int32
     case SGAME_ENDLEVEL:
         return SG_EndLevel();
     case SGAME_SEND_USER_CMD:
-        SG_SendUserCmd( arg0, arg1, arg2, arg3 );
+        SG_SendUserCmd( arg0, arg1, arg2 );
+        return 0;
+    case SGAME_MOUSE_EVENT:
+        return 0;
+    case SGAME_KEY_EVENT:
+        SG_KeyEvent( arg0, arg1 );
         return 0;
     case SGAME_EVENT_HANDLING:
     case SGAME_EVENT_NONE:
@@ -35,9 +40,10 @@ int32_t vmMain( int32_t command, int32_t arg0, int32_t arg1, int32_t arg2, int32
     case SGAME_LOADLEVEL:
         return SG_InitLevel( arg0 );
     case SGAME_CONSOLE_COMMAND:
+        SGameCommand();
         return 0;
     case SGAME_RUNTIC:
-        return SG_RunLoop( arg0 );
+        return SG_RunLoop( arg0, arg1 );
     default:
         break;
     };
@@ -48,28 +54,7 @@ int32_t vmMain( int32_t command, int32_t arg0, int32_t arg1, int32_t arg2, int32
 
 sgGlobals_t sg;
 
-const vec3_t dirvectors[NUMDIRS] = {
-    { -1.0f, -1.0f, 0.0f },
-    {  0.0f, -1.0f, 0.0f },
-    {  1.0f, -1.0f, 0.0f },
-    {  1.0f,  0.0f, 0.0f },
-    {  1.0f,  1.0f, 0.0f },
-    {  0.0f,  1.0f, 0.0f },
-    { -1.0f,  1.0f, 0.0f },
-    { -1.0f,  0.0f, 0.0f }
-};
-
-const dirtype_t inversedirs[NUMDIRS] = {
-    DIR_SOUTH_EAST,
-    DIR_SOUTH,
-    DIR_SOUTH_WEST,
-    DIR_WEST,
-    DIR_NORTH_WEST,
-    DIR_NORTH,
-    DIR_NORTH_EAST,
-    DIR_EAST
-};
-
+vmCvar_t sg_printEntities;
 vmCvar_t sg_debugPrint;
 vmCvar_t sg_paused;
 vmCvar_t sg_mouseInvert;
@@ -91,38 +76,47 @@ vmCvar_t pm_wallrunAccelMove;
 vmCvar_t pm_wallTime;
 
 typedef struct {
-    const char *name;
+    vmCvar_t *vmCvar;
+    const char *cvarName;
     const char *defaultValue;
-    vmCvar_t *cvar;
-    uint32_t flags;
+    uint32_t cvarFlags;
+    uint32_t modificationCount; // for tracking changes
+    qboolean trackChange;       // track this variable, and announce if changed
 } cvarTable_t;
 
 static cvarTable_t cvarTable[] = {
-    { "sg_debugPrint",                  "0",            &sg_debugPrint,             CVAR_LATCH },
-    { "g_paused",                       "1",            &sg_paused,                 CVAR_LATCH | CVAR_TEMP },
-    { "pm_airAccel",                    "1.5",          &pm_airAccel,               CVAR_LATCH | CVAR_SAVE },
-    { "pm_waterAccel",                  "0.5",          &pm_waterAccel,             CVAR_LATCH | CVAR_SAVE },
-    { "pm_baseAccel",                   "1.2",          &pm_baseAccel,              CVAR_LATCH | CVAR_SAVE },
-    { "pm_baseSpeed",                   "1.0",          &pm_baseSpeed,              CVAR_LATCH | CVAR_SAVE },
-    { "g_mouseInvert",                  "0",            &sg_mouseInvert,            CVAR_LATCH | CVAR_SAVE },
-    { "g_mouseAcceleration",            "0",            &sg_mouseAcceleration,      CVAR_LATCH | CVAR_SAVE },
-    { "sg_printLevelStats",             "1",            &sg_printLevelStats,        CVAR_LATCH | CVAR_TEMP },
-    { "sg_decalDetail",                 "3",            &sg_decalDetail,            CVAR_LATCH | CVAR_SAVE },
-    { "sg_gibs",                        "0",            &sg_gibs,                   CVAR_LATCH | CVAR_SAVE },
-    { "sg_levelInfoFile",               "levels.txt",   &sg_levelInfoFile,          CVAR_INIT | CVAR_LATCH },
-    { "sg_savename",                    "savedata.ngd", &sg_savename,               CVAR_LATCH | CVAR_TEMP },
-    { "sg_numSaves",                    "0",            &sg_numSaves,               CVAR_LATCH | CVAR_TEMP },
+    // noset vars
+    { NULL,                     "gamename",             GLN_VERSION,    CVAR_ROM,                   0, qfalse },
+    { NULL,                     "gamedate",             __DATE__,       CVAR_ROM,                   0, qfalse },
+    { &sg_printEntities,        "sg_printEntities",     "0",            0,                          0, qfalse },
+    { &sg_debugPrint,           "sg_debugPrint",        "1",            CVAR_TEMP,                  0, qfalse },
+    { &sg_paused,               "g_paused",             "1",            CVAR_TEMP | CVAR_LATCH,     0, qfalse },
+    { &pm_airAccel,             "pm_airAccel",          "1.5f",         CVAR_LATCH | CVAR_SAVE,     0, qfalse },
+    { &pm_waterAccel,           "pm_waterAccel",        "0.5f",         CVAR_LATCH | CVAR_SAVE,     0, qfalse },
+    { &pm_baseAccel,            "pm_baseAccel",         "1.2f",         CVAR_LATCH | CVAR_SAVE,     0, qfalse },
+    { &pm_baseSpeed,            "pm_baseSpeed",         "1.0f",         CVAR_LATCH | CVAR_SAVE,     0, qfalse },
+    { &sg_mouseInvert,          "g_mouseInvert",        "0",            CVAR_LATCH | CVAR_SAVE,     0, qtrue },
+    { &sg_mouseAcceleration,    "g_mouseAcceleration",  "0",            CVAR_LATCH | CVAR_SAVE,     0, qtrue },
+    { &sg_printLevelStats,      "sg_printLevelStats",   "1",            CVAR_LATCH | CVAR_SAVE,     0, qfalse },
+    { &sg_decalDetail,          "sg_decalDetail",       "3",            CVAR_LATCH | CVAR_SAVE,     0, qtrue },
+    { &sg_gibs,                 "sg_gibs",              "0",            CVAR_LATCH | CVAR_SAVE,     0, qtrue },
+    { &sg_levelInfoFile,        "sg_levelInfoFile",     "levels.txt",   CVAR_LATCH | CVAR_SAVE,     0, qtrue },
+    { &sg_savename,             "sg_savename",          "savedata",     CVAR_LATCH | CVAR_SAVE,     0, qtrue },
+    { &sg_numSaves,             "sg_numSaves",          "0",            CVAR_LATCH | CVAR_SAVE,     0, qfalse },
 };
 
-static uint32_t cvarTableSize = arraylen(cvarTable);
+static const uint32_t cvarTableSize = arraylen(cvarTable);
 
 static void SG_RegisterCvars( void )
 {
     uint32_t i;
     cvarTable_t *cv;
 
-    for (i = 0, cv = cvarTable; i < cvarTableSize; i++, cv++) {
-       Cvar_Register( cv->cvar, cv->name, cv->defaultValue, cv->flags );
+    for ( i = 0, cv = cvarTable; i < cvarTableSize; i++, cv++ ) {
+        Cvar_Register( cv->vmCvar, cv->cvarName, cv->defaultValue, cv->cvarFlags );
+        if ( cv->vmCvar ) {
+            cv->modificationCount = cv->vmCvar->modificationCount;
+        }
     }
 }
 
@@ -131,7 +125,19 @@ void SG_UpdateCvars( void )
     uint32_t i;
     cvarTable_t *cv;
 
-    Cvar_Update( &sg_paused );
+    for ( i = 0, cv = cvarTable; i < cvarTableSize; i++, cv++ ) {
+        if ( cv->vmCvar ) {
+            Cvar_Update( cv->vmCvar );
+
+            if ( cv->modificationCount != cv->vmCvar->modificationCount ) {
+                cv->modificationCount = cv->vmCvar->modificationCount;
+
+                if ( cv->trackChange ) {
+                    trap_SendConsoleCommand( va( "Changed \"%s\" to \"%s\"", cv->cvarName, cv->vmCvar->s ) );
+                }
+            }
+        }
+    }
 }
 
 void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL G_Printf(const char *fmt, ...)
@@ -233,11 +239,11 @@ void GDR_DECL GDR_ATTRIBUTE((format(printf, 1, 2))) Con_Printf(const char *fmt, 
 
 //#endif
 
-int32_t SG_RunLoop( int32_t levelTime )
+int SG_RunLoop( int levelTime, int frameTime )
 {
-    int32_t i;
-    int32_t start, end;
-    int32_t msec;
+    int i;
+    int start, end;
+    int msec;
     sgentity_t *ent;
 
     if ( sg.state == SG_INACTIVE ) {
@@ -264,6 +270,9 @@ int32_t SG_RunLoop( int32_t levelTime )
     sg.levelTime = levelTime;
     msec = sg.levelTime - sg.previousTime;
 
+    // build player's movement command
+//    SG_BuildMoveCommand();
+
     //
     // go through all allocated entities
     //
@@ -274,9 +283,33 @@ int32_t SG_RunLoop( int32_t levelTime )
             continue;
         }
 
-        
+        ent->ticker--;
+
+        if ( ent->ticker <= -1 ) {
+            Ent_SetState( ent, ent->state->nextstate );
+            continue;
+        }
+
+        // update the current entity's animation frame
+        if ( ent->state->frames > 0 ) {
+            if ( ent->frame == ent->state->frames ) {
+                ent->frame = 0; // reset animation
+            }
+            else if ( ent->state->tics % ent->state->frames ) {
+                ent->frame++;
+            }
+        }
+
+        ent->state->action.acp1( ent );
     }
     end = trap_Milliseconds();
+
+    if ( sg_printEntities.i ) {
+        for ( i = 0; i < sg.numEntities; i++ ) {
+            G_Printf( "%4i: %s\n", i, sg_entities[i].classname );
+        }
+        Cvar_Set( "sg_printEntities", "0" );
+    }
 
     return 1;
 }
@@ -284,8 +317,6 @@ int32_t SG_RunLoop( int32_t levelTime )
 
 static void SG_LoadMedia( void )
 {
-    G_Printf( "Loading sgame sfx...\n" );
-
     sg.media.player_death0 = trap_Snd_RegisterSfx( "sfx/player/death1.wav" );
     sg.media.player_death1 = trap_Snd_RegisterSfx( "sfx/player/death2.wav" );
     sg.media.player_death2 = trap_Snd_RegisterSfx( "sfx/player/death3.wav" ); 
@@ -295,20 +326,20 @@ static void SG_LoadMedia( void )
     sg.media.revolver_fire = trap_Snd_RegisterSfx( "sfx/weapons/revolver_fire.wav" );
     sg.media.revolver_rld = trap_Snd_RegisterSfx( "sfx/weapons/revolver_rld.wav" );
 
-    G_Printf( "Finished loading sfx.\n" );
-
-    G_Printf( "Loading sgame sprites...\n" );
-
     sg.media.raio_shader = RE_RegisterShader( "textures/sprites/glnomad_raio_base.png" );
     sg.media.grunt_shader = RE_RegisterShader( "textures/sprites/glnomad_grunt.png" );
 
     sg.media.raio_sprites = RE_RegisterSpriteSheet( "textures/sprites/glnomad_raio_base.png", 512, 512, 32, 32 );
-
-    G_Printf( "Finished loading sprites.\n" );
 }
 
 void SG_Init( void )
 {
+    G_Printf( "---------- Game Initialization ----------\n" );
+    G_Printf( "gamename: %s\n", GLN_VERSION );
+    G_Printf( "gamedate: %s\n", __DATE__ );
+
+//    trap_Key_SetCatcher( trap_Key_GetCatcher() | KEYCATCH_SGAME );
+
     // clear sgame state
     memset( &sg, 0, sizeof(sg) );
     
@@ -335,13 +366,13 @@ void SG_Init( void )
     SG_MemInit();
 
     sg.state = SG_INACTIVE;
+
+    G_Printf( "-----------------------------------\n" );
 }
 
 void SG_Shutdown( void )
 {
     G_Printf( "Shutting down sgame...\n" );
-
-    trap_Key_SetCatcher( trap_Key_GetCatcher() & ~KEYCATCH_SGAME );
 
     memset( &sg, 0, sizeof(sg) );
 
@@ -359,3 +390,26 @@ void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL trap_FS_Printf( file_t f, co
 
     trap_FS_Write( msg, strlen(msg), f );
 }
+
+
+const vec3_t dirvectors[NUMDIRS] = {
+    { -1.0f, -1.0f, 0.0f },
+    {  0.0f, -1.0f, 0.0f },
+    {  1.0f, -1.0f, 0.0f },
+    {  1.0f,  0.0f, 0.0f },
+    {  1.0f,  1.0f, 0.0f },
+    {  0.0f,  1.0f, 0.0f },
+    { -1.0f,  1.0f, 0.0f },
+    { -1.0f,  0.0f, 0.0f }
+};
+
+const dirtype_t inversedirs[NUMDIRS] = {
+    DIR_SOUTH_EAST,
+    DIR_SOUTH,
+    DIR_SOUTH_WEST,
+    DIR_WEST,
+    DIR_NORTH_WEST,
+    DIR_NORTH,
+    DIR_NORTH_EAST,
+    DIR_EAST
+};

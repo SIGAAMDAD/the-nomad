@@ -865,7 +865,7 @@ void G_Init(void)
     g_drawBuffer = Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
 	Cvar_SetDescription( g_drawBuffer, "Specifies buffer to draw from: GL_FRONT or GL_BACK." );
 
-    g_paused = Cvar_Get( "g_paused", "1", CVAR_PRIVATE | CVAR_TEMP );
+    g_paused = Cvar_Get( "g_paused", "1", CVAR_LATCH | CVAR_TEMP );
     Cvar_CheckRange( g_paused, "0", "1", CVT_INT );
     Cvar_SetDescription( g_paused, "Set to 1 when in the pause menu." );
 
@@ -1098,7 +1098,7 @@ void G_Frame(int32_t msec, int32_t realMsec)
     // generate a new user command for the frame
     if ( gi.state == GS_LEVEL && sgvm ) {
         const usercmd_t cmd = G_CreateNewCommand();
-        VM_Call( sgvm, 4, SGAME_SEND_USER_CMD, cmd.forwardmove, cmd.rightmove, cmd.upmove, cmd.buttons );
+        VM_Call( sgvm, 3, SGAME_SEND_USER_CMD, cmd.rightmove, cmd.forwardmove, cmd.upmove );
     }
 
     Con_RunConsole();

@@ -139,6 +139,27 @@ sgentity_t *SG_AllocEntity( entitytype_t type )
 	ent->ticker = -1;
 	ent->width = ent->height = 0;
 
+	switch ( type ) {
+	case ET_MOB:
+		ent->classname = "mob";
+		break;
+	case ET_ITEM:
+		ent->classname = "item";
+		break;
+	case ET_BOT:
+		ent->classname = "bot";
+		break;
+	case ET_PLAYR:
+		ent->classname = "player";
+		break;
+	case ET_WALL:
+		ent->classname = "wall";
+		break;
+	case ET_WEAPON:
+		ent->classname = "weapon";
+		break;
+	};
+
 	Ent_BuildBounds( ent );
 
 	return ent;

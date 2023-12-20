@@ -173,8 +173,11 @@ struct sgentity_s
 	bbox_t bounds;
 	vec3_t origin;
 	vec3_t vel;
+
 	void *entPtr;
 	state_t *state;
+
+	const char *classname;
 
 	sgentity_t *next;
 	sgentity_t *prev;
@@ -243,8 +246,6 @@ typedef struct
 	float missile_range;
 } mobj_t;
 
-// used for collision physics
-
 typedef struct stringHash_s
 {
 	char name[MAX_STRING_CHARS];
@@ -284,13 +285,15 @@ typedef struct
 	// general game state
 	sgameState_t state;
 
+	int frameTime;
+
 	uint32_t numLevels;
 	uint32_t numEntities;
-	int32_t numSaves;
+	int numSaves;
 
-	int32_t previousTime;
-	int32_t levelTime;
-	int32_t framenum;
+	int previousTime;
+	int levelTime;
+	int framenum;
 
 	// current map's name
 	char mapname[MAX_GDR_PATH];
@@ -315,7 +318,7 @@ typedef struct
 	float scale;
 	float bias;
 
-	int32_t checkpointIndex;
+	int checkpointIndex;
 	linkEntity_t activeEnts;
 
 	uint32_t soundBits[MAX_MAP_WIDTH*MAX_MAP_HEIGHT];
@@ -373,6 +376,12 @@ extern vmCvar_t pm_wallTime;
 // sg_draw.c
 //
 int SG_DrawFrame( void );
+
+//
+// sg_cmds.c
+//
+void SGameCommand( void );
+void SG_BuildMoveCommand( void );
 
 //
 // sg_main.c
@@ -433,7 +442,7 @@ qboolean SG_OutOfMemory( void );
 void SG_InitPlayer( void );
 void SG_KeyEvent( uint32_t key, qboolean down );
 void SG_MouseEvent( int dx, int dy );
-void SG_SendUserCmd( int forwardmove, int rightmove, int upmove, uint32_t buttons );
+void SG_SendUserCmd( int rightmove, int forwardmove, int upmove );
 void P_Ticker( sgentity_t *self );
 void P_MeleeTicker( sgentity_t *self );
 void P_ParryTicker( sgentity_t *self );

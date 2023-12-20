@@ -83,7 +83,7 @@ int CUIWindow::DrawMenuList( const menuList_t *list ) const
 
 static int ImGuiInputTextCallback_Basic( ImGuiInputTextCallbackData *data )
 {
-    if (Key_IsDown(KEY_LCTRL) && Key_IsDown(KEY_A)) {
+    if (Key_IsDown(KEY_CTRL) && Key_IsDown(KEY_A)) {
         data->SelectAll();
     }
     if (Key_IsDown(KEY_DELETE)) {
@@ -107,7 +107,7 @@ static int ImGuiInputTextCallback_Completion( ImGuiInputTextCallbackData *data )
 {
     mfield_t *field = (mfield_t *)data->UserData;
 
-    if (Key_IsDown(KEY_LCTRL) && Key_IsDown(KEY_A)) {
+    if (Key_IsDown(KEY_CTRL) && Key_IsDown(KEY_A)) {
         data->SelectAll();
     }
     if (Key_IsDown(KEY_DELETE)) {

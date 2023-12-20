@@ -123,7 +123,7 @@ void MField_KeyDownEvent( mfield_t *edit, uint32_t key )
 	int		len;
 
 	// shift-insert is paste
-	if ( ( ( key == KEY_INSERT ) /*|| ( key == K_KP_INS )*/ ) && Key_IsDown( KEY_LSHIFT ) ) {
+	if ( ( ( key == KEY_INSERT ) /*|| ( key == K_KP_INS )*/ ) && Key_IsDown( KEY_SHIFT ) ) {
 		MField_Paste( edit );
 		return;
 	}
@@ -158,13 +158,13 @@ void MField_KeyDownEvent( mfield_t *edit, uint32_t key )
 		return;
 	}
 
-	if ( key == KEY_HOME || ( tolower(key) == 'a' && Key_IsDown( KEY_LCTRL ) ) ) {
+	if ( key == KEY_HOME || ( tolower(key) == 'a' && Key_IsDown( KEY_CTRL ) ) ) {
 		edit->cursor = 0;
 		edit->scroll = 0;
 		return;
 	}
 
-	if ( key == KEY_END || ( tolower(key) == 'e' && Key_IsDown( KEY_LCTRL ) ) ) {
+	if ( key == KEY_END || ( tolower(key) == 'e' && Key_IsDown( KEY_CTRL ) ) ) {
 		edit->cursor = len;
 		edit->scroll = len - edit->widthInChars + 1;
 		if (edit->scroll < 0) {

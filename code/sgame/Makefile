@@ -32,6 +32,7 @@ OBJS=\
 	$(O)/sg_playr.o \
 	$(O)/sg_mthink.o \
 	$(O)/sg_archive.o \
+	$(O)/sg_cmds.o \
 	$(O)/sg_gameinfo.o \
 	$(O)/sg_draw.o \
 	$(O)/sg_imgui.o \

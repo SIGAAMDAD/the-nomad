@@ -44,12 +44,9 @@ static const keyname_t keynames[] = {
 	{"y", KEY_Y},
 	{"z", KEY_Z},
 
-	{"LALT", KEY_LALT},
-	{"RALT", KEY_RALT},
-	{"LSHIFT", KEY_LSHIFT},
-	{"RSHIFT", KEY_RSHIFT},
-	{"LCTRL", KEY_LCTRL},
-	{"RCTRL", KEY_RCTRL},
+	{"ALT", KEY_ALT},
+	{"SHIFT", KEY_SHIFT},
+	{"CTRL", KEY_CTRL},
 	{"TAB", KEY_TAB},
 	{"ENTER", KEY_ENTER},
 	{"BACKSPACE", KEY_BACKSPACE},
@@ -210,18 +207,12 @@ const char *Key_KeynumToString(uint32_t keynum)
 		return "WHEEL_UP";
     case KEY_TAB: // shows up as '+'
         return "TAB";
-    case KEY_LSHIFT:
-        return "LSHIFT";
-    case KEY_RSHIFT:
-        return "RSHIFT";
-    case KEY_LALT:
-        return "LALT";
-    case KEY_RALT:
-        return "RALT";
-    case KEY_LCTRL:
-        return "LCTRL";
-    case KEY_RCTRL:
-        return "RCTRL";
+    case KEY_SHIFT:
+        return "SHIFT";
+    case KEY_ALT:
+        return "ALT";
+    case KEY_CTRL:
+        return "CTRL";
     case KEY_HOME:
         return "HOME";
     case KEY_SPACE:
@@ -448,7 +439,7 @@ static void G_KeyDownEvent(uint32_t key, uint32_t time)
 	keys[key].repeats++;
 
 #ifndef _WIN32
-	if (keys[KEY_LALT].down && key == KEY_ENTER) {
+	if (keys[KEY_ALT].down && key == KEY_ENTER) {
 		Cvar_SetIntegerValue("r_fullscreen", !Cvar_VariableInteger("r_fullscreen"));
 		Cbuf_ExecuteText(EXEC_APPEND, "vid_restart\n");
 		return;
@@ -456,14 +447,14 @@ static void G_KeyDownEvent(uint32_t key, uint32_t time)
 #endif
 
 	// console key is hardcoded, so the user can never unbind it
-	if ( key == KEY_CONSOLE || (keys[KEY_LSHIFT].down && key == KEY_ESCAPE ) ) {
+	if ( key == KEY_CONSOLE || (keys[KEY_SHIFT].down && key == KEY_ESCAPE ) ) {
 		Con_ToggleConsole_f();
 		return;
 	}
 
 	// hardcoded screenshot key
 	if (key == KEY_SCREENSHOT) {
-		if (keys[KEY_LSHIFT].down) {
+		if (keys[KEY_SHIFT].down) {
 			Cbuf_ExecuteText(EXEC_APPEND, "screenshotBMP\n");
 		}
 		else {
@@ -472,46 +463,35 @@ static void G_KeyDownEvent(uint32_t key, uint32_t time)
 		return;
 	}
 
-	// escape is always handled special
 	if ( key == KEY_ESCAPE ) {
 		if ( Key_GetCatcher() & KEYCATCH_CONSOLE ) {
-			// escape always closes console
+			// escape always closes the console
 			Con_ToggleConsole_f();
 			Key_ClearStates();
 		}
+
 		// escape always gets out of SGAME stuff
 		if ( Key_GetCatcher() & KEYCATCH_SGAME ) {
 			Key_SetCatcher( Key_GetCatcher() & ~KEYCATCH_SGAME );
-			VM_Call(sgvm, 1, SGAME_EVENT_HANDLING, SGAME_EVENT_NONE);
+			VM_Call( sgvm, 1, SGAME_EVENT_HANDLING, SGAME_EVENT_NONE );
 			return;
 		}
 
 		if ( !( Key_GetCatcher() & KEYCATCH_UI ) ) {
-			if ( gi.state == GS_LEVEL ) {
-//				VM_Call(uivm, 1, UI_, UI_MENU_PAUSE);
-				gi.state = GS_PAUSE;
-			}
-			else if ( gi.state == GS_MENU ) {
-				Cmd_Clear();
-				if ( com_errorEntered ) {
-					Cvar_Set("com_errorMessage", "");
-					G_FlushMemory();
-				}
-//				VM_Call(uivm, 1, UI_SET_ACTIVE_MENU, UI_MENU_MAIN);
-			}
+			Cmd_Clear();
+			Cvar_Set( "com_errorMessage", "" );
 		}
-
-//		VM_Call(uivm, 2, UI_KEY_EVENT, key, qtrue);
 		return;
 	}
 
-	// distribute the key down event to the appropriate handler
-	if ( Key_GetCatcher() & KEYCATCH_SGAME ) {
-		if (sgvm) {
+	if ( Key_GetCatcher() & KEYCATCH_CONSOLE ) {
+	} else if ( Key_GetCatcher() & KEYCATCH_UI ) {
+	} else if ( Key_GetCatcher() & KEYCATCH_SGAME ) {
+		if ( sgvm ) {
 			VM_Call( sgvm, 2, SGAME_KEY_EVENT, key, qtrue );
 		}
-	}
-	else {
+	} else {
+		// send the bound action
 		Key_ParseBinding( key, qtrue, time );
 	}
 }
@@ -525,7 +505,7 @@ static void G_KeyUpEvent(uint32_t key, uint32_t time)
 	keys[key].bound = qfalse;
 
 	// don't process key-up events for the console key
-	if (key == KEY_CONSOLE || (key == KEY_ESCAPE && keys[KEY_LSHIFT].down)) {
+	if (key == KEY_CONSOLE || (key == KEY_ESCAPE && keys[KEY_SHIFT].down)) {
 		return;
 	}
 
@@ -533,8 +513,8 @@ static void G_KeyUpEvent(uint32_t key, uint32_t time)
 	if (key == KEY_SCREENSHOT) {
 		return;
 	}
-
-	else if (Key_GetCatcher() & KEYCATCH_SGAME) {
+	
+	if ( Key_GetCatcher() & KEYCATCH_SGAME ) {
 		if (sgvm) {
 			VM_Call( sgvm, 2, SGAME_KEY_EVENT, key, qfalse );
 		}
@@ -652,7 +632,7 @@ void Key_SetCatcher( uint32_t catcher )
 
 static ImGuiKey EngineKeyToImGuiKey(uint32_t key)
 {
-	switch (key) {
+	switch ( key ) {
 	case KEY_A: return ImGuiKey_A;
     case KEY_B: return ImGuiKey_B;
     case KEY_C: return ImGuiKey_C;
@@ -679,35 +659,29 @@ static ImGuiKey EngineKeyToImGuiKey(uint32_t key)
     case KEY_X: return ImGuiKey_X;
     case KEY_Y: return ImGuiKey_Y;
     case KEY_Z: return ImGuiKey_Z;
-    case KEY_1: return ImGuiKey_1;
-    case KEY_2: return ImGuiKey_2;
-    case KEY_3: return ImGuiKey_3;
-    case KEY_4: return ImGuiKey_4;
-    case KEY_5: return ImGuiKey_5;
-    case KEY_6: return ImGuiKey_6;
-    case KEY_7: return ImGuiKey_7;
-    case KEY_8: return ImGuiKey_8;
-    case KEY_9: return ImGuiKey_9;
-    case KEY_0: return ImGuiKey_0;
+    case '1': return ImGuiKey_1;
+    case '2': return ImGuiKey_2;
+    case '3': return ImGuiKey_3;
+    case '4': return ImGuiKey_4;
+    case '5': return ImGuiKey_5;
+    case '6': return ImGuiKey_6;
+    case '7': return ImGuiKey_7;
+    case '8': return ImGuiKey_8;
+    case '9': return ImGuiKey_9;
+    case '0': return ImGuiKey_0;
     case KEY_ENTER: return ImGuiKey_Enter;
     case KEY_ESCAPE: return ImGuiKey_Escape;
     case KEY_BACKSPACE: return ImGuiKey_Backspace;
     case KEY_TAB: return ImGuiKey_Tab;
     case KEY_SPACE: return ImGuiKey_Space;
     case KEY_MINUS: return ImGuiKey_Minus;
-    case KEY_EQUALS: return ImGuiKey_Equal;
-    case KEY_LEFTBRACKET: return ImGuiKey_LeftBracket;
-    case KEY_RIGHTBRACKET: return ImGuiKey_RightBracket;
-    
-	case KEY_BACKSLASH:
-    case KEY_ISO_USB_BACKSLASH:
-		return ImGuiKey_Backslash;
-    
+    case KEY_EQUAL: return ImGuiKey_Equal;
+    case KEY_BRACKET_OPEN: return ImGuiKey_LeftBracket;
+    case KEY_BRACKET_CLOSE: return ImGuiKey_RightBracket;
+	case KEY_BACKSLASH: return ImGuiKey_Backslash;    
 	case KEY_SEMICOLON: return ImGuiKey_Semicolon;
-    case KEY_APOSTROPHE: return ImGuiKey_Apostrophe;
     case KEY_CONSOLE: return ImGuiKey_GraveAccent;
     case KEY_COMMA: return ImGuiKey_Comma;
-    case KEY_PERIOD: return ImGuiKey_Period;
     case KEY_SLASH: return ImGuiKey_Slash;
     case KEY_CAPSLOCK: return ImGuiKey_CapsLock;
     case KEY_F1: return ImGuiKey_F1;
@@ -723,7 +697,6 @@ static ImGuiKey EngineKeyToImGuiKey(uint32_t key)
     case KEY_F11: return ImGuiKey_F11;
     case KEY_F12: return ImGuiKey_F12;
     case KEY_SCREENSHOT: return ImGuiKey_PrintScreen;
-    case KEY_SCROLLLOCK: return ImGuiKey_ScrollLock;
     case KEY_PAUSE: return ImGuiKey_Pause;
     case KEY_INSERT: return ImGuiKey_Insert;
     case KEY_HOME: return ImGuiKey_Home;
@@ -735,119 +708,16 @@ static ImGuiKey EngineKeyToImGuiKey(uint32_t key)
     case KEY_LEFT: return ImGuiKey_LeftArrow;
     case KEY_DOWN: return ImGuiKey_DownArrow;
     case KEY_UP: return ImGuiKey_UpArrow;
-    case KEY_NUMLOCKCLEAR:
-#ifdef __APPLE__
-		break;
-#else
-		return ImGuiKey_NumLock;
-#endif
-    case KEY_KP_DIVIDE: return ImGuiKey_KeypadDivide;
-    case KEY_KP_MULTIPLY: return ImGuiKey_KeypadMultiply;
     case KEY_KP_MINUS: return ImGuiKey_KeypadSubtract;
     case KEY_KP_PLUS: return ImGuiKey_KeypadAdd;
     case KEY_KP_ENTER: return ImGuiKey_KeypadEnter;
-    case KEY_KP_1: return ImGuiKey_Keypad1;
-    case KEY_KP_2: return ImGuiKey_Keypad2;
-    case KEY_KP_3: return ImGuiKey_Keypad3;
-    case KEY_KP_4: return ImGuiKey_Keypad4;
-    case KEY_KP_5: return ImGuiKey_Keypad5;
-    case KEY_KP_6: return ImGuiKey_Keypad6;
-    case KEY_KP_7: return ImGuiKey_Keypad7;
-    case KEY_KP_8: return ImGuiKey_Keypad8;
-    case KEY_KP_9: return ImGuiKey_Keypad9;
-    case KEY_KP_0: return ImGuiKey_Keypad0;
     case KEY_KP_EQUALS: return ImGuiKey_KeypadEqual;
 	case KEY_MENU: return ImGuiKey_Menu;
-	case KEY_LCTRL: return ImGuiKey_LeftCtrl;
-    case KEY_LSHIFT: return ImGuiKey_LeftShift;
-    case KEY_LALT: return ImGuiKey_LeftAlt;
-    case KEY_RCTRL: return ImGuiKey_RightCtrl;
-    case KEY_RSHIFT: return ImGuiKey_RightShift;
-    case KEY_RALT: return ImGuiKey_RightAlt;
-
-	case KEY_KP_PERIOD:
-    case KEY_F13:
-    case KEY_F14:
-    case KEY_F15:
-    case KEY_F16:
-    case KEY_F17:
-    case KEY_F18:
-    case KEY_F19:
-    case KEY_F20:
-    case KEY_F21:
-    case KEY_F22:
-    case KEY_F23:
-    case KEY_F24:
+	case KEY_CTRL: return ImGuiKey_LeftCtrl;
+    case KEY_SHIFT: return ImGuiKey_LeftShift;
 	case KEY_HELP:
-	case KEY_SELECT:
-	case KEY_STOP:
-	case KEY_AGAIN:
-    case KEY_UNDO:
-    case KEY_CUT:
-    case KEY_COPY:
-    case KEY_PASTE:
-    case KEY_FIND:
-	case KEY_MUTE:
-    case KEY_VOLUMEUP:
-    case KEY_VOLUMEDOWN:
-	case KEY_KP_COMMA:
-    case KEY_KP_EQUALSAS400:
-    case KEY_KP_00:
-    case KEY_KP_000:
-    case KEY_THOUSANDSSEPARATOR:
-    case KEY_DECIMALSEPARATOR:
-    case KEY_CURRENCYUNIT:
-    case KEY_CURRENCYSUBUNIT:
-	case KEY_KP_LEFTPAREN:
-    case KEY_KP_RIGHTPAREN:
-    case KEY_KP_LEFTBRACE:
-    case KEY_KP_RIGHTBRACE:
-	case KEY_KP_TAB:
-    case KEY_KP_BACKSPACE:
-    case KEY_KP_A:
-    case KEY_KP_B:
-    case KEY_KP_C:
-    case KEY_KP_D:
-    case KEY_KP_E:
-    case KEY_KP_F:
-    case KEY_KP_XOR:
-    case KEY_KP_POWER:
-    case KEY_KP_PERCENT:
-    case KEY_KP_LESS:
-    case KEY_KP_GREATER:
-    case KEY_KP_AMPERSAND:
-    case KEY_KP_DBLAMPERSAND:
-    case KEY_KP_VERTICALBAR:
-    case KEY_KP_DBLVERTICALBAR:
-    case KEY_KP_COLON:
-    case KEY_KP_HASH:
-    case KEY_KP_SPACE:
-    case KEY_KP_AT:
-    case KEY_KP_EXCLAM:
-    case KEY_KP_MEMSTORE:
-    case KEY_KP_MEMRECALL:
-    case KEY_KP_MEMCLEAR:
-    case KEY_KP_MEMADD:
-    case KEY_KP_MEMSUBTRACT:
-    case KEY_KP_MEMMULTIPLY:
-    case KEY_KP_MEMDIVIDE:
-    case KEY_KP_PLUSMINUS:
-    case KEY_KP_CLEAR:
-    case KEY_KP_CLEARENTRY:
-    case KEY_KP_BINARY:
-    case KEY_KP_OCTAL:
-    case KEY_KP_DECIMAL:
-    case KEY_KP_HEXADECIMAL:
-	case KEY_AUDIONEXT:
-    case KEY_AUDIOPREV:
-    case KEY_AUDIOSTOP:
-    case KEY_AUDIOPLAY:
-    case KEY_AUDIOMUTE:
-	case KEY_BRIGHTNESSDOWN:
-    case KEY_BRIGHTNESSUP:
-    case KEY_EJECT:
-    case KEY_SLEEP:
-		break; // no ImGui equivalent
+	case KEY_UNDO:
+    	break; // no ImGui equivalent
 	};
 	return ImGuiKey_None;
 }

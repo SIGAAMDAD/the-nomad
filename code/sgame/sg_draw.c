@@ -59,13 +59,14 @@ static void SG_DrawPlayer( void )
 
     ent = sg.playr.ent;
 
-    RE_AddSpriteToScene( ent->origin, ent->hSpriteSheet, ent->sprite + ent->frame );
+    RE_AddSpriteToScene( ent->origin, ent->hSpriteSheet, ( ent->sprite + ent->facing ) + ent->frame );
+
+//    RE_AddSpriteToScene( ent->origin, ent->hSpriteSheet, sg.playr.foot_sprite + sg.playr.foot_frame );
 }
 
 int SG_DrawFrame( void )
 {
     renderSceneRef_t refdef;
-    const vec2_t cameraPos = { 0.0f, 0.0f };
 
     // setup scene
     memset( &refdef, 0, sizeof(refdef) );
@@ -75,6 +76,8 @@ int SG_DrawFrame( void )
     refdef.x = 0;
     refdef.y = 0;
     refdef.time = sg.levelTime;
+
+    G_SetCameraData( sg.cameraPos, 1.6f, 0.0f );
 
     // draw the player
     SG_DrawPlayer();

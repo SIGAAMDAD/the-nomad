@@ -162,7 +162,8 @@ static intptr_t G_SGameSystemCalls( intptr_t *args )
     case SG_KEY_GETCATCHER:
         return Key_GetCatcher();
     case SG_KEY_SETCATCHER:
-        Key_SetCatcher( args[1] );
+        // don't all the sgame module to close the console
+        Key_SetCatcher( args[1] | ( Key_GetCatcher() & KEYCATCH_CONSOLE ) );
         return 0;
     case SG_KEY_ISDOWN:
         return Key_IsDown( args[1] );
@@ -449,7 +450,7 @@ static intptr_t GDR_DECL G_SGameDllSyscall(intptr_t arg, uint32_t numArgs, ...)
 
 void G_ShutdownSGame(void)
 {
-    Key_SetCatcher(Key_GetCatcher() & ~KEYCATCH_SGAME);
+    Key_SetCatcher( Key_GetCatcher() & ~KEYCATCH_SGAME );
 
     if (!sgvm) {
         return;
@@ -484,7 +485,7 @@ void G_InitSGame(void)
 //    re.EndRegistration();
 
     // make sure everything is paged in
-    if (!Sys_LowPhysicalMemory()) {
+    if ( !Sys_LowPhysicalMemory() ) {
         Com_TouchMemory();
     }
 
@@ -502,11 +503,11 @@ qboolean G_GameCommand(void)
 {
     qboolean bRes;
 
-    if (!sgvm) {
+    if ( !sgvm ) {
         return qfalse;
     }
 
-    bRes = (qboolean)VM_Call(sgvm, 0, SGAME_CONSOLE_COMMAND);
+    bRes = (qboolean)VM_Call( sgvm, 0, SGAME_CONSOLE_COMMAND );
 
     return bRes;
 }

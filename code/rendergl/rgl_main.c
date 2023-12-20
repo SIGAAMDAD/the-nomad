@@ -60,7 +60,7 @@ void RB_MakeViewMatrix( void )
 R_Radix
 ===============
 */
-static GDR_INLINE void R_Radix( int32_t byte, uint32_t size, const srfPoly_t *source, srfPoly_t *dest )
+static GDR_INLINE void R_RadixPoly( int32_t byte, uint32_t size, const srfPoly_t *source, srfPoly_t *dest )
 {
     uint32_t       count[ 256 ] = { 0 };
     uint32_t       index[ 256 ];
@@ -70,19 +70,52 @@ static GDR_INLINE void R_Radix( int32_t byte, uint32_t size, const srfPoly_t *so
 
     sortKey = ( (uint8_t *)&source[ 0 ].hShader ) + byte;
     end = sortKey + ( size * sizeof( srfPoly_t ) );
-    for ( ; sortKey < end; sortKey += sizeof( srfPoly_t ) )
+    for ( ; sortKey < end; sortKey += sizeof( srfPoly_t ) ) {
         ++count[ *sortKey ];
+    }
 
     index[ 0 ] = 0;
 
-    for ( i = 1; i < 256; ++i )
-      index[ i ] = index[ i - 1 ] + count[ i - 1 ];
+    for ( i = 1; i < 256; ++i ) {
+        index[ i ] = index[ i - 1 ] + count[ i - 1 ];
+    }
 
     sortKey = ( (uint8_t *)&source[ 0 ].hShader ) + byte;
-    for ( i = 0; i < size; ++i, sortKey += sizeof( srfPoly_t ) )
+    for ( i = 0; i < size; ++i, sortKey += sizeof( srfPoly_t ) ) {
         dest[ index[ *sortKey ]++ ] = source[ i ];
+    }
 }
 
+/*
+===============
+R_Radix
+===============
+*/
+static GDR_INLINE void R_RadixQuad( int32_t byte, uint32_t size, const srfQuad_t *source, srfQuad_t *dest )
+{
+    uint32_t       count[ 256 ] = { 0 };
+    uint32_t       index[ 256 ];
+    uint32_t       i;
+    uint8_t        *sortKey;
+    uint8_t        *end;
+
+    sortKey = ( (uint8_t *)&source[ 0 ].hSpriteSheet ) + byte;
+    end = sortKey + ( size * sizeof( srfQuad_t ) );
+    for ( ; sortKey < end; sortKey += sizeof( srfQuad_t ) ) {
+        ++count[ *sortKey ];
+    }
+
+    index[ 0 ] = 0;
+
+    for ( i = 1; i < 256; ++i ) {
+        index[ i ] = index[ i - 1 ] + count[ i - 1 ];
+    }
+
+    sortKey = ( (uint8_t *)&source[ 0 ].hSpriteSheet ) + byte;
+    for ( i = 0; i < size; ++i, sortKey += sizeof( srfQuad_t ) ) {
+        dest[ index[ *sortKey ]++ ] = source[ i ];
+    }
+}
 
 /*
 ===============
@@ -91,22 +124,52 @@ R_RadixSort
 Radix sort with 4 byte size buckets
 ===============
 */
-static void R_RadixSort( srfPoly_t *source, uint32_t size )
+static void R_RadixSortPoly( srfPoly_t *source, uint32_t size )
 {
-    srfPoly_t scratch[MAX_BATCH_QUADS];
+    srfPoly_t *scratch = (srfPoly_t *)ri.Hunk_AllocateTempMemory( sizeof(*scratch) * r_maxPolys->i );
+    if ( !scratch ) {
+        N_Error( ERR_FATAL, "R_RadixSortPoly: failed to allocate sufficient memory for scratch sort buffer" );
+    }
 #ifdef GDR_LITTLE_ENDIAN
-    R_Radix( 0, size, source, scratch );
-    R_Radix( 1, size, scratch, source );
-    R_Radix( 2, size, source, scratch );
-    R_Radix( 3, size, scratch, source );
+    R_RadixPoly( 0, size, source, scratch );
+    R_RadixPoly( 1, size, scratch, source );
+    R_RadixPoly( 2, size, source, scratch );
+    R_RadixPoly( 3, size, scratch, source );
 #else
-    R_Radix( 3, size, source, scratch );
-    R_Radix( 2, size, scratch, source );
-    R_Radix( 1, size, source, scratch );
-    R_Radix( 0, size, scratch, source );
+    R_RadixPoly( 3, size, source, scratch );
+    R_RadixPoly( 2, size, scratch, source );
+    R_RadixPoly( 1, size, source, scratch );
+    R_RadixPoly( 0, size, scratch, source );
 #endif //Q3_LITTLE_ENDIAN
+    ri.Hunk_FreeTempMemory( scratch );
 }
 
+/*
+===============
+R_RadixSort
+
+Radix sort with 4 byte size buckets
+===============
+*/
+static void R_RadixSortQuad( srfQuad_t *source, uint32_t size )
+{
+    srfQuad_t *scratch = (srfQuad_t *)ri.Hunk_AllocateTempMemory( sizeof(*scratch) * r_maxQuads->i );
+    if ( !scratch ) {
+        N_Error( ERR_FATAL, "R_RadixSortQuad: failed to allocate sufficient memory for scratch sort buffer" );
+    }
+#ifdef GDR_LITTLE_ENDIAN
+    R_RadixQuad( 0, size, source, scratch );
+    R_RadixQuad( 1, size, scratch, source );
+    R_RadixQuad( 2, size, source, scratch );
+    R_RadixQuad( 3, size, scratch, source );
+#else
+    R_RadixQuad( 3, size, source, scratch );
+    R_RadixQuad( 2, size, scratch, source );
+    R_RadixQuad( 1, size, source, scratch );
+    R_RadixQuad( 0, size, scratch, source );
+#endif //Q3_LITTLE_ENDIAN
+    ri.Hunk_FreeTempMemory( scratch );
+}
 
 extern uint64_t r_numPolys, r_numPolyVerts, r_numQuads;
 
@@ -162,7 +225,13 @@ void R_DrawPolys( void )
 
     // sort the polys to be more efficient with our shaders
 //    R_RadixSort( backendData->polys, r_numPolys ); // segfaults, dunno why rn
-    qsort( backendData->polys, backendData->numPolys, sizeof(srfPoly_t), SortPoly );
+#if 1
+    R_RadixSortPoly( backendData->polys, r_numPolys );
+    R_RadixSortQuad( backendData->quads, r_numQuads );
+#else
+    qsort( backendData->polys, r_numPolys, sizeof(srfPoly_t), SortPoly );
+    qsort( backendData->quads, r_numQuads, sizeof(srfQuad_t), SortQuad );
+#endif
 
     // submit all the indices
     RB_CommitDrawData( NULL, 0, backendData->indices, backendData->numIndices );

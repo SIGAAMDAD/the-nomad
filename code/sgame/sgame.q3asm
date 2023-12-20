@@ -8,6 +8,7 @@ sg_info
 sg_playr
 sg_mthink
 sg_archive
+sg_cmds
 sg_gameinfo
 sg_draw
 sg_imgui

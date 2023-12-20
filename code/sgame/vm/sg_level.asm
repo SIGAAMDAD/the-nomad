@@ -38,7 +38,7 @@ line 34
 ;33:
 ;34:    spawn = sg.mapInfo.spawns;
 ADDRLP4 4
-ADDRGP4 sg+4280676
+ADDRGP4 sg+4280680
 ASGNP4
 line 35
 ;35:    for ( i = 0; i < sg.mapInfo.numSpawns; i++, spawn++ ) {
@@ -115,7 +115,7 @@ ASGNP4
 LABELV $88
 ADDRLP4 0
 INDIRU4
-ADDRGP4 sg+4280676+26888
+ADDRGP4 sg+4280680+26888
 INDIRU4
 LTU4 $85
 line 46
@@ -175,11 +175,11 @@ line 61
 ADDRFP4 0
 INDIRI4
 ARGI4
-ADDRGP4 sg+4280676
+ADDRGP4 sg+4280680
 ARGP4
-ADDRGP4 sg+86364
+ADDRGP4 sg+86368
 ARGP4
-ADDRGP4 sg+86324
+ADDRGP4 sg+86328
 ARGP4
 ADDRLP4 12
 ADDRGP4 G_LoadMap
@@ -212,7 +212,7 @@ line 66
 ;66:    G_Printf( "Loading map %s...\n", sg.mapInfo.name );
 ADDRGP4 $108
 ARGP4
-ADDRGP4 sg+4280676+26816
+ADDRGP4 sg+4280680+26816
 ARGP4
 ADDRGP4 G_Printf
 CALLV
@@ -262,7 +262,7 @@ line 79
 ;79:        G_Printf( "Map Name: %s\n", sg.mapInfo.name );
 ADDRGP4 $117
 ARGP4
-ADDRGP4 sg+4280676+26816
+ADDRGP4 sg+4280680+26816
 ARGP4
 ADDRGP4 G_Printf
 CALLV
@@ -271,7 +271,7 @@ line 80
 ;80:        G_Printf( "Checkpoint Count: %i\n", sg.mapInfo.numCheckpoints );
 ADDRGP4 $120
 ARGP4
-ADDRGP4 sg+4280676+26892
+ADDRGP4 sg+4280680+26892
 INDIRU4
 ARGU4
 ADDRGP4 G_Printf
@@ -281,7 +281,7 @@ line 81
 ;81:        G_Printf( "Spawn Count: %i\n", sg.mapInfo.numSpawns );
 ADDRGP4 $123
 ARGP4
-ADDRGP4 sg+4280676+26888
+ADDRGP4 sg+4280680+26888
 INDIRU4
 ARGU4
 ADDRGP4 G_Printf
@@ -291,7 +291,7 @@ line 82
 ;82:        G_Printf( "Map Width: %i\n", sg.mapInfo.width );
 ADDRGP4 $126
 ARGP4
-ADDRGP4 sg+4280676+26880
+ADDRGP4 sg+4280680+26880
 INDIRU4
 ARGU4
 ADDRGP4 G_Printf
@@ -301,7 +301,7 @@ line 83
 ;83:        G_Printf( "Map Height: %i\n", sg.mapInfo.height );
 ADDRGP4 $129
 ARGP4
-ADDRGP4 sg+4280676+26884
+ADDRGP4 sg+4280680+26884
 INDIRU4
 ARGU4
 ADDRGP4 G_Printf
@@ -315,7 +315,7 @@ line 86
 ;86:    RE_LoadWorldMap( va( "maps/%s", sg.mapInfo.name ) );
 ADDRGP4 $132
 ARGP4
-ADDRGP4 sg+4280676+26816
+ADDRGP4 sg+4280680+26816
 ARGP4
 ADDRLP4 16
 ADDRGP4 va
@@ -366,7 +366,7 @@ ADDRLP4 28
 CNSTF4 1073741824
 ASGNF4
 ADDRLP4 32
-ADDRGP4 sg+4280676
+ADDRGP4 sg+4280680
 INDIRU4
 ASGNU4
 ADDRLP4 36
@@ -396,7 +396,7 @@ CVIF4 4
 ADDF4
 ASGNF4
 ADDRLP4 44
-ADDRGP4 sg+4280676+4
+ADDRGP4 sg+4280680+4
 INDIRU4
 ASGNU4
 ADDRLP4 0+4
@@ -703,6 +703,8 @@ import G_Printf
 import G_Error
 import SG_Printf
 import SG_Error
+import SG_BuildMoveCommand
+import SGameCommand
 import SG_DrawFrame
 import pm_wallTime
 import pm_wallrunAccelMove

@@ -294,6 +294,156 @@ static void Com_PushEvent(const sysEvent_t *event)
 	com_pushedEventsHead++;
 }
 
+#define MAX_CONSOLE_KEYS 16
+
+static keynum_t Com_TranslateSDL2ToQ3Key( SDL_Keysym *keysym, qboolean down )
+{
+	keynum_t key = (keynum_t)0;
+
+	if ( keysym->scancode >= SDL_SCANCODE_1 && keysym->scancode <= SDL_SCANCODE_0 ) {
+		// Always map the number keys as such even if they actually map
+		// to other characters (eg, "1" is "&" on an AZERTY keyboard).
+		// This is required for SDL before 2.0.6, except on Windows
+		// which already had this behavior.
+		if ( keysym->scancode == SDL_SCANCODE_0 ) {
+			key = '0';
+		} else {
+			key = '1' + keysym->scancode - SDL_SCANCODE_1 ;
+		}
+	} else {
+		if ( keysym->scancode >= SDL_SCANCODE_A && keysym->scancode <= SDL_SCANCODE_Z ) {
+			key = 'a' + keysym->scancode - SDL_SCANCODE_A;
+		} else {
+			switch ( keysym->scancode ) {
+			case SDL_SCANCODE_MINUS:        key = '-';  break;
+			case SDL_SCANCODE_EQUALS:       key = '=';  break;
+			case SDL_SCANCODE_LEFTBRACKET:  key = '[';  break;
+			case SDL_SCANCODE_RIGHTBRACKET: key = ']';  break;
+			case SDL_SCANCODE_NONUSBACKSLASH:
+			case SDL_SCANCODE_BACKSLASH:    key = '\\'; break;
+			case SDL_SCANCODE_SEMICOLON:    key = ';';  break;
+			case SDL_SCANCODE_APOSTROPHE:   key = '\''; break;
+			case SDL_SCANCODE_COMMA:        key = ',';  break;
+			case SDL_SCANCODE_PERIOD:       key = '.';  break;
+			case SDL_SCANCODE_SLASH:        key = '/';  break;
+			default:
+				/* key = 0 */
+				break;
+			};
+		}
+	}
+
+	if ( !key && keysym->sym >= SDLK_SPACE && keysym->sym < SDLK_DELETE ) {
+		// These happen to match the ASCII chars
+		key = (uint32_t)keysym->sym;
+	}
+	else if ( !key ) {
+		switch ( keysym->sym ) {
+			case SDLK_PAGEUP:       key = KEY_PAGEUP;      		break;
+			case SDLK_KP_9:         key = KEY_KP_PAGEUP;    	break;
+			case SDLK_PAGEDOWN:     key = KEY_PAGEDOWN;      	break;
+			case SDLK_KP_3:         key = KEY_KP_PAGEDOWN;      break;
+			case SDLK_KP_7:         key = KEY_KP_HOME;       	break;
+			case SDLK_HOME:         key = KEY_HOME;          	break;
+			case SDLK_KP_1:         key = KEY_KP_END;        	break;
+			case SDLK_END:          key = KEY_END;           	break;
+			case SDLK_KP_4:         key = KEY_KP_LEFT;  		break;
+			case SDLK_LEFT:         key = KEY_LEFT;     		break;
+			case SDLK_KP_6:         key = KEY_KP_RIGHT; 		break;
+			case SDLK_RIGHT:        key = KEY_RIGHT;    		break;
+			case SDLK_KP_2:         key = KEY_KP_DOWN;  		break;
+			case SDLK_DOWN:         key = KEY_DOWN;     		break;
+			case SDLK_KP_8:         key = KEY_KP_UP;    		break;
+			case SDLK_UP:           key = KEY_UP;       		break;
+			case SDLK_ESCAPE:       key = KEY_ESCAPE;        	break;
+			case SDLK_KP_ENTER:     key = KEY_KP_ENTER;      	break;
+			case SDLK_RETURN:       key = KEY_ENTER;         	break;
+			case SDLK_TAB:          key = KEY_TAB;           	break;
+			case SDLK_F1:           key = KEY_F1;            	break;
+			case SDLK_F2:           key = KEY_F2;            	break;
+			case SDLK_F3:           key = KEY_F3;            	break;
+			case SDLK_F4:           key = KEY_F4;            	break;
+			case SDLK_F5:           key = KEY_F5;            	break;
+			case SDLK_F6:           key = KEY_F6;            	break;
+			case SDLK_F7:           key = KEY_F7;            	break;
+			case SDLK_F8:           key = KEY_F8;            	break;
+			case SDLK_F9:           key = KEY_F9;            	break;
+			case SDLK_F10:          key = KEY_F10;           	break;
+			case SDLK_F11:          key = KEY_F11;           	break;
+			case SDLK_F12:          key = KEY_F12;           	break;
+
+			case SDLK_BACKSPACE:    key = KEY_BACKSPACE;     	break;
+			case SDLK_KP_PERIOD:    key = KEY_KP_DELETE;        break;
+			case SDLK_DELETE:       key = KEY_DELETE;           break;
+			case SDLK_PAUSE:        key = KEY_PAUSE;         	break;
+
+			case SDLK_LSHIFT:
+			case SDLK_RSHIFT:       key = KEY_SHIFT;         	break;
+
+			case SDLK_LCTRL:
+			case SDLK_RCTRL:        key = KEY_CTRL;          	break;
+
+#ifdef __APPLE__
+			case SDLK_RGUI:
+			case SDLK_LGUI:         key = KEY_COMMAND;       	break;
+#else
+			case SDLK_RGUI:
+			case SDLK_LGUI:         key = KEY_SUPER;         	break;
+#endif
+
+			case SDLK_RALT:
+			case SDLK_LALT:         key = KEY_ALT;           	break;
+
+			case SDLK_KP_5:         key = KEY_KP_5;          	break;
+			case SDLK_INSERT:       key = KEY_INSERT;           break;
+			case SDLK_KP_0:         key = KEY_KP_INSERT;        break;
+			case SDLK_KP_MULTIPLY:  key = '*'; /*K_KP_STAR;*/ 	break;
+			case SDLK_KP_PLUS:      key = KEY_KP_PLUS;       	break;
+			case SDLK_KP_MINUS:     key = KEY_KP_MINUS;      	break;
+			case SDLK_KP_DIVIDE:    key = KEY_KP_SLASH;      	break;
+
+			case SDLK_MODE:         key = KEY_MODE;          	break;
+			case SDLK_HELP:         key = KEY_HELP;          	break;
+			case SDLK_PRINTSCREEN:  key = KEY_SCREENSHOT;       break;
+			case SDLK_SYSREQ:       key = KEY_SYSREQ;        	break;
+			case SDLK_MENU:         key = KEY_MENU;          	break;
+			case SDLK_APPLICATION:	key = KEY_MENU;          	break;
+			case SDLK_POWER:        key = KEY_POWER;         	break;
+			case SDLK_UNDO:         key = KEY_UNDO;          	break;
+			case SDLK_SCROLLLOCK:   key = KEY_SCROLLOCK;     	break;
+			case SDLK_NUMLOCKCLEAR: key = KEY_KP_NUMLOCK;    	break;
+			case SDLK_CAPSLOCK:     key = KEY_CAPSLOCK;      	break;
+
+			default:
+#if 1
+				key = 0;
+#else
+				if ( !( keysym->sym & SDLK_SCANCODE_MASK ) && keysym->scancode <= 95 ) {
+					// Map Unicode characters to 95 world keys using the key's scan code.
+					// FIXME: There aren't enough world keys to cover all the scancodes.
+					// Maybe create a map of scancode to quake key at start up and on
+					// key map change; allocate world key numbers as needed similar
+					// to SDL 1.2.
+					key = KEY_WORLD_0 + (int)keysym->scancode;
+				}
+#endif
+				break;
+		}
+	}
+
+	if ( keysym->scancode == SDL_SCANCODE_GRAVE ) {
+		//SDL_Keycode translated = SDL_GetKeyFromScancode( SDL_SCANCODE_GRAVE );
+
+		//if ( translated == SDLK_CARET )
+		{
+			// Console keys can't be bound or generate characters
+			key = KEY_CONSOLE;
+		}
+	}
+
+	return key;
+}
+
 static void Com_PumpKeyEvents(void)
 {
 	SDL_Event event;
@@ -304,16 +454,16 @@ static void Com_PumpKeyEvents(void)
 	in_eventTime = Sys_Milliseconds();
 
 	while (SDL_PollEvent(&event)) {
-		if (Key_GetCatcher() & KEYCATCH_CONSOLE || Key_GetCatcher() & KEYCATCH_UI) {
+		if ( Key_GetCatcher() & KEYCATCH_CONSOLE || Key_GetCatcher() & KEYCATCH_UI ) {
 			ImGui_ImplSDL2_ProcessEvent(&event);
 		}
 
 		switch (event.type) {
 		case SDL_KEYDOWN:
-			Com_QueueEvent( in_eventTime, SE_KEY, event.key.keysym.scancode, qtrue, 0, NULL );
+			Com_QueueEvent( in_eventTime, SE_KEY, Com_TranslateSDL2ToQ3Key( &event.key.keysym, qtrue ), qtrue, 0, NULL );
 			break;
 		case SDL_KEYUP:
-			Com_QueueEvent( in_eventTime, SE_KEY, event.key.keysym.scancode, qfalse, 0, NULL );
+			Com_QueueEvent( in_eventTime, SE_KEY, Com_TranslateSDL2ToQ3Key( &event.key.keysym, qfalse ), qfalse, 0, NULL );
 			break;
 		case SDL_WINDOWEVENT:
 			switch (event.window.event) {
@@ -1481,6 +1631,7 @@ void Com_Init(char *commandLine)
 	Cmd_AddCommand("shutdown", Com_Shutdown_f);
 //	Cmd_AddCommand("game_restart", Com_GameRestart_f);
 	Cmd_AddCommand("quit", Com_Quit_f);
+	Cmd_AddCommand( "exit", Com_Quit_f ); // really just added for convenience...
 	Cmd_AddCommand( "writecfg", Com_WriteConfig_f );
 
 	VM_Init();

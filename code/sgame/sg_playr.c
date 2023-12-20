@@ -11,6 +11,11 @@
 #define WEAPON_SLOT_RIFLE   2
 #define WEAPON_SLOT_ARM     3
 
+// DO NOT CHANGE THESE, THESE VALUES ARE USED FOR CAMERA MOVEMENT!!!!!!!!!!!!!!!
+#define PMOVE_VELSCALE_VERTICLE		0.33f
+#define PMOVE_VELSCALE_HORIZONTAL	0.4467f
+#define PMOVE_CAMERA_SPEED			0.079f
+
 typedef enum {
     kbMelee,
     kbDash,
@@ -281,9 +286,59 @@ static void PM_WallMove( pmove_t *pm )
 
 static void PM_WalkMove( pmove_t *pm )
 {
-}
+	int i;
+	vec3_t wishvel;
+	float fmove, smove;
+	vec3_t wishdir;
+	float wishspeed;
+	float scale;
+	float accelerate;
+	float vel;
 
-static pmove_t pm;
+	if ( PM_CheckJump( pm ) ) {
+		// jumped away
+		PM_AirMove( pm );
+	}
+
+	PM_Friction( pm );
+
+	fmove = pm->forwardmove;
+	smove = pm->rightmove;
+
+	scale = PM_CmdScale( pm );
+
+	PM_ClipVelocity( pm->forward );
+	PM_ClipVelocity( pm->right );
+
+	VectorNormalize( pm->forward );
+	VectorNormalize( pm->forward );
+
+	for ( i = 0; i < 3; i++ ) {
+		wishvel[i] = pm->forward[i]*fmove + pm->right[i]*smove;
+	}
+
+	VectorCopy( wishvel, wishdir );
+	wishspeed = VectorNormalize( wishdir );
+	wishspeed *= scale;
+
+	PM_Accelerate( wishdir, wishspeed, accelerate, pm );
+
+	vel = VectorLength( pm->vel );
+
+	PM_ClipVelocity( pm->vel );
+
+	VectorNormalize( pm->vel );
+	VectorScale( pm->vel, vel, pm->vel );
+
+	// don't do anything if standing still
+	if ( !pm->vel[0] && !pm->vel[1] ) {
+		return;
+	}
+
+	pm->speed = vel;
+
+	VectorCopy( sg.playr.ent->vel, pm->vel );
+}
 
 void P_MeleeThink( sgentity_t *self )
 {
@@ -312,50 +367,100 @@ void P_MeleeThink( sgentity_t *self )
 	}
 }
 
-static void P_SetMovementDir( int rightmove, int forwardmove )
+static void P_SetMovementDir( pmove_t *pm )
 {
-	if ( rightmove > forwardmove ) {
-		pm.velDir = 0;
-		pm.velDirInverse = 1;
-	} else if ( rightmove < forwardmove ) {
-		pm.velDir = 1;
-		pm.velDirInverse = 0;
+	if ( pm->rightmove > pm->forwardmove ) {
+		pm->velDir = 0;
+		pm->velDirInverse = 1;
+	} else if ( pm->rightmove < pm->forwardmove ) {
+		pm->velDir = 1;
+		pm->velDirInverse = 0;
+	} else {
+		pm->velDir = 0;
 	}
 	
-	if ( rightmove < 0 && forwardmove > 0 ) {
-		pm.movementDir = DIR_NORTH_WEST;
-	} else if ( rightmove == 0 && forwardmove > 0 ) {
-		pm.movementDir = DIR_NORTH;
-	} else if ( rightmove > 0 && forwardmove > 0 ) {
-		pm.movementDir = DIR_NORTH_EAST;
-	} else if ( rightmove > 0 && forwardmove == 0 ) {
-		pm.movementDir = DIR_EAST;
-	} else if ( rightmove > 0 && forwardmove < 0 ) {
-		pm.movementDir = DIR_SOUTH_EAST;
-	} else if ( rightmove == 0 && forwardmove < 0 ) {
-		pm.movementDir = DIR_SOUTH;
-	} else if ( rightmove < 0 && forwardmove < 0 ) {
-		pm.movementDir = DIR_SOUTH_WEST;
-	} else if ( rightmove < 0 && forwardmove == 0 ) {
-		pm.movementDir = DIR_WEST;
+	if ( pm->rightmove < 0 && pm->forwardmove > 0 ) {
+		pm->movementDir = DIR_NORTH_WEST;
+	} else if ( pm->rightmove == 0 && pm->forwardmove > 0 ) {
+		pm->movementDir = DIR_NORTH;
+	} else if ( pm->rightmove > 0 && pm->forwardmove > 0 ) {
+		pm->movementDir = DIR_NORTH_EAST;
+	} else if ( pm->rightmove > 0 && pm->forwardmove == 0 ) {
+		pm->movementDir = DIR_EAST;
+	} else if ( pm->rightmove > 0 && pm->forwardmove < 0 ) {
+		pm->movementDir = DIR_SOUTH_EAST;
+	} else if ( pm->rightmove == 0 && pm->forwardmove < 0 ) {
+		pm->movementDir = DIR_SOUTH;
+	} else if ( pm->rightmove < 0 && pm->forwardmove < 0 ) {
+		pm->movementDir = DIR_SOUTH_WEST;
+	} else if ( pm->rightmove < 0 && pm->forwardmove == 0 ) {
+		pm->movementDir = DIR_WEST;
 	}
 }
+
+static void P_ClipOrigin( sgentity_t *self )
+{
+	self->origin[0] = MAX( self->origin[0], 0 );
+	self->origin[1] = MAX( self->origin[1], 0 );
+}
+
+static void Pmove( sgentity_t *self, pmove_t *pm )
+{
+	// clear results
+	pm->waterlevel = 0;
+
+	P_SetMovementDir( pm );
+
+	pm->forward[0] = pm->forwardmove;
+	pm->forward[1] = pm->forwardmove;
+
+	pm->right[0] = pm->rightmove;
+	pm->right[1] = pm->rightmove;
+
+	PM_WalkMove( pm );
+
+	VectorMA( self->origin, pm->speed, self->vel, self->origin );
+
+	// clip player
+	P_ClipOrigin( self );
+}
+
+static pmove_t pm;
 
 void P_Thinker( sgentity_t *self )
 {
+	int i;
+	ImGuiWindow window;
 
+	Pmove( self, &pm );
+
+	self->facing = pm.velDir;
+
+	window.m_bClosable = qfalse;
+	window.m_bOpen = qtrue;
+	window.m_Flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize;
+	window.m_pTitle = "Player Move Metrics";
+
+	ImGui_BeginWindow( &window );
+	ImGui_SetWindowPos( 0, 0 );
+
+	ImGui_Text( "pm.forwardmove: %i", pm.forwardmove );
+	ImGui_Text( "pm.rightmove: %i", pm.rightmove );
+	ImGui_Text( "pm.upmove: %i", pm.upmove );
+
+	for ( i = 0; i < 3; i++ ) {
+		ImGui_Text( "pm.vel[%i]: %f", i, pm.vel[i] );
+	}
+
+	ImGui_EndWindow();
 }
 
-void SG_SendUserCmd( int forwardmove, int rightmove, int upmove, uint32_t buttons )
+void SG_SendUserCmd( int rightmove, int forwardmove, int upmove )
 {
-    P_SetMovementDir( rightmove, forwardmove );
-	
-	pm.upmove = upmove;
 	pm.forwardmove = forwardmove;
 	pm.rightmove = rightmove;
-	
-	VectorScale( pm.forward, forwardmove, pm.forward );
-	VectorScale( pm.right, rightmove, pm.right );
+	pm.upmove = upmove;
+	P_SetMovementDir( &pm );
 }
 
 void SG_InitPlayer( void )
@@ -377,6 +482,7 @@ void SG_InitPlayer( void )
 	ent->sprite = SPR_PLAYR_IDLE_R;
 	ent->frame = 0;
     ent->entPtr = &sg.playr;
+	ent->health = 100;
 
 	ent->width = 0.5f;
 	ent->height = 0.5f;
@@ -386,4 +492,41 @@ void SG_InitPlayer( void )
 
     // mark as allocated
     sg.playrReady = qtrue;
+}
+
+static void SG_KeyDown( uint32_t key )
+{
+	sgentity_t *ent;
+	float add, *velPoint;
+}
+
+void SG_KeyEvent( uint32_t key, qboolean down )
+{
+	if ( down ) {
+		switch ( key ) {
+		case KEY_W:
+			pm.forwardmove++;
+
+			sg.playr.ent->origin[1] -= PMOVE_VELSCALE_VERTICLE;
+			sg.cameraPos[1] += PMOVE_CAMERA_SPEED;
+			break;
+		case KEY_S:
+			pm.forwardmove--;
+			sg.playr.ent->origin[1] += PMOVE_VELSCALE_VERTICLE;
+			sg.cameraPos[1] -= PMOVE_CAMERA_SPEED;
+			break;
+		case KEY_A:
+			pm.rightmove--;
+			sg.playr.ent->origin[0] -= PMOVE_VELSCALE_HORIZONTAL;
+			sg.cameraPos[0] -= PMOVE_CAMERA_SPEED;
+			sg.playr.ent->facing = 1;
+			break;
+		case KEY_D:
+			pm.rightmove++;
+			sg.playr.ent->origin[0] += PMOVE_VELSCALE_HORIZONTAL;
+			sg.cameraPos[0] += PMOVE_CAMERA_SPEED;
+			sg.playr.ent->facing = 0;
+			break;
+		};
+	}
 }

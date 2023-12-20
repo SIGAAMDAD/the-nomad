@@ -542,27 +542,27 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 
 	len = strlen( edit->buffer );
 
-	if ( Key_IsDown( KEY_LCTRL ) && Key_IsDown( KEY_A ) ) {
+	if ( Key_IsDown( KEY_CTRL ) && Key_IsDown( KEY_A ) ) {
 		data->SelectAll();
 	}
 
 	// ctrl-L clears screen
-	if ( keys[KEY_L].down && keys[ KEY_LCTRL ].down ) {
+	if ( keys[KEY_L].down && keys[ KEY_CTRL ].down ) {
 		Cbuf_AddText( "clear\n" );
 		return 1;
 	}
 
 	// command completion
 
-	if ( keys[KEY_TAB].down || keys[KEY_KP_TAB].down ) {
+	if ( keys[KEY_TAB].down ) {
 		Field_AutoComplete( &g_consoleField );
 		data->InsertChars( data->CursorPos, edit->buffer + data->CursorPos, edit->buffer + edit->cursor );
 	}
 
 	// command history (ctrl-p ctrl-n for unix style)
 
-	if ( ( keys[KEY_WHEEL_UP].down && keys[KEY_LSHIFT].down ) || keys[KEY_UP].down
-		|| ( keys[KEY_P].down && keys[KEY_LCTRL].down ) )
+	if ( ( keys[KEY_WHEEL_UP].down && keys[KEY_SHIFT].down ) || keys[KEY_UP].down
+		|| ( keys[KEY_P].down && keys[KEY_CTRL].down ) )
 	{
 		if ( Con_HistoryGetPrev( &g_consoleField ) ) {
 			data->CursorPos = 0;
@@ -573,8 +573,8 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 		}
 	}
 
-	if ( ( keys[KEY_WHEEL_DOWN].down && keys[KEY_LSHIFT].down ) || keys[KEY_DOWN].down
-		|| ( keys[KEY_N].down && keys[KEY_LCTRL].down ) )
+	if ( ( keys[KEY_WHEEL_DOWN].down && keys[KEY_SHIFT].down ) || keys[KEY_DOWN].down
+		|| ( keys[KEY_N].down && keys[KEY_CTRL].down ) )
 	{
 		if ( Con_HistoryGetNext( &g_consoleField ) ) {
 			data->CursorPos = 0;
@@ -608,13 +608,13 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 	}
 
 	// ctrl-home = top of console
-	if ( Key_IsDown( KEY_HOME ) && Key_IsDown( KEY_LCTRL ) ) {
+	if ( Key_IsDown( KEY_HOME ) && Key_IsDown( KEY_CTRL ) ) {
 		ImGui::SetScrollX( 0.0f );
 		ImGui::SetScrollY( 0.0f );
 	}
 
 	// ctrl-end = bottom of console
-	if ( Key_IsDown( KEY_END ) && Key_IsDown( KEY_LCTRL ) ) {
+	if ( Key_IsDown( KEY_END ) && Key_IsDown( KEY_CTRL ) ) {
 		ImGui::SetScrollX( 0.0f );
 		ImGui::SetScrollY( ImGui::GetScrollMaxY() );
 	}

@@ -229,7 +229,7 @@ static void G_KeyMove( usercmd_t *cmd )
 	int32_t     forward, side, up;
 
 	cmd->buttons |= BUTTON_WALKING;
-	movespeed = 64;
+	movespeed = 1;
 
 	forward = 0;
 	side = 0;

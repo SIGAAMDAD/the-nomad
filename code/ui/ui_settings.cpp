@@ -108,8 +108,7 @@ static settingsmenu_t settings;
 static const char *KeyToString( uint32_t key )
 {
     switch (key) {
-    case KEY_LSHIFT: return "Left-Shift";
-    case KEY_RSHIFT: return "Right-Shift";
+    case KEY_SHIFT: return "Left-Shift";
     default:
         break;
     };

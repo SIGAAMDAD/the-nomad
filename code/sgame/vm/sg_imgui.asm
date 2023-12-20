@@ -293,6 +293,8 @@ import G_Printf
 import G_Error
 import SG_Printf
 import SG_Error
+import SG_BuildMoveCommand
+import SGameCommand
 import SG_DrawFrame
 import pm_wallTime
 import pm_wallrunAccelMove
