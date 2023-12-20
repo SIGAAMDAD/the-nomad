@@ -632,6 +632,14 @@ float RadiusFromBounds( const vec3_t mins, const vec3_t maxs ) {
 	return VectorLength (corner);
 }
 
+#if defined( Q3_VM ) || defined( __Q3_VM_MATH )
+int VectorCompare( const vec3_t a, const vec3_t b ) {
+	if ( a[0] != b[0] || a[1] != b[1] || a[2] != b[2] ) {
+		return 0;
+	}
+	return 1;
+}
+#endif
 
 void ClearBounds( vec3_t mins, vec3_t maxs ) {
 	mins[0] = mins[1] = mins[2] = 99999;

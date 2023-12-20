@@ -425,6 +425,10 @@ qboolean G_CheckWallHit( const vec3_t origin, dirtype_t dir ) {
 }
 
 void G_SetCameraData( const vec2_t origin, float zoom, float rotation ) {
+    if ( r_debugCamera->i ) {
+        return;
+    }
+
     VectorCopy2( pos, origin );
     pos[2] = zoom;
 }

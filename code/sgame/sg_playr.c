@@ -12,7 +12,7 @@
 #define WEAPON_SLOT_ARM     3
 
 // DO NOT CHANGE THESE, THESE VALUES ARE USED FOR CAMERA MOVEMENT!!!!!!!!!!!!!!!
-#define PMOVE_VELSCALE_VERTICLE		0.33f
+#define PMOVE_VELSCALE_VERTICLE		0.329f
 #define PMOVE_VELSCALE_HORIZONTAL	0.4467f
 #define PMOVE_CAMERA_SPEED			0.079f
 
@@ -398,31 +398,37 @@ static void P_SetMovementDir( pmove_t *pm )
 	}
 }
 
-static void P_ClipOrigin( sgentity_t *self )
+/*
+* P_ClipOrigin: returns qtrue if the player's origin was clipped
+*/
+static qboolean P_ClipOrigin( sgentity_t *self )
 {
-	self->origin[0] = MAX( self->origin[0], 0 );
-	self->origin[1] = MAX( self->origin[1], 0 );
-}
+	vec3_t origin;
+	sgentity_t *ent;
 
-static void Pmove( sgentity_t *self, pmove_t *pm )
-{
-	// clear results
-	pm->waterlevel = 0;
+	VectorCopy( origin, self->origin );
 
-	P_SetMovementDir( pm );
+	if ( origin[0] > sg.mapInfo.width - 1 ) {
+		origin[0] = sg.mapInfo.width - 1;
+	} else if ( origin[0] < 0 ) {
+		origin[0] = 0;
+	}
 
-	pm->forward[0] = pm->forwardmove;
-	pm->forward[1] = pm->forwardmove;
+	if ( origin[1] > sg.mapInfo.height - 1 ) {
+		origin[1] = sg.mapInfo.height - 1;
+	} else if ( origin[1] < 0 ) {
+		origin[1] = 0;
+	}
 
-	pm->right[0] = pm->rightmove;
-	pm->right[1] = pm->rightmove;
+	if ( !VectorCompare( self->origin, origin ) ) { // clip it at map boundaries
+		VectorCopy( self->origin, origin );
+		return qtrue;
+	} else if ( Ent_CheckWallCollision( self ) || Ent_CheckEntityCollision( self ) ) { // hit a solid entity
+		VectorCopy( self->origin, origin );
+		return qtrue;
+	}
 
-	PM_WalkMove( pm );
-
-	VectorMA( self->origin, pm->speed, self->vel, self->origin );
-
-	// clip player
-	P_ClipOrigin( self );
+	return qfalse;
 }
 
 static pmove_t pm;
@@ -431,8 +437,6 @@ void P_Thinker( sgentity_t *self )
 {
 	int i;
 	ImGuiWindow window;
-
-	Pmove( self, &pm );
 
 	self->facing = pm.velDir;
 
@@ -453,14 +457,11 @@ void P_Thinker( sgentity_t *self )
 	}
 
 	ImGui_EndWindow();
+
+	memset( &pm, 0, sizeof(pm) );
 }
 
-void SG_SendUserCmd( int rightmove, int forwardmove, int upmove )
-{
-	pm.forwardmove = forwardmove;
-	pm.rightmove = rightmove;
-	pm.upmove = upmove;
-	P_SetMovementDir( &pm );
+void SG_SendUserCmd( int rightmove, int forwardmove, int upmove ) {
 }
 
 void SG_InitPlayer( void )
@@ -503,10 +504,12 @@ static void SG_KeyDown( uint32_t key )
 void SG_KeyEvent( uint32_t key, qboolean down )
 {
 	if ( down ) {
+		vec2_t cameraPos;
+		VectorCopy2( cameraPos, sg.cameraPos );
+
 		switch ( key ) {
 		case KEY_W:
 			pm.forwardmove++;
-
 			sg.playr.ent->origin[1] -= PMOVE_VELSCALE_VERTICLE;
 			sg.cameraPos[1] += PMOVE_CAMERA_SPEED;
 			break;
@@ -528,5 +531,10 @@ void SG_KeyEvent( uint32_t key, qboolean down )
 			sg.playr.ent->facing = 0;
 			break;
 		};
+
+		// clip the origin so the camera doesn't detach from the player
+		if ( P_ClipOrigin( sg.playr.ent ) ) {
+			VectorCopy2( sg.cameraPos, cameraPos );
+		}
 	}
 }

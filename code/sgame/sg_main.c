@@ -338,7 +338,7 @@ void SG_Init( void )
     G_Printf( "gamename: %s\n", GLN_VERSION );
     G_Printf( "gamedate: %s\n", __DATE__ );
 
-//    trap_Key_SetCatcher( trap_Key_GetCatcher() | KEYCATCH_SGAME );
+    trap_Key_SetCatcher( trap_Key_GetCatcher() | KEYCATCH_SGAME );
 
     // clear sgame state
     memset( &sg, 0, sizeof(sg) );

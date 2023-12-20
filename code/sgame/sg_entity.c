@@ -43,7 +43,7 @@ sgentity_t *Ent_CheckEntityCollision( const sgentity_t *ent )
 
 	it = &sg_entities[0];
 	for ( i = 0; i < sg.numEntities; i++, it++ ) {
-		if ( BoundsIntersect( it->bounds.mins, it->bounds.maxs, ent->bounds.mins, ent->bounds.maxs ) ) {
+		if ( BoundsIntersect( it->bounds.mins, it->bounds.maxs, ent->bounds.mins, ent->bounds.maxs ) && it != ent ) {
 			return it;
 		}
 	}
@@ -56,18 +56,8 @@ sgentity_t *Ent_CheckEntityCollision( const sgentity_t *ent )
 */
 qboolean Ent_CheckWallCollision( const sgentity_t *e )
 {
-	ray_t ray;
-	const float *moveDir;
-	vec3_t origin;
-	sgentity_t *it;
 	dirtype_t d;
-	
-	moveDir = dirvectors[ e->dir ];
-	VectorAdd( e->origin, moveDir, origin );
-	
-	origin[0] += e->vel[0];
-	origin[1] += e->vel[1];
-	
+
 	switch ( e->dir ) {
 	case DIR_NORTH:
 	case DIR_SOUTH:
@@ -84,7 +74,7 @@ qboolean Ent_CheckWallCollision( const sgentity_t *e )
 	
 	// check for a wall collision
 	// if we're touching a wall with the side marked for collision, return true
-	if ( trap_CheckWallHit( origin, d ) ) {
+	if ( trap_CheckWallHit( e->origin, d ) ) {
 		return qtrue;
 	}
 	

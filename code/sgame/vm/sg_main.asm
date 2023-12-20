@@ -1583,7 +1583,7 @@ line 333
 LABELV $209
 endproc SG_LoadMedia 52 20
 export SG_Init
-proc SG_Init 0 12
+proc SG_Init 4 12
 line 336
 ;334:
 ;335:void SG_Init( void )
@@ -1613,9 +1613,22 @@ ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 344
+line 341
 ;340:
-;341://    trap_Key_SetCatcher( trap_Key_GetCatcher() | KEYCATCH_SGAME );
+;341:    trap_Key_SetCatcher( trap_Key_GetCatcher() | KEYCATCH_SGAME );
+ADDRLP4 0
+ADDRGP4 trap_Key_GetCatcher
+CALLU4
+ASGNU4
+ADDRLP4 0
+INDIRU4
+CNSTU4 8192
+BORU4
+ARGU4
+ADDRGP4 trap_Key_SetCatcher
+CALLV
+pop
+line 344
 ;342:
 ;343:    // clear sgame state
 ;344:    memset( &sg, 0, sizeof(sg) );
@@ -1728,7 +1741,7 @@ pop
 line 371
 ;371:}
 LABELV $230
-endproc SG_Init 0 12
+endproc SG_Init 4 12
 export SG_Shutdown
 proc SG_Shutdown 0 12
 line 374

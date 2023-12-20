@@ -229,7 +229,7 @@ static void G_KeyMove( usercmd_t *cmd )
 	int32_t     forward, side, up;
 
 	cmd->buttons |= BUTTON_WALKING;
-	movespeed = 1;
+	movespeed = 4;
 
 	forward = 0;
 	side = 0;
@@ -238,10 +238,10 @@ static void G_KeyMove( usercmd_t *cmd )
 	side += movespeed * G_KeyState (&in_right);
 	side -= movespeed * G_KeyState (&in_left);
 
-	up += movespeed * G_KeyState (&in_up);
-
 	forward += movespeed * G_KeyState (&in_forward);
 	forward -= movespeed * G_KeyState (&in_backward);
+
+	up += movespeed * G_KeyState (&in_up);
 
 	cmd->forwardmove = ClampCharMove( forward );
 	cmd->rightmove = ClampCharMove( side );
@@ -556,10 +556,10 @@ void G_InitInput( void )
     Cmd_AddCommand( "-forward", IN_ForwardUp );
     Cmd_AddCommand( "+backward", IN_BackDown );
     Cmd_AddCommand( "-backward", IN_BackUp );
-    Cmd_AddCommand( "+moveleft", IN_LeftDown );
-    Cmd_AddCommand( "-moveleft", IN_LeftUp );
-    Cmd_AddCommand( "+moveright", IN_RightDown );
-    Cmd_AddCommand( "-moveright", IN_RightUp );
+    Cmd_AddCommand( "+left", IN_LeftDown );
+    Cmd_AddCommand( "-left", IN_LeftUp );
+    Cmd_AddCommand( "+right", IN_RightDown );
+    Cmd_AddCommand( "-right", IN_RightUp );
     Cmd_AddCommand( "+moveup", IN_UpDown );
     Cmd_AddCommand( "-moveup", IN_UpUp );
     Cmd_AddCommand( "+button0", IN_Button0Down );
