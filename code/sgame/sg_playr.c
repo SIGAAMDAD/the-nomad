@@ -12,9 +12,8 @@
 #define WEAPON_SLOT_ARM     3
 
 // DO NOT CHANGE THESE, THESE VALUES ARE USED FOR CAMERA MOVEMENT!!!!!!!!!!!!!!!
-#define PMOVE_VELSCALE_VERTICLE		0.329f
-#define PMOVE_VELSCALE_HORIZONTAL	0.4467f
-#define PMOVE_CAMERA_SPEED			0.079f
+#define PMOVE_CLAMP_BORDER_HORZ		-0.2f
+#define PMOVE_CLAMP_BORDER_VERT		0.0f
 
 typedef enum {
     kbMelee,
@@ -32,6 +31,7 @@ typedef enum {
 
 typedef struct {
     vec3_t vel;
+	vec3_t cameraPos;
 	vec3_t grapplePoint;
 	vec3_t forward, right;
 	float addspeed;
@@ -84,6 +84,7 @@ qboolean P_GiveWeapon( weapontype_t type )
 
 static uint32_t key_dash;
 static uint32_t key_melee;
+float pm_friction = 0.045f;
 
 static void P_SetLegsAnim( int anim )
 {
@@ -93,13 +94,14 @@ static void P_SetLegsAnim( int anim )
 static void PM_Friction( pmove_t *pm )
 {
 	float speed;
-	
+
 	speed = VectorLength( pm->vel );
 	if ( speed <= 0.0f ) {
 		return;
 	}
-	
 
+	pm->vel[0] = MAX( 0, pm->vel[0] - pm_friction );
+	pm->vel[1] = MAX( 0, pm->vel[1] - pm_friction );
 }
 
 static void PM_Accelerate( vec3_t wishdir, float wishspeed, float accel, pmove_t *pm )
@@ -398,6 +400,8 @@ static void P_SetMovementDir( pmove_t *pm )
 	}
 }
 
+static pmove_t pm;
+
 /*
 * P_ClipOrigin: returns qtrue if the player's origin was clipped
 */
@@ -410,35 +414,51 @@ static qboolean P_ClipOrigin( sgentity_t *self )
 
 	if ( origin[0] > sg.mapInfo.width - 1 ) {
 		origin[0] = sg.mapInfo.width - 1;
-	} else if ( origin[0] < 0 ) {
-		origin[0] = 0;
+	} else if ( origin[0] < PMOVE_CLAMP_BORDER_HORZ ) {
+		origin[0] = PMOVE_CLAMP_BORDER_HORZ;
 	}
 
 	if ( origin[1] > sg.mapInfo.height - 1 ) {
 		origin[1] = sg.mapInfo.height - 1;
-	} else if ( origin[1] < 0 ) {
-		origin[1] = 0;
+	} else if ( origin[1] < PMOVE_CLAMP_BORDER_VERT ) {
+		origin[1] = PMOVE_CLAMP_BORDER_VERT;
 	}
 
 	if ( !VectorCompare( self->origin, origin ) ) { // clip it at map boundaries
 		VectorCopy( self->origin, origin );
+		VectorClear( pm.vel );
 		return qtrue;
 	} else if ( Ent_CheckWallCollision( self ) || Ent_CheckEntityCollision( self ) ) { // hit a solid entity
 		VectorCopy( self->origin, origin );
+		VectorClear( pm.vel );
 		return qtrue;
 	}
 
 	return qfalse;
 }
 
-static pmove_t pm;
+
+static void Pmove( sgentity_t *self )
+{
+	int i;
+
+	VectorAdd( self->origin, pm.vel, self->origin );
+	PM_Friction( &pm );
+
+	if ( P_ClipOrigin( sg.playr.ent ) ) {
+		VectorClear( pm.vel );
+	}
+
+	sg.cameraPos[0] = self->origin[0];
+	sg.cameraPos[1] = -self->origin[1];
+}
 
 void P_Thinker( sgentity_t *self )
 {
 	int i;
 	ImGuiWindow window;
 
-	self->facing = pm.velDir;
+	Pmove( self );
 
 	window.m_bClosable = qfalse;
 	window.m_bOpen = qtrue;
@@ -446,19 +466,12 @@ void P_Thinker( sgentity_t *self )
 	window.m_pTitle = "Player Move Metrics";
 
 	ImGui_BeginWindow( &window );
-	ImGui_SetWindowPos( 0, 0 );
-
-	ImGui_Text( "pm.forwardmove: %i", pm.forwardmove );
-	ImGui_Text( "pm.rightmove: %i", pm.rightmove );
-	ImGui_Text( "pm.upmove: %i", pm.upmove );
 
 	for ( i = 0; i < 3; i++ ) {
 		ImGui_Text( "pm.vel[%i]: %f", i, pm.vel[i] );
 	}
 
 	ImGui_EndWindow();
-
-	memset( &pm, 0, sizeof(pm) );
 }
 
 void SG_SendUserCmd( int rightmove, int forwardmove, int upmove ) {
@@ -504,37 +517,25 @@ static void SG_KeyDown( uint32_t key )
 void SG_KeyEvent( uint32_t key, qboolean down )
 {
 	if ( down ) {
-		vec2_t cameraPos;
-		VectorCopy2( cameraPos, sg.cameraPos );
-
 		switch ( key ) {
 		case KEY_W:
 			pm.forwardmove++;
-			sg.playr.ent->origin[1] -= PMOVE_VELSCALE_VERTICLE;
-			sg.cameraPos[1] += PMOVE_CAMERA_SPEED;
+			pm.vel[1] -= 0.05f;
 			break;
 		case KEY_S:
 			pm.forwardmove--;
-			sg.playr.ent->origin[1] += PMOVE_VELSCALE_VERTICLE;
-			sg.cameraPos[1] -= PMOVE_CAMERA_SPEED;
+			pm.vel[1] += 0.05f;
 			break;
 		case KEY_A:
 			pm.rightmove--;
-			sg.playr.ent->origin[0] -= PMOVE_VELSCALE_HORIZONTAL;
-			sg.cameraPos[0] -= PMOVE_CAMERA_SPEED;
+			pm.vel[0] -= 0.05f;
 			sg.playr.ent->facing = 1;
 			break;
 		case KEY_D:
 			pm.rightmove++;
-			sg.playr.ent->origin[0] += PMOVE_VELSCALE_HORIZONTAL;
-			sg.cameraPos[0] += PMOVE_CAMERA_SPEED;
+			pm.vel[0] += 0.05f;
 			sg.playr.ent->facing = 0;
 			break;
 		};
-
-		// clip the origin so the camera doesn't detach from the player
-		if ( P_ClipOrigin( sg.playr.ent ) ) {
-			VectorCopy2( sg.cameraPos, cameraPos );
-		}
 	}
 }

@@ -59,9 +59,13 @@ static void SG_DrawPlayer( void )
 
     ent = sg.playr.ent;
 
-    RE_AddSpriteToScene( ent->origin, ent->hSpriteSheet, ( ent->sprite + ent->facing ) + ent->frame );
+    if ( ent->state->frames ) {
+        RE_AddSpriteToScene( ent->origin, ent->hSpriteSheet, ent->sprite + ent->frame );
+    } else {
+        RE_AddSpriteToScene( ent->origin, ent->hSpriteSheet, ent->sprite );
+    }
 
-//    RE_AddSpriteToScene( ent->origin, ent->hSpriteSheet, sg.playr.foot_sprite + sg.playr.foot_frame );
+    RE_AddSpriteToScene( ent->origin, ent->hSpriteSheet, ( sg.playr.foot_sprite + ent->facing ) + sg.playr.foot_frame );
 }
 
 int SG_DrawFrame( void )

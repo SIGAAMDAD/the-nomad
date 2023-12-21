@@ -1069,28 +1069,22 @@ LABELV $172
 line 262
 ;260:    }
 ;261:
-;262:    SG_DrawFrame();
-ADDRGP4 SG_DrawFrame
-CALLI4
-pop
-line 264
-;263:
-;264:    if ( sg_paused.i ) {
+;262:    if ( sg_paused.i ) {
 ADDRGP4 sg_paused+260
 INDIRI4
 CNSTI4 0
 EQI4 $175
-line 265
-;265:        return 0;
+line 263
+;263:        return 0;
 CNSTI4 0
 RETI4
 ADDRGP4 $168
 JUMPV
 LABELV $175
-line 268
-;266:    }
-;267:
-;268:    sg.framenum++;
+line 266
+;264:    }
+;265:
+;266:    sg.framenum++;
 ADDRLP4 20
 ADDRGP4 sg+92
 ASGNP4
@@ -1102,20 +1096,20 @@ INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-line 269
-;269:    sg.previousTime = sg.framenum;
+line 267
+;267:    sg.previousTime = sg.framenum;
 ADDRGP4 sg+84
 ADDRGP4 sg+92
 INDIRI4
 ASGNI4
-line 270
-;270:    sg.levelTime = levelTime;
+line 268
+;268:    sg.levelTime = levelTime;
 ADDRGP4 sg+88
 ADDRFP4 0
 INDIRI4
 ASGNI4
-line 271
-;271:    msec = sg.levelTime - sg.previousTime;
+line 269
+;269:    msec = sg.levelTime - sg.previousTime;
 ADDRLP4 16
 ADDRGP4 sg+88
 INDIRI4
@@ -1123,15 +1117,15 @@ ADDRGP4 sg+84
 INDIRI4
 SUBI4
 ASGNI4
-line 279
-;272:
-;273:    // build player's movement command
-;274://    SG_BuildMoveCommand();
-;275:
+line 277
+;270:
+;271:    // build player's movement command
+;272://    SG_BuildMoveCommand();
+;273:
+;274:    //
+;275:    // go through all allocated entities
 ;276:    //
-;277:    // go through all allocated entities
-;278:    //
-;279:    start = trap_Milliseconds();
+;277:    start = trap_Milliseconds();
 ADDRLP4 24
 ADDRGP4 trap_Milliseconds
 CALLI4
@@ -1140,21 +1134,21 @@ ADDRLP4 8
 ADDRLP4 24
 INDIRI4
 ASGNI4
-line 280
-;280:    ent = &sg_entities[0];
+line 278
+;278:    ent = &sg_entities[0];
 ADDRLP4 0
 ADDRGP4 sg_entities
 ASGNP4
-line 281
-;281:    for ( i = 0; i < sg.numEntities; i++) {
+line 279
+;279:    for ( i = 0; i < sg.numEntities; i++) {
 ADDRLP4 4
 CNSTI4 0
 ASGNI4
 ADDRGP4 $187
 JUMPV
 LABELV $184
-line 282
-;282:        if ( !ent->health ) {
+line 280
+;280:        if ( !ent->health ) {
 ADDRLP4 0
 INDIRP4
 CNSTI4 112
@@ -1162,15 +1156,15 @@ ADDP4
 INDIRI4
 CNSTI4 0
 NEI4 $189
-line 283
-;283:            continue;
+line 281
+;281:            continue;
 ADDRGP4 $185
 JUMPV
 LABELV $189
-line 286
-;284:        }
-;285:
-;286:        ent->ticker--;
+line 284
+;282:        }
+;283:
+;284:        ent->ticker--;
 ADDRLP4 28
 ADDRLP4 0
 INDIRP4
@@ -1185,9 +1179,9 @@ INDIRI4
 CNSTI4 1
 SUBI4
 ASGNI4
-line 288
-;287:
-;288:        if ( ent->ticker <= -1 ) {
+line 286
+;285:
+;286:        if ( ent->ticker <= -1 ) {
 ADDRLP4 0
 INDIRP4
 CNSTI4 116
@@ -1195,8 +1189,8 @@ ADDP4
 INDIRI4
 CNSTI4 -1
 GTI4 $191
-line 289
-;289:            Ent_SetState( ent, ent->state->nextstate );
+line 287
+;287:            Ent_SetState( ent, ent->state->nextstate );
 ADDRLP4 0
 INDIRP4
 ARGP4
@@ -1212,16 +1206,16 @@ ARGI4
 ADDRGP4 Ent_SetState
 CALLI4
 pop
-line 290
-;290:            continue;
+line 288
+;288:            continue;
 ADDRGP4 $185
 JUMPV
 LABELV $191
-line 294
-;291:        }
-;292:
-;293:        // update the current entity's animation frame
-;294:        if ( ent->state->frames > 0 ) {
+line 292
+;289:        }
+;290:
+;291:        // update the current entity's animation frame
+;292:        if ( ent->state->frames > 0 ) {
 ADDRLP4 0
 INDIRP4
 CNSTI4 92
@@ -1232,8 +1226,8 @@ ADDP4
 INDIRU4
 CNSTU4 0
 EQU4 $193
-line 295
-;295:            if ( ent->frame == ent->state->frames ) {
+line 293
+;293:            if ( ent->frame == ent->state->frames ) {
 ADDRLP4 0
 INDIRP4
 CNSTI4 120
@@ -1249,34 +1243,31 @@ CNSTI4 4
 ADDP4
 INDIRU4
 NEU4 $195
-line 296
-;296:                ent->frame = 0; // reset animation
+line 294
+;294:                ent->frame = 0; // reset animation
 ADDRLP4 0
 INDIRP4
 CNSTI4 120
 ADDP4
 CNSTI4 0
 ASGNI4
-line 297
-;297:            }
+line 295
+;295:            }
 ADDRGP4 $196
 JUMPV
 LABELV $195
-line 298
-;298:            else if ( ent->state->tics % ent->state->frames ) {
-ADDRLP4 36
+line 296
+;296:            else if ( ent->ticker % ent->state->frames ) {
+ADDRLP4 0
+INDIRP4
+CNSTI4 116
+ADDP4
+INDIRI4
+CVIU4 4
 ADDRLP4 0
 INDIRP4
 CNSTI4 92
 ADDP4
-INDIRP4
-ASGNP4
-ADDRLP4 36
-INDIRP4
-CNSTI4 8
-ADDP4
-INDIRU4
-ADDRLP4 36
 INDIRP4
 CNSTI4 4
 ADDP4
@@ -1284,8 +1275,8 @@ INDIRU4
 MODU4
 CNSTU4 0
 EQU4 $197
-line 299
-;299:                ent->frame++;
+line 297
+;297:                ent->frame++;
 ADDRLP4 40
 ADDRLP4 0
 INDIRP4
@@ -1300,16 +1291,16 @@ INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-line 300
-;300:            }
+line 298
+;298:            }
 LABELV $197
 LABELV $196
-line 301
-;301:        }
+line 299
+;299:        }
 LABELV $193
-line 303
-;302:
-;303:        ent->state->action.acp1( ent );
+line 301
+;300:
+;301:        ent->state->action.acp1( ent );
 ADDRLP4 0
 INDIRP4
 ARGP4
@@ -1323,10 +1314,10 @@ ADDP4
 INDIRP4
 CALLV
 pop
-line 304
-;304:    }
+line 302
+;302:    }
 LABELV $185
-line 281
+line 279
 ADDRLP4 4
 ADDRLP4 4
 INDIRI4
@@ -1340,8 +1331,8 @@ CVIU4 4
 ADDRGP4 sg+76
 INDIRU4
 LTU4 $184
-line 305
-;305:    end = trap_Milliseconds();
+line 303
+;303:    end = trap_Milliseconds();
 ADDRLP4 28
 ADDRGP4 trap_Milliseconds
 CALLI4
@@ -1350,6 +1341,12 @@ ADDRLP4 12
 ADDRLP4 28
 INDIRI4
 ASGNI4
+line 305
+;304:
+;305:    SG_DrawFrame();
+ADDRGP4 SG_DrawFrame
+CALLI4
+pop
 line 307
 ;306:
 ;307:    if ( sg_printEntities.i ) {
@@ -3258,7 +3255,7 @@ byte 1 101
 byte 1 99
 byte 1 32
 byte 1 50
-byte 1 48
+byte 1 49
 byte 1 32
 byte 1 50
 byte 1 48

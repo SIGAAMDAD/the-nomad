@@ -259,8 +259,6 @@ int SG_RunLoop( int levelTime, int frameTime )
         return 1; // we don't draw the level if we're ending it
     }
 
-    SG_DrawFrame();
-
     if ( sg_paused.i ) {
         return 0;
     }
@@ -295,7 +293,7 @@ int SG_RunLoop( int levelTime, int frameTime )
             if ( ent->frame == ent->state->frames ) {
                 ent->frame = 0; // reset animation
             }
-            else if ( ent->state->tics % ent->state->frames ) {
+            else if ( ent->ticker % ent->state->frames ) {
                 ent->frame++;
             }
         }
@@ -303,6 +301,8 @@ int SG_RunLoop( int levelTime, int frameTime )
         ent->state->action.acp1( ent );
     }
     end = trap_Milliseconds();
+
+    SG_DrawFrame();
 
     if ( sg_printEntities.i ) {
         for ( i = 0; i < sg.numEntities; i++ ) {

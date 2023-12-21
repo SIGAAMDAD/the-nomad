@@ -22,13 +22,47 @@ typedef struct imguiState_s
 
 static imguiState_t imgui;
 
+static bool ImGui_IsValid( void )
+{
+    if ( Key_GetCatcher() & KEYCATCH_CONSOLE ) {
+        //
+        // kill anything currently active
+        //
+
+        if ( imgui.m_nColorStack ) {
+            ImGui::PopStyleColor( imgui.m_nColorStack );
+        }
+        if ( imgui.m_bMenuOpen ) {
+            ImGui::EndMenu();
+        }
+        if ( imgui.m_bPopupOpen ) {
+            ImGui::EndPopup();
+        }
+        if ( imgui.m_bWindowOpen ) {
+            ImGui::End();
+        }
+
+        // clear state
+        memset( &imgui, 0, sizeof(imgui) );
+
+        return false;
+    }
+    return true;
+}
+
 void ImGui_OpenPopup( const char *pName ) {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     ImGui::OpenPopup( pName );
     imgui.m_bPopupOpen = true;
 }
 
 int ImGui_BeginPopupModal( const char *pName, ImGuiWindowFlags flags )
 {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     if ( !imgui.m_bPopupOpen ) {
         N_Error( ERR_DROP, "%s: no popup is open", __func__ );
     }
@@ -37,6 +71,9 @@ int ImGui_BeginPopupModal( const char *pName, ImGuiWindowFlags flags )
 }
 
 void ImGui_CloseCurrentPopup( void ) {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     if ( !imgui.m_bPopupOpen ) {
         N_Error( ERR_DROP, "%s: no popup is open", __func__ );
     }
@@ -44,6 +81,9 @@ void ImGui_CloseCurrentPopup( void ) {
 }
 
 void ImGui_EndPopup( void ) {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     if ( !imgui.m_bPopupOpen ) {
         N_Error( ERR_DROP, "%s: no popup is open", __func__ );
     }
@@ -53,6 +93,10 @@ void ImGui_EndPopup( void ) {
 int ImGui_BeginWindow( ImGuiWindow *pWindow )
 {
     bool bOpen, bResult;
+
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
 
     if (imgui.m_bWindowOpen) {
         N_Error( ERR_DROP, "ImGui_BeginWindow: a window is already active, pop it before adding another one to the frame" );
@@ -70,6 +114,9 @@ int ImGui_BeginWindow( ImGuiWindow *pWindow )
 
 void ImGui_EndWindow( void )
 {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     if (!imgui.m_bWindowOpen) {
         N_Error( ERR_DROP, "ImGui_EndWindow: there must be a window active before calling this" );
     }
@@ -79,27 +126,45 @@ void ImGui_EndWindow( void )
 }
 
 int ImGui_BeginTable( const char *pLabel, uint32_t nColumns ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     return ImGui::BeginTable( pLabel, nColumns );
 }
 
 void ImGui_EndTable( void ) {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     ImGui::EndTable();
 }
 
 void ImGui_TableNextRow( void ) {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     ImGui::TableNextRow();
 }
 
 void ImGui_TableNextColumn( void ) {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     ImGui::TableNextColumn();
 }
 
 int ImGui_BeginMenu( const char *pTitle ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     imgui.m_bMenuOpen = ImGui::BeginMenu( pTitle );
     return imgui.m_bMenuOpen;
 }
 
 void ImGui_EndMenu( void ) {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     if (!imgui.m_bMenuOpen) {
         N_Error( ERR_DROP, "%s: no menu active", __func__ );
     }
@@ -109,6 +174,9 @@ void ImGui_EndMenu( void ) {
 }
 
 int ImGui_MenuItem( ImGuiMenuItem *pItem ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     if (!imgui.m_bMenuOpen) {
         N_Error( ERR_DROP, "%s: no menu active", __func__ );
     }
@@ -117,6 +185,9 @@ int ImGui_MenuItem( ImGuiMenuItem *pItem ) {
 
 int ImGui_InputText( ImGuiInputText *pInput )
 {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
@@ -129,6 +200,9 @@ int ImGui_InputText( ImGuiInputText *pInput )
 }
 
 int ImGui_IsWindowCollapsed( void ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     if (!imgui.m_bWindowOpen) {
         N_Error( ERR_DROP, "%s: no window active", __func__ );
     }
@@ -136,6 +210,9 @@ int ImGui_IsWindowCollapsed( void ) {
 }
 
 void ImGui_SetWindowCollapsed( int bCollapsed ) {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     if (!imgui.m_bWindowOpen) {
         N_Error( ERR_DROP, "%s: no window active", __func__ );
     }
@@ -143,6 +220,9 @@ void ImGui_SetWindowCollapsed( int bCollapsed ) {
 }
 
 void ImGui_SetWindowPos( float x, float y ) {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     if (!imgui.m_bWindowOpen) {
         N_Error( ERR_DROP, "%s: no window active", __func__ );
     }
@@ -150,6 +230,9 @@ void ImGui_SetWindowPos( float x, float y ) {
 }
 
 void ImGui_SetWindowSize( float w, float h ) {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     if (!imgui.m_bWindowOpen) {
         N_Error( ERR_DROP, "%s: no window active", __func__ );
     }
@@ -157,6 +240,9 @@ void ImGui_SetWindowSize( float w, float h ) {
 }
 
 void ImGui_SetWindowFontScale( float scale ) {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     if (!imgui.m_bWindowOpen) {
         N_Error( ERR_DROP, "%s: no window active", __func__ );
     }
@@ -165,12 +251,18 @@ void ImGui_SetWindowFontScale( float scale ) {
 
 void ImGui_SetItemTooltip( const char *pTooltip )
 {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     if (ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled )) {
         ImGui::SetItemTooltip( pTooltip );
     }
 }
 
 int ImGui_InputTextMultiline( ImGuiInputText *pInput ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
@@ -184,6 +276,9 @@ int ImGui_InputTextMultiline( ImGuiInputText *pInput ) {
 }
 
 int ImGui_InputTextWithHint( ImGuiInputTextWithHint *pInput ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
@@ -197,6 +292,9 @@ int ImGui_InputTextWithHint( ImGuiInputTextWithHint *pInput ) {
 }
 
 int ImGui_InputFloat( ImGuiInputFloat *pInput ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
@@ -210,6 +308,9 @@ int ImGui_InputFloat( ImGuiInputFloat *pInput ) {
 }
 
 int ImGui_InputFloat2( ImGuiInputFloat2 *pInput ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
@@ -223,6 +324,9 @@ int ImGui_InputFloat2( ImGuiInputFloat2 *pInput ) {
 }
 
 int ImGui_InputFloat3( ImGuiInputFloat3 *pInput ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
@@ -236,6 +340,9 @@ int ImGui_InputFloat3( ImGuiInputFloat3 *pInput ) {
 }
 
 int ImGui_InputFloat4( ImGuiInputFloat4 *pInput ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
@@ -249,6 +356,9 @@ int ImGui_InputFloat4( ImGuiInputFloat4 *pInput ) {
 }
 
 int ImGui_InputInt( ImGuiInputInt *pInput ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
@@ -262,6 +372,9 @@ int ImGui_InputInt( ImGuiInputInt *pInput ) {
 }
 
 int ImGui_InputInt2( ImGuiInputInt2 *pInput ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
@@ -275,6 +388,9 @@ int ImGui_InputInt2( ImGuiInputInt2 *pInput ) {
 }
 
 int ImGui_InputInt3( ImGuiInputInt3 *pInput ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
@@ -288,6 +404,9 @@ int ImGui_InputInt3( ImGuiInputInt3 *pInput ) {
 }
 
 int ImGui_InputInt4( ImGuiInputInt4 *pInput ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
     || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
@@ -301,89 +420,150 @@ int ImGui_InputInt4( ImGuiInputInt4 *pInput ) {
 }
 
 int ImGui_SliderFloat( ImGuiSliderFloat *pSlider ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     return ImGui::SliderFloat( pSlider->m_pLabel, &pSlider->m_Data, pSlider->m_nMin, pSlider->m_nMax );
 }
 
 int ImGui_SliderFloat2( ImGuiSliderFloat2 *pSlider ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     return ImGui::SliderFloat2( pSlider->m_pLabel, pSlider->m_Data, pSlider->m_nMin, pSlider->m_nMax );
 }
 
 int ImGui_SliderFloat3( ImGuiSliderFloat3 *pSlider ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     return ImGui::SliderFloat3( pSlider->m_pLabel, pSlider->m_Data, pSlider->m_nMin, pSlider->m_nMax );
 }
 
 int ImGui_SliderFloat4( ImGuiSliderFloat4 *pSlider ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     return ImGui::SliderFloat4( pSlider->m_pLabel, pSlider->m_Data, pSlider->m_nMin, pSlider->m_nMax );
 }
 
 int ImGui_SliderInt( ImGuiSliderInt *pSlider ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     return ImGui::SliderInt( pSlider->m_pLabel, &pSlider->m_Data, pSlider->m_nMin, pSlider->m_nMax );
 }
 
 int ImGui_SliderInt2( ImGuiSliderInt2 *pSlider ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     return ImGui::SliderInt2( pSlider->m_pLabel, pSlider->m_Data, pSlider->m_nMin, pSlider->m_nMax );
 }
 
 int ImGui_SliderInt3( ImGuiSliderInt3 *pSlider ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     return ImGui::SliderInt3( pSlider->m_pLabel, pSlider->m_Data, pSlider->m_nMin, pSlider->m_nMax );
 }
 
 int ImGui_SliderInt4( ImGuiSliderInt4 *pSlider ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     return ImGui::SliderInt4( pSlider->m_pLabel, pSlider->m_Data, pSlider->m_nMin, pSlider->m_nMax );
 }
 
 int ImGui_ColorEdit3( ImGuiColorEdit3 *pEdit ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     return ImGui::ColorEdit3( pEdit->m_pLabel, pEdit->m_pColor, pEdit->m_Flags );
 }
 
 int ImGui_ColorEdit4( ImGuiColorEdit4 *pEdit ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     return ImGui::ColorEdit4( pEdit->m_pLabel, pEdit->m_pColor, pEdit->m_Flags );
 }
 
 int ImGui_ArrowButton( const char *pLabel, ImGuiDir dir ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     return ImGui::ArrowButton( pLabel, dir );
 }
 
 int ImGui_Checkbox( ImGuiCheckbox *pCheckbox ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
+
     bool bPressed = pCheckbox->m_bPressed;
     pCheckbox->m_bPressed = ImGui::Checkbox( pCheckbox->m_pLabel, &bPressed );
     return pCheckbox->m_bPressed;
 }
 
 int ImGui_Button( const char *pLabel ) {
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
     return ImGui::Button( pLabel );
 }
 
 float ImGui_GetFontScale( void ) {
+    if ( !ImGui_IsValid() ) {
+        return 0;
+    }
     return ImGui::GetFont()->Scale;
 }
 
 void ImGui_SetCursorPos( float x, float y ) {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     ImGui::SetCursorPos( ImVec2( x, y ) );
 }
 
 void ImGui_GetCursorPos( float *x, float *y ) {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     const ImVec2 pos = ImGui::GetCursorPos();
     *x = pos.x;
     *y = pos.y;
 }
 
 void ImGui_SetCursorScreenPos( float x, float y ) {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     ImGui::SetCursorScreenPos( ImVec2( x, y ) );
 }
 
 void ImGui_GetCursorScreenPos( float *x, float *y ) {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     const ImVec2 pos = ImGui::GetCursorScreenPos();
     *x = pos.x;
     *y = pos.y;
 }
 
 void ImGui_PushColor( ImGuiCol index, const vec4_t color ) {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     imgui.m_nColorStack++;
     ImGui::PushStyleColor( index, color );
 }
 
 void ImGui_PopColor( void ) {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     if (imgui.m_nColorStack == 0) {
         N_Error( ERR_DROP, "%s: color stack underflow", __func__ );
     }
@@ -392,30 +572,51 @@ void ImGui_PopColor( void ) {
 }
 
 void ImGui_SameLine( float offsetFromStartX ) {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     ImGui::SameLine( offsetFromStartX );
 }
 
 void ImGui_NewLine( void ) {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     ImGui::NewLine();
 }
 
 void ImGui_Text( const char *pText ) {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     ImGui::TextUnformatted( pText );
 }
 
 void ImGui_ColoredText( const vec4_t pColor, const char *pText ) {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     ImGui::TextColored( pColor, pText );
 }
 
 void ImGui_SeparatorText( const char *pText ) {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     ImGui::SeparatorText( pText );
 }
 
 void ImGui_Separator( void ) {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     ImGui::Separator();
 }
 
 void ImGui_ProgressBar( float fraction ) {
+    if ( !ImGui_IsValid() ) {
+        return;
+    }
     ImGui::ProgressBar( fraction );
 }
 

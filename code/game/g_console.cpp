@@ -258,9 +258,7 @@ void Con_CheckResize( void )
 		smallchar_height = SMALLCHAR_HEIGHT;
 	}
 
-#if 0
-	if ( gi.gpuConfig.vidWidth == 0 ) // video hasn't been initialized yet
-	{
+	if ( gi.gpuConfig.vidWidth == 0 ) { // video hasn't been initialized yet
 		g_console_field_width = DEFAULT_CONSOLE_WIDTH;
 		width = DEFAULT_CONSOLE_WIDTH * scale;
 		con.linewidth = width;
@@ -269,15 +267,15 @@ void Con_CheckResize( void )
 
 		Con_Clear_f();
 	}
-	else
-	{
+	else {
 		width = ((gi.gpuConfig.vidWidth / smallchar_width) - 2);
 
 		g_console_field_width = width;
 		g_consoleField.widthInChars = g_console_field_width;
 
-		if ( width > MAX_CONSOLE_WIDTH )
+		if ( width > MAX_CONSOLE_WIDTH ) {
 			width = MAX_CONSOLE_WIDTH;
+		}
 
 		vispage = gi.gpuConfig.vidHeight / ( smallchar_height * 2 ) - 1;
 
@@ -316,15 +314,15 @@ void Con_CheckResize( void )
 		{
 			src = &tbuf[ ((oldcurrent - i + oldtotallines) % oldtotallines) * oldwidth ];
 			dst = &con.text[ (numlines - 1 - i) * con.linewidth ];
-			for ( j = 0; j < numchars; j++ )
+			for ( j = 0; j < numchars; j++ ) {
 				*dst++ = *src++;
+			}
 		}
 
 		Con_ClearNotify();
 
 		con.current = numlines - 1;
 	}
-#endif
 
 	con.display = con.current;
 
@@ -371,7 +369,7 @@ void Con_Init( void )
 	Field_Clear( &g_consoleField );
 	g_consoleField.widthInChars = g_console_field_width;
 
-	memset(&con, 0, sizeof(con));
+	memset( &con, 0, sizeof(con) );
 
 	Cmd_AddCommand( "clear", Con_Clear_f );
 	Cmd_AddCommand( "condump", Con_Dump_f );
@@ -385,8 +383,7 @@ void Con_Init( void )
 Con_Shutdown
 ================
 */
-void Con_Shutdown( void )
-{
+void Con_Shutdown( void ) {
 	Cmd_RemoveCommand( "clear" );
 	Cmd_RemoveCommand( "condump" );
 	Cmd_RemoveCommand( "toggleconsole" );
@@ -398,7 +395,6 @@ void Con_Shutdown( void )
 Con_Fixup
 ===============
 */
-#if 0
 static void Con_Fixup( void ) 
 {
 	uint32_t filled;
@@ -432,13 +428,15 @@ static void Con_NewLine( void )
 	uint32_t i;
 
 	// follow last line
-	if ( con.display == con.current )
+	if ( con.display == con.current ) {
 		con.display++;
+	}
 	con.current++;
 
 	s = &con.text[ ( con.current % con.totallines ) * con.linewidth ];
-	for ( i = 0; i < con.linewidth ; i++ ) 
-		*s++ = (ColorIndex(S_COLOR_WHITE)<<8) | ' ';
+	for ( i = 0; i < con.linewidth ; i++ ) {
+		*s++ = ( ColorIndex( COLOR_WHITE ) << 8 ) | ' ';
+	}
 
 	con.x = 0;
 }
@@ -453,10 +451,12 @@ static void Con_Linefeed( qboolean skipnotify )
 {
 	// mark time for transparent overlay
 	if ( con.current >= 0 )	{
-		if ( skipnotify )
+		if ( skipnotify ) {
 			con.times[ con.current % NUM_CON_TIMES ] = 0;
-		else
-			con.times[ con.current % NUM_CON_TIMES ] = gi.realtime;
+		}
+		else {
+			con.times[ con.current % NUM_CON_TIMES ] = cls.realtime;
+		}
 	}
 
 	if ( con.newline ) {
@@ -468,7 +468,6 @@ static void Con_Linefeed( qboolean skipnotify )
 
 	Con_Fixup();
 }
-#endif
 
 
 /*
@@ -716,7 +715,7 @@ static void Con_DrawSolidConsole( float frac )
 	qboolean customColor = qfalse;
 	uint32_t i, x;
 	uint32_t lines, row, rows;
-	char s[2];
+	char s[3];
 	qboolean usedColor = qfalse;
 	char *text;
 	char buf[ MAX_CVAR_VALUE ], *v[4];
@@ -747,17 +746,20 @@ static void Con_DrawSolidConsole( float frac )
 				}
 			}
 		}
-//		ImGui::GetStyle().Colors[ImGuiCol_WindowBg] = ImVec4( conColorValue );
+		ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( conColorValue ) );
 		customColor = qtrue;
 	} else {
-//		ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( 0.0f, 0.0f, 0.35f, 1.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( 0.0f, 0.0f, 0.35f, 1.0f ) );
 	}
 
 	// draw from the bottom up
 	{
 		// draw arrows to show the buffer is backscrolled
 		ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( g_color_table[ ColorIndex(S_COLOR_RED) ] ) );
-		for (i = 0; i < 80; i++) {
+
+		const uint32_t count = gi.gpuConfig.vidWidth / ImGui::CalcTextSize( "^" ).x;
+
+		for (i = 0; i < count; i++) {
 			ImGui::TextUnformatted("^");
 			ImGui::SameLine();
 		}
@@ -799,6 +801,7 @@ static void Con_DrawSolidConsole( float frac )
 		default:
 			s[0] = *text;
 			s[1] = 0;
+
 			ImGui::TextUnformatted( s );
 			ImGui::SameLine();
 			break;
@@ -806,26 +809,13 @@ static void Con_DrawSolidConsole( float frac )
 	}
 	
 	Con_DrawInput();
+
+	ImGui::PopStyleColor();
 	
 	ImGui::End();
 }
 
 static void Con_DrawNotify( void ) {
-/*
-	const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove
-							| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBackground;
-	uint32_t i;
-	uint32_t colorIndex, currentColorIndex;
-	char *text;
-	
-	currentColorIndex = ColorIndex( S_COLOR_WHITE );
-	ImGui::Begin( "NotifyWindow", NULL, windowFlags );
-	for (uint32_t i = 0, text = con.text + CON_; i < NUM_CON_TIMES; i++) {
-		ImGui::Text(" ", );
-	}
-	ImGui::End();
-
-
 	int		x, v;
 	short	*text;
 	int		i;
@@ -833,11 +823,16 @@ static void Con_DrawNotify( void ) {
 	int		skip;
 	int		currentColorIndex;
 	int		colorIndex;
+	char	s[2];
 
 	currentColorIndex = ColorIndex( COLOR_WHITE );
 	re.SetColor( g_color_table[ currentColorIndex ] );
 
 	v = 0;
+
+	for ( i =  )
+
+
 	for (i= con.current-NUM_CON_TIMES+1 ; i<=con.current ; i++)
 	{
 		if (i < 0)
@@ -845,15 +840,14 @@ static void Con_DrawNotify( void ) {
 		time = con.times[i % NUM_CON_TIMES];
 		if (time == 0)
 			continue;
-		time = gi.realtime - time;
-		if ( time >= con_notifytime->f*1000 )
+		time = cls.realtime - time;
+		if ( time >= con_notifytime->value*1000 )
 			continue;
-		
-		text = con.text + (i;
+		text = con.text + (i % con.totallines)*con.linewidth;
 
-//		if (cl.snap.ps.pm_type != PM_INTERMISSION && Key_GetCatcher( ) & (KEYCATCH_UI | KEYCATCH_CGAME) ) {
-//			continue;
-//		}
+		if (cl.snap.ps.pm_type != PM_INTERMISSION && Key_GetCatcher( ) & (KEYCATCH_UI | KEYCATCH_CGAME) ) {
+			continue;
+		}
 
 		for (x = 0 ; x < con.linewidth ; x++) {
 			if ( ( text[x] & 0xff ) == ' ' ) {
@@ -864,21 +858,22 @@ static void Con_DrawNotify( void ) {
 				currentColorIndex = colorIndex;
 				re.SetColor( g_color_table[ colorIndex ] );
 			}
-			SCR_DrawSmallChar( cl_conXOffset->integer + con.xadjust + (x+1)*smallchar_width, v, text[x] & 0xff );
+			ImGui::TextUnformatted( text[x] & 0xff );
+//			SCR_DrawSmallChar( cl_conXOffset->integer + con.xadjust + (x+1)*smallchar_width, v, text[x] & 0xff );
 		}
 
 		v += smallchar_height;
 	}
 
-	re.SetColor( NULL );
+	ImGui::PopStyleColor();
 
-	if ( Key_GetCatcher() & (KEYCATCH_UI | KEYCATCH_CGAME) ) {
+	if ( Key_GetCatcher() & ( KEYCATCH_UI | KEYCATCH_SGAME ) ) {
 		return;
 	}
 
 	// draw the chat line
-	if ( Key_GetCatcher( ) & KEYCATCH_MESSAGE )
-	{
+	/*
+	if ( Key_GetCatcher( ) & KEYCATCH_MESSAGE ) {
 		// rescale to virtual 640x480 space
 		v /= cls.glconfig.vidHeight / 480.0;
 
@@ -896,7 +891,7 @@ static void Con_DrawNotify( void ) {
 		Field_BigDraw( &chatField, skip * BIGCHAR_WIDTH, v,
 			SCREEN_WIDTH - ( skip + 1 ) * BIGCHAR_WIDTH, qtrue, qtrue );
 	}
-*/
+	*/
 }
 
 /*
