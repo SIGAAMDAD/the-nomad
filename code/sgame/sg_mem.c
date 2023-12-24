@@ -3,7 +3,7 @@
 // 8 MiB of static memory for the vm to use
 #define MEMPOOL_SIZE (8*1024*1024)
 static char mempool[MEMPOOL_SIZE];
-static uint32_t allocPoint;
+static int allocPoint;
 
 #define STRINGPOOL_SIZE (8*1024)
 
@@ -15,15 +15,15 @@ typedef struct stringDef_s {
 	const char *str;
 } stringDef_t;
 
-static uint32_t strPoolIndex;
+static int strPoolIndex;
 static char strPool[STRINGPOOL_SIZE];
 
-static uint32_t strHandleCount;
+static int strHandleCount;
 static stringDef_t *strHandle[HASH_TABLE_SIZE];
 
 const char *String_Alloc( const char *p )
 {
-	uint32_t len;
+	int len;
 	uint64_t hash;
 	stringDef_t *str, *last;
 	static const char *staticNULL = "";
@@ -48,7 +48,7 @@ const char *String_Alloc( const char *p )
 
 	len = strlen(p);
 	if (len + strPoolIndex + 1 < STRINGPOOL_SIZE) {
-		uint32_t ph = strPoolIndex;
+		int ph = strPoolIndex;
 		strcpy(&strPool[strPoolIndex], p);
 		strPoolIndex += len + 1;
 
@@ -89,7 +89,7 @@ void String_Report( void )
 	Con_Printf("Memory Pool is %.1f%% full, %i bytes out of %i used.\n", f, allocPoint, MEMPOOL_SIZE);
 }
 
-void *SG_MemAlloc( uint32_t size )
+void *SG_MemAlloc( int size )
 {
     char *buf;
 
@@ -113,13 +113,13 @@ void *SG_MemAlloc( uint32_t size )
     return buf;
 }
 
-uint32_t SG_MemoryRemaining( void ) {
+int SG_MemoryRemaining( void ) {
     return sizeof(mempool) - allocPoint;
 }
 
 void SG_MemInit( void )
 {
-    uint32_t i;
+    int i;
 
     memset( mempool, 0, sizeof(mempool) );
     memset( strPool, 0, sizeof(strPool) );
@@ -275,7 +275,7 @@ static void ScanForBlock(void *start, void *end)
 {
     memblock_t *block;
     void **mem;
-    uint32_t i, len, tag;
+    int i, len, tag;
 
     block = mainzone->blocklist.next;
 
@@ -360,9 +360,9 @@ void Z_Free (void* ptr)
 //
 #define MINFRAGMENT		64
 
-void *Z_Malloc( uint32_t size, uint32_t tag )
+void *Z_Malloc( int size, int tag )
 {
-    uint32_t extra;
+    int extra;
     memblock_t *start;
     memblock_t *rover;
     memblock_t *newblock;
@@ -454,7 +454,7 @@ void *Z_Malloc( uint32_t size, uint32_t tag )
 //
 // Z_FreeTags
 //
-void Z_FreeTags( uint32_t lowtag, uint32_t hightag )
+void Z_FreeTags( int lowtag, int hightag )
 {
     memblock_t *block;
     memblock_t *next;
@@ -478,7 +478,7 @@ void Z_FreeTags( uint32_t lowtag, uint32_t hightag )
 // Z_DumpHeap
 // Note: TFileDumpHeap( stdout ) ?
 //
-void Z_DumpHeap( uint32_t lowtag, uint32_t hightag )
+void Z_DumpHeap( int lowtag, int hightag )
 {
     memblock_t *block;
 	
@@ -572,7 +572,7 @@ void Z_CheckHeap (void)
 //
 // Z_ChangeTag
 //
-void Z_ChangeTag(void *ptr, uint32_t tag)
+void Z_ChangeTag(void *ptr, int tag)
 {
     memblock_t *block;
 	
@@ -588,10 +588,10 @@ void Z_ChangeTag(void *ptr, uint32_t tag)
 //
 // Z_FreeMemory
 //
-uint32_t Z_FreeMemory (void)
+int Z_FreeMemory (void)
 {
     memblock_t		*block;
-    uint32_t		free;
+    int		free;
 	
     free = 0;
     for (block = mainzone->blocklist.next; block != &mainzone->blocklist; block = block->next) {
@@ -603,7 +603,7 @@ uint32_t Z_FreeMemory (void)
     return free;
 }
 
-uint32_t Z_ZoneSize(void)
+int Z_ZoneSize(void)
 {
     return mainzone->size;
 }

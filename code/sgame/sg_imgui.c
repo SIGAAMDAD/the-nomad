@@ -4,16 +4,11 @@
 void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL ImGui_SetItemTooltip( const char *fmt, ... )
 {
     va_list argptr;
-    char msg[4096];
-    int32_t length;
-
+    char msg[8192];
+    
     va_start( argptr, fmt );
-    length = vsprintf( msg, fmt, argptr );
+    vsprintf( msg, fmt, argptr );
     va_end( argptr );
-
-    if (length >= sizeof(msg)) {
-        trap_Error( "ImGui_SetItemTooltip: buffer overflow" );
-    }
 
     ImGui_SetItemTooltipUnformatted( msg );
 }
@@ -21,16 +16,11 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL ImGui_SetItemTooltip( const 
 void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL ImGui_Text( const char *fmt, ... )
 {
     va_list argptr;
-    char msg[4096];
-    int32_t length;
+    char msg[8192];
 
     va_start( argptr, fmt );
-    length = vsprintf( msg, fmt, argptr );
+    vsprintf( msg, fmt, argptr );
     va_end( argptr );
-
-    if (length >= sizeof(msg)) {
-        trap_Error( "ImGui_Text: buffer overflow" );
-    }
 
     ImGui_TextUnformatted( msg );
 }
@@ -38,16 +28,11 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL ImGui_Text( const char *fmt,
 void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL ImGui_ColoredText( const vec4_t pColor, const char *fmt, ... )
 {
     va_list argptr;
-    char msg[4096];
-    int32_t length;
+    char msg[8192];
 
     va_start( argptr, fmt );
-    length = vsprintf( msg, fmt, argptr );
+    vsprintf( msg, fmt, argptr );
     va_end( argptr );
-
-    if (length >= sizeof(msg)) {
-        trap_Error( "ImGui_Text: buffer overflow" );
-    }
 
     ImGui_ColoredTextUnformatted( pColor, msg );
 }

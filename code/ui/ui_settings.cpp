@@ -11,14 +11,39 @@
 #include <EASTL/fixed_vector.h>
 #include <EASTL/array.h>
 
+#define RADIOBUTTON_STR(x) { "OFF##" #x, "ON##" #x };
+
 typedef struct {
     uint32_t keynum;
     char bindname[64];
     char keyname[24];
 } keybind_t;
 
+typedef struct
+{
+    eastl::array<const char *, 2> allowSoftwareGLStr;
+    eastl::array<const char *, 2> allowLegacyGLStr;
+
+    eastl::array<const char *, 2> use_GL_ARB_vertex_buffer_object_str;
+    eastl::array<const char *, 2> use_GL_ARB_vertex_array_object_str;
+
+    bool allowLegacyGL;
+    bool allowSoftwareGL;
+
+    bool use_GL_ARB_vertex_buffer_object;
+    bool use_GL_ARB_vertex_array_object;
+} graphics_extended_GL_t;
+
+typedef struct
+{
+} graphics_extended_VK_t;
+
 typedef struct {
     renderapi_t api;
+
+    graphics_extended_GL_t *GL_extended;
+    graphics_extended_VK_t *VK_extended;
+
     bool fullscreen;
     bool extensions;
     textureFilter_t texfilter;
@@ -33,12 +58,11 @@ typedef struct {
     uint32_t anisotropicFilteringTmp;
     uint32_t anisotropicFiltering;
     int32_t vsync;
-    bool allowSoftwareGL;
-    bool allowLegacyGL;
     float gamma;
 
     bool mouseAccelerate;
     bool mouseInvert;
+    bool useExtensions;
     int32_t mouseSensitivity;
 
     bool musicOn;
@@ -55,10 +79,13 @@ typedef struct
 
     char extensionsMenuStr[64];
     eastl::array<const char *, 2> fullscreenStr;
-    eastl::array<const char *, 2> useExtensionsStr;
-    eastl::array<const char *, 2> allowSoftwareGLStr;
     eastl::array<const char *, 2> advancedGraphicsStr;
-    eastl::array<const char *, 2> allowLegacyGLStr;
+    eastl::array<const char *, 2> useExtensionsStr;
+
+    graphics_extended_GL_t *GL_extended;
+    graphics_extended_VK_t *VK_extended;
+
+    bool useExtensions;
 
     // temp cvar data
     keybind_t keybinds[21];
@@ -87,13 +114,9 @@ typedef struct
     uint32_t anisotropicFilteringTmp;
     uint32_t anisotropicFiltering;
     int32_t vsync;
-    bool allowLegacyGL;
-    bool allowSoftwareGL;
     float gamma;
 
     eastl::fixed_vector<eastl::fixed_string<char, 64, true>, 1024, true> extensionStrings;
-
-    uint32_t newLineCount;
 
     bool advancedGraphics; // "stats for nerds", that kinda stuff
     qboolean confirmation;
@@ -306,7 +329,7 @@ static void SettingsMenu_ApplyAudioChanges( void )
 static void SettingsMenu_SetDefault( void )
 {
     settings.anisotropicFiltering = Cvar_VariableInteger( "r_anisotropicFiltering" );
-    settings.extensions = Cvar_VariableInteger( "r_useExtensions" );
+    settings.useExtensions = Cvar_VariableInteger( "r_useExtensions" );
     settings.customWidth = Cvar_VariableInteger( "r_customWidth" );
     settings.customHeight = Cvar_VariableInteger( "r_customHeight" );
     settings.texdetail = (textureDetail_t)Cvar_VariableInteger( "r_textureDetail" );
@@ -317,11 +340,18 @@ static void SettingsMenu_SetDefault( void )
     settings.fullscreen = Cvar_VariableInteger( "r_fullscreen" );
     settings.api = StringToRenderAPI( Cvar_VariableString( "g_renderer" ) );
     settings.multisamplingIndex = Cvar_VariableInteger( "r_multisample" );
-    settings.allowSoftwareGL = Cvar_VariableInteger( "r_allowSoftwareGL" );
-    settings.allowLegacyGL = Cvar_VariableInteger( "r_allowLegacy" );
     settings.vsync = Cvar_VariableInteger( "r_swapInterval" );
     settings.gamma = Cvar_VariableFloat( "r_gammaAmount" );
     settings.advancedGraphics = false;
+    settings.advancedGraphicsStr = RADIOBUTTON_STR( settings.advancedGraphics );
+    settings.useExtensionsStr = RADIOBUTTON_STR( settings.useExtensions );
+    settings.fullscreenStr = RADIOBUTTON_STR( settings.fullscreen );
+
+    if ( settings.api == R_OPENGL ) {
+        settings.GL_extended = (graphics_extended_GL_t *)Z_Malloc( sizeof(graphics_extended_GL_t), TAG_GAME );
+        settings.GL_extended->allowLegacyGLStr =  RADIOBUTTON_STR( settings.GL_extended->allowLegacyGL );
+        settings.GL_extended->allowSoftwareGLStr = RADIOBUTTON_STR( settings.GL_extended->allowSoftwareGL );
+    }
 
     settings.sfxOn = Cvar_VariableInteger( "snd_sfxon" );
     settings.musicOn = Cvar_VariableInteger( "snd_musicon" );
@@ -454,9 +484,6 @@ static void SettingsMenu_Update( void )
     if (initial.videoMode != settings.videoMode) {
         settings.modified = true;
     }
-    if (initial.allowSoftwareGL != settings.allowSoftwareGL) {
-        settings.modified = true;
-    }
     if (initial.anisotropicFiltering != settings.anisotropicFiltering) {
         settings.modified = true;
     }
@@ -496,8 +523,14 @@ static void SettingsMenu_Update( void )
     if (initial.gamma != settings.gamma) {
         settings.modified = true;
     }
-    if (initial.allowLegacyGL != settings.allowLegacyGL) {
-        settings.modified = true;
+
+    if ( settings.api == R_OPENGL && initial.api == R_OPENGL ) {
+        if ( settings.GL_extended->allowSoftwareGL != initial.GL_extended->allowSoftwareGL ) {
+            settings.modified = true;
+        }
+        if ( settings.GL_extended->allowLegacyGL != initial.GL_extended->allowLegacyGL ) {
+            settings.modified = true;
+        }
     }
 }
 
@@ -725,11 +758,11 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::SameLine();
         if (ImGui::ArrowButton( "##VYSNCRIGHT", ImGuiDir_Right )) {
             switch (settings.vsync) {
-            case -1:
-                settings.vsync = 1;
+            case 1:
+                settings.vsync = -1;
                 break;
             default:
-                settings.vsync--;
+                settings.vsync++;
                 break;
             };
             ui->PlaySelected();
@@ -768,21 +801,28 @@ static void SettingsMenuGraphics_Draw( void )
             ui->PlaySelected();
         }
 
-        if (settings.advancedGraphics) {
+        if ( settings.advancedGraphics && settings.api == R_OPENGL ) {
             ImGui::TableNextRow();
 
             ImGui::TableNextColumn();
             ImGui::TextUnformatted( "Allow Software GL Driver" );
             ImGui::TableNextColumn();
-            if (ImGui::RadioButton( settings.allowSoftwareGLStr[settings.allowSoftwareGL], settings.allowSoftwareGL )) {
-                settings.allowSoftwareGL = !settings.allowSoftwareGL;
+            if (ImGui::RadioButton( settings.GL_extended->allowLegacyGLStr[settings.GL_extended->allowSoftwareGL],
+                settings.GL_extended->allowSoftwareGL ))
+            {
+                settings.GL_extended->allowSoftwareGL = !settings.GL_extended->allowSoftwareGL;
                 ui->PlaySelected();
             }
 
             ImGui::TableNextRow();
 
             ImGui::TableNextColumn();
-            ImGui::TextUnformatted( "Enable GL Extensions" );
+            ImGui::TextUnformatted( "Use GL_ARB_vertex_object" );
+
+            ImGui::TableNextRow();
+
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted( "Allow GL Extensions" );
             ImGui::TableNextColumn();
             if (ImGui::RadioButton( settings.useExtensionsStr[settings.extensions], settings.extensions )) {
                 settings.extensions = !settings.extensions;
@@ -794,8 +834,10 @@ static void SettingsMenuGraphics_Draw( void )
             ImGui::TableNextColumn();
             ImGui::TextUnformatted( "Allow Legacy GL Functionality" );
             ImGui::TableNextColumn();
-            if (ImGui::RadioButton( settings.allowLegacyGLStr[settings.allowLegacyGL], settings.allowLegacyGL )) {
-                settings.allowLegacyGL = !settings.allowLegacyGL;
+            if (ImGui::RadioButton( settings.GL_extended->allowLegacyGLStr[settings.GL_extended->allowLegacyGL],
+                settings.GL_extended->allowLegacyGL ))
+            {
+                settings.GL_extended->allowLegacyGL = !settings.GL_extended->allowLegacyGL;
                 ui->PlaySelected();
             }
 
@@ -942,8 +984,10 @@ void SettingsMenu_Draw( void )
 }
 
 static void SettingsMenu_GetInitial( void ) {
+    memset( &initial, 0, sizeof(initial) );
+
     initial.anisotropicFiltering = Cvar_VariableInteger( "r_anisotropicFiltering" );
-    initial.extensions = Cvar_VariableInteger( "r_useExtensions" );
+    initial.useExtensions = Cvar_VariableInteger( "r_useExtensions" );
     initial.customWidth = Cvar_VariableInteger( "r_customWidth" );
     initial.customHeight = Cvar_VariableInteger( "r_customHeight" );
     initial.texdetail = (textureDetail_t)Cvar_VariableInteger( "r_textureDetail" );
@@ -952,7 +996,12 @@ static void SettingsMenu_GetInitial( void ) {
     initial.fullscreen = Cvar_VariableInteger( "r_fullscreen" );
     initial.api = StringToRenderAPI( Cvar_VariableString( "g_renderer" ) );
     initial.multisamplingIndex = Cvar_VariableInteger( "r_multisample" );
-    initial.allowSoftwareGL = Cvar_VariableInteger( "r_allowSoftwareGL" );
+
+    if ( initial.api == R_OPENGL ) {
+        initial.GL_extended = (graphics_extended_GL_t *)Z_Malloc( sizeof(graphics_extended_GL_t), TAG_GAME );
+        initial.GL_extended->allowSoftwareGL = Cvar_VariableInteger( "r_allowSoftwareGL" );
+        initial.GL_extended->use_GL_ARB_vertex_array_object = Cvar_VariableInteger( "r_arb_vertex_array_object" );
+    }
     initial.vsync = Cvar_VariableInteger( "r_swapInterval" );
     initial.gamma = Cvar_VariableFloat( "r_gammaAmount" );
 
@@ -967,8 +1016,6 @@ static void SettingsMenu_GetInitial( void ) {
     initial.mouseInvert = Cvar_VariableInteger("g_mouseInvert");
 }
 
-#define RADIOBUTTON_STR(x) { "OFF##" #x, "ON##" #x };
-
 void SettingsMenu_Cache( void ) {
     int32_t numExtensions;
     int32_t i;
@@ -977,13 +1024,6 @@ void SettingsMenu_Cache( void ) {
 
     SettingsMenu_GetInitial();
     SettingsMenu_SetDefault();
-
-    // cache redundant calculations
-    settings.allowSoftwareGLStr = RADIOBUTTON_STR( settings.allowSoftwareGL );
-    settings.useExtensionsStr = RADIOBUTTON_STR( settings.extensions );
-    settings.fullscreenStr = RADIOBUTTON_STR( settings.fullscreen );
-    settings.advancedGraphicsStr = RADIOBUTTON_STR( settings.advancedGraphics );
-    settings.allowLegacyGLStr = RADIOBUTTON_STR( settings.allowLegacyGL );
 
     settings.confirmation = qfalse;
     settings.modified = qfalse;

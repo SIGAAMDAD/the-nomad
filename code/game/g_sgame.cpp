@@ -187,9 +187,9 @@ static intptr_t G_SGameSystemCalls( intptr_t *args )
         return Hunk_MemoryRemaining();
     case SG_G_LOADMAP:
         VM_CHECKBOUNDS( args[2], sizeof(mapinfo_t) );
-        VM_CHECKBOUNDS( args[3], sizeof(uint32_t) * MAX_MAP_WIDTH * MAX_MAP_HEIGHT );
+        VM_CHECKBOUNDS( args[3], sizeof(int32_t) * MAX_MAP_WIDTH * MAX_MAP_HEIGHT );
         VM_CHECKBOUNDS( args[4], sizeof(linkEntity_t) );
-        return G_LoadMap( args[1], (mapinfo_t *)VMA( 2 ), (uint32_t *)VMA( 3 ), (linkEntity_t *)VMA( 4 ) );
+        return G_LoadMap( args[1], (mapinfo_t *)VMA( 2 ), (int32_t *)VMA( 3 ), (linkEntity_t *)VMA( 4 ) );
     case SG_FS_FOPENREAD:
         return FS_VM_FOpenRead( (const char *)VMA( 1 ), H_SGAME );
     case SG_FS_FOPENWRITE:
@@ -232,8 +232,7 @@ static intptr_t G_SGameSystemCalls( intptr_t *args )
         re.LoadWorld( (const char *)VMA( 1 ) );
         return 0;
     case IMGUI_BEGIN_WINDOW:
-        VM_CHECKBOUNDS( args[1], sizeof(ImGuiWindow) );
-        return ImGui_BeginWindow( (ImGuiWindow *)VMA(1) );
+        return ImGui_BeginWindow( (const char *)VMA( 1 ), (byte *)VMA( 2 ), args[3] );
     case IMGUI_END_WINDOW:
         ImGui_EndWindow();
         return 0;
@@ -257,79 +256,78 @@ static intptr_t G_SGameSystemCalls( intptr_t *args )
         ImGui_EndMenu();
         return 0;
     case IMGUI_MENU_ITEM:
-        VM_CHECKBOUNDS( args[1], sizeof(ImGuiMenuItem) );
-        return ImGui_MenuItem( (ImGuiMenuItem *)VMA(1) );
+        return ImGui_MenuItem( (const char *)VMA( 1 ), (const char *)VMA( 2 ), args[3] );
     case IMGUI_SET_ITEM_TOOLTIP:
         ImGui_SetItemTooltip( (const char *)VMA(1) );
         return 0;
     case IMGUI_INPUT_TEXT:
-        VM_CHECKBOUNDS( args[1], sizeof(ImGuiInputText) );
-        return ImGui_InputText( (ImGuiInputText *)VMA(1) );
+        VM_CHECKBOUNDS( args[2], args[3] );
+        return ImGui_InputText( (const char *)VMA( 1 ), (char *)VMA( 2 ), args[3], args[4] );
     case IMGUI_INPUT_TEXT_MULTILINE:
-        VM_CHECKBOUNDS( args[1], sizeof(ImGuiInputText) );
-        return ImGui_InputTextMultiline( (ImGuiInputText *)VMA(1) );
+        VM_CHECKBOUNDS( args[2], args[3] );
+        return ImGui_InputTextMultiline( (const char *)VMA( 1 ), (char *)VMA( 2 ), args[3], args[4] );
     case IMGUI_INPUT_TEXT_WITH_HINT:
-        VM_CHECKBOUNDS( args[1], sizeof(ImGuiInputTextWithHint) );
-        return ImGui_InputTextWithHint( (ImGuiInputTextWithHint *)VMA(1) );
+        VM_CHECKBOUNDS( args[3], args[4] );
+        return ImGui_InputTextWithHint( (const char *)VMA( 1 ), (const char *)VMA( 2 ), (char *)VMA( 3 ), args[4], args[5] );
     case IMGUI_INPUT_FLOAT:
-        VM_CHECKBOUNDS( args[1], sizeof(ImGuiInputFloat) );
-        return ImGui_InputFloat( (ImGuiInputFloat *)VMA(1) );
+        VM_CHECKBOUNDS( args[2], sizeof(float) );
+        return ImGui_InputFloat( (const char *)VMA( 1 ), (float *)VMA( 2 ) );
     case IMGUI_INPUT_FLOAT2:
-        VM_CHECKBOUNDS( args[1], sizeof(ImGuiInputFloat2) );
-        return ImGui_InputFloat2( (ImGuiInputFloat2 *)VMA(1) );
+        VM_CHECKBOUNDS( args[2], sizeof(vec2_t) );
+        return ImGui_InputFloat2( (const char *)VMA( 1 ), (float *)VMA( 2 ) );
     case IMGUI_INPUT_FLOAT3:
-        VM_CHECKBOUNDS( args[1], sizeof(ImGuiInputFloat3) );
-        return ImGui_InputFloat3( (ImGuiInputFloat3 *)VMA(1) );
+        VM_CHECKBOUNDS( args[2], sizeof(vec3_t) );
+        return ImGui_InputFloat3( (const char *)VMA( 1 ), (float *)VMA( 2 ) );
     case IMGUI_INPUT_FLOAT4:
-        VM_CHECKBOUNDS( args[1], sizeof(ImGuiInputFloat4) );
-        return ImGui_InputFloat4( (ImGuiInputFloat4 *)VMA(1) );
+        VM_CHECKBOUNDS( args[2], sizeof(vec4_t) );
+        return ImGui_InputFloat4( (const char *)VMA( 1 ), (float *)VMA( 2 ) );
     case IMGUI_INPUT_INT:
-        VM_CHECKBOUNDS( args[1], sizeof(ImGuiInputInt) );
-        return ImGui_InputInt( (ImGuiInputInt *)VMA(1) );
+        VM_CHECKBOUNDS( args[2], sizeof(int32_t) );
+        return ImGui_InputInt( (const char *)VMA( 1 ), (int32_t *)VMA( 2 ) );
     case IMGUI_INPUT_INT2:
-        VM_CHECKBOUNDS( args[1], sizeof(ImGuiInputInt2) );
-        return ImGui_InputInt2( (ImGuiInputInt2 *)VMA(1) );
+        VM_CHECKBOUNDS( args[2], sizeof(ivec2_t) );
+        return ImGui_InputInt2( (const char *)VMA( 1 ), (int32_t *)VMA( 2 ) );
     case IMGUI_INPUT_INT3:
-        VM_CHECKBOUNDS( args[1], sizeof(ImGuiInputInt3) );
-        return ImGui_InputInt3( (ImGuiInputInt3 *)VMA(1) );
+        VM_CHECKBOUNDS( args[2], sizeof(ivec3_t) );
+        return ImGui_InputInt3( (const char *)VMA( 1 ), (int32_t *)VMA( 2 ) );
     case IMGUI_INPUT_INT4:
-        VM_CHECKBOUNDS( args[1], sizeof(ImGuiInputInt4) );
-        return ImGui_InputInt4( (ImGuiInputInt4 *)VMA(1) );
+        VM_CHECKBOUNDS( args[2], sizeof(ivec4_t) );
+        return ImGui_InputInt4( (const char *)VMA( 1 ), (int32_t *)VMA( 2 ) );
     case IMGUI_SLIDER_FLOAT:
-        VM_CHECKBOUNDS( args[1], sizeof(ImGuiSliderFloat) );
-        return ImGui_SliderFloat( (ImGuiSliderFloat *)VMA(1) );
+        VM_CHECKBOUNDS( args[2], sizeof(float) );
+        return ImGui_SliderFloat( (const char *)VMA( 1 ), (float *)VMA( 2 ), VMF( 3 ), VMF( 4 ) );
     case IMGUI_SLIDER_FLOAT2:
-        VM_CHECKBOUNDS( args[1], sizeof(ImGuiSliderFloat2) );
-        return ImGui_SliderFloat2( (ImGuiSliderFloat2 *)VMA(1) );
+        VM_CHECKBOUNDS( args[2], sizeof(vec2_t) );
+        return ImGui_SliderFloat2( (const char *)VMA( 1 ), (float *)VMA( 2 ), VMF( 3 ), VMF( 4 ) );
     case IMGUI_SLIDER_FLOAT3:
-        VM_CHECKBOUNDS( args[1], sizeof(ImGuiSliderFloat3) );
-        return ImGui_SliderFloat3( (ImGuiSliderFloat3 *)VMA(1) );
+        VM_CHECKBOUNDS( args[2], sizeof(vec3_t) );
+        return ImGui_SliderFloat3( (const char *)VMA( 1 ), (float *)VMA( 2 ), VMF( 3 ), VMF( 4 ) );
     case IMGUI_SLIDER_FLOAT4:
-        VM_CHECKBOUNDS( args[1], sizeof(ImGuiSliderFloat4) );
-        return ImGui_SliderFloat4( (ImGuiSliderFloat4 *)VMA(1) );
+        VM_CHECKBOUNDS( args[2], sizeof(vec4_t) );
+        return ImGui_SliderFloat4( (const char *)VMA( 1 ), (float *)VMA( 2 ), VMF( 3 ), VMF( 4 ) );
     case IMGUI_SLIDER_INT:
-        VM_CHECKBOUNDS( args[1], sizeof(ImGuiSliderInt) );
-        return ImGui_SliderInt( (ImGuiSliderInt *)VMA(1) );
+        VM_CHECKBOUNDS( args[2], sizeof(int32_t) );
+        return ImGui_SliderInt( (const char *)VMA( 1 ), (int32_t *)VMA( 2 ), args[3], args[4] );
     case IMGUI_SLIDER_INT2:
-        VM_CHECKBOUNDS( args[1], sizeof(ImGuiSliderInt2) );
-        return ImGui_SliderInt2( (ImGuiSliderInt2 *)VMA(1) );
+        VM_CHECKBOUNDS( args[2], sizeof(ivec2_t) );
+        return ImGui_SliderInt2( (const char *)VMA( 1 ), (int32_t *)VMA( 2 ), args[3], args[4] );
     case IMGUI_SLIDER_INT3:
-        VM_CHECKBOUNDS( args[1], sizeof(ImGuiSliderInt3) );
-        return ImGui_SliderInt3( (ImGuiSliderInt3 *)VMA(1) );
+        VM_CHECKBOUNDS( args[2], sizeof(ivec3_t) );
+        return ImGui_SliderInt3( (const char *)VMA( 1 ), (int32_t *)VMA( 2 ), args[3], args[4] );
     case IMGUI_SLIDER_INT4:
-        VM_CHECKBOUNDS( args[1], sizeof(ImGuiSliderInt4) );
-        return ImGui_SliderInt4( (ImGuiSliderInt4 *)VMA(1) );
+        VM_CHECKBOUNDS( args[2], sizeof(ivec4_t) );
+        return ImGui_SliderInt4( (const char *)VMA( 1 ), (int32_t *)VMA( 2 ), args[3], args[4] );
     case IMGUI_COLOR_EDIT3:
-        VM_CHECKBOUNDS( args[1], sizeof(ImGuiColorEdit3) );
-        return ImGui_ColorEdit3( (ImGuiColorEdit3 *)VMA(1) );
+        VM_CHECKBOUNDS( args[2], sizeof(vec3_t) );
+        return ImGui_ColorEdit3( (const char *)VMA( 1 ), (float *)VMA( 2 ), args[3] );
     case IMGUI_COLOR_EDIT4:
-        VM_CHECKBOUNDS( args[1], sizeof(ImGuiColorEdit4) );
-        return ImGui_ColorEdit4( (ImGuiColorEdit4 *)VMA(1) );
+        VM_CHECKBOUNDS( args[2], sizeof(vec4_t) );
+        return ImGui_ColorEdit4( (const char *)VMA( 1 ), (float *)VMA( 2 ), args[3] );
     case IMGUI_ARROW_BUTTON:
-        return ImGui_ArrowButton( (const char *)VMA(1), (ImGuiDir)args[2] );
+        return ImGui_ArrowButton( (const char *)VMA( 1 ), (ImGuiDir)args[2] );
     case IMGUI_CHECKBOX:
-        VM_CHECKBOUNDS( args[1], sizeof(ImGuiCheckbox) );
-        return ImGui_Checkbox( (ImGuiCheckbox *)VMA(1) );
+        VM_CHECKBOUNDS( args[2], sizeof(byte) );
+        return ImGui_Checkbox( (const char *)VMA( 1 ), (byte *)VMA( 2 ) );
     case IMGUI_GET_FONTSCALE:
         return FloatToInt( ImGui_GetFontScale() );
     case IMGUI_SET_CURSOR_POS:

@@ -4,3 +4,9 @@
 [submodule "deps/glm"]
 	path = deps/glm
 	url = https://github.com/g-truc/glm.git
+[submodule "deps/squirrel"]
+	path = deps/squirrel
+	url = https://github.com/albertodemichelis/squirrel.git
+[submodule "deps/squall"]
+	path = deps/squall
+	url = https://github.com/jonigata/squall.git

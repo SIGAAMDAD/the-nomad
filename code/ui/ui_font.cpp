@@ -58,7 +58,7 @@ CUIFont *CUIFontManager::AddFont( const char *path )
         N_Error(ERR_DROP, "CUIFontManager::AddFont: MAX_FONTS hit");
     }
 
-    font = fonts[numFonts] = (CUIFont *)Hunk_Alloc(sizeof(*font), h_low);
+    font = fonts[numFonts] = (CUIFont *)Z_Malloc( sizeof(*font), TAG_GAME );
     numFonts++;
 
     // construct

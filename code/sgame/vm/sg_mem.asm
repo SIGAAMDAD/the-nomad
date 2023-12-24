@@ -4,7 +4,7 @@ LABELV $82
 address $83
 export String_Alloc
 code
-proc String_Alloc 44 8
+proc String_Alloc 40 8
 file "../sg_mem.c"
 line 25
 ;1:#include "sg_local.h"
@@ -12,7 +12,7 @@ line 25
 ;3:// 8 MiB of static memory for the vm to use
 ;4:#define MEMPOOL_SIZE (8*1024*1024)
 ;5:static char mempool[MEMPOOL_SIZE];
-;6:static uint32_t allocPoint;
+;6:static int allocPoint;
 ;7:
 ;8:#define STRINGPOOL_SIZE (8*1024)
 ;9:
@@ -24,16 +24,16 @@ line 25
 ;15:	const char *str;
 ;16:} stringDef_t;
 ;17:
-;18:static uint32_t strPoolIndex;
+;18:static int strPoolIndex;
 ;19:static char strPool[STRINGPOOL_SIZE];
 ;20:
-;21:static uint32_t strHandleCount;
+;21:static int strHandleCount;
 ;22:static stringDef_t *strHandle[HASH_TABLE_SIZE];
 ;23:
 ;24:const char *String_Alloc( const char *p )
 ;25:{
 line 31
-;26:	uint32_t len;
+;26:	int len;
 ;27:	uint64_t hash;
 ;28:	stringDef_t *str, *last;
 ;29:	static const char *staticNULL = "";
@@ -163,28 +163,29 @@ ASGNU4
 ADDRLP4 12
 ADDRLP4 20
 INDIRU4
-ASGNU4
+CVUI4 4
+ASGNI4
 line 50
 ;50:	if (len + strPoolIndex + 1 < STRINGPOOL_SIZE) {
 ADDRLP4 12
-INDIRU4
+INDIRI4
 ADDRGP4 strPoolIndex
-INDIRU4
-ADDU4
-CNSTU4 1
-ADDU4
-CNSTU4 8192
-GEU4 $93
+INDIRI4
+ADDI4
+CNSTI4 1
+ADDI4
+CNSTI4 8192
+GEI4 $93
 line 51
-;51:		uint32_t ph = strPoolIndex;
+;51:		int ph = strPoolIndex;
 ADDRLP4 24
 ADDRGP4 strPoolIndex
-INDIRU4
-ASGNU4
+INDIRI4
+ASGNI4
 line 52
 ;52:		strcpy(&strPool[strPoolIndex], p);
 ADDRGP4 strPoolIndex
-INDIRU4
+INDIRI4
 ADDRGP4 strPool
 ADDP4
 ARGP4
@@ -203,13 +204,13 @@ ADDRLP4 28
 INDIRP4
 ADDRLP4 28
 INDIRP4
-INDIRU4
+INDIRI4
 ADDRLP4 12
-INDIRU4
-CNSTU4 1
-ADDU4
-ADDU4
-ASGNU4
+INDIRI4
+CNSTI4 1
+ADDI4
+ADDI4
+ASGNI4
 line 55
 ;54:
 ;55:		str = strHandle[hash];
@@ -250,34 +251,29 @@ line 60
 ;60:		}
 LABELV $96
 line 57
-ADDRLP4 36
-CNSTU4 0
-ASGNU4
 ADDRLP4 0
 INDIRP4
 CVPU4 4
-ADDRLP4 36
-INDIRU4
+CNSTU4 0
 EQU4 $98
 ADDRLP4 0
 INDIRP4
 INDIRP4
 CVPU4 4
-ADDRLP4 36
-INDIRU4
+CNSTU4 0
 NEU4 $95
 LABELV $98
 line 62
 ;61:
 ;62:		str = (stringDef_t *)SG_MemAlloc( sizeof(stringDef_t) );
-CNSTU4 8
-ARGU4
-ADDRLP4 40
+CNSTI4 8
+ARGI4
+ADDRLP4 36
 ADDRGP4 SG_MemAlloc
 CALLP4
 ASGNP4
 ADDRLP4 0
-ADDRLP4 40
+ADDRLP4 36
 INDIRP4
 ASGNP4
 line 63
@@ -293,7 +289,7 @@ INDIRP4
 CNSTI4 4
 ADDP4
 ADDRLP4 24
-INDIRU4
+INDIRI4
 ADDRGP4 strPool
 ADDP4
 ASGNP4
@@ -333,7 +329,7 @@ LABELV $100
 line 70
 ;70:		return &strPool[ph];
 ADDRLP4 24
-INDIRU4
+INDIRI4
 ADDRGP4 strPool
 ADDP4
 RETP4
@@ -346,9 +342,9 @@ line 72
 CNSTP4 0
 RETP4
 LABELV $81
-endproc String_Alloc 44 8
+endproc String_Alloc 40 8
 export String_Report
-proc String_Report 12 16
+proc String_Report 4 16
 line 76
 ;73:}
 ;74:
@@ -372,41 +368,25 @@ pop
 line 81
 ;80:	
 ;81:    f = strPoolIndex;
-ADDRLP4 4
-ADDRGP4 strPoolIndex
-INDIRU4
-ASGNU4
 ADDRLP4 0
-CNSTF4 1073741824
-ADDRLP4 4
-INDIRU4
-CNSTI4 1
-RSHU4
-CVUI4 4
+ADDRGP4 strPoolIndex
+INDIRI4
 CVIF4 4
-MULF4
-ADDRLP4 4
-INDIRU4
-CNSTU4 1
-BANDU4
-CVUI4 4
-CVIF4 4
-ADDF4
 ASGNF4
 line 82
 ;82:	f /= STRINGPOOL_SIZE;
 ADDRLP4 0
 ADDRLP4 0
 INDIRF4
-CNSTF4 1174405120
-DIVF4
+CNSTF4 956301312
+MULF4
 ASGNF4
 line 83
 ;83:	f *= 100;
 ADDRLP4 0
-CNSTF4 1120403456
 ADDRLP4 0
 INDIRF4
+CNSTF4 1120403456
 MULF4
 ASGNF4
 line 84
@@ -417,8 +397,8 @@ ADDRLP4 0
 INDIRF4
 ARGF4
 ADDRGP4 strPoolIndex
-INDIRU4
-ARGU4
+INDIRI4
+ARGI4
 CNSTI4 8192
 ARGI4
 ADDRGP4 Con_Printf
@@ -427,41 +407,25 @@ pop
 line 86
 ;85:	
 ;86:    f = allocPoint;
-ADDRLP4 8
-ADDRGP4 allocPoint
-INDIRU4
-ASGNU4
 ADDRLP4 0
-CNSTF4 1073741824
-ADDRLP4 8
-INDIRU4
-CNSTI4 1
-RSHU4
-CVUI4 4
+ADDRGP4 allocPoint
+INDIRI4
 CVIF4 4
-MULF4
-ADDRLP4 8
-INDIRU4
-CNSTU4 1
-BANDU4
-CVUI4 4
-CVIF4 4
-ADDF4
 ASGNF4
 line 87
 ;87:	f /= MEMPOOL_SIZE;
 ADDRLP4 0
 ADDRLP4 0
 INDIRF4
-CNSTF4 1258291200
-DIVF4
+CNSTF4 872415232
+MULF4
 ASGNF4
 line 88
 ;88:	f *= 100;
 ADDRLP4 0
-CNSTF4 1120403456
 ADDRLP4 0
 INDIRF4
+CNSTF4 1120403456
 MULF4
 ASGNF4
 line 89
@@ -472,8 +436,8 @@ ADDRLP4 0
 INDIRF4
 ARGF4
 ADDRGP4 allocPoint
-INDIRU4
-ARGU4
+INDIRI4
+ARGI4
 CNSTI4 8388608
 ARGI4
 ADDRGP4 Con_Printf
@@ -482,21 +446,21 @@ pop
 line 90
 ;90:}
 LABELV $101
-endproc String_Report 12 16
+endproc String_Report 4 16
 export SG_MemAlloc
 proc SG_MemAlloc 8 12
 line 93
 ;91:
-;92:void *SG_MemAlloc( uint32_t size )
+;92:void *SG_MemAlloc( int size )
 ;93:{
 line 96
 ;94:    char *buf;
 ;95:
 ;96:    if (!size) {
 ADDRFP4 0
-INDIRU4
-CNSTU4 0
-NEU4 $107
+INDIRI4
+CNSTI4 0
+NEI4 $107
 line 97
 ;97:        G_Error( "SG_MemAlloc: bad size" );
 ADDRGP4 $109
@@ -512,22 +476,25 @@ line 100
 ;100:    size = PAD(size, (unsigned)16); // round to 16-byte alignment
 ADDRFP4 0
 ADDRFP4 0
-INDIRU4
+INDIRI4
+CVIU4 4
 CNSTU4 16
 ADDU4
 CNSTU4 1
 SUBU4
 CNSTU4 4294967280
 BANDU4
-ASGNU4
+CVUI4 4
+ASGNI4
 line 102
 ;101:
 ;102:    if (allocPoint + size >= sizeof(mempool)) {
 ADDRGP4 allocPoint
-INDIRU4
+INDIRI4
 ADDRFP4 0
-INDIRU4
-ADDU4
+INDIRI4
+ADDI4
+CVIU4 4
 CNSTU4 8388608
 LTU4 $110
 line 103
@@ -550,7 +517,7 @@ line 107
 ;107:    buf = &mempool[ allocPoint ];
 ADDRLP4 0
 ADDRGP4 allocPoint
-INDIRU4
+INDIRI4
 ADDRGP4 mempool
 ADDP4
 ASGNP4
@@ -563,11 +530,11 @@ ADDRLP4 4
 INDIRP4
 ADDRLP4 4
 INDIRP4
-INDIRU4
+INDIRI4
 ADDRFP4 0
-INDIRU4
-ADDU4
-ASGNU4
+INDIRI4
+ADDI4
+ASGNI4
 line 111
 ;109:
 ;110:    // zero init
@@ -578,7 +545,8 @@ ARGP4
 CNSTI4 0
 ARGI4
 ADDRFP4 0
-INDIRU4
+INDIRI4
+CVIU4 4
 ARGU4
 ADDRGP4 memset
 CALLP4
@@ -596,14 +564,16 @@ proc SG_MemoryRemaining 0 0
 line 116
 ;114:}
 ;115:
-;116:uint32_t SG_MemoryRemaining( void ) {
+;116:int SG_MemoryRemaining( void ) {
 line 117
 ;117:    return sizeof(mempool) - allocPoint;
 CNSTU4 8388608
 ADDRGP4 allocPoint
-INDIRU4
+INDIRI4
+CVIU4 4
 SUBU4
-RETU4
+CVUI4 4
+RETI4
 LABELV $113
 endproc SG_MemoryRemaining 0 0
 export SG_MemInit
@@ -614,7 +584,7 @@ line 121
 ;120:void SG_MemInit( void )
 ;121:{
 line 124
-;122:    uint32_t i;
+;122:    int i;
 ;123:
 ;124:    memset( mempool, 0, sizeof(mempool) );
 ADDRGP4 mempool
@@ -641,17 +611,15 @@ line 127
 ;126:
 ;127:	for (i = 0; i < HASH_TABLE_SIZE; i++) {
 ADDRLP4 0
-CNSTU4 0
-ASGNU4
-ADDRGP4 $118
-JUMPV
+CNSTI4 0
+ASGNI4
 LABELV $115
 line 128
 ;128:		strHandle[i] = 0;
 ADDRLP4 0
-INDIRU4
+INDIRI4
 CNSTI4 2
-LSHU4
+LSHI4
 ADDRGP4 strHandle
 ADDP4
 CNSTP4 0
@@ -662,25 +630,24 @@ LABELV $116
 line 127
 ADDRLP4 0
 ADDRLP4 0
-INDIRU4
-CNSTU4 1
-ADDU4
-ASGNU4
-LABELV $118
+INDIRI4
+CNSTI4 1
+ADDI4
+ASGNI4
 ADDRLP4 0
-INDIRU4
-CNSTU4 2048
-LTU4 $115
+INDIRI4
+CNSTI4 2048
+LTI4 $115
 line 130
 ;130:	strHandleCount = 0;
 ADDRGP4 strHandleCount
-CNSTU4 0
-ASGNU4
+CNSTI4 0
+ASGNI4
 line 131
 ;131:	strPoolIndex = 0;
 ADDRGP4 strPoolIndex
-CNSTU4 0
-ASGNU4
+CNSTI4 0
+ASGNI4
 line 132
 ;132:}
 LABELV $114
@@ -795,6 +762,9 @@ import pm_airAccel
 import pm_baseSpeed
 import pm_baseAccel
 import pm_waterAccel
+import pm_airFriction
+import pm_waterFriction
+import pm_groundFriction
 import sg_numSaves
 import sg_savename
 import sg_levelDataFile

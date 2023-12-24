@@ -441,6 +441,10 @@ static uint32_t VM_trap_FS_GetFileList( const char *path, const char *extension,
 	return (uint32_t)FS_GetFileList( path, extension, listbuf, bufferLength );
 }
 
+static void VM_trap_Key_SetCatcher( int32_t catcher  ) {
+	Key_SetCatcher( (uint32_t)catcher );
+}
+
 static void VM_FillImport(vmRefImport_t *import, const char *name)
 {
 	import->Cvar_Set = Cvar_Set;
@@ -491,7 +495,7 @@ static void VM_FillImport(vmRefImport_t *import, const char *name)
 	import->trap_Key_GetKey = Key_GetKey;
 	import->trap_Key_ClearStates = Key_ClearStates;
 	import->trap_Key_GetCatcher = Key_GetCatcher;
-	import->trap_Key_SetCatcher = Key_SetCatcher;
+	import->trap_Key_SetCatcher = VM_trap_Key_SetCatcher;
 
 	import->trap_MemoryRemaining = VM_trap_MemoryRemaining;
 
@@ -683,8 +687,7 @@ vm_t *VM_Create(vmIndex_t index, syscall_t systemCalls, dllSyscall_t dllSyscalls
 
     // allocate space for the jump targets, which will be filled in by the compile/prep functions
 	vm->instructionCount = header->instructionCount;
-//	vm->instructionPointers = Hunk_Alloc(vm->instructionCount * sizeof(*vm->instructionPointers), "instructions", h_high);
-	vm->instructionPointers = NULL;
+	vm->instructionPointers = (intptr_t *)Hunk_Alloc( vm->instructionCount * sizeof(*vm->instructionPointers), h_low );
 
 	// copy or compile the instructions
 	vm->codeLength = header->codeLength;
@@ -1760,7 +1763,7 @@ void VM_StackTrace( vm_t *vm, int programCounter, int programStack )
 
 	count = 0;
 	do {
-//		Con_Printf( "%s\n", VM_ValueToSymbol( vm, programCounter ) );
+		Con_Printf( "%s\n", VM_ValueToSymbol( vm, programCounter ) );
 		programStack =  *(int *)&vm->dataBase[programStack+4];
 		programCounter = *(int *)&vm->dataBase[programStack];
 	} while ( programCounter != -1 && ++count < 32 );

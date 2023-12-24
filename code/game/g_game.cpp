@@ -402,7 +402,7 @@ static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, const glm::mat4&
     }
 }
 
-int32_t G_LoadMap( int32_t index, mapinfo_t *info, uint32_t *soundBits, linkEntity_t *activeEnts )
+int32_t G_LoadMap( int32_t index, mapinfo_t *info, int32_t *soundBits, linkEntity_t *activeEnts )
 {
     if ( index >= gi.mapCache.numMapFiles ) {
         Con_Printf( COLOR_RED "G_LoadMap: invalid map index %i\n", index );
@@ -974,6 +974,9 @@ void G_ShutdownVMs(void)
 
 void G_StartHunkUsers(void)
 {
+    // set the marker before loading any map assets
+    Hunk_SetMark();
+
     if (!gi.rendererStarted) {
         gi.rendererStarted = qtrue;
         G_InitRenderer();
@@ -990,9 +993,6 @@ void G_StartHunkUsers(void)
         gi.uiStarted = qtrue;
         G_InitUI();
     }
-
-    // set the marker before loading any map assets
-    Hunk_SetMark();
 
     // cache all maps
     G_InitMapCache();
@@ -1045,6 +1045,9 @@ G_ClearMem: clears all the game's hunk memory
 */
 void G_ClearMem(void)
 {
+    // clear all game memory
+    Z_FreeTags( TAG_GAME, TAG_GAME );
+
     // if not in a level, clear the whole hunk
     if (!gi.mapLoaded) {
         // clear the whole hunk

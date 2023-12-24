@@ -2,8 +2,8 @@
 #include "sg_imgui.h"
 
 typedef struct {
-    uint32_t polyCount;
-    uint32_t vertexCount;
+    int polyCount;
+    int vertexCount;
     float realCamWidth;
     float realCamHeight;
     bbox_t frustum;
@@ -41,7 +41,7 @@ static void SG_DrawEntity( const sgentity_t *ent )
 static void SG_AddSpritesToFrame( void )
 {
     const sgentity_t *ent;
-    uint32_t i;
+    int i;
 
     ent = &sg_entities[0];
     for ( i = 0; i < sg.numEntities; i++, ent++ ) {

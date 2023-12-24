@@ -855,6 +855,11 @@ static void R_CameraInfo_f( void ) {
 
 static void R_UnloadWorld_f( void ) {
     ri.Printf( PRINT_INFO, "Unloading world...\n" );
+
+    if ( !rg.world ) {
+        return;
+    }
+
     R_ShutdownBuffer( rg.world->buffer );
 
     rg.world = NULL;
@@ -1058,7 +1063,7 @@ void R_GLDebug_Callback_ARB(GLenum source, GLenum type, GLuint id, GLenum severi
 
     // allocate it on the hunk so we don't need to clean it up
     len = strlen(message) + 1;
-    cachedGLMessages[numCachedGLMessages] = (char *)ri.Hunk_Alloc(len, h_low);
+    cachedGLMessages[numCachedGLMessages] = (char *)ri.Malloc( len );
     cachedGLMessages[numCachedGLMessages][len - 1] = '\0';
     strcpy(cachedGLMessages[numCachedGLMessages], message);
     numCachedGLMessages++;

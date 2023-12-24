@@ -545,91 +545,35 @@ static const void *RB_ColorMask(const void *data) {
 	return (const void *)(cmd + 1);
 }
 
-static const void *RB_DrawImage(const void *data) {
+static const void *RB_DrawImage( const void *data ) {
 	const drawImageCmd_t *cmd;
 	shader_t *shader;
 	vec3_t oldPos;
+	polyVert_t verts[4];
 	uint32_t numVerts, numIndices;
 
 	cmd = (const drawImageCmd_t *)data;
 
 	shader = cmd->shader;
 
-	RB_SetBatchBuffer( backend.drawBuffer, backendData->polyVerts, sizeof(polyVert_t), backendData->indices, sizeof(glIndex_t) );
-
-	// flush it since we might have already had it bound
-	RB_FlushBatchBuffer();
-
-	numVerts = backend.drawBatch.vtxOffset;
-	numIndices = backend.drawBatch.idxOffset;
-
-	backendData->indices[ numIndices ] = numVerts + 0;
-	backendData->indices[ numIndices + 1 ] = numVerts + 1;
-	backendData->indices[ numIndices + 2 ] = numVerts + 2;
-	backendData->indices[ numIndices + 3 ] = numVerts + 3;
-	backendData->indices[ numIndices + 4 ] = numVerts + 2;
-	backendData->indices[ numIndices + 5 ] = numVerts + 0;
-
 	{
-		VectorCopy4(backendData->polyVerts[numVerts].modulate.rgba, backend.color2D);
-		VectorCopy4(backendData->polyVerts[numVerts + 1].modulate.rgba, backend.color2D);
-		VectorCopy4(backendData->polyVerts[numVerts + 2].modulate.rgba, backend.color2D);
-		VectorCopy4(backendData->polyVerts[numVerts + 3].modulate.rgba, backend.color2D);
+		VectorCopy4( verts[0].modulate.rgba, backend.color2D );
+		VectorCopy4( verts[1].modulate.rgba, backend.color2D );
+		VectorCopy4( verts[2].modulate.rgba, backend.color2D );
+		VectorCopy4( verts[3].modulate.rgba, backend.color2D );
 	}
 
-	backendData->polyVerts[numVerts].xyz[0] = cmd->x;
-	backendData->polyVerts[numVerts].xyz[1] = cmd->y;
-	backendData->polyVerts[numVerts].xyz[2] = 0;
+	VectorSet( verts[0].xyz, cmd->x, cmd->y, 0 );
+	VectorSet( verts[1].xyz, cmd->x + cmd->w, cmd->y, 0 );
+	VectorSet( verts[2].xyz, cmd->x + cmd->w, cmd->y + cmd->h, 0 );
+	VectorSet( verts[3].xyz, cmd->x, cmd->y + cmd->h, 0 );
 
-	backendData->polyVerts[numVerts + 1].xyz[0] = cmd->x + cmd->w;
-	backendData->polyVerts[numVerts + 1].xyz[1] = cmd->y;
-	backendData->polyVerts[numVerts + 1].xyz[2] = 0;
+	VectorSet2( verts[0].uv, cmd->u1, cmd->v1 );
+	VectorSet2( verts[1].uv, cmd->u2, cmd->v1 );
+	VectorSet2( verts[2].uv, cmd->u2, cmd->v2 );
+	VectorSet2( verts[3].uv, cmd->u1, cmd->v2 );
 
-	backendData->polyVerts[numVerts + 2].xyz[0] = cmd->x + cmd->w;
-	backendData->polyVerts[numVerts + 2].xyz[1] = cmd->y + cmd->h;
-	backendData->polyVerts[numVerts + 2].xyz[2] = 0;
-
-	backendData->polyVerts[numVerts + 3].xyz[0] = cmd->x;
-	backendData->polyVerts[numVerts + 3].xyz[1] = cmd->y + cmd->h;
-	backendData->polyVerts[numVerts + 3].xyz[2] = 0;
-
-	backendData->polyVerts[numVerts].uv[0] = cmd->u1;
-	backendData->polyVerts[numVerts].uv[1] = cmd->v1;
-
-	backendData->polyVerts[numVerts + 1].uv[0] = cmd->u2;
-	backendData->polyVerts[numVerts + 1].uv[1] = cmd->v1;
-
-	backendData->polyVerts[numVerts + 2].uv[0] = cmd->u2;
-	backendData->polyVerts[numVerts + 2].uv[1] = cmd->v2;
-
-	backendData->polyVerts[numVerts + 3].uv[0] = cmd->u1;
-	backendData->polyVerts[numVerts + 3].uv[1] = cmd->v2;
-
-#if 0
-	RB_CommitDrawData( &backendData->polyVerts[numVerts], 4, &backendData->indices[numIndices], 6 );
-
-	VectorCopy( oldPos, glState.viewData.camera.origin );
-	glState.viewData.camera.origin[0] = 0.0f;
-	glState.viewData.camera.origin[1] = 0.0f;
-	RB_MakeViewMatrix();
-	VectorCopy( glState.viewData.camera.origin, oldPos );
-
-	GLSL_UseProgram( &rg.basicShader );
-	GLSL_SetUniformMatrix4( &rg.basicShader, UNIFORM_MODELVIEWPROJECTION, glState.viewData.camera.viewProjectionMatrix );
-	GLSL_SetUniformInt( &rg.basicShader, UNIFORM_DIFFUSE_MAP, 0 );
-	GL_BindTexture( 0, shader->stages[0]->image );
-
-	RB_FlushBatchBuffer();
-#endif
-	GLSL_UseProgram( NULL );
-
-	nglBegin( GL_TRIANGLES );
-	for (uint32_t i = 0; i < 6; i++) {
-		GL_BindTexture( 0, shader->stages[0]->image );
-		nglVertex2fv( backendData->polyVerts[backendData->indices[numIndices + i]].xyz );
-		nglTexCoord2fv( backendData->polyVerts[backendData->indices[numIndices + i]].uv );
-	}
-	nglEnd();
+	RE_AddPolyToScene( shader->index, verts, 4 );
 
 	return (const void *)(cmd + 1);
 }

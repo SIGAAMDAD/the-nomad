@@ -85,9 +85,13 @@ extern "C" void UI_Shutdown( void )
 {
     if (ui) {
         ui->Shutdown();
+		Z_Free( ui );
+		ui = NULL;
     }
     if (strManager) {
         strManager->Shutdown();
+		Z_Free( strManager );
+		strManager = NULL;
     }
 
     Cmd_RemoveCommand( "ui_cache" );
@@ -106,17 +110,17 @@ extern "C" void UI_Init( void )
     UI_RegisterCvars();
 
     // init the library
-    ui = (CUILib *)Hunk_Alloc(sizeof(*ui), h_low);
+    ui = (CUILib *)Z_Malloc( sizeof(*ui), TAG_GAME );
     memset(ui, 0, sizeof(*ui));
     ui->Init(); // we could call ::new
 
     // init the string manager
-    strManager = (CUIStringManager *)Hunk_Alloc(sizeof(*strManager), h_low);
+    strManager = (CUIStringManager *)Z_Malloc( sizeof(*strManager), TAG_GAME );
     memset(strManager, 0, sizeof(*strManager));
     strManager->Init();
 
     // init the font manager
-    fontManager = (CUIFontManager *)Hunk_Alloc(sizeof(*fontManager), h_low);
+    fontManager = (CUIFontManager *)Z_Malloc( sizeof(*fontManager), TAG_GAME );
     memset(fontManager, 0, sizeof(*fontManager));
     ::new ((void *)fontManager) CUIFontManager();
 
@@ -146,7 +150,6 @@ void Menu_Cache( void )
     ui->whiteShader = re.RegisterShader( "white" );
 //    ui->menubackShader = re.RegisterShader( "menuback" );
 }
-
 /*
 =================
 UI_Refresh
@@ -571,6 +574,11 @@ void Sys_DisplayEngineStats( void )
 	else if (ui_diagnostics->i == 1) {
 		UI_DrawFPS();
         return;
+	}
+
+	if ( ui->GetState() == STATE_CREDITS ) {
+		// pay respects, don't block the words
+		return;
 	}
 	
 	ImGui::Begin( "Engine Diagnostics", NULL, windowFlags );

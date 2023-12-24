@@ -1,59 +1,39 @@
 #include "n_shared.h"
-#include <mono-2.0/mono/jit/jit.h>
-#include <mono-2.0/mono/metadata/assembly.h>
-#include <mono-2.0/mono/metadata/class.h>
-#include <mono-2.0/mono/metadata/image.h>
-#include <mono-2.0/mono/metadata/threads.h>
-#include <mono-2.0/mono/utils/mono-logger.h>
-#include <mono-2.0/mono/utils/mono-error.h>
-#include <mono-2.0/mono/utils/mono-jemalloc.h>
-#include <jni.h>
-#include <squall/squall_vm.hpp>
-#include <squall/squall_vmstd.hpp>
+#include <squirrel.h>
 #include "vm_local.h"
 
-static squall::VM sgameNutVM;
+static squall::VMStd nutVM;
 
-typedef struct MonoJIT {
-    MonoDomain *m_pDomain;
-    MonoAssembly *m_pAssembly;
-} MonoJIT;
-
-static MonoJIT sgameMonoVM;
-
-void VM_CallSquirrel( int32_t command, int32_t args[MAX_VMMAIN_ARGS] )
+void VM_InitSquirrel( vm_t *vm )
 {
-    try {
+    HSQUIRRELVM hVMInstance;
+    SQRESULT res;
 
-        // define all the system calls
-        sgameNutVM.defun( "G_Error", [&]( const std::string& str ) -> void {
-            N_Error(ERR_DROP, "%s", str.c_str());
-        } );
-        sgameNutVM.defun( "G_Printf", [&]( const std::string& str ) -> void {
-            Con_Printf( "%s", str.c_str() );
-        } );
+    hVMInstance = sq_open( PROGRAM_STACK_SIZE );
 
-        sgameNutVM.call( "vmMain", command, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9],
-                                            args[10], args[11] );
+    vm->dataAlloc = ~0U;
+    vm->dataMask = ~0U;
+    vm->dataBase = 0;
 
-    } catch (const squall::squirrel_error& e) {
-        N_Error(ERR_DROP, "[SQuall Error] %s", e.what());
-    }
+    vm->squirrelVMInstance = hVMInstance;
 }
 
-
-void VM_CallMono( int32_t command, int32_t args[MAX_VMMAIN_ARGS] )
+void VM_ShutdownSquirrel( vm_t *vm )
 {
-    char argv[MAX_VMMAIN_ARGS][6];
-    int32_t argc;
-
-    argc = MAX_VMMAIN_ARGS;
-    memset( argv, 0, sizeof(argv) );
-
-    for (int32_t i = 0; i < MAX_VMMAIN_ARGS; i++) {
-        snprintf( argv[i], sizeof(*argv), "%i", args[i] );
-    }
-
-    mono_jit_exec( sgameMonoVM.m_pDomain, sgameMonoVM.m_pAssembly, argc, argv );
+    sq_close( (HSQUIRRELVM)vm->squirrelVMInstance );
 }
+
+void VM_CallSquirrel( vm_t *vm, int32_t command, uint32_t numCommands, ... )
+{
+    int32_t args[MAX_VMMAIN_ARGS];
+    va_list argptr;
+
+    args[0] = command;
+    va_start( argptr, numCommands );
+    for ( uint32_t i = 0; i < numCommands; i++ ) {
+        args[i+1] = va_arg( argptr, int32_t );
+    }
+    va_end( argptr );
+}
+
 

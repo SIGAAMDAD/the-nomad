@@ -67,6 +67,10 @@ vmCvar_t sg_levelIndex;
 vmCvar_t sg_levelDataFile;
 vmCvar_t sg_savename;
 vmCvar_t sg_numSaves;
+
+vmCvar_t pm_groundFriction;
+vmCvar_t pm_waterFriction;
+vmCvar_t pm_airFriction;
 vmCvar_t pm_waterAccel;
 vmCvar_t pm_baseAccel;
 vmCvar_t pm_baseSpeed;
@@ -79,8 +83,8 @@ typedef struct {
     vmCvar_t *vmCvar;
     const char *cvarName;
     const char *defaultValue;
-    uint32_t cvarFlags;
-    uint32_t modificationCount; // for tracking changes
+    int cvarFlags;
+    int modificationCount; // for tracking changes
     qboolean trackChange;       // track this variable, and announce if changed
 } cvarTable_t;
 
@@ -91,10 +95,13 @@ static cvarTable_t cvarTable[] = {
     { &sg_printEntities,        "sg_printEntities",     "0",            0,                          0, qfalse },
     { &sg_debugPrint,           "sg_debugPrint",        "1",            CVAR_TEMP,                  0, qfalse },
     { &sg_paused,               "g_paused",             "1",            CVAR_TEMP | CVAR_LATCH,     0, qfalse },
+    { &pm_groundFriction,       "pm_groundFriction",    "0.6f",         CVAR_LATCH | CVAR_SAVE,     0, qtrue },
+    { &pm_waterFriction,        "pm_waterFriction",     "0.06f",        CVAR_LATCH | CVAR_SAVE,     0, qtrue },
+    { &pm_airFriction,          "pm_airFriction",       "0.01f",        CVAR_LATCH | CVAR_SAVE,     0, qtrue },
     { &pm_airAccel,             "pm_airAccel",          "1.5f",         CVAR_LATCH | CVAR_SAVE,     0, qfalse },
     { &pm_waterAccel,           "pm_waterAccel",        "0.5f",         CVAR_LATCH | CVAR_SAVE,     0, qfalse },
-    { &pm_baseAccel,            "pm_baseAccel",         "1.2f",         CVAR_LATCH | CVAR_SAVE,     0, qfalse },
-    { &pm_baseSpeed,            "pm_baseSpeed",         "1.0f",         CVAR_LATCH | CVAR_SAVE,     0, qfalse },
+    { &pm_baseAccel,            "pm_baseAccel",         "1.0f",         CVAR_LATCH | CVAR_SAVE,     0, qfalse },
+    { &pm_baseSpeed,            "pm_baseSpeed",         "0.02f",        CVAR_LATCH | CVAR_SAVE,     0, qfalse },
     { &sg_mouseInvert,          "g_mouseInvert",        "0",            CVAR_LATCH | CVAR_SAVE,     0, qtrue },
     { &sg_mouseAcceleration,    "g_mouseAcceleration",  "0",            CVAR_LATCH | CVAR_SAVE,     0, qtrue },
     { &sg_printLevelStats,      "sg_printLevelStats",   "1",            CVAR_LATCH | CVAR_SAVE,     0, qfalse },
@@ -105,11 +112,11 @@ static cvarTable_t cvarTable[] = {
     { &sg_numSaves,             "sg_numSaves",          "0",            CVAR_LATCH | CVAR_SAVE,     0, qfalse },
 };
 
-static const uint32_t cvarTableSize = arraylen(cvarTable);
+static const int cvarTableSize = arraylen(cvarTable);
 
 static void SG_RegisterCvars( void )
 {
-    uint32_t i;
+    int i;
     cvarTable_t *cv;
 
     for ( i = 0, cv = cvarTable; i < cvarTableSize; i++, cv++ ) {
@@ -122,7 +129,7 @@ static void SG_RegisterCvars( void )
 
 void SG_UpdateCvars( void )
 {
-    uint32_t i;
+    int i;
     cvarTable_t *cv;
 
     for ( i = 0, cv = cvarTable; i < cvarTableSize; i++, cv++ ) {

@@ -9,6 +9,9 @@
 #include "../rendercommon/imgui_impl_opengl3.h"
 #include "../rendercommon/imgui_impl_sdlrenderer2.h"
 #include "../rendercommon/imgui_impl_sdl2.h"
+#include "../system/sys_thread.h"
+#include <thread>
+#include <EASTL/atomic.h>
 
 
 #define  DEFAULT_CONSOLE_WIDTH 78
@@ -59,6 +62,7 @@ typedef struct {
 	uint32_t x;				// offset in current line for next print
 	uint32_t display;		// bottom of console displays this line
 
+	uint32_t contime;
 	uint32_t 	linewidth;		// characters across screen
 	uint32_t 	totallines;		// total lines in console scrollback
 
@@ -67,10 +71,9 @@ typedef struct {
 	float	displayFrac;	// aproaches finalFrac at scr_conspeed
 	float	finalFrac;		// 0.0 to 1.0 lines of console to display
 
-	uint32_t vislines;		// in scanlines
-
-	char *times[NUM_CON_TIMES];	// gi.realtime time the line was generated
+	char times[NUM_CON_TIMES][MAXPRINTMSG];	// gi.realtime time the line was generated
 								// for transparent notify lines
+	int32_t contimes[NUM_CON_TIMES];
 	vec4_t	color;
 
 	uint32_t viswidth;
@@ -84,6 +87,8 @@ typedef struct {
 //	uint32_t windowWidth;
 //	uint32_t windowHeight;
 } console_t;
+
+static ImFont *RobotoMono;
 
 console_t con;
 
@@ -145,8 +150,7 @@ Con_Clear_f
 ================
 */
 static void Con_Clear_f( void ) {
-	memset(con.text, 0, sizeof(con.text));
-	con.used = 0;
+	memset( &con, 0, sizeof(con) );
 }
 
 						
@@ -217,9 +221,15 @@ Con_ClearNotify
 void Con_ClearNotify( void ) {
 	uint32_t i;
 	
+#if 0
 	for ( i = 0 ; i < NUM_CON_TIMES ; i++ ) {
-		con.times[i] = 0;
+		con.contimes[i] = 0;
 	}
+#else
+	con.contime = 0;
+	memset( con.contimes, 0, sizeof(con.contimes) );
+	memset( con.times, 0, sizeof(con.times) );
+#endif
 }
 
 
@@ -258,6 +268,7 @@ void Con_CheckResize( void )
 		smallchar_height = SMALLCHAR_HEIGHT;
 	}
 
+#if 0
 	if ( gi.gpuConfig.vidWidth == 0 ) { // video hasn't been initialized yet
 		g_console_field_width = DEFAULT_CONSOLE_WIDTH;
 		width = DEFAULT_CONSOLE_WIDTH * scale;
@@ -305,10 +316,7 @@ void Con_CheckResize( void )
 		if ( numlines > con.totallines )
 			numlines = con.totallines;
 
-		memcpy( tbuf, con.text, CON_TEXTSIZE * sizeof( short ) );
-
-		for ( i = 0; i < CON_TEXTSIZE; i++ ) 
-			con.text[i] = (ColorIndex(S_COLOR_WHITE)<<8) | ' ';
+		memcpy( tbuf, con.text, sizeof( con.text ) );
 
 		for ( i = 0; i < numlines; i++ )
 		{
@@ -323,6 +331,7 @@ void Con_CheckResize( void )
 
 		con.current = numlines - 1;
 	}
+#endif
 
 	con.display = con.current;
 
@@ -339,6 +348,38 @@ static void Cmd_CompleteTxtName(const char *args, uint32_t argNum ) {
 	if ( argNum == 2 ) {
 		Field_CompleteFilename( "", "txt", qfalse, FS_MATCH_EXTERN );
 	}
+}
+
+static void Con_LoadFonts( void ) {
+	union {
+		void *v;
+		char *b;
+	} f;
+	ImFontConfig config;
+	uint64_t length;
+
+	if ( RobotoMono ) {
+		return;
+	}
+
+	Con_Printf( "Loading fonts...\n" );
+
+	length = FS_LoadFile( "fonts/RobotoMono/static/RobotoMono-Regular.ttf", &f.v );
+	if ( !length || !f.v ) {
+		Con_Printf( COLOR_RED "WARNING: failed to load RobotoMono ttf font.\n" );
+		return;
+	}
+
+	config.FontDataOwnedByAtlas = false;
+	RobotoMono = ImGui::GetIO().Fonts->AddFontFromMemoryTTF( f.v, length, 16.0f, &config );
+
+	FS_FreeFile( f.v );
+
+	Con_Printf( "Finish loading fonts.\n" );
+
+	ImGui::GetIO().Fonts->Build();
+
+	ImGui_ImplOpenGL3_CreateFontsTexture();
 }
 
 /*
@@ -415,6 +456,7 @@ static void Con_Fixup( void )
 }
 
 
+#if 0
 /*
 ===============
 Con_Linefeed
@@ -468,6 +510,7 @@ static void Con_Linefeed( qboolean skipnotify )
 
 	Con_Fixup();
 }
+#endif
 
 
 /*
@@ -481,9 +524,10 @@ If no console is visible, the text will appear at the top of the game window
 */
 void G_ConsolePrint( const char *txt ) {
 	qboolean skipnotify = qfalse;
-	uint64_t len;
+	char *buf, *startLine;
 	int colorIndex;
 	int c;
+	uint64_t len;
 
 	// TTimo - prefix for text that shows up in console but not in notify
 	// backported from RTCW
@@ -505,6 +549,7 @@ void G_ConsolePrint( const char *txt ) {
 		con.color[3] = 1.0f;
 		con.viswidth = -9999;
 		gi.con_factor = 1.0f;
+		con.contime = 0;
 		con_scale = &null_cvar;
 		con_scale->f = 1.0f;
 		con_scale->modified = qtrue;
@@ -512,13 +557,40 @@ void G_ConsolePrint( const char *txt ) {
 		con.initialized = qtrue;
 	}
 	
-	len = strlen(txt);
-	if (con.used + len >= CON_TEXTSIZE) {
+	buf = con.times[con.contime % NUM_CON_TIMES];
+	startLine = buf;
+	len = strlen( txt );
+
+	if ( con.used + len >= CON_TEXTSIZE ) {
 		Con_Clear_f();
 	}
 
-	memcpy(&con.text[con.used], txt, len);
+	memcpy( con.text + con.used, txt, len );
 	con.used += len;
+
+	while ( ( c = *txt ) != 0 ) {
+		txt++;
+		switch ( *txt ) {
+		case '\n':
+			con.totallines++;
+			if ( skipnotify ) {
+				con.contimes[ con.contime % NUM_CON_TIMES ] = 0;
+			} else {
+				con.contimes[ con.contime % NUM_CON_TIMES ] = gi.realtime;
+			}
+			con.contime++;
+			*buf++ = 0;
+			buf = con.times[con.contime % NUM_CON_TIMES];
+			startLine = buf;
+			break;
+		case '\r':
+			buf = startLine;
+			break;
+		default:
+			*buf++ = *txt;
+			break;
+		};
+	}
 }
 
 
@@ -572,6 +644,23 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 		}
 	}
 
+/*
+	if ( keys[KEY_CTRL].down && keys[KEY_C].down ) {
+		if ( !data->HasSelection() ) {
+			SDL_SetClipboardText( " " );
+		} else {
+			SDL_SetClipboardText( data->Buf + data->SelectionStart );
+		}
+	}
+	if ( keys[KEY_CTRL].down && keys[KEY_V].down ) {
+		if ( data->HasSelection() ) {
+			data->DeleteChars( data->SelectionStart, data->SelectionEnd - data->SelectionStart );
+		}
+		data->InsertChars( data->CursorPos, buf );
+		edit->cursor = data->CursorPos;
+		Z_Free( buf );
+	}
+*/
 	if ( ( keys[KEY_WHEEL_DOWN].down && keys[KEY_SHIFT].down ) || keys[KEY_DOWN].down
 		|| ( keys[KEY_N].down && keys[KEY_CTRL].down ) )
 	{
@@ -631,13 +720,9 @@ Draw the editline after a ] prompt
 ================
 */
 static void Con_DrawInput( void ) {
-	uint32_t y;
-
 	if ( !(Key_GetCatcher( ) & KEYCATCH_CONSOLE ) ) {
 		return;
 	}
-
-	y = con.vislines - ( smallchar_height * 2 );
 
 	ImGui::NewLine();
 //	ImGui::GetStyle().Colors[ImGuiCol_FrameBgActive] = ImVec4( con.color );
@@ -698,6 +783,56 @@ DRAWING
 */
 
 static void Con_DrawExternalConsole( void );
+static void Con_DrawText( const char *txt )
+{
+	uint64_t len, i;
+	int currentColorIndex;
+	int colorIndex;
+	qboolean usedColor = qfalse;
+	const char *text;
+	char s[2];
+
+	currentColorIndex = ColorIndex( S_COLOR_WHITE );
+
+	len = strlen( txt );
+
+	for ( i = 0, text = txt; i < len; i++, text++ ) {
+		// track color changes
+		if (Q_IsColorString(text) && *(text+1) != '\n') {
+			colorIndex = ColorIndexFromChar(*(text+1));
+			if (currentColorIndex != colorIndex) {
+				currentColorIndex = colorIndex;
+				if (usedColor) {
+					ImGui::PopStyleColor();
+				}
+				ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( g_color_table[ colorIndex ] ) );
+				usedColor = qtrue;
+			}
+			text += 2;
+		}
+		
+		switch (*text) {
+		case '\n':
+			if ( usedColor ) {
+				ImGui::PopStyleColor();
+				currentColorIndex = ColorIndex(S_COLOR_WHITE);
+//				ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( g_color_table[currentColorIndex] ) );
+			}
+			ImGui::NewLine();
+			break;
+		case '\r':
+			ImGui::SameLine();
+			break;
+		default:
+			s[0] = *text;
+			s[1] = 0;
+
+			ImGui::TextUnformatted( s );
+			ImGui::SameLine();
+			break;
+		};
+	}
+}
 
 /*
 ================
@@ -715,8 +850,6 @@ static void Con_DrawSolidConsole( float frac )
 	qboolean customColor = qfalse;
 	uint32_t i, x;
 	uint32_t lines, row, rows;
-	char s[3];
-	qboolean usedColor = qfalse;
 	char *text;
 	char buf[ MAX_CVAR_VALUE ], *v[4];
 	const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar
@@ -769,44 +902,7 @@ static void Con_DrawSolidConsole( float frac )
 		ImGui::NewLine();
 	}
 
-	currentColorIndex = ColorIndex(S_COLOR_WHITE);
-
-	for (i = 0, text = con.text; i < con.used; i++, text++) {
-		// track color changes
-		if (Q_IsColorString(text) && *(text+1) != '\n') {
-			colorIndex = ColorIndexFromChar(*(text+1));
-			if (currentColorIndex != colorIndex) {
-				currentColorIndex = colorIndex;
-				if (usedColor) {
-					ImGui::PopStyleColor();
-				}
-				ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( g_color_table[ colorIndex ] ) );
-				usedColor = qtrue;
-			}
-			text += 2;
-		}
-		
-		switch (*text) {
-		case '\n':
-			if (usedColor) {
-				ImGui::PopStyleColor();
-				currentColorIndex = ColorIndex(S_COLOR_WHITE);
-				ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( g_color_table[currentColorIndex] ) );
-			}
-			ImGui::NewLine();
-			break;
-		case '\r':
-			ImGui::SameLine();
-			break;
-		default:
-			s[0] = *text;
-			s[1] = 0;
-
-			ImGui::TextUnformatted( s );
-			ImGui::SameLine();
-			break;
-		};
-	}
+	Con_DrawText( con.text );
 	
 	Con_DrawInput();
 
@@ -816,40 +912,44 @@ static void Con_DrawSolidConsole( float frac )
 }
 
 static void Con_DrawNotify( void ) {
-	int		x, v;
-	short	*text;
-	int		i;
-	int		time;
-	int		skip;
-	int		currentColorIndex;
-	int		colorIndex;
-	char	s[2];
+	char		*text;
+	int32_t		i;
+	uint32_t	time;
+	int32_t		skip;
+	uint32_t	v;
 
-	currentColorIndex = ColorIndex( COLOR_WHITE );
-	re.SetColor( g_color_table[ currentColorIndex ] );
+	const int windowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBackground
+		| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoMouseInputs;
+
+	ImGui::Begin( "Notify", NULL, windowFlags );
+
+	ImGui::PushStyleColor( ImGuiCol_Text, g_color_table[ ColorIndex( S_COLOR_WHITE ) ] );
 
 	v = 0;
 
-	for ( i =  )
-
-
-	for (i= con.current-NUM_CON_TIMES+1 ; i<=con.current ; i++)
-	{
-		if (i < 0)
+	for ( i = con.contime - NUM_CON_TIMES + 1; i <= con.current; i++ ) {
+		if ( i < 0 ) {
 			continue;
-		time = con.times[i % NUM_CON_TIMES];
-		if (time == 0)
+		}
+		time = con.contimes[i % NUM_CON_TIMES];
+		if (time == 0) {
 			continue;
-		time = cls.realtime - time;
-		if ( time >= con_notifytime->value*1000 )
+		}
+		time = gi.realtime - time;
+		if ( time >= con_notifytime->f * 1000 ) {
 			continue;
-		text = con.text + (i % con.totallines)*con.linewidth;
+		}
+		text = con.text + ( i % con.totallines );
 
+		Con_DrawText( text );
+
+		/*
 		if (cl.snap.ps.pm_type != PM_INTERMISSION && Key_GetCatcher( ) & (KEYCATCH_UI | KEYCATCH_CGAME) ) {
 			continue;
 		}
+		*/
 
-		for (x = 0 ; x < con.linewidth ; x++) {
+/*		for ( x = 0; x < con.linewidth; x++ ) {
 			if ( ( text[x] & 0xff ) == ' ' ) {
 				continue;
 			}
@@ -861,6 +961,7 @@ static void Con_DrawNotify( void ) {
 			ImGui::TextUnformatted( text[x] & 0xff );
 //			SCR_DrawSmallChar( cl_conXOffset->integer + con.xadjust + (x+1)*smallchar_width, v, text[x] & 0xff );
 		}
+*/
 
 		v += smallchar_height;
 	}
@@ -892,6 +993,8 @@ static void Con_DrawNotify( void ) {
 			SCREEN_WIDTH - ( skip + 1 ) * BIGCHAR_WIDTH, qtrue, qtrue );
 	}
 	*/
+
+	ImGui::End();
 }
 
 /*

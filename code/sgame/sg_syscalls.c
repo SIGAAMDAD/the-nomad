@@ -11,7 +11,7 @@
 
 vmRefImport_t vmi;
 
-//static intptr_t (GDR_DECL *syscall)(intptr_t arg, uint32_t, ...) = (intptr_t (GDR_DECL *)(intptr_t, uint32_t, ...)) - 1;
+//static intptr_t (GDR_DECL *syscall)(intptr_t arg, int, ...) = (intptr_t (GDR_DECL *)(intptr_t, int, ...)) - 1;
 
 void dllEntry(const vmRefImport_t *import)
 {
@@ -19,7 +19,7 @@ void dllEntry(const vmRefImport_t *import)
 }
 
 #if 0
-void dllEntry(intptr_t (GDR_DECL *syscallptr)(intptr_t arg, uint32_t numArgs, ...))
+void dllEntry(intptr_t (GDR_DECL *syscallptr)(intptr_t arg, int numArgs, ...))
 {
     syscall = syscallptr;
 }
@@ -42,17 +42,17 @@ void trap_Error( const char *str )
     vmi.trap_Error( str );
 }
 
-uint32_t trap_Argc( void )
+int trap_Argc( void )
 {
     return vmi.trap_Argc();
 }
 
-void trap_Argv( uint32_t n, char *buf, uint32_t bufferLength )
+void trap_Argv( int n, char *buf, int bufferLength )
 {
     vmi.trap_Argv( n, buf, bufferLength );
 }
 
-void trap_Args( char *buf, uint32_t bufferLength )
+void trap_Args( char *buf, int bufferLength )
 {
     vmi.trap_Args( buf, bufferLength );
 }
@@ -72,7 +72,7 @@ void trap_RemoveCommand( const char *cmdName )
     vmi.trap_RemoveCommand( cmdName );
 }
 
-uint32_t trap_MemoryRemaining( void )
+int trap_MemoryRemaining( void )
 {
     return vmi.trap_MemoryRemaining();
 }
@@ -87,7 +87,7 @@ qboolean trap_CheckWallHit( const vec3_t origin, dirtype_t dir )
     return vmi.trap_CheckWallHit( origin, dir );
 }
 
-int G_LoadMap( int levelIndex, mapinfo_t *info, uint32_t *soundBits, linkEntity_t *activeEnts )
+int G_LoadMap( int levelIndex, mapinfo_t *info, int *soundBits, linkEntity_t *activeEnts )
 {
     return vmi.G_LoadMap( levelIndex, info, soundBits, activeEnts );
 }
@@ -112,17 +112,17 @@ int trap_Milliseconds( void )
     return vmi.trap_Milliseconds();
 }
 
-void trap_Key_SetCatcher( uint32_t catcher )
+void trap_Key_SetCatcher( int catcher )
 {
     vmi.trap_Key_SetCatcher( catcher );
 }
 
-uint32_t trap_Key_GetCatcher( void )
+int trap_Key_GetCatcher( void )
 {
     return vmi.trap_Key_GetCatcher();
 }
 
-uint32_t trap_Key_GetKey( const char *key )
+int trap_Key_GetKey( const char *key )
 {
     return vmi.trap_Key_GetKey( key );
 }
@@ -187,12 +187,12 @@ void RE_RenderScene( const renderSceneRef_t *fd )
     vmi.RE_RenderScene( fd );
 }
 
-nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32_t sheetHeight, uint32_t spriteWidth, uint32_t spriteHeight )
+nhandle_t RE_RegisterSpriteSheet( const char *npath, int sheetWidth, int sheetHeight, int spriteWidth, int spriteHeight )
 {
     return vmi.RE_RegisterSpriteSheet( npath, sheetWidth, sheetHeight, spriteWidth, spriteHeight );
 }
 
-nhandle_t RE_RegisterSprite( nhandle_t hSpriteSheet, uint32_t index )
+nhandle_t RE_RegisterSprite( nhandle_t hSpriteSheet, int index )
 {
     return vmi.RE_RegisterSprite( hSpriteSheet, index );
 }
@@ -202,7 +202,7 @@ void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t
     vmi.RE_AddSpriteToScene( origin, hSpriteSheet, hSprite );
 }
 
-void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts )
+void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, int numVerts )
 {
     vmi.RE_AddPolyToScene( hShader, verts, numVerts );
 }
@@ -212,7 +212,7 @@ void Sys_GetGPUConfig( gpuConfig_t *config )
     vmi.Sys_GetGPUConfig( config );
 }
 
-uint32_t trap_FS_FOpenFile( const char *npath, file_t *f, fileMode_t mode )
+int trap_FS_FOpenFile( const char *npath, file_t *f, fileMode_t mode )
 {
     return vmi.FS_FOpenFile( npath, f, mode, H_SGAME );
 }
@@ -227,32 +227,32 @@ void trap_FS_FClose( file_t f )
     vmi.FS_FClose( f, H_SGAME );
 }
 
-uint32_t trap_FS_Write( const void *data, uint32_t size, file_t f )
+int trap_FS_Write( const void *data, int size, file_t f )
 {
     return vmi.FS_Write( data, size, f, H_SGAME );
 }
 
-uint32_t trap_FS_Read( void *data, uint32_t size, file_t f )
+int trap_FS_Read( void *data, int size, file_t f )
 {
     return vmi.FS_Read( data, size, f, H_SGAME );
 }
 
-uint32_t trap_FS_GetFileList( const char *path, const char *extension, char *listbuf, uint32_t bufsize )
+int trap_FS_GetFileList( const char *path, const char *extension, char *listbuf, int bufsize )
 {
     return vmi.FS_GetFileList( path, extension, listbuf, bufsize );
 }
 
-uint32_t trap_FS_FileSeek( file_t f, fileOffset_t offset, uint32_t whence )
+int trap_FS_FileSeek( file_t f, fileOffset_t offset, int whence )
 {
     return vmi.FS_FileSeek( f, offset, whence, H_SGAME );
 }
 
-uint32_t trap_FS_FileTell( file_t f )
+int trap_FS_FileTell( file_t f )
 {
     return vmi.FS_FileTell( f, H_SGAME );
 }
 
-void Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, uint32_t flags )
+void Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags )
 {
     vmi.Cvar_Register( vmCvar, varName, defaultValue, flags );
 }
@@ -267,14 +267,14 @@ void Cvar_Set( const char *varName, const char *value )
     vmi.Cvar_Set( varName, value );
 }
 
-void Cvar_VariableStringBuffer( const char *var_name, char *buffer, uint32_t bufsize )
+void Cvar_VariableStringBuffer( const char *var_name, char *buffer, int bufsize )
 {
     vmi.Cvar_VariableStringBuffer( var_name, buffer, bufsize );
 }
 
-int ImGui_BeginWindow( ImGuiWindow *pWindow )
+int ImGui_BeginWindow( const char *pLabel, byte *pOpen, ImGuiWindowFlags windowFlags )
 {
-    return vmi.ImGui_BeginWindow( pWindow );
+    return vmi.ImGui_BeginWindow( pLabel, pOpen, windowFlags );
 }
 
 void ImGui_EndWindow( void )
@@ -317,9 +317,9 @@ void ImGui_EndMenu( void )
     vmi.ImGui_EndMenu();
 }
 
-int ImGui_MenuItem( ImGuiMenuItem *pItem )
+int ImGui_MenuItem( const char *pLabel, const char *pShortcut, byte bUsed )
 {
-    return vmi.ImGui_MenuItem( pItem );
+    return vmi.ImGui_MenuItem( pLabel, pShortcut, bUsed );
 }
 
 void ImGui_SetItemTooltipUnformatted( const char *pTooltip )
@@ -327,7 +327,7 @@ void ImGui_SetItemTooltipUnformatted( const char *pTooltip )
     vmi.ImGui_SetItemTooltipUnformatted( pTooltip );
 }
 
-int ImGui_BeginTable( const char *pLabel, uint32_t nColumns )
+int ImGui_BeginTable( const char *pLabel, int nColumns )
 {
     return vmi.ImGui_BeginTable( pLabel, nColumns );
 }
@@ -347,109 +347,109 @@ void ImGui_EndTable( void )
     vmi.ImGui_EndTable();
 }
 
-int ImGui_InputText( ImGuiInputText *pInput )
+int ImGui_InputText( const char *pLabel, char *pBuffer, size_t nBufSize, ImGuiInputTextFlags flags )
 {
-    return vmi.ImGui_InputText( pInput );
+    return vmi.ImGui_InputText( pLabel, pBuffer, nBufSize, flags );
 }
 
-int ImGui_InputTextMultiline( ImGuiInputText *pInput )
+int ImGui_InputTextMultiline( const char *pLabel, char *pBuffer, size_t nBufSize, ImGuiInputTextFlags flags )
 {
-    return vmi.ImGui_InputTextMultiline( pInput );
+    return vmi.ImGui_InputTextMultiline( pLabel, pBuffer, nBufSize, flags );
 }
 
-int ImGui_InputTextWithHint( ImGuiInputTextWithHint *pInput )
+int ImGui_InputTextWithHint( const char *pLabel, const char *pHint, char *pBuffer, size_t nBufSize, ImGuiInputTextFlags flags )
 {
-    return vmi.ImGui_InputTextWithHint( pInput );
+    return vmi.ImGui_InputTextWithHint( pLabel, pHint, pBuffer, nBufSize, flags );
 }
 
-int ImGui_InputFloat( ImGuiInputFloat *pInput )
+int ImGui_InputFloat( const char *pLabel, float *pData )
 {
-    return vmi.ImGui_InputFloat( pInput );
+    return vmi.ImGui_InputFloat( pLabel, pData );
 }
 
-int ImGui_InputFloat2( ImGuiInputFloat2 *pInput )
+int ImGui_InputFloat2( const char *pLabel, vec2_t pData )
 {
-    return vmi.ImGui_InputFloat2( pInput );
+    return vmi.ImGui_InputFloat2( pLabel, pData );
 }
 
-int ImGui_InputFloat3( ImGuiInputFloat3 *pInput )
+int ImGui_InputFloat3( const char *pLabel, vec3_t pData )
 {
-    return vmi.ImGui_InputFloat3( pInput );
+    return vmi.ImGui_InputFloat3( pLabel, pData );
 }
 
-int ImGui_InputFloat4( ImGuiInputFloat4 *pInput )
+int ImGui_InputFloat4( const char *pLabel, vec4_t pData )
 {
-    return vmi.ImGui_InputFloat4( pInput );
+    return vmi.ImGui_InputFloat4( pLabel, pData );
 }
 
-int ImGui_InputInt( ImGuiInputInt *pInput )
+int ImGui_InputInt( const char *pLabel, int *pData )
 {
-    return vmi.ImGui_InputInt( pInput );
+    return vmi.ImGui_InputInt( pLabel, pData );
 }
 
-int ImGui_InputInt2( ImGuiInputInt2 *pInput )
+int ImGui_InputInt2( const char *pLabel, ivec2_t pData )
 {
-    return vmi.ImGui_InputInt2( pInput );
+    return vmi.ImGui_InputInt2( pLabel, pData );
 }
 
-int ImGui_InputInt3( ImGuiInputInt3 *pInput )
+int ImGui_InputInt3( const char *pLabel, ivec3_t pData )
 {
-    return vmi.ImGui_InputInt3( pInput );
+    return vmi.ImGui_InputInt3( pLabel, pData );
 }
 
-int ImGui_InputInt4( ImGuiInputInt4 *pInput )
+int ImGui_InputInt4( const char *pLabel, ivec4_t pData )
 {
-    return vmi.ImGui_InputInt4( pInput );
+    return vmi.ImGui_InputInt4( pLabel, pData );
 }
 
-int ImGui_SliderFloat( ImGuiSliderFloat *pSlider )
+int ImGui_SliderFloat( const char *pLabel, float *pData, float nMax, float nMin )
 {
-    return vmi.ImGui_SliderFloat( pSlider );
+    return vmi.ImGui_SliderFloat( pLabel, pData, nMax, nMin );
 }
 
-int ImGui_SliderFloat2( ImGuiSliderFloat2 *pSlider )
+int ImGui_SliderFloat2( const char *pLabel, vec2_t pData, float nMax, float nMin )
 {
-    return vmi.ImGui_SliderFloat2( pSlider );
+    return vmi.ImGui_SliderFloat2( pLabel, pData, nMax, nMin );
 }
 
-int ImGui_SliderFloat3( ImGuiSliderFloat3 *pSlider )
+int ImGui_SliderFloat3( const char *pLabel, vec3_t pData, float nMax, float nMin )
 {
-    return vmi.ImGui_SliderFloat3( pSlider );
+    return vmi.ImGui_SliderFloat3( pLabel, pData, nMax, nMin );
 }
 
-int ImGui_SliderFloat4( ImGuiSliderFloat4 *pSlider )
+int ImGui_SliderFloat4( const char *pLabel, vec4_t pData, float nMax, float nMin )
 {
-    return vmi.ImGui_SliderFloat4( pSlider );
+    return vmi.ImGui_SliderFloat4( pLabel, pData, nMax, nMin );
 }
 
-int ImGui_SliderInt( ImGuiSliderInt *pSlider )
+int ImGui_SliderInt( const char *pLabel, int *pData, float nMax, float nMin )
 {
-    return vmi.ImGui_SliderInt( pSlider );
+    return vmi.ImGui_SliderInt( pLabel, pData, nMax, nMin );
 }
 
-int ImGui_SliderInt2( ImGuiSliderInt2 *pSlider )
+int ImGui_SliderInt2( const char *pLabel, ivec2_t pData, float nMax, float nMin )
 {
-    return vmi.ImGui_SliderInt2( pSlider );
+    return vmi.ImGui_SliderInt2( pLabel, pData, nMax, nMin );
 }
 
-int ImGui_SliderInt3( ImGuiSliderInt3 *pSlider )
+int ImGui_SliderInt3( const char *pLabel, ivec3_t pData, float nMax, float nMin )
 {
-    return vmi.ImGui_SliderInt3( pSlider );
+    return vmi.ImGui_SliderInt3( pLabel, pData, nMax, nMin );
 }
 
-int ImGui_SliderInt4( ImGuiSliderInt4 *pSlider )
+int ImGui_SliderInt4( const char *pLabel, ivec4_t pData, float nMax, float nMin )
 {
-    return vmi.ImGui_SliderInt4( pSlider );
+    return vmi.ImGui_SliderInt4( pLabel, pData, nMax, nMin );
 }
 
-int ImGui_ColorEdit3( ImGuiColorEdit3 *pEdit )
+int ImGui_ColorEdit3( const char *pLabel, vec3_t pColor, ImGuiColorEditFlags flags )
 {
-    return vmi.ImGui_ColorEdit3( pEdit );
+    return vmi.ImGui_ColorEdit3( pLabel, pColor, flags );
 }
 
-int ImGui_ColorEdit4( ImGuiColorEdit4 *pEdit )
+int ImGui_ColorEdit4( const char *pLabel, vec4_t pColor, ImGuiColorEditFlags flags )
 {
-    return vmi.ImGui_ColorEdit4( pEdit );
+    return vmi.ImGui_ColorEdit4( pLabel, pColor, flags );
 }
 
 int ImGui_ArrowButton( const char *pLabel, ImGuiDir dir )
@@ -457,9 +457,9 @@ int ImGui_ArrowButton( const char *pLabel, ImGuiDir dir )
     return vmi.ImGui_ArrowButton( pLabel, dir );
 }
 
-int ImGui_Checkbox( ImGuiCheckbox *pCheckbox )
+int ImGui_Checkbox( const char *pLabel, byte *bPressed )
 {
-    return vmi.ImGui_Checkbox( pCheckbox );
+    return vmi.ImGui_Checkbox( pLabel, bPressed );
 }
 
 int ImGui_Button( const char *pLabel )
@@ -484,7 +484,7 @@ void ImGui_GetCursorPos( float *x, float *y )
 
 void ImGui_SetCursorScreenPos( float x, float y )
 {
-    vmi.ImGui_SetCursorScreenPos( x, y );
+    vmi.ImGui_SetCursorPos( x, y );
 }
 
 void ImGui_GetCursorScreenPos( float *x, float *y )
@@ -517,13 +517,14 @@ void ImGui_Separator( void )
     vmi.ImGui_Separator();
 }
 
-void ImGui_SameLine( float offset_from_x ) {
-    vmi.ImGui_SameLine( offset_from_x );
-}
-
 void ImGui_ProgressBar( float fraction )
 {
     vmi.ImGui_ProgressBar( fraction );
+}
+
+void ImGui_SameLine( float offset_from_x )
+{
+    vmi.ImGui_SameLine( offset_from_x );
 }
 
 void ImGui_TextUnformatted( const char *pText )
@@ -541,11 +542,6 @@ int ImGui_BeginPopupModal( const char *pName, ImGuiWindowFlags flags )
     return vmi.ImGui_BeginPopupModal( pName, flags );
 }
 
-void ImGui_CloseCurrentPopup( void )
-{
-    vmi.ImGui_CloseCurrentPopup();
-}
-
 void ImGui_EndPopup( void )
 {
     vmi.ImGui_EndPopup();
@@ -556,3 +552,7 @@ void ImGui_OpenPopup( const char *pName )
     vmi.ImGui_OpenPopup( pName );
 }
 
+void ImGui_CloseCurrentPopup( void )
+{
+    vmi.ImGui_CloseCurrentPopup();
+}

@@ -5,10 +5,10 @@
 
 static char *sg_levelInfos[MAX_LEVELS];
 
-int SG_ParseInfos( char *buf, uint32_t max, char **infos )
+int SG_ParseInfos( char *buf, int max, char **infos )
 {
     const char *token, **text;
-    uint32_t count;
+    int count;
     char key[MAX_TOKEN_CHARS];
     char info[MAX_INFO_STRING];
 
@@ -61,7 +61,7 @@ int SG_ParseInfos( char *buf, uint32_t max, char **infos )
 
 static void SG_LoadLevelInfoFromFile( const char *filename )
 {
-    uint32_t len;
+    int len;
     file_t f;
     char buf[MAX_LEVELINFO_LEN];
 
@@ -85,12 +85,12 @@ static void SG_LoadLevelInfoFromFile( const char *filename )
 
 static void SG_LoadLevelInfos( void )
 {
-    uint32_t numdirs;
+    int numdirs;
     char filename[128];
     char dirlist[1024];
     char *dirptr;
-    uint32_t i, dirlen;
-    uint32_t n;
+    int i, dirlen;
+    int n;
 
     sg.numLevels = 0;
 
@@ -123,7 +123,7 @@ static void SG_LoadLevelInfos( void )
 
 const char *SG_GetLevelInfoByIndex( int32_t index )
 {
-    uint32_t n;
+    int n;
     const char *value;
 
     if (index < 0 || index >= sg.numLevels) {
@@ -143,7 +143,7 @@ const char *SG_GetLevelInfoByIndex( int32_t index )
 
 const char *SG_GetLevelInfoByMap( const char *mapname )
 {
-    uint32_t n;
+    int n;
 
     for (n = 0; n < sg.numLevels; n++) {
         if (N_stricmp( Info_ValueForKey( sg_levelInfos[n], "map" ), mapname ) == 0) {

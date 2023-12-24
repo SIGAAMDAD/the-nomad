@@ -516,6 +516,8 @@ void CSoundManager::Shutdown( void )
 
     ALCall(alDeleteSources( 1, &m_iMusicSource ));
 
+    Z_FreeTags( TAG_SFX, TAG_MUSIC );
+
     alcMakeContextCurrent( NULL );
     alcDestroyContext( m_pContext );
     alcCloseDevice( m_pDevice );
@@ -577,7 +579,7 @@ CSoundSource *CSoundManager::InitSource( const char *filename, int64_t tag )
 
     m_hAllocLock.Lock();
 
-    src = (CSoundSource *)Hunk_Alloc( sizeof(*src), h_low );
+    src = (CSoundSource *)Z_Malloc( sizeof(*src), (memtag_t)tag );
     memset(src, 0, sizeof(*src));
     src->Init();
 
@@ -890,7 +892,7 @@ void Snd_Init(void)
     Con_Printf("---------- Snd_Init ----------\n");
 
     // init sound manager
-    sndManager = (CSoundManager *)Hunk_Alloc( sizeof(*sndManager), h_low );
+    sndManager = (CSoundManager *)Z_Malloc( sizeof(*sndManager), TAG_GAME );
     memset( sndManager, 0, sizeof(*sndManager) );
     sndManager->Init();
 

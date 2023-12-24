@@ -304,7 +304,7 @@ void ImGui_ImplOpenGL3_Init(void *shaderData, const char *glsl_version, const im
     IM_ASSERT(io.BackendRendererUserData == nullptr && "Already initialized a renderer backend!");
 
     // Setup backend capabilities flags
-    bd = (ImGui_ImplOpenGL3_Data *)Hunk_Alloc(sizeof(*bd), h_low);
+    bd = (ImGui_ImplOpenGL3_Data *)Z_Malloc( sizeof(*bd), TAG_RENDERER );
     memset(bd, 0, sizeof(*bd));
     io.BackendRendererUserData = (void *)bd;
     io.BackendRendererName = "imgui_impl_opengl3";

@@ -273,8 +273,8 @@ void R_DrawPolys( void )
 
     RB_FlushBatchBuffer();
 
-/*
     oldShader = poly->hShader;
+    
     for ( i = 0; i < r_numPolys; i++, poly++ ) {
         if (oldShader != poly->hShader) {
             // if we have a new shader, flush the current batch
@@ -285,14 +285,11 @@ void R_DrawPolys( void )
             GLSL_SetUniformInt( &rg.basicShader, UNIFORM_DIFFUSE_MAP, 0 );
         }
 
-        R_WorldToGL2( vtx, pos );
-
         // submit to draw buffer
         RB_CommitDrawData( poly->verts, poly->numVerts, NULL, 0 );
     }
 
     RB_FlushBatchBuffer();
-*/
 }
 
 static void R_DrawWorld( void )
@@ -361,6 +358,9 @@ void R_RenderView( const viewData_t *parms )
     RB_MakeViewMatrix();
 
     GLSL_SetUniformMatrix4( &rg.basicShader, UNIFORM_MODELVIEWPROJECTION, glState.viewData.camera.viewProjectionMatrix );
+
+    // issue all currently queued rendering commands
+    R_IssuePendingRenderCommands();
 
     // draw the tilemap
     R_DrawWorld();
@@ -445,7 +445,7 @@ nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32
     size += PAD( len, sizeof(uintptr_t) );
 
     handle = rg.numSpriteSheets;
-    sheet = rg.sheets[rg.numSpriteSheets] = (spriteSheet_t *)ri.Hunk_Alloc( size, h_low );
+    sheet = rg.sheets[rg.numSpriteSheets] = (spriteSheet_t *)ri.Malloc( size );
     sheet->name = (char *)( sheet + 1 );
     sheet->sprites = (sprite_t *)( sheet->name + len );
 

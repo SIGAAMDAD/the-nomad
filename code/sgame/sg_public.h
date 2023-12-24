@@ -205,6 +205,8 @@ typedef enum
     
     SGAME_REWIND_TO_LAST_CHECKPOINT,
 
+    SGAME_DRAW_ADVANCED_SETTINGS,
+
     SGAME_CONSOLE_COMMAND,
     // qboolean (*SG_ConsoleCommand)( void );
     // a console command has been issued locally that is not recognized by the

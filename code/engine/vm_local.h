@@ -210,8 +210,8 @@ typedef struct {
 #define PROC_OPSTACK_SIZE 30
 #define PROGRAM_STACK_SIZE VM_PROGRAM_STACK_SIZE
 
-#define MAX_OPSTACK_SIZE 512
-
+//#define MAX_OPSTACK_SIZE 512
+#define MAX_OPSTACK_SIZE 1024
 
 #if !defined(Q3_VM) || (defined(Q3_VM) && defined(_NOMAD_DEBUG))
 typedef intptr_t (GDR_DECL *vmMainFunc_t)(int command, int arg0, int arg1, int arg2);
@@ -238,7 +238,8 @@ typedef enum
 typedef enum {
 	VMI_NATIVE,
 	VMI_BYTECODE,
-	VMI_COMPILED
+	VMI_COMPILED,
+    VMI_SQUIRREL
 } vmInterpret_t;
 
 typedef enum {
@@ -268,17 +269,19 @@ typedef enum {
 
 typedef struct vm_s
 {
+    void *squirrelVMInstance;
+
     syscall_t	systemCall;
 	byte		*dataBase;
-	int32_t		*opStack;			// pointer to local function stack
+	int32_t 	*opStack;			// pointer to local function stack
 	int32_t		*opStackTop;
 
-	int32_t		programStack;		// the vm may be recursively entered
-	int32_t		stackBottom;		// if programStack < stackBottom, error
+	intptr_t	programStack;		// the vm may be recursively entered
+	intptr_t	stackBottom;		// if programStack < stackBottom, error
 
 	//------------------------------------
 
-	const char	*name;				// module should be bare: "cgame", not "cgame.dll" or "vm/cgame.qvm"
+	const char	*name;				// module should be bare: "sgame", not "sgame.so" or "vm/sgame.qvm"
 	vmIndex_t	index;
 
 	// for dynamic linked modules
@@ -337,7 +340,7 @@ int32_t VM_CallCompiled( vm_t *vm, uint32_t nargs, int32_t *args );
 
 vm_t *VM_Create(vmIndex_t index, syscall_t systemCalls, dllSyscall_t dllSyscalls, vmInterpret_t interpret);
 qboolean VM_PrepareInterpreter2(vm_t* vm, vmHeader_t* header);
-int VM_CallInterpreted2(vm_t* vm, uint32_t nargs, int32_t* args);
+intptr_t VM_CallInterpreted2(vm_t* vm, uint32_t nargs, int32_t* args);
 
 vmSymbol_t *VM_ValueToFunctionSymbol( vm_t *vm, uint32_t value );
 int VM_SymbolToValue( vm_t *vm, const char *symbol );

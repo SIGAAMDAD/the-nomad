@@ -89,7 +89,7 @@ static void R_LoadShaderCache(void)
         ri.Error(ERR_DROP, "R_LoadShaderCache: numEntries is a funny number");
     }
 
-    cacheHashTable = ri.Hunk_Alloc(sizeof(*cacheHashTable) * numEntries, h_low);
+    cacheHashTable = ri.Malloc( sizeof(*cacheHashTable) * numEntries );
 
     for (i = 0; i < numEntries; i++) {
         if (!ri.FS_Read(name, sizeof(name), f)) {
@@ -106,7 +106,7 @@ static void R_LoadShaderCache(void)
             ri.Printf(PRINT_DEVELOPER, "Error reading shader cache entry size at %lu\n", i);
         }
 
-        entry->data = ri.Hunk_Alloc(entry->size, h_low);
+        entry->data = ri.Malloc( entry->size );
         if (!ri.FS_Read(entry->data, entry->size, f)) {
             ri.FS_FClose(f);
             ri.Printf(PRINT_DEVELOPER, "Error reading shader cache entry buffer at %lu\n", i);
@@ -509,23 +509,23 @@ static void GLSL_InitUniforms(shaderProgram_t *program)
 			uniformBufferSize += sizeof(GLfloat);
 			break;
 		case GLSL_VEC2:
-			uniformBufferSize += sizeof(vec_t) * 2;
+			uniformBufferSize += sizeof(vec2_t);
 			break;
 		case GLSL_VEC3:
-			uniformBufferSize += sizeof(vec_t) * 3;
+			uniformBufferSize += sizeof(vec3_t);
 			break;
 		case GLSL_VEC4:
-			uniformBufferSize += sizeof(vec_t) * 4;
+			uniformBufferSize += sizeof(vec4_t);
 			break;
 		case GLSL_MAT16:
-			uniformBufferSize += sizeof(vec_t) * 16;
+			uniformBufferSize += sizeof(mat4_t);
 			break;
 		default:
 			break;
 		};
 	}
 
-	program->uniformBuffer = ri.Hunk_Alloc( uniformBufferSize, h_low );
+	program->uniformBuffer = ri.Malloc( uniformBufferSize );
 }
 
 static void GLSL_FinishGPUShader(shaderProgram_t *program)

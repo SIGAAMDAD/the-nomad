@@ -84,6 +84,7 @@ Platform Specific Preprocessors
 		#define COMPILER_STRING "mingw64"
 		#define ARCH_STRING "x64"
 		#define GDR_LITTLE_ENDIAN
+	#elif defined(__LCC__)
 	#else
 		#error "unsupported windows compiler"
 	#endif
@@ -194,6 +195,12 @@ Platform Specific Preprocessors
 #endif
 
 #ifdef Q3_VM
+	#ifdef OS_STRING
+		#undef OS_STRING
+	#endif
+	#ifdef ARCH_STRING
+		#undef ARCH_STRING
+	#endif
 	#define OS_STRING "q3vm"
 	#define ARCH_STRING "bytecode"
 	#define GDR_LITTLE_ENDIAN
@@ -305,6 +312,10 @@ Compiler Macro Abstraction
 	#define GDR_ATTRIBUTE(x)
 	#define GDR_EXPORT
 	#define GDR_NOINLINE
+	#ifdef GDR_DECL
+		#undef GDR_DECL
+		#define GDR_DECL
+	#endif
 #endif
 
 // stack based version of strdup
@@ -537,22 +548,120 @@ extern void __assert_failure(const char *expr, const char *file, unsigned line);
 #endif
 
 typedef float vec_t;
+typedef int32_t ivec_t;
+typedef uint32_t uvec_t;
+
+#if	1
+
+#if 0
+#ifdef Q3_VM
+#ifdef VectorCopy
+#undef VectorCopy
+// this is a little hack to get more efficient copies in our interpreter
+typedef struct {
+	float	v[3];
+} vec3struct_t;
+#define VectorCopy(a,b)	(*(vec3struct_t *)b=*(vec3struct_t *)a)
+#endif
+#endif
+#endif
+
+#ifdef Q3_VM
+
+#define VectorNegate(a,b)		((b).x=-(a).x,(b).y=-(a).y,(b).z=-(a).z)
+#define VectorSet(v, x, y, z)	((v).x=(x),(v).y=(y),(v).z=(z))
+#define VectorClear(a)			((a).x=(a).y=(a).z=0)
+
+#define DotProduct(x,y)			((x).x*(y).x+(x).y*(y).y+(x).z*(y).z)
+#define VectorSubtract(a,b,c)	((c).x=(a).x-(b).x,(c).y=(a).y-(b).y,(c).z=(a).z-(b).z)
+#define VectorAdd(a,b,c)		((c).x=(a).x+(b).x,(c).y=(a).y+(b).y,(c).z=(a).z+(b).z)
+#define VectorCopy(b,a)			((b).x=(a).x,(b).y=(a).y,(b).z=(a).z)
+#define	VectorScale(v, s, o)	((o).x=(v).x*(s),(o).y=(v).y*(s),(o).z=(v).z*(s))
+#define	VectorMA(v, s, b, o)	((o).x=(v).x+(b).x*(s),(o).y=(v).y+(b).y*(s),(o).z=(v).z+(b).z*(s))
+
+#define VectorCopy4(b,a)		((b).r=(a).r,(b).g=(a).g,(b).b=(a).b,(b).a=(a).a)
+#define DotProduct4(a,b)		((a).r*(b).r + (a).g*(b).g + (a).b*(b).b + (a).a*(b).a)
+#define VectorScale4(a,b,c)		((c).r=(a).r*(b),(c).g=(a).g*(b),(c).b=(a).b*(b),(c).a=(a).a*(b))
+#define VectorSet4(v,x,y,z,w)	((v).r=(x),(v).g=(y),(v).b=(z),a=(w))
+
+#define	SnapVector(v) {v.x=((int)(v.x));v.y=((int)(v.y));v.z=((int)(v.z));}
+
+#define VectorClear2(a)			((a).x=(a).y=0)
+#define VectorCopy2(dst,src)	((dst).x=(src).x,(dst).y=(src).y)
+#define VectorSet2(dst,a,b)		((dst).x=(a),(dst).x=(b))
+
+#else
+
+#define Byte4Copy(a,b)			((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2],(b)[3]=(a)[3])
+
+#define QuatCopy(a,b)			((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2],(b)[3]=(a)[3])
+
+#define VectorNegate(a,b)		((b)[0]=-(a)[0],(b)[1]=-(a)[1],(b)[2]=-(a)[2])
+#define VectorSet(v, x, y, z)	((v)[0]=(x), (v)[1]=(y), (v)[2]=(z))
+#define VectorClear(a)			((a)[0]=(a)[1]=(a)[2]=0)
+
+#define DotProduct(x,y)			((x)[0]*(y)[0]+(x)[1]*(y)[1]+(x)[2]*(y)[2])
+#define VectorSubtract(a,b,c)	((c)[0]=(a)[0]-(b)[0],(c)[1]=(a)[1]-(b)[1],(c)[2]=(a)[2]-(b)[2])
+#define VectorAdd(a,b,c)		((c)[0]=(a)[0]+(b)[0],(c)[1]=(a)[1]+(b)[1],(c)[2]=(a)[2]+(b)[2])
+#define VectorCopy(b,a)			((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2])
+#define	VectorScale(v, s, o)	((o)[0]=(v)[0]*(s),(o)[1]=(v)[1]*(s),(o)[2]=(v)[2]*(s))
+#define	VectorMA(v, s, b, o)	((o)[0]=(v)[0]+(b)[0]*(s),(o)[1]=(v)[1]+(b)[1]*(s),(o)[2]=(v)[2]+(b)[2]*(s))
+
+#define VectorSet4(v,x,y,z,w)	((v)[0]=(x), (v)[1]=(y), (v)[2]=(z), v[3]=(w))
+#define VectorCopy4(b,a)		((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2],(b)[3]=(a)[3])
+#define DotProduct4(a,b)		((a)[0]*(b)[0] + (a)[1]*(b)[1] + (a)[2]*(b)[2] + (a)[3]*(b)[3])
+#define VectorScale4(a,b,c)		((c)[0]=(a)[0]*(b),(c)[1]=(a)[1]*(b),(c)[2]=(a)[2]*(b),(c)[3]=(a)[3]*(b))
+
+#define	SnapVector(v) {v[0]=((int)(v[0]));v[1]=((int)(v[1]));v[2]=((int)(v[2]));}
+
+#define VectorClear2(a)			((a)[0]=(a)[1]=0)
+#define VectorCopy2(dst,src)	((dst)[0]=(src)[0],(dst)[1]=(src)[1])
+#define VectorSet2(dst,a,b)		((dst)[0]=(a),(dst)[1]=(b))
+
+#endif
+
+#else
+
+#define DotProduct(x,y)			_DotProduct(x,y)
+#define VectorSubtract(a,b,c)	_VectorSubtract(a,b,c)
+#define VectorAdd(a,b,c)		_VectorAdd(a,b,c)
+#define VectorCopy(b,a)			_VectorCopy(a,b)
+#define	VectorScale(v, s, o)	_VectorScale(v,s,o)
+#define	VectorMA(v, s, b, o)	_VectorMA(v,s,b,o)
+
+#endif
+
+#ifdef Q3_VM
+typedef struct { byte r, byte, g, byte, b, byte a; } colorbyte_t;
+
+typedef struct { vec_t x, y; } vec2_t;
+typedef struct { vec_t x, y, z; } vec3_t;
+typedef struct { vec_t r, g, b, a; } vec4_t;
+
+typedef struct { ivec_t x, y; } ivec2_t;
+typedef struct { ivec_t x, y, z; } ivec3_t;
+typedef struct { ivec_t r, g, b, a; } ivec4_t;
+
+typedef struct { uvec_t x, y } uvec2_t;
+typedef struct { uvec_t x, y, z; } uvec3_t;
+typedef struct { uvec_t r, g, b, a; } uvec4_t;
+#else
 typedef vec_t vec2_t[2];
 typedef vec_t vec3_t[3];
 typedef vec_t vec4_t[4];
 typedef vec_t mat3_t[3][3];
 typedef vec_t mat4_t[4][4];
-typedef unsigned char byte;
 
-typedef uint32_t uvec_t;
 typedef uvec_t uvec2_t[2];
 typedef uvec_t uvec3_t[3];
 typedef uvec_t uvec4_t[4];
 
-typedef int32_t ivec_t;
 typedef ivec_t ivec2_t[2];
 typedef ivec_t ivec3_t[3];
 typedef ivec_t ivec4_t[4];
+#endif
+
+typedef unsigned char byte;
 
 typedef union {
 	float f;
@@ -561,7 +670,11 @@ typedef union {
 } floatint_t;
 
 typedef union {
+#ifdef Q3_VM
+	colorbyte_t color;
+#else
 	byte rgba[4];
+#endif
 	uint32_t u32;
 } color4ub_t;
 
@@ -633,8 +746,13 @@ signed char ClampCharMove( int i );
 signed short ClampShort( int i );
 
 // this isn't a real cheap function to call!
+#ifdef Q3_VM
+int DirToByte( vec3_t *dir );
+void ByteToDir( int b, vec3_t *dir );
+#else
 int DirToByte( vec3_t dir );
 void ByteToDir( int b, vec3_t dir );
+#endif
 
 #ifndef SGN
 #define SGN(x) (((x) >= 0) ? !!(x) : -1)
@@ -642,31 +760,6 @@ void ByteToDir( int b, vec3_t dir );
 
 #define DEG2RAD( a ) ( ( (a) * M_PI ) / 180.0F )
 #define RAD2DEG( a ) ( ( (a) * 180.0f ) / M_PI )
-
-#if	1
-
-#define DotProduct(x,y)			((x)[0]*(y)[0]+(x)[1]*(y)[1]+(x)[2]*(y)[2])
-#define VectorSubtract(a,b,c)	((c)[0]=(a)[0]-(b)[0],(c)[1]=(a)[1]-(b)[1],(c)[2]=(a)[2]-(b)[2])
-#define VectorAdd(a,b,c)		((c)[0]=(a)[0]+(b)[0],(c)[1]=(a)[1]+(b)[1],(c)[2]=(a)[2]+(b)[2])
-#define VectorCopy(b,a)			((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2])
-#define	VectorScale(v, s, o)	((o)[0]=(v)[0]*(s),(o)[1]=(v)[1]*(s),(o)[2]=(v)[2]*(s))
-#define	VectorMA(v, s, b, o)	((o)[0]=(v)[0]+(b)[0]*(s),(o)[1]=(v)[1]+(b)[1]*(s),(o)[2]=(v)[2]+(b)[2]*(s))
-
-#define DotProduct4(a,b)		((a)[0]*(b)[0] + (a)[1]*(b)[1] + (a)[2]*(b)[2] + (a)[3]*(b)[3])
-#define VectorScale4(a,b,c)		((c)[0]=(a)[0]*(b),(c)[1]=(a)[1]*(b),(c)[2]=(a)[2]*(b),(c)[3]=(a)[3]*(b))
-#define VectorCopy2(dst,src)	((dst)[0]=(src)[0],(dst)[1]=(src)[1])
-#define VectorSet2(dst,a,b)		((dst)[0]=(a),(dst)[1]=(b))
-
-#else
-
-#define DotProduct(x,y)			_DotProduct(x,y)
-#define VectorSubtract(a,b,c)	_VectorSubtract(a,b,c)
-#define VectorAdd(a,b,c)		_VectorAdd(a,b,c)
-#define VectorCopy(b,a)			_VectorCopy(a,b)
-#define	VectorScale(v, s, o)	_VectorScale(v,s,o)
-#define	VectorMA(v, s, b, o)	_VectorMA(v,s,b,o)
-
-#endif
 
 #ifdef PATH_MAX
 #define MAX_OSPATH			PATH_MAX
@@ -679,46 +772,39 @@ void ByteToDir( int b, vec3_t dir );
 
 #define	MAX_UINT			((unsigned)(~0))
 
-#ifdef Q3_VM
-#ifdef VectorCopy
-#undef VectorCopy
-// this is a little hack to get more efficient copies in our interpreter
-typedef struct {
-	float	v[3];
-} vec3struct_t;
-#define VectorCopy(a,b)	(*(vec3struct_t *)b=*(vec3struct_t *)a)
-#endif
-#endif
-
-#define VectorClear(a)			((a)[0]=(a)[1]=(a)[2]=0)
-#define VectorNegate(a,b)		((b)[0]=-(a)[0],(b)[1]=-(a)[1],(b)[2]=-(a)[2])
-#define VectorSet(v, x, y, z)	((v)[0]=(x), (v)[1]=(y), (v)[2]=(z))
-#define VectorSet4(v,x,y,z,w)	((v)[0]=(x), (v)[1]=(y), (v)[2]=(z), v[3]=(w))
-#define VectorCopy4(b,a)		((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2],(b)[3]=(a)[3])
-
-#define Byte4Copy(a,b)			((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2],(b)[3]=(a)[3])
-
-#define QuatCopy(a,b)			((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2],(b)[3]=(a)[3])
-
-#define	SnapVector(v) {v[0]=((int)(v[0]));v[1]=((int)(v[1]));v[2]=((int)(v[2]));}
 // just in case you don't want to use the macros
+#ifdef Q3_VM
+vec_t _DotProduct( const vec3_t *v1, const vec3_t *v2 );
+void _VectorSubtract( const vec3_t *veca, const vec3_t *vecb, vec3_t *out );
+void _VectorAdd( const vec3_t *veca, const vec3_t *vecb, vec3_t *out );
+void _VectorCopy( const vec3_t *in, vec3_t *out );
+void _VectorScale( const vec3_t *in, float scale, vec3_t *out );
+void _VectorMA( const vec3_t *veca, float scale, const vec3_t *vecb, vec3_t *vecc );
+#else
 vec_t _DotProduct( const vec3_t v1, const vec3_t v2 );
 void _VectorSubtract( const vec3_t veca, const vec3_t vecb, vec3_t out );
 void _VectorAdd( const vec3_t veca, const vec3_t vecb, vec3_t out );
 void _VectorCopy( const vec3_t in, vec3_t out );
 void _VectorScale( const vec3_t in, float scale, vec3_t out );
 void _VectorMA( const vec3_t veca, float scale, const vec3_t vecb, vec3_t vecc );
+#endif
 
 unsigned ColorBytes3 (float r, float g, float b);
 unsigned ColorBytes4 (float r, float g, float b, float a);
 
-float NormalizeColor( const vec3_t in, vec3_t out );
+#ifdef Q3_VM
+float NormalizeColor( const vec3_t *in, vec3_t *out );
+float RadiusFromBounds( const vec3_t *mins, const vec3_t *maxs );
+void ClearBounds( vec3_t *mins, vec3_t *maxs );
+void AddPointToBounds( const vec3_t *v, vec3_t *mins, vec3_t *maxs );
+#else
+float NormalizeColor( const vec3_t *in, vec3_t *out );
+float RadiusFromBounds( const vec3_t *mins, const vec3_t *maxs );
+void ClearBounds( vec3_t mins, vec3_t *maxs );
+void AddPointToBounds( const vec3_t *v, vec3_t *mins, vec3_t *maxs );
+#endif
 
-float RadiusFromBounds( const vec3_t mins, const vec3_t maxs );
-void ClearBounds( vec3_t mins, vec3_t maxs );
-void AddPointToBounds( const vec3_t v, vec3_t mins, vec3_t maxs );
-
-#if !defined( Q3_VM ) || ( defined( Q3_VM ) && defined( __Q3_VM_MATH ) )
+#if !defined( Q3_VM )
 GDR_INLINE int VectorCompare( const vec3_t v1, const vec3_t v2 ) {
 	if (v1[0] != v2[0] || v1[1] != v2[1] || v1[2] != v2[2]) {
 		return 0;
@@ -775,21 +861,27 @@ GDR_INLINE void CrossProduct( const vec3_t v1, const vec3_t v2, vec3_t cross ) {
 
 #else
 
-int VectorCompare( const vec3_t v1, const vec3_t v2 );
-vec_t VectorLength( const vec3_t v );
-vec_t VectorLengthSquared( const vec3_t v );
-vec_t Distance( const vec3_t p1, const vec3_t p2 );
-vec_t DistanceSquared( const vec3_t p1, const vec3_t p2 );
-void VectorNormalizeFast( vec3_t v );
-void VectorInverse( vec3_t v );
-void CrossProduct( const vec3_t v1, const vec3_t v2, vec3_t cross );
+int VectorCompare( const vec3_t *v1, const vec3_t *v2 );
+vec_t VectorLength( const vec3_t *v );
+vec_t VectorLengthSquared( const vec3_t *v );
+vec_t Distance( const vec3_t *p1, const vec3_t *p2 );
+vec_t DistanceSquared( const vec3_t *p1, const vec3_t *p2 );
+void VectorNormalizeFast( vec3_t *v );
+void VectorInverse( vec3_t *v );
+void CrossProduct( const vec3_t *v1, const vec3_t *v2, vec3_t *cross );
 
 #endif
 
+#ifdef Q3_VM
+vec_t VectorNormalize( vec3_t *v );		// returns vector length
+vec_t VectorNormalize2( const vec3_t *v, vec3_t *out );
+#else
 vec_t VectorNormalize (vec3_t v);		// returns vector length
 vec_t VectorNormalize2( const vec3_t v, vec3_t out );
 void Vector4Scale( const vec4_t in, vec_t scale, vec4_t out );
 void VectorRotate( const vec3_t in, const vec3_t matrix[3], vec3_t out );
+#endif
+
 int N_log2(int val);
 
 float N_acos(float c);
@@ -802,8 +894,13 @@ float N_crandom( int *seed );
 #define random()	((rand () & 0x7fff) / ((float)0x7fff))
 #define crandom()	(2.0 * (random() - 0.5))
 
+#ifdef Q3_VM
 void vectoangles( const vec3_t value1, vec3_t angles);
 void AnglesToAxis( const vec3_t angles, vec3_t axis[3] );
+#else
+void vectoangles( const vec3_t value1, vec3_t angles);
+void AnglesToAxis( const vec3_t angles, vec3_t axis[3] );
+#endif
 
 void AxisClear( vec3_t axis[3] );
 void AxisCopy( vec3_t in[3], vec3_t out[3] );

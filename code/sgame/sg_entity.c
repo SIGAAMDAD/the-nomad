@@ -11,8 +11,8 @@ sgentity_t sg_entities[MAXENTITIES];
 qboolean Ent_SetState( sgentity_t *self, statenum_t state )
 {
 	state_t *st;
-	uint32_t counter;
-	
+	int counter;
+
 	counter = 0;
 	do {
 		if ( state == S_NULL ) {
@@ -20,26 +20,26 @@ qboolean Ent_SetState( sgentity_t *self, statenum_t state )
 			SG_FreeEntity(self);
 			return qfalse;
 		}
-		
+
 		st = &stateinfo[state];
 		self->state = st;
 		self->ticker = st->tics;
 		self->frame = st->frames;
 		self->sprite = st->sprite + self->facing;
-		
+
 		state = st->nextstate;
 		if ( counter++ > ENTITY_CYCLE_LIMIT ) {
 			G_Error("Ent_SetState: infinite state cycle detected!");
 		}
 	} while ( !self->ticker );
-	
+
 	return qtrue;
 }
 
 sgentity_t *Ent_CheckEntityCollision( const sgentity_t *ent )
 {
 	sgentity_t *it;
-	uint32_t i;
+	int i;
 
 	it = &sg_entities[0];
 	for ( i = 0; i < sg.numEntities; i++, it++ ) {
@@ -52,8 +52,8 @@ sgentity_t *Ent_CheckEntityCollision( const sgentity_t *ent )
 }
 
 /*
-* Ent_CheckWallCollision: returns true if there's a wall in the way
-*/
+ * Ent_CheckWallCollision: returns true if there's a wall in the way
+ */
 qboolean Ent_CheckWallCollision( const sgentity_t *e )
 {
 	dirtype_t d;
@@ -71,13 +71,13 @@ qboolean Ent_CheckWallCollision( const sgentity_t *e )
 	case DIR_SOUTH_EAST:
 		return qtrue;
 	};
-	
+
 	// check for a wall collision
 	// if we're touching a wall with the side marked for collision, return true
 	if ( trap_CheckWallHit( e->origin, d ) ) {
 		return qtrue;
 	}
-	
+
 	return qfalse;
 }
 
@@ -154,4 +154,3 @@ sgentity_t *SG_AllocEntity( entitytype_t type )
 
 	return ent;
 }
-

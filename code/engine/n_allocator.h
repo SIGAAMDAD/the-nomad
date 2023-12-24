@@ -5,7 +5,7 @@
 
 #include <EASTL/allocator.h>
 #include <EASTL/vector.h>
-
+#include <EASTL/type_traits.h>
 class CHunkTempAllocator
 {
 public:
@@ -115,6 +115,60 @@ GDR_INLINE void CZoneAllocator::deallocate( void *ptr, size_t )
     }
 }
 
+template<typename T>
+class CStdSmallZoneAllocator
+{
+public:
+    EASTL_ALLOCATOR_EXPLICIT CStdSmallZoneAllocator(const char* pName = EASTL_NAME_VAL(EASTL_ALLOCATOR_DEFAULT_NAME)) { }
+	CStdSmallZoneAllocator(const CStdSmallZoneAllocator& x) { }
+	CStdSmallZoneAllocator(const CStdSmallZoneAllocator& x, const char* pName) { }
+
+	typedef T value_type;
+	typedef char char_type;
+
+	CStdSmallZoneAllocator& operator=( const CStdSmallZoneAllocator& x ) = default;
+
+	T* allocate( size_t n ) const;
+	void* allocate( size_t n, int flags = 0 );
+	void* allocate( size_t n, size_t alignment, size_t offset, int flags = 0 );
+	void  deallocate( T* p, size_t n );
+
+	const char* get_name( void ) const { return NULL; }
+	void        set_name( const char* pName ) { }
+private:
+	#if EASTL_NAME_ENABLED
+		const char* mpName; // Debug name, used to track memory.
+	#endif
+};
+
+template<typename T>
+GDR_INLINE T *CStdSmallZoneAllocator<T>::allocate( size_t n ) const
+{
+	T *pMem = (T *)S_Malloc( n );
+	::new (pMem) T();
+	return pMem;
+}
+
+template<typename T>
+GDR_INLINE void *CStdSmallZoneAllocator<T>::allocate( size_t n, int flags )
+{
+	return S_Malloc( n );
+}
+
+template<typename T>
+GDR_INLINE void *CStdSmallZoneAllocator<T>::allocate( size_t n, size_t alignment, size_t offset, int flags )
+{
+	return S_Malloc( n );
+}
+
+template<typename T>
+GDR_INLINE void CStdSmallZoneAllocator<T>::deallocate( T *ptr, size_t )
+{
+    if (ptr != NULL) {
+		ptr->~T();
+        Z_Free( ptr );
+    }
+}
 class CSmallZoneAllocator
 {
 public:
@@ -152,6 +206,21 @@ GDR_INLINE void CSmallZoneAllocator::deallocate( void *ptr, size_t )
         Z_Free( ptr );
     }
 }
+
+template<typename T>
+class CZoneDeleter
+{
+public:
+	EA_CONSTEXPR CZoneDeleter( void ) = default;
+
+	template<typename U>  // Enable if T* can be constructed with U* (i.e. U* is convertible to T*).
+	CZoneDeleter( const CZoneDeleter<U>&, typename eastl::enable_if<eastl::is_convertible<U*, T*>::value>::type* = 0 ) { }
+
+	void operator()( T* p ) const {
+		static_assert(eastl::internal::is_complete_type_v<T>, "Attempting to call the destructor of an incomplete type");
+		Z_Free( p );
+	}
+};
 
 using tempBuffer = eastl::vector<char, CHunkTempAllocator>;
 

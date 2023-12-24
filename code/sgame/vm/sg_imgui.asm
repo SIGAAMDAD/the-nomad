@@ -1,6 +1,6 @@
 export ImGui_SetItemTooltip
 code
-proc ImGui_SetItemTooltip 4108 12
+proc ImGui_SetItemTooltip 8196 12
 file "../sg_imgui.c"
 line 5
 ;1:#include "sg_local.h"
@@ -8,17 +8,16 @@ line 5
 ;3:
 ;4:void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL ImGui_SetItemTooltip( const char *fmt, ... )
 ;5:{
-line 10
+line 9
 ;6:    va_list argptr;
-;7:    char msg[4096];
-;8:    int32_t length;
-;9:
-;10:    va_start( argptr, fmt );
+;7:    char msg[8192];
+;8:    
+;9:    va_start( argptr, fmt );
 ADDRLP4 0
 ADDRFP4 0+4
 ASGNP4
-line 11
-;11:    length = vsprintf( msg, fmt, argptr );
+line 10
+;10:    vsprintf( msg, fmt, argptr );
 ADDRLP4 4
 ARGP4
 ADDRFP4 0
@@ -27,66 +26,42 @@ ARGP4
 ADDRLP4 0
 INDIRP4
 ARGP4
-ADDRLP4 4104
 ADDRGP4 vsprintf
 CALLI4
-ASGNI4
-ADDRLP4 4100
-ADDRLP4 4104
-INDIRI4
-ASGNI4
-line 12
-;12:    va_end( argptr );
+pop
+line 11
+;11:    va_end( argptr );
 ADDRLP4 0
 CNSTP4 0
 ASGNP4
-line 14
-;13:
-;14:    if (length >= sizeof(msg)) {
-ADDRLP4 4100
-INDIRI4
-CVIU4 4
-CNSTU4 4096
-LTU4 $83
-line 15
-;15:        trap_Error( "ImGui_SetItemTooltip: buffer overflow" );
-ADDRGP4 $85
-ARGP4
-ADDRGP4 trap_Error
-CALLV
-pop
-line 16
-;16:    }
-LABELV $83
-line 18
-;17:
-;18:    ImGui_SetItemTooltipUnformatted( msg );
+line 13
+;12:
+;13:    ImGui_SetItemTooltipUnformatted( msg );
 ADDRLP4 4
 ARGP4
 ADDRGP4 ImGui_SetItemTooltipUnformatted
 CALLV
 pop
-line 19
-;19:}
+line 14
+;14:}
 LABELV $81
-endproc ImGui_SetItemTooltip 4108 12
+endproc ImGui_SetItemTooltip 8196 12
 export ImGui_Text
-proc ImGui_Text 4108 12
-line 22
+proc ImGui_Text 8196 12
+line 17
+;15:
+;16:void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL ImGui_Text( const char *fmt, ... )
+;17:{
+line 21
+;18:    va_list argptr;
+;19:    char msg[8192];
 ;20:
-;21:void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL ImGui_Text( const char *fmt, ... )
-;22:{
-line 27
-;23:    va_list argptr;
-;24:    char msg[4096];
-;25:    int32_t length;
-;26:
-;27:    va_start( argptr, fmt );
+;21:    va_start( argptr, fmt );
 ADDRLP4 0
 ADDRFP4 0+4
 ASGNP4
-line 28
-;28:    length = vsprintf( msg, fmt, argptr );
+line 22
+;22:    vsprintf( msg, fmt, argptr );
 ADDRLP4 4
 ARGP4
 ADDRFP4 0
@@ -95,66 +70,42 @@ ARGP4
 ADDRLP4 0
 INDIRP4
 ARGP4
-ADDRLP4 4104
 ADDRGP4 vsprintf
 CALLI4
-ASGNI4
-ADDRLP4 4100
-ADDRLP4 4104
-INDIRI4
-ASGNI4
-line 29
-;29:    va_end( argptr );
+pop
+line 23
+;23:    va_end( argptr );
 ADDRLP4 0
 CNSTP4 0
 ASGNP4
-line 31
-;30:
-;31:    if (length >= sizeof(msg)) {
-ADDRLP4 4100
-INDIRI4
-CVIU4 4
-CNSTU4 4096
-LTU4 $88
-line 32
-;32:        trap_Error( "ImGui_Text: buffer overflow" );
-ADDRGP4 $90
-ARGP4
-ADDRGP4 trap_Error
-CALLV
-pop
-line 33
-;33:    }
-LABELV $88
-line 35
-;34:
-;35:    ImGui_TextUnformatted( msg );
+line 25
+;24:
+;25:    ImGui_TextUnformatted( msg );
 ADDRLP4 4
 ARGP4
 ADDRGP4 ImGui_TextUnformatted
 CALLV
 pop
-line 36
-;36:}
-LABELV $86
-endproc ImGui_Text 4108 12
+line 26
+;26:}
+LABELV $83
+endproc ImGui_Text 8196 12
 export ImGui_ColoredText
-proc ImGui_ColoredText 4108 12
-line 39
-;37:
-;38:void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL ImGui_ColoredText( const vec4_t pColor, const char *fmt, ... )
-;39:{
-line 44
-;40:    va_list argptr;
-;41:    char msg[4096];
-;42:    int32_t length;
-;43:
-;44:    va_start( argptr, fmt );
+proc ImGui_ColoredText 8196 12
+line 29
+;27:
+;28:void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL ImGui_ColoredText( const vec4_t pColor, const char *fmt, ... )
+;29:{
+line 33
+;30:    va_list argptr;
+;31:    char msg[8192];
+;32:
+;33:    va_start( argptr, fmt );
 ADDRLP4 0
 ADDRFP4 4+4
 ASGNP4
-line 45
-;45:    length = vsprintf( msg, fmt, argptr );
+line 34
+;34:    vsprintf( msg, fmt, argptr );
 ADDRLP4 4
 ARGP4
 ADDRFP4 4
@@ -163,40 +114,17 @@ ARGP4
 ADDRLP4 0
 INDIRP4
 ARGP4
-ADDRLP4 4104
 ADDRGP4 vsprintf
 CALLI4
-ASGNI4
-ADDRLP4 4100
-ADDRLP4 4104
-INDIRI4
-ASGNI4
-line 46
-;46:    va_end( argptr );
+pop
+line 35
+;35:    va_end( argptr );
 ADDRLP4 0
 CNSTP4 0
 ASGNP4
-line 48
-;47:
-;48:    if (length >= sizeof(msg)) {
-ADDRLP4 4100
-INDIRI4
-CVIU4 4
-CNSTU4 4096
-LTU4 $93
-line 49
-;49:        trap_Error( "ImGui_Text: buffer overflow" );
-ADDRGP4 $90
-ARGP4
-ADDRGP4 trap_Error
-CALLV
-pop
-line 50
-;50:    }
-LABELV $93
-line 52
-;51:
-;52:    ImGui_ColoredTextUnformatted( pColor, msg );
+line 37
+;36:
+;37:    ImGui_ColoredTextUnformatted( pColor, msg );
 ADDRFP4 0
 INDIRP4
 ARGP4
@@ -205,10 +133,10 @@ ARGP4
 ADDRGP4 ImGui_ColoredTextUnformatted
 CALLV
 pop
-line 53
-;53:}
-LABELV $91
-endproc ImGui_ColoredText 4108 12
+line 38
+;38:}
+LABELV $85
+endproc ImGui_ColoredText 8196 12
 import Cvar_VariableStringBuffer
 import Cvar_Set
 import Cvar_Update
@@ -303,6 +231,9 @@ import pm_airAccel
 import pm_baseSpeed
 import pm_baseAccel
 import pm_waterAccel
+import pm_airFriction
+import pm_waterFriction
+import pm_groundFriction
 import sg_numSaves
 import sg_savename
 import sg_levelDataFile
@@ -733,74 +664,3 @@ import memmove
 import memset
 import memchr
 import memcpy
-lit
-align 1
-LABELV $90
-byte 1 73
-byte 1 109
-byte 1 71
-byte 1 117
-byte 1 105
-byte 1 95
-byte 1 84
-byte 1 101
-byte 1 120
-byte 1 116
-byte 1 58
-byte 1 32
-byte 1 98
-byte 1 117
-byte 1 102
-byte 1 102
-byte 1 101
-byte 1 114
-byte 1 32
-byte 1 111
-byte 1 118
-byte 1 101
-byte 1 114
-byte 1 102
-byte 1 108
-byte 1 111
-byte 1 119
-byte 1 0
-align 1
-LABELV $85
-byte 1 73
-byte 1 109
-byte 1 71
-byte 1 117
-byte 1 105
-byte 1 95
-byte 1 83
-byte 1 101
-byte 1 116
-byte 1 73
-byte 1 116
-byte 1 101
-byte 1 109
-byte 1 84
-byte 1 111
-byte 1 111
-byte 1 108
-byte 1 116
-byte 1 105
-byte 1 112
-byte 1 58
-byte 1 32
-byte 1 98
-byte 1 117
-byte 1 102
-byte 1 102
-byte 1 101
-byte 1 114
-byte 1 32
-byte 1 111
-byte 1 118
-byte 1 101
-byte 1 114
-byte 1 102
-byte 1 108
-byte 1 111
-byte 1 119
-byte 1 0

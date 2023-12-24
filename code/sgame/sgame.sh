@@ -3,7 +3,10 @@
 mkdir -p vm
 cd vm
 
-CC="../lcc -I. -DQ3_VM -DSGAME -D_NOMAD_VERSION=1 -D_NOMAD_VERSION_UPDATE=1 -D_NOMAD_VERSION_PATCH=0 -S -Wf-target=bytecode -Wf-g -I../../game -I../../engine -I../../allocator"
+#if [ ! -f q3rcc.exe ]; then ln -s ../q3rcc.exe; fi
+#if [ ! -f q3cpp.exe ]; then ln -s ../q3cpp.exe; fi
+
+CC="../q3lcc -I. -DQ3_VM -DSGAME -D_NOMAD_VERSION=1 -D_NOMAD_VERSION_UPDATE=1 -D_NOMAD_VERSION_PATCH=0 -S -Wf-target=bytecode -Wf-g -I../../game -I../../engine -I../../allocator"
 
 $CC ../sg_main.c
 $CC ../sg_level.c

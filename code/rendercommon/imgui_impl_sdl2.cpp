@@ -132,7 +132,7 @@ static const char* ImGui_ImplSDL2_GetClipboardText(void*)
 {
     ImGui_ImplSDL2_Data* bd = ImGui_ImplSDL2_GetBackendData();
     if (bd->ClipboardTextData)
-        SDL_free(bd->ClipboardTextData);
+        Z_Free(bd->ClipboardTextData);
     
     bd->ClipboardTextData = Sys_GetClipboardData();
     return bd->ClipboardTextData;
@@ -401,7 +401,7 @@ static int ImGui_ImplSDL2_Init(SDL_Window* window, SDL_Renderer* renderer)
 #endif
 
     // Setup backend capabilities flags
-    ImGui_ImplSDL2_Data* bd = (ImGui_ImplSDL2_Data *)Hunk_Alloc(sizeof(*bd), h_low);
+    ImGui_ImplSDL2_Data* bd = (ImGui_ImplSDL2_Data *)Z_Malloc( sizeof(*bd), TAG_RENDERER );
     memset(bd, 0, sizeof(*bd));
     io.BackendPlatformUserData = (void*)bd;
     io.BackendPlatformName = "imgui_impl_sdl2";
@@ -511,7 +511,7 @@ extern "C" void ImGui_ImplSDL2_Shutdown(void)
     ImGuiIO& io = ImGui::GetIO();
 
     if (bd->ClipboardTextData)
-        SDL_free(bd->ClipboardTextData);
+        Z_Free(bd->ClipboardTextData);
     for (ImGuiMouseCursor cursor_n = 0; cursor_n < ImGuiMouseCursor_COUNT; cursor_n++)
         SDL_FreeCursor(bd->MouseCursors[cursor_n]);
     bd->LastMouseCursor = nullptr;

@@ -188,7 +188,7 @@ struct sgentity_s
 	int ticker;
 	int frame;
 
-	uint32_t facing;
+	int facing;
 
 	nhandle_t hShader;
 
@@ -206,7 +206,7 @@ typedef struct {
 	sgentity_t *ent;
 
 	const char *name;
-	uint32_t cost; // in the market, not implemented yet
+	int cost; // in the market, not implemented yet
 	itemtype_t type;
 } item_t;
 
@@ -214,9 +214,9 @@ typedef struct {
 	item_t base; // weapons ARE techinally items
 	
 	ammotype_t ammo;
-	uint32_t addammo;
-	uint32_t damage;
-	uint32_t range;
+	int addammo;
+	int damage;
+	int range;
 } weapon_t;
 
 typedef struct
@@ -226,12 +226,12 @@ typedef struct
 //	pmove_t pm;
 	
 	const weapon_t *weaponInv[MAXPLAYERWEAPONS];
-	uint32_t ammocounts[NUMAMMOTYPES];
+	int ammocounts[NUMAMMOTYPES];
 	const weapon_t *curwpn;
 	
 	spritenum_t foot_sprite;
 	int foot_frame;
-	uint32_t flags;
+	int flags;
 } playr_t;
 
 typedef struct
@@ -287,8 +287,8 @@ typedef struct
 
 	int frameTime;
 
-	uint32_t numLevels;
-	uint32_t numEntities;
+	int numLevels;
+	int numEntities;
 	int numSaves;
 
 	int previousTime;
@@ -302,13 +302,13 @@ typedef struct
 	float cameraHeight;
 
 	mobj_t mobs[MAXMOBS];
-	uint32_t numMobs;
+	int numMobs;
 
 	item_t items[MAXITEMS];
-	uint32_t numItems;
+	int numItems;
 
 	weapon_t weapons[MAXWEAPONS];
-	uint32_t numWeapons;
+	int numWeapons;
 
 	playr_t playr;
 	qboolean playrReady;
@@ -321,7 +321,7 @@ typedef struct
 	int checkpointIndex;
 	linkEntity_t activeEnts;
 
-	uint32_t soundBits[MAX_MAP_WIDTH*MAX_MAP_HEIGHT];
+	int soundBits[MAX_MAP_WIDTH*MAX_MAP_HEIGHT];
 
 	vec2_t cameraPos;
 	
@@ -344,7 +344,7 @@ extern sgGlobals_t sg;
 extern const weapon_t weaponinfo[NUMWEAPONTYPES];
 extern const item_t iteminfo[NUMITEMS];
 extern const mobj_t mobinfo[NUMMOBS];
-extern const uint32_t ammoCaps[NUMAMMOTYPES];
+extern const int ammoCaps[NUMAMMOTYPES];
 extern state_t stateinfo[NUMSTATES];
 
 extern vmCvar_t sg_debugPrint;
@@ -360,6 +360,9 @@ extern vmCvar_t sg_levelDataFile;
 extern vmCvar_t sg_savename;
 extern vmCvar_t sg_numSaves;
 
+extern vmCvar_t pm_groundFriction;
+extern vmCvar_t pm_waterFriction;
+extern vmCvar_t pm_airFriction;
 extern vmCvar_t pm_waterAccel;
 extern vmCvar_t pm_baseAccel;
 extern vmCvar_t pm_baseSpeed;
@@ -432,7 +435,7 @@ void SG_SpawnMobOnMap( mobtype_t id, float x, float y, float elevation );
 // sg_mem.c
 //
 const char *String_Alloc( const char *str );
-void *SG_MemAlloc( uint32_t size );
+void *SG_MemAlloc( int size );
 void SG_MemInit( void );
 qboolean SG_OutOfMemory( void );
 
@@ -440,7 +443,7 @@ qboolean SG_OutOfMemory( void );
 // sg_playr.c
 //
 void SG_InitPlayer( void );
-void SG_KeyEvent( uint32_t key, qboolean down );
+void SG_KeyEvent( int key, qboolean down );
 void SG_MouseEvent( int dx, int dy );
 void SG_SendUserCmd( int rightmove, int forwardmove, int upmove );
 void P_Ticker( sgentity_t *self );
@@ -463,9 +466,9 @@ void trap_Print( const char *str );
 void trap_Error( const char *str );
 
 // console command access
-uint32_t trap_Argc( void );
-void trap_Argv( uint32_t n, char *buf, uint32_t bufferLength );
-void trap_Args( char *buf, uint32_t bufferLength );
+int trap_Argc( void );
+void trap_Argv( int n, char *buf, int bufferLength );
+void trap_Args( char *buf, int bufferLength );
 
 // add commands to the local console as if they were typed in
 // for map changing, etc.  The command is not executed immediately,
@@ -479,23 +482,23 @@ void		trap_AddCommand( const char *cmdName );
 
 void trap_RemoveCommand( const char *cmdName );
 
-uint32_t trap_MemoryRemaining( void );
+int trap_MemoryRemaining( void );
 
 void Sys_SnapVector( float *v );
 
 // sets the desired camera position, zoom, rotation, etc.
 void G_SetCameraData( const vec2_t origin, float zoom, float rotation );
 
-int G_LoadMap( int levelIndex, mapinfo_t *info, uint32_t *soundBits, linkEntity_t *activeEnts );
+int G_LoadMap( int levelIndex, mapinfo_t *info, int *soundBits, linkEntity_t *activeEnts );
 void G_CastRay( ray_t *ray );
 void G_SoundRecursive( int width, int height, float volume, const vec3_t origin );
 qboolean trap_CheckWallHit( const vec3_t origin, dirtype_t dir );
 
 int trap_Milliseconds( void );
 
-void trap_Key_SetCatcher( uint32_t catcher );
-uint32_t trap_Key_GetCatcher( void );
-uint32_t trap_Key_GetKey( const char *key );
+void trap_Key_SetCatcher( int catcher );
+int trap_Key_GetCatcher( void );
+int trap_Key_GetKey( const char *key );
 void trap_Key_ClearStates( void );
 
 sfxHandle_t trap_Snd_RegisterSfx( const char *npath );
@@ -507,30 +510,30 @@ void trap_Snd_SetLoopingTrack( sfxHandle_t track );
 void trap_Snd_ClearLoopingTrack( void );
 
 nhandle_t RE_RegisterShader( const char *npath );
-nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32_t sheetHeight, uint32_t spriteWidth, uint32_t spriteHeight );
-nhandle_t RE_RegisterSprite( nhandle_t hSpriteSheet, uint32_t index );
+nhandle_t RE_RegisterSpriteSheet( const char *npath, int sheetWidth, int sheetHeight, int spriteWidth, int spriteHeight );
+nhandle_t RE_RegisterSprite( nhandle_t hSpriteSheet, int index );
 void RE_LoadWorldMap( const char *npath );
 void RE_ClearScene( void );
 void RE_RenderScene( const renderSceneRef_t *fd );
-void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
+void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, int numVerts );
 void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t hSprite );
 
 void Sys_GetGPUConfig( gpuConfig_t *config );
 
 // filesystem access
-uint32_t trap_FS_FOpenFile( const char *npath, file_t *f, fileMode_t mode );
+int trap_FS_FOpenFile( const char *npath, file_t *f, fileMode_t mode );
 file_t trap_FS_FOpenWrite( const char *npath );
 void trap_FS_FClose( file_t f );
-uint32_t trap_FS_Write( const void *data, uint32_t size, file_t f );
-uint32_t trap_FS_Read( void *data, uint32_t size, file_t f );
-uint32_t trap_FS_GetFileList( const char *path, const char *extension, char *listbuf, uint32_t bufsize ); 
-uint32_t trap_FS_FileSeek( file_t f, fileOffset_t offset, uint32_t whence );
-uint32_t trap_FS_FileTell( file_t f );
+int trap_FS_Write( const void *data, int size, file_t f );
+int trap_FS_Read( void *data, int size, file_t f );
+int trap_FS_GetFileList( const char *path, const char *extension, char *listbuf, int bufsize ); 
+int trap_FS_FileSeek( file_t f, fileOffset_t offset, int whence );
+int trap_FS_FileTell( file_t f );
 
 // console variable interaction
-void Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, uint32_t flags );
+void Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags );
 void Cvar_Update( vmCvar_t *vmCvar );
 void Cvar_Set( const char *varName, const char *value );
-void Cvar_VariableStringBuffer( const char *var_name, char *buffer, uint32_t bufsize );
+void Cvar_VariableStringBuffer( const char *var_name, char *buffer, int bufsize );
 
 #endif

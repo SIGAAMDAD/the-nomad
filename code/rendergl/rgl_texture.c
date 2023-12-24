@@ -2310,7 +2310,7 @@ texture_t *R_CreateImage(  const char *name, byte *pic, uint32_t width, uint32_t
 		ri.Error(ERR_DROP, "R_CreateImage: MAX_RENDER_TEXTURES hit");
 	}
 
-	image = rg.textures[rg.numTextures] = ri.Hunk_Alloc(sizeof(*image) + namelen, h_low);
+	image = rg.textures[rg.numTextures] = ri.Malloc( sizeof(*image) + namelen );
 	nglGenTextures(1, (GLuint *)&image->id);
 	rg.numTextures++;
 

@@ -36,7 +36,7 @@ char* strchr(const char* string, int c)
 	return (char *)0;
 }
 
-char *strrchr(const char *string, int32_t c)
+char *strrchr(const char *string, int c)
 {
     const char *found, *p;
 
@@ -117,7 +117,7 @@ static void  swapfunc(char*, char*, int, int);
                    : es == sizeof(long) ? 0 : 1;
 
 static void swapfunc(a, b, n, swaptype) char *a, *b;
-int32_t         n, swaptype;
+int         n, swaptype;
 {
     if (swaptype <= 1)
         swapcode(long, a, b, n) else swapcode(char, a, b, n)
@@ -149,7 +149,7 @@ size_t n, es;
 cmp_t* cmp;
 {
     char *pa, *pb, *pc, *pd, *pl, *pm, *pn;
-    int32_t   d, r, swaptype, swap_cnt;
+    int   d, r, swaptype, swap_cnt;
 
 loop:
     SWAPINIT(a, es);
@@ -234,7 +234,7 @@ loop:
 }
 #endif
 
-int32_t tolower(int32_t c)
+int tolower(int c)
 {
     if (c >= 'A' && c <= 'Z') {
         c += 'a' - 'A';
@@ -242,7 +242,7 @@ int32_t tolower(int32_t c)
     return c;
 }
 
-int32_t toupper(int32_t c)
+int toupper(int c)
 {
     if (c >= 'a' && c <= 'z') {
         c += 'A' - 'a';
@@ -255,7 +255,7 @@ double atof(const char* string)
 {
     float sign;
     float value;
-    int32_t   c;
+    int   c;
 
     // skip whitespace
     while (*string <= ' ')
@@ -333,7 +333,7 @@ double _atof(const char** stringPtr)
     const char* string;
     float       sign;
     float       value;
-    int32_t         c = '0'; // bk001211 - uninitialized use possible
+    int         c = '0'; // bk001211 - uninitialized use possible
 
     string = *stringPtr;
 
@@ -405,11 +405,11 @@ double _atof(const char** stringPtr)
     return value * sign;
 }
 
-int32_t atoi(const char* string)
+int atoi(const char* string)
 {
-    int32_t sign;
-    int32_t value;
-    int32_t c;
+    int sign;
+    int value;
+    int c;
 
     // skip whitespace
     while (*string <= ' ')
@@ -455,11 +455,11 @@ int32_t atoi(const char* string)
     return value * sign;
 }
 
-int32_t _atoi(const char** stringPtr)
+int _atoi(const char** stringPtr)
 {
-    int32_t         sign;
-    int32_t         value;
-    int32_t         c;
+    int         sign;
+    int         value;
+    int         c;
     const char* string;
 
     string = *stringPtr;
@@ -515,21 +515,21 @@ double tan(double x)
     return sin(x) / cos(x);
 }
 
-static int32_t randSeed = 0;
+static int randSeed = 0;
 
 void srand(unsigned seed)
 {
     randSeed = seed;
 }
 
-int32_t rand(void)
+int rand(void)
 {
     randSeed = (69069 * randSeed + 1);
     return randSeed & 0x7fff;
 }
 
 
-int32_t abs(int32_t n)
+int abs(int n)
 {
     return n < 0 ? -n : n;
 }
@@ -547,17 +547,17 @@ double fabs(double x)
 #define QUADINT 0x00000020   /* quad integer */
 #define SHORTINT 0x00000040  /* short integer */
 #define ZEROPAD 0x00000080   /* zero (as opposed to blank) pad */
-#define FPT 0x00000100       /* floating point32_t number */
+#define FPT 0x00000100       /* floating point number */
 
 #define to_digit(c) ((c) - '0')
 #define is_digit(c) ((unsigned)to_digit(c) <= 9)
 #define to_char(n) ((n) + '0')
 
-void AddInt(char** buf_p, int32_t val, int32_t width, int32_t flags)
+void AddInt(char** buf_p, int val, int width, int flags)
 {
     char  text[32];
-    int32_t   digits;
-    int32_t   signedVal;
+    int   digits;
+    int   signedVal;
     char* buf;
 
     digits    = 0;
@@ -605,7 +605,7 @@ void AddInt(char** buf_p, int32_t val, int32_t width, int32_t flags)
     *buf_p = buf;
 }
 
-void AddUInt(char** buf_p, uint32_t val, int32_t width, int32_t flags)
+void AddUInt(char** buf_p, uint32_t val, int width, int flags)
 {
     char  text[32];
     uint32_t   digits;
@@ -646,13 +646,13 @@ void AddUInt(char** buf_p, uint32_t val, int32_t width, int32_t flags)
     *buf_p = buf;
 }
 
-void AddFloat(char** buf_p, float fval, int32_t width, int32_t prec)
+void AddFloat(char** buf_p, float fval, int width, int prec)
 {
     char  text[32];
-    int32_t   digits;
+    int digits;
     float signedVal;
     char* buf;
-    int32_t   val;
+    int val;
 
     // get the sign
     signedVal = fval;
@@ -663,7 +663,7 @@ void AddFloat(char** buf_p, float fval, int32_t width, int32_t prec)
 
     // write the float number
     digits = 0;
-    val    = (int32_t)fval;
+    val    = (int)fval;
     do
     {
         text[digits++] = '0' + val % 10;
@@ -714,9 +714,9 @@ void AddFloat(char** buf_p, float fval, int32_t width, int32_t prec)
     }
 }
 
-void AddString(char** buf_p, char* string, int32_t width, int32_t prec)
+void AddString(char** buf_p, char* string, int width, int prec)
 {
-    int32_t   size;
+    int   size;
     char* buf;
 
     buf = *buf_p;
@@ -757,19 +757,19 @@ void AddString(char** buf_p, char* string, int32_t width, int32_t prec)
     *buf_p = buf;
 }
 
-int32_t vsprintf(char* buffer, const char* fmt, va_list argptr)
+int vsprintf(char* buffer, const char* fmt, va_list argptr)
 {
-    int32_t*    arg;
+    int*    arg;
     char*       buf_p;
     char        ch;
-    int32_t     flags;
-    int32_t     width;
-    int32_t     prec;
-    int32_t     n;
+    int     flags;
+    int     width;
+    int     prec;
+    int     n;
     char        sign;
 
     buf_p = buffer;
-    arg   = (int32_t *)argptr;
+    arg   = (int *)argptr;
 
     while (1)
     {
@@ -840,7 +840,7 @@ int32_t vsprintf(char* buffer, const char* fmt, va_list argptr)
         case 'f':
             AddFloat(&buf_p, *(double*)arg, width, prec);
 #ifdef __LCC__
-            arg += 1; // everything is 32 bit in my compiler
+            arg += 2; // everything is 32 bit in my compiler
 #else
             arg += 2;
 #endif
@@ -865,13 +865,13 @@ done:
 }
 
 /* this is really crappy */
-int32_t sscanf( const char *buffer, const char *fmt, ... )
+int sscanf( const char *buffer, const char *fmt, ... )
 {
-	int32_t	cmd;
-	int32_t	**arg;
-	int32_t	count;
+	int	cmd;
+	int	**arg;
+	int	count;
 
-	arg = (int32_t **)&fmt + 1;
+	arg = (int **)&fmt + 1;
 	count = 0;
 
 	while ( *fmt ) {

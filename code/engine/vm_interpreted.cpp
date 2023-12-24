@@ -161,6 +161,7 @@ qboolean VM_PrepareInterpreter2( vm_t *vm, vmHeader_t *header )
 }
 
 
+
 /*
 ==============
 VM_CallInterpreted2
@@ -184,22 +185,19 @@ an OP_ENTER instruction, which will subtract space for
 locals from sp
 ==============
 */
-int VM_CallInterpreted2( vm_t *vm, uint32_t nargs, int32_t *args ) {
+intptr_t VM_CallInterpreted2( vm_t *vm, uint32_t nargs, int32_t *args ) {
 	int32_t	stack[MAX_OPSTACK_SIZE];
 	int32_t	*opStack, *opStackTop;
 	int32_t	programStack;
 	int32_t	stackOnEntry;
 	byte	*image;
 	int32_t	v1, v0;
-	int		dataMask;
+	uintptr_t dataMask;
 	instruction_t *inst, *ci;
 	floatint_t	r0, r1;
-	int		opcode;
+	int32_t	opcode;
 	int32_t	*img;
-	int		i;
-
-	// interpret the code
-	//vm->currentlyInterpreting = qtrue;
+	int32_t	i;
 
 	// we might be called recursively, so this might not be the very top
 	programStack = stackOnEntry = vm->programStack;
@@ -228,14 +226,6 @@ int VM_CallInterpreted2( vm_t *vm, uint32_t nargs, int32_t *args ) {
 	// main interpreter loop, will exit when a LEAVE instruction
 	// grabs the -1 program counter
 
-	if ( img[2] == SGAME_LOADLEVEL ) {
-		Con_Printf( "[opstack]\n"
-					"command: %i\n"
-					"arg0 (img): %i\n"
-					"arg0 (args): %i\n"
-				, img[ 2 ], img[ 3 ], args[ 1 ] );
-	}
-
 	while ( 1 ) {
 
 		r0.i = opStack[0];
@@ -248,11 +238,9 @@ nextInstruction2:
 		ci++;
 
 		switch ( opcode ) {
-
 		case OP_IGNORE:
 			ci += v0;
 			goto nextInstruction2;
-
 		case OP_BREAK:
 			vm->breakCount++;
 			goto nextInstruction2;
@@ -277,7 +265,7 @@ nextInstruction2:
 			// check for leaving the VM
 			if ( v1 == -1 ) {
 				goto done;
-			} else if ( (unsigned)v1 >= vm->instructionCount ) {
+			} else if ( (uint32_t)v1 >= vm->instructionCount ) {
 				N_Error( ERR_DROP, "VM program counter out of range in OP_LEAVE" );
 			}
 			ci = inst + v1;
@@ -285,7 +273,7 @@ nextInstruction2:
 
 		case OP_CALL:
 			// save current program counter
-			*(int *)&image[ programStack ] = ci - inst;
+			*(int32_t *)&image[ programStack ] = ci - inst;
 
 			// jump to the location on the stack
 			if ( r0.i < 0 ) {
@@ -299,7 +287,7 @@ nextInstruction2:
 					// the vm has ints on the stack, we expect
 					// longs so we have to convert it
 					intptr_t argarr[16];
-					int argn;
+					int32_t argn;
 					for ( argn = 0; argn < arraylen( argarr ); ++argn ) {
 						argarr[ argn ] = *(int32_t*)&image[ programStack + 4 + 4*argn ];
 					}
@@ -460,7 +448,7 @@ nextInstruction2:
 			goto nextInstruction2;
 
 		case OP_LOAD2:
-			r0.i = *opStack = *(unsigned short *)&image[ r0.i & dataMask ];
+			r0.i = *opStack = *(uint16_t *)&image[ r0.i & dataMask ];
 			goto nextInstruction2;
 
 		case OP_LOAD4:
@@ -473,12 +461,12 @@ nextInstruction2:
 			break;
 
 		case OP_STORE2:
-			*(short *)&image[ r1.i & dataMask ] = r0.i;
+			*(int16_t *)&image[ r1.i & dataMask ] = r0.i;
 			opStack -= 2;
 			break;
 
 		case OP_STORE4:
-			*(int *)&image[ r1.i & dataMask ] = r0.i;
+			*(int32_t *)&image[ r1.i & dataMask ] = r0.i;
 			opStack -= 2;
 			break;
 
@@ -490,8 +478,8 @@ nextInstruction2:
 
 		case OP_BLOCK_COPY:
 			{
-				int		*src, *dest;
-				int		count, srci, desti;
+				int32_t	 *src, *dest;
+				int32_t	 count, srci, desti;
 
 				count = v0;
 				// MrE: copy range check
@@ -500,8 +488,8 @@ nextInstruction2:
 				count = ((srci + count) & dataMask) - srci;
 				count = ((desti + count) & dataMask) - desti;
 
-				src = (int *)&image[ srci ];
-				dest = (int *)&image[ desti ];
+				src = (int32_t *)&image[ srci ];
+				dest = (int32_t *)&image[ desti ];
 
 				memcpy( dest, src, count );
 				opStack -= 2;
@@ -509,11 +497,11 @@ nextInstruction2:
 			break;
 
 		case OP_SEX8:
-			*opStack = (signed char)*opStack;
+			*opStack = (int8_t)*opStack;
 			break;
 
 		case OP_SEX16:
-			*opStack = (signed short)*opStack;
+			*opStack = (int16_t)*opStack;
 			break;
 
 		case OP_NEGI:
@@ -605,7 +593,7 @@ nextInstruction2:
 			break;
 
 		case OP_CVFI:
-			*opStack = (int) r0.f;
+			*opStack = (int32_t) r0.f;
 			break;
 
 		case MOP_LOCAL_LOAD4:

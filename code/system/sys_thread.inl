@@ -72,41 +72,40 @@ inline uint64_t __stdcall ThreadProc( void *arg )
 inline void *ThreadProc( void *arg )
 #endif
 {
-	threadrun_t *run;
-	
-	run = (threadrun_t *)arg;
-	
+	CThread *thread;
+
+	thread = (CThread *)arg;
+
 	try {
-		run->bInitSuccess = run->pThread->Init();
+		thread->m_bInitSuccess = thread->Init();
 	} catch (...) {
-		throw;
 	}
 	
-	if (!run->bInitSuccess)
+	if (!thread->m_bInitSuccess)
 		return 0;
 	
 #ifdef ALLOW_THREAD_EXCEPTIONS
 	if (!Sys_IsInDebugSession()) {
 		try {
-			run->pThread->m_iResult = run->pThread->Run();
+			thread->m_iResult = thread->Run();
 		} catch (...) {
 		}
 	}
 	else
 #endif
 	{
-		run->pThread->m_iResult = run->pThread->Run();
+		thread->m_iResult = thread->Run();
 	}
 	
-	run->pThread->OnExit();
+	thread->OnExit();
 	
-	CThreadAutoLock<CThreadMutex> lock( run->pThread->m_hLock );
+	CThreadAutoLock<CThreadMutex> lock( thread->m_hLock );
 #ifdef _WIN32
-	CloseHandle( run->pThread->m_hThread );
+	CloseHandle( thread->m_hThread );
 	
-	return run->pThread->m_iResult;
+	return thread->m_iResult;
 #else
-	return (void *)(intptr_t)run->pThread->m_iResult;
+	return (void *)(intptr_t)thread->m_iResult;
 #endif
 }
 
@@ -152,11 +151,7 @@ GDR_INLINE bool CThread::Join( uint64_t nTimeout )
 }
 
 GDR_INLINE bool CThread::Start( uint64_t nBytesStack )
-{
-	threadrun_t threadArgs;
-	
-	CThreadAutoLock<CThreadMutex> lock( m_hLock );
-	
+{	
 	if (IsAlive()) {
 		AssertMsg( false, "Tried to create a thread that has already been created!" );
 		return false;
@@ -166,15 +161,12 @@ GDR_INLINE bool CThread::Start( uint64_t nBytesStack )
 		nBytesStack = STACK_SIZE_DEFAULT;
 	}
 	
-	memset( &threadArgs, 0, sizeof(threadArgs) );
-	threadArgs.pThread = this;
-	
 #ifdef _WIN32
 	m_hThread = (HANDLE)CreateThread(
 		NULL,
 		nBytesStack,
 		(LPTHREAD_START_ROUTINE)GetThreadProc(),
-		&threadArgs,
+		this,
 		0,
 		NULL);
 	
@@ -183,7 +175,7 @@ GDR_INLINE bool CThread::Start( uint64_t nBytesStack )
 	}
 #elif defined(POSIX)
 	pthread_attr_setstacksize( &m_hAttrib, nBytesStack );
-	if (pthread_create( &m_ThreadId, &m_hAttrib, (void *(*)(void *))GetThreadProc(), &threadArgs ) != 0) {
+	if (pthread_create( &m_ThreadId, &m_hAttrib, (void *(*)(void *))GetThreadProc(), this ) != 0) {
 		N_Error( ERR_DROP, "CThread::Run: pthread_create failed, error: %s", strerror(errno) );
 	}
 #endif

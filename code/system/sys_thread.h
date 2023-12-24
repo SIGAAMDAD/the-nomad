@@ -357,7 +357,9 @@ protected:
 #endif
 	
 	virtual ThreadProc_t GetThreadProc( void );
+
 	CThreadMutex m_hLock;
+	bool m_bInitSuccess;
 private:
 #ifdef _WIN32
 	HANDLE m_hThread;

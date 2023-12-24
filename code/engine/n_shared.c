@@ -493,7 +493,11 @@ int N_vsnprintf( char *str, size_t size, const char *format, va_list ap )
 {
 	int retval;
 	
+#ifndef Q3_VM
 	retval = _vsnprintf( str, size, format, ap );
+#else
+	retval = vsprintf( str, format, ap );
+#endif
 
 	if ( retval < 0 || (size_t)retval == size ) {
 		// Microsoft doesn't adhere to the C99 standard of vsnprintf,

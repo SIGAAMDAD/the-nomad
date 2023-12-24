@@ -41,10 +41,10 @@ typedef struct {
     mapcheckpoint_t checkpoints[MAX_MAP_CHECKPOINTS];
 
     char name[MAX_GDR_PATH];
-    uint32_t width;
-    uint32_t height;
-    uint32_t numSpawns;
-    uint32_t numCheckpoints;
+    int32_t width;
+    int32_t height;
+    int32_t numSpawns;
+    int32_t numCheckpoints;
 } mapinfo_t;
 
 enum
@@ -74,7 +74,7 @@ struct vmRefImport_s
 
     void (*Sys_SnapVector)( float *v );
 
-    int (*G_LoadMap)( int32_t levelIndex, mapinfo_t *info, uint32_t *soundBits, linkEntity_t *activeEnts );
+    int (*G_LoadMap)( int32_t levelIndex, mapinfo_t *info, int32_t *soundBits, linkEntity_t *activeEnts );
     void (*G_CastRay)( ray_t *ray );
     void (*G_SoundRecursive)( int32_t width, int32_t height, float volume, const vec3_t origin );
     qboolean (*trap_CheckWallHit)( const vec3_t origin, dirtype_t dir );
@@ -83,7 +83,7 @@ struct vmRefImport_s
 
     int (*trap_Milliseconds)( void );
 
-    void (*trap_Key_SetCatcher)( uint32_t catcher );
+    void (*trap_Key_SetCatcher)( int32_t catcher );
     uint32_t (*trap_Key_GetCatcher)( void );
     uint32_t (*trap_Key_GetKey)( const char *key );
     void (*trap_Key_ClearStates)( void );
@@ -128,6 +128,37 @@ struct vmRefImport_s
     uint32_t (*FS_FileLength)( file_t file, handleOwner_t owner );
     uint32_t (*FS_GetFileList)( const char *path, const char *extension, char *listbuf, uint32_t bufsize );
 
+    int (*ImGui_BeginWindow)( const char *pLabel, byte *pOpen, ImGuiWindowFlags windowFlags );
+    int (*ImGui_BeginPopupModal)( const char *pName, ImGuiWindowFlags flags );
+    int (*ImGui_IsWindowCollapsed)( void );
+    int (*ImGui_BeginMenu)( const char *pLabel );
+    int (*ImGui_MenuItem)( const char *pLabel, const char *pShortcut, byte bUsed );
+    int (*ImGui_BeginTable)( const char *pLabel, uint32_t nColumns );
+    int (*ImGui_InputText)( const char *pLabel, char *pBuffer, size_t nBufSize, ImGuiInputTextFlags flags );
+    int (*ImGui_InputTextMultiline)( const char *pLabel, char *pBuffer, size_t nBufSize, ImGuiInputTextFlags flags );
+    int (*ImGui_InputTextWithHint)( const char *pLabel, const char *pHint, char *pBuffer, size_t nBufSize, ImGuiInputTextFlags flags );
+    int (*ImGui_InputFloat)( const char *pLabel, float *pData );
+    int (*ImGui_InputFloat2)( const char *pLabel, vec2_t pData );
+    int (*ImGui_InputFloat3)( const char *pLabel, vec3_t pData );
+    int (*ImGui_InputFloat4)( const char *pLabel, vec4_t pData );
+    int (*ImGui_InputInt)( const char *pLabel, int32_t *pData );
+    int (*ImGui_InputInt2)( const char *pLabel, ivec2_t pData );
+    int (*ImGui_InputInt3)( const char *pLabel, ivec3_t pData );
+    int (*ImGui_InputInt4)( const char *pLabel, ivec4_t pData );
+    int (*ImGui_SliderFloat)( const char *pLabel, float *pData, float nMax, float nMin );
+    int (*ImGui_SliderFloat2)( const char *pLabel, vec2_t pData, float nMax, float nMin );
+    int (*ImGui_SliderFloat3)( const char *pLabel, vec3_t pData, float nMax, float nMin );
+    int (*ImGui_SliderFloat4)( const char *pLabel, vec4_t pData, float nMax, float nMin );
+    int (*ImGui_SliderInt)( const char *pLabel, int32_t *pData, int32_t nMax, int32_t nMin );
+    int (*ImGui_SliderInt2)( const char *pLabel, ivec2_t pData, int32_t nMax, int32_t nMin );
+    int (*ImGui_SliderInt3)( const char *pLabel, ivec3_t pData, int32_t nMax, int32_t nMin );
+    int (*ImGui_SliderInt4)( const char *pLabel, ivec4_t pData, int32_t nMax, int32_t nMin );
+    int (*ImGui_ColorEdit3)( const char *pLabel, vec3_t pColor, ImGuiColorEditFlags flags );
+    int (*ImGui_ColorEdit4)( const char *pLabel, vec4_t pColor, ImGuiColorEditFlags flags );
+    int (*ImGui_ArrowButton)( const char *pLabel, ImGuiDir dir );
+    int (*ImGui_Checkbox)( const char *pLabel, byte *bPressed );
+    int (*ImGui_Button)( const char *pLabel );
+    float (*ImGui_GetFontScale)( void );
     void (*ImGui_EndWindow)( void );
     void (*ImGui_SetWindowCollapsed)( int bCollapsed );
     void (*ImGui_SetWindowPos)( float x, float y );
@@ -144,47 +175,16 @@ struct vmRefImport_s
     void (*ImGui_GetCursorScreenPos)( float *x, float *y );
     void (*ImGui_PushColor)( ImGuiCol index, const vec4_t color );
     void (*ImGui_PopColor)( void );
+    void (*ImGui_SameLine)( float offsetFromStartX );
     void (*ImGui_NewLine)( void );
+    void (*ImGui_TextUnformatted)( const char *pText );
+    void (*ImGui_ColoredTextUnformatted)( const vec4_t pColor, const char *pText );
     void (*ImGui_SeparatorText)( const char *pText );
     void (*ImGui_Separator)( void );
     void (*ImGui_ProgressBar)( float fraction );
-    void (*ImGui_TextUnformatted)( const char *pText );
-    void (*ImGui_ColoredTextUnformatted)( const vec4_t pColor, const char *pText );
     void (*ImGui_OpenPopup)( const char *pName );
     void (*ImGui_CloseCurrentPopup)( void );
     void (*ImGui_EndPopup)( void );
-    void (*ImGui_SameLine)( float offset_from_x );
-    float (*ImGui_GetFontScale)( void );
-    int (*ImGui_BeginPopupModal)( const char *pName, ImGuiWindowFlags flags );
-    int (*ImGui_InputText)( ImGuiInputText *pInput );
-    int (*ImGui_InputTextMultiline)( ImGuiInputText *pInput );
-    int (*ImGui_InputTextWithHint)( ImGuiInputTextWithHint *pInput );
-    int (*ImGui_InputFloat)( ImGuiInputFloat *pInput );
-    int (*ImGui_InputFloat2)( ImGuiInputFloat2 *pInput );
-    int (*ImGui_InputFloat3)( ImGuiInputFloat3 *pInput );
-    int (*ImGui_InputFloat4)( ImGuiInputFloat4 *pInput );
-    int (*ImGui_InputInt)( ImGuiInputInt *pInput );
-    int (*ImGui_InputInt2)( ImGuiInputInt2 *pInput );
-    int (*ImGui_InputInt3)( ImGuiInputInt3 *pInput );
-    int (*ImGui_InputInt4)( ImGuiInputInt4 *pInput );
-    int (*ImGui_SliderFloat)( ImGuiSliderFloat *pSlider );
-    int (*ImGui_SliderFloat2)( ImGuiSliderFloat2 *pSlider );
-    int (*ImGui_SliderFloat3)( ImGuiSliderFloat3 *pSlider );
-    int (*ImGui_SliderFloat4)( ImGuiSliderFloat4 *pSlider );
-    int (*ImGui_SliderInt)( ImGuiSliderInt *pSlider );
-    int (*ImGui_SliderInt2)( ImGuiSliderInt2 *pSlider );
-    int (*ImGui_SliderInt3)( ImGuiSliderInt3 *pSlider );
-    int (*ImGui_SliderInt4)( ImGuiSliderInt4 *pSlider );
-    int (*ImGui_ColorEdit3)( ImGuiColorEdit3 *pEdit );
-    int (*ImGui_ColorEdit4)( ImGuiColorEdit4 *pEdit );
-    int (*ImGui_ArrowButton)( const char *pLabel, ImGuiDir dir );
-    int (*ImGui_Checkbox)( ImGuiCheckbox *pCheckbox );
-    int (*ImGui_Button)( const char *pLabel );
-    int (*ImGui_IsWindowCollapsed)( void );
-    int (*ImGui_MenuItem)( ImGuiMenuItem *pItem );
-    int (*ImGui_BeginWindow)( ImGuiWindow *pWindow );
-    int (*ImGui_BeginTable)( const char *pLabel, uint32_t nColumns );
-    int (*ImGui_BeginMenu)( const char *pLabel );
 };
 #endif
 
@@ -368,7 +368,7 @@ void G_InitDisplay(gpuConfig_t *config);
 SDL_Window *G_GetSDLWindow(void);
 SDL_GLContext G_GetGLContext( void );
 void GLimp_Minimize( void );
-int32_t G_LoadMap( int32_t index, mapinfo_t *info, uint32_t *soundBits, linkEntity_t *activeEnts );
+int32_t G_LoadMap( int32_t index, mapinfo_t *info, int32_t *soundBits, linkEntity_t *activeEnts );
 qboolean G_CheckPaused( void );
 qboolean G_CheckWallHit( const vec3_t origin, dirtype_t dir );
 void G_SetCameraData( const vec2_t origin, float zoom, float rotation );

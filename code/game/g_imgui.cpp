@@ -90,10 +90,8 @@ void ImGui_EndPopup( void ) {
     ImGui::EndPopup();
 }
 
-int ImGui_BeginWindow( ImGuiWindow *pWindow )
+int ImGui_BeginWindow( const char *pLabel, byte *pOpen, ImGuiWindowFlags flags )
 {
-    bool bOpen, bResult;
-
     if ( !ImGui_IsValid() ) {
         return false;
     }
@@ -103,13 +101,8 @@ int ImGui_BeginWindow( ImGuiWindow *pWindow )
     }
 
     imgui.m_bWindowOpen = true;
-    bOpen = true;
 
-    bResult = ImGui::Begin( pWindow->m_pTitle, pWindow->m_bClosable ? &bOpen : NULL, pWindow->m_Flags );
-
-    pWindow->m_bOpen = bOpen;
-
-    return bResult;
+    return ImGui::Begin( pLabel, (bool *)pOpen, flags );
 }
 
 void ImGui_EndWindow( void )
@@ -173,30 +166,14 @@ void ImGui_EndMenu( void ) {
     ImGui::EndMenu();
 }
 
-int ImGui_MenuItem( ImGuiMenuItem *pItem ) {
+int ImGui_MenuItem( const char *pLabel, const char *pShortcut, byte bUsed ) {
     if ( !ImGui_IsValid() ) {
         return false;
     }
     if (!imgui.m_bMenuOpen) {
         N_Error( ERR_DROP, "%s: no menu active", __func__ );
     }
-    return (pItem->m_bUsed = ImGui::MenuItem( pItem->m_pLabel, pItem->m_pShortcut ));
-}
-
-int ImGui_InputText( ImGuiInputText *pInput )
-{
-    if ( !ImGui_IsValid() ) {
-        return false;
-    }
-    if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackEdit
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackHistory
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackResize) {
-        N_Error( ERR_DROP, "%s: callbacks aren't allowed for vm modules", __func__ );
-    }
-    return (pInput->m_bUsed = ImGui::InputText( pInput->m_pLabel, pInput->m_Data, sizeof(pInput->m_Data), pInput->m_Flags ));
+    return ImGui::MenuItem( pLabel, pShortcut, (bool *)NULL, (bool)bUsed );
 }
 
 int ImGui_IsWindowCollapsed( void ) {
@@ -259,234 +236,220 @@ void ImGui_SetItemTooltip( const char *pTooltip )
     }
 }
 
-int ImGui_InputTextMultiline( ImGuiInputText *pInput ) {
+int ImGui_InputText( const char *pLabel, char *pBuffer, size_t nBufSize, ImGuiInputTextFlags flags )
+{
     if ( !ImGui_IsValid() ) {
         return false;
     }
-    if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackEdit
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackHistory
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackResize) {
+    else if ( flags & ImGuiInputTextFlags_CallbackAlways
+        || flags & ImGuiInputTextFlags_CallbackCharFilter
+        || flags & ImGuiInputTextFlags_CallbackCompletion
+        || flags & ImGuiInputTextFlags_CallbackEdit
+        || flags & ImGuiInputTextFlags_CallbackHistory
+        || flags & ImGuiInputTextFlags_CallbackResize )
+    {
         N_Error( ERR_DROP, "%s: callbacks aren't allowed for vm modules", __func__ );
     }
 
-    return (pInput->m_bUsed = ImGui::InputTextMultiline( pInput->m_pLabel, pInput->m_Data, sizeof(pInput->m_Data), ImVec2( 0, 0 ), pInput->m_Flags ));
+    return ImGui::InputText( pLabel, pBuffer, nBufSize, flags );
 }
 
-int ImGui_InputTextWithHint( ImGuiInputTextWithHint *pInput ) {
+int ImGui_InputTextMultiline( const char *pLabel, char *pBuffer, size_t nBufSize, ImGuiInputTextFlags flags )
+{
     if ( !ImGui_IsValid() ) {
         return false;
     }
-    if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackEdit
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackHistory
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackResize) {
+    else if ( flags & ImGuiInputTextFlags_CallbackAlways
+        || flags & ImGuiInputTextFlags_CallbackCharFilter
+        || flags & ImGuiInputTextFlags_CallbackCompletion
+        || flags & ImGuiInputTextFlags_CallbackEdit
+        || flags & ImGuiInputTextFlags_CallbackHistory
+        || flags & ImGuiInputTextFlags_CallbackResize )
+    {
         N_Error( ERR_DROP, "%s: callbacks aren't allowed for vm modules", __func__ );
     }
 
-    return (pInput->m_bUsed = ImGui::InputTextWithHint( pInput->m_pLabel, pInput->m_pHint, pInput->m_Data, sizeof(pInput->m_Data), pInput->m_Flags ));
+    return ImGui::InputTextMultiline( pLabel, pBuffer, nBufSize, ImVec2( 0, 0 ), flags );
 }
 
-int ImGui_InputFloat( ImGuiInputFloat *pInput ) {
+int ImGui_InputTextWithHint( const char *pLabel, const char *pHint, char *pBuffer, size_t nBufSize, ImGuiInputTextFlags flags )
+{
     if ( !ImGui_IsValid() ) {
         return false;
     }
-    if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackEdit
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackHistory
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackResize) {
+    else if ( flags & ImGuiInputTextFlags_CallbackAlways
+        || flags & ImGuiInputTextFlags_CallbackCharFilter
+        || flags & ImGuiInputTextFlags_CallbackCompletion
+        || flags & ImGuiInputTextFlags_CallbackEdit
+        || flags & ImGuiInputTextFlags_CallbackHistory
+        || flags & ImGuiInputTextFlags_CallbackResize )
+    {
         N_Error( ERR_DROP, "%s: callbacks aren't allowed for vm modules", __func__ );
     }
 
-    return (pInput->m_bUsed = ImGui::InputFloat( pInput->m_pLabel, &pInput->m_Data, 0.0f, 0.0f, "%.3f", pInput->m_Flags ));
+    return ImGui::InputTextWithHint( pLabel, pHint, pBuffer, nBufSize, flags );
 }
 
-int ImGui_InputFloat2( ImGuiInputFloat2 *pInput ) {
+int ImGui_InputFloat( const char *pLabel, float *pData )
+{
     if ( !ImGui_IsValid() ) {
         return false;
     }
-    if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackEdit
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackHistory
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackResize) {
-        N_Error( ERR_DROP, "%s: callbacks aren't allowed for vm modules", __func__ );
-    }
 
-    return (pInput->m_bUsed = ImGui::InputFloat2( pInput->m_pLabel, pInput->m_Data, "%.3f", pInput->m_Flags ));
+    return ImGui::InputFloat( pLabel, pData );
 }
 
-int ImGui_InputFloat3( ImGuiInputFloat3 *pInput ) {
+int ImGui_InputFloat2( const char *pLabel, vec2_t pData )
+{
     if ( !ImGui_IsValid() ) {
         return false;
     }
-    if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackEdit
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackHistory
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackResize) {
-        N_Error( ERR_DROP, "%s: callbacks aren't allowed for vm modules", __func__ );
-    }
 
-    return (pInput->m_bUsed = ImGui::InputFloat3( pInput->m_pLabel, pInput->m_Data, "%.3f", pInput->m_Flags ));
+    return ImGui::InputFloat2( pLabel, pData );
 }
 
-int ImGui_InputFloat4( ImGuiInputFloat4 *pInput ) {
+int ImGui_InputFloat3( const char *pLabel, vec3_t pData )
+{
     if ( !ImGui_IsValid() ) {
         return false;
     }
-    if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackEdit
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackHistory
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackResize) {
-        N_Error( ERR_DROP, "%s: callbacks aren't allowed for vm modules", __func__ );
-    }
 
-    return (pInput->m_bUsed = ImGui::InputFloat4( pInput->m_pLabel, pInput->m_Data, "%.3f", pInput->m_Flags ));
+    return ImGui::InputFloat3( pLabel, pData );
 }
 
-int ImGui_InputInt( ImGuiInputInt *pInput ) {
+int ImGui_InputFloat4( const char *pLabel, vec4_t pData )
+{
     if ( !ImGui_IsValid() ) {
         return false;
     }
-    if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackEdit
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackHistory
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackResize) {
-        N_Error( ERR_DROP, "%s: callbacks aren't allowed for vm modules", __func__ );
-    }
 
-    return (pInput->m_bUsed = ImGui::InputInt( pInput->m_pLabel, &pInput->m_Data, 1, 100, pInput->m_Flags ));
+    return ImGui::InputFloat4( pLabel, pData );
 }
 
-int ImGui_InputInt2( ImGuiInputInt2 *pInput ) {
+int ImGui_InputInt( const char *pLabel, int32_t *pData )
+{
     if ( !ImGui_IsValid() ) {
         return false;
     }
-    if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackEdit
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackHistory
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackResize) {
-        N_Error( ERR_DROP, "%s: callbacks aren't allowed for vm modules", __func__ );
-    }
 
-    return (pInput->m_bUsed = ImGui::InputInt2( pInput->m_pLabel, pInput->m_Data, pInput->m_Flags ));
+    return ImGui::InputInt( pLabel, pData );
 }
 
-int ImGui_InputInt3( ImGuiInputInt3 *pInput ) {
+int ImGui_InputInt2( const char *pLabel, ivec2_t pData )
+{
     if ( !ImGui_IsValid() ) {
         return false;
     }
-    if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackEdit
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackHistory
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackResize) {
-        N_Error( ERR_DROP, "%s: callbacks aren't allowed for vm modules", __func__ );
-    }
 
-    return (pInput->m_bUsed = ImGui::InputInt3( pInput->m_pLabel, pInput->m_Data, pInput->m_Flags ));
+    return ImGui::InputInt2( pLabel, pData );
 }
 
-int ImGui_InputInt4( ImGuiInputInt4 *pInput ) {
+int ImGui_InputInt3( const char *pLabel, ivec3_t pData )
+{
     if ( !ImGui_IsValid() ) {
         return false;
     }
-    if (pInput->m_Flags & ImGuiInputTextFlags_CallbackAlways
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackCharFilter
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackCompletion
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackEdit
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackHistory
-    || pInput->m_Flags & ImGuiInputTextFlags_CallbackResize) {
-        N_Error( ERR_DROP, "%s: callbacks aren't allowed for vm modules", __func__ );
-    }
 
-    return (pInput->m_bUsed = ImGui::InputInt4( pInput->m_pLabel, pInput->m_Data, pInput->m_Flags ));
+    return ImGui::InputInt3( pLabel, pData );
 }
 
-int ImGui_SliderFloat( ImGuiSliderFloat *pSlider ) {
+int ImGui_InputInt4( const char *pLabel, ivec4_t pData )
+{
     if ( !ImGui_IsValid() ) {
         return false;
     }
-    return ImGui::SliderFloat( pSlider->m_pLabel, &pSlider->m_Data, pSlider->m_nMin, pSlider->m_nMax );
+
+    return ImGui::InputInt4( pLabel, pData );
 }
 
-int ImGui_SliderFloat2( ImGuiSliderFloat2 *pSlider ) {
+int ImGui_SliderFloat( const char *pLabel, float *pData, float nMax, float nMin )
+{
     if ( !ImGui_IsValid() ) {
         return false;
     }
-    return ImGui::SliderFloat2( pSlider->m_pLabel, pSlider->m_Data, pSlider->m_nMin, pSlider->m_nMax );
+
+    return ImGui::SliderFloat( pLabel, pData, nMin, nMax );
 }
 
-int ImGui_SliderFloat3( ImGuiSliderFloat3 *pSlider ) {
+int ImGui_SliderFloat2( const char *pLabel, vec2_t pData, float nMax, float nMin )
+{
     if ( !ImGui_IsValid() ) {
         return false;
     }
-    return ImGui::SliderFloat3( pSlider->m_pLabel, pSlider->m_Data, pSlider->m_nMin, pSlider->m_nMax );
+
+    return ImGui::SliderFloat2( pLabel, pData, nMin, nMax );
 }
 
-int ImGui_SliderFloat4( ImGuiSliderFloat4 *pSlider ) {
+int ImGui_SliderFloat3( const char *pLabel, vec3_t pData, float nMax, float nMin )
+{
     if ( !ImGui_IsValid() ) {
         return false;
     }
-    return ImGui::SliderFloat4( pSlider->m_pLabel, pSlider->m_Data, pSlider->m_nMin, pSlider->m_nMax );
+
+    return ImGui::SliderFloat3( pLabel, pData, nMin, nMax );
 }
 
-int ImGui_SliderInt( ImGuiSliderInt *pSlider ) {
+int ImGui_SliderFloat4( const char *pLabel, vec4_t pData, float nMax, float nMin )
+{
     if ( !ImGui_IsValid() ) {
         return false;
     }
-    return ImGui::SliderInt( pSlider->m_pLabel, &pSlider->m_Data, pSlider->m_nMin, pSlider->m_nMax );
+
+    return ImGui::SliderFloat4( pLabel, pData, nMin, nMax );
 }
 
-int ImGui_SliderInt2( ImGuiSliderInt2 *pSlider ) {
+int ImGui_SliderInt( const char *pLabel, int32_t *pData, int32_t nMax, int32_t nMin )
+{
     if ( !ImGui_IsValid() ) {
         return false;
     }
-    return ImGui::SliderInt2( pSlider->m_pLabel, pSlider->m_Data, pSlider->m_nMin, pSlider->m_nMax );
+
+    return ImGui::SliderInt( pLabel, pData, nMin, nMax );
 }
 
-int ImGui_SliderInt3( ImGuiSliderInt3 *pSlider ) {
+int ImGui_SliderInt2( const char *pLabel, ivec2_t pData, int32_t nMax, int32_t nMin )
+{
     if ( !ImGui_IsValid() ) {
         return false;
     }
-    return ImGui::SliderInt3( pSlider->m_pLabel, pSlider->m_Data, pSlider->m_nMin, pSlider->m_nMax );
+
+    return ImGui::SliderInt2( pLabel, pData, nMin, nMax );
 }
 
-int ImGui_SliderInt4( ImGuiSliderInt4 *pSlider ) {
+int ImGui_SliderInt3( const char *pLabel, ivec3_t pData, int32_t nMax, int32_t nMin )
+{
     if ( !ImGui_IsValid() ) {
         return false;
     }
-    return ImGui::SliderInt4( pSlider->m_pLabel, pSlider->m_Data, pSlider->m_nMin, pSlider->m_nMax );
+
+    return ImGui::SliderInt3( pLabel, pData, nMin, nMax );
 }
 
-int ImGui_ColorEdit3( ImGuiColorEdit3 *pEdit ) {
+int ImGui_SliderInt4( const char *pLabel, ivec4_t pData, int32_t nMax, int32_t nMin )
+{
     if ( !ImGui_IsValid() ) {
         return false;
     }
-    return ImGui::ColorEdit3( pEdit->m_pLabel, pEdit->m_pColor, pEdit->m_Flags );
+
+    return ImGui::SliderInt4( pLabel, pData, nMin, nMax );
 }
 
-int ImGui_ColorEdit4( ImGuiColorEdit4 *pEdit ) {
+int ImGui_ColorEdit3( const char *pLabel, vec3_t pColor, ImGuiColorEditFlags flags )
+{
     if ( !ImGui_IsValid() ) {
         return false;
     }
-    return ImGui::ColorEdit4( pEdit->m_pLabel, pEdit->m_pColor, pEdit->m_Flags );
+
+    return ImGui::ColorEdit3( pLabel, pColor, flags );
+}
+
+int ImGui_ColorEdit4( const char *pLabel, vec4_t pColor, ImGuiColorEditFlags flags )
+{
+    if ( !ImGui_IsValid() ) {
+        return false;
+    }
+
+    return ImGui::ColorEdit4( pLabel, pColor, flags );
 }
 
 int ImGui_ArrowButton( const char *pLabel, ImGuiDir dir ) {
@@ -496,14 +459,12 @@ int ImGui_ArrowButton( const char *pLabel, ImGuiDir dir ) {
     return ImGui::ArrowButton( pLabel, dir );
 }
 
-int ImGui_Checkbox( ImGuiCheckbox *pCheckbox ) {
+int ImGui_Checkbox( const char *pLabel, byte *pPressed ) {
     if ( !ImGui_IsValid() ) {
         return false;
     }
 
-    bool bPressed = pCheckbox->m_bPressed;
-    pCheckbox->m_bPressed = ImGui::Checkbox( pCheckbox->m_pLabel, &bPressed );
-    return pCheckbox->m_bPressed;
+    return ImGui::Checkbox( pLabel, (bool *)pPressed );
 }
 
 int ImGui_Button( const char *pLabel ) {

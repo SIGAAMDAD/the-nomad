@@ -596,7 +596,7 @@ static shader_t *GeneratePermanentShader( void )
     shader_t *newShader;
     uint64_t size, hash;
 
-    newShader = ri.Hunk_Alloc(sizeof(shader_t), h_low);
+    newShader = ri.Malloc( sizeof(shader_t) );
 
     *newShader = shader;
 
@@ -613,7 +613,7 @@ static shader_t *GeneratePermanentShader( void )
 			break;
 		}
 
-		newShader->stages[i] = ri.Hunk_Alloc(sizeof(stages[i]), h_low);
+		newShader->stages[i] = ri.Malloc( sizeof(stages[i]) );
 		*newShader->stages[i] = stages[i];
 	}
 
@@ -1181,7 +1181,7 @@ static void ScanAndLoadShaderFiles( void )
 	sum += loadShaderBuffers( shaderFiles, numShaderFiles, buffers );
 
 	// build single large buffer
-	r_shaderText = ri.Hunk_Alloc( sum + numShaderFiles*2 + 1, h_low );
+	r_shaderText = ri.Malloc( sum + numShaderFiles*2 + 1 );
 	memset(r_shaderText, 0, sum + numShaderFiles*2);
 
 	textEnd = r_shaderText;
@@ -1223,7 +1223,7 @@ static void ScanAndLoadShaderFiles( void )
 
 	size += MAX_SHADERTEXT_HASH;
 
-	hashMem = ri.Hunk_Alloc( size * sizeof(char *), h_low );
+	hashMem = ri.Malloc( size * sizeof(char *) );
 
 	for (i = 0; i < MAX_SHADERTEXT_HASH; i++) {
 		shaderTextHashTable[i] = (const char **) hashMem;

@@ -15,7 +15,7 @@ const mobj_t mobinfo[NUMMOBS] = {
     { NULL, NULL, MT_GRUNT, 26, 10, 0 },
 };
 
-const uint32_t ammoCaps[NUMAMMOTYPES] = {
+const int ammoCaps[NUMAMMOTYPES] = {
     25, // AM_SHELL
     50, // AM_BULLET
     10, // AM_ROCKET

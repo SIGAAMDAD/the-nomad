@@ -27,24 +27,22 @@ typedef enum {
 #define PMF_SLIDING         (unsigned)0x0002
 #define PMF_JUMP_HELD       (unsigned)0x0004
 #define PMF_BACKWARDS_JUMP  (unsigned)0x0008
-#define PMOVE_MAXSPEED 80
+#define PMOVE_MAXSPEED 10
 
 typedef struct {
-    vec3_t vel;
-	vec3_t cameraPos;
+	vec3_t vel;
 	vec3_t grapplePoint;
-	vec3_t forward, right;
-	float addspeed;
-    float speed;
+	float forward, backward, right, left;
+	qboolean rightmove;
+	qboolean leftmove;
+	qboolean backwardmove;
+	qboolean forwardmove;
 	int waterlevel;
 	int velDir;
 	int velDirInverse;
 	int frametime;
-	int rightmove;
-	int upmove;
-	int forwardmove;
 	int wallTime;
-	uint32_t flags;
+	int flags;
 	dirtype_t movementDir;
 	qboolean wallHook;
 	qboolean groundPlane;
@@ -53,7 +51,7 @@ typedef struct {
 
 qboolean P_GiveWeapon( weapontype_t type )
 {
-    uint32_t slot;
+    int slot;
 
     switch (type) {
     case WT_SHOTTY_3B_PUMP:
@@ -82,9 +80,8 @@ qboolean P_GiveWeapon( weapontype_t type )
     return qtrue;
 }
 
-static uint32_t key_dash;
-static uint32_t key_melee;
-float pm_friction = 0.045f;
+static int key_dash;
+static int key_melee;
 
 static void P_SetLegsAnim( int anim )
 {
@@ -94,14 +91,31 @@ static void P_SetLegsAnim( int anim )
 static void PM_Friction( pmove_t *pm )
 {
 	float speed;
+	vec3_t v;
 
-	speed = VectorLength( pm->vel );
+	VectorCopy( v, pm->vel );
+
+	speed = VectorLength( v );
 	if ( speed <= 0.0f ) {
 		return;
 	}
 
-	pm->vel[0] = MAX( 0, pm->vel[0] - pm_friction );
-	pm->vel[1] = MAX( 0, pm->vel[1] - pm_friction );
+	if ( pm->vel[0] < 0 ) {
+		pm->vel[0] = MIN( 0, pm->vel[0] + pm_groundFriction.f );
+	} else if ( pm->vel[0] > 0 ) {
+		pm->vel[0] = MAX( 0, pm->vel[0] - pm_groundFriction.f );
+	}
+
+	if ( pm->vel[1] < 0 ) {
+		pm->vel[1] = MIN( 0, pm->vel[1] + pm_groundFriction.f );
+	} else if ( pm->vel[0] > 0 ) {
+		pm->vel[1] = MAX( 0, pm->vel[1] - pm_groundFriction.f );
+	}
+
+	pm->forward = MAX( 0, pm->forward - pm_groundFriction.f );
+	pm->backward = MAX( 0, pm->backward - pm_groundFriction.f );
+	pm->left = MAX( 0, pm->left - pm_groundFriction.f );
+	pm->right = MAX( 0, pm->right - pm_groundFriction.f );
 }
 
 static void PM_Accelerate( vec3_t wishdir, float wishspeed, float accel, pmove_t *pm )
@@ -124,222 +138,28 @@ static void PM_Accelerate( vec3_t wishdir, float wishspeed, float accel, pmove_t
 	}
 }
 
-static void PM_ClipVelocity( vec3_t vel )
+static void PM_ClipVelocity( vec3_t vel, float *forward, float *left, float *right, float *backward )
 {
-	vel[0] = MIN( vel[0], PMOVE_MAXSPEED );
-	vel[1] = MIN( vel[1], PMOVE_MAXSPEED );
-}
-
-static float PM_CmdScale( pmove_t *pm )
-{
-	int max;
-	float total, scale;
-	
-	max = abs( pm->forwardmove );
-	if ( abs( pm->rightmove ) > max ) {
-		max = abs( pm->rightmove );
-	}
-	if ( abs( pm->upmove ) > max ) {
-		max = abs( pm->upmove );
-	}
-	if ( !max ) {
-		return 0;
-	}
-	
-	total = sqrt( pm->forwardmove * pm->forwardmove + pm->rightmove * pm->rightmove + pm->upmove * pm->upmove );
-	scale = (float)pm->speed * max / ( 127.0f * total );
-	
-	return scale;
-}
-
-static void PM_AirMove( pmove_t *pm )
-{
-	int i;
-	vec3_t wishvel;
-	float fmove, smove;
-	vec3_t wishdir;
-	float wishspeed;
-	float scale;
-	
-	PM_Friction( pm );
-	
-	fmove = pm->forwardmove;
-	smove = pm->rightmove;
-	
-	scale = PM_CmdScale( pm );
-	
-	for ( i = 0; i < 2; i++ ) {
-		wishvel[i] = pm->forward[i]*fmove + pm->right[i]*smove;
-	}
-	
-	VectorCopy( wishdir, wishvel );
-	wishspeed = VectorNormalize( wishdir );
-	wishspeed *= scale;
-	
-	// not on ground, so have a little effect on velocity
-	PM_Accelerate( wishdir, wishspeed, pm_airAccel.f, pm );
-}
-
-static void PM_GrappleMove( pmove_t *pm )
-{
-	vec3_t vel, v;
-	float vlen;
-	
-	VectorScale( pm->forward, -16, v );
-	VectorAdd( pm->grapplePoint, v, v );
-	VectorSubtract( v, sg.playr.ent->origin, vel );
-	vlen = VectorLength( vel );
-	VectorNormalize( vel );
-	
-	if ( vlen <= 100 ) {
-		VectorScale( vel, 10 * vlen, vel );
-	} else {
-		VectorScale( vel, 800, vel );
-	}
-	
-	VectorCopy( vel, pm->vel );
-	
-	pm->groundPlane = qfalse;
-}
-
-static void PM_WallJumpAccel( pmove_t *pm )
-{
-	if ( pm->wallTime == 1 ) {
-		pm->vel[pm->velDir] = MAX( pm->vel[pm->velDir], 8 );
-		pm->vel[2] += 0.75f; // add a bit of height
-	}
-}
-
-static qboolean PM_CheckJump( pmove_t *pm )
-{
-	if ( pm->upmove < 10 ) {
-		// not holding jump
-		return qfalse;
-	}
-	
-	// must wait for jump to be released
-	if ( pm->flags & PMF_JUMP_HELD ) {
-		// clear upmove to cmdscale doesn't lower running speed
-		pm->upmove = 0;
-		return qfalse;
-	}
-	
-	if ( pm->wallTime == 1 ) { // we were on the wall for just a single tic, wall bounce
-		
-	} else if ( pm->wallTime > 1 ) { // we were wall running, scale up the vel
-		pm->vel[0] = pm->vel[0] + pm_wallrunAccelMove.f;
-		pm->vel[1] = pm->vel[1] + pm_wallrunAccelMove.f;
-		pm->vel[2] = pm->vel[2] + pm_wallrunAccelVertical.f;
-	}
-	
-	pm->groundPlane = qfalse; // jumping away
-	pm->walking = qfalse;
-	pm->flags |= PMF_JUMP_HELD;
-	
-	pm->vel[2] = JUMP_VELOCITY;
-	
-	if ( pm->forwardmove >= 0 ) {
-		P_SetLegsAnim( LEGS_JUMP );
-		pm->flags &= ~PMF_BACKWARDS_JUMP;
-	} else {
-		P_SetLegsAnim( LEGS_JUMPB );
-		pm->flags |= PMF_BACKWARDS_JUMP;
-	}
-	
-	return qtrue;
-}
-
-static qboolean PM_CheckWaterJump( pmove_t *pm )
-{
-	vec3_t spot;
-	int cont;
-	vec3_t flatforward;
-	
-	if ( pm->waterlevel != 2 ) {
-		return qfalse;
-	}
-	
-	
-	
-	return qtrue;
-}
-
-static void PM_WallMove( pmove_t *pm )
-{
-	if ( pm->waterlevel ) {
-		
-	}
-	
-	if ( !Ent_CheckWallCollision( sg.playr.ent ) || !pm->groundPlane ) {
-		return; // cannot wall run
-	}
-	
-	if ( pm->wallTime >= pm_wallTime.i ) { // force the player off the wall
-		pm->wallTime = 0;
-		pm->wallHook = qfalse;
-		return;
-	}
-	
-//	pm->vel[0] ; // increase their speed just a bit
-	
-	pm->wallHook = qtrue;
-	pm->wallTime++;
-}
-
-static void PM_WalkMove( pmove_t *pm )
-{
-	int i;
-	vec3_t wishvel;
-	float fmove, smove;
-	vec3_t wishdir;
-	float wishspeed;
-	float scale;
-	float accelerate;
-	float vel;
-
-	if ( PM_CheckJump( pm ) ) {
-		// jumped away
-		PM_AirMove( pm );
+	if ( vel[0] > PMOVE_MAXSPEED ) {
+		vel[0] = PMOVE_MAXSPEED;
+	} else if ( vel[0] < -PMOVE_MAXSPEED ) {
+		vel[0] = -PMOVE_MAXSPEED;
 	}
 
-	PM_Friction( pm );
-
-	fmove = pm->forwardmove;
-	smove = pm->rightmove;
-
-	scale = PM_CmdScale( pm );
-
-	PM_ClipVelocity( pm->forward );
-	PM_ClipVelocity( pm->right );
-
-	VectorNormalize( pm->forward );
-	VectorNormalize( pm->forward );
-
-	for ( i = 0; i < 3; i++ ) {
-		wishvel[i] = pm->forward[i]*fmove + pm->right[i]*smove;
+	if ( vel[1] > PMOVE_MAXSPEED ) {
+		vel[1] = PMOVE_MAXSPEED;
+	} else if ( vel[1] < -PMOVE_MAXSPEED ) {
+		vel[1] = -PMOVE_MAXSPEED;
 	}
 
-	VectorCopy( wishvel, wishdir );
-	wishspeed = VectorNormalize( wishdir );
-	wishspeed *= scale;
-
-	PM_Accelerate( wishdir, wishspeed, accelerate, pm );
-
-	vel = VectorLength( pm->vel );
-
-	PM_ClipVelocity( pm->vel );
-
-	VectorNormalize( pm->vel );
-	VectorScale( pm->vel, vel, pm->vel );
-
-	// don't do anything if standing still
-	if ( !pm->vel[0] && !pm->vel[1] ) {
-		return;
+	if ( vel[2] > 10 ) {
+		vel[2] = 10;
 	}
 
-	pm->speed = vel;
-
-	VectorCopy( sg.playr.ent->vel, pm->vel );
+	*forward = MIN( *forward, PMOVE_MAXSPEED );
+	*backward = MIN( *backward, PMOVE_MAXSPEED );
+	*left = MIN( *left, PMOVE_MAXSPEED );
+	*right = MIN( *right, PMOVE_MAXSPEED );
 }
 
 void P_MeleeThink( sgentity_t *self )
@@ -369,6 +189,7 @@ void P_MeleeThink( sgentity_t *self )
 	}
 }
 
+/*
 static void P_SetMovementDir( pmove_t *pm )
 {
 	if ( pm->rightmove > pm->forwardmove ) {
@@ -399,6 +220,7 @@ static void P_SetMovementDir( pmove_t *pm )
 		pm->movementDir = DIR_WEST;
 	}
 }
+*/
 
 static pmove_t pm;
 
@@ -424,6 +246,10 @@ static qboolean P_ClipOrigin( sgentity_t *self )
 		origin[1] = PMOVE_CLAMP_BORDER_VERT;
 	}
 
+	if ( origin[2] > 10 ) {
+		origin[2] = 10;
+	}
+
 	if ( !VectorCompare( self->origin, origin ) ) { // clip it at map boundaries
 		VectorCopy( self->origin, origin );
 		VectorClear( pm.vel );
@@ -437,38 +263,62 @@ static qboolean P_ClipOrigin( sgentity_t *self )
 	return qfalse;
 }
 
-
 static void Pmove( sgentity_t *self )
 {
 	int i;
+	float tmp;
 
-	VectorAdd( self->origin, pm.vel, self->origin );
+	if ( pm.left > pm.right ) {
+		self->facing = 1;
+	} else if ( pm.right > pm.left ) {
+		self->facing = 0;
+	}
+
+	pm.vel[0] += pm.right;
+	pm.vel[0] -= pm.left;
+
+	pm.vel[1] -= pm.forward;
+	pm.vel[1] += pm.backward;
+
+	pm.backwardmove = pm.backward == 0;
+	pm.forwardmove = pm.forward == 0;
+	pm.leftmove = pm.left == 0;
+	pm.rightmove = pm.right == 0;
+
+	PM_ClipVelocity( pm.vel, &pm.forward, &pm.left, &pm.right, &pm.backward );
 	PM_Friction( &pm );
+
+	x += pm.vel[0];
+	y += pm.vel[1];
 
 	if ( P_ClipOrigin( sg.playr.ent ) ) {
 		VectorClear( pm.vel );
 	}
 
-	sg.cameraPos[0] = self->origin[0];
+	sg.cameraPos[0] = self->origin[0] - ( sg.cameraPos[0] / 2 );
 	sg.cameraPos[1] = -self->origin[1];
 }
 
 void P_Thinker( sgentity_t *self )
 {
 	int i;
-	ImGuiWindow window;
+	float f;
 
 	Pmove( self );
 
-	window.m_bClosable = qfalse;
-	window.m_bOpen = qtrue;
-	window.m_Flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize;
-	window.m_pTitle = "Player Move Metrics";
+	ImGui_BeginWindow( "Player Move Metrics", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize );
 
-	ImGui_BeginWindow( &window );
+	ImGui_Text( "x: %f", x );
+	ImGui_Text( "y: %f", y );
+
+	ImGui_Text( "pm.forward: %f", pm.forward );
+	ImGui_Text( "pm.backward: %f", pm.backward );
+	ImGui_Text( "pm.left: %f", pm.left );
+	ImGui_Text( "pm.right: %f", pm.right );
 
 	for ( i = 0; i < 3; i++ ) {
-		ImGui_Text( "pm.vel[%i]: %f", i, pm.vel[i] );
+		f = pm.vel[i];
+		ImGui_Text( "pm.vel[%i]: %f", i, f );
 	}
 
 	ImGui_EndWindow();
@@ -508,33 +358,21 @@ void SG_InitPlayer( void )
     sg.playrReady = qtrue;
 }
 
-static void SG_KeyDown( uint32_t key )
-{
-	sgentity_t *ent;
-	float add, *velPoint;
-}
-
-void SG_KeyEvent( uint32_t key, qboolean down )
+void SG_KeyEvent( int key, qboolean down )
 {
 	if ( down ) {
 		switch ( key ) {
 		case KEY_W:
-			pm.forwardmove++;
-			pm.vel[1] -= 0.05f;
+			pm.forward += pm_baseSpeed.f * pm_baseAccel.f;
 			break;
 		case KEY_S:
-			pm.forwardmove--;
-			pm.vel[1] += 0.05f;
+			pm.backward += pm_baseSpeed.f * pm_baseAccel.f;
 			break;
 		case KEY_A:
-			pm.rightmove--;
-			pm.vel[0] -= 0.05f;
-			sg.playr.ent->facing = 1;
+			pm.left += pm_baseSpeed.f * pm_baseAccel.f;
 			break;
 		case KEY_D:
-			pm.rightmove++;
-			pm.vel[0] += 0.05f;
-			sg.playr.ent->facing = 0;
+			pm.right += pm_baseSpeed.f * pm_baseAccel.f;
 			break;
 		};
 	}

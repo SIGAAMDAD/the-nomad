@@ -4727,7 +4727,7 @@ __compile:
 	VM_FreeBuffers();
 
 #ifdef VM_X86_MMAP
-	if ( mprotect( vm->codeBase.ptr, vm->codeSize, PROT_READ|PROT_EXEC ) ) {
+	if ( mprotect( vm->codeBase.ptr, vm->codeSize, PROT_READ|PROT_WRITE|PROT_EXEC ) ) {
 		VM_Destroy_Compiled( vm );
 		Con_Printf( COLOR_YELLOW "VM_CompileX86: mprotect failed\n" );
 		return qfalse;

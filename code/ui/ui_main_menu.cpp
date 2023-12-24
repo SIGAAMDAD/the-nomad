@@ -228,7 +228,7 @@ void MainMenu_Cache( void )
 
     menu.menu.Draw = MainMenu_Draw;
 
-    menu.ambience = Snd_RegisterTrack( "music/track00.ogg" );
+    menu.ambience = Snd_RegisterTrack( "music/title.ogg" );
     menu.background0 = re.RegisterShader( "textures/desertbkgd.jpg" );
 
     menu.settingsString = strManager->ValueForKey("MENU_MAIN_SETTINGS");

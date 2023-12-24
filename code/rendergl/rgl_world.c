@@ -13,7 +13,7 @@ static void R_LoadLights(const lump_t *lights)
         ri.Error(ERR_DROP, "RE_LoadWorldMap: funny lump size in %s", r_worldData.name);
     
     count = lights->length / sizeof(*in);
-    out = ri.Hunk_Alloc(count * sizeof(*out), h_low);
+    out = ri.Malloc( sizeof(*out) * count );
 
     r_worldData.lights = out;
     r_worldData.numLights = count;
@@ -31,7 +31,7 @@ static void R_LoadTiles(const lump_t *tiles)
         ri.Error(ERR_DROP, "RE_LoadWorldMap: funny lump size in %s", r_worldData.name);
     
     count = tiles->length / sizeof(*in);
-    out = ri.Hunk_Alloc(count * sizeof(*out), h_low);
+    out = ri.Malloc( sizeof(*out) * count );
 
     r_worldData.tiles = out;
     r_worldData.numTiles = count;
@@ -49,7 +49,7 @@ static void R_LoadCheckpoints(const lump_t *c)
         ri.Error(ERR_DROP, "RE_LoadWorldMap: funny lump size in %s", r_worldData.name);
     
     count = c->length / sizeof(*in);
-    out = ri.Hunk_Alloc(count * sizeof(*out), h_low);
+    out = ri.Malloc( sizeof(*out) * count );
 
     r_worldData.checkpoints = out;
     r_worldData.numCheckpoints = count;
@@ -67,7 +67,7 @@ static void R_LoadSpawns(const lump_t *s)
         ri.Error(ERR_DROP, "RE_LoadWorldMap: funny lump size in %s", r_worldData.name);
     
     count = s->length / sizeof(*in);
-    out = ri.Hunk_Alloc(count * sizeof(*out), h_low);
+    out = ri.Malloc( sizeof(*out) * count );
 
     r_worldData.spawns = out;
     r_worldData.numSpawns = count;
@@ -85,7 +85,7 @@ static void R_LoadTileset(const lump_t *sprites, const tile2d_header_t *theader)
         ri.Error(ERR_DROP, "RE_LoadWorldMap: funny lump size in %s", r_worldData.name);
     
     count = sprites->length / sizeof(*in);
-    out = ri.Hunk_Alloc(count * sizeof(*out), h_low);
+    out = ri.Malloc( sizeof(*out) * count );
 
     r_worldData.sprites = out;
     r_worldData.numTilesetSprites = count;

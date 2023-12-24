@@ -3,13 +3,13 @@
 
 typedef struct
 {
-    uint32_t timeStart;
-    uint32_t timeEnd;
+    int timeStart;
+    int timeEnd;
 
-    uint32_t stylePoints;
+    int stylePoints;
 
-    uint32_t numDeaths;
-    uint32_t numKills;
+    int numDeaths;
+    int numKills;
 } levelstats_t;
 
 typedef struct
@@ -18,7 +18,7 @@ typedef struct
 
     // save data
     levelstats_t stats;
-    uint32_t checkpointIndex;
+    int checkpointIndex;
 } levelinfo_t;
 
 static levelinfo_t level;
@@ -28,7 +28,7 @@ static levelinfo_t level;
 //
 static void SG_SpawnLevelEntities(void)
 {
-    uint32_t i;
+    int i;
     const mapspawn_t *spawn;
 
     spawn = sg.mapInfo.spawns;
@@ -101,13 +101,6 @@ void SG_SaveLevelData( void )
 {
 }
 
-typedef struct
-{
-    ImGuiWindow window;
-} endlevelScreen_t;
-
-static endlevelScreen_t endLevel;
-
 void SG_DrawLevelStats( void )
 {
     float font_scale;
@@ -115,7 +108,7 @@ void SG_DrawLevelStats( void )
 
     font_scale = ImGui_GetFontScale();
 
-    if ( ImGui_BeginWindow( &endLevel.window ) ) {
+    if ( ImGui_BeginWindow( "EndLevel", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar ) ) {
         ImGui_SetWindowFontScale(font_scale * 6);
         ImGui_TextUnformatted("Level Statistics");
         ImGui_SetWindowFontScale(font_scale * 3.5f);
@@ -130,15 +123,7 @@ void SG_DrawLevelStats( void )
 
 int SG_EndLevel( void )
 {
-    // setup the window
-    memset( &endLevel, 0, sizeof(endLevel) );
-
     level.stats.timeEnd = trap_Milliseconds();
-
-    endLevel.window.m_Flags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar;
-    endLevel.window.m_pTitle = "endLevel";
-    endLevel.window.m_bOpen = qtrue;
-    endLevel.window.m_bClosable = qfalse;
 
     sg.state = SG_SHOW_LEVEL_STATS;
 

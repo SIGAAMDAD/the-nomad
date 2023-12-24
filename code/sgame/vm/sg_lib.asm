@@ -1,6 +1,6 @@
 export strcat
 code
-proc strcat 16 0
+proc strcat 12 0
 file "../sg_lib.c"
 line 4
 ;1:#include "sg_lib.h"
@@ -49,14 +49,10 @@ ADDRLP4 4
 ADDRLP4 0
 INDIRP4
 ASGNP4
-ADDRLP4 12
-CNSTI4 1
-ASGNI4
 ADDRLP4 0
 ADDRLP4 4
 INDIRP4
-ADDRLP4 12
-INDIRI4
+CNSTI4 1
 ADDP4
 ASGNP4
 ADDRLP4 8
@@ -66,8 +62,7 @@ ASGNP4
 ADDRFP4 4
 ADDRLP4 8
 INDIRP4
-ADDRLP4 12
-INDIRI4
+CNSTI4 1
 ADDP4
 ASGNP4
 ADDRLP4 4
@@ -98,7 +93,7 @@ ADDRFP4 0
 INDIRP4
 RETP4
 LABELV $1
-endproc strcat 16 0
+endproc strcat 12 0
 export tolower
 proc tolower 4 0
 line 238
@@ -125,7 +120,7 @@ line 238
 ;36:	return (char *)0;
 ;37:}
 ;38:
-;39:char *strrchr(const char *string, int32_t c)
+;39:char *strrchr(const char *string, int c)
 ;40:{
 ;41:    const char *found, *p;
 ;42:
@@ -206,7 +201,7 @@ line 238
 ;117:                   : es == sizeof(long) ? 0 : 1;
 ;118:
 ;119:static void swapfunc(a, b, n, swaptype) char *a, *b;
-;120:int32_t         n, swaptype;
+;120:int         n, swaptype;
 ;121:{
 ;122:    if (swaptype <= 1)
 ;123:        swapcode(long, a, b, n) else swapcode(char, a, b, n)
@@ -238,7 +233,7 @@ line 238
 ;149:cmp_t* cmp;
 ;150:{
 ;151:    char *pa, *pb, *pc, *pd, *pl, *pm, *pn;
-;152:    int32_t   d, r, swaptype, swap_cnt;
+;152:    int   d, r, swaptype, swap_cnt;
 ;153:
 ;154:loop:
 ;155:    SWAPINIT(a, es);
@@ -323,7 +318,7 @@ line 238
 ;234:}
 ;235:#endif
 ;236:
-;237:int32_t tolower(int32_t c)
+;237:int tolower(int c)
 ;238:{
 line 239
 ;239:    if (c >= 'A' && c <= 'Z') {
@@ -362,7 +357,7 @@ proc toupper 4 0
 line 246
 ;243:}
 ;244:
-;245:int32_t toupper(int32_t c)
+;245:int toupper(int c)
 ;246:{
 line 247
 ;247:    if (c >= 'a' && c <= 'z') {
@@ -410,7 +405,7 @@ LABELV $15
 line 262
 ;256:    float sign;
 ;257:    float value;
-;258:    int32_t   c;
+;258:    int   c;
 ;259:
 ;260:    // skip whitespace
 ;261:    while (*string <= ' ')
@@ -597,9 +592,9 @@ ASGNI4
 line 299
 ;299:            value = value * 10 + c;
 ADDRLP4 4
-CNSTF4 1092616192
 ADDRLP4 4
 INDIRF4
+CNSTF4 1092616192
 MULF4
 ADDRLP4 0
 INDIRI4
@@ -712,9 +707,9 @@ ASGNF4
 line 322
 ;322:            fraction *= 0.1;
 ADDRLP4 20
-CNSTF4 1036831949
 ADDRLP4 20
 INDIRF4
+CNSTF4 1036831949
 MULF4
 ASGNF4
 line 323
@@ -750,7 +745,7 @@ line 336
 ;333:    const char* string;
 ;334:    float       sign;
 ;335:    float       value;
-;336:    int32_t         c = '0'; // bk001211 - uninitialized use possible
+;336:    int         c = '0'; // bk001211 - uninitialized use possible
 ADDRLP4 0
 CNSTI4 48
 ASGNI4
@@ -953,9 +948,9 @@ ASGNI4
 line 379
 ;379:            value = value * 10 + c;
 ADDRLP4 8
-CNSTF4 1092616192
 ADDRLP4 8
 INDIRF4
+CNSTF4 1092616192
 MULF4
 ADDRLP4 0
 INDIRI4
@@ -1053,9 +1048,9 @@ ASGNF4
 line 398
 ;398:            fraction *= 0.1;
 ADDRLP4 24
-CNSTF4 1036831949
 ADDRLP4 24
 INDIRF4
+CNSTF4 1036831949
 MULF4
 ASGNF4
 line 399
@@ -1092,15 +1087,15 @@ proc atoi 28 0
 line 409
 ;406:}
 ;407:
-;408:int32_t atoi(const char* string)
+;408:int atoi(const char* string)
 ;409:{
 ADDRGP4 $70
 JUMPV
 LABELV $69
 line 416
-;410:    int32_t sign;
-;411:    int32_t value;
-;412:    int32_t c;
+;410:    int sign;
+;411:    int value;
+;412:    int c;
 ;413:
 ;414:    // skip whitespace
 ;415:    while (*string <= ' ')
@@ -1271,9 +1266,9 @@ ASGNI4
 line 450
 ;450:        value = value * 10 + c;
 ADDRLP4 4
-CNSTI4 10
 ADDRLP4 4
 INDIRI4
+CNSTI4 10
 MULI4
 ADDRLP4 0
 INDIRI4
@@ -1303,12 +1298,12 @@ proc _atoi 32 0
 line 459
 ;456:}
 ;457:
-;458:int32_t _atoi(const char** stringPtr)
+;458:int _atoi(const char** stringPtr)
 ;459:{
 line 465
-;460:    int32_t         sign;
-;461:    int32_t         value;
-;462:    int32_t         c;
+;460:    int         sign;
+;461:    int         value;
+;462:    int         c;
 ;463:    const char* string;
 ;464:
 ;465:    string = *stringPtr;
@@ -1491,9 +1486,9 @@ ASGNI4
 line 503
 ;503:        value = value * 10 + c;
 ADDRLP4 8
-CNSTI4 10
 ADDRLP4 8
 INDIRI4
+CNSTI4 10
 MULI4
 ADDRLP4 0
 INDIRI4
@@ -1567,7 +1562,7 @@ proc srand 0 0
 line 521
 ;516:}
 ;517:
-;518:static int32_t randSeed = 0;
+;518:static int randSeed = 0;
 ;519:
 ;520:void srand(unsigned seed)
 ;521:{
@@ -1586,7 +1581,7 @@ export rand
 proc rand 4 0
 line 526
 ;524:
-;525:int32_t rand(void)
+;525:int rand(void)
 ;526:{
 line 527
 ;527:    randSeed = (69069 * randSeed + 1);
@@ -1595,10 +1590,10 @@ ADDRGP4 randSeed
 ASGNP4
 ADDRLP4 0
 INDIRP4
-CNSTI4 69069
 ADDRLP4 0
 INDIRP4
 INDIRI4
+CNSTI4 69069
 MULI4
 CNSTI4 1
 ADDI4
@@ -1618,7 +1613,7 @@ line 533
 ;529:}
 ;530:
 ;531:
-;532:int32_t abs(int32_t n)
+;532:int abs(int n)
 ;533:{
 line 534
 ;534:    return n < 0 ? -n : n;
@@ -1688,18 +1683,18 @@ line 557
 ;547:#define QUADINT 0x00000020   /* quad integer */
 ;548:#define SHORTINT 0x00000040  /* short integer */
 ;549:#define ZEROPAD 0x00000080   /* zero (as opposed to blank) pad */
-;550:#define FPT 0x00000100       /* floating point32_t number */
+;550:#define FPT 0x00000100       /* floating point number */
 ;551:
 ;552:#define to_digit(c) ((c) - '0')
 ;553:#define is_digit(c) ((unsigned)to_digit(c) <= 9)
 ;554:#define to_char(n) ((n) + '0')
 ;555:
-;556:void AddInt(char** buf_p, int32_t val, int32_t width, int32_t flags)
+;556:void AddInt(char** buf_p, int val, int width, int flags)
 ;557:{
 line 563
 ;558:    char  text[32];
-;559:    int32_t   digits;
-;560:    int32_t   signedVal;
+;559:    int   digits;
+;560:    int   signedVal;
 ;561:    char* buf;
 ;562:
 ;563:    digits    = 0;
@@ -2022,7 +2017,7 @@ export AddUInt
 proc AddUInt 52 0
 line 609
 ;607:
-;608:void AddUInt(char** buf_p, uint32_t val, int32_t width, int32_t flags)
+;608:void AddUInt(char** buf_p, uint32_t val, int width, int flags)
 ;609:{
 line 614
 ;610:    char  text[32];
@@ -2297,14 +2292,14 @@ export AddFloat
 proc AddFloat 60 0
 line 650
 ;648:
-;649:void AddFloat(char** buf_p, float fval, int32_t width, int32_t prec)
+;649:void AddFloat(char** buf_p, float fval, int width, int prec)
 ;650:{
 line 658
 ;651:    char  text[32];
-;652:    int32_t   digits;
+;652:    int digits;
 ;653:    float signedVal;
 ;654:    char* buf;
-;655:    int32_t   val;
+;655:    int val;
 ;656:
 ;657:    // get the sign
 ;658:    signedVal = fval;
@@ -2338,7 +2333,7 @@ ADDRLP4 0
 CNSTI4 0
 ASGNI4
 line 666
-;666:    val    = (int32_t)fval;
+;666:    val    = (int)fval;
 ADDRLP4 4
 ADDRFP4 4
 INDIRF4
@@ -2561,9 +2556,9 @@ ASGNF4
 line 700
 ;700:        fval *= 10.0;
 ADDRFP4 4
-CNSTF4 1092616192
 ADDRFP4 4
 INDIRF4
+CNSTF4 1092616192
 MULF4
 ASGNF4
 line 701
@@ -2699,13 +2694,13 @@ line 715
 LABELV $163
 endproc AddFloat 60 0
 export AddString
-proc AddString 20 4
+proc AddString 16 4
 line 718
 ;716:
-;717:void AddString(char** buf_p, char* string, int32_t width, int32_t prec)
+;717:void AddString(char** buf_p, char* string, int width, int prec)
 ;718:{
 line 722
-;719:    int32_t   size;
+;719:    int   size;
 ;720:    char* buf;
 ;721:
 ;722:    buf = *buf_p;
@@ -2839,14 +2834,10 @@ ADDRLP4 8
 ADDRLP4 4
 INDIRP4
 ASGNP4
-ADDRLP4 16
-CNSTI4 1
-ASGNI4
 ADDRLP4 4
 ADDRLP4 8
 INDIRP4
-ADDRLP4 16
-INDIRI4
+CNSTI4 1
 ADDP4
 ASGNP4
 ADDRLP4 12
@@ -2856,8 +2847,7 @@ ASGNP4
 ADDRFP4 4
 ADDRLP4 12
 INDIRP4
-ADDRLP4 16
-INDIRI4
+CNSTI4 1
 ADDP4
 ASGNP4
 ADDRLP4 8
@@ -2936,21 +2926,21 @@ ASGNP4
 line 758
 ;758:}
 LABELV $188
-endproc AddString 20 4
+endproc AddString 16 4
 export vsprintf
 proc vsprintf 72 16
 line 761
 ;759:
-;760:int32_t vsprintf(char* buffer, const char* fmt, va_list argptr)
+;760:int vsprintf(char* buffer, const char* fmt, va_list argptr)
 ;761:{
 line 771
-;762:    int32_t*    arg;
+;762:    int*    arg;
 ;763:    char*       buf_p;
 ;764:    char        ch;
-;765:    int32_t     flags;
-;766:    int32_t     width;
-;767:    int32_t     prec;
-;768:    int32_t     n;
+;765:    int     flags;
+;766:    int     width;
+;767:    int     prec;
+;768:    int     n;
 ;769:    char        sign;
 ;770:
 ;771:    buf_p = buffer;
@@ -2959,7 +2949,7 @@ ADDRFP4 0
 INDIRP4
 ASGNP4
 line 772
-;772:    arg   = (int32_t *)argptr;
+;772:    arg   = (int *)argptr;
 ADDRLP4 24
 ADDRFP4 8
 INDIRP4
@@ -3124,7 +3114,7 @@ ADDRGP4 $243-396
 ADDP4
 INDIRP4
 JUMPV
-lit
+data
 align 4
 LABELV $243
 address $236
@@ -3152,7 +3142,7 @@ ADDRGP4 $245-148
 ADDP4
 INDIRP4
 JUMPV
-lit
+data
 align 4
 LABELV $245
 address $240
@@ -3216,9 +3206,9 @@ line 806
 line 807
 ;807:                n = 10 * n + (ch - '0');
 ADDRLP4 8
-CNSTI4 10
 ADDRLP4 8
 INDIRI4
+CNSTI4 10
 MULI4
 ADDRLP4 0
 INDIRI1
@@ -3319,9 +3309,9 @@ line 825
 line 826
 ;826:                n  = 10 * n + (ch - '0');
 ADDRLP4 8
-CNSTI4 10
 ADDRLP4 8
 INDIRI4
+CNSTI4 10
 MULI4
 ADDRLP4 0
 INDIRI1
@@ -3454,11 +3444,11 @@ CALLV
 pop
 line 843
 ;842:#ifdef __LCC__
-;843:            arg += 1; // everything is 32 bit in my compiler
+;843:            arg += 2; // everything is 32 bit in my compiler
 ADDRLP4 24
 ADDRLP4 24
 INDIRP4
-CNSTI4 4
+CNSTI4 8
 ADDP4
 ASGNP4
 line 847
@@ -3586,19 +3576,19 @@ RETI4
 LABELV $206
 endproc vsprintf 72 16
 export sscanf
-proc sscanf 28 4
+proc sscanf 24 4
 line 869
 ;865:}
 ;866:
 ;867:/* this is really crappy */
-;868:int32_t sscanf( const char *buffer, const char *fmt, ... )
+;868:int sscanf( const char *buffer, const char *fmt, ... )
 ;869:{
 line 874
-;870:	int32_t	cmd;
-;871:	int32_t	**arg;
-;872:	int32_t	count;
+;870:	int	cmd;
+;871:	int	**arg;
+;872:	int	count;
 ;873:
-;874:	arg = (int32_t **)&fmt + 1;
+;874:	arg = (int **)&fmt + 1;
 ADDRLP4 4
 ADDRFP4 4+4
 ASGNP4
@@ -3657,13 +3647,9 @@ ASGNP4
 line 886
 ;885:
 ;886:		switch ( cmd ) {
-ADDRLP4 16
-CNSTI4 100
-ASGNI4
 ADDRLP4 0
 INDIRI4
-ADDRLP4 16
-INDIRI4
+CNSTI4 100
 EQI4 $256
 ADDRLP4 0
 INDIRI4
@@ -3675,8 +3661,7 @@ CNSTI4 105
 EQI4 $256
 ADDRLP4 0
 INDIRI4
-ADDRLP4 16
-INDIRI4
+CNSTI4 100
 LTI4 $254
 LABELV $258
 ADDRLP4 0
@@ -3693,14 +3678,14 @@ line 890
 ;890:			**arg = _atoi( &buffer );
 ADDRFP4 0
 ARGP4
-ADDRLP4 20
+ADDRLP4 16
 ADDRGP4 _atoi
 CALLI4
 ASGNI4
 ADDRLP4 4
 INDIRP4
 INDIRP4
-ADDRLP4 20
+ADDRLP4 16
 INDIRI4
 ASGNI4
 line 891
@@ -3713,14 +3698,14 @@ line 893
 ;893:			*(float *)*arg = _atof( &buffer );
 ADDRFP4 0
 ARGP4
-ADDRLP4 24
+ADDRLP4 20
 ADDRGP4 _atof
 CALLF4
 ASGNF4
 ADDRLP4 4
 INDIRP4
 INDIRP4
-ADDRLP4 24
+ADDRLP4 20
 INDIRF4
 ASGNF4
 line 894
@@ -3753,7 +3738,7 @@ ADDRLP4 8
 INDIRI4
 RETI4
 LABELV $247
-endproc sscanf 28 4
+endproc sscanf 24 4
 import acos
 import atan2
 import cos
