@@ -6,7 +6,8 @@
 #include "../engine/n_shared.h"
 #include "../rendercommon/r_types.h"
 
-#ifndef Q3_VM
+#ifdef _NOMAD_ENGINE
+
 typedef enum {
     REF_KEEP_CONTEXT, // don't destroy window and context, just deallocate buffers and shaders
     REF_KEEP_WINDOW, // destroy context, keep window

@@ -145,12 +145,6 @@ typedef enum {
 // data types
 //
 
-// bounding boxes
-typedef struct {
-	vec3_t mins;
-	vec3_t maxs;
-} bbox_t;
-
 typedef struct sgentity_s sgentity_t;
 
 //

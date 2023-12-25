@@ -45,9 +45,9 @@ line 35
 ADDRLP4 0
 CNSTI4 0
 ASGNI4
-ADDRGP4 $88
+ADDRGP4 $97
 JUMPV
-LABELV $85
+LABELV $94
 line 36
 ;36:        switch ( spawn->entitytype ) {
 ADDRLP4 8
@@ -65,26 +65,26 @@ ASGNI4
 ADDRLP4 12
 INDIRI4
 CNSTI4 0
-LTI4 $91
+LTI4 $100
 ADDRLP4 12
 INDIRI4
 CNSTI4 3
-GTI4 $91
+GTI4 $100
 ADDRLP4 12
 INDIRI4
 CNSTI4 2
 LSHI4
-ADDRGP4 $97
+ADDRGP4 $106
 ADDP4
 INDIRP4
 JUMPV
 data
 align 4
-LABELV $97
-address $92
-address $92
-address $92
-address $92
+LABELV $106
+address $101
+address $101
+address $101
+address $101
 code
 line 38
 ;37:        case ET_MOB:
@@ -96,13 +96,13 @@ line 43
 ;41:        case ET_ITEM:
 ;42:        case ET_WEAPON:
 ;43:            break;
-LABELV $91
-LABELV $92
+LABELV $100
+LABELV $101
 line 44
 ;44:        };
 line 45
 ;45:    }
-LABELV $86
+LABELV $95
 line 35
 ADDRLP4 0
 ADDRLP4 0
@@ -116,15 +116,15 @@ INDIRP4
 CNSTI4 20
 ADDP4
 ASGNP4
-LABELV $88
+LABELV $97
 ADDRLP4 0
 INDIRI4
 ADDRGP4 sg+4280680+26888
 INDIRI4
-LTI4 $85
+LTI4 $94
 line 46
 ;46:}
-LABELV $83
+LABELV $92
 endproc SG_SpawnLevelEntities 16 0
 export SG_InitLevel
 proc SG_InitLevel 36 16
@@ -137,7 +137,7 @@ line 53
 ;51:    float zoom;
 ;52:
 ;53:    G_Printf( "Starting up level at index %i\n", levelIndex );
-ADDRGP4 $99
+ADDRGP4 $108
 ARGP4
 ADDRFP4 0
 INDIRI4
@@ -147,7 +147,7 @@ CALLV
 pop
 line 54
 ;54:    G_Printf( "Loadng resources...\n" );
-ADDRGP4 $100
+ADDRGP4 $109
 ARGP4
 ADDRGP4 G_Printf
 CALLV
@@ -168,7 +168,7 @@ pop
 line 59
 ;58:
 ;59:    G_Printf( "Loading map from internal cache...\n" );
-ADDRGP4 $101
+ADDRGP4 $110
 ARGP4
 ADDRGP4 G_Printf
 CALLV
@@ -192,10 +192,10 @@ ASGNI4
 ADDRLP4 12
 INDIRI4
 CNSTI4 0
-NEI4 $102
+NEI4 $111
 line 62
 ;62:        SG_Printf( COLOR_RED "SG_InitLevel: failed to load map file at index %i\n", levelIndex );
-ADDRGP4 $107
+ADDRGP4 $116
 ARGP4
 ADDRFP4 0
 INDIRI4
@@ -207,14 +207,14 @@ line 63
 ;63:        return qfalse;
 CNSTI4 0
 RETI4
-ADDRGP4 $98
+ADDRGP4 $107
 JUMPV
-LABELV $102
+LABELV $111
 line 66
 ;64:    }
 ;65:
 ;66:    G_Printf( "Loading map %s...\n", sg.mapInfo.name );
-ADDRGP4 $108
+ADDRGP4 $117
 ARGP4
 ADDRGP4 sg+4280680+26816
 ARGP4
@@ -224,7 +224,7 @@ pop
 line 68
 ;67:
 ;68:    G_Printf( "All done.\n" );
-ADDRGP4 $111
+ADDRGP4 $120
 ARGP4
 ADDRGP4 G_Printf
 CALLV
@@ -254,17 +254,17 @@ line 77
 ADDRGP4 sg_printLevelStats+260
 INDIRI4
 CNSTI4 0
-EQI4 $113
+EQI4 $122
 line 78
 ;78:        G_Printf( "\n---------- Level Info ----------\n" );
-ADDRGP4 $116
+ADDRGP4 $125
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
 line 79
 ;79:        G_Printf( "Map Name: %s\n", sg.mapInfo.name );
-ADDRGP4 $117
+ADDRGP4 $126
 ARGP4
 ADDRGP4 sg+4280680+26816
 ARGP4
@@ -273,7 +273,7 @@ CALLV
 pop
 line 80
 ;80:        G_Printf( "Checkpoint Count: %i\n", sg.mapInfo.numCheckpoints );
-ADDRGP4 $120
+ADDRGP4 $129
 ARGP4
 ADDRGP4 sg+4280680+26892
 INDIRI4
@@ -283,7 +283,7 @@ CALLV
 pop
 line 81
 ;81:        G_Printf( "Spawn Count: %i\n", sg.mapInfo.numSpawns );
-ADDRGP4 $123
+ADDRGP4 $132
 ARGP4
 ADDRGP4 sg+4280680+26888
 INDIRI4
@@ -293,7 +293,7 @@ CALLV
 pop
 line 82
 ;82:        G_Printf( "Map Width: %i\n", sg.mapInfo.width );
-ADDRGP4 $126
+ADDRGP4 $135
 ARGP4
 ADDRGP4 sg+4280680+26880
 INDIRI4
@@ -303,7 +303,7 @@ CALLV
 pop
 line 83
 ;83:        G_Printf( "Map Height: %i\n", sg.mapInfo.height );
-ADDRGP4 $129
+ADDRGP4 $138
 ARGP4
 ADDRGP4 sg+4280680+26884
 INDIRI4
@@ -313,11 +313,11 @@ CALLV
 pop
 line 84
 ;84:    }
-LABELV $113
+LABELV $122
 line 86
 ;85:
 ;86:    RE_LoadWorldMap( va( "maps/%s", sg.mapInfo.name ) );
-ADDRGP4 $132
+ADDRGP4 $141
 ARGP4
 ADDRGP4 sg+4280680+26816
 ARGP4
@@ -334,7 +334,7 @@ pop
 line 88
 ;87:
 ;88:    Cvar_Set( "sg_levelIndex", va( "%i", levelIndex ) );
-ADDRGP4 $136
+ADDRGP4 $145
 ARGP4
 ADDRFP4 0
 INDIRI4
@@ -343,7 +343,7 @@ ADDRLP4 20
 ADDRGP4 va
 CALLP4
 ASGNP4
-ADDRGP4 $135
+ADDRGP4 $144
 ARGP4
 ADDRLP4 20
 INDIRP4
@@ -419,7 +419,7 @@ line 97
 ;97:    return qtrue;
 CNSTI4 1
 RETI4
-LABELV $98
+LABELV $107
 endproc SG_InitLevel 36 16
 export SG_SaveLevelData
 proc SG_SaveLevelData 0 0
@@ -430,7 +430,7 @@ line 101
 ;101:{
 line 102
 ;102:}
-LABELV $142
+LABELV $151
 endproc SG_SaveLevelData 0 0
 export SG_DrawLevelStats
 proc SG_DrawLevelStats 20 12
@@ -454,7 +454,7 @@ ASGNF4
 line 111
 ;110:
 ;111:    if ( ImGui_BeginWindow( "EndLevel", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar ) ) {
-ADDRGP4 $146
+ADDRGP4 $155
 ARGP4
 CNSTP4 0
 ARGP4
@@ -467,7 +467,7 @@ ASGNI4
 ADDRLP4 16
 INDIRI4
 CNSTI4 0
-EQI4 $144
+EQI4 $153
 line 112
 ;112:        ImGui_SetWindowFontScale(font_scale * 6);
 ADDRLP4 0
@@ -480,7 +480,7 @@ CALLV
 pop
 line 113
 ;113:        ImGui_TextUnformatted("Level Statistics");
-ADDRGP4 $147
+ADDRGP4 $156
 ARGP4
 ADDRGP4 ImGui_TextUnformatted
 CALLV
@@ -502,7 +502,7 @@ CALLV
 pop
 line 117
 ;116:
-;117:        ImGui_GetCursorScreenPos(&cursorPos[0], &cursorPos[1]);
+;117:        ImGui_GetCursorScreenPos( &cursorPos.x, &cursorPos.y );
 ADDRLP4 4
 ARGP4
 ADDRLP4 4+4
@@ -512,7 +512,7 @@ CALLV
 pop
 line 119
 ;118:
-;119:        ImGui_SetCursorScreenPos(cursorPos[0], cursorPos[1] + 20);
+;119:        ImGui_SetCursorScreenPos( cursorPos.x, cursorPos.y + 20);
 ADDRLP4 4
 INDIRF4
 ARGF4
@@ -526,7 +526,7 @@ CALLV
 pop
 line 120
 ;120:    }
-LABELV $144
+LABELV $153
 line 121
 ;121:    ImGui_EndWindow();
 ADDRGP4 ImGui_EndWindow
@@ -534,7 +534,7 @@ CALLV
 pop
 line 122
 ;122:}
-LABELV $143
+LABELV $152
 endproc SG_DrawLevelStats 20 12
 export SG_EndLevel
 proc SG_EndLevel 4 0
@@ -563,7 +563,7 @@ line 130
 ;130:    return 1;
 CNSTI4 1
 RETI4
-LABELV $150
+LABELV $159
 endproc SG_EndLevel 4 0
 bss
 align 4
@@ -957,54 +957,18 @@ import Info_ValueForKey
 import Com_Clamp
 import bytedirs
 import N_isnan
-import PerpendicularVector
-import AngleVectors
-import MatrixMultiply
-import COM_SkipPath
-import MakeNormalVectors
-import RotateAroundDirection
-import RotatePointAroundVector
-import ProjectPointOnPlane
-import PlaneFromPoints
-import AngleDelta
-import AngleNormalize180
-import AngleNormalize360
-import AnglesSubtract
-import AngleSubtract
-import LerpAngle
-import AngleMod
-import BoundsIntersectPoint
-import BoundsIntersectSphere
-import BoundsIntersect
-import disBetweenOBJ
-import AxisCopy
-import AxisClear
-import AnglesToAxis
-import vectoangles
 import N_crandom
 import N_random
 import N_rand
 import N_fabs
 import N_acos
 import N_log2
-import VectorRotate
-import Vector4Scale
-import VectorNormalize2
-import VectorNormalize
-import CrossProduct
-import VectorInverse
-import VectorNormalizeFast
-import DistanceSquared
-import Distance
-import VectorLengthSquared
-import VectorLength
-import VectorCompare
+import ColorBytes4
+import ColorBytes3
 import AddPointToBounds
 import ClearBounds
 import RadiusFromBounds
 import NormalizeColor
-import ColorBytes4
-import ColorBytes3
 import _VectorMA
 import _VectorScale
 import _VectorCopy
@@ -1013,6 +977,20 @@ import _VectorSubtract
 import _DotProduct
 import ByteToDir
 import DirToByte
+import CrossProduct
+import VectorInverse
+import VectorNormalizeFast
+import DistanceSquared
+import Distance
+import VectorLengthSquared
+import VectorLength
+import VectorCompare
+import BoundsIntersectPoint
+import BoundsIntersectSphere
+import BoundsIntersect
+import disBetweenOBJ
+import vec3_set
+import vec3_get
 import ClampShort
 import ClampCharMove
 import ClampChar
@@ -1034,7 +1012,7 @@ import colorRed
 import colorBlack
 import vec2_origin
 import vec3_origin
-import mat4_identity
+import COM_SkipPath
 import Com_Split
 import N_replace
 import N_memcmp
@@ -1098,7 +1076,7 @@ import memchr
 import memcpy
 lit
 align 1
-LABELV $147
+LABELV $156
 byte 1 76
 byte 1 101
 byte 1 118
@@ -1117,7 +1095,7 @@ byte 1 99
 byte 1 115
 byte 1 0
 align 1
-LABELV $146
+LABELV $155
 byte 1 69
 byte 1 110
 byte 1 100
@@ -1128,12 +1106,12 @@ byte 1 101
 byte 1 108
 byte 1 0
 align 1
-LABELV $136
+LABELV $145
 byte 1 37
 byte 1 105
 byte 1 0
 align 1
-LABELV $135
+LABELV $144
 byte 1 115
 byte 1 103
 byte 1 95
@@ -1149,7 +1127,7 @@ byte 1 101
 byte 1 120
 byte 1 0
 align 1
-LABELV $132
+LABELV $141
 byte 1 109
 byte 1 97
 byte 1 112
@@ -1159,7 +1137,7 @@ byte 1 37
 byte 1 115
 byte 1 0
 align 1
-LABELV $129
+LABELV $138
 byte 1 77
 byte 1 97
 byte 1 112
@@ -1177,7 +1155,7 @@ byte 1 105
 byte 1 10
 byte 1 0
 align 1
-LABELV $126
+LABELV $135
 byte 1 77
 byte 1 97
 byte 1 112
@@ -1194,7 +1172,7 @@ byte 1 105
 byte 1 10
 byte 1 0
 align 1
-LABELV $123
+LABELV $132
 byte 1 83
 byte 1 112
 byte 1 97
@@ -1213,7 +1191,7 @@ byte 1 105
 byte 1 10
 byte 1 0
 align 1
-LABELV $120
+LABELV $129
 byte 1 67
 byte 1 104
 byte 1 101
@@ -1237,7 +1215,7 @@ byte 1 105
 byte 1 10
 byte 1 0
 align 1
-LABELV $117
+LABELV $126
 byte 1 77
 byte 1 97
 byte 1 112
@@ -1253,7 +1231,7 @@ byte 1 115
 byte 1 10
 byte 1 0
 align 1
-LABELV $116
+LABELV $125
 byte 1 10
 byte 1 45
 byte 1 45
@@ -1290,7 +1268,7 @@ byte 1 45
 byte 1 10
 byte 1 0
 align 1
-LABELV $111
+LABELV $120
 byte 1 65
 byte 1 108
 byte 1 108
@@ -1303,7 +1281,7 @@ byte 1 46
 byte 1 10
 byte 1 0
 align 1
-LABELV $108
+LABELV $117
 byte 1 76
 byte 1 111
 byte 1 97
@@ -1324,7 +1302,7 @@ byte 1 46
 byte 1 10
 byte 1 0
 align 1
-LABELV $107
+LABELV $116
 byte 1 94
 byte 1 49
 byte 1 83
@@ -1379,7 +1357,7 @@ byte 1 105
 byte 1 10
 byte 1 0
 align 1
-LABELV $101
+LABELV $110
 byte 1 76
 byte 1 111
 byte 1 97
@@ -1417,7 +1395,7 @@ byte 1 46
 byte 1 10
 byte 1 0
 align 1
-LABELV $100
+LABELV $109
 byte 1 76
 byte 1 111
 byte 1 97
@@ -1440,7 +1418,7 @@ byte 1 46
 byte 1 10
 byte 1 0
 align 1
-LABELV $99
+LABELV $108
 byte 1 83
 byte 1 116
 byte 1 97

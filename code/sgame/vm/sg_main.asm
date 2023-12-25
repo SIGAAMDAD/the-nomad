@@ -29,38 +29,38 @@ ASGNI4
 ADDRLP4 0
 INDIRI4
 CNSTI4 0
-LTI4 $83
+LTI4 $92
 ADDRLP4 0
 INDIRI4
 CNSTI4 13
-GTI4 $83
+GTI4 $92
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
 LSHI4
-ADDRGP4 $96
+ADDRGP4 $105
 ADDP4
 INDIRP4
 JUMPV
 data
 align 4
-LABELV $96
-address $84
-address $85
+LABELV $105
 address $93
-address $88
-address $83
-address $83
 address $94
+address $102
+address $97
+address $92
+address $92
+address $103
+address $104
+address $100
+address $99
+address $98
+address $101
+address $101
 address $95
-address $91
-address $90
-address $89
-address $92
-address $92
-address $86
 code
-LABELV $84
+LABELV $93
 line 20
 ;19:    case SGAME_INIT:
 ;20:        SG_Init();
@@ -71,9 +71,9 @@ line 21
 ;21:        return 0;
 CNSTI4 0
 RETI4
-ADDRGP4 $81
+ADDRGP4 $90
 JUMPV
-LABELV $85
+LABELV $94
 line 23
 ;22:    case SGAME_SHUTDOWN:
 ;23:        SG_Shutdown();
@@ -84,18 +84,18 @@ line 24
 ;24:        return 0;
 CNSTI4 0
 RETI4
-ADDRGP4 $81
+ADDRGP4 $90
 JUMPV
-LABELV $86
+LABELV $95
 line 26
 ;25:    case SGAME_GET_STATE:
 ;26:        return sg.state;
 ADDRGP4 sg+64
 INDIRI4
 RETI4
-ADDRGP4 $81
+ADDRGP4 $90
 JUMPV
-LABELV $88
+LABELV $97
 line 28
 ;27:    case SGAME_ENDLEVEL:
 ;28:        return SG_EndLevel();
@@ -106,9 +106,9 @@ ASGNI4
 ADDRLP4 4
 INDIRI4
 RETI4
-ADDRGP4 $81
+ADDRGP4 $90
 JUMPV
-LABELV $89
+LABELV $98
 line 30
 ;29:    case SGAME_SEND_USER_CMD:
 ;30:        SG_SendUserCmd( arg0, arg1, arg2 );
@@ -128,17 +128,17 @@ line 31
 ;31:        return 0;
 CNSTI4 0
 RETI4
-ADDRGP4 $81
+ADDRGP4 $90
 JUMPV
-LABELV $90
+LABELV $99
 line 33
 ;32:    case SGAME_MOUSE_EVENT:
 ;33:        return 0;
 CNSTI4 0
 RETI4
-ADDRGP4 $81
+ADDRGP4 $90
 JUMPV
-LABELV $91
+LABELV $100
 line 35
 ;34:    case SGAME_KEY_EVENT:
 ;35:        SG_KeyEvent( arg0, arg1 );
@@ -155,18 +155,18 @@ line 36
 ;36:        return 0;
 CNSTI4 0
 RETI4
-ADDRGP4 $81
+ADDRGP4 $90
 JUMPV
-LABELV $92
+LABELV $101
 line 39
 ;37:    case SGAME_EVENT_HANDLING:
 ;38:    case SGAME_EVENT_NONE:
 ;39:        return 0;
 CNSTI4 0
 RETI4
-ADDRGP4 $81
+ADDRGP4 $90
 JUMPV
-LABELV $93
+LABELV $102
 line 41
 ;40:    case SGAME_LOADLEVEL:
 ;41:        return SG_InitLevel( arg0 );
@@ -180,9 +180,9 @@ ASGNI4
 ADDRLP4 8
 INDIRI4
 RETI4
-ADDRGP4 $81
+ADDRGP4 $90
 JUMPV
-LABELV $94
+LABELV $103
 line 43
 ;42:    case SGAME_CONSOLE_COMMAND:
 ;43:        SGameCommand();
@@ -193,9 +193,9 @@ line 44
 ;44:        return 0;
 CNSTI4 0
 RETI4
-ADDRGP4 $81
+ADDRGP4 $90
 JUMPV
-LABELV $95
+LABELV $104
 line 46
 ;45:    case SGAME_RUNTIC:
 ;46:        return SG_RunLoop( arg0, arg1 );
@@ -212,18 +212,18 @@ ASGNI4
 ADDRLP4 12
 INDIRI4
 RETI4
-ADDRGP4 $81
+ADDRGP4 $90
 JUMPV
 line 48
 ;47:    default:
 ;48:        break;
-LABELV $83
+LABELV $92
 line 49
 ;49:    };
 line 51
 ;50:
 ;51:    SG_Error( "vmMain: unrecognized command %i", command );
-ADDRGP4 $97
+ADDRGP4 $106
 ARGP4
 ADDRFP4 0
 INDIRI4
@@ -235,128 +235,128 @@ line 52
 ;52:    return -1;
 CNSTI4 -1
 RETI4
-LABELV $81
+LABELV $90
 endproc vmMain 16 12
 data
 align 4
 LABELV cvarTable
 byte 4 0
-address $99
-address $100
+address $108
+address $109
 byte 4 64
 byte 4 0
 byte 4 0
 byte 4 0
-address $101
-address $102
+address $110
+address $111
 byte 4 64
 byte 4 0
 byte 4 0
 address sg_printEntities
-address $103
-address $104
+address $112
+address $113
 byte 4 0
 byte 4 0
 byte 4 0
 address sg_debugPrint
-address $105
-address $106
+address $114
+address $115
 byte 4 256
 byte 4 0
 byte 4 0
 address sg_paused
-address $107
-address $106
+address $116
+address $115
 byte 4 288
 byte 4 0
 byte 4 0
 address pm_groundFriction
-address $108
-address $109
+address $117
+address $118
 byte 4 33
 byte 4 0
 byte 4 1
 address pm_waterFriction
-address $110
-address $111
+address $119
+address $120
 byte 4 33
 byte 4 0
 byte 4 1
 address pm_airFriction
-address $112
-address $113
+address $121
+address $122
 byte 4 33
 byte 4 0
 byte 4 1
 address pm_airAccel
-address $114
-address $115
+address $123
+address $124
 byte 4 33
 byte 4 0
 byte 4 0
 address pm_waterAccel
-address $116
-address $117
-byte 4 33
-byte 4 0
-byte 4 0
-address pm_baseAccel
-address $118
-address $119
-byte 4 33
-byte 4 0
-byte 4 0
-address pm_baseSpeed
-address $120
-address $121
-byte 4 33
-byte 4 0
-byte 4 0
-address sg_mouseInvert
-address $122
-address $104
-byte 4 33
-byte 4 0
-byte 4 1
-address sg_mouseAcceleration
-address $123
-address $104
-byte 4 33
-byte 4 0
-byte 4 1
-address sg_printLevelStats
-address $124
-address $106
-byte 4 33
-byte 4 0
-byte 4 0
-address sg_decalDetail
 address $125
 address $126
 byte 4 33
 byte 4 0
+byte 4 0
+address pm_baseAccel
+address $127
+address $128
+byte 4 33
+byte 4 0
+byte 4 0
+address pm_baseSpeed
+address $129
+address $130
+byte 4 33
+byte 4 0
+byte 4 0
+address sg_mouseInvert
+address $131
+address $113
+byte 4 33
+byte 4 0
+byte 4 1
+address sg_mouseAcceleration
+address $132
+address $113
+byte 4 33
+byte 4 0
+byte 4 1
+address sg_printLevelStats
+address $133
+address $115
+byte 4 33
+byte 4 0
+byte 4 0
+address sg_decalDetail
+address $134
+address $135
+byte 4 33
+byte 4 0
 byte 4 1
 address sg_gibs
-address $127
-address $104
+address $136
+address $113
 byte 4 33
 byte 4 0
 byte 4 1
 address sg_levelInfoFile
-address $128
-address $129
+address $137
+address $138
 byte 4 33
 byte 4 0
 byte 4 1
 address sg_savename
-address $130
-address $131
+address $139
+address $140
 byte 4 33
 byte 4 0
 byte 4 1
 address sg_numSaves
-address $132
-address $104
+address $141
+address $113
 byte 4 33
 byte 4 0
 byte 4 0
@@ -443,9 +443,9 @@ ASGNI4
 ADDRLP4 0
 ADDRGP4 cvarTable
 ASGNP4
-ADDRGP4 $137
+ADDRGP4 $146
 JUMPV
-LABELV $134
+LABELV $143
 line 123
 ;123:        Cvar_Register( cv->vmCvar, cv->cvarName, cv->defaultValue, cv->cvarFlags );
 ADDRLP4 0
@@ -480,7 +480,7 @@ INDIRP4
 INDIRP4
 CVPU4 4
 CNSTU4 0
-EQU4 $138
+EQU4 $147
 line 125
 ;125:            cv->modificationCount = cv->vmCvar->modificationCount;
 ADDRLP4 0
@@ -497,10 +497,10 @@ CVUI4 4
 ASGNI4
 line 126
 ;126:        }
-LABELV $138
+LABELV $147
 line 127
 ;127:    }
-LABELV $135
+LABELV $144
 line 122
 ADDRLP4 4
 ADDRLP4 4
@@ -514,15 +514,15 @@ INDIRP4
 CNSTI4 24
 ADDP4
 ASGNP4
-LABELV $137
+LABELV $146
 ADDRLP4 4
 INDIRI4
 ADDRGP4 cvarTableSize
 INDIRI4
-LTI4 $134
+LTI4 $143
 line 128
 ;128:}
-LABELV $133
+LABELV $142
 endproc SG_RegisterCvars 16 16
 export SG_UpdateCvars
 proc SG_UpdateCvars 24 12
@@ -541,9 +541,9 @@ ASGNI4
 ADDRLP4 0
 ADDRGP4 cvarTable
 ASGNP4
-ADDRGP4 $144
+ADDRGP4 $153
 JUMPV
-LABELV $141
+LABELV $150
 line 136
 ;136:        if ( cv->vmCvar ) {
 ADDRLP4 0
@@ -551,7 +551,7 @@ INDIRP4
 INDIRP4
 CVPU4 4
 CNSTU4 0
-EQU4 $145
+EQU4 $154
 line 137
 ;137:            Cvar_Update( cv->vmCvar );
 ADDRLP4 0
@@ -576,7 +576,7 @@ INDIRP4
 CNSTI4 268
 ADDP4
 INDIRU4
-EQU4 $147
+EQU4 $156
 line 140
 ;140:                cv->modificationCount = cv->vmCvar->modificationCount;
 ADDRLP4 0
@@ -600,10 +600,10 @@ CNSTI4 20
 ADDP4
 INDIRI4
 CNSTI4 0
-EQI4 $149
+EQI4 $158
 line 143
 ;143:                    trap_SendConsoleCommand( va( "Changed \"%s\" to \"%s\"", cv->cvarName, cv->vmCvar->s ) );
-ADDRGP4 $151
+ADDRGP4 $160
 ARGP4
 ADDRLP4 0
 INDIRP4
@@ -627,16 +627,16 @@ CALLV
 pop
 line 144
 ;144:                }
-LABELV $149
+LABELV $158
 line 145
 ;145:            }
-LABELV $147
+LABELV $156
 line 146
 ;146:        }
-LABELV $145
+LABELV $154
 line 147
 ;147:    }
-LABELV $142
+LABELV $151
 line 135
 ADDRLP4 4
 ADDRLP4 4
@@ -650,15 +650,15 @@ INDIRP4
 CNSTI4 24
 ADDP4
 ASGNP4
-LABELV $144
+LABELV $153
 ADDRLP4 4
 INDIRI4
 ADDRGP4 cvarTableSize
 INDIRI4
-LTI4 $141
+LTI4 $150
 line 148
 ;148:}
-LABELV $140
+LABELV $149
 endproc SG_UpdateCvars 24 12
 export G_Printf
 proc G_Printf 4108 12
@@ -708,7 +708,7 @@ CALLV
 pop
 line 161
 ;161:}
-LABELV $152
+LABELV $161
 endproc G_Printf 4108 12
 export G_Error
 proc G_Error 4108 12
@@ -758,7 +758,7 @@ CALLV
 pop
 line 174
 ;174:}
-LABELV $154
+LABELV $163
 endproc G_Error 4108 12
 export SG_Printf
 proc SG_Printf 4108 12
@@ -805,17 +805,17 @@ ADDRLP4 4100
 INDIRI4
 CVIU4 4
 CNSTU4 4096
-LTU4 $158
+LTU4 $167
 line 187
 ;187:        trap_Error( "SG_Printf: buffer overflow" );
-ADDRGP4 $160
+ADDRGP4 $169
 ARGP4
 ADDRGP4 trap_Error
 CALLV
 pop
 line 188
 ;188:    }
-LABELV $158
+LABELV $167
 line 190
 ;189:
 ;190:    trap_Print(msg);
@@ -826,7 +826,7 @@ CALLV
 pop
 line 191
 ;191:}
-LABELV $156
+LABELV $165
 endproc SG_Printf 4108 12
 export SG_Error
 proc SG_Error 4108 12
@@ -873,17 +873,17 @@ ADDRLP4 4100
 INDIRI4
 CVIU4 4
 CNSTU4 4096
-LTU4 $163
+LTU4 $172
 line 204
 ;204:        trap_Error( "SG_Printf: buffer overflow" );
-ADDRGP4 $160
+ADDRGP4 $169
 ARGP4
 ADDRGP4 trap_Error
 CALLV
 pop
 line 205
 ;205:    }
-LABELV $163
+LABELV $172
 line 207
 ;206:
 ;207:    trap_Error(msg);
@@ -894,7 +894,7 @@ CALLV
 pop
 line 208
 ;208:}
-LABELV $161
+LABELV $170
 endproc SG_Error 4108 12
 export N_Error
 proc N_Error 4108 12
@@ -941,21 +941,21 @@ ADDRLP4 4100
 INDIRI4
 CVIU4 4
 CNSTU4 4096
-LTU4 $167
+LTU4 $176
 line 221
 ;221:        trap_Error( "SG_Printf: buffer overflow" );
-ADDRGP4 $160
+ADDRGP4 $169
 ARGP4
 ADDRGP4 trap_Error
 CALLV
 pop
 line 222
 ;222:    }
-LABELV $167
+LABELV $176
 line 224
 ;223:
 ;224:    SG_Error("%s", msg);
-ADDRGP4 $169
+ADDRGP4 $178
 ARGP4
 ADDRLP4 4
 ARGP4
@@ -964,7 +964,7 @@ CALLV
 pop
 line 225
 ;225:}
-LABELV $165
+LABELV $174
 endproc N_Error 4108 12
 export Con_Printf
 proc Con_Printf 4108 12
@@ -1014,21 +1014,21 @@ ADDRLP4 4100
 INDIRI4
 CVIU4 4
 CNSTU4 4096
-LTU4 $172
+LTU4 $181
 line 241
 ;241:        trap_Error( "SG_Printf: buffer overflow" );
-ADDRGP4 $160
+ADDRGP4 $169
 ARGP4
 ADDRGP4 trap_Error
 CALLV
 pop
 line 242
 ;242:    }
-LABELV $172
+LABELV $181
 line 244
 ;243:
 ;244:    SG_Printf("%s", msg);
-ADDRGP4 $169
+ADDRGP4 $178
 ARGP4
 ADDRLP4 4
 ARGP4
@@ -1037,7 +1037,7 @@ CALLV
 pop
 line 245
 ;245:}
-LABELV $170
+LABELV $179
 endproc Con_Printf 4108 12
 export SG_RunLoop
 proc SG_RunLoop 44 12
@@ -1057,14 +1057,14 @@ line 256
 ADDRGP4 sg+64
 INDIRI4
 CNSTI4 0
-NEI4 $175
+NEI4 $184
 line 257
 ;257:        return 0;
 CNSTI4 0
 RETI4
-ADDRGP4 $174
+ADDRGP4 $183
 JUMPV
-LABELV $175
+LABELV $184
 line 261
 ;258:    }
 ;259:
@@ -1080,7 +1080,7 @@ line 264
 ADDRGP4 sg+64
 INDIRI4
 CNSTI4 2
-NEI4 $178
+NEI4 $187
 line 265
 ;265:        SG_DrawLevelStats();
 ADDRGP4 SG_DrawLevelStats
@@ -1090,9 +1090,9 @@ line 266
 ;266:        return 1; // we don't draw the level if we're ending it
 CNSTI4 1
 RETI4
-ADDRGP4 $174
+ADDRGP4 $183
 JUMPV
-LABELV $178
+LABELV $187
 line 269
 ;267:    }
 ;268:
@@ -1100,14 +1100,14 @@ line 269
 ADDRGP4 sg_paused+260
 INDIRI4
 CNSTI4 0
-EQI4 $181
+EQI4 $190
 line 270
 ;270:        return 0;
 CNSTI4 0
 RETI4
-ADDRGP4 $174
+ADDRGP4 $183
 JUMPV
-LABELV $181
+LABELV $190
 line 273
 ;271:    }
 ;272:
@@ -1171,9 +1171,9 @@ line 286
 ADDRLP4 4
 CNSTI4 0
 ASGNI4
-ADDRGP4 $193
+ADDRGP4 $202
 JUMPV
-LABELV $190
+LABELV $199
 line 287
 ;287:        if ( !ent->health ) {
 ADDRLP4 0
@@ -1182,12 +1182,12 @@ CNSTI4 112
 ADDP4
 INDIRI4
 CNSTI4 0
-NEI4 $195
+NEI4 $204
 line 288
 ;288:            continue;
-ADDRGP4 $191
+ADDRGP4 $200
 JUMPV
-LABELV $195
+LABELV $204
 line 291
 ;289:        }
 ;290:
@@ -1215,7 +1215,7 @@ CNSTI4 116
 ADDP4
 INDIRI4
 CNSTI4 -1
-GTI4 $197
+GTI4 $206
 line 294
 ;294:            Ent_SetState( ent, ent->state->nextstate );
 ADDRLP4 0
@@ -1235,9 +1235,9 @@ CALLI4
 pop
 line 295
 ;295:            continue;
-ADDRGP4 $191
+ADDRGP4 $200
 JUMPV
-LABELV $197
+LABELV $206
 line 299
 ;296:        }
 ;297:
@@ -1252,7 +1252,7 @@ CNSTI4 4
 ADDP4
 INDIRU4
 CNSTU4 0
-EQU4 $199
+EQU4 $208
 line 300
 ;300:            if ( ent->frame == ent->state->frames ) {
 ADDRLP4 0
@@ -1269,7 +1269,7 @@ INDIRP4
 CNSTI4 4
 ADDP4
 INDIRU4
-NEU4 $201
+NEU4 $210
 line 301
 ;301:                ent->frame = 0; // reset animation
 ADDRLP4 0
@@ -1280,9 +1280,9 @@ CNSTI4 0
 ASGNI4
 line 302
 ;302:            }
-ADDRGP4 $202
+ADDRGP4 $211
 JUMPV
-LABELV $201
+LABELV $210
 line 303
 ;303:            else if ( ent->ticker % ent->state->frames ) {
 ADDRLP4 0
@@ -1301,7 +1301,7 @@ ADDP4
 INDIRU4
 MODU4
 CNSTU4 0
-EQU4 $203
+EQU4 $212
 line 304
 ;304:                ent->frame++;
 ADDRLP4 40
@@ -1320,11 +1320,11 @@ ADDI4
 ASGNI4
 line 305
 ;305:            }
-LABELV $203
-LABELV $202
+LABELV $212
+LABELV $211
 line 306
 ;306:        }
-LABELV $199
+LABELV $208
 line 308
 ;307:
 ;308:        ent->state->action.acp1( ent );
@@ -1343,7 +1343,7 @@ CALLV
 pop
 line 309
 ;309:    }
-LABELV $191
+LABELV $200
 line 286
 ADDRLP4 4
 ADDRLP4 4
@@ -1351,12 +1351,12 @@ INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-LABELV $193
+LABELV $202
 ADDRLP4 4
 INDIRI4
 ADDRGP4 sg+76
 INDIRI4
-LTI4 $190
+LTI4 $199
 line 310
 ;310:    end = trap_Milliseconds();
 ADDRLP4 28
@@ -1379,18 +1379,18 @@ line 314
 ADDRGP4 sg_printEntities+260
 INDIRI4
 CNSTI4 0
-EQI4 $205
+EQI4 $214
 line 315
 ;315:        for ( i = 0; i < sg.numEntities; i++ ) {
 ADDRLP4 4
 CNSTI4 0
 ASGNI4
-ADDRGP4 $211
+ADDRGP4 $220
 JUMPV
-LABELV $208
+LABELV $217
 line 316
 ;316:            G_Printf( "%4i: %s\n", i, sg_entities[i].classname );
-ADDRGP4 $213
+ADDRGP4 $222
 ARGP4
 ADDRLP4 4
 INDIRI4
@@ -1408,7 +1408,7 @@ CALLV
 pop
 line 317
 ;317:        }
-LABELV $209
+LABELV $218
 line 315
 ADDRLP4 4
 ADDRLP4 4
@@ -1416,30 +1416,30 @@ INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-LABELV $211
+LABELV $220
 ADDRLP4 4
 INDIRI4
 ADDRGP4 sg+76
 INDIRI4
-LTI4 $208
+LTI4 $217
 line 318
 ;318:        Cvar_Set( "sg_printEntities", "0" );
-ADDRGP4 $103
+ADDRGP4 $112
 ARGP4
-ADDRGP4 $104
+ADDRGP4 $113
 ARGP4
 ADDRGP4 Cvar_Set
 CALLV
 pop
 line 319
 ;319:    }
-LABELV $205
+LABELV $214
 line 321
 ;320:
 ;321:    return 1;
 CNSTI4 1
 RETI4
-LABELV $174
+LABELV $183
 endproc SG_RunLoop 44 12
 proc SG_LoadMedia 44 20
 line 326
@@ -1450,7 +1450,7 @@ line 326
 ;326:{
 line 327
 ;327:    sg.media.player_death0 = trap_Snd_RegisterSfx( "sfx/player/death1.wav" );
-ADDRGP4 $217
+ADDRGP4 $226
 ARGP4
 ADDRLP4 0
 ADDRGP4 trap_Snd_RegisterSfx
@@ -1462,7 +1462,7 @@ INDIRI4
 ASGNI4
 line 328
 ;328:    sg.media.player_death1 = trap_Snd_RegisterSfx( "sfx/player/death2.wav" );
-ADDRGP4 $219
+ADDRGP4 $228
 ARGP4
 ADDRLP4 4
 ADDRGP4 trap_Snd_RegisterSfx
@@ -1474,7 +1474,7 @@ INDIRI4
 ASGNI4
 line 329
 ;329:    sg.media.player_death2 = trap_Snd_RegisterSfx( "sfx/player/death3.wav" ); 
-ADDRGP4 $221
+ADDRGP4 $230
 ARGP4
 ADDRLP4 8
 ADDRGP4 trap_Snd_RegisterSfx
@@ -1486,7 +1486,7 @@ INDIRI4
 ASGNI4
 line 330
 ;330:    sg.media.player_pain0 = trap_Snd_RegisterSfx( "sfx/player/pain0.wav" );
-ADDRGP4 $222
+ADDRGP4 $231
 ARGP4
 ADDRLP4 12
 ADDRGP4 trap_Snd_RegisterSfx
@@ -1498,7 +1498,7 @@ INDIRI4
 ASGNI4
 line 331
 ;331:    sg.media.player_pain1 = trap_Snd_RegisterSfx( "sfx/player/pain1.wav" );
-ADDRGP4 $224
+ADDRGP4 $233
 ARGP4
 ADDRLP4 16
 ADDRGP4 trap_Snd_RegisterSfx
@@ -1510,7 +1510,7 @@ INDIRI4
 ASGNI4
 line 332
 ;332:    sg.media.player_pain2 = trap_Snd_RegisterSfx( "sfx/player/pain2.wav" );
-ADDRGP4 $226
+ADDRGP4 $235
 ARGP4
 ADDRLP4 20
 ADDRGP4 trap_Snd_RegisterSfx
@@ -1522,7 +1522,7 @@ INDIRI4
 ASGNI4
 line 333
 ;333:    sg.media.revolver_fire = trap_Snd_RegisterSfx( "sfx/weapons/revolver_fire.wav" );
-ADDRGP4 $228
+ADDRGP4 $237
 ARGP4
 ADDRLP4 24
 ADDRGP4 trap_Snd_RegisterSfx
@@ -1534,7 +1534,7 @@ INDIRI4
 ASGNI4
 line 334
 ;334:    sg.media.revolver_rld = trap_Snd_RegisterSfx( "sfx/weapons/revolver_rld.wav" );
-ADDRGP4 $230
+ADDRGP4 $239
 ARGP4
 ADDRLP4 28
 ADDRGP4 trap_Snd_RegisterSfx
@@ -1547,7 +1547,7 @@ ASGNI4
 line 336
 ;335:
 ;336:    sg.media.raio_shader = RE_RegisterShader( "textures/sprites/glnomad_raio_base.png" );
-ADDRGP4 $232
+ADDRGP4 $241
 ARGP4
 ADDRLP4 32
 ADDRGP4 RE_RegisterShader
@@ -1559,7 +1559,7 @@ INDIRI4
 ASGNI4
 line 337
 ;337:    sg.media.grunt_shader = RE_RegisterShader( "textures/sprites/glnomad_grunt.png" );
-ADDRGP4 $234
+ADDRGP4 $243
 ARGP4
 ADDRLP4 36
 ADDRGP4 RE_RegisterShader
@@ -1572,7 +1572,7 @@ ASGNI4
 line 339
 ;338:
 ;339:    sg.media.raio_sprites = RE_RegisterSpriteSheet( "textures/sprites/glnomad_raio_base.png", 512, 512, 32, 32 );
-ADDRGP4 $232
+ADDRGP4 $241
 ARGP4
 CNSTI4 512
 ARGI4
@@ -1592,7 +1592,7 @@ INDIRI4
 ASGNI4
 line 340
 ;340:}
-LABELV $215
+LABELV $224
 endproc SG_LoadMedia 44 20
 export SG_Init
 proc SG_Init 4 12
@@ -1602,25 +1602,25 @@ line 343
 ;343:{
 line 344
 ;344:    G_Printf( "---------- Game Initialization ----------\n" );
-ADDRGP4 $237
+ADDRGP4 $246
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
 line 345
 ;345:    G_Printf( "gamename: %s\n", GLN_VERSION );
-ADDRGP4 $238
+ADDRGP4 $247
 ARGP4
-ADDRGP4 $100
+ADDRGP4 $109
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
 line 346
 ;346:    G_Printf( "gamedate: %s\n", __DATE__ );
-ADDRGP4 $239
+ADDRGP4 $248
 ARGP4
-ADDRGP4 $102
+ADDRGP4 $111
 ARGP4
 ADDRGP4 G_Printf
 CALLV
@@ -1685,7 +1685,7 @@ ADDRGP4 sg+73968+12312
 INDIRI4
 CNSTI4 10
 LSHI4
-LEI4 $244
+LEI4 $253
 line 360
 ;359:		// wide screen
 ;360:		sg.bias = 0.5 * ( sg.gpuConfig.vidWidth - ( sg.gpuConfig.vidHeight * (1024.0/768.0) ) );
@@ -1704,9 +1704,9 @@ MULF4
 ASGNF4
 line 361
 ;361:	}
-ADDRGP4 $245
+ADDRGP4 $254
 JUMPV
-LABELV $244
+LABELV $253
 line 362
 ;362:	else {
 line 364
@@ -1717,7 +1717,7 @@ CNSTF4 0
 ASGNF4
 line 365
 ;365:	}
-LABELV $245
+LABELV $254
 line 368
 ;366:
 ;367:    // register sgame cvars
@@ -1747,14 +1747,14 @@ ASGNI4
 line 377
 ;376:
 ;377:    G_Printf( "-----------------------------------\n" );
-ADDRGP4 $257
+ADDRGP4 $266
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
 line 378
 ;378:}
-LABELV $236
+LABELV $245
 endproc SG_Init 4 12
 export SG_Shutdown
 proc SG_Shutdown 0 12
@@ -1764,7 +1764,7 @@ line 381
 ;381:{
 line 382
 ;382:    G_Printf( "Shutting down sgame...\n" );
-ADDRGP4 $259
+ADDRGP4 $268
 ARGP4
 ADDRGP4 G_Printf
 CALLV
@@ -1789,7 +1789,7 @@ CNSTI4 0
 ASGNI4
 line 387
 ;387:}
-LABELV $258
+LABELV $267
 endproc SG_Shutdown 0 12
 export trap_FS_Printf
 proc trap_FS_Printf 8200 12
@@ -1846,7 +1846,7 @@ CALLI4
 pop
 line 399
 ;399:}
-LABELV $261
+LABELV $270
 endproc trap_FS_Printf 8200 12
 data
 export dirvectors
@@ -2344,54 +2344,18 @@ import Info_ValueForKey
 import Com_Clamp
 import bytedirs
 import N_isnan
-import PerpendicularVector
-import AngleVectors
-import MatrixMultiply
-import COM_SkipPath
-import MakeNormalVectors
-import RotateAroundDirection
-import RotatePointAroundVector
-import ProjectPointOnPlane
-import PlaneFromPoints
-import AngleDelta
-import AngleNormalize180
-import AngleNormalize360
-import AnglesSubtract
-import AngleSubtract
-import LerpAngle
-import AngleMod
-import BoundsIntersectPoint
-import BoundsIntersectSphere
-import BoundsIntersect
-import disBetweenOBJ
-import AxisCopy
-import AxisClear
-import AnglesToAxis
-import vectoangles
 import N_crandom
 import N_random
 import N_rand
 import N_fabs
 import N_acos
 import N_log2
-import VectorRotate
-import Vector4Scale
-import VectorNormalize2
-import VectorNormalize
-import CrossProduct
-import VectorInverse
-import VectorNormalizeFast
-import DistanceSquared
-import Distance
-import VectorLengthSquared
-import VectorLength
-import VectorCompare
+import ColorBytes4
+import ColorBytes3
 import AddPointToBounds
 import ClearBounds
 import RadiusFromBounds
 import NormalizeColor
-import ColorBytes4
-import ColorBytes3
 import _VectorMA
 import _VectorScale
 import _VectorCopy
@@ -2400,6 +2364,20 @@ import _VectorSubtract
 import _DotProduct
 import ByteToDir
 import DirToByte
+import CrossProduct
+import VectorInverse
+import VectorNormalizeFast
+import DistanceSquared
+import Distance
+import VectorLengthSquared
+import VectorLength
+import VectorCompare
+import BoundsIntersectPoint
+import BoundsIntersectSphere
+import BoundsIntersect
+import disBetweenOBJ
+import vec3_set
+import vec3_get
 import ClampShort
 import ClampCharMove
 import ClampChar
@@ -2420,7 +2398,7 @@ import colorRed
 import colorBlack
 import vec2_origin
 import vec3_origin
-import mat4_identity
+import COM_SkipPath
 import Com_Split
 import N_replace
 import N_memcmp
@@ -2484,7 +2462,7 @@ import memchr
 import memcpy
 lit
 align 1
-LABELV $259
+LABELV $268
 byte 1 83
 byte 1 104
 byte 1 117
@@ -2510,7 +2488,7 @@ byte 1 46
 byte 1 10
 byte 1 0
 align 1
-LABELV $257
+LABELV $266
 byte 1 45
 byte 1 45
 byte 1 45
@@ -2549,7 +2527,7 @@ byte 1 45
 byte 1 10
 byte 1 0
 align 1
-LABELV $239
+LABELV $248
 byte 1 103
 byte 1 97
 byte 1 109
@@ -2565,7 +2543,7 @@ byte 1 115
 byte 1 10
 byte 1 0
 align 1
-LABELV $238
+LABELV $247
 byte 1 103
 byte 1 97
 byte 1 109
@@ -2581,7 +2559,7 @@ byte 1 115
 byte 1 10
 byte 1 0
 align 1
-LABELV $237
+LABELV $246
 byte 1 45
 byte 1 45
 byte 1 45
@@ -2626,7 +2604,7 @@ byte 1 45
 byte 1 10
 byte 1 0
 align 1
-LABELV $234
+LABELV $243
 byte 1 116
 byte 1 101
 byte 1 120
@@ -2663,7 +2641,7 @@ byte 1 110
 byte 1 103
 byte 1 0
 align 1
-LABELV $232
+LABELV $241
 byte 1 116
 byte 1 101
 byte 1 120
@@ -2704,7 +2682,7 @@ byte 1 110
 byte 1 103
 byte 1 0
 align 1
-LABELV $230
+LABELV $239
 byte 1 115
 byte 1 102
 byte 1 120
@@ -2735,7 +2713,7 @@ byte 1 97
 byte 1 118
 byte 1 0
 align 1
-LABELV $228
+LABELV $237
 byte 1 115
 byte 1 102
 byte 1 120
@@ -2767,7 +2745,7 @@ byte 1 97
 byte 1 118
 byte 1 0
 align 1
-LABELV $226
+LABELV $235
 byte 1 115
 byte 1 102
 byte 1 120
@@ -2790,7 +2768,7 @@ byte 1 97
 byte 1 118
 byte 1 0
 align 1
-LABELV $224
+LABELV $233
 byte 1 115
 byte 1 102
 byte 1 120
@@ -2813,7 +2791,7 @@ byte 1 97
 byte 1 118
 byte 1 0
 align 1
-LABELV $222
+LABELV $231
 byte 1 115
 byte 1 102
 byte 1 120
@@ -2836,7 +2814,7 @@ byte 1 97
 byte 1 118
 byte 1 0
 align 1
-LABELV $221
+LABELV $230
 byte 1 115
 byte 1 102
 byte 1 120
@@ -2860,7 +2838,7 @@ byte 1 97
 byte 1 118
 byte 1 0
 align 1
-LABELV $219
+LABELV $228
 byte 1 115
 byte 1 102
 byte 1 120
@@ -2884,7 +2862,7 @@ byte 1 97
 byte 1 118
 byte 1 0
 align 1
-LABELV $217
+LABELV $226
 byte 1 115
 byte 1 102
 byte 1 120
@@ -2908,7 +2886,7 @@ byte 1 97
 byte 1 118
 byte 1 0
 align 1
-LABELV $213
+LABELV $222
 byte 1 37
 byte 1 52
 byte 1 105
@@ -2919,12 +2897,12 @@ byte 1 115
 byte 1 10
 byte 1 0
 align 1
-LABELV $169
+LABELV $178
 byte 1 37
 byte 1 115
 byte 1 0
 align 1
-LABELV $160
+LABELV $169
 byte 1 83
 byte 1 71
 byte 1 95
@@ -2953,7 +2931,7 @@ byte 1 111
 byte 1 119
 byte 1 0
 align 1
-LABELV $151
+LABELV $160
 byte 1 67
 byte 1 104
 byte 1 97
@@ -2976,7 +2954,7 @@ byte 1 115
 byte 1 34
 byte 1 0
 align 1
-LABELV $132
+LABELV $141
 byte 1 115
 byte 1 103
 byte 1 95
@@ -2990,7 +2968,7 @@ byte 1 101
 byte 1 115
 byte 1 0
 align 1
-LABELV $131
+LABELV $140
 byte 1 115
 byte 1 97
 byte 1 118
@@ -3001,7 +2979,7 @@ byte 1 116
 byte 1 97
 byte 1 0
 align 1
-LABELV $130
+LABELV $139
 byte 1 115
 byte 1 103
 byte 1 95
@@ -3015,7 +2993,7 @@ byte 1 109
 byte 1 101
 byte 1 0
 align 1
-LABELV $129
+LABELV $138
 byte 1 108
 byte 1 101
 byte 1 118
@@ -3028,7 +3006,7 @@ byte 1 120
 byte 1 116
 byte 1 0
 align 1
-LABELV $128
+LABELV $137
 byte 1 115
 byte 1 103
 byte 1 95
@@ -3047,7 +3025,7 @@ byte 1 108
 byte 1 101
 byte 1 0
 align 1
-LABELV $127
+LABELV $136
 byte 1 115
 byte 1 103
 byte 1 95
@@ -3057,11 +3035,11 @@ byte 1 98
 byte 1 115
 byte 1 0
 align 1
-LABELV $126
+LABELV $135
 byte 1 51
 byte 1 0
 align 1
-LABELV $125
+LABELV $134
 byte 1 115
 byte 1 103
 byte 1 95
@@ -3078,7 +3056,7 @@ byte 1 105
 byte 1 108
 byte 1 0
 align 1
-LABELV $124
+LABELV $133
 byte 1 115
 byte 1 103
 byte 1 95
@@ -3099,7 +3077,7 @@ byte 1 116
 byte 1 115
 byte 1 0
 align 1
-LABELV $123
+LABELV $132
 byte 1 103
 byte 1 95
 byte 1 109
@@ -3121,7 +3099,7 @@ byte 1 111
 byte 1 110
 byte 1 0
 align 1
-LABELV $122
+LABELV $131
 byte 1 103
 byte 1 95
 byte 1 109
@@ -3137,7 +3115,7 @@ byte 1 114
 byte 1 116
 byte 1 0
 align 1
-LABELV $121
+LABELV $130
 byte 1 48
 byte 1 46
 byte 1 48
@@ -3145,7 +3123,7 @@ byte 1 50
 byte 1 102
 byte 1 0
 align 1
-LABELV $120
+LABELV $129
 byte 1 112
 byte 1 109
 byte 1 95
@@ -3160,14 +3138,14 @@ byte 1 101
 byte 1 100
 byte 1 0
 align 1
-LABELV $119
+LABELV $128
 byte 1 49
 byte 1 46
 byte 1 48
 byte 1 102
 byte 1 0
 align 1
-LABELV $118
+LABELV $127
 byte 1 112
 byte 1 109
 byte 1 95
@@ -3182,110 +3160,110 @@ byte 1 101
 byte 1 108
 byte 1 0
 align 1
+LABELV $126
+byte 1 48
+byte 1 46
+byte 1 53
+byte 1 102
+byte 1 0
+align 1
+LABELV $125
+byte 1 112
+byte 1 109
+byte 1 95
+byte 1 119
+byte 1 97
+byte 1 116
+byte 1 101
+byte 1 114
+byte 1 65
+byte 1 99
+byte 1 99
+byte 1 101
+byte 1 108
+byte 1 0
+align 1
+LABELV $124
+byte 1 49
+byte 1 46
+byte 1 53
+byte 1 102
+byte 1 0
+align 1
+LABELV $123
+byte 1 112
+byte 1 109
+byte 1 95
+byte 1 97
+byte 1 105
+byte 1 114
+byte 1 65
+byte 1 99
+byte 1 99
+byte 1 101
+byte 1 108
+byte 1 0
+align 1
+LABELV $122
+byte 1 48
+byte 1 46
+byte 1 48
+byte 1 49
+byte 1 102
+byte 1 0
+align 1
+LABELV $121
+byte 1 112
+byte 1 109
+byte 1 95
+byte 1 97
+byte 1 105
+byte 1 114
+byte 1 70
+byte 1 114
+byte 1 105
+byte 1 99
+byte 1 116
+byte 1 105
+byte 1 111
+byte 1 110
+byte 1 0
+align 1
+LABELV $120
+byte 1 48
+byte 1 46
+byte 1 48
+byte 1 54
+byte 1 102
+byte 1 0
+align 1
+LABELV $119
+byte 1 112
+byte 1 109
+byte 1 95
+byte 1 119
+byte 1 97
+byte 1 116
+byte 1 101
+byte 1 114
+byte 1 70
+byte 1 114
+byte 1 105
+byte 1 99
+byte 1 116
+byte 1 105
+byte 1 111
+byte 1 110
+byte 1 0
+align 1
+LABELV $118
+byte 1 48
+byte 1 46
+byte 1 54
+byte 1 102
+byte 1 0
+align 1
 LABELV $117
-byte 1 48
-byte 1 46
-byte 1 53
-byte 1 102
-byte 1 0
-align 1
-LABELV $116
-byte 1 112
-byte 1 109
-byte 1 95
-byte 1 119
-byte 1 97
-byte 1 116
-byte 1 101
-byte 1 114
-byte 1 65
-byte 1 99
-byte 1 99
-byte 1 101
-byte 1 108
-byte 1 0
-align 1
-LABELV $115
-byte 1 49
-byte 1 46
-byte 1 53
-byte 1 102
-byte 1 0
-align 1
-LABELV $114
-byte 1 112
-byte 1 109
-byte 1 95
-byte 1 97
-byte 1 105
-byte 1 114
-byte 1 65
-byte 1 99
-byte 1 99
-byte 1 101
-byte 1 108
-byte 1 0
-align 1
-LABELV $113
-byte 1 48
-byte 1 46
-byte 1 48
-byte 1 49
-byte 1 102
-byte 1 0
-align 1
-LABELV $112
-byte 1 112
-byte 1 109
-byte 1 95
-byte 1 97
-byte 1 105
-byte 1 114
-byte 1 70
-byte 1 114
-byte 1 105
-byte 1 99
-byte 1 116
-byte 1 105
-byte 1 111
-byte 1 110
-byte 1 0
-align 1
-LABELV $111
-byte 1 48
-byte 1 46
-byte 1 48
-byte 1 54
-byte 1 102
-byte 1 0
-align 1
-LABELV $110
-byte 1 112
-byte 1 109
-byte 1 95
-byte 1 119
-byte 1 97
-byte 1 116
-byte 1 101
-byte 1 114
-byte 1 70
-byte 1 114
-byte 1 105
-byte 1 99
-byte 1 116
-byte 1 105
-byte 1 111
-byte 1 110
-byte 1 0
-align 1
-LABELV $109
-byte 1 48
-byte 1 46
-byte 1 54
-byte 1 102
-byte 1 0
-align 1
-LABELV $108
 byte 1 112
 byte 1 109
 byte 1 95
@@ -3305,7 +3283,7 @@ byte 1 111
 byte 1 110
 byte 1 0
 align 1
-LABELV $107
+LABELV $116
 byte 1 103
 byte 1 95
 byte 1 112
@@ -3316,11 +3294,11 @@ byte 1 101
 byte 1 100
 byte 1 0
 align 1
-LABELV $106
+LABELV $115
 byte 1 49
 byte 1 0
 align 1
-LABELV $105
+LABELV $114
 byte 1 115
 byte 1 103
 byte 1 95
@@ -3336,11 +3314,11 @@ byte 1 110
 byte 1 116
 byte 1 0
 align 1
-LABELV $104
+LABELV $113
 byte 1 48
 byte 1 0
 align 1
-LABELV $103
+LABELV $112
 byte 1 115
 byte 1 103
 byte 1 95
@@ -3359,13 +3337,13 @@ byte 1 101
 byte 1 115
 byte 1 0
 align 1
-LABELV $102
+LABELV $111
 byte 1 68
 byte 1 101
 byte 1 99
 byte 1 32
 byte 1 50
-byte 1 52
+byte 1 53
 byte 1 32
 byte 1 50
 byte 1 48
@@ -3373,7 +3351,7 @@ byte 1 50
 byte 1 51
 byte 1 0
 align 1
-LABELV $101
+LABELV $110
 byte 1 103
 byte 1 97
 byte 1 109
@@ -3384,7 +3362,7 @@ byte 1 116
 byte 1 101
 byte 1 0
 align 1
-LABELV $100
+LABELV $109
 byte 1 71
 byte 1 76
 byte 1 78
@@ -3404,7 +3382,7 @@ byte 1 104
 byte 1 97
 byte 1 0
 align 1
-LABELV $99
+LABELV $108
 byte 1 103
 byte 1 97
 byte 1 109
@@ -3415,7 +3393,7 @@ byte 1 109
 byte 1 101
 byte 1 0
 align 1
-LABELV $97
+LABELV $106
 byte 1 118
 byte 1 109
 byte 1 77

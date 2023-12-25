@@ -114,9 +114,9 @@ void SG_DrawLevelStats( void )
         ImGui_SetWindowFontScale(font_scale * 3.5f);
         ImGui_NewLine();
 
-        ImGui_GetCursorScreenPos(&cursorPos[0], &cursorPos[1]);
+        ImGui_GetCursorScreenPos( &cursorPos.x, &cursorPos.y );
 
-        ImGui_SetCursorScreenPos(cursorPos[0], cursorPos[1] + 20);
+        ImGui_SetCursorScreenPos( cursorPos.x, cursorPos.y + 20);
     }
     ImGui_EndWindow();
 }

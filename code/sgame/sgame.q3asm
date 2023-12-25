@@ -13,5 +13,5 @@ sg_gameinfo
 sg_draw
 sg_imgui
 sg_lib
-n_math
+sg_math
 n_shared

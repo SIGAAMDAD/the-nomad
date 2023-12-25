@@ -4,7 +4,7 @@ static mobj_t sg_mobs[MAXMOBS];
 
 static qboolean SG_CheckSight( mobj_t *m )
 {
-	float dis = disBetweenOBJ( m->ent->origin, m->target->origin );
+	float dis = disBetweenOBJ( &m->ent->origin, &m->target->origin );
 
 	if ( dis <= m->sight_range ) {
 		return qfalse;
@@ -53,7 +53,7 @@ void SG_SpawnMobOnMap( mobtype_t id, float x, float y, float elevation )
 	
 	m = SG_SpawnMob( id );
 	
-	m->ent->origin[0] = x;
-	m->ent->origin[1] = y;
-	m->ent->origin[2] = elevation;
+	m->ent->origin.x = x;
+	m->ent->origin.y = y;
+	m->ent->origin.z = elevation;
 }

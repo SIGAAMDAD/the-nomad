@@ -43,7 +43,7 @@ sgentity_t *Ent_CheckEntityCollision( const sgentity_t *ent )
 
 	it = &sg_entities[0];
 	for ( i = 0; i < sg.numEntities; i++, it++ ) {
-		if ( BoundsIntersect( it->bounds.mins, it->bounds.maxs, ent->bounds.mins, ent->bounds.maxs ) && it != ent ) {
+		if ( BoundsIntersect( &it->bounds, &ent->bounds ) && it != ent ) {
 			return it;
 		}
 	}
@@ -83,24 +83,24 @@ qboolean Ent_CheckWallCollision( const sgentity_t *e )
 
 void SG_BuildBounds( bbox_t *bounds, float width, float height, const vec3_t origin )
 {
-	bounds->mins[0] = origin[0] - height;
-	bounds->mins[1] = origin[1] - width;
-	bounds->mins[2] = origin[2];
+	bounds->mins.x = origin.x - height;
+	bounds->mins.y = origin.y - width;
+	bounds->mins.z = origin.z;
 
-	bounds->maxs[0] = origin[0] + height;
-	bounds->maxs[1] = origin[1] + width;
-	bounds->maxs[2] = origin[2];
+	bounds->maxs.x = origin.x + height;
+	bounds->maxs.y = origin.y + width;
+	bounds->maxs.z = origin.z;
 }
 
 void Ent_BuildBounds( sgentity_t *ent )
 {
-	ent->bounds.mins[0] = ent->origin[0] - ent->height;
-	ent->bounds.mins[1] = ent->origin[1] - ent->width;
-	ent->bounds.mins[2] = ent->origin[2];
+	ent->bounds.mins.x = ent->origin.x - ent->height;
+	ent->bounds.mins.y = ent->origin.y - ent->width;
+	ent->bounds.mins.z = ent->origin.z;
 
-	ent->bounds.maxs[0] = ent->origin[0] + ent->height;
-	ent->bounds.maxs[1] = ent->origin[1] + ent->width;
-	ent->bounds.maxs[2] = ent->origin[2];
+	ent->bounds.maxs.x = ent->origin.x + ent->height;
+	ent->bounds.maxs.y = ent->origin.y + ent->width;
+	ent->bounds.maxs.z = ent->origin.z;
 }
 
 void SG_FreeEntity( sgentity_t *ent )

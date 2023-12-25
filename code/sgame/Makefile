@@ -36,7 +36,7 @@ OBJS=\
 	$(O)/sg_gameinfo.o \
 	$(O)/sg_draw.o \
 	$(O)/sg_imgui.o \
-	$(O)/n_math.o \
+	$(O)/sg_math.o \
 	$(O)/n_shared.o \
 
 $(O)/%.o: $(SDIR)/sgame/%.c

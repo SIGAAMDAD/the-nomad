@@ -12,7 +12,7 @@ typedef struct {
 static drawdata_t data;
 
 static qboolean EntityIsInView( const bbox_t *bounds ) {
-    return BoundsIntersect( bounds->mins, bounds->maxs, data.frustum.mins, data.frustum.maxs );
+    return BoundsIntersect( bounds, &data.frustum );
 }
 
 static void SG_CalcVerts( const sgentity_t *ent, polyVert_t *verts )

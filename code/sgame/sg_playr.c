@@ -95,21 +95,21 @@ static void PM_Friction( pmove_t *pm )
 
 	VectorCopy( v, pm->vel );
 
-	speed = VectorLength( v );
+	speed = VectorLength( &v );
 	if ( speed <= 0.0f ) {
 		return;
 	}
 
-	if ( pm->vel[0] < 0 ) {
-		pm->vel[0] = MIN( 0, pm->vel[0] + pm_groundFriction.f );
-	} else if ( pm->vel[0] > 0 ) {
-		pm->vel[0] = MAX( 0, pm->vel[0] - pm_groundFriction.f );
+	if ( pm->vel.x < 0 ) {
+		pm->vel.x = MIN( 0, pm->vel.x + pm_groundFriction.f );
+	} else if ( pm->vel.x > 0 ) {
+		pm->vel.x = MAX( 0, pm->vel.x - pm_groundFriction.f );
 	}
 
-	if ( pm->vel[1] < 0 ) {
-		pm->vel[1] = MIN( 0, pm->vel[1] + pm_groundFriction.f );
-	} else if ( pm->vel[0] > 0 ) {
-		pm->vel[1] = MAX( 0, pm->vel[1] - pm_groundFriction.f );
+	if ( pm->vel.y < 0 ) {
+		pm->vel.y = MIN( 0, pm->vel.y + pm_groundFriction.f );
+	} else if ( pm->vel.x > 0 ) {
+		pm->vel.y = MAX( 0, pm->vel.y - pm_groundFriction.f );
 	}
 
 	pm->forward = MAX( 0, pm->forward - pm_groundFriction.f );
@@ -120,7 +120,6 @@ static void PM_Friction( pmove_t *pm )
 
 static void PM_Accelerate( vec3_t wishdir, float wishspeed, float accel, pmove_t *pm )
 {
-	int i;
 	float addspeed, accelspeed, speed;
 	
 	speed = DotProduct( pm->vel, wishdir );
@@ -132,28 +131,28 @@ static void PM_Accelerate( vec3_t wishdir, float wishspeed, float accel, pmove_t
 	if ( accelspeed > addspeed ) {
 		accelspeed = addspeed;
 	}
-	
-	for ( i = 0; i < 3; i++ ) {
-		pm->vel[i] += accelspeed * wishdir[i];
-	}
+
+	pm->vel.x += accelspeed * wishdir.x;
+	pm->vel.y += accelspeed * wishdir.y;
+	pm->vel.z += accelspeed * wishdir.z;
 }
 
 static void PM_ClipVelocity( vec3_t vel, float *forward, float *left, float *right, float *backward )
 {
-	if ( vel[0] > PMOVE_MAXSPEED ) {
-		vel[0] = PMOVE_MAXSPEED;
-	} else if ( vel[0] < -PMOVE_MAXSPEED ) {
-		vel[0] = -PMOVE_MAXSPEED;
+	if ( vel.x > PMOVE_MAXSPEED ) {
+		vel.x = PMOVE_MAXSPEED;
+	} else if ( vel.x < -PMOVE_MAXSPEED ) {
+		vel.x = -PMOVE_MAXSPEED;
 	}
 
-	if ( vel[1] > PMOVE_MAXSPEED ) {
-		vel[1] = PMOVE_MAXSPEED;
-	} else if ( vel[1] < -PMOVE_MAXSPEED ) {
-		vel[1] = -PMOVE_MAXSPEED;
+	if ( vel.y > PMOVE_MAXSPEED ) {
+		vel.y = PMOVE_MAXSPEED;
+	} else if ( vel.y < -PMOVE_MAXSPEED ) {
+		vel.y = -PMOVE_MAXSPEED;
 	}
 
-	if ( vel[2] > 10 ) {
-		vel[2] = 10;
+	if ( vel.z > 10 ) {
+		vel.z = 10;
 	}
 
 	*forward = MIN( *forward, PMOVE_MAXSPEED );
@@ -234,23 +233,23 @@ static qboolean P_ClipOrigin( sgentity_t *self )
 
 	VectorCopy( origin, self->origin );
 
-	if ( origin[0] > sg.mapInfo.width - 1 ) {
-		origin[0] = sg.mapInfo.width - 1;
-	} else if ( origin[0] < PMOVE_CLAMP_BORDER_HORZ ) {
-		origin[0] = PMOVE_CLAMP_BORDER_HORZ;
+	if ( origin.x > sg.mapInfo.width - 1 ) {
+		origin.x = sg.mapInfo.width - 1;
+	} else if ( origin.x < PMOVE_CLAMP_BORDER_HORZ ) {
+		origin.x = PMOVE_CLAMP_BORDER_HORZ;
 	}
 
-	if ( origin[1] > sg.mapInfo.height - 1 ) {
-		origin[1] = sg.mapInfo.height - 1;
-	} else if ( origin[1] < PMOVE_CLAMP_BORDER_VERT ) {
-		origin[1] = PMOVE_CLAMP_BORDER_VERT;
+	if ( origin.y > sg.mapInfo.height - 1 ) {
+		origin.y = sg.mapInfo.height - 1;
+	} else if ( origin.y < PMOVE_CLAMP_BORDER_VERT ) {
+		origin.y = PMOVE_CLAMP_BORDER_VERT;
 	}
 
-	if ( origin[2] > 10 ) {
-		origin[2] = 10;
+	if ( origin.z > 10 ) {
+		origin.z = 10;
 	}
 
-	if ( !VectorCompare( self->origin, origin ) ) { // clip it at map boundaries
+	if ( !VectorCompare( &self->origin, &origin ) ) { // clip it at map boundaries
 		VectorCopy( self->origin, origin );
 		VectorClear( pm.vel );
 		return qtrue;
@@ -274,11 +273,11 @@ static void Pmove( sgentity_t *self )
 		self->facing = 0;
 	}
 
-	pm.vel[0] += pm.right;
-	pm.vel[0] -= pm.left;
+	pm.vel.x += pm.right;
+	pm.vel.x -= pm.left;
 
-	pm.vel[1] -= pm.forward;
-	pm.vel[1] += pm.backward;
+	pm.vel.y -= pm.forward;
+	pm.vel.y += pm.backward;
 
 	pm.backwardmove = pm.backward == 0;
 	pm.forwardmove = pm.forward == 0;
@@ -288,15 +287,15 @@ static void Pmove( sgentity_t *self )
 	PM_ClipVelocity( pm.vel, &pm.forward, &pm.left, &pm.right, &pm.backward );
 	PM_Friction( &pm );
 
-	x += pm.vel[0];
-	y += pm.vel[1];
+	self->origin.x += pm.vel.x;
+	self->origin.y += pm.vel.y;
 
 	if ( P_ClipOrigin( sg.playr.ent ) ) {
 		VectorClear( pm.vel );
 	}
 
-	sg.cameraPos[0] = self->origin[0] - ( sg.cameraPos[0] / 2 );
-	sg.cameraPos[1] = -self->origin[1];
+	sg.cameraPos.x = self->origin.x - ( sg.cameraPos.x / 2 );
+	sg.cameraPos.y = -self->origin.y;
 }
 
 void P_Thinker( sgentity_t *self )
@@ -308,18 +307,15 @@ void P_Thinker( sgentity_t *self )
 
 	ImGui_BeginWindow( "Player Move Metrics", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize );
 
-	ImGui_Text( "x: %f", x );
-	ImGui_Text( "y: %f", y );
+	for ( i = 0; i < 3; i++ ) {
+		f = vec3_get( &self->origin, i );
+		ImGui_Text( "self->origin[%i]: %f", i, f );
+	}
 
 	ImGui_Text( "pm.forward: %f", pm.forward );
 	ImGui_Text( "pm.backward: %f", pm.backward );
 	ImGui_Text( "pm.left: %f", pm.left );
 	ImGui_Text( "pm.right: %f", pm.right );
-
-	for ( i = 0; i < 3; i++ ) {
-		f = pm.vel[i];
-		ImGui_Text( "pm.vel[%i]: %f", i, f );
-	}
 
 	ImGui_EndWindow();
 }

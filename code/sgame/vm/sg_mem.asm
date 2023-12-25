@@ -1,7 +1,7 @@
 data
 align 4
-LABELV $82
-address $83
+LABELV $91
+address $92
 export String_Alloc
 code
 proc String_Alloc 40 8
@@ -43,14 +43,14 @@ ADDRFP4 0
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $84
+NEU4 $93
 line 32
 ;32:		return NULL;
 CNSTP4 0
 RETP4
-ADDRGP4 $81
+ADDRGP4 $90
 JUMPV
-LABELV $84
+LABELV $93
 line 35
 ;33:	}
 ;34:
@@ -60,15 +60,15 @@ INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $86
+NEI4 $95
 line 36
 ;36:		return staticNULL;
-ADDRGP4 $82
+ADDRGP4 $91
 INDIRP4
 RETP4
-ADDRGP4 $81
+ADDRGP4 $90
 JUMPV
-LABELV $86
+LABELV $95
 line 39
 ;37:	}
 ;38:
@@ -98,9 +98,9 @@ ADDRGP4 strHandle
 ADDP4
 INDIRP4
 ASGNP4
-ADDRGP4 $89
+ADDRGP4 $98
 JUMPV
-LABELV $88
+LABELV $97
 line 42
 ;42:	while (str) {
 line 43
@@ -121,7 +121,7 @@ ASGNI4
 ADDRLP4 20
 INDIRI4
 CNSTI4 0
-NEI4 $91
+NEI4 $100
 line 44
 ;44:			return str->str;
 ADDRLP4 0
@@ -130,9 +130,9 @@ CNSTI4 4
 ADDP4
 INDIRP4
 RETP4
-ADDRGP4 $81
+ADDRGP4 $90
 JUMPV
-LABELV $91
+LABELV $100
 line 46
 ;45:		}
 ;46:		str = str->next;
@@ -143,13 +143,13 @@ INDIRP4
 ASGNP4
 line 47
 ;47:	}
-LABELV $89
+LABELV $98
 line 42
 ADDRLP4 0
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $88
+NEU4 $97
 line 49
 ;48:
 ;49:	len = strlen(p);
@@ -175,7 +175,7 @@ ADDI4
 CNSTI4 1
 ADDI4
 CNSTI4 8192
-GEI4 $93
+GEI4 $102
 line 51
 ;51:		int ph = strPoolIndex;
 ADDRLP4 24
@@ -229,9 +229,9 @@ ADDRLP4 4
 ADDRLP4 0
 INDIRP4
 ASGNP4
-ADDRGP4 $96
+ADDRGP4 $105
 JUMPV
-LABELV $95
+LABELV $104
 line 57
 ;57:		while (str && str->next) {
 line 58
@@ -249,20 +249,20 @@ INDIRP4
 ASGNP4
 line 60
 ;60:		}
-LABELV $96
+LABELV $105
 line 57
 ADDRLP4 0
 INDIRP4
 CVPU4 4
 CNSTU4 0
-EQU4 $98
+EQU4 $107
 ADDRLP4 0
 INDIRP4
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $95
-LABELV $98
+NEU4 $104
+LABELV $107
 line 62
 ;61:
 ;62:		str = (stringDef_t *)SG_MemAlloc( sizeof(stringDef_t) );
@@ -299,7 +299,7 @@ ADDRLP4 4
 INDIRP4
 CVPU4 4
 CNSTU4 0
-EQU4 $99
+EQU4 $108
 line 66
 ;66:			last->next = str;
 ADDRLP4 4
@@ -309,9 +309,9 @@ INDIRP4
 ASGNP4
 line 67
 ;67:		} else {
-ADDRGP4 $100
+ADDRGP4 $109
 JUMPV
-LABELV $99
+LABELV $108
 line 68
 ;68:			strHandle[hash] = str;
 ADDRLP4 8
@@ -325,7 +325,7 @@ INDIRP4
 ASGNP4
 line 69
 ;69:		}
-LABELV $100
+LABELV $109
 line 70
 ;70:		return &strPool[ph];
 ADDRLP4 24
@@ -333,15 +333,15 @@ INDIRI4
 ADDRGP4 strPool
 ADDP4
 RETP4
-ADDRGP4 $81
+ADDRGP4 $90
 JUMPV
-LABELV $93
+LABELV $102
 line 72
 ;71:	}
 ;72:	return NULL;
 CNSTP4 0
 RETP4
-LABELV $81
+LABELV $90
 endproc String_Alloc 40 8
 export String_Report
 proc String_Report 4 16
@@ -353,14 +353,14 @@ line 76
 line 78
 ;77:	float f;
 ;78:	Con_Printf("Memory/String Pool Info\n");
-ADDRGP4 $102
+ADDRGP4 $111
 ARGP4
 ADDRGP4 Con_Printf
 CALLV
 pop
 line 79
 ;79:	Con_Printf("----------------\n");
-ADDRGP4 $103
+ADDRGP4 $112
 ARGP4
 ADDRGP4 Con_Printf
 CALLV
@@ -391,7 +391,7 @@ MULF4
 ASGNF4
 line 84
 ;84:	Con_Printf("String Pool is %.1f%% full, %i bytes out of %i used.\n", f, strPoolIndex, STRINGPOOL_SIZE);
-ADDRGP4 $104
+ADDRGP4 $113
 ARGP4
 ADDRLP4 0
 INDIRF4
@@ -430,7 +430,7 @@ MULF4
 ASGNF4
 line 89
 ;89:	Con_Printf("Memory Pool is %.1f%% full, %i bytes out of %i used.\n", f, allocPoint, MEMPOOL_SIZE);
-ADDRGP4 $105
+ADDRGP4 $114
 ARGP4
 ADDRLP4 0
 INDIRF4
@@ -445,7 +445,7 @@ CALLV
 pop
 line 90
 ;90:}
-LABELV $101
+LABELV $110
 endproc String_Report 4 16
 export SG_MemAlloc
 proc SG_MemAlloc 8 12
@@ -460,17 +460,17 @@ line 96
 ADDRFP4 0
 INDIRI4
 CNSTI4 0
-NEI4 $107
+NEI4 $116
 line 97
 ;97:        G_Error( "SG_MemAlloc: bad size" );
-ADDRGP4 $109
+ADDRGP4 $118
 ARGP4
 ADDRGP4 G_Error
 CALLV
 pop
 line 98
 ;98:    }
-LABELV $107
+LABELV $116
 line 100
 ;99:
 ;100:    size = PAD(size, (unsigned)16); // round to 16-byte alignment
@@ -496,10 +496,10 @@ INDIRI4
 ADDI4
 CVIU4 4
 CNSTU4 8388608
-LTU4 $110
+LTU4 $119
 line 103
 ;103:        G_Error( "SG_MemAlloc: not enough vm memory" );
-ADDRGP4 $112
+ADDRGP4 $121
 ARGP4
 ADDRGP4 G_Error
 CALLV
@@ -508,9 +508,9 @@ line 104
 ;104:        return NULL;
 CNSTP4 0
 RETP4
-ADDRGP4 $106
+ADDRGP4 $115
 JUMPV
-LABELV $110
+LABELV $119
 line 107
 ;105:    }
 ;106:
@@ -557,7 +557,7 @@ line 113
 ADDRLP4 0
 INDIRP4
 RETP4
-LABELV $106
+LABELV $115
 endproc SG_MemAlloc 8 12
 export SG_MemoryRemaining
 proc SG_MemoryRemaining 0 0
@@ -574,7 +574,7 @@ CVIU4 4
 SUBU4
 CVUI4 4
 RETI4
-LABELV $113
+LABELV $122
 endproc SG_MemoryRemaining 0 0
 export SG_MemInit
 proc SG_MemInit 4 12
@@ -613,7 +613,7 @@ line 127
 ADDRLP4 0
 CNSTI4 0
 ASGNI4
-LABELV $115
+LABELV $124
 line 128
 ;128:		strHandle[i] = 0;
 ADDRLP4 0
@@ -626,7 +626,7 @@ CNSTP4 0
 ASGNP4
 line 129
 ;129:	}
-LABELV $116
+LABELV $125
 line 127
 ADDRLP4 0
 ADDRLP4 0
@@ -637,7 +637,7 @@ ASGNI4
 ADDRLP4 0
 INDIRI4
 CNSTI4 2048
-LTI4 $115
+LTI4 $124
 line 130
 ;130:	strHandleCount = 0;
 ADDRGP4 strHandleCount
@@ -650,7 +650,7 @@ CNSTI4 0
 ASGNI4
 line 132
 ;132:}
-LABELV $114
+LABELV $123
 endproc SG_MemInit 4 12
 bss
 align 4
@@ -1059,54 +1059,18 @@ import Info_ValueForKey
 import Com_Clamp
 import bytedirs
 import N_isnan
-import PerpendicularVector
-import AngleVectors
-import MatrixMultiply
-import COM_SkipPath
-import MakeNormalVectors
-import RotateAroundDirection
-import RotatePointAroundVector
-import ProjectPointOnPlane
-import PlaneFromPoints
-import AngleDelta
-import AngleNormalize180
-import AngleNormalize360
-import AnglesSubtract
-import AngleSubtract
-import LerpAngle
-import AngleMod
-import BoundsIntersectPoint
-import BoundsIntersectSphere
-import BoundsIntersect
-import disBetweenOBJ
-import AxisCopy
-import AxisClear
-import AnglesToAxis
-import vectoangles
 import N_crandom
 import N_random
 import N_rand
 import N_fabs
 import N_acos
 import N_log2
-import VectorRotate
-import Vector4Scale
-import VectorNormalize2
-import VectorNormalize
-import CrossProduct
-import VectorInverse
-import VectorNormalizeFast
-import DistanceSquared
-import Distance
-import VectorLengthSquared
-import VectorLength
-import VectorCompare
+import ColorBytes4
+import ColorBytes3
 import AddPointToBounds
 import ClearBounds
 import RadiusFromBounds
 import NormalizeColor
-import ColorBytes4
-import ColorBytes3
 import _VectorMA
 import _VectorScale
 import _VectorCopy
@@ -1115,6 +1079,20 @@ import _VectorSubtract
 import _DotProduct
 import ByteToDir
 import DirToByte
+import CrossProduct
+import VectorInverse
+import VectorNormalizeFast
+import DistanceSquared
+import Distance
+import VectorLengthSquared
+import VectorLength
+import VectorCompare
+import BoundsIntersectPoint
+import BoundsIntersectSphere
+import BoundsIntersect
+import disBetweenOBJ
+import vec3_set
+import vec3_get
 import ClampShort
 import ClampCharMove
 import ClampChar
@@ -1136,7 +1114,7 @@ import colorRed
 import colorBlack
 import vec2_origin
 import vec3_origin
-import mat4_identity
+import COM_SkipPath
 import Com_Split
 import N_replace
 import N_memcmp
@@ -1200,7 +1178,7 @@ import memchr
 import memcpy
 lit
 align 1
-LABELV $112
+LABELV $121
 byte 1 83
 byte 1 71
 byte 1 95
@@ -1236,7 +1214,7 @@ byte 1 114
 byte 1 121
 byte 1 0
 align 1
-LABELV $109
+LABELV $118
 byte 1 83
 byte 1 71
 byte 1 95
@@ -1260,7 +1238,7 @@ byte 1 122
 byte 1 101
 byte 1 0
 align 1
-LABELV $105
+LABELV $114
 byte 1 77
 byte 1 101
 byte 1 109
@@ -1316,7 +1294,7 @@ byte 1 46
 byte 1 10
 byte 1 0
 align 1
-LABELV $104
+LABELV $113
 byte 1 83
 byte 1 116
 byte 1 114
@@ -1372,7 +1350,7 @@ byte 1 46
 byte 1 10
 byte 1 0
 align 1
-LABELV $103
+LABELV $112
 byte 1 45
 byte 1 45
 byte 1 45
@@ -1392,7 +1370,7 @@ byte 1 45
 byte 1 10
 byte 1 0
 align 1
-LABELV $102
+LABELV $111
 byte 1 77
 byte 1 101
 byte 1 109
@@ -1419,5 +1397,5 @@ byte 1 111
 byte 1 10
 byte 1 0
 align 1
-LABELV $83
+LABELV $92
 byte 1 0

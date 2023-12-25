@@ -44,7 +44,7 @@ CALLV
 pop
 line 14
 ;14:}
-LABELV $81
+LABELV $90
 endproc ImGui_SetItemTooltip 8196 12
 export ImGui_Text
 proc ImGui_Text 8196 12
@@ -88,10 +88,10 @@ CALLV
 pop
 line 26
 ;26:}
-LABELV $83
+LABELV $92
 endproc ImGui_Text 8196 12
 export ImGui_ColoredText
-proc ImGui_ColoredText 8196 12
+proc ImGui_ColoredText 8212 12
 line 29
 ;27:
 ;28:void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL ImGui_ColoredText( const vec4_t pColor, const char *fmt, ... )
@@ -125,8 +125,12 @@ ASGNP4
 line 37
 ;36:
 ;37:    ImGui_ColoredTextUnformatted( pColor, msg );
+ADDRLP4 8196
 ADDRFP4 0
 INDIRP4
+INDIRB
+ASGNB 16
+ADDRLP4 8196
 ARGP4
 ADDRLP4 4
 ARGP4
@@ -135,8 +139,8 @@ CALLV
 pop
 line 38
 ;38:}
-LABELV $85
-endproc ImGui_ColoredText 8196 12
+LABELV $94
+endproc ImGui_ColoredText 8212 12
 import Cvar_VariableStringBuffer
 import Cvar_Set
 import Cvar_Update
@@ -525,54 +529,18 @@ import Info_ValueForKey
 import Com_Clamp
 import bytedirs
 import N_isnan
-import PerpendicularVector
-import AngleVectors
-import MatrixMultiply
-import COM_SkipPath
-import MakeNormalVectors
-import RotateAroundDirection
-import RotatePointAroundVector
-import ProjectPointOnPlane
-import PlaneFromPoints
-import AngleDelta
-import AngleNormalize180
-import AngleNormalize360
-import AnglesSubtract
-import AngleSubtract
-import LerpAngle
-import AngleMod
-import BoundsIntersectPoint
-import BoundsIntersectSphere
-import BoundsIntersect
-import disBetweenOBJ
-import AxisCopy
-import AxisClear
-import AnglesToAxis
-import vectoangles
 import N_crandom
 import N_random
 import N_rand
 import N_fabs
 import N_acos
 import N_log2
-import VectorRotate
-import Vector4Scale
-import VectorNormalize2
-import VectorNormalize
-import CrossProduct
-import VectorInverse
-import VectorNormalizeFast
-import DistanceSquared
-import Distance
-import VectorLengthSquared
-import VectorLength
-import VectorCompare
+import ColorBytes4
+import ColorBytes3
 import AddPointToBounds
 import ClearBounds
 import RadiusFromBounds
 import NormalizeColor
-import ColorBytes4
-import ColorBytes3
 import _VectorMA
 import _VectorScale
 import _VectorCopy
@@ -581,6 +549,20 @@ import _VectorSubtract
 import _DotProduct
 import ByteToDir
 import DirToByte
+import CrossProduct
+import VectorInverse
+import VectorNormalizeFast
+import DistanceSquared
+import Distance
+import VectorLengthSquared
+import VectorLength
+import VectorCompare
+import BoundsIntersectPoint
+import BoundsIntersectSphere
+import BoundsIntersect
+import disBetweenOBJ
+import vec3_set
+import vec3_get
 import ClampShort
 import ClampCharMove
 import ClampChar
@@ -602,7 +584,7 @@ import colorRed
 import colorBlack
 import vec2_origin
 import vec3_origin
-import mat4_identity
+import COM_SkipPath
 import Com_Split
 import N_replace
 import N_memcmp

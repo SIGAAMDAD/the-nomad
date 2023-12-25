@@ -19,10 +19,6 @@ Platform Specific Preprocessors
 #define arm64   0
 #define arm32   0
 
-#ifndef CLAMP
-#define CLAMP(a,b,c) MIN(MAX((a),(b)),(c))
-#endif
-
 #define MAX_GDR_PATH 64
 
 #if defined(__cplusplus) && !defined(__GNUC__) && !defined(__MINGW64__) && !defined(__MINGW32__)
@@ -428,15 +424,9 @@ int GDR_ATTRIBUTE((format(printf, 3, 4))) GDR_DECL Com_snprintf(char *dest, uint
 
 #define TICRATE 60
 
-#ifndef M_LN2
-#define M_LN2          0.69314718055994530942  /* log_e 2 */
-#endif
-#ifndef M_PI
-#define M_PI		3.14159265358979323846f	// matches value in gcc v2 math.h
-#endif
-
 #ifndef __BYTEBOOL__
 #define __BYTEBOOL__
+typedef unsigned char byte;
 #ifdef __cplusplus
 typedef uint32_t qboolean;
 #define qtrue 1
@@ -566,13 +556,13 @@ typedef struct {
 #endif
 #endif
 
-#ifdef Q3_VM
+#if defined(Q3_VM) || !defined(_NOMAD_ENGINE)
 
 #define VectorNegate(a,b)		((b).x=-(a).x,(b).y=-(a).y,(b).z=-(a).z)
-#define VectorSet(v, x, y, z)	((v).x=(x),(v).y=(y),(v).z=(z))
+#define VectorSet(v, x, y, o)	((v).x=(x),(v).y=(y),(v).z=(o))
 #define VectorClear(a)			((a).x=(a).y=(a).z=0)
 
-#define DotProduct(x,y)			((x).x*(y).x+(x).y*(y).y+(x).z*(y).z)
+#define DotProduct(a,b)			((a).x*(b).x+(a).y*(b).y+(a).z*(b).z)
 #define VectorSubtract(a,b,c)	((c).x=(a).x-(b).x,(c).y=(a).y-(b).y,(c).z=(a).z-(b).z)
 #define VectorAdd(a,b,c)		((c).x=(a).x+(b).x,(c).y=(a).y+(b).y,(c).z=(a).z+(b).z)
 #define VectorCopy(b,a)			((b).x=(a).x,(b).y=(a).y,(b).z=(a).z)
@@ -582,7 +572,7 @@ typedef struct {
 #define VectorCopy4(b,a)		((b).r=(a).r,(b).g=(a).g,(b).b=(a).b,(b).a=(a).a)
 #define DotProduct4(a,b)		((a).r*(b).r + (a).g*(b).g + (a).b*(b).b + (a).a*(b).a)
 #define VectorScale4(a,b,c)		((c).r=(a).r*(b),(c).g=(a).g*(b),(c).b=(a).b*(b),(c).a=(a).a*(b))
-#define VectorSet4(v,x,y,z,w)	((v).r=(x),(v).g=(y),(v).b=(z),a=(w))
+#define VectorSet4(v,x,y,z,w)	((v).r=(x),(v).g=(y),(v).b=(z),(v).a=(w))
 
 #define	SnapVector(v) {v.x=((int)(v.x));v.y=((int)(v.y));v.z=((int)(v.z));}
 
@@ -631,8 +621,8 @@ typedef struct {
 
 #endif
 
-#ifdef Q3_VM
-typedef struct { byte r, byte, g, byte, b, byte a; } colorbyte_t;
+#if defined(Q3_VM) || !defined(_NOMAD_ENGINE)
+typedef struct { byte r, g, b, a; } colorbyte_t;
 
 typedef struct { vec_t x, y; } vec2_t;
 typedef struct { vec_t x, y, z; } vec3_t;
@@ -642,7 +632,7 @@ typedef struct { ivec_t x, y; } ivec2_t;
 typedef struct { ivec_t x, y, z; } ivec3_t;
 typedef struct { ivec_t r, g, b, a; } ivec4_t;
 
-typedef struct { uvec_t x, y } uvec2_t;
+typedef struct { uvec_t x, y; } uvec2_t;
 typedef struct { uvec_t x, y, z; } uvec3_t;
 typedef struct { uvec_t r, g, b, a; } uvec4_t;
 #else
@@ -661,8 +651,6 @@ typedef ivec_t ivec3_t[3];
 typedef ivec_t ivec4_t[4];
 #endif
 
-typedef unsigned char byte;
-
 typedef union {
 	float f;
 	int i;
@@ -678,7 +666,8 @@ typedef union {
 	uint32_t u32;
 } color4ub_t;
 
-extern const mat4_t mat4_identity;
+char *COM_SkipPath (char *pathname);
+
 extern const vec3_t vec3_origin;
 extern const vec2_t vec2_origin;
 
@@ -695,6 +684,12 @@ extern	const vec4_t		colorMdGrey;
 extern	const vec4_t		colorDkGrey;
 
 extern const byte locase[256];
+
+#ifdef PATH_MAX
+#define MAX_OSPATH			PATH_MAX
+#else
+#define	MAX_OSPATH			256		// max length of a filesystem pathname
+#endif
 
 #if defined (_WIN32)
 #if !defined(_MSC_VER)
@@ -730,221 +725,7 @@ void GDR_ATTRIBUTE((format(printf, 2, 3))) N_Error(errorCode_t code, const char 
 #define arraylen(arr) (sizeof((arr))/sizeof(*(arr)))
 #define zeroinit(x,size) memset((x),0,(size))
 
-#define	nanmask (255<<23)
-
-#define	IS_NAN(x) (((*(int *)&x)&nanmask)==nanmask)
-
-float Q_rsqrt( float f );		// reciprocal square root
-
-float N_log2f( float f );
-float N_exp2f( float f );
-
-#define SQRTFAST( x ) ( (x) * Q_rsqrt( x ) )
-
-signed char ClampChar( int i );
-signed char ClampCharMove( int i );
-signed short ClampShort( int i );
-
-// this isn't a real cheap function to call!
-#ifdef Q3_VM
-int DirToByte( vec3_t *dir );
-void ByteToDir( int b, vec3_t *dir );
-#else
-int DirToByte( vec3_t dir );
-void ByteToDir( int b, vec3_t dir );
-#endif
-
-#ifndef SGN
-#define SGN(x) (((x) >= 0) ? !!(x) : -1)
-#endif
-
-#define DEG2RAD( a ) ( ( (a) * M_PI ) / 180.0F )
-#define RAD2DEG( a ) ( ( (a) * 180.0f ) / M_PI )
-
-#ifdef PATH_MAX
-#define MAX_OSPATH			PATH_MAX
-#else
-#define	MAX_OSPATH			256		// max length of a filesystem pathname
-#endif
-
-#define	MAX_INT			0x7fffffff
-#define	MIN_INT			(-MAX_INT-1)
-
-#define	MAX_UINT			((unsigned)(~0))
-
-// just in case you don't want to use the macros
-#ifdef Q3_VM
-vec_t _DotProduct( const vec3_t *v1, const vec3_t *v2 );
-void _VectorSubtract( const vec3_t *veca, const vec3_t *vecb, vec3_t *out );
-void _VectorAdd( const vec3_t *veca, const vec3_t *vecb, vec3_t *out );
-void _VectorCopy( const vec3_t *in, vec3_t *out );
-void _VectorScale( const vec3_t *in, float scale, vec3_t *out );
-void _VectorMA( const vec3_t *veca, float scale, const vec3_t *vecb, vec3_t *vecc );
-#else
-vec_t _DotProduct( const vec3_t v1, const vec3_t v2 );
-void _VectorSubtract( const vec3_t veca, const vec3_t vecb, vec3_t out );
-void _VectorAdd( const vec3_t veca, const vec3_t vecb, vec3_t out );
-void _VectorCopy( const vec3_t in, vec3_t out );
-void _VectorScale( const vec3_t in, float scale, vec3_t out );
-void _VectorMA( const vec3_t veca, float scale, const vec3_t vecb, vec3_t vecc );
-#endif
-
-unsigned ColorBytes3 (float r, float g, float b);
-unsigned ColorBytes4 (float r, float g, float b, float a);
-
-#ifdef Q3_VM
-float NormalizeColor( const vec3_t *in, vec3_t *out );
-float RadiusFromBounds( const vec3_t *mins, const vec3_t *maxs );
-void ClearBounds( vec3_t *mins, vec3_t *maxs );
-void AddPointToBounds( const vec3_t *v, vec3_t *mins, vec3_t *maxs );
-#else
-float NormalizeColor( const vec3_t *in, vec3_t *out );
-float RadiusFromBounds( const vec3_t *mins, const vec3_t *maxs );
-void ClearBounds( vec3_t mins, vec3_t *maxs );
-void AddPointToBounds( const vec3_t *v, vec3_t *mins, vec3_t *maxs );
-#endif
-
-#if !defined( Q3_VM )
-GDR_INLINE int VectorCompare( const vec3_t v1, const vec3_t v2 ) {
-	if (v1[0] != v2[0] || v1[1] != v2[1] || v1[2] != v2[2]) {
-		return 0;
-	}			
-	return 1;
-}
-
-GDR_INLINE vec_t VectorLength( const vec3_t v ) {
-	return (vec_t)sqrtf (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
-}
-
-GDR_INLINE vec_t VectorLengthSquared( const vec3_t v ) {
-	return (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
-}
-
-GDR_INLINE vec_t Distance( const vec3_t p1, const vec3_t p2 ) {
-	vec3_t	v;
-
-	VectorSubtract (p2, p1, v);
-	return VectorLength( v );
-}
-
-GDR_INLINE vec_t DistanceSquared( const vec3_t p1, const vec3_t p2 ) {
-	vec3_t	v;
-
-	VectorSubtract (p2, p1, v);
-	return v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
-}
-
-// fast vector normalize routine that does not check to make sure
-// that length != 0, nor does it return length, uses rsqrt approximation
-GDR_INLINE void VectorNormalizeFast( vec3_t v )
-{
-	float ilength;
-
-	ilength = Q_rsqrt( DotProduct( v, v ) );
-
-	v[0] *= ilength;
-	v[1] *= ilength;
-	v[2] *= ilength;
-}
-
-GDR_INLINE void VectorInverse( vec3_t v ){
-	v[0] = -v[0];
-	v[1] = -v[1];
-	v[2] = -v[2];
-}
-
-GDR_INLINE void CrossProduct( const vec3_t v1, const vec3_t v2, vec3_t cross ) {
-	cross[0] = v1[1]*v2[2] - v1[2]*v2[1];
-	cross[1] = v1[2]*v2[0] - v1[0]*v2[2];
-	cross[2] = v1[0]*v2[1] - v1[1]*v2[0];
-}
-
-#else
-
-int VectorCompare( const vec3_t *v1, const vec3_t *v2 );
-vec_t VectorLength( const vec3_t *v );
-vec_t VectorLengthSquared( const vec3_t *v );
-vec_t Distance( const vec3_t *p1, const vec3_t *p2 );
-vec_t DistanceSquared( const vec3_t *p1, const vec3_t *p2 );
-void VectorNormalizeFast( vec3_t *v );
-void VectorInverse( vec3_t *v );
-void CrossProduct( const vec3_t *v1, const vec3_t *v2, vec3_t *cross );
-
-#endif
-
-#ifdef Q3_VM
-vec_t VectorNormalize( vec3_t *v );		// returns vector length
-vec_t VectorNormalize2( const vec3_t *v, vec3_t *out );
-#else
-vec_t VectorNormalize (vec3_t v);		// returns vector length
-vec_t VectorNormalize2( const vec3_t v, vec3_t out );
-void Vector4Scale( const vec4_t in, vec_t scale, vec4_t out );
-void VectorRotate( const vec3_t in, const vec3_t matrix[3], vec3_t out );
-#endif
-
-int N_log2(int val);
-
-float N_acos(float c);
-float N_fabs( float f );
-
-int N_rand( int *seed );
-float N_random( int *seed );
-float N_crandom( int *seed );
-
-#define random()	((rand () & 0x7fff) / ((float)0x7fff))
-#define crandom()	(2.0 * (random() - 0.5))
-
-#ifdef Q3_VM
-void vectoangles( const vec3_t value1, vec3_t angles);
-void AnglesToAxis( const vec3_t angles, vec3_t axis[3] );
-#else
-void vectoangles( const vec3_t value1, vec3_t angles);
-void AnglesToAxis( const vec3_t angles, vec3_t axis[3] );
-#endif
-
-void AxisClear( vec3_t axis[3] );
-void AxisCopy( vec3_t in[3], vec3_t out[3] );
-
-//void SetPlaneSignbits( struct cplane_s *out );
-//int BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, struct cplane_s *plane);
-
-float disBetweenOBJ(const vec3_t src, const vec3_t tar);
-qboolean BoundsIntersect(const vec3_t mins, const vec3_t maxs,
-		const vec3_t mins2, const vec3_t maxs2);
-qboolean BoundsIntersectSphere(const vec3_t mins, const vec3_t maxs,
-		const vec3_t origin, vec_t radius);
-qboolean BoundsIntersectPoint(const vec3_t mins, const vec3_t maxs,
-		const vec3_t origin);
-
-float	AngleMod(float a);
-float	LerpAngle (float from, float to, float frac);
-float	AngleSubtract( float a1, float a2 );
-void	AnglesSubtract( vec3_t v1, vec3_t v2, vec3_t v3 );
-
-float AngleNormalize360 ( float angle );
-float AngleNormalize180 ( float angle );
-float AngleDelta ( float angle1, float angle2 );
-
-qboolean PlaneFromPoints( vec4_t plane, const vec3_t a, const vec3_t b, const vec3_t c );
-void ProjectPointOnPlane( vec3_t dst, const vec3_t p, const vec3_t normal );
-void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point, float degrees );
-void RotateAroundDirection( vec3_t axis[3], float yaw );
-void MakeNormalVectors( const vec3_t forward, vec3_t right, vec3_t up );
-// perpendicular vector could be replaced by this
-
-char *COM_SkipPath (char *pathname);
-void MatrixMultiply(float in1[3][3], float in2[3][3], float out[3][3]);
-void AngleVectors( const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
-void PerpendicularVector( vec3_t dst, const vec3_t src );
-int N_isnan( float x );
-
-#ifndef MAX
-#define MAX(x,y) ((x)>(y)?(x):(y))
-#endif
-
-#ifndef MIN
-#define MIN(x,y) ((x)<(y)?(x):(y))
-#endif
+#include "n_math.h"
 
 #define NUMVERTEXNORMALS	162
 extern	vec3_t	bytedirs[NUMVERTEXNORMALS];

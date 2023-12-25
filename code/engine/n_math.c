@@ -14,6 +14,10 @@
 #endif
 #endif
 
+#ifdef Q3_VM
+#error NEVER include this in a vm build
+#endif
+
 const vec2_t vec2_origin = {0, 0};
 const vec3_t vec3_origin = {0, 0};
 
@@ -223,7 +227,6 @@ signed short ClampShort( int i ) {
 	return i;
 }
 
-
 // this isn't a real cheap function to call!
 int DirToByte( vec3_t dir ) {
 	int		i, best;
@@ -298,7 +301,6 @@ float NormalizeColor( const vec3_t in, vec3_t out ) {
 	}
 	return max;
 }
-
 
 /*
 =====================
@@ -534,30 +536,11 @@ void VectorRotate( const vec3_t in, const vec3_t matrix[3], vec3_t out )
 	out[2] = DotProduct( in, matrix[2] );
 }
 
-
-float Q_root(float x)
-{
-	long        i;								// The integer interpretation of x
-	float       x_half = x * 0.5f;
-	float       r_sqrt = x;
-	const float threehalfs = 1.5F;
-
-	// trick c/c++, bit hack
-	i = *(long *)&r_sqrt;					    // oh yes, undefined behaviour, who gives a fuck?
-	i = 0x5f375a86 - (i >> 1);				    // weird magic base-16 nums
-	r_sqrt = *(float *) &i;
-
-	r_sqrt = r_sqrt * (threehalfs - (x_half * r_sqrt * r_sqrt)); // 1st Newton iteration
-	r_sqrt = r_sqrt * (threehalfs - (x_half * r_sqrt * r_sqrt)); // 2nd Newton iteration
-
-	return x * r_sqrt; // x * (1/sqrt(x)) := sqrt(x)
-}
-
 float Q_rsqrt(float number)
 {
 #ifdef USING_SSE2
 	// does this cpu actually support sse2?
-	if (!(CPU_flags & CPU_SSE2)) {
+	if ( !( CPU_flags & CPU_SSE2 ) ) {
 		long x;
     	float x2, y;
 		const float threehalfs = 1.5F;
@@ -1022,8 +1005,6 @@ float N_exp2f( float f )
 	return powf( 2.0f, f );
 }
 
-
-#ifndef Q3_VM
 /*
 =====================
 Q_acos
@@ -1049,5 +1030,3 @@ float N_acos(float c) {
 	}
 	return angle;
 }
-#endif
-
