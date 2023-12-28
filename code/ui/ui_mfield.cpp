@@ -1,5 +1,5 @@
 #include "../game/g_game.h"
-#include "ui_public.h"
+#include "ui_public.hpp"
 #include "ui_menu.h"
 #include "ui_lib.h"
 

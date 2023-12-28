@@ -1,5 +1,4 @@
 #include "rgl_local.h"
-#include "../rendercommon/imgui_impl_opengl3.h"
 
 renderBackendData_t *backendData;
 
@@ -174,26 +173,32 @@ GDR_EXPORT void RE_BeginFrame(stereoFrame_t stereoFrame)
 
 	clearBits = GL_COLOR_BUFFER_BIT;
 
-    if (r_measureOverdraw->i) {
+	if ( r_glDiagnostics->i ) {
+		nglBeginQuery( GL_TIME_ELAPSED, rg.queries[TIME_QUERY] );
+		nglBeginQuery( GL_SAMPLES_PASSED, rg.queries[SAMPLES_QUERY] );
+		nglBeginQuery( GL_PRIMITIVES_GENERATED, rg.queries[PRIMTIVES_QUERY] );
+	}
+
+    if ( r_measureOverdraw->i ) {
         clearBits |= GL_STENCIL_BUFFER_BIT;
     }
 
     // clear relevant buffers
-    nglClear(clearBits);
-	nglActiveTexture(GL_TEXTURE0);
-	nglClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    nglClear( clearBits );
+	nglActiveTexture( GL_TEXTURE0 );
+	nglClearColor( 0.1f, 0.1f, 0.1f, 1.0f );
 
 	// setup basic state
-	nglEnable(GL_BLEND);
-	nglEnable(GL_SCISSOR_TEST);
-	nglDisable(GL_CULL_FACE);
-	nglDisable(GL_DEPTH_TEST);
+	nglEnable( GL_BLEND );
+	nglEnable( GL_SCISSOR_TEST );
+	nglDisable( GL_CULL_FACE );
+	nglDisable( GL_DEPTH_TEST );
 
 	nglBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
     // set 2D virtual screen size
-    nglViewport(0, 0, width, height);
-    nglScissor(0, 0, width, height);
+    nglViewport( 0, 0, width, height );
+    nglScissor( 0, 0, width, height );
 
 	ri.ImGui_NewFrame();
 
@@ -205,8 +210,7 @@ GDR_EXPORT void RE_BeginFrame(stereoFrame_t stereoFrame)
 	//
 	// do overdraw measurement
 	//
-	if ( r_measureOverdraw->i )
-	{
+	if ( r_measureOverdraw->i ) {
 		if ( glConfig.stencilBits < 4 ) {
 			ri.Printf( PRINT_INFO, "Warning: not enough stencil bits to measure overdraw: %d\n", glConfig.stencilBits );
 			ri.Cvar_Set( "r_measureOverdraw", "0" );
@@ -220,8 +224,7 @@ GDR_EXPORT void RE_BeginFrame(stereoFrame_t stereoFrame)
 			r_measureOverdraw->modified = qfalse;
 		}
 #endif
-		else
-		{
+		else {
 			R_IssuePendingRenderCommands();
 			nglEnable( GL_STENCIL_TEST );
 			nglStencilMask( ~0U );
@@ -231,8 +234,7 @@ GDR_EXPORT void RE_BeginFrame(stereoFrame_t stereoFrame)
 		}
 		r_measureOverdraw->modified = qfalse;
 	}
-	else
-	{
+	else {
 		// this is only reached if it was on and is now off
 		if ( r_measureOverdraw->modified ) {
 			R_IssuePendingRenderCommands();
@@ -244,46 +246,46 @@ GDR_EXPORT void RE_BeginFrame(stereoFrame_t stereoFrame)
     //
     // texture filtering
     //
-    if (r_textureFiltering->modified) {
+    if ( r_textureFiltering->modified ) {
         R_IssuePendingRenderCommands();
         R_UpdateTextures();
     }
 
     // check for errors
-    if (!r_ignoreGLErrors->i) {
+    if ( !r_ignoreGLErrors->i ) {
         GLenum error;
 
         R_IssuePendingRenderCommands();
-        if ((error = nglGetError()) != GL_NO_ERROR)
-            ri.Error(ERR_FATAL, "RE_BeginFrame() - glGetError() failed (0x%x)!", error);
+        if ( ( error = nglGetError() ) != GL_NO_ERROR )
+            ri.Error( ERR_FATAL, "RE_BeginFrame() - glGetError() failed (0x%x)!", error );
     }
 
-    if (glConfig.stereoEnabled) {
-		if (!(cmd = R_GetCommandBuffer(sizeof(*cmd))))
+    if ( glConfig.stereoEnabled ) {
+		if ( !( cmd = R_GetCommandBuffer( sizeof(*cmd) ) ) )
 			return;
 		
 		cmd->commandId = RC_DRAW_BUFFER;
 
-		if (stereoFrame == STEREO_LEFT) {
+		if ( stereoFrame == STEREO_LEFT ) {
 			cmd->buffer = GL_BACK_LEFT;
 		}
-		else if (stereoFrame == STEREO_RIGHT) {
+		else if ( stereoFrame == STEREO_RIGHT ) {
 			cmd->buffer = GL_BACK_RIGHT;
 		}
 		else {
-			ri.Error(ERR_FATAL, "RE_BeginFrame: Stereo is enabled, but stereoFrame was %i", stereoFrame);
+			ri.Error( ERR_FATAL, "RE_BeginFrame: Stereo is enabled, but stereoFrame was %i", stereoFrame );
 		}
     }
     else {
-		if (stereoFrame != STEREO_CENTER)
-			ri.Error(ERR_FATAL, "RE_BeginFrame: Stereo is disabled, but stereoFrame was %i", stereoFrame);
-		if (!(cmd = R_GetCommandBuffer(sizeof(*cmd))))
+		if ( stereoFrame != STEREO_CENTER )
+			ri.Error( ERR_FATAL, "RE_BeginFrame: Stereo is disabled, but stereoFrame was %i", stereoFrame );
+		if ( !( cmd = R_GetCommandBuffer( sizeof(*cmd) ) ) )
 			return;
 		
-		if (cmd) {
+		if ( cmd ) {
 			cmd->commandId = RC_DRAW_BUFFER;
 
-			if (!N_stricmp(r_drawBuffer->s, "GL_FRONT"))
+			if ( !N_stricmp( r_drawBuffer->s, "GL_FRONT" ) )
 				cmd->buffer = GL_FRONT;
 			else
 				cmd->buffer = GL_BACK;
@@ -291,6 +293,8 @@ GDR_EXPORT void RE_BeginFrame(stereoFrame_t stereoFrame)
     }
 
 	backend.refdef.stereoFrame = stereoFrame;
+	rg.shaderTime = ri.Milliseconds() - rg.lastShaderTime;
+	rg.lastShaderTime = rg.shaderTime;
 }
 /*
 =============

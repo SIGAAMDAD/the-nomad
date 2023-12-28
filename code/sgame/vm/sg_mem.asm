@@ -1,12 +1,12 @@
 data
 align 4
-LABELV $91
-address $92
+LABELV $90
+address $91
 export String_Alloc
 code
 proc String_Alloc 40 8
 file "../sg_mem.c"
-line 25
+line 24
 ;1:#include "sg_local.h"
 ;2:
 ;3:// 8 MiB of static memory for the vm to use
@@ -16,63 +16,62 @@ line 25
 ;7:
 ;8:#define STRINGPOOL_SIZE (8*1024)
 ;9:
-;10:
-;11:#define HASH_TABLE_SIZE 2048
-;12:
-;13:typedef struct stringDef_s {
-;14:	struct stringDef_s *next;
-;15:	const char *str;
-;16:} stringDef_t;
-;17:
-;18:static int strPoolIndex;
-;19:static char strPool[STRINGPOOL_SIZE];
-;20:
-;21:static int strHandleCount;
-;22:static stringDef_t *strHandle[HASH_TABLE_SIZE];
-;23:
-;24:const char *String_Alloc( const char *p )
-;25:{
-line 31
-;26:	int len;
-;27:	uint64_t hash;
-;28:	stringDef_t *str, *last;
-;29:	static const char *staticNULL = "";
-;30:
-;31:	if (p == NULL) {
+;10:#define HASH_TABLE_SIZE 2048
+;11:
+;12:typedef struct stringDef_s {
+;13:	struct stringDef_s *next;
+;14:	const char *str;
+;15:} stringDef_t;
+;16:
+;17:static int strPoolIndex;
+;18:static char strPool[STRINGPOOL_SIZE];
+;19:
+;20:static int strHandleCount;
+;21:static stringDef_t *strHandle[HASH_TABLE_SIZE];
+;22:
+;23:const char *String_Alloc( const char *p )
+;24:{
+line 30
+;25:	int len;
+;26:	uint64_t hash;
+;27:	stringDef_t *str, *last;
+;28:	static const char *staticNULL = "";
+;29:
+;30:	if (p == NULL) {
 ADDRFP4 0
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $93
-line 32
-;32:		return NULL;
+NEU4 $92
+line 31
+;31:		return NULL;
 CNSTP4 0
 RETP4
-ADDRGP4 $90
+ADDRGP4 $89
 JUMPV
-LABELV $93
-line 35
-;33:	}
-;34:
-;35:	if (*p == 0) {
+LABELV $92
+line 34
+;32:	}
+;33:
+;34:	if (*p == 0) {
 ADDRFP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $95
-line 36
-;36:		return staticNULL;
-ADDRGP4 $91
+NEI4 $94
+line 35
+;35:		return staticNULL;
+ADDRGP4 $90
 INDIRP4
 RETP4
-ADDRGP4 $90
+ADDRGP4 $89
 JUMPV
-LABELV $95
-line 39
-;37:	}
-;38:
-;39:	hash = Com_GenerateHashValue( p, HASH_TABLE_SIZE );
+LABELV $94
+line 38
+;36:	}
+;37:
+;38:	hash = Com_GenerateHashValue( p, HASH_TABLE_SIZE );
 ADDRFP4 0
 INDIRP4
 ARGP4
@@ -86,9 +85,9 @@ ADDRLP4 8
 ADDRLP4 16
 INDIRU4
 ASGNU4
-line 41
-;40:
-;41:	str = strHandle[hash];
+line 40
+;39:
+;40:	str = strHandle[hash];
 ADDRLP4 0
 ADDRLP4 8
 INDIRU4
@@ -98,13 +97,13 @@ ADDRGP4 strHandle
 ADDP4
 INDIRP4
 ASGNP4
-ADDRGP4 $98
+ADDRGP4 $97
 JUMPV
-LABELV $97
+LABELV $96
+line 41
+;41:	while (str) {
 line 42
-;42:	while (str) {
-line 43
-;43:		if (strcmp(p, str->str) == 0) {
+;42:		if (strcmp(p, str->str) == 0) {
 ADDRFP4 0
 INDIRP4
 ARGP4
@@ -121,38 +120,38 @@ ASGNI4
 ADDRLP4 20
 INDIRI4
 CNSTI4 0
-NEI4 $100
-line 44
-;44:			return str->str;
+NEI4 $99
+line 43
+;43:			return str->str;
 ADDRLP4 0
 INDIRP4
 CNSTI4 4
 ADDP4
 INDIRP4
 RETP4
-ADDRGP4 $90
+ADDRGP4 $89
 JUMPV
-LABELV $100
-line 46
-;45:		}
-;46:		str = str->next;
+LABELV $99
+line 45
+;44:		}
+;45:		str = str->next;
 ADDRLP4 0
 ADDRLP4 0
 INDIRP4
 INDIRP4
 ASGNP4
-line 47
-;47:	}
-LABELV $98
-line 42
+line 46
+;46:	}
+LABELV $97
+line 41
 ADDRLP4 0
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $97
-line 49
-;48:
-;49:	len = strlen(p);
+NEU4 $96
+line 48
+;47:
+;48:	len = strlen(p);
 ADDRFP4 0
 INDIRP4
 ARGP4
@@ -165,8 +164,8 @@ ADDRLP4 20
 INDIRU4
 CVUI4 4
 ASGNI4
-line 50
-;50:	if (len + strPoolIndex + 1 < STRINGPOOL_SIZE) {
+line 49
+;49:	if (len + strPoolIndex + 1 < STRINGPOOL_SIZE) {
 ADDRLP4 12
 INDIRI4
 ADDRGP4 strPoolIndex
@@ -175,15 +174,15 @@ ADDI4
 CNSTI4 1
 ADDI4
 CNSTI4 8192
-GEI4 $102
-line 51
-;51:		int ph = strPoolIndex;
+GEI4 $101
+line 50
+;50:		int ph = strPoolIndex;
 ADDRLP4 24
 ADDRGP4 strPoolIndex
 INDIRI4
 ASGNI4
-line 52
-;52:		strcpy(&strPool[strPoolIndex], p);
+line 51
+;51:		strcpy(&strPool[strPoolIndex], p);
 ADDRGP4 strPoolIndex
 INDIRI4
 ADDRGP4 strPool
@@ -195,8 +194,8 @@ ARGP4
 ADDRGP4 strcpy
 CALLP4
 pop
-line 53
-;53:		strPoolIndex += len + 1;
+line 52
+;52:		strPoolIndex += len + 1;
 ADDRLP4 28
 ADDRGP4 strPoolIndex
 ASGNP4
@@ -211,9 +210,9 @@ CNSTI4 1
 ADDI4
 ADDI4
 ASGNI4
-line 55
-;54:
-;55:		str = strHandle[hash];
+line 54
+;53:
+;54:		str = strHandle[hash];
 ADDRLP4 0
 ADDRLP4 8
 INDIRU4
@@ -223,49 +222,49 @@ ADDRGP4 strHandle
 ADDP4
 INDIRP4
 ASGNP4
-line 56
-;56:		last = str;
+line 55
+;55:		last = str;
 ADDRLP4 4
 ADDRLP4 0
 INDIRP4
 ASGNP4
-ADDRGP4 $105
+ADDRGP4 $104
 JUMPV
-LABELV $104
+LABELV $103
+line 56
+;56:		while (str && str->next) {
 line 57
-;57:		while (str && str->next) {
-line 58
-;58:			last = str;
+;57:			last = str;
 ADDRLP4 4
 ADDRLP4 0
+INDIRP4
+ASGNP4
+line 58
+;58:			str = str->next;
+ADDRLP4 0
+ADDRLP4 0
+INDIRP4
 INDIRP4
 ASGNP4
 line 59
-;59:			str = str->next;
-ADDRLP4 0
-ADDRLP4 0
-INDIRP4
-INDIRP4
-ASGNP4
-line 60
-;60:		}
-LABELV $105
-line 57
+;59:		}
+LABELV $104
+line 56
 ADDRLP4 0
 INDIRP4
 CVPU4 4
 CNSTU4 0
-EQU4 $107
+EQU4 $106
 ADDRLP4 0
 INDIRP4
 INDIRP4
 CVPU4 4
 CNSTU4 0
-NEU4 $104
-LABELV $107
-line 62
-;61:
-;62:		str = (stringDef_t *)SG_MemAlloc( sizeof(stringDef_t) );
+NEU4 $103
+LABELV $106
+line 61
+;60:
+;61:		str = (stringDef_t *)SG_MemAlloc( sizeof(stringDef_t) );
 CNSTI4 8
 ARGI4
 ADDRLP4 36
@@ -276,14 +275,14 @@ ADDRLP4 0
 ADDRLP4 36
 INDIRP4
 ASGNP4
-line 63
-;63:		str->next = NULL;
+line 62
+;62:		str->next = NULL;
 ADDRLP4 0
 INDIRP4
 CNSTP4 0
 ASGNP4
-line 64
-;64:		str->str = &strPool[ph];
+line 63
+;63:		str->str = &strPool[ph];
 ADDRLP4 0
 INDIRP4
 CNSTI4 4
@@ -293,27 +292,27 @@ INDIRI4
 ADDRGP4 strPool
 ADDP4
 ASGNP4
-line 65
-;65:		if (last) {
+line 64
+;64:		if (last) {
 ADDRLP4 4
 INDIRP4
 CVPU4 4
 CNSTU4 0
-EQU4 $108
-line 66
-;66:			last->next = str;
+EQU4 $107
+line 65
+;65:			last->next = str;
 ADDRLP4 4
 INDIRP4
 ADDRLP4 0
 INDIRP4
 ASGNP4
-line 67
-;67:		} else {
-ADDRGP4 $109
+line 66
+;66:		} else {
+ADDRGP4 $108
 JUMPV
-LABELV $108
-line 68
-;68:			strHandle[hash] = str;
+LABELV $107
+line 67
+;67:			strHandle[hash] = str;
 ADDRLP4 8
 INDIRU4
 CNSTI4 2
@@ -323,75 +322,75 @@ ADDP4
 ADDRLP4 0
 INDIRP4
 ASGNP4
+line 68
+;68:		}
+LABELV $108
 line 69
-;69:		}
-LABELV $109
-line 70
-;70:		return &strPool[ph];
+;69:		return &strPool[ph];
 ADDRLP4 24
 INDIRI4
 ADDRGP4 strPool
 ADDP4
 RETP4
-ADDRGP4 $90
+ADDRGP4 $89
 JUMPV
-LABELV $102
-line 72
-;71:	}
-;72:	return NULL;
+LABELV $101
+line 71
+;70:	}
+;71:	return NULL;
 CNSTP4 0
 RETP4
-LABELV $90
+LABELV $89
 endproc String_Alloc 40 8
 export String_Report
 proc String_Report 4 16
-line 76
-;73:}
-;74:
-;75:void String_Report( void )
-;76:{
+line 75
+;72:}
+;73:
+;74:void String_Report( void )
+;75:{
+line 77
+;76:	float f;
+;77:	Con_Printf("Memory/String Pool Info\n");
+ADDRGP4 $110
+ARGP4
+ADDRGP4 Con_Printf
+CALLV
+pop
 line 78
-;77:	float f;
-;78:	Con_Printf("Memory/String Pool Info\n");
+;78:	Con_Printf("----------------\n");
 ADDRGP4 $111
 ARGP4
 ADDRGP4 Con_Printf
 CALLV
 pop
-line 79
-;79:	Con_Printf("----------------\n");
-ADDRGP4 $112
-ARGP4
-ADDRGP4 Con_Printf
-CALLV
-pop
-line 81
-;80:	
-;81:    f = strPoolIndex;
+line 80
+;79:	
+;80:    f = strPoolIndex;
 ADDRLP4 0
 ADDRGP4 strPoolIndex
 INDIRI4
 CVIF4 4
 ASGNF4
-line 82
-;82:	f /= STRINGPOOL_SIZE;
+line 81
+;81:	f /= STRINGPOOL_SIZE;
 ADDRLP4 0
 ADDRLP4 0
 INDIRF4
 CNSTF4 956301312
 MULF4
 ASGNF4
-line 83
-;83:	f *= 100;
+line 82
+;82:	f *= 100;
 ADDRLP4 0
 ADDRLP4 0
 INDIRF4
 CNSTF4 1120403456
 MULF4
 ASGNF4
-line 84
-;84:	Con_Printf("String Pool is %.1f%% full, %i bytes out of %i used.\n", f, strPoolIndex, STRINGPOOL_SIZE);
-ADDRGP4 $113
+line 83
+;83:	Con_Printf("String Pool is %.1f%% full, %i bytes out of %i used.\n", f, strPoolIndex, STRINGPOOL_SIZE);
+ADDRGP4 $112
 ARGP4
 ADDRLP4 0
 INDIRF4
@@ -404,33 +403,33 @@ ARGI4
 ADDRGP4 Con_Printf
 CALLV
 pop
-line 86
-;85:	
-;86:    f = allocPoint;
+line 85
+;84:	
+;85:    f = allocPoint;
 ADDRLP4 0
 ADDRGP4 allocPoint
 INDIRI4
 CVIF4 4
 ASGNF4
-line 87
-;87:	f /= MEMPOOL_SIZE;
+line 86
+;86:	f /= MEMPOOL_SIZE;
 ADDRLP4 0
 ADDRLP4 0
 INDIRF4
 CNSTF4 872415232
 MULF4
 ASGNF4
-line 88
-;88:	f *= 100;
+line 87
+;87:	f *= 100;
 ADDRLP4 0
 ADDRLP4 0
 INDIRF4
 CNSTF4 1120403456
 MULF4
 ASGNF4
-line 89
-;89:	Con_Printf("Memory Pool is %.1f%% full, %i bytes out of %i used.\n", f, allocPoint, MEMPOOL_SIZE);
-ADDRGP4 $114
+line 88
+;88:	Con_Printf("Memory Pool is %.1f%% full, %i bytes out of %i used.\n", f, allocPoint, MEMPOOL_SIZE);
+ADDRGP4 $113
 ARGP4
 ADDRLP4 0
 INDIRF4
@@ -443,37 +442,37 @@ ARGI4
 ADDRGP4 Con_Printf
 CALLV
 pop
-line 90
-;90:}
-LABELV $110
+line 89
+;89:}
+LABELV $109
 endproc String_Report 4 16
 export SG_MemAlloc
 proc SG_MemAlloc 8 12
-line 93
-;91:
-;92:void *SG_MemAlloc( int size )
-;93:{
-line 96
-;94:    char *buf;
-;95:
-;96:    if (!size) {
+line 92
+;90:
+;91:void *SG_MemAlloc( int size )
+;92:{
+line 95
+;93:    char *buf;
+;94:
+;95:    if (!size) {
 ADDRFP4 0
 INDIRI4
 CNSTI4 0
-NEI4 $116
-line 97
-;97:        G_Error( "SG_MemAlloc: bad size" );
-ADDRGP4 $118
+NEI4 $115
+line 96
+;96:        trap_Error( "SG_MemAlloc: bad size" );
+ADDRGP4 $117
 ARGP4
-ADDRGP4 G_Error
+ADDRGP4 trap_Error
 CALLV
 pop
-line 98
-;98:    }
-LABELV $116
-line 100
-;99:
-;100:    size = PAD(size, (unsigned)16); // round to 16-byte alignment
+line 97
+;97:    }
+LABELV $115
+line 99
+;98:
+;99:    size = PAD(size, (unsigned)16); // round to 16-byte alignment
 ADDRFP4 0
 ADDRFP4 0
 INDIRI4
@@ -486,9 +485,9 @@ CNSTU4 4294967280
 BANDU4
 CVUI4 4
 ASGNI4
-line 102
-;101:
-;102:    if (allocPoint + size >= sizeof(mempool)) {
+line 101
+;100:
+;101:    if (allocPoint + size >= sizeof(mempool)) {
 ADDRGP4 allocPoint
 INDIRI4
 ADDRFP4 0
@@ -496,33 +495,33 @@ INDIRI4
 ADDI4
 CVIU4 4
 CNSTU4 8388608
-LTU4 $119
-line 103
-;103:        G_Error( "SG_MemAlloc: not enough vm memory" );
-ADDRGP4 $121
+LTU4 $118
+line 102
+;102:        trap_Error( "SG_MemAlloc: not enough vm memory" );
+ADDRGP4 $120
 ARGP4
-ADDRGP4 G_Error
+ADDRGP4 trap_Error
 CALLV
 pop
-line 104
-;104:        return NULL;
+line 103
+;103:        return NULL;
 CNSTP4 0
 RETP4
-ADDRGP4 $115
+ADDRGP4 $114
 JUMPV
-LABELV $119
-line 107
-;105:    }
-;106:
-;107:    buf = &mempool[ allocPoint ];
+LABELV $118
+line 106
+;104:    }
+;105:
+;106:    buf = &mempool[ allocPoint ];
 ADDRLP4 0
 ADDRGP4 allocPoint
 INDIRI4
 ADDRGP4 mempool
 ADDP4
 ASGNP4
-line 108
-;108:    allocPoint += size;
+line 107
+;107:    allocPoint += size;
 ADDRLP4 4
 ADDRGP4 allocPoint
 ASGNP4
@@ -535,10 +534,10 @@ ADDRFP4 0
 INDIRI4
 ADDI4
 ASGNI4
-line 111
-;109:
-;110:    // zero init
-;111:    memset( buf, 0, size );
+line 110
+;108:
+;109:    // zero init
+;110:    memset( buf, 0, size );
 ADDRLP4 0
 INDIRP4
 ARGP4
@@ -551,22 +550,22 @@ ARGU4
 ADDRGP4 memset
 CALLP4
 pop
-line 113
-;112:
-;113:    return buf;
+line 112
+;111:
+;112:    return buf;
 ADDRLP4 0
 INDIRP4
 RETP4
-LABELV $115
+LABELV $114
 endproc SG_MemAlloc 8 12
 export SG_MemoryRemaining
 proc SG_MemoryRemaining 0 0
+line 115
+;113:}
+;114:
+;115:int SG_MemoryRemaining( void ) {
 line 116
-;114:}
-;115:
-;116:int SG_MemoryRemaining( void ) {
-line 117
-;117:    return sizeof(mempool) - allocPoint;
+;116:    return sizeof(mempool) - allocPoint;
 CNSTU4 8388608
 ADDRGP4 allocPoint
 INDIRI4
@@ -574,19 +573,73 @@ CVIU4 4
 SUBU4
 CVUI4 4
 RETI4
-LABELV $122
+LABELV $121
 endproc SG_MemoryRemaining 0 0
+export SG_ClearToMemoryMark
+proc SG_ClearToMemoryMark 4 4
+line 119
+;117:}
+;118:
+;119:void SG_ClearToMemoryMark( int mark ) {
+line 120
+;120:    if ( mark < 0 || mark > allocPoint ) {
+ADDRLP4 0
+ADDRFP4 0
+INDIRI4
+ASGNI4
+ADDRLP4 0
+INDIRI4
+CNSTI4 0
+LTI4 $125
+ADDRLP4 0
+INDIRI4
+ADDRGP4 allocPoint
+INDIRI4
+LEI4 $123
+LABELV $125
+line 121
+;121:        trap_Error( "SG_ClearToMemoryMark: invalid memory mark" );
+ADDRGP4 $126
+ARGP4
+ADDRGP4 trap_Error
+CALLV
+pop
+line 122
+;122:    }
+LABELV $123
+line 123
+;123:    allocPoint = mark;
+ADDRGP4 allocPoint
+ADDRFP4 0
+INDIRI4
+ASGNI4
+line 124
+;124:}
+LABELV $122
+endproc SG_ClearToMemoryMark 4 4
+export SG_MakeMemoryMark
+proc SG_MakeMemoryMark 0 0
+line 126
+;125:
+;126:int SG_MakeMemoryMark( void ) {
+line 127
+;127:    return allocPoint;
+ADDRGP4 allocPoint
+INDIRI4
+RETI4
+LABELV $127
+endproc SG_MakeMemoryMark 0 0
 export SG_MemInit
 proc SG_MemInit 4 12
-line 121
-;118:}
-;119:
-;120:void SG_MemInit( void )
-;121:{
-line 124
-;122:    int i;
-;123:
-;124:    memset( mempool, 0, sizeof(mempool) );
+line 131
+;128:}
+;129:
+;130:void SG_MemInit( void )
+;131:{
+line 134
+;132:    int i;
+;133:
+;134:    memset( mempool, 0, sizeof(mempool) );
 ADDRGP4 mempool
 ARGP4
 CNSTI4 0
@@ -596,8 +649,8 @@ ARGU4
 ADDRGP4 memset
 CALLP4
 pop
-line 125
-;125:    memset( strPool, 0, sizeof(strPool) );
+line 135
+;135:    memset( strPool, 0, sizeof(strPool) );
 ADDRGP4 strPool
 ARGP4
 CNSTI4 0
@@ -607,15 +660,15 @@ ARGU4
 ADDRGP4 memset
 CALLP4
 pop
-line 127
-;126:
-;127:	for (i = 0; i < HASH_TABLE_SIZE; i++) {
+line 137
+;136:
+;137:	for ( i = 0; i < HASH_TABLE_SIZE; i++ ) {
 ADDRLP4 0
 CNSTI4 0
 ASGNI4
-LABELV $124
-line 128
-;128:		strHandle[i] = 0;
+LABELV $129
+line 138
+;138:		strHandle[i] = 0;
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -624,10 +677,10 @@ ADDRGP4 strHandle
 ADDP4
 CNSTP4 0
 ASGNP4
-line 129
-;129:	}
-LABELV $125
-line 127
+line 139
+;139:	}
+LABELV $130
+line 137
 ADDRLP4 0
 ADDRLP4 0
 INDIRI4
@@ -637,20 +690,20 @@ ASGNI4
 ADDRLP4 0
 INDIRI4
 CNSTI4 2048
-LTI4 $124
-line 130
-;130:	strHandleCount = 0;
+LTI4 $129
+line 140
+;140:	strHandleCount = 0;
 ADDRGP4 strHandleCount
 CNSTI4 0
 ASGNI4
-line 131
-;131:	strPoolIndex = 0;
+line 141
+;141:	strPoolIndex = 0;
 ADDRGP4 strPoolIndex
 CNSTI4 0
 ASGNI4
-line 132
-;132:}
-LABELV $123
+line 142
+;142:}
+LABELV $128
 endproc SG_MemInit 4 12
 bss
 align 4
@@ -681,6 +734,7 @@ import trap_FS_GetFileList
 import trap_FS_Read
 import trap_FS_Write
 import trap_FS_FClose
+import trap_FS_FOpenRead
 import trap_FS_FOpenWrite
 import trap_FS_FOpenFile
 import Sys_GetGPUConfig
@@ -733,6 +787,8 @@ import SG_SpawnMob
 import SG_AddArchiveHandle
 import SG_LoadGame
 import SG_SaveGame
+import SG_LoadSection
+import SG_WriteSection
 import Ent_SetState
 import SG_InitEntities
 import Ent_BuildBounds
@@ -765,6 +821,7 @@ import pm_waterAccel
 import pm_airFriction
 import pm_waterFriction
 import pm_groundFriction
+import sg_memoryDebug
 import sg_numSaves
 import sg_savename
 import sg_levelDataFile
@@ -966,9 +1023,9 @@ import Cbuf_AddText
 import Cbuf_Execute
 import Cbuf_InsertText
 import Cbuf_ExecuteText
+import va
 import Cmd_CompleteArgument
 import Cmd_CommandCompletion
-import va
 import Cmd_Clear
 import Cmd_Argv
 import Cmd_ArgsFrom
@@ -1067,6 +1124,7 @@ import N_acos
 import N_log2
 import ColorBytes4
 import ColorBytes3
+import VectorNormalize
 import AddPointToBounds
 import ClearBounds
 import RadiusFromBounds
@@ -1178,7 +1236,51 @@ import memchr
 import memcpy
 lit
 align 1
-LABELV $121
+LABELV $126
+byte 1 83
+byte 1 71
+byte 1 95
+byte 1 67
+byte 1 108
+byte 1 101
+byte 1 97
+byte 1 114
+byte 1 84
+byte 1 111
+byte 1 77
+byte 1 101
+byte 1 109
+byte 1 111
+byte 1 114
+byte 1 121
+byte 1 77
+byte 1 97
+byte 1 114
+byte 1 107
+byte 1 58
+byte 1 32
+byte 1 105
+byte 1 110
+byte 1 118
+byte 1 97
+byte 1 108
+byte 1 105
+byte 1 100
+byte 1 32
+byte 1 109
+byte 1 101
+byte 1 109
+byte 1 111
+byte 1 114
+byte 1 121
+byte 1 32
+byte 1 109
+byte 1 97
+byte 1 114
+byte 1 107
+byte 1 0
+align 1
+LABELV $120
 byte 1 83
 byte 1 71
 byte 1 95
@@ -1214,7 +1316,7 @@ byte 1 114
 byte 1 121
 byte 1 0
 align 1
-LABELV $118
+LABELV $117
 byte 1 83
 byte 1 71
 byte 1 95
@@ -1238,69 +1340,13 @@ byte 1 122
 byte 1 101
 byte 1 0
 align 1
-LABELV $114
+LABELV $113
 byte 1 77
 byte 1 101
 byte 1 109
 byte 1 111
 byte 1 114
 byte 1 121
-byte 1 32
-byte 1 80
-byte 1 111
-byte 1 111
-byte 1 108
-byte 1 32
-byte 1 105
-byte 1 115
-byte 1 32
-byte 1 37
-byte 1 46
-byte 1 49
-byte 1 102
-byte 1 37
-byte 1 37
-byte 1 32
-byte 1 102
-byte 1 117
-byte 1 108
-byte 1 108
-byte 1 44
-byte 1 32
-byte 1 37
-byte 1 105
-byte 1 32
-byte 1 98
-byte 1 121
-byte 1 116
-byte 1 101
-byte 1 115
-byte 1 32
-byte 1 111
-byte 1 117
-byte 1 116
-byte 1 32
-byte 1 111
-byte 1 102
-byte 1 32
-byte 1 37
-byte 1 105
-byte 1 32
-byte 1 117
-byte 1 115
-byte 1 101
-byte 1 100
-byte 1 46
-byte 1 10
-byte 1 0
-align 1
-LABELV $113
-byte 1 83
-byte 1 116
-byte 1 114
-byte 1 105
-byte 1 110
-byte 1 103
 byte 1 32
 byte 1 80
 byte 1 111
@@ -1351,6 +1397,62 @@ byte 1 10
 byte 1 0
 align 1
 LABELV $112
+byte 1 83
+byte 1 116
+byte 1 114
+byte 1 105
+byte 1 110
+byte 1 103
+byte 1 32
+byte 1 80
+byte 1 111
+byte 1 111
+byte 1 108
+byte 1 32
+byte 1 105
+byte 1 115
+byte 1 32
+byte 1 37
+byte 1 46
+byte 1 49
+byte 1 102
+byte 1 37
+byte 1 37
+byte 1 32
+byte 1 102
+byte 1 117
+byte 1 108
+byte 1 108
+byte 1 44
+byte 1 32
+byte 1 37
+byte 1 105
+byte 1 32
+byte 1 98
+byte 1 121
+byte 1 116
+byte 1 101
+byte 1 115
+byte 1 32
+byte 1 111
+byte 1 117
+byte 1 116
+byte 1 32
+byte 1 111
+byte 1 102
+byte 1 32
+byte 1 37
+byte 1 105
+byte 1 32
+byte 1 117
+byte 1 115
+byte 1 101
+byte 1 100
+byte 1 46
+byte 1 10
+byte 1 0
+align 1
+LABELV $111
 byte 1 45
 byte 1 45
 byte 1 45
@@ -1370,7 +1472,7 @@ byte 1 45
 byte 1 10
 byte 1 0
 align 1
-LABELV $111
+LABELV $110
 byte 1 77
 byte 1 101
 byte 1 109
@@ -1397,5 +1499,5 @@ byte 1 111
 byte 1 10
 byte 1 0
 align 1
-LABELV $92
+LABELV $91
 byte 1 0

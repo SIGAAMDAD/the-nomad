@@ -1,5 +1,5 @@
 #include "../game/g_game.h"
-#include "ui_public.h"
+#include "ui_public.hpp"
 #include "ui_menu.h"
 #include "ui_lib.h"
 #include "ui_window.h"
@@ -30,6 +30,7 @@ typedef struct {
     CGameArchive sv;
 } singleplayer_t;
 
+extern ImFont *RobotoMono;
 static singleplayer_t sp;
 
 typedef struct {
@@ -56,8 +57,10 @@ static const char *difHardestTitles[] = {
     "GIT REKT",
     "GET PWNED",
     "Wish U Had A BFG?",
-    "Sounds Like a Skill Issue",
+    "Skill Issue",
     "DAKKA",
+    "OOOOF",
+    "So sad, too bad."
 };
 
 static const dif_t difficultyTable[NUMDIFS] = {
@@ -125,6 +128,7 @@ void SinglePlayerMenu_Draw( void )
 {
     ImVec2 mousePos;
     uint64_t i;
+    float font_scale;
 
     switch (ui->GetState()) {
     case STATE_SINGLEPLAYER:
@@ -155,6 +159,9 @@ void SinglePlayerMenu_Draw( void )
         ImGui::EndTable();
         break;
     case STATE_NEWGAME: {
+
+        ImGui::SetWindowSize( ImVec2( ImGui::GetWindowSize().x / 2, ImGui::GetWindowSize().y ) );
+
         ui->EscapeMenuToggle( STATE_SINGLEPLAYER );
         const char *difName;
         if (ui->GetState() != STATE_NEWGAME) {
@@ -188,7 +195,7 @@ void SinglePlayerMenu_Draw( void )
             if (ImGui::InputText( " ", sp.name, sizeof(sp.name), ImGuiInputTextFlags_EscapeClearsAll | ImGuiInputTextFlags_EnterReturnsTrue )) {
                 ui->PlaySelected();
                 // make sure it's an absolute path
-                if (strchr( sp.name, '/' ) || strchr( sp.name, '\\' )) {
+                if ( strchr( sp.name, '/' ) || strchr( sp.name, '\\' ) ) {
                     N_strncpyz( sp.name, COM_SkipPath( sp.name ), sizeof(sp.name) );
                 }
                 // make sure its a unique name, so we don't get filename collisions
@@ -218,22 +225,15 @@ void SinglePlayerMenu_Draw( void )
                             ui->PlaySelected();
                         }
                     }
-                    if (ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled )) {
-                        ImGui::BeginTooltip();
-                        ImGui::TextUnformatted( difficultyTable[i].tooltip );
-                        ImGui::EndTooltip();
-                    }
                 }
                 ImGui::EndMenu();
             }
         }
         ImGui::EndTable();
+
         ImGui::NewLine();
-        ImGui::NewLine();
-        ImGui::NewLine();
-        ImGui::NewLine();
-        ImGui::NewLine();
-        if (ImGui::Button( "Open To a Fresh Chapter" )) {
+
+        if ( ImGui::Button( "Open To a Fresh Chapter" ) ) {
             ui->PlaySelected();
             ui->SetState( STATE_NONE );
             ui->SetActiveMenu( UI_MENU_NONE );
@@ -241,9 +241,24 @@ void SinglePlayerMenu_Draw( void )
             Key_SetCatcher( 0 );
             Key_ClearStates();
 
+            if ( N_stricmp( Cvar_VariableString( "sg_savename" ), sp.name ) ) {
+                Cvar_Set( "sg_savename", sp.name );
+            }
+            
             VM_Call( sgvm, 0, SGAME_INIT );
             VM_Call( sgvm, 1, SGAME_LOADLEVEL, 0 ); // start a new game
         }
+
+        ImGui::NewLine();
+        ImGui::NewLine();
+
+        FontCache()->SetActiveFont( RobotoMono );
+
+        font_scale = ImGui::GetFont()->Scale;
+        ImGui::SetWindowFontScale( font_scale * 1.75f );
+        ImGui::TextUnformatted( "Difficulty Description" );
+        ImGui::SetWindowFontScale( font_scale );
+        ImGui::TextWrapped( "%s", difficultyTable[(int32_t)sp.diff].tooltip );
         break; }
     case STATE_LOADGAME: {
         ui->EscapeMenuToggle( STATE_SINGLEPLAYER );
@@ -257,19 +272,23 @@ void SinglePlayerMenu_Draw( void )
         mousePos = ImGui::GetCursorScreenPos();
         ImGui::SetCursorScreenPos( ImVec2( mousePos.x, mousePos.y + 10 ) );
         if (sp.numSaves) {
-            ImGui::BeginTable( "Save Slots", 5 );
+            ImGui::BeginTable( "Save Slots", 6 );
             // TODO: add key here
             for (i = 0; i < sp.numSaves; i++) {
                 ImGui::TableNextColumn();
-                ImGui::Text( "%-64s", sp.saveList[i].name );
+                if ( ImGui::Button( "LOAD" ) ) {
+                    Cvar_Set( "sg_savename", sp.saveList[i].name );
+                }
                 ImGui::TableNextColumn();
-                ImGui::Text( "%-8lu", sp.saveList[i].stats.ctime ); // creation time
+                ImGui::Text( "%s", sp.saveList[i].name );
                 ImGui::TableNextColumn();
-                ImGui::Text( "%-8lu", sp.saveList[i].stats.mtime ); // last used time
+                ImGui::Text( "%lu", sp.saveList[i].stats.ctime ); // creation time
                 ImGui::TableNextColumn();
-                ImGui::Text( "%-64s", sp.saveList[i].gd.bffName );
+                ImGui::Text( "%lu", sp.saveList[i].stats.mtime ); // last used time
                 ImGui::TableNextColumn();
-                ImGui::Text( "%-12s", difficultyTable[ sp.saveList[i].gd.diff ].name );
+                ImGui::Text( "%s", sp.saveList[i].gd.bffName );
+                ImGui::TableNextColumn();
+                ImGui::Text( "%s", difficultyTable[ sp.saveList[i].gd.diff ].name );
                 ImGui::TableNextRow();
             }
             ImGui::EndTable();
@@ -288,17 +307,12 @@ void SinglePlayerMenu_Cache( void )
     char **fileList;
     saveinfo_t *info;
 
-    // free anything we currently have allocated
-    if (sp.saveList) {
-        Z_Free( sp.saveList );
-    }
-
     memset( &sp, 0, sizeof(sp) );
 
     fileList = FS_ListFiles( "savedata/", ".ngd", &sp.numSaves );
 
     if (sp.numSaves) {
-        sp.saveList = (saveinfo_t *)Z_Malloc( sizeof(saveinfo_t) * sp.numSaves, TAG_GAME );
+        sp.saveList = (saveinfo_t *)Hunk_Alloc( sizeof(saveinfo_t) * sp.numSaves, h_low );
         memset( sp.saveList, 0, sizeof(saveinfo_t) * sp.numSaves );
         info = sp.saveList;
     }

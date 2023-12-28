@@ -19,7 +19,7 @@
 
 #define  NUM_CON_TIMES  4
 
-#define  CON_TEXTSIZE   65536*2
+#define  CON_TEXTSIZE   65536*4
 
 uint32_t bigchar_width;
 uint32_t bigchar_height;
@@ -81,14 +81,10 @@ typedef struct {
 
 	qboolean newline;
 
-//	SDL_Window *externalConsole;
-//	uint32_t windowId;
-//	qboolean minimized;
-//	uint32_t windowWidth;
-//	uint32_t windowHeight;
+	void *imguiTextureData[2];
 } console_t;
 
-static ImFont *RobotoMono;
+ImFont *RobotoMono;
 
 console_t con;
 
@@ -135,9 +131,9 @@ void Con_ToggleConsole_f( void ) {
 
 	// set the scroll to the absolute bottom
 	if ( Key_GetCatcher() & KEYCATCH_CONSOLE ) {
-		Con_DrawSolidConsole( con.displayFrac );
+		Con_DrawConsole();
 
-		ImGui::Begin( "Command Console", NULL, windowFlags );
+		ImGui::Begin( "CommandConsole", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar );
 		ImGui::SetScrollHereY();
 		ImGui::End();
 	}
@@ -348,38 +344,6 @@ static void Cmd_CompleteTxtName(const char *args, uint32_t argNum ) {
 	if ( argNum == 2 ) {
 		Field_CompleteFilename( "", "txt", qfalse, FS_MATCH_EXTERN );
 	}
-}
-
-static void Con_LoadFonts( void ) {
-	union {
-		void *v;
-		char *b;
-	} f;
-	ImFontConfig config;
-	uint64_t length;
-
-	if ( RobotoMono ) {
-		return;
-	}
-
-	Con_Printf( "Loading fonts...\n" );
-
-	length = FS_LoadFile( "fonts/RobotoMono/static/RobotoMono-Regular.ttf", &f.v );
-	if ( !length || !f.v ) {
-		Con_Printf( COLOR_RED "WARNING: failed to load RobotoMono ttf font.\n" );
-		return;
-	}
-
-	config.FontDataOwnedByAtlas = false;
-	RobotoMono = ImGui::GetIO().Fonts->AddFontFromMemoryTTF( f.v, length, 16.0f, &config );
-
-	FS_FreeFile( f.v );
-
-	Con_Printf( "Finish loading fonts.\n" );
-
-	ImGui::GetIO().Fonts->Build();
-
-	ImGui_ImplOpenGL3_CreateFontsTexture();
 }
 
 /*
@@ -627,7 +591,10 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 
 	if ( keys[KEY_TAB].down ) {
 		Field_AutoComplete( &g_consoleField );
-		data->InsertChars( data->CursorPos, edit->buffer + data->CursorPos, edit->buffer + edit->cursor );
+
+		if ( g_consoleField.cursor > data->CursorPos ) {
+			data->InsertChars( data->CursorPos, edit->buffer + data->CursorPos, edit->buffer + edit->cursor );
+		}
 	}
 
 	// command history (ctrl-p ctrl-n for unix style)
@@ -707,6 +674,8 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 		ImGui::SetScrollY( ImGui::GetScrollMaxY() );
 	}
 
+	edit->cursor = data->CursorPos;
+
 	ImGui::SetScrollHereY();
 	
 	return 1;
@@ -720,14 +689,16 @@ Draw the editline after a ] prompt
 ================
 */
 static void Con_DrawInput( void ) {
-	if ( !(Key_GetCatcher( ) & KEYCATCH_CONSOLE ) ) {
+	const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar
+		| ImGuiWindowFlags_AlwaysAutoResize;
+	
+	if ( !( Key_GetCatcher( ) & KEYCATCH_CONSOLE ) ) {
 		return;
 	}
 
 	ImGui::NewLine();
-//	ImGui::GetStyle().Colors[ImGuiCol_FrameBgActive] = ImVec4( con.color );
+	ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( g_color_table[ ColorIndex( S_COLOR_WHITE ) ] ) );
 	ImGui::TextUnformatted( "] " );
-//	ImGui::PopStyleColor();
 	ImGui::SameLine();
 
 	if ( ImGui::InputText( "", g_consoleField.buffer, sizeof(g_consoleField.buffer) - 1,
@@ -760,6 +731,8 @@ static void Con_DrawInput( void ) {
 			if ( !g_consoleField.buffer[0] ) {
 				return;	// empty lines just scroll the console without adding to history
 			} else {
+				Cbuf_AddText( g_consoleField.buffer+1 );	// valid command
+				Cbuf_AddText( "\n" );
 	//			Cbuf_AddText( "cmd say " );
 	//			Cbuf_AddText( g_consoleField.buffer );
 	//			Cbuf_AddText( "\n" );
@@ -772,6 +745,8 @@ static void Con_DrawInput( void ) {
 		Field_Clear( &g_consoleField );
 		g_consoleField.widthInChars = g_console_field_width;
 	}
+
+	ImGui::PopStyleColor();
 }
 
 /*
@@ -796,9 +771,15 @@ static void Con_DrawText( const char *txt )
 
 	len = strlen( txt );
 
+	if ( RobotoMono ) {
+		FontCache()->SetActiveFont( RobotoMono );
+	} else {
+		RobotoMono = FontCache()->AddFontToCache( "fonts/RobotoMono/RobotoMono-Regular.ttf" );
+	}
+
 	for ( i = 0, text = txt; i < len; i++, text++ ) {
 		// track color changes
-		if (Q_IsColorString(text) && *(text+1) != '\n') {
+		while ( Q_IsColorString(text) && *(text+1) != '\n' ) {
 			colorIndex = ColorIndexFromChar(*(text+1));
 			if (currentColorIndex != colorIndex) {
 				currentColorIndex = colorIndex;
@@ -816,7 +797,8 @@ static void Con_DrawText( const char *txt )
 			if ( usedColor ) {
 				ImGui::PopStyleColor();
 				currentColorIndex = ColorIndex(S_COLOR_WHITE);
-//				ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( g_color_table[currentColorIndex] ) );
+				ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( g_color_table[currentColorIndex] ) );
+				usedColor = qfalse;
 			}
 			ImGui::NewLine();
 			break;
@@ -849,19 +831,35 @@ static void Con_DrawSolidConsole( float frac )
 	int currentColorIndex, colorIndex;
 	qboolean customColor = qfalse;
 	uint32_t i, x;
-	uint32_t lines, row, rows;
+	float w, h;
 	char *text;
 	char buf[ MAX_CVAR_VALUE ], *v[4];
-	const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar
-		| ImGuiWindowFlags_AlwaysHorizontalScrollbar;
+	refdef_t refdef;
+	const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar;
 
-	lines = gi.gpuConfig.vidHeight * 0.5f;
+	memset( &refdef, 0, sizeof(refdef) );
+	refdef.x = 0;
+	refdef.y = 0;
+	refdef.width = (float)gi.gpuConfig.vidWidth;
+	refdef.height = (float)gi.gpuConfig.vidHeight;
+	refdef.time = gi.realtime;
+	refdef.flags = RSF_NOWORLDMODEL;
 
-	ImGui::Begin("Command Console", NULL, windowFlags);
-	ImGui::SetWindowPos({ 0.0f, 0.0f });
-	ImGui::SetWindowSize({ (float)gi.gpuConfig.vidWidth, (float)gi.gpuConfig.vidHeight });
+	w = (float)gi.gpuConfig.vidWidth;
+	h = (float)gi.gpuConfig.vidHeight * 0.75f;
+
+	ImGui::Begin( "ConsoleBackground", NULL, windowFlags );
+	ImGui::SetWindowPos( ImVec2( 0, 0 ) );
+	ImGui::SetWindowSize( ImVec2( w, h ) );
+	ImGui::Image( (ImTextureID)(intptr_t)gi.consoleShader, ImGui::GetWindowSize() );
+	ImGui::End();
+
+	ImGui::SetNextWindowFocus();
+	ImGui::Begin( "CommandConsole", NULL, windowFlags | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_AlwaysHorizontalScrollbar );
+	ImGui::SetWindowPos( ImVec2( 0, 0 ) );
+	ImGui::SetWindowSize( ImVec2( w, h ) );
 	ImGui::SetWindowFontScale( 1.0f );
-	ImGui::PushTextWrapPos( ImGui::GetWindowWidth() );
+	ImGui::PushTextWrapPos( w );
 
 	// custom console background color
 	if ( con_color->s[0] ) {
@@ -882,7 +880,8 @@ static void Con_DrawSolidConsole( float frac )
 		ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( conColorValue ) );
 		customColor = qtrue;
 	} else {
-		ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( 0.0f, 0.0f, 0.35f, 1.0f ) );
+		VectorSet4( con.color, 0.0f, 0.0f, 0.0f, 1.0f );
+		ImGui::PushStyleColor( ImGuiCol_WindowBg, con.color );
 	}
 
 	// draw from the bottom up
@@ -890,7 +889,7 @@ static void Con_DrawSolidConsole( float frac )
 		// draw arrows to show the buffer is backscrolled
 		ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( g_color_table[ ColorIndex(S_COLOR_RED) ] ) );
 
-		const uint32_t count = gi.gpuConfig.vidWidth / ImGui::CalcTextSize( "^" ).x;
+		const uint32_t count = gi.gpuConfig.vidWidth / ImGui::CalcTextSize("^").x / ImGui::GetFont()->Scale;
 
 		for (i = 0; i < count; i++) {
 			ImGui::TextUnformatted("^");
@@ -903,11 +902,17 @@ static void Con_DrawSolidConsole( float frac )
 	}
 
 	Con_DrawText( con.text );
-	
+
 	Con_DrawInput();
 
-	ImGui::PopStyleColor();
-	
+	ImGui::End();
+
+	//
+	// draw the version
+	//
+	ImGui::Begin( "CommandConsoleVersion", NULL, windowFlags | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_AlwaysAutoResize );
+	ImGui::SetWindowPos( ImVec2( w - 150, h - 48 ) );
+	ImGui::TextUnformatted( GLN_VERSION );
 	ImGui::End();
 }
 

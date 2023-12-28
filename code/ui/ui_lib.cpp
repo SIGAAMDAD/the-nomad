@@ -1,6 +1,6 @@
 #include "../engine/n_shared.h"
 #include "../game/g_game.h"
-#include "ui_public.h"
+#include "ui_public.hpp"
 #include "ui_menu.h"
 #include "ui_lib.h"
 
@@ -31,9 +31,7 @@ bool CUILib::Menu_Option( const char *label )
 
 bool CUILib::Menu_Title( const char *label )
 {
-	const float font_scale = ImGui::GetFont()->Scale;
-
-    ImGui::SetWindowFontScale( font_scale * 1.5f * scale );
+    ImGui::SetWindowFontScale( 1.5f * scale );
     if (ImGui::ArrowButton( va("##BACK%s", label), ImGuiDir_Left )) {
 		Snd_PlaySfx( sfx_back );
         return true;
@@ -41,9 +39,9 @@ bool CUILib::Menu_Title( const char *label )
     ImGui::SameLine();
     ImGui::TextUnformatted( "BACK" );
 
-    ImGui::SetWindowFontScale( font_scale * 3.75f * scale );
+    ImGui::SetWindowFontScale( 3.75f * scale );
     ImGui::TextUnformatted( label );
-    ImGui::SetWindowFontScale( font_scale * 1.5f * scale );
+    ImGui::SetWindowFontScale( 1.0f * scale );
 
     return false;
 }
@@ -77,7 +75,8 @@ void CUILib::Init( void )
 	scale = gpuConfig.vidHeight * (1.0/768.0);
 	if ( gpuConfig.vidWidth * 768 > gpuConfig.vidHeight * 1024 ) {
 		// wide screen
-		bias = 0.5 * ( gpuConfig.vidWidth - ( gpuConfig.vidHeight * (1024.0/768.0) ) );
+		bias = 0.5 * ( gpuConfig.vidWidth - ( gpuConfig.vidHeight * ( 1024.0 / 768.0 ) ) );
+//		bias = r_customWidth->i / r_customHeight->i;
 	}
 	else {
 		// no wide screen
@@ -963,12 +962,12 @@ void CUILib::MouseEvent( uint32_t dx, uint32_t dy )
 
 /*
 ================
-UI_AdjustFrom640
+UI_AdjustFrom1024
 
 Adjusted for resolution and screen aspect ratio
 ================
 */
-void CUILib::AdjustFrom640( float *x, float *y, float *w, float *h ) const
+void CUILib::AdjustFrom1024( float *x, float *y, float *w, float *h ) const
 {
 	// expect valid pointers
 	*x = *x * scale + bias;
@@ -982,7 +981,7 @@ void CUILib::DrawNamedPic( float x, float y, float width, float height, const ch
 	nhandle_t hShader;
 
 	hShader = re.RegisterShader( picname );
-	AdjustFrom640( &x, &y, &width, &height );
+	AdjustFrom1024( &x, &y, &width, &height );
 	re.DrawImage( x, y, width, height, 0, 0, 1, 1, hShader );
 }
 
@@ -1013,7 +1012,7 @@ void CUILib::DrawHandlePic( float x, float y, float w, float h, nhandle_t hShade
 		t1 = 1;
 	}
 	
-	AdjustFrom640( &x, &y, &w, &h );
+	AdjustFrom1024( &x, &y, &w, &h );
 	re.DrawImage( x, y, w, h, s0, t0, s1, t1, hShader );
 }
 
@@ -1028,7 +1027,7 @@ void CUILib::FillRect( float x, float y, float width, float height, const float 
 {
 	re.SetColor( color );
 
-	AdjustFrom640( &x, &y, &width, &height );
+	AdjustFrom1024( &x, &y, &width, &height );
 	re.DrawImage( x, y, width, height, 0, 0, 0, 0, whiteShader );
 
 	re.SetColor( NULL );
@@ -1045,7 +1044,7 @@ void CUILib::DrawRect( float x, float y, float width, float height, const float 
 {
 	re.SetColor( color );
 
-	AdjustFrom640( &x, &y, &width, &height );
+	AdjustFrom1024( &x, &y, &width, &height );
 
 	re.DrawImage( x, y, width, 1, 0, 0, 0, 0, whiteShader );
 	re.DrawImage( x, y, 1, height, 0, 0, 0, 0, whiteShader );

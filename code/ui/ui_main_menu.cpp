@@ -1,6 +1,8 @@
 #include "ui_lib.h"
 #include "../game/g_archive.h"
 
+#define MAIN_MENU_BACKGROUND "menuback"
+
 class CToggleKey
 {
 public:
@@ -48,6 +50,8 @@ typedef struct
 {
     CUIMenu menu;
 
+    ImFont *font;
+
     nhandle_t background0;
     nhandle_t background1;
     sfxHandle_t ambience;
@@ -90,15 +94,56 @@ static const collaborator_t collaborators[] = {
 void MainMenu_Draw( void )
 {
     uint64_t i;
+    float x, y, w, h;
+    refdef_t refdef;
     const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
                             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground;
 
     menu.noMenuToggle.Toggle( KEY_F2, menu.noMenu );
 
+    //
+    // setup a basic scene
+    //
+
+    memset( &refdef, 0, sizeof(refdef) );
+
+    x = 0;
+    y = 0;
+    w = 1024;
+    h = 768;
+
+    ui->AdjustFrom1024( &x, &y, &w, &h );
+
+    refdef.x = x;
+    refdef.y = y;
+    refdef.width = w;
+    refdef.height = h;
+
+    refdef.time = ui->GetRealTime();
+    refdef.flags = RSF_NOWORLDMODEL;
+
+    refdef.fovY = 60;
+    refdef.fovX = 19.6875f;
+
+    re.ClearScene();
+
+    re.DrawImage( x, y, w, h, 0, 1, 1, 0, menu.background0 );
+
+    re.RenderScene( &refdef );
+
+//    ImGui::Begin( "MainMenuBackground", NULL, windowFlags | ImGuiWindowFlags_AlwaysAutoResize );
+//    ImGui::SetWindowSize( ImVec2( w, h ) );
+//    ImGui::Image( (void *)(intptr_t)menu.background0, ImVec2( w, h ) );
+//    ImGui::End();
+
     Snd_SetLoopingTrack( menu.ambience );
 
-    if ( ui->GetState() == STATE_ERROR ) {
-        if ( ImGui::BeginPopup( "Engine Error", windowFlags & ~( ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground ) ) ) {
+    if ( menu.font ) {
+        FontCache()->SetActiveFont( menu.font );
+    }
+
+    if ( ui->GetState() == STATE_ERROR || errorMenu.message[0] ) {
+        if ( ImGui::BeginPopupModal( "Engine Error", NULL, windowFlags & ~( ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground ) ) ) {
             ImGui::TextUnformatted( errorMenu.message );
             if ( Key_AnyDown() ) {
                 Snd_PlaySfx( ui->sfx_null );
@@ -108,15 +153,7 @@ void MainMenu_Draw( void )
         }
     }
 
-    /*
-    ImGui::Begin( "MainMenu##BACKGROUND", NULL, windowFlags | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoBringToFrontOnFocus );
-    ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-    ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth, (float)menu.menuHeight ) );
-    ImGui::Image( re.ImGui_TextureData( menu.background0 ), ImVec2( (float)menu.menuWidth, (float)menu.menuHeight ) );
-    ImGui::End();
-    */
-
-    if (menu.noMenu) {
+    if ( menu.noMenu ) {
         return; // just the scenery & the music (a bit like Halo 3: ODST, check out halome.nu)...
     }
 
@@ -127,7 +164,7 @@ void MainMenu_Draw( void )
     if (ui->GetState() == STATE_MAIN) {
         ImGui::Begin( "MainMenu", NULL, windowFlags );
         ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth / 2, (float)menu.menuHeight ) );
+        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth, (float)menu.menuHeight ) );
         ui->Menu_Title( "MAIN MENU" );
 
         const ImVec2 mousePos = ImGui::GetCursorScreenPos();
@@ -140,6 +177,10 @@ void MainMenu_Draw( void )
         ImGui::TableNextRow();
         if (ui->Menu_Option( "Settings" )) {
             ui->SetState( STATE_SETTINGS );
+        }
+        ImGui::TableNextRow();
+        if ( ui->Menu_Option( "Legal Stuff" ) ) {
+            ui->SetState( STATE_LEGAL );
         }
         ImGui::TableNextRow();
         if (ui->Menu_Option( "Credits" )) {
@@ -158,17 +199,24 @@ void MainMenu_Draw( void )
 
         ImGui::End();
     }
+    else if ( ui->GetState() == STATE_LEGAL ) {
+        ImGui::Begin( "MainMenu", NULL, windowFlags );
+        ImGui::SetWindowPos( ImVec2( 0, 0 ) );
+        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth, (float)menu.menuHeight ) );
+        LegalMenu_Draw();
+        ImGui::End();
+    }
     else if (ui->GetState() >= STATE_SINGLEPLAYER && ui->GetState() <= STATE_PLAYMISSION) {
         ImGui::Begin( "MainMenu", NULL, windowFlags );
         ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth / 2, (float)menu.menuHeight ) );
+        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth, (float)menu.menuHeight ) );
         SinglePlayerMenu_Draw();
         ImGui::End();
     }
     else if (ui->GetState() >= STATE_SETTINGS && ui->GetState() <= STATE_AUDIO) {
         ImGui::Begin( "MainMenu", NULL, windowFlags );
         ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth / 2, (float)menu.menuHeight ) );
+        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth, (float)menu.menuHeight ) );
         SettingsMenu_Draw();
         ImGui::End();
     }
@@ -194,7 +242,7 @@ void MainMenu_Draw( void )
         }
     }
     else {
-        N_Error(ERR_FATAL, "Invalid UI State"); // should NEVER happen
+        N_Error( ERR_FATAL, "Invalid UI State" ); // should NEVER happen
     }
 }
 
@@ -229,9 +277,11 @@ void MainMenu_Cache( void )
     menu.menu.Draw = MainMenu_Draw;
 
     menu.ambience = Snd_RegisterTrack( "music/title.ogg" );
-    menu.background0 = re.RegisterShader( "textures/desertbkgd.jpg" );
+    menu.background0 = re.RegisterShader( MAIN_MENU_BACKGROUND );
 
     menu.settingsString = strManager->ValueForKey("MENU_MAIN_SETTINGS");
+
+    menu.font = FontCache()->AddFontToCache( "fonts/PressStart2P-Regular.ttf" );
 
     menu.noMenu = qfalse;
     menu.menuHeight = ui->GetConfig().vidHeight;

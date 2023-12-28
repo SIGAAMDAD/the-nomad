@@ -212,9 +212,14 @@ void Sys_GetGPUConfig( gpuConfig_t *config )
     vmi.Sys_GetGPUConfig( config );
 }
 
-int trap_FS_FOpenFile( const char *npath, file_t *f, fileMode_t mode )
+uint32_t trap_FS_FOpenFile( const char *npath, file_t *f, fileMode_t mode )
 {
     return vmi.FS_FOpenFile( npath, f, mode, H_SGAME );
+}
+
+file_t trap_FS_FOpenRead( const char *npath )
+{
+    return vmi.FS_FOpenRead( npath, H_SGAME );
 }
 
 file_t trap_FS_FOpenWrite( const char *npath )

@@ -25,7 +25,14 @@
 #define MAX_RENDER_SHADERS 2048
 #define MAX_RENDER_FBOs 64
 
-typedef struct ImDrawData ImDrawData;
+#define	FOG_TABLE_SIZE		256
+#define FUNCTABLE_SIZE		1024
+#define FUNCTABLE_SIZE2		10
+#define FUNCTABLE_MASK		(FUNCTABLE_SIZE-1)
+
+#define DYN_BUFFER_SIZE ( 4 * 1024 * 1024 )
+#define DYN_BUFFER_SEGMENTS 4
+
 #define GLN_INDEX_TYPE GL_UNSIGNED_INT
 typedef uint32_t glIndex_t;
 
@@ -62,22 +69,11 @@ typedef uint32_t glIndex_t;
 #define MAX_BATCH_INDICES (MAX_BATCH_QUADS*6)
 
 // any change in the LIGHTMAP_* defines here MUST be reflected in
-// R_FindShader() in tr_bsp.c
+// R_FindShader()
 #define LIGHTMAP_2D         -4	// shader is for 2D rendering
 #define LIGHTMAP_BY_VERTEX  -3	// pre-lit triangle models
 #define LIGHTMAP_WHITEIMAGE -2
 #define LIGHTMAP_NONE       -1
-
-enum
-{
-    TB_COLORMAP = 0,
-    TB_DIFFUSEMAP,
-    TB_NORMALMAP,
-    TB_SPECULARMAP,
-    TB_LIGHTMAP,
-
-    NUM_TEXTURE_BINDINGS
-};
 
 typedef enum {
     MI_NONE,
@@ -142,6 +138,7 @@ typedef struct
     qboolean ARB_framebuffer_multisample;
     qboolean ARB_vertex_shader;
     qboolean ARB_texture_compression;
+    qboolean ARB_sync;
 } glContext_t;
 
 typedef struct {
@@ -193,6 +190,8 @@ typedef struct texture_s
 
     uint64_t frameUsed;
 
+    byte *imgBuffer;            // cached image file
+
     uint32_t internalFormat;
     imgType_t type;
     imgFlags_t flags;
@@ -203,6 +202,7 @@ enum {
 	ATTRIB_INDEX_TEXCOORD       = 1,
     ATTRIB_INDEX_COLOR          = 2,
     ATTRIB_INDEX_NORMAL         = 3,
+    ATTRIB_INDEX_WORLDPOS       = 4,
 	
 	ATTRIB_INDEX_COUNT
 };
@@ -213,12 +213,14 @@ enum
     ATTRIB_NORMAL               = BIT(ATTRIB_INDEX_NORMAL),
 	ATTRIB_TEXCOORD             = BIT(ATTRIB_INDEX_TEXCOORD),
     ATTRIB_COLOR                = BIT(ATTRIB_INDEX_COLOR),
+    ATTRIB_WORLDPOS             = BIT(ATTRIB_INDEX_WORLDPOS),
 
 	ATTRIB_BITS =
         ATTRIB_POSITION |
         ATTRIB_TEXCOORD | 
         ATTRIB_COLOR |
-        ATTRIB_NORMAL
+        ATTRIB_NORMAL |
+        ATTRIB_WORLDPOS
 };
 
 typedef enum {
@@ -227,6 +229,7 @@ typedef enum {
     GLSL_VEC2,
     GLSL_VEC3,
     GLSL_VEC4,
+    GLSL_VEC5,
     GLSL_MAT16,
     GLSL_BUFFER, // uniform buffer -- special case
 } glslType_t;
@@ -244,19 +247,27 @@ typedef enum {
     UNIFORM_MODELVIEWPROJECTION,
     UNIFORM_MODELMATRIX,
 
-    UNIFORM_SPECULAR_SCALE,
-    UNIFORM_NORMAL_SCALE,
+    UNIFORM_NORMALSCALE,
+    UNIFORM_SPECULARSCALE,
 
-    UNIFORM_COLOR_GEN,
-    UNIFORM_ALPHA_GEN,
+    UNIFORM_DIFFUSETEXMATRIX,
+    UNIFORM_DIFFUSETEXOFFTURB,
+
+    UNIFORM_COLORGEN,
+    UNIFORM_ALPHAGEN,
     UNIFORM_COLOR,
-    UNIFORM_BASE_COLOR,
-    UNIFORM_VERT_COLOR,
+    UNIFORM_BASECOLOR,
+    UNIFORM_VERTCOLOR,
 
-    // random stuff
+    UNIFORM_TCGEN0,
+    UNIFORM_TCGEN0VECTOR0,
+    UNIFORM_TCGEN0VECTOR1,
+
+    UNIFORM_DEFORMGEN,
+    UNIFORM_DEFORMPARAMS,
+
     UNIFORM_ALPHA_TEST,
-    UNIFORM_TCGEN,
-	UNIFORM_VIEWINFO, // znear, zfar, width/2, height/2
+
 
     UNIFORM_COUNT
 } uniform_t;
@@ -318,7 +329,10 @@ typedef struct dlight_s
 typedef struct
 {
     vec3_t xyz;
+    vec3_t worldPos;
     vec2_t uv;
+    vec2_t lightmap;
+    int16_t tangent[4];
     int16_t normal[4];
     uint16_t color[4];
 } drawVert_t;
@@ -339,9 +353,27 @@ typedef struct {
 
 //==================================================================
 
+#ifdef GL_ARB_sync
+typedef struct
+{
+	// the BO is logically split into DYN_BUFFER_SEGMENTS
+	// segments, the active segment is the one the CPU may write
+	// into, while the GPU may read from the inactive segments.
+	void           *baseAddr;
+	uint32_t        elementSize;
+	uint32_t        segmentElements;
+	uint32_t        activeSegment;
+	// all syncs except the active segment's should be
+	// always defined and waitable, the active segment's
+	// sync is always undefined
+	GLsync         syncs[ DYN_BUFFER_SEGMENTS ];
+} glRingbuffer_t;
+#endif
+
 typedef enum
 {
     BUF_GL_MAPPED,
+    BUF_GL_SYNCED,
     BUF_GL_BUFFER,
     BUF_GL_CLIENT,
 } bufferMemType_t;
@@ -434,13 +466,169 @@ typedef enum {
 	CGEN_CONST				// fixed color
 } colorGen_t;
 
+typedef enum {
+	TCGEN_BAD,
+	TCGEN_IDENTITY,			// clear to 0,0
+	TCGEN_LIGHTMAP,
+	TCGEN_TEXTURE,
+	TCGEN_ENVIRONMENT_MAPPED,
+	TCGEN_ENVIRONMENT_MAPPED_FP, // with correct first-person mapping
+	TCGEN_FOG,
+	TCGEN_VECTOR			// S and T from world coordinates
+} texCoordGen_t;
+
+typedef enum {
+	GF_NONE,
+
+	GF_SIN,
+	GF_SQUARE,
+	GF_TRIANGLE,
+	GF_SAWTOOTH, 
+	GF_INVERSE_SAWTOOTH, 
+
+	GF_NOISE
+
+} genFunc_t;
+
+typedef enum {
+	ACFF_NONE,
+	ACFF_MODULATE_RGB,
+	ACFF_MODULATE_RGBA,
+	ACFF_MODULATE_ALPHA
+} acff_t;
+
 typedef struct {
-    qboolean active;
+	float base;
+	float amplitude;
+	float phase;
+	float frequency;
+
+	genFunc_t	func;
+} waveForm_t;
+
+#define TR_MAX_TEXMODS 4
+
+typedef enum {
+	TMOD_NONE,
+	TMOD_TRANSFORM,
+	TMOD_TURBULENT,
+	TMOD_SCROLL,
+	TMOD_SCALE,
+	TMOD_STRETCH,
+	TMOD_ROTATE,
+	TMOD_ENTITY_TRANSLATE,
+	TMOD_OFFSET,
+	TMOD_SCALE_OFFSET,
+} texMod_t;
+
+#define	MAX_SHADER_DEFORMS	3
+typedef struct {
+	deform_t	deformation;			// vertex coordinate modification type
+
+	vec3_t		moveVector;
+	waveForm_t	deformationWave;
+	float		deformationSpread;
+
+	float		bulgeWidth;
+	float		bulgeHeight;
+	float		bulgeSpeed;
+} deformStage_t;
+
+typedef struct {
+	texMod_t		type;
+
+	union {
+
+		// used for TMOD_TURBULENT and TMOD_STRETCH
+		waveForm_t		wave;
+
+		// used for TMOD_TRANSFORM
+		struct {
+			float		matrix[2][2];	// s' = s * m[0][0] + t * m[1][0] + trans[0]
+			float		translate[2];	// t' = s * m[0][1] + t * m[0][1] + trans[1]
+		};
+
+		// used for TMOD_SCALE, TMOD_OFFSET, TMOD_SCALE_OFFSET
+		struct {
+			float		scale[2];		// s' = s * scale[0] + offset[0]
+			float		offset[2];		// t' = t * scale[1] + offset[1]
+		};
+
+		// used for TMOD_SCROLL
+		float			scroll[2];		// s' = s + scroll[0] * time
+										// t' = t + scroll[1] * time
+		// used for TMOD_ROTATE
+		// + = clockwise
+		// - = counterclockwise
+		float			rotateSpeed;
+
+	};
+
+} texModInfo_t;
+
+
+//#define MAX_IMAGE_ANIMATIONS		24
+//#define MAX_IMAGE_ANIMATIONS_VQ3	8
+
+#define LIGHTMAP_INDEX_NONE			0
+#define LIGHTMAP_INDEX_SHADER		1
+#define LIGHTMAP_INDEX_OFFSET		2
+
+typedef struct {
+	texture_t		*image;
+//	uint32_t		numImageAnimations;
+//	double			imageAnimationSpeed;	// -EC- set to double
+
+	texCoordGen_t	tcGen;
+	vec3_t			tcGenVectors[2];
+
+	uint32_t		numTexMods;
+	texModInfo_t	*texMods;
+
     qboolean isLightmap;
 
-    texture_t *image;
+    textureFilter_t filter;
 
+/*
+	int				videoMapHandle;
+	int				lightmap;				// LIGHTMAP_INDEX_NONE, LIGHTMAP_INDEX_SHADER, LIGHTMAP_INDEX_OFFSET
+	qboolean		isVideoMap;
+	qboolean		isScreenMap;
+*/
+} textureBundle_t;
+
+#define TESS_ST0	1<<0
+#define TESS_ST1	1<<1
+#define TESS_ENV0	1<<2
+#define TESS_ENV1	1<<3
+
+enum
+{
+	TB_COLORMAP    = 0,
+	TB_DIFFUSEMAP  = 0,
+	TB_LIGHTMAP    = 1,
+	TB_LEVELSMAP   = 1,
+	TB_SHADOWMAP3  = 1,
+	TB_NORMALMAP   = 2,
+	TB_DELUXEMAP   = 3,
+	TB_SHADOWMAP2  = 3,
+	TB_SPECULARMAP = 4,
+	TB_SHADOWMAP   = 5,
+	TB_CUBEMAP     = 6,
+	TB_SHADOWMAP4  = 6,
+
+    NUM_TEXTURE_BUNDLES
+};
+
+typedef struct {
+    qboolean active;
+
+    textureBundle_t	bundle[NUM_TEXTURE_BUNDLES];
+
+    waveForm_t rgbWave;
     colorGen_t rgbGen;
+
+    waveForm_t alphaWave;
     alphaGen_t alphaGen;
 
     uint32_t stateBits;         // GLS_xxxx mask
@@ -456,23 +644,30 @@ typedef struct shader_s {
 
     shaderStage_t *stages[MAX_SHADER_STAGES];
 
-    uint32_t sortedIndex;       // this shader == rg.sortedShaders[sortedIndex]
-    uint32_t index;             // this shader == rg.shaders[index]
+    uint32_t sortedIndex;           // this shader == rg.sortedShaders[sortedIndex]
+    uint32_t index;                 // this shader == rg.shaders[index]
     shaderSort_t sort;
 
-    uint32_t surfaceFlags;      // if explicitly defined this will have SURFPARM_* flags
+    int32_t lightmapIndex;
 
-    uint32_t vertexAttribs;
+    qboolean explicitlyDefined;     // found in a .shader file
 
-    qboolean polygonOffset;     // set for decals and other items that must be offset
+    uint32_t surfaceFlags;          // if explicitly defined this will have SURFPARM_* flags
 
-    qboolean defaultShader;		// we want to return index 0 if the shader failed to
-								// load for some reason, but R_FindShader should
-								// still keep a name allocated for it, so if
-								// something calls RE_RegisterShader again with
-								// the same name, we don't try looking for it again
+    uint32_t vertexAttribs;         // not all shaders will need all data to be gathered
+    
+    qboolean noLightScale;
+    qboolean polygonOffset;		    // set for decals and other items that must be offset 
+	qboolean noMipMaps;			    // for console fonts, 2D elements, etc.
+	qboolean noPicMip;			    // for images that must always be full resolution
 
-    qboolean isLightmap;
+    int32_t lightingStage;
+
+    qboolean defaultShader;		    // we want to return index 0 if the shader failed to
+								    // load for some reason, but R_FindShader should
+								    // still keep a name allocated for it, so if
+								    // something calls RE_RegisterShader again with
+								    // the same name, we don't try looking for it again
 
     struct shader_s *next;
 } shader_t;
@@ -510,7 +705,7 @@ typedef struct {
 
     qboolean drawn;
 
-    uint64_t time;
+    int64_t time;
     uint64_t flags;
 
     double floatTime;
@@ -527,13 +722,24 @@ typedef struct {
 
 typedef struct {
     vec3_t origin;
+    vec3_t axis[3];
+    vec3_t viewOrigin;
     float angle;
     float zoom;
     float aspect;
+    mat4_t modelMatrix;
     mat4_t projectionMatrix;
     mat4_t viewMatrix;
     mat4_t viewProjectionMatrix;
 } cameraData_t;
+
+typedef struct {
+	vec3_t		origin;			// in world coordinates
+	vec3_t		axis[3];		// orientation in world
+	vec3_t		viewOrigin;		// viewParms->or.origin in local coordinates
+	float		modelMatrix[16];
+	float		transformMatrix[16];
+} orientationr_t;
 
 typedef struct {
     cameraData_t camera;
@@ -543,8 +749,13 @@ typedef struct {
 
     float zFar;
     float zNear;
+    float fovX;
+    float fovY;
 
     stereoFrame_t stereoFrame;
+    cplane_t frustum[5];
+
+    uint32_t flags;
 
     uint64_t frameSceneNum;
     uint64_t frameCount;
@@ -562,12 +773,6 @@ typedef struct {
 
     maptile_t *tiles;
     uint32_t numTiles;
-
-    mapcheckpoint_t *checkpoints;
-    uint32_t numCheckpoints;
-
-    mapspawn_t *spawns;
-    uint32_t numSpawns;
 
     uint64_t numIndices;
     uint64_t numVertices;
@@ -611,6 +816,11 @@ typedef struct {
     void *indices;              // address of the client indices
 
     vertexBuffer_t *buffer;     // the buffer handle we're using for this batch
+
+    glRingbuffer_t vertexRB;
+    glRingbuffer_t indexRB;
+
+    shader_t *shader;
 } batch_t;
 
 typedef struct {
@@ -661,10 +871,21 @@ typedef struct {
     shaderProgram_t *currentShader;
 } glstate_t;
 
+typedef enum {
+    TIME_QUERY,
+    SAMPLES_QUERY,
+    PRIMTIVES_QUERY,
+
+    NUMQUERIES
+} query_t;
+
 typedef struct
 {
     texture_t *defaultImage;
     texture_t *whiteImage;
+
+    texture_t **lightmaps;
+    uint64_t numLightmaps;
 
     shader_t *defaultShader;
 
@@ -698,9 +919,22 @@ typedef struct
     uint32_t identityLightByte;
 
     uint64_t frontEndMsec;
+    double shaderTime;
+    double lastShaderTime;
 
     shaderProgram_t basicShader;
     shaderProgram_t imguiShader;
+
+    uint32_t samplers[MAX_TEXTURE_UNITS];
+
+    uint32_t queries[NUMQUERIES];
+    uint32_t queryCounts[NUMQUERIES];
+
+    float sinTable[FUNCTABLE_SIZE];
+	float squareTable[FUNCTABLE_SIZE];
+	float triangleTable[FUNCTABLE_SIZE];
+	float sawToothTable[FUNCTABLE_SIZE];
+	float inverseSawToothTable[FUNCTABLE_SIZE];
 } renderGlobals_t;
 
 extern renderGlobals_t rg;
@@ -791,6 +1025,7 @@ extern cvar_t *r_specularMapping;
 extern cvar_t *r_genNormalMaps;
 extern cvar_t *r_drawMode;
 extern cvar_t *r_hdr;
+extern cvar_t *r_pbr;
 extern cvar_t *r_ssao;
 extern cvar_t *r_greyscale;
 extern cvar_t *r_externalGLSL;
@@ -818,6 +1053,16 @@ extern cvar_t *r_clear;
 extern cvar_t *r_drawBuffer;
 extern cvar_t *r_customWidth;
 extern cvar_t *r_customHeight;
+extern cvar_t *r_mappedBuffers;
+extern cvar_t *r_glDiagnostics;
+extern cvar_t *r_baseNormalX;
+extern cvar_t *r_baseNormalY;
+extern cvar_t *r_baseParallax;
+extern cvar_t *r_baseSpecular;
+extern cvar_t *r_baseGloss;
+extern cvar_t *r_lightmap;
+extern cvar_t *r_zproj;
+extern cvar_t *r_stereoSeparation;
 
 extern cvar_t *r_maxQuads;
 extern cvar_t *r_maxPolys;
@@ -836,6 +1081,7 @@ extern cvar_t *r_arb_vertex_array_object;
 extern cvar_t *r_arb_vertex_buffer_object;
 extern cvar_t *r_arb_texture_filter_anisotropic;
 extern cvar_t *r_arb_texture_float;
+extern cvar_t *r_arb_sync;
 
 static GDR_INLINE int VectorCompare4(const vec4_t v1, const vec4_t v2)
 {
@@ -918,6 +1164,21 @@ texture_t *R_CreateImage(  const char *name, byte *pic, uint32_t width, uint32_t
 extern int32_t gl_filter_min, gl_filter_max;
 
 //
+// rgl_shade_calc.c
+//
+void RB_DeformTessGeometry( void );
+//void RB_CalcFogTexCoords( float *dstTexCoords );
+void RB_CalcScaleTexMatrix( const float scale[2], float *matrix );
+void RB_CalcScrollTexMatrix( const float scrollSpeed[2], float *matrix );
+void RB_CalcRotateTexMatrix( float degsPerSecond, float *matrix );
+void RB_CalcTurbulentFactors( const waveForm_t *wf, float *amplitude, float *now );
+void RB_CalcTransformTexMatrix( const texModInfo_t *tmi, float *matrix  );
+void RB_CalcStretchTexMatrix( const waveForm_t *wf, float *matrix );
+void RB_CalcModulateColorsByFog( unsigned char *dstColors );
+float RB_CalcWaveAlphaSingle( const waveForm_t *wf );
+float RB_CalcWaveColorSingle( const waveForm_t *wf );
+
+//
 // rgl_main.c
 //
 void RB_MakeViewMatrix( void );
@@ -927,6 +1188,7 @@ qboolean R_HasExtension(const char *ext);
 void RE_BeginRegistration(gpuConfig_t *config);
 nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32_t sheetHeight, uint32_t spriteWidth, uint32_t spriteHeight );
 nhandle_t RE_RegisterSprite( nhandle_t hSpriteSheet, uint32_t index );
+void R_WorldToGL2( polyVert_t *verts, vec3_t pos );
 
 //
 // rgl_scene.c
@@ -945,8 +1207,8 @@ void R_InitNextFrame( void );
 //
 // rgl_shader.c
 //
-void R_ShaderList_f(void);
-nhandle_t RE_RegisterShaderFromTexture(const char *name, texture_t *image);
+void R_ShaderList_f( void );
+nhandle_t RE_RegisterShaderFromTexture(const char *name, int32_t lightmapIndex, texture_t *image);
 nhandle_t RE_RegisterShader(const char *name);
 shader_t *R_GetShaderByHandle(nhandle_t hShader);
 shader_t *R_FindShaderByName( const char *name );
@@ -958,8 +1220,10 @@ void R_InitShaders( void );
 //
 void R_DrawElements( uint32_t numElements, uintptr_t nOffset );
 void R_DrawPolys( void );
+void RB_IterateShaderStages( shader_t *shader );
 void RB_InstantQuad(vec4_t quadVerts[4]);
 void RB_InstantQuad2(vec4_t quadVerts[4], vec2_t texCoords[4]);
+void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, const void *offset, int32_t baseVertex );
 
 //
 // rgl_cache.c
@@ -1057,7 +1321,6 @@ typedef struct {
     glIndex_t *indices;
     polyVert_t *polyVerts;
     srfPoly_t *polys;
-    srfQuad_t *quads;
 
     uint64_t numPolys;
     uint64_t numIndices;
@@ -1071,5 +1334,8 @@ void RE_DrawImage( float x, float y, float w, float h, float u1, float v1, float
 void RE_LoadWorldMap(const char *filename);
 void RE_SetColor(const float *rgba);
 void R_IssuePendingRenderCommands(void);
+
+float R_NoiseGet4f( float x, float y, float z, double t );
+void R_NoiseInit();
 
 #endif

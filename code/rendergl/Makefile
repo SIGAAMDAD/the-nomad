@@ -27,7 +27,7 @@ VERSION_DEFINE=-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPD
 
 .PHONY: all clean
 
-DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -DGDR_DLLCOMPILE -Werror=implicit-function-declaration -Werror=incompatible-pointer-types
+DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -DGDR_DLLCOMPILE -Werror=implicit-function-declaration -Werror=incompatible-pointer-types -D_NOMAD_ENGINE
 OPTIMIZERS    =\
 				-fexpensive-optimizations \
 				-funroll-loops \
@@ -56,6 +56,7 @@ INTERNAL_OBJS=\
 	$(O)/rendergl/rgl_shader.o \
 	$(O)/rendergl/rgl_cmd.o \
 	$(O)/rendergl/rgl_draw.o \
+	$(O)/rendergl/rgl_shade_calc.o \
 	$(O)/rendergl/rgl_extensions.o \
 	$(O)/rendergl/rgl_glsl_fallback.o \
 	$(O)/rendergl/rgl_init.o \

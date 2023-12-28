@@ -5,6 +5,8 @@
 
 #include "ui_strings.h"
 
+#define MAX_UI_STRINGS 4096
+
 typedef enum : uint64_t
 {
     LANGUAGE_ENGLISH,
@@ -20,9 +22,10 @@ typedef enum : uint64_t
 } language_t;
 
 typedef struct stringHash_s {
-    const char *name;
-    char value[1024];
+    char *name;
+    char *value;
     language_t lang;
+    struct stringHash_s *next;
 } stringHash_t;
 
 class CUIStringManager
@@ -42,7 +45,7 @@ public:
 private:
     int LoadTokenList( const char **text, language_t lang );
 
-    stringHash_t *stringHash[NUMLANGS];
+    stringHash_t *stringHash[NUMLANGS][MAX_UI_STRINGS];
     uint64_t numLanguages;
 };
 

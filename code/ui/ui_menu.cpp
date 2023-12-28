@@ -1,5 +1,5 @@
 #include "../game/g_game.h"
-#include "ui_public.h"
+#include "ui_public.hpp"
 #include "ui_menu.h"
 #include "ui_lib.h"
 
@@ -369,6 +369,10 @@ void Bitmap_Draw( mbitmap_t *b )
 			else
 				color = pulse_color;
 			color[3] = 0.5+0.5*sin(ui->GetRealTime()/PULSE_DIVISOR);
+
+			ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( color ) );
+			ImGui::Image( re.ImGui_TextureData( b->focusshader ), ImVec2( w, h ) );
+			ImGui::PopStyleColor();
 
 			ui->SetColor( color );
 			ui->DrawHandlePic( x, y, w, h, b->focusshader );
@@ -1598,4 +1602,30 @@ sfxHandle_t Menu_DefaultKey( CUIMenu *m, uint32_t key )
 	};
 
 	return sound;
+}
+
+typedef struct {
+	const char *m_pName;
+	int32_t m_nColumns;
+	int32_t m_nRows;
+	ImGuiTableFlags m_Flags;
+} mtable_t;
+
+void Table_Draw( mtable_t *table )
+{
+	ImGui::BeginTable( table->m_pName, table->m_nColumns, table->m_Flags );
+
+	for ( int32_t y = 0; y < table->m_nRows; y++ ) {
+		if ( y != table->m_nRows - 1 ) {
+			ImGui::TableNextRow();
+		}
+		for ( int32_t x = 0; x < table->m_nColumns; x++ ) {
+			if ( x != table->m_nColumns - 1 ) {
+				ImGui::TableNextColumn();
+			}
+			
+		}
+	}
+
+	ImGui::EndTable();
 }

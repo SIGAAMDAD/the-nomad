@@ -30,53 +30,42 @@ void R_InitNextFrame(void)
     r_numPolys = 0;
 
     r_numPolyVerts = 0;
-
-    r_numQuads = 0;
 }
 
 void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t hSprite )
 {
-    srfQuad_t *quad;
-    glIndex_t *idx;
+    srfPoly_t *poly;
+    polyVert_t *vtx;
+    vec3_t pos;
+    uint32_t i;
 
     if ( !rg.registered ) {
         return;
     }
 
-    if ( r_numQuads + 1 >= r_maxQuads->i ) {
-        ri.Printf( PRINT_DEVELOPER, "RE_AddQuadToScene: r_maxQuads hit, dropping 4 vertices\n" );
+    if ( r_numPolyVerts + 4 >= r_maxPolys->i * 4 ) {
+        ri.Printf(PRINT_DEVELOPER, "RE_AddPolyToScene: r_maxPolyVerts hit, dropping %i vertices\n", 4);
         return;
     }
+    
+    poly = &backendData->polys[r_numPolys];
+    vtx = &backendData->polyVerts[r_numPolyVerts];
 
-    quad = &backendData->quads[r_numQuads];
+    pos[0] = origin[0] - ( glState.viewData.camera.origin[0] * 0.5f );
+    pos[1] = glState.viewData.camera.origin[1] - origin[1];
+    pos[2] = origin[2];
 
-    VectorCopy( quad->origin, origin );
-    quad->hSprite = hSprite;
-    quad->hSpriteSheet = hSpriteSheet;
+    R_WorldToGL2( vtx, pos );
 
-#if 0
-    idx = backendData->indices;
-
-    idx[backendData->numIndices + 0] = r_numPolyVerts + 0;
-    idx[backendData->numIndices + 1] = r_numPolyVerts + 1;
-    idx[backendData->numIndices + 2] = r_numPolyVerts + 2;
-
-    idx[backendData->numIndices + 3] = r_numPolyVerts + 3;
-    idx[backendData->numIndices + 4] = r_numPolyVerts + 2;
-    idx[backendData->numIndices + 5] = r_numPolyVerts + 0;
-
-    backendData->numIndices += 6;
-#else
-    // generate fan indexes into the buffer
-    for ( uint32_t i = 0; i < 2; i++ ) {
+    for ( i = 0; i < 2; i++ ) {
         backendData->indices[backendData->numIndices + 0] = r_numPolyVerts;
         backendData->indices[backendData->numIndices + 1] = r_numPolyVerts + i + 1;
         backendData->indices[backendData->numIndices + 2] = r_numPolyVerts + i + 2;
         backendData->numIndices += 3;
     }
-#endif
 
-    r_numQuads++;
+    r_numPolyVerts += 4;
+    r_numPolys++;
 }
 
 void RE_AddPolyToScene(nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts)
@@ -90,7 +79,7 @@ void RE_AddPolyToScene(nhandle_t hShader, const polyVert_t *verts, uint32_t numV
         return;
     }
 
-    if (r_numPolyVerts + numVerts >= r_maxPolys->i * 4) {
+    if ( r_numPolyVerts + numVerts >= r_maxPolys->i * 4 ) {
         ri.Printf(PRINT_DEVELOPER, "RE_AddPolyToScene: r_maxPolyVerts hit, dropping %i vertices\n", numVerts);
         return;
     }
@@ -104,25 +93,13 @@ void RE_AddPolyToScene(nhandle_t hShader, const polyVert_t *verts, uint32_t numV
 
     memcpy( vt, verts, sizeof(*vt) * numVerts );
 
-    idx = backendData->indices;
-
-    idx[backendData->numIndices + 0] = r_numPolyVerts;
-    idx[backendData->numIndices + 1] = r_numPolyVerts + 1;
-    idx[backendData->numIndices + 2] = r_numPolyVerts + 2;
-
-    idx[backendData->numIndices + 3] = r_numPolyVerts + 3;
-    idx[backendData->numIndices + 4] = r_numPolyVerts + 2;
-    idx[backendData->numIndices + 5] = r_numPolyVerts + 1;
-
-    backendData->numIndices += 6;
-
     // generate fan indexes into the buffer
-/*    for (i = 0; i < numVerts - 2; i++) {
+    for ( i = 0; i < numVerts - 2; i++ ) {
         backendData->indices[backendData->numIndices + 0] = r_numPolyVerts;
         backendData->indices[backendData->numIndices + 1] = r_numPolyVerts + i + 1;
         backendData->indices[backendData->numIndices + 2] = r_numPolyVerts + i + 2;
         backendData->numIndices += 3;
-    }*/
+    }
 
     r_numPolyVerts += numVerts;
     r_numPolys++;
@@ -170,19 +147,16 @@ void RE_AddEntityToScene( const renderEntityRef_t *ent )
     r_numEntities++;
 }
 
-void RE_BeginScene(const renderSceneRef_t *fd)
+void RE_BeginScene( const renderSceneRef_t *fd )
 {
-    assert(fd);
-
-    if (!rg.world && !(fd->flags & RSF_NOWORLDMODEL)) {
-        ri.Error(ERR_DROP, "RE_RenderScene: no world loaded");
-    }
-
     backend.refdef.x = fd->x;
     backend.refdef.y = fd->y;
     backend.refdef.width = fd->width;
     backend.refdef.height = fd->height;
     backend.refdef.flags = fd->flags;
+
+    backend.refdef.time = fd->time;
+    backend.refdef.floatTime = (double)backend.refdef.time * 0.001f; // -EC-: cast to double
 
     backend.refdef.numDLights = r_firstSceneDLight - r_numDLights;
     backend.refdef.dlights = backendData->dlights;
@@ -190,7 +164,13 @@ void RE_BeginScene(const renderSceneRef_t *fd)
     backend.refdef.numEntities = r_firstSceneEntity - r_numEntities;
     backend.refdef.entities = &backendData->entities[r_firstSceneEntity];
 
+    backend.refdef.numPolys = r_numPolys - r_firstScenePoly;
+    backend.refdef.polys = &backendData->polys[r_firstSceneEntity];
+
     backend.refdef.drawn = qfalse;
+
+    rg.frameSceneNum++;
+    rg.frameCount++;
 }
 
 void RE_ClearScene(void)
@@ -210,30 +190,55 @@ void RE_EndScene(void)
 void RE_RenderScene( const renderSceneRef_t *fd )
 {
     viewData_t parms;
-    uint64_t startTime;
+    int64_t startTime;
 
-    if (!rg.registered) {
+    if ( !rg.registered ) {
         return;
     }
 
     startTime = ri.Milliseconds();
 
-    if (!rg.world && !(fd->flags & RSF_NOWORLDMODEL)) {
+    if ( !rg.world && !( fd->flags & RSF_NOWORLDMODEL ) ) {
         ri.Error(ERR_FATAL, "RE_RenderScene: no world loaded");
     }
 
-    RE_BeginScene(fd);
+    RE_BeginScene( fd );
 
-    memset(&parms, 0, sizeof(parms));
-    parms.viewportX = backend.refdef.x;
-    parms.viewportY = backend.refdef.y;
+    memset( &parms, 0, sizeof(parms) );
+    
+    if ( fd->flags & RSF_NOWORLDMODEL ) {
+        // do things Quake3 style
+
+        // setup view parms for the initial view
+    	//
+    	// set up viewport
+    	// The refdef takes 0-at-the-top y coordinates, so
+    	// convert to GL's 0-at-the-bottom space
+    	//
+
+        parms.viewportX = backend.refdef.x;
+        parms.viewportY = glConfig.vidHeight - ( backend.refdef.y + backend.refdef.height );
+
+        parms.fovX = fd->fovX;
+        parms.fovY = fd->fovY;
+    }
+    else {
+        parms.viewportX = backend.refdef.x;
+        parms.viewportY = backend.refdef.y;
+    }
+
+    parms.flags = fd->flags;
+
     parms.viewportWidth = backend.refdef.width;
     parms.viewportHeight = backend.refdef.height;
     parms.camera = glState.viewData.camera;
+    parms.stereoFrame = backend.refdef.stereoFrame;
 
     R_RenderView( &parms );
 
     RE_EndScene();
+
+    rg.frontEndMsec += ri.Milliseconds() - startTime;
 }
 
 

@@ -2310,7 +2310,7 @@ texture_t *R_CreateImage(  const char *name, byte *pic, uint32_t width, uint32_t
 		ri.Error(ERR_DROP, "R_CreateImage: MAX_RENDER_TEXTURES hit");
 	}
 
-	image = rg.textures[rg.numTextures] = ri.Malloc( sizeof(*image) + namelen );
+	image = rg.textures[rg.numTextures] = ri.Hunk_Alloc( sizeof(*image) + namelen, h_low );
 	nglGenTextures(1, (GLuint *)&image->id);
 	rg.numTextures++;
 
@@ -2344,8 +2344,16 @@ texture_t *R_CreateImage(  const char *name, byte *pic, uint32_t width, uint32_t
 	nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
 	nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 
+#ifdef GL_UNPACK_ROW_LENGTH
+	if ( !N_stricmp( COM_GetExtension( name ), "fimg" ) ) {
+		// Not on WebGL/ES
+	    nglPixelStorei( GL_UNPACK_ROW_LENGTH, 0 );
+		dataType = GL_UNSIGNED_BYTE;
+	}
+#endif
+
 	GL_LogComment("-- (%s) -- glTexImage2D(GL_TEXTURE_2D, 0, 0x%04x, %i, %i, 0, 0x%04x, 0x%04x, %p)", name, internalFormat, width, height, picFormat, dataType, pic);
-	nglTexImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, picFormat, dataType, pic);
+	nglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, width, height, 0, picFormat, dataType, pic );
 
 	GL_BindTexture(TB_COLORMAP, NULL);
 
@@ -2420,8 +2428,7 @@ static void R_LoadImage( const char *name, byte **pic, uint32_t *width, uint32_t
 	ext = COM_GetExtension( localName );
 
 	// If compressed textures are enabled, try loading a DDS first, it'll load fastest
-	if (r_arb_texture_compression->i)
-	{
+	if (r_arb_texture_compression->i) {
 		char ddsName[MAX_GDR_PATH];
 
 		COM_StripExtension(name, ddsName, MAX_GDR_PATH);
@@ -2433,6 +2440,41 @@ static void R_LoadImage( const char *name, byte **pic, uint32_t *width, uint32_t
 		// If loaded, we're done.
 		if (*pic)
 			return;
+	}
+
+	// check if it's a raw font bitmap, most likely from the imgui backend
+	if ( !N_stricmp( ext, "fimg" ) ) {
+		const int32_t ident = (('g'<<24)+('m'<<16)+('i'<<8)+'f');
+		uint64_t size;
+		char *buf;
+		byte *out;
+
+		size = ri.FS_LoadFile( name, (void **)&buf );
+		if ( !size || !buf ) {
+			ri.Error( ERR_DROP, "R_LoadImage: failed to load image file '%s'", name );
+		}
+
+		if ( ( (int32_t *)buf )[0] != ident ) {
+			ri.Error( ERR_DROP, "R_LoadImage: failed to load image file '%s' because its identifier was incorrect", name );
+		}
+
+		*width = ((int32_t *)buf)[1];
+		*height = ((int32_t *)buf)[2];
+
+		if ( size != *width * *height * 4 + 12 ) {
+			ri.Error( ERR_DROP, "R_LoadImage: failed to load image file '%s' because it has an invalid size", name );
+		}
+
+		// create a copy of the same data, its inefficient, but hopefully should only happen once per R_Init
+		out = (byte *)malloc( *width * *height * 4 );
+		memcpy( out, (byte *)buf + 12, *width * *height * 4 );
+
+		ri.FS_FreeFile( buf );
+
+		*picFormat = GL_RGBA;
+		*pic = out;
+
+		return;
 	}
 
 	// now we just use stb_image
@@ -2879,7 +2921,7 @@ void R_SetColorMappings( void )
 
 void R_InitTextures(void)
 {
-	memset(hashTable, 0, sizeof(hashTable));
+	memset( hashTable, 0, sizeof(hashTable) );
 	switch (r_textureFiltering->i) {
 	case TexFilter_Linear:
 		gl_filter_max = GL_LINEAR;
@@ -2914,9 +2956,9 @@ void R_DeleteTextures( void )
 	uint64_t i;
 
 	for (i = 0; i < rg.numTextures; i++) {
-		nglDeleteTextures(1, (const GLuint *)&rg.textures[i]->id);
+		nglDeleteTextures( 1, &rg.textures[i]->id );
 	}
-	memset(rg.textures, 0, sizeof(rg.textures));
+	memset( rg.textures, 0, sizeof(rg.textures) );
 
 	GL_BindNullTextures();
 }

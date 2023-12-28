@@ -314,6 +314,31 @@ Compiler Macro Abstraction
 	#endif
 #endif
 
+/*
+* Credits to The Cherno for FUNC_SIG macro
+*/
+
+// Resolve which function signature macro will be used. Note that this only
+// is resolved when the (pre)compiler starts, so the syntax highlighting
+// could mark the wrong one in your editor!
+#if defined(__GNUC__) || (defined(__MWERKS__) && (__MWERKS__ >= 0x3000)) || (defined(__ICC) && (__ICC >= 600)) || defined(__ghs__)
+	#define FUNC_SIG __PRETTY_FUNCTION__
+#elif defined(__DMC__) && (__DMC__ >= 0x810)
+	#define FUNC_SIG __PRETTY_FUNCTION__
+#elif (defined(__FUNCSIG__) || (_MSC_VER))
+	#define FUNC_SIG __FUNCSIG__
+#elif (defined(__INTEL_COMPILER) && (__INTEL_COMPILER >= 600)) || (defined(__IBMCPP__) && (__IBMCPP__ >= 500))
+	#define FUNC_SIG __FUNCTION__
+#elif defined(__BORLANDC__) && (__BORLANDC__ >= 0x550)
+	#define FUNC_SIG __FUNC__
+#elif defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901)
+	#define FUNC_SIG __func__
+#elif defined(__cplusplus) && (__cplusplus >= 201103)
+	#define FUNC_SIG __func__
+#else
+	#define FUNC_SIG "HZ_FUNC_SIG unknown!"
+#endif
+
 // stack based version of strdup
 #ifndef strdup_a
 	// strdupa is defined in gcc
@@ -650,6 +675,33 @@ typedef ivec_t ivec2_t[2];
 typedef ivec_t ivec3_t[3];
 typedef ivec_t ivec4_t[4];
 #endif
+
+// plane types are used to speed some tests
+// 0-2 are axial planes
+#define	PLANE_X			0
+#define	PLANE_Y			1
+#define	PLANE_Z			2
+#define	PLANE_NON_AXIAL	3
+
+
+/*
+=================
+PlaneTypeForNormal
+=================
+*/
+
+#define PlaneTypeForNormal(x) (x[0] == 1.0 ? PLANE_X : (x[1] == 1.0 ? PLANE_Y : (x[2] == 1.0 ? PLANE_Z : PLANE_NON_AXIAL) ) )
+
+
+// plane_t structure
+// !!! if this is changed, it must be changed in asm code too !!!
+typedef struct cplane_s {
+	vec3_t	normal;
+	float	dist;
+	byte	type;			// for fast side tests: 0,1,2 = axial, 3 = nonaxial
+	byte	signbits;		// signx + (signy<<1) + (signz<<2), used as lookup during collision
+	byte	pad[2];
+} cplane_t;
 
 typedef union {
 	float f;

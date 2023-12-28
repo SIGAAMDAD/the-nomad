@@ -452,6 +452,16 @@ static const void *RB_SwapBuffers(const void *data)
 	// only draw imgui data after everything else has finished
 	ri.ImGui_Draw();
 
+	if ( r_glDiagnostics->i ) {
+		nglEndQuery( GL_TIME_ELAPSED );
+    	nglEndQuery( GL_SAMPLES_PASSED );
+    	nglEndQuery( GL_PRIMITIVES_GENERATED );
+
+    	nglGetQueryObjectiv( rg.queries[TIME_QUERY], GL_QUERY_RESULT, &rg.queryCounts[TIME_QUERY] );
+    	nglGetQueryObjectiv( rg.queries[SAMPLES_QUERY], GL_QUERY_RESULT, &rg.queryCounts[SAMPLES_QUERY] );
+    	nglGetQueryObjectiv( rg.queries[PRIMTIVES_QUERY], GL_QUERY_RESULT, &rg.queryCounts[PRIMTIVES_QUERY] );
+	}
+
     // we measure overdraw by reading back the stencil buffer and
 	// counting up the number of increments that have happened
 	if ( r_measureOverdraw->i ) {

@@ -29,38 +29,38 @@ ASGNI4
 ADDRLP4 0
 INDIRI4
 CNSTI4 0
-LTI4 $92
+LTI4 $91
 ADDRLP4 0
 INDIRI4
 CNSTI4 13
-GTI4 $92
+GTI4 $91
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
 LSHI4
-ADDRGP4 $105
+ADDRGP4 $104
 ADDP4
 INDIRP4
 JUMPV
 data
 align 4
-LABELV $105
+LABELV $104
+address $92
 address $93
-address $94
+address $101
+address $96
+address $91
+address $91
 address $102
-address $97
-address $92
-address $92
 address $103
-address $104
-address $100
 address $99
 address $98
-address $101
-address $101
-address $95
+address $97
+address $100
+address $100
+address $94
 code
-LABELV $93
+LABELV $92
 line 20
 ;19:    case SGAME_INIT:
 ;20:        SG_Init();
@@ -71,9 +71,9 @@ line 21
 ;21:        return 0;
 CNSTI4 0
 RETI4
-ADDRGP4 $90
+ADDRGP4 $89
 JUMPV
-LABELV $94
+LABELV $93
 line 23
 ;22:    case SGAME_SHUTDOWN:
 ;23:        SG_Shutdown();
@@ -84,18 +84,18 @@ line 24
 ;24:        return 0;
 CNSTI4 0
 RETI4
-ADDRGP4 $90
+ADDRGP4 $89
 JUMPV
-LABELV $95
+LABELV $94
 line 26
 ;25:    case SGAME_GET_STATE:
 ;26:        return sg.state;
 ADDRGP4 sg+64
 INDIRI4
 RETI4
-ADDRGP4 $90
+ADDRGP4 $89
 JUMPV
-LABELV $97
+LABELV $96
 line 28
 ;27:    case SGAME_ENDLEVEL:
 ;28:        return SG_EndLevel();
@@ -106,9 +106,9 @@ ASGNI4
 ADDRLP4 4
 INDIRI4
 RETI4
-ADDRGP4 $90
+ADDRGP4 $89
 JUMPV
-LABELV $98
+LABELV $97
 line 30
 ;29:    case SGAME_SEND_USER_CMD:
 ;30:        SG_SendUserCmd( arg0, arg1, arg2 );
@@ -128,17 +128,17 @@ line 31
 ;31:        return 0;
 CNSTI4 0
 RETI4
-ADDRGP4 $90
+ADDRGP4 $89
 JUMPV
-LABELV $99
+LABELV $98
 line 33
 ;32:    case SGAME_MOUSE_EVENT:
 ;33:        return 0;
 CNSTI4 0
 RETI4
-ADDRGP4 $90
+ADDRGP4 $89
 JUMPV
-LABELV $100
+LABELV $99
 line 35
 ;34:    case SGAME_KEY_EVENT:
 ;35:        SG_KeyEvent( arg0, arg1 );
@@ -155,18 +155,18 @@ line 36
 ;36:        return 0;
 CNSTI4 0
 RETI4
-ADDRGP4 $90
+ADDRGP4 $89
 JUMPV
-LABELV $101
+LABELV $100
 line 39
 ;37:    case SGAME_EVENT_HANDLING:
 ;38:    case SGAME_EVENT_NONE:
 ;39:        return 0;
 CNSTI4 0
 RETI4
-ADDRGP4 $90
+ADDRGP4 $89
 JUMPV
-LABELV $102
+LABELV $101
 line 41
 ;40:    case SGAME_LOADLEVEL:
 ;41:        return SG_InitLevel( arg0 );
@@ -180,9 +180,9 @@ ASGNI4
 ADDRLP4 8
 INDIRI4
 RETI4
-ADDRGP4 $90
+ADDRGP4 $89
 JUMPV
-LABELV $103
+LABELV $102
 line 43
 ;42:    case SGAME_CONSOLE_COMMAND:
 ;43:        SGameCommand();
@@ -193,9 +193,9 @@ line 44
 ;44:        return 0;
 CNSTI4 0
 RETI4
-ADDRGP4 $90
+ADDRGP4 $89
 JUMPV
-LABELV $104
+LABELV $103
 line 46
 ;45:    case SGAME_RUNTIC:
 ;46:        return SG_RunLoop( arg0, arg1 );
@@ -212,18 +212,18 @@ ASGNI4
 ADDRLP4 12
 INDIRI4
 RETI4
-ADDRGP4 $90
+ADDRGP4 $89
 JUMPV
 line 48
 ;47:    default:
 ;48:        break;
-LABELV $92
+LABELV $91
 line 49
 ;49:    };
 line 51
 ;50:
 ;51:    SG_Error( "vmMain: unrecognized command %i", command );
-ADDRGP4 $106
+ADDRGP4 $105
 ARGP4
 ADDRFP4 0
 INDIRI4
@@ -235,137 +235,143 @@ line 52
 ;52:    return -1;
 CNSTI4 -1
 RETI4
-LABELV $90
+LABELV $89
 endproc vmMain 16 12
 data
 align 4
 LABELV cvarTable
 byte 4 0
+address $107
 address $108
-address $109
 byte 4 64
 byte 4 0
 byte 4 0
 byte 4 0
+address $109
 address $110
-address $111
 byte 4 64
 byte 4 0
 byte 4 0
 address sg_printEntities
+address $111
 address $112
-address $113
 byte 4 0
 byte 4 0
 byte 4 0
 address sg_debugPrint
+address $113
 address $114
-address $115
 byte 4 256
 byte 4 0
 byte 4 0
 address sg_paused
-address $116
 address $115
+address $114
 byte 4 288
 byte 4 0
 byte 4 0
 address pm_groundFriction
+address $116
 address $117
-address $118
 byte 4 33
 byte 4 0
 byte 4 1
 address pm_waterFriction
+address $118
 address $119
-address $120
 byte 4 33
 byte 4 0
 byte 4 1
 address pm_airFriction
+address $120
 address $121
-address $122
 byte 4 33
 byte 4 0
 byte 4 1
 address pm_airAccel
+address $122
 address $123
-address $124
 byte 4 33
 byte 4 0
 byte 4 0
 address pm_waterAccel
+address $124
 address $125
-address $126
 byte 4 33
 byte 4 0
 byte 4 0
 address pm_baseAccel
+address $126
 address $127
-address $128
 byte 4 33
 byte 4 0
 byte 4 0
 address pm_baseSpeed
+address $128
 address $129
-address $130
 byte 4 33
 byte 4 0
 byte 4 0
 address sg_mouseInvert
-address $131
-address $113
+address $130
+address $112
 byte 4 33
 byte 4 0
 byte 4 1
 address sg_mouseAcceleration
-address $132
-address $113
+address $131
+address $112
 byte 4 33
 byte 4 0
 byte 4 1
 address sg_printLevelStats
-address $133
-address $115
+address $132
+address $114
 byte 4 33
 byte 4 0
 byte 4 0
 address sg_decalDetail
+address $133
 address $134
-address $135
 byte 4 33
 byte 4 0
 byte 4 1
 address sg_gibs
-address $136
-address $113
+address $135
+address $112
 byte 4 33
 byte 4 0
 byte 4 1
 address sg_levelInfoFile
+address $136
 address $137
-address $138
 byte 4 33
 byte 4 0
 byte 4 1
 address sg_savename
+address $138
 address $139
-address $140
 byte 4 33
 byte 4 0
 byte 4 1
 address sg_numSaves
-address $141
-address $113
+address $140
+address $112
 byte 4 33
+byte 4 0
+byte 4 0
+address sg_memoryDebug
+address $141
+address $112
+byte 4 288
 byte 4 0
 byte 4 0
 align 4
 LABELV cvarTableSize
-byte 4 20
+byte 4 21
 code
 proc SG_RegisterCvars 16 16
-line 118
+line 124
 ;53:}
 ;54:
 ;55:sgGlobals_t sg;
@@ -383,60 +389,66 @@ line 118
 ;67:vmCvar_t sg_levelDataFile;
 ;68:vmCvar_t sg_savename;
 ;69:vmCvar_t sg_numSaves;
-;70:
-;71:vmCvar_t pm_groundFriction;
-;72:vmCvar_t pm_waterFriction;
-;73:vmCvar_t pm_airFriction;
-;74:vmCvar_t pm_waterAccel;
-;75:vmCvar_t pm_baseAccel;
-;76:vmCvar_t pm_baseSpeed;
-;77:vmCvar_t pm_airAccel;
-;78:vmCvar_t pm_wallrunAccelVertical;
-;79:vmCvar_t pm_wallrunAccelMove;
-;80:vmCvar_t pm_wallTime;
-;81:
-;82:typedef struct {
-;83:    vmCvar_t *vmCvar;
-;84:    const char *cvarName;
-;85:    const char *defaultValue;
-;86:    int cvarFlags;
-;87:    int modificationCount; // for tracking changes
-;88:    qboolean trackChange;       // track this variable, and announce if changed
-;89:} cvarTable_t;
-;90:
-;91:static cvarTable_t cvarTable[] = {
-;92:    // noset vars
-;93:    { NULL,                     "gamename",             GLN_VERSION,    CVAR_ROM,                   0, qfalse },
-;94:    { NULL,                     "gamedate",             __DATE__,       CVAR_ROM,                   0, qfalse },
-;95:    { &sg_printEntities,        "sg_printEntities",     "0",            0,                          0, qfalse },
-;96:    { &sg_debugPrint,           "sg_debugPrint",        "1",            CVAR_TEMP,                  0, qfalse },
-;97:    { &sg_paused,               "g_paused",             "1",            CVAR_TEMP | CVAR_LATCH,     0, qfalse },
-;98:    { &pm_groundFriction,       "pm_groundFriction",    "0.6f",         CVAR_LATCH | CVAR_SAVE,     0, qtrue },
-;99:    { &pm_waterFriction,        "pm_waterFriction",     "0.06f",        CVAR_LATCH | CVAR_SAVE,     0, qtrue },
-;100:    { &pm_airFriction,          "pm_airFriction",       "0.01f",        CVAR_LATCH | CVAR_SAVE,     0, qtrue },
-;101:    { &pm_airAccel,             "pm_airAccel",          "1.5f",         CVAR_LATCH | CVAR_SAVE,     0, qfalse },
-;102:    { &pm_waterAccel,           "pm_waterAccel",        "0.5f",         CVAR_LATCH | CVAR_SAVE,     0, qfalse },
-;103:    { &pm_baseAccel,            "pm_baseAccel",         "1.0f",         CVAR_LATCH | CVAR_SAVE,     0, qfalse },
-;104:    { &pm_baseSpeed,            "pm_baseSpeed",         "0.02f",        CVAR_LATCH | CVAR_SAVE,     0, qfalse },
-;105:    { &sg_mouseInvert,          "g_mouseInvert",        "0",            CVAR_LATCH | CVAR_SAVE,     0, qtrue },
-;106:    { &sg_mouseAcceleration,    "g_mouseAcceleration",  "0",            CVAR_LATCH | CVAR_SAVE,     0, qtrue },
-;107:    { &sg_printLevelStats,      "sg_printLevelStats",   "1",            CVAR_LATCH | CVAR_SAVE,     0, qfalse },
-;108:    { &sg_decalDetail,          "sg_decalDetail",       "3",            CVAR_LATCH | CVAR_SAVE,     0, qtrue },
-;109:    { &sg_gibs,                 "sg_gibs",              "0",            CVAR_LATCH | CVAR_SAVE,     0, qtrue },
-;110:    { &sg_levelInfoFile,        "sg_levelInfoFile",     "levels.txt",   CVAR_LATCH | CVAR_SAVE,     0, qtrue },
-;111:    { &sg_savename,             "sg_savename",          "savedata",     CVAR_LATCH | CVAR_SAVE,     0, qtrue },
-;112:    { &sg_numSaves,             "sg_numSaves",          "0",            CVAR_LATCH | CVAR_SAVE,     0, qfalse },
-;113:};
-;114:
-;115:static const int cvarTableSize = arraylen(cvarTable);
-;116:
-;117:static void SG_RegisterCvars( void )
-;118:{
-line 122
-;119:    int i;
-;120:    cvarTable_t *cv;
-;121:
-;122:    for ( i = 0, cv = cvarTable; i < cvarTableSize; i++, cv++ ) {
+;70:vmCvar_t sg_memoryDebug;
+;71:
+;72:vmCvar_t pm_groundFriction;
+;73:vmCvar_t pm_waterFriction;
+;74:vmCvar_t pm_airFriction;
+;75:vmCvar_t pm_waterAccel;
+;76:vmCvar_t pm_baseAccel;
+;77:vmCvar_t pm_baseSpeed;
+;78:vmCvar_t pm_airAccel;
+;79:vmCvar_t pm_wallrunAccelVertical;
+;80:vmCvar_t pm_wallrunAccelMove;
+;81:vmCvar_t pm_wallTime;
+;82:
+;83:typedef struct {
+;84:    vmCvar_t *vmCvar;
+;85:    const char *cvarName;
+;86:    const char *defaultValue;
+;87:    int cvarFlags;
+;88:    int modificationCount; // for tracking changes
+;89:    qboolean trackChange;       // track this variable, and announce if changed
+;90:} cvarTable_t;
+;91:
+;92:static cvarTable_t cvarTable[] = {
+;93:    // noset vars
+;94:    { NULL,                     "gamename",             GLN_VERSION,    CVAR_ROM,                   0, qfalse },
+;95:    { NULL,                     "gamedate",             __DATE__,       CVAR_ROM,                   0, qfalse },
+;96:    { &sg_printEntities,        "sg_printEntities",     "0",            0,                          0, qfalse },
+;97:    { &sg_debugPrint,           "sg_debugPrint",        "1",            CVAR_TEMP,                  0, qfalse },
+;98:    { &sg_paused,               "g_paused",             "1",            CVAR_TEMP | CVAR_LATCH,     0, qfalse },
+;99:    { &pm_groundFriction,       "pm_groundFriction",    "0.6f",         CVAR_LATCH | CVAR_SAVE,     0, qtrue },
+;100:    { &pm_waterFriction,        "pm_waterFriction",     "0.06f",        CVAR_LATCH | CVAR_SAVE,     0, qtrue },
+;101:    { &pm_airFriction,          "pm_airFriction",       "0.01f",        CVAR_LATCH | CVAR_SAVE,     0, qtrue },
+;102:    { &pm_airAccel,             "pm_airAccel",          "1.5f",         CVAR_LATCH | CVAR_SAVE,     0, qfalse },
+;103:    { &pm_waterAccel,           "pm_waterAccel",        "0.5f",         CVAR_LATCH | CVAR_SAVE,     0, qfalse },
+;104:    { &pm_baseAccel,            "pm_baseAccel",         "1.0f",         CVAR_LATCH | CVAR_SAVE,     0, qfalse },
+;105:    { &pm_baseSpeed,            "pm_baseSpeed",         "0.02f",        CVAR_LATCH | CVAR_SAVE,     0, qfalse },
+;106:    { &sg_mouseInvert,          "g_mouseInvert",        "0",            CVAR_LATCH | CVAR_SAVE,     0, qtrue },
+;107:    { &sg_mouseAcceleration,    "g_mouseAcceleration",  "0",            CVAR_LATCH | CVAR_SAVE,     0, qtrue },
+;108:    { &sg_printLevelStats,      "sg_printLevelStats",   "1",            CVAR_LATCH | CVAR_SAVE,     0, qfalse },
+;109:    { &sg_decalDetail,          "sg_decalDetail",       "3",            CVAR_LATCH | CVAR_SAVE,     0, qtrue },
+;110:    { &sg_gibs,                 "sg_gibs",              "0",            CVAR_LATCH | CVAR_SAVE,     0, qtrue },
+;111:    { &sg_levelInfoFile,        "sg_levelInfoFile",     "levels.txt",   CVAR_LATCH | CVAR_SAVE,     0, qtrue },
+;112:    { &sg_savename,             "sg_savename",          "savedata",     CVAR_LATCH | CVAR_SAVE,     0, qtrue },
+;113:    { &sg_numSaves,             "sg_numSaves",          "0",            CVAR_LATCH | CVAR_SAVE,     0, qfalse },
+;114:#ifdef _NOMAD_DEBUG
+;115:    { &sg_memoryDebug,          "sg_memoryDebug",       "1",            CVAR_LATCH | CVAR_TEMP,     0, qfalse },
+;116:#else
+;117:    { &sg_memoryDebug,          "sg_memoryDebug",       "0",            CVAR_LATCH | CVAR_TEMP,     0, qfalse },
+;118:#endif
+;119:};
+;120:
+;121:static const int cvarTableSize = arraylen(cvarTable);
+;122:
+;123:static void SG_RegisterCvars( void )
+;124:{
+line 128
+;125:    int i;
+;126:    cvarTable_t *cv;
+;127:
+;128:    for ( i = 0, cv = cvarTable; i < cvarTableSize; i++, cv++ ) {
 ADDRLP4 4
 CNSTI4 0
 ASGNI4
@@ -446,8 +458,8 @@ ASGNP4
 ADDRGP4 $146
 JUMPV
 LABELV $143
-line 123
-;123:        Cvar_Register( cv->vmCvar, cv->cvarName, cv->defaultValue, cv->cvarFlags );
+line 129
+;129:        Cvar_Register( cv->vmCvar, cv->cvarName, cv->defaultValue, cv->cvarFlags );
 ADDRLP4 0
 INDIRP4
 INDIRP4
@@ -473,16 +485,16 @@ ARGI4
 ADDRGP4 Cvar_Register
 CALLV
 pop
-line 124
-;124:        if ( cv->vmCvar ) {
+line 130
+;130:        if ( cv->vmCvar ) {
 ADDRLP4 0
 INDIRP4
 INDIRP4
 CVPU4 4
 CNSTU4 0
 EQU4 $147
-line 125
-;125:            cv->modificationCount = cv->vmCvar->modificationCount;
+line 131
+;131:            cv->modificationCount = cv->vmCvar->modificationCount;
 ADDRLP4 0
 INDIRP4
 CNSTI4 16
@@ -495,13 +507,13 @@ ADDP4
 INDIRU4
 CVUI4 4
 ASGNI4
-line 126
-;126:        }
+line 132
+;132:        }
 LABELV $147
-line 127
-;127:    }
+line 133
+;133:    }
 LABELV $144
-line 122
+line 128
 ADDRLP4 4
 ADDRLP4 4
 INDIRI4
@@ -520,21 +532,21 @@ INDIRI4
 ADDRGP4 cvarTableSize
 INDIRI4
 LTI4 $143
-line 128
-;128:}
+line 134
+;134:}
 LABELV $142
 endproc SG_RegisterCvars 16 16
 export SG_UpdateCvars
 proc SG_UpdateCvars 24 12
-line 131
-;129:
-;130:void SG_UpdateCvars( void )
-;131:{
-line 135
-;132:    int i;
-;133:    cvarTable_t *cv;
-;134:
-;135:    for ( i = 0, cv = cvarTable; i < cvarTableSize; i++, cv++ ) {
+line 137
+;135:
+;136:void SG_UpdateCvars( void )
+;137:{
+line 141
+;138:    int i;
+;139:    cvarTable_t *cv;
+;140:
+;141:    for ( i = 0, cv = cvarTable; i < cvarTableSize; i++, cv++ ) {
 ADDRLP4 4
 CNSTI4 0
 ASGNI4
@@ -544,16 +556,16 @@ ASGNP4
 ADDRGP4 $153
 JUMPV
 LABELV $150
-line 136
-;136:        if ( cv->vmCvar ) {
+line 142
+;142:        if ( cv->vmCvar ) {
 ADDRLP4 0
 INDIRP4
 INDIRP4
 CVPU4 4
 CNSTU4 0
 EQU4 $154
-line 137
-;137:            Cvar_Update( cv->vmCvar );
+line 143
+;143:            Cvar_Update( cv->vmCvar );
 ADDRLP4 0
 INDIRP4
 INDIRP4
@@ -561,9 +573,9 @@ ARGP4
 ADDRGP4 Cvar_Update
 CALLV
 pop
-line 139
-;138:
-;139:            if ( cv->modificationCount != cv->vmCvar->modificationCount ) {
+line 145
+;144:
+;145:            if ( cv->modificationCount != cv->vmCvar->modificationCount ) {
 ADDRLP4 0
 INDIRP4
 CNSTI4 16
@@ -577,8 +589,8 @@ CNSTI4 268
 ADDP4
 INDIRU4
 EQU4 $156
-line 140
-;140:                cv->modificationCount = cv->vmCvar->modificationCount;
+line 146
+;146:                cv->modificationCount = cv->vmCvar->modificationCount;
 ADDRLP4 0
 INDIRP4
 CNSTI4 16
@@ -591,9 +603,9 @@ ADDP4
 INDIRU4
 CVUI4 4
 ASGNI4
-line 142
-;141:
-;142:                if ( cv->trackChange ) {
+line 148
+;147:
+;148:                if ( cv->trackChange ) {
 ADDRLP4 0
 INDIRP4
 CNSTI4 20
@@ -601,8 +613,8 @@ ADDP4
 INDIRI4
 CNSTI4 0
 EQI4 $158
-line 143
-;143:                    trap_SendConsoleCommand( va( "Changed \"%s\" to \"%s\"", cv->cvarName, cv->vmCvar->s ) );
+line 149
+;149:                    trap_SendConsoleCommand( va( "Changed \"%s\" to \"%s\"", cv->cvarName, cv->vmCvar->s ) );
 ADDRGP4 $160
 ARGP4
 ADDRLP4 0
@@ -625,19 +637,19 @@ ARGP4
 ADDRGP4 trap_SendConsoleCommand
 CALLV
 pop
-line 144
-;144:                }
+line 150
+;150:                }
 LABELV $158
-line 145
-;145:            }
+line 151
+;151:            }
 LABELV $156
-line 146
-;146:        }
+line 152
+;152:        }
 LABELV $154
-line 147
-;147:    }
+line 153
+;153:    }
 LABELV $151
-line 135
+line 141
 ADDRLP4 4
 ADDRLP4 4
 INDIRI4
@@ -656,27 +668,27 @@ INDIRI4
 ADDRGP4 cvarTableSize
 INDIRI4
 LTI4 $150
-line 148
-;148:}
+line 154
+;154:}
 LABELV $149
 endproc SG_UpdateCvars 24 12
 export G_Printf
 proc G_Printf 4108 12
-line 151
-;149:
-;150:void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL G_Printf(const char *fmt, ...)
-;151:{
-line 156
-;152:    va_list argptr;
-;153:    char msg[4096];
-;154:    int32_t length;
+line 157
 ;155:
-;156:    va_start(argptr, fmt);
+;156:void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL G_Printf(const char *fmt, ...)
+;157:{
+line 162
+;158:    va_list argptr;
+;159:    char msg[4096];
+;160:    int32_t length;
+;161:
+;162:    va_start(argptr, fmt);
 ADDRLP4 0
 ADDRFP4 0+4
 ASGNP4
-line 157
-;157:    length = vsprintf(msg, fmt, argptr);
+line 163
+;163:    length = vsprintf(msg, fmt, argptr);
 ADDRLP4 4
 ARGP4
 ADDRFP4 0
@@ -693,40 +705,40 @@ ADDRLP4 4100
 ADDRLP4 4104
 INDIRI4
 ASGNI4
-line 158
-;158:    va_end(argptr);
+line 164
+;164:    va_end(argptr);
 ADDRLP4 0
 CNSTP4 0
 ASGNP4
-line 160
-;159:
-;160:    trap_Print(msg);
+line 166
+;165:
+;166:    trap_Print(msg);
 ADDRLP4 4
 ARGP4
 ADDRGP4 trap_Print
 CALLV
 pop
-line 161
-;161:}
+line 167
+;167:}
 LABELV $161
 endproc G_Printf 4108 12
 export G_Error
 proc G_Error 4108 12
-line 164
-;162:
-;163:void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL G_Error(const char *err, ...)
-;164:{
-line 169
-;165:    va_list argptr;
-;166:    char msg[4096];
-;167:    int32_t length;
+line 170
 ;168:
-;169:    va_start(argptr, err);
+;169:void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL G_Error(const char *err, ...)
+;170:{
+line 175
+;171:    va_list argptr;
+;172:    char msg[4096];
+;173:    int32_t length;
+;174:
+;175:    va_start(argptr, err);
 ADDRLP4 0
 ADDRFP4 0+4
 ASGNP4
-line 170
-;170:    length = vsprintf(msg, err, argptr);
+line 176
+;176:    length = vsprintf(msg, err, argptr);
 ADDRLP4 4
 ARGP4
 ADDRFP4 0
@@ -743,40 +755,40 @@ ADDRLP4 4100
 ADDRLP4 4104
 INDIRI4
 ASGNI4
-line 171
-;171:    va_end(argptr);
+line 177
+;177:    va_end(argptr);
 ADDRLP4 0
 CNSTP4 0
 ASGNP4
-line 173
-;172:
-;173:    trap_Error(msg);
+line 179
+;178:
+;179:    trap_Error(msg);
 ADDRLP4 4
 ARGP4
 ADDRGP4 trap_Error
 CALLV
 pop
-line 174
-;174:}
+line 180
+;180:}
 LABELV $163
 endproc G_Error 4108 12
 export SG_Printf
 proc SG_Printf 4108 12
-line 177
-;175:
-;176:void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL SG_Printf(const char *fmt, ...)
-;177:{
-line 182
-;178:    va_list argptr;
-;179:    char msg[4096];
-;180:    int32_t length;
+line 183
 ;181:
-;182:    va_start(argptr, fmt);
+;182:void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL SG_Printf(const char *fmt, ...)
+;183:{
+line 188
+;184:    va_list argptr;
+;185:    char msg[4096];
+;186:    int32_t length;
+;187:
+;188:    va_start(argptr, fmt);
 ADDRLP4 0
 ADDRFP4 0+4
 ASGNP4
-line 183
-;183:    length = vsprintf(msg, fmt, argptr);
+line 189
+;189:    length = vsprintf(msg, fmt, argptr);
 ADDRLP4 4
 ARGP4
 ADDRFP4 0
@@ -793,58 +805,58 @@ ADDRLP4 4100
 ADDRLP4 4104
 INDIRI4
 ASGNI4
-line 184
-;184:    va_end(argptr);
+line 190
+;190:    va_end(argptr);
 ADDRLP4 0
 CNSTP4 0
 ASGNP4
-line 186
-;185:
-;186:    if (length >= sizeof(msg)) {
+line 192
+;191:
+;192:    if (length >= sizeof(msg)) {
 ADDRLP4 4100
 INDIRI4
 CVIU4 4
 CNSTU4 4096
 LTU4 $167
-line 187
-;187:        trap_Error( "SG_Printf: buffer overflow" );
+line 193
+;193:        trap_Error( "SG_Printf: buffer overflow" );
 ADDRGP4 $169
 ARGP4
 ADDRGP4 trap_Error
 CALLV
 pop
-line 188
-;188:    }
+line 194
+;194:    }
 LABELV $167
-line 190
-;189:
-;190:    trap_Print(msg);
+line 196
+;195:
+;196:    trap_Print(msg);
 ADDRLP4 4
 ARGP4
 ADDRGP4 trap_Print
 CALLV
 pop
-line 191
-;191:}
+line 197
+;197:}
 LABELV $165
 endproc SG_Printf 4108 12
 export SG_Error
 proc SG_Error 4108 12
-line 194
-;192:
-;193:void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL SG_Error(const char *err, ...)
-;194:{
-line 199
-;195:    va_list argptr;
-;196:    char msg[4096];
-;197:    int32_t length;
+line 200
 ;198:
-;199:    va_start(argptr, err);
+;199:void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL SG_Error(const char *err, ...)
+;200:{
+line 205
+;201:    va_list argptr;
+;202:    char msg[4096];
+;203:    int32_t length;
+;204:
+;205:    va_start(argptr, err);
 ADDRLP4 0
 ADDRFP4 0+4
 ASGNP4
-line 200
-;200:    length = vsprintf(msg, err, argptr);
+line 206
+;206:    length = vsprintf(msg, err, argptr);
 ADDRLP4 4
 ARGP4
 ADDRFP4 0
@@ -861,58 +873,58 @@ ADDRLP4 4100
 ADDRLP4 4104
 INDIRI4
 ASGNI4
-line 201
-;201:    va_end(argptr);
+line 207
+;207:    va_end(argptr);
 ADDRLP4 0
 CNSTP4 0
 ASGNP4
-line 203
-;202:
-;203:    if (length >= sizeof(msg)) {
+line 209
+;208:
+;209:    if (length >= sizeof(msg)) {
 ADDRLP4 4100
 INDIRI4
 CVIU4 4
 CNSTU4 4096
 LTU4 $172
-line 204
-;204:        trap_Error( "SG_Printf: buffer overflow" );
+line 210
+;210:        trap_Error( "SG_Printf: buffer overflow" );
 ADDRGP4 $169
 ARGP4
 ADDRGP4 trap_Error
 CALLV
 pop
-line 205
-;205:    }
+line 211
+;211:    }
 LABELV $172
-line 207
-;206:
-;207:    trap_Error(msg);
+line 213
+;212:
+;213:    trap_Error(msg);
 ADDRLP4 4
 ARGP4
 ADDRGP4 trap_Error
 CALLV
 pop
-line 208
-;208:}
+line 214
+;214:}
 LABELV $170
 endproc SG_Error 4108 12
 export N_Error
 proc N_Error 4108 12
-line 211
-;209:
-;210:void GDR_DECL GDR_ATTRIBUTE((format(printf, 2, 3))) N_Error(errorCode_t code, const char *err, ...)
-;211:{
-line 216
-;212:    va_list argptr;
-;213:    char msg[4096];
-;214:    int32_t length;
+line 217
 ;215:
-;216:    va_start(argptr, err);
+;216:void GDR_DECL GDR_ATTRIBUTE((format(printf, 2, 3))) N_Error(errorCode_t code, const char *err, ...)
+;217:{
+line 222
+;218:    va_list argptr;
+;219:    char msg[4096];
+;220:    int32_t length;
+;221:
+;222:    va_start(argptr, err);
 ADDRLP4 0
 ADDRFP4 4+4
 ASGNP4
-line 217
-;217:    length = vsprintf(msg, err, argptr);
+line 223
+;223:    length = vsprintf(msg, err, argptr);
 ADDRLP4 4
 ARGP4
 ADDRFP4 4
@@ -929,32 +941,32 @@ ADDRLP4 4100
 ADDRLP4 4104
 INDIRI4
 ASGNI4
-line 218
-;218:    va_end(argptr);
+line 224
+;224:    va_end(argptr);
 ADDRLP4 0
 CNSTP4 0
 ASGNP4
-line 220
-;219:
-;220:    if (length >= sizeof(msg)) {
+line 226
+;225:
+;226:    if (length >= sizeof(msg)) {
 ADDRLP4 4100
 INDIRI4
 CVIU4 4
 CNSTU4 4096
 LTU4 $176
-line 221
-;221:        trap_Error( "SG_Printf: buffer overflow" );
+line 227
+;227:        trap_Error( "SG_Printf: buffer overflow" );
 ADDRGP4 $169
 ARGP4
 ADDRGP4 trap_Error
 CALLV
 pop
-line 222
-;222:    }
+line 228
+;228:    }
 LABELV $176
-line 224
-;223:
-;224:    SG_Error("%s", msg);
+line 230
+;229:
+;230:    SG_Error("%s", msg);
 ADDRGP4 $178
 ARGP4
 ADDRLP4 4
@@ -962,30 +974,30 @@ ARGP4
 ADDRGP4 SG_Error
 CALLV
 pop
-line 225
-;225:}
+line 231
+;231:}
 LABELV $174
 endproc N_Error 4108 12
 export Con_Printf
 proc Con_Printf 4108 12
-line 231
-;226:
-;227://#ifndef SGAME_HARD_LINKED
-;228:// this is only here so the functions in n_shared.c and bg_*.c can link
-;229:
-;230:void GDR_DECL GDR_ATTRIBUTE((format(printf, 1, 2))) Con_Printf(const char *fmt, ...)
-;231:{
-line 236
-;232:    va_list argptr;
-;233:    char msg[4096];
-;234:    int32_t length;
+line 237
+;232:
+;233://#ifndef SGAME_HARD_LINKED
+;234:// this is only here so the functions in n_shared.c and bg_*.c can link
 ;235:
-;236:    va_start(argptr, fmt);
+;236:void GDR_DECL GDR_ATTRIBUTE((format(printf, 1, 2))) Con_Printf(const char *fmt, ...)
+;237:{
+line 242
+;238:    va_list argptr;
+;239:    char msg[4096];
+;240:    int32_t length;
+;241:
+;242:    va_start(argptr, fmt);
 ADDRLP4 0
 ADDRFP4 0+4
 ASGNP4
-line 237
-;237:    length = vsprintf(msg, fmt, argptr);
+line 243
+;243:    length = vsprintf(msg, fmt, argptr);
 ADDRLP4 4
 ARGP4
 ADDRFP4 0
@@ -1002,32 +1014,32 @@ ADDRLP4 4100
 ADDRLP4 4104
 INDIRI4
 ASGNI4
-line 238
-;238:    va_end(argptr);
+line 244
+;244:    va_end(argptr);
 ADDRLP4 0
 CNSTP4 0
 ASGNP4
-line 240
-;239:
-;240:    if (length >= sizeof(msg)) {
+line 246
+;245:
+;246:    if (length >= sizeof(msg)) {
 ADDRLP4 4100
 INDIRI4
 CVIU4 4
 CNSTU4 4096
 LTU4 $181
-line 241
-;241:        trap_Error( "SG_Printf: buffer overflow" );
+line 247
+;247:        trap_Error( "SG_Printf: buffer overflow" );
 ADDRGP4 $169
 ARGP4
 ADDRGP4 trap_Error
 CALLV
 pop
-line 242
-;242:    }
+line 248
+;248:    }
 LABELV $181
-line 244
-;243:
-;244:    SG_Printf("%s", msg);
+line 250
+;249:
+;250:    SG_Printf("%s", msg);
 ADDRGP4 $178
 ARGP4
 ADDRLP4 4
@@ -1035,83 +1047,83 @@ ARGP4
 ADDRGP4 SG_Printf
 CALLV
 pop
-line 245
-;245:}
+line 251
+;251:}
 LABELV $179
 endproc Con_Printf 4108 12
 export SG_RunLoop
 proc SG_RunLoop 44 12
-line 250
-;246:
-;247://#endif
-;248:
-;249:int SG_RunLoop( int levelTime, int frameTime )
-;250:{
 line 256
-;251:    int i;
-;252:    int start, end;
-;253:    int msec;
-;254:    sgentity_t *ent;
-;255:
-;256:    if ( sg.state == SG_INACTIVE ) {
+;252:
+;253://#endif
+;254:
+;255:int SG_RunLoop( int levelTime, int frameTime )
+;256:{
+line 262
+;257:    int i;
+;258:    int start, end;
+;259:    int msec;
+;260:    sgentity_t *ent;
+;261:
+;262:    if ( sg.state == SG_INACTIVE ) {
 ADDRGP4 sg+64
 INDIRI4
-CNSTI4 0
+CNSTI4 2
 NEI4 $184
-line 257
-;257:        return 0;
+line 263
+;263:        return 0;
 CNSTI4 0
 RETI4
 ADDRGP4 $183
 JUMPV
 LABELV $184
-line 261
-;258:    }
-;259:
-;260:    // get any cvar changes
-;261:    SG_UpdateCvars();
+line 267
+;264:    }
+;265:
+;266:    // get any cvar changes
+;267:    SG_UpdateCvars();
 ADDRGP4 SG_UpdateCvars
 CALLV
 pop
-line 264
-;262:
-;263:    // even if the game is paused, we still render everything in the background
-;264:    if ( sg.state == SG_SHOW_LEVEL_STATS ) {
+line 270
+;268:
+;269:    // even if the game is paused, we still render everything in the background
+;270:    if ( sg.state == SG_SHOW_LEVEL_STATS ) {
 ADDRGP4 sg+64
 INDIRI4
-CNSTI4 2
+CNSTI4 4
 NEI4 $187
-line 265
-;265:        SG_DrawLevelStats();
+line 271
+;271:        SG_DrawLevelStats();
 ADDRGP4 SG_DrawLevelStats
 CALLV
 pop
-line 266
-;266:        return 1; // we don't draw the level if we're ending it
+line 272
+;272:        return 1; // we don't draw the level if we're ending it
 CNSTI4 1
 RETI4
 ADDRGP4 $183
 JUMPV
 LABELV $187
-line 269
-;267:    }
-;268:
-;269:    if ( sg_paused.i ) {
+line 275
+;273:    }
+;274:
+;275:    if ( sg_paused.i ) {
 ADDRGP4 sg_paused+260
 INDIRI4
 CNSTI4 0
 EQI4 $190
-line 270
-;270:        return 0;
+line 276
+;276:        return 0;
 CNSTI4 0
 RETI4
 ADDRGP4 $183
 JUMPV
 LABELV $190
-line 273
-;271:    }
-;272:
-;273:    sg.framenum++;
+line 279
+;277:    }
+;278:
+;279:    sg.framenum++;
 ADDRLP4 20
 ADDRGP4 sg+92
 ASGNP4
@@ -1123,20 +1135,20 @@ INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-line 274
-;274:    sg.previousTime = sg.framenum;
+line 280
+;280:    sg.previousTime = sg.framenum;
 ADDRGP4 sg+84
 ADDRGP4 sg+92
 INDIRI4
 ASGNI4
-line 275
-;275:    sg.levelTime = levelTime;
+line 281
+;281:    sg.levelTime = levelTime;
 ADDRGP4 sg+88
 ADDRFP4 0
 INDIRI4
 ASGNI4
-line 276
-;276:    msec = sg.levelTime - sg.previousTime;
+line 282
+;282:    msec = sg.levelTime - sg.previousTime;
 ADDRLP4 16
 ADDRGP4 sg+88
 INDIRI4
@@ -1144,15 +1156,15 @@ ADDRGP4 sg+84
 INDIRI4
 SUBI4
 ASGNI4
-line 284
-;277:
-;278:    // build player's movement command
-;279://    SG_BuildMoveCommand();
-;280:
-;281:    //
-;282:    // go through all allocated entities
-;283:    //
-;284:    start = trap_Milliseconds();
+line 290
+;283:
+;284:    // build player's movement command
+;285://    SG_BuildMoveCommand();
+;286:
+;287:    //
+;288:    // go through all allocated entities
+;289:    //
+;290:    start = trap_Milliseconds();
 ADDRLP4 24
 ADDRGP4 trap_Milliseconds
 CALLI4
@@ -1161,21 +1173,21 @@ ADDRLP4 8
 ADDRLP4 24
 INDIRI4
 ASGNI4
-line 285
-;285:    ent = &sg_entities[0];
+line 291
+;291:    ent = &sg_entities[0];
 ADDRLP4 0
 ADDRGP4 sg_entities
 ASGNP4
-line 286
-;286:    for ( i = 0; i < sg.numEntities; i++) {
+line 292
+;292:    for ( i = 0; i < sg.numEntities; i++) {
 ADDRLP4 4
 CNSTI4 0
 ASGNI4
 ADDRGP4 $202
 JUMPV
 LABELV $199
-line 287
-;287:        if ( !ent->health ) {
+line 293
+;293:        if ( !ent->health ) {
 ADDRLP4 0
 INDIRP4
 CNSTI4 112
@@ -1183,15 +1195,15 @@ ADDP4
 INDIRI4
 CNSTI4 0
 NEI4 $204
-line 288
-;288:            continue;
+line 294
+;294:            continue;
 ADDRGP4 $200
 JUMPV
 LABELV $204
-line 291
-;289:        }
-;290:
-;291:        ent->ticker--;
+line 297
+;295:        }
+;296:
+;297:        ent->ticker--;
 ADDRLP4 28
 ADDRLP4 0
 INDIRP4
@@ -1206,9 +1218,9 @@ INDIRI4
 CNSTI4 1
 SUBI4
 ASGNI4
-line 293
-;292:
-;293:        if ( ent->ticker <= -1 ) {
+line 299
+;298:
+;299:        if ( ent->ticker <= -1 ) {
 ADDRLP4 0
 INDIRP4
 CNSTI4 116
@@ -1216,8 +1228,8 @@ ADDP4
 INDIRI4
 CNSTI4 -1
 GTI4 $206
-line 294
-;294:            Ent_SetState( ent, ent->state->nextstate );
+line 300
+;300:            Ent_SetState( ent, ent->state->nextstate );
 ADDRLP4 0
 INDIRP4
 ARGP4
@@ -1233,16 +1245,16 @@ ARGI4
 ADDRGP4 Ent_SetState
 CALLI4
 pop
-line 295
-;295:            continue;
+line 301
+;301:            continue;
 ADDRGP4 $200
 JUMPV
 LABELV $206
-line 299
-;296:        }
-;297:
-;298:        // update the current entity's animation frame
-;299:        if ( ent->state->frames > 0 ) {
+line 305
+;302:        }
+;303:
+;304:        // update the current entity's animation frame
+;305:        if ( ent->state->frames > 0 ) {
 ADDRLP4 0
 INDIRP4
 CNSTI4 92
@@ -1253,8 +1265,8 @@ ADDP4
 INDIRU4
 CNSTU4 0
 EQU4 $208
-line 300
-;300:            if ( ent->frame == ent->state->frames ) {
+line 306
+;306:            if ( ent->frame == ent->state->frames ) {
 ADDRLP4 0
 INDIRP4
 CNSTI4 120
@@ -1270,21 +1282,21 @@ CNSTI4 4
 ADDP4
 INDIRU4
 NEU4 $210
-line 301
-;301:                ent->frame = 0; // reset animation
+line 307
+;307:                ent->frame = 0; // reset animation
 ADDRLP4 0
 INDIRP4
 CNSTI4 120
 ADDP4
 CNSTI4 0
 ASGNI4
-line 302
-;302:            }
+line 308
+;308:            }
 ADDRGP4 $211
 JUMPV
 LABELV $210
-line 303
-;303:            else if ( ent->ticker % ent->state->frames ) {
+line 309
+;309:            else if ( ent->ticker % ent->state->frames ) {
 ADDRLP4 0
 INDIRP4
 CNSTI4 116
@@ -1302,8 +1314,8 @@ INDIRU4
 MODU4
 CNSTU4 0
 EQU4 $212
-line 304
-;304:                ent->frame++;
+line 310
+;310:                ent->frame++;
 ADDRLP4 40
 ADDRLP4 0
 INDIRP4
@@ -1318,16 +1330,16 @@ INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-line 305
-;305:            }
+line 311
+;311:            }
 LABELV $212
 LABELV $211
-line 306
-;306:        }
+line 312
+;312:        }
 LABELV $208
-line 308
-;307:
-;308:        ent->state->action.acp1( ent );
+line 314
+;313:
+;314:        ent->state->action.acp1( ent );
 ADDRLP4 0
 INDIRP4
 ARGP4
@@ -1341,10 +1353,10 @@ ADDP4
 INDIRP4
 CALLV
 pop
-line 309
-;309:    }
+line 315
+;315:    }
 LABELV $200
-line 286
+line 292
 ADDRLP4 4
 ADDRLP4 4
 INDIRI4
@@ -1357,8 +1369,8 @@ INDIRI4
 ADDRGP4 sg+76
 INDIRI4
 LTI4 $199
-line 310
-;310:    end = trap_Milliseconds();
+line 316
+;316:    end = trap_Milliseconds();
 ADDRLP4 28
 ADDRGP4 trap_Milliseconds
 CALLI4
@@ -1367,29 +1379,29 @@ ADDRLP4 12
 ADDRLP4 28
 INDIRI4
 ASGNI4
-line 312
-;311:
-;312:    SG_DrawFrame();
+line 318
+;317:
+;318:    SG_DrawFrame();
 ADDRGP4 SG_DrawFrame
 CALLI4
 pop
-line 314
-;313:
-;314:    if ( sg_printEntities.i ) {
+line 320
+;319:
+;320:    if ( sg_printEntities.i ) {
 ADDRGP4 sg_printEntities+260
 INDIRI4
 CNSTI4 0
 EQI4 $214
-line 315
-;315:        for ( i = 0; i < sg.numEntities; i++ ) {
+line 321
+;321:        for ( i = 0; i < sg.numEntities; i++ ) {
 ADDRLP4 4
 CNSTI4 0
 ASGNI4
 ADDRGP4 $220
 JUMPV
 LABELV $217
-line 316
-;316:            G_Printf( "%4i: %s\n", i, sg_entities[i].classname );
+line 322
+;322:            G_Printf( "%4i: %s\n", i, sg_entities[i].classname );
 ADDRGP4 $222
 ARGP4
 ADDRLP4 4
@@ -1406,10 +1418,10 @@ ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 317
-;317:        }
+line 323
+;323:        }
 LABELV $218
-line 315
+line 321
 ADDRLP4 4
 ADDRLP4 4
 INDIRI4
@@ -1422,34 +1434,34 @@ INDIRI4
 ADDRGP4 sg+76
 INDIRI4
 LTI4 $217
-line 318
-;318:        Cvar_Set( "sg_printEntities", "0" );
-ADDRGP4 $112
+line 324
+;324:        Cvar_Set( "sg_printEntities", "0" );
+ADDRGP4 $111
 ARGP4
-ADDRGP4 $113
+ADDRGP4 $112
 ARGP4
 ADDRGP4 Cvar_Set
 CALLV
 pop
-line 319
-;319:    }
+line 325
+;325:    }
 LABELV $214
-line 321
-;320:
-;321:    return 1;
+line 327
+;326:
+;327:    return 1;
 CNSTI4 1
 RETI4
 LABELV $183
 endproc SG_RunLoop 44 12
 proc SG_LoadMedia 44 20
-line 326
-;322:}
-;323:
-;324:
-;325:static void SG_LoadMedia( void )
-;326:{
-line 327
-;327:    sg.media.player_death0 = trap_Snd_RegisterSfx( "sfx/player/death1.wav" );
+line 332
+;328:}
+;329:
+;330:
+;331:static void SG_LoadMedia( void )
+;332:{
+line 333
+;333:    sg.media.player_death0 = trap_Snd_RegisterSfx( "sfx/player/death1.wav" );
 ADDRGP4 $226
 ARGP4
 ADDRLP4 0
@@ -1460,8 +1472,8 @@ ADDRGP4 sg+12
 ADDRLP4 0
 INDIRI4
 ASGNI4
-line 328
-;328:    sg.media.player_death1 = trap_Snd_RegisterSfx( "sfx/player/death2.wav" );
+line 334
+;334:    sg.media.player_death1 = trap_Snd_RegisterSfx( "sfx/player/death2.wav" );
 ADDRGP4 $228
 ARGP4
 ADDRLP4 4
@@ -1472,8 +1484,8 @@ ADDRGP4 sg+16
 ADDRLP4 4
 INDIRI4
 ASGNI4
-line 329
-;329:    sg.media.player_death2 = trap_Snd_RegisterSfx( "sfx/player/death3.wav" ); 
+line 335
+;335:    sg.media.player_death2 = trap_Snd_RegisterSfx( "sfx/player/death3.wav" ); 
 ADDRGP4 $230
 ARGP4
 ADDRLP4 8
@@ -1484,8 +1496,8 @@ ADDRGP4 sg+20
 ADDRLP4 8
 INDIRI4
 ASGNI4
-line 330
-;330:    sg.media.player_pain0 = trap_Snd_RegisterSfx( "sfx/player/pain0.wav" );
+line 336
+;336:    sg.media.player_pain0 = trap_Snd_RegisterSfx( "sfx/player/pain0.wav" );
 ADDRGP4 $231
 ARGP4
 ADDRLP4 12
@@ -1496,8 +1508,8 @@ ADDRGP4 sg
 ADDRLP4 12
 INDIRI4
 ASGNI4
-line 331
-;331:    sg.media.player_pain1 = trap_Snd_RegisterSfx( "sfx/player/pain1.wav" );
+line 337
+;337:    sg.media.player_pain1 = trap_Snd_RegisterSfx( "sfx/player/pain1.wav" );
 ADDRGP4 $233
 ARGP4
 ADDRLP4 16
@@ -1508,8 +1520,8 @@ ADDRGP4 sg+4
 ADDRLP4 16
 INDIRI4
 ASGNI4
-line 332
-;332:    sg.media.player_pain2 = trap_Snd_RegisterSfx( "sfx/player/pain2.wav" );
+line 338
+;338:    sg.media.player_pain2 = trap_Snd_RegisterSfx( "sfx/player/pain2.wav" );
 ADDRGP4 $235
 ARGP4
 ADDRLP4 20
@@ -1520,8 +1532,8 @@ ADDRGP4 sg+8
 ADDRLP4 20
 INDIRI4
 ASGNI4
-line 333
-;333:    sg.media.revolver_fire = trap_Snd_RegisterSfx( "sfx/weapons/revolver_fire.wav" );
+line 339
+;339:    sg.media.revolver_fire = trap_Snd_RegisterSfx( "sfx/weapons/revolver_fire.wav" );
 ADDRGP4 $237
 ARGP4
 ADDRLP4 24
@@ -1532,8 +1544,8 @@ ADDRGP4 sg+28
 ADDRLP4 24
 INDIRI4
 ASGNI4
-line 334
-;334:    sg.media.revolver_rld = trap_Snd_RegisterSfx( "sfx/weapons/revolver_rld.wav" );
+line 340
+;340:    sg.media.revolver_rld = trap_Snd_RegisterSfx( "sfx/weapons/revolver_rld.wav" );
 ADDRGP4 $239
 ARGP4
 ADDRLP4 28
@@ -1544,9 +1556,9 @@ ADDRGP4 sg+32
 ADDRLP4 28
 INDIRI4
 ASGNI4
-line 336
-;335:
-;336:    sg.media.raio_shader = RE_RegisterShader( "textures/sprites/glnomad_raio_base.png" );
+line 342
+;341:
+;342:    sg.media.raio_shader = RE_RegisterShader( "sprites/glnomad_raio_base" );
 ADDRGP4 $241
 ARGP4
 ADDRLP4 32
@@ -1557,8 +1569,8 @@ ADDRGP4 sg+36
 ADDRLP4 32
 INDIRI4
 ASGNI4
-line 337
-;337:    sg.media.grunt_shader = RE_RegisterShader( "textures/sprites/glnomad_grunt.png" );
+line 343
+;343:    sg.media.grunt_shader = RE_RegisterShader( "sprites/glnomad_grunt" );
 ADDRGP4 $243
 ARGP4
 ADDRLP4 36
@@ -1569,9 +1581,9 @@ ADDRGP4 sg+40
 ADDRLP4 36
 INDIRI4
 ASGNI4
-line 339
-;338:
-;339:    sg.media.raio_sprites = RE_RegisterSpriteSheet( "textures/sprites/glnomad_raio_base.png", 512, 512, 32, 32 );
+line 345
+;344:
+;345:    sg.media.raio_sprites = RE_RegisterSpriteSheet( "sprites/glnomad_raio_base", 512, 512, 32, 32 );
 ADDRGP4 $241
 ARGP4
 CNSTI4 512
@@ -1590,44 +1602,44 @@ ADDRGP4 sg+48
 ADDRLP4 40
 INDIRI4
 ASGNI4
-line 340
-;340:}
+line 346
+;346:}
 LABELV $224
 endproc SG_LoadMedia 44 20
 export SG_Init
 proc SG_Init 4 12
-line 343
-;341:
-;342:void SG_Init( void )
-;343:{
-line 344
-;344:    G_Printf( "---------- Game Initialization ----------\n" );
+line 349
+;347:
+;348:void SG_Init( void )
+;349:{
+line 350
+;350:    G_Printf( "---------- Game Initialization ----------\n" );
 ADDRGP4 $246
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 345
-;345:    G_Printf( "gamename: %s\n", GLN_VERSION );
+line 351
+;351:    G_Printf( "gamename: %s\n", GLN_VERSION );
 ADDRGP4 $247
 ARGP4
-ADDRGP4 $109
+ADDRGP4 $108
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 346
-;346:    G_Printf( "gamedate: %s\n", __DATE__ );
+line 352
+;352:    G_Printf( "gamedate: %s\n", __DATE__ );
 ADDRGP4 $248
 ARGP4
-ADDRGP4 $111
+ADDRGP4 $110
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 348
-;347:
-;348:    trap_Key_SetCatcher( trap_Key_GetCatcher() | KEYCATCH_SGAME );
+line 354
+;353:
+;354:    trap_Key_SetCatcher( trap_Key_GetCatcher() | KEYCATCH_SGAME );
 ADDRLP4 0
 ADDRGP4 trap_Key_GetCatcher
 CALLI4
@@ -1642,10 +1654,10 @@ ARGI4
 ADDRGP4 trap_Key_SetCatcher
 CALLV
 pop
-line 351
-;349:
-;350:    // clear sgame state
-;351:    memset( &sg, 0, sizeof(sg) );
+line 357
+;355:
+;356:    // clear sgame state
+;357:    memset( &sg, 0, sizeof(sg) );
 ADDRGP4 sg
 ARGP4
 CNSTI4 0
@@ -1655,19 +1667,19 @@ ARGU4
 ADDRGP4 memset
 CALLP4
 pop
-line 354
-;352:    
-;353:    // cache redundant calculations
-;354:    Sys_GetGPUConfig( &sg.gpuConfig );
+line 360
+;358:    
+;359:    // cache redundant calculations
+;360:    Sys_GetGPUConfig( &sg.gpuConfig );
 ADDRGP4 sg+73968
 ARGP4
 ADDRGP4 Sys_GetGPUConfig
 CALLV
 pop
-line 357
-;355:
-;356:    // for 1024x768 virtualized screen
-;357:	sg.scale = sg.gpuConfig.vidHeight * (1.0/768.0);
+line 363
+;361:
+;362:    // for 1024x768 virtualized screen
+;363:	sg.scale = sg.gpuConfig.vidHeight * (1.0/768.0);
 ADDRGP4 sg+86316
 ADDRGP4 sg+73968+12312
 INDIRI4
@@ -1675,8 +1687,8 @@ CVIF4 4
 CNSTF4 984263339
 MULF4
 ASGNF4
-line 358
-;358:	if ( sg.gpuConfig.vidWidth * 768 > sg.gpuConfig.vidHeight * 1024 ) {
+line 364
+;364:	if ( sg.gpuConfig.vidWidth * 768 > sg.gpuConfig.vidHeight * 1024 ) {
 ADDRGP4 sg+73968+12308
 INDIRI4
 CNSTI4 768
@@ -1686,9 +1698,9 @@ INDIRI4
 CNSTI4 10
 LSHI4
 LEI4 $253
-line 360
-;359:		// wide screen
-;360:		sg.bias = 0.5 * ( sg.gpuConfig.vidWidth - ( sg.gpuConfig.vidHeight * (1024.0/768.0) ) );
+line 366
+;365:		// wide screen
+;366:		sg.bias = 0.5 * ( sg.gpuConfig.vidWidth - ( sg.gpuConfig.vidHeight * (1024.0/768.0) ) );
 ADDRGP4 sg+86320
 ADDRGP4 sg+73968+12308
 INDIRI4
@@ -1702,76 +1714,76 @@ SUBF4
 CNSTF4 1056964608
 MULF4
 ASGNF4
-line 361
-;361:	}
+line 367
+;367:	}
 ADDRGP4 $254
 JUMPV
 LABELV $253
-line 362
-;362:	else {
-line 364
-;363:		// no wide screen
-;364:		sg.bias = 0;
+line 368
+;368:	else {
+line 370
+;369:		// no wide screen
+;370:		sg.bias = 0;
 ADDRGP4 sg+86320
 CNSTF4 0
 ASGNF4
-line 365
-;365:	}
+line 371
+;371:	}
 LABELV $254
-line 368
-;366:
-;367:    // register sgame cvars
-;368:    SG_RegisterCvars();
+line 374
+;372:
+;373:    // register sgame cvars
+;374:    SG_RegisterCvars();
 ADDRGP4 SG_RegisterCvars
 CALLV
 pop
-line 371
-;369:
-;370:    // load assets/resources
-;371:    SG_LoadMedia();
+line 377
+;375:
+;376:    // load assets/resources
+;377:    SG_LoadMedia();
 ADDRGP4 SG_LoadMedia
 CALLV
 pop
-line 373
-;372:
-;373:    SG_MemInit();
+line 379
+;378:
+;379:    SG_MemInit();
 ADDRGP4 SG_MemInit
 CALLV
 pop
-line 375
-;374:
-;375:    sg.state = SG_INACTIVE;
+line 381
+;380:
+;381:    sg.state = SG_INACTIVE;
 ADDRGP4 sg+64
-CNSTI4 0
+CNSTI4 2
 ASGNI4
-line 377
-;376:
-;377:    G_Printf( "-----------------------------------\n" );
+line 383
+;382:
+;383:    G_Printf( "-----------------------------------\n" );
 ADDRGP4 $266
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 378
-;378:}
+line 384
+;384:}
 LABELV $245
 endproc SG_Init 4 12
 export SG_Shutdown
 proc SG_Shutdown 0 12
-line 381
-;379:
-;380:void SG_Shutdown( void )
-;381:{
-line 382
-;382:    G_Printf( "Shutting down sgame...\n" );
+line 387
+;385:
+;386:void SG_Shutdown( void )
+;387:{
+line 388
+;388:    G_Printf( "Shutting down sgame...\n" );
 ADDRGP4 $268
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 384
-;383:
-;384:    memset( &sg, 0, sizeof(sg) );
+line 390
+;389:
+;390:    memset( &sg, 0, sizeof(sg) );
 ADDRGP4 sg
 ARGP4
 CNSTI4 0
@@ -1781,32 +1793,32 @@ ARGU4
 ADDRGP4 memset
 CALLP4
 pop
-line 386
-;385:
-;386:    sg.state = SG_INACTIVE;
+line 392
+;391:
+;392:    sg.state = SG_INACTIVE;
 ADDRGP4 sg+64
-CNSTI4 0
+CNSTI4 2
 ASGNI4
-line 387
-;387:}
+line 393
+;393:}
 LABELV $267
 endproc SG_Shutdown 0 12
 export trap_FS_Printf
 proc trap_FS_Printf 8200 12
-line 390
-;388:
-;389:void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL trap_FS_Printf( file_t f, const char *fmt, ... )
-;390:{
-line 394
-;391:    va_list argptr;
-;392:    char msg[MAXPRINTMSG];
-;393:
-;394:    va_start( argptr, fmt );
+line 396
+;394:
+;395:void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL trap_FS_Printf( file_t f, const char *fmt, ... )
+;396:{
+line 400
+;397:    va_list argptr;
+;398:    char msg[MAXPRINTMSG];
+;399:
+;400:    va_start( argptr, fmt );
 ADDRLP4 0
 ADDRFP4 4+4
 ASGNP4
-line 395
-;395:    vsprintf( msg, fmt, argptr );
+line 401
+;401:    vsprintf( msg, fmt, argptr );
 ADDRLP4 4
 ARGP4
 ADDRFP4 4
@@ -1818,14 +1830,14 @@ ARGP4
 ADDRGP4 vsprintf
 CALLI4
 pop
-line 396
-;396:    va_end( argptr );
+line 402
+;402:    va_end( argptr );
 ADDRLP4 0
 CNSTP4 0
 ASGNP4
-line 398
-;397:
-;398:    trap_FS_Write( msg, strlen(msg), f );
+line 404
+;403:
+;404:    trap_FS_Write( msg, strlen(msg), f );
 ADDRLP4 4
 ARGP4
 ADDRLP4 8196
@@ -1844,8 +1856,8 @@ ARGI4
 ADDRGP4 trap_FS_Write
 CALLI4
 pop
-line 399
-;399:}
+line 405
+;405:}
 LABELV $270
 endproc trap_FS_Printf 8200 12
 data
@@ -1902,6 +1914,7 @@ import trap_FS_GetFileList
 import trap_FS_Read
 import trap_FS_Write
 import trap_FS_FClose
+import trap_FS_FOpenRead
 import trap_FS_FOpenWrite
 import trap_FS_FOpenFile
 import Sys_GetGPUConfig
@@ -1949,6 +1962,8 @@ import SG_MouseEvent
 import SG_KeyEvent
 import SG_InitPlayer
 import SG_OutOfMemory
+import SG_ClearToMemoryMark
+import SG_MakeMemoryMark
 import SG_MemInit
 import SG_MemAlloc
 import String_Alloc
@@ -1957,6 +1972,8 @@ import SG_SpawnMob
 import SG_AddArchiveHandle
 import SG_LoadGame
 import SG_SaveGame
+import SG_LoadSection
+import SG_WriteSection
 import Ent_SetState
 import SG_InitEntities
 import Ent_BuildBounds
@@ -2013,6 +2030,10 @@ skip 276
 export pm_groundFriction
 align 4
 LABELV pm_groundFriction
+skip 276
+export sg_memoryDebug
+align 4
+LABELV sg_memoryDebug
 skip 276
 export sg_numSaves
 align 4
@@ -2252,9 +2273,9 @@ import Cbuf_AddText
 import Cbuf_Execute
 import Cbuf_InsertText
 import Cbuf_ExecuteText
+import va
 import Cmd_CompleteArgument
 import Cmd_CommandCompletion
-import va
 import Cmd_Clear
 import Cmd_Argv
 import Cmd_ArgsFrom
@@ -2352,6 +2373,7 @@ import N_acos
 import N_log2
 import ColorBytes4
 import ColorBytes3
+import VectorNormalize
 import AddPointToBounds
 import ClearBounds
 import RadiusFromBounds
@@ -2605,15 +2627,6 @@ byte 1 10
 byte 1 0
 align 1
 LABELV $243
-byte 1 116
-byte 1 101
-byte 1 120
-byte 1 116
-byte 1 117
-byte 1 114
-byte 1 101
-byte 1 115
-byte 1 47
 byte 1 115
 byte 1 112
 byte 1 114
@@ -2635,22 +2648,9 @@ byte 1 114
 byte 1 117
 byte 1 110
 byte 1 116
-byte 1 46
-byte 1 112
-byte 1 110
-byte 1 103
 byte 1 0
 align 1
 LABELV $241
-byte 1 116
-byte 1 101
-byte 1 120
-byte 1 116
-byte 1 117
-byte 1 114
-byte 1 101
-byte 1 115
-byte 1 47
 byte 1 115
 byte 1 112
 byte 1 114
@@ -2676,10 +2676,6 @@ byte 1 98
 byte 1 97
 byte 1 115
 byte 1 101
-byte 1 46
-byte 1 112
-byte 1 110
-byte 1 103
 byte 1 0
 align 1
 LABELV $239
@@ -2958,6 +2954,23 @@ LABELV $141
 byte 1 115
 byte 1 103
 byte 1 95
+byte 1 109
+byte 1 101
+byte 1 109
+byte 1 111
+byte 1 114
+byte 1 121
+byte 1 68
+byte 1 101
+byte 1 98
+byte 1 117
+byte 1 103
+byte 1 0
+align 1
+LABELV $140
+byte 1 115
+byte 1 103
+byte 1 95
 byte 1 110
 byte 1 117
 byte 1 109
@@ -2968,7 +2981,7 @@ byte 1 101
 byte 1 115
 byte 1 0
 align 1
-LABELV $140
+LABELV $139
 byte 1 115
 byte 1 97
 byte 1 118
@@ -2979,7 +2992,7 @@ byte 1 116
 byte 1 97
 byte 1 0
 align 1
-LABELV $139
+LABELV $138
 byte 1 115
 byte 1 103
 byte 1 95
@@ -2993,7 +3006,7 @@ byte 1 109
 byte 1 101
 byte 1 0
 align 1
-LABELV $138
+LABELV $137
 byte 1 108
 byte 1 101
 byte 1 118
@@ -3006,7 +3019,7 @@ byte 1 120
 byte 1 116
 byte 1 0
 align 1
-LABELV $137
+LABELV $136
 byte 1 115
 byte 1 103
 byte 1 95
@@ -3025,7 +3038,7 @@ byte 1 108
 byte 1 101
 byte 1 0
 align 1
-LABELV $136
+LABELV $135
 byte 1 115
 byte 1 103
 byte 1 95
@@ -3035,11 +3048,11 @@ byte 1 98
 byte 1 115
 byte 1 0
 align 1
-LABELV $135
+LABELV $134
 byte 1 51
 byte 1 0
 align 1
-LABELV $134
+LABELV $133
 byte 1 115
 byte 1 103
 byte 1 95
@@ -3056,7 +3069,7 @@ byte 1 105
 byte 1 108
 byte 1 0
 align 1
-LABELV $133
+LABELV $132
 byte 1 115
 byte 1 103
 byte 1 95
@@ -3077,7 +3090,7 @@ byte 1 116
 byte 1 115
 byte 1 0
 align 1
-LABELV $132
+LABELV $131
 byte 1 103
 byte 1 95
 byte 1 109
@@ -3099,7 +3112,7 @@ byte 1 111
 byte 1 110
 byte 1 0
 align 1
-LABELV $131
+LABELV $130
 byte 1 103
 byte 1 95
 byte 1 109
@@ -3115,7 +3128,7 @@ byte 1 114
 byte 1 116
 byte 1 0
 align 1
-LABELV $130
+LABELV $129
 byte 1 48
 byte 1 46
 byte 1 48
@@ -3123,7 +3136,7 @@ byte 1 50
 byte 1 102
 byte 1 0
 align 1
-LABELV $129
+LABELV $128
 byte 1 112
 byte 1 109
 byte 1 95
@@ -3138,14 +3151,14 @@ byte 1 101
 byte 1 100
 byte 1 0
 align 1
-LABELV $128
+LABELV $127
 byte 1 49
 byte 1 46
 byte 1 48
 byte 1 102
 byte 1 0
 align 1
-LABELV $127
+LABELV $126
 byte 1 112
 byte 1 109
 byte 1 95
@@ -3160,37 +3173,37 @@ byte 1 101
 byte 1 108
 byte 1 0
 align 1
-LABELV $126
+LABELV $125
 byte 1 48
 byte 1 46
 byte 1 53
 byte 1 102
-byte 1 0
-align 1
-LABELV $125
-byte 1 112
-byte 1 109
-byte 1 95
-byte 1 119
-byte 1 97
-byte 1 116
-byte 1 101
-byte 1 114
-byte 1 65
-byte 1 99
-byte 1 99
-byte 1 101
-byte 1 108
 byte 1 0
 align 1
 LABELV $124
+byte 1 112
+byte 1 109
+byte 1 95
+byte 1 119
+byte 1 97
+byte 1 116
+byte 1 101
+byte 1 114
+byte 1 65
+byte 1 99
+byte 1 99
+byte 1 101
+byte 1 108
+byte 1 0
+align 1
+LABELV $123
 byte 1 49
 byte 1 46
 byte 1 53
 byte 1 102
 byte 1 0
 align 1
-LABELV $123
+LABELV $122
 byte 1 112
 byte 1 109
 byte 1 95
@@ -3204,7 +3217,7 @@ byte 1 101
 byte 1 108
 byte 1 0
 align 1
-LABELV $122
+LABELV $121
 byte 1 48
 byte 1 46
 byte 1 48
@@ -3212,7 +3225,7 @@ byte 1 49
 byte 1 102
 byte 1 0
 align 1
-LABELV $121
+LABELV $120
 byte 1 112
 byte 1 109
 byte 1 95
@@ -3229,7 +3242,7 @@ byte 1 111
 byte 1 110
 byte 1 0
 align 1
-LABELV $120
+LABELV $119
 byte 1 48
 byte 1 46
 byte 1 48
@@ -3237,7 +3250,7 @@ byte 1 54
 byte 1 102
 byte 1 0
 align 1
-LABELV $119
+LABELV $118
 byte 1 112
 byte 1 109
 byte 1 95
@@ -3256,14 +3269,14 @@ byte 1 111
 byte 1 110
 byte 1 0
 align 1
-LABELV $118
+LABELV $117
 byte 1 48
 byte 1 46
 byte 1 54
 byte 1 102
 byte 1 0
 align 1
-LABELV $117
+LABELV $116
 byte 1 112
 byte 1 109
 byte 1 95
@@ -3283,7 +3296,7 @@ byte 1 111
 byte 1 110
 byte 1 0
 align 1
-LABELV $116
+LABELV $115
 byte 1 103
 byte 1 95
 byte 1 112
@@ -3294,11 +3307,11 @@ byte 1 101
 byte 1 100
 byte 1 0
 align 1
-LABELV $115
+LABELV $114
 byte 1 49
 byte 1 0
 align 1
-LABELV $114
+LABELV $113
 byte 1 115
 byte 1 103
 byte 1 95
@@ -3314,11 +3327,11 @@ byte 1 110
 byte 1 116
 byte 1 0
 align 1
-LABELV $113
+LABELV $112
 byte 1 48
 byte 1 0
 align 1
-LABELV $112
+LABELV $111
 byte 1 115
 byte 1 103
 byte 1 95
@@ -3337,13 +3350,13 @@ byte 1 101
 byte 1 115
 byte 1 0
 align 1
-LABELV $111
+LABELV $110
 byte 1 68
 byte 1 101
 byte 1 99
 byte 1 32
 byte 1 50
-byte 1 53
+byte 1 56
 byte 1 32
 byte 1 50
 byte 1 48
@@ -3351,7 +3364,7 @@ byte 1 50
 byte 1 51
 byte 1 0
 align 1
-LABELV $110
+LABELV $109
 byte 1 103
 byte 1 97
 byte 1 109
@@ -3362,7 +3375,7 @@ byte 1 116
 byte 1 101
 byte 1 0
 align 1
-LABELV $109
+LABELV $108
 byte 1 71
 byte 1 76
 byte 1 78
@@ -3382,7 +3395,7 @@ byte 1 104
 byte 1 97
 byte 1 0
 align 1
-LABELV $108
+LABELV $107
 byte 1 103
 byte 1 97
 byte 1 109
@@ -3393,7 +3406,7 @@ byte 1 109
 byte 1 101
 byte 1 0
 align 1
-LABELV $106
+LABELV $105
 byte 1 118
 byte 1 109
 byte 1 77

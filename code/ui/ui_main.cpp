@@ -1,16 +1,148 @@
 #include "../game/g_game.h"
-#include "ui_public.h"
+#include "ui_public.hpp"
 #include "ui_menu.h"
 #include "ui_lib.h"
 #include "ui_window.h"
 #include "ui_string_manager.h"
+#include "../rendercommon/imgui_impl_opengl3.h"
 
 CUILib *ui;
+CUIFontCache *g_pFontCache;
+
 cvar_t *ui_language;
 cvar_t *ui_cpuString;
 cvar_t *ui_printStrings;
 cvar_t *ui_active;
 cvar_t *ui_diagnostics;
+cvar_t *r_gpuDiagnostics;
+
+/*
+=================
+UI_Cache
+=================
+*/
+static void UI_Cache_f( void )
+{
+    Con_Printf( "Caching ui resources...\n" );
+
+    TitleMenu_Cache();
+    IntroMenu_Cache();
+    MainMenu_Cache();
+    SettingsMenu_Cache();
+    SinglePlayerMenu_Cache();
+	LegalMenu_Cache();
+}
+
+CUIFontCache::CUIFontCache( void ) {
+	Con_Printf( "Initializing font cache...\n" );
+
+	memset( m_FontList, 0, sizeof(m_FontList) );
+	m_pCurrentFont = NULL;
+}
+
+void CUIFontCache::SetActiveFont( ImFont *font )
+{
+	if ( !ImGui::GetIO().Fonts->IsBuilt() ) {
+		Finalize();
+	}
+
+	if ( m_pCurrentFont ) {
+		ImGui::PopFont();
+	}
+
+	m_pCurrentFont = font;
+
+	ImGui::PushFont( font );
+}
+
+void CUIFontCache::ClearCache( void ) {
+	ImGui::GetIO().Fonts->Clear();
+	memset( m_FontList, 0, sizeof(m_FontList) );
+	m_pCurrentFont = NULL;
+}
+
+void CUIFontCache::Finalize( void ) {
+	ImGui::GetIO().Fonts->Build();
+	ImGui_ImplOpenGL3_CreateFontsTexture();
+}
+
+ImFont *CUIFontCache::AddFontToCache( const char *filename )
+{
+	uiFont_t *font;
+	uint64_t size;
+	uint64_t hash;
+	ImFontConfig config;
+	union {
+		void *v;
+		char *b;
+	} f;
+
+	hash = Com_GenerateHashValue( filename, MAX_UI_FONTS );
+
+	//
+	// see if we already have the font in the cache
+	//
+	for ( font = m_FontList[hash]; font; font = font->m_pNext ) {
+		if ( !N_stricmp( font->m_szName, filename ) ) {
+			return font->m_pFont; // its already been loaded
+		}
+	}
+
+	Con_Printf( "CUIFontCache: loading font '%s'...\n", filename );
+
+	if ( strlen( filename ) >= MAX_GDR_PATH ) {
+		N_Error( ERR_DROP, "CUIFontCache::AddFontToCache: name '%s' is too long", filename );
+	}
+
+	size = FS_LoadFile( filename, &f.v );
+	if ( !size || !f.v ) {
+		N_Error( ERR_DROP, "CUIFontCache::AddFontToCache: failed to load font file '%s'", filename );
+	}
+
+	font = (uiFont_t *)Hunk_Alloc( sizeof(*font), h_low );
+
+	font->m_pNext = m_FontList[hash];
+	m_FontList[hash] = font;
+
+	config.FontDataOwnedByAtlas = false;
+	config.GlyphExtraSpacing.x = -1.0f;
+
+	N_strncpyz( font->m_szName, filename, sizeof(font->m_szName) );
+	font->m_nFileSize = size;
+	font->m_pFont = ImGui::GetIO().Fonts->AddFontFromMemoryTTF( f.v, size * ui->scale, 16.0f, &config );
+
+	FS_FreeFile( f.v );
+
+	return font->m_pFont;
+}
+
+void CUIFontCache::ListFonts_f( void ) {
+	uint64_t memSize, i;
+	uint64_t numFonts;
+	const uiFont_t *font;
+
+	Con_Printf( "---------- Font Cache Info ----------\n" );
+
+	numFonts = 0;
+	memSize = 0;
+	for ( i = 0; i < MAX_UI_FONTS; i++ ) {
+		font = g_pFontCache->m_FontList[i];
+
+		if ( !font ) {
+			continue;
+		}
+
+		Con_Printf( "[%s]\n", font->m_szName );
+		Con_Printf( "File Size: %lu\n", font->m_nFileSize );
+
+		memSize += font->m_nFileSize;
+		numFonts++;
+	}
+
+	Con_Printf( "\n" );
+	Con_Printf( "%-8lu total bytes in font cache\n", memSize );
+	Con_Printf( "%-8lu total fonts in cache\n", numFonts );
+}
 
 const char *UI_LangToString( int32_t lang )
 {
@@ -43,6 +175,12 @@ static void UI_RegisterCvars( void )
     ui_active = Cvar_Get( "g_paused", "1", CVAR_LATCH | CVAR_TEMP );
 
 #ifdef _NOMAD_DEBUG
+	r_gpuDiagnostics = Cvar_Get( "r_gpuDiagnostics", "1", CVAR_LATCH | CVAR_SAVE );
+#else
+	r_gpuDiagnostics = Cvar_Get( "r_gpuDiagnostics", "0", CVAR_LATCH | CVAR_SAVE );
+#endif
+
+#ifdef _NOMAD_DEBUG
 	ui_diagnostics = Cvar_Get( "ui_diagnostics", "3", CVAR_LATCH | CVAR_PROTECTED | CVAR_SAVE );
 #else
 	ui_diagnostics = Cvar_Get( "ui_diagnostics", "0", CVAR_LATCH | CVAR_PROTECTED | CVAR_SAVE );
@@ -65,36 +203,19 @@ void UI_UpdateCvars( void )
     }
 }
 
-/*
-=================
-UI_Cache
-=================
-*/
-static void UI_Cache_f( void )
-{
-    Con_Printf( "Caching ui resources...\n" );
-
-    TitleMenu_Cache();
-    IntroMenu_Cache();
-    MainMenu_Cache();
-    SettingsMenu_Cache();
-    SinglePlayerMenu_Cache();
-}
-
 extern "C" void UI_Shutdown( void )
 {
-    if (ui) {
+    if ( ui ) {
         ui->Shutdown();
-		Z_Free( ui );
 		ui = NULL;
     }
-    if (strManager) {
+    if ( strManager ) {
         strManager->Shutdown();
-		Z_Free( strManager );
 		strManager = NULL;
     }
 
     Cmd_RemoveCommand( "ui_cache" );
+	Cmd_RemoveCommand( "fontinfo" );
 }
 
 // FIXME: call UI_Shutdown instead
@@ -110,24 +231,16 @@ extern "C" void UI_Init( void )
     UI_RegisterCvars();
 
     // init the library
-    ui = (CUILib *)Z_Malloc( sizeof(*ui), TAG_GAME );
-    memset(ui, 0, sizeof(*ui));
+    ui = (CUILib *)Hunk_Alloc( sizeof(*ui), h_low );
     ui->Init(); // we could call ::new
 
     // init the string manager
-    strManager = (CUIStringManager *)Z_Malloc( sizeof(*strManager), TAG_GAME );
-    memset(strManager, 0, sizeof(*strManager));
+    strManager = (CUIStringManager *)Hunk_Alloc( sizeof(*strManager), h_low );
     strManager->Init();
-
-    // init the font manager
-    fontManager = (CUIFontManager *)Z_Malloc( sizeof(*fontManager), TAG_GAME );
-    memset(fontManager, 0, sizeof(*fontManager));
-    ::new ((void *)fontManager) CUIFontManager();
-
     // load the language string file
-    strManager->LoadFile(va("scripts/ui_strings_%s.txt", UI_LangToString(ui_language->i)));
-    if (!strManager->NumLangsLoaded()) {
-        N_Error(ERR_DROP, "UI_Init: no language loaded");
+    strManager->LoadFile( va( "scripts/ui_strings_%s.txt", UI_LangToString( ui_language->i ) ) );
+    if ( !strManager->NumLangsLoaded() ) {
+        N_Error( ERR_DROP, "UI_Init: no language loaded" );
     }
 
     ui->SetActiveMenu( UI_MENU_TITLE );
@@ -136,9 +249,7 @@ extern "C" void UI_Init( void )
 
     // add commands
     Cmd_AddCommand( "ui_cache", UI_Cache_f );
-
-    // build the font texture
-//    fontManager->BuildAltas();
+	Cmd_AddCommand( "fontinfo", CUIFontCache::ListFonts_f );
 }
 
 void Menu_Cache( void )
@@ -286,13 +397,37 @@ extern "C" void UI_Refresh( int32_t realtime )
 
 typedef struct
 {
+	double cpuFrames[TRACE_FRAMES];
+	uint32_t gpuTimes[TRACE_FRAMES];
+	uint32_t gpuSamples[TRACE_FRAMES];
+	uint32_t gpuPrimitives[TRACE_FRAMES];
+
 	uint64_t virtualHeapUsed;
 	uint64_t physicalHeapUsed;
 	uint64_t stackMemoryUsed;
-	
+
+	uint32_t gpuTimeMin;
+	uint32_t gpuTimeMax;
+	uint32_t gpuTimeAvg;
+	int32_t gpuTimeIndex;
+	uint32_t gpuTimePrevious;
+
+	uint32_t gpuSamplesMin;
+	uint32_t gpuSamplesMax;
+	uint32_t gpuSamplesAvg;
+	int32_t gpuSamplesIndex;
+	uint32_t gpuSamplesPrevious;
+
+	uint32_t gpuPrimitivesMin;
+	uint32_t gpuPrimitivesMax;
+	uint32_t gpuPrimitivesAvg;
+	int32_t gpuPrimitivesIndex;
+	uint32_t gpuPrimitivesPrevious;
+
+	qboolean cpuNewMin;
+	qboolean cpuNewMax;
 	double cpuMin;
 	double cpuMax;
-	double cpuFrames[TRACE_FRAMES];
 	double cpuAvg;
 	int32_t cpuIndex;
 	double cpuPrevious;
@@ -357,8 +492,6 @@ CallBeforeMain(Sys_InitCPUMonitor)
 			numProcessors++;
 		}
 	}
-	
-	selfStatus = fopen( "/proc/self/status", "r" );
 #endif
 }
 
@@ -450,16 +583,11 @@ static bool Posix_GetProcessMemoryUsage( uint64_t *virtualMem, uint64_t *physica
 {
 	char line[128];
 	int64_t result;
-	
-	if (selfStatus == NULL) {
-		selfStatus = fopen( "/proc/self/status", "r" );
-		if (!selfStatus) {
-			N_Error( ERR_FATAL, "Posix_GetProcessMemoryUsage: failed to open /proc/self/status in readonly mode" );
-		}
+
+	selfStatus = fopen( "/proc/self/status", "r" );
+	if ( !selfStatus ) {
+		N_Error( ERR_FATAL, "Posix_GetProcessMemoryUsage: failed to open /proc/self/status" );
 	}
-    else {
-        rewind( selfStatus );
-    }
 	
 	//
 	// get virtual memory
@@ -470,6 +598,8 @@ static bool Posix_GetProcessMemoryUsage( uint64_t *virtualMem, uint64_t *physica
 	// get physical (resident) memory
 	//
 	*physicalMem = GetValue( "VmRSS:" );
+
+	fclose( selfStatus );
 	
 	return true;
 }
@@ -494,32 +624,33 @@ static void Sys_GetMemoryUsage( sys_stats_t *usage )
 #endif
 }
 
-static sys_stats_t stats;
+static sys_stats_t *stats;
 
 static void Sys_GetCPUStats( void )
 {
-	double cpuTime = Sys_GetCPUUsage();
+	const double cpuTime = Sys_GetCPUUsage();
 	double total, cpu;
 	
-	if (cpuTime < stats.cpuMin) {
-		stats.cpuMin = cpuTime;
+	if ( cpuTime < stats->cpuMin ) {
+		stats->cpuMin = cpuTime;
+		stats->cpuNewMin = qtrue;
+	} else if ( cpuTime > stats->cpuMax ) {
+		stats->cpuMax = cpuTime;
+		stats->cpuNewMax = qtrue;
 	}
-	else if (cpuTime > stats.cpuMax) {
-		stats.cpuMax = cpuTime;
-	}
 	
-	stats.cpuPrevious = cpuTime;
+	stats->cpuPrevious = cpuTime;
 	
-	stats.cpuFrames[stats.cpuIndex % TRACE_FRAMES] = cpuTime;
-	stats.cpuIndex++;
+	stats->cpuFrames[stats->cpuIndex % TRACE_FRAMES] = cpuTime;
+	stats->cpuIndex++;
 	
-	if (stats.cpuIndex > TRACE_FRAMES) {
+	if (stats->cpuIndex > TRACE_FRAMES) {
 		// average multiple frames of cpu usage to smooth changes out
 		for (uint32_t i = 0; i < TRACE_FRAMES; i++) {
-			stats.cpuAvg += stats.cpuFrames[i];
+			stats->cpuAvg += stats->cpuFrames[i];
 		}
 		
-		stats.cpuAvg /= TRACE_FRAMES;
+		stats->cpuAvg /= TRACE_FRAMES;
 	}
 }
 
@@ -527,9 +658,51 @@ static void Sys_DrawMemoryUsage( void )
 {
 	ImGui::SeparatorText( "Memory Usage/Stats" );
 	ImGui::Text( "Blocks Currently Allocated: %i", SDL_GetNumAllocations() );
-	ImGui::Text( "Total Virtual Memory Used: %lu", stats.virtualHeapUsed );	
-    ImGui::Text( "Total Physical Memory Used: %lu", stats.physicalHeapUsed );
+	ImGui::Text( "Total Virtual Memory Used: %lu", stats->virtualHeapUsed );	
+    ImGui::Text( "Total Physical Memory Used: %lu", stats->physicalHeapUsed );
     ImGui::Text( "Total Stack Memory Remaining: %lu", Sys_StackMemoryRemaining() );
+}
+
+static void Sys_GPUStatFrame( uint32_t stat, uint32_t *min, uint32_t *max, uint32_t *avg, uint32_t *prev, uint32_t *frames, int32_t *index )
+{
+	if ( stat < *min ) {
+		*min = stat;
+	} else if ( stat > *max ) {
+		*max = stat;
+	}
+
+	*prev = stat;
+
+	frames[*index % TRACE_FRAMES] = stat;
+	(*index)++;
+
+	if ( *index > TRACE_FRAMES ) {
+		// average multiple frames of stats to smooth changes out
+		for ( uint32_t i = 0; i < TRACE_FRAMES; i++ ) {
+			*avg += frames[i];
+		}
+
+		*avg /= TRACE_FRAMES;
+	}
+}
+
+static void Sys_DrawGPUStats( void )
+{
+	uint32_t time, samples, primitives;
+
+	re.GetGPUFrameStats( &time, &samples, &primitives );
+
+	Sys_GPUStatFrame( time, &stats->gpuTimeMin, &stats->gpuTimeMax, &stats->gpuTimeAvg, &stats->gpuTimePrevious, stats->gpuTimes,
+		&stats->gpuTimeIndex );
+	Sys_GPUStatFrame( samples, &stats->gpuSamplesMin, &stats->gpuSamplesMax, &stats->gpuSamplesAvg, &stats->gpuSamplesPrevious,
+		stats->gpuSamples, &stats->gpuSamplesIndex );
+	Sys_GPUStatFrame( primitives, &stats->gpuPrimitivesMin, &stats->gpuPrimitivesMax, &stats->gpuPrimitivesAvg, &stats->gpuPrimitivesPrevious,
+		stats->gpuPrimitives, &stats->gpuPrimitivesIndex );
+
+	ImGui::SeparatorText( "GPU Frame Statistics" );
+	ImGui::Text( "Time Elapsed (Average): %u", stats->gpuTimeAvg );
+	ImGui::Text( "Samples Passed (Average): %u", stats->gpuSamplesAvg );
+	ImGui::Text( "Primitives Generated (Average): %u", stats->gpuPrimitivesAvg );
 }
 
 static void Sys_DrawCPUUsage( void )
@@ -551,48 +724,84 @@ static void Sys_DrawCPUUsage( void )
     	ImGui::TableNextRow();
 
     	ImGui::TableNextColumn();
-    	ImGui::Text( "%03.3f", stats.cpuAvg );
+    	ImGui::Text( "%03.4f", stats->cpuAvg );
     	ImGui::TableNextColumn();
-    	ImGui::Text( "%03.3f", stats.cpuMin );
+
+		if ( stats->cpuNewMin ) {
+			ImGui::TextColored( ImVec4( g_color_table[ ColorIndex( S_COLOR_GREEN ) ] ), "%03.4f", stats->cpuMin );
+			stats->cpuNewMin = qfalse;
+		} else {
+			ImGui::Text( "%03.4f", stats->cpuMin );
+		}
+
     	ImGui::TableNextColumn();
-    	ImGui::Text( "%03.3f", stats.cpuMax );
-    	ImGui::TableNextColumn();
-    	ImGui::Text( "%03.3f", stats.cpuPrevious );
+
+		if ( stats->cpuNewMax ) {
+    		ImGui::TextColored( ImVec4( g_color_table[ ColorIndex( S_COLOR_RED ) ] ), "%03.4f", stats->cpuMax );
+			stats->cpuNewMax = qfalse;
+		} else {
+			ImGui::Text( "%03.4f", stats->cpuMax );
+		}
+		
+		ImGui::TableNextColumn();
+    	ImGui::Text( "%03.4f", stats->cpuPrevious );
     }
     ImGui::EndTable();
 }
 
 void Sys_DisplayEngineStats( void )
 {
-	const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse
-						| ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoMove;
-	
-	if (!ui_diagnostics->i) {
+	const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBackground
+						| ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoTitleBar;
+	extern ImFont *RobotoMono;
+	ImVec2 windowPos;
+
+	if ( !ui_diagnostics->i ) {
 		return;
 	}
     // draw the fps
-	else if (ui_diagnostics->i == 1) {
+	else if ( ui_diagnostics->i == 1 ) {
 		UI_DrawFPS();
         return;
 	}
 
-	if ( ui->GetState() == STATE_CREDITS ) {
+	if ( ui->GetState() == STATE_CREDITS || ui->GetState() == STATE_LEGAL || ImGui::IsWindowCollapsed() ) {
 		// pay respects, don't block the words
+
+		// if its in the legal section, just don't draw it
+
+		// if we're collapsing, we'll segfault when drawing CPU usage
 		return;
 	}
 	
 	ImGui::Begin( "Engine Diagnostics", NULL, windowFlags );
-    ImGui::SetWindowPos( ImVec2( 700 * ui->scale, 16 * ui->scale ) );
-	
+
+	if ( ui->GetConfig().vidWidth == 1024 ) {
+		windowPos.x = 750 * ui->scale + ui->bias;
+	} else {
+		windowPos.x = 900 * ui->scale + ui->bias;
+	}
+	windowPos.y = 16 * ui->scale;
+	ImGui::SetWindowPos( windowPos );
+
+	if ( RobotoMono ) {
+		FontCache()->SetActiveFont( RobotoMono );
+	}
+	ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * ui->scale );
+
+	if ( !stats ) {
+		stats = (sys_stats_t *)Hunk_Alloc( sizeof(sys_stats_t), h_low );
+	}
+
 	// draw the cpu usage chart
-	if (ui_diagnostics->i == 2) {
+	if ( ui_diagnostics->i == 2 ) {
 		Sys_GetCPUStats();
 		Sys_DrawCPUUsage();
         return;
     }
 	// draw memory statistics
-	else if (ui_diagnostics->i == 3) {
-        Sys_GetMemoryUsage( &stats );
+	else if ( ui_diagnostics->i == 3 ) {
+        Sys_GetMemoryUsage( stats );
 
         Sys_DrawMemoryUsage();
         return;
@@ -603,7 +812,7 @@ void Sys_DisplayEngineStats( void )
 	//
 
 	Sys_GetCPUStats();
-	Sys_GetMemoryUsage( &stats );
+	Sys_GetMemoryUsage( stats );
 	
 	//
 	// draw EVERYTHING
@@ -615,6 +824,7 @@ void Sys_DisplayEngineStats( void )
 
 	Sys_DrawCPUUsage();
     Sys_DrawMemoryUsage();
+	Sys_DrawGPUStats();
 
 	ImGui::SeparatorText( "Computer Information" );
 	

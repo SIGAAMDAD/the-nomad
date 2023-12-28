@@ -21,6 +21,8 @@ typedef enum : uint64_t
             STATE_LOADGAME,
             STATE_PLAYMISSION,
 
+    STATE_LEGAL,
+
     STATE_SETTINGS,
         STATE_GRAPHICS,
         STATE_CONTROLS,
@@ -97,7 +99,7 @@ public:
     void PopMenu( void );
     void ForceMenuOff( void );
 
-    void AdjustFrom640( float *x, float *y, float *w, float *h ) const;
+    void AdjustFrom1024( float *x, float *y, float *w, float *h ) const;
     void DrawNamedPic( float x, float y, float width, float height, const char *picname ) const;
     void DrawHandlePic( float x, float y, float w, float h, nhandle_t hShader ) const;
     void FillRect( float x, float y, float width, float height, const float *color ) const;
@@ -314,6 +316,12 @@ extern void         MainMenu_Draw( void );
 extern void         UI_SettingsMenu( void );
 extern void         SettingsMenu_Cache( void );
 extern void         SettingsMenu_Draw( void );
+
+//
+// ui_legal.cpp
+//
+extern void         LegalMenu_Cache( void );
+extern void         LegalMenu_Draw( void );
 
 //
 // ui_single_player.cpp

@@ -54,24 +54,42 @@ void R_InitExtensions(void)
     }
 
     //
+    // ARB_sync
+    //
+    ext = "GL_ARB_sync";
+    glContext.ARB_sync = qfalse;
+    if ( NGL_VERSION_ATLEAST( 3, 2 ) || R_HasExtension( ext ) ) {
+        glContext.ARB_sync = qtrue;
+
+        NGL_ARB_sync
+
+        if ( !nglClientWaitSync || !nglFenceSync || !nglDeleteSync || !nglWaitSync ) {
+            ri.Printf( PRINT_WARNING, result[EXT_FAILED], ext );
+            glContext.ARB_sync = qfalse;
+        } else {
+            ri.Printf( PRINT_INFO, result[EXT_USING], ext );
+        }
+    } else {
+        ri.Printf( PRINT_INFO, result[EXT_NOTFOUND], ext );
+    }
+
+    //
     // ARB_map_buffer_range
     //
     ext = "GL_ARB_map_buffer_range";
     glContext.ARB_map_buffer_range = qfalse;
-    if (NGL_VERSION_ATLEAST(4, 5) || R_HasExtension(ext)) {
+    if ( NGL_VERSION_ATLEAST( 4, 5 ) || R_HasExtension( ext ) ) {
         glContext.ARB_map_buffer_range = qtrue;
 
         NGL_ARB_map_buffer_range
         
-        if (!nglMapBufferRange || !nglFlushMappedBufferRange) {
+        if ( !nglMapBufferRange || !nglFlushMappedBufferRange ) {
             ri.Printf(PRINT_INFO, result[EXT_FAILED], ext);
             glContext.ARB_map_buffer_range = qfalse;
-        }
-        else {
+        } else {
             ri.Printf(PRINT_INFO, result[EXT_USING], ext);
         }
-    }
-    else {
+    } else {
         ri.Printf(PRINT_INFO, result[EXT_NOTFOUND], ext);
     }
 

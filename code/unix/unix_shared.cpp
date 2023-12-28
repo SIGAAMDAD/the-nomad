@@ -63,14 +63,15 @@ void Sys_ListFilteredFiles(const char *basedir, const char *subdirs, const char 
             continue;
         
         if (st.st_mode & S_IFDIR) {
-            if (!N_streq(d->d_name, ".") && !N_streq(d->d_name, "..")) {
-                if (*subdirs)
-                    Com_snprintf(newsubdirs, sizeof(newsubdirs), "%s/%s", subdirs, d->d_name);
-                else
-                    Com_snprintf(newsubdirs, sizeof(newsubdirs), "%s", d->d_name);
-                
-                Sys_ListFilteredFiles(basedir, newsubdirs, filter, list, numfiles);
+            if ( d->d_name[0] == '.' || ( d->d_name[0] == '.' && d->d_name[1] == '.' ) ) {
+                continue;
             }
+            if (*subdirs)
+                Com_snprintf(newsubdirs, sizeof(newsubdirs), "%s/%s", subdirs, d->d_name);
+            else
+                Com_snprintf(newsubdirs, sizeof(newsubdirs), "%s", d->d_name);
+            
+            Sys_ListFilteredFiles(basedir, newsubdirs, filter, list, numfiles);
         }
         if (*numfiles >= MAX_FOUND_FILES - 1)
             break;
@@ -145,6 +146,11 @@ char **Sys_ListFiles(const char *directory, const char *extension, const char *f
     while ((d = readdir(fdir)) != NULL) {
         if (nfiles >= MAX_FOUND_FILES - 1)
             break;
+
+        // skip pwd '.' and '..', those'll cause a segfault in FS_PathCmp after FS_SortFileList
+        if (d->d_name[0] == '.' || (d->d_name[0] == '.' && d->d_name[1] == '.')) {
+            continue;
+        }
         
         Com_snprintf(search, sizeof(search), "%s/%s", directory, d->d_name);
         if (stat(search, &st) == -1)
@@ -152,11 +158,6 @@ char **Sys_ListFiles(const char *directory, const char *extension, const char *f
         
         if ((dironly && !(st.st_mode & S_IFDIR)) || (!dironly && (st.st_mode & S_IFDIR)))
             continue;
-        
-        // skip pwd '.' and '..', those'll cause a segfault in FS_PathCmp after FS_SortFileList
-        if (d->d_name[0] == '.' || (d->d_name[0] == '.' && d->d_name[1] == '.')) {
-            continue;
-        }
         
         if (*extension) {
             if (hasPatterns) {

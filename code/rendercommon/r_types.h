@@ -11,6 +11,7 @@
 
 typedef struct {
     vec3_t xyz;
+	vec3_t worldPos;
     vec2_t uv;
 	color4ub_t modulate;
 } polyVert_t;
@@ -30,34 +31,20 @@ typedef struct {
 
 	uint32_t flags;
 } renderEntityRef_t;
-
-typedef struct {
-	vec3_t origin;
-
-	float width;
-	float height;
-
-	float realWidth;
-	float realHeight;
-} renderCameraDef_t;
-
 typedef struct {
 	uint32_t x, y;
 	uint32_t width, height;
 
+	float fovX;
+	float fovY;
+
 	uint32_t flags;
 	uint32_t time;
-
-	renderCameraDef_t *camera; // only used when rendering with tilemaps
 } renderSceneRef_t;
 
 typedef renderSceneRef_t refdef_t;
 
-#ifdef __cplusplus
-typedef enum : uint32_t
-#else
 typedef enum
-#endif
 {
 	AntiAlias_2xMSAA,
 	AntiAlias_4xMSAA,
@@ -69,11 +56,7 @@ typedef enum
 	AntiAlias_DSSAA
 } antialiasType_t;
 
-#ifdef __cplusplus
-typedef enum : uint32_t
-#else
 typedef enum
-#endif
 {
     TexDetail_MSDOS,
     TexDetail_IntegratedGPU,
@@ -84,11 +67,7 @@ typedef enum
 	NumTexDetails
 } textureDetail_t;
 
-#ifdef __cplusplus
-typedef enum : uint32_t
-#else
 typedef enum
-#endif
 {							// [min, mag]
     TexFilter_Linear,       // GL_LINEAR GL_LINEAR
     TexFilter_Nearest,      // GL_NEAREST GL_NEAREST

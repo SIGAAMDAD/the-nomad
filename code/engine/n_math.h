@@ -61,7 +61,11 @@ float RadiusFromBounds( const vec3_t *mins, const vec3_t *maxs );
 void ClearBounds( vec3_t *mins, vec3_t *maxs );
 void AddPointToBounds( const vec3_t *v, vec3_t *mins, vec3_t *maxs );
 
+vec_t VectorNormalize( vec3_t *v );
+
 #else
+
+vec_t VectorNormalize2( const vec3_t v, vec3_t out );
 
 float disBetweenOBJ(const vec3_t src, const vec3_t tar);
 qboolean BoundsIntersect(const vec3_t mins, const vec3_t maxs,
@@ -137,18 +141,18 @@ void _VectorCopy( const vec3_t in, vec3_t out );
 void _VectorScale( const vec3_t in, float scale, vec3_t out );
 void _VectorMA( const vec3_t veca, float scale, const vec3_t vecb, vec3_t vecc );
 
-float NormalizeColor( const vec3_t *in, vec3_t *out );
-float RadiusFromBounds( const vec3_t *mins, const vec3_t *maxs );
-void ClearBounds( vec3_t mins, vec3_t *maxs );
-void AddPointToBounds( const vec3_t *v, vec3_t *mins, vec3_t *maxs );
+float NormalizeColor( const vec3_t in, vec3_t out );
+float RadiusFromBounds( const vec3_t mins, const vec3_t maxs );
+void ClearBounds( vec3_t mins, vec3_t maxs );
+void AddPointToBounds( const vec3_t v, vec3_t mins, vec3_t maxs );
 
 void vectoangles( const vec3_t value1, vec3_t angles);
 void AnglesToAxis( const vec3_t angles, vec3_t axis[3] );
 void AxisClear( vec3_t axis[3] );
 void AxisCopy( vec3_t in[3], vec3_t out[3] );
 
-//void SetPlaneSignbits( struct cplane_s *out );
-//int BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, struct cplane_s *plane);
+void SetPlaneSignbits( struct cplane_s *out );
+int BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, struct cplane_s *plane);
 
 float	AngleMod(float a);
 float	LerpAngle (float from, float to, float frac);
@@ -169,6 +173,7 @@ void MakeNormalVectors( const vec3_t forward, vec3_t right, vec3_t up );
 void MatrixMultiply(float in1[3][3], float in2[3][3], float out[3][3]);
 void AngleVectors( const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
 void PerpendicularVector( vec3_t dst, const vec3_t src );
+vec_t VectorNormalize( vec3_t v );
 
 #endif
 

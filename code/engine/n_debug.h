@@ -27,9 +27,9 @@ void Sys_DebugMessageBox( const char *title, const char *message );
 #define AssertMsg1( x, msg, ... ) ((bool)(x) ? (void)0 : Sys_AssertionFailureMsg( #x, __FILE__, __func__, __LINE__, msg, __VA_ARGS__ ) )
 #else
 // simply print it to the log if in dist or release mode
-#define AssertMsg( x, msg ) if (!(x)) Con_Printf( COLOR_YELLOW "WARNING: " #msg )
-#define Assert( x ) (void)0
-#define AssertMsg1( x, msg, ... ) if (!(x)) Con_Printf( COLOR_YELLOW "WARNING: " #msg  " " __VA_ARGS__ )
+#define AssertMsg( x, msg ) if (!(x)) Con_Printf( COLOR_RED "[ASSERTION FAILURE - %s:%s:%u] " #msg "\n", __FILE__, FUNC_SIG, __LINE__ )
+#define Assert( x ) if (!(x)) Con_Printf( COLOR_RED "[ASSERTION FAILURE] %s:%s:%u\n", __FILE__, FUNC_SIG, __LINE__ )
+#define AssertMsg1( x, msg, ... ) if (!(x)) Con_Printf( COLOR_REd "[ASSERTION FAILURE - " __FILE__ ":" FUNC_SIG ":" __LINE__ "] " #msg  " " __VA_ARGS__ "\n" )
 #endif
 
 #ifdef _WIN32

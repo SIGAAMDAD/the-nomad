@@ -118,6 +118,11 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glRotatef, GLfloat angle, GLfloat x, GLfloat y, GLfloat z ) \
     NGL( void, glTranslatef, GLfloat x, GLfloat y, GLfloat z ) \
     NGL( void, glDrawElementsBaseVertex, GLenum mode, GLsizei count, GLenum type, const void *indices, GLint basevertex ) \
+    NGL( void, glGenQueries, GLsizei n, GLuint *ids ) \
+    NGL( void, glDeleteQueries, GLsizei n, const GLuint *ids ) \
+    NGL( void, glBeginQuery, GLenum target, GLuint id ) \
+    NGL( void, glEndQuery, GLenum target ) \
+    NGL( void, glGetQueryObjectiv, GLuint id, GLenum pname, GLuint *params )
 
 #define NGL_List_Procs \
     NGL( void, glListBase, GLuint base ) \
@@ -258,7 +263,7 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glBufferDataARB, GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage ) \
     NGL( void, glBufferSubDataARB, GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data ) \
     NGL( void, glUnmapBufferARB, GLenum target ) \
-    NGL( void*, glMapBufferARB, GLenum target, GLbitfield access ) \
+    NGL( void*, glMapBufferARB, GLenum target, GLbitfield access )
 
 #define NGL_Buffer_Procs \
     NGL( void, glGenBuffers, GLsizei n, GLuint *buffers ) \
@@ -279,6 +284,13 @@ typedef void*(*NGLloadproc)(const char *name);
 /*
 * GL_EXT, GL_ARB procs
 */
+
+#define NGL_ARB_sync \
+    NGL( GLsync, glFenceSync, GLenum condition, GLbitfield flags ) \
+    NGL( GLenum, glClientWaitSync, GLsync sync, GLbitfield flags, GLuint64 timeout ) \
+    NGL( void, glWaitSync, GLsync sync, GLbitfield flags, GLuint64 timeout ) \
+    NGL( void, glDeleteSync, GLsync sync )
+
 #define NGL_ARB_map_buffer_range \
     NGL( void*, glMapBufferRange, GLenum target, GLintptr offset, GLsizeiptr length, GLbitfield access ) \
     NGL( void, glFlushMappedBufferRange, GLenum target, GLintptr offset, GLsizeiptr length ) \
@@ -321,6 +333,7 @@ NGL_Texture_Procs
 
 NGL_ARB_map_buffer_range
 NGL_ARB_buffer_storage
+NGL_ARB_sync
 #undef NGL
 
 #define LOAD_GL_PROCS( procs ) procs

@@ -13,7 +13,7 @@ static void R_LoadLights(const lump_t *lights)
         ri.Error(ERR_DROP, "RE_LoadWorldMap: funny lump size in %s", r_worldData.name);
     
     count = lights->length / sizeof(*in);
-    out = ri.Malloc( sizeof(*out) * count );
+    out = ri.Hunk_Alloc( sizeof(*out) * count, h_low );
 
     r_worldData.lights = out;
     r_worldData.numLights = count;
@@ -31,46 +31,10 @@ static void R_LoadTiles(const lump_t *tiles)
         ri.Error(ERR_DROP, "RE_LoadWorldMap: funny lump size in %s", r_worldData.name);
     
     count = tiles->length / sizeof(*in);
-    out = ri.Malloc( sizeof(*out) * count );
+    out = ri.Hunk_Alloc( sizeof(*out) * count, h_low );
 
     r_worldData.tiles = out;
     r_worldData.numTiles = count;
-
-    memcpy(out, in, count*sizeof(*out));
-}
-
-static void R_LoadCheckpoints(const lump_t *c)
-{
-    uint32_t count;
-    mapcheckpoint_t *in, *out;
-
-    in = (mapcheckpoint_t *)(fileBase + c->fileofs);
-    if (c->length % sizeof(*in))
-        ri.Error(ERR_DROP, "RE_LoadWorldMap: funny lump size in %s", r_worldData.name);
-    
-    count = c->length / sizeof(*in);
-    out = ri.Malloc( sizeof(*out) * count );
-
-    r_worldData.checkpoints = out;
-    r_worldData.numCheckpoints = count;
-
-    memcpy(out, in, count*sizeof(*out));
-}
-
-static void R_LoadSpawns(const lump_t *s)
-{
-    uint32_t count;
-    mapspawn_t *in, *out;
-
-    in = (mapspawn_t *)(fileBase + s->fileofs);
-    if (s->length % sizeof(*in))
-        ri.Error(ERR_DROP, "RE_LoadWorldMap: funny lump size in %s", r_worldData.name);
-    
-    count = s->length / sizeof(*in);
-    out = ri.Malloc( sizeof(*out) * count );
-
-    r_worldData.spawns = out;
-    r_worldData.numSpawns = count;
 
     memcpy(out, in, count*sizeof(*out));
 }
@@ -85,7 +49,7 @@ static void R_LoadTileset(const lump_t *sprites, const tile2d_header_t *theader)
         ri.Error(ERR_DROP, "RE_LoadWorldMap: funny lump size in %s", r_worldData.name);
     
     count = sprites->length / sizeof(*in);
-    out = ri.Malloc( sizeof(*out) * count );
+    out = ri.Hunk_Alloc( sizeof(*out) * count, h_low );
 
     r_worldData.sprites = out;
     r_worldData.numTilesetSprites = count;
@@ -103,7 +67,7 @@ void R_GenerateDrawData(void)
     r_worldData.numIndices = r_worldData.width * r_worldData.height * 6;
     r_worldData.numVertices = r_worldData.width * r_worldData.height * 4;
 
-    r_worldData.indices = ri.Hunk_Alloc(sizeof(glIndex_t) * r_worldData.numIndices, h_low);
+    r_worldData.indices = ri.Hunk_Alloc( sizeof(glIndex_t) * r_worldData.numIndices, h_low );
     r_worldData.vertices = ri.Hunk_Alloc( sizeof(drawVert_t) * r_worldData.numVertices, h_low );
 
     r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, r_worldData.numVertices * sizeof(drawVert_t), NULL,
@@ -114,39 +78,46 @@ void R_GenerateDrawData(void)
 	attribs[ATTRIB_INDEX_TEXCOORD].enabled		= qtrue;
 	attribs[ATTRIB_INDEX_COLOR].enabled			= qtrue;
 	attribs[ATTRIB_INDEX_NORMAL].enabled		= qfalse;
+    attribs[ATTRIB_INDEX_WORLDPOS].enabled      = qtrue;
 
 	attribs[ATTRIB_INDEX_POSITION].count		= 3;
 	attribs[ATTRIB_INDEX_TEXCOORD].count		= 2;
 	attribs[ATTRIB_INDEX_COLOR].count			= 4;
 	attribs[ATTRIB_INDEX_NORMAL].count			= 4;
+    attribs[ATTRIB_INDEX_WORLDPOS].count        = 3;
 
 	attribs[ATTRIB_INDEX_POSITION].type			= GL_FLOAT;
 	attribs[ATTRIB_INDEX_TEXCOORD].type			= GL_FLOAT;
 	attribs[ATTRIB_INDEX_COLOR].type			= GL_UNSIGNED_SHORT;
 	attribs[ATTRIB_INDEX_NORMAL].type			= GL_SHORT;
+    attribs[ATTRIB_INDEX_WORLDPOS].type         = GL_FLOAT;
 
 	attribs[ATTRIB_INDEX_POSITION].index		= ATTRIB_INDEX_POSITION;
 	attribs[ATTRIB_INDEX_TEXCOORD].index		= ATTRIB_INDEX_TEXCOORD;
 	attribs[ATTRIB_INDEX_COLOR].index			= ATTRIB_INDEX_COLOR;
 	attribs[ATTRIB_INDEX_NORMAL].index			= ATTRIB_INDEX_NORMAL;
+    attribs[ATTRIB_INDEX_WORLDPOS].index        = ATTRIB_INDEX_WORLDPOS;
 
 	attribs[ATTRIB_INDEX_POSITION].normalized	= GL_FALSE;
 	attribs[ATTRIB_INDEX_TEXCOORD].normalized	= GL_FALSE;
 	attribs[ATTRIB_INDEX_COLOR].normalized		= GL_TRUE;
 	attribs[ATTRIB_INDEX_NORMAL].normalized		= GL_TRUE;
+    attribs[ATTRIB_INDEX_WORLDPOS].normalized   = GL_FALSE;
 
 	attribs[ATTRIB_INDEX_POSITION].offset		= offsetof( drawVert_t, xyz );
 	attribs[ATTRIB_INDEX_TEXCOORD].offset		= offsetof( drawVert_t, uv );
 	attribs[ATTRIB_INDEX_COLOR].offset			= offsetof( drawVert_t, color );
 	attribs[ATTRIB_INDEX_NORMAL].offset			= 0;
+    attribs[ATTRIB_INDEX_WORLDPOS].offset       = offsetof( drawVert_t, worldPos );
 
 	attribs[ATTRIB_INDEX_POSITION].stride		= sizeof(drawVert_t);
 	attribs[ATTRIB_INDEX_TEXCOORD].stride		= sizeof(drawVert_t);
 	attribs[ATTRIB_INDEX_COLOR].stride			= sizeof(drawVert_t);
 	attribs[ATTRIB_INDEX_NORMAL].stride			= sizeof(drawVert_t);
+    attribs[ATTRIB_INDEX_WORLDPOS].stride       = sizeof(drawVert_t);
 
-
-    for (i = 0, offset = 0; i < r_worldData.numIndices; i += 6, offset += 4) {
+    // cache the indices so that we aren't calculating these every frame (there could be thousands)
+    for ( i = 0, offset = 0; i < r_worldData.numIndices; i += 6, offset += 4 ) {
         r_worldData.indices[i + 0] = offset + 0;
         r_worldData.indices[i + 1] = offset + 1;
         r_worldData.indices[i + 2] = offset + 2;
@@ -156,8 +127,9 @@ void R_GenerateDrawData(void)
         r_worldData.indices[i + 5] = offset + 0;
     }
 
-    for (uint32_t y = 0; y < r_worldData.height; y++) {
-        for (uint32_t x = 0; x < r_worldData.width; x++) {
+    // copy the pre-calculated texture coordinates over
+    for ( uint32_t y = 0; y < r_worldData.height; y++ ) {
+        for ( uint32_t x = 0; x < r_worldData.width; x++ ) {
             VectorCopy2( r_worldData.vertices[(y * r_worldData.width + x) + 0].uv, r_worldData.tiles[y * r_worldData.width + x].texcoords[0] );
             VectorCopy2( r_worldData.vertices[(y * r_worldData.width + x) + 1].uv, r_worldData.tiles[y * r_worldData.width + x].texcoords[1] );
             VectorCopy2( r_worldData.vertices[(y * r_worldData.width + x) + 2].uv, r_worldData.tiles[y * r_worldData.width + x].texcoords[2] );
@@ -227,8 +199,6 @@ GDR_EXPORT void RE_LoadWorldMap(const char *filename)
 
     // load into heap
     R_LoadTiles(&mheader->lumps[LUMP_TILES]);
-    R_LoadCheckpoints(&mheader->lumps[LUMP_CHECKPOINTS]);
-    R_LoadSpawns(&mheader->lumps[LUMP_SPAWNS]);
     R_LoadLights(&mheader->lumps[LUMP_LIGHTS]);
 
     R_LoadTileset(&mheader->lumps[LUMP_SPRITES], theader);
@@ -242,16 +212,10 @@ GDR_EXPORT void RE_LoadWorldMap(const char *filename)
         texture[ strlen(texture) - 1 ] = '\0';
     }
 
-    rg.world->shader = R_FindShader(texture);
-    if (rg.world->shader == rg.defaultShader) {
+    rg.world->shader = R_FindShader( texture );
+    if ( rg.world->shader == rg.defaultShader ) {
         ri.Error(ERR_DROP, "RE_LoadWorldMap: failed to load shader for '%s'", filename);
     }
 
     ri.FS_FreeFile( buffer.v );
-
-    // setup the camera
-    glState.viewData.camera.origin[0] = rg.world->spawns[0].xyz[0];
-    glState.viewData.camera.origin[1] = rg.world->spawns[0].xyz[1];
-    glState.viewData.camera.origin[2] = 0.0f;
-    glState.viewData.camera.zoom = 2.0f;
 }

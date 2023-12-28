@@ -106,8 +106,8 @@ typedef struct memzone_s {
 
 static CThreadMutex commonLock;
 
-static uint64_t hunksize;
-static byte* hunkbase;
+uint64_t hunksize;
+byte* hunkbase;
 extern file_t logfile;
 
 #define HUNKID 0x553dfa2

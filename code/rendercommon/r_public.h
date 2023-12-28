@@ -50,6 +50,7 @@ typedef struct {
     void (*Cvar_Reset)(const char *name);
     const char *(*Cvar_VariableString)(const char *name);
 
+    void (*GLM_MakeVPMQuake3)( mat4_t vpm, mat4_t projection, mat4_t view );
     void (*GLM_MakeVPM)( float aspect, float *zoom, vec3_t origin, mat4_t vpm, mat4_t projection, mat4_t view );
     void (*GLM_TransformToGL)( const vec3_t world, vec3_t *xyz, mat4_t vpm );
 
@@ -58,7 +59,7 @@ typedef struct {
     void (*Cmd_ExecuteCommand)(const char* name);
     void (*Cmd_ExecuteString)(const char *str);
     uint32_t (*Cmd_Argc)(void);
-    char *(*Cmd_ArgsFrom)(int32_t index);
+    char *(*Cmd_ArgsFrom)(uint32_t index);
     const char *(*Cmd_Argv)(uint32_t index);
 
     uint64_t (*Milliseconds)(void);
@@ -142,13 +143,15 @@ typedef struct {
 
     void (*GetConfig)( gpuConfig_t *config );
 
+    void (*GetGPUFrameStats)( uint32_t *time, uint32_t *samples, uint32_t *primitives );
+
 	void (*SetColor)( const float *rgba );	// NULL = 1,1,1,1
 
 	void	(*BeginFrame)( stereoFrame_t stereoFrame );
 	void	(*EndFrame)( uint64_t *frontEndMsec, uint64_t *backEndMsec );
 
 //	void	(*RegisterFont)(const char *fontName, int pointSize, fontInfo_t *font);
-	void	(*TakeVideoFrame)( int h, int w, byte* captureBuffer, byte *encodeBuffer, qboolean motionJpeg );
+	void	(*TakeVideoFrame)( int32_t h, int32_t w, byte* captureBuffer, byte *encodeBuffer, qboolean motionJpeg );
 
 	void	(*ThrottleBackend)( void );
 	void	(*FinishBloom)( void );

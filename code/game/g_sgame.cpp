@@ -466,14 +466,14 @@ void G_InitSGame(void)
     CTimer timer;
 
     timer.Run();
-    interpret = (vmInterpret_t)Cvar_VariableInteger("vm_sgame");
-    sgvm = VM_Create(VM_SGAME, G_SGameSystemCalls, G_SGameDllSyscall, interpret);
-    if (!sgvm) {
-        N_Error(ERR_DROP, "G_InitSGame: failed to load vm");
+    interpret = (vmInterpret_t)Cvar_VariableInteger( "vm_sgame" );
+    sgvm = VM_Create( VM_SGAME, G_SGameSystemCalls, G_SGameDllSyscall, interpret );
+    if ( !sgvm ) {
+        N_Error( ERR_DROP, "G_InitSGame: failed to load vm" );
     }
 
     // run a quick initialization
-    VM_Call(sgvm, 0, SGAME_INIT);
+    VM_Call( sgvm, 0, SGAME_INIT );
 
     timer.Stop();
     Con_Printf( "G_InitSGame: %5.5lf milliseconds\n", (double)timer.ElapsedMilliseconds().count() );
@@ -495,9 +495,9 @@ void G_InitSGame(void)
 }
 
 /*
-G_GameCommand: see if the current console command is claimed by the sgame
+* G_SGameCommand: see if the current console command is claimed by the sgame
 */
-qboolean G_GameCommand(void)
+qboolean G_SGameCommand(void)
 {
     qboolean bRes;
 

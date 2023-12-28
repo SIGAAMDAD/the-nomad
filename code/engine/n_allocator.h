@@ -77,6 +77,7 @@ GDR_INLINE void CHunkAllocator::deallocate( void *ptr, size_t )
 {
 }
 
+template<memtag_t tag = TAG_STATIC>
 class CZoneAllocator
 {
 public:
@@ -98,17 +99,20 @@ private:
 	#endif
 };
 
-GDR_INLINE void *CZoneAllocator::allocate( size_t n, int flags )
+template<memtag_t tag>
+GDR_INLINE void *CZoneAllocator<tag>::allocate( size_t n, int flags )
+{
+    return Z_Malloc( n, tag );
+}
+
+template<memtag_t tag>
+GDR_INLINE void *CZoneAllocator<tag>::allocate( size_t n, size_t alignment, size_t offset, int flags )
 {
     return Z_Malloc( n, TAG_STATIC );
 }
 
-GDR_INLINE void *CZoneAllocator::allocate( size_t n, size_t alignment, size_t offset, int flags )
-{
-    return Z_Malloc( n, TAG_STATIC );
-}
-
-GDR_INLINE void CZoneAllocator::deallocate( void *ptr, size_t )
+template<memtag_t tag>
+GDR_INLINE void CZoneAllocator<tag>::deallocate( void *ptr, size_t )
 {
     if (ptr != NULL) {
         Z_Free( ptr );

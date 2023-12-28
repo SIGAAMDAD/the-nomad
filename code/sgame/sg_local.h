@@ -353,6 +353,7 @@ extern vmCvar_t sg_levelIndex;
 extern vmCvar_t sg_levelDataFile;
 extern vmCvar_t sg_savename;
 extern vmCvar_t sg_numSaves;
+extern vmCvar_t sg_memoryDebug;
 
 extern vmCvar_t pm_groundFriction;
 extern vmCvar_t pm_waterFriction;
@@ -368,6 +369,7 @@ extern vmCvar_t pm_wallTime;
 //==============================================================
 // functions
 //
+
 
 //
 // sg_draw.c
@@ -414,9 +416,11 @@ qboolean Ent_SetState( sgentity_t *ent, statenum_t state );
 //
 // sg_archive.c
 //
-typedef void (*archiveFunc_t)( file_t, int );
-void SG_SaveGame( void );
-void SG_LoadGame( const char *filename );
+void SG_WriteSection( const char *name, int size, const void *data, file_t f );
+void SG_LoadSection( const char *name, void *dest, int size );
+typedef void (*archiveFunc_t)( file_t );
+int SG_SaveGame( void );
+int SG_LoadGame( void );
 void SG_AddArchiveHandle( archiveFunc_t pFunc );
 
 //
@@ -431,6 +435,8 @@ void SG_SpawnMobOnMap( mobtype_t id, float x, float y, float elevation );
 const char *String_Alloc( const char *str );
 void *SG_MemAlloc( int size );
 void SG_MemInit( void );
+int SG_MakeMemoryMark( void );
+void SG_ClearToMemoryMark( int mark );
 qboolean SG_OutOfMemory( void );
 
 //
@@ -515,8 +521,9 @@ void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t
 void Sys_GetGPUConfig( gpuConfig_t *config );
 
 // filesystem access
-int trap_FS_FOpenFile( const char *npath, file_t *f, fileMode_t mode );
+uint32_t trap_FS_FOpenFile( const char *npath, file_t *f, fileMode_t mode );
 file_t trap_FS_FOpenWrite( const char *npath );
+file_t trap_FS_FOpenRead( const char *npath );
 void trap_FS_FClose( file_t f );
 int trap_FS_Write( const void *data, int size, file_t f );
 int trap_FS_Read( void *data, int size, file_t f );

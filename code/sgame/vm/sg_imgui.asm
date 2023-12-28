@@ -44,7 +44,7 @@ CALLV
 pop
 line 14
 ;14:}
-LABELV $90
+LABELV $89
 endproc ImGui_SetItemTooltip 8196 12
 export ImGui_Text
 proc ImGui_Text 8196 12
@@ -88,7 +88,7 @@ CALLV
 pop
 line 26
 ;26:}
-LABELV $92
+LABELV $91
 endproc ImGui_Text 8196 12
 export ImGui_ColoredText
 proc ImGui_ColoredText 8212 12
@@ -139,7 +139,7 @@ CALLV
 pop
 line 38
 ;38:}
-LABELV $94
+LABELV $93
 endproc ImGui_ColoredText 8212 12
 import Cvar_VariableStringBuffer
 import Cvar_Set
@@ -151,6 +151,7 @@ import trap_FS_GetFileList
 import trap_FS_Read
 import trap_FS_Write
 import trap_FS_FClose
+import trap_FS_FOpenRead
 import trap_FS_FOpenWrite
 import trap_FS_FOpenFile
 import Sys_GetGPUConfig
@@ -198,6 +199,8 @@ import SG_MouseEvent
 import SG_KeyEvent
 import SG_InitPlayer
 import SG_OutOfMemory
+import SG_ClearToMemoryMark
+import SG_MakeMemoryMark
 import SG_MemInit
 import SG_MemAlloc
 import String_Alloc
@@ -206,6 +209,8 @@ import SG_SpawnMob
 import SG_AddArchiveHandle
 import SG_LoadGame
 import SG_SaveGame
+import SG_LoadSection
+import SG_WriteSection
 import Ent_SetState
 import SG_InitEntities
 import Ent_BuildBounds
@@ -238,6 +243,7 @@ import pm_waterAccel
 import pm_airFriction
 import pm_waterFriction
 import pm_groundFriction
+import sg_memoryDebug
 import sg_numSaves
 import sg_savename
 import sg_levelDataFile
@@ -436,9 +442,9 @@ import Cbuf_AddText
 import Cbuf_Execute
 import Cbuf_InsertText
 import Cbuf_ExecuteText
+import va
 import Cmd_CompleteArgument
 import Cmd_CommandCompletion
-import va
 import Cmd_Clear
 import Cmd_Argv
 import Cmd_ArgsFrom
@@ -537,6 +543,7 @@ import N_acos
 import N_log2
 import ColorBytes4
 import ColorBytes3
+import VectorNormalize
 import AddPointToBounds
 import ClearBounds
 import RadiusFromBounds

@@ -208,7 +208,6 @@ SRC=\
 	$(O)/ui/ui_lib.o \
 	$(O)/ui/ui_menu.o \
 	$(O)/ui/ui_mfield.o \
-	$(O)/ui/ui_font.o \
 	$(O)/ui/ui_string_manager.o \
 	$(O)/ui/ui_window.o \
 	$(O)/ui/ui_title.o \
@@ -217,6 +216,9 @@ SRC=\
 	$(O)/ui/ui_main_menu.o \
 	$(O)/ui/ui_single_player.o \
 	$(O)/ui/ui_pause.o \
+	$(O)/ui/ui_legal.o \
+	\
+	$(O)/ui/ml_widget.o \
 
 MAKE=make
 
@@ -251,6 +253,8 @@ $(O)/engine/%.o: $(SDIR)/system/%.cpp
 $(O)/engine/%.o: $(SDIR)/engine/%.c
 	$(COMPILE_SRC)
 $(O)/ui/%.o: $(SDIR)/ui/%.cpp
+	$(COMPILE_SRC)
+$(O)/ui/%.o: $(SDIR)/ui/menulib/%.cpp
 	$(COMPILE_SRC)
 $(O)/sys/%.o: $(SYS_DIR)/%.cpp
 	$(COMPILE_SRC)

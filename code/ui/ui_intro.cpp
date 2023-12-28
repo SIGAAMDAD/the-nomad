@@ -18,7 +18,7 @@
 typedef struct
 {
 	CUIMenu menu;
-	CUIFont msdosFont;
+	ImFont *msdosFont;
 	
 	const stringHash_t *osString;
 	const stringHash_t *statusBooting;
@@ -460,6 +460,8 @@ void IntroMenu_Cache( void )
 	
 	intro.ticker = CALC_TICS( BOOT_TIME );
 	intro.updateStatus = STATUS_BOOTING;
+
+//	intro.msdosFont = FontCache()->AddFontToCache( "fonts/PressStart2P-Regular.ttf" );
 }
 
 void UI_IntroMenu( void )

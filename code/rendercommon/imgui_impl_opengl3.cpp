@@ -110,6 +110,9 @@
 #include "../engine/n_shared.h"
 #include "../engine/n_cvar.h"
 #include "../rendergl/ngl.h"
+#include "../game/g_game.h"
+#include "../rendercommon/r_types.h"
+#include "../rendergl/rgl_local.h"
 #include "imgui.h"
 // #ifndef IMGUI_DISABLE
 #include "imgui_impl_opengl3.h"
@@ -227,6 +230,8 @@ struct ImGui_ImplOpenGL3_Data
     int GlProfileIsCompat;
     GLint GlProfileMask;
     GLuint FontTexture;
+    nhandle_t FontShader;
+
     GLuint ShaderHandle;
     GLint AttribLocationTex; // Uniforms location
     GLint AttribLocationGamma;
@@ -246,7 +251,7 @@ struct ImGui_ImplOpenGL3_Data
 static GLuint imguiShader;
 static ImGui_ImplOpenGL3_Data *bd;
 imguiGL3Import_t renderImport;
-static cvar_t *r_gammaAmount;
+static cvar_t *r_gamma;
 
 // Backend data stored in io.BackendRendererUserData to allow support for multiple Dear ImGui contexts
 // It is STRONGLY preferred that you use docking branch with multi-viewports (== single Dear ImGui context + multiple windows) instead of multiple Dear ImGui contexts.
@@ -304,12 +309,12 @@ void ImGui_ImplOpenGL3_Init(void *shaderData, const char *glsl_version, const im
     IM_ASSERT(io.BackendRendererUserData == nullptr && "Already initialized a renderer backend!");
 
     // Setup backend capabilities flags
-    bd = (ImGui_ImplOpenGL3_Data *)Z_Malloc( sizeof(*bd), TAG_RENDERER );
+    bd = (ImGui_ImplOpenGL3_Data *)Z_Malloc( sizeof(*bd), TAG_IMGUI );
     memset(bd, 0, sizeof(*bd));
     io.BackendRendererUserData = (void *)bd;
     io.BackendRendererName = "imgui_impl_opengl3";
 
-    r_gammaAmount = Cvar_Get("r_gammaAmount", "1", CVAR_SAVE | CVAR_LATCH);
+    r_gamma = Cvar_Get("r_gammaAmount", "1", CVAR_SAVE | CVAR_LATCH);
 
     // Query for GL version (e.g. 320 for GL 3.2)
 #if defined(IMGUI_IMPL_OPENGL_ES2)
@@ -393,9 +398,8 @@ void ImGui_ImplOpenGL3_Init(void *shaderData, const char *glsl_version, const im
             bd->HasClipOrigin = true;
     }
 #endif
-
+//    ImGui_ImplOpenGL3_CreateFontsTexture();
     ImGui_ImplOpenGL3_CreateDeviceObjects();
-    ImGui_ImplOpenGL3_CreateFontsTexture();
 }
 
 void ImGui_ImplOpenGL3_Shutdown(void)
@@ -471,7 +475,7 @@ static void ImGui_ImplOpenGL3_SetupRenderState(ImDrawData *draw_data, int fb_wid
     };
     renderImport.glUseProgram(imguiShader);
     renderImport.glUniform1i(bd->AttribLocationTex, 0);
-    renderImport.glUniform1f(bd->AttribLocationGamma, r_gammaAmount->f);
+    renderImport.glUniform1f( bd->AttribLocationGamma, r_gamma->f );
 
     renderImport.glUniformMatrix4fv(bd->AttribLocationProjMtx, 1, GL_FALSE, &ortho_projection[0][0]);
 
@@ -655,13 +659,25 @@ void ImGui_ImplOpenGL3_RenderDrawData(ImDrawData *draw_data)
                 renderImport.glScissor((int)clip_min.x, (int)((float)fb_height - clip_max.y), (int)(clip_max.x - clip_min.x), (int)(clip_max.y - clip_min.y));
 
                 // Bind texture, Draw
-                renderImport.glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)pcmd->GetTexID());
+
+//                renderImport.glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)( (shader_t *)pcmd->GetTexID() )->index );
 #ifdef IMGUI_IMPL_OPENGL_MAY_HAVE_VTX_OFFSET
-                if (bd->GlVersion >= 320)
-                    renderImport.glDrawElementsBaseVertex(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, (void *)(intptr_t)(pcmd->IdxOffset * sizeof(ImDrawIdx)), (GLint)pcmd->VtxOffset);
-                else
+                if (bd->GlVersion >= 320) {
+                    renderImport.DrawShaderStages( (nhandle_t)(intptr_t)pcmd->GetTexID(), pcmd->ElemCount,
+                        sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, (void *)(intptr_t)(pcmd->IdxOffset * sizeof(ImDrawIdx)),
+                        (GLint)pcmd->VtxOffset  );
+                    //renderImport.glDrawElementsBaseVertex( GL_TRIANGLES, (GLsizei)pcmd->ElemCount,
+                    //    sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, (void *)(intptr_t)(pcmd->IdxOffset * sizeof(ImDrawIdx)),
+                    //    (GLint)pcmd->VtxOffset );
+                } else
 #endif
-                    renderImport.glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, (void *)(intptr_t)(pcmd->IdxOffset * sizeof(ImDrawIdx)));
+                {
+                    renderImport.DrawShaderStages( (nhandle_t)(intptr_t)pcmd->GetTexID(), pcmd->ElemCount,
+                        sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, (void *)(intptr_t)(pcmd->IdxOffset * sizeof(ImDrawIdx)),
+                        -1 );
+                    //renderImport.glDrawElements( GL_TRIANGLES, (GLsizei)pcmd->ElemCount,
+                    //    sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, (void *)(intptr_t)(pcmd->IdxOffset * sizeof(ImDrawIdx) ) );
+                }
             }
         }
     }
@@ -758,26 +774,68 @@ int ImGui_ImplOpenGL3_CreateFontsTexture(void)
     unsigned char *pixels;
     int width, height;
     GLint last_texture;
+    textureFilter_t filter;
     ImGuiIO &io = ImGui::GetIO();
     ImGui_ImplOpenGL3_Data *bd = ImGui_ImplOpenGL3_GetBackendData();
+    char *buf;
+    shader_t *shader;
+    texture_t *fontsTex;
 
     // Build texture atlas
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height); // Load as RGBA 32-bit (75% of the memory is wasted, but default font is so small) because it is more likely to be compatible with user's existing shaders. If your ImTextureId represent a higher-level concept than just a GL texture id, consider calling GetTexDataAsAlpha8() instead to save on GPU memory.
+    
+    shader = (shader_t *)renderImport.GetShaderByHandle( re.RegisterShader( "gfx/fonts" ) );
+    fontsTex = shader->stages[0]->bundle[0].image;
+    /*
+#define IDENT (('g'<<24)+('m'<<16)+('i'<<8)+'f')
+
+    buf = (char *)Hunk_AllocateTempMemory( width * height * 4 + 12 );
+
+    FS_Remove( "gfx/fonts.fimg" );
+
+    // store a bit of metadata for the renderer
+    ((int32_t *)buf)[0] = IDENT;
+    ((int32_t *)buf)[1] = width;
+    ((int32_t *)buf)[2] = height;
+    memcpy( buf + 12, pixels, width * height * 4 );
+
+    FS_WriteFile( "gfx/fonts.fimg", buf, width * height * 4 + 12 );
+
+    Hunk_FreeTempMemory( buf );
 
     // Upload texture to graphics system
     // (Bilinear sampling is required by default. Set 'io.Fonts->Flags |= ImFontAtlasFlags_NoBakedLines' or 'style.AntiAliasedLinesUseTex = false' to allow point/nearest sampling)
     renderImport.glGetIntegerv(GL_TEXTURE_BINDING_2D, &last_texture);
-    renderImport.glGenTextures(1, &bd->FontTexture);
-    renderImport.glBindTexture(GL_TEXTURE_2D, bd->FontTexture);
-    renderImport.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    renderImport.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-#ifdef GL_UNPACK_ROW_LENGTH // Not on WebGL/ES
-    renderImport.glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
-#endif
+
+    // temporarily set the filtering
+    filter = (textureFilter_t)Cvar_VariableInteger( "r_textureFiltering" );
+    Cvar_Set( "r_textureFiltering", va( "%i", (int32_t)TexFilter_Linear ) );
+
+    bd->FontShader = re.RegisterShader( "gfx/fonts" );
+    renderImport.GetTextureId( bd->FontShader, 0, &bd->FontTexture );
+
+    Cvar_Set( "r_textureFiltering", va( "%i", (int32_t)filter ) );
+
     renderImport.glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
+//    renderImport.glBindTexture( GL_TEXTURE_2D, bd->FontTexture );
+//    renderImport.glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels );
+    */
+
+    bd->FontTexture = fontsTex->id;
+
+//    renderImport.glGenTextures(1, &bd->FontTexture);
+    renderImport.glBindTexture( GL_TEXTURE_2D, bd->FontTexture );
+    renderImport.glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    renderImport.glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+#ifdef GL_UNPACK_ROW_LENGTH // Not on WebGL/ES
+    renderImport.glPixelStorei( GL_UNPACK_ROW_LENGTH, 0 );
+#endif
+    renderImport.glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels );
+//    */
+
     // Store our identifier
-    io.Fonts->SetTexID((ImTextureID)(intptr_t)bd->FontTexture);
+    io.Fonts->SetTexID((ImTextureID)(intptr_t)shader->index);
 
     // Restore state
     renderImport.glBindTexture(GL_TEXTURE_2D, last_texture);
@@ -791,7 +849,7 @@ void ImGui_ImplOpenGL3_DestroyFontsTexture(void)
     ImGui_ImplOpenGL3_Data *bd = ImGui_ImplOpenGL3_GetBackendData();
     if (bd->FontTexture)
     {
-        renderImport.glDeleteTextures(1, &bd->FontTexture);
+//        renderImport.glDeleteTextures(1, &bd->FontTexture);
         io.Fonts->SetTexID(0);
         bd->FontTexture = 0;
     }

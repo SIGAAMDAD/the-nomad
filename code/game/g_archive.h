@@ -23,7 +23,6 @@ public:
     bool Save( const char *filename );
     bool LoadPartial( const char *filename, gamedata_t *gd );
 private:
-    void GDR_ATTRIBUTE((format(printf, 2, 3))) Error( const char *fmt, ... ) const;
     bool ValidateHeader( const void *header ) const;
 
     const char *curfile;

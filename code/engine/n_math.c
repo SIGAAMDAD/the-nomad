@@ -575,12 +575,13 @@ float Q_rsqrt(float number)
 }
 float disBetweenOBJ(const vec3_t src, const vec3_t tar)
 {
-	if (src[1] == tar[1]) // horizontal
+	if (src[1] == tar[1]) { // horizontal
 		return src[0] > tar[0] ? (src[0] - tar[0]) : (tar[0] - src[0]);
-	else if (src[0] == tar[0]) // vertical
+	} else if (src[0] == tar[0]) { // vertical
 		return src[1] > tar[1] ? (src[1] - tar[1]) : (tar[1] - src[1]);
-	else // diagonal
-		return Q_root((pow((src[0] - tar[0]), 2) + pow((src[1] - tar[1]), 2)));
+	} else { // diagonal
+		return sqrtf( ( pow( ( src[0] - tar[0] ), 2 ) + pow( ( src[1] - tar[1] ), 2 ) ) );
+	}
 }
 
 #if defined(Q3_VM) && !defined(__Q3_VM_MATH)
@@ -595,6 +596,70 @@ vec_t VectorLength(const vec3_t v) {
 	return (vec_t)sqrtf (v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
 #endif
+
+//============================================================
+
+/*
+=================
+SetPlaneSignbits
+=================
+*/
+void SetPlaneSignbits (cplane_t *out) {
+	int	bits, j;
+
+	// for fast box on planeside test
+	bits = 0;
+	for (j=0 ; j<3 ; j++) {
+		if (out->normal[j] < 0) {
+			bits |= 1<<j;
+		}
+	}
+	out->signbits = bits;
+}
+
+
+/*
+==================
+BoxOnPlaneSide
+
+Returns 1, 2, or 1 + 2
+==================
+*/
+int BoxOnPlaneSide(vec3_t emins, vec3_t emaxs, struct cplane_s *p)
+{
+	float	dist[2];
+	int		sides, b, i;
+
+	// fast axial cases
+	if (p->type < 3)
+	{
+		if (p->dist <= emins[p->type])
+			return 1;
+		if (p->dist >= emaxs[p->type])
+			return 2;
+		return 3;
+	}
+
+	// general case
+	dist[0] = dist[1] = 0;
+	if (p->signbits < 8) // >= 8: default case is original code (dist[0]=dist[1]=0)
+	{
+		for (i=0 ; i<3 ; i++)
+		{
+			b = (p->signbits >> i) & 1;
+			dist[ b] += p->normal[i]*emaxs[i];
+			dist[!b] += p->normal[i]*emins[i];
+		}
+	}
+
+	sides = 0;
+	if (dist[0] >= p->dist)
+		sides = 1;
+	if (dist[1] < p->dist)
+		sides |= 2;
+
+	return sides;
+}
 
 /*
 =================
@@ -719,7 +784,7 @@ vec_t VectorNormalize( vec3_t v ) {
 	return length;
 }
 
-vec_t VectorNormalize2( const vec3_t v, vec3_t out) {
+vec_t VectorNormalize2( const vec3_t v, vec3_t out ) {
 	float	length, ilength;
 
 	length = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];

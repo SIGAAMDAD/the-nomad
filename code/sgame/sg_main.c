@@ -67,6 +67,7 @@ vmCvar_t sg_levelIndex;
 vmCvar_t sg_levelDataFile;
 vmCvar_t sg_savename;
 vmCvar_t sg_numSaves;
+vmCvar_t sg_memoryDebug;
 
 vmCvar_t pm_groundFriction;
 vmCvar_t pm_waterFriction;
@@ -110,6 +111,11 @@ static cvarTable_t cvarTable[] = {
     { &sg_levelInfoFile,        "sg_levelInfoFile",     "levels.txt",   CVAR_LATCH | CVAR_SAVE,     0, qtrue },
     { &sg_savename,             "sg_savename",          "savedata",     CVAR_LATCH | CVAR_SAVE,     0, qtrue },
     { &sg_numSaves,             "sg_numSaves",          "0",            CVAR_LATCH | CVAR_SAVE,     0, qfalse },
+#ifdef _NOMAD_DEBUG
+    { &sg_memoryDebug,          "sg_memoryDebug",       "1",            CVAR_LATCH | CVAR_TEMP,     0, qfalse },
+#else
+    { &sg_memoryDebug,          "sg_memoryDebug",       "0",            CVAR_LATCH | CVAR_TEMP,     0, qfalse },
+#endif
 };
 
 static const int cvarTableSize = arraylen(cvarTable);
@@ -333,10 +339,10 @@ static void SG_LoadMedia( void )
     sg.media.revolver_fire = trap_Snd_RegisterSfx( "sfx/weapons/revolver_fire.wav" );
     sg.media.revolver_rld = trap_Snd_RegisterSfx( "sfx/weapons/revolver_rld.wav" );
 
-    sg.media.raio_shader = RE_RegisterShader( "textures/sprites/glnomad_raio_base.png" );
-    sg.media.grunt_shader = RE_RegisterShader( "textures/sprites/glnomad_grunt.png" );
+    sg.media.raio_shader = RE_RegisterShader( "sprites/glnomad_raio_base" );
+    sg.media.grunt_shader = RE_RegisterShader( "sprites/glnomad_grunt" );
 
-    sg.media.raio_sprites = RE_RegisterSpriteSheet( "textures/sprites/glnomad_raio_base.png", 512, 512, 32, 32 );
+    sg.media.raio_sprites = RE_RegisterSpriteSheet( "sprites/glnomad_raio_base", 512, 512, 32, 32 );
 }
 
 void SG_Init( void )

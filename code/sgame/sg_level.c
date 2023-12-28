@@ -14,7 +14,7 @@ typedef struct
 
 typedef struct
 {
-    int32_t index;
+    int index;
 
     // save data
     levelstats_t stats;
@@ -97,8 +97,14 @@ qboolean SG_InitLevel( int levelIndex )
     return qtrue;
 }
 
-void SG_SaveLevelData( void )
+void SG_SaveLevelData( file_t f )
 {
+    
+}
+
+void SG_LoadLevelData( file_t f )
+{
+
 }
 
 void SG_DrawLevelStats( void )

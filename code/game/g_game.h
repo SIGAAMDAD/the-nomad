@@ -27,6 +27,7 @@ typedef enum
     GS_LEVEL,
     GS_PAUSE,
     GS_SETTINGS,
+    GS_MEMORY_VIEW,
 
     NUM_GAME_STATES
 } gamestate_t;
@@ -218,7 +219,7 @@ typedef struct {
     maptile_t *tiles;
 } mapinfoReal_t;
 
-#include "../ui/ui_public.h"
+#include "../ui/ui_public.hpp"
 #include "../engine/vm_local.h"
 
 typedef struct {
@@ -253,6 +254,8 @@ typedef struct {
     int32_t mouseDx[2], mouseDy[2];	// added to by mouse events
 	int32_t mouseIndex;
     vec3_t viewangles;
+    
+    gamestate_t oldState;
 
     uint32_t cmdNumber;
     usercmd_t cmds[CMD_BACKUP];
@@ -432,6 +435,7 @@ qboolean Key_AnyDown(void);
 void G_ShutdownUI(void);
 void G_InitUI(void);
 void G_DrawUI(void);
+qboolean UI_Command( void );
 
 //
 // g_sgame.cpp
@@ -439,6 +443,7 @@ void G_DrawUI(void);
 void G_ShutdownSGame(void);
 void G_InitSGame(void);
 void G_SGameRender(stereoFrame_t stereo);
+qboolean G_SGameCommand( void );
 
 extern vm_t *sgvm;
 extern vm_t *uivm;

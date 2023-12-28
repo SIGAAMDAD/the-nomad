@@ -29,6 +29,8 @@ typedef struct
 
 typedef enum
 {
+    SG_LOADGAME,
+    SG_SAVEGAME,
     SG_INACTIVE,
     SG_IN_LEVEL,
     SG_SHOW_LEVEL_STATS,
@@ -122,6 +124,9 @@ typedef enum
     SG_RE_REGISTERSPRITESHEET,
     SG_RE_REGISTERSPRITE,
     SG_RE_ADDSPRITETOSCENE,
+
+    SG_G_LOADGAME,
+    SG_G_SAVEGAME,
 
     IMGUI_BEGIN_WINDOW = 400,
     IMGUI_END_WINDOW,
@@ -230,6 +235,9 @@ typedef enum
 
     SGAME_EVENT_NONE,
     SGAME_GET_STATE,
+
+    SGAME_LOAD,
+    SGAME_SAVE,
 
     SGAME_EXPORT_LAST,
 } sgameExport_t;

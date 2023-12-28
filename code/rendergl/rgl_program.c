@@ -15,26 +15,39 @@ typedef struct {
 } uniformInfo_t;
 
 // these must in the same order as in uniform_t in rgl_local.h
-static uniformInfo_t uniformsInfo[] = {
-    {"u_DiffuseMap", GLSL_INT},
-    {"u_LightMap", GLSL_INT},
-    {"u_NormalMap", GLSL_INT},
-    {"u_SpecularMap", GLSL_INT},
-    {"u_NumLights", GLSL_INT},
-    {"u_LightInfo", GLSL_BUFFER},
-    {"u_AmbientLight", GLSL_FLOAT},
-    {"u_ModelViewProjection", GLSL_MAT16},
-    {"u_ModelMatrix", GLSL_MAT16},
-    {"u_SpecularScale", GLSL_VEC4},
-    {"u_NormalScale", GLSL_VEC4},
-    {"u_ColorGen", GLSL_INT},
-    {"u_AlphaGen", GLSL_INT},
-    {"u_Color", GLSL_VEC4},
-    {"u_BaseColor", GLSL_VEC4},
-    {"u_VertColor", GLSL_VEC4},
-    {"u_AlphaTest", GLSL_INT},
-    {"u_TCGen", GLSL_VEC4},
-    {"u_ViewInfo", GLSL_VEC4}
+static uniformInfo_t uniformsInfo[UNIFORM_COUNT] = {
+    { "u_DiffuseMap",           GLSL_INT },
+    { "u_LightMap",             GLSL_INT },
+    { "u_NormalMap",            GLSL_INT },
+    { "u_SpecularMap",          GLSL_INT },
+
+    { "u_NumLights",            GLSL_INT },
+    { "u_LightInfo",            GLSL_BUFFER },
+    { "u_AmbientLight",         GLSL_FLOAT },
+
+    { "u_ModelViewProjection",  GLSL_MAT16 },
+    { "u_ModelMatrix",          GLSL_MAT16 },
+
+    { "u_NormalScale",          GLSL_VEC4 },
+    { "u_SpecularScale",        GLSL_VEC4 },
+
+    { "u_DiffuseTexMatrix",     GLSL_VEC4 },
+    { "u_DIffuseTexOffTurb",    GLSL_VEC4 },
+    
+    { "u_ColorGen",             GLSL_INT },
+    { "u_AlphaGen",             GLSL_INT },
+    { "u_Color",                GLSL_VEC4 },
+    { "u_BaseColor",            GLSL_VEC4 },
+    { "u_VertColor",            GLSL_VEC4 },
+
+    { "u_TCGen0",               GLSL_INT },
+    { "u_TCGen0Vector0",        GLSL_VEC3 },
+    { "u_TCGen0Vector1",        GLSL_VEC3 },
+
+    { "u_DeformGen",            GLSL_INT },
+    { "u_DeformParams",         GLSL_VEC5 },
+
+    { "u_AlphaTest",            GLSL_INT }
 };
 
 static shaderProgram_t *hashTable[MAX_RENDER_SHADERS];
@@ -55,7 +68,7 @@ static shaderCacheEntry_t *cacheHashTable;
 //
 static void R_InitShaderCache(void)
 {
-    cacheHashTable = ri.Malloc(sizeof(*cacheHashTable) * rg.numPrograms);
+    cacheHashTable = (shaderCacheEntry_t *)ri.Malloc( sizeof(*cacheHashTable) * rg.numPrograms );
     memset(cacheHashTable, 0, sizeof(cacheHashTable));
 
     for (uint64_t i = 0; i < rg.numPrograms; i++) {
@@ -377,6 +390,60 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
 
     N_strcat(dest, size, "#ifndef M_PI\n#define M_PI 3.14159265358979323846\n#endif\n");
 
+    N_strcat( dest, size, "#define USE_TCGEN\n" );
+//    N_strcat( dest, size, "#define USE_" );
+
+    /*
+    N_strcat(dest, size,
+					 va("#ifndef deformGen_t\n"
+						"#define deformGen_t\n"
+						"#define DGEN_WAVE_SIN %i\n"
+						"#define DGEN_WAVE_SQUARE %i\n"
+						"#define DGEN_WAVE_TRIANGLE %i\n"
+						"#define DGEN_WAVE_SAWTOOTH %i\n"
+						"#define DGEN_WAVE_INVERSE_SAWTOOTH %i\n"
+						"#define DGEN_BULGE %i\n"
+						"#define DGEN_MOVE %i\n"
+						"#endif\n",
+						DGEN_WAVE_SIN,
+						DGEN_WAVE_SQUARE,
+						DGEN_WAVE_TRIANGLE,
+						DGEN_WAVE_SAWTOOTH,
+						DGEN_WAVE_INVERSE_SAWTOOTH,
+						DGEN_BULGE,
+						DGEN_MOVE)); */
+
+	N_strcat(dest, size,
+					 va("#ifndef tcGen_t\n"
+						"#define tcGen_t\n"
+						"#define TCGEN_LIGHTMAP %i\n"
+						"#define TCGEN_TEXTURE %i\n"
+						"#define TCGEN_ENVIRONMENT_MAPPED %i\n"
+						"#define TCGEN_FOG %i\n"
+						"#define TCGEN_VECTOR %i\n"
+						"#endif\n",
+						TCGEN_LIGHTMAP,
+						TCGEN_TEXTURE,
+						TCGEN_ENVIRONMENT_MAPPED,
+						TCGEN_FOG,
+						TCGEN_VECTOR));
+
+	N_strcat(dest, size,
+					 va("#ifndef colorGen_t\n"
+						"#define colorGen_t\n"
+						"#define CGEN_LIGHTING_DIFFUSE %i\n"
+						"#endif\n",
+						CGEN_LIGHTING_DIFFUSE));
+
+	N_strcat(dest, size,
+							 va("#ifndef alphaGen_t\n"
+								"#define alphaGen_t\n"
+								"#define AGEN_LIGHTING_SPECULAR %i\n"
+								"#define AGEN_PORTAL %i\n"
+								"#endif\n",
+								AGEN_LIGHTING_SPECULAR,
+								AGEN_PORTAL));
+
     // OK we added a lot of stuff but if we do something bad in the GLSL shaders then we want the proper line
 	// so we have to reset the line counting
 	N_strcat(dest, size, "#line 0\n");
@@ -517,6 +584,9 @@ static void GLSL_InitUniforms(shaderProgram_t *program)
 		case GLSL_VEC4:
 			uniformBufferSize += sizeof(vec4_t);
 			break;
+        case GLSL_VEC5:
+            uniformBufferSize += sizeof(vec_t) * 5;
+            break;
 		case GLSL_MAT16:
 			uniformBufferSize += sizeof(mat4_t);
 			break;
@@ -525,7 +595,7 @@ static void GLSL_InitUniforms(shaderProgram_t *program)
 		};
 	}
 
-	program->uniformBuffer = ri.Malloc( uniformBufferSize );
+	program->uniformBuffer = (char *)ri.Malloc( uniformBufferSize );
 }
 
 static void GLSL_FinishGPUShader(shaderProgram_t *program)
@@ -537,24 +607,28 @@ static void GLSL_FinishGPUShader(shaderProgram_t *program)
 static void GLSL_DeleteGPUShader(shaderProgram_t *program)
 {
     if (program->programId) {
-        if (program->vertexId) {
+        if ( program->vertexId ) {
             nglDetachShader(program->programId, program->vertexId);
             nglDeleteShader(program->vertexId);
         }
-        if (program->fragmentId) {
+        if ( program->fragmentId ) {
             nglDetachShader(program->programId, program->fragmentId);
             nglDeleteShader(program->fragmentId);
         }
-        nglDeleteProgram(program->programId);
+        if ( program->uniformBuffer ) {
+            ri.Free( program->uniformBuffer );
+        }
 
-        memset(program, 0, sizeof(*program));
+        nglDeleteProgram( program->programId );
+
+        memset( program, 0, sizeof(*program) );
     }
 }
 
 void GLSL_SetUniformInt(shaderProgram_t *program, uint32_t uniformNum, GLint value)
 {
     GLint *uniforms = program->uniforms;
-    GLint *compare = (GLint *)(program->uniformBuffer + program->uniformBuffer[uniformNum]);
+    GLint *compare = (GLint *)(program->uniformBuffer + program->uniformBufferOffsets[uniformNum]);
 
     if (uniforms[uniformNum] == -1)
         return;
@@ -573,7 +647,7 @@ void GLSL_SetUniformInt(shaderProgram_t *program, uint32_t uniformNum, GLint val
 void GLSL_SetUniformFloat(shaderProgram_t *program, uint32_t uniformNum, GLfloat value)
 {
     GLint *uniforms = program->uniforms;
-    GLfloat *compare = (GLfloat *)(program->uniformBuffer + program->uniformBuffer[uniformNum]);
+    GLfloat *compare = (GLfloat *)(program->uniformBuffer + program->uniformBufferOffsets[uniformNum]);
 
     if (uniforms[uniformNum] == -1)
         return;
@@ -592,7 +666,7 @@ void GLSL_SetUniformFloat(shaderProgram_t *program, uint32_t uniformNum, GLfloat
 void GLSL_SetUniformVec2(shaderProgram_t *program, uint32_t uniformNum, const vec2_t v)
 {
     GLint *uniforms = program->uniforms;
-    vec_t *compare = (vec_t *)(program->uniformBuffer + program->uniformBuffer[uniformNum]);
+    vec_t *compare = (vec_t *)(program->uniformBuffer + program->uniformBufferOffsets[uniformNum]);
 
     if (uniforms[uniformNum] == -1)
         return;
@@ -612,7 +686,7 @@ void GLSL_SetUniformVec2(shaderProgram_t *program, uint32_t uniformNum, const ve
 void GLSL_SetUniformVec3(shaderProgram_t *program, uint32_t uniformNum, const vec3_t v)
 {
     GLint *uniforms = program->uniforms;
-    vec_t *compare = (vec_t *)(program->uniformBuffer + program->uniformBuffer[uniformNum]);
+    vec_t *compare = (vec_t *)(program->uniformBuffer + program->uniformBufferOffsets[uniformNum]);
 
     if (uniforms[uniformNum] == -1)
         return;
@@ -631,7 +705,7 @@ void GLSL_SetUniformVec3(shaderProgram_t *program, uint32_t uniformNum, const ve
 void GLSL_SetUniformVec4(shaderProgram_t *program, uint32_t uniformNum, const vec4_t v)
 {
     GLint *uniforms = program->uniforms;
-    vec_t *compare = (vec_t *)(program->uniformBuffer + program->uniformBuffer[uniformNum]);
+    vec_t *compare = (vec_t *)(program->uniformBuffer + program->uniformBufferOffsets[uniformNum]);
 
     if (uniforms[uniformNum] == -1)
         return;
@@ -640,17 +714,36 @@ void GLSL_SetUniformVec4(shaderProgram_t *program, uint32_t uniformNum, const ve
         ri.Printf(PRINT_INFO, COLOR_YELLOW "WARNING: GLSL_SetUniformVec4: wrong type for uniform %i in program %s\n", uniformNum, program->name);
         return;
     }
-    if (VectorCompare4(v, compare))
+    if ( VectorCompare4( v, compare ) )
         return;
     
-    VectorCopy4(compare, v);
+    VectorCopy4( compare, v );
     nglUniform4f(uniforms[uniformNum], v[0], v[1], v[2], v[3]);
+}
+
+void GLSL_SetUniformVec5( shaderProgram_t *program, uint32_t uniformNum, const float *v )
+{
+    GLint *uniforms = program->uniforms;
+    vec_t *compare = (vec_t *)(program->uniformBuffer + program->uniformBufferOffsets[uniformNum]);
+
+    if (uniforms[uniformNum] == -1)
+        return;
+    
+    if ( uniformsInfo[uniformNum].type != GLSL_VEC5 ) {
+        ri.Printf(PRINT_INFO, COLOR_YELLOW "WARNING: GLSL_SetUniformVec5: wrong type for uniform %i in program %s\n", uniformNum, program->name);
+        return;
+    }
+    if ( !memcmp( compare, v, sizeof(vec_t) * 5 ) )
+        return;
+    
+    memcpy( compare, v, sizeof(vec_t) * 5 );
+    nglUniform1fv(uniforms[uniformNum], 5, v);
 }
 
 void GLSL_SetUniformMatrix4(shaderProgram_t *program, uint32_t uniformNum, const mat4_t m)
 {
     GLint *uniforms = program->uniforms;
-    mat4_t *compare = (mat4_t *)(program->uniformBuffer + program->uniformBuffer[uniformNum]);
+    mat4_t *compare = (mat4_t *)(program->uniformBuffer + program->uniformBufferOffsets[uniformNum]);
 
     if (uniforms[uniformNum] == -1)
         return;

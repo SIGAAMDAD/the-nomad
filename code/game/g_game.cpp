@@ -4,6 +4,7 @@
 #include "../rendercommon/imgui.h"
 #include "../rendercommon/imgui_impl_sdl2.h"
 #include "../rendercommon/imgui_impl_opengl3.h"
+#include "imgui_memory_editor.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -119,7 +120,7 @@ static qboolean G_LoadLevelFile( const char *filename, mapinfoReal_t *info )
     }
 
     info->numTiles = header->map.lumps[LUMP_TILES].length / sizeof(maptile_t);
-    info->tiles = (maptile_t *)Z_Malloc( header->map.lumps[LUMP_TILES].length, TAG_GAME );
+    info->tiles = (maptile_t *)Hunk_Alloc( header->map.lumps[LUMP_TILES].length, h_high );
 
     memcpy( info->tiles, (byte *)header + header->map.lumps[LUMP_TILES].fileofs, sizeof(maptile_t) * info->numTiles );
 
@@ -133,6 +134,7 @@ static void G_InitMapCache( void )
     bmf_t header;
     nhandle_t file;
     mapinfoReal_t *info;
+    uint64_t i;
 
     Con_Printf( "Caching map files...\n" );
 
@@ -147,11 +149,11 @@ static void G_InitMapCache( void )
     Con_Printf( "Got %lu map files\n", gi.mapCache.numMapFiles );
 
     // allocate the info
-    gi.mapCache.infoList = (mapinfoReal_t *)Z_Malloc( sizeof(mapinfoReal_t) * gi.mapCache.numMapFiles, TAG_GAME );
+    gi.mapCache.infoList = (mapinfoReal_t *)Hunk_Alloc( sizeof(mapinfoReal_t) * gi.mapCache.numMapFiles, h_high );
 
     info = gi.mapCache.infoList;
-    for (uint64_t i = 0; i < gi.mapCache.numMapFiles; i++, info++) {
-        if (!G_LoadLevelFile( gi.mapCache.mapList[i], info )) {
+    for ( i = 0; i < gi.mapCache.numMapFiles; i++, info++ ) {
+        if ( !G_LoadLevelFile( gi.mapCache.mapList[i], info ) ) {
             N_Error( ERR_DROP, "G_InitMapCache: failed to load map file '%s'", gi.mapCache.mapList[i] );
         }
     }
@@ -159,7 +161,7 @@ static void G_InitMapCache( void )
 
 static void G_MapInfo_f( void ) {
     Con_Printf( "---------- Map Info ----------\n" );
-    for (uint64_t i = 0; i < gi.mapCache.numMapFiles; i++) {
+    for ( uint64_t i = 0; i < gi.mapCache.numMapFiles; i++ ) {
         Con_Printf( "[Map %lu] >\n", i );
         Con_Printf( "Name: %s\n", gi.mapCache.infoList[i].info.name );
         Con_Printf( "Checkpoint Count: %i\n", gi.mapCache.infoList[i].info.numCheckpoints );
@@ -182,7 +184,7 @@ static SDL_Thread *PFN_SDL_CreateThreadWithStackSize(SDL_ThreadFunction fn, cons
 #endif
 #endif
 
-static void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL G_RefPrintf(int level, const char *fmt, ...)
+static void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL G_RefPrintf( int level, const char *fmt, ... )
 {
     va_list argptr;
     char msg[MAXPRINTMSG];
@@ -227,13 +229,18 @@ static void G_RefImGuiFree(void *ptr, void *) {
 static void G_RefImGuiShutdown(void) {
     ImGuiIO& io = ImGui::GetIO();
     io.BackendRendererName = NULL;
+    io.BackendRendererUserData = NULL;
     io.BackendLanguageUserData = NULL;
+    io.BackendFlags = ImGuiBackendFlags_None;
+
+    FontCache()->ClearCache();
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
 
-    // G_RefFreeAll will clean all the imgui stuff up
+    // clean everything up
+    Z_FreeTags( TAG_IMGUI, TAG_IMGUI );
 }
 
 static void G_RefImGuiNewFrame(void) {
@@ -243,24 +250,20 @@ static void G_RefImGuiNewFrame(void) {
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     io.DisplaySize.x = r_customWidth->i;
     io.DisplaySize.y = r_customHeight->i;
-    io.DeltaTime = com_maxfps->i;
+    io.DeltaTime = 1.0 / com_maxfps->i;
+    io.Fonts->Flags |= ImFontAtlasFlags_NoBakedLines;
 
     ImGuiStyle& style = ImGui::GetStyle();
 
     switch ((antialiasType_t)r_multisample->i) {
-    case AntiAlias_2xMSAA:
-        style.AntiAliasedLinesUseTex = true;
-        break;
     case AntiAlias_4xMSAA:
     case AntiAlias_8xMSAA:
         style.AntiAliasedFill = true;
-        style.AntiAliasedLinesUseTex = true;
         break;
     case AntiAlias_16xMSAA:
     case AntiAlias_32xMSAA:
         style.AntiAliasedLines = true;
         style.AntiAliasedFill = true;
-        style.AntiAliasedLinesUseTex = true;
         break;
     default:
         // its ssaa
@@ -274,7 +277,7 @@ static void G_RefImGuiNewFrame(void) {
 
 static void G_RefImGuiDraw(void) {
     ImGui::Render();
-    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
 }
 
 static void G_SetScaling(float factor, uint32_t captureWidth, uint32_t captureHeight)
@@ -303,6 +306,14 @@ static void G_RefImGuiInit(void *shaderData, const void *importData) {
     IMGUI_CHECKVERSION();
     ImGui::SetAllocatorFunctions((ImGuiMemAllocFunc)G_RefImGuiMalloc, (ImGuiMemFreeFunc)G_RefImGuiFree);
     ImGui::CreateContext();
+
+    ImGuiIO& io = ImGui::GetIO();
+
+    io.BackendPlatformName = OS_STRING;
+
+    // init font cache
+    g_pFontCache = (CUIFontCache *)Hunk_Alloc( sizeof(*g_pFontCache), h_low );
+    ::new ( g_pFontCache ) CUIFontCache();
 
     if (!N_stricmp( g_renderer->s, "opengl" )) {
         ImGui_ImplSDL2_InitForOpenGL( r_window, r_GLcontext );
@@ -362,7 +373,7 @@ static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, mat4_t vpm )
 
     memcpy( &viewProjectionMatrix[0][0], &vpm[0][0], sizeof(mat4_t) );
 
-    model = glm::translate( glm::mat4( viewProjectionMatrix ), glm::vec3( world[0], world[1], world[2] ) );
+    model = glm::translate( viewProjectionMatrix, glm::vec3( world[0], world[1], world[2] ) );
     mvp = viewProjectionMatrix * model;
 
     const glm::vec4 positions[4] = {
@@ -376,6 +387,19 @@ static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, mat4_t vpm )
         pos = mvp * positions[i];
         VectorCopy( xyz[i], pos );
     }
+}
+
+static void GLM_MakeVPMQuake3( mat4_t vpm, mat4_t projection, mat4_t view )
+{
+    glm::mat4 viewProjectionMatrix, viewMatrix, projectionMatrix;
+
+    memcpy( &projectionMatrix[0][0], &projection[0][0], sizeof(mat4_t) );
+
+    viewMatrix = glm::translate( glm::mat4( 1.0f ), glm::vec3( 0.0f ) );
+    viewProjectionMatrix = projectionMatrix * viewMatrix;
+
+    memcpy( &vpm[0][0], &viewProjectionMatrix[0][0], sizeof(mat4_t) );
+    memcpy( &view[0][0], &viewMatrix[0][0], sizeof(mat4_t) );
 }
 
 static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, const glm::mat4& vpm )
@@ -508,6 +532,7 @@ static void G_InitRenderRef(void)
 
     import.GLM_TransformToGL = GLM_TransformToGL;
     import.GLM_MakeVPM = GLM_MakeVPM;
+    import.GLM_MakeVPMQuake3 = GLM_MakeVPMQuake3;
 
     import.Milliseconds = Sys_Milliseconds;
 
@@ -546,7 +571,7 @@ static void G_InitRenderRef(void)
 
     ret = GetRenderAPI( NOMAD_VERSION_FULL, &import );
 
-    Con_Printf( "-------------------------------\n");
+    Con_Printf( "-------------------------------\n" );
 	if ( !ret ) {
 		N_Error (ERR_FATAL, "Couldn't initialize refresh" );
 	}
@@ -554,54 +579,36 @@ static void G_InitRenderRef(void)
     re = *ret;
 }
 
-static void G_InitRenderer(void)
+static void G_InitRenderer( void )
 {
-    if (!re.BeginRegistration) {
+    if ( !re.BeginRegistration ) {
         G_InitRenderRef();
     }
 
-    re.BeginRegistration(&gi.gpuConfig);
+    re.BeginRegistration( &gi.gpuConfig );
 
     // load the character sets
     gi.charSetShader = re.RegisterShader("gfx/bigchars");
     gi.whiteShader = re.RegisterShader("white");
     gi.consoleShader = re.RegisterShader("console");
-
-    Con_CheckResize();
-
-    g_console_field_width = ((gi.gpuConfig.vidWidth / smallchar_width)) - 2;
-    g_consoleField.widthInChars = g_console_field_width;
-
-    // for 640x480 virtualized screen
-    gi.biasX = 0;
-    gi.biasY = 0;
-    if ( gi.gpuConfig.vidWidth * 480 > gi.gpuConfig.vidHeight * 640 ) {
-		// wide screen, scale by height
-		gi.scale = gi.gpuConfig.vidHeight * (1.0/480.0);
-		gi.biasX = 0.5 * ( gi.gpuConfig.vidWidth - ( gi.gpuConfig.vidHeight * (640.0/480.0) ) );
-	} else {
-		// no wide screen, scale by width
-		gi.scale = gi.gpuConfig.vidWidth * (1.0/640.0);
-		gi.biasY = 0.5 * ( gi.gpuConfig.vidHeight - ( gi.gpuConfig.vidWidth * (480.0/640) ) );
-	}
 }
 
-void G_ShutdownRenderer(refShutdownCode_t code)
+void G_ShutdownRenderer( refShutdownCode_t code )
 {
-    if (g_renderer && g_renderer->modified) {
+    if ( g_renderer && g_renderer->modified ) {
         code = REF_UNLOAD_DLL;
     }
 
-    if (re.Shutdown) {
-        re.Shutdown(code);
+    if ( re.Shutdown ) {
+        re.Shutdown( code );
     }
 
-    if (renderLib) {
-        Sys_CloseDLL(renderLib);
+    if ( renderLib ) {
+        Sys_CloseDLL( renderLib );
         renderLib = NULL;
     }
 
-    memset(&re, 0, sizeof(re));
+    memset( &re, 0, sizeof(re) );
 
     gi.rendererStarted = qfalse;
 }
@@ -627,6 +634,17 @@ static void G_Vid_Restart(refShutdownCode_t code)
 
     // make sure all sounds have updated volumes
     Cbuf_ExecuteText( EXEC_APPEND, "updatevolume\n" );
+}
+
+/*
+* G_ViewMemory_f: use imgui's memory editor to look at the game's heap memory usage
+* NOTE: only really use this for debugging
+*/
+static void G_ViewMemory_f( void ) {
+    gi.oldState = gi.state;
+    gi.state = GS_MEMORY_VIEW;
+
+    Con_Printf( "Viewing memory of hunk block.\n" );
 }
 
 static void G_PlayDemo_f(void)
@@ -760,6 +778,32 @@ static void G_TogglePhotoMode_f( void ) {
     Con_Printf( "Toggle Photo Mode: %s\n", gi.togglePhotomode ? "on" : "off" );
 }
 
+static void G_LogGamestate_f( void ) {
+    const char *state;
+    switch ( gi.state ) {
+    case GS_LEVEL:
+        state = "GS_LEVEL";
+        break;
+    case GS_INACTIVE:
+        state = "GS_INACTIVE";
+        break;
+    case GS_MEMORY_VIEW:
+        state = "GS_MEMORY_VIEW";
+        break;
+    case GS_PAUSE:
+        state = "GS_PAUSE";
+        break;
+    case GS_MENU:
+        state = "GS_MENU";
+        break;
+    case GS_SETTINGS:
+        state = "GS_SETTINGS";
+        break;
+    };
+
+    Con_Printf( "Current Gamestate: %s\n", state );
+}
+
 //
 // G_Init: called every time a new level is loaded
 //
@@ -790,7 +834,7 @@ void G_Init(void)
 	r_swapInterval = Cvar_Get( "r_swapInterval", "1", CVAR_SAVE | CVAR_LATCH );
 	Cvar_SetDescription( r_swapInterval,
                         "V-blanks to wait before swapping buffers."
-                        "\n 0: No V-Sync\n 1: Synced to the monitor's refresh rate.\n -1: Adaptive V-Sync" );
+                        "\n  0: No V-Sync\n  1: Synced to the monitor's refresh rate.\n -1: Adaptive V-Sync" );
     
 	r_displayRefresh = Cvar_Get( "r_displayRefresh", "0", CVAR_LATCH );
 	Cvar_CheckRange( r_displayRefresh, "0", "500", CVT_INT );
@@ -873,18 +917,17 @@ void G_Init(void)
     Cvar_CheckRange( g_paused, "0", "1", CVT_INT );
     Cvar_SetDescription( g_paused, "Set to 1 when in the pause menu." );
 
-    g_renderer = Cvar_Get("g_renderer", "opengl", CVAR_SAVE | CVAR_LATCH);
-    Cvar_SetDescription(g_renderer,
+    g_renderer = Cvar_Get( "g_renderer", "opengl", CVAR_SAVE | CVAR_LATCH );
+    Cvar_SetDescription( g_renderer,
                         "Set your desired renderer, valid options: opengl, vulkan\n"
-                        "NOTICE: Vulkan rendering not supported yet...\n"
+                        "NOTICE: Vulkan rendering not supported yet... *will be tho soon :)*\n"
                         "requires \\vid_restart when changed"
                         );
     
-    if (!isValidRenderer(g_renderer->s)) {
-        Cvar_ForceReset("g_renderer");
+    
+    if ( !isValidRenderer( g_renderer->s ) ) {
+        Cvar_ForceReset( "g_renderer" );
     }
-
-    Con_Init();
 
     // init sound
     Snd_Init();
@@ -893,6 +936,9 @@ void G_Init(void)
     // init renderer
     G_InitRenderer();
     gi.rendererStarted = qtrue;
+
+    // init developer console
+    Con_Init();
 
     //
     // register game commands
@@ -905,6 +951,8 @@ void G_Init(void)
     Cmd_AddCommand( "maplist", G_MapInfo_f );
     Cmd_AddCommand( "vm_restart", G_VM_Restart_f );
     Cmd_AddCommand( "togglephotomode", G_TogglePhotoMode_f );
+    Cmd_AddCommand( "viewmemory", G_ViewMemory_f );
+    Cmd_AddCommand( "gamestate", G_LogGamestate_f );
 
     G_InitInput();
 
@@ -916,11 +964,11 @@ void G_Shutdown(qboolean quit)
     static qboolean recursive = qfalse;
 
     if ( !recursive ) {
-        Con_Printf("----- Game State Shutdown (%s) ----\n", quit ? "quit" : "restart");
+        Con_Printf( "----- Game State Shutdown (%s) ----\n", quit ? "quit" : "restart" );
     }
 
-    if (recursive) {
-        Con_Printf("WARNING: recursive G_Shutdown\n");
+    if ( recursive ) {
+        Con_Printf( "WARNING: recursive G_Shutdown\n" );
         return;
     }
     recursive = qtrue;
@@ -931,7 +979,7 @@ void G_Shutdown(qboolean quit)
     Con_Shutdown();
 
     G_ShutdownVMs();
-    G_ShutdownRenderer(quit ? REF_UNLOAD_DLL : REF_DESTROY_WINDOW);
+    G_ShutdownRenderer( quit ? REF_UNLOAD_DLL : REF_DESTROY_WINDOW );
 
     Cmd_RemoveCommand( "demo" );
     Cmd_RemoveCommand( "vid_restart" );
@@ -940,21 +988,21 @@ void G_Shutdown(qboolean quit)
     Cmd_RemoveCommand( "maplist" );
     Cmd_RemoveCommand( "vm_restart" );
     Cmd_RemoveCommand( "togglephotomode" );
+    Cmd_RemoveCommand( "viewmemory" );
+    Cmd_RemoveCommand( "gamestate" );
 
     G_ShutdownInput();
 
     Key_SetCatcher( 0 );
-    Con_Printf( "-------------------------------\n");
+    Con_Printf( "-------------------------------\n" );
 }
 
-void G_InitUI( void )
-{
-    Key_SetCatcher(KEYCATCH_UI);
+void G_InitUI( void ) {
+    Key_SetCatcher( KEYCATCH_UI );
     UI_Init();
 }
 
-void G_FlushMemory(void)
-{
+void G_FlushMemory( void ) {
     // shutdown all game state stuff
     G_ShutdownAll();
 
@@ -963,8 +1011,7 @@ void G_FlushMemory(void)
     G_StartHunkUsers();
 }
 
-void G_ShutdownVMs(void)
-{
+void G_ShutdownVMs( void ) {
     G_ShutdownSGame();
     G_ShutdownUI();
 
@@ -972,33 +1019,33 @@ void G_ShutdownVMs(void)
     gi.sgameStarted = qfalse;
 }
 
-void G_StartHunkUsers(void)
+void G_StartHunkUsers( void )
 {
-    // set the marker before loading any map assets
-    Hunk_SetMark();
-
-    if (!gi.rendererStarted) {
+    if ( !gi.rendererStarted ) {
         gi.rendererStarted = qtrue;
         G_InitRenderer();
     }
-    if (!gi.soundStarted) {
+    if ( !gi.soundStarted ) {
         gi.soundStarted = qtrue;
         Snd_Init();
     }
-    if (!gi.sgameStarted) {
+    if ( !gi.sgameStarted ) {
         gi.sgameStarted = qtrue;
         G_InitSGame();
     }
-    if (!gi.uiStarted) {
+    if ( !gi.uiStarted ) {
         gi.uiStarted = qtrue;
         G_InitUI();
     }
+
+    // set the marker before loading any map assets
+    Hunk_SetMark();
 
     // cache all maps
     G_InitMapCache();
 }
 
-void G_ShutdownAll(void)
+void G_ShutdownAll( void )
 {
     // clear and mute all sounds until next registration
     Snd_StopAll();
@@ -1007,12 +1054,12 @@ void G_ShutdownAll(void)
     G_ShutdownVMs();
 
     // shutdown the renderer
-    if (re.Shutdown) {
-        if (!com_errorEntered) {
-            G_ShutdownRenderer(REF_DESTROY_WINDOW); // shutdown renderer & window
+    if ( re.Shutdown ) {
+        if ( !com_errorEntered ) {
+            G_ShutdownRenderer( REF_DESTROY_WINDOW ); // shutdown renderer & window
         }
         else {
-            re.Shutdown(REF_KEEP_CONTEXT); // don't destroy the window or context, kill the buffers tho
+            re.Shutdown( REF_KEEP_CONTEXT ); // don't destroy the window or context, kill the buffers tho
         }
     }
 
@@ -1020,8 +1067,11 @@ void G_ShutdownAll(void)
     gi.soundStarted = qfalse;
 }
 
-void G_ClearState(void) {
-    memset(&gi, 0, sizeof(gi));
+/*
+* G_ClearState: clears current gamestate
+*/
+void G_ClearState( void ) {
+    memset( &gi, 0, sizeof(gi) );
 }
 
 qboolean G_CheckPaused( void ) {
@@ -1032,16 +1082,15 @@ qboolean G_CheckPaused( void ) {
 }
 
 /*
-G_Restart: restarts the hunk memory and all the users
+* G_Restart: restarts the hunk memory and all the users
 */
-void G_Restart(void)
-{
-    G_Shutdown(qfalse);
+void G_Restart( void ) {
+    G_Shutdown( qfalse );
     G_Init();
 }
 
 /*
-G_ClearMem: clears all the game's hunk memory
+* G_ClearMem: clears all the game's hunk memory
 */
 void G_ClearMem(void)
 {
@@ -1049,7 +1098,7 @@ void G_ClearMem(void)
     Z_FreeTags( TAG_GAME, TAG_GAME );
 
     // if not in a level, clear the whole hunk
-    if (!gi.mapLoaded) {
+    if ( !gi.mapLoaded ) {
         // clear the whole hunk
         Hunk_Clear();
     }
@@ -1061,7 +1110,7 @@ void G_ClearMem(void)
 
 static void G_MoveCamera( void )
 {
-    if (!r_debugCamera->i) {
+    if ( !r_debugCamera->i ) {
         return;
     }
 
@@ -1100,14 +1149,28 @@ void G_Frame(int32_t msec, int32_t realMsec)
     // update sound
     Snd_Update( gi.realtime );
 
-    G_MoveCamera();
+    if ( gi.state == GS_MEMORY_VIEW ) {
+        if ( keys[KEY_ESCAPE].down ) {
+            // exit
+            gi.state = gi.oldState;
+            return;
+        }
 
-    // generate a new user command for the frame
-    if ( gi.state == GS_LEVEL && sgvm ) {
-        const usercmd_t cmd = G_CreateNewCommand();
-        VM_Call( sgvm, 3, SGAME_SEND_USER_CMD, cmd.rightmove, cmd.forwardmove, cmd.upmove );
+        // get a peek at the hunk
+        extern byte *hunkbase;
+        extern uint64_t hunksize;
+
+        static MemoryEditor memEditor;
+        memEditor.DrawWindow( "Hunk Memory", hunkbase, hunksize, (uintptr_t)hunkbase );
+    } else {
+        G_MoveCamera();
+
+        // generate a new user command for the frame
+        if ( gi.state == GS_LEVEL && sgvm ) {
+            const usercmd_t cmd = G_CreateNewCommand();
+            VM_Call( sgvm, 3, SGAME_SEND_USER_CMD, cmd.rightmove, cmd.forwardmove, cmd.upmove );
+        }
     }
-
     Con_RunConsole();
 
     // update the screen

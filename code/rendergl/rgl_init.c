@@ -1,4 +1,6 @@
 #include "rgl_local.h"
+
+typedef uintptr_t ImDrawData;
 #include "../rendercommon/imgui_impl_opengl3.h"
 
 #define NGL( ret, name, ... ) PFN ## name n ## name = NULL;
@@ -16,6 +18,7 @@ NGL_VertexShaderARB_Procs
 
 NGL_ARB_buffer_storage
 NGL_ARB_map_buffer_range
+NGL_ARB_sync
 #undef NGL
 
 // because they're edgy...
@@ -63,6 +66,17 @@ cvar_t *r_clear;
 cvar_t *r_drawBuffer;
 cvar_t *r_customWidth;
 cvar_t *r_customHeight;
+cvar_t *r_mappedBuffers;
+cvar_t *r_glDiagnostics;
+cvar_t *r_pbr;
+cvar_t *r_baseNormalX;
+cvar_t *r_baseNormalY;
+cvar_t *r_baseParallax;
+cvar_t *r_baseSpecular;
+cvar_t *r_baseGloss;
+cvar_t *r_lightmap;
+cvar_t *r_zproj;
+cvar_t *r_stereoSeparation;
 
 cvar_t *r_maxQuads;
 cvar_t *r_maxPolys;
@@ -80,6 +94,7 @@ cvar_t *r_arb_vertex_array_object;
 cvar_t *r_arb_vertex_buffer_object;
 cvar_t *r_arb_texture_filter_anisotropic;
 cvar_t *r_arb_texture_float;
+cvar_t *r_arb_sync;
 
 renderGlobals_t rg;
 glstate_t glState;
@@ -505,6 +520,9 @@ static void R_Register(void)
     r_arb_vertex_buffer_object = ri.Cvar_Get("r_arb_vertex_buffer_object", "1", CVAR_SAVE | CVAR_LATCH);
     ri.Cvar_SetDescription(r_arb_vertex_buffer_object, "Enables use of hardware accelerated vertex and index rendering.");
 
+    r_arb_sync = ri.Cvar_Get( "r_arb_sync", "0", CVAR_SAVE | CVAR_LATCH );
+    ri.Cvar_CheckRange( r_arb_sync, "0", "1", CVT_INT );
+
     r_arb_texture_filter_anisotropic = ri.Cvar_Get("r_arb_texture_filter_anisotropic", "1", CVAR_SAVE | CVAR_LATCH);
     ri.Cvar_SetDescription(r_arb_texture_filter_anisotropic, "Enabled anisotropic filtering.");
     r_arb_texture_float = ri.Cvar_Get("r_arb_texture_float", "1", CVAR_SAVE | CVAR_LATCH);
@@ -543,9 +561,16 @@ static void R_Register(void)
     ri.Cvar_SetDescription( r_hdr, "Do scene rendering in a framebuffer with high dynamic range." );
     r_ssao = ri.Cvar_Get( "r_ssao", "0", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_ssao, "Enable screen-space ambient occlusion." );
+    r_pbr = ri.Cvar_Get( "r_pbr", "0", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_pbr, "Enable physically based rendering." );
+    r_baseNormalX = ri.Cvar_Get( "r_baseNormalX", "1.0", CVAR_SAVE | CVAR_LATCH );
+	r_baseNormalY = ri.Cvar_Get( "r_baseNormalY", "1.0", CVAR_SAVE | CVAR_LATCH );
+	r_baseParallax = ri.Cvar_Get( "r_baseParallax", "0.05", CVAR_SAVE | CVAR_LATCH );
+	r_baseSpecular = ri.Cvar_Get( "r_baseSpecular", "0.04", CVAR_SAVE | CVAR_LATCH );
+	r_baseGloss = ri.Cvar_Get( "r_baseGloss", "0.3", CVAR_SAVE | CVAR_LATCH );
 
     r_greyscale = ri.Cvar_Get("r_greyscale", "0", CVAR_SAVE | CVAR_LATCH);
-	ri.Cvar_CheckRange( r_greyscale, "0", "1", CVT_FLOAT );
+	ri.Cvar_CheckRange( r_greyscale, "0", "1", CVT_INT );
 	ri.Cvar_SetDescription( r_greyscale, "Desaturates rendered frame." );
 
 	r_externalGLSL = ri.Cvar_Get( "r_externalGLSL", "0", CVAR_LATCH );
@@ -556,6 +581,14 @@ static void R_Register(void)
 
     r_ignoreDstAlpha = ri.Cvar_Get( "r_ignoreDstAlpha", "1", CVAR_SAVE | CVAR_LATCH );
 
+#ifdef _NOMAD_DEBUG
+    r_glDiagnostics = ri.Cvar_Get( "r_gpuDiagnostics", "1", CVAR_SAVE | CVAR_LATCH );
+#else
+    r_glDiagnostics = ri.Cvar_Get( "r_gpuDiagnostics", "0", CVAR_SAVE | CVAR_LATCH );
+#endif
+    ri.Cvar_CheckRange( r_glDiagnostics, "0", "1", CVT_INT );
+    ri.Cvar_SetDescription( r_glDiagnostics, "Toggles display of gpu per-frame statistics." );
+
     //
     // temporary latched variables that can only change over a restart
     //
@@ -565,6 +598,12 @@ static void R_Register(void)
 	ri.Cvar_SetDescription( r_intensity, "Global texture lighting scale." );
 	r_singleShader = ri.Cvar_Get("r_singleShader", "0", CVAR_CHEAT | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_singleShader, "Debugging tool that only uses the default shader for all rendering." );
+
+    //
+    // temporary variables that can change at any time
+    //
+    r_lightmap = ri.Cvar_Get( "r_lightmap", "0", 0 );
+	ri.Cvar_SetDescription( r_lightmap, "Show only lightmaps on all world surfaces." );
 
 
     //
@@ -589,9 +628,13 @@ static void R_Register(void)
 	r_roundImagesDown = ri.Cvar_Get("r_roundImagesDown", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_roundImagesDown, "When images are scaled, round images down instead of up." );
 
-    r_gammaAmount = ri.Cvar_Get("r_gammaAmount", "1", CVAR_SAVE | CVAR_LATCH);
-    ri.Cvar_CheckRange(r_gammaAmount, "0.5", "3", CVT_FLOAT);
-    ri.Cvar_SetDescription(r_gammaAmount, "Gamma correction factor.");
+    r_mappedBuffers = ri.Cvar_Get( "r_mappedBuffers", "0", CVAR_SAVE | CVAR_LATCH );
+    ri.Cvar_CheckRange( r_mappedBuffers, "0", "1", CVT_INT );
+    ri.Cvar_SetDescription( r_mappedBuffers, "Toggles whether or not vertex and index buffer data is mapped into cpu memory." );
+
+    r_gammaAmount = ri.Cvar_Get( "r_gammaAmount", "1", CVAR_SAVE | CVAR_LATCH );
+    ri.Cvar_CheckRange( r_gammaAmount, "0.5", "3", CVT_FLOAT );
+    ri.Cvar_SetDescription( r_gammaAmount, "Gamma correction factor." );
 
     r_printShaders = ri.Cvar_Get( "r_printShaders", "0", 0 );
 	ri.Cvar_SetDescription( r_printShaders, "Debugging tool to print on console of the number of shaders used." );
@@ -625,6 +668,10 @@ static void R_Register(void)
     r_znear = ri.Cvar_Get( "r_znear", "4", CVAR_CHEAT );
 	ri.Cvar_CheckRange( r_znear, "0.001", "200", CVT_FLOAT );
 	ri.Cvar_SetDescription( r_znear, "Viewport distance from view origin (how close objects can be to the player before they're clipped out of the scene)." );
+	r_zproj = ri.Cvar_Get( "r_zproj", "64", CVAR_SAVE );
+	ri.Cvar_SetDescription( r_zproj, "Projected viewport frustum." );
+	r_stereoSeparation = ri.Cvar_Get( "r_stereoSeparation", "64", CVAR_SAVE );
+	ri.Cvar_SetDescription( r_stereoSeparation, "Control eye separation. Resulting separation is \\r_zproj divided by this value in standard units." );
 
     r_measureOverdraw = ri.Cvar_Get("r_measureOverdraw", "0", CVAR_DEV);
     r_ignoreGLErrors = ri.Cvar_Get("r_ignoreGLErrors", "1", CVAR_LATCH);
@@ -633,11 +680,22 @@ static void R_Register(void)
     ri.Cvar_SetDescription( r_drawBuffer, "Sets which frame buffer to draw into." );
 
     r_maxQuads = ri.Cvar_Get( "r_maxQuads", va("%lu", (uint64_t)MAX_BATCH_QUADS), CVAR_LATCH | CVAR_PROTECTED );
+    ri.Cvar_CheckRange( r_maxQuads, va( "%i", 1024 ), va( "%lu", ( MAX_INT / sizeof(srfQuad_t) ) ), CVT_INT );
     ri.Cvar_SetDescription( r_maxQuads, "Sets the maximum amount of quad polygons that can be processed per scene.\n"
                                         "NOTE: tehree can be multiple scenes rendered in a single frame." );
-    r_maxPolys = ri.Cvar_Get("r_maxPolys", va("%lu", (uint64_t)MAX_BATCH_QUADS), CVAR_LATCH | CVAR_PROTECTED);
+    if ( r_maxQuads->i == MAX_INT / sizeof(srfQuad_t) ) {
+        ri.Printf( PRINT_WARNING, "\n**********\n" COLOR_RED "BRU\n" COLOR_RED "**********\n" );
+    }
+
+    r_maxPolys = ri.Cvar_Get( "r_maxPolys", va( "%i", MAX_BATCH_QUADS ), CVAR_LATCH | CVAR_PROTECTED );
+    ri.Cvar_CheckRange( r_maxPolys, va( "%i", MAX_BATCH_QUADS ), va( "%lu", ( MAX_INT / sizeof(srfPoly_t) ) ), CVT_INT );
     ri.Cvar_SetDescription(r_maxPolys, "Sets the maximum amount of polygons that can be processed per scene.\n"
                                         "NOTE: there can be multiple scenes rendered in a single frame.");
+    
+    if ( r_maxPolys->i == MAX_INT / sizeof(srfPoly_t) ) {
+        ri.Printf( PRINT_WARNING, "\n**********\n" COLOR_RED "BRU\n" COLOR_RED "**********\n" );
+    }
+
     r_maxDLights = ri.Cvar_Get( "r_maxDLights", va("%lu", (uint64_t)MAX_DLIGHTS), CVAR_LATCH | CVAR_PROTECTED );
     ri.Cvar_SetDescription( r_maxDLights, "Sets the maximum amount of dynamic lights that can be processed per scene.\n"
                                             "NOTE: there can be multiple scenes rendered in a single frame." );
@@ -647,11 +705,11 @@ static void R_Register(void)
 
     // make sure all commands added here are also
     // removed in R_Shutdown
-    ri.Cmd_AddCommand("texturelist", R_ImageList_f);
-//    ri.Cmd_AddCommand("shaderlist", R_ShaderList_f);
-    ri.Cmd_AddCommand("screenshot", R_ScreenShot_f);
-    ri.Cmd_AddCommand("gpuinfo", GpuInfo_f);
-    ri.Cmd_AddCommand("gpumeminfo", GpuMemInfo_f);
+    ri.Cmd_AddCommand( "texturelist", R_ImageList_f );
+    ri.Cmd_AddCommand( "shaderlist", R_ShaderList_f );
+    ri.Cmd_AddCommand("screenshot", R_ScreenShot_f );
+    ri.Cmd_AddCommand( "gpuinfo", GpuInfo_f );
+    ri.Cmd_AddCommand( "gpumeminfo", GpuMemInfo_f );
 }
 
 static void R_InitGLContext(void)
@@ -763,6 +821,21 @@ static void R_InitGLContext(void)
     R_InitExtensions();
 }
 
+static void RE_GetTextureId( nhandle_t hShader, uint32_t stageNum, uint32_t *id )
+{
+    shader_t *shader;
+
+    shader = R_GetShaderByHandle( hShader );
+
+    if ( !shader ) {
+        ri.Printf( PRINT_WARNING, "RE_GetTextureId: Invalid shader given" );
+        *id = 0;
+        return;
+    }
+
+    *id = shader->stages[stageNum]->bundle[0].image->id;
+}
+
 static void R_InitImGui(void)
 {
     imguiGL3Import_t import;
@@ -814,28 +887,61 @@ static void R_InitImGui(void)
     import.glAlphaFunc = nglAlphaFunc;
     import.glClear = nglClear;
 
+    import.DrawShaderStages = RB_DrawShaderStages;
+    import.GetTextureId = RE_GetTextureId;
+    import.GetShaderByHandle = (void *(*)( nhandle_t )) R_GetShaderByHandle;
+
     ri.ImGui_Init((void *)(uintptr_t)rg.imguiShader.programId, &import);
 }
 
 static void R_AllocBackend( void ) {
     uint64_t size;
+    uint64_t polyVertBytes;
+    uint64_t polyBytes;
+    uint64_t indexBytes;
+    uint64_t dlightBytes;
+    uint64_t entityBytes;
+    
+    if ( r_maxPolys->i < MAX_BATCH_QUADS ) {
+        ri.Cvar_Set( "r_maxPolys", va( "%i", MAX_BATCH_QUADS ) );
+    }
+
+    polyVertBytes = PAD( sizeof(polyVert_t) * r_maxPolys->i * 4, sizeof(uintptr_t) );
+    polyBytes = PAD( sizeof(srfPoly_t) * r_maxPolys->i, sizeof(uintptr_t) );
+    indexBytes = PAD( sizeof(glIndex_t) * r_maxPolys->i * 6, sizeof(uintptr_t) );
+    entityBytes = PAD( sizeof(renderEntityDef_t) * r_maxEntities->i, sizeof(uintptr_t) );
+    dlightBytes = PAD( sizeof(dlight_t) * r_maxDLights->i, sizeof(uintptr_t) );
 
     size = 0;
-    size += PAD( sizeof(*backendData), sizeof(uintptr_t) );
-    size += PAD( sizeof(srfPoly_t) * r_maxPolys->i, sizeof(uintptr_t) );
+    size += PAD( sizeof(renderBackendData_t), sizeof(uintptr_t) );
     size += PAD( sizeof(polyVert_t) * r_maxPolys->i * 4, sizeof(uintptr_t) );
+    size += PAD( sizeof(srfPoly_t) * r_maxPolys->i, sizeof(uintptr_t) );
     size += PAD( sizeof(glIndex_t) * r_maxPolys->i * 6, sizeof(uintptr_t) );
     size += PAD( sizeof(renderEntityDef_t) * r_maxEntities->i, sizeof(uintptr_t) );
-    size += PAD( sizeof(dlight_t) * r_maxEntities->i, sizeof(uintptr_t) );
-    size += PAD( sizeof(srfQuad_t) * r_maxQuads->i, sizeof(uintptr_t) );
-    
-    backendData = ri.Malloc( size );
-    backendData->polys = (srfPoly_t *)(backendData + 1);
-    backendData->polyVerts = (polyVert_t *)(backendData->polys + r_maxPolys->i);
-    backendData->indices = (glIndex_t *)(backendData->polyVerts + (r_maxPolys->i * 4));
-    backendData->dlights = (dlight_t *)(backendData->indices + (r_maxPolys->i * 6));
-    backendData->entities = (renderEntityDef_t *)(backendData->entities + r_maxDLights->i);
-    backendData->quads = (srfQuad_t *)( backendData->entities + r_maxEntities->i );
+    size += PAD( sizeof(dlight_t) * r_maxDLights->i, sizeof(uintptr_t) );
+
+    backendData = (renderBackendData_t *)ri.Malloc( size );
+    backendData->polyVerts = (polyVert_t *)( backendData + 1 );
+    backendData->polys = (srfPoly_t *)( backendData->polyVerts + r_maxPolys->i * 4 );
+    backendData->indices = (glIndex_t *)( backendData->polys + r_maxPolys->i * 6 );
+    backendData->entities = (renderEntityDef_t *)( backendData->indices + r_maxPolys->i * 6 );
+    backendData->dlights = (dlight_t *)( backendData->entities + r_maxEntities->i );
+
+    ri.Printf( PRINT_DEVELOPER,
+        COLOR_CYAN "---------- Renderer Backend Allocation Info ----------\n"
+        COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated to renderer backend\n"
+        COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated for polygon vertices\n"
+        COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated for polygons\n"
+        COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated for polygon indices\n"
+        COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated for renderer entities\n"
+        COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated for dynamic lights\n"
+        COLOR_CYAN "--------------------\n"
+    , size, ( (double)size / 1024 ), ( (double)size / 1024 / 1024 ),
+    polyVertBytes, ( (double)polyVertBytes / 1024 ), ( (double)polyVertBytes / 1024 / 1024 ),
+    polyBytes, ( (double)polyBytes / 1024 ), ( (double)polyBytes / 1024 / 1024 ),
+    indexBytes, ( (double)indexBytes / 1024 ), ( (double)indexBytes / 1024 / 1024 ),
+    entityBytes, ( (double)entityBytes / 1024 ), ( (double)entityBytes / 1024 / 1024 ),
+    dlightBytes, ( (double)dlightBytes / 1024 ), ( (double)dlightBytes / 1024 / 1024 ) );
 }
 
 static void R_CameraInfo_f( void ) {
@@ -866,6 +972,23 @@ static void R_UnloadWorld_f( void ) {
     rg.worldLoaded = qfalse;
 }
 
+static void R_InitSamplers( void )
+{
+    nglGenSamplers( MAX_TEXTURE_UNITS, rg.samplers );
+
+    nglSamplerParameteri( rg.samplers[TexFilter_Linear], GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    nglSamplerParameteri( rg.samplers[TexFilter_Linear], GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+
+    nglSamplerParameteri( rg.samplers[TexFilter_Nearest], GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+    nglSamplerParameteri( rg.samplers[TexFilter_Nearest], GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+
+    nglSamplerParameteri( rg.samplers[TexFilter_Bilinear], GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+    nglSamplerParameteri( rg.samplers[TexFilter_Bilinear], GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+
+    nglSamplerParameteri( rg.samplers[TexFilter_Nearest], GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    nglSamplerParameteri( rg.samplers[TexFilter_Nearest], GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+}
+
 void R_Init(void)
 {
     GLenum error;
@@ -881,31 +1004,56 @@ void R_Init(void)
 
     glState.viewData.camera.zoom = 1.0f;
 
+    //
+	// init function tables
+	//
+	for ( uint32_t i = 0; i < FUNCTABLE_SIZE; i++ ) {
+		rg.sinTable[i]		= sin( DEG2RAD( i * 360.0f / ( ( float ) ( FUNCTABLE_SIZE - 1 ) ) ) );
+		rg.squareTable[i]	= ( i < FUNCTABLE_SIZE/2 ) ? 1.0f : -1.0f;
+		rg.sawToothTable[i] = (float)i / FUNCTABLE_SIZE;
+		rg.inverseSawToothTable[i] = 1.0f - rg.sawToothTable[i];
+
+		if ( i < FUNCTABLE_SIZE / 2 ) {
+			if ( i < FUNCTABLE_SIZE / 4 ) {
+				rg.triangleTable[i] = ( float ) i / ( FUNCTABLE_SIZE / 4 );
+			}
+			else {
+				rg.triangleTable[i] = 1.0f - rg.triangleTable[i-FUNCTABLE_SIZE / 4];
+			}
+		}
+		else {
+			rg.triangleTable[i] = -rg.triangleTable[i-FUNCTABLE_SIZE/2];
+		}
+	}
+
+    R_InitNoise();
+
     R_Register();
 
-    // allocate backend memory buffers
     R_AllocBackend();
 
     R_InitNextFrame();
 
-    // initialize OpenGL
     R_InitGLContext();
 
-    // init texture manager
     R_InitTextures();
-    
-    // init vao manager
-    R_InitGPUBuffers();
 
-    // init glsl manager
+    nglGenQueries( 3, rg.queries );
+
+    if ( glContext.ARB_framebuffer_object && 0 ) {
+//        FBO_Init();
+    }
+    
     GLSL_InitGPUShaders();
 
-    // init shader manager
+    R_InitGPUBuffers();
+
     R_InitShaders();
 
-    error = nglGetError();
-    if (error != GL_NO_ERROR)
-        ri.Printf(PRINT_INFO, COLOR_RED "glGetError() = 0x%x\n", error);
+    R_Register();
+
+    // init samplers
+    R_InitSamplers();
 
     // init imgui
     R_InitImGui();
@@ -913,10 +1061,14 @@ void R_Init(void)
     ri.Cmd_AddCommand( "camerainfo", R_CameraInfo_f );
     ri.Cmd_AddCommand( "unloadworld", R_UnloadWorld_f );
 
+    error = nglGetError();
+    if ( error != GL_NO_ERROR )
+        ri.Printf(PRINT_INFO, COLOR_RED "glGetError() = 0x%x\n", error);
+
     // print info
     GpuInfo_f();
     GpuMemInfo_f();
-    ri.Printf(PRINT_INFO, "---------- finished RE_Init ----------\n");
+    ri.Printf( PRINT_INFO, "---------- finished RE_Init ----------\n" );
 }
 
 void RE_BeginRegistration(gpuConfig_t *config)
@@ -926,7 +1078,7 @@ void RE_BeginRegistration(gpuConfig_t *config)
     *config = glConfig;
 }
 
-void RE_Shutdown(refShutdownCode_t code)
+void RE_Shutdown( refShutdownCode_t code )
 {
     ri.Printf(PRINT_INFO, "RE_Shutdown( %i )\n", code);
 
@@ -937,8 +1089,11 @@ void RE_Shutdown(refShutdownCode_t code)
     ri.Cmd_RemoveCommand( "camerainfo" );
     ri.Cmd_RemoveCommand( "unloadworld" );
 
-    if (rg.registered) {
+    if ( rg.registered ) {
         R_IssuePendingRenderCommands();
+
+        nglDeleteQueries( 3, rg.queries );
+        nglDeleteSamplers( MAX_TEXTURE_UNITS, rg.samplers );
 
         R_DeleteTextures();
         R_ShutdownGPUBuffers();
@@ -947,8 +1102,8 @@ void RE_Shutdown(refShutdownCode_t code)
     }
 
     // shutdown platform specific OpenGL thingies
-    if (code != REF_KEEP_CONTEXT) {
-        ri.GLimp_Shutdown(code == REF_UNLOAD_DLL ? qtrue : qfalse);
+    if ( code != REF_KEEP_CONTEXT ) {
+        ri.GLimp_Shutdown( code == REF_UNLOAD_DLL ? qtrue : qfalse );
 
         memset( &glConfig, 0, sizeof(glConfig) );
         memset( &glState, 0, sizeof(glState) );
@@ -978,34 +1133,42 @@ void RE_GetConfig(gpuConfig_t *config) {
     *config = glConfig;
 }
 
-void *RE_GetTextureImGuiData( nhandle_t hShader ) {
-    shader_t *sh;
+void RE_GetGPUFrameStats( uint32_t *time, uint32_t *samples, uint32_t *primitives ) {
+    *time = rg.queryCounts[TIME_QUERY];
+    *samples = rg.queryCounts[SAMPLES_QUERY];
+    *primitives = rg.queryCounts[PRIMTIVES_QUERY];
+}
 
-    sh = R_GetShaderByHandle( hShader );
-    if (!sh) {
-        ri.Printf( PRINT_WARNING, "no shader found when getting imgui shader texture data.\n" );
+void *RE_GetImGuiTextureData( nhandle_t hShader )
+{
+    shader_t *shader;
+
+    shader = R_GetShaderByHandle( hShader );
+    if ( !shader ) {
+        ri.Printf( PRINT_WARNING, "RE_GetImGuiTextureData: invalid shader given\n" );
         return NULL;
     }
 
-    return (void *)(intptr_t)sh->stages[0]->image->id;
+    return (void *)(intptr_t)shader->stages[0]->bundle[0].image->id;
 }
 
-GDR_EXPORT renderExport_t *GDR_DECL GetRenderAPI(uint32_t version, refimport_t *import)
+GDR_EXPORT renderExport_t *GDR_DECL GetRenderAPI( uint32_t version, refimport_t *import )
 {
     static renderExport_t re;
 
     ri = *import;
-    memset(&re, 0, sizeof(re));
+    memset( &re, 0, sizeof(re) );
 
-    if (version != NOMAD_VERSION_FULL) {
-        ri.Error(ERR_FATAL, "GetRenderAPI: rendergl version (%i) != glnomad engine version (%i)", NOMAD_VERSION_FULL, version);
+    if ( version != NOMAD_VERSION_FULL ) {
+        ri.Error( ERR_FATAL, "GetRenderAPI: rendergl version (%i) != glnomad engine version (%i)", NOMAD_VERSION_FULL, version );
     }
 
     re.Shutdown = RE_Shutdown;
     re.BeginRegistration = RE_BeginRegistration;
     re.RegisterShader = RE_RegisterShader;
     re.GetConfig = RE_GetConfig;
-    re.ImGui_TextureData = RE_GetTextureImGuiData;
+    re.ImGui_TextureData = RE_GetImGuiTextureData;
+    re.GetGPUFrameStats = RE_GetGPUFrameStats;
 
     re.ClearScene = RE_ClearScene;
     re.BeginScene = RE_BeginScene;
@@ -1061,7 +1224,6 @@ void R_GLDebug_Callback_ARB(GLenum source, GLenum type, GLuint id, GLenum severi
         }
     }
 
-    // allocate it on the hunk so we don't need to clean it up
     len = strlen(message) + 1;
     cachedGLMessages[numCachedGLMessages] = (char *)ri.Malloc( len );
     cachedGLMessages[numCachedGLMessages][len - 1] = '\0';

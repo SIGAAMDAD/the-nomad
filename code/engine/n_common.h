@@ -200,25 +200,25 @@ extern nkey_t keys[NUMKEYS];
 
 #define MAXPRINTMSG			8192
 
-
-void Cmd_Init(void);
-void Cmd_AddCommand(const char* name, cmdfunc_t function);
-void Cmd_RemoveCommand(const char* name);
-void Cmd_ExecuteCommand(const char* name);
+void Cmd_Init( void );
+void Cmd_AddCommand( const char *name, cmdfunc_t function );
+void Cmd_RemoveCommand( const char *name );
+void Cmd_ExecuteCommand( const char *name );
 void Cmd_ArgsBuffer( char *buffer, uint32_t bufferLength );
-void Cmd_ExecuteText(const char *str);
-void Cmd_ExecuteString(const char *str);
-uint32_t Cmd_Argc(void);
-void Cmd_ArgvBuffer(uint32_t arg, char *buffer, uint32_t bufLen);
-void Cmd_TokenizeString(const char *text_p);
-void Cmd_TokenizeStringIgnoreQuotes(const char *text_p);
-void Cmd_SetCommandCompletionFunc(const char *name, completionFunc_t fn);
-char* Cmd_ArgsFrom(int32_t index);
-const char* Cmd_Argv(uint32_t index);
-void Cmd_Clear(void);
-const char* GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL va(const char *format, ...);
-void Cmd_CommandCompletion( void(*callback)(const char *s) );
-qboolean Cmd_CompleteArgument(const char *command, const char *args, uint32_t argnum);
+void Cmd_ExecuteText( const char *str );
+void Cmd_ExecuteString( const char *str );
+uint32_t Cmd_Argc( void );
+void Cmd_ArgvBuffer( uint32_t arg, char *buffer, uint32_t bufLen );
+void Cmd_TokenizeString( const char *text_p );
+void Cmd_TokenizeStringIgnoreQuotes( const char *text_p );
+void Cmd_SetCommandCompletionFunc( const char *name, completionFunc_t fn );
+char *Cmd_ArgsFrom( uint32_t index );
+const char* Cmd_Argv( uint32_t index );
+void Cmd_Clear( void );
+void Cmd_CommandCompletion( void(*callback)( const char *s ) );
+qboolean Cmd_CompleteArgument( const char *command, const char *args, uint32_t argnum );
+
+const char* GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL va( const char *format, ... );
 
 typedef enum {
 	EXEC_NOW = 0,

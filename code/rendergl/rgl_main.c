@@ -208,7 +208,6 @@ void R_DrawPolys( void )
 {
     uint64_t i;
     const srfPoly_t *poly;
-    const srfQuad_t *quad;
     const glIndex_t *idx;
     nhandle_t oldShader;
     polyVert_t *vtx;
@@ -217,20 +216,17 @@ void R_DrawPolys( void )
     uint32_t numIndices;
 
     // no polygon submissions this frame
-    if (!r_numPolys && !r_numPolyVerts && !r_numQuads) {
+    if ( !r_numPolys && !r_numPolyVerts ) {
         return;
     }
 
     RB_SetBatchBuffer( backend.drawBuffer, backendData->polyVerts, sizeof(polyVert_t), backendData->indices, sizeof(glIndex_t) );
 
     // sort the polys to be more efficient with our shaders
-//    R_RadixSort( backendData->polys, r_numPolys ); // segfaults, dunno why rn
 #if 1
     R_RadixSortPoly( backendData->polys, r_numPolys );
-    R_RadixSortQuad( backendData->quads, r_numQuads );
 #else
     qsort( backendData->polys, r_numPolys, sizeof(srfPoly_t), SortPoly );
-    qsort( backendData->quads, r_numQuads, sizeof(srfQuad_t), SortQuad );
 #endif
 
     // submit all the indices
@@ -238,57 +234,29 @@ void R_DrawPolys( void )
 
     vtx = backendData->polyVerts;
     poly = backendData->polys;
-    quad = backendData->quads;
-    oldShader = rg.sheets[quad->hSpriteSheet]->hShader;
-
-    GL_BindTexture( 0, R_GetShaderByHandle( oldShader )->stages[0]->image );
-    GLSL_SetUniformInt( &rg.basicShader, UNIFORM_DIFFUSE_MAP, 0 );
-
-    for ( i = 0; i < r_numQuads; i++, quad++ ) {
-        if ( oldShader != rg.sheets[quad->hSpriteSheet]->hShader ) {
-            // if we have a new shader, flush the current batch
-            RB_FlushBatchBuffer();
-            oldShader = rg.sheets[quad->hSpriteSheet]->hShader;
-
-            GL_BindTexture( 0,  R_GetShaderByHandle( oldShader )->stages[0]->image );
-            GLSL_SetUniformInt( &rg.basicShader, UNIFORM_DIFFUSE_MAP, 0 );
-        }
-
-        pos[0] = quad->origin[0] - ( glState.viewData.camera.origin[0] * 0.5f );
-        pos[1] = glState.viewData.camera.origin[1] - quad->origin[1];
-        pos[2] = 0.5f;
-
-        // convert local world coordinates to opengl screen coordinates
-        R_WorldToGL2( vtx, pos );
-
-        for ( uint32_t a = 0; a < 4; a++ ) {
-            VectorCopy2( vtx[a].uv, rg.sheets[quad->hSpriteSheet]->sprites[quad->hSprite].texCoords[a] );
-        }
-
-        // submit to draw buffer
-        RB_CommitDrawData( vtx, 4, NULL, 0 );
-
-        vtx += 4;
-    }
-
-    RB_FlushBatchBuffer();
-
-    oldShader = poly->hShader;
     
-    for ( i = 0; i < r_numPolys; i++, poly++ ) {
-        if (oldShader != poly->hShader) {
+    oldShader = poly->hShader;
+    backend.drawBatch.shader = R_GetShaderByHandle( oldShader );
+
+    RB_CommitDrawData( NULL, 0, backendData->indices, backendData->numIndices );
+
+    GLSL_UseProgram( &rg.basicShader );
+    
+    for ( i = 0; i < r_numPolys; i++ ) {
+        if ( oldShader != poly->hShader ) {
             // if we have a new shader, flush the current batch
             RB_FlushBatchBuffer();
             oldShader = poly->hShader;
-
-            GL_BindTexture( 0,  R_GetShaderByHandle( oldShader )->stages[0]->image );
-            GLSL_SetUniformInt( &rg.basicShader, UNIFORM_DIFFUSE_MAP, 0 );
+            backend.drawBatch.shader = R_GetShaderByHandle( poly->hShader );
         }
 
         // submit to draw buffer
         RB_CommitDrawData( poly->verts, poly->numVerts, NULL, 0 );
+        
+        poly++;
     }
 
+    // flush out anything remaining
     RB_FlushBatchBuffer();
 }
 
@@ -314,8 +282,7 @@ static void R_DrawWorld( void )
     // submit the indices, we won't be ever changing those
     RB_CommitDrawData( NULL, 0, rg.world->indices, rg.world->numIndices );
 
-    GL_BindTexture( 0, rg.world->shader->stages[0]->image );
-    GLSL_SetUniformInt( &rg.basicShader, UNIFORM_DIFFUSE_MAP, 0 );
+    backend.drawBatch.shader = rg.world->shader;
 
     vtx = rg.world->vertices;
 
@@ -332,6 +299,7 @@ static void R_DrawWorld( void )
 
             for (i = 0; i < 4; i++) {
                 VectorCopy2( vtx[i].uv, rg.world->tiles[y * rg.world->width + x].texcoords[i] );
+                VectorSet( vtx[i].worldPos, x, y, 0.0f );
             }
 
             // submit the processed vertices
@@ -345,19 +313,163 @@ static void R_DrawWorld( void )
     RB_FlushBatchBuffer();
 }
 
+/*
+=================
+R_SetupFrustum
+
+Set up the culling frustum planes for the current view using the results we got from computing the first two rows of
+the projection matrix.
+=================
+*/
+static void R_SetupFrustum( viewData_t *dest, float xmin, float xmax, float ymax, float zProj, float zFar, float stereoSep )
+{
+	vec3_t ofsorigin;
+	float oppleg, adjleg, length;
+    uint32_t i;
+
+	if ( stereoSep == 0 && xmin == -xmax ) {
+		// symmetric case can be simplified
+		VectorCopy( dest->camera.origin, ofsorigin );
+
+		length = sqrt( xmax * xmax + zProj * zProj );
+		oppleg = xmax / length;
+		adjleg = zProj / length;
+
+		VectorScale( dest->camera.axis[0], oppleg, dest->frustum[0].normal );
+		VectorMA( dest->frustum[0].normal, adjleg, dest->camera.axis[1], dest->frustum[0].normal );
+
+		VectorScale( dest->camera.axis[0], oppleg, dest->frustum[1].normal );
+		VectorMA( dest->frustum[1].normal, -adjleg, dest->camera.axis[1], dest->frustum[1].normal );
+	}
+	else {
+		// In stereo rendering, due to the modification of the projection matrix, dest->camera.origin is not the
+		// actual origin that we're rendering so offset the tip of the view pyramid.
+		VectorMA( dest->camera.origin, stereoSep, dest->camera.axis[1], ofsorigin );
+	
+		oppleg = xmax + stereoSep;
+		length = sqrt( oppleg * oppleg + zProj * zProj );
+		VectorScale( dest->camera.axis[0], oppleg / length, dest->frustum[0].normal );
+		VectorMA( dest->frustum[0].normal, zProj / length, dest->camera.axis[1], dest->frustum[0].normal );
+
+		oppleg = xmin + stereoSep;
+		length = sqrt( oppleg * oppleg + zProj * zProj);
+		VectorScale( dest->camera.axis[0], -oppleg / length, dest->frustum[1].normal );
+		VectorMA( dest->frustum[1].normal, -zProj / length, dest->camera.axis[1], dest->frustum[1].normal );
+	}
+
+	length = sqrt( ymax * ymax + zProj * zProj );
+	oppleg = ymax / length;
+	adjleg = zProj / length;
+
+	VectorScale( dest->camera.axis[0], oppleg, dest->frustum[2].normal );
+	VectorMA( dest->frustum[2].normal, adjleg, dest->camera.axis[2], dest->frustum[2].normal );
+
+	VectorScale( dest->camera.axis[0], oppleg, dest->frustum[3].normal );
+	VectorMA( dest->frustum[3].normal, -adjleg, dest->camera.axis[2], dest->frustum[3].normal );
+	
+	for ( i = 0; i < 4; i++ ) {
+		dest->frustum[i].type = PLANE_NON_AXIAL;
+		dest->frustum[i].dist = DotProduct( ofsorigin, dest->frustum[i].normal );
+		SetPlaneSignbits( &dest->frustum[i] );
+	}
+
+	if ( zFar != 0.0f ) {
+		vec3_t farpoint;
+
+		VectorMA( ofsorigin, zFar, dest->camera.axis[0], farpoint );
+		VectorScale( dest->camera.axis[0], -1.0f, dest->frustum[4].normal );
+
+		dest->frustum[4].type = PLANE_NON_AXIAL;
+		dest->frustum[4].dist = DotProduct( farpoint, dest->frustum[4].normal );
+		SetPlaneSignbits( &dest->frustum[4] );
+//		dest->flags |= VPF_FARPLANEFRUSTUM;
+	}
+}
+
+/*
+===============
+R_SetupProjection
+===============
+*/
+void R_SetupProjection( viewData_t *dest, float zProj, float zFar, qboolean computeFrustum )
+{
+	float	xmin, xmax, ymin, ymax;
+	float	width, height, stereoSep = r_stereoSeparation->f;
+    float   *projectionMatrix;
+
+	/*
+	 * offset the view origin of the viewer for stereo rendering 
+	 * by setting the projection matrix appropriately.
+	 */
+
+	if ( stereoSep != 0 ) {
+		if ( dest->stereoFrame == STEREO_LEFT ) {
+			stereoSep = zProj / stereoSep;
+        } else if ( dest->stereoFrame == STEREO_RIGHT ) {
+			stereoSep = zProj / -stereoSep;
+    	} else {
+			stereoSep = 0;
+        }
+	}
+
+	ymax = zProj * tan( dest->fovY * M_PI / 360.0f );
+	ymin = -ymax;
+
+	xmax = zProj * tan( dest->fovX * M_PI / 360.0f );
+	xmin = -xmax;
+
+	width = xmax - xmin;
+	height = ymax - ymin;
+
+    projectionMatrix = &dest->camera.projectionMatrix[0][0];
+	
+	projectionMatrix[0] = 2 * zProj / width;
+	projectionMatrix[4] = 0;
+	projectionMatrix[8] = ( xmax + xmin + 2 * stereoSep ) / width;
+	projectionMatrix[12] = 2 * zProj * stereoSep / width;
+
+	projectionMatrix[1] = 0;
+	projectionMatrix[5] = 2 * zProj / height;
+	projectionMatrix[9] = ( ymax + ymin ) / height;	// normally 0
+	projectionMatrix[13] = 0;
+
+	projectionMatrix[3] = 0;
+	projectionMatrix[7] = 0;
+	projectionMatrix[11] = -1;
+	projectionMatrix[15] = 0;
+	
+	// Now that we have all the data for the projection matrix we can also setup the view frustum.
+	if ( computeFrustum ) {
+		R_SetupFrustum( dest, xmin, xmax, ymax, zProj, zFar, stereoSep );
+    }
+
+    ri.GLM_MakeVPMQuake3( dest->camera.viewProjectionMatrix, dest->camera.projectionMatrix, dest->camera.viewMatrix );
+}
+
 void R_RenderView( const viewData_t *parms )
 {
     rg.viewCount++;
-    polyVert_t verts[4];
+
+    if ( parms->flags & RSF_NOWORLDMODEL ) {
+        // do things Quake3 style
+
+        memcpy( &glState.viewData, parms, sizeof(*parms) );
+
+        R_SetupProjection( &glState.viewData, r_zproj->f, parms->zFar, qtrue );
+
+        // issue all currently pending rendering commands
+        R_IssuePendingRenderCommands();
+
+        // draw all submitted images
+        R_DrawPolys();
+
+        return;
+    }
 
     memcpy( &glState.viewData, parms, sizeof(*parms) );
 
-    GLSL_UseProgram( &rg.basicShader );
-
     // setup the correct matrices
     RB_MakeViewMatrix();
-
-    GLSL_SetUniformMatrix4( &rg.basicShader, UNIFORM_MODELVIEWPROJECTION, glState.viewData.camera.viewProjectionMatrix );
 
     // issue all currently queued rendering commands
     R_IssuePendingRenderCommands();
@@ -445,7 +557,7 @@ nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32
     size += PAD( len, sizeof(uintptr_t) );
 
     handle = rg.numSpriteSheets;
-    sheet = rg.sheets[rg.numSpriteSheets] = (spriteSheet_t *)ri.Malloc( size );
+    sheet = rg.sheets[rg.numSpriteSheets] = (spriteSheet_t *)ri.Hunk_Alloc( size, h_low );
     sheet->name = (char *)( sheet + 1 );
     sheet->sprites = (sprite_t *)( sheet->name + len );
 
@@ -496,3 +608,154 @@ nhandle_t RE_RegisterSprite( nhandle_t hSpriteSheet, uint32_t index )
 
     return (nhandle_t)index; // nothing too fancy...
 }
+
+/*
+=============
+R_CalcTexDirs
+
+Lengyel, Eric. �Computing Tangent Space Basis Vectors for an Arbitrary Mesh�. Terathon Software 3D Graphics Library, 2001. http://www.terathon.com/code/tangent.html
+=============
+*/
+void R_CalcTexDirs(vec3_t sdir, vec3_t tdir, const vec3_t v1, const vec3_t v2,
+				   const vec3_t v3, const vec2_t w1, const vec2_t w2, const vec2_t w3)
+{
+	float			x1, x2, y1, y2, z1, z2;
+	float			s1, s2, t1, t2, r;
+
+	x1 = v2[0] - v1[0];
+	x2 = v3[0] - v1[0];
+	y1 = v2[1] - v1[1];
+	y2 = v3[1] - v1[1];
+	z1 = v2[2] - v1[2];
+	z2 = v3[2] - v1[2];
+
+	s1 = w2[0] - w1[0];
+	s2 = w3[0] - w1[0];
+	t1 = w2[1] - w1[1];
+	t2 = w3[1] - w1[1];
+
+	r = s1 * t2 - s2 * t1;
+	if (r) r = 1.0f / r;
+
+	VectorSet(sdir, (t2 * x1 - t1 * x2) * r, (t2 * y1 - t1 * y2) * r, (t2 * z1 - t1 * z2) * r);
+	VectorSet(tdir, (s1 * x2 - s2 * x1) * r, (s1 * y2 - s2 * y1) * r, (s1 * z2 - s2 * z1) * r);
+}
+
+/*
+=============
+R_CalcTangentSpace
+
+Lengyel, Eric. �Computing Tangent Space Basis Vectors for an Arbitrary Mesh�. Terathon Software 3D Graphics Library, 2001. http://www.terathon.com/code/tangent.html
+=============
+*/
+vec_t R_CalcTangentSpace( vec3_t tangent, vec3_t bitangent, const vec3_t normal, const vec3_t sdir, const vec3_t tdir )
+{
+	vec3_t n_cross_t;
+	vec_t n_dot_t, handedness;
+
+	// Gram-Schmidt orthogonalize
+	n_dot_t = DotProduct(normal, sdir);
+	VectorMA(sdir, -n_dot_t, normal, tangent);
+	VectorNormalize(tangent);
+
+	// Calculate handedness
+	CrossProduct(normal, sdir, n_cross_t);
+	handedness = (DotProduct(n_cross_t, tdir) < 0.0f) ? -1.0f : 1.0f;
+
+	// Calculate orthogonal bitangent, if necessary
+	if (bitangent)
+		CrossProduct(normal, tangent, bitangent);
+
+	return handedness;
+}
+
+qboolean R_CalcTangentVectors(drawVert_t * dv[3])
+{
+	int             i;
+	float           bb, s, t;
+	vec3_t          bary;
+
+
+	/* calculate barycentric basis for the triangle */
+	bb = (dv[1]->uv[0] - dv[0]->uv[0]) * (dv[2]->uv[1] - dv[0]->uv[1]) - (dv[2]->uv[0] - dv[0]->uv[0]) * (dv[1]->uv[1] - dv[0]->uv[1]);
+	if(fabs(bb) < 0.00000001f)
+		return qfalse;
+
+	/* do each vertex */
+	for(i = 0; i < 3; i++)
+	{
+		vec4_t tangent;
+		vec3_t normal, bitangent, nxt;
+
+		// calculate s tangent vector
+		s = dv[i]->uv[0] + 10.0f;
+		t = dv[i]->uv[1];
+		bary[0] = ((dv[1]->uv[0] - s) * (dv[2]->uv[1] - t) - (dv[2]->uv[0] - s) * (dv[1]->uv[1] - t)) / bb;
+		bary[1] = ((dv[2]->uv[0] - s) * (dv[0]->uv[1] - t) - (dv[0]->uv[0] - s) * (dv[2]->uv[1] - t)) / bb;
+		bary[2] = ((dv[0]->uv[0] - s) * (dv[1]->uv[1] - t) - (dv[1]->uv[0] - s) * (dv[0]->uv[1] - t)) / bb;
+
+		tangent[0] = bary[0] * dv[0]->xyz[0] + bary[1] * dv[1]->xyz[0] + bary[2] * dv[2]->xyz[0];
+		tangent[1] = bary[0] * dv[0]->xyz[1] + bary[1] * dv[1]->xyz[1] + bary[2] * dv[2]->xyz[1];
+		tangent[2] = bary[0] * dv[0]->xyz[2] + bary[1] * dv[1]->xyz[2] + bary[2] * dv[2]->xyz[2];
+
+		VectorSubtract(tangent, dv[i]->xyz, tangent);
+		VectorNormalize(tangent);
+
+		// calculate t tangent vector
+		s = dv[i]->uv[0];
+		t = dv[i]->uv[1] + 10.0f;
+		bary[0] = ((dv[1]->uv[0] - s) * (dv[2]->uv[1] - t) - (dv[2]->uv[0] - s) * (dv[1]->uv[1] - t)) / bb;
+		bary[1] = ((dv[2]->uv[0] - s) * (dv[0]->uv[1] - t) - (dv[0]->uv[0] - s) * (dv[2]->uv[1] - t)) / bb;
+		bary[2] = ((dv[0]->uv[0] - s) * (dv[1]->uv[1] - t) - (dv[1]->uv[0] - s) * (dv[0]->uv[1] - t)) / bb;
+
+		bitangent[0] = bary[0] * dv[0]->xyz[0] + bary[1] * dv[1]->xyz[0] + bary[2] * dv[2]->xyz[0];
+		bitangent[1] = bary[0] * dv[0]->xyz[1] + bary[1] * dv[1]->xyz[1] + bary[2] * dv[2]->xyz[1];
+		bitangent[2] = bary[0] * dv[0]->xyz[2] + bary[1] * dv[1]->xyz[2] + bary[2] * dv[2]->xyz[2];
+
+		VectorSubtract(bitangent, dv[i]->xyz, bitangent);
+		VectorNormalize(bitangent);
+
+		// store bitangent handedness
+		R_VaoUnpackNormal(normal, dv[i]->normal);
+		CrossProduct(normal, tangent, nxt);
+		tangent[3] = (DotProduct(nxt, bitangent) < 0.0f) ? -1.0f : 1.0f;
+
+		R_VaoPackTangent(dv[i]->tangent, tangent);
+
+		// debug code
+		//% Sys_FPrintf( SYS_VRB, "%d S: (%f %f %f) T: (%f %f %f)\n", i,
+		//%     stv[ i ][ 0 ], stv[ i ][ 1 ], stv[ i ][ 2 ], ttv[ i ][ 0 ], ttv[ i ][ 1 ], ttv[ i ][ 2 ] );
+	}
+
+	return qtrue;
+}
+
+/*
+==========================
+myGlMultMatrix
+
+==========================
+*/
+static void myGlMultMatrix( const float *a, const float *b, float *out ) {
+	int		i, j;
+
+	for ( i = 0 ; i < 4 ; i++ ) {
+		for ( j = 0 ; j < 4 ; j++ ) {
+			out[ i * 4 + j ] =
+				a [ i * 4 + 0 ] * b [ 0 * 4 + j ]
+				+ a [ i * 4 + 1 ] * b [ 1 * 4 + j ]
+				+ a [ i * 4 + 2 ] * b [ 2 * 4 + j ]
+				+ a [ i * 4 + 3 ] * b [ 3 * 4 + j ];
+		}
+	}
+}
+
+static const float s_flipMatrix[16] = {
+	// convert from Q3's coordinate system (looking down X)
+	// to OpenGL's coordinate system (looking down -Z)
+	 0, 0, -1, 0,
+	-1, 0,  0, 0,
+	 0, 1,  0, 0,
+	 0, 0,  0, 1
+};
+

@@ -13661,6 +13661,7 @@ import N_acos
 import N_log2
 import ColorBytes4
 import ColorBytes3
+import VectorNormalize
 import AddPointToBounds
 import ClearBounds
 import RadiusFromBounds

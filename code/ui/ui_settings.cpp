@@ -1,8 +1,9 @@
 #include "../game/g_game.h"
-#include "ui_public.h"
+#include "ui_public.hpp"
 #include "ui_menu.h"
 #include "ui_lib.h"
 #include "ui_window.h"
+#include "../engine/n_allocator.h"
 #include "ui_string_manager.h"
 #include "ui_table.h"
 #include "../rendergl/ngl.h"
@@ -16,8 +17,13 @@
 typedef struct {
     uint32_t keynum;
     char bindname[64];
-    char keyname[24];
+    const char *keyname;
 } keybind_t;
+
+typedef struct {
+    const char *name;
+    qboolean enabled;
+} gpu_extension_t;
 
 typedef struct
 {
@@ -26,6 +32,9 @@ typedef struct
 
     eastl::array<const char *, 2> use_GL_ARB_vertex_buffer_object_str;
     eastl::array<const char *, 2> use_GL_ARB_vertex_array_object_str;
+
+    gpu_extension_t *extensions;
+    uint32_t numExtensions;
 
     bool allowLegacyGL;
     bool allowSoftwareGL;
@@ -116,7 +125,8 @@ typedef struct
     int32_t vsync;
     float gamma;
 
-    eastl::fixed_vector<eastl::fixed_string<char, 64, true>, 1024, true> extensionStrings;
+    char **extensionStrings;
+    uint32_t numExtensions;
 
     bool advancedGraphics; // "stats for nerds", that kinda stuff
     qboolean confirmation;
@@ -338,7 +348,6 @@ static void SettingsMenu_SetDefault( void )
     settings.texfilterString = TexFilterString( settings.texfilter );
     settings.videoMode = Cvar_VariableInteger( "r_mode" );
     settings.fullscreen = Cvar_VariableInteger( "r_fullscreen" );
-    settings.api = StringToRenderAPI( Cvar_VariableString( "g_renderer" ) );
     settings.multisamplingIndex = Cvar_VariableInteger( "r_multisample" );
     settings.vsync = Cvar_VariableInteger( "r_swapInterval" );
     settings.gamma = Cvar_VariableFloat( "r_gammaAmount" );
@@ -348,9 +357,19 @@ static void SettingsMenu_SetDefault( void )
     settings.fullscreenStr = RADIOBUTTON_STR( settings.fullscreen );
 
     if ( settings.api == R_OPENGL ) {
-        settings.GL_extended = (graphics_extended_GL_t *)Z_Malloc( sizeof(graphics_extended_GL_t), TAG_GAME );
+        settings.GL_extended = (graphics_extended_GL_t *)Hunk_Alloc( sizeof(graphics_extended_GL_t), h_low );
+
+        settings.GL_extended->allowSoftwareGL = Cvar_VariableInteger( "r_allowSoftwareGL" );
+        settings.GL_extended->allowLegacyGL = Cvar_VariableInteger( "r_allowLegacy" );
+
         settings.GL_extended->allowLegacyGLStr =  RADIOBUTTON_STR( settings.GL_extended->allowLegacyGL );
         settings.GL_extended->allowSoftwareGLStr = RADIOBUTTON_STR( settings.GL_extended->allowSoftwareGL );
+
+        settings.GL_extended->numExtensions = settings.numExtensions;
+        settings.GL_extended->extensions = (gpu_extension_t *)Hunk_Alloc( sizeof(gpu_extension_t) * settings.numExtensions, h_low );
+        for ( uint32_t i = 0; i < settings.numExtensions; i++ ) {
+            settings.GL_extended->extensions->name = settings.extensionStrings[i];
+        }
     }
 
     settings.sfxOn = Cvar_VariableInteger( "snd_sfxon" );
@@ -366,6 +385,7 @@ static void SettingsMenu_SetDefault( void )
     for ( uint32_t i = 0; i < arraylen( bindNames ); i++ ) {
         N_strncpyz( settings.keybinds[i].bindname, bindNames[i], sizeof(settings.keybinds[i].bindname) );
         settings.keybinds[i].keynum = Key_GetKey( bindNames[i] );
+        settings.keybinds[i].keyname = Key_GetBinding( settings.keybinds[i].keynum );
     }
 }
 
@@ -385,7 +405,6 @@ static void SettingsMenuPopup( void )
     ImGui::Begin( va( "%s##SETTINGSMENUPOPUP", title ), NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
                                                             | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse );
     ImGui::SetWindowPos( ImVec2( 480 * ui->scale, 340 * ui->scale ) );
-    ImGui::SetWindowFontScale( 2.5f * ui->scale );
     if (settings.confirmation) {
         ImGui::TextUnformatted( "You made some changes to your settings, would you like to apply them?" );
         if (ImGui::Button( "SAVE CHANGES##SETTINGSMENUPOPUP" )) {
@@ -396,7 +415,7 @@ static void SettingsMenuPopup( void )
         }
     }
     else if (settings.confirmreset) {
-        ImGui::TextUnformatted( "Are you want to reset all your settings to their defaults?" );
+        ImGui::TextUnformatted( "Are you sure you want to reset all your settings to their defaults?" );
         if (ImGui::Button( "YES##SETTINGSMENUPOPUP" )) {
             SettingsMenu_SetDefault();
             settings.confirmreset = qfalse;
@@ -417,7 +436,7 @@ static void SettingsMenuPopup( void )
             if (Key_IsDown( i )) {
                 settings.rebinding = qfalse;
                 settings.keybinds[settings.rebindIndex].keynum = i;
-                strcpy( settings.keybinds[settings.rebindIndex].keyname, Key_KeynumToString( i ) );
+                settings.keybinds[settings.rebindIndex].keyname = Key_KeynumToString( i );
                 Cbuf_ExecuteText( EXEC_APPEND, va( "bind %s \"%s\"\n",
                     settings.keybinds[settings.rebindIndex].keyname, settings.keybinds[settings.rebindIndex].bindname ) );
             }
@@ -817,11 +836,6 @@ static void SettingsMenuGraphics_Draw( void )
             ImGui::TableNextRow();
 
             ImGui::TableNextColumn();
-            ImGui::TextUnformatted( "Use GL_ARB_vertex_object" );
-
-            ImGui::TableNextRow();
-
-            ImGui::TableNextColumn();
             ImGui::TextUnformatted( "Allow GL Extensions" );
             ImGui::TableNextColumn();
             if (ImGui::RadioButton( settings.useExtensionsStr[settings.extensions], settings.extensions )) {
@@ -847,8 +861,8 @@ static void SettingsMenuGraphics_Draw( void )
             ImGui::TextUnformatted( "GL Extensions" );
             ImGui::TableNextColumn();
             if (ImGui::BeginMenu( settings.extensionsMenuStr )) {
-                for (const auto& it : settings.extensionStrings) {
-                    ImGui::MenuItem( it.c_str() );
+                for ( uint32_t i = 0; i < settings.numExtensions; i++ ) {
+                    ImGui::MenuItem( settings.extensionStrings[i] );
                 }
                 ImGui::EndMenu();
             }
@@ -998,7 +1012,7 @@ static void SettingsMenu_GetInitial( void ) {
     initial.multisamplingIndex = Cvar_VariableInteger( "r_multisample" );
 
     if ( initial.api == R_OPENGL ) {
-        initial.GL_extended = (graphics_extended_GL_t *)Z_Malloc( sizeof(graphics_extended_GL_t), TAG_GAME );
+        initial.GL_extended = (graphics_extended_GL_t *)Hunk_Alloc( sizeof(graphics_extended_GL_t), h_low );
         initial.GL_extended->allowSoftwareGL = Cvar_VariableInteger( "r_allowSoftwareGL" );
         initial.GL_extended->use_GL_ARB_vertex_array_object = Cvar_VariableInteger( "r_arb_vertex_array_object" );
     }
@@ -1019,8 +1033,29 @@ static void SettingsMenu_GetInitial( void ) {
 void SettingsMenu_Cache( void ) {
     int32_t numExtensions;
     int32_t i;
+    uint64_t len;
 
-    memset(&settings, 0, sizeof(settings));
+    memset( &settings, 0, sizeof(settings) );
+
+    settings.api = StringToRenderAPI( Cvar_VariableString( "g_renderer" ) );
+
+    // get extensions list
+    if (settings.api == R_OPENGL) {
+        renderImport.glGetIntegerv( GL_NUM_EXTENSIONS, &numExtensions );
+
+        settings.extensionStrings = (char **)Hunk_Alloc( sizeof(char *) * numExtensions, h_low );
+        settings.numExtensions = numExtensions;
+
+        for (i = 0; i < numExtensions; i++) {
+            const GLubyte *name = renderImport.glGetStringi( GL_EXTENSIONS, i );
+            len = strlen( (const char *)name );
+
+            settings.extensionStrings[i] = (char *)Hunk_Alloc( len + 1, h_low );
+            strcpy( settings.extensionStrings[i], (const char *)name );
+        }
+    }
+
+    N_strncpyz( settings.extensionsMenuStr, va("%u Extensions", settings.numExtensions), sizeof(settings.extensionsMenuStr) );
 
     SettingsMenu_GetInitial();
     SettingsMenu_SetDefault();
@@ -1028,15 +1063,4 @@ void SettingsMenu_Cache( void ) {
     settings.confirmation = qfalse;
     settings.modified = qfalse;
     settings.paused = Cvar_VariableInteger( "sg_paused" );
-
-    // get extensions list
-    if (settings.api == R_OPENGL) {
-        renderImport.glGetIntegerv( GL_NUM_EXTENSIONS, &numExtensions );
-        settings.extensionStrings.reserve( numExtensions );
-        for (i = 0; i < numExtensions; i++) {
-            settings.extensionStrings.emplace_back( (const char *)renderImport.glGetStringi( GL_EXTENSIONS, i ) );
-        }
-    }
-
-    N_strncpyz( settings.extensionsMenuStr, va("%lu Extensions", settings.extensionStrings.size()), sizeof(settings.extensionsMenuStr) );
 }
