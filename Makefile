@@ -113,6 +113,7 @@ O             = obj
 QVM           = qvm
 SDIR          = code
 COMPILE_SRC   =$(CC) $(CFLAGS) -o $@ -c $<
+COMPILE_C     =distcc gcc $(FTYPE) $(OPTIMIZERS) $(INCLUDE) -o $@ -c $<
 COMPILE_LIBSRC=$(CC) -fPIC -shared $(CFLAGS) -o $@ -c $<
 
 ifeq ($(VM_CANNOT_COMPILE),true)
@@ -170,6 +171,55 @@ GAME_DIR=$(O)/game
 
 COMPILE_SRC=$(CC) $(CFLAGS) -o $@ -c $<
 
+
+JPGOBJ = \
+  	$(O)/game/jpeg/jaricom.o \
+  	$(O)/game/jpeg/jcapimin.o \
+  	$(O)/game/jpeg/jcapistd.o \
+  	$(O)/game/jpeg/jcarith.o \
+  	$(O)/game/jpeg/jccoefct.o  \
+  	$(O)/game/jpeg/jccolor.o \
+  	$(O)/game/jpeg/jcdctmgr.o \
+  	$(O)/game/jpeg/jchuff.o   \
+  	$(O)/game/jpeg/jcinit.o \
+  	$(O)/game/jpeg/jcmainct.o \
+  	$(O)/game/jpeg/jcmarker.o \
+  	$(O)/game/jpeg/jcmaster.o \
+  	$(O)/game/jpeg/jcomapi.o \
+  	$(O)/game/jpeg/jcparam.o \
+  	$(O)/game/jpeg/jcprepct.o \
+  	$(O)/game/jpeg/jcsample.o \
+  	$(O)/game/jpeg/jctrans.o \
+  	$(O)/game/jpeg/jdapimin.o \
+  	$(O)/game/jpeg/jdapistd.o \
+  	$(O)/game/jpeg/jdarith.o \
+  	$(O)/game/jpeg/jdatadst.o \
+  	$(O)/game/jpeg/jdatasrc.o \
+  	$(O)/game/jpeg/jdcoefct.o \
+  	$(O)/game/jpeg/jdcolor.o \
+  	$(O)/game/jpeg/jddctmgr.o \
+  	$(O)/game/jpeg/jdhuff.o \
+  	$(O)/game/jpeg/jdinput.o \
+  	$(O)/game/jpeg/jdmainct.o \
+  	$(O)/game/jpeg/jdmarker.o \
+  	$(O)/game/jpeg/jdmaster.o \
+  	$(O)/game/jpeg/jdmerge.o \
+  	$(O)/game/jpeg/jdpostct.o \
+  	$(O)/game/jpeg/jdsample.o \
+  	$(O)/game/jpeg/jdtrans.o \
+  	$(O)/game/jpeg/jerror.o \
+  	$(O)/game/jpeg/jfdctflt.o \
+  	$(O)/game/jpeg/jfdctfst.o \
+  	$(O)/game/jpeg/jfdctint.o \
+  	$(O)/game/jpeg/jidctflt.o \
+  	$(O)/game/jpeg/jidctfst.o \
+  	$(O)/game/jpeg/jidctint.o \
+  	$(O)/game/jpeg/jmemmgr.o \
+  	$(O)/game/jpeg/jmemnobs.o \
+  	$(O)/game/jpeg/jquant1.o \
+  	$(O)/game/jpeg/jquant2.o \
+  	$(O)/game/jpeg/jutils.o
+
 SRC=\
 	$(O)/game/g_game.o \
 	$(O)/game/g_sgame.o \
@@ -182,6 +232,7 @@ SRC=\
 	$(O)/game/g_imgui.o \
 	$(O)/game/g_input.o \
 	$(O)/game/g_world.o \
+	$(O)/game/g_jpeg.o \
 	\
 	$(O)/engine/vm.o \
 	$(O)/engine/vm_interpreted.o \
@@ -236,6 +287,7 @@ makedirs:
 	@if [ ! -d $(O)/rendercommon ];then $(MKDIR) $(O)/rendercommon;fi
 	@if [ ! -d $(O)/sys ];then $(MKDIR) $(O)/sys;fi
 	@if [ ! -d $(O)/ui ];then $(MKDIR) $(O)/ui;fi
+	@if [ ! -d $(O)/game/jpeg ];then $(MKDIR) $(O)/game/jpeg;fi
 
 targets: makedirs
 	$(MAKE) $(EXE)
@@ -258,13 +310,15 @@ $(O)/ui/%.o: $(SDIR)/ui/menulib/%.cpp
 	$(COMPILE_SRC)
 $(O)/sys/%.o: $(SYS_DIR)/%.cpp
 	$(COMPILE_SRC)
+$(O)/game/jpeg/%.o: $(SDIR)/libjpeg/%.c
+	$(COMPILE_C)
 
 ifdef win32
 ADD=-flinker-output=exec
 endif
 
-$(EXE): $(SRC) $(COMMON) $(SYS)
-	$(CC) $(CFLAGS) $(SRC) $(COMMON) $(SYS) $(ADD) -o $(EXE) $(LDLIBS)
+$(EXE): $(SRC) $(COMMON) $(SYS) $(JPGOBJ)
+	$(CC) $(CFLAGS) $(SRC) $(COMMON) $(SYS) $(ADD) $(JPGOBJ) -o $(EXE) $(LDLIBS)
 
 clean.pch:
 	rm $(SDIR)/engine/n_pch_all.h.gch

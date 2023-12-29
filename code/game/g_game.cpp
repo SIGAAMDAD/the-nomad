@@ -57,7 +57,7 @@ void GLimp_Shutdown(qboolean unloadDLL);
 void GLimp_LogComment(const char *comment);
 void GLimp_Minimize( void );
 void *GL_GetProcAddress(const char *name);
-void GLimp_SetGamma(const unsigned short r[256], const unsigned short g[256], const unsigned short b[256]);
+void GLimp_SetGamma( unsigned char red[256], unsigned char green[256], unsigned char blue[256] );
 
 static uint32_t CopyLump( void *dest, uint32_t lump, uint64_t size, mapheader_t *header )
 {
@@ -1544,15 +1544,81 @@ void GLimp_HideFullscreenWindow(void)
     }
 }
 
-void GLimp_InitGamma(gpuConfig_t *config)
+static Uint16 r[256];
+static Uint16 g[256];
+static Uint16 b[256];
+
+void GLimp_InitGamma( gpuConfig_t *config )
 {
-    config->deviceSupportsGamma = qtrue;
+	config->deviceSupportsGamma = qfalse;
+
+	if ( SDL_GetWindowGammaRamp( r_window, r, g, b ) == 0 ) {
+		config->deviceSupportsGamma = SDL_SetWindowBrightness( r_window, 1.0f ) >= 0 ? qtrue : qfalse;
+	}
 }
 
-void GLimp_SetGamma(const unsigned short r[256], const unsigned short g[256], const unsigned short b[256])
+
+/*
+=================
+GLimp_SetGamma
+=================
+*/
+void GLimp_SetGamma( unsigned char red[256], unsigned char green[256], unsigned char blue[256] )
 {
-    SDL_SetWindowGammaRamp(r_window, r, g, b);
+	Uint16 table[3][256];
+	uint32_t i, j;
+
+	for ( i = 0; i < 256; i++ ) {
+		table[0][i] = ( ( ( Uint16 ) red[i] ) << 8 ) | red[i];
+		table[1][i] = ( ( ( Uint16 ) green[i] ) << 8 ) | green[i];
+		table[2][i] = ( ( ( Uint16 ) blue[i] ) << 8 ) | blue[i];
+	}
+
+#ifdef _WIN32
+#include <windows.h>
+
+	// Win2K and newer put this odd restriction on gamma ramps...
+	{
+		//OSVERSIONINFO	vinfo;
+		//vinfo.dwOSVersionInfoSize = sizeof( vinfo );
+		//GetVersionEx( &vinfo );
+		//if( vinfo.dwMajorVersion >= 5 && vinfo.dwPlatformId == VER_PLATFORM_WIN32_NT )
+		{
+			qboolean clamped = qfalse;
+			for ( j = 0 ; j < 3 ; j++ ) {
+				for ( i = 0 ; i < 128 ; i++ ) {
+					if ( table[ j ] [ i] > ( ( 128 + i ) << 8 ) ) {
+						table[ j ][ i ] = ( 128 + i ) << 8;
+						clamped = qtrue;
+					}
+				}
+
+				if ( table[ j ] [127 ] > 254 << 8 ) {
+					table[ j ][ 127 ] = 254 << 8;
+					clamped = qtrue;
+				}
+			}
+			if ( clamped ) {
+				Con_DPrintf( "performing gamma clamp.\n" );
+			}
+		}
+	}
+#endif
+
+	// enforce constantly increasing
+	for ( j = 0; j < 3; j++ ) {
+		for ( i = 1; i < 256; i++) {
+			if ( table[j][i] < table[j][i-1] ) {
+				table[j][i] = table[j][i-1];
+            }
+		}
+	}
+
+	if ( SDL_SetWindowGammaRamp( r_window, table[0], table[1], table[2] ) < 0 ) {
+		Con_DPrintf( "SDL_SetWindowGammaRamp() failed: %s\n", SDL_GetError() );
+	}
 }
+
 
 SDL_GLContext G_GetGLContext( void ) {
     return r_GLcontext;
@@ -1601,5 +1667,6 @@ void G_InitDisplay(gpuConfig_t *config)
     Con_Printf("...setting mode %i\n", r_mode->i);
     
     // init OpenGL
-    GLimp_Init(config);
+    GLimp_Init( config );
+    GLimp_InitGamma( config );
 }

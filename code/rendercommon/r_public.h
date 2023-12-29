@@ -84,7 +84,7 @@ typedef struct {
     void (*G_SetScaling)(float factor, uint32_t captureWidth, uint32_t captureHeight);
 
     void (*GLimp_Init)(gpuConfig_t *config);
-    void (*GLimp_SetGamma)(const unsigned short r[256], const unsigned short g[256], const unsigned short b[256]);
+    void (*GLimp_SetGamma)( unsigned char red[256], unsigned char green[256], unsigned char blue[256] );
     void (*GLimp_HideFullscreenWindow)(void);
     void (*GLimp_EndFrame)(void);
     void (*GLimp_Shutdown)(qboolean unloadDLL);

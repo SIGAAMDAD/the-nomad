@@ -22,8 +22,8 @@ static void Image_Free(void *ptr) {
 static byte s_intensitytable[256];
 static unsigned char s_gammatable[256];
 
-int		gl_filter_min = GL_LINEAR;
-int		gl_filter_max = GL_NEAREST;
+int32_t gl_filter_min = GL_LINEAR;
+int32_t gl_filter_max = GL_NEAREST;
 
 #define FILE_HASH_SIZE 1024
 static texture_t *hashTable[FILE_HASH_SIZE];
@@ -45,10 +45,10 @@ typedef struct {
 } textureFilterMode_t;
 
 static const textureFilterMode_t filters[] = {
-    {"Linear", GL_LINEAR, GL_LINEAR},
-    {"Nearest", GL_NEAREST, GL_NEAREST},
-    {"Bilinear", GL_NEAREST, GL_LINEAR},
-    {"Trilinear", GL_LINEAR, GL_NEAREST}
+    { "Linear", GL_LINEAR, GL_LINEAR },
+    { "Nearest", GL_NEAREST, GL_NEAREST },
+    { "Bilinear", GL_NEAREST, GL_LINEAR },
+    { "Trilinear", GL_LINEAR, GL_NEARES T}
 };
 
 /*
@@ -98,14 +98,12 @@ void R_UpdateTextures(void)
     for (i = 0; i < rg.numTextures; i++) {
         t = rg.textures[i];
 
-		if (!(t->flags & IMGFLAG_CUBEMAP)) {
-	        GL_BindTexture(GL_TEXTURE0, t);
+	    GL_BindTexture(GL_TEXTURE0, t);
 
-	        nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filters[i].min);
-	        nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filters[i].mag);
+	    nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filters[i].min );
+	    nglTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filters[i].mag );
 
-	        GL_BindTexture(GL_TEXTURE0, 0);
-		}
+	    GL_BindTexture(GL_TEXTURE0, 0);
     }
 }
 
