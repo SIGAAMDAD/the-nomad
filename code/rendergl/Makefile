@@ -56,6 +56,7 @@ INTERNAL_OBJS=\
 	$(O)/rendergl/rgl_shader.o \
 	$(O)/rendergl/rgl_cmd.o \
 	$(O)/rendergl/rgl_draw.o \
+	$(O)/rendergl/r_noise.o \
 	$(O)/rendergl/rgl_shade_calc.o \
 	$(O)/rendergl/rgl_extensions.o \
 	$(O)/rendergl/rgl_glsl_fallback.o \
@@ -71,6 +72,8 @@ INTERNAL_OBJS=\
 $(O)/rendergl/%.o: $(SDIR)/engine/%.c
 	$(CC) $(CFLAGS) -shared -fPIC -o $@ -c $<
 $(O)/rendergl/%.o: $(SDIR)/rendergl/%.c
+	$(CC) $(CFLAGS) -shared -fPIC -o $@ -c $<
+$(O)/rendergl/%.o: $(SDIR)/rendercommon/%.c
 	$(CC) $(CFLAGS) -shared -fPIC -o $@ -c $<
 
 $(LIB): $(INTERNAL_OBJS)

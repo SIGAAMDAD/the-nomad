@@ -50,7 +50,7 @@ typedef struct {
     void (*Cvar_Reset)(const char *name);
     const char *(*Cvar_VariableString)(const char *name);
 
-    void (*GLM_MakeVPMQuake3)( mat4_t vpm, mat4_t projection, mat4_t view );
+    void (*GLM_MakeVPMScreenSpace)( mat4_t vpm, mat4_t projection, mat4_t view );
     void (*GLM_MakeVPM)( float aspect, float *zoom, vec3_t origin, mat4_t vpm, mat4_t projection, mat4_t view );
     void (*GLM_TransformToGL)( const vec3_t world, vec3_t *xyz, mat4_t vpm );
 
@@ -82,8 +82,12 @@ typedef struct {
     void (*FS_WriteFile)(const char *npath, const void *buffer, uint64_t size);
 
     void (*G_SetScaling)(float factor, uint32_t captureWidth, uint32_t captureHeight);
+    size_t (*G_SaveJPGToBuffer)( byte *buffer, size_t bufSize, int32_t quality, int32_t imageWidth, int32_t imageHeight, byte *imageBuffer, int32_t padding );
+    void (*G_SaveJPG)( const char *filename, int32_t quality, int32_t imageWidth, int32_t imageHeight, byte *imageBuffer, int32_t padding );
+    void (*G_LoadJPG)( const char *filename, byte **pic, int32_t *width, int32_t *height );
 
-    void (*GLimp_Init)(gpuConfig_t *config);
+    void (*GLimp_Init)( gpuConfig_t *config );
+    void (*GLimp_InitGamma)( gpuConfig_t *config );
     void (*GLimp_SetGamma)( unsigned char red[256], unsigned char green[256], unsigned char blue[256] );
     void (*GLimp_HideFullscreenWindow)(void);
     void (*GLimp_EndFrame)(void);

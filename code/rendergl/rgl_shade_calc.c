@@ -19,9 +19,9 @@ along with Quake III Arena source code; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
-// tr_shade_calc.c
+// rgl_shade_calc.c
 
-#include "tr_local.h"
+#include "rgl_local.h"
 
 
 #define	WAVEVALUE( table, base, amplitude, phase, freq )  ((base) + table[ (int64_t)( ( ( (phase) + backend.refdef.floatTime * (freq) ) * FUNCTABLE_SIZE ) ) & FUNCTABLE_MASK ] * (amplitude))
@@ -136,7 +136,7 @@ static void RB_CalcDeformVertexes( deformStage_t *ds )
 
 		for ( i = 0; i < backend.drawBatch.vtxOffset; i++, vtx++ )
 		{
-			float off = ( xyz[0] + xyz[1] + xyz[2] ) * ds->deformationSpread;
+			float off = ( vtx->xyz[0] + vtx->xyz[1] + vtx->xyz[2] ) * ds->deformationSpread;
 
 			scale = WAVEVALUE( table, ds->deformationWave.base, 
 				ds->deformationWave.amplitude,

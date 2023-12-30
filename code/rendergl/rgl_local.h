@@ -56,7 +56,9 @@ typedef uint32_t glIndex_t;
 #define PRINT_DEVELOPER 1
 #define PRINT_WARNING 2
 
-#define PSHADOW_MAP_SIZE 512
+#define MAX_CALC_PSHADOWS    64
+#define MAX_DRAWN_PSHADOWS    16 // do not increase past 32, because bit flags are used on surfaces
+#define PSHADOW_MAP_SIZE      512
 
 #define NGL_VERSION_ATLEAST(major,minor) (glContext.versionMajor > major || (glContext.versionMajor == major && glContext.versionMinor >= minor))
 
@@ -420,6 +422,34 @@ typedef struct {
 } vertexBuffer_t;
 
 
+
+typedef struct fbo_s
+{
+	char            name[MAX_GDR_PATH];
+
+	int32_t         index;
+
+	uint32_t        frameBuffer;
+
+	uint32_t        colorBuffers[16];
+	int32_t         colorFormat;
+	texture_t       *colorImage[16];
+
+	uint32_t        depthBuffer;
+	int32_t         depthFormat;
+
+	uint32_t        stencilBuffer;
+	int32_t         stencilFormat;
+
+	uint32_t        packedDepthStencilBuffer;
+	int32_t         packedDepthStencilFormat;
+
+    int32_t         width;
+    int32_t         height;
+} fbo_t;
+
+
+
 //==================================================================
 
 /*
@@ -435,6 +465,40 @@ typedef enum {
 
     SS_BLEND,           // the standard
 } shaderSort_t;
+
+typedef enum {
+	GF_NONE,
+
+	GF_SIN,
+	GF_SQUARE,
+	GF_TRIANGLE,
+	GF_SAWTOOTH, 
+	GF_INVERSE_SAWTOOTH, 
+
+	GF_NOISE
+
+} genFunc_t;
+
+
+typedef enum {
+	DEFORM_NONE,
+	DEFORM_WAVE,
+	DEFORM_NORMALS,
+	DEFORM_BULGE,
+	DEFORM_MOVE,
+	DEFORM_PROJECTION_SHADOW,
+	DEFORM_AUTOSPRITE,
+	DEFORM_AUTOSPRITE2,
+	DEFORM_TEXT0,
+	DEFORM_TEXT1,
+	DEFORM_TEXT2,
+	DEFORM_TEXT3,
+	DEFORM_TEXT4,
+	DEFORM_TEXT5,
+	DEFORM_TEXT6,
+	DEFORM_TEXT7
+} deform_t;
+
 
 typedef enum {
 	AGEN_IDENTITY,
@@ -476,19 +540,6 @@ typedef enum {
 	TCGEN_FOG,
 	TCGEN_VECTOR			// S and T from world coordinates
 } texCoordGen_t;
-
-typedef enum {
-	GF_NONE,
-
-	GF_SIN,
-	GF_SQUARE,
-	GF_TRIANGLE,
-	GF_SAWTOOTH, 
-	GF_INVERSE_SAWTOOTH, 
-
-	GF_NOISE
-
-} genFunc_t;
 
 typedef enum {
 	ACFF_NONE,
@@ -881,46 +932,96 @@ typedef enum {
 
 typedef struct
 {
-    texture_t *defaultImage;
-    texture_t *whiteImage;
+    qboolean				registered;		// cleared at shutdown, set at beginRegistration
 
-    texture_t **lightmaps;
-    uint64_t numLightmaps;
+	uint32_t				frameCount;		// incremented every frame
+	uint32_t				sceneCount;		// incremented every scene
+	uint32_t				viewCount;		// incremented every view (twice a scene if portaled)
+											// and every R_MarkFragments call
 
-    shader_t *defaultShader;
+	uint32_t	   			frameSceneNum;	// zeroed at RE_BeginFrame
+
+	qboolean				worldMapLoaded;
+	qboolean				worldDeluxeMapping;
+	vec3_t                  toneMinAvgMaxLevel;
+	world_t					*world;
+
+	texture_t				*defaultImage;
+//	texture_t				*scratchImage[ MAX_VIDEO_HANDLES ];
+//	texture_t				*fogImage;
+	texture_t				*dlightImage;	// inverse-quare highlight for projective adding
+	texture_t				*flareImage;
+	texture_t				*whiteImage;			// full of 0xff
+	texture_t				*identityLightImage;	// full of tr.identityLightByte	
+
+	texture_t				*renderImage;
+	texture_t				*sunRaysImage;
+	texture_t				*renderDepthImage;
+	texture_t				*pshadowMaps[MAX_DRAWN_PSHADOWS];
+	texture_t				*screenScratchImage;
+	texture_t				*textureScratchImage[2];
+	texture_t               *quarterImage[2];
+//	texture_t				*calcLevelsImage;
+//	texture_t				*targetLevelsImage;
+//	texture_t				*fixedLevelsImage;
+	texture_t				*sunShadowDepthImage[4];
+	texture_t               *screenShadowImage;
+	texture_t               *screenSsaoImage;
+	texture_t				*hdrDepthImage;
+//	texture_t               *renderCubeImage;
+	
+	texture_t				*textureDepthImage;
+
+	fbo_t					*renderFbo;
+	fbo_t					*msaaResolveFbo;
+	fbo_t					*sunRaysFbo;
+	fbo_t					*depthFbo;
+	fbo_t					*pshadowFbos[MAX_DRAWN_PSHADOWS];
+	fbo_t					*screenScratchFbo;
+	fbo_t					*textureScratchFbo[2];
+	fbo_t                   *quarterFbo[2];
+	fbo_t					*calcLevelsFbo;
+	fbo_t					*targetLevelsFbo;
+	fbo_t					*sunShadowFbo[4];
+	fbo_t					*screenShadowFbo;
+	fbo_t					*screenSsaoFbo;
+	fbo_t					*hdrDepthFbo;
+//	fbo_t                   *renderCubeFbo;
+
+	shader_t				*defaultShader;
+	shader_t				*shadowShader;
+	shader_t				*projectionShadowShader;
+
+	shader_t				*flareShader;
+	shader_t				*sunShader;
+	shader_t				*sunFlareShader;
+
+	uint32_t				numLightmaps;
+	uint32_t				lightmapSize;
+	texture_t				**lightmaps;
+	texture_t				**deluxemaps;
 
     spriteSheet_t *sheets[MAX_RENDER_SPRITESHEETS];
-    uint64_t numSpriteSheets;
+    uint32_t numSpriteSheets;
 
     vertexBuffer_t *buffers[MAX_RENDER_BUFFERS];
-    uint64_t numBuffers;
+    uint32_t numBuffers;
 
     shader_t *shaders[MAX_RENDER_SHADERS];
     shader_t *sortedShaders[MAX_RENDER_SHADERS];
-    uint64_t numShaders;
+    uint32_t numShaders;
 
     shaderProgram_t *programs[MAX_RENDER_PROGRAMS];
-    uint64_t numPrograms;
+    uint32_t numPrograms;
 
     texture_t *textures[MAX_RENDER_TEXTURES];
-    uint64_t numTextures;
-
-    world_t *world;
-    qboolean worldLoaded;
-
-    uint64_t viewCount;
-
-    qboolean registered;
-
-    uint64_t frameSceneNum;
-    uint64_t frameCount;
+    uint32_t numTextures;
 
     float identityLight;
     uint32_t identityLightByte;
+    uint32_t overbrightBits;
 
-    uint64_t frontEndMsec;
-    double shaderTime;
-    double lastShaderTime;
+    uint64_t frontEntMsec;
 
     shaderProgram_t basicShader;
     shaderProgram_t imguiShader;
@@ -1014,57 +1115,123 @@ extern renderBackend_t backend;
 #define CLAMP(a,b,c) MIN(MAX((a),(b)),(c))
 #endif
 
-extern cvar_t *r_useExtensions;
-extern cvar_t *r_allowLegacy;
-extern cvar_t *r_allowShaders;
-extern cvar_t *r_multisample;
-extern cvar_t *r_overBrightBits;
-extern cvar_t *r_ignorehwgamma;
+
+extern cvar_t *r_measureOverdraw;		// enables stencil buffer overdraw measurement
+
+extern cvar_t *r_fastsky;				// controls whether sky should be cleared or drawn
+extern cvar_t *r_drawSun;				// controls drawing of sun quad
+extern cvar_t *r_dynamiclight;		    // dynamic lights enabled/disabled
+extern cvar_t *r_dlightBacks;			// dlight non-facing surfaces for continuity
+
+extern cvar_t *r_norefresh;			    // bypasses the ref rendering
+extern cvar_t *r_drawentities;		    // disable/enable entity rendering
+extern cvar_t *r_drawworld;			    // disable/enable world rendering
+extern cvar_t *r_speeds;				// various levels of information display
+extern cvar_t *r_detailTextures;		// enables/disables detail texturing stages
+
+extern cvar_t *r_gammaAmount;
+
+extern cvar_t *r_singleShader;			// make most world faces use default shader
+extern cvar_t *r_roundImagesDown;
+extern cvar_t *r_picmip;				// controls picmip values
+extern cvar_t *r_finish;
+extern cvar_t *r_textureMode;
+
+extern cvar_t *r_fullbright;			// avoid lightmap pass
+extern cvar_t *r_lightmap;			    // render lightmaps only
+extern cvar_t *r_vertexLight;			// vertex lighting mode for better performance
+
+extern cvar_t *r_showSky;			    // forces sky in front of all surfaces
+extern cvar_t *r_clear;			        // force screen clear every frame
+
+extern cvar_t *r_shadows;				// controls shadows: 0 = none, 1 = blur, 2 = stencil, 3 = black planar projection
+extern cvar_t *r_flares;				// light flares
+
+extern cvar_t *r_intensity;
+
+extern cvar_t *r_skipBackEnd;
+
+extern cvar_t *r_externalGLSL;
+
+extern cvar_t *r_hdr;
+extern cvar_t *r_floatLightmap;
+extern cvar_t *r_postProcess;
+extern cvar_t *r_lightmap;
+
+extern cvar_t *r_toneMap;
+extern cvar_t *r_forceToneMap;
+extern cvar_t *r_forceToneMapMin;
+extern cvar_t *r_forceToneMapAvg;
+extern cvar_t *r_forceToneMapMax;
+
+extern cvar_t *r_depthPrepass;
+extern cvar_t *r_ssao;
+
 extern cvar_t *r_normalMapping;
 extern cvar_t *r_specularMapping;
-extern cvar_t *r_genNormalMaps;
-extern cvar_t *r_drawMode;
-extern cvar_t *r_hdr;
+extern cvar_t *r_deluxeMapping;
+extern cvar_t *r_parallaxMapping;
+extern cvar_t *r_parallaxMapOffset;
+extern cvar_t *r_parallaxMapShadows;
+extern cvar_t *r_cubeMapping;
+extern cvar_t *r_cubemapSize;
+extern cvar_t *r_deluxeSpecular;
 extern cvar_t *r_pbr;
-extern cvar_t *r_ssao;
-extern cvar_t *r_greyscale;
-extern cvar_t *r_externalGLSL;
-extern cvar_t *r_ignoreDstAlpha;
-extern cvar_t *r_fullbright;
-extern cvar_t *r_intensity;
-extern cvar_t *r_singleShader;
-extern cvar_t *r_glDebug;
-extern cvar_t *r_textureBits;
-extern cvar_t *r_stencilBits;
-extern cvar_t *r_finish;
-extern cvar_t *r_picmip;
-extern cvar_t *r_roundImagesDown;
-extern cvar_t *r_gammaAmount;
-extern cvar_t *r_printShaders;
-extern cvar_t *r_textureDetail;
-extern cvar_t *r_textureFiltering;
-extern cvar_t *r_speeds;
-extern cvar_t *r_showImages;
-extern cvar_t *r_skipBackEnd;
-extern cvar_t *r_znear;
-extern cvar_t *r_measureOverdraw;
-extern cvar_t *r_ignoreGLErrors;
-extern cvar_t *r_clear;
-extern cvar_t *r_drawBuffer;
-extern cvar_t *r_customWidth;
-extern cvar_t *r_customHeight;
-extern cvar_t *r_mappedBuffers;
-extern cvar_t *r_glDiagnostics;
 extern cvar_t *r_baseNormalX;
 extern cvar_t *r_baseNormalY;
 extern cvar_t *r_baseParallax;
 extern cvar_t *r_baseSpecular;
 extern cvar_t *r_baseGloss;
-extern cvar_t *r_lightmap;
-extern cvar_t *r_zproj;
-extern cvar_t *r_stereoSeparation;
+extern cvar_t *r_glossType;
+extern cvar_t *r_dlightMode;
+extern cvar_t *r_pshadowDist;
+extern cvar_t *r_mergeLightmaps;
+extern cvar_t *r_imageUpsample;
+extern cvar_t *r_imageUpsampleMaxSize;
+extern cvar_t *r_imageUpsampleType;
+extern cvar_t *r_genNormalMaps;
+extern cvar_t *r_forceSun;
+extern cvar_t *r_forceSunLightScale;
+extern cvar_t *r_forceSunAmbientScale;
+extern cvar_t *r_sunlightMode;
+extern cvar_t *r_drawSunRays;
+extern cvar_t *r_sunShadows;
+extern cvar_t *r_shadowFilter;
+extern cvar_t *r_shadowBlur;
+extern cvar_t *r_shadowMapSize;
+extern cvar_t *r_shadowCascadeZNear;
+extern cvar_t *r_shadowCascadeZFar;
+extern cvar_t *r_shadowCascadeZBias;
+extern cvar_t *r_ignoreDstAlpha;
 
-extern cvar_t *r_maxQuads;
+extern cvar_t *r_greyscale;
+
+extern cvar_t *r_ignoreGLErrors;
+
+extern cvar_t *r_overBrightBits;
+extern cvar_t *r_mapOverBrightBits;
+
+extern cvar_t *r_showImages;
+
+extern cvar_t *r_printShaders;
+
+extern cvar_t *r_useExtensions;
+extern cvar_t *r_allowLegacy;
+extern cvar_t *r_allowShaders;
+extern cvar_t *r_multisample;
+extern cvar_t *r_ignorehwgamma;
+extern cvar_t *r_drawMode;
+extern cvar_t *r_glDebug;
+extern cvar_t *r_textureBits;
+extern cvar_t *r_stencilBits;
+extern cvar_t *r_textureDetail;
+extern cvar_t *r_textureFiltering;
+extern cvar_t *r_drawBuffer;
+extern cvar_t *r_customWidth;
+extern cvar_t *r_customHeight;
+extern cvar_t *r_mappedBuffers;
+extern cvar_t *r_glDiagnostics;
+
 extern cvar_t *r_maxPolys;
 extern cvar_t *r_maxEntities;
 extern cvar_t *r_maxDLights;
@@ -1072,7 +1239,6 @@ extern cvar_t *r_maxDLights;
 extern cvar_t *r_imageUpsampleType;
 extern cvar_t *r_imageUpsample;
 extern cvar_t *r_imageUpsampleMaxSize;
-extern cvar_t *r_colorMipLevels;
 
 // OpenGL extensions
 extern cvar_t *r_arb_texture_compression;
@@ -1273,6 +1439,7 @@ typedef enum
     RC_SWAP_BUFFERS,
     RC_DRAW_BUFFER,
     RC_COLORMASK,
+    RC_SCREENSHOT,
 
     // mainly called from the vm
     RC_DRAW_IMAGE,
@@ -1310,6 +1477,17 @@ typedef struct {
 } drawImageCmd_t;
 
 typedef struct {
+	renderCmdType_t commandId;
+	int x;
+	int y;
+	int width;
+	int height;
+	const char *fileName;
+	qboolean jpeg;
+} screenshotCommand_t;
+
+
+typedef struct {
     renderCmdType_t commandId;
     viewData_t viewData;
 } postProcessCmd_t;
@@ -1325,7 +1503,9 @@ typedef struct {
     uint64_t numPolys;
     uint64_t numIndices;
 
+    qboolean screenshotFrame;
     renderCommandList_t commandList;
+    screenshotCommand_t screenshotBuf;
 } renderBackendData_t;
 
 extern renderBackendData_t *backendData;
@@ -1335,7 +1515,11 @@ void RE_LoadWorldMap(const char *filename);
 void RE_SetColor(const float *rgba);
 void R_IssuePendingRenderCommands(void);
 
+// https://zerowing.idsoftware.com/bugzilla/show_bug.cgi?id=516
+void RB_TakeScreenshotCmd( void );
+void *R_GetCommandBuffer( uint32_t bytes );
+
 float R_NoiseGet4f( float x, float y, float z, double t );
-void R_NoiseInit();
+void R_NoiseInit( void );
 
 #endif

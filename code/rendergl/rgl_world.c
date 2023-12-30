@@ -155,7 +155,7 @@ GDR_EXPORT void RE_LoadWorldMap(const char *filename)
         ri.Error(ERR_DROP, "RE_LoadWorldMap: name '%s' too long", filename);
     }
 
-    if (rg.worldLoaded) {
+    if (rg.worldMapLoaded) {
         ri.Error(ERR_DROP, "attempted to reduntantly load world map");
     }
 
@@ -169,7 +169,7 @@ GDR_EXPORT void RE_LoadWorldMap(const char *filename)
     // try will not look at the partially loaded version
     rg.world = NULL;
 
-    rg.worldLoaded = qtrue;
+    rg.worldMapLoaded = qtrue;
 
     memset(&r_worldData, 0, sizeof(r_worldData));
     N_strncpyz(r_worldData.name, filename, sizeof(r_worldData.name));

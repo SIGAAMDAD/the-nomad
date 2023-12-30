@@ -6,7 +6,6 @@ static void R_PerformanceCounters(void)
 {
 	if (!r_speeds->i) {
 		// clear the counters even if we aren't printing
-//		memset(&rg.pc, 0, sizeof(rg.pc));
 		memset(&backend.pc, 0, sizeof(backend.pc));
 		return;
 	}

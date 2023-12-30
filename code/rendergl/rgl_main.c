@@ -37,8 +37,13 @@ void RB_MakeViewMatrix( void )
     glState.viewData.zFar = -1.0f;
     glState.viewData.zNear = 1.0f;
 
-    ri.GLM_MakeVPM( aspect, &glState.viewData.camera.zoom, glState.viewData.camera.origin, glState.viewData.camera.viewProjectionMatrix,
-        glState.viewData.camera.projectionMatrix, glState.viewData.camera.viewMatrix );
+    if ( glState.viewData.flags & RSF_USE_ORTHO_UI ) {
+        ri.GLM_MakeVPMScreenSpace( glState.viewData.camera.viewProjectionMatrix, glState.viewData.camera.projectionMatrix,
+            glState.viewData.camera.viewMatrix );
+    } else {
+        ri.GLM_MakeVPM( aspect, &glState.viewData.camera.zoom, glState.viewData.camera.origin, glState.viewData.camera.viewProjectionMatrix,
+            glState.viewData.camera.projectionMatrix, glState.viewData.camera.viewMatrix );
+    }
 
 #if 0
     // setup ortho projection matrix
@@ -60,7 +65,7 @@ void RB_MakeViewMatrix( void )
 R_Radix
 ===============
 */
-static GDR_INLINE void R_RadixPoly( int32_t byte, uint32_t size, const srfPoly_t *source, srfPoly_t *dest )
+static GDR_INLINE void R_Radix( int32_t byte, uint32_t size, const srfPoly_t *source, srfPoly_t *dest )
 {
     uint32_t       count[ 256 ] = { 0 };
     uint32_t       index[ 256 ];
@@ -86,36 +91,6 @@ static GDR_INLINE void R_RadixPoly( int32_t byte, uint32_t size, const srfPoly_t
     }
 }
 
-/*
-===============
-R_Radix
-===============
-*/
-static GDR_INLINE void R_RadixQuad( int32_t byte, uint32_t size, const srfQuad_t *source, srfQuad_t *dest )
-{
-    uint32_t       count[ 256 ] = { 0 };
-    uint32_t       index[ 256 ];
-    uint32_t       i;
-    uint8_t        *sortKey;
-    uint8_t        *end;
-
-    sortKey = ( (uint8_t *)&source[ 0 ].hSpriteSheet ) + byte;
-    end = sortKey + ( size * sizeof( srfQuad_t ) );
-    for ( ; sortKey < end; sortKey += sizeof( srfQuad_t ) ) {
-        ++count[ *sortKey ];
-    }
-
-    index[ 0 ] = 0;
-
-    for ( i = 1; i < 256; ++i ) {
-        index[ i ] = index[ i - 1 ] + count[ i - 1 ];
-    }
-
-    sortKey = ( (uint8_t *)&source[ 0 ].hSpriteSheet ) + byte;
-    for ( i = 0; i < size; ++i, sortKey += sizeof( srfQuad_t ) ) {
-        dest[ index[ *sortKey ]++ ] = source[ i ];
-    }
-}
 
 /*
 ===============
@@ -124,49 +99,22 @@ R_RadixSort
 Radix sort with 4 byte size buckets
 ===============
 */
-static void R_RadixSortPoly( srfPoly_t *source, uint32_t size )
+static void R_RadixSort( srfPoly_t *source, uint32_t size )
 {
     srfPoly_t *scratch = (srfPoly_t *)ri.Hunk_AllocateTempMemory( sizeof(*scratch) * r_maxPolys->i );
     if ( !scratch ) {
-        N_Error( ERR_FATAL, "R_RadixSortPoly: failed to allocate sufficient memory for scratch sort buffer" );
+        N_Error( ERR_FATAL, "R_RadixSort: failed to allocate sufficient memory for scratch sort buffer" );
     }
 #ifdef GDR_LITTLE_ENDIAN
-    R_RadixPoly( 0, size, source, scratch );
-    R_RadixPoly( 1, size, scratch, source );
-    R_RadixPoly( 2, size, source, scratch );
-    R_RadixPoly( 3, size, scratch, source );
+    R_Radix( 0, size, source, scratch );
+    R_Radix( 1, size, scratch, source );
+    R_Radix( 2, size, source, scratch );
+    R_Radix( 3, size, scratch, source );
 #else
-    R_RadixPoly( 3, size, source, scratch );
-    R_RadixPoly( 2, size, scratch, source );
-    R_RadixPoly( 1, size, source, scratch );
-    R_RadixPoly( 0, size, scratch, source );
-#endif //Q3_LITTLE_ENDIAN
-    ri.Hunk_FreeTempMemory( scratch );
-}
-
-/*
-===============
-R_RadixSort
-
-Radix sort with 4 byte size buckets
-===============
-*/
-static void R_RadixSortQuad( srfQuad_t *source, uint32_t size )
-{
-    srfQuad_t *scratch = (srfQuad_t *)ri.Hunk_AllocateTempMemory( sizeof(*scratch) * r_maxQuads->i );
-    if ( !scratch ) {
-        N_Error( ERR_FATAL, "R_RadixSortQuad: failed to allocate sufficient memory for scratch sort buffer" );
-    }
-#ifdef GDR_LITTLE_ENDIAN
-    R_RadixQuad( 0, size, source, scratch );
-    R_RadixQuad( 1, size, scratch, source );
-    R_RadixQuad( 2, size, source, scratch );
-    R_RadixQuad( 3, size, scratch, source );
-#else
-    R_RadixQuad( 3, size, source, scratch );
-    R_RadixQuad( 2, size, scratch, source );
-    R_RadixQuad( 1, size, source, scratch );
-    R_RadixQuad( 0, size, scratch, source );
+    R_Radix( 3, size, source, scratch );
+    R_Radix( 2, size, scratch, source );
+    R_Radix( 1, size, source, scratch );
+    R_Radix( 0, size, scratch, source );
 #endif //Q3_LITTLE_ENDIAN
     ri.Hunk_FreeTempMemory( scratch );
 }
@@ -175,10 +123,6 @@ extern uint64_t r_numPolys, r_numPolyVerts, r_numQuads;
 
 static int SortPoly( const void *a, const void *b ) {
     return (int)( ( (srfPoly_t *)a )->hShader - ( (srfPoly_t *)b )->hShader );
-}
-
-static int SortQuad( const void *a, const void *b ) {
-    return (int)( ( (srfQuad_t *)a )->hSpriteSheet - ( (srfQuad_t *)b )->hSpriteSheet );
 }
 
 void R_WorldToGL( drawVert_t *verts, vec3_t pos )
@@ -224,7 +168,7 @@ void R_DrawPolys( void )
 
     // sort the polys to be more efficient with our shaders
 #if 1
-    R_RadixSortPoly( backendData->polys, r_numPolys );
+    R_RadixSort( backendData->polys, r_numPolys );
 #else
     qsort( backendData->polys, r_numPolys, sizeof(srfPoly_t), SortPoly );
 #endif
@@ -313,158 +257,9 @@ static void R_DrawWorld( void )
     RB_FlushBatchBuffer();
 }
 
-/*
-=================
-R_SetupFrustum
-
-Set up the culling frustum planes for the current view using the results we got from computing the first two rows of
-the projection matrix.
-=================
-*/
-static void R_SetupFrustum( viewData_t *dest, float xmin, float xmax, float ymax, float zProj, float zFar, float stereoSep )
-{
-	vec3_t ofsorigin;
-	float oppleg, adjleg, length;
-    uint32_t i;
-
-	if ( stereoSep == 0 && xmin == -xmax ) {
-		// symmetric case can be simplified
-		VectorCopy( dest->camera.origin, ofsorigin );
-
-		length = sqrt( xmax * xmax + zProj * zProj );
-		oppleg = xmax / length;
-		adjleg = zProj / length;
-
-		VectorScale( dest->camera.axis[0], oppleg, dest->frustum[0].normal );
-		VectorMA( dest->frustum[0].normal, adjleg, dest->camera.axis[1], dest->frustum[0].normal );
-
-		VectorScale( dest->camera.axis[0], oppleg, dest->frustum[1].normal );
-		VectorMA( dest->frustum[1].normal, -adjleg, dest->camera.axis[1], dest->frustum[1].normal );
-	}
-	else {
-		// In stereo rendering, due to the modification of the projection matrix, dest->camera.origin is not the
-		// actual origin that we're rendering so offset the tip of the view pyramid.
-		VectorMA( dest->camera.origin, stereoSep, dest->camera.axis[1], ofsorigin );
-	
-		oppleg = xmax + stereoSep;
-		length = sqrt( oppleg * oppleg + zProj * zProj );
-		VectorScale( dest->camera.axis[0], oppleg / length, dest->frustum[0].normal );
-		VectorMA( dest->frustum[0].normal, zProj / length, dest->camera.axis[1], dest->frustum[0].normal );
-
-		oppleg = xmin + stereoSep;
-		length = sqrt( oppleg * oppleg + zProj * zProj);
-		VectorScale( dest->camera.axis[0], -oppleg / length, dest->frustum[1].normal );
-		VectorMA( dest->frustum[1].normal, -zProj / length, dest->camera.axis[1], dest->frustum[1].normal );
-	}
-
-	length = sqrt( ymax * ymax + zProj * zProj );
-	oppleg = ymax / length;
-	adjleg = zProj / length;
-
-	VectorScale( dest->camera.axis[0], oppleg, dest->frustum[2].normal );
-	VectorMA( dest->frustum[2].normal, adjleg, dest->camera.axis[2], dest->frustum[2].normal );
-
-	VectorScale( dest->camera.axis[0], oppleg, dest->frustum[3].normal );
-	VectorMA( dest->frustum[3].normal, -adjleg, dest->camera.axis[2], dest->frustum[3].normal );
-	
-	for ( i = 0; i < 4; i++ ) {
-		dest->frustum[i].type = PLANE_NON_AXIAL;
-		dest->frustum[i].dist = DotProduct( ofsorigin, dest->frustum[i].normal );
-		SetPlaneSignbits( &dest->frustum[i] );
-	}
-
-	if ( zFar != 0.0f ) {
-		vec3_t farpoint;
-
-		VectorMA( ofsorigin, zFar, dest->camera.axis[0], farpoint );
-		VectorScale( dest->camera.axis[0], -1.0f, dest->frustum[4].normal );
-
-		dest->frustum[4].type = PLANE_NON_AXIAL;
-		dest->frustum[4].dist = DotProduct( farpoint, dest->frustum[4].normal );
-		SetPlaneSignbits( &dest->frustum[4] );
-//		dest->flags |= VPF_FARPLANEFRUSTUM;
-	}
-}
-
-/*
-===============
-R_SetupProjection
-===============
-*/
-void R_SetupProjection( viewData_t *dest, float zProj, float zFar, qboolean computeFrustum )
-{
-	float	xmin, xmax, ymin, ymax;
-	float	width, height, stereoSep = r_stereoSeparation->f;
-    float   *projectionMatrix;
-
-	/*
-	 * offset the view origin of the viewer for stereo rendering 
-	 * by setting the projection matrix appropriately.
-	 */
-
-	if ( stereoSep != 0 ) {
-		if ( dest->stereoFrame == STEREO_LEFT ) {
-			stereoSep = zProj / stereoSep;
-        } else if ( dest->stereoFrame == STEREO_RIGHT ) {
-			stereoSep = zProj / -stereoSep;
-    	} else {
-			stereoSep = 0;
-        }
-	}
-
-	ymax = zProj * tan( dest->fovY * M_PI / 360.0f );
-	ymin = -ymax;
-
-	xmax = zProj * tan( dest->fovX * M_PI / 360.0f );
-	xmin = -xmax;
-
-	width = xmax - xmin;
-	height = ymax - ymin;
-
-    projectionMatrix = &dest->camera.projectionMatrix[0][0];
-	
-	projectionMatrix[0] = 2 * zProj / width;
-	projectionMatrix[4] = 0;
-	projectionMatrix[8] = ( xmax + xmin + 2 * stereoSep ) / width;
-	projectionMatrix[12] = 2 * zProj * stereoSep / width;
-
-	projectionMatrix[1] = 0;
-	projectionMatrix[5] = 2 * zProj / height;
-	projectionMatrix[9] = ( ymax + ymin ) / height;	// normally 0
-	projectionMatrix[13] = 0;
-
-	projectionMatrix[3] = 0;
-	projectionMatrix[7] = 0;
-	projectionMatrix[11] = -1;
-	projectionMatrix[15] = 0;
-	
-	// Now that we have all the data for the projection matrix we can also setup the view frustum.
-	if ( computeFrustum ) {
-		R_SetupFrustum( dest, xmin, xmax, ymax, zProj, zFar, stereoSep );
-    }
-
-    ri.GLM_MakeVPMQuake3( dest->camera.viewProjectionMatrix, dest->camera.projectionMatrix, dest->camera.viewMatrix );
-}
-
 void R_RenderView( const viewData_t *parms )
 {
     rg.viewCount++;
-
-    if ( parms->flags & RSF_NOWORLDMODEL ) {
-        // do things Quake3 style
-
-        memcpy( &glState.viewData, parms, sizeof(*parms) );
-
-        R_SetupProjection( &glState.viewData, r_zproj->f, parms->zFar, qtrue );
-
-        // issue all currently pending rendering commands
-        R_IssuePendingRenderCommands();
-
-        // draw all submitted images
-        R_DrawPolys();
-
-        return;
-    }
 
     memcpy( &glState.viewData, parms, sizeof(*parms) );
 

@@ -48,7 +48,7 @@ static const textureFilterMode_t filters[] = {
     { "Linear", GL_LINEAR, GL_LINEAR },
     { "Nearest", GL_NEAREST, GL_NEAREST },
     { "Bilinear", GL_NEAREST, GL_LINEAR },
-    { "Trilinear", GL_LINEAR, GL_NEARES T}
+    { "Trilinear", GL_LINEAR, GL_NEAREST }
 };
 
 /*
@@ -136,12 +136,11 @@ R_ImageList_f
 void R_ImageList_f( void )
 {
 	uint32_t i;
-	uint32_t estTotalSize = 0;
+	uint64_t estTotalSize = 0;
 
-	ri.Printf(PRINT_INFO, "\n      -w-- -h-- -type-- -size- --name-------\n");
+	ri.Printf( PRINT_INFO, "\n      -w-- -h-- -type-- -size- --name-------\n" );
 
-	for ( i = 0 ; i < rg.numTextures ; i++ )
-	{
+	for ( i = 0 ; i < rg.numTextures ; i++ ) {
 		texture_t *image = rg.textures[i];
 		const char *format = "????   ";
 		const char *sizeSuffix;
@@ -287,13 +286,13 @@ void R_ImageList_f( void )
 			sizeSuffix = "Gb";
 		}
 
-		ri.Printf(PRINT_INFO, "%4i: %4ix%4i %s %4i%s %s\n", i, image->uploadWidth, image->uploadHeight, format, displaySize, sizeSuffix, image->imgName);
+		ri.Printf(PRINT_INFO, "%u: %4ux%4u %s %4u%s %s\n", i, image->uploadWidth, image->uploadHeight, format, displaySize, sizeSuffix, image->imgName);
 		estTotalSize += estSize;
 	}
 
 	ri.Printf(PRINT_INFO, " ---------\n");
-	ri.Printf(PRINT_INFO, " approx %i bytes\n", estTotalSize);
-	ri.Printf(PRINT_INFO, " %lu total images\n\n", rg.numTextures );
+	ri.Printf(PRINT_INFO, " approx %lu bytes\n", estTotalSize);
+	ri.Printf(PRINT_INFO, " %u total images\n\n", rg.numTextures );
 }
 
 //=======================================================================

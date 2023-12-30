@@ -99,6 +99,9 @@ VERSION       = 1
 VERSION_UPDATE= 1
 VERSION_PATCH = 0
 
+USE_OPENGL_API=1
+USE_VULKAN_API=0
+
 INCLUDE       =-Idependencies/include/ -Idependencies/include/EA/ -Ideps/squirrel/include -Ideps/squall/ $(OS_INCLUDE) -I. -Icode/
 VERSION_DEFINE=-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPDATE) -D_NOMAD_VERSION_PATCH=$(VERSION_PATCH)
 
@@ -120,11 +123,18 @@ ifeq ($(VM_CANNOT_COMPILE),true)
 	DEFINES+=-DVM_CANNOT_COMPILE
 endif
 
+ifdef USE_OPENGL_API
+DEFINES += -DUSE_OPENGL_API
+endif
+
+ifdef USE_VULKAN_API
+DEFINES += -DUSE_VULKAN_API
+endif
+
 ifndef win32
 LDLIBS=-L/usr/lib/x86_64-linux-gnu/ \
 		-lGL \
 		-lbacktrace \
-		-lboost_thread \
 		$(LIB_PREFIX)/libEASTL.a \
 		$(LIB_PREFIX)/libopenal.a \
 		-L$(LIB_PREFIX) \
@@ -141,7 +151,6 @@ LDLIBS=-L. \
 		-lOpenAL32 \
 		-lopengl32 \
 		-lsndfile \
-		-lboost_thread \
 		-lgdi32 \
 		-lmingw32 \
 		-lwinmm \

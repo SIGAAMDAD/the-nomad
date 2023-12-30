@@ -395,6 +395,13 @@ void SCR_DrawSmallString( uint32_t x, uint32_t y, const char *s, uint64_t len );
 void SCR_UpdateScreen( void );
 
 //
+// g_jpeg.cpp
+//
+size_t G_SaveJPGToBuffer( byte *buffer, size_t bufSize, int32_t quality, int32_t imageWidth, int32_t imageHeight, byte *imageBuffer, int32_t padding );
+void G_SaveJPG( const char *filename, int32_t quality, int32_t imageWidth, int32_t imageHeight, byte *imageBuffer, int32_t padding );
+void G_LoadJPG( const char *filename, byte **pic, int32_t *width, int32_t *height );
+
+//
 // g_console.cpp
 //
 void Con_DrawConsole( void );
@@ -410,6 +417,20 @@ void Con_ClearNotify( void );
 void Con_ToggleConsole_f( void );
 uint32_t Con_ExternalWindowID( void );
 void Con_ExternalWindowEvent( uint32_t value );
+
+// platform-specific
+void GLimp_InitGamma( gpuConfig_t *config );
+void GLimp_SetGamma( unsigned char red[256], unsigned char green[256], unsigned char blue[256] );
+
+// OpenGL
+#ifdef USE_OPENGL_API
+void GLimp_Init( gpuConfig_t *config );
+void GLimp_Shutdown( qboolean unloadDLL );
+void GLimp_EndFrame( void );
+void GLimp_HideFullscreenWindow( void );
+void GLimp_LogComment( const char *msg );
+void *GL_GetProcAddress( const char *name );
+#endif
 
 //
 // g_input.cpp

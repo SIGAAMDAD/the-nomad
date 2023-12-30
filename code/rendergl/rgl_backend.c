@@ -480,9 +480,14 @@ static const void *RB_SwapBuffers(const void *data)
 		ri.Hunk_FreeTempMemory( stencilReadback );
 	}
 
-    if (!glState.finishCalled) {
+    if ( !glState.finishCalled ) {
         nglFinish();
     }
+
+	if ( backendData->screenshotFrame ) {
+		RB_TakeScreenshotCmd();
+		backendData->screenshotFrame = qfalse;
+	}
 
     ri.GLimp_EndFrame();
 
@@ -611,9 +616,10 @@ void RB_ExecuteRenderCommands( const void *data )
 		case RC_SWAP_BUFFERS:
 			data = RB_SwapBuffers( data );
 			break;
-//		case RC_SCREENSHOT:
-//			data = RB_TakeScreenshotCmd( data );
-//			break;
+		case RC_SCREENSHOT:
+			backendData->screenshotBuf = *(const screenshotCommand_t *)data;
+			data = (const void *)( (const screenshotCommand_t *)data + 1 );
+			break;
 		case RC_COLORMASK:
 			data = RB_ColorMask(data);
 			break;

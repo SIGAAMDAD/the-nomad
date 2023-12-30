@@ -50,15 +50,6 @@ cvar_t *r_debugCameraSpeed;
 static void *renderLib;
 static glm::vec3 pos, worldCameraPos;
 
-
-void GLimp_HideFullscreenWindow(void);
-void GLimp_EndFrame(void);
-void GLimp_Shutdown(qboolean unloadDLL);
-void GLimp_LogComment(const char *comment);
-void GLimp_Minimize( void );
-void *GL_GetProcAddress(const char *name);
-void GLimp_SetGamma( unsigned char red[256], unsigned char green[256], unsigned char blue[256] );
-
 static uint32_t CopyLump( void *dest, uint32_t lump, uint64_t size, mapheader_t *header )
 {
     uint64_t length, fileofs;
@@ -389,15 +380,15 @@ static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, mat4_t vpm )
     }
 }
 
-static void GLM_MakeVPMQuake3( mat4_t vpm, mat4_t projection, mat4_t view )
+static void GLM_MakeVPMScreenSpace( mat4_t vpm, mat4_t projection, mat4_t view )
 {
     glm::mat4 viewProjectionMatrix, viewMatrix, projectionMatrix;
 
-    memcpy( &projectionMatrix[0][0], &projection[0][0], sizeof(mat4_t) );
-
+    projectionMatrix = glm::ortho( 0.0f, (float)r_customWidth->i, (float)r_customHeight->i, 0.0f, -1.0f, 1.0f );
     viewMatrix = glm::translate( glm::mat4( 1.0f ), glm::vec3( 0.0f ) );
     viewProjectionMatrix = projectionMatrix * viewMatrix;
 
+    memcpy( &projection[0][0], &projectionMatrix[0][0], sizeof(mat4_t) );
     memcpy( &vpm[0][0], &viewProjectionMatrix[0][0], sizeof(mat4_t) );
     memcpy( &view[0][0], &viewMatrix[0][0], sizeof(mat4_t) );
 }
@@ -520,6 +511,7 @@ static void G_InitRenderRef(void)
     import.CopyString = CopyString;
 
     import.GLimp_Init = G_InitDisplay;
+    import.GLimp_InitGamma = GLimp_InitGamma;
     import.GLimp_EndFrame = GLimp_EndFrame;
     import.GLimp_SetGamma = GLimp_SetGamma;
     import.GLimp_LogComment = GLimp_LogComment;
@@ -529,10 +521,13 @@ static void G_InitRenderRef(void)
     import.GL_GetProcAddress = GL_GetProcAddress;
 
     import.G_SetScaling = G_SetScaling;
+    import.G_SaveJPGToBuffer = G_SaveJPGToBuffer;
+    import.G_SaveJPG = G_SaveJPG;
+    import.G_LoadJPG = G_LoadJPG;
 
     import.GLM_TransformToGL = GLM_TransformToGL;
     import.GLM_MakeVPM = GLM_MakeVPM;
-    import.GLM_MakeVPMQuake3 = GLM_MakeVPMQuake3;
+    import.GLM_MakeVPMScreenSpace = GLM_MakeVPMScreenSpace;
 
     import.Milliseconds = Sys_Milliseconds;
 
@@ -1668,5 +1663,4 @@ void G_InitDisplay(gpuConfig_t *config)
     
     // init OpenGL
     GLimp_Init( config );
-    GLimp_InitGamma( config );
 }
