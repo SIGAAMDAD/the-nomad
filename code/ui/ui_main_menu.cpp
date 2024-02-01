@@ -248,6 +248,8 @@ void MainMenu_Draw( void )
 
 void MainMenu_Cache( void )
 {
+    extern ImFont *RobotoMono;
+
     memset( &menu, 0, sizeof(menu) );
     memset( &errorMenu, 0, sizeof(errorMenu) );
 
@@ -282,6 +284,7 @@ void MainMenu_Cache( void )
     menu.settingsString = strManager->ValueForKey("MENU_MAIN_SETTINGS");
 
     menu.font = FontCache()->AddFontToCache( "fonts/PressStart2P-Regular.ttf" );
+    RobotoMono = FontCache()->AddFontToCache( "fonts/RobotoMono/RobotoMono-Bold.ttf" );
 
     menu.noMenu = qfalse;
     menu.menuHeight = ui->GetConfig().vidHeight;

@@ -1,7 +1,7 @@
 #include "rgl_local.h"
 
-extern const char *fallbackShader_basic_vp;
-extern const char *fallbackShader_basic_fp;
+extern const char *fallbackShader_generic_vp;
+extern const char *fallbackShader_generic_fp;
 extern const char *fallbackShader_imgui_vp;
 extern const char *fallbackShader_imgui_fp;
 extern const char *fallbackShader_ssao_vp;
@@ -295,10 +295,10 @@ static int GLSL_LoadGPUShaderText(const char *name, const char *fallback, GLenum
     uint64_t size;
 
     if (shaderType == GL_VERTEX_SHADER) {
-        Com_snprintf(filename, sizeof(filename), "glsl/%s_vs.glsl", name);
+        Com_snprintf(filename, sizeof(filename), "shaders/%s_vp.glsl", name);
     }
     else {
-        Com_snprintf(filename, sizeof(filename), "glsl/%s_fs.glsl", name);
+        Com_snprintf(filename, sizeof(filename), "shaders/%s_fp.glsl", name);
     }
 
     if (r_externalGLSL->i) {
@@ -781,8 +781,8 @@ void GLSL_InitGPUShaders(void)
     start = ri.Milliseconds();
 
     attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_COLOR | ATTRIB_NORMAL;
-    if (!GLSL_InitGPUShader(&rg.basicShader, "basic", attribs, qtrue, NULL, qtrue, fallbackShader_basic_vp, fallbackShader_basic_fp)) {
-        ri.Error(ERR_FATAL, "Could not load basic shader");
+    if (!GLSL_InitGPUShader(&rg.basicShader, "generic", attribs, qtrue, NULL, qtrue, fallbackShader_generic_vp, fallbackShader_generic_fp)) {
+        ri.Error(ERR_FATAL, "Could not load generic shader");
     }
     GLSL_InitUniforms(&rg.basicShader);
     GLSL_FinishGPUShader(&rg.basicShader);
@@ -796,7 +796,7 @@ void GLSL_InitGPUShaders(void)
 
     end = ri.Milliseconds();
 
-    ri.Printf(PRINT_INFO, "...loaded %lu GLSL shaders in %5.2f seconds\n",
+    ri.Printf(PRINT_INFO, "...loaded %u GLSL shaders in %5.2f seconds\n",
         rg.numPrograms, (end - start) / 1000.0);
 }
 

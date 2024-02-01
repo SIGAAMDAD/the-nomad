@@ -2,7 +2,7 @@
 out vec4 a_Color;
 #endif
 
-in vec2 v_TexCoord;
+in vec2 v_TexCoords;
 in vec3 v_FragPos;
 in vec4 v_Color;
 
@@ -92,6 +92,6 @@ void AmbientLight() {
 
 void main() {
     vec4 color = v_Color;
-    color = vec4(0.0);
-    a_Color = texture2D( u_DiffuseMap, v_TexCoord.st ) * color;
+    color = vec4(1.0);
+    a_Color = texture2D( u_DiffuseMap, v_TexCoords ) * color;
 }

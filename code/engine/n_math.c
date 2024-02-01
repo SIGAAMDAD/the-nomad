@@ -666,14 +666,14 @@ int BoxOnPlaneSide(vec3_t emins, vec3_t emaxs, struct cplane_s *p)
 RadiusFromBounds
 =================
 */
-float RadiusFromBounds( const vec3_t mins, const vec3_t maxs ) {
+float RadiusFromBounds( const bbox_t *bounds ) {
 	int		i;
 	vec3_t	corner;
 	float	a, b;
 
 	for (i=0 ; i<3 ; i++) {
-		a = fabs( mins[i] );
-		b = fabs( maxs[i] );
+		a = fabs( bounds->mins[i] );
+		b = fabs( bounds->maxs[i] );
 		corner[i] = a > b ? a : b;
 	}
 
@@ -689,43 +689,42 @@ int VectorCompare( const vec3_t a, const vec3_t b ) {
 }
 #endif
 
-void ClearBounds( vec3_t mins, vec3_t maxs ) {
-	mins[0] = mins[1] = mins[2] = 99999;
-	maxs[0] = maxs[1] = maxs[2] = -99999;
+void ClearBounds( bbox_t *bounds ) {
+	bounds->mins[0] = bounds->mins[1] = bounds->mins[2] = 99999;
+	bounds->maxs[0] = bounds->maxs[1] = bounds->maxs[2] = -99999;
 }
 
-void AddPointToBounds( const vec3_t v, vec3_t mins, vec3_t maxs ) {
-	if ( v[0] < mins[0] ) {
-		mins[0] = v[0];
+void AddPointToBounds( const vec3_t v, bbox_t *bounds ) {
+	if ( v[0] < bounds->mins[0] ) {
+		bounds->mins[0] = v[0];
 	}
-	if ( v[0] > maxs[0]) {
-		maxs[0] = v[0];
-	}
-
-	if ( v[1] < mins[1] ) {
-		mins[1] = v[1];
-	}
-	if ( v[1] > maxs[1]) {
-		maxs[1] = v[1];
+	if ( v[0] > bounds->maxs[0]) {
+		bounds->maxs[0] = v[0];
 	}
 
-	if ( v[2] < mins[2] ) {
-		mins[2] = v[2];
+	if ( v[1] < bounds->mins[1] ) {
+		bounds->mins[1] = v[1];
 	}
-	if ( v[2] > maxs[2]) {
-		maxs[2] = v[2];
+	if ( v[1] > bounds->maxs[1]) {
+		bounds->maxs[1] = v[1];
+	}
+
+	if ( v[2] < bounds->mins[2] ) {
+		bounds->mins[2] = v[2];
+	}
+	if ( v[2] > bounds->maxs[2]) {
+		bounds->maxs[2] = v[2];
 	}
 }
 
-qboolean BoundsIntersect(const vec3_t mins, const vec3_t maxs,
-		const vec3_t mins2, const vec3_t maxs2)
+qboolean BoundsIntersect( const bbox_t *a, const bbox_t *b )
 {
-	if ( maxs[0] < mins2[0] ||
-		maxs[1] < mins2[1] ||
-		maxs[2] < mins2[2] ||
-		mins[0] > maxs2[0] ||
-		mins[1] > maxs2[1] ||
-		mins[2] > maxs2[2])
+	if ( a->maxs[0] < b->mins[0] ||
+		a->maxs[1] < b->mins[1] ||
+		a->maxs[2] < b->mins[2] ||
+		a->mins[0] > b->maxs[0] ||
+		a->mins[1] > b->maxs[1] ||
+		a->mins[2] > b->maxs[2])
 	{
 		return qfalse;
 	}
@@ -733,15 +732,15 @@ qboolean BoundsIntersect(const vec3_t mins, const vec3_t maxs,
 	return qtrue;
 }
 
-qboolean BoundsIntersectSphere(const vec3_t mins, const vec3_t maxs,
-		const vec3_t origin, vec_t radius)
+qboolean BoundsIntersectSphere( const bbox_t *bounds,
+		const vec3_t origin, vec_t radius )
 {
-	if ( origin[0] - radius > maxs[0] ||
-		origin[0] + radius < mins[0] ||
-		origin[1] - radius > maxs[1] ||
-		origin[1] + radius < mins[1] ||
-		origin[2] - radius > maxs[2] ||
-		origin[2] + radius < mins[2])
+	if ( origin[0] - radius > bounds->maxs[0] ||
+		origin[0] + radius < bounds->mins[0] ||
+		origin[1] - radius > bounds->maxs[1] ||
+		origin[1] + radius < bounds->mins[1] ||
+		origin[2] - radius > bounds->maxs[2] ||
+		origin[2] + radius < bounds->mins[2])
 	{
 		return qfalse;
 	}
@@ -749,15 +748,15 @@ qboolean BoundsIntersectSphere(const vec3_t mins, const vec3_t maxs,
 	return qtrue;
 }
 
-qboolean BoundsIntersectPoint(const vec3_t mins, const vec3_t maxs,
-		const vec3_t origin)
+qboolean BoundsIntersectPoint( const bbox_t *bounds,
+		const vec3_t origin )
 {
-	if ( origin[0] > maxs[0] ||
-		origin[0] < mins[0] ||
-		origin[1] > maxs[1] ||
-		origin[1] < mins[1] ||
-		origin[2] > maxs[2] ||
-		origin[2] < mins[2])
+	if ( origin[0] > bounds->maxs[0] ||
+		origin[0] < bounds->mins[0] ||
+		origin[1] > bounds->maxs[1] ||
+		origin[1] < bounds->mins[1] ||
+		origin[2] > bounds->maxs[2] ||
+		origin[2] < bounds->mins[2])
 	{
 		return qfalse;
 	}

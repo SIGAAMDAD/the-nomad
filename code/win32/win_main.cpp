@@ -527,10 +527,6 @@ char **Sys_ListFiles( const char *directory, const char *extension, const char *
 	nfiles = 0;
 
 	do {
-		// skip pwd '.' and '..', those'll cause a segfault in FS_PathCmp after FS_SortFileList
-		if (findinfo.name[0] == '.' || (findinfo.name[0] == '.' && findinfo.name[1] == '.')) {
-            continue;
-        }
 		if ( (!wantsubs && flag ^ ( findinfo.attrib & _A_SUBDIR )) || (wantsubs && findinfo.attrib & _A_SUBDIR) ) {
 			if ( nfiles == MAX_FOUND_FILES - 1 ) {
 				break;
@@ -1051,12 +1047,12 @@ static const int s_scantokey[ 128 ] =
 	0  , KEY_ESCAPE,  '1',    '2',    '3',    '4',    '5',    '6', 
 	'7',    '8',    '9',    '0',    '-',    '=',KEY_BACKSPACE,KEY_TAB,  // 0 
 	'q',    'w',    'e',    'r',    't',    'y',    'u',    'i', 
-	'o',    'p',    '[',    ']',  KEY_ENTER, KEY_LCTRL,	'a',	's',	// 1 
+	'o',    'p',    '[',    ']',  KEY_ENTER, KEY_CTRL,	'a',	's',	// 1 
 	'd',    'f',    'g',    'h',    'j',    'k',    'l',    ';', 
-	'\'',KEY_CONSOLE,KEY_LSHIFT, '\\',   'z',    'x',    'c',    'v',	// 2 
-	'b',    'n',    'm',    ',',    '.',    '/',  KEY_LSHIFT,  '*', 
-	KEY_LALT,  ' ',KEY_CAPSLOCK, KEY_F1,   KEY_F2,   KEY_F3,   KEY_F4,  KEY_F5,    // 3 
-	KEY_F6, KEY_F7,  KEY_F8,   KEY_F9,  KEY_F10, KEY_PAUSE, KEY_SCROLLLOCK, KEY_HOME, 
+	'\'',KEY_CONSOLE,KEY_SHIFT, '\\',   'z',    'x',    'c',    'v',	// 2 
+	'b',    'n',    'm',    ',',    '.',    '/',  KEY_SHIFT,  '*', 
+	KEY_ALT,  ' ',KEY_CAPSLOCK, KEY_F1,   KEY_F2,   KEY_F3,   KEY_F4,  KEY_F5,    // 3 
+	KEY_F6, KEY_F7,  KEY_F8,   KEY_F9,  KEY_F10, KEY_PAUSE, KEY_SCROLLOCK, KEY_HOME, 
 	KEY_UP,KEY_PAGEUP,KEY_KP_MINUS,KEY_LEFT,KEY_KP_5,KEY_RIGHT,KEY_KP_PLUS,KEY_END, //4 
 	KEY_DOWN,KEY_PAGEDOWN,KEY_INSERT,KEY_DELETE, 0,      0,      0,    KEY_F11, 
 	KEY_F12,  0  ,    0  ,    0  ,    0  ,  KEY_MENU,   0  ,    0,     // 5

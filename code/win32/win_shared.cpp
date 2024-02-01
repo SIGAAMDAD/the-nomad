@@ -164,7 +164,7 @@ qboolean Sys_SetAffinityMask( const uint64_t mask )
 #endif // USE_AFFINITY_MASK
 
 
-
+ 
 
 qboolean Sys_GetFileStats( fileStats_t *stats, const char *filename )
 {

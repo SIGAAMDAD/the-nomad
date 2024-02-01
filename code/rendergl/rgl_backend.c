@@ -453,13 +453,17 @@ static const void *RB_SwapBuffers(const void *data)
 	ri.ImGui_Draw();
 
 	if ( r_glDiagnostics->i ) {
-		nglEndQuery( GL_TIME_ELAPSED );
-    	nglEndQuery( GL_SAMPLES_PASSED );
-    	nglEndQuery( GL_PRIMITIVES_GENERATED );
+		if ( rg.beganQuery ) {
+			nglEndQuery( GL_TIME_ELAPSED );
+	    	nglEndQuery( GL_SAMPLES_PASSED );
+	    	nglEndQuery( GL_PRIMITIVES_GENERATED );
 
-    	nglGetQueryObjectiv( rg.queries[TIME_QUERY], GL_QUERY_RESULT, &rg.queryCounts[TIME_QUERY] );
-    	nglGetQueryObjectiv( rg.queries[SAMPLES_QUERY], GL_QUERY_RESULT, &rg.queryCounts[SAMPLES_QUERY] );
-    	nglGetQueryObjectiv( rg.queries[PRIMTIVES_QUERY], GL_QUERY_RESULT, &rg.queryCounts[PRIMTIVES_QUERY] );
+	    	nglGetQueryObjectiv( rg.queries[TIME_QUERY], GL_QUERY_RESULT, &rg.queryCounts[TIME_QUERY] );
+	    	nglGetQueryObjectiv( rg.queries[SAMPLES_QUERY], GL_QUERY_RESULT, &rg.queryCounts[SAMPLES_QUERY] );
+	    	nglGetQueryObjectiv( rg.queries[PRIMTIVES_QUERY], GL_QUERY_RESULT, &rg.queryCounts[PRIMTIVES_QUERY] );
+
+			rg.beganQuery = qfalse;
+		}
 	}
 
     // we measure overdraw by reading back the stencil buffer and
@@ -603,7 +607,7 @@ void RB_ExecuteRenderCommands( const void *data )
 	while ( 1 ) {
 		data = PADP(data, sizeof(void *));
 
-		switch ( *(const int *)data ) {
+		switch ( *(const renderCmdType_t *)data ) {
 		case RC_SET_COLOR:
 			data = RB_SetColor( data );
 			break;

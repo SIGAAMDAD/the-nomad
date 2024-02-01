@@ -185,11 +185,14 @@ static intptr_t G_SGameSystemCalls( intptr_t *args )
         return 0;
     case SG_MEMORY_REMAINING:
         return Hunk_MemoryRemaining();
-    case SG_G_LOADMAP:
+    case SG_G_SETACTIVEMAP:
         VM_CHECKBOUNDS( args[2], sizeof(mapinfo_t) );
         VM_CHECKBOUNDS( args[3], sizeof(int32_t) * MAX_MAP_WIDTH * MAX_MAP_HEIGHT );
         VM_CHECKBOUNDS( args[4], sizeof(linkEntity_t) );
-        return G_LoadMap( args[1], (mapinfo_t *)VMA( 2 ), (int32_t *)VMA( 3 ), (linkEntity_t *)VMA( 4 ) );
+        G_SetActiveMap( args[1], (mapinfo_t *)VMA( 2 ), (int32_t *)VMA( 3 ), (linkEntity_t *)VMA( 4 ) );
+        return 0;
+    case SG_G_LOADMAP:
+        return G_LoadMap( (const char *)VMA( 1 ) );
     case SG_FS_FOPENREAD:
         return FS_VM_FOpenRead( (const char *)VMA( 1 ), H_SGAME );
     case SG_FS_FOPENWRITE:

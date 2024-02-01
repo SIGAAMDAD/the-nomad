@@ -27,7 +27,7 @@ uint32_t smallchar_width;
 uint32_t smallchar_height;
 
 #if 0
-class CConsole
+class CDevConsole
 {
 public:
 	CConsole( void );
@@ -774,7 +774,7 @@ static void Con_DrawText( const char *txt )
 	if ( RobotoMono ) {
 		FontCache()->SetActiveFont( RobotoMono );
 	} else {
-		RobotoMono = FontCache()->AddFontToCache( "fonts/RobotoMono/RobotoMono-Regular.ttf" );
+		RobotoMono = FontCache()->AddFontToCache( "fonts/RobotoMono/RobotoMono-Bold.ttf" );
 	}
 
 	for ( i = 0, text = txt; i < len; i++, text++ ) {

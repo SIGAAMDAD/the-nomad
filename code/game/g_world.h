@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "../engine/n_threads.h"
+
 class CGameWorld
 {
 public:
@@ -27,6 +29,8 @@ private:
     linkEntity_t *m_pEndEnt;
     mapinfoReal_t *m_pMapInfo;
     int32_t *m_pSoundBits;
+
+    CThreadRWMutex m_hLock;
 };
 
 extern CGameWorld g_world;

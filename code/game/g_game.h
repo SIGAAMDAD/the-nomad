@@ -16,9 +16,6 @@
 #include <SDL2/SDL.h>
 #endif
 
-#ifndef O_BINARY
-#define O_BINARY 0
-#endif
 typedef enum
 {
     GS_INACTIVE,
@@ -30,7 +27,7 @@ typedef enum
     GS_MEMORY_VIEW,
 
     NUM_GAME_STATES
-} gamestate_t;
+} gameState_t;
 
 //
 // mapinfo_t
@@ -231,7 +228,13 @@ typedef struct {
 } mapCache_t;
 
 typedef struct {
-    char currentmap[MAX_GDR_PATH];
+    char mapname[MAX_NPATH];
+
+    int32_t framecount;
+    int32_t frametime;      // msec since last frame
+
+    int32_t realtime;       // ingores pause
+    int32_t realFrameTime;
 
     qboolean uiStarted;
     qboolean sgameStarted;
@@ -240,14 +243,6 @@ typedef struct {
     qboolean mapLoaded;
 
     qboolean togglePhotomode;
-
-    gamestate_t state;
-    int32_t frametime;
-    int32_t oldframetime;
-    int32_t framecount;
-    int32_t realtime;
-    int32_t realFrameTime;
-    int32_t sendtime;
     
     uint64_t lastVidRestart;
 
@@ -255,12 +250,9 @@ typedef struct {
 	int32_t mouseIndex;
     vec3_t viewangles;
     
-    gamestate_t oldState;
+    gameState_t oldState;
+    gameState_t state;
 
-    uint32_t cmdNumber;
-    usercmd_t cmds[CMD_BACKUP];
-
-//    uiMenu_t menuIndex;
     nhandle_t consoleShader;
     nhandle_t whiteShader;
     nhandle_t charSetShader;
@@ -366,15 +358,21 @@ void G_FlushMemory(void);
 void G_StartHunkUsers(void);
 void G_ShutdownAll(void);
 void G_ShutdownVMs(void);
-void G_Frame(int msec, int realMsec);
-void G_InitDisplay(gpuConfig_t *config);
+void G_Frame( int32_t msec, int32_t realMsec );
+void G_InitDisplay( gpuConfig_t *config );
 SDL_Window *G_GetSDLWindow(void);
 SDL_GLContext G_GetGLContext( void );
 void GLimp_Minimize( void );
-int32_t G_LoadMap( int32_t index, mapinfo_t *info, int32_t *soundBits, linkEntity_t *activeEnts );
 qboolean G_CheckPaused( void );
 qboolean G_CheckWallHit( const vec3_t origin, dirtype_t dir );
 void G_SetCameraData( const vec2_t origin, float zoom, float rotation );
+
+//
+// g_world.cpp
+//
+void G_InitMapCache( void );
+void G_SetActiveMap( nhandle_t hMap, mapinfo_t *info, int32_t *soundBits, linkEntity_t *activeEnts );
+nhandle_t G_LoadMap( const char *name );
 
 //
 // g_screen.cpp

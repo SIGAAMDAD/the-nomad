@@ -98,6 +98,7 @@ endif
 VERSION       = 1
 VERSION_UPDATE= 1
 VERSION_PATCH = 0
+VERSION_STRING= $(VERSION).$(VERSION_UPDATE).$(VERSION_PATCH)
 
 USE_OPENGL_API=1
 USE_VULKAN_API=0
@@ -146,6 +147,7 @@ SYS=\
 	$(O)/sys/unix_shared.o
 SYS_DIR=$(SDIR)/unix
 else
+INCLUDE+=-Ideps/
 LDLIBS=-L. \
 		-lSDL2 \
 		-lOpenAL32 \
@@ -157,8 +159,9 @@ LDLIBS=-L. \
 		-lcomctl32 \
 		-limagehlp \
 		-lpsapi \
+		-ljpeg-9 \
 		/usr/x86_64-w64-mingw32/lib/libmsvcrt.a \
-		-static-libgcc -static-libstdc++
+		-static-libgcc -static-libstdc++ \
 
 ifndef release
 LDLIBS+=-ldbghelp
@@ -180,7 +183,7 @@ GAME_DIR=$(O)/game
 
 COMPILE_SRC=$(CC) $(CFLAGS) -o $@ -c $<
 
-
+ifndef win32 
 JPGOBJ = \
   	$(O)/game/jpeg/jaricom.o \
   	$(O)/game/jpeg/jcapimin.o \
@@ -228,6 +231,7 @@ JPGOBJ = \
   	$(O)/game/jpeg/jquant1.o \
   	$(O)/game/jpeg/jquant2.o \
   	$(O)/game/jpeg/jutils.o
+endif
 
 SRC=\
 	$(O)/game/g_game.o \
@@ -299,6 +303,31 @@ makedirs:
 	@if [ ! -d $(O)/game/jpeg ];then $(MKDIR) $(O)/game/jpeg;fi
 
 targets: makedirs
+	@echo ""
+	@echo "Building thenomad:"
+	@echo ""
+	@echo "  VERSION: $(VERSION)"
+	@echo "  PLATFORM: $(PLATFORM)"
+	@echo "  ARCH: $(ARCH)"
+	@echo "  COMPILE_PLATFORM: $(COMPILE_PLATFORM)"
+	@echo "  COMPILE_ARCH: $(COMPILE_ARCH)"
+ifdef MINGW
+	@echo "  WINDRES: $(WINDRES)"
+endif
+	@echo "  CC: $(CC)"
+	@echo ""
+	@echo "  CFLAGS:"
+	@for i in $(CFLAGS); \
+	do \
+		echo "    $$i"; \
+	done
+	@echo ""
+	@echo "  Output:"
+	@for i in $(TARGETS); \
+	do \
+		echo "    $$i"; \
+	done
+	@echo ""
 	$(MAKE) $(EXE)
 
 $(O)/rendercommon/%.o: $(SDIR)/rendercommon/%.cpp

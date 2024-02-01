@@ -64,6 +64,7 @@ equ trap_CheckWallHit                       -61
 equ RE_RegisterSpriteSheet                  -62
 equ RE_RegisterSprite                       -63
 equ RE_AddSpriteToScene                     -64
+equ G_SetActiveMap                          -65
 
 equ ImGui_BeginWindow                       -401
 equ ImGui_EndWindow                         -402

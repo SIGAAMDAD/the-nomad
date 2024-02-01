@@ -1843,7 +1843,7 @@ void Com_Frame( qboolean noDelay )
 Sys_SnapVector
 ================
 */
-#if (__GNUC__ || _MSC_VER)
+#if defined(__GNUC__) || defined(_MSC_VER ) || defined(__MINGW64__) || defined(__MINGW32__)
 #include <xmmintrin.h>
 #if GDRx64
 void Sys_SnapVector( float *vector )

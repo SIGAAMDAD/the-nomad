@@ -64,14 +64,6 @@ static void G_GetGPUConfig(gpuConfig_t *config) {
     *config = gi.gpuConfig;
 }
 
-static void G_DrawMenu(const menuframework_t *menu)
-{
-    ImGui::Begin(menu->name);
-    for (uint32_t i = 0; i < menu->nitems; i++) {
-    }
-    ImGui::End();
-}
-
 static intptr_t G_UISystemCalls(intptr_t *args)
 {
     switch (args[0]) {

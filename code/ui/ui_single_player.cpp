@@ -160,7 +160,7 @@ void SinglePlayerMenu_Draw( void )
         break;
     case STATE_NEWGAME: {
 
-        ImGui::SetWindowSize( ImVec2( ImGui::GetWindowSize().x / 2, ImGui::GetWindowSize().y ) );
+        ImGui::SetWindowSize( ImVec2( (float)ui->GetConfig().vidWidth * 0.75f, ImGui::GetWindowSize().y ) );
 
         ui->EscapeMenuToggle( STATE_SINGLEPLAYER );
         const char *difName;
@@ -255,9 +255,9 @@ void SinglePlayerMenu_Draw( void )
         FontCache()->SetActiveFont( RobotoMono );
 
         font_scale = ImGui::GetFont()->Scale;
-        ImGui::SetWindowFontScale( font_scale * 1.75f );
+        ImGui::SetWindowFontScale( font_scale * 3.75f );
         ImGui::TextUnformatted( "Difficulty Description" );
-        ImGui::SetWindowFontScale( font_scale );
+        ImGui::SetWindowFontScale( font_scale * 2.75f );
         ImGui::TextWrapped( "%s", difficultyTable[(int32_t)sp.diff].tooltip );
         break; }
     case STATE_LOADGAME: {

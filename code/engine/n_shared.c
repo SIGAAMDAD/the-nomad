@@ -54,7 +54,7 @@ const byte locase[ 256 ] = {
 	0xf8,0xf9,0xfa,0xfb,0xfc,0xfd,0xfe,0xff
 };
 
-uint32_t crc32_buffer(const byte *buf, uint32_t len)
+uint32_t crc32_buffer( const byte *buf, uint32_t len )
 {
 	static uint32_t crc32_table[256];
 	static qboolean crc32_inited = qfalse;

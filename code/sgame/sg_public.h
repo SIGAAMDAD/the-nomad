@@ -7,8 +7,7 @@
 #include "../rendercommon/r_types.h"
 
 typedef struct linkEntity_s {
-    vec3_t mins;
-    vec3_t maxs;
+    bbox_t bounds;
     uint32_t type;
     uint32_t id;
 
@@ -16,15 +15,15 @@ typedef struct linkEntity_s {
     struct linkEntity_s *prev;
 } linkEntity_t;
 
-typedef struct
-{
+typedef struct {
 	vec3_t start;
 	vec3_t end;
 	vec3_t origin;
-	float speed;
+    void *hitData;
+//	float speed;
 	float length;
 	float angle;
-    void *hitData;
+    uint32_t flags; // unused for now
 } ray_t;
 
 typedef enum
@@ -125,8 +124,7 @@ typedef enum
     SG_RE_REGISTERSPRITE,
     SG_RE_ADDSPRITETOSCENE,
 
-    SG_G_LOADGAME,
-    SG_G_SAVEGAME,
+    SG_G_SETACTIVEMAP,
 
     IMGUI_BEGIN_WINDOW = 400,
     IMGUI_END_WINDOW,
@@ -236,8 +234,10 @@ typedef enum
     SGAME_EVENT_NONE,
     SGAME_GET_STATE,
 
-    SGAME_LOAD,
-    SGAME_SAVE,
+    SGAME_LOAD_GAME,
+    SGAME_SAVE_GAME,
+
+    SGAME_GET_CURRENT_LEVEL_INDEX,
 
     SGAME_EXPORT_LAST,
 } sgameExport_t;

@@ -57,9 +57,9 @@ void _VectorScale( const vec3_t *in, float scale, vec3_t *out );
 void _VectorMA( const vec3_t *veca, float scale, const vec3_t *vecb, vec3_t *vecc );
 
 float NormalizeColor( const vec3_t *in, vec3_t *out );
-float RadiusFromBounds( const vec3_t *mins, const vec3_t *maxs );
-void ClearBounds( vec3_t *mins, vec3_t *maxs );
-void AddPointToBounds( const vec3_t *v, vec3_t *mins, vec3_t *maxs );
+float RadiusFromBounds( const bbox_t *bounds );
+void ClearBounds( bbox_t *bounds );
+void AddPointToBounds( const vec3_t *v, bbox_t *bounds );
 
 vec_t VectorNormalize( vec3_t *v );
 
@@ -67,13 +67,12 @@ vec_t VectorNormalize( vec3_t *v );
 
 vec_t VectorNormalize2( const vec3_t v, vec3_t out );
 
-float disBetweenOBJ(const vec3_t src, const vec3_t tar);
-qboolean BoundsIntersect(const vec3_t mins, const vec3_t maxs,
-		const vec3_t mins2, const vec3_t maxs2);
-qboolean BoundsIntersectSphere(const vec3_t mins, const vec3_t maxs,
-		const vec3_t origin, vec_t radius);
-qboolean BoundsIntersectPoint(const vec3_t mins, const vec3_t maxs,
-		const vec3_t origin);
+float disBetweenOBJ( const vec3_t src, const vec3_t tar );
+qboolean BoundsIntersect( const bbox_t *a, const bbox_t *b );
+qboolean BoundsIntersectSphere( const bbox_t *bounds,
+		const vec3_t origin, vec_t radius );
+qboolean BoundsIntersectPoint( const bbox_t *bounds,
+		const vec3_t origin );
 
 GDR_INLINE int VectorCompare( const vec3_t v1, const vec3_t v2 ) {
 	if (v1[0] != v2[0] || v1[1] != v2[1] || v1[2] != v2[2]) {

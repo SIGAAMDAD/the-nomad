@@ -506,6 +506,8 @@ memoryMap_t *Sys_MapMemory(FILE *fp, qboolean temp, file_t fd);
 // like Sys_MapMemory but frees the mapped file, doesn't close it though
 void Sys_UnmapMemory(memoryMap_t *file);
 
+int Sys_MessageBox(const char *title, const char *text, bool ShowOkAndCancelButton);
+
 uint64_t Sys_GetUsedRAM_Physical(void);
 uint64_t Sys_GetUsedRAM_Virtual(void);
 uint64_t Sys_GetTotalRAM_Virtual(void);

@@ -72,14 +72,18 @@ Platform Specific Preprocessors
 	
 	#if defined(_MSC_VER) && _MSVC_VER >= 1400
 		#define COMPILER_STRING "msvc"
-	#elif defined(__MINGW32__)
+	#elif defined(__MINGW32__) && !defined(_WIN64)
 		#define COMPILER_STRING "mingw32"
 		#define ARCH_STRING "x86"
 		#define GDR_LITTLE_ENDIAN
+		#undef GDRi386
+		#define GDRi386 1
 	#elif defined(__MINGW64__)
 		#define COMPILER_STRING "mingw64"
 		#define ARCH_STRING "x64"
 		#define GDR_LITTLE_ENDIAN
+		#undef GDRx64
+		#define GDRx64 1
 	#elif defined(__LCC__)
 	#else
 		#error "unsupported windows compiler"

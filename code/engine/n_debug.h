@@ -33,6 +33,8 @@ void Sys_DebugMessageBox( const char *title, const char *message );
 #endif
 
 #ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
 DWORD DumpStackTraceWindows( EXCEPTION_POINTERS *pException );
 #endif
 

@@ -7,8 +7,8 @@
 #include <ALsoft/alc.h>
 #include <ALsoft/alext.h>
 #include <sndfile.h>
-#include <ogg/ogg.h>
-#include <vorbis/vorbisfile.h>
+//#include <ogg/ogg.h>
+//#include <vorbis/vorbisfile.h>
 
 #define MAX_SOUND_SOURCES 1024
 #define MAX_MUSIC_QUEUE 8

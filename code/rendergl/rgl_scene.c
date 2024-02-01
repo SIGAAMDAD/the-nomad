@@ -55,6 +55,14 @@ void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t
     pos[1] = glState.viewData.camera.origin[1] - origin[1];
     pos[2] = origin[2];
 
+    poly->verts = vtx;
+    poly->numVerts = 4;
+    poly->hShader = rg.sheets[hSpriteSheet]->hShader;
+
+    for ( i = 0; i < 4; i++ ) {
+        VectorCopy2( vtx[i].uv, rg.sheets[hSpriteSheet]->sprites[hSprite].texCoords[i] );
+    }
+
     R_WorldToGL2( vtx, pos );
 
     for ( i = 0; i < 2; i++ ) {
@@ -205,27 +213,8 @@ void RE_RenderScene( const renderSceneRef_t *fd )
     RE_BeginScene( fd );
 
     memset( &parms, 0, sizeof(parms) );
-    
-    if ( fd->flags & RSF_NOWORLDMODEL ) {
-        // do things Quake3 style
-
-        // setup view parms for the initial view
-    	//
-    	// set up viewport
-    	// The refdef takes 0-at-the-top y coordinates, so
-    	// convert to GL's 0-at-the-bottom space
-    	//
-
-        parms.viewportX = backend.refdef.x;
-        parms.viewportY = glConfig.vidHeight - ( backend.refdef.y + backend.refdef.height );
-
-        parms.fovX = fd->fovX;
-        parms.fovY = fd->fovY;
-    }
-    else {
-        parms.viewportX = backend.refdef.x;
-        parms.viewportY = backend.refdef.y;
-    }
+    parms.viewportX = backend.refdef.x;
+    parms.viewportY = backend.refdef.y;
 
     parms.flags = fd->flags;
 

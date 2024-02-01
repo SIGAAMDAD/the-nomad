@@ -101,7 +101,7 @@ RE_SetColor
 Passing NULL will set the color to white
 =============
 */
-GDR_EXPORT void RE_SetColor( const float *rgba )
+void RE_SetColor( const float *rgba )
 {
 	setColorCmd_t *cmd;
 
@@ -125,7 +125,7 @@ GDR_EXPORT void RE_SetColor( const float *rgba )
 	cmd->color[3] = rgba[3];
 }
 
-GDR_EXPORT void RE_DrawImage( float x, float y, float w, float h, float u1, float v1, float u2, float v2,
+void RE_DrawImage( float x, float y, float w, float h, float u1, float v1, float u2, float v2,
 	nhandle_t hShader )
 {
 	drawImageCmd_t *cmd;
@@ -150,7 +150,7 @@ GDR_EXPORT void RE_DrawImage( float x, float y, float w, float h, float u1, floa
 	cmd->v2 = v2;
 }
 
-GDR_EXPORT void RE_BeginFrame(stereoFrame_t stereoFrame)
+void RE_BeginFrame(stereoFrame_t stereoFrame)
 {
     int width, height;
     unsigned clearBits;
@@ -173,9 +173,12 @@ GDR_EXPORT void RE_BeginFrame(stereoFrame_t stereoFrame)
 	clearBits = GL_COLOR_BUFFER_BIT;
 
 	if ( r_glDiagnostics->i ) {
-		nglBeginQuery( GL_TIME_ELAPSED, rg.queries[TIME_QUERY] );
-		nglBeginQuery( GL_SAMPLES_PASSED, rg.queries[SAMPLES_QUERY] );
-		nglBeginQuery( GL_PRIMITIVES_GENERATED, rg.queries[PRIMTIVES_QUERY] );
+		if ( !rg.beganQuery ) {
+			nglBeginQuery( GL_TIME_ELAPSED, rg.queries[TIME_QUERY] );
+			nglBeginQuery( GL_SAMPLES_PASSED, rg.queries[SAMPLES_QUERY] );
+			nglBeginQuery( GL_PRIMITIVES_GENERATED, rg.queries[PRIMTIVES_QUERY] );
+		}
+		rg.beganQuery = qtrue;
 	}
 
     if ( r_measureOverdraw->i ) {
@@ -292,8 +295,6 @@ GDR_EXPORT void RE_BeginFrame(stereoFrame_t stereoFrame)
     }
 
 	backend.refdef.stereoFrame = stereoFrame;
-	rg.shaderTime = ri.Milliseconds() - rg.lastShaderTime;
-	rg.lastShaderTime = rg.shaderTime;
 }
 /*
 =============
@@ -302,8 +303,7 @@ RE_EndFrame
 Returns the number of msec spent in the back end
 =============
 */
-
-GDR_EXPORT void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec)
+void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec)
 {
 	swapBuffersCmd_t *cmd;
 

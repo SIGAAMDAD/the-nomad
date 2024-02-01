@@ -50,118 +50,6 @@ cvar_t *r_debugCameraSpeed;
 static void *renderLib;
 static glm::vec3 pos, worldCameraPos;
 
-static uint32_t CopyLump( void *dest, uint32_t lump, uint64_t size, mapheader_t *header )
-{
-    uint64_t length, fileofs;
-
-    length = header->lumps[lump].length;
-    fileofs = header->lumps[lump].fileofs;
-
-    if (length % size) {
-        N_Error( ERR_DROP, "CopyLump: funny lump size" );
-    }
-    memcpy( dest, (byte *)header + fileofs, length );
-
-    return length / size;
-}
-
-static qboolean G_LoadLevelFile( const char *filename, mapinfoReal_t *info )
-{
-    union {
-        char *b;
-        void *v;
-    } f;
-    bmf_t *header;
-    uint64_t size;
-    char realpath[MAX_GDR_PATH];
-
-    Com_snprintf( realpath, sizeof(realpath), "maps/%s", filename );
-
-    size = FS_LoadFile( realpath, &f.v );
-    if (!size || !f.v) {
-        Con_Printf( COLOR_YELLOW "WARNING: failed to load map file '%s'\n", filename );
-        return qfalse;
-    }
-
-    header = (bmf_t *)f.b;
-    if (size < sizeof(*header)) {
-        Con_Printf( COLOR_YELLOW "WARNING: map file '%s' isn't big enough to be a map file\n", filename );
-        return qfalse;
-    }
-    
-    if (header->ident != LEVEL_IDENT) {
-        Con_Printf( COLOR_YELLOW "WARNING: map file '%s' has bad ident\n", filename );
-        return qfalse;
-    }
-    if (header->version != LEVEL_VERSION) {
-        Con_Printf( COLOR_YELLOW "WARNING: bad map version (%i (it) != %i (this)) in file '%s'\n", header->version, LEVEL_VERSION, filename );
-        return qfalse;
-    }
-    
-    N_strncpyz( info->info.name, COM_SkipPath( const_cast<char *>(filename) ), sizeof(info->info.name) );
-
-    info->info.width = header->map.mapWidth;
-    info->info.height = header->map.mapHeight;
-
-    info->info.numCheckpoints = CopyLump( info->info.checkpoints, LUMP_CHECKPOINTS, sizeof(mapcheckpoint_t), &header->map );
-    info->info.numSpawns = CopyLump( info->info.spawns, LUMP_SPAWNS, sizeof(mapspawn_t), &header->map );
-
-    if (header->map.lumps[LUMP_TILES].length % sizeof(maptile_t)) {
-        N_Error( ERR_DROP, "G_LoadLevelFile: weird tile lump size" );
-    }
-
-    info->numTiles = header->map.lumps[LUMP_TILES].length / sizeof(maptile_t);
-    info->tiles = (maptile_t *)Hunk_Alloc( header->map.lumps[LUMP_TILES].length, h_high );
-
-    memcpy( info->tiles, (byte *)header + header->map.lumps[LUMP_TILES].fileofs, sizeof(maptile_t) * info->numTiles );
-
-    FS_FreeFile( f.v );
-
-    return qtrue;
-}
-
-static void G_InitMapCache( void )
-{
-    bmf_t header;
-    nhandle_t file;
-    mapinfoReal_t *info;
-    uint64_t i;
-
-    Con_Printf( "Caching map files...\n" );
-
-    memset( &gi.mapCache, 0, sizeof(gi.mapCache) );
-    gi.mapCache.mapList = FS_ListFiles( "maps/", ".bmf", &gi.mapCache.numMapFiles );
-
-    if (!gi.mapCache.numMapFiles) {
-        Con_Printf( "no map files to load.\n" );
-        return;
-    }
-
-    Con_Printf( "Got %lu map files\n", gi.mapCache.numMapFiles );
-
-    // allocate the info
-    gi.mapCache.infoList = (mapinfoReal_t *)Hunk_Alloc( sizeof(mapinfoReal_t) * gi.mapCache.numMapFiles, h_high );
-
-    info = gi.mapCache.infoList;
-    for ( i = 0; i < gi.mapCache.numMapFiles; i++, info++ ) {
-        if ( !G_LoadLevelFile( gi.mapCache.mapList[i], info ) ) {
-            N_Error( ERR_DROP, "G_InitMapCache: failed to load map file '%s'", gi.mapCache.mapList[i] );
-        }
-    }
-}
-
-static void G_MapInfo_f( void ) {
-    Con_Printf( "---------- Map Info ----------\n" );
-    for ( uint64_t i = 0; i < gi.mapCache.numMapFiles; i++ ) {
-        Con_Printf( "[Map %lu] >\n", i );
-        Con_Printf( "Name: %s\n", gi.mapCache.infoList[i].info.name );
-        Con_Printf( "Checkpoint Count: %i\n", gi.mapCache.infoList[i].info.numCheckpoints );
-        Con_Printf( "Spawn Count: %i\n", gi.mapCache.infoList[i].info.numSpawns );
-        Con_Printf( "Map Width: %i\n", gi.mapCache.infoList[i].info.width );
-        Con_Printf( "Map Height: %i\n", gi.mapCache.infoList[i].info.height );
-    }
-}
-
 #if 0
 #if defined(__OS2__) || defined(_WIN32)
 static SDL_Thread *PFN_SDL_CreateThread(SDL_ThreadFunction fn, const char *name, void *data)
@@ -180,22 +68,22 @@ static void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL G_RefPrintf( int leve
     va_list argptr;
     char msg[MAXPRINTMSG];
 
-    va_start(argptr, fmt);
-    N_vsnprintf(msg, sizeof(msg), fmt, argptr);
-    va_end(argptr);
+    va_start( argptr, fmt );
+    N_vsnprintf( msg, sizeof(msg), fmt, argptr );
+    va_end( argptr );
 
-    switch (level) {
+    switch ( level ) {
     case PRINT_INFO:
-        Con_Printf("%s", msg);
+        Con_Printf( "%s", msg);
         break;
     case PRINT_DEVELOPER:
-        Con_DPrintf("%s", msg);
+        Con_DPrintf( "%s", msg );
         break;
     case PRINT_WARNING:
-        Con_Printf(COLOR_YELLOW "WARNING: %s", msg);
+        Con_Printf( COLOR_YELLOW "WARNING: %s", msg );
         break;
     default:
-        N_Error(ERR_FATAL, "G_RefPrintf: Bad print level");
+        N_Error( ERR_FATAL, "G_RefPrintf: Bad print level" );
     };
 }
 
@@ -417,24 +305,6 @@ static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, const glm::mat4&
     }
 }
 
-int32_t G_LoadMap( int32_t index, mapinfo_t *info, int32_t *soundBits, linkEntity_t *activeEnts )
-{
-    if ( index >= gi.mapCache.numMapFiles ) {
-        Con_Printf( COLOR_RED "G_LoadMap: invalid map index %i\n", index );
-        return -1;
-    }
-
-    memcpy( info, &gi.mapCache.infoList[index].info, sizeof(*info) );
-    gi.mapLoaded = qtrue;
-
-    pos[2] = 1.6f;
-
-    // init local world data
-    g_world.Init( &gi.mapCache.infoList[index], soundBits, activeEnts );
-
-    return 1;
-}
-
 qboolean G_CheckWallHit( const vec3_t origin, dirtype_t dir ) {
     return g_world.CheckWallHit( origin, dir );
 }
@@ -460,8 +330,8 @@ static void G_InitRenderRef(void)
 
     dllPrefix = g_renderer->s;
 
-    if (!N_stricmp(g_renderer->s, "vulkan")) {
-        N_Error(ERR_FATAL, "Vulkan rendering not available yet, will be tho in the future... ;)");
+    if ( !N_stricmp( g_renderer->s, "vulkan" ) || !N_stricmp( g_renderer->s, "sdl2" ) ) {
+        N_Error( ERR_FATAL, "Vulkan & SDL2 rendering not available yet, will be tho in the future... ;)" );
     }
 #if defined (__linux__) && defined(__i386__)
 #define REND_ARCH_STRING "x86"
@@ -469,11 +339,11 @@ static void G_InitRenderRef(void)
 #define REND_ARCH_STRING ARCH_STRING
 #endif
 
-    snprintf(dllName, sizeof(dllName), DLL_PREFIX "glnomad_%s_" REND_ARCH_STRING DLL_EXT, dllPrefix);
+    snprintf(dllName, sizeof(dllName), DLL_PREFIX "thenomad_%s_" REND_ARCH_STRING DLL_EXT, dllPrefix);
     renderLib = Sys_LoadDLL(dllName);
     if (!renderLib) {
-        Cvar_ForceReset("g_renderer");
-        snprintf(dllName, sizeof(dllName), DLL_PREFIX "glnomad_%s_" REND_ARCH_STRING DLL_EXT, dllPrefix);
+        Cvar_ForceReset( "g_renderer" );
+        snprintf(dllName, sizeof(dllName), DLL_PREFIX "thenomad_%s_" REND_ARCH_STRING DLL_EXT, dllPrefix);
         renderLib = Sys_LoadDLL(dllName);
         if (!renderLib) {
             N_Error(ERR_FATAL, "Failed to load rendering library '%s', possible system error: %s", dllName, Sys_GetDLLError());
@@ -608,7 +478,7 @@ void G_ShutdownRenderer( refShutdownCode_t code )
     gi.rendererStarted = qfalse;
 }
 
-static void G_Vid_Restart(refShutdownCode_t code)
+static void G_Vid_Restart( refShutdownCode_t code )
 {
     // shutdown VMs
     G_ShutdownVMs();
@@ -647,24 +517,24 @@ static void G_PlayDemo_f(void)
 
 }
 
-static void G_Vid_Restart_f(void)
+static void G_Vid_Restart_f( void )
 {
-    if (N_stricmp(Cmd_Argv(1), "keep_window") == 0) {
+    if ( N_stricmp( Cmd_Argv( 1 ), "keep_window" ) == 0 ) {
         // fast path: keep window
-        G_Vid_Restart(REF_KEEP_WINDOW);
+        G_Vid_Restart( REF_KEEP_WINDOW );
     }
-    else if (N_stricmp(Cmd_Argv(1), "fast") == 0) {
+    else if ( N_stricmp( Cmd_Argv( 1 ), "fast" ) == 0 ) {
         // fast path: keep context
-        G_Vid_Restart(REF_KEEP_CONTEXT);
+        G_Vid_Restart( REF_KEEP_CONTEXT );
     }
     else {
-        if (gi.lastVidRestart) {
-            if (abs((long)(gi.lastVidRestart - Sys_Milliseconds())) < 500) {
+        if ( gi.lastVidRestart ) {
+            if ( abs( (long)( gi.lastVidRestart - Sys_Milliseconds() ) ) < 500 ) {
                 // don't allow vid restart too quickly after a first one
                 return;
             }
         }
-        G_Vid_Restart(REF_DESTROY_WINDOW);
+        G_Vid_Restart( REF_DESTROY_WINDOW );
     }
 }
 
@@ -673,14 +543,13 @@ static void G_Vid_Restart_f(void)
 // The sgame and ui must also be forced to restart
 // because the handles will be invalid
 //
-static void G_Snd_Restart_f(void)
+static void G_Snd_Restart_f( void )
 {
     // sound will be reinitialized by vid restart
     G_Vid_Restart( REF_KEEP_CONTEXT );
 }
 
-static void G_VM_Restart_f( void )
-{
+static void G_VM_Restart_f( void ) {
     G_ShutdownVMs();
 
     G_InitSGame();
@@ -799,10 +668,13 @@ static void G_LogGamestate_f( void ) {
     Con_Printf( "Current Gamestate: %s\n", state );
 }
 
+extern void G_MapInfo_f( void );
+extern void G_SetMap_f( void );
+
 //
 // G_Init: called every time a new level is loaded
 //
-void G_Init(void)
+void G_Init( void )
 {
     Con_Printf( "----- Game State Initialization ----\n" );
 
@@ -948,6 +820,8 @@ void G_Init(void)
     Cmd_AddCommand( "togglephotomode", G_TogglePhotoMode_f );
     Cmd_AddCommand( "viewmemory", G_ViewMemory_f );
     Cmd_AddCommand( "gamestate", G_LogGamestate_f );
+    Cmd_AddCommand( "setmap", G_SetMap_f );
+    Cmd_AddCommand( "mapinfo", G_MapInfo_f );
 
     G_InitInput();
 
@@ -1139,33 +1013,11 @@ void G_Frame(int32_t msec, int32_t realMsec)
     gi.realFrameTime = msec;
     gi.frametime = msec;
     gi.realtime += gi.frametime;
-    gi.sendtime = gi.realtime;
 
     // update sound
     Snd_Update( gi.realtime );
 
-    if ( gi.state == GS_MEMORY_VIEW ) {
-        if ( keys[KEY_ESCAPE].down ) {
-            // exit
-            gi.state = gi.oldState;
-            return;
-        }
-
-        // get a peek at the hunk
-        extern byte *hunkbase;
-        extern uint64_t hunksize;
-
-        static MemoryEditor memEditor;
-        memEditor.DrawWindow( "Hunk Memory", hunkbase, hunksize, (uintptr_t)hunkbase );
-    } else {
-        G_MoveCamera();
-
-        // generate a new user command for the frame
-        if ( gi.state == GS_LEVEL && sgvm ) {
-            const usercmd_t cmd = G_CreateNewCommand();
-            VM_Call( sgvm, 3, SGAME_SEND_USER_CMD, cmd.rightmove, cmd.forwardmove, cmd.upmove );
-        }
-    }
+    // run the console
     Con_RunConsole();
 
     // update the screen
@@ -1198,13 +1050,14 @@ typedef struct {
 
 static glState_t glState;
 
-void GLimp_Shutdown(qboolean unloadDLL)
+void GLimp_Shutdown( qboolean unloadDLL )
 {
-    SDL_DestroyWindow(r_window);
+    SDL_DestroyWindow( r_window );
     r_window = NULL;
 
-    if (unloadDLL)
-        SDL_QuitSubSystem(SDL_INIT_VIDEO);
+    if ( unloadDLL ) {
+        SDL_QuitSubSystem( SDL_INIT_VIDEO );
+    }
 }
 
 /*
@@ -1219,70 +1072,74 @@ void GLimp_Minimize( void )
 	SDL_MinimizeWindow( r_window );
 }
 
-void GLimp_LogComment(const char *comment)
+void GLimp_LogComment( const char *comment )
 {
 }
 
-SDL_Window *G_GetSDLWindow(void) {
+SDL_Window *G_GetSDLWindow( void ) {
     return r_window;
 }
 
-static int GLimp_CreateBaseWindow(gpuConfig_t *config)
+static int GLimp_CreateBaseWindow( gpuConfig_t *config )
 {
-    unsigned windowFlags;
-    unsigned contextFlags;
-    int depthBits, stencilBits, colorBits;
-    int perChannelColorBits;
-    int x, y;
+    uint32_t windowFlags;
+    uint32_t contextFlags;
+    int32_t depthBits, stencilBits, colorBits;
+    int32_t perChannelColorBits;
+    int32_t x, y;
+    int32_t i;
 
     // set window flags
     windowFlags = SDL_WINDOW_OPENGL;
-    if (r_fullscreen->i) {
+    if ( r_fullscreen->i ) {
         // custom fullscreen or native?
-        if (r_mode->i == -2) {
+        if ( r_mode->i == -2 ) {
             windowFlags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
         }
         else {
             windowFlags |= SDL_WINDOW_FULLSCREEN;
         }
     }
-    if (r_noborder->i) {
+    if ( r_noborder->i ) {
         windowFlags |= SDL_WINDOW_BORDERLESS;
     }
 
     // destroy existing context if it exists
-    if  (r_GLcontext) {
-        SDL_GL_DeleteContext(r_GLcontext);
+    if  ( r_GLcontext ) {
+        SDL_GL_DeleteContext( r_GLcontext );
         r_GLcontext = NULL;
     }
-    if (r_window) {
-        SDL_GetWindowPosition(r_window, &x, &y);
-        Con_DPrintf("Existing window at %ix%i before destruction\n", x, y);
-        SDL_DestroyWindow(r_window);
+    if ( r_window ) {
+        SDL_GetWindowPosition( r_window, &x, &y );
+        Con_DPrintf( "Existing window at %ix%i before destruction\n", x, y );
+        SDL_DestroyWindow( r_window );
         r_window = NULL;
     }
 
     colorBits = r_colorBits->i;
-    if (colorBits == 0 || colorBits > 32) {
+    if ( colorBits == 0 || colorBits > 32 ) {
         colorBits = 32;
     }
-    if (g_depthBits->i == 0) {
+    if ( g_depthBits->i == 0 ) {
         // implicitly assume Z-buffer depth == desktop color depth
-        if (colorBits > 16)
+        if ( colorBits > 16 ) {
             depthBits = 24;
-        else
+        } else {
             depthBits = 16;
+        }
     }
-    else
+    else {
         depthBits = g_depthBits->i;
+    }
 
     stencilBits = g_stencilBits->i;
 
     // do not allow stencil if Z-buffer depth likely won't contain it
-    if (depthBits < 24)
+    if ( depthBits < 24 ) {
         stencilBits = 0;
+    }
     
-    for (uint32_t i = 0; i < 16; i++) {
+    for ( i = 0; i < 16; i++ ) {
         int testColorBits, testDepthBits, testStencilBits;
         int realColorBits[3];
 
@@ -1290,23 +1147,26 @@ static int GLimp_CreateBaseWindow(gpuConfig_t *config)
 		// 1 - minus colorBits
 		// 2 - minus depthBits
 		// 3 - minus stencil
-		if ((i % 4) == 0 && i) {
+		if ( ( i % 4 ) == 0 && i ) {
 			// one pass, reduce
-			switch (i / 4) {
-			case 2 :
-				if (colorBits == 24)
+			switch ( i / 4 ) {
+			case 2:
+				if ( colorBits == 24 ) {
 					colorBits = 16;
+                }
 				break;
-			case 1 :
-				if (depthBits == 24)
+			case 1:
+				if ( depthBits == 24 ) {
 					depthBits = 16;
-				else if (depthBits == 16)
+				} else if ( depthBits == 16 ) {
 					depthBits = 8;
-			case 3 :
-				if (stencilBits == 24)
+                }
+			case 3:
+				if ( stencilBits == 24 ) {
 					stencilBits = 16;
-				else if (stencilBits == 16)
+                } else if ( stencilBits == 16 ) {
 					stencilBits = 8;
+                }
 			};
 		}
 
@@ -1314,59 +1174,63 @@ static int GLimp_CreateBaseWindow(gpuConfig_t *config)
 		testDepthBits = depthBits;
 		testStencilBits = stencilBits;
 
-		if ((i % 4) == 3) { // reduce colorBits
-			if (testColorBits == 24)
+		if ( ( i % 4 ) == 3 ) { // reduce colorBits
+			if ( testColorBits == 24 ) {
 				testColorBits = 16;
+            }
 		}
 
-		if ((i % 4) == 2) { // reduce depthBits
-			if (testDepthBits == 24)
+		if ( ( i % 4 ) == 2 ) { // reduce depthBits
+			if ( testDepthBits == 24 ) {
 				testDepthBits = 16;
-			else if (testDepthBits == 16)
+            } else if ( testDepthBits == 16 ) {
 				testDepthBits = 8;
+            }
 		}
 
-		if ((i % 4) == 1) { // reduce stencilBits
-			if (testStencilBits == 24)
+		if ( ( i % 4 ) == 1 ) { // reduce stencilBits
+			if ( testStencilBits == 24 ) {
 				testStencilBits = 16;
-			else if (testStencilBits == 16)
+            } else if ( testStencilBits == 16 ) {
 				testStencilBits = 8;
-			else
+            } else {
 				testStencilBits = 0;
+            }
 		}
 
-		if ( testColorBits == 24 )
+		if ( testColorBits == 24 ) {
 			perChannelColorBits = 8;
-		else
+        } else {
 			perChannelColorBits = 4;
+        }
         
-        SDL_GL_SetAttribute(SDL_GL_RED_SIZE, perChannelColorBits);
-        SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, perChannelColorBits);
-        SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, perChannelColorBits);
+        SDL_GL_SetAttribute( SDL_GL_RED_SIZE, perChannelColorBits );
+        SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE, perChannelColorBits );
+        SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE, perChannelColorBits );
 
-        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, testDepthBits);
-        SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, testStencilBits);
+        SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, testDepthBits );
+        SDL_GL_SetAttribute( SDL_GL_STENCIL_SIZE, testStencilBits );
 
-        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 0);
-        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 0);
+        SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 0 );
+        SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, 0 );
 
         contextFlags = 0;
-        if (r_glDebug->i) {
+        if ( r_glDebug->i ) {
             contextFlags |= SDL_GL_CONTEXT_DEBUG_FLAG;
         }
-        if (!r_allowLegacy->i) {
+        if ( !r_allowLegacy->i ) {
 //            contextFlags |= SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG;
         }
 
         // set the recommended version, this is not mandatory,
         // however if your driver isn't >= 3.3, that'll be
         // deprecated stuff
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+        SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 3 );
+        SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 3 );
+        SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY );
 
-        if (contextFlags) {
-            SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, contextFlags);
+        if ( contextFlags ) {
+            SDL_GL_SetAttribute( SDL_GL_CONTEXT_FLAGS, contextFlags );
         }
 
         if (r_stereoEnabled->i) {

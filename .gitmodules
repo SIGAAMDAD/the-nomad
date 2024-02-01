@@ -10,3 +10,9 @@
 [submodule "deps/squall"]
 	path = deps/squall
 	url = https://github.com/jonigata/squall.git
+[submodule "deps/openal-soft"]
+	path = deps/openal-soft
+	url = https://github.com/kcat/openal-soft.git
+[submodule "deps/libjpeg"]
+	path = deps/libjpeg
+	url = https://github.com/winlibs/libjpeg.git

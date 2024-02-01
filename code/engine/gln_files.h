@@ -4,16 +4,19 @@
 #pragma once
 
 /*
-GLN_FILES: these definitions must not change in any glnomad extension or project
+* GLN_FILES: these definitions must not change in any glnomad extension or project
 */
 
+#ifndef MAX_NPATH
+#define MAX_NPATH 64
+#endif
 
 #ifndef MAX_GDR_PATH
 #define MAX_GDR_PATH 64
 #endif
 
 // the minimum size in bytes a lump should be before compressing it
-#define COMPRESSED_LUMP_SIZE 2048
+#define COMPRESSED_LUMP_SIZE (4*1024*1024)
 
 #define COMPRESS_NONE 0
 #define COMPRESS_ZLIB 1
@@ -102,8 +105,8 @@ typedef struct {
 #define MAP_VERSION 1
 
 #define MAX_MAP_SPAWNS 1024
-#define MAX_MAP_CHECKPOINTS 528
-#define MAX_MAP_LIGHTS 1025
+#define MAX_MAP_CHECKPOINTS 256
+#define MAX_MAP_LIGHTS 256
 
 #define MAX_MAP_WIDTH 1024
 #define MAX_MAP_HEIGHT 1024
@@ -119,6 +122,16 @@ typedef struct {
 #define LUMP_INDICES 5
 #define LUMP_SPRITES 6
 #define NUMLUMPS 7
+
+#define TILETYPE_CHECKPOINT       0x0001
+#define TILETYPE_SPAWN            0x0002
+#define TILETYPE_NORMAL           0x0004
+#define TILETYPE_BITS             0x000f
+
+#define SURFACEPARM_NODLIGHT      0x0010
+#define SURFACEPARM_METAL         0x0020
+#define SURFACEPARM_LIQUID        0x0040
+#define SURFACEPARM_BITS          0x00f0
 
 typedef enum {
     light_point = 0,

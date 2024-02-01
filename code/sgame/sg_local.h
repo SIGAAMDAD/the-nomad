@@ -93,10 +93,10 @@ typedef enum
 {
 	ET_ITEM,
 	ET_WEAPON,
-	ET_PLAYR,
 	ET_MOB,
 	ET_BOT,
 	ET_WALL, // a tile with pre-determined collision physics
+	ET_PLAYR,
 	
 	NUMENTITYTYPES
 } entitytype_t;
@@ -489,7 +489,8 @@ void Sys_SnapVector( float *v );
 // sets the desired camera position, zoom, rotation, etc.
 void G_SetCameraData( const vec2_t origin, float zoom, float rotation );
 
-int G_LoadMap( int levelIndex, mapinfo_t *info, int *soundBits, linkEntity_t *activeEnts );
+nhandle_t G_LoadMap( const char *name );
+void G_SetActiveMap( nhandle_t mapHandle, mapinfo_t *info, int *soundBits, linkEntity_t *activeEnts );
 void G_CastRay( ray_t *ray );
 void G_SoundRecursive( int width, int height, float volume, const vec3_t origin );
 qboolean trap_CheckWallHit( const vec3_t origin, dirtype_t dir );

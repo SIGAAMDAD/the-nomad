@@ -1021,10 +1021,12 @@ typedef struct
     uint32_t identityLightByte;
     uint32_t overbrightBits;
 
-    uint64_t frontEntMsec;
+    uint64_t frontEndMsec;
 
     shaderProgram_t basicShader;
     shaderProgram_t imguiShader;
+
+    qboolean beganQuery;
 
     uint32_t samplers[MAX_TEXTURE_UNITS];
 
@@ -1493,6 +1495,8 @@ typedef struct {
 } postProcessCmd_t;
 
 typedef struct {
+    renderCommandList_t commandList;
+
     dlight_t *dlights;
     renderEntityDef_t *entities;
 
@@ -1504,7 +1508,6 @@ typedef struct {
     uint64_t numIndices;
 
     qboolean screenshotFrame;
-    renderCommandList_t commandList;
     screenshotCommand_t screenshotBuf;
 } renderBackendData_t;
 

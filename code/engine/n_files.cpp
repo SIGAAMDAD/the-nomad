@@ -2943,7 +2943,7 @@ void FS_InitFilesystem( void )
 	Com_StartupVariable( "fs_locked" );
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32) && defined(_MSC_VER)
  	_setmaxstdio( 2048 );
 #endif
 
