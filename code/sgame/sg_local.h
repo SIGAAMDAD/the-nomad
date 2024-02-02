@@ -85,6 +85,7 @@ typedef enum {
 typedef enum
 {
     I_NULL,
+	I_WEAPON,
 
     NUMITEMS,
 } itemtype_t;
@@ -205,7 +206,7 @@ typedef struct {
 } item_t;
 
 typedef struct {
-	item_t base; // weapons ARE techinally items
+	item_t *base; // weapons ARE techinally items
 	
 	ammotype_t ammo;
 	int addammo;
@@ -348,9 +349,7 @@ extern vmCvar_t sg_mouseAcceleration;
 extern vmCvar_t sg_printLevelStats;
 extern vmCvar_t sg_decalDetail;
 extern vmCvar_t sg_gibs;
-extern vmCvar_t sg_levelInfoFile;
 extern vmCvar_t sg_levelIndex;
-extern vmCvar_t sg_levelDataFile;
 extern vmCvar_t sg_savename;
 extern vmCvar_t sg_numSaves;
 extern vmCvar_t sg_memoryDebug;
@@ -394,11 +393,17 @@ void SG_UpdateCvars( void );
 //
 // sg_level.c
 //
-qboolean SG_InitLevel( int32_t index );
+qboolean SG_StartLevel( void );
 int SG_EndLevel( void );
-void Lvl_AddKillEntity( entitytype_t type, causeofdeath_t cod );
-int SG_DrawAbortMission( void );
-void SG_DrawLevelStats( void );
+void SG_SaveLevelData( void );
+void SG_LoadLevelData( void );
+
+//
+// sg_items.c
+//
+item_t *SG_SpawnItem( itemtype_t type );
+weapon_t *SG_SpawnWeapon( weapontype_t type );
+void SG_PickupWeapon();
 
 //
 // sg_entity.c
@@ -408,26 +413,16 @@ sgentity_t *Ent_CheckEntityCollision( const sgentity_t *ent );
 void Ent_RunTic( void );
 sgentity_t *SG_AllocEntity( entitytype_t type );
 void SG_FreeEntity( sgentity_t *e );
-void SG_BuildBounds( bbox_t *bounds, float width, float height, const vec3_t origin );
+void SG_BuildBounds( bbox_t *bounds, float width, float height, const vec3_t *origin );
 void Ent_BuildBounds( sgentity_t *ent );
 void SG_InitEntities( void );
 qboolean Ent_SetState( sgentity_t *ent, statenum_t state );
+void SG_Spawn( uint32_t id, uint32_t type, const uvec3_t *origin );
 
 //
-// sg_archive.c
-//
-void SG_WriteSection( const char *name, int size, const void *data, file_t f );
-void SG_LoadSection( const char *name, void *dest, int size );
-typedef void (*archiveFunc_t)( file_t );
-int SG_SaveGame( void );
-int SG_LoadGame( void );
-void SG_AddArchiveHandle( archiveFunc_t pFunc );
-
-//
-// sg_mthink.c
+// sg_mob.c
 //
 mobj_t *SG_SpawnMob( mobtype_t type );
-void SG_SpawnMobOnMap( mobtype_t id, float x, float y, float elevation );
 
 //
 // sg_mem.c
@@ -470,15 +465,43 @@ int trap_Argc( void );
 void trap_Argv( int n, char *buf, int bufferLength );
 void trap_Args( char *buf, int bufferLength );
 
+//
+// archive file handling
+//
+
+// save
+void trap_BeginSaveSection( const char *name );
+void trap_EndSaveSection( void );
+void trap_SaveChar( const char *name, char data );
+void trap_SaveInt( const char *name, int data );
+void trap_SaveUInt( const char *name, unsigned int data );
+void trap_SaveString( const char *name, const char *data );
+void trap_SaveFloat( const char *name, float data );
+void trap_SaveVec2( const char *name, const vec2_t *data );
+void trap_SaveVec3( const char *name, const vec3_t *data );
+void trap_SaveVec4( const char *name, const vec4_t *data );
+
+// load
+nhandle_t trap_GetSaveSection( const char *name );
+unsigned int trap_LoadUInt( const char *name, nhandle_t hSection );
+int trap_LoadInt( const char *name, nhandle_t hSection );
+float trap_LoadFloat( const char *name, nhandle_t hSection );
+void trap_LoadString( const char *name, char *pBuffer, int maxLength, nhandle_t hSection );
+void trap_LoadVec2( const char *name, vec2_t *data, nhandle_t hSection );
+void trap_LoadVec3( const char *name, vec3_t *data, nhandle_t hSection );
+void trap_LoadVec4( const char *name, vec4_t *data, nhandle_t hSection );
+
+//===============================================
+
 // add commands to the local console as if they were typed in
 // for map changing, etc.  The command is not executed immediately,
 // but will be executed in order the next time console commands
 // are processed
-void		trap_SendConsoleCommand( const char *text );
+void trap_SendConsoleCommand( const char *text );
 
 // register a command name so the console can perform command completion.
 // FIXME: replace this with a normal console command "defineCommand"?
-void		trap_AddCommand( const char *cmdName );
+void trap_AddCommand( const char *cmdName );
 
 void trap_RemoveCommand( const char *cmdName );
 
@@ -487,13 +510,13 @@ int trap_MemoryRemaining( void );
 void Sys_SnapVector( float *v );
 
 // sets the desired camera position, zoom, rotation, etc.
-void G_SetCameraData( const vec2_t origin, float zoom, float rotation );
+void G_SetCameraData( const vec2_t *origin, float zoom, float rotation );
 
 nhandle_t G_LoadMap( const char *name );
 void G_SetActiveMap( nhandle_t mapHandle, mapinfo_t *info, int *soundBits, linkEntity_t *activeEnts );
 void G_CastRay( ray_t *ray );
-void G_SoundRecursive( int width, int height, float volume, const vec3_t origin );
-qboolean trap_CheckWallHit( const vec3_t origin, dirtype_t dir );
+void G_SoundRecursive( int width, int height, float volume, const vec3_t *origin );
+qboolean trap_CheckWallHit( const vec3_t *origin, dirtype_t dir );
 
 int trap_Milliseconds( void );
 
@@ -517,7 +540,7 @@ void RE_LoadWorldMap( const char *npath );
 void RE_ClearScene( void );
 void RE_RenderScene( const renderSceneRef_t *fd );
 void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, int numVerts );
-void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t hSprite );
+void RE_AddSpriteToScene( const vec3_t *origin, nhandle_t hSpriteSheet, nhandle_t hSprite );
 
 void Sys_GetGPUConfig( gpuConfig_t *config );
 
@@ -530,7 +553,9 @@ int trap_FS_Write( const void *data, int size, file_t f );
 int trap_FS_Read( void *data, int size, file_t f );
 int trap_FS_GetFileList( const char *path, const char *extension, char *listbuf, int bufsize ); 
 int trap_FS_FileSeek( file_t f, fileOffset_t offset, int whence );
+int trap_FS_FileLength( file_t f );
 int trap_FS_FileTell( file_t f );
+void GDR_ATTRIBUTE((format(printf, 2, 3))) trap_FS_Printf( file_t f, const char *fmt, ... );
 
 // console variable interaction
 void Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags );

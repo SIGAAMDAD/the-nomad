@@ -1,7 +1,7 @@
 #include "sg_local.h"
 
-// 8 MiB of static memory for the vm to use
-#define MEMPOOL_SIZE (8*1024*1024)
+// 12 KiB of static memory for the vm to use
+#define MEMPOOL_SIZE (12*1024*1024)
 static char mempool[MEMPOOL_SIZE];
 static int allocPoint;
 
@@ -19,6 +19,8 @@ static char strPool[STRINGPOOL_SIZE];
 
 static int strHandleCount;
 static stringDef_t *strHandle[HASH_TABLE_SIZE];
+
+static qboolean outOfMemory;
 
 const char *String_Alloc( const char *p )
 {
@@ -74,32 +76,33 @@ const char *String_Alloc( const char *p )
 void String_Report( void )
 {
 	float f;
-	Con_Printf("Memory/String Pool Info\n");
-	Con_Printf("----------------\n");
+	Con_Printf( "Memory/String Pool Info\n");
+	Con_Printf( "----------------\n");
 	
     f = strPoolIndex;
 	f /= STRINGPOOL_SIZE;
 	f *= 100;
-	Con_Printf("String Pool is %.1f%% full, %i bytes out of %i used.\n", f, strPoolIndex, STRINGPOOL_SIZE);
+	Con_Printf( "String Pool is %.1f%% full, %i bytes out of %i used.\n", f, strPoolIndex, STRINGPOOL_SIZE );
 	
     f = allocPoint;
 	f /= MEMPOOL_SIZE;
 	f *= 100;
-	Con_Printf("Memory Pool is %.1f%% full, %i bytes out of %i used.\n", f, allocPoint, MEMPOOL_SIZE);
+	Con_Printf( "Memory Pool is %.1f%% full, %i bytes out of %i used.\n", f, allocPoint, MEMPOOL_SIZE );
 }
 
 void *SG_MemAlloc( int size )
 {
     char *buf;
 
-    if (!size) {
+    if ( !size ) {
         trap_Error( "SG_MemAlloc: bad size" );
     }
 
-    size = PAD(size, (unsigned)16); // round to 16-byte alignment
+    size = PAD( size, (unsigned)16 ); // round to 16-byte alignment
 
-    if (allocPoint + size >= sizeof(mempool)) {
-        trap_Error( "SG_MemAlloc: not enough vm memory" );
+    if ( allocPoint + size >= sizeof(mempool) ) {
+        trap_Print( COLOR_RED "(ERROR) SG_MemAlloc: not enough vm memory\n" );
+		outOfMemory = qtrue;
         return NULL;
     }
 
@@ -116,6 +119,10 @@ int SG_MemoryRemaining( void ) {
     return sizeof(mempool) - allocPoint;
 }
 
+qboolean SG_OutOfMemory( void ) {
+	return outOfMemory;
+}
+
 void SG_ClearToMemoryMark( int mark ) {
     if ( mark < 0 || mark > allocPoint ) {
         trap_Error( "SG_ClearToMemoryMark: invalid memory mark" );
@@ -130,6 +137,8 @@ int SG_MakeMemoryMark( void ) {
 void SG_MemInit( void )
 {
     int i;
+
+	outOfMemory = qfalse;
 
     memset( mempool, 0, sizeof(mempool) );
     memset( strPool, 0, sizeof(strPool) );

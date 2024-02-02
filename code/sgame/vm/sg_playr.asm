@@ -171,7 +171,7 @@ line 87
 ;87:{
 line 88
 ;88:	sg.playr.foot_frame = anim;
-ADDRGP4 sg+73908+48
+ADDRGP4 sg+61620+48
 ADDRFP4 0
 INDIRI4
 ASGNI4
@@ -988,7 +988,7 @@ line 162
 LABELV $160
 endproc PM_ClipVelocity 32 0
 export P_MeleeThink
-proc P_MeleeThink 48 16
+proc P_MeleeThink 36 16
 line 165
 ;163:
 ;164:void P_MeleeThink( sgentity_t *self )
@@ -997,21 +997,17 @@ line 169
 ;166:	bbox_t bounds;
 ;167:	sgentity_t *ent;
 ;168:	
-;169:	SG_BuildBounds( &bounds, PLAYR_WIDTH, MELEE_RANGE, ent->origin );
+;169:	SG_BuildBounds( &bounds, PLAYR_WIDTH, MELEE_RANGE, &ent->origin );
 ADDRLP4 4
 ARGP4
 CNSTF4 1066611507
 ARGF4
 CNSTF4 1084227584
 ARGF4
-ADDRLP4 28
 ADDRLP4 0
 INDIRP4
 CNSTI4 64
 ADDP4
-INDIRB
-ASGNB 12
-ADDRLP4 28
 ARGP4
 ADDRGP4 SG_BuildBounds
 CALLV
@@ -1022,12 +1018,12 @@ line 171
 ADDRFP4 0
 INDIRP4
 ARGP4
-ADDRLP4 40
+ADDRLP4 28
 ADDRGP4 Ent_CheckEntityCollision
 CALLP4
 ASGNP4
 ADDRLP4 0
-ADDRLP4 40
+ADDRLP4 28
 INDIRP4
 ASGNP4
 line 172
@@ -1070,7 +1066,7 @@ CALLV
 pop
 line 183
 ;183:		Ent_SetState( sg.playr.ent, S_PLAYR_PARRY );
-ADDRGP4 sg+73908
+ADDRGP4 sg+61620
 INDIRP4
 ARGP4
 CNSTI4 5
@@ -1112,7 +1108,7 @@ CALLV
 pop
 line 187
 ;187:		Ent_SetState( sg.playr.ent, S_PLAYR_PARRY );
-ADDRGP4 sg+73908
+ADDRGP4 sg+61620
 INDIRP4
 ARGP4
 CNSTI4 5
@@ -1127,7 +1123,7 @@ LABELV $187
 line 189
 ;189:}
 LABELV $183
-endproc P_MeleeThink 48 16
+endproc P_MeleeThink 36 16
 proc P_ClipOrigin 36 8
 line 230
 ;190:
@@ -1206,7 +1202,7 @@ line 236
 ;236:	if ( origin.x > sg.mapInfo.width - 1 ) {
 ADDRLP4 0
 INDIRF4
-ADDRGP4 sg+4280680+26880
+ADDRGP4 sg+4268392+23616
 INDIRI4
 CNSTI4 1
 SUBI4
@@ -1215,7 +1211,7 @@ LEF4 $197
 line 237
 ;237:		origin.x = sg.mapInfo.width - 1;
 ADDRLP4 0
-ADDRGP4 sg+4280680+26880
+ADDRGP4 sg+4268392+23616
 INDIRI4
 CNSTI4 1
 SUBI4
@@ -1244,7 +1240,7 @@ line 242
 ;242:	if ( origin.y > sg.mapInfo.height - 1 ) {
 ADDRLP4 0+4
 INDIRF4
-ADDRGP4 sg+4280680+26884
+ADDRGP4 sg+4268392+23620
 INDIRI4
 CNSTI4 1
 SUBI4
@@ -1253,7 +1249,7 @@ LEF4 $205
 line 243
 ;243:		origin.y = sg.mapInfo.height - 1;
 ADDRLP4 0+4
-ADDRGP4 sg+4280680+26884
+ADDRGP4 sg+4268392+23620
 INDIRI4
 CNSTI4 1
 SUBI4
@@ -1688,7 +1684,7 @@ ASGNF4
 line 293
 ;292:
 ;293:	if ( P_ClipOrigin( sg.playr.ent ) ) {
-ADDRGP4 sg+73908
+ADDRGP4 sg+61620
 INDIRP4
 ARGP4
 ADDRLP4 60
@@ -1722,13 +1718,13 @@ LABELV $274
 line 297
 ;296:
 ;297:	sg.cameraPos.x = self->origin.x - ( sg.cameraPos.x / 2 );
-ADDRGP4 sg+4280672
+ADDRGP4 sg+4268384
 ADDRFP4 0
 INDIRP4
 CNSTI4 64
 ADDP4
 INDIRF4
-ADDRGP4 sg+4280672
+ADDRGP4 sg+4268384
 INDIRF4
 CNSTF4 1056964608
 MULF4
@@ -1736,7 +1732,7 @@ SUBF4
 ASGNF4
 line 298
 ;298:	sg.cameraPos.y = -self->origin.y;
-ADDRGP4 sg+4280672+4
+ADDRGP4 sg+4268384+4
 ADDRFP4 0
 INDIRP4
 CNSTI4 68
@@ -1880,40 +1876,16 @@ line 321
 ;321:}
 LABELV $283
 endproc P_Thinker 12 12
-export SG_SendUserCmd
-proc SG_SendUserCmd 0 0
-line 323
-;322:
-;323:void SG_SendUserCmd( int rightmove, int forwardmove, int upmove ) {
-line 324
-;324:}
-LABELV $298
-endproc SG_SendUserCmd 0 0
 export SG_InitPlayer
-proc SG_InitPlayer 8 12
-line 327
-;325:
-;326:void SG_InitPlayer( void )
-;327:{
-line 330
-;328:    sgentity_t *ent;
-;329:
-;330:    ent = SG_AllocEntity( ET_PLAYR );
-CNSTI4 2
-ARGI4
-ADDRLP4 4
-ADDRGP4 SG_AllocEntity
-CALLP4
-ASGNP4
-ADDRLP4 0
-ADDRLP4 4
-INDIRP4
-ASGNP4
-line 333
-;331:    
-;332:    // initialize player state
-;333:    memset( &sg.playr, 0, sizeof(sg.playr) );
-ADDRGP4 sg+73908
+proc SG_InitPlayer 0 12
+line 324
+;322:
+;323:void SG_InitPlayer( void )
+;324:{    
+line 326
+;325:    // initialize player state
+;326:    memset( &sg.playr, 0, sizeof(sg.playr) );
+ADDRGP4 sg+61620
 ARGP4
 CNSTI4 0
 ARGI4
@@ -1922,143 +1894,42 @@ ARGU4
 ADDRGP4 memset
 CALLP4
 pop
-line 335
-;334:
-;335:	sg.playr.foot_frame = 0;
-ADDRGP4 sg+73908+48
+line 328
+;327:
+;328:	sg.playr.foot_frame = 0;
+ADDRGP4 sg+61620+48
 CNSTI4 0
 ASGNI4
-line 336
-;336:	sg.playr.foot_sprite = SPR_PLAYR_LEGS0_7_R;
-ADDRGP4 sg+73908+44
+line 329
+;329:	sg.playr.foot_sprite = SPR_PLAYR_LEGS0_7_R;
+ADDRGP4 sg+61620+44
 CNSTI4 39
 ASGNI4
-line 337
-;337:	sg.playr.ent = ent;
-ADDRGP4 sg+73908
-ADDRLP4 0
-INDIRP4
-ASGNP4
-line 339
-;338:
-;339:	ent->facing = 0;
-ADDRLP4 0
-INDIRP4
-CNSTI4 124
-ADDP4
-CNSTI4 0
-ASGNI4
-line 340
-;340:    ent->hShader = sg.media.raio_shader;
-ADDRLP4 0
-INDIRP4
-CNSTI4 128
-ADDP4
-ADDRGP4 sg+36
-INDIRI4
-ASGNI4
-line 341
-;341:	ent->hSpriteSheet = sg.media.raio_sprites;
-ADDRLP4 0
-INDIRP4
-CNSTI4 156
-ADDP4
-ADDRGP4 sg+48
-INDIRI4
-ASGNI4
-line 342
-;342:	ent->sprite = SPR_PLAYR_IDLE_R;
-ADDRLP4 0
-INDIRP4
-CNSTI4 152
-ADDP4
-CNSTI4 0
-ASGNI4
-line 343
-;343:	ent->frame = 0;
-ADDRLP4 0
-INDIRP4
-CNSTI4 120
-ADDP4
-CNSTI4 0
-ASGNI4
-line 344
-;344:    ent->entPtr = &sg.playr;
-ADDRLP4 0
-INDIRP4
-CNSTI4 88
-ADDP4
-ADDRGP4 sg+73908
-ASGNP4
-line 345
-;345:	ent->health = 100;
-ADDRLP4 0
-INDIRP4
-CNSTI4 112
-ADDP4
-CNSTI4 100
-ASGNI4
-line 347
-;346:
-;347:	ent->width = 0.5f;
-ADDRLP4 0
-INDIRP4
-CNSTI4 132
-ADDP4
-CNSTF4 1056964608
-ASGNF4
-line 348
-;348:	ent->height = 0.5f;
-ADDRLP4 0
-INDIRP4
-CNSTI4 136
-ADDP4
-CNSTF4 1056964608
-ASGNF4
-line 350
-;349:
-;350:    Ent_SetState( ent, S_PLAYR_IDLE );
-ADDRLP4 0
-INDIRP4
-ARGP4
-CNSTI4 1
-ARGI4
-ADDRGP4 Ent_SetState
-CALLI4
-pop
-line 351
-;351:	Ent_BuildBounds( ent );
-ADDRLP4 0
-INDIRP4
-ARGP4
-ADDRGP4 Ent_BuildBounds
-CALLV
-pop
-line 354
-;352:
-;353:    // mark as allocated
-;354:    sg.playrReady = qtrue;
-ADDRGP4 sg+73964
+line 332
+;330:
+;331:    // mark as allocated
+;332:    sg.playrReady = qtrue;
+ADDRGP4 sg+61676
 CNSTI4 1
 ASGNI4
-line 355
-;355:}
-LABELV $299
-endproc SG_InitPlayer 8 12
+line 333
+;333:}
+LABELV $298
+endproc SG_InitPlayer 0 12
 export SG_KeyEvent
 proc SG_KeyEvent 24 0
-line 358
-;356:
-;357:void SG_KeyEvent( int key, qboolean down )
-;358:{
-line 359
-;359:	if ( down ) {
+line 336
+;334:
+;335:void SG_KeyEvent( int key, qboolean down )
+;336:{
+line 337
+;337:	if ( down ) {
 ADDRFP4 4
 INDIRI4
 CNSTI4 0
-EQI4 $312
-line 360
-;360:		switch ( key ) {
+EQI4 $307
+line 338
+;338:		switch ( key ) {
 ADDRLP4 0
 ADDRFP4 0
 INDIRI4
@@ -2066,12 +1937,12 @@ ASGNI4
 ADDRLP4 0
 INDIRI4
 CNSTI4 115
-EQI4 $320
+EQI4 $315
 ADDRLP4 0
 INDIRI4
 CNSTI4 115
-GTI4 $333
-LABELV $332
+GTI4 $328
+LABELV $327
 ADDRLP4 4
 ADDRFP4 0
 INDIRI4
@@ -2079,24 +1950,24 @@ ASGNI4
 ADDRLP4 4
 INDIRI4
 CNSTI4 97
-EQI4 $324
+EQI4 $319
 ADDRLP4 4
 INDIRI4
 CNSTI4 100
-EQI4 $328
-ADDRGP4 $314
+EQI4 $323
+ADDRGP4 $309
 JUMPV
-LABELV $333
+LABELV $328
 ADDRFP4 0
 INDIRI4
 CNSTI4 119
-EQI4 $316
-ADDRGP4 $314
+EQI4 $311
+ADDRGP4 $309
 JUMPV
-LABELV $316
-line 362
-;361:		case KEY_W:
-;362:			pm.forward += pm_baseSpeed.f * pm_baseAccel.f;
+LABELV $311
+line 340
+;339:		case KEY_W:
+;340:			pm.forward += pm_baseSpeed.f * pm_baseAccel.f;
 ADDRLP4 8
 ADDRGP4 pm+24
 ASGNP4
@@ -2112,14 +1983,14 @@ INDIRF4
 MULF4
 ADDF4
 ASGNF4
-line 363
-;363:			break;
-ADDRGP4 $315
+line 341
+;341:			break;
+ADDRGP4 $310
 JUMPV
-LABELV $320
-line 365
-;364:		case KEY_S:
-;365:			pm.backward += pm_baseSpeed.f * pm_baseAccel.f;
+LABELV $315
+line 343
+;342:		case KEY_S:
+;343:			pm.backward += pm_baseSpeed.f * pm_baseAccel.f;
 ADDRLP4 12
 ADDRGP4 pm+28
 ASGNP4
@@ -2135,14 +2006,14 @@ INDIRF4
 MULF4
 ADDF4
 ASGNF4
-line 366
-;366:			break;
-ADDRGP4 $315
+line 344
+;344:			break;
+ADDRGP4 $310
 JUMPV
-LABELV $324
-line 368
-;367:		case KEY_A:
-;368:			pm.left += pm_baseSpeed.f * pm_baseAccel.f;
+LABELV $319
+line 346
+;345:		case KEY_A:
+;346:			pm.left += pm_baseSpeed.f * pm_baseAccel.f;
 ADDRLP4 16
 ADDRGP4 pm+36
 ASGNP4
@@ -2158,14 +2029,14 @@ INDIRF4
 MULF4
 ADDF4
 ASGNF4
-line 369
-;369:			break;
-ADDRGP4 $315
+line 347
+;347:			break;
+ADDRGP4 $310
 JUMPV
-LABELV $328
-line 371
-;370:		case KEY_D:
-;371:			pm.right += pm_baseSpeed.f * pm_baseAccel.f;
+LABELV $323
+line 349
+;348:		case KEY_D:
+;349:			pm.right += pm_baseSpeed.f * pm_baseAccel.f;
 ADDRLP4 20
 ADDRGP4 pm+32
 ASGNP4
@@ -2181,18 +2052,18 @@ INDIRF4
 MULF4
 ADDF4
 ASGNF4
-line 372
-;372:			break;
-LABELV $314
-LABELV $315
-line 373
-;373:		};
-line 374
-;374:	}
-LABELV $312
-line 375
-;375:}
-LABELV $311
+line 350
+;350:			break;
+LABELV $309
+LABELV $310
+line 351
+;351:		};
+line 352
+;352:	}
+LABELV $307
+line 353
+;353:}
+LABELV $306
 endproc SG_KeyEvent 24 0
 bss
 align 4
@@ -2208,7 +2079,9 @@ import Cvar_VariableStringBuffer
 import Cvar_Set
 import Cvar_Update
 import Cvar_Register
+import trap_FS_Printf
 import trap_FS_FileTell
+import trap_FS_FileLength
 import trap_FS_FileSeek
 import trap_FS_GetFileList
 import trap_FS_Read
@@ -2241,12 +2114,31 @@ import trap_Milliseconds
 import trap_CheckWallHit
 import G_SoundRecursive
 import G_CastRay
+import G_SetActiveMap
 import G_LoadMap
 import G_SetCameraData
 import trap_MemoryRemaining
 import trap_RemoveCommand
 import trap_AddCommand
 import trap_SendConsoleCommand
+import trap_LoadVec4
+import trap_LoadVec3
+import trap_LoadVec2
+import trap_LoadString
+import trap_LoadFloat
+import trap_LoadInt
+import trap_LoadUInt
+import trap_GetSaveSection
+import trap_WriteVec4
+import trap_WriteVec3
+import trap_WriteVec2
+import trap_WriteFloat
+import trap_WriteString
+import trap_WriteUInt
+import trap_WriteInt
+import trap_WriteChar
+import trap_EndSaveSection
+import trap_BeginSaveSection
 import trap_Args
 import trap_Argv
 import trap_Argc
@@ -2256,6 +2148,7 @@ import P_GiveItem
 import P_ParryTicker
 import P_MeleeTicker
 import P_Ticker
+import SG_SendUserCmd
 import SG_MouseEvent
 import SG_OutOfMemory
 import SG_ClearToMemoryMark
@@ -2263,13 +2156,8 @@ import SG_MakeMemoryMark
 import SG_MemInit
 import SG_MemAlloc
 import String_Alloc
-import SG_SpawnMobOnMap
 import SG_SpawnMob
-import SG_AddArchiveHandle
-import SG_LoadGame
-import SG_SaveGame
-import SG_LoadSection
-import SG_WriteSection
+import SG_Spawn
 import Ent_SetState
 import SG_InitEntities
 import Ent_BuildBounds
@@ -2279,11 +2167,13 @@ import SG_AllocEntity
 import Ent_RunTic
 import Ent_CheckEntityCollision
 import Ent_CheckWallCollision
-import SG_DrawLevelStats
-import SG_DrawAbortMission
-import Lvl_AddKillEntity
+import SG_PickupWeapon
+import SG_SpawnWeapon
+import SG_SpawnItem
+import SG_LoadLevelData
+import SG_SaveLevelData
 import SG_EndLevel
-import SG_InitLevel
+import SG_StartLevel
 import SG_UpdateCvars
 import G_Printf
 import G_Error
@@ -2305,9 +2195,7 @@ import pm_groundFriction
 import sg_memoryDebug
 import sg_numSaves
 import sg_savename
-import sg_levelDataFile
 import sg_levelIndex
-import sg_levelInfoFile
 import sg_gibs
 import sg_decalDetail
 import sg_printLevelStats

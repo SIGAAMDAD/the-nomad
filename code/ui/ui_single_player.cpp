@@ -27,7 +27,10 @@ typedef struct {
     const stringHash_t *newGame;
     const stringHash_t *loadGame;
 
-    CGameArchive sv;
+    char **hardestStrings;
+    uint32_t numHardestStrings;
+
+    const stringHash_t *difficultyDescriptions[NUMDIFS];
 } singleplayer_t;
 
 extern ImFont *RobotoMono;
@@ -63,43 +66,7 @@ static const char *difHardestTitles[] = {
     "So sad, too bad."
 };
 
-static const dif_t difficultyTable[NUMDIFS] = {
-    {
-        "Noob",
-
-        "The easiest difficulty by far, you will encounter extremely weak and unaggressive enemies."
-        "Play this if you're new to fighting games and/or want a stress-free experience."
-    },
-    {
-        "Rookie",
-        
-        "The game will take it easy on you, but it will still have a challenge every now and then."
-        "Play this if you are new and/or want a stress-free experience but it won't pull all it's punches."
-    },
-    {
-        "Mercenary",
-
-        "The normal difficulty. Play this mode if you want a challenging but fair experience with your game."
-    },
-    {
-        "Nomad",
-
-        "One of the hardest difficulties, enemies will act more aggressive, deal more damage, and be a pain your ass."
-        "Play this if you want even more of a challenge than Mercenary."
-    },
-    {
-        "The Blackdeath",
-        
-        "The hardest difficulty. This mode is only for this most hardened players; enemies will attack and kill you without mercy, most attacks one-shot."
-        "Speed, accuracy, and skill are your best friends. Play this if you feel like ascending into god gamerhood."
-        "TLDR: this is the difficulty that is used in the canon story."
-    },
-    {
-        NULL,
-
-        "PAIN."
-    }
-};
+static dif_t difficultyTable[NUMDIFS];
 
 void NewGame_DrawNameIssue( void )
 {
@@ -214,13 +181,13 @@ void SinglePlayerMenu_Draw( void )
             if (ImGui::BeginMenu( va("%s", difName) )) {
                 for (i = 0; i < NUMDIFS; i++) {
                     if (i != DIF_HARDEST) {
-                        if (ImGui::MenuItem( difficultyTable[ i ].name )) {
+                        if ( ImGui::MenuItem( difficultyTable[ i ].name ) ) {
                             sp.diff = (gamedif_t)i;
                             ui->PlaySelected();
                         }
                     }
                     else {
-                        if (ImGui::MenuItem( difHardestTitles[ sp.hardestIndex ] )) {
+                        if ( ImGui::MenuItem( sp.hardestStrings[ sp.hardestIndex ] ) ) {
                             sp.diff = (gamedif_t)i;
                             ui->PlaySelected();
                         }
@@ -245,8 +212,8 @@ void SinglePlayerMenu_Draw( void )
                 Cvar_Set( "sg_savename", sp.name );
             }
             
-            VM_Call( sgvm, 0, SGAME_INIT );
-            VM_Call( sgvm, 1, SGAME_LOADLEVEL, 0 ); // start a new game
+            Cvar_Set( "mapname", gi.mapCache.infoList[0].info.name );
+            VM_Call( sgvm, 0, SGAME_LOADLEVEL ); // start a new game
         }
 
         ImGui::NewLine();
@@ -271,13 +238,15 @@ void SinglePlayerMenu_Draw( void )
         }
         mousePos = ImGui::GetCursorScreenPos();
         ImGui::SetCursorScreenPos( ImVec2( mousePos.x, mousePos.y + 10 ) );
-        if (sp.numSaves) {
+        if ( sp.numSaves ) {
             ImGui::BeginTable( "Save Slots", 6 );
             // TODO: add key here
             for (i = 0; i < sp.numSaves; i++) {
                 ImGui::TableNextColumn();
                 if ( ImGui::Button( "LOAD" ) ) {
                     Cvar_Set( "sg_savename", sp.saveList[i].name );
+                    Cvar_Set( "mapname", gi.mapCache.infoList[i].info.name );
+                    VM_Call( sgvm, 0, SGAME_LOAD_GAME );
                 }
                 ImGui::TableNextColumn();
                 ImGui::Text( "%s", sp.saveList[i].name );
@@ -302,37 +271,211 @@ void SinglePlayerMenu_Draw( void )
     ImGui::End();
 }
 
+char **parse_csv( const char *line );
+uint32_t count_fields( const char *line );
+
 void SinglePlayerMenu_Cache( void )
 {
-    char **fileList;
     saveinfo_t *info;
+    const char **fileList;
+    uint64_t i;
+    const stringHash_t *hardest;
 
     memset( &sp, 0, sizeof(sp) );
+    
+    //
+    // init strings
+    //
+    difficultyTable[DIF_NOOB].name = strManager->ValueForKey( "SP_DIFF_VERY_EASY" )->value;
+    difficultyTable[DIF_NOOB].tooltip = strManager->ValueForKey( "SP_DIFF_0_DESC" )->value;
 
-    fileList = FS_ListFiles( "savedata/", ".ngd", &sp.numSaves );
+    difficultyTable[DIF_RECRUIT].name = strManager->ValueForKey( "SP_DIFF_EASY" )->value;
+    difficultyTable[DIF_RECRUIT].tooltip = strManager->ValueForKey( "SP_DIFF_1_DESC" )->value;
 
-    if (sp.numSaves) {
+    difficultyTable[DIF_MERC].name = strManager->ValueForKey( "SP_DIFF_MEDIUM" )->value;
+    difficultyTable[DIF_MERC].tooltip = strManager->ValueForKey( "SP_DIFF_2_DESC" )->value;
+
+    difficultyTable[DIF_NOMAD].name = strManager->ValueForKey( "SP_DIFF_HARD" )->value;
+    difficultyTable[DIF_NOMAD].tooltip = strManager->ValueForKey( "SP_DIFF_3_DESC" )->value;
+
+    difficultyTable[DIF_BLACKDEATH].name = strManager->ValueForKey( "SP_DIFF_VERY_HARD" )->value;
+    difficultyTable[DIF_BLACKDEATH].tooltip = strManager->ValueForKey( "SP_DIFF_4_DESC" )->value;
+
+    sp.newGame = strManager->ValueForKey( "SP_NEWGAME" );
+    sp.loadGame = strManager->ValueForKey( "SP_LOADGAME" );
+    hardest = strManager->ValueForKey( "SP_DIFF_THE_MEMES" );
+    sp.hardestStrings = parse_csv( hardest->value );
+    sp.numHardestStrings = count_fields( hardest->value );
+
+    //
+    // init savefiles
+    //
+
+    fileList = g_pArchiveHandler->GetSaveFiles( &sp.numSaves );
+
+    if ( sp.numSaves ) {
+        Cvar_Set( "sg_numSaves", va( "%i", (int32_t)sp.numSaves ) );
+
         sp.saveList = (saveinfo_t *)Hunk_Alloc( sizeof(saveinfo_t) * sp.numSaves, h_low );
-        memset( sp.saveList, 0, sizeof(saveinfo_t) * sp.numSaves );
         info = sp.saveList;
+
+        for ( i = 0; i < sp.numSaves; i++, info++ ) {
+            N_strncpyz( info->name, fileList[i], sizeof(info->name) );
+
+            info->index = i;
+            if ( !Sys_GetFileStats( &info->stats, info->name ) ) { // this should never fail
+                N_Error( ERR_DROP, "Failed to stat savefile '%s' even though it exists", info->name );
+            }
+
+            if ( !g_pArchiveHandler->LoadPartial( info->name, &info->gd ) ) { // just get the header and basic game information
+                Con_Printf( COLOR_YELLOW "WARNING: Failed to get valid header data from savefile '%s'\n", info->name );
+                info->valid = qfalse;
+            }
+            else {
+                info->valid = qtrue;
+            }
+        }
+    }
+}
+
+//
+// a small csv parser for c, credits to semitrivial for this
+// https://github.com/semitrivial/csv_parser.git
+//
+
+void free_csv_line( char **parsed ) {
+    char **ptr;
+
+    for ( ptr = parsed; *ptr; ptr++ ) {
+        Z_Free( *ptr );
     }
 
-    for (uint64_t i = 0; i < sp.numSaves; i++, info++) {
-        N_strncpyz( info->name, fileList[i], sizeof(info->name) );
+    Z_Free( parsed );
+}
 
-        info->index = i;
-        if (!Sys_GetFileStats( &info->stats, info->name )) { // this should never fail
-            N_Error(ERR_DROP, "Failed to stat savefile '%s' even though it exists", info->name);
+uint32_t count_fields( const char *line ) {
+    const char *ptr;
+    uint32_t cnt, fQuote;
+
+    for ( cnt = 1, fQuote = 0, ptr = line; *ptr; ptr++ ) {
+        if ( fQuote ) {
+            if ( *ptr == '\"' ) {
+                fQuote = 0;
+            }
+            continue;
         }
 
-        if (!sp.sv.LoadPartial( info->name, &info->gd )) { // just get the header and basic game information
-            Con_Printf( COLOR_YELLOW "WARNING: Failed to get valid header data from savefile '%s'\n", info->name );
-            info->valid = qfalse;
-        }
-        else {
-            info->valid = qtrue;
+        switch( *ptr ) {
+            case '\"':
+                fQuote = 1;
+                continue;
+            case ',':
+                cnt++;
+                continue;
+            default:
+                continue;
         }
     }
 
-    Sys_FreeFileList( fileList );
+    if ( fQuote ) {
+        return -1;
+    }
+
+    return cnt;
+}
+
+/*
+ *  Given a string containing no linebreaks, or containing line breaks
+ *  which are escaped by "double quotes", extract a NULL-terminated
+ *  array of strings, one for every cell in the row.
+ */
+char **parse_csv( const char *line ) {
+    char **buf, **bptr, *tmp, *tptr;
+    const char *ptr;
+    uint32_t fieldcnt, fQuote, fEnd;
+
+    fieldcnt = count_fields( line );
+
+    if ( fieldcnt == -1 ) {
+        return NULL;
+    }
+
+    buf = (char **)Hunk_Alloc( sizeof(char *) * (fieldcnt+1), h_low );
+
+    if ( !buf ) {
+        return NULL;
+    }
+
+    tmp = (char *)Z_Malloc( strlen(line) + 1, TAG_STATIC );
+
+    if ( !tmp ) {
+        Z_Free( buf );
+        return NULL;
+    }
+
+    bptr = buf;
+
+    for ( ptr = line, fQuote = 0, *tmp = '\0', tptr = tmp, fEnd = 0; ; ptr++ ) {
+        if ( fQuote ) {
+            if ( !*ptr ) {
+                break;
+            }
+
+            if ( *ptr == '\"' ) {
+                if ( ptr[1] == '\"' ) {
+                    *tptr++ = '\"';
+                    ptr++;
+                    continue;
+                }
+                fQuote = 0;
+            }
+            else {
+                *tptr++ = *ptr;
+            }
+
+            continue;
+        }
+
+        switch( *ptr ) {
+            case '\"':
+                fQuote = 1;
+                continue;
+            case '\0':
+                fEnd = 1;
+            case ',':
+                *tptr = '\0';
+                *bptr = CopyString( tmp );
+
+                if ( !*bptr ) {
+                    for ( bptr--; bptr >= buf; bptr-- ) {
+                        Z_Free( *bptr );
+                    }
+                    Z_Free( buf );
+                    Z_Free( tmp );
+
+                    return NULL;
+                }
+
+                bptr++;
+                tptr = tmp;
+
+                if ( fEnd ) {
+                    break;
+                } else {
+                    continue;
+                }
+
+            default:
+                *tptr++ = *ptr;
+                continue;
+        }
+
+        if ( fEnd ) {
+            break;
+        }
+    }
+
+    *bptr = NULL;
+    Z_Free( tmp );
+    return buf;
 }

@@ -141,7 +141,7 @@ LDLIBS=-L/usr/lib/x86_64-linux-gnu/ \
 		-L$(LIB_PREFIX) \
 		-lSDL2 \
 		-lsndfile \
-		-leasy_profiler
+#		-leasy_profiler
 SYS=\
 	$(O)/sys/unix_main.o \
 	$(O)/sys/unix_shared.o
@@ -243,7 +243,6 @@ SRC=\
 	$(O)/game/g_console.o \
 	$(O)/game/g_archive.o \
 	$(O)/game/g_imgui.o \
-	$(O)/game/g_input.o \
 	$(O)/game/g_world.o \
 	$(O)/game/g_jpeg.o \
 	\

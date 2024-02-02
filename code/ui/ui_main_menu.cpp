@@ -142,15 +142,13 @@ void MainMenu_Draw( void )
         FontCache()->SetActiveFont( menu.font );
     }
 
-    if ( ui->GetState() == STATE_ERROR || errorMenu.message[0] ) {
-        if ( ImGui::BeginPopupModal( "Engine Error", NULL, windowFlags & ~( ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground ) ) ) {
-            ImGui::TextUnformatted( errorMenu.message );
-            if ( Key_AnyDown() ) {
-                Snd_PlaySfx( ui->sfx_null );
-                ImGui::CloseCurrentPopup();
-            }
-            ImGui::EndPopup();
+    if ( ImGui::BeginPopupModal( "Engine Error", NULL, windowFlags & ~( ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground ) ) ) {
+        ImGui::TextUnformatted( errorMenu.message );
+        if ( Key_AnyDown() ) {
+            Snd_PlaySfx( ui->sfx_null );
+            ImGui::CloseCurrentPopup();
         }
+        ImGui::EndPopup();
     }
 
     if ( menu.noMenu ) {
@@ -281,7 +279,8 @@ void MainMenu_Cache( void )
     menu.ambience = Snd_RegisterTrack( "music/title.ogg" );
     menu.background0 = re.RegisterShader( MAIN_MENU_BACKGROUND );
 
-    menu.settingsString = strManager->ValueForKey("MENU_MAIN_SETTINGS");
+    menu.settingsString = strManager->ValueForKey( "MENU_MAIN_SETTINGS" );
+    menu.spString = strManager->ValueForKey( "MENU_MAIN_SINGLEPLAYER" );
 
     menu.font = FontCache()->AddFontToCache( "fonts/PressStart2P-Regular.ttf" );
     RobotoMono = FontCache()->AddFontToCache( "fonts/RobotoMono/RobotoMono-Bold.ttf" );

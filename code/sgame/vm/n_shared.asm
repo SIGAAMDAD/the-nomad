@@ -363,7 +363,7 @@ line 58
 ;54:	0xf8,0xf9,0xfa,0xfb,0xfc,0xfd,0xfe,0xff
 ;55:};
 ;56:
-;57:uint32_t crc32_buffer(const byte *buf, uint32_t len)
+;57:uint32_t crc32_buffer( const byte *buf, uint32_t len )
 ;58:{
 line 62
 ;59:	static uint32_t crc32_table[256];

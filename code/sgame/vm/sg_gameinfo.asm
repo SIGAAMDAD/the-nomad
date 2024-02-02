@@ -491,454 +491,15 @@ line 84
 ;84:}
 LABELV $116
 endproc SG_LoadLevelInfoFromFile 8212 16
-proc SG_LoadLevelInfos 1180 16
-line 87
-;85:
-;86:static void SG_LoadLevelInfos( void )
-;87:{
-line 95
-;88:    int numdirs;
-;89:    char filename[128];
-;90:    char dirlist[1024];
-;91:    char *dirptr;
-;92:    int i, dirlen;
-;93:    int n;
-;94:
-;95:    sg.numLevels = 0;
-ADDRGP4 sg+72
-CNSTI4 0
-ASGNI4
-line 97
-;96:
-;97:    if (*sg_levelInfoFile.s) {
-ADDRGP4 sg_levelInfoFile
-INDIRI1
-CVII4 1
-CNSTI4 0
-EQI4 $128
-line 98
-;98:        SG_LoadLevelInfoFromFile( sg_levelInfoFile.s );
-ADDRGP4 sg_levelInfoFile
-ARGP4
-ADDRGP4 SG_LoadLevelInfoFromFile
-CALLV
-pop
-line 99
-;99:    }
-ADDRGP4 $129
-JUMPV
-LABELV $128
-line 100
-;100:    else {
-line 101
-;101:        SG_LoadLevelInfoFromFile( "scripts/levels.txt" );
-ADDRGP4 $130
-ARGP4
-ADDRGP4 SG_LoadLevelInfoFromFile
-CALLV
-pop
-line 102
-;102:    }
-LABELV $129
-line 105
-;103:
-;104:    // get all arenas from .lvl files
-;105:    numdirs = trap_FS_GetFileList( "scripts", ".lvl", dirlist, 1024 );
-ADDRGP4 $131
-ARGP4
-ADDRGP4 $132
-ARGP4
-ADDRLP4 148
-ARGP4
-CNSTI4 1024
-ARGI4
-ADDRLP4 1172
-ADDRGP4 trap_FS_GetFileList
-CALLI4
-ASGNI4
-ADDRLP4 144
-ADDRLP4 1172
-INDIRI4
-ASGNI4
-line 106
-;106:    dirptr = dirlist;
-ADDRLP4 4
-ADDRLP4 148
-ASGNP4
-line 107
-;107:    for (i = 0; i < numdirs; i++, dirptr += dirlen + 1) {
-ADDRLP4 136
-CNSTI4 0
-ASGNI4
-ADDRGP4 $136
-JUMPV
-LABELV $133
-line 108
-;108:        dirlen = strlen( dirptr );
-ADDRLP4 4
-INDIRP4
-ARGP4
-ADDRLP4 1176
-ADDRGP4 strlen
-CALLU4
-ASGNU4
-ADDRLP4 140
-ADDRLP4 1176
-INDIRU4
-CVUI4 4
-ASGNI4
-line 112
-;109:
-;110:        // FIXME: possibly use Com_snprintf?
-;111:
-;112:        strcpy( filename, "scripts/" );
-ADDRLP4 8
-ARGP4
-ADDRGP4 $137
-ARGP4
-ADDRGP4 strcpy
-CALLP4
-pop
-line 113
-;113:        strcat( filename, dirptr );
-ADDRLP4 8
-ARGP4
-ADDRLP4 4
-INDIRP4
-ARGP4
-ADDRGP4 strcat
-CALLP4
-pop
-line 114
-;114:        SG_LoadLevelInfoFromFile( filename );
-ADDRLP4 8
-ARGP4
-ADDRGP4 SG_LoadLevelInfoFromFile
-CALLV
-pop
-line 115
-;115:    }
-LABELV $134
-line 107
-ADDRLP4 136
-ADDRLP4 136
-INDIRI4
-CNSTI4 1
-ADDI4
-ASGNI4
-ADDRLP4 4
-ADDRLP4 140
-INDIRI4
-CNSTI4 1
-ADDI4
-ADDRLP4 4
-INDIRP4
-ADDP4
-ASGNP4
-LABELV $136
-ADDRLP4 136
-INDIRI4
-ADDRLP4 144
-INDIRI4
-LTI4 $133
-line 116
-;116:    G_Printf( "%i levels parsed\n", sg.numLevels );
-ADDRGP4 $138
-ARGP4
-ADDRGP4 sg+72
-INDIRI4
-ARGI4
-ADDRGP4 G_Printf
-CALLV
-pop
-line 119
-;117:
-;118:    // set initial numbers
-;119:    for (n = 0; n < sg.numLevels; n++) {
-ADDRLP4 0
-CNSTI4 0
-ASGNI4
-ADDRGP4 $143
-JUMPV
-LABELV $140
-line 120
-;120:        Info_SetValueForKey( sg_levelInfos[n], "num", va( "%i", n ) );
-ADDRGP4 $113
-ARGP4
-ADDRLP4 0
-INDIRI4
-ARGI4
-ADDRLP4 1176
-ADDRGP4 va
-CALLP4
-ASGNP4
-ADDRLP4 0
-INDIRI4
-CNSTI4 2
-LSHI4
-ADDRGP4 sg_levelInfos
-ADDP4
-INDIRP4
-ARGP4
-CNSTU4 1024
-ARGU4
-ADDRGP4 $145
-ARGP4
-ADDRLP4 1176
-INDIRP4
-ARGP4
-ADDRGP4 Info_SetValueForKey_s
-CALLI4
-pop
-line 121
-;121:    }
-LABELV $141
-line 119
-ADDRLP4 0
-ADDRLP4 0
-INDIRI4
-CNSTI4 1
-ADDI4
-ASGNI4
-LABELV $143
-ADDRLP4 0
-INDIRI4
-ADDRGP4 sg+72
-INDIRI4
-LTI4 $140
-line 122
-;122:}
-LABELV $126
-endproc SG_LoadLevelInfos 1180 16
+export SG_LoadLevelInfos
+proc SG_LoadLevelInfos 0 0
+endproc SG_LoadLevelInfos 0 0
 export SG_GetLevelInfoByIndex
-proc SG_GetLevelInfoByIndex 24 8
-line 125
-;123:
-;124:const char *SG_GetLevelInfoByIndex( int32_t index )
-;125:{
-line 129
-;126:    int n;
-;127:    const char *value;
-;128:
-;129:    if (index < 0 || index >= sg.numLevels) {
-ADDRLP4 8
-ADDRFP4 0
-INDIRI4
-ASGNI4
-ADDRLP4 8
-INDIRI4
-CNSTI4 0
-LTI4 $150
-ADDRLP4 8
-INDIRI4
-ADDRGP4 sg+72
-INDIRI4
-LTI4 $147
-LABELV $150
-line 130
-;130:        G_Printf( COLOR_RED "Invalid level index: %i\n", index );
-ADDRGP4 $151
-ARGP4
-ADDRFP4 0
-INDIRI4
-ARGI4
-ADDRGP4 G_Printf
-CALLV
-pop
-line 131
-;131:        return NULL;
-CNSTP4 0
-RETP4
-ADDRGP4 $146
-JUMPV
-LABELV $147
-line 134
-;132:    }
-;133:
-;134:    for (n = 0; n < sg.numLevels; n++) {
-ADDRLP4 0
-CNSTI4 0
-ASGNI4
-ADDRGP4 $155
-JUMPV
-LABELV $152
-line 135
-;135:        value = Info_ValueForKey( sg_levelInfos[n], "num" );
-ADDRLP4 0
-INDIRI4
-CNSTI4 2
-LSHI4
-ADDRGP4 sg_levelInfos
-ADDP4
-INDIRP4
-ARGP4
-ADDRGP4 $145
-ARGP4
-ADDRLP4 12
-ADDRGP4 Info_ValueForKey
-CALLP4
-ASGNP4
-ADDRLP4 4
-ADDRLP4 12
-INDIRP4
-ASGNP4
-line 136
-;136:        if (*value && atoi(value) == index) {
-ADDRLP4 4
-INDIRP4
-INDIRI1
-CVII4 1
-CNSTI4 0
-EQI4 $157
-ADDRLP4 4
-INDIRP4
-ARGP4
-ADDRLP4 20
-ADDRGP4 atoi
-CALLI4
-ASGNI4
-ADDRLP4 20
-INDIRI4
-ADDRFP4 0
-INDIRI4
-NEI4 $157
-line 137
-;137:            return sg_levelInfos[n];
-ADDRLP4 0
-INDIRI4
-CNSTI4 2
-LSHI4
-ADDRGP4 sg_levelInfos
-ADDP4
-INDIRP4
-RETP4
-ADDRGP4 $146
-JUMPV
-LABELV $157
-line 139
-;138:        }
-;139:    }
-LABELV $153
-line 134
-ADDRLP4 0
-ADDRLP4 0
-INDIRI4
-CNSTI4 1
-ADDI4
-ASGNI4
-LABELV $155
-ADDRLP4 0
-INDIRI4
-ADDRGP4 sg+72
-INDIRI4
-LTI4 $152
-line 141
-;140:    
-;141:    return NULL;
-CNSTP4 0
-RETP4
-LABELV $146
-endproc SG_GetLevelInfoByIndex 24 8
+proc SG_GetLevelInfoByIndex 0 0
+endproc SG_GetLevelInfoByIndex 0 0
 export SG_GetLevelInfoByMap
-proc SG_GetLevelInfoByMap 12 8
-line 145
-;142:}
-;143:
-;144:const char *SG_GetLevelInfoByMap( const char *mapname )
-;145:{
-line 148
-;146:    int n;
-;147:
-;148:    for (n = 0; n < sg.numLevels; n++) {
-ADDRLP4 0
-CNSTI4 0
-ASGNI4
-ADDRGP4 $163
-JUMPV
-LABELV $160
-line 149
-;149:        if (N_stricmp( Info_ValueForKey( sg_levelInfos[n], "map" ), mapname ) == 0) {
-ADDRLP4 0
-INDIRI4
-CNSTI4 2
-LSHI4
-ADDRGP4 sg_levelInfos
-ADDP4
-INDIRP4
-ARGP4
-ADDRGP4 $167
-ARGP4
-ADDRLP4 4
-ADDRGP4 Info_ValueForKey
-CALLP4
-ASGNP4
-ADDRLP4 4
-INDIRP4
-ARGP4
-ADDRFP4 0
-INDIRP4
-ARGP4
-ADDRLP4 8
-ADDRGP4 N_stricmp
-CALLI4
-ASGNI4
-ADDRLP4 8
-INDIRI4
-CNSTI4 0
-NEI4 $165
-line 150
-;150:            return sg_levelInfos[n];
-ADDRLP4 0
-INDIRI4
-CNSTI4 2
-LSHI4
-ADDRGP4 sg_levelInfos
-ADDP4
-INDIRP4
-RETP4
-ADDRGP4 $159
-JUMPV
-LABELV $165
-line 152
-;151:        }
-;152:    }
-LABELV $161
-line 148
-ADDRLP4 0
-ADDRLP4 0
-INDIRI4
-CNSTI4 1
-ADDI4
-ASGNI4
-LABELV $163
-ADDRLP4 0
-INDIRI4
-ADDRGP4 sg+72
-INDIRI4
-LTI4 $160
-line 154
-;153:    
-;154:    return NULL;
-CNSTP4 0
-RETP4
-LABELV $159
-endproc SG_GetLevelInfoByMap 12 8
-export SG_InitLevels
-proc SG_InitLevels 0 0
-line 158
-;155:}
-;156:
-;157:void SG_InitLevels( void )
-;158:{
-line 159
-;159:    SG_LoadLevelInfos();
-ADDRGP4 SG_LoadLevelInfos
-CALLV
-pop
-line 160
-;160:}
-LABELV $168
-endproc SG_InitLevels 0 0
+proc SG_GetLevelInfoByMap 0 0
+endproc SG_GetLevelInfoByMap 0 0
 import atoi
 bss
 align 4
@@ -948,7 +509,9 @@ import Cvar_VariableStringBuffer
 import Cvar_Set
 import Cvar_Update
 import Cvar_Register
+import trap_FS_Printf
 import trap_FS_FileTell
+import trap_FS_FileLength
 import trap_FS_FileSeek
 import trap_FS_GetFileList
 import trap_FS_Read
@@ -981,12 +544,31 @@ import trap_Milliseconds
 import trap_CheckWallHit
 import G_SoundRecursive
 import G_CastRay
+import G_SetActiveMap
 import G_LoadMap
 import G_SetCameraData
 import trap_MemoryRemaining
 import trap_RemoveCommand
 import trap_AddCommand
 import trap_SendConsoleCommand
+import trap_LoadVec4
+import trap_LoadVec3
+import trap_LoadVec2
+import trap_LoadString
+import trap_LoadFloat
+import trap_LoadInt
+import trap_LoadUInt
+import trap_GetSaveSection
+import trap_WriteVec4
+import trap_WriteVec3
+import trap_WriteVec2
+import trap_WriteFloat
+import trap_WriteString
+import trap_WriteUInt
+import trap_WriteInt
+import trap_WriteChar
+import trap_EndSaveSection
+import trap_BeginSaveSection
 import trap_Args
 import trap_Argv
 import trap_Argc
@@ -1009,11 +591,6 @@ import SG_MemAlloc
 import String_Alloc
 import SG_SpawnMobOnMap
 import SG_SpawnMob
-import SG_AddArchiveHandle
-import SG_LoadGame
-import SG_SaveGame
-import SG_LoadSection
-import SG_WriteSection
 import Ent_SetState
 import SG_InitEntities
 import Ent_BuildBounds
@@ -1027,7 +604,7 @@ import SG_DrawLevelStats
 import SG_DrawAbortMission
 import Lvl_AddKillEntity
 import SG_EndLevel
-import SG_InitLevel
+import SG_StartLevel
 import SG_UpdateCvars
 import G_Printf
 import G_Error
@@ -1051,7 +628,6 @@ import sg_numSaves
 import sg_savename
 import sg_levelDataFile
 import sg_levelIndex
-import sg_levelInfoFile
 import sg_gibs
 import sg_decalDetail
 import sg_printLevelStats

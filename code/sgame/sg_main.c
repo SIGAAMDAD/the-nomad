@@ -6,14 +6,17 @@ void SG_Shutdown( void );
 int SG_RunLoop( int levelTime, int frameTime );
 int SG_DrawFrame( void );
 
+void SaveGame( void );
+void LoadGame( void );
+
 /*
 vmMain
 
 this is the only way control passes into the module.
 this must be the very first function compiled into the .qvm file
 */
-int32_t vmMain( int32_t command, int32_t arg0, int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg4, int32_t arg5, int32_t arg6, int32_t arg7,
-    int32_t arg8, int32_t arg9, int32_t arg10 )
+int vmMain( int command, int arg0, int arg1, int arg2, int arg3, int arg4, int arg5, int arg6, int arg7,
+    int arg8, int arg9, int arg10 )
 {
     switch ( command ) {
     case SGAME_INIT:
@@ -26,8 +29,11 @@ int32_t vmMain( int32_t command, int32_t arg0, int32_t arg1, int32_t arg2, int32
         return sg.state;
     case SGAME_ENDLEVEL:
         return SG_EndLevel();
-    case SGAME_SEND_USER_CMD:
-        SG_SendUserCmd( arg0, arg1, arg2 );
+    case SGAME_LOAD_GAME:
+        LoadGame();
+        return 0;
+    case SGAME_SAVE_GAME:
+        SaveGame();
         return 0;
     case SGAME_MOUSE_EVENT:
         return 0;
@@ -38,7 +44,7 @@ int32_t vmMain( int32_t command, int32_t arg0, int32_t arg1, int32_t arg2, int32
     case SGAME_EVENT_NONE:
         return 0;
     case SGAME_LOADLEVEL:
-        return SG_InitLevel( arg0 );
+        return SG_StartLevel();
     case SGAME_CONSOLE_COMMAND:
         SGameCommand();
         return 0;
@@ -62,9 +68,7 @@ vmCvar_t sg_mouseAcceleration;
 vmCvar_t sg_printLevelStats;
 vmCvar_t sg_decalDetail;
 vmCvar_t sg_gibs;
-vmCvar_t sg_levelInfoFile;
 vmCvar_t sg_levelIndex;
-vmCvar_t sg_levelDataFile;
 vmCvar_t sg_savename;
 vmCvar_t sg_numSaves;
 vmCvar_t sg_memoryDebug;
@@ -108,7 +112,6 @@ static cvarTable_t cvarTable[] = {
     { &sg_printLevelStats,      "sg_printLevelStats",   "1",            CVAR_LATCH | CVAR_SAVE,     0, qfalse },
     { &sg_decalDetail,          "sg_decalDetail",       "3",            CVAR_LATCH | CVAR_SAVE,     0, qtrue },
     { &sg_gibs,                 "sg_gibs",              "0",            CVAR_LATCH | CVAR_SAVE,     0, qtrue },
-    { &sg_levelInfoFile,        "sg_levelInfoFile",     "levels.txt",   CVAR_LATCH | CVAR_SAVE,     0, qtrue },
     { &sg_savename,             "sg_savename",          "savedata",     CVAR_LATCH | CVAR_SAVE,     0, qtrue },
     { &sg_numSaves,             "sg_numSaves",          "0",            CVAR_LATCH | CVAR_SAVE,     0, qfalse },
 #ifdef _NOMAD_DEBUG
@@ -157,7 +160,7 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL G_Printf(const char *fmt, ..
 {
     va_list argptr;
     char msg[4096];
-    int32_t length;
+    int length;
 
     va_start(argptr, fmt);
     length = vsprintf(msg, fmt, argptr);
@@ -170,7 +173,7 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL G_Error(const char *err, ...
 {
     va_list argptr;
     char msg[4096];
-    int32_t length;
+    int length;
 
     va_start(argptr, err);
     length = vsprintf(msg, err, argptr);
@@ -183,7 +186,7 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL SG_Printf(const char *fmt, .
 {
     va_list argptr;
     char msg[4096];
-    int32_t length;
+    int length;
 
     va_start(argptr, fmt);
     length = vsprintf(msg, fmt, argptr);
@@ -200,7 +203,7 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL SG_Error(const char *err, ..
 {
     va_list argptr;
     char msg[4096];
-    int32_t length;
+    int length;
 
     va_start(argptr, err);
     length = vsprintf(msg, err, argptr);
@@ -217,7 +220,7 @@ void GDR_DECL GDR_ATTRIBUTE((format(printf, 2, 3))) N_Error(errorCode_t code, co
 {
     va_list argptr;
     char msg[4096];
-    int32_t length;
+    int length;
 
     va_start(argptr, err);
     length = vsprintf(msg, err, argptr);
@@ -237,7 +240,7 @@ void GDR_DECL GDR_ATTRIBUTE((format(printf, 1, 2))) Con_Printf(const char *fmt, 
 {
     va_list argptr;
     char msg[4096];
-    int32_t length;
+    int length;
 
     va_start(argptr, fmt);
     length = vsprintf(msg, fmt, argptr);
@@ -265,12 +268,6 @@ int SG_RunLoop( int levelTime, int frameTime )
 
     // get any cvar changes
     SG_UpdateCvars();
-
-    // even if the game is paused, we still render everything in the background
-    if ( sg.state == SG_SHOW_LEVEL_STATS ) {
-        SG_DrawLevelStats();
-        return 1; // we don't draw the level if we're ending it
-    }
 
     if ( sg_paused.i ) {
         return 0;
@@ -392,6 +389,24 @@ void SG_Shutdown( void )
     sg.state = SG_INACTIVE;
 }
 
+void SaveGame( void )
+{
+    G_Printf( "Saving game...\n" );
+
+    SG_SaveLevelData();
+
+    G_Printf( "Done" );
+}
+
+void LoadGame( void )
+{
+    char savename[MAX_NPATH];
+
+    Cvar_VariableStringBuffer( "sg_savename", savename, sizeof(savename) );
+
+    G_Printf( "Loading save file '%s'...\n", savename );
+}
+
 void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL trap_FS_Printf( file_t f, const char *fmt, ... )
 {
     va_list argptr;
@@ -401,7 +416,7 @@ void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL trap_FS_Printf( file_t f, co
     vsprintf( msg, fmt, argptr );
     va_end( argptr );
 
-    trap_FS_Write( msg, strlen(msg), f );
+    trap_FS_Write( msg, strlen( msg ), f );
 }
 
 

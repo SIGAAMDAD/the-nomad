@@ -249,10 +249,6 @@ int64_t CSoundSource::FileFormat( const char *ext ) const
         return SF_FORMAT_WAV;
     } else if (!N_stricmp( ext, "aiff" )) {
         return SF_FORMAT_AIFF;
-    } else if (!N_stricmp( ext, "mp3")) {
-        // mp3 copyright laws and all that stuff
-        Con_Printf( COLOR_YELLOW "WARNING: loading an mp3 audio file, this could lead to some legal shit...\n" );
-        return SF_FORMAT_MPEG;
     } else if (!N_stricmp( ext, "ogg" )) {
         return SF_FORMAT_OGG;
     } else if (!N_stricmp( ext, "opus" )) {

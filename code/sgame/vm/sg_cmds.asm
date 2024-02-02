@@ -1,6 +1,6 @@
 export SGameCommand
 code
-proc SGameCommand 1024 12
+proc SGameCommand 1064 12
 file "../sg_cmds.c"
 line 5
 ;1:#include "sg_local.h"
@@ -21,15 +21,202 @@ ARGI4
 ADDRGP4 trap_Argv
 CALLV
 pop
-line 9
-;9:}
+line 15
+;9:
+;10:    //
+;11:    // cheat codes
+;12:    //
+;13:
+;14:    // infinite health
+;15:    if ( !N_stricmp( cmd, "gimme_more" ) || !N_stricmp( cmd, "gmathitw" ) ) {
+ADDRLP4 0
+ARGP4
+ADDRGP4 $92
+ARGP4
+ADDRLP4 1024
+ADDRGP4 N_stricmp
+CALLI4
+ASGNI4
+ADDRLP4 1024
+INDIRI4
+CNSTI4 0
+EQI4 $94
+ADDRLP4 0
+ARGP4
+ADDRGP4 $93
+ARGP4
+ADDRLP4 1028
+ADDRGP4 N_stricmp
+CALLI4
+ASGNI4
+ADDRLP4 1028
+INDIRI4
+CNSTI4 0
+NEI4 $90
+LABELV $94
+line 16
+;16:    }
+ADDRGP4 $91
+JUMPV
+LABELV $90
+line 18
+;17:    // god mode
+;18:    else if ( !N_stricmp( cmd, "godmode" ) || !N_stricmp( cmd, "iwtbag" ) ) {
+ADDRLP4 0
+ARGP4
+ADDRGP4 $97
+ARGP4
+ADDRLP4 1032
+ADDRGP4 N_stricmp
+CALLI4
+ASGNI4
+ADDRLP4 1032
+INDIRI4
+CNSTI4 0
+EQI4 $99
+ADDRLP4 0
+ARGP4
+ADDRGP4 $98
+ARGP4
+ADDRLP4 1036
+ADDRGP4 N_stricmp
+CALLI4
+ASGNI4
+ADDRLP4 1036
+INDIRI4
+CNSTI4 0
+NEI4 $95
+LABELV $99
+line 20
+;19:
+;20:    }
+ADDRGP4 $96
+JUMPV
+LABELV $95
+line 22
+;21:    // make all enemies blind
+;22:    else if ( !N_stricmp( cmd, "blindmobs" ) ) {
+ADDRLP4 0
+ARGP4
+ADDRGP4 $102
+ARGP4
+ADDRLP4 1040
+ADDRGP4 N_stricmp
+CALLI4
+ASGNI4
+ADDRLP4 1040
+INDIRI4
+CNSTI4 0
+NEI4 $100
+line 24
+;23:
+;24:    }
+ADDRGP4 $101
+JUMPV
+LABELV $100
+line 26
+;25:    // make all enemies deaf
+;26:    else if ( !N_stricmp( cmd, "deafmobs" ) ) {
+ADDRLP4 0
+ARGP4
+ADDRGP4 $105
+ARGP4
+ADDRLP4 1044
+ADDRGP4 N_stricmp
+CALLI4
+ASGNI4
+ADDRLP4 1044
+INDIRI4
+CNSTI4 0
+NEI4 $103
+line 28
+;27:
+;28:    }
+ADDRGP4 $104
+JUMPV
+LABELV $103
+line 30
+;29:    // enable all cheats
+;30:    else if ( !N_stricmp( cmd, "iamacheater" ) || !N_stricmp( cmd, "iamapussy" ) ) {
+ADDRLP4 0
+ARGP4
+ADDRGP4 $108
+ARGP4
+ADDRLP4 1048
+ADDRGP4 N_stricmp
+CALLI4
+ASGNI4
+ADDRLP4 1048
+INDIRI4
+CNSTI4 0
+EQI4 $110
+ADDRLP4 0
+ARGP4
+ADDRGP4 $109
+ARGP4
+ADDRLP4 1052
+ADDRGP4 N_stricmp
+CALLI4
+ASGNI4
+ADDRLP4 1052
+INDIRI4
+CNSTI4 0
+NEI4 $106
+LABELV $110
+line 32
+;31:
+;32:    }
+ADDRGP4 $107
+JUMPV
+LABELV $106
+line 34
+;33:    // disable all cheats
+;34:    else if ( !N_stricmp( cmd, "iamnotacheater" ) || !N_stricmp( cmd, "ihavetheballs" ) ) {
+ADDRLP4 0
+ARGP4
+ADDRGP4 $113
+ARGP4
+ADDRLP4 1056
+ADDRGP4 N_stricmp
+CALLI4
+ASGNI4
+ADDRLP4 1056
+INDIRI4
+CNSTI4 0
+EQI4 $115
+ADDRLP4 0
+ARGP4
+ADDRGP4 $114
+ARGP4
+ADDRLP4 1060
+ADDRGP4 N_stricmp
+CALLI4
+ASGNI4
+ADDRLP4 1060
+INDIRI4
+CNSTI4 0
+NEI4 $111
+LABELV $115
+line 36
+;35:
+;36:    }
+LABELV $111
+LABELV $107
+LABELV $104
+LABELV $101
+LABELV $96
+LABELV $91
+line 37
+;37:}
 LABELV $89
-endproc SGameCommand 1024 12
+endproc SGameCommand 1064 12
 import Cvar_VariableStringBuffer
 import Cvar_Set
 import Cvar_Update
 import Cvar_Register
+import trap_FS_Printf
 import trap_FS_FileTell
+import trap_FS_FileLength
 import trap_FS_FileSeek
 import trap_FS_GetFileList
 import trap_FS_Read
@@ -62,12 +249,31 @@ import trap_Milliseconds
 import trap_CheckWallHit
 import G_SoundRecursive
 import G_CastRay
+import G_SetActiveMap
 import G_LoadMap
 import G_SetCameraData
 import trap_MemoryRemaining
 import trap_RemoveCommand
 import trap_AddCommand
 import trap_SendConsoleCommand
+import trap_LoadVec4
+import trap_LoadVec3
+import trap_LoadVec2
+import trap_LoadString
+import trap_LoadFloat
+import trap_LoadInt
+import trap_LoadUInt
+import trap_GetSaveSection
+import trap_WriteVec4
+import trap_WriteVec3
+import trap_WriteVec2
+import trap_WriteFloat
+import trap_WriteString
+import trap_WriteUInt
+import trap_WriteInt
+import trap_WriteChar
+import trap_EndSaveSection
+import trap_BeginSaveSection
 import trap_Args
 import trap_Argv
 import trap_Argc
@@ -88,13 +294,8 @@ import SG_MakeMemoryMark
 import SG_MemInit
 import SG_MemAlloc
 import String_Alloc
-import SG_SpawnMobOnMap
 import SG_SpawnMob
-import SG_AddArchiveHandle
-import SG_LoadGame
-import SG_SaveGame
-import SG_LoadSection
-import SG_WriteSection
+import SG_Spawn
 import Ent_SetState
 import SG_InitEntities
 import Ent_BuildBounds
@@ -104,11 +305,13 @@ import SG_AllocEntity
 import Ent_RunTic
 import Ent_CheckEntityCollision
 import Ent_CheckWallCollision
-import SG_DrawLevelStats
-import SG_DrawAbortMission
-import Lvl_AddKillEntity
+import SG_PickupWeapon
+import SG_SpawnWeapon
+import SG_SpawnItem
+import SG_LoadLevelData
+import SG_SaveLevelData
 import SG_EndLevel
-import SG_InitLevel
+import SG_StartLevel
 import SG_UpdateCvars
 import G_Printf
 import G_Error
@@ -129,9 +332,7 @@ import pm_groundFriction
 import sg_memoryDebug
 import sg_numSaves
 import sg_savename
-import sg_levelDataFile
 import sg_levelIndex
-import sg_levelInfoFile
 import sg_gibs
 import sg_decalDetail
 import sg_printLevelStats
@@ -539,3 +740,129 @@ import memmove
 import memset
 import memchr
 import memcpy
+lit
+align 1
+LABELV $114
+byte 1 105
+byte 1 104
+byte 1 97
+byte 1 118
+byte 1 101
+byte 1 116
+byte 1 104
+byte 1 101
+byte 1 98
+byte 1 97
+byte 1 108
+byte 1 108
+byte 1 115
+byte 1 0
+align 1
+LABELV $113
+byte 1 105
+byte 1 97
+byte 1 109
+byte 1 110
+byte 1 111
+byte 1 116
+byte 1 97
+byte 1 99
+byte 1 104
+byte 1 101
+byte 1 97
+byte 1 116
+byte 1 101
+byte 1 114
+byte 1 0
+align 1
+LABELV $109
+byte 1 105
+byte 1 97
+byte 1 109
+byte 1 97
+byte 1 112
+byte 1 117
+byte 1 115
+byte 1 115
+byte 1 121
+byte 1 0
+align 1
+LABELV $108
+byte 1 105
+byte 1 97
+byte 1 109
+byte 1 97
+byte 1 99
+byte 1 104
+byte 1 101
+byte 1 97
+byte 1 116
+byte 1 101
+byte 1 114
+byte 1 0
+align 1
+LABELV $105
+byte 1 100
+byte 1 101
+byte 1 97
+byte 1 102
+byte 1 109
+byte 1 111
+byte 1 98
+byte 1 115
+byte 1 0
+align 1
+LABELV $102
+byte 1 98
+byte 1 108
+byte 1 105
+byte 1 110
+byte 1 100
+byte 1 109
+byte 1 111
+byte 1 98
+byte 1 115
+byte 1 0
+align 1
+LABELV $98
+byte 1 105
+byte 1 119
+byte 1 116
+byte 1 98
+byte 1 97
+byte 1 103
+byte 1 0
+align 1
+LABELV $97
+byte 1 103
+byte 1 111
+byte 1 100
+byte 1 109
+byte 1 111
+byte 1 100
+byte 1 101
+byte 1 0
+align 1
+LABELV $93
+byte 1 103
+byte 1 109
+byte 1 97
+byte 1 116
+byte 1 104
+byte 1 105
+byte 1 116
+byte 1 119
+byte 1 0
+align 1
+LABELV $92
+byte 1 103
+byte 1 105
+byte 1 109
+byte 1 109
+byte 1 101
+byte 1 95
+byte 1 109
+byte 1 111
+byte 1 114
+byte 1 101
+byte 1 0

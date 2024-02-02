@@ -6,12 +6,12 @@ sg_level
 sg_entity
 sg_info
 sg_playr
+sg_items
 sg_mthink
-sg_archive
 sg_cmds
-sg_gameinfo
 sg_draw
 sg_imgui
 sg_lib
 sg_math
+sg_hud
 n_shared

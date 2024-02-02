@@ -91,10 +91,10 @@ line 26
 LABELV $91
 endproc ImGui_Text 8196 12
 export ImGui_ColoredText
-proc ImGui_ColoredText 8212 12
+proc ImGui_ColoredText 8196 12
 line 29
 ;27:
-;28:void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL ImGui_ColoredText( const vec4_t pColor, const char *fmt, ... )
+;28:void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL ImGui_ColoredText( const vec4_t *pColor, const char *fmt, ... )
 ;29:{
 line 33
 ;30:    va_list argptr;
@@ -125,12 +125,8 @@ ASGNP4
 line 37
 ;36:
 ;37:    ImGui_ColoredTextUnformatted( pColor, msg );
-ADDRLP4 8196
 ADDRFP4 0
 INDIRP4
-INDIRB
-ASGNB 16
-ADDRLP4 8196
 ARGP4
 ADDRLP4 4
 ARGP4
@@ -140,12 +136,14 @@ pop
 line 38
 ;38:}
 LABELV $93
-endproc ImGui_ColoredText 8212 12
+endproc ImGui_ColoredText 8196 12
 import Cvar_VariableStringBuffer
 import Cvar_Set
 import Cvar_Update
 import Cvar_Register
+import trap_FS_Printf
 import trap_FS_FileTell
+import trap_FS_FileLength
 import trap_FS_FileSeek
 import trap_FS_GetFileList
 import trap_FS_Read
@@ -178,12 +176,31 @@ import trap_Milliseconds
 import trap_CheckWallHit
 import G_SoundRecursive
 import G_CastRay
+import G_SetActiveMap
 import G_LoadMap
 import G_SetCameraData
 import trap_MemoryRemaining
 import trap_RemoveCommand
 import trap_AddCommand
 import trap_SendConsoleCommand
+import trap_LoadVec4
+import trap_LoadVec3
+import trap_LoadVec2
+import trap_LoadString
+import trap_LoadFloat
+import trap_LoadInt
+import trap_LoadUInt
+import trap_GetSaveSection
+import trap_WriteVec4
+import trap_WriteVec3
+import trap_WriteVec2
+import trap_WriteFloat
+import trap_WriteString
+import trap_WriteUInt
+import trap_WriteInt
+import trap_WriteChar
+import trap_EndSaveSection
+import trap_BeginSaveSection
 import trap_Args
 import trap_Argv
 import trap_Argc
@@ -204,13 +221,8 @@ import SG_MakeMemoryMark
 import SG_MemInit
 import SG_MemAlloc
 import String_Alloc
-import SG_SpawnMobOnMap
 import SG_SpawnMob
-import SG_AddArchiveHandle
-import SG_LoadGame
-import SG_SaveGame
-import SG_LoadSection
-import SG_WriteSection
+import SG_Spawn
 import Ent_SetState
 import SG_InitEntities
 import Ent_BuildBounds
@@ -220,11 +232,13 @@ import SG_AllocEntity
 import Ent_RunTic
 import Ent_CheckEntityCollision
 import Ent_CheckWallCollision
-import SG_DrawLevelStats
-import SG_DrawAbortMission
-import Lvl_AddKillEntity
+import SG_PickupWeapon
+import SG_SpawnWeapon
+import SG_SpawnItem
+import SG_LoadLevelData
+import SG_SaveLevelData
 import SG_EndLevel
-import SG_InitLevel
+import SG_StartLevel
 import SG_UpdateCvars
 import G_Printf
 import G_Error
@@ -246,9 +260,7 @@ import pm_groundFriction
 import sg_memoryDebug
 import sg_numSaves
 import sg_savename
-import sg_levelDataFile
 import sg_levelIndex
-import sg_levelInfoFile
 import sg_gibs
 import sg_decalDetail
 import sg_printLevelStats

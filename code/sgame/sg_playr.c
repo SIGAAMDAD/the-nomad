@@ -166,7 +166,7 @@ void P_MeleeThink( sgentity_t *self )
 	bbox_t bounds;
 	sgentity_t *ent;
 	
-	SG_BuildBounds( &bounds, PLAYR_WIDTH, MELEE_RANGE, ent->origin );
+	SG_BuildBounds( &bounds, PLAYR_WIDTH, MELEE_RANGE, &ent->origin );
 	
 	ent = Ent_CheckEntityCollision( self );
 	if ( !ent ) {
@@ -320,35 +320,13 @@ void P_Thinker( sgentity_t *self )
 	ImGui_EndWindow();
 }
 
-void SG_SendUserCmd( int rightmove, int forwardmove, int upmove ) {
-}
-
 void SG_InitPlayer( void )
-{
-    sgentity_t *ent;
-
-    ent = SG_AllocEntity( ET_PLAYR );
-    
+{    
     // initialize player state
     memset( &sg.playr, 0, sizeof(sg.playr) );
 
 	sg.playr.foot_frame = 0;
 	sg.playr.foot_sprite = SPR_PLAYR_LEGS0_7_R;
-	sg.playr.ent = ent;
-
-	ent->facing = 0;
-    ent->hShader = sg.media.raio_shader;
-	ent->hSpriteSheet = sg.media.raio_sprites;
-	ent->sprite = SPR_PLAYR_IDLE_R;
-	ent->frame = 0;
-    ent->entPtr = &sg.playr;
-	ent->health = 100;
-
-	ent->width = 0.5f;
-	ent->height = 0.5f;
-
-    Ent_SetState( ent, S_PLAYR_IDLE );
-	Ent_BuildBounds( ent );
 
     // mark as allocated
     sg.playrReady = qtrue;

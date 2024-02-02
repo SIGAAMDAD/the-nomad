@@ -165,7 +165,7 @@ line 50
 ;50:}
 LABELV $96
 endproc SG_AddSpritesToFrame 8 4
-proc SG_DrawPlayer 20 12
+proc SG_DrawPlayer 8 12
 line 57
 ;51:
 ;52:/*
@@ -179,7 +179,7 @@ line 60
 ;59:
 ;60:    ent = sg.playr.ent;
 ADDRLP4 0
-ADDRGP4 sg+73908
+ADDRGP4 sg+61620
 INDIRP4
 ASGNP4
 line 62
@@ -196,15 +196,11 @@ INDIRU4
 CNSTU4 0
 EQU4 $104
 line 63
-;63:        RE_AddSpriteToScene( ent->origin, ent->hSpriteSheet, ent->sprite + ent->frame );
-ADDRLP4 4
+;63:        RE_AddSpriteToScene( &ent->origin, ent->hSpriteSheet, ent->sprite + ent->frame );
 ADDRLP4 0
 INDIRP4
 CNSTI4 64
 ADDP4
-INDIRB
-ASGNB 12
-ADDRLP4 4
 ARGP4
 ADDRLP4 0
 INDIRP4
@@ -233,15 +229,11 @@ ADDRGP4 $105
 JUMPV
 LABELV $104
 line 65
-;65:        RE_AddSpriteToScene( ent->origin, ent->hSpriteSheet, ent->sprite );
-ADDRLP4 4
+;65:        RE_AddSpriteToScene( &ent->origin, ent->hSpriteSheet, ent->sprite );
 ADDRLP4 0
 INDIRP4
 CNSTI4 64
 ADDP4
-INDIRB
-ASGNB 12
-ADDRLP4 4
 ARGP4
 ADDRLP4 0
 INDIRP4
@@ -263,15 +255,11 @@ line 66
 LABELV $105
 line 68
 ;67:
-;68:    RE_AddSpriteToScene( ent->origin, ent->hSpriteSheet, ( sg.playr.foot_sprite + ent->facing ) + sg.playr.foot_frame );
-ADDRLP4 4
+;68:    RE_AddSpriteToScene( &ent->origin, ent->hSpriteSheet, ( sg.playr.foot_sprite + ent->facing ) + sg.playr.foot_frame );
 ADDRLP4 0
 INDIRP4
 CNSTI4 64
 ADDP4
-INDIRB
-ASGNB 12
-ADDRLP4 4
 ARGP4
 ADDRLP4 0
 INDIRP4
@@ -279,7 +267,7 @@ CNSTI4 156
 ADDP4
 INDIRI4
 ARGI4
-ADDRGP4 sg+73908+44
+ADDRGP4 sg+61620+44
 INDIRI4
 ADDRLP4 0
 INDIRP4
@@ -287,7 +275,7 @@ CNSTI4 124
 ADDP4
 INDIRI4
 ADDI4
-ADDRGP4 sg+73908+48
+ADDRGP4 sg+61620+48
 INDIRI4
 ADDI4
 ARGI4
@@ -297,9 +285,9 @@ pop
 line 69
 ;69:}
 LABELV $102
-endproc SG_DrawPlayer 20 12
+endproc SG_DrawPlayer 8 12
 export SG_DrawFrame
-proc SG_DrawFrame 64 12
+proc SG_DrawFrame 56 12
 line 72
 ;70:
 ;71:int SG_DrawFrame( void )
@@ -416,12 +404,8 @@ CVIU4 4
 ASGNU4
 line 84
 ;83:
-;84:    G_SetCameraData( sg.cameraPos, 1.6f, 0.0f );
-ADDRLP4 56
-ADDRGP4 sg+4280672
-INDIRB
-ASGNB 8
-ADDRLP4 56
+;84:    G_SetCameraData( &sg.cameraPos, 1.6f, 0.0f );
+ADDRGP4 sg+4268384
 ARGP4
 CNSTF4 1070386381
 ARGF4
@@ -458,7 +442,7 @@ line 94
 CNSTI4 1
 RETI4
 LABELV $110
-endproc SG_DrawFrame 64 12
+endproc SG_DrawFrame 56 12
 bss
 align 4
 LABELV data
@@ -467,7 +451,9 @@ import Cvar_VariableStringBuffer
 import Cvar_Set
 import Cvar_Update
 import Cvar_Register
+import trap_FS_Printf
 import trap_FS_FileTell
+import trap_FS_FileLength
 import trap_FS_FileSeek
 import trap_FS_GetFileList
 import trap_FS_Read
@@ -500,12 +486,31 @@ import trap_Milliseconds
 import trap_CheckWallHit
 import G_SoundRecursive
 import G_CastRay
+import G_SetActiveMap
 import G_LoadMap
 import G_SetCameraData
 import trap_MemoryRemaining
 import trap_RemoveCommand
 import trap_AddCommand
 import trap_SendConsoleCommand
+import trap_LoadVec4
+import trap_LoadVec3
+import trap_LoadVec2
+import trap_LoadString
+import trap_LoadFloat
+import trap_LoadInt
+import trap_LoadUInt
+import trap_GetSaveSection
+import trap_WriteVec4
+import trap_WriteVec3
+import trap_WriteVec2
+import trap_WriteFloat
+import trap_WriteString
+import trap_WriteUInt
+import trap_WriteInt
+import trap_WriteChar
+import trap_EndSaveSection
+import trap_BeginSaveSection
 import trap_Args
 import trap_Argv
 import trap_Argc
@@ -526,13 +531,8 @@ import SG_MakeMemoryMark
 import SG_MemInit
 import SG_MemAlloc
 import String_Alloc
-import SG_SpawnMobOnMap
 import SG_SpawnMob
-import SG_AddArchiveHandle
-import SG_LoadGame
-import SG_SaveGame
-import SG_LoadSection
-import SG_WriteSection
+import SG_Spawn
 import Ent_SetState
 import SG_InitEntities
 import Ent_BuildBounds
@@ -542,11 +542,13 @@ import SG_AllocEntity
 import Ent_RunTic
 import Ent_CheckEntityCollision
 import Ent_CheckWallCollision
-import SG_DrawLevelStats
-import SG_DrawAbortMission
-import Lvl_AddKillEntity
+import SG_PickupWeapon
+import SG_SpawnWeapon
+import SG_SpawnItem
+import SG_LoadLevelData
+import SG_SaveLevelData
 import SG_EndLevel
-import SG_InitLevel
+import SG_StartLevel
 import SG_UpdateCvars
 import G_Printf
 import G_Error
@@ -567,9 +569,7 @@ import pm_groundFriction
 import sg_memoryDebug
 import sg_numSaves
 import sg_savename
-import sg_levelDataFile
 import sg_levelIndex
-import sg_levelInfoFile
 import sg_gibs
 import sg_decalDetail
 import sg_printLevelStats

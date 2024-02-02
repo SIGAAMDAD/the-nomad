@@ -25,7 +25,7 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL ImGui_Text( const char *fmt,
     ImGui_TextUnformatted( msg );
 }
 
-void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL ImGui_ColoredText( const vec4_t pColor, const char *fmt, ... )
+void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL ImGui_ColoredText( const vec4_t *pColor, const char *fmt, ... )
 {
     va_list argptr;
     char msg[8192];

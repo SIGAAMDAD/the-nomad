@@ -72,12 +72,18 @@ struct vmRefImport_s
 
     void (*Sys_SnapVector)( float *v );
 
-    int (*G_LoadMap)( int32_t levelIndex, mapinfo_t *info, int32_t *soundBits, linkEntity_t *activeEnts );
+    nhandle_t (*G_LoadMap)( const char *mapname );
+    void (*G_SetActiveMap)( nhandle_t mapHandle, mapinfo_t *info, int32_t *soundBits, linkEntity_t *activeEnts );
     void (*G_CastRay)( ray_t *ray );
+#if defined(Q3_VM) || !defined(_NOMAD_ENGINE)
+    void (*G_SoundRecursive)( int32_t width, int32_t height, float volume, const vec3_t *origin );
+    qboolean (*trap_CheckWallHit)( const vec3_t *origin, dirtype_t dir );
+    void (*G_SetCameraData)( const vec2_t *origin, float zoom, float rotation );
+#else
     void (*G_SoundRecursive)( int32_t width, int32_t height, float volume, const vec3_t origin );
     qboolean (*trap_CheckWallHit)( const vec3_t origin, dirtype_t dir );
-
     void (*G_SetCameraData)( const vec2_t origin, float zoom, float rotation );
+#endif
 
     int (*trap_Milliseconds)( void );
 
@@ -100,7 +106,11 @@ struct vmRefImport_s
     void (*RE_LoadWorldMap)( const char *npath );
     void (*RE_ClearScene)( void );
     void (*RE_RenderScene)( const renderSceneRef_t *fd );
+#if defined(Q3_VM) || !defined(_NOMAD_ENGINE)
+    void (*RE_AddSpriteToScene)( const vec3_t *origin, nhandle_t hSpriteSheet, nhandle_t hSprite );
+#else
     void (*RE_AddSpriteToScene)( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t hSprite );
+#endif
     void (*RE_AddPolyToScene)( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts );
 
     void (*Sys_GetGPUConfig)( gpuConfig_t *config );
@@ -136,23 +146,40 @@ struct vmRefImport_s
     int (*ImGui_InputTextMultiline)( const char *pLabel, char *pBuffer, size_t nBufSize, ImGuiInputTextFlags flags );
     int (*ImGui_InputTextWithHint)( const char *pLabel, const char *pHint, char *pBuffer, size_t nBufSize, ImGuiInputTextFlags flags );
     int (*ImGui_InputFloat)( const char *pLabel, float *pData );
+#if defined(Q3_VM) || !defined(_NOMAD_ENGINE)
+    int (*ImGui_InputFloat2)( const char *pLabel, vec2_t *pData );
+    int (*ImGui_InputFloat3)( const char *pLabel, vec3_t *pData );
+    int (*ImGui_InputFloat4)( const char *pLabel, vec4_t *pData );
+    int (*ImGui_InputInt2)( const char *pLabel, ivec2_t *pData );
+    int (*ImGui_InputInt3)( const char *pLabel, ivec3_t *pData );
+    int (*ImGui_InputInt4)( const char *pLabel, ivec4_t *pData );
+    int (*ImGui_SliderFloat2)( const char *pLabel, vec2_t *pData, float nMax, float nMin );
+    int (*ImGui_SliderFloat3)( const char *pLabel, vec3_t *pData, float nMax, float nMin );
+    int (*ImGui_SliderFloat4)( const char *pLabel, vec4_t *pData, float nMax, float nMin );
+    int (*ImGui_SliderInt2)( const char *pLabel, ivec2_t *pData, int32_t nMax, int32_t nMin );
+    int (*ImGui_SliderInt3)( const char *pLabel, ivec3_t *pData, int32_t nMax, int32_t nMin );
+    int (*ImGui_SliderInt4)( const char *pLabel, ivec4_t *pData, int32_t nMax, int32_t nMin );
+    int (*ImGui_ColorEdit3)( const char *pLabel, vec3_t *pColor, ImGuiColorEditFlags flags );
+    int (*ImGui_ColorEdit4)( const char *pLabel, vec4_t *pColor, ImGuiColorEditFlags flags );
+#else
     int (*ImGui_InputFloat2)( const char *pLabel, vec2_t pData );
     int (*ImGui_InputFloat3)( const char *pLabel, vec3_t pData );
     int (*ImGui_InputFloat4)( const char *pLabel, vec4_t pData );
-    int (*ImGui_InputInt)( const char *pLabel, int32_t *pData );
     int (*ImGui_InputInt2)( const char *pLabel, ivec2_t pData );
     int (*ImGui_InputInt3)( const char *pLabel, ivec3_t pData );
     int (*ImGui_InputInt4)( const char *pLabel, ivec4_t pData );
-    int (*ImGui_SliderFloat)( const char *pLabel, float *pData, float nMax, float nMin );
     int (*ImGui_SliderFloat2)( const char *pLabel, vec2_t pData, float nMax, float nMin );
     int (*ImGui_SliderFloat3)( const char *pLabel, vec3_t pData, float nMax, float nMin );
     int (*ImGui_SliderFloat4)( const char *pLabel, vec4_t pData, float nMax, float nMin );
-    int (*ImGui_SliderInt)( const char *pLabel, int32_t *pData, int32_t nMax, int32_t nMin );
     int (*ImGui_SliderInt2)( const char *pLabel, ivec2_t pData, int32_t nMax, int32_t nMin );
     int (*ImGui_SliderInt3)( const char *pLabel, ivec3_t pData, int32_t nMax, int32_t nMin );
     int (*ImGui_SliderInt4)( const char *pLabel, ivec4_t pData, int32_t nMax, int32_t nMin );
     int (*ImGui_ColorEdit3)( const char *pLabel, vec3_t pColor, ImGuiColorEditFlags flags );
     int (*ImGui_ColorEdit4)( const char *pLabel, vec4_t pColor, ImGuiColorEditFlags flags );
+#endif
+    int (*ImGui_SliderFloat)( const char *pLabel, float *pData, float nMax, float nMin );
+    int (*ImGui_InputInt)( const char *pLabel, int32_t *pData );
+    int (*ImGui_SliderInt)( const char *pLabel, int32_t *pData, int32_t nMax, int32_t nMin );
     int (*ImGui_ArrowButton)( const char *pLabel, ImGuiDir dir );
     int (*ImGui_Checkbox)( const char *pLabel, byte *bPressed );
     int (*ImGui_Button)( const char *pLabel );
@@ -171,12 +198,17 @@ struct vmRefImport_s
     void (*ImGui_GetCursorPos)( float *x, float *y );
     void (*ImGui_SetCursorScreenPos)( float x, float y );
     void (*ImGui_GetCursorScreenPos)( float *x, float *y );
-    void (*ImGui_PushColor)( ImGuiCol index, const vec4_t color );
     void (*ImGui_PopColor)( void );
     void (*ImGui_SameLine)( float offsetFromStartX );
     void (*ImGui_NewLine)( void );
     void (*ImGui_TextUnformatted)( const char *pText );
+#if defined(Q3_VM) || !defined(_NOMAD_ENGINE)
+    void (*ImGui_ColoredTextUnformatted)( const vec4_t *pColor, const char *pText );
+    void (*ImGui_PushColor)( ImGuiCol index, const vec4_t *color );
+#else
     void (*ImGui_ColoredTextUnformatted)( const vec4_t pColor, const char *pText );
+    void (*ImGui_PushColor)( ImGuiCol index, const vec4_t color );
+#endif
     void (*ImGui_SeparatorText)( const char *pText );
     void (*ImGui_Separator)( void );
     void (*ImGui_ProgressBar)( float fraction );

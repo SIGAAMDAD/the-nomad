@@ -1,6 +1,7 @@
 #include "g_game.h"
 #include "g_sound.h"
 #include "g_world.h"
+#include "g_archive.h"
 #include "../rendercommon/imgui.h"
 #include "../rendercommon/imgui_impl_sdl2.h"
 #include "../rendercommon/imgui_impl_opengl3.h"
@@ -800,6 +801,10 @@ void G_Init( void )
     Snd_Init();
     gi.soundStarted = qtrue;
 
+    // init archive handler
+    g_pArchiveHandler = (CGameArchive *)Hunk_Alloc( sizeof(*g_pArchiveHandler), h_low );
+    ::new ( g_pArchiveHandler ) CGameArchive();
+
     // init renderer
     G_InitRenderer();
     gi.rendererStarted = qtrue;
@@ -823,8 +828,6 @@ void G_Init( void )
     Cmd_AddCommand( "setmap", G_SetMap_f );
     Cmd_AddCommand( "mapinfo", G_MapInfo_f );
 
-    G_InitInput();
-
     Con_Printf( "----- Game State Initialization Complete ----\n" );
 }
 
@@ -841,6 +844,8 @@ void G_Shutdown(qboolean quit)
         return;
     }
     recursive = qtrue;
+
+    g_pArchiveHandler->~CGameArchive();
 
     // clear and mute all sounds until next registration
     Snd_StopAll();
@@ -859,8 +864,6 @@ void G_Shutdown(qboolean quit)
     Cmd_RemoveCommand( "togglephotomode" );
     Cmd_RemoveCommand( "viewmemory" );
     Cmd_RemoveCommand( "gamestate" );
-
-    G_ShutdownInput();
 
     Key_SetCatcher( 0 );
     Con_Printf( "-------------------------------\n" );
@@ -1026,6 +1029,8 @@ void G_Frame(int32_t msec, int32_t realMsec)
     gi.framecount++;
 }
 
+void G_MouseEvent( int dx, int dy ) {
+}
 
 /*
 ===========================================

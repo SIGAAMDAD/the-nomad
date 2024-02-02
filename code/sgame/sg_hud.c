@@ -1,40 +1,33 @@
 #include "sg_local.h"
 #include "sg_imgui.h"
 
-typedef struct {
-    ImGuiWindow health;
-    ImGuiWindow weapons;
-} hudData_t;
-
-static hudData_t *hud;
-
-void Hud_Draw( void )
+void SG_HudDraw( void )
 {
-    ImGui_BeginWindow( &hud->health );
-    ImGui_SetWindowPos( 16 * sg.scale, 16 * sg.scale );
-    ImGui_Text( "Health: %lu", sg.playr.ent->health );
+    const sgentity_t *data;
+    vec4_t color;
+
+    data = sg.playr.ent;
+
+    ImGui_BeginWindow( "HEALTH", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize );
+    ImGui_SetWindowPos( 16.0f * sg.scale, 16.0f * sg.scale );
+
+    if ( data->health >= 50 ) {
+        color.r = 0;
+        color.g = 1;
+        color.b = 0;
+        color.a = 1;
+        ImGui_PushColor( ImGuiCol_FrameBg, &color );
+    }
+    else if ( data->health < 50 ) {
+        color.r = 1;
+        color.g = 1;
+        color.b = 0;
+        color.a = 1;
+
+        ImGui_PushColor( ImGuiCol_FrameBg, &color );
+    }
+    ImGui_ProgressBar( (float)data->health );
+    ImGui_PopColor();
+    
     ImGui_EndWindow();
-
-    ImGui_BeginWindow( &hud->weapons );
-    ImGui_EndWindow();
-}
-
-void Hud_Init( void )
-{
-    const int statusWindowFlags =
-        ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar;
-
-    hud = (hudData_t *)SG_MemAlloc( sizeof(*hud) );
-    memset( hud, 0, sizeof(*hud) );
-
-    hud->health.m_bClosable = qfalse;
-    hud->health.m_bOpen = qtrue;
-    hud->health.m_Flags = statusWindowFlags;
-    hud->health.m_pTitle = "HealthStatus";
-
-    hud->weapons.m_bClosable = qfalse;
-    hud->weapons.m_bClosable = qfalse;
-    hud->weapons.m_bOpen = qtrue;
-    hud->weapons.m_Flags = statusWindowFlags;
-    hud->weapons.m_pTitle = "WeaponStatus";
 }

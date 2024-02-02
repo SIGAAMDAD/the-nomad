@@ -80,7 +80,7 @@ INDIRI4
 CNSTI4 4
 LTI4 $93
 line 23
-;23:		trap_Error("SG_SpawnMob: bad mob index");
+;23:		trap_Error( "SG_SpawnMob: bad mob index" );
 ADDRGP4 $95
 ARGP4
 ADDRGP4 trap_Error
@@ -89,10 +89,26 @@ pop
 line 24
 ;24:	}
 LABELV $93
+line 25
+;25:	if ( sg.numMobs == MAXMOBS ) {
+ADDRGP4 sg+24744
+INDIRI4
+CNSTI4 1024
+NEI4 $96
 line 26
-;25:
-;26:    e = SG_AllocEntity( ET_MOB );
-CNSTI4 3
+;26:		trap_Error( "SG_SpawnMob: mod incompatible with current sgame" );
+ADDRGP4 $99
+ARGP4
+ADDRGP4 trap_Error
+CALLV
+pop
+line 27
+;27:	}
+LABELV $96
+line 29
+;28:
+;29:    e = SG_AllocEntity( ET_MOB );
+CNSTI4 2
 ARGI4
 ADDRLP4 8
 ADDRGP4 SG_AllocEntity
@@ -102,9 +118,9 @@ ADDRLP4 4
 ADDRLP4 8
 INDIRP4
 ASGNP4
-line 28
-;27:
-;28:    m = &sg_mobs[sg.numMobs];
+line 31
+;30:
+;31:    m = &sg_mobs[sg.numMobs];
 ADDRLP4 0
 ADDRGP4 sg+24744
 INDIRI4
@@ -113,8 +129,8 @@ MULI4
 ADDRGP4 sg_mobs
 ADDP4
 ASGNP4
-line 29
-;29:    memset( m, 0, sizeof(*m) );
+line 32
+;32:    memset( m, 0, sizeof(*m) );
 ADDRLP4 0
 INDIRP4
 ARGP4
@@ -125,9 +141,9 @@ ARGU4
 ADDRGP4 memset
 CALLP4
 pop
-line 31
-;30:
-;31:    memcpy( m, &mobinfo[type], sizeof(*m) );
+line 34
+;33:
+;34:    memcpy( m, &mobinfo[type], sizeof(*m) );
 ADDRLP4 0
 INDIRP4
 ARGP4
@@ -143,16 +159,16 @@ ARGU4
 ADDRGP4 memcpy
 CALLP4
 pop
-line 32
-;32:    m->ent = e;
+line 35
+;35:    m->ent = e;
 ADDRLP4 0
 INDIRP4
 ADDRLP4 4
 INDIRP4
 ASGNP4
-line 34
-;33:
-;34:	switch ( type ) {
+line 37
+;36:
+;37:	switch ( type ) {
 ADDRLP4 12
 ADDRFP4 0
 INDIRI4
@@ -160,13 +176,13 @@ ASGNI4
 ADDRLP4 12
 INDIRI4
 CNSTI4 0
-EQI4 $100
-ADDRGP4 $97
+EQI4 $104
+ADDRGP4 $101
 JUMPV
-LABELV $100
-line 36
-;35:	case MT_GRUNT:
-;36:		Ent_SetState( e, S_GRUNT_IDLE );
+LABELV $104
+line 39
+;38:	case MT_GRUNT:
+;39:		Ent_SetState( e, S_GRUNT_IDLE );
 ADDRLP4 4
 INDIRP4
 ARGP4
@@ -175,15 +191,15 @@ ARGI4
 ADDRGP4 Ent_SetState
 CALLI4
 pop
-line 37
-;37:		break;
-LABELV $97
-LABELV $98
-line 38
-;38:	};
 line 40
-;39:
-;40:    sg.numMobs++;
+;40:		break;
+LABELV $101
+LABELV $102
+line 41
+;41:	};
+line 43
+;42:
+;43:    sg.numMobs++;
 ADDRLP4 16
 ADDRGP4 sg+24744
 ASGNP4
@@ -195,9 +211,9 @@ INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-line 42
-;41:	
-;42:	return m;
+line 45
+;44:	
+;45:	return m;
 ADDRLP4 0
 INDIRP4
 RETP4
@@ -205,13 +221,13 @@ LABELV $92
 endproc SG_SpawnMob 20 12
 export SG_KillMob
 proc SG_KillMob 0 4
-line 46
-;43:}
-;44:
-;45:void SG_KillMob( mobj_t *m )
-;46:{
-line 47
-;47:	SG_FreeEntity( m->ent );
+line 49
+;46:}
+;47:
+;48:void SG_KillMob( mobj_t *m )
+;49:{
+line 50
+;50:	SG_FreeEntity( m->ent );
 ADDRFP4 0
 INDIRP4
 INDIRP4
@@ -219,20 +235,20 @@ ARGP4
 ADDRGP4 SG_FreeEntity
 CALLV
 pop
-line 48
-;48:}
-LABELV $102
+line 51
+;51:}
+LABELV $106
 endproc SG_KillMob 0 4
 export SG_SpawnMobOnMap
 proc SG_SpawnMobOnMap 8 4
-line 51
-;49:
-;50:void SG_SpawnMobOnMap( mobtype_t id, float x, float y, float elevation )
-;51:{
 line 54
-;52:	mobj_t *m;
-;53:	
-;54:	m = SG_SpawnMob( id );
+;52:
+;53:void SG_SpawnMobOnMap( mobtype_t id, float x, float y, float elevation )
+;54:{
+line 57
+;55:	mobj_t *m;
+;56:	
+;57:	m = SG_SpawnMob( id );
 ADDRFP4 0
 INDIRI4
 ARGI4
@@ -244,9 +260,9 @@ ADDRLP4 0
 ADDRLP4 4
 INDIRP4
 ASGNP4
-line 56
-;55:	
-;56:	m->ent->origin.x = x;
+line 59
+;58:	
+;59:	m->ent->origin.x = x;
 ADDRLP4 0
 INDIRP4
 INDIRP4
@@ -255,8 +271,8 @@ ADDP4
 ADDRFP4 4
 INDIRF4
 ASGNF4
-line 57
-;57:	m->ent->origin.y = y;
+line 60
+;60:	m->ent->origin.y = y;
 ADDRLP4 0
 INDIRP4
 INDIRP4
@@ -265,8 +281,8 @@ ADDP4
 ADDRFP4 8
 INDIRF4
 ASGNF4
-line 58
-;58:	m->ent->origin.z = elevation;
+line 61
+;61:	m->ent->origin.z = elevation;
 ADDRLP4 0
 INDIRP4
 INDIRP4
@@ -275,9 +291,9 @@ ADDP4
 ADDRFP4 12
 INDIRF4
 ASGNF4
-line 59
-;59:}
-LABELV $103
+line 62
+;62:}
+LABELV $107
 endproc SG_SpawnMobOnMap 8 4
 bss
 align 4
@@ -287,7 +303,9 @@ import Cvar_VariableStringBuffer
 import Cvar_Set
 import Cvar_Update
 import Cvar_Register
+import trap_FS_Printf
 import trap_FS_FileTell
+import trap_FS_FileLength
 import trap_FS_FileSeek
 import trap_FS_GetFileList
 import trap_FS_Read
@@ -320,12 +338,31 @@ import trap_Milliseconds
 import trap_CheckWallHit
 import G_SoundRecursive
 import G_CastRay
+import G_SetActiveMap
 import G_LoadMap
 import G_SetCameraData
 import trap_MemoryRemaining
 import trap_RemoveCommand
 import trap_AddCommand
 import trap_SendConsoleCommand
+import trap_LoadVec4
+import trap_LoadVec3
+import trap_LoadVec2
+import trap_LoadString
+import trap_LoadFloat
+import trap_LoadInt
+import trap_LoadUInt
+import trap_GetSaveSection
+import trap_WriteVec4
+import trap_WriteVec3
+import trap_WriteVec2
+import trap_WriteFloat
+import trap_WriteString
+import trap_WriteUInt
+import trap_WriteInt
+import trap_WriteChar
+import trap_EndSaveSection
+import trap_BeginSaveSection
 import trap_Args
 import trap_Argv
 import trap_Argc
@@ -346,11 +383,6 @@ import SG_MakeMemoryMark
 import SG_MemInit
 import SG_MemAlloc
 import String_Alloc
-import SG_AddArchiveHandle
-import SG_LoadGame
-import SG_SaveGame
-import SG_LoadSection
-import SG_WriteSection
 import Ent_SetState
 import SG_InitEntities
 import Ent_BuildBounds
@@ -364,7 +396,7 @@ import SG_DrawLevelStats
 import SG_DrawAbortMission
 import Lvl_AddKillEntity
 import SG_EndLevel
-import SG_InitLevel
+import SG_StartLevel
 import SG_UpdateCvars
 import G_Printf
 import G_Error
@@ -388,7 +420,6 @@ import sg_numSaves
 import sg_savename
 import sg_levelDataFile
 import sg_levelIndex
-import sg_levelInfoFile
 import sg_gibs
 import sg_decalDetail
 import sg_printLevelStats
@@ -797,6 +828,57 @@ import memset
 import memchr
 import memcpy
 lit
+align 1
+LABELV $99
+byte 1 83
+byte 1 71
+byte 1 95
+byte 1 83
+byte 1 112
+byte 1 97
+byte 1 119
+byte 1 110
+byte 1 77
+byte 1 111
+byte 1 98
+byte 1 58
+byte 1 32
+byte 1 109
+byte 1 111
+byte 1 100
+byte 1 32
+byte 1 105
+byte 1 110
+byte 1 99
+byte 1 111
+byte 1 109
+byte 1 112
+byte 1 97
+byte 1 116
+byte 1 105
+byte 1 98
+byte 1 108
+byte 1 101
+byte 1 32
+byte 1 119
+byte 1 105
+byte 1 116
+byte 1 104
+byte 1 32
+byte 1 99
+byte 1 117
+byte 1 114
+byte 1 114
+byte 1 101
+byte 1 110
+byte 1 116
+byte 1 32
+byte 1 115
+byte 1 103
+byte 1 97
+byte 1 109
+byte 1 101
+byte 1 0
 align 1
 LABELV $95
 byte 1 83

@@ -1551,12 +1551,12 @@ line 256
 ;253:RadiusFromBounds
 ;254:=================
 ;255:*/
-;256:float RadiusFromBounds( const vec3_t *mins, const vec3_t *maxs ) {
+;256:float RadiusFromBounds( const bbox_t *bounds ) {
 line 260
 ;257:	vec3_t	corner;
 ;258:	float	a, b;
 ;259:
-;260:    a = fabs( mins->x );
+;260:    a = fabs( bounds->mins.x );
 ADDRFP4 0
 INDIRP4
 INDIRF4
@@ -1570,9 +1570,11 @@ ADDRLP4 20
 INDIRF4
 ASGNF4
 line 261
-;261:    b = fabs( maxs->x );
-ADDRFP4 4
+;261:    b = fabs( bounds->maxs.x );
+ADDRFP4 0
 INDIRP4
+CNSTI4 12
+ADDP4
 INDIRF4
 ARGF4
 ADDRLP4 24
@@ -1608,7 +1610,7 @@ INDIRF4
 ASGNF4
 line 264
 ;263:
-;264:    a = fabs( mins->y );
+;264:    a = fabs( bounds->mins.y );
 ADDRFP4 0
 INDIRP4
 CNSTI4 4
@@ -1624,10 +1626,10 @@ ADDRLP4 32
 INDIRF4
 ASGNF4
 line 265
-;265:    b = fabs( maxs->y );
-ADDRFP4 4
+;265:    b = fabs( bounds->maxs.y );
+ADDRFP4 0
 INDIRP4
-CNSTI4 4
+CNSTI4 16
 ADDP4
 INDIRF4
 ARGF4
@@ -1664,7 +1666,7 @@ INDIRF4
 ASGNF4
 line 268
 ;267:
-;268:    a = fabs( mins->z );
+;268:    a = fabs( bounds->mins.z );
 ADDRFP4 0
 INDIRP4
 CNSTI4 8
@@ -1680,10 +1682,10 @@ ADDRLP4 44
 INDIRF4
 ASGNF4
 line 269
-;269:    b = fabs( maxs->z );
-ADDRFP4 4
+;269:    b = fabs( bounds->maxs.z );
+ADDRFP4 0
 INDIRP4
-CNSTI4 8
+CNSTI4 20
 ADDP4
 INDIRF4
 ARGF4
@@ -1797,9 +1799,9 @@ proc ClearBounds 16 0
 line 282
 ;280:}
 ;281:
-;282:void ClearBounds( vec3_t *mins, vec3_t *maxs ) {
+;282:void ClearBounds( bbox_t *bounds ) {
 line 283
-;283:	mins->x = mins->y = mins->z = 99999;
+;283:	bounds->mins.x = bounds->mins.y = bounds->mins.z = 99999;
 ADDRLP4 0
 ADDRFP4 0
 INDIRP4
@@ -1827,9 +1829,9 @@ ADDRLP4 4
 INDIRF4
 ASGNF4
 line 284
-;284:	maxs->x = maxs->y = maxs->z = -99999;
+;284:	bounds->maxs.x = bounds->maxs.y = bounds->maxs.z = -99999;
 ADDRLP4 8
-ADDRFP4 4
+ADDRFP4 0
 INDIRP4
 ASGNP4
 ADDRLP4 12
@@ -1837,20 +1839,22 @@ CNSTF4 3351465856
 ASGNF4
 ADDRLP4 8
 INDIRP4
-CNSTI4 8
+CNSTI4 20
 ADDP4
 ADDRLP4 12
 INDIRF4
 ASGNF4
 ADDRLP4 8
 INDIRP4
-CNSTI4 4
+CNSTI4 16
 ADDP4
 ADDRLP4 12
 INDIRF4
 ASGNF4
 ADDRLP4 8
 INDIRP4
+CNSTI4 12
+ADDP4
 ADDRLP4 12
 INDIRF4
 ASGNF4
@@ -1862,9 +1866,9 @@ export AddPointToBounds
 proc AddPointToBounds 0 0
 line 287
 ;286:
-;287:void AddPointToBounds( const vec3_t *v, vec3_t *mins, vec3_t *maxs ) {
+;287:void AddPointToBounds( const vec3_t *v, bbox_t *bounds ) {
 line 288
-;288:	if ( v->x < mins->x ) {
+;288:	if ( v->x < bounds->mins.x ) {
 ADDRFP4 0
 INDIRP4
 INDIRF4
@@ -1873,7 +1877,7 @@ INDIRP4
 INDIRF4
 GEF4 $184
 line 289
-;289:		mins->x = v->x;
+;289:		bounds->mins.x = v->x;
 ADDRFP4 4
 INDIRP4
 ADDRFP4 0
@@ -1884,18 +1888,22 @@ line 290
 ;290:	}
 LABELV $184
 line 291
-;291:	if ( v->x > maxs->x ) {
+;291:	if ( v->x > bounds->maxs.x ) {
 ADDRFP4 0
 INDIRP4
 INDIRF4
-ADDRFP4 8
+ADDRFP4 4
 INDIRP4
+CNSTI4 12
+ADDP4
 INDIRF4
 LEF4 $186
 line 292
-;292:		maxs->x = v->x;
-ADDRFP4 8
+;292:		bounds->maxs.x = v->x;
+ADDRFP4 4
 INDIRP4
+CNSTI4 12
+ADDP4
 ADDRFP4 0
 INDIRP4
 INDIRF4
@@ -1905,7 +1913,7 @@ line 293
 LABELV $186
 line 295
 ;294:
-;295:	if ( v->y < mins->y ) {
+;295:	if ( v->y < bounds->mins.y ) {
 ADDRFP4 0
 INDIRP4
 CNSTI4 4
@@ -1918,7 +1926,7 @@ ADDP4
 INDIRF4
 GEF4 $188
 line 296
-;296:		mins->y = v->y;
+;296:		bounds->mins.y = v->y;
 ADDRFP4 4
 INDIRP4
 CNSTI4 4
@@ -1933,23 +1941,23 @@ line 297
 ;297:	}
 LABELV $188
 line 298
-;298:	if ( v->y > maxs->y ) {
+;298:	if ( v->y > bounds->maxs.y ) {
 ADDRFP4 0
 INDIRP4
 CNSTI4 4
 ADDP4
 INDIRF4
-ADDRFP4 8
+ADDRFP4 4
 INDIRP4
-CNSTI4 4
+CNSTI4 16
 ADDP4
 INDIRF4
 LEF4 $190
 line 299
-;299:		maxs->y = v->y;
-ADDRFP4 8
+;299:		bounds->maxs.y = v->y;
+ADDRFP4 4
 INDIRP4
-CNSTI4 4
+CNSTI4 16
 ADDP4
 ADDRFP4 0
 INDIRP4
@@ -1962,7 +1970,7 @@ line 300
 LABELV $190
 line 302
 ;301:
-;302:	if ( v->z < mins->z ) {
+;302:	if ( v->z < bounds->mins.z ) {
 ADDRFP4 0
 INDIRP4
 CNSTI4 8
@@ -1975,7 +1983,7 @@ ADDP4
 INDIRF4
 GEF4 $192
 line 303
-;303:		mins->z = v->z;
+;303:		bounds->mins.z = v->z;
 ADDRFP4 4
 INDIRP4
 CNSTI4 8
@@ -1990,23 +1998,23 @@ line 304
 ;304:	}
 LABELV $192
 line 305
-;305:	if ( v->z > maxs->z ) {
+;305:	if ( v->z > bounds->maxs.z ) {
 ADDRFP4 0
 INDIRP4
 CNSTI4 8
 ADDP4
 INDIRF4
-ADDRFP4 8
+ADDRFP4 4
 INDIRP4
-CNSTI4 8
+CNSTI4 20
 ADDP4
 INDIRF4
 LEF4 $194
 line 306
-;306:		maxs->z = v->z;
-ADDRFP4 8
+;306:		bounds->maxs.z = v->z;
+ADDRFP4 4
 INDIRP4
-CNSTI4 8
+CNSTI4 20
 ADDP4
 ADDRFP4 0
 INDIRP4
@@ -3456,7 +3464,9 @@ import Cvar_VariableStringBuffer
 import Cvar_Set
 import Cvar_Update
 import Cvar_Register
+import trap_FS_Printf
 import trap_FS_FileTell
+import trap_FS_FileLength
 import trap_FS_FileSeek
 import trap_FS_GetFileList
 import trap_FS_Read
@@ -3489,12 +3499,31 @@ import trap_Milliseconds
 import trap_CheckWallHit
 import G_SoundRecursive
 import G_CastRay
+import G_SetActiveMap
 import G_LoadMap
 import G_SetCameraData
 import trap_MemoryRemaining
 import trap_RemoveCommand
 import trap_AddCommand
 import trap_SendConsoleCommand
+import trap_LoadVec4
+import trap_LoadVec3
+import trap_LoadVec2
+import trap_LoadString
+import trap_LoadFloat
+import trap_LoadInt
+import trap_LoadUInt
+import trap_GetSaveSection
+import trap_WriteVec4
+import trap_WriteVec3
+import trap_WriteVec2
+import trap_WriteFloat
+import trap_WriteString
+import trap_WriteUInt
+import trap_WriteInt
+import trap_WriteChar
+import trap_EndSaveSection
+import trap_BeginSaveSection
 import trap_Args
 import trap_Argv
 import trap_Argc
@@ -3515,13 +3544,8 @@ import SG_MakeMemoryMark
 import SG_MemInit
 import SG_MemAlloc
 import String_Alloc
-import SG_SpawnMobOnMap
 import SG_SpawnMob
-import SG_AddArchiveHandle
-import SG_LoadGame
-import SG_SaveGame
-import SG_LoadSection
-import SG_WriteSection
+import SG_Spawn
 import Ent_SetState
 import SG_InitEntities
 import Ent_BuildBounds
@@ -3531,11 +3555,13 @@ import SG_AllocEntity
 import Ent_RunTic
 import Ent_CheckEntityCollision
 import Ent_CheckWallCollision
-import SG_DrawLevelStats
-import SG_DrawAbortMission
-import Lvl_AddKillEntity
+import SG_PickupWeapon
+import SG_SpawnWeapon
+import SG_SpawnItem
+import SG_LoadLevelData
+import SG_SaveLevelData
 import SG_EndLevel
-import SG_InitLevel
+import SG_StartLevel
 import SG_UpdateCvars
 import G_Printf
 import G_Error
@@ -3557,9 +3583,7 @@ import pm_groundFriction
 import sg_memoryDebug
 import sg_numSaves
 import sg_savename
-import sg_levelDataFile
 import sg_levelIndex
-import sg_levelInfoFile
 import sg_gibs
 import sg_decalDetail
 import sg_printLevelStats

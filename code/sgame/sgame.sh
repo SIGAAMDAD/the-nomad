@@ -14,14 +14,14 @@ $CC ../sg_mem.c
 $CC ../sg_entity.c
 $CC ../sg_info.c
 $CC ../sg_playr.c
-$CC ../sg_mthink.c
-$CC ../sg_archive.c
+$CC ../sg_items.c
+$CC ../sg_mob.c
 $CC ../sg_cmds.c
-$CC ../sg_gameinfo.c
 $CC ../sg_draw.c
 $CC ../sg_imgui.c
 $CC ../sg_lib.c
 $CC ../sg_math.c
+$CC ../sg_hud.c
 $CC ../../engine/n_shared.c
 
 ../q3asm -f ../sgame

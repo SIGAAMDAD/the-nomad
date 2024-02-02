@@ -2,63 +2,66 @@ export Ent_SetState
 code
 proc Ent_SetState 16 4
 file "../sg_entity.c"
-line 12
+line 15
 ;1:#include "sg_local.h"
 ;2:
-;3:sgentity_t sg_entities[MAXENTITIES];
-;4:
-;5:// Use a heuristic approach to detect infinite state cycles: Count the number
-;6:// of times the loop in Ent_SetState() executes and exit with an error once
-;7:// an arbitrary very large limit is reached.
-;8:
-;9:#define ENTITY_CYCLE_LIMIT 100000
-;10:
-;11:qboolean Ent_SetState( sgentity_t *self, statenum_t state )
-;12:{
-line 16
-;13:	state_t *st;
-;14:	int counter;
-;15:
-;16:	counter = 0;
+;3:sgentity_t *sg_activeEnts;
+;4:sgentity_t *sg_freeEnts;
+;5:
+;6:sgentity_t sg_entities[MAXENTITIES];
+;7:
+;8:// Use a heuristic approach to detect infinite state cycles: Count the number
+;9:// of times the loop in Ent_SetState() executes and exit with an error once
+;10:// an arbitrary very large limit is reached.
+;11:
+;12:#define ENTITY_CYCLE_LIMIT 100000
+;13:
+;14:qboolean Ent_SetState( sgentity_t *self, statenum_t state )
+;15:{
+line 19
+;16:	state_t *st;
+;17:	int counter;
+;18:
+;19:	counter = 0;
 ADDRLP4 4
 CNSTI4 0
 ASGNI4
 LABELV $90
-line 17
-;17:	do {
-line 18
-;18:		if ( state == S_NULL ) {
+line 20
+;20:	do {
+line 21
+;21:		if ( state == S_NULL ) {
 ADDRFP4 4
 INDIRI4
 CNSTI4 0
 NEI4 $93
-line 19
-;19:			self->state = &stateinfo[S_NULL];
+line 22
+;22:			self->state = &stateinfo[S_NULL];
 ADDRFP4 0
 INDIRP4
 CNSTI4 92
 ADDP4
 ADDRGP4 stateinfo
 ASGNP4
-line 20
-;20:			SG_FreeEntity(self);
+line 23
+;23:			SG_FreeEntity( self );
 ADDRFP4 0
 INDIRP4
 ARGP4
 ADDRGP4 SG_FreeEntity
 CALLV
 pop
-line 21
-;21:			return qfalse;
+line 24
+;24:			return qfalse;
 CNSTI4 0
 RETI4
 ADDRGP4 $89
 JUMPV
 LABELV $93
-line 24
-;22:		}
-;23:
-;24:		st = &stateinfo[state];
+line 27
+;25:		}
+;26:
+;27:		st = &stateinfo[state];
 ADDRLP4 0
 ADDRFP4 4
 INDIRI4
@@ -67,8 +70,8 @@ MULI4
 ADDRGP4 stateinfo
 ADDP4
 ASGNP4
-line 25
-;25:		self->state = st;
+line 28
+;28:		self->state = st;
 ADDRFP4 0
 INDIRP4
 CNSTI4 92
@@ -76,8 +79,8 @@ ADDP4
 ADDRLP4 0
 INDIRP4
 ASGNP4
-line 26
-;26:		self->ticker = st->tics;
+line 29
+;29:		self->ticker = st->tics;
 ADDRFP4 0
 INDIRP4
 CNSTI4 116
@@ -89,8 +92,8 @@ ADDP4
 INDIRU4
 CVUI4 4
 ASGNI4
-line 27
-;27:		self->frame = st->frames;
+line 30
+;30:		self->frame = st->frames;
 ADDRFP4 0
 INDIRP4
 CNSTI4 120
@@ -102,8 +105,8 @@ ADDP4
 INDIRU4
 CVUI4 4
 ASGNI4
-line 28
-;28:		self->sprite = st->sprite + self->facing;
+line 31
+;31:		self->sprite = st->sprite + self->facing;
 ADDRLP4 8
 ADDRFP4 0
 INDIRP4
@@ -122,9 +125,9 @@ ADDP4
 INDIRI4
 ADDI4
 ASGNI4
-line 30
-;29:
-;30:		state = st->nextstate;
+line 33
+;32:
+;33:		state = st->nextstate;
 ADDRFP4 4
 ADDRLP4 0
 INDIRP4
@@ -132,8 +135,8 @@ CNSTI4 16
 ADDP4
 INDIRI4
 ASGNI4
-line 31
-;31:		if ( counter++ > ENTITY_CYCLE_LIMIT ) {
+line 34
+;34:		if ( counter++ > ENTITY_CYCLE_LIMIT ) {
 ADDRLP4 12
 ADDRLP4 4
 INDIRI4
@@ -148,18 +151,18 @@ ADDRLP4 12
 INDIRI4
 CNSTI4 100000
 LEI4 $95
-line 32
-;32:			G_Error("Ent_SetState: infinite state cycle detected!");
+line 35
+;35:			G_Error("Ent_SetState: infinite state cycle detected!");
 ADDRGP4 $97
 ARGP4
 ADDRGP4 G_Error
 CALLV
 pop
-line 33
-;33:		}
+line 36
+;36:		}
 LABELV $95
-line 34
-;34:	} while ( !self->ticker );
+line 37
+;37:	} while ( !self->ticker );
 LABELV $91
 ADDRFP4 0
 INDIRP4
@@ -168,38 +171,38 @@ ADDP4
 INDIRI4
 CNSTI4 0
 EQI4 $90
-line 36
-;35:
-;36:	return qtrue;
+line 39
+;38:
+;39:	return qtrue;
 CNSTI4 1
 RETI4
 LABELV $89
 endproc Ent_SetState 16 4
 export Ent_CheckEntityCollision
 proc Ent_CheckEntityCollision 12 8
-line 40
-;37:}
-;38:
-;39:sgentity_t *Ent_CheckEntityCollision( const sgentity_t *ent )
-;40:{
-line 44
-;41:	sgentity_t *it;
-;42:	int i;
-;43:
-;44:	it = &sg_entities[0];
+line 43
+;40:}
+;41:
+;42:sgentity_t *Ent_CheckEntityCollision( const sgentity_t *ent )
+;43:{
+line 47
+;44:	sgentity_t *it;
+;45:	int i;
+;46:
+;47:	it = &sg_entities[0];
 ADDRLP4 0
 ADDRGP4 sg_entities
 ASGNP4
-line 45
-;45:	for ( i = 0; i < sg.numEntities; i++, it++ ) {
+line 48
+;48:	for ( i = 0; i < sg.numEntities; i++, it++ ) {
 ADDRLP4 4
 CNSTI4 0
 ASGNI4
 ADDRGP4 $102
 JUMPV
 LABELV $99
-line 46
-;46:		if ( BoundsIntersect( &it->bounds, &ent->bounds ) && it != ent ) {
+line 49
+;49:		if ( BoundsIntersect( &it->bounds, &ent->bounds ) && it != ent ) {
 ADDRLP4 0
 INDIRP4
 CNSTI4 40
@@ -225,19 +228,19 @@ ADDRFP4 0
 INDIRP4
 CVPU4 4
 EQU4 $104
-line 47
-;47:			return it;
+line 50
+;50:			return it;
 ADDRLP4 0
 INDIRP4
 RETP4
 ADDRGP4 $98
 JUMPV
 LABELV $104
-line 49
-;48:		}
-;49:	}
+line 52
+;51:		}
+;52:	}
 LABELV $100
-line 45
+line 48
 ADDRLP4 4
 ADDRLP4 4
 INDIRI4
@@ -256,27 +259,27 @@ INDIRI4
 ADDRGP4 sg+76
 INDIRI4
 LTI4 $99
-line 51
-;50:
-;51:	return NULL;
+line 54
+;53:
+;54:	return NULL;
 CNSTP4 0
 RETP4
 LABELV $98
 endproc Ent_CheckEntityCollision 12 8
 export Ent_CheckWallCollision
-proc Ent_CheckWallCollision 28 8
-line 58
-;52:}
-;53:
-;54:/*
-;55: * Ent_CheckWallCollision: returns true if there's a wall in the way
-;56: */
-;57:qboolean Ent_CheckWallCollision( const sgentity_t *e )
-;58:{
+proc Ent_CheckWallCollision 16 8
 line 61
-;59:	dirtype_t d;
-;60:
-;61:	switch ( e->dir ) {
+;55:}
+;56:
+;57:/*
+;58: * Ent_CheckWallCollision: returns true if there's a wall in the way
+;59: */
+;60:qboolean Ent_CheckWallCollision( const sgentity_t *e )
+;61:{
+line 64
+;62:	dirtype_t d;
+;63:
+;64:	switch ( e->dir ) {
 ADDRLP4 4
 ADDRFP4 0
 INDIRP4
@@ -313,12 +316,12 @@ address $110
 address $111
 code
 LABELV $110
-line 66
-;62:	case DIR_NORTH:
-;63:	case DIR_SOUTH:
-;64:	case DIR_EAST:
-;65:	case DIR_WEST:
-;66:		d = inversedirs[e->dir];
+line 69
+;65:	case DIR_NORTH:
+;66:	case DIR_SOUTH:
+;67:	case DIR_EAST:
+;68:	case DIR_WEST:
+;69:		d = inversedirs[e->dir];
 ADDRLP4 0
 ADDRFP4 0
 INDIRP4
@@ -331,74 +334,70 @@ ADDRGP4 inversedirs
 ADDP4
 INDIRI4
 ASGNI4
-line 67
-;67:		break;
+line 70
+;70:		break;
 ADDRGP4 $108
 JUMPV
 LABELV $111
-line 72
-;68:	case DIR_NORTH_WEST:
-;69:	case DIR_NORTH_EAST:
-;70:	case DIR_SOUTH_WEST:
-;71:	case DIR_SOUTH_EAST:
-;72:		return qtrue;
+line 75
+;71:	case DIR_NORTH_WEST:
+;72:	case DIR_NORTH_EAST:
+;73:	case DIR_SOUTH_WEST:
+;74:	case DIR_SOUTH_EAST:
+;75:		return qtrue;
 CNSTI4 1
 RETI4
 ADDRGP4 $106
 JUMPV
 LABELV $107
 LABELV $108
-line 73
-;73:	};
-line 77
-;74:
-;75:	// check for a wall collision
-;76:	// if we're touching a wall with the side marked for collision, return true
-;77:	if ( trap_CheckWallHit( e->origin, d ) ) {
-ADDRLP4 12
+line 76
+;76:	};
+line 80
+;77:
+;78:	// check for a wall collision
+;79:	// if we're touching a wall with the side marked for collision, return true
+;80:	if ( trap_CheckWallHit( &e->origin, d ) ) {
 ADDRFP4 0
 INDIRP4
 CNSTI4 64
 ADDP4
-INDIRB
-ASGNB 12
-ADDRLP4 12
 ARGP4
 ADDRLP4 0
 INDIRI4
 ARGI4
-ADDRLP4 24
+ADDRLP4 12
 ADDRGP4 trap_CheckWallHit
 CALLI4
 ASGNI4
-ADDRLP4 24
+ADDRLP4 12
 INDIRI4
 CNSTI4 0
 EQI4 $113
-line 78
-;78:		return qtrue;
+line 81
+;81:		return qtrue;
 CNSTI4 1
 RETI4
 ADDRGP4 $106
 JUMPV
 LABELV $113
-line 81
-;79:	}
-;80:
-;81:	return qfalse;
+line 84
+;82:	}
+;83:
+;84:	return qfalse;
 CNSTI4 0
 RETI4
 LABELV $106
-endproc Ent_CheckWallCollision 28 8
+endproc Ent_CheckWallCollision 16 8
 export SG_BuildBounds
 proc SG_BuildBounds 0 0
-line 85
-;82:}
-;83:
-;84:void SG_BuildBounds( bbox_t *bounds, float width, float height, const vec3_t origin )
-;85:{
-line 86
-;86:	bounds->mins.x = origin.x - height;
+line 88
+;85:}
+;86:
+;87:void SG_BuildBounds( bbox_t *bounds, float width, float height, const vec3_t *origin )
+;88:{
+line 89
+;89:	bounds->mins.x = origin->x - height;
 ADDRFP4 0
 INDIRP4
 ADDRFP4 12
@@ -408,8 +407,8 @@ ADDRFP4 8
 INDIRF4
 SUBF4
 ASGNF4
-line 87
-;87:	bounds->mins.y = origin.y - width;
+line 90
+;90:	bounds->mins.y = origin->y - width;
 ADDRFP4 0
 INDIRP4
 CNSTI4 4
@@ -423,8 +422,8 @@ ADDRFP4 4
 INDIRF4
 SUBF4
 ASGNF4
-line 88
-;88:	bounds->mins.z = origin.z;
+line 91
+;91:	bounds->mins.z = origin->z;
 ADDRFP4 0
 INDIRP4
 CNSTI4 8
@@ -435,9 +434,9 @@ CNSTI4 8
 ADDP4
 INDIRF4
 ASGNF4
-line 90
-;89:
-;90:	bounds->maxs.x = origin.x + height;
+line 93
+;92:
+;93:	bounds->maxs.x = origin->x + height;
 ADDRFP4 0
 INDIRP4
 CNSTI4 12
@@ -449,8 +448,8 @@ ADDRFP4 8
 INDIRF4
 ADDF4
 ASGNF4
-line 91
-;91:	bounds->maxs.y = origin.y + width;
+line 94
+;94:	bounds->maxs.y = origin->y + width;
 ADDRFP4 0
 INDIRP4
 CNSTI4 16
@@ -464,8 +463,8 @@ ADDRFP4 4
 INDIRF4
 ADDF4
 ASGNF4
-line 92
-;92:	bounds->maxs.z = origin.z;
+line 95
+;95:	bounds->maxs.z = origin->z;
 ADDRFP4 0
 INDIRP4
 CNSTI4 20
@@ -476,18 +475,18 @@ CNSTI4 8
 ADDP4
 INDIRF4
 ASGNF4
-line 93
-;93:}
+line 96
+;96:}
 LABELV $115
 endproc SG_BuildBounds 0 0
 export Ent_BuildBounds
 proc Ent_BuildBounds 24 0
-line 96
-;94:
-;95:void Ent_BuildBounds( sgentity_t *ent )
-;96:{
-line 97
-;97:	ent->bounds.mins.x = ent->origin.x - ent->height;
+line 99
+;97:
+;98:void Ent_BuildBounds( sgentity_t *ent )
+;99:{
+line 100
+;100:	ent->bounds.mins.x = ent->origin.x - ent->height;
 ADDRLP4 0
 ADDRFP4 0
 INDIRP4
@@ -508,8 +507,8 @@ ADDP4
 INDIRF4
 SUBF4
 ASGNF4
-line 98
-;98:	ent->bounds.mins.y = ent->origin.y - ent->width;
+line 101
+;101:	ent->bounds.mins.y = ent->origin.y - ent->width;
 ADDRLP4 4
 ADDRFP4 0
 INDIRP4
@@ -530,8 +529,8 @@ ADDP4
 INDIRF4
 SUBF4
 ASGNF4
-line 99
-;99:	ent->bounds.mins.z = ent->origin.z;
+line 102
+;102:	ent->bounds.mins.z = ent->origin.z;
 ADDRLP4 8
 ADDRFP4 0
 INDIRP4
@@ -546,9 +545,9 @@ CNSTI4 72
 ADDP4
 INDIRF4
 ASGNF4
-line 101
-;100:
-;101:	ent->bounds.maxs.x = ent->origin.x + ent->height;
+line 104
+;103:
+;104:	ent->bounds.maxs.x = ent->origin.x + ent->height;
 ADDRLP4 12
 ADDRFP4 0
 INDIRP4
@@ -569,8 +568,8 @@ ADDP4
 INDIRF4
 ADDF4
 ASGNF4
-line 102
-;102:	ent->bounds.maxs.y = ent->origin.y + ent->width;
+line 105
+;105:	ent->bounds.maxs.y = ent->origin.y + ent->width;
 ADDRLP4 16
 ADDRFP4 0
 INDIRP4
@@ -591,8 +590,8 @@ ADDP4
 INDIRF4
 ADDF4
 ASGNF4
-line 103
-;103:	ent->bounds.maxs.z = ent->origin.z;
+line 106
+;106:	ent->bounds.maxs.z = ent->origin.z;
 ADDRLP4 20
 ADDRFP4 0
 INDIRP4
@@ -607,18 +606,18 @@ CNSTI4 72
 ADDP4
 INDIRF4
 ASGNF4
-line 104
-;104:}
+line 107
+;107:}
 LABELV $116
 endproc Ent_BuildBounds 24 0
 export SG_FreeEntity
 proc SG_FreeEntity 4 4
-line 107
-;105:
-;106:void SG_FreeEntity( sgentity_t *ent )
-;107:{
-line 108
-;108:	if ( !ent->health ) {
+line 110
+;108:
+;109:void SG_FreeEntity( sgentity_t *ent )
+;110:{
+line 111
+;111:	if ( !ent->health ) {
 ADDRFP4 0
 INDIRP4
 CNSTI4 112
@@ -626,22 +625,22 @@ ADDP4
 INDIRI4
 CNSTI4 0
 NEI4 $118
-line 109
-;109:		trap_Print( COLOR_YELLOW "WARNING: SG_FreeEntity: freed a freed entity" );
+line 112
+;112:		trap_Print( COLOR_YELLOW "WARNING: SG_FreeEntity: freed a freed entity" );
 ADDRGP4 $120
 ARGP4
 ADDRGP4 trap_Print
 CALLV
 pop
-line 110
-;110:		return;
+line 113
+;113:		return;
 ADDRGP4 $117
 JUMPV
 LABELV $118
-line 113
-;111:	}
-;112:
-;113:	sg.numEntities--;
+line 116
+;114:	}
+;115:
+;116:	sg.numEntities--;
 ADDRLP4 0
 ADDRGP4 sg+76
 ASGNP4
@@ -653,37 +652,37 @@ INDIRI4
 CNSTI4 1
 SUBI4
 ASGNI4
-line 114
-;114:}
+line 117
+;117:}
 LABELV $117
 endproc SG_FreeEntity 4 4
 export SG_AllocEntity
 proc SG_AllocEntity 24 12
-line 117
-;115:
-;116:sgentity_t *SG_AllocEntity( entitytype_t type )
-;117:{
 line 120
-;118:	sgentity_t *ent;
-;119:
-;120:	if ( sg.numEntities == MAXENTITIES ) {
+;118:
+;119:sgentity_t *SG_AllocEntity( entitytype_t type )
+;120:{
+line 123
+;121:	sgentity_t *ent;
+;122:
+;123:	if ( sg.numEntities == MAXENTITIES ) {
 ADDRGP4 sg+76
 INDIRI4
 CNSTI4 2048
 NEI4 $123
-line 121
-;121:		trap_Error( "SG_AllocEntity: MAXENTITIES hit" );
+line 124
+;124:		trap_Error( "SG_AllocEntity: MAXENTITIES hit" );
 ADDRGP4 $126
 ARGP4
 ADDRGP4 trap_Error
 CALLV
 pop
-line 122
-;122:	}
+line 125
+;125:	}
 LABELV $123
-line 124
-;123:
-;124:	ent = &sg_entities[sg.numEntities];
+line 127
+;126:
+;127:	ent = &sg_entities[sg.numEntities];
 ADDRLP4 0
 ADDRGP4 sg+76
 INDIRI4
@@ -692,8 +691,8 @@ MULI4
 ADDRGP4 sg_entities
 ADDP4
 ASGNP4
-line 125
-;125:	sg.numEntities++;
+line 128
+;128:	sg.numEntities++;
 ADDRLP4 4
 ADDRGP4 sg+76
 ASGNP4
@@ -705,9 +704,9 @@ INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-line 127
-;126:
-;127:	memset( ent, 0, sizeof(*ent) );
+line 130
+;129:
+;130:	memset( ent, 0, sizeof(*ent) );
 ADDRLP4 0
 INDIRP4
 ARGP4
@@ -718,8 +717,8 @@ ARGU4
 ADDRGP4 memset
 CALLP4
 pop
-line 128
-;128:	ent->type = type;
+line 131
+;131:	ent->type = type;
 ADDRLP4 0
 INDIRP4
 CNSTI4 108
@@ -727,16 +726,16 @@ ADDP4
 ADDRFP4 0
 INDIRI4
 ASGNI4
-line 129
-;129:	ent->ticker = -1;
+line 132
+;132:	ent->ticker = -1;
 ADDRLP4 0
 INDIRP4
 CNSTI4 116
 ADDP4
 CNSTI4 -1
 ASGNI4
-line 130
-;130:	ent->width = ent->height = 0;
+line 133
+;133:	ent->width = ent->height = 0;
 ADDRLP4 12
 CNSTF4 0
 ASGNF4
@@ -754,9 +753,9 @@ ADDP4
 ADDRLP4 12
 INDIRF4
 ASGNF4
-line 132
-;131:
-;132:	switch ( type ) {
+line 135
+;134:
+;135:	switch ( type ) {
 ADDRLP4 16
 ADDRFP4 0
 INDIRI4
@@ -782,119 +781,506 @@ align 4
 LABELV $144
 address $134
 address $142
-address $138
 address $132
 address $136
 address $140
+address $138
 code
 LABELV $132
-line 134
-;133:	case ET_MOB:
-;134:		ent->classname = "mob";
+line 137
+;136:	case ET_MOB:
+;137:		ent->classname = "mob";
 ADDRLP4 0
 INDIRP4
 CNSTI4 96
 ADDP4
 ADDRGP4 $133
 ASGNP4
-line 135
-;135:		break;
+line 138
+;138:		break;
 ADDRGP4 $130
 JUMPV
 LABELV $134
-line 137
-;136:	case ET_ITEM:
-;137:		ent->classname = "item";
+line 140
+;139:	case ET_ITEM:
+;140:		ent->classname = "item";
 ADDRLP4 0
 INDIRP4
 CNSTI4 96
 ADDP4
 ADDRGP4 $135
 ASGNP4
-line 138
-;138:		break;
+line 141
+;141:		break;
 ADDRGP4 $130
 JUMPV
 LABELV $136
-line 140
-;139:	case ET_BOT:
-;140:		ent->classname = "bot";
+line 143
+;142:	case ET_BOT:
+;143:		ent->classname = "bot";
 ADDRLP4 0
 INDIRP4
 CNSTI4 96
 ADDP4
 ADDRGP4 $137
 ASGNP4
-line 141
-;141:		break;
+line 144
+;144:		break;
 ADDRGP4 $130
 JUMPV
 LABELV $138
-line 143
-;142:	case ET_PLAYR:
-;143:		ent->classname = "player";
+line 146
+;145:	case ET_PLAYR:
+;146:		ent->classname = "player";
 ADDRLP4 0
 INDIRP4
 CNSTI4 96
 ADDP4
 ADDRGP4 $139
 ASGNP4
-line 144
-;144:		break;
+line 147
+;147:		break;
 ADDRGP4 $130
 JUMPV
 LABELV $140
-line 146
-;145:	case ET_WALL:
-;146:		ent->classname = "wall";
+line 149
+;148:	case ET_WALL:
+;149:		ent->classname = "wall";
 ADDRLP4 0
 INDIRP4
 CNSTI4 96
 ADDP4
 ADDRGP4 $141
 ASGNP4
-line 147
-;147:		break;
+line 150
+;150:		break;
 ADDRGP4 $130
 JUMPV
 LABELV $142
-line 149
-;148:	case ET_WEAPON:
-;149:		ent->classname = "weapon";
+line 152
+;151:	case ET_WEAPON:
+;152:		ent->classname = "weapon";
 ADDRLP4 0
 INDIRP4
 CNSTI4 96
 ADDP4
 ADDRGP4 $143
 ASGNP4
-line 150
-;150:		break;
+line 153
+;153:		break;
 LABELV $129
 LABELV $130
-line 151
-;151:	};
-line 153
-;152:
-;153:	Ent_BuildBounds( ent );
+line 154
+;154:	};
+line 156
+;155:
+;156:	Ent_BuildBounds( ent );
 ADDRLP4 0
 INDIRP4
 ARGP4
 ADDRGP4 Ent_BuildBounds
 CALLV
 pop
-line 155
-;154:
-;155:	return ent;
+line 158
+;157:
+;158:	return ent;
 ADDRLP4 0
 INDIRP4
 RETP4
 LABELV $122
 endproc SG_AllocEntity 24 12
+export SG_Spawn
+proc SG_Spawn 24 4
+line 162
+;159:}
+;160:
+;161:void SG_Spawn( uint32_t id, uint32_t type, const uvec3_t *origin )
+;162:{
+line 165
+;163:	sgentity_t *ent;
+;164:
+;165:	if ( sg.numEntities == MAXENTITIES ) {
+ADDRGP4 sg+76
+INDIRI4
+CNSTI4 2048
+NEI4 $146
+line 166
+;166:		trap_Error( "SG_Spawn: MAXENTITIES hit" );
+ADDRGP4 $149
+ARGP4
+ADDRGP4 trap_Error
+CALLV
+pop
+line 167
+;167:	}
+LABELV $146
+line 168
+;168:	if ( type >= NUMENTITYTYPES ) {
+ADDRFP4 4
+INDIRU4
+CNSTU4 6
+LTU4 $150
+line 169
+;169:		trap_Error( "SG_Spawn: unknown entity type" );
+ADDRGP4 $152
+ARGP4
+ADDRGP4 trap_Error
+CALLV
+pop
+line 170
+;170:	}
+LABELV $150
+line 172
+;171:
+;172:	ent = &sg_entities[sg.numEntities];
+ADDRLP4 0
+ADDRGP4 sg+76
+INDIRI4
+CNSTI4 160
+MULI4
+ADDRGP4 sg_entities
+ADDP4
+ASGNP4
+line 174
+;173:
+;174:	switch ( type ) {
+ADDRLP4 4
+ADDRFP4 4
+INDIRU4
+CVUI4 4
+ASGNI4
+ADDRLP4 4
+INDIRI4
+CNSTI4 0
+LTI4 $154
+ADDRLP4 4
+INDIRI4
+CNSTI4 5
+GTI4 $154
+ADDRLP4 4
+INDIRI4
+CNSTI4 2
+LSHI4
+ADDRGP4 $166
+ADDP4
+INDIRP4
+JUMPV
+data
+align 4
+LABELV $166
+address $163
+address $164
+address $156
+address $162
+address $165
+address $157
+code
+LABELV $156
+line 176
+;175:	case ET_MOB:
+;176:		ent->classname = "mob";
+ADDRLP4 0
+INDIRP4
+CNSTI4 96
+ADDP4
+ADDRGP4 $133
+ASGNP4
+line 177
+;177:		break;
+ADDRGP4 $155
+JUMPV
+LABELV $157
+line 178
+;178:	case ET_PLAYR: {
+line 179
+;179:		if ( sg.playrReady ) {
+ADDRGP4 sg+61676
+INDIRI4
+CNSTI4 0
+EQI4 $158
+line 180
+;180:			trap_Print( COLOR_YELLOW "WARNING: more than one player spawn in map, skipping.\n" );
+ADDRGP4 $161
+ARGP4
+ADDRGP4 trap_Print
+CALLV
+pop
+line 181
+;181:			break;
+ADDRGP4 $155
+JUMPV
+LABELV $158
+line 183
+;182:		}
+;183:		ent->classname = "player";
+ADDRLP4 0
+INDIRP4
+CNSTI4 96
+ADDP4
+ADDRGP4 $139
+ASGNP4
+line 184
+;184:		( (playr_t *)ent->entPtr )->ent = ent;
+ADDRLP4 0
+INDIRP4
+CNSTI4 88
+ADDP4
+INDIRP4
+ADDRLP4 0
+INDIRP4
+ASGNP4
+line 185
+;185:		SG_InitPlayer();
+ADDRGP4 SG_InitPlayer
+CALLV
+pop
+line 186
+;186:		break; }
+ADDRGP4 $155
+JUMPV
+LABELV $162
+line 187
+;187:	case ET_BOT: {
+line 188
+;188:		ent->classname = "bot";
+ADDRLP4 0
+INDIRP4
+CNSTI4 96
+ADDP4
+ADDRGP4 $137
+ASGNP4
+line 189
+;189:		break; }
+ADDRGP4 $155
+JUMPV
+LABELV $163
+line 190
+;190:	case ET_ITEM: {
+line 191
+;191:		ent->classname = "item";
+ADDRLP4 0
+INDIRP4
+CNSTI4 96
+ADDP4
+ADDRGP4 $135
+ASGNP4
+line 192
+;192:		ent->entPtr = SG_SpawnItem( id );
+ADDRFP4 0
+INDIRU4
+CVUI4 4
+ARGI4
+ADDRLP4 8
+ADDRGP4 SG_SpawnItem
+CALLP4
+ASGNP4
+ADDRLP4 0
+INDIRP4
+CNSTI4 88
+ADDP4
+ADDRLP4 8
+INDIRP4
+ASGNP4
+line 193
+;193:		( (item_t *)ent->entPtr )->ent = ent;
+ADDRLP4 0
+INDIRP4
+CNSTI4 88
+ADDP4
+INDIRP4
+ADDRLP4 0
+INDIRP4
+ASGNP4
+line 194
+;194:		break; }
+ADDRGP4 $155
+JUMPV
+LABELV $164
+line 195
+;195:	case ET_WEAPON: {
+line 196
+;196:		ent->classname = "weapon";
+ADDRLP4 0
+INDIRP4
+CNSTI4 96
+ADDP4
+ADDRGP4 $143
+ASGNP4
+line 197
+;197:		ent->entPtr = SG_SpawnWeapon( id );
+ADDRFP4 0
+INDIRU4
+CVUI4 4
+ARGI4
+ADDRLP4 8
+ADDRGP4 SG_SpawnWeapon
+CALLP4
+ASGNP4
+ADDRLP4 0
+INDIRP4
+CNSTI4 88
+ADDP4
+ADDRLP4 8
+INDIRP4
+ASGNP4
+line 198
+;198:		( (weapon_t *)ent->entPtr )->base->ent = ent;
+ADDRLP4 0
+INDIRP4
+CNSTI4 88
+ADDP4
+INDIRP4
+INDIRP4
+ADDRLP4 0
+INDIRP4
+ASGNP4
+line 199
+;199:		break; }
+ADDRGP4 $155
+JUMPV
+LABELV $165
+line 200
+;200:	case ET_WALL: {
+line 201
+;201:		ent->classname = "wall";
+ADDRLP4 0
+INDIRP4
+CNSTI4 96
+ADDP4
+ADDRGP4 $141
+ASGNP4
+line 202
+;202:		break; }
+LABELV $154
+LABELV $155
+line 203
+;203:	};
+line 205
+;204:
+;205:	ent->type = type;
+ADDRLP4 0
+INDIRP4
+CNSTI4 108
+ADDP4
+ADDRFP4 4
+INDIRU4
+CVUI4 4
+ASGNI4
+line 206
+;206:	VectorCopy( ent->origin, (*origin) );
+ADDRLP4 8
+ADDRFP4 8
+INDIRP4
+INDIRU4
+ASGNU4
+ADDRLP4 0
+INDIRP4
+CNSTI4 64
+ADDP4
+ADDRLP4 8
+INDIRU4
+CNSTI4 1
+RSHU4
+CVUI4 4
+CVIF4 4
+CNSTF4 1073741824
+MULF4
+ADDRLP4 8
+INDIRU4
+CNSTU4 1
+BANDU4
+CVUI4 4
+CVIF4 4
+ADDF4
+ASGNF4
+ADDRLP4 12
+ADDRFP4 8
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRU4
+ASGNU4
+ADDRLP4 0
+INDIRP4
+CNSTI4 68
+ADDP4
+ADDRLP4 12
+INDIRU4
+CNSTI4 1
+RSHU4
+CVUI4 4
+CVIF4 4
+CNSTF4 1073741824
+MULF4
+ADDRLP4 12
+INDIRU4
+CNSTU4 1
+BANDU4
+CVUI4 4
+CVIF4 4
+ADDF4
+ASGNF4
+ADDRLP4 16
+ADDRFP4 8
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRU4
+ASGNU4
+ADDRLP4 0
+INDIRP4
+CNSTI4 72
+ADDP4
+ADDRLP4 16
+INDIRU4
+CNSTI4 1
+RSHU4
+CVUI4 4
+CVIF4 4
+CNSTF4 1073741824
+MULF4
+ADDRLP4 16
+INDIRU4
+CNSTU4 1
+BANDU4
+CVUI4 4
+CVIF4 4
+ADDF4
+ASGNF4
+line 208
+;207:	
+;208:	sg.numEntities++;
+ADDRLP4 20
+ADDRGP4 sg+76
+ASGNP4
+ADDRLP4 20
+INDIRP4
+ADDRLP4 20
+INDIRP4
+INDIRI4
+CNSTI4 1
+ADDI4
+ASGNI4
+line 209
+;209:}
+LABELV $145
+endproc SG_Spawn 24 4
+bss
+export sg_freeEnts
+align 4
+LABELV sg_freeEnts
+skip 4
+export sg_activeEnts
+align 4
+LABELV sg_activeEnts
+skip 4
 import Cvar_VariableStringBuffer
 import Cvar_Set
 import Cvar_Update
 import Cvar_Register
+import trap_FS_Printf
 import trap_FS_FileTell
+import trap_FS_FileLength
 import trap_FS_FileSeek
 import trap_FS_GetFileList
 import trap_FS_Read
@@ -927,12 +1313,31 @@ import trap_Milliseconds
 import trap_CheckWallHit
 import G_SoundRecursive
 import G_CastRay
+import G_SetActiveMap
 import G_LoadMap
 import G_SetCameraData
 import trap_MemoryRemaining
 import trap_RemoveCommand
 import trap_AddCommand
 import trap_SendConsoleCommand
+import trap_LoadVec4
+import trap_LoadVec3
+import trap_LoadVec2
+import trap_LoadString
+import trap_LoadFloat
+import trap_LoadInt
+import trap_LoadUInt
+import trap_GetSaveSection
+import trap_WriteVec4
+import trap_WriteVec3
+import trap_WriteVec2
+import trap_WriteFloat
+import trap_WriteString
+import trap_WriteUInt
+import trap_WriteInt
+import trap_WriteChar
+import trap_EndSaveSection
+import trap_BeginSaveSection
 import trap_Args
 import trap_Argv
 import trap_Argc
@@ -953,20 +1358,16 @@ import SG_MakeMemoryMark
 import SG_MemInit
 import SG_MemAlloc
 import String_Alloc
-import SG_SpawnMobOnMap
 import SG_SpawnMob
-import SG_AddArchiveHandle
-import SG_LoadGame
-import SG_SaveGame
-import SG_LoadSection
-import SG_WriteSection
 import SG_InitEntities
 import Ent_RunTic
-import SG_DrawLevelStats
-import SG_DrawAbortMission
-import Lvl_AddKillEntity
+import SG_PickupWeapon
+import SG_SpawnWeapon
+import SG_SpawnItem
+import SG_LoadLevelData
+import SG_SaveLevelData
 import SG_EndLevel
-import SG_InitLevel
+import SG_StartLevel
 import SG_UpdateCvars
 import G_Printf
 import G_Error
@@ -988,9 +1389,7 @@ import pm_groundFriction
 import sg_memoryDebug
 import sg_numSaves
 import sg_savename
-import sg_levelDataFile
 import sg_levelIndex
-import sg_levelInfoFile
 import sg_gibs
 import sg_decalDetail
 import sg_printLevelStats
@@ -1003,7 +1402,6 @@ import mobinfo
 import iteminfo
 import weaponinfo
 import sg
-bss
 export sg_entities
 align 4
 LABELV sg_entities
@@ -1403,6 +1801,125 @@ import memset
 import memchr
 import memcpy
 lit
+align 1
+LABELV $161
+byte 1 94
+byte 1 51
+byte 1 87
+byte 1 65
+byte 1 82
+byte 1 78
+byte 1 73
+byte 1 78
+byte 1 71
+byte 1 58
+byte 1 32
+byte 1 109
+byte 1 111
+byte 1 114
+byte 1 101
+byte 1 32
+byte 1 116
+byte 1 104
+byte 1 97
+byte 1 110
+byte 1 32
+byte 1 111
+byte 1 110
+byte 1 101
+byte 1 32
+byte 1 112
+byte 1 108
+byte 1 97
+byte 1 121
+byte 1 101
+byte 1 114
+byte 1 32
+byte 1 115
+byte 1 112
+byte 1 97
+byte 1 119
+byte 1 110
+byte 1 32
+byte 1 105
+byte 1 110
+byte 1 32
+byte 1 109
+byte 1 97
+byte 1 112
+byte 1 44
+byte 1 32
+byte 1 115
+byte 1 107
+byte 1 105
+byte 1 112
+byte 1 112
+byte 1 105
+byte 1 110
+byte 1 103
+byte 1 46
+byte 1 10
+byte 1 0
+align 1
+LABELV $152
+byte 1 83
+byte 1 71
+byte 1 95
+byte 1 83
+byte 1 112
+byte 1 97
+byte 1 119
+byte 1 110
+byte 1 58
+byte 1 32
+byte 1 117
+byte 1 110
+byte 1 107
+byte 1 110
+byte 1 111
+byte 1 119
+byte 1 110
+byte 1 32
+byte 1 101
+byte 1 110
+byte 1 116
+byte 1 105
+byte 1 116
+byte 1 121
+byte 1 32
+byte 1 116
+byte 1 121
+byte 1 112
+byte 1 101
+byte 1 0
+align 1
+LABELV $149
+byte 1 83
+byte 1 71
+byte 1 95
+byte 1 83
+byte 1 112
+byte 1 97
+byte 1 119
+byte 1 110
+byte 1 58
+byte 1 32
+byte 1 77
+byte 1 65
+byte 1 88
+byte 1 69
+byte 1 78
+byte 1 84
+byte 1 73
+byte 1 84
+byte 1 73
+byte 1 69
+byte 1 83
+byte 1 32
+byte 1 104
+byte 1 105
+byte 1 116
+byte 1 0
 align 1
 LABELV $143
 byte 1 119

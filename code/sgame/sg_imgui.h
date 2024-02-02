@@ -439,23 +439,24 @@ int ImGui_InputText( const char *pLabel, char *pBuffer, size_t nBufSize, ImGuiIn
 int ImGui_InputTextMultiline( const char *pLabel, char *pBuffer, size_t nBufSize, ImGuiInputTextFlags flags );
 int ImGui_InputTextWithHint( const char *pLabel, const char *pHint, char *pBuffer, size_t nBufSize, ImGuiInputTextFlags flags );
 int ImGui_InputFloat( const char *pLabel, float *pData );
-int ImGui_InputFloat2( const char *pLabel, vec2_t pData );
-int ImGui_InputFloat3( const char *pLabel, vec3_t pData );
-int ImGui_InputFloat4( const char *pLabel, vec4_t pData );
+
+int ImGui_InputFloat2( const char *pLabel, vec2_t *pData );
+int ImGui_InputFloat3( const char *pLabel, vec3_t *pData );
+int ImGui_InputFloat4( const char *pLabel, vec4_t *pData );
 int ImGui_InputInt( const char *pLabel, int *pData );
-int ImGui_InputInt2( const char *pLabel, ivec2_t pData );
-int ImGui_InputInt3( const char *pLabel, ivec3_t pData );
-int ImGui_InputInt4( const char *pLabel, ivec4_t pData );
+int ImGui_InputInt2( const char *pLabel, ivec2_t *pData );
+int ImGui_InputInt3( const char *pLabel, ivec3_t *pData );
+int ImGui_InputInt4( const char *pLabel, ivec4_t *pData );
 int ImGui_SliderFloat( const char *pLabel, float *pData, float nMax, float nMin );
-int ImGui_SliderFloat2( const char *pLabel, vec2_t pData, float nMax, float nMin );
-int ImGui_SliderFloat3( const char *pLabel, vec3_t pData, float nMax, float nMin );
-int ImGui_SliderFloat4( const char *pLabel, vec4_t pData, float nMax, float nMin );
+int ImGui_SliderFloat2( const char *pLabel, vec2_t *pData, float nMax, float nMin );
+int ImGui_SliderFloat3( const char *pLabel, vec3_t *pData, float nMax, float nMin );
+int ImGui_SliderFloat4( const char *pLabel, vec4_t *pData, float nMax, float nMin );
 int ImGui_SliderInt( const char *pLabel, int *pData, float nMax, float nMin );
-int ImGui_SliderInt2( const char *pLabel, ivec2_t pData, float nMax, float nMin );
-int ImGui_SliderInt3( const char *pLabel, ivec3_t pData, float nMax, float nMin );
-int ImGui_SliderInt4( const char *pLabel, ivec4_t pData, float nMax, float nMin );
-int ImGui_ColorEdit3( const char *pLabel, vec3_t pColor, ImGuiColorEditFlags flags );
-int ImGui_ColorEdit4( const char *pLabel, vec4_t pColor, ImGuiColorEditFlags flags );
+int ImGui_SliderInt2( const char *pLabel, ivec2_t *pData, float nMax, float nMin );
+int ImGui_SliderInt3( const char *pLabel, ivec3_t *pData, float nMax, float nMin );
+int ImGui_SliderInt4( const char *pLabel, ivec4_t *pData, float nMax, float nMin );
+int ImGui_ColorEdit3( const char *pLabel, vec3_t *pColor, ImGuiColorEditFlags flags );
+int ImGui_ColorEdit4( const char *pLabel, vec4_t *pColor, ImGuiColorEditFlags flags );
 
 int ImGui_ArrowButton( const char *pLabel, ImGuiDir dir );
 int ImGui_Checkbox( const char *pLabel, byte *bPressed );
@@ -466,7 +467,7 @@ void ImGui_SetCursorPos( float x, float y );
 void ImGui_GetCursorPos( float *x, float *y );
 void ImGui_SetCursorScreenPos( float x, float y );
 void ImGui_GetCursorScreenPos( float *x, float *y );
-void ImGui_PushColor( ImGuiCol index, const vec4_t color );
+void ImGui_PushColor( ImGuiCol index, const vec4_t *color );
 void ImGui_PopColor( void );
 
 void ImGui_NewLine( void );
@@ -476,10 +477,10 @@ void ImGui_ProgressBar( float fraction );
 void ImGui_SameLine( float offset_from_x );
 
 void ImGui_TextUnformatted( const char *pText );
-void ImGui_ColoredTextUnformatted( const vec4_t pColor, const char *pText );
+void ImGui_ColoredTextUnformatted( const vec4_t *pColor, const char *pText );
 
 void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL ImGui_Text( const char *fmt, ... );
-void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL ImGui_ColoredText( const vec4_t pColor, const char *fmt, ... );
+void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL ImGui_ColoredText( const vec4_t *pColor, const char *fmt, ... );
 
 int ImGui_BeginPopupModal( const char *pName, ImGuiWindowFlags flags );
 void ImGui_EndPopup( void );

@@ -25,7 +25,7 @@ void dllEntry(intptr_t (GDR_DECL *syscallptr)(intptr_t arg, int numArgs, ...))
 }
 #endif
 
-int32_t PASSFLOAT(float x)
+int32_t PASSFLOAT( float x )
 {
     float floatTemp;
     floatTemp = x;
@@ -82,14 +82,19 @@ void Sys_SnapVector( float *v )
     vmi.Sys_SnapVector( v );
 }
 
-qboolean trap_CheckWallHit( const vec3_t origin, dirtype_t dir )
+qboolean trap_CheckWallHit( const vec3_t *origin, dirtype_t dir )
 {
     return vmi.trap_CheckWallHit( origin, dir );
 }
 
-int G_LoadMap( int levelIndex, mapinfo_t *info, int *soundBits, linkEntity_t *activeEnts )
+nhandle_t G_LoadMap( const char *mapname )
 {
-    return vmi.G_LoadMap( levelIndex, info, soundBits, activeEnts );
+    return vmi.G_LoadMap( mapname );
+}
+
+void G_SetActiveMap( nhandle_t mapHandle, mapinfo_t *info, int *soundBits, linkEntity_t *activeEnts )
+{
+    vmi.G_SetActiveMap( mapHandle, info, soundBits, activeEnts );
 }
 
 void G_CastRay( ray_t *ray )
@@ -97,12 +102,12 @@ void G_CastRay( ray_t *ray )
     vmi.G_CastRay( ray );
 }
 
-void G_SoundRecursive( int width, int height, float volume, const vec3_t origin )
+void G_SoundRecursive( int width, int height, float volume, const vec3_t *origin )
 {
     vmi.G_SoundRecursive( width, height, volume, origin );
 }
 
-void G_SetCameraData( const vec2_t origin, float zoom, float rotation )
+void G_SetCameraData( const vec2_t *origin, float zoom, float rotation )
 {
     vmi.G_SetCameraData( origin, zoom, rotation );
 }
@@ -197,7 +202,7 @@ nhandle_t RE_RegisterSprite( nhandle_t hSpriteSheet, int index )
     return vmi.RE_RegisterSprite( hSpriteSheet, index );
 }
 
-void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t hSprite )
+void RE_AddSpriteToScene( const vec3_t *origin, nhandle_t hSpriteSheet, nhandle_t hSprite )
 {
     vmi.RE_AddSpriteToScene( origin, hSpriteSheet, hSprite );
 }
@@ -372,17 +377,17 @@ int ImGui_InputFloat( const char *pLabel, float *pData )
     return vmi.ImGui_InputFloat( pLabel, pData );
 }
 
-int ImGui_InputFloat2( const char *pLabel, vec2_t pData )
+int ImGui_InputFloat2( const char *pLabel, vec2_t *pData )
 {
     return vmi.ImGui_InputFloat2( pLabel, pData );
 }
 
-int ImGui_InputFloat3( const char *pLabel, vec3_t pData )
+int ImGui_InputFloat3( const char *pLabel, vec3_t *pData )
 {
     return vmi.ImGui_InputFloat3( pLabel, pData );
 }
 
-int ImGui_InputFloat4( const char *pLabel, vec4_t pData )
+int ImGui_InputFloat4( const char *pLabel, vec4_t *pData )
 {
     return vmi.ImGui_InputFloat4( pLabel, pData );
 }
@@ -392,17 +397,17 @@ int ImGui_InputInt( const char *pLabel, int *pData )
     return vmi.ImGui_InputInt( pLabel, pData );
 }
 
-int ImGui_InputInt2( const char *pLabel, ivec2_t pData )
+int ImGui_InputInt2( const char *pLabel, ivec2_t *pData )
 {
     return vmi.ImGui_InputInt2( pLabel, pData );
 }
 
-int ImGui_InputInt3( const char *pLabel, ivec3_t pData )
+int ImGui_InputInt3( const char *pLabel, ivec3_t *pData )
 {
     return vmi.ImGui_InputInt3( pLabel, pData );
 }
 
-int ImGui_InputInt4( const char *pLabel, ivec4_t pData )
+int ImGui_InputInt4( const char *pLabel, ivec4_t *pData )
 {
     return vmi.ImGui_InputInt4( pLabel, pData );
 }
@@ -412,17 +417,17 @@ int ImGui_SliderFloat( const char *pLabel, float *pData, float nMax, float nMin 
     return vmi.ImGui_SliderFloat( pLabel, pData, nMax, nMin );
 }
 
-int ImGui_SliderFloat2( const char *pLabel, vec2_t pData, float nMax, float nMin )
+int ImGui_SliderFloat2( const char *pLabel, vec2_t *pData, float nMax, float nMin )
 {
     return vmi.ImGui_SliderFloat2( pLabel, pData, nMax, nMin );
 }
 
-int ImGui_SliderFloat3( const char *pLabel, vec3_t pData, float nMax, float nMin )
+int ImGui_SliderFloat3( const char *pLabel, vec3_t *pData, float nMax, float nMin )
 {
     return vmi.ImGui_SliderFloat3( pLabel, pData, nMax, nMin );
 }
 
-int ImGui_SliderFloat4( const char *pLabel, vec4_t pData, float nMax, float nMin )
+int ImGui_SliderFloat4( const char *pLabel, vec4_t *pData, float nMax, float nMin )
 {
     return vmi.ImGui_SliderFloat4( pLabel, pData, nMax, nMin );
 }
@@ -432,27 +437,27 @@ int ImGui_SliderInt( const char *pLabel, int *pData, float nMax, float nMin )
     return vmi.ImGui_SliderInt( pLabel, pData, nMax, nMin );
 }
 
-int ImGui_SliderInt2( const char *pLabel, ivec2_t pData, float nMax, float nMin )
+int ImGui_SliderInt2( const char *pLabel, ivec2_t *pData, float nMax, float nMin )
 {
     return vmi.ImGui_SliderInt2( pLabel, pData, nMax, nMin );
 }
 
-int ImGui_SliderInt3( const char *pLabel, ivec3_t pData, float nMax, float nMin )
+int ImGui_SliderInt3( const char *pLabel, ivec3_t *pData, float nMax, float nMin )
 {
     return vmi.ImGui_SliderInt3( pLabel, pData, nMax, nMin );
 }
 
-int ImGui_SliderInt4( const char *pLabel, ivec4_t pData, float nMax, float nMin )
+int ImGui_SliderInt4( const char *pLabel, ivec4_t *pData, float nMax, float nMin )
 {
     return vmi.ImGui_SliderInt4( pLabel, pData, nMax, nMin );
 }
 
-int ImGui_ColorEdit3( const char *pLabel, vec3_t pColor, ImGuiColorEditFlags flags )
+int ImGui_ColorEdit3( const char *pLabel, vec3_t *pColor, ImGuiColorEditFlags flags )
 {
     return vmi.ImGui_ColorEdit3( pLabel, pColor, flags );
 }
 
-int ImGui_ColorEdit4( const char *pLabel, vec4_t pColor, ImGuiColorEditFlags flags )
+int ImGui_ColorEdit4( const char *pLabel, vec4_t *pColor, ImGuiColorEditFlags flags )
 {
     return vmi.ImGui_ColorEdit4( pLabel, pColor, flags );
 }
@@ -497,7 +502,7 @@ void ImGui_GetCursorScreenPos( float *x, float *y )
     vmi.ImGui_GetCursorScreenPos( x, y );
 }
 
-void ImGui_PushColor( ImGuiCol index, const vec4_t color )
+void ImGui_PushColor( ImGuiCol index, const vec4_t *color )
 {
     vmi.ImGui_PushColor( index, color );
 }
@@ -537,7 +542,7 @@ void ImGui_TextUnformatted( const char *pText )
     vmi.ImGui_TextUnformatted( pText );
 }
 
-void ImGui_ColoredTextUnformatted( const vec4_t pColor, const char *pText )
+void ImGui_ColoredTextUnformatted( const vec4_t *pColor, const char *pText )
 {
     vmi.ImGui_ColoredTextUnformatted( pColor, pText );
 }

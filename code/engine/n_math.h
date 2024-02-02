@@ -24,6 +24,9 @@ signed char ClampChar( int i );
 signed char ClampCharMove( int i );
 signed short ClampShort( int i );
 
+float RadiusFromBounds( const bbox_t *bounds );
+void ClearBounds( bbox_t *bounds );
+
 #if defined(Q3_VM) || !defined(_NOMAD_ENGINE)
 
 float vec3_get( vec3_t *v, int i );
@@ -57,8 +60,6 @@ void _VectorScale( const vec3_t *in, float scale, vec3_t *out );
 void _VectorMA( const vec3_t *veca, float scale, const vec3_t *vecb, vec3_t *vecc );
 
 float NormalizeColor( const vec3_t *in, vec3_t *out );
-float RadiusFromBounds( const bbox_t *bounds );
-void ClearBounds( bbox_t *bounds );
 void AddPointToBounds( const vec3_t *v, bbox_t *bounds );
 
 vec_t VectorNormalize( vec3_t *v );
@@ -141,9 +142,9 @@ void _VectorScale( const vec3_t in, float scale, vec3_t out );
 void _VectorMA( const vec3_t veca, float scale, const vec3_t vecb, vec3_t vecc );
 
 float NormalizeColor( const vec3_t in, vec3_t out );
-float RadiusFromBounds( const vec3_t mins, const vec3_t maxs );
-void ClearBounds( vec3_t mins, vec3_t maxs );
-void AddPointToBounds( const vec3_t v, vec3_t mins, vec3_t maxs );
+float RadiusFromBounds( const bbox_t *bounds );
+void ClearBounds( bbox_t *bounds );
+void AddPointToBounds( const vec3_t v, bbox_t *bounds );
 
 void vectoangles( const vec3_t value1, vec3_t angles);
 void AnglesToAxis( const vec3_t angles, vec3_t axis[3] );

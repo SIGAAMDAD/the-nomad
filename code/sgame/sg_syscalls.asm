@@ -65,6 +65,27 @@ equ RE_RegisterSpriteSheet                  -62
 equ RE_RegisterSprite                       -63
 equ RE_AddSpriteToScene                     -64
 equ G_SetActiveMap                          -65
+equ trap_BeginSaveSection                   -66
+equ trap_EndSaveSection                     -67
+equ trap_SaveChar                           -68
+equ trap_SaveInt                            -69
+equ trap_SaveFloat                          -70
+equ trap_SaveByte                           -71
+equ trap_SaveUInt                           -72
+equ trap_SaveString                         -73
+equ trap_SaveVector2                        -74
+equ trap_SaveVector3                        -75
+equ trap_SaveVector4                        -76
+equ trap_LoadChar                           -77
+equ trap_LoadInt                            -78
+equ trap_LoadFloat                          -79
+equ trap_LoadByte                           -80
+equ trap_LoadUInt                           -81
+equ trap_LoadString                         -82
+equ trap_LoadVector2                        -83
+equ trap_LoadVector3                        -84
+equ trap_LoadVector4                        -85
+equ trap_GetSaveSection                     -86
 
 equ ImGui_BeginWindow                       -401
 equ ImGui_EndWindow                         -402

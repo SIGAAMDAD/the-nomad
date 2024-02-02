@@ -253,20 +253,20 @@ vec_t VectorLength(const vec3_t *v) {
 RadiusFromBounds
 =================
 */
-float RadiusFromBounds( const vec3_t *mins, const vec3_t *maxs ) {
+float RadiusFromBounds( const bbox_t *bounds ) {
 	vec3_t	corner;
 	float	a, b;
 
-    a = fabs( mins->x );
-    b = fabs( maxs->x );
+    a = fabs( bounds->mins.x );
+    b = fabs( bounds->maxs.x );
     corner.x = a > b ? a : b;
 
-    a = fabs( mins->y );
-    b = fabs( maxs->y );
+    a = fabs( bounds->mins.y );
+    b = fabs( bounds->maxs.y );
     corner.y = a > b ? a : b;
 
-    a = fabs( mins->z );
-    b = fabs( maxs->z );
+    a = fabs( bounds->mins.z );
+    b = fabs( bounds->maxs.z );
     corner.z = a > b ? a : b;
 
 	return VectorLength( &corner );
@@ -279,31 +279,31 @@ int VectorCompare( const vec3_t *a, const vec3_t *b ) {
 	return 1;
 }
 
-void ClearBounds( vec3_t *mins, vec3_t *maxs ) {
-	mins->x = mins->y = mins->z = 99999;
-	maxs->x = maxs->y = maxs->z = -99999;
+void ClearBounds( bbox_t *bounds ) {
+	bounds->mins.x = bounds->mins.y = bounds->mins.z = 99999;
+	bounds->maxs.x = bounds->maxs.y = bounds->maxs.z = -99999;
 }
 
-void AddPointToBounds( const vec3_t *v, vec3_t *mins, vec3_t *maxs ) {
-	if ( v->x < mins->x ) {
-		mins->x = v->x;
+void AddPointToBounds( const vec3_t *v, bbox_t *bounds ) {
+	if ( v->x < bounds->mins.x ) {
+		bounds->mins.x = v->x;
 	}
-	if ( v->x > maxs->x ) {
-		maxs->x = v->x;
-	}
-
-	if ( v->y < mins->y ) {
-		mins->y = v->y;
-	}
-	if ( v->y > maxs->y ) {
-		maxs->y = v->y;
+	if ( v->x > bounds->maxs.x ) {
+		bounds->maxs.x = v->x;
 	}
 
-	if ( v->z < mins->z ) {
-		mins->z = v->z;
+	if ( v->y < bounds->mins.y ) {
+		bounds->mins.y = v->y;
 	}
-	if ( v->z > maxs->z ) {
-		maxs->z = v->z;
+	if ( v->y > bounds->maxs.y ) {
+		bounds->maxs.y = v->y;
+	}
+
+	if ( v->z < bounds->mins.z ) {
+		bounds->mins.z = v->z;
+	}
+	if ( v->z > bounds->maxs.z ) {
+		bounds->maxs.z = v->z;
 	}
 }
 

@@ -251,7 +251,7 @@ FS_PathCmp: Ignore case and separator char distinctions
 static int FS_PathCmp( const char *s1, const char *s2 )
 {
 	int c1, c2;
-	
+
 	do {
 		c1 = *s1++;
 		c2 = *s2++;
@@ -2493,7 +2493,7 @@ static void FS_AddGameDirectory(const char *path, const char *dir)
 
 	bffDirs = Sys_ListFiles(curpath, "/", NULL, &numdirs, qfalse);
 	if (numdirs >= 2) {
-		FS_SortFileList( bffDirs, numdirs - 1 );
+//		FS_SortFileList( bffDirs, numdirs - 1 );
 	}
 
 #if 0

@@ -19,6 +19,8 @@ HEADER     | version | N/A     | uint64
 
 */
 
+CGameArchive *g_pArchiveHandler;
+
 enum {
 	FT_CHAR,
 	FT_SHORT,
@@ -37,10 +39,15 @@ enum {
 	FT_STRING
 };
 
-static qboolean ValidateHeader( const ngdheader_t *h )
+bool CGameArchive::ValidateHeader( const void *data ) const
 {
+	const ngdheader_t *h;
+
+	h = (const ngdheader_t *)data;
+
     if ( h->validation.ident != IDENT ) {
         Con_Printf( COLOR_RED "LoadArchiveFile: failed to load save, header has incorrect identifier.\n" );
+		return false;
     }
 
     if ( h->validation.version.m_nVersionMajor != _NOMAD_VERSION
@@ -49,6 +56,8 @@ static qboolean ValidateHeader( const ngdheader_t *h )
         Con_Printf( COLOR_RED "LoadArchiveFile: failed to load save, header has incorrect version.\n" );
         return false;
     }
+
+	return true;
 }
 
 qboolean CGameArchive::LoadArchiveFile( const char *filename, uint64_t index )
@@ -189,23 +198,26 @@ CGameArchive::CGameArchive( void )
 	CTimer timer;
 	uint64_t i;
 	
-	Con_Printf( "Loading save files...\n" );
-	
-	timer.Run();
-	
 	m_pArchiveFileList = FS_ListFiles( "SaveData", ".ngd", &m_nArchiveFiles );
-	m_pArchiveCache = (ngd_file_t **)Hunk_Alloc( sizeof(*m_pArchiveCache) * m_nArchiveFiles, h_high );
-	
-	for ( i = 0; i < m_nArchiveFiles; i++ ) {
-		if ( !LoadArchiveFile( m_pArchiveFileList[i], i ) ) {
-			Con_Printf( COLOR_RED "Failed to load save file '%s', continuing...\n", m_pArchiveFileList[i] );
-		}
-	}
-	
-	timer.Stop();
 
-	Con_Printf( "Done.\n" );
-	Con_Printf( "Cached %lu save files in %5.5lf milliseconds.\n", m_nArchiveFiles, (double)timer.ElapsedMilliseconds().count() );
+	if ( m_nArchiveFiles ) {
+		Con_Printf( "Loading save files...\n" );
+	
+		timer.Run();
+
+		m_pArchiveCache = (ngd_file_t **)Hunk_Alloc( sizeof(*m_pArchiveCache) * m_nArchiveFiles, h_high );
+
+		for ( i = 0; i < m_nArchiveFiles; i++ ) {
+			if ( !LoadArchiveFile( m_pArchiveFileList[i], i ) ) {
+				Con_Printf( COLOR_RED "Failed to load save file '%s', continuing...\n", m_pArchiveFileList[i] );
+			}
+		}
+
+		timer.Stop();
+
+		Con_Printf( "Done.\n" );
+		Con_Printf( "Cached %lu save files in %5.5lf milliseconds.\n", m_nArchiveFiles, (double)timer.ElapsedMilliseconds().count() );
+	}
 }
 
 CGameArchive::~CGameArchive() {
