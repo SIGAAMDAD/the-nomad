@@ -102,16 +102,14 @@ void Parse1DMatrix( const char **buf_p, int x, float *m);
 void Parse2DMatrix( const char **buf_p, int y, int x, float *m);
 void Parse3DMatrix( const char **buf_p, int z, int y, int x, float *m);
 
-
-
 #define FS_INVALID_HANDLE 0
 
-typedef int32_t file_t;
 #ifdef Q3_VM
-typedef unsigned long int fileTime_t;
-#else
-typedef time_t fileTime_t;
+typedef uint32_t time_t;
 #endif
+
+typedef int32_t fileHandle_t;
+typedef time_t fileTime_t;
 #if defined(_MSVC_VER) || defined(__clang__)
 typedef _off_t fileOffset_t;
 #elif !defined(Q3_VM)
@@ -140,7 +138,7 @@ typedef void (*cmdfunc_t)(void);
 #define	BIG_INFO_KEY		8192
 #define	BIG_INFO_VALUE		8192
 #define MAX_CMD_LINE		1024
-#define MAX_CMD_BUFFER  65536
+#define MAX_CMD_BUFFER  	65536
 
 typedef enum {
   // bk001129 - make sure SE_NONE is zero
@@ -175,18 +173,18 @@ uint64_t Com_EventLoop(void);
 #define KEYCATCH_UI			(unsigned)0x0080
 #define KEYCATCH_CONSOLE	(unsigned)0x0001
 
-void Key_KeynameCompletion( void(*callback)(const char *s) );
+void Key_KeynameCompletion( void(*callback)( const char *s ) );
 uint32_t Key_StringToKeynum( const char *str );
-const char *Key_KeynumToString(uint32_t keynum);
-qboolean Key_IsDown(uint32_t keynum);
-const char *Key_GetBinding(uint32_t keynum);
-void Key_ClearStates(void);
-void Key_SetCatcher(uint32_t catcher);
-uint32_t Key_GetCatcher(void);
+const char *Key_KeynumToString( uint32_t keynum );
+qboolean Key_IsDown( uint32_t keynum );
+const char *Key_GetBinding( uint32_t keynum );
+void Key_ClearStates( void );
+void Key_SetCatcher( uint32_t catcher );
+uint32_t Key_GetCatcher( void );
 uint32_t Key_GetKey( const char *binding );
 qboolean Key_GetOverstrikeMode( void );
 void Key_SetOverstrikeMode( qboolean overstrike );
-void Key_WriteBindings( file_t f );
+void Key_WriteBindings( fileHandle_t f );
 
 typedef struct
 {
@@ -327,20 +325,20 @@ extern qboolean com_fullyInitialized;
 extern char com_errorMessage[MAXPRINTMSG];
 
 /* vm specific file handling */
-file_t FS_VM_FOpenRead( const char *npath, handleOwner_t owner );
-file_t FS_VM_FOpenWrite( const char *npath, handleOwner_t owner );
-file_t FS_VM_FOpenAppend( const char *npath, handleOwner_t owner );
-file_t FS_VM_FOpenRW( const char *npath, handleOwner_t owner );
-fileOffset_t FS_VM_FileSeek( file_t file, fileOffset_t offset, uint32_t whence, handleOwner_t owner );
-fileOffset_t FS_VM_FileTell( file_t file, handleOwner_t owner );
-uint32_t FS_VM_FOpenFile( const char *npath, file_t *file, fileMode_t mode, handleOwner_t owner );
-file_t FS_VM_FOpenFileWrite( const char *npath, file_t *file, handleOwner_t owner );
-uint32_t FS_VM_FOpenFileRead( const char *npath, file_t *file, handleOwner_t owner );
-void FS_VM_FClose( file_t file, handleOwner_t owner );
-uint32_t FS_VM_WriteFile( const void *buffer, uint32_t len, file_t file, handleOwner_t owner );
-uint32_t FS_VM_Write( const void *buffer, uint32_t len, file_t file, handleOwner_t owner );
-uint32_t FS_VM_Read( void *buffer, uint32_t len, file_t file, handleOwner_t owner );
-uint32_t FS_VM_FileLength( file_t file, handleOwner_t owner );
+fileHandle_t FS_VM_FOpenRead( const char *npath, handleOwner_t owner );
+fileHandle_t FS_VM_FOpenWrite( const char *npath, handleOwner_t owner );
+fileHandle_t FS_VM_FOpenAppend( const char *npath, handleOwner_t owner );
+fileHandle_t FS_VM_FOpenRW( const char *npath, handleOwner_t owner );
+fileOffset_t FS_VM_FileSeek( fileHandle_t file, fileOffset_t offset, uint32_t whence, handleOwner_t owner );
+fileOffset_t FS_VM_FileTell( fileHandle_t file, handleOwner_t owner );
+uint32_t FS_VM_FOpenFile( const char *npath, fileHandle_t *file, fileMode_t mode, handleOwner_t owner );
+fileHandle_t FS_VM_FOpenFileWrite( const char *npath, fileHandle_t *file, handleOwner_t owner );
+uint32_t FS_VM_FOpenFileRead( const char *npath, fileHandle_t *file, handleOwner_t owner );
+void FS_VM_FClose( fileHandle_t file, handleOwner_t owner );
+uint32_t FS_VM_WriteFile( const void *buffer, uint32_t len, fileHandle_t file, handleOwner_t owner );
+uint32_t FS_VM_Write( const void *buffer, uint32_t len, fileHandle_t file, handleOwner_t owner );
+uint32_t FS_VM_Read( void *buffer, uint32_t len, fileHandle_t file, handleOwner_t owner );
+uint32_t FS_VM_FileLength( fileHandle_t file, handleOwner_t owner );
 
 void FS_VM_CloseFiles(handleOwner_t owner);
 
@@ -350,13 +348,13 @@ void FS_Shutdown(qboolean closeFiles);
 void FS_Restart(void);
 
 void FS_Remove(const char *path);
-uint64_t FS_Read(void *buffer, uint64_t size, file_t f);
-uint64_t FS_Write(const void *buffer, uint64_t size, file_t f);
+uint64_t FS_Read(void *buffer, uint64_t size, fileHandle_t f);
+uint64_t FS_Write(const void *buffer, uint64_t size, fileHandle_t f);
 void FS_WriteFile(const char *npath, const void *buffer, uint64_t size);
 uint64_t FS_LoadFile(const char *npath, void **buffer);
-void FS_FClose(file_t f);
-void FS_ForceFlush(file_t f);
-void FS_Flush(file_t f);
+void FS_FClose(fileHandle_t f);
+void FS_ForceFlush(fileHandle_t f);
+void FS_Flush(fileHandle_t f);
 
 const char *FS_GetCurrentGameDir( void );
 const char *FS_GetBaseGameDir( void );
@@ -364,24 +362,24 @@ const char *FS_GetBasePath( void );
 const char *FS_GetHomePath( void );
 const char *FS_GetGamePath( void );
 
-void GDR_DECL GDR_ATTRIBUTE((format(printf, 2, 3))) FS_Printf(file_t f, const char *fmt, ...);
+void GDR_DECL GDR_ATTRIBUTE((format(printf, 2, 3))) FS_Printf(fileHandle_t f, const char *fmt, ...);
 
-int FS_FileToFileno(file_t f);
-file_t FS_FOpenWithMode(const char *path, fileMode_t mode);
-uint64_t FS_FOpenFileWithMode(const char *path, file_t *f, fileMode_t mode);
+int FS_FileToFileno(fileHandle_t f);
+fileHandle_t FS_FOpenWithMode(const char *path, fileMode_t mode);
+uint64_t FS_FOpenFileWithMode(const char *path, fileHandle_t *f, fileMode_t mode);
 
-file_t FS_FOpenRead(const char *path);
-file_t FS_FOpenWrite(const char *path);
-file_t FS_FOpenRW(const char *path);
-file_t FS_FOpenAppend(const char *path);
-uint64_t FS_FOpenFileRead(const char *path, file_t *fd);
+fileHandle_t FS_FOpenRead(const char *path);
+fileHandle_t FS_FOpenWrite(const char *path);
+fileHandle_t FS_FOpenRW(const char *path);
+fileHandle_t FS_FOpenAppend(const char *path);
+uint64_t FS_FOpenFileRead(const char *path, fileHandle_t *fd);
 void FS_Rename(const char *from, const char *to);
 uint64_t FS_LoadStack(void);
 int64_t FS_LastBFFIndex(void);
 qboolean FS_FileExists(const char *filename);
-fileOffset_t FS_FileSeek(file_t f, fileOffset_t offset, uint32_t whence);
-uint64_t FS_FileLength(file_t f);
-fileOffset_t FS_FileTell(file_t f);
+fileOffset_t FS_FileSeek(fileHandle_t f, fileOffset_t offset, uint32_t whence);
+uint64_t FS_FileLength(fileHandle_t f);
+fileOffset_t FS_FileTell(fileHandle_t f);
 qboolean FS_FilenameCompare(const char *s1, const char *s2);
 char *FS_BuildOSPath(const char *base, const char *game, const char *npath);
 char *FS_CopyString(const char *s);
@@ -397,7 +395,7 @@ void FS_SetBFFIndex(uint64_t index);
 void FS_FreeFile(void *buffer);
 void FS_FreeFileList(char **list);
 char **FS_ListFiles(const char *path, const char *extension, uint64_t *numfiles);
-char *FS_ReadLine(char *buf, uint64_t size, file_t f);
+char *FS_ReadLine(char *buf, uint64_t size, fileHandle_t f);
 
 extern int CPU_flags;
 
@@ -502,7 +500,7 @@ uint64_t Sys_Milliseconds(void);
 FILE *Sys_FOpen(const char *filepath, const char *mode);
 
 // Sys_MapMemory should only be called by the filesystem
-memoryMap_t *Sys_MapMemory(FILE *fp, qboolean temp, file_t fd);
+memoryMap_t *Sys_MapMemory(FILE *fp, qboolean temp, fileHandle_t fd);
 // like Sys_MapMemory but frees the mapped file, doesn't close it though
 void Sys_UnmapMemory(memoryMap_t *file);
 

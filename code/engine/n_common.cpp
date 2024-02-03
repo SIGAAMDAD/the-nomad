@@ -10,8 +10,8 @@
 #define MASK_QUEUED_EVENTS (MAX_EVENT_QUEUE - 1)
 #define MAX_PUSHED_EVENTS 256
 
-file_t logfile = FS_INVALID_HANDLE;
-static file_t com_journalFile = FS_INVALID_HANDLE;
+fileHandle_t logfile = FS_INVALID_HANDLE;
+static fileHandle_t com_journalFile = FS_INVALID_HANDLE;
 
 static sysEvent_t eventQueue[MAX_EVENT_QUEUE];
 static sysEvent_t *lastEvent = eventQueue + MAX_EVENT_QUEUE - 1;
@@ -1652,7 +1652,7 @@ void Com_Init(char *commandLine)
 //==================================================================
 
 static void Com_WriteConfigToFile( const char *filename ) {
-	file_t f;
+	fileHandle_t f;
 
 	f = FS_FOpenWrite( filename );
 	if ( f == FS_INVALID_HANDLE ) {

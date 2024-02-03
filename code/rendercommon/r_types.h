@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "../engine/n_common.h"
+
 #define MAX_VIDEO_HANDLES	16
 
 #define RSF_ORTHO_TYPE_WORLD			0x0001 // range = [mapWidth, mapHeight]
@@ -12,6 +14,8 @@
 
 #define RSF_NOWORLDMODEL				0x0010 // used when rendering the ui, but can be used with sgame
 #define RSF_CONFIG_BITS					0x00f0
+
+#define MAX_VERTS_ON_POLY				1024
 
 typedef struct {
     vec3_t xyz;
@@ -27,14 +31,33 @@ typedef struct {
 } poly_t;
 
 typedef struct {
+	vec2_t topLeft;
+	vec2_t topRight;
+	vec2_t bottomLeft;
+	vec2_t bottomRight;
+} entityTexCoords_t;
+
+typedef enum {
+	RT_LIGHTNING,
+	RT_SPRITE,			// from a sprite sheet (a mob or player)
+	RT_POLY,			// used for fx
+
+	RT_MAX_REF_ENTITY_TYPE
+} renderEntityType_t;
+
+typedef struct {
+	entityTexCoords_t texCoords;
 	vec3_t origin;
-	vec2_t texCoords[4];
 	color4ub_t modulate;
 
-	nhandle_t hShader;
-
 	uint32_t flags;
+
+	// sprite information
+	nhandle_t hShader;
+	color4ub_t shaderRGBA;		// colors used by rgbGen entity shaders
+	float rotation;
 } renderEntityRef_t;
+
 typedef struct {
 	uint32_t x, y;
 	uint32_t width, height;
@@ -46,10 +69,12 @@ typedef struct {
 	uint32_t time;
 } renderSceneRef_t;
 
+// for quake3 enthusiasts
+typedef renderEntityType_t refEntityType_t;
+typedef renderEntityRef_t refEntity_t;
 typedef renderSceneRef_t refdef_t;
 
-typedef enum
-{
+typedef enum {
 	AntiAlias_2xMSAA,
 	AntiAlias_4xMSAA,
 	AntiAlias_8xMSAA,
@@ -60,8 +85,7 @@ typedef enum
 	AntiAlias_DSSAA
 } antialiasType_t;
 
-typedef enum
-{
+typedef enum {
     TexDetail_MSDOS,
     TexDetail_IntegratedGPU,
     TexDetail_Normie,
@@ -121,27 +145,32 @@ typedef enum {
 } stereoFrame_t;
 
 typedef struct {
-	char vendor[1024];
-    char renderer[1024];
-    char version_str[1024];
-    char glsl_version_str[1024];
-    char extensions[8192];
+	char vendor_string[MAX_STRING_CHARS];
+    char renderer_string[MAX_STRING_CHARS];
+    char version_string[MAX_STRING_CHARS];
+    char shader_version_str[MAX_STRING_CHARS];
+    char extensions_string[BIG_INFO_STRING];
 
-    int maxTextureSize; // queried from GL
-    int maxTextureUnits; // can only be 16 for the forseeable future
+    int maxTextureSize;		// queried from GL
+    int maxTextureUnits;	// can only be 16 for the forseeable future
+
+	int colorBits, depthBits, stencilBits;
 
     glDriverType_t driverType;
     glHardwareType_t hardwareType;
 
     float windowAspect;
+	// aspect is the screen's physical width / height, which may be different
+	// than scrWidth / scrHeight if the pixels are non-square
+	// normal screens should be 4/3, but wide aspect monitors may be 16/9
     int vidWidth, vidHeight;
-    int colorBits, depthBits, stencilBits;
+
     int displayFrequency;
 
     qboolean isFullscreen;
     qboolean deviceSupportsGamma;
     qboolean stereoEnabled;
-    qboolean usingRenderThread;
+    qboolean usingRenderThread;		// dedicated render thread (not yet implemented)
 } gpuConfig_t;
 
 #if defined(_WIN32)
@@ -151,13 +180,5 @@ typedef struct {
 #else
 #define OPENGL_DRIVER_NAME	"libGL.so.1"
 #endif
-
-enum {
-	RF_LIGHTING_ORIGIN,
-};
-
-typedef struct {
-	vec3_t origin;
-} refEntity_t;
 
 #endif

@@ -146,7 +146,7 @@ private:
     qboolean LoadArchiveFile( const char *filename, uint64_t index );
     const ngdfield_t *FindField( const char *name, int32_t type, nhandle_t hSection ) const;
 
-    file_t m_hFile;
+    fileHandle_t m_hFile;
     ngdsection_read_t *m_pSectionList;
     
     int64_t m_nSections;

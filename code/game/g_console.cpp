@@ -159,12 +159,12 @@ Save the console contents out to a file
 */
 static void Con_Dump_f( void )
 {
-	uint32_t i;
-	file_t	f;
-	uint32_t bufferlen;
-	char	*buffer;
-	char	filename[ MAX_OSPATH ];
-	const char *ext;
+	uint32_t		i;
+	fileHandle_t	f;
+	uint32_t		bufferlen;
+	char			*buffer;
+	char			filename[ MAX_OSPATH ];
+	const char		*ext;
 
 	if ( Cmd_Argc() != 2 )
 	{

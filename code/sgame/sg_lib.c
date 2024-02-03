@@ -1,7 +1,91 @@
-#include "sg_lib.h"
+#include "../engine/n_shared.h"
 
-char *strcat( char *strDestination, const char *strSource )
+#ifndef Q3_VM
+    #error Never include this in engine builds
+#endif
+
+void *memset(void *dst, int fill, size_t n)
 {
+    size_t i;
+
+    if ((((long)dst | n) & 3) == 0) {
+        n >>= 2;
+        fill = fill | (fill << 8) | (fill << 16) | (fill << 24);
+
+        for (i = 0; i < n; i++) {
+            ((int *)dst)[i] = fill;
+        }
+    }
+    else {
+        for (i = 0; i < n; i++) {
+            ((char *)dst)[i] = fill;
+        }
+    }
+    return dst;
+}
+
+void *memcpy( void *dst, const void *src, size_t n )
+{
+    size_t i;
+
+    if ( (((long)dst | (long)src | n) & 3) == 0 ) {
+        n >>= 2;
+
+        for ( i = 0; i < n; i++) {
+            ((int *)dst)[i] = ((const int *)src)[i];
+        }
+    }
+    else {
+        for ( i = 0; i < n; i++ ) {
+            ((char *)dst)[i] = ((const char *)src)[i];
+        }
+    }
+    return dst;
+}
+
+void *memchr( void *ptr, int delegate, size_t n )
+{
+    char *p = ptr;
+
+    while ( n-- ) {
+        if ( *p++ == delegate ) {
+            return (void *)p;
+        }
+    }
+    return ptr;
+}
+
+void *memmove( void *dst, const void *src, size_t n )
+{
+    char *d = dst;
+    const char *s = src;
+    
+    if ( d > s ) {
+        while ( n-- ) {
+            *d-- = *s--;
+        }
+    }
+    else {
+        while ( n-- ) {
+            *d++ = *s++;
+        }
+    }
+    return dst;
+}
+
+// bk001211 - gcc errors on compiling strcpy:  parse error before `__extension__'
+#ifdef Q3_VM
+
+size_t strlen(const char *str)
+{
+    const char *s = str;
+    while (*s) {
+        s++;
+    }
+    return (size_t)(s - str);
+}
+
+char *strcat( char *strDestination, const char *strSource ) {
 	char	*s;
 
 	s = strDestination;
@@ -15,15 +99,6 @@ char *strcat( char *strDestination, const char *strSource )
 	return strDestination;
 }
 
-#ifdef Q3VM_USE_DEBUG_FUNCS
-size_t strlen(const char *str)
-{
-    const char *s = str;
-    while (*s) {
-        s++;
-    }
-    return (size_t)(s - str);
-}
 
 char* strchr(const char* string, int c)
 {
@@ -53,10 +128,9 @@ char *strrchr(const char *string, int c)
     return (char *)found;
 }
 
-char *strstr( const char *string, const char *strCharSet )
-{
+char *strstr( const char *string, const char *strCharSet ) {
 	while ( *string ) {
-		uint32_t i;
+		int		i;
 
 		for ( i = 0 ; strCharSet[i] ; i++ ) {
 			if ( string[i] != strCharSet[i] ) {
@@ -91,6 +165,24 @@ char* strcpy(char *dst, const char *src)
     *d = 0;
     return dst;
 }
+
+
+int tolower(int c)
+{
+    if (c >= 'A' && c <= 'Z') {
+        c += 'a' - 'A';
+    }
+    return c;
+}
+
+int toupper(int c)
+{
+    if (c >= 'a' && c <= 'z') {
+        c += 'A' - 'a';
+    }
+    return c;
+}
+#endif
 
 static char* med3(char*, char*, char*, cmp_t*);
 static void  swapfunc(char*, char*, int, int);
@@ -231,23 +323,6 @@ loop:
         goto loop;
     }
     /*      qsort(pn - r, r / es, es, cmp);*/
-}
-#endif
-
-int tolower(int c)
-{
-    if (c >= 'A' && c <= 'Z') {
-        c += 'a' - 'A';
-    }
-    return c;
-}
-
-int toupper(int c)
-{
-    if (c >= 'a' && c <= 'z') {
-        c += 'A' - 'a';
-    }
-    return c;
 }
 
 
@@ -405,6 +480,8 @@ double _atof(const char** stringPtr)
     return value * sign;
 }
 
+#ifdef Q3_VM
+
 int atoi(const char* string)
 {
     int sign;
@@ -510,10 +587,12 @@ int _atoi(const char** stringPtr)
     return value * sign;
 }
 
+#ifdef Q3_VM
 double tan(double x)
 {
     return sin(x) / cos(x);
 }
+#endif
 
 static int randSeed = 0;
 
@@ -605,54 +684,13 @@ void AddInt(char** buf_p, int val, int width, int flags)
     *buf_p = buf;
 }
 
-void AddUInt(char** buf_p, uint32_t val, int width, int flags)
-{
-    char  text[32];
-    uint32_t   digits;
-    char* buf;
-
-    digits    = 0;
-    do
-    {
-        text[digits++] = '0' + val % 10;
-        val /= 10;
-    } while (val);
-
-    buf = *buf_p;
-
-    if (!(flags & LADJUST))
-    {
-        while (digits < width)
-        {
-            *buf++ = (flags & ZEROPAD) ? '0' : ' ';
-            width--;
-        }
-    }
-
-    while (digits--)
-    {
-        *buf++ = text[digits];
-        width--;
-    }
-
-    if (flags & LADJUST)
-    {
-        while (width--)
-        {
-            *buf++ = (flags & ZEROPAD) ? '0' : ' ';
-        }
-    }
-
-    *buf_p = buf;
-}
-
 void AddFloat(char** buf_p, float fval, int width, int prec)
 {
     char  text[32];
-    int digits;
+    int   digits;
     float signedVal;
     char* buf;
-    int val;
+    int   val;
 
     // get the sign
     signedVal = fval;
@@ -759,17 +797,17 @@ void AddString(char** buf_p, char* string, int width, int prec)
 
 int vsprintf(char* buffer, const char* fmt, va_list argptr)
 {
-    int*    arg;
-    char*       buf_p;
-    char        ch;
-    int     flags;
-    int     width;
-    int     prec;
-    int     n;
-    char        sign;
+    int*  arg;
+    char* buf_p;
+    char  ch;
+    int   flags;
+    int   width;
+    int   prec;
+    int   n;
+    char  sign;
 
     buf_p = buffer;
-    arg   = (int *)argptr;
+    arg   = (int*)argptr;
 
     while (1)
     {
@@ -840,7 +878,7 @@ int vsprintf(char* buffer, const char* fmt, va_list argptr)
         case 'f':
             AddFloat(&buf_p, *(double*)arg, width, prec);
 #ifdef __LCC__
-            arg += 2; // everything is 32 bit in my compiler
+            arg += 1; // everything is 32 bit in my compiler
 #else
             arg += 2;
 #endif
@@ -865,11 +903,10 @@ done:
 }
 
 /* this is really crappy */
-int sscanf( const char *buffer, const char *fmt, ... )
-{
-	int	cmd;
-	int	**arg;
-	int	count;
+int sscanf( const char *buffer, const char *fmt, ... ) {
+	int		cmd;
+	int		**arg;
+	int		count;
 
 	arg = (int **)&fmt + 1;
 	count = 0;
@@ -898,3 +935,5 @@ int sscanf( const char *buffer, const char *fmt, ... )
 
 	return count;
 }
+
+#endif

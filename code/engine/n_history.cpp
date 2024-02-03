@@ -385,7 +385,7 @@ static void Con_LoadHistory( void )
 	const char *token, *text_p;
 	uint64_t i, numChars, numLines = 0;
 	field_t *edit;
-	file_t f;
+	fileHandle_t f;
 
 	for ( i = 0 ; i < COMMAND_HISTORY ; i++ ) {
 		Field_Clear( &historyEditLines[i] );
@@ -463,7 +463,7 @@ static void Con_SaveHistory( void )
 	uint64_t        consoleSaveBufferSize;
 	uint64_t        i;
 	uint64_t        lineLength, saveBufferLength, additionalLength;
-	file_t          f;
+	fileHandle_t          f;
 
 	consoleSaveBuffer[ 0 ] = '\0';
 

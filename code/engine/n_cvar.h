@@ -36,6 +36,6 @@ qboolean Cvar_SetModified(const char *name, qboolean modified);
 void Cvar_SetIntegerValue(const char *name, int32_t value);
 void Cvar_SetFloatValue(const char *name, float value);
 void Cvar_SetStringValue(const char *name, const char *value);
-void Cvar_WriteVariables(file_t f);
+void Cvar_WriteVariables(fileHandle_t f);
 
 #endif

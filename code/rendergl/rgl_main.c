@@ -29,6 +29,7 @@ void GDR_DECL Con_Printf(const char *fmt, ...)
 void RB_MakeViewMatrix( void )
 {
     float aspect;
+    uint32_t viewFlags;
 
     aspect = glConfig.vidWidth / glConfig.vidHeight;
 
@@ -36,6 +37,7 @@ void RB_MakeViewMatrix( void )
 
     glState.viewData.zFar = -1.0f;
     glState.viewData.zNear = 1.0f;
+    viewFlags = glState.viewData.flags & RSF_ORTHO_BITS;
 
     if ( glState.viewData.flags & RSF_USE_ORTHO_UI ) {
         ri.GLM_MakeVPMScreenSpace( glState.viewData.camera.viewProjectionMatrix, glState.viewData.camera.projectionMatrix,
@@ -44,20 +46,6 @@ void RB_MakeViewMatrix( void )
         ri.GLM_MakeVPM( aspect, &glState.viewData.camera.zoom, glState.viewData.camera.origin, glState.viewData.camera.viewProjectionMatrix,
             glState.viewData.camera.projectionMatrix, glState.viewData.camera.viewMatrix );
     }
-
-#if 0
-    // setup ortho projection matrix
-    glm_ortho( -aspect * zoom, aspect * zoom, -aspect, aspect, glState.viewData.zNear, glState.viewData.zFar, glState.viewData.camera.projectionMatrix );
-
-    // create the view matrix
-    glm_mat4_identity( transpose );
-    glm_translate( transpose, glState.viewData.camera.origin );
-    glm_mat4_inv( transpose, transpose );
-    glm_mat4_copy( glState.viewData.camera.viewMatrix, transpose );
-
-    // make the final thinga-majig
-    glm_mat4_mul( glState.viewData.camera.projectionMatrix, glState.viewData.camera.viewMatrix, glState.viewData.camera.viewProjectionMatrix );
-#endif
 }
 
 /*

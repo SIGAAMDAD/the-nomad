@@ -90,7 +90,7 @@ static void bt_error_callback( void *data, const char *msg, int errnum )
     g_debugSession.m_bBacktraceError = true;
 }
 
-extern file_t logfile;
+extern fileHandle_t logfile;
 
 static void bt_syminfo_callback( void *data, uintptr_t pc, const char *symname,
 								 uintptr_t symval, uintptr_t symsize )

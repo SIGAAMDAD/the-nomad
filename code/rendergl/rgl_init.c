@@ -1065,22 +1065,22 @@ static void R_InitGLContext(void)
     // get the OpenGL config vars
     //
 
-    N_strncpyz( glContext.vendor, (const char *)nglGetString(GL_VENDOR), sizeof(glContext.vendor) );
-    N_strncpyz( glContext.renderer, (const char *)nglGetString(GL_RENDERER), sizeof(glContext.renderer) );
-    N_strncpyz( glContext.version_str, (const char *)nglGetString(GL_VERSION), sizeof(glContext.version_str) );
-    N_strncpyz( gl_extensions, (const char *)nglGetString(GL_EXTENSIONS), sizeof(gl_extensions) );
+    N_strncpyz( glContext.vendor, (const char *)nglGetString( GL_VENDOR ), sizeof(glContext.vendor) );
+    N_strncpyz( glContext.renderer, (const char *)nglGetString( GL_RENDERER ), sizeof(glContext.renderer) );
+    N_strncpyz( glContext.version_str, (const char *)nglGetString( GL_VERSION ), sizeof(glContext.version_str) );
+    N_strncpyz( gl_extensions, (const char *)nglGetString( GL_EXTENSIONS ), sizeof(gl_extensions) );
 
-    N_strncpyz( glConfig.renderer, glContext.renderer, sizeof(glConfig.renderer) );
-    N_strncpyz( glConfig.version_str, glContext.version_str, sizeof(glConfig.version_str) );
-    N_strncpyz( glConfig.vendor, glContext.vendor, sizeof(glConfig.vendor) );
-    N_strncpyz( glConfig.glsl_version_str, (const char *)nglGetString(GL_SHADING_LANGUAGE_VERSION), sizeof(glConfig.glsl_version_str) );
-    N_strncpyz( glConfig.extensions, gl_extensions, sizeof(glConfig.extensions) );
+    N_strncpyz( glConfig.renderer_string, glContext.renderer, sizeof(glConfig.renderer_string) );
+    N_strncpyz( glConfig.version_string, glContext.version_str, sizeof(glConfig.version_string) );
+    N_strncpyz( glConfig.vendor_string, glContext.vendor, sizeof(glConfig.vendor_string) );
+    N_strncpyz( glConfig.shader_version_str, (const char *)nglGetString( GL_SHADING_LANGUAGE_VERSION ), sizeof(glConfig.shader_version_str) );
+    N_strncpyz( glConfig.extensions_string, gl_extensions, sizeof(glConfig.extensions_string) );
 
-    nglGetIntegerv(GL_NUM_EXTENSIONS, &glContext.numExtensions);
-    nglGetIntegerv(GL_STEREO, (GLint *)&glContext.stereo);
-    nglGetIntegerv(GL_MAX_IMAGE_UNITS, &glContext.maxTextureUnits);
-    nglGetIntegerv(GL_MAX_TEXTURE_SIZE, &glContext.maxTextureSize);
-    nglGetIntegerv(GL_MAX_SAMPLES, &glContext.maxSamples);
+    nglGetIntegerv( GL_NUM_EXTENSIONS, &glContext.numExtensions );
+    nglGetIntegerv( GL_STEREO, (GLint *)&glContext.stereo );
+    nglGetIntegerv( GL_MAX_IMAGE_UNITS, &glContext.maxTextureUnits );
+    nglGetIntegerv( GL_MAX_TEXTURE_SIZE, &glContext.maxTextureSize );
+    nglGetIntegerv( GL_MAX_SAMPLES, &glContext.maxSamples );
 
     sscanf( glContext.version_str, "%i.%i", &glContext.versionMajor, &glContext.versionMinor );
 

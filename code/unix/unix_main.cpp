@@ -25,7 +25,7 @@ static qboolean ttycon_on = qfalse;
 static qboolean ttycon_color_on = qfalse;
 static cvar_t *ttycon;
 static cvar_t *ttycon_ansicolor;
-extern file_t logfile;
+extern fileHandle_t logfile;
 
 typedef enum {
 	TTY_ENABLED,

@@ -1297,7 +1297,7 @@ Appends lines containing "set variable value" for all variables
 with the archive flag set to qtrue.
 ============
 */
-void Cvar_WriteVariables(file_t f)
+void Cvar_WriteVariables(fileHandle_t f)
 {
     cvar_t *var;
     char buffer[MAX_CMD_LINE];

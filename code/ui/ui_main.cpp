@@ -829,9 +829,9 @@ void Sys_DisplayEngineStats( void )
 	ImGui::SeparatorText( "Computer Information" );
 	
 	ImGui::Text( "%ix%i", gi.gpuConfig.vidWidth, gi.gpuConfig.vidHeight );
-	ImGui::Text( "%s", ui->GetConfig().version_str );
-	ImGui::Text( "%s", ui->GetConfig().vendor );
-	ImGui::Text( "%s", ui->GetConfig().renderer );
+	ImGui::Text( "%s", ui->GetConfig().version_string );
+	ImGui::Text( "%s", ui->GetConfig().vendor_string );
+	ImGui::Text( "%s", ui->GetConfig().renderer_string );
     ImGui::Text( "%s", ui_cpuString->s );
 	
 	ImGui::End();

@@ -249,12 +249,12 @@ typedef struct string_s {
 
 typedef struct
 {
-	sfxHandle_t player_pain0;
-    sfxHandle_t player_pain1;
-    sfxHandle_t player_pain2;
-    sfxHandle_t player_death0;
-    sfxHandle_t player_death1;
-    sfxHandle_t player_death2;
+	sfxHandle_t playerPain0;
+    sfxHandle_t playerPain1;
+    sfxHandle_t playerPain2;
+    sfxHandle_t playerDeath0;
+    sfxHandle_t playerDeath1;
+    sfxHandle_t playerDeath2;
 	sfxHandle_t player_parry;
 
 	sfxHandle_t revolver_fire;
@@ -276,12 +276,27 @@ typedef struct
 	//
 	nhandle_t gfxSprites;
 
+	//
+	// sound effects
+	//
 	sfxHandle_t footsteps;
-
 	sfxHandle_t gibBounce0;
 	sfxHandle_t gibBounce1;
 
+	//
+	// music
+	// these are set when loading a new level
+	//
+	sfxHandle_t combatTrack_Intensity0; // a few enemies
+	sfxHandle_t combatTrack_Intensity1; // the local militia vs you
+	sfxHandle_t combatTrack_Intensity2; // you're fighting an army
+	sfxHandle_t ambientTrack;
+
+	//
+	// ui strings
+	//
 	string_t pickupShotgun;
+	string_t pickupMurstar;
 } sgameMedia_t;
 
 typedef struct

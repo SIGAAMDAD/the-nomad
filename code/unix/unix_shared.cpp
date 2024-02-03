@@ -378,7 +378,7 @@ uint64_t Sys_EventSubtime(uint64_t time)
 }
 
 typedef struct {
-    file_t file;
+    fileHandle_t file;
     int fd;
 } mappedFile_t;
 
@@ -402,7 +402,7 @@ memoryMap_t *Sys_VirtualAlloc(uint64_t size)
 }
 
 
-memoryMap_t *Sys_MapMemory(FILE *fp, qboolean temp, file_t fd)
+memoryMap_t *Sys_MapMemory(FILE *fp, qboolean temp, fileHandle_t fd)
 {
     return NULL; // FIXME: implement
 }

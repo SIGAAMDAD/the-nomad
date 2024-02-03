@@ -1,31 +1,36 @@
-#ifndef __SG_LIB__
-#define __SG_LIB__
+#ifndef _BG_LIB_
+#define _BG_LIB_
 
 #pragma once
 
-#ifndef NULL
-    #define NULL ((void *)0)
+// sg_lib.h -- the standard library of the vm
+
+// safeguard
+#ifndef Q3_VM
+    #error Never include this in engine builds
 #endif
 
-#ifndef SGN
-    #define SGN(x) (((x) >= 0) ? !!(x) : -1)
-#endif
+#define NULL ((void *)0)
+#define offsetof(type,member) ((size_t)&(((type*)0)->(member)))
 
-#ifndef MAX
-    #define MAX(a,b) ((a) > (b) ? (a) : (b))
-#endif
+typedef unsigned char uint8_t;
+typedef unsigned short int uint16_t;
+typedef unsigned int uint32_t;
+typedef signed char int8_t;
+typedef signed short int int16_t;
+typedef signed int int32_t;
 
-#ifndef MIN
-    #define MIN(a,b) ((a) < (b) ? (a) : (b))
-#endif
+// there isn't such thing as a 64-bit integer on the qvm, so if you want to actually have a 64-bit integer, use the struct instead
+// NOTE: sizeof longs on the qvm is the exact same as an int
+typedef unsigned long int uint64_t;
+typedef signed long int int64_t;
 
-#ifndef CLAMP
-    #define CLAMP(a,b,c) MIN(MAX((a),(b)),(c))
-#endif
-
-#ifndef offsetof
-    #define offsetof(type,member) ((size_t)&(((type*)0)->(member)))
-#endif
+// the qvm is 32-bit
+typedef unsigned int size_t;
+typedef signed int ssize_t;
+typedef unsigned int ptrdiff_t;
+typedef unsigned int uintptr_t;
+typedef int intptr_t;
 
 // same as one found in math.h
 #define NAN (0.0f / 0.0f)
@@ -38,52 +43,29 @@ typedef char* va_list;
 #define va_arg(ap, t) (*(t*)((ap += _INTSIZEOF(t)) - _INTSIZEOF(t)))
 #define va_end(ap) (ap = (va_list)0)
 
-// q3vm integer types
-
-//
-// note that types such as uint64_t and int64_t
-// aren't actually 64 bits, they're just here
-// to prevent functions in n_shared.h from
-// bitching
-//
-
-typedef unsigned char uint8_t;
-typedef signed char int8_t;
-
-typedef unsigned short int uint16_t;
-typedef unsigned int uint32_t;
-typedef unsigned long int uint64_t;
-
-typedef short int int16_t;
-typedef int int32_t;
-typedef long int int64_t;
-
-typedef unsigned int uintptr_t;
-typedef signed int intptr_t;
-typedef unsigned int ptrdiff_t;
-typedef unsigned int size_t;
-typedef signed int ssize_t;
+#define min(a,b) ((a)<(b)?(a):(b))
+#define max(a,b) ((a)>(b)?(a):(b))
 
 typedef int cmp_t(const void *, const void *);
 
 /* standard library replacement functions */
-void *memcpy(void *dst, const void *src, size_t n);
-void *memchr(void *ptr, int delegate, size_t n);
-void *memset(void *dst, int fill, size_t n);
-void *memmove(void *dst, const void *src, size_t n);
-char *strcpy(char *dst, const char *src);
-char *strcat(char *dst, const char *src);
-size_t strlen(const char *str);
-char *strchr(const char *str, int c);
-char *strstr(const char *needle, const char *haystack);
-int strcmp(const char *str1, const char *str2);
-int strncmp(const char *str1, const char *str2, size_t n);
-int tolower(int c);
-int toupper(int c);
-void qsort(void *a, size_t n, size_t es, cmp_t *cmp);
-void srand(unsigned seed);
-int rand(void);
-int vsprintf(char *buffer, const char *fmt, va_list argptr);
+void *memcpy( void *dst, const void *src, size_t n );
+void *memchr( void *ptr, int delegate, size_t n );
+void *memset( void *dst, int fill, size_t n );
+void *memmove( void *dst, const void *src, size_t n );
+char *strcpy( char *dst, const char *src );
+char *strcat( char *dst, const char *src );
+size_t strlen( const char *str );
+char *strchr( const char *str, int c );
+char *strstr( const char *needle, const char *haystack );
+int strcmp( const char *str1, const char *str2 );
+int strncmp( const char *str1, const char *str2, size_t n );
+int tolower( int c );
+int toupper( int c );
+void qsort( void *a, size_t n, size_t es, cmp_t *cmp );
+void srand( unsigned seed );
+int rand( void );
+int vsprintf( char *buffer, const char *fmt, va_list argptr );
 int sscanf( const char *buffer, const char *fmt, ... );
 
 // Math functions
@@ -97,9 +79,6 @@ double tan( double x );
 int abs( int n );
 double fabs( double x );
 double acos( double x );
-
-// stuff for people new to c
-#define new(type) (type *)SG_MemAlloc( sizeof(type) )
 
 #define CHAR_BIT 8       /* number of bits in a char */
 #define SCHAR_MIN (-128) /* minimum signed char value */

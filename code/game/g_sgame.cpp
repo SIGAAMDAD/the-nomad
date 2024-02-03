@@ -8,46 +8,48 @@
 #define VM_CHECKBOUNDS(addr1,len) VM_CheckBounds(sgvm,(addr1),(len))
 #define VM_CHECKBOUNDS2(addr1,addr2,len) VM_CheckBounds2(sgvm,(addr1),(addr2),(len))
 
-static void G_AddSGameCommand(const char *name)
+static void G_AddSGameCommand( const char *name )
 {
-    Cmd_AddCommand(name, NULL);
+    Cmd_AddCommand( name, NULL );
 }
 
-static int FloatToInt(float f)
+static int FloatToInt( float f )
 {
     floatint_t fi;
     fi.f = f;
     return fi.i;
 }
 
-static float IntToFloat(int32_t i)
+static float IntToFloat( int32_t i )
 {
     floatint_t fi;
     fi.i = i;
     return fi.f;
 }
 
-static float UIntToFloat(uint32_t u)
+static float UIntToFloat( uint32_t u )
 {
     floatint_t fi;
     fi.u = u;
     return fi.f;
 }
 
-static void *VM_ArgPtr(intptr_t addr)
+static void *VM_ArgPtr( intptr_t addr )
 {
-    if (!addr || sgvm == NULL)
+    if ( !addr || sgvm == NULL ) {
         return NULL;
+    }
     
-    if (sgvm->entryPoint)
-        return (void *)(addr);
-    else
-        return (void *)(sgvm->dataBase + (addr & sgvm->dataMask));
+    if ( sgvm->entryPoint ) {
+        return (void *)( addr );
+    } else {
+        return (void *)( sgvm->dataBase + ( addr & sgvm->dataMask ) );
+    }
 }
 
 static intptr_t G_SGameSystemCalls( intptr_t *args )
 {
-    switch (args[0]) {
+    switch ( args[0] ) {
     case SG_G_CASTRAY:
         g_world.CastRay( (ray_t *)VMA( 1 ) );
         return 0;
@@ -203,14 +205,14 @@ static intptr_t G_SGameSystemCalls( intptr_t *args )
     case SG_FS_FILETELL:
         return FS_VM_FileTell( args[1], H_SGAME );
     case SG_FS_FOPENFILE:
-        VM_CHECKBOUNDS( args[2], sizeof(file_t) );
-        return FS_VM_FOpenFile( (const char *)VMA( 1 ), (file_t *)VMA( 2 ), (fileMode_t)args[3], H_SGAME );
+        VM_CHECKBOUNDS( args[2], sizeof(fileHandle_t) );
+        return FS_VM_FOpenFile( (const char *)VMA( 1 ), (fileHandle_t *)VMA( 2 ), (fileMode_t)args[3], H_SGAME );
     case SG_FS_FOPENFILEWRITE:
-        VM_CHECKBOUNDS( args[2], sizeof(file_t) );
-        return FS_VM_FOpenFileWrite( (const char *)VMA( 1 ), (file_t *)VMA( 2 ), H_SGAME );
+        VM_CHECKBOUNDS( args[2], sizeof(fileHandle_t) );
+        return FS_VM_FOpenFileWrite( (const char *)VMA( 1 ), (fileHandle_t *)VMA( 2 ), H_SGAME );
     case SG_FS_FOPENFILEREAD:
-        VM_CHECKBOUNDS( args[2], sizeof(file_t) );
-        return FS_VM_FOpenFileRead( (const char *)VMA( 1 ), (file_t *)VMA( 2 ), H_SGAME );
+        VM_CHECKBOUNDS( args[2], sizeof(fileHandle_t) );
+        return FS_VM_FOpenFileRead( (const char *)VMA( 1 ), (fileHandle_t *)VMA( 2 ), H_SGAME );
     case SG_FS_FCLOSE:
         FS_VM_FClose( args[1], H_SGAME );
         return 0;

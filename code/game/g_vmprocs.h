@@ -5,7 +5,7 @@
 
 #include "../engine/n_common.h"
 
-#if !defined(Q3_VM) || (defined(UI_HARD_LINKED) || defined(SGAME_HARD_LINKED))
+#ifndef Q3_VM
 typedef struct vmRefImport_s vmRefImport_t;
 struct vmRefImport_s
 {
@@ -26,7 +26,7 @@ struct vmRefImport_s
     nhandle_t (*G_LoadMap)( const char *mapname );
     void (*G_SetActiveMap)( nhandle_t mapHandle, mapinfo_t *info, int32_t *soundBits, linkEntity_t *activeEnts );
     void (*G_CastRay)( ray_t *ray );
-#if !defined(Q3_VM) || (defined(UI_HARD_LINKED) || defined(SGAME_HARD_LINKED))
+#if defined(SGAME_HARD_LINKED)
     void (*G_SoundRecursive)( int32_t width, int32_t height, float volume, const vec3_t *origin );
     qboolean (*trap_CheckWallHit)( const vec3_t *origin, dirtype_t dir );
     void (*G_SetCameraData)( const vec2_t *origin, float zoom, float rotation );
@@ -56,7 +56,7 @@ struct vmRefImport_s
     void (*RE_LoadWorldMap)( const char *npath );
     void (*RE_ClearScene)( void );
     void (*RE_RenderScene)( const renderSceneRef_t *fd );
-#if !defined(Q3_VM) || (defined(UI_HARD_LINKED) || defined(SGAME_HARD_LINKED))
+#if defined(SGAME_HARD_LINKED)
     void (*RE_AddSpriteToScene)( const vec3_t *origin, nhandle_t hSpriteSheet, nhandle_t hSprite );
 #else
     void (*RE_AddSpriteToScene)( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t hSprite );
@@ -70,20 +70,20 @@ struct vmRefImport_s
     void (*Cvar_Set)( const char *varName, const char *value );
     void (*Cvar_VariableStringBuffer)( const char *var_name, char *buffer, uint32_t bufsize );
 
-    file_t (*FS_FOpenRead)( const char *npath, handleOwner_t owner );
-    file_t (*FS_FOpenWrite)( const char *npath, handleOwner_t owner );
-    file_t (*FS_FOpenAppend)( const char *npath, handleOwner_t owner );
-    file_t (*FS_FOpenRW)( const char *npath, handleOwner_t owner );
-    fileOffset_t (*FS_FileSeek)( file_t file, fileOffset_t offset, uint32_t whence, handleOwner_t owner );
-    fileOffset_t (*FS_FileTell)( file_t file, handleOwner_t owner );
-    uint32_t (*FS_FOpenFile)( const char *npath, file_t *file, fileMode_t mode, handleOwner_t owner );
-    file_t (*FS_FOpenFileWrite)( const char *npath, file_t *file, handleOwner_t owner );
-    uint32_t (*FS_FOpenFileRead)( const char *npath, file_t *file, handleOwner_t owner );
-    void (*FS_FClose)( file_t file, handleOwner_t owner );
-    uint32_t (*FS_WriteFile)( const void *buffer, uint32_t len, file_t file, handleOwner_t owner );
-    uint32_t (*FS_Write)( const void *buffer, uint32_t len, file_t file, handleOwner_t owner );
-    uint32_t (*FS_Read)( void *buffer, uint32_t len, file_t file, handleOwner_t owner );
-    uint32_t (*FS_FileLength)( file_t file, handleOwner_t owner );
+    fileHandle_t (*FS_FOpenRead)( const char *npath, handleOwner_t owner );
+    fileHandle_t (*FS_FOpenWrite)( const char *npath, handleOwner_t owner );
+    fileHandle_t (*FS_FOpenAppend)( const char *npath, handleOwner_t owner );
+    fileHandle_t (*FS_FOpenRW)( const char *npath, handleOwner_t owner );
+    fileOffset_t (*FS_FileSeek)( fileHandle_t file, fileOffset_t offset, uint32_t whence, handleOwner_t owner );
+    fileOffset_t (*FS_FileTell)( fileHandle_t file, handleOwner_t owner );
+    uint32_t (*FS_FOpenFile)( const char *npath, fileHandle_t *file, fileMode_t mode, handleOwner_t owner );
+    fileHandle_t (*FS_FOpenFileWrite)( const char *npath, fileHandle_t *file, handleOwner_t owner );
+    uint32_t (*FS_FOpenFileRead)( const char *npath, fileHandle_t *file, handleOwner_t owner );
+    void (*FS_FClose)( fileHandle_t file, handleOwner_t owner );
+    uint32_t (*FS_WriteFile)( const void *buffer, uint32_t len, fileHandle_t file, handleOwner_t owner );
+    uint32_t (*FS_Write)( const void *buffer, uint32_t len, fileHandle_t file, handleOwner_t owner );
+    uint32_t (*FS_Read)( void *buffer, uint32_t len, fileHandle_t file, handleOwner_t owner );
+    uint32_t (*FS_FileLength)( fileHandle_t file, handleOwner_t owner );
     uint32_t (*FS_GetFileList)( const char *path, const char *extension, char *listbuf, uint32_t bufsize );
 
     int (*ImGui_BeginWindow)( const char *pLabel, byte *pOpen, ImGuiWindowFlags windowFlags );
@@ -96,7 +96,7 @@ struct vmRefImport_s
     int (*ImGui_InputTextMultiline)( const char *pLabel, char *pBuffer, size_t nBufSize, ImGuiInputTextFlags flags );
     int (*ImGui_InputTextWithHint)( const char *pLabel, const char *pHint, char *pBuffer, size_t nBufSize, ImGuiInputTextFlags flags );
     int (*ImGui_InputFloat)( const char *pLabel, float *pData );
-#if !defined(Q3_VM) || (defined(UI_HARD_LINKED) || defined(SGAME_HARD_LINKED))
+#if defined(SGAME_HARD_LINKED)
     int (*ImGui_InputFloat2)( const char *pLabel, vec2_t *pData );
     int (*ImGui_InputFloat3)( const char *pLabel, vec3_t *pData );
     int (*ImGui_InputFloat4)( const char *pLabel, vec4_t *pData );
@@ -152,7 +152,7 @@ struct vmRefImport_s
     void (*ImGui_SameLine)( float offsetFromStartX );
     void (*ImGui_NewLine)( void );
     void (*ImGui_TextUnformatted)( const char *pText );
-#if !defined(Q3_VM) || (defined(UI_HARD_LINKED) || defined(SGAME_HARD_LINKED))
+#if defined(SGAME_HARD_LINKED)
     void (*ImGui_ColoredTextUnformatted)( const vec4_t *pColor, const char *pText );
     void (*ImGui_PushColor)( ImGuiCol index, const vec4_t *color );
 #else

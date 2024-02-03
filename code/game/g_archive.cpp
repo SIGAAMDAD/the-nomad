@@ -65,7 +65,7 @@ qboolean CGameArchive::LoadArchiveFile( const char *filename, uint64_t index )
 	ngd_file_t *file;
 	ngdheader_t header;
     uint32_t i, nameLength, j;
-    file_t hFile;
+    fileHandle_t hFile;
 	ngdsection_read_t *section;
 	ngdfield_t *field;
 	void *data;
@@ -729,7 +729,7 @@ nhandle_t CGameArchive::GetSection( const char *name )
 
 bool CGameArchive::LoadPartial( const char *filename, gamedata_t *gd )
 {
-    file_t f;
+    fileHandle_t f;
     ngdheader_t header;
 
     if ( FS_FileIsInBFF( filename ) ) {

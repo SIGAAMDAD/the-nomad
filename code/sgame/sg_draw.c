@@ -42,6 +42,8 @@ static void SG_DrawPlayer( void )
 static void SG_DrawHUD( void )
 {
     renderSceneRef_t refdef;
+    int windowFlags;
+    vec4_t color;
 
     memset( &refdef, 0, sizeof(refdef) );
     refdef.x = 0;
@@ -54,6 +56,29 @@ static void SG_DrawHUD( void )
     //
     // draw status bars
     //
+    windowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoMouseInputs
+                | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar;
+
+    ImGui_BeginWindow( "PlayerHealth", NULL, windowFlags );
+    if ( sg.playr.ent->health <= 65 ) {
+        color.r = ( 1.0 / (float)sg.playr.ent->health ) * 2.0f;
+        color.g = ( 1.0 / (float)sg.playr.ent->health );
+        color.b = 0;
+        color.a = 1;
+    } else {
+        color.r = 0;
+        color.g = 1;
+        color.b = 0;
+        color.a = 1;
+    }
+    ImGui_PushColor( ImGuiCol_FrameBg, &color );
+    ImGui_ProgressBar( (float)sg.playr.ent->health );
+    ImGui_PopColor();
+    ImGui_EndWindow();
+
+    ImGui_BeginWindow( "PlayerRageMeter", NULL, windowFlags );
+    
+    ImGui_EndWindow();
 }
 
 int SG_DrawFrame( void )

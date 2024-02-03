@@ -50,8 +50,8 @@ typedef struct {
     void (*Cvar_Reset)(const char *name);
     const char *(*Cvar_VariableString)(const char *name);
 
-    void (*GLM_MakeVPMScreenSpace)( mat4_t vpm, mat4_t projection, mat4_t view );
-    void (*GLM_MakeVPM)( float aspect, float *zoom, vec3_t origin, mat4_t vpm, mat4_t projection, mat4_t view );
+    void (*GLM_MakeVPM)( vec4_t ortho, float *zoom, float zFar, float zNear, vec3_t origin, mat4_t vpm,
+        mat4_t projection, mat4_t view );
     void (*GLM_TransformToGL)( const vec3_t world, vec3_t *xyz, mat4_t vpm );
 
     void (*Cmd_AddCommand)(const char* name, cmdfunc_t function);
@@ -67,15 +67,15 @@ typedef struct {
     qboolean (*Key_IsDown)(uint32_t keynum);
 
     void (*FS_FreeFileList)(char **list);
-    uint64_t (*FS_Write)(const void *buffer, uint64_t size, file_t f);
-    uint64_t (*FS_Read)(void *buffer, uint64_t size, file_t);
-    fileOffset_t (*FS_FileSeek)(file_t f, fileOffset_t offset, uint32_t whence);
-    fileOffset_t (*FS_FileTell)(file_t f);
-    uint64_t (*FS_FileLength)(file_t f);
+    uint64_t (*FS_Write)(const void *buffer, uint64_t size, fileHandle_t f);
+    uint64_t (*FS_Read)(void *buffer, uint64_t size, fileHandle_t);
+    fileOffset_t (*FS_FileSeek)(fileHandle_t f, fileOffset_t offset, uint32_t whence);
+    fileOffset_t (*FS_FileTell)(fileHandle_t f);
+    uint64_t (*FS_FileLength)(fileHandle_t f);
     qboolean (*FS_FileExists)(const char *filename);
-    file_t (*FS_FOpenRead)(const char *path);
-    file_t (*FS_FOpenWrite)(const char *path);
-    void (*FS_FClose)(file_t f);
+    fileHandle_t (*FS_FOpenRead)(const char *path);
+    fileHandle_t (*FS_FOpenWrite)(const char *path);
+    void (*FS_FClose)(fileHandle_t f);
     void (*FS_FreeFile)(void *buffer);
     uint64_t (*FS_LoadFile)(const char *path, void **buffer);
     char **(*FS_ListFiles)(const char *path, const char *extension, uint64_t *numfiles);

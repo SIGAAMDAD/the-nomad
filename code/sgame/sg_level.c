@@ -261,7 +261,7 @@ int SG_ParseInfos( char *buf, int max, char **infos )
 
 static void SG_LoadLevelsFromFile( const char *filename ) {
 	int				len;
-	file_t	        f;
+	fileHandle_t    f;
 	char			buf[MAX_LEVELINFO_LEN];
 
 	len = trap_FS_FOpenFile( filename, &f, FS_OPEN_READ );

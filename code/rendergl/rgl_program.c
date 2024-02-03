@@ -78,7 +78,7 @@ static void R_InitShaderCache(void)
 
 static void R_LoadShaderCache(void)
 {
-    file_t f;
+    fileHandle_t f;
     uint64_t numEntries, i;
     uint64_t hash;
     char name[MAX_GDR_PATH];
@@ -129,7 +129,7 @@ static void R_LoadShaderCache(void)
     ri.FS_FClose(f);
 }
 
-static void R_SaveShaderToCache(const shaderProgram_t *program, file_t cacheFile)
+static void R_SaveShaderToCache(const shaderProgram_t *program, fileHandle_t cacheFile)
 {
     shaderCacheEntry_t entry;
     GLint length;

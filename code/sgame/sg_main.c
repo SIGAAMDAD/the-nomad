@@ -156,101 +156,109 @@ void SG_UpdateCvars( void )
     }
 }
 
-void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL G_Printf(const char *fmt, ...)
+void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL G_Printf( const char *fmt, ... )
 {
     va_list argptr;
-    char msg[4096];
+    char msg[MAXPRINTMSG];
     int length;
 
-    va_start(argptr, fmt);
-    length = vsprintf(msg, fmt, argptr);
-    va_end(argptr);
+    va_start( argptr, fmt );
+    length = vsprintf( msg, fmt, argptr );
+    va_end( argptr );
 
-    trap_Print(msg);
+    if ( length >= sizeof(msg) ) {
+        trap_Error( "G_Printf: buffer overflow" );
+    }
+
+    trap_Print( msg );
 }
 
-void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL G_Error(const char *err, ...)
+void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL G_Error( const char *fmt, ... )
 {
     va_list argptr;
-    char msg[4096];
+    char msg[MAXPRINTMSG];
     int length;
 
-    va_start(argptr, err);
-    length = vsprintf(msg, err, argptr);
-    va_end(argptr);
+    va_start( argptr, fmt );
+    length = vsprintf( msg, fmt, argptr );
+    va_end( argptr );
 
-    trap_Error(msg);
+    if ( length >= sizeof(msg) ) {
+        trap_Error( "G_Error: buffer overflow" );
+    }
+
+    trap_Error( msg );
 }
 
-void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL SG_Printf(const char *fmt, ...)
+void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL SG_Printf( const char *fmt, ... )
 {
     va_list argptr;
-    char msg[4096];
+    char msg[MAXPRINTMSG];
     int length;
 
-    va_start(argptr, fmt);
-    length = vsprintf(msg, fmt, argptr);
-    va_end(argptr);
+    va_start( argptr, fmt );
+    length = vsprintf( msg, fmt, argptr );
+    va_end( argptr );
 
-    if (length >= sizeof(msg)) {
+    if ( length >= sizeof(msg) ) {
         trap_Error( "SG_Printf: buffer overflow" );
     }
 
     trap_Print(msg);
 }
 
-void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL SG_Error(const char *err, ...)
+void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL SG_Error( const char *fmt, ... )
 {
     va_list argptr;
-    char msg[4096];
+    char msg[MAXPRINTMSG];
     int length;
 
-    va_start(argptr, err);
-    length = vsprintf(msg, err, argptr);
-    va_end(argptr);
+    va_start( argptr, fmt );
+    length = vsprintf( msg, fmt, argptr );
+    va_end( argptr );
 
-    if (length >= sizeof(msg)) {
-        trap_Error( "SG_Printf: buffer overflow" );
+    if ( length >= sizeof(msg) ) {
+        trap_Error( "SG_Error: buffer overflow" );
     }
 
-    trap_Error(msg);
-}
-
-void GDR_DECL GDR_ATTRIBUTE((format(printf, 2, 3))) N_Error(errorCode_t code, const char *err, ...)
-{
-    va_list argptr;
-    char msg[4096];
-    int length;
-
-    va_start(argptr, err);
-    length = vsprintf(msg, err, argptr);
-    va_end(argptr);
-
-    if (length >= sizeof(msg)) {
-        trap_Error( "SG_Printf: buffer overflow" );
-    }
-
-    SG_Error("%s", msg);
+    trap_Error( msg );
 }
 
 //#ifndef SGAME_HARD_LINKED
 // this is only here so the functions in n_shared.c and bg_*.c can link
 
-void GDR_DECL GDR_ATTRIBUTE((format(printf, 1, 2))) Con_Printf(const char *fmt, ...)
+void GDR_DECL GDR_ATTRIBUTE((format(printf, 1, 2))) Con_Printf( const char *fmt, ... )
 {
     va_list argptr;
-    char msg[4096];
+    char msg[MAXPRINTMSG];
     int length;
 
-    va_start(argptr, fmt);
-    length = vsprintf(msg, fmt, argptr);
-    va_end(argptr);
+    va_start( argptr, fmt );
+    length = vsprintf( msg, fmt, argptr );
+    va_end( argptr );
 
-    if (length >= sizeof(msg)) {
+    if ( length >= sizeof(msg) ) {
         trap_Error( "SG_Printf: buffer overflow" );
     }
 
-    SG_Printf("%s", msg);
+    trap_Print( msg );
+}
+
+void GDR_DECL GDR_ATTRIBUTE((format(printf, 2, 3))) N_Error( errorCode_t code, const char *err, ... )
+{
+    va_list argptr;
+    char msg[MAXPRINTMSG];
+    int length;
+
+    va_start( argptr, err );
+    length = vsprintf( msg, err, argptr );
+    va_end( argptr );
+
+    if ( length >= sizeof(msg) ) {
+        trap_Error( "N_Error: buffer overflow" );
+    }
+
+    trap_Error( msg );
 }
 
 //#endif
@@ -324,19 +332,10 @@ int SG_RunLoop( int levelTime, int frameTime )
 
 static void SG_LoadMedia( void )
 {
-    sg.media.player_death0 = Snd_RegisterSfx( "sfx/player/death1.wav" );
-    sg.media.player_death1 = Snd_RegisterSfx( "sfx/player/death2.wav" );
-    sg.media.player_death2 = Snd_RegisterSfx( "sfx/player/death3.wav" ); 
-    sg.media.player_pain0 = Snd_RegisterSfx( "sfx/player/pain0.wav" );
-    sg.media.player_pain1 = Snd_RegisterSfx( "sfx/player/pain1.wav" );
-    sg.media.player_pain2 = Snd_RegisterSfx( "sfx/player/pain2.wav" );
-    sg.media.revolver_fire = Snd_RegisterSfx( "sfx/weapons/revolver_fire.wav" );
-    sg.media.revolver_rld = Snd_RegisterSfx( "sfx/weapons/revolver_rld.wav" );
+    int len;
+    fileHandle_t f;
+    char text[20000];
 
-    sg.media.raio_shader = RE_RegisterShader( "sprites/glnomad_raio_base" );
-    sg.media.grunt_shader = RE_RegisterShader( "sprites/glnomad_grunt" );
-
-    sg.media.raio_sprites = RE_RegisterSpriteSheet( "sprites/glnomad_raio_base", 512, 512, 32, 32 );
 }
 
 void SG_Init( void )
@@ -404,7 +403,7 @@ void LoadGame( void )
     G_Printf( "Loading save file '%s'...\n", savename );
 }
 
-void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL trap_FS_Printf( file_t f, const char *fmt, ... )
+void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL trap_FS_Printf( fileHandle_t f, const char *fmt, ... )
 {
     va_list argptr;
     char msg[MAXPRINTMSG];

@@ -350,9 +350,9 @@ static void Key_Bind_f( void )
 }
 
 /*
-Key_WriteBindings: Writes lines containing "bind key value"
+* Key_WriteBindings: Writes lines containing "bind key value"
 */
-void Key_WriteBindings( file_t f )
+void Key_WriteBindings( fileHandle_t f )
 {
 	uint32_t i;
 

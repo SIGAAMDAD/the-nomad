@@ -109,7 +109,7 @@ static CThreadMutex commonLock;
 
 uint64_t hunksize;
 byte* hunkbase;
-extern file_t logfile;
+extern fileHandle_t logfile;
 
 #define HUNKID 0x553dfa2
 #define HUNKFREE 0x0ffa3d

@@ -204,7 +204,8 @@ static void G_RefImGuiInit(void *shaderData, const void *importData) {
     }
 }
 
-static void GLM_MakeVPM( float aspect, float *zoom, vec3_t origin, mat4_t vpm, mat4_t projection, mat4_t view )
+static void GLM_MakeVPM( vec4_t ortho, float *zoom, float zFar, float zNear, vec3_t origin, mat4_t vpm,
+    mat4_t projection, mat4_t view )
 {
     glm::mat4 viewProjectionMatrix, projectionMatrix, viewMatrix, transpose;
 
@@ -213,11 +214,6 @@ static void GLM_MakeVPM( float aspect, float *zoom, vec3_t origin, mat4_t vpm, m
     transpose = glm::translate( glm::mat4( 1.0f ), glm::vec3( pos[0], pos[1], 0.0f ) )
                                 * glm::scale( glm::mat4( 1.0f ), glm::vec3( *zoom ));
     viewMatrix = glm::inverse( transpose );
-
-    // convert world camera position to opengl coordinates
-    const glm::vec3 v0 = {  0.5f, 0.0f, 0.0f };
-    const glm::vec3 v1 = { -0.5f, 0.0f, 0.0f };
-//    const float middle = ;
 
     VectorCopy( origin, pos );
     

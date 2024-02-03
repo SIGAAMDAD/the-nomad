@@ -25,6 +25,7 @@
 #include "../game/g_sound.h"
 #include "../game/g_vmimgui.h"
 #include "../game/g_world.h"
+#include "../game/g_vmprocs.h"
 
 /******************************************************************************
  * DEFINES

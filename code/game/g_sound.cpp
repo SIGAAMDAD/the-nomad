@@ -364,19 +364,19 @@ void CSoundSource::Stop( void ) {
 }
 
 static sf_count_t SndFile_Read( void *data, sf_count_t size, void *file ) {
-    return FS_Read( data, size, *(file_t *)file );
+    return FS_Read( data, size, *(fileHandle_t *)file );
 }
 
 static sf_count_t SndFile_Tell( void *file ) {
-    return FS_FileTell( *(file_t *)file );
+    return FS_FileTell( *(fileHandle_t *)file );
 }
 
 static sf_count_t SndFile_GetFileLen(void *file) {
-    return FS_FileLength( *(file_t *)file );
+    return FS_FileLength( *(fileHandle_t *)file );
 }
 
 static sf_count_t SndFile_Seek( sf_count_t offset, int64_t whence, void *file ) {
-    file_t f = *(file_t *)file;
+    fileHandle_t f = *(fileHandle_t *)file;
     switch ( whence ) {
     case SEEK_SET:
         return FS_FileSeek( f, (fileOffset_t)offset, FS_SEEK_SET );
@@ -396,7 +396,7 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     SNDFILE *sf;
     SF_VIRTUAL_IO vio;
     ALenum format;
-    file_t f;
+    fileHandle_t f;
     FILE *fp;
     void *buffer;
     uint64_t length;
