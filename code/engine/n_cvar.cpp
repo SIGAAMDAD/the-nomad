@@ -1,5 +1,6 @@
 #include "n_shared.h"
 #include "n_allocator.h"
+#include "n_common.h"
 #include "n_cvar.h"
 
 static cvar_t *cvar_vars = NULL;

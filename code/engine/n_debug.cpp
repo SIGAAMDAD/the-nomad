@@ -1,4 +1,5 @@
 #include "n_shared.h"
+#include "n_common.h"
 
 #ifdef POSIX
 #include <dlfcn.h>

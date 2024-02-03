@@ -479,7 +479,6 @@ static void VM_FillImport(vmRefImport_t *import, const char *name)
 	import->trap_Snd_SetLoopingTrack = Snd_SetLoopingTrack;
 	import->trap_Snd_RegisterSfx = Snd_RegisterSfx;
 	import->trap_Snd_RegisterTrack = Snd_RegisterTrack;
-	import->trap_Snd_QueueTrack = Snd_QueueTrack;
 
 	import->trap_Print = VM_trap_Print;
 	import->trap_Error = VM_trap_Error;

@@ -1,6 +1,8 @@
 #include "../engine/n_shared.h"
+#include "../engine/n_common.h"
 #include "sys_unix.h"
 #include <SDL2/SDL.h>
+#include <cpu-set.h>
 
 qboolean Sys_RandomBytes(byte *s, uint64_t len)
 {
@@ -28,11 +30,11 @@ void Sys_Sleep( double msec ) {
 //
 // Sys_StackMemoryRemaining: returns the amount of stack we have left
 //
-uint64_t Sys_StackMemoryRemaining(void)
+uint64_t Sys_StackMemoryRemaining( void )
 {
     struct rlimit limit;
     
-    getrlimit(RLIMIT_STACK, &limit);
+    getrlimit( RLIMIT_STACK, &limit );
 
     return limit.rlim_cur;
 }
@@ -577,32 +579,32 @@ void Sys_CloseDLL(void *handle)
 
 FILE *Sys_FOpen(const char *filepath, const char *mode)
 {
-    if (!filepath)
-        N_Error(ERR_FATAL, "Sys_FOpen: no filepath given");
-    if (!mode)
-        N_Error(ERR_FATAL, "Sys_FOpen: no mode given");
+    Assert( filepath );
+    Assert( mode );
     
-    if (!*filepath)
-        N_Error(ERR_FATAL, "Sys_FOpen: empty filepath");
+    if ( !*filepath ) {
+        N_Error( ERR_FATAL, "Sys_FOpen: empty filepath" );
+    }
     
     return fopen(filepath, mode);
 }
 
-const char *Sys_pwd(void)
+const char *Sys_pwd( void )
 {
     static char pwd[MAX_OSPATH];
 
-    if (*pwd)
+    if ( *pwd ) {
         return pwd;
+    }
 
     // more reliable, linux-specific
-    if (readlink("/proc/self/exe", pwd, sizeof(pwd) - 1) != -1) {
+    if ( readlink( "/proc/self/exe", pwd, sizeof(pwd) - 1 ) != -1 ) {
         pwd[sizeof(pwd) - 1] = '\0';
-        dirname(pwd);
+        dirname( pwd );
         return pwd;
     }
     
-    if (!getcwd(pwd, sizeof(pwd))) {
+    if ( !getcwd( pwd, sizeof(pwd) ) ) {
         *pwd = '\0';
     }
 
@@ -628,3 +630,53 @@ char *Sys_GetClipboardData( void )
 	}
 	return data;
 }
+
+const char *Sys_GetCurrentUser( void )
+{
+    struct passwd *pw;
+
+    if ( ( pw = getpwuid( getuid() ) ) == NULL ) {
+        return "player";
+    }
+
+    return pw->pw_name;
+}
+
+#ifdef USE_AFFINITY_MASK
+uint64_t Sys_GetAffinityMask( void )
+{
+    cpu_set_t cpu_set;
+
+    if ( sched_getaffinity( getpid(), sizeof( cpu_set ), &cpu_set ) == 0 ) {
+		uint64_t mask = 0;
+		int cpu;
+		for ( cpu = 0; cpu < sizeof( mask ) * 8; cpu++ ) {
+			if ( CPU_ISSET( cpu, &cpu_set ) ) {
+				mask |= (1ULL << cpu);
+			}
+		}
+		return mask;
+	} else {
+		return 0;
+	}
+}
+
+qboolean Sys_SetAffinityMask( const uint64_t mask )
+{
+	cpu_set_t cpu_set;
+	int cpu;
+
+	CPU_ZERO( &cpu_set );
+	for ( cpu = 0; cpu < sizeof( mask ) * 8; cpu++ ) {
+		if ( mask & (1ULL << cpu) ) {
+			CPU_SET( cpu, &cpu_set );
+		}
+	}
+
+	if ( sched_setaffinity( getpid(), sizeof( cpu_set ), &cpu_set ) == 0 ) {
+		return qtrue;
+	} else {
+		return qfalse;
+	}
+}
+#endif // USE_AFFINITY_MASK

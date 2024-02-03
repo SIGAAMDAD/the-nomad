@@ -210,11 +210,11 @@ static	int jumpSizeChanged;
 static	int	funcOffset[ FUNC_LAST ];
 
 
-static void *VM_Alloc_Compiled( vm_t *vm, int codeLength, int tableLength );
+static void *VM_Alloc_Compiled( vm_t *vm, int32_t codeLength, int32_t tableLength );
 static void VM_Destroy_Compiled( vm_t *vm );
 static void VM_FreeBuffers( void );
 
-static void Emit1( int v );
+static void Emit1( int32_t v );
 static void Emit2( int16_t v );
 static void Emit4( int32_t v );
 #if GDRx64
@@ -235,7 +235,7 @@ static void Emit8( int64_t v );
 	} while(0)
 #endif
 
-#define SWAP_INT( X, Y ) do { int T = X; X = Y; Y = T; } while ( 0 )
+#define SWAP_INT( X, Y ) do { int32_t T = X; X = Y; Y = T; } while ( 0 )
 
 // x86 instruction encoding
 
@@ -403,7 +403,7 @@ static void emit_modrm_base_offset( uint32_t reg, uint32_t base, int32_t offset 
 }
 
 // reg <-> [base + index*scale + disp]
-static void emit_modrm_base_index( uint32_t reg, uint32_t base, uint32_t index, int scale, int32_t disp )
+static void emit_modrm_base_index( uint32_t reg, uint32_t base, uint32_t index, int32_t scale, int32_t disp )
 {
 	modrm_t modrm;
 	sib_t sib;
@@ -460,7 +460,7 @@ static void emit_modrm_reg( uint32_t base, uint32_t regx )
 	Emit1( modrm.v );
 }
 
-static void emit_op_reg( int prefix, int opcode, uint32_t base, uint32_t reg )
+static void emit_op_reg( int32_t prefix, int32_t opcode, uint32_t base, uint32_t reg )
 {
 #if GDRx64
 	emit_rex2( base, reg );
@@ -474,7 +474,7 @@ static void emit_op_reg( int prefix, int opcode, uint32_t base, uint32_t reg )
 }
 
 // offset is RIP-related in 64-bit mode
-static void emit_op_reg_offset( int prefix, int opcode, uint32_t reg, int32_t offset )
+static void emit_op_reg_offset( int32_t prefix, int32_t opcode, uint32_t reg, int32_t offset )
 {
 #if GDRx64
 	emit_rex2( 0x0, reg );
@@ -487,7 +487,7 @@ static void emit_op_reg_offset( int prefix, int opcode, uint32_t reg, int32_t of
 	emit_modrm_offset( reg, offset );
 }
 
-static void emit_op_reg_base_offset( int prefix, int opcode, uint32_t reg, uint32_t base, int32_t offset )
+static void emit_op_reg_base_offset( int32_t prefix, int32_t opcode, uint32_t reg, uint32_t base, int32_t offset )
 {
 #if GDRx64
 	emit_rex2( base, reg );
@@ -500,7 +500,7 @@ static void emit_op_reg_base_offset( int prefix, int opcode, uint32_t reg, uint3
 	emit_modrm_base_offset( reg, base, offset );
 }
 
-static void emit_op2_reg_base_offset( int prefix, int opcode, int opcode2, uint32_t reg, uint32_t base, int32_t offset )
+static void emit_op2_reg_base_offset( int32_t prefix, int32_t opcode, int32_t opcode2, uint32_t reg, uint32_t base, int32_t offset )
 {
 #if GDRx64
 	emit_rex2( base, reg );
@@ -516,7 +516,7 @@ static void emit_op2_reg_base_offset( int prefix, int opcode, int opcode2, uint3
 }
 
 
-static void emit_op_reg_base_index( int prefix, int opcode, uint32_t reg, uint32_t base, uint32_t index, int scale, int32_t disp )
+static void emit_op_reg_base_index( int32_t prefix, int32_t opcode, uint32_t reg, uint32_t base, uint32_t index, int32_t scale, int32_t disp )
 {
 	if ( ( index & R_MASK ) == 4 ) {
 		if ( scale == 1 && ( base & R_MASK ) != 4 ) {
@@ -543,7 +543,7 @@ static void emit_op_reg_base_index( int prefix, int opcode, uint32_t reg, uint32
 }
 
 
-static void emit_op_reg_index_offset( int opcode, uint32_t reg, uint32_t index, int scale, int32_t offset )
+static void emit_op_reg_index_offset( int32_t opcode, uint32_t reg, uint32_t index, int32_t scale, int32_t offset )
 {
 	modrm_t modrm;
 	sib_t sib;
@@ -587,7 +587,7 @@ static void emit_lea_base_index( uint32_t reg, uint32_t base, uint32_t index )
 }
 
 #if 0
-static void emit_lea_index_scale( uint32_t reg, uint32_t index, int scale, int32_t offset )
+static void emit_lea_index_scale( uint32_t reg, uint32_t index, int32_t scale, int32_t offset )
 {
 	emit_op_reg_index_offset( 0x8D, reg, index, scale, offset );
 }
@@ -812,7 +812,7 @@ static void emit_load4_index( uint32_t reg, uint32_t base, uint32_t index )
 }
 
 #if 0
-static void emit_load4_index_offset( uint32_t reg, uint32_t base, uint32_t index, int scale, int32_t offset )
+static void emit_load4_index_offset( uint32_t reg, uint32_t base, uint32_t index, int32_t scale, int32_t offset )
 {
 	emit_op_reg_base_index( 0, 0x8B, reg, base, index, scale, offset );
 }
@@ -847,32 +847,32 @@ static void emit_store2_rx( uint32_t reg, uint32_t base, int32_t offset )
 	emit_op_reg_base_offset( 0, 0x89, reg, base, offset );
 }
 
-static void emit_store2_imm16( int imm16, uint32_t base, int32_t offset )
+static void emit_store2_imm16( int32_t imm16, uint32_t base, int32_t offset )
 {
 	Emit1( 0x66 );
 	emit_op_reg_base_offset( 0, 0xC7, 0x0, base, offset );
 	Emit2( imm16 );
 }
 
-static void emit_store2_imm16_index( int imm16, uint32_t base, uint32_t index )
+static void emit_store2_imm16_index( int32_t imm16, uint32_t base, uint32_t index )
 {
 	Emit1( 0x66 );
 	emit_op_reg_base_index( 0, 0xC7, 0x0, base, index, 1, 0 );
 	Emit2( imm16 );
 }
 
-static void emit_store1_rx( int reg, uint32_t base, int32_t offset )
+static void emit_store1_rx( int32_t reg, uint32_t base, int32_t offset )
 {
 	emit_op_reg_base_offset( 0, 0x88, reg, base, offset );
 }
 
-static void emit_store1_imm8( int imm8, uint32_t base, int32_t offset )
+static void emit_store1_imm8( int32_t imm8, uint32_t base, int32_t offset )
 {
 	emit_op_reg_base_offset( 0, 0xC6, 0x0, base, offset );
 	Emit1( imm8 );
 }
 
-static void emit_store1_imm8_index( int imm8, uint32_t base, uint32_t index )
+static void emit_store1_imm8_index( int32_t imm8, uint32_t base, uint32_t index )
 {
 	emit_op_reg_base_index( 0, 0xC6, 0x0, base, index, 1, 0 );
 	Emit1( imm8 );
@@ -983,7 +983,7 @@ enum {
 	X_CMP
 };
 
-static void emit_op_rx_imm32( int xop, uint32_t reg, int32_t imm32 )
+static void emit_op_rx_imm32( int32_t xop, uint32_t reg, int32_t imm32 )
 {
 	if ( imm32 < -128 || imm32 > 127 ) {
 		if ( reg == R_EAX ) {
@@ -1009,7 +1009,7 @@ static void emit_op_rx_imm32( int xop, uint32_t reg, int32_t imm32 )
 }
 
 #ifdef MACRO_OPTIMIZE
-static void emit_op_mem_imm( int xop, int base, int32_t offset, int32_t imm32 )
+static void emit_op_mem_imm( int32_t xop, int32_t base, int32_t offset, int32_t imm32 )
 {
 	if ( imm32 < -128 || imm32 > 127 ) {
 		emit_op_reg_base_offset( 0, 0x81, xop, base, offset );
@@ -1021,7 +1021,7 @@ static void emit_op_mem_imm( int xop, int base, int32_t offset, int32_t imm32 )
 }
 #endif
 
-static void emit_mul_rx_imm( int reg, int32_t imm32 )
+static void emit_mul_rx_imm( int32_t reg, int32_t imm32 )
 {
 	if ( imm32 < -128 || imm32 > 127 ) {
 		emit_op_reg( 0, 0x69, reg, reg );
@@ -1032,30 +1032,30 @@ static void emit_mul_rx_imm( int reg, int32_t imm32 )
 	}
 }
 
-static void emit_shl_rx_imm( int reg, int8_t imm8 )
+static void emit_shl_rx_imm( int32_t reg, int8_t imm8 )
 {
 	emit_op_reg( 0, 0xC1, reg, 4 );
 	Emit1( imm8 );
 }
 
-static void emit_shr_rx_imm( int reg, int8_t imm8 )
+static void emit_shr_rx_imm( int32_t reg, int8_t imm8 )
 {
 	emit_op_reg( 0, 0xC1, reg, 5 );
 	Emit1( imm8 );
 }
 
-static void emit_sar_rx_imm( int reg, int8_t imm8 )
+static void emit_sar_rx_imm( int32_t reg, int8_t imm8 )
 {
 	emit_op_reg( 0, 0xC1, reg, 7 );
 	Emit1( imm8 );
 }
 
-static void emit_sub_rx( int base, int reg )
+static void emit_sub_rx( int32_t base, int32_t reg )
 {
 	emit_op_reg( 0, 0x29, base, reg );
 }
 
-static void emit_mul_rx( int base, int reg )
+static void emit_mul_rx( int32_t base, int32_t reg )
 {
 	emit_op_reg( 0x0F, 0xAF, reg, base );
 }
@@ -1164,7 +1164,7 @@ static void emit_load_sx_index( uint32_t reg, uint32_t base, uint32_t index )
 }
 
 #if 0
-static void emit_load_sx_index_offset( uint32_t reg, uint32_t base, uint32_t index, int scale, int32_t offset )
+static void emit_load_sx_index_offset( uint32_t reg, uint32_t base, uint32_t index, int32_t scale, int32_t offset )
 {
 	Emit1( 0xF3 );
 	emit_op_reg_base_index( 0x0F, 0x10, reg, base, index, scale, offset );
@@ -1415,7 +1415,7 @@ typedef struct reg_s {
 	ext_t ext;	 // zero/sign-extension flags
 } reg_t;
 
-static int opstack;
+static int32_t opstack;
 static opstack_t opstackv[PROC_OPSTACK_SIZE + 1];
 
 // cached register values
@@ -1849,7 +1849,7 @@ static void discard_top( void )
 }
 
 #if 0
-static int is_safe_arg( void )
+static int32_t is_safe_arg( void )
 {
 #ifdef DEBUG_VM
 	if ( opstack >= PROC_OPSTACK_SIZE || opstack <= 0 )
@@ -2802,7 +2802,7 @@ static const GDR_INLINE qboolean HasSSEFP( void )
 }
 
 
-static void Emit1( int v )
+static void Emit1( int32_t v )
 {
 	if ( code )
 	{
@@ -2841,7 +2841,7 @@ void Emit8( int64_t v )
 }
 
 
-static int Hex( int c )
+static int32_t Hex( int32_t c )
 {
 	if ( c >= '0' && c <= '9' ) {
 		return c - '0';
@@ -2880,7 +2880,7 @@ static void EmitString( const char *string )
 }
 
 
-static void EmitAlign( int align )
+static void EmitAlign( int32_t align )
 {
 	int i, n;
 
@@ -2892,7 +2892,7 @@ static void EmitAlign( int align )
 
 
 #if JUMP_OPTIMIZE
-static const char *NearJumpStr( int op )
+static const char *NearJumpStr( int32_t op )
 {
 	switch ( op )
 	{
@@ -2929,7 +2929,7 @@ static const char *NearJumpStr( int op )
 #endif
 
 
-static const char *FarJumpStr( int op, int *n )
+static const char *FarJumpStr( int32_t op, int32_t *n )
 {
 	switch ( op )
 	{
@@ -2962,7 +2962,7 @@ static const char *FarJumpStr( int op, int *n )
 }
 
 
-static void EmitJump( instruction_t *i, int op, int addr )
+static void EmitJump( instruction_t *i, int32_t op, int32_t addr )
 {
 	const char *str;
 	int v, jump_size = 0;
@@ -3046,9 +3046,9 @@ static void EmitJump( instruction_t *i, int op, int addr )
 }
 
 
-static void EmitCallAddr( vm_t *vm, int addr )
+static void EmitCallAddr( vm_t *vm, int32_t addr )
 {
-	const int v = instructionOffsets[ addr ] - compiledOfs;
+	const int32_t v = instructionOffsets[ addr ] - compiledOfs;
 	EmitString( "E8" );
 	Emit4( v - 5 );
 }
@@ -3056,7 +3056,7 @@ static void EmitCallAddr( vm_t *vm, int addr )
 
 static void EmitCallOffset( func_t Func )
 {
-	const int v = funcOffset[ Func ] - compiledOfs;
+	const int32_t v = funcOffset[ Func ] - compiledOfs;
 	EmitString( "E8" );		// call +funcOffset[ Func ]
 	Emit4( v - 5 );
 }
@@ -3161,7 +3161,7 @@ static void emit_CheckProc( vm_t *vm, instruction_t *ins )
 
 static void EmitCallFunc( vm_t *vm )
 {
-	static int sysCallOffset = 0;
+	static int32_t sysCallOffset = 0;
 
 	init_opstack(); // to avoid any side-effects on emit_CheckJump()
 
@@ -3333,7 +3333,7 @@ static void EmitBCPYFunc( vm_t *vm )
 }
 
 
-static void EmitFloatJump( instruction_t *i, int op, int addr )
+static void EmitFloatJump( instruction_t *i, int32_t op, int32_t addr )
 {
 	switch ( op ) {
 		case OP_EQF:
@@ -3419,7 +3419,7 @@ static void EmitDATWFunc( vm_t *vm )
 
 #ifdef CONST_OPTIMIZE
 
-static qboolean IsFloorTrap( const vm_t *vm, const int trap )
+static qboolean IsFloorTrap( const vm_t *vm, const int32_t trap )
 {
 	if ( trap == ~SG_FLOOR && vm->index == VM_SGAME )
 		return qtrue;
@@ -3431,7 +3431,7 @@ static qboolean IsFloorTrap( const vm_t *vm, const int trap )
 }
 
 
-static qboolean IsCeilTrap( const vm_t *vm, const int trap )
+static qboolean IsCeilTrap( const vm_t *vm, const int32_t trap )
 {
 	if ( trap == ~SG_CEIL && vm->index == VM_SGAME )
 		return qtrue;
@@ -3443,7 +3443,7 @@ static qboolean IsCeilTrap( const vm_t *vm, const int trap )
 }
 
 
-static qboolean NextLoad( const var_addr_t *v, const instruction_t *i, int op )
+static qboolean NextLoad( const var_addr_t *v, const instruction_t *i, int32_t op )
 {
 	if ( i->jused ) {
 		return qfalse;
@@ -3729,7 +3729,7 @@ VM_FindMOps
 Search for known macro-op sequences
 =================
 */
-static void VM_FindMOps( instruction_t *buf, int instructionCount )
+static void VM_FindMOps( instruction_t *buf, int32_t instructionCount )
 {
 	instruction_t *i;
 	int n;
@@ -3898,7 +3898,7 @@ qboolean VM_Compile( vm_t *vm, vmHeader_t *header ) {
 #endif
 
 	inst = (instruction_t*)Z_Malloc( (header->instructionCount + 8 ) * sizeof( instruction_t ), TAG_STATIC );
-	instructionOffsets = (int*)Z_Malloc( header->instructionCount * sizeof( int ), TAG_STATIC );
+	instructionOffsets = (int*)Z_Malloc( header->instructionCount * sizeof( int32_t ), TAG_STATIC );
 
 	errMsg = VM_LoadInstructions( (byte *) header + header->codeOffset, header->codeLength, header->instructionCount, inst );
 	if ( !errMsg ) {
@@ -4051,14 +4051,14 @@ __compile:
 		switch ( ci->op ) {
 
 			case OP_UNDEF:
-				emit_brk();			// int 3
+				emit_brk();			// int32_t 3
 				break;
 
 			case OP_IGNORE:
 				break;
 
 			case OP_BREAK:
-				emit_brk();			// int 3
+				emit_brk();			// int32_t 3
 				break;
 
 			case OP_ENTER:
@@ -4701,11 +4701,11 @@ __compile:
 	n = header->instructionCount * sizeof( intptr_t );
 
 	if ( code == NULL ) {
-		code = (byte*)VM_Alloc_Compiled( vm, PAD(compiledOfs,8), n );
+		code = (byte *)VM_Alloc_Compiled( vm, PAD( compiledOfs, 8 ), n );
 		if ( code == NULL ) {
 			return qfalse;
 		}
-		instructionPointers = (intptr_t*)(byte*)(code + PAD(compiledOfs,8));
+		instructionPointers = (intptr_t *)(byte *)(code + PAD( compiledOfs, 8 ) );
 		//vm->instructionPointers = instructionPointers; // for debug purposes?
 		pass = NUM_PASSES-1; // repeat last pass
 		goto __compile;
@@ -4727,12 +4727,12 @@ __compile:
 	VM_FreeBuffers();
 
 #ifdef VM_X86_MMAP
-	if ( mprotect( vm->codeBase.ptr, vm->codeSize, PROT_READ|PROT_WRITE|PROT_EXEC ) ) {
+	if ( mprotect( vm->codeBase.ptr, vm->codeSize, PROT_READ | PROT_EXEC ) ) {
 		VM_Destroy_Compiled( vm );
 		Con_Printf( COLOR_YELLOW "VM_CompileX86: mprotect failed\n" );
 		return qfalse;
 	}
-#elif _WIN32
+#elif defined(_WIN32)
 	{
 		DWORD oldProtect = 0;
 
@@ -4758,14 +4758,14 @@ __compile:
 VM_Alloc_Compiled
 =================
 */
-static void *VM_Alloc_Compiled( vm_t *vm, int codeLength, int tableLength )
+static void *VM_Alloc_Compiled( vm_t *vm, int32_t codeLength, int32_t tableLength )
 {
 	void	*ptr;
-	int		length;
+	int32_t	length;
 
 	length = codeLength + tableLength;
 #ifdef VM_X86_MMAP
-	ptr = mmap( NULL, length, PROT_READ|PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0 );
+	ptr = mmap( NULL, length, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0 );
 	if ( ptr == MAP_FAILED ) {
 		N_Error( ERR_FATAL, "VM_CompileX86: mmap failed" );
 		return NULL;
@@ -4837,7 +4837,7 @@ int32_t VM_CallCompiled( vm_t *vm, uint32_t nargs, int32_t *args )
 	vm->programStack -= ( MAX_VMMAIN_ARGS + 2 ) * sizeof( int32_t );
 
 	// set up the stack frame
-	image = (int32_t*) ( vm->dataBase + vm->programStack );
+	image = (int32_t *)( vm->dataBase + vm->programStack );
 	for ( i = 0; i < nargs; i++ ) {
 		image[i + 2] = args[i];
 	}

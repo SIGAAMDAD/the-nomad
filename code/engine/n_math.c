@@ -1,8 +1,5 @@
-#ifndef GDR_DLLCOMPILE
-#include "n_shared.h"
-#else
 #include "../engine/n_shared.h"
-#endif
+#include "../engine/n_common.h"
 
 #if defined(__SSE2__) || defined(_MSC_SSE2_)
 #define USING_SSE2

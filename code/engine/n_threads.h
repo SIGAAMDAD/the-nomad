@@ -260,10 +260,10 @@ public:
 	void ReadUnlock( void );
 	void WriteUnlock( void );
 	
-	GDR_INLINE void ReadLock( void ) const { const_cast<CThreadRWMutex *>( this )->ReadLock(); }
-	GDR_INLINE void WriteLock( void ) const { const_cast<CThreadRWMutex *>( this )->WriteLock(); }
-	GDR_INLINE void ReadUnlock( void ) const { const_cast<CThreadRWMutex *>( this )->ReadUnlock(); }
-	GDR_INLINE void WriteUnlock( void ) const { const_cast<CThreadRWMutex *>( this )->WriteUnlock(); }
+	inline void ReadLock( void ) const { const_cast<CThreadRWMutex *>( this )->ReadLock(); }
+	inline void WriteLock( void ) const { const_cast<CThreadRWMutex *>( this )->WriteLock(); }
+	inline void ReadUnlock( void ) const { const_cast<CThreadRWMutex *>( this )->ReadUnlock(); }
+	inline void WriteUnlock( void ) const { const_cast<CThreadRWMutex *>( this )->WriteUnlock(); }
 private:
 #ifdef _WIN32
 	SRWLOCK m_hLock;

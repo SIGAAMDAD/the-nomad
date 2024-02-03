@@ -32,47 +32,47 @@ int32_t PASSFLOAT( float x )
     return *(int32_t *)&floatTemp;
 }
 
-void trap_Print( const char *str )
+void Print( const char *str )
 {
     vmi.trap_Print( str );
 }
 
-void trap_Error( const char *str )
+void Error( const char *str )
 {
     vmi.trap_Error( str );
 }
 
-int trap_Argc( void )
+int Cmd_Argc( void )
 {
     return vmi.trap_Argc();
 }
 
-void trap_Argv( int n, char *buf, int bufferLength )
+void Cmd_Argv( int n, char *buf, int bufferLength )
 {
     vmi.trap_Argv( n, buf, bufferLength );
 }
 
-void trap_Args( char *buf, int bufferLength )
+void Cmd_Args( char *buf, int bufferLength )
 {
     vmi.trap_Args( buf, bufferLength );
 }
 
-void trap_SendConsoleCommand( const char *text )
+void Cmd_SendConsoleCommand( const char *text )
 {
     vmi.trap_SendConsoleCommand( text );
 }
 
-void trap_AddCommand( const char *cmdName )
+void Cmd_AddCommand( const char *cmdName )
 {
     vmi.trap_AddCommand( cmdName );
 }
 
-void trap_RemoveCommand( const char *cmdName )
+void Cmd_RemoveCommand( const char *cmdName )
 {
     vmi.trap_RemoveCommand( cmdName );
 }
 
-int trap_MemoryRemaining( void )
+int Cmd_MemoryRemaining( void )
 {
     return vmi.trap_MemoryRemaining();
 }
@@ -82,7 +82,7 @@ void Sys_SnapVector( float *v )
     vmi.Sys_SnapVector( v );
 }
 
-qboolean trap_CheckWallHit( const vec3_t *origin, dirtype_t dir )
+qboolean G_CheckWallHit( const vec3_t *origin, dirtype_t dir )
 {
     return vmi.trap_CheckWallHit( origin, dir );
 }
@@ -112,62 +112,62 @@ void G_SetCameraData( const vec2_t *origin, float zoom, float rotation )
     vmi.G_SetCameraData( origin, zoom, rotation );
 }
 
-int trap_Milliseconds( void )
+int Sys_Milliseconds( void )
 {
     return vmi.trap_Milliseconds();
 }
 
-void trap_Key_SetCatcher( int catcher )
+void Key_SetCatcher( int catcher )
 {
     vmi.trap_Key_SetCatcher( catcher );
 }
 
-int trap_Key_GetCatcher( void )
+int Key_GetCatcher( void )
 {
     return vmi.trap_Key_GetCatcher();
 }
 
-int trap_Key_GetKey( const char *key )
+int Key_GetKey( const char *key )
 {
     return vmi.trap_Key_GetKey( key );
 }
 
-void trap_Key_ClearStates( void )
+void Key_ClearStates( void )
 {
     vmi.trap_Key_ClearStates();
 }
 
-sfxHandle_t trap_Snd_RegisterSfx( const char *npath )
+sfxHandle_t Snd_RegisterSfx( const char *npath )
 {
     return vmi.trap_Snd_RegisterSfx( npath );
 }
 
-sfxHandle_t trap_Snd_RegisterTrack( const char *npath )
+sfxHandle_t Snd_RegisterTrack( const char *npath )
 {
     return vmi.trap_Snd_RegisterTrack( npath );
 }
 
-void trap_Snd_QueueTrack( sfxHandle_t track )
+void Snd_QueueTrack( sfxHandle_t track )
 {
     vmi.trap_Snd_QueueTrack( track );
 }
 
-void trap_Snd_PlaySfx( sfxHandle_t sfx )
+void Snd_PlaySfx( sfxHandle_t sfx )
 {
     vmi.trap_Snd_PlaySfx( sfx );
 }
 
-void trap_Snd_StopSfx( sfxHandle_t sfx )
+void Snd_StopSfx( sfxHandle_t sfx )
 {
     vmi.trap_Snd_StopSfx( sfx );
 }
 
-void trap_Snd_SetLoopingTrack( sfxHandle_t track )
+void Snd_SetLoopingTrack( sfxHandle_t track )
 {
     vmi.trap_Snd_SetLoopingTrack( track );
 }
 
-void trap_Snd_ClearLoopingTrack( void )
+void Snd_ClearLoopingTrack( void )
 {
     vmi.trap_Snd_ClearLoopingTrack();
 }
@@ -217,47 +217,47 @@ void Sys_GetGPUConfig( gpuConfig_t *config )
     vmi.Sys_GetGPUConfig( config );
 }
 
-uint32_t trap_FS_FOpenFile( const char *npath, file_t *f, fileMode_t mode )
+uint32_t FS_FOpenFile( const char *npath, file_t *f, fileMode_t mode )
 {
     return vmi.FS_FOpenFile( npath, f, mode, H_SGAME );
 }
 
-file_t trap_FS_FOpenRead( const char *npath )
+file_t FS_FOpenRead( const char *npath )
 {
     return vmi.FS_FOpenRead( npath, H_SGAME );
 }
 
-file_t trap_FS_FOpenWrite( const char *npath )
+file_t FS_FOpenWrite( const char *npath )
 {
     return vmi.FS_FOpenWrite( npath, H_SGAME );
 }
 
-void trap_FS_FClose( file_t f )
+void FS_FClose( file_t f )
 {
     vmi.FS_FClose( f, H_SGAME );
 }
 
-int trap_FS_Write( const void *data, int size, file_t f )
+int FS_Write( const void *data, int size, file_t f )
 {
     return vmi.FS_Write( data, size, f, H_SGAME );
 }
 
-int trap_FS_Read( void *data, int size, file_t f )
+int FS_Read( void *data, int size, file_t f )
 {
     return vmi.FS_Read( data, size, f, H_SGAME );
 }
 
-int trap_FS_GetFileList( const char *path, const char *extension, char *listbuf, int bufsize )
+int FS_GetFileList( const char *path, const char *extension, char *listbuf, int bufsize )
 {
     return vmi.FS_GetFileList( path, extension, listbuf, bufsize );
 }
 
-int trap_FS_FileSeek( file_t f, fileOffset_t offset, int whence )
+int FS_FileSeek( file_t f, fileOffset_t offset, int whence )
 {
     return vmi.FS_FileSeek( f, offset, whence, H_SGAME );
 }
 
-int trap_FS_FileTell( file_t f )
+int FS_FileTell( file_t f )
 {
     return vmi.FS_FileTell( f, H_SGAME );
 }

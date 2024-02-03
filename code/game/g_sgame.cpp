@@ -48,7 +48,7 @@ static void *VM_ArgPtr(intptr_t addr)
 static intptr_t G_SGameSystemCalls( intptr_t *args )
 {
     switch (args[0]) {
-    case SG_CASTRAY:
+    case SG_G_CASTRAY:
         g_world.CastRay( (ray_t *)VMA( 1 ) );
         return 0;
     case SG_G_CHECK_WALL_COLLISION:
@@ -70,7 +70,7 @@ static intptr_t G_SGameSystemCalls( intptr_t *args )
         return re.RegisterSpriteSheet( (const char *)VMA( 1 ), args[2], args[3], args[4], args[5] );
     case SG_RE_REGISTERSPRITE:
         return re.RegisterSprite( args[1], args[2] );
-    case SG_SETCAMERAINFO:
+    case SG_G_SETCAMERAINFO:
         VM_CHECKBOUNDS( args[1], sizeof(vec2_t) );
         G_SetCameraData( (const float *)VMA( 1 ), VMF( 2 ), VMF( 3 ) );
         return 0;
@@ -89,7 +89,7 @@ static intptr_t G_SGameSystemCalls( intptr_t *args )
         VM_CHECKBOUNDS( args[2], args[3] );
         Cvar_VariableStringBuffer( (const char *)VMA( 1 ), (char *)VMA( 2 ), args[3] );
         return 0;
-    case SG_MILLISECONDS:
+    case SG_SYS_MILLISECONDS:
         return Sys_Milliseconds();
     case SG_PRINT:
         Con_Printf( "%s", (const char *)VMA( 1 ) );
@@ -97,14 +97,12 @@ static intptr_t G_SGameSystemCalls( intptr_t *args )
     case SG_ERROR:
         N_Error( ERR_DROP, "%s", (const char *)VMA( 1 ) );
         return 0;
-    /*
     case SG_RE_SETCOLOR:
         re.SetColor( (const float *)VMA( 1 ) );
         return 0;
     case SG_RE_DRAWIMAGE:
         re.DrawImage( VMF( 1 ), VMF( 2 ), VMF( 3 ), VMF( 4 ), VMF( 5 ), VMF( 6 ), VMF( 7 ), VMF( 8 ), args[9]);
         return 0;
-    */
     case SG_RE_ADDLIGHTOSCENE:
         return 0;
     case SG_RE_ADDPOLYTOSCENE:
@@ -144,46 +142,45 @@ static intptr_t G_SGameSystemCalls( intptr_t *args )
     case SG_SND_CLEARLOOPINGTRACK:
         Snd_ClearLoopingTrack();
         return 0;
-    case SG_SND_QUEUETRACK:
-        Snd_QueueTrack( args[1] );
+    case SG_CMD_ADDCOMMAND:
+        G_AddSGameCommand( (const char *)VMA( 1 ) );
         return 0;
-    case SG_ADDCOMMAND:
+    case SG_CMD_REMOVECOMMAND:
+        Cmd_RemoveCommand( (const char *)VMA( 1 ) );
         return 0;
-    case SG_REMOVECOMMAND:
-        return 0;
-    case SG_ARGC:
+    case SG_CMD_ARGC:
         return Cmd_Argc();
-    case SG_ARGV:
+    case SG_CMD_ARGV:
         VM_CHECKBOUNDS( args[2], args[3] );
         Cmd_ArgvBuffer( args[1], (char *)VMA( 2 ), args[3] );
         return 0;
-    case SG_ARGS:
+    case SG_CMD_ARGS:
         return 0;
     case SG_KEY_GETCATCHER:
         return Key_GetCatcher();
     case SG_KEY_SETCATCHER:
-        // don't all the sgame module to close the console
+        // don't allow the sgame module to close the console
         Key_SetCatcher( args[1] | ( Key_GetCatcher() & KEYCATCH_CONSOLE ) );
         return 0;
     case SG_KEY_ISDOWN:
         return Key_IsDown( args[1] );
     case SG_KEY_GETKEY:
-        return Key_GetKey( (const char *)VMA(1) );
+        return Key_GetKey( (const char *)VMA( 1 ) );
     case SG_KEY_CLEARSTATES:
         Key_ClearStates();
         return 0;
     case SG_KEY_ANYDOWN:
         return Key_AnyDown();
-    case SG_GETGPUCONFIG:
+    case SG_SYS_GETGPUCONFIG:
         VM_CHECKBOUNDS( args[1], sizeof(gpuConfig_t) );
         memcpy( (gpuConfig_t *)VMA( 1 ), &gi.gpuConfig, sizeof(gpuConfig_t) );
         return 0;
-    case SG_GETCLIPBOARDDATA:
+    case SG_SYS_GETCLIPBOARDDATA:
         return 0;
-    case SG_SENDCONSOLECOMMAND:
+    case SG_CMD_SENDCONSOLECOMMAND:
         Cbuf_ExecuteText( EXEC_APPEND, (const char *)VMA( 1 ) );
         return 0;
-    case SG_MEMORY_REMAINING:
+    case SG_SYS_MEMORYREMAINING:
         return Hunk_MemoryRemaining();
     case SG_G_SETACTIVEMAP:
         VM_CHECKBOUNDS( args[2], sizeof(mapinfo_t) );
@@ -245,23 +242,23 @@ static intptr_t G_SGameSystemCalls( intptr_t *args )
         ImGui_SetWindowCollapsed( args[1] );
         return 0;
     case IMGUI_SET_WINDOW_POS:
-        ImGui_SetWindowPos( VMF(1), VMF(2) );
+        ImGui_SetWindowPos( VMF( 1 ), VMF( 2 ) );
         return 0;
     case IMGUI_SET_WINDOW_SIZE:
-        ImGui_SetWindowSize( VMF(1), VMF(2) );
+        ImGui_SetWindowSize( VMF( 1 ), VMF( 2 ) );
         return 0;
     case IMGUI_SET_WINDOW_FONTSCALE:
-        ImGui_SetWindowFontScale( VMF(1) );
+        ImGui_SetWindowFontScale( VMF( 1 ) );
         return 0;
     case IMGUI_BEGIN_MENU:
-        return ImGui_BeginMenu( (const char *)VMA(1) );
+        return ImGui_BeginMenu( (const char *)VMA( 1 ) );
     case IMGUI_END_MENU:
         ImGui_EndMenu();
         return 0;
     case IMGUI_MENU_ITEM:
         return ImGui_MenuItem( (const char *)VMA( 1 ), (const char *)VMA( 2 ), args[3] );
     case IMGUI_SET_ITEM_TOOLTIP:
-        ImGui_SetItemTooltip( (const char *)VMA(1) );
+        ImGui_SetItemTooltip( (const char *)VMA( 1 ) );
         return 0;
     case IMGUI_INPUT_TEXT:
         VM_CHECKBOUNDS( args[2], args[3] );
@@ -334,68 +331,68 @@ static intptr_t G_SGameSystemCalls( intptr_t *args )
     case IMGUI_GET_FONTSCALE:
         return FloatToInt( ImGui_GetFontScale() );
     case IMGUI_SET_CURSOR_POS:
-        ImGui_SetCursorPos( VMF(1), VMF(2) );
+        ImGui_SetCursorPos( VMF( 1 ), VMF( 2 ) );
         return 0;
     case IMGUI_GET_CURSOR_POS:
-        ImGui_GetCursorPos( (float *)VMA(1), (float *)VMA(2) );
+        ImGui_GetCursorPos( (float *)VMA( 1 ), (float *)VMA( 2 ) );
         return 0;
     case IMGUI_SET_CURSOR_SCREEN_POS:
-        ImGui_SetCursorScreenPos( VMF(1), VMF(2) );
+        ImGui_SetCursorScreenPos( VMF( 1 ), VMF( 2 ) );
         return 0;
     case IMGUI_GET_CURSOR_SCREEN_POS:
-        ImGui_GetCursorScreenPos( (float *)VMA(1), (float *)VMA(2) );
+        ImGui_GetCursorScreenPos( (float *)VMA( 1 ), (float *)VMA( 2 ) );
         return 0;
     case IMGUI_PUSH_COLOR:
         VM_CHECKBOUNDS( args[2], sizeof(vec4_t) );
-        ImGui_PushColor( (ImGuiCol)args[1], (const float *)VMA(2) );
+        ImGui_PushColor( (ImGuiCol)args[1], (const float *)VMA( 2 ) );
         return 0;
     case IMGUI_POP_COLOR:
         ImGui_PopColor();
         return 0;
     case IMGUI_SAMELINE:
-        ImGui_SameLine( VMF(1) );
+        ImGui_SameLine( VMF( 1 ) );
         return 0;
     case IMGUI_NEWLINE:
         ImGui_NewLine();
         return 0;
     case IMGUI_TEXT:
-        ImGui_Text( (const char *)VMA(1) );
+        ImGui_Text( (const char *)VMA( 1 ) );
         return 0;
     case IMGUI_COLOREDTEXT:
         VM_CHECKBOUNDS( args[1], sizeof(vec4_t) );
-        ImGui_ColoredText( (const float *)VMA(1), (const char *)VMA(2) );
+        ImGui_ColoredText( (const float *)VMA( 1 ), (const char *)VMA( 2 ) );
         return 0;
     case IMGUI_SEPARATOR_TEXT:
-        ImGui_SeparatorText( (const char *)VMA(1) );
+        ImGui_SeparatorText( (const char *)VMA( 1 ) );
         return 0;
     case IMGUI_SEPARATOR:
         ImGui_Separator();
         return 0;
     case IMGUI_PROGRESSBAR:
-        ImGui_ProgressBar( VMF(1) );
+        ImGui_ProgressBar( VMF( 1 ) );
         return 0;
     case IMGUI_OPEN_POPUP:
-        ImGui_OpenPopup( (const char *)VMA(1) );
+        ImGui_OpenPopup( (const char *)VMA( 1 ) );
         return 0;
     case IMGUI_CLOSE_CURRENT_POPUP:
         ImGui_CloseCurrentPopup();
         return 0;
     case IMGUI_BEGIN_POPUP_MODAL:
-        return ImGui_BeginPopupModal( (const char *)VMA(1), args[2] );
+        return ImGui_BeginPopupModal( (const char *)VMA( 1) , args[2] );
     case IMGUI_END_POPUP:
         ImGui_EndPopup();
         return 0;
     case IMGUI_BUTTON:
-        return ImGui_Button( (const char *)VMA(1) );
+        return ImGui_Button( (const char *)VMA( 1 ) );
     case TRAP_MEMSET:
-        VM_CHECKBOUNDS(args[1], args[3]);
-        return (intptr_t)memset(VMA(1), args[2], args[3]);
+        VM_CHECKBOUNDS( args[1], args[3] );
+        return (intptr_t)memset( VMA( 1 ), args[2], args[3] );
 	case TRAP_MEMCPY:
-        VM_CHECKBOUNDS2(args[1], args[2], args[3]);
-        return (intptr_t)memcpy(VMA(1), VMA(2), args[3]);
+        VM_CHECKBOUNDS2( args[1], args[2], args[3] );
+        return (intptr_t)memcpy( VMA( 1 ), VMA( 2 ), args[3] );
 	case TRAP_STRNCPY:
-        VM_CHECKBOUNDS(args[1], args[3]);
-        return (intptr_t)strncpy((char *)VMA(1), (const char *)VMA(2), args[3]);
+        VM_CHECKBOUNDS( args[1], args[3] );
+        return (intptr_t)strncpy( (char *)VMA( 1 ), (const char *)VMA( 2 ), args[3] );
     case TRAP_STRLEN:
         return (int32_t)strlen( (const char *)VMA( 1 ) );
     case TRAP_STRCHR:
@@ -409,38 +406,38 @@ static intptr_t G_SGameSystemCalls( intptr_t *args )
     case TRAP_STRSTR:
         return (intptr_t)strstr( (const char *)VMA( 1 ), (const char *)VMA( 2 ) );
 	case TRAP_FLOOR:
-        return FloatToInt(floor(VMF(1)));
+        return FloatToInt( floor( VMF(1 ) ) );
 	case TRAP_SIN:
-        return FloatToInt(sin(VMF(1)));
+        return FloatToInt( sin( VMF( 1 ) ) );
 	case TRAP_COS:
-        return FloatToInt(cos(VMF(1)));
+        return FloatToInt( cos( VMF( 1 ) ) );
 	case TRAP_ATAN2:
-        return FloatToInt(atan2(VMF(1), VMF(2)));
+        return FloatToInt( atan2( VMF( 1 ), VMF( 2 ) ) );
 	case TRAP_CEIL:
-        return FloatToInt(ceil(VMF(1)));
+        return FloatToInt( ceil( VMF( 1 ) ) );
     case TRAP_SQRT:
-        return FloatToInt(sqrt(VMF(1)));
+        return FloatToInt( sqrt( VMF( 1 ) ) );
     case TRAP_POW:
-        return FloatToInt(pow(VMF(1), VMF(2)));
+        return FloatToInt( pow( VMF( 1 ), VMF( 2 ) ) );
     case TRAP_LOGF:
-        return FloatToInt(logf(VMF(1)));
+        return FloatToInt( logf( VMF( 1 ) ) );
     case TRAP_POWF:
-        return FloatToInt(powf(VMF(1), VMF(2)));
+        return FloatToInt( powf( VMF( 1 ), VMF( 2 ) ) );
     case TRAP_SQRTF:
-        return FloatToInt(sqrtf(VMF(1)));
+        return FloatToInt( sqrtf( VMF( 1 ) ) );
     default:
-        N_Error(ERR_DROP, "G_SGameSystemCalls: bad call: %lu\n", args[0]);
+        N_Error( ERR_DROP, "G_SGameSystemCalls: bad call: %lu\n", args[0] );
     };
     return -1;
 }
 
-static intptr_t GDR_DECL G_SGameDllSyscall(intptr_t arg, uint32_t numArgs, ...)
+static intptr_t GDR_DECL G_SGameDllSyscall( intptr_t arg, uint32_t numArgs, ... )
 {
     va_list argptr;
     intptr_t args[MAX_VMSYSCALL_ARGS + 1];
     args[0] = arg;
 
-    va_start(argptr, numArgs);
+    va_start( argptr, numArgs );
     for (uint32_t i = 1; i < numArgs; i++) {
         args[i] = va_arg(argptr, intptr_t);
     }
@@ -449,21 +446,21 @@ static intptr_t GDR_DECL G_SGameDllSyscall(intptr_t arg, uint32_t numArgs, ...)
     return G_SGameSystemCalls(args);
 }
 
-void G_ShutdownSGame(void)
+void G_ShutdownSGame( void )
 {
     Key_SetCatcher( Key_GetCatcher() & ~KEYCATCH_SGAME );
 
-    if (!sgvm) {
+    if ( !sgvm ) {
         return;
     }
 
-    VM_Call(sgvm, 0, SGAME_SHUTDOWN);
-    VM_Free(sgvm);
+    VM_Call( sgvm, 0, SGAME_SHUTDOWN );
+    VM_Free( sgvm );
     sgvm = NULL;
-    FS_VM_CloseFiles(H_SGAME);
+    FS_VM_CloseFiles( H_SGAME );
 }
 
-void G_InitSGame(void)
+void G_InitSGame( void )
 {
     vmInterpret_t interpret;
     CTimer timer;
@@ -500,7 +497,7 @@ void G_InitSGame(void)
 /*
 * G_SGameCommand: see if the current console command is claimed by the sgame
 */
-qboolean G_SGameCommand(void)
+qboolean G_SGameCommand( void )
 {
     qboolean bRes;
 

@@ -9,6 +9,8 @@ extern "C" {
 
 #include <stdint.h>
 #include <string.h>
+#include "n_common.h"
+
 #ifdef _NOMAD_DEBUG
 #define DEBUG_VM
 #endif

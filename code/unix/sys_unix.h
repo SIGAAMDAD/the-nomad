@@ -18,6 +18,7 @@
 #include <sys/sysinfo.h>
 #include <sys/resource.h>
 #include <signal.h>
+#include <pwd.h>
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE

@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "../engine/n_common.h"
+
 extern uint32_t cvar_modifiedFlags;
 
 void Cvar_ResetGroup( cvarGroup_t group, qboolean resetModifiedFlags );

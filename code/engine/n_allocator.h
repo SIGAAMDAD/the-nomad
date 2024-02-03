@@ -3,9 +3,11 @@
 
 #pragma once
 
+#include "../engine/n_common.h"
 #include <EASTL/allocator.h>
 #include <EASTL/vector.h>
 #include <EASTL/type_traits.h>
+
 class CHunkTempAllocator
 {
 public:

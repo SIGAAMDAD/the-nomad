@@ -1,8 +1,5 @@
-#ifdef Q3_VM
 #include "../engine/n_shared.h"
-#else
-#include "code/engine/n_shared.h"
-#endif
+#include "../engine/n_common.h"
 
 // undefined symbol: CPU_flags when compiling dlls
 #if defined(GDR_DLLCOMPILE) || defined(UI_HARD_LINKED) || defined(SGAME_HARD_LINKED)

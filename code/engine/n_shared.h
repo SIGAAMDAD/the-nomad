@@ -960,10 +960,8 @@ void Con_DrawConsole(void);
 void Con_Init(void);
 void Con_Shutdown(void);
 
-void GDR_DECL Con_Printf(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
-void GDR_DECL Con_DPrintf(const char *fmt, ...) GDR_ATTRIBUTE((format(printf, 1, 2)));
-
-#include "n_common.h"
+void GDR_DECL Con_Printf( const char *fmt, ... ) GDR_ATTRIBUTE((format(printf, 1, 2)));
+void GDR_DECL Con_DPrintf( const char *fmt, ... ) GDR_ATTRIBUTE((format(printf, 1, 2)));
 
 #define PAD(base, alignment)	(((base)+(alignment)-1) & ~((alignment)-1))
 #define PADLEN(base, alignment)	(PAD((base), (alignment)) - (base))

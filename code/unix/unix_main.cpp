@@ -168,7 +168,7 @@ static const exittype_t *exit_type;
 //
 // Sys_MessageBox: adapted slightly from the source engine
 //
-int Sys_MessageBox(const char *title, const char *text, bool ShowOkAndCancelButton)
+int Sys_MessageBox( const char *title, const char *text, bool ShowOkAndCancelButton )
 {
     int buttonid = 0;
     SDL_MessageBoxData boxData = { 0 };
@@ -187,7 +187,7 @@ int Sys_MessageBox(const char *title, const char *text, bool ShowOkAndCancelButt
     return ( buttonid == 1 );
 }
 
-void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error(const char *fmt, ...)
+void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error( const char *fmt, ... )
 {
     va_list argptr;
 	char text[MAXPRINTMSG];
@@ -212,13 +212,8 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error(const
 	va_end( argptr );
 
     Sys_DebugStacktrace( MAX_STACKTRACE_FRAMES );
-
-    if (exit_type) {
-        Sys_MessageBox( "System Error", text, false );
-    }
-    else {
-        Sys_MessageBox( "Engine Error", text, false );
-    }
+    
+    Sys_MessageBox( "Engine Error", text, false );
 
     msg = va("Sys_Error: %s\n", text);
     write(STDERR_FILENO, msg, strlen(msg));
@@ -230,7 +225,7 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error(const
 	Sys_Exit( -1 ); // bk010104 - use single exit point.
 }
 
-void GDR_NORETURN Sys_Exit(int code)
+void GDR_NORETURN Sys_Exit( int code )
 {
     const char *err;
 #ifdef _NOMAD_DEBUG
@@ -239,31 +234,34 @@ void GDR_NORETURN Sys_Exit(int code)
     const bool debug = false;
 #endif
 
-    if (code == -1) {
-        if (exit_type)
+    if ( code == -1 ) {
+        if ( exit_type ) {
             err = exit_type->str;
-        else
+        } else {
             err = "No System Error";
-        if (N_stricmp("No System Error", err) != 0)
+        }
+        if ( N_stricmp( "No System Error", err ) != 0 ) {
             Con_Printf( "Exiting with System Error: %s\n", err );
-        else
+        } else {
             Con_Printf( "Exiting with Engine Error\n" );
+        }
     }
     Sys_ShutdownConsole();
     if ( code == 0 || code == 1 ) {
         Con_Printf( "Exiting App (EXIT_SUCCESS)\n" );
     }
 
-    if (code == -1)
-        exit(EXIT_FAILURE);
+    if ( code == -1 ) {
+        exit( EXIT_FAILURE );
+    }
     
-    exit(EXIT_SUCCESS);
+    exit( EXIT_SUCCESS );
 }
 
 
-void fpe_exception_handler(int signum)
+void fpe_exception_handler( int signum )
 {
-    signal(SIGFPE, fpe_exception_handler);
+    signal( SIGFPE, fpe_exception_handler );
 }
 
 void Catch_Signal(int signum)
@@ -272,8 +270,9 @@ void Catch_Signal(int signum)
         if (signals[i].id == signum)
             exit_type = &signals[i];
     }
-    if (!exit_type)
+    if ( !exit_type ) {
         exit_type = &signals[arraylen(signals) - 1];
+    }
     
     Sys_Exit(-1);
 }
@@ -562,15 +561,15 @@ const char *Sys_GetError(void) {
     return strerror( errno );
 }
 
-tty_err Sys_InitConsole(void)
+tty_err Sys_InitConsole( void )
 {
     struct termios tc;
     struct rlimit limit;
     int err;
     const char *term;
 
-    signal(SIGTTIN, SIG_IGN);
-    signal(SIGTTOU, SIG_IGN);
+    signal( SIGTTIN, SIG_IGN );
+    signal( SIGTTOU, SIG_IGN );
 
     Con_Printf("Sys_InitConsole: initializing logging\n");
 
@@ -605,8 +604,8 @@ tty_err Sys_InitConsole(void)
     tty_eof = tty_tc.c_cc[VEOF];
     tc = tty_tc;
 
-    tc.c_lflag &= ~(ECHO | ICANON);
-    tc.c_iflag &= ~(ISTRIP | INPCK);
+    tc.c_lflag &= ~( ECHO | ICANON );
+    tc.c_iflag &= ~( ISTRIP | INPCK );
     tc.c_cc[VMIN] = 1;
     tc.c_cc[VTIME] = 0;
     tcsetattr(STDIN_FILENO, TCSADRAIN, &tc);
@@ -618,13 +617,14 @@ tty_err Sys_InitConsole(void)
     tty_Show();
 
     err = getrlimit( RLIMIT_CORE, &limit );
-    if (err != 0) {
-        Con_Printf( "WARNING: failed to set core dump file limit.\n" );
+    if ( err != 0 ) {
+        Con_Printf( COLOR_YELLOW "WARNING: failed to set core dump file limit.\n" );
     }
 
-    if (limit.rlim_max < 1) {
+    if ( limit.rlim_max < 1 ) {
         limit.rlim_max = 1;
     }
+    setrlimit( RLIMIT_CORE, &limit );
 
     return TTY_ENABLED;
 }
@@ -635,10 +635,10 @@ void Sys_PrintBinVersion( const char* name )
 	const char *time = __TIME__;
 	const char *sep = "==============================================================";
 
-	fprintf( stdout, "\n\n%s\n", sep );
-	fprintf( stdout, "Linux GLNomad Full Executable  [%s %s]\n", date, time );
-	fprintf( stdout, " local install: %s\n", name );
-	fprintf( stdout, "%s\n\n", sep );
+	Con_Printf( "\n\n%s\n", sep );
+	Con_Printf( "Linux \"The Nomad\" Full Executable  [%s %s]\n", date, time );
+	Con_Printf( " local install: %s\n", name );
+	Con_Printf( "%s\n\n", sep );
 }
 
 /*
@@ -696,57 +696,76 @@ int Sys_ParseArgs(int argc, const char *argv[])
     return 0;
 }
 
-static void SignalHandle(int signum)
+static void SignalHandle( int signum )
 {
-    if (signum == SIGSEGV) {
+    if ( signum == SIGSEGV ) {
         exit_type = &signals[0];
         Sys_SetError( ERR_SEGGY );
-        Sys_Error("Memory Access Violation (SIGSEGV)");
-    } else if (signum == SIGABRT) {
+        Sys_Error( "An unrecoverable error has occured within the engine, please click OK and report this error.\n\n(FOR DEVELOPERS) Memory Access Violation (SIGSEGV)" );
+    }
+    else if ( signum == SIGABRT ) {
         exit_type = &signals[2];
-        Sys_Error("recieved SIGABRT");
-    } else if (signum == SIGTERM) {
-        signal(SIGTERM, SignalHandle);
-    } else if (signum == SIGBUS) {
+        Sys_SetError( ERR_ASSERTION );
+        Sys_Error( "An unrecoverable error has occured within the engine, please click OK and report this error.\n\n(FOR DEVELOPERS) Debug Assertion (SIGABRT)" );
+    }
+    else if ( signum == SIGTERM ) {
+        Con_DPrintf( "Recieved SIGTERM, ignoring.\n" );
+        signal( SIGTERM, SignalHandle );
+    }
+    else if ( signum == SIGBUS ) {
         exit_type = &signals[1];
         Sys_SetError( ERR_BUS );
-        Sys_Error("Cannot Address Memory (SIGBUS)");
-    } else if (signum == SIGILL) {
+        Sys_Error( "An unrecoverable error has occured within the engine, please click OK and report this error.\n\n(FOR DEVELOPERS) Invalid memory address access (SIGBUS)" );
+    }
+    else if ( signum == SIGILL ) {
         exit_type = &signals[5];
-        Sys_DebugStacktrace(1024);
-        Sys_Error("Illegal Instruction (SIGILL)");
-    } else if (signum == SIGFPE) {
-        Sys_DebugStacktrace(1024); // do a stack dump
-        Sys_Error("Floating Point Exception (SIGFPE)");
-    } else if (signum == SIGTRAP) {
+        Sys_Error( "An unrecoverable error has occured within the engine, please click OK and report this error.\n\n(FOR DEVELOPERS) Illegal CPU instruction (SIGILL)" );
+    }
+    else if ( signum == SIGFPE ) {
         static qboolean recursive = qfalse;
-        Con_DPrintf("DebugBreak Triggered...\n");
-        Sys_DebugStacktrace(1024); // do a stack dump
+        Con_DPrintf( "FPE Triggered...\n" );
+        Sys_DebugStacktrace( 1024 ); // do a stack dump
 
+        if ( !recursive ) {
+            Sys_MessageBox( "Engine Warning", "A Floating Point Exception was caught", false );
+            recursive = qtrue;
+            signal( SIGFPE, SignalHandle );
+        }
+        else {
+            Sys_Error( "An unrecoverable error has occured within the engine, please click OK and report this error.\n\n(FOR DEVELOPERS) Divide by zero or somethin'?? (SIGFPE)" );
+        }
+    }
+    else if ( signum == SIGTRAP ) {
+        static qboolean recursive = qfalse;
+        Con_DPrintf( "DebugBreak Triggered...\n" );
+        Sys_DebugStacktrace( 1024 ); // do a stack dump
+
+        // debug traps woun't happen unless we have a dedicated debug binary
         if ( !recursive ) {
             Sys_MessageBox( "DebugBreak Triggered", "A DebugBreak was triggered", false );
             recursive = qtrue;
-            signal(SIGTRAP, SignalHandle);
+            signal( SIGTRAP, SignalHandle );
         }
         else {
             Sys_Error( "DebugBreak triggered twice!" );
         }
-    } else {
-        Con_DPrintf("Unknown signal (%i)... Wtf?\n", signum);
+    }
+    else {
+        Con_DPrintf( "Unknown signal (%i)... Wtf?\n", signum );
     }
 }
 
-void Sys_Init(void)
+void Sys_Init( void )
 {
     tty_err err;
 
-    signal(SIGTERM, SignalHandle);
-    signal(SIGSEGV, SignalHandle);
-    signal(SIGFPE, SignalHandle);
-    signal(SIGABRT, SignalHandle);
-    signal(SIGBUS, SignalHandle);
-    signal(SIGTRAP, SignalHandle);
-    signal(SIGILL, SignalHandle);
+    signal( SIGTERM, SignalHandle );
+    signal( SIGSEGV, SignalHandle );
+    signal( SIGFPE, SignalHandle );
+    signal( SIGABRT, SignalHandle );
+    signal( SIGBUS, SignalHandle );
+    signal( SIGTRAP, SignalHandle );
+    signal( SIGILL, SignalHandle );
 
     // get the initial time base
 	Sys_Milliseconds();
@@ -763,7 +782,7 @@ void Sys_Init(void)
 	}
 }
 
-int main(int argc, char **argv)
+int main( int argc, char **argv )
 {
     char con_title[MAX_CVAR_VALUE];
     int xpos, ypos;

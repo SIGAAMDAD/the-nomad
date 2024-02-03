@@ -90,6 +90,7 @@
 
 // SDL
 #include "../engine/n_shared.h"
+#include "../engine/n_common.h"
 #if defined(__APPLE__)
 #include <TargetConditionals.h>
 #endif

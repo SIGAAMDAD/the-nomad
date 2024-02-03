@@ -361,3 +361,40 @@ void Sys_CloseDLL( void *handle ) {
 
 void UpdateMonitorInfo( const RECT *target ) {
 }
+
+#ifdef USE_AFFINITY_MASK
+static HANDLE hCurrentProcess = 0;
+
+uint64_t Sys_GetAffinityMask( void )
+{
+	DWORD_PTR dwProcessAffinityMask;
+	DWORD_PTR dwSystemAffinityMask;
+
+	if ( hCurrentProcess == 0 )	{
+		hCurrentProcess = GetCurrentProcess();
+	}
+
+	if ( GetProcessAffinityMask( hCurrentProcess, &dwProcessAffinityMask, &dwSystemAffinityMask ) )	{
+		return (uint64_t)dwProcessAffinityMask;
+	}
+
+	return 0;
+}
+
+
+qboolean Sys_SetAffinityMask( const uint64_t mask )
+{
+	DWORD_PTR dwProcessAffinityMask = (DWORD_PTR)mask;
+
+	if ( hCurrentProcess == 0 ) {
+		hCurrentProcess = GetCurrentProcess();
+	}
+
+	if ( SetProcessAffinityMask( hCurrentProcess, dwProcessAffinityMask ) )	{
+		//Sleep( 0 );
+		return qtrue;
+	}
+
+	return qfalse;
+}
+#endif // USE_AFFINITY_MASK
