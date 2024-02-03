@@ -95,7 +95,7 @@ LABELV $94
 line 29
 ;28:    case SGAME_GET_STATE:
 ;29:        return sg.state;
-ADDRGP4 sg+64
+ADDRGP4 sg+2140
 INDIRI4
 RETI4
 ADDRGP4 $89
@@ -1063,7 +1063,7 @@ line 265
 ;263:    sgentity_t *ent;
 ;264:
 ;265:    if ( sg.state == SG_INACTIVE ) {
-ADDRGP4 sg+64
+ADDRGP4 sg+2140
 INDIRI4
 CNSTI4 2
 NEI4 $183
@@ -1101,7 +1101,7 @@ line 276
 ;275:
 ;276:    sg.framenum++;
 ADDRLP4 20
-ADDRGP4 sg+92
+ADDRGP4 sg+2168
 ASGNP4
 ADDRLP4 20
 INDIRP4
@@ -1113,57 +1113,54 @@ ADDI4
 ASGNI4
 line 277
 ;277:    sg.previousTime = sg.framenum;
-ADDRGP4 sg+84
-ADDRGP4 sg+92
+ADDRGP4 sg+2160
+ADDRGP4 sg+2168
 INDIRI4
 ASGNI4
 line 278
 ;278:    sg.levelTime = levelTime;
-ADDRGP4 sg+88
+ADDRGP4 sg+2164
 ADDRFP4 0
 INDIRI4
 ASGNI4
 line 279
 ;279:    msec = sg.levelTime - sg.previousTime;
 ADDRLP4 16
-ADDRGP4 sg+88
+ADDRGP4 sg+2164
 INDIRI4
-ADDRGP4 sg+84
+ADDRGP4 sg+2160
 INDIRI4
 SUBI4
 ASGNI4
-line 287
+line 284
 ;280:
-;281:    // build player's movement command
-;282://    SG_BuildMoveCommand();
-;283:
-;284:    //
-;285:    // go through all allocated entities
-;286:    //
-;287:    start = trap_Milliseconds();
+;281:    //
+;282:    // go through all allocated entities
+;283:    //
+;284:    start = Sys_Milliseconds();
 ADDRLP4 24
-ADDRGP4 trap_Milliseconds
+ADDRGP4 Sys_Milliseconds
 CALLI4
 ASGNI4
 ADDRLP4 8
 ADDRLP4 24
 INDIRI4
 ASGNI4
-line 288
-;288:    ent = &sg_entities[0];
+line 285
+;285:    ent = &sg_entities[0];
 ADDRLP4 0
 ADDRGP4 sg_entities
 ASGNP4
-line 289
-;289:    for ( i = 0; i < sg.numEntities; i++) {
+line 286
+;286:    for ( i = 0; i < sg.numEntities; i++) {
 ADDRLP4 4
 CNSTI4 0
 ASGNI4
 ADDRGP4 $198
 JUMPV
 LABELV $195
-line 290
-;290:        if ( !ent->health ) {
+line 287
+;287:        if ( !ent->health ) {
 ADDRLP4 0
 INDIRP4
 CNSTI4 112
@@ -1171,15 +1168,15 @@ ADDP4
 INDIRI4
 CNSTI4 0
 NEI4 $200
-line 291
-;291:            continue;
+line 288
+;288:            continue;
 ADDRGP4 $196
 JUMPV
 LABELV $200
-line 294
-;292:        }
-;293:
-;294:        ent->ticker--;
+line 291
+;289:        }
+;290:
+;291:        ent->ticker--;
 ADDRLP4 28
 ADDRLP4 0
 INDIRP4
@@ -1194,9 +1191,9 @@ INDIRI4
 CNSTI4 1
 SUBI4
 ASGNI4
-line 296
-;295:
-;296:        if ( ent->ticker <= -1 ) {
+line 293
+;292:
+;293:        if ( ent->ticker <= -1 ) {
 ADDRLP4 0
 INDIRP4
 CNSTI4 116
@@ -1204,8 +1201,8 @@ ADDP4
 INDIRI4
 CNSTI4 -1
 GTI4 $202
-line 297
-;297:            Ent_SetState( ent, ent->state->nextstate );
+line 294
+;294:            Ent_SetState( ent, ent->state->nextstate );
 ADDRLP4 0
 INDIRP4
 ARGP4
@@ -1221,16 +1218,16 @@ ARGI4
 ADDRGP4 Ent_SetState
 CALLI4
 pop
-line 298
-;298:            continue;
+line 295
+;295:            continue;
 ADDRGP4 $196
 JUMPV
 LABELV $202
-line 302
-;299:        }
-;300:
-;301:        // update the current entity's animation frame
-;302:        if ( ent->state->frames > 0 ) {
+line 299
+;296:        }
+;297:
+;298:        // update the current entity's animation frame
+;299:        if ( ent->state->frames > 0 ) {
 ADDRLP4 0
 INDIRP4
 CNSTI4 92
@@ -1241,8 +1238,8 @@ ADDP4
 INDIRU4
 CNSTU4 0
 EQU4 $204
-line 303
-;303:            if ( ent->frame == ent->state->frames ) {
+line 300
+;300:            if ( ent->frame == ent->state->frames ) {
 ADDRLP4 0
 INDIRP4
 CNSTI4 120
@@ -1258,21 +1255,21 @@ CNSTI4 4
 ADDP4
 INDIRU4
 NEU4 $206
-line 304
-;304:                ent->frame = 0; // reset animation
+line 301
+;301:                ent->frame = 0; // reset animation
 ADDRLP4 0
 INDIRP4
 CNSTI4 120
 ADDP4
 CNSTI4 0
 ASGNI4
-line 305
-;305:            }
+line 302
+;302:            }
 ADDRGP4 $207
 JUMPV
 LABELV $206
-line 306
-;306:            else if ( ent->ticker % ent->state->frames ) {
+line 303
+;303:            else if ( ent->ticker % ent->state->frames ) {
 ADDRLP4 0
 INDIRP4
 CNSTI4 116
@@ -1290,8 +1287,8 @@ INDIRU4
 MODU4
 CNSTU4 0
 EQU4 $208
-line 307
-;307:                ent->frame++;
+line 304
+;304:                ent->frame++;
 ADDRLP4 40
 ADDRLP4 0
 INDIRP4
@@ -1306,16 +1303,16 @@ INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-line 308
-;308:            }
+line 305
+;305:            }
 LABELV $208
 LABELV $207
-line 309
-;309:        }
+line 306
+;306:        }
 LABELV $204
-line 311
-;310:
-;311:        ent->state->action.acp1( ent );
+line 308
+;307:
+;308:        ent->state->action.acp1( ent );
 ADDRLP4 0
 INDIRP4
 ARGP4
@@ -1329,10 +1326,10 @@ ADDP4
 INDIRP4
 CALLV
 pop
-line 312
-;312:    }
+line 309
+;309:    }
 LABELV $196
-line 289
+line 286
 ADDRLP4 4
 ADDRLP4 4
 INDIRI4
@@ -1342,42 +1339,42 @@ ASGNI4
 LABELV $198
 ADDRLP4 4
 INDIRI4
-ADDRGP4 sg+76
+ADDRGP4 sg+2152
 INDIRI4
 LTI4 $195
-line 313
-;313:    end = trap_Milliseconds();
+line 310
+;310:    end = Sys_Milliseconds();
 ADDRLP4 28
-ADDRGP4 trap_Milliseconds
+ADDRGP4 Sys_Milliseconds
 CALLI4
 ASGNI4
 ADDRLP4 12
 ADDRLP4 28
 INDIRI4
 ASGNI4
-line 315
-;314:
-;315:    SG_DrawFrame();
+line 312
+;311:
+;312:    SG_DrawFrame();
 ADDRGP4 SG_DrawFrame
 CALLI4
 pop
-line 317
-;316:
-;317:    if ( sg_printEntities.i ) {
+line 314
+;313:
+;314:    if ( sg_printEntities.i ) {
 ADDRGP4 sg_printEntities+260
 INDIRI4
 CNSTI4 0
 EQI4 $210
-line 318
-;318:        for ( i = 0; i < sg.numEntities; i++ ) {
+line 315
+;315:        for ( i = 0; i < sg.numEntities; i++ ) {
 ADDRLP4 4
 CNSTI4 0
 ASGNI4
 ADDRGP4 $216
 JUMPV
 LABELV $213
-line 319
-;319:            G_Printf( "%4i: %s\n", i, sg_entities[i].classname );
+line 316
+;316:            G_Printf( "%4i: %s\n", i, sg_entities[i].classname );
 ADDRGP4 $218
 ARGP4
 ADDRLP4 4
@@ -1394,10 +1391,10 @@ ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 320
-;320:        }
+line 317
+;317:        }
 LABELV $214
-line 318
+line 315
 ADDRLP4 4
 ADDRLP4 4
 INDIRI4
@@ -1407,11 +1404,11 @@ ASGNI4
 LABELV $216
 ADDRLP4 4
 INDIRI4
-ADDRGP4 sg+76
+ADDRGP4 sg+2152
 INDIRI4
 LTI4 $213
-line 321
-;321:        Cvar_Set( "sg_printEntities", "0" );
+line 318
+;318:        Cvar_Set( "sg_printEntities", "0" );
 ADDRGP4 $112
 ARGP4
 ADDRGP4 $113
@@ -1419,122 +1416,122 @@ ARGP4
 ADDRGP4 Cvar_Set
 CALLV
 pop
-line 322
-;322:    }
+line 319
+;319:    }
 LABELV $210
-line 324
-;323:
-;324:    return 1;
+line 321
+;320:
+;321:    return 1;
 CNSTI4 1
 RETI4
 LABELV $182
 endproc SG_RunLoop 44 12
 proc SG_LoadMedia 44 20
-line 329
-;325:}
-;326:
-;327:
-;328:static void SG_LoadMedia( void )
-;329:{
-line 330
-;330:    sg.media.player_death0 = trap_Snd_RegisterSfx( "sfx/player/death1.wav" );
+line 326
+;322:}
+;323:
+;324:
+;325:static void SG_LoadMedia( void )
+;326:{
+line 327
+;327:    sg.media.player_death0 = Snd_RegisterSfx( "sfx/player/death1.wav" );
 ADDRGP4 $222
 ARGP4
 ADDRLP4 0
-ADDRGP4 trap_Snd_RegisterSfx
+ADDRGP4 Snd_RegisterSfx
 CALLI4
 ASGNI4
 ADDRGP4 sg+12
 ADDRLP4 0
 INDIRI4
 ASGNI4
-line 331
-;331:    sg.media.player_death1 = trap_Snd_RegisterSfx( "sfx/player/death2.wav" );
+line 328
+;328:    sg.media.player_death1 = Snd_RegisterSfx( "sfx/player/death2.wav" );
 ADDRGP4 $224
 ARGP4
 ADDRLP4 4
-ADDRGP4 trap_Snd_RegisterSfx
+ADDRGP4 Snd_RegisterSfx
 CALLI4
 ASGNI4
 ADDRGP4 sg+16
 ADDRLP4 4
 INDIRI4
 ASGNI4
-line 332
-;332:    sg.media.player_death2 = trap_Snd_RegisterSfx( "sfx/player/death3.wav" ); 
+line 329
+;329:    sg.media.player_death2 = Snd_RegisterSfx( "sfx/player/death3.wav" ); 
 ADDRGP4 $226
 ARGP4
 ADDRLP4 8
-ADDRGP4 trap_Snd_RegisterSfx
+ADDRGP4 Snd_RegisterSfx
 CALLI4
 ASGNI4
 ADDRGP4 sg+20
 ADDRLP4 8
 INDIRI4
 ASGNI4
-line 333
-;333:    sg.media.player_pain0 = trap_Snd_RegisterSfx( "sfx/player/pain0.wav" );
+line 330
+;330:    sg.media.player_pain0 = Snd_RegisterSfx( "sfx/player/pain0.wav" );
 ADDRGP4 $227
 ARGP4
 ADDRLP4 12
-ADDRGP4 trap_Snd_RegisterSfx
+ADDRGP4 Snd_RegisterSfx
 CALLI4
 ASGNI4
 ADDRGP4 sg
 ADDRLP4 12
 INDIRI4
 ASGNI4
-line 334
-;334:    sg.media.player_pain1 = trap_Snd_RegisterSfx( "sfx/player/pain1.wav" );
+line 331
+;331:    sg.media.player_pain1 = Snd_RegisterSfx( "sfx/player/pain1.wav" );
 ADDRGP4 $229
 ARGP4
 ADDRLP4 16
-ADDRGP4 trap_Snd_RegisterSfx
+ADDRGP4 Snd_RegisterSfx
 CALLI4
 ASGNI4
 ADDRGP4 sg+4
 ADDRLP4 16
 INDIRI4
 ASGNI4
-line 335
-;335:    sg.media.player_pain2 = trap_Snd_RegisterSfx( "sfx/player/pain2.wav" );
+line 332
+;332:    sg.media.player_pain2 = Snd_RegisterSfx( "sfx/player/pain2.wav" );
 ADDRGP4 $231
 ARGP4
 ADDRLP4 20
-ADDRGP4 trap_Snd_RegisterSfx
+ADDRGP4 Snd_RegisterSfx
 CALLI4
 ASGNI4
 ADDRGP4 sg+8
 ADDRLP4 20
 INDIRI4
 ASGNI4
-line 336
-;336:    sg.media.revolver_fire = trap_Snd_RegisterSfx( "sfx/weapons/revolver_fire.wav" );
+line 333
+;333:    sg.media.revolver_fire = Snd_RegisterSfx( "sfx/weapons/revolver_fire.wav" );
 ADDRGP4 $233
 ARGP4
 ADDRLP4 24
-ADDRGP4 trap_Snd_RegisterSfx
+ADDRGP4 Snd_RegisterSfx
 CALLI4
 ASGNI4
 ADDRGP4 sg+28
 ADDRLP4 24
 INDIRI4
 ASGNI4
-line 337
-;337:    sg.media.revolver_rld = trap_Snd_RegisterSfx( "sfx/weapons/revolver_rld.wav" );
+line 334
+;334:    sg.media.revolver_rld = Snd_RegisterSfx( "sfx/weapons/revolver_rld.wav" );
 ADDRGP4 $235
 ARGP4
 ADDRLP4 28
-ADDRGP4 trap_Snd_RegisterSfx
+ADDRGP4 Snd_RegisterSfx
 CALLI4
 ASGNI4
 ADDRGP4 sg+32
 ADDRLP4 28
 INDIRI4
 ASGNI4
-line 339
-;338:
-;339:    sg.media.raio_shader = RE_RegisterShader( "sprites/glnomad_raio_base" );
+line 336
+;335:
+;336:    sg.media.raio_shader = RE_RegisterShader( "sprites/glnomad_raio_base" );
 ADDRGP4 $237
 ARGP4
 ADDRLP4 32
@@ -1545,8 +1542,8 @@ ADDRGP4 sg+36
 ADDRLP4 32
 INDIRI4
 ASGNI4
-line 340
-;340:    sg.media.grunt_shader = RE_RegisterShader( "sprites/glnomad_grunt" );
+line 337
+;337:    sg.media.grunt_shader = RE_RegisterShader( "sprites/glnomad_grunt" );
 ADDRGP4 $239
 ARGP4
 ADDRLP4 36
@@ -1557,9 +1554,9 @@ ADDRGP4 sg+40
 ADDRLP4 36
 INDIRI4
 ASGNI4
-line 342
-;341:
-;342:    sg.media.raio_sprites = RE_RegisterSpriteSheet( "sprites/glnomad_raio_base", 512, 512, 32, 32 );
+line 339
+;338:
+;339:    sg.media.raio_sprites = RE_RegisterSpriteSheet( "sprites/glnomad_raio_base", 512, 512, 32, 32 );
 ADDRGP4 $237
 ARGP4
 CNSTI4 512
@@ -1578,25 +1575,25 @@ ADDRGP4 sg+48
 ADDRLP4 40
 INDIRI4
 ASGNI4
-line 343
-;343:}
+line 340
+;340:}
 LABELV $220
 endproc SG_LoadMedia 44 20
 export SG_Init
 proc SG_Init 4 12
-line 346
-;344:
-;345:void SG_Init( void )
-;346:{
-line 347
-;347:    G_Printf( "---------- Game Initialization ----------\n" );
+line 343
+;341:
+;342:void SG_Init( void )
+;343:{
+line 344
+;344:    G_Printf( "---------- Game Initialization ----------\n" );
 ADDRGP4 $242
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 348
-;348:    G_Printf( "gamename: %s\n", GLN_VERSION );
+line 345
+;345:    G_Printf( "gamename: %s\n", GLN_VERSION );
 ADDRGP4 $243
 ARGP4
 ADDRGP4 $109
@@ -1604,8 +1601,8 @@ ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 349
-;349:    G_Printf( "gamedate: %s\n", __DATE__ );
+line 346
+;346:    G_Printf( "gamedate: %s\n", __DATE__ );
 ADDRGP4 $244
 ARGP4
 ADDRGP4 $111
@@ -1613,9 +1610,9 @@ ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 351
-;350:
-;351:    trap_Key_SetCatcher( trap_Key_GetCatcher() | KEYCATCH_SGAME );
+line 348
+;347:
+;348:    trap_Key_SetCatcher( trap_Key_GetCatcher() | KEYCATCH_SGAME );
 ADDRLP4 0
 ADDRGP4 trap_Key_GetCatcher
 CALLI4
@@ -1630,58 +1627,58 @@ ARGI4
 ADDRGP4 trap_Key_SetCatcher
 CALLV
 pop
-line 354
-;352:
-;353:    // clear sgame state
-;354:    memset( &sg, 0, sizeof(sg) );
+line 351
+;349:
+;350:    // clear sgame state
+;351:    memset( &sg, 0, sizeof(sg) );
 ADDRGP4 sg
 ARGP4
 CNSTI4 0
 ARGI4
-CNSTU4 4292024
+CNSTU4 4294100
 ARGU4
 ADDRGP4 memset
 CALLP4
 pop
-line 357
-;355:    
-;356:    // cache redundant calculations
-;357:    Sys_GetGPUConfig( &sg.gpuConfig );
-ADDRGP4 sg+61680
+line 354
+;352:    
+;353:    // cache redundant calculations
+;354:    Sys_GetGPUConfig( &sg.gpuConfig );
+ADDRGP4 sg+63756
 ARGP4
 ADDRGP4 Sys_GetGPUConfig
 CALLV
 pop
-line 360
-;358:
-;359:    // for 1024x768 virtualized screen
-;360:	sg.scale = sg.gpuConfig.vidHeight * (1.0/768.0);
-ADDRGP4 sg+74028
-ADDRGP4 sg+61680+12312
+line 357
+;355:
+;356:    // for 1024x768 virtualized screen
+;357:	sg.scale = sg.gpuConfig.vidHeight * (1.0/768.0);
+ADDRGP4 sg+76104
+ADDRGP4 sg+63756+12312
 INDIRI4
 CVIF4 4
 CNSTF4 984263339
 MULF4
 ASGNF4
-line 361
-;361:	if ( sg.gpuConfig.vidWidth * 768 > sg.gpuConfig.vidHeight * 1024 ) {
-ADDRGP4 sg+61680+12308
+line 358
+;358:	if ( sg.gpuConfig.vidWidth * 768 > sg.gpuConfig.vidHeight * 1024 ) {
+ADDRGP4 sg+63756+12308
 INDIRI4
 CNSTI4 768
 MULI4
-ADDRGP4 sg+61680+12312
+ADDRGP4 sg+63756+12312
 INDIRI4
 CNSTI4 10
 LSHI4
 LEI4 $249
-line 363
-;362:		// wide screen
-;363:		sg.bias = 0.5 * ( sg.gpuConfig.vidWidth - ( sg.gpuConfig.vidHeight * (1024.0/768.0) ) );
-ADDRGP4 sg+74032
-ADDRGP4 sg+61680+12308
+line 360
+;359:		// wide screen
+;360:		sg.bias = 0.5 * ( sg.gpuConfig.vidWidth - ( sg.gpuConfig.vidHeight * (1024.0/768.0) ) );
+ADDRGP4 sg+76108
+ADDRGP4 sg+63756+12308
 INDIRI4
 CVIF4 4
-ADDRGP4 sg+61680+12312
+ADDRGP4 sg+63756+12312
 INDIRI4
 CVIF4 4
 CNSTF4 1068149419
@@ -1690,136 +1687,136 @@ SUBF4
 CNSTF4 1056964608
 MULF4
 ASGNF4
-line 364
-;364:	}
+line 361
+;361:	}
 ADDRGP4 $250
 JUMPV
 LABELV $249
-line 365
-;365:	else {
-line 367
-;366:		// no wide screen
-;367:		sg.bias = 0;
-ADDRGP4 sg+74032
+line 362
+;362:	else {
+line 364
+;363:		// no wide screen
+;364:		sg.bias = 0;
+ADDRGP4 sg+76108
 CNSTF4 0
 ASGNF4
-line 368
-;368:	}
+line 365
+;365:	}
 LABELV $250
-line 371
-;369:
-;370:    // register sgame cvars
-;371:    SG_RegisterCvars();
+line 368
+;366:
+;367:    // register sgame cvars
+;368:    SG_RegisterCvars();
 ADDRGP4 SG_RegisterCvars
 CALLV
 pop
-line 374
-;372:
-;373:    // load assets/resources
-;374:    SG_LoadMedia();
+line 371
+;369:
+;370:    // load assets/resources
+;371:    SG_LoadMedia();
 ADDRGP4 SG_LoadMedia
 CALLV
 pop
-line 376
-;375:
-;376:    SG_MemInit();
+line 373
+;372:
+;373:    SG_MemInit();
 ADDRGP4 SG_MemInit
 CALLV
 pop
-line 378
-;377:
-;378:    sg.state = SG_INACTIVE;
-ADDRGP4 sg+64
+line 375
+;374:
+;375:    sg.state = SG_INACTIVE;
+ADDRGP4 sg+2140
 CNSTI4 2
 ASGNI4
-line 380
-;379:
-;380:    G_Printf( "-----------------------------------\n" );
+line 377
+;376:
+;377:    G_Printf( "-----------------------------------\n" );
 ADDRGP4 $262
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 381
-;381:}
+line 378
+;378:}
 LABELV $241
 endproc SG_Init 4 12
 export SG_Shutdown
 proc SG_Shutdown 0 12
-line 384
-;382:
-;383:void SG_Shutdown( void )
-;384:{
-line 385
-;385:    G_Printf( "Shutting down sgame...\n" );
+line 381
+;379:
+;380:void SG_Shutdown( void )
+;381:{
+line 382
+;382:    G_Printf( "Shutting down sgame...\n" );
 ADDRGP4 $264
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 387
-;386:
-;387:    memset( &sg, 0, sizeof(sg) );
+line 384
+;383:
+;384:    memset( &sg, 0, sizeof(sg) );
 ADDRGP4 sg
 ARGP4
 CNSTI4 0
 ARGI4
-CNSTU4 4292024
+CNSTU4 4294100
 ARGU4
 ADDRGP4 memset
 CALLP4
 pop
-line 389
-;388:
-;389:    sg.state = SG_INACTIVE;
-ADDRGP4 sg+64
+line 386
+;385:
+;386:    sg.state = SG_INACTIVE;
+ADDRGP4 sg+2140
 CNSTI4 2
 ASGNI4
-line 390
-;390:}
+line 387
+;387:}
 LABELV $263
 endproc SG_Shutdown 0 12
 export SaveGame
 proc SaveGame 0 4
-line 393
-;391:
-;392:void SaveGame( void )
-;393:{
-line 394
-;394:    G_Printf( "Saving game...\n" );
+line 390
+;388:
+;389:void SaveGame( void )
+;390:{
+line 391
+;391:    G_Printf( "Saving game...\n" );
 ADDRGP4 $267
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 396
-;395:
-;396:    SG_SaveLevelData();
+line 393
+;392:
+;393:    SG_SaveLevelData();
 ADDRGP4 SG_SaveLevelData
 CALLV
 pop
-line 398
-;397:
-;398:    G_Printf( "Done" );
+line 395
+;394:
+;395:    G_Printf( "Done" );
 ADDRGP4 $268
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 399
-;399:}
+line 396
+;396:}
 LABELV $266
 endproc SaveGame 0 4
 export LoadGame
 proc LoadGame 64 12
+line 399
+;397:
+;398:void LoadGame( void )
+;399:{
 line 402
-;400:
-;401:void LoadGame( void )
-;402:{
-line 405
-;403:    char savename[MAX_NPATH];
-;404:
-;405:    Cvar_VariableStringBuffer( "sg_savename", savename, sizeof(savename) );
+;400:    char savename[MAX_NPATH];
+;401:
+;402:    Cvar_VariableStringBuffer( "sg_savename", savename, sizeof(savename) );
 ADDRGP4 $137
 ARGP4
 ADDRLP4 0
@@ -1829,9 +1826,9 @@ ARGI4
 ADDRGP4 Cvar_VariableStringBuffer
 CALLV
 pop
-line 407
-;406:
-;407:    G_Printf( "Loading save file '%s'...\n", savename );
+line 404
+;403:
+;404:    G_Printf( "Loading save file '%s'...\n", savename );
 ADDRGP4 $270
 ARGP4
 ADDRLP4 0
@@ -1839,26 +1836,26 @@ ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 408
-;408:}
+line 405
+;405:}
 LABELV $269
 endproc LoadGame 64 12
 export trap_FS_Printf
 proc trap_FS_Printf 8200 12
-line 411
-;409:
-;410:void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL trap_FS_Printf( file_t f, const char *fmt, ... )
-;411:{
-line 415
-;412:    va_list argptr;
-;413:    char msg[MAXPRINTMSG];
-;414:
-;415:    va_start( argptr, fmt );
+line 408
+;406:
+;407:void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL trap_FS_Printf( file_t f, const char *fmt, ... )
+;408:{
+line 412
+;409:    va_list argptr;
+;410:    char msg[MAXPRINTMSG];
+;411:
+;412:    va_start( argptr, fmt );
 ADDRLP4 0
 ADDRFP4 4+4
 ASGNP4
-line 416
-;416:    vsprintf( msg, fmt, argptr );
+line 413
+;413:    vsprintf( msg, fmt, argptr );
 ADDRLP4 4
 ARGP4
 ADDRFP4 4
@@ -1870,14 +1867,14 @@ ARGP4
 ADDRGP4 vsprintf
 CALLI4
 pop
-line 417
-;417:    va_end( argptr );
+line 414
+;414:    va_end( argptr );
 ADDRLP4 0
 CNSTP4 0
 ASGNP4
-line 419
-;418:
-;419:    trap_FS_Write( msg, strlen( msg ), f );
+line 416
+;415:
+;416:    trap_FS_Write( msg, strlen( msg ), f );
 ADDRLP4 4
 ARGP4
 ADDRLP4 8196
@@ -1896,8 +1893,8 @@ ARGI4
 ADDRGP4 trap_FS_Write
 CALLI4
 pop
-line 420
-;420:}
+line 417
+;417:}
 LABELV $271
 endproc trap_FS_Printf 8200 12
 data
@@ -1959,6 +1956,8 @@ import trap_FS_FOpenRead
 import trap_FS_FOpenWrite
 import trap_FS_FOpenFile
 import Sys_GetGPUConfig
+import RE_SetColor
+import RE_DrawImage
 import RE_AddSpriteToScene
 import RE_AddPolyToScene
 import RE_RenderScene
@@ -1967,46 +1966,45 @@ import RE_LoadWorldMap
 import RE_RegisterSprite
 import RE_RegisterSpriteSheet
 import RE_RegisterShader
-import trap_Snd_ClearLoopingTrack
-import trap_Snd_SetLoopingTrack
-import trap_Snd_StopSfx
-import trap_Snd_PlaySfx
-import trap_Snd_QueueTrack
-import trap_Snd_RegisterTrack
-import trap_Snd_RegisterSfx
+import Snd_ClearLoopingTrack
+import Snd_SetLoopingTrack
+import Snd_StopSfx
+import Snd_PlaySfx
+import Snd_RegisterTrack
+import Snd_RegisterSfx
 import trap_Key_ClearStates
 import trap_Key_GetKey
 import trap_Key_GetCatcher
 import trap_Key_SetCatcher
-import trap_Milliseconds
-import trap_CheckWallHit
+import Sys_Milliseconds
+import G_CheckWallHit
 import G_SoundRecursive
 import G_CastRay
 import G_SetActiveMap
 import G_LoadMap
 import G_SetCameraData
-import trap_MemoryRemaining
+import Sys_MemoryRemaining
 import trap_RemoveCommand
 import trap_AddCommand
 import trap_SendConsoleCommand
-import trap_LoadVec4
-import trap_LoadVec3
-import trap_LoadVec2
-import trap_LoadString
-import trap_LoadFloat
-import trap_LoadInt
-import trap_LoadUInt
-import trap_GetSaveSection
-import trap_WriteVec4
-import trap_WriteVec3
-import trap_WriteVec2
-import trap_WriteFloat
-import trap_WriteString
-import trap_WriteUInt
-import trap_WriteInt
-import trap_WriteChar
-import trap_EndSaveSection
-import trap_BeginSaveSection
+import G_LoadVector4
+import G_LoadVector3
+import G_LoadVector2
+import G_LoadString
+import LoadFloat
+import G_LoadInt
+import G_LoadUInt
+import G_GetSaveSection
+import G_SaveVector4
+import G_SaveVector3
+import G_SaveVector2
+import G_SaveFloat
+import G_SaveString
+import G_SaveUInt
+import G_SaveInt
+import G_SaveChar
+import G_EndSaveSection
+import G_BeginSaveSection
 import trap_Args
 import trap_Argv
 import trap_Argc
@@ -2139,70 +2137,9 @@ import weaponinfo
 export sg
 align 4
 LABELV sg
-skip 4292024
+skip 4294100
 import sg_entities
 import stateinfo
-import ImGui_CloseCurrentPopup
-import ImGui_OpenPopup
-import ImGui_EndPopup
-import ImGui_BeginPopupModal
-import ImGui_ColoredText
-import ImGui_Text
-import ImGui_ColoredTextUnformatted
-import ImGui_TextUnformatted
-import ImGui_SameLine
-import ImGui_ProgressBar
-import ImGui_Separator
-import ImGui_SeparatorText
-import ImGui_NewLine
-import ImGui_PopColor
-import ImGui_PushColor
-import ImGui_GetCursorScreenPos
-import ImGui_SetCursorScreenPos
-import ImGui_GetCursorPos
-import ImGui_SetCursorPos
-import ImGui_GetFontScale
-import ImGui_Button
-import ImGui_Checkbox
-import ImGui_ArrowButton
-import ImGui_ColorEdit4
-import ImGui_ColorEdit3
-import ImGui_SliderInt4
-import ImGui_SliderInt3
-import ImGui_SliderInt2
-import ImGui_SliderInt
-import ImGui_SliderFloat4
-import ImGui_SliderFloat3
-import ImGui_SliderFloat2
-import ImGui_SliderFloat
-import ImGui_InputInt4
-import ImGui_InputInt3
-import ImGui_InputInt2
-import ImGui_InputInt
-import ImGui_InputFloat4
-import ImGui_InputFloat3
-import ImGui_InputFloat2
-import ImGui_InputFloat
-import ImGui_InputTextWithHint
-import ImGui_InputTextMultiline
-import ImGui_InputText
-import ImGui_EndTable
-import ImGui_TableNextColumn
-import ImGui_TableNextRow
-import ImGui_BeginTable
-import ImGui_SetItemTooltip
-import ImGui_SetItemTooltipUnformatted
-import ImGui_MenuItem
-import ImGui_EndMenu
-import ImGui_BeginMenu
-import ImGui_SetWindowFontScale
-import ImGui_SetWindowSize
-import ImGui_SetWindowPos
-import ImGui_SetWindowCollapsed
-import ImGui_IsWindowCollapsed
-import ImGui_EndWindow
-import ImGui_BeginWindow
-import I_GetParm
 import Com_TouchMemory
 import Hunk_TempIsClear
 import Hunk_Check
@@ -2396,6 +2333,67 @@ import Com_EarlyParseCmdLine
 import Com_Milliseconds
 import Com_Frame
 import Sys_SnapVector
+import ImGui_CloseCurrentPopup
+import ImGui_OpenPopup
+import ImGui_EndPopup
+import ImGui_BeginPopupModal
+import ImGui_ColoredText
+import ImGui_Text
+import ImGui_ColoredTextUnformatted
+import ImGui_TextUnformatted
+import ImGui_SameLine
+import ImGui_ProgressBar
+import ImGui_Separator
+import ImGui_SeparatorText
+import ImGui_NewLine
+import ImGui_PopColor
+import ImGui_PushColor
+import ImGui_GetCursorScreenPos
+import ImGui_SetCursorScreenPos
+import ImGui_GetCursorPos
+import ImGui_SetCursorPos
+import ImGui_GetFontScale
+import ImGui_Button
+import ImGui_Checkbox
+import ImGui_ArrowButton
+import ImGui_ColorEdit4
+import ImGui_ColorEdit3
+import ImGui_SliderInt4
+import ImGui_SliderInt3
+import ImGui_SliderInt2
+import ImGui_SliderInt
+import ImGui_SliderFloat4
+import ImGui_SliderFloat3
+import ImGui_SliderFloat2
+import ImGui_SliderFloat
+import ImGui_InputInt4
+import ImGui_InputInt3
+import ImGui_InputInt2
+import ImGui_InputInt
+import ImGui_InputFloat4
+import ImGui_InputFloat3
+import ImGui_InputFloat2
+import ImGui_InputFloat
+import ImGui_InputTextWithHint
+import ImGui_InputTextMultiline
+import ImGui_InputText
+import ImGui_EndTable
+import ImGui_TableNextColumn
+import ImGui_TableNextRow
+import ImGui_BeginTable
+import ImGui_SetItemTooltip
+import ImGui_SetItemTooltipUnformatted
+import ImGui_MenuItem
+import ImGui_EndMenu
+import ImGui_BeginMenu
+import ImGui_SetWindowFontScale
+import ImGui_SetWindowSize
+import ImGui_SetWindowPos
+import ImGui_SetWindowCollapsed
+import ImGui_IsWindowCollapsed
+import ImGui_EndWindow
+import ImGui_BeginWindow
+import I_GetParm
 import Con_DPrintf
 import Con_Shutdown
 import Con_Init
@@ -2424,8 +2422,6 @@ import ColorBytes4
 import ColorBytes3
 import VectorNormalize
 import AddPointToBounds
-import ClearBounds
-import RadiusFromBounds
 import NormalizeColor
 import _VectorMA
 import _VectorScale
@@ -2449,6 +2445,8 @@ import BoundsIntersect
 import disBetweenOBJ
 import vec3_set
 import vec3_get
+import ClearBounds
+import RadiusFromBounds
 import ClampShort
 import ClampCharMove
 import ClampChar
@@ -3427,7 +3425,7 @@ byte 1 101
 byte 1 98
 byte 1 32
 byte 1 32
-byte 1 49
+byte 1 50
 byte 1 32
 byte 1 50
 byte 1 48

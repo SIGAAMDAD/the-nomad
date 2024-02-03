@@ -5,9 +5,13 @@
 
 #define MAX_VIDEO_HANDLES	16
 
-#define RSF_USE_ORTHO_ASPECT	0x0001 // rendering to the tilemap?
-#define RSF_USE_ORTHO_UI		0x0002 // rendering to the ui?
-#define RSF_NOWORLDMODEL		0x0004 // used when rendering the ui, but can be used with sgame
+#define RSF_ORTHO_TYPE_WORLD			0x0001 // range = [mapWidth, mapHeight]
+#define RSF_ORTHO_TYPE_SCREENSPACE		0x0002 // range = [vidWidth, vidHeight]
+#define RSF_ORTHO_TYPE_CORDESIAN		0x0004 // range = [1.0, 1.0] (OpenGL screen coordinates)
+#define RSF_ORTHO_BITS					0x000f
+
+#define RSF_NOWORLDMODEL				0x0010 // used when rendering the ui, but can be used with sgame
+#define RSF_CONFIG_BITS					0x00f0
 
 typedef struct {
     vec3_t xyz;

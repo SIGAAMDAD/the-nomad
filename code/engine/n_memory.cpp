@@ -1,4 +1,5 @@
 #include "n_shared.h"
+#include "n_common.h"
 #include "../game/g_game.h"
 #include "../system/sys_thread.h"
 
@@ -761,11 +762,11 @@ Z_Malloc
 ========================
 */
 #ifdef _NOMAD_DEBUG
-void *Z_MallocDebug(uint64_t size, memtag_t tag, const char *label, const char *file, uint32_t line) {
+void *Z_MallocDebug( uint64_t size, memtag_t tag, const char *label, const char *file, uint32_t line ) {
 	return Z_AllocDebug(size, tag, label, file, line);
 }
 #else
-void *Z_Malloc(uint64_t size, memtag_t tag) {
+void *Z_Malloc( uint64_t size, memtag_t tag ) {
 	return Z_Alloc(size, tag);
 }
 #endif

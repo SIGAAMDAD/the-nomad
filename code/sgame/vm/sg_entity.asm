@@ -256,7 +256,7 @@ ASGNP4
 LABELV $102
 ADDRLP4 4
 INDIRI4
-ADDRGP4 sg+76
+ADDRGP4 sg+2152
 INDIRI4
 LTI4 $99
 line 54
@@ -356,8 +356,8 @@ line 76
 line 80
 ;77:
 ;78:	// check for a wall collision
-;79:	// if we're touching a wall with the side marked for collision, return true
-;80:	if ( trap_CheckWallHit( &e->origin, d ) ) {
+;79:	// if we're touching anything with the side marked for collision, return true
+;80:	if ( G_CheckWallHit( &e->origin, d ) ) {
 ADDRFP4 0
 INDIRP4
 CNSTI4 64
@@ -367,7 +367,7 @@ ADDRLP4 0
 INDIRI4
 ARGI4
 ADDRLP4 12
-ADDRGP4 trap_CheckWallHit
+ADDRGP4 G_CheckWallHit
 CALLI4
 ASGNI4
 ADDRLP4 12
@@ -642,7 +642,7 @@ line 116
 ;115:
 ;116:	sg.numEntities--;
 ADDRLP4 0
-ADDRGP4 sg+76
+ADDRGP4 sg+2152
 ASGNP4
 ADDRLP4 0
 INDIRP4
@@ -666,7 +666,7 @@ line 123
 ;121:	sgentity_t *ent;
 ;122:
 ;123:	if ( sg.numEntities == MAXENTITIES ) {
-ADDRGP4 sg+76
+ADDRGP4 sg+2152
 INDIRI4
 CNSTI4 2048
 NEI4 $123
@@ -684,7 +684,7 @@ line 127
 ;126:
 ;127:	ent = &sg_entities[sg.numEntities];
 ADDRLP4 0
-ADDRGP4 sg+76
+ADDRGP4 sg+2152
 INDIRI4
 CNSTI4 160
 MULI4
@@ -694,7 +694,7 @@ ASGNP4
 line 128
 ;128:	sg.numEntities++;
 ADDRLP4 4
-ADDRGP4 sg+76
+ADDRGP4 sg+2152
 ASGNP4
 ADDRLP4 4
 INDIRP4
@@ -900,7 +900,7 @@ line 165
 ;163:	sgentity_t *ent;
 ;164:
 ;165:	if ( sg.numEntities == MAXENTITIES ) {
-ADDRGP4 sg+76
+ADDRGP4 sg+2152
 INDIRI4
 CNSTI4 2048
 NEI4 $146
@@ -934,7 +934,7 @@ line 172
 ;171:
 ;172:	ent = &sg_entities[sg.numEntities];
 ADDRLP4 0
-ADDRGP4 sg+76
+ADDRGP4 sg+2152
 INDIRI4
 CNSTI4 160
 MULI4
@@ -994,7 +994,7 @@ line 178
 ;178:	case ET_PLAYR: {
 line 179
 ;179:		if ( sg.playrReady ) {
-ADDRGP4 sg+61676
+ADDRGP4 sg+63752
 INDIRI4
 CNSTI4 0
 EQI4 $158
@@ -1251,7 +1251,7 @@ line 208
 ;207:	
 ;208:	sg.numEntities++;
 ADDRLP4 20
-ADDRGP4 sg+76
+ADDRGP4 sg+2152
 ASGNP4
 ADDRLP4 20
 INDIRP4
@@ -1290,6 +1290,8 @@ import trap_FS_FOpenRead
 import trap_FS_FOpenWrite
 import trap_FS_FOpenFile
 import Sys_GetGPUConfig
+import RE_SetColor
+import RE_DrawImage
 import RE_AddSpriteToScene
 import RE_AddPolyToScene
 import RE_RenderScene
@@ -1298,46 +1300,45 @@ import RE_LoadWorldMap
 import RE_RegisterSprite
 import RE_RegisterSpriteSheet
 import RE_RegisterShader
-import trap_Snd_ClearLoopingTrack
-import trap_Snd_SetLoopingTrack
-import trap_Snd_StopSfx
-import trap_Snd_PlaySfx
-import trap_Snd_QueueTrack
-import trap_Snd_RegisterTrack
-import trap_Snd_RegisterSfx
+import Snd_ClearLoopingTrack
+import Snd_SetLoopingTrack
+import Snd_StopSfx
+import Snd_PlaySfx
+import Snd_RegisterTrack
+import Snd_RegisterSfx
 import trap_Key_ClearStates
 import trap_Key_GetKey
 import trap_Key_GetCatcher
 import trap_Key_SetCatcher
-import trap_Milliseconds
-import trap_CheckWallHit
+import Sys_Milliseconds
+import G_CheckWallHit
 import G_SoundRecursive
 import G_CastRay
 import G_SetActiveMap
 import G_LoadMap
 import G_SetCameraData
-import trap_MemoryRemaining
+import Sys_MemoryRemaining
 import trap_RemoveCommand
 import trap_AddCommand
 import trap_SendConsoleCommand
-import trap_LoadVec4
-import trap_LoadVec3
-import trap_LoadVec2
-import trap_LoadString
-import trap_LoadFloat
-import trap_LoadInt
-import trap_LoadUInt
-import trap_GetSaveSection
-import trap_WriteVec4
-import trap_WriteVec3
-import trap_WriteVec2
-import trap_WriteFloat
-import trap_WriteString
-import trap_WriteUInt
-import trap_WriteInt
-import trap_WriteChar
-import trap_EndSaveSection
-import trap_BeginSaveSection
+import G_LoadVector4
+import G_LoadVector3
+import G_LoadVector2
+import G_LoadString
+import LoadFloat
+import G_LoadInt
+import G_LoadUInt
+import G_GetSaveSection
+import G_SaveVector4
+import G_SaveVector3
+import G_SaveVector2
+import G_SaveFloat
+import G_SaveString
+import G_SaveUInt
+import G_SaveInt
+import G_SaveChar
+import G_EndSaveSection
+import G_BeginSaveSection
 import trap_Args
 import trap_Argv
 import trap_Argc
@@ -1409,67 +1410,6 @@ skip 327680
 import inversedirs
 import dirvectors
 import stateinfo
-import ImGui_CloseCurrentPopup
-import ImGui_OpenPopup
-import ImGui_EndPopup
-import ImGui_BeginPopupModal
-import ImGui_ColoredText
-import ImGui_Text
-import ImGui_ColoredTextUnformatted
-import ImGui_TextUnformatted
-import ImGui_SameLine
-import ImGui_ProgressBar
-import ImGui_Separator
-import ImGui_SeparatorText
-import ImGui_NewLine
-import ImGui_PopColor
-import ImGui_PushColor
-import ImGui_GetCursorScreenPos
-import ImGui_SetCursorScreenPos
-import ImGui_GetCursorPos
-import ImGui_SetCursorPos
-import ImGui_GetFontScale
-import ImGui_Button
-import ImGui_Checkbox
-import ImGui_ArrowButton
-import ImGui_ColorEdit4
-import ImGui_ColorEdit3
-import ImGui_SliderInt4
-import ImGui_SliderInt3
-import ImGui_SliderInt2
-import ImGui_SliderInt
-import ImGui_SliderFloat4
-import ImGui_SliderFloat3
-import ImGui_SliderFloat2
-import ImGui_SliderFloat
-import ImGui_InputInt4
-import ImGui_InputInt3
-import ImGui_InputInt2
-import ImGui_InputInt
-import ImGui_InputFloat4
-import ImGui_InputFloat3
-import ImGui_InputFloat2
-import ImGui_InputFloat
-import ImGui_InputTextWithHint
-import ImGui_InputTextMultiline
-import ImGui_InputText
-import ImGui_EndTable
-import ImGui_TableNextColumn
-import ImGui_TableNextRow
-import ImGui_BeginTable
-import ImGui_SetItemTooltip
-import ImGui_SetItemTooltipUnformatted
-import ImGui_MenuItem
-import ImGui_EndMenu
-import ImGui_BeginMenu
-import ImGui_SetWindowFontScale
-import ImGui_SetWindowSize
-import ImGui_SetWindowPos
-import ImGui_SetWindowCollapsed
-import ImGui_IsWindowCollapsed
-import ImGui_EndWindow
-import ImGui_BeginWindow
-import I_GetParm
 import Com_TouchMemory
 import Hunk_TempIsClear
 import Hunk_Check
@@ -1663,6 +1603,67 @@ import Com_EarlyParseCmdLine
 import Com_Milliseconds
 import Com_Frame
 import Sys_SnapVector
+import ImGui_CloseCurrentPopup
+import ImGui_OpenPopup
+import ImGui_EndPopup
+import ImGui_BeginPopupModal
+import ImGui_ColoredText
+import ImGui_Text
+import ImGui_ColoredTextUnformatted
+import ImGui_TextUnformatted
+import ImGui_SameLine
+import ImGui_ProgressBar
+import ImGui_Separator
+import ImGui_SeparatorText
+import ImGui_NewLine
+import ImGui_PopColor
+import ImGui_PushColor
+import ImGui_GetCursorScreenPos
+import ImGui_SetCursorScreenPos
+import ImGui_GetCursorPos
+import ImGui_SetCursorPos
+import ImGui_GetFontScale
+import ImGui_Button
+import ImGui_Checkbox
+import ImGui_ArrowButton
+import ImGui_ColorEdit4
+import ImGui_ColorEdit3
+import ImGui_SliderInt4
+import ImGui_SliderInt3
+import ImGui_SliderInt2
+import ImGui_SliderInt
+import ImGui_SliderFloat4
+import ImGui_SliderFloat3
+import ImGui_SliderFloat2
+import ImGui_SliderFloat
+import ImGui_InputInt4
+import ImGui_InputInt3
+import ImGui_InputInt2
+import ImGui_InputInt
+import ImGui_InputFloat4
+import ImGui_InputFloat3
+import ImGui_InputFloat2
+import ImGui_InputFloat
+import ImGui_InputTextWithHint
+import ImGui_InputTextMultiline
+import ImGui_InputText
+import ImGui_EndTable
+import ImGui_TableNextColumn
+import ImGui_TableNextRow
+import ImGui_BeginTable
+import ImGui_SetItemTooltip
+import ImGui_SetItemTooltipUnformatted
+import ImGui_MenuItem
+import ImGui_EndMenu
+import ImGui_BeginMenu
+import ImGui_SetWindowFontScale
+import ImGui_SetWindowSize
+import ImGui_SetWindowPos
+import ImGui_SetWindowCollapsed
+import ImGui_IsWindowCollapsed
+import ImGui_EndWindow
+import ImGui_BeginWindow
+import I_GetParm
 import Con_DPrintf
 import Con_Printf
 import Con_Shutdown
@@ -1692,8 +1693,6 @@ import ColorBytes4
 import ColorBytes3
 import VectorNormalize
 import AddPointToBounds
-import ClearBounds
-import RadiusFromBounds
 import NormalizeColor
 import _VectorMA
 import _VectorScale
@@ -1717,6 +1716,8 @@ import BoundsIntersect
 import disBetweenOBJ
 import vec3_set
 import vec3_get
+import ClearBounds
+import RadiusFromBounds
 import ClampShort
 import ClampCharMove
 import ClampChar

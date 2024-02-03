@@ -123,7 +123,7 @@ qboolean SG_StartLevel( void )
 
     Cvar_Set( "sg_levelIndex", va( "%i", (int)(uintptr_t)( info - sg_levelInfoData ) ) );
 
-    level.stats.timeStart = trap_Milliseconds();
+    level.stats.timeStart = Sys_Milliseconds();
 
     VectorCopy2( cameraPos, sg.mapInfo.spawns[0].xyz );
     zoom = 1.6f;
@@ -139,12 +139,12 @@ void SG_SaveLevelData( void )
 {
     int i;
 
-    trap_BeginSaveSection( "level" );
+    G_BeginSaveSection( "level" );
 
-    trap_SaveInt( "checkpoint_index", level.checkpointIndex );
-    trap_SaveInt( "level_index", level.index );
+    G_SaveInt( "checkpoint_index", level.checkpointIndex );
+    G_SaveInt( "level_index", level.index );
 
-    trap_SaveVec2( "sg_camera_position", &sg.cameraPos );
+    G_SaveVector2( "sg_camera_position", &sg.cameraPos );
 
     //
     // archive entity data
@@ -153,20 +153,20 @@ void SG_SaveLevelData( void )
 
     }
 
-    trap_EndSaveSection();
+    G_EndSaveSection();
 }
 
 void SG_LoadLevelData( void )
 {
     nhandle_t section;
 
-    section = trap_GetSaveSection( "level" );
+    section = G_GetSaveSection( "level" );
     if ( section == FS_INVALID_HANDLE ) {
         trap_Error( "SG_LoadLevelData: failed to fetch \"level\" section from save file!" );
     }
 
-    level.checkpointIndex = trap_LoadInt( "checkpoint_index", section );
-    level.index = trap_LoadInt( "level_index", section );
+    level.checkpointIndex = G_LoadInt( "checkpoint_index", section );
+    level.index = G_LoadInt( "level_index", section );
 
     G_SetActiveMap( level.index, &sg.mapInfo, sg.soundBits, &sg.activeEnts );
 }
@@ -193,7 +193,7 @@ void SG_DrawLevelStats( void )
 
 int SG_EndLevel( void )
 {
-    level.stats.timeEnd = trap_Milliseconds();
+    level.stats.timeEnd = Sys_Milliseconds();
 
     sg.state = SG_SHOW_LEVEL_STATS;
 
@@ -215,111 +215,48 @@ int SG_ParseInfos( char *buf, int max, char **infos )
     text = (const char **)&buf;
     count = 0;
 
-    while (1) {
+    while ( 1 ) {
         token = COM_Parse( text );
-        if (!token[0]) {
+        if ( !token[0] ) {
             break;
         }
-        if (token[0] != '{') {
-            Con_Printf( "missing '{' in info file\n" );
+        if ( token[0] != '{' ) {
+            G_Printf( "missing '{' in info file\n" );
             break;
         }
 
-        if (count == max) {
-            Con_Printf( "max infos exceeded\n" );
+        if ( count == max ) {
+            G_Printf( "max infos exceeded\n" );
             break;
         }
 
         info[0] = '\0';
-        while (1) {
+        while ( 1 ) {
             token = COM_ParseExt( text, qtrue );
-            if (!token[0]) {
-                Con_Printf( "unexpected end of info file\n" );
+            if ( !token[0] ) {
+                G_Printf( "unexpected end of info file\n" );
                 break;
             }
-            if (token[0] == '}') {
+            if ( token[0] == '}' ) {
                 break;
             }
             N_strncpyz( key, token, sizeof(key) );
 
             token = COM_ParseExt( text, qfalse );
-            if (!token[0]) {
+            if ( !token[0] ) {
                 token = "<NULL>";
             }
             Info_SetValueForKey( info, key, token );
         }
         // NOTE: extra space for level index
-        infos[count] = SG_MemAlloc( strlen(info) + strlen("\\num\\") + strlen(va("%i", MAX_LEVELS)) + 1 );
-        if (infos[count]) {
-            strcpy(infos[count], info);
+        infos[count] = SG_MemAlloc( strlen( info ) + strlen( "\\num\\" ) + strlen( va( "%i", MAX_LEVELS ) ) + 1 );
+        if ( infos[count] ) {
+            strcpy( infos[count], info );
             count++;
         }
     }
 
     return count;
-}
-
-static void SG_LoadLevelInfoFromFile( const char *filename )
-{
-    int len;
-    file_t f;
-    char buf[MAX_LEVELINFO_LEN];
-
-    len = trap_FS_FOpenFile( filename, &f, FS_OPEN_READ );
-    if (f == FS_INVALID_HANDLE) {
-        G_Printf( COLOR_RED "file not found: %s\n", filename );
-        return;
-    }
-    if (len >= MAX_LEVELINFO_LEN) {
-        G_Printf( COLOR_RED "file too large: %s is %i, max allowed is %i\n", filename, len, MAX_LEVELINFO_LEN );
-        trap_FS_FClose( f );
-        return;
-    }
-
-    trap_FS_Read( buf, len, f );
-    buf[len] = 0;
-    trap_FS_FClose( f );
-
-    sg.numLevels += SG_ParseInfos( buf, MAX_LEVELS - sg.numLevels, &sg_levelInfos[sg.numLevels] );
-}
-
-static void SG_LoadLevelInfos( void )
-{
-    int numdirs;
-    char filename[128];
-    char dirlist[1024];
-    char *dirptr;
-    int i, dirlen;
-    int n;
-    vmCvar_t levelInfoFile;
-
-    sg.numLevels = 0;
-
-    Cvar_Register( &levelInfoFile, "sg_levelInfoFile", "", CVAR_INIT | CVAR_ROM );
-    if ( *levelInfoFile.s ) {
-        SG_LoadLevelInfoFromFile( levelInfoFile.s );
-    } else {
-        SG_LoadLevelInfoFromFile( "scripts/levels.txt" );
-    }
-
-    // get all arenas from .lvl files
-    numdirs = trap_FS_GetFileList( "scripts", ".lvl", dirlist, 1024 );
-    dirptr = dirlist;
-    for (i = 0; i < numdirs; i++, dirptr += dirlen + 1) {
-        dirlen = strlen( dirptr );
-
-        // FIXME: possibly use Com_snprintf?
-
-        strcpy( filename, "scripts/" );
-        strcat( filename, dirptr );
-        SG_LoadLevelInfoFromFile( filename );
-    }
-    G_Printf( "%i levels parsed.\n", sg.numLevels );
-
-    // set initial numbers
-    for ( n = 0; n < sg.numLevels; n++ ) {
-        Info_SetValueForKey( sg_levelInfos[n], "num", va( "%i", n ) );
-    }
 }
 
 static void SG_LoadLevelsFromFile( const char *filename ) {

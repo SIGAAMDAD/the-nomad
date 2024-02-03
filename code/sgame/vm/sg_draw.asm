@@ -32,159 +32,37 @@ INDIRI4
 RETI4
 LABELV $90
 endproc EntityIsInView 4 8
-proc SG_CalcVerts 0 4
+proc SG_DrawEntities 4 0
 line 19
 ;16:}
 ;17:
-;18:static void SG_CalcVerts( const sgentity_t *ent, polyVert_t *verts )
+;18:static void SG_DrawEntities( void )
 ;19:{
-line 20
-;20:    trap_Error( "SG_CalcVerts: called" );
-ADDRGP4 $93
-ARGP4
-ADDRGP4 trap_Error
-CALLV
-pop
-line 22
-;21:    // FIXME: implement
-;22:}
+line 21
+;20:    const sgentity_t *ent;
+;21:}
 LABELV $92
-endproc SG_CalcVerts 0 4
-proc SG_DrawEntity 152 12
-line 25
-;23:
-;24:static void SG_DrawEntity( const sgentity_t *ent )
-;25:{
-line 33
-;26:    polyVert_t verts[4];
-;27:
-;28:    // is it visible?
-;29://    if ( !EntityIsInView( &ent->bounds ) ) {
-;30://        return;
-;31://    }
-;32:
-;33:    data.polyCount++;
-ADDRLP4 144
-ADDRGP4 data
-ASGNP4
-ADDRLP4 144
-INDIRP4
-ADDRLP4 144
-INDIRP4
-INDIRI4
-CNSTI4 1
-ADDI4
-ASGNI4
-line 34
-;34:    data.vertexCount += 4;
-ADDRLP4 148
-ADDRGP4 data+4
-ASGNP4
-ADDRLP4 148
-INDIRP4
-ADDRLP4 148
-INDIRP4
-INDIRI4
-CNSTI4 4
-ADDI4
-ASGNI4
-line 38
-;35:
-;36://    SG_CalcVerts( ent, verts );
-;37:
-;38:    RE_AddPolyToScene( ent->hShader, verts, 4 );
-ADDRFP4 0
-INDIRP4
-CNSTI4 128
-ADDP4
-INDIRI4
-ARGI4
-ADDRLP4 0
-ARGP4
-CNSTI4 4
-ARGI4
-ADDRGP4 RE_AddPolyToScene
-CALLV
-pop
-line 39
-;39:}
-LABELV $94
-endproc SG_DrawEntity 152 12
-proc SG_AddSpritesToFrame 8 4
-line 42
-;40:
-;41:static void SG_AddSpritesToFrame( void )
-;42:{
-line 46
-;43:    const sgentity_t *ent;
-;44:    int i;
-;45:
-;46:    ent = &sg_entities[0];
-ADDRLP4 0
-ADDRGP4 sg_entities
-ASGNP4
-line 47
-;47:    for ( i = 0; i < sg.numEntities; i++, ent++ ) {
-ADDRLP4 4
-CNSTI4 0
-ASGNI4
-ADDRGP4 $100
-JUMPV
-LABELV $97
-line 48
-;48:        SG_DrawEntity( ent );
-ADDRLP4 0
-INDIRP4
-ARGP4
-ADDRGP4 SG_DrawEntity
-CALLV
-pop
-line 49
-;49:    }
-LABELV $98
-line 47
-ADDRLP4 4
-ADDRLP4 4
-INDIRI4
-CNSTI4 1
-ADDI4
-ASGNI4
-ADDRLP4 0
-ADDRLP4 0
-INDIRP4
-CNSTI4 160
-ADDP4
-ASGNP4
-LABELV $100
-ADDRLP4 4
-INDIRI4
-ADDRGP4 sg+76
-INDIRI4
-LTI4 $97
-line 50
-;50:}
-LABELV $96
-endproc SG_AddSpritesToFrame 8 4
+endproc SG_DrawEntities 4 0
 proc SG_DrawPlayer 8 12
-line 57
-;51:
-;52:/*
-;53:* SG_DrawPlayer: draws the player, the player's sprite is special
-;54:* because it has two parts to draw
-;55:*/
-;56:static void SG_DrawPlayer( void )
-;57:{
-line 60
-;58:    const sgentity_t *ent;
-;59:
-;60:    ent = sg.playr.ent;
+line 28
+;22:
+;23:/*
+;24:* SG_DrawPlayer: draws the player, the player's sprite is special
+;25:* because it has two parts to draw
+;26:*/
+;27:static void SG_DrawPlayer( void )
+;28:{
+line 31
+;29:    const sgentity_t *ent;
+;30:
+;31:    ent = sg.playr.ent;
 ADDRLP4 0
-ADDRGP4 sg+61620
+ADDRGP4 sg+63696
 INDIRP4
 ASGNP4
-line 62
-;61:
-;62:    if ( ent->state->frames ) {
+line 33
+;32:
+;33:    if ( ent->state->frames ) {
 ADDRLP4 0
 INDIRP4
 CNSTI4 92
@@ -194,9 +72,9 @@ CNSTI4 4
 ADDP4
 INDIRU4
 CNSTU4 0
-EQU4 $104
-line 63
-;63:        RE_AddSpriteToScene( &ent->origin, ent->hSpriteSheet, ent->sprite + ent->frame );
+EQU4 $95
+line 34
+;34:        RE_AddSpriteToScene( &ent->origin, ent->hSpriteSheet, ent->sprite + ent->frame );
 ADDRLP4 0
 INDIRP4
 CNSTI4 64
@@ -223,13 +101,13 @@ ARGI4
 ADDRGP4 RE_AddSpriteToScene
 CALLV
 pop
-line 64
-;64:    } else {
-ADDRGP4 $105
+line 35
+;35:    } else {
+ADDRGP4 $96
 JUMPV
-LABELV $104
-line 65
-;65:        RE_AddSpriteToScene( &ent->origin, ent->hSpriteSheet, ent->sprite );
+LABELV $95
+line 36
+;36:        RE_AddSpriteToScene( &ent->origin, ent->hSpriteSheet, ent->sprite );
 ADDRLP4 0
 INDIRP4
 CNSTI4 64
@@ -250,12 +128,12 @@ ARGI4
 ADDRGP4 RE_AddSpriteToScene
 CALLV
 pop
-line 66
-;66:    }
-LABELV $105
-line 68
-;67:
-;68:    RE_AddSpriteToScene( &ent->origin, ent->hSpriteSheet, ( sg.playr.foot_sprite + ent->facing ) + sg.playr.foot_frame );
+line 37
+;37:    }
+LABELV $96
+line 39
+;38:
+;39:    RE_AddSpriteToScene( &ent->origin, ent->hSpriteSheet, ( sg.playr.foot_sprite + ent->facing ) + sg.playr.foot_frame );
 ADDRLP4 0
 INDIRP4
 CNSTI4 64
@@ -267,7 +145,7 @@ CNSTI4 156
 ADDP4
 INDIRI4
 ARGI4
-ADDRGP4 sg+61620+44
+ADDRGP4 sg+63696+44
 INDIRI4
 ADDRLP4 0
 INDIRP4
@@ -275,28 +153,26 @@ CNSTI4 124
 ADDP4
 INDIRI4
 ADDI4
-ADDRGP4 sg+61620+48
+ADDRGP4 sg+63696+48
 INDIRI4
 ADDI4
 ARGI4
 ADDRGP4 RE_AddSpriteToScene
 CALLV
 pop
-line 69
-;69:}
-LABELV $102
+line 40
+;40:}
+LABELV $93
 endproc SG_DrawPlayer 8 12
-export SG_DrawFrame
-proc SG_DrawFrame 56 12
-line 72
-;70:
-;71:int SG_DrawFrame( void )
-;72:{
-line 76
-;73:    renderSceneRef_t refdef;
-;74:
-;75:    // setup scene
-;76:    memset( &refdef, 0, sizeof(refdef) );
+proc SG_DrawHUD 32 12
+line 43
+;41:
+;42:static void SG_DrawHUD( void )
+;43:{
+line 46
+;44:    renderSceneRef_t refdef;
+;45:
+;46:    memset( &refdef, 0, sizeof(refdef) );
 ADDRLP4 0
 ARGP4
 CNSTI4 0
@@ -306,9 +182,63 @@ ARGU4
 ADDRGP4 memset
 CALLP4
 pop
-line 78
-;77:
-;78:    refdef.width = data.realCamWidth;
+line 47
+;47:    refdef.x = 0;
+ADDRLP4 0
+CNSTU4 0
+ASGNU4
+line 48
+;48:    refdef.y = 0;
+ADDRLP4 0+4
+CNSTU4 0
+ASGNU4
+line 49
+;49:    refdef.width = sg.gpuConfig.vidWidth;
+ADDRLP4 0+8
+ADDRGP4 sg+63756+12308
+INDIRI4
+CVIU4 4
+ASGNU4
+line 50
+;50:    refdef.height = sg.gpuConfig.vidHeight;
+ADDRLP4 0+12
+ADDRGP4 sg+63756+12312
+INDIRI4
+CVIU4 4
+ASGNU4
+line 57
+;51:
+;52:    // draw crosshair
+;53:
+;54:    //
+;55:    // draw status bars
+;56:    //
+;57:}
+LABELV $101
+endproc SG_DrawHUD 32 12
+export SG_DrawFrame
+proc SG_DrawFrame 56 12
+line 60
+;58:
+;59:int SG_DrawFrame( void )
+;60:{
+line 64
+;61:    renderSceneRef_t refdef;
+;62:
+;63:    // setup scene
+;64:    memset( &refdef, 0, sizeof(refdef) );
+ADDRLP4 0
+ARGP4
+CNSTI4 0
+ARGI4
+CNSTU4 32
+ARGU4
+ADDRGP4 memset
+CALLP4
+pop
+line 66
+;65:
+;66:    refdef.width = data.realCamWidth;
 ADDRLP4 36
 ADDRGP4 data+8
 INDIRF4
@@ -320,7 +250,7 @@ ADDRLP4 36
 INDIRF4
 ADDRLP4 40
 INDIRF4
-LTF4 $114
+LTF4 $113
 ADDRLP4 32
 ADDRLP4 36
 INDIRF4
@@ -332,22 +262,22 @@ CVIU4 4
 CNSTU4 2147483648
 ADDU4
 ASGNU4
-ADDRGP4 $115
+ADDRGP4 $114
 JUMPV
-LABELV $114
+LABELV $113
 ADDRLP4 32
 ADDRLP4 36
 INDIRF4
 CVFI4 4
 CVIU4 4
 ASGNU4
-LABELV $115
+LABELV $114
 ADDRLP4 0+8
 ADDRLP4 32
 INDIRU4
 ASGNU4
-line 79
-;79:    refdef.height = data.realCamHeight;
+line 67
+;67:    refdef.height = data.realCamHeight;
 ADDRLP4 48
 ADDRGP4 data+12
 INDIRF4
@@ -359,7 +289,7 @@ ADDRLP4 48
 INDIRF4
 ADDRLP4 52
 INDIRF4
-LTF4 $119
+LTF4 $118
 ADDRLP4 44
 ADDRLP4 48
 INDIRF4
@@ -371,41 +301,41 @@ CVIU4 4
 CNSTU4 2147483648
 ADDU4
 ASGNU4
-ADDRGP4 $120
+ADDRGP4 $119
 JUMPV
-LABELV $119
+LABELV $118
 ADDRLP4 44
 ADDRLP4 48
 INDIRF4
 CVFI4 4
 CVIU4 4
 ASGNU4
-LABELV $120
+LABELV $119
 ADDRLP4 0+12
 ADDRLP4 44
 INDIRU4
 ASGNU4
-line 80
-;80:    refdef.x = 0;
+line 68
+;68:    refdef.x = 0;
 ADDRLP4 0
 CNSTU4 0
 ASGNU4
-line 81
-;81:    refdef.y = 0;
+line 69
+;69:    refdef.y = 0;
 ADDRLP4 0+4
 CNSTU4 0
 ASGNU4
-line 82
-;82:    refdef.time = sg.levelTime;
+line 70
+;70:    refdef.time = sg.levelTime;
 ADDRLP4 0+28
-ADDRGP4 sg+88
+ADDRGP4 sg+2164
 INDIRI4
 CVIU4 4
 ASGNU4
-line 84
-;83:
-;84:    G_SetCameraData( &sg.cameraPos, 1.6f, 0.0f );
-ADDRGP4 sg+4268384
+line 72
+;71:
+;72:    G_SetCameraData( &sg.cameraPos, 1.6f, 0.0f );
+ADDRGP4 sg+4270460
 ARGP4
 CNSTF4 1070386381
 ARGF4
@@ -414,34 +344,33 @@ ARGF4
 ADDRGP4 G_SetCameraData
 CALLV
 pop
-line 87
-;85:
-;86:    // draw the player
-;87:    SG_DrawPlayer();
+line 75
+;73:
+;74:    // draw entities
+;75:    SG_DrawPlayer();
 ADDRGP4 SG_DrawPlayer
 CALLV
 pop
-line 90
-;88:
-;89:    // draw everything
-;90:    RE_ClearScene();
+line 78
+;76:
+;77:    // finish the scene
+;78:    RE_ClearScene();
 ADDRGP4 RE_ClearScene
 CALLV
 pop
-line 92
-;91:
-;92:    RE_RenderScene( &refdef );
+line 79
+;79:    RE_RenderScene( &refdef );
 ADDRLP4 0
 ARGP4
 ADDRGP4 RE_RenderScene
 CALLV
 pop
-line 94
-;93:
-;94:    return 1;
+line 81
+;80:
+;81:    return 1;
 CNSTI4 1
 RETI4
-LABELV $110
+LABELV $109
 endproc SG_DrawFrame 56 12
 bss
 align 4
@@ -463,6 +392,8 @@ import trap_FS_FOpenRead
 import trap_FS_FOpenWrite
 import trap_FS_FOpenFile
 import Sys_GetGPUConfig
+import RE_SetColor
+import RE_DrawImage
 import RE_AddSpriteToScene
 import RE_AddPolyToScene
 import RE_RenderScene
@@ -471,46 +402,45 @@ import RE_LoadWorldMap
 import RE_RegisterSprite
 import RE_RegisterSpriteSheet
 import RE_RegisterShader
-import trap_Snd_ClearLoopingTrack
-import trap_Snd_SetLoopingTrack
-import trap_Snd_StopSfx
-import trap_Snd_PlaySfx
-import trap_Snd_QueueTrack
-import trap_Snd_RegisterTrack
-import trap_Snd_RegisterSfx
+import Snd_ClearLoopingTrack
+import Snd_SetLoopingTrack
+import Snd_StopSfx
+import Snd_PlaySfx
+import Snd_RegisterTrack
+import Snd_RegisterSfx
 import trap_Key_ClearStates
 import trap_Key_GetKey
 import trap_Key_GetCatcher
 import trap_Key_SetCatcher
-import trap_Milliseconds
-import trap_CheckWallHit
+import Sys_Milliseconds
+import G_CheckWallHit
 import G_SoundRecursive
 import G_CastRay
 import G_SetActiveMap
 import G_LoadMap
 import G_SetCameraData
-import trap_MemoryRemaining
+import Sys_MemoryRemaining
 import trap_RemoveCommand
 import trap_AddCommand
 import trap_SendConsoleCommand
-import trap_LoadVec4
-import trap_LoadVec3
-import trap_LoadVec2
-import trap_LoadString
-import trap_LoadFloat
-import trap_LoadInt
-import trap_LoadUInt
-import trap_GetSaveSection
-import trap_WriteVec4
-import trap_WriteVec3
-import trap_WriteVec2
-import trap_WriteFloat
-import trap_WriteString
-import trap_WriteUInt
-import trap_WriteInt
-import trap_WriteChar
-import trap_EndSaveSection
-import trap_BeginSaveSection
+import G_LoadVector4
+import G_LoadVector3
+import G_LoadVector2
+import G_LoadString
+import LoadFloat
+import G_LoadInt
+import G_LoadUInt
+import G_GetSaveSection
+import G_SaveVector4
+import G_SaveVector3
+import G_SaveVector2
+import G_SaveFloat
+import G_SaveString
+import G_SaveUInt
+import G_SaveInt
+import G_SaveChar
+import G_EndSaveSection
+import G_BeginSaveSection
 import trap_Args
 import trap_Argv
 import trap_Argc
@@ -586,67 +516,6 @@ import sg_entities
 import inversedirs
 import dirvectors
 import stateinfo
-import ImGui_CloseCurrentPopup
-import ImGui_OpenPopup
-import ImGui_EndPopup
-import ImGui_BeginPopupModal
-import ImGui_ColoredText
-import ImGui_Text
-import ImGui_ColoredTextUnformatted
-import ImGui_TextUnformatted
-import ImGui_SameLine
-import ImGui_ProgressBar
-import ImGui_Separator
-import ImGui_SeparatorText
-import ImGui_NewLine
-import ImGui_PopColor
-import ImGui_PushColor
-import ImGui_GetCursorScreenPos
-import ImGui_SetCursorScreenPos
-import ImGui_GetCursorPos
-import ImGui_SetCursorPos
-import ImGui_GetFontScale
-import ImGui_Button
-import ImGui_Checkbox
-import ImGui_ArrowButton
-import ImGui_ColorEdit4
-import ImGui_ColorEdit3
-import ImGui_SliderInt4
-import ImGui_SliderInt3
-import ImGui_SliderInt2
-import ImGui_SliderInt
-import ImGui_SliderFloat4
-import ImGui_SliderFloat3
-import ImGui_SliderFloat2
-import ImGui_SliderFloat
-import ImGui_InputInt4
-import ImGui_InputInt3
-import ImGui_InputInt2
-import ImGui_InputInt
-import ImGui_InputFloat4
-import ImGui_InputFloat3
-import ImGui_InputFloat2
-import ImGui_InputFloat
-import ImGui_InputTextWithHint
-import ImGui_InputTextMultiline
-import ImGui_InputText
-import ImGui_EndTable
-import ImGui_TableNextColumn
-import ImGui_TableNextRow
-import ImGui_BeginTable
-import ImGui_SetItemTooltip
-import ImGui_SetItemTooltipUnformatted
-import ImGui_MenuItem
-import ImGui_EndMenu
-import ImGui_BeginMenu
-import ImGui_SetWindowFontScale
-import ImGui_SetWindowSize
-import ImGui_SetWindowPos
-import ImGui_SetWindowCollapsed
-import ImGui_IsWindowCollapsed
-import ImGui_EndWindow
-import ImGui_BeginWindow
-import I_GetParm
 import Com_TouchMemory
 import Hunk_TempIsClear
 import Hunk_Check
@@ -840,6 +709,67 @@ import Com_EarlyParseCmdLine
 import Com_Milliseconds
 import Com_Frame
 import Sys_SnapVector
+import ImGui_CloseCurrentPopup
+import ImGui_OpenPopup
+import ImGui_EndPopup
+import ImGui_BeginPopupModal
+import ImGui_ColoredText
+import ImGui_Text
+import ImGui_ColoredTextUnformatted
+import ImGui_TextUnformatted
+import ImGui_SameLine
+import ImGui_ProgressBar
+import ImGui_Separator
+import ImGui_SeparatorText
+import ImGui_NewLine
+import ImGui_PopColor
+import ImGui_PushColor
+import ImGui_GetCursorScreenPos
+import ImGui_SetCursorScreenPos
+import ImGui_GetCursorPos
+import ImGui_SetCursorPos
+import ImGui_GetFontScale
+import ImGui_Button
+import ImGui_Checkbox
+import ImGui_ArrowButton
+import ImGui_ColorEdit4
+import ImGui_ColorEdit3
+import ImGui_SliderInt4
+import ImGui_SliderInt3
+import ImGui_SliderInt2
+import ImGui_SliderInt
+import ImGui_SliderFloat4
+import ImGui_SliderFloat3
+import ImGui_SliderFloat2
+import ImGui_SliderFloat
+import ImGui_InputInt4
+import ImGui_InputInt3
+import ImGui_InputInt2
+import ImGui_InputInt
+import ImGui_InputFloat4
+import ImGui_InputFloat3
+import ImGui_InputFloat2
+import ImGui_InputFloat
+import ImGui_InputTextWithHint
+import ImGui_InputTextMultiline
+import ImGui_InputText
+import ImGui_EndTable
+import ImGui_TableNextColumn
+import ImGui_TableNextRow
+import ImGui_BeginTable
+import ImGui_SetItemTooltip
+import ImGui_SetItemTooltipUnformatted
+import ImGui_MenuItem
+import ImGui_EndMenu
+import ImGui_BeginMenu
+import ImGui_SetWindowFontScale
+import ImGui_SetWindowSize
+import ImGui_SetWindowPos
+import ImGui_SetWindowCollapsed
+import ImGui_IsWindowCollapsed
+import ImGui_EndWindow
+import ImGui_BeginWindow
+import I_GetParm
 import Con_DPrintf
 import Con_Printf
 import Con_Shutdown
@@ -869,8 +799,6 @@ import ColorBytes4
 import ColorBytes3
 import VectorNormalize
 import AddPointToBounds
-import ClearBounds
-import RadiusFromBounds
 import NormalizeColor
 import _VectorMA
 import _VectorScale
@@ -894,6 +822,8 @@ import BoundsIntersect
 import disBetweenOBJ
 import vec3_set
 import vec3_get
+import ClearBounds
+import RadiusFromBounds
 import ClampShort
 import ClampCharMove
 import ClampChar
@@ -977,27 +907,3 @@ import memmove
 import memset
 import memchr
 import memcpy
-lit
-align 1
-LABELV $93
-byte 1 83
-byte 1 71
-byte 1 95
-byte 1 67
-byte 1 97
-byte 1 108
-byte 1 99
-byte 1 86
-byte 1 101
-byte 1 114
-byte 1 116
-byte 1 115
-byte 1 58
-byte 1 32
-byte 1 99
-byte 1 97
-byte 1 108
-byte 1 108
-byte 1 101
-byte 1 100
-byte 1 0

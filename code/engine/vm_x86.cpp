@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 // with dynamic register allocation and various optimizations
 
 #include "n_shared.h"
+#include "n_common.h"
 #include "vm_local.h"
 //#include "../ui/ui_public.h"
 #include "../sgame/sg_public.h"
@@ -3898,7 +3899,7 @@ qboolean VM_Compile( vm_t *vm, vmHeader_t *header ) {
 #endif
 
 	inst = (instruction_t*)Z_Malloc( (header->instructionCount + 8 ) * sizeof( instruction_t ), TAG_STATIC );
-	instructionOffsets = (int*)Z_Malloc( header->instructionCount * sizeof( int32_t ), TAG_STATIC );
+	instructionOffsets = (int32_t *)Z_Malloc( header->instructionCount * sizeof( int32_t ), TAG_STATIC );
 
 	errMsg = VM_LoadInstructions( (byte *) header + header->codeOffset, header->codeLength, header->instructionCount, inst );
 	if ( !errMsg ) {

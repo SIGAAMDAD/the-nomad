@@ -76,8 +76,8 @@ qboolean Ent_CheckWallCollision( const sgentity_t *e )
 	};
 
 	// check for a wall collision
-	// if we're touching a wall with the side marked for collision, return true
-	if ( trap_CheckWallHit( &e->origin, d ) ) {
+	// if we're touching anything with the side marked for collision, return true
+	if ( G_CheckWallHit( &e->origin, d ) ) {
 		return qtrue;
 	}
 

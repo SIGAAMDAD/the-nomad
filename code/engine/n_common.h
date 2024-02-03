@@ -489,7 +489,7 @@ typedef struct {
 	qboolean exists;
 } fileStats_t;
 
-#ifndef Q3_VM
+#ifdef __cplusplus
 
 #define MUTEX_TYPE_STANDARD 0
 #define MUTEX_TYPE_SHARED 1

@@ -4,11 +4,11 @@
 #pragma once
 
 #include "../engine/n_shared.h"
-#include "../engine/n_common.h"
 #include "../sgame/sg_public.h"
 #include "../rendercommon/r_public.h"
 #include "../engine/gln_files.h"
 #if defined(__cplusplus)
+#include "../engine/n_common.h"
 #include "../rendercommon/imgui.h"
 #include "g_vmimgui.h"
 #include "../engine/n_cvar.h"

@@ -5,6 +5,7 @@
 #include "sg_public.h"
 #include "../rendercommon/r_types.h"
 #include "sg_imgui.h"
+#include "../engine/n_common.h"
 #include "../game/g_game.h"
 
 #pragma once
@@ -241,12 +242,10 @@ typedef struct
 	float missile_range;
 } mobj_t;
 
-typedef struct stringHash_s
-{
+typedef struct string_s {
 	char name[MAX_STRING_CHARS];
 	char string[MAX_STRING_CHARS];
-	struct stringHash_s *next;
-} stringHash_t;
+} string_t;
 
 typedef struct
 {
@@ -269,7 +268,20 @@ typedef struct
 	nhandle_t grunt_sprites;
 	nhandle_t shotty_sprites;
 
-	stringHash_t *pickupShotgun;
+	// gfx shaders
+	nhandle_t bloodSplatterShader[4];
+
+	//
+	// sprite sheets
+	//
+	nhandle_t gfxSprites;
+
+	sfxHandle_t footsteps;
+
+	sfxHandle_t gibBounce0;
+	sfxHandle_t gibBounce1;
+
+	string_t pickupShotgun;
 } sgameMedia_t;
 
 typedef struct
@@ -455,15 +467,15 @@ qboolean P_GiveWeapon( weapontype_t weapon );
 //
 
 // print a message on the local console
-void Print( const char *str );
+void trap_Print( const char *str );
 
 // abort the vm
-void Error( const char *str );
+void trap_Error( const char *str );
 
 // console command access
-int Cmd_Argc( void );
-void Cmd_Argv( int n, char *buf, int bufferLength );
-void Cmd_Args( char *buf, int bufferLength );
+int trap_Argc( void );
+void trap_Argv( int n, char *buf, int bufferLength );
+void trap_Args( char *buf, int bufferLength );
 
 //
 // archive file handling
@@ -477,9 +489,9 @@ void G_SaveInt( const char *name, int data );
 void G_SaveUInt( const char *name, unsigned int data );
 void G_SaveString( const char *name, const char *data );
 void G_SaveFloat( const char *name, float data );
-void G_SaveVec2( const char *name, const vec2_t *data );
-void G_SaveVec3( const char *name, const vec3_t *data );
-void G_SaveVec4( const char *name, const vec4_t *data );
+void G_SaveVector2( const char *name, const vec2_t *data );
+void G_SaveVector3( const char *name, const vec3_t *data );
+void G_SaveVector4( const char *name, const vec4_t *data );
 
 // load
 nhandle_t G_GetSaveSection( const char *name );
@@ -487,9 +499,9 @@ unsigned int G_LoadUInt( const char *name, nhandle_t hSection );
 int G_LoadInt( const char *name, nhandle_t hSection );
 float LoadFloat( const char *name, nhandle_t hSection );
 void G_LoadString( const char *name, char *pBuffer, int maxLength, nhandle_t hSection );
-void G_LoadVec2( const char *name, vec2_t *data, nhandle_t hSection );
-void G_LoadVec3( const char *name, vec3_t *data, nhandle_t hSection );
-void G_LoadVec4( const char *name, vec4_t *data, nhandle_t hSection );
+void G_LoadVector2( const char *name, vec2_t *data, nhandle_t hSection );
+void G_LoadVector3( const char *name, vec3_t *data, nhandle_t hSection );
+void G_LoadVector4( const char *name, vec4_t *data, nhandle_t hSection );
 
 //===============================================
 
@@ -497,13 +509,13 @@ void G_LoadVec4( const char *name, vec4_t *data, nhandle_t hSection );
 // for map changing, etc.  The command is not executed immediately,
 // but will be executed in order the next time console commands
 // are processed
-void Cmd_SendConsoleCommand( const char *text );
+void trap_SendConsoleCommand( const char *text );
 
 // register a command name so the console can perform command completion.
 // FIXME: replace this with a normal console command "defineCommand"?
-void Cmd_AddCommand( const char *cmdName );
+void trap_AddCommand( const char *cmdName );
 
-void Cmd_RemoveCommand( const char *cmdName );
+void trap_RemoveCommand( const char *cmdName );
 
 int Sys_MemoryRemaining( void );
 
@@ -520,10 +532,10 @@ qboolean G_CheckWallHit( const vec3_t *origin, dirtype_t dir );
 
 int Sys_Milliseconds( void );
 
-void Key_SetCatcher( int catcher );
-int Key_GetCatcher( void );
-int Key_GetKey( const char *key );
-void Key_ClearStates( void );
+void trap_Key_SetCatcher( int catcher );
+int trap_Key_GetCatcher( void );
+int trap_Key_GetKey( const char *key );
+void trap_Key_ClearStates( void );
 
 sfxHandle_t Snd_RegisterSfx( const char *npath );
 sfxHandle_t Snd_RegisterTrack( const char *npath );
@@ -546,17 +558,17 @@ void RE_SetColor( const float *pColor );
 void Sys_GetGPUConfig( gpuConfig_t *config );
 
 // filesystem access
-uint32_t FS_FOpenFile( const char *npath, file_t *f, fileMode_t mode );
-file_t FS_FOpenWrite( const char *npath );
-file_t FS_FOpenRead( const char *npath );
-void FS_FClose( file_t f );
-int FS_Write( const void *data, int size, file_t f );
-int FS_Read( void *data, int size, file_t f );
-int FS_GetFileList( const char *path, const char *extension, char *listbuf, int bufsize ); 
-int FS_FileSeek( file_t f, fileOffset_t offset, int whence );
-int FS_FileLength( file_t f );
-int FS_FileTell( file_t f );
-void GDR_ATTRIBUTE((format(printf, 2, 3))) FS_Printf( file_t f, const char *fmt, ... );
+uint32_t trap_FS_FOpenFile( const char *npath, file_t *f, fileMode_t mode );
+file_t trap_FS_FOpenWrite( const char *npath );
+file_t trap_FS_FOpenRead( const char *npath );
+void trap_FS_FClose( file_t f );
+int trap_FS_Write( const void *data, int size, file_t f );
+int trap_FS_Read( void *data, int size, file_t f );
+int trap_FS_GetFileList( const char *path, const char *extension, char *listbuf, int bufsize ); 
+int trap_FS_FileSeek( file_t f, fileOffset_t offset, int whence );
+int trap_FS_FileLength( file_t f );
+int trap_FS_FileTell( file_t f );
+void GDR_DECL GDR_ATTRIBUTE((format(printf, 2, 3))) trap_FS_Printf( file_t f, const char *fmt, ... );
 
 // console variable interaction
 void Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags );

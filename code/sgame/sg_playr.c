@@ -179,11 +179,11 @@ void P_MeleeThink( sgentity_t *self )
 	
 	if ( ent->flags & EF_PARRY ) {
 		// its a projectile
-		trap_Snd_PlaySfx( sg.media.player_parry );
+		Snd_PlaySfx( sg.media.player_parry );
 		Ent_SetState( sg.playr.ent, S_PLAYR_PARRY );
 	} else if ( ent->flags & EF_FIGHTING && ent->flags & EF_PARRY ) {
 		// its an attack
-		trap_Snd_PlaySfx( sg.media.player_parry );
+		Snd_PlaySfx( sg.media.player_parry );
 		Ent_SetState( sg.playr.ent, S_PLAYR_PARRY );
 	}
 }

@@ -278,13 +278,10 @@ int SG_RunLoop( int levelTime, int frameTime )
     sg.levelTime = levelTime;
     msec = sg.levelTime - sg.previousTime;
 
-    // build player's movement command
-//    SG_BuildMoveCommand();
-
     //
     // go through all allocated entities
     //
-    start = trap_Milliseconds();
+    start = Sys_Milliseconds();
     ent = &sg_entities[0];
     for ( i = 0; i < sg.numEntities; i++) {
         if ( !ent->health ) {
@@ -310,7 +307,7 @@ int SG_RunLoop( int levelTime, int frameTime )
 
         ent->state->action.acp1( ent );
     }
-    end = trap_Milliseconds();
+    end = Sys_Milliseconds();
 
     SG_DrawFrame();
 
@@ -327,14 +324,14 @@ int SG_RunLoop( int levelTime, int frameTime )
 
 static void SG_LoadMedia( void )
 {
-    sg.media.player_death0 = trap_Snd_RegisterSfx( "sfx/player/death1.wav" );
-    sg.media.player_death1 = trap_Snd_RegisterSfx( "sfx/player/death2.wav" );
-    sg.media.player_death2 = trap_Snd_RegisterSfx( "sfx/player/death3.wav" ); 
-    sg.media.player_pain0 = trap_Snd_RegisterSfx( "sfx/player/pain0.wav" );
-    sg.media.player_pain1 = trap_Snd_RegisterSfx( "sfx/player/pain1.wav" );
-    sg.media.player_pain2 = trap_Snd_RegisterSfx( "sfx/player/pain2.wav" );
-    sg.media.revolver_fire = trap_Snd_RegisterSfx( "sfx/weapons/revolver_fire.wav" );
-    sg.media.revolver_rld = trap_Snd_RegisterSfx( "sfx/weapons/revolver_rld.wav" );
+    sg.media.player_death0 = Snd_RegisterSfx( "sfx/player/death1.wav" );
+    sg.media.player_death1 = Snd_RegisterSfx( "sfx/player/death2.wav" );
+    sg.media.player_death2 = Snd_RegisterSfx( "sfx/player/death3.wav" ); 
+    sg.media.player_pain0 = Snd_RegisterSfx( "sfx/player/pain0.wav" );
+    sg.media.player_pain1 = Snd_RegisterSfx( "sfx/player/pain1.wav" );
+    sg.media.player_pain2 = Snd_RegisterSfx( "sfx/player/pain2.wav" );
+    sg.media.revolver_fire = Snd_RegisterSfx( "sfx/weapons/revolver_fire.wav" );
+    sg.media.revolver_rld = Snd_RegisterSfx( "sfx/weapons/revolver_rld.wav" );
 
     sg.media.raio_shader = RE_RegisterShader( "sprites/glnomad_raio_base" );
     sg.media.grunt_shader = RE_RegisterShader( "sprites/glnomad_grunt" );

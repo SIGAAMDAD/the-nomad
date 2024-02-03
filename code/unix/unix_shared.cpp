@@ -1,8 +1,21 @@
 #include "../engine/n_shared.h"
 #include "../engine/n_common.h"
-#include "sys_unix.h"
 #include <SDL2/SDL.h>
-#include <cpu-set.h>
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+#include <sched.h>
+#include <pwd.h>
+#include <unistd.h>
+#include <dlfcn.h>
+#include <dirent.h>
+#include <errno.h>
+#include <sys/stat.h>
+#include <sys/resource.h>
+#include <sys/time.h>
+#include <sys/sysinfo.h>
+#include <libgen.h>
 
 qboolean Sys_RandomBytes(byte *s, uint64_t len)
 {
@@ -290,7 +303,6 @@ uint64_t Sys_GetAffinityMask( void )
 		return 0;
 	}
 }
-
 
 /*
 =================
@@ -641,42 +653,3 @@ const char *Sys_GetCurrentUser( void )
 
     return pw->pw_name;
 }
-
-#ifdef USE_AFFINITY_MASK
-uint64_t Sys_GetAffinityMask( void )
-{
-    cpu_set_t cpu_set;
-
-    if ( sched_getaffinity( getpid(), sizeof( cpu_set ), &cpu_set ) == 0 ) {
-		uint64_t mask = 0;
-		int cpu;
-		for ( cpu = 0; cpu < sizeof( mask ) * 8; cpu++ ) {
-			if ( CPU_ISSET( cpu, &cpu_set ) ) {
-				mask |= (1ULL << cpu);
-			}
-		}
-		return mask;
-	} else {
-		return 0;
-	}
-}
-
-qboolean Sys_SetAffinityMask( const uint64_t mask )
-{
-	cpu_set_t cpu_set;
-	int cpu;
-
-	CPU_ZERO( &cpu_set );
-	for ( cpu = 0; cpu < sizeof( mask ) * 8; cpu++ ) {
-		if ( mask & (1ULL << cpu) ) {
-			CPU_SET( cpu, &cpu_set );
-		}
-	}
-
-	if ( sched_setaffinity( getpid(), sizeof( cpu_set ), &cpu_set ) == 0 ) {
-		return qtrue;
-	} else {
-		return qfalse;
-	}
-}
-#endif // USE_AFFINITY_MASK

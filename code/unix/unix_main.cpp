@@ -1,9 +1,14 @@
 #include "../engine/n_shared.h"
 #include "../engine/n_common.h"
 #include "../game/g_game.h"
-#include "sys_unix.h"
 #include <execinfo.h>
 #include <sys/vfs.h>
+#include <unistd.h>
+#include <signal.h>
+#include <errno.h>
+#include <fcntl.h>
+#include <termios.h>
+#include <sys/resource.h>
 
 #define SYS_BACKTRACE_MAX 1024
 #define MEM_THRESHOLD (96*1024*1024)
@@ -28,7 +33,7 @@ typedef enum {
 	TTY_ERROR
 } tty_err;
 
-void Sys_ShutdownConsole(void);
+void Sys_ShutdownConsole( void );
 tty_err Sys_InitConsole( void );
 
 bool Sys_IsInDebugSession( void )

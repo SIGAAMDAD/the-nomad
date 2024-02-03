@@ -119,7 +119,7 @@ ASGNI4
 LABELV $97
 ADDRLP4 0
 INDIRI4
-ADDRGP4 sg+72
+ADDRGP4 sg+2148
 INDIRI4
 LTI4 $94
 line 67
@@ -143,7 +143,7 @@ line 78
 ;77:
 ;78:    spawn = sg.mapInfo.spawns;
 ADDRLP4 0
-ADDRGP4 sg+4268392
+ADDRGP4 sg+4270468
 ASGNP4
 line 79
 ;79:    for ( i = 0; i < sg.mapInfo.numSpawns; i++, spawn++ ) {
@@ -192,7 +192,7 @@ ASGNP4
 LABELV $106
 ADDRLP4 4
 INDIRI4
-ADDRGP4 sg+4268392+23624
+ADDRGP4 sg+4270468+23624
 INDIRI4
 LTI4 $103
 line 82
@@ -255,7 +255,7 @@ line 96
 LABELV $111
 line 98
 ;97:
-;98:    G_Printf( "Starting up level %s\n", info->name );
+;98:    G_Printf( "Starting up level %s...\n", info->name );
 ADDRGP4 $114
 ARGP4
 ADDRLP4 0
@@ -266,7 +266,7 @@ CALLV
 pop
 line 101
 ;99:
-;100:    // clear the old level
+;100:    // clear the old level data
 ;101:    memset( &level, 0, sizeof(level) );
 ADDRGP4 level
 ARGP4
@@ -277,115 +277,126 @@ ARGU4
 ADDRGP4 memset
 CALLP4
 pop
-line 103
-;102:
-;103:    G_SetActiveMap( info->maphandle, &sg.mapInfo, sg.soundBits, &sg.activeEnts );
+line 102
+;102:    memset( &sg.mapInfo, 0, sizeof(sg.mapInfo) );
+ADDRGP4 sg+4270468
+ARGP4
+CNSTI4 0
+ARGI4
+CNSTU4 23632
+ARGU4
+ADDRGP4 memset
+CALLP4
+pop
+line 104
+;103:
+;104:    G_SetActiveMap( info->maphandle, &sg.mapInfo, sg.soundBits, &sg.activeEnts );
 ADDRLP4 0
 INDIRP4
 CNSTI4 64
 ADDP4
 INDIRI4
 ARGI4
-ADDRGP4 sg+4268392
+ADDRGP4 sg+4270468
 ARGP4
-ADDRGP4 sg+74080
+ADDRGP4 sg+76156
 ARGP4
-ADDRGP4 sg+74040
+ADDRGP4 sg+76116
 ARGP4
 ADDRGP4 G_SetActiveMap
 CALLV
 pop
-line 105
-;104:
-;105:    SG_InitPlayer();
+line 106
+;105:
+;106:    SG_InitPlayer();
 ADDRGP4 SG_InitPlayer
 CALLV
 pop
-line 108
-;106:
-;107:    // spawn everything
-;108:    SG_SpawnLevelEntities();
+line 109
+;107:
+;108:    // spawn everything
+;109:    SG_SpawnLevelEntities();
 ADDRGP4 SG_SpawnLevelEntities
 CALLV
 pop
-line 110
-;109:
-;110:    sg.state = SG_IN_LEVEL;
-ADDRGP4 sg+64
+line 111
+;110:
+;111:    sg.state = SG_IN_LEVEL;
+ADDRGP4 sg+2140
 CNSTI4 3
 ASGNI4
-line 112
-;111:
-;112:    if ( sg_printLevelStats.i ) {
+line 113
+;112:
+;113:    if ( sg_printLevelStats.i ) {
 ADDRGP4 sg_printLevelStats+260
 INDIRI4
 CNSTI4 0
-EQI4 $119
-line 113
-;113:        G_Printf( "\n---------- Level Info ----------\n" );
-ADDRGP4 $122
-ARGP4
-ADDRGP4 G_Printf
-CALLV
-pop
+EQI4 $121
 line 114
-;114:        G_Printf( "Map Name: %s\n", sg.mapInfo.name );
-ADDRGP4 $123
-ARGP4
-ADDRGP4 sg+4268392+23552
+;114:        G_Printf( "\n---------- Level Info ----------\n" );
+ADDRGP4 $124
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
 line 115
-;115:        G_Printf( "Checkpoint Count: %i\n", sg.mapInfo.numCheckpoints );
-ADDRGP4 $126
+;115:        G_Printf( "Map Name: %s\n", sg.mapInfo.name );
+ADDRGP4 $125
 ARGP4
-ADDRGP4 sg+4268392+23628
-INDIRI4
-ARGI4
+ADDRGP4 sg+4270468+23552
+ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
 line 116
-;116:        G_Printf( "Spawn Count: %i\n", sg.mapInfo.numSpawns );
-ADDRGP4 $129
+;116:        G_Printf( "Checkpoint Count: %i\n", sg.mapInfo.numCheckpoints );
+ADDRGP4 $128
 ARGP4
-ADDRGP4 sg+4268392+23624
+ADDRGP4 sg+4270468+23628
 INDIRI4
 ARGI4
 ADDRGP4 G_Printf
 CALLV
 pop
 line 117
-;117:        G_Printf( "Map Width: %i\n", sg.mapInfo.width );
-ADDRGP4 $132
+;117:        G_Printf( "Spawn Count: %i\n", sg.mapInfo.numSpawns );
+ADDRGP4 $131
 ARGP4
-ADDRGP4 sg+4268392+23616
+ADDRGP4 sg+4270468+23624
 INDIRI4
 ARGI4
 ADDRGP4 G_Printf
 CALLV
 pop
 line 118
-;118:        G_Printf( "Map Height: %i\n", sg.mapInfo.height );
-ADDRGP4 $135
+;118:        G_Printf( "Map Width: %i\n", sg.mapInfo.width );
+ADDRGP4 $134
 ARGP4
-ADDRGP4 sg+4268392+23620
+ADDRGP4 sg+4270468+23616
 INDIRI4
 ARGI4
 ADDRGP4 G_Printf
 CALLV
 pop
 line 119
-;119:    }
-LABELV $119
-line 121
-;120:
-;121:    RE_LoadWorldMap( va( "maps/%s", sg.mapInfo.name ) );
-ADDRGP4 $138
+;119:        G_Printf( "Map Height: %i\n", sg.mapInfo.height );
+ADDRGP4 $137
 ARGP4
-ADDRGP4 sg+4268392+23552
+ADDRGP4 sg+4270468+23620
+INDIRI4
+ARGI4
+ADDRGP4 G_Printf
+CALLV
+pop
+line 120
+;120:    }
+LABELV $121
+line 122
+;121:
+;122:    RE_LoadWorldMap( va( "maps/%s", sg.mapInfo.name ) );
+ADDRGP4 $140
+ARGP4
+ADDRGP4 sg+4270468+23552
 ARGP4
 ADDRLP4 84
 ADDRGP4 va
@@ -397,10 +408,10 @@ ARGP4
 ADDRGP4 RE_LoadWorldMap
 CALLV
 pop
-line 123
-;122:
-;123:    Cvar_Set( "sg_levelIndex", va( "%i", (uintptr_t)( info - sg_levelInfoData ) ) );
-ADDRGP4 $142
+line 124
+;123:
+;124:    Cvar_Set( "sg_levelIndex", va( "%i", (int)(uintptr_t)( info - sg_levelInfoData ) ) );
+ADDRGP4 $144
 ARGP4
 ADDRLP4 0
 INDIRP4
@@ -413,12 +424,13 @@ CVUI4 4
 CNSTI4 172
 DIVI4
 CVIU4 4
-ARGU4
+CVUI4 4
+ARGI4
 ADDRLP4 88
 ADDRGP4 va
 CALLP4
 ASGNP4
-ADDRGP4 $141
+ADDRGP4 $143
 ARGP4
 ADDRLP4 88
 INDIRP4
@@ -426,22 +438,22 @@ ARGP4
 ADDRGP4 Cvar_Set
 CALLV
 pop
-line 125
-;124:
-;125:    level.stats.timeStart = trap_Milliseconds();
+line 126
+;125:
+;126:    level.stats.timeStart = Sys_Milliseconds();
 ADDRLP4 92
-ADDRGP4 trap_Milliseconds
+ADDRGP4 Sys_Milliseconds
 CALLI4
 ASGNI4
 ADDRGP4 level+4
 ADDRLP4 92
 INDIRI4
 ASGNI4
-line 127
-;126:
-;127:    VectorCopy2( cameraPos, sg.mapInfo.spawns[0].xyz );
+line 128
+;127:
+;128:    VectorCopy2( cameraPos, sg.mapInfo.spawns[0].xyz );
 ADDRLP4 96
-ADDRGP4 sg+4268392
+ADDRGP4 sg+4270468
 INDIRU4
 ASGNU4
 ADDRLP4 68
@@ -462,7 +474,7 @@ CVIF4 4
 ADDF4
 ASGNF4
 ADDRLP4 100
-ADDRGP4 sg+4268392+4
+ADDRGP4 sg+4270468+4
 INDIRU4
 ASGNU4
 ADDRLP4 68+4
@@ -482,143 +494,211 @@ CVUI4 4
 CVIF4 4
 ADDF4
 ASGNF4
-line 128
-;128:    zoom = 1.6f;
+line 129
+;129:    zoom = 1.6f;
 ADDRLP4 76
 CNSTF4 1070386381
 ASGNF4
-line 130
-;129:
-;130:    G_Printf( "Done." );
-ADDRGP4 $148
+line 131
+;130:
+;131:    G_Printf( "Done." );
+ADDRGP4 $150
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 134
-;131:
-;132://    G_SetCameraData( cameraPos, zoom, 0.0f );
-;133:
-;134:    return qtrue;
+line 135
+;132:
+;133://    G_SetCameraData( cameraPos, zoom, 0.0f );
+;134:
+;135:    return qtrue;
 CNSTI4 1
 RETI4
 LABELV $109
 endproc SG_StartLevel 104 16
 export SG_SaveLevelData
-proc SG_SaveLevelData 0 4
-line 138
-;135:}
-;136:
-;137:void SG_SaveLevelData( void )
-;138:{
+proc SG_SaveLevelData 4 8
 line 139
-;139:    trap_BeginSaveSection( "level" );
-ADDRGP4 $150
+;136:}
+;137:
+;138:void SG_SaveLevelData( void )
+;139:{
+line 142
+;140:    int i;
+;141:
+;142:    G_BeginSaveSection( "level" );
+ADDRGP4 $152
 ARGP4
-ADDRGP4 trap_BeginSaveSection
+ADDRGP4 G_BeginSaveSection
 CALLV
 pop
-line 140
-;140:}
-LABELV $149
-endproc SG_SaveLevelData 0 4
+line 144
+;143:
+;144:    G_SaveInt( "checkpoint_index", level.checkpointIndex );
+ADDRGP4 $153
+ARGP4
+ADDRGP4 level+24
+INDIRI4
+ARGI4
+ADDRGP4 G_SaveInt
+CALLV
+pop
+line 145
+;145:    G_SaveInt( "level_index", level.index );
+ADDRGP4 $155
+ARGP4
+ADDRGP4 level
+INDIRI4
+ARGI4
+ADDRGP4 G_SaveInt
+CALLV
+pop
+line 147
+;146:
+;147:    G_SaveVector2( "sg_camera_position", &sg.cameraPos );
+ADDRGP4 $156
+ARGP4
+ADDRGP4 sg+4270460
+ARGP4
+ADDRGP4 G_SaveVector2
+CALLV
+pop
+line 152
+;148:
+;149:    //
+;150:    // archive entity data
+;151:    //
+;152:    for ( i = 0; i < sg.numEntities; i++ ) {
+ADDRLP4 0
+CNSTI4 0
+ASGNI4
+ADDRGP4 $161
+JUMPV
+LABELV $158
+line 154
+;153:
+;154:    }
+LABELV $159
+line 152
+ADDRLP4 0
+ADDRLP4 0
+INDIRI4
+CNSTI4 1
+ADDI4
+ASGNI4
+LABELV $161
+ADDRLP4 0
+INDIRI4
+ADDRGP4 sg+2152
+INDIRI4
+LTI4 $158
+line 156
+;155:
+;156:    G_EndSaveSection();
+ADDRGP4 G_EndSaveSection
+CALLV
+pop
+line 157
+;157:}
+LABELV $151
+endproc SG_SaveLevelData 4 8
 export SG_LoadLevelData
 proc SG_LoadLevelData 16 16
-line 143
-;141:
-;142:void SG_LoadLevelData( void )
-;143:{
-line 146
-;144:    nhandle_t section;
-;145:
-;146:    section = trap_GetSaveSection( "level" );
-ADDRGP4 $150
+line 160
+;158:
+;159:void SG_LoadLevelData( void )
+;160:{
+line 163
+;161:    nhandle_t section;
+;162:
+;163:    section = G_GetSaveSection( "level" );
+ADDRGP4 $152
 ARGP4
 ADDRLP4 4
-ADDRGP4 trap_GetSaveSection
+ADDRGP4 G_GetSaveSection
 CALLI4
 ASGNI4
 ADDRLP4 0
 ADDRLP4 4
 INDIRI4
 ASGNI4
-line 147
-;147:    if ( section == FS_INVALID_HANDLE ) {
+line 164
+;164:    if ( section == FS_INVALID_HANDLE ) {
 ADDRLP4 0
 INDIRI4
 CNSTI4 0
-NEI4 $152
-line 148
-;148:        trap_Error( "SG_LoadLevelData: failed to fetch \"level\" section from save file!" );
-ADDRGP4 $154
+NEI4 $164
+line 165
+;165:        trap_Error( "SG_LoadLevelData: failed to fetch \"level\" section from save file!" );
+ADDRGP4 $166
 ARGP4
 ADDRGP4 trap_Error
 CALLV
 pop
-line 149
-;149:    }
-LABELV $152
-line 151
-;150:
-;151:    level.checkpointIndex = trap_LoadInt( "checkpoint", section );
-ADDRGP4 $156
+line 166
+;166:    }
+LABELV $164
+line 168
+;167:
+;168:    level.checkpointIndex = G_LoadInt( "checkpoint_index", section );
+ADDRGP4 $153
 ARGP4
 ADDRLP4 0
 INDIRI4
 ARGI4
 ADDRLP4 8
-ADDRGP4 trap_LoadInt
+ADDRGP4 G_LoadInt
 CALLI4
 ASGNI4
 ADDRGP4 level+24
 ADDRLP4 8
 INDIRI4
 ASGNI4
-line 152
-;152:    level.index = trap_LoadInt( "index", section );
-ADDRGP4 $157
+line 169
+;169:    level.index = G_LoadInt( "level_index", section );
+ADDRGP4 $155
 ARGP4
 ADDRLP4 0
 INDIRI4
 ARGI4
 ADDRLP4 12
-ADDRGP4 trap_LoadInt
+ADDRGP4 G_LoadInt
 CALLI4
 ASGNI4
 ADDRGP4 level
 ADDRLP4 12
 INDIRI4
 ASGNI4
-line 154
-;153:
-;154:    G_SetActiveMap( level.index, &sg.mapInfo, sg.soundBits, &sg.activeEnts );
+line 171
+;170:
+;171:    G_SetActiveMap( level.index, &sg.mapInfo, sg.soundBits, &sg.activeEnts );
 ADDRGP4 level
 INDIRI4
 ARGI4
-ADDRGP4 sg+4268392
+ADDRGP4 sg+4270468
 ARGP4
-ADDRGP4 sg+74080
+ADDRGP4 sg+76156
 ARGP4
-ADDRGP4 sg+74040
+ADDRGP4 sg+76116
 ARGP4
 ADDRGP4 G_SetActiveMap
 CALLV
 pop
-line 155
-;155:}
-LABELV $151
+line 172
+;172:}
+LABELV $163
 endproc SG_LoadLevelData 16 16
 export SG_DrawLevelStats
 proc SG_DrawLevelStats 20 12
-line 158
-;156:
-;157:void SG_DrawLevelStats( void )
-;158:{
-line 162
-;159:    float font_scale;
-;160:    vec2_t cursorPos;
-;161:
-;162:    font_scale = ImGui_GetFontScale();
+line 175
+;173:
+;174:void SG_DrawLevelStats( void )
+;175:{
+line 179
+;176:    float font_scale;
+;177:    vec2_t cursorPos;
+;178:
+;179:    font_scale = ImGui_GetFontScale();
 ADDRLP4 12
 ADDRGP4 ImGui_GetFontScale
 CALLF4
@@ -627,10 +707,10 @@ ADDRLP4 0
 ADDRLP4 12
 INDIRF4
 ASGNF4
-line 164
-;163:
-;164:    if ( ImGui_BeginWindow( "EndLevel", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar ) ) {
-ADDRGP4 $164
+line 181
+;180:
+;181:    if ( ImGui_BeginWindow( "EndLevel", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar ) ) {
+ADDRGP4 $174
 ARGP4
 CNSTP4 0
 ARGP4
@@ -643,9 +723,9 @@ ASGNI4
 ADDRLP4 16
 INDIRI4
 CNSTI4 0
-EQI4 $162
-line 165
-;165:        ImGui_SetWindowFontScale(font_scale * 6);
+EQI4 $172
+line 182
+;182:        ImGui_SetWindowFontScale(font_scale * 6);
 ADDRLP4 0
 INDIRF4
 CNSTF4 1086324736
@@ -654,15 +734,15 @@ ARGF4
 ADDRGP4 ImGui_SetWindowFontScale
 CALLV
 pop
-line 166
-;166:        ImGui_TextUnformatted("Level Statistics");
-ADDRGP4 $165
+line 183
+;183:        ImGui_TextUnformatted("Level Statistics");
+ADDRGP4 $175
 ARGP4
 ADDRGP4 ImGui_TextUnformatted
 CALLV
 pop
-line 167
-;167:        ImGui_SetWindowFontScale(font_scale * 3.5f);
+line 184
+;184:        ImGui_SetWindowFontScale(font_scale * 3.5f);
 ADDRLP4 0
 INDIRF4
 CNSTF4 1080033280
@@ -671,14 +751,14 @@ ARGF4
 ADDRGP4 ImGui_SetWindowFontScale
 CALLV
 pop
-line 168
-;168:        ImGui_NewLine();
+line 185
+;185:        ImGui_NewLine();
 ADDRGP4 ImGui_NewLine
 CALLV
 pop
-line 170
-;169:
-;170:        ImGui_GetCursorScreenPos( &cursorPos.x, &cursorPos.y );
+line 187
+;186:
+;187:        ImGui_GetCursorScreenPos( &cursorPos.x, &cursorPos.y );
 ADDRLP4 4
 ARGP4
 ADDRLP4 4+4
@@ -686,9 +766,9 @@ ARGP4
 ADDRGP4 ImGui_GetCursorScreenPos
 CALLV
 pop
-line 172
-;171:
-;172:        ImGui_SetCursorScreenPos( cursorPos.x, cursorPos.y + 20);
+line 189
+;188:
+;189:        ImGui_SetCursorScreenPos( cursorPos.x, cursorPos.y + 20);
 ADDRLP4 4
 INDIRF4
 ARGF4
@@ -700,82 +780,82 @@ ARGF4
 ADDRGP4 ImGui_SetCursorScreenPos
 CALLV
 pop
-line 173
-;173:    }
-LABELV $162
-line 174
-;174:    ImGui_EndWindow();
+line 190
+;190:    }
+LABELV $172
+line 191
+;191:    ImGui_EndWindow();
 ADDRGP4 ImGui_EndWindow
 CALLV
 pop
-line 175
-;175:}
-LABELV $161
+line 192
+;192:}
+LABELV $171
 endproc SG_DrawLevelStats 20 12
 export SG_EndLevel
 proc SG_EndLevel 4 0
-line 178
-;176:
-;177:int SG_EndLevel( void )
-;178:{
-line 179
-;179:    level.stats.timeEnd = trap_Milliseconds();
+line 195
+;193:
+;194:int SG_EndLevel( void )
+;195:{
+line 196
+;196:    level.stats.timeEnd = Sys_Milliseconds();
 ADDRLP4 0
-ADDRGP4 trap_Milliseconds
+ADDRGP4 Sys_Milliseconds
 CALLI4
 ASGNI4
 ADDRGP4 level+4+4
 ADDRLP4 0
 INDIRI4
 ASGNI4
-line 181
-;180:
-;181:    sg.state = SG_SHOW_LEVEL_STATS;
-ADDRGP4 sg+64
+line 198
+;197:
+;198:    sg.state = SG_SHOW_LEVEL_STATS;
+ADDRGP4 sg+2140
 CNSTI4 4
 ASGNI4
-line 183
-;182:
-;183:    return 1;
+line 200
+;199:
+;200:    return 1;
 CNSTI4 1
 RETI4
-LABELV $168
+LABELV $178
 endproc SG_EndLevel 4 0
 export SG_ParseInfos
 proc SG_ParseInfos 2084 16
-line 192
-;184:}
-;185:
-;186:#define MAX_LEVELINFO_LEN 8192
-;187:#define MAX_LEVELS 1024
-;188:
-;189:static char *sg_levelInfos[MAX_LEVELS];
-;190:
-;191:int SG_ParseInfos( char *buf, int max, char **infos )
-;192:{
-line 198
-;193:    const char *token, **text;
-;194:    int count;
-;195:    char key[MAX_TOKEN_CHARS];
-;196:    char info[MAX_INFO_STRING];
-;197:
-;198:    text = (const char **)&buf;
+line 209
+;201:}
+;202:
+;203:#define MAX_LEVELINFO_LEN 8192
+;204:#define MAX_LEVELS 1024
+;205:
+;206:static char *sg_levelInfos[MAX_LEVELS];
+;207:
+;208:int SG_ParseInfos( char *buf, int max, char **infos )
+;209:{
+line 215
+;210:    const char *token, **text;
+;211:    int count;
+;212:    char key[MAX_TOKEN_CHARS];
+;213:    char info[MAX_INFO_STRING];
+;214:
+;215:    text = (const char **)&buf;
 ADDRLP4 1028
 ADDRFP4 0
 ASGNP4
-line 199
-;199:    count = 0;
+line 216
+;216:    count = 0;
 ADDRLP4 2056
 CNSTI4 0
 ASGNI4
-ADDRGP4 $174
+ADDRGP4 $184
 JUMPV
-LABELV $173
-line 201
-;200:
-;201:    while (1) {
-line 202
-;202:        token = COM_Parse( text );
+LABELV $183
+line 218
+;217:
+;218:    while ( 1 ) {
+line 219
+;219:        token = COM_Parse( text );
 ADDRLP4 1028
 INDIRP4
 ARGP4
@@ -787,75 +867,75 @@ ADDRLP4 0
 ADDRLP4 2060
 INDIRP4
 ASGNP4
-line 203
-;203:        if (!token[0]) {
+line 220
+;220:        if ( !token[0] ) {
 ADDRLP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $176
-line 204
-;204:            break;
-ADDRGP4 $175
+NEI4 $186
+line 221
+;221:            break;
+ADDRGP4 $185
 JUMPV
-LABELV $176
-line 206
-;205:        }
-;206:        if (token[0] != '{') {
+LABELV $186
+line 223
+;222:        }
+;223:        if ( token[0] != '{' ) {
 ADDRLP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 123
-EQI4 $178
-line 207
-;207:            Con_Printf( "missing '{' in info file\n" );
-ADDRGP4 $180
+EQI4 $188
+line 224
+;224:            G_Printf( "missing '{' in info file\n" );
+ADDRGP4 $190
 ARGP4
-ADDRGP4 Con_Printf
+ADDRGP4 G_Printf
 CALLV
 pop
-line 208
-;208:            break;
-ADDRGP4 $175
+line 225
+;225:            break;
+ADDRGP4 $185
 JUMPV
-LABELV $178
-line 211
-;209:        }
-;210:
-;211:        if (count == max) {
+LABELV $188
+line 228
+;226:        }
+;227:
+;228:        if ( count == max ) {
 ADDRLP4 2056
 INDIRI4
 ADDRFP4 4
 INDIRI4
-NEI4 $181
-line 212
-;212:            Con_Printf( "max infos exceeded\n" );
-ADDRGP4 $183
+NEI4 $191
+line 229
+;229:            G_Printf( "max infos exceeded\n" );
+ADDRGP4 $193
 ARGP4
-ADDRGP4 Con_Printf
+ADDRGP4 G_Printf
 CALLV
 pop
-line 213
-;213:            break;
-ADDRGP4 $175
+line 230
+;230:            break;
+ADDRGP4 $185
 JUMPV
-LABELV $181
-line 216
-;214:        }
-;215:
-;216:        info[0] = '\0';
+LABELV $191
+line 233
+;231:        }
+;232:
+;233:        info[0] = '\0';
 ADDRLP4 1032
 CNSTI1 0
 ASGNI1
-ADDRGP4 $185
+ADDRGP4 $195
 JUMPV
-LABELV $184
-line 217
-;217:        while (1) {
-line 218
-;218:            token = COM_ParseExt( text, qtrue );
+LABELV $194
+line 234
+;234:        while ( 1 ) {
+line 235
+;235:            token = COM_ParseExt( text, qtrue );
 ADDRLP4 1028
 INDIRP4
 ARGP4
@@ -869,43 +949,43 @@ ADDRLP4 0
 ADDRLP4 2064
 INDIRP4
 ASGNP4
-line 219
-;219:            if (!token[0]) {
+line 236
+;236:            if ( !token[0] ) {
 ADDRLP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $187
-line 220
-;220:                Con_Printf( "unexpected end of info file\n" );
-ADDRGP4 $189
+NEI4 $197
+line 237
+;237:                G_Printf( "unexpected end of info file\n" );
+ADDRGP4 $199
 ARGP4
-ADDRGP4 Con_Printf
+ADDRGP4 G_Printf
 CALLV
 pop
-line 221
-;221:                break;
-ADDRGP4 $186
+line 238
+;238:                break;
+ADDRGP4 $196
 JUMPV
-LABELV $187
-line 223
-;222:            }
-;223:            if (token[0] == '}') {
+LABELV $197
+line 240
+;239:            }
+;240:            if ( token[0] == '}' ) {
 ADDRLP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 125
-NEI4 $190
-line 224
-;224:                break;
-ADDRGP4 $186
+NEI4 $200
+line 241
+;241:                break;
+ADDRGP4 $196
 JUMPV
-LABELV $190
-line 226
-;225:            }
-;226:            N_strncpyz( key, token, sizeof(key) );
+LABELV $200
+line 243
+;242:            }
+;243:            N_strncpyz( key, token, sizeof(key) );
 ADDRLP4 4
 ARGP4
 ADDRLP4 0
@@ -916,9 +996,9 @@ ARGU4
 ADDRGP4 N_strncpyz
 CALLV
 pop
-line 228
-;227:
-;228:            token = COM_ParseExt( text, qfalse );
+line 245
+;244:
+;245:            token = COM_ParseExt( text, qfalse );
 ADDRLP4 1028
 INDIRP4
 ARGP4
@@ -932,24 +1012,24 @@ ADDRLP4 0
 ADDRLP4 2068
 INDIRP4
 ASGNP4
-line 229
-;229:            if (!token[0]) {
+line 246
+;246:            if ( !token[0] ) {
 ADDRLP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $192
-line 230
-;230:                token = "<NULL>";
+NEI4 $202
+line 247
+;247:                token = "<NULL>";
 ADDRLP4 0
-ADDRGP4 $194
+ADDRGP4 $204
 ASGNP4
-line 231
-;231:            }
-LABELV $192
-line 232
-;232:            Info_SetValueForKey( info, key, token );
+line 248
+;248:            }
+LABELV $202
+line 249
+;249:            Info_SetValueForKey( info, key, token );
 ADDRLP4 1032
 ARGP4
 CNSTU4 1024
@@ -962,29 +1042,29 @@ ARGP4
 ADDRGP4 Info_SetValueForKey_s
 CALLI4
 pop
-line 233
-;233:        }
-LABELV $185
-line 217
-ADDRGP4 $184
+line 250
+;250:        }
+LABELV $195
+line 234
+ADDRGP4 $194
 JUMPV
-LABELV $186
-line 235
-;234:        // NOTE: extra space for level index
-;235:        infos[count] = SG_MemAlloc( strlen(info) + strlen("\\num\\") + strlen(va("%i", MAX_LEVELS)) + 1 );
+LABELV $196
+line 252
+;251:        // NOTE: extra space for level index
+;252:        infos[count] = SG_MemAlloc( strlen( info ) + strlen( "\\num\\" ) + strlen( va( "%i", MAX_LEVELS ) ) + 1 );
 ADDRLP4 1032
 ARGP4
 ADDRLP4 2064
 ADDRGP4 strlen
 CALLU4
 ASGNU4
-ADDRGP4 $195
+ADDRGP4 $205
 ARGP4
 ADDRLP4 2068
 ADDRGP4 strlen
 CALLU4
 ASGNU4
-ADDRGP4 $142
+ADDRGP4 $144
 ARGP4
 CNSTI4 1024
 ARGI4
@@ -1025,8 +1105,8 @@ ADDP4
 ADDRLP4 2080
 INDIRP4
 ASGNP4
-line 236
-;236:        if (infos[count]) {
+line 253
+;253:        if ( infos[count] ) {
 ADDRLP4 2056
 INDIRI4
 CNSTI4 2
@@ -1037,9 +1117,9 @@ ADDP4
 INDIRP4
 CVPU4 4
 CNSTU4 0
-EQU4 $196
-line 237
-;237:            strcpy(infos[count], info);
+EQU4 $206
+line 254
+;254:            strcpy( infos[count], info );
 ADDRLP4 2056
 INDIRI4
 CNSTI4 2
@@ -1054,44 +1134,43 @@ ARGP4
 ADDRGP4 strcpy
 CALLP4
 pop
-line 238
-;238:            count++;
+line 255
+;255:            count++;
 ADDRLP4 2056
 ADDRLP4 2056
 INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-line 239
-;239:        }
-LABELV $196
-line 240
-;240:    }
-LABELV $174
-line 201
-ADDRGP4 $173
+line 256
+;256:        }
+LABELV $206
+line 257
+;257:    }
+LABELV $184
+line 218
+ADDRGP4 $183
 JUMPV
-LABELV $175
-line 242
-;241:
-;242:    return count;
+LABELV $185
+line 259
+;258:
+;259:    return count;
 ADDRLP4 2056
 INDIRI4
 RETI4
-LABELV $172
+LABELV $182
 endproc SG_ParseInfos 2084 16
-proc SG_LoadLevelInfoFromFile 8212 16
-line 246
-;243:}
-;244:
-;245:static void SG_LoadLevelInfoFromFile( const char *filename )
-;246:{
-line 251
-;247:    int len;
-;248:    file_t f;
-;249:    char buf[MAX_LEVELINFO_LEN];
-;250:
-;251:    len = trap_FS_FOpenFile( filename, &f, FS_OPEN_READ );
+proc SG_LoadLevelsFromFile 8212 16
+line 262
+;260:}
+;261:
+;262:static void SG_LoadLevelsFromFile( const char *filename ) {
+line 267
+;263:	int				len;
+;264:	file_t	        f;
+;265:	char			buf[MAX_LEVELINFO_LEN];
+;266:
+;267:	len = trap_FS_FOpenFile( filename, &f, FS_OPEN_READ );
 ADDRFP4 0
 INDIRP4
 ARGP4
@@ -1108,37 +1187,44 @@ ADDRLP4 8200
 INDIRU4
 CVUI4 4
 ASGNI4
-line 252
-;252:    if (f == FS_INVALID_HANDLE) {
+line 268
+;268:	if ( !f ) {
 ADDRLP4 4
 INDIRI4
 CNSTI4 0
-NEI4 $199
-line 253
-;253:        G_Printf( COLOR_RED "file not found: %s\n", filename );
-ADDRGP4 $201
+NEI4 $209
+line 269
+;269:		trap_Print( va( COLOR_RED "ERROR: file not found: %s\n", filename ) );
+ADDRGP4 $211
 ARGP4
 ADDRFP4 0
 INDIRP4
 ARGP4
-ADDRGP4 G_Printf
+ADDRLP4 8204
+ADDRGP4 va
+CALLP4
+ASGNP4
+ADDRLP4 8204
+INDIRP4
+ARGP4
+ADDRGP4 trap_Print
 CALLV
 pop
-line 254
-;254:        return;
-ADDRGP4 $198
+line 270
+;270:		return;
+ADDRGP4 $208
 JUMPV
-LABELV $199
-line 256
-;255:    }
-;256:    if (len >= MAX_LEVELINFO_LEN) {
+LABELV $209
+line 272
+;271:	}
+;272:	if ( len >= MAX_LEVELINFO_LEN ) {
 ADDRLP4 0
 INDIRI4
 CNSTI4 8192
-LTI4 $202
-line 257
-;257:        G_Printf( COLOR_RED "file too large: %s is %i, max allowed is %i\n", filename, len, MAX_LEVELINFO_LEN );
-ADDRGP4 $204
+LTI4 $212
+line 273
+;273:		trap_Print( va( COLOR_RED "ERROR: file too large: %s is %i, max allowed is %i", filename, len, MAX_LEVELINFO_LEN ) );
+ADDRGP4 $214
 ARGP4
 ADDRFP4 0
 INDIRP4
@@ -1148,26 +1234,33 @@ INDIRI4
 ARGI4
 CNSTI4 8192
 ARGI4
-ADDRGP4 G_Printf
+ADDRLP4 8204
+ADDRGP4 va
+CALLP4
+ASGNP4
+ADDRLP4 8204
+INDIRP4
+ARGP4
+ADDRGP4 trap_Print
 CALLV
 pop
-line 258
-;258:        trap_FS_FClose( f );
+line 274
+;274:		trap_FS_FClose( f );
 ADDRLP4 4
 INDIRI4
 ARGI4
 ADDRGP4 trap_FS_FClose
 CALLV
 pop
-line 259
-;259:        return;
-ADDRGP4 $198
+line 275
+;275:		return;
+ADDRGP4 $208
 JUMPV
-LABELV $202
-line 262
-;260:    }
-;261:
-;262:    trap_FS_Read( buf, len, f );
+LABELV $212
+line 278
+;276:	}
+;277:
+;278:	trap_FS_Read( buf, len, f );
 ADDRLP4 8
 ARGP4
 ADDRLP4 0
@@ -1179,428 +1272,33 @@ ARGI4
 ADDRGP4 trap_FS_Read
 CALLI4
 pop
-line 263
-;263:    buf[len] = 0;
+line 279
+;279:	buf[len] = 0;
 ADDRLP4 0
 INDIRI4
 ADDRLP4 8
 ADDP4
 CNSTI1 0
 ASGNI1
-line 264
-;264:    trap_FS_FClose( f );
+line 280
+;280:	trap_FS_FClose( f );
 ADDRLP4 4
 INDIRI4
 ARGI4
 ADDRGP4 trap_FS_FClose
-CALLV
-pop
-line 266
-;265:
-;266:    sg.numLevels += SG_ParseInfos( buf, MAX_LEVELS - sg.numLevels, &sg_levelInfos[sg.numLevels] );
-ADDRLP4 8
-ARGP4
-CNSTI4 1024
-ADDRGP4 sg+72
-INDIRI4
-SUBI4
-ARGI4
-ADDRGP4 sg+72
-INDIRI4
-CNSTI4 2
-LSHI4
-ADDRGP4 sg_levelInfos
-ADDP4
-ARGP4
-ADDRLP4 8204
-ADDRGP4 SG_ParseInfos
-CALLI4
-ASGNI4
-ADDRLP4 8208
-ADDRGP4 sg+72
-ASGNP4
-ADDRLP4 8208
-INDIRP4
-ADDRLP4 8208
-INDIRP4
-INDIRI4
-ADDRLP4 8204
-INDIRI4
-ADDI4
-ASGNI4
-line 267
-;267:}
-LABELV $198
-endproc SG_LoadLevelInfoFromFile 8212 16
-proc SG_LoadLevelInfos 1456 16
-line 270
-;268:
-;269:static void SG_LoadLevelInfos( void )
-;270:{
-line 279
-;271:    int numdirs;
-;272:    char filename[128];
-;273:    char dirlist[1024];
-;274:    char *dirptr;
-;275:    int i, dirlen;
-;276:    int n;
-;277:    vmCvar_t levelInfoFile;
-;278:
-;279:    sg.numLevels = 0;
-ADDRGP4 sg+72
-CNSTI4 0
-ASGNI4
-line 281
-;280:
-;281:    Cvar_Register( &levelInfoFile, "sg_levelInfoFile", "", CVAR_INIT | CVAR_ROM );
-ADDRLP4 148
-ARGP4
-ADDRGP4 $210
-ARGP4
-ADDRGP4 $211
-ARGP4
-CNSTI4 80
-ARGI4
-ADDRGP4 Cvar_Register
 CALLV
 pop
 line 282
-;282:    if ( *levelInfoFile.s ) {
-ADDRLP4 148
-INDIRI1
-CVII4 1
-CNSTI4 0
-EQI4 $212
-line 283
-;283:        SG_LoadLevelInfoFromFile( levelInfoFile.s );
-ADDRLP4 148
-ARGP4
-ADDRGP4 SG_LoadLevelInfoFromFile
-CALLV
-pop
-line 284
-;284:    } else {
-ADDRGP4 $213
-JUMPV
-LABELV $212
-line 285
-;285:        SG_LoadLevelInfoFromFile( "scripts/levels.txt" );
-ADDRGP4 $214
-ARGP4
-ADDRGP4 SG_LoadLevelInfoFromFile
-CALLV
-pop
-line 286
-;286:    }
-LABELV $213
-line 289
-;287:
-;288:    // get all arenas from .lvl files
-;289:    numdirs = trap_FS_GetFileList( "scripts", ".lvl", dirlist, 1024 );
-ADDRGP4 $215
-ARGP4
-ADDRGP4 $216
-ARGP4
-ADDRLP4 424
-ARGP4
-CNSTI4 1024
-ARGI4
-ADDRLP4 1448
-ADDRGP4 trap_FS_GetFileList
-CALLI4
-ASGNI4
-ADDRLP4 144
-ADDRLP4 1448
-INDIRI4
-ASGNI4
-line 290
-;290:    dirptr = dirlist;
-ADDRLP4 4
-ADDRLP4 424
-ASGNP4
-line 291
-;291:    for (i = 0; i < numdirs; i++, dirptr += dirlen + 1) {
-ADDRLP4 136
-CNSTI4 0
-ASGNI4
-ADDRGP4 $220
-JUMPV
-LABELV $217
-line 292
-;292:        dirlen = strlen( dirptr );
-ADDRLP4 4
-INDIRP4
-ARGP4
-ADDRLP4 1452
-ADDRGP4 strlen
-CALLU4
-ASGNU4
-ADDRLP4 140
-ADDRLP4 1452
-INDIRU4
-CVUI4 4
-ASGNI4
-line 296
-;293:
-;294:        // FIXME: possibly use Com_snprintf?
-;295:
-;296:        strcpy( filename, "scripts/" );
-ADDRLP4 8
-ARGP4
-ADDRGP4 $221
-ARGP4
-ADDRGP4 strcpy
-CALLP4
-pop
-line 297
-;297:        strcat( filename, dirptr );
-ADDRLP4 8
-ARGP4
-ADDRLP4 4
-INDIRP4
-ARGP4
-ADDRGP4 strcat
-CALLP4
-pop
-line 298
-;298:        SG_LoadLevelInfoFromFile( filename );
-ADDRLP4 8
-ARGP4
-ADDRGP4 SG_LoadLevelInfoFromFile
-CALLV
-pop
-line 299
-;299:    }
-LABELV $218
-line 291
-ADDRLP4 136
-ADDRLP4 136
-INDIRI4
-CNSTI4 1
-ADDI4
-ASGNI4
-ADDRLP4 4
-ADDRLP4 140
-INDIRI4
-CNSTI4 1
-ADDI4
-ADDRLP4 4
-INDIRP4
-ADDP4
-ASGNP4
-LABELV $220
-ADDRLP4 136
-INDIRI4
-ADDRLP4 144
-INDIRI4
-LTI4 $217
-line 300
-;300:    G_Printf( "%i levels parsed.\n", sg.numLevels );
-ADDRGP4 $222
-ARGP4
-ADDRGP4 sg+72
-INDIRI4
-ARGI4
-ADDRGP4 G_Printf
-CALLV
-pop
-line 303
-;301:
-;302:    // set initial numbers
-;303:    for ( n = 0; n < sg.numLevels; n++ ) {
-ADDRLP4 0
-CNSTI4 0
-ASGNI4
-ADDRGP4 $227
-JUMPV
-LABELV $224
-line 304
-;304:        Info_SetValueForKey( sg_levelInfos[n], "num", va( "%i", n ) );
-ADDRGP4 $142
-ARGP4
-ADDRLP4 0
-INDIRI4
-ARGI4
-ADDRLP4 1452
-ADDRGP4 va
-CALLP4
-ASGNP4
-ADDRLP4 0
-INDIRI4
-CNSTI4 2
-LSHI4
-ADDRGP4 sg_levelInfos
-ADDP4
-INDIRP4
-ARGP4
-CNSTU4 1024
-ARGU4
-ADDRGP4 $229
-ARGP4
-ADDRLP4 1452
-INDIRP4
-ARGP4
-ADDRGP4 Info_SetValueForKey_s
-CALLI4
-pop
-line 305
-;305:    }
-LABELV $225
-line 303
-ADDRLP4 0
-ADDRLP4 0
-INDIRI4
-CNSTI4 1
-ADDI4
-ASGNI4
-LABELV $227
-ADDRLP4 0
-INDIRI4
-ADDRGP4 sg+72
-INDIRI4
-LTI4 $224
-line 306
-;306:}
-LABELV $208
-endproc SG_LoadLevelInfos 1456 16
-proc SG_LoadLevelsFromFile 8212 16
-line 308
-;307:
-;308:static void SG_LoadLevelsFromFile( const char *filename ) {
-line 313
-;309:	int				len;
-;310:	file_t	        f;
-;311:	char			buf[MAX_LEVELINFO_LEN];
-;312:
-;313:	len = trap_FS_FOpenFile( filename, &f, FS_OPEN_READ );
-ADDRFP4 0
-INDIRP4
-ARGP4
-ADDRLP4 4
-ARGP4
-CNSTI4 0
-ARGI4
-ADDRLP4 8200
-ADDRGP4 trap_FS_FOpenFile
-CALLU4
-ASGNU4
-ADDRLP4 0
-ADDRLP4 8200
-INDIRU4
-CVUI4 4
-ASGNI4
-line 314
-;314:	if ( !f ) {
-ADDRLP4 4
-INDIRI4
-CNSTI4 0
-NEI4 $231
-line 315
-;315:		trap_Print( va( COLOR_RED "ERROR: file not found: %s\n", filename ) );
-ADDRGP4 $233
-ARGP4
-ADDRFP4 0
-INDIRP4
-ARGP4
-ADDRLP4 8204
-ADDRGP4 va
-CALLP4
-ASGNP4
-ADDRLP4 8204
-INDIRP4
-ARGP4
-ADDRGP4 trap_Print
-CALLV
-pop
-line 316
-;316:		return;
-ADDRGP4 $230
-JUMPV
-LABELV $231
-line 318
-;317:	}
-;318:	if ( len >= MAX_LEVELINFO_LEN ) {
-ADDRLP4 0
-INDIRI4
-CNSTI4 8192
-LTI4 $234
-line 319
-;319:		trap_Print( va( COLOR_RED "ERROR: file too large: %s is %i, max allowed is %i", filename, len, MAX_LEVELINFO_LEN ) );
-ADDRGP4 $236
-ARGP4
-ADDRFP4 0
-INDIRP4
-ARGP4
-ADDRLP4 0
-INDIRI4
-ARGI4
-CNSTI4 8192
-ARGI4
-ADDRLP4 8204
-ADDRGP4 va
-CALLP4
-ASGNP4
-ADDRLP4 8204
-INDIRP4
-ARGP4
-ADDRGP4 trap_Print
-CALLV
-pop
-line 320
-;320:		trap_FS_FClose( f );
-ADDRLP4 4
-INDIRI4
-ARGI4
-ADDRGP4 trap_FS_FClose
-CALLV
-pop
-line 321
-;321:		return;
-ADDRGP4 $230
-JUMPV
-LABELV $234
-line 324
-;322:	}
-;323:
-;324:	trap_FS_Read( buf, len, f );
-ADDRLP4 8
-ARGP4
-ADDRLP4 0
-INDIRI4
-ARGI4
-ADDRLP4 4
-INDIRI4
-ARGI4
-ADDRGP4 trap_FS_Read
-CALLI4
-pop
-line 325
-;325:	buf[len] = 0;
-ADDRLP4 0
-INDIRI4
-ADDRLP4 8
-ADDP4
-CNSTI1 0
-ASGNI1
-line 326
-;326:	trap_FS_FClose( f );
-ADDRLP4 4
-INDIRI4
-ARGI4
-ADDRGP4 trap_FS_FClose
-CALLV
-pop
-line 328
-;327:
-;328:	sg.numLevels += SG_ParseInfos( buf, MAX_LEVELS - sg.numLevels, &sg_levelInfos[sg.numLevels] );
+;281:
+;282:	sg.numLevels += SG_ParseInfos( buf, MAX_LEVELS - sg.numLevels, &sg_levelInfos[sg.numLevels] );
 ADDRLP4 8
 ARGP4
 CNSTI4 1024
-ADDRGP4 sg+72
+ADDRGP4 sg+2148
 INDIRI4
 SUBI4
 ARGI4
-ADDRGP4 sg+72
+ADDRGP4 sg+2148
 INDIRI4
 CNSTI4 2
 LSHI4
@@ -1612,7 +1310,7 @@ ADDRGP4 SG_ParseInfos
 CALLI4
 ASGNI4
 ADDRLP4 8208
-ADDRGP4 sg+72
+ADDRGP4 sg+2148
 ASGNP4
 ADDRLP4 8208
 INDIRP4
@@ -1623,89 +1321,89 @@ ADDRLP4 8204
 INDIRI4
 ADDI4
 ASGNI4
-line 329
-;329:}
-LABELV $230
+line 283
+;283:}
+LABELV $208
 endproc SG_LoadLevelsFromFile 8212 16
 export SG_LoadLevels
 proc SG_LoadLevels 2616 16
-line 332
-;330:
-;331:void SG_LoadLevels( void )
-;332:{
-line 343
-;333:    int numdirs;
-;334:    vmCvar_t levelsFile;
-;335:    char filename[1024];
-;336:    char dirlist[1024];
-;337:    char *dirptr;
-;338:    int i;
-;339:    int dirlen;
-;340:    const char *mapname;
-;341:    levelInfo_t *info;
-;342:
-;343:    sg.numLevels = 0;
-ADDRGP4 sg+72
+line 286
+;284:
+;285:void SG_LoadLevels( void )
+;286:{
+line 297
+;287:    int numdirs;
+;288:    vmCvar_t levelsFile;
+;289:    char filename[1024];
+;290:    char dirlist[1024];
+;291:    char *dirptr;
+;292:    int i;
+;293:    int dirlen;
+;294:    const char *mapname;
+;295:    levelInfo_t *info;
+;296:
+;297:    sg.numLevels = 0;
+ADDRGP4 sg+2148
 CNSTI4 0
 ASGNI4
-line 345
-;344:
-;345:    G_Printf( "Loading level configs...\n" );
-ADDRGP4 $242
+line 299
+;298:
+;299:    G_Printf( "Loading level configs...\n" );
+ADDRGP4 $220
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 347
-;346:
-;347:    Cvar_Register( &levelsFile, "sg_levelsFile", "", CVAR_INIT | CVAR_ROM );
+line 301
+;300:
+;301:    Cvar_Register( &levelsFile, "sg_levelsFile", "", CVAR_INIT | CVAR_ROM );
 ADDRLP4 2068
 ARGP4
-ADDRGP4 $243
+ADDRGP4 $221
 ARGP4
-ADDRGP4 $211
+ADDRGP4 $222
 ARGP4
 CNSTI4 80
 ARGI4
 ADDRGP4 Cvar_Register
 CALLV
 pop
-line 348
-;348:    if ( *levelsFile.s ) {
+line 302
+;302:    if ( *levelsFile.s ) {
 ADDRLP4 2068
 INDIRI1
 CVII4 1
 CNSTI4 0
-EQI4 $244
-line 349
-;349:        SG_LoadLevelsFromFile( levelsFile.s );
+EQI4 $223
+line 303
+;303:        SG_LoadLevelsFromFile( levelsFile.s );
 ADDRLP4 2068
 ARGP4
 ADDRGP4 SG_LoadLevelsFromFile
 CALLV
 pop
-line 350
-;350:    } else {
-ADDRGP4 $245
+line 304
+;304:    } else {
+ADDRGP4 $224
 JUMPV
-LABELV $244
-line 351
-;351:        SG_LoadLevelsFromFile( "scripts/levels.txt" );
-ADDRGP4 $214
+LABELV $223
+line 305
+;305:        SG_LoadLevelsFromFile( "scripts/levels.txt" );
+ADDRGP4 $225
 ARGP4
 ADDRGP4 SG_LoadLevelsFromFile
 CALLV
 pop
-line 352
-;352:    }
-LABELV $245
-line 355
-;353:
-;354:    // get all levels from .level files
-;355:    numdirs = trap_FS_GetFileList( "scripts", ".level", dirlist, sizeof(dirlist) );
-ADDRGP4 $215
+line 306
+;306:    }
+LABELV $224
+line 309
+;307:
+;308:    // get all levels from .level files
+;309:    numdirs = trap_FS_GetFileList( "scripts", ".level", dirlist, sizeof(dirlist) );
+ADDRGP4 $226
 ARGP4
-ADDRGP4 $246
+ADDRGP4 $227
 ARGP4
 ADDRLP4 1044
 ARGP4
@@ -1719,21 +1417,21 @@ ADDRLP4 1040
 ADDRLP4 2348
 INDIRI4
 ASGNI4
-line 356
-;356:	dirptr  = dirlist;
+line 310
+;310:	dirptr  = dirlist;
 ADDRLP4 4
 ADDRLP4 1044
 ASGNP4
-line 357
-;357:	for ( i = 0; i < numdirs; i++, dirptr += dirlen + 1 ) {
+line 311
+;311:	for ( i = 0; i < numdirs; i++, dirptr += dirlen + 1 ) {
 ADDRLP4 0
 CNSTI4 0
 ASGNI4
-ADDRGP4 $250
+ADDRGP4 $231
 JUMPV
-LABELV $247
-line 358
-;358:		dirlen = strlen( dirptr );
+LABELV $228
+line 312
+;312:		dirlen = strlen( dirptr );
 ADDRLP4 4
 INDIRP4
 ARGP4
@@ -1746,17 +1444,17 @@ ADDRLP4 2352
 INDIRU4
 CVUI4 4
 ASGNI4
-line 359
-;359:		strcpy( filename, "scripts/" );
+line 313
+;313:		strcpy( filename, "scripts/" );
 ADDRLP4 8
 ARGP4
-ADDRGP4 $221
+ADDRGP4 $232
 ARGP4
 ADDRGP4 strcpy
 CALLP4
 pop
-line 360
-;360:		strcat( filename, dirptr );
+line 314
+;314:		strcat( filename, dirptr );
 ADDRLP4 8
 ARGP4
 ADDRLP4 4
@@ -1765,17 +1463,17 @@ ARGP4
 ADDRGP4 strcat
 CALLP4
 pop
-line 361
-;361:		SG_LoadLevelsFromFile( filename );
+line 315
+;315:		SG_LoadLevelsFromFile( filename );
 ADDRLP4 8
 ARGP4
 ADDRGP4 SG_LoadLevelsFromFile
 CALLV
 pop
-line 362
-;362:	}
-LABELV $248
-line 357
+line 316
+;316:	}
+LABELV $229
+line 311
 ADDRLP4 0
 ADDRLP4 0
 INDIRI4
@@ -1791,17 +1489,17 @@ ADDRLP4 4
 INDIRP4
 ADDP4
 ASGNP4
-LABELV $250
+LABELV $231
 ADDRLP4 0
 INDIRI4
 ADDRLP4 1040
 INDIRI4
-LTI4 $247
-line 363
-;363:	trap_Print( va( "%i levels parsed\n", sg.numLevels ) );
-ADDRGP4 $251
+LTI4 $228
+line 317
+;317:	trap_Print( va( "%i levels parsed\n", sg.numLevels ) );
+ADDRGP4 $233
 ARGP4
-ADDRGP4 sg+72
+ADDRGP4 sg+2148
 INDIRI4
 ARGI4
 ADDRLP4 2352
@@ -1814,8 +1512,8 @@ ARGP4
 ADDRGP4 trap_Print
 CALLV
 pop
-line 364
-;364:	if ( SG_OutOfMemory() ) {
+line 318
+;318:	if ( SG_OutOfMemory() ) {
 ADDRLP4 2356
 ADDRGP4 SG_OutOfMemory
 CALLI4
@@ -1823,30 +1521,30 @@ ASGNI4
 ADDRLP4 2356
 INDIRI4
 CNSTI4 0
-EQI4 $253
-line 365
-;365:        trap_Error( COLOR_RED "ERROR: not anough memory in pool to load all levels" );
-ADDRGP4 $255
+EQI4 $235
+line 319
+;319:        trap_Error( COLOR_RED "ERROR: not anough memory in pool to load all levels" );
+ADDRGP4 $237
 ARGP4
 ADDRGP4 trap_Error
 CALLV
 pop
-line 366
-;366:    }
-LABELV $253
-line 369
-;367:
-;368:	// set initial numbers
-;369:	for ( i = 0; i < sg.numLevels; i++ ) {
+line 320
+;320:    }
+LABELV $235
+line 323
+;321:
+;322:	// set initial numbers
+;323:	for ( i = 0; i < sg.numLevels; i++ ) {
 ADDRLP4 0
 CNSTI4 0
 ASGNI4
-ADDRGP4 $259
+ADDRGP4 $241
 JUMPV
-LABELV $256
-line 370
-;370:		Info_SetValueForKey( sg_levelInfos[i], "num", va( "%i", i ) );
-ADDRGP4 $142
+LABELV $238
+line 324
+;324:		Info_SetValueForKey( sg_levelInfos[i], "num", va( "%i", i ) );
+ADDRGP4 $144
 ARGP4
 ADDRLP4 0
 INDIRI4
@@ -1865,7 +1563,7 @@ INDIRP4
 ARGP4
 CNSTU4 1024
 ARGU4
-ADDRGP4 $229
+ADDRGP4 $243
 ARGP4
 ADDRLP4 2360
 INDIRP4
@@ -1873,26 +1571,26 @@ ARGP4
 ADDRGP4 Info_SetValueForKey_s
 CALLI4
 pop
-line 371
-;371:    }
-LABELV $257
-line 369
+line 325
+;325:    }
+LABELV $239
+line 323
 ADDRLP4 0
 ADDRLP4 0
 INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-LABELV $259
+LABELV $241
 ADDRLP4 0
 INDIRI4
-ADDRGP4 sg+72
+ADDRGP4 sg+2148
 INDIRI4
-LTI4 $256
-line 373
-;372:
-;373:    sg_levelInfoData = SG_MemAlloc( sizeof(*sg_levelInfoData) * sg.numLevels );
-ADDRGP4 sg+72
+LTI4 $238
+line 327
+;326:
+;327:    sg_levelInfoData = SG_MemAlloc( sizeof(*sg_levelInfoData) * sg.numLevels );
+ADDRGP4 sg+2148
 INDIRI4
 CVIU4 4
 CNSTU4 172
@@ -1907,18 +1605,18 @@ ADDRGP4 sg_levelInfoData
 ADDRLP4 2360
 INDIRP4
 ASGNP4
-line 376
-;374:
-;375:    // load the level information (difficulty, map, etc.)
-;376:    for ( i = 0; i < sg.numLevels; i++ ) {
+line 330
+;328:
+;329:    // load the level information (difficulty, map, etc.)
+;330:    for ( i = 0; i < sg.numLevels; i++ ) {
 ADDRLP4 0
 CNSTI4 0
 ASGNI4
-ADDRGP4 $265
+ADDRGP4 $248
 JUMPV
-LABELV $262
-line 377
-;377:        N_strncpyz( sg_levelInfoData[i].name, Info_ValueForKey( sg_levelInfos[i], "name" ), MAX_NPATH );
+LABELV $245
+line 331
+;331:        N_strncpyz( sg_levelInfoData[i].name, Info_ValueForKey( sg_levelInfos[i], "name" ), MAX_NPATH );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -1927,7 +1625,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $267
+ADDRGP4 $250
 ARGP4
 ADDRLP4 2364
 ADDRGP4 Info_ValueForKey
@@ -1949,9 +1647,9 @@ ARGU4
 ADDRGP4 N_strncpyz
 CALLV
 pop
-line 379
-;378:
-;379:        mapname = Info_ValueForKey( sg_levelInfos[i], "mapname" );
+line 333
+;332:
+;333:        mapname = Info_ValueForKey( sg_levelInfos[i], "mapname" );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -1970,8 +1668,8 @@ ADDRLP4 1032
 ADDRLP4 2368
 INDIRP4
 ASGNP4
-line 380
-;380:        sg_levelInfoData[i].maphandle = G_LoadMap( mapname );
+line 334
+;334:        sg_levelInfoData[i].maphandle = G_LoadMap( mapname );
 ADDRLP4 1032
 INDIRP4
 ARGP4
@@ -1991,8 +1689,8 @@ ADDP4
 ADDRLP4 2372
 INDIRI4
 ASGNI4
-line 381
-;381:        if ( sg_levelInfoData[i].maphandle == FS_INVALID_HANDLE ) {
+line 335
+;335:        if ( sg_levelInfoData[i].maphandle == FS_INVALID_HANDLE ) {
 ADDRLP4 0
 INDIRI4
 CNSTI4 172
@@ -2004,10 +1702,10 @@ CNSTI4 64
 ADDP4
 INDIRI4
 CNSTI4 0
-NEI4 $268
-line 382
-;382:            G_Printf( COLOR_YELLOW "WARNING: failed to load map '%s' for level '%s'\n", mapname, sg_levelInfoData[i].name );
-ADDRGP4 $270
+NEI4 $251
+line 336
+;336:            G_Printf( COLOR_YELLOW "WARNING: failed to load map '%s' for level '%s'\n", mapname, sg_levelInfoData[i].name );
+ADDRGP4 $253
 ARGP4
 ADDRLP4 1032
 INDIRP4
@@ -2023,15 +1721,15 @@ ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 383
-;383:            continue;
-ADDRGP4 $263
+line 337
+;337:            continue;
+ADDRGP4 $246
 JUMPV
-LABELV $268
-line 386
-;384:        }
-;385:        
-;386:        sg_levelInfoData[i].a.rank = LEVEL_RANK_A;
+LABELV $251
+line 340
+;338:        }
+;339:        
+;340:        sg_levelInfoData[i].a.rank = LEVEL_RANK_A;
 ADDRLP4 0
 INDIRI4
 CNSTI4 172
@@ -2043,8 +1741,8 @@ CNSTI4 72
 ADDP4
 CNSTI4 0
 ASGNI4
-line 387
-;387:        sg_levelInfoData[i].a.minKills = atoi( Info_ValueForKey( sg_levelInfos[i], "rankA_minKills" ) );
+line 341
+;341:        sg_levelInfoData[i].a.minKills = atoi( Info_ValueForKey( sg_levelInfos[i], "rankA_minKills" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -2053,7 +1751,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $271
+ADDRGP4 $254
 ARGP4
 ADDRLP4 2380
 ADDRGP4 Info_ValueForKey
@@ -2078,8 +1776,8 @@ ADDP4
 ADDRLP4 2384
 INDIRI4
 ASGNI4
-line 388
-;388:        sg_levelInfoData[i].a.minStyle = atoi( Info_ValueForKey( sg_levelInfos[i], "rankA_minStyle" ) );
+line 342
+;342:        sg_levelInfoData[i].a.minStyle = atoi( Info_ValueForKey( sg_levelInfos[i], "rankA_minStyle" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -2088,7 +1786,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $272
+ADDRGP4 $255
 ARGP4
 ADDRLP4 2392
 ADDRGP4 Info_ValueForKey
@@ -2113,8 +1811,8 @@ ADDP4
 ADDRLP4 2396
 INDIRI4
 ASGNI4
-line 389
-;389:        sg_levelInfoData[i].a.minTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankA_minTime" ) );
+line 343
+;343:        sg_levelInfoData[i].a.minTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankA_minTime" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -2123,7 +1821,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $273
+ADDRGP4 $256
 ARGP4
 ADDRLP4 2404
 ADDRGP4 Info_ValueForKey
@@ -2148,8 +1846,8 @@ ADDP4
 ADDRLP4 2408
 INDIRI4
 ASGNI4
-line 390
-;390:        sg_levelInfoData[i].a.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "cleanRunRequired" ) );
+line 344
+;344:        sg_levelInfoData[i].a.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "cleanRunRequired" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -2158,7 +1856,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $274
+ADDRGP4 $257
 ARGP4
 ADDRLP4 2416
 ADDRGP4 Info_ValueForKey
@@ -2183,9 +1881,9 @@ ADDP4
 ADDRLP4 2420
 INDIRI4
 ASGNI4
-line 392
-;391:
-;392:        sg_levelInfoData[i].b.rank = LEVEL_RANK_B;
+line 346
+;345:
+;346:        sg_levelInfoData[i].b.rank = LEVEL_RANK_B;
 ADDRLP4 0
 INDIRI4
 CNSTI4 172
@@ -2197,8 +1895,8 @@ CNSTI4 92
 ADDP4
 CNSTI4 1
 ASGNI4
-line 393
-;393:        sg_levelInfoData[i].b.minKills = atoi( Info_ValueForKey( sg_levelInfos[i], "rankB_minKills" ) );
+line 347
+;347:        sg_levelInfoData[i].b.minKills = atoi( Info_ValueForKey( sg_levelInfos[i], "rankB_minKills" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -2207,7 +1905,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $275
+ADDRGP4 $258
 ARGP4
 ADDRLP4 2428
 ADDRGP4 Info_ValueForKey
@@ -2232,8 +1930,8 @@ ADDP4
 ADDRLP4 2432
 INDIRI4
 ASGNI4
-line 394
-;394:        sg_levelInfoData[i].b.minStyle = atoi( Info_ValueForKey( sg_levelInfos[i], "rankB_minStyle" ) );
+line 348
+;348:        sg_levelInfoData[i].b.minStyle = atoi( Info_ValueForKey( sg_levelInfos[i], "rankB_minStyle" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -2242,7 +1940,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $276
+ADDRGP4 $259
 ARGP4
 ADDRLP4 2440
 ADDRGP4 Info_ValueForKey
@@ -2267,8 +1965,8 @@ ADDP4
 ADDRLP4 2444
 INDIRI4
 ASGNI4
-line 395
-;395:        sg_levelInfoData[i].b.minTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankB_minTime" ) );
+line 349
+;349:        sg_levelInfoData[i].b.minTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankB_minTime" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -2277,7 +1975,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $277
+ADDRGP4 $260
 ARGP4
 ADDRLP4 2452
 ADDRGP4 Info_ValueForKey
@@ -2302,8 +2000,8 @@ ADDP4
 ADDRLP4 2456
 INDIRI4
 ASGNI4
-line 396
-;396:        sg_levelInfoData[i].b.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "cleanRunRequired" ) );
+line 350
+;350:        sg_levelInfoData[i].b.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "cleanRunRequired" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -2312,7 +2010,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $274
+ADDRGP4 $257
 ARGP4
 ADDRLP4 2464
 ADDRGP4 Info_ValueForKey
@@ -2337,9 +2035,9 @@ ADDP4
 ADDRLP4 2468
 INDIRI4
 ASGNI4
-line 398
-;397:
-;398:        sg_levelInfoData[i].c.rank = LEVEL_RANK_C;
+line 352
+;351:
+;352:        sg_levelInfoData[i].c.rank = LEVEL_RANK_C;
 ADDRLP4 0
 INDIRI4
 CNSTI4 172
@@ -2351,8 +2049,8 @@ CNSTI4 112
 ADDP4
 CNSTI4 2
 ASGNI4
-line 399
-;399:        sg_levelInfoData[i].c.minKills = atoi( Info_ValueForKey( sg_levelInfos[i], "rankC_minKills" ) );
+line 353
+;353:        sg_levelInfoData[i].c.minKills = atoi( Info_ValueForKey( sg_levelInfos[i], "rankC_minKills" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -2361,7 +2059,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $278
+ADDRGP4 $261
 ARGP4
 ADDRLP4 2476
 ADDRGP4 Info_ValueForKey
@@ -2386,8 +2084,8 @@ ADDP4
 ADDRLP4 2480
 INDIRI4
 ASGNI4
-line 400
-;400:        sg_levelInfoData[i].c.minStyle = atoi( Info_ValueForKey( sg_levelInfos[i], "rankC_minStyle" ) );
+line 354
+;354:        sg_levelInfoData[i].c.minStyle = atoi( Info_ValueForKey( sg_levelInfos[i], "rankC_minStyle" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -2396,7 +2094,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $279
+ADDRGP4 $262
 ARGP4
 ADDRLP4 2488
 ADDRGP4 Info_ValueForKey
@@ -2421,8 +2119,8 @@ ADDP4
 ADDRLP4 2492
 INDIRI4
 ASGNI4
-line 401
-;401:        sg_levelInfoData[i].c.minTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankC_minTime" ) );
+line 355
+;355:        sg_levelInfoData[i].c.minTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankC_minTime" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -2431,7 +2129,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $280
+ADDRGP4 $263
 ARGP4
 ADDRLP4 2500
 ADDRGP4 Info_ValueForKey
@@ -2456,8 +2154,8 @@ ADDP4
 ADDRLP4 2504
 INDIRI4
 ASGNI4
-line 402
-;402:        sg_levelInfoData[i].c.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "cleanRunRequired" ) );
+line 356
+;356:        sg_levelInfoData[i].c.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "cleanRunRequired" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -2466,7 +2164,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $274
+ADDRGP4 $257
 ARGP4
 ADDRLP4 2512
 ADDRGP4 Info_ValueForKey
@@ -2491,9 +2189,9 @@ ADDP4
 ADDRLP4 2516
 INDIRI4
 ASGNI4
-line 404
-;403:
-;404:        sg_levelInfoData[i].d.rank = LEVEL_RANK_D;
+line 358
+;357:
+;358:        sg_levelInfoData[i].d.rank = LEVEL_RANK_D;
 ADDRLP4 0
 INDIRI4
 CNSTI4 172
@@ -2505,8 +2203,8 @@ CNSTI4 132
 ADDP4
 CNSTI4 3
 ASGNI4
-line 405
-;405:        sg_levelInfoData[i].d.minKills = atoi( Info_ValueForKey( sg_levelInfos[i], "rankD_minKills" ) );
+line 359
+;359:        sg_levelInfoData[i].d.minKills = atoi( Info_ValueForKey( sg_levelInfos[i], "rankD_minKills" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -2515,7 +2213,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $281
+ADDRGP4 $264
 ARGP4
 ADDRLP4 2524
 ADDRGP4 Info_ValueForKey
@@ -2540,8 +2238,8 @@ ADDP4
 ADDRLP4 2528
 INDIRI4
 ASGNI4
-line 406
-;406:        sg_levelInfoData[i].d.minStyle = atoi( Info_ValueForKey( sg_levelInfos[i], "rankD_minStyle" ) );
+line 360
+;360:        sg_levelInfoData[i].d.minStyle = atoi( Info_ValueForKey( sg_levelInfos[i], "rankD_minStyle" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -2550,7 +2248,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $282
+ADDRGP4 $265
 ARGP4
 ADDRLP4 2536
 ADDRGP4 Info_ValueForKey
@@ -2575,8 +2273,8 @@ ADDP4
 ADDRLP4 2540
 INDIRI4
 ASGNI4
-line 407
-;407:        sg_levelInfoData[i].d.minTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankD_minTime" ) );
+line 361
+;361:        sg_levelInfoData[i].d.minTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankD_minTime" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -2585,7 +2283,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $283
+ADDRGP4 $266
 ARGP4
 ADDRLP4 2548
 ADDRGP4 Info_ValueForKey
@@ -2610,8 +2308,8 @@ ADDP4
 ADDRLP4 2552
 INDIRI4
 ASGNI4
-line 408
-;408:        sg_levelInfoData[i].d.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "cleanRunRequired" ) );
+line 362
+;362:        sg_levelInfoData[i].d.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "cleanRunRequired" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -2620,7 +2318,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $274
+ADDRGP4 $257
 ARGP4
 ADDRLP4 2560
 ADDRGP4 Info_ValueForKey
@@ -2645,9 +2343,9 @@ ADDP4
 ADDRLP4 2564
 INDIRI4
 ASGNI4
-line 410
-;409:
-;410:        sg_levelInfoData[i].f.rank = LEVEL_RANK_WERE_U_BOTTING;
+line 364
+;363:
+;364:        sg_levelInfoData[i].f.rank = LEVEL_RANK_WERE_U_BOTTING;
 ADDRLP4 0
 INDIRI4
 CNSTI4 172
@@ -2659,8 +2357,8 @@ CNSTI4 152
 ADDP4
 CNSTI4 4
 ASGNI4
-line 411
-;411:        sg_levelInfoData[i].f.minKills = atoi( Info_ValueForKey( sg_levelInfos[i], "rankF_minKills" ) );
+line 365
+;365:        sg_levelInfoData[i].f.minKills = atoi( Info_ValueForKey( sg_levelInfos[i], "rankF_minKills" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -2669,7 +2367,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $284
+ADDRGP4 $267
 ARGP4
 ADDRLP4 2572
 ADDRGP4 Info_ValueForKey
@@ -2694,8 +2392,8 @@ ADDP4
 ADDRLP4 2576
 INDIRI4
 ASGNI4
-line 412
-;412:        sg_levelInfoData[i].f.minStyle = atoi( Info_ValueForKey( sg_levelInfos[i], "rankF_minStyle" ) );
+line 366
+;366:        sg_levelInfoData[i].f.minStyle = atoi( Info_ValueForKey( sg_levelInfos[i], "rankF_minStyle" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -2704,7 +2402,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $285
+ADDRGP4 $268
 ARGP4
 ADDRLP4 2584
 ADDRGP4 Info_ValueForKey
@@ -2729,8 +2427,8 @@ ADDP4
 ADDRLP4 2588
 INDIRI4
 ASGNI4
-line 413
-;413:        sg_levelInfoData[i].f.minTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankF_minTime" ) );
+line 367
+;367:        sg_levelInfoData[i].f.minTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankF_minTime" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -2739,7 +2437,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $286
+ADDRGP4 $269
 ARGP4
 ADDRLP4 2596
 ADDRGP4 Info_ValueForKey
@@ -2764,8 +2462,8 @@ ADDP4
 ADDRLP4 2600
 INDIRI4
 ASGNI4
-line 414
-;414:        sg_levelInfoData[i].f.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "cleanRunRequired" ) );
+line 368
+;368:        sg_levelInfoData[i].f.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "cleanRunRequired" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -2774,7 +2472,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $274
+ADDRGP4 $257
 ARGP4
 ADDRLP4 2608
 ADDRGP4 Info_ValueForKey
@@ -2799,25 +2497,25 @@ ADDP4
 ADDRLP4 2612
 INDIRI4
 ASGNI4
-line 415
-;415:    }
-LABELV $263
-line 376
+line 369
+;369:    }
+LABELV $246
+line 330
 ADDRLP4 0
 ADDRLP4 0
 INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-LABELV $265
+LABELV $248
 ADDRLP4 0
 INDIRI4
-ADDRGP4 sg+72
+ADDRGP4 sg+2148
 INDIRI4
-LTI4 $262
-line 416
-;416:}
-LABELV $240
+LTI4 $245
+line 370
+;370:}
+LABELV $218
 endproc SG_LoadLevels 2616 16
 import atoi
 bss
@@ -2846,6 +2544,8 @@ import trap_FS_FOpenRead
 import trap_FS_FOpenWrite
 import trap_FS_FOpenFile
 import Sys_GetGPUConfig
+import RE_SetColor
+import RE_DrawImage
 import RE_AddSpriteToScene
 import RE_AddPolyToScene
 import RE_RenderScene
@@ -2854,46 +2554,45 @@ import RE_LoadWorldMap
 import RE_RegisterSprite
 import RE_RegisterSpriteSheet
 import RE_RegisterShader
-import trap_Snd_ClearLoopingTrack
-import trap_Snd_SetLoopingTrack
-import trap_Snd_StopSfx
-import trap_Snd_PlaySfx
-import trap_Snd_QueueTrack
-import trap_Snd_RegisterTrack
-import trap_Snd_RegisterSfx
+import Snd_ClearLoopingTrack
+import Snd_SetLoopingTrack
+import Snd_StopSfx
+import Snd_PlaySfx
+import Snd_RegisterTrack
+import Snd_RegisterSfx
 import trap_Key_ClearStates
 import trap_Key_GetKey
 import trap_Key_GetCatcher
 import trap_Key_SetCatcher
-import trap_Milliseconds
-import trap_CheckWallHit
+import Sys_Milliseconds
+import G_CheckWallHit
 import G_SoundRecursive
 import G_CastRay
 import G_SetActiveMap
 import G_LoadMap
 import G_SetCameraData
-import trap_MemoryRemaining
+import Sys_MemoryRemaining
 import trap_RemoveCommand
 import trap_AddCommand
 import trap_SendConsoleCommand
-import trap_LoadVec4
-import trap_LoadVec3
-import trap_LoadVec2
-import trap_LoadString
-import trap_LoadFloat
-import trap_LoadInt
-import trap_LoadUInt
-import trap_GetSaveSection
-import trap_WriteVec4
-import trap_WriteVec3
-import trap_WriteVec2
-import trap_WriteFloat
-import trap_WriteString
-import trap_WriteUInt
-import trap_WriteInt
-import trap_WriteChar
-import trap_EndSaveSection
-import trap_BeginSaveSection
+import G_LoadVector4
+import G_LoadVector3
+import G_LoadVector2
+import G_LoadString
+import LoadFloat
+import G_LoadInt
+import G_LoadUInt
+import G_GetSaveSection
+import G_SaveVector4
+import G_SaveVector3
+import G_SaveVector2
+import G_SaveFloat
+import G_SaveString
+import G_SaveUInt
+import G_SaveInt
+import G_SaveChar
+import G_EndSaveSection
+import G_BeginSaveSection
 import trap_Args
 import trap_Argv
 import trap_Argc
@@ -2966,67 +2665,6 @@ import sg_entities
 import inversedirs
 import dirvectors
 import stateinfo
-import ImGui_CloseCurrentPopup
-import ImGui_OpenPopup
-import ImGui_EndPopup
-import ImGui_BeginPopupModal
-import ImGui_ColoredText
-import ImGui_Text
-import ImGui_ColoredTextUnformatted
-import ImGui_TextUnformatted
-import ImGui_SameLine
-import ImGui_ProgressBar
-import ImGui_Separator
-import ImGui_SeparatorText
-import ImGui_NewLine
-import ImGui_PopColor
-import ImGui_PushColor
-import ImGui_GetCursorScreenPos
-import ImGui_SetCursorScreenPos
-import ImGui_GetCursorPos
-import ImGui_SetCursorPos
-import ImGui_GetFontScale
-import ImGui_Button
-import ImGui_Checkbox
-import ImGui_ArrowButton
-import ImGui_ColorEdit4
-import ImGui_ColorEdit3
-import ImGui_SliderInt4
-import ImGui_SliderInt3
-import ImGui_SliderInt2
-import ImGui_SliderInt
-import ImGui_SliderFloat4
-import ImGui_SliderFloat3
-import ImGui_SliderFloat2
-import ImGui_SliderFloat
-import ImGui_InputInt4
-import ImGui_InputInt3
-import ImGui_InputInt2
-import ImGui_InputInt
-import ImGui_InputFloat4
-import ImGui_InputFloat3
-import ImGui_InputFloat2
-import ImGui_InputFloat
-import ImGui_InputTextWithHint
-import ImGui_InputTextMultiline
-import ImGui_InputText
-import ImGui_EndTable
-import ImGui_TableNextColumn
-import ImGui_TableNextRow
-import ImGui_BeginTable
-import ImGui_SetItemTooltip
-import ImGui_SetItemTooltipUnformatted
-import ImGui_MenuItem
-import ImGui_EndMenu
-import ImGui_BeginMenu
-import ImGui_SetWindowFontScale
-import ImGui_SetWindowSize
-import ImGui_SetWindowPos
-import ImGui_SetWindowCollapsed
-import ImGui_IsWindowCollapsed
-import ImGui_EndWindow
-import ImGui_BeginWindow
-import I_GetParm
 import Com_TouchMemory
 import Hunk_TempIsClear
 import Hunk_Check
@@ -3220,6 +2858,67 @@ import Com_EarlyParseCmdLine
 import Com_Milliseconds
 import Com_Frame
 import Sys_SnapVector
+import ImGui_CloseCurrentPopup
+import ImGui_OpenPopup
+import ImGui_EndPopup
+import ImGui_BeginPopupModal
+import ImGui_ColoredText
+import ImGui_Text
+import ImGui_ColoredTextUnformatted
+import ImGui_TextUnformatted
+import ImGui_SameLine
+import ImGui_ProgressBar
+import ImGui_Separator
+import ImGui_SeparatorText
+import ImGui_NewLine
+import ImGui_PopColor
+import ImGui_PushColor
+import ImGui_GetCursorScreenPos
+import ImGui_SetCursorScreenPos
+import ImGui_GetCursorPos
+import ImGui_SetCursorPos
+import ImGui_GetFontScale
+import ImGui_Button
+import ImGui_Checkbox
+import ImGui_ArrowButton
+import ImGui_ColorEdit4
+import ImGui_ColorEdit3
+import ImGui_SliderInt4
+import ImGui_SliderInt3
+import ImGui_SliderInt2
+import ImGui_SliderInt
+import ImGui_SliderFloat4
+import ImGui_SliderFloat3
+import ImGui_SliderFloat2
+import ImGui_SliderFloat
+import ImGui_InputInt4
+import ImGui_InputInt3
+import ImGui_InputInt2
+import ImGui_InputInt
+import ImGui_InputFloat4
+import ImGui_InputFloat3
+import ImGui_InputFloat2
+import ImGui_InputFloat
+import ImGui_InputTextWithHint
+import ImGui_InputTextMultiline
+import ImGui_InputText
+import ImGui_EndTable
+import ImGui_TableNextColumn
+import ImGui_TableNextRow
+import ImGui_BeginTable
+import ImGui_SetItemTooltip
+import ImGui_SetItemTooltipUnformatted
+import ImGui_MenuItem
+import ImGui_EndMenu
+import ImGui_BeginMenu
+import ImGui_SetWindowFontScale
+import ImGui_SetWindowSize
+import ImGui_SetWindowPos
+import ImGui_SetWindowCollapsed
+import ImGui_IsWindowCollapsed
+import ImGui_EndWindow
+import ImGui_BeginWindow
+import I_GetParm
 import Con_DPrintf
 import Con_Printf
 import Con_Shutdown
@@ -3249,8 +2948,6 @@ import ColorBytes4
 import ColorBytes3
 import VectorNormalize
 import AddPointToBounds
-import ClearBounds
-import RadiusFromBounds
 import NormalizeColor
 import _VectorMA
 import _VectorScale
@@ -3274,6 +2971,8 @@ import BoundsIntersect
 import disBetweenOBJ
 import vec3_set
 import vec3_get
+import ClearBounds
+import RadiusFromBounds
 import ClampShort
 import ClampCharMove
 import ClampChar
@@ -3359,7 +3058,7 @@ import memchr
 import memcpy
 lit
 align 1
-LABELV $286
+LABELV $269
 byte 1 114
 byte 1 97
 byte 1 110
@@ -3375,7 +3074,7 @@ byte 1 109
 byte 1 101
 byte 1 0
 align 1
-LABELV $285
+LABELV $268
 byte 1 114
 byte 1 97
 byte 1 110
@@ -3392,7 +3091,7 @@ byte 1 108
 byte 1 101
 byte 1 0
 align 1
-LABELV $284
+LABELV $267
 byte 1 114
 byte 1 97
 byte 1 110
@@ -3409,7 +3108,7 @@ byte 1 108
 byte 1 115
 byte 1 0
 align 1
-LABELV $283
+LABELV $266
 byte 1 114
 byte 1 97
 byte 1 110
@@ -3425,7 +3124,7 @@ byte 1 109
 byte 1 101
 byte 1 0
 align 1
-LABELV $282
+LABELV $265
 byte 1 114
 byte 1 97
 byte 1 110
@@ -3442,7 +3141,7 @@ byte 1 108
 byte 1 101
 byte 1 0
 align 1
-LABELV $281
+LABELV $264
 byte 1 114
 byte 1 97
 byte 1 110
@@ -3459,7 +3158,7 @@ byte 1 108
 byte 1 115
 byte 1 0
 align 1
-LABELV $280
+LABELV $263
 byte 1 114
 byte 1 97
 byte 1 110
@@ -3475,7 +3174,7 @@ byte 1 109
 byte 1 101
 byte 1 0
 align 1
-LABELV $279
+LABELV $262
 byte 1 114
 byte 1 97
 byte 1 110
@@ -3492,7 +3191,7 @@ byte 1 108
 byte 1 101
 byte 1 0
 align 1
-LABELV $278
+LABELV $261
 byte 1 114
 byte 1 97
 byte 1 110
@@ -3509,7 +3208,7 @@ byte 1 108
 byte 1 115
 byte 1 0
 align 1
-LABELV $277
+LABELV $260
 byte 1 114
 byte 1 97
 byte 1 110
@@ -3525,7 +3224,7 @@ byte 1 109
 byte 1 101
 byte 1 0
 align 1
-LABELV $276
+LABELV $259
 byte 1 114
 byte 1 97
 byte 1 110
@@ -3542,7 +3241,7 @@ byte 1 108
 byte 1 101
 byte 1 0
 align 1
-LABELV $275
+LABELV $258
 byte 1 114
 byte 1 97
 byte 1 110
@@ -3559,7 +3258,7 @@ byte 1 108
 byte 1 115
 byte 1 0
 align 1
-LABELV $274
+LABELV $257
 byte 1 99
 byte 1 108
 byte 1 101
@@ -3578,7 +3277,7 @@ byte 1 101
 byte 1 100
 byte 1 0
 align 1
-LABELV $273
+LABELV $256
 byte 1 114
 byte 1 97
 byte 1 110
@@ -3594,7 +3293,7 @@ byte 1 109
 byte 1 101
 byte 1 0
 align 1
-LABELV $272
+LABELV $255
 byte 1 114
 byte 1 97
 byte 1 110
@@ -3611,7 +3310,7 @@ byte 1 108
 byte 1 101
 byte 1 0
 align 1
-LABELV $271
+LABELV $254
 byte 1 114
 byte 1 97
 byte 1 110
@@ -3628,7 +3327,7 @@ byte 1 108
 byte 1 115
 byte 1 0
 align 1
-LABELV $270
+LABELV $253
 byte 1 94
 byte 1 51
 byte 1 87
@@ -3681,14 +3380,20 @@ byte 1 39
 byte 1 10
 byte 1 0
 align 1
-LABELV $267
+LABELV $250
 byte 1 110
 byte 1 97
 byte 1 109
 byte 1 101
 byte 1 0
 align 1
-LABELV $255
+LABELV $243
+byte 1 110
+byte 1 117
+byte 1 109
+byte 1 0
+align 1
+LABELV $237
 byte 1 94
 byte 1 49
 byte 1 69
@@ -3744,7 +3449,7 @@ byte 1 108
 byte 1 115
 byte 1 0
 align 1
-LABELV $251
+LABELV $233
 byte 1 37
 byte 1 105
 byte 1 32
@@ -3764,7 +3469,18 @@ byte 1 100
 byte 1 10
 byte 1 0
 align 1
-LABELV $246
+LABELV $232
+byte 1 115
+byte 1 99
+byte 1 114
+byte 1 105
+byte 1 112
+byte 1 116
+byte 1 115
+byte 1 47
+byte 1 0
+align 1
+LABELV $227
 byte 1 46
 byte 1 108
 byte 1 101
@@ -3773,7 +3489,41 @@ byte 1 101
 byte 1 108
 byte 1 0
 align 1
-LABELV $243
+LABELV $226
+byte 1 115
+byte 1 99
+byte 1 114
+byte 1 105
+byte 1 112
+byte 1 116
+byte 1 115
+byte 1 0
+align 1
+LABELV $225
+byte 1 115
+byte 1 99
+byte 1 114
+byte 1 105
+byte 1 112
+byte 1 116
+byte 1 115
+byte 1 47
+byte 1 108
+byte 1 101
+byte 1 118
+byte 1 101
+byte 1 108
+byte 1 115
+byte 1 46
+byte 1 116
+byte 1 120
+byte 1 116
+byte 1 0
+align 1
+LABELV $222
+byte 1 0
+align 1
+LABELV $221
 byte 1 115
 byte 1 103
 byte 1 95
@@ -3789,7 +3539,7 @@ byte 1 108
 byte 1 101
 byte 1 0
 align 1
-LABELV $242
+LABELV $220
 byte 1 76
 byte 1 111
 byte 1 97
@@ -3817,7 +3567,7 @@ byte 1 46
 byte 1 10
 byte 1 0
 align 1
-LABELV $236
+LABELV $214
 byte 1 94
 byte 1 49
 byte 1 69
@@ -3870,219 +3620,48 @@ byte 1 115
 byte 1 32
 byte 1 37
 byte 1 105
-byte 1 0
-align 1
-LABELV $233
-byte 1 94
-byte 1 49
-byte 1 69
-byte 1 82
-byte 1 82
-byte 1 79
-byte 1 82
-byte 1 58
-byte 1 32
-byte 1 102
-byte 1 105
-byte 1 108
-byte 1 101
-byte 1 32
-byte 1 110
-byte 1 111
-byte 1 116
-byte 1 32
-byte 1 102
-byte 1 111
-byte 1 117
-byte 1 110
-byte 1 100
-byte 1 58
-byte 1 32
-byte 1 37
-byte 1 115
-byte 1 10
-byte 1 0
-align 1
-LABELV $229
-byte 1 110
-byte 1 117
-byte 1 109
-byte 1 0
-align 1
-LABELV $222
-byte 1 37
-byte 1 105
-byte 1 32
-byte 1 108
-byte 1 101
-byte 1 118
-byte 1 101
-byte 1 108
-byte 1 115
-byte 1 32
-byte 1 112
-byte 1 97
-byte 1 114
-byte 1 115
-byte 1 101
-byte 1 100
-byte 1 46
-byte 1 10
-byte 1 0
-align 1
-LABELV $221
-byte 1 115
-byte 1 99
-byte 1 114
-byte 1 105
-byte 1 112
-byte 1 116
-byte 1 115
-byte 1 47
-byte 1 0
-align 1
-LABELV $216
-byte 1 46
-byte 1 108
-byte 1 118
-byte 1 108
-byte 1 0
-align 1
-LABELV $215
-byte 1 115
-byte 1 99
-byte 1 114
-byte 1 105
-byte 1 112
-byte 1 116
-byte 1 115
-byte 1 0
-align 1
-LABELV $214
-byte 1 115
-byte 1 99
-byte 1 114
-byte 1 105
-byte 1 112
-byte 1 116
-byte 1 115
-byte 1 47
-byte 1 108
-byte 1 101
-byte 1 118
-byte 1 101
-byte 1 108
-byte 1 115
-byte 1 46
-byte 1 116
-byte 1 120
-byte 1 116
 byte 1 0
 align 1
 LABELV $211
-byte 1 0
-align 1
-LABELV $210
-byte 1 115
-byte 1 103
-byte 1 95
-byte 1 108
-byte 1 101
-byte 1 118
-byte 1 101
-byte 1 108
-byte 1 73
-byte 1 110
+byte 1 94
+byte 1 49
+byte 1 69
+byte 1 82
+byte 1 82
+byte 1 79
+byte 1 82
+byte 1 58
+byte 1 32
 byte 1 102
-byte 1 111
-byte 1 70
 byte 1 105
 byte 1 108
 byte 1 101
+byte 1 32
+byte 1 110
+byte 1 111
+byte 1 116
+byte 1 32
+byte 1 102
+byte 1 111
+byte 1 117
+byte 1 110
+byte 1 100
+byte 1 58
+byte 1 32
+byte 1 37
+byte 1 115
+byte 1 10
+byte 1 0
+align 1
+LABELV $205
+byte 1 92
+byte 1 110
+byte 1 117
+byte 1 109
+byte 1 92
 byte 1 0
 align 1
 LABELV $204
-byte 1 94
-byte 1 49
-byte 1 102
-byte 1 105
-byte 1 108
-byte 1 101
-byte 1 32
-byte 1 116
-byte 1 111
-byte 1 111
-byte 1 32
-byte 1 108
-byte 1 97
-byte 1 114
-byte 1 103
-byte 1 101
-byte 1 58
-byte 1 32
-byte 1 37
-byte 1 115
-byte 1 32
-byte 1 105
-byte 1 115
-byte 1 32
-byte 1 37
-byte 1 105
-byte 1 44
-byte 1 32
-byte 1 109
-byte 1 97
-byte 1 120
-byte 1 32
-byte 1 97
-byte 1 108
-byte 1 108
-byte 1 111
-byte 1 119
-byte 1 101
-byte 1 100
-byte 1 32
-byte 1 105
-byte 1 115
-byte 1 32
-byte 1 37
-byte 1 105
-byte 1 10
-byte 1 0
-align 1
-LABELV $201
-byte 1 94
-byte 1 49
-byte 1 102
-byte 1 105
-byte 1 108
-byte 1 101
-byte 1 32
-byte 1 110
-byte 1 111
-byte 1 116
-byte 1 32
-byte 1 102
-byte 1 111
-byte 1 117
-byte 1 110
-byte 1 100
-byte 1 58
-byte 1 32
-byte 1 37
-byte 1 115
-byte 1 10
-byte 1 0
-align 1
-LABELV $195
-byte 1 92
-byte 1 110
-byte 1 117
-byte 1 109
-byte 1 92
-byte 1 0
-align 1
-LABELV $194
 byte 1 60
 byte 1 78
 byte 1 85
@@ -4091,7 +3670,7 @@ byte 1 76
 byte 1 62
 byte 1 0
 align 1
-LABELV $189
+LABELV $199
 byte 1 117
 byte 1 110
 byte 1 101
@@ -4122,7 +3701,7 @@ byte 1 101
 byte 1 10
 byte 1 0
 align 1
-LABELV $183
+LABELV $193
 byte 1 109
 byte 1 97
 byte 1 120
@@ -4144,7 +3723,7 @@ byte 1 100
 byte 1 10
 byte 1 0
 align 1
-LABELV $180
+LABELV $190
 byte 1 109
 byte 1 105
 byte 1 115
@@ -4172,7 +3751,7 @@ byte 1 101
 byte 1 10
 byte 1 0
 align 1
-LABELV $165
+LABELV $175
 byte 1 76
 byte 1 101
 byte 1 118
@@ -4191,7 +3770,7 @@ byte 1 99
 byte 1 115
 byte 1 0
 align 1
-LABELV $164
+LABELV $174
 byte 1 69
 byte 1 110
 byte 1 100
@@ -4202,28 +3781,7 @@ byte 1 101
 byte 1 108
 byte 1 0
 align 1
-LABELV $157
-byte 1 105
-byte 1 110
-byte 1 100
-byte 1 101
-byte 1 120
-byte 1 0
-align 1
-LABELV $156
-byte 1 99
-byte 1 104
-byte 1 101
-byte 1 99
-byte 1 107
-byte 1 112
-byte 1 111
-byte 1 105
-byte 1 110
-byte 1 116
-byte 1 0
-align 1
-LABELV $154
+LABELV $166
 byte 1 83
 byte 1 71
 byte 1 95
@@ -4291,7 +3849,61 @@ byte 1 101
 byte 1 33
 byte 1 0
 align 1
-LABELV $150
+LABELV $156
+byte 1 115
+byte 1 103
+byte 1 95
+byte 1 99
+byte 1 97
+byte 1 109
+byte 1 101
+byte 1 114
+byte 1 97
+byte 1 95
+byte 1 112
+byte 1 111
+byte 1 115
+byte 1 105
+byte 1 116
+byte 1 105
+byte 1 111
+byte 1 110
+byte 1 0
+align 1
+LABELV $155
+byte 1 108
+byte 1 101
+byte 1 118
+byte 1 101
+byte 1 108
+byte 1 95
+byte 1 105
+byte 1 110
+byte 1 100
+byte 1 101
+byte 1 120
+byte 1 0
+align 1
+LABELV $153
+byte 1 99
+byte 1 104
+byte 1 101
+byte 1 99
+byte 1 107
+byte 1 112
+byte 1 111
+byte 1 105
+byte 1 110
+byte 1 116
+byte 1 95
+byte 1 105
+byte 1 110
+byte 1 100
+byte 1 101
+byte 1 120
+byte 1 0
+align 1
+LABELV $152
 byte 1 108
 byte 1 101
 byte 1 118
@@ -4299,7 +3911,7 @@ byte 1 101
 byte 1 108
 byte 1 0
 align 1
-LABELV $148
+LABELV $150
 byte 1 68
 byte 1 111
 byte 1 110
@@ -4307,12 +3919,12 @@ byte 1 101
 byte 1 46
 byte 1 0
 align 1
-LABELV $142
+LABELV $144
 byte 1 37
 byte 1 105
 byte 1 0
 align 1
-LABELV $141
+LABELV $143
 byte 1 115
 byte 1 103
 byte 1 95
@@ -4328,7 +3940,7 @@ byte 1 101
 byte 1 120
 byte 1 0
 align 1
-LABELV $138
+LABELV $140
 byte 1 109
 byte 1 97
 byte 1 112
@@ -4338,7 +3950,7 @@ byte 1 37
 byte 1 115
 byte 1 0
 align 1
-LABELV $135
+LABELV $137
 byte 1 77
 byte 1 97
 byte 1 112
@@ -4356,7 +3968,7 @@ byte 1 105
 byte 1 10
 byte 1 0
 align 1
-LABELV $132
+LABELV $134
 byte 1 77
 byte 1 97
 byte 1 112
@@ -4373,7 +3985,7 @@ byte 1 105
 byte 1 10
 byte 1 0
 align 1
-LABELV $129
+LABELV $131
 byte 1 83
 byte 1 112
 byte 1 97
@@ -4392,7 +4004,7 @@ byte 1 105
 byte 1 10
 byte 1 0
 align 1
-LABELV $126
+LABELV $128
 byte 1 67
 byte 1 104
 byte 1 101
@@ -4416,7 +4028,7 @@ byte 1 105
 byte 1 10
 byte 1 0
 align 1
-LABELV $123
+LABELV $125
 byte 1 77
 byte 1 97
 byte 1 112
@@ -4432,7 +4044,7 @@ byte 1 115
 byte 1 10
 byte 1 0
 align 1
-LABELV $122
+LABELV $124
 byte 1 10
 byte 1 45
 byte 1 45
@@ -4490,6 +4102,9 @@ byte 1 108
 byte 1 32
 byte 1 37
 byte 1 115
+byte 1 46
+byte 1 46
+byte 1 46
 byte 1 10
 byte 1 0
 align 1

@@ -171,7 +171,7 @@ line 87
 ;87:{
 line 88
 ;88:	sg.playr.foot_frame = anim;
-ADDRGP4 sg+61620+48
+ADDRGP4 sg+63696+48
 ADDRFP4 0
 INDIRI4
 ASGNI4
@@ -1057,16 +1057,16 @@ CNSTI4 0
 EQI4 $186
 line 182
 ;181:		// its a projectile
-;182:		trap_Snd_PlaySfx( sg.media.player_parry );
+;182:		Snd_PlaySfx( sg.media.player_parry );
 ADDRGP4 sg+24
 INDIRI4
 ARGI4
-ADDRGP4 trap_Snd_PlaySfx
+ADDRGP4 Snd_PlaySfx
 CALLV
 pop
 line 183
 ;183:		Ent_SetState( sg.playr.ent, S_PLAYR_PARRY );
-ADDRGP4 sg+61620
+ADDRGP4 sg+63696
 INDIRP4
 ARGP4
 CNSTI4 5
@@ -1099,16 +1099,16 @@ CNSTI4 0
 EQI4 $190
 line 186
 ;185:		// its an attack
-;186:		trap_Snd_PlaySfx( sg.media.player_parry );
+;186:		Snd_PlaySfx( sg.media.player_parry );
 ADDRGP4 sg+24
 INDIRI4
 ARGI4
-ADDRGP4 trap_Snd_PlaySfx
+ADDRGP4 Snd_PlaySfx
 CALLV
 pop
 line 187
 ;187:		Ent_SetState( sg.playr.ent, S_PLAYR_PARRY );
-ADDRGP4 sg+61620
+ADDRGP4 sg+63696
 INDIRP4
 ARGP4
 CNSTI4 5
@@ -1202,7 +1202,7 @@ line 236
 ;236:	if ( origin.x > sg.mapInfo.width - 1 ) {
 ADDRLP4 0
 INDIRF4
-ADDRGP4 sg+4268392+23616
+ADDRGP4 sg+4270468+23616
 INDIRI4
 CNSTI4 1
 SUBI4
@@ -1211,7 +1211,7 @@ LEF4 $197
 line 237
 ;237:		origin.x = sg.mapInfo.width - 1;
 ADDRLP4 0
-ADDRGP4 sg+4268392+23616
+ADDRGP4 sg+4270468+23616
 INDIRI4
 CNSTI4 1
 SUBI4
@@ -1240,7 +1240,7 @@ line 242
 ;242:	if ( origin.y > sg.mapInfo.height - 1 ) {
 ADDRLP4 0+4
 INDIRF4
-ADDRGP4 sg+4268392+23620
+ADDRGP4 sg+4270468+23620
 INDIRI4
 CNSTI4 1
 SUBI4
@@ -1249,7 +1249,7 @@ LEF4 $205
 line 243
 ;243:		origin.y = sg.mapInfo.height - 1;
 ADDRLP4 0+4
-ADDRGP4 sg+4268392+23620
+ADDRGP4 sg+4270468+23620
 INDIRI4
 CNSTI4 1
 SUBI4
@@ -1684,7 +1684,7 @@ ASGNF4
 line 293
 ;292:
 ;293:	if ( P_ClipOrigin( sg.playr.ent ) ) {
-ADDRGP4 sg+61620
+ADDRGP4 sg+63696
 INDIRP4
 ARGP4
 ADDRLP4 60
@@ -1718,13 +1718,13 @@ LABELV $274
 line 297
 ;296:
 ;297:	sg.cameraPos.x = self->origin.x - ( sg.cameraPos.x / 2 );
-ADDRGP4 sg+4268384
+ADDRGP4 sg+4270460
 ADDRFP4 0
 INDIRP4
 CNSTI4 64
 ADDP4
 INDIRF4
-ADDRGP4 sg+4268384
+ADDRGP4 sg+4270460
 INDIRF4
 CNSTF4 1056964608
 MULF4
@@ -1732,7 +1732,7 @@ SUBF4
 ASGNF4
 line 298
 ;298:	sg.cameraPos.y = -self->origin.y;
-ADDRGP4 sg+4268384+4
+ADDRGP4 sg+4270460+4
 ADDRFP4 0
 INDIRP4
 CNSTI4 68
@@ -1885,7 +1885,7 @@ line 324
 line 326
 ;325:    // initialize player state
 ;326:    memset( &sg.playr, 0, sizeof(sg.playr) );
-ADDRGP4 sg+61620
+ADDRGP4 sg+63696
 ARGP4
 CNSTI4 0
 ARGI4
@@ -1897,19 +1897,19 @@ pop
 line 328
 ;327:
 ;328:	sg.playr.foot_frame = 0;
-ADDRGP4 sg+61620+48
+ADDRGP4 sg+63696+48
 CNSTI4 0
 ASGNI4
 line 329
 ;329:	sg.playr.foot_sprite = SPR_PLAYR_LEGS0_7_R;
-ADDRGP4 sg+61620+44
+ADDRGP4 sg+63696+44
 CNSTI4 39
 ASGNI4
 line 332
 ;330:
 ;331:    // mark as allocated
 ;332:    sg.playrReady = qtrue;
-ADDRGP4 sg+61676
+ADDRGP4 sg+63752
 CNSTI4 1
 ASGNI4
 line 333
@@ -2091,6 +2091,8 @@ import trap_FS_FOpenRead
 import trap_FS_FOpenWrite
 import trap_FS_FOpenFile
 import Sys_GetGPUConfig
+import RE_SetColor
+import RE_DrawImage
 import RE_AddSpriteToScene
 import RE_AddPolyToScene
 import RE_RenderScene
@@ -2099,46 +2101,45 @@ import RE_LoadWorldMap
 import RE_RegisterSprite
 import RE_RegisterSpriteSheet
 import RE_RegisterShader
-import trap_Snd_ClearLoopingTrack
-import trap_Snd_SetLoopingTrack
-import trap_Snd_StopSfx
-import trap_Snd_PlaySfx
-import trap_Snd_QueueTrack
-import trap_Snd_RegisterTrack
-import trap_Snd_RegisterSfx
+import Snd_ClearLoopingTrack
+import Snd_SetLoopingTrack
+import Snd_StopSfx
+import Snd_PlaySfx
+import Snd_RegisterTrack
+import Snd_RegisterSfx
 import trap_Key_ClearStates
 import trap_Key_GetKey
 import trap_Key_GetCatcher
 import trap_Key_SetCatcher
-import trap_Milliseconds
-import trap_CheckWallHit
+import Sys_Milliseconds
+import G_CheckWallHit
 import G_SoundRecursive
 import G_CastRay
 import G_SetActiveMap
 import G_LoadMap
 import G_SetCameraData
-import trap_MemoryRemaining
+import Sys_MemoryRemaining
 import trap_RemoveCommand
 import trap_AddCommand
 import trap_SendConsoleCommand
-import trap_LoadVec4
-import trap_LoadVec3
-import trap_LoadVec2
-import trap_LoadString
-import trap_LoadFloat
-import trap_LoadInt
-import trap_LoadUInt
-import trap_GetSaveSection
-import trap_WriteVec4
-import trap_WriteVec3
-import trap_WriteVec2
-import trap_WriteFloat
-import trap_WriteString
-import trap_WriteUInt
-import trap_WriteInt
-import trap_WriteChar
-import trap_EndSaveSection
-import trap_BeginSaveSection
+import G_LoadVector4
+import G_LoadVector3
+import G_LoadVector2
+import G_LoadString
+import LoadFloat
+import G_LoadInt
+import G_LoadUInt
+import G_GetSaveSection
+import G_SaveVector4
+import G_SaveVector3
+import G_SaveVector2
+import G_SaveFloat
+import G_SaveString
+import G_SaveUInt
+import G_SaveInt
+import G_SaveChar
+import G_EndSaveSection
+import G_BeginSaveSection
 import trap_Args
 import trap_Argv
 import trap_Argc
@@ -2212,67 +2213,6 @@ import sg_entities
 import inversedirs
 import dirvectors
 import stateinfo
-import ImGui_CloseCurrentPopup
-import ImGui_OpenPopup
-import ImGui_EndPopup
-import ImGui_BeginPopupModal
-import ImGui_ColoredText
-import ImGui_Text
-import ImGui_ColoredTextUnformatted
-import ImGui_TextUnformatted
-import ImGui_SameLine
-import ImGui_ProgressBar
-import ImGui_Separator
-import ImGui_SeparatorText
-import ImGui_NewLine
-import ImGui_PopColor
-import ImGui_PushColor
-import ImGui_GetCursorScreenPos
-import ImGui_SetCursorScreenPos
-import ImGui_GetCursorPos
-import ImGui_SetCursorPos
-import ImGui_GetFontScale
-import ImGui_Button
-import ImGui_Checkbox
-import ImGui_ArrowButton
-import ImGui_ColorEdit4
-import ImGui_ColorEdit3
-import ImGui_SliderInt4
-import ImGui_SliderInt3
-import ImGui_SliderInt2
-import ImGui_SliderInt
-import ImGui_SliderFloat4
-import ImGui_SliderFloat3
-import ImGui_SliderFloat2
-import ImGui_SliderFloat
-import ImGui_InputInt4
-import ImGui_InputInt3
-import ImGui_InputInt2
-import ImGui_InputInt
-import ImGui_InputFloat4
-import ImGui_InputFloat3
-import ImGui_InputFloat2
-import ImGui_InputFloat
-import ImGui_InputTextWithHint
-import ImGui_InputTextMultiline
-import ImGui_InputText
-import ImGui_EndTable
-import ImGui_TableNextColumn
-import ImGui_TableNextRow
-import ImGui_BeginTable
-import ImGui_SetItemTooltip
-import ImGui_SetItemTooltipUnformatted
-import ImGui_MenuItem
-import ImGui_EndMenu
-import ImGui_BeginMenu
-import ImGui_SetWindowFontScale
-import ImGui_SetWindowSize
-import ImGui_SetWindowPos
-import ImGui_SetWindowCollapsed
-import ImGui_IsWindowCollapsed
-import ImGui_EndWindow
-import ImGui_BeginWindow
-import I_GetParm
 import Com_TouchMemory
 import Hunk_TempIsClear
 import Hunk_Check
@@ -2466,6 +2406,67 @@ import Com_EarlyParseCmdLine
 import Com_Milliseconds
 import Com_Frame
 import Sys_SnapVector
+import ImGui_CloseCurrentPopup
+import ImGui_OpenPopup
+import ImGui_EndPopup
+import ImGui_BeginPopupModal
+import ImGui_ColoredText
+import ImGui_Text
+import ImGui_ColoredTextUnformatted
+import ImGui_TextUnformatted
+import ImGui_SameLine
+import ImGui_ProgressBar
+import ImGui_Separator
+import ImGui_SeparatorText
+import ImGui_NewLine
+import ImGui_PopColor
+import ImGui_PushColor
+import ImGui_GetCursorScreenPos
+import ImGui_SetCursorScreenPos
+import ImGui_GetCursorPos
+import ImGui_SetCursorPos
+import ImGui_GetFontScale
+import ImGui_Button
+import ImGui_Checkbox
+import ImGui_ArrowButton
+import ImGui_ColorEdit4
+import ImGui_ColorEdit3
+import ImGui_SliderInt4
+import ImGui_SliderInt3
+import ImGui_SliderInt2
+import ImGui_SliderInt
+import ImGui_SliderFloat4
+import ImGui_SliderFloat3
+import ImGui_SliderFloat2
+import ImGui_SliderFloat
+import ImGui_InputInt4
+import ImGui_InputInt3
+import ImGui_InputInt2
+import ImGui_InputInt
+import ImGui_InputFloat4
+import ImGui_InputFloat3
+import ImGui_InputFloat2
+import ImGui_InputFloat
+import ImGui_InputTextWithHint
+import ImGui_InputTextMultiline
+import ImGui_InputText
+import ImGui_EndTable
+import ImGui_TableNextColumn
+import ImGui_TableNextRow
+import ImGui_BeginTable
+import ImGui_SetItemTooltip
+import ImGui_SetItemTooltipUnformatted
+import ImGui_MenuItem
+import ImGui_EndMenu
+import ImGui_BeginMenu
+import ImGui_SetWindowFontScale
+import ImGui_SetWindowSize
+import ImGui_SetWindowPos
+import ImGui_SetWindowCollapsed
+import ImGui_IsWindowCollapsed
+import ImGui_EndWindow
+import ImGui_BeginWindow
+import I_GetParm
 import Con_DPrintf
 import Con_Printf
 import Con_Shutdown
@@ -2495,8 +2496,6 @@ import ColorBytes4
 import ColorBytes3
 import VectorNormalize
 import AddPointToBounds
-import ClearBounds
-import RadiusFromBounds
 import NormalizeColor
 import _VectorMA
 import _VectorScale
@@ -2520,6 +2519,8 @@ import BoundsIntersect
 import disBetweenOBJ
 import vec3_set
 import vec3_get
+import ClearBounds
+import RadiusFromBounds
 import ClampShort
 import ClampCharMove
 import ClampChar

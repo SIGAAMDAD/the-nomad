@@ -2,61 +2,58 @@ export SG_SpawnItem
 code
 proc SG_SpawnItem 8 12
 file "../sg_items.c"
-line 7
+line 4
 ;1:#include "sg_local.h"
 ;2:
-;3:static item_t sg_items[MAXITEMS];
-;4:static weapon_t sg_weapons[MAXWEAPONS];
-;5:
-;6:item_t *SG_SpawnItem( itemtype_t type )
-;7:{
-line 10
-;8:    item_t *item;
-;9:
-;10:    if ( type >= NUMITEMS ) {
+;3:item_t *SG_SpawnItem( itemtype_t type )
+;4:{
+line 7
+;5:    item_t *item;
+;6:
+;7:    if ( type >= NUMITEMS ) {
 ADDRFP4 0
 INDIRI4
 CNSTI4 2
 LTI4 $90
-line 11
-;11:        trap_Error( "SG_SpawnItem: incompatible mod with sgame, type >= NUMITEMS" );
+line 8
+;8:        trap_Error( "SG_SpawnItem: incompatible mod with sgame, type >= NUMITEMS" );
 ADDRGP4 $92
+ARGP4
+ADDRGP4 trap_Error
+CALLV
+pop
+line 9
+;9:    }
+LABELV $90
+line 10
+;10:    if ( sg.numItems == MAXITEMS ) {
+ADDRGP4 sg+43208
+INDIRI4
+CNSTI4 1024
+NEI4 $93
+line 11
+;11:        trap_Error( "SG_SpawnItem: MAXITEMS hit" );
+ADDRGP4 $96
 ARGP4
 ADDRGP4 trap_Error
 CALLV
 pop
 line 12
 ;12:    }
-LABELV $90
-line 13
-;13:    if ( sg.numItems == MAXITEMS ) {
-ADDRGP4 sg+41132
-INDIRI4
-CNSTI4 1024
-NEI4 $93
-line 14
-;14:        trap_Error( "SG_SpawnItem: MAXITEMS hit" );
-ADDRGP4 $96
-ARGP4
-ADDRGP4 trap_Error
-CALLV
-pop
-line 15
-;15:    }
 LABELV $93
-line 17
-;16:
-;17:    item = &sg_items[sg.numItems];
+line 14
+;13:
+;14:    item = &sg.items[sg.numItems];
 ADDRLP4 0
-ADDRGP4 sg+41132
+ADDRGP4 sg+43208
 INDIRI4
 CNSTI4 4
 LSHI4
-ADDRGP4 sg_items
+ADDRGP4 sg+26824
 ADDP4
 ASGNP4
-line 18
-;18:    memset( item, 0, sizeof(*item) );
+line 15
+;15:    memset( item, 0, sizeof(*item) );
 ADDRLP4 0
 INDIRP4
 ARGP4
@@ -67,8 +64,8 @@ ARGU4
 ADDRGP4 memset
 CALLP4
 pop
-line 19
-;19:    item->type = type;
+line 16
+;16:    item->type = type;
 ADDRLP4 0
 INDIRP4
 CNSTI4 12
@@ -76,11 +73,11 @@ ADDP4
 ADDRFP4 0
 INDIRI4
 ASGNI4
-line 21
-;20:
-;21:    sg.numItems++;
+line 18
+;17:
+;18:    sg.numItems++;
 ADDRLP4 4
-ADDRGP4 sg+41132
+ADDRGP4 sg+43208
 ASGNP4
 ADDRLP4 4
 INDIRP4
@@ -90,9 +87,9 @@ INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-line 23
-;22:
-;23:    return item;
+line 20
+;19:
+;20:    return item;
 ADDRLP4 0
 INDIRP4
 RETP4
@@ -100,59 +97,59 @@ LABELV $89
 endproc SG_SpawnItem 8 12
 export SG_SpawnWeapon
 proc SG_SpawnWeapon 16 12
-line 27
-;24:}
-;25:
-;26:weapon_t *SG_SpawnWeapon( weapontype_t type )
-;27:{
-line 31
-;28:    item_t *item;
-;29:    weapon_t *w;
-;30:
-;31:    if ( type >= NUMWEAPONTYPES ) {
+line 24
+;21:}
+;22:
+;23:weapon_t *SG_SpawnWeapon( weapontype_t type )
+;24:{
+line 28
+;25:    item_t *item;
+;26:    weapon_t *w;
+;27:
+;28:    if ( type >= NUMWEAPONTYPES ) {
 ADDRFP4 0
 INDIRI4
 CNSTI4 22
-LTI4 $100
+LTI4 $101
+line 29
+;29:        trap_Error( "SG_SpawnWeapon: incompatible mod with sgame, type >= NUMWEAPONS" );
+ADDRGP4 $103
+ARGP4
+ADDRGP4 trap_Error
+CALLV
+pop
+line 30
+;30:    }
+LABELV $101
+line 31
+;31:    if ( sg.numWeapons == MAXWEAPONS ) {
+ADDRGP4 sg+63692
+INDIRI4
+CNSTI4 1024
+NEI4 $104
 line 32
-;32:        trap_Error( "SG_SpawnWeapon: incompatible mod with sgame, type >= NUMWEAPONS" );
-ADDRGP4 $102
+;32:        trap_Error( "SG_SpawnWeapon: MAXWEAPONS hit" );
+ADDRGP4 $107
 ARGP4
 ADDRGP4 trap_Error
 CALLV
 pop
 line 33
 ;33:    }
-LABELV $100
-line 34
-;34:    if ( sg.numWeapons == MAXWEAPONS ) {
-ADDRGP4 sg+61616
-INDIRI4
-CNSTI4 1024
-NEI4 $103
+LABELV $104
 line 35
-;35:        trap_Error( "SG_SpawnWeapon: MAXWEAPONS hit" );
-ADDRGP4 $106
-ARGP4
-ADDRGP4 trap_Error
-CALLV
-pop
-line 36
-;36:    }
-LABELV $103
-line 38
-;37:
-;38:    w = &sg_weapons[sg.numWeapons];
+;34:
+;35:    w = &sg.weapons[sg.numWeapons];
 ADDRLP4 0
-ADDRGP4 sg+61616
+ADDRGP4 sg+63692
 INDIRI4
 CNSTI4 20
 MULI4
-ADDRGP4 sg_weapons
+ADDRGP4 sg+43212
 ADDP4
 ASGNP4
-line 39
-;39:    memset( w, 0, sizeof(*w) );
+line 36
+;36:    memset( w, 0, sizeof(*w) );
 ADDRLP4 0
 INDIRP4
 ARGP4
@@ -163,10 +160,10 @@ ARGU4
 ADDRGP4 memset
 CALLP4
 pop
-line 40
-;40:    sg.numWeapons++;
+line 37
+;37:    sg.numWeapons++;
 ADDRLP4 8
-ADDRGP4 sg+61616
+ADDRGP4 sg+63692
 ASGNP4
 ADDRLP4 8
 INDIRP4
@@ -176,9 +173,9 @@ INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-line 42
-;41:
-;42:    item = SG_SpawnItem( I_WEAPON );
+line 39
+;38:
+;39:    item = SG_SpawnItem( I_WEAPON );
 CNSTI4 1
 ARGI4
 ADDRLP4 12
@@ -189,28 +186,21 @@ ADDRLP4 4
 ADDRLP4 12
 INDIRP4
 ASGNP4
-line 43
-;43:    w->base = item;
+line 40
+;40:    w->base = item;
 ADDRLP4 0
 INDIRP4
 ADDRLP4 4
 INDIRP4
 ASGNP4
-line 45
-;44:
-;45:    return w;
+line 42
+;41:
+;42:    return w;
 ADDRLP4 0
 INDIRP4
 RETP4
-LABELV $99
+LABELV $100
 endproc SG_SpawnWeapon 16 12
-bss
-align 4
-LABELV sg_weapons
-skip 20480
-align 4
-LABELV sg_items
-skip 16384
 import Cvar_VariableStringBuffer
 import Cvar_Set
 import Cvar_Update
@@ -227,6 +217,8 @@ import trap_FS_FOpenRead
 import trap_FS_FOpenWrite
 import trap_FS_FOpenFile
 import Sys_GetGPUConfig
+import RE_SetColor
+import RE_DrawImage
 import RE_AddSpriteToScene
 import RE_AddPolyToScene
 import RE_RenderScene
@@ -235,46 +227,45 @@ import RE_LoadWorldMap
 import RE_RegisterSprite
 import RE_RegisterSpriteSheet
 import RE_RegisterShader
-import trap_Snd_ClearLoopingTrack
-import trap_Snd_SetLoopingTrack
-import trap_Snd_StopSfx
-import trap_Snd_PlaySfx
-import trap_Snd_QueueTrack
-import trap_Snd_RegisterTrack
-import trap_Snd_RegisterSfx
+import Snd_ClearLoopingTrack
+import Snd_SetLoopingTrack
+import Snd_StopSfx
+import Snd_PlaySfx
+import Snd_RegisterTrack
+import Snd_RegisterSfx
 import trap_Key_ClearStates
 import trap_Key_GetKey
 import trap_Key_GetCatcher
 import trap_Key_SetCatcher
-import trap_Milliseconds
-import trap_CheckWallHit
+import Sys_Milliseconds
+import G_CheckWallHit
 import G_SoundRecursive
 import G_CastRay
 import G_SetActiveMap
 import G_LoadMap
 import G_SetCameraData
-import trap_MemoryRemaining
+import Sys_MemoryRemaining
 import trap_RemoveCommand
 import trap_AddCommand
 import trap_SendConsoleCommand
-import trap_LoadVec4
-import trap_LoadVec3
-import trap_LoadVec2
-import trap_LoadString
-import trap_LoadFloat
-import trap_LoadInt
-import trap_LoadUInt
-import trap_GetSaveSection
-import trap_WriteVec4
-import trap_WriteVec3
-import trap_WriteVec2
-import trap_WriteFloat
-import trap_WriteString
-import trap_WriteUInt
-import trap_WriteInt
-import trap_WriteChar
-import trap_EndSaveSection
-import trap_BeginSaveSection
+import G_LoadVector4
+import G_LoadVector3
+import G_LoadVector2
+import G_LoadString
+import LoadFloat
+import G_LoadInt
+import G_LoadUInt
+import G_GetSaveSection
+import G_SaveVector4
+import G_SaveVector3
+import G_SaveVector2
+import G_SaveFloat
+import G_SaveString
+import G_SaveUInt
+import G_SaveInt
+import G_SaveChar
+import G_EndSaveSection
+import G_BeginSaveSection
 import trap_Args
 import trap_Argv
 import trap_Argc
@@ -349,67 +340,6 @@ import sg_entities
 import inversedirs
 import dirvectors
 import stateinfo
-import ImGui_CloseCurrentPopup
-import ImGui_OpenPopup
-import ImGui_EndPopup
-import ImGui_BeginPopupModal
-import ImGui_ColoredText
-import ImGui_Text
-import ImGui_ColoredTextUnformatted
-import ImGui_TextUnformatted
-import ImGui_SameLine
-import ImGui_ProgressBar
-import ImGui_Separator
-import ImGui_SeparatorText
-import ImGui_NewLine
-import ImGui_PopColor
-import ImGui_PushColor
-import ImGui_GetCursorScreenPos
-import ImGui_SetCursorScreenPos
-import ImGui_GetCursorPos
-import ImGui_SetCursorPos
-import ImGui_GetFontScale
-import ImGui_Button
-import ImGui_Checkbox
-import ImGui_ArrowButton
-import ImGui_ColorEdit4
-import ImGui_ColorEdit3
-import ImGui_SliderInt4
-import ImGui_SliderInt3
-import ImGui_SliderInt2
-import ImGui_SliderInt
-import ImGui_SliderFloat4
-import ImGui_SliderFloat3
-import ImGui_SliderFloat2
-import ImGui_SliderFloat
-import ImGui_InputInt4
-import ImGui_InputInt3
-import ImGui_InputInt2
-import ImGui_InputInt
-import ImGui_InputFloat4
-import ImGui_InputFloat3
-import ImGui_InputFloat2
-import ImGui_InputFloat
-import ImGui_InputTextWithHint
-import ImGui_InputTextMultiline
-import ImGui_InputText
-import ImGui_EndTable
-import ImGui_TableNextColumn
-import ImGui_TableNextRow
-import ImGui_BeginTable
-import ImGui_SetItemTooltip
-import ImGui_SetItemTooltipUnformatted
-import ImGui_MenuItem
-import ImGui_EndMenu
-import ImGui_BeginMenu
-import ImGui_SetWindowFontScale
-import ImGui_SetWindowSize
-import ImGui_SetWindowPos
-import ImGui_SetWindowCollapsed
-import ImGui_IsWindowCollapsed
-import ImGui_EndWindow
-import ImGui_BeginWindow
-import I_GetParm
 import Com_TouchMemory
 import Hunk_TempIsClear
 import Hunk_Check
@@ -603,6 +533,67 @@ import Com_EarlyParseCmdLine
 import Com_Milliseconds
 import Com_Frame
 import Sys_SnapVector
+import ImGui_CloseCurrentPopup
+import ImGui_OpenPopup
+import ImGui_EndPopup
+import ImGui_BeginPopupModal
+import ImGui_ColoredText
+import ImGui_Text
+import ImGui_ColoredTextUnformatted
+import ImGui_TextUnformatted
+import ImGui_SameLine
+import ImGui_ProgressBar
+import ImGui_Separator
+import ImGui_SeparatorText
+import ImGui_NewLine
+import ImGui_PopColor
+import ImGui_PushColor
+import ImGui_GetCursorScreenPos
+import ImGui_SetCursorScreenPos
+import ImGui_GetCursorPos
+import ImGui_SetCursorPos
+import ImGui_GetFontScale
+import ImGui_Button
+import ImGui_Checkbox
+import ImGui_ArrowButton
+import ImGui_ColorEdit4
+import ImGui_ColorEdit3
+import ImGui_SliderInt4
+import ImGui_SliderInt3
+import ImGui_SliderInt2
+import ImGui_SliderInt
+import ImGui_SliderFloat4
+import ImGui_SliderFloat3
+import ImGui_SliderFloat2
+import ImGui_SliderFloat
+import ImGui_InputInt4
+import ImGui_InputInt3
+import ImGui_InputInt2
+import ImGui_InputInt
+import ImGui_InputFloat4
+import ImGui_InputFloat3
+import ImGui_InputFloat2
+import ImGui_InputFloat
+import ImGui_InputTextWithHint
+import ImGui_InputTextMultiline
+import ImGui_InputText
+import ImGui_EndTable
+import ImGui_TableNextColumn
+import ImGui_TableNextRow
+import ImGui_BeginTable
+import ImGui_SetItemTooltip
+import ImGui_SetItemTooltipUnformatted
+import ImGui_MenuItem
+import ImGui_EndMenu
+import ImGui_BeginMenu
+import ImGui_SetWindowFontScale
+import ImGui_SetWindowSize
+import ImGui_SetWindowPos
+import ImGui_SetWindowCollapsed
+import ImGui_IsWindowCollapsed
+import ImGui_EndWindow
+import ImGui_BeginWindow
+import I_GetParm
 import Con_DPrintf
 import Con_Printf
 import Con_Shutdown
@@ -632,8 +623,6 @@ import ColorBytes4
 import ColorBytes3
 import VectorNormalize
 import AddPointToBounds
-import ClearBounds
-import RadiusFromBounds
 import NormalizeColor
 import _VectorMA
 import _VectorScale
@@ -657,6 +646,8 @@ import BoundsIntersect
 import disBetweenOBJ
 import vec3_set
 import vec3_get
+import ClearBounds
+import RadiusFromBounds
 import ClampShort
 import ClampCharMove
 import ClampChar
@@ -742,7 +733,7 @@ import memchr
 import memcpy
 lit
 align 1
-LABELV $106
+LABELV $107
 byte 1 83
 byte 1 71
 byte 1 95
@@ -775,7 +766,7 @@ byte 1 105
 byte 1 116
 byte 1 0
 align 1
-LABELV $102
+LABELV $103
 byte 1 83
 byte 1 71
 byte 1 95

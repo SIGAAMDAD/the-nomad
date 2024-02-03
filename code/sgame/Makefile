@@ -30,14 +30,12 @@ OBJS=\
 	$(O)/sg_entity.o \
 	$(O)/sg_info.o \
 	$(O)/sg_playr.o \
-	$(O)/sg_mthink.o \
-	$(O)/sg_archive.o \
+	$(O)/sg_mob.o \
+	$(O)/sg_items.o \
 	$(O)/sg_cmds.o \
-	$(O)/sg_gameinfo.o \
 	$(O)/sg_draw.o \
 	$(O)/sg_imgui.o \
 	$(O)/sg_math.o \
-	$(O)/sg_hud.o \
 	$(O)/n_shared.o \
 
 $(O)/%.o: $(SDIR)/sgame/%.c

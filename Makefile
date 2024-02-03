@@ -86,13 +86,13 @@ OS_INCLUDE=-I/usr/include/ -I/usr/local/include/
 COMPILER  =distcc g++
 LIB_PREFIX=dependencies/libs/linux
 DLL_EXT   =so
-EXE		  =glnomad
+EXE		  =TheNomad
 else
 OS_INCLUDE=-I/usr/x86_64-w64-mingw32/include/
 COMPILER  =distcc x86_64-w64-mingw32-g++
 LIB_PREFIX=dependencies/libs/windows
 DLL_EXT   =dll
-EXE		  =glnomad.exe
+EXE		  =TheNomad.exe
 endif
 
 VERSION       = 1
@@ -246,9 +246,6 @@ SRC=\
 	$(O)/game/g_world.o \
 	$(O)/game/g_jpeg.o \
 	\
-	$(O)/engine/vm.o \
-	$(O)/engine/vm_interpreted.o \
-	$(O)/engine/vm_x86.o \
 	$(O)/engine/n_common.o \
 	$(O)/engine/n_files.o \
 	$(O)/engine/n_shared.o \
@@ -259,6 +256,9 @@ SRC=\
 	$(O)/engine/n_memory.o \
 	$(O)/engine/n_debug.o \
 	$(O)/engine/md4.o \
+	$(O)/engine/vm.o \
+	$(O)/engine/vm_interpreted.o \
+	$(O)/engine/vm_x86.o \
 	\
 	$(O)/rendercommon/imgui.o \
 	$(O)/rendercommon/imgui_draw.o \
@@ -280,8 +280,6 @@ SRC=\
 	$(O)/ui/ui_single_player.o \
 	$(O)/ui/ui_pause.o \
 	$(O)/ui/ui_legal.o \
-	\
-	$(O)/ui/ml_widget.o \
 
 MAKE=make
 

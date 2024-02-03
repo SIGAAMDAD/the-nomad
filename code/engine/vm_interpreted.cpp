@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 ===========================================================================
 */
 #include "n_shared.h"
+#include "n_common.h"
 #include "vm_local.h"
 #include "../sgame/sg_public.h"
 

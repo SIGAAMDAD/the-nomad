@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "../engine/n_common.h"
+
 #if !defined(Q3_VM) || (defined(UI_HARD_LINKED) || defined(SGAME_HARD_LINKED))
 typedef struct vmRefImport_s vmRefImport_t;
 struct vmRefImport_s
@@ -24,7 +26,7 @@ struct vmRefImport_s
     nhandle_t (*G_LoadMap)( const char *mapname );
     void (*G_SetActiveMap)( nhandle_t mapHandle, mapinfo_t *info, int32_t *soundBits, linkEntity_t *activeEnts );
     void (*G_CastRay)( ray_t *ray );
-#if defined(Q3_VM) || !defined(_NOMAD_ENGINE)
+#if !defined(Q3_VM) || (defined(UI_HARD_LINKED) || defined(SGAME_HARD_LINKED))
     void (*G_SoundRecursive)( int32_t width, int32_t height, float volume, const vec3_t *origin );
     qboolean (*trap_CheckWallHit)( const vec3_t *origin, dirtype_t dir );
     void (*G_SetCameraData)( const vec2_t *origin, float zoom, float rotation );
@@ -54,7 +56,7 @@ struct vmRefImport_s
     void (*RE_LoadWorldMap)( const char *npath );
     void (*RE_ClearScene)( void );
     void (*RE_RenderScene)( const renderSceneRef_t *fd );
-#if defined(Q3_VM) || !defined(_NOMAD_ENGINE)
+#if !defined(Q3_VM) || (defined(UI_HARD_LINKED) || defined(SGAME_HARD_LINKED))
     void (*RE_AddSpriteToScene)( const vec3_t *origin, nhandle_t hSpriteSheet, nhandle_t hSprite );
 #else
     void (*RE_AddSpriteToScene)( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t hSprite );
@@ -94,7 +96,7 @@ struct vmRefImport_s
     int (*ImGui_InputTextMultiline)( const char *pLabel, char *pBuffer, size_t nBufSize, ImGuiInputTextFlags flags );
     int (*ImGui_InputTextWithHint)( const char *pLabel, const char *pHint, char *pBuffer, size_t nBufSize, ImGuiInputTextFlags flags );
     int (*ImGui_InputFloat)( const char *pLabel, float *pData );
-#if defined(Q3_VM) || !defined(_NOMAD_ENGINE)
+#if !defined(Q3_VM) || (defined(UI_HARD_LINKED) || defined(SGAME_HARD_LINKED))
     int (*ImGui_InputFloat2)( const char *pLabel, vec2_t *pData );
     int (*ImGui_InputFloat3)( const char *pLabel, vec3_t *pData );
     int (*ImGui_InputFloat4)( const char *pLabel, vec4_t *pData );
@@ -150,7 +152,7 @@ struct vmRefImport_s
     void (*ImGui_SameLine)( float offsetFromStartX );
     void (*ImGui_NewLine)( void );
     void (*ImGui_TextUnformatted)( const char *pText );
-#if defined(Q3_VM) || !defined(_NOMAD_ENGINE)
+#if !defined(Q3_VM) || (defined(UI_HARD_LINKED) || defined(SGAME_HARD_LINKED))
     void (*ImGui_ColoredTextUnformatted)( const vec4_t *pColor, const char *pText );
     void (*ImGui_PushColor)( ImGuiCol index, const vec4_t *color );
 #else

@@ -15,38 +15,9 @@ static qboolean EntityIsInView( const bbox_t *bounds ) {
     return BoundsIntersect( bounds, &data.frustum );
 }
 
-static void SG_CalcVerts( const sgentity_t *ent, polyVert_t *verts )
-{
-    trap_Error( "SG_CalcVerts: called" );
-    // FIXME: implement
-}
-
-static void SG_DrawEntity( const sgentity_t *ent )
-{
-    polyVert_t verts[4];
-
-    // is it visible?
-//    if ( !EntityIsInView( &ent->bounds ) ) {
-//        return;
-//    }
-
-    data.polyCount++;
-    data.vertexCount += 4;
-
-//    SG_CalcVerts( ent, verts );
-
-    RE_AddPolyToScene( ent->hShader, verts, 4 );
-}
-
-static void SG_AddSpritesToFrame( void )
+static void SG_DrawEntities( void )
 {
     const sgentity_t *ent;
-    int i;
-
-    ent = &sg_entities[0];
-    for ( i = 0; i < sg.numEntities; i++, ent++ ) {
-        SG_DrawEntity( ent );
-    }
 }
 
 /*
@@ -68,6 +39,23 @@ static void SG_DrawPlayer( void )
     RE_AddSpriteToScene( &ent->origin, ent->hSpriteSheet, ( sg.playr.foot_sprite + ent->facing ) + sg.playr.foot_frame );
 }
 
+static void SG_DrawHUD( void )
+{
+    renderSceneRef_t refdef;
+
+    memset( &refdef, 0, sizeof(refdef) );
+    refdef.x = 0;
+    refdef.y = 0;
+    refdef.width = sg.gpuConfig.vidWidth;
+    refdef.height = sg.gpuConfig.vidHeight;
+
+    // draw crosshair
+
+    //
+    // draw status bars
+    //
+}
+
 int SG_DrawFrame( void )
 {
     renderSceneRef_t refdef;
@@ -83,12 +71,11 @@ int SG_DrawFrame( void )
 
     G_SetCameraData( &sg.cameraPos, 1.6f, 0.0f );
 
-    // draw the player
+    // draw entities
     SG_DrawPlayer();
 
-    // draw everything
+    // finish the scene
     RE_ClearScene();
-
     RE_RenderScene( &refdef );
 
     return 1;
