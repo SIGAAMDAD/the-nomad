@@ -171,7 +171,7 @@ line 87
 ;87:{
 line 88
 ;88:	sg.playr.foot_frame = anim;
-ADDRGP4 sg+63696+48
+ADDRGP4 sg+65760+48
 ADDRFP4 0
 INDIRI4
 ASGNI4
@@ -1066,7 +1066,7 @@ CALLV
 pop
 line 183
 ;183:		Ent_SetState( sg.playr.ent, S_PLAYR_PARRY );
-ADDRGP4 sg+63696
+ADDRGP4 sg+65760
 INDIRP4
 ARGP4
 CNSTI4 5
@@ -1108,7 +1108,7 @@ CALLV
 pop
 line 187
 ;187:		Ent_SetState( sg.playr.ent, S_PLAYR_PARRY );
-ADDRGP4 sg+63696
+ADDRGP4 sg+65760
 INDIRP4
 ARGP4
 CNSTI4 5
@@ -1202,7 +1202,7 @@ line 236
 ;236:	if ( origin.x > sg.mapInfo.width - 1 ) {
 ADDRLP4 0
 INDIRF4
-ADDRGP4 sg+4270468+23616
+ADDRGP4 sg+4272532+23616
 INDIRI4
 CNSTI4 1
 SUBI4
@@ -1211,7 +1211,7 @@ LEF4 $197
 line 237
 ;237:		origin.x = sg.mapInfo.width - 1;
 ADDRLP4 0
-ADDRGP4 sg+4270468+23616
+ADDRGP4 sg+4272532+23616
 INDIRI4
 CNSTI4 1
 SUBI4
@@ -1240,7 +1240,7 @@ line 242
 ;242:	if ( origin.y > sg.mapInfo.height - 1 ) {
 ADDRLP4 0+4
 INDIRF4
-ADDRGP4 sg+4270468+23620
+ADDRGP4 sg+4272532+23620
 INDIRI4
 CNSTI4 1
 SUBI4
@@ -1249,7 +1249,7 @@ LEF4 $205
 line 243
 ;243:		origin.y = sg.mapInfo.height - 1;
 ADDRLP4 0+4
-ADDRGP4 sg+4270468+23620
+ADDRGP4 sg+4272532+23620
 INDIRI4
 CNSTI4 1
 SUBI4
@@ -1684,7 +1684,7 @@ ASGNF4
 line 293
 ;292:
 ;293:	if ( P_ClipOrigin( sg.playr.ent ) ) {
-ADDRGP4 sg+63696
+ADDRGP4 sg+65760
 INDIRP4
 ARGP4
 ADDRLP4 60
@@ -1718,13 +1718,13 @@ LABELV $274
 line 297
 ;296:
 ;297:	sg.cameraPos.x = self->origin.x - ( sg.cameraPos.x / 2 );
-ADDRGP4 sg+4270460
+ADDRGP4 sg+4272524
 ADDRFP4 0
 INDIRP4
 CNSTI4 64
 ADDP4
 INDIRF4
-ADDRGP4 sg+4270460
+ADDRGP4 sg+4272524
 INDIRF4
 CNSTF4 1056964608
 MULF4
@@ -1732,7 +1732,7 @@ SUBF4
 ASGNF4
 line 298
 ;298:	sg.cameraPos.y = -self->origin.y;
-ADDRGP4 sg+4270460+4
+ADDRGP4 sg+4272524+4
 ADDRFP4 0
 INDIRP4
 CNSTI4 68
@@ -1885,31 +1885,31 @@ line 324
 line 326
 ;325:    // initialize player state
 ;326:    memset( &sg.playr, 0, sizeof(sg.playr) );
-ADDRGP4 sg+63696
+ADDRGP4 sg+65760
 ARGP4
 CNSTI4 0
 ARGI4
 CNSTU4 56
 ARGU4
 ADDRGP4 memset
-CALLP4
+CALLI4
 pop
 line 328
 ;327:
 ;328:	sg.playr.foot_frame = 0;
-ADDRGP4 sg+63696+48
+ADDRGP4 sg+65760+48
 CNSTI4 0
 ASGNI4
 line 329
 ;329:	sg.playr.foot_sprite = SPR_PLAYR_LEGS0_7_R;
-ADDRGP4 sg+63696+44
+ADDRGP4 sg+65760+44
 CNSTI4 39
 ASGNI4
 line 332
 ;330:
 ;331:    // mark as allocated
 ;332:    sg.playrReady = qtrue;
-ADDRGP4 sg+63752
+ADDRGP4 sg+65816
 CNSTI4 1
 ASGNI4
 line 333
@@ -2065,6 +2065,7 @@ line 353
 ;353:}
 LABELV $306
 endproc SG_KeyEvent 24 0
+import memset
 bss
 align 4
 LABELV pm
@@ -2213,6 +2214,66 @@ import sg_entities
 import inversedirs
 import dirvectors
 import stateinfo
+import ImGui_CloseCurrentPopup
+import ImGui_OpenPopup
+import ImGui_EndPopup
+import ImGui_BeginPopupModal
+import ImGui_ColoredText
+import ImGui_Text
+import ImGui_ColoredTextUnformatted
+import ImGui_TextUnformatted
+import ImGui_SameLine
+import ImGui_ProgressBar
+import ImGui_Separator
+import ImGui_SeparatorText
+import ImGui_NewLine
+import ImGui_PopColor
+import ImGui_PushColor
+import ImGui_GetCursorScreenPos
+import ImGui_SetCursorScreenPos
+import ImGui_GetCursorPos
+import ImGui_SetCursorPos
+import ImGui_GetFontScale
+import ImGui_Button
+import ImGui_Checkbox
+import ImGui_ArrowButton
+import ImGui_ColorEdit4
+import ImGui_ColorEdit3
+import ImGui_SliderInt4
+import ImGui_SliderInt3
+import ImGui_SliderInt2
+import ImGui_SliderInt
+import ImGui_SliderFloat4
+import ImGui_SliderFloat3
+import ImGui_SliderFloat2
+import ImGui_SliderFloat
+import ImGui_InputInt4
+import ImGui_InputInt3
+import ImGui_InputInt2
+import ImGui_InputInt
+import ImGui_InputFloat4
+import ImGui_InputFloat3
+import ImGui_InputFloat2
+import ImGui_InputFloat
+import ImGui_InputTextWithHint
+import ImGui_InputTextMultiline
+import ImGui_InputText
+import ImGui_EndTable
+import ImGui_TableNextColumn
+import ImGui_TableNextRow
+import ImGui_BeginTable
+import ImGui_SetItemTooltip
+import ImGui_SetItemTooltipUnformatted
+import ImGui_MenuItem
+import ImGui_EndMenu
+import ImGui_BeginMenu
+import ImGui_SetWindowFontScale
+import ImGui_SetWindowSize
+import ImGui_SetWindowPos
+import ImGui_SetWindowCollapsed
+import ImGui_IsWindowCollapsed
+import ImGui_EndWindow
+import ImGui_BeginWindow
 import Com_TouchMemory
 import Hunk_TempIsClear
 import Hunk_Check
@@ -2406,66 +2467,6 @@ import Com_EarlyParseCmdLine
 import Com_Milliseconds
 import Com_Frame
 import Sys_SnapVector
-import ImGui_CloseCurrentPopup
-import ImGui_OpenPopup
-import ImGui_EndPopup
-import ImGui_BeginPopupModal
-import ImGui_ColoredText
-import ImGui_Text
-import ImGui_ColoredTextUnformatted
-import ImGui_TextUnformatted
-import ImGui_SameLine
-import ImGui_ProgressBar
-import ImGui_Separator
-import ImGui_SeparatorText
-import ImGui_NewLine
-import ImGui_PopColor
-import ImGui_PushColor
-import ImGui_GetCursorScreenPos
-import ImGui_SetCursorScreenPos
-import ImGui_GetCursorPos
-import ImGui_SetCursorPos
-import ImGui_GetFontScale
-import ImGui_Button
-import ImGui_Checkbox
-import ImGui_ArrowButton
-import ImGui_ColorEdit4
-import ImGui_ColorEdit3
-import ImGui_SliderInt4
-import ImGui_SliderInt3
-import ImGui_SliderInt2
-import ImGui_SliderInt
-import ImGui_SliderFloat4
-import ImGui_SliderFloat3
-import ImGui_SliderFloat2
-import ImGui_SliderFloat
-import ImGui_InputInt4
-import ImGui_InputInt3
-import ImGui_InputInt2
-import ImGui_InputInt
-import ImGui_InputFloat4
-import ImGui_InputFloat3
-import ImGui_InputFloat2
-import ImGui_InputFloat
-import ImGui_InputTextWithHint
-import ImGui_InputTextMultiline
-import ImGui_InputText
-import ImGui_EndTable
-import ImGui_TableNextColumn
-import ImGui_TableNextRow
-import ImGui_BeginTable
-import ImGui_SetItemTooltip
-import ImGui_SetItemTooltipUnformatted
-import ImGui_MenuItem
-import ImGui_EndMenu
-import ImGui_BeginMenu
-import ImGui_SetWindowFontScale
-import ImGui_SetWindowSize
-import ImGui_SetWindowPos
-import ImGui_SetWindowCollapsed
-import ImGui_IsWindowCollapsed
-import ImGui_EndWindow
-import ImGui_BeginWindow
 import I_GetParm
 import Con_DPrintf
 import Con_Printf
@@ -2576,34 +2577,6 @@ import N_isprint
 import Com_SkipCharset
 import Com_SkipTokens
 import Com_snprintf
-import acos
-import fabs
-import abs
-import tan
-import atan2
-import cos
-import sin
-import sqrt
-import floor
-import ceil
-import sscanf
-import vsprintf
-import rand
-import srand
-import qsort
-import toupper
-import tolower
-import strncmp
-import strcmp
-import strstr
-import strchr
-import strlen
-import strcat
-import strcpy
-import memmove
-import memset
-import memchr
-import memcpy
 lit
 align 1
 LABELV $296

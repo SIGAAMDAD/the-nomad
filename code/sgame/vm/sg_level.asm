@@ -119,7 +119,7 @@ ASGNI4
 LABELV $97
 ADDRLP4 0
 INDIRI4
-ADDRGP4 sg+2148
+ADDRGP4 sg+4212
 INDIRI4
 LTI4 $94
 line 67
@@ -143,7 +143,7 @@ line 78
 ;77:
 ;78:    spawn = sg.mapInfo.spawns;
 ADDRLP4 0
-ADDRGP4 sg+4270468
+ADDRGP4 sg+4272532
 ASGNP4
 line 79
 ;79:    for ( i = 0; i < sg.mapInfo.numSpawns; i++, spawn++ ) {
@@ -192,7 +192,7 @@ ASGNP4
 LABELV $106
 ADDRLP4 4
 INDIRI4
-ADDRGP4 sg+4270468+23624
+ADDRGP4 sg+4272532+23624
 INDIRI4
 LTI4 $103
 line 82
@@ -275,18 +275,18 @@ ARGI4
 CNSTU4 28
 ARGU4
 ADDRGP4 memset
-CALLP4
+CALLI4
 pop
 line 102
 ;102:    memset( &sg.mapInfo, 0, sizeof(sg.mapInfo) );
-ADDRGP4 sg+4270468
+ADDRGP4 sg+4272532
 ARGP4
 CNSTI4 0
 ARGI4
 CNSTU4 23632
 ARGU4
 ADDRGP4 memset
-CALLP4
+CALLI4
 pop
 line 104
 ;103:
@@ -297,11 +297,11 @@ CNSTI4 64
 ADDP4
 INDIRI4
 ARGI4
-ADDRGP4 sg+4270468
+ADDRGP4 sg+4272532
 ARGP4
-ADDRGP4 sg+76156
+ADDRGP4 sg+78220
 ARGP4
-ADDRGP4 sg+76116
+ADDRGP4 sg+78180
 ARGP4
 ADDRGP4 G_SetActiveMap
 CALLV
@@ -322,7 +322,7 @@ pop
 line 111
 ;110:
 ;111:    sg.state = SG_IN_LEVEL;
-ADDRGP4 sg+2140
+ADDRGP4 sg+4204
 CNSTI4 3
 ASGNI4
 line 113
@@ -343,7 +343,7 @@ line 115
 ;115:        G_Printf( "Map Name: %s\n", sg.mapInfo.name );
 ADDRGP4 $125
 ARGP4
-ADDRGP4 sg+4270468+23552
+ADDRGP4 sg+4272532+23552
 ARGP4
 ADDRGP4 G_Printf
 CALLV
@@ -352,7 +352,7 @@ line 116
 ;116:        G_Printf( "Checkpoint Count: %i\n", sg.mapInfo.numCheckpoints );
 ADDRGP4 $128
 ARGP4
-ADDRGP4 sg+4270468+23628
+ADDRGP4 sg+4272532+23628
 INDIRI4
 ARGI4
 ADDRGP4 G_Printf
@@ -362,7 +362,7 @@ line 117
 ;117:        G_Printf( "Spawn Count: %i\n", sg.mapInfo.numSpawns );
 ADDRGP4 $131
 ARGP4
-ADDRGP4 sg+4270468+23624
+ADDRGP4 sg+4272532+23624
 INDIRI4
 ARGI4
 ADDRGP4 G_Printf
@@ -372,7 +372,7 @@ line 118
 ;118:        G_Printf( "Map Width: %i\n", sg.mapInfo.width );
 ADDRGP4 $134
 ARGP4
-ADDRGP4 sg+4270468+23616
+ADDRGP4 sg+4272532+23616
 INDIRI4
 ARGI4
 ADDRGP4 G_Printf
@@ -382,7 +382,7 @@ line 119
 ;119:        G_Printf( "Map Height: %i\n", sg.mapInfo.height );
 ADDRGP4 $137
 ARGP4
-ADDRGP4 sg+4270468+23620
+ADDRGP4 sg+4272532+23620
 INDIRI4
 ARGI4
 ADDRGP4 G_Printf
@@ -396,7 +396,7 @@ line 122
 ;122:    RE_LoadWorldMap( va( "maps/%s", sg.mapInfo.name ) );
 ADDRGP4 $140
 ARGP4
-ADDRGP4 sg+4270468+23552
+ADDRGP4 sg+4272532+23552
 ARGP4
 ADDRLP4 84
 ADDRGP4 va
@@ -453,7 +453,7 @@ line 128
 ;127:
 ;128:    VectorCopy2( cameraPos, sg.mapInfo.spawns[0].xyz );
 ADDRLP4 96
-ADDRGP4 sg+4270468
+ADDRGP4 sg+4272532
 INDIRU4
 ASGNU4
 ADDRLP4 68
@@ -474,7 +474,7 @@ CVIF4 4
 ADDF4
 ASGNF4
 ADDRLP4 100
-ADDRGP4 sg+4270468+4
+ADDRGP4 sg+4272532+4
 INDIRU4
 ASGNU4
 ADDRLP4 68+4
@@ -558,7 +558,7 @@ line 147
 ;147:    G_SaveVector2( "sg_camera_position", &sg.cameraPos );
 ADDRGP4 $156
 ARGP4
-ADDRGP4 sg+4270460
+ADDRGP4 sg+4272524
 ARGP4
 ADDRGP4 G_SaveVector2
 CALLV
@@ -589,7 +589,7 @@ ASGNI4
 LABELV $161
 ADDRLP4 0
 INDIRI4
-ADDRGP4 sg+2152
+ADDRGP4 sg+4216
 INDIRI4
 LTI4 $158
 line 156
@@ -675,11 +675,11 @@ line 171
 ADDRGP4 level
 INDIRI4
 ARGI4
-ADDRGP4 sg+4270468
+ADDRGP4 sg+4272532
 ARGP4
-ADDRGP4 sg+76156
+ADDRGP4 sg+78220
 ARGP4
-ADDRGP4 sg+76116
+ADDRGP4 sg+78180
 ARGP4
 ADDRGP4 G_SetActiveMap
 CALLV
@@ -811,7 +811,7 @@ ASGNI4
 line 198
 ;197:
 ;198:    sg.state = SG_SHOW_LEVEL_STATS;
-ADDRGP4 sg+2140
+ADDRGP4 sg+4204
 CNSTI4 4
 ASGNI4
 line 200
@@ -1056,14 +1056,14 @@ ADDRLP4 1032
 ARGP4
 ADDRLP4 2064
 ADDRGP4 strlen
-CALLU4
-ASGNU4
+CALLI4
+ASGNI4
 ADDRGP4 $205
 ARGP4
 ADDRLP4 2068
 ADDRGP4 strlen
-CALLU4
-ASGNU4
+CALLI4
+ASGNI4
 ADDRGP4 $144
 ARGP4
 CNSTI4 1024
@@ -1077,19 +1077,18 @@ INDIRP4
 ARGP4
 ADDRLP4 2076
 ADDRGP4 strlen
-CALLU4
-ASGNU4
+CALLI4
+ASGNI4
 ADDRLP4 2064
-INDIRU4
+INDIRI4
 ADDRLP4 2068
-INDIRU4
-ADDU4
+INDIRI4
+ADDI4
 ADDRLP4 2076
-INDIRU4
-ADDU4
-CNSTU4 1
-ADDU4
-CVUI4 4
+INDIRI4
+ADDI4
+CNSTI4 1
+ADDI4
 ARGI4
 ADDRLP4 2080
 ADDRGP4 SG_MemAlloc
@@ -1132,7 +1131,7 @@ ARGP4
 ADDRLP4 1032
 ARGP4
 ADDRGP4 strcpy
-CALLP4
+CALLI4
 pop
 line 255
 ;255:            count++;
@@ -1167,7 +1166,7 @@ line 262
 ;262:static void SG_LoadLevelsFromFile( const char *filename ) {
 line 267
 ;263:	int				len;
-;264:	file_t	        f;
+;264:	fileHandle_t    f;
 ;265:	char			buf[MAX_LEVELINFO_LEN];
 ;266:
 ;267:	len = trap_FS_FOpenFile( filename, &f, FS_OPEN_READ );
@@ -1294,11 +1293,11 @@ line 282
 ADDRLP4 8
 ARGP4
 CNSTI4 1024
-ADDRGP4 sg+2148
+ADDRGP4 sg+4212
 INDIRI4
 SUBI4
 ARGI4
-ADDRGP4 sg+2148
+ADDRGP4 sg+4212
 INDIRI4
 CNSTI4 2
 LSHI4
@@ -1310,7 +1309,7 @@ ADDRGP4 SG_ParseInfos
 CALLI4
 ASGNI4
 ADDRLP4 8208
-ADDRGP4 sg+2148
+ADDRGP4 sg+4212
 ASGNP4
 ADDRLP4 8208
 INDIRP4
@@ -1343,7 +1342,7 @@ line 297
 ;295:    levelInfo_t *info;
 ;296:
 ;297:    sg.numLevels = 0;
-ADDRGP4 sg+2148
+ADDRGP4 sg+4212
 CNSTI4 0
 ASGNI4
 line 299
@@ -1437,12 +1436,11 @@ INDIRP4
 ARGP4
 ADDRLP4 2352
 ADDRGP4 strlen
-CALLU4
-ASGNU4
+CALLI4
+ASGNI4
 ADDRLP4 1036
 ADDRLP4 2352
-INDIRU4
-CVUI4 4
+INDIRI4
 ASGNI4
 line 313
 ;313:		strcpy( filename, "scripts/" );
@@ -1451,7 +1449,7 @@ ARGP4
 ADDRGP4 $232
 ARGP4
 ADDRGP4 strcpy
-CALLP4
+CALLI4
 pop
 line 314
 ;314:		strcat( filename, dirptr );
@@ -1461,7 +1459,7 @@ ADDRLP4 4
 INDIRP4
 ARGP4
 ADDRGP4 strcat
-CALLP4
+CALLI4
 pop
 line 315
 ;315:		SG_LoadLevelsFromFile( filename );
@@ -1499,7 +1497,7 @@ line 317
 ;317:	trap_Print( va( "%i levels parsed\n", sg.numLevels ) );
 ADDRGP4 $233
 ARGP4
-ADDRGP4 sg+2148
+ADDRGP4 sg+4212
 INDIRI4
 ARGI4
 ADDRLP4 2352
@@ -1584,13 +1582,13 @@ ASGNI4
 LABELV $241
 ADDRLP4 0
 INDIRI4
-ADDRGP4 sg+2148
+ADDRGP4 sg+4212
 INDIRI4
 LTI4 $238
 line 327
 ;326:
 ;327:    sg_levelInfoData = SG_MemAlloc( sizeof(*sg_levelInfoData) * sg.numLevels );
-ADDRGP4 sg+2148
+ADDRGP4 sg+4212
 INDIRI4
 CVIU4 4
 CNSTU4 172
@@ -2510,7 +2508,7 @@ ASGNI4
 LABELV $248
 ADDRLP4 0
 INDIRI4
-ADDRGP4 sg+2148
+ADDRGP4 sg+4212
 INDIRI4
 LTI4 $245
 line 370
@@ -2518,6 +2516,10 @@ line 370
 LABELV $218
 endproc SG_LoadLevels 2616 16
 import atoi
+import strcat
+import strcpy
+import strlen
+import memset
 bss
 align 4
 LABELV sg_levelInfos
@@ -2665,6 +2667,66 @@ import sg_entities
 import inversedirs
 import dirvectors
 import stateinfo
+import ImGui_CloseCurrentPopup
+import ImGui_OpenPopup
+import ImGui_EndPopup
+import ImGui_BeginPopupModal
+import ImGui_ColoredText
+import ImGui_Text
+import ImGui_ColoredTextUnformatted
+import ImGui_TextUnformatted
+import ImGui_SameLine
+import ImGui_ProgressBar
+import ImGui_Separator
+import ImGui_SeparatorText
+import ImGui_NewLine
+import ImGui_PopColor
+import ImGui_PushColor
+import ImGui_GetCursorScreenPos
+import ImGui_SetCursorScreenPos
+import ImGui_GetCursorPos
+import ImGui_SetCursorPos
+import ImGui_GetFontScale
+import ImGui_Button
+import ImGui_Checkbox
+import ImGui_ArrowButton
+import ImGui_ColorEdit4
+import ImGui_ColorEdit3
+import ImGui_SliderInt4
+import ImGui_SliderInt3
+import ImGui_SliderInt2
+import ImGui_SliderInt
+import ImGui_SliderFloat4
+import ImGui_SliderFloat3
+import ImGui_SliderFloat2
+import ImGui_SliderFloat
+import ImGui_InputInt4
+import ImGui_InputInt3
+import ImGui_InputInt2
+import ImGui_InputInt
+import ImGui_InputFloat4
+import ImGui_InputFloat3
+import ImGui_InputFloat2
+import ImGui_InputFloat
+import ImGui_InputTextWithHint
+import ImGui_InputTextMultiline
+import ImGui_InputText
+import ImGui_EndTable
+import ImGui_TableNextColumn
+import ImGui_TableNextRow
+import ImGui_BeginTable
+import ImGui_SetItemTooltip
+import ImGui_SetItemTooltipUnformatted
+import ImGui_MenuItem
+import ImGui_EndMenu
+import ImGui_BeginMenu
+import ImGui_SetWindowFontScale
+import ImGui_SetWindowSize
+import ImGui_SetWindowPos
+import ImGui_SetWindowCollapsed
+import ImGui_IsWindowCollapsed
+import ImGui_EndWindow
+import ImGui_BeginWindow
 import Com_TouchMemory
 import Hunk_TempIsClear
 import Hunk_Check
@@ -2858,66 +2920,6 @@ import Com_EarlyParseCmdLine
 import Com_Milliseconds
 import Com_Frame
 import Sys_SnapVector
-import ImGui_CloseCurrentPopup
-import ImGui_OpenPopup
-import ImGui_EndPopup
-import ImGui_BeginPopupModal
-import ImGui_ColoredText
-import ImGui_Text
-import ImGui_ColoredTextUnformatted
-import ImGui_TextUnformatted
-import ImGui_SameLine
-import ImGui_ProgressBar
-import ImGui_Separator
-import ImGui_SeparatorText
-import ImGui_NewLine
-import ImGui_PopColor
-import ImGui_PushColor
-import ImGui_GetCursorScreenPos
-import ImGui_SetCursorScreenPos
-import ImGui_GetCursorPos
-import ImGui_SetCursorPos
-import ImGui_GetFontScale
-import ImGui_Button
-import ImGui_Checkbox
-import ImGui_ArrowButton
-import ImGui_ColorEdit4
-import ImGui_ColorEdit3
-import ImGui_SliderInt4
-import ImGui_SliderInt3
-import ImGui_SliderInt2
-import ImGui_SliderInt
-import ImGui_SliderFloat4
-import ImGui_SliderFloat3
-import ImGui_SliderFloat2
-import ImGui_SliderFloat
-import ImGui_InputInt4
-import ImGui_InputInt3
-import ImGui_InputInt2
-import ImGui_InputInt
-import ImGui_InputFloat4
-import ImGui_InputFloat3
-import ImGui_InputFloat2
-import ImGui_InputFloat
-import ImGui_InputTextWithHint
-import ImGui_InputTextMultiline
-import ImGui_InputText
-import ImGui_EndTable
-import ImGui_TableNextColumn
-import ImGui_TableNextRow
-import ImGui_BeginTable
-import ImGui_SetItemTooltip
-import ImGui_SetItemTooltipUnformatted
-import ImGui_MenuItem
-import ImGui_EndMenu
-import ImGui_BeginMenu
-import ImGui_SetWindowFontScale
-import ImGui_SetWindowSize
-import ImGui_SetWindowPos
-import ImGui_SetWindowCollapsed
-import ImGui_IsWindowCollapsed
-import ImGui_EndWindow
-import ImGui_BeginWindow
 import I_GetParm
 import Con_DPrintf
 import Con_Printf
@@ -3028,34 +3030,6 @@ import N_isprint
 import Com_SkipCharset
 import Com_SkipTokens
 import Com_snprintf
-import acos
-import fabs
-import abs
-import tan
-import atan2
-import cos
-import sin
-import sqrt
-import floor
-import ceil
-import sscanf
-import vsprintf
-import rand
-import srand
-import qsort
-import toupper
-import tolower
-import strncmp
-import strcmp
-import strstr
-import strchr
-import strlen
-import strcat
-import strcpy
-import memmove
-import memset
-import memchr
-import memcpy
 lit
 align 1
 LABELV $269

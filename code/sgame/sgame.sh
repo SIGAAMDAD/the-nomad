@@ -21,7 +21,6 @@ $CC ../sg_draw.c
 $CC ../sg_imgui.c
 $CC ../sg_lib.c
 $CC ../sg_math.c
-$CC ../sg_hud.c
 $CC ../../engine/n_shared.c
 
 ../q3asm -f ../sgame

@@ -212,32 +212,32 @@ void Sys_GetGPUConfig( gpuConfig_t *config )
     vmi.Sys_GetGPUConfig( config );
 }
 
-uint32_t trap_FS_FOpenFile( const char *npath, file_t *f, fileMode_t mode )
+uint32_t trap_FS_FOpenFile( const char *npath, fileHandle_t *f, fileMode_t mode )
 {
     return vmi.FS_FOpenFile( npath, f, mode, H_SGAME );
 }
 
-file_t trap_FS_FOpenRead( const char *npath )
+fileHandle_t trap_FS_FOpenRead( const char *npath )
 {
     return vmi.FS_FOpenRead( npath, H_SGAME );
 }
 
-file_t trap_FS_FOpenWrite( const char *npath )
+fileHandle_t trap_FS_FOpenWrite( const char *npath )
 {
     return vmi.FS_FOpenWrite( npath, H_SGAME );
 }
 
-void trap_FS_FClose( file_t f )
+void trap_FS_FClose( fileHandle_t f )
 {
     vmi.FS_FClose( f, H_SGAME );
 }
 
-int trap_FS_Write( const void *data, int size, file_t f )
+int trap_FS_Write( const void *data, int size, fileHandle_t f )
 {
     return vmi.FS_Write( data, size, f, H_SGAME );
 }
 
-int trap_FS_Read( void *data, int size, file_t f )
+int trap_FS_Read( void *data, int size, fileHandle_t f )
 {
     return vmi.FS_Read( data, size, f, H_SGAME );
 }
@@ -247,12 +247,12 @@ int trap_FS_GetFileList( const char *path, const char *extension, char *listbuf,
     return vmi.FS_GetFileList( path, extension, listbuf, bufsize );
 }
 
-int trap_FS_FileSeek( file_t f, fileOffset_t offset, int whence )
+int trap_FS_FileSeek( fileHandle_t f, fileOffset_t offset, int whence )
 {
     return vmi.FS_FileSeek( f, offset, whence, H_SGAME );
 }
 
-int trap_FS_FileTell( file_t f )
+int trap_FS_FileTell( fileHandle_t f )
 {
     return vmi.FS_FileTell( f, H_SGAME );
 }

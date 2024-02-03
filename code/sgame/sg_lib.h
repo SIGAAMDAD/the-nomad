@@ -48,6 +48,7 @@ typedef char* va_list;
 
 typedef int cmp_t(const void *, const void *);
 
+#if 0
 /* standard library replacement functions */
 void *memcpy( void *dst, const void *src, size_t n );
 void *memchr( void *ptr, int delegate, size_t n );
@@ -79,6 +80,7 @@ double tan( double x );
 int abs( int n );
 double fabs( double x );
 double acos( double x );
+#endif
 
 #define CHAR_BIT 8       /* number of bits in a char */
 #define SCHAR_MIN (-128) /* minimum signed char value */

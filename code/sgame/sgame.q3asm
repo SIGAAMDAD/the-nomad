@@ -13,5 +13,4 @@ sg_draw
 sg_imgui
 sg_lib
 sg_math
-sg_hud
 n_shared

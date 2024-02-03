@@ -50,7 +50,7 @@ typedef struct {
     void (*Cvar_Reset)(const char *name);
     const char *(*Cvar_VariableString)(const char *name);
 
-    void (*GLM_MakeVPM)( vec4_t ortho, float *zoom, float zFar, float zNear, vec3_t origin, mat4_t vpm,
+    void (*GLM_MakeVPM)( vec4_t ortho, float *zoom, float zNear, float zFar, vec3_t origin, mat4_t vpm,
         mat4_t projection, mat4_t view );
     void (*GLM_TransformToGL)( const vec3_t world, vec3_t *xyz, mat4_t vpm );
 

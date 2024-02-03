@@ -30,22 +30,39 @@ void RB_MakeViewMatrix( void )
 {
     float aspect;
     uint32_t viewFlags;
+    vec4_t ortho;
 
     aspect = glConfig.vidWidth / glConfig.vidHeight;
-
-    VectorSet( glState.viewData.camera.origin, 0.0f, 0.0f, 0.0f );
 
     glState.viewData.zFar = -1.0f;
     glState.viewData.zNear = 1.0f;
     viewFlags = glState.viewData.flags & RSF_ORTHO_BITS;
 
-    if ( glState.viewData.flags & RSF_USE_ORTHO_UI ) {
-        ri.GLM_MakeVPMScreenSpace( glState.viewData.camera.viewProjectionMatrix, glState.viewData.camera.projectionMatrix,
-            glState.viewData.camera.viewMatrix );
-    } else {
-        ri.GLM_MakeVPM( aspect, &glState.viewData.camera.zoom, glState.viewData.camera.origin, glState.viewData.camera.viewProjectionMatrix,
-            glState.viewData.camera.projectionMatrix, glState.viewData.camera.viewMatrix );
-    }
+    switch ( viewFlags ) {
+    case RSF_ORTHO_TYPE_SCREENSPACE:
+        ortho[0] = 0;
+        ortho[1] = glConfig.vidWidth;
+        ortho[2] = 0;
+        ortho[3] = glConfig.vidHeight;
+        break;
+    case RSF_ORTHO_TYPE_WORLD:
+        ortho[0] = 0;
+        ortho[1] = rg.world->width;
+        ortho[2] = 0;
+        ortho[3] = rg.world->height;
+        break;
+    case RSF_ORTHO_TYPE_CORDESIAN:
+        ortho[0] = -aspect;
+        ortho[1] = aspect;
+        ortho[2] = -aspect;
+        ortho[3] = aspect;
+        break;
+    default:
+        ri.Error( ERR_DROP, "R_RenderView: invalid orthographic matrix type" );
+    };
+
+    ri.GLM_MakeVPM( ortho, &glState.viewData.camera.zoom, glState.viewData.zNear, glState.viewData.zFar, glState.viewData.camera.origin,
+        glState.viewData.camera.viewProjectionMatrix, glState.viewData.camera.projectionMatrix, glState.viewData.camera.viewMatrix );
 }
 
 /*

@@ -124,14 +124,10 @@ private:
     void Alloc( void );
     ALenum Format( void ) const;
 
-    char m_pName[MAX_GDR_PATH];
+    char m_pName[MAX_NPATH];
 
-#ifndef USE_ZONE_SOUND_ALLOC
-    eastl::vector<short> m_pData;
-#else
     short *m_pData;
-    uint32_t m_nSize;
-#endif
+    uint64_t m_nSize;
     uint32_t m_iType;
     uint32_t m_iTag;
 
@@ -240,10 +236,8 @@ void CSoundSource::Init( void )
     if ( m_iBuffer == 0 ) {
         ALCall( alGenBuffers( 1, &m_iBuffer) );
     }
-#ifdef USE_ZONE_SOUND_ALLOC
     m_nSize = 0;
     m_pData = NULL;
-#endif
     m_iType = 0;
     m_bLoop = false;
 }
@@ -264,12 +258,6 @@ void CSoundSource::Shutdown( void )
     m_iBuffer = 0;
     m_iSource = 0;
     m_iType = 0;
-
-#ifdef USE_ZONE_SOUND_ALLOC
-    if ( m_pData ) {
-        Z_Free( m_pData );
-    }
-#endif
 }
 
 
@@ -330,12 +318,8 @@ void CSoundSource::Alloc( void )
         break;
     };
 
-#ifdef USE_ZONE_SOUND_ALLOC
     m_nSize = m_hFData.channels * m_hFData.frames;
-    m_pData = (short *)Z_Malloc( sizeof(short) * m_nSize, m_iTag );
-#else
-    m_pData.resize( m_hFData.channels * m_hFData.frames );
-#endif
+    m_pData = (short *)Hunk_AllocateTempMemory( sizeof(short) * m_nSize );
 }
 
 void CSoundSource::Play( bool loop )
@@ -446,19 +430,9 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     // allocate the buffer
     Alloc();
 
-#ifdef USE_ZONE_SOUND_ALLOC
-    if ( !sf_read_short( sf, m_pData, m_nSize ) )
-#else
-    if ( !sf_read_short( sf, m_pData.data(), m_pData.size() * sizeof(short) ) )
-#endif
-    {
-#ifdef USE_ZONE_SOUND_ALLOC
-        N_Error( ERR_FATAL, "CSoundSource::LoadFile(%s): failed to read %u bytes from audio stream, sf_strerror(): %s\n",
-            npath, m_nSize * sizeof(short), sf_strerror( sf ) );
-#else
+    if ( !sf_read_short( sf, m_pData, m_nSize ) ) {
         N_Error( ERR_FATAL, "CSoundSource::LoadFile(%s): failed to read %lu bytes from audio stream, sf_strerror(): %s\n",
-            npath, m_pData.size() * sizeof(short), sf_strerror( sf ) );
-#endif
+            npath, m_nSize * sizeof(short), sf_strerror( sf ) );
     }
     
     sf_close( sf );
@@ -474,12 +448,11 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     if (tag == TAG_SFX && m_iSource == 0) {
         ALCall( alGenSources( 1, &m_iSource ) );
     }
+    if ( tag == TAG_SFX && m_iBuffer == 0 ) {
+        ALCall( alGenBuffers( 1, &m_iBuffer ) );
+    }
 
-#ifdef USE_ZONE_SOUND_ALLOC
-    ALCall( alBufferData( m_iBuffer, format, m_p, m_nSize * sizeof(short), m_hFData.samplerate ) );
-#else
-    ALCall( alBufferData( m_iBuffer, format, m_pData.data(), m_pData.size() * sizeof(short), m_hFData.samplerate ) );
-#endif
+    ALCall( alBufferData( m_iBuffer, format, m_pData, m_nSize * sizeof(short), m_hFData.samplerate ) );
     ALCall( alSourcei( m_iSource, AL_BUFFER, m_iBuffer ) );
 
     if ( tag == TAG_SFX ) {
@@ -488,6 +461,7 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
         ALCall( alSourcef( m_iSource, AL_GAIN, snd_musicvol->f ) );
     }
 
+    Hunk_FreeTempMemory( m_pData );
     FS_FreeFile( buffer );
 
     return true;
@@ -602,6 +576,7 @@ CSoundSource *CSoundManager::InitSource( const char *filename, int64_t tag )
     m_hAllocLock.Lock();
 
     src = (CSoundSource *)Z_Malloc( sizeof(*src), (memtag_t)tag );
+    ::new ( src ) CSoundSource();
     src->Init();
 
     if (tag == TAG_MUSIC) {
@@ -609,9 +584,6 @@ CSoundSource *CSoundManager::InitSource( const char *filename, int64_t tag )
             ALCall( alGenSources( 1, &m_iMusicSource ));
         }
         src->SetSource( m_iMusicSource );
-    }
-    else {
-        src->Init();
     }
 
     if ( !src->LoadFile( filename, tag ) ) {

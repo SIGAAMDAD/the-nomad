@@ -573,17 +573,17 @@ void RE_SetColor( const float *pColor );
 void Sys_GetGPUConfig( gpuConfig_t *config );
 
 // filesystem access
-uint32_t trap_FS_FOpenFile( const char *npath, file_t *f, fileMode_t mode );
-file_t trap_FS_FOpenWrite( const char *npath );
-file_t trap_FS_FOpenRead( const char *npath );
-void trap_FS_FClose( file_t f );
-int trap_FS_Write( const void *data, int size, file_t f );
-int trap_FS_Read( void *data, int size, file_t f );
+uint32_t trap_FS_FOpenFile( const char *npath, fileHandle_t *f, fileMode_t mode );
+fileHandle_t trap_FS_FOpenWrite( const char *npath );
+fileHandle_t trap_FS_FOpenRead( const char *npath );
+void trap_FS_FClose( fileHandle_t f );
+int trap_FS_Write( const void *data, int size, fileHandle_t f );
+int trap_FS_Read( void *data, int size, fileHandle_t f );
 int trap_FS_GetFileList( const char *path, const char *extension, char *listbuf, int bufsize ); 
-int trap_FS_FileSeek( file_t f, fileOffset_t offset, int whence );
-int trap_FS_FileLength( file_t f );
-int trap_FS_FileTell( file_t f );
-void GDR_DECL GDR_ATTRIBUTE((format(printf, 2, 3))) trap_FS_Printf( file_t f, const char *fmt, ... );
+int trap_FS_FileSeek( fileHandle_t f, fileOffset_t offset, int whence );
+int trap_FS_FileLength( fileHandle_t f );
+int trap_FS_FileTell( fileHandle_t f );
+void GDR_DECL GDR_ATTRIBUTE((format(printf, 2, 3))) trap_FS_Printf( fileHandle_t f, const char *fmt, ... );
 
 // console variable interaction
 void Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultValue, int flags );

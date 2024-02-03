@@ -787,7 +787,8 @@ int N_replace(const char *str1, const char *str2, char *src, size_t max_len)
 	const char *s0, *s1, *s2, *max;
 	char *match, *dst;
 
-	match = strstr(src, str1);
+	// lcc bitches about this for some reason, 'pointer to char and int' error
+	match = (char *)strstr(src, str1);
 
 	if (!match)
 		return 0;
@@ -819,7 +820,8 @@ int N_replace(const char *str1, const char *str2, char *src, size_t max_len)
 			while (*s2)
                 *match++ = *s2++;
 			
-            match = strstr(match, str1);
+			// lcc bitches about this for some reason, 'pointer to char and int' error
+            match = (char *)strstr(match, str1);
 
             count++;
 		} while (match);
@@ -838,7 +840,8 @@ int N_replace(const char *str1, const char *str2, char *src, size_t max_len)
 				*match++ = *s2++;
 			}
 
-            match = strstr( match, str1 );
+			// lcc bitches about this for some reason, 'pointer to char and int' error
+            match = (char *)strstr( match, str1 );
 
             count++;
         } 
@@ -852,7 +855,8 @@ int N_replace(const char *str1, const char *str2, char *src, size_t max_len)
 			while (*s2)
 				*match++ = *s2++;
 
-    	    match = strstr(match, str1);
+			// lcc bitches about this for some reason, 'pointer to char and int' error
+    	    match = (char *)strstr(match, str1);
     	    count++;
 		}  while (match);
 	}

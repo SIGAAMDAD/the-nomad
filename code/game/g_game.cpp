@@ -204,13 +204,13 @@ static void G_RefImGuiInit(void *shaderData, const void *importData) {
     }
 }
 
-static void GLM_MakeVPM( vec4_t ortho, float *zoom, float zFar, float zNear, vec3_t origin, mat4_t vpm,
+static void GLM_MakeVPM( vec4_t ortho, float *zoom, float zNear, float zFar, vec3_t origin, mat4_t vpm,
     mat4_t projection, mat4_t view )
 {
     glm::mat4 viewProjectionMatrix, projectionMatrix, viewMatrix, transpose;
 
     *zoom = pos.z;
-    projectionMatrix = glm::ortho( -aspect, aspect, -aspect, aspect, -1.0f, 1.0f );
+    projectionMatrix = glm::ortho( ortho[0], ortho[1], ortho[2], ortho[3], zNear, zFar );
     transpose = glm::translate( glm::mat4( 1.0f ), glm::vec3( pos[0], pos[1], 0.0f ) )
                                 * glm::scale( glm::mat4( 1.0f ), glm::vec3( *zoom ));
     viewMatrix = glm::inverse( transpose );
@@ -394,7 +394,6 @@ static void G_InitRenderRef(void)
 
     import.GLM_TransformToGL = GLM_TransformToGL;
     import.GLM_MakeVPM = GLM_MakeVPM;
-    import.GLM_MakeVPMScreenSpace = GLM_MakeVPMScreenSpace;
 
     import.Milliseconds = Sys_Milliseconds;
 

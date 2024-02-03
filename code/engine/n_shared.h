@@ -407,7 +407,7 @@ Compiler Macro Abstraction
 #endif
 
 #ifdef Q3_VM
-#include "../game/bg_lib.h"
+#include "../sgame/sg_lib.h"
 #else
 #include <stdlib.h>
 #include <stdio.h>
@@ -588,7 +588,7 @@ typedef struct {
 #if defined(Q3_VM) || !defined(_NOMAD_ENGINE)
 
 #define VectorNegate(a,b)		((b).x=-(a).x,(b).y=-(a).y,(b).z=-(a).z)
-#define VectorSet(v, x, y, o)	((v).x=(x),(v).y=(y),(v).z=(o))
+#define VectorSet(v, a, b, x)	((v).x=(a),(v).y=(b),(v).z=(c))
 #define VectorClear(a)			((a).x=(a).y=(a).z=0)
 
 #define DotProduct(a,b)			((a).x*(b).x+(a).y*(b).y+(a).z*(b).z)

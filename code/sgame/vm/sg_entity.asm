@@ -256,7 +256,7 @@ ASGNP4
 LABELV $102
 ADDRLP4 4
 INDIRI4
-ADDRGP4 sg+2152
+ADDRGP4 sg+4216
 INDIRI4
 LTI4 $99
 line 54
@@ -642,7 +642,7 @@ line 116
 ;115:
 ;116:	sg.numEntities--;
 ADDRLP4 0
-ADDRGP4 sg+2152
+ADDRGP4 sg+4216
 ASGNP4
 ADDRLP4 0
 INDIRP4
@@ -666,7 +666,7 @@ line 123
 ;121:	sgentity_t *ent;
 ;122:
 ;123:	if ( sg.numEntities == MAXENTITIES ) {
-ADDRGP4 sg+2152
+ADDRGP4 sg+4216
 INDIRI4
 CNSTI4 2048
 NEI4 $123
@@ -684,7 +684,7 @@ line 127
 ;126:
 ;127:	ent = &sg_entities[sg.numEntities];
 ADDRLP4 0
-ADDRGP4 sg+2152
+ADDRGP4 sg+4216
 INDIRI4
 CNSTI4 160
 MULI4
@@ -694,7 +694,7 @@ ASGNP4
 line 128
 ;128:	sg.numEntities++;
 ADDRLP4 4
-ADDRGP4 sg+2152
+ADDRGP4 sg+4216
 ASGNP4
 ADDRLP4 4
 INDIRP4
@@ -715,7 +715,7 @@ ARGI4
 CNSTU4 160
 ARGU4
 ADDRGP4 memset
-CALLP4
+CALLI4
 pop
 line 131
 ;131:	ent->type = type;
@@ -900,7 +900,7 @@ line 165
 ;163:	sgentity_t *ent;
 ;164:
 ;165:	if ( sg.numEntities == MAXENTITIES ) {
-ADDRGP4 sg+2152
+ADDRGP4 sg+4216
 INDIRI4
 CNSTI4 2048
 NEI4 $146
@@ -934,7 +934,7 @@ line 172
 ;171:
 ;172:	ent = &sg_entities[sg.numEntities];
 ADDRLP4 0
-ADDRGP4 sg+2152
+ADDRGP4 sg+4216
 INDIRI4
 CNSTI4 160
 MULI4
@@ -994,7 +994,7 @@ line 178
 ;178:	case ET_PLAYR: {
 line 179
 ;179:		if ( sg.playrReady ) {
-ADDRGP4 sg+63752
+ADDRGP4 sg+65816
 INDIRI4
 CNSTI4 0
 EQI4 $158
@@ -1251,7 +1251,7 @@ line 208
 ;207:	
 ;208:	sg.numEntities++;
 ADDRLP4 20
-ADDRGP4 sg+2152
+ADDRGP4 sg+4216
 ASGNP4
 ADDRLP4 20
 INDIRP4
@@ -1265,6 +1265,7 @@ line 209
 ;209:}
 LABELV $145
 endproc SG_Spawn 24 4
+import memset
 bss
 export sg_freeEnts
 align 4
@@ -1410,6 +1411,66 @@ skip 327680
 import inversedirs
 import dirvectors
 import stateinfo
+import ImGui_CloseCurrentPopup
+import ImGui_OpenPopup
+import ImGui_EndPopup
+import ImGui_BeginPopupModal
+import ImGui_ColoredText
+import ImGui_Text
+import ImGui_ColoredTextUnformatted
+import ImGui_TextUnformatted
+import ImGui_SameLine
+import ImGui_ProgressBar
+import ImGui_Separator
+import ImGui_SeparatorText
+import ImGui_NewLine
+import ImGui_PopColor
+import ImGui_PushColor
+import ImGui_GetCursorScreenPos
+import ImGui_SetCursorScreenPos
+import ImGui_GetCursorPos
+import ImGui_SetCursorPos
+import ImGui_GetFontScale
+import ImGui_Button
+import ImGui_Checkbox
+import ImGui_ArrowButton
+import ImGui_ColorEdit4
+import ImGui_ColorEdit3
+import ImGui_SliderInt4
+import ImGui_SliderInt3
+import ImGui_SliderInt2
+import ImGui_SliderInt
+import ImGui_SliderFloat4
+import ImGui_SliderFloat3
+import ImGui_SliderFloat2
+import ImGui_SliderFloat
+import ImGui_InputInt4
+import ImGui_InputInt3
+import ImGui_InputInt2
+import ImGui_InputInt
+import ImGui_InputFloat4
+import ImGui_InputFloat3
+import ImGui_InputFloat2
+import ImGui_InputFloat
+import ImGui_InputTextWithHint
+import ImGui_InputTextMultiline
+import ImGui_InputText
+import ImGui_EndTable
+import ImGui_TableNextColumn
+import ImGui_TableNextRow
+import ImGui_BeginTable
+import ImGui_SetItemTooltip
+import ImGui_SetItemTooltipUnformatted
+import ImGui_MenuItem
+import ImGui_EndMenu
+import ImGui_BeginMenu
+import ImGui_SetWindowFontScale
+import ImGui_SetWindowSize
+import ImGui_SetWindowPos
+import ImGui_SetWindowCollapsed
+import ImGui_IsWindowCollapsed
+import ImGui_EndWindow
+import ImGui_BeginWindow
 import Com_TouchMemory
 import Hunk_TempIsClear
 import Hunk_Check
@@ -1603,66 +1664,6 @@ import Com_EarlyParseCmdLine
 import Com_Milliseconds
 import Com_Frame
 import Sys_SnapVector
-import ImGui_CloseCurrentPopup
-import ImGui_OpenPopup
-import ImGui_EndPopup
-import ImGui_BeginPopupModal
-import ImGui_ColoredText
-import ImGui_Text
-import ImGui_ColoredTextUnformatted
-import ImGui_TextUnformatted
-import ImGui_SameLine
-import ImGui_ProgressBar
-import ImGui_Separator
-import ImGui_SeparatorText
-import ImGui_NewLine
-import ImGui_PopColor
-import ImGui_PushColor
-import ImGui_GetCursorScreenPos
-import ImGui_SetCursorScreenPos
-import ImGui_GetCursorPos
-import ImGui_SetCursorPos
-import ImGui_GetFontScale
-import ImGui_Button
-import ImGui_Checkbox
-import ImGui_ArrowButton
-import ImGui_ColorEdit4
-import ImGui_ColorEdit3
-import ImGui_SliderInt4
-import ImGui_SliderInt3
-import ImGui_SliderInt2
-import ImGui_SliderInt
-import ImGui_SliderFloat4
-import ImGui_SliderFloat3
-import ImGui_SliderFloat2
-import ImGui_SliderFloat
-import ImGui_InputInt4
-import ImGui_InputInt3
-import ImGui_InputInt2
-import ImGui_InputInt
-import ImGui_InputFloat4
-import ImGui_InputFloat3
-import ImGui_InputFloat2
-import ImGui_InputFloat
-import ImGui_InputTextWithHint
-import ImGui_InputTextMultiline
-import ImGui_InputText
-import ImGui_EndTable
-import ImGui_TableNextColumn
-import ImGui_TableNextRow
-import ImGui_BeginTable
-import ImGui_SetItemTooltip
-import ImGui_SetItemTooltipUnformatted
-import ImGui_MenuItem
-import ImGui_EndMenu
-import ImGui_BeginMenu
-import ImGui_SetWindowFontScale
-import ImGui_SetWindowSize
-import ImGui_SetWindowPos
-import ImGui_SetWindowCollapsed
-import ImGui_IsWindowCollapsed
-import ImGui_EndWindow
-import ImGui_BeginWindow
 import I_GetParm
 import Con_DPrintf
 import Con_Printf
@@ -1773,34 +1774,6 @@ import N_isprint
 import Com_SkipCharset
 import Com_SkipTokens
 import Com_snprintf
-import acos
-import fabs
-import abs
-import tan
-import atan2
-import cos
-import sin
-import sqrt
-import floor
-import ceil
-import sscanf
-import vsprintf
-import rand
-import srand
-import qsort
-import toupper
-import tolower
-import strncmp
-import strcmp
-import strstr
-import strchr
-import strlen
-import strcat
-import strcpy
-import memmove
-import memset
-import memchr
-import memcpy
 lit
 align 1
 LABELV $161

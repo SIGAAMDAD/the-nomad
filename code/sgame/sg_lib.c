@@ -4,6 +4,8 @@
     #error Never include this in engine builds
 #endif
 
+#if 0
+
 void *memset(void *dst, int fill, size_t n)
 {
     size_t i;
@@ -72,10 +74,12 @@ void *memmove( void *dst, const void *src, size_t n )
     }
     return dst;
 }
+#endif
 
 // bk001211 - gcc errors on compiling strcpy:  parse error before `__extension__'
 #ifdef Q3_VM
 
+#if 0
 size_t strlen(const char *str)
 {
     const char *s = str;
@@ -84,21 +88,6 @@ size_t strlen(const char *str)
     }
     return (size_t)(s - str);
 }
-
-char *strcat( char *strDestination, const char *strSource ) {
-	char	*s;
-
-	s = strDestination;
-	while ( *s ) {
-		s++;
-	}
-	while ( *strSource ) {
-		*s++ = *strSource++;
-	}
-	*s = 0;
-	return strDestination;
-}
-
 
 char* strchr(const char* string, int c)
 {
@@ -165,7 +154,21 @@ char* strcpy(char *dst, const char *src)
     *d = 0;
     return dst;
 }
+#endif
 
+char *strcat( char *strDestination, const char *strSource ) {
+	char	*s;
+
+	s = strDestination;
+	while ( *s ) {
+		s++;
+	}
+	while ( *strSource ) {
+		*s++ = *strSource++;
+	}
+	*s = 0;
+	return (char *)strDestination;
+}
 
 int tolower(int c)
 {
@@ -183,6 +186,7 @@ int toupper(int c)
     return c;
 }
 #endif
+
 
 static char* med3(char*, char*, char*, cmp_t*);
 static void  swapfunc(char*, char*, int, int);
