@@ -1946,12 +1946,14 @@ line 359
 ;358:
 ;359:    while ( 1 ) {
 line 360
-;360:        token = COM_Parse( text );
+;360:        token = COM_ParseExt( text, qtrue );
 ADDRLP4 1028
 INDIRP4
 ARGP4
+CNSTI4 1
+ARGI4
 ADDRLP4 2060
-ADDRGP4 COM_Parse
+ADDRGP4 COM_ParseExt
 CALLP4
 ASGNP4
 ADDRLP4 0
@@ -1973,60 +1975,74 @@ JUMPV
 LABELV $257
 line 364
 ;363:        }
-;364:        if ( token[0] != '{' ) {
+;364:        if ( token[0] == ' ' ) {
+ADDRLP4 0
+INDIRP4
+INDIRI1
+CVII4 1
+CNSTI4 32
+NEI4 $259
+line 365
+;365:            continue;
+ADDRGP4 $255
+JUMPV
+LABELV $259
+line 367
+;366:        }
+;367:        if ( token[0] != '{' ) {
 ADDRLP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 123
-EQI4 $259
-line 365
-;365:            G_Printf( "missing '{' in info file\n" );
-ADDRGP4 $261
+EQI4 $261
+line 368
+;368:            G_Printf( "missing '{' in info file\n" );
+ADDRGP4 $263
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 366
-;366:            break;
+line 369
+;369:            break;
 ADDRGP4 $256
 JUMPV
-LABELV $259
-line 369
-;367:        }
-;368:
-;369:        if ( count == max ) {
+LABELV $261
+line 372
+;370:        }
+;371:
+;372:        if ( count == max ) {
 ADDRLP4 2056
 INDIRI4
 ADDRFP4 4
 INDIRI4
-NEI4 $262
-line 370
-;370:            G_Printf( "max infos exceeded\n" );
-ADDRGP4 $264
+NEI4 $264
+line 373
+;373:            G_Printf( "max infos exceeded\n" );
+ADDRGP4 $266
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 371
-;371:            break;
+line 374
+;374:            break;
 ADDRGP4 $256
 JUMPV
-LABELV $262
-line 374
-;372:        }
-;373:
-;374:        info[0] = '\0';
+LABELV $264
+line 377
+;375:        }
+;376:
+;377:        info[0] = '\0';
 ADDRLP4 1032
 CNSTI1 0
 ASGNI1
-ADDRGP4 $266
+ADDRGP4 $268
 JUMPV
-LABELV $265
-line 375
-;375:        while ( 1 ) {
-line 376
-;376:            token = COM_ParseExt( text, qtrue );
+LABELV $267
+line 378
+;378:        while ( 1 ) {
+line 379
+;379:            token = COM_ParseExt( text, qtrue );
 ADDRLP4 1028
 INDIRP4
 ARGP4
@@ -2040,43 +2056,43 @@ ADDRLP4 0
 ADDRLP4 2064
 INDIRP4
 ASGNP4
-line 377
-;377:            if ( !token[0] ) {
+line 380
+;380:            if ( !token[0] ) {
 ADDRLP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $268
-line 378
-;378:                G_Printf( "unexpected end of info file\n" );
-ADDRGP4 $270
+NEI4 $270
+line 381
+;381:                G_Printf( "unexpected end of info file\n" );
+ADDRGP4 $272
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 379
-;379:                break;
-ADDRGP4 $267
+line 382
+;382:                break;
+ADDRGP4 $269
 JUMPV
-LABELV $268
-line 381
-;380:            }
-;381:            if ( token[0] == '}' ) {
+LABELV $270
+line 384
+;383:            }
+;384:            if ( token[0] == '}' ) {
 ADDRLP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 125
-NEI4 $271
-line 382
-;382:                break;
-ADDRGP4 $267
+NEI4 $273
+line 385
+;385:                break;
+ADDRGP4 $269
 JUMPV
-LABELV $271
-line 384
-;383:            }
-;384:            N_strncpyz( key, token, sizeof(key) );
+LABELV $273
+line 387
+;386:            }
+;387:            N_strncpyz( key, token, sizeof(key) );
 ADDRLP4 4
 ARGP4
 ADDRLP4 0
@@ -2087,9 +2103,9 @@ ARGU4
 ADDRGP4 N_strncpyz
 CALLV
 pop
-line 386
-;385:
-;386:            token = COM_ParseExt( text, qfalse );
+line 389
+;388:
+;389:            token = COM_ParseExt( text, qfalse );
 ADDRLP4 1028
 INDIRP4
 ARGP4
@@ -2103,24 +2119,24 @@ ADDRLP4 0
 ADDRLP4 2068
 INDIRP4
 ASGNP4
-line 387
-;387:            if ( !token[0] ) {
+line 390
+;390:            if ( !token[0] ) {
 ADDRLP4 0
 INDIRP4
 INDIRI1
 CVII4 1
 CNSTI4 0
-NEI4 $273
-line 388
-;388:                token = "<NULL>";
+NEI4 $275
+line 391
+;391:                token = "<NULL>";
 ADDRLP4 0
-ADDRGP4 $275
+ADDRGP4 $277
 ASGNP4
-line 389
-;389:            }
-LABELV $273
-line 390
-;390:            Info_SetValueForKey( info, key, token );
+line 392
+;392:            }
+LABELV $275
+line 393
+;393:            Info_SetValueForKey( info, key, token );
 ADDRLP4 1032
 ARGP4
 CNSTU4 1024
@@ -2133,23 +2149,23 @@ ARGP4
 ADDRGP4 Info_SetValueForKey_s
 CALLI4
 pop
-line 391
-;391:        }
-LABELV $266
-line 375
-ADDRGP4 $265
+line 394
+;394:        }
+LABELV $268
+line 378
+ADDRGP4 $267
 JUMPV
-LABELV $267
-line 393
-;392:        // NOTE: extra space for level index
-;393:        infos[count] = SG_MemAlloc( strlen( info ) + strlen( "\\num\\" ) + strlen( va( "%i", MAX_LEVELS ) ) + 1 );
+LABELV $269
+line 396
+;395:        // NOTE: extra space for level index
+;396:        infos[count] = SG_MemAlloc( strlen( info ) + strlen( "\\num\\" ) + strlen( va( "%i", MAX_LEVELS ) ) + 1 );
 ADDRLP4 1032
 ARGP4
 ADDRLP4 2064
 ADDRGP4 strlen
 CALLI4
 ASGNI4
-ADDRGP4 $276
+ADDRGP4 $278
 ARGP4
 ADDRLP4 2068
 ADDRGP4 strlen
@@ -2195,8 +2211,8 @@ ADDP4
 ADDRLP4 2080
 INDIRP4
 ASGNP4
-line 394
-;394:        if ( infos[count] ) {
+line 397
+;397:        if ( infos[count] ) {
 ADDRLP4 2056
 INDIRI4
 CNSTI4 2
@@ -2207,9 +2223,9 @@ ADDP4
 INDIRP4
 CVPU4 4
 CNSTU4 0
-EQU4 $277
-line 395
-;395:            strcpy( infos[count], info );
+EQU4 $279
+line 398
+;398:            strcpy( infos[count], info );
 ADDRLP4 2056
 INDIRI4
 CNSTI4 2
@@ -2224,43 +2240,43 @@ ARGP4
 ADDRGP4 strcpy
 CALLI4
 pop
-line 396
-;396:            count++;
+line 399
+;399:            count++;
 ADDRLP4 2056
 ADDRLP4 2056
 INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-line 397
-;397:        }
-LABELV $277
-line 398
-;398:    }
+line 400
+;400:        }
+LABELV $279
+line 401
+;401:    }
 LABELV $255
 line 359
 ADDRGP4 $254
 JUMPV
 LABELV $256
-line 400
-;399:
-;400:    return count;
+line 403
+;402:
+;403:    return count;
 ADDRLP4 2056
 INDIRI4
 RETI4
 LABELV $253
 endproc SG_ParseInfos 2084 16
 proc SG_LoadLevelsFromFile 8212 16
-line 403
-;401:}
-;402:
-;403:static void SG_LoadLevelsFromFile( const char *filename ) {
-line 408
-;404:	int				len;
-;405:	fileHandle_t    f;
-;406:	char			buf[MAX_LEVELINFO_LEN];
-;407:
-;408:	len = trap_FS_FOpenFile( filename, &f, FS_OPEN_READ );
+line 406
+;404:}
+;405:
+;406:static void SG_LoadLevelsFromFile( const char *filename ) {
+line 411
+;407:	int				len;
+;408:	fileHandle_t    f;
+;409:	char			buf[MAX_LEVELINFO_LEN];
+;410:
+;411:	len = trap_FS_FOpenFile( filename, &f, FS_OPEN_READ );
 ADDRFP4 0
 INDIRP4
 ARGP4
@@ -2277,44 +2293,44 @@ ADDRLP4 8200
 INDIRU4
 CVUI4 4
 ASGNI4
-line 409
-;409:	if ( !f ) {
+line 412
+;412:	if ( !f ) {
 ADDRLP4 4
 INDIRI4
 CNSTI4 0
-NEI4 $280
-line 410
-;410:		trap_Print( va( COLOR_RED "ERROR: file not found: %s\n", filename ) );
-ADDRGP4 $282
-ARGP4
-ADDRFP4 0
-INDIRP4
-ARGP4
-ADDRLP4 8204
-ADDRGP4 va
-CALLP4
-ASGNP4
-ADDRLP4 8204
-INDIRP4
-ARGP4
-ADDRGP4 trap_Print
-CALLV
-pop
-line 411
-;411:		return;
-ADDRGP4 $279
-JUMPV
-LABELV $280
+NEI4 $282
 line 413
-;412:	}
-;413:	if ( len >= MAX_LEVELINFO_LEN ) {
+;413:		trap_Print( va( COLOR_RED "ERROR: file not found: %s\n", filename ) );
+ADDRGP4 $284
+ARGP4
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRLP4 8204
+ADDRGP4 va
+CALLP4
+ASGNP4
+ADDRLP4 8204
+INDIRP4
+ARGP4
+ADDRGP4 trap_Print
+CALLV
+pop
+line 414
+;414:		return;
+ADDRGP4 $281
+JUMPV
+LABELV $282
+line 416
+;415:	}
+;416:	if ( len >= MAX_LEVELINFO_LEN ) {
 ADDRLP4 0
 INDIRI4
 CNSTI4 8192
-LTI4 $283
-line 414
-;414:		trap_Print( va( COLOR_RED "ERROR: file too large: %s is %i, max allowed is %i", filename, len, MAX_LEVELINFO_LEN ) );
-ADDRGP4 $285
+LTI4 $285
+line 417
+;417:		trap_Print( va( COLOR_RED "ERROR: file too large: %s is %i, max allowed is %i", filename, len, MAX_LEVELINFO_LEN ) );
+ADDRGP4 $287
 ARGP4
 ADDRFP4 0
 INDIRP4
@@ -2334,23 +2350,23 @@ ARGP4
 ADDRGP4 trap_Print
 CALLV
 pop
-line 415
-;415:		trap_FS_FClose( f );
+line 418
+;418:		trap_FS_FClose( f );
 ADDRLP4 4
 INDIRI4
 ARGI4
 ADDRGP4 trap_FS_FClose
 CALLV
 pop
-line 416
-;416:		return;
-ADDRGP4 $279
-JUMPV
-LABELV $283
 line 419
-;417:	}
-;418:
-;419:	trap_FS_Read( buf, len, f );
+;419:		return;
+ADDRGP4 $281
+JUMPV
+LABELV $285
+line 422
+;420:	}
+;421:
+;422:	trap_FS_Read( buf, len, f );
 ADDRLP4 8
 ARGP4
 ADDRLP4 0
@@ -2362,25 +2378,25 @@ ARGI4
 ADDRGP4 trap_FS_Read
 CALLI4
 pop
-line 420
-;420:	buf[len] = 0;
+line 423
+;423:	buf[len] = 0;
 ADDRLP4 0
 INDIRI4
 ADDRLP4 8
 ADDP4
 CNSTI1 0
 ASGNI1
-line 421
-;421:	trap_FS_FClose( f );
+line 424
+;424:	trap_FS_FClose( f );
 ADDRLP4 4
 INDIRI4
 ARGI4
 ADDRGP4 trap_FS_FClose
 CALLV
 pop
-line 423
-;422:
-;423:	sg.numLevels += SG_ParseInfos( buf, MAX_LEVELS - sg.numLevels, &sg_levelInfos[sg.numLevels] );
+line 426
+;425:
+;426:	sg.numLevels += SG_ParseInfos( buf, MAX_LEVELS - sg.numLevels, &sg_levelInfos[sg.numLevels] );
 ADDRLP4 8
 ARGP4
 CNSTI4 1024
@@ -2411,81 +2427,81 @@ ADDRLP4 8204
 INDIRI4
 ADDI4
 ASGNI4
-line 424
-;424:}
-LABELV $279
+line 427
+;427:}
+LABELV $281
 endproc SG_LoadLevelsFromFile 8212 16
 export SG_LoadLevels
 proc SG_LoadLevels 2672 16
-line 427
-;425:
-;426:void SG_LoadLevels( void )
-;427:{
-line 438
-;428:    int numdirs;
-;429:    vmCvar_t levelsFile;
-;430:    char filename[1024];
-;431:    char dirlist[1024];
-;432:    char *dirptr;
-;433:    int i, j;
-;434:    int dirlen;
-;435:    const char *mapname;
-;436:    levelInfo_t *info;
-;437:
-;438:    sg.numLevels = 0;
+line 430
+;428:
+;429:void SG_LoadLevels( void )
+;430:{
+line 441
+;431:    int numdirs;
+;432:    vmCvar_t levelsFile;
+;433:    char filename[1024];
+;434:    char dirlist[1024];
+;435:    char *dirptr;
+;436:    int i, j;
+;437:    int dirlen;
+;438:    const char *mapname;
+;439:    levelInfo_t *info;
+;440:
+;441:    sg.numLevels = 0;
 ADDRGP4 sg+2220
 CNSTI4 0
 ASGNI4
-line 440
-;439:
-;440:    Cvar_Register( &levelsFile, "sg_levelsFile", "", CVAR_INIT | CVAR_ROM );
+line 443
+;442:
+;443:    Cvar_Register( &levelsFile, "sg_levelsFile", "", CVAR_INIT | CVAR_ROM );
 ADDRLP4 2072
 ARGP4
-ADDRGP4 $291
+ADDRGP4 $293
 ARGP4
-ADDRGP4 $292
+ADDRGP4 $294
 ARGP4
 CNSTI4 80
 ARGI4
 ADDRGP4 Cvar_Register
 CALLV
 pop
-line 441
-;441:    if ( *levelsFile.s ) {
+line 444
+;444:    if ( *levelsFile.s ) {
 ADDRLP4 2072
 INDIRI1
 CVII4 1
 CNSTI4 0
-EQI4 $293
-line 442
-;442:        SG_LoadLevelsFromFile( levelsFile.s );
+EQI4 $295
+line 445
+;445:        SG_LoadLevelsFromFile( levelsFile.s );
 ADDRLP4 2072
 ARGP4
 ADDRGP4 SG_LoadLevelsFromFile
 CALLV
 pop
-line 443
-;443:    } else {
-ADDRGP4 $294
+line 446
+;446:    } else {
+ADDRGP4 $296
 JUMPV
-LABELV $293
-line 444
-;444:        SG_LoadLevelsFromFile( "scripts/levels.txt" );
-ADDRGP4 $295
+LABELV $295
+line 447
+;447:        SG_LoadLevelsFromFile( "scripts/levels.txt" );
+ADDRGP4 $297
 ARGP4
 ADDRGP4 SG_LoadLevelsFromFile
 CALLV
 pop
-line 445
-;445:    }
-LABELV $294
 line 448
-;446:
-;447:    // get all levels from .level files
-;448:    numdirs = trap_FS_GetFileList( "scripts", ".level", dirlist, sizeof(dirlist) );
-ADDRGP4 $296
+;448:    }
+LABELV $296
+line 451
+;449:
+;450:    // get all levels from .level files
+;451:    numdirs = trap_FS_GetFileList( "scripts", ".level", dirlist, sizeof(dirlist) );
+ADDRGP4 $298
 ARGP4
-ADDRGP4 $297
+ADDRGP4 $299
 ARGP4
 ADDRLP4 1048
 ARGP4
@@ -2499,21 +2515,21 @@ ADDRLP4 1044
 ADDRLP4 2352
 INDIRI4
 ASGNI4
-line 449
-;449:	dirptr  = dirlist;
+line 452
+;452:	dirptr  = dirlist;
 ADDRLP4 12
 ADDRLP4 1048
 ASGNP4
-line 450
-;450:	for ( i = 0; i < numdirs; i++, dirptr += dirlen + 1 ) {
+line 453
+;453:	for ( i = 0; i < numdirs; i++, dirptr += dirlen + 1 ) {
 ADDRLP4 0
 CNSTI4 0
 ASGNI4
-ADDRGP4 $301
+ADDRGP4 $303
 JUMPV
-LABELV $298
-line 451
-;451:		dirlen = strlen( dirptr );
+LABELV $300
+line 454
+;454:		dirlen = strlen( dirptr );
 ADDRLP4 12
 INDIRP4
 ARGP4
@@ -2525,17 +2541,17 @@ ADDRLP4 1040
 ADDRLP4 2356
 INDIRI4
 ASGNI4
-line 452
-;452:		strcpy( filename, "scripts/" );
+line 455
+;455:		strcpy( filename, "scripts/" );
 ADDRLP4 16
 ARGP4
-ADDRGP4 $302
+ADDRGP4 $304
 ARGP4
 ADDRGP4 strcpy
 CALLI4
 pop
-line 453
-;453:		strcat( filename, dirptr );
+line 456
+;456:		strcat( filename, dirptr );
 ADDRLP4 16
 ARGP4
 ADDRLP4 12
@@ -2544,17 +2560,17 @@ ARGP4
 ADDRGP4 strcat
 CALLI4
 pop
-line 454
-;454:		SG_LoadLevelsFromFile( filename );
+line 457
+;457:		SG_LoadLevelsFromFile( filename );
 ADDRLP4 16
 ARGP4
 ADDRGP4 SG_LoadLevelsFromFile
 CALLV
 pop
-line 455
-;455:	}
-LABELV $299
-line 450
+line 458
+;458:	}
+LABELV $301
+line 453
 ADDRLP4 0
 ADDRLP4 0
 INDIRI4
@@ -2570,16 +2586,16 @@ ADDRLP4 12
 INDIRP4
 ADDP4
 ASGNP4
-LABELV $301
+LABELV $303
 ADDRLP4 0
 INDIRI4
 ADDRLP4 1044
 INDIRI4
-LTI4 $298
-line 457
-;456:
-;457:	SG_Printf( "%i levels parsed.\n", sg.numLevels);
-ADDRGP4 $303
+LTI4 $300
+line 460
+;459:
+;460:	SG_Printf( "%i levels parsed.\n", sg.numLevels);
+ADDRGP4 $305
 ARGP4
 ADDRGP4 sg+2220
 INDIRI4
@@ -2587,8 +2603,8 @@ ARGI4
 ADDRGP4 SG_Printf
 CALLV
 pop
-line 458
-;458:	if ( SG_OutOfMemory() ) {
+line 461
+;461:	if ( SG_OutOfMemory() ) {
 ADDRLP4 2356
 ADDRGP4 SG_OutOfMemory
 CALLI4
@@ -2596,29 +2612,29 @@ ASGNI4
 ADDRLP4 2356
 INDIRI4
 CNSTI4 0
-EQI4 $305
-line 459
-;459:        trap_Error( COLOR_RED "ERROR: not anough memory in pool to load all levels" );
-ADDRGP4 $307
+EQI4 $307
+line 462
+;462:        trap_Error( COLOR_RED "ERROR: not anough memory in pool to load all levels" );
+ADDRGP4 $309
 ARGP4
 ADDRGP4 trap_Error
 CALLV
 pop
-line 460
-;460:    }
-LABELV $305
 line 463
-;461:
-;462:	// set initial numbers
-;463:	for ( i = 0; i < sg.numLevels; i++ ) {
+;463:    }
+LABELV $307
+line 466
+;464:
+;465:	// set initial numbers
+;466:	for ( i = 0; i < sg.numLevels; i++ ) {
 ADDRLP4 0
 CNSTI4 0
 ASGNI4
-ADDRGP4 $311
+ADDRGP4 $313
 JUMPV
-LABELV $308
-line 464
-;464:		Info_SetValueForKey( sg_levelInfos[i], "num", va( "%i", i ) );
+LABELV $310
+line 467
+;467:		Info_SetValueForKey( sg_levelInfos[i], "num", va( "%i", i ) );
 ADDRGP4 $146
 ARGP4
 ADDRLP4 0
@@ -2638,7 +2654,7 @@ INDIRP4
 ARGP4
 CNSTU4 1024
 ARGU4
-ADDRGP4 $313
+ADDRGP4 $315
 ARGP4
 ADDRLP4 2360
 INDIRP4
@@ -2646,26 +2662,26 @@ ARGP4
 ADDRGP4 Info_SetValueForKey_s
 CALLI4
 pop
-line 465
-;465:    }
-LABELV $309
-line 463
+line 468
+;468:    }
+LABELV $311
+line 466
 ADDRLP4 0
 ADDRLP4 0
 INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-LABELV $311
+LABELV $313
 ADDRLP4 0
 INDIRI4
 ADDRGP4 sg+2220
 INDIRI4
-LTI4 $308
-line 468
-;466:
-;467:    // if there are no levels, let it crash
-;468:    sg_levelInfoData = SG_MemAlloc( sizeof(*sg_levelInfoData) * sg.numLevels );
+LTI4 $310
+line 471
+;469:
+;470:    // if there are no levels, let it crash
+;471:    sg_levelInfoData = SG_MemAlloc( sizeof(*sg_levelInfoData) * sg.numLevels );
 ADDRGP4 sg+2220
 INDIRI4
 CVIU4 4
@@ -2681,18 +2697,18 @@ ADDRGP4 sg_levelInfoData
 ADDRLP4 2360
 INDIRP4
 ASGNP4
-line 471
-;469:
-;470:    // load the level information (difficulty, map, etc.)
-;471:    for ( i = 0; i < sg.numLevels; i++ ) {
+line 474
+;472:
+;473:    // load the level information (difficulty, map, etc.)
+;474:    for ( i = 0; i < sg.numLevels; i++ ) {
 ADDRLP4 0
 CNSTI4 0
 ASGNI4
-ADDRGP4 $318
+ADDRGP4 $320
 JUMPV
-LABELV $315
-line 472
-;472:        N_strncpyz( sg_levelInfoData[i].name, Info_ValueForKey( sg_levelInfos[i], "name" ), MAX_NPATH );
+LABELV $317
+line 475
+;475:        N_strncpyz( sg_levelInfoData[i].name, Info_ValueForKey( sg_levelInfos[i], "name" ), MAX_NPATH );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -2725,9 +2741,9 @@ ARGU4
 ADDRGP4 N_strncpyz
 CALLV
 pop
-line 473
-;473:        G_Printf( "Loaded Level %s...\n", sg_levelInfoData[i].name );
-ADDRGP4 $320
+line 476
+;476:        G_Printf( "Loaded Level %s...\n", sg_levelInfoData[i].name );
+ADDRGP4 $322
 ARGP4
 ADDRLP4 0
 INDIRI4
@@ -2742,16 +2758,16 @@ ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 475
-;474:
-;475:        for ( j = 0; j < NUMDIFS; j++ ) {
+line 478
+;477:
+;478:        for ( j = 0; j < NUMDIFS; j++ ) {
 ADDRLP4 4
 CNSTI4 0
 ASGNI4
-LABELV $321
-line 476
-;476:            mapname = Info_ValueForKey( sg_levelInfos[i], va( "mapname_difficulty_%i", j ) );
-ADDRGP4 $325
+LABELV $323
+line 479
+;479:            mapname = Info_ValueForKey( sg_levelInfos[i], va( "mapname_difficulty_%i", j ) );
+ADDRGP4 $327
 ARGP4
 ADDRLP4 4
 INDIRI4
@@ -2779,12 +2795,12 @@ ADDRLP4 8
 ADDRLP4 2372
 INDIRP4
 ASGNP4
-line 477
-;477:            if ( !N_stricmp( mapname, "none" ) ) {
+line 480
+;480:            if ( !N_stricmp( mapname, "none" ) ) {
 ADDRLP4 8
 INDIRP4
 ARGP4
-ADDRGP4 $328
+ADDRGP4 $330
 ARGP4
 ADDRLP4 2376
 ADDRGP4 N_stricmp
@@ -2793,16 +2809,16 @@ ASGNI4
 ADDRLP4 2376
 INDIRI4
 CNSTI4 0
-NEI4 $326
-line 479
-;478:                // map currently doesn't support this difficulty
-;479:                continue;
-ADDRGP4 $322
+NEI4 $328
+line 482
+;481:                // map currently doesn't support this difficulty
+;482:                continue;
+ADDRGP4 $324
 JUMPV
-LABELV $326
-line 481
-;480:            }
-;481:            N_strncpyz( sg_levelInfoData[i].maphandles[j].name, mapname, MAX_NPATH );
+LABELV $328
+line 484
+;483:            }
+;484:            N_strncpyz( sg_levelInfoData[i].maphandles[j].name, mapname, MAX_NPATH );
 ADDRLP4 4
 INDIRI4
 CNSTI4 100
@@ -2826,8 +2842,8 @@ ARGU4
 ADDRGP4 N_strncpyz
 CALLV
 pop
-line 482
-;482:            sg_levelInfoData[i].maphandles[j].handle = G_LoadMap( mapname );
+line 485
+;485:            sg_levelInfoData[i].maphandles[j].handle = G_LoadMap( mapname );
 ADDRLP4 8
 INDIRP4
 ARGP4
@@ -2852,8 +2868,8 @@ ADDP4
 ADDRLP4 2380
 INDIRI4
 ASGNI4
-line 483
-;483:            sg_levelInfoData[i].maphandles[j].difficulty = j;
+line 486
+;486:            sg_levelInfoData[i].maphandles[j].difficulty = j;
 ADDRLP4 4
 INDIRI4
 CNSTI4 100
@@ -2871,8 +2887,8 @@ ADDP4
 ADDRLP4 4
 INDIRI4
 ASGNI4
-line 484
-;484:            if ( sg_levelInfoData[i].maphandles[j].handle == FS_INVALID_HANDLE ) {
+line 487
+;487:            if ( sg_levelInfoData[i].maphandles[j].handle == FS_INVALID_HANDLE ) {
 ADDRLP4 4
 INDIRI4
 CNSTI4 100
@@ -2889,10 +2905,10 @@ CNSTI4 96
 ADDP4
 INDIRI4
 CNSTI4 0
-NEI4 $329
-line 485
-;485:                G_Printf( COLOR_YELLOW "WARNING: failed to load map '%s' for level '%s'\n", mapname, sg_levelInfoData[i].name );
-ADDRGP4 $331
+NEI4 $331
+line 488
+;488:                G_Printf( COLOR_YELLOW "WARNING: failed to load map '%s' for level '%s'\n", mapname, sg_levelInfoData[i].name );
+ADDRGP4 $333
 ARGP4
 ADDRLP4 8
 INDIRP4
@@ -2910,14 +2926,14 @@ ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 486
-;486:                continue;
-LABELV $329
-line 488
-;487:            }
-;488:        }
-LABELV $322
-line 475
+line 489
+;489:                continue;
+LABELV $331
+line 491
+;490:            }
+;491:        }
+LABELV $324
+line 478
 ADDRLP4 4
 ADDRLP4 4
 INDIRI4
@@ -2927,10 +2943,10 @@ ASGNI4
 ADDRLP4 4
 INDIRI4
 CNSTI4 6
-LTI4 $321
-line 490
-;489:
-;490:        sg_levelInfoData[i].index = i;
+LTI4 $323
+line 493
+;492:
+;493:        sg_levelInfoData[i].index = i;
 ADDRLP4 0
 INDIRI4
 CNSTI4 788
@@ -2943,9 +2959,9 @@ ADDP4
 ADDRLP4 0
 INDIRI4
 ASGNI4
-line 492
-;491:        
-;492:        sg_levelInfoData[i].a.rank = LEVEL_RANK_A;
+line 495
+;494:        
+;495:        sg_levelInfoData[i].a.rank = LEVEL_RANK_A;
 ADDRLP4 0
 INDIRI4
 CNSTI4 788
@@ -2957,8 +2973,8 @@ CNSTI4 668
 ADDP4
 CNSTI4 0
 ASGNI4
-line 493
-;493:        sg_levelInfoData[i].a.minKills = atoi( Info_ValueForKey( sg_levelInfos[i], "rankA_minKills" ) );
+line 496
+;496:        sg_levelInfoData[i].a.minKills = atoi( Info_ValueForKey( sg_levelInfos[i], "rankA_minKills" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -2967,7 +2983,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $332
+ADDRGP4 $334
 ARGP4
 ADDRLP4 2376
 ADDRGP4 Info_ValueForKey
@@ -2992,8 +3008,8 @@ ADDP4
 ADDRLP4 2380
 INDIRI4
 ASGNI4
-line 494
-;494:        sg_levelInfoData[i].a.minStyle = atoi( Info_ValueForKey( sg_levelInfos[i], "rankA_minStyle" ) );
+line 497
+;497:        sg_levelInfoData[i].a.minStyle = atoi( Info_ValueForKey( sg_levelInfos[i], "rankA_minStyle" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -3002,7 +3018,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $333
+ADDRGP4 $335
 ARGP4
 ADDRLP4 2388
 ADDRGP4 Info_ValueForKey
@@ -3027,8 +3043,8 @@ ADDP4
 ADDRLP4 2392
 INDIRI4
 ASGNI4
-line 495
-;495:        sg_levelInfoData[i].a.maxTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankA_maxTime" ) );
+line 498
+;498:        sg_levelInfoData[i].a.maxTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankA_maxTime" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -3037,7 +3053,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $334
+ADDRGP4 $336
 ARGP4
 ADDRLP4 2400
 ADDRGP4 Info_ValueForKey
@@ -3062,8 +3078,8 @@ ADDP4
 ADDRLP4 2404
 INDIRI4
 ASGNI4
-line 496
-;496:        sg_levelInfoData[i].a.maxDeaths = atoi( Info_ValueForKey( sg_levelInfos[i], "rankA_maxDeaths" ) );
+line 499
+;499:        sg_levelInfoData[i].a.maxDeaths = atoi( Info_ValueForKey( sg_levelInfos[i], "rankA_maxDeaths" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -3072,7 +3088,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $335
+ADDRGP4 $337
 ARGP4
 ADDRLP4 2412
 ADDRGP4 Info_ValueForKey
@@ -3097,8 +3113,8 @@ ADDP4
 ADDRLP4 2416
 INDIRI4
 ASGNI4
-line 497
-;497:        sg_levelInfoData[i].a.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "rankA_cleanRunRequired" ) );
+line 500
+;500:        sg_levelInfoData[i].a.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "rankA_cleanRunRequired" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -3107,7 +3123,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $336
+ADDRGP4 $338
 ARGP4
 ADDRLP4 2424
 ADDRGP4 Info_ValueForKey
@@ -3132,9 +3148,9 @@ ADDP4
 ADDRLP4 2428
 INDIRI4
 ASGNI4
-line 499
-;498:
-;499:        sg_levelInfoData[i].b.rank = LEVEL_RANK_B;
+line 502
+;501:
+;502:        sg_levelInfoData[i].b.rank = LEVEL_RANK_B;
 ADDRLP4 0
 INDIRI4
 CNSTI4 788
@@ -3146,8 +3162,8 @@ CNSTI4 692
 ADDP4
 CNSTI4 1
 ASGNI4
-line 500
-;500:        sg_levelInfoData[i].b.minKills = atoi( Info_ValueForKey( sg_levelInfos[i], "rankB_minKills" ) );
+line 503
+;503:        sg_levelInfoData[i].b.minKills = atoi( Info_ValueForKey( sg_levelInfos[i], "rankB_minKills" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -3156,7 +3172,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $337
+ADDRGP4 $339
 ARGP4
 ADDRLP4 2436
 ADDRGP4 Info_ValueForKey
@@ -3181,8 +3197,8 @@ ADDP4
 ADDRLP4 2440
 INDIRI4
 ASGNI4
-line 501
-;501:        sg_levelInfoData[i].b.minStyle = atoi( Info_ValueForKey( sg_levelInfos[i], "rankB_minStyle" ) );
+line 504
+;504:        sg_levelInfoData[i].b.minStyle = atoi( Info_ValueForKey( sg_levelInfos[i], "rankB_minStyle" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -3191,7 +3207,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $338
+ADDRGP4 $340
 ARGP4
 ADDRLP4 2448
 ADDRGP4 Info_ValueForKey
@@ -3216,8 +3232,8 @@ ADDP4
 ADDRLP4 2452
 INDIRI4
 ASGNI4
-line 502
-;502:        sg_levelInfoData[i].b.maxTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankB_maxTime" ) );
+line 505
+;505:        sg_levelInfoData[i].b.maxTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankB_maxTime" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -3226,7 +3242,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $339
+ADDRGP4 $341
 ARGP4
 ADDRLP4 2460
 ADDRGP4 Info_ValueForKey
@@ -3251,8 +3267,8 @@ ADDP4
 ADDRLP4 2464
 INDIRI4
 ASGNI4
-line 503
-;503:        sg_levelInfoData[i].b.maxDeaths = atoi( Info_ValueForKey( sg_levelInfos[i], "rankB_maxDeaths" ) );
+line 506
+;506:        sg_levelInfoData[i].b.maxDeaths = atoi( Info_ValueForKey( sg_levelInfos[i], "rankB_maxDeaths" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -3261,7 +3277,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $340
+ADDRGP4 $342
 ARGP4
 ADDRLP4 2472
 ADDRGP4 Info_ValueForKey
@@ -3286,8 +3302,8 @@ ADDP4
 ADDRLP4 2476
 INDIRI4
 ASGNI4
-line 504
-;504:        sg_levelInfoData[i].b.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "rankB_cleanRunRequired" ) );
+line 507
+;507:        sg_levelInfoData[i].b.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "rankB_cleanRunRequired" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -3296,7 +3312,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $341
+ADDRGP4 $343
 ARGP4
 ADDRLP4 2484
 ADDRGP4 Info_ValueForKey
@@ -3321,9 +3337,9 @@ ADDP4
 ADDRLP4 2488
 INDIRI4
 ASGNI4
-line 506
-;505:
-;506:        sg_levelInfoData[i].c.rank = LEVEL_RANK_C;
+line 509
+;508:
+;509:        sg_levelInfoData[i].c.rank = LEVEL_RANK_C;
 ADDRLP4 0
 INDIRI4
 CNSTI4 788
@@ -3335,8 +3351,8 @@ CNSTI4 716
 ADDP4
 CNSTI4 2
 ASGNI4
-line 507
-;507:        sg_levelInfoData[i].c.minKills = atoi( Info_ValueForKey( sg_levelInfos[i], "rankC_minKills" ) );
+line 510
+;510:        sg_levelInfoData[i].c.minKills = atoi( Info_ValueForKey( sg_levelInfos[i], "rankC_minKills" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -3345,7 +3361,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $342
+ADDRGP4 $344
 ARGP4
 ADDRLP4 2496
 ADDRGP4 Info_ValueForKey
@@ -3370,8 +3386,8 @@ ADDP4
 ADDRLP4 2500
 INDIRI4
 ASGNI4
-line 508
-;508:        sg_levelInfoData[i].c.minStyle = atoi( Info_ValueForKey( sg_levelInfos[i], "rankC_minStyle" ) );
+line 511
+;511:        sg_levelInfoData[i].c.minStyle = atoi( Info_ValueForKey( sg_levelInfos[i], "rankC_minStyle" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -3380,7 +3396,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $343
+ADDRGP4 $345
 ARGP4
 ADDRLP4 2508
 ADDRGP4 Info_ValueForKey
@@ -3405,8 +3421,8 @@ ADDP4
 ADDRLP4 2512
 INDIRI4
 ASGNI4
-line 509
-;509:        sg_levelInfoData[i].c.maxTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankC_maxTime" ) );
+line 512
+;512:        sg_levelInfoData[i].c.maxTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankC_maxTime" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -3415,7 +3431,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $344
+ADDRGP4 $346
 ARGP4
 ADDRLP4 2520
 ADDRGP4 Info_ValueForKey
@@ -3440,8 +3456,8 @@ ADDP4
 ADDRLP4 2524
 INDIRI4
 ASGNI4
-line 510
-;510:        sg_levelInfoData[i].c.maxDeaths = atoi( Info_ValueForKey( sg_levelInfos[i], "rankC_maxDeaths" ) );
+line 513
+;513:        sg_levelInfoData[i].c.maxDeaths = atoi( Info_ValueForKey( sg_levelInfos[i], "rankC_maxDeaths" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -3450,7 +3466,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $345
+ADDRGP4 $347
 ARGP4
 ADDRLP4 2532
 ADDRGP4 Info_ValueForKey
@@ -3475,8 +3491,8 @@ ADDP4
 ADDRLP4 2536
 INDIRI4
 ASGNI4
-line 511
-;511:        sg_levelInfoData[i].c.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "rankC_cleanRunRequired" ) );
+line 514
+;514:        sg_levelInfoData[i].c.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "rankC_cleanRunRequired" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -3485,7 +3501,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $346
+ADDRGP4 $348
 ARGP4
 ADDRLP4 2544
 ADDRGP4 Info_ValueForKey
@@ -3510,9 +3526,9 @@ ADDP4
 ADDRLP4 2548
 INDIRI4
 ASGNI4
-line 513
-;512:
-;513:        sg_levelInfoData[i].d.rank = LEVEL_RANK_D;
+line 516
+;515:
+;516:        sg_levelInfoData[i].d.rank = LEVEL_RANK_D;
 ADDRLP4 0
 INDIRI4
 CNSTI4 788
@@ -3524,8 +3540,8 @@ CNSTI4 740
 ADDP4
 CNSTI4 3
 ASGNI4
-line 514
-;514:        sg_levelInfoData[i].d.minKills = atoi( Info_ValueForKey( sg_levelInfos[i], "rankD_minKills" ) );
+line 517
+;517:        sg_levelInfoData[i].d.minKills = atoi( Info_ValueForKey( sg_levelInfos[i], "rankD_minKills" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -3534,7 +3550,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $347
+ADDRGP4 $349
 ARGP4
 ADDRLP4 2556
 ADDRGP4 Info_ValueForKey
@@ -3559,8 +3575,8 @@ ADDP4
 ADDRLP4 2560
 INDIRI4
 ASGNI4
-line 515
-;515:        sg_levelInfoData[i].d.minStyle = atoi( Info_ValueForKey( sg_levelInfos[i], "rankD_minStyle" ) );
+line 518
+;518:        sg_levelInfoData[i].d.minStyle = atoi( Info_ValueForKey( sg_levelInfos[i], "rankD_minStyle" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -3569,7 +3585,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $348
+ADDRGP4 $350
 ARGP4
 ADDRLP4 2568
 ADDRGP4 Info_ValueForKey
@@ -3594,8 +3610,8 @@ ADDP4
 ADDRLP4 2572
 INDIRI4
 ASGNI4
-line 516
-;516:        sg_levelInfoData[i].d.maxTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankD_maxTime" ) );
+line 519
+;519:        sg_levelInfoData[i].d.maxTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankD_maxTime" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -3604,7 +3620,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $349
+ADDRGP4 $351
 ARGP4
 ADDRLP4 2580
 ADDRGP4 Info_ValueForKey
@@ -3629,8 +3645,8 @@ ADDP4
 ADDRLP4 2584
 INDIRI4
 ASGNI4
-line 517
-;517:        sg_levelInfoData[i].d.maxDeaths = atoi( Info_ValueForKey( sg_levelInfos[i], "rankD_maxDeaths" ) );
+line 520
+;520:        sg_levelInfoData[i].d.maxDeaths = atoi( Info_ValueForKey( sg_levelInfos[i], "rankD_maxDeaths" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -3639,7 +3655,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $350
+ADDRGP4 $352
 ARGP4
 ADDRLP4 2592
 ADDRGP4 Info_ValueForKey
@@ -3664,8 +3680,8 @@ ADDP4
 ADDRLP4 2596
 INDIRI4
 ASGNI4
-line 518
-;518:        sg_levelInfoData[i].d.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "rankD_cleanRunRequired" ) );
+line 521
+;521:        sg_levelInfoData[i].d.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "rankD_cleanRunRequired" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -3674,7 +3690,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $351
+ADDRGP4 $353
 ARGP4
 ADDRLP4 2604
 ADDRGP4 Info_ValueForKey
@@ -3699,9 +3715,9 @@ ADDP4
 ADDRLP4 2608
 INDIRI4
 ASGNI4
-line 520
-;519:
-;520:        sg_levelInfoData[i].f.rank = LEVEL_RANK_WERE_U_BOTTING;
+line 523
+;522:
+;523:        sg_levelInfoData[i].f.rank = LEVEL_RANK_WERE_U_BOTTING;
 ADDRLP4 0
 INDIRI4
 CNSTI4 788
@@ -3713,8 +3729,8 @@ CNSTI4 764
 ADDP4
 CNSTI4 4
 ASGNI4
-line 521
-;521:        sg_levelInfoData[i].f.minKills = atoi( Info_ValueForKey( sg_levelInfos[i], "rankF_minKills" ) );
+line 524
+;524:        sg_levelInfoData[i].f.minKills = atoi( Info_ValueForKey( sg_levelInfos[i], "rankF_minKills" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -3723,7 +3739,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $352
+ADDRGP4 $354
 ARGP4
 ADDRLP4 2616
 ADDRGP4 Info_ValueForKey
@@ -3748,8 +3764,8 @@ ADDP4
 ADDRLP4 2620
 INDIRI4
 ASGNI4
-line 522
-;522:        sg_levelInfoData[i].f.minStyle = atoi( Info_ValueForKey( sg_levelInfos[i], "rankF_minStyle" ) );
+line 525
+;525:        sg_levelInfoData[i].f.minStyle = atoi( Info_ValueForKey( sg_levelInfos[i], "rankF_minStyle" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -3758,7 +3774,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $353
+ADDRGP4 $355
 ARGP4
 ADDRLP4 2628
 ADDRGP4 Info_ValueForKey
@@ -3783,8 +3799,8 @@ ADDP4
 ADDRLP4 2632
 INDIRI4
 ASGNI4
-line 523
-;523:        sg_levelInfoData[i].f.maxTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankF_maxTime" ) );
+line 526
+;526:        sg_levelInfoData[i].f.maxTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankF_maxTime" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -3793,7 +3809,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $354
+ADDRGP4 $356
 ARGP4
 ADDRLP4 2640
 ADDRGP4 Info_ValueForKey
@@ -3818,8 +3834,8 @@ ADDP4
 ADDRLP4 2644
 INDIRI4
 ASGNI4
-line 524
-;524:        sg_levelInfoData[i].f.maxDeaths = atoi( Info_ValueForKey( sg_levelInfos[i], "rankF_maxDeaths" ) );
+line 527
+;527:        sg_levelInfoData[i].f.maxDeaths = atoi( Info_ValueForKey( sg_levelInfos[i], "rankF_maxDeaths" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -3828,7 +3844,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $355
+ADDRGP4 $357
 ARGP4
 ADDRLP4 2652
 ADDRGP4 Info_ValueForKey
@@ -3853,8 +3869,8 @@ ADDP4
 ADDRLP4 2656
 INDIRI4
 ASGNI4
-line 525
-;525:        sg_levelInfoData[i].f.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "rankF_cleanRunRequired" ) );
+line 528
+;528:        sg_levelInfoData[i].f.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "rankF_cleanRunRequired" ) );
 ADDRLP4 0
 INDIRI4
 CNSTI4 2
@@ -3863,7 +3879,7 @@ ADDRGP4 sg_levelInfos
 ADDP4
 INDIRP4
 ARGP4
-ADDRGP4 $356
+ADDRGP4 $358
 ARGP4
 ADDRLP4 2664
 ADDRGP4 Info_ValueForKey
@@ -3888,25 +3904,25 @@ ADDP4
 ADDRLP4 2668
 INDIRI4
 ASGNI4
-line 526
-;526:    }
-LABELV $316
-line 471
+line 529
+;529:    }
+LABELV $318
+line 474
 ADDRLP4 0
 ADDRLP4 0
 INDIRI4
 CNSTI4 1
 ADDI4
 ASGNI4
-LABELV $318
+LABELV $320
 ADDRLP4 0
 INDIRI4
 ADDRGP4 sg+2220
 INDIRI4
-LTI4 $315
-line 527
-;527:}
-LABELV $289
+LTI4 $317
+line 530
+;530:}
+LABELV $291
 endproc SG_LoadLevels 2672 16
 import atoi
 import strcat
@@ -4437,7 +4453,7 @@ import Com_SkipTokens
 import Com_snprintf
 lit
 align 1
-LABELV $356
+LABELV $358
 byte 1 114
 byte 1 97
 byte 1 110
@@ -4460,6 +4476,40 @@ byte 1 105
 byte 1 114
 byte 1 101
 byte 1 100
+byte 1 0
+align 1
+LABELV $357
+byte 1 114
+byte 1 97
+byte 1 110
+byte 1 107
+byte 1 70
+byte 1 95
+byte 1 109
+byte 1 97
+byte 1 120
+byte 1 68
+byte 1 101
+byte 1 97
+byte 1 116
+byte 1 104
+byte 1 115
+byte 1 0
+align 1
+LABELV $356
+byte 1 114
+byte 1 97
+byte 1 110
+byte 1 107
+byte 1 70
+byte 1 95
+byte 1 109
+byte 1 97
+byte 1 120
+byte 1 84
+byte 1 105
+byte 1 109
+byte 1 101
 byte 1 0
 align 1
 LABELV $355
@@ -4470,14 +4520,13 @@ byte 1 107
 byte 1 70
 byte 1 95
 byte 1 109
-byte 1 97
-byte 1 120
-byte 1 68
-byte 1 101
-byte 1 97
+byte 1 105
+byte 1 110
+byte 1 83
 byte 1 116
-byte 1 104
-byte 1 115
+byte 1 121
+byte 1 108
+byte 1 101
 byte 1 0
 align 1
 LABELV $354
@@ -4488,12 +4537,13 @@ byte 1 107
 byte 1 70
 byte 1 95
 byte 1 109
-byte 1 97
-byte 1 120
-byte 1 84
 byte 1 105
-byte 1 109
-byte 1 101
+byte 1 110
+byte 1 75
+byte 1 105
+byte 1 108
+byte 1 108
+byte 1 115
 byte 1 0
 align 1
 LABELV $353
@@ -4501,16 +4551,24 @@ byte 1 114
 byte 1 97
 byte 1 110
 byte 1 107
-byte 1 70
+byte 1 68
 byte 1 95
-byte 1 109
-byte 1 105
-byte 1 110
-byte 1 83
-byte 1 116
-byte 1 121
+byte 1 99
 byte 1 108
 byte 1 101
+byte 1 97
+byte 1 110
+byte 1 82
+byte 1 117
+byte 1 110
+byte 1 82
+byte 1 101
+byte 1 113
+byte 1 117
+byte 1 105
+byte 1 114
+byte 1 101
+byte 1 100
 byte 1 0
 align 1
 LABELV $352
@@ -4518,15 +4576,16 @@ byte 1 114
 byte 1 97
 byte 1 110
 byte 1 107
-byte 1 70
+byte 1 68
 byte 1 95
 byte 1 109
-byte 1 105
-byte 1 110
-byte 1 75
-byte 1 105
-byte 1 108
-byte 1 108
+byte 1 97
+byte 1 120
+byte 1 68
+byte 1 101
+byte 1 97
+byte 1 116
+byte 1 104
 byte 1 115
 byte 1 0
 align 1
@@ -4537,22 +4596,13 @@ byte 1 110
 byte 1 107
 byte 1 68
 byte 1 95
-byte 1 99
-byte 1 108
-byte 1 101
+byte 1 109
 byte 1 97
-byte 1 110
-byte 1 82
-byte 1 117
-byte 1 110
-byte 1 82
-byte 1 101
-byte 1 113
-byte 1 117
+byte 1 120
+byte 1 84
 byte 1 105
-byte 1 114
+byte 1 109
 byte 1 101
-byte 1 100
 byte 1 0
 align 1
 LABELV $350
@@ -4563,14 +4613,13 @@ byte 1 107
 byte 1 68
 byte 1 95
 byte 1 109
-byte 1 97
-byte 1 120
-byte 1 68
-byte 1 101
-byte 1 97
+byte 1 105
+byte 1 110
+byte 1 83
 byte 1 116
-byte 1 104
-byte 1 115
+byte 1 121
+byte 1 108
+byte 1 101
 byte 1 0
 align 1
 LABELV $349
@@ -4581,12 +4630,13 @@ byte 1 107
 byte 1 68
 byte 1 95
 byte 1 109
-byte 1 97
-byte 1 120
-byte 1 84
 byte 1 105
-byte 1 109
-byte 1 101
+byte 1 110
+byte 1 75
+byte 1 105
+byte 1 108
+byte 1 108
+byte 1 115
 byte 1 0
 align 1
 LABELV $348
@@ -4594,16 +4644,24 @@ byte 1 114
 byte 1 97
 byte 1 110
 byte 1 107
-byte 1 68
+byte 1 67
 byte 1 95
-byte 1 109
-byte 1 105
-byte 1 110
-byte 1 83
-byte 1 116
-byte 1 121
+byte 1 99
 byte 1 108
 byte 1 101
+byte 1 97
+byte 1 110
+byte 1 82
+byte 1 117
+byte 1 110
+byte 1 82
+byte 1 101
+byte 1 113
+byte 1 117
+byte 1 105
+byte 1 114
+byte 1 101
+byte 1 100
 byte 1 0
 align 1
 LABELV $347
@@ -4611,15 +4669,16 @@ byte 1 114
 byte 1 97
 byte 1 110
 byte 1 107
-byte 1 68
+byte 1 67
 byte 1 95
 byte 1 109
-byte 1 105
-byte 1 110
-byte 1 75
-byte 1 105
-byte 1 108
-byte 1 108
+byte 1 97
+byte 1 120
+byte 1 68
+byte 1 101
+byte 1 97
+byte 1 116
+byte 1 104
 byte 1 115
 byte 1 0
 align 1
@@ -4630,22 +4689,13 @@ byte 1 110
 byte 1 107
 byte 1 67
 byte 1 95
-byte 1 99
-byte 1 108
-byte 1 101
+byte 1 109
 byte 1 97
-byte 1 110
-byte 1 82
-byte 1 117
-byte 1 110
-byte 1 82
-byte 1 101
-byte 1 113
-byte 1 117
+byte 1 120
+byte 1 84
 byte 1 105
-byte 1 114
+byte 1 109
 byte 1 101
-byte 1 100
 byte 1 0
 align 1
 LABELV $345
@@ -4656,14 +4706,13 @@ byte 1 107
 byte 1 67
 byte 1 95
 byte 1 109
-byte 1 97
-byte 1 120
-byte 1 68
-byte 1 101
-byte 1 97
+byte 1 105
+byte 1 110
+byte 1 83
 byte 1 116
-byte 1 104
-byte 1 115
+byte 1 121
+byte 1 108
+byte 1 101
 byte 1 0
 align 1
 LABELV $344
@@ -4674,12 +4723,13 @@ byte 1 107
 byte 1 67
 byte 1 95
 byte 1 109
-byte 1 97
-byte 1 120
-byte 1 84
 byte 1 105
-byte 1 109
-byte 1 101
+byte 1 110
+byte 1 75
+byte 1 105
+byte 1 108
+byte 1 108
+byte 1 115
 byte 1 0
 align 1
 LABELV $343
@@ -4687,16 +4737,24 @@ byte 1 114
 byte 1 97
 byte 1 110
 byte 1 107
-byte 1 67
+byte 1 66
 byte 1 95
-byte 1 109
-byte 1 105
-byte 1 110
-byte 1 83
-byte 1 116
-byte 1 121
+byte 1 99
 byte 1 108
 byte 1 101
+byte 1 97
+byte 1 110
+byte 1 82
+byte 1 117
+byte 1 110
+byte 1 82
+byte 1 101
+byte 1 113
+byte 1 117
+byte 1 105
+byte 1 114
+byte 1 101
+byte 1 100
 byte 1 0
 align 1
 LABELV $342
@@ -4704,15 +4762,16 @@ byte 1 114
 byte 1 97
 byte 1 110
 byte 1 107
-byte 1 67
+byte 1 66
 byte 1 95
 byte 1 109
-byte 1 105
-byte 1 110
-byte 1 75
-byte 1 105
-byte 1 108
-byte 1 108
+byte 1 97
+byte 1 120
+byte 1 68
+byte 1 101
+byte 1 97
+byte 1 116
+byte 1 104
 byte 1 115
 byte 1 0
 align 1
@@ -4723,22 +4782,13 @@ byte 1 110
 byte 1 107
 byte 1 66
 byte 1 95
-byte 1 99
-byte 1 108
-byte 1 101
+byte 1 109
 byte 1 97
-byte 1 110
-byte 1 82
-byte 1 117
-byte 1 110
-byte 1 82
-byte 1 101
-byte 1 113
-byte 1 117
+byte 1 120
+byte 1 84
 byte 1 105
-byte 1 114
+byte 1 109
 byte 1 101
-byte 1 100
 byte 1 0
 align 1
 LABELV $340
@@ -4749,40 +4799,6 @@ byte 1 107
 byte 1 66
 byte 1 95
 byte 1 109
-byte 1 97
-byte 1 120
-byte 1 68
-byte 1 101
-byte 1 97
-byte 1 116
-byte 1 104
-byte 1 115
-byte 1 0
-align 1
-LABELV $339
-byte 1 114
-byte 1 97
-byte 1 110
-byte 1 107
-byte 1 66
-byte 1 95
-byte 1 109
-byte 1 97
-byte 1 120
-byte 1 84
-byte 1 105
-byte 1 109
-byte 1 101
-byte 1 0
-align 1
-LABELV $338
-byte 1 114
-byte 1 97
-byte 1 110
-byte 1 107
-byte 1 66
-byte 1 95
-byte 1 109
 byte 1 105
 byte 1 110
 byte 1 83
@@ -4792,7 +4808,7 @@ byte 1 108
 byte 1 101
 byte 1 0
 align 1
-LABELV $337
+LABELV $339
 byte 1 114
 byte 1 97
 byte 1 110
@@ -4809,7 +4825,7 @@ byte 1 108
 byte 1 115
 byte 1 0
 align 1
-LABELV $336
+LABELV $338
 byte 1 114
 byte 1 97
 byte 1 110
@@ -4834,7 +4850,7 @@ byte 1 101
 byte 1 100
 byte 1 0
 align 1
-LABELV $335
+LABELV $337
 byte 1 114
 byte 1 97
 byte 1 110
@@ -4852,7 +4868,7 @@ byte 1 104
 byte 1 115
 byte 1 0
 align 1
-LABELV $334
+LABELV $336
 byte 1 114
 byte 1 97
 byte 1 110
@@ -4868,7 +4884,7 @@ byte 1 109
 byte 1 101
 byte 1 0
 align 1
-LABELV $333
+LABELV $335
 byte 1 114
 byte 1 97
 byte 1 110
@@ -4885,7 +4901,7 @@ byte 1 108
 byte 1 101
 byte 1 0
 align 1
-LABELV $332
+LABELV $334
 byte 1 114
 byte 1 97
 byte 1 110
@@ -4902,7 +4918,7 @@ byte 1 108
 byte 1 115
 byte 1 0
 align 1
-LABELV $331
+LABELV $333
 byte 1 94
 byte 1 51
 byte 1 87
@@ -4955,14 +4971,14 @@ byte 1 39
 byte 1 10
 byte 1 0
 align 1
-LABELV $328
+LABELV $330
 byte 1 110
 byte 1 111
 byte 1 110
 byte 1 101
 byte 1 0
 align 1
-LABELV $325
+LABELV $327
 byte 1 109
 byte 1 97
 byte 1 112
@@ -4986,7 +5002,7 @@ byte 1 37
 byte 1 105
 byte 1 0
 align 1
-LABELV $320
+LABELV $322
 byte 1 76
 byte 1 111
 byte 1 97
@@ -5008,13 +5024,13 @@ byte 1 46
 byte 1 10
 byte 1 0
 align 1
-LABELV $313
+LABELV $315
 byte 1 110
 byte 1 117
 byte 1 109
 byte 1 0
 align 1
-LABELV $307
+LABELV $309
 byte 1 94
 byte 1 49
 byte 1 69
@@ -5070,7 +5086,7 @@ byte 1 108
 byte 1 115
 byte 1 0
 align 1
-LABELV $303
+LABELV $305
 byte 1 37
 byte 1 105
 byte 1 32
@@ -5091,7 +5107,7 @@ byte 1 46
 byte 1 10
 byte 1 0
 align 1
-LABELV $302
+LABELV $304
 byte 1 115
 byte 1 99
 byte 1 114
@@ -5102,7 +5118,7 @@ byte 1 115
 byte 1 47
 byte 1 0
 align 1
-LABELV $297
+LABELV $299
 byte 1 46
 byte 1 108
 byte 1 101
@@ -5111,7 +5127,7 @@ byte 1 101
 byte 1 108
 byte 1 0
 align 1
-LABELV $296
+LABELV $298
 byte 1 115
 byte 1 99
 byte 1 114
@@ -5121,7 +5137,7 @@ byte 1 116
 byte 1 115
 byte 1 0
 align 1
-LABELV $295
+LABELV $297
 byte 1 115
 byte 1 99
 byte 1 114
@@ -5142,10 +5158,10 @@ byte 1 120
 byte 1 116
 byte 1 0
 align 1
-LABELV $292
+LABELV $294
 byte 1 0
 align 1
-LABELV $291
+LABELV $293
 byte 1 115
 byte 1 103
 byte 1 95
@@ -5161,7 +5177,7 @@ byte 1 108
 byte 1 101
 byte 1 0
 align 1
-LABELV $285
+LABELV $287
 byte 1 94
 byte 1 49
 byte 1 69
@@ -5216,7 +5232,7 @@ byte 1 37
 byte 1 105
 byte 1 0
 align 1
-LABELV $282
+LABELV $284
 byte 1 94
 byte 1 49
 byte 1 69
@@ -5247,7 +5263,7 @@ byte 1 115
 byte 1 10
 byte 1 0
 align 1
-LABELV $276
+LABELV $278
 byte 1 92
 byte 1 110
 byte 1 117
@@ -5255,7 +5271,7 @@ byte 1 109
 byte 1 92
 byte 1 0
 align 1
-LABELV $275
+LABELV $277
 byte 1 60
 byte 1 78
 byte 1 85
@@ -5264,7 +5280,7 @@ byte 1 76
 byte 1 62
 byte 1 0
 align 1
-LABELV $270
+LABELV $272
 byte 1 117
 byte 1 110
 byte 1 101
@@ -5295,7 +5311,7 @@ byte 1 101
 byte 1 10
 byte 1 0
 align 1
-LABELV $264
+LABELV $266
 byte 1 109
 byte 1 97
 byte 1 120
@@ -5317,7 +5333,7 @@ byte 1 100
 byte 1 10
 byte 1 0
 align 1
-LABELV $261
+LABELV $263
 byte 1 109
 byte 1 105
 byte 1 115

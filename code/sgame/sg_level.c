@@ -357,9 +357,12 @@ int SG_ParseInfos( char *buf, int max, char **infos )
     count = 0;
 
     while ( 1 ) {
-        token = COM_Parse( text );
+        token = COM_ParseExt( text, qtrue );
         if ( !token[0] ) {
             break;
+        }
+        if ( token[0] == ' ' ) {
+            continue;
         }
         if ( token[0] != '{' ) {
             G_Printf( "missing '{' in info file\n" );
