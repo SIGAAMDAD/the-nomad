@@ -33,16 +33,23 @@ typedef struct {
     rank_t rank;
     int minStyle;
     int minKills;
-    int minTime;
+    int maxTime;
 
     qboolean requireClean; // no warcrimes, no innocent deaths, etc. required for perfect score
 } levelRank_t;
 
+typedef struct {
+    levelstats_t stats;
+
+    char name[MAX_NPATH];
+    gamedif_t difficulty;
+    nhandle_t handle;
+} levelMap_t;
+
 typedef struct levelInfo_s
 {
+    levelMap_t maphandles[NUMDIFS];
     char name[MAX_NPATH];
-    nhandle_t maphandle;
-    gamedif_t difficulty;
 
     // ranking info
     levelRank_t a;
@@ -97,11 +104,13 @@ qboolean SG_StartLevel( void )
 
     G_Printf( "Starting up level %s...\n", info->name );
 
+    // check if there's an existing save for this level
+
     // clear the old level data
     memset( &level, 0, sizeof(level) );
     memset( &sg.mapInfo, 0, sizeof(sg.mapInfo) );
 
-    G_SetActiveMap( info->maphandle, &sg.mapInfo, sg.soundBits, &sg.activeEnts );
+    G_SetActiveMap( info->maphandle[ sg_difficulty.i ], &sg.mapInfo, sg.soundBits, &sg.activeEnts );
 
     SG_InitPlayer();
 
@@ -135,11 +144,27 @@ qboolean SG_StartLevel( void )
     return qtrue;
 }
 
+//
+// SG_SaveLevelData: archives all level data currently loaded
+//
 void SG_SaveLevelData( void )
 {
-    int i;
+    int i, n;
 
-    G_BeginSaveSection( "level" );
+    G_BeginSaveSection( "levels" );
+    for ( i = 0; i < sg.numLevels; i++ ) {
+        G_BeginSaveSection( sg_levelInfoData[i].name );
+
+        // save map and rank data for each difficulty
+        for ( n = 0; n < NUMDIFS; i++ ) {
+            G_BeginSaveSection( va( "%s", sg_levelInfoData[i].map ) );
+        }
+
+        G_EndSaveSection();
+    }
+    G_EndSaveSection();
+
+    G_BeginSaveSection( va( "%s_%s_%i" ) );
 
     G_SaveInt( "checkpoint_index", level.checkpointIndex );
     G_SaveInt( "level_index", level.index );
@@ -289,7 +314,7 @@ void SG_LoadLevels( void )
     char filename[1024];
     char dirlist[1024];
     char *dirptr;
-    int i;
+    int i, j;
     int dirlen;
     const char *mapname;
     levelInfo_t *info;
@@ -323,47 +348,57 @@ void SG_LoadLevels( void )
 		Info_SetValueForKey( sg_levelInfos[i], "num", va( "%i", i ) );
     }
 
+    // if there are no levels, let it crash
     sg_levelInfoData = SG_MemAlloc( sizeof(*sg_levelInfoData) * sg.numLevels );
 
     // load the level information (difficulty, map, etc.)
     for ( i = 0; i < sg.numLevels; i++ ) {
         N_strncpyz( sg_levelInfoData[i].name, Info_ValueForKey( sg_levelInfos[i], "name" ), MAX_NPATH );
+        G_Printf( "Loaded Level %s...\n", sg_levelInfoData[i].name );
 
-        mapname = Info_ValueForKey( sg_levelInfos[i], "mapname" );
-        sg_levelInfoData[i].maphandle = G_LoadMap( mapname );
-        if ( sg_levelInfoData[i].maphandle == FS_INVALID_HANDLE ) {
-            G_Printf( COLOR_YELLOW "WARNING: failed to load map '%s' for level '%s'\n", mapname, sg_levelInfoData[i].name );
-            continue;
+        for ( j = 0; j < NUMDIFS; j++ ) {
+            mapname = Info_ValueForKey( sg_levelInfos[i], va( "mapname_difficulty_%i", j ) );
+            if ( !N_stricmp( mapname, "none" ) ) {
+                // map currently doesn't support this difficulty
+                continue;
+            }
+            N_strncpyz( sg_levelInfoData[i].maphandles[j].name, mapname, MAX_NPATH );
+            sg_levelInfoData[i].maphandles[j].handle = G_LoadMap( mapname );
+            sg_levelInfoData[i].maphandles[j].difficulty = j;
+            if ( sg_levelInfoData[i].maphandle[j].handle == FS_INVALID_HANDLE ) {
+                G_Printf( COLOR_YELLOW "WARNING: failed to load map '%s' for level '%s'\n", mapname, sg_levelInfoData[i].name );
+                continue;
+            }
         }
         
         sg_levelInfoData[i].a.rank = LEVEL_RANK_A;
         sg_levelInfoData[i].a.minKills = atoi( Info_ValueForKey( sg_levelInfos[i], "rankA_minKills" ) );
         sg_levelInfoData[i].a.minStyle = atoi( Info_ValueForKey( sg_levelInfos[i], "rankA_minStyle" ) );
-        sg_levelInfoData[i].a.minTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankA_minTime" ) );
-        sg_levelInfoData[i].a.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "cleanRunRequired" ) );
+        sg_levelInfoData[i].a.maxTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankA_maxTime" ) );
+        sg_levelInfoData[i].a.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "rankA_cleanRunRequired" ) );
 
         sg_levelInfoData[i].b.rank = LEVEL_RANK_B;
         sg_levelInfoData[i].b.minKills = atoi( Info_ValueForKey( sg_levelInfos[i], "rankB_minKills" ) );
         sg_levelInfoData[i].b.minStyle = atoi( Info_ValueForKey( sg_levelInfos[i], "rankB_minStyle" ) );
-        sg_levelInfoData[i].b.minTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankB_minTime" ) );
-        sg_levelInfoData[i].b.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "cleanRunRequired" ) );
+        sg_levelInfoData[i].b.maxTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankB_maxTime" ) );
+        sg_levelInfoData[i].b.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "rankB_cleanRunRequired" ) );
 
         sg_levelInfoData[i].c.rank = LEVEL_RANK_C;
         sg_levelInfoData[i].c.minKills = atoi( Info_ValueForKey( sg_levelInfos[i], "rankC_minKills" ) );
         sg_levelInfoData[i].c.minStyle = atoi( Info_ValueForKey( sg_levelInfos[i], "rankC_minStyle" ) );
-        sg_levelInfoData[i].c.minTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankC_minTime" ) );
-        sg_levelInfoData[i].c.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "cleanRunRequired" ) );
+        sg_levelInfoData[i].c.maxTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankC_maxTime" ) );
+        sg_levelInfoData[i].c.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "rankC_cleanRunRequired" ) );
 
         sg_levelInfoData[i].d.rank = LEVEL_RANK_D;
         sg_levelInfoData[i].d.minKills = atoi( Info_ValueForKey( sg_levelInfos[i], "rankD_minKills" ) );
         sg_levelInfoData[i].d.minStyle = atoi( Info_ValueForKey( sg_levelInfos[i], "rankD_minStyle" ) );
-        sg_levelInfoData[i].d.minTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankD_minTime" ) );
-        sg_levelInfoData[i].d.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "cleanRunRequired" ) );
+        sg_levelInfoData[i].d.maxTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankD_maxTime" ) );
+        sg_levelInfoData[i].d.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "rankD_cleanRunRequired" ) );
 
         sg_levelInfoData[i].f.rank = LEVEL_RANK_WERE_U_BOTTING;
         sg_levelInfoData[i].f.minKills = atoi( Info_ValueForKey( sg_levelInfos[i], "rankF_minKills" ) );
         sg_levelInfoData[i].f.minStyle = atoi( Info_ValueForKey( sg_levelInfos[i], "rankF_minStyle" ) );
-        sg_levelInfoData[i].f.minTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankF_minTime" ) );
-        sg_levelInfoData[i].f.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "cleanRunRequired" ) );
+        sg_levelInfoData[i].f.maxTime = atoi( Info_ValueForKey( sg_levelInfos[i], "rankF_maxTime" ) );
+        sg_levelInfoData[i].f.requireClean = atoi( Info_ValueForKey( sg_levelInfos[i], "rankF_cleanRunRequired" ) );
     }
 }

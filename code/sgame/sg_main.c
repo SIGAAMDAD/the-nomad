@@ -70,6 +70,7 @@ vmCvar_t sg_decalDetail;
 vmCvar_t sg_gibs;
 vmCvar_t sg_levelIndex;
 vmCvar_t sg_savename;
+vmCvar_t sg_gameDifficulty;
 vmCvar_t sg_numSaves;
 vmCvar_t sg_memoryDebug;
 
@@ -83,6 +84,14 @@ vmCvar_t pm_airAccel;
 vmCvar_t pm_wallrunAccelVertical;
 vmCvar_t pm_wallrunAccelMove;
 vmCvar_t pm_wallTime;
+
+vmCvar_t sgc_infiniteHealth;
+vmCvar_t sgc_infiniteRage;
+vmCvar_t sgc_infiniteAmmo;
+vmCvar_t sgc_blindMobs;
+vmCvar_t sgc_deafMobs;
+vmCvar_t sg_cheatsOn;
+vmCvar_t sgc_godmode;
 
 typedef struct {
     vmCvar_t *vmCvar;
@@ -112,6 +121,7 @@ static cvarTable_t cvarTable[] = {
     { &sg_printLevelStats,      "sg_printLevelStats",   "1",            CVAR_LATCH | CVAR_SAVE,     0, qfalse },
     { &sg_decalDetail,          "sg_decalDetail",       "3",            CVAR_LATCH | CVAR_SAVE,     0, qtrue },
     { &sg_gibs,                 "sg_gibs",              "0",            CVAR_LATCH | CVAR_SAVE,     0, qtrue },
+    { &sg_gameDifficulty,       "sg_gameDifficulty",    "2",            CVAR_LATCH | CVAR_TEMP,     0, qtrue },
     { &sg_savename,             "sg_savename",          "savedata",     CVAR_LATCH | CVAR_SAVE,     0, qtrue },
     { &sg_numSaves,             "sg_numSaves",          "0",            CVAR_LATCH | CVAR_SAVE,     0, qfalse },
 #ifdef _NOMAD_DEBUG
@@ -119,6 +129,13 @@ static cvarTable_t cvarTable[] = {
 #else
     { &sg_memoryDebug,          "sg_memoryDebug",       "0",            CVAR_LATCH | CVAR_TEMP,     0, qfalse },
 #endif
+    { &sgc_infiniteHealth,      "sgc_infiniteHealth",   "0",            CVAR_LATCH | CVAR_SAVE,     0, qtrue },
+    { &sgc_infiniteAmmo,        "sgc_infiniteAmmo",     "0",            CVAR_LATCH | CVAR_SAVE,     0, qtrue },
+    { &sgc_infiniteRage,        "sgc_infiniteRage",     "0",            CVAR_LATCH | CVAR_SAVE,     0, qtrue },
+    { &sgc_godmode,             "sgc_godmode",          "0",            CVAR_LATCH | CVAR_SAVE,     0, qtrue },
+    { &sgc_blindMobs,           "sgc_blindMobs",        "0",            CVAR_LATCH | CVAR_SAVE,     0, qtrue },
+    { &sgc_deafMobs,            "sgc_deafMobs",         "0",            CVAR_LATCH | CVAR_SAVE,     0, qtrue },
+    { &sg_cheatsOn,             "sg_cheatsOn",          "0",            CVAR_LATCH | CVAR_SAVE,     0, qtrue },
 };
 
 static const int cvarTableSize = arraylen(cvarTable);
@@ -444,6 +461,9 @@ void SG_Init( void )
     // load assets/resources
     SG_LoadMedia();
 
+    // register commands
+    SG_InitCommands();
+
     sg.state = SG_INACTIVE;
 
     G_Printf( "-----------------------------------\n" );
@@ -452,6 +472,8 @@ void SG_Init( void )
 void SG_Shutdown( void )
 {
     G_Printf( "Shutting down sgame...\n" );
+
+    SG_ShutdownCommands();
 
     memset( &sg, 0, sizeof(sg) );
 
@@ -474,6 +496,8 @@ void LoadGame( void )
     Cvar_VariableStringBuffer( "sg_savename", savename, sizeof(savename) );
 
     G_Printf( "Loading save file '%s'...\n", savename );
+
+    SG_LoadLevelData();
 }
 
 void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL trap_FS_Printf( fileHandle_t f, const char *fmt, ... )

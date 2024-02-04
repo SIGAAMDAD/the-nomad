@@ -4,82 +4,9 @@
     #error Never include this in engine builds
 #endif
 
-#if 0
-
-void *memset(void *dst, int fill, size_t n)
-{
-    size_t i;
-
-    if ((((long)dst | n) & 3) == 0) {
-        n >>= 2;
-        fill = fill | (fill << 8) | (fill << 16) | (fill << 24);
-
-        for (i = 0; i < n; i++) {
-            ((int *)dst)[i] = fill;
-        }
-    }
-    else {
-        for (i = 0; i < n; i++) {
-            ((char *)dst)[i] = fill;
-        }
-    }
-    return dst;
-}
-
-void *memcpy( void *dst, const void *src, size_t n )
-{
-    size_t i;
-
-    if ( (((long)dst | (long)src | n) & 3) == 0 ) {
-        n >>= 2;
-
-        for ( i = 0; i < n; i++) {
-            ((int *)dst)[i] = ((const int *)src)[i];
-        }
-    }
-    else {
-        for ( i = 0; i < n; i++ ) {
-            ((char *)dst)[i] = ((const char *)src)[i];
-        }
-    }
-    return dst;
-}
-
-void *memchr( void *ptr, int delegate, size_t n )
-{
-    char *p = ptr;
-
-    while ( n-- ) {
-        if ( *p++ == delegate ) {
-            return (void *)p;
-        }
-    }
-    return ptr;
-}
-
-void *memmove( void *dst, const void *src, size_t n )
-{
-    char *d = dst;
-    const char *s = src;
-    
-    if ( d > s ) {
-        while ( n-- ) {
-            *d-- = *s--;
-        }
-    }
-    else {
-        while ( n-- ) {
-            *d++ = *s++;
-        }
-    }
-    return dst;
-}
-#endif
-
 // bk001211 - gcc errors on compiling strcpy:  parse error before `__extension__'
 #ifdef Q3_VM
 
-#if 0
 size_t strlen(const char *str)
 {
     const char *s = str;
@@ -100,17 +27,17 @@ char* strchr(const char* string, int c)
 	return (char *)0;
 }
 
-char *strrchr(const char *string, int c)
+char *strrchr( const char *string, int c )
 {
     const char *found, *p;
 
     c = (unsigned char)c;
 
-    if (c == '\0')
-        return strchr(string, '\0');
+    if ( c == '\0' )
+        return strchr( string, '\0' );
     
     found = NULL;
-    while ((p = strchr(string, c)) != NULL) {
+    while ( ( p = strchr( string, c ) ) != NULL ) {
         found = p;
         string = p + 1;
     }
@@ -134,7 +61,7 @@ char *strstr( const char *string, const char *strCharSet ) {
 	return (char *)0;
 }
 
-int strcmp(const char* string1, const char* string2)
+int strcmp( const char* string1, const char* string2 )
 {
     while ( *string1 == *string2 && *string1 && *string2 ) {
 		string1++;
@@ -143,18 +70,17 @@ int strcmp(const char* string1, const char* string2)
 	return *string1 - *string2;
 }
 
-char* strcpy(char *dst, const char *src)
+char* strcpy( char *dst, const char *src )
 {
     char *d;
 
     d = dst;
-    while (*src) {
+    while ( *src ) {
         *d++ = *src++;
     }
     *d = 0;
     return dst;
 }
-#endif
 
 char *strcat( char *strDestination, const char *strSource ) {
 	char	*s;
@@ -170,17 +96,17 @@ char *strcat( char *strDestination, const char *strSource ) {
 	return (char *)strDestination;
 }
 
-int tolower(int c)
+int tolower( int c )
 {
-    if (c >= 'A' && c <= 'Z') {
+    if ( c >= 'A' && c <= 'Z' ) {
         c += 'a' - 'A';
     }
     return c;
 }
 
-int toupper(int c)
+int toupper( int c )
 {
-    if (c >= 'a' && c <= 'z') {
+    if ( c >= 'a' && c <= 'z' ) {
         c += 'A' - 'a';
     }
     return c;

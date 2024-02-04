@@ -392,6 +392,7 @@ extern vmCvar_t sg_decalDetail;
 extern vmCvar_t sg_gibs;
 extern vmCvar_t sg_levelIndex;
 extern vmCvar_t sg_savename;
+extern vmCvar_t sg_gameDifficulty;
 extern vmCvar_t sg_numSaves;
 extern vmCvar_t sg_memoryDebug;
 
@@ -405,6 +406,15 @@ extern vmCvar_t pm_airAccel;
 extern vmCvar_t pm_wallrunAccelVertical;
 extern vmCvar_t pm_wallrunAccelMove;
 extern vmCvar_t pm_wallTime;
+
+// cheats
+extern vmCvar_t sgc_infiniteHealth;
+extern vmCvar_t sgc_infiniteRage;
+extern vmCvar_t sgc_infiniteAmmo;
+extern vmCvar_t sgc_blindMobs;
+extern vmCvar_t sgc_deafMobs;
+extern vmCvar_t sg_cheatsOn;
+extern vmCvar_t sgc_godmode;
 
 //==============================================================
 // functions
@@ -420,7 +430,8 @@ int SG_DrawFrame( void );
 // sg_cmds.c
 //
 void SGameCommand( void );
-void SG_BuildMoveCommand( void );
+void SG_InitCommands( void );
+void SG_ShutdownCommands( void );
 
 //
 // sg_main.c

@@ -390,47 +390,40 @@ static intptr_t G_SGameSystemCalls( intptr_t *args )
         return 0;
     case IMGUI_BUTTON:
         return ImGui_Button( (const char *)VMA( 1 ) );
+    case TRAP_MEMCPY:
+        VM_CHECKBOUNDS2( args[1], args[2], args[3] );
+        return (intptr_t)memcpy( VMA( 1 ), VMA( 2 ), args[3] );
     case TRAP_MEMSET:
         VM_CHECKBOUNDS( args[1], args[3] );
         return (intptr_t)memset( VMA( 1 ), args[2], args[3] );
-	case TRAP_MEMCPY:
+    case TRAP_MEMMOVE:
         VM_CHECKBOUNDS2( args[1], args[2], args[3] );
-        return (intptr_t)memcpy( VMA( 1 ), VMA( 2 ), args[3] );
-	case TRAP_STRNCPY:
-        VM_CHECKBOUNDS( args[1], args[3] );
-        return (intptr_t)strncpy( (char *)VMA( 1 ), (const char *)VMA( 2 ), args[3] );
-    case TRAP_STRLEN:
-        return (int32_t)strlen( (const char *)VMA( 1 ) );
-    case TRAP_STRCHR:
-        return (intptr_t)strchr( (const char *)VMA( 1 ), args[2] );
-    case TRAP_STRRCHR:
-        return (intptr_t)strrchr( (const char *)VMA( 1 ), args[2] );
-    case TRAP_ACOS:
+        return (intptr_t)memmove( VMA( 1 ), VMA( 2 ), args[3] );
+    case SG_FLOOR:
+        return FloatToInt( floor( VMF( 1 ) ) );
+    case SG_ACOS:
         return FloatToInt( acos( VMF( 1 ) ) );
-    case TRAP_MEMCHR:
-        return (intptr_t)memchr( VMA( 1 ), args[2], args[3] );
-    case TRAP_STRSTR:
-        return (intptr_t)strstr( (const char *)VMA( 1 ), (const char *)VMA( 2 ) );
-	case TRAP_FLOOR:
-        return FloatToInt( floor( VMF(1 ) ) );
-	case TRAP_SIN:
-        return FloatToInt( sin( VMF( 1 ) ) );
-	case TRAP_COS:
-        return FloatToInt( cos( VMF( 1 ) ) );
-	case TRAP_ATAN2:
-        return FloatToInt( atan2( VMF( 1 ), VMF( 2 ) ) );
-	case TRAP_CEIL:
+    case SG_CEIL:
         return FloatToInt( ceil( VMF( 1 ) ) );
-    case TRAP_SQRT:
-        return FloatToInt( sqrt( VMF( 1 ) ) );
     case TRAP_POW:
         return FloatToInt( pow( VMF( 1 ), VMF( 2 ) ) );
     case TRAP_LOGF:
         return FloatToInt( logf( VMF( 1 ) ) );
+    case TRAP_COS:
+        return FloatToInt( cos( VMF( 1 ) ) );
+    case TRAP_ATAN2:
+        return FloatToInt( atan2( VMF( 1 ), VMF( 2 ) ) );
     case TRAP_POWF:
         return FloatToInt( powf( VMF( 1 ), VMF( 2 ) ) );
+    case TRAP_SIN:
+        return FloatToInt( sin( VMF( 1 ) ) );
+    case TRAP_SQRT:
+        return FloatToInt( sqrt( VMF( 1 ) ) );
     case TRAP_SQRTF:
         return FloatToInt( sqrtf( VMF( 1 ) ) );
+    case TRAP_STRNCPY:
+        VM_CHECKBOUNDS2( args[1], args[2], args[3] );
+        return (intptr_t)strncpy( (char *)VMA( 1 ), (const char *)VMA( 2 ), args[3] );
     default:
         N_Error( ERR_DROP, "G_SGameSystemCalls: bad call: %lu\n", args[0] );
     };
