@@ -310,9 +310,17 @@ import G_Printf
 import G_Error
 import SG_Printf
 import SG_Error
-import SG_BuildMoveCommand
+import SG_ShutdownCommands
+import SG_InitCommands
 import SGameCommand
 import SG_DrawFrame
+import sgc_godmode
+import sg_cheatsOn
+import sgc_deafMobs
+import sgc_blindMobs
+import sgc_infiniteAmmo
+import sgc_infiniteRage
+import sgc_infiniteHealth
 import pm_wallTime
 import pm_wallrunAccelMove
 import pm_wallrunAccelVertical
@@ -325,6 +333,7 @@ import pm_waterFriction
 import pm_groundFriction
 import sg_memoryDebug
 import sg_numSaves
+import sg_gameDifficulty
 import sg_savename
 import sg_levelIndex
 import sg_gibs

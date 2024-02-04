@@ -118,7 +118,7 @@ qboolean SG_StartLevel( void )
     memset( &level, 0, sizeof(level) );
     memset( &sg.mapInfo, 0, sizeof(sg.mapInfo) );
 
-    G_SetActiveMap( info->maphandle[ sg_difficulty.i ].handle, &sg.mapInfo, sg.soundBits, &sg.activeEnts );
+    G_SetActiveMap( info->maphandles[ sg_gameDifficulty.i ].handle, &sg.mapInfo, sg.soundBits, &sg.activeEnts );
 
     SG_InitPlayer();
 
@@ -192,7 +192,7 @@ void SG_SaveLevelData( void )
         G_SaveString( "name", sg_levelInfoData[i].name );
 
         // save static ranking data
-        rank = &sg_levelInfoData.a;
+        rank = &sg_levelInfoData[i].a;
         for ( n = 0; n < NUMRANKS; n++ ) {
             G_BeginSaveSection( va( "rank%i_index_%i", n, i ) );
             {
@@ -271,7 +271,7 @@ void SG_LoadLevelData( void )
     sg_levelInfoData = SG_MemAlloc( sizeof(*sg_levelInfoData) * sg.numLevels );
 
     for ( i = 0; i < sg.numLevels; i++ ) {
-        hSection = G_GetSaveSection( va( "level_%i" ) );
+        hSection = G_GetSaveSection( va( "level_%i", i ) );
         if ( hSection == FS_INVALID_HANDLE ) {
             SG_Error( "SG_LoadLevelData: failed to get section \"%s\" from save file, possible mod imcompatibility", va( "level_%i", i ) );
         }
@@ -299,7 +299,7 @@ void SG_LoadLevelData( void )
             hSection = G_GetSaveSection( va( "map_difficulty_%i", n ) );
             if ( hSection == FS_INVALID_HANDLE ) {
                 SG_Error( "SG_LoadLevelData: failed to get section \"%s\" from save file, possible mod incompatibility",
-                    va( "map_difficulty_%i" ) );
+                    va( "map_difficulty_%i", n ) );
             }
             m->difficulty = n;
             G_LoadString( "name", m->name, sizeof(m->name), hSection );
@@ -307,7 +307,7 @@ void SG_LoadLevelData( void )
             m->stats.numDeaths = G_LoadInt( "numDeaths", hSection );
             m->stats.stylePoints = G_LoadInt( "stylePoints", hSection );
             m->stats.timeTotal = G_LoadInt( "timeTotal", hSection );
-            m->stats.isCleanRun = G_LoadInt( "isCleanRun", hSections );
+            m->stats.isCleanRun = G_LoadInt( "isCleanRun", hSection );
         }
     }
 }
@@ -481,7 +481,7 @@ void SG_LoadLevels( void )
             N_strncpyz( sg_levelInfoData[i].maphandles[j].name, mapname, MAX_NPATH );
             sg_levelInfoData[i].maphandles[j].handle = G_LoadMap( mapname );
             sg_levelInfoData[i].maphandles[j].difficulty = j;
-            if ( sg_levelInfoData[i].maphandle[j].handle == FS_INVALID_HANDLE ) {
+            if ( sg_levelInfoData[i].maphandles[j].handle == FS_INVALID_HANDLE ) {
                 G_Printf( COLOR_YELLOW "WARNING: failed to load map '%s' for level '%s'\n", mapname, sg_levelInfoData[i].name );
                 continue;
             }

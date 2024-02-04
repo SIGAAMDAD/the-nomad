@@ -1,49 +1,590 @@
-export SGameCommand
 code
-proc SGameCommand 1064 12
+proc Cheat_GetToggle 84 12
 file "../sg_cmds.c"
-line 5
+line 4
 ;1:#include "sg_local.h"
 ;2:
-;3:
-;4:void SGameCommand( void )
-;5:{
+;3:static int Cheat_GetToggle( const char *cheatname )
+;4:{
+line 7
+;5:    char num[64];
+;6:
+;7:    if ( trap_Argc() != 2 ) {
+ADDRLP4 64
+ADDRGP4 trap_Argc
+CALLI4
+ASGNI4
+ADDRLP4 64
+INDIRI4
+CNSTI4 2
+EQI4 $90
 line 8
-;6:    char cmd[MAX_TOKEN_CHARS];
-;7:
-;8:    trap_Argv( 0, cmd, sizeof(cmd) );
-CNSTI4 0
+;8:        G_Printf( "usage: %s <1|on|toggleon> or <0|off|toggleoff>\n", cheatname );
+ADDRGP4 $92
+ARGP4
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRGP4 G_Printf
+CALLV
+pop
+line 9
+;9:    }
+LABELV $90
+line 11
+;10:    
+;11:    trap_Argv( 1, num, sizeof(num) );
+CNSTI4 1
 ARGI4
 ADDRLP4 0
+ARGP4
+CNSTI4 64
+ARGI4
+ADDRGP4 trap_Argv
+CALLV
+pop
+line 13
+;12:
+;13:    if ( num[0] == '1' || !N_stricmp( num, "on" ) || !N_stricmp( num, "toggleon" ) ) {
+ADDRLP4 0
+INDIRI1
+CVII4 1
+CNSTI4 49
+EQI4 $98
+ADDRLP4 0
+ARGP4
+ADDRGP4 $95
+ARGP4
+ADDRLP4 68
+ADDRGP4 N_stricmp
+CALLI4
+ASGNI4
+ADDRLP4 68
+INDIRI4
+CNSTI4 0
+EQI4 $98
+ADDRLP4 0
+ARGP4
+ADDRGP4 $96
+ARGP4
+ADDRLP4 72
+ADDRGP4 N_stricmp
+CALLI4
+ASGNI4
+ADDRLP4 72
+INDIRI4
+CNSTI4 0
+NEI4 $93
+LABELV $98
+line 14
+;14:        G_Printf( "Cheat '%s' toggled on.\n", cheatname );
+ADDRGP4 $99
+ARGP4
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRGP4 G_Printf
+CALLV
+pop
+line 15
+;15:        return qtrue;
+CNSTI4 1
+RETI4
+ADDRGP4 $89
+JUMPV
+LABELV $93
+line 16
+;16:    } else if ( num[0] == '0' || !N_stricmp( num, "off" ) || !N_stricmp( num, "toggleoff" ) ) {
+ADDRLP4 0
+INDIRI1
+CVII4 1
+CNSTI4 48
+EQI4 $105
+ADDRLP4 0
+ARGP4
+ADDRGP4 $102
+ARGP4
+ADDRLP4 76
+ADDRGP4 N_stricmp
+CALLI4
+ASGNI4
+ADDRLP4 76
+INDIRI4
+CNSTI4 0
+EQI4 $105
+ADDRLP4 0
+ARGP4
+ADDRGP4 $103
+ARGP4
+ADDRLP4 80
+ADDRGP4 N_stricmp
+CALLI4
+ASGNI4
+ADDRLP4 80
+INDIRI4
+CNSTI4 0
+NEI4 $100
+LABELV $105
+line 17
+;17:        G_Printf( "Cheat '%s' toggled off.\n", cheatname );
+ADDRGP4 $106
+ARGP4
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRGP4 G_Printf
+CALLV
+pop
+line 18
+;18:        return qfalse;
+CNSTI4 0
+RETI4
+ADDRGP4 $89
+JUMPV
+LABELV $100
+line 21
+;19:    }
+;20:    
+;21:    G_Printf( "WARNING: unknown option '%s' for cheat command\n", num );
+ADDRGP4 $107
+ARGP4
+ADDRLP4 0
+ARGP4
+ADDRGP4 G_Printf
+CALLV
+pop
+line 22
+;22:    return qfalse;
+CNSTI4 0
+RETI4
+LABELV $89
+endproc Cheat_GetToggle 84 12
+proc Cheat_InfiniteHealth_f 8 8
+line 25
+;23:}
+;24:
+;25:static void Cheat_InfiniteHealth_f( void ) {
+line 26
+;26:    Cvar_Set( "sgc_infiniteHealth", va( "%i", Cheat_GetToggle( "i_am_built_different" ) ) );
+ADDRGP4 $111
+ARGP4
+ADDRLP4 0
+ADDRGP4 Cheat_GetToggle
+CALLI4
+ASGNI4
+ADDRGP4 $110
+ARGP4
+ADDRLP4 0
+INDIRI4
+ARGI4
+ADDRLP4 4
+ADDRGP4 va
+CALLP4
+ASGNP4
+ADDRGP4 $109
+ARGP4
+ADDRLP4 4
+INDIRP4
+ARGP4
+ADDRGP4 Cvar_Set
+CALLV
+pop
+line 27
+;27:}
+LABELV $108
+endproc Cheat_InfiniteHealth_f 8 8
+proc Cheat_InfiniteAmmo_f 8 8
+line 29
+;28:
+;29:static void Cheat_InfiniteAmmo_f( void ) {
+line 30
+;30:    Cvar_Set( "sgc_infiniteAmmo", va( "%i", Cheat_GetToggle( "i_need_more_BOOLETS" ) ) );
+ADDRGP4 $114
+ARGP4
+ADDRLP4 0
+ADDRGP4 Cheat_GetToggle
+CALLI4
+ASGNI4
+ADDRGP4 $110
+ARGP4
+ADDRLP4 0
+INDIRI4
+ARGI4
+ADDRLP4 4
+ADDRGP4 va
+CALLP4
+ASGNP4
+ADDRGP4 $113
+ARGP4
+ADDRLP4 4
+INDIRP4
+ARGP4
+ADDRGP4 Cvar_Set
+CALLV
+pop
+line 31
+;31:}
+LABELV $112
+endproc Cheat_InfiniteAmmo_f 8 8
+proc Cheat_InfiniteRage_f 8 8
+line 33
+;32:
+;33:static void Cheat_InfiniteRage_f( void ) {
+line 34
+;34:    Cvar_Set( "sgc_infiniteRage", va( "%i", Cheat_GetToggle( "too_angry_to_die" ) ) );
+ADDRGP4 $117
+ARGP4
+ADDRLP4 0
+ADDRGP4 Cheat_GetToggle
+CALLI4
+ASGNI4
+ADDRGP4 $110
+ARGP4
+ADDRLP4 0
+INDIRI4
+ARGI4
+ADDRLP4 4
+ADDRGP4 va
+CALLP4
+ASGNP4
+ADDRGP4 $116
+ARGP4
+ADDRLP4 4
+INDIRP4
+ARGP4
+ADDRGP4 Cvar_Set
+CALLV
+pop
+line 35
+;35:}
+LABELV $115
+endproc Cheat_InfiniteRage_f 8 8
+proc Cheat_GodMode_f 8 8
+line 37
+;36:
+;37:static void Cheat_GodMode_f( void ) {
+line 38
+;38:    Cvar_Set( "sgc_godmode", va( "%i", Cheat_GetToggle( "godmode" ) ) );
+ADDRGP4 $120
+ARGP4
+ADDRLP4 0
+ADDRGP4 Cheat_GetToggle
+CALLI4
+ASGNI4
+ADDRGP4 $110
+ARGP4
+ADDRLP4 0
+INDIRI4
+ARGI4
+ADDRLP4 4
+ADDRGP4 va
+CALLP4
+ASGNP4
+ADDRGP4 $119
+ARGP4
+ADDRLP4 4
+INDIRP4
+ARGP4
+ADDRGP4 Cvar_Set
+CALLV
+pop
+line 39
+;39:}
+LABELV $118
+endproc Cheat_GodMode_f 8 8
+proc Cheats_Set 8 8
+line 41
+;40:
+;41:static void Cheats_Set( int toggle ) {
+line 43
+;42:    const char *str;
+;43:    str = va( "%i", toggle );
+ADDRGP4 $110
+ARGP4
+ADDRFP4 0
+INDIRI4
+ARGI4
+ADDRLP4 4
+ADDRGP4 va
+CALLP4
+ASGNP4
+ADDRLP4 0
+ADDRLP4 4
+INDIRP4
+ASGNP4
+line 45
+;44:
+;45:    Cvar_Set( "sgc_infiniteHealth", str );
+ADDRGP4 $109
+ARGP4
+ADDRLP4 0
+INDIRP4
+ARGP4
+ADDRGP4 Cvar_Set
+CALLV
+pop
+line 46
+;46:    Cvar_Set( "sgc_infiniteAmmo", str );
+ADDRGP4 $113
+ARGP4
+ADDRLP4 0
+INDIRP4
+ARGP4
+ADDRGP4 Cvar_Set
+CALLV
+pop
+line 47
+;47:    Cvar_Set( "sgc_infiniteRage", str );
+ADDRGP4 $116
+ARGP4
+ADDRLP4 0
+INDIRP4
+ARGP4
+ADDRGP4 Cvar_Set
+CALLV
+pop
+line 48
+;48:    Cvar_Set( "sgc_godmode", str );
+ADDRGP4 $119
+ARGP4
+ADDRLP4 0
+INDIRP4
+ARGP4
+ADDRGP4 Cvar_Set
+CALLV
+pop
+line 49
+;49:    Cvar_Set( "sgc_blindMobs", str );
+ADDRGP4 $122
+ARGP4
+ADDRLP4 0
+INDIRP4
+ARGP4
+ADDRGP4 Cvar_Set
+CALLV
+pop
+line 50
+;50:    Cvar_Set( "sgc_deafMobs", str );
+ADDRGP4 $123
+ARGP4
+ADDRLP4 0
+INDIRP4
+ARGP4
+ADDRGP4 Cvar_Set
+CALLV
+pop
+line 51
+;51:}
+LABELV $121
+endproc Cheats_Set 8 8
+proc Cheat_EnableAll_f 0 8
+line 53
+;52:
+;53:static void Cheat_EnableAll_f( void ) {
+line 54
+;54:    Con_Printf( "Enabling all cheats" );
+ADDRGP4 $125
+ARGP4
+ADDRGP4 Con_Printf
+CALLV
+pop
+line 55
+;55:    Cvar_Set( "sg_cheatsOn", "1" );
+ADDRGP4 $126
+ARGP4
+ADDRGP4 $127
+ARGP4
+ADDRGP4 Cvar_Set
+CALLV
+pop
+line 56
+;56:}
+LABELV $124
+endproc Cheat_EnableAll_f 0 8
+proc Cheat_DisableAll_f 0 8
+line 58
+;57:
+;58:static void Cheat_DisableAll_f( void ) {
+line 59
+;59:    Con_Printf( "Disabling cheats.\n" );
+ADDRGP4 $129
+ARGP4
+ADDRGP4 Con_Printf
+CALLV
+pop
+line 60
+;60:    Cvar_Set( "sg_cheatsOn", "0" );
+ADDRGP4 $126
+ARGP4
+ADDRGP4 $130
+ARGP4
+ADDRGP4 Cvar_Set
+CALLV
+pop
+line 61
+;61:}
+LABELV $128
+endproc Cheat_DisableAll_f 0 8
+proc Cheat_BlindMobs_f 8 8
+line 63
+;62:
+;63:static void Cheat_BlindMobs_f( void ) {
+line 64
+;64:    Cvar_Set( "sgc_blindMobs", va( "%i", Cheat_GetToggle( "blindmobs" ) ) );
+ADDRGP4 $132
+ARGP4
+ADDRLP4 0
+ADDRGP4 Cheat_GetToggle
+CALLI4
+ASGNI4
+ADDRGP4 $110
+ARGP4
+ADDRLP4 0
+INDIRI4
+ARGI4
+ADDRLP4 4
+ADDRGP4 va
+CALLP4
+ASGNP4
+ADDRGP4 $122
+ARGP4
+ADDRLP4 4
+INDIRP4
+ARGP4
+ADDRGP4 Cvar_Set
+CALLV
+pop
+line 65
+;65:}
+LABELV $131
+endproc Cheat_BlindMobs_f 8 8
+proc Cheat_DeafMobs_f 8 8
+line 67
+;66:
+;67:static void Cheat_DeafMobs_f( void ) {
+line 68
+;68:    Cvar_Set( "sgc_deafMobs", va( "%i", Cheat_GetToggle( "deafmobs" ) ) );
+ADDRGP4 $134
+ARGP4
+ADDRLP4 0
+ADDRGP4 Cheat_GetToggle
+CALLI4
+ASGNI4
+ADDRGP4 $110
+ARGP4
+ADDRLP4 0
+INDIRI4
+ARGI4
+ADDRLP4 4
+ADDRGP4 va
+CALLP4
+ASGNP4
+ADDRGP4 $123
+ARGP4
+ADDRLP4 4
+INDIRP4
+ARGP4
+ADDRGP4 Cvar_Set
+CALLV
+pop
+line 69
+;69:}
+LABELV $133
+endproc Cheat_DeafMobs_f 8 8
+data
+align 4
+LABELV commands
+address $111
+address Cheat_InfiniteHealth_f
+address $136
+address Cheat_InfiniteHealth_f
+address $114
+address Cheat_InfiniteAmmo_f
+address $137
+address Cheat_InfiniteAmmo_f
+address $120
+address Cheat_GodMode_f
+address $138
+address Cheat_GodMode_f
+address $132
+address Cheat_BlindMobs_f
+address $134
+address Cheat_DeafMobs_f
+address $139
+address Cheat_EnableAll_f
+address $140
+address Cheat_EnableAll_f
+address $141
+address Cheat_DisableAll_f
+address $142
+address Cheat_DisableAll_f
+address $117
+address Cheat_InfiniteRage_f
+address $143
+address Cheat_InfiniteRage_f
+export SGameCommand
+code
+proc SGameCommand 1032 12
+line 94
+;70:
+;71:typedef struct {
+;72:    const char *name;
+;73:    void (*fn)( void );
+;74:} cmd_t;
+;75:
+;76:static const cmd_t commands[] = {
+;77:    { "i_am_built_different", Cheat_InfiniteHealth_f },
+;78:    { "gmathitw", Cheat_InfiniteHealth_f },
+;79:    { "i_need_more_BOOLETS", Cheat_InfiniteAmmo_f },
+;80:    { "gmataitw", Cheat_InfiniteAmmo_f },
+;81:    { "godmode", Cheat_GodMode_f },
+;82:    { "iwtbag", Cheat_GodMode_f },
+;83:    { "blindmobs", Cheat_BlindMobs_f },
+;84:    { "deafmobs", Cheat_DeafMobs_f },
+;85:    { "iamacheater", Cheat_EnableAll_f },
+;86:    { "iamapussy", Cheat_EnableAll_f },
+;87:    { "iamnotacheater", Cheat_DisableAll_f },
+;88:    { "ihavetheballs", Cheat_DisableAll_f },
+;89:    { "too_angry_to_die", Cheat_InfiniteRage_f },
+;90:    { "iambatman", Cheat_InfiniteRage_f }
+;91:};
+;92:
+;93:void SGameCommand( void )
+;94:{
+line 98
+;95:    char cmd[MAX_TOKEN_CHARS];
+;96:    int i;
+;97:
+;98:    trap_Argv( 0, cmd, sizeof(cmd) );
+CNSTI4 0
+ARGI4
+ADDRLP4 4
 ARGP4
 CNSTI4 1024
 ARGI4
 ADDRGP4 trap_Argv
 CALLV
 pop
-line 15
-;9:
-;10:    //
-;11:    // cheat codes
-;12:    //
-;13:
-;14:    // infinite health
-;15:    if ( !N_stricmp( cmd, "gimme_more" ) || !N_stricmp( cmd, "gmathitw" ) ) {
+line 100
+;99:
+;100:    for ( i = 0; i < arraylen( commands ); i++ ) {
 ADDRLP4 0
-ARGP4
-ADDRGP4 $92
-ARGP4
-ADDRLP4 1024
-ADDRGP4 N_stricmp
-CALLI4
-ASGNI4
-ADDRLP4 1024
-INDIRI4
 CNSTI4 0
-EQI4 $94
+ASGNI4
+ADDRGP4 $148
+JUMPV
+LABELV $145
+line 101
+;101:        if ( !N_stricmp( commands[i].name, cmd ) ) {
 ADDRLP4 0
+INDIRI4
+CNSTI4 3
+LSHI4
+ADDRGP4 commands
+ADDP4
+INDIRP4
 ARGP4
-ADDRGP4 $93
+ADDRLP4 4
 ARGP4
 ADDRLP4 1028
 ADDRGP4 N_stricmp
@@ -52,164 +593,139 @@ ASGNI4
 ADDRLP4 1028
 INDIRI4
 CNSTI4 0
-NEI4 $90
-LABELV $94
-line 16
-;16:    }
-ADDRGP4 $91
+NEI4 $149
+line 102
+;102:            commands[i].fn();
+ADDRLP4 0
+INDIRI4
+CNSTI4 3
+LSHI4
+ADDRGP4 commands+4
+ADDP4
+INDIRP4
+CALLV
+pop
+line 103
+;103:        }
+LABELV $149
+line 104
+;104:    }
+LABELV $146
+line 100
+ADDRLP4 0
+ADDRLP4 0
+INDIRI4
+CNSTI4 1
+ADDI4
+ASGNI4
+LABELV $148
+ADDRLP4 0
+INDIRI4
+CVIU4 4
+CNSTU4 14
+LTU4 $145
+line 105
+;105:}
+LABELV $144
+endproc SGameCommand 1032 12
+export SG_InitCommands
+proc SG_InitCommands 4 4
+line 108
+;106:
+;107:void SG_InitCommands( void )
+;108:{
+line 111
+;109:    int i;
+;110:
+;111:    for ( i = 0; i < arraylen( commands ); i++ ) {
+ADDRLP4 0
+CNSTI4 0
+ASGNI4
+ADDRGP4 $156
 JUMPV
-LABELV $90
-line 18
-;17:    // god mode
-;18:    else if ( !N_stricmp( cmd, "godmode" ) || !N_stricmp( cmd, "iwtbag" ) ) {
+LABELV $153
+line 112
+;112:        trap_AddCommand( commands[i].name );
 ADDRLP4 0
-ARGP4
-ADDRGP4 $97
-ARGP4
-ADDRLP4 1032
-ADDRGP4 N_stricmp
-CALLI4
-ASGNI4
-ADDRLP4 1032
 INDIRI4
-CNSTI4 0
-EQI4 $99
+CNSTI4 3
+LSHI4
+ADDRGP4 commands
+ADDP4
+INDIRP4
+ARGP4
+ADDRGP4 trap_AddCommand
+CALLV
+pop
+line 113
+;113:    }
+LABELV $154
+line 111
 ADDRLP4 0
-ARGP4
-ADDRGP4 $98
-ARGP4
-ADDRLP4 1036
-ADDRGP4 N_stricmp
-CALLI4
-ASGNI4
-ADDRLP4 1036
+ADDRLP4 0
 INDIRI4
+CNSTI4 1
+ADDI4
+ASGNI4
+LABELV $156
+ADDRLP4 0
+INDIRI4
+CVIU4 4
+CNSTU4 14
+LTU4 $153
+line 114
+;114:}
+LABELV $152
+endproc SG_InitCommands 4 4
+export SG_ShutdownCommands
+proc SG_ShutdownCommands 4 4
+line 117
+;115:
+;116:void SG_ShutdownCommands( void )
+;117:{
+line 120
+;118:    int i;
+;119:
+;120:    for ( i = 0; i < arraylen( commands ); i++ ) {
+ADDRLP4 0
 CNSTI4 0
-NEI4 $95
-LABELV $99
-line 20
-;19:
-;20:    }
-ADDRGP4 $96
+ASGNI4
+ADDRGP4 $161
 JUMPV
-LABELV $95
-line 22
-;21:    // make all enemies blind
-;22:    else if ( !N_stricmp( cmd, "blindmobs" ) ) {
+LABELV $158
+line 121
+;121:        trap_RemoveCommand( commands[i].name );
 ADDRLP4 0
-ARGP4
-ADDRGP4 $102
-ARGP4
-ADDRLP4 1040
-ADDRGP4 N_stricmp
-CALLI4
-ASGNI4
-ADDRLP4 1040
 INDIRI4
-CNSTI4 0
-NEI4 $100
-line 24
-;23:
-;24:    }
-ADDRGP4 $101
-JUMPV
-LABELV $100
-line 26
-;25:    // make all enemies deaf
-;26:    else if ( !N_stricmp( cmd, "deafmobs" ) ) {
+CNSTI4 3
+LSHI4
+ADDRGP4 commands
+ADDP4
+INDIRP4
+ARGP4
+ADDRGP4 trap_RemoveCommand
+CALLV
+pop
+line 122
+;122:    }
+LABELV $159
+line 120
 ADDRLP4 0
-ARGP4
-ADDRGP4 $105
-ARGP4
-ADDRLP4 1044
-ADDRGP4 N_stricmp
-CALLI4
-ASGNI4
-ADDRLP4 1044
-INDIRI4
-CNSTI4 0
-NEI4 $103
-line 28
-;27:
-;28:    }
-ADDRGP4 $104
-JUMPV
-LABELV $103
-line 30
-;29:    // enable all cheats
-;30:    else if ( !N_stricmp( cmd, "iamacheater" ) || !N_stricmp( cmd, "iamapussy" ) ) {
 ADDRLP4 0
-ARGP4
-ADDRGP4 $108
-ARGP4
-ADDRLP4 1048
-ADDRGP4 N_stricmp
-CALLI4
-ASGNI4
-ADDRLP4 1048
 INDIRI4
-CNSTI4 0
-EQI4 $110
+CNSTI4 1
+ADDI4
+ASGNI4
+LABELV $161
 ADDRLP4 0
-ARGP4
-ADDRGP4 $109
-ARGP4
-ADDRLP4 1052
-ADDRGP4 N_stricmp
-CALLI4
-ASGNI4
-ADDRLP4 1052
 INDIRI4
-CNSTI4 0
-NEI4 $106
-LABELV $110
-line 32
-;31:
-;32:    }
-ADDRGP4 $107
-JUMPV
-LABELV $106
-line 34
-;33:    // disable all cheats
-;34:    else if ( !N_stricmp( cmd, "iamnotacheater" ) || !N_stricmp( cmd, "ihavetheballs" ) ) {
-ADDRLP4 0
-ARGP4
-ADDRGP4 $113
-ARGP4
-ADDRLP4 1056
-ADDRGP4 N_stricmp
-CALLI4
-ASGNI4
-ADDRLP4 1056
-INDIRI4
-CNSTI4 0
-EQI4 $115
-ADDRLP4 0
-ARGP4
-ADDRGP4 $114
-ARGP4
-ADDRLP4 1060
-ADDRGP4 N_stricmp
-CALLI4
-ASGNI4
-ADDRLP4 1060
-INDIRI4
-CNSTI4 0
-NEI4 $111
-LABELV $115
-line 36
-;35:
-;36:    }
-LABELV $111
-LABELV $107
-LABELV $104
-LABELV $101
-LABELV $96
-LABELV $91
-line 37
-;37:}
-LABELV $89
-endproc SGameCommand 1064 12
+CVIU4 4
+CNSTU4 14
+LTU4 $158
+line 123
+;123:}
+LABELV $157
+endproc SG_ShutdownCommands 4 4
 import Cvar_VariableStringBuffer
 import Cvar_Set
 import Cvar_Update
@@ -320,8 +836,14 @@ import G_Printf
 import G_Error
 import SG_Printf
 import SG_Error
-import SG_BuildMoveCommand
 import SG_DrawFrame
+import sgc_godmode
+import sg_cheatsOn
+import sgc_deafMobs
+import sgc_blindMobs
+import sgc_infiniteAmmo
+import sgc_infiniteRage
+import sgc_infiniteHealth
 import pm_wallTime
 import pm_wallrunAccelMove
 import pm_wallrunAccelVertical
@@ -334,6 +856,7 @@ import pm_waterFriction
 import pm_groundFriction
 import sg_memoryDebug
 import sg_numSaves
+import sg_gameDifficulty
 import sg_savename
 import sg_levelIndex
 import sg_gibs
@@ -719,7 +1242,19 @@ import Com_SkipTokens
 import Com_snprintf
 lit
 align 1
-LABELV $114
+LABELV $143
+byte 1 105
+byte 1 97
+byte 1 109
+byte 1 98
+byte 1 97
+byte 1 116
+byte 1 109
+byte 1 97
+byte 1 110
+byte 1 0
+align 1
+LABELV $142
 byte 1 105
 byte 1 104
 byte 1 97
@@ -735,7 +1270,7 @@ byte 1 108
 byte 1 115
 byte 1 0
 align 1
-LABELV $113
+LABELV $141
 byte 1 105
 byte 1 97
 byte 1 109
@@ -752,7 +1287,7 @@ byte 1 101
 byte 1 114
 byte 1 0
 align 1
-LABELV $109
+LABELV $140
 byte 1 105
 byte 1 97
 byte 1 109
@@ -764,7 +1299,7 @@ byte 1 115
 byte 1 121
 byte 1 0
 align 1
-LABELV $108
+LABELV $139
 byte 1 105
 byte 1 97
 byte 1 109
@@ -778,7 +1313,38 @@ byte 1 101
 byte 1 114
 byte 1 0
 align 1
-LABELV $105
+LABELV $138
+byte 1 105
+byte 1 119
+byte 1 116
+byte 1 98
+byte 1 97
+byte 1 103
+byte 1 0
+align 1
+LABELV $137
+byte 1 103
+byte 1 109
+byte 1 97
+byte 1 116
+byte 1 97
+byte 1 105
+byte 1 116
+byte 1 119
+byte 1 0
+align 1
+LABELV $136
+byte 1 103
+byte 1 109
+byte 1 97
+byte 1 116
+byte 1 104
+byte 1 105
+byte 1 116
+byte 1 119
+byte 1 0
+align 1
+LABELV $134
 byte 1 100
 byte 1 101
 byte 1 97
@@ -789,7 +1355,7 @@ byte 1 98
 byte 1 115
 byte 1 0
 align 1
-LABELV $102
+LABELV $132
 byte 1 98
 byte 1 108
 byte 1 105
@@ -801,45 +1367,437 @@ byte 1 98
 byte 1 115
 byte 1 0
 align 1
-LABELV $98
+LABELV $130
+byte 1 48
+byte 1 0
+align 1
+LABELV $129
+byte 1 68
 byte 1 105
-byte 1 119
-byte 1 116
+byte 1 115
+byte 1 97
 byte 1 98
-byte 1 97
+byte 1 108
+byte 1 105
+byte 1 110
 byte 1 103
-byte 1 0
-align 1
-LABELV $97
-byte 1 103
-byte 1 111
-byte 1 100
-byte 1 109
-byte 1 111
-byte 1 100
-byte 1 101
-byte 1 0
-align 1
-LABELV $93
-byte 1 103
-byte 1 109
-byte 1 97
-byte 1 116
+byte 1 32
+byte 1 99
 byte 1 104
-byte 1 105
+byte 1 101
+byte 1 97
 byte 1 116
-byte 1 119
+byte 1 115
+byte 1 46
+byte 1 10
 byte 1 0
 align 1
-LABELV $92
+LABELV $127
+byte 1 49
+byte 1 0
+align 1
+LABELV $126
+byte 1 115
 byte 1 103
-byte 1 105
-byte 1 109
-byte 1 109
+byte 1 95
+byte 1 99
+byte 1 104
 byte 1 101
+byte 1 97
+byte 1 116
+byte 1 115
+byte 1 79
+byte 1 110
+byte 1 0
+align 1
+LABELV $125
+byte 1 69
+byte 1 110
+byte 1 97
+byte 1 98
+byte 1 108
+byte 1 105
+byte 1 110
+byte 1 103
+byte 1 32
+byte 1 97
+byte 1 108
+byte 1 108
+byte 1 32
+byte 1 99
+byte 1 104
+byte 1 101
+byte 1 97
+byte 1 116
+byte 1 115
+byte 1 0
+align 1
+LABELV $123
+byte 1 115
+byte 1 103
+byte 1 99
+byte 1 95
+byte 1 100
+byte 1 101
+byte 1 97
+byte 1 102
+byte 1 77
+byte 1 111
+byte 1 98
+byte 1 115
+byte 1 0
+align 1
+LABELV $122
+byte 1 115
+byte 1 103
+byte 1 99
+byte 1 95
+byte 1 98
+byte 1 108
+byte 1 105
+byte 1 110
+byte 1 100
+byte 1 77
+byte 1 111
+byte 1 98
+byte 1 115
+byte 1 0
+align 1
+LABELV $120
+byte 1 103
+byte 1 111
+byte 1 100
+byte 1 109
+byte 1 111
+byte 1 100
+byte 1 101
+byte 1 0
+align 1
+LABELV $119
+byte 1 115
+byte 1 103
+byte 1 99
+byte 1 95
+byte 1 103
+byte 1 111
+byte 1 100
+byte 1 109
+byte 1 111
+byte 1 100
+byte 1 101
+byte 1 0
+align 1
+LABELV $117
+byte 1 116
+byte 1 111
+byte 1 111
+byte 1 95
+byte 1 97
+byte 1 110
+byte 1 103
+byte 1 114
+byte 1 121
+byte 1 95
+byte 1 116
+byte 1 111
+byte 1 95
+byte 1 100
+byte 1 105
+byte 1 101
+byte 1 0
+align 1
+LABELV $116
+byte 1 115
+byte 1 103
+byte 1 99
+byte 1 95
+byte 1 105
+byte 1 110
+byte 1 102
+byte 1 105
+byte 1 110
+byte 1 105
+byte 1 116
+byte 1 101
+byte 1 82
+byte 1 97
+byte 1 103
+byte 1 101
+byte 1 0
+align 1
+LABELV $114
+byte 1 105
+byte 1 95
+byte 1 110
+byte 1 101
+byte 1 101
+byte 1 100
 byte 1 95
 byte 1 109
 byte 1 111
 byte 1 114
 byte 1 101
+byte 1 95
+byte 1 66
+byte 1 79
+byte 1 79
+byte 1 76
+byte 1 69
+byte 1 84
+byte 1 83
+byte 1 0
+align 1
+LABELV $113
+byte 1 115
+byte 1 103
+byte 1 99
+byte 1 95
+byte 1 105
+byte 1 110
+byte 1 102
+byte 1 105
+byte 1 110
+byte 1 105
+byte 1 116
+byte 1 101
+byte 1 65
+byte 1 109
+byte 1 109
+byte 1 111
+byte 1 0
+align 1
+LABELV $111
+byte 1 105
+byte 1 95
+byte 1 97
+byte 1 109
+byte 1 95
+byte 1 98
+byte 1 117
+byte 1 105
+byte 1 108
+byte 1 116
+byte 1 95
+byte 1 100
+byte 1 105
+byte 1 102
+byte 1 102
+byte 1 101
+byte 1 114
+byte 1 101
+byte 1 110
+byte 1 116
+byte 1 0
+align 1
+LABELV $110
+byte 1 37
+byte 1 105
+byte 1 0
+align 1
+LABELV $109
+byte 1 115
+byte 1 103
+byte 1 99
+byte 1 95
+byte 1 105
+byte 1 110
+byte 1 102
+byte 1 105
+byte 1 110
+byte 1 105
+byte 1 116
+byte 1 101
+byte 1 72
+byte 1 101
+byte 1 97
+byte 1 108
+byte 1 116
+byte 1 104
+byte 1 0
+align 1
+LABELV $107
+byte 1 87
+byte 1 65
+byte 1 82
+byte 1 78
+byte 1 73
+byte 1 78
+byte 1 71
+byte 1 58
+byte 1 32
+byte 1 117
+byte 1 110
+byte 1 107
+byte 1 110
+byte 1 111
+byte 1 119
+byte 1 110
+byte 1 32
+byte 1 111
+byte 1 112
+byte 1 116
+byte 1 105
+byte 1 111
+byte 1 110
+byte 1 32
+byte 1 39
+byte 1 37
+byte 1 115
+byte 1 39
+byte 1 32
+byte 1 102
+byte 1 111
+byte 1 114
+byte 1 32
+byte 1 99
+byte 1 104
+byte 1 101
+byte 1 97
+byte 1 116
+byte 1 32
+byte 1 99
+byte 1 111
+byte 1 109
+byte 1 109
+byte 1 97
+byte 1 110
+byte 1 100
+byte 1 10
+byte 1 0
+align 1
+LABELV $106
+byte 1 67
+byte 1 104
+byte 1 101
+byte 1 97
+byte 1 116
+byte 1 32
+byte 1 39
+byte 1 37
+byte 1 115
+byte 1 39
+byte 1 32
+byte 1 116
+byte 1 111
+byte 1 103
+byte 1 103
+byte 1 108
+byte 1 101
+byte 1 100
+byte 1 32
+byte 1 111
+byte 1 102
+byte 1 102
+byte 1 46
+byte 1 10
+byte 1 0
+align 1
+LABELV $103
+byte 1 116
+byte 1 111
+byte 1 103
+byte 1 103
+byte 1 108
+byte 1 101
+byte 1 111
+byte 1 102
+byte 1 102
+byte 1 0
+align 1
+LABELV $102
+byte 1 111
+byte 1 102
+byte 1 102
+byte 1 0
+align 1
+LABELV $99
+byte 1 67
+byte 1 104
+byte 1 101
+byte 1 97
+byte 1 116
+byte 1 32
+byte 1 39
+byte 1 37
+byte 1 115
+byte 1 39
+byte 1 32
+byte 1 116
+byte 1 111
+byte 1 103
+byte 1 103
+byte 1 108
+byte 1 101
+byte 1 100
+byte 1 32
+byte 1 111
+byte 1 110
+byte 1 46
+byte 1 10
+byte 1 0
+align 1
+LABELV $96
+byte 1 116
+byte 1 111
+byte 1 103
+byte 1 103
+byte 1 108
+byte 1 101
+byte 1 111
+byte 1 110
+byte 1 0
+align 1
+LABELV $95
+byte 1 111
+byte 1 110
+byte 1 0
+align 1
+LABELV $92
+byte 1 117
+byte 1 115
+byte 1 97
+byte 1 103
+byte 1 101
+byte 1 58
+byte 1 32
+byte 1 37
+byte 1 115
+byte 1 32
+byte 1 60
+byte 1 49
+byte 1 124
+byte 1 111
+byte 1 110
+byte 1 124
+byte 1 116
+byte 1 111
+byte 1 103
+byte 1 103
+byte 1 108
+byte 1 101
+byte 1 111
+byte 1 110
+byte 1 62
+byte 1 32
+byte 1 111
+byte 1 114
+byte 1 32
+byte 1 60
+byte 1 48
+byte 1 124
+byte 1 111
+byte 1 102
+byte 1 102
+byte 1 124
+byte 1 116
+byte 1 111
+byte 1 103
+byte 1 103
+byte 1 108
+byte 1 101
+byte 1 111
+byte 1 102
+byte 1 102
+byte 1 62
+byte 1 10
 byte 1 0
