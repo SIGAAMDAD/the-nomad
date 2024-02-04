@@ -86,6 +86,7 @@ equ RE_RegisterSprite                       -83
 equ RE_AddSpriteToScene                     -84
 equ RE_DrawImage                            -85
 equ RE_SetColor                             -86
+equ trap_GetHashString                      -87
 
 equ ImGui_BeginWindow                       -401
 equ ImGui_EndWindow                         -402

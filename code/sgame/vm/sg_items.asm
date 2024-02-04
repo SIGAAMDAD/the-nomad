@@ -27,7 +27,7 @@ line 9
 LABELV $90
 line 10
 ;10:    if ( sg.numItems == MAXITEMS ) {
-ADDRGP4 sg+45272
+ADDRGP4 sg+43280
 INDIRI4
 CNSTI4 1024
 NEI4 $93
@@ -45,11 +45,11 @@ line 14
 ;13:
 ;14:    item = &sg.items[sg.numItems];
 ADDRLP4 0
-ADDRGP4 sg+45272
+ADDRGP4 sg+43280
 INDIRI4
 CNSTI4 4
 LSHI4
-ADDRGP4 sg+28888
+ADDRGP4 sg+26896
 ADDP4
 ASGNP4
 line 15
@@ -77,7 +77,7 @@ line 18
 ;17:
 ;18:    sg.numItems++;
 ADDRLP4 4
-ADDRGP4 sg+45272
+ADDRGP4 sg+43280
 ASGNP4
 ADDRLP4 4
 INDIRP4
@@ -123,7 +123,7 @@ line 30
 LABELV $101
 line 31
 ;31:    if ( sg.numWeapons == MAXWEAPONS ) {
-ADDRGP4 sg+65756
+ADDRGP4 sg+63764
 INDIRI4
 CNSTI4 1024
 NEI4 $104
@@ -141,11 +141,11 @@ line 35
 ;34:
 ;35:    w = &sg.weapons[sg.numWeapons];
 ADDRLP4 0
-ADDRGP4 sg+65756
+ADDRGP4 sg+63764
 INDIRI4
 CNSTI4 20
 MULI4
-ADDRGP4 sg+45276
+ADDRGP4 sg+43284
 ADDP4
 ASGNP4
 line 36
@@ -163,7 +163,7 @@ pop
 line 37
 ;37:    sg.numWeapons++;
 ADDRLP4 8
-ADDRGP4 sg+65756
+ADDRGP4 sg+63764
 ASGNP4
 ADDRLP4 8
 INDIRP4
@@ -244,6 +244,7 @@ import G_SoundRecursive
 import G_CastRay
 import G_SetActiveMap
 import G_LoadMap
+import trap_GetHashString
 import G_SetCameraData
 import Sys_MemoryRemaining
 import trap_RemoveCommand

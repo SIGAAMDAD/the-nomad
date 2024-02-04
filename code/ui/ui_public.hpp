@@ -56,8 +56,10 @@ typedef enum : uint64_t {
     NUM_UI_MENUS
 } uiMenu_t;
 
+extern "C" void UI_GetHashString( const char *name, char *value );
+
 extern "C" void UI_Init( void );
 extern "C" void UI_Shutdown( void );
-extern "C" void UI_Refresh( int realtime );
+extern "C" void UI_Refresh( int32_t realtime );
 
 #endif

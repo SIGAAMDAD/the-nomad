@@ -493,44 +493,27 @@ typedef struct {
 #define MUTEX_TYPE_SHARED 1
 #define MUTEX_TYPE_RECURSIVE 2
 
-typedef struct memoryMap_s memoryMap_t;
+const char *Sys_GetSteamPath( void );
+uint64_t Sys_Milliseconds( void );
+FILE *Sys_FOpen( const char *filepath, const char *mode );
 
-const char *Sys_GetSteamPath(void);
-uint64_t Sys_Milliseconds(void);
-FILE *Sys_FOpen(const char *filepath, const char *mode);
+int Sys_MessageBox( const char *title, const char *text, bool ShowOkAndCancelButton );
 
-// Sys_MapMemory should only be called by the filesystem
-memoryMap_t *Sys_MapMemory(FILE *fp, qboolean temp, fileHandle_t fd);
-// like Sys_MapMemory but frees the mapped file, doesn't close it though
-void Sys_UnmapMemory(memoryMap_t *file);
+void Sys_GetRAMUsage( uint64_t *virt, uint64_t *phys );
 
-int Sys_MessageBox(const char *title, const char *text, bool ShowOkAndCancelButton);
-
-uint64_t Sys_GetUsedRAM_Physical(void);
-uint64_t Sys_GetUsedRAM_Virtual(void);
-uint64_t Sys_GetTotalRAM_Virtual(void);
-uint64_t Sys_GetTotalRAM_Physical(void);
-
-uint64_t Sys_GetCacheLine(void);
-uint64_t Sys_GetPageSize(void);
+uint64_t Sys_GetCacheLine( void );
+uint64_t Sys_GetPageSize( void );
 
 char *Sys_ConsoleInput( void );
-uint64_t Sys_EventSubtime(uint64_t time);
+uint64_t Sys_EventSubtime( uint64_t time );
 
-fileOffset_t Sys_SeekMappedFile(fileOffset_t offset, uint32_t whence, memoryMap_t *file);
-fileOffset_t Sys_TellMappedFile(memoryMap_t *file);
-memoryMap_t *Sys_MapFile(const char *path, qboolean temp);
-uint64_t Sys_ReadMappedFile(void *buffer, uint64_t size, memoryMap_t *file);
-void *Sys_GetMappedFileBuffer(memoryMap_t *file);
-void Sys_UnmapFile(memoryMap_t *file);
+uint64_t Sys_StackMemoryRemaining( void );
 
-uint64_t Sys_StackMemoryRemaining(void);
-
-qboolean Sys_mkdir(const char *name);
+qboolean Sys_mkdir( const char *name );
 
 void Sys_Print(const char *msg);
-void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error(const char *fmt, ...);
-char *Sys_GetClipboardData(void);
+void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error( const char *fmt, ... );
+char *Sys_GetClipboardData( void );
 
 const char *Sys_pwd(void);
 void *Sys_LoadDLL(const char *name);

@@ -223,6 +223,17 @@ void G_ShutdownUI( void ) {
     UI_Shutdown();
 }
 
+/*
+* UI_GetHashString: an sgame interface for the string manager
+*/
+extern "C" void UI_GetHashString( const char *name, char *value ) {
+	const stringHash_t *hash;
+
+	hash = strManager->ValueForKey( name );
+
+	N_strncpyz( value, hash->value, MAX_STRING_CHARS );
+}
+
 extern "C" void UI_Init( void )
 {
     Con_Printf( "UI_Init: initializing UI...\n" );

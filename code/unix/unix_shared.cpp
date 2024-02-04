@@ -16,6 +16,8 @@
 #include <sys/time.h>
 #include <sys/sysinfo.h>
 #include <libgen.h>
+#include <fcntl.h>
+#include <sys/mman.h>
 
 qboolean Sys_RandomBytes(byte *s, uint64_t len)
 {
@@ -377,62 +379,143 @@ uint64_t Sys_EventSubtime(uint64_t time)
     return ret;
 }
 
-typedef struct {
-    fileHandle_t file;
-    int fd;
-} mappedFile_t;
+#define MEMOPTION_MAKEHOT   0 // memory will be accessed most frames
+#define MEMOPTION_MAKECOLD  1 // memory will be accessed rarely, most likely only in init stage
 
-struct memoryMap_s
+void Sys_SetMemoryOptions( void *pAddress, uint64_t nBytes, int options )
 {
-    void *addr;
-    union {
-        mappedFile_t file;
-        uint64_t size;
+    int rOption;
+    switch ( options ) {
+    case MEMOPTION_MAKECOLD:
+        rOption = POSIX_MADV_DONTNEED;
+        break;
+    case MEMOPTION_MAKEHOT:
+        rOption = POSIX_MADV_WILLNEED:
+        break;
     };
-};
 
-memoryMap_t *Sys_MapFile(const char *path, qboolean temp)
+    if ( posix_madvise( pAddress, nBytes, rOption ) == -1 ) {
+        N_Error( ERR_FATAL, "Sys_SetMemoryOptions: posix_madvise failed, errno: %s", Sys_GetError() );
+    }
+}
+
+typedef struct {
+    void *pAddress;
+    size_t nBytes;
+    int fileHandle;
+    qboolean temporary;
+} memoryMap_t;
+
+static memoryMap_t *MapMemory( size_t nBytes, int prot, int flags, int fd )
+{
+    memoryMap_t *mem;
+
+    mem = (memoryMap_t *)Z_Malloc( sizeof(*mem), TAG_STATIC );
+    memset( mem, 0, sizeof(*mem) );
+    mem->nBytes = nBytes;
+    mem->temporary = !( flags & MAP_SHARED );
+    mem->fileHandle = fd;
+
+    mem->pAddress = mmap( NULL, nBytes, prot, flags, fd, 0 );
+    if ( !mem->pAddress || mem->pAddress == MAP_FAILED ) {
+        if ( fd != -1 ) {
+            close( fd );
+        }
+        Z_Free( file );
+
+        N_Error( ERR_DROP, "Sys_CreateMemoryMap: failed to create memory map size %lu bytes, prot 0x%04x, flags 0x%04x, fd %i, strerror: %s",
+            nBytes, prot, flags, fd, strerror( errno ) );
+    }
+
+    return mem;
+}
+
+void *Sys_MapFile( const char *path, qboolean temp )
+{
+    memoryMap_t *file;
+    int prot, flags;
+    int fd;
+    size_t size;
+    void *address;
+
+    fd = open( path, 0 );
+    if ( fd == -1 ) {
+        N_Error( ERR_DROP, "Sys_MapFile: failed to create mapping for %s, strerror: %s", path, strerror( errno ) );
+    }
+
+    file = MapMemory( lseek( fd, 0, SEEK_END ), PROT_READ | PROT_WRITE, temp ? MAP_PRIVATE : MAP_SHARED, fd );
+    lseek( fd, 0, SEEK_SET );
+
+    return file;
+}
+
+void *Sys_VirtualAlloc( uint64_t size )
+{
+    return MapMemory( size, PROT_READ | PROT_WRITE, MAP_PRIVATE, -1 );
+}
+
+void Sys_SetMemoryReadOnly( void *pAddress, uint64_t nBytes, qboolean isMapped )
+{
+    memoryMap_t *mem;
+
+    if ( isMapped ) {
+        mem = (memoryMap_t *)pAddress;
+
+        if ( mprotect( mem->pAddress, nBytes, PROT_READ ) == -1 ) {
+            N_Error( ERR_FATAL, "Sys_SetMemoryReadOnly: mprotect failed on memory mapped region, strerror: %s", strerror( errno ) );
+        }
+    }
+    else {
+        if ( mprotect( pAddress, nBytes, PROT_READ ) ) {
+            N_Error( ERR_FATAL, "Sys_SetMemoryReadOnly: mprotect failed on memory region sized %lu bytes, strerror: %s", strerror( errno ) );
+        }
+    }
+
+    Con_DPrintf( "Set memory address %p -> %p (%lu bytes) to read only.\n", pAddress, (void *)( (byte *)pAddress + nBytes ), nBytes );
+}
+
+void Sys_MapMemory( FILE *fp, qboolean temp, fileHandle_t fd )
 {
     return NULL; // FIXME: implement
 }
 
-memoryMap_t *Sys_VirtualAlloc(uint64_t size)
+void *Sys_GetMappedFileBuffer( void *file )
 {
     return NULL; // FIXME: implement
 }
 
-
-memoryMap_t *Sys_MapMemory(FILE *fp, qboolean temp, fileHandle_t fd)
-{
-    return NULL; // FIXME: implement
-}
-
-void *Sys_GetMappedFileBuffer(memoryMap_t *file)
-{
-    return NULL; // FIXME: implement
-}
-
-uint64_t Sys_ReadMappedFile(void *buffer, uint64_t size, memoryMap_t *file)
+uint64_t Sys_ReadMappedFile( void *buffer, uint64_t size, void *file )
 {
     return 0; // FIXME: implement
 }
 
-void Sys_UnmapMemory(memoryMap_t *file)
+void Sys_UnmapMemory( void *pAddress, uint64_t nBytes )
 {
 }
 
-void Sys_UnmapFile(memoryMap_t *file)
+void Sys_UnmapFile( void *file )
 {
+    memoryMap_t *mem;
+
+    mem = (memoryMap_t *)file;
+
+    if ( mem->fileHandle != -1 ) {
+        close( mem->fileHandle );
+    }
+    if ( munmap( mem->pAddress, mem->nBytes ) == -1 ) {
+        N_Error( ERR_FATAL, "Sys_UnmapMemory: munmap failed on %p, %lu bytes, strerror: %s", mem->pAddress, mem->nBytes, strerror( errno ) );
+    }
+    Z_Free( mem );
 }
 
-fileOffset_t Sys_TellMappedFile(memoryMap_t *file)
+fileOffset_t Sys_TellMappedFile( void *file )
 {
 }
 
 /*
-Sys_SeekMappedFile: use SEEK_SET, SEEK_END, and SEEK_CUR instead of custom filesystem seekers
+* Sys_SeekMappedFile: use SEEK_SET, SEEK_END, and SEEK_CUR instead of custom filesystem seekers
 */
-fileOffset_t Sys_SeekMappedFile(fileOffset_t offset, uint32_t whence, memoryMap_t *file)
+fileOffset_t Sys_SeekMappedFile( fileOffset_t offset, uint32_t whence, void *file )
 {
 }
 

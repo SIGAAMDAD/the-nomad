@@ -126,8 +126,6 @@ private:
 
     char m_pName[MAX_NPATH];
 
-    short *m_pData;
-    uint64_t m_nSize;
     uint32_t m_iType;
     uint32_t m_iTag;
 
@@ -194,7 +192,6 @@ private:
 
 static CSoundManager *sndManager;
 
-
 CSoundSource::CSoundSource( void ) {
     Init();
 }
@@ -236,8 +233,6 @@ void CSoundSource::Init( void )
     if ( m_iBuffer == 0 ) {
         ALCall( alGenBuffers( 1, &m_iBuffer) );
     }
-    m_nSize = 0;
-    m_pData = NULL;
     m_iType = 0;
     m_bLoop = false;
 }
@@ -293,7 +288,7 @@ int64_t CSoundSource::FileFormat( const char *ext ) const
 
 void CSoundSource::Alloc( void )
 {
-    switch (m_hFData.format & SF_FORMAT_SUBMASK) {
+    switch ( m_hFData.format & SF_FORMAT_SUBMASK ) {
     case SF_FORMAT_ALAW:
         break;
     case SF_FORMAT_ULAW:
@@ -317,9 +312,6 @@ void CSoundSource::Alloc( void )
         m_iType = SNDBUF_16BIT;
         break;
     };
-
-    m_nSize = m_hFData.channels * m_hFData.frames;
-    m_pData = (short *)Hunk_AllocateTempMemory( sizeof(short) * m_nSize );
 }
 
 void CSoundSource::Play( bool loop )
@@ -385,6 +377,8 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     void *buffer;
     uint64_t length;
     const char *ospath;
+    void *data;
+    uint64_t dataSize;
 
     m_iTag = tag;
 
@@ -430,9 +424,28 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     // allocate the buffer
     Alloc();
 
-    if ( !sf_read_short( sf, m_pData, m_nSize ) ) {
+    switch ( m_iType ) {
+    default:
+    case SNDBUF_16BIT:
+        dataSize = sizeof(short);
+        break;
+    case SNDBUF_8BIT:
+        dataSize = sizeof(char);
+        break;
+    case SNDBUF_DOUBLE:
+        dataSize = sizeof(double);
+        break;
+    case SNDBUF_FLOAT:
+        dataSize = sizeof(float);
+        break;
+    };
+
+    dataSize *= m_hFData.channels * m_hFData.frames;
+    data = Hunk_AllocateTempMemory( dataSize );
+
+    if ( !sf_read_raw( sf, data, dataSize ) ) {
         N_Error( ERR_FATAL, "CSoundSource::LoadFile(%s): failed to read %lu bytes from audio stream, sf_strerror(): %s\n",
-            npath, m_nSize * sizeof(short), sf_strerror( sf ) );
+            npath, dataSize, sf_strerror( sf ) );
     }
     
     sf_close( sf );
@@ -445,14 +458,11 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     }
 
     // generate a brand new source for each individual sfx
-    if (tag == TAG_SFX && m_iSource == 0) {
+    if ( tag == TAG_SFX && m_iSource == 0 ) {
         ALCall( alGenSources( 1, &m_iSource ) );
     }
-    if ( tag == TAG_SFX && m_iBuffer == 0 ) {
-        ALCall( alGenBuffers( 1, &m_iBuffer ) );
-    }
 
-    ALCall( alBufferData( m_iBuffer, format, m_pData, m_nSize * sizeof(short), m_hFData.samplerate ) );
+    ALCall( alBufferData( m_iBuffer, format, data, dataSize, m_hFData.samplerate ) );
     ALCall( alSourcei( m_iSource, AL_BUFFER, m_iBuffer ) );
 
     if ( tag == TAG_SFX ) {
@@ -461,7 +471,7 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
         ALCall( alSourcef( m_iSource, AL_GAIN, snd_musicvol->f ) );
     }
 
-    Hunk_FreeTempMemory( m_pData );
+    Hunk_FreeTempMemory( data );
     FS_FreeFile( buffer );
 
     return true;
@@ -469,6 +479,8 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
 
 void CSoundManager::Init( void )
 {
+    memset( this, 0, sizeof(*this) );
+
     m_pDevice = alcOpenDevice( NULL );
     if ( !m_pDevice ) {
         N_Error( ERR_FATAL, "Snd_Init: failed to open OpenAL device" );
@@ -576,7 +588,7 @@ CSoundSource *CSoundManager::InitSource( const char *filename, int64_t tag )
     m_hAllocLock.Lock();
 
     src = (CSoundSource *)Z_Malloc( sizeof(*src), (memtag_t)tag );
-    ::new ( src ) CSoundSource();
+    memset( src, 0, sizeof(*src) );
     src->Init();
 
     if (tag == TAG_MUSIC) {
@@ -814,7 +826,7 @@ void Snd_Update( int32_t msec )
         ALCall( alSourcef( sndManager->GetMusicSource(), AL_GAIN, CLAMP( snd_musicvol->f, 0.0f, snd_mastervol->f ) / CLAMP_VOLUME ) );
         snd_musicvol->modified = qfalse;
     }
-    if ( !sndManager->m_pCurrentTrack->IsPlaying() || sndManager->m_pQueuedTrack ) {
+    if ( sndManager->m_pCurrentTrack && !sndManager->m_pCurrentTrack->IsPlaying() || sndManager->m_pQueuedTrack ) {
         Snd_ClearLoopingTrack();
     }
 }

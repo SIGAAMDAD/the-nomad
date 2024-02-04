@@ -256,7 +256,7 @@ ASGNP4
 LABELV $102
 ADDRLP4 4
 INDIRI4
-ADDRGP4 sg+4216
+ADDRGP4 sg+2224
 INDIRI4
 LTI4 $99
 line 54
@@ -642,7 +642,7 @@ line 116
 ;115:
 ;116:	sg.numEntities--;
 ADDRLP4 0
-ADDRGP4 sg+4216
+ADDRGP4 sg+2224
 ASGNP4
 ADDRLP4 0
 INDIRP4
@@ -666,7 +666,7 @@ line 123
 ;121:	sgentity_t *ent;
 ;122:
 ;123:	if ( sg.numEntities == MAXENTITIES ) {
-ADDRGP4 sg+4216
+ADDRGP4 sg+2224
 INDIRI4
 CNSTI4 2048
 NEI4 $123
@@ -684,7 +684,7 @@ line 127
 ;126:
 ;127:	ent = &sg_entities[sg.numEntities];
 ADDRLP4 0
-ADDRGP4 sg+4216
+ADDRGP4 sg+2224
 INDIRI4
 CNSTI4 160
 MULI4
@@ -694,7 +694,7 @@ ASGNP4
 line 128
 ;128:	sg.numEntities++;
 ADDRLP4 4
-ADDRGP4 sg+4216
+ADDRGP4 sg+2224
 ASGNP4
 ADDRLP4 4
 INDIRP4
@@ -900,7 +900,7 @@ line 165
 ;163:	sgentity_t *ent;
 ;164:
 ;165:	if ( sg.numEntities == MAXENTITIES ) {
-ADDRGP4 sg+4216
+ADDRGP4 sg+2224
 INDIRI4
 CNSTI4 2048
 NEI4 $146
@@ -934,7 +934,7 @@ line 172
 ;171:
 ;172:	ent = &sg_entities[sg.numEntities];
 ADDRLP4 0
-ADDRGP4 sg+4216
+ADDRGP4 sg+2224
 INDIRI4
 CNSTI4 160
 MULI4
@@ -994,7 +994,7 @@ line 178
 ;178:	case ET_PLAYR: {
 line 179
 ;179:		if ( sg.playrReady ) {
-ADDRGP4 sg+65816
+ADDRGP4 sg+63824
 INDIRI4
 CNSTI4 0
 EQI4 $158
@@ -1251,7 +1251,7 @@ line 208
 ;207:	
 ;208:	sg.numEntities++;
 ADDRLP4 20
-ADDRGP4 sg+4216
+ADDRGP4 sg+2224
 ASGNP4
 ADDRLP4 20
 INDIRP4
@@ -1317,6 +1317,7 @@ import G_SoundRecursive
 import G_CastRay
 import G_SetActiveMap
 import G_LoadMap
+import trap_GetHashString
 import G_SetCameraData
 import Sys_MemoryRemaining
 import trap_RemoveCommand

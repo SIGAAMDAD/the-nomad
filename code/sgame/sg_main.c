@@ -329,13 +329,50 @@ int SG_RunLoop( int levelTime, int frameTime )
     return 1;
 }
 
-
-static void SG_LoadMedia( void )
+char *SG_LoadFile( const char *filename )
 {
     int len;
     fileHandle_t f;
-    char text[20000];
+    static char text[20000];
 
+    len = trap_FS_FOpenFile( filename, &f, FS_OPEN_READ );
+    if ( !len ) {
+        SG_Error( "SG_LoadFile: failed to open file %s", filename );
+    }
+    if ( len >= sizeof(text) ) {
+        SG_Error( "SG_LoadFile: file %s too long", filename );
+    }
+    trap_FS_Read( text, len, f );
+    trap_FS_FClose( f );
+
+    return text;
+}
+
+static void SG_LoadMedia( void )
+{
+    int i;
+
+    SG_Printf( "Loading sgame resources...\n" );
+
+    //
+    // shaders
+    //
+    for ( i = 0; i < arraylen( sg.media.bloodSplatterShader ); i++ ) {
+//        sg.media.bloodSplatterShader[i] = RE_RegisterShader( va( "gfx/bloodSplatter%i", i ) );
+    }
+//    sg.media.bulletMarkShader = RE_RegisterShader( "gfx/bulletMarks" );
+
+    //
+    // sfx
+    //
+//    sg.media.footstepsGround = Snd_RegisterSfx( "sfx/player/footstepsGround.ogg" );
+//    sg.media.footstepsMetal = Snd_RegisterSfx( "sfx/player/footstepsMetal.ogg" );
+//    sg.media.footstepsWater = Snd_RegisterSfx( "sfx/player/footstepsWater.ogg" );
+//    sg.media.footstepsWood = Snd_RegisterSfx( "sfx/player/footstepsWood.ogg" );
+
+//    sg.media.grappleHit = Snd_RegisterSfx( "sfx/player/grappleHit.ogg" );
+
+//    sg.media.bladeModeEnter = Snd_RegisterSfx( "sfx/player/bladeModeEnter.ogg" );
 }
 
 void SG_Init( void )

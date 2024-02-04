@@ -797,6 +797,7 @@ import G_SoundRecursive
 import G_CastRay
 import G_SetActiveMap
 import G_LoadMap
+import trap_GetHashString
 import G_SetCameraData
 import Sys_MemoryRemaining
 import trap_RemoveCommand

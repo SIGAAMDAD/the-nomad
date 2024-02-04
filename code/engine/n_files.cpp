@@ -29,8 +29,7 @@ the basepath is the path to the user's current working directory.
 #define HEADER_MAGIC 0x5f3759df
 #define BFF_IDENT (('B'<<24)+('F'<<16)+('F'<<8)+'I')
 
-typedef struct
-{
+typedef struct {
 	int64_t ident = BFF_IDENT;
 	int64_t magic = HEADER_MAGIC;
 	int64_t numChunks;
@@ -92,7 +91,6 @@ typedef struct
 	char name[MAX_NPATH];
 
 	fileData data;
-	memoryMap_t *mapping; // a file mapping is a fake handle to a file
 
 	int64_t bffIndex;
 	bffFile_t *bff;
@@ -1033,7 +1031,8 @@ fileHandle_t FS_OpenFileMapping( const char *path, qboolean temp )
 		return FS_INVALID_HANDLE;
 	}
 
-//	f->mapping = Sys_MapMemory(f->data.fp, temp, fd);
+/*
+	f->mapping = Sys_MapMemory(f->data.fp, temp, fd);
 	if ( !f->mapping ) {
 		// cleanup, file mapping failed
 		f->data.stream = NULL;
@@ -1048,6 +1047,7 @@ fileHandle_t FS_OpenFileMapping( const char *path, qboolean temp )
 	f->used = qtrue;
 
 	return fd;
+*/
 }
 
 void FS_SetBFFIndex( uint64_t index )
@@ -1626,7 +1626,6 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 	uint64_t baseNameLen, fileNameLen;
 	uint32_t stream;
 	void *streamPtr;
-	memoryMap_t *file;
 	FILE *fp;
 	fileStats_t stats;
 
@@ -1649,18 +1648,18 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 	file = NULL;
 
 	// if the file is really heavy, map it, otherwise, open it normally
-#if 0
-	if (stats.size >= BFF_MAPFILE_SIZE) {
-		file = Sys_MapFile(bffpath, qtrue); // create a temporary file mapping, don't save it to disk
-		if (!file) {
-			N_Error(ERR_FATAL, "FS_LoadBFF: failed to create a memory mapping of bff %s", bffpath);
+/*
+	if ( stats.size >= BFF_MAPFILE_SIZE ) {
+		file = Sys_MapFile( bffpath, qtrue ); // create a temporary file mapping, don't save it to disk
+		if ( !file ) {
+			N_Error( ERR_FATAL, "FS_LoadBFF: failed to create a memory mapping of bff %s", bffpath );
 			return NULL;
 		}
 		stream = BFF_STREAM_MAPPED;
 		streamPtr = (void *)file;
 	}
 	else
-#endif
+*/
 	{
 		fp = Sys_FOpen(bffpath, "rb");
 		if (!fp) {

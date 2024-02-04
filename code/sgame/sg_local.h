@@ -243,45 +243,57 @@ typedef struct
 } mobj_t;
 
 typedef struct string_s {
-	char name[MAX_STRING_CHARS];
+	const char *name;
 	char string[MAX_STRING_CHARS];
 } string_t;
 
 typedef struct
 {
+	// gfx shaders
+	nhandle_t bloodSplatterShader[4];
+	nhandle_t bulletMarkShader;
+
+	//
+	// sprite sheets
+	//
+	nhandle_t gfxSprites;
+	nhandle_t raioMoveSprites;
+	nhandle_t raioCombatSprites;
+	nhandle_t gruntSprites;
+	nhandle_t shottySprites;
+
+	//
+	// sound effects
+	//
+	sfxHandle_t footstepsMetal;
+	sfxHandle_t footstepsWood;
+	sfxHandle_t footstepsGround;
+	sfxHandle_t footstepsWater;
+	sfxHandle_t gibBounce0;
+	sfxHandle_t gibBounce1;
+
+	sfxHandle_t bladeModeEnter;
+
+	sfxHandle_t grappleShoot;
+	sfxHandle_t grapplePull;
+	sfxHandle_t grappleHit;
+	sfxHandle_t grappleHitWall[2];
+
 	sfxHandle_t playerPain0;
     sfxHandle_t playerPain1;
     sfxHandle_t playerPain2;
     sfxHandle_t playerDeath0;
     sfxHandle_t playerDeath1;
     sfxHandle_t playerDeath2;
-	sfxHandle_t player_parry;
+	sfxHandle_t playerParry;
 
-	sfxHandle_t revolver_fire;
-	sfxHandle_t revolver_rld;
+	sfxHandle_t murstarFire;
+	sfxHandle_t murstarEquip;
+	sfxHandle_t murstarReload;
 
-	nhandle_t raio_shader;
-	nhandle_t grunt_shader;
-	nhandle_t shotty_shader;
-
-	nhandle_t raio_sprites;
-	nhandle_t grunt_sprites;
-	nhandle_t shotty_sprites;
-
-	// gfx shaders
-	nhandle_t bloodSplatterShader[4];
-
-	//
-	// sprite sheets
-	//
-	nhandle_t gfxSprites;
-
-	//
-	// sound effects
-	//
-	sfxHandle_t footsteps;
-	sfxHandle_t gibBounce0;
-	sfxHandle_t gibBounce1;
+	sfxHandle_t plasmaSmgFire;
+	sfxHandle_t plasmaSmgEquip;
+	sfxHandle_t plasmaSmgReload;
 
 	//
 	// music
@@ -318,7 +330,7 @@ typedef struct
 	int framenum;
 
 	// current map's name
-	char mapname[MAX_GDR_PATH];
+	char mapname[MAX_NPATH];
 
 	float cameraWidth;
 	float cameraHeight;
@@ -538,6 +550,8 @@ void Sys_SnapVector( float *v );
 
 // sets the desired camera position, zoom, rotation, etc.
 void G_SetCameraData( const vec2_t *origin, float zoom, float rotation );
+
+void trap_GetHashString( const char *name, char *value );
 
 nhandle_t G_LoadMap( const char *name );
 void G_SetActiveMap( nhandle_t mapHandle, mapinfo_t *info, int *soundBits, linkEntity_t *activeEnts );

@@ -95,7 +95,7 @@ LABELV $94
 line 29
 ;28:    case SGAME_GET_STATE:
 ;29:        return sg.state;
-ADDRGP4 sg+4204
+ADDRGP4 sg+2212
 INDIRI4
 RETI4
 ADDRGP4 $89
@@ -1095,7 +1095,7 @@ line 273
 ;271:    sgentity_t *ent;
 ;272:
 ;273:    if ( sg.state == SG_INACTIVE ) {
-ADDRGP4 sg+4204
+ADDRGP4 sg+2212
 INDIRI4
 CNSTI4 2
 NEI4 $190
@@ -1133,7 +1133,7 @@ line 284
 ;283:
 ;284:    sg.framenum++;
 ADDRLP4 20
-ADDRGP4 sg+4232
+ADDRGP4 sg+2240
 ASGNP4
 ADDRLP4 20
 INDIRP4
@@ -1145,22 +1145,22 @@ ADDI4
 ASGNI4
 line 285
 ;285:    sg.previousTime = sg.framenum;
-ADDRGP4 sg+4224
-ADDRGP4 sg+4232
+ADDRGP4 sg+2232
+ADDRGP4 sg+2240
 INDIRI4
 ASGNI4
 line 286
 ;286:    sg.levelTime = levelTime;
-ADDRGP4 sg+4228
+ADDRGP4 sg+2236
 ADDRFP4 0
 INDIRI4
 ASGNI4
 line 287
 ;287:    msec = sg.levelTime - sg.previousTime;
 ADDRLP4 16
-ADDRGP4 sg+4228
+ADDRGP4 sg+2236
 INDIRI4
-ADDRGP4 sg+4224
+ADDRGP4 sg+2232
 INDIRI4
 SUBI4
 ASGNI4
@@ -1371,7 +1371,7 @@ ASGNI4
 LABELV $205
 ADDRLP4 4
 INDIRI4
-ADDRGP4 sg+4216
+ADDRGP4 sg+2224
 INDIRI4
 LTI4 $202
 line 318
@@ -1436,7 +1436,7 @@ ASGNI4
 LABELV $223
 ADDRLP4 4
 INDIRI4
-ADDRGP4 sg+4216
+ADDRGP4 sg+2224
 INDIRI4
 LTI4 $220
 line 326
@@ -1458,55 +1458,202 @@ CNSTI4 1
 RETI4
 LABELV $189
 endproc SG_RunLoop 44 12
-proc SG_LoadMedia 20008 0
-line 334
+bss
+align 1
+LABELV $228
+skip 20000
+export SG_LoadFile
+code
+proc SG_LoadFile 12 12
+line 333
 ;330:}
 ;331:
-;332:
-;333:static void SG_LoadMedia( void )
-;334:{
+;332:char *SG_LoadFile( const char *filename )
+;333:{
+line 338
+;334:    int len;
+;335:    fileHandle_t f;
+;336:    static char text[20000];
+;337:
+;338:    len = trap_FS_FOpenFile( filename, &f, FS_OPEN_READ );
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRLP4 4
+ARGP4
+CNSTI4 0
+ARGI4
+ADDRLP4 8
+ADDRGP4 trap_FS_FOpenFile
+CALLU4
+ASGNU4
+ADDRLP4 0
+ADDRLP4 8
+INDIRU4
+CVUI4 4
+ASGNI4
 line 339
-;335:    int len;
-;336:    fileHandle_t f;
-;337:    char text[20000];
-;338:
-;339:}
+;339:    if ( !len ) {
+ADDRLP4 0
+INDIRI4
+CNSTI4 0
+NEI4 $229
+line 340
+;340:        SG_Error( "SG_LoadFile: failed to open file %s", filename );
+ADDRGP4 $231
+ARGP4
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRGP4 SG_Error
+CALLV
+pop
+line 341
+;341:    }
+LABELV $229
+line 342
+;342:    if ( len >= sizeof(text) ) {
+ADDRLP4 0
+INDIRI4
+CVIU4 4
+CNSTU4 20000
+LTU4 $232
+line 343
+;343:        SG_Error( "SG_LoadFile: file %s too long", filename );
+ADDRGP4 $234
+ARGP4
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRGP4 SG_Error
+CALLV
+pop
+line 344
+;344:    }
+LABELV $232
+line 345
+;345:    trap_FS_Read( text, len, f );
+ADDRGP4 $228
+ARGP4
+ADDRLP4 0
+INDIRI4
+ARGI4
+ADDRLP4 4
+INDIRI4
+ARGI4
+ADDRGP4 trap_FS_Read
+CALLI4
+pop
+line 346
+;346:    trap_FS_FClose( f );
+ADDRLP4 4
+INDIRI4
+ARGI4
+ADDRGP4 trap_FS_FClose
+CALLV
+pop
+line 348
+;347:
+;348:    return text;
+ADDRGP4 $228
+RETP4
 LABELV $227
-endproc SG_LoadMedia 20008 0
+endproc SG_LoadFile 12 12
+proc SG_LoadMedia 4 4
+line 352
+;349:}
+;350:
+;351:static void SG_LoadMedia( void )
+;352:{
+line 355
+;353:    int i;
+;354:
+;355:    SG_Printf( "Loading sgame resources...\n" );
+ADDRGP4 $236
+ARGP4
+ADDRGP4 SG_Printf
+CALLV
+pop
+line 360
+;356:
+;357:    //
+;358:    // shaders
+;359:    //
+;360:    for ( i = 0; i < arraylen( sg.media.bloodSplatterShader ); i++ ) {
+ADDRLP4 0
+CNSTI4 0
+ASGNI4
+ADDRGP4 $240
+JUMPV
+LABELV $237
+line 362
+;361://        sg.media.bloodSplatterShader[i] = RE_RegisterShader( va( "gfx/bloodSplatter%i", i ) );
+;362:    }
+LABELV $238
+line 360
+ADDRLP4 0
+ADDRLP4 0
+INDIRI4
+CNSTI4 1
+ADDI4
+ASGNI4
+LABELV $240
+ADDRLP4 0
+INDIRI4
+CVIU4 4
+CNSTU4 4
+LTU4 $237
+line 376
+;363://    sg.media.bulletMarkShader = RE_RegisterShader( "gfx/bulletMarks" );
+;364:
+;365:    //
+;366:    // sfx
+;367:    //
+;368://    sg.media.footstepsGround = Snd_RegisterSfx( "sfx/player/footstepsGround.ogg" );
+;369://    sg.media.footstepsMetal = Snd_RegisterSfx( "sfx/player/footstepsMetal.ogg" );
+;370://    sg.media.footstepsWater = Snd_RegisterSfx( "sfx/player/footstepsWater.ogg" );
+;371://    sg.media.footstepsWood = Snd_RegisterSfx( "sfx/player/footstepsWood.ogg" );
+;372:
+;373://    sg.media.grappleHit = Snd_RegisterSfx( "sfx/player/grappleHit.ogg" );
+;374:
+;375://    sg.media.bladeModeEnter = Snd_RegisterSfx( "sfx/player/bladeModeEnter.ogg" );
+;376:}
+LABELV $235
+endproc SG_LoadMedia 4 4
 export SG_Init
 proc SG_Init 4 12
-line 342
-;340:
-;341:void SG_Init( void )
-;342:{
-line 343
-;343:    G_Printf( "---------- Game Initialization ----------\n" );
-ADDRGP4 $229
+line 379
+;377:
+;378:void SG_Init( void )
+;379:{
+line 380
+;380:    G_Printf( "---------- Game Initialization ----------\n" );
+ADDRGP4 $242
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 344
-;344:    G_Printf( "gamename: %s\n", GLN_VERSION );
-ADDRGP4 $230
+line 381
+;381:    G_Printf( "gamename: %s\n", GLN_VERSION );
+ADDRGP4 $243
 ARGP4
 ADDRGP4 $109
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 345
-;345:    G_Printf( "gamedate: %s\n", __DATE__ );
-ADDRGP4 $231
+line 382
+;382:    G_Printf( "gamedate: %s\n", __DATE__ );
+ADDRGP4 $244
 ARGP4
 ADDRGP4 $111
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 347
-;346:
-;347:    trap_Key_SetCatcher( trap_Key_GetCatcher() | KEYCATCH_SGAME );
+line 384
+;383:
+;384:    trap_Key_SetCatcher( trap_Key_GetCatcher() | KEYCATCH_SGAME );
 ADDRLP4 0
 ADDRGP4 trap_Key_GetCatcher
 CALLI4
@@ -1521,58 +1668,58 @@ ARGI4
 ADDRGP4 trap_Key_SetCatcher
 CALLV
 pop
-line 350
-;348:
-;349:    // clear sgame state
-;350:    memset( &sg, 0, sizeof(sg) );
+line 387
+;385:
+;386:    // clear sgame state
+;387:    memset( &sg, 0, sizeof(sg) );
 ADDRGP4 sg
 ARGP4
 CNSTI4 0
 ARGI4
-CNSTU4 4296164
+CNSTU4 4294172
 ARGU4
 ADDRGP4 memset
 CALLI4
 pop
-line 353
-;351:    
-;352:    // cache redundant calculations
-;353:    Sys_GetGPUConfig( &sg.gpuConfig );
-ADDRGP4 sg+65820
+line 390
+;388:    
+;389:    // cache redundant calculations
+;390:    Sys_GetGPUConfig( &sg.gpuConfig );
+ADDRGP4 sg+63828
 ARGP4
 ADDRGP4 Sys_GetGPUConfig
 CALLV
 pop
-line 356
-;354:
-;355:    // for 1024x768 virtualized screen
-;356:	sg.scale = sg.gpuConfig.vidHeight * (1.0/768.0);
-ADDRGP4 sg+78168
-ADDRGP4 sg+65820+12324
+line 393
+;391:
+;392:    // for 1024x768 virtualized screen
+;393:	sg.scale = sg.gpuConfig.vidHeight * (1.0/768.0);
+ADDRGP4 sg+76176
+ADDRGP4 sg+63828+12324
 INDIRI4
 CVIF4 4
 CNSTF4 984263339
 MULF4
 ASGNF4
-line 357
-;357:	if ( sg.gpuConfig.vidWidth * 768 > sg.gpuConfig.vidHeight * 1024 ) {
-ADDRGP4 sg+65820+12320
+line 394
+;394:	if ( sg.gpuConfig.vidWidth * 768 > sg.gpuConfig.vidHeight * 1024 ) {
+ADDRGP4 sg+63828+12320
 INDIRI4
 CNSTI4 768
 MULI4
-ADDRGP4 sg+65820+12324
+ADDRGP4 sg+63828+12324
 INDIRI4
 CNSTI4 10
 LSHI4
-LEI4 $236
-line 359
-;358:		// wide screen
-;359:		sg.bias = 0.5 * ( sg.gpuConfig.vidWidth - ( sg.gpuConfig.vidHeight * (1024.0/768.0) ) );
-ADDRGP4 sg+78172
-ADDRGP4 sg+65820+12320
+LEI4 $249
+line 396
+;395:		// wide screen
+;396:		sg.bias = 0.5 * ( sg.gpuConfig.vidWidth - ( sg.gpuConfig.vidHeight * (1024.0/768.0) ) );
+ADDRGP4 sg+76180
+ADDRGP4 sg+63828+12320
 INDIRI4
 CVIF4 4
-ADDRGP4 sg+65820+12324
+ADDRGP4 sg+63828+12324
 INDIRI4
 CVIF4 4
 CNSTF4 1068149419
@@ -1581,136 +1728,136 @@ SUBF4
 CNSTF4 1056964608
 MULF4
 ASGNF4
-line 360
-;360:	}
-ADDRGP4 $237
+line 397
+;397:	}
+ADDRGP4 $250
 JUMPV
-LABELV $236
-line 361
-;361:	else {
-line 363
-;362:		// no wide screen
-;363:		sg.bias = 0;
-ADDRGP4 sg+78172
+LABELV $249
+line 398
+;398:	else {
+line 400
+;399:		// no wide screen
+;400:		sg.bias = 0;
+ADDRGP4 sg+76180
 CNSTF4 0
 ASGNF4
-line 364
-;364:	}
-LABELV $237
-line 367
-;365:
-;366:    // register sgame cvars
-;367:    SG_RegisterCvars();
+line 401
+;401:	}
+LABELV $250
+line 404
+;402:
+;403:    // register sgame cvars
+;404:    SG_RegisterCvars();
 ADDRGP4 SG_RegisterCvars
 CALLV
 pop
-line 370
-;368:
-;369:    // load assets/resources
-;370:    SG_LoadMedia();
+line 407
+;405:
+;406:    // load assets/resources
+;407:    SG_LoadMedia();
 ADDRGP4 SG_LoadMedia
 CALLV
 pop
-line 372
-;371:
-;372:    SG_MemInit();
+line 409
+;408:
+;409:    SG_MemInit();
 ADDRGP4 SG_MemInit
 CALLV
 pop
-line 374
-;373:
-;374:    sg.state = SG_INACTIVE;
-ADDRGP4 sg+4204
+line 411
+;410:
+;411:    sg.state = SG_INACTIVE;
+ADDRGP4 sg+2212
 CNSTI4 2
 ASGNI4
-line 376
-;375:
-;376:    G_Printf( "-----------------------------------\n" );
-ADDRGP4 $249
+line 413
+;412:
+;413:    G_Printf( "-----------------------------------\n" );
+ADDRGP4 $262
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 377
-;377:}
-LABELV $228
+line 414
+;414:}
+LABELV $241
 endproc SG_Init 4 12
 export SG_Shutdown
 proc SG_Shutdown 0 12
-line 380
-;378:
-;379:void SG_Shutdown( void )
-;380:{
-line 381
-;381:    G_Printf( "Shutting down sgame...\n" );
-ADDRGP4 $251
+line 417
+;415:
+;416:void SG_Shutdown( void )
+;417:{
+line 418
+;418:    G_Printf( "Shutting down sgame...\n" );
+ADDRGP4 $264
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 383
-;382:
-;383:    memset( &sg, 0, sizeof(sg) );
+line 420
+;419:
+;420:    memset( &sg, 0, sizeof(sg) );
 ADDRGP4 sg
 ARGP4
 CNSTI4 0
 ARGI4
-CNSTU4 4296164
+CNSTU4 4294172
 ARGU4
 ADDRGP4 memset
 CALLI4
 pop
-line 385
-;384:
-;385:    sg.state = SG_INACTIVE;
-ADDRGP4 sg+4204
+line 422
+;421:
+;422:    sg.state = SG_INACTIVE;
+ADDRGP4 sg+2212
 CNSTI4 2
 ASGNI4
-line 386
-;386:}
-LABELV $250
+line 423
+;423:}
+LABELV $263
 endproc SG_Shutdown 0 12
 export SaveGame
 proc SaveGame 0 4
-line 389
-;387:
-;388:void SaveGame( void )
-;389:{
-line 390
-;390:    G_Printf( "Saving game...\n" );
-ADDRGP4 $254
+line 426
+;424:
+;425:void SaveGame( void )
+;426:{
+line 427
+;427:    G_Printf( "Saving game...\n" );
+ADDRGP4 $267
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 392
-;391:
-;392:    SG_SaveLevelData();
+line 429
+;428:
+;429:    SG_SaveLevelData();
 ADDRGP4 SG_SaveLevelData
 CALLV
 pop
-line 394
-;393:
-;394:    G_Printf( "Done" );
-ADDRGP4 $255
+line 431
+;430:
+;431:    G_Printf( "Done" );
+ADDRGP4 $268
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 395
-;395:}
-LABELV $253
+line 432
+;432:}
+LABELV $266
 endproc SaveGame 0 4
 export LoadGame
 proc LoadGame 64 12
-line 398
-;396:
-;397:void LoadGame( void )
-;398:{
-line 401
-;399:    char savename[MAX_NPATH];
-;400:
-;401:    Cvar_VariableStringBuffer( "sg_savename", savename, sizeof(savename) );
+line 435
+;433:
+;434:void LoadGame( void )
+;435:{
+line 438
+;436:    char savename[MAX_NPATH];
+;437:
+;438:    Cvar_VariableStringBuffer( "sg_savename", savename, sizeof(savename) );
 ADDRGP4 $137
 ARGP4
 ADDRLP4 0
@@ -1720,36 +1867,36 @@ ARGI4
 ADDRGP4 Cvar_VariableStringBuffer
 CALLV
 pop
-line 403
-;402:
-;403:    G_Printf( "Loading save file '%s'...\n", savename );
-ADDRGP4 $257
+line 440
+;439:
+;440:    G_Printf( "Loading save file '%s'...\n", savename );
+ADDRGP4 $270
 ARGP4
 ADDRLP4 0
 ARGP4
 ADDRGP4 G_Printf
 CALLV
 pop
-line 404
-;404:}
-LABELV $256
+line 441
+;441:}
+LABELV $269
 endproc LoadGame 64 12
 export trap_FS_Printf
 proc trap_FS_Printf 8200 12
-line 407
-;405:
-;406:void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL trap_FS_Printf( fileHandle_t f, const char *fmt, ... )
-;407:{
-line 411
-;408:    va_list argptr;
-;409:    char msg[MAXPRINTMSG];
-;410:
-;411:    va_start( argptr, fmt );
+line 444
+;442:
+;443:void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL trap_FS_Printf( fileHandle_t f, const char *fmt, ... )
+;444:{
+line 448
+;445:    va_list argptr;
+;446:    char msg[MAXPRINTMSG];
+;447:
+;448:    va_start( argptr, fmt );
 ADDRLP4 0
 ADDRFP4 4+4
 ASGNP4
-line 412
-;412:    vsprintf( msg, fmt, argptr );
+line 449
+;449:    vsprintf( msg, fmt, argptr );
 ADDRLP4 4
 ARGP4
 ADDRFP4 4
@@ -1761,14 +1908,14 @@ ARGP4
 ADDRGP4 vsprintf
 CALLI4
 pop
-line 413
-;413:    va_end( argptr );
+line 450
+;450:    va_end( argptr );
 ADDRLP4 0
 CNSTP4 0
 ASGNP4
-line 415
-;414:
-;415:    trap_FS_Write( msg, strlen( msg ), f );
+line 452
+;451:
+;452:    trap_FS_Write( msg, strlen( msg ), f );
 ADDRLP4 4
 ARGP4
 ADDRLP4 8196
@@ -1786,9 +1933,9 @@ ARGI4
 ADDRGP4 trap_FS_Write
 CALLI4
 pop
-line 416
-;416:}
-LABELV $258
+line 453
+;453:}
+LABELV $271
 endproc trap_FS_Printf 8200 12
 data
 export dirvectors
@@ -1878,6 +2025,7 @@ import G_SoundRecursive
 import G_CastRay
 import G_SetActiveMap
 import G_LoadMap
+import trap_GetHashString
 import G_SetCameraData
 import Sys_MemoryRemaining
 import trap_RemoveCommand
@@ -2033,7 +2181,7 @@ import weaponinfo
 export sg
 align 4
 LABELV sg
-skip 4296164
+skip 4294172
 import sg_entities
 import stateinfo
 import ImGui_CloseCurrentPopup
@@ -2399,7 +2547,7 @@ import Com_SkipTokens
 import Com_snprintf
 lit
 align 1
-LABELV $257
+LABELV $270
 byte 1 76
 byte 1 111
 byte 1 97
@@ -2428,14 +2576,14 @@ byte 1 46
 byte 1 10
 byte 1 0
 align 1
-LABELV $255
+LABELV $268
 byte 1 68
 byte 1 111
 byte 1 110
 byte 1 101
 byte 1 0
 align 1
-LABELV $254
+LABELV $267
 byte 1 83
 byte 1 97
 byte 1 118
@@ -2453,7 +2601,7 @@ byte 1 46
 byte 1 10
 byte 1 0
 align 1
-LABELV $251
+LABELV $264
 byte 1 83
 byte 1 104
 byte 1 117
@@ -2479,7 +2627,7 @@ byte 1 46
 byte 1 10
 byte 1 0
 align 1
-LABELV $249
+LABELV $262
 byte 1 45
 byte 1 45
 byte 1 45
@@ -2518,7 +2666,7 @@ byte 1 45
 byte 1 10
 byte 1 0
 align 1
-LABELV $231
+LABELV $244
 byte 1 103
 byte 1 97
 byte 1 109
@@ -2534,7 +2682,7 @@ byte 1 115
 byte 1 10
 byte 1 0
 align 1
-LABELV $230
+LABELV $243
 byte 1 103
 byte 1 97
 byte 1 109
@@ -2550,7 +2698,7 @@ byte 1 115
 byte 1 10
 byte 1 0
 align 1
-LABELV $229
+LABELV $242
 byte 1 45
 byte 1 45
 byte 1 45
@@ -2593,6 +2741,106 @@ byte 1 45
 byte 1 45
 byte 1 45
 byte 1 10
+byte 1 0
+align 1
+LABELV $236
+byte 1 76
+byte 1 111
+byte 1 97
+byte 1 100
+byte 1 105
+byte 1 110
+byte 1 103
+byte 1 32
+byte 1 115
+byte 1 103
+byte 1 97
+byte 1 109
+byte 1 101
+byte 1 32
+byte 1 114
+byte 1 101
+byte 1 115
+byte 1 111
+byte 1 117
+byte 1 114
+byte 1 99
+byte 1 101
+byte 1 115
+byte 1 46
+byte 1 46
+byte 1 46
+byte 1 10
+byte 1 0
+align 1
+LABELV $234
+byte 1 83
+byte 1 71
+byte 1 95
+byte 1 76
+byte 1 111
+byte 1 97
+byte 1 100
+byte 1 70
+byte 1 105
+byte 1 108
+byte 1 101
+byte 1 58
+byte 1 32
+byte 1 102
+byte 1 105
+byte 1 108
+byte 1 101
+byte 1 32
+byte 1 37
+byte 1 115
+byte 1 32
+byte 1 116
+byte 1 111
+byte 1 111
+byte 1 32
+byte 1 108
+byte 1 111
+byte 1 110
+byte 1 103
+byte 1 0
+align 1
+LABELV $231
+byte 1 83
+byte 1 71
+byte 1 95
+byte 1 76
+byte 1 111
+byte 1 97
+byte 1 100
+byte 1 70
+byte 1 105
+byte 1 108
+byte 1 101
+byte 1 58
+byte 1 32
+byte 1 102
+byte 1 97
+byte 1 105
+byte 1 108
+byte 1 101
+byte 1 100
+byte 1 32
+byte 1 116
+byte 1 111
+byte 1 32
+byte 1 111
+byte 1 112
+byte 1 101
+byte 1 110
+byte 1 32
+byte 1 102
+byte 1 105
+byte 1 108
+byte 1 101
+byte 1 32
+byte 1 37
+byte 1 115
 byte 1 0
 align 1
 LABELV $225

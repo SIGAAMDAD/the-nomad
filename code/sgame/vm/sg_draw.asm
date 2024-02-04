@@ -57,7 +57,7 @@ line 31
 ;30:
 ;31:    ent = sg.playr.ent;
 ADDRLP4 0
-ADDRGP4 sg+65760
+ADDRGP4 sg+63768
 INDIRP4
 ASGNP4
 line 33
@@ -145,7 +145,7 @@ CNSTI4 156
 ADDP4
 INDIRI4
 ARGI4
-ADDRGP4 sg+65760+44
+ADDRGP4 sg+63768+44
 INDIRI4
 ADDRLP4 0
 INDIRP4
@@ -153,7 +153,7 @@ CNSTI4 124
 ADDP4
 INDIRI4
 ADDI4
-ADDRGP4 sg+65760+48
+ADDRGP4 sg+63768+48
 INDIRI4
 ADDI4
 ARGI4
@@ -197,14 +197,14 @@ ASGNU4
 line 51
 ;51:    refdef.width = sg.gpuConfig.vidWidth;
 ADDRLP4 0+8
-ADDRGP4 sg+65820+12320
+ADDRGP4 sg+63828+12320
 INDIRI4
 CVIU4 4
 ASGNU4
 line 52
 ;52:    refdef.height = sg.gpuConfig.vidHeight;
 ADDRLP4 0+12
-ADDRGP4 sg+65820+12324
+ADDRGP4 sg+63828+12324
 INDIRI4
 CVIU4 4
 ASGNU4
@@ -235,7 +235,7 @@ CALLI4
 pop
 line 63
 ;63:    if ( sg.playr.ent->health <= 65 ) {
-ADDRGP4 sg+65760
+ADDRGP4 sg+63768
 INDIRP4
 CNSTI4 112
 ADDP4
@@ -246,7 +246,7 @@ line 64
 ;64:        color.r = ( 1.0 / (float)sg.playr.ent->health ) * 2.0f;
 ADDRLP4 32
 CNSTF4 1065353216
-ADDRGP4 sg+65760
+ADDRGP4 sg+63768
 INDIRP4
 CNSTI4 112
 ADDP4
@@ -260,7 +260,7 @@ line 65
 ;65:        color.g = ( 1.0 / (float)sg.playr.ent->health );
 ADDRLP4 32+4
 CNSTF4 1065353216
-ADDRGP4 sg+65760
+ADDRGP4 sg+63768
 INDIRP4
 CNSTI4 112
 ADDP4
@@ -317,7 +317,7 @@ CALLV
 pop
 line 75
 ;75:    ImGui_ProgressBar( (float)sg.playr.ent->health );
-ADDRGP4 sg+65760
+ADDRGP4 sg+63768
 INDIRP4
 CNSTI4 112
 ADDP4
@@ -472,14 +472,14 @@ ASGNU4
 line 95
 ;95:    refdef.time = sg.levelTime;
 ADDRLP4 0+28
-ADDRGP4 sg+4228
+ADDRGP4 sg+2236
 INDIRI4
 CVIU4 4
 ASGNU4
 line 97
 ;96:
 ;97:    G_SetCameraData( &sg.cameraPos, 1.6f, 0.0f );
-ADDRGP4 sg+4272524
+ADDRGP4 sg+4270532
 ARGP4
 CNSTF4 1070386381
 ARGF4
@@ -563,6 +563,7 @@ import G_SoundRecursive
 import G_CastRay
 import G_SetActiveMap
 import G_LoadMap
+import trap_GetHashString
 import G_SetCameraData
 import Sys_MemoryRemaining
 import trap_RemoveCommand

@@ -120,15 +120,10 @@ void MainMenu_Draw( void )
     refdef.height = h;
 
     refdef.time = ui->GetRealTime();
-    refdef.flags = RSF_NOWORLDMODEL;
-
-    refdef.fovY = 60;
-    refdef.fovX = 19.6875f;
-
-    re.ClearScene();
+    refdef.flags = RSF_NOWORLDMODEL | RSF_ORTHO_TYPE_SCREENSPACE;
 
     re.DrawImage( x, y, w, h, 0, 1, 1, 0, menu.background0 );
-
+    re.ClearScene();
     re.RenderScene( &refdef );
 
 //    ImGui::Begin( "MainMenuBackground", NULL, windowFlags | ImGuiWindowFlags_AlwaysAutoResize );

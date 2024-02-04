@@ -38,6 +38,8 @@ struct vmRefImport_s
 
     int (*trap_Milliseconds)( void );
 
+    void (*trap_GetHashString)( const char *name, char *value );
+
     void (*trap_Key_SetCatcher)( int32_t catcher );
     uint32_t (*trap_Key_GetCatcher)( void );
     uint32_t (*trap_Key_GetKey)( const char *key );

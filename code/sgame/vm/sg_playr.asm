@@ -171,7 +171,7 @@ line 87
 ;87:{
 line 88
 ;88:	sg.playr.foot_frame = anim;
-ADDRGP4 sg+65760+48
+ADDRGP4 sg+63768+48
 ADDRFP4 0
 INDIRI4
 ASGNI4
@@ -1057,8 +1057,8 @@ CNSTI4 0
 EQI4 $186
 line 182
 ;181:		// its a projectile
-;182:		Snd_PlaySfx( sg.media.player_parry );
-ADDRGP4 sg+24
+;182:		Snd_PlaySfx( sg.media.playerParry );
+ADDRGP4 sg+112
 INDIRI4
 ARGI4
 ADDRGP4 Snd_PlaySfx
@@ -1066,7 +1066,7 @@ CALLV
 pop
 line 183
 ;183:		Ent_SetState( sg.playr.ent, S_PLAYR_PARRY );
-ADDRGP4 sg+65760
+ADDRGP4 sg+63768
 INDIRP4
 ARGP4
 CNSTI4 5
@@ -1099,8 +1099,8 @@ CNSTI4 0
 EQI4 $190
 line 186
 ;185:		// its an attack
-;186:		Snd_PlaySfx( sg.media.player_parry );
-ADDRGP4 sg+24
+;186:		Snd_PlaySfx( sg.media.playerParry );
+ADDRGP4 sg+112
 INDIRI4
 ARGI4
 ADDRGP4 Snd_PlaySfx
@@ -1108,7 +1108,7 @@ CALLV
 pop
 line 187
 ;187:		Ent_SetState( sg.playr.ent, S_PLAYR_PARRY );
-ADDRGP4 sg+65760
+ADDRGP4 sg+63768
 INDIRP4
 ARGP4
 CNSTI4 5
@@ -1202,7 +1202,7 @@ line 236
 ;236:	if ( origin.x > sg.mapInfo.width - 1 ) {
 ADDRLP4 0
 INDIRF4
-ADDRGP4 sg+4272532+23616
+ADDRGP4 sg+4270540+23616
 INDIRI4
 CNSTI4 1
 SUBI4
@@ -1211,7 +1211,7 @@ LEF4 $197
 line 237
 ;237:		origin.x = sg.mapInfo.width - 1;
 ADDRLP4 0
-ADDRGP4 sg+4272532+23616
+ADDRGP4 sg+4270540+23616
 INDIRI4
 CNSTI4 1
 SUBI4
@@ -1240,7 +1240,7 @@ line 242
 ;242:	if ( origin.y > sg.mapInfo.height - 1 ) {
 ADDRLP4 0+4
 INDIRF4
-ADDRGP4 sg+4272532+23620
+ADDRGP4 sg+4270540+23620
 INDIRI4
 CNSTI4 1
 SUBI4
@@ -1249,7 +1249,7 @@ LEF4 $205
 line 243
 ;243:		origin.y = sg.mapInfo.height - 1;
 ADDRLP4 0+4
-ADDRGP4 sg+4272532+23620
+ADDRGP4 sg+4270540+23620
 INDIRI4
 CNSTI4 1
 SUBI4
@@ -1684,7 +1684,7 @@ ASGNF4
 line 293
 ;292:
 ;293:	if ( P_ClipOrigin( sg.playr.ent ) ) {
-ADDRGP4 sg+65760
+ADDRGP4 sg+63768
 INDIRP4
 ARGP4
 ADDRLP4 60
@@ -1718,13 +1718,13 @@ LABELV $274
 line 297
 ;296:
 ;297:	sg.cameraPos.x = self->origin.x - ( sg.cameraPos.x / 2 );
-ADDRGP4 sg+4272524
+ADDRGP4 sg+4270532
 ADDRFP4 0
 INDIRP4
 CNSTI4 64
 ADDP4
 INDIRF4
-ADDRGP4 sg+4272524
+ADDRGP4 sg+4270532
 INDIRF4
 CNSTF4 1056964608
 MULF4
@@ -1732,7 +1732,7 @@ SUBF4
 ASGNF4
 line 298
 ;298:	sg.cameraPos.y = -self->origin.y;
-ADDRGP4 sg+4272524+4
+ADDRGP4 sg+4270532+4
 ADDRFP4 0
 INDIRP4
 CNSTI4 68
@@ -1885,7 +1885,7 @@ line 324
 line 326
 ;325:    // initialize player state
 ;326:    memset( &sg.playr, 0, sizeof(sg.playr) );
-ADDRGP4 sg+65760
+ADDRGP4 sg+63768
 ARGP4
 CNSTI4 0
 ARGI4
@@ -1897,19 +1897,19 @@ pop
 line 328
 ;327:
 ;328:	sg.playr.foot_frame = 0;
-ADDRGP4 sg+65760+48
+ADDRGP4 sg+63768+48
 CNSTI4 0
 ASGNI4
 line 329
 ;329:	sg.playr.foot_sprite = SPR_PLAYR_LEGS0_7_R;
-ADDRGP4 sg+65760+44
+ADDRGP4 sg+63768+44
 CNSTI4 39
 ASGNI4
 line 332
 ;330:
 ;331:    // mark as allocated
 ;332:    sg.playrReady = qtrue;
-ADDRGP4 sg+65816
+ADDRGP4 sg+63824
 CNSTI4 1
 ASGNI4
 line 333
@@ -2118,6 +2118,7 @@ import G_SoundRecursive
 import G_CastRay
 import G_SetActiveMap
 import G_LoadMap
+import trap_GetHashString
 import G_SetCameraData
 import Sys_MemoryRemaining
 import trap_RemoveCommand

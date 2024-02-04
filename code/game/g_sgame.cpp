@@ -233,6 +233,10 @@ static intptr_t G_SGameSystemCalls( intptr_t *args )
     case SG_RE_LOADWORLDMAP:
         re.LoadWorld( (const char *)VMA( 1 ) );
         return 0;
+    case SG_GETHASHSTRING:
+        VM_CHECKBOUNDS( args[2], MAX_STRING_CHARS );
+        UI_GetHashString( (const char *)VMA( 1 ), (char *)VMA( 2 ) );
+        return 0;
     case IMGUI_BEGIN_WINDOW:
         return ImGui_BeginWindow( (const char *)VMA( 1 ), (byte *)VMA( 2 ), args[3] );
     case IMGUI_END_WINDOW:

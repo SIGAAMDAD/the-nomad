@@ -89,7 +89,7 @@ line 22
 LABELV $93
 line 23
 ;23:	if ( sg.numMobs == MAXMOBS ) {
-ADDRGP4 sg+28884
+ADDRGP4 sg+26892
 INDIRI4
 CNSTI4 1024
 NEI4 $96
@@ -120,11 +120,11 @@ line 29
 ;28:
 ;29:    m = &sg.mobs[sg.numMobs];
 ADDRLP4 0
-ADDRGP4 sg+28884
+ADDRGP4 sg+26892
 INDIRI4
 CNSTI4 24
 MULI4
-ADDRGP4 sg+4308
+ADDRGP4 sg+2316
 ADDP4
 ASGNP4
 line 30
@@ -199,7 +199,7 @@ line 41
 ;40:
 ;41:    sg.numMobs++;
 ADDRLP4 16
-ADDRGP4 sg+28884
+ADDRGP4 sg+26892
 ASGNP4
 ADDRLP4 16
 INDIRP4
@@ -337,6 +337,7 @@ import G_SoundRecursive
 import G_CastRay
 import G_SetActiveMap
 import G_LoadMap
+import trap_GetHashString
 import G_SetCameraData
 import Sys_MemoryRemaining
 import trap_RemoveCommand

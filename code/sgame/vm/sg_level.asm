@@ -119,7 +119,7 @@ ASGNI4
 LABELV $97
 ADDRLP4 0
 INDIRI4
-ADDRGP4 sg+4212
+ADDRGP4 sg+2220
 INDIRI4
 LTI4 $94
 line 67
@@ -143,7 +143,7 @@ line 78
 ;77:
 ;78:    spawn = sg.mapInfo.spawns;
 ADDRLP4 0
-ADDRGP4 sg+4272532
+ADDRGP4 sg+4270540
 ASGNP4
 line 79
 ;79:    for ( i = 0; i < sg.mapInfo.numSpawns; i++, spawn++ ) {
@@ -192,7 +192,7 @@ ASGNP4
 LABELV $106
 ADDRLP4 4
 INDIRI4
-ADDRGP4 sg+4272532+23624
+ADDRGP4 sg+4270540+23624
 INDIRI4
 LTI4 $103
 line 82
@@ -279,7 +279,7 @@ CALLI4
 pop
 line 102
 ;102:    memset( &sg.mapInfo, 0, sizeof(sg.mapInfo) );
-ADDRGP4 sg+4272532
+ADDRGP4 sg+4270540
 ARGP4
 CNSTI4 0
 ARGI4
@@ -297,11 +297,11 @@ CNSTI4 64
 ADDP4
 INDIRI4
 ARGI4
-ADDRGP4 sg+4272532
+ADDRGP4 sg+4270540
 ARGP4
-ADDRGP4 sg+78220
+ADDRGP4 sg+76228
 ARGP4
-ADDRGP4 sg+78180
+ADDRGP4 sg+76188
 ARGP4
 ADDRGP4 G_SetActiveMap
 CALLV
@@ -322,7 +322,7 @@ pop
 line 111
 ;110:
 ;111:    sg.state = SG_IN_LEVEL;
-ADDRGP4 sg+4204
+ADDRGP4 sg+2212
 CNSTI4 3
 ASGNI4
 line 113
@@ -343,7 +343,7 @@ line 115
 ;115:        G_Printf( "Map Name: %s\n", sg.mapInfo.name );
 ADDRGP4 $125
 ARGP4
-ADDRGP4 sg+4272532+23552
+ADDRGP4 sg+4270540+23552
 ARGP4
 ADDRGP4 G_Printf
 CALLV
@@ -352,7 +352,7 @@ line 116
 ;116:        G_Printf( "Checkpoint Count: %i\n", sg.mapInfo.numCheckpoints );
 ADDRGP4 $128
 ARGP4
-ADDRGP4 sg+4272532+23628
+ADDRGP4 sg+4270540+23628
 INDIRI4
 ARGI4
 ADDRGP4 G_Printf
@@ -362,7 +362,7 @@ line 117
 ;117:        G_Printf( "Spawn Count: %i\n", sg.mapInfo.numSpawns );
 ADDRGP4 $131
 ARGP4
-ADDRGP4 sg+4272532+23624
+ADDRGP4 sg+4270540+23624
 INDIRI4
 ARGI4
 ADDRGP4 G_Printf
@@ -372,7 +372,7 @@ line 118
 ;118:        G_Printf( "Map Width: %i\n", sg.mapInfo.width );
 ADDRGP4 $134
 ARGP4
-ADDRGP4 sg+4272532+23616
+ADDRGP4 sg+4270540+23616
 INDIRI4
 ARGI4
 ADDRGP4 G_Printf
@@ -382,7 +382,7 @@ line 119
 ;119:        G_Printf( "Map Height: %i\n", sg.mapInfo.height );
 ADDRGP4 $137
 ARGP4
-ADDRGP4 sg+4272532+23620
+ADDRGP4 sg+4270540+23620
 INDIRI4
 ARGI4
 ADDRGP4 G_Printf
@@ -396,7 +396,7 @@ line 122
 ;122:    RE_LoadWorldMap( va( "maps/%s", sg.mapInfo.name ) );
 ADDRGP4 $140
 ARGP4
-ADDRGP4 sg+4272532+23552
+ADDRGP4 sg+4270540+23552
 ARGP4
 ADDRLP4 84
 ADDRGP4 va
@@ -453,7 +453,7 @@ line 128
 ;127:
 ;128:    VectorCopy2( cameraPos, sg.mapInfo.spawns[0].xyz );
 ADDRLP4 96
-ADDRGP4 sg+4272532
+ADDRGP4 sg+4270540
 INDIRU4
 ASGNU4
 ADDRLP4 68
@@ -474,7 +474,7 @@ CVIF4 4
 ADDF4
 ASGNF4
 ADDRLP4 100
-ADDRGP4 sg+4272532+4
+ADDRGP4 sg+4270540+4
 INDIRU4
 ASGNU4
 ADDRLP4 68+4
@@ -558,7 +558,7 @@ line 147
 ;147:    G_SaveVector2( "sg_camera_position", &sg.cameraPos );
 ADDRGP4 $156
 ARGP4
-ADDRGP4 sg+4272524
+ADDRGP4 sg+4270532
 ARGP4
 ADDRGP4 G_SaveVector2
 CALLV
@@ -589,7 +589,7 @@ ASGNI4
 LABELV $161
 ADDRLP4 0
 INDIRI4
-ADDRGP4 sg+4216
+ADDRGP4 sg+2224
 INDIRI4
 LTI4 $158
 line 156
@@ -675,11 +675,11 @@ line 171
 ADDRGP4 level
 INDIRI4
 ARGI4
-ADDRGP4 sg+4272532
+ADDRGP4 sg+4270540
 ARGP4
-ADDRGP4 sg+78220
+ADDRGP4 sg+76228
 ARGP4
-ADDRGP4 sg+78180
+ADDRGP4 sg+76188
 ARGP4
 ADDRGP4 G_SetActiveMap
 CALLV
@@ -811,7 +811,7 @@ ASGNI4
 line 198
 ;197:
 ;198:    sg.state = SG_SHOW_LEVEL_STATS;
-ADDRGP4 sg+4204
+ADDRGP4 sg+2212
 CNSTI4 4
 ASGNI4
 line 200
@@ -1293,11 +1293,11 @@ line 282
 ADDRLP4 8
 ARGP4
 CNSTI4 1024
-ADDRGP4 sg+4212
+ADDRGP4 sg+2220
 INDIRI4
 SUBI4
 ARGI4
-ADDRGP4 sg+4212
+ADDRGP4 sg+2220
 INDIRI4
 CNSTI4 2
 LSHI4
@@ -1309,7 +1309,7 @@ ADDRGP4 SG_ParseInfos
 CALLI4
 ASGNI4
 ADDRLP4 8208
-ADDRGP4 sg+4212
+ADDRGP4 sg+2220
 ASGNP4
 ADDRLP4 8208
 INDIRP4
@@ -1342,7 +1342,7 @@ line 297
 ;295:    levelInfo_t *info;
 ;296:
 ;297:    sg.numLevels = 0;
-ADDRGP4 sg+4212
+ADDRGP4 sg+2220
 CNSTI4 0
 ASGNI4
 line 299
@@ -1497,7 +1497,7 @@ line 317
 ;317:	trap_Print( va( "%i levels parsed\n", sg.numLevels ) );
 ADDRGP4 $233
 ARGP4
-ADDRGP4 sg+4212
+ADDRGP4 sg+2220
 INDIRI4
 ARGI4
 ADDRLP4 2352
@@ -1582,13 +1582,13 @@ ASGNI4
 LABELV $241
 ADDRLP4 0
 INDIRI4
-ADDRGP4 sg+4212
+ADDRGP4 sg+2220
 INDIRI4
 LTI4 $238
 line 327
 ;326:
 ;327:    sg_levelInfoData = SG_MemAlloc( sizeof(*sg_levelInfoData) * sg.numLevels );
-ADDRGP4 sg+4212
+ADDRGP4 sg+2220
 INDIRI4
 CVIU4 4
 CNSTU4 172
@@ -2508,7 +2508,7 @@ ASGNI4
 LABELV $248
 ADDRLP4 0
 INDIRI4
-ADDRGP4 sg+4212
+ADDRGP4 sg+2220
 INDIRI4
 LTI4 $245
 line 370
@@ -2572,6 +2572,7 @@ import G_SoundRecursive
 import G_CastRay
 import G_SetActiveMap
 import G_LoadMap
+import trap_GetHashString
 import G_SetCameraData
 import Sys_MemoryRemaining
 import trap_RemoveCommand
