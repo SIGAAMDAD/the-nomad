@@ -369,6 +369,8 @@ typedef struct
 extern const vec3_t dirvectors[NUMDIRS];
 extern const dirtype_t inversedirs[NUMDIRS];
 
+extern sgentity_t *sg_freeEnts;
+extern sgentity_t sg_activeEnts;
 extern sgentity_t sg_entities[MAXENTITIES];
 
 extern sgGlobals_t sg;
@@ -436,6 +438,7 @@ qboolean SG_StartLevel( void );
 int SG_EndLevel( void );
 void SG_SaveLevelData( void );
 void SG_LoadLevelData( void );
+void SG_LoadLevels( void );
 
 //
 // sg_items.c

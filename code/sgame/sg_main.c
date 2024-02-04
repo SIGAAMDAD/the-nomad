@@ -204,7 +204,7 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL SG_Printf( const char *fmt, 
         trap_Error( "SG_Printf: buffer overflow" );
     }
 
-    trap_Print(msg);
+    trap_Print( msg );
 }
 
 void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL SG_Error( const char *fmt, ... )
@@ -348,31 +348,67 @@ char *SG_LoadFile( const char *filename )
     return text;
 }
 
+static nhandle_t SG_LoadResource( const char *name, nhandle_t (*fn)( const char * ) )
+{
+    nhandle_t handle;
+
+    G_Printf( "Loading Resource %s...\n", name );
+    handle = fn( name );
+    if ( handle == FS_INVALID_HANDLE ) {
+        G_Printf( COLOR_YELLOW "WARNING: Failed to load %s.\n", name );
+    }
+
+    return handle;
+}
+
 static void SG_LoadMedia( void )
 {
     int i;
+    int start, end;
 
-    SG_Printf( "Loading sgame resources...\n" );
+    SG_Printf( "Loading media...\n" );
+
+    start = Sys_Milliseconds();
 
     //
     // shaders
     //
     for ( i = 0; i < arraylen( sg.media.bloodSplatterShader ); i++ ) {
-//        sg.media.bloodSplatterShader[i] = RE_RegisterShader( va( "gfx/bloodSplatter%i", i ) );
+        sg.media.bloodSplatterShader[i] = SG_LoadResource( va( "gfx/bloodSplatter%i", i ), RE_RegisterShader );
     }
-//    sg.media.bulletMarkShader = RE_RegisterShader( "gfx/bulletMarks" );
+    sg.media.bulletMarkShader = SG_LoadResource( "gfx/bulletMarks", RE_RegisterShader );
 
     //
     // sfx
     //
-//    sg.media.footstepsGround = Snd_RegisterSfx( "sfx/player/footstepsGround.ogg" );
-//    sg.media.footstepsMetal = Snd_RegisterSfx( "sfx/player/footstepsMetal.ogg" );
-//    sg.media.footstepsWater = Snd_RegisterSfx( "sfx/player/footstepsWater.ogg" );
-//    sg.media.footstepsWood = Snd_RegisterSfx( "sfx/player/footstepsWood.ogg" );
+    sg.media.footstepsGround = SG_LoadResource( "sfx/player/footstepsGround.ogg", Snd_RegisterSfx );
+    sg.media.footstepsMetal = SG_LoadResource( "sfx/player/footstepsMetal.ogg", Snd_RegisterSfx );
+    sg.media.footstepsWater = SG_LoadResource( "sfx/player/footstepsWater.ogg", Snd_RegisterSfx );
+    sg.media.footstepsWood = SG_LoadResource( "sfx/player/footstepsWood.ogg", Snd_RegisterSfx );
 
-//    sg.media.grappleHit = Snd_RegisterSfx( "sfx/player/grappleHit.ogg" );
+    sg.media.grappleHit = SG_LoadResource( "sfx/player/grappleHit.ogg", Snd_RegisterSfx );
 
-//    sg.media.bladeModeEnter = Snd_RegisterSfx( "sfx/player/bladeModeEnter.ogg" );
+    sg.media.bladeModeEnter = SG_LoadResource( "sfx/player/bladeModeEnter.ogg", Snd_RegisterSfx );
+
+    end = Sys_Milliseconds();
+
+    if ( sg_debugPrint.i ) {
+        SG_Printf( "Loaded resource files in %i msec.\n", end - start );
+    }
+
+    //
+    // levels
+    //
+
+    SG_Printf( "Initializing level configs...\n" );
+
+    start = Sys_Milliseconds();
+    SG_LoadLevels();
+    end = Sys_Milliseconds();
+
+    if ( sg_debugPrint.i ) {
+        SG_Printf( "Loaded level configurations in %i msec.\n", end - start );
+    }
 }
 
 void SG_Init( void )
@@ -403,10 +439,10 @@ void SG_Init( void )
     // register sgame cvars
     SG_RegisterCvars();
 
+    SG_MemInit();
+
     // load assets/resources
     SG_LoadMedia();
-
-    SG_MemInit();
 
     sg.state = SG_INACTIVE;
 

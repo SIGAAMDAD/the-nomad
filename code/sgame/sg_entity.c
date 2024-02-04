@@ -1,6 +1,6 @@
 #include "sg_local.h"
 
-sgentity_t *sg_activeEnts;
+sgentity_t sg_activeEnts;
 sgentity_t *sg_freeEnts;
 
 sgentity_t sg_entities[MAXENTITIES];

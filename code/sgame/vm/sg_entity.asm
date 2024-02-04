@@ -5,7 +5,7 @@ file "../sg_entity.c"
 line 15
 ;1:#include "sg_local.h"
 ;2:
-;3:sgentity_t *sg_activeEnts;
+;3:sgentity_t sg_activeEnts;
 ;4:sgentity_t *sg_freeEnts;
 ;5:
 ;6:sgentity_t sg_entities[MAXENTITIES];
@@ -1266,15 +1266,6 @@ line 209
 LABELV $145
 endproc SG_Spawn 24 4
 import memset
-bss
-export sg_freeEnts
-align 4
-LABELV sg_freeEnts
-skip 4
-export sg_activeEnts
-align 4
-LABELV sg_activeEnts
-skip 4
 import Cvar_VariableStringBuffer
 import Cvar_Set
 import Cvar_Update
@@ -1367,6 +1358,7 @@ import Ent_RunTic
 import SG_PickupWeapon
 import SG_SpawnWeapon
 import SG_SpawnItem
+import SG_LoadLevels
 import SG_LoadLevelData
 import SG_SaveLevelData
 import SG_EndLevel
@@ -1405,10 +1397,19 @@ import mobinfo
 import iteminfo
 import weaponinfo
 import sg
+bss
 export sg_entities
 align 4
 LABELV sg_entities
 skip 327680
+export sg_activeEnts
+align 4
+LABELV sg_activeEnts
+skip 160
+export sg_freeEnts
+align 4
+LABELV sg_freeEnts
+skip 4
 import inversedirs
 import dirvectors
 import stateinfo

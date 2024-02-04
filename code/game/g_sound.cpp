@@ -692,6 +692,10 @@ void Snd_SetLoopingTrack( sfxHandle_t handle ) {
     CSoundSource *track;
     trackQueue_t *pTrack;
 
+    if ( !snd_musicon->i ) {
+        return;
+    }
+
     if ( handle == FS_INVALID_HANDLE ) {
         Con_Printf( COLOR_RED "Snd_SetLoopingTrack: invalid handle, ignoring call.\n" );
         return;
@@ -706,12 +710,18 @@ void Snd_SetLoopingTrack( sfxHandle_t handle ) {
         return; // already playing
     }
 
-    ALCall( alSourcei( sndManager->m_pCurrentTrack->GetSource(), AL_LOOPING, AL_FALSE ) );
-    sndManager->m_pQueuedTrack = track;
+    if ( !sndManager->m_pCurrentTrack ) {
+        sndManager->m_pCurrentTrack = track;
+        sndManager->m_pCurrentTrack->Play( true );
+        sndManager->m_pQueuedTrack = NULL;
+    } else {
+        ALCall( alSourcei( sndManager->m_pCurrentTrack->GetSource(), AL_LOOPING, AL_FALSE ) );
+        sndManager->m_pQueuedTrack = track;
+    }
 }
 
 void Snd_ClearLoopingTrack( void ) {
-    if ( !sndManager->m_pCurrentTrack || !sndManager->m_pCurrentTrack->IsLooping() ) {
+    if ( !snd_musicon->i || !sndManager->m_pCurrentTrack || !sndManager->m_pCurrentTrack->IsLooping() ) {
         return;
     }
 

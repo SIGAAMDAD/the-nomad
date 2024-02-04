@@ -495,23 +495,35 @@ line 100
 ADDRGP4 SG_DrawPlayer
 CALLV
 pop
-line 103
-;101:
-;102:    // finish the scene
-;103:    RE_ClearScene();
-ADDRGP4 RE_ClearScene
+line 101
+;101:    SG_DrawEntities();
+ADDRGP4 SG_DrawEntities
 CALLV
 pop
 line 104
-;104:    RE_RenderScene( &refdef );
+;102:
+;103:    // draw extra stuff
+;104:    SG_DrawHUD();
+ADDRGP4 SG_DrawHUD
+CALLV
+pop
+line 107
+;105:
+;106:    // finish the scene
+;107:    RE_ClearScene();
+ADDRGP4 RE_ClearScene
+CALLV
+pop
+line 108
+;108:    RE_RenderScene( &refdef );
 ADDRLP4 0
 ARGP4
 ADDRGP4 RE_RenderScene
 CALLV
 pop
-line 106
-;105:
-;106:    return 1;
+line 110
+;109:
+;110:    return 1;
 CNSTI4 1
 RETI4
 LABELV $123
@@ -621,6 +633,7 @@ import Ent_CheckWallCollision
 import SG_PickupWeapon
 import SG_SpawnWeapon
 import SG_SpawnItem
+import SG_LoadLevels
 import SG_LoadLevelData
 import SG_SaveLevelData
 import SG_EndLevel
@@ -659,6 +672,8 @@ import iteminfo
 import weaponinfo
 import sg
 import sg_entities
+import sg_activeEnts
+import sg_freeEnts
 import inversedirs
 import dirvectors
 import stateinfo

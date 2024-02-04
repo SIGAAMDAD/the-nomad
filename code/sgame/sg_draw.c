@@ -98,6 +98,10 @@ int SG_DrawFrame( void )
 
     // draw entities
     SG_DrawPlayer();
+    SG_DrawEntities();
+
+    // draw extra stuff
+    SG_DrawHUD();
 
     // finish the scene
     RE_ClearScene();

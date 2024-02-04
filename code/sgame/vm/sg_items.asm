@@ -300,6 +300,7 @@ import Ent_RunTic
 import Ent_CheckEntityCollision
 import Ent_CheckWallCollision
 import SG_PickupWeapon
+import SG_LoadLevels
 import SG_LoadLevelData
 import SG_SaveLevelData
 import SG_EndLevel
@@ -339,6 +340,8 @@ import iteminfo
 import weaponinfo
 import sg
 import sg_entities
+import sg_activeEnts
+import sg_freeEnts
 import inversedirs
 import dirvectors
 import stateinfo

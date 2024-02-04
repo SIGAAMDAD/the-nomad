@@ -390,7 +390,7 @@ void Sys_SetMemoryOptions( void *pAddress, uint64_t nBytes, int options )
         rOption = POSIX_MADV_DONTNEED;
         break;
     case MEMOPTION_MAKEHOT:
-        rOption = POSIX_MADV_WILLNEED:
+        rOption = POSIX_MADV_WILLNEED;
         break;
     };
 
@@ -421,7 +421,7 @@ static memoryMap_t *MapMemory( size_t nBytes, int prot, int flags, int fd )
         if ( fd != -1 ) {
             close( fd );
         }
-        Z_Free( file );
+        Z_Free( mem );
 
         N_Error( ERR_DROP, "Sys_CreateMemoryMap: failed to create memory map size %lu bytes, prot 0x%04x, flags 0x%04x, fd %i, strerror: %s",
             nBytes, prot, flags, fd, strerror( errno ) );
@@ -467,14 +467,14 @@ void Sys_SetMemoryReadOnly( void *pAddress, uint64_t nBytes, qboolean isMapped )
     }
     else {
         if ( mprotect( pAddress, nBytes, PROT_READ ) ) {
-            N_Error( ERR_FATAL, "Sys_SetMemoryReadOnly: mprotect failed on memory region sized %lu bytes, strerror: %s", strerror( errno ) );
+            N_Error( ERR_FATAL, "Sys_SetMemoryReadOnly: mprotect failed on memory region sized %lu bytes, strerror: %s", nBytes, strerror( errno ) );
         }
     }
 
     Con_DPrintf( "Set memory address %p -> %p (%lu bytes) to read only.\n", pAddress, (void *)( (byte *)pAddress + nBytes ), nBytes );
 }
 
-void Sys_MapMemory( FILE *fp, qboolean temp, fileHandle_t fd )
+void *Sys_MapMemory( FILE *fp, qboolean temp, fileHandle_t fd )
 {
     return NULL; // FIXME: implement
 }

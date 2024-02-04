@@ -296,8 +296,6 @@ void SG_LoadLevels( void )
 
     sg.numLevels = 0;
 
-    G_Printf( "Loading level configs...\n" );
-
     Cvar_Register( &levelsFile, "sg_levelsFile", "", CVAR_INIT | CVAR_ROM );
     if ( *levelsFile.s ) {
         SG_LoadLevelsFromFile( levelsFile.s );
@@ -314,7 +312,8 @@ void SG_LoadLevels( void )
 		strcat( filename, dirptr );
 		SG_LoadLevelsFromFile( filename );
 	}
-	trap_Print( va( "%i levels parsed\n", sg.numLevels ) );
+
+	SG_Printf( "%i levels parsed.\n", sg.numLevels);
 	if ( SG_OutOfMemory() ) {
         trap_Error( COLOR_RED "ERROR: not anough memory in pool to load all levels" );
     }

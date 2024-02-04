@@ -38,7 +38,7 @@ typedef struct {
 } bffheader_t;
 
 // tunables
-//#define USE_BFF_CACHE_FILE // cache the bff archives into a file for faster load times
+// #define USE_BFF_CACHE_FILE // cache the bff archives into a file for faster load times
 
 typedef struct fileInBFF_s
 {
@@ -64,19 +64,22 @@ typedef struct bffFile_s
 
 	fileInBFF_t **hashTable;
 	fileInBFF_t *buildBuffer;
-
-	struct bffFile_s *next;
-	struct bffFile_s *prev;
-
-	fileTime_t mtime;
-	fileTime_t ctime;
-	uint64_t size;
 	
 	uint32_t referenced;
 	uint32_t handlesUsed;
 	uint32_t checksum;
-	uint32_t nameHash;
+
+	// caching subsystem
+#ifdef USE_BFF_CACHE_FILE
+	uint32_t namehash;
+	fileOffset_t size;
+	fileTime_t mtime;
+	fileTime_t ctime;
 	qboolean touched;
+	struct bffFile_s *next;
+	struct bffFile_s *prev;
+	uint32_t checksumFeed;
+#endif
 } bffFile_t;
 
 typedef union
@@ -1358,27 +1361,24 @@ BFF FILE LOADING
 ==========================================================
 */
 
-// map a bff archive file if its >= to this size
-#define BFF_MAPFILE_SIZE (900*1024*1024)
-#define BFF_STREAM_MAPPED 0
-#define BFF_STREAM_FILE 1
+static uint64_t fs_bffsReaded;		// actually read from the disk
+static uint64_t fs_bffsReleased;	// unreferenced bffs since last FS restart
 
-static uint64_t fs_bffsReaded;
-static uint64_t fs_bffsReleased;
-static uint64_t fs_bffsCached;
-static uint64_t fs_bffsSkipped;
-static qboolean fs_cacheLoaded;
-static qboolean fs_cacheSynced;
+static uint64_t fs_bffsCached;		// read from cache file
+static uint64_t fs_bffsSkipped;		// outdated/non-existent cache file bff entries
+
+static qboolean fs_cacheLoaded = qfalse;
+static qboolean fs_cacheSynced = qtrue;
 
 #ifdef USE_BFF_CACHE_FILE
 
 #define CACHE_FILE_NAME "bffcache.dat"
+#define CACHE_SYNC_CONDITION ( fs_bffsReaded + fs_bffsSkipped + fs_bffsReaded >= NUM_GDR_BFFS )
 
-#pragma pack(push, 1)
+#pragma pack( push, 1 )
 
 typedef struct {
 	uint64_t bffNameLen;
-	uint64_t namesLen;
 	uint64_t numFiles;
 	uint64_t contentLen;
 	fileTime_t ctime;	// creation/status change time
@@ -1387,7 +1387,7 @@ typedef struct {
 } bffCacheHeader_t;
 
 typedef struct {
-	uint64_t name; // offset in the name buffer
+	char *name;
 	uint64_t size;
 	uint64_t pos;
 } bffCacheFileItem_t;
@@ -1423,16 +1423,16 @@ static uint32_t FS_HashBFF( const char *name )
 	while ( (c = *name++) != '\0' ) {
 		hash = hash * 101 + c;
 	}
-	hash = hash ^ (hash >> 16);
-	return hash & (MAX_BFF_HASH-1);
+	hash = hash ^ ( hash >> 16 );
+	return hash & ( MAX_BFF_HASH-1 );
 }
 
-uint64_t FS_BFFHashSize(uint32_t fileCount)
+uint64_t FS_BFFHashSize( uint32_t fileCount )
 {
 	uint64_t hashSize;
 
-	for (hashSize = 2; hashSize < MAX_FILEHASH_SIZE; hashSize <<= 1) {
-		if (hashSize >= fileCount) {
+	for ( hashSize = 2; hashSize < MAX_FILEHASH_SIZE; hashSize <<= 1 ) {
+		if ( hashSize >= fileCount ) {
 			break;
 		}
 	}
@@ -1440,37 +1440,40 @@ uint64_t FS_BFFHashSize(uint32_t fileCount)
 	return hashSize;
 }
 
-static void FS_FreeBFF(bffFile_t *bff)
+static void FS_FreeBFF( bffFile_t *bff )
 {
 	fileInBFF_t *file;
+	uint64_t i;
 
-	if (!bff) {
-		N_Error(ERR_FATAL, "FS_FreeBFF(NULL)");
+	if ( !bff ) {
+		N_Error( ERR_FATAL, "FS_FreeBFF(NULL)" );
 	}
 
-	for (uint64_t i = 0; i < bff->numfiles; i++) {
+	for ( i = 0; i < bff->numfiles; i++ ) {
 		file = &bff->buildBuffer[i];
 
-		if (file->buf) {
+		if ( file->buf ) {
 			Z_Free( file->buf );
 		}
-		if (file->name) {
+		if ( file->name ) {
 			Z_Free( file->name );
 		}
 	}
 
-	Z_Free(bff);
+	Z_Free( bff );
 }
 
-static bffFile_t *FS_FindInCache(const char *bffFile)
+#ifdef USE_BFF_CACHE_FILE
+
+static bffFile_t *FS_FindInCache( const char *bffFile )
 {
 	bffFile_t *bff;
 	uint64_t hash;
 
-	hash = FS_HashBFF(bffFile);
+	hash = FS_HashBFF( bffFile );
 	bff = bffHashTable[hash];
-	while (bff) {
-		if (!strcmp(bffFile, bff->bffGamename)) {
+	while ( bff ) {
+		if ( !strcmp( bffFile, bff->bffGamename ) ) {
 			return bff;
 		}
 		bff = bff->next;
@@ -1478,61 +1481,78 @@ static bffFile_t *FS_FindInCache(const char *bffFile)
 	return NULL;
 }
 
-static void FS_RemoveFromCache(bffFile_t *bff)
+static void FS_RemoveFromCache( bffFile_t *bff )
 {
-	if (!bff->next && !bff->prev && bffHashTable[bff->nameHash] != bff) {
-		N_Error(ERR_FATAL, "Invalid BFF Link");
+	if ( !bff->next && !bff->prev && bffHashTable[bff->nameHash] != bff ) {
+		N_Error( ERR_FATAL, "Invalid BFF Link" );
 	}
 
-	if (bff->prev)
+	if ( bff->prev )
 		bff->prev->next = bff->next;
 	else
 		bffHashTable[bff->nameHash] = bff->next;
 	
-	if (bff->next)
+	if ( bff->next )
 		bff->next->prev = bff->prev;
 }
 
-static void FS_AddToCache(bffFile_t *bff)
+static void FS_AddToCache( bffFile_t *bff )
 {
 	bff->nameHash = FS_HashBFF(bff->bffGamename);
 	bff->next = bffHashTable[bff->nameHash];
 	bff->prev = NULL;
-	if (bffHashTable[bff->nameHash])
+	if ( bffHashTable[bff->nameHash] )
 		bffHashTable[bff->nameHash]->prev = bff;
 	
 	bffHashTable[bff->nameHash] = bff;
 }
 
-#ifdef USE_BFF_CACHE_FILE
-
-#define BFF_CACHE_FILENAME "bffcache.dat"
-
-static uint64_t fs_bffsRead;
-static uint64_t fs_bffsReleased;
-static uint64_t fs_bffsCached;
-static uint64_t fs_bffsSkipped;
-static qboolean fs_cacheLoaded;
-static qboolean fs_cacheSynced;
-
-static void FS_InsertBFFToCache(bffFile_t *bff)
+static bffFile_t *FS_LoadCachedBFF( const char *bffpath )
 {
 	fileStats_t stats;
-	if (Sys_GetFileStats(&stats, bff->bffFilename)) {
+	bffFile_t *bff;
+
+	bff = FS_FindInCache( bffpath );
+	if ( !bff ) {
+		return NULL;
+	}
+
+	if ( !Sys_GetFileStats( &stats, bffpath ) ) {
+		FS_RemoveFromCache( bff );
+		FS_FreeBFF( bff );
+		return NULL;
+	}
+
+	if ( bff->size != stats.size || bff->mtime != stats.mtime || bff->ctime != ctime ) {
+		// release outdated information
+		FS_RemoveFromCache( bff );
+		FS_FreeBFF( bff );
+		return NULL;
+	}
+
+	return bff;
+}
+
+static void FS_InsertBFFToCache( bffFile_t *bff )
+{
+	fileStats_t stats;
+
+	if ( Sys_GetFileStats( &stats, bff->bffFilename ) ) {
 		bff->mtime = stats.mtime;
 		bff->ctime = stats.ctime;
-		FS_AddToCache(bff);
+		FS_AddToCache( bff );
 		bff->touched = qtrue;
 	}
 }
 
-static void FS_ResetCacheReferences(void)
+static void FS_ResetCacheReferences( void )
 {
 	bffFile_t *bff;
+	uint64_t i;
 
-	for (uint64_t i = 0; i < arraylen(bffHashTable); i++) {
+	for ( i = 0; i < arraylen(bffHashTable); i++ ) {
 		bff = bffHashTable[i];
-		while (bff) {
+		while ( bff ) {
 			bff->touched = qfalse;
 			bff = bff->next;
 		}
@@ -1558,6 +1578,57 @@ static void FS_FreeUnusedCache( void )
 	}
 }
 
+static void FS_WriteCacheHeader( FILE *f )
+{
+	fwrite( cache_header, sizeof(cache_header), 1, f );
+}
+
+static qboolean FS_ValidateCacheHeader( FILE *f )
+{
+	byte buf[ sizeof(cache_header) ];
+
+	if ( fread( buf, sizeof(buf), 1, f ) != 1 ) {
+		return qfalse;
+	}
+
+	if ( memcmp( buf, cache_header, sizeof(buf) ) != 0 ) {
+		return qfalse;
+	}
+	
+	return qtrue;
+}
+
+static qboolean FS_SaveBFFToFile( const bffFile_t *bff, FILE *f )
+{
+	uint64_t i, bffNameLen;
+	const char *bffName;
+	bffCacheHeader_t bff;
+	bffCacheFileItem_t it;
+
+	bffName = bff->bffFilename;
+	bffNameLen = strlen( bffName ) + 1;
+	bffNameLen = PAD( bffNameLen, sizeof(uintptr_t) );
+
+	memset( &bff, 0, sizeof(bff) );
+
+	// bff filename length
+	bff.bffNameLen = bffNameLen;
+	// number of files
+	bff.numFiles = bff->numfiles;
+	// creation/status change time
+	bff.ctime = bff->ctime;
+	// modification time
+	bff.mtime = bff->mtime;
+	// bff file size
+	bff.size = bff->size;
+
+	// dump header
+	fwrite( &bff, sizeof(bff), 1, f );
+
+	// bff filename
+	fwrite( bffName, bffNameLen, 1, f );
+}
+
 #endif
 
 /*
@@ -1568,46 +1639,8 @@ BFF FILE LOADING
 ==========================================================
 */
 
-// map a bff archive file if its >= to this size
-#define BFF_MAPFILE_SIZE (900*1024*1024)
-#define BFF_STREAM_MAPPED 0
-#define BFF_STREAM_FILE 1
-
-
-static uint64_t FS_ReadFromBFF(uint32_t stream, void *fp, void *buffer, uint64_t size)
-{
-	if (stream == BFF_STREAM_MAPPED) {
-//		return Sys_ReadMappedFile(buffer, size, (memoryMap_t *)fp);
-	}
-	return fread(buffer, 1, size, (FILE *)fp);
-}
-
-static fileOffset_t FS_SeekBFF(uint32_t stream, void *fp, fileOffset_t offset, uint32_t whence)
-{
-	if (stream == BFF_STREAM_MAPPED) {
-//		return Sys_SeekMappedFile(offset, whence, (memoryMap_t *)fp);
-	}
-	return fseek((FILE *)fp, offset, whence);
-}
-
-static fileOffset_t FS_TellBFF(uint32_t stream, void *fp)
-{
-	if (stream == BFF_STREAM_MAPPED) {
-//		return Sys_TellMappedFile((memoryMap_t *)fp);
-	}
-	return ftell((FILE *)fp);
-}
-
-static void FS_CloseBFFStream(FILE *fp, memoryMap_t *file)
-{
-//	if (file)
-//		Sys_UnmapFile(file);
-//	else
-		fclose(fp);
-}
-
 /*
-FS_LoadBFF: creates a new bffFile_t in the search chain for the contents of a bff archive file
+* FS_LoadBFF: creates a new bffFile_t in the search chain for the contents of a bff archive file
 */
 static bffFile_t *FS_LoadBFF(const char *bffpath)
 {
@@ -1624,8 +1657,6 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 	uint64_t chunkSize;
 	uint64_t gameNameLen;
 	uint64_t baseNameLen, fileNameLen;
-	uint32_t stream;
-	void *streamPtr;
 	FILE *fp;
 	fileStats_t stats;
 
@@ -1645,7 +1676,6 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 
 	chunkCount = 0;
 	fp = NULL;
-	file = NULL;
 
 	// if the file is really heavy, map it, otherwise, open it normally
 /*
@@ -1662,30 +1692,28 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 */
 	{
 		fp = Sys_FOpen(bffpath, "rb");
-		if (!fp) {
+		if ( !fp ) {
 			N_Error(ERR_FATAL, "FS_LoadBFF: failed to open bff %s in readonly mode", bffpath);
 			return NULL;
 		}
-		stream = BFF_STREAM_FILE;
-		streamPtr = (void *)fp;
 	}
 
-	if (!fread( &header, sizeof(header), 1, fp )) {
+	if ( !fread( &header, sizeof(header), 1, fp ) ) {
 		fclose( fp );
-		N_Error(ERR_FATAL, "FS_LoadBFF: failed to read header for '%s'", bffpath);
+		N_Error( ERR_FATAL, "FS_LoadBFF: failed to read header for '%s'", bffpath );
 	}
 
-	if (header.ident != BFF_IDENT) {
+	if ( header.ident != BFF_IDENT ) {
 		Con_DPrintf( "FS_LoadBFF: bad identifier, '%s'\n", bffpath );
 		fclose( fp );
 		return NULL;
 	}
-	if (header.magic != HEADER_MAGIC) {
+	if ( header.magic != HEADER_MAGIC ) {
 		Con_DPrintf( "FS_LoadBFF: bad header magic, '%s'\n", bffpath );
 		fclose( fp );
 		return NULL;
 	}
-	if (!header.numChunks) {
+	if ( !header.numChunks ) {
 		Con_DPrintf( "FS_LoadBFF: funny chunk count, '%s'\n", bffpath );
 		fclose( fp );
 		return NULL;
@@ -1693,24 +1721,24 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 
 	// technically not an error, but could cause some severe issues if the
 	// version gap is large enough
-	if (header.version != BFF_VERSION) {
+	if ( header.version != BFF_VERSION ) {
 		Con_Printf(
 			COLOR_YELLOW "==== WARNING: bff version found in header isn't the same as this program's ====\n" COLOR_RESET
-			"\tHeader Version: %hi\n\tProgram BFF Version: %hi\n", header.version, BFF_VERSION);
+			"\tHeader Version: %hi\n\tProgram BFF Version: %hi\n", header.version, BFF_VERSION );
 	}
-	if (!fread( gameName, sizeof(gameName), 1, fp )) {
+	if ( !fread( gameName, sizeof(gameName), 1, fp ) ) {
 		fclose( fp );
-		N_Error(ERR_FATAL, "FS_LoadBFF: failed to read gameName");
+		N_Error( ERR_FATAL, "FS_LoadBFF: failed to read gameName" );
 	}
 
-	hashSize = FS_BFFHashSize(header.numChunks);
+	hashSize = FS_BFFHashSize( header.numChunks );
 
 	size = 0;
 	size += sizeof(*bff) + sizeof(*bff->buildBuffer) * header.numChunks + hashSize * sizeof(*bff->hashTable);
-	size += PAD(fileNameLen, sizeof(uintptr_t));
-	size += PAD(baseNameLen, sizeof(uintptr_t));
+	size += PAD( fileNameLen, sizeof(uintptr_t) );
+	size += PAD( baseNameLen, sizeof(uintptr_t) );
 
-	bff = (bffFile_t *)Z_Malloc(size, TAG_BFF);
+	bff = (bffFile_t *)Z_Malloc( size, TAG_BFF );
 	memset(bff, 0, size);
 
 	bff->numfiles = header.numChunks;
@@ -1718,55 +1746,55 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 	bff->handlesUsed = 0;
 
 	// setup memory layout
-	bff->hashTable = (fileInBFF_t **)(bff + 1);
-	bff->buildBuffer = (fileInBFF_t *)(bff->hashTable + bff->hashSize);
+	bff->hashTable = (fileInBFF_t **)( bff + 1 );
+	bff->buildBuffer = (fileInBFF_t *)( bff->hashTable + bff->hashSize );
 
-	bff->bffFilename = (char *)(bff->buildBuffer + header.numChunks);
-	bff->bffBasename = (char *)(bff->bffFilename + PAD(fileNameLen, sizeof(uintptr_t)));
+	bff->bffFilename = (char *)( bff->buildBuffer + header.numChunks );
+	bff->bffBasename = (char *)( bff->bffFilename + PAD( fileNameLen, sizeof(uintptr_t) ) );
 
-	memcpy(bff->bffGamename, gameName, sizeof(bff->bffGamename));
-	memcpy(bff->bffFilename, bffpath, fileNameLen);
-	memcpy(bff->bffBasename, basename, baseNameLen);
+	memcpy( bff->bffGamename, gameName, sizeof(bff->bffGamename) );
+	memcpy( bff->bffFilename, bffpath, fileNameLen );
+	memcpy( bff->bffBasename, basename, baseNameLen );
 
 	// strip the .bff if needed
-	FS_StripExt(bff->bffBasename, ".bff");
+	FS_StripExt( bff->bffBasename, ".bff" );
 	
 	curFile = bff->buildBuffer;
-	for (i = 0; i < bff->numfiles; i++) {
-		if (!fread( &curFile->nameLen, sizeof(curFile->nameLen), 1, fp )) {
+	for ( i = 0; i < bff->numfiles; i++ ) {
+		if ( !fread( &curFile->nameLen, sizeof(curFile->nameLen), 1, fp ) ) {
 			fclose( fp );
-			Con_DPrintf("Error reading chunk nameLen at %lu\n", i);
+			Con_Printf( COLOR_RED "ERROR: failed reading chunk nameLen at %lu\n", i );
 			return NULL;
 		}
 
-		curFile->name = (char *)Z_Malloc(curFile->nameLen, TAG_BFF);
-		if (!fread( curFile->name, curFile->nameLen, 1, fp )) {
+		curFile->name = (char *)Z_Malloc( curFile->nameLen, TAG_BFF );
+		if ( !fread( curFile->name, curFile->nameLen, 1, fp ) ) {
 			fclose( fp );
-			Con_DPrintf("Error reading chunk name at %lu\n", i);
+			Con_Printf( COLOR_RED "ERROR: failed reading chunk name at %lu\n", i );
 			return NULL;
 		}
-		if (!fread( &curFile->size, sizeof(curFile->size), 1, fp )) {
+		if ( !fread( &curFile->size, sizeof(curFile->size), 1, fp ) ) {
 			fclose( fp );
-			Con_DPrintf("Error reading read chunk size at %lu\n", i);
-			return NULL;
-		}
-
-		if (!curFile->size) {
-			fclose( fp );
-			Con_DPrintf("Bad chunk size at %lu\n", i);
+			Con_Printf( COLOR_RED "ERROR: failed reading read chunk size at %lu\n", i );
 			return NULL;
 		}
 
-		FS_ConvertFilename(curFile->name);
+		if ( !curFile->size ) {
+			fclose( fp );
+			Con_Printf( COLOR_RED "ERROR: bad chunk size at %lu\n", i);
+			return NULL;
+		}
 
-		hash = FS_HashFileName(curFile->name, bff->hashSize);
+		FS_ConvertFilename( curFile->name );
+
+		hash = FS_HashFileName( curFile->name, bff->hashSize );
 		curFile->next = bff->hashTable[hash];
 		bff->hashTable[hash] = curFile;
 		curFile->bytesRead = 0;
 
 		// read the chunk data
-		curFile->buf = (char *)Z_Malloc(curFile->size, TAG_BFF);
-		if (!fread( curFile->buf, curFile->size, 1, fp )) {
+		curFile->buf = (char *)Z_Malloc( curFile->size, TAG_BFF );
+		if ( !fread( curFile->buf, curFile->size, 1, fp ) ) {
 			fclose( fp );
 			Con_DPrintf("Error reading chunk buffer at %lu\n", i);
 			return NULL;
@@ -1775,8 +1803,8 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 		curFile++;
 	}
 
-	bff->checksum = Com_BlockChecksum(bff, size);
-	bff->checksum = LittleInt(bff->checksum);
+	bff->checksum = Com_BlockChecksum( bff, size );
+	bff->checksum = LittleInt( bff->checksum );
 
 #ifdef USE_BFF_CACHE_FILE
 	FS_InsertBFFToCache(bff);
