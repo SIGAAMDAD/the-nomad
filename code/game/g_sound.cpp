@@ -384,17 +384,21 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
 
     // clear audio file data before anything
     memset( &m_hFData, 0, sizeof(m_hFData) );
-
     memset( &vio, 0, sizeof(vio) );
 
     N_strncpyz( m_pName, npath, sizeof(m_pName) );
 
-    length = FS_LoadFile( npath, &buffer );
-    
     // hash it so that if we try loading it
     // even if it's failed, we won't try loading
     // it again
     sndManager->AddSourceToHash( this );
+
+    length = FS_LoadFile( npath, &buffer );
+
+    if ( !length || !buffer ) {
+        Con_Printf( COLOR_RED "CSoundSource::LoadFile: failed to load file '%s'.\n", npath );
+        return false;
+    }
 
     fp = tmpfile();
     AssertMsg( fp, "Failed to open temprorary file!" );
