@@ -270,7 +270,7 @@ void Menu_Cache( void )
     ui->rb_off = re.RegisterShader( "gfx/rb_off" );
 
     ui->whiteShader = re.RegisterShader( "white" );
-//    ui->menubackShader = re.RegisterShader( "menuback" );
+    ui->menubackShader = re.RegisterShader( "menuback" );
 }
 /*
 =================

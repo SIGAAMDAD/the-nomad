@@ -468,7 +468,7 @@ static void SettingsMenu_ApplyChanges( void )
         return;
     }
 
-    ImGui::SetCursorScreenPos( ImVec2( 240 * ui->scale, 720 * ui->scale ) );
+    ImGui::SetCursorScreenPos( ImVec2( 260 * ui->scale, 720 * ui->scale ) );
     
     if (ImGui::Button( "APPLY CHANGES" )) {
         SettingsMenu_ApplyGraphicsChanges();

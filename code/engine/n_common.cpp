@@ -474,7 +474,11 @@ static void Com_PumpKeyEvents(void)
 //					Cvar_SetIntegerValue( "vid_ypos", event.window.data2 );
 				}
 				break;
-			case SDL_WINDOWEVENT_FOCUS_LOST: Key_ClearStates(); break;
+			case SDL_WINDOWEVENT_MINIMIZED:
+			case SDL_WINDOWEVENT_FOCUS_LOST:
+				Cvar_Set( "g_paused", "1" );
+				Key_ClearStates();
+				break;
 			};
 			break;
 		case SDL_QUIT:

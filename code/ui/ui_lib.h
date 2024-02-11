@@ -226,6 +226,11 @@ private:
 extern CUILib *ui;
 extern qboolean m_entersound;
 
+template<typename T>
+GDR_INLINE T *AllocateMenu( void ) {
+    return (T *)Hunk_Alloc( sizeof(*T), h_low );
+}
+
 // cvars
 extern cvar_t *ui_language;
 extern cvar_t *ui_printStrings;

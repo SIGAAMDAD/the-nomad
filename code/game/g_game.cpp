@@ -265,19 +265,6 @@ static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, mat4_t vpm )
     }
 }
 
-static void GLM_MakeVPMScreenSpace( mat4_t vpm, mat4_t projection, mat4_t view )
-{
-    glm::mat4 viewProjectionMatrix, viewMatrix, projectionMatrix;
-
-    projectionMatrix = glm::ortho( 0.0f, (float)r_customWidth->i, (float)r_customHeight->i, 0.0f, -1.0f, 1.0f );
-    viewMatrix = glm::translate( glm::mat4( 1.0f ), glm::vec3( 0.0f ) );
-    viewProjectionMatrix = projectionMatrix * viewMatrix;
-
-    memcpy( &projection[0][0], &projectionMatrix[0][0], sizeof(mat4_t) );
-    memcpy( &vpm[0][0], &viewProjectionMatrix[0][0], sizeof(mat4_t) );
-    memcpy( &view[0][0], &viewMatrix[0][0], sizeof(mat4_t) );
-}
-
 static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, const glm::mat4& vpm )
 {
     glm::mat4 viewProjectionMatrix;

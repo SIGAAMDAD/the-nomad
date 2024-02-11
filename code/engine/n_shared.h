@@ -778,7 +778,7 @@ typedef struct link_s {
 void ClearLink( link_t *l );
 void RemoveLink( link_t *l );
 void InsertLinkBefore( link_t *l, link_t *before );
-void InsertLinkAfter( link_t *l, link_t *after ):
+void InsertLinkAfter( link_t *l, link_t *after );
 
 #ifdef ERR_FATAL
 	#undef ERR_FATAL // this is defined in malloc.h

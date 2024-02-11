@@ -42,8 +42,8 @@ void RB_MakeViewMatrix( void )
     case RSF_ORTHO_TYPE_SCREENSPACE:
         ortho[0] = 0;
         ortho[1] = glConfig.vidWidth;
-        ortho[2] = 0;
-        ortho[3] = glConfig.vidHeight;
+        ortho[2] = glConfig.vidHeight;
+        ortho[3] = 0;
         break;
     case RSF_ORTHO_TYPE_WORLD:
         ortho[0] = 0;

@@ -107,23 +107,16 @@ void MainMenu_Draw( void )
 
     memset( &refdef, 0, sizeof(refdef) );
 
-    x = 0;
-    y = 0;
-    w = 1024;
-    h = 768;
-
-    ui->AdjustFrom1024( &x, &y, &w, &h );
-
-    refdef.x = x;
-    refdef.y = y;
-    refdef.width = w;
-    refdef.height = h;
+    refdef.x = 0;
+    refdef.y = 0;
+    refdef.width = ui->GetConfig().vidWidth;
+    refdef.height = ui->GetConfig().vidHeight;
 
     refdef.time = ui->GetRealTime();
     refdef.flags = RSF_NOWORLDMODEL | RSF_ORTHO_TYPE_SCREENSPACE;
 
-    re.DrawImage( x, y, w, h, 0, 1, 1, 0, menu.background0 );
     re.ClearScene();
+    re.DrawImage( refdef.x, refdef.y, refdef.width, refdef.height, 0, 1, 1, 0, menu.background0 );
     re.RenderScene( &refdef );
 
 //    ImGui::Begin( "MainMenuBackground", NULL, windowFlags | ImGuiWindowFlags_AlwaysAutoResize );
