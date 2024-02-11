@@ -393,7 +393,7 @@ int SG_ParseInfos( char *buf, int max, char **infos )
             Info_SetValueForKey( info, key, token );
         }
         // NOTE: extra space for level index
-        infos[count] = SG_MemAlloc( strlen( info ) + strlen( "\\num\\" ) + strlen( va( "%i", MAX_LEVELS ) ) + 1 );
+        infos[count] = (char **)SG_MemAlloc( strlen( info ) + strlen( "\\num\\" ) + strlen( va( "%i", MAX_LEVELS ) ) + 1 );
         if ( infos[count] ) {
             strcpy( infos[count], info );
             count++;

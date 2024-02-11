@@ -72,13 +72,9 @@ int strcmp( const char* string1, const char* string2 )
 
 char* strcpy( char *dst, const char *src )
 {
-    char *d;
-
-    d = dst;
-    while ( *src ) {
-        *d++ = *src++;
+    while ( *src != 0 ) {
+        *dst++ = *src++;
     }
-    *d = 0;
     return dst;
 }
 

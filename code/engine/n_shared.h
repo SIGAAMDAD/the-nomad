@@ -767,6 +767,19 @@ int Q_longjmp_c(void *, int);
 #define Q_longjmp longjmp
 #endif
 
+//
+// a little linked list utility
+//
+
+typedef struct link_s {
+	struct link_s *next, *prev;
+} link_t;
+
+void ClearLink( link_t *l );
+void RemoveLink( link_t *l );
+void InsertLinkBefore( link_t *l, link_t *before );
+void InsertLinkAfter( link_t *l, link_t *after ):
+
 #ifdef ERR_FATAL
 	#undef ERR_FATAL // this is defined in malloc.h
 #endif
