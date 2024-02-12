@@ -1507,10 +1507,10 @@ typedef struct {
     uint64_t numPolys;
     uint64_t numIndices;
 
-    qboolean screenshotFrame;
     screenshotCommand_t screenshotBuf;
 } renderBackendData_t;
 
+extern qboolean screenshotFrame;
 extern renderBackendData_t *backendData;
 
 void RE_DrawImage( float x, float y, float w, float h, float u1, float v1, float u2, float v2, nhandle_t hShader );

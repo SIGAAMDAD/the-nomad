@@ -30,7 +30,7 @@ typedef struct
     const stringHash_t *exitToMainMenu;
 } pausemenu_t;
 
-#define PAUSEMENU_VOLUME_CAP 2
+#define PAUSEMENU_VOLUME_CAP 2.0f
 
 static const char *dailyTips[] = {
     "You can parry anything that's a projectile, that includes bullets, flying corpses, blades, etc.",
@@ -46,7 +46,7 @@ static const char *helpStrings[NUMHELPSTRINGS][2] = {
 };
 
 // PAUSE. REWIND. PLAY.
-static pausemenu_t *menu;
+static pausemenu_t menu;
 
 static void PauseMenu_Help( void )
 {
@@ -54,16 +54,16 @@ static void PauseMenu_Help( void )
     case STATE_HELP:
         ui->EscapeMenuToggle( STATE_PAUSE );
         if (ui->GetState() != STATE_HELP) {
-            menu->helpMenu = qfalse;
+            menu.helpMenu = qfalse;
             break;
         }
         else if (ui->Menu_Title( "HELP" )) {
-            menu->helpMenu = qfalse;
+            menu.helpMenu = qfalse;
             break;
         }
         if (ui->Menu_Option( "Tutorial 1: How To Parry" )) {
             ui->SetState( STATE_HELP_SHOW );
-            menu->helpstate = HELP_PARRY;
+            menu.helpstate = HELP_PARRY;
         }
         break;
     case STATE_HELP_SHOW:
@@ -71,13 +71,13 @@ static void PauseMenu_Help( void )
         if (ui->GetState() != STATE_HELP_SHOW) {
             break;
         }
-        else if (ui->Menu_Title( helpStrings[menu->helpstate][0] )) {
+        else if (ui->Menu_Title( helpStrings[menu.helpstate][0] )) {
             ui->SetState( STATE_HELP );
             break;
         }
 
         ImGui::NewLine();
-        ImGui::TextUnformatted( helpStrings[menu->helpstate][1] );
+        ImGui::TextUnformatted( helpStrings[menu.helpstate][1] );
         break;
     };
 }
@@ -86,7 +86,7 @@ static void PauseMenu_DrawTitle( void ) {
     const float font_scale = ImGui::GetFont()->Scale;
 
     ImGui::SetWindowFontScale( font_scale * 3.75f * ui->scale );
-    ImGui::TextUnformatted( menu->title->value );
+    ImGui::TextUnformatted( menu.title->value );
     ImGui::SetWindowFontScale( font_scale * 1.5f * ui->scale );
 }
 
@@ -100,10 +100,10 @@ static void PauseMenu_Draw( void )
     ImGui::SetWindowSize( ImVec2( (float)ui->GetConfig().vidWidth, (float)ui->GetConfig().vidHeight ) );
     ImGui::SetWindowPos( ImVec2( 0, 0 ) );
 
-    if ( menu->helpMenu ) {
+    if ( menu.helpMenu ) {
         PauseMenu_Help();
         return;
-    } else if ( menu->settingsMenu ) {
+    } else if ( menu.settingsMenu ) {
         // we don't want to be drawing everything else behind the settings menu
         // otherwise its very hard to see the options
         ui->SetActiveMenu( UI_MENU_MAIN );
@@ -121,24 +121,24 @@ static void PauseMenu_Draw( void )
 
     ImGui::BeginTable( " ", 2 );
     {
-        if (ui->Menu_Option( menu->resume->value )) {
+        if (ui->Menu_Option( menu.resume->value )) {
             ui->SetState( STATE_NONE );
             ui->SetActiveMenu( UI_MENU_NONE );
         }
         ImGui::TableNextRow();
-        if (ui->Menu_Option( menu->help->value )) {
-            menu->helpMenu = qtrue;
+        if (ui->Menu_Option( menu.help->value )) {
+            menu.helpMenu = qtrue;
         }
         ImGui::TableNextRow();
-        if (ui->Menu_Option( menu->checkpoint->value )) {
+        if (ui->Menu_Option( menu.checkpoint->value )) {
             VM_Call( sgvm, 0, SGAME_REWIND_TO_LAST_CHECKPOINT );
         }
         ImGui::TableNextRow();
-        if (ui->Menu_Option( menu->settings->value )) {
-            menu->settingsMenu = qtrue;
+        if (ui->Menu_Option( menu.settings->value )) {
+            menu.settingsMenu = qtrue;
         }
         ImGui::TableNextRow();
-        if (ui->Menu_Option( menu->exitToMainMenu->value )) {
+        if (ui->Menu_Option( menu.exitToMainMenu->value )) {
             ui->SetState( STATE_MAIN );
             ui->SetActiveMenu( UI_MENU_MAIN );
             gi.mapLoaded = qfalse;
@@ -175,14 +175,14 @@ static void PauseMenu_LoadDailyTips( void )
 
         if ( !tok[0] ) {
             break;
-        } else if ( menu->numDailyTips >= MAX_DAILY_TIPS ) {
+        } else if ( menu.numDailyTips >= MAX_DAILY_TIPS ) {
             Con_Printf( COLOR_YELLOW "WARNING: too many daily tips\n" );
             break;
         }
 
-        menu->dailyTips[menu->numDailyTips] = (char *)Hunk_Alloc( strlen( tok ) + 1 );
-        strcpy( menu->dailyTips[menu->numDailyTips], tok );
-        menu->numDailyTips++;
+        menu.dailyTips[menu.numDailyTips] = (char *)Hunk_Alloc( strlen( tok ) + 1, h_low );
+        strcpy( menu.dailyTips[menu.numDailyTips], tok );
+        menu.numDailyTips++;
     }
 
     FS_FreeFile( f.v );
@@ -190,21 +190,21 @@ static void PauseMenu_LoadDailyTips( void )
 
 void PauseMenu_Cache( void )
 {
-    menu = AllocateMenu();
+    memset( &menu, 0, sizeof(menu) );
 
-    menu->menu.Draw = PauseMenu_Draw;
+    menu.menu.Draw = PauseMenu_Draw;
 
-    menu->oldVolume = Cvar_VariableFloat( "snd_musicvol" );
+    menu.oldVolume = Cvar_VariableFloat( "snd_musicvol" );
     Cvar_Set( "snd_musicvol", va( "%f", PAUSEMENU_VOLUME_CAP ) );
 
-    menu->title = strManager->ValueForKey( "MENU_PAUSE_TITLE" );
-    menu->checkpoint = strManager->ValueForKey( "MENU_PAUSE_CHECKPOINT" );
-    menu->help = strManager->ValueForKey( "MENU_PAUSE_HELP" );
-    menu->resume = strManager->ValueForKey( "MENU_PAUSE_RESUME" );
-    menu->settings = strManager->ValueForKey( "MENU_PAUSE_SETTINGS" );
-    menu->exitToMainMenu = strManager->ValueForKey( "MENU_PAUSE_ETMM" );
+    menu.title = strManager->ValueForKey( "MENU_PAUSE_TITLE" );
+    menu.checkpoint = strManager->ValueForKey( "MENU_PAUSE_CHECKPOINT" );
+    menu.help = strManager->ValueForKey( "MENU_PAUSE_HELP" );
+    menu.resume = strManager->ValueForKey( "MENU_PAUSE_RESUME" );
+    menu.settings = strManager->ValueForKey( "MENU_PAUSE_SETTINGS" );
+    menu.exitToMainMenu = strManager->ValueForKey( "MENU_PAUSE_ETMM" );
 
-    ui->PushMenu( &menu->menu );
+    ui->PushMenu( &menu.menu );
 }
 
 void UI_PauseMenu( void )

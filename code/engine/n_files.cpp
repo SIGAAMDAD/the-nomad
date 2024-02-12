@@ -25,7 +25,6 @@ the basepath is the path to the user's current working directory.
 #define MAX_FILEHASH_SIZE 256
 #define BASEGAME_DIR "gamedata"
 
-
 #define HEADER_MAGIC 0x5f3759df
 #define BFF_IDENT (('B'<<24)+('F'<<16)+('F'<<8)+'I')
 

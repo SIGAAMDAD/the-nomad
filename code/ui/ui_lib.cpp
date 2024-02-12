@@ -32,12 +32,14 @@ bool CUILib::Menu_Option( const char *label )
 bool CUILib::Menu_Title( const char *label )
 {
     ImGui::SetWindowFontScale( 1.5f * scale );
-    if ( state != STATE_MAIN && ImGui::ArrowButton( va("##BACK%s", label), ImGuiDir_Left )) {
-		Snd_PlaySfx( sfx_back );
-        return true;
-    }
-    ImGui::SameLine();
-    ImGui::TextUnformatted( "BACK" );
+	if ( state != STATE_MAIN ) {
+	    if ( ImGui::ArrowButton( va( "##BACK%s", label ), ImGuiDir_Left ) ) {
+			Snd_PlaySfx( sfx_back );
+	        return true;
+	    }
+	    ImGui::SameLine();
+	    ImGui::TextUnformatted( "BACK" );
+	}
 
     ImGui::SetWindowFontScale( 3.75f * scale );
     ImGui::TextUnformatted( label );

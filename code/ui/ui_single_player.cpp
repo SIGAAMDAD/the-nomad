@@ -311,6 +311,7 @@ void SinglePlayerMenu_Cache( void )
     // init savefiles
     //
 
+    sp.numSaves = 0;
     fileList = g_pArchiveHandler->GetSaveFiles( &sp.numSaves );
 
     if ( sp.numSaves ) {

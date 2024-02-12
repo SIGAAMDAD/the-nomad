@@ -96,6 +96,7 @@ void MainMenu_Draw( void )
     uint64_t i;
     float x, y, w, h;
     refdef_t refdef;
+    polyVert_t verts[4];
     const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
                             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground;
 
@@ -115,8 +116,8 @@ void MainMenu_Draw( void )
     refdef.time = ui->GetRealTime();
     refdef.flags = RSF_NOWORLDMODEL | RSF_ORTHO_TYPE_SCREENSPACE;
 
+    re.DrawImage( refdef.x, refdef.y, refdef.width, refdef.height, 1, 0, 0, 1, menu.background0 );
     re.ClearScene();
-    re.DrawImage( refdef.x, refdef.y, refdef.width, refdef.height, 0, 1, 1, 0, menu.background0 );
     re.RenderScene( &refdef );
 
 //    ImGui::Begin( "MainMenuBackground", NULL, windowFlags | ImGuiWindowFlags_AlwaysAutoResize );

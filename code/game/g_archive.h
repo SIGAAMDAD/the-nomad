@@ -91,8 +91,8 @@ typedef struct {
 class CGameArchive
 {
 public:
-    CGameArchive( void );
-    ~CGameArchive();
+    CGameArchive( void ) = default;
+    ~CGameArchive() = default;
 
     void BeginSaveSection( const char *name );
     void EndSaveSection( void );
@@ -140,6 +140,9 @@ public:
     bool LoadPartial( const char *filename, gamedata_t *gd );
 
     nhandle_t GetSection( const char *name );
+
+    friend void G_InitArchiveHandler( void );
+    friend void G_ShutdownArchiveHandler( void );
 private:
     void AddField( const char *name, int32_t type, const void *data, uint32_t dataSize );
     bool ValidateHeader( const void *header ) const;
@@ -158,6 +161,9 @@ private:
     ngd_file_t **m_pArchiveCache;
     ngd_file_t *m_pCurrentArchive;
 };
+
+void G_InitArchiveHandler( void );
+void G_ShutdownArchiveHandler( void );
 
 extern CGameArchive *g_pArchiveHandler;
 

@@ -156,42 +156,27 @@ void R_WorldToGL2( polyVert_t *verts, vec3_t pos )
 void R_DrawPolys( void )
 {
     uint64_t i;
+    uint64_t startIndex, numVerts;
     const srfPoly_t *poly;
-    const glIndex_t *idx;
     nhandle_t oldShader;
-    polyVert_t *vtx;
-    vec3_t pos;
-    uint32_t numVerts;
-    uint32_t numIndices;
 
     // no polygon submissions this frame
     if ( !r_numPolys && !r_numPolyVerts ) {
         return;
     }
 
-    RB_SetBatchBuffer( backend.drawBuffer, backendData->polyVerts, sizeof(polyVert_t), backendData->indices, sizeof(glIndex_t) );
+    RB_SetBatchBuffer( backend.drawBuffer, backend.refdef.polys, sizeof(polyVert_t), backendData->indices, sizeof(glIndex_t) );
 
     // sort the polys to be more efficient with our shaders
-#if 1
-    R_RadixSort( backendData->polys, r_numPolys );
-#else
-    qsort( backendData->polys, r_numPolys, sizeof(srfPoly_t), SortPoly );
-#endif
+    R_RadixSort( backend.refdef.polys, backend.refdef.numPolys );
 
-    // submit all the indices
-    RB_CommitDrawData( NULL, 0, backendData->indices, backendData->numIndices );
-
-    vtx = backendData->polyVerts;
-    poly = backendData->polys;
-    
+    poly = backend.refdef.polys;
     oldShader = poly->hShader;
     backend.drawBatch.shader = R_GetShaderByHandle( oldShader );
 
-    RB_CommitDrawData( NULL, 0, backendData->indices, backendData->numIndices );
-
     GLSL_UseProgram( &rg.basicShader );
     
-    for ( i = 0; i < r_numPolys; i++ ) {
+    for ( i = 0; i < backend.refdef.numPolys; i++ ) {
         if ( oldShader != poly->hShader ) {
             // if we have a new shader, flush the current batch
             RB_FlushBatchBuffer();
@@ -199,8 +184,19 @@ void R_DrawPolys( void )
             backend.drawBatch.shader = R_GetShaderByHandle( poly->hShader );
         }
 
+        startIndex = backendData->numIndices;
+
+        // generate fan indexes into the buffer
+        for ( i = 0; i < poly->numVerts - 2; i++ ) {
+            backendData->indices[backendData->numIndices + 0] = numVerts;
+            backendData->indices[backendData->numIndices + 1] = numVerts + i + 1;
+            backendData->indices[backendData->numIndices + 2] = numVerts + i + 2;
+            backendData->numIndices += 3;
+        }
+        numVerts += poly->numVerts;
+
         // submit to draw buffer
-        RB_CommitDrawData( poly->verts, poly->numVerts, NULL, 0 );
+        RB_CommitDrawData( poly->verts, poly->numVerts, &backendData->indices[startIndex], backendData->numIndices - startIndex );
         
         poly++;
     }

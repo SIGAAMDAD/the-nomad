@@ -409,6 +409,7 @@ extern int CPU_flags;
 typedef enum {
 	TAG_FREE,
 	TAG_STATIC,
+	TAG_SAVEFILE,
 	TAG_BFF,
 	TAG_SEARCH_PATH,
 	TAG_SEARCH_DIR,

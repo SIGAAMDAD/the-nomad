@@ -82,7 +82,6 @@ qboolean CGameArchive::LoadArchiveFile( const char *filename, uint64_t index )
 	}
 	
 	file = (ngd_file_t *)Hunk_Alloc( sizeof(*file), h_high );
-	memset( file, 0, sizeof(*file) );
 	
 	N_strncpyz( file->name, filename, sizeof(file->name) );
 	memcpy( &file->header, &header, sizeof(header) );
@@ -112,7 +111,8 @@ qboolean CGameArchive::LoadArchiveFile( const char *filename, uint64_t index )
 			FS_Read( &field->nameLength, sizeof(field->nameLength), hFile );
 
 			if ( !field->nameLength || field->nameLength >= MAX_STRING_CHARS ) {
-				N_Error( ERR_DROP, "(LoadArchiveFile) failed to load save '%s', field name length is corrupt at section '%s' (index %i)", filename, section->name, i );
+				N_Error( ERR_DROP, "(LoadArchiveFile) failed to load save '%s', field name length is corrupt at section '%s' (index %i)",
+					filename, section->name, i );
 			}
 			
 			field->name = (char *)Hunk_Alloc( field->nameLength, h_high );
@@ -193,35 +193,47 @@ qboolean CGameArchive::LoadArchiveFile( const char *filename, uint64_t index )
 	return qtrue;
 }
 
-CGameArchive::CGameArchive( void )
+void G_InitArchiveHandler( void )
 {
 	CTimer timer;
 	uint64_t i;
-	
-	m_pArchiveFileList = FS_ListFiles( "SaveData", ".ngd", &m_nArchiveFiles );
 
-	if ( m_nArchiveFiles ) {
+	if ( g_pArchiveHandler ) {
+		return;
+	}
+
+	g_pArchiveHandler = (CGameArchive *)Hunk_Alloc( sizeof(*g_pArchiveHandler), h_high );
+
+	Con_Printf( "G_InitArchiveHandler: caching save files...\n" );
+	
+	g_pArchiveHandler->m_pArchiveFileList = FS_ListFiles( "SaveData", ".ngd", &g_pArchiveHandler->m_nArchiveFiles );
+
+	if ( g_pArchiveHandler->m_nArchiveFiles ) {
 		Con_Printf( "Loading save files...\n" );
 	
 		timer.Run();
 
-		m_pArchiveCache = (ngd_file_t **)Hunk_Alloc( sizeof(*m_pArchiveCache) * m_nArchiveFiles, h_high );
+		g_pArchiveHandler->m_pArchiveCache = (ngd_file_t **)Hunk_Alloc( sizeof(*g_pArchiveHandler->m_pArchiveCache)
+			* g_pArchiveHandler->m_nArchiveFiles, h_high );
 
-		for ( i = 0; i < m_nArchiveFiles; i++ ) {
-			if ( !LoadArchiveFile( m_pArchiveFileList[i], i ) ) {
-				Con_Printf( COLOR_RED "Failed to load save file '%s', continuing...\n", m_pArchiveFileList[i] );
+		for ( i = 0; i < g_pArchiveHandler->m_nArchiveFiles; i++ ) {
+			if ( !g_pArchiveHandler->LoadArchiveFile( g_pArchiveHandler->m_pArchiveFileList[i], i ) ) {
+				Con_Printf( COLOR_RED "Failed to load save file '%s', continuing...\n", g_pArchiveHandler->m_pArchiveFileList[i] );
 			}
 		}
 
 		timer.Stop();
 
 		Con_Printf( "Done.\n" );
-		Con_Printf( "Cached %lu save files in %5.5lf milliseconds.\n", m_nArchiveFiles, (double)timer.ElapsedMilliseconds().count() );
+		Con_Printf( "Cached %lu save files in %5.5lf milliseconds.\n", g_pArchiveHandler->m_nArchiveFiles,
+			(double)timer.ElapsedMilliseconds().count() );
 	}
 }
 
-CGameArchive::~CGameArchive() {
-	FS_FreeFileList( m_pArchiveFileList );
+void G_ShutdownArchiveHandler( void ) {
+	Con_Printf( "G_ShutdownArchiveHandler: clearing save file cache...\n" );
+
+	g_pArchiveHandler = NULL;
 }
 
 const char **CGameArchive::GetSaveFiles( uint64_t *nFiles ) const {

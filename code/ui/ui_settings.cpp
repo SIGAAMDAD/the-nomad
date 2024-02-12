@@ -408,6 +408,9 @@ static void SettingsMenuPopup( void )
     if (settings.confirmation) {
         ImGui::TextUnformatted( "You made some changes to your settings, would you like to apply them?" );
         if (ImGui::Button( "SAVE CHANGES##SETTINGSMENUPOPUP" )) {
+            Cvar_Set( "com_restarting", "1" );
+            ui->PlaySelected();
+            SettingsMenu_ApplyAudioChanges();
             SettingsMenu_ApplyGraphicsChanges();
             settings.confirmation = qfalse;
             settings.modified = qfalse;
@@ -417,6 +420,7 @@ static void SettingsMenuPopup( void )
     else if (settings.confirmreset) {
         ImGui::TextUnformatted( "Are you sure you want to reset all your settings to their defaults?" );
         if (ImGui::Button( "YES##SETTINGSMENUPOPUP" )) {
+            Cvar_Set( "com_restarting", "1" );
             SettingsMenu_SetDefault();
             settings.confirmreset = qfalse;
             settings.modified = qfalse;

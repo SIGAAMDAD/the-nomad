@@ -472,6 +472,8 @@ static void G_Vid_Restart( refShutdownCode_t code )
     Snd_Shutdown();
     gi.soundStarted = qfalse;
 
+    G_ShutdownArchiveHandler();
+
     G_ClearMem();
 
     // startup all the gamestate memory
@@ -666,8 +668,10 @@ void G_Init( void )
 
     G_ClearState();
 
-    r_allowLegacy = Cvar_Get("r_allowLegacy", "0", CVAR_SAVE | CVAR_LATCH);
-    Cvar_SetDescription(r_allowLegacy, "Allow the use of old OpenGL API versions, requires \\r_drawMode 0 or 1 and \\r_allowShaders 0");
+    Cvar_Get( "com_restarting", "0", CVAR_PRIVATE | CVAR_TEMP | CVAR_PROTECTED );
+
+    r_allowLegacy = Cvar_Get( "r_allowLegacy", "0", CVAR_SAVE | CVAR_LATCH );
+    Cvar_SetDescription( r_allowLegacy, "Allow the use of old OpenGL API versions, requires \\r_drawMode 0 or 1 and \\r_allowShaders 0" );
 
     r_glDebug = Cvar_Get( "r_glDebug", "1", CVAR_SAVE | CVAR_LATCH );
     Cvar_SetDescription( r_glDebug, "Toggles OpenGL driver debug logging." );
@@ -784,8 +788,7 @@ void G_Init( void )
     gi.soundStarted = qtrue;
 
     // init archive handler
-    g_pArchiveHandler = (CGameArchive *)Hunk_Alloc( sizeof(*g_pArchiveHandler), h_low );
-    ::new ( g_pArchiveHandler ) CGameArchive();
+    G_InitArchiveHandler();
 
     // init renderer
     G_InitRenderer();
@@ -827,12 +830,12 @@ void G_Shutdown(qboolean quit)
     }
     recursive = qtrue;
 
-    g_pArchiveHandler->~CGameArchive();
-
     // clear and mute all sounds until next registration
     Snd_StopAll();
 
     Con_Shutdown();
+
+    G_ShutdownArchiveHandler();
 
     G_ShutdownVMs();
     G_ShutdownRenderer( quit ? REF_UNLOAD_DLL : REF_DESTROY_WINDOW );
@@ -875,6 +878,8 @@ void G_ShutdownVMs( void ) {
 
 void G_StartHunkUsers( void )
 {
+    G_InitArchiveHandler();
+
     if ( !gi.rendererStarted ) {
         gi.rendererStarted = qtrue;
         G_InitRenderer();
@@ -901,6 +906,8 @@ void G_StartHunkUsers( void )
 
 void G_ShutdownAll( void )
 {
+    G_ShutdownArchiveHandler();
+
     // clear and mute all sounds until next registration
     Snd_StopAll();
 
@@ -919,6 +926,8 @@ void G_ShutdownAll( void )
 
     gi.rendererStarted = qfalse;
     gi.soundStarted = qfalse;
+
+    Hunk_ClearToMark();
 }
 
 /*

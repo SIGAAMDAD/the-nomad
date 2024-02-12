@@ -1,5 +1,7 @@
 #include "rgl_local.h"
 
+qboolean screenshotFrame;
+
 void GL_SetObjectDebugName(GLenum target, GLuint id, const char *name, const char *add)
 {
 	if (r_glDebug->i) {
@@ -488,9 +490,9 @@ static const void *RB_SwapBuffers(const void *data)
         nglFinish();
     }
 
-	if ( backendData->screenshotFrame ) {
+	if ( screenshotFrame ) {
 		RB_TakeScreenshotCmd();
-		backendData->screenshotFrame = qfalse;
+		screenshotFrame = qfalse;
 	}
 
     ri.GLimp_EndFrame();

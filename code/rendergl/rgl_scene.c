@@ -65,30 +65,23 @@ void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t
 
     R_WorldToGL2( vtx, pos );
 
-    for ( i = 0; i < 2; i++ ) {
-        backendData->indices[backendData->numIndices + 0] = r_numPolyVerts;
-        backendData->indices[backendData->numIndices + 1] = r_numPolyVerts + i + 1;
-        backendData->indices[backendData->numIndices + 2] = r_numPolyVerts + i + 2;
-        backendData->numIndices += 3;
-    }
-
     r_numPolyVerts += 4;
     r_numPolys++;
 }
 
-void RE_AddPolyToScene(nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts)
+void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts )
 {
     uint32_t i, offset;
     uint32_t *idx;
     polyVert_t *vt;
     srfPoly_t *poly;
 
-    if (!rg.registered) {
+    if ( !rg.registered ) {
         return;
     }
 
     if ( r_numPolyVerts + numVerts >= r_maxPolys->i * 4 ) {
-        ri.Printf(PRINT_DEVELOPER, "RE_AddPolyToScene: r_maxPolyVerts hit, dropping %i vertices\n", numVerts);
+        ri.Printf( PRINT_DEVELOPER, "RE_AddPolyToScene: r_maxPolyVerts hit, dropping %i vertices\n", numVerts );
         return;
     }
 
@@ -100,14 +93,6 @@ void RE_AddPolyToScene(nhandle_t hShader, const polyVert_t *verts, uint32_t numV
     poly->numVerts = numVerts;
 
     memcpy( vt, verts, sizeof(*vt) * numVerts );
-
-    // generate fan indexes into the buffer
-    for ( i = 0; i < numVerts - 2; i++ ) {
-        backendData->indices[backendData->numIndices + 0] = r_numPolyVerts;
-        backendData->indices[backendData->numIndices + 1] = r_numPolyVerts + i + 1;
-        backendData->indices[backendData->numIndices + 2] = r_numPolyVerts + i + 2;
-        backendData->numIndices += 3;
-    }
 
     r_numPolyVerts += numVerts;
     r_numPolys++;

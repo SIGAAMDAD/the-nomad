@@ -1318,6 +1318,7 @@ void R_Init(void)
     memset( &glContext, 0, sizeof(glContext) );
 
     glState.viewData.camera.zoom = 1.0f;
+    screenshotFrame = qfalse;
 
     //
 	// init function tables
