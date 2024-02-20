@@ -3,92 +3,71 @@
 
 #pragma once
 
-#define NUM_REVOLVER_SPRITES (SPR_MURSTAR_RLD1_L - SPR_PLAYR_PARRY6_HIT4_L)
-#define NUM_PLASMA_SPRITES (SPR_PLASMA_FIRE_L - SPR_MURSTAR_RLD1_L)
+typedef struct {
+    int damage[NUMDIFS];
+    const char *name;
+    int range;
+    int ammo;
+    int damagetype; // used for causeOfDeath_t
+    float accuracy;
 
-// a lot of these are duplicates, that is until i add the sprites in
-typedef enum
-{
-    SPR_PLAYR_IDLE_R,
-    SPR_PLAYR_IDLE_L,
-    SPR_PLAYR_PARRY0_R,
-    SPR_PLAYR_PARRY0_L,
-    SPR_PLAYR_PARRY1_R,
-    SPR_PLAYR_PARRY1_L,
-    SPR_PLAYR_PARRY2_HIT0_R,
-    SPR_PLAYR_PARRY2_HIT0_L,
-    SPR_PLAYR_PARRY3_HIT1_R,
-    SPR_PLAYR_PARRY3_HIT1_L,
-    SPR_PLAYR_PARRY4_HIT2_R,
-    SPR_PLAYR_PARRY4_HIT2_L,
-    SPR_PLAYR_PARRY5_HIT3_R,
-    SPR_PLAYR_PARRY5_HIT3_L,
-    SPR_PLAYR_PARRY6_HIT4_R,
-    SPR_PLAYR_PARRY6_HIT4_L,
-    SPR_MURSTAR_IDLE_R,
-    SPR_MURSTAR_IDLE_L,
-    SPR_MURSTAR_FIRE_R,
-    SPR_MURSTAR_FIRE_L,
-    SPR_MURSTAR_RLD0_R,
-    SPR_MURSTAR_RLD0_L,
-    SPR_MURSTAR_RLD1_R,
-    SPR_MURSTAR_RLD1_L,
-    SPR_PLASMA_IDLE_R,
-    SPR_PLASMA_IDLE_L,
-    SPR_PLASMA_FIRE_R,
-    SPR_PLASMA_FIRE_L,
-    SPR_PLAYR_DASH_R,
-    SPR_PLAYR_DASH_L,
-    SPR_PLAYR_MOVE0_R,
-    SPR_PLAYR_MOVE0_L,
-    SPR_PLAYR_MOVE1_R,
-    SPR_PLAYR_MOVE1_L,
-    SPR_PLAYR_MOVE2_R,
-    SPR_PLAYR_MOVE2_L,
-    SPR_PLAYR_MOVE3_R,
-    SPR_PLAYR_MOVE3_L,
-    SPR_PLAYR_DEAD,
-    SPR_PLAYR_LEGS0_7_R,
-    SPR_PLAYR_LEGS0_7_L,
-    SPR_PLAYR_LEGS1_7_R,
-    SPR_PLAYR_LEGS1_7_L,
-    SPR_PLAYR_LEGS2_7_R,
-    SPR_PLAYR_LEGS2_7_L,
-    SPR_PLAYR_LEGS3_7_R,
-    SPR_PLAYR_LEGS3_7_L,
-    SPR_PLAYR_LEGS0_5_R,
-    SPR_PLAYR_LEGS0_5_L,
-    SPR_PLAYR_LEGS1_5_R,
-    SPR_PLAYR_LEGS1_5_L,
-    SPR_PLAYR_LEGS2_5_R,
-    SPR_PLAYR_LEGS2_5_L,
-    SPR_PLAYR_LEGS3_5_R,
-    SPR_PLAYR_LEGS3_5_L,
-    SPR_PLAYR_HB_IDLE_R,
-    SPR_PLAYR_HB_IDLE_L,
-    SPR_PLAYR_HB_STAB_R,
-    SPR_PLAYR_HB_STAB_L,
-    SPR_PLAYR_HB_SLASH_R,
-    SPR_PLAYR_HB_SLASH_L,
-    SPR_PLAYR_LEGS0_4_R,
-    SPR_PLAYR_LEGS0_4_L,
-    SPR_PLAYR_LEGS1_4_R,
-    SPR_PLAYR_LEGS1_4_L,
-    SPR_PLAYR_LEGS2_4_R,
-    SPR_PLAYR_LEGS2_4_L,
-    SPR_PLAYR_LEGS3_4_R,
-    SPR_PLAYR_LEGS3_4_L,
-    NUM_PLAYER_SPRITES,
+    nhandle_t hIconShader;
 
-    SPR_GRUNT_IDLE_R = 0,
-    SPR_GRUNT_IDLE_L,
-    NUM_GRUNT_SPRITES,
+    sfxHandle_t equipSfx;
+    sfxHandle_t altfireSfx;
+    sfxHandle_t meleeSfx;
+    sfxHandle_t reloadSfx;
+} weaponinfo_t;
 
-    NUMSPRITES = NUM_PLAYER_SPRITES
-                + NUM_GRUNT_SPRITES
-                + NUM_REVOLVER_SPRITES
-                + NUM_PLASMA_SPRITES
-} spritenum_t;
+typedef struct {
+    const char *name;
+    int cost;
+    int stack;
+    int moduleIndex;
+
+    nhandle_t hIconShader;
+
+    sfxHandle_t useSfx;
+} iteminfo_t;
+
+typedef struct {
+    const char *name;
+
+    int moduleIndex;
+    int health;
+    int movespeed;
+    uint32_t flags;
+
+    qboolean hasMelee;
+    qboolean hasMissile;
+
+    int soundTolerance;
+    int detectionRangeX;
+    int detectionRangeY;
+
+    int meleeDamage[NUMDIFS];
+    int meleeRange[NUMDIFS];
+} mobinfo_t;
+
+typedef struct {
+    const char *name;
+    int *statToChange;
+    int statChangeDelta;
+} powerupinfo_t;
+
+typedef struct {
+    const char *strings[6];
+    int moduleIndex;
+    int index;
+} damageType_t;
+
+typedef struct {
+    int ticks;
+} animFrame_t;
+
+typedef struct {
+    int numFrames;
+} animation_t;
 
 typedef enum
 {
@@ -100,16 +79,15 @@ typedef enum
     S_PLAYR_MELEE,
     S_PLAYR_PARRY,
 
-    S_MURSTAR_IDLE,
-    S_MURSTAR_FIRE,
-    S_MURSTAR_RLD,
+    S_FIREARM_IDLE,
+    S_FIREARM_USE,
+    S_FIREARM_RELOAD,
 
-    S_PLASMA_IDLE,
-    S_PLASMA_FIRE,
-
-    S_GRUNT_IDLE,
-    S_GRUNT_MOVE,
-    S_GRUNT_FIGHT,
+    S_MOB_IDLE,
+    S_MOB_CHASE,
+    S_MOB_FIGHT,
+    S_MOB_FLEE,
+    S_MOB_,
 
     NUMSTATES
 } statenum_t;

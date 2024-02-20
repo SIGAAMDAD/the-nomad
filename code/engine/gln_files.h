@@ -33,6 +33,21 @@
 #define LEVEL_FILE_EXT ".bmf"
 #define LEVEL_FILE_EXT_RAW "bmf"
 
+typedef enum {
+    DIR_NORTH = 0,
+    DIR_NORTH_EAST,
+    DIR_EAST,
+    DIR_SOUTH_EAST,
+    DIR_SOUTH,
+    DIR_SOUTH_WEST,
+    DIR_WEST,
+    DIR_NORTH_WEST,
+    
+    NUMDIRS,
+
+	DIR_NULL
+} dirtype_t;
+
 typedef struct {
     uint64_t fileofs;
     uint64_t length;
@@ -151,8 +166,8 @@ typedef struct {
 } maplight_t;
 
 typedef struct {
-    float texcoords[4][2];
-    byte sides[5]; // for physics
+    vec2_t texcoords[4];
+    byte sides[DIR_NULL]; // for physics
     vec4_t color;
     uvec3_t pos;
     int32_t index; // tileset texture index, -1 if not bound

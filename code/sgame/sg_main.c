@@ -9,6 +9,17 @@ int SG_DrawFrame( void );
 void SaveGame( void );
 void LoadGame( void );
 
+typedef struct {
+    qboolean initialized;
+    int maxGfx;
+    int difficulty;
+} sgameSettings_t;
+
+static sgameSettings_t settings;
+
+static void SG_SaveSettings( void );
+static void SG_DrawSettings( void );
+
 /*
 vmMain
 
@@ -19,6 +30,21 @@ int vmMain( int command, int arg0, int arg1, int arg2, int arg3, int arg4, int a
     int arg8, int arg9, int arg10 )
 {
     switch ( command ) {
+    case SGAME_RUNTIC:
+        return SG_RunLoop( arg0, arg1 );
+    case SGAME_CONSOLE_COMMAND:
+        SGameCommand();
+        return 0;
+    case SGAME_MOUSE_EVENT:
+        return 0;
+    case SGAME_KEY_EVENT:
+        SG_KeyEvent( arg0, arg1 );
+        return 0;
+    case SGAME_LOADLEVEL:
+        return SG_StartLevel();
+    case SGAME_CONSOLE_COMMAND:
+        SGameCommand();
+        return 0;
     case SGAME_INIT:
         SG_Init();
         return 0;
@@ -29,27 +55,21 @@ int vmMain( int command, int arg0, int arg1, int arg2, int arg3, int arg4, int a
         return sg.state;
     case SGAME_ENDLEVEL:
         return SG_EndLevel();
+    case SGAME_DRAW_ADVANCED_SETTINGS:
+        SG_DrawSettings();
+        return 0;
+    case SGAME_SAVE_SETTINGS:
+        SG_SaveSettings();
+        return 0;
     case SGAME_LOAD_GAME:
         LoadGame();
         return 0;
     case SGAME_SAVE_GAME:
         SaveGame();
         return 0;
-    case SGAME_MOUSE_EVENT:
-        return 0;
-    case SGAME_KEY_EVENT:
-        SG_KeyEvent( arg0, arg1 );
-        return 0;
     case SGAME_EVENT_HANDLING:
     case SGAME_EVENT_NONE:
         return 0;
-    case SGAME_LOADLEVEL:
-        return SG_StartLevel();
-    case SGAME_CONSOLE_COMMAND:
-        SGameCommand();
-        return 0;
-    case SGAME_RUNTIC:
-        return SG_RunLoop( arg0, arg1 );
     default:
         break;
     };
@@ -73,6 +93,7 @@ vmCvar_t sg_savename;
 vmCvar_t sg_gameDifficulty;
 vmCvar_t sg_numSaves;
 vmCvar_t sg_memoryDebug;
+vmCvar_t sg_maxGfx;
 
 vmCvar_t pm_groundFriction;
 vmCvar_t pm_waterFriction;
@@ -124,6 +145,7 @@ static cvarTable_t cvarTable[] = {
     { &sg_gameDifficulty,       "sg_gameDifficulty",    "2",            CVAR_LATCH | CVAR_TEMP,     0, qtrue },
     { &sg_savename,             "sg_savename",          "savedata",     CVAR_LATCH | CVAR_SAVE,     0, qtrue },
     { &sg_numSaves,             "sg_numSaves",          "0",            CVAR_LATCH | CVAR_SAVE,     0, qfalse },
+    { &sg_maxGfx,               "sg_maxGfx",            "1024",         CVAR_LATCH | CVAR_SAVE,     0, qtrue },
 #ifdef _NOMAD_DEBUG
     { &sg_memoryDebug,          "sg_memoryDebug",       "1",            CVAR_LATCH | CVAR_TEMP,     0, qfalse },
 #else
@@ -365,7 +387,7 @@ char *SG_LoadFile( const char *filename )
     return text;
 }
 
-static nhandle_t SG_LoadResource( const char *name, nhandle_t (*fn)( const char * ) )
+nhandle_t SG_LoadResource( const char *name, nhandle_t (*fn)( const char * ) )
 {
     nhandle_t handle;
 
@@ -474,6 +496,7 @@ void SG_Shutdown( void )
     G_Printf( "Shutting down sgame...\n" );
 
     SG_ShutdownCommands();
+    SaveGame();
 
     memset( &sg, 0, sizeof(sg) );
 
@@ -498,6 +521,31 @@ void LoadGame( void )
     G_Printf( "Loading save file '%s'...\n", savename );
 
     SG_LoadLevelData();
+}
+
+static void SG_DrawSettings( void )
+{
+    ImGui_BeginTable( "##SGameSettings", 2 );
+    
+    ImGui_TableNextColumn();
+    ImGui_TextUnformatted( "Maximum GFX" );
+    ImGui_TableNextColumn();
+    ImGui_SliderInt( "##MaximumGraphicsEffects", &settings.maxGfx, 0, MAX_GFX );
+
+    ImGui_TableNextRow();
+
+    if ( sg.state == SG_IN_LEVEL ) {
+        ImGui_TableNextColumn();
+        ImGui_TextUnformatted( "Difficulty" );
+        ImGui_TableNextColumn();
+        ImGui_ArrowButton( "##DifficultySelectorLeft", ImGuiDir_Left );
+        ImGui_SameLine();
+        ImGui_Text( "%s",  );
+        ImGui_SameLine();
+        ImGui_ArrowButton( "##DifficultySelectorRight", ImGuiDir_Right );
+    }
+
+    ImGui_EndTable();
 }
 
 void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL trap_FS_Printf( fileHandle_t f, const char *fmt, ... )

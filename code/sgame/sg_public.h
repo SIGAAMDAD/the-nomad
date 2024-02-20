@@ -8,6 +8,7 @@
 
 typedef struct linkEntity_s {
     bbox_t bounds;
+    vec3_t origin;
     uint32_t type;
     uint32_t id;
 
@@ -227,6 +228,7 @@ typedef enum
     SGAME_REWIND_TO_LAST_CHECKPOINT,
 
     SGAME_DRAW_ADVANCED_SETTINGS,
+    SGAME_SAVE_SETTINGS,
 
     SGAME_CONSOLE_COMMAND,
     // qboolean (*SG_ConsoleCommand)( void );

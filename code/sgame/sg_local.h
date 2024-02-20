@@ -14,24 +14,36 @@
 // defines & macros
 //
 
-#define MAXENTITIES 2048
+//
+// be aware that increasing these will also increase the amount of memory
+// used by the vm, and you might actually have to change com_hunkMegs if its
+// a large enough data section
+//
 
+// maximum number of levels that can be cached/loaded
+#define MAXLEVELS 1024
+// maximum amount of active entities
+#define MAXENTITIES 2048
 #define MAXMOBS 1024
 #define MAXITEMS 1024
 #define MAXWEAPONS 1024
 
-#define ARCHIVE_SAVEGAME 0
-#define ARCHIVE_LOADGAME 1
+// module data limitations
+#define MAX_MODULE_NAME MAX_NPATH
+#define MAX_MODULE_DEPENDENCIES 12
+#define MAX_MODULE_INFOS 256
+#define MAX_MODULE_COUNT 256
 
-#define DMG_EXPLOSION 16
+// maximum animations per entity
+#define MAXANIMATIONS 64
 
 #define MAXPLAYERWEAPONS 6
-
-#define NUMLEVELS 1
 
 //==============================================================
 // enums
 //
+// this is where all the types are listed, add your own if you want, but you'll probably have
+// to write some code if their properties/features differ from that of vanilla
 
 //
 // weapontype_t: enumerations for weapons, feel free to add your own
@@ -87,6 +99,8 @@ typedef enum
 {
     I_NULL,
 	I_WEAPON,
+	I_POWERUP,
+	I_AMMO,
 
     NUMITEMS,
 } itemtype_t;
@@ -149,6 +163,16 @@ typedef enum {
 
 typedef struct sgentity_s sgentity_t;
 
+typedef struct localEntity_s {
+	refEntity_t refEntity;
+
+	struct localEntity_s *next, *prev;
+} localEntity_t;
+
+typedef struct {
+
+} markPoly_t;
+
 //
 // entity state tracking
 //
@@ -166,8 +190,6 @@ typedef union {
 struct sgentity_s
 {
 	linkEntity_t link;
-	bbox_t bounds;
-	vec3_t origin;
 	vec3_t vel;
 
 	void *entPtr;
@@ -185,6 +207,7 @@ struct sgentity_s
 	int frame;
 
 	int facing;
+	int facingEx;
 
 	nhandle_t hShader;
 
@@ -198,28 +221,35 @@ struct sgentity_s
 	nhandle_t hSpriteSheet;
 };
 
-typedef struct {
+typedef struct item_s {
 	sgentity_t *ent;
-
+	
 	const char *name;
 	int cost; // in the market, not implemented yet
-	itemtype_t type;
+	int type;
+
+	struct item_s *next, *prev;
 } item_t;
 
 typedef struct {
-	item_t *base; // weapons ARE techinally items
+	item_t base; // weapons ARE techinally items
 	
-	ammotype_t ammo;
+	int ammo;
 	int addammo;
 	int damage;
 	int range;
+
+	weaponinfo_t *info;
 } weapon_t;
+
+typedef struct {
+	item_t base;
+	powerupinfo_t *info;
+} powerup_t;
 
 typedef struct
 {
 	sgentity_t *ent;
-	
-//	pmove_t pm;
 	
 	const weapon_t *weaponInv[MAXPLAYERWEAPONS];
 	int ammocounts[NUMAMMOTYPES];
@@ -375,27 +405,25 @@ extern sgentity_t sg_entities[MAXENTITIES];
 
 extern sgGlobals_t sg;
 
-// there may be weapon mods in the future, if that does happen, we'll just may a copy in the
-// player data instead of un-consting this stuff
-extern const weapon_t weaponinfo[NUMWEAPONTYPES];
-extern const item_t iteminfo[NUMITEMS];
-extern const mobj_t mobinfo[NUMMOBS];
-extern const int ammoCaps[NUMAMMOTYPES];
-extern state_t stateinfo[NUMSTATES];
+//
+// cvars: sgame configuration
+//
 
 extern vmCvar_t sg_debugPrint;
 extern vmCvar_t sg_paused;
 extern vmCvar_t sg_mouseInvert;
 extern vmCvar_t sg_mouseAcceleration;
 extern vmCvar_t sg_printLevelStats;
-extern vmCvar_t sg_decalDetail;
-extern vmCvar_t sg_gibs;
 extern vmCvar_t sg_levelIndex;
 extern vmCvar_t sg_savename;
 extern vmCvar_t sg_gameDifficulty;
 extern vmCvar_t sg_numSaves;
 extern vmCvar_t sg_memoryDebug;
+extern vmCvar_t sg_maxGfx;
+extern vmCvar_t sg_decalDetail;
+extern vmCvar_t sg_gibs;
 
+// player movement cvars
 extern vmCvar_t pm_groundFriction;
 extern vmCvar_t pm_waterFriction;
 extern vmCvar_t pm_airFriction;
@@ -420,6 +448,15 @@ extern vmCvar_t sgc_godmode;
 // functions
 //
 
+//
+// sg_gfx.c
+//
+void SG_Explosion( const vec3_t *origin );
+void SG_Bleed( const vec3_t *origin );
+void SG_GibEntity( const vec3_t *origin );
+void SG_SmokePuff( const vec3_t *origin );
+void SG_BulletMark( const vec3_t *origin );
+void SG_DustTrail( const vec3_t *origin );
 
 //
 // sg_draw.c
@@ -436,11 +473,14 @@ void SG_ShutdownCommands( void );
 //
 // sg_main.c
 //
+void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Debug_Printf( const char *fmt, ... );
 void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL SG_Error( const char *err, ... );
 void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL SG_Printf( const char *fmt, ... );
 void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL G_Error( const char *err, ... );
 void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL G_Printf( const char *fmt, ... );
 void SG_UpdateCvars( void );
+char *SG_LoadFile( const char *filename );
+nhandle_t SG_LoadResource( const char *name, nhandle_t (*fn)( const char * ) );
 
 //
 // sg_level.c
@@ -457,6 +497,7 @@ void SG_LoadLevels( void );
 item_t *SG_SpawnItem( itemtype_t type );
 weapon_t *SG_SpawnWeapon( weapontype_t type );
 void SG_PickupWeapon();
+item_t *Item_FindInBounds( const bbox_t *bounds );
 
 //
 // sg_entity.c
@@ -476,6 +517,11 @@ void SG_Spawn( uint32_t id, uint32_t type, const uvec3_t *origin );
 // sg_mob.c
 //
 mobj_t *SG_SpawnMob( mobtype_t type );
+void M_FightThink( mobj_t *m );
+void M_IdleThink( mobj_t *m );
+void M_DeadThink( mobj_t *m );
+void M_FleeThink( mobj_t *m );
+void M_ChaseThink( mobj_t *m );
 
 //
 // sg_mem.c
@@ -618,5 +664,80 @@ void Cvar_Register( vmCvar_t *vmCvar, const char *varName, const char *defaultVa
 void Cvar_Update( vmCvar_t *vmCvar );
 void Cvar_Set( const char *varName, const char *value );
 void Cvar_VariableStringBuffer( const char *var_name, char *buffer, int bufsize );
+
+//
+// module interface (external vms)
+//
+
+typedef struct {
+	char name[MAX_NPATH];
+
+	// game version, it's 64 bits in the engine
+	int gameVersionMajor;
+	int gameVersionUpdate;
+	int gameVersionPatch;
+
+	// mod version, it's 64 bits in the engine
+	int modVersionMajor;
+	int modVersionUpdate;
+	int modVersionPatch;
+	
+	// is it being used?
+	qboolean active;
+
+	// other mods this one depends on
+	int numDependencies;
+	char dependencies[MAX_MODULE_DEPENDENCIES][MAX_NPATH];
+
+	int numMobs;
+	int numBots;
+	int numItems;
+	int numPowerups;
+	int numWeapons;
+
+	int loadedMobs;
+	int loadedBots;
+	int loadedItems;
+	int loadedPowerups;
+	int loadedWeapons;
+
+	nhandle_t damageTypes;
+	nhandle_t mobs;
+	nhandle_t bots;
+	nhandle_t items;
+	nhandle_t powerups;
+	nhandle_t weapons;
+} module_t;
+
+typedef struct {
+    int count;          // number of modules active
+    int total;          // total modules found
+	int *loadList;		// for load orders
+    module_t *modules;  // data buffer
+} moduleInfo_t;
+
+extern moduleInfo_t sg_moduleInfos;
+
+#define MODULE_INFO_COUNT 0
+#define MODULE_INFO_NAMES 1
+#define MODULE_INFO_ACTIVE 2
+#define MODULE_INFO_DEPENDENCIES 3
+
+void ML_GetModulesInfo( int infoType, void *data, int size );
+void ML_LoadModuleCode( const char *moduleName );
+
+nhandle_t ML_CreateModuleDataLink( const char *pName );
+void ML_CloseModuleDataLink( nhandle_t hDataLink );
+
+// custom buffer management
+nhandle_t ML_CreateBuffer( void );
+void ML_ReleaseBuffer( nhandle_t hBuffer );
+void ML_SetBufferSize( nhandle_t hBuffer, uint32_t nBytes );
+void ML_SetBufferData( nhandle_t hBuffer, uint32_t nOffset, uint32_t nBytes, const void *pSource );
+void ML_GetBufferData( nhandle_t hBuffer, uint32_t nOffset, uint32_t nBytes, void *pDest );
+void ML_InsertBufferIntoBuffer( nhandle_t hDestBuffer, nhandle_t hSourceBuffer, uint32_t nBytes );
+void ML_BufferAppend( nhandle_t hBuffer, uint32_t nBytes, const void *pData );
+void ML_ClearBuffer( nhandle_t hBuffer );
+void ML_FillBufferData( int value, uint32_t nBytes, nhandle_t hBuffer );
 
 #endif

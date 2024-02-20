@@ -39,7 +39,7 @@ typedef struct {
 
     void (*Cvar_VariableStringBuffer)(const char *name, char *buffer, uint64_t bufferSize);
     void (*Cvar_VariableStringBufferSafe)(const char *name, char *buffer, uint64_t bufferSize, uint32_t flag);
-    int32_t (*Cvar_VariableInteger)(const char *name);
+    int64_t (*Cvar_VariableInteger)(const char *name);
     cvar_t *(*Cvar_Get)(const char *name, const char *value, uint32_t flags);
     void (*Cvar_SetGroup)(cvar_t *cv, cvarGroup_t group);
     void (*Cvar_SetDescription)(cvar_t *cv, const char *description);

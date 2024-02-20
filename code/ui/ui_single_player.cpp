@@ -317,7 +317,7 @@ void SinglePlayerMenu_Cache( void )
     if ( sp.numSaves ) {
         Cvar_Set( "sg_numSaves", va( "%i", (int32_t)sp.numSaves ) );
 
-        sp.saveList = (saveinfo_t *)Hunk_Alloc( sizeof(saveinfo_t) * sp.numSaves, h_low );
+        sp.saveList = (saveinfo_t *)Hunk_Alloc( sizeof(saveinfo_t) * sp.numSaves, h_high );
         info = sp.saveList;
 
         for ( i = 0; i < sp.numSaves; i++, info++ ) {
@@ -354,9 +354,9 @@ void free_csv_line( char **parsed ) {
     Z_Free( parsed );
 }
 
-uint32_t count_fields( const char *line ) {
+int32_t count_fields( const char *line ) {
     const char *ptr;
-    uint32_t cnt, fQuote;
+    int32_t cnt, fQuote;
 
     for ( cnt = 1, fQuote = 0, ptr = line; *ptr; ptr++ ) {
         if ( fQuote ) {
@@ -385,6 +385,17 @@ uint32_t count_fields( const char *line ) {
     return cnt;
 }
 
+static char *CopyUIString( const char *str ) {
+    char *out;
+    uint64_t len;
+
+    len = strlen( str ) + 1;
+    out = (char *)Z_Malloc( len, TAG_GAME );
+    N_strncpyz( out, str, len );
+
+    return out;
+}
+
 /*
  *  Given a string containing no linebreaks, or containing line breaks
  *  which are escaped by "double quotes", extract a NULL-terminated
@@ -393,7 +404,7 @@ uint32_t count_fields( const char *line ) {
 char **parse_csv( const char *line ) {
     char **buf, **bptr, *tmp, *tptr;
     const char *ptr;
-    uint32_t fieldcnt, fQuote, fEnd;
+    int32_t fieldcnt, fQuote, fEnd;
 
     fieldcnt = count_fields( line );
 
@@ -401,18 +412,8 @@ char **parse_csv( const char *line ) {
         return NULL;
     }
 
-    buf = (char **)Hunk_Alloc( sizeof(char *) * (fieldcnt+1), h_low );
-
-    if ( !buf ) {
-        return NULL;
-    }
-
-    tmp = (char *)Z_Malloc( strlen(line) + 1, TAG_STATIC );
-
-    if ( !tmp ) {
-        Z_Free( buf );
-        return NULL;
-    }
+    buf = (char **)Z_Malloc( sizeof(char *) * ( fieldcnt + 1 ), TAG_GAME );
+    tmp = (char *)Hunk_AllocateTempMemory( strlen( line ) + 1 );
 
     bptr = buf;
 
@@ -445,14 +446,14 @@ char **parse_csv( const char *line ) {
                 fEnd = 1;
             case ',':
                 *tptr = '\0';
-                *bptr = CopyString( tmp );
+                *bptr = CopyUIString( tmp );
 
                 if ( !*bptr ) {
                     for ( bptr--; bptr >= buf; bptr-- ) {
                         Z_Free( *bptr );
                     }
                     Z_Free( buf );
-                    Z_Free( tmp );
+                    Hunk_FreeTempMemory( tmp );
 
                     return NULL;
                 }
@@ -477,6 +478,6 @@ char **parse_csv( const char *line ) {
     }
 
     *bptr = NULL;
-    Z_Free( tmp );
+    Hunk_FreeTempMemory( tmp );
     return buf;
 }

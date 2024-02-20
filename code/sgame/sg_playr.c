@@ -49,6 +49,22 @@ typedef struct {
 	qboolean walking;
 } pmove_t;
 
+static void P_CheckItemPickup( void )
+{
+	item_t *item;
+
+	item = Item_FindInBounds( &sg.playr.ent->link.bounds );
+
+	if ( !item ) {
+		return;
+	}
+
+	switch ( item->type ) {
+	case I_WEAPON:
+	case I_POWERUP:
+	};
+}
+
 qboolean P_GiveWeapon( weapontype_t type )
 {
     int slot;
@@ -188,39 +204,6 @@ void P_MeleeThink( sgentity_t *self )
 	}
 }
 
-/*
-static void P_SetMovementDir( pmove_t *pm )
-{
-	if ( pm->rightmove > pm->forwardmove ) {
-		pm->velDir = 0;
-		pm->velDirInverse = 1;
-	} else if ( pm->rightmove < pm->forwardmove ) {
-		pm->velDir = 1;
-		pm->velDirInverse = 0;
-	} else {
-		pm->velDir = 0;
-	}
-	
-	if ( pm->rightmove < 0 && pm->forwardmove > 0 ) {
-		pm->movementDir = DIR_NORTH_WEST;
-	} else if ( pm->rightmove == 0 && pm->forwardmove > 0 ) {
-		pm->movementDir = DIR_NORTH;
-	} else if ( pm->rightmove > 0 && pm->forwardmove > 0 ) {
-		pm->movementDir = DIR_NORTH_EAST;
-	} else if ( pm->rightmove > 0 && pm->forwardmove == 0 ) {
-		pm->movementDir = DIR_EAST;
-	} else if ( pm->rightmove > 0 && pm->forwardmove < 0 ) {
-		pm->movementDir = DIR_SOUTH_EAST;
-	} else if ( pm->rightmove == 0 && pm->forwardmove < 0 ) {
-		pm->movementDir = DIR_SOUTH;
-	} else if ( pm->rightmove < 0 && pm->forwardmove < 0 ) {
-		pm->movementDir = DIR_SOUTH_WEST;
-	} else if ( pm->rightmove < 0 && pm->forwardmove == 0 ) {
-		pm->movementDir = DIR_WEST;
-	}
-}
-*/
-
 static pmove_t pm;
 
 /*
@@ -350,4 +333,106 @@ void SG_KeyEvent( int key, qboolean down )
 			break;
 		};
 	}
+}
+
+typedef struct skin_s {
+	const char *name;
+	const char *id;
+	nhandle_t hMoveSpriteSheet;
+	nhandle_t hCombatShader;
+	struct skin_s *next;
+} skin_t;
+
+static skin_t *sg_playerSkins;
+static skin_t *sg_currentSkin;
+static int sg_numSkins;
+
+//
+// SG_LoadPlayerConfig: loads special player specific configuration variables
+// feel free to add your own configuration vars here for mod specific stuff
+//
+void SG_LoadPlayerConfig( void )
+{
+	const char *text_p, **text;
+	const char *tok;
+	char currentSkin[MAX_NPATH];
+	skin_t *skin;
+
+	sg_numSkins = 0;
+	sg_playerSkins = NULL;
+	sg_currentSkin = NULL;
+
+	text_p = SG_LoadFile( "player.cfg" );
+	text = &text_p;
+
+	while ( 1 ) {
+		tok = COM_Parse( text );
+
+		if ( !tok ) {
+			break;
+		}
+
+		//
+		// add_skin <name> <id> <combat_shader> <move_shader>
+		//
+		if ( !N_stricmp( tok, "add_skin" ) ) {
+			skin = SG_MemAlloc( sizeof(*skin) );
+			skin->next = sg_playerSkins;
+			sg_playerSkins = skin;
+
+			tok = COM_Parse( text );
+			if ( !tok[0] ) {
+				trap_Error( "missing parameter for skin name in player configuration" );
+			}
+			skin->name = String_Alloc( tok );
+
+			tok = COM_Parse( text );
+			if ( !tok[0] ) {
+				trap_Error( "missing parameter for skin id in player configuration" );
+			}
+			skin->id = String_Alloc( tok );
+
+			tok = COM_Parse( text );
+			if ( !tok[0] ) {
+				trap_Error( "missing parameter for skin combat shader in player configuration" );
+			}
+			skin->hCombatShader = SG_LoadResource( tok, RE_RegisterShader );
+
+			tok = COM_Parse( text );
+			if ( !tok[0] ) {
+				trap_Error( "Missing parameter for skin move shader in player configuration" );
+			}
+			skin->hMoveSpriteSheet = SG_LoadResource( tok, RE_RegisterShader );
+
+			G_Printf( "added skin \"%s\".\n", skin->id );
+
+			sg_numSkins++;
+		}
+		else if ( !N_stricmp( tok, "current_skin" ) ) {
+			tok = COM_Parse( text );
+			if ( !tok[0] ) {
+				trap_Error( "missing parameter for 'current_skin' in player configuration" );
+			}
+			N_strncpyz( currentSkin, tok, sizeof(currentSkin) );
+		}
+		else if ( !N_stricmp( tok, "name" ) ) {
+			
+		}
+		else {
+			COM_ParseWarning( "unrecognized token '%s' in player configuration", tok );
+		}
+	}
+
+	if ( !sg_numSkins ) {
+		trap_Error( "no skins found, there must be at least a base skin found in the player configuration" );
+	}
+}
+
+//
+// SG_WritePlayerData: writes player's current data to a text file, I assume
+// this would be used to either convert from one mod or another... OR CHEATING!
+//
+static void SG_WritePlayerData( void )
+{
+	
 }

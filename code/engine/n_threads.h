@@ -16,6 +16,8 @@
 	#include <intrin.h>
 #endif
 
+#include "gln_files.h"
+
 typedef uintptr_t ThreadHandle_t;
 typedef uintptr_t (*ThreadFunc_t)( void *pArgs );
 

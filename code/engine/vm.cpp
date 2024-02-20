@@ -624,7 +624,7 @@ static void *GDR_DECL VM_LoadDLL(const char *name, vmMainFunc_t *entryPoint, dll
     return libHandle;
 }
 
-vm_t *VM_Create(vmIndex_t index, syscall_t systemCalls, dllSyscall_t dllSyscalls, vmInterpret_t interpret)
+vm_t *VM_Create( vmIndex_t index, syscall_t systemCalls, dllSyscall_t dllSyscalls, vmInterpret_t interpret, const char *moduleName )
 {
     uint64_t remaining;
     const char *name;
@@ -640,18 +640,25 @@ vm_t *VM_Create(vmIndex_t index, syscall_t systemCalls, dllSyscall_t dllSyscalls
     }
     remaining = Hunk_MemoryRemaining();
 
-    vm = &vmTable[index];
-    
-    // see if we already have the vm
-    if (vm->name) {
-        if (vm->index != index) {
-            N_Error(ERR_DROP, "VM_Create: bad allocated vm index %i", vm->index);
-            return NULL;
-        }
-        return vm;
-    }
+	if ( index == VM_MOD ) {
+		// allocate a brand new vm for the module
+		vm = (vm_t *)Hunk_Alloc( sizeof(*vm), h_low );
+		name = moduleName;
+	}
+	else {
+	    vm = &vmTable[index];
+	
+	    // see if we already have the vm
+	    if (vm->name) {
+	        if (vm->index != index) {
+	            N_Error(ERR_DROP, "VM_Create: bad allocated vm index %i", vm->index);
+	            return NULL;
+	        }
+	        return vm;
+	    }
 
-    name = vmNames[index];
+	    name = vmNames[index];
+	}
 
     vm->name = name;
     vm->systemCall = systemCalls;
@@ -1322,11 +1329,8 @@ VM_CheckBounds
 */
 void VM_CheckBounds( const vm_t *vm, uint32_t address, uint32_t length )
 {
-	//if ( !vm->entryPoint )
-	{
-		if ( (address | length) > vm->dataMask || (address + length) > vm->dataMask ) {
-			N_Error( ERR_DROP, "program tried to bypass data segment bounds" );
-		}
+	if ( ( address | length ) > vm->dataMask || ( address + length ) > vm->dataMask ) {
+		N_Error( ERR_DROP, "program tried to bypass data segment bounds" );
 	}
 }
 
@@ -1338,11 +1342,10 @@ VM_CheckBounds2
 */
 void VM_CheckBounds2( const vm_t *vm, uint32_t addr1, uint32_t addr2, uint32_t length )
 {
-	//if ( !vm->entryPoint )
+	if ( ( ( addr1 | length ) > vm->dataMask || ( addr1 + length ) > vm->dataMask )
+	|| ( ( addr2 | length ) > vm->dataMask || ( addr2 + length ) > vm->dataMask ) )
 	{
-		if ( (addr1 | addr2 | length) > vm->dataMask || (addr1 + length) > vm->dataMask || (addr2+length) > vm->dataMask ) {
-			N_Error( ERR_DROP, "program tried to bypass data segment bounds" );
-		}
+		N_Error( ERR_DROP, "program tried to bypass data segment bounds" );
 	}
 }
 

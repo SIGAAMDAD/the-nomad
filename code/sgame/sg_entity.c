@@ -207,3 +207,45 @@ void SG_Spawn( uint32_t id, uint32_t type, const uvec3_t *origin )
 	
 	sg.numEntities++;
 }
+
+void SG_DamageEntity( sgentity_t *attacker, sgentity_t *victim )
+{
+	if ( victim->health < 0 ) {
+		SG_KillEntity( attacker, victim );
+	}
+}
+
+static void SG_GenerateObituary( sgentity_t *attacker, sgentity_t *victim )
+{
+	causeofdeath_t cod;
+	const char *victim_name;
+	const char *attacker_name;
+	const char *death_string;
+
+	if ( attacker->type == ET_PLAYR ) {
+		if ( sg_moduleInfos.modules[sg.playr->curwpn->base.info->moduleIndex].dmage[sg.playr.curwpn->info->damagetype] )
+	}
+
+	SG_Printf( "%s" );
+}
+
+static void SG_GibEntity( sgentity_t *ent )
+{
+
+}
+
+void SG_KillEntity( sgentity_t *attacker, sgentity_t *victim )
+{
+}
+
+typedef struct {
+
+} lerpFrame_t;
+
+typedef struct {
+
+} animation_t;
+
+void SG_LoadAnimationFile( const char *filename )
+{
+}

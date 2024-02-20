@@ -63,7 +63,7 @@ static qboolean G_LoadLevelFile( const char *filename, mapinfoReal_t *info )
     }
 
     info->numTiles = header->map.lumps[LUMP_TILES].length / sizeof(maptile_t);
-    info->tiles = (maptile_t *)Hunk_Alloc( header->map.lumps[LUMP_TILES].length, h_high );
+    info->tiles = (maptile_t *)Hunk_Alloc( header->map.lumps[LUMP_TILES].length, h_low );
 
     memcpy( info->tiles, (byte *)header + header->map.lumps[LUMP_TILES].fileofs, sizeof(maptile_t) * info->numTiles );
 
@@ -92,7 +92,7 @@ void G_InitMapCache( void )
     Con_Printf( "Got %lu map files\n", gi.mapCache.numMapFiles );
 
     // allocate the info
-    gi.mapCache.infoList = (mapinfoReal_t *)Hunk_Alloc( sizeof(mapinfoReal_t) * gi.mapCache.numMapFiles, h_high );
+    gi.mapCache.infoList = (mapinfoReal_t *)Hunk_Alloc( sizeof(mapinfoReal_t) * gi.mapCache.numMapFiles, h_low );
 
     info = gi.mapCache.infoList;
     for ( i = 0; i < gi.mapCache.numMapFiles; i++, info++ ) {

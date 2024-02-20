@@ -8,8 +8,6 @@
 #include "ui_table.h"
 #include "../rendergl/ngl.h"
 #include "../rendercommon/imgui_impl_opengl3.h"
-#include <EASTL/fixed_string.h>
-#include <EASTL/fixed_vector.h>
 #include <EASTL/array.h>
 
 #define RADIOBUTTON_STR(x) { "OFF##" #x, "ON##" #x };
@@ -34,11 +32,10 @@ typedef struct
     eastl::array<const char *, 2> use_GL_ARB_vertex_array_object_str;
 
     gpu_extension_t *extensions;
-    uint32_t numExtensions;
+    uint64_t numExtensions;
 
     bool allowLegacyGL;
     bool allowSoftwareGL;
-
     bool use_GL_ARB_vertex_buffer_object;
     bool use_GL_ARB_vertex_array_object;
 } graphics_extended_GL_t;
@@ -48,13 +45,14 @@ typedef struct
 } graphics_extended_VK_t;
 
 typedef struct {
-    renderapi_t api;
-
     graphics_extended_GL_t *GL_extended;
     graphics_extended_VK_t *VK_extended;
 
-    bool fullscreen;
-    bool extensions;
+    int64_t musicVol;
+    int64_t sfxVol;
+    int64_t masterVol;
+    int64_t mouseSensitivity;
+
     textureFilter_t texfilter;
     textureDetail_t texdetail;
     uint32_t texquality;
@@ -68,21 +66,21 @@ typedef struct {
     uint32_t anisotropicFiltering;
     int32_t vsync;
     float gamma;
-
-    bool mouseAccelerate;
-    bool mouseInvert;
-    bool useExtensions;
-    int32_t mouseSensitivity;
+    renderapi_t api;
 
     bool musicOn;
     bool sfxOn;
-    int32_t musicVol;
-    int32_t sfxVol;
-    int32_t masterVol;
+    bool mouseAccelerate;
+    bool mouseInvert;
+    bool useExtensions;
+    bool fullscreen;
+    bool extensions;
 } initialSettings_t;
 
 typedef struct
 {
+    keybind_t keybinds[21];
+
     const char *texdetailString;
     const char *texfilterString;
 
@@ -94,23 +92,21 @@ typedef struct
     graphics_extended_GL_t *GL_extended;
     graphics_extended_VK_t *VK_extended;
 
-    bool useExtensions;
+    char **extensionStrings;
 
-    // temp cvar data
-    keybind_t keybinds[21];
-    bool mouseAccelerate;
-    bool mouseInvert;
-    int32_t mouseSensitivity;
-    uint32_t rebindIndex;
+    qboolean confirmation;
+    qboolean confirmreset;
+    qboolean modified;
+    qboolean paused; // did we get here from the pause menu?
     qboolean rebinding;
-    bool musicOn;
-    bool sfxOn;
+
+    uint32_t numExtensions;
     int32_t masterVol;
     int32_t musicVol;
     int32_t sfxVol;
     renderapi_t api;
-    bool fullscreen;
-    bool extensions;
+    int32_t mouseSensitivity;
+    uint32_t rebindIndex;
     textureFilter_t texfilter;
     textureDetail_t texdetail;
     uint32_t texquality;
@@ -125,29 +121,18 @@ typedef struct
     int32_t vsync;
     float gamma;
 
-    char **extensionStrings;
-    uint32_t numExtensions;
-
+    bool mouseAccelerate;
+    bool mouseInvert;
+    bool fullscreen;
+    bool extensions;
+    bool musicOn;
+    bool sfxOn;
+    bool useExtensions;
     bool advancedGraphics; // "stats for nerds", that kinda stuff
-    qboolean confirmation;
-    qboolean confirmreset;
-    qboolean modified;
-    qboolean paused; // did we get here from the pause menu?
 } settingsmenu_t;
 
 static initialSettings_t initial;
 static settingsmenu_t settings;
-
-static const char *KeyToString( uint32_t key )
-{
-    switch (key) {
-    case KEY_SHIFT: return "Left-Shift";
-    default:
-        break;
-    };
-    Con_Printf("WARNING: unknown key %i\n", key);
-    return "";
-}
 
 typedef struct {
     const char *label;
@@ -204,14 +189,14 @@ typedef struct {
 } antialiasSetting_t;
 
 static const antialiasSetting_t antialiasSettings[] = {
-    { "2x MSAA",                     AntiAlias_2xMSAA },
-    { "4x MSAA",                     AntiAlias_4xMSAA },
-    { "8x MSAA",                     AntiAlias_8xMSAA },
-    { "16x MSAA",                    AntiAlias_16xMSAA, },
-    { "32x MSAA",                    AntiAlias_32xMSAA, },
-    { "2x SSAA",                                    AntiAlias_2xSSAA },
-    { "4x SSAA",                                    AntiAlias_2xSSAA },
-    { "Dynamic SSAA",      AntiAlias_DSSAA }
+    { "2x MSAA",                    AntiAlias_2xMSAA },
+    { "4x MSAA",                    AntiAlias_4xMSAA },
+    { "8x MSAA",                    AntiAlias_8xMSAA },
+    { "16x MSAA",                   AntiAlias_16xMSAA, },
+    { "32x MSAA",                   AntiAlias_32xMSAA, },
+    { "2x SSAA",                    AntiAlias_2xSSAA },
+    { "4x SSAA",                    AntiAlias_2xSSAA },
+    { "Dynamic SSAA",               AntiAlias_DSSAA }
 };
 
 static renderapi_t StringToRenderAPI( const char *str )
@@ -357,7 +342,7 @@ static void SettingsMenu_SetDefault( void )
     settings.fullscreenStr = RADIOBUTTON_STR( settings.fullscreen );
 
     if ( settings.api == R_OPENGL ) {
-        settings.GL_extended = (graphics_extended_GL_t *)Hunk_Alloc( sizeof(graphics_extended_GL_t), h_low );
+        settings.GL_extended = (graphics_extended_GL_t *)Hunk_Alloc( sizeof(graphics_extended_GL_t), h_high );
 
         settings.GL_extended->allowSoftwareGL = Cvar_VariableInteger( "r_allowSoftwareGL" );
         settings.GL_extended->allowLegacyGL = Cvar_VariableInteger( "r_allowLegacy" );
@@ -366,7 +351,7 @@ static void SettingsMenu_SetDefault( void )
         settings.GL_extended->allowSoftwareGLStr = RADIOBUTTON_STR( settings.GL_extended->allowSoftwareGL );
 
         settings.GL_extended->numExtensions = settings.numExtensions;
-        settings.GL_extended->extensions = (gpu_extension_t *)Hunk_Alloc( sizeof(gpu_extension_t) * settings.numExtensions, h_low );
+        settings.GL_extended->extensions = (gpu_extension_t *)Hunk_Alloc( sizeof(gpu_extension_t) * settings.numExtensions, h_high );
         for ( uint32_t i = 0; i < settings.numExtensions; i++ ) {
             settings.GL_extended->extensions->name = settings.extensionStrings[i];
         }
@@ -408,19 +393,18 @@ static void SettingsMenuPopup( void )
     if (settings.confirmation) {
         ImGui::TextUnformatted( "You made some changes to your settings, would you like to apply them?" );
         if (ImGui::Button( "SAVE CHANGES##SETTINGSMENUPOPUP" )) {
-            Cvar_Set( "com_restarting", "1" );
             ui->PlaySelected();
             SettingsMenu_ApplyAudioChanges();
             SettingsMenu_ApplyGraphicsChanges();
             settings.confirmation = qfalse;
             settings.modified = qfalse;
+            VM_Call( sgvm, 0, SGAME_SAVE_SETTINGS );
             ImGui::CloseCurrentPopup();
         }
     }
-    else if (settings.confirmreset) {
+    else if ( settings.confirmreset ) {
         ImGui::TextUnformatted( "Are you sure you want to reset all your settings to their defaults?" );
         if (ImGui::Button( "YES##SETTINGSMENUPOPUP" )) {
-            Cvar_Set( "com_restarting", "1" );
             SettingsMenu_SetDefault();
             settings.confirmreset = qfalse;
             settings.modified = qfalse;
@@ -560,20 +544,21 @@ static void SettingsMenu_Update( void )
 
 static GDR_INLINE void SettingsMenu_Bar( void )
 {
-    if (ImGui::BeginTabBar( " " )) {
-        if (ImGui::BeginTabItem( "GRAPHICS" )) {
+    if ( ImGui::BeginTabBar( " " ) ) {
+        if ( ImGui::BeginTabItem( "GRAPHICS" ) ) {
             ui->SetState( STATE_GRAPHICS );
-//            ui->PlaySelected();
             ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem( "AUDIO" )) {
+        if ( ImGui::BeginTabItem( "AUDIO" ) ) {
             ui->SetState( STATE_AUDIO );
-//            ui->PlaySelected();
             ImGui::EndTabItem();
         }
-        if (ImGui::BeginTabItem( "CONTROLS" )) {
+        if ( ImGui::BeginTabItem( "CONTROLS" ) ) {
             ui->SetState( STATE_CONTROLS );
-//            ui->PlaySelected();
+            ImGui::EndTabItem();
+        }
+        if ( ImGui::BeginTabItem( "GAMEPLAY" ) ) {
+            ui->SetState( STATE_GAMEPLAY );
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
@@ -647,10 +632,10 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Texture Detail" );
         ImGui::TableNextColumn();
-        if (ImGui::BeginMenu( settings.texdetailString )) {
-            for (i = 0; i < NumTexDetails; i++) {
-                if (ImGui::MenuItem( TexDetailString( (textureDetail_t)((int)TexDetail_MSDOS + i) ) )) {
-                    settings.texdetail = (textureDetail_t)((int)TexDetail_MSDOS + i);
+        if ( ImGui::BeginMenu( settings.texdetailString ) ) {
+            for ( i = 0; i < NumTexDetails; i++ ) {
+                if ( ImGui::MenuItem( TexDetailString( (textureDetail_t)( (int)TexDetail_MSDOS + i ) ) ) ) {
+                    settings.texdetail = (textureDetail_t)( (int)TexDetail_MSDOS + i );
                     settings.texdetailString = TexDetailString( settings.texdetail );
                     ui->PlaySelected();
                 }
@@ -663,7 +648,7 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Anisotropic Filtering" );
         ImGui::TableNextColumn();
-        if (ImGui::ArrowButton( "##ANIFILTER_LEFT", ImGuiDir_Left )) {
+        if ( ImGui::ArrowButton( "##ANIFILTER_LEFT", ImGuiDir_Left ) ) {
             settings.anisotropicFiltering = (int32_t)settings.anisotropicFiltering - 1 == -1 ? arraylen(anisotropicFilters) - 1
                 : settings.anisotropicFiltering - 1;
             ui->PlaySelected();
@@ -671,16 +656,16 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::SameLine();
         ImGui::TextUnformatted( anisotropicFilters[ settings.anisotropicFiltering ].label );
         ImGui::SameLine();
-        if (ImGui::ArrowButton( "##ANIFILTER_RIGHT", ImGuiDir_Right )) {
+        if ( ImGui::ArrowButton( "##ANIFILTER_RIGHT", ImGuiDir_Right ) ) {
             settings.anisotropicFiltering = settings.anisotropicFiltering + 1 >= arraylen(anisotropicFilters) ? 0 : settings.anisotropicFiltering + 1;
             ui->PlaySelected();
         }
 
         ImGui::TableNextRow();
         
-        switch (settings.videoMode) {
+        switch ( settings.videoMode ) {
         case -2:
-            vidMode = va( vidmodeSettings[0], r_customWidth->i, r_customHeight->i );
+            vidMode = va( vidmodeSettings[0], gi.desktopWidth, gi.desktopHeight );
             break;
         case -1:
             vidMode = va( vidmodeSettings[1], r_customWidth->i, r_customHeight->i );
@@ -692,17 +677,17 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Video Mode" );
         ImGui::TableNextColumn();
-        if (ImGui::BeginMenu( vidMode )) {
-            if (ImGui::MenuItem( va( "Native Resolution (%ix%i)", r_customWidth->i, r_customHeight->i ) )) {
+        if ( ImGui::BeginMenu( vidMode ) ) {
+            if ( ImGui::MenuItem( va( "Native Resolution (%ix%i)", gi.desktopWidth, gi.desktopHeight ) ) ) {
                 settings.videoMode = -2;
                 ui->PlaySelected();
             }
-            if (ImGui::MenuItem( va( "Custom Resolution (%ix%i)", r_customWidth->i, r_customHeight->i ) )) {
+            if ( ImGui::MenuItem( va( "Custom Resolution (%lix%li)", r_customWidth->i, r_customHeight->i ) ) ) {
                 settings.videoMode = -1;
                 ui->PlaySelected();
             }
-            for (i = 2; i < NUMVIDMODES+2; i++) {
-                if (ImGui::MenuItem( r_vidModes[ i - 2 ].description )) {
+            for ( i = 2; i < NUMVIDMODES + 2; i++ ) {
+                if ( ImGui::MenuItem( r_vidModes[ i - 2 ].description ) ) {
                     settings.videoMode = i - 2;
                     ui->PlaySelected();
                 }
@@ -715,16 +700,16 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Renderer" );
         ImGui::TableNextColumn();
-        if (ImGui::BeginMenu( RenderAPIString( settings.api ) )) {
-            if (ImGui::MenuItem( RenderAPIString( R_OPENGL ) )) {
+        if ( ImGui::BeginMenu( RenderAPIString( settings.api ) ) ) {
+            if ( ImGui::MenuItem( RenderAPIString( R_OPENGL ) ) ) {
                 settings.api = R_OPENGL;
                 ui->PlaySelected();
             }
-            if (ImGui::MenuItem( RenderAPIString( R_SDL2 ) )) {
+            if ( ImGui::MenuItem( RenderAPIString( R_SDL2 ) ) ) {
                 settings.api = R_SDL2;
                 ui->PlaySelected();
             }
-            if (ImGui::MenuItem( RenderAPIString( R_VULKAN ) )) {
+            if ( ImGui::MenuItem( RenderAPIString( R_VULKAN ) ) ) {
                 settings.api = R_VULKAN;
                 ui->PlaySelected();
             }
@@ -736,7 +721,7 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Fullscreen" );
         ImGui::TableNextColumn();
-        if (ImGui::RadioButton( settings.fullscreenStr[settings.fullscreen], settings.fullscreen )) {
+        if ( ImGui::RadioButton( settings.fullscreenStr[settings.fullscreen], settings.fullscreen ) ) {
             settings.fullscreen = !settings.fullscreen;
             ui->PlaySelected();
         }
@@ -753,8 +738,8 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "VSync" );
         ImGui::TableNextColumn();
-        if (ImGui::ArrowButton( "##VSYNCLEFT", ImGuiDir_Left )) {
-            switch (settings.vsync) {
+        if ( ImGui::ArrowButton( "##VSYNCLEFT", ImGuiDir_Left ) ) {
+            switch ( settings.vsync ) {
             case -1:
                 settings.vsync = 1;
                 break;
@@ -765,7 +750,7 @@ static void SettingsMenuGraphics_Draw( void )
             ui->PlaySelected();
         }
         ImGui::SameLine();
-        switch (settings.vsync) {
+        switch ( settings.vsync ) {
         case -1:
             ImGui::TextUnformatted( "Adaptive" );
             break;
@@ -779,7 +764,7 @@ static void SettingsMenuGraphics_Draw( void )
             N_Error( ERR_FATAL, "Invalid UI state" );
         };
         ImGui::SameLine();
-        if (ImGui::ArrowButton( "##VYSNCRIGHT", ImGuiDir_Right )) {
+        if ( ImGui::ArrowButton( "##VYSNCRIGHT", ImGuiDir_Right ) ) {
             switch (settings.vsync) {
             case 1:
                 settings.vsync = -1;
@@ -796,7 +781,7 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Gamma Correction" );
         ImGui::TableNextColumn();
-        if (ImGui::SliderFloat( " ", &settings.gamma, 1.0f, 5.0f )) {
+        if ( ImGui::SliderFloat( " ", &settings.gamma, 1.0f, 5.0f ) ) {
             ui->PlaySelected();
         }
 
@@ -819,7 +804,7 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Stuff For The NERDS" );
         ImGui::TableNextColumn();
-        if (ImGui::RadioButton( settings.advancedGraphicsStr[settings.advancedGraphics], settings.advancedGraphics )) {
+        if ( ImGui::RadioButton( settings.advancedGraphicsStr[settings.advancedGraphics], settings.advancedGraphics ) ) {
             settings.advancedGraphics = !settings.advancedGraphics;
             ui->PlaySelected();
         }
@@ -830,8 +815,8 @@ static void SettingsMenuGraphics_Draw( void )
             ImGui::TableNextColumn();
             ImGui::TextUnformatted( "Allow Software GL Driver" );
             ImGui::TableNextColumn();
-            if (ImGui::RadioButton( settings.GL_extended->allowLegacyGLStr[settings.GL_extended->allowSoftwareGL],
-                settings.GL_extended->allowSoftwareGL ))
+            if ( ImGui::RadioButton( settings.GL_extended->allowLegacyGLStr[settings.GL_extended->allowSoftwareGL],
+                settings.GL_extended->allowSoftwareGL ) )
             {
                 settings.GL_extended->allowSoftwareGL = !settings.GL_extended->allowSoftwareGL;
                 ui->PlaySelected();
@@ -842,7 +827,7 @@ static void SettingsMenuGraphics_Draw( void )
             ImGui::TableNextColumn();
             ImGui::TextUnformatted( "Allow GL Extensions" );
             ImGui::TableNextColumn();
-            if (ImGui::RadioButton( settings.useExtensionsStr[settings.extensions], settings.extensions )) {
+            if ( ImGui::RadioButton( settings.useExtensionsStr[settings.extensions], settings.extensions ) ) {
                 settings.extensions = !settings.extensions;
                 ui->PlaySelected();
             }
@@ -852,8 +837,8 @@ static void SettingsMenuGraphics_Draw( void )
             ImGui::TableNextColumn();
             ImGui::TextUnformatted( "Allow Legacy GL Functionality" );
             ImGui::TableNextColumn();
-            if (ImGui::RadioButton( settings.GL_extended->allowLegacyGLStr[settings.GL_extended->allowLegacyGL],
-                settings.GL_extended->allowLegacyGL ))
+            if ( ImGui::RadioButton( settings.GL_extended->allowLegacyGLStr[settings.GL_extended->allowLegacyGL],
+                settings.GL_extended->allowLegacyGL ) )
             {
                 settings.GL_extended->allowLegacyGL = !settings.GL_extended->allowLegacyGL;
                 ui->PlaySelected();
@@ -864,7 +849,7 @@ static void SettingsMenuGraphics_Draw( void )
             ImGui::TableNextColumn();
             ImGui::TextUnformatted( "GL Extensions" );
             ImGui::TableNextColumn();
-            if (ImGui::BeginMenu( settings.extensionsMenuStr )) {
+            if ( ImGui::BeginMenu( settings.extensionsMenuStr )) {
                 for ( uint32_t i = 0; i < settings.numExtensions; i++ ) {
                     ImGui::MenuItem( settings.extensionStrings[i] );
                 }
@@ -905,8 +890,19 @@ static void SettingsMenuAudio_Draw( void )
     }
 }
 
+static void SettingsMenuGameplay_Draw( void )
+{
+    SettingsMenu_ExitChild( STATE_GAMEPLAY );
+
+    if ( sgvm ) {
+        VM_Call( sgvm, 0, SGAME_DRAW_ADVANCED_SETTINGS );
+    }
+}
+
 static void SettingsMenuControls_Draw( void )
 {
+    uint32_t i;
+
     SettingsMenu_ExitChild( STATE_CONTROLS );
 
     // mouse options
@@ -917,7 +913,7 @@ static void SettingsMenuControls_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Sensitivity" );
         ImGui::TableNextColumn();
-        if (ImGui::SliderInt( " ", &settings.mouseSensitivity, 0, 100 )) {
+        if ( ImGui::SliderInt( " ", &settings.mouseSensitivity, 0, 100 ) ) {
             ui->PlaySelected();
         }
 
@@ -926,7 +922,7 @@ static void SettingsMenuControls_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Mouse Invert" );
         ImGui::TableNextColumn();
-        if (ImGui::RadioButton( settings.mouseInvert ? "ON" : "OFF", settings.mouseInvert )) {
+        if ( ImGui::RadioButton( settings.mouseInvert ? "ON" : "OFF", settings.mouseInvert ) ) {
             settings.mouseInvert = !settings.mouseInvert;
             ui->PlaySelected();
         }
@@ -936,7 +932,7 @@ static void SettingsMenuControls_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Mouse Acceleration" );
         ImGui::TableNextColumn();
-        if (ImGui::RadioButton( settings.mouseAccelerate ? "ON" : "OFF", settings.mouseAccelerate )) {
+        if ( ImGui::RadioButton( settings.mouseAccelerate ? "ON" : "OFF", settings.mouseAccelerate ) ) {
             settings.mouseAccelerate = !settings.mouseAccelerate;
             ui->PlaySelected();
         }
@@ -960,17 +956,17 @@ static void SettingsMenuControls_Draw( void )
 
         ImGui::SetWindowFontScale( font_scale );
 
-        for (uint32_t i = 0; i < arraylen( bindNames ); i++) {
+        for ( i = 0; i < arraylen(bindNames); i++ ) {
             ImGui::TableNextColumn();
             ImGui::TextUnformatted( settings.keybinds[i].keyname );
             ImGui::TableNextColumn();
-            if (ImGui::Button( settings.keybinds[i].bindname )) {
+            if ( ImGui::Button( settings.keybinds[i].bindname ) ) {
                 settings.rebinding = qtrue;
                 settings.rebindIndex = i;
                 ui->PlaySelected();
             }
 
-            if (i != arraylen( bindNames ) - 1) {
+            if ( i != arraylen(bindNames) - 1 ) {
                 ImGui::TableNextRow();
             }
         }
@@ -982,7 +978,7 @@ void SettingsMenu_Draw( void )
 {
     SettingsMenuPopup();
 
-    switch (ui->GetState()) {
+    switch ( ui->GetState() ) {
     case STATE_SETTINGS:
         SettingsMenu_ExitChild( STATE_SETTINGS );
         break;
@@ -994,6 +990,9 @@ void SettingsMenu_Draw( void )
         break;
     case STATE_CONTROLS:
         SettingsMenuControls_Draw();
+        break;
+    case STATE_GAMEPLAY:
+        SettingsMenuGameplay_Draw();
         break;
     };
 
@@ -1016,7 +1015,7 @@ static void SettingsMenu_GetInitial( void ) {
     initial.multisamplingIndex = Cvar_VariableInteger( "r_multisample" );
 
     if ( initial.api == R_OPENGL ) {
-        initial.GL_extended = (graphics_extended_GL_t *)Hunk_Alloc( sizeof(graphics_extended_GL_t), h_low );
+        initial.GL_extended = (graphics_extended_GL_t *)Hunk_Alloc( sizeof(graphics_extended_GL_t), h_high );
         initial.GL_extended->allowSoftwareGL = Cvar_VariableInteger( "r_allowSoftwareGL" );
         initial.GL_extended->use_GL_ARB_vertex_array_object = Cvar_VariableInteger( "r_arb_vertex_array_object" );
     }
@@ -1039,27 +1038,29 @@ void SettingsMenu_Cache( void ) {
     int32_t i;
     uint64_t len;
 
+//    settings = (settingsmenu_t *)Hunk_Alloc( sizeof(*settings), h_high );
+
     memset( &settings, 0, sizeof(settings) );
 
     settings.api = StringToRenderAPI( Cvar_VariableString( "g_renderer" ) );
 
     // get extensions list
-    if (settings.api == R_OPENGL) {
+    if ( settings.api == R_OPENGL ) {
         renderImport.glGetIntegerv( GL_NUM_EXTENSIONS, &numExtensions );
 
-        settings.extensionStrings = (char **)Hunk_Alloc( sizeof(char *) * numExtensions, h_low );
+        settings.extensionStrings = (char **)Hunk_Alloc( sizeof(char *) * numExtensions, h_high );
         settings.numExtensions = numExtensions;
 
-        for (i = 0; i < numExtensions; i++) {
+        for ( i = 0; i < numExtensions; i++ ) {
             const GLubyte *name = renderImport.glGetStringi( GL_EXTENSIONS, i );
             len = strlen( (const char *)name );
 
-            settings.extensionStrings[i] = (char *)Hunk_Alloc( len + 1, h_low );
+            settings.extensionStrings[i] = (char *)Hunk_Alloc( len + 1, h_high );
             strcpy( settings.extensionStrings[i], (const char *)name );
         }
     }
 
-    N_strncpyz( settings.extensionsMenuStr, va("%u Extensions", settings.numExtensions), sizeof(settings.extensionsMenuStr) );
+    N_strncpyz( settings.extensionsMenuStr, va( "%u Extensions", settings.numExtensions ), sizeof(settings.extensionsMenuStr) );
 
     SettingsMenu_GetInitial();
     SettingsMenu_SetDefault();

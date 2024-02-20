@@ -1,7 +1,5 @@
 #include "g_game.h"
 #include "g_sound.h"
-#include "../system/sys_thread.h"
-#include <EASTL/fixed_vector.h>
 
 #include <ALsoft/al.h>
 #include <ALsoft/alc.h>

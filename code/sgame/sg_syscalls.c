@@ -427,22 +427,22 @@ int ImGui_SliderFloat4( const char *pLabel, vec4_t *pData, float nMax, float nMi
     return vmi.ImGui_SliderFloat4( pLabel, pData, nMax, nMin );
 }
 
-int ImGui_SliderInt( const char *pLabel, int *pData, float nMax, float nMin )
+int ImGui_SliderInt( const char *pLabel, int *pData, int nMax, int nMin )
 {
     return vmi.ImGui_SliderInt( pLabel, pData, nMax, nMin );
 }
 
-int ImGui_SliderInt2( const char *pLabel, ivec2_t *pData, float nMax, float nMin )
+int ImGui_SliderInt2( const char *pLabel, ivec2_t *pData, int nMax, int nMin )
 {
     return vmi.ImGui_SliderInt2( pLabel, pData, nMax, nMin );
 }
 
-int ImGui_SliderInt3( const char *pLabel, ivec3_t *pData, float nMax, float nMin )
+int ImGui_SliderInt3( const char *pLabel, ivec3_t *pData, int nMax, int nMin )
 {
     return vmi.ImGui_SliderInt3( pLabel, pData, nMax, nMin );
 }
 
-int ImGui_SliderInt4( const char *pLabel, ivec4_t *pData, float nMax, float nMin )
+int ImGui_SliderInt4( const char *pLabel, ivec4_t *pData, int nMax, int nMin )
 {
     return vmi.ImGui_SliderInt4( pLabel, pData, nMax, nMin );
 }

@@ -2873,13 +2873,15 @@ static void FS_Touch_f(void)
 void FS_Shutdown(qboolean closeFiles)
 {
 	searchpath_t *p, *next;
+	uint64_t i;
 
-	if (closeFiles) {
-		for (uint64_t i = 1; i < MAX_FILE_HANDLES; i++) {
-			if (!handles[i].data.stream)
+	if ( closeFiles ) {
+		for ( i = 1; i < MAX_FILE_HANDLES; i++ ) {
+			if ( !handles[i].data.stream ) {
 				continue;
+			}
 			
-			FS_FClose(i);
+			FS_FClose( i );
 		}
 	}
 
@@ -2904,18 +2906,12 @@ void FS_Shutdown(qboolean closeFiles)
 	fs_bffChunks = 0;
 	fs_dirCount = 0;
 
-	// only fixes fs_restart
-	if (com_logfile && com_logfile->i) {
-		extern fileHandle_t logfile;
-		logfile = FS_INVALID_HANDLE;
-	}
-
-	Cmd_RemoveCommand("dir");
-	Cmd_RemoveCommand("ls");
-	Cmd_RemoveCommand("list");
-	Cmd_RemoveCommand("fs_restart");
-	Cmd_RemoveCommand("lsof");
-	Cmd_RemoveCommand("addmod");
+	Cmd_RemoveCommand( "dir" );
+	Cmd_RemoveCommand( "ls" );
+	Cmd_RemoveCommand( "list" );
+	Cmd_RemoveCommand( "fs_restart" );
+	Cmd_RemoveCommand( "lsof" );
+	Cmd_RemoveCommand( "addmod" );
 }
 
 void FS_Restart(void)
@@ -3010,7 +3006,7 @@ void FS_InitFilesystem( void )
 }
 
 
-void FS_Startup(void)
+void FS_Startup( void )
 {
 	const char *homepath;
 	CTimer timer;
@@ -3022,7 +3018,7 @@ void FS_Startup(void)
 	fs_readCount = 0;
 	fs_writeCount = 0;
 
-	Con_Printf("\n---------- FS_Startup ----------\n");
+	Con_Printf( "\n---------- FS_Startup ----------\n" );
 
 	fs_basepath = Cvar_Get("fs_basepath", Sys_DefaultBasePath(), CVAR_INIT | CVAR_PROTECTED | CVAR_PRIVATE);
 	Cvar_SetDescription(fs_basepath, "Write-protected CVar specifying the path to the installation folder of the game.");
@@ -3120,9 +3116,8 @@ void FS_Startup(void)
 	// we just loaded, it's not modified
 	fs_gamedirvar->modified = qfalse;
 
-	for (uint64_t i = 0; i < MAX_FILE_HANDLES; i++) {
-		FS_InitHandle(&handles[i]);
-	}
+	// clear all handles
+	memset( handles, 0, sizeof(handles) );
 
 #ifdef USE_BFF_CACHE_FILE
 	FS_FreeUnusedCache();

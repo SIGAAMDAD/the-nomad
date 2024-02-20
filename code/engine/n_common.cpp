@@ -5,6 +5,7 @@
 #include "../rendercommon/imgui_impl_sdl2.h"
 #include "vm_local.h"
 #include <setjmp.h>
+#include <zip.h>
 
 #define MAX_EVENT_QUEUE 256
 #define MASK_QUEUED_EVENTS (MAX_EVENT_QUEUE - 1)
@@ -109,7 +110,6 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Con_Printf(const char *fmt, 
     // echo to the actual console
     Sys_Print(msg);
 
-#ifndef _WIN32
     // slap that shit into the logfile
     if (com_logfile && com_logfile->i) {
         if (logfile == FS_INVALID_HANDLE && FS_Initialized() && !opening_console) {
@@ -150,7 +150,6 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Con_Printf(const char *fmt, 
 			FS_Write( msg, strlen(msg), logfile );
         }
     }
-#endif
 }
 
 void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Con_DPrintf(const char *fmt, ...)
@@ -652,9 +651,9 @@ uint64_t Com_EventLoop(void)
 			return ev.evTime;
 		}
 
-		switch (ev.evType) {
+		switch ( ev.evType ) {
 		case SE_KEY:
-			G_KeyEvent(ev.evValue, (qboolean)ev.evValue2, ev.evTime);
+			G_KeyEvent( ev.evValue, (qboolean)ev.evValue2, ev.evTime );
 			break;
 		case SE_MOUSE:
 			G_MouseEvent(ev.evValue, ev.evValue2);
@@ -719,26 +718,24 @@ static void Com_Freeze_f( void ) {
 //
 // Com_LoadConfig: loads the default configuration file
 //
-void Com_LoadConfig(void)
+void Com_LoadConfig( void )
 {
     Cbuf_ExecuteText(EXEC_APPEND, va("exec %s", Cvar_VariableString( "com_defaultcfg" )));
     Cbuf_Execute();
 }
 
-//
-// Com_Crash_f: force crash, only for devs
-//
-static void Com_Crash_f(void)
-{
+/*
+* Com_Crash_f: force crash, only for devs
+*/
+static void Com_Crash_f( void ) {
     *((volatile int *)0) = 0x12346789;
 }
 
-//
-// Com_Shutdown_f: for testing exit/crashing processes
-//
-static void Com_Shutdown_f(void)
-{
-    N_Error(ERR_FATAL, "testing");
+/*
+* Com_Shutdown_f: for testing exit/crashing processes
+*/
+static void Com_Shutdown_f( void ) {
+    N_Error( ERR_FATAL, "testing" );
 }
 
 //
@@ -751,7 +748,7 @@ static void Com_ExecuteCfg(void)
 }
 
 /*
-Com_InitJournals: initializes the logfile and the event journal
+* Com_InitJournals: initializes the logfile and the event journal
 */
 void Com_InitJournals(void)
 {
@@ -776,7 +773,7 @@ void Com_InitJournals(void)
 	}
 }
 
-void Com_RestartGame(void)
+void Com_RestartGame( void )
 {
 	static qboolean gameRestarting = qfalse;
 
@@ -793,10 +790,10 @@ void Com_RestartGame(void)
 		Con_ResetHistory();
 
 		// clear the filesystem before restarting the cvars
-		FS_Shutdown(qtrue);
+		FS_Shutdown( qtrue );
 
 		// reset all cvars
-		Cvar_Restart(qtrue);
+		Cvar_Restart( qtrue );
 
 		FS_Restart();
 
@@ -1501,10 +1498,33 @@ static void Com_PrintVersionStrings( const char *commandLine )
 	Com_VersionString(), version_str);
 }
 
+static void Com_CrashCheck( void )
+{
+	FILE *fp;
+
+	fp = Sys_FOpen( "nomad.pid", "w+" );
+	if ( fp ) {
+		zip_t *zf;
+		zip_source_t *source;
+		int error;
+
+		Sys_MessageBox( "WARNING", "nomad.pid is present meaning the game had an unnatural exit, please report this bug", false );
+
+		zf = zip_open( "crash-report.zip", ZIP_CREATE | ZIP_TRUNCATE, &error );
+		if ( !zf ) {
+			Con_Printf( COLOR_RED "ERROR: Failed to create crash-report.zip, please send the debug.log!\n" );
+			return;
+		}
+
+		source = zip_source_file( zf,  );
+		zip_add( zf, "", );
+	}
+}
+
 /*
 * Com_Init: initializes all the engine's systems
 */
-void Com_Init(char *commandLine)
+void Com_Init( char *commandLine )
 {
 	cvar_t *cv;
 
@@ -1515,8 +1535,8 @@ void Com_Init(char *commandLine)
 	// get the cacheline for optimized allocations and memory management
 	com_cacheLine = SDL_GetCPUCacheLineSize();
 
-	if (Q_setjmp(abortframe)) {
-		Sys_Error("Error during initialization");
+	if ( Q_setjmp( abortframe ) ) {
+		Sys_Error( "Error during initialization" );
 	}
 
 	Com_InitPushEvent();
@@ -1526,7 +1546,7 @@ void Com_Init(char *commandLine)
 
 	// prepare enough of the subsystems to handle
 	// cvar and command buffer management
-	Com_ParseCommandLine(commandLine);
+	Com_ParseCommandLine( commandLine );
 
 	Cbuf_Init();
 
@@ -1536,12 +1556,12 @@ void Com_Init(char *commandLine)
 	Z_InitMemory();
 	Cmd_Init();
 
-// get the developer cvar set as early as possible
-	Com_StartupVariable("com_devmode");
+	// get the developer cvar set as early as possible
+	Com_StartupVariable( "com_devmode" );
 #ifdef _NOMAD_DEBUG
-	com_devmode = Cvar_Get("com_devmode", "1", CVAR_INIT | CVAR_PROTECTED);
+	com_devmode = Cvar_Get( "com_devmode", "1", CVAR_INIT | CVAR_PROTECTED );
 #else
-	com_devmode = Cvar_Get("com_devmode", "0", CVAR_INIT | CVAR_PROTECTED);
+	com_devmode = Cvar_Get( "com_devmode", "0", CVAR_INIT | CVAR_PROTECTED );
 #endif
 	Cvar_CheckRange(com_devmode, "0", "1", CVT_INT);
 	Cvar_SetDescription(com_devmode, "Enables a bunch of extra diagnostics for developers.");

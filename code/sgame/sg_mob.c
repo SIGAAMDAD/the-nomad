@@ -2,12 +2,6 @@
 
 static qboolean SG_CheckSight( mobj_t *m )
 {
-	float dis = disBetweenOBJ( &m->ent->origin, &m->target->origin );
-
-	if ( dis <= m->sight_range ) {
-		return qfalse;
-	}
-	return qtrue;
 }
 
 //======================================================

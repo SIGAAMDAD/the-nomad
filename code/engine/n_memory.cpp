@@ -1,7 +1,6 @@
 #include "n_shared.h"
 #include "n_common.h"
 #include "../game/g_game.h"
-#include "../system/sys_thread.h"
 
 /*
 ===============================
@@ -612,12 +611,15 @@ Z_Alloc
 ================
 */
 #ifdef _NOMAD_DEBUG
-void *Z_AllocDebug( uint64_t size, memtag_t tag, const char *label, const char *file, uint32_t line ) {
-	uint64_t allocSize;
+void *Z_AllocDebug( uint64_t size, memtag_t tag, const char *label, const char *file, uint32_t line )
 #else
-void *Z_Alloc( uint64_t size, memtag_t tag ) {
+void *Z_Alloc( uint64_t size, memtag_t tag )
 #endif
+{
 	uint32_t extra;
+#ifdef _NOMAD_DEBUG
+		uint64_t allocSize;
+#endif
 #ifndef USE_MULTI_SEGMENT
 	memblock_t *start, *rover;
 #endif
@@ -896,21 +898,17 @@ void Z_LogHeap( void ) {
 	Z_LogZoneHeap( smallzone, "SMALL" );
 }
 
-void Z_InitSmallZoneMemory(void) {
-	//static byte zoneBuf[512 * 1024];
-	byte *zoneBuf = (byte *)malloc( 512 * 1024 );
-	if (!zoneBuf) {
-		Sys_Error( "Z_InitSmallZoneMemory: failed to allocate small zone heap of %i bytes", 512 * 1024 );
-	}
+void Z_InitSmallZoneMemory( void ) {
+	static byte zoneBuf[512 * 1024];
 	uint64_t size;
 
 	size = 512 * 1024;
-	memset(zoneBuf, 0, size);
+	memset( zoneBuf, 0, sizeof(zoneBuf) );
 	smallzone = (memzone_t *)zoneBuf;
 	Z_ClearZone(smallzone, smallzone, size, 1);
 }
 
-void Z_InitMemory(void)
+void Z_InitMemory( void )
 {
 	uint64_t mainsize;
 	cvar_t *cv;
@@ -1380,7 +1378,7 @@ qboolean Hunk_CheckMark(void)
 }
 
 /*
-Hunk_Alloc: allocates a chunk of memory out of the hunk heap in the ha_pref (h_low, h_high)
+* Hunk_Alloc: allocates a chunk of memory out of the hunk heap in the ha_pref (h_low, h_high)
 */
 #ifdef _NOMAD_DEBUG
 void *Hunk_AllocDebug (uint64_t size, ha_pref where, const char *name, const char *file, uint64_t line)
@@ -1390,19 +1388,20 @@ void *Hunk_Alloc (uint64_t size, const char *name, ha_pref where)
 {
 	void *buf;
 
-	if (!hunkbase) {
-		N_Error(ERR_FATAL, "Hunk_Alloc: Hunk memory system not initialized");
+	if ( !hunkbase ) {
+		N_Error( ERR_FATAL, "Hunk_Alloc: Hunk memory system not initialized" );
 	}
 
-	if (!size)
-		N_Error(ERR_FATAL, "Hunk_Alloc: bad size");
+	if ( size >= hunksize ) {
+		N_Error( ERR_FATAL, "Hunk_Alloc: bad size" );
+	}
 	
 	CThreadAutoLock lock( hunkLock );
 	if (where == h_dontcare || hunk_temp->temp != hunk_temp->permanent) {
 		Hunk_SwapBanks();
 	}
 	else {
-		if (where == h_low && hunk_permanent != &hunk_low) {
+		if ( where == h_low && hunk_permanent != &hunk_low ) {
 			Hunk_SwapBanks();
 		}
 		else if (where == h_high && hunk_permanent != &hunk_high) {
@@ -1486,9 +1485,6 @@ void Hunk_Log(void) {
 	Hunk_SmallLog();
 }
 
-// kept for free later on
-static void *hunkorig;
-
 void Hunk_InitMemory(void)
 {
     cvar_t *cv;
@@ -1516,7 +1512,6 @@ void Hunk_InitMemory(void)
 	}
 
 	// cacheline align
-    hunkorig = hunkbase; // store the original pointer for free()
 	hunkbase = (byte *)PADP( hunkbase, com_cacheLine );
 	Hunk_Clear();
 

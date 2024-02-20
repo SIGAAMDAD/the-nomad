@@ -9,10 +9,7 @@
 #include "../rendercommon/imgui_impl_opengl3.h"
 #include "../rendercommon/imgui_impl_sdlrenderer2.h"
 #include "../rendercommon/imgui_impl_sdl2.h"
-#include "../system/sys_thread.h"
-#include <thread>
-#include <EASTL/atomic.h>
-
+#include "../engine/n_threads.h"
 
 #define  DEFAULT_CONSOLE_WIDTH 78
 #define  MAX_CONSOLE_WIDTH 120
@@ -26,32 +23,130 @@ uint32_t bigchar_height;
 uint32_t smallchar_width;
 uint32_t smallchar_height;
 
-#if 0
+/*
+typedef struct {
+	char m_szText[MAXPRINTMSG];	// text buffer
+	uint32_t m_nDeltaTime;		// how long has it been around?
+	uint32_t m_nLifeTime;		// con_maxNotifyTime->i, once delta time is greater, DIE
+} notify_t;
+
 class CDevConsole
 {
 public:
-	CConsole( void );
-	~CConsole();
+	CDevConsole( void );
+	~CDevConsole();
 
-	void Print( const char *txt );
+	void AddText( const char *pText );
 	void Draw( void );
 	void Run( void );
 private:
+	void DrawText( const char *pText );
 	void DrawNotify( void );
 	void DrawSolidConsole( void ) const;
 	void DrawInput( void ) const;
 
-	qboolean initialized;
-	char *buffer;
-	uint64_t used;
+	vec4_t m_Color;
 
-	uint32_t notify[NUM_CON_TIMES];
+	char *m_pBuffer;
+	uint64_t m_nBufUsed;
 
-	float displayFrac;
-	float finalFrac;
-	vec4_t color;
+	notify_t *m_pNotify;
+	uint64_t m_nNofityCount;
+
+	float m_nDisplayFrac;
+	float m_nFinalFrac;
+	qboolean m_bInitialized;
 };
-#endif
+
+static CDevConsole s_devConsole;
+cvar_t *con_maxTextSize;
+cvar_t *con_textShuffle;
+
+
+CDevConsole::CDevConsole( void ) {
+}
+
+CDevConsole::~CDevConsole() {
+}
+
+void CDevConsole::Draw( void )
+{
+
+}
+
+void CDevConsole::AddText( const char *pText )
+{
+	uint64_t len;
+
+	len = strlen( pText );
+
+	if ( len + m_nBufUsed >= con_maxTextSize->i ) {
+		if ( con_textShuffle->i == 0 ) {
+			memset( m_pBuffer, 0, con_maxTextSize->i );
+		} else {
+			memmove( m_pBuffer, m_pBuffer + m_nBufUsed );
+		}
+	}
+}
+
+void CDevConsole::DrawText( const char *pText )
+{
+	uint64_t len, i;
+	int currentColorIndex;
+	int colorIndex;
+	qboolean usedColor;
+	const char *text;
+	char s[2];
+
+	currentColorIndex = ColorIndex( S_COLOR_WHITE );
+	len = strlen( pText );
+	usedColor = qfalse;
+
+	if ( RobotoMono ) {
+		FontCache()->SetActiveFont( RobotoMono );
+	} else {
+		RobotoMono = FontCache()->AddFontToCache( "fonts/RobotoMono/RobotoMono-Bold.ttf" );
+	}
+
+	for ( i = 0, text = pText; i < len; i++, text++ ) {
+		// track color changes
+		while ( Q_IsColorString( text ) && *( text + 1 ) != '\n' ) {
+			colorIndex = ColorIndexFromChar( *( text + 1 ) );
+			if ( currentColorIndex != colorIndex ) {
+				currentColorIndex = colorIndex;
+				if ( usedColor ) {
+					ImGui::PopStyleColor();
+				}
+				ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( g_color_table[ colorIndex ] ) );
+				usedColor = qtrue;
+			}
+			text += 2;
+		}
+		
+		switch ( *text ) {
+		case '\n':
+			if ( usedColor ) {
+				ImGui::PopStyleColor();
+				currentColorIndex = ColorIndex( S_COLOR_WHITE );
+				ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( g_color_table[currentColorIndex] ) );
+				usedColor = qfalse;
+			}
+			ImGui::NewLine();
+			break;
+		case '\r':
+			ImGui::SameLine();
+			break;
+		default:
+			s[0] = *text;
+			s[1] = 0;
+
+			ImGui::TextUnformatted( s );
+			ImGui::SameLine();
+			break;
+		};
+	}
+}
+*/
 
 typedef struct {
 	qboolean	initialized;
@@ -84,9 +179,11 @@ typedef struct {
 	void *imguiTextureData[2];
 } console_t;
 
-ImFont *RobotoMono;
+static void Con_DrawSolidConsole( float frac );
 
 console_t con;
+
+ImFont *RobotoMono;
 
 field_t g_consoleField;
 cvar_t *con_conspeed;
@@ -98,9 +195,6 @@ cvar_t *con_noprint;
 cvar_t *g_conXOffset;
 
 uint32_t g_console_field_width;
-
-static void Con_DrawSolidConsole( float frac );
-
 
 /*
 ================

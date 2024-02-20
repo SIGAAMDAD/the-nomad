@@ -110,7 +110,7 @@ float Cvar_VariableFloat(const char *name)
 Cvar_VariableInteger
 ============
 */
-int32_t Cvar_VariableInteger(const char *name)
+int64_t Cvar_VariableInteger(const char *name)
 {
     cvar_t *var;
 
@@ -225,7 +225,7 @@ static const char *Cvar_Validate(cvar_t *var, const char *value, qboolean warn)
     static char intbuf[32];
     const char *limit;
     float valuef;
-    int32_t valuei;
+    int64_t valuei;
 
     if (var->type == CVT_NONE)
         return value;
@@ -248,14 +248,14 @@ static const char *Cvar_Validate(cvar_t *var, const char *value, qboolean warn)
                     if (warn)
                         Con_Printf("WARNING: cvar '%s' must be integral", var->name);
 
-                    sprintf(intbuf, "%i", atoi(value));
+                    sprintf(intbuf, "%li", atol(value));
                     value = intbuf; // new value
                 }
-                valuei = atoi(value);
-                if (var->mins && valuei < atoi(var->mins)) {
+                valuei = atol(value);
+                if (var->mins && valuei < atol(var->mins)) {
                     limit = var->mins;
                 }
-                else if (var->maxs && valuei > atoi(var->maxs)) {
+                else if (var->maxs && valuei > atol(var->maxs)) {
                     limit = var->maxs;
                 }
             }
@@ -457,7 +457,7 @@ cvar_t *Cvar_Get(const char *var_name, const char *var_value, uint32_t flags)
     var->modified = qtrue;
     var->modificationCount = 1;
     var->f = N_atof(var->s);
-    var->i = atoi(var->s);
+    var->i = atol(var->s);
     var->resetString = CopyString(var_value);
     var->type = CVT_NONE;
     var->description = NULL;
@@ -708,7 +708,7 @@ cvar_t *Cvar_Set2(const char *var_name, const char *value, qboolean force)
     cvar_group[var->group] = 1;
     var->s = CopyString(value);
     var->f = N_atof(var->s);
-    var->i = atoi(var->s);
+    var->i = atol(var->s);
 
     return var;
 }
@@ -777,8 +777,8 @@ void Cvar_SetFloatValue(const char *var_name, float value)
 {
     char val[32];
 
-    if (value == (int32_t)value) {
-        Com_snprintf(val, sizeof(val), "%i", (int32_t)value);
+    if (value == (int64_t)value) {
+        Com_snprintf(val, sizeof(val), "%li", (int64_t)value);
     }
     else {
         Com_snprintf(val, sizeof(val), "%f", value);
@@ -791,11 +791,11 @@ void Cvar_SetFloatValue(const char *var_name, float value)
 Cvar_SetIntegerValue
 ============
 */
-void Cvar_SetIntegerValue(const char *var_name, int32_t value)
+void Cvar_SetIntegerValue(const char *var_name, int64_t value)
 {
     char val[32];
 
-    sprintf(val, "%i", value);
+    sprintf(val, "%li", value);
     Cvar_Set(var_name, val);
 }
 
@@ -814,7 +814,7 @@ void Cvar_SetValueSafe(const char *var_name, float value)
     char val[32];
 
     if (N_isintegral(value))
-        Com_snprintf(val, sizeof(val), "%i", (int32_t)value);
+        Com_snprintf(val, sizeof(val), "%li", (int64_t)value);
     else
         Com_snprintf(val, sizeof(val), "%f", value);
     
@@ -1053,7 +1053,7 @@ static void Cvar_Reset_f(void)
 }
 
 // returns NULL for non-existent "-" argument
-static const char *GetValue(uint64_t index, int32_t *ival, float *fval)
+static const char *GetValue(uint64_t index, int64_t *ival, float *fval)
 {
     static char buf[MAX_CVAR_VALUE];
     const char *cmd;
@@ -1070,7 +1070,7 @@ static const char *GetValue(uint64_t index, int32_t *ival, float *fval)
 
     var = Cvar_FindVar(cmd);
     if (!var) { // cvar not found, return string
-        *ival = atoi(cmd);
+        *ival = atol(cmd);
         *fval = N_atof(cmd);
         N_strncpyz(buf, cmd, sizeof(buf));
         return buf;
@@ -1134,9 +1134,9 @@ static qboolean AllowEmptyCvar(funcType_t ftype)
     };
 }
 
-static void Cvar_Op(funcType_t ftype, int32_t *ival, float *fval)
+static void Cvar_Op(funcType_t ftype, int64_t *ival, float *fval)
 {
-    int32_t icap, imod;
+    int64_t icap, imod;
     float fcap, fmod;
 
     GetValue(3, &imod, &fmod); // index 3: value
@@ -1163,7 +1163,7 @@ static void Cvar_Op(funcType_t ftype, int32_t *ival, float *fval)
     case FT_MOD:
         if (imod) {
             *ival %= imod;
-            *fval = (float)((int32_t)*fval % imod); // FIXME: use float
+            *fval = (float)((int64_t)*fval % imod); // FIXME: use float
         }
         break;
 
@@ -1198,9 +1198,9 @@ static void Cvar_Op(funcType_t ftype, int32_t *ival, float *fval)
     }
 }
 
-static void Cvar_Rand(int32_t *ival, float *fval)
+static void Cvar_Rand(int64_t *ival, float *fval)
 {
-    int32_t icap;
+    int64_t icap;
     float fcap;
 
     *ival = rand();
@@ -1228,7 +1228,7 @@ static void Cvar_Func_f(void)
     const char *cvar_name;
     char value[64];
     cvar_t *cvar;
-    int32_t ival;
+    int64_t ival;
     float fval;
 
     if (Cmd_Argc() < 3) {
@@ -1277,11 +1277,11 @@ static void Cvar_Func_f(void)
         Cvar_Op(ftype, &ival, &fval); // apply modification
 
     if (cvar && cvar->type == CVT_INT) {
-        sprintf(value, "%i", ival);
+        sprintf(value, "%li", ival);
     }
     else {
-        if ((int32_t)fval == fval)
-            sprintf(value, "%i", (int32_t)fval);
+        if ((int64_t)fval == fval)
+            sprintf(value, "%li", (int64_t)fval);
         else
             sprintf(value, "%f", fval);
     }

@@ -422,31 +422,7 @@ typedef struct {
 } vertexBuffer_t;
 
 
-
-typedef struct fbo_s
-{
-	char            name[MAX_GDR_PATH];
-
-	int32_t         index;
-
-	uint32_t        frameBuffer;
-
-	uint32_t        colorBuffers[16];
-	int32_t         colorFormat;
-	texture_t       *colorImage[16];
-
-	uint32_t        depthBuffer;
-	int32_t         depthFormat;
-
-	uint32_t        stencilBuffer;
-	int32_t         stencilFormat;
-
-	uint32_t        packedDepthStencilBuffer;
-	int32_t         packedDepthStencilFormat;
-
-    int32_t         width;
-    int32_t         height;
-} fbo_t;
+#include "rgl_fbo.h"
 
 
 
@@ -1016,6 +992,9 @@ typedef struct
 
     texture_t *textures[MAX_RENDER_TEXTURES];
     uint32_t numTextures;
+
+    fbo_t *fbos[MAX_RENDER_FBOs];
+    uint32_t numFBOs;
 
     float identityLight;
     uint32_t identityLightByte;

@@ -1,7 +1,7 @@
 #include "sg_local.h"
 
-// 12 KiB of static memory for the vm to use
-#define MEMPOOL_SIZE (12*1024*1024)
+// 10 MiB of static memory for the vm to use
+#define MEMPOOL_SIZE (10*1024*1024)
 static char mempool[MEMPOOL_SIZE];
 static int allocPoint;
 

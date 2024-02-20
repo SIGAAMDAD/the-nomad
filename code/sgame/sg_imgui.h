@@ -451,10 +451,10 @@ int ImGui_SliderFloat( const char *pLabel, float *pData, float nMax, float nMin 
 int ImGui_SliderFloat2( const char *pLabel, vec2_t *pData, float nMax, float nMin );
 int ImGui_SliderFloat3( const char *pLabel, vec3_t *pData, float nMax, float nMin );
 int ImGui_SliderFloat4( const char *pLabel, vec4_t *pData, float nMax, float nMin );
-int ImGui_SliderInt( const char *pLabel, int *pData, float nMax, float nMin );
-int ImGui_SliderInt2( const char *pLabel, ivec2_t *pData, float nMax, float nMin );
-int ImGui_SliderInt3( const char *pLabel, ivec3_t *pData, float nMax, float nMin );
-int ImGui_SliderInt4( const char *pLabel, ivec4_t *pData, float nMax, float nMin );
+int ImGui_SliderInt( const char *pLabel, int *pData, int nMax, int nMin );
+int ImGui_SliderInt2( const char *pLabel, ivec2_t *pData, int nMax, int nMin );
+int ImGui_SliderInt3( const char *pLabel, ivec3_t *pData, int nMax, int nMin );
+int ImGui_SliderInt4( const char *pLabel, ivec4_t *pData, int nMax, int nMin );
 int ImGui_ColorEdit3( const char *pLabel, vec3_t *pColor, ImGuiColorEditFlags flags );
 int ImGui_ColorEdit4( const char *pLabel, vec4_t *pColor, ImGuiColorEditFlags flags );
 

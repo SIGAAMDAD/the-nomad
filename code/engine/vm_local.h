@@ -3,13 +3,10 @@
 
 #ifdef __cplusplus
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <stdint.h>
 #include <string.h>
 #include "n_common.h"
+#include "n_threads.h"
 
 #ifdef _NOMAD_DEBUG
 #define DEBUG_VM
@@ -227,6 +224,7 @@ typedef void (GDR_DECL *dllEntry_t)(const vmRefImport_t *import);
 typedef enum
 {
     VM_SGAME = 0,
+    VM_MOD,
     VM_COUNT
 } vmIndex_t;
 
@@ -261,8 +259,6 @@ typedef enum {
 
 typedef struct vm_s
 {
-    void *squirrelVMInstance;
-
     syscall_t	systemCall;
 	byte		*dataBase;
 	int32_t 	*opStack;			// pointer to local function stack
@@ -310,6 +306,7 @@ typedef struct vm_s
 	int32_t		numJumpTableTargets;
 
 	uint32_t	crc32sum;
+    CThreadAtomic<qboolean> called;
 
 	qboolean	forceDataMask;
 
@@ -330,7 +327,7 @@ vm_t *VM_Restart(vm_t *vm);
 qboolean VM_Compile( vm_t *vm, vmHeader_t *header );
 int32_t VM_CallCompiled( vm_t *vm, uint32_t nargs, int32_t *args );
 
-vm_t *VM_Create(vmIndex_t index, syscall_t systemCalls, dllSyscall_t dllSyscalls, vmInterpret_t interpret);
+vm_t *VM_Create( vmIndex_t index, syscall_t systemCalls, dllSyscall_t dllSyscalls, vmInterpret_t interpret, const char *moduleName = NULL );
 qboolean VM_PrepareInterpreter2(vm_t* vm, vmHeader_t* header);
 intptr_t VM_CallInterpreted2(vm_t* vm, uint32_t nargs, int32_t* args);
 
@@ -366,10 +363,6 @@ extern vm_t vmTable[VM_COUNT];
 int VM_MemoryRangeValid(intptr_t vmAddr, size_t len, vm_t* vm);
 void VM_VmProfile_f(const vm_t* vm);
 void VM_Debug(int level);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif
 

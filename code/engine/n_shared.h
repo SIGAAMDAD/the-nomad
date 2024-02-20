@@ -426,6 +426,28 @@ Compiler Macro Abstraction
 #endif
 #endif
 
+#ifdef __cplusplus
+#include <EASTL/vector.h>
+#include <EASTL/fixed_vector.h>
+#include <EASTL/fixed_allocator.h>
+#include <EASTL/fixed_list.h>
+#include <EASTL/fixed_string.h>
+#include <EASTL/fixed_substring.h>
+#include <EASTL/chrono.h>
+#include <EASTL/utility.h>
+#include <EASTL/unordered_map.h>
+#include <EASTL/map.h>
+#include <EASTL/hash_map.h>
+#include <EASTL/fixed_hash_map.h>
+#include <EASTL/vector_map.h>
+#include <EASTL/string_hash_map.h>
+#include <EASTL/string.h>
+#include <EASTL/random.h>
+#include <EASTL/bonus/lru_cache.h>
+#include <EASTL/bonus/fixed_ring_buffer.h>
+#include <EASTL/bonus/ring_buffer.h>
+#endif
+
 #ifndef Q3_VM
 	#if defined (_MSC_VER) && !defined(__clang__)
 		typedef __int64 int64_t;
@@ -912,8 +934,8 @@ typedef struct cvar_s
 	uint32_t	flags;
 	qboolean	modified;			// set each time the cvar is changed
 	uint32_t	modificationCount;	// incremented each time the cvar is changed
-	float		f;  				// Q_atof( string )
-	int32_t		i;      			// atoi( string )
+	float		f;  				// N_atof( string )
+	int64_t		i;      			// atol( string )
 	cvartype_t  type;
 	char		*mins;
 	char		*maxs;
@@ -995,24 +1017,7 @@ typedef enum
 	NUMDIFS
 } gamedif_t;
 
-typedef enum
-{
-    DIR_NORTH = 0,
-    DIR_NORTH_EAST,
-    DIR_EAST,
-    DIR_SOUTH_EAST,
-    DIR_SOUTH,
-    DIR_SOUTH_WEST,
-    DIR_WEST,
-    DIR_NORTH_WEST,
-    
-    NUMDIRS,
-
-	DIR_NULL
-} dirtype_t;
-
-typedef enum
-{
+typedef enum {
     R_SDL2,
     R_OPENGL,
     R_VULKAN

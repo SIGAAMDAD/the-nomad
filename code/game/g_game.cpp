@@ -1502,6 +1502,9 @@ void G_InitDisplay(gpuConfig_t *config)
         mode.h = 1080;
     }
 
+    gi.desktopWidth = mode.w;
+    gi.desktopHeight = mode.h;
+
     if (!G_GetModeInfo(&config->vidWidth, &config->vidHeight, &config->windowAspect, r_mode->i,
         "", mode.w, mode.h, r_fullscreen->i))
     {
@@ -1519,7 +1522,7 @@ void G_InitDisplay(gpuConfig_t *config)
     }
 
     Con_Printf("Setting up display\n");
-    Con_Printf("...setting mode %i\n", r_mode->i);
+    Con_Printf("...setting mode %li\n", r_mode->i);
     
     // init OpenGL
     GLimp_Init( config );

@@ -67,8 +67,8 @@ typedef struct levelInfo_s
     levelRank_t f;
 } levelInfo_t;
 
-static levelInfo_t *sg_levelInfoData;
-static level_t level;
+static levelInfo_t sg_levelInfoData[MAXLEVELS];
+static nhandle_t sg_levelInfoBuffer;
 
 static levelInfo_t *SG_GetLevelInfoByMapName( const char *mapname )
 {
@@ -466,9 +466,6 @@ void SG_LoadLevels( void )
 	for ( i = 0; i < sg.numLevels; i++ ) {
 		Info_SetValueForKey( sg_levelInfos[i], "num", va( "%i", i ) );
     }
-
-    // if there are no levels, let it crash
-    sg_levelInfoData = SG_MemAlloc( sizeof(*sg_levelInfoData) * sg.numLevels );
 
     // load the level information (difficulty, map, etc.)
     for ( i = 0; i < sg.numLevels; i++ ) {

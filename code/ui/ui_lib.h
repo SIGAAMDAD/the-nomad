@@ -27,6 +27,7 @@ typedef enum : uint64_t
         STATE_GRAPHICS,
         STATE_CONTROLS,
         STATE_AUDIO,
+        STATE_GAMEPLAY,
     
     STATE_CREDITS,
 

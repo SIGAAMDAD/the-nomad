@@ -1,5 +1,27 @@
 #include "sg_local.h"
 
+static item_t *sg_itemList;
+
+item_t *Item_FindInBounds( const bbox_t *bounds )
+{
+    item_t *it;
+
+    for ( it = sg_itemList; it; it = it->next ) {
+        if ( BoundsIntersect( bounds, &it->ent->link.bounds ) ) {
+            return it;
+        }
+    }
+    return NULL;
+}
+
+void Item_Remove( item_t *item )
+{
+    item->prev->next = item->next;
+    item->next->prev = item->prev;
+    sg.numEntities--;
+    sg.numItems--;
+}
+
 item_t *SG_SpawnItem( itemtype_t type )
 {
     item_t *item;
@@ -16,6 +38,12 @@ item_t *SG_SpawnItem( itemtype_t type )
     item->type = type;
 
     sg.numItems++;
+
+    if ( !sg_itemList ) {
+        sg_itemList = item;
+    }
+
+    item->prev = sg_itemList;
 
     return item;
 }
