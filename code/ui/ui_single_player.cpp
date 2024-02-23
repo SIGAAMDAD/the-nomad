@@ -28,7 +28,7 @@ typedef struct {
     const stringHash_t *loadGame;
 
     char **hardestStrings;
-    uint32_t numHardestStrings;
+    int32_t numHardestStrings;
 
     const stringHash_t *difficultyDescriptions[NUMDIFS];
 } singleplayer_t;
@@ -272,7 +272,7 @@ void SinglePlayerMenu_Draw( void )
 }
 
 char **parse_csv( const char *line );
-uint32_t count_fields( const char *line );
+int32_t count_fields( const char *line );
 
 void SinglePlayerMenu_Cache( void )
 {

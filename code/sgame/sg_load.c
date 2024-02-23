@@ -1,8 +1,39 @@
 #include "sg_local.h"
 #include "sg_info.h"
 #include "sg_util.h"
+#define JSON_IMPLEMENTATION
+#include "json.h"
+#undef JSON_IMPLEMENTATION
 
 moduleInfo_t sg_moduleInfos;
+
+static qboolean JSON_GetString( const char *text_p, const char *json_end, const char *name, char *str, int maxLength ) {
+    text_p = JSON_ObjectGetNamedValue( text_p, json_end, name );
+    if ( !text_p ) {
+        SG_Printf( COLOR_RED "ERROR: missing value for '%s' in json file!\n", name );
+        return qfalse;
+    }
+    JSON_ValueGetString( text_p, json_end, str, maxLength );
+    return qtrue;
+}
+
+static int JSON_GetInt( const char *text_p, const char *json_end, const char *name ) {
+    text_p = JSON_ObjectGetNamedValue( text_p, json_end, name );
+    if ( !text_p ) {
+        SG_Printf( COLOR_RED "ERROR: missing value for '%s' in json file!\n", name );
+        return -1;
+    }
+    return JSON_ValueGetInt( text_p, json_end );
+}
+
+static float JSON_GetFloat( const char *text_p, const char *json_end, const char *name ) {
+    text_p = JSON_ObjectGetNamedValue( text_p, json_end, name );
+    if ( !text_p ) {
+        SG_Printf( COLOR_RED "ERROR: missing value for '%s' in json file!\n", name );
+        return -1;
+    }
+    return JSON_ValueGetFloat( text_p, json_end );
+}
 
 static const char *GetString( const char *name, const char **text ) {
     static char str[MAX_TOKEN_CHARS];
@@ -61,7 +92,7 @@ static float GetFloatParm( const char *name, const char **text ) {
     return atof( tok );
 }
 
-static void LoadMobInfos( int currentModule )
+static qboolean LoadMobInfos( int currentModule )
 {
     const char *text_p, **text;
     const char *tok;
@@ -84,7 +115,9 @@ static void LoadMobInfos( int currentModule )
 
         if ( tok[0] == '{' ) {
             while ( 1 ) {
-
+                tok = COM_ParseExt( text, qtrue );
+                if ( !tok[0] ) {
+                }
             }
             ML_BufferAppend( sg_moduleInfos.modules[currentModule].mobs, sizeof(mobinfo_t), &info );
         }
@@ -92,17 +125,21 @@ static void LoadMobInfos( int currentModule )
     }
 }
 
-static void LoadItemInfos( int currentModule )
+static qboolean LoadItemInfos( int currentModule )
 {
-    const char *text_p, **text;
-    const char *tok;
+    const char *text_p, *text_end;
     iteminfo_t info;
-    int i;
+    const char *json;
 
-    text_p = SG_LoadFile( va( "modules/%s/items.txt", sg_moduleData[currentModule].name ) );
-    text = &text_p;
+    text_p = SG_LoadFile( va( "modules/%s/items.json", sg_moduleData[currentModule].name ) );
+    text_end = text_p + strlen( text_p ) + 1;
 
     G_Printf( "- Loading item infos for \"%s\"...\n", sg_moduleData[currentModule].name );
+
+    if ( JSON_ValueGetType( text_p, text_end ) != JSONTYPE_OBJECT ) {
+        SG_Printf( "" );
+        return qfalse;
+    }
 
     while ( 1 ) {
         tok = COM_ParseExt( text, qtrue );
@@ -135,7 +172,7 @@ static void LoadItemInfos( int currentModule )
     }
 }
 
-static void LoadWeaponInfos( int currentModule )
+static qboolean LoadWeaponInfos( int currentModule )
 {
     const char *text_p, **text;
     const char *tok;
@@ -182,7 +219,7 @@ static void LoadWeaponInfos( int currentModule )
     }
 }
 
-static void LoadPowerupInfos( int currentModule )
+static qboolean LoadPowerupInfos( int currentModule )
 {
     const char *text_p, **text;
     const char *tok;
@@ -205,7 +242,7 @@ static void LoadPowerupInfos( int currentModule )
     }
 }
 
-static void LoadDamageTypes( const char *moduleName )
+static qboolean LoadDamageTypes( const char *moduleName )
 {
     const char *text_p, **text;
     const char *tok;
@@ -226,67 +263,91 @@ static void LoadDamageTypes( const char *moduleName )
     }
 }
 
-static void LoadModuleConfig( const char *moduleName )
+static qboolean LoadModuleConfig( const char *moduleName )
 {
-    const char *text_p, **text;
+    const char *text_p, *text_end;
     const char *tok;
     module_t *m;
+    const char *json;
+    const char *jsonArray;
 
-    text_p = SG_LoadFile( va( "modules/%s/module.cfg", moduleName ) );
-    text = &text_p;
+    text_p = SG_LoadFile( va( "modules/%s/module.json", moduleName ) );
+    text_end = text_p + strlen( text_p ) + 1;
     m = &sg_moduleInfos.modules[sg_moduleInfos.count];
 
-    while ( 1 ) {
-        tok = COM_ParseExt( text, qfalse );
+    if ( JSON_ValueGetType( text_p, text_end ) != JSONTYPE_OBJECT ) {
+        SG_Printf( COLOR_RED "ERROR: invalid module configuration, not a proper json file!\n" );
+        return qfalse;
+    }
+
+    JSON_GetString( text_p, text_end, "name", m->name, sizeof(m->name) );
+
+    json = JSON_ObjectGetNamedValue( text_p, text_end, "version" );
+    if ( !json ) {
         
-        if ( !tok ) {
+    }
+    m->modVersionMajor = JSON_GetInt( json, text_end, "version_major" );
+    m->modVersionUpdate = JSON_GetInt( json, text_end, "version_update" );
+    m->modVersionPatch = JSON_GetInt( json, text_end, "version_patch" );
+
+    m->gameVersionMajor = JSON_GetInt( json, text_end, "game_version_major" );
+    m->gameVersionUpdate = JSON_GetInt( json, text_end, "game_version_update" );
+    m->gameVersionPatch = JSON_GetInt( json, text_end, "gameVersionPatch" );
+
+    json = JSON_ObjectGetNamedValue( text_p, text_end, "dependencies" );
+    if ( !json ) {
+
+    }
+    for ( jsonArray = JSON_ArrayGetFirstValue( json, text_end ); jsonArray; jsonArray = JSON_ArrayGetNextValue( jsonArray, text_end ) ) {
+        if ( m->numDependencies >= MAX_MODULE_DEPENDENCIES ) {
+            SG_Printf( COLOR_YELLOW "WARNING: too many dependencies in module \"%s\"!\n", moduleName );
             break;
         }
-
-        if ( !N_stricmp( tok, "add_mob" ) ) {
-            if ( m->numMobs == MAX_MODULE_INFOS ) {
-                SG_Printf( COLOR_RED "WARNING: too many mob infos found in \"%s\", ignoring.\n", m->name );
-                continue;
-            }
-            m->mobs[m->numMobs].name = GetStringToken( "add_mob", text );
-            m->numMobs++;
-        }
-        else if ( !N_stricmp( tok, "add_bot" ) ) {
-            if ( m->numBots == MAX_MODULE_INFOS ) {
-                SG_Printf( COLOR_RED "WARNING: too many bot infos found in \"%s\", ignoring.\n", m->name );
-                continue;
-            }
-            m->bots[m->numBots].name = GetStringToken( "add_bot", text );
-            m->numBots++;
-        }
-        else if ( !N_stricmp( tok, "add_item" ) ) {
-            if ( m->numItems == MAX_MODULE_INFOS ) {
-                SG_Printf( COLOR_RED "WARNING: too many item infos found in \"%s\", ignoring.\n", m->name );
-                continue;
-            }
-            m->items[m->numItems].name = GetStringToken( "add_item", text );
-            m->numItems++;
-        }
-        else if ( !N_stricmp( tok, "add_powerup" ) ) {
-            if ( m->numPowerups == MAX_MODULE_INFOS ) {
-                SG_Printf( COLOR_RED "WARNING: too many powerup infos found in \"%s\", ignoring.\n", m->name );
-                continue;
-            }
-            m->powerups[m->numPowerups].name = GetStringToken( "add_powerup", text );
-            m->numPowerups++;
-        }
-        else if ( !N_stricmp( tok, "add_weapon" ) ) {
-            if ( m->numWeapons == MAX_MODULE_INFOS ) {
-                SG_Printf( COLOR_RED "WARNING: too many weapon infos found in \"%s\", ignoring.\n", m->name );
-                continue;
-            }
-            m->powerups[m->numPowerups].name = GetStringToken( "add_powerup", text );
-            m->numPowerups++;
-        }
-        else {
-            COM_ParseWarning( "unrecognized token '%s' in module configuration", tok );
-        }
+        N_strncpyz( m->dependencies[m->numDependencies], jsonArray, MAX_MODULE_NAME );
+        m->numDependencies++;
     }
+
+    json = JSON_ObjectGetNamedValue( text_p, text_end, "mobs" );
+    if ( !json ) {
+
+    }
+    for ( jsonArray = JSON_ArrayGetFirstValue( json, text_end ); jsonArray; jsonArray = JSON_ArrayGetNextValue( jsonArray, text_end ) ) {
+
+    }
+
+    json = JSON_ObjectGetNamedValue( text_p, text_end, "items" );
+    if ( !json ) {
+
+    }
+    for ( jsonArray = JSON_ArrayGetFirstValue( json, text_end ); jsonArray; jsonArray = JSON_ArrayGetNextValue( jsonArray, text_end ) ) {
+        
+    }
+
+    json = JSON_ObjectGetNamedValue( text_p, text_end, "weapons" );
+    if ( !json ) {
+
+    }
+    for ( jsonArray = JSON_ArrayGetFirstValue( json, text_end ); jsonArray; jsonArray = JSON_ArrayGetNextValue( jsonArray, text_end ) ) {
+        
+    }
+
+    json = JSON_ObjectGetNamedValue( text_p, text_end, "powerups" );
+    if ( !json ) {
+
+    }
+    for ( jsonArray = JSON_ArrayGetFirstValue( json, text_end ); jsonArray; jsonArray = JSON_ArrayGetNextValue( jsonArray, text_end ) ) {
+        
+    }
+
+    json = JSON_ObjectGetNamedValue( text_p, text_end, "bots" );
+    if ( !json ) {
+
+    }
+    for ( jsonArray = JSON_ArrayGetFirstValue( json, text_end ); jsonArray; jsonArray = JSON_ArrayGetNextValue( jsonArray, text_end ) ) {
+        
+    }
+
+    return qtrue;
 }
 
 //
@@ -341,17 +402,11 @@ static void LoadInfos( const char *moduleName )
     G_Printf( "Loading info files for \"%s\"...\n", moduleName );
 }
 
-// the mods that I make
-static const char *officialMods[] = {
-    "Advanced_Armor",
-    "Advanced_Weapons",
-    "Renown_System"
-};
-
 void SG_LoadModules( void )
 {
     int i;
     char moduleName[MAX_MODULE_COUNT][MAX_MODULE_NAME];
+
 
     SG_Printf( "Getting module data...\n" );
 

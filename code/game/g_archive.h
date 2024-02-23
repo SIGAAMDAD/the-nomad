@@ -37,7 +37,6 @@ typedef struct {
 
 
 #pragma pack( push, 1 )
-
 // version, 64 bits
 typedef union {
 	struct {

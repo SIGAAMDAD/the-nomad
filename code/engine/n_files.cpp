@@ -43,9 +43,9 @@ typedef struct fileInBFF_s
 {
 	char *name;
 	char *buf;
-	uint64_t nameLen;
-	uint64_t size;
-    uint64_t bytesRead;
+	int64_t nameLen;
+	int64_t size;
+    int64_t bytesRead;
 	struct fileInBFF_s *next;
 } fileInBFF_t;
 

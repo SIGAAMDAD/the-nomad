@@ -3,15 +3,19 @@
 
 #pragma once
 
+#include "../engine/n_shared.h"
+
 class CModuleBuffer
 {
 public:
-    extern "C" CModuleBuffer( uint32_t nBytes );
-    extern "C" ~CModuleBuffer();
+    CModuleBuffer( uint32_t nBytes );
+    ~CModuleBuffer();
 
-    extern "C" void SetSize( uint32_t nBytes );
-    extern "C" void SetMemory( const void *pBuffer, uint32_t nBytes );
-    extern "C" void GetMemory( void *pBuffer, uint32_t nBytes ) const;
+    uint32_t GetSize( void ) const;
+    void Reserve( uint32_t nItems );
+    void SetSize( uint32_t nBytes );
+    void SetMemory( const void *pBuffer, uint32_t nBytes );
+    void GetMemory( void *pBuffer, uint32_t nBytes ) const;
 private:
     void *m_pBuffer;
     uint32_t m_nSize;

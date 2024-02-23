@@ -1498,6 +1498,7 @@ static void Com_PrintVersionStrings( const char *commandLine )
 	Com_VersionString(), version_str);
 }
 
+/*
 static void Com_CrashCheck( void )
 {
 	FILE *fp;
@@ -1520,6 +1521,7 @@ static void Com_CrashCheck( void )
 		zip_add( zf, "", );
 	}
 }
+*/
 
 /*
 * Com_Init: initializes all the engine's systems

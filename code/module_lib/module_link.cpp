@@ -31,6 +31,15 @@ extern "C" const void *CModuleDataLink::GetBuffer( void ) const
 
 extern "C" void CModuleDataLink::Create( vm_t *pModule0, vm_t *pModule1 )
 {
+    m_pModule0 = pModule0;
+    m_pModule1 = pModule1;
+}
+
+extern "C" void CModuleDataLink::Fill( int value, uint32_t nBytes )
+{
+    m_hLock.WriteLock();
+
+    m_hLock.WriteUnlock();
 }
 
 extern "C" void CModuleDataLink::Release( void )

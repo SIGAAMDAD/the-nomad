@@ -1489,8 +1489,6 @@ void Hunk_InitMemory(void)
 {
     cvar_t *cv;
 
-    hunkorig = NULL;
-
     // make sure the file system has allocated and "not" freed any temp blocks
 	// this allows the config and product id files ( journal files too ) to be loaded
 	// by the file system without redundant routines in the file system utilizing different
