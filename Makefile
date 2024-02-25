@@ -233,6 +233,40 @@ JPGOBJ = \
   	$(O)/game/jpeg/jutils.o
 endif
 
+ASOBJS=\
+	$(O)/angelscript/as_atomic.o \
+	$(O)/angelscript/as_builder.o \
+	$(O)/angelscript/as_bytecode.o \
+	$(O)/angelscript/as_callfunc_x86.o \
+	$(O)/angelscript/as_callfunc.o \
+	$(O)/angelscript/as_compiler.o \
+	$(O)/angelscript/as_configgroup.o \
+	$(O)/angelscript/as_context.o \
+	$(O)/angelscript/as_datatype.o \
+	$(O)/angelscript/as_gc.o \
+	$(O)/angelscript/as_generic.o \
+	$(O)/angelscript/as_globalproperty.o \
+	$(O)/angelscript/as_memory.o \
+	$(O)/angelscript/as_module.o \
+	$(O)/angelscript/as_objecttype.o \
+	$(O)/angelscript/as_outputbuffer.o \
+	$(O)/angelscript/as_parser.o \
+	$(O)/angelscript/as_restore.o \
+	$(O)/angelscript/as_scriptcode.o \
+	$(O)/angelscript/as_scriptengine.o \
+	$(O)/angelscript/as_scriptfunction.o \
+	$(O)/angelscript/as_scriptnode.o \
+	$(O)/angelscript/as_scriptobject.o \
+	$(O)/angelscript/as_string_util.o \
+	$(O)/angelscript/as_string.o \
+	$(O)/angelscript/as_thread.o \
+	$(O)/angelscript/as_tokenizer.o \
+	$(O)/angelscript/as_typeinfo.o \
+	$(O)/angelscript/as_variablescope.o \
+	$(O)/angelscript/as_callfunc_arm64_gcc.o \
+	$(O)/angelscript/as_callfunc_arm_gcc.o \
+	$(O)/angelscript/as_callfunc_arm_vita.o \
+
 SRC=\
 	$(O)/game/g_game.o \
 	$(O)/game/g_sgame.o \
@@ -246,6 +280,20 @@ SRC=\
 	$(O)/game/g_world.o \
 	$(O)/game/g_jpeg.o \
 	\
+	$(O)/module_lib/module_memory.o \
+	$(O)/module_lib/module_main.o \
+	$(O)/module_lib/module_parse.o \
+	$(O)/module_lib/module_handle.o \
+	$(O)/module_lib/module_renderlib.o \
+	$(O)/module_lib/debugger.o \
+	$(O)/module_lib/scriptarray.o \
+	$(O)/module_lib/scriptbuilder.o \
+	$(O)/module_lib/scriptdictionary.o \
+	$(O)/module_lib/scriptstdstring.o \
+	$(O)/module_lib/scriptstdstring_utils.o \
+	$(O)/module_lib/scriptmath.o \
+	$(O)/module_lib/contextmgr.o \
+	\
 	$(O)/engine/n_common.o \
 	$(O)/engine/n_files.o \
 	$(O)/engine/n_shared.o \
@@ -256,9 +304,6 @@ SRC=\
 	$(O)/engine/n_memory.o \
 	$(O)/engine/n_debug.o \
 	$(O)/engine/md4.o \
-	$(O)/engine/vm.o \
-	$(O)/engine/vm_interpreted.o \
-	$(O)/engine/vm_x86.o \
 	\
 	$(O)/rendercommon/imgui.o \
 	$(O)/rendercommon/imgui_draw.o \
@@ -298,6 +343,8 @@ makedirs:
 	@if [ ! -d $(O)/sys ];then $(MKDIR) $(O)/sys;fi
 	@if [ ! -d $(O)/ui ];then $(MKDIR) $(O)/ui;fi
 	@if [ ! -d $(O)/game/jpeg ];then $(MKDIR) $(O)/game/jpeg;fi
+	@if [ ! -d $(O)/module_lib/ ];then $(MKDIR) $(O)/module_lib;fi
+	@if [ ! -d $(O)/angelscript/ ];then $(MKDIR) $(O)/angelscript;fi
 
 targets: makedirs
 	@echo ""
@@ -347,13 +394,19 @@ $(O)/sys/%.o: $(SYS_DIR)/%.cpp
 	$(COMPILE_SRC)
 $(O)/game/jpeg/%.o: $(SDIR)/libjpeg/%.c
 	$(COMPILE_C)
+$(O)/module_lib/%.o: $(SDIR)/module_lib/%.cpp
+	$(COMPILE_SRC) -DMODULE_LIB
+$(O)/angelscript/%.o: $(SDIR)/angelscript/%.cpp
+	$(COMPILE_SRC)
+$(O)/angelscript/%.o: $(SDIR)/angelscript/%.S
+	$(COMPILE_SRC)
 
 ifdef win32
 ADD=-flinker-output=exec
 endif
 
-$(EXE): $(SRC) $(COMMON) $(SYS) $(JPGOBJ)
-	$(CC) $(CFLAGS) $(SRC) $(COMMON) $(SYS) $(ADD) $(JPGOBJ) -o $(EXE) $(LDLIBS)
+$(EXE): $(SRC) $(COMMON) $(SYS) $(JPGOBJ) $(ASOBJS)
+	$(CC) $(CFLAGS) $(SRC) $(COMMON) $(SYS) $(ADD) $(JPGOBJ) $(ASOBJS) -o $(EXE) $(LDLIBS)
 
 clean.pch:
 	rm $(SDIR)/engine/n_pch_all.h.gch

@@ -213,7 +213,7 @@ void SinglePlayerMenu_Draw( void )
             }
             
             Cvar_Set( "mapname", gi.mapCache.infoList[0].info.name );
-            VM_Call( sgvm, 0, SGAME_LOADLEVEL ); // start a new game
+            g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelStart, 1, 0 ); // start a new game
         }
 
         ImGui::NewLine();
@@ -246,7 +246,7 @@ void SinglePlayerMenu_Draw( void )
                 if ( ImGui::Button( "LOAD" ) ) {
                     Cvar_Set( "sg_savename", sp.saveList[i].name );
                     Cvar_Set( "mapname", gi.mapCache.infoList[i].info.name );
-                    VM_Call( sgvm, 0, SGAME_LOAD_GAME );
+                    g_pModuleLib->ModuleCall( sgvm, ModuleOnLoadGame, 0 );
                 }
                 ImGui::TableNextColumn();
                 ImGui::Text( "%s", sp.saveList[i].name );

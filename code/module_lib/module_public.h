@@ -7,6 +7,61 @@
 #include "../game/g_game.h"
 #include "../game/g_archive.h"
 
+#include <EASTL/fixed_string.h>
+#include <EASTL/fixed_vector.h>
+#include <EASTL/fixed_map.h>
+#include <EASTL/fixed_hash_map.h>
+#include <EASTL/fixed_set.h>
+#include <EASTL/sort.h>
+
+#include "../engine/n_allocator.h"
+#include "../rendercommon/r_public.h"
+
+#include <EASTL/allocator.h>
+#include <EASTL/allocator_malloc.h>
+
+class CModuleAllocator
+{
+public:
+    EASTL_ALLOCATOR_EXPLICIT CModuleAllocator( const char* pName = EASTL_NAME_VAL( EASTL_ALLOCATOR_DEFAULT_NAME ) ) { }
+	CModuleAllocator( const CModuleAllocator& x ) { }
+	CModuleAllocator( const CModuleAllocator& x, const char* pName ) { }
+
+	CModuleAllocator& operator=( const CModuleAllocator& x ) = default;
+
+	void* allocate( size_t n, int flags = 0 );
+	void* allocate( size_t n, size_t alignment, size_t offset, int flags = 0 );
+	void  deallocate( void* p, size_t n );
+
+	const char* get_name( void ) const { return NULL; }
+	void        set_name( const char* pName ) { }
+private:
+	#if EASTL_NAME_ENABLED
+		const char* mpName; // Debug name, used to track memory.
+	#endif
+};
+
+template<typename T>
+using UtlVector = eastl::vector<T, CModuleAllocator>;
+template<typename Key, typename Value>
+using UtlHashMap = eastl::hash_map<Key, Value, eastl::hash<Key>, eastl::equal_to<Key>, CModuleAllocator, true>;
+template<typename Key, typename Value>
+using UtlMap = eastl::unordered_map<Key, Value, eastl::hash<Key>, eastl::equal_to<Key>, CModuleAllocator, true>;
+template<typename Key, typename Compare = eastl::less<Key>>
+using UtlSet = eastl::set<Key, Compare, CModuleAllocator>;
+using UtlString = eastl::basic_string<char, eastl::allocator_malloc<char>>;
+
+#include "module_memory.h"
+#include "module_handle.h"
+#include "module_buffer.hpp"
+#include "module_parse.h"
+#include "scriptarray.h"
+#include "scriptdictionary.h"
+#include "scriptbuilder.h"
+#include "scriptstdstring.h"
+#include "scriptmath.h"
+#include "contextmgr.h"
+
 typedef struct
 {
     void *(*Malloc)(uint64_t size);
@@ -72,104 +127,31 @@ typedef struct
     void (*Sys_CloseDLL)(void *handle);
 } moduleImport_t;
 
-/*
-* CModuleMemoryAllocator: a dedicated heap manager for modules to avoid fragmentation or the vm touching
-* engine memory, only for the modulelib's hands, no one else's
-*/
-class CModuleMemoryAllocator
-{
-public:
-private:
-    enum {
-		ALIGN = 8									// memory alignment in bytes
-	};
-
-	enum {
-		INVALID_ALLOC	= 0xdd,
-		SMALL_ALLOC		= 0xaa,						// small allocation
-		MEDIUM_ALLOC	= 0xbb,						// medium allocaction
-		LARGE_ALLOC		= 0xcc						// large allocaction
-	};
-
-	typedef struct page_s {							// allocation page
-		void						*data;			// data pointer to allocated memory
-		uint64_t					dataSize;		// number of bytes of memory 'data' points to
-		struct page_s				*next;			// next free page in same page manager
-		struct page_s				*prev;			// used only when allocated
-		uint64_t					largestFree;	// this data used by the medium-size heap manager
-		void						*firstFree;		// pointer to first free entry
-	} page_t;
-
-	typedef struct mediumHeapEntry_s {
-		struct page_s				*page;			// pointer to page
-		uint64_t					size;			// size of block
-		struct mediumHeapEntry_s	*prev;			// previous block
-		struct mediumHeapEntry_s	*next;			// next block
-		struct mediumHeapEntry_s	*prevFree;		// previous free block
-		struct mediumHeapEntry_s	*nextFree;		// next free block
-		uint64_t					freeBlock;		// non-zero if free block
-	} mediumHeapEntry_t;
-
-	// variables
-	void			*smallFirstFree[256/ALIGN+1];	// small heap allocator lists (for allocs of 1-255 bytes)
-	page_t			*smallCurPage;					// current page for small allocations
-	uint64_t		smallCurPageOffset;				// byte offset in current page
-	page_t			*smallFirstUsedPage;			// first used page of the small heap manager
-
-	page_t			*mediumFirstFreePage;			// first partially free page
-	page_t			*mediumLastFreePage;			// last partially free page
-	page_t			*mediumFirstUsedPage;			// completely used page
-
-	page_t			*largeFirstUsedPage;			// first page used by the large heap manager
-
-	page_t			*swapPage;
-
-	uint64_t		pagesAllocated;					// number of pages currently allocated
-	uint64_t		pageSize;						// size of one alloc page in bytes
-
-	uint64_t		pageRequests;					// page requests
-	uint64_t		OSAllocs;						// number of allocs made to the OS
-
-	uint32_t		c_heapAllocRunningCount;
-
-    //
-    // methods
-    //
-
-    // allocate page from the OS
-	page_t          *AllocatePage( uint64_t nBytes );
-
-    // free an OS allocated page
-	void			FreePage( CModuleMemoryAllocator::page_t *p );
-
-    // allocate memory (1-255 bytes) from small heap manager
-	void            *SmallAllocate( uint64_t nBytes );
-
-    // free memory allocated by small heap manager
-	void			SmallFree( void *pBuffer );
-
-	void            *MediumAllocateFromPage( CModuleMemoryAllocator::page_t *p, uint64_t sizeNeeded );
-
-    // allocate memory (256-32768 bytes) from medium heap manager
-	void            *MediumAllocate( uint64_t nBytes );
-
-    // free memory allocated by medium heap manager
-	void			MediumFree( void *pBuffer );
-
-    // allocate large block from OS directly
-	void            *LargeAllocate( uint64_t nBytes );
-
-    // free memory allocated by large heap manager
-	void			LargeFree( void *pBuffer );
-
-	void			ReleaseSwappedPages( void );
-	void			FreePageReal( CModuleMemoryAllocator::page_t *p );
-};
+class CModuleHandle;
 
 struct CModuleInfo
 {
-	char m_szName[MAX_NPATH];
-	eastl::vector<CModuleInfo *> m_Dependencies;
+	CModuleInfo( CModuleParse& parse, CModuleHandle *pHandle ) {
+		N_strncpyz( m_szName.data(), parse.GetValue( "module_name" ).c_str(), MAX_NPATH );
+		m_Dependencies = parse.GetArray( "dependencies" );
+		m_GameVersion.m_nVersionMajor = atoi( parse.GetInfo( "version" )->GetValue( "game_version_major" ).c_str() );
+		m_GameVersion.m_nVersionUpdate = atoi( parse.GetInfo( "version" )->GetValue( "game_version_update" ).c_str() );
+		m_GameVersion.m_nVersionPatch = atoi( parse.GetInfo( "version" )->GetValue( "game_version_patch" ).c_str() );
+
+		m_nModVersionMajor = atoi( parse.GetInfo( "version" )->GetValue( "version_major" ).c_str() );
+		m_nModVersionUpdate = atoi( parse.GetInfo( "version" )->GetValue( "version_update" ).c_str() );
+		m_nModVersionPatch = atoi( parse.GetInfo( "version" )->GetValue( "version_patch" ).c_str() );
+
+		m_pHandle = pHandle;
+	}
+	~CModuleInfo() {
+		delete m_pHandle;
+	}
+
+	eastl::fixed_string<char, MAX_NPATH> m_szName;
+	UtlVector<UtlString> m_Dependencies;
+
+	CModuleHandle *m_pHandle;
 	
 	int32_t m_nModVersionMajor;
 	int32_t m_nModVersionUpdate;
@@ -178,56 +160,41 @@ struct CModuleInfo
 	version_t m_GameVersion;
 };
 
-GDR_EXPORT class CModuleLib
+class CContextMgr;
+class CScriptBuilder;
+
+class CModuleLib
 {
 public:
-    CModuleLib( void ) = default;
-    ~CModuleLib() = default;
+    CModuleLib( void );
+    ~CModuleLib();
 
-    extern "C" void Init( const moduleImport_t *pImport );
-    extern "C" void Shutdown( void );
+    void Init( void );
+    void Shutdown( void );
+	CModuleInfo *GetModule( const char *pName );
+	int ModuleCall( CModuleInfo *pModule, EModuleFuncId nCallId, uint32_t nArgs, ... );
 
-	extern "C" void ModuleCallFunc( nhandle_t hModule, uint32_t nFuncId );
-
-	//
-	// vm dynamic memory interface (not shared between vms)
-	//
-	extern "C" nhandle_t ModuleCreateBuffer( nhandle_t hModule, uint32_t nBytes );
-	extern "C" void ModuleReleaseBuffer( nhandle_t hBuffer );
-
-	//
-	// vm memory link interface
-	//
-	extern "C" void ModuleCreateLink( void );
+	// only for module_lib
+	CScriptBuilder *GetScriptBuilder( void );
+	asIScriptEngine *GetScriptEngine( void );
+	CContextMgr *GetContextManager( void );
 private:
-	extern "C" void LoadModule( const char *pModuleName );
+	void LoadModule( const char *pModuleName );
 
-	eastl::vector<CModuleInfo> m_LoadList;
-    CModuleMemoryAllocator m_ModuleAllocator;
+	UtlVector<CModuleInfo> m_LoadList;
+
+	CScriptBuilder *m_pScriptBuilder;
+	CContextMgr *m_pContextManager;
+	asIScriptEngine *m_pEngine;
 };
-
-void *Mem_Alloc( uint32_t nBytes );
-void Mem_Free( void *pBuffer );
-
-#ifdef GDR_DLLCOMPILE
-#undef new
-#undef delete
-GDR_INLINE void *operator new( size_t sz ) {
-	return Mem_Alloc( sz );
-}
-GDR_INLINE void *operator new[]( size_t sz ) {
-	return Mem_Alloc( sz );
-}
-GDR_INLINE void operator delete( void *ptr ) {
-	Mem_Free( ptr );
-}
-GDR_INLINE void operator delete[]( void *ptr ) {
-	Mem_Free( ptr );
-}
-#endif
 
 extern moduleImport_t moduleImport;
 
-GDR_EXPORT extern CModuleLib *g_pModuleLib;
+typedef CModuleLib *(*GetModuleAPI_t)( const moduleImport_t *, const renderExport_t *, version_t nGameVersion );
+CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *pExport, version_t nGameVersion );
+
+extern CModuleLib *g_pModuleLib;
+
+extern cvar_t *ml_debugMode;
 
 #endif

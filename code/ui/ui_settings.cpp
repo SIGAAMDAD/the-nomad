@@ -398,7 +398,7 @@ static void SettingsMenuPopup( void )
             SettingsMenu_ApplyGraphicsChanges();
             settings.confirmation = qfalse;
             settings.modified = qfalse;
-            VM_Call( sgvm, 0, SGAME_SAVE_SETTINGS );
+            g_pModuleLib->ModuleCall( sgvm, ModuleSaveConfiguration, 0 );
             ImGui::CloseCurrentPopup();
         }
     }
@@ -895,7 +895,7 @@ static void SettingsMenuGameplay_Draw( void )
     SettingsMenu_ExitChild( STATE_GAMEPLAY );
 
     if ( sgvm ) {
-        VM_Call( sgvm, 0, SGAME_DRAW_ADVANCED_SETTINGS );
+        g_pModuleLib->ModuleCall( sgvm, ModuleDrawConfiguration, 0 );
     }
 }
 

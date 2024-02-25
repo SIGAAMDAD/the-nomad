@@ -206,20 +206,20 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error(errorCo
 	if (code == ERR_DROP) {
 		Con_Printf( "********************\nERROR: %s\n********************\n",
 			com_errorMessage );
-		VM_Forced_Unload_Start();
+//		VM_Forced_Unload_Start();
 		Com_EndRedirect();
 		G_FlushMemory();
-		VM_Forced_Unload_Done();
+//		VM_Forced_Unload_Done();
 
 		com_errorEntered = qfalse;
 
 		Q_longjmp( abortframe, 1 );
 	} else { // ERR_FATAL
-		VM_Forced_Unload_Start();
+//		VM_Forced_Unload_Start();
 		G_ShutdownVMs();
 		G_ShutdownRenderer(REF_UNLOAD_DLL);
 		Com_EndRedirect();
-		VM_Forced_Unload_Done();
+//		VM_Forced_Unload_Done();
 	}
 
 	Com_Shutdown();
@@ -1396,9 +1396,9 @@ void Com_Quit_f( void ) {
 		// which would trigger an unload of active VM error.
 		// Sys_Quit will kill this process anyways, so
 		// a corrupt call stack makes no difference
-		VM_Forced_Unload_Start();
+//		VM_Forced_Unload_Start();
 		G_Shutdown(qtrue);
-		VM_Forced_Unload_Done();
+//		VM_Forced_Unload_Done();
 		Com_Shutdown();
 		FS_Shutdown( qtrue );
 	}
@@ -1574,12 +1574,12 @@ void Com_Init( char *commandLine )
 	Com_StartupVariable( "com_defaultcfg" );
 	Cvar_Get( "com_defaultcfg", NOMAD_CONFIG, CVAR_TEMP | CVAR_INIT );
 
-	Com_StartupVariable("vm_rtChecks");
-	vm_rtChecks = Cvar_Get("vm_rtChecks", "15", CVAR_INIT | CVAR_PROTECTED);
-	Cvar_CheckRange(vm_rtChecks, "0", "15", CVT_INT);
-	Cvar_SetDescription(vm_rtChecks,
-		"Runtime checks in compiled vm code, bitmask:\n 1 - program stack overflow\n" \
-		" 2 - opcode stack overflow\n 4 - jump target range\n 8 - data read/write range");
+//	Com_StartupVariable("vm_rtChecks");
+//	vm_rtChecks = Cvar_Get("vm_rtChecks", "15", CVAR_INIT | CVAR_PROTECTED);
+//	Cvar_CheckRange(vm_rtChecks, "0", "15", CVT_INT);
+//	Cvar_SetDescription(vm_rtChecks,
+//		"Runtime checks in compiled vm code, bitmask:\n 1 - program stack overflow\n" \
+//		" 2 - opcode stack overflow\n 4 - jump target range\n 8 - data read/write range");
 	
 	com_demo = Cvar_Get("com_demo", "0", CVAR_LATCH);
 
@@ -1660,7 +1660,7 @@ void Com_Init( char *commandLine )
 	Cmd_AddCommand( "exit", Com_Quit_f ); // really just added for convenience...
 	Cmd_AddCommand( "writecfg", Com_WriteConfig_f );
 
-	VM_Init();
+//	VM_Init();
 
 	G_Init();
 	G_StartHunkUsers();

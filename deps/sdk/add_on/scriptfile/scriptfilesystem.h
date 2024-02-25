@@ -17,15 +17,15 @@ BEGIN_AS_NAMESPACE
 class CScriptFileSystem
 {
 public:
-	CScriptFileSystem();
+	CScriptFileSystem( void );
 
-	void AddRef() const;
-	void Release() const;
+	void AddRef( void ) const;
+	void Release( void ) const;
 
 	// Sets the current path that should be used in other calls when using relative paths
 	// It can use relative paths too, so moving up a directory is used by passing in ".."
-	bool ChangeCurrentPath(const std::string &path);
-	std::string GetCurrentPath() const;
+	bool ChangeCurrentPath( const eastl::string &path );
+	eastl::string GetCurrentPath( void ) const;
 
 	// Returns true if the path is a directory. Input can be either a full path or a relative path.
 	// This method does not return the dirs '.' and '..'

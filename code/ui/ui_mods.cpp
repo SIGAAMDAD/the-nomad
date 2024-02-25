@@ -33,7 +33,6 @@ static modmenu_t mods;
 */
 static void ModsMenu_LoadMod( module_t *mod )
 {
-    mod->vm = VM_Create( VM_MOD, NULL, NULL, VMI_COMPILED, mod->name );
 }
 
 static void ModsMenu_Draw( void )
@@ -120,7 +119,7 @@ static void ModsMenu_LoadConfigs( void )
     mods.modNames = (char **)Hunk_Alloc( size, h_high );
     mods.modList = (module_t *)Hunk_Alloc( sizeof(*mods.modList) * mods.numMods, h_high );
 
-    modPtr = mods.modNames;
+    modPtr = (char *)mods.modNames;
     for ( i = 0; i < mods.numMods; i++ ) {
         mods.modNames[i] = modPtr;
         strcpy( mods.modNames[i], COM_SkipPath( fileList[i] ) );

@@ -10,8 +10,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-vm_t *sgvm;
-vm_t *uivm;
+CModuleLib *g_pModuleLib;
+CModuleInfo *sgvm;
 renderExport_t re;
 gameInfo_t gi;
 
@@ -425,6 +425,90 @@ static void G_InitRenderRef(void)
 	}
 
     re = *ret;
+}
+
+static void G_InitModuleLib( void )
+{
+    char dllName[MAX_OSPATH];
+    version_t gameVersion;
+    moduleImport_t import;
+
+    Con_Printf( "----- Initializing Module Library -----\n" );
+
+
+/*
+    Com_snprintf( dllName, sizeof(dllName), "thenomad_modulelib_" DLL_PREFIX DLL_EXT );
+    moduleLib = Sys_LoadDLL( dllName );
+    if ( !moduleLib ) {
+        N_Error( ERR_FATAL, "G_initModuleLib: failed to load %s", dllName );
+    }
+
+    GetModuleAPI = (GetModuleAPI_t)Sys_GetProcAddress( moduleLib, "InitModuleLib" );
+    if ( !GetModuleAPI ) {
+        N_Error( ERR_FATAL, "Couldn't load symbol InitModuleLib" );
+    }
+    */
+
+    gameVersion.m_nVersionMajor = NOMAD_VERSION;
+    gameVersion.m_nVersionUpdate = NOMAD_VERSION_UPDATE;
+    gameVersion.m_nVersionPatch = NOMAD_VERSION_PATCH;
+
+    import.Cmd_AddCommand = Cmd_AddCommand;
+    import.Cmd_RemoveCommand = Cmd_RemoveCommand;
+    import.Cmd_Argc = Cmd_Argc;
+    import.Cmd_Argv = Cmd_Argv;
+    import.Cmd_ArgsFrom = Cmd_ArgsFrom;
+    import.Printf = G_RefPrintf;
+    import.Error = N_Error;
+#ifdef _NOMAD_DEBUG
+    import.Hunk_AllocDebug = Hunk_AllocDebug;
+#else
+    import.Hunk_Alloc = Hunk_Alloc;
+#endif
+    import.Hunk_AllocateTempMemory = Hunk_AllocateTempMemory;
+    import.Hunk_FreeTempMemory = Hunk_FreeTempMemory;
+    import.Malloc = G_RefMalloc;
+    import.Realloc = G_RefRealloc;
+    import.Free = Z_Free;
+    import.FreeAll = G_RefFreeAll;
+    import.CopyString = CopyString;
+
+    import.Milliseconds = Sys_Milliseconds;
+
+    import.Key_IsDown = Key_IsDown;
+
+    import.FS_LoadFile = FS_LoadFile;
+    import.FS_FreeFile = FS_FreeFile;
+    import.FS_WriteFile = FS_WriteFile;
+    import.FS_FileExists = FS_FileExists;
+    import.FS_FreeFileList = FS_FreeFileList;
+    import.FS_ListFiles = FS_ListFiles;
+    import.FS_FOpenRead = FS_FOpenRead;
+    import.FS_FOpenWrite = FS_FOpenWrite;
+    import.FS_FClose = FS_FClose;
+
+    import.Cvar_Get = Cvar_Get;
+    import.Cvar_Set = Cvar_Set;
+    import.Cvar_Reset = Cvar_Reset;
+    import.Cvar_SetGroup = Cvar_SetGroup;
+    import.Cvar_CheckRange = Cvar_CheckRange;
+    import.Cvar_SetDescription = Cvar_SetDescription;
+    import.Cvar_VariableStringBuffer = Cvar_VariableStringBuffer;
+    import.Cvar_VariableString = Cvar_VariableString;
+    import.Cvar_VariableInteger = Cvar_VariableInteger;
+    import.Cvar_CheckGroup = Cvar_CheckGroup;
+    import.Cvar_ResetGroup = Cvar_ResetGroup;
+
+    import.Sys_LoadDLL = Sys_LoadDLL;
+    import.Sys_CloseDLL = Sys_CloseDLL;
+    import.Sys_GetProcAddress = Sys_GetProcAddress;
+
+    g_pModuleLib = InitModuleLib( &import, &re, gameVersion );
+    if ( !g_pModuleLib ) {
+        N_Error( ERR_FATAL, "InitModuleLib failed" );
+    }
+
+    Con_Printf( "-------------------------------\n" );
 }
 
 static void G_InitRenderer( void )

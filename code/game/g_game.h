@@ -4,16 +4,16 @@
 #pragma once
 
 #include "../engine/n_shared.h"
-#include "../sgame/sg_public.h"
 #include "../rendercommon/r_public.h"
 #include "../engine/gln_files.h"
 #if defined(__cplusplus)
+#include "../module_lib/module_public.h"
 #include "../engine/n_common.h"
 #include "../rendercommon/imgui.h"
-#include "g_vmimgui.h"
 #include "../engine/n_cvar.h"
 #include "../system/sys_timer.h"
 #include <SDL2/SDL.h>
+#include "../ui/ui_public.hpp"
 #endif
 
 typedef enum
@@ -45,6 +45,44 @@ typedef struct {
     int32_t numCheckpoints;
 } mapinfo_t;
 
+typedef struct linkEntity_s {
+    bbox_t bounds;
+    vec3_t origin;
+    uint32_t type;
+    uint32_t id;
+
+    struct linkEntity_s *next;
+    struct linkEntity_s *prev;
+} linkEntity_t;
+
+typedef struct {
+	vec3_t start;
+	vec3_t end;
+	vec3_t origin;
+    void *hitData;
+//	float speed;
+	float length;
+	float angle;
+    uint32_t flags; // unused for now
+} ray_t;
+
+typedef enum
+{
+    SG_LOADGAME,
+    SG_SAVEGAME,
+    SG_INACTIVE,
+    SG_IN_LEVEL,
+    SG_SHOW_LEVEL_STATS,
+} sgameState_t;
+
+typedef enum
+{
+    SGAME_INIT,
+    SGAME_SHUTDOWN,
+    SGAME_ON_LEVEL_START,
+    SGAME_ON_LEVEL_END,
+} sgameExport_t;
+
 enum
 {
     OCC_NORMY,
@@ -54,17 +92,6 @@ enum
     OCC_THANKSGIVING
 };
 
-#include "g_vmprocs.h"
-
-typedef struct usercmd_s {
-	int32_t			angles[3];
-	uint32_t		buttons;
-	byte			weapon;           // weapon 
-	int8_t	        forwardmove, rightmove, upmove;
-} usercmd_t;
-
-#if !defined(UI_HARD_LINKED) && !defined(SGAME_HARD_LINKED) && !defined(Q3_VM)
-
 typedef struct {
     mapinfo_t info;
 
@@ -72,8 +99,17 @@ typedef struct {
     maptile_t *tiles;
 } mapinfoReal_t;
 
-#include "../ui/ui_public.hpp"
-#include "../engine/vm_local.h"
+typedef enum
+{
+	ET_ITEM,
+	ET_WEAPON,
+	ET_MOB,
+	ET_BOT,
+	ET_WALL, // a tile with pre-determined collision physics
+	ET_PLAYR,
+	
+	NUMENTITYTYPES
+} entitytype_t;
 
 typedef struct {
     char **mapList;
@@ -292,7 +328,6 @@ void *GL_GetProcAddress( const char *name );
 void G_MouseEvent( int32_t dx, int32_t dy /*, int time*/ );
 void G_InitInput( void );
 void G_ShutdownInput( void );
-usercmd_t G_CreateNewCommand( void );
 
 extern qboolean key_overstrikeMode;
 
@@ -320,10 +355,9 @@ void G_InitSGame(void);
 void G_SGameRender(stereoFrame_t stereo);
 qboolean G_SGameCommand( void );
 
-extern vm_t *sgvm;
-extern vm_t *uivm;
-extern renderExport_t re;
+struct CModuleInfo;
 
-#endif
+extern CModuleInfo *sgvm;
+extern renderExport_t re;
 
 #endif

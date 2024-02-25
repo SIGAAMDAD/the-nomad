@@ -678,7 +678,7 @@ bool CGameArchive::Save( void )
 		return false;
 	}
 	
-	VM_Call( sgvm, 0, SGAME_SAVE_GAME );
+	g_pModuleLib->ModuleCall( sgvm, ModuleOnSaveGame, 0 );
 
 	partFiles = FS_ListFiles( va( "SaveData/%s/parts", Cvar_VariableString( "fs_basegame" ) ), ".prt", &nPartFiles );
 	
@@ -687,7 +687,7 @@ bool CGameArchive::Save( void )
 	header.gamedata.diff = (gamedif_t)Cvar_VariableInteger( "sg_difficulty" );
 
 	N_strncpyz( header.gamedata.bffName, Cvar_VariableString( "g_modname" ), sizeof(header.gamedata.bffName) );
-	header.gamedata.levelIndex = VM_Call( sgvm, 0, SGAME_GET_CURRENT_LEVEL_INDEX );
+	header.gamedata.levelIndex = g_pModuleLib->ModuleCall( sgvm, ModuleGetCurrentLevelIndex, 0 );
 	
 	header.validation.ident = IDENT;
 	header.validation.version.m_nVersionMajor = _NOMAD_VERSION;
@@ -794,7 +794,7 @@ bool CGameArchive::Load( const char *name )
 		N_Error( ERR_DROP, "CGameArchive::Load: attempted to load non-existing save file (... HOW?)" );
 	}
 
-	VM_Call( sgvm, 0, SGAME_LOAD_GAME );
+	g_pModuleLib->ModuleCall( sgvm, ModuleOnLoadGame, 0 );
 
 	return true;
 }

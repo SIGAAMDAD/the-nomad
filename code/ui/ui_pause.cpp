@@ -131,7 +131,7 @@ static void PauseMenu_Draw( void )
         }
         ImGui::TableNextRow();
         if (ui->Menu_Option( menu.checkpoint->value )) {
-            VM_Call( sgvm, 0, SGAME_REWIND_TO_LAST_CHECKPOINT );
+            g_pModuleLib->ModuleCall( sgvm, ModuleRewindToLastCheckpoint, 0 );
         }
         ImGui::TableNextRow();
         if (ui->Menu_Option( menu.settings->value )) {
@@ -142,8 +142,8 @@ static void PauseMenu_Draw( void )
             ui->SetState( STATE_MAIN );
             ui->SetActiveMenu( UI_MENU_MAIN );
             gi.mapLoaded = qfalse;
-            VM_Call( sgvm, 0, SGAME_ENDLEVEL );
-            VM_Call( sgvm, 0, SGAME_SHUTDOWN );
+            g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelEnd, 0 );
+            g_pModuleLib->ModuleCall( sgvm, ModuleShutdown, 0 );
             Cbuf_ExecuteText( EXEC_APPEND, "unloadworld\n" );
         }
     }

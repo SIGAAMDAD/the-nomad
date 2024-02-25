@@ -473,7 +473,7 @@ static void G_KeyDownEvent(uint32_t key, uint32_t time)
 		// escape always gets out of SGAME stuff
 		if ( Key_GetCatcher() & KEYCATCH_SGAME ) {
 			Key_SetCatcher( Key_GetCatcher() & ~KEYCATCH_SGAME );
-			VM_Call( sgvm, 1, SGAME_EVENT_HANDLING, SGAME_EVENT_NONE );
+//			VM_Call( sgvm, 1, SGAME_EVENT_HANDLING, SGAME_EVENT_NONE );
 			return;
 		}
 
@@ -488,7 +488,7 @@ static void G_KeyDownEvent(uint32_t key, uint32_t time)
 	} else if ( Key_GetCatcher() & KEYCATCH_UI ) {
 	} else if ( Key_GetCatcher() & KEYCATCH_SGAME ) {
 		if ( sgvm ) {
-			VM_Call( sgvm, 2, SGAME_KEY_EVENT, key, qtrue );
+			g_pModuleLib->ModuleCall( sgvm, ModuleOnKeyEvent, 2, key, qtrue );
 		}
 	} else {
 		// send the bound action
@@ -515,8 +515,8 @@ static void G_KeyUpEvent(uint32_t key, uint32_t time)
 	}
 	
 	if ( Key_GetCatcher() & KEYCATCH_SGAME ) {
-		if (sgvm) {
-			VM_Call( sgvm, 2, SGAME_KEY_EVENT, key, qfalse );
+		if ( sgvm ) {
+			g_pModuleLib->ModuleCall( sgvm, ModuleOnKeyEvent, 2, key, qfalse );
 		}
 	}
 	else {

@@ -1,5 +1,6 @@
 #include "g_game.h"
 #include "g_sound.h"
+#include "../engine/n_threads.h"
 
 #include <ALsoft/al.h>
 #include <ALsoft/alc.h>

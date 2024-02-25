@@ -6,8 +6,6 @@
 #include "../engine/n_shared.h"
 #include "../rendercommon/r_types.h"
 
-#ifdef _NOMAD_ENGINE
-
 typedef enum {
     REF_KEEP_CONTEXT, // don't destroy window and context, just deallocate buffers and shaders
     REF_KEEP_WINDOW, // destroy context, keep window
@@ -172,7 +170,5 @@ typedef struct {
 
 extern refimport_t ri;
 typedef renderExport_t *(GDR_DECL *GetRenderAPI_t)(uint32_t version, refimport_t *import);
-
-#endif
 
 #endif

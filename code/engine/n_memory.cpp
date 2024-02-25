@@ -1,6 +1,7 @@
 #include "n_shared.h"
 #include "n_common.h"
 #include "../game/g_game.h"
+#include "n_threads.h"
 
 /*
 ===============================
@@ -1224,7 +1225,7 @@ void Hunk_Clear(void)
 	hunk_temp = &hunk_high;
 
 	Con_Printf("Hunk_Clear: reset the hunk ok\n");
-	VM_Clear();
+//	VM_Clear();
 
 	hunkblocks = NULL;
 }

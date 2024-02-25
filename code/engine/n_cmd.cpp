@@ -2,6 +2,7 @@
 #include "n_common.h"
 #include "../game/g_game.h"
 #include "n_cvar.h"
+#include "n_threads.h"
 
 
 /*

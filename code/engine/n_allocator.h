@@ -228,6 +228,4 @@ public:
 	}
 };
 
-using tempBuffer = eastl::vector<char, CHunkTempAllocator>;
-
 #endif
