@@ -1,0 +1,16 @@
+-o "../../../nomadmain/vm/sgame.qvm"
+sg_main
+../sg_syscalls.asm
+sg_mem
+sg_level
+sg_entity
+sg_info
+sg_playr
+sg_items
+sg_mthink
+sg_cmds
+sg_draw
+sg_imgui
+sg_lib
+sg_math
+n_shared

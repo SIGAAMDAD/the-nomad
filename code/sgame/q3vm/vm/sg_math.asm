@@ -1,0 +1,3968 @@
+data
+export vec2_origin
+align 4
+LABELV vec2_origin
+byte 4 0
+byte 4 0
+export vec3_origin
+align 4
+LABELV vec3_origin
+byte 4 0
+byte 4 0
+skip 4
+export colorBlack
+align 4
+LABELV colorBlack
+byte 4 0
+byte 4 0
+byte 4 0
+byte 4 1065353216
+export colorRed
+align 4
+LABELV colorRed
+byte 4 1065353216
+byte 4 0
+byte 4 0
+byte 4 1065353216
+export colorGreen
+align 4
+LABELV colorGreen
+byte 4 0
+byte 4 1065353216
+byte 4 0
+byte 4 1065353216
+export colorBlue
+align 4
+LABELV colorBlue
+byte 4 0
+byte 4 0
+byte 4 1065353216
+byte 4 1065353216
+export colorYellow
+align 4
+LABELV colorYellow
+byte 4 1065353216
+byte 4 1065353216
+byte 4 0
+byte 4 1065353216
+export colorMagenta
+align 4
+LABELV colorMagenta
+byte 4 1065353216
+byte 4 0
+byte 4 1065353216
+byte 4 1065353216
+export colorCyan
+align 4
+LABELV colorCyan
+byte 4 0
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1065353216
+export colorWhite
+align 4
+LABELV colorWhite
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1065353216
+export colorLtGrey
+align 4
+LABELV colorLtGrey
+byte 4 1061158912
+byte 4 1061158912
+byte 4 1061158912
+byte 4 1065353216
+export colorMdGrey
+align 4
+LABELV colorMdGrey
+byte 4 1056964608
+byte 4 1056964608
+byte 4 1056964608
+byte 4 1065353216
+export colorDkGrey
+align 4
+LABELV colorDkGrey
+byte 4 1048576000
+byte 4 1048576000
+byte 4 1048576000
+byte 4 1065353216
+export g_color_table
+align 4
+LABELV g_color_table
+byte 4 0
+byte 4 0
+byte 4 0
+byte 4 1065353216
+byte 4 1065353216
+byte 4 0
+byte 4 0
+byte 4 1065353216
+byte 4 0
+byte 4 1065353216
+byte 4 0
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1065353216
+byte 4 0
+byte 4 1065353216
+byte 4 1045220557
+byte 4 1045220557
+byte 4 1065353216
+byte 4 1065353216
+byte 4 0
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1065353216
+byte 4 0
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1056964608
+byte 4 0
+byte 4 1065353216
+byte 4 1058642330
+byte 4 1058642330
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1065353216
+byte 4 0
+byte 4 0
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1049178302
+byte 4 0
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1056964608
+byte 4 0
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1060857761
+byte 4 0
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1065353216
+byte 4 0
+byte 4 1065353216
+byte 4 1060857761
+byte 4 1065353216
+byte 4 0
+byte 4 1065353216
+byte 4 1056964608
+byte 4 1065353216
+byte 4 0
+byte 4 1065353216
+byte 4 1049178302
+byte 4 1065353216
+byte 4 0
+byte 4 1065353216
+byte 4 0
+byte 4 1065353216
+byte 4 0
+byte 4 1065353216
+byte 4 0
+byte 4 1065353216
+byte 4 1049178302
+byte 4 1065353216
+byte 4 0
+byte 4 1065353216
+byte 4 1056964608
+byte 4 1065353216
+byte 4 0
+byte 4 1065353216
+byte 4 1060857761
+byte 4 1065353216
+byte 4 0
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1065353216
+byte 4 0
+byte 4 1060857761
+byte 4 1065353216
+byte 4 1065353216
+byte 4 0
+byte 4 1056964608
+byte 4 1065353216
+byte 4 1065353216
+byte 4 0
+byte 4 1049178302
+byte 4 1065353216
+byte 4 1065353216
+byte 4 0
+byte 4 0
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1049178302
+byte 4 0
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1056964608
+byte 4 0
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1060857761
+byte 4 0
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1065353216
+byte 4 0
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1065353216
+byte 4 0
+byte 4 1060857761
+byte 4 1065353216
+byte 4 1065353216
+byte 4 0
+byte 4 1056964608
+byte 4 1065353216
+byte 4 1065353216
+byte 4 0
+byte 4 1049178302
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1065353216
+byte 4 1056964608
+byte 4 1056964608
+byte 4 1056964608
+byte 4 1065353216
+skip 448
+export ColorIndexFromChar
+code
+proc ColorIndexFromChar 12 0
+ADDRFP4 0
+ADDRFP4 0
+INDIRI4
+CVII1 4
+ASGNI1
+file "../sg_math.c"
+line 66
+;1:#include "sg_local.h"
+;2:
+;3:
+;4:const vec2_t vec2_origin = {0, 0};
+;5:const vec3_t vec3_origin = {0, 0};
+;6:
+;7:const vec4_t		colorBlack	= {0, 0, 0, 1};
+;8:const vec4_t		colorRed	= {1, 0, 0, 1};
+;9:const vec4_t		colorGreen	= {0, 1, 0, 1};
+;10:const vec4_t		colorBlue	= {0, 0, 1, 1};
+;11:const vec4_t		colorYellow	= {1, 1, 0, 1};
+;12:const vec4_t		colorMagenta= {1, 0, 1, 1};
+;13:const vec4_t		colorCyan	= {0, 1, 1, 1};
+;14:const vec4_t		colorWhite	= {1, 1, 1, 1};
+;15:const vec4_t		colorLtGrey	= {0.75, 0.75, 0.75, 1};
+;16:const vec4_t		colorMdGrey	= {0.5, 0.5, 0.5, 1};
+;17:const vec4_t		colorDkGrey	= {0.25, 0.25, 0.25, 1};
+;18:
+;19:// actually there are 35 colors but we want to use bitmask safely
+;20:const vec4_t g_color_table[ 64 ] = {
+;21:
+;22:	{0.0f, 0.0f, 0.0f, 1.0f},
+;23:	{1.0f, 0.0f, 0.0f, 1.0f},
+;24:	{0.0f, 1.0f, 0.0f, 1.0f},
+;25:	{1.0f, 1.0f, 0.0f, 1.0f},
+;26:	{0.2f, 0.2f, 1.0f, 1.0f}, //{0.0, 0.0, 1.0, 1.0},
+;27:	{0.0f, 1.0f, 1.0f, 1.0f},
+;28:	{1.0f, 0.0f, 1.0f, 1.0f},
+;29:	{1.0f, 1.0f, 1.0f, 1.0f},
+;30:
+;31:	// extended color codes from CPMA/CNQ3:
+;32:	{ 1.00000f, 0.50000f, 0.00000f, 1.00000f },	// 8
+;33:	{ 0.60000f, 0.60000f, 1.00000f, 1.00000f },	// 9
+;34:
+;35:	// CPMA's alphabet rainbow
+;36:	{ 1.00000f, 0.00000f, 0.00000f, 1.00000f },	// a
+;37:	{ 1.00000f, 0.26795f, 0.00000f, 1.00000f },	// b
+;38:	{ 1.00000f, 0.50000f, 0.00000f, 1.00000f },	// c
+;39:	{ 1.00000f, 0.73205f, 0.00000f, 1.00000f },	// d
+;40:	{ 1.00000f, 1.00000f, 0.00000f, 1.00000f },	// e
+;41:	{ 0.73205f, 1.00000f, 0.00000f, 1.00000f },	// f
+;42:	{ 0.50000f, 1.00000f, 0.00000f, 1.00000f },	// g
+;43:	{ 0.26795f, 1.00000f, 0.00000f, 1.00000f },	// h
+;44:	{ 0.00000f, 1.00000f, 0.00000f, 1.00000f },	// i
+;45:	{ 0.00000f, 1.00000f, 0.26795f, 1.00000f },	// j
+;46:	{ 0.00000f, 1.00000f, 0.50000f, 1.00000f },	// k
+;47:	{ 0.00000f, 1.00000f, 0.73205f, 1.00000f },	// l
+;48:	{ 0.00000f, 1.00000f, 1.00000f, 1.00000f },	// m
+;49:	{ 0.00000f, 0.73205f, 1.00000f, 1.00000f },	// n
+;50:	{ 0.00000f, 0.50000f, 1.00000f, 1.00000f },	// o
+;51:	{ 0.00000f, 0.26795f, 1.00000f, 1.00000f },	// p
+;52:	{ 0.00000f, 0.00000f, 1.00000f, 1.00000f },	// q
+;53:	{ 0.26795f, 0.00000f, 1.00000f, 1.00000f },	// r
+;54:	{ 0.50000f, 0.00000f, 1.00000f, 1.00000f },	// s
+;55:	{ 0.73205f, 0.00000f, 1.00000f, 1.00000f },	// t
+;56:	{ 1.00000f, 0.00000f, 1.00000f, 1.00000f },	// u
+;57:	{ 1.00000f, 0.00000f, 0.73205f, 1.00000f },	// v
+;58:	{ 1.00000f, 0.00000f, 0.50000f, 1.00000f },	// w
+;59:	{ 1.00000f, 0.00000f, 0.26795f, 1.00000f },	// x
+;60:	{ 1.0, 1.0, 1.0, 1.0 }, // y, white, duped so all colors can be expressed with this palette
+;61:	{ 0.5, 0.5, 0.5, 1.0 }, // z, grey
+;62:};
+;63:
+;64:
+;65:int ColorIndexFromChar( char ccode )
+;66:{
+line 67
+;67:	if ( ccode >= '0' && ccode <= '9' ) {
+ADDRLP4 0
+ADDRFP4 0
+INDIRI1
+CVII4 1
+ASGNI4
+ADDRLP4 0
+INDIRI4
+CNSTI4 48
+LTI4 $90
+ADDRLP4 0
+INDIRI4
+CNSTI4 57
+GTI4 $90
+line 68
+;68:		return ( ccode - '0' );
+ADDRFP4 0
+INDIRI1
+CVII4 1
+CNSTI4 48
+SUBI4
+RETI4
+ADDRGP4 $89
+JUMPV
+LABELV $90
+line 70
+;69:	}
+;70:	else if ( ccode >= 'a' && ccode <= 'z' ) {
+ADDRLP4 4
+ADDRFP4 0
+INDIRI1
+CVII4 1
+ASGNI4
+ADDRLP4 4
+INDIRI4
+CNSTI4 97
+LTI4 $92
+ADDRLP4 4
+INDIRI4
+CNSTI4 122
+GTI4 $92
+line 71
+;71:		return ( ccode - 'a' + 10 );
+ADDRFP4 0
+INDIRI1
+CVII4 1
+CNSTI4 97
+SUBI4
+CNSTI4 10
+ADDI4
+RETI4
+ADDRGP4 $89
+JUMPV
+LABELV $92
+line 73
+;72:	}
+;73:	else if ( ccode >= 'A' && ccode <= 'Z' ) {
+ADDRLP4 8
+ADDRFP4 0
+INDIRI1
+CVII4 1
+ASGNI4
+ADDRLP4 8
+INDIRI4
+CNSTI4 65
+LTI4 $94
+ADDRLP4 8
+INDIRI4
+CNSTI4 90
+GTI4 $94
+line 74
+;74:		return ( ccode - 'A' + 10 );
+ADDRFP4 0
+INDIRI1
+CVII4 1
+CNSTI4 65
+SUBI4
+CNSTI4 10
+ADDI4
+RETI4
+ADDRGP4 $89
+JUMPV
+LABELV $94
+line 76
+;75:	}
+;76:	else {
+line 77
+;77:		return  ColorIndex( S_COLOR_WHITE );
+CNSTI4 7
+RETI4
+LABELV $89
+endproc ColorIndexFromChar 12 0
+export Q_rand
+proc Q_rand 4 0
+line 81
+;78:	}
+;79:}
+;80:
+;81:int		Q_rand( int *seed ) {
+line 82
+;82:	*seed = (69069 * *seed + 1);
+ADDRLP4 0
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 0
+INDIRP4
+ADDRLP4 0
+INDIRP4
+INDIRI4
+CNSTI4 69069
+MULI4
+CNSTI4 1
+ADDI4
+ASGNI4
+line 83
+;83:	return *seed;
+ADDRFP4 0
+INDIRP4
+INDIRI4
+RETI4
+LABELV $96
+endproc Q_rand 4 0
+export Q_random
+proc Q_random 4 4
+line 86
+;84:}
+;85:
+;86:float	Q_random( int *seed ) {
+line 87
+;87:	return ( Q_rand( seed ) & 0xffff ) / (float)0x10000;
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRLP4 0
+ADDRGP4 Q_rand
+CALLI4
+ASGNI4
+ADDRLP4 0
+INDIRI4
+CNSTI4 65535
+BANDI4
+CVIF4 4
+CNSTF4 931135488
+MULF4
+RETF4
+LABELV $97
+endproc Q_random 4 4
+export Q_crandom
+proc Q_crandom 4 4
+line 90
+;88:}
+;89:
+;90:float	Q_crandom( int *seed ) {
+line 91
+;91:	return 2.0 * ( Q_random( seed ) - 0.5 );
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRLP4 0
+ADDRGP4 Q_random
+CALLF4
+ASGNF4
+ADDRLP4 0
+INDIRF4
+CNSTF4 1056964608
+SUBF4
+CNSTF4 1073741824
+MULF4
+RETF4
+LABELV $98
+endproc Q_crandom 4 4
+export ClampChar
+proc ClampChar 0 0
+line 96
+;92:}
+;93:
+;94://=======================================================
+;95:
+;96:signed char ClampChar( int i ) {
+line 97
+;97:	if ( i < -128 ) {
+ADDRFP4 0
+INDIRI4
+CNSTI4 -128
+GEI4 $100
+line 98
+;98:		return -128;
+CNSTI4 -128
+RETI4
+ADDRGP4 $99
+JUMPV
+LABELV $100
+line 100
+;99:	}
+;100:	if ( i > 127 ) {
+ADDRFP4 0
+INDIRI4
+CNSTI4 127
+LEI4 $102
+line 101
+;101:		return 127;
+CNSTI4 127
+RETI4
+ADDRGP4 $99
+JUMPV
+LABELV $102
+line 103
+;102:	}
+;103:	return i;
+ADDRFP4 0
+INDIRI4
+CVII1 4
+CVII4 1
+RETI4
+LABELV $99
+endproc ClampChar 0 0
+export ClampCharMove
+proc ClampCharMove 0 0
+line 106
+;104:}
+;105:
+;106:signed char ClampCharMove( int i ) {
+line 107
+;107:	if ( i < -127 ) {
+ADDRFP4 0
+INDIRI4
+CNSTI4 -127
+GEI4 $105
+line 108
+;108:		return -127;
+CNSTI4 -127
+RETI4
+ADDRGP4 $104
+JUMPV
+LABELV $105
+line 110
+;109:	}
+;110:	if ( i > 127 ) {
+ADDRFP4 0
+INDIRI4
+CNSTI4 127
+LEI4 $107
+line 111
+;111:		return 127;
+CNSTI4 127
+RETI4
+ADDRGP4 $104
+JUMPV
+LABELV $107
+line 113
+;112:	}
+;113:	return i;
+ADDRFP4 0
+INDIRI4
+CVII1 4
+CVII4 1
+RETI4
+LABELV $104
+endproc ClampCharMove 0 0
+export ClampShort
+proc ClampShort 0 0
+line 116
+;114:}
+;115:
+;116:signed short ClampShort( int i ) {
+line 117
+;117:	if ( i < -32768 ) {
+ADDRFP4 0
+INDIRI4
+CNSTI4 -32768
+GEI4 $110
+line 118
+;118:		return -32768;
+CNSTI4 -32768
+RETI4
+ADDRGP4 $109
+JUMPV
+LABELV $110
+line 120
+;119:	}
+;120:	if ( i > 0x7fff ) {
+ADDRFP4 0
+INDIRI4
+CNSTI4 32767
+LEI4 $112
+line 121
+;121:		return 0x7fff;
+CNSTI4 32767
+RETI4
+ADDRGP4 $109
+JUMPV
+LABELV $112
+line 123
+;122:	}
+;123:	return i;
+ADDRFP4 0
+INDIRI4
+CVII2 4
+CVII4 2
+RETI4
+LABELV $109
+endproc ClampShort 0 0
+export ColorBytes3
+proc ColorBytes3 40 12
+line 126
+;124:}
+;125:
+;126:unsigned ColorBytes3( float r, float g, float b ) {
+line 132
+;127:    typedef struct {
+;128:        byte r, g, b;
+;129:    } u32color_t;
+;130:    u32color_t i;
+;131:
+;132:    memset( &i, 0, sizeof(i) );
+ADDRLP4 0
+ARGP4
+CNSTI4 0
+ARGI4
+CNSTU4 4
+ARGU4
+ADDRGP4 memset
+CALLI4
+pop
+line 135
+;133:
+;134:#if 1
+;135:    i.r = r * 255;
+ADDRLP4 8
+ADDRFP4 0
+INDIRF4
+CNSTF4 1132396544
+MULF4
+ASGNF4
+ADDRLP4 12
+CNSTF4 1325400064
+ASGNF4
+ADDRLP4 8
+INDIRF4
+ADDRLP4 12
+INDIRF4
+LTF4 $117
+ADDRLP4 4
+ADDRLP4 8
+INDIRF4
+ADDRLP4 12
+INDIRF4
+SUBF4
+CVFI4 4
+CVIU4 4
+CNSTU4 2147483648
+ADDU4
+ASGNU4
+ADDRGP4 $118
+JUMPV
+LABELV $117
+ADDRLP4 4
+ADDRLP4 8
+INDIRF4
+CVFI4 4
+CVIU4 4
+ASGNU4
+LABELV $118
+ADDRLP4 0
+ADDRLP4 4
+INDIRU4
+CVUU1 4
+ASGNU1
+line 136
+;136:    i.g = g * 255;
+ADDRLP4 20
+ADDRFP4 4
+INDIRF4
+CNSTF4 1132396544
+MULF4
+ASGNF4
+ADDRLP4 24
+CNSTF4 1325400064
+ASGNF4
+ADDRLP4 20
+INDIRF4
+ADDRLP4 24
+INDIRF4
+LTF4 $121
+ADDRLP4 16
+ADDRLP4 20
+INDIRF4
+ADDRLP4 24
+INDIRF4
+SUBF4
+CVFI4 4
+CVIU4 4
+CNSTU4 2147483648
+ADDU4
+ASGNU4
+ADDRGP4 $122
+JUMPV
+LABELV $121
+ADDRLP4 16
+ADDRLP4 20
+INDIRF4
+CVFI4 4
+CVIU4 4
+ASGNU4
+LABELV $122
+ADDRLP4 0+1
+ADDRLP4 16
+INDIRU4
+CVUU1 4
+ASGNU1
+line 137
+;137:    i.b = b * 255;
+ADDRLP4 32
+ADDRFP4 8
+INDIRF4
+CNSTF4 1132396544
+MULF4
+ASGNF4
+ADDRLP4 36
+CNSTF4 1325400064
+ASGNF4
+ADDRLP4 32
+INDIRF4
+ADDRLP4 36
+INDIRF4
+LTF4 $125
+ADDRLP4 28
+ADDRLP4 32
+INDIRF4
+ADDRLP4 36
+INDIRF4
+SUBF4
+CVFI4 4
+CVIU4 4
+CNSTU4 2147483648
+ADDU4
+ASGNU4
+ADDRGP4 $126
+JUMPV
+LABELV $125
+ADDRLP4 28
+ADDRLP4 32
+INDIRF4
+CVFI4 4
+CVIU4 4
+ASGNU4
+LABELV $126
+ADDRLP4 0+2
+ADDRLP4 28
+INDIRU4
+CVUU1 4
+ASGNU1
+line 144
+;138:#else
+;139:	( (byte *)&i )[0] = r * 255;
+;140:	( (byte *)&i )[1] = g * 255;
+;141:	( (byte *)&i )[2] = b * 255;
+;142:#endif
+;143:
+;144:    return *(unsigned *)&i;
+ADDRLP4 0
+INDIRU4
+RETU4
+LABELV $114
+endproc ColorBytes3 40 12
+export ColorBytes4
+proc ColorBytes4 52 0
+line 147
+;145:}
+;146:
+;147:unsigned ColorBytes4( float r, float g, float b, float a ) {
+line 154
+;148:    typedef struct {
+;149:        byte r, g, b, a;
+;150:    } u32color_t;
+;151:    u32color_t i;
+;152:
+;153:#if 1
+;154:    i.r = r * 255;
+ADDRLP4 8
+ADDRFP4 0
+INDIRF4
+CNSTF4 1132396544
+MULF4
+ASGNF4
+ADDRLP4 12
+CNSTF4 1325400064
+ASGNF4
+ADDRLP4 8
+INDIRF4
+ADDRLP4 12
+INDIRF4
+LTF4 $130
+ADDRLP4 4
+ADDRLP4 8
+INDIRF4
+ADDRLP4 12
+INDIRF4
+SUBF4
+CVFI4 4
+CVIU4 4
+CNSTU4 2147483648
+ADDU4
+ASGNU4
+ADDRGP4 $131
+JUMPV
+LABELV $130
+ADDRLP4 4
+ADDRLP4 8
+INDIRF4
+CVFI4 4
+CVIU4 4
+ASGNU4
+LABELV $131
+ADDRLP4 0
+ADDRLP4 4
+INDIRU4
+CVUU1 4
+ASGNU1
+line 155
+;155:    i.g = g * 255;
+ADDRLP4 20
+ADDRFP4 4
+INDIRF4
+CNSTF4 1132396544
+MULF4
+ASGNF4
+ADDRLP4 24
+CNSTF4 1325400064
+ASGNF4
+ADDRLP4 20
+INDIRF4
+ADDRLP4 24
+INDIRF4
+LTF4 $134
+ADDRLP4 16
+ADDRLP4 20
+INDIRF4
+ADDRLP4 24
+INDIRF4
+SUBF4
+CVFI4 4
+CVIU4 4
+CNSTU4 2147483648
+ADDU4
+ASGNU4
+ADDRGP4 $135
+JUMPV
+LABELV $134
+ADDRLP4 16
+ADDRLP4 20
+INDIRF4
+CVFI4 4
+CVIU4 4
+ASGNU4
+LABELV $135
+ADDRLP4 0+1
+ADDRLP4 16
+INDIRU4
+CVUU1 4
+ASGNU1
+line 156
+;156:    i.b = b * 255;
+ADDRLP4 32
+ADDRFP4 8
+INDIRF4
+CNSTF4 1132396544
+MULF4
+ASGNF4
+ADDRLP4 36
+CNSTF4 1325400064
+ASGNF4
+ADDRLP4 32
+INDIRF4
+ADDRLP4 36
+INDIRF4
+LTF4 $138
+ADDRLP4 28
+ADDRLP4 32
+INDIRF4
+ADDRLP4 36
+INDIRF4
+SUBF4
+CVFI4 4
+CVIU4 4
+CNSTU4 2147483648
+ADDU4
+ASGNU4
+ADDRGP4 $139
+JUMPV
+LABELV $138
+ADDRLP4 28
+ADDRLP4 32
+INDIRF4
+CVFI4 4
+CVIU4 4
+ASGNU4
+LABELV $139
+ADDRLP4 0+2
+ADDRLP4 28
+INDIRU4
+CVUU1 4
+ASGNU1
+line 157
+;157:    i.a = a * 255;
+ADDRLP4 44
+ADDRFP4 12
+INDIRF4
+CNSTF4 1132396544
+MULF4
+ASGNF4
+ADDRLP4 48
+CNSTF4 1325400064
+ASGNF4
+ADDRLP4 44
+INDIRF4
+ADDRLP4 48
+INDIRF4
+LTF4 $142
+ADDRLP4 40
+ADDRLP4 44
+INDIRF4
+ADDRLP4 48
+INDIRF4
+SUBF4
+CVFI4 4
+CVIU4 4
+CNSTU4 2147483648
+ADDU4
+ASGNU4
+ADDRGP4 $143
+JUMPV
+LABELV $142
+ADDRLP4 40
+ADDRLP4 44
+INDIRF4
+CVFI4 4
+CVIU4 4
+ASGNU4
+LABELV $143
+ADDRLP4 0+3
+ADDRLP4 40
+INDIRU4
+CVUU1 4
+ASGNU1
+line 165
+;158:#else
+;159:	( (byte *)&i )[0] = r * 255;
+;160:	( (byte *)&i )[1] = g * 255;
+;161:	( (byte *)&i )[2] = b * 255;
+;162:	( (byte *)&i )[3] = a * 255;
+;163:#endif
+;164:
+;165:    return *(unsigned *)&i;
+ADDRLP4 0
+INDIRU4
+RETU4
+LABELV $127
+endproc ColorBytes4 52 0
+export NormalizeColor
+proc NormalizeColor 4 12
+line 168
+;166:}
+;167:
+;168:float NormalizeColor( const vec3_t *in, vec3_t *out ) {
+line 171
+;169:	float	max;
+;170:	
+;171:	max = in->x;
+ADDRLP4 0
+ADDRFP4 0
+INDIRP4
+INDIRF4
+ASGNF4
+line 173
+;172:
+;173:	if ( in->y > max ) {
+ADDRFP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRLP4 0
+INDIRF4
+LEF4 $145
+line 174
+;174:		max = in->y;
+ADDRLP4 0
+ADDRFP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ASGNF4
+line 175
+;175:	}
+LABELV $145
+line 176
+;176:	if ( in->z > max ) {
+ADDRFP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ADDRLP4 0
+INDIRF4
+LEF4 $147
+line 177
+;177:		max = in->z;
+ADDRLP4 0
+ADDRFP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ASGNF4
+line 178
+;178:	}
+LABELV $147
+line 180
+;179:
+;180:	if ( !max ) {
+ADDRLP4 0
+INDIRF4
+CNSTF4 0
+NEF4 $149
+line 181
+;181:		memset( out, 0, sizeof(*out) );
+ADDRFP4 4
+INDIRP4
+ARGP4
+CNSTI4 0
+ARGI4
+CNSTU4 12
+ARGU4
+ADDRGP4 memset
+CALLI4
+pop
+line 182
+;182:	} else {
+ADDRGP4 $150
+JUMPV
+LABELV $149
+line 183
+;183:		out->x = in->x / max;
+ADDRFP4 4
+INDIRP4
+ADDRFP4 0
+INDIRP4
+INDIRF4
+ADDRLP4 0
+INDIRF4
+DIVF4
+ASGNF4
+line 184
+;184:		out->y = in->y / max;
+ADDRFP4 4
+INDIRP4
+CNSTI4 4
+ADDP4
+ADDRFP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRLP4 0
+INDIRF4
+DIVF4
+ASGNF4
+line 185
+;185:		out->z = in->z / max;
+ADDRFP4 4
+INDIRP4
+CNSTI4 8
+ADDP4
+ADDRFP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ADDRLP4 0
+INDIRF4
+DIVF4
+ASGNF4
+line 186
+;186:	}
+LABELV $150
+line 187
+;187:	return max;
+ADDRLP4 0
+INDIRF4
+RETF4
+LABELV $144
+endproc NormalizeColor 4 12
+export Q_rsqrt
+proc Q_rsqrt 20 0
+line 191
+;188:}
+;189:
+;190:float Q_rsqrt(float number)
+;191:{
+line 215
+;192:#ifdef USING_SSE2
+;193:	// does this cpu actually support sse2?
+;194:	if ( !( CPU_flags & CPU_SSE2 ) ) {
+;195:		long x;
+;196:    	float x2, y;
+;197:		const float threehalfs = 1.5F;
+;198:
+;199:    	x2 = number * 0.5F;
+;200:    	x = *(long *)&number;                    // evil floating point bit level hacking
+;201:    	x = 0x5f3759df - (x >> 1);               // what the fuck?
+;202:    	y = *(float *)&x;
+;203:    	y = y * ( threehalfs - ( x2 * y * y ) ); // 1st iteration
+;204:  	//	y = y * ( threehalfs - ( x2 * y * y ) ); // 2nd iteration, this can be removed
+;205:
+;206:    	return y;
+;207:	}
+;208:
+;209:	float ret;
+;210:	_mm_store_ss( &ret, _mm_rsqrt_ss( _mm_load_ss( &number ) ) );
+;211:	return ret;
+;212:#else
+;213:    long x;
+;214:    float x2, y;
+;215:	const float threehalfs = 1.5F;
+ADDRLP4 12
+CNSTF4 1069547520
+ASGNF4
+line 217
+;216:
+;217:    x2 = number * 0.5F;
+ADDRLP4 8
+ADDRFP4 0
+INDIRF4
+CNSTF4 1056964608
+MULF4
+ASGNF4
+line 218
+;218:    x = *(long *)&number;                    // evil floating point bit level hacking
+ADDRLP4 4
+ADDRFP4 0
+INDIRI4
+ASGNI4
+line 219
+;219:    x = 0x5f3759df - (x >> 1);               // what the fuck?
+ADDRLP4 4
+CNSTI4 1597463007
+ADDRLP4 4
+INDIRI4
+CNSTI4 1
+RSHI4
+SUBI4
+ASGNI4
+line 220
+;220:    y = *(float *)&x;
+ADDRLP4 0
+ADDRLP4 4
+INDIRF4
+ASGNF4
+line 221
+;221:    y = y * ( threehalfs - ( x2 * y * y ) ); // 1st iteration
+ADDRLP4 0
+ADDRLP4 0
+INDIRF4
+ADDRLP4 12
+INDIRF4
+ADDRLP4 8
+INDIRF4
+ADDRLP4 0
+INDIRF4
+MULF4
+ADDRLP4 0
+INDIRF4
+MULF4
+SUBF4
+MULF4
+ASGNF4
+line 224
+;222://  y = y * ( threehalfs - ( x2 * y * y ) ); // 2nd iteration, this can be removed
+;223:
+;224:    return y;
+ADDRLP4 0
+INDIRF4
+RETF4
+LABELV $151
+endproc Q_rsqrt 20 0
+export disBetweenOBJ
+proc disBetweenOBJ 12 8
+line 228
+;225:#endif
+;226:}
+;227:float disBetweenOBJ(const vec3_t *src, const vec3_t *tar)
+;228:{
+line 229
+;229:	if ( src->y == tar->y ) { // horizontal
+ADDRFP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRFP4 4
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+NEF4 $153
+line 230
+;230:		return src->x > tar->x ? ( src->x - tar->x ) : ( tar->x - src->x );
+ADDRFP4 0
+INDIRP4
+INDIRF4
+ADDRFP4 4
+INDIRP4
+INDIRF4
+LEF4 $156
+ADDRLP4 0
+ADDRFP4 0
+INDIRP4
+INDIRF4
+ADDRFP4 4
+INDIRP4
+INDIRF4
+SUBF4
+ASGNF4
+ADDRGP4 $157
+JUMPV
+LABELV $156
+ADDRLP4 0
+ADDRFP4 4
+INDIRP4
+INDIRF4
+ADDRFP4 0
+INDIRP4
+INDIRF4
+SUBF4
+ASGNF4
+LABELV $157
+ADDRLP4 0
+INDIRF4
+RETF4
+ADDRGP4 $152
+JUMPV
+LABELV $153
+line 231
+;231:    } else if ( src->x == tar->x ) { // vertical
+ADDRFP4 0
+INDIRP4
+INDIRF4
+ADDRFP4 4
+INDIRP4
+INDIRF4
+NEF4 $158
+line 232
+;232:		return src->y > tar->y ? ( src->y - tar->y ) : (tar->y - src->y );
+ADDRFP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRFP4 4
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+LEF4 $161
+ADDRLP4 0
+ADDRFP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRFP4 4
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+SUBF4
+ASGNF4
+ADDRGP4 $162
+JUMPV
+LABELV $161
+ADDRLP4 0
+ADDRFP4 4
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRFP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+SUBF4
+ASGNF4
+LABELV $162
+ADDRLP4 0
+INDIRF4
+RETF4
+ADDRGP4 $152
+JUMPV
+LABELV $158
+line 233
+;233:    } else { // diagonal
+line 234
+;234:		return sqrtf( ( pow( ( src->x - tar->x ), 2 ) + pow( ( src->y - tar->y ), 2 ) ) );
+ADDRFP4 0
+INDIRP4
+INDIRF4
+ADDRFP4 4
+INDIRP4
+INDIRF4
+SUBF4
+ARGF4
+CNSTI4 2
+ARGI4
+ADDRLP4 0
+ADDRGP4 pow
+CALLI4
+ASGNI4
+ADDRFP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRFP4 4
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+SUBF4
+ARGF4
+CNSTI4 2
+ARGI4
+ADDRLP4 4
+ADDRGP4 pow
+CALLI4
+ASGNI4
+ADDRLP4 0
+INDIRI4
+ADDRLP4 4
+INDIRI4
+ADDI4
+ARGI4
+ADDRLP4 8
+ADDRGP4 sqrtf
+CALLI4
+ASGNI4
+ADDRLP4 8
+INDIRI4
+CVIF4 4
+RETF4
+LABELV $152
+endproc disBetweenOBJ 12 8
+export CrossProduct
+proc CrossProduct 24 0
+line 240
+;235:    }
+;236:}
+;237:
+;238:#if !defined(__Q3_VM_MATH)
+;239:void CrossProduct(const vec3_t *v1, const vec3_t *v2, vec3_t *cross)
+;240:{
+line 241
+;241:	cross->x = v1->y*v2->z - v1->z*v2->y;
+ADDRLP4 0
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 4
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRFP4 8
+INDIRP4
+ADDRLP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRLP4 4
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+MULF4
+ADDRLP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ADDRLP4 4
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+MULF4
+SUBF4
+ASGNF4
+line 242
+;242:	cross->y = v1->z*v2->x - v1->x*v2->z;
+ADDRLP4 8
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 12
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRFP4 8
+INDIRP4
+CNSTI4 4
+ADDP4
+ADDRLP4 8
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ADDRLP4 12
+INDIRP4
+INDIRF4
+MULF4
+ADDRLP4 8
+INDIRP4
+INDIRF4
+ADDRLP4 12
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+MULF4
+SUBF4
+ASGNF4
+line 243
+;243:	cross->z = v1->x*v2->y - v1->y*v2->x;
+ADDRLP4 16
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 20
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRFP4 8
+INDIRP4
+CNSTI4 8
+ADDP4
+ADDRLP4 16
+INDIRP4
+INDIRF4
+ADDRLP4 20
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+MULF4
+ADDRLP4 16
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRLP4 20
+INDIRP4
+INDIRF4
+MULF4
+SUBF4
+ASGNF4
+line 244
+;244:}
+LABELV $163
+endproc CrossProduct 24 0
+export VectorLength
+proc VectorLength 12 4
+line 246
+;245:
+;246:vec_t VectorLength(const vec3_t *v) {
+line 247
+;247:	return (vec_t)sqrtf ( v->x*v->x + v->y*v->y + v->z*v->z );
+ADDRLP4 0
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 4
+ADDRLP4 0
+INDIRP4
+INDIRF4
+ASGNF4
+ADDRLP4 4
+INDIRF4
+ADDRLP4 4
+INDIRF4
+MULF4
+ADDRLP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRLP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+MULF4
+ADDF4
+ADDRLP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ADDRLP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+MULF4
+ADDF4
+ARGF4
+ADDRLP4 8
+ADDRGP4 sqrtf
+CALLI4
+ASGNI4
+ADDRLP4 8
+INDIRI4
+CVIF4 4
+RETF4
+LABELV $164
+endproc VectorLength 12 4
+export RadiusFromBounds
+proc RadiusFromBounds 60 4
+line 256
+;248:}
+;249:#endif
+;250:
+;251:/*
+;252:=================
+;253:RadiusFromBounds
+;254:=================
+;255:*/
+;256:float RadiusFromBounds( const bbox_t *bounds ) {
+line 260
+;257:	vec3_t	corner;
+;258:	float	a, b;
+;259:
+;260:    a = fabs( bounds->mins.x );
+ADDRFP4 0
+INDIRP4
+INDIRF4
+ARGF4
+ADDRLP4 20
+ADDRGP4 fabs
+CALLI4
+ASGNI4
+ADDRLP4 0
+ADDRLP4 20
+INDIRI4
+CVIF4 4
+ASGNF4
+line 261
+;261:    b = fabs( bounds->maxs.x );
+ADDRFP4 0
+INDIRP4
+CNSTI4 12
+ADDP4
+INDIRF4
+ARGF4
+ADDRLP4 24
+ADDRGP4 fabs
+CALLI4
+ASGNI4
+ADDRLP4 4
+ADDRLP4 24
+INDIRI4
+CVIF4 4
+ASGNF4
+line 262
+;262:    corner.x = a > b ? a : b;
+ADDRLP4 0
+INDIRF4
+ADDRLP4 4
+INDIRF4
+LEF4 $167
+ADDRLP4 28
+ADDRLP4 0
+INDIRF4
+ASGNF4
+ADDRGP4 $168
+JUMPV
+LABELV $167
+ADDRLP4 28
+ADDRLP4 4
+INDIRF4
+ASGNF4
+LABELV $168
+ADDRLP4 8
+ADDRLP4 28
+INDIRF4
+ASGNF4
+line 264
+;263:
+;264:    a = fabs( bounds->mins.y );
+ADDRFP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ARGF4
+ADDRLP4 32
+ADDRGP4 fabs
+CALLI4
+ASGNI4
+ADDRLP4 0
+ADDRLP4 32
+INDIRI4
+CVIF4 4
+ASGNF4
+line 265
+;265:    b = fabs( bounds->maxs.y );
+ADDRFP4 0
+INDIRP4
+CNSTI4 16
+ADDP4
+INDIRF4
+ARGF4
+ADDRLP4 36
+ADDRGP4 fabs
+CALLI4
+ASGNI4
+ADDRLP4 4
+ADDRLP4 36
+INDIRI4
+CVIF4 4
+ASGNF4
+line 266
+;266:    corner.y = a > b ? a : b;
+ADDRLP4 0
+INDIRF4
+ADDRLP4 4
+INDIRF4
+LEF4 $171
+ADDRLP4 40
+ADDRLP4 0
+INDIRF4
+ASGNF4
+ADDRGP4 $172
+JUMPV
+LABELV $171
+ADDRLP4 40
+ADDRLP4 4
+INDIRF4
+ASGNF4
+LABELV $172
+ADDRLP4 8+4
+ADDRLP4 40
+INDIRF4
+ASGNF4
+line 268
+;267:
+;268:    a = fabs( bounds->mins.z );
+ADDRFP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ARGF4
+ADDRLP4 44
+ADDRGP4 fabs
+CALLI4
+ASGNI4
+ADDRLP4 0
+ADDRLP4 44
+INDIRI4
+CVIF4 4
+ASGNF4
+line 269
+;269:    b = fabs( bounds->maxs.z );
+ADDRFP4 0
+INDIRP4
+CNSTI4 20
+ADDP4
+INDIRF4
+ARGF4
+ADDRLP4 48
+ADDRGP4 fabs
+CALLI4
+ASGNI4
+ADDRLP4 4
+ADDRLP4 48
+INDIRI4
+CVIF4 4
+ASGNF4
+line 270
+;270:    corner.z = a > b ? a : b;
+ADDRLP4 0
+INDIRF4
+ADDRLP4 4
+INDIRF4
+LEF4 $175
+ADDRLP4 52
+ADDRLP4 0
+INDIRF4
+ASGNF4
+ADDRGP4 $176
+JUMPV
+LABELV $175
+ADDRLP4 52
+ADDRLP4 4
+INDIRF4
+ASGNF4
+LABELV $176
+ADDRLP4 8+8
+ADDRLP4 52
+INDIRF4
+ASGNF4
+line 272
+;271:
+;272:	return VectorLength( &corner );
+ADDRLP4 8
+ARGP4
+ADDRLP4 56
+ADDRGP4 VectorLength
+CALLF4
+ASGNF4
+ADDRLP4 56
+INDIRF4
+RETF4
+LABELV $165
+endproc RadiusFromBounds 60 4
+export VectorCompare
+proc VectorCompare 8 0
+line 275
+;273:}
+;274:
+;275:int VectorCompare( const vec3_t *a, const vec3_t *b ) {
+line 276
+;276:	if ( a->x != b->x || a->y != b->y || a->z != b->z ) {
+ADDRLP4 0
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 4
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRLP4 0
+INDIRP4
+INDIRF4
+ADDRLP4 4
+INDIRP4
+INDIRF4
+NEF4 $181
+ADDRLP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRLP4 4
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+NEF4 $181
+ADDRLP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ADDRLP4 4
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+EQF4 $178
+LABELV $181
+line 277
+;277:		return 0;
+CNSTI4 0
+RETI4
+ADDRGP4 $177
+JUMPV
+LABELV $178
+line 279
+;278:	}
+;279:	return 1;
+CNSTI4 1
+RETI4
+LABELV $177
+endproc VectorCompare 8 0
+export ClearBounds
+proc ClearBounds 16 0
+line 282
+;280:}
+;281:
+;282:void ClearBounds( bbox_t *bounds ) {
+line 283
+;283:	bounds->mins.x = bounds->mins.y = bounds->mins.z = 99999;
+ADDRLP4 0
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 4
+CNSTF4 1203982208
+ASGNF4
+ADDRLP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+ADDRLP4 4
+INDIRF4
+ASGNF4
+ADDRLP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+ADDRLP4 4
+INDIRF4
+ASGNF4
+ADDRLP4 0
+INDIRP4
+ADDRLP4 4
+INDIRF4
+ASGNF4
+line 284
+;284:	bounds->maxs.x = bounds->maxs.y = bounds->maxs.z = -99999;
+ADDRLP4 8
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 12
+CNSTF4 3351465856
+ASGNF4
+ADDRLP4 8
+INDIRP4
+CNSTI4 20
+ADDP4
+ADDRLP4 12
+INDIRF4
+ASGNF4
+ADDRLP4 8
+INDIRP4
+CNSTI4 16
+ADDP4
+ADDRLP4 12
+INDIRF4
+ASGNF4
+ADDRLP4 8
+INDIRP4
+CNSTI4 12
+ADDP4
+ADDRLP4 12
+INDIRF4
+ASGNF4
+line 285
+;285:}
+LABELV $182
+endproc ClearBounds 16 0
+export AddPointToBounds
+proc AddPointToBounds 0 0
+line 287
+;286:
+;287:void AddPointToBounds( const vec3_t *v, bbox_t *bounds ) {
+line 288
+;288:	if ( v->x < bounds->mins.x ) {
+ADDRFP4 0
+INDIRP4
+INDIRF4
+ADDRFP4 4
+INDIRP4
+INDIRF4
+GEF4 $184
+line 289
+;289:		bounds->mins.x = v->x;
+ADDRFP4 4
+INDIRP4
+ADDRFP4 0
+INDIRP4
+INDIRF4
+ASGNF4
+line 290
+;290:	}
+LABELV $184
+line 291
+;291:	if ( v->x > bounds->maxs.x ) {
+ADDRFP4 0
+INDIRP4
+INDIRF4
+ADDRFP4 4
+INDIRP4
+CNSTI4 12
+ADDP4
+INDIRF4
+LEF4 $186
+line 292
+;292:		bounds->maxs.x = v->x;
+ADDRFP4 4
+INDIRP4
+CNSTI4 12
+ADDP4
+ADDRFP4 0
+INDIRP4
+INDIRF4
+ASGNF4
+line 293
+;293:	}
+LABELV $186
+line 295
+;294:
+;295:	if ( v->y < bounds->mins.y ) {
+ADDRFP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRFP4 4
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+GEF4 $188
+line 296
+;296:		bounds->mins.y = v->y;
+ADDRFP4 4
+INDIRP4
+CNSTI4 4
+ADDP4
+ADDRFP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ASGNF4
+line 297
+;297:	}
+LABELV $188
+line 298
+;298:	if ( v->y > bounds->maxs.y ) {
+ADDRFP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRFP4 4
+INDIRP4
+CNSTI4 16
+ADDP4
+INDIRF4
+LEF4 $190
+line 299
+;299:		bounds->maxs.y = v->y;
+ADDRFP4 4
+INDIRP4
+CNSTI4 16
+ADDP4
+ADDRFP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ASGNF4
+line 300
+;300:	}
+LABELV $190
+line 302
+;301:
+;302:	if ( v->z < bounds->mins.z ) {
+ADDRFP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ADDRFP4 4
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+GEF4 $192
+line 303
+;303:		bounds->mins.z = v->z;
+ADDRFP4 4
+INDIRP4
+CNSTI4 8
+ADDP4
+ADDRFP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ASGNF4
+line 304
+;304:	}
+LABELV $192
+line 305
+;305:	if ( v->z > bounds->maxs.z ) {
+ADDRFP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ADDRFP4 4
+INDIRP4
+CNSTI4 20
+ADDP4
+INDIRF4
+LEF4 $194
+line 306
+;306:		bounds->maxs.z = v->z;
+ADDRFP4 4
+INDIRP4
+CNSTI4 20
+ADDP4
+ADDRFP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ASGNF4
+line 307
+;307:	}
+LABELV $194
+line 308
+;308:}
+LABELV $183
+endproc AddPointToBounds 0 0
+export BoundsIntersect
+proc BoundsIntersect 8 0
+line 311
+;309:
+;310:qboolean BoundsIntersect( const bbox_t *a, const bbox_t *b )
+;311:{
+line 312
+;312:    if ( a->maxs.x < b->mins.x ||
+ADDRLP4 0
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 4
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRLP4 0
+INDIRP4
+CNSTI4 12
+ADDP4
+INDIRF4
+ADDRLP4 4
+INDIRP4
+INDIRF4
+LTF4 $203
+ADDRLP4 0
+INDIRP4
+CNSTI4 16
+ADDP4
+INDIRF4
+ADDRLP4 4
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+LTF4 $203
+ADDRLP4 0
+INDIRP4
+CNSTI4 20
+ADDP4
+INDIRF4
+ADDRLP4 4
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+LTF4 $203
+ADDRLP4 0
+INDIRP4
+INDIRF4
+ADDRLP4 4
+INDIRP4
+CNSTI4 12
+ADDP4
+INDIRF4
+GTF4 $203
+ADDRLP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRLP4 4
+INDIRP4
+CNSTI4 16
+ADDP4
+INDIRF4
+GTF4 $203
+ADDRLP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ADDRLP4 4
+INDIRP4
+CNSTI4 20
+ADDP4
+INDIRF4
+LEF4 $197
+LABELV $203
+line 318
+;313:        a->maxs.y < b->mins.y ||
+;314:        a->maxs.z < b->mins.z ||
+;315:        a->mins.x > b->maxs.x ||
+;316:        a->mins.y > b->maxs.y || 
+;317:        a->mins.z > b->maxs.z )
+;318:    {
+line 319
+;319:        return qfalse;
+CNSTI4 0
+RETI4
+ADDRGP4 $196
+JUMPV
+LABELV $197
+line 321
+;320:    }
+;321:	return qtrue;
+CNSTI4 1
+RETI4
+LABELV $196
+endproc BoundsIntersect 8 0
+export BoundsIntersectSphere
+proc BoundsIntersectSphere 16 0
+line 327
+;322:}
+;323:
+;324:
+;325:qboolean BoundsIntersectSphere( const bbox_t *box,
+;326:		const vec3_t *origin, vec_t radius )
+;327:{
+line 328
+;328:	if ( origin->x - radius > box->maxs.x ||
+ADDRLP4 0
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRLP4 4
+ADDRLP4 0
+INDIRP4
+INDIRF4
+ASGNF4
+ADDRLP4 8
+ADDRFP4 8
+INDIRF4
+ASGNF4
+ADDRLP4 12
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 4
+INDIRF4
+ADDRLP4 8
+INDIRF4
+SUBF4
+ADDRLP4 12
+INDIRP4
+CNSTI4 12
+ADDP4
+INDIRF4
+GTF4 $211
+ADDRLP4 4
+INDIRF4
+ADDRLP4 8
+INDIRF4
+ADDF4
+ADDRLP4 12
+INDIRP4
+INDIRF4
+LTF4 $211
+ADDRLP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRLP4 8
+INDIRF4
+SUBF4
+ADDRLP4 12
+INDIRP4
+CNSTI4 16
+ADDP4
+INDIRF4
+GTF4 $211
+ADDRLP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRLP4 8
+INDIRF4
+ADDF4
+ADDRLP4 12
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+LTF4 $211
+ADDRLP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ADDRLP4 8
+INDIRF4
+SUBF4
+ADDRLP4 12
+INDIRP4
+CNSTI4 20
+ADDP4
+INDIRF4
+GTF4 $211
+ADDRLP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ADDRLP4 8
+INDIRF4
+ADDF4
+ADDRLP4 12
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+GEF4 $205
+LABELV $211
+line 334
+;329:		origin->x + radius < box->mins.x ||
+;330:		origin->y - radius > box->maxs.y ||
+;331:		origin->y + radius < box->mins.y ||
+;332:		origin->z - radius > box->maxs.z ||
+;333:		origin->z + radius < box->mins.z)
+;334:	{
+line 335
+;335:		return qfalse;
+CNSTI4 0
+RETI4
+ADDRGP4 $204
+JUMPV
+LABELV $205
+line 338
+;336:	}
+;337:
+;338:	return qtrue;
+CNSTI4 1
+RETI4
+LABELV $204
+endproc BoundsIntersectSphere 16 0
+export BoundsIntersectPoint
+proc BoundsIntersectPoint 12 0
+line 343
+;339:}
+;340:
+;341:qboolean BoundsIntersectPoint( const bbox_t *box,
+;342:		const vec3_t *origin )
+;343:{
+line 344
+;344:	if ( origin->x > box->maxs.x ||
+ADDRLP4 0
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRLP4 4
+ADDRLP4 0
+INDIRP4
+INDIRF4
+ASGNF4
+ADDRLP4 8
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 4
+INDIRF4
+ADDRLP4 8
+INDIRP4
+CNSTI4 12
+ADDP4
+INDIRF4
+GTF4 $219
+ADDRLP4 4
+INDIRF4
+ADDRLP4 8
+INDIRP4
+INDIRF4
+LTF4 $219
+ADDRLP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRLP4 8
+INDIRP4
+CNSTI4 16
+ADDP4
+INDIRF4
+GTF4 $219
+ADDRLP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRLP4 8
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+LTF4 $219
+ADDRLP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ADDRLP4 8
+INDIRP4
+CNSTI4 20
+ADDP4
+INDIRF4
+GTF4 $219
+ADDRLP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ADDRLP4 8
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+GEF4 $213
+LABELV $219
+line 350
+;345:		origin->x < box->mins.x ||
+;346:		origin->y > box->maxs.y ||
+;347:		origin->y < box->mins.y ||
+;348:		origin->z > box->maxs.z ||
+;349:		origin->z < box->mins.z)
+;350:	{
+line 351
+;351:		return qfalse;
+CNSTI4 0
+RETI4
+ADDRGP4 $212
+JUMPV
+LABELV $213
+line 354
+;352:	}
+;353:
+;354:	return qtrue;
+CNSTI4 1
+RETI4
+LABELV $212
+endproc BoundsIntersectPoint 12 0
+export vec3_get
+proc vec3_get 4 4
+line 357
+;355:}
+;356:
+;357:float vec3_get( vec3_t *v, int i ) {
+line 358
+;358:	switch ( i ) {
+ADDRLP4 0
+ADDRFP4 4
+INDIRI4
+ASGNI4
+ADDRLP4 0
+INDIRI4
+CNSTI4 0
+EQI4 $223
+ADDRLP4 0
+INDIRI4
+CNSTI4 1
+EQI4 $224
+ADDRLP4 0
+INDIRI4
+CNSTI4 2
+EQI4 $225
+ADDRGP4 $221
+JUMPV
+LABELV $223
+line 359
+;359:	case 0: return v->x;
+ADDRFP4 0
+INDIRP4
+INDIRF4
+RETF4
+ADDRGP4 $220
+JUMPV
+LABELV $224
+line 360
+;360:	case 1: return v->y;
+ADDRFP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+RETF4
+ADDRGP4 $220
+JUMPV
+LABELV $225
+line 361
+;361:	case 2: return v->z;
+ADDRFP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+RETF4
+ADDRGP4 $220
+JUMPV
+LABELV $221
+line 363
+;362:	default:
+;363:		trap_Error( "vec3_get: bad index" );
+ADDRGP4 $226
+ARGP4
+ADDRGP4 trap_Error
+CALLV
+pop
+line 364
+;364:		break;
+LABELV $222
+line 365
+;365:	};
+line 366
+;366:	return 0;
+CNSTF4 0
+RETF4
+LABELV $220
+endproc vec3_get 4 4
+export VectorNormalize
+proc VectorNormalize 32 4
+line 369
+;367:}
+;368:
+;369:vec_t VectorNormalize( vec3_t *v ) {
+line 373
+;370:	// NOTE: TTimo - Apple G4 altivec source uses double?
+;371:	float	length, ilength;
+;372:
+;373:	length = v->x*v->x + v->y*v->y + v->z*v->z;
+ADDRLP4 8
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 12
+ADDRLP4 8
+INDIRP4
+INDIRF4
+ASGNF4
+ADDRLP4 0
+ADDRLP4 12
+INDIRF4
+ADDRLP4 12
+INDIRF4
+MULF4
+ADDRLP4 8
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRLP4 8
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+MULF4
+ADDF4
+ADDRLP4 8
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ADDRLP4 8
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+MULF4
+ADDF4
+ASGNF4
+line 375
+;374:
+;375:	if ( length ) {
+ADDRLP4 0
+INDIRF4
+CNSTF4 0
+EQF4 $228
+line 377
+;376:		/* writing it this way allows gcc to recognize that rsqrt can be used */
+;377:		ilength = 1/(float)sqrt (length);
+ADDRLP4 0
+INDIRF4
+ARGF4
+ADDRLP4 16
+ADDRGP4 sqrt
+CALLI4
+ASGNI4
+ADDRLP4 4
+CNSTF4 1065353216
+ADDRLP4 16
+INDIRI4
+CVIF4 4
+DIVF4
+ASGNF4
+line 379
+;378:		/* sqrt(length) = length * (1 / sqrt(length)) */
+;379:		length *= ilength;
+ADDRLP4 0
+ADDRLP4 0
+INDIRF4
+ADDRLP4 4
+INDIRF4
+MULF4
+ASGNF4
+line 380
+;380:		v->x *= ilength;
+ADDRLP4 20
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 20
+INDIRP4
+ADDRLP4 20
+INDIRP4
+INDIRF4
+ADDRLP4 4
+INDIRF4
+MULF4
+ASGNF4
+line 381
+;381:		v->y *= ilength;
+ADDRLP4 24
+ADDRFP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+ASGNP4
+ADDRLP4 24
+INDIRP4
+ADDRLP4 24
+INDIRP4
+INDIRF4
+ADDRLP4 4
+INDIRF4
+MULF4
+ASGNF4
+line 382
+;382:		v->z *= ilength;
+ADDRLP4 28
+ADDRFP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+ASGNP4
+ADDRLP4 28
+INDIRP4
+ADDRLP4 28
+INDIRP4
+INDIRF4
+ADDRLP4 4
+INDIRF4
+MULF4
+ASGNF4
+line 383
+;383:	}
+LABELV $228
+line 385
+;384:		
+;385:	return length;
+ADDRLP4 0
+INDIRF4
+RETF4
+LABELV $227
+endproc VectorNormalize 32 4
+export VectorNormalize2
+proc VectorNormalize2 20 12
+line 388
+;386:}
+;387:
+;388:vec_t VectorNormalize2( const vec3_t *v, vec3_t *out) {
+line 391
+;389:	float	length, ilength;
+;390:
+;391:	length = v->x*v->x + v->y*v->y + v->z*v->z;
+ADDRLP4 8
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 12
+ADDRLP4 8
+INDIRP4
+INDIRF4
+ASGNF4
+ADDRLP4 0
+ADDRLP4 12
+INDIRF4
+ADDRLP4 12
+INDIRF4
+MULF4
+ADDRLP4 8
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRLP4 8
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+MULF4
+ADDF4
+ADDRLP4 8
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ADDRLP4 8
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+MULF4
+ADDF4
+ASGNF4
+line 393
+;392:
+;393:	if (length) {
+ADDRLP4 0
+INDIRF4
+CNSTF4 0
+EQF4 $231
+line 395
+;394:		/* writing it this way allows gcc to recognize that rsqrt can be used */
+;395:		ilength = 1/(float)sqrt (length);
+ADDRLP4 0
+INDIRF4
+ARGF4
+ADDRLP4 16
+ADDRGP4 sqrt
+CALLI4
+ASGNI4
+ADDRLP4 4
+CNSTF4 1065353216
+ADDRLP4 16
+INDIRI4
+CVIF4 4
+DIVF4
+ASGNF4
+line 397
+;396:		/* sqrt(length) = length * (1 / sqrt(length)) */
+;397:		length *= ilength;
+ADDRLP4 0
+ADDRLP4 0
+INDIRF4
+ADDRLP4 4
+INDIRF4
+MULF4
+ASGNF4
+line 398
+;398:		out->x = v->x*ilength;
+ADDRFP4 4
+INDIRP4
+ADDRFP4 0
+INDIRP4
+INDIRF4
+ADDRLP4 4
+INDIRF4
+MULF4
+ASGNF4
+line 399
+;399:		out->y = v->y*ilength;
+ADDRFP4 4
+INDIRP4
+CNSTI4 4
+ADDP4
+ADDRFP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRLP4 4
+INDIRF4
+MULF4
+ASGNF4
+line 400
+;400:		out->z = v->z*ilength;
+ADDRFP4 4
+INDIRP4
+CNSTI4 8
+ADDP4
+ADDRFP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ADDRLP4 4
+INDIRF4
+MULF4
+ASGNF4
+line 401
+;401:	} else {
+ADDRGP4 $232
+JUMPV
+LABELV $231
+line 402
+;402:		memset( out, 0, sizeof(*out) );
+ADDRFP4 4
+INDIRP4
+ARGP4
+CNSTI4 0
+ARGI4
+CNSTU4 12
+ARGU4
+ADDRGP4 memset
+CALLI4
+pop
+line 403
+;403:	}
+LABELV $232
+line 405
+;404:		
+;405:	return length;
+ADDRLP4 0
+INDIRF4
+RETF4
+LABELV $230
+endproc VectorNormalize2 20 12
+export _VectorMA
+proc _VectorMA 0 0
+line 409
+;406:
+;407:}
+;408:
+;409:void _VectorMA( const vec3_t *veca, float scale, const vec3_t *vecb, vec3_t *vecc) {
+line 410
+;410:	vecc->x = veca->x + scale*vecb->x;
+ADDRFP4 12
+INDIRP4
+ADDRFP4 0
+INDIRP4
+INDIRF4
+ADDRFP4 4
+INDIRF4
+ADDRFP4 8
+INDIRP4
+INDIRF4
+MULF4
+ADDF4
+ASGNF4
+line 411
+;411:	vecc->y = veca->y + scale*vecb->y;
+ADDRFP4 12
+INDIRP4
+CNSTI4 4
+ADDP4
+ADDRFP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRFP4 4
+INDIRF4
+ADDRFP4 8
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+MULF4
+ADDF4
+ASGNF4
+line 412
+;412:	vecc->z = veca->z + scale*vecb->z;
+ADDRFP4 12
+INDIRP4
+CNSTI4 8
+ADDP4
+ADDRFP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ADDRFP4 4
+INDIRF4
+ADDRFP4 8
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+MULF4
+ADDF4
+ASGNF4
+line 413
+;413:}
+LABELV $233
+endproc _VectorMA 0 0
+export _DotProduct
+proc _DotProduct 8 0
+line 416
+;414:
+;415:
+;416:vec_t _DotProduct( const vec3_t *v1, const vec3_t *v2 ) {
+line 417
+;417:	return v1->x*v2->x + v1->y*v2->y + v1->z*v2->z;
+ADDRLP4 0
+ADDRFP4 0
+INDIRP4
+ASGNP4
+ADDRLP4 4
+ADDRFP4 4
+INDIRP4
+ASGNP4
+ADDRLP4 0
+INDIRP4
+INDIRF4
+ADDRLP4 4
+INDIRP4
+INDIRF4
+MULF4
+ADDRLP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRLP4 4
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+MULF4
+ADDF4
+ADDRLP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ADDRLP4 4
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+MULF4
+ADDF4
+RETF4
+LABELV $234
+endproc _DotProduct 8 0
+export _VectorSubtract
+proc _VectorSubtract 0 0
+line 420
+;418:}
+;419:
+;420:void _VectorSubtract( const vec3_t *veca, const vec3_t *vecb, vec3_t *out ) {
+line 421
+;421:	out->x = veca->x-vecb->x;
+ADDRFP4 8
+INDIRP4
+ADDRFP4 0
+INDIRP4
+INDIRF4
+ADDRFP4 4
+INDIRP4
+INDIRF4
+SUBF4
+ASGNF4
+line 422
+;422:	out->y = veca->y-vecb->y;
+ADDRFP4 8
+INDIRP4
+CNSTI4 4
+ADDP4
+ADDRFP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRFP4 4
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+SUBF4
+ASGNF4
+line 423
+;423:	out->z = veca->z-vecb->z;
+ADDRFP4 8
+INDIRP4
+CNSTI4 8
+ADDP4
+ADDRFP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ADDRFP4 4
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+SUBF4
+ASGNF4
+line 424
+;424:}
+LABELV $235
+endproc _VectorSubtract 0 0
+export _VectorAdd
+proc _VectorAdd 0 0
+line 426
+;425:
+;426:void _VectorAdd( const vec3_t *veca, const vec3_t *vecb, vec3_t *out ) {
+line 427
+;427:	out->x = veca->x+vecb->x;
+ADDRFP4 8
+INDIRP4
+ADDRFP4 0
+INDIRP4
+INDIRF4
+ADDRFP4 4
+INDIRP4
+INDIRF4
+ADDF4
+ASGNF4
+line 428
+;428:	out->y = veca->y+vecb->y;
+ADDRFP4 8
+INDIRP4
+CNSTI4 4
+ADDP4
+ADDRFP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRFP4 4
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDF4
+ASGNF4
+line 429
+;429:	out->z = veca->z+vecb->z;
+ADDRFP4 8
+INDIRP4
+CNSTI4 8
+ADDP4
+ADDRFP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ADDRFP4 4
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ADDF4
+ASGNF4
+line 430
+;430:}
+LABELV $236
+endproc _VectorAdd 0 0
+export _VectorCopy
+proc _VectorCopy 0 0
+line 432
+;431:
+;432:void _VectorCopy( const vec3_t *in, vec3_t *out ) {
+line 433
+;433:	out->x = in->x;
+ADDRFP4 4
+INDIRP4
+ADDRFP4 0
+INDIRP4
+INDIRF4
+ASGNF4
+line 434
+;434:	out->y = in->y;
+ADDRFP4 4
+INDIRP4
+CNSTI4 4
+ADDP4
+ADDRFP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ASGNF4
+line 435
+;435:	out->z = in->z;
+ADDRFP4 4
+INDIRP4
+CNSTI4 8
+ADDP4
+ADDRFP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ASGNF4
+line 436
+;436:}
+LABELV $237
+endproc _VectorCopy 0 0
+export _VectorScale
+proc _VectorScale 0 0
+line 438
+;437:
+;438:void _VectorScale( const vec3_t *in, vec_t scale, vec3_t *out ) {
+line 439
+;439:	out->x = in->x*scale;
+ADDRFP4 8
+INDIRP4
+ADDRFP4 0
+INDIRP4
+INDIRF4
+ADDRFP4 4
+INDIRF4
+MULF4
+ASGNF4
+line 440
+;440:	out->y = in->y*scale;
+ADDRFP4 8
+INDIRP4
+CNSTI4 4
+ADDP4
+ADDRFP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRFP4 4
+INDIRF4
+MULF4
+ASGNF4
+line 441
+;441:	out->z = in->z*scale;
+ADDRFP4 8
+INDIRP4
+CNSTI4 8
+ADDP4
+ADDRFP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ADDRFP4 4
+INDIRF4
+MULF4
+ASGNF4
+line 442
+;442:}
+LABELV $238
+endproc _VectorScale 0 0
+export Vector4Scale
+proc Vector4Scale 0 0
+line 444
+;443:
+;444:void Vector4Scale( const vec4_t *in, vec_t scale, vec4_t *out ) {
+line 445
+;445:	out->r = in->r*scale;
+ADDRFP4 8
+INDIRP4
+ADDRFP4 0
+INDIRP4
+INDIRF4
+ADDRFP4 4
+INDIRF4
+MULF4
+ASGNF4
+line 446
+;446:	out->g = in->g*scale;
+ADDRFP4 8
+INDIRP4
+CNSTI4 4
+ADDP4
+ADDRFP4 0
+INDIRP4
+CNSTI4 4
+ADDP4
+INDIRF4
+ADDRFP4 4
+INDIRF4
+MULF4
+ASGNF4
+line 447
+;447:	out->b = in->b*scale;
+ADDRFP4 8
+INDIRP4
+CNSTI4 8
+ADDP4
+ADDRFP4 0
+INDIRP4
+CNSTI4 8
+ADDP4
+INDIRF4
+ADDRFP4 4
+INDIRF4
+MULF4
+ASGNF4
+line 448
+;448:	out->a = in->a*scale;
+ADDRFP4 8
+INDIRP4
+CNSTI4 12
+ADDP4
+ADDRFP4 0
+INDIRP4
+CNSTI4 12
+ADDP4
+INDIRF4
+ADDRFP4 4
+INDIRF4
+MULF4
+ASGNF4
+line 449
+;449:}
+LABELV $239
+endproc Vector4Scale 0 0
+export Q_log2
+proc Q_log2 8 0
+line 452
+;450:
+;451:
+;452:int Q_log2( int val ) {
+line 455
+;453:	int answer;
+;454:
+;455:	answer = 0;
+ADDRLP4 0
+CNSTI4 0
+ASGNI4
+ADDRGP4 $242
+JUMPV
+LABELV $241
+line 456
+;456:	while ( ( val>>=1 ) != 0 ) {
+line 457
+;457:		answer++;
+ADDRLP4 0
+ADDRLP4 0
+INDIRI4
+CNSTI4 1
+ADDI4
+ASGNI4
+line 458
+;458:	}
+LABELV $242
+line 456
+ADDRLP4 4
+ADDRFP4 0
+INDIRI4
+CNSTI4 1
+RSHI4
+ASGNI4
+ADDRFP4 0
+ADDRLP4 4
+INDIRI4
+ASGNI4
+ADDRLP4 4
+INDIRI4
+CNSTI4 0
+NEI4 $241
+line 459
+;459:	return answer;
+ADDRLP4 0
+INDIRI4
+RETI4
+LABELV $240
+endproc Q_log2 8 0
+export N_isnan
+proc N_isnan 4 0
+line 470
+;460:}
+;461:
+;462:/*
+;463:================
+;464:Q_isnan
+;465:
+;466:Don't pass doubles to this
+;467:================
+;468:*/
+;469:int N_isnan( float x )
+;470:{
+line 473
+;471:	floatint_t fi;
+;472:
+;473:	fi.f = x;
+ADDRLP4 0
+ADDRFP4 0
+INDIRF4
+ASGNF4
+line 474
+;474:	fi.u &= 0x7FFFFFFF;
+ADDRLP4 0
+ADDRLP4 0
+INDIRU4
+CNSTU4 2147483647
+BANDU4
+ASGNU4
+line 475
+;475:	fi.u = 0x7F800000 - fi.u;
+ADDRLP4 0
+CNSTU4 2139095040
+ADDRLP4 0
+INDIRU4
+SUBU4
+ASGNU4
+line 477
+;476:
+;477:	return (int)( fi.u >> 31 );
+ADDRLP4 0
+INDIRU4
+CNSTI4 31
+RSHU4
+CVUI4 4
+RETI4
+LABELV $244
+endproc N_isnan 4 0
+proc N_isfinite 8 0
+line 488
+;478:}
+;479://------------------------------------------------------------------------
+;480:
+;481:
+;482:/*
+;483:================
+;484:Q_isfinite
+;485:================
+;486:*/
+;487:static int N_isfinite( float f )
+;488:{
+line 490
+;489:	floatint_t fi;
+;490:	fi.f = f;
+ADDRLP4 0
+ADDRFP4 0
+INDIRF4
+ASGNF4
+line 492
+;491:
+;492:	if ( fi.u == 0xFF800000 || fi.u == 0x7F800000 )
+ADDRLP4 4
+ADDRLP4 0
+INDIRU4
+ASGNU4
+ADDRLP4 4
+INDIRU4
+CNSTU4 4286578688
+EQU4 $248
+ADDRLP4 4
+INDIRU4
+CNSTU4 2139095040
+NEU4 $246
+LABELV $248
+line 493
+;493:		return 0; // -INF or +INF
+CNSTI4 0
+RETI4
+ADDRGP4 $245
+JUMPV
+LABELV $246
+line 495
+;494:
+;495:	fi.u = 0x7F800000 - (fi.u & 0x7FFFFFFF);
+ADDRLP4 0
+CNSTU4 2139095040
+ADDRLP4 0
+INDIRU4
+CNSTU4 2147483647
+BANDU4
+SUBU4
+ASGNU4
+line 496
+;496:	if ( (int)( fi.u >> 31 ) )
+ADDRLP4 0
+INDIRU4
+CNSTI4 31
+RSHU4
+CVUI4 4
+CNSTI4 0
+EQI4 $249
+line 497
+;497:		return 0; // -NAN or +NAN
+CNSTI4 0
+RETI4
+ADDRGP4 $245
+JUMPV
+LABELV $249
+line 499
+;498:
+;499:	return 1;
+CNSTI4 1
+RETI4
+LABELV $245
+endproc N_isfinite 8 0
+export N_atof
+proc N_atof 12 4
+line 509
+;500:}
+;501:
+;502:
+;503:/*
+;504:================
+;505:Q_atof
+;506:================
+;507:*/
+;508:float N_atof( const char *str )
+;509:{
+line 512
+;510:	float f;
+;511:
+;512:	f = atof( str );
+ADDRFP4 0
+INDIRP4
+ARGP4
+ADDRLP4 4
+ADDRGP4 atof
+CALLI4
+ASGNI4
+ADDRLP4 0
+ADDRLP4 4
+INDIRI4
+CVIF4 4
+ASGNF4
+line 517
+;513:
+;514:	// modern C11-like implementations of atof() may return INF or NAN
+;515:	// which breaks all FP code where such values getting passed
+;516:	// and effectively corrupts range checks for cvars as well
+;517:	if ( !N_isfinite( f ) )
+ADDRLP4 0
+INDIRF4
+ARGF4
+ADDRLP4 8
+ADDRGP4 N_isfinite
+CALLI4
+ASGNI4
+ADDRLP4 8
+INDIRI4
+CNSTI4 0
+NEI4 $252
+line 518
+;518:		return 0.0f;
+CNSTF4 0
+RETF4
+ADDRGP4 $251
+JUMPV
+LABELV $252
+line 520
+;519:
+;520:	return f;
+ADDRLP4 0
+INDIRF4
+RETF4
+LABELV $251
+endproc N_atof 12 4
+export N_fabs
+proc N_fabs 4 0
+line 524
+;521:}
+;522:
+;523:
+;524:float N_fabs( float f ) {
+line 526
+;525:	floatint_t fi;
+;526:	fi.f = f;
+ADDRLP4 0
+ADDRFP4 0
+INDIRF4
+ASGNF4
+line 527
+;527:	fi.i &= 0x7FFFFFFF;
+ADDRLP4 0
+ADDRLP4 0
+INDIRI4
+CNSTI4 2147483647
+BANDI4
+ASGNI4
+line 528
+;528:	return fi.f;
+ADDRLP4 0
+INDIRF4
+RETF4
+LABELV $254
+endproc N_fabs 4 0
+export N_log2f
+proc N_log2f 8 4
+line 538
+;529:}
+;530:
+;531:
+;532:/*
+;533:================
+;534:Q_log2f
+;535:================
+;536:*/
+;537:float N_log2f( float f )
+;538:{
+line 539
+;539:	const float v = logf( f );
+ADDRFP4 0
+INDIRF4
+ARGF4
+ADDRLP4 4
+ADDRGP4 logf
+CALLI4
+ASGNI4
+ADDRLP4 0
+ADDRLP4 4
+INDIRI4
+CVIF4 4
+ASGNF4
+line 540
+;540:	return v / M_LN2;
+ADDRLP4 0
+INDIRF4
+CNSTF4 1069066811
+MULF4
+RETF4
+LABELV $255
+endproc N_log2f 8 4
+export N_exp2f
+proc N_exp2f 4 8
+line 550
+;541:}
+;542:
+;543:
+;544:/*
+;545:================
+;546:Q_exp2f
+;547:================
+;548:*/
+;549:float N_exp2f( float f )
+;550:{
+line 551
+;551:	return powf( 2.0f, f );
+CNSTF4 1073741824
+ARGF4
+ADDRFP4 0
+INDIRF4
+ARGF4
+ADDRLP4 0
+ADDRGP4 powf
+CALLI4
+ASGNI4
+ADDRLP4 0
+INDIRI4
+CVIF4 4
+RETF4
+LABELV $256
+endproc N_exp2f 4 8
+import powf
+import logf
+import atof
+import sqrt
+import fabs
+import pow
+import sqrtf
+import memset
+import Cvar_VariableStringBuffer
+import Cvar_Set
+import Cvar_Update
+import Cvar_Register
+import trap_FS_Printf
+import trap_FS_FileTell
+import trap_FS_FileLength
+import trap_FS_FileSeek
+import trap_FS_GetFileList
+import trap_FS_Read
+import trap_FS_Write
+import trap_FS_FClose
+import trap_FS_FOpenRead
+import trap_FS_FOpenWrite
+import trap_FS_FOpenFile
+import Sys_GetGPUConfig
+import RE_SetColor
+import RE_DrawImage
+import RE_AddSpriteToScene
+import RE_AddPolyToScene
+import RE_RenderScene
+import RE_ClearScene
+import RE_LoadWorldMap
+import RE_RegisterSprite
+import RE_RegisterSpriteSheet
+import RE_RegisterShader
+import Snd_ClearLoopingTrack
+import Snd_SetLoopingTrack
+import Snd_StopSfx
+import Snd_PlaySfx
+import Snd_RegisterTrack
+import Snd_RegisterSfx
+import trap_Key_ClearStates
+import trap_Key_GetKey
+import trap_Key_GetCatcher
+import trap_Key_SetCatcher
+import Sys_Milliseconds
+import G_CheckWallHit
+import G_SoundRecursive
+import G_CastRay
+import G_SetActiveMap
+import G_LoadMap
+import trap_GetHashString
+import G_SetCameraData
+import Sys_MemoryRemaining
+import trap_RemoveCommand
+import trap_AddCommand
+import trap_SendConsoleCommand
+import G_LoadVector4
+import G_LoadVector3
+import G_LoadVector2
+import G_LoadString
+import LoadFloat
+import G_LoadInt
+import G_LoadUInt
+import G_GetSaveSection
+import G_SaveVector4
+import G_SaveVector3
+import G_SaveVector2
+import G_SaveFloat
+import G_SaveString
+import G_SaveUInt
+import G_SaveInt
+import G_SaveChar
+import G_EndSaveSection
+import G_BeginSaveSection
+import trap_Args
+import trap_Argv
+import trap_Argc
+import trap_Error
+import trap_Print
+import P_GiveWeapon
+import P_GiveItem
+import P_ParryTicker
+import P_MeleeTicker
+import P_Ticker
+import SG_SendUserCmd
+import SG_MouseEvent
+import SG_KeyEvent
+import SG_InitPlayer
+import SG_OutOfMemory
+import SG_ClearToMemoryMark
+import SG_MakeMemoryMark
+import SG_MemInit
+import SG_MemAlloc
+import String_Alloc
+import SG_SpawnMob
+import SG_Spawn
+import Ent_SetState
+import SG_InitEntities
+import Ent_BuildBounds
+import SG_BuildBounds
+import SG_FreeEntity
+import SG_AllocEntity
+import Ent_RunTic
+import Ent_CheckEntityCollision
+import Ent_CheckWallCollision
+import SG_PickupWeapon
+import SG_SpawnWeapon
+import SG_SpawnItem
+import SG_LoadLevels
+import SG_LoadLevelData
+import SG_SaveLevelData
+import SG_EndLevel
+import SG_StartLevel
+import SG_UpdateCvars
+import G_Printf
+import G_Error
+import SG_Printf
+import SG_Error
+import SG_ShutdownCommands
+import SG_InitCommands
+import SGameCommand
+import SG_DrawFrame
+import sgc_godmode
+import sg_cheatsOn
+import sgc_deafMobs
+import sgc_blindMobs
+import sgc_infiniteAmmo
+import sgc_infiniteRage
+import sgc_infiniteHealth
+import pm_wallTime
+import pm_wallrunAccelMove
+import pm_wallrunAccelVertical
+import pm_airAccel
+import pm_baseSpeed
+import pm_baseAccel
+import pm_waterAccel
+import pm_airFriction
+import pm_waterFriction
+import pm_groundFriction
+import sg_memoryDebug
+import sg_numSaves
+import sg_gameDifficulty
+import sg_savename
+import sg_levelIndex
+import sg_gibs
+import sg_decalDetail
+import sg_printLevelStats
+import sg_mouseAcceleration
+import sg_mouseInvert
+import sg_paused
+import sg_debugPrint
+import ammoCaps
+import mobinfo
+import iteminfo
+import weaponinfo
+import sg
+import sg_entities
+import sg_activeEnts
+import sg_freeEnts
+import inversedirs
+import dirvectors
+import stateinfo
+import ImGui_CloseCurrentPopup
+import ImGui_OpenPopup
+import ImGui_EndPopup
+import ImGui_BeginPopupModal
+import ImGui_ColoredText
+import ImGui_Text
+import ImGui_ColoredTextUnformatted
+import ImGui_TextUnformatted
+import ImGui_SameLine
+import ImGui_ProgressBar
+import ImGui_Separator
+import ImGui_SeparatorText
+import ImGui_NewLine
+import ImGui_PopColor
+import ImGui_PushColor
+import ImGui_GetCursorScreenPos
+import ImGui_SetCursorScreenPos
+import ImGui_GetCursorPos
+import ImGui_SetCursorPos
+import ImGui_GetFontScale
+import ImGui_Button
+import ImGui_Checkbox
+import ImGui_ArrowButton
+import ImGui_ColorEdit4
+import ImGui_ColorEdit3
+import ImGui_SliderInt4
+import ImGui_SliderInt3
+import ImGui_SliderInt2
+import ImGui_SliderInt
+import ImGui_SliderFloat4
+import ImGui_SliderFloat3
+import ImGui_SliderFloat2
+import ImGui_SliderFloat
+import ImGui_InputInt4
+import ImGui_InputInt3
+import ImGui_InputInt2
+import ImGui_InputInt
+import ImGui_InputFloat4
+import ImGui_InputFloat3
+import ImGui_InputFloat2
+import ImGui_InputFloat
+import ImGui_InputTextWithHint
+import ImGui_InputTextMultiline
+import ImGui_InputText
+import ImGui_EndTable
+import ImGui_TableNextColumn
+import ImGui_TableNextRow
+import ImGui_BeginTable
+import ImGui_SetItemTooltip
+import ImGui_SetItemTooltipUnformatted
+import ImGui_MenuItem
+import ImGui_EndMenu
+import ImGui_BeginMenu
+import ImGui_SetWindowFontScale
+import ImGui_SetWindowSize
+import ImGui_SetWindowPos
+import ImGui_SetWindowCollapsed
+import ImGui_IsWindowCollapsed
+import ImGui_EndWindow
+import ImGui_BeginWindow
+import Com_TouchMemory
+import Hunk_TempIsClear
+import Hunk_Check
+import Hunk_Print
+import Hunk_SetMark
+import Hunk_ClearToMark
+import Hunk_CheckMark
+import Hunk_SmallLog
+import Hunk_Log
+import Hunk_MemoryRemaining
+import Hunk_ClearTempMemory
+import Hunk_FreeTempMemory
+import Hunk_AllocateTempMemory
+import Hunk_Clear
+import Hunk_Alloc
+import Hunk_InitMemory
+import Z_InitMemory
+import Z_InitSmallZoneMemory
+import CopyString
+import Z_AvailableMemory
+import Z_FreeTags
+import Z_Free
+import S_Malloc
+import Z_Malloc
+import Z_Realloc
+import CPU_flags
+import FS_ReadLine
+import FS_ListFiles
+import FS_FreeFileList
+import FS_FreeFile
+import FS_SetBFFIndex
+import FS_GetCurrentChunkList
+import FS_Initialized
+import FS_FileIsInBFF
+import FS_StripExt
+import FS_AllowedExtension
+import FS_GetFileList
+import FS_LoadLibrary
+import FS_CopyString
+import FS_BuildOSPath
+import FS_FilenameCompare
+import FS_FileTell
+import FS_FileLength
+import FS_FileSeek
+import FS_FileExists
+import FS_LastBFFIndex
+import FS_LoadStack
+import FS_Rename
+import FS_FOpenFileRead
+import FS_FOpenAppend
+import FS_FOpenRW
+import FS_FOpenWrite
+import FS_FOpenRead
+import FS_FOpenFileWithMode
+import FS_FOpenWithMode
+import FS_FileToFileno
+import FS_Printf
+import FS_GetGamePath
+import FS_GetHomePath
+import FS_GetBasePath
+import FS_GetBaseGameDir
+import FS_GetCurrentGameDir
+import FS_Flush
+import FS_ForceFlush
+import FS_FClose
+import FS_LoadFile
+import FS_WriteFile
+import FS_Write
+import FS_Read
+import FS_Remove
+import FS_Restart
+import FS_Shutdown
+import FS_InitFilesystem
+import FS_Startup
+import FS_VM_CloseFiles
+import FS_VM_FileLength
+import FS_VM_Read
+import FS_VM_Write
+import FS_VM_WriteFile
+import FS_VM_FClose
+import FS_VM_FOpenFileRead
+import FS_VM_FOpenFileWrite
+import FS_VM_FOpenFile
+import FS_VM_FileTell
+import FS_VM_FileSeek
+import FS_VM_FOpenRW
+import FS_VM_FOpenAppend
+import FS_VM_FOpenWrite
+import FS_VM_FOpenRead
+import com_errorMessage
+import com_fullyInitialized
+import com_errorEntered
+import com_cacheLine
+import com_frameTime
+import com_fps
+import com_frameNumber
+import com_maxfps
+import sys_cpuString
+import com_devmode
+import com_version
+import com_logfile
+import com_journal
+import com_demo
+import Con_HistoryGetNext
+import Con_HistoryGetPrev
+import Con_SaveField
+import Con_ResetHistory
+import Field_CompleteCommand
+import Field_CompleteFilename
+import Field_CompleteKeyBind
+import Field_CompleteKeyname
+import Field_AutoComplete
+import Field_Clear
+import Cbuf_Init
+import Cbuf_Clear
+import Cbuf_AddText
+import Cbuf_Execute
+import Cbuf_InsertText
+import Cbuf_ExecuteText
+import va
+import Cmd_CompleteArgument
+import Cmd_CommandCompletion
+import Cmd_Clear
+import Cmd_Argv
+import Cmd_ArgsFrom
+import Cmd_SetCommandCompletionFunc
+import Cmd_TokenizeStringIgnoreQuotes
+import Cmd_TokenizeString
+import Cmd_ArgvBuffer
+import Cmd_Argc
+import Cmd_ExecuteString
+import Cmd_ExecuteText
+import Cmd_ArgsBuffer
+import Cmd_ExecuteCommand
+import Cmd_RemoveCommand
+import Cmd_AddCommand
+import Cmd_Init
+import keys
+import Key_WriteBindings
+import Key_SetOverstrikeMode
+import Key_GetOverstrikeMode
+import Key_GetKey
+import Key_GetCatcher
+import Key_SetCatcher
+import Key_ClearStates
+import Key_GetBinding
+import Key_IsDown
+import Key_KeynumToString
+import Key_StringToKeynum
+import Key_KeynameCompletion
+import Com_EventLoop
+import Com_KeyEvent
+import Com_SendKeyEvents
+import Com_QueueEvent
+import Com_InitKeyCommands
+import Parse3DMatrix
+import Parse2DMatrix
+import Parse1DMatrix
+import ParseHex
+import SkipRestOfLine
+import SkipBracedSection
+import com_tokentype
+import COM_ParseComplex
+import Com_BlockChecksum
+import COM_ParseWarning
+import COM_ParseError
+import COM_Compress
+import COM_ParseExt
+import COM_Parse
+import COM_GetCurrentParseLine
+import COM_BeginParseSession
+import COM_StripExtension
+import COM_GetExtension
+import Com_TruncateLongString
+import Com_SortFileList
+import Com_Base64Decode
+import Com_HasPatterns
+import Com_FilterPath
+import Com_Filter
+import Com_FilterExt
+import Com_HexStrToInt
+import COM_DefaultExtension
+import Com_WriteConfig
+import Con_RenderConsole
+import Com_GenerateHashValue
+import Com_Shutdown
+import Com_Init
+import Com_StartupVariable
+import crc32_buffer
+import Com_EarlyParseCmdLine
+import Com_Milliseconds
+import Com_Frame
+import Sys_SnapVector
+import I_GetParm
+import Con_DPrintf
+import Con_Printf
+import Con_Shutdown
+import Con_Init
+import Con_DrawConsole
+import Con_AddText
+import Info_RemoveKey
+import Info_NextPair
+import Info_ValidateKeyValue
+import Info_Validate
+import Info_SetValueForKey_s
+import Info_ValueForKeyToken
+import Info_Tokenize
+import Info_ValueForKey
+import Com_Clamp
+import bytedirs
+import N_crandom
+import N_random
+import N_rand
+import N_acos
+import N_log2
+import ByteToDir
+import DirToByte
+import VectorInverse
+import VectorNormalizeFast
+import DistanceSquared
+import Distance
+import VectorLengthSquared
+import vec3_set
+import N_Error
+import locase
+import COM_SkipPath
+import Com_Split
+import N_replace
+import N_memcmp
+import N_memchr
+import N_memcpy
+import N_memset
+import N_strncpyz
+import N_strncpy
+import N_strcpy
+import N_stradd
+import N_strneq
+import N_streq
+import N_strlen
+import N_atoi
+import N_fmaxf
+import N_stristr
+import N_strcat
+import N_strupr
+import N_strlwr
+import N_stricmpn
+import N_stricmp
+import N_strncmp
+import N_strcmp
+import N_isanumber
+import N_isintegral
+import N_isalpha
+import N_isupper
+import N_islower
+import N_isprint
+import Com_SkipCharset
+import Com_SkipTokens
+import Com_snprintf
+lit
+align 1
+LABELV $226
+byte 1 118
+byte 1 101
+byte 1 99
+byte 1 51
+byte 1 95
+byte 1 103
+byte 1 101
+byte 1 116
+byte 1 58
+byte 1 32
+byte 1 98
+byte 1 97
+byte 1 100
+byte 1 32
+byte 1 105
+byte 1 110
+byte 1 100
+byte 1 101
+byte 1 120
+byte 1 0
