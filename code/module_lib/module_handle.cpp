@@ -5,6 +5,8 @@
 CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sourceFiles )
     : m_szName( pName ), m_pScriptContext( NULL ), m_pScriptModule( NULL )
 {
+    int error;
+
     memset( m_pFuncTable, 0, sizeof(m_pFuncTable) );
 
     if ( !sourceFiles.size() ) {
@@ -25,8 +27,8 @@ CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sou
         LoadSourceFile( it );
     }
 
-    if ( g_pModuleLib->GetScriptBuilder()->BuildModule() != 0 ) {
-        N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: failed to build module '%s'", pName );
+    if ( ( error = g_pModuleLib->GetScriptBuilder()->BuildModule() ) != 0 ) {
+        N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: failed to build module '%s' -- %s", pName, AS_PrintErrorString( error ) );
     }
 
     m_pScriptContext = g_pModuleLib->GetScriptEngine()->CreateContext();
@@ -49,7 +51,9 @@ void LogExceptionInfo( asIScriptContext *pContext )
         " Section Name: %s\n"
         " Function: %s\n"
         " Line: %i\n"
-    , pFunc->GetModuleName(), pFunc->GetScriptSectionName(), pFunc->GetDeclaration(), pContext->GetExceptionLineNumber() );
+        " Error Message: %s\n"
+    , pFunc->GetModuleName(), pFunc->GetScriptSectionName(), pFunc->GetDeclaration(), pContext->GetExceptionLineNumber(),
+    pContext->GetExceptionString() );
 }
 
 int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pArgList )

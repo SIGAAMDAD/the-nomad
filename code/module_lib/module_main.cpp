@@ -16,6 +16,59 @@ cvar_t *ml_angelScript_DebugPrint;
 
 static CDebugger *s_pDebugger;
 
+const char *AS_PrintErrorString( int code )
+{
+    switch ( code ) {
+    case asERROR:
+        return "error occurred";
+    case asNOT_SUPPORTED:
+        return "not supported";
+    case asINVALID_ARG:
+        return "invalid argument";
+    case asINVALID_CONFIGURATION:
+        return "invalid configuration";
+    case asINVALID_DECLARATION:
+        return "invalid declaration";
+    case asINVALID_INTERFACE:
+        return "invalid interface";
+    case asINVALID_NAME:
+        return "invalid name";
+    case asINVALID_OBJECT:
+        return "invalid object";
+    case asINVALID_TYPE:
+        return "invalid type";
+    case asNO_FUNCTION:
+        return "function wasn't found";
+    case asNO_GLOBAL_VAR:
+        return "no global variable was found";
+    case asNAME_TAKEN:
+        return "name already taken";
+    case asMULTIPLE_FUNCTIONS:
+        return "multiple matching functions";
+    case asCANT_BIND_ALL_FUNCTIONS:
+        return "all imported functions couldn't be bound";
+    case asCONTEXT_NOT_FINISHED:
+        return "context not finished";
+    case asCONTEXT_NOT_PREPARED:
+        return "context not prepared";
+    case asOUT_OF_MEMORY:
+        return "out of memory... SOMEHOW?";
+    case asILLEGAL_BEHAVIOUR_FOR_TYPE:
+        return "illegal behaviour for type";
+    case asWRONG_CALLING_CONV:
+        return "specified calling convention doesn't match the function/method pointer";
+    case asALREADY_REGISTERED:
+        return "already registered";
+    case asINIT_GLOBAL_VARS_FAILED:
+        return "initialization of global vars failed";
+    case asNO_MODULE:
+        return "no module was found";
+    default:
+        break;
+    };
+    return "<unknown error>";
+}
+
 namespace EA::StdC {
 
 extern "C" EASTL_EASTDC_API int Vsnprintf(char*  EA_RESTRICT pDestination, size_t n, const char*  EA_RESTRICT pFormat, va_list arguments) {
@@ -31,11 +84,6 @@ EASTL_EASTDC_API int Vsnprintf(char32_t* EA_RESTRICT pDestination, size_t n, con
     return 0;
 }
 
-#if EA_CHAR8_UNIQUE
-	EASTL_EASTDC_API int Vsnprintf(char8_t*  EA_RESTRICT pDestination, size_t n, const char8_t*  EA_RESTRICT pFormat, va_list arguments) {
-        return N_vsnprintf( pDestination, n, pFormat, arguments );
-    }
-#endif
 #if defined(EA_WCHAR_UNIQUE) && EA_WCHAR_UNIQUE
 	EASTL_EASTDC_API int Vsnprintf(wchar_t* EA_RESTRICT pDestination, size_t n, const wchar_t* EA_RESTRICT pFormat, va_list arguments) {
         return 0; // TODO

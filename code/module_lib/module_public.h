@@ -203,6 +203,8 @@ private:
 
 extern moduleImport_t moduleImport;
 
+const char *AS_PrintErrorString( int code );
+
 typedef CModuleLib *(*GetModuleAPI_t)( const moduleImport_t *, const renderExport_t *, version_t nGameVersion );
 CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *pExport, version_t nGameVersion );
 
