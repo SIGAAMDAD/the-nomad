@@ -8,6 +8,7 @@
 #include <glm/glm.hpp>
 #include <filesystem>
 #include "module_renderlib.h"
+#include "module_funcdefs.hpp"
 
 moduleImport_t moduleImport;
 
@@ -45,14 +46,35 @@ EASTL_EASTDC_API int Vsnprintf(char32_t* EA_RESTRICT pDestination, size_t n, con
 void CModuleLib::LoadModule( const char *pModule )
 {
     CModuleHandle *pHandle;
-    CModuleParse parse( va( "%s/module.txt", pModule ) );
+    nlohmann::json parse;
+    UtlVector<UtlString> submodules;
+    union {
+        void *v;
+        char *b;
+    } f;
 
-    if ( parse.Failed() ) {
-        moduleImport.Printf( PRINT_INFO, COLOR_RED "ERROR: failed to load module configuration for \"%s\"!\n", pModule );
+    try {
+        uint64_t length = FS_LoadFile( va( "modules/%s/module.json", pModule ), &f.v );
+        if ( !length || !f.v ) {
+            Con_Printf( COLOR_RED "ERROR: failed to load module configuration for \"%s\"!\n", pModule );
+            return;
+        } else {
+            parse = nlohmann::json::parse( f.b );
+        }
+        FS_FreeFile( f.v );
+        
+    } catch ( const nlohmann::json::exception& e ) {
+        Con_Printf( COLOR_RED "ERROR: failed to load module configuration for \"%s\"!\n\tid: %i\n\tmessage: %s\n", pModule, e.id, e.what() );
+        FS_FreeFile( f.v );
         return;
     }
 
-    pHandle = new CModuleHandle( pModule, parse.GetArray( "submodules" ) );
+    submodules.reserve( parse["submodules"].size() );
+    for ( const auto& it : parse["submodules"] ) {
+        submodules.emplace_back( eastl::move( it.get<std::string>().c_str() ) );
+    }
+
+    pHandle = new CModuleHandle( pModule, submodules );
     m_LoadList.emplace_back( CModuleInfo( parse, pHandle ) );
 }
 
@@ -64,34 +86,33 @@ int CModuleLib::ModuleCall( CModuleInfo *pModule, EModuleFuncId nCallId, uint32_
     uint32_t args[16];
 
     if ( !pModule ) {
-        moduleImport.Error( ERR_FATAL, "CModuleLib::ModuleCall: invalid module" );
+        N_Error( ERR_FATAL, "CModuleLib::ModuleCall: invalid module" );
     }
     if ( nCallId >= NumFuncs ) {
-        moduleImport.Error( ERR_FATAL, "CModuleLib::ModuleCall: invalid call id" );
+        N_Error( ERR_FATAL, "CModuleLib::ModuleCall: invalid call id" );
     }
-
+    
     va_start( argptr, nArgs );
     for ( i = 0; i < nArgs; i++ ) {
-       args[i] = va_arg( argptr, uint32_t ); 
+        args[i] = va_arg( argptr, uint32_t );
     }
     va_end( argptr );
 
-    pContext = m_pContextManager->AddContext( m_pEngine, pModule->m_pHandle->GetFunction( nCallId ) );
-    pContext->Execute();
+    return pModule->m_pHandle->CallFunc( nCallId, nArgs, args );
 }
 
 void Module_ASMessage_f( const asSMessageInfo *pMsg, void *param )
 {
     switch ( pMsg->type ) {
     case asMSGTYPE_ERROR:
-        moduleImport.Printf( PRINT_INFO, COLOR_RED "ERROR: [AngelScript](%s:%i:%i) %s\n",
+        Con_Printf( COLOR_RED "ERROR: [AngelScript](%s:%i:%i) %s\n",
             pMsg->section, pMsg->row, pMsg->col, pMsg->message );
         break;
     case asMSGTYPE_WARNING:
-        moduleImport.Printf( PRINT_WARNING, "[AngelScript](%s:%i:%i) %s\n", pMsg->section, pMsg->row, pMsg->col, pMsg->message );
+        Con_Printf( COLOR_YELLOW "WARNING: [AngelScript](%s:%i:%i) %s\n", pMsg->section, pMsg->row, pMsg->col, pMsg->message );
         break;
     case asMSGTYPE_INFORMATION:
-        moduleImport.Printf( PRINT_INFO, "[AngelScript](%s:%i:%i) %s\n", pMsg->section, pMsg->row, pMsg->col, pMsg->message );
+        Con_Printf( "[AngelScript](%s:%i:%i) %s\n", pMsg->section, pMsg->row, pMsg->col, pMsg->message );
         break;
     };
 }
@@ -112,122 +133,103 @@ int Module_IncludeCallback_f( const char *pInclude, const char *pFrom, CScriptBu
     } f;
     uint64_t length;
 
-    length = moduleImport.FS_LoadFile( pInclude, &f.v );
+    length = FS_LoadFile( pInclude, &f.v );
     if ( !length || !f.v ) {
-        moduleImport.Printf( PRINT_WARNING, "failed to load include preprocessor file '%s'!\n", pInclude );
+        Con_Printf( COLOR_YELLOW "WARNING: failed to load include preprocessor file '%s'!\n", pInclude );
         return -1;
     }
     pBuilder->AddSectionFromMemory( pInclude, f.b, length );
-    moduleImport.FS_FreeFile( f.v );
+    FS_FreeFile( f.v );
 
-    moduleImport.Printf( PRINT_INFO, "Added include file '%s' to '%s'\n", pInclude, pFrom );
+    Con_Printf( "Added include file '%s' to '%s'\n", pInclude, pFrom );
 
     (void)unused; // shut up compiler
-}
 
-//
-// c++ compatible wrappers around angelscript engine function calls
-//
-
-void ModuleLib_Printf( const eastl::string& msg ) {
-    moduleImport.Printf( PRINT_INFO, "%s", msg.c_str() );
-}
-
-void ModuleLib_AddPolyToScene( nhandle_t hShader, CScriptArray *pPolyList ) {
-    re.AddPolyToScene( hShader, (const polyVert_t *)pPolyList->GetBuffer(), pPolyList->GetSize() );
+    return 1;
 }
 
 void ModuleLib_AddDefaultProcs( void )
 {
-    RegisterStdString_Native( g_pModuleLib->GetScriptEngine() );
+    RegisterStdString( g_pModuleLib->GetScriptEngine() );
     RegisterScriptArray( g_pModuleLib->GetScriptEngine(), true );
     RegisterScriptDictionary( g_pModuleLib->GetScriptEngine() );
-    RegisterScriptDictionary_Native( g_pModuleLib->GetScriptEngine() );
-    RegisterScriptMath_Native( g_pModuleLib->GetScriptEngine() );
+    RegisterScriptMath( g_pModuleLib->GetScriptEngine() );
 
-    g_pModuleLib->GetScriptEngine()->RegisterTypedef( "int32", "EngineHandle" );
-    g_pModuleLib->GetScriptEngine()->RegisterTypedef( "int32", "nhandle" );
-    g_pModuleLib->GetScriptEngine()->RegisterTypedef( "int32", "ShaderHandle" );
-    g_pModuleLib->GetScriptEngine()->RegisterTypedef( "int32", "SpriteHandle" );
-
-    g_pModuleLib->GetScriptEngine()->RegisterEnum( "SPEntityType" );
-    g_pModuleLib->GetScriptEngine()->RegisterEnumValue( "SPEntityType", "Playr", ET_PLAYR );
-    g_pModuleLib->GetScriptEngine()->RegisterEnumValue( "SPEntityType", "Mob", ET_MOB );
-    g_pModuleLib->GetScriptEngine()->RegisterEnumValue( "SPEntityType", "Bot", ET_BOT );
-    g_pModuleLib->GetScriptEngine()->RegisterEnumValue( "SPEntityType", "Item", ET_ITEM );
-    g_pModuleLib->GetScriptEngine()->RegisterEnumValue( "SPEntityType", "Wall", ET_WALL );
-    g_pModuleLib->GetScriptEngine()->RegisterEnumValue( "SPEntityType", "Weapon", ET_WEAPON );
-
-    // render engine
-    CRenderSceneRef::Register();
-
-    g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void RE_AddEntityToScene()", asFUNCTION( re.AddEntityToScene ), asCALL_CDECL );
-    g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void RE_AddPolyToScene( ShaderHandle, vector<PolyVert>& )", asFUNCTION( ModuleLib_AddPolyToScene ), asCALL_CDECL );
-    g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void RE_AddSpriteToScene( ShaderHandle, const vec3& )", asFUNCTION( re.AddSpriteToScene ), asCALL_CDECL );
-    g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "ShaderHandle RegisterShader( string )", asFUNCTION( re.RegisterShader ), asCALL_CDECL );
-    g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "SpriteHandle RegisterSprite( string, uint, uint, uint, uint )", asFUNCTION( re.RegisterSpriteSheet ), asCALL_CDECL );
-
-    g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void ConsolePrint( string& fmt )", asFUNCTION( ModuleLib_Printf ), asCALL_CDECL );
-
-    g_pModuleLib->GetScriptBuilder()->SetIncludeCallback( Module_IncludeCallback_f, NULL );
+    ModuleLib_Register_Engine();
+    ModuleLib_Register_Cvar();
+    ModuleLib_Register_RenderEngine();
+    ModuleLib_Register_FileSystem();
+    ModuleLib_Register_SoundSystem();
 }
 
 CModuleLib::CModuleLib( void )
 {
     const char *path;
 
+    g_pModuleLib = this;
+
     //
     // init angelscript api
     //
     m_pEngine = asCreateScriptEngine();
     if ( !m_pEngine ) {
-        moduleImport.Error( ERR_DROP, "CModuleLib::Init: failed to create an AngelScript Engine context" );
+        N_Error( ERR_DROP, "CModuleLib::Init: failed to create an AngelScript Engine context" );
     }
-    m_pEngine->SetMessageCallback( asFUNCTION( Module_ASMessage_f ), NULL, asCALL_CDECL );
+    m_pEngine->SetMessageCallback( asFUNCTION( Module_ASMessage_f ), NULL, asCALL_GENERIC );
+    m_pEngine->SetEngineProperty( asEP_ALLOW_MULTILINE_STRINGS, true );
+    m_pEngine->SetEngineProperty( asEP_ALLOW_UNSAFE_REFERENCES, true );
+    m_pEngine->SetEngineProperty( asEP_ALWAYS_IMPL_DEFAULT_CONSTRUCT, false );
+    m_pEngine->SetEngineProperty( asEP_COMPILER_WARNINGS, true );
+    m_pEngine->SetEngineProperty( asEP_OPTIMIZE_BYTECODE, true );
+    m_pEngine->SetDefaultNamespace( "TheNomad" );
 
     m_pScriptBuilder = new CScriptBuilder();
-    m_pContextManager = new CContextMgr();
+//    m_pContextManager = new CContextMgr();
 
     ModuleLib_AddDefaultProcs();
 
     s_pDebugger = new CDebugger();
 
+    g_pModuleLib->GetScriptBuilder()->SetIncludeCallback( Module_IncludeCallback_f, NULL );
+
     //
     // load all the modules
     //
 
-    moduleImport.Printf( PRINT_INFO, "Loading module configurations...\n" );
+    Con_Printf( "Loading module configurations from \"%s\"...\n", Cvar_VariableString( "fs_basegame" ) );
 
-    path = va( "%s/modules/", moduleImport.Cvar_VariableString( "fs_basepath" ) );
+    path = va( "%s/modules/", Cvar_VariableString( "fs_basegame" ) );
 
-    // this is really inefficient but it'll do for now
-    for ( const auto& it : std::filesystem::directory_iterator{ path } ) {
-        if ( it.is_directory() ) {
-            const std::string&& path = eastl::move( it.path().string() );
-            moduleImport.Printf( PRINT_INFO, "- found module directory \"%s\".\n", path.c_str() );
+    try {
+        // this is really inefficient but it'll do for now
+        for ( const auto& it : std::filesystem::directory_iterator{ path } ) {
+            if ( it.is_directory() ) {
+                const std::string path = it.path().filename().string();
+                Con_Printf( "- found module directory \"%s\".\n", path.c_str() );
 
-            LoadModule( path.c_str() );
+                LoadModule( path.c_str() );
+            }
         }
+    } catch ( const std::exception& e ) {
+        N_Error( ERR_FATAL, "InitModuleLib: failed to load module directories, std::exception was thrown -> %s", e.what() );
     }
 }
 
 CModuleLib::~CModuleLib()
 {
     delete m_pScriptBuilder;
-    delete m_pContextManager;
+//    delete m_pContextManager;
     delete s_pDebugger;
 }
 
 CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *pExport, version_t nGameVersion )
 {
-    memcpy( &moduleImport, pImport, sizeof(*pImport) );
-
-    moduleImport.Printf( PRINT_INFO, "InitModuleLib: initializing mod library...\n" );
+    Con_Printf( "InitModuleLib: initializing mod library...\n" );
 
     //
     // init cvars
     //
-    ml_angelScript_DebugPrint = moduleImport.Cvar_Get( "ml_angelScript_DebugPrint", "0", CVAR_LATCH | CVAR_PRIVATE );
+    ml_angelScript_DebugPrint = Cvar_Get( "ml_angelScript_DebugPrint", "0", CVAR_LATCH | CVAR_PRIVATE );
 
     // init memory manager
     Mem_Init();
@@ -240,7 +242,7 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
 
 void CModuleLib::Shutdown( void )
 {
-    moduleImport.Printf( PRINT_INFO, "CModuleLib::Shutdown: shutting down modules...\n" );
+    Con_Printf( "CModuleLib::Shutdown: shutting down modules...\n" );
 
     m_pEngine->ShutDownAndRelease();
     delete g_pModuleLib;
@@ -262,7 +264,7 @@ CContextMgr *CModuleLib::GetContextManager( void ) {
 
 CModuleInfo *CModuleLib::GetModule( const char *pName ) {
     for ( auto it = m_LoadList.begin(); it != m_LoadList.end(); it++ ) {
-        if ( !N_stricmp( it->m_szName.c_str(), pName ) ) {
+        if ( !N_stricmp( it->m_szName, pName ) ) {
             return it; // THANK YOU eastl for just being a MOTHERFUCKING POINTER instead of an overcomplicated class
         }
     }

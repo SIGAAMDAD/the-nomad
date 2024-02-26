@@ -249,7 +249,7 @@ void idHeap::AllocDefragBlock( void ) {
 		}
 		size >>= 1;
 	}
-	moduleImport.Printf( PRINT_INFO, "Allocated a %i mb defrag block\n", size / (1024*1024) );
+	Con_Printf( "Allocated a %i mb defrag block\n", size / (1024*1024) );
 }
 
 /*
@@ -304,7 +304,7 @@ void idHeap::Free( void *p ) {
 			break;
 		}
 		default: {
-			moduleImport.Error( ERR_FATAL, "idHeap::Free: invalid memory block" );
+			N_Error( ERR_FATAL, "idHeap::Free: invalid memory block" );
 			break;
 		}
 	}
@@ -322,14 +322,14 @@ void *idHeap::Allocate16( const uint32_t bytes ) {
 	ptr = (byte *) malloc( bytes + 16 + sizeof(intptr_t) );
 	if ( !ptr ) {
 		if ( defragBlock ) {
-			moduleImport.Printf( PRINT_INFO, "Freeing defragBlock on alloc of %i.\n", bytes );
+			Con_Printf( "Freeing defragBlock on alloc of %i.\n", bytes );
 			free( defragBlock );
 			defragBlock = NULL;
 			ptr = (byte *) malloc( bytes + 16 + sizeof(intptr_t) );
 			AllocDefragBlock();
 		}
 		if ( !ptr ) {
-			moduleImport.Error( ERR_FATAL, "malloc failure for %i", bytes );
+			N_Error( ERR_FATAL, "malloc failure for %i", bytes );
 		}
 	}
 	alignedPtr = (byte *) ( ( ( (intptr_t) ptr ) + 15) & ~15 );
@@ -385,7 +385,7 @@ uint32_t idHeap::Msize( void *p ) {
 			return ((idHeap::page_s*)(*((intptr_t *)(((byte *)p) - ALIGN_SIZE( LARGE_HEADER_SIZE )))))->dataSize - ALIGN_SIZE( LARGE_HEADER_SIZE );
 		}
 		default: {
-			moduleImport.Error( ERR_FATAL, "idHeap::Msize: invalid memory block" );
+			N_Error( ERR_FATAL, "idHeap::Msize: invalid memory block" );
 			return 0;
 		}
 	}
@@ -403,27 +403,27 @@ void idHeap::Dump( void ) {
 	idHeap::page_s	*pg;
 
 	for ( pg = smallFirstUsedPage; pg; pg = pg->next ) {
-		moduleImport.Printf( PRINT_INFO, "%p  bytes %-8d  (in use by small heap)\n", pg->data, pg->dataSize);
+		Con_Printf( "%p  bytes %-8d  (in use by small heap)\n", pg->data, pg->dataSize);
 	}
 
 	if ( smallCurPage ) {
 		pg = smallCurPage;
-		moduleImport.Printf( PRINT_INFO, "%p  bytes %-8d  (small heap active page)\n", pg->data, pg->dataSize );
+		Con_Printf( "%p  bytes %-8d  (small heap active page)\n", pg->data, pg->dataSize );
 	}
 
 	for ( pg = mediumFirstUsedPage; pg; pg = pg->next ) {
-		moduleImport.Printf( PRINT_INFO, "%p  bytes %-8d  (completely used by medium heap)\n", pg->data, pg->dataSize );
+		Con_Printf( "%p  bytes %-8d  (completely used by medium heap)\n", pg->data, pg->dataSize );
 	}
 
 	for ( pg = mediumFirstFreePage; pg; pg = pg->next ) {
-		moduleImport.Printf( PRINT_INFO, "%p  bytes %-8d  (partially used by medium heap)\n", pg->data, pg->dataSize );
+		Con_Printf( "%p  bytes %-8d  (partially used by medium heap)\n", pg->data, pg->dataSize );
 	}
 
 	for ( pg = largeFirstUsedPage; pg; pg = pg->next ) {
-		moduleImport.Printf( PRINT_INFO, "%p  bytes %-8d  (fully used by large heap)\n", pg->data, pg->dataSize );
+		Con_Printf( "%p  bytes %-8d  (fully used by large heap)\n", pg->data, pg->dataSize );
 	}
 
-	moduleImport.Printf( PRINT_INFO, "pages allocated : %d\n", pagesAllocated );
+	Con_Printf( "pages allocated : %d\n", pagesAllocated );
 }
 
 /*
@@ -479,14 +479,14 @@ idHeap::page_s* idHeap::AllocatePage( uint32_t bytes ) {
 		p = (idHeap::page_s *) ::malloc( size + ALIGN - 1 );
 		if ( !p ) {
 			if ( defragBlock ) {
-				moduleImport.Printf( PRINT_INFO, "Freeing defragBlock on alloc of %i.\n", size + ALIGN - 1 );
+				Con_Printf( "Freeing defragBlock on alloc of %i.\n", size + ALIGN - 1 );
 				free( defragBlock );
 				defragBlock = NULL;
 				p = (idHeap::page_s *) ::malloc( size + ALIGN - 1 );
 				AllocDefragBlock();
 			}
 			if ( !p ) {
-				moduleImport.Error( ERR_FATAL, "malloc failure for %i", bytes );
+				N_Error( ERR_FATAL, "malloc failure for %i", bytes );
 			}
 		}
 
@@ -597,7 +597,7 @@ void idHeap::SmallFree( void *ptr ) {
 
 	// check if the index is correct
 	if ( ix > (256 / ALIGN) ) {
-		moduleImport.Error( ERR_FATAL, "SmallFree: invalid memory block" );
+		N_Error( ERR_FATAL, "SmallFree: invalid memory block" );
 	}
 
 	*link = (intptr_t)smallFirstFree[ix];	// write next index
@@ -985,77 +985,77 @@ void idHeap::LargeFree( void *ptr) {
 #undef new
 
 static idHeap *			mem_heap = NULL;
-//static memoryStats_t	mem_total_allocs = { 0, 0x0fffffff, -1, 0 };
-//static memoryStats_t	mem_frame_allocs;
-//static memoryStats_t	mem_frame_frees;
+static memoryStats_t	mem_total_allocs = { 0, 0x0fffffff, -1, 0 };
+static memoryStats_t	mem_frame_allocs;
+static memoryStats_t	mem_frame_frees;
 
 /*
 ==================
 Mem_ClearFrameStats
 ==================
 */
-//void Mem_ClearFrameStats( void ) {
-//	mem_frame_allocs.num = mem_frame_frees.num = 0;
-//	mem_frame_allocs.minSize = mem_frame_frees.minSize = 0x0fffffff;
-//	mem_frame_allocs.maxSize = mem_frame_frees.maxSize = -1;
-//	mem_frame_allocs.totalSize = mem_frame_frees.totalSize = 0;
-//}
+void Mem_ClearFrameStats( void ) {
+	mem_frame_allocs.num = mem_frame_frees.num = 0;
+	mem_frame_allocs.minSize = mem_frame_frees.minSize = 0x0fffffff;
+	mem_frame_allocs.maxSize = mem_frame_frees.maxSize = -1;
+	mem_frame_allocs.totalSize = mem_frame_frees.totalSize = 0;
+}
 
 /*
 ==================
 Mem_GetFrameStats
 ==================
 */
-//void Mem_GetFrameStats( memoryStats_t &allocs, memoryStats_t &frees ) {
-//	allocs = mem_frame_allocs;
-//	frees = mem_frame_frees;
-//}
+void Mem_GetFrameStats( memoryStats_t &allocs, memoryStats_t &frees ) {
+	allocs = mem_frame_allocs;
+	frees = mem_frame_frees;
+}
 
 /*
 ==================
 Mem_GetStats
 ==================
 */
-//void Mem_GetStats( memoryStats_t &stats ) {
-//	stats = mem_total_allocs;
-//}
+void Mem_GetStats( memoryStats_t &stats ) {
+	stats = mem_total_allocs;
+}
 
 /*
 ==================
 Mem_UpdateStats
 ==================
 */
-//void Mem_UpdateStats( memoryStats_t &stats, int size ) {
-//	stats.num++;
-//	if ( size < stats.minSize ) {
-//		stats.minSize = size;
-//	}
-//	if ( size > stats.maxSize ) {
-//		stats.maxSize = size;
-//	}
-//	stats.totalSize += size;
-//}
+void Mem_UpdateStats( memoryStats_t &stats, uint32_t size ) {
+	stats.num++;
+	if ( size < stats.minSize ) {
+		stats.minSize = size;
+	}
+	if ( size > stats.maxSize ) {
+		stats.maxSize = size;
+	}
+	stats.totalSize += size;
+}
 
 /*
 ==================
 Mem_UpdateAllocStats
 ==================
 */
-//void Mem_UpdateAllocStats( int size ) {
-//	Mem_UpdateStats( mem_frame_allocs, size );
-//	Mem_UpdateStats( mem_total_allocs, size );
-//}
+void Mem_UpdateAllocStats( uint32_t size ) {
+	Mem_UpdateStats( mem_frame_allocs, size );
+	Mem_UpdateStats( mem_total_allocs, size );
+}
 
 /*
 ==================
 Mem_UpdateFreeStats
 ==================
 */
-//void Mem_UpdateFreeStats( int size ) {
-//	Mem_UpdateStats( mem_frame_frees, size );
-//	mem_total_allocs.num--;
-//	mem_total_allocs.totalSize -= size;
-//}
+void Mem_UpdateFreeStats( uint32_t size ) {
+	Mem_UpdateStats( mem_frame_frees, size );
+	mem_total_allocs.num--;
+	mem_total_allocs.totalSize -= size;
+}
 
 
 #ifndef ID_DEBUG_MEMORY
@@ -1065,7 +1065,7 @@ Mem_UpdateFreeStats
 Mem_Alloc
 ==================
 */
-void *Mem_Alloc( const int size ) {
+void *Mem_Alloc( const uint32_t size ) {
 	if ( !size ) {
 		return NULL;
 	}
@@ -1105,7 +1105,7 @@ void Mem_Free( void *ptr ) {
 Mem_Alloc16
 ==================
 */
-void *Mem_Alloc16( const int size ) {
+void *Mem_Alloc16( const uint32_t size ) {
 	if ( !size ) {
 		return NULL;
 	}
@@ -1147,7 +1147,7 @@ void Mem_Free16( void *ptr ) {
 Mem_ClearedAlloc
 ==================
 */
-void *Mem_ClearedAlloc( const int size ) {
+void *Mem_ClearedAlloc( const uint32_t size ) {
 	void *mem = Mem_Alloc( size );
 	memset( mem, 0, size );
 	return mem;
@@ -1235,9 +1235,9 @@ void Mem_EnableLeakTest( const char *name ) {
 // size of this struct must be a multiple of 16 bytes
 typedef struct debugMemory_s {
 	const char *			fileName;
-	int						lineNumber;
-	int						frameNumber;
-	int						size;
+	int32_t					lineNumber;
+	uint32_t				frameNumber;
+	uint32_t				size;
 	struct debugMemory_s *	prev;
 	struct debugMemory_s *	next;
 } debugMemory_t;
@@ -1259,11 +1259,11 @@ const char *Mem_CleanupFileName( const char *fileName ) {
 	newFileName = fileName;
 	i1 = newFileName.find( "code/", false );
 	if ( i1 >= 0 ) {
-		i1 = newFileName.Find( "/", false, i1 );
+		i1 = newFileName.find( "/", false, i1 );
 		newFileName = newFileName.Right( newFileName.Length() - ( i1 + 1 ) );
 	}
 	while( 1 ) {
-		i1 = newFileName.Find( "/../" );
+		i1 = newFileName.find( "/../" );
 		if ( i1 <= 0 ) {
 			break;
 		}
@@ -1290,7 +1290,7 @@ void Mem_Dump( const char *fileName ) {
 	eastl::string m, funcName;
     fileHandle_t f;
 
-    f = moduleImport.FS_FOpenWrite( fileName );
+    f = FS_FOpenWrite( fileName );
 	if ( f == FS_INVALID_HANDLE ) {
 		return;
 	}
@@ -1308,17 +1308,17 @@ void Mem_Dump( const char *fileName ) {
 		}
 		dump[i] = '\0';
 		if ( ( b->size >> 10 ) != 0 ) {
-			moduleImport.FS_FPrintf( f, "size: %6d KB: %s, line: %d [%s]\r\n", ( b->size >> 10 ), Mem_CleanupFileName(b->fileName), b->lineNumber, dump );
+			FS_FPrintf( f, "size: %6d KB: %s, line: %d [%s]\r\n", ( b->size >> 10 ), Mem_CleanupFileName(b->fileName), b->lineNumber, dump );
 		}
 		else {
-			moduleImport.FS_FPrintf( f, "size: %7d B: %s, line: %d [%s], call stack: %s\r\n", b->size, Mem_CleanupFileName(b->fileName), b->lineNumber, dump );
+			FS_FPrintf( f, "size: %7d B: %s, line: %d [%s], call stack: %s\r\n", b->size, Mem_CleanupFileName(b->fileName), b->lineNumber, dump );
 		}
 	}
 
-	moduleImport.FS_FPrintf( f, "%8d total memory blocks allocated\r\n", numBlocks );
-	moduleImport.FS_FPrintf( f, "%8d KB memory allocated\r\n", ( totalSize >> 10 ) );
+	FS_FPrintf( f, "%8d total memory blocks allocated\r\n", numBlocks );
+	FS_FPrintf( f, "%8d KB memory allocated\r\n", ( totalSize >> 10 ) );
 
-    moduleImport.FS_FClose( f );
+    FS_FClose( f );
 }
 
 /*
@@ -1329,8 +1329,8 @@ Mem_Dump_f
 void Mem_Dump_f( void ) {
 	const char *fileName;
 
-	if ( moduleImport.Cmd_Argc() >= 2 ) {
-		fileName = moduleImport.Cmd_Argv( 1 );
+	if ( Cmd_Argc() >= 2 ) {
+		fileName = Cmd_Argv( 1 );
 	}
 	else {
 		fileName = "memorydump.txt";
@@ -1452,7 +1452,7 @@ void Mem_DumpCompressed( const char *fileName, memorySortType_t memSort, int num
 		}
 	}
 
-    f = moduleImport.FS_FOpenWrite( fileName );
+    f = FS_FOpenWrite( fileName );
 	if ( f == FS_INVALID_HANDLE ) {
 		return;
 	}
@@ -1460,16 +1460,16 @@ void Mem_DumpCompressed( const char *fileName, memorySortType_t memSort, int num
 	// write list to file
 	for ( a = sortedAllocInfo; a; a = nexta ) {
 		nexta = a->next;
-		moduleImport.FS_FPrintf( f, "size: %6d KB, allocs: %5d: %s, line: %d\r\n",
+		FS_FPrintf( f, "size: %6d KB, allocs: %5d: %s, line: %d\r\n",
 					(a->size >> 10), a->numAllocs, Mem_CleanupFileName(a->fileName),
 							a->lineNumber );
 		::free( a );
 	}
 
-	moduleImport.FS_FPrintf( f, "%8d total memory blocks allocated\r\n", numBlocks );
-	moduleImport.FS_FPrintf( f, "%8d KB memory allocated\r\n", ( totalSize >> 10 ) );
+	FS_FPrintf( f, "%8d total memory blocks allocated\r\n", numBlocks );
+	FS_FPrintf( f, "%8d KB memory allocated\r\n", ( totalSize >> 10 ) );
 
-	moduleImport.FS_FPrintf( f );
+	FS_FPrintf( f );
 }
 
 /*
@@ -1485,9 +1485,9 @@ void Mem_DumpCompressed_f( void ) {
 
 	// get cmd-line options
 	argNum = 1;
-	arg = moduleImport.Cmd_Argv( argNum );
+	arg = Cmd_Argv( argNum );
 	while( arg[0] == '-' ) {
-		arg = moduleImport.Cmd_Argv( ++argNum );
+		arg = Cmd_Argv( ++argNum );
 		if ( N_stricmp( arg, "s" ) == 0 ) {
 			memSort = MEMSORT_SIZE;
 		} else if ( N_stricmp( arg, "l" ) == 0 ) {
@@ -1497,7 +1497,7 @@ void Mem_DumpCompressed_f( void ) {
 		} else if ( arg[0] == 'f' ) {
 			numFrames = atoi( arg + 1 );
 		} else {
-			moduleImport.Printf( PRINT_INFO, "memoryDumpCompressed [options] [filename]\n"
+			Con_Printf( "memoryDumpCompressed [options] [filename]\n"
 						"options:\n"
 						"  -s     sort on size\n"
 						"  -l     sort on location\n"
@@ -1510,7 +1510,7 @@ void Mem_DumpCompressed_f( void ) {
 						"By default a 'memorydump.txt' is written if no file name is specified.\n" );
 			return;
 		}
-		arg = moduleImport.Cmd_Argv( ++argNum );
+		arg = Cmd_Argv( ++argNum );
 	}
 	if ( argNum >= args.Argc() ) {
 		fileName = "memorydump.txt";
@@ -1525,7 +1525,7 @@ void Mem_DumpCompressed_f( void ) {
 Mem_AllocDebugMemory
 ==================
 */
-void *Mem_AllocDebugMemory( const int size, const char *fileName, const int lineNumber, const bool align16 ) {
+void *Mem_AllocDebugMemory( const uint32_t size, const char *fileName, const int lineNumber, const bool align16 ) {
 	void *p;
 	debugMemory_t *m;
 
@@ -1553,7 +1553,7 @@ void *Mem_AllocDebugMemory( const int size, const char *fileName, const int line
 	m = (debugMemory_t *) p;
 	m->fileName = fileName;
 	m->lineNumber = lineNumber;
-	m->frameNumber = idLib::frameNumber;
+	m->frameNumber = com_frameNumber;
 	m->size = size;
 	m->next = mem_debugMemory;
 	m->prev = NULL;
@@ -1589,7 +1589,7 @@ void Mem_FreeDebugMemory( void *p, const char *fileName, const int lineNumber, c
 	m = (debugMemory_t *) ( ( (byte *) p ) - sizeof( debugMemory_t ) );
 
 	if ( m->size < 0 ) {
-		moduleImport.Error( ERR_FATAL, "memory freed twice" );
+		N_Error( ERR_FATAL, "memory freed twice" );
 	}
 
 	Mem_UpdateFreeStats( m->size );
@@ -1622,7 +1622,7 @@ void Mem_FreeDebugMemory( void *p, const char *fileName, const int lineNumber, c
 Mem_Alloc
 ==================
 */
-void *Mem_Alloc( const int size, const char *fileName, const int lineNumber ) {
+void *Mem_Alloc( const uint32_t size, const char *fileName, const int lineNumber ) {
 	if ( !size ) {
 		return NULL;
 	}
@@ -1646,7 +1646,7 @@ void Mem_Free( void *ptr, const char *fileName, const int lineNumber ) {
 Mem_Alloc16
 ==================
 */
-void *Mem_Alloc16( const int size, const char *fileName, const int lineNumber ) {
+void *Mem_Alloc16( const uint32_t size, const char *fileName, const int lineNumber ) {
 	if ( !size ) {
 		return NULL;
 	}
@@ -1675,7 +1675,7 @@ void Mem_Free16( void *ptr, const char *fileName, const int lineNumber ) {
 Mem_ClearedAlloc
 ==================
 */
-void *Mem_ClearedAlloc( const int size, const char *fileName, const int lineNumber ) {
+void *Mem_ClearedAlloc( const uint32_t size, const char *fileName, const int lineNumber ) {
 	void *mem = Mem_Alloc( size, fileName, lineNumber );
 	SIMDProcessor->Memset( mem, 0, size );
 	return mem;

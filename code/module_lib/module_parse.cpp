@@ -7,14 +7,17 @@ CModuleParse::CModuleParse( const char *filename )
         void *v;
         char *c;
     } f;
+    uint64_t length;
     
-    moduleImport.FS_LoadFile( filename, &f.v );
-    if ( !f.v ) {
-        moduleImport.Printf( PRINT_WARNING, "CModuleParse::CModuleParse: failed to load info file '%s'\n", filename );
+    length = FS_LoadFile( filename, &f.v );
+    if ( !length || !f.v ) {
+        Con_Printf( COLOR_YELLOW "[WARNING] CModuleParse::CModuleParse: failed to load info file '%s'\n", filename );
         return;
     }
 
     m_pTextBuffer = f.c;
+
+    Parse();
 }
 
 CModuleParse::CModuleParse( const CModuleParse& other ) {
@@ -34,11 +37,11 @@ CModuleParse::CModuleParse( CModuleParse&& other ) {
 }
 
 CModuleParse::~CModuleParse() {
-    moduleImport.FS_FreeFile( m_pTextBuffer );
-
     for ( auto it = m_Infos.begin(); it != m_Infos.end(); it++ ) {
         delete *it;
     }
+
+    FS_FreeFile( m_pTextBuffer );
 }
 
 void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL CModuleParse::Error( const char *fmt, ... )
@@ -66,10 +69,10 @@ void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL CModuleParse::Warning( const
     COM_ParseWarning( "%s", msg );
 }
 
-void CModuleParse::ParseHashTable( const char **text, const char *pName, HashTable& hashTable )
+void CModuleParse::ParseHashTable( const char **text, const eastl::string& pName, HashTable& hashTable )
 {
-    const char *key, *value;
-    const char *rewind;
+    eastl::string key, value;
+    eastl::string rewind;
 
     if ( m_bFailed ) {
         return;
@@ -79,7 +82,7 @@ void CModuleParse::ParseHashTable( const char **text, const char *pName, HashTab
         key = COM_ParseExt( text, qfalse );
 
         if ( !key[0] ) {
-            Error( "expected '}' at end of info array hashtable");
+            Error( "expected ')' at end of info array hashtable");
             return;
         }
 
@@ -88,8 +91,8 @@ void CModuleParse::ParseHashTable( const char **text, const char *pName, HashTab
             break;
         }
         // nested info
-        else if ( key[0] == '{' ) {
-            if ( !rewind ) {
+        else if ( key.back() == '{' ) {
+            if ( !rewind.size() ) {
                 Error( "unnamed nested info in info definition" );
                 return;
             }
@@ -101,8 +104,8 @@ void CModuleParse::ParseHashTable( const char **text, const char *pName, HashTab
             m_Infos.emplace_back( parse );
         }
         // array list
-        else if ( key[0] == '[' ) {
-            if ( !rewind ) {
+        else if ( key.back() == '[' ) {
+            if ( !rewind.size() ) {
                 Error( "unnamed array list in info definition" );
                 return;
             }
@@ -113,8 +116,8 @@ void CModuleParse::ParseHashTable( const char **text, const char *pName, HashTab
             m_ValueLists.try_emplace( rewind, valueList );
         }
         // array hashtable
-        else if ( key[0] == '(' ) {
-            if ( !rewind ) {
+        else if ( key.back() == '(' ) {
+            if ( !rewind.size() ) {
                 Error( "unnamed array hashtable in info definition" );
                 return;
             }
@@ -127,7 +130,7 @@ void CModuleParse::ParseHashTable( const char **text, const char *pName, HashTab
         else {
             value = COM_ParseExt( text, qfalse );
             if ( !value[0] ) {
-                Error( "missing value for key '%s' in array hashtable", key );
+                Error( "missing value for key '%s' in array hashtable", key.c_str() );
                 return;
             }
             hashTable.try_emplace( key, value );
@@ -137,10 +140,10 @@ void CModuleParse::ParseHashTable( const char **text, const char *pName, HashTab
     }
 }
 
-void CModuleParse::ParseList( const char **text, const char *pName, ValueList& valueList )
+void CModuleParse::ParseList( const char **text, const eastl::string& pName, ValueList& valueList )
 {
-    const char *tok;
-    const char *rewind;
+    eastl::string tok;
+    eastl::string rewind;
     
     if ( m_bFailed ) {
         return;
@@ -150,7 +153,7 @@ void CModuleParse::ParseList( const char **text, const char *pName, ValueList& v
         tok = COM_ParseExt( text, qfalse );
 
         if ( !tok[0] ) {
-            Error( "expected '}' at end of info array list");
+            Error( "expected ']' at end of info array list");
             return;
         }
 
@@ -159,8 +162,8 @@ void CModuleParse::ParseList( const char **text, const char *pName, ValueList& v
             break;
         }
         // nested info
-        else if ( tok[0] == '{' ) {
-            if ( !rewind ) {
+        else if ( tok.back() == '{' ) {
+            if ( !rewind.size() ) {
                 Error( "unnamed nested info in info definition" );
                 return;
             }
@@ -172,8 +175,8 @@ void CModuleParse::ParseList( const char **text, const char *pName, ValueList& v
             m_Infos.emplace_back( parse );
         }
         // array list
-        else if ( tok[0] == '[' ) {
-            if ( !rewind ) {
+        else if ( tok.back() == '[' ) {
+            if ( !rewind.size() ) {
                 Error( "unnamed array list in info definition" );
                 return;
             }
@@ -184,8 +187,8 @@ void CModuleParse::ParseList( const char **text, const char *pName, ValueList& v
             m_ValueLists.try_emplace( rewind, valueList );
         }
         // array hashtable
-        else if ( tok[0] == '(' ) {
-            if ( !rewind ) {
+        else if ( tok.back() == '(' ) {
+            if ( !rewind.size() ) {
                 Error( "unnamed array hashtable in info definition" );
                 return;
             }
@@ -203,10 +206,10 @@ void CModuleParse::ParseList( const char **text, const char *pName, ValueList& v
     }
 }
 
-void CModuleParse::ParseInfo( const char **text, const char *pName, CModuleParse *parse )
+void CModuleParse::ParseInfo( const char **text, const eastl::string& pName, CModuleParse *parse )
 {
-    const char *key, *value;
-    const char *rewind;
+    eastl::string key, value;
+    eastl::string rewind;
 
     if ( m_bFailed ) {
         return;
@@ -225,8 +228,8 @@ void CModuleParse::ParseInfo( const char **text, const char *pName, CModuleParse
             break;
         }
         // nested info
-        else if ( key[0] == '{' ) {
-            if ( !rewind ) {
+        else if ( key.back() == '{' ) {
+            if ( !rewind.size() ) {
                 Error( "unnamed nested info in info definition" );
                 return;
             }
@@ -238,8 +241,8 @@ void CModuleParse::ParseInfo( const char **text, const char *pName, CModuleParse
             m_Infos.emplace_back( parse );
         }
         // array list
-        else if ( key[0] == '[' ) {
-            if ( !rewind ) {
+        else if ( key.back() == '[' ) {
+            if ( !rewind.size() ) {
                 Error( "unnamed array list in info definition" );
                 return;
             }
@@ -250,8 +253,8 @@ void CModuleParse::ParseInfo( const char **text, const char *pName, CModuleParse
             m_ValueLists.try_emplace( rewind, valueList );
         }
         // array hashtable
-        else if ( key[0] == '(' ) {
-            if ( !rewind ) {
+        else if ( key.back() == '(' ) {
+            if ( !rewind.size() ) {
                 Error( "unnamed array hashtable in info definition" );
                 return;
             }
@@ -264,11 +267,13 @@ void CModuleParse::ParseInfo( const char **text, const char *pName, CModuleParse
         else {
             value = COM_ParseExt( text, qfalse );
             if ( !value[0] ) {
-                Error( "missing value for key '%s' in info definition", key );
+                Error( "missing value for key '%s' in info definition", key.c_str() );
                 return;
             }
             m_Values.try_emplace( key, value );
         }
+
+        rewind = key;
     }
 }
 
@@ -276,8 +281,8 @@ void CModuleParse::Parse( void )
 {
     const char **text;
     const char *text_p;
-    const char *key, *value;
-    const char *rewind;
+    eastl::string key, value;
+    eastl::string rewind;
 
     text_p = m_pTextBuffer;
     text = (const char **)&text_p;
@@ -291,7 +296,7 @@ void CModuleParse::Parse( void )
     while ( 1 ) {
         if ( m_bFailed ) {
             // failed somewhere, get out
-            moduleImport.Printf( PRINT_INFO, "failed to parse info file.\n" );
+            Con_Printf( "failed to parse info file.\n" );
             break;
         }
 
@@ -300,18 +305,14 @@ void CModuleParse::Parse( void )
             Error( "unexpected end of info file" );
             return;
         }
-        if ( key[0] != '}' ) {
-            Error( "expected '}' at end of info definition" );
-            return;
-        }
         
         // end of defintion
         if ( key[0] == '}' ) {
             break;
         }
         // nested info
-        else if ( key[0] == '{' ) {
-            if ( !rewind ) {
+        else if ( key.back() == '{' ) {
+            if ( !rewind.size() ) {
                 Error( "unnamed nested info in info definition" );
                 return;
             }
@@ -323,8 +324,8 @@ void CModuleParse::Parse( void )
             m_Infos.emplace_back( parse );
         }
         // array list
-        else if ( key[0] == '[' ) {
-            if ( !rewind ) {
+        else if ( key.back() == '[' ) {
+            if ( !rewind.size() ) {
                 Error( "unnamed array list in info definition" );
                 return;
             }
@@ -335,8 +336,8 @@ void CModuleParse::Parse( void )
             m_ValueLists.try_emplace( rewind, valueList );
         }
         // array hashtable
-        else if ( key[0] == '(' ) {
-            if ( !rewind ) {
+        else if ( key.back() == '(' ) {
+            if ( !rewind.size() ) {
                 Error( "unnamed array hashtable in info definition" );
                 return;
             }
@@ -348,6 +349,10 @@ void CModuleParse::Parse( void )
         }
         else {
             value = COM_ParseExt( text, qfalse );
+            if ( !value[0] ) {
+                Error( "missing value for key '%s' in info definition", key.c_str() );
+                return;
+            }
             m_Values.try_emplace( key, value );
         }
 
@@ -367,39 +372,39 @@ CModuleParse *CModuleParse::GetInfo( const char *pName )
         }
     }
 
-    moduleImport.Printf( PRINT_WARNING, "CModuleParse::GetInfo: failed to find info '%s'", pName );
+    Con_Printf( COLOR_YELLOW "[WARNING] CModuleParse::GetInfo: failed to find info '%s'\n", pName );
     return NULL;
 }
 
-UtlString& CModuleParse::GetValue( const char *pName )
+eastl::string& CModuleParse::GetValue( const char *pName )
 {
     for ( auto it = m_Values.begin(); it != m_Values.end(); it++ ) {
         if ( !N_stricmp( it->first.c_str(), pName ) ) {
             return it->second;
         }
     }
-    moduleImport.Printf( PRINT_WARNING, "CModuleParse::GetValue: no value for info key '%s'\n", pName );
+    Con_Printf( COLOR_YELLOW "[WARNING] CModuleParse::GetValue: no value for info key '%s'\n", pName );
     return m_EmptyString;
 }
 
-UtlMap<eastl::string, UtlString>& CModuleParse::GetHashTable( const char *pName )
+CModuleParse::HashTable& CModuleParse::GetHashTable( const char *pName )
 {
     for ( auto it = m_ValueMaps.begin(); it != m_ValueMaps.end(); it++ ) {
         if ( !N_stricmp( it->first.c_str(), pName ) ) {
             return it->second;
         }
     }
-    moduleImport.Printf( PRINT_WARNING, "CModuleParse::GetHashTable: no hashtable for info key '%s'\n", pName );
+    Con_Printf( COLOR_YELLOW "[WARNING] CModuleParse::GetHashTable: no hashtable for info key '%s'\n", pName );
     return m_EmptyMap;
 }
 
-UtlVector<UtlString>& CModuleParse::GetArray( const char *pName )
+CModuleParse::ValueList& CModuleParse::GetArray( const char *pName )
 {
     for ( auto it = m_ValueLists.begin(); it != m_ValueLists.end(); it++ ) {
         if ( !N_stricmp( it->first.c_str(), pName ) ) {
             return it->second;
         }
     }
-    moduleImport.Printf( PRINT_WARNING, "CModuleParse::GetHashTable: no list for info key '%s'\n", pName );
+    Con_Printf( COLOR_YELLOW "[WARNING] CModuleParse::GetHashTable: no list for info key '%s'\n", pName );
     return m_EmptyList;
 }

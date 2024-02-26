@@ -426,28 +426,6 @@ Compiler Macro Abstraction
 #endif
 #endif
 
-#ifdef __cplusplus
-#include <EASTL/vector.h>
-#include <EASTL/fixed_vector.h>
-#include <EASTL/fixed_allocator.h>
-#include <EASTL/fixed_list.h>
-#include <EASTL/fixed_string.h>
-#include <EASTL/fixed_substring.h>
-#include <EASTL/chrono.h>
-#include <EASTL/utility.h>
-#include <EASTL/unordered_map.h>
-#include <EASTL/map.h>
-#include <EASTL/hash_map.h>
-#include <EASTL/fixed_hash_map.h>
-#include <EASTL/vector_map.h>
-#include <EASTL/string_hash_map.h>
-#include <EASTL/string.h>
-#include <EASTL/random.h>
-#include <EASTL/bonus/lru_cache.h>
-#include <EASTL/bonus/fixed_ring_buffer.h>
-#include <EASTL/bonus/ring_buffer.h>
-#endif
-
 #ifndef Q3_VM
 	#if defined (_MSC_VER) && !defined(__clang__)
 		typedef __int64 int64_t;
@@ -607,32 +585,6 @@ typedef struct {
 #endif
 #endif
 
-#if defined(Q3_VM) || !defined(_NOMAD_ENGINE)
-
-#define VectorNegate(a,b)		((b).x=-(a).x,(b).y=-(a).y,(b).z=-(a).z)
-#define VectorSet(v, a, b, x)	((v).x=(a),(v).y=(b),(v).z=(c))
-#define VectorClear(a)			((a).x=(a).y=(a).z=0)
-
-#define DotProduct(a,b)			((a).x*(b).x+(a).y*(b).y+(a).z*(b).z)
-#define VectorSubtract(a,b,c)	((c).x=(a).x-(b).x,(c).y=(a).y-(b).y,(c).z=(a).z-(b).z)
-#define VectorAdd(a,b,c)		((c).x=(a).x+(b).x,(c).y=(a).y+(b).y,(c).z=(a).z+(b).z)
-#define VectorCopy(b,a)			((b).x=(a).x,(b).y=(a).y,(b).z=(a).z)
-#define	VectorScale(v, s, o)	((o).x=(v).x*(s),(o).y=(v).y*(s),(o).z=(v).z*(s))
-#define	VectorMA(v, s, b, o)	((o).x=(v).x+(b).x*(s),(o).y=(v).y+(b).y*(s),(o).z=(v).z+(b).z*(s))
-
-#define VectorCopy4(b,a)		((b).r=(a).r,(b).g=(a).g,(b).b=(a).b,(b).a=(a).a)
-#define DotProduct4(a,b)		((a).r*(b).r + (a).g*(b).g + (a).b*(b).b + (a).a*(b).a)
-#define VectorScale4(a,b,c)		((c).r=(a).r*(b),(c).g=(a).g*(b),(c).b=(a).b*(b),(c).a=(a).a*(b))
-#define VectorSet4(v,x,y,z,w)	((v).r=(x),(v).g=(y),(v).b=(z),(v).a=(w))
-
-#define	SnapVector(v) {v.x=((int)(v.x));v.y=((int)(v.y));v.z=((int)(v.z));}
-
-#define VectorClear2(a)			((a).x=(a).y=0)
-#define VectorCopy2(dst,src)	((dst).x=(src).x,(dst).y=(src).y)
-#define VectorSet2(dst,a,b)		((dst).x=(a),(dst).x=(b))
-
-#else
-
 #define Byte4Copy(a,b)			((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2],(b)[3]=(a)[3])
 
 #define QuatCopy(a,b)			((b)[0]=(a)[0],(b)[1]=(a)[1],(b)[2]=(a)[2],(b)[3]=(a)[3])
@@ -659,8 +611,6 @@ typedef struct {
 #define VectorCopy2(dst,src)	((dst)[0]=(src)[0],(dst)[1]=(src)[1])
 #define VectorSet2(dst,a,b)		((dst)[0]=(a),(dst)[1]=(b))
 
-#endif
-
 #else
 
 #define DotProduct(x,y)			_DotProduct(x,y)
@@ -672,21 +622,6 @@ typedef struct {
 
 #endif
 
-#if defined(Q3_VM) || !defined(_NOMAD_ENGINE)
-typedef struct { byte r, g, b, a; } colorbyte_t;
-
-typedef struct { vec_t x, y; } vec2_t;
-typedef struct { vec_t x, y, z; } vec3_t;
-typedef struct { vec_t r, g, b, a; } vec4_t;
-
-typedef struct { ivec_t x, y; } ivec2_t;
-typedef struct { ivec_t x, y, z; } ivec3_t;
-typedef struct { ivec_t r, g, b, a; } ivec4_t;
-
-typedef struct { uvec_t x, y; } uvec2_t;
-typedef struct { uvec_t x, y, z; } uvec3_t;
-typedef struct { uvec_t r, g, b, a; } uvec4_t;
-#else
 typedef vec_t vec2_t[2];
 typedef vec_t vec3_t[3];
 typedef vec_t vec4_t[4];
@@ -700,7 +635,6 @@ typedef uvec_t uvec4_t[4];
 typedef ivec_t ivec2_t[2];
 typedef ivec_t ivec3_t[3];
 typedef ivec_t ivec4_t[4];
-#endif
 
 // plane types are used to speed some tests
 // 0-2 are axial planes
@@ -736,11 +670,7 @@ typedef union {
 } floatint_t;
 
 typedef union {
-#ifdef Q3_VM
-	colorbyte_t color;
-#else
 	byte rgba[4];
-#endif
 	uint32_t u32;
 } color4ub_t;
 

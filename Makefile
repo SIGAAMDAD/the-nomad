@@ -106,7 +106,7 @@ USE_VULKAN_API=0
 INCLUDE       =-Idependencies/include/ -Idependencies/include/EA/ -Ideps/squirrel/include -Ideps/squall/ $(OS_INCLUDE) -I. -Icode/
 VERSION_DEFINE=-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPDATE) -D_NOMAD_VERSION_PATCH=$(VERSION_PATCH)
 
-DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -D_NOMAD_ENGINE
+DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -D_NOMAD_ENGINE -DAS_MAX_PORTABILITY
 OPTIMIZERS    =\
 			-ffast-math \
 			-mfma -msse3 -msse2 -msse -mavx -mavx2 -mmmx -mfpmath=sse
@@ -263,9 +263,6 @@ ASOBJS=\
 	$(O)/angelscript/as_tokenizer.o \
 	$(O)/angelscript/as_typeinfo.o \
 	$(O)/angelscript/as_variablescope.o \
-	$(O)/angelscript/as_callfunc_arm64_gcc.o \
-	$(O)/angelscript/as_callfunc_arm_gcc.o \
-	$(O)/angelscript/as_callfunc_arm_vita.o \
 
 SRC=\
 	$(O)/game/g_game.o \
@@ -285,6 +282,7 @@ SRC=\
 	$(O)/module_lib/module_parse.o \
 	$(O)/module_lib/module_handle.o \
 	$(O)/module_lib/module_renderlib.o \
+	$(O)/module_lib/module_funcdefs.o \
 	$(O)/module_lib/debugger.o \
 	$(O)/module_lib/scriptarray.o \
 	$(O)/module_lib/scriptbuilder.o \
@@ -397,8 +395,6 @@ $(O)/game/jpeg/%.o: $(SDIR)/libjpeg/%.c
 $(O)/module_lib/%.o: $(SDIR)/module_lib/%.cpp
 	$(COMPILE_SRC) -DMODULE_LIB
 $(O)/angelscript/%.o: $(SDIR)/angelscript/%.cpp
-	$(COMPILE_SRC)
-$(O)/angelscript/%.o: $(SDIR)/angelscript/%.S
 	$(COMPILE_SRC)
 
 ifdef win32

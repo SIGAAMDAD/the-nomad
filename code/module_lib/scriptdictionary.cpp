@@ -35,7 +35,7 @@ void SDictionaryCache::Setup( asIScriptEngine *engine )
 		engine->SetEngineUserDataCleanupCallback( SDictionaryCache::Cleanup, DICTIONARY_CACHE );
 
 		cache->dictType = engine->GetTypeInfoByName( "dictionary" );
-		cache->arrayType = engine->GetTypeInfoByDecl( "array<string>" );
+		cache->arrayType = engine->GetTypeInfoByDecl( "vector<string>" );
 		cache->keyType = engine->GetTypeInfoByDecl( "string" );
 	}
 }
@@ -413,7 +413,7 @@ void CScriptDictionary::DeleteAll()
 
 CScriptArray* CScriptDictionary::GetKeys() const
 {
-	// Retrieve the object type for the array<string> from the cache
+	// Retrieve the object type for the vector<string> from the cache
 	SDictionaryCache *cache = reinterpret_cast<SDictionaryCache*>(m_pEngine->GetUserData(DICTIONARY_CACHE));
 	asITypeInfo *ti = cache->arrayType;
 
@@ -1064,8 +1064,8 @@ void RegisterScriptDictionary_Native(asIScriptEngine *engine)
 {
 	int r;
 
-	// The array<string> type must be available
-	assert( engine->GetTypeInfoByDecl("array<string>") );
+	// The vector<string> type must be available
+	assert( engine->GetTypeInfoByDecl("vector<string>") );
 
 #if AS_CAN_USE_CPP11
 	// With C++11 it is possible to use asGetTypeTraits to automatically determine the correct flags that represents the C++ class
@@ -1112,7 +1112,7 @@ void RegisterScriptDictionary_Native(asIScriptEngine *engine)
 	r = engine->RegisterObjectMethod("dictionary", "bool delete(const string &in)", asMETHOD(CScriptDictionary,Delete), asCALL_THISCALL); assert( r >= 0 );
 	r = engine->RegisterObjectMethod("dictionary", "void deleteAll()", asMETHOD(CScriptDictionary,DeleteAll), asCALL_THISCALL); assert( r >= 0 );
 
-	r = engine->RegisterObjectMethod("dictionary", "array<string> @getKeys() const", asMETHOD(CScriptDictionary,GetKeys), asCALL_THISCALL); assert( r >= 0 );
+	r = engine->RegisterObjectMethod("dictionary", "vector<string> @getKeys() const", asMETHOD(CScriptDictionary,GetKeys), asCALL_THISCALL); assert( r >= 0 );
 
 	r = engine->RegisterObjectMethod("dictionary", "dictionaryValue &opIndex(const string &in)", asMETHODPR(CScriptDictionary, operator[], (const dictKey_t &), CScriptDictValue*), asCALL_THISCALL); assert( r >= 0 );
 	r = engine->RegisterObjectMethod("dictionary", "const dictionaryValue &opIndex(const string &in) const", asMETHODPR(CScriptDictionary, operator[], (const dictKey_t &) const, const CScriptDictValue*), asCALL_THISCALL); assert( r >= 0 );
@@ -1146,12 +1146,7 @@ void RegisterScriptDictionary_Generic(asIScriptEngine *engine)
 	// Register the cleanup callback for the object type cache
 	engine->SetEngineUserDataCleanupCallback(SDictionaryCache::Cleanup, DICTIONARY_CACHE);
 
-#if AS_CAN_USE_CPP11
-	// With C++11 it is possible to use asGetTypeTraits to automatically determine the correct flags that represents the C++ class
-	r = engine->RegisterObjectType("dictionaryValue", sizeof(CScriptDictValue), asOBJ_VALUE | asOBJ_ASHANDLE | asOBJ_GC | asGetTypeTraits<CScriptDictValue>()); assert( r >= 0 );
-#else
-	r = engine->RegisterObjectType("dictionaryValue", sizeof(CScriptDictValue), asOBJ_VALUE | asOBJ_ASHANDLE | asOBJ_GC | asOBJ_APP_CLASS_CD); assert( r >= 0 );
-#endif
+	r = engine->RegisterObjectType("dictionaryValue", sizeof(CScriptDictValue), asOBJ_VALUE | asOBJ_GC | asOBJ_ASHANDLE | asGetTypeTraits<CScriptDictionary>()); assert( r >= 0 );
 	r = engine->RegisterObjectBehaviour("dictionaryValue", asBEHAVE_CONSTRUCT, "void f()", asFUNCTION(CScriptDictValue_Construct_Generic), asCALL_GENERIC); assert( r >= 0 );
 	r = engine->RegisterObjectBehaviour("dictionaryValue", asBEHAVE_DESTRUCT, "void f()", asFUNCTION(CScriptDictValue_Destruct_Generic), asCALL_GENERIC); assert( r >= 0 );
 	r = engine->RegisterObjectBehaviour("dictionaryValue", asBEHAVE_ENUMREFS, "void f(int&in)", asFUNCTION(CScriptDictValue_EnumReferences_Generic), asCALL_GENERIC); assert(r >= 0);
@@ -1190,7 +1185,7 @@ void RegisterScriptDictionary_Generic(asIScriptEngine *engine)
 	r = engine->RegisterObjectMethod("dictionary", "bool delete(const string &in)", asFUNCTION(ScriptDictionaryDelete_Generic), asCALL_GENERIC); assert( r >= 0 );
 	r = engine->RegisterObjectMethod("dictionary", "void deleteAll()", asFUNCTION(ScriptDictionaryDeleteAll_Generic), asCALL_GENERIC); assert( r >= 0 );
 
-	r = engine->RegisterObjectMethod("dictionary", "array<string> @getKeys() const", asFUNCTION(CScriptDictionaryGetKeys_Generic), asCALL_GENERIC); assert( r >= 0 );
+	r = engine->RegisterObjectMethod("dictionary", "vector<string> @getKeys() const", asFUNCTION(CScriptDictionaryGetKeys_Generic), asCALL_GENERIC); assert( r >= 0 );
 
 	r = engine->RegisterObjectMethod("dictionary", "dictionaryValue &opIndex(const string &in)", asFUNCTION(CScriptDictionary_opIndex_Generic), asCALL_GENERIC); assert( r >= 0 );
 	r = engine->RegisterObjectMethod("dictionary", "const dictionaryValue &opIndex(const string &in) const", asFUNCTION(CScriptDictionary_opIndex_const_Generic), asCALL_GENERIC); assert( r >= 0 );

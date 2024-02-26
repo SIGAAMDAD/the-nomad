@@ -5,8 +5,10 @@
 CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sourceFiles )
     : m_szName( pName ), m_pScriptContext( NULL ), m_pScriptModule( NULL )
 {
+    memset( m_pFuncTable, 0, sizeof(m_pFuncTable) );
+
     if ( !sourceFiles.size() ) {
-        moduleImport.Printf( PRINT_WARNING, "no source files found for '%s', not compiling\n", pName );
+        Con_Printf( COLOR_YELLOW "WARNING: no source files found for '%s', not compiling\n", pName );
         return;
     }
 
@@ -24,8 +26,10 @@ CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sou
     }
 
     if ( g_pModuleLib->GetScriptBuilder()->BuildModule() != 0 ) {
-        moduleImport.Error( ERR_DROP, "CModuleHandle::CModuleHandle: failed to build module '%s'", pName );
+        N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: failed to build module '%s'", pName );
     }
+
+    m_pScriptContext = g_pModuleLib->GetScriptEngine()->CreateContext();
 }
 
 CModuleHandle::~CModuleHandle() {
@@ -39,7 +43,7 @@ void LogExceptionInfo( asIScriptContext *pContext )
 
     pFunc = pContext->GetExceptionFunction();
 
-    moduleImport.Error( ERR_DROP,
+    N_Error( ERR_DROP,
         "exception was thrown on module exit ->\n"
         " Module ID: %s\n"
         " Section Name: %s\n"
@@ -50,21 +54,25 @@ void LogExceptionInfo( asIScriptContext *pContext )
 
 int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pArgList )
 {
-    asIScriptContext *pContext;
     uint32_t i;
 
-    pContext = g_pModuleLib->GetContextManager()->AddContext( g_pModuleLib->GetScriptEngine(), m_pFuncTable[nCallId] );
-
-    for ( i = 0; i < nArgs; i++ ) {
-        pContext->SetArgDWord( i, pArgList[i] );
+    if ( !m_pScriptContext ) {
+        return -1;
     }
 
-    switch ( pContext->Execute() ) {
+    m_pScriptContext->Prepare( m_pFuncTable[nCallId] );
+    m_pScriptContext->SetExceptionCallback( asFUNCTION( LogExceptionInfo ), NULL, asCALL_CDECL );
+
+    for ( i = 0; i < nArgs; i++ ) {
+        m_pScriptContext->SetArgDWord( i, pArgList[i] );
+    }
+
+    switch ( m_pScriptContext->Execute() ) {
     case asEXECUTION_ABORTED:
     case asEXECUTION_ERROR:
     case asEXECUTION_EXCEPTION:
-        // shit went DOWN in there
-        LogExceptionInfo( pContext );
+        // something happened in there, dunno what
+        LogExceptionInfo( m_pScriptContext );
         break;
     case asEXECUTION_SUSPENDED:
     case asEXECUTION_FINISHED:
@@ -73,7 +81,7 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
         break;
     };
 
-    return (int)pContext->GetReturnWord();
+    return (int)m_pScriptContext->GetReturnWord();
 }
 
 void CModuleHandle::InitCalls( void )
@@ -105,12 +113,12 @@ void CModuleHandle::LoadSourceFile( const UtlString& filename )
     } f;
     uint64_t length;
 
-    length = moduleImport.FS_LoadFile( filename.c_str(), &f.v );
+    length = FS_LoadFile( filename.c_str(), &f.v );
     if ( !f.v ) {
-        moduleImport.Error( ERR_DROP, "CModuleHandle::LoadSourceFile: failed to load source file '%s'", filename.c_str() );
+        N_Error( ERR_DROP, "CModuleHandle::LoadSourceFile: failed to load source file '%s'", filename.c_str() );
     }
     g_pModuleLib->GetScriptBuilder()->AddSectionFromMemory( filename.c_str(), f.b, length );
-    moduleImport.FS_FreeFile( f.v );
+    FS_FreeFile( f.v );
 }
 
 void CModuleHandle::SaveToCache( void ) const
@@ -126,7 +134,11 @@ void CModuleHandle::SaveToCache( void ) const
 */
 void CModuleHandle::ClearMemory( void )
 {
-    moduleImport.Printf( PRINT_INFO, "CModuleHandle::ClearMemory: clearing memory of '%s'...\n", m_szName.c_str() );
+    if ( !m_pScriptModule ) {
+        return;
+    }
+
+    Con_Printf( "CModuleHandle::ClearMemory: clearing memory of '%s'...\n", m_szName.c_str() );
 
     m_pScriptModule->ResetGlobalVars();
 }

@@ -27,45 +27,6 @@ signed short ClampShort( int i );
 float RadiusFromBounds( const bbox_t *bounds );
 void ClearBounds( bbox_t *bounds );
 
-#if defined(Q3_VM) || !defined(_NOMAD_ENGINE)
-
-float vec3_get( vec3_t *v, int i );
-void vec3_set( vec3_t *v, int i, float f );
-
-float disBetweenOBJ(const vec3_t *src, const vec3_t *tar);
-qboolean BoundsIntersect( const bbox_t *a, const bbox_t *b );
-qboolean BoundsIntersectSphere( const bbox_t *box,
-		const vec3_t *origin, vec_t radius );
-qboolean BoundsIntersectPoint( const bbox_t *box,
-		const vec3_t *origin );
-
-int VectorCompare( const vec3_t *v1, const vec3_t *v2 );
-vec_t VectorLength( const vec3_t *v );
-vec_t VectorLengthSquared( const vec3_t *v );
-vec_t Distance( const vec3_t *p1, const vec3_t *p2 );
-vec_t DistanceSquared( const vec3_t *p1, const vec3_t *p2 );
-void VectorNormalizeFast( vec3_t *v );
-void VectorInverse( vec3_t *v );
-void CrossProduct( const vec3_t *v1, const vec3_t *v2, vec3_t *cross );
-
-// this isn't a real cheap function to call!
-int DirToByte( vec3_t *dir );
-void ByteToDir( int b, vec3_t *dir );
-
-vec_t _DotProduct( const vec3_t *v1, const vec3_t *v2 );
-void _VectorSubtract( const vec3_t *veca, const vec3_t *vecb, vec3_t *out );
-void _VectorAdd( const vec3_t *veca, const vec3_t *vecb, vec3_t *out );
-void _VectorCopy( const vec3_t *in, vec3_t *out );
-void _VectorScale( const vec3_t *in, float scale, vec3_t *out );
-void _VectorMA( const vec3_t *veca, float scale, const vec3_t *vecb, vec3_t *vecc );
-
-float NormalizeColor( const vec3_t *in, vec3_t *out );
-void AddPointToBounds( const vec3_t *v, bbox_t *bounds );
-
-vec_t VectorNormalize( vec3_t *v );
-
-#else
-
 vec_t VectorNormalize2( const vec3_t v, vec3_t out );
 
 float disBetweenOBJ( const vec3_t src, const vec3_t tar );
@@ -174,8 +135,6 @@ void MatrixMultiply(float in1[3][3], float in2[3][3], float out[3][3]);
 void AngleVectors( const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
 void PerpendicularVector( vec3_t dst, const vec3_t src );
 vec_t VectorNormalize( vec3_t v );
-
-#endif
 
 unsigned ColorBytes3 (float r, float g, float b);
 unsigned ColorBytes4 (float r, float g, float b, float a);

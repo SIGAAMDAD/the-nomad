@@ -2,6 +2,7 @@
 #ifndef __psp2__
 	#include <locale.h> // setlocale()
 #endif
+#include "../engine/n_threads.h"
 
 // This macro is used to avoid warnings about unused variables.
 // Usually where the variables are only used in debug mode.
@@ -9,89 +10,96 @@
 
 // The eastl::string factory doesn't need to keep a specific order in the
 // cache, so the unordered_map is faster than the ordinary map
-typedef UtlMap<eastl::string, int32_t> map_t;
+typedef eastl::unordered_map<eastl::string, int64_t> map_t;
 
 class CStringFactory : public asIStringFactory
 {
 public:
-	CStringFactory() = default;
-	~CStringFactory()  {
+	CStringFactory( void ) {
+		m_StringCache.reserve( 256 );
+	}
+	~CStringFactory() {
 		// The script engine must release each eastl::string 
 		// constant that it has requested
-		assert(stringCache.size() == 0);
+		Assert( m_StringCache.size() == 0 );
 	}
 
-	const void *GetStringConstant(const char *data, asUINT length)
-	{
+	const void *GetStringConstant( const char *data, asUINT length ) {
 		// The eastl::string factory might be modified from multiple 
 		// threads, so it is necessary to use a mutex.
-		asAcquireExclusiveLock();
-		
-		eastl::string str(data, length);
-		map_t::iterator it = stringCache.find(str);
-		if (it != stringCache.end())
-			it->second++;
-		else
-			it = stringCache.insert(map_t::value_type(str, 1)).first;
+		CThreadAutoLock<CThreadMutex> lock( m_CacheLock );
 
-		asReleaseExclusiveLock();
+		char *str = (char *)alloca( length );
+		N_strncpyz( str, data, length );
+
+		auto it = m_StringCache.find( str );
+		if ( it != m_StringCache.end() ) {
+			it->second++;
+		} else {
+			it = m_StringCache.insert( map_t::value_type( str, 1 ) ).first;
+		}
 		
-		return reinterpret_cast<const void*>(&it->first);
+		return (const void *)&it->first;
 	}
 
-	int  ReleaseStringConstant(const void *str)
+	int ReleaseStringConstant( const void *str )
 	{
-		if (str == 0)
+		if ( !str ) {
+			Assert( false );
 			return asERROR;
+		}
 
 		int ret = asSUCCESS;
 		
 		// The eastl::string factory might be modified from multiple 
 		// threads, so it is necessary to use a mutex.
-		asAcquireExclusiveLock();
+		CThreadAutoLock<CThreadMutex> lock( m_CacheLock );
 		
-		map_t::iterator it = stringCache.find(*reinterpret_cast<const eastl::string*>(str));
-		if (it == stringCache.end())
+		auto it = m_StringCache.find( (const char *)str );
+		if ( it == m_StringCache.end() ) {
+			Con_Printf( COLOR_RED "ERROR: string factory cache lookup failed!\n" );
 			ret = asERROR;
-		else
-		{
+		} else {
 			it->second--;
-			if (it->second == 0)
-				stringCache.erase(it);
+			if ( !it->second ) {
+				m_StringCache.erase( it );
+			}
 		}
-		
-		asReleaseExclusiveLock();
 		
 		return ret;
 	}
 
-	int  GetRawStringData(const void *str, char *data, asUINT *length) const
+	int GetRawStringData( const void *str, char *data, asUINT *length ) const
 	{
-		if (str == 0)
+		if ( !str ) {
+			Assert( false );
 			return asERROR;
+		}
 
-		if (length)
-			*length = (asUINT)reinterpret_cast<const eastl::string*>(str)->length();
+		if ( length ) {
+			*length = (asUINT)( (const eastl::string *)data )->size();
+		}
 
-		if (data)
-			memcpy(data, reinterpret_cast<const eastl::string*>(str)->c_str(), reinterpret_cast<const eastl::string*>(str)->length());
+		if ( data ) {
+			memcpy( data, reinterpret_cast<const eastl::string*>(str)->c_str(), reinterpret_cast<const eastl::string*>(str)->length() );
+		}
 
 		return asSUCCESS;
 	}
 
 	// THe access to the eastl::string cache is protected with the common mutex provided by AngelScript
-	map_t stringCache;
+	map_t m_StringCache;
+	CThreadMutex m_CacheLock;
 };
 
-static CStringFactory *stringFactory = 0;
+static CStringFactory *stringFactory = NULL;
 
 // TODO: Make this public so the application can also use the eastl::string 
 //       factory and share the eastl::string constants if so desired, or to
 //       monitor the size of the eastl::string factory cache.
-CStringFactory *GetStringFactorySingleton()
+CStringFactory *GetStringFactorySingleton( void )
 {
-	if( stringFactory == 0 )
-	{
+	if ( !stringFactory ) {
 		// The following instance will be destroyed by the global 
 		// CStringFactoryCleaner instance upon application shutdown
 		stringFactory = new CStringFactory();
@@ -112,8 +120,7 @@ public:
 			// the application might crash. Not deleting the cache would
 			// lead to a memory leak, but since this is only happens when the
 			// application is shutting down anyway, it is not important.
-			if (stringFactory->stringCache.empty())
-			{
+			if (!stringFactory->m_StringCache.empty()) {
 				delete stringFactory;
 				stringFactory = 0;
 			}
@@ -723,7 +730,7 @@ void RegisterStdString_Native(asIScriptEngine *engine)
 #endif
 	// Need to use a wrapper on Mac OS X 10.7/XCode 4.3 and CLang/LLVM, otherwise the linker fails
 //	r = engine->RegisterObjectMethod("string", "bool isEmpty() const", asMETHOD(string, empty), asCALL_THISCALL); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "bool empty() const", asFUNCTION(StringIsEmpty), asCALL_CDECL_OBJLAST); assert( r >= 0 );
+	r = engine->RegisterObjectMethod("string", "bool isEmpty() const", asFUNCTION(StringIsEmpty), asCALL_CDECL_OBJLAST); assert( r >= 0 );
 
 	// Register the index operator, both as a mutator and as an inspector
 	// Note that we don't register the operator[] directly, as it doesn't do bounds checking
@@ -775,7 +782,6 @@ void RegisterStdString_Native(asIScriptEngine *engine)
 	r = engine->RegisterGlobalFunction("uint64 parseUInt(const eastl::string &in, uint base = 10, uint &out byteCount = 0)", asFUNCTION(parseUInt), asCALL_CDECL); assert(r >= 0);
 	r = engine->RegisterGlobalFunction("double parseFloat(const eastl::string &in, uint &out byteCount = 0)", asFUNCTION(parseFloat), asCALL_CDECL); assert(r >= 0);
 
-#if AS_USE_STLNAMES == 1
 	// Same as length
 	r = engine->RegisterObjectMethod("string", "uint size() const", asFUNCTION(StringLength), asCALL_CDECL_OBJLAST); assert( r >= 0 );
 	// Same as isEmpty
@@ -784,7 +790,6 @@ void RegisterStdString_Native(asIScriptEngine *engine)
 	r = engine->RegisterObjectMethod("string", "int find(const eastl::string &in, uint start = 0) const", asFUNCTION(StringFindFirst), asCALL_CDECL_OBJLAST); assert( r >= 0 );
 	// Same as findLast
 	r = engine->RegisterObjectMethod("string", "int rfind(const eastl::string &in, int start = -1) const", asFUNCTION(StringFindLast), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-#endif
 
 	// TODO: Implement the following
 	// findAndReplace - replaces a text found in the string
@@ -792,11 +797,8 @@ void RegisterStdString_Native(asIScriptEngine *engine)
 	// multiply/times/opMul/opMul_r - takes the eastl::string and multiplies it n times, e.g. "-".multiply(5) returns "-----"
 }
 
-/*
-
-static void ConstructStringGeneric(asIScriptGeneric * gen)
-{
-	new (gen->GetObject()) eastl::string();
+static void ConstructStringGeneric( asIScriptGeneric * gen ) {
+	new ( gen->GetObject() ) eastl::string();
 }
 
 static void CopyConstructStringGeneric(asIScriptGeneric * gen)
@@ -807,8 +809,9 @@ static void CopyConstructStringGeneric(asIScriptGeneric * gen)
 
 static void DestructStringGeneric(asIScriptGeneric * gen)
 {
+	using eastl::string;
 	eastl::string * ptr = static_cast<eastl::string *>(gen->GetObject());
-	ptr->~eastl::string();
+	ptr->~string();
 }
 
 static void AssignStringGeneric(asIScriptGeneric *gen)
@@ -1144,9 +1147,7 @@ static void AddInt2StringGeneric(asIScriptGeneric * gen)
 {
 	asINT64* a = static_cast<asINT64 *>(gen->GetAddressOfArg(0));
 	eastl::string * b = static_cast<eastl::string *>(gen->GetObject());
-	std::stringstream sstr;
-	sstr << *a << *b;
-	eastl::string ret_val = sstr.str();
+	eastl::string ret_val = va( "%li%s", *a, b->c_str() );
 	gen->SetReturnObject(&ret_val);
 }
 
@@ -1154,9 +1155,7 @@ static void AddUInt2StringGeneric(asIScriptGeneric * gen)
 {
 	asQWORD* a = static_cast<asQWORD *>(gen->GetAddressOfArg(0));
 	eastl::string * b = static_cast<eastl::string *>(gen->GetObject());
-	std::stringstream sstr;
-	sstr << *a << *b;
-	eastl::string ret_val = sstr.str();
+	eastl::string ret_val = va( "%lu%s", *a, b->c_str() );;
 	gen->SetReturnObject(&ret_val);
 }
 
@@ -1164,9 +1163,7 @@ static void AddBool2StringGeneric(asIScriptGeneric * gen)
 {
 	bool* a = static_cast<bool *>(gen->GetAddressOfArg(0));
 	eastl::string * b = static_cast<eastl::string *>(gen->GetObject());
-	std::stringstream sstr;
-	sstr << (*a ? "true" : "false") << *b;
-	eastl::string ret_val = sstr.str();
+	eastl::string ret_val = va( "%s%s", ( *a ? "true" : "false" ), b->c_str() );
 	gen->SetReturnObject(&ret_val);
 }
 
@@ -1178,7 +1175,7 @@ static void StringSubString_Generic(asIScriptGeneric *gen)
 	int     count = *(int*)gen->GetAddressOfArg(1);
 
 	// Return the substring
-	new(gen->GetAddressOfReturnLocation()) string(StringSubString(start, count, *str));
+	new(gen->GetAddressOfReturnLocation()) eastl::string(StringSubString(start, count, *str));
 }
 
 void RegisterStdString_Generic(asIScriptEngine *engine)
@@ -1187,20 +1184,20 @@ void RegisterStdString_Generic(asIScriptEngine *engine)
 	UNUSED_VAR(r);
 
 	// Register the eastl::string type
-	r = engine->RegisterObjectType("string", sizeof(string), asOBJ_VALUE | asOBJ_APP_CLASS_CDAK); assert( r >= 0 );
+	r = engine->RegisterObjectType("string", sizeof(eastl::string), asOBJ_VALUE | asOBJ_APP_CLASS_CDAK); assert( r >= 0 );
 
 	r = engine->RegisterStringFactory("string", GetStringFactorySingleton());
 
 	// Register the object operator overloads
 	r = engine->RegisterObjectBehaviour("string", asBEHAVE_CONSTRUCT,  "void f()",                    asFUNCTION(ConstructStringGeneric), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterObjectBehaviour("string", asBEHAVE_CONSTRUCT,  "void f(const eastl::string &in)",    asFUNCTION(CopyConstructStringGeneric), asCALL_GENERIC); assert( r >= 0 );
+	r = engine->RegisterObjectBehaviour("string", asBEHAVE_CONSTRUCT,  "void f(const string &in)",    asFUNCTION(CopyConstructStringGeneric), asCALL_GENERIC); assert( r >= 0 );
 	r = engine->RegisterObjectBehaviour("string", asBEHAVE_DESTRUCT,   "void f()",                    asFUNCTION(DestructStringGeneric),  asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "string &opAssign(const eastl::string &in)", asFUNCTION(AssignStringGeneric),    asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "string &opAddAssign(const eastl::string &in)", asFUNCTION(AddAssignStringGeneric), asCALL_GENERIC); assert( r >= 0 );
+	r = engine->RegisterObjectMethod("string", "string &opAssign(const string &in)", asFUNCTION(AssignStringGeneric),    asCALL_GENERIC); assert( r >= 0 );
+	r = engine->RegisterObjectMethod("string", "string &opAddAssign(const string &in)", asFUNCTION(AddAssignStringGeneric), asCALL_GENERIC); assert( r >= 0 );
 
-	r = engine->RegisterObjectMethod("string", "bool opEquals(const eastl::string &in) const", asFUNCTION(StringEqualsGeneric), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "int opCmp(const eastl::string &in) const", asFUNCTION(StringCmpGeneric), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "string opAdd(const eastl::string &in) const", asFUNCTION(StringAddGeneric), asCALL_GENERIC); assert( r >= 0 );
+	r = engine->RegisterObjectMethod("string", "bool opEquals(const string &in) const", asFUNCTION(StringEqualsGeneric), asCALL_GENERIC); assert( r >= 0 );
+	r = engine->RegisterObjectMethod("string", "int opCmp(const string &in) const", asFUNCTION(StringCmpGeneric), asCALL_GENERIC); assert( r >= 0 );
+	r = engine->RegisterObjectMethod("string", "string opAdd(const string &in) const", asFUNCTION(StringAddGeneric), asCALL_GENERIC); assert( r >= 0 );
 
 	// Register the object methods
 #if AS_USE_ACCESSORS != 1
@@ -1244,22 +1241,22 @@ void RegisterStdString_Generic(asIScriptEngine *engine)
 	r = engine->RegisterObjectMethod("string", "string opAdd_r(bool) const", asFUNCTION(AddBool2StringGeneric), asCALL_GENERIC); assert( r >= 0 );
 
 	r = engine->RegisterObjectMethod("string", "string substr(uint start = 0, int count = -1) const", asFUNCTION(StringSubString_Generic), asCALL_GENERIC); assert(r >= 0);
-	r = engine->RegisterObjectMethod("string", "int findFirst(const eastl::string &in, uint start = 0) const", asFUNCTION(StringFindFirst_Generic), asCALL_GENERIC); assert(r >= 0);
-	r = engine->RegisterObjectMethod("string", "int findFirstOf(const eastl::string &in, uint start = 0) const", asFUNCTION(StringFindFirstOf_Generic), asCALL_GENERIC); assert(r >= 0);
-	r = engine->RegisterObjectMethod("string", "int findFirstNotOf(const eastl::string &in, uint start = 0) const", asFUNCTION(StringFindFirstNotOf_Generic), asCALL_GENERIC); assert(r >= 0);
-	r = engine->RegisterObjectMethod("string", "int findLast(const eastl::string &in, int start = -1) const", asFUNCTION(StringFindLast_Generic), asCALL_GENERIC); assert(r >= 0);
-	r = engine->RegisterObjectMethod("string", "int findLastOf(const eastl::string &in, int start = -1) const", asFUNCTION(StringFindLastOf_Generic), asCALL_GENERIC); assert(r >= 0);
-	r = engine->RegisterObjectMethod("string", "int findLastNotOf(const eastl::string &in, int start = -1) const", asFUNCTION(StringFindLastNotOf_Generic), asCALL_GENERIC); assert(r >= 0);
-	r = engine->RegisterObjectMethod("string", "void insert(uint pos, const eastl::string &in other)", asFUNCTION(StringInsert_Generic), asCALL_GENERIC); assert(r >= 0);
+	r = engine->RegisterObjectMethod("string", "int findFirst(const string &in, uint start = 0) const", asFUNCTION(StringFindFirst_Generic), asCALL_GENERIC); assert(r >= 0);
+	r = engine->RegisterObjectMethod("string", "int findFirstOf(const string &in, uint start = 0) const", asFUNCTION(StringFindFirstOf_Generic), asCALL_GENERIC); assert(r >= 0);
+	r = engine->RegisterObjectMethod("string", "int findFirstNotOf(const string &in, uint start = 0) const", asFUNCTION(StringFindFirstNotOf_Generic), asCALL_GENERIC); assert(r >= 0);
+	r = engine->RegisterObjectMethod("string", "int findLast(const string &in, int start = -1) const", asFUNCTION(StringFindLast_Generic), asCALL_GENERIC); assert(r >= 0);
+	r = engine->RegisterObjectMethod("string", "int findLastOf(const string &in, int start = -1) const", asFUNCTION(StringFindLastOf_Generic), asCALL_GENERIC); assert(r >= 0);
+	r = engine->RegisterObjectMethod("string", "int findLastNotOf(const string &in, int start = -1) const", asFUNCTION(StringFindLastNotOf_Generic), asCALL_GENERIC); assert(r >= 0);
+	r = engine->RegisterObjectMethod("string", "void insert(uint pos, const string &in other)", asFUNCTION(StringInsert_Generic), asCALL_GENERIC); assert(r >= 0);
 	r = engine->RegisterObjectMethod("string", "void erase(uint pos, int count = -1)", asFUNCTION(StringErase_Generic), asCALL_GENERIC); assert(r >= 0);
 
 
-	r = engine->RegisterGlobalFunction("string formatInt(int64 val, const eastl::string &in options = \"\", uint width = 0)", asFUNCTION(formatInt_Generic), asCALL_GENERIC); assert(r >= 0);
-	r = engine->RegisterGlobalFunction("string formatUInt(uint64 val, const eastl::string &in options = \"\", uint width = 0)", asFUNCTION(formatUInt_Generic), asCALL_GENERIC); assert(r >= 0);
-	r = engine->RegisterGlobalFunction("string formatFloat(double val, const eastl::string &in options = \"\", uint width = 0, uint precision = 0)", asFUNCTION(formatFloat_Generic), asCALL_GENERIC); assert(r >= 0);
-	r = engine->RegisterGlobalFunction("int64 parseInt(const eastl::string &in, uint base = 10, uint &out byteCount = 0)", asFUNCTION(parseInt_Generic), asCALL_GENERIC); assert(r >= 0);
-	r = engine->RegisterGlobalFunction("uint64 parseUInt(const eastl::string &in, uint base = 10, uint &out byteCount = 0)", asFUNCTION(parseUInt_Generic), asCALL_GENERIC); assert(r >= 0);
-	r = engine->RegisterGlobalFunction("double parseFloat(const eastl::string &in, uint &out byteCount = 0)", asFUNCTION(parseFloat_Generic), asCALL_GENERIC); assert(r >= 0);
+	r = engine->RegisterGlobalFunction("string formatInt(int64 val, const string &in options = \"\", uint width = 0)", asFUNCTION(formatInt_Generic), asCALL_GENERIC); assert(r >= 0);
+	r = engine->RegisterGlobalFunction("string formatUInt(uint64 val, const string &in options = \"\", uint width = 0)", asFUNCTION(formatUInt_Generic), asCALL_GENERIC); assert(r >= 0);
+	r = engine->RegisterGlobalFunction("string formatFloat(double val, const string &in options = \"\", uint width = 0, uint precision = 0)", asFUNCTION(formatFloat_Generic), asCALL_GENERIC); assert(r >= 0);
+	r = engine->RegisterGlobalFunction("int64 parseInt(const string &in, uint base = 10, uint &out byteCount = 0)", asFUNCTION(parseInt_Generic), asCALL_GENERIC); assert(r >= 0);
+	r = engine->RegisterGlobalFunction("uint64 parseUInt(const string &in, uint base = 10, uint &out byteCount = 0)", asFUNCTION(parseUInt_Generic), asCALL_GENERIC); assert(r >= 0);
+	r = engine->RegisterGlobalFunction("double parseFloat(const string &in, uint &out byteCount = 0)", asFUNCTION(parseFloat_Generic), asCALL_GENERIC); assert(r >= 0);
 }
 
 void RegisterStdString(asIScriptEngine * engine)
@@ -1269,9 +1266,5 @@ void RegisterStdString(asIScriptEngine * engine)
 	else
 		RegisterStdString_Native(engine);
 }
-
-*/
-
-
 
 

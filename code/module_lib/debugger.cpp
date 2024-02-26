@@ -5,7 +5,7 @@ static CDebugger *s_pDebugger;
 
 void Module_DebuggerListGlobalVars_f( void ) {
 	if ( !s_pDebugger->m_pModule ) {
-		moduleImport.Printf( PRINT_WARNING, "module_lib debug command called, but no script debug is active.\n" );
+		Con_Printf( COLOR_YELLOW "WARNING: module_lib debug command called, but no script debug is active.\n" );
 		return;
 	}
 	s_pDebugger->ListGlobalVariables( s_pDebugger->m_pModule->m_pHandle->GetContext() );
@@ -14,25 +14,25 @@ void Module_DebuggerListGlobalVars_f( void ) {
 void Module_SetScriptDebug_f( void ) {
 	const char *moduleName;
 
-	if ( moduleImport.Cmd_Argc() < 2 ) {
-		moduleImport.Printf( PRINT_INFO, "usage: ml_debug.set_script_debug <module name>\n" );
+	if ( Cmd_Argc() < 2 ) {
+		Con_Printf( "usage: ml_debug.set_script_debug <module name>\n" );
 		return;
 	}
-	moduleName = moduleImport.Cmd_Argv( 1 );
+	moduleName = Cmd_Argv( 1 );
 	if ( !N_stricmp( moduleName, "none" ) ) {
-		moduleImport.Printf( PRINT_INFO, "ending module debug session.\n" );
+		Con_Printf( "ending module debug session.\n" );
 		s_pDebugger->m_pModule = NULL;
 		return;
 	}
 
-	moduleImport.Printf( PRINT_INFO, "beginning debug session for '%s'\n", moduleName );
+	Con_Printf( "beginning debug session for '%s'\n", moduleName );
 
 	s_pDebugger->m_pModule = g_pModuleLib->GetModule( moduleName );
 }
 
 void Module_DebuggerListLocalVars_f( void ) {
 	if ( !s_pDebugger->m_pModule ) {
-		moduleImport.Printf( PRINT_WARNING, "module_lib debug command called, but no script debug is active.\n" );
+		Con_Printf( COLOR_YELLOW "WARNING: module_lib debug command called, but no script debug is active.\n" );
 		return;
 	}
 	s_pDebugger->ListLocalVariables( s_pDebugger->m_pModule->m_pHandle->GetContext() );
@@ -40,7 +40,7 @@ void Module_DebuggerListLocalVars_f( void ) {
 
 void Module_DebuggerListStats_f( void ) {
 	if ( !s_pDebugger->m_pModule ) {
-		moduleImport.Printf( PRINT_WARNING, "module_lib debug command called, but no script debug is active.\n" );
+		Con_Printf( COLOR_YELLOW "WARNING: module_lib debug command called, but no script debug is active.\n" );
 		return;
 	}
 	s_pDebugger->ListStatistics( s_pDebugger->m_pModule->m_pHandle->GetContext() );
@@ -48,7 +48,7 @@ void Module_DebuggerListStats_f( void ) {
 
 void Module_DebuggerListMemberProps_f( void ) {
 	if ( !s_pDebugger->m_pModule ) {
-		moduleImport.Printf( PRINT_WARNING, "module_lib debug command called, but no script debug is active.\n" );
+		Con_Printf( COLOR_YELLOW "WARNING: module_lib debug command called, but no script debug is active.\n" );
 		return;
 	}
 	s_pDebugger->ListMemberProperties( s_pDebugger->m_pModule->m_pHandle->GetContext() );
@@ -56,15 +56,15 @@ void Module_DebuggerListMemberProps_f( void ) {
 
 void Module_DebuggerPrintValue_f( void ) {
 	if ( !s_pDebugger->m_pModule ) {
-		moduleImport.Printf( PRINT_WARNING, "module_lib debug command called, but no script debug is active.\n" );
+		Con_Printf( COLOR_YELLOW "WARNING: module_lib debug command called, but no script debug is active.\n" );
 		return;
 	}
-	if ( moduleImport.Cmd_Argc() < 2 ) {
-		moduleImport.Printf( PRINT_INFO, "usage: ml_debug.print_value <value name>\n" );
+	if ( Cmd_Argc() < 2 ) {
+		Con_Printf( "usage: ml_debug.print_value <value name>\n" );
 		return;
 	}
 
-	s_pDebugger->PrintValue( moduleImport.Cmd_Argv( 1 ), s_pDebugger->m_pModule->m_pHandle->GetContext() );
+	s_pDebugger->PrintValue( Cmd_Argv( 1 ), s_pDebugger->m_pModule->m_pHandle->GetContext() );
 }
 
 void Module_DebuggerPrintHelp_f( void ) {
@@ -77,21 +77,21 @@ CDebugger::CDebugger( void ) {
 	s_pDebugger = this;
 	m_pEngine = g_pModuleLib->GetScriptEngine();
 
-	moduleImport.Cmd_AddCommand( "ml_debug.set_script_debug", Module_SetScriptDebug_f );
-	moduleImport.Cmd_AddCommand( "ml_debug.list_global_vars", Module_DebuggerListGlobalVars_f );
-	moduleImport.Cmd_AddCommand( "ml_debug.list_local_vars", Module_DebuggerListLocalVars_f );
-	moduleImport.Cmd_AddCommand( "ml_debug.print_value", Module_DebuggerPrintValue_f );
-	moduleImport.Cmd_AddCommand( "ml_debug.print_help", Module_DebuggerPrintHelp_f );
+	Cmd_AddCommand( "ml_debug.set_script_debug", Module_SetScriptDebug_f );
+	Cmd_AddCommand( "ml_debug.list_global_vars", Module_DebuggerListGlobalVars_f );
+	Cmd_AddCommand( "ml_debug.list_local_vars", Module_DebuggerListLocalVars_f );
+	Cmd_AddCommand( "ml_debug.print_value", Module_DebuggerPrintValue_f );
+	Cmd_AddCommand( "ml_debug.print_help", Module_DebuggerPrintHelp_f );
 }
 
 CDebugger::~CDebugger() {
 	SetEngine( NULL );
 
-	moduleImport.Cmd_RemoveCommand( "ml_debug.set_script_debug" );
-	moduleImport.Cmd_RemoveCommand( "ml_debug.list_global_vars" );
-	moduleImport.Cmd_RemoveCommand( "ml_debug.list_local_vars" );
-	moduleImport.Cmd_RemoveCommand( "ml_debug.print_value" );
-	moduleImport.Cmd_RemoveCommand( "ml_debug.print_help" );
+	Cmd_RemoveCommand( "ml_debug.set_script_debug" );
+	Cmd_RemoveCommand( "ml_debug.list_global_vars" );
+	Cmd_RemoveCommand( "ml_debug.list_local_vars" );
+	Cmd_RemoveCommand( "ml_debug.print_value" );
+	Cmd_RemoveCommand( "ml_debug.print_help" );
 }
 
 const eastl::string& CDebugger::ToString( void *value, asUINT typeId, int32_t expandMembers, asIScriptEngine *engine )
@@ -271,7 +271,7 @@ void CDebugger::LineCallback( asIScriptContext *ctx )
 	}
 
 	lineNbr = ctx->GetLineNumber( 0, 0, &file );
-	moduleImport.Printf( PRINT_INFO, "%s:%i; %s\n",
+	Con_Printf( "%s:%i; %s\n",
 		( file ? file : "{unnamed}" ), lineNbr, ctx->GetFunction()->GetDeclaration() );
 }
 
@@ -308,7 +308,7 @@ bool CDebugger::CheckBreakPoint( asIScriptContext *ctx )
 			// We need to check for a breakpoint at entering the function
 			if ( m_BreakPoints[n].func ) {
 				if ( m_BreakPoints[n].name == func->GetName() ) {
-					moduleImport.Printf( PRINT_INFO, "Entering function '%s'. Transforming it into breakpoint\n",
+					Con_Printf( "Entering function '%s'. Transforming it into breakpoint\n",
 						m_BreakPoints[n].name.c_str() );
 
 					// Transform the function breakpoint into a file breakpoint
@@ -326,7 +326,7 @@ bool CDebugger::CheckBreakPoint( asIScriptContext *ctx )
 				if ( line >= 0 ) {
 					m_BreakPoints[n].needsAdjusting = false;
 					if ( line != m_BreakPoints[n].lineNbr ) {
-						moduleImport.Printf( PRINT_INFO, "Moving breakpoint %lu in file '%s' to next line with code at line %i\n",
+						Con_Printf( "Moving breakpoint %lu in file '%s' to next line with code at line %i\n",
 							n, file.c_str(), line );
 
 						// Move the breakpoint to the next line
@@ -347,7 +347,7 @@ bool CDebugger::CheckBreakPoint( asIScriptContext *ctx )
 			m_BreakPoints[n].lineNbr == lineNbr &&
 			m_BreakPoints[n].name == file )
 		{
-			moduleImport.Printf( PRINT_INFO, "Reached break point %lu in file '%s' at line %i", n, file.c_str(), lineNbr );
+			Con_Printf( "Reached break point %lu in file '%s' at line %i", n, file.c_str(), lineNbr );
 			return true;
 		}
 	}
@@ -491,7 +491,7 @@ void CDebugger::PrintValue(const eastl::string &expr, asIScriptContext *ctx)
 			{
 				// TODO: Allow user to set if members should be expanded
 				// Expand members by default to 3 recursive levels only
-				moduleImport.Printf( PRINT_INFO, "%s\n", ToString( ptr, typeId, 3, engine ).c_str() );
+				Con_Printf( "%s\n", ToString( ptr, typeId, 3, engine ).c_str() );
 			}
 		}
 		else
@@ -512,9 +512,9 @@ void CDebugger::ListBreakPoints( void ) const
 	// List all break points
 	for ( b = 0; b < m_BreakPoints.size(); b++ ) {
 		if ( m_BreakPoints[b].func ) {
-			moduleImport.Printf( PRINT_INFO, "%lu - %s\n", b, m_BreakPoints[b].name.c_str() );
+			Con_Printf( "%lu - %s\n", b, m_BreakPoints[b].name.c_str() );
 		} else {
-			moduleImport.Printf( PRINT_INFO, "%lu - %s:%i\n", b, m_BreakPoints[b].name.c_str(), m_BreakPoints[b].lineNbr );
+			Con_Printf( "%lu - %s:%i\n", b, m_BreakPoints[b].name.c_str(), m_BreakPoints[b].lineNbr );
 		}
 	}
 }
@@ -532,7 +532,7 @@ void CDebugger::ListMemberProperties( asIScriptContext *ctx )
 	if ( ptr ) {
 		// TODO: Allow user to define if members should be expanded or not
 		// Expand members by default to 3 recursive levels only
-		moduleImport.Printf( PRINT_INFO, "this = %s\n", ToString( ptr, ctx->GetThisTypeId(), 3, ctx->GetEngine() ).c_str() );
+		Con_Printf( "this = %s\n", ToString( ptr, ctx->GetThisTypeId(), 3, ctx->GetEngine() ).c_str() );
 	}
 }
 
@@ -565,7 +565,7 @@ void CDebugger::ListLocalVariables( asIScriptContext *ctx )
 			// TODO: Allow user to set if members should be expanded or not
 			// Expand members by default to 3 recursive levels only
 			ctx->GetVar( n, 0, 0, &typeId );
-			moduleImport.Printf( PRINT_INFO, "%s = %s\n",
+			Con_Printf( "%s = %s\n",
 				func->GetVarDecl( n ), ToString( ctx->GetAddressOfVar( n ), typeId, 3, ctx->GetEngine() ).c_str() );
 		}
 	}
@@ -596,7 +596,7 @@ void CDebugger::ListGlobalVariables( asIScriptContext *ctx )
 		mod->GetGlobalVar( n, 0, 0, &typeId );
 		// TODO: Allow user to set how many recursive expansions should be done
 		// Expand members by default to 3 recursive levels only
-		moduleImport.Printf( PRINT_INFO, "%s = %s\n",
+		Con_Printf( "%s = %s\n",
 			mod->GetGlobalVarDeclaration( n ), ToString( mod->GetAddressOfGlobalVar( n ), typeId, 3, ctx->GetEngine() ).c_str() );
 	}
 }
@@ -613,7 +613,7 @@ void CDebugger::ListStatistics( asIScriptContext *ctx )
 
 	engine->GetGCStatistics( &gcCurrSize, &gcTotalDestr, &gcTotalDet, &gcNewObjects, &gcTotalNewDestr );
 
-	moduleImport.Printf( PRINT_INFO, 
+	Con_Printf(
 		"Garbage Collector:\n"
 		" current size:         %-8u\n"
 		" total freed:          %-8u\n"
@@ -638,7 +638,7 @@ void CDebugger::PrintCallstack( asIScriptContext *ctx )
 
 	for ( n = 0; n < ctx->GetCallstackSize(); n++ ) {
 		lineNbr = ctx->GetLineNumber( n, 0, &file );
-		moduleImport.Printf( PRINT_INFO, "%s:%i; %s\n",
+		Con_Printf( "%s:%i; %s\n",
 			( file ? file : "{unnamed}" ), lineNbr, ctx->GetFunction( n )->GetDeclaration() );
 	}
 }
@@ -652,7 +652,7 @@ void CDebugger::AddFuncBreakPoint( const eastl::string& func )
 	e = func.find_last_not_of( " \t"  );
 	eastl::string&& actual = eastl::move( func.substr( b, e != eastl::string::npos ? e - b + 1 : eastl::string::npos ) );
 
-	moduleImport.Printf( PRINT_INFO, "Adding deferred break point for function '%s'\n", actual.c_str() );
+	Con_Printf( "Adding deferred break point for function '%s'\n", actual.c_str() );
 
 	m_BreakPoints.push_back( BreakPoint( actual, 0, true ) );
 }
@@ -675,14 +675,14 @@ void CDebugger::AddFileBreakPoint( const eastl::string& file, int32_t lineNbr )
 	e = actual.find_last_not_of( " \t" );
 	actual = actual.substr( b, e != eastl::string::npos ? e - b + 1 : eastl::string::npos );
 
-	moduleImport.Printf( PRINT_INFO, "Setting break point in file '%s' at line %i\n", actual.c_str(), lineNbr );
+	Con_Printf( "Setting break point in file '%s' at line %i\n", actual.c_str(), lineNbr );
 
 	m_BreakPoints.push_back( BreakPoint( actual, lineNbr, false ) );
 }
 
 void CDebugger::PrintHelp( void )
 {
-	moduleImport.Printf( PRINT_INFO,
+	Con_Printf(
 	//	" c - Continue\n"
 	//    " s - Step into\n"
 	//    " n - Next step\n"
@@ -700,7 +700,7 @@ void CDebugger::PrintHelp( void )
 }
 
 void CDebugger::Output( const eastl::string& str ) {
-	moduleImport.Printf( PRINT_INFO, "%s", str.c_str() );
+	Con_Printf( "%s", str.c_str() );
 }
 
 void CDebugger::SetEngine( asIScriptEngine *engine )

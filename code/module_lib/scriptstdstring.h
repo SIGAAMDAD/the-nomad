@@ -14,6 +14,8 @@
 #include "module_public.h"
 #include <EASTL/string.h>
 
+using string_t = eastl::basic_string<char, eastl::allocator_malloc<char>>;
+
 //---------------------------
 // Compilation settings
 //
@@ -34,7 +36,8 @@
 #define AS_USE_ACCESSORS 0
 #endif
 
-void RegisterStdString_Native(asIScriptEngine *engine);
+void RegisterStdString_Generic(asIScriptEngine *engine);
+void RegisterStdString(asIScriptEngine *engine);
 void RegisterStdStringUtils(asIScriptEngine *engine);
 
 #endif

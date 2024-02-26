@@ -7,15 +7,7 @@
 #include "../game/g_game.h"
 #include "../game/g_archive.h"
 
-#include <EASTL/fixed_string.h>
-#include <EASTL/fixed_vector.h>
-#include <EASTL/fixed_map.h>
-#include <EASTL/fixed_hash_map.h>
-#include <EASTL/fixed_set.h>
-#include <EASTL/sort.h>
-
-#include "../engine/n_allocator.h"
-#include "../rendercommon/r_public.h"
+#include <glm/glm.hpp>
 
 #include <EASTL/allocator.h>
 #include <EASTL/allocator_malloc.h>
@@ -41,6 +33,21 @@ private:
 	#endif
 };
 
+#include "module_memory.h"
+#include <EASTL/fixed_string.h>
+#include <EASTL/fixed_vector.h>
+#include <EASTL/fixed_map.h>
+#include <EASTL/fixed_hash_map.h>
+#include <EASTL/fixed_set.h>
+#include <EASTL/sort.h>
+#include <EASTL/string_hash_map.h>
+#include <EASTL/unordered_map.h>
+
+#include "../engine/n_allocator.h"
+#include "../rendercommon/r_public.h"
+
+template<typename T>
+using UtlStringHashTable = eastl::string_hash_map<T, eastl::hash<const char *>, eastl::str_equal_to<const char *>, CModuleAllocator>;
 template<typename T>
 using UtlVector = eastl::vector<T, CModuleAllocator>;
 template<typename Key, typename Value>
@@ -51,10 +58,9 @@ template<typename Key, typename Compare = eastl::less<Key>>
 using UtlSet = eastl::set<Key, Compare, CModuleAllocator>;
 using UtlString = eastl::basic_string<char, eastl::allocator_malloc<char>>;
 
-#include "module_memory.h"
+#include "nlohmann/json.hpp"
 #include "module_handle.h"
 #include "module_buffer.hpp"
-#include "module_parse.h"
 #include "scriptarray.h"
 #include "scriptdictionary.h"
 #include "scriptbuilder.h"
@@ -131,25 +137,32 @@ class CModuleHandle;
 
 struct CModuleInfo
 {
-	CModuleInfo( CModuleParse& parse, CModuleHandle *pHandle ) {
-		N_strncpyz( m_szName.data(), parse.GetValue( "module_name" ).c_str(), MAX_NPATH );
-		m_Dependencies = parse.GetArray( "dependencies" );
-		m_GameVersion.m_nVersionMajor = atoi( parse.GetInfo( "version" )->GetValue( "game_version_major" ).c_str() );
-		m_GameVersion.m_nVersionUpdate = atoi( parse.GetInfo( "version" )->GetValue( "game_version_update" ).c_str() );
-		m_GameVersion.m_nVersionPatch = atoi( parse.GetInfo( "version" )->GetValue( "game_version_patch" ).c_str() );
+	CModuleInfo( nlohmann::json& parse, CModuleHandle *pHandle ) {
+		N_strncpyz( m_szName, parse["module_name"].get<std::string>().c_str(), MAX_NPATH );
+        
+        m_Dependencies.reserve( parse["dependencies"].size() );
+        for ( const auto& it : parse["dependencies"] ) {
+            m_Dependencies.emplace_back( eastl::move( it.get<std::string>().c_str() ) );
+        }
 
-		m_nModVersionMajor = atoi( parse.GetInfo( "version" )->GetValue( "version_major" ).c_str() );
-		m_nModVersionUpdate = atoi( parse.GetInfo( "version" )->GetValue( "version_update" ).c_str() );
-		m_nModVersionPatch = atoi( parse.GetInfo( "version" )->GetValue( "version_patch" ).c_str() );
+		m_GameVersion.m_nVersionMajor = parse["version"]["game_version_major"];
+		m_GameVersion.m_nVersionUpdate = parse["version"]["game_version_update"];
+		m_GameVersion.m_nVersionPatch = parse["version"]["game_version_patch"];
+
+		m_nModVersionMajor = parse["version"]["version_major"];
+		m_nModVersionUpdate = parse["version"]["version_update"];
+		m_nModVersionPatch = parse["version"]["version_patch"];
 
 		m_pHandle = pHandle;
+
+        Con_Printf( " - Added module \"%s\", v%i.%i.%i\n", m_szName, m_nModVersionMajor, m_nModVersionUpdate, m_nModVersionPatch );
 	}
 	~CModuleInfo() {
 		delete m_pHandle;
 	}
 
-	eastl::fixed_string<char, MAX_NPATH> m_szName;
-	UtlVector<UtlString> m_Dependencies;
+	char m_szName[MAX_NPATH];
+	UtlVector<eastl::string> m_Dependencies;
 
 	CModuleHandle *m_pHandle;
 	

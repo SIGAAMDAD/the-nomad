@@ -8,8 +8,8 @@
 class CModuleParse
 {
 public:
-    using HashTable = UtlMap<eastl::string, UtlString>;
-    using ValueList = UtlVector<UtlString>;
+    using HashTable = eastl::unordered_map<eastl::string, eastl::string>;
+    using ValueList = UtlVector<eastl::string>;
 
     CModuleParse( const char *filename );
     CModuleParse( const CModuleParse & );
@@ -17,22 +17,22 @@ public:
     ~CModuleParse();
 
     CModuleParse *GetInfo( const char *pName );
-    UtlString& GetValue( const char *pName );
-    UtlMap<eastl::string, UtlString>& GetHashTable( const char *pName );
-    UtlVector<UtlString>& GetArray( const char *pName );
+    eastl::string& GetValue( const char *pName );
+    HashTable& GetHashTable( const char *pName );
+    ValueList& GetArray( const char *pName );
 
     bool Failed( void ) const;
 
-    static inline UtlMap<eastl::string, UtlString> m_EmptyMap{};
-    static inline UtlVector<UtlString> m_EmptyList{};
-    static inline UtlString m_EmptyString{ "" };
+    static inline HashTable m_EmptyMap{};
+    static inline ValueList m_EmptyList{};
+    static inline eastl::string m_EmptyString{ "" };
 protected:
     CModuleParse( void  ) = default;
 
     // these three will recurse off each other
-    void ParseHashTable( const char **text, const char *pName, HashTable& hashTable );
-    void ParseList( const char **text, const char *pName, ValueList& valueList );
-    void ParseInfo( const char **text, const char *pName, CModuleParse *parse );
+    void ParseHashTable( const char **text, const eastl::string& pName, HashTable& hashTable );
+    void ParseList( const char **text, const eastl::string& pName, ValueList& valueList );
+    void ParseInfo( const char **text, const eastl::string& pName, CModuleParse *parse );
     
     void Parse( void );
 
@@ -42,13 +42,13 @@ protected:
     char *m_pTextBuffer;
     qboolean m_bFailed;
 
-    UtlString m_Name;
-    UtlVector<CModuleParse *> m_Infos;
-    UtlMap<eastl::string, UtlString> m_Values;
+    eastl::string m_Name;
+    eastl::vector<CModuleParse *> m_Infos;
+    HashTable m_Values;
 
-    // this is ugly as fuck
-    UtlMap<eastl::string, UtlVector<UtlString>> m_ValueLists;
-    UtlMap<eastl::string, UtlMap<eastl::string, UtlString>> m_ValueMaps;
+    // this is ugly
+    eastl::unordered_map<eastl::string, ValueList> m_ValueLists;
+    eastl::unordered_map<eastl::string, HashTable> m_ValueMaps;
 };
 
 #endif
