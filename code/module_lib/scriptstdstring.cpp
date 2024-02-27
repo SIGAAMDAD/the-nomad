@@ -4,150 +4,28 @@
 #endif
 #include "../engine/n_threads.h"
 
+#include "module_stringfactory.hpp"
+
 // This macro is used to avoid warnings about unused variables.
 // Usually where the variables are only used in debug mode.
 #define UNUSED_VAR(x) (void)(x)
 
-// The eastl::string factory doesn't need to keep a specific order in the
-// cache, so the unordered_map is faster than the ordinary map
-typedef eastl::unordered_map<eastl::string, int64_t> map_t;
-
-class CStringFactory : public asIStringFactory
+static void ConstructString(string_t *thisPointer)
 {
-public:
-	CStringFactory( void ) {
-		m_StringCache.reserve( 256 );
-	}
-	~CStringFactory() {
-		// The script engine must release each eastl::string 
-		// constant that it has requested
-		Assert( m_StringCache.size() == 0 );
-	}
-
-	const void *GetStringConstant( const char *data, asUINT length ) {
-		// The eastl::string factory might be modified from multiple 
-		// threads, so it is necessary to use a mutex.
-		CThreadAutoLock<CThreadMutex> lock( m_CacheLock );
-
-		char *str = (char *)alloca( length );
-		N_strncpyz( str, data, length );
-
-		auto it = m_StringCache.find( str );
-		if ( it != m_StringCache.end() ) {
-			it->second++;
-		} else {
-			it = m_StringCache.insert( map_t::value_type( str, 1 ) ).first;
-		}
-		
-		return (const void *)&it->first;
-	}
-
-	int ReleaseStringConstant( const void *str )
-	{
-		if ( !str ) {
-			Assert( false );
-			return asERROR;
-		}
-
-		int ret = asSUCCESS;
-		
-		// The eastl::string factory might be modified from multiple 
-		// threads, so it is necessary to use a mutex.
-		CThreadAutoLock<CThreadMutex> lock( m_CacheLock );
-		
-		auto it = m_StringCache.find( (const char *)str );
-		if ( it == m_StringCache.end() ) {
-			Con_Printf( COLOR_RED "ERROR: string factory cache lookup failed!\n" );
-			ret = asERROR;
-		} else {
-			it->second--;
-			if ( !it->second ) {
-				m_StringCache.erase( it );
-			}
-		}
-		
-		return ret;
-	}
-
-	int GetRawStringData( const void *str, char *data, asUINT *length ) const
-	{
-		if ( !str ) {
-			Assert( false );
-			return asERROR;
-		}
-
-		if ( length ) {
-			*length = (asUINT)( (const eastl::string *)data )->size();
-		}
-
-		if ( data ) {
-			memcpy( data, reinterpret_cast<const eastl::string*>(str)->c_str(), reinterpret_cast<const eastl::string*>(str)->length() );
-		}
-
-		return asSUCCESS;
-	}
-
-	// THe access to the eastl::string cache is protected with the common mutex provided by AngelScript
-	map_t m_StringCache;
-	CThreadMutex m_CacheLock;
-};
-
-static CStringFactory *stringFactory = NULL;
-
-// TODO: Make this public so the application can also use the eastl::string 
-//       factory and share the eastl::string constants if so desired, or to
-//       monitor the size of the eastl::string factory cache.
-CStringFactory *GetStringFactorySingleton( void )
-{
-	if ( !stringFactory ) {
-		// The following instance will be destroyed by the global 
-		// CStringFactoryCleaner instance upon application shutdown
-		stringFactory = new CStringFactory();
-	}
-	return stringFactory;
+	new(thisPointer) string_t();
 }
 
-class CStringFactoryCleaner
+static void CopyConstructString(const string_t& other, string_t *thisPointer)
 {
-public:
-	~CStringFactoryCleaner()
-	{
-		if (stringFactory)
-		{
-			// Only delete the eastl::string factory if the stringCache is empty
-			// If it is not empty, it means that someone might still attempt
-			// to release eastl::string constants, so if we delete the eastl::string factory
-			// the application might crash. Not deleting the cache would
-			// lead to a memory leak, but since this is only happens when the
-			// application is shutting down anyway, it is not important.
-			if (!stringFactory->m_StringCache.empty()) {
-				delete stringFactory;
-				stringFactory = 0;
-			}
-		}
-	}
-};
-
-static CStringFactoryCleaner cleaner;
-
-
-static void ConstructString(eastl::string *thisPointer)
-{
-	new(thisPointer) eastl::string();
+	new(thisPointer) string_t(other);
 }
 
-static void CopyConstructString(const eastl::string &other, eastl::string *thisPointer)
+static void DestructString(string_t *thisPointer)
 {
-	new(thisPointer) eastl::string(other);
+	thisPointer->~string_t();
 }
 
-static void DestructString(eastl::string *thisPointer)
-{
-	using eastl::string;
-	thisPointer->~string();
-}
-
-static eastl::string &AddAssignStringToString(const eastl::string &str, eastl::string &dest)
+static string_t& AddAssignStringToString(const string_t& str, string_t& dest)
 {
 	// We don't register the method directly because some compilers
 	// and standard libraries inline the definition, resulting in the
@@ -159,7 +37,7 @@ static eastl::string &AddAssignStringToString(const eastl::string &str, eastl::s
 
 // bool string::isEmpty()
 // bool string::empty() // if AS_USE_STLNAMES == 1
-static bool StringIsEmpty(const eastl::string &str)
+static bool StringIsEmpty(const string_t& str)
 {
 	// We don't register the method directly because some compilers
 	// and standard libraries inline the definition, resulting in the
@@ -168,117 +46,117 @@ static bool StringIsEmpty(const eastl::string &str)
 	return str.empty();
 }
 
-static eastl::string &AssignUInt64ToString(asQWORD i, eastl::string &dest)
+static string_t& AssignUInt64ToString(asQWORD i, string_t& dest)
 {
 	dest.sprintf( "%lu", i );
 	return dest;
 }
 
-static eastl::string &AddAssignUInt64ToString(asQWORD i, eastl::string &dest)
+static string_t& AddAssignUInt64ToString(asQWORD i, string_t& dest)
 {
 	dest.append_sprintf( "%lu", i );
 	return dest;
 }
 
-static eastl::string AddStringUInt64(const eastl::string &str, asQWORD i)
+static string_t AddStringUInt64(const string_t& str, asQWORD i)
 {
 	return str + va( "%lu", i );
 }
 
-static eastl::string AddInt64String(asINT64 i, const eastl::string &str)
+static string_t AddInt64String(asINT64 i, const string_t& str)
 {
-	return eastl::string( va( "%li", i ) ) + str;
+	return string_t( va( "%li", i ) ) + str;
 }
 
-static eastl::string &AssignInt64ToString(asINT64 i, eastl::string &dest)
+static string_t& AssignInt64ToString(asINT64 i, string_t& dest)
 {
 	dest.sprintf( "%li", i );
 	return dest;
 }
 
-static eastl::string &AddAssignInt64ToString(asINT64 i, eastl::string &dest)
+static string_t& AddAssignInt64ToString(asINT64 i, string_t& dest)
 {
 	dest.append_sprintf( "%li", i );
 	return dest;
 }
 
-static eastl::string AddStringInt64(const eastl::string &str, asINT64 i)
+static string_t AddStringInt64(const string_t& str, asINT64 i)
 {
 	return str + va( "%li", i );
 }
 
-static eastl::string AddUInt64String(asQWORD i, const eastl::string &str)
+static string_t AddUInt64String(asQWORD i, const string_t& str)
 {
-	return eastl::string( va( "%li", i ) ) + str;
+	return string_t( va( "%li", i ) ) + str;
 }
 
-static eastl::string &AssignDoubleToString(double f, eastl::string &dest)
+static string_t& AssignDoubleToString(double f, string_t& dest)
 {
 	dest.sprintf( "%lf", f );
 	return dest;
 }
 
-static eastl::string &AddAssignDoubleToString(double f, eastl::string &dest)
+static string_t& AddAssignDoubleToString(double f, string_t& dest)
 {
 	dest.append_sprintf( "%lf", f );
 	return dest;
 }
 
-static eastl::string &AssignFloatToString(float f, eastl::string &dest)
+static string_t& AssignFloatToString(float f, string_t& dest)
 {
 	dest.sprintf( "%f", f );
 	return dest;
 }
 
-static eastl::string &AddAssignFloatToString(float f, eastl::string &dest)
+static string_t& AddAssignFloatToString(float f, string_t& dest)
 {
 	dest.append_sprintf( "%f", f );
 	return dest;
 }
 
-static eastl::string &AssignBoolToString(bool b, eastl::string &dest)
+static string_t& AssignBoolToString(bool b, string_t& dest)
 {
 	dest.sprintf( "%s", b ? "true" : "false" );
 	return dest;
 }
 
-static eastl::string &AddAssignBoolToString(bool b, eastl::string &dest)
+static string_t& AddAssignBoolToString(bool b, string_t& dest)
 {
 	dest.append_sprintf( "%s", b ? "true" : "false" );
 	return dest;
 }
 
-static eastl::string AddStringDouble(const eastl::string &str, double f)
+static string_t AddStringDouble(const string_t& str, double f)
 {
 	return str + va( "%lf", f );
 }
 
-static eastl::string AddDoubleString(double f, const eastl::string &str)
+static string_t AddDoubleString(double f, const string_t& str)
 {
-	return eastl::string( va( "%lf", f ) ) + str;
+	return string_t( va( "%lf", f ) ) + str;
 }
 
-static eastl::string AddStringFloat(const eastl::string &str, float f)
+static string_t AddStringFloat(const string_t& str, float f)
 {
 	return str + va( "%f", f );
 }
 
-static eastl::string AddFloatString(float f, const eastl::string &str)
+static string_t AddFloatString(float f, const string_t& str)
 {
-	return eastl::string( va( "%f", f ) )  + str;
+	return string_t( va( "%f", f ) )  + str;
 }
 
-static eastl::string AddStringBool(const eastl::string &str, bool b)
+static string_t AddStringBool(const string_t& str, bool b)
 {
 	return str + va( "%s", b ? "true" : "false" );
 }
 
-static eastl::string AddBoolString(bool b, const eastl::string &str)
+static string_t AddBoolString(bool b, const string_t& str)
 {
-	return eastl::string( va( "%s", b ? "true" : "false" ) ) + str;
+	return string_t( va( "%s", b ? "true" : "false" ) ) + str;
 }
 
-static char *StringCharAt( asQWORD i, eastl::string &str)
+static char *StringCharAt( asQWORD i, string_t& str)
 {
 	if( i >= str.size() )
 	{
@@ -293,85 +171,85 @@ static char *StringCharAt( asQWORD i, eastl::string &str)
 }
 
 // AngelScript signature:
-// int string::opCmp(const eastl::string &in) const
-static asQWORD StringCmp(const eastl::string &a, const eastl::string &b)
+// int string::opCmp(const string_t& in) const
+static asQWORD StringCmp(const string_t& a, const string_t& b)
 {
 	return N_strcmp( a.c_str(), b.c_str() );
 }
 
 // This function returns the index of the first position where the substring
 // exists in the input string. If the substring doesn't exist in the input
-// eastl::string -1 is returned.
+// string_t -1 is returned.
 //
 // AngelScript signature:
-// int string::findFirst(const eastl::string &in sub, uint start = 0) const
-static asQWORD StringFindFirst(const eastl::string &sub, asQWORD start, const eastl::string &str)
+// int string::findFirst(const string_t& in sub, uint start = 0) const
+static asQWORD StringFindFirst(const string_t& sub, asQWORD start, const string_t& str)
 {
 	// We don't register the method directly because the argument types change between 32bit and 64bit platforms
-	return (asQWORD)str.find(sub, (asQWORD)(start < 0 ? eastl::string::npos : start));
+	return (asQWORD)str.find(sub, (asQWORD)(start < 0 ? string_t::npos : start));
 }
 
 // This function returns the index of the first position where the one of the bytes in substring
 // exists in the input string. If the characters in the substring doesn't exist in the input
-// eastl::string -1 is returned.
+// string_t -1 is returned.
 //
 // AngelScript signature:
-// int string::findFirstOf(const eastl::string &in sub, uint start = 0) const
-static asQWORD StringFindFirstOf(const eastl::string &sub, asQWORD start, const eastl::string &str)
+// int string::findFirstOf(const string_t& in sub, uint start = 0) const
+static asQWORD StringFindFirstOf(const string_t& sub, asQWORD start, const string_t& str)
 {
 	// We don't register the method directly because the argument types change between 32bit and 64bit platforms
-	return (asQWORD)str.find_first_of(sub, (asQWORD)(start < 0 ? eastl::string::npos : start));
+	return (asQWORD)str.find_first_of(sub, (asQWORD)(start < 0 ? string_t::npos : start));
 }
 
 // This function returns the index of the last position where the one of the bytes in substring
 // exists in the input string. If the characters in the substring doesn't exist in the input
-// eastl::string -1 is returned.
+// string_t -1 is returned.
 //
 // AngelScript signature:
-// int string::findLastOf(const eastl::string &in sub, uint start = -1) const
-static asQWORD StringFindLastOf(const eastl::string &sub, asQWORD start, const eastl::string &str)
+// int string::findLastOf(const string_t& in sub, uint start = -1) const
+static asQWORD StringFindLastOf(const string_t& sub, asQWORD start, const string_t& str)
 {
 	// We don't register the method directly because the argument types change between 32bit and 64bit platforms
-	return (asQWORD)str.find_last_of(sub, (asQWORD)(start < 0 ? eastl::string::npos : start));
+	return (asQWORD)str.find_last_of(sub, (asQWORD)(start < 0 ? string_t::npos : start));
 }
 
 // This function returns the index of the first position where a byte other than those in substring
 // exists in the input string. If none is found -1 is returned.
 //
 // AngelScript signature:
-// int string::findFirstNotOf(const eastl::string &in sub, uint start = 0) const
-static asQWORD StringFindFirstNotOf(const eastl::string &sub, asQWORD start, const eastl::string &str)
+// int string::findFirstNotOf(const string_t& in sub, uint start = 0) const
+static asQWORD StringFindFirstNotOf(const string_t& sub, asQWORD start, const string_t& str)
 {
 	// We don't register the method directly because the argument types change between 32bit and 64bit platforms
-	return (asQWORD)str.find_first_not_of(sub, (asQWORD)(start < 0 ? eastl::string::npos : start));
+	return (asQWORD)str.find_first_not_of(sub, (asQWORD)(start < 0 ? string_t::npos : start));
 }
 
 // This function returns the index of the last position where a byte other than those in substring
 // exists in the input string. If none is found -1 is returned.
 //
 // AngelScript signature:
-// int string::findLastNotOf(const eastl::string &in sub, uint start = -1) const
-static asQWORD StringFindLastNotOf(const eastl::string &sub, asQWORD start, const eastl::string &str)
+// int string::findLastNotOf(const string_t& in sub, uint start = -1) const
+static asQWORD StringFindLastNotOf(const string_t& sub, asQWORD start, const string_t& str)
 {
 	// We don't register the method directly because the argument types change between 32bit and 64bit platforms
-	return (asQWORD)str.find_last_not_of(sub, (asQWORD)(start < 0 ? eastl::string::npos : start));
+	return (asQWORD)str.find_last_not_of(sub, (asQWORD)(start < 0 ? string_t::npos : start));
 }
 
 // This function returns the index of the last position where the substring
 // exists in the input string. If the substring doesn't exist in the input
-// eastl::string -1 is returned.
+// string_t -1 is returned.
 //
 // AngelScript signature:
-// int string::findLast(const eastl::string &in sub, int start = -1) const
-static asQWORD StringFindLast(const eastl::string &sub, asQWORD start, const eastl::string &str)
+// int string::findLast(const string_t& in sub, int start = -1) const
+static asQWORD StringFindLast(const string_t& sub, asQWORD start, const string_t& str)
 {
 	// We don't register the method directly because the argument types change between 32bit and 64bit platforms
-	return (asQWORD)str.rfind(sub, (asQWORD)(start < 0 ? eastl::string::npos : start));
+	return (asQWORD)str.rfind(sub, (asQWORD)(start < 0 ? string_t::npos : start));
 }
 
 // AngelScript signature:
-// void string::insert(uint pos, const eastl::string &in other)
-static void StringInsert( asQWORD pos, const eastl::string &other, eastl::string &str)
+// void string::insert(uint pos, const string_t& in other)
+static void StringInsert( asQWORD pos, const string_t& other, string_t& str)
 {
 	// We don't register the method directly because the argument types change between 32bit and 64bit platforms
 	str.insert(pos, other);
@@ -379,16 +257,16 @@ static void StringInsert( asQWORD pos, const eastl::string &other, eastl::string
 
 // AngelScript signature:
 // void string::erase(uint pos, int count = -1)
-static void StringErase( asQWORD pos, asQWORD count, eastl::string &str)
+static void StringErase( asQWORD pos, asQWORD count, string_t& str)
 {
 	// We don't register the method directly because the argument types change between 32bit and 64bit platforms
-	str.erase(pos, (asQWORD)(count < 0 ? eastl::string::npos : count));
+	str.erase(pos, (asQWORD)(count < 0 ? string_t::npos : count));
 }
 
 
 // AngelScript signature:
 // uint string::length() const
-static asQWORD StringLength(const eastl::string &str)
+static asQWORD StringLength(const string_t& str)
 {
 	// We don't register the method directly because the return type changes between 32bit and 64bit platforms
 	return str.length();
@@ -397,23 +275,23 @@ static asQWORD StringLength(const eastl::string &str)
 
 // AngelScript signature:
 // void string::resize(uint l)
-static void StringResize(asQWORD l, eastl::string &str)
+static void StringResize(asQWORD l, string_t& str)
 {
 	// We don't register the method directly because the argument types change between 32bit and 64bit platforms
 	str.resize(l);
 }
 
 // AngelScript signature:
-// eastl::string formatInt(int64 val, const eastl::string &in options, uint width)
-static eastl::string formatInt(asINT64 value, const eastl::string &options, asQWORD width)
+// string_t formatInt(int64 val, const string_t& in options, uint width)
+static string_t formatInt(asINT64 value, const string_t& options, asQWORD width)
 {
-	const bool leftJustify = options.find("l") != eastl::string::npos;
-	const bool padWithZero = options.find("0") != eastl::string::npos;
-	const bool alwaysSign  = options.find("+") != eastl::string::npos;
-	const bool spaceOnSign = options.find(" ") != eastl::string::npos;
-	const bool hexSmall    = options.find("h") != eastl::string::npos;
-	const bool hexLarge    = options.find("H") != eastl::string::npos;
-	eastl::string fmt = "%";
+	const bool leftJustify = options.find("l") != string_t::npos;
+	const bool padWithZero = options.find("0") != string_t::npos;
+	const bool alwaysSign  = options.find("+") != string_t::npos;
+	const bool spaceOnSign = options.find(" ") != string_t::npos;
+	const bool hexSmall    = options.find("h") != string_t::npos;
+	const bool hexLarge    = options.find("H") != string_t::npos;
+	string_t fmt = "%";
 
 	if ( leftJustify ) fmt.append( "-" );
 	if ( alwaysSign ) fmt.append( "+" );
@@ -434,7 +312,7 @@ static eastl::string formatInt(asINT64 value, const eastl::string &options, asQW
 	else if( hexLarge ) fmt += "X";
 	else fmt += "d";
 
-	eastl::string buf;
+	string_t buf;
 	buf.resize( width + 30 );
 #if _MSC_VER >= 1400 && !defined(__S3E__)
 	// MSVC 8.0 / 2005 or newer
@@ -448,17 +326,17 @@ static eastl::string formatInt(asINT64 value, const eastl::string &options, asQW
 }
 
 // AngelScript signature:
-// eastl::string formatUInt(uint64 val, const eastl::string &in options, uint width)
-static eastl::string formatUInt(asQWORD value, const eastl::string &options, asQWORD width)
+// string_t formatUInt(uint64 val, const string_t& in options, uint width)
+static string_t formatUInt(asQWORD value, const string_t& options, asQWORD width)
 {
-	bool leftJustify = options.find("l") != eastl::string::npos;
-	bool padWithZero = options.find("0") != eastl::string::npos;
-	bool alwaysSign  = options.find("+") != eastl::string::npos;
-	bool spaceOnSign = options.find(" ") != eastl::string::npos;
-	bool hexSmall    = options.find("h") != eastl::string::npos;
-	bool hexLarge    = options.find("H") != eastl::string::npos;
+	bool leftJustify = options.find("l") != string_t::npos;
+	bool padWithZero = options.find("0") != string_t::npos;
+	bool alwaysSign  = options.find("+") != string_t::npos;
+	bool spaceOnSign = options.find(" ") != string_t::npos;
+	bool hexSmall    = options.find("h") != string_t::npos;
+	bool hexLarge    = options.find("H") != string_t::npos;
 
-	eastl::string fmt = "%";
+	string_t fmt = "%";
 	if( leftJustify ) fmt += "-";
 	if( alwaysSign ) fmt += "+";
 	if( spaceOnSign ) fmt += " ";
@@ -478,7 +356,7 @@ static eastl::string formatUInt(asQWORD value, const eastl::string &options, asQ
 	else if( hexLarge ) fmt += "X";
 	else fmt += "u";
 
-	eastl::string buf;
+	string_t buf;
 	buf.resize(width+30);
 #if _MSC_VER >= 1400 && !defined(__S3E__)
 	// MSVC 8.0 / 2005 or newer
@@ -492,17 +370,17 @@ static eastl::string formatUInt(asQWORD value, const eastl::string &options, asQ
 }
 
 // AngelScript signature:
-// eastl::string formatFloat(double val, const eastl::string &in options, uint width, uint precision)
-static eastl::string formatFloat(double value, const eastl::string &options, asUINT width, asUINT precision)
+// string_t formatFloat(double val, const string_t& in options, uint width, uint precision)
+static string_t formatFloat(double value, const string_t& options, asUINT width, asUINT precision)
 {
-	bool leftJustify = options.find("l") != eastl::string::npos;
-	bool padWithZero = options.find("0") != eastl::string::npos;
-	bool alwaysSign  = options.find("+") != eastl::string::npos;
-	bool spaceOnSign = options.find(" ") != eastl::string::npos;
-	bool expSmall    = options.find("e") != eastl::string::npos;
-	bool expLarge    = options.find("E") != eastl::string::npos;
+	bool leftJustify = options.find("l") != string_t::npos;
+	bool padWithZero = options.find("0") != string_t::npos;
+	bool alwaysSign  = options.find("+") != string_t::npos;
+	bool spaceOnSign = options.find(" ") != string_t::npos;
+	bool expSmall    = options.find("e") != string_t::npos;
+	bool expLarge    = options.find("E") != string_t::npos;
 
-	eastl::string fmt = "%";
+	string_t fmt = "%";
 	if( leftJustify ) fmt += "-";
 	if( alwaysSign ) fmt += "+";
 	if( spaceOnSign ) fmt += " ";
@@ -514,7 +392,7 @@ static eastl::string formatFloat(double value, const eastl::string &options, asU
 	else if( expLarge ) fmt += "E";
 	else fmt += "f";
 
-	eastl::string buf;
+	string_t buf;
 	buf.resize(width+precision+50);
 #if _MSC_VER >= 1400 && !defined(__S3E__)
 	// MSVC 8.0 / 2005 or newer
@@ -528,8 +406,8 @@ static eastl::string formatFloat(double value, const eastl::string &options, asU
 }
 
 // AngelScript signature:
-// int64 parseInt(const eastl::string &in val, uint base = 10, uint &out byteCount = 0)
-static asINT64 parseInt(const eastl::string &val, asUINT base, asUINT *byteCount)
+// int64 parseInt(const string_t& in val, uint base = 10, uint &out byteCount = 0)
+static asINT64 parseInt(const string_t& val, asUINT base, asUINT *byteCount)
 {
 	// Only accept base 10 and 16
 	if( base != 10 && base != 16 )
@@ -585,8 +463,8 @@ static asINT64 parseInt(const eastl::string &val, asUINT base, asUINT *byteCount
 }
 
 // AngelScript signature:
-// uint64 parseUInt(const eastl::string &in val, uint base = 10, uint &out byteCount = 0)
-static asQWORD parseUInt(const eastl::string &val, asUINT base, asUINT *byteCount)
+// uint64 parseUInt(const string_t& in val, uint base = 10, uint &out byteCount = 0)
+static asQWORD parseUInt(const string_t& val, asUINT base, asUINT *byteCount)
 {
 	// Only accept base 10 and 16
 	if (base != 10 && base != 16)
@@ -629,8 +507,8 @@ static asQWORD parseUInt(const eastl::string &val, asUINT base, asUINT *byteCoun
 }
 
 // AngelScript signature:
-// double parseFloat(const eastl::string &in val, uint &out byteCount = 0)
-double parseFloat(const eastl::string &val, asUINT *byteCount)
+// double parseFloat(const string_t& in val, uint &out byteCount = 0)
+double parseFloat(const string_t& val, asUINT *byteCount)
 {
 	char *end;
 
@@ -640,7 +518,7 @@ double parseFloat(const eastl::string &val, asUINT *byteCount)
 #if !defined(_WIN32_WCE) && !defined(ANDROID) && !defined(__psp2__)
 	// Set the locale to C so that we are guaranteed to parse the float value correctly
 	char *tmp = setlocale(LC_NUMERIC, 0);
-	eastl::string orig = tmp ? tmp : "C";
+	string_t orig = tmp ? tmp : "C";
 	setlocale(LC_NUMERIC, "C");
 #endif
 
@@ -657,17 +535,17 @@ double parseFloat(const eastl::string &val, asUINT *byteCount)
 	return res;
 }
 
-// This function returns a eastl::string containing the substring of the input string
+// This function returns a string_t containing the substring of the input string
 // determined by the starting index and count of characters.
 //
 // AngelScript signature:
-// eastl::string string::substr(uint start = 0, int count = -1) const
-static eastl::string StringSubString(asUINT start, int count, const eastl::string &str)
+// string_t string::substr(uint start = 0, int count = -1) const
+static string_t StringSubString(asUINT start, int count, const string_t& str)
 {
 	// Check for out-of-bounds
-	eastl::string ret;
+	string_t ret;
 	if( start < str.length() && count != 0 )
-		ret = str.substr(start, (asQWORD)(count < 0 ? eastl::string::npos : count));
+		ret = str.substr(start, (asQWORD)(count < 0 ? string_t::npos : count));
 
 	return ret;
 }
@@ -676,14 +554,14 @@ static eastl::string StringSubString(asUINT start, int count, const eastl::strin
 // Returns true iff lhs is equal to rhs.
 //
 // For some reason gcc 4.7 has difficulties resolving the
-// asFUNCTIONPR(operator==, (const eastl::string &, const eastl::string &)
+// asFUNCTIONPR(operator==, (const string_t& , const string_t& )
 // makro, so this wrapper was introduced as work around.
-static bool StringEquals(const eastl::string& lhs, const eastl::string& rhs)
+static bool StringEquals(const string_t& lhs, const string_t& rhs)
 {
 	return N_strcmp( lhs.c_str(), rhs.c_str() ) == 0;
 }
 
-static eastl::string StringAppend( const eastl::string& value, const eastl::string& add )
+static string_t StringAppend( const string_t& value, const string_t& add )
 {
 	return value + add;
 }
@@ -693,31 +571,31 @@ void RegisterStdString_Native(asIScriptEngine *engine)
 	int r = 0;
 	UNUSED_VAR(r);
 
-	// Register the eastl::string type
+	// Register the string_t type
 #if AS_CAN_USE_CPP11
 	// With C++11 it is possible to use asGetTypeTraits to automatically determine the correct flags to use
-	r = engine->RegisterObjectType("string", sizeof(eastl::string), asOBJ_VALUE | asGetTypeTraits<eastl::string>()); assert( r >= 0 );
+	r = engine->RegisterObjectType("string", sizeof(string_t), asOBJ_VALUE | asGetTypeTraits<string_t>()); assert( r >= 0 );
 #else
-	r = engine->RegisterObjectType("string", sizeof(eastl::string), asOBJ_VALUE | asOBJ_APP_CLASS_CDAK); assert( r >= 0 );
+	r = engine->RegisterObjectType("string", sizeof(string_t), asOBJ_VALUE | asOBJ_APP_CLASS_CDAK); assert( r >= 0 );
 #endif
 
 	r = engine->RegisterStringFactory("string", GetStringFactorySingleton());
 
 	// Register the object operator overloads
 	r = engine->RegisterObjectBehaviour("string", asBEHAVE_CONSTRUCT,  "void f()",                    asFUNCTION(ConstructString), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	r = engine->RegisterObjectBehaviour("string", asBEHAVE_CONSTRUCT,  "void f(const eastl::string &in)",    asFUNCTION(CopyConstructString), asCALL_CDECL_OBJLAST); assert( r >= 0 );
+	r = engine->RegisterObjectBehaviour("string", asBEHAVE_CONSTRUCT,  "void f(const string& in)",    asFUNCTION(CopyConstructString), asCALL_CDECL_OBJLAST); assert( r >= 0 );
 	r = engine->RegisterObjectBehaviour("string", asBEHAVE_DESTRUCT,   "void f()",                    asFUNCTION(DestructString),  asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "string &opAssign(const eastl::string &in)", asMETHODPR(eastl::string, operator =, (const eastl::string&), eastl::string&), asCALL_THISCALL); assert( r >= 0 );
+	r = engine->RegisterObjectMethod("string", "string &opAssign(const string& in)", asMETHODPR(string_t, operator =, (const string_t&), string_t&), asCALL_THISCALL); assert( r >= 0 );
 	// Need to use a wrapper on Mac OS X 10.7/XCode 4.3 and CLang/LLVM, otherwise the linker fails
-	r = engine->RegisterObjectMethod("string", "string &opAddAssign(const eastl::string &in)", asFUNCTION(AddAssignStringToString), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-//	r = engine->RegisterObjectMethod("string", "string &opAddAssign(const eastl::string &in)", asMETHODPR(string, operator+=, (const string&), string&), asCALL_THISCALL); assert( r >= 0 );
+	r = engine->RegisterObjectMethod("string", "string &opAddAssign(const string& in)", asFUNCTION(AddAssignStringToString), asCALL_CDECL_OBJLAST); assert( r >= 0 );
+//	r = engine->RegisterObjectMethod("string", "string &opAddAssign(const string& in)", asMETHODPR(string, operator+=, (const string&), string&), asCALL_THISCALL); assert( r >= 0 );
 
 	// Need to use a wrapper for operator== otherwise gcc 4.7 fails to compile
-	r = engine->RegisterObjectMethod("string", "bool opEquals(const eastl::string &in) const", asFUNCTIONPR(StringEquals, (const eastl::string &, const eastl::string &), bool), asCALL_CDECL_OBJFIRST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "int opCmp(const eastl::string &in) const", asFUNCTION(StringCmp), asCALL_CDECL_OBJFIRST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "string opAdd(const eastl::string &in) const", asFUNCTION(StringAppend), asCALL_CDECL_OBJFIRST); assert( r >= 0 );
+	r = engine->RegisterObjectMethod("string", "bool opEquals(const string& in) const", asFUNCTIONPR(StringEquals, (const string_t& , const string_t& ), bool), asCALL_CDECL_OBJFIRST); assert( r >= 0 );
+	r = engine->RegisterObjectMethod("string", "int opCmp(const string& in) const", asFUNCTION(StringCmp), asCALL_CDECL_OBJFIRST); assert( r >= 0 );
+	r = engine->RegisterObjectMethod("string", "string opAdd(const string& in) const", asFUNCTION(StringAppend), asCALL_CDECL_OBJFIRST); assert( r >= 0 );
 
-	// The eastl::string length can be accessed through methods or through virtual property
+	// The string_t length can be accessed through methods or through virtual property
 	// TODO: Register as size() for consistency with other types
 #if AS_USE_ACCESSORS != 1
 	r = engine->RegisterObjectMethod("string", "uint length() const", asFUNCTION(StringLength), asCALL_CDECL_OBJLAST); assert( r >= 0 );
@@ -765,82 +643,81 @@ void RegisterStdString_Native(asIScriptEngine *engine)
 
 	// Utilities
 	r = engine->RegisterObjectMethod("string", "string substr(uint start = 0, int count = -1) const", asFUNCTION(StringSubString), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "int findFirst(const eastl::string &in, uint start = 0) const", asFUNCTION(StringFindFirst), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "int findFirstOf(const eastl::string &in, uint start = 0) const", asFUNCTION(StringFindFirstOf), asCALL_CDECL_OBJLAST); assert(r >= 0);
-	r = engine->RegisterObjectMethod("string", "int findFirstNotOf(const eastl::string &in, uint start = 0) const", asFUNCTION(StringFindFirstNotOf), asCALL_CDECL_OBJLAST); assert(r >= 0);
-	r = engine->RegisterObjectMethod("string", "int findLast(const eastl::string &in, int start = -1) const", asFUNCTION(StringFindLast), asCALL_CDECL_OBJLAST); assert( r >= 0 );
-	r = engine->RegisterObjectMethod("string", "int findLastOf(const eastl::string &in, int start = -1) const", asFUNCTION(StringFindLastOf), asCALL_CDECL_OBJLAST); assert(r >= 0);
-	r = engine->RegisterObjectMethod("string", "int findLastNotOf(const eastl::string &in, int start = -1) const", asFUNCTION(StringFindLastNotOf), asCALL_CDECL_OBJLAST); assert(r >= 0);
-	r = engine->RegisterObjectMethod("string", "void insert(uint pos, const eastl::string &in other)", asFUNCTION(StringInsert), asCALL_CDECL_OBJLAST); assert(r >= 0);
+	r = engine->RegisterObjectMethod("string", "int findFirst(const string& in, uint start = 0) const", asFUNCTION(StringFindFirst), asCALL_CDECL_OBJLAST); assert( r >= 0 );
+	r = engine->RegisterObjectMethod("string", "int findFirstOf(const string&, uint start = 0) const", asFUNCTION(StringFindFirstOf), asCALL_CDECL_OBJLAST); assert(r >= 0);
+	r = engine->RegisterObjectMethod("string", "int findFirstNotOf(const string&, uint start = 0) const", asFUNCTION(StringFindFirstNotOf), asCALL_CDECL_OBJLAST); assert(r >= 0);
+	r = engine->RegisterObjectMethod("string", "int findLast(const string&, int start = -1) const", asFUNCTION(StringFindLast), asCALL_CDECL_OBJLAST); assert( r >= 0 );
+	r = engine->RegisterObjectMethod("string", "int findLastOf(const string&, int start = -1) const", asFUNCTION(StringFindLastOf), asCALL_CDECL_OBJLAST); assert(r >= 0);
+	r = engine->RegisterObjectMethod("string", "int findLastNotOf(const string&, int start = -1) const", asFUNCTION(StringFindLastNotOf), asCALL_CDECL_OBJLAST); assert(r >= 0);
+	r = engine->RegisterObjectMethod("string", "void insert(uint pos, const string& in other)", asFUNCTION(StringInsert), asCALL_CDECL_OBJLAST); assert(r >= 0);
 	r = engine->RegisterObjectMethod("string", "void erase(uint pos, int count = -1)", asFUNCTION(StringErase), asCALL_CDECL_OBJLAST); assert(r >= 0);
 
 
-	r = engine->RegisterGlobalFunction("string formatInt(int64 val, const eastl::string &in options = \"\", uint width = 0)", asFUNCTION(formatInt), asCALL_CDECL); assert(r >= 0);
-	r = engine->RegisterGlobalFunction("string formatUInt(uint64 val, const eastl::string &in options = \"\", uint width = 0)", asFUNCTION(formatUInt), asCALL_CDECL); assert(r >= 0);
-	r = engine->RegisterGlobalFunction("string formatFloat(double val, const eastl::string &in options = \"\", uint width = 0, uint precision = 0)", asFUNCTION(formatFloat), asCALL_CDECL); assert(r >= 0);
-	r = engine->RegisterGlobalFunction("int64 parseInt(const eastl::string &in, uint base = 10, uint &out byteCount = 0)", asFUNCTION(parseInt), asCALL_CDECL); assert(r >= 0);
-	r = engine->RegisterGlobalFunction("uint64 parseUInt(const eastl::string &in, uint base = 10, uint &out byteCount = 0)", asFUNCTION(parseUInt), asCALL_CDECL); assert(r >= 0);
-	r = engine->RegisterGlobalFunction("double parseFloat(const eastl::string &in, uint &out byteCount = 0)", asFUNCTION(parseFloat), asCALL_CDECL); assert(r >= 0);
+	r = engine->RegisterGlobalFunction("string formatInt(int64 val, const string& in options = \"\", uint width = 0)", asFUNCTION(formatInt), asCALL_CDECL); assert(r >= 0);
+	r = engine->RegisterGlobalFunction("string formatUInt(uint64 val, const string& in options = \"\", uint width = 0)", asFUNCTION(formatUInt), asCALL_CDECL); assert(r >= 0);
+	r = engine->RegisterGlobalFunction("string formatFloat(double val, const const string& in options = \"\", uint width = 0, uint precision = 0)", asFUNCTION(formatFloat), asCALL_CDECL); assert(r >= 0);
+	r = engine->RegisterGlobalFunction("int64 parseInt(const string& in, uint base = 10, uint &out byteCount = 0)", asFUNCTION(parseInt), asCALL_CDECL); assert(r >= 0);
+	r = engine->RegisterGlobalFunction("uint64 parseUInt(const string& in, uint base = 10, uint &out byteCount = 0)", asFUNCTION(parseUInt), asCALL_CDECL); assert(r >= 0);
+	r = engine->RegisterGlobalFunction("double parseFloat(const string& in, uint &out byteCount = 0)", asFUNCTION(parseFloat), asCALL_CDECL); assert(r >= 0);
 
 	// Same as length
 	r = engine->RegisterObjectMethod("string", "uint size() const", asFUNCTION(StringLength), asCALL_CDECL_OBJLAST); assert( r >= 0 );
 	// Same as isEmpty
 	r = engine->RegisterObjectMethod("string", "bool empty() const", asFUNCTION(StringIsEmpty), asCALL_CDECL_OBJLAST); assert( r >= 0 );
 	// Same as findFirst
-	r = engine->RegisterObjectMethod("string", "int find(const eastl::string &in, uint start = 0) const", asFUNCTION(StringFindFirst), asCALL_CDECL_OBJLAST); assert( r >= 0 );
+	r = engine->RegisterObjectMethod("string", "int find(const string& in, uint start = 0) const", asFUNCTION(StringFindFirst), asCALL_CDECL_OBJLAST); assert( r >= 0 );
 	// Same as findLast
-	r = engine->RegisterObjectMethod("string", "int rfind(const eastl::string &in, int start = -1) const", asFUNCTION(StringFindLast), asCALL_CDECL_OBJLAST); assert( r >= 0 );
+	r = engine->RegisterObjectMethod("string", "int rfind(const string& in, int start = -1) const", asFUNCTION(StringFindLast), asCALL_CDECL_OBJLAST); assert( r >= 0 );
 
 	// TODO: Implement the following
 	// findAndReplace - replaces a text found in the string
 	// replaceRange - replaces a range of bytes in the string
-	// multiply/times/opMul/opMul_r - takes the eastl::string and multiplies it n times, e.g. "-".multiply(5) returns "-----"
+	// multiply/times/opMul/opMul_r - takes the string_t and multiplies it n times, e.g. "-".multiply(5) returns "-----"
 }
 
-static void ConstructStringGeneric( asIScriptGeneric * gen ) {
-	new ( gen->GetObject() ) eastl::string();
+static void ConstructStringGeneric( asIScriptGeneric *gen ) {
+	new ( gen->GetObject() ) string_t();
 }
 
-static void CopyConstructStringGeneric(asIScriptGeneric * gen)
+static void CopyConstructStringGeneric(asIScriptGeneric *gen)
 {
-	eastl::string * a = static_cast<eastl::string *>(gen->GetArgObject(0));
-	new (gen->GetObject()) eastl::string(*a);
+	string_t *a = static_cast<string_t *>(gen->GetArgObject(0));
+	new (gen->GetObject()) string_t(*a);
 }
 
-static void DestructStringGeneric(asIScriptGeneric * gen)
+static void DestructStringGeneric(asIScriptGeneric *gen)
 {
-	using eastl::string;
-	eastl::string * ptr = static_cast<eastl::string *>(gen->GetObject());
-	ptr->~string();
+	string_t *ptr = static_cast<string_t *>(gen->GetObject());
+	ptr->~string_t();
 }
 
 static void AssignStringGeneric(asIScriptGeneric *gen)
 {
-	eastl::string * a = static_cast<eastl::string *>(gen->GetArgObject(0));
-	eastl::string * self = static_cast<eastl::string *>(gen->GetObject());
+	string_t *a = static_cast<string_t *>(gen->GetArgObject(0));
+	string_t *self = static_cast<string_t *>(gen->GetObject());
 	*self = *a;
 	gen->SetReturnAddress(self);
 }
 
 static void AddAssignStringGeneric(asIScriptGeneric *gen)
 {
-	eastl::string * a = static_cast<eastl::string *>(gen->GetArgObject(0));
-	eastl::string * self = static_cast<eastl::string *>(gen->GetObject());
+	string_t *a = static_cast<string_t *>(gen->GetArgObject(0));
+	string_t *self = static_cast<string_t *>(gen->GetObject());
 	*self += *a;
 	gen->SetReturnAddress(self);
 }
 
-static void StringEqualsGeneric(asIScriptGeneric * gen)
+static void StringEqualsGeneric(asIScriptGeneric *gen)
 {
-	eastl::string * a = static_cast<eastl::string *>(gen->GetObject());
-	eastl::string * b = static_cast<eastl::string *>(gen->GetArgAddress(0));
+	string_t *a = static_cast<string_t *>(gen->GetObject());
+	string_t *b = static_cast<string_t *>(gen->GetArgAddress(0));
 	*(bool*)gen->GetAddressOfReturnLocation() = (*a == *b);
 }
 
-static void StringCmpGeneric(asIScriptGeneric * gen)
+static void StringCmpGeneric(asIScriptGeneric *gen)
 {
-	eastl::string * a = static_cast<eastl::string *>(gen->GetObject());
-	eastl::string * b = static_cast<eastl::string *>(gen->GetArgAddress(0));
+	string_t *a = static_cast<string_t *>(gen->GetObject());
+	string_t *b = static_cast<string_t *>(gen->GetArgAddress(0));
 
 	int cmp = 0;
 	if( *a < *b ) cmp = -1;
@@ -849,124 +726,124 @@ static void StringCmpGeneric(asIScriptGeneric * gen)
 	*(int*)gen->GetAddressOfReturnLocation() = cmp;
 }
 
-static void StringAddGeneric(asIScriptGeneric * gen)
+static void StringAddGeneric(asIScriptGeneric *gen)
 {
-	eastl::string * a = static_cast<eastl::string *>(gen->GetObject());
-	eastl::string * b = static_cast<eastl::string *>(gen->GetArgAddress(0));
-	eastl::string ret_val = *a + *b;
+	string_t *a = static_cast<string_t *>(gen->GetObject());
+	string_t *b = static_cast<string_t *>(gen->GetArgAddress(0));
+	string_t ret_val = *a + *b;
 	gen->SetReturnObject(&ret_val);
 }
 
-static void StringLengthGeneric(asIScriptGeneric * gen)
+static void StringLengthGeneric(asIScriptGeneric *gen)
 {
-	eastl::string * self = static_cast<eastl::string *>(gen->GetObject());
+	string_t *self = static_cast<string_t *>(gen->GetObject());
 	*static_cast<asUINT *>(gen->GetAddressOfReturnLocation()) = (asUINT)self->length();
 }
 
-static void StringIsEmptyGeneric(asIScriptGeneric * gen)
+static void StringIsEmptyGeneric(asIScriptGeneric *gen)
 {
-	eastl::string * self = reinterpret_cast<eastl::string *>(gen->GetObject());
+	string_t *self = reinterpret_cast<string_t *>(gen->GetObject());
 	*reinterpret_cast<bool *>(gen->GetAddressOfReturnLocation()) = StringIsEmpty(*self);
 }
 
-static void StringResizeGeneric(asIScriptGeneric * gen)
+static void StringResizeGeneric(asIScriptGeneric *gen)
 {
-	eastl::string * self = static_cast<eastl::string *>(gen->GetObject());
+	string_t *self = static_cast<string_t *>(gen->GetObject());
 	self->resize(*static_cast<asUINT *>(gen->GetAddressOfArg(0)));
 }
 
 static void StringInsert_Generic(asIScriptGeneric *gen)
 {
-	eastl::string * self = static_cast<eastl::string *>(gen->GetObject());
+	string_t *self = static_cast<string_t *>(gen->GetObject());
 	asUINT pos = gen->GetArgDWord(0);
-	eastl::string *other = reinterpret_cast<eastl::string *>(gen->GetArgAddress(1));
+	string_t *other = reinterpret_cast<string_t *>(gen->GetArgAddress(1));
 	StringInsert(pos, *other, *self);
 }
 
 static void StringErase_Generic(asIScriptGeneric *gen)
 {
-	eastl::string * self = static_cast<eastl::string *>(gen->GetObject());
+	string_t *self = static_cast<string_t *>(gen->GetObject());
 	asUINT pos = gen->GetArgDWord(0);
 	int count = int(gen->GetArgDWord(1));
 	StringErase(pos, count, *self);
 }
 
-static void StringFindFirst_Generic(asIScriptGeneric * gen)
+static void StringFindFirst_Generic(asIScriptGeneric *gen)
 {
-	eastl::string *find = reinterpret_cast<eastl::string*>(gen->GetArgAddress(0));
+	string_t *find = reinterpret_cast<string_t*>(gen->GetArgAddress(0));
 	asUINT start = gen->GetArgDWord(1);
-	eastl::string *self = reinterpret_cast<eastl::string *>(gen->GetObject());
+	string_t *self = reinterpret_cast<string_t *>(gen->GetObject());
 	*reinterpret_cast<int *>(gen->GetAddressOfReturnLocation()) = StringFindFirst(*find, start, *self);
 }
 
-static void StringFindLast_Generic(asIScriptGeneric * gen)
+static void StringFindLast_Generic(asIScriptGeneric *gen)
 {
-	eastl::string *find = reinterpret_cast<eastl::string*>(gen->GetArgAddress(0));
+	string_t *find = reinterpret_cast<string_t*>(gen->GetArgAddress(0));
 	asUINT start = gen->GetArgDWord(1);
-	eastl::string *self = reinterpret_cast<eastl::string *>(gen->GetObject());
+	string_t *self = reinterpret_cast<string_t *>(gen->GetObject());
 	*reinterpret_cast<int *>(gen->GetAddressOfReturnLocation()) = StringFindLast(*find, start, *self);
 }
 
-static void StringFindFirstOf_Generic(asIScriptGeneric * gen)
+static void StringFindFirstOf_Generic(asIScriptGeneric *gen)
 {
-	eastl::string *find = reinterpret_cast<eastl::string*>(gen->GetArgAddress(0));
+	string_t *find = reinterpret_cast<string_t*>(gen->GetArgAddress(0));
 	asUINT start = gen->GetArgDWord(1);
-	eastl::string *self = reinterpret_cast<eastl::string *>(gen->GetObject());
+	string_t *self = reinterpret_cast<string_t *>(gen->GetObject());
 	*reinterpret_cast<int *>(gen->GetAddressOfReturnLocation()) = StringFindFirstOf(*find, start, *self);
 }
 
-static void StringFindLastOf_Generic(asIScriptGeneric * gen)
+static void StringFindLastOf_Generic(asIScriptGeneric *gen)
 {
-	eastl::string *find = reinterpret_cast<eastl::string*>(gen->GetArgAddress(0));
+	string_t *find = reinterpret_cast<string_t*>(gen->GetArgAddress(0));
 	asUINT start = gen->GetArgDWord(1);
-	eastl::string *self = reinterpret_cast<eastl::string *>(gen->GetObject());
+	string_t *self = reinterpret_cast<string_t *>(gen->GetObject());
 	*reinterpret_cast<int *>(gen->GetAddressOfReturnLocation()) = StringFindLastOf(*find, start, *self);
 }
 
-static void StringFindFirstNotOf_Generic(asIScriptGeneric * gen)
+static void StringFindFirstNotOf_Generic(asIScriptGeneric *gen)
 {
-	eastl::string *find = reinterpret_cast<eastl::string*>(gen->GetArgAddress(0));
+	string_t *find = reinterpret_cast<string_t*>(gen->GetArgAddress(0));
 	asUINT start = gen->GetArgDWord(1);
-	eastl::string *self = reinterpret_cast<eastl::string *>(gen->GetObject());
+	string_t *self = reinterpret_cast<string_t *>(gen->GetObject());
 	*reinterpret_cast<int *>(gen->GetAddressOfReturnLocation()) = StringFindFirstNotOf(*find, start, *self);
 }
 
-static void StringFindLastNotOf_Generic(asIScriptGeneric * gen)
+static void StringFindLastNotOf_Generic(asIScriptGeneric *gen)
 {
-	eastl::string *find = reinterpret_cast<eastl::string*>(gen->GetArgAddress(0));
+	string_t *find = reinterpret_cast<string_t*>(gen->GetArgAddress(0));
 	asUINT start = gen->GetArgDWord(1);
-	eastl::string *self = reinterpret_cast<eastl::string *>(gen->GetObject());
+	string_t *self = reinterpret_cast<string_t *>(gen->GetObject());
 	*reinterpret_cast<int *>(gen->GetAddressOfReturnLocation()) = StringFindLastNotOf(*find, start, *self);
 }
 
-static void formatInt_Generic(asIScriptGeneric * gen)
+static void formatInt_Generic(asIScriptGeneric *gen)
 {
 	asINT64 val = gen->GetArgQWord(0);
-	eastl::string *options = reinterpret_cast<eastl::string*>(gen->GetArgAddress(1));
+	string_t *options = reinterpret_cast<string_t*>(gen->GetArgAddress(1));
 	asUINT width = gen->GetArgDWord(2);
-	new(gen->GetAddressOfReturnLocation()) eastl::string(formatInt(val, *options, width));
+	new(gen->GetAddressOfReturnLocation()) string_t(formatInt(val, *options, width));
 }
 
-static void formatUInt_Generic(asIScriptGeneric * gen)
+static void formatUInt_Generic(asIScriptGeneric *gen)
 {
 	asQWORD val = gen->GetArgQWord(0);
-	eastl::string *options = reinterpret_cast<eastl::string*>(gen->GetArgAddress(1));
+	string_t *options = reinterpret_cast<string_t*>(gen->GetArgAddress(1));
 	asUINT width = gen->GetArgDWord(2);
-	new(gen->GetAddressOfReturnLocation()) eastl::string(formatUInt(val, *options, width));
+	new(gen->GetAddressOfReturnLocation()) string_t(formatUInt(val, *options, width));
 }
 
 static void formatFloat_Generic(asIScriptGeneric *gen)
 {
 	double val = gen->GetArgDouble(0);
-	eastl::string *options = reinterpret_cast<eastl::string*>(gen->GetArgAddress(1));
+	string_t *options = reinterpret_cast<string_t*>(gen->GetArgAddress(1));
 	asUINT width = gen->GetArgDWord(2);
 	asUINT precision = gen->GetArgDWord(3);
-	new(gen->GetAddressOfReturnLocation()) eastl::string(formatFloat(val, *options, width, precision));
+	new(gen->GetAddressOfReturnLocation()) string_t(formatFloat(val, *options, width, precision));
 }
 
 static void parseInt_Generic(asIScriptGeneric *gen)
 {
-	eastl::string *str = reinterpret_cast<eastl::string*>(gen->GetArgAddress(0));
+	string_t *str = reinterpret_cast<string_t*>(gen->GetArgAddress(0));
 	asUINT base = gen->GetArgDWord(1);
 	asUINT *byteCount = reinterpret_cast<asUINT*>(gen->GetArgAddress(2));
 	gen->SetReturnQWord(parseInt(*str,base,byteCount));
@@ -974,7 +851,7 @@ static void parseInt_Generic(asIScriptGeneric *gen)
 
 static void parseUInt_Generic(asIScriptGeneric *gen)
 {
-	eastl::string *str = reinterpret_cast<eastl::string*>(gen->GetArgAddress(0));
+	string_t *str = reinterpret_cast<string_t*>(gen->GetArgAddress(0));
 	asUINT base = gen->GetArgDWord(1);
 	asUINT *byteCount = reinterpret_cast<asUINT*>(gen->GetArgAddress(2));
 	gen->SetReturnQWord(parseUInt(*str, base, byteCount));
@@ -982,15 +859,15 @@ static void parseUInt_Generic(asIScriptGeneric *gen)
 
 static void parseFloat_Generic(asIScriptGeneric *gen)
 {
-	eastl::string *str = reinterpret_cast<eastl::string*>(gen->GetArgAddress(0));
+	string_t *str = reinterpret_cast<string_t*>(gen->GetArgAddress(0));
 	asUINT *byteCount = reinterpret_cast<asUINT*>(gen->GetArgAddress(1));
 	gen->SetReturnDouble(parseFloat(*str,byteCount));
 }
 
-static void StringCharAtGeneric(asIScriptGeneric * gen)
+static void StringCharAtGeneric(asIScriptGeneric *gen)
 {
 	unsigned int index = gen->GetArgDWord(0);
-	eastl::string * self = static_cast<eastl::string *>(gen->GetObject());
+	string_t *self = static_cast<string_t *>(gen->GetObject());
 
 	if (index >= self->size())
 	{
@@ -1009,7 +886,7 @@ static void StringCharAtGeneric(asIScriptGeneric * gen)
 static void AssignInt2StringGeneric(asIScriptGeneric *gen)
 {
 	asINT64 *a = static_cast<asINT64*>(gen->GetAddressOfArg(0));
-	eastl::string *self = static_cast<eastl::string*>(gen->GetObject());
+	string_t *self = static_cast<string_t*>(gen->GetObject());
 	*self = va( "%lu", *a );
 	gen->SetReturnAddress(self);
 }
@@ -1017,7 +894,7 @@ static void AssignInt2StringGeneric(asIScriptGeneric *gen)
 static void AssignUInt2StringGeneric(asIScriptGeneric *gen)
 {
 	asQWORD *a = static_cast<asQWORD*>(gen->GetAddressOfArg(0));
-	eastl::string *self = static_cast<eastl::string*>(gen->GetObject());
+	string_t *self = static_cast<string_t*>(gen->GetObject());
 	*self = va( "%lu", *a );
 	gen->SetReturnAddress(self);
 }
@@ -1025,7 +902,7 @@ static void AssignUInt2StringGeneric(asIScriptGeneric *gen)
 static void AssignDouble2StringGeneric(asIScriptGeneric *gen)
 {
 	double *a = static_cast<double*>(gen->GetAddressOfArg(0));
-	eastl::string *self = static_cast<eastl::string*>(gen->GetObject());
+	string_t *self = static_cast<string_t*>(gen->GetObject());
 	*self = va( "%lf", *a );
 	gen->SetReturnAddress(self);
 }
@@ -1033,7 +910,7 @@ static void AssignDouble2StringGeneric(asIScriptGeneric *gen)
 static void AssignFloat2StringGeneric(asIScriptGeneric *gen)
 {
 	float *a = static_cast<float*>(gen->GetAddressOfArg(0));
-	eastl::string *self = static_cast<eastl::string*>(gen->GetObject());
+	string_t *self = static_cast<string_t*>(gen->GetObject());
 	*self = va( "%f", *a );
 	gen->SetReturnAddress(self);
 }
@@ -1041,141 +918,141 @@ static void AssignFloat2StringGeneric(asIScriptGeneric *gen)
 static void AssignBool2StringGeneric(asIScriptGeneric *gen)
 {
 	bool *a = static_cast<bool*>(gen->GetAddressOfArg(0));
-	eastl::string *self = static_cast<eastl::string*>(gen->GetObject());
+	string_t *self = static_cast<string_t*>(gen->GetObject());
 	*self = va( "%s", *a ? "true" : "false" );
 	gen->SetReturnAddress(self);
 }
 
-static void AddAssignDouble2StringGeneric(asIScriptGeneric * gen)
+static void AddAssignDouble2StringGeneric(asIScriptGeneric *gen)
 {
-	double * a = static_cast<double *>(gen->GetAddressOfArg(0));
-	eastl::string * self = static_cast<eastl::string *>(gen->GetObject());
+	double *a = static_cast<double *>(gen->GetAddressOfArg(0));
+	string_t *self = static_cast<string_t *>(gen->GetObject());
 	*self += va( "%lf", *a );
 	gen->SetReturnAddress(self);
 }
 
-static void AddAssignFloat2StringGeneric(asIScriptGeneric * gen)
+static void AddAssignFloat2StringGeneric(asIScriptGeneric *gen)
 {
-	float * a = static_cast<float *>(gen->GetAddressOfArg(0));
-	eastl::string * self = static_cast<eastl::string *>(gen->GetObject());
+	float *a = static_cast<float *>(gen->GetAddressOfArg(0));
+	string_t *self = static_cast<string_t *>(gen->GetObject());
 	*self += va( "%f", *a );
 	gen->SetReturnAddress(self);
 }
 
-static void AddAssignInt2StringGeneric(asIScriptGeneric * gen)
+static void AddAssignInt2StringGeneric(asIScriptGeneric *gen)
 {
-	asINT64 * a = static_cast<asINT64 *>(gen->GetAddressOfArg(0));
-	eastl::string * self = static_cast<eastl::string *>(gen->GetObject());
+	asINT64 *a = static_cast<asINT64 *>(gen->GetAddressOfArg(0));
+	string_t *self = static_cast<string_t *>(gen->GetObject());
 	*self += va( "%li", *a );
 	gen->SetReturnAddress(self);
 }
 
-static void AddAssignUInt2StringGeneric(asIScriptGeneric * gen)
+static void AddAssignUInt2StringGeneric(asIScriptGeneric *gen)
 {
-	asQWORD * a = static_cast<asQWORD *>(gen->GetAddressOfArg(0));
-	eastl::string * self = static_cast<eastl::string *>(gen->GetObject());
+	asQWORD *a = static_cast<asQWORD *>(gen->GetAddressOfArg(0));
+	string_t *self = static_cast<string_t *>(gen->GetObject());
 	*self += va("%lu", *a );
 	gen->SetReturnAddress(self);
 }
 
-static void AddAssignBool2StringGeneric(asIScriptGeneric * gen)
+static void AddAssignBool2StringGeneric(asIScriptGeneric *gen)
 {
-	bool * a = static_cast<bool *>(gen->GetAddressOfArg(0));
-	eastl::string * self = static_cast<eastl::string *>(gen->GetObject());
+	bool *a = static_cast<bool *>(gen->GetAddressOfArg(0));
+	string_t *self = static_cast<string_t *>(gen->GetObject());
 	*self += va( "%s", *a ? "true" : "false" );
 	gen->SetReturnAddress(self);
 }
 
-static void AddString2DoubleGeneric(asIScriptGeneric * gen)
+static void AddString2DoubleGeneric(asIScriptGeneric *gen)
 {
-	eastl::string * a = static_cast<eastl::string *>(gen->GetObject());
-	double * b = static_cast<double *>(gen->GetAddressOfArg(0));
-	eastl::string ret_val = va( "%s%lf", a->c_str(), *b );
+	string_t *a = static_cast<string_t *>(gen->GetObject());
+	double *b = static_cast<double *>(gen->GetAddressOfArg(0));
+	string_t ret_val = va( "%s%lf", a->c_str(), *b );
 	gen->SetReturnObject(&ret_val);
 }
 
-static void AddString2FloatGeneric(asIScriptGeneric * gen)
+static void AddString2FloatGeneric(asIScriptGeneric *gen)
 {
-	eastl::string * a = static_cast<eastl::string *>(gen->GetObject());
-	float * b = static_cast<float *>(gen->GetAddressOfArg(0));
-	eastl::string ret_val = va( "%s%f", a->c_str(), *b );
+	string_t *a = static_cast<string_t *>(gen->GetObject());
+	float *b = static_cast<float *>(gen->GetAddressOfArg(0));
+	string_t ret_val = va( "%s%f", a->c_str(), *b );
 	gen->SetReturnObject(&ret_val);
 }
 
-static void AddString2IntGeneric(asIScriptGeneric * gen)
+static void AddString2IntGeneric(asIScriptGeneric *gen)
 {
-	eastl::string * a = static_cast<eastl::string *>(gen->GetObject());
-	asINT64 * b = static_cast<asINT64 *>(gen->GetAddressOfArg(0));
-	eastl::string ret_val = va( "%s%li", a->c_str(), *b );
+	string_t *a = static_cast<string_t *>(gen->GetObject());
+	asINT64 *b = static_cast<asINT64 *>(gen->GetAddressOfArg(0));
+	string_t ret_val = va( "%s%li", a->c_str(), *b );
 	gen->SetReturnObject(&ret_val);
 }
 
-static void AddString2UIntGeneric(asIScriptGeneric * gen)
+static void AddString2UIntGeneric(asIScriptGeneric *gen)
 {
-	eastl::string * a = static_cast<eastl::string *>(gen->GetObject());
-	asQWORD * b = static_cast<asQWORD *>(gen->GetAddressOfArg(0));
-	eastl::string ret_val = va( "%s%lu", a->c_str(), *b );
+	string_t *a = static_cast<string_t *>(gen->GetObject());
+	asQWORD *b = static_cast<asQWORD *>(gen->GetAddressOfArg(0));
+	string_t ret_val = va( "%s%lu", a->c_str(), *b );
 	gen->SetReturnObject(&ret_val);
 }
 
-static void AddString2BoolGeneric(asIScriptGeneric * gen)
+static void AddString2BoolGeneric(asIScriptGeneric *gen)
 {
-	eastl::string * a = static_cast<eastl::string *>(gen->GetObject());
-	bool * b = static_cast<bool *>(gen->GetAddressOfArg(0));
-	eastl::string ret_val = va( "%s%s", a->c_str(), ( *b ? "true" : "false" ) );
+	string_t *a = static_cast<string_t *>(gen->GetObject());
+	bool *b = static_cast<bool *>(gen->GetAddressOfArg(0));
+	string_t ret_val = va( "%s%s", a->c_str(), ( *b ? "true" : "false" ) );
 	gen->SetReturnObject(&ret_val);
 }
 
-static void AddDouble2StringGeneric(asIScriptGeneric * gen)
+static void AddDouble2StringGeneric(asIScriptGeneric *gen)
 {
-	double* a = static_cast<double *>(gen->GetAddressOfArg(0));
-	eastl::string * b = static_cast<eastl::string *>(gen->GetObject());
-	eastl::string ret_val = va( "%lf%s", *a, b->c_str() );
+	double*a = static_cast<double *>(gen->GetAddressOfArg(0));
+	string_t *b = static_cast<string_t *>(gen->GetObject());
+	string_t ret_val = va( "%lf%s", *a, b->c_str() );
 	gen->SetReturnObject(&ret_val);
 }
 
-static void AddFloat2StringGeneric(asIScriptGeneric * gen)
+static void AddFloat2StringGeneric(asIScriptGeneric *gen)
 {
-	float* a = static_cast<float *>(gen->GetAddressOfArg(0));
-	eastl::string * b = static_cast<eastl::string *>(gen->GetObject());
+	float*a = static_cast<float *>(gen->GetAddressOfArg(0));
+	string_t *b = static_cast<string_t *>(gen->GetObject());
 
-	eastl::string ret_val = va( "%f%s", *a, b->c_str() );
+	string_t ret_val = va( "%f%s", *a, b->c_str() );
 	gen->SetReturnObject(&ret_val);
 }
 
-static void AddInt2StringGeneric(asIScriptGeneric * gen)
+static void AddInt2StringGeneric(asIScriptGeneric *gen)
 {
-	asINT64* a = static_cast<asINT64 *>(gen->GetAddressOfArg(0));
-	eastl::string * b = static_cast<eastl::string *>(gen->GetObject());
-	eastl::string ret_val = va( "%li%s", *a, b->c_str() );
+	asINT64*a = static_cast<asINT64 *>(gen->GetAddressOfArg(0));
+	string_t *b = static_cast<string_t *>(gen->GetObject());
+	string_t ret_val = va( "%li%s", *a, b->c_str() );
 	gen->SetReturnObject(&ret_val);
 }
 
-static void AddUInt2StringGeneric(asIScriptGeneric * gen)
+static void AddUInt2StringGeneric(asIScriptGeneric *gen)
 {
-	asQWORD* a = static_cast<asQWORD *>(gen->GetAddressOfArg(0));
-	eastl::string * b = static_cast<eastl::string *>(gen->GetObject());
-	eastl::string ret_val = va( "%lu%s", *a, b->c_str() );;
+	asQWORD*a = static_cast<asQWORD *>(gen->GetAddressOfArg(0));
+	string_t *b = static_cast<string_t *>(gen->GetObject());
+	string_t ret_val = va( "%lu%s", *a, b->c_str() );;
 	gen->SetReturnObject(&ret_val);
 }
 
-static void AddBool2StringGeneric(asIScriptGeneric * gen)
+static void AddBool2StringGeneric(asIScriptGeneric *gen)
 {
-	bool* a = static_cast<bool *>(gen->GetAddressOfArg(0));
-	eastl::string * b = static_cast<eastl::string *>(gen->GetObject());
-	eastl::string ret_val = va( "%s%s", ( *a ? "true" : "false" ), b->c_str() );
+	bool*a = static_cast<bool *>(gen->GetAddressOfArg(0));
+	string_t *b = static_cast<string_t *>(gen->GetObject());
+	string_t ret_val = va( "%s%s", ( *a ? "true" : "false" ), b->c_str() );
 	gen->SetReturnObject(&ret_val);
 }
 
 static void StringSubString_Generic(asIScriptGeneric *gen)
 {
 	// Get the arguments
-	eastl::string *str   = (eastl::string*)gen->GetObject();
+	string_t *str   = (string_t*)gen->GetObject();
 	asUINT  start = *(int*)gen->GetAddressOfArg(0);
 	int     count = *(int*)gen->GetAddressOfArg(1);
 
 	// Return the substring
-	new(gen->GetAddressOfReturnLocation()) eastl::string(StringSubString(start, count, *str));
+	new(gen->GetAddressOfReturnLocation()) string_t(StringSubString(start, count, *str));
 }
 
 void RegisterStdString_Generic(asIScriptEngine *engine)
@@ -1183,8 +1060,8 @@ void RegisterStdString_Generic(asIScriptEngine *engine)
 	int r = 0;
 	UNUSED_VAR(r);
 
-	// Register the eastl::string type
-	r = engine->RegisterObjectType("string", sizeof(eastl::string), asOBJ_VALUE | asOBJ_APP_CLASS_CDAK); assert( r >= 0 );
+	// Register the string_t type
+	r = engine->RegisterObjectType("string", sizeof(string_t), asOBJ_VALUE | asOBJ_APP_CLASS_CDAK); assert( r >= 0 );
 
 	r = engine->RegisterStringFactory("string", GetStringFactorySingleton());
 
@@ -1259,7 +1136,7 @@ void RegisterStdString_Generic(asIScriptEngine *engine)
 	r = engine->RegisterGlobalFunction("double parseFloat(const string &in, uint &out byteCount = 0)", asFUNCTION(parseFloat_Generic), asCALL_GENERIC); assert(r >= 0);
 }
 
-void RegisterStdString(asIScriptEngine * engine)
+void RegisterStdString(asIScriptEngine *engine)
 {
 	if (strstr(asGetLibraryOptions(), "AS_MAX_PORTABILITY"))
 		RegisterStdString_Generic(engine);

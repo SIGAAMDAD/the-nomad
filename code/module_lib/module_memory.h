@@ -22,8 +22,6 @@ typedef struct {
 	int32_t	totalSize;
 } memoryStats_t;
 
-//#define MODULE_REDIRECT_NEWDELETE
-
 void		Mem_Init( void );
 void		Mem_Shutdown( void );
 void		Mem_EnableLeakTest( const char *name );
@@ -34,86 +32,12 @@ void		Mem_Dump_f( const class idCmdArgs &args );
 void		Mem_DumpCompressed_f( const class idCmdArgs &args );
 void		Mem_AllocDefragBlock( void );
 
-
-#ifndef MODULE_DEBUG_MEMORY
-
 void *		Mem_Alloc( const uint32_t size );
 void *		Mem_ClearedAlloc( const uint32_t size );
 void		Mem_Free( void *ptr );
 char *		Mem_CopyString( const char *in );
 void *		Mem_Alloc16( const uint32_t size );
 void		Mem_Free16( void *ptr );
-
-#ifdef MODULE_REDIRECT_NEWDELETE
-
-#undef new
-#undef delete
-
-GDR_INLINE void *operator new( size_t s ) {
-	return Mem_Alloc( s );
-}
-GDR_INLINE void operator delete( void *p ) {
-	Mem_Free( p );
-}
-GDR_INLINE void *operator new[]( size_t s ) {
-	return Mem_Alloc( s );
-}
-GDR_INLINE void operator delete[]( void *p ) {
-	Mem_Free( p );
-}
-
-#endif
-
-#else /* MODULE_DEBUG_MEMORY */
-
-void *		Mem_Alloc( const uint32_t size, const char *fileName, const uint32_t32_t lineNumber );
-void *		Mem_ClearedAlloc( const uint32_t size, const char *fileName, const uint32_t32_t lineNumber );
-void		Mem_Free( void *ptr, const char *fileName, const uint32_t32_t lineNumber );
-char *		Mem_CopyString( const char *in, const char *fileName, const uint32_t32_t lineNumber );
-void *		Mem_Alloc16( const uint32_t size, const char *fileName, const uint32_t32_t lineNumber );
-void		Mem_Free16( void *ptr, const char *fileName, const uint32_t32_t lineNumber );
-
-#ifdef MODULE_REDIRECT_NEWDELETE
-
-GDR_INLINE void *operator new( size_t s, int t1, int t2, char *fileName, int32_t lineNumber ) {
-	return Mem_Alloc( s, fileName, lineNumber );
-}
-GDR_INLINE void operator delete( void *p, int t1, int t2, char *fileName, int32_t lineNumber ) {
-	Mem_Free( p, fileName, lineNumber );
-}
-GDR_INLINE void *operator new[]( size_t s, int t1, int t2, char *fileName, int32_t lineNumber ) {
-	return Mem_Alloc( s, fileName, lineNumber );
-}
-GDR_INLINE void operator delete[]( void *p, int t1, int t2, char *fileName, int32_t lineNumber ) {
-	Mem_Free( p, fileName, lineNumber );
-}
-GDR_INLINE void *operator new( size_t s ) {
-	return Mem_Alloc( s, "", 0 );
-}
-GDR_INLINE void operator delete( void *p ) {
-	Mem_Free( p, "", 0 );
-}
-GDR_INLINE void *operator new[]( size_t s ) {
-	return Mem_Alloc( s, "", 0 );
-}
-GDR_INLINE void operator delete[]( void *p ) {
-	Mem_Free( p, "", 0 );
-}
-
-#define MODULE_DEBUG_NEW						new( 0, 0, __FILE__, __LINE__ )
-#undef new
-#define new									ID_DEBUG_NEW
-
-#endif
-
-#define		Mem_Alloc( size )				Mem_Alloc( size, __FILE__, __LINE__ )
-#define		Mem_ClearedAlloc( size )		Mem_ClearedAlloc( size, __FILE__, __LINE__ )
-#define		Mem_Free( ptr )					Mem_Free( ptr, __FILE__, __LINE__ )
-#define		Mem_CopyString( s )				Mem_CopyString( s, __FILE__, __LINE__ )
-#define		Mem_Alloc16( size )				Mem_Alloc16( size, __FILE__, __LINE__ )
-#define		Mem_Free16( ptr )				Mem_Free16( ptr, __FILE__, __LINE__ )
-
-#endif /* MODULE_DEBUG_MEMORY */
 
 GDR_INLINE void *CModuleAllocator::allocate( size_t n, int flags )
 {

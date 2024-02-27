@@ -1,5 +1,3 @@
-namespace TheNomad {
-
 int Module_Init()
 {
     ConsolePrint( "SGameInit: initializing sgame...\n" );
@@ -44,7 +42,5 @@ int Module_CommandLine( void )
 
 void main()
 {
-    
-}
 
-};
+}

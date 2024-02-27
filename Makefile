@@ -279,7 +279,6 @@ SRC=\
 	\
 	$(O)/module_lib/module_memory.o \
 	$(O)/module_lib/module_main.o \
-	$(O)/module_lib/module_parse.o \
 	$(O)/module_lib/module_handle.o \
 	$(O)/module_lib/module_renderlib.o \
 	$(O)/module_lib/module_funcdefs.o \

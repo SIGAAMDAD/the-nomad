@@ -196,8 +196,11 @@ int Module_IncludeCallback_f( const char *pInclude, const char *pFrom, CScriptBu
     return 1;
 }
 
-void ModuleLib_AddDefaultProcs( void )
-{
+bool CModuleLib::AddDefaultProcs( void ) const {
+    if ( m_bRegistered ) {
+        return true;
+    }
+
     RegisterStdString( g_pModuleLib->GetScriptEngine() );
     RegisterScriptArray( g_pModuleLib->GetScriptEngine(), true );
     RegisterScriptDictionary( g_pModuleLib->GetScriptEngine() );
@@ -208,13 +211,27 @@ void ModuleLib_AddDefaultProcs( void )
     ModuleLib_Register_RenderEngine();
     ModuleLib_Register_FileSystem();
     ModuleLib_Register_SoundSystem();
+
+    const_cast<CModuleLib *>( this )->m_bRegistered = qtrue;
+
+    return true;
+}
+
+static void CheckValue( const char *func, int value ) {
+    if ( value != asSUCCESS ) {
+        N_Error( ERR_FATAL, "InitModuleLib: %s failed -- %s", func, AS_PrintErrorString( value ) );
+    }
 }
 
 CModuleLib::CModuleLib( void )
 {
+    #define CALL( func ) CheckValue( #func, func )
+
     const char *path;
+    int ret;
 
     g_pModuleLib = this;
+    memset( this, 0, sizeof(*this) );
 
     //
     // init angelscript api
@@ -223,22 +240,19 @@ CModuleLib::CModuleLib( void )
     if ( !m_pEngine ) {
         N_Error( ERR_DROP, "CModuleLib::Init: failed to create an AngelScript Engine context" );
     }
-    m_pEngine->SetMessageCallback( asFUNCTION( Module_ASMessage_f ), NULL, asCALL_GENERIC );
-    m_pEngine->SetEngineProperty( asEP_ALLOW_MULTILINE_STRINGS, true );
-    m_pEngine->SetEngineProperty( asEP_ALLOW_UNSAFE_REFERENCES, true );
-    m_pEngine->SetEngineProperty( asEP_ALWAYS_IMPL_DEFAULT_CONSTRUCT, false );
-    m_pEngine->SetEngineProperty( asEP_COMPILER_WARNINGS, true );
-    m_pEngine->SetEngineProperty( asEP_OPTIMIZE_BYTECODE, true );
-    m_pEngine->SetDefaultNamespace( "TheNomad" );
+    CALL( m_pEngine->SetMessageCallback( asFUNCTION( Module_ASMessage_f ), NULL, asCALL_CDECL ) );
+    CALL( m_pEngine->SetEngineProperty( asEP_ALLOW_MULTILINE_STRINGS, true ) );
+    CALL( m_pEngine->SetEngineProperty( asEP_ALLOW_UNSAFE_REFERENCES, true ) );
+    CALL( m_pEngine->SetEngineProperty( asEP_ALWAYS_IMPL_DEFAULT_CONSTRUCT, false ) );
+    CALL( m_pEngine->SetEngineProperty( asEP_COMPILER_WARNINGS, true ) );
+    CALL( m_pEngine->SetEngineProperty( asEP_OPTIMIZE_BYTECODE, true ) );
 
     m_pScriptBuilder = new CScriptBuilder();
 //    m_pContextManager = new CContextMgr();
 
-    ModuleLib_AddDefaultProcs();
-
     s_pDebugger = new CDebugger();
 
-    g_pModuleLib->GetScriptBuilder()->SetIncludeCallback( Module_IncludeCallback_f, NULL );
+    m_pScriptBuilder->SetIncludeCallback( Module_IncludeCallback_f, NULL );
 
     //
     // load all the modules
@@ -261,6 +275,8 @@ CModuleLib::CModuleLib( void )
     } catch ( const std::exception& e ) {
         N_Error( ERR_FATAL, "InitModuleLib: failed to load module directories, std::exception was thrown -> %s", e.what() );
     }
+
+    #undef CALL
 }
 
 CModuleLib::~CModuleLib()
@@ -317,4 +333,21 @@ CModuleInfo *CModuleLib::GetModule( const char *pName ) {
         }
     }
     return NULL;
+}
+
+void CModuleLib::RegisterCvar( const UtlString& name, const UtlString& value, uint32_t flags, bool trackChanges, uint32_t privateFlag )
+{
+    vmCvar_t vmCvar;
+
+    const auto it = m_CvarList.find( name.c_str() );
+    if ( it != m_CvarList.cend() ) {
+        Con_Printf( "CModuleLib::RegisterCvar: vmCvar '%s' already registered.\n", name.c_str() );
+        return;
+    }
+
+    memset( &vmCvar, 0, sizeof(vmCvar) );
+    Cvar_Register( &vmCvar, name.c_str(), value.c_str(), flags, privateFlag );
+    m_CvarList.emplace( name.c_str(), vmCvar );
+
+    Con_Printf( "Registered VM CVar \"%s\" with default value of \"%s\"\n", name.c_str(), value.c_str() );
 }

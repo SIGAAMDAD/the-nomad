@@ -12,8 +12,8 @@
 #endif
 
 // Helper functions
-static eastl::string GetCurrentDir();
-static eastl::string GetAbsolutePath(const eastl::string &path);
+static UtlString GetCurrentDir();
+static UtlString GetAbsolutePath(const UtlString &path);
 
 
 CScriptBuilder::CScriptBuilder()
@@ -69,14 +69,14 @@ unsigned int CScriptBuilder::GetSectionCount() const
 	return (unsigned int)(includedScripts.size());
 }
 
-eastl::string CScriptBuilder::GetSectionName(unsigned int idx) const
+UtlString CScriptBuilder::GetSectionName(unsigned int idx) const
 {
 	if( idx >= includedScripts.size() ) return "";
 
 #ifdef _WIN32
-	UtlSet<eastl::string, ci_less>::const_iterator it = includedScripts.begin();
+	UtlSet<UtlString, ci_less>::const_iterator it = includedScripts.begin();
 #else
-	UtlSet<eastl::string>::const_iterator it = includedScripts.begin();
+	UtlSet<UtlString>::const_iterator it = includedScripts.begin();
 #endif
 	while( idx-- > 0 ) it++;
 	return *it;
@@ -89,7 +89,7 @@ int CScriptBuilder::AddSectionFromFile(const char *filename)
 {
 	// The file name stored in the set should be the fully resolved name because
 	// it is possible to name the same file in multiple ways using relative paths.
-	const eastl::string fullpath = GetAbsolutePath(filename);
+	const UtlString fullpath = GetAbsolutePath(filename);
 
 	if( IncludeIfNotAlreadyIncluded(fullpath.c_str()) )
 	{
@@ -127,7 +127,7 @@ int CScriptBuilder::BuildModule()
 
 void CScriptBuilder::DefineWord(const char *word)
 {
-	eastl::string sword = word;
+	UtlString sword = word;
 	if( definedWords.find(sword) == definedWords.end() )
 	{
 		definedWords.insert(sword);
@@ -151,7 +151,7 @@ void CScriptBuilder::ClearAll()
 
 bool CScriptBuilder::IncludeIfNotAlreadyIncluded(const char *filename)
 {
-	eastl::string scriptFile = filename;
+	UtlString scriptFile = filename;
 	if( includedScripts.find(scriptFile) != includedScripts.end() )
 	{
 		// Already included
@@ -167,7 +167,7 @@ bool CScriptBuilder::IncludeIfNotAlreadyIncluded(const char *filename)
 int CScriptBuilder::LoadScriptSection(const char *filename)
 {
 	// Open the script file
-	eastl::string scriptFile = filename;
+	UtlString scriptFile = filename;
 #if _MSC_VER >= 1500 && !defined(__S3E__)
 	FILE *f = 0;
 	fopen_s(&f, scriptFile.c_str(), "rb");
@@ -177,7 +177,7 @@ int CScriptBuilder::LoadScriptSection(const char *filename)
 	if( f == 0 )
 	{
 		// Write a message to the engine's message callback
-		eastl::string msg = "Failed to open script file '" + GetAbsolutePath(scriptFile) + "'";
+		UtlString msg = "Failed to open script file '" + GetAbsolutePath(scriptFile) + "'";
 		engine->WriteMessage(filename, 0, 0, asMSGTYPE_ERROR, msg.c_str());
 
 		// TODO: Write the file where this one was included from
@@ -194,7 +194,7 @@ int CScriptBuilder::LoadScriptSection(const char *filename)
 	// int len = _filelength(_fileno(f));
 
 	// Read the entire file
-	eastl::string code;
+	UtlString code;
 	size_t c = 0;
 	if( len > 0 )
 	{
@@ -207,7 +207,7 @@ int CScriptBuilder::LoadScriptSection(const char *filename)
 	if( c == 0 && len > 0 )
 	{
 		// Write a message to the engine's message callback
-		eastl::string msg = "Failed to load script file '" + GetAbsolutePath(scriptFile) + "'";
+		UtlString msg = "Failed to load script file '" + GetAbsolutePath(scriptFile) + "'";
 		engine->WriteMessage(filename, 0, 0, asMSGTYPE_ERROR, msg.c_str());
 		return -1;
 	}
@@ -218,7 +218,7 @@ int CScriptBuilder::LoadScriptSection(const char *filename)
 
 int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length, const char *sectionname, int lineOffset)
 {
-	eastl::vector<eastl::string> includes;
+	UtlVector<UtlString> includes;
 
 	// Perform a superficial parsing of the script first to store the metadata
 	if( length )
@@ -240,7 +240,7 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 			// Is this an #if directive?
 			t = engine->ParseToken(&modifiedScript[pos], modifiedScript.size() - pos, &len);
 
-			eastl::string token;
+			UtlString token;
 			token.assign(&modifiedScript[pos], len);
 
 			pos += len;
@@ -256,7 +256,7 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 
 				if( t == asTC_IDENTIFIER )
 				{
-					eastl::string word;
+					UtlString word;
 					word.assign(&modifiedScript[pos], len);
 
 					// Overwrite the #if directive with space characters to avoid compiler error
@@ -291,8 +291,8 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 
 #if AS_PROCESS_METADATA == 1
 	// Preallocate memory
-	eastl::string name, declaration;
-	eastl::vector<eastl::string> metadata;
+	UtlString name, declaration;
+	UtlVector<UtlString> metadata;
 	declaration.reserve(100);
 #endif
 
@@ -307,7 +307,7 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 			pos += len;
 			continue;
 		}
-		eastl::string token;
+		UtlString token;
 		token.assign(&modifiedScript[pos], len);
 
 #if AS_PROCESS_METADATA == 1
@@ -409,7 +409,7 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 		if( currentNamespace != "" && token == "}" )
 		{
 			size_t found = currentNamespace.rfind( "::" );
-			if( found != eastl::string::npos )
+			if( found != UtlString::npos )
 			{
 				currentNamespace.erase( found );
 			}
@@ -424,7 +424,7 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 		// Is this the start of metadata?
 		if( token == "[" )
 		{
-			// Get the metadata eastl::string
+			// Get the metadata UtlString
 			pos = ExtractMetadata(pos, metadata);
 
 			// Determine what this metadata is for
@@ -462,7 +462,7 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 					if (t == asTC_VALUE && len > 2 && (modifiedScript[pos] == '"' || modifiedScript[pos] == '\''))
 					{
 						// Get the include file
-						eastl::string includefile;
+						UtlString includefile;
 						includefile.assign(&modifiedScript[pos + 1], len - 2);
 						pos += len;
 
@@ -480,7 +480,7 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 					for (; pos < modifiedScript.size() && modifiedScript[pos] != '\n'; pos++);
 
 					// Call the pragma callback
-					eastl::string pragmaText(&modifiedScript[start + 7], pos - start - 7);
+					UtlString pragmaText(&modifiedScript[start + 7], pos - start - 7);
 					int r = pragmaCallback ? pragmaCallback(pragmaText, *this, pragmaParam) : -1;
 					if (r < 0)
 					{
@@ -535,9 +535,9 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 			// By default we try to load the included file from the relative directory of the current file
 
 			// Determine the path of the current script so that we can resolve relative paths for includes
-			eastl::string path = sectionname;
+			UtlString path = sectionname;
 			size_t posOfSlash = path.find_last_of("/\\");
-			if( posOfSlash != eastl::string::npos )
+			if( posOfSlash != UtlString::npos )
 				path.resize(posOfSlash+1);
 			else
 				path = "";
@@ -547,7 +547,7 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 			{
 				// If the include is a relative path, then prepend the path of the originating script
 				if( includes[n].find_first_of("/\\") != 0 &&
-					includes[n].find_first_of(":") == eastl::string::npos )
+					includes[n].find_first_of(":") == UtlString::npos )
 				{
 					includes[n] = path + includes[n];
 				}
@@ -570,7 +570,7 @@ int CScriptBuilder::Build()
 		return r;
 
 #if AS_PROCESS_METADATA == 1
-	// After the script has been built, the metadata eastl::strings should be
+	// After the script has been built, the metadata UtlStrings should be
 	// stored for later lookup by function id, type id, and variable index
 	for( int n = 0; n < (int)foundDeclarations.size(); n++ )
 	{
@@ -582,7 +582,7 @@ int CScriptBuilder::Build()
 			int typeId = module->GetTypeIdByDecl(decl->declaration.c_str());
 			assert( typeId >= 0 );
 			if( typeId >= 0 )
-				typeMetadataMap.insert(eastl::unordered_map<int, eastl::vector<eastl::string> >::value_type(typeId, decl->metadata));
+				typeMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(typeId, decl->metadata));
 		}
 		else if( decl->type == MDT_FUNC )
 		{
@@ -592,7 +592,7 @@ int CScriptBuilder::Build()
 				asIScriptFunction *func = module->GetFunctionByDecl(decl->declaration.c_str());
 				assert( func );
 				if( func )
-					funcMetadataMap.insert(eastl::unordered_map<int, eastl::vector<eastl::string> >::value_type(func->GetId(), decl->metadata));
+					funcMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
 			}
 			else
 			{
@@ -610,7 +610,7 @@ int CScriptBuilder::Build()
 				asIScriptFunction *func = type->GetMethodByDecl(decl->declaration.c_str());
 				assert( func );
 				if( func )
-					it->second.funcMetadataMap.insert(eastl::unordered_map<int, eastl::vector<eastl::string> >::value_type(func->GetId(), decl->metadata));
+					it->second.funcMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
 			}
 		}
 		else if( decl->type == MDT_VIRTPROP )
@@ -620,10 +620,10 @@ int CScriptBuilder::Build()
 				// Find the global virtual property accessors
 				asIScriptFunction *func = module->GetFunctionByName(("get_" + decl->declaration).c_str());
 				if( func )
-					funcMetadataMap.insert(eastl::unordered_map<int, eastl::vector<eastl::string> >::value_type(func->GetId(), decl->metadata));
+					funcMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
 				func = module->GetFunctionByName(("set_" + decl->declaration).c_str());
 				if( func )
-					funcMetadataMap.insert(eastl::unordered_map<int, eastl::vector<eastl::string> >::value_type(func->GetId(), decl->metadata));
+					funcMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
 			}
 			else
 			{
@@ -640,10 +640,10 @@ int CScriptBuilder::Build()
 				asITypeInfo *type = engine->GetTypeInfoById(typeId);
 				asIScriptFunction *func = type->GetMethodByName(("get_" + decl->declaration).c_str());
 				if( func )
-					it->second.funcMetadataMap.insert(eastl::unordered_map<int, eastl::vector<eastl::string> >::value_type(func->GetId(), decl->metadata));
+					it->second.funcMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
 				func = type->GetMethodByName(("set_" + decl->declaration).c_str());
 				if( func )
-					it->second.funcMetadataMap.insert(eastl::unordered_map<int, eastl::vector<eastl::string> >::value_type(func->GetId(), decl->metadata));
+					it->second.funcMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
 			}
 		}
 		else if( decl->type == MDT_VAR )
@@ -654,7 +654,7 @@ int CScriptBuilder::Build()
 				int varIdx = module->GetGlobalVarIndexByName(decl->declaration.c_str());
 				assert( varIdx >= 0 );
 				if( varIdx >= 0 )
-					varMetadataMap.insert(eastl::unordered_map<int, eastl::vector<eastl::string> >::value_type(varIdx, decl->metadata));
+					varMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(varIdx, decl->metadata));
 			}
 			else
 			{
@@ -687,7 +687,7 @@ int CScriptBuilder::Build()
 
 				// If found, add it
 				assert( idx >= 0 );
-				if( idx >= 0 ) it->second.varMetadataMap.insert(eastl::unordered_map<int, eastl::vector<eastl::string> >::value_type(idx, decl->metadata));
+				if( idx >= 0 ) it->second.varMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(idx, decl->metadata));
 			}
 		}
 		else if (decl->type == MDT_FUNC_OR_VAR)
@@ -697,13 +697,13 @@ int CScriptBuilder::Build()
 				// Find the global variable index
 				int varIdx = module->GetGlobalVarIndexByName(decl->name.c_str());
 				if (varIdx >= 0)
-					varMetadataMap.insert(eastl::unordered_map<int, eastl::vector<eastl::string> >::value_type(varIdx, decl->metadata));
+					varMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(varIdx, decl->metadata));
 				else
 				{
 					asIScriptFunction *func = module->GetFunctionByDecl(decl->declaration.c_str());
 					assert(func);
 					if (func)
-						funcMetadataMap.insert(eastl::unordered_map<int, eastl::vector<eastl::string> >::value_type(func->GetId(), decl->metadata));
+						funcMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
 				}
 			}
 			else
@@ -737,7 +737,7 @@ int CScriptBuilder::Build()
 
 				// If found, add it
 				if (idx >= 0) 
-					it->second.varMetadataMap.insert(eastl::unordered_map<int, eastl::vector<eastl::string> >::value_type(idx, decl->metadata));
+					it->second.varMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(idx, decl->metadata));
 				else
 				{
 					// Look for the matching method instead
@@ -745,7 +745,7 @@ int CScriptBuilder::Build()
 					asIScriptFunction *func = type->GetMethodByDecl(decl->declaration.c_str());
 					assert(func);
 					if (func)
-						it->second.funcMetadataMap.insert(eastl::unordered_map<int, eastl::vector<eastl::string> >::value_type(func->GetId(), decl->metadata));
+						it->second.funcMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
 				}
 			}
 		}
@@ -809,7 +809,7 @@ int CScriptBuilder::ExcludeCode(int pos)
 
 			// Is it an #if or #endif directive?
 			engine->ParseToken(&modifiedScript[pos], modifiedScript.size() - pos, &len);
-			eastl::string token;
+			UtlString token;
 			token.assign(&modifiedScript[pos], len);
 			OverwriteCode(pos, len);
 
@@ -849,14 +849,14 @@ void CScriptBuilder::OverwriteCode(int start, int len)
 }
 
 #if AS_PROCESS_METADATA == 1
-int CScriptBuilder::ExtractMetadata(int pos, eastl::vector<eastl::string> &metadata)
+int CScriptBuilder::ExtractMetadata(int pos, UtlVector<UtlString> &metadata)
 {
 	metadata.clear();
 
 	// Extract all metadata. They can be separated by whitespace and comments
 	for (;;)
 	{
-		eastl::string metadataString = "";
+		UtlString metadataString = "";
 
 		// Overwrite the metadata with space characters to allow compilation
 		modifiedScript[pos] = ' ';
@@ -905,14 +905,14 @@ int CScriptBuilder::ExtractMetadata(int pos, eastl::vector<eastl::string> &metad
 	return pos;
 }
 
-int CScriptBuilder::ExtractDeclaration(int pos, eastl::string &name, eastl::string &declaration, int &type)
+int CScriptBuilder::ExtractDeclaration(int pos, UtlString &name, UtlString &declaration, int &type)
 {
 	declaration = "";
 	type = 0;
 
 	int start = pos;
 
-	eastl::string token;
+	UtlString token;
 	asUINT len = 0;
 	asETokenClass t = asTC_WHITESPACE;
 
@@ -1028,91 +1028,91 @@ int CScriptBuilder::ExtractDeclaration(int pos, eastl::string &name, eastl::stri
 	return start;
 }
 
-eastl::vector<eastl::string> CScriptBuilder::GetMetadataForType(int typeId)
+UtlVector<UtlString> CScriptBuilder::GetMetadataForType(int typeId)
 {
-	eastl::unordered_map<int,eastl::vector<eastl::string> >::iterator it = typeMetadataMap.find(typeId);
+	eastl::unordered_map<int,UtlVector<UtlString> >::iterator it = typeMetadataMap.find(typeId);
 	if( it != typeMetadataMap.end() )
 		return it->second;
 
-	return eastl::vector<eastl::string>();
+	return UtlVector<UtlString>();
 }
 
-eastl::vector<eastl::string> CScriptBuilder::GetMetadataForFunc(asIScriptFunction *func)
+UtlVector<UtlString> CScriptBuilder::GetMetadataForFunc(asIScriptFunction *func)
 {
 	if( func )
 	{
-		eastl::unordered_map<int,eastl::vector<eastl::string> >::iterator it = funcMetadataMap.find(func->GetId());
+		eastl::unordered_map<int,UtlVector<UtlString> >::iterator it = funcMetadataMap.find(func->GetId());
 		if( it != funcMetadataMap.end() )
 			return it->second;
 	}
 
-	return eastl::vector<eastl::string>();
+	return UtlVector<UtlString>();
 }
 
-eastl::vector<eastl::string> CScriptBuilder::GetMetadataForVar(int varIdx)
+UtlVector<UtlString> CScriptBuilder::GetMetadataForVar(int varIdx)
 {
-	eastl::unordered_map<int,eastl::vector<eastl::string> >::iterator it = varMetadataMap.find(varIdx);
+	eastl::unordered_map<int,UtlVector<UtlString> >::iterator it = varMetadataMap.find(varIdx);
 	if( it != varMetadataMap.end() )
 		return it->second;
 
-	return eastl::vector<eastl::string>();
+	return UtlVector<UtlString>();
 }
 
-eastl::vector<eastl::string> CScriptBuilder::GetMetadataForTypeProperty(int typeId, int varIdx)
+UtlVector<UtlString> CScriptBuilder::GetMetadataForTypeProperty(int typeId, int varIdx)
 {
 	eastl::unordered_map<int, SClassMetadata>::iterator typeIt = classMetadataMap.find(typeId);
-	if(typeIt == classMetadataMap.end()) return eastl::vector<eastl::string>();
+	if(typeIt == classMetadataMap.end()) return UtlVector<UtlString>();
 
-	eastl::unordered_map<int, eastl::vector<eastl::string> >::iterator propIt = typeIt->second.varMetadataMap.find(varIdx);
-	if(propIt == typeIt->second.varMetadataMap.end()) return eastl::vector<eastl::string>();
+	eastl::unordered_map<int, UtlVector<UtlString> >::iterator propIt = typeIt->second.varMetadataMap.find(varIdx);
+	if(propIt == typeIt->second.varMetadataMap.end()) return UtlVector<UtlString>();
 
 	return propIt->second;
 }
 
-eastl::vector<eastl::string> CScriptBuilder::GetMetadataForTypeMethod(int typeId, asIScriptFunction *method)
+UtlVector<UtlString> CScriptBuilder::GetMetadataForTypeMethod(int typeId, asIScriptFunction *method)
 {
 	if( method )
 	{
 		eastl::unordered_map<int, SClassMetadata>::iterator typeIt = classMetadataMap.find(typeId);
-		if (typeIt == classMetadataMap.end()) return eastl::vector<eastl::string>();
+		if (typeIt == classMetadataMap.end()) return UtlVector<UtlString>();
 
-		eastl::unordered_map<int, eastl::vector<eastl::string> >::iterator methodIt = typeIt->second.funcMetadataMap.find(method->GetId());
-		if(methodIt == typeIt->second.funcMetadataMap.end()) return eastl::vector<eastl::string>();
+		eastl::unordered_map<int, UtlVector<UtlString> >::iterator methodIt = typeIt->second.funcMetadataMap.find(method->GetId());
+		if(methodIt == typeIt->second.funcMetadataMap.end()) return UtlVector<UtlString>();
 
 		return methodIt->second;
 	}
 
-	return eastl::vector<eastl::string>();
+	return UtlVector<UtlString>();
 }
 #endif
 
-eastl::string GetAbsolutePath(const eastl::string &file)
+UtlString GetAbsolutePath(const UtlString &file)
 {
-	eastl::string str = file;
+	UtlString str = file;
 
 	// If this is a relative path, complement it with the current path
 	if( !((str.length() > 0 && (str[0] == '/' || str[0] == '\\')) ||
-		  str.find(":") != eastl::string::npos) )
+		  str.find(":") != UtlString::npos) )
 	{
 		str = GetCurrentDir() + "/" + str;
 	}
 
 	// Replace backslashes for forward slashes
 	size_t pos = 0;
-	while( (pos = str.find("\\", pos)) != eastl::string::npos )
+	while( (pos = str.find("\\", pos)) != UtlString::npos )
 		str[pos] = '/';
 
 	// Replace /./ with /
 	pos = 0;
-	while( (pos = str.find("/./", pos)) != eastl::string::npos )
+	while( (pos = str.find("/./", pos)) != UtlString::npos )
 		str.erase(pos+1, 2);
 
 	// For each /../ remove the parent dir and the /../
 	pos = 0;
-	while( (pos = str.find("/../")) != eastl::string::npos )
+	while( (pos = str.find("/../")) != UtlString::npos )
 	{
 		size_t pos2 = str.rfind("/", pos-1);
-		if( pos2 != eastl::string::npos )
+		if( pos2 != UtlString::npos )
 			str.erase(pos2, pos+3-pos2);
 		else
 		{
@@ -1124,7 +1124,7 @@ eastl::string GetAbsolutePath(const eastl::string &file)
 	return str;
 }
 
-eastl::string GetCurrentDir()
+UtlString GetCurrentDir()
 {
 	char buffer[1024];
 #if defined(_MSC_VER) || defined(_WIN32)
@@ -1148,7 +1148,7 @@ eastl::string GetCurrentDir()
 			appLen--;
 		}
 
-		// Terminate the eastl::string after the trailing backslash
+		// Terminate the UtlString after the trailing backslash
 		apppath[appLen] = TEXT('\0');
 	}
 		#ifdef _UNICODE

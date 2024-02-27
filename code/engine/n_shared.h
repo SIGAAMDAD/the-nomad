@@ -882,8 +882,7 @@ typedef struct cvar_s
 typedef struct {
     char s[MAX_CVAR_VALUE];
     float f;
-    int i;
-    qboolean b;
+    int64_t i;
 
     unsigned int modificationCount;
     cvarHandle_t handle;

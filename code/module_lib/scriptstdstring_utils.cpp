@@ -13,8 +13,8 @@
 // {"A", "B", "", "D"}
 //
 // AngelScript signature:
-// array<string>@ string::split(const eastl::string& in delim) const
-static CScriptArray *StringSplit(const eastl::string& delim, const eastl::string& str)
+// array<string>@ string::split(const string_t& in delim) const
+static CScriptArray *StringSplit(const string_t& delim, const string_t& str)
 {
 	// Obtain a pointer to the engine
 	asIScriptContext *ctx = asGetActiveContext();
@@ -30,11 +30,11 @@ static CScriptArray *StringSplit(const eastl::string& delim, const eastl::string
 	// Find the existence of the delimiter in the input string
 	size_t pos = 0, prev = 0;
 	asUINT count = 0;
-	while( (pos = str.find(delim, prev)) != eastl::string::npos )
+	while( (pos = str.find(delim, prev)) != string_t::npos )
 	{
 		// Add the part to the array
 		array->Resize(array->GetSize()+1);
-		((eastl::string*)array->At(count))->assign(&str[prev], pos-prev);
+		((string_t*)array->At(count))->assign(&str[prev], pos-prev);
 
 		// Find the next part
 		count++;
@@ -43,7 +43,7 @@ static CScriptArray *StringSplit(const eastl::string& delim, const eastl::string
 
 	// Add the remaining part
 	array->Resize(array->GetSize()+1);
-	((eastl::string*)array->At(count))->assign(&str[prev]);
+	((string_t*)array->At(count))->assign(&str[prev]);
 
 	return array;
 }
@@ -51,8 +51,8 @@ static CScriptArray *StringSplit(const eastl::string& delim, const eastl::string
 static void StringSplit_Generic(asIScriptGeneric *gen)
 {
 	// Get the arguments
-	const eastl::string *str   = (eastl::string*)gen->GetObject();
-	const eastl::string *delim = *(eastl::string**)gen->GetAddressOfArg(0);
+	const string_t *str   = (string_t *)gen->GetObject();
+	const string_t *delim = *(string_t **)gen->GetAddressOfArg(0);
 
 	// Return the array by handle
 	*(CScriptArray**)gen->GetAddressOfReturnLocation() = StringSplit(*delim, *str);
@@ -72,22 +72,22 @@ static void StringSplit_Generic(asIScriptGeneric *gen)
 // "A|B||D"
 //
 // AngelScript signature:
-// string join(const array<string> &in array, const eastl::string& in delim)
-static eastl::string StringJoin(const CScriptArray &array, const eastl::string& delim)
+// string join(const array<string> &in array, const string_t& in delim)
+static string_t StringJoin(const CScriptArray &array, const string_t& delim)
 {
 	// Create the new string
-	eastl::string str = "";
+	string_t str = "";
 	if( array.GetSize() )
 	{
 		int n;
 		for( n = 0; n < (int)array.GetSize() - 1; n++ )
 		{
-			str += *(eastl::string*)array.At(n);
+			str += *(string_t *)array.At(n);
 			str += delim;
 		}
 
 		// Add the last part
-		str += *(eastl::string*)array.At(n);
+		str += *(string_t *)array.At(n);
 	}
 
 	return str;
@@ -96,11 +96,11 @@ static eastl::string StringJoin(const CScriptArray &array, const eastl::string& 
 static void StringJoin_Generic(asIScriptGeneric *gen)
 {
 	// Get the arguments
-	CScriptArray  *array = *(CScriptArray**)gen->GetAddressOfArg(0);
-	eastl::string *delim = *(eastl::string**)gen->GetAddressOfArg(1);
+	CScriptArray  *array = *(CScriptArray **)gen->GetAddressOfArg(0);
+	string_t *delim = *(string_t **)gen->GetAddressOfArg(1);
 
 	// Return the string
-	new(gen->GetAddressOfReturnLocation()) eastl::string(StringJoin(*array, *delim));
+	new(gen->GetAddressOfReturnLocation()) string_t(StringJoin(*array, *delim));
 }
 
 // This is where the utility functions are registered.
@@ -111,13 +111,13 @@ void RegisterStdStringUtils(asIScriptEngine *engine)
 
 	if( strstr(asGetLibraryOptions(), "AS_MAX_PORTABILITY") )
 	{
-		r = engine->RegisterObjectMethod("string", "array<string>@ split(const eastl::string& in) const", asFUNCTION(StringSplit_Generic), asCALL_GENERIC); assert(r >= 0);
-		r = engine->RegisterGlobalFunction("string join(const array<string> &in, const eastl::string& in)", asFUNCTION(StringJoin_Generic), asCALL_GENERIC); assert(r >= 0);
+		r = engine->RegisterObjectMethod("string", "array<string>@ split(const string& in) const", asFUNCTION(StringSplit_Generic), asCALL_GENERIC); assert(r >= 0);
+		r = engine->RegisterGlobalFunction("string join(const array<string> &in, const string& in)", asFUNCTION(StringJoin_Generic), asCALL_GENERIC); assert(r >= 0);
 	}
 	else
 	{
-		r = engine->RegisterObjectMethod("string", "array<string>@ split(const eastl::string& in) const", asFUNCTION(StringSplit), asCALL_CDECL_OBJLAST); assert(r >= 0);
-		r = engine->RegisterGlobalFunction("string join(const array<string> &in, const eastl::string& in)", asFUNCTION(StringJoin), asCALL_CDECL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("string", "array<string>@ split(const string in) const", asFUNCTION(StringSplit), asCALL_CDECL_OBJLAST); assert(r >= 0);
+		r = engine->RegisterGlobalFunction("string join(const array<string> &in, const string& in)", asFUNCTION(StringJoin), asCALL_CDECL); assert(r >= 0);
 	}
 }
 

@@ -14,20 +14,24 @@ CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sou
         return;
     }
 
-    g_pModuleLib->GetScriptBuilder()->StartNewModule( g_pModuleLib->GetScriptEngine(), pName );
+    if ( ( error = g_pModuleLib->GetScriptBuilder()->StartNewModule( g_pModuleLib->GetScriptEngine(), pName ) ) != asSUCCESS ) {
+        N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: failed to start module '%s' -- %s", pName, AS_PrintErrorString( error ) );
+    }
 
     // add standard definitions
     g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define NOMAD_VERSION %u", _NOMAD_VERSION ) );
     g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define NOMAD_VERSION_UPDATE %u", _NOMAD_VERSION_UPDATE ) );
     g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define NOMAD_VERSION_PATCH %u", _NOMAD_VERSION_PATCH ) );
 
-    m_pScriptModule = g_pModuleLib->GetScriptEngine()->GetModule( pName, asGM_ALWAYS_CREATE );
+    g_pModuleLib->AddDefaultProcs();
+
+    m_pScriptModule = g_pModuleLib->GetScriptEngine()->GetModule( pName, asGM_CREATE_IF_NOT_EXISTS );
 
     for ( const auto& it : sourceFiles ) {
         LoadSourceFile( it );
     }
 
-    if ( ( error = g_pModuleLib->GetScriptBuilder()->BuildModule() ) != 0 ) {
+    if ( ( error = g_pModuleLib->GetScriptBuilder()->BuildModule() ) != asSUCCESS ) {
         N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: failed to build module '%s' -- %s", pName, AS_PrintErrorString( error ) );
     }
 

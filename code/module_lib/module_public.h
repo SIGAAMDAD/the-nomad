@@ -33,6 +33,19 @@ private:
 	#endif
 };
 
+constexpr GDR_INLINE bool operator==( const eastl::allocator& a, const CModuleAllocator& b ) {
+    return true;
+}
+constexpr GDR_INLINE bool operator!=( const eastl::allocator& a, const CModuleAllocator& b ) {
+    return true;
+}
+constexpr GDR_INLINE bool operator==( const CModuleAllocator& a, const eastl::allocator& b ) {
+    return true;
+}
+constexpr GDR_INLINE bool operator!=( const CModuleAllocator& a, const eastl::allocator& b ) {
+    return true;
+}
+
 #include "module_memory.h"
 #include <EASTL/fixed_string.h>
 #include <EASTL/fixed_vector.h>
@@ -46,6 +59,20 @@ private:
 #include "../engine/n_allocator.h"
 #include "../rendercommon/r_public.h"
 
+using UtlString = eastl::fixed_string<char, MAX_STRING_CHARS, true, eastl::allocator_malloc<char>>;
+namespace eastl {
+	// for some reason, the eastl doesn't support this
+	template<> struct hash<UtlString> {
+		size_t operator()( const UtlString& str ) const {
+			const unsigned char *p = (const unsigned char *)str.c_str(); // To consider: limit p to at most 256 chars.
+			unsigned int c, result = 2166136261U; // We implement an FNV-like string hash.
+			while((c = *p++) != 0) // Using '!=' disables compiler warnings.
+				result = (result * 16777619) ^ c;
+			return (size_t)result;
+		}
+	};
+};
+
 template<typename T>
 using UtlStringHashTable = eastl::string_hash_map<T, eastl::hash<const char *>, eastl::str_equal_to<const char *>, CModuleAllocator>;
 template<typename T>
@@ -56,7 +83,8 @@ template<typename Key, typename Value>
 using UtlMap = eastl::unordered_map<Key, Value, eastl::hash<Key>, eastl::equal_to<Key>, CModuleAllocator, true>;
 template<typename Key, typename Compare = eastl::less<Key>>
 using UtlSet = eastl::set<Key, Compare, CModuleAllocator>;
-using UtlString = eastl::basic_string<char, eastl::allocator_malloc<char>>;
+
+using string_t = eastl::string;
 
 #include "nlohmann/json.hpp"
 #include "module_handle.h"
@@ -162,7 +190,7 @@ struct CModuleInfo
 	}
 
 	char m_szName[MAX_NPATH];
-	UtlVector<eastl::string> m_Dependencies;
+	UtlVector<UtlString> m_Dependencies;
 
 	CModuleHandle *m_pHandle;
 	
@@ -191,6 +219,10 @@ public:
 	CScriptBuilder *GetScriptBuilder( void );
 	asIScriptEngine *GetScriptEngine( void );
 	CContextMgr *GetContextManager( void );
+    void RegisterCvar( const UtlString& name, const UtlString& value, uint32_t flags, bool trackChanges, uint32_t privateFlag );
+    bool AddDefaultProcs( void ) const;
+
+    UtlVector<UtlString> m_RegisteredProcs;
 private:
 	void LoadModule( const char *pModuleName );
 
@@ -199,6 +231,10 @@ private:
 	CScriptBuilder *m_pScriptBuilder;
 	CContextMgr *m_pContextManager;
 	asIScriptEngine *m_pEngine;
+
+    UtlStringHashTable<vmCvar_t> m_CvarList;
+
+    qboolean m_bRegistered;
 };
 
 extern moduleImport_t moduleImport;

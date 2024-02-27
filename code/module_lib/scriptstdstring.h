@@ -14,8 +14,6 @@
 #include "module_public.h"
 #include <EASTL/string.h>
 
-using string_t = eastl::basic_string<char, eastl::allocator_malloc<char>>;
-
 //---------------------------
 // Compilation settings
 //

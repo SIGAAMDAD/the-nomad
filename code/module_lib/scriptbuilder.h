@@ -39,7 +39,7 @@ typedef int (*INCLUDECALLBACK_t)(const char *include, const char *from, CScriptB
 // This callback will be called for each #pragma directive encountered by the builder.
 // The application can interpret the pragmaText and decide what do to based on that.
 // If the callback returns a negative value the builder will report an error and abort the compilation.
-typedef int(*PRAGMACALLBACK_t)(const eastl::string &pragmaText, CScriptBuilder &builder, void *userParam);
+typedef int(*PRAGMACALLBACK_t)(const UtlString &pragmaText, CScriptBuilder &builder, void *userParam);
 
 // Helper class for loading and pre-processing script files to
 // support include directives and metadata declarations
@@ -86,23 +86,23 @@ public:
 
 	// Enumerate included script sections
 	unsigned int GetSectionCount() const;
-	eastl::string  GetSectionName(unsigned int idx) const;
+	UtlString  GetSectionName(unsigned int idx) const;
 
 #if AS_PROCESS_METADATA == 1
 	// Get metadata declared for classes, interfaces, and enums
-	eastl::vector<eastl::string> GetMetadataForType(int typeId);
+	UtlVector<UtlString> GetMetadataForType(int typeId);
 
 	// Get metadata declared for functions
-	eastl::vector<eastl::string> GetMetadataForFunc(asIScriptFunction *func);
+	UtlVector<UtlString> GetMetadataForFunc(asIScriptFunction *func);
 
 	// Get metadata declared for global variables
-	eastl::vector<eastl::string> GetMetadataForVar(int varIdx);
+	UtlVector<UtlString> GetMetadataForVar(int varIdx);
 
 	// Get metadata declared for class variables
-	eastl::vector<eastl::string> GetMetadataForTypeProperty(int typeId, int varIdx);
+	UtlVector<UtlString> GetMetadataForTypeProperty(int typeId, int varIdx);
 
 	// Get metadata declared for class methods
-	eastl::vector<eastl::string> GetMetadataForTypeMethod(int typeId, asIScriptFunction *method);
+	UtlVector<UtlString> GetMetadataForTypeMethod(int typeId, asIScriptFunction *method);
 #endif
 
 protected:
@@ -119,7 +119,7 @@ protected:
 
 	asIScriptEngine           *engine;
 	asIScriptModule           *module;
-	eastl::string                modifiedScript;
+	UtlString                modifiedScript;
 
 	INCLUDECALLBACK_t  includeCallback;
 	void              *includeParam;
@@ -128,8 +128,8 @@ protected:
 	void             *pragmaParam;
 
 #if AS_PROCESS_METADATA == 1
-	int  ExtractMetadata(int pos, eastl::vector<eastl::string> &outMetadata);
-	int  ExtractDeclaration(int pos, eastl::string &outName, eastl::string &outDeclaration, int &outType);
+	int  ExtractMetadata(int pos, UtlVector<UtlString> &outMetadata);
+	int  ExtractDeclaration(int pos, UtlString &outName, UtlString &outDeclaration, int &outType);
 
 	enum METADATATYPE
 	{
@@ -143,30 +143,30 @@ protected:
 	// Temporary structure for storing metadata and declaration
 	struct SMetadataDecl
 	{
-		SMetadataDecl(eastl::vector<eastl::string> m, eastl::string n, eastl::string d, int t, eastl::string c, eastl::string ns) : metadata(m), name(n), declaration(d), type(t), parentClass(c), nameSpace(ns) {}
-		eastl::vector<eastl::string> metadata;
-		eastl::string              name;
-		eastl::string              declaration;
+		SMetadataDecl(UtlVector<UtlString> m, UtlString n, UtlString d, int t, UtlString c, UtlString ns) : metadata(m), name(n), declaration(d), type(t), parentClass(c), nameSpace(ns) {}
+		UtlVector<UtlString> metadata;
+		UtlString              name;
+		UtlString              declaration;
 		int                      type;
-		eastl::string              parentClass;
-		eastl::string              nameSpace;
+		UtlString              parentClass;
+		UtlString              nameSpace;
 	};
-	eastl::vector<SMetadataDecl> foundDeclarations;
-	eastl::string currentClass;
-	eastl::string currentNamespace;
+	UtlVector<SMetadataDecl> foundDeclarations;
+	UtlString currentClass;
+	UtlString currentNamespace;
 
 	// Storage of metadata for global declarations
-	eastl::unordered_map<int, eastl::vector<eastl::string> > typeMetadataMap;
-	eastl::unordered_map<int, eastl::vector<eastl::string> > funcMetadataMap;
-	eastl::unordered_map<int, eastl::vector<eastl::string> > varMetadataMap;
+	eastl::unordered_map<int, UtlVector<UtlString> > typeMetadataMap;
+	eastl::unordered_map<int, UtlVector<UtlString> > funcMetadataMap;
+	eastl::unordered_map<int, UtlVector<UtlString> > varMetadataMap;
 
 	// Storage of metadata for class member declarations
 	struct SClassMetadata
 	{
-		SClassMetadata(const eastl::string& aName) : className(aName) {}
-		eastl::string className;
-		eastl::unordered_map<int, eastl::vector<eastl::string> > funcMetadataMap;
-		eastl::unordered_map<int, eastl::vector<eastl::string> > varMetadataMap;
+		SClassMetadata(const UtlString& aName) : className(aName) {}
+		UtlString className;
+		eastl::unordered_map<int, UtlVector<UtlString> > funcMetadataMap;
+		eastl::unordered_map<int, UtlVector<UtlString> > varMetadataMap;
 	};
 	eastl::unordered_map<int, SClassMetadata> classMetadataMap;
 
@@ -187,17 +187,17 @@ protected:
 
 	struct ci_less
 	{
-		bool operator()(const eastl::string &a, const eastl::string &b) const
+		bool operator()(const UtlString &a, const UtlString &b) const
 		{
 			return _stricmp(a.c_str(), b.c_str()) < 0;
 		}
 	};
-	eastl::set<eastl::string, ci_less> includedScripts;
+	UtlSet<UtlString, ci_less> includedScripts;
 #else
-	eastl::set<eastl::string>      includedScripts;
+	UtlSet<UtlString>      includedScripts;
 #endif
 
-	eastl::set<eastl::string>      definedWords;
+	UtlSet<UtlString>      definedWords;
 };
 
 END_AS_NAMESPACE
