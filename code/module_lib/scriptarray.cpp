@@ -1,4 +1,5 @@
 #include "scriptarray.h"
+#include "module_alloc.h"
 
 // This macro is used to avoid warnings about unused variables.
 // Usually where the variables are only used in debug mode.

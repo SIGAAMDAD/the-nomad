@@ -66,7 +66,7 @@ const char *AS_PrintErrorString( int code )
     default:
         break;
     };
-    return "<unknown error>";
+    return va( "<unknown error> (%i)", code );
 }
 
 namespace EA::StdC {
@@ -96,6 +96,7 @@ void CModuleLib::LoadModule( const char *pModule )
     CModuleHandle *pHandle;
     nlohmann::json parse;
     UtlVector<UtlString> submodules;
+    CModuleInfo *m;
     union {
         void *v;
         char *b;
@@ -122,8 +123,9 @@ void CModuleLib::LoadModule( const char *pModule )
         submodules.emplace_back( eastl::move( it.get<std::string>().c_str() ) );
     }
 
-    pHandle = new CModuleHandle( pModule, submodules );
-    m_LoadList.emplace_back( CModuleInfo( parse, pHandle ) );
+    pHandle = CreateObject<CModuleHandle>( pModule, submodules );
+    m = CreateObject<CModuleInfo>( parse, pHandle );
+    m_LoadList.emplace_back( m );
 }
 
 int CModuleLib::ModuleCall( CModuleInfo *pModule, EModuleFuncId nCallId, uint32_t nArgs, ... )
@@ -217,16 +219,8 @@ bool CModuleLib::AddDefaultProcs( void ) const {
     return true;
 }
 
-static void CheckValue( const char *func, int value ) {
-    if ( value != asSUCCESS ) {
-        N_Error( ERR_FATAL, "InitModuleLib: %s failed -- %s", func, AS_PrintErrorString( value ) );
-    }
-}
-
 CModuleLib::CModuleLib( void )
 {
-    #define CALL( func ) CheckValue( #func, func )
-
     const char *path;
     int ret;
 
@@ -240,12 +234,12 @@ CModuleLib::CModuleLib( void )
     if ( !m_pEngine ) {
         N_Error( ERR_DROP, "CModuleLib::Init: failed to create an AngelScript Engine context" );
     }
-    CALL( m_pEngine->SetMessageCallback( asFUNCTION( Module_ASMessage_f ), NULL, asCALL_CDECL ) );
-    CALL( m_pEngine->SetEngineProperty( asEP_ALLOW_MULTILINE_STRINGS, true ) );
-    CALL( m_pEngine->SetEngineProperty( asEP_ALLOW_UNSAFE_REFERENCES, true ) );
-    CALL( m_pEngine->SetEngineProperty( asEP_ALWAYS_IMPL_DEFAULT_CONSTRUCT, false ) );
-    CALL( m_pEngine->SetEngineProperty( asEP_COMPILER_WARNINGS, true ) );
-    CALL( m_pEngine->SetEngineProperty( asEP_OPTIMIZE_BYTECODE, true ) );
+    CheckASCall( m_pEngine->SetMessageCallback( asFUNCTION( Module_ASMessage_f ), NULL, asCALL_CDECL ) );
+    CheckASCall( m_pEngine->SetEngineProperty( asEP_ALLOW_MULTILINE_STRINGS, true ) );
+    CheckASCall( m_pEngine->SetEngineProperty( asEP_ALLOW_UNSAFE_REFERENCES, true ) );
+    CheckASCall( m_pEngine->SetEngineProperty( asEP_ALWAYS_IMPL_DEFAULT_CONSTRUCT, false ) );
+    CheckASCall( m_pEngine->SetEngineProperty( asEP_COMPILER_WARNINGS, true ) );
+    CheckASCall( m_pEngine->SetEngineProperty( asEP_OPTIMIZE_BYTECODE, true ) );
 
     m_pScriptBuilder = new CScriptBuilder();
 //    m_pContextManager = new CContextMgr();
@@ -281,6 +275,10 @@ CModuleLib::CModuleLib( void )
 
 CModuleLib::~CModuleLib()
 {
+    for ( auto it : m_LoadList ) {
+        DeleteObject( it );
+    }
+
     delete m_pScriptBuilder;
 //    delete m_pContextManager;
     delete s_pDebugger;
@@ -328,8 +326,8 @@ CContextMgr *CModuleLib::GetContextManager( void ) {
 
 CModuleInfo *CModuleLib::GetModule( const char *pName ) {
     for ( auto it = m_LoadList.begin(); it != m_LoadList.end(); it++ ) {
-        if ( !N_stricmp( it->m_szName, pName ) ) {
-            return it; // THANK YOU eastl for just being a MOTHERFUCKING POINTER instead of an overcomplicated class
+        if ( !N_stricmp( ( *it )->m_szName, pName ) ) {
+            return *it; // THANK YOU eastl for just being a MOTHERFUCKING POINTER instead of an overcomplicated class
         }
     }
     return NULL;

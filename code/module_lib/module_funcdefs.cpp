@@ -1,4 +1,5 @@
 #include "module_public.h"
+#include <glm/gtc/type_ptr.hpp>
 
 //
 // c++ compatible wrappers around angelscript engine function calls
@@ -223,9 +224,182 @@ DEFINE_CALLBACK( GetMapData ) {
     CScriptArray *soundBits = (CScriptArray *)pGeneric->GetArgAddress( 1 );
 }
 
+DEFINE_CALLBACK( BeginSaveSection ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    g_pArchiveHandler->BeginSaveSection( name->c_str() );
+}
+
+DEFINE_CALLBACK( EndSaveSection ) {
+    g_pArchiveHandler->EndSaveSection();
+}
+
+DEFINE_CALLBACK( SaveInt8 ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const asINT8 arg = *(const asINT8 *)pGeneric->GetArgAddress( 1 );
+    g_pArchiveHandler->SaveChar( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( SaveInt16 ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const asINT16 arg = *(const asINT16 *)pGeneric->GetArgAddress( 1 );
+    g_pArchiveHandler->SaveShort( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( SaveInt32 ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const asINT32 arg = *(const asINT32 *)pGeneric->GetArgAddress( 1 );
+    g_pArchiveHandler->SaveInt( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( SaveInt64 ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const asINT64 arg = *(const asINT64 *)pGeneric->GetArgAddress( 1 );
+    g_pArchiveHandler->SaveLong( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( SaveUInt8 ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const byte arg = *(const byte *)pGeneric->GetArgAddress( 1 );
+    g_pArchiveHandler->SaveByte( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( SaveUInt16 ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const asUINT16 arg = *(const asUINT16 *)pGeneric->GetArgAddress( 1 );
+    g_pArchiveHandler->SaveUShort( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( SaveUInt32 ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const asUINT32 arg = *(const asUINT32 *)pGeneric->GetArgAddress( 1 );
+    g_pArchiveHandler->SaveUInt( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( SaveUInt64 ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const asUINT64 arg = *(const asUINT64 *)pGeneric->GetArgAddress( 1 );
+    g_pArchiveHandler->SaveULong( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( SaveFloat ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const float arg = pGeneric->GetArgFloat( 1 );
+    g_pArchiveHandler->SaveFloat( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( SaveString ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const string_t *arg = (const string_t *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->SaveString( name->c_str(), arg->c_str() );
+}
+
+DEFINE_CALLBACK( SaveVec2 ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const glm::vec2 v = *(const glm::vec2 *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->SaveVec2( name->c_str(), glm::value_ptr( v ) );
+}
+
+DEFINE_CALLBACK( SaveVec3 ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const glm::vec3 v = *(const glm::vec3 *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->SaveVec3( name->c_str(), glm::value_ptr( v ) );
+}
+
+DEFINE_CALLBACK( SaveVec4 ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const glm::vec4 v = *(const glm::vec4 *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->SaveVec4( name->c_str(), glm::value_ptr( v ) );
+}
+
+
+DEFINE_CALLBACK( LoadInt8 ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const asINT8 arg = *(const asINT8 *)pGeneric->GetArgAddress( 1 );
+    g_pArchiveHandler->SaveChar( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( LoadInt16 ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const asINT16 arg = *(const asINT16 *)pGeneric->GetArgAddress( 1 );
+    g_pArchiveHandler->SaveShort( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( LoadInt32 ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const asINT32 arg = *(const asINT32 *)pGeneric->GetArgAddress( 1 );
+    g_pArchiveHandler->SaveInt( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( LoadInt64 ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const asINT64 arg = *(const asINT64 *)pGeneric->GetArgAddress( 1 );
+    g_pArchiveHandler->SaveLong( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( LoadUInt8 ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const byte arg = *(const byte *)pGeneric->GetArgAddress( 1 );
+    g_pArchiveHandler->SaveByte( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( LoadUInt16 ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const asUINT16 arg = *(const asUINT16 *)pGeneric->GetArgAddress( 1 );
+    g_pArchiveHandler->SaveUShort( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( LoadUInt32 ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const asUINT32 arg = *(const asUINT32 *)pGeneric->GetArgAddress( 1 );
+    g_pArchiveHandler->SaveUInt( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( LoadUInt64 ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const asUINT64 arg = *(const asUINT64 *)pGeneric->GetArgAddress( 1 );
+    g_pArchiveHandler->SaveULong( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( LoadFloat ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const float arg = pGeneric->GetArgFloat( 1 );
+    g_pArchiveHandler->SaveFloat( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( LoadString ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    string_t *arg = (const string_t *)pGeneric->GetArgObject( 1 );
+
+    arg->resize( MAX_STRING_CHARS );
+    memset( arg->data(), 0, MAX_STRING_CHARS );
+
+    g_pArchiveHandler->LoadString( name->c_str(), str->data(), MAX_STRING_CHARS, pGeneric->GetArgWord( 3 ) );
+}
+
+DEFINE_CALLBACK( LoadVec2 ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const glm::vec2 v = *(const glm::vec2 *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->SaveVec2( name->c_str(), glm::value_ptr( v ) );
+}
+
+DEFINE_CALLBACK( LoadVec3 ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const glm::vec3 v = *(const glm::vec3 *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->SaveVec3( name->c_str(), glm::value_ptr( v ) );
+}
+
+DEFINE_CALLBACK( LoadVec4 ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const glm::vec4 v = *(const glm::vec4 *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->SaveVec4( name->c_str(), glm::value_ptr( v ) );
+}
+
 void ModuleLib_Register_Game( void )
 {
     SET_NAMESPACE( "TheNomad::GameSystem" );
+
+    REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::BeginSaveSection( const string& )", BeginSaveSection );
+    REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::EndSaveSection()", EndSaveSection );
 
     // these are here because if they change in the map editor or the engine, it'll break sgame
     REGISTER_ENUM_TYPE( "TheNomad::GameSystem::EntityType" );
@@ -260,14 +434,7 @@ DEFINE_CALLBACK( CopyConstructVec3Generic ) {
 
 }
 
-DEFINE_CALLBACK( Cop)
-
-static void ModuleLib_Register_Math( void )
-{
-    RESET_NAMESPACE();
-
-    REGISTER_OBJECT_TYPE( "vec3", glm::vec3, asOBJ_VALUE );
-    REGISTER_OBJECT_BEHAVIOUR( "vec3", asBEHAVE_CONSTRUCT, "void f()",  );
+static void ModuleLib_Register_Math( void ) {
 }
 
 DEFINE_CALLBACK( ConsolePrint ) {

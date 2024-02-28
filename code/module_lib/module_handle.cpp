@@ -2,12 +2,28 @@
 #include "module_handle.h"
 #include "angelscript/as_bytecode.h"
 
+static const char *funcNames[NumFuncs] = {
+    "ModuleInit",
+    "ModuleShutdown",
+    "ModuleOnLevelStart",
+    "ModuleOnLevelEnd",
+    "ModuleOnCommand",
+    "ModuleOnKeyEvent",
+    "ModuleOnMouseEvent",
+    "ModuleOnRunTic",
+    "ModuleOnSaveGame",
+    "ModuleOnLoadGame",
+    "ModuleDrawConfiguration",
+    "ModuleSaveConfiguration",
+
+    "ModuleGetCurrentLevelIndex",
+    "ModuleRewindToLastCheckpoint"
+};
+
 CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sourceFiles )
     : m_szName( pName ), m_pScriptContext( NULL ), m_pScriptModule( NULL )
 {
     int error;
-
-    memset( m_pFuncTable, 0, sizeof(m_pFuncTable) );
 
     if ( !sourceFiles.size() ) {
         Con_Printf( COLOR_YELLOW "WARNING: no source files found for '%s', not compiling\n", pName );
@@ -26,6 +42,9 @@ CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sou
     g_pModuleLib->AddDefaultProcs();
 
     m_pScriptModule = g_pModuleLib->GetScriptEngine()->GetModule( pName, asGM_CREATE_IF_NOT_EXISTS );
+    if ( !m_pScriptModule ) {
+        N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: GetModule() failed\n" );
+    }
 
     for ( const auto& it : sourceFiles ) {
         LoadSourceFile( it );
@@ -36,6 +55,7 @@ CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sou
     }
 
     m_pScriptContext = g_pModuleLib->GetScriptEngine()->CreateContext();
+    InitCalls();
 }
 
 CModuleHandle::~CModuleHandle() {
@@ -63,16 +83,20 @@ void LogExceptionInfo( asIScriptContext *pContext )
 int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pArgList )
 {
     uint32_t i;
-
+    int retn;
+    
     if ( !m_pScriptContext ) {
         return -1;
     }
 
-    m_pScriptContext->Prepare( m_pFuncTable[nCallId] );
-    m_pScriptContext->SetExceptionCallback( asFUNCTION( LogExceptionInfo ), NULL, asCALL_CDECL );
+    Con_DPrintf( "Calling function proc '%s' at 0x%08lx... (module \"%s\")\n",
+        funcNames[nCallId], (uintptr_t)(void *)m_pFuncTable[nCallId], m_szName.c_str() );
+
+    CheckASCall( m_pScriptContext->Prepare( m_pFuncTable[nCallId] ) );
+    CheckASCall( m_pScriptContext->SetExceptionCallback( asFUNCTION( LogExceptionInfo ), NULL, asCALL_CDECL ) );
 
     for ( i = 0; i < nArgs; i++ ) {
-        m_pScriptContext->SetArgDWord( i, pArgList[i] );
+        CheckASCall( m_pScriptContext->SetArgDWord( i, pArgList[i] ) );
     }
 
     switch ( m_pScriptContext->Execute() ) {
@@ -89,27 +113,30 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
         break;
     };
 
-    return (int)m_pScriptContext->GetReturnWord();
+    retn = (int)m_pScriptContext->GetReturnWord();
+
+    m_pScriptContext->Unprepare();
+
+    return retn;
 }
 
 void CModuleHandle::InitCalls( void )
 {
-    m_pFuncTable[ModuleInit] = g_pModuleLib->GetScriptEngine()->GetModule( m_szName.c_str() )->GetFunctionByDecl( "Module_Init" );
-    m_pFuncTable[ModuleShutdown] = g_pModuleLib->GetScriptEngine()->GetModule( m_szName.c_str() )->GetFunctionByDecl( "Module_Shutdown" );
-    m_pFuncTable[ModuleOnLevelEnd] = g_pModuleLib->GetScriptEngine()->GetModule( m_szName.c_str() )->GetFunctionByDecl( "Module_OnLevelStart" );
-    m_pFuncTable[ModuleOnLevelStart] = g_pModuleLib->GetScriptEngine()->GetModule( m_szName.c_str() )->GetFunctionByDecl( "Module_OnLevelEnd" );
-    m_pFuncTable[ModuleCommandLine] = g_pModuleLib->GetScriptEngine()->GetModule( m_szName.c_str() )->GetFunctionByDecl( "Module_Command" );
-    m_pFuncTable[ModuleOnKeyEvent] = g_pModuleLib->GetScriptEngine()->GetModule( m_szName.c_str() )->GetFunctionByDecl( "Module_OnKeyEvent" );
-    m_pFuncTable[ModuleOnMouseEvent] = g_pModuleLib->GetScriptEngine()->GetModule( m_szName.c_str() )->GetFunctionByDecl( "Module_OnMouseEvent" );
-    m_pFuncTable[ModuleOnRunTic] = g_pModuleLib->GetScriptEngine()->GetModule( m_szName.c_str() )->GetFunctionByDecl( "Module_RunTic" );
-    m_pFuncTable[ModuleOnSaveGame] = g_pModuleLib->GetScriptEngine()->GetModule( m_szName.c_str() )->GetFunctionByDecl( "Module_OnSaveGame" );
-    m_pFuncTable[ModuleOnLoadGame] = g_pModuleLib->GetScriptEngine()->GetModule( m_szName.c_str() )->GetFunctionByDecl( "Module_OnLoadGame" );
-    m_pFuncTable[ModuleDrawConfiguration] = g_pModuleLib->GetScriptEngine()->GetModule( m_szName.c_str() )->GetFunctionByDecl( "Module_DrawConfiguration" );
-    m_pFuncTable[ModuleSaveConfiguration] = g_pModuleLib->GetScriptEngine()->GetModule( m_szName.c_str() )->GetFunctionByDecl( "Module_SaveConfiguration" );
+    Con_Printf( "Initializing function procs...\n" );
 
-    if ( !N_stricmp( m_szName.c_str(), "nomadmain" ) ) {
-        m_pFuncTable[ModuleGetCurrentLevelIndex] = g_pModuleLib->GetScriptEngine()->GetModule( m_szName.c_str() )->GetFunctionByDecl( "GetCurrentLevelIndex" );
-        m_pFuncTable[ModuleRewindToLastCheckpoint] = g_pModuleLib->GetScriptEngine()->GetModule( m_szName.c_str() )->GetFunctionByDecl( "RewindToLastCheckpoint" );
+    memset( m_pFuncTable, 0, sizeof( m_pFuncTable ) );
+
+    for ( uint32_t i = 0; i < NumFuncs; i++ ) {
+        if ( i == ModuleGetCurrentLevelIndex && N_stricmp( m_szName.c_str(), "nomadmain" ) ) {
+            break; // not sgame
+        }
+        Con_DPrintf( "Checking if module has function '%s'...\n", funcNames[i] );
+        m_pFuncTable[i] = m_pScriptModule->GetFunctionByName( funcNames[i] );
+        if ( m_pFuncTable[i] ) {
+            Con_Printf( COLOR_GREEN "Module \"%s\" registered with proc '%s'.\n", m_szName.c_str(), funcNames[i] );
+        } else {
+            Con_Printf( COLOR_MAGENTA "Module \"%s\" not registered with proc '%s'.\n", m_szName.c_str(), funcNames[i] );
+        }
     }
 }
 
@@ -119,13 +146,19 @@ void CModuleHandle::LoadSourceFile( const UtlString& filename )
         void *v;
         char *b;
     } f;
+    int retn;
     uint64_t length;
 
     length = FS_LoadFile( filename.c_str(), &f.v );
     if ( !f.v ) {
         N_Error( ERR_DROP, "CModuleHandle::LoadSourceFile: failed to load source file '%s'", filename.c_str() );
     }
-    g_pModuleLib->GetScriptBuilder()->AddSectionFromMemory( filename.c_str(), f.b, length );
+    
+    retn = g_pModuleLib->GetScriptBuilder()->AddSectionFromMemory( filename.c_str(), f.b, length );
+    if ( retn < 0 ) {
+        Con_Printf( COLOR_RED "ERROR: failed to add source file '%s' -- %s\n", filename.c_str(), AS_PrintErrorString( retn ) );
+    }
+
     FS_FreeFile( f.v );
 }
 

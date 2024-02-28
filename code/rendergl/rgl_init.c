@@ -727,7 +727,7 @@ static void GpuInfo_f( void )
 	ri.Printf( PRINT_INFO, "GL_MAX_TEXTURE_IMAGE_UNITS: %d\n", glContext.maxTextureUnits );
     ri.Printf( PRINT_INFO, "GL_MAX_TEXTURE_MAX_ANISOTROPY: %f\n", glContext.maxAnisotropy );
 	ri.Printf( PRINT_INFO, "\nPIXELFORMAT: color(%d-bits) Z(%d-bit) stencil(%d-bits)\n", glConfig.colorBits, glConfig.depthBits, glConfig.stencilBits );
-	ri.Printf( PRINT_INFO, "MODE: %d, %d x %d %s hz:", ri.Cvar_VariableInteger( "r_mode" ), glConfig.vidWidth, glConfig.vidHeight, fsstrings[ glConfig.isFullscreen != 0 ] );
+	ri.Printf( PRINT_INFO, "MODE: %li, %d x %d %s hz:", ri.Cvar_VariableInteger( "r_mode" ), glConfig.vidWidth, glConfig.vidHeight, fsstrings[ glConfig.isFullscreen != 0 ] );
 	if ( glConfig.displayFrequency ) {
 		ri.Printf( PRINT_INFO, "%d\n", glConfig.displayFrequency );
 	}

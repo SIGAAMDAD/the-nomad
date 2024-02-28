@@ -6,10 +6,6 @@
 #include "module_public.h"
 #include "../engine/n_threads.h"
 
-class CModuleStringFactory;
-
-static CModuleStringFactory *s_pStringFactory;
-
 class CModuleStringFactory : public asIStringFactory
 {
 public:
@@ -24,7 +20,7 @@ public:
 	const void *GetStringConstant( const char *pData, asUINT nLength ) {
 		CThreadAutoLock<CThreadMutex> lock( m_hLock );
 		
-		const eastl::string str( pData, nLength );
+		const string_t str( pData, nLength );
 		auto it = m_StringCache.find( str );
 		if ( it != m_StringCache.end() ) {
 			it->second++;
@@ -45,7 +41,8 @@ public:
 		ret = asSUCCESS;
 		
 		CThreadAutoLock<CThreadMutex> lock( m_hLock );
-		auto it = m_StringCache.find( (const char *)pStr );
+		const string_t *data = (const string_t *)pStr;
+		auto it = m_StringCache.find( *data );
 		if ( it == m_StringCache.end() ) {
 			Con_Printf( COLOR_RED "[ERROR] ReleaseStringConstant: invalid string '%s'\n", (const char *)pStr );
 			ret = asERROR;
@@ -79,31 +76,6 @@ public:
 	CStringCache m_StringCache;
 };
 
-CModuleStringFactory *GetStringFactorySingleton( void )
-{
-	if ( !s_pStringFactory ) {
-		CThreadMutex mutex;
-		
-		CThreadAutoLock<CThreadMutex> lock( mutex );
-		if ( !s_pStringFactory ) {
-			s_pStringFactory = new CModuleStringFactory();
-		}
-	}
-	return s_pStringFactory;
-}
-
-struct CStringCacheCleaner
-{
-	~CStringCacheCleaner() {
-		if ( s_pStringFactory ) {
-			if ( s_pStringFactory->m_StringCache.empty() ) {
-				delete s_pStringFactory;
-				s_pStringFactory = NULL;
-			}
-		}
-	}
-};
-
-static CStringCacheCleaner s_StringCacheCleaner;
+extern CModuleStringFactory *g_pStringFactory;
 
 #endif

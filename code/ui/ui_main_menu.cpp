@@ -200,7 +200,7 @@ void MainMenu_Draw( void )
         SinglePlayerMenu_Draw();
         ImGui::End();
     }
-    else if (ui->GetState() >= STATE_SETTINGS && ui->GetState() <= STATE_AUDIO) {
+    else if (ui->GetState() >= STATE_SETTINGS && ui->GetState() <= STATE_GAMEPLAY) {
         ImGui::Begin( "MainMenu", NULL, windowFlags );
         ImGui::SetWindowPos( ImVec2( 0, 0 ) );
         ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth, (float)menu.menuHeight ) );

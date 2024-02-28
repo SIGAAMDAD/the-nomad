@@ -13,6 +13,7 @@
 #include "module_virtual_asm.h"
 using namespace assembler;
 
+#include "module_stringfactory.hpp"
 #include "module_alloc.h"
 
 #ifdef __amd64__
@@ -22,6 +23,10 @@ using namespace assembler;
 
 #ifdef _M_AMD64
 #define JIT_64
+#endif
+
+#if defined(GDRx64) && !defined(JIT_64)
+	#define JIT_64
 #endif
 
 #ifdef JIT_64
@@ -46,7 +51,9 @@ static const void* JUMP_DESTINATION = (void*)(size_t)0x1;
 #define offset1 (asBC_SWORDARG1(pOp)*sizeof(asDWORD))
 #define offset2 (asBC_SWORDARG2(pOp)*sizeof(asDWORD))
 
-//#define JIT_DEBUG
+#ifdef _NOMAD_DEBUG
+	#define JIT_DEBUG
+#endif
 #ifdef JIT_DEBUG
 static asEBCInstr DBG_CurrentOP;
 static asEBCInstr DBG_LastOP;
@@ -1702,6 +1709,7 @@ int asCJITCompiler::CompileFunction(asIScriptFunction *function, asJITFunction *
 		//case asBC_PshRPtr: //All pushes are handled above, near asBC_PshC4
 		case asBC_STR:
 			{
+				const asCString& str = 
 				const asCString &str = ((asIScriptEngine*)function->GetEngine())->GetConstantString(asBC_WORDARG0(pOp));
 				esi -= sizeof(void*) + sizeof(asDWORD);
 				as<void*>(*esi + sizeof(asDWORD)) = (void*)str.AddressOf();

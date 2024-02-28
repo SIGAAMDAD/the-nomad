@@ -1,4 +1,5 @@
 #include "scriptbuilder.h"
+#include "module_alloc.h"
 
 #if defined(_MSC_VER) && !defined(_WIN32_WCE) && !defined(__S3E__)
 #include <direct.h>

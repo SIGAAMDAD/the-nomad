@@ -61,7 +61,7 @@ constexpr GDR_INLINE bool operator!=( const CModuleAllocator& a, const eastl::al
 
 using UtlString = eastl::fixed_string<char, MAX_STRING_CHARS, true, eastl::allocator_malloc<char>>;
 namespace eastl {
-	// for some reason, the eastl doesn't support this
+	// for some reason, the eastl doesn't support eastl::hash<eastl::fixed_string>
 	template<> struct hash<UtlString> {
 		size_t operator()( const UtlString& str ) const {
 			const unsigned char *p = (const unsigned char *)str.c_str(); // To consider: limit p to at most 256 chars.
@@ -85,6 +85,17 @@ template<typename Key, typename Compare = eastl::less<Key>>
 using UtlSet = eastl::set<Key, Compare, CModuleAllocator>;
 
 using string_t = eastl::string;
+/*namespace eastl {
+	template<> struct hash<string_t> {
+		size_t operator()( const string_t& str ) const {
+			const unsigned char *p = (const unsigned char *)str.c_str(); // To consider: limit p to at most 256 chars.
+			unsigned int c, result = 2166136261U; // We implement an FNV-like string hash.
+			while((c = *p++) != 0) // Using '!=' disables compiler warnings.
+				result = (result * 16777619) ^ c;
+			return (size_t)result;
+		}
+	};
+};*/
 
 #include "nlohmann/json.hpp"
 #include "module_handle.h"
@@ -163,6 +174,16 @@ typedef struct
 
 class CModuleHandle;
 
+template<typename T, typename... Args>
+inline T *CreateObject( Args&&... args ) {
+    return (T *)::new ( Mem_Alloc( sizeof(T) ) ) T( eastl::forward<Args>( args )... );
+}
+template<typename T>
+inline void DeleteObject( T *pObject ) {
+    pObject->~T();
+    Mem_Free( (void *)pObject );
+}
+
 struct CModuleInfo
 {
 	CModuleInfo( nlohmann::json& parse, CModuleHandle *pHandle ) {
@@ -183,10 +204,10 @@ struct CModuleInfo
 
 		m_pHandle = pHandle;
 
-        Con_Printf( " - Added module \"%s\", v%i.%i.%i\n", m_szName, m_nModVersionMajor, m_nModVersionUpdate, m_nModVersionPatch );
+        Con_Printf( "- loaded module \"%s\", v%i.%i.%i\n", m_szName, m_nModVersionMajor, m_nModVersionUpdate, m_nModVersionPatch );
 	}
 	~CModuleInfo() {
-		delete m_pHandle;
+        DeleteObject( m_pHandle );
 	}
 
 	char m_szName[MAX_NPATH];
@@ -203,6 +224,16 @@ struct CModuleInfo
 
 class CContextMgr;
 class CScriptBuilder;
+
+const char *AS_PrintErrorString( int code );
+GDR_INLINE void CheckValue( const char *caller, const char *func, int value ) {
+    if ( value != asSUCCESS ) {
+        N_Error( ERR_FATAL, "%s: %s failed -- %s", caller, func, AS_PrintErrorString( value ) );
+    }
+}
+
+#define CheckASCall( call ) \
+    CheckValue( __func__, #call, call )
 
 class CModuleLib
 {
@@ -226,7 +257,7 @@ public:
 private:
 	void LoadModule( const char *pModuleName );
 
-	UtlVector<CModuleInfo> m_LoadList;
+	UtlVector<CModuleInfo *> m_LoadList;
 
 	CScriptBuilder *m_pScriptBuilder;
 	CContextMgr *m_pContextManager;
@@ -238,8 +269,6 @@ private:
 };
 
 extern moduleImport_t moduleImport;
-
-const char *AS_PrintErrorString( int code );
 
 typedef CModuleLib *(*GetModuleAPI_t)( const moduleImport_t *, const renderExport_t *, version_t nGameVersion );
 CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *pExport, version_t nGameVersion );

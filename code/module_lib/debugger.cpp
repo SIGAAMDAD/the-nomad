@@ -682,6 +682,14 @@ void CDebugger::AddFileBreakPoint( const eastl::string& file, int32_t lineNbr )
 
 void CDebugger::PrintHelp( void )
 {
+//	Con_Printf(
+//		"debugging commands for vm:\n"
+//		"br      set a debug breakpoint at specified location\n"
+//		"bt      print a stacktrace\n"
+//		"p       print the value of specified variable or function\n"
+//		"cont    continue execution\n"
+//		"n       execute the next line of code");
+
 	Con_Printf(
 	//	" c - Continue\n"
 	//    " s - Step into\n"

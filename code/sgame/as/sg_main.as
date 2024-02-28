@@ -1,46 +1,45 @@
-int Module_Init()
+
+//
+// ModuleInit: initialize all your variables here
+//
+int ModuleInit()
 {
     ConsolePrint( "SGameInit: initializing sgame...\n" );
     return 1;
 }
 
-int Module_Shutdown()
+int ModuleShutdown()
 {
     ConsolePrint( "SGameShutdown: shutting down sgame...\n" );
     return 1;
 }
 
-int Module_RunTic( uint frametime, uint msec )
+int ModuleOnRunTic( uint frametime, uint msec )
 {
     return 1;
 }
 
-int Module_OnKeyEvent( uint key, uint down )
+int ModuleOnKeyEvent( uint key, uint down )
 {
     return 0;
 }
 
-int Module_OnSaveGame()
+int ModuleOnSaveGame()
 {
     return 0;
 }
 
-int Module_LoadGame()
+int ModuleOnLoadGame()
 {
     return 0;
 }
 
-int Module_OnMouseEvent( uint dx, uint dy )
+int ModuleOnMouseEvent( uint dx, uint dy )
 {
     return 0;
 }
 
-int Module_CommandLine( void )
+int ModuleOnCommand( void )
 {
     return 0;
-}
-
-void main()
-{
-
 }
