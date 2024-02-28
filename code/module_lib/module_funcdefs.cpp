@@ -314,56 +314,49 @@ DEFINE_CALLBACK( SaveVec4 ) {
 
 DEFINE_CALLBACK( LoadInt8 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const asINT8 arg = *(const asINT8 *)pGeneric->GetArgAddress( 1 );
-    g_pArchiveHandler->SaveChar( name->c_str(), arg );
+    *(asINT8 *)pGeneric->GetAddressOfReturnLocation() = g_pArchiveHandler->LoadChar( name->c_str(), pGeneric->GetArgWord( 1 ) );
 }
 
 DEFINE_CALLBACK( LoadInt16 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const asINT16 arg = *(const asINT16 *)pGeneric->GetArgAddress( 1 );
-    g_pArchiveHandler->SaveShort( name->c_str(), arg );
+    *(asINT16 *)pGeneric->GetAddressOfReturnLocation() = g_pArchiveHandler->LoadShort( name->c_str(), pGeneric->GetArgWord( 1 ) );
 }
 
 DEFINE_CALLBACK( LoadInt32 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const asINT32 arg = *(const asINT32 *)pGeneric->GetArgAddress( 1 );
-    g_pArchiveHandler->SaveInt( name->c_str(), arg );
+    *(asINT32 *)pGeneric->GetAddressOfReturnLocation() = g_pArchiveHandler->LoadInt( name->c_str(), pGeneric->GetArgWord( 1 ) );
 }
 
 DEFINE_CALLBACK( LoadInt64 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const asINT64 arg = *(const asINT64 *)pGeneric->GetArgAddress( 1 );
-    g_pArchiveHandler->SaveLong( name->c_str(), arg );
+    *(asINT64 *)pGeneric->GetAddressOfReturnLocation() = g_pArchiveHandler->LoadLong( name->c_str(), pGeneric->GetArgWord( 1 ) );
 }
 
 DEFINE_CALLBACK( LoadUInt8 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const byte arg = *(const byte *)pGeneric->GetArgAddress( 1 );
-    g_pArchiveHandler->SaveByte( name->c_str(), arg );
+    *(byte *)pGeneric->GetAddressOfReturnLocation() = g_pArchiveHandler->LoadByte( name->c_str(), pGeneric->GetArgWord( 1 ) );
 }
 
 DEFINE_CALLBACK( LoadUInt16 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const asUINT16 arg = *(const asUINT16 *)pGeneric->GetArgAddress( 1 );
-    g_pArchiveHandler->SaveUShort( name->c_str(), arg );
+    *(uint16_t *)pGeneric->GetAddressOfReturnLocation() = g_pArchiveHandler->LoadUShort( name->c_str(), pGeneric->GetArgWord( 1 ) );
 }
 
 DEFINE_CALLBACK( LoadUInt32 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const asUINT32 arg = *(const asUINT32 *)pGeneric->GetArgAddress( 1 );
-    g_pArchiveHandler->SaveUInt( name->c_str(), arg );
+    *(uint32_t *)pGeneric->GetAddressOfReturnLocation() = g_pArchiveHandler->LoadUInt( name->c_str(), arg, pGeneric->GetArgWord( 2 ) );
 }
 
 DEFINE_CALLBACK( LoadUInt64 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const asUINT64 arg = *(const asUINT64 *)pGeneric->GetArgAddress( 1 );
-    g_pArchiveHandler->SaveULong( name->c_str(), arg );
+    asUINT64 *arg = (asUINT64 *)pGeneric->GetArgAddress( 1 );
+    g_pArchiveHandler->LoadULong( name->c_str(), arg, pGeneric->GetArgWord( 2 ) );
 }
 
 DEFINE_CALLBACK( LoadFloat ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const float arg = pGeneric->GetArgFloat( 1 );
-    g_pArchiveHandler->SaveFloat( name->c_str(), arg );
+    float *arg = (float *)pGeneric->GetArgAddress( 1 );
+    g_pArchiveHandler->LoadFloat( name->c_str(), arg, pGeneric->GetArgWord( 2 ) );
 }
 
 DEFINE_CALLBACK( LoadString ) {
@@ -373,25 +366,25 @@ DEFINE_CALLBACK( LoadString ) {
     arg->resize( MAX_STRING_CHARS );
     memset( arg->data(), 0, MAX_STRING_CHARS );
 
-    g_pArchiveHandler->LoadString( name->c_str(), str->data(), MAX_STRING_CHARS, pGeneric->GetArgWord( 3 ) );
+    g_pArchiveHandler->LoadString( name->c_str(), str->data(), MAX_STRING_CHARS, pGeneric->GetArgWord( 2 ) );
 }
 
 DEFINE_CALLBACK( LoadVec2 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const glm::vec2 v = *(const glm::vec2 *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->SaveVec2( name->c_str(), glm::value_ptr( v ) );
+    glm::vec2 *v = (glm::vec2 *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->LoadVec2( name->c_str(), v, pGeneric->GetArgWord( 2 ) );
 }
 
 DEFINE_CALLBACK( LoadVec3 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const glm::vec3 v = *(const glm::vec3 *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->SaveVec3( name->c_str(), glm::value_ptr( v ) );
+    glm::vec3 *v = (glm::vec3 *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->LoadVec3( name->c_str(), v, pGeneric->GetArgWord( 2 ) );
 }
 
 DEFINE_CALLBACK( LoadVec4 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const glm::vec4 v = *(const glm::vec4 *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->SaveVec4( name->c_str(), glm::value_ptr( v ) );
+    glm::vec4 *v = (glm::vec4 *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->LoadVec4( name->c_str(), v, pGeneric->GetArgWord( 2 ) );
 }
 
 void ModuleLib_Register_Game( void )
