@@ -5,7 +5,6 @@
 
 #include "../engine/n_shared.h"
 #include "../game/g_game.h"
-#include "../game/g_archive.h"
 
 #include <glm/glm.hpp>
 
@@ -105,7 +104,10 @@ using string_t = eastl::string;
 #include "scriptbuilder.h"
 #include "scriptstdstring.h"
 #include "scriptmath.h"
+#include "scripthandle.h"
 #include "contextmgr.h"
+
+#include "../game/g_archive.h"
 
 typedef struct
 {

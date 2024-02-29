@@ -7,6 +7,7 @@
 #include "angelscript/angelscript.h"
 #include "angelscript/as_compiler.h"
 #include "angelscript/as_context.h"
+#include "module_jit.h"
 
 typedef uint64_t EModuleFuncId;
 
@@ -61,6 +62,8 @@ private:
     UtlString m_szName;
     asIScriptContext *m_pScriptContext;
     asIScriptModule *m_pScriptModule;
+	asCJITCompiler *m_pCompiler;
+	UtlVector<asJITFunction> m_Functions;
 };
 
 class CModuleContextHandle : public asIScriptContext

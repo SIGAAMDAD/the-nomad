@@ -1707,14 +1707,14 @@ int asCJITCompiler::CompileFunction(asIScriptFunction *function, asJITFunction *
 			esi += sizeof(void*);
 			break;
 		//case asBC_PshRPtr: //All pushes are handled above, near asBC_PshC4
-		case asBC_STR:
+/*		case asBC_STR: // not used anymore
 			{
 				const asCString& str = 
 				const asCString &str = ((asIScriptEngine*)function->GetEngine())->GetConstantString(asBC_WORDARG0(pOp));
 				esi -= sizeof(void*) + sizeof(asDWORD);
 				as<void*>(*esi + sizeof(asDWORD)) = (void*)str.AddressOf();
 				as<asDWORD>(*esi) = (asDWORD)str.GetLength();
-			} break;
+			} break; */
 		case asBC_CALLSYS:
 		case asBC_Thiscall1:
 			{

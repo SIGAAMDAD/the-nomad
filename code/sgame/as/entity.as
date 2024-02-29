@@ -1,15 +1,12 @@
 #include "game.as"
+#include "state.as"
 #include "info.as"
 
 namespace TheNomad {
 	namespace SGame {
 		shared class EntityObject
 		{
-			EntityObject( const TheNomad::Engine::InfoParser@ in info ) {
-				m_EntityInfo = info;
-				
-				m_nHealth = info["health"];
-				m_Name = info["name"];
+			EntityObject() {
 			}
 			
 			//
@@ -27,14 +24,17 @@ namespace TheNomad {
 			void SetState( uint statenum ) {
 				TheNomad::GameSystem::GameManager.GetInfo( "EntityStates" ).GetInfoInt( statenum );
 			}
-			const LinkEntity& GetLink() const {
+			const TheNomad::GameSystem::LinkEntity& GetLink() const {
 				return m_Link;
 			}
-			LinkEntity& GetLink() {
+			TheNomad::GameSystem::LinkEntity& GetLink() {
 				return m_Link;
 			}
 			void SetOrigin( const vec3& in origin ) {
 				m_Link.SetOrigin( origin );
+			}
+			const EntityState@ GetState() const {
+				return m_State;
 			}
 			
 			//
@@ -44,40 +44,27 @@ namespace TheNomad {
 				
 			}
 			
-			private LinkEntity m_Link;
+			private TheNomad::GameSystem::LinkEntity m_Link;
 			private string m_Name;
 			private EntityType m_nType;
 			private int m_nId;
 			private int m_nHealth;
 			private uint m_Flags;
-			
 			private EntityState@ m_State;
 		};
 		
-		shared class EntitySystem
+		shared class EntitySystem : TheNomad::GameSystem::GameObject
 		{
 			EntitySystem() {
-				m_InfoData = TheNomad::Engine::InfoParser();
 				m_EntityList.clear();
-				
-				ParseInfos();
 			}
 			
-			private void ParseMob( const TheNomad::Engine::InfoParser@ in info ) {
-				m_MobInfos.emplace_back();
-				MobInfo& info = m_MobInfos.back();
-				
-				info.health = info.GetInt( "health" );
+			void OnLoad() {
 			}
-			
-			private void ParseInfos() {
-				const array<string>& infoFiles = TheNomad::Engine::ModuleManager.GetInfoFiles();
-				
-				ConsolePrint( "Parsing info files...\n" );
-				for ( int i = 0; i < infoFiles.size(); i++ ) {
-					ConsolePrint( "Added '" + infoFiles[i] + "' to info data cache.\n" );
-					m_InfoData.AddInfoData( infoFiles[i] );
-				}
+			void OnSave() const {
+			}
+			const string& GetName() const {
+				return "EntityManager";
 			}
 			
 			private void SpawnMob( int nId, const vec3& in origin ) {
@@ -114,10 +101,13 @@ namespace TheNomad {
 				return m_EntityList;
 			}
 			
-			private TheNomad::Engine::InfoParser@ m_InfoData;
 			private array<EntityObject@> m_EntityList;
 		};
 		
 		EntitySystem@ EntityManager;
+		
+		void InitEntities() {
+			EntityManager = cast<EntitySystem>( TheNomad::GameSystem::AddSystem( EntitySystem() ) );
+		}
 	};
 };

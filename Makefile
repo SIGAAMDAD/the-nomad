@@ -282,6 +282,9 @@ SRC=\
 	$(O)/module_lib/module_handle.o \
 	$(O)/module_lib/module_renderlib.o \
 	$(O)/module_lib/module_funcdefs.o \
+	$(O)/module_lib/module_jit.o \
+	$(O)/module_lib/module_virtual_asm_linux.o \
+	$(O)/module_lib/module_virtual_asm_x64.o \
 	$(O)/module_lib/debugger.o \
 	$(O)/module_lib/scriptarray.o \
 	$(O)/module_lib/scriptbuilder.o \
@@ -289,6 +292,7 @@ SRC=\
 	$(O)/module_lib/scriptstdstring.o \
 	$(O)/module_lib/scriptstdstring_utils.o \
 	$(O)/module_lib/scriptmath.o \
+	$(O)/module_lib/scripthandle.o \
 	$(O)/module_lib/contextmgr.o \
 	\
 	$(O)/engine/n_common.o \

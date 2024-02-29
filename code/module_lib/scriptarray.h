@@ -92,6 +92,7 @@ public:
 
 	// Return the address of internal buffer for direct manipulation of elements
 	void *GetBuffer();
+	const void *GetBuffer( void ) const;
 
 	// GC methods
 	int  GetRefCount();

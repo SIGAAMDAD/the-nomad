@@ -203,17 +203,13 @@ bool CModuleLib::AddDefaultProcs( void ) const {
         return true;
     }
 
-    RegisterStdString( g_pModuleLib->GetScriptEngine() );
-    RegisterScriptArray( g_pModuleLib->GetScriptEngine(), true );
-    RegisterScriptDictionary( g_pModuleLib->GetScriptEngine() );
-    RegisterScriptMath( g_pModuleLib->GetScriptEngine() );
+    RegisterStdString( m_pEngine );
+    RegisterScriptArray( m_pEngine, true );
+    RegisterScriptDictionary( m_pEngine );
+    RegisterScriptMath( m_pEngine );
+    RegisterScriptHandle( m_pEngine );
 
     ModuleLib_Register_Engine();
-    ModuleLib_Register_Cvar();
-    ModuleLib_Register_RenderEngine();
-    ModuleLib_Register_FileSystem();
-    ModuleLib_Register_SoundSystem();
-
     const_cast<CModuleLib *>( this )->m_bRegistered = qtrue;
 
     return true;

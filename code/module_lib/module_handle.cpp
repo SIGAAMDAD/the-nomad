@@ -1,4 +1,5 @@
 #include "module_public.h"
+#include "module_alloc.h"
 #include "module_handle.h"
 #include "angelscript/as_bytecode.h"
 
@@ -50,9 +51,17 @@ CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sou
         LoadSourceFile( it );
     }
 
+#ifdef MODULE_USE_JIT
+    for ( uint32_t i = 0; i < m_pScriptModule->GetFunctionCount(); i++ ) {
+        if ( ( error = compiler->CompileFunction( m_pScriptModule->GetFunctionByIndex( i ) ) ) != asSUCCESS ) {
+            N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: failed to build module '%s' -- %s", pName, AS_PrintErrorString( error ) );
+        }
+    }
+#else
     if ( ( error = g_pModuleLib->GetScriptBuilder()->BuildModule() ) != asSUCCESS ) {
         N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: failed to build module '%s' -- %s", pName, AS_PrintErrorString( error ) );
     }
+#endif
 
     m_pScriptContext = g_pModuleLib->GetScriptEngine()->CreateContext();
     InitCalls();

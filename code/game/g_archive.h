@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "../module_lib/module_public.h"
+
 typedef struct {
     char mapName[MAX_GDR_PATH];
     gamedif_t diff;
@@ -114,7 +116,9 @@ public:
     void SaveVec3( const char *name, const vec3_t data );
     void SaveVec4( const char *name, const vec4_t data );
 
-    void SaveString( const char *name, const char *data );
+    void SaveCString( const char *name, const char *data );
+    void SaveString( const char *name, const string_t *pData );
+    void SaveArray( const char *name, const CScriptArray *pData );
 
     float LoadFloat( const char *name, nhandle_t hSection );
 
@@ -132,7 +136,10 @@ public:
     void LoadVec3( const char *name, vec3_t data, nhandle_t hSection );
     void LoadVec4( const char *name, vec4_t data, nhandle_t hSection );
 
-    void LoadString( const char *name, char *pBuffer, int32_t maxLength, nhandle_t hSection );
+    void LoadCString( const char *name, char *pBuffer, int32_t maxLength, nhandle_t hSection );
+    void LoadString( const char *name, string_t *pString, nhandle_t hSection );
+
+    void LoadArray( const char *name, CScriptArray *pData, nhandle_t hSection );
 
     bool Load( const char *filename );
     bool Save( void );

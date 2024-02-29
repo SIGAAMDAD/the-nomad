@@ -930,6 +930,10 @@ void *CScriptArray::GetBuffer()
 	return buffer->data;
 }
 
+const void *CScriptArray::GetBuffer( void ) const {
+	return buffer->data;
+}
+
 
 // internal
 void CScriptArray::CreateBuffer(SArrayBuffer **buf, asUINT numElements)

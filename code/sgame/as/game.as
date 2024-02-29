@@ -1,5 +1,6 @@
 #include "entity.as"
 #include "level.as"
+#include "convar.as"
 
 namespace TheNomad {
 	namespace GameSystem {
@@ -21,19 +22,32 @@ namespace TheNomad {
 			CampaignManager() {
 			}
 			
+			const string& GetName() const {
+				return "CampaignManager";
+			}
+			
 			void OnLoad() {
 				int hSection;
 				int numEntities;
 				
 				hSection = FindArchiveSection( "GameData" );
-				if ( hSection == TheNomad::Engine::InvalidHandle ) {
+				if ( hSection == TheNomad::Constants::InvalidHandle ) {
 					return;
 				}
+			}
+			void OnSave() const {
+				const TheNomad::SGame::EntityObject@ ent;
 				
-				GetInt( "entityCount" );
+				BeginSaveSection( "GameData" );
+				
+				SaveArray( "soundBits", m_SoundBits );
+				SaveInt( "difficulty", m_Difficulty );
+				
+				EndSaveSection();
 			}
 			
-			void OnSave() const {
+			const array<int>& GetSoundBits() const {
+				return m_SoundBits;
 			}
 			
 			TheNomad::SGame::EntityObject@ CreateEntity( TheNomad::SGame::EntityType nEntityType ) {
@@ -42,12 +56,19 @@ namespace TheNomad {
 				return entityRef;
 			}
 			
-			private array<TheNomad::SGame::EntityObject@> m_EntityList;
+			private array<int> m_SoundBits;
+			private LevelData@ m_Level;
+			private MapData@ m_MapData;
 		};
+		
+		CampaignManager@ Game;
+		ConVar@ sg_difficulty;
 		
 		void Init() {
 			Game = cast<CampaignManager>( AddGameSystem( CampaignManager() ) );
 			Game.OnLoad();
+			
+			sg_difficulty = ConVar( "sg_difficulty", "2", , );
 		}
 	};
 };
