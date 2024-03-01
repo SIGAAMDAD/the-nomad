@@ -150,22 +150,21 @@ qboolean Sys_LowPhysicalMemory( void )
 #endif
 }
 
-typedef struct
-{
+typedef struct {
     uint32_t id;
     qboolean safe;
     const char *str;
 } exittype_t;
 
 static const exittype_t signals[] = {
-    {SIGSEGV,  qfalse, "segmentation violation"},
-    {SIGBUS,   qfalse, "bus error"},
-    {SIGABRT,  qfalse, "abnormal program termination"},
-    {SIGSTOP,  qtrue,  "pausing program"},
-    {SIGTERM,  qtrue,  "program termination"},
-    {SIGILL,   qtrue,  "illegal instruction"},
-    {SIGTRAP,  qtrue,  "debug breakpoint"},
-    {0,        qtrue,  "No System Error"}
+    { SIGSEGV,  qfalse, "segmentation violation" },
+    { SIGBUS,   qfalse, "bus error" },
+    { SIGABRT,  qfalse, "abnormal program termination" },
+    { SIGSTOP,  qtrue,  "pausing program" },
+    { SIGTERM,  qtrue,  "program termination" },
+    { SIGILL,   qtrue,  "illegal instruction" },
+    { SIGTRAP,  qtrue,  "debug breakpoint" },
+    { 0,        qtrue,  "No System Error "}
 };
 
 static const exittype_t *exit_type;

@@ -38,10 +38,11 @@ enum : uint64_t
 class CModuleHandle
 {
 public:
-    CModuleHandle( const char *pName, const UtlVector<UtlString>& sourceFiles );
+    CModuleHandle( const char *pName, const UtlVector<UtlString>& sourceFiles, int32_t moduleVersionMajor );
     ~CModuleHandle();
 
     void SaveToCache( void ) const;
+	bool LoadFromCache( void );
 
     void ClearMemory( void );
     asIScriptContext *GetContext( void );
@@ -64,8 +65,9 @@ private:
     UtlString m_szName;
     asIScriptContext *m_pScriptContext;
     asIScriptModule *m_pScriptModule;
-	asCJITCompiler *m_pCompiler;
 	UtlVector<asJITFunction> m_Functions;
+
+	int32_t m_nVersion;
 };
 
 class CModuleContextHandle : public asIScriptContext
@@ -171,10 +173,14 @@ protected:
 class CModuleCacheHandle : public asIBinaryStream
 {
 public:
+	CModuleCacheHandle( const char *path, fileMode_t mode );
+
 	virtual int Read( void *pBuffer, asUINT nBytes ) override;
 	virtual int Write( const void *pBuffer, asUINT nBytes ) override;
 
 	virtual ~CModuleCacheHandle() override;
+private:
+	fileHandle_t m_hFile;
 };
 
 #endif

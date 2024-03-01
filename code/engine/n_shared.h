@@ -952,6 +952,15 @@ typedef enum {
     R_VULKAN
 } renderapi_t;
 
+#ifdef _WIN32
+	#define alloca( x ) _alloca( (x) )
+	#define alloca16( x ) ((void *)((((uintptr_t)_alloca( (x)+15 )) + 15) & ~15))
+#else
+	#define alloca16( x ) ((void *)((((uintptr_t)alloca( (x)+15 )) + 15) & ~15))
+#endif
+
+#define CreateStackObject( obj, ... ) new ( (obj *)alloca16( sizeof( obj ) ) ) obj( __VA_ARGS__ )
+
 #define BUTTON_WALKING		1
 #define BUTTON_ATTACK		2
 #define	BUTTON_ANY			2048			// any key whatsoever

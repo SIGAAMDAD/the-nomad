@@ -106,6 +106,7 @@ using string_t = eastl::string;
 #include "scriptmath.h"
 #include "scripthandle.h"
 #include "contextmgr.h"
+#include "module_jit.h"
 
 #include "../game/g_archive.h"
 
@@ -276,6 +277,8 @@ private:
 
     qboolean m_bRegistered;
 
+    asCJITCompiler *m_pCompiler;
+
     CModuleHandle *m_pCurrentHandle;
 };
 
@@ -287,5 +290,8 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
 extern CModuleLib *g_pModuleLib;
 
 extern cvar_t *ml_debugMode;
+extern cvar_t *ml_angelScript_DebugPrint;
+extern cvar_t *ml_alwaysCompile;
+extern cvar_t *ml_allowJIT;
 
 #endif

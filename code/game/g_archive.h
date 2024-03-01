@@ -40,13 +40,20 @@ typedef struct {
 
 #pragma pack( push, 1 )
 // version, 64 bits
-typedef union {
+typedef union version_s {
 	struct {
 		uint16_t m_nVersionMajor;
 		uint16_t m_nVersionUpdate;
 		uint32_t m_nVersionPatch;
 	};
 	uint64_t m_nVersion;
+
+    bool operator==( const version_s& other ) const {
+        return m_nVersion == other.m_nVersion;
+    }
+    bool operator!=( const version_s& other ) const {
+        return m_nVersion != other.m_nVersion;
+    }
 } version_t;
 
 typedef struct

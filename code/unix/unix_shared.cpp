@@ -364,38 +364,25 @@ uint64_t Sys_Milliseconds(void)
     return curtime;
 }
 
-uint64_t Sys_EventSubtime(uint64_t time)
+uint64_t Sys_EventSubtime( uint64_t time )
 {
     uint64_t ret, t, test;
 
-	ret = com_frameTime - (uint64_t)(sys_timeBase * 1000);
+	ret = com_frameTime - (uint64_t)( sys_timeBase * 1000 );
     t = Sys_Milliseconds();
     test = t - ret;
 
-    if (test < 0 || test > 30) {
+    if ( test < 0 || test > 30 ) {
         return t;
     }
 
     return ret;
 }
 
-#define MEMOPTION_MAKEHOT   0 // memory will be accessed most frames
-#define MEMOPTION_MAKECOLD  1 // memory will be accessed rarely, most likely only in init stage
-
-void Sys_SetMemoryOptions( void *pAddress, uint64_t nBytes, int options )
+void Sys_LockMemory( void *pAddress, uint64_t nBytes )
 {
-    int rOption;
-    switch ( options ) {
-    case MEMOPTION_MAKECOLD:
-        rOption = POSIX_MADV_DONTNEED;
-        break;
-    case MEMOPTION_MAKEHOT:
-        rOption = POSIX_MADV_WILLNEED;
-        break;
-    };
-
-    if ( posix_madvise( pAddress, nBytes, rOption ) == -1 ) {
-        N_Error( ERR_FATAL, "Sys_SetMemoryOptions: posix_madvise failed, errno: %s", Sys_GetError() );
+    if ( mprotect( pAddress, nBytes, PROT_READ ) == -1 ) {
+        N_Error( ERR_FATAL, "Sys_LockMemory: mprotect failed!" );
     }
 }
 

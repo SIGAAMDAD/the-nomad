@@ -4,7 +4,7 @@
 
 namespace TheNomad {
 	namespace Engine {
-		shared const int InvalidHandle = FS_INVALID_HANDLE;
+//		const int InvalidHandle = FS_INVALID_HANDLE;
 	};
 	namespace GameSystem {
 		shared class GameObject {
@@ -36,7 +36,7 @@ namespace TheNomad {
 				int numEntities;
 
 //				hSection = FindArchiveSection( "GameData" );
-				if ( hSection == TheNomad::Engine::InvalidHandle ) {
+				if ( hSection == FS_INVALID_HANDLE ) {
 					return;
 				}
 			}

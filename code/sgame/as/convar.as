@@ -70,7 +70,7 @@ namespace TheNomad {
 //		}
 		
 		void ListVars_f() {
-//			uint i;
+			uint i;
 //			ConsolePrint( "VM " + ModuleInfo.GetName() + " cvars:\n" );
 			
 //			for ( i = 0; i < m_CvarCache.size(); i++ ) {

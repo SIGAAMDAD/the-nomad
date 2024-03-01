@@ -13,6 +13,9 @@
 moduleImport_t moduleImport;
 
 cvar_t *ml_angelScript_DebugPrint;
+cvar_t *ml_debugMode;
+cvar_t *ml_alwaysCompile;
+cvar_t *ml_allowJIT;
 
 static CDebugger *s_pDebugger;
 
@@ -123,7 +126,7 @@ void CModuleLib::LoadModule( const char *pModule )
         submodules.emplace_back( eastl::move( it.get<std::string>().c_str() ) );
     }
 
-    pHandle = CreateObject<CModuleHandle>( pModule, submodules );
+    pHandle = CreateObject<CModuleHandle>( pModule, submodules, parse[ "version" ][ "mod_version_major" ].get<int32_t>() );
     m = CreateObject<CModuleInfo>( parse, pHandle );
     m_LoadList.emplace_back( m );
 }
@@ -166,6 +169,9 @@ void Module_ASMessage_f( const asSMessageInfo *pMsg, void *param )
         Con_Printf( COLOR_YELLOW "WARNING: [AngelScript](%s:%i:%i) %s\n", pMsg->section, pMsg->row, pMsg->col, pMsg->message );
         break;
     case asMSGTYPE_INFORMATION:
+        if ( !ml_angelScript_DebugPrint->i ) {
+            return;
+        }
         Con_Printf( "[AngelScript](%s:%i:%i) %s\n", pMsg->section, pMsg->row, pMsg->col, pMsg->message );
         break;
     };
@@ -199,7 +205,9 @@ int Module_IncludeCallback_f( const char *pInclude, const char *pFrom, CScriptBu
     path = va( "%s%s", g_pModuleLib->GetCurrentHandle()->GetModulePath(), pInclude );
     length = FS_LoadFile( path, &f.v );
     if ( !length || !f.v ) {
-        Con_Printf( COLOR_YELLOW "WARNING: failed to load include preprocessor file '%s'!\n", path );
+        g_pModuleLib->GetScriptEngine()->WriteMessage(
+            g_pModuleLib->GetCurrentHandle()->GetModulePath(),
+            0, 0, asMSGTYPE_WARNING, va( "failed to load include preprocessor file \"%s\"", path ) );
         return -1;
     }
     pBuilder->AddSectionFromMemory( COM_SkipPath( const_cast<char *>( pInclude ) ), f.b, length );
@@ -246,16 +254,18 @@ CModuleLib::CModuleLib( void )
     }
     CheckASCall( m_pEngine->SetMessageCallback( asFUNCTION( Module_ASMessage_f ), NULL, asCALL_CDECL ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_ALLOW_MULTILINE_STRINGS, true ) );
-    CheckASCall( m_pEngine->SetEngineProperty( asEP_ALLOW_UNSAFE_REFERENCES, true ) );
+    CheckASCall( m_pEngine->SetEngineProperty( asEP_ALLOW_UNSAFE_REFERENCES, false ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_ALWAYS_IMPL_DEFAULT_CONSTRUCT, false ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_COMPILER_WARNINGS, true ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_OPTIMIZE_BYTECODE, true ) );
 
-    m_pScriptBuilder = new CScriptBuilder();
-//    m_pContextManager = new CContextMgr();
+    m_pScriptBuilder = CreateObject<CScriptBuilder>();
+    s_pDebugger = CreateObject<CDebugger>();
 
-    s_pDebugger = new CDebugger();
-
+    if ( ml_allowJIT->i ) {
+        m_pCompiler = CreateObject<asCJITCompiler>();
+        CheckASCall( m_pEngine->SetJITCompiler( m_pCompiler ) );
+    }
     m_pScriptBuilder->SetIncludeCallback( Module_IncludeCallback_f, NULL );
 
     //
@@ -289,9 +299,11 @@ CModuleLib::~CModuleLib()
         DeleteObject( it );
     }
 
-    delete m_pScriptBuilder;
-//    delete m_pContextManager;
-    delete s_pDebugger;
+    if ( m_pCompiler ) {
+        DeleteObject<asCJITCompiler>( m_pCompiler );
+    }
+    DeleteObject<CScriptBuilder>( m_pScriptBuilder );
+    DeleteObject<CDebugger>( s_pDebugger );
 }
 
 CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *pExport, version_t nGameVersion )
@@ -301,13 +313,20 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
     //
     // init cvars
     //
-    ml_angelScript_DebugPrint = Cvar_Get( "ml_angelScript_DebugPrint", "0", CVAR_LATCH | CVAR_PRIVATE );
+    ml_angelScript_DebugPrint = Cvar_Get( "ml_angelScript_DebugPrint", "1", CVAR_LATCH | CVAR_PRIVATE | CVAR_SAVE );
+    Cvar_SetDescription( ml_angelScript_DebugPrint, "Set to 1 if you want verbose AngelScript API logging" );
+    ml_alwaysCompile = Cvar_Get( "ml_alwaysCompile", "0", CVAR_INIT | CVAR_PRIVATE | CVAR_SAVE );
+    Cvar_SetDescription( ml_alwaysCompile, "Toggle forced compilation of a module every time the game loads as opposed to using cached bytecode" );
+    ml_allowJIT = Cvar_Get( "ml_allowJIT", "1", CVAR_LATCH | CVAR_PRIVATE | CVAR_SAVE );
+    Cvar_SetDescription( ml_allowJIT, "Toggle JIT compilation of a module" );
+    ml_debugMode = Cvar_Get( "ml_debugMode", "0", CVAR_LATCH | CVAR_TEMP );
+    Cvar_SetDescription( ml_debugMode, "Set to 1 whenever a module is being debugged" );
 
     // init memory manager
     Mem_Init();
     asSetGlobalMemoryFunctions( asAlloc, asFree );
 
-    g_pModuleLib = new CModuleLib();
+    g_pModuleLib = CreateObject<CModuleLib>();
 
     return g_pModuleLib;
 }
@@ -317,7 +336,7 @@ void CModuleLib::Shutdown( void )
     Con_Printf( "CModuleLib::Shutdown: shutting down modules...\n" );
 
     m_pEngine->ShutDownAndRelease();
-    delete g_pModuleLib;
+    DeleteObject<CModuleLib>( g_pModuleLib );
 
     Mem_Shutdown();
 }

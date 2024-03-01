@@ -21,8 +21,8 @@ static const char *funcNames[NumFuncs] = {
     "ModuleRewindToLastCheckpoint"
 };
 
-CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sourceFiles )
-    : m_szName( pName ), m_pScriptContext( NULL ), m_pScriptModule( NULL )
+CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sourceFiles, int32_t modVersionMajor )
+    : m_szName( pName ), m_pScriptContext( NULL ), m_pScriptModule( NULL ), m_nVersion{ modVersionMajor }
 {
     int error;
 
@@ -36,36 +36,30 @@ CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sou
     }
 
     // add standard definitions
-    g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define NOMAD_VERSION %u", _NOMAD_VERSION ) );
-    g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define NOMAD_VERSION_UPDATE %u", _NOMAD_VERSION_UPDATE ) );
-    g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define NOMAD_VERSION_PATCH %u", _NOMAD_VERSION_PATCH ) );
     g_pModuleLib->SetHandle( this );
-
     g_pModuleLib->AddDefaultProcs();
 
     m_pScriptModule = g_pModuleLib->GetScriptEngine()->GetModule( pName, asGM_CREATE_IF_NOT_EXISTS );
     if ( !m_pScriptModule ) {
-        N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: GetModule() failed\n" );
+        N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: GetModule() failed on \"%s\"\n", pName );
     }
 
-    for ( const auto& it : sourceFiles ) {
-        LoadSourceFile( it );
-    }
-
-#ifdef MODULE_USE_JIT
-    for ( uint32_t i = 0; i < m_pScriptModule->GetFunctionCount(); i++ ) {
-        if ( ( error = compiler->CompileFunction( m_pScriptModule->GetFunctionByIndex( i ) ) ) != asSUCCESS ) {
-            N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: failed to build module '%s' -- %s", pName, AS_PrintErrorString( error ) );
+    if ( LoadFromCache() ) {
+        Con_Printf( "Loaded module bytecode from cache.\n" );
+    } else {
+        for ( const auto& it : sourceFiles ) {
+            LoadSourceFile( it );
         }
     }
-#else
+
     if ( ( error = g_pModuleLib->GetScriptBuilder()->BuildModule() ) != asSUCCESS ) {
         N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: failed to build module '%s' -- %s", pName, AS_PrintErrorString( error ) );
     }
-#endif
 
     m_pScriptContext = g_pModuleLib->GetScriptEngine()->CreateContext();
     InitCalls();
+
+    SaveToCache();
 }
 
 CModuleHandle::~CModuleHandle() {
@@ -176,12 +170,75 @@ void CModuleHandle::LoadSourceFile( const UtlString& filename )
     FS_FreeFile( f.v );
 }
 
-void CModuleHandle::SaveToCache( void ) const
-{
-    asIBinaryStream *dataStream;
+#define AS_CACHE_CODE_IDENT (('C'<<24)+('B'<<16)+('S'<<8)+'A')
 
-//    dataStream = new CModuleCacheHandle;
-///    m_pScriptModule->SaveByteCode( dataStream, ml_debugMode->i );
+typedef struct {
+    int64_t ident;
+    version_t gameVersion;
+    int32_t moduleVersion; // versionMajor
+    qboolean hasDebugSymbols;
+} asCodeCacheHeader_t;
+
+void CModuleHandle::SaveToCache( void ) const {
+    CModuleCacheHandle *dataStream;
+    const char *path;
+    asCodeCacheHeader_t header;
+
+    path = va( "%scache/bcode.dat", m_szName.c_str() );
+
+    dataStream = CreateStackObject( CModuleCacheHandle, path, FS_OPEN_READ );
+    Con_Printf( "Saving compiled module \"%s\" bytecode to \"%s\"...\n", m_szName.c_str(), path );
+
+    memset( &header, 0, sizeof(header) );
+    header.ident = AS_CACHE_CODE_IDENT;
+    header.gameVersion = version_t{ NOMAD_VERSION_FULL };
+    header.moduleVersion = m_nVersion;
+#ifdef _NOMAD_DEBUG
+    header.hasDebugSymbols = true;
+#else
+    header.hasDebugSymbols = ml_debugMode->i;
+#endif
+
+    dataStream->Write( &header, sizeof(header) );
+
+    CheckASCall( m_pScriptModule->SaveByteCode( dataStream, !header.hasDebugSymbols ) );
+}
+
+bool CModuleHandle::LoadFromCache( void ) {
+    CModuleCacheHandle *dataStream;
+    const char *path;
+    asCodeCacheHeader_t header;
+
+    if ( ml_alwaysCompile->i ) {
+        return false; // force recompilation
+    }
+
+    path = va( "%scache/bcode.dat", m_szName.c_str() );
+    if ( !FS_FileExists( path ) ) {
+        return false;
+    }
+
+    dataStream = CreateStackObject( CModuleCacheHandle, path, FS_OPEN_READ );
+    Con_Printf( "Loading compiled module \"%s\" bytecode from \"%s\"...\n", m_szName.c_str(), path );
+
+    dataStream->Read( &header, sizeof(header) );
+    if ( header.ident != AS_CACHE_CODE_IDENT ) {
+        Con_Printf( COLOR_RED "ERROR: invalid code cache file \"%s\", identifier is incorrect.\n", path );
+        return false;
+    }
+    if ( header.gameVersion != version_t{ NOMAD_VERSION_FULL } ) {
+        Con_Printf( COLOR_YELLOW
+            "WARNING: game version found in code cache file is different,"
+            "GDR Games is not responsible for an unstable experience.\n" );
+    }
+    if ( header.moduleVersion != m_nVersion ) {
+        Con_Printf( "Module version found in code cache file isn't the same as the one loaded, recompiling.\n" );
+        return false;
+    }
+
+    CheckASCall( m_pScriptModule->LoadByteCode( dataStream, NULL ) );
+
+    return true;
 }
 
 /*
@@ -194,8 +251,6 @@ void CModuleHandle::ClearMemory( void )
     }
 
     Con_Printf( "CModuleHandle::ClearMemory: clearing memory of '%s'...\n", m_szName.c_str() );
-
-    m_pScriptModule->ResetGlobalVars();
 }
 
 asIScriptContext *CModuleHandle::GetContext( void ) {
@@ -208,4 +263,33 @@ asIScriptModule *CModuleHandle::GetModule( void ) {
 
 const UtlString& CModuleHandle::GetName( void ) const {
     return m_szName;
+}
+
+CModuleCacheHandle::CModuleCacheHandle( const char *path, fileMode_t mode ) {
+    uint64_t nLength;
+
+    nLength = FS_FOpenFileWithMode( path, &m_hFile, mode );
+    if ( m_hFile == FS_INVALID_HANDLE ) {
+        N_Error( ERR_DROP, "CModuleCacheHande::CModuleCacheHandle: failed to open '%s'", path );
+    }
+}
+
+CModuleCacheHandle::~CModuleCacheHandle() {
+    FS_FClose( m_hFile );
+}
+
+int CModuleCacheHandle::Read( void *pBuffer, asUINT nBytes ) {
+    if ( !nBytes ) {
+        Assert( nBytes );
+        return 0;
+    }
+    return FS_Read( pBuffer, nBytes, m_hFile );
+}
+
+int CModuleCacheHandle::Write( const void *pBuffer, asUINT nBytes ) {
+    if ( !nBytes ) {
+        Assert( nBytes );
+        return 0;
+    }
+    return FS_Write( pBuffer, nBytes, m_hFile );
 }
