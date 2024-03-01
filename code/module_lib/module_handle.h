@@ -48,6 +48,8 @@ public:
     asIScriptModule *GetModule( void );
     const UtlString& GetName( void ) const;
 
+	const char *GetModulePath( void ) const;
+
     int CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pArgList );
 
     inline asIScriptFunction *GetFunction( EModuleFuncId nCallId ) {

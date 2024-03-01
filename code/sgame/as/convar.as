@@ -6,8 +6,7 @@ namespace TheNomad {
 	// its been put here. This is a shared object
 	// DO NOT MODIFY
 	//
-	shared class ConVar
-	{
+	shared class ConVar {
 		ConVar() {
 		}
 		ConVar( const string& in name, const string& in value, uint flags, bool bTrackChanges ) {
@@ -15,7 +14,7 @@ namespace TheNomad {
 			m_Value = value;
 			m_Flags = flags;
 			m_bTrackChanges = bTrackChanges;
-			Cvar_Register( name, value, flags, m_IntValue, m_FloatValue, m_nModificationCount, m_nCvarHandle );
+			Engine::CvarRegister( name, value, flags, m_IntValue, m_FloatValue, m_nModificationCount, m_nCvarHandle );
 		}
 		
 		void Register( const string& in name, const string& in value, uint flags, bool bTrackChanges ) {
@@ -23,7 +22,7 @@ namespace TheNomad {
 			m_Value = value;
 			m_Flags = flags;
 			m_bTrackChanges = bTrackChanges;
-			Cvar_Register( name, value, flags, m_IntValue, m_FloatValue, m_nModificationCount, m_nCvarHandle );
+			Engine::CvarRegister( name, value, flags, m_IntValue, m_FloatValue, m_nModificationCount, m_nCvarHandle );
 		}
 		
 		const string& GetName() const {
@@ -43,10 +42,10 @@ namespace TheNomad {
 		}
 		
 		void Set( const string& value ) {
-			Cvar_Set( m_Name, m_Value );
+			Engine::CvarSet( m_Name, value );
 		}
 		void Update() {
-			Cvar_Update( m_Name );
+			Engine::CvarUpdate( m_Name, m_Value, m_IntValue, m_FloatValue, m_nModificationCount, m_nCvarHandle );
 		}
 		
 		private string m_Name;
@@ -59,27 +58,45 @@ namespace TheNomad {
 		private bool m_bTrackChanges;
 	};
 	
-	class CvarSystem {
+	shared class CvarSystem : TheNomad::GameSystem::GameObject {
 		CvarSystem() {
-			TheNomad::Engine::CmdArgs::AddCommand( "sgame.list_cvars", this.ListVars_f );
+//			TheNomad::Engine::CmdArgs::AddCommand( "sgame.list_cvars", this.ListVars_f );
 		}
 		
 		ConVar@ AddCvar( const string& in name, const string& in value, uint flags, bool bTrackChanges ) {
 			ConVar@ var = ConVar( name, value, flags, bTrackChanges );
-			m_CvarCache.emplace_back( var );
+			m_CvarCache.push_back( var );
 			return var;
 		}
 		
 		void ListVars_f() {
-			ConsolePrint( "VM " + ModuleInfo.GetName() + " cvars:\n" );
+//			ConsolePrint( "VM " + ModuleInfo.GetName() + " cvars:\n" );
 			
-			for ( int i = 0; i < m_CvarCache.size(); i++ ) {
+			for ( uint i = 0; i < m_CvarCache.size(); i++ ) {
 				ConsolePrint( m_CvarCache[i].GetName() + " " + m_CvarCache[i].GetValue() );
 			}
 		}
+
+		void OnLoad() {
+
+		}
+		void OnSave() const {
+
+		}
+		void OnRunTic() {
+
+		}
+		void OnLevelStart() {
+
+		}
+		void OnLevelEnd() {
+
+		}
+		const string& GetName() const {
+			return "CvarSystem";
+		}
 		
 		void DrawCvarList() {
-			ImGui::Window window;
 		}
 		
 		private array<ConVar@> m_CvarCache;

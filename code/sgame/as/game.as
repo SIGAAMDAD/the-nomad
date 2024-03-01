@@ -1,29 +1,34 @@
-#include "entity.as"
-#include "level.as"
+//#include "entity.as"
+//#include "level.as"
 #include "convar.as"
 
 namespace TheNomad {
+	namespace Engine {
+		const int InvalidHandle = FS_INVALID_HANDLE;
+	};
 	namespace GameSystem {
-		array<GameObject@> GameSystems;
-		
-		interface GameObject {
-			void OnLoad();
-			void OnSave() const;
-			const string& GetName() const;
+		shared class GameObject {
+			void OnLoad() {
+			}
+			void OnSave() {
+			}
+			void OnRunTic() {
+			}
+			void OnLevelStart() {
+			}
+			void OnLevelEnd() {
+			}
+			const string& GetName() {
+				return "";
+			}
 		};
 		
-		shared GameObject@ AddGameSystem( GameObject@ SystemHandle ) {
-			ConsolePrint( "Registered game system '" + SystemHandle.GetName() "'\n" );
-			GameSystems.append( SystemHandle );
+		shared GameObject@ AddSystem( GameObject@ SystemHandle ) {
 			return SystemHandle;
 		}
 		
-		class CampaignManager : GameObject {
+		shared class CampaignManager : GameObject {
 			CampaignManager() {
-			}
-			
-			const string& GetName() const {
-				return "CampaignManager";
 			}
 			
 			void OnLoad() {
@@ -45,30 +50,36 @@ namespace TheNomad {
 				
 				EndSaveSection();
 			}
+			void OnRunTic() {
+
+			}
+			void OnLevelStart() {
+
+			}
+			void OnLevelEnd() {
+
+			}
+			const string& GetName() const {
+				return "CampaignManager";
+			}
 			
 			const array<int>& GetSoundBits() const {
 				return m_SoundBits;
 			}
 			
-			TheNomad::SGame::EntityObject@ CreateEntity( TheNomad::SGame::EntityType nEntityType ) {
-				TheNomad::SGame::EntityObject@ entityRef = TheNomad::SGame::EntityObject();
-				m_EntityList.emplace_back( entityRef );
-				return entityRef;
-			}
-			
 			private array<int> m_SoundBits;
-			private LevelData@ m_Level;
-			private MapData@ m_MapData;
+//			private LevelData@ m_Level;
+//			private MapData@ m_MapData;
 		};
 		
 		CampaignManager@ Game;
 		ConVar@ sg_difficulty;
 		
 		void Init() {
-			Game = cast<CampaignManager>( AddGameSystem( CampaignManager() ) );
+			@Game = cast<CampaignManager>( AddSystem( CampaignManager() ) );
 			Game.OnLoad();
 			
-			sg_difficulty = ConVar( "sg_difficulty", "2", , );
+//			sg_difficulty = ConVar( "sg_difficulty", "2", , );
 		}
 	};
 };

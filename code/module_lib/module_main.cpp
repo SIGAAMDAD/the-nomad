@@ -153,10 +153,14 @@ int CModuleLib::ModuleCall( CModuleInfo *pModule, EModuleFuncId nCallId, uint32_
 
 void Module_ASMessage_f( const asSMessageInfo *pMsg, void *param )
 {
+    bool error;
+
+    error = false;
     switch ( pMsg->type ) {
     case asMSGTYPE_ERROR:
         Con_Printf( COLOR_RED "ERROR: [AngelScript](%s:%i:%i) %s\n",
             pMsg->section, pMsg->row, pMsg->col, pMsg->message );
+        error = true;
         break;
     case asMSGTYPE_WARNING:
         Con_Printf( COLOR_YELLOW "WARNING: [AngelScript](%s:%i:%i) %s\n", pMsg->section, pMsg->row, pMsg->col, pMsg->message );
@@ -165,6 +169,14 @@ void Module_ASMessage_f( const asSMessageInfo *pMsg, void *param )
         Con_Printf( "[AngelScript](%s:%i:%i) %s\n", pMsg->section, pMsg->row, pMsg->col, pMsg->message );
         break;
     };
+
+    if ( error ) {
+        Sys_MessageBox( "*** ERROR DURING MODULE COMPILATION ***",
+            va( "An error occurred during the compilation of a module section\n"
+                "%s:%i:%i %s"
+            , pMsg->section, pMsg->row, pMsg->col, pMsg->message ),
+            false );
+    }
 }
 
 void *asAlloc( size_t nBytes ) {
@@ -182,16 +194,18 @@ int Module_IncludeCallback_f( const char *pInclude, const char *pFrom, CScriptBu
         char *b;
     } f;
     uint64_t length;
+    const char *path;
 
-    length = FS_LoadFile( pInclude, &f.v );
+    path = va( "%s%s", g_pModuleLib->GetCurrentHandle()->GetModulePath(), pInclude );
+    length = FS_LoadFile( path, &f.v );
     if ( !length || !f.v ) {
-        Con_Printf( COLOR_YELLOW "WARNING: failed to load include preprocessor file '%s'!\n", pInclude );
+        Con_Printf( COLOR_YELLOW "WARNING: failed to load include preprocessor file '%s'!\n", path );
         return -1;
     }
-    pBuilder->AddSectionFromMemory( pInclude, f.b, length );
+    pBuilder->AddSectionFromMemory( COM_SkipPath( const_cast<char *>( pInclude ) ), f.b, length );
     FS_FreeFile( f.v );
 
-    Con_Printf( "Added include file '%s' to '%s'\n", pInclude, pFrom );
+    Con_Printf( "Added include file '%s' to '%s'\n", path, pFrom );
 
     (void)unused; // shut up compiler
 

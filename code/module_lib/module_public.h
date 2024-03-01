@@ -255,6 +255,13 @@ public:
     void RegisterCvar( const UtlString& name, const UtlString& value, uint32_t flags, bool trackChanges, uint32_t privateFlag );
     bool AddDefaultProcs( void ) const;
 
+    void SetHandle( CModuleHandle *pHandle ) {
+        m_pCurrentHandle = pHandle;
+    }
+    const CModuleHandle *GetCurrentHandle( void ) const {
+        return m_pCurrentHandle;
+    }
+
     UtlVector<UtlString> m_RegisteredProcs;
 private:
 	void LoadModule( const char *pModuleName );
@@ -268,6 +275,8 @@ private:
     UtlStringHashTable<vmCvar_t> m_CvarList;
 
     qboolean m_bRegistered;
+
+    CModuleHandle *m_pCurrentHandle;
 };
 
 extern moduleImport_t moduleImport;

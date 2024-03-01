@@ -39,6 +39,7 @@ CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sou
     g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define NOMAD_VERSION %u", _NOMAD_VERSION ) );
     g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define NOMAD_VERSION_UPDATE %u", _NOMAD_VERSION_UPDATE ) );
     g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define NOMAD_VERSION_PATCH %u", _NOMAD_VERSION_PATCH ) );
+    g_pModuleLib->SetHandle( this );
 
     g_pModuleLib->AddDefaultProcs();
 
@@ -69,6 +70,10 @@ CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sou
 
 CModuleHandle::~CModuleHandle() {
     ClearMemory();
+}
+
+const char *CModuleHandle::GetModulePath( void ) const {
+    return va( "modules/%s/", m_szName.c_str() );
 }
 
 void LogExceptionInfo( asIScriptContext *pContext )
@@ -158,7 +163,7 @@ void CModuleHandle::LoadSourceFile( const UtlString& filename )
     int retn;
     uint64_t length;
 
-    length = FS_LoadFile( filename.c_str(), &f.v );
+    length = FS_LoadFile( va( "modules/%s/%s", m_szName.c_str(), filename.c_str() ), &f.v );
     if ( !f.v ) {
         N_Error( ERR_DROP, "CModuleHandle::LoadSourceFile: failed to load source file '%s'", filename.c_str() );
     }
