@@ -37,6 +37,8 @@
 
 #include <math.h> // fmodf() pow()
 
+#include "../engine/n_shared.h"
+
 #include "as_config.h"
 
 #ifndef AS_NO_COMPILER

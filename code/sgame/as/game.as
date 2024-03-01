@@ -4,7 +4,7 @@
 
 namespace TheNomad {
 	namespace Engine {
-		const int InvalidHandle = FS_INVALID_HANDLE;
+		shared const int InvalidHandle = FS_INVALID_HANDLE;
 	};
 	namespace GameSystem {
 		shared class GameObject {
@@ -19,7 +19,7 @@ namespace TheNomad {
 			void OnLevelEnd() {
 			}
 			const string& GetName() {
-				return "";
+				return " ";
 			}
 		};
 		
@@ -34,19 +34,17 @@ namespace TheNomad {
 			void OnLoad() {
 				int hSection;
 				int numEntities;
-				
-				hSection = FindArchiveSection( "GameData" );
-				if ( hSection == TheNomad::Constants::InvalidHandle ) {
+
+//				hSection = FindArchiveSection( "GameData" );
+				if ( hSection == TheNomad::Engine::InvalidHandle ) {
 					return;
 				}
 			}
 			void OnSave() const {
-				const TheNomad::SGame::EntityObject@ ent;
-				
 				BeginSaveSection( "GameData" );
 				
-				SaveArray( "soundBits", m_SoundBits );
-				SaveInt( "difficulty", m_Difficulty );
+//				SaveArray( "soundBits", m_SoundBits );
+//				SaveInt( "difficulty", m_Difficulty );
 				
 				EndSaveSection();
 			}

@@ -798,32 +798,6 @@ void ModuleLib_Register_Engine( void )
 {
 //    SET_NAMESPACE( "TheNomad::Constants" );
     { // Constants
-        g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define S_COLOR_BLACK '%c'", S_COLOR_BLACK ) );
-        g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define S_COLOR_RED '%c'", S_COLOR_RED ) );
-        g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define S_COLOR_GREEN '%c'", S_COLOR_GREEN ) );
-        g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define S_COLOR_YELLOW '%c'", S_COLOR_YELLOW ) );
-        g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define S_COLOR_BLUE '%c'", S_COLOR_BLUE ) );
-        g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define S_COLOR_CYAN '%c'", S_COLOR_CYAN ) );
-        g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define S_COLOR_MAGENTA '%c'", S_COLOR_MAGENTA ) );
-        g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define S_COLOR_WHITE '%c'", S_COLOR_WHITE ) );
-        g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define S_COLOR_RESET '%c'", S_COLOR_RESET ) );
-
-        g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define FS_INVALID_HANDLE %i", FS_INVALID_HANDLE ) );
-
-        g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define MAX_TOKEN_CHARS %u", MAX_TOKEN_CHARS ) );
-        g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define MAX_STRING_CHARS %u", MAX_STRING_CHARS ) );
-
-        g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define CVAR_SAVE %u", CVAR_SAVE ) );
-        g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define CVAR_CHEAT %u", CVAR_CHEAT ) );
-        g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define CVAR_INIT %u", CVAR_INIT ) );
-        g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define CVAR_LATCH %u", CVAR_LATCH ) );
-        g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define CVAR_NODEFAULT %u", CVAR_NODEFAULT ) );
-        g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define CVAR_TEMP %u", CVAR_TEMP ) );
-        g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define CVAR_NORESTART %u", CVAR_NORESTART ) );
-        g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define CVAR_NOTABCOMPLETE %u", CVAR_NOTABCOMPLETE ) );
-        g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define CVAR_ROM %u", CVAR_ROM ) );
-        g_pModuleLib->GetScriptBuilder()->DefineWord( va( "#define CVAR_USERINFO %u", CVAR_USERINFO ) );
-
         REGISTER_GLOBAL_VAR( "const int32 FS_INVALID_HANDLE", &script_FS_INVALID_HANDLE );
     }
 

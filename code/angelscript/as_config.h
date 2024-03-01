@@ -364,6 +364,8 @@
 // Detect compiler
 //------------------------------------------------
 
+#include "../engine/n_debug.h"
+
 
 #define VALUE_OF_BOOLEAN_TRUE  1
 #define STDCALL_RETURN_SIMPLE_IN_MEMORY_MIN_SIZE 0
@@ -1337,7 +1339,7 @@
 	#endif
 #else
 	#include <assert.h>
-	#define asASSERT(x) assert(x)
+	#define asASSERT(x) Assert(x)
 #endif
 
 
