@@ -818,11 +818,11 @@ int main( int argc, char **argv )
 
     Sys_Init();
     
-    Com_Init(cmdline);
+    Com_Init( cmdline );
 
 	while (1) {
 		// run the game
-		Com_Frame(qfalse);
+		Com_Frame( qfalse );
 	}
 	// never gets here
 	return 0;

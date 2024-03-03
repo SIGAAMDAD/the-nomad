@@ -33,6 +33,7 @@ public:
     ImFont *AddFontToCache( const char *filename );
     void Finalize( void );
     void SetActiveFont( ImFont *font );
+    uiFont_t *GetFont( const char *fileName );
 
     static void ListFonts_f( void );
 private:

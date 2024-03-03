@@ -74,6 +74,9 @@ typedef renderEntityType_t refEntityType_t;
 typedef renderEntityRef_t refEntity_t;
 typedef renderSceneRef_t refdef_t;
 
+#define LIGHTING_STATIC 0
+#define LIGHTING_DYNAMIC 1
+
 typedef enum {
 	AntiAlias_2xMSAA,
 	AntiAlias_4xMSAA,
@@ -94,6 +97,16 @@ typedef enum {
 
 	NumTexDetails
 } textureDetail_t;
+
+typedef enum {
+	GeomDetail_VeryLow,
+	GeomDetail_Low,
+	GeomDetail_Normal,
+	GeomDetail_High,
+	GeomDetail_VeryHigh,
+
+	NumGeomDetails
+} geometryDetail_t;
 
 typedef enum
 {							// [min, mag]

@@ -67,6 +67,7 @@ typedef struct
     qboolean noMenu; // do we just want the scenery?
 } mainmenu_t;
 
+ImFont *PressStart2P;
 static mainmenu_t menu;
 
 static const char *creditsString =
@@ -282,7 +283,7 @@ void MainMenu_Cache( void )
     menu.settingsString = strManager->ValueForKey( "MENU_MAIN_SETTINGS" );
     menu.spString = strManager->ValueForKey( "MENU_MAIN_SINGLEPLAYER" );
 
-    menu.font = FontCache()->AddFontToCache( "fonts/PressStart2P-Regular.ttf" );
+    PressStart2P = menu.font = FontCache()->AddFontToCache( "fonts/PressStart2P-Regular.ttf" );
     RobotoMono = FontCache()->AddFontToCache( "fonts/RobotoMono/RobotoMono-Bold.ttf" );
 
     menu.noMenu = qfalse;

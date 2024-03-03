@@ -56,6 +56,10 @@ void CUIFontCache::SetActiveFont( ImFont *font )
 	ImGui::PushFont( font );
 }
 
+uiFont_t *CUIFontCache::GetFont( const char *fileName ) {
+	return m_FontList[ Com_GenerateHashValue( fileName, MAX_UI_FONTS ) ];
+}
+
 void CUIFontCache::ClearCache( void ) {
 	ImGui::GetIO().Fonts->Clear();
 	memset( m_FontList, 0, sizeof(m_FontList) );

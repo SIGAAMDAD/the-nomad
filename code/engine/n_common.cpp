@@ -1620,13 +1620,13 @@ void Com_Init( char *commandLine )
 	// init commands and vars
 	//
 
-	if (com_devmode->i) {
-		Cmd_AddCommand("freeze", Com_Freeze_f);
-		Cmd_AddCommand("error", Com_Error_f);
-		Cmd_AddCommand("crash", Com_Crash_f);
+	if ( com_devmode->i ) {
+		Cmd_AddCommand( "freeze", Com_Freeze_f );
+		Cmd_AddCommand( "error", Com_Error_f );
+		Cmd_AddCommand( "crash", Com_Crash_f );
 	}
 
-	com_maxfps = Cvar_Get("com_maxfps", "60", CVAR_LATCH | CVAR_SAVE | CVAR_PROTECTED);
+	com_maxfps = Cvar_Get( "com_maxfps", "60", CVAR_LATCH | CVAR_SAVE | CVAR_PROTECTED );
 #ifdef USE_AFFINITY_MASK
 	com_affinityMask = Cvar_Get("com_affinityMask", "", CVAR_ARCHIVE_ND);
 	Cvar_SetDescription( com_affinityMask, "Bind game process to bitmask-specified CPU core(s), special characters:\n A or a - all default cores\n P or p - performance cores\n E or e - efficiency cores\n 0x<value> - use hexadecimal notation\n + or - can be used to add or exclude particular cores" );

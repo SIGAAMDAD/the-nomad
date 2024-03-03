@@ -9,6 +9,7 @@
 #include "../rendergl/ngl.h"
 #include "../rendercommon/imgui_impl_opengl3.h"
 #include <EASTL/array.h>
+#include "../rendercommon/imgui.h"
 
 #define RADIOBUTTON_STR(x) { "OFF##" #x, "ON##" #x };
 
@@ -70,7 +71,7 @@ typedef struct {
     uint32_t lighting;
     int32_t customWidth;
     int32_t customHeight;
-    uint32_t multisamplingIndex;
+    int32_t multisamplingIndex;
     uint32_t anisotropicFilteringTmp;
     uint32_t anisotropicFiltering;
     int32_t vsync;
@@ -117,6 +118,8 @@ typedef struct {
     qboolean paused; // did we get here from the pause menu?
     qboolean rebinding;
 
+    int32_t presetIndex;
+
     eastl::array<const char *, 2> fullscreenStr;
     eastl::array<const char *, 2> advancedGraphicsStr;
     eastl::array<const char *, 2> useExtensionsStr;
@@ -128,8 +131,15 @@ typedef struct {
     graphics_t *presets;
 
     menustate_t lastChild;
+
+    qboolean showGPUDriverInfo;
+
+    int totalGPUMemory;
+    int availableGPUMemory;
 } settingsmenu_t;
 
+extern ImFont *PressStart2P;
+extern ImFont *RobotoMono;
 static initialSettings_t initial;
 static settingsmenu_t settings;
 
@@ -803,6 +813,13 @@ static GDR_INLINE void SettingsMenu_ExitChild( menustate_t childstate )
 static void SettingsMenuGraphics_Draw( void )
 {
     uint64_t i;
+    static const char *presetTitles[NUM_PRESETS] = {
+        "Low",
+        "Normal",
+        "High",
+        "Ultra High Quality",
+        "Performance"
+    };
 
     SettingsMenu_ExitChild( STATE_GRAPHICS );
     if ( ui->GetState() != STATE_GRAPHICS ) {
@@ -812,18 +829,61 @@ static void SettingsMenuGraphics_Draw( void )
     ImGui::BeginTable( "##GraphicsSettings", 2 );
     {
         const char *vidMode;
+
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted( "Quality Preset" );
+        ImGui::TableNextColumn();
+        if ( ImGui::BeginCombo( "##GPUQualityPreset", settings.presetIndex != -1 ? presetTitles[ settings.presetIndex ] : "Custom" ) ) {
+            for ( i = 0; i < NUM_PRESETS; i++ ) {
+                if ( ImGui::Selectable( presetTitles[i], ( settings.presetIndex == i ) ) ) {
+                    settings.presetIndex = i;
+                    memcpy( &settings.gfx, &settings.presets[i], sizeof( *settings.presets ) );
+                }
+            }
+            if ( ImGui::Selectable( "Custom", ( settings.presetIndex == -1 ) ) ) {
+                settings.presetIndex = -1;
+            }
+            ImGui::EndCombo();
+        }
+
+        ImGui::TableNextRow();
+        ImGui::TableNextRow();
+
+        ImGui::TableNextRow();
+
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Anti-Aliasing" );
         ImGui::TableNextColumn();
 
-        if (ImGui::BeginMenu( antialiasSettings[ settings.gfx.multisamplingIndex ].label )) {
-            for (uint32_t a = 0; a < arraylen(antialiasSettings); a++) {
-                if (ImGui::MenuItem( antialiasSettings[a].label )) {
-                    settings.gfx.multisamplingIndex = a;
-                    ui->PlaySelected();
-                }
-            }
-            ImGui::EndMenu();
+        if ( ImGui::ArrowButton( "##ANTIALIASLEFT", ImGuiDir_Left ) ) {
+            switch ( settings.gfx.multisamplingIndex ) {
+            case -1:
+                settings.gfx.multisamplingIndex = AntiAlias_DSSAA;
+                break;
+            default:
+                settings.gfx.multisamplingIndex--;
+                break;
+            };
+            settings.presetIndex = -1;
+            ui->PlaySelected();
+        }
+        ImGui::SameLine();
+        if ( settings.gfx.multisamplingIndex == -1 ) {
+            ImGui::TextUnformatted( "None" );
+        } else {
+            ImGui::TextUnformatted( antialiasSettings[settings.gfx.multisamplingIndex].label );
+        }
+        ImGui::SameLine();
+        if ( ImGui::ArrowButton( "##ANTIALIASRIGHT", ImGuiDir_Right ) ) {
+            switch ( settings.gfx.multisamplingIndex ) {
+            case AntiAlias_DSSAA:
+                settings.gfx.multisamplingIndex = -1;
+                break;
+            default:
+                settings.gfx.multisamplingIndex++;
+                break;
+            };
+            ui->PlaySelected();
         }
 
         ImGui::TableNextRow();
@@ -831,15 +891,35 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Texture Filtering" );
         ImGui::TableNextColumn();
-        if (ImGui::BeginMenu( settings.gfx.texfilterString )) {
-            for (i = 0; i < NumTexFilters; i++) {
-                if (ImGui::MenuItem( TexFilterString( (textureFilter_t)((int)TexFilter_Linear + i) ) )) {
-                    settings.gfx.texfilter = (textureFilter_t)((int)TexFilter_Linear + i);
-                    settings.gfx.texfilterString = TexFilterString( settings.gfx.texfilter );
-                    ui->PlaySelected();
-                }
-            }
-            ImGui::EndMenu();
+
+        if ( ImGui::ArrowButton( "##TextureFilteringLeft", ImGuiDir_Left ) ) {
+            switch ( settings.gfx.texfilter ) {
+            case TexFilter_Linear:
+                settings.gfx.texfilter = TexFilter_Trilinear;
+                break;
+            default:
+                settings.gfx.texfilter = (textureFilter_t)( (unsigned)settings.gfx.texfilter - 1 );
+                break;
+            };
+            settings.gfx.texfilterString = TexFilterString( settings.gfx.texfilter );
+            settings.presetIndex = -1;
+            ui->PlaySelected();
+        }
+        ImGui::SameLine();
+        ImGui::TextUnformatted( settings.gfx.texfilterString );
+        ImGui::SameLine();
+        if ( ImGui::ArrowButton( "##TextureFilteringRight", ImGuiDir_Right ) ) {
+            switch ( settings.gfx.texfilter ) {
+            case TexFilter_Trilinear:
+                settings.gfx.texfilter = TexFilter_Linear;
+                break;
+            default:
+                settings.gfx.texfilter = (textureFilter_t)( (unsigned)settings.gfx.texfilter + 1 );
+                break;
+            };
+            settings.gfx.texfilterString = TexFilterString( settings.gfx.texfilter );
+            settings.presetIndex = -1;
+            ui->PlaySelected();
         }
 
         ImGui::TableNextRow();
@@ -847,15 +927,35 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Texture Detail" );
         ImGui::TableNextColumn();
-        if ( ImGui::BeginMenu( settings.gfx.texdetailString ) ) {
-            for ( i = 0; i < NumTexDetails; i++ ) {
-                if ( ImGui::MenuItem( TexDetailString( (textureDetail_t)( (int)TexDetail_MSDOS + i ) ) ) ) {
-                    settings.gfx.texdetail = (textureDetail_t)( (int)TexDetail_MSDOS + i );
-                    settings.gfx.texdetailString = TexDetailString( settings.gfx.texdetail );
-                    ui->PlaySelected();
-                }
-            }
-            ImGui::EndMenu();
+
+        if ( ImGui::ArrowButton( "##TextureDetailLeft", ImGuiDir_Left ) ) {
+            switch ( settings.gfx.texdetail ) {
+            case TexDetail_MSDOS:
+                settings.gfx.texdetail = TexDetail_GPUvsGod;
+                break;
+            default:
+                settings.gfx.texdetail = (textureDetail_t)( (unsigned)settings.gfx.texdetail - 1 );
+                break;
+            };
+            settings.gfx.texdetailString = TexDetailString( settings.gfx.texdetail );
+            settings.presetIndex = -1;
+            ui->PlaySelected();
+        }
+        ImGui::SameLine();
+        ImGui::TextUnformatted( settings.gfx.texdetailString );
+        ImGui::SameLine();
+        if ( ImGui::ArrowButton( "##TextureDetailRight", ImGuiDir_Right ) ) {
+            switch ( settings.gfx.texdetail ) {
+            case TexDetail_GPUvsGod:
+                settings.gfx.texdetail = TexDetail_MSDOS;
+                break;
+            default:
+                settings.gfx.texdetail = (textureDetail_t)( (unsigned)settings.gfx.texdetail + 1 );
+                break;
+            };
+            settings.gfx.texdetailString = TexDetailString( settings.gfx.texdetail );
+            settings.presetIndex = -1;
+            ui->PlaySelected();
         }
 
         ImGui::TableNextRow();
@@ -863,9 +963,11 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Anisotropic Filtering" );
         ImGui::TableNextColumn();
+
         if ( ImGui::ArrowButton( "##ANIFILTER_LEFT", ImGuiDir_Left ) ) {
             settings.gfx.anisotropicFiltering = (int32_t)settings.gfx.anisotropicFiltering - 1 == -1 ? arraylen(anisotropicFilters) - 1
                 : settings.gfx.anisotropicFiltering - 1;
+            settings.presetIndex = -1;
             ui->PlaySelected();
         }
         ImGui::SameLine();
@@ -874,6 +976,7 @@ static void SettingsMenuGraphics_Draw( void )
         if ( ImGui::ArrowButton( "##ANIFILTER_RIGHT", ImGuiDir_Right ) ) {
             settings.gfx.anisotropicFiltering = settings.gfx.anisotropicFiltering + 1 >= arraylen(anisotropicFilters)
                 ? 0 : settings.gfx.anisotropicFiltering + 1;
+            settings.presetIndex = -1;
             ui->PlaySelected();
         }
 
@@ -893,6 +996,7 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Video Mode" );
         ImGui::TableNextColumn();
+
         if ( ImGui::ArrowButton( "##VideoModeLeft", ImGuiDir_Left ) ) {
             switch ( settings.gfx.videoMode ) {
             case -2:
@@ -902,6 +1006,7 @@ static void SettingsMenuGraphics_Draw( void )
                 settings.gfx.videoMode--;
                 break;
             };
+            settings.presetIndex = -1;
             ui->PlaySelected();
         }
         ImGui::SameLine();
@@ -926,6 +1031,7 @@ static void SettingsMenuGraphics_Draw( void )
                 settings.gfx.videoMode++;
                 break;
             };
+            settings.presetIndex = -1;
             ui->PlaySelected();
         }
 
@@ -934,20 +1040,31 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Renderer" );
         ImGui::TableNextColumn();
-        if ( ImGui::BeginMenu( RenderAPIString( settings.gfx.api ) ) ) {
-            if ( ImGui::MenuItem( RenderAPIString( R_OPENGL ) ) ) {
-                settings.gfx.api = R_OPENGL;
-                ui->PlaySelected();
-            }
-            if ( ImGui::MenuItem( RenderAPIString( R_SDL2 ) ) ) {
-                settings.gfx.api = R_SDL2;
-                ui->PlaySelected();
-            }
-            if ( ImGui::MenuItem( RenderAPIString( R_VULKAN ) ) ) {
+
+        if ( ImGui::ArrowButton( "##RendererLeft", ImGuiDir_Left ) ) {
+            if ( settings.gfx.api == R_SDL2 ) {
                 settings.gfx.api = R_VULKAN;
-                ui->PlaySelected();
+            } else if ( settings.gfx.api == R_OPENGL ) {
+                settings.gfx.api = R_SDL2;
+            } else if ( settings.gfx.api == R_VULKAN ) {
+                settings.gfx.api = R_OPENGL;
             }
-            ImGui::EndMenu();
+            settings.presetIndex = -1;
+            ui->PlaySelected();
+        }
+        ImGui::SameLine();
+        ImGui::TextUnformatted( RenderAPIString( settings.gfx.api ) );
+        ImGui::SameLine();
+        if ( ImGui::ArrowButton( "##RendererRight", ImGuiDir_Right ) ) {
+            if ( settings.gfx.api == R_SDL2 ) {
+                settings.gfx.api = R_OPENGL;
+            } else if ( settings.gfx.api == R_OPENGL ) {
+                settings.gfx.api = R_VULKAN;
+            } else if ( settings.gfx.api == R_VULKAN ) {
+                settings.gfx.api = R_SDL2;
+            }
+            settings.presetIndex = -1;
+            ui->PlaySelected();
         }
 
         ImGui::TableNextRow();
@@ -957,6 +1074,7 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextColumn();
         if ( ImGui::RadioButton( settings.fullscreenStr[settings.gfx.fullscreen], settings.gfx.fullscreen ) ) {
             settings.gfx.fullscreen = !settings.gfx.fullscreen;
+            settings.presetIndex = -1;
             ui->PlaySelected();
         }
 
@@ -975,14 +1093,15 @@ static void SettingsMenuGraphics_Draw( void )
                 settings.gfx.lighting--;
                 break;
             };
+            settings.presetIndex = -1;
             ui->PlaySelected();
         }
         ImGui::SameLine();
         switch ( settings.gfx.lighting ) {
-        case 0:
+        case LIGHTING_DYNAMIC:
             ImGui::TextUnformatted( "Dynamic Lighting" );
             break;
-        case 1:
+        case LIGHTING_STATIC:
             ImGui::TextUnformatted( "Static Lighting" );
             break;
         };
@@ -996,6 +1115,7 @@ static void SettingsMenuGraphics_Draw( void )
                 settings.gfx.lighting++;
                 break;
             };
+            settings.presetIndex = -1;
             ui->PlaySelected();
         }
 
@@ -1013,6 +1133,7 @@ static void SettingsMenuGraphics_Draw( void )
                 settings.gfx.vsync--;
                 break;
             };
+            settings.presetIndex = -1;
             ui->PlaySelected();
         }
         ImGui::SameLine();
@@ -1031,7 +1152,7 @@ static void SettingsMenuGraphics_Draw( void )
         };
         ImGui::SameLine();
         if ( ImGui::ArrowButton( "##VYSNCRIGHT", ImGuiDir_Right ) ) {
-            switch (settings.gfx.vsync) {
+            switch ( settings.gfx.vsync ) {
             case 1:
                 settings.gfx.vsync = -1;
                 break;
@@ -1039,6 +1160,7 @@ static void SettingsMenuGraphics_Draw( void )
                 settings.gfx.vsync++;
                 break;
             };
+            settings.presetIndex = -1;
             ui->PlaySelected();
         }
 
@@ -1047,8 +1169,9 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Gamma Correction" );
         ImGui::TableNextColumn();
-        if ( ImGui::SliderFloat( " ", &settings.gfx.gamma, 1.0f, 5.0f ) ) {
+        if ( ImGui::SliderFloat( "##GammaCorrectionConfig", &settings.gfx.gamma, 1.0f, 5.0f ) ) {
             ui->PlaySelected();
+            settings.presetIndex = -1;
         }
 
         ImGui::TableNextRow();
@@ -1079,6 +1202,7 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextColumn();
         if ( ImGui::RadioButton( settings.advancedGraphicsStr[settings.gfx.advancedGraphics], settings.gfx.advancedGraphics ) ) {
             settings.gfx.advancedGraphics = !settings.gfx.advancedGraphics;
+            settings.presetIndex = -1;
             ui->PlaySelected();
         }
 
@@ -1116,19 +1240,66 @@ static void SettingsMenuGraphics_Draw( void )
                 settings.gfx.GL_extended->allowLegacyGL = !settings.gfx.GL_extended->allowLegacyGL;
                 ui->PlaySelected();
             }
+        }
+        ImGui::TableNextRow();
+            
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted( "GPU Driver Information" );
+        ImGui::TableNextColumn();
+        if ( ImGui::RadioButton( settings.showGPUDriverInfo ? "ON##ShowGPUDriverInfo" : "OFF##ShowGPUDriverInfo", settings.showGPUDriverInfo ) ) {
+            settings.showGPUDriverInfo = !settings.showGPUDriverInfo;
+            ui->PlaySelected();
+        }
+
+        if ( settings.showGPUDriverInfo ) {
+            ImGui::TableNextRow();
+            ImGui::TextUnformatted( "GPU Extensions Count" );
+            ImGui::TableNextColumn();
+            ImGui::Text( "%u", settings.gfx.numExtensions );
 
             ImGui::TableNextRow();
-            
+            ImGui::TextUnformatted( "GPU Extensions List" );
             ImGui::TableNextColumn();
-            ImGui::TextUnformatted( "GL Extensions" );
-            ImGui::TableNextColumn();
-            if ( ImGui::BeginMenu( settings.gfx.extensionsMenuStr )) {
+            if ( ImGui::BeginMenu( "Extensions" ) ) {
                 for ( uint32_t i = 0; i < settings.gfx.numExtensions; i++ ) {
-                    ImGui::MenuItem( settings.gfx.extensionStrings[i] );
+                    switch ( settings.gfx.api ) {
+                    case R_OPENGL: {
+                        ImVec4 color;
+                        if ( settings.gfx.GL_extended->extensions[i].enabled ) {
+                            color = ImVec4( 0.0f, 1.0f, 0.0f, 1.0f );
+                        } else {
+                            color = ImVec4( 1.0f, 0.0f, 0.0f, 1.0f );
+                        }
+                        ImGui::PushStyleColor( ImGuiCol_FrameBg, color );
+                        ImGui::PushStyleColor( ImGuiCol_FrameBgActive, color );
+                        ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, color );
+                        ImGui::MenuItem( settings.gfx.GL_extended->extensions[i].name );
+                        ImGui::PopStyleColor( 3 );
+                        break; }
+                    case R_VULKAN:
+                        N_Error( ERR_FATAL, "Vulkan not implemented" );
+                        break;
+                    };
                 }
                 ImGui::EndMenu();
             }
         }
+
+/*
+        ImGui::Begin( "##GPUMemoryInfo", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
+                        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoMouseInputs );
+        ImGui::SetWindowPos( { (float)830 * ui->scale, (float)700 * ui->scale } );
+        ImGui::SetWindowSize( { (float)500 * ui->scale, (float)100 * ui->scale } );
+        ImGui::SetWindowFontScale( 1.90f );
+        FontCache()->SetActiveFont( RobotoMono );
+
+        ImGui::TextUnformatted( "Available GPU Memory" );
+        ImGui::SameLine();
+        ImGui::SliderInt( "##AvailableGPUMemory", &settings.availableGPUMemory, 0, settings.totalGPUMemory, "%i", ImGuiSliderFlags_NoInput );
+
+        ImGui::End();
+        FontCache()->SetActiveFont( PressStart2P );
+        */
     }
     ImGui::EndTable();
 }
@@ -1141,27 +1312,27 @@ static void SettingsMenuAudio_Draw( void )
     }
 
     ImGui::SeparatorText( "Master Volume" );
-    if (ImGui::SliderInt( " ", &settings.sound.masterVol, 0, 100 )) {
+    if ( ImGui::SliderInt( "##MasterVolumeSlider", &settings.sound.masterVol, 0, 100 ) ) {
         ui->PlaySelected();
     }
 
     ImGui::SeparatorText( "Sound Effects" );
-    if (ImGui::RadioButton( "ON##SfxOn", settings.sound.sfxOn )) {
+    if ( ImGui::RadioButton( "ON##SfxOn", settings.sound.sfxOn ) ) {
         settings.sound.sfxOn = !settings.sound.sfxOn;
         ui->PlaySelected();
     }
     ImGui::SameLine();
-    if (ImGui::SliderInt( "VOLUME##SfxVolume", &settings.sound.sfxVol, 0, 100 )) {
+    if ( ImGui::SliderInt( "VOLUME##SfxVolume", &settings.sound.sfxVol, 0, 100 ) ) {
         ui->PlaySelected();
     }
 
     ImGui::SeparatorText( "Music" );
-    if (ImGui::RadioButton( "ON##MusicOn", settings.sound.musicOn )) {
+    if ( ImGui::RadioButton( "ON##MusicOn", settings.sound.musicOn ) ) {
         settings.sound.musicOn = !settings.sound.musicOn;
         ui->PlaySelected();
     }
     ImGui::SameLine();
-    if (ImGui::SliderInt( "VOLUME##MusicVolume", &settings.sound.musicVol, 0, 100 )) {
+    if ( ImGui::SliderInt( "VOLUME##MusicVolume", &settings.sound.musicVol, 0, 100 ) ) {
         ui->PlaySelected();
     }
 }
@@ -1193,12 +1364,12 @@ static void SettingsMenuControls_Draw( void )
     // mouse options
     ImGui::SeparatorText( "MOUSE" );
 
-    ImGui::BeginTable( " ", 2 );
+    ImGui::BeginTable( "##MouseConfiguration", 2 );
     {
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Sensitivity" );
         ImGui::TableNextColumn();
-        if ( ImGui::SliderInt( " ", &settings.controls.mouseSensitivity, 0, 100 ) ) {
+        if ( ImGui::SliderInt( "##MouseSensitivityConfiguration", &settings.controls.mouseSensitivity, 0, 100 ) ) {
             ui->PlaySelected();
         }
 
@@ -1207,7 +1378,7 @@ static void SettingsMenuControls_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Mouse Invert" );
         ImGui::TableNextColumn();
-        if ( ImGui::RadioButton( settings.controls.mouseInvert ? "ON" : "OFF", settings.controls.mouseInvert ) ) {
+        if ( ImGui::RadioButton( settings.controls.mouseInvert ? "ON##MouseInvert" : "OFF##MouseInvert", settings.controls.mouseInvert ) ) {
             settings.controls.mouseInvert = !settings.controls.mouseInvert;
             ui->PlaySelected();
         }
@@ -1217,7 +1388,7 @@ static void SettingsMenuControls_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Mouse Acceleration" );
         ImGui::TableNextColumn();
-        if ( ImGui::RadioButton( settings.controls.mouseAccelerate ? "ON" : "OFF", settings.controls.mouseAccelerate ) ) {
+        if ( ImGui::RadioButton( settings.controls.mouseAccelerate ? "ON##MouseAcceleration" : "OFF##MouseAcceleration", settings.controls.mouseAccelerate ) ) {
             settings.controls.mouseAccelerate = !settings.controls.mouseAccelerate;
             ui->PlaySelected();
         }
@@ -1227,7 +1398,7 @@ static void SettingsMenuControls_Draw( void )
     // key bindings
     ImGui::SeparatorText( "KEY BINDS" );
 
-    ImGui::BeginTable( " ", 2 );
+    ImGui::BeginTable( "##KeyBindingsTable", 2 );
     {
         // draw the legend
         const float font_scale = ImGui::GetFont()->Scale;
@@ -1344,7 +1515,86 @@ static void SettingsMenu_InitPresets( void )
 
     p = settings.presets = (graphics_t *)Hunk_Alloc( sizeof( *settings.presets ) * NUM_PRESETS, h_high );
 
-    p[PRESET_LOW_QUALITY].fullscreen = true;
+    for ( i = 0; i < NUM_PRESETS; i++ ) {
+        p[i].api = settings.gfx.api;
+        p[i].fullscreen = settings.gfx.fullscreen;
+        p[i].advancedGraphics = settings.gfx.advancedGraphics;
+        p[i].gamma = settings.gfx.gamma;
+        p[i].vsync = 1;
+        p[i].customHeight = settings.gfx.customHeight;
+        p[i].customWidth = settings.gfx.customWidth;
+        p[i].videoMode = settings.gfx.videoMode;
+        p[i].GL_extended = settings.gfx.GL_extended;
+        p[i].VK_extended = settings.gfx.VK_extended;
+    }
+
+    Cvar_Get( "r_gfxPresetIndex", "1", CVAR_PROTECTED | CVAR_LATCH | CVAR_SAVE );
+    settings.presetIndex = Cvar_VariableInteger( "r_gfxPresetIndex" );
+
+    p[PRESET_LOW_QUALITY].texdetail = TexDetail_IntegratedGPU;
+    p[PRESET_LOW_QUALITY].texfilter = TexFilter_Nearest;
+    p[PRESET_LOW_QUALITY].bloom = true;
+    p[PRESET_LOW_QUALITY].hdr = false;
+    p[PRESET_LOW_QUALITY].anisotropicFiltering = 1;
+    p[PRESET_LOW_QUALITY].exposure = 1.5f;
+    p[PRESET_LOW_QUALITY].geometrydetail = GeomDetail_Low;
+    p[PRESET_LOW_QUALITY].texquality = 1;
+    p[PRESET_LOW_QUALITY].lighting = LIGHTING_STATIC;
+    p[PRESET_LOW_QUALITY].multisamplingIndex = AntiAlias_2xMSAA;
+    p[PRESET_LOW_QUALITY].texdetailString = TexDetailString( p[PRESET_LOW_QUALITY].texdetail );
+    p[PRESET_LOW_QUALITY].texfilterString = TexFilterString( p[PRESET_LOW_QUALITY].texfilter );
+
+    p[PRESET_NORMAL_QUALITY].texdetail = TexDetail_Normie;
+    p[PRESET_NORMAL_QUALITY].texfilter = TexFilter_Nearest;
+    p[PRESET_NORMAL_QUALITY].bloom = true;
+    p[PRESET_NORMAL_QUALITY].hdr = true;
+    p[PRESET_NORMAL_QUALITY].anisotropicFiltering = 2;
+    p[PRESET_NORMAL_QUALITY].exposure = 1.5f;
+    p[PRESET_NORMAL_QUALITY].geometrydetail = GeomDetail_Normal;
+    p[PRESET_NORMAL_QUALITY].texquality = 1;
+    p[PRESET_NORMAL_QUALITY].lighting = LIGHTING_STATIC;
+    p[PRESET_NORMAL_QUALITY].multisamplingIndex = AntiAlias_8xMSAA;
+    p[PRESET_NORMAL_QUALITY].texdetailString = TexDetailString( p[PRESET_NORMAL_QUALITY].texdetail );
+    p[PRESET_NORMAL_QUALITY].texfilterString = TexFilterString( p[PRESET_NORMAL_QUALITY].texfilter );
+
+    p[PRESET_HIGH_QUALITY].texdetail = TexDetail_ExpensiveShitWeveGotHere;
+    p[PRESET_HIGH_QUALITY].texfilter = TexFilter_Nearest;
+    p[PRESET_HIGH_QUALITY].bloom = true;
+    p[PRESET_HIGH_QUALITY].hdr = true;
+    p[PRESET_HIGH_QUALITY].anisotropicFiltering = 3;
+    p[PRESET_HIGH_QUALITY].exposure = 1.5f;
+    p[PRESET_HIGH_QUALITY].geometrydetail = GeomDetail_High;
+    p[PRESET_HIGH_QUALITY].texquality = 1;
+    p[PRESET_HIGH_QUALITY].lighting = LIGHTING_DYNAMIC;
+    p[PRESET_HIGH_QUALITY].multisamplingIndex = AntiAlias_16xMSAA;
+    p[PRESET_HIGH_QUALITY].texdetailString = TexDetailString( p[PRESET_HIGH_QUALITY].texdetail );
+    p[PRESET_HIGH_QUALITY].texfilterString = TexFilterString( p[PRESET_HIGH_QUALITY].texfilter );
+
+    p[PRESET_PERFORMANCE].texdetail = TexDetail_IntegratedGPU;
+    p[PRESET_PERFORMANCE].texfilter = TexFilter_Nearest;
+    p[PRESET_PERFORMANCE].bloom = false;
+    p[PRESET_PERFORMANCE].hdr = false;
+    p[PRESET_PERFORMANCE].anisotropicFiltering = 0;
+    p[PRESET_PERFORMANCE].exposure = 1.5f;
+    p[PRESET_PERFORMANCE].geometrydetail = GeomDetail_VeryLow;
+    p[PRESET_PERFORMANCE].texquality = 1;
+    p[PRESET_PERFORMANCE].lighting = LIGHTING_STATIC;
+    p[PRESET_PERFORMANCE].multisamplingIndex = -1;
+    p[PRESET_PERFORMANCE].texdetailString = TexDetailString( p[PRESET_PERFORMANCE].texdetail );
+    p[PRESET_PERFORMANCE].texfilterString = TexFilterString( p[PRESET_PERFORMANCE].texfilter );
+
+    p[PRESET_ULTRA_HIGH_QUALITY].texdetail = TexDetail_GPUvsGod;
+    p[PRESET_ULTRA_HIGH_QUALITY].texfilter = TexFilter_Nearest;
+    p[PRESET_ULTRA_HIGH_QUALITY].bloom = true;
+    p[PRESET_ULTRA_HIGH_QUALITY].hdr = true;
+    p[PRESET_ULTRA_HIGH_QUALITY].anisotropicFiltering = 3;
+    p[PRESET_ULTRA_HIGH_QUALITY].exposure = 1.5f;
+    p[PRESET_ULTRA_HIGH_QUALITY].geometrydetail = GeomDetail_VeryHigh;
+    p[PRESET_ULTRA_HIGH_QUALITY].texquality = 1;
+    p[PRESET_ULTRA_HIGH_QUALITY].lighting = LIGHTING_DYNAMIC;
+    p[PRESET_ULTRA_HIGH_QUALITY].multisamplingIndex = AntiAlias_32xMSAA;
+    p[PRESET_ULTRA_HIGH_QUALITY].texdetailString = TexDetailString( p[PRESET_ULTRA_HIGH_QUALITY].texdetail );
+    p[PRESET_ULTRA_HIGH_QUALITY].texfilterString = TexFilterString( p[PRESET_ULTRA_HIGH_QUALITY].texfilter );
 }
 
 void SettingsMenu_Cache( void ) {
@@ -1372,11 +1622,14 @@ void SettingsMenu_Cache( void ) {
             settings.gfx.extensionStrings[i] = (char *)Hunk_Alloc( len + 1, h_high );
             strcpy( settings.gfx.extensionStrings[i], (const char *)name );
         }
+
+        renderImport.glGetIntegerv( GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &settings.totalGPUMemory );
     }
 
     N_strncpyz( settings.gfx.extensionsMenuStr, va( "%u Extensions", settings.gfx.numExtensions ), sizeof( settings.gfx.extensionsMenuStr ) );
 
     SettingsMenu_SetDefault();
+    SettingsMenu_InitPresets();
     SettingsMenu_GetInitial();
 
     settings.confirmation = qfalse;
