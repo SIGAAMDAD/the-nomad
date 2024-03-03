@@ -509,13 +509,12 @@ static void G_Vid_Restart( refShutdownCode_t code )
     G_ShutdownArchiveHandler();
 
     g_pModuleLib->Shutdown();
+    g_pModuleLib = NULL;
 
     G_ClearMem();
 
     // startup all the gamestate memory
     G_StartHunkUsers();
-
-    G_InitModuleLib();
 
     G_InitSGame();
     gi.sgameStarted = qtrue;
@@ -832,9 +831,6 @@ void G_Init( void )
     G_InitRenderer();
     gi.rendererStarted = qtrue;
 
-    // init mods
-    G_InitModuleLib();
-
     // init developer console
     Con_Init();
 
@@ -881,7 +877,6 @@ void G_Shutdown(qboolean quit)
     G_ShutdownArchiveHandler();
 
     G_ShutdownVMs();
-    g_pModuleLib->Shutdown();
     G_ShutdownRenderer( quit ? REF_UNLOAD_DLL : REF_DESTROY_WINDOW );
 
     Cmd_RemoveCommand( "demo" );
@@ -923,6 +918,10 @@ void G_ShutdownVMs( void ) {
 void G_StartHunkUsers( void )
 {
     G_InitArchiveHandler();
+
+    if ( !g_pModuleLib ) {
+        G_InitModuleLib();
+    }
 
     if ( !gi.rendererStarted ) {
         gi.rendererStarted = qtrue;

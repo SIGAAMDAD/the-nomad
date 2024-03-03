@@ -133,6 +133,7 @@ static cvar_t		*fs_homepath;
 #ifdef USE_BFF_CACHE_FILE
 static cvar_t		*fs_locked;
 #endif
+static cvar_t		*fs_debug;
 static cvar_t		*fs_restrict;
 static cvar_t		*fs_basepath;
 static cvar_t		*fs_steampath;
@@ -603,12 +604,30 @@ static void FS_CheckFilenameIsNotAllowed( const char *filename, const char *func
 	}
 }
 
-
-void FS_Remove( const char *path )
+/*
+===========
+FS_Remove
+===========
+*/
+void FS_Remove( const char *osPath ) 
 {
-	FS_CheckFilenameIsNotAllowed( path, __func__, qtrue );
+	FS_CheckFilenameIsNotAllowed( osPath, __func__, qtrue );
 
-	remove( path );
+	remove( osPath );
+}
+
+
+/*
+===========
+FS_HomeRemove
+===========
+*/
+void FS_HomeRemove( const char *osPath ) 
+{
+	FS_CheckFilenameIsNotAllowed( osPath, __func__, qfalse );
+
+	remove( FS_BuildOSPath( fs_homepath->s,
+			fs_gamedir, osPath ) );
 }
 
 /*
@@ -950,7 +969,11 @@ fileHandle_t FS_FOpenAppend( const char *path )
 		return FS_INVALID_HANDLE;
 	}
 
-	ospath = FS_BuildOSPath( fs_basepath->s, fs_gamedir, path );
+	ospath = FS_BuildOSPath( fs_homepath->s, fs_gamedir, path );
+
+	if ( fs_debug->i ) {
+		Con_Printf( "FS_FOpenAppend: %s\n", ospath );
+	}
 
 	// validate the file is actually write-enabled
 	FS_CheckFilenameIsNotAllowed( ospath, __func__, qfalse );
@@ -2113,7 +2136,11 @@ fileHandle_t FS_FOpenWrite(const char *path)
 		return FS_INVALID_HANDLE;
 	}
 
-	ospath = FS_BuildOSPath(fs_basepath->s, fs_gamedir, path);
+	ospath = FS_BuildOSPath( fs_homepath->s, fs_gamedir, path );
+
+	if ( fs_debug->i ) {
+		Con_Printf( "FS_FOpenWrite: %s\n", ospath );
+	}
 
 	// validate the file is actually write-enabled
 	FS_CheckFilenameIsNotAllowed(ospath, __func__, qfalse);
@@ -2914,7 +2941,7 @@ void FS_Shutdown(qboolean closeFiles)
 	Cmd_RemoveCommand( "addmod" );
 }
 
-void FS_Restart(void)
+void FS_Restart( void )
 {
 	// last valid game folder
 	static char lastValidBase[MAX_OSPATH];
@@ -3020,6 +3047,8 @@ void FS_Startup( void )
 
 	Con_Printf( "\n---------- FS_Startup ----------\n" );
 
+	fs_debug = Cvar_Get( "fs_debug", "0", 0 );
+	Cvar_SetDescription( fs_debug, "Debugging tool for the filesystem. Run the game in debug mode. Prints additional information regarding read files into the console." );
 	fs_basepath = Cvar_Get("fs_basepath", Sys_DefaultBasePath(), CVAR_INIT | CVAR_PROTECTED | CVAR_PRIVATE);
 	Cvar_SetDescription(fs_basepath, "Write-protected CVar specifying the path to the installation folder of the game.");
 	Cvar_SetGroup(fs_basepath, CVG_FILESYSTEM);
@@ -3045,13 +3074,13 @@ void FS_Startup( void )
 		N_Error(ERR_FATAL, "* fs_basegame not set *");
 	}
 
-//	homepath = Sys_DefaultHomePath();
-//	if (!homepath || !homepath[0]) {
-//		homepath = fs_basepath->s;
-//	}
-//
-//	fs_homepath = Cvar_Get("fs_homepath", homepath, CVAR_INIT | CVAR_PROTECTED | CVAR_PRIVATE);
-//	Cvar_SetDescription( fs_homepath, "Directory to store user configuration and downloaded files." );
+	homepath = Sys_DefaultHomePath();
+	if (!homepath || !homepath[0]) {
+		homepath = fs_basepath->s;
+	}
+
+	fs_homepath = Cvar_Get("fs_homepath", homepath, CVAR_INIT | CVAR_PROTECTED | CVAR_PRIVATE);
+	Cvar_SetDescription( fs_homepath, "Directory to store user configuration and downloaded files." );
 
 	fs_gamedirvar = Cvar_Get("fs_gamedir", "", CVAR_INIT | CVAR_SYSTEMINFO);
 	Cvar_CheckRange(fs_gamedirvar, NULL, NULL, CVT_FSPATH);
@@ -3078,9 +3107,9 @@ void FS_Startup( void )
 		FS_AddGameDirectory(fs_basepath->s, fs_basegame->s);
 	}
 	// fs_homepath is somewhat particular to *nix systems, only add if relevant
-//	if (fs_homepath->s[0] && N_stricmp(fs_homepath->s, fs_basegame->s)) {
-//		FS_AddGameDirectory(fs_homepath->s, fs_basegame->s);
-//	}
+	if (fs_homepath->s[0] && N_stricmp(fs_homepath->s, fs_basegame->s)) {
+		FS_AddGameDirectory(fs_homepath->s, fs_basegame->s);
+	}
 
 
 	// check for additional game folder for mods

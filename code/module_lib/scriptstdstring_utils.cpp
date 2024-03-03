@@ -1,6 +1,7 @@
 #include "module_public.h"
 #include "scriptstdstring.h"
 #include "scriptarray.h"
+#include "module_alloc.h"
 
 // This function takes an input string and splits it into parts by looking
 // for a specified delimiter. Example:

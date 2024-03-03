@@ -31,6 +31,7 @@ static void UI_Cache_f( void )
     SettingsMenu_Cache();
     SinglePlayerMenu_Cache();
 	LegalMenu_Cache();
+	ModsMenu_Cache();
 }
 
 CUIFontCache::CUIFontCache( void ) {
@@ -195,9 +196,9 @@ static void UI_RegisterCvars( void )
 
 void UI_UpdateCvars( void )
 {
-    if (ui_language->modified) {
-        if (!strManager->LanguageLoaded((language_t)ui_language->i)) {
-            strManager->LoadFile(va("scripts/ui_strings_%s.txt", UI_LangToString(ui_language->i)));
+    if ( ui_language->modified ) {
+        if ( !strManager->LanguageLoaded( (language_t)ui_language->i ) ) {
+            strManager->LoadFile( va( "scripts/ui_strings_%s.txt", UI_LangToString( ui_language->i ) ) );
         }
         ui_language->modified = qfalse;
     }
@@ -214,8 +215,8 @@ extern "C" void UI_Shutdown( void )
 		strManager = NULL;
     }
 
-    Cmd_RemoveCommand( "ui_cache" );
-	Cmd_RemoveCommand( "fontinfo" );
+    Cmd_RemoveCommand( "ui.cache" );
+	Cmd_RemoveCommand( "ui.fontinfo" );
 }
 
 // FIXME: call UI_Shutdown instead
@@ -242,11 +243,11 @@ extern "C" void UI_Init( void )
     UI_RegisterCvars();
 
     // init the library
-    ui = (CUILib *)Hunk_Alloc( sizeof(*ui), h_low );
+    ui = (CUILib *)Hunk_Alloc( sizeof( *ui ), h_high );
     ui->Init(); // we could call ::new
 
     // init the string manager
-    strManager = (CUIStringManager *)Hunk_Alloc( sizeof(*strManager), h_low );
+    strManager = (CUIStringManager *)Hunk_Alloc( sizeof( *strManager ), h_high );
     strManager->Init();
     // load the language string file
     strManager->LoadFile( va( "scripts/ui_strings_%s.txt", UI_LangToString( ui_language->i ) ) );
@@ -259,8 +260,8 @@ extern "C" void UI_Init( void )
     UI_Cache_f();
 
     // add commands
-    Cmd_AddCommand( "ui_cache", UI_Cache_f );
-	Cmd_AddCommand( "fontinfo", CUIFontCache::ListFonts_f );
+    Cmd_AddCommand( "ui.cache", UI_Cache_f );
+	Cmd_AddCommand( "ui.fontinfo", CUIFontCache::ListFonts_f );
 }
 
 void Menu_Cache( void )
@@ -787,11 +788,7 @@ void Sys_DisplayEngineStats( void )
 	
 	ImGui::Begin( "Engine Diagnostics", NULL, windowFlags );
 
-	if ( ui->GetConfig().vidWidth == 1024 ) {
-		windowPos.x = 750 * ui->scale + ui->bias;
-	} else {
-		windowPos.x = 900 * ui->scale + ui->bias;
-	}
+	windowPos.x = 730 * ui->scale + ui->bias;
 	windowPos.y = 16 * ui->scale;
 	ImGui::SetWindowPos( windowPos );
 

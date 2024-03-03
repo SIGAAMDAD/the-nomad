@@ -29,7 +29,7 @@ bool CUILib::Menu_Option( const char *label )
 	return retn;
 }
 
-bool CUILib::Menu_Title( const char *label )
+bool CUILib::Menu_Title( const char *label, float fontScale )
 {
     ImGui::SetWindowFontScale( 1.5f * scale );
 	if ( state != STATE_MAIN ) {
@@ -41,7 +41,7 @@ bool CUILib::Menu_Title( const char *label )
 	    ImGui::TextUnformatted( "BACK" );
 	}
 
-    ImGui::SetWindowFontScale( 3.75f * scale );
+    ImGui::SetWindowFontScale( fontScale * scale );
     ImGui::TextUnformatted( label );
     ImGui::SetWindowFontScale( 1.0f * scale );
 

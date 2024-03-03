@@ -54,6 +54,7 @@ constexpr GDR_INLINE bool operator!=( const CModuleAllocator& a, const eastl::al
 #include <EASTL/sort.h>
 #include <EASTL/string_hash_map.h>
 #include <EASTL/unordered_map.h>
+#include <EASTL/functional.h>
 
 #include "../engine/n_allocator.h"
 #include "../rendercommon/r_public.h"
@@ -192,8 +193,8 @@ struct CModuleInfo
 	CModuleInfo( nlohmann::json& parse, CModuleHandle *pHandle ) {
 		N_strncpyz( m_szName, parse["module_name"].get<std::string>().c_str(), MAX_NPATH );
         
-        m_Dependencies.reserve( parse["dependencies"].size() );
-        for ( const auto& it : parse["dependencies"] ) {
+        m_Dependencies.reserve( parse[ "dependencies" ].size() );
+        for ( const auto& it : parse[ "dependencies" ] ) {
             m_Dependencies.emplace_back( eastl::move( it.get<std::string>().c_str() ) );
         }
 
@@ -207,7 +208,7 @@ struct CModuleInfo
 
 		m_pHandle = pHandle;
 
-        Con_Printf( "- loaded module \"%s\", v%i.%i.%i\n", m_szName, m_nModVersionMajor, m_nModVersionUpdate, m_nModVersionPatch );
+        Con_Printf( "...loaded module \"%s\", v%i.%i.%i\n", m_szName, m_nModVersionMajor, m_nModVersionUpdate, m_nModVersionPatch );
 	}
 	~CModuleInfo() {
         DeleteObject( m_pHandle );
@@ -230,7 +231,7 @@ class CScriptBuilder;
 
 const char *AS_PrintErrorString( int code );
 GDR_INLINE void CheckValue( const char *caller, const char *func, int value ) {
-    if ( value != asSUCCESS ) {
+    if ( value < asSUCCESS ) {
         N_Error( ERR_FATAL, "%s: %s failed -- %s", caller, func, AS_PrintErrorString( value ) );
     }
 }
@@ -244,10 +245,13 @@ public:
     CModuleLib( void );
     ~CModuleLib();
 
-    void Init( void );
     void Shutdown( void );
 	CModuleInfo *GetModule( const char *pName );
 	int ModuleCall( CModuleInfo *pModule, EModuleFuncId nCallId, uint32_t nArgs, ... );
+    UtlVector<CModuleInfo *>& GetLoadList( void );
+
+    // runs all modules besides for sgame
+    void RunModules( EModuleFuncId nCallId, uint32_t nArgs, ... );
 
 	// only for module_lib
 	CScriptBuilder *GetScriptBuilder( void );
@@ -273,7 +277,7 @@ private:
 	CContextMgr *m_pContextManager;
 	asIScriptEngine *m_pEngine;
 
-    UtlStringHashTable<vmCvar_t> m_CvarList;
+    UtlHashMap<UtlString, vmCvar_t> m_CvarList;
 
     qboolean m_bRegistered;
 

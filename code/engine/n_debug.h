@@ -3,6 +3,8 @@
 
 #pragma once
 
+#include "n_shared.h"
+
 typedef enum {
     ERR_OUT_OF_MEMORY,
     ERR_SEGGY,

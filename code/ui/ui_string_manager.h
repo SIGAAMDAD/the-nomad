@@ -36,13 +36,14 @@ public:
 
     void Init( void );
     void Shutdown( void );
-
+    
     void LoadFile( const char *filename );
 
     qboolean LanguageLoaded( language_t lang ) const;
     uint64_t NumLangsLoaded( void ) const;
-    const stringHash_t *ValueForKey( const char *name ) const;
+    const stringHash_t *ValueForKey( const char *name );
 private:
+    const stringHash_t *AllocErrorString( const char *key );
     int LoadTokenList( const char **text, language_t lang );
 
     stringHash_t *stringHash[NUMLANGS][MAX_UI_STRINGS];

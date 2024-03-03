@@ -21,20 +21,6 @@ CModuleStringFactory *GetStringFactorySingleton( void )
 	return g_pStringFactory;
 }
 
-struct CStringCacheCleaner
-{
-	~CStringCacheCleaner() {
-		if ( g_pStringFactory ) {
-			if ( g_pStringFactory->m_StringCache.empty() ) {
-				DeleteObject( g_pStringFactory );
-				g_pStringFactory = NULL;
-			}
-		}
-	}
-};
-
-static CStringCacheCleaner s_StringCacheCleaner;
-
 // This macro is used to avoid warnings about unused variables.
 // Usually where the variables are only used in debug mode.
 #define UNUSED_VAR(x) (void)(x)

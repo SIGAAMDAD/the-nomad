@@ -294,6 +294,7 @@ SRC=\
 	$(O)/module_lib/scriptmath.o \
 	$(O)/module_lib/scripthandle.o \
 	$(O)/module_lib/contextmgr.o \
+	$(O)/module_lib/imgui_stdlib.o \
 	\
 	$(O)/engine/n_common.o \
 	$(O)/engine/n_files.o \
@@ -326,6 +327,7 @@ SRC=\
 	$(O)/ui/ui_single_player.o \
 	$(O)/ui/ui_pause.o \
 	$(O)/ui/ui_legal.o \
+	$(O)/ui/ui_mods.o \
 
 MAKE=make
 

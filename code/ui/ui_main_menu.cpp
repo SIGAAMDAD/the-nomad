@@ -162,6 +162,10 @@ void MainMenu_Draw( void )
             ui->SetState( STATE_SINGLEPLAYER );
         }
         ImGui::TableNextRow();
+        if ( ui->Menu_Option( "Tales Around the Campfire" ) ) {
+            ui->SetState( STATE_MODS );
+        }
+        ImGui::TableNextRow();
         if (ui->Menu_Option( "Settings" )) {
             ui->SetState( STATE_SETTINGS );
         }
@@ -200,10 +204,17 @@ void MainMenu_Draw( void )
         SinglePlayerMenu_Draw();
         ImGui::End();
     }
-    else if (ui->GetState() >= STATE_SETTINGS && ui->GetState() <= STATE_GAMEPLAY) {
+    else if ( ui->GetState() == STATE_MODS ) {
         ImGui::Begin( "MainMenu", NULL, windowFlags );
         ImGui::SetWindowPos( ImVec2( 0, 0 ) );
         ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth, (float)menu.menuHeight ) );
+        ModsMenu_Draw();
+        ImGui::End();
+    }
+    else if (ui->GetState() >= STATE_SETTINGS && ui->GetState() <= STATE_GAMEPLAY) {
+        ImGui::Begin( "MainMenu", NULL, windowFlags );
+        ImGui::SetWindowPos( ImVec2( 0, 0 ) );
+        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth * 0.75f, (float)menu.menuHeight * 0.75f ) );
         SettingsMenu_Draw();
         ImGui::End();
     }

@@ -1,4 +1,5 @@
 #include "module_public.h"
+#include "module_alloc.h"
 #include "module_virtual_asm.h"
 
 #include <EASTL/stack.h>

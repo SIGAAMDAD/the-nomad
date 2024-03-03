@@ -13,12 +13,16 @@ namespace TheNomad {
 			void OnSave() {
 			}
 			void OnRunTic() {
+				GameError( "GameObject::OnRunTic: called" );
 			}
 			void OnLevelStart() {
+				GameError( "GameObject::OnLevelStart: called" );
 			}
 			void OnLevelEnd() {
+				GameError( "GameObject::OnLevelEnd: called" );
 			}
 			const string& GetName() {
+				GameError( "GameObject::GetName: called" );
 				return " ";
 			}
 		};

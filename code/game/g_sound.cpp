@@ -185,8 +185,8 @@ private:
 
     uint32_t m_iMusicSource;
 
-    bool m_bClearedQueue;
-    bool m_bRegistered;
+    qboolean m_bClearedQueue;
+    qboolean m_bRegistered;
 };
 
 static CSoundManager *sndManager;
@@ -223,8 +223,8 @@ bool CSoundSource::IsLooping( void ) const {
 
 void CSoundSource::Init( void )
 {
-    memset( m_pName, 0, sizeof(m_pName) );
-    memset( &m_hFData, 0, sizeof(m_hFData) );
+    memset( m_pName, 0, sizeof( m_pName ) );
+    memset( &m_hFData, 0, sizeof( m_hFData ) );
 
     // this could be the music source, so don't allocate a new redundant source just yet
     m_iSource = 0;
@@ -382,10 +382,10 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     m_iTag = tag;
 
     // clear audio file data before anything
-    memset( &m_hFData, 0, sizeof(m_hFData) );
-    memset( &vio, 0, sizeof(vio) );
+    memset( &m_hFData, 0, sizeof( m_hFData ) );
+    memset( &vio, 0, sizeof( vio ) );
 
-    N_strncpyz( m_pName, npath, sizeof(m_pName) );
+    N_strncpyz( m_pName, npath, sizeof( m_pName ) );
 
     // hash it so that if we try loading it
     // even if it's failed, we won't try loading
@@ -430,16 +430,16 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     switch ( m_iType ) {
     default:
     case SNDBUF_16BIT:
-        dataSize = sizeof(short);
+        dataSize = sizeof( short );
         break;
     case SNDBUF_8BIT:
-        dataSize = sizeof(char);
+        dataSize = sizeof( char );
         break;
     case SNDBUF_DOUBLE:
-        dataSize = sizeof(double);
+        dataSize = sizeof( double );
         break;
     case SNDBUF_FLOAT:
-        dataSize = sizeof(float);
+        dataSize = sizeof( float );
         break;
     };
 
@@ -482,7 +482,7 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
 
 void CSoundManager::Init( void )
 {
-    memset( this, 0, sizeof(*this) );
+    memset( this, 0, sizeof( *this ) );
 
     m_pDevice = alcOpenDevice( NULL );
     if ( !m_pDevice ) {
@@ -519,13 +519,18 @@ void CSoundManager::Shutdown( void )
         m_pSources[i]->Shutdown();
     }
 
-    memset( m_pSources, 0, sizeof(m_pSources) );
+    memset( m_pSources, 0, sizeof( m_pSources ) );
     m_nSources = 0;
     m_bRegistered = false;
 
     ALCall( alDeleteSources( 1, &m_iMusicSource ) );
 
     Z_FreeTags( TAG_SFX, TAG_MUSIC );
+
+    Cmd_RemoveCommand( "snd.setvolume" );
+    Cmd_RemoveCommand( "snd.toggle" );
+    Cmd_RemoveCommand( "snd.updatevolume" );
+    Cmd_RemoveCommand( "snd.list_files" );
 
     alcMakeContextCurrent( NULL );
     alcDestroyContext( m_pContext );
@@ -590,8 +595,8 @@ CSoundSource *CSoundManager::InitSource( const char *filename, int64_t tag )
 
     m_hAllocLock.Lock();
 
-    src = (CSoundSource *)Z_Malloc( sizeof(*src), (memtag_t)tag );
-    memset( src, 0, sizeof(*src) );
+    src = (CSoundSource *)Z_Malloc( sizeof( *src ), (memtag_t)tag );
+    memset( src, 0, sizeof( *src ) );
     src->Init();
 
     if (tag == TAG_MUSIC) {
@@ -755,7 +760,7 @@ static void Snd_Toggle_f( void )
     bool option;
 
     if ( Cmd_Argc() < 3 ) {
-        Con_Printf( "usage: sndtoggle <sfx|music> <on|off, 1|0>\n" );
+        Con_Printf( "usage: snd.toggle <sfx|music> <on|off, 1|0>\n" );
         return;
     }
 
@@ -776,7 +781,7 @@ static void Snd_Toggle_f( void )
         Cvar_Set( "snd_musicon", va( "%i", option ) );
     }
     else {
-        Con_Printf( "sndtoggle: unknown parameter '%s', use either 'sfx' or 'music'\n", var );
+        Con_Printf( "snd.toggle: unknown parameter '%s', use either 'sfx' or 'music'\n", var );
         return;
     }
 }
@@ -787,7 +792,7 @@ static void Snd_SetVolume_f( void )
     const char *change;
 
     if ( Cmd_Argc() < 3 ) {
-        Con_Printf( "usage: setvolume <sfx|music> <volume>\n" );
+        Con_Printf( "usage: snd.setvolume <sfx|music> <volume>\n" );
         return;
     }
 
@@ -808,7 +813,7 @@ static void Snd_SetVolume_f( void )
         }
     }
     else {
-        Con_Printf( "setvolume: unknown parameter '%s', use either 'sfx' or 'music'\n", change );
+        Con_Printf( "snd.setvolume: unknown parameter '%s', use either 'sfx' or 'music'\n", change );
         return;
     }
 }
@@ -887,7 +892,8 @@ void Snd_Init( void )
     sndManager = (CSoundManager *)Z_Malloc( sizeof(*sndManager), TAG_GAME );
     sndManager->Init();
 
-    Cmd_AddCommand( "setvolume", Snd_SetVolume_f );
-    Cmd_AddCommand( "sndtoggle", Snd_Toggle_f );
-    Cmd_AddCommand( "updatevolume", Snd_UpdateVolume_f );
+    Cmd_AddCommand( "snd.setvolume", Snd_SetVolume_f );
+    Cmd_AddCommand( "snd.toggle", Snd_Toggle_f );
+    Cmd_AddCommand( "snd.updatevolume", Snd_UpdateVolume_f );
+    Cmd_AddCommand( "snd.list_files", Snd_ListFiles_f );
 }

@@ -347,7 +347,8 @@ void FS_InitFilesystem(void);
 void FS_Shutdown(qboolean closeFiles);
 void FS_Restart(void);
 
-void FS_Remove(const char *path);
+void FS_Remove( const char *path );
+void FS_HomeRemove( const char *osPath );
 uint64_t FS_Read(void *buffer, uint64_t size, fileHandle_t f);
 uint64_t FS_Write(const void *buffer, uint64_t size, fileHandle_t f);
 void FS_WriteFile(const char *npath, const void *buffer, uint64_t size);
@@ -488,8 +489,6 @@ typedef struct {
 	qboolean exists;
 } fileStats_t;
 
-#ifdef __cplusplus
-
 #define MUTEX_TYPE_STANDARD 0
 #define MUTEX_TYPE_SHARED 1
 #define MUTEX_TYPE_RECURSIVE 2
@@ -533,10 +532,11 @@ qboolean Sys_RandomBytes(byte *s, uint64_t len);
 qboolean Sys_LowPhysicalMemory( void );
 void Sys_Sleep( double msec );
 
+void Sys_LockMemory( void *pAddress, uint64_t nBytes );
+void Sys_UnlockMemory( void *pAddress, uint64_t nBytes );
+
 void Sys_ClearDLLError( void );
 int Sys_GetDLLErrorCount( void );
 const char *Sys_GetDLLError( void );
-
-#endif
 
 #endif

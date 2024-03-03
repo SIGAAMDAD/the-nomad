@@ -379,10 +379,25 @@ uint64_t Sys_EventSubtime( uint64_t time )
     return ret;
 }
 
+/*
+* Sys_LockMemory: sets pAddress to ROM, if it wasn't in read permissions before,
+* this'll probably fail
+*/
 void Sys_LockMemory( void *pAddress, uint64_t nBytes )
 {
     if ( mprotect( pAddress, nBytes, PROT_READ ) == -1 ) {
         N_Error( ERR_FATAL, "Sys_LockMemory: mprotect failed!" );
+    }
+}
+
+/*
+* Sys_UnlockMemory: sets pAddress to read/write, if the memory wasn't write permitted before,
+* this'll crash
+*/
+void Sys_UnlockMemory( void *pAddress, uint64_t nBytes )
+{
+    if ( mprotect( pAddress, nBytes, PROT_WRITE | PROT_READ ) == -1 ) {
+        N_Error( ERR_FATAL, "Sys_UnlockMemory: mprotect failed!" );
     }
 }
 

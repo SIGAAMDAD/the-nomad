@@ -13,12 +13,6 @@
 #define RADIOBUTTON_STR(x) { "OFF##" #x, "ON##" #x };
 
 typedef struct {
-    uint32_t keynum;
-    char bindname[64];
-    const char *keyname;
-} keybind_t;
-
-typedef struct {
     const char *name;
     qboolean enabled;
 } gpu_extension_t;
@@ -34,10 +28,10 @@ typedef struct
     gpu_extension_t *extensions;
     uint64_t numExtensions;
 
-    bool allowLegacyGL;
-    bool allowSoftwareGL;
-    bool use_GL_ARB_vertex_buffer_object;
-    bool use_GL_ARB_vertex_array_object;
+    qboolean allowLegacyGL;
+    qboolean allowSoftwareGL;
+    qboolean use_GL_ARB_vertex_buffer_object;
+    qboolean use_GL_ARB_vertex_array_object;
 } graphics_extended_GL_t;
 
 typedef struct
@@ -45,68 +39,29 @@ typedef struct
 } graphics_extended_VK_t;
 
 typedef struct {
-    graphics_extended_GL_t *GL_extended;
-    graphics_extended_VK_t *VK_extended;
+    const char *command;
+    const char *label;
+    int32_t id;
+    int32_t defaultBind1;
+    int32_t defaultBind2;
+    int32_t bind1;
+    int32_t bind2;
+} bind_t;
 
-    int64_t musicVol;
-    int64_t sfxVol;
-    int64_t masterVol;
-    int64_t mouseSensitivity;
-
-    textureFilter_t texfilter;
-    textureDetail_t texdetail;
-    uint32_t texquality;
-    uint32_t geometrydetail;
-    int32_t videoMode;
-    uint32_t lighting;
-    int32_t customWidth;
-    int32_t customHeight;
-    uint32_t multisamplingIndex;
-    uint32_t anisotropicFilteringTmp;
-    uint32_t anisotropicFiltering;
-    int32_t vsync;
-    float gamma;
-    renderapi_t api;
-
-    bool musicOn;
-    bool sfxOn;
-    bool mouseAccelerate;
-    bool mouseInvert;
-    bool useExtensions;
-    bool fullscreen;
-    bool extensions;
-} initialSettings_t;
-
-typedef struct
-{
-    keybind_t keybinds[21];
-
+typedef struct {
     const char *texdetailString;
     const char *texfilterString;
 
     char extensionsMenuStr[64];
-    eastl::array<const char *, 2> fullscreenStr;
-    eastl::array<const char *, 2> advancedGraphicsStr;
-    eastl::array<const char *, 2> useExtensionsStr;
 
     graphics_extended_GL_t *GL_extended;
     graphics_extended_VK_t *VK_extended;
 
     char **extensionStrings;
 
-    qboolean confirmation;
-    qboolean confirmreset;
-    qboolean modified;
-    qboolean paused; // did we get here from the pause menu?
-    qboolean rebinding;
-
     uint32_t numExtensions;
-    int32_t masterVol;
-    int32_t musicVol;
-    int32_t sfxVol;
     renderapi_t api;
-    int32_t mouseSensitivity;
-    uint32_t rebindIndex;
+
     textureFilter_t texfilter;
     textureDetail_t texdetail;
     uint32_t texquality;
@@ -120,15 +75,59 @@ typedef struct
     uint32_t anisotropicFiltering;
     int32_t vsync;
     float gamma;
+    float exposure;
 
-    bool mouseAccelerate;
-    bool mouseInvert;
-    bool fullscreen;
-    bool extensions;
-    bool musicOn;
-    bool sfxOn;
-    bool useExtensions;
-    bool advancedGraphics; // "stats for nerds", that kinda stuff
+    qboolean bloom;
+    qboolean hdr;
+    qboolean fullscreen;
+    qboolean extensions;
+    qboolean useExtensions;
+    qboolean advancedGraphics; // "stats for nerds", that kinda stuff
+} graphics_t;
+
+typedef struct {
+    int32_t masterVol;
+    int32_t musicVol;
+    int32_t sfxVol;
+    qboolean sfxOn;
+    qboolean musicOn;
+} sound_t;
+
+typedef struct {
+    bind_t *keybinds;
+    uint32_t numBinds;
+
+    int32_t mouseSensitivity;
+    uint32_t rebindIndex;
+
+    qboolean mouseAccelerate;
+    qboolean mouseInvert;
+} controls_t;
+
+typedef struct {
+    sound_t sound;
+    graphics_t gfx;
+    controls_t controls;
+} initialSettings_t;
+
+typedef struct {
+    qboolean confirmation;
+    qboolean confirmreset;
+    qboolean modified;
+    qboolean paused; // did we get here from the pause menu?
+    qboolean rebinding;
+
+    eastl::array<const char *, 2> fullscreenStr;
+    eastl::array<const char *, 2> advancedGraphicsStr;
+    eastl::array<const char *, 2> useExtensionsStr;
+
+    sound_t sound;
+    graphics_t gfx;
+    controls_t controls;
+
+    graphics_t *presets;
+
+    menustate_t lastChild;
 } settingsmenu_t;
 
 static initialSettings_t initial;
@@ -166,23 +165,6 @@ static const anistropicSetting_t anisotropicFilters[] = {
     { "32x",    32}
 };
 
-static const char *bindNames[] = {
-    "button0",
-    "button1",
-    "button2",
-    "button3",
-    "button4",
-    "button5",
-    "button6",
-    "button7",
-    "button8",
-    "button9",
-    "forward",
-    "backward",
-    "right",
-    "left"
-};
-
 typedef struct {
     const char *label;
     antialiasType_t type;
@@ -198,6 +180,13 @@ static const antialiasSetting_t antialiasSettings[] = {
     { "4x SSAA",                    AntiAlias_2xSSAA },
     { "Dynamic SSAA",               AntiAlias_DSSAA }
 };
+
+#define PRESET_LOW_QUALITY          0
+#define PRESET_NORMAL_QUALITY       1
+#define PRESET_HIGH_QUALITY         2
+#define PRESET_ULTRA_HIGH_QUALITY   3
+#define PRESET_PERFORMANCE          4
+#define NUM_PRESETS                 5
 
 static renderapi_t StringToRenderAPI( const char *str )
 {
@@ -289,88 +278,283 @@ const char *RenderAPIString( renderapi_t api )
 
 static void SettingsMenu_ApplyGraphicsChanges( void )
 {
-    Cvar_Set( "r_mode", va( "%i", settings.videoMode ) );
-    Cvar_Set( "r_fullscreen", va( "%i", settings.fullscreen ) );
-    switch (settings.videoMode) {
+    Cvar_Set( "r_mode", va( "%i", settings.gfx.videoMode ) );
+    Cvar_Set( "r_fullscreen", va( "%i", settings.gfx.fullscreen ) );
+    switch ( settings.gfx.videoMode ) {
     case -2:
         Cvar_Set( "r_customWidth", va( "%i", gi.desktopWidth ) );
         Cvar_Set( "r_customHeight", va( "%i", gi.desktopHeight ) );
         break;
     case -1:
-        Cvar_Set( "r_customWidth", va( "%i", settings.customWidth ) );
-        Cvar_Set( "r_customHeight", va( "%i", settings.customHeight ) );
+        Cvar_Set( "r_customWidth", va( "%i", settings.gfx.customWidth ) );
+        Cvar_Set( "r_customHeight", va( "%i", settings.gfx.customHeight ) );
         break;
     default:
-        Cvar_Set( "r_customWidth", va( "%i", r_vidModes[ settings.videoMode ].width ) );
-        Cvar_Set( "r_customWidth", va( "%i", r_vidModes[ settings.videoMode ].height ) );
+        Cvar_Set( "r_customWidth", va( "%i", r_vidModes[ settings.gfx.videoMode ].width ) );
+        Cvar_Set( "r_customWidth", va( "%i", r_vidModes[ settings.gfx.videoMode ].height ) );
         break;
     };
-    Cvar_Set( "r_anisotropicFiltering", va( "%i", settings.anisotropicFiltering ) );
-    Cvar_Set( "r_textureDetail", va( "%i", settings.texdetail ) );
-    Cvar_Set( "r_textureFiltering", va( "%i", settings.texfilter ) );
-    Cvar_Set( "r_gammaAmount", va( "%f", settings.gamma ) );
+    Cvar_Set( "r_anisotropicFiltering", va( "%i", settings.gfx.anisotropicFiltering ) );
+    Cvar_Set( "r_textureDetail", va( "%i", settings.gfx.texdetail ) );
+    Cvar_Set( "r_textureFiltering", va( "%i", settings.gfx.texfilter ) );
+    Cvar_Set( "r_gammaAmount", va( "%f", settings.gfx.gamma ) );
 
-    Cvar_Set( "g_renderer", RenderAPIString2( settings.api ) );
+    Cvar_Set( "g_renderer", RenderAPIString2( settings.gfx.api ) );
 }
 
 static void SettingsMenu_ApplyAudioChanges( void )
 {
-    Cvar_Set( "snd_sfxvol", va("%i", settings.sfxVol) );
-    Cvar_Set( "snd_musicvol", va("%i", settings.musicVol) );
-    Cvar_Set( "snd_sfxon", va("%i", settings.sfxOn) );
-    Cvar_Set( "snd_musicon", va("%i", settings.musicOn) );
+    Cvar_Set( "snd_sfxvol", va( "%i", settings.sound.sfxVol ) );
+    Cvar_Set( "snd_musicvol", va( "%i", settings.sound.musicVol ) );
+    Cvar_Set( "snd_sfxon", va( "%i", settings.sound.sfxOn ) );
+    Cvar_Set( "snd_musicon", va ( "%i", settings.sound.musicOn ) );
+}
+
+const char *Hunk_CopyString( const char *str, ha_pref pref ) {
+    char *out;
+    uint64_t len;
+
+    len = strlen( str ) + 1;
+    out = (char *)Hunk_Alloc( len, pref );
+    N_strncpyz( out, str, len );
+
+    return out;
+}
+
+static void SettingsMenu_LoadBindings( void )
+{
+    union {
+        void *v;
+        char *b;
+    } f;
+    const char **text, *text_p, *tok;
+    bind_t *bind;
+    uint64_t i;
+
+    FS_LoadFile( "bindings.cfg", &f.v );
+    if ( !f.v ) {
+        N_Error( ERR_DROP, "SettingsMenu_Cache: no bindings file" );
+    }
+
+    text_p = f.b;
+    text = &text_p;
+
+    COM_BeginParseSession( "bindings.cfg" );
+
+    settings.controls.numBinds = 0;
+    while ( 1 ) {
+        tok = COM_ParseExt( text, qtrue );
+        if ( !tok || !tok[0] ) {
+            break;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( !tok[0] ) {
+            COM_ParseError( "missing parameter for keybind 'label'" );
+            break;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( !tok[0] ) {
+            COM_ParseError( "missing paramter for keybind 'id'" );
+            break;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( !tok[0] ) {
+            COM_ParseError( "missing paramter for keybind 'defaultBinding1'" );
+            break;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( !tok[0] ) {
+            COM_ParseError( "missing paramter for keybind 'defaultBinding2'" );
+            break;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( !tok[0] ) {
+            COM_ParseError( "missing paramter for keybind 'bind1'" );
+            break;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( !tok[0] ) {
+            COM_ParseError( "missing paramter for keybind 'bind2'" );
+            break;
+        }
+
+        settings.controls.numBinds++;
+    }
+
+    settings.controls.keybinds = (bind_t *)Hunk_Alloc( sizeof( *settings.controls.keybinds ) * settings.controls.numBinds, h_high );
+    text_p = f.b;
+    text = &text_p;
+
+    bind = settings.controls.keybinds;
+    for ( i = 0; i < settings.controls.numBinds; i++ ) {
+        tok = COM_ParseExt( text, qtrue );
+        if ( !tok || !tok[0] ) {
+            break;
+        }
+        bind->command = Hunk_CopyString( tok, h_high );
+
+        tok = COM_ParseExt( text, qfalse );
+        bind->label = Hunk_CopyString( tok, h_high );
+
+        tok = COM_ParseExt( text, qfalse );
+        bind->id = atoi( tok );
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( tok[0] != '-' && tok[1] != '1' ) {
+            bind->defaultBind1 = Key_StringToKeynum( tok );
+        } else {
+            bind->defaultBind1 = -1;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( tok[0] != '-' && tok[1] != '1' ) {
+            bind->defaultBind2 = Key_StringToKeynum( tok );
+        } else {
+            bind->defaultBind2 = -1;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( tok[0] != '-' && tok[1] != '1' ) {
+            bind->bind1 = Key_StringToKeynum( tok );
+        } else {
+            bind->bind1 = -1;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( tok[0] != '-' && tok[1] != '1' ) {
+            bind->bind2 = Key_StringToKeynum( tok );
+        } else {
+            bind->bind2 = -1;
+        }
+
+        if ( bind->defaultBind1 != -1 ) {
+            bind->bind1 = bind->defaultBind1;
+        }
+        if ( bind->defaultBind2 != -1 ) {
+            bind->bind2 = bind->defaultBind2;
+        }
+
+        Con_Printf( "Added keybind \"%s\": \"%s\"\n", bind->command, bind->label );
+
+        bind++;
+    }
+
+    FS_FreeFile( f.v );
 }
 
 static void SettingsMenu_SetDefault( void )
 {
-    settings.anisotropicFiltering = Cvar_VariableInteger( "r_anisotropicFiltering" );
-    settings.useExtensions = Cvar_VariableInteger( "r_useExtensions" );
-    settings.customWidth = Cvar_VariableInteger( "r_customWidth" );
-    settings.customHeight = Cvar_VariableInteger( "r_customHeight" );
-    settings.texdetail = (textureDetail_t)Cvar_VariableInteger( "r_textureDetail" );
-    settings.texfilter = (textureFilter_t)Cvar_VariableInteger( "r_textureFiltering" );
-    settings.texdetailString = TexDetailString( settings.texdetail );
-    settings.texfilterString = TexFilterString( settings.texfilter );
-    settings.videoMode = Cvar_VariableInteger( "r_mode" );
-    settings.fullscreen = Cvar_VariableInteger( "r_fullscreen" );
-    settings.multisamplingIndex = Cvar_VariableInteger( "r_multisample" );
-    settings.vsync = Cvar_VariableInteger( "r_swapInterval" );
-    settings.gamma = Cvar_VariableFloat( "r_gammaAmount" );
-    settings.advancedGraphics = false;
-    settings.advancedGraphicsStr = RADIOBUTTON_STR( settings.advancedGraphics );
-    settings.useExtensionsStr = RADIOBUTTON_STR( settings.useExtensions );
-    settings.fullscreenStr = RADIOBUTTON_STR( settings.fullscreen );
+    settings.gfx.anisotropicFiltering = Cvar_VariableInteger( "r_anisotropicFiltering" );
+    settings.gfx.useExtensions = Cvar_VariableInteger( "r_useExtensions" );
+    settings.gfx.customWidth = Cvar_VariableInteger( "r_customWidth" );
+    settings.gfx.customHeight = Cvar_VariableInteger( "r_customHeight" );
+    settings.gfx.texdetail = (textureDetail_t)Cvar_VariableInteger( "r_textureDetail" );
+    settings.gfx.texfilter = (textureFilter_t)Cvar_VariableInteger( "r_textureFiltering" );
+    settings.gfx.texdetailString = TexDetailString( settings.gfx.texdetail );
+    settings.gfx.texfilterString = TexFilterString( settings.gfx.texfilter );
+    settings.gfx.videoMode = Cvar_VariableInteger( "r_mode" );
+    settings.gfx.fullscreen = Cvar_VariableInteger( "r_fullscreen" );
+    settings.gfx.multisamplingIndex = Cvar_VariableInteger( "r_multisample" );
+    settings.gfx.vsync = Cvar_VariableInteger( "r_swapInterval" );
+    settings.gfx.gamma = Cvar_VariableFloat( "r_gammaAmount" );
+    settings.gfx.advancedGraphics = false;
+    settings.advancedGraphicsStr = RADIOBUTTON_STR( settings.gfx.advancedGraphics );
+    settings.useExtensionsStr = RADIOBUTTON_STR( settings.gfx.useExtensions );
+    settings.fullscreenStr = RADIOBUTTON_STR( settings.gfx.fullscreen );
 
-    if ( settings.api == R_OPENGL ) {
-        settings.GL_extended = (graphics_extended_GL_t *)Hunk_Alloc( sizeof(graphics_extended_GL_t), h_high );
+    if ( settings.gfx.api == R_OPENGL ) {
+        settings.gfx.GL_extended = (graphics_extended_GL_t *)Hunk_Alloc( sizeof( graphics_extended_GL_t ), h_high );
 
-        settings.GL_extended->allowSoftwareGL = Cvar_VariableInteger( "r_allowSoftwareGL" );
-        settings.GL_extended->allowLegacyGL = Cvar_VariableInteger( "r_allowLegacy" );
+        settings.gfx.GL_extended->allowSoftwareGL = Cvar_VariableInteger( "r_allowSoftwareGL" );
+        settings.gfx.GL_extended->allowLegacyGL = Cvar_VariableInteger( "r_allowLegacy" );
 
-        settings.GL_extended->allowLegacyGLStr =  RADIOBUTTON_STR( settings.GL_extended->allowLegacyGL );
-        settings.GL_extended->allowSoftwareGLStr = RADIOBUTTON_STR( settings.GL_extended->allowSoftwareGL );
+        settings.gfx.GL_extended->allowLegacyGLStr =  RADIOBUTTON_STR( settings.gfx.GL_extended->allowLegacyGL );
+        settings.gfx.GL_extended->allowSoftwareGLStr = RADIOBUTTON_STR( settings.gfx.GL_extended->allowSoftwareGL );
 
-        settings.GL_extended->numExtensions = settings.numExtensions;
-        settings.GL_extended->extensions = (gpu_extension_t *)Hunk_Alloc( sizeof(gpu_extension_t) * settings.numExtensions, h_high );
-        for ( uint32_t i = 0; i < settings.numExtensions; i++ ) {
-            settings.GL_extended->extensions->name = settings.extensionStrings[i];
+        settings.gfx.GL_extended->numExtensions = settings.gfx.numExtensions;
+        settings.gfx.GL_extended->extensions = (gpu_extension_t *)Hunk_Alloc( sizeof( gpu_extension_t ) * settings.gfx.numExtensions, h_high );
+        for ( uint32_t i = 0; i < settings.gfx.numExtensions; i++ ) {
+            settings.gfx.GL_extended->extensions->name = settings.gfx.extensionStrings[i];
         }
     }
 
-    settings.sfxOn = Cvar_VariableInteger( "snd_sfxon" );
-    settings.musicOn = Cvar_VariableInteger( "snd_musicon" );
-    settings.sfxVol = Cvar_VariableInteger( "snd_sfxvol" );
-    settings.musicVol = Cvar_VariableInteger( "snd_musicvol" );
-    settings.masterVol = Cvar_VariableInteger( "snd_mastervol" );
+    settings.sound.sfxOn = Cvar_VariableInteger( "snd_sfxon" );
+    settings.sound.musicOn = Cvar_VariableInteger( "snd_musicon" );
+    settings.sound.sfxVol = Cvar_VariableInteger( "snd_sfxvol" );
+    settings.sound.musicVol = Cvar_VariableInteger( "snd_musicvol" );
+    settings.sound.masterVol = Cvar_VariableInteger( "snd_mastervol" );
     
-    settings.mouseSensitivity = Cvar_VariableInteger( "g_mouseSensitivity" );
-    settings.mouseAccelerate = Cvar_VariableInteger("g_mouseAcceleration");
-    settings.mouseInvert = Cvar_VariableInteger("g_mouseInvert");
+    settings.controls.mouseSensitivity = Cvar_VariableInteger( "g_mouseSensitivity" );
+    settings.controls.mouseAccelerate = Cvar_VariableInteger("g_mouseAcceleration");
+    settings.controls.mouseInvert = Cvar_VariableInteger("g_mouseInvert");
 
-    for ( uint32_t i = 0; i < arraylen( bindNames ); i++ ) {
-        N_strncpyz( settings.keybinds[i].bindname, bindNames[i], sizeof(settings.keybinds[i].bindname) );
-        settings.keybinds[i].keynum = Key_GetKey( bindNames[i] );
-        settings.keybinds[i].keyname = Key_GetBinding( settings.keybinds[i].keynum );
+    SettingsMenu_LoadBindings();
+}
+
+static void SettingsMenu_Rebind( void )
+{
+    int32_t bind;
+    uint32_t i;
+    int ret;
+    const char *binding;
+
+    ImGui::TextUnformatted( "PRESS ESCAPE TO CANCEL" );
+    if ( Key_IsDown( KEY_ESCAPE ) ) {
+        settings.rebinding = qfalse;
+        settings.controls.rebindIndex = 0;
+        ui->PlaySelected();
+        ImGui::CloseCurrentPopup();
+        return;
+    }
+
+    ImGui::TextUnformatted( "Press Any Key..." );
+    for ( i = 0; i < NUMKEYS; i++ ) {
+        if ( Key_IsDown( i ) ) {
+            settings.rebinding = qfalse;
+            binding = Key_GetBinding( i );
+
+            if ( binding != NULL ) {
+                if ( settings.controls.keybinds[ Key_GetKey( binding ) ].bind1 != -1 ) {
+                    // we're overwriting a binding, warn them
+                    ret = Sys_MessageBox( "WARNING",
+                        va( "You are overwriting another binding, are you sure about this? (\"%s\" = \"%s\")",
+                            Key_KeynumToString( settings.controls.keybinds[ Key_GetKey( binding ) ].bind1 ),
+                            binding ),
+                        true );
+                    
+                    if ( ret == 0 ) {
+                        settings.rebinding = qfalse;
+                        settings.controls.rebindIndex = 0;
+                        ui->PlaySelected();
+                        ImGui::CloseCurrentPopup();
+                        return;
+                    }
+                }
+            }
+
+            if ( settings.controls.keybinds[settings.controls.rebindIndex].bind1 != -1 ) {
+                Con_Printf( "setting double-binding for key \"%s\".\n",
+                    Key_GetBinding( settings.controls.keybinds[settings.controls.rebindIndex].bind1 ) );
+
+                settings.controls.keybinds[settings.controls.rebindIndex].bind2 = i;
+            } else {
+                settings.controls.keybinds[settings.controls.rebindIndex].bind1 = i;
+            }
+            Cbuf_ExecuteText( EXEC_APPEND, va( "bind %s \"%s\"\n",
+                Key_KeynumToString( i ),
+                settings.controls.keybinds[settings.controls.rebindIndex].command ) );
+            
+            settings.modified = qtrue;
+            settings.rebinding = qfalse;
+            settings.controls.rebindIndex = 0;
+            ImGui::CloseCurrentPopup();
+        }
     }
 }
 
@@ -419,29 +603,16 @@ static void SettingsMenuPopup( void )
         }
     }
     else if (settings.rebinding) {
-        ImGui::TextUnformatted( "Press Any Key..." );
-        for (uint32_t i = 0; i < NUMKEYS; i++) {
-            if (Key_IsDown( i )) {
-                settings.rebinding = qfalse;
-                settings.keybinds[settings.rebindIndex].keynum = i;
-                settings.keybinds[settings.rebindIndex].keyname = Key_KeynumToString( i );
-                Cbuf_ExecuteText( EXEC_APPEND, va( "bind %s \"%s\"\n",
-                    settings.keybinds[settings.rebindIndex].keyname, settings.keybinds[settings.rebindIndex].bindname ) );
-            }
-        }
-        if (ImGui::Button("CANCEL##SETTINGSMENUPOPUP")) {
-            settings.rebinding = qfalse;
-            settings.rebindIndex = 0;
-            ui->PlaySelected();
-            ImGui::CloseCurrentPopup();
-        }
+        SettingsMenu_Rebind();
     }
     ImGui::End();
 }
 
 static void SettingsMenu_ApplyChanges( void )
 {
-    ImGui::BeginChild( 0xff, ImVec2( 0, 0 ), ImGuiChildFlags_AlwaysAutoResize );
+    const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
+                            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_AlwaysAutoResize;
+    ImGui::Begin( "##APPLYCHANGESWINDOW", NULL, windowFlags );
 
     ImGui::SetWindowPos(ImVec2( 8 * ui->scale, 720 * ui->scale ));
 
@@ -451,14 +622,14 @@ static void SettingsMenu_ApplyChanges( void )
         ui->PlaySelected();
     }
 
-    if (!settings.modified) {
-        ImGui::EndChild();
+    if ( !settings.modified ) {
+        ImGui::End();
         return;
     }
 
     ImGui::SetCursorScreenPos( ImVec2( 260 * ui->scale, 720 * ui->scale ) );
     
-    if (ImGui::Button( "APPLY CHANGES" )) {
+    if ( ImGui::Button( "APPLY CHANGES" ) ) {
         SettingsMenu_ApplyGraphicsChanges();
         SettingsMenu_ApplyAudioChanges();
         Cbuf_ExecuteText( EXEC_APPEND, va( "writecfg %s\n", Cvar_VariableString( "com_defaultcfg" ) ) );
@@ -466,99 +637,134 @@ static void SettingsMenu_ApplyChanges( void )
         settings.modified = qfalse;
         ui->PlaySelected();
     }
-    ImGui::EndChild();
+    ImGui::End();
 }
 
 static void SettingsMenu_Update( void )
 {
     settings.modified = false;
 
-    if (initial.masterVol != settings.masterVol) {
+    if ( initial.gfx.anisotropicFiltering != settings.gfx.anisotropicFiltering ) {
         settings.modified = true;
     }
-    if (initial.sfxOn != settings.sfxOn) {
+    if ( initial.gfx.api != settings.gfx.api ) {
         settings.modified = true;
     }
-    if (initial.musicOn != settings.musicOn) {
+    if ( initial.gfx.customHeight != settings.gfx.customHeight ) {
         settings.modified = true;
     }
-    if (initial.sfxVol != settings.sfxVol) {
+    if ( initial.gfx.customWidth != settings.gfx.customWidth ) {
         settings.modified = true;
     }
-    if (initial.musicVol != settings.musicVol) {
+    if ( initial.gfx.fullscreen != settings.gfx.fullscreen ) {
         settings.modified = true;
     }
-    if (initial.videoMode != settings.videoMode) {
+    if ( initial.gfx.gamma != settings.gfx.gamma ) {
         settings.modified = true;
     }
-    if (initial.anisotropicFiltering != settings.anisotropicFiltering) {
+    if ( initial.gfx.vsync != settings.gfx.vsync ) {
         settings.modified = true;
     }
-    if (initial.api != settings.api) {
+    if ( initial.gfx.videoMode != settings.gfx.videoMode ) {
         settings.modified = true;
     }
-    if (initial.customHeight != settings.customHeight) {
+    if ( initial.gfx.lighting != settings.gfx.lighting ) {
         settings.modified = true;
     }
-    if (initial.customWidth != settings.customWidth) {
+    if ( initial.gfx.texdetail != settings.gfx.texdetail ) {
         settings.modified = true;
     }
-    if (initial.extensions != settings.extensions) {
+    if ( initial.gfx.texfilter != settings.gfx.texfilter ) {
         settings.modified = true;
     }
-    if (initial.vsync != settings.vsync) {
+    if ( initial.gfx.texquality != settings.gfx.texquality ) {
         settings.modified = true;
     }
-    if (initial.fullscreen != settings.fullscreen) {
+    if ( initial.gfx.hdr != settings.gfx.hdr ) {
         settings.modified = true;
     }
-    if (initial.geometrydetail != settings.geometrydetail) {
+    if ( initial.gfx.bloom != settings.gfx.bloom ) {
         settings.modified = true;
     }
-    if (initial.multisamplingIndex != settings.multisamplingIndex) {
+    if ( initial.gfx.exposure != settings.gfx.exposure ) {
         settings.modified = true;
     }
-    if (initial.texquality != settings.texquality) {
+    if ( initial.gfx.geometrydetail != settings.gfx.geometrydetail ) {
         settings.modified = true;
     }
-    if (initial.texfilter != settings.texfilter) {
+    if ( initial.gfx.multisamplingIndex != settings.gfx.multisamplingIndex ) {
+        settings.modified = true;   
+    }
+    if ( initial.controls.mouseAccelerate != settings.controls.mouseAccelerate ) {
         settings.modified = true;
     }
-    if (initial.texdetail != settings.texdetail) {
+    if ( initial.controls.mouseInvert != settings.controls.mouseInvert ) {
         settings.modified = true;
     }
-    if (initial.gamma != settings.gamma) {
+    if ( initial.controls.mouseSensitivity != settings.controls.mouseSensitivity ) {
+        settings.modified = true;
+    }
+    if ( memcmp( initial.controls.keybinds, settings.controls.keybinds,
+        sizeof( *initial.controls.keybinds ) * settings.controls.numBinds ) != 0 )
+    {
+        settings.modified = true;
+    }
+    if ( initial.sound.masterVol != settings.sound.masterVol ) {
+        settings.modified = true;
+    }
+    if ( initial.sound.musicVol != settings.sound.musicVol ) {
+        settings.modified = true;
+    }
+    if ( initial.sound.sfxVol != settings.sound.sfxVol ) {
+        settings.modified = true;
+    }
+    if ( initial.sound.musicOn != settings.sound.musicOn ) {
         settings.modified = true;
     }
 
-    if ( settings.api == R_OPENGL && initial.api == R_OPENGL ) {
-        if ( settings.GL_extended->allowSoftwareGL != initial.GL_extended->allowSoftwareGL ) {
+    if ( settings.gfx.api == R_OPENGL && initial.gfx.api == R_OPENGL ) {
+        if ( settings.gfx.GL_extended->allowSoftwareGL != initial.gfx.GL_extended->allowSoftwareGL ) {
             settings.modified = true;
         }
-        if ( settings.GL_extended->allowLegacyGL != initial.GL_extended->allowLegacyGL ) {
+        if ( settings.gfx.GL_extended->allowLegacyGL != initial.gfx.GL_extended->allowLegacyGL ) {
             settings.modified = true;
         }
     }
 }
-
 
 static GDR_INLINE void SettingsMenu_Bar( void )
 {
     if ( ImGui::BeginTabBar( " " ) ) {
         if ( ImGui::BeginTabItem( "GRAPHICS" ) ) {
             ui->SetState( STATE_GRAPHICS );
+            if ( settings.lastChild != STATE_GRAPHICS ) {
+                ui->PlaySelected();
+                settings.lastChild = STATE_GRAPHICS;
+            }
             ImGui::EndTabItem();
         }
         if ( ImGui::BeginTabItem( "AUDIO" ) ) {
             ui->SetState( STATE_AUDIO );
+            if ( settings.lastChild != STATE_AUDIO ) {
+                ui->PlaySelected();
+                settings.lastChild = STATE_AUDIO;
+            }
             ImGui::EndTabItem();
         }
         if ( ImGui::BeginTabItem( "CONTROLS" ) ) {
             ui->SetState( STATE_CONTROLS );
+            if ( settings.lastChild != STATE_CONTROLS ) {
+                ui->PlaySelected();
+                settings.lastChild = STATE_CONTROLS;
+            }
             ImGui::EndTabItem();
         }
         if ( ImGui::BeginTabItem( "GAMEPLAY" ) ) {
             ui->SetState( STATE_GAMEPLAY );
+            if ( settings.lastChild != STATE_GAMEPLAY ) {
+                ui->PlaySelected();
+                settings.lastChild = STATE_GAMEPLAY;
+            }
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
@@ -567,20 +773,26 @@ static GDR_INLINE void SettingsMenu_Bar( void )
 
 static GDR_INLINE void SettingsMenu_ExitChild( menustate_t childstate )
 {
-    ui->EscapeMenuToggle( settings.paused ? STATE_PAUSE :  STATE_MAIN );
-    if (ui->GetState() != childstate) {
-        if (settings.modified) {
+    ui->EscapeMenuToggle( settings.paused ? STATE_PAUSE : STATE_MAIN );
+    if ( settings.rebinding ) {
+        // special condition so that we don't exit out of the settings menu when canceling a rebinding
+        ui->SetState( STATE_CONTROLS );
+
+        // just draw the stuff in the background
+        ui->Menu_Title( "SETTINGS" );
+        SettingsMenu_Bar();
+        return;
+    }
+
+    if ( ui->GetState() != childstate ) {
+        if ( settings.modified ) {
             settings.confirmation = qtrue;
-        }
-        else {
-            return;
         }
     }
-    else if (ui->Menu_Title( "SETTINGS" )) {
-        if (settings.modified) {
+    else if ( ui->Menu_Title( "SETTINGS" ) ) {
+        if ( settings.modified ) {
             settings.confirmation = qtrue;
-        }
-        else {
+        } else {
             ui->SetState( settings.paused ? STATE_PAUSE :  STATE_MAIN );
             return;
         }
@@ -593,18 +805,21 @@ static void SettingsMenuGraphics_Draw( void )
     uint64_t i;
 
     SettingsMenu_ExitChild( STATE_GRAPHICS );
+    if ( ui->GetState() != STATE_GRAPHICS ) {
+        return;
+    }
 
-    ImGui::BeginTable( " ", 2 );
+    ImGui::BeginTable( "##GraphicsSettings", 2 );
     {
         const char *vidMode;
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Anti-Aliasing" );
         ImGui::TableNextColumn();
 
-        if (ImGui::BeginMenu( antialiasSettings[ settings.multisamplingIndex ].label )) {
+        if (ImGui::BeginMenu( antialiasSettings[ settings.gfx.multisamplingIndex ].label )) {
             for (uint32_t a = 0; a < arraylen(antialiasSettings); a++) {
                 if (ImGui::MenuItem( antialiasSettings[a].label )) {
-                    settings.multisamplingIndex = a;
+                    settings.gfx.multisamplingIndex = a;
                     ui->PlaySelected();
                 }
             }
@@ -616,11 +831,11 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Texture Filtering" );
         ImGui::TableNextColumn();
-        if (ImGui::BeginMenu( settings.texfilterString )) {
+        if (ImGui::BeginMenu( settings.gfx.texfilterString )) {
             for (i = 0; i < NumTexFilters; i++) {
                 if (ImGui::MenuItem( TexFilterString( (textureFilter_t)((int)TexFilter_Linear + i) ) )) {
-                    settings.texfilter = (textureFilter_t)((int)TexFilter_Linear + i);
-                    settings.texfilterString = TexFilterString( settings.texfilter );
+                    settings.gfx.texfilter = (textureFilter_t)((int)TexFilter_Linear + i);
+                    settings.gfx.texfilterString = TexFilterString( settings.gfx.texfilter );
                     ui->PlaySelected();
                 }
             }
@@ -632,11 +847,11 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Texture Detail" );
         ImGui::TableNextColumn();
-        if ( ImGui::BeginMenu( settings.texdetailString ) ) {
+        if ( ImGui::BeginMenu( settings.gfx.texdetailString ) ) {
             for ( i = 0; i < NumTexDetails; i++ ) {
                 if ( ImGui::MenuItem( TexDetailString( (textureDetail_t)( (int)TexDetail_MSDOS + i ) ) ) ) {
-                    settings.texdetail = (textureDetail_t)( (int)TexDetail_MSDOS + i );
-                    settings.texdetailString = TexDetailString( settings.texdetail );
+                    settings.gfx.texdetail = (textureDetail_t)( (int)TexDetail_MSDOS + i );
+                    settings.gfx.texdetailString = TexDetailString( settings.gfx.texdetail );
                     ui->PlaySelected();
                 }
             }
@@ -649,21 +864,22 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TextUnformatted( "Anisotropic Filtering" );
         ImGui::TableNextColumn();
         if ( ImGui::ArrowButton( "##ANIFILTER_LEFT", ImGuiDir_Left ) ) {
-            settings.anisotropicFiltering = (int32_t)settings.anisotropicFiltering - 1 == -1 ? arraylen(anisotropicFilters) - 1
-                : settings.anisotropicFiltering - 1;
+            settings.gfx.anisotropicFiltering = (int32_t)settings.gfx.anisotropicFiltering - 1 == -1 ? arraylen(anisotropicFilters) - 1
+                : settings.gfx.anisotropicFiltering - 1;
             ui->PlaySelected();
         }
         ImGui::SameLine();
-        ImGui::TextUnformatted( anisotropicFilters[ settings.anisotropicFiltering ].label );
+        ImGui::TextUnformatted( anisotropicFilters[ settings.gfx.anisotropicFiltering ].label );
         ImGui::SameLine();
         if ( ImGui::ArrowButton( "##ANIFILTER_RIGHT", ImGuiDir_Right ) ) {
-            settings.anisotropicFiltering = settings.anisotropicFiltering + 1 >= arraylen(anisotropicFilters) ? 0 : settings.anisotropicFiltering + 1;
+            settings.gfx.anisotropicFiltering = settings.gfx.anisotropicFiltering + 1 >= arraylen(anisotropicFilters)
+                ? 0 : settings.gfx.anisotropicFiltering + 1;
             ui->PlaySelected();
         }
 
         ImGui::TableNextRow();
         
-        switch ( settings.videoMode ) {
+        switch ( settings.gfx.videoMode ) {
         case -2:
             vidMode = va( vidmodeSettings[0], gi.desktopWidth, gi.desktopHeight );
             break;
@@ -671,28 +887,46 @@ static void SettingsMenuGraphics_Draw( void )
             vidMode = va( vidmodeSettings[1], r_customWidth->i, r_customHeight->i );
             break;
         default:
-            vidMode = r_vidModes[ settings.videoMode ].description;
+            vidMode = r_vidModes[ settings.gfx.videoMode ].description;
             break;
         };
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Video Mode" );
         ImGui::TableNextColumn();
-        if ( ImGui::BeginMenu( vidMode ) ) {
-            if ( ImGui::MenuItem( va( "Native Resolution (%ix%i)", gi.desktopWidth, gi.desktopHeight ) ) ) {
-                settings.videoMode = -2;
-                ui->PlaySelected();
-            }
-            if ( ImGui::MenuItem( va( "Custom Resolution (%lix%li)", r_customWidth->i, r_customHeight->i ) ) ) {
-                settings.videoMode = -1;
-                ui->PlaySelected();
-            }
-            for ( i = 2; i < NUMVIDMODES + 2; i++ ) {
-                if ( ImGui::MenuItem( r_vidModes[ i - 2 ].description ) ) {
-                    settings.videoMode = i - 2;
-                    ui->PlaySelected();
-                }
-            }
-            ImGui::EndMenu();
+        if ( ImGui::ArrowButton( "##VideoModeLeft", ImGuiDir_Left ) ) {
+            switch ( settings.gfx.videoMode ) {
+            case -2:
+                settings.gfx.videoMode = NUMVIDMODES - 1;
+                break;
+            default:
+                settings.gfx.videoMode--;
+                break;
+            };
+            ui->PlaySelected();
+        }
+        ImGui::SameLine();
+        switch ( settings.gfx.videoMode ) {
+        case -2:
+            ImGui::Text( "Desktop Resolution (%ix%i)", gi.desktopWidth, gi.desktopHeight );
+            break;
+        case -1:
+            ImGui::Text( "Custom Resolution (%lix%li)", r_customWidth->i, r_customHeight->i );
+            break;
+        default:
+            ImGui::TextUnformatted( r_vidModes[ settings.gfx.videoMode ].description );
+            break;
+        };
+        ImGui::SameLine();
+        if ( ImGui::ArrowButton( "##VideoModeRight", ImGuiDir_Right ) ) {
+            switch ( settings.gfx.videoMode ) {
+            case NUMVIDMODES - 1:
+                settings.gfx.videoMode = -2;
+                break;
+            default:
+                settings.gfx.videoMode++;
+                break;
+            };
+            ui->PlaySelected();
         }
 
         ImGui::TableNextRow();
@@ -700,17 +934,17 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Renderer" );
         ImGui::TableNextColumn();
-        if ( ImGui::BeginMenu( RenderAPIString( settings.api ) ) ) {
+        if ( ImGui::BeginMenu( RenderAPIString( settings.gfx.api ) ) ) {
             if ( ImGui::MenuItem( RenderAPIString( R_OPENGL ) ) ) {
-                settings.api = R_OPENGL;
+                settings.gfx.api = R_OPENGL;
                 ui->PlaySelected();
             }
             if ( ImGui::MenuItem( RenderAPIString( R_SDL2 ) ) ) {
-                settings.api = R_SDL2;
+                settings.gfx.api = R_SDL2;
                 ui->PlaySelected();
             }
             if ( ImGui::MenuItem( RenderAPIString( R_VULKAN ) ) ) {
-                settings.api = R_VULKAN;
+                settings.gfx.api = R_VULKAN;
                 ui->PlaySelected();
             }
             ImGui::EndMenu();
@@ -721,8 +955,8 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Fullscreen" );
         ImGui::TableNextColumn();
-        if ( ImGui::RadioButton( settings.fullscreenStr[settings.fullscreen], settings.fullscreen ) ) {
-            settings.fullscreen = !settings.fullscreen;
+        if ( ImGui::RadioButton( settings.fullscreenStr[settings.gfx.fullscreen], settings.gfx.fullscreen ) ) {
+            settings.gfx.fullscreen = !settings.gfx.fullscreen;
             ui->PlaySelected();
         }
 
@@ -731,7 +965,39 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Lighting" );
         ImGui::TableNextColumn();
-        ImGui::TextUnformatted( "COMING SOON!" );
+
+        if ( ImGui::ArrowButton( "##LightingLeft", ImGuiDir_Left ) ) {
+            switch ( settings.gfx.lighting ) {
+            case 0:
+                settings.gfx.lighting = 1;
+                break;
+            default:
+                settings.gfx.lighting--;
+                break;
+            };
+            ui->PlaySelected();
+        }
+        ImGui::SameLine();
+        switch ( settings.gfx.lighting ) {
+        case 0:
+            ImGui::TextUnformatted( "Dynamic Lighting" );
+            break;
+        case 1:
+            ImGui::TextUnformatted( "Static Lighting" );
+            break;
+        };
+        ImGui::SameLine();
+        if ( ImGui::ArrowButton( "##LightingRight", ImGuiDir_Right ) ) {
+            switch ( settings.gfx.lighting ) {
+            case 1:
+                settings.gfx.lighting = 0;
+                break;
+            default:
+                settings.gfx.lighting++;
+                break;
+            };
+            ui->PlaySelected();
+        }
 
         ImGui::TableNextRow();
 
@@ -739,18 +1005,18 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TextUnformatted( "VSync" );
         ImGui::TableNextColumn();
         if ( ImGui::ArrowButton( "##VSYNCLEFT", ImGuiDir_Left ) ) {
-            switch ( settings.vsync ) {
+            switch ( settings.gfx.vsync ) {
             case -1:
-                settings.vsync = 1;
+                settings.gfx.vsync = 1;
                 break;
             default:
-                settings.vsync--;
+                settings.gfx.vsync--;
                 break;
             };
             ui->PlaySelected();
         }
         ImGui::SameLine();
-        switch ( settings.vsync ) {
+        switch ( settings.gfx.vsync ) {
         case -1:
             ImGui::TextUnformatted( "Adaptive" );
             break;
@@ -765,12 +1031,12 @@ static void SettingsMenuGraphics_Draw( void )
         };
         ImGui::SameLine();
         if ( ImGui::ArrowButton( "##VYSNCRIGHT", ImGuiDir_Right ) ) {
-            switch (settings.vsync) {
+            switch (settings.gfx.vsync) {
             case 1:
-                settings.vsync = -1;
+                settings.gfx.vsync = -1;
                 break;
             default:
-                settings.vsync++;
+                settings.gfx.vsync++;
                 break;
             };
             ui->PlaySelected();
@@ -781,44 +1047,51 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Gamma Correction" );
         ImGui::TableNextColumn();
-        if ( ImGui::SliderFloat( " ", &settings.gamma, 1.0f, 5.0f ) ) {
+        if ( ImGui::SliderFloat( " ", &settings.gfx.gamma, 1.0f, 5.0f ) ) {
             ui->PlaySelected();
         }
+
+        ImGui::TableNextRow();
+
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted( "Bloom" );
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted( "COMING SOON! :)" );
 
         ImGui::TableNextRow();
 
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "HDR" );
         ImGui::TableNextColumn();
-        ImGui::TextUnformatted( "COMING SOON!" );
+        ImGui::TextUnformatted( "COMING SOON! :)" );
 
         ImGui::TableNextRow();
 
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Ambient Occlusion" );
         ImGui::TableNextColumn();
-        ImGui::TextUnformatted( "COMING SOON!" );
+        ImGui::TextUnformatted( "COMING SOON! :)" );
 
         ImGui::TableNextRow();
 
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Stuff For The NERDS" );
         ImGui::TableNextColumn();
-        if ( ImGui::RadioButton( settings.advancedGraphicsStr[settings.advancedGraphics], settings.advancedGraphics ) ) {
-            settings.advancedGraphics = !settings.advancedGraphics;
+        if ( ImGui::RadioButton( settings.advancedGraphicsStr[settings.gfx.advancedGraphics], settings.gfx.advancedGraphics ) ) {
+            settings.gfx.advancedGraphics = !settings.gfx.advancedGraphics;
             ui->PlaySelected();
         }
 
-        if ( settings.advancedGraphics && settings.api == R_OPENGL ) {
+        if ( settings.gfx.advancedGraphics && settings.gfx.api == R_OPENGL ) {
             ImGui::TableNextRow();
 
             ImGui::TableNextColumn();
             ImGui::TextUnformatted( "Allow Software GL Driver" );
             ImGui::TableNextColumn();
-            if ( ImGui::RadioButton( settings.GL_extended->allowLegacyGLStr[settings.GL_extended->allowSoftwareGL],
-                settings.GL_extended->allowSoftwareGL ) )
+            if ( ImGui::RadioButton( settings.gfx.GL_extended->allowLegacyGLStr[settings.gfx.GL_extended->allowSoftwareGL],
+                settings.gfx.GL_extended->allowSoftwareGL ) )
             {
-                settings.GL_extended->allowSoftwareGL = !settings.GL_extended->allowSoftwareGL;
+                settings.gfx.GL_extended->allowSoftwareGL = !settings.gfx.GL_extended->allowSoftwareGL;
                 ui->PlaySelected();
             }
 
@@ -827,8 +1100,8 @@ static void SettingsMenuGraphics_Draw( void )
             ImGui::TableNextColumn();
             ImGui::TextUnformatted( "Allow GL Extensions" );
             ImGui::TableNextColumn();
-            if ( ImGui::RadioButton( settings.useExtensionsStr[settings.extensions], settings.extensions ) ) {
-                settings.extensions = !settings.extensions;
+            if ( ImGui::RadioButton( settings.useExtensionsStr[settings.gfx.extensions], settings.gfx.extensions ) ) {
+                settings.gfx.extensions = !settings.gfx.extensions;
                 ui->PlaySelected();
             }
 
@@ -837,10 +1110,10 @@ static void SettingsMenuGraphics_Draw( void )
             ImGui::TableNextColumn();
             ImGui::TextUnformatted( "Allow Legacy GL Functionality" );
             ImGui::TableNextColumn();
-            if ( ImGui::RadioButton( settings.GL_extended->allowLegacyGLStr[settings.GL_extended->allowLegacyGL],
-                settings.GL_extended->allowLegacyGL ) )
+            if ( ImGui::RadioButton( settings.gfx.GL_extended->allowLegacyGLStr[settings.gfx.GL_extended->allowLegacyGL],
+                settings.gfx.GL_extended->allowLegacyGL ) )
             {
-                settings.GL_extended->allowLegacyGL = !settings.GL_extended->allowLegacyGL;
+                settings.gfx.GL_extended->allowLegacyGL = !settings.gfx.GL_extended->allowLegacyGL;
                 ui->PlaySelected();
             }
 
@@ -849,9 +1122,9 @@ static void SettingsMenuGraphics_Draw( void )
             ImGui::TableNextColumn();
             ImGui::TextUnformatted( "GL Extensions" );
             ImGui::TableNextColumn();
-            if ( ImGui::BeginMenu( settings.extensionsMenuStr )) {
-                for ( uint32_t i = 0; i < settings.numExtensions; i++ ) {
-                    ImGui::MenuItem( settings.extensionStrings[i] );
+            if ( ImGui::BeginMenu( settings.gfx.extensionsMenuStr )) {
+                for ( uint32_t i = 0; i < settings.gfx.numExtensions; i++ ) {
+                    ImGui::MenuItem( settings.gfx.extensionStrings[i] );
                 }
                 ImGui::EndMenu();
             }
@@ -863,29 +1136,32 @@ static void SettingsMenuGraphics_Draw( void )
 static void SettingsMenuAudio_Draw( void )
 {
     SettingsMenu_ExitChild( STATE_AUDIO );
+    if ( ui->GetState() != STATE_AUDIO ) {
+        return;
+    }
 
     ImGui::SeparatorText( "Master Volume" );
-    if (ImGui::SliderInt( " ", &settings.masterVol, 0, 100 )) {
+    if (ImGui::SliderInt( " ", &settings.sound.masterVol, 0, 100 )) {
         ui->PlaySelected();
     }
 
     ImGui::SeparatorText( "Sound Effects" );
-    if (ImGui::RadioButton( "ON##SfxOn", settings.sfxOn )) {
-        settings.sfxOn = !settings.sfxOn;
+    if (ImGui::RadioButton( "ON##SfxOn", settings.sound.sfxOn )) {
+        settings.sound.sfxOn = !settings.sound.sfxOn;
         ui->PlaySelected();
     }
     ImGui::SameLine();
-    if (ImGui::SliderInt( "VOLUME##SfxVolume", &settings.sfxVol, 0, 100 )) {
+    if (ImGui::SliderInt( "VOLUME##SfxVolume", &settings.sound.sfxVol, 0, 100 )) {
         ui->PlaySelected();
     }
 
     ImGui::SeparatorText( "Music" );
-    if (ImGui::RadioButton( "ON##MusicOn", settings.musicOn )) {
-        settings.musicOn = !settings.musicOn;
+    if (ImGui::RadioButton( "ON##MusicOn", settings.sound.musicOn )) {
+        settings.sound.musicOn = !settings.sound.musicOn;
         ui->PlaySelected();
     }
     ImGui::SameLine();
-    if (ImGui::SliderInt( "VOLUME##MusicVolume", &settings.musicVol, 0, 100 )) {
+    if (ImGui::SliderInt( "VOLUME##MusicVolume", &settings.sound.musicVol, 0, 100 )) {
         ui->PlaySelected();
     }
 }
@@ -893,17 +1169,26 @@ static void SettingsMenuAudio_Draw( void )
 static void SettingsMenuGameplay_Draw( void )
 {
     SettingsMenu_ExitChild( STATE_GAMEPLAY );
+    if ( ui->GetState() != STATE_GAMEPLAY ) {
+        return;
+    }
 
     if ( sgvm ) {
         g_pModuleLib->ModuleCall( sgvm, ModuleDrawConfiguration, 0 );
+        g_pModuleLib->RunModules( ModuleDrawConfiguration, 0 );
     }
 }
 
 static void SettingsMenuControls_Draw( void )
 {
     uint32_t i;
+    char bind[1024];
+    char bind2[1024];
 
     SettingsMenu_ExitChild( STATE_CONTROLS );
+    if ( ui->GetState() != STATE_CONTROLS ) {
+        return;
+    }
 
     // mouse options
     ImGui::SeparatorText( "MOUSE" );
@@ -913,7 +1198,7 @@ static void SettingsMenuControls_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Sensitivity" );
         ImGui::TableNextColumn();
-        if ( ImGui::SliderInt( " ", &settings.mouseSensitivity, 0, 100 ) ) {
+        if ( ImGui::SliderInt( " ", &settings.controls.mouseSensitivity, 0, 100 ) ) {
             ui->PlaySelected();
         }
 
@@ -922,8 +1207,8 @@ static void SettingsMenuControls_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Mouse Invert" );
         ImGui::TableNextColumn();
-        if ( ImGui::RadioButton( settings.mouseInvert ? "ON" : "OFF", settings.mouseInvert ) ) {
-            settings.mouseInvert = !settings.mouseInvert;
+        if ( ImGui::RadioButton( settings.controls.mouseInvert ? "ON" : "OFF", settings.controls.mouseInvert ) ) {
+            settings.controls.mouseInvert = !settings.controls.mouseInvert;
             ui->PlaySelected();
         }
 
@@ -932,8 +1217,8 @@ static void SettingsMenuControls_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "Mouse Acceleration" );
         ImGui::TableNextColumn();
-        if ( ImGui::RadioButton( settings.mouseAccelerate ? "ON" : "OFF", settings.mouseAccelerate ) ) {
-            settings.mouseAccelerate = !settings.mouseAccelerate;
+        if ( ImGui::RadioButton( settings.controls.mouseAccelerate ? "ON" : "OFF", settings.controls.mouseAccelerate ) ) {
+            settings.controls.mouseAccelerate = !settings.controls.mouseAccelerate;
             ui->PlaySelected();
         }
     }
@@ -956,17 +1241,31 @@ static void SettingsMenuControls_Draw( void )
 
         ImGui::SetWindowFontScale( font_scale );
 
-        for ( i = 0; i < arraylen(bindNames); i++ ) {
+        for ( i = 0; i < settings.controls.numBinds; i++ ) {
             ImGui::TableNextColumn();
-            ImGui::TextUnformatted( settings.keybinds[i].keyname );
+            if ( settings.controls.keybinds[i].bind1 == -1 ) {
+                strcpy( bind, "???" );
+            } else {
+                strcpy( bind, Key_KeynumToString( settings.controls.keybinds[i].bind1 ) );
+                N_strupr( bind );
+
+                if ( settings.controls.keybinds[i].bind2 != -1 ) {
+                    strcpy( bind2, Key_KeynumToString( settings.controls.keybinds[i].bind2 ) );
+                    N_strupr( bind2 );
+
+                    strcat( bind, " or " );
+                    strcat( bind, bind2 );
+                }
+            }
+            ImGui::TextUnformatted( bind );
             ImGui::TableNextColumn();
-            if ( ImGui::Button( settings.keybinds[i].bindname ) ) {
+            if ( ImGui::Button( settings.controls.keybinds[i].label ) ) {
                 settings.rebinding = qtrue;
-                settings.rebindIndex = i;
+                settings.controls.rebindIndex = i;
                 ui->PlaySelected();
             }
 
-            if ( i != arraylen(bindNames) - 1 ) {
+            if ( i != settings.controls.numBinds - 1 ) {
                 ImGui::TableNextRow();
             }
         }
@@ -994,6 +1293,8 @@ void SettingsMenu_Draw( void )
     case STATE_GAMEPLAY:
         SettingsMenuGameplay_Draw();
         break;
+    default:
+        return;
     };
 
     SettingsMenu_Update();
@@ -1001,36 +1302,49 @@ void SettingsMenu_Draw( void )
 }
 
 static void SettingsMenu_GetInitial( void ) {
-    memset( &initial, 0, sizeof(initial) );
+    memset( &initial, 0, sizeof( initial ) );
 
-    initial.anisotropicFiltering = Cvar_VariableInteger( "r_anisotropicFiltering" );
-    initial.useExtensions = Cvar_VariableInteger( "r_useExtensions" );
-    initial.customWidth = Cvar_VariableInteger( "r_customWidth" );
-    initial.customHeight = Cvar_VariableInteger( "r_customHeight" );
-    initial.texdetail = (textureDetail_t)Cvar_VariableInteger( "r_textureDetail" );
-    initial.texfilter = (textureFilter_t)Cvar_VariableInteger( "r_textureFiltering" );
-    initial.videoMode = Cvar_VariableInteger( "r_mode" );
-    initial.fullscreen = Cvar_VariableInteger( "r_fullscreen" );
-    initial.api = StringToRenderAPI( Cvar_VariableString( "g_renderer" ) );
-    initial.multisamplingIndex = Cvar_VariableInteger( "r_multisample" );
+    initial.gfx.anisotropicFiltering = Cvar_VariableInteger( "r_anisotropicFiltering" );
+    initial.gfx.useExtensions = Cvar_VariableInteger( "r_useExtensions" );
+    initial.gfx.customWidth = Cvar_VariableInteger( "r_customWidth" );
+    initial.gfx.customHeight = Cvar_VariableInteger( "r_customHeight" );
+    initial.gfx.texdetail = (textureDetail_t)Cvar_VariableInteger( "r_textureDetail" );
+    initial.gfx.texfilter = (textureFilter_t)Cvar_VariableInteger( "r_textureFiltering" );
+    initial.gfx.videoMode = Cvar_VariableInteger( "r_mode" );
+    initial.gfx.fullscreen = Cvar_VariableInteger( "r_fullscreen" );
+    initial.gfx.api = StringToRenderAPI( Cvar_VariableString( "g_renderer" ) );
+    initial.gfx.multisamplingIndex = Cvar_VariableInteger( "r_multisample" );
 
-    if ( initial.api == R_OPENGL ) {
-        initial.GL_extended = (graphics_extended_GL_t *)Hunk_Alloc( sizeof(graphics_extended_GL_t), h_high );
-        initial.GL_extended->allowSoftwareGL = Cvar_VariableInteger( "r_allowSoftwareGL" );
-        initial.GL_extended->use_GL_ARB_vertex_array_object = Cvar_VariableInteger( "r_arb_vertex_array_object" );
+    if ( initial.gfx.api == R_OPENGL ) {
+        initial.gfx.GL_extended = (graphics_extended_GL_t *)Hunk_Alloc( sizeof( graphics_extended_GL_t ), h_high );
+        initial.gfx.GL_extended->allowSoftwareGL = Cvar_VariableInteger( "r_allowSoftwareGL" );
+        initial.gfx.GL_extended->use_GL_ARB_vertex_array_object = Cvar_VariableInteger( "r_arb_vertex_array_object" );
     }
-    initial.vsync = Cvar_VariableInteger( "r_swapInterval" );
-    initial.gamma = Cvar_VariableFloat( "r_gammaAmount" );
+    initial.gfx.vsync = Cvar_VariableInteger( "r_swapInterval" );
+    initial.gfx.gamma = Cvar_VariableFloat( "r_gammaAmount" );
 
-    initial.sfxOn = Cvar_VariableInteger( "snd_sfxon" );
-    initial.musicOn = Cvar_VariableInteger( "snd_musicon" );
-    initial.sfxVol = Cvar_VariableInteger( "snd_sfxvol" );
-    initial.musicVol = Cvar_VariableInteger( "snd_musicvol" );
-    initial.masterVol = Cvar_VariableFloat( "snd_mastervol" );
+    initial.sound.sfxOn = Cvar_VariableInteger( "snd_sfxon" );
+    initial.sound.musicOn = Cvar_VariableInteger( "snd_musicon" );
+    initial.sound.sfxVol = Cvar_VariableInteger( "snd_sfxvol" );
+    initial.sound.musicVol = Cvar_VariableInteger( "snd_musicvol" );
+    initial.sound.masterVol = Cvar_VariableFloat( "snd_mastervol" );
     
-    initial.mouseSensitivity = Cvar_VariableInteger( "g_mouseSensitivity" );
-    initial.mouseAccelerate = Cvar_VariableInteger("g_mouseAcceleration");
-    initial.mouseInvert = Cvar_VariableInteger("g_mouseInvert");
+    initial.controls.mouseSensitivity = Cvar_VariableInteger( "g_mouseSensitivity" );
+    initial.controls.mouseAccelerate = Cvar_VariableInteger("g_mouseAcceleration");
+    initial.controls.mouseInvert = Cvar_VariableInteger("g_mouseInvert");
+
+    initial.controls.keybinds = (bind_t *)Hunk_Alloc( sizeof( *initial.controls.keybinds ) * settings.controls.numBinds, h_high );
+    memcpy( initial.controls.keybinds, settings.controls.keybinds, sizeof( *initial.controls.keybinds ) * settings.controls.numBinds );
+}
+
+static void SettingsMenu_InitPresets( void )
+{
+    uint32_t i;
+    graphics_t *p;
+
+    p = settings.presets = (graphics_t *)Hunk_Alloc( sizeof( *settings.presets ) * NUM_PRESETS, h_high );
+
+    p[PRESET_LOW_QUALITY].fullscreen = true;
 }
 
 void SettingsMenu_Cache( void ) {
@@ -1040,30 +1354,30 @@ void SettingsMenu_Cache( void ) {
 
 //    settings = (settingsmenu_t *)Hunk_Alloc( sizeof(*settings), h_high );
 
-    memset( &settings, 0, sizeof(settings) );
+    memset( &settings, 0, sizeof( settings ) );
 
-    settings.api = StringToRenderAPI( Cvar_VariableString( "g_renderer" ) );
+    settings.gfx.api = StringToRenderAPI( Cvar_VariableString( "g_renderer" ) );
 
     // get extensions list
-    if ( settings.api == R_OPENGL ) {
+    if ( settings.gfx.api == R_OPENGL ) {
         renderImport.glGetIntegerv( GL_NUM_EXTENSIONS, &numExtensions );
 
-        settings.extensionStrings = (char **)Hunk_Alloc( sizeof(char *) * numExtensions, h_high );
-        settings.numExtensions = numExtensions;
+        settings.gfx.extensionStrings = (char **)Hunk_Alloc( sizeof( char * ) * numExtensions, h_high );
+        settings.gfx.numExtensions = numExtensions;
 
         for ( i = 0; i < numExtensions; i++ ) {
             const GLubyte *name = renderImport.glGetStringi( GL_EXTENSIONS, i );
             len = strlen( (const char *)name );
 
-            settings.extensionStrings[i] = (char *)Hunk_Alloc( len + 1, h_high );
-            strcpy( settings.extensionStrings[i], (const char *)name );
+            settings.gfx.extensionStrings[i] = (char *)Hunk_Alloc( len + 1, h_high );
+            strcpy( settings.gfx.extensionStrings[i], (const char *)name );
         }
     }
 
-    N_strncpyz( settings.extensionsMenuStr, va( "%u Extensions", settings.numExtensions ), sizeof(settings.extensionsMenuStr) );
+    N_strncpyz( settings.gfx.extensionsMenuStr, va( "%u Extensions", settings.gfx.numExtensions ), sizeof( settings.gfx.extensionsMenuStr ) );
 
-    SettingsMenu_GetInitial();
     SettingsMenu_SetDefault();
+    SettingsMenu_GetInitial();
 
     settings.confirmation = qfalse;
     settings.modified = qfalse;

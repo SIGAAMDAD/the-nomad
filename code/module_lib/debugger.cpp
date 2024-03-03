@@ -85,8 +85,6 @@ CDebugger::CDebugger( void ) {
 }
 
 CDebugger::~CDebugger() {
-	SetEngine( NULL );
-
 	Cmd_RemoveCommand( "ml_debug.set_script_debug" );
 	Cmd_RemoveCommand( "ml_debug.list_global_vars" );
 	Cmd_RemoveCommand( "ml_debug.list_local_vars" );
@@ -99,7 +97,7 @@ const eastl::string& CDebugger::ToString( void *value, asUINT typeId, int32_t ex
 	static eastl::string str;
 
 	if ( !value ) {
-		return "<null>";
+		str = "(null)";
 	}
 
 	// If no engine pointer was provided use the default
@@ -108,7 +106,7 @@ const eastl::string& CDebugger::ToString( void *value, asUINT typeId, int32_t ex
 	}
 
 	switch ( typeId ) {
-	case asTYPEID_VOID: return "<void>";
+	case asTYPEID_VOID: str = "<void>";
 	case asTYPEID_BOOL:
 		return str.sprintf( "%s", *(bool *)value ? "true" : "false" );
 	case asTYPEID_INT8:

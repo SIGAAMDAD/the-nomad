@@ -1,6 +1,8 @@
 #include "module_public.h"
 #include <glm/gtc/type_ptr.hpp>
 #include <limits.h>
+#include "aswrappedcall.h"
+#include "imgui_stdlib.h"
 
 //
 // c++ compatible wrappers around angelscript engine function calls
@@ -269,6 +271,12 @@ DEFINE_CALLBACK( SaveUInt64 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
     const uint64_t arg = *(const uint64_t *)pGeneric->GetArgAddress( 1 );
     g_pArchiveHandler->SaveULong( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( SaveArray ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const CScriptArray *arg = (const CScriptArray *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->SaveArray( name->c_str(), arg );
 }
 
 DEFINE_CALLBACK( SaveFloat ) {
@@ -742,6 +750,36 @@ DEFINE_CALLBACK( LoadFile ) {
 DEFINE_CALLBACK( ModuleAssertion ) {
 }
 
+DEFINE_CALLBACK( CmdArgcGeneric ) {
+    *(uint32_t *)pGeneric->GetAddressOfReturnLocation() = Cmd_Argc();
+}
+
+DEFINE_CALLBACK( CmdArgvGeneric ) {
+    *(string_t *)pGeneric->GetAddressOfReturnLocation() = Cmd_Argv( pGeneric->GetArgDWord( 0 ) );
+}
+
+DEFINE_CALLBACK( CmdArgsGeneric ) {
+    *(string_t *)pGeneric->GetAddressOfReturnLocation() = Cmd_ArgsFrom( pGeneric->GetArgDWord( 0 ) );
+}
+
+DEFINE_CALLBACK( CmdAddCommandGeneric ) {
+    Cmd_AddCommand( ( (string_t *)pGeneric->GetArgObject( 0 ) )->c_str(), NULL );
+}
+
+DEFINE_CALLBACK( CmdRemoveCommandGeneric ) {
+    Cmd_RemoveCommand( ( (string_t *)pGeneric->GetArgObject( 0 ) )->c_str() );
+}
+
+static int32_t ImGui_InputText( const string_t *label, string_t *str, ImGuiInputTextFlags flags = 0 ) {
+    return ImGui::InputText( label->c_str(), str, flags );
+}
+
+static bool ImGui_BeginTable( const string_t *title, int32_t numColumns, ImGuiTableFlags flags )
+{
+    return ImGui::BeginTable( title->c_str(), numColumns, flags );
+
+}
+
 //
 // script globals
 //
@@ -792,79 +830,159 @@ static const asQWORD script_MAX_UINT64 = ULONG_MAX;
 static const asQWORD script_MIN_INT8 = CHAR_MIN;
 static const asQWORD script_MIN_INT16 = SHRT_MIN;
 static const asQWORD script_MIN_INT32 = INT_MIN;
-static const asQWORD script_MIN_INT64 = LONG_MIN;
+
+static const asDWORD script_CVAR_ROM = CVAR_ROM;
+static const asDWORD script_CVAR_CHEAT = CVAR_CHEAT;
+static const asDWORD script_CVAR_INIT = CVAR_INIT;
+static const asDWORD script_CVAR_LATCH = CVAR_LATCH;
+static const asDWORD script_CVAR_NODEFAULT = CVAR_NODEFAULT;
+static const asDWORD script_CVAR_NORESTART = CVAR_NORESTART;
+static const asDWORD script_CVAR_NOTABCOMPLETE = CVAR_NOTABCOMPLETE;
+static const asDWORD script_CVAR_PROTECTED = CVAR_PROTECTED;
+static const asDWORD script_CVAR_SAVE = CVAR_SAVE;
+static const asDWORD script_CVAR_TEMP = CVAR_TEMP;
+static const asDWORD script_CVAR_INVALID_HANDLE = CVAR_INVALID_HANDLE;
+
+static const asDWORD script_NOMAD_VERSION = NOMAD_VERSION;
+static const asDWORD script_NOMAD_VERSION_UPDATE = NOMAD_VERSION_UPDATE;
+static const asDWORD script_NOMAD_VERSION_PATCH = NOMAD_VERSION_PATCH;
 
 void ModuleLib_Register_Engine( void )
 {
 //    SET_NAMESPACE( "TheNomad::Constants" );
     { // Constants
         REGISTER_GLOBAL_VAR( "const int32 FS_INVALID_HANDLE", &script_FS_INVALID_HANDLE );
+
+        REGISTER_GLOBAL_VAR( "const uint32 CVAR_CHEAT", &script_CVAR_CHEAT );
+        REGISTER_GLOBAL_VAR( "const uint32 CVAR_ROM", &script_CVAR_ROM );
+        REGISTER_GLOBAL_VAR( "const uint32 CVAR_INIT", &script_CVAR_INIT );
+        REGISTER_GLOBAL_VAR( "const uint32 CVAR_LATCH", &script_CVAR_LATCH );
+        REGISTER_GLOBAL_VAR( "const uint32 CVAR_NODEFAULT", &script_CVAR_NODEFAULT );
+        REGISTER_GLOBAL_VAR( "const uint32 CVAR_NORESTART", &script_CVAR_NORESTART );
+        REGISTER_GLOBAL_VAR( "const uint32 CVAR_NOTABCOMPLETE", &script_CVAR_NOTABCOMPLETE );
+        REGISTER_GLOBAL_VAR( "const uint32 CVAR_PROTECTED", &script_CVAR_PROTECTED );
+        REGISTER_GLOBAL_VAR( "const uint32 CVAR_TEMP", &script_CVAR_TEMP );
+        REGISTER_GLOBAL_VAR( "const uint32 CVAR_SAVE", &script_CVAR_SAVE );
+
+        REGISTER_GLOBAL_VAR( "const uint32 NOMAD_VERSION", &script_NOMAD_VERSION );
+        REGISTER_GLOBAL_VAR( "const uint32 NOMAD_VERSION_UPDATE", &script_NOMAD_VERSION_UPDATE );
+        REGISTER_GLOBAL_VAR( "const uint32 NOMAD_VERSION_PATCH", &script_NOMAD_VERSION_PATCH );
     }
+
+    { // ModuleInfo
+        REGISTER_GLOBAL_VAR( "const int32 MODULE_VERSION_MAJOR", g_pModuleLib->GetCurrentHandle()->VersionMajor() );
+        REGISTER_GLOBAL_VAR( "const int32 MODULE_VERSION_UPDATE", g_pModuleLib->GetCurrentHandle()->VersionUpdate() );
+        REGISTER_GLOBAL_VAR( "const int32 MODULE_VERSION_PATCH", g_pModuleLib->GetCurrentHandle()->VersionPatch() );
+        REGISTER_GLOBAL_VAR( "const string MODULE_NAME", eastl::addressof( g_pModuleLib->GetCurrentHandle()->GetName() ) );
+    }
+
+    { // Math
+        RESET_NAMESPACE(); // should this be defined at a global level?
+
+        {
+            REGISTER_OBJECT_TYPE( "vec2", glm::vec2, asOBJ_VALUE );
+            REGISTER_OBJECT_BEHAVIOUR( "vec2", asBEHAVE_CONSTRUCT, "void f()", ConstructVec2Generic );
+            REGISTER_OBJECT_BEHAVIOUR( "vec2", asBEHAVE_CONSTRUCT, "void f( const vec2& in )", CopyConstructVec2Generic );
+            REGISTER_OBJECT_BEHAVIOUR( "vec2", asBEHAVE_CONSTRUCT, "void f( float, float )", ValueConstructVec2Generic );
+            REGISTER_OBJECT_BEHAVIOUR( "vec2", asBEHAVE_DESTRUCT, "void f()", DestructVec2Generic );
+            REGISTER_OBJECT_PROPERTY( "vec2", "float", x, offsetof( glm::vec2, x ) );
+            REGISTER_OBJECT_PROPERTY( "vec2", "float", y, offsetof( glm::vec2, y ) );
+
+            REGISTER_METHOD_FUNCTION( "vec2", "vec2& opAssign( const vec2& in )", AssignVec2ToVec2Generic );
+            REGISTER_METHOD_FUNCTION( "vec2", "vec2& opAddAssign( const vec2& in )", AddAssignVec2Generic );
+            REGISTER_METHOD_FUNCTION( "vec2", "vec2& opSubAssign( const vec2& in )", SubAssignVec2Generic );
+            REGISTER_METHOD_FUNCTION( "vec2", "vec2& opMulAssign( const vec2& in )", MulAssignVec2Generic );
+            REGISTER_METHOD_FUNCTION( "vec2", "vec2& opDivAssign( const vec2& in )", DivAssignVec2Generic );
+
+            REGISTER_METHOD_FUNCTION( "vec2", "bool opEquals( const vec2& in ) const", EqualsVec2Generic );
+            REGISTER_METHOD_FUNCTION( "vec2", "int opCmp( const vec2& in ) const", CmpVec2Generic );
+            REGISTER_METHOD_FUNCTION( "vec2", "float& opIndex( uint )", IndexVec2Generic );
+            REGISTER_METHOD_FUNCTION( "vec2", "const float& opSub( uint ) const", IndexVec2Generic );
+
+            REGISTER_METHOD_FUNCTION( "vec2", "vec2 opAdd( const vec2& in ) const", AddVec2Generic );
+            REGISTER_METHOD_FUNCTION( "vec2", "vec2 opSub( const vec2& in ) const", SubVec2Generic );
+            REGISTER_METHOD_FUNCTION( "vec2", "vec2 opMul( const vec2& in ) const", MulVec2Generic );
+            REGISTER_METHOD_FUNCTION( "vec2", "vec2 opDiv( const vec2& in ) const", DivVec2Generic );
+        }
+        {
+            REGISTER_OBJECT_TYPE( "vec3", glm::vec3, asOBJ_VALUE );
+            REGISTER_OBJECT_BEHAVIOUR( "vec3", asBEHAVE_CONSTRUCT, "void f()", ConstructVec3Generic );
+            REGISTER_OBJECT_BEHAVIOUR( "vec3", asBEHAVE_CONSTRUCT, "void f( const vec3& in )", CopyConstructVec3Generic );
+            REGISTER_OBJECT_BEHAVIOUR( "vec3", asBEHAVE_CONSTRUCT, "void f( float, float, float )", ValueConstructVec3Generic );
+            REGISTER_OBJECT_BEHAVIOUR( "vec3", asBEHAVE_DESTRUCT, "void f()", DestructVec3Generic );
+            REGISTER_OBJECT_PROPERTY( "vec3", "float", x, offsetof( glm::vec3, x ) );
+            REGISTER_OBJECT_PROPERTY( "vec3", "float", y, offsetof( glm::vec3, y ) );
+            REGISTER_OBJECT_PROPERTY( "vec3", "float", z, offsetof( glm::vec3, z ) );
+
+            REGISTER_METHOD_FUNCTION( "vec3", "vec3& opAssign( const vec3& in )", AssignVec3ToVec3Generic );
+            REGISTER_METHOD_FUNCTION( "vec3", "vec3& opAddAssign( const vec3& in )", AddAssignVec3Generic );
+            REGISTER_METHOD_FUNCTION( "vec3", "vec3& opSubAssign( const vec3& in )", SubAssignVec3Generic );
+            REGISTER_METHOD_FUNCTION( "vec3", "vec3& opMulAssign( const vec3& in )", MulAssignVec3Generic );
+            REGISTER_METHOD_FUNCTION( "vec3", "vec3& opDivAssign( const vec3& in )", DivAssignVec3Generic );
+
+            REGISTER_METHOD_FUNCTION( "vec3", "bool opEquals( const vec3& in ) const", EqualsVec3Generic );
+            REGISTER_METHOD_FUNCTION( "vec3", "int opCmp( const vec3& in ) const", CmpVec3Generic );
+            REGISTER_METHOD_FUNCTION( "vec3", "float& opIndex( uint )", IndexVec3Generic );
+            REGISTER_METHOD_FUNCTION( "vec3", "const float& opSub( uint ) const", IndexVec3Generic );
+
+            REGISTER_METHOD_FUNCTION( "vec3", "vec3 opAdd( const vec3& in ) const", AddVec3Generic );
+            REGISTER_METHOD_FUNCTION( "vec3", "vec3 opSub( const vec3& in ) const", SubVec3Generic );
+            REGISTER_METHOD_FUNCTION( "vec3", "vec3 opMul( const vec3& in ) const", MulVec3Generic );
+            REGISTER_METHOD_FUNCTION( "vec3", "vec3 opDiv( const vec3& in ) const", DivVec3Generic );
+        }
+    }
+
+    SET_NAMESPACE( "ImGui" );
+    { // ImGui
+        #undef REGISTER_GLOBAL_FUNCTION
+        #define REGISTER_GLOBAL_FUNCTION( decl, funcPtr ) \
+            ValidateFunction( __func__, decl,\
+                g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( decl, WRAP_FN( funcPtr ), asCALL_GENERIC ) )
+        
+        RESET_NAMESPACE();
+        REGISTER_ENUM_TYPE( "ImGuiTableFlags" );
+        REGISTER_ENUM_VALUE( "ImGuiTableFlags", "ImGuiTableFlags_None", ImGuiTableFlags_None );
+        REGISTER_ENUM_VALUE( "ImGuiTableFlags", "ImGuiTableFlags_Resizable", ImGuiTableFlags_Resizable );
+        REGISTER_ENUM_VALUE( "ImGuiTableFlags", "ImGuiTableFlags_Reorderable", ImGuiTableFlags_Reorderable );
+
+        REGISTER_ENUM_TYPE( "ImGuiInputTextFlags" );
+        REGISTER_ENUM_VALUE( "ImGuiInputTextFlags", "ImGuiInputTextFlags_EnterReturnsTrue", ImGuiInputTextFlags_EnterReturnsTrue );
+        REGISTER_ENUM_VALUE( "ImGuiInputTextFlags", "ImGuiInputTextFlags_AllowTabInput", ImGuiInputTextFlags_AllowTabInput );
+        REGISTER_ENUM_VALUE( "ImGuiInputTextFlags", "ImGuiInputTextFlags_CtrlEnterForNewLine", ImGuiInputTextFlags_CtrlEnterForNewLine );
+
+        // this isn't currently supported
+        CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterFuncdef( "int ImGuiInputTextCalback( ref@ )" ) );
+
+        SET_NAMESPACE( "ImGui" );
+
+        REGISTER_GLOBAL_FUNCTION( "bool ImGui::Begin( const string& in, bool& in = null, const int = 0 )", ImGui::Begin );
+        REGISTER_GLOBAL_FUNCTION( "void ImGui::End()", ImGui::End );
+        REGISTER_GLOBAL_FUNCTION( "bool ImGui::BeginTable( const string& in, int, ImGuiTableFlags = 0, const vec2& in = ( 0.0f, 0.0f ), float = 0.0f )", ImGui_BeginTable );
+        REGISTER_GLOBAL_FUNCTION( "void ImGui::EndTable()", ImGui::EndTable );
+        REGISTER_GLOBAL_FUNCTION( "int ImGui::InputText( const string& in, string& out, ImGuiInputTextFlags = 0 )", ImGui_InputText );
+
+        #undef REGISTER_GLOBAL_FUNCTION
+        #define REGISTER_GLOBAL_FUNCTION( decl, funcPtr ) \
+            ValidateFunction( __func__, decl,\
+                g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( decl, asFUNCTION( ModuleLib_##funcPtr ), asCALL_GENERIC ) )
+    }
+    RESET_NAMESPACE();
 
     SET_NAMESPACE( "TheNomad" );
 	
 	SET_NAMESPACE( "TheNomad::Engine" );
 	{ // Engine
         
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CvarRegister( const string&, const string&, uint, int64&, float&, int&, int& )", CvarRegisterGeneric );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CvarSet( const string&, const string& )", CvarSetValueGeneric );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CvarUpdate( const string&, string&, int64&, float&, int&, const int )", CvarUpdateGeneric );
-		
-        { // Math
-            RESET_NAMESPACE(); // should this be defined at a global level?
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CvarRegister( const string& in, const string& in, uint, int64& out, float& out, int& out, int& out )", CvarRegisterGeneric );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CvarSet( const string& in, const string& in )", CvarSetValueGeneric );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CvarUpdate( const string& in, string& out, int64& out, float& out, int& out, const int )", CvarUpdateGeneric );
 
-            {
-                REGISTER_OBJECT_TYPE( "vec2", glm::vec2, asOBJ_VALUE );
-                REGISTER_OBJECT_BEHAVIOUR( "vec2", asBEHAVE_CONSTRUCT, "void f()", ConstructVec2Generic );
-                REGISTER_OBJECT_BEHAVIOUR( "vec2", asBEHAVE_CONSTRUCT, "void f( const vec2& )", CopyConstructVec2Generic );
-                REGISTER_OBJECT_BEHAVIOUR( "vec2", asBEHAVE_CONSTRUCT, "void f( float, float )", ValueConstructVec2Generic );
-                REGISTER_OBJECT_BEHAVIOUR( "vec2", asBEHAVE_DESTRUCT, "void f()", DestructVec2Generic );
-                REGISTER_OBJECT_PROPERTY( "vec2", "float", x, offsetof( glm::vec2, x ) );
-                REGISTER_OBJECT_PROPERTY( "vec2", "float", y, offsetof( glm::vec2, y ) );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdArgc()", CmdArgcGeneric );
+        REGISTER_GLOBAL_FUNCTION( "const string& TheNomad::Engine::CmdArgv( uint )", CmdArgvGeneric );
+        REGISTER_GLOBAL_FUNCTION( "const string& TheNomad::Engine::CmdArgs( uint )", CmdArgsGeneric );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdAddCommand( const string& in )", CmdAddCommandGeneric );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdRemoveCommand( const string& in )", CmdRemoveCommandGeneric );
 
-                REGISTER_METHOD_FUNCTION( "vec2", "vec2& opAssign( const vec2& )", AssignVec2ToVec2Generic );
-                REGISTER_METHOD_FUNCTION( "vec2", "vec2& opAddAssign( const vec2& )", AddAssignVec2Generic );
-                REGISTER_METHOD_FUNCTION( "vec2", "vec2& opSubAssign( const vec2& )", SubAssignVec2Generic );
-                REGISTER_METHOD_FUNCTION( "vec2", "vec2& opMulAssign( const vec2& )", MulAssignVec2Generic );
-                REGISTER_METHOD_FUNCTION( "vec2", "vec2& opDivAssign( const vec2& )", DivAssignVec2Generic );
-
-                REGISTER_METHOD_FUNCTION( "vec2", "bool opEquals( const vec2& ) const", EqualsVec2Generic );
-                REGISTER_METHOD_FUNCTION( "vec2", "int opCmp( const vec2& ) const", CmpVec2Generic );
-                REGISTER_METHOD_FUNCTION( "vec2", "float& opIndex( uint )", IndexVec2Generic );
-                REGISTER_METHOD_FUNCTION( "vec2", "const float& opSub( uint ) const", IndexVec2Generic );
-
-                REGISTER_METHOD_FUNCTION( "vec2", "vec2 opAdd( const vec2& ) const", AddVec2Generic );
-                REGISTER_METHOD_FUNCTION( "vec2", "vec2 opSub( const vec2& ) const", SubVec2Generic );
-                REGISTER_METHOD_FUNCTION( "vec2", "vec2 opMul( const vec2& ) const", MulVec2Generic );
-                REGISTER_METHOD_FUNCTION( "vec2", "vec2 opDiv( const vec2& ) const", DivVec2Generic );
-            }
-            {
-                REGISTER_OBJECT_TYPE( "vec3", glm::vec3, asOBJ_VALUE );
-                REGISTER_OBJECT_BEHAVIOUR( "vec3", asBEHAVE_CONSTRUCT, "void f()", ConstructVec3Generic );
-                REGISTER_OBJECT_BEHAVIOUR( "vec3", asBEHAVE_CONSTRUCT, "void f( const vec3& )", CopyConstructVec3Generic );
-                REGISTER_OBJECT_BEHAVIOUR( "vec3", asBEHAVE_CONSTRUCT, "void f( float, float, float )", ValueConstructVec3Generic );
-                REGISTER_OBJECT_BEHAVIOUR( "vec3", asBEHAVE_DESTRUCT, "void f()", DestructVec3Generic );
-                REGISTER_OBJECT_PROPERTY( "vec3", "float", x, offsetof( glm::vec3, x ) );
-                REGISTER_OBJECT_PROPERTY( "vec3", "float", y, offsetof( glm::vec3, y ) );
-                REGISTER_OBJECT_PROPERTY( "vec3", "float", z, offsetof( glm::vec3, z ) );
-
-                REGISTER_METHOD_FUNCTION( "vec3", "vec3& opAssign( const vec3& )", AssignVec3ToVec3Generic );
-                REGISTER_METHOD_FUNCTION( "vec3", "vec3& opAddAssign( const vec3& )", AddAssignVec3Generic );
-                REGISTER_METHOD_FUNCTION( "vec3", "vec3& opSubAssign( const vec3& )", SubAssignVec3Generic );
-                REGISTER_METHOD_FUNCTION( "vec3", "vec3& opMulAssign( const vec3& )", MulAssignVec3Generic );
-                REGISTER_METHOD_FUNCTION( "vec3", "vec3& opDivAssign( const vec3& )", DivAssignVec3Generic );
-
-                REGISTER_METHOD_FUNCTION( "vec3", "bool opEquals( const vec3& ) const", EqualsVec3Generic );
-                REGISTER_METHOD_FUNCTION( "vec3", "int opCmp( const vec3& ) const", CmpVec3Generic );
-                REGISTER_METHOD_FUNCTION( "vec3", "float& opIndex( uint )", IndexVec3Generic );
-                REGISTER_METHOD_FUNCTION( "vec3", "const float& opSub( uint ) const", IndexVec3Generic );
-
-                REGISTER_METHOD_FUNCTION( "vec3", "vec3 opAdd( const vec3& ) const", AddVec3Generic );
-                REGISTER_METHOD_FUNCTION( "vec3", "vec3 opSub( const vec3& ) const", SubVec3Generic );
-                REGISTER_METHOD_FUNCTION( "vec3", "vec3 opMul( const vec3& ) const", MulVec3Generic );
-                REGISTER_METHOD_FUNCTION( "vec3", "vec3 opDiv( const vec3& ) const", DivVec3Generic );
-            }
-        }
 		{ // SoundSystem
 			SET_NAMESPACE( "TheNomad::Engine::SoundSystem" );
 			
@@ -873,8 +991,8 @@ void ModuleLib_Register_Engine( void )
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::PlaySfx( int )", Snd_PlaySfx );
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::SetLoopingTrack( int )", Snd_SetLoopingTrack );
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::ClearLoopingTrack()", Snd_ClearLoopingTrack );
-			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::SoundSystem::RegisterSfx( const string& )", Snd_RegisterSfx );
-			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::SoundSystem::RegisterTrack( const string& )", Snd_RegisterTrack );
+			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::SoundSystem::RegisterSfx( const string& in )", Snd_RegisterSfx );
+			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::SoundSystem::RegisterTrack( const string& in )", Snd_RegisterTrack );
 
             RESET_NAMESPACE();
 		}
@@ -883,17 +1001,17 @@ void ModuleLib_Register_Engine( void )
 			
 			// could this be a class, YES, but I won't force it on the modder
 			
-			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::FileSystem::OpenFileRead( const string& )", OpenFileRead );
-			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::FileSystem::OpenFileWrite( const string& )", OpenFileWrite );
-			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::FileSystem::OpenFileAppend( const string& )", OpenFileAppend );
-			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::OpenFile( const string&, int, int& )", OpenFile );
+			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::FileSystem::OpenFileRead( const string& in )", OpenFileRead );
+			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::FileSystem::OpenFileWrite( const string& in )", OpenFileWrite );
+			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::FileSystem::OpenFileAppend( const string& in )", OpenFileAppend );
+			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::OpenFile( const string& in, int, int& out )", OpenFile );
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::FileSystem::CloseFile( int )", CloseFile );
 			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::GetLength( int )", GetFileLength );
 			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::GetPosition( int )", GetFilePosition );
             REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::SetPosition( int, uint, uint )", FileSetPosition );
 			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::Write( const ref@, uint64, int )", Write );
 			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::Read( ref@, uint64, int )", Read );
-			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::LoadFile( const string&, array<int8>& )", LoadFile );
+			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::LoadFile( const string& in, array<int8>& out )", LoadFile );
 
             RESET_NAMESPACE();
 		}
@@ -907,8 +1025,8 @@ void ModuleLib_Register_Engine( void )
 //            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::RE_AddEntityToScene( int, vec3, uint,  )", AddEntityToScene );
 //            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::RE_AddPolyToScene( int, const array<PolyVert>@ )", AddPolyToScene );
             REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::RE_AddSpriteToScene( float, float, float, int, int )", AddSpriteToScene );
-            REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RE_RegisterShader( const string& )", RegisterShader );
-            REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RE_RegisterSprite( const string&, uint, uint, uint, uint )", RegisterSpriteSheet );
+            REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RE_RegisterShader( const string& in )", RegisterShader );
+            REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RE_RegisterSprite( const string& in, uint, uint, uint, uint )", RegisterSpriteSheet );
 
             RESET_NAMESPACE();
         }
@@ -916,59 +1034,61 @@ void ModuleLib_Register_Engine( void )
     
 	SET_NAMESPACE( "TheNomad::GameSystem" );
 	{
-		REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::BeginSaveSection( const string& )", BeginSaveSection );
+		REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::BeginSaveSection( const string& in )", BeginSaveSection );
 		REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::EndSaveSection()", EndSaveSection );
-        REGISTER_GLOBAL_FUNCTION( "int TheNomad::GameSystem::FindSaveSection( const string& )", FindSaveSection );
+        REGISTER_GLOBAL_FUNCTION( "int TheNomad::GameSystem::FindSaveSection( const string& in )", FindSaveSection );
 
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveInt8( const string&, int8 )", SaveInt8 );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveInt16( const string&, int16 )", SaveInt16 );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveInt32( const string&, int32 )", SaveInt32 );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveInt64( const string&, int64 )", SaveInt64 );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveInt8( const string& in, int8 )", SaveInt8 );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveInt16( const string& in, int16 )", SaveInt16 );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveInt32( const string& in, int32 )", SaveInt32 );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveInt64( const string& in, int64 )", SaveInt64 );
 
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveUInt8( const string&, uint8 )", SaveUInt8 );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveUInt16( const string&, uint16 )", SaveUInt16 );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveUInt32( const string&, uint32 )", SaveUInt32 );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveUInt64( const string&, uint64 )", SaveUInt64 );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveUInt8( const string& in, uint8 )", SaveUInt8 );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveUInt16( const string& in, uint16 )", SaveUInt16 );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveUInt32( const string& in, uint32 )", SaveUInt32 );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveUInt64( const string& in, uint64 )", SaveUInt64 );
 
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveChar( const string&, int8 )", SaveInt8 );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveShort( const string&, int16 )", SaveInt16 );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveInt( const string&, int32 )", SaveInt32 );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveLong( const string&, int64 )", SaveInt64 );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveChar( const string& in, int8 )", SaveInt8 );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveShort( const string& in, int16 )", SaveInt16 );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveInt( const string& in, int32 )", SaveInt32 );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveLong( const string& in, int64 )", SaveInt64 );
 
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveByte( const string&, uint8 )", SaveUInt8 );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveUShort( const string&, uint16 )", SaveUInt16 );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveUInt( const string&, uint32 )", SaveUInt32 );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveULong( const string&, uint64 )", SaveUInt64 );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveByte( const string& in, uint8 )", SaveUInt8 );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveUShort( const string& in, uint16 )", SaveUInt16 );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveUInt( const string& in, uint32 )", SaveUInt32 );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveULong( const string& in, uint64 )", SaveUInt64 );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<T>& in )", SaveArray );
 
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveString( const string&, const string& )", SaveString );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveVec2( const string&, const vec2& )", SaveVec2 );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveVec3( const string&, const vec3& )", SaveVec3 );
-//        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveVec4( const string&, const vec4& )", SaveVec4 );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveString( const string& in, const string& in )", SaveString );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveVec2( const string& in, const vec2& in )", SaveVec2 );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveVec3( const string& in, const vec3& in )", SaveVec3 );
+//        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveVec4( const string& in, const vec4& )", SaveVec4 );
 
-        REGISTER_GLOBAL_FUNCTION( "int8 TheNomad::GameSystem::LoadInt8( const string&, int )", LoadInt8 );
-        REGISTER_GLOBAL_FUNCTION( "int16 TheNomad::GameSystem::LoadInt16( const string&, int )", LoadInt16 );
-        REGISTER_GLOBAL_FUNCTION( "int32 TheNomad::GameSystem::LoadInt32( const string&, int )", LoadInt32 );
-        REGISTER_GLOBAL_FUNCTION( "int64 TheNomad::GameSystem::LoadInt64( const string&, int )", LoadInt64 );
+        REGISTER_GLOBAL_FUNCTION( "int8 TheNomad::GameSystem::LoadInt8( const string& in, int )", LoadInt8 );
+        REGISTER_GLOBAL_FUNCTION( "int16 TheNomad::GameSystem::LoadInt16( const string& in, int )", LoadInt16 );
+        REGISTER_GLOBAL_FUNCTION( "int32 TheNomad::GameSystem::LoadInt32( const string& in, int )", LoadInt32 );
+        REGISTER_GLOBAL_FUNCTION( "int64 TheNomad::GameSystem::LoadInt64( const string& in, int )", LoadInt64 );
 
-        REGISTER_GLOBAL_FUNCTION( "uint8 TheNomad::GameSystem::LoadUInt8( const string&, int )", LoadUInt8 );
-        REGISTER_GLOBAL_FUNCTION( "uint16 TheNomad::GameSystem::LoadUInt16( const string&, int )", LoadUInt16 );
-        REGISTER_GLOBAL_FUNCTION( "uint32 TheNomad::GameSystem::LoadUInt32( const string&, int )", LoadUInt32 );
-        REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::GameSystem::LoadUInt64( const string&, int )", LoadUInt64 );
+        REGISTER_GLOBAL_FUNCTION( "uint8 TheNomad::GameSystem::LoadUInt8( const string& in, int )", LoadUInt8 );
+        REGISTER_GLOBAL_FUNCTION( "uint16 TheNomad::GameSystem::LoadUInt16( const string& in, int )", LoadUInt16 );
+        REGISTER_GLOBAL_FUNCTION( "uint32 TheNomad::GameSystem::LoadUInt32( const string& in, int )", LoadUInt32 );
+        REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::GameSystem::LoadUInt64( const string& in, int )", LoadUInt64 );
 
-        REGISTER_GLOBAL_FUNCTION( "int8 TheNomad::GameSystem::LoadChar( const string&, int )", LoadInt8 );
-        REGISTER_GLOBAL_FUNCTION( "int16 TheNomad::GameSystem::LoadShort( const string&, int )", LoadInt16 );
-        REGISTER_GLOBAL_FUNCTION( "int32 TheNomad::GameSystem::LoadInt( const string&, int )", LoadInt32 );
-        REGISTER_GLOBAL_FUNCTION( "int64 TheNomad::GameSystem::LoadLong( const string&, int )", LoadInt64 );
+        REGISTER_GLOBAL_FUNCTION( "int8 TheNomad::GameSystem::LoadChar( const string& in, int )", LoadInt8 );
+        REGISTER_GLOBAL_FUNCTION( "int16 TheNomad::GameSystem::LoadShort( const string& in, int )", LoadInt16 );
+        REGISTER_GLOBAL_FUNCTION( "int32 TheNomad::GameSystem::LoadInt( const string& in, int )", LoadInt32 );
+        REGISTER_GLOBAL_FUNCTION( "int64 TheNomad::GameSystem::LoadLong( const string& in, int )", LoadInt64 );
 
-        REGISTER_GLOBAL_FUNCTION( "uint8 TheNomad::GameSystem::LoadByte( const string&, uint )", LoadUInt8 );
-        REGISTER_GLOBAL_FUNCTION( "uint16 TheNomad::GameSystem::LoadUShort( const string&, uint )", LoadUInt16 );
-        REGISTER_GLOBAL_FUNCTION( "uint32 TheNomad::GameSystem::LoadUInt( const string&, uint )", LoadUInt32 );
-        REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::GameSystem::LoadULong( const string&, uint )", LoadUInt64 );
+        REGISTER_GLOBAL_FUNCTION( "uint8 TheNomad::GameSystem::LoadByte( const string& in, uint )", LoadUInt8 );
+        REGISTER_GLOBAL_FUNCTION( "uint16 TheNomad::GameSystem::LoadUShort( const string& in, uint )", LoadUInt16 );
+        REGISTER_GLOBAL_FUNCTION( "uint32 TheNomad::GameSystem::LoadUInt( const string& in, uint )", LoadUInt32 );
+        REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::GameSystem::LoadULong( const string& in, uint )", LoadUInt64 );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<T>& out )", LoadArray );
 
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadString( const string&, string&, int )", LoadString );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadVec2( const string&, vec2&, int )", LoadVec2 );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadVec3( const string&, vec3&, int )", LoadVec3 );
-//        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadVec4( const string&, vec4&, int )", LoadVec4 );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadString( const string& in, string& out, int )", LoadString );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadVec2( const string& in, vec2& out, int )", LoadVec2 );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadVec3( const string& in, vec3& out, int )", LoadVec3 );
+//        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadVec4( const string& in, vec4& out, int )", LoadVec4 );
 
         
 		// these are here because if they change in the map editor or the engine, it'll break sgame
@@ -999,7 +1119,7 @@ void ModuleLib_Register_Engine( void )
 		REGISTER_ENUM_VALUE( "DirType", "NorthWest", DIR_NORTH_WEST );
 		REGISTER_ENUM_VALUE( "DirType", "Inside", DIR_NULL );
 		
-	    REGISTER_GLOBAL_FUNCTION( "int TheNomad::GameSystem::GetMapData( array<uint32>&, array<int32>&, array<vec3>&, int&, int& )", GetMapData );
+	    REGISTER_GLOBAL_FUNCTION( "int TheNomad::GameSystem::GetMapData( array<uint32>& out, array<int32>& out, array<vec3>& out, int& out, int& out )", GetMapData );
     }
 
     RESET_NAMESPACE();
@@ -1008,7 +1128,7 @@ void ModuleLib_Register_Engine( void )
 	// misc & global funcdefs
 	//
 	
-	REGISTER_GLOBAL_FUNCTION( "void ConsolePrint( const string& )", ConsolePrint );
-	REGISTER_GLOBAL_FUNCTION( "void GameError( const string& )", GameError );
+	REGISTER_GLOBAL_FUNCTION( "void ConsolePrint( const string& in )", ConsolePrint );
+	REGISTER_GLOBAL_FUNCTION( "void GameError( const string& in )", GameError );
     REGISTER_GLOBAL_FUNCTION( "void Assert( bool bValue )", ModuleAssertion );
 }

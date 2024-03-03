@@ -9,6 +9,7 @@
 #include <filesystem>
 #include "module_renderlib.h"
 #include "module_funcdefs.hpp"
+#include "module_stringfactory.hpp"
 
 moduleImport_t moduleImport;
 
@@ -18,6 +19,17 @@ cvar_t *ml_alwaysCompile;
 cvar_t *ml_allowJIT;
 
 static CDebugger *s_pDebugger;
+
+static void ML_CleanCache_f( void ) {
+    const char *path;
+
+    Con_Printf( "Clearing cached bytecode script files...\n" );
+    for ( auto it : g_pModuleLib->GetLoadList() ) {
+        path = va( "_cache/%s_code.dat", it->m_pHandle->GetName().c_str() );
+        FS_Remove( path );
+        FS_HomeRemove( path );
+    }
+}
 
 const char *AS_PrintErrorString( int code )
 {
@@ -121,19 +133,91 @@ void CModuleLib::LoadModule( const char *pModule )
         return;
     }
 
-    submodules.reserve( parse["submodules"].size() );
-    for ( const auto& it : parse["submodules"] ) {
+    //
+    // validate its an actual config
+    //
+    if ( !parse.contains( "submodules" ) ) {
+        Con_Printf( COLOR_RED "ERROR: invalid module configuration for \"%s\", no array 'submodules'\n", pModule );
+        return;
+    }
+    if ( !parse.contains( "dependencies" ) ) {
+        Con_Printf( COLOR_RED "ERROR: invalid module configuration for \"%s\", no array 'depedencies'\n", pModule );
+        return;
+    }
+    if ( parse.contains( "version" ) ) {
+        if ( !parse.at( "version" ).contains( "game_version_major" ) ) {
+            Con_Printf( COLOR_RED "ERROR: invalid module configuration for \"%s\", no value for 'game_version_major'\n", pModule );
+            return;
+        }
+        if ( !parse.at( "version" ).contains( "game_version_update" ) ) {
+            Con_Printf( COLOR_RED "ERROR: invalid module configuration for \"%s\", no value for 'game_version_update'\n", pModule );
+            return;
+        }
+        if ( !parse.at( "version" ).contains( "game_version_patch" ) ) {
+            Con_Printf( COLOR_RED "ERROR: invalid module configuration for \"%s\", no value for 'game_version_patch'\n", pModule );
+            return;
+        }
+        if ( !parse.at( "version" ).contains( "version_major" ) ) {
+            Con_Printf( COLOR_RED "ERROR: invalid module configuration for \"%s\", no value for 'version_major'\n", pModule );
+            return;
+        }
+        if ( !parse.at( "version" ).contains( "version_update" ) ) {
+            Con_Printf( COLOR_RED "ERROR: invalid module configuration for \"%s\", no value for 'version_update'\n", pModule );
+            return;
+        }
+        if ( !parse.at( "version" ).contains( "version_patch" ) ) {
+            Con_Printf( COLOR_RED "ERROR: invalid module configuration for \"%s\", no value for 'version_patch'\n", pModule );
+            return;
+        }
+    } else {
+        Con_Printf( COLOR_RED "ERROR: invalid module configuration for \"%s\", no object 'version'\n", pModule );
+        return;
+    }
+
+    submodules.reserve( parse[ "submodules" ].size() );
+    for ( const auto& it : parse[ "submodules" ] ) {
         submodules.emplace_back( eastl::move( it.get<std::string>().c_str() ) );
     }
 
-    pHandle = CreateObject<CModuleHandle>( pModule, submodules, parse[ "version" ][ "mod_version_major" ].get<int32_t>() );
-    m = CreateObject<CModuleInfo>( parse, pHandle );
+    const int32_t versionMajor = parse[ "version" ][ "version_major" ];
+    const int32_t versionUpdate = parse[ "version" ][ "version_update" ];
+    const int32_t versionPatch = parse[ "version" ][ "version_patch" ];
+
+    pHandle = new ( Hunk_Alloc( sizeof( *pHandle ), h_high ) ) CModuleHandle( pModule, submodules, versionMajor, versionUpdate, versionPatch );
+    m = new ( Hunk_Alloc( sizeof( *m ), h_high ) ) CModuleInfo( parse, pHandle );
     m_LoadList.emplace_back( m );
+}
+
+void CModuleLib::RunModules( EModuleFuncId nCallId, uint32_t nArgs, ... )
+{
+    va_list argptr;
+    uint64_t j;
+    uint32_t i;
+    uint32_t args[16];
+
+    if ( nCallId >= NumFuncs ) {
+        N_Error( ERR_FATAL, "CModuleLib::RunModules: invalid call id" );
+    }
+    
+    va_start( argptr, nArgs );
+    for ( i = 0; i < nArgs; i++ ) {
+        args[i] = va_arg( argptr, uint32_t );
+    }
+    va_end( argptr );
+
+    for ( j = 0; j < m_LoadList.size(); j++ ) {
+        if ( m_LoadList[i] == sgvm ) {
+            continue; // avoid running it twice
+        }
+        if ( m_LoadList[j]->m_pHandle->CallFunc( nCallId, nArgs, args ) == -1 ) {
+            Con_Printf( COLOR_YELLOW "WARNING: module \"%s\" returned error code on call to proc \"%s\".\n",
+                m_LoadList[j]->m_szName, funcNames[ nCallId ] );
+        }
+    }
 }
 
 int CModuleLib::ModuleCall( CModuleInfo *pModule, EModuleFuncId nCallId, uint32_t nArgs, ... )
 {
-    asIScriptContext *pContext;
     va_list argptr;
     uint32_t i;
     uint32_t args[16];
@@ -258,12 +342,13 @@ CModuleLib::CModuleLib( void )
     CheckASCall( m_pEngine->SetEngineProperty( asEP_ALWAYS_IMPL_DEFAULT_CONSTRUCT, false ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_COMPILER_WARNINGS, true ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_OPTIMIZE_BYTECODE, true ) );
+    CheckASCall( m_pEngine->SetEngineProperty( asEP_INCLUDE_JIT_INSTRUCTIONS, true ) );
 
-    m_pScriptBuilder = CreateObject<CScriptBuilder>();
-    s_pDebugger = CreateObject<CDebugger>();
+    m_pScriptBuilder = new ( Hunk_Alloc( sizeof( *m_pScriptBuilder ), h_high ) ) CScriptBuilder();
+    s_pDebugger = new ( Hunk_Alloc( sizeof( *s_pDebugger ), h_high ) ) CDebugger();
 
     if ( ml_allowJIT->i ) {
-        m_pCompiler = CreateObject<asCJITCompiler>();
+        m_pCompiler = new ( Hunk_Alloc( sizeof( *m_pCompiler ), h_high ) ) asCJITCompiler();
         CheckASCall( m_pEngine->SetJITCompiler( m_pCompiler ) );
     }
     m_pScriptBuilder->SetIncludeCallback( Module_IncludeCallback_f, NULL );
@@ -281,7 +366,7 @@ CModuleLib::CModuleLib( void )
         for ( const auto& it : std::filesystem::directory_iterator{ path } ) {
             if ( it.is_directory() ) {
                 const std::string path = it.path().filename().string();
-                Con_Printf( "- found module directory \"%s\".\n", path.c_str() );
+                Con_Printf( "...found module directory \"%s\".\n", path.c_str() );
 
                 LoadModule( path.c_str() );
             }
@@ -299,11 +384,11 @@ CModuleLib::~CModuleLib()
         DeleteObject( it );
     }
 
-    if ( m_pCompiler ) {
-        DeleteObject<asCJITCompiler>( m_pCompiler );
-    }
-    DeleteObject<CScriptBuilder>( m_pScriptBuilder );
-    DeleteObject<CDebugger>( s_pDebugger );
+    m_pEngine->ShutDownAndRelease();
+    asFree( m_pEngine );
+
+    s_pDebugger = NULL;
+    g_pStringFactory = NULL;
 }
 
 CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *pExport, version_t nGameVersion )
@@ -322,11 +407,13 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
     ml_debugMode = Cvar_Get( "ml_debugMode", "0", CVAR_LATCH | CVAR_TEMP );
     Cvar_SetDescription( ml_debugMode, "Set to 1 whenever a module is being debugged" );
 
+    Cmd_AddCommand( "ml.clean_script_cache", ML_CleanCache_f );
+
     // init memory manager
     Mem_Init();
     asSetGlobalMemoryFunctions( asAlloc, asFree );
 
-    g_pModuleLib = CreateObject<CModuleLib>();
+    g_pModuleLib = new ( Hunk_Alloc( sizeof( *g_pModuleLib ), h_high ) ) CModuleLib();
 
     return g_pModuleLib;
 }
@@ -335,9 +422,8 @@ void CModuleLib::Shutdown( void )
 {
     Con_Printf( "CModuleLib::Shutdown: shutting down modules...\n" );
 
-    m_pEngine->ShutDownAndRelease();
-    DeleteObject<CModuleLib>( g_pModuleLib );
-
+    g_pModuleLib->~CModuleLib();
+    g_pModuleLib = NULL;
     Mem_Shutdown();
 }
 
@@ -377,4 +463,8 @@ void CModuleLib::RegisterCvar( const UtlString& name, const UtlString& value, ui
     m_CvarList.emplace( name.c_str(), vmCvar );
 
     Con_Printf( "Registered VM CVar \"%s\" with default value of \"%s\"\n", name.c_str(), value.c_str() );
+}
+
+UtlVector<CModuleInfo *>& CModuleLib::GetLoadList( void ) {
+    return m_LoadList;
 }

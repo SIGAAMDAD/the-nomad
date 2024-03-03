@@ -3,7 +3,7 @@
 #include "module_handle.h"
 #include "angelscript/as_bytecode.h"
 
-static const char *funcNames[NumFuncs] = {
+const char *funcNames[NumFuncs] = {
     "ModuleInit",
     "ModuleShutdown",
     "ModuleOnLevelStart",
@@ -21,10 +21,14 @@ static const char *funcNames[NumFuncs] = {
     "ModuleRewindToLastCheckpoint"
 };
 
-CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sourceFiles, int32_t modVersionMajor )
-    : m_szName( pName ), m_pScriptContext( NULL ), m_pScriptModule( NULL ), m_nVersion{ modVersionMajor }
+CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sourceFiles, int32_t moduleVersionMajor,
+    int32_t moduleVersionUpdate, int32_t moduleVersionPatch )
+    : m_szName( pName ), m_pScriptContext( NULL ), m_pScriptModule( NULL ), m_nVersionMajor{ moduleVersionMajor },
+    m_nVersionUpdate{ moduleVersionUpdate }, m_nVersionPatch{ moduleVersionPatch }
 {
     int error;
+
+    m_bLoaded = qfalse;
 
     if ( !sourceFiles.size() ) {
         Con_Printf( COLOR_YELLOW "WARNING: no source files found for '%s', not compiling\n", pName );
@@ -44,26 +48,44 @@ CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sou
         N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: GetModule() failed on \"%s\"\n", pName );
     }
 
-    if ( LoadFromCache() ) {
+    switch ( ( error = LoadFromCache() ) ) {
+    case 1:
         Con_Printf( "Loaded module bytecode from cache.\n" );
-    } else {
-        for ( const auto& it : sourceFiles ) {
-            LoadSourceFile( it );
-        }
-    }
+        break;
+    case 0:
+        Con_Printf( "forced recomplation option is on.\n" );
+        break;
+    case -1:
+        Con_Printf( COLOR_RED "failed to load module bytecode.\n" );
+        break;
+    };
 
-    if ( ( error = g_pModuleLib->GetScriptBuilder()->BuildModule() ) != asSUCCESS ) {
-        N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: failed to build module '%s' -- %s", pName, AS_PrintErrorString( error ) );
+    if ( error != 1 ) {
+        Build( sourceFiles );
     }
 
     m_pScriptContext = g_pModuleLib->GetScriptEngine()->CreateContext();
     InitCalls();
 
+    m_pScriptModule->SetUserData( this );
     SaveToCache();
+
+    m_bLoaded = qtrue;
 }
 
 CModuleHandle::~CModuleHandle() {
     ClearMemory();
+}
+
+void CModuleHandle::Build( const UtlVector<UtlString>& sourceFiles ) {
+    int error;
+
+    for ( const auto& it : sourceFiles ) {
+        LoadSourceFile( it );
+    }
+    if ( ( error = g_pModuleLib->GetScriptBuilder()->BuildModule() ) != asSUCCESS ) {
+        N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: failed to build module '%s' -- %s", m_szName.c_str(), AS_PrintErrorString( error ) );
+    }
 }
 
 const char *CModuleHandle::GetModulePath( void ) const {
@@ -97,9 +119,6 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
         return -1;
     }
 
-    Con_DPrintf( "Calling function proc '%s' at 0x%08lx... (module \"%s\")\n",
-        funcNames[nCallId], (uintptr_t)(void *)m_pFuncTable[nCallId], m_szName.c_str() );
-
     CheckASCall( m_pScriptContext->Prepare( m_pFuncTable[nCallId] ) );
     CheckASCall( m_pScriptContext->SetExceptionCallback( asFUNCTION( LogExceptionInfo ), NULL, asCALL_CDECL ) );
 
@@ -123,7 +142,7 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
 
     retn = (int)m_pScriptContext->GetReturnWord();
 
-    m_pScriptContext->Unprepare();
+    CheckASCall( m_pScriptContext->Unprepare() );
 
     return retn;
 }
@@ -183,12 +202,14 @@ void CModuleHandle::SaveToCache( void ) const {
     CModuleCacheHandle *dataStream;
     const char *path;
     asCodeCacheHeader_t header;
+    int ret;
 
-    path = va( "%scache/bcode.dat", m_szName.c_str() );
+    path = va( "_cache/%s_code.dat", m_szName.c_str() );
 
-    dataStream = CreateStackObject( CModuleCacheHandle, path, FS_OPEN_READ );
+    dataStream = CreateStackObject( CModuleCacheHandle, path, FS_OPEN_WRITE );
     Con_Printf( "Saving compiled module \"%s\" bytecode to \"%s\"...\n", m_szName.c_str(), path );
 
+/*
     memset( &header, 0, sizeof(header) );
     header.ident = AS_CACHE_CODE_IDENT;
     header.gameVersion = version_t{ NOMAD_VERSION_FULL };
@@ -199,32 +220,36 @@ void CModuleHandle::SaveToCache( void ) const {
     header.hasDebugSymbols = ml_debugMode->i;
 #endif
 
-    dataStream->Write( &header, sizeof(header) );
+    dataStream->Write( &header, sizeof(header) ); */
 
-    CheckASCall( m_pScriptModule->SaveByteCode( dataStream, !header.hasDebugSymbols ) );
+    ret = m_pScriptModule->SaveByteCode( dataStream, !header.hasDebugSymbols );
+    if ( ret != asSUCCESS ) {
+        Con_Printf( COLOR_RED "ERROR: failed to save module bytecode.\n" );
+    }
 }
 
-bool CModuleHandle::LoadFromCache( void ) {
+int CModuleHandle::LoadFromCache( void ) {
     CModuleCacheHandle *dataStream;
     const char *path;
     asCodeCacheHeader_t header;
+    int ret;
 
     if ( ml_alwaysCompile->i ) {
-        return false; // force recompilation
+        return 0; // force recompilation
     }
 
-    path = va( "%scache/bcode.dat", m_szName.c_str() );
+    path = va( "_cache/%s_code.dat", m_szName.c_str() );
     if ( !FS_FileExists( path ) ) {
-        return false;
+        return -1;
     }
 
     dataStream = CreateStackObject( CModuleCacheHandle, path, FS_OPEN_READ );
     Con_Printf( "Loading compiled module \"%s\" bytecode from \"%s\"...\n", m_szName.c_str(), path );
 
-    dataStream->Read( &header, sizeof(header) );
+/*    dataStream->Read( &header, sizeof(header) );
     if ( header.ident != AS_CACHE_CODE_IDENT ) {
         Con_Printf( COLOR_RED "ERROR: invalid code cache file \"%s\", identifier is incorrect.\n", path );
-        return false;
+        return -1;
     }
     if ( header.gameVersion != version_t{ NOMAD_VERSION_FULL } ) {
         Con_Printf( COLOR_YELLOW
@@ -233,12 +258,15 @@ bool CModuleHandle::LoadFromCache( void ) {
     }
     if ( header.moduleVersion != m_nVersion ) {
         Con_Printf( "Module version found in code cache file isn't the same as the one loaded, recompiling.\n" );
-        return false;
+        return -1;
+    }*/
+
+    ret = m_pScriptModule->LoadByteCode( dataStream, NULL );
+    if ( ret != asSUCCESS ) {
+        return -1; // just recompile it
     }
 
-    CheckASCall( m_pScriptModule->LoadByteCode( dataStream, NULL ) );
-
-    return true;
+    return 1;
 }
 
 /*
@@ -261,7 +289,7 @@ asIScriptModule *CModuleHandle::GetModule( void ) {
     return m_pScriptModule;
 }
 
-const UtlString& CModuleHandle::GetName( void ) const {
+const string_t& CModuleHandle::GetName( void ) const {
     return m_szName;
 }
 

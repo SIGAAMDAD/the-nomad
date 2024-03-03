@@ -23,6 +23,8 @@ typedef enum : uint64_t
 
     STATE_LEGAL,
 
+    STATE_MODS,
+
     STATE_SETTINGS,
         STATE_GRAPHICS,
         STATE_CONTROLS,
@@ -123,7 +125,7 @@ public:
     void SetActiveMenu( uiMenu_t menu );
 
     bool Menu_Option( const char *label );
-    bool Menu_Title( const char *label );
+    bool Menu_Title( const char *label, float fontScale = 3.75f );
 
     GDR_INLINE menustate_t GetState( void ) const { return state; }
     GDR_INLINE void SetState( menustate_t _state) { state = _state; }
@@ -194,6 +196,11 @@ public:
     nhandle_t rb_off;
     sfxHandle_t sfx_null;
 
+    sfxHandle_t sfx_scroll;
+    sfxHandle_t sfx_back;
+    sfxHandle_t sfx_select;
+    qboolean sfx_scroll_toggle;
+
     float scale;
     float bias;
 private:
@@ -213,11 +220,6 @@ private:
 
     int32_t frametime;
     int32_t realtime;
-
-    sfxHandle_t sfx_scroll;
-    sfxHandle_t sfx_back;
-    sfxHandle_t sfx_select;
-    qboolean sfx_scroll_toggle;
 
     gpuConfig_t gpuConfig;
     menustate_t state;
@@ -323,6 +325,13 @@ extern void         SettingsMenu_Draw( void );
 //
 extern void         LegalMenu_Cache( void );
 extern void         LegalMenu_Draw( void );
+
+//
+// ui_mods.cpp
+//
+extern void         UI_ModsMenu( void );
+extern void         ModsMenu_Cache( void );
+extern void         ModsMenu_Draw( void );
 
 //
 // ui_single_player.cpp

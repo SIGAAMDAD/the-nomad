@@ -8,7 +8,7 @@ CUIStringManager *strManager;
 
 void CUIStringManager::Init( void ) {
     numLanguages = 0;
-    memset( stringHash, 0, sizeof(stringHash) );
+    memset( stringHash, 0, sizeof( stringHash ) );
 }
 
 void CUIStringManager::Shutdown( void ) {
@@ -38,13 +38,13 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
     qboolean ignore;
 
     // we may be just reloading the language file, so clear it out
-    memset( stringHash[lang], 0, sizeof(*str) * MAX_UI_STRINGS );
+    memset( stringHash[lang], 0, sizeof( *str ) * MAX_UI_STRINGS );
 
     for ( i = 0; i < MAX_UI_STRINGS; i++ ) {
         ignore = qfalse;
 
-        memset( name, 0, sizeof(name) );
-        memset( value, 0, sizeof(value) );
+        memset( name, 0, sizeof( name ) );
+        memset( value, 0, sizeof( value ) );
 
         tok = COM_ParseComplex( text, qtrue );
         if ( tok[0] == ' ' || tok[0] == '\n' ) {
@@ -55,7 +55,7 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
         } else if ( tok[0] == 0 ) {
             COM_ParseError( "unexpected end of string token list" );
             return -1;
-        } else if ( strlen( tok ) >= sizeof(name) ) {
+        } else if ( strlen( tok ) >= sizeof( name ) ) {
             COM_ParseError( "string token name '%s' is too long", tok );
             continue;
         }
@@ -73,26 +73,26 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
             continue;
         }
 
-        N_strncpyz( name, tok, sizeof(name) );
+        N_strncpyz( name, tok, sizeof( name ) );
 
         tok = COM_ParseExt( text, qtrue );
         if ( !tok[0] ) {
             COM_ParseError( "expected value for string token '%s', got nothing", name );
             return -1;
         }
-        else if ( strlen( tok ) >= sizeof(value) ) {
+        else if ( strlen( tok ) >= sizeof( value ) ) {
             COM_ParseError( "string token value '%s' is too long", tok );
             return -1;
         }
 
-        N_strncpyz( value, tok, sizeof(value) );
+        N_strncpyz( value, tok, sizeof( value ) );
 
         size = 0;
-        size += PAD( sizeof(*str), sizeof(uintptr_t) );
-        size += PAD( strlen( name ) + 1, sizeof(uintptr_t) );
-        size += PAD( strlen( value ) + 1, sizeof(uintptr_t) );
+        size += PAD( sizeof( *str ), sizeof( uintptr_t ) );
+        size += PAD( strlen( name ) + 1, sizeof( uintptr_t ) );
+        size += PAD( strlen( value ) + 1, sizeof( uintptr_t ) );
 
-        str = (stringHash_t *)Hunk_Alloc( size, h_low );
+        str = (stringHash_t *)Hunk_Alloc( size, h_high );
         str->name = (char *)( str + 1 );
         str->value = (char *)( str->name + strlen( name ) + 1 );
 
@@ -202,7 +202,34 @@ uint64_t CUIStringManager::NumLangsLoaded( void ) const {
     return numLanguages;
 }
 
-const stringHash_t *CUIStringManager::ValueForKey( const char *name ) const
+const stringHash_t *CUIStringManager::AllocErrorString( const char *key ) {
+    stringHash_t *str;
+    uint64_t size, hash;
+    const char *value;
+
+    value = va( "ERROR: %s variable has not been set before.", key );
+
+    size = 0;
+    size += PAD( sizeof( *str ), sizeof( uintptr_t ) );
+    size += PAD( strlen( key ) + 1, sizeof( uintptr_t ) );
+    size += PAD( strlen( value ) + 1, sizeof( uintptr_t ) );
+
+    str = (stringHash_t *)Hunk_Alloc( size, h_high );
+    str->name = (char *)( str + 1 );
+    str->value = (char *)( str->name + strlen( key ) + 1 );
+    str->lang = (language_t)ui_language->i;
+
+    N_strncpyz( str->name, key, MAX_STRING_CHARS );
+    N_strncpyz( str->value, value, MAX_STRING_CHARS );
+
+    hash = Com_GenerateHashValue( key, MAX_UI_STRINGS );
+    str->next = stringHash[ui_language->i][hash];
+    stringHash[ui_language->i][hash] = str;
+
+    return str;
+}
+
+const stringHash_t *CUIStringManager::ValueForKey( const char *name )
 {
     uint64_t hash;
     const stringHash_t *str;
@@ -218,6 +245,5 @@ const stringHash_t *CUIStringManager::ValueForKey( const char *name ) const
         }
     }
 
-    N_Error( ERR_FATAL, "CUIStringManager::ValueForKey: failed to load value string for key \"%s\"", name );
-    return NULL;
+    return AllocErrorString( name );
 }

@@ -6,7 +6,7 @@ namespace TheNomad {
 	// its been put here. This is a shared object
 	// DO NOT MODIFY
 	//
-	shared class ConVar {
+	class ConVar {
 		ConVar() {
 		}
 		ConVar( const string& in name, const string& in value, uint flags, bool bTrackChanges ) {
@@ -41,7 +41,7 @@ namespace TheNomad {
 			return m_Flags;
 		}
 		
-		void Set( const string& value ) {
+		void Set( const string& in value ) {
 			Engine::CvarSet( m_Name, value );
 		}
 		void Update() {
@@ -58,24 +58,23 @@ namespace TheNomad {
 		private bool m_bTrackChanges;
 	};
 	
-	shared class CvarSystem : TheNomad::GameSystem::GameObject {
+	class CvarSystem : TheNomad::GameSystem::GameObject {
 		CvarSystem() {
 //			TheNomad::Engine::CmdArgs::AddCommand( "sgame.list_cvars", this.ListVars_f );
 		}
 		
-//		ConVar@ AddCvar( const string& in name, const string& in value, uint flags, bool bTrackChanges ) {
-//			ConVar@ var = ConVar( name, value, flags, bTrackChanges );
-//			m_CvarCache.push_back( var );
-//			return var;
-//		}
+		ConVar@ AddCvar( const string& in name, const string& in value, uint flags, bool bTrackChanges ) {
+			ConVar@ var = ConVar( name, value, flags, bTrackChanges );
+			m_CvarCache.push_back( var );
+			return var;
+		}
 		
 		void ListVars_f() {
-			uint i;
-//			ConsolePrint( "VM " + ModuleInfo.GetName() + " cvars:\n" );
-			
-//			for ( i = 0; i < m_CvarCache.size(); i++ ) {
-//				ConsolePrint( m_CvarCache[i].GetName() + " " + m_CvarCache[i].GetValue() );
-//			}
+			ConsolePrint( "VM " + moduleInfo.name + " Cvars:\n" );
+
+			for ( uint i = 0; i < m_CvarCache.size(); i++ ) {
+				ConsolePrint( m_CvarCache[i].GetName() + " " + m_CvarCache[i].GetValue() );
+			}
 		}
 
 		void OnLoad() {

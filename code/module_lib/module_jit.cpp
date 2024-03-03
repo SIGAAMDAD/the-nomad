@@ -1,6 +1,7 @@
 #include "module_public.h"
 #include "module_jit.h"
 #include <EASTL/functional.h>
+//#include "module_alloc.h"
 
 #include "angelscript/as_scriptfunction.h"
 #include "angelscript/as_objecttype.h"
@@ -14,7 +15,6 @@
 using namespace assembler;
 
 #include "module_stringfactory.hpp"
-#include "module_alloc.h"
 
 #ifdef __amd64__
 #define stdcall
@@ -287,10 +287,10 @@ struct SystemCall {
 	bool handleSuspend;
 	bool acceptReturn;
 	bool isSimple;
-	eastl::function<void(JumpType,bool)> returnHandler;
+	std::function<void(JumpType,bool)> returnHandler;
 
 	SystemCall(Processor& CPU, FloatingPointUnit& FPU,
-		eastl::function<void(JumpType,bool)> ConditionalReturn, asDWORD* const & bytecode, unsigned JitFlags)
+		std::function<void(JumpType,bool)> ConditionalReturn, asDWORD* const & bytecode, unsigned JitFlags)
 		: cpu(CPU), fpu(FPU), returnHandler(ConditionalReturn), pOp(bytecode), flags(0)
 	{
 		if((JitFlags & JIT_SYSCALL_NO_ERRORS) != 0)

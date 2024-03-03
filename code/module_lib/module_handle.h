@@ -38,36 +38,58 @@ enum : uint64_t
 class CModuleHandle
 {
 public:
-    CModuleHandle( const char *pName, const UtlVector<UtlString>& sourceFiles, int32_t moduleVersionMajor );
+    CModuleHandle( const char *pName, const UtlVector<UtlString>& sourceFiles,
+		int32_t moduleVersionMajor, int32_t moduleVersionUpdate, int32_t moduleVersionPatch );
     ~CModuleHandle();
 
     void SaveToCache( void ) const;
-	bool LoadFromCache( void );
+	int LoadFromCache( void );
 
     void ClearMemory( void );
     asIScriptContext *GetContext( void );
     asIScriptModule *GetModule( void );
-    const UtlString& GetName( void ) const;
+    const string_t& GetName( void ) const;
 
 	const char *GetModulePath( void ) const;
 
     int CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pArgList );
 
+	inline void GetVersion( int32_t *major, int32_t *update, int32_t *patch ) const {
+		*major = m_nVersionMajor;
+		*update = m_nVersionUpdate;
+		*patch = m_nVersionPatch;
+	}
+	inline bool IsValid( void ) const {
+		return m_bLoaded;
+	}
     inline asIScriptFunction *GetFunction( EModuleFuncId nCallId ) {
         return m_pFuncTable[nCallId];
     }
+	const int32_t *VersionMajor( void ) const {
+		return &m_nVersionMajor;
+	}
+	const int32_t *VersionUpdate( void ) const {
+		return &m_nVersionUpdate;
+	}
+	const int32_t *VersionPatch( void ) const {
+		return &m_nVersionPatch;
+	}
 private:
+	void Build( const UtlVector<UtlString>& sourceFiles );
     void InitCalls( void );
     void LoadSourceFile( const UtlString& filename );
 
     asIScriptFunction *m_pFuncTable[NumFuncs];
 
-    UtlString m_szName;
+    string_t m_szName;
     asIScriptContext *m_pScriptContext;
     asIScriptModule *m_pScriptModule;
 	UtlVector<asJITFunction> m_Functions;
+	qboolean m_bLoaded;
 
-	int32_t m_nVersion;
+	int32_t m_nVersionMajor;
+	int32_t m_nVersionUpdate;
+	int32_t m_nVersionPatch;
 };
 
 class CModuleContextHandle : public asIScriptContext
@@ -182,5 +204,7 @@ public:
 private:
 	fileHandle_t m_hFile;
 };
+
+extern const char *funcNames[NumFuncs];
 
 #endif
