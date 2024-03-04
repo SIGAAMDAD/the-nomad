@@ -759,7 +759,7 @@ bool CGameArchive::Save( void )
 	header.gamedata.diff = (gamedif_t)Cvar_VariableInteger( "sg_difficulty" );
 
 	N_strncpyz( header.gamedata.bffName, Cvar_VariableString( "g_modname" ), sizeof(header.gamedata.bffName) );
-	header.gamedata.levelIndex = g_pModuleLib->ModuleCall( sgvm, ModuleGetCurrentLevelIndex, 0 );
+	header.gamedata.levelIndex = Cvar_VariableInteger( "g_levelIndex" );
 	
 	header.validation.ident = IDENT;
 	header.validation.version.m_nVersionMajor = _NOMAD_VERSION;

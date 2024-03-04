@@ -112,7 +112,7 @@ ImFont *CUIFontCache::AddFontToCache( const char *filename )
 	config.FontDataOwnedByAtlas = false;
 	config.GlyphExtraSpacing.x = -1.0f;
 
-	N_strncpyz( font->m_szName, filename, sizeof(font->m_szName) );
+	N_strncpyz( font->m_szName, filename, sizeof( font->m_szName ) );
 	font->m_nFileSize = size;
 	font->m_pFont = ImGui::GetIO().Fonts->AddFontFromMemoryTTF( f.v, size * ui->scale, 16.0f, &config );
 

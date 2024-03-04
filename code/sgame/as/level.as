@@ -1,22 +1,25 @@
-#include "sg_game.as"
+#include "game.as"
 
 namespace TheNomad {
 	namespace SGame {
 		ConVar@ sgame_LevelIndex;
 		ConVar@ sgame_MapName;
 		ConVar@ sgame_LevelDebugPrint;
+		ConVar@ sgame_SaveName;
 		
 		shared class MapSpawn
 		{
-			MapSpawn( const vec3& origin, int nEntityId, SGEntityType nEntityType ) {
+			MapSpawn( const vec3& in origin, int nEntityId, TheNomad::GameSystem::EntityType nEntityType ) {
 				m_Origin = origin;
 				m_nEntityId = nEntityId;
 				m_nEntityType = nEntityType;
 			}
+			MapSpawn() {
+			}
 			
 			vec3 m_Origin;
 			int m_nEntityId;
-			SGEntityType m_nEntityType;
+			TheNomad::GameSystem::EntityType m_nEntityType;
 		};
 		
 		shared class MapData : TheNomad::GameSystem::GameObject
@@ -26,10 +29,10 @@ namespace TheNomad {
 				m_nHeight = 0;
 			}
 			
-			void Load( const string& mapName ) {
+			void Load( const string& in mapName ) {
 				g_MapName.Set( mapName );
 				
-				TheNomad::Engine::Renderer::RE_LoadWorldMap( mapName );
+//				TheNomad::Engine::Renderer::RE_LoadWorldMap( mapName );
 			}
 			
 			void OnLoad() {
@@ -52,24 +55,24 @@ namespace TheNomad {
 				return m_nHeight;
 			}
 			
-			array<MapSpawn> m_Spawns;
-			array<vec3> m_Checkpoints;
+			private array<MapSpawn> m_Spawns;
+			private array<vec3> m_Checkpoints;
 			private int m_nWidth;
 			private int m_nHeight;
 		};
 		
 		shared class LevelInfoData {
-			LevelInfoData( GameDifficulty difficulty, LevelRank rank, int nMinKills, int nMinStyle, int nMaxCollateral, int nMinTime ) {
+			LevelInfoData( TheNomad::GameSystem::GameDifficulty difficulty, int nMinKills, int nMinStyle, int nMaxCollateral, int nMinTime ) {
 				m_Difficulty = difficulty;
-				m_Rank = rank;
+//				m_Rank = rank;
 				m_nMinKills = nMinKills;
 				m_nMinStyle = nMinStyle;
 				m_nMaxCollateral = nMaxCollateral;
 				m_nMinTime = nMinTime;
 			}
 			
-			GameDifficulty m_Difficulty;
-			LevelRank m_Rank;
+			TheNomad::GameSystem::GameDifficulty m_Difficulty;
+//			LevelRank m_Rank;
 			int m_nMinKills;
 			int m_nMinStyle;
 			int m_nMaxCollateral;
@@ -100,11 +103,11 @@ namespace TheNomad {
 				return "LevelData";
 			}
 			
-			void LoadInfo( const TheNomad::Util::InfoParser& parse ) {
+			void LoadInfo( ) {
 				
 			}
 			
-			void Start( int nIndex, const string& name ) {
+			void Start( int nIndex, const string& in name ) {
 				ConsolePrint( "Starting level " + name + "...\n" );
 				
 				if ( g_DebugPrint.GetInt() is 1 ) {
@@ -124,12 +127,12 @@ namespace TheNomad {
 			MapData m_MapData;
 			
 			// level info data
-			dictionary<LevelInfoData> m_RankingData;
+//			array<LevelInfoData> m_RankingData;
 			
 			// ranking data
 			string m_Name;
-			GameDifficulty m_nBestDifficulty;
-			LevelRank m_nBestRank;
+			
+//			LevelRank m_nBestRank;
 			int m_nBestKills;
 			int m_nBestTime;
 			int m_nBestCollateral;

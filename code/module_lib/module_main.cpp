@@ -211,7 +211,7 @@ void CModuleLib::RunModules( EModuleFuncId nCallId, uint32_t nArgs, ... )
         }
         if ( m_LoadList[j]->m_pHandle->CallFunc( nCallId, nArgs, args ) == -1 ) {
             Con_Printf( COLOR_YELLOW "WARNING: module \"%s\" returned error code on call to proc \"%s\".\n",
-                m_LoadList[j]->m_szName, funcNames[ nCallId ] );
+                m_LoadList[j]->m_szName, funcDefs[ nCallId ].name );
         }
     }
 }

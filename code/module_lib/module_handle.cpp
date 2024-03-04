@@ -3,22 +3,20 @@
 #include "module_handle.h"
 #include "angelscript/as_bytecode.h"
 
-const char *funcNames[NumFuncs] = {
-    "ModuleInit",
-    "ModuleShutdown",
-    "ModuleOnLevelStart",
-    "ModuleOnLevelEnd",
-    "ModuleOnCommand",
-    "ModuleOnKeyEvent",
-    "ModuleOnMouseEvent",
-    "ModuleOnRunTic",
-    "ModuleOnSaveGame",
-    "ModuleOnLoadGame",
-    "ModuleDrawConfiguration",
-    "ModuleSaveConfiguration",
-
-    "ModuleGetCurrentLevelIndex",
-    "ModuleRewindToLastCheckpoint"
+const moduleFunc_t funcDefs[NumFuncs] = {
+    { "ModuleInit", ModuleInit, 0, qtrue },
+    { "ModuleShutdown", ModuleShutdown, 0, qtrue },
+    { "ModuleOnConsoleCommand", ModuleCommandLine, 0, qfalse },
+    { "ModuleDrawConfiguration", ModuleDrawConfiguration, 0, qfalse },
+    { "ModuleSaveConfiguration", ModuleSaveConfiguration, 0, qfalse },
+    { "ModuleOnKeyEvent", ModuleOnKeyEvent, 2, qfalse },
+    { "ModuleOnMouseEvent", ModuleOnMouseEvent, 2, qfalse },
+    { "ModuleOnLevelStart", ModuleOnLevelStart, 1, qfalse },
+    { "ModuleOnLevelEnd", ModuleOnLevelEnd, 0, qfalse },
+    { "ModuleOnRunTic", ModuleOnRunTic, 1, qtrue },
+    { "ModuleOnSaveGame", ModuleOnSaveGame, 0, qfalse },
+    { "ModuleOnLoadGame", ModuleOnLoadGame, 0, qfalse },
+    { "ModuleRewindToLastCheckpoint", ModuleRewindToLastCheckpoint, 0, qfalse },
 };
 
 CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sourceFiles, int32_t moduleVersionMajor,
@@ -65,7 +63,9 @@ CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sou
     }
 
     m_pScriptContext = g_pModuleLib->GetScriptEngine()->CreateContext();
-    InitCalls();
+    if ( !InitCalls() ) {
+        return;
+    }
 
     m_pScriptModule->SetUserData( this );
     SaveToCache();
@@ -147,24 +147,35 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
     return retn;
 }
 
-void CModuleHandle::InitCalls( void )
+bool CModuleHandle::InitCalls( void )
 {
     Con_Printf( "Initializing function procs...\n" );
 
     memset( m_pFuncTable, 0, sizeof( m_pFuncTable ) );
 
     for ( uint32_t i = 0; i < NumFuncs; i++ ) {
-        if ( i == ModuleGetCurrentLevelIndex && N_stricmp( m_szName.c_str(), "nomadmain" ) ) {
+        if ( i == ModuleRewindToLastCheckpoint && N_stricmp( m_szName.c_str(), "nomadmain" ) ) {
             break; // not sgame
         }
-        Con_DPrintf( "Checking if module has function '%s'...\n", funcNames[i] );
-        m_pFuncTable[i] = m_pScriptModule->GetFunctionByName( funcNames[i] );
+        Con_DPrintf( "Checking if module has function '%s'...\n", funcDefs[i].name );
+        m_pFuncTable[i] = m_pScriptModule->GetFunctionByName( funcDefs[i].name );
         if ( m_pFuncTable[i] ) {
-            Con_Printf( COLOR_GREEN "Module \"%s\" registered with proc '%s'.\n", m_szName.c_str(), funcNames[i] );
+            Con_Printf( COLOR_GREEN "Module \"%s\" registered with proc '%s'.\n", m_szName.c_str(), funcDefs[i].name );
         } else {
-            Con_Printf( COLOR_MAGENTA "Module \"%s\" not registered with proc '%s'.\n", m_szName.c_str(), funcNames[i] );
+            if ( funcDefs[i].required ) {
+                Con_Printf( COLOR_RED "Module \"%s\" not registered with required proc '%s'.\n", m_szName.c_str(), funcDefs[i].name );
+                return false;
+            }
+            Con_Printf( COLOR_MAGENTA "Module \"%s\" not registered with proc '%s'.\n", m_szName.c_str(), funcDefs[i].name );
+            continue;
+        }
+
+        if ( m_pFuncTable[i]->GetParamCount() != funcDefs[i].expectedArgs ) {
+            Con_Printf( COLOR_RED "Module \"%s\" has proc '%s' but not the correct args (%u).\n", m_szName.c_str(), funcDefs[i].name, funcDefs[i].expectedArgs );
+            return false;
         }
     }
+    return true;
 }
 
 void CModuleHandle::LoadSourceFile( const UtlString& filename )

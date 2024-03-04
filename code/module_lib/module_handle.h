@@ -29,7 +29,6 @@ enum : uint64_t
     ModuleOnLoadGame,
 
     // special sgame stuff
-    ModuleGetCurrentLevelIndex,
     ModuleRewindToLastCheckpoint,
 
     NumFuncs
@@ -76,7 +75,7 @@ public:
 	}
 private:
 	void Build( const UtlVector<UtlString>& sourceFiles );
-    void InitCalls( void );
+    bool InitCalls( void );
     void LoadSourceFile( const UtlString& filename );
 
     asIScriptFunction *m_pFuncTable[NumFuncs];
@@ -205,6 +204,13 @@ private:
 	fileHandle_t m_hFile;
 };
 
-extern const char *funcNames[NumFuncs];
+typedef struct {
+    const char *name;
+    uint64_t callId;
+    uint32_t expectedArgs;
+    qboolean required;
+} moduleFunc_t;
+
+extern const moduleFunc_t funcDefs[NumFuncs];
 
 #endif

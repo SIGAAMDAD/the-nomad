@@ -211,6 +211,8 @@ void SinglePlayerMenu_Draw( void )
             if ( N_stricmp( Cvar_VariableString( "sg_savename" ), sp.name ) ) {
                 Cvar_Set( "sg_savename", sp.name );
             }
+
+            Cvar_SetIntegerValue( "g_levelIndex", 0 );
             
             Cvar_Set( "mapname", gi.mapCache.infoList[0].info.name );
             g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelStart, 1, 0 ); // start a new game

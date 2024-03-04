@@ -841,7 +841,7 @@ void ModuleLib_Register_Engine( void )
             REGISTER_OBJECT_TYPE( "vec2", vec2, asOBJ_VALUE );
             
             REGISTER_OBJECT_BEHAVIOUR( "vec2", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( vec2, ( void ) ) );
-            REGISTER_OBJECT_BEHAVIOUR( "vec4", asBEHAVE_CONSTRUCT, "void f( float )", WRAP_CON( vec2, ( float) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "vec2", asBEHAVE_CONSTRUCT, "void f( float )", WRAP_CON( vec2, ( float) ) );
             REGISTER_OBJECT_BEHAVIOUR( "vec2", asBEHAVE_CONSTRUCT, "void f( const vec2& in )", WRAP_CON( vec2, ( const vec2& ) ) );
             REGISTER_OBJECT_BEHAVIOUR( "vec2", asBEHAVE_CONSTRUCT, "void f( float, float )", WRAP_CON( vec2, ( float, float ) ) );
             REGISTER_OBJECT_BEHAVIOUR( "vec2", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( vec2 ) );
@@ -868,7 +868,7 @@ void ModuleLib_Register_Engine( void )
         {
             REGISTER_OBJECT_TYPE( "vec3", vec3, asOBJ_VALUE );
             REGISTER_OBJECT_BEHAVIOUR( "vec3", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( vec3, ( void ) ) );
-            REGISTER_OBJECT_BEHAVIOUR( "vec4", asBEHAVE_CONSTRUCT, "void f( float )", WRAP_CON( vec3, ( float ) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "vec3", asBEHAVE_CONSTRUCT, "void f( float )", WRAP_CON( vec3, ( float ) ) );
             REGISTER_OBJECT_BEHAVIOUR( "vec3", asBEHAVE_CONSTRUCT, "void f( const vec3& in )", WRAP_CON( vec3, ( const vec3& ) ) );
             REGISTER_OBJECT_BEHAVIOUR( "vec3", asBEHAVE_CONSTRUCT, "void f( float, float, float )", WRAP_CON( vec3, ( float, float, float ) ) );
             REGISTER_OBJECT_BEHAVIOUR( "vec3", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( vec3 ) );
@@ -915,10 +915,10 @@ void ModuleLib_Register_Engine( void )
             g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "vec4", "float& opIndex( uint )", asFUNCTION( ModuleLib_IndexVec4Generic ), asCALL_GENERIC );
             g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "vec4", "const float& opIndex( uint ) const", asFUNCTION( ModuleLib_IndexVec4Generic ), asCALL_GENERIC );
 
-            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "vec4", "vec3 opAdd( const vec3& in ) const", asFUNCTION( ModuleLib_AddVec4Generic ), asCALL_GENERIC );
-            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "vec4", "vec3 opSub( const vec3& in ) const", asFUNCTION( ModuleLib_SubVec4Generic ), asCALL_GENERIC );
-            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "vec4", "vec3 opDiv( const vec3& in ) const", asFUNCTION( ModuleLib_DivVec4Generic ), asCALL_GENERIC );
-            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "vec4", "vec3 opMul( const vec3& in ) const", asFUNCTION( ModuleLib_MulVec4Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "vec4", "vec4 opAdd( const vec4& in ) const", asFUNCTION( ModuleLib_AddVec4Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "vec4", "vec4 opSub( const vec4& in ) const", asFUNCTION( ModuleLib_SubVec4Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "vec4", "vec4 opDiv( const vec4& in ) const", asFUNCTION( ModuleLib_DivVec4Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "vec4", "vec4 opMul( const vec4& in ) const", asFUNCTION( ModuleLib_MulVec4Generic ), asCALL_GENERIC );
         }
     }
 
@@ -939,6 +939,13 @@ void ModuleLib_Register_Engine( void )
         REGISTER_ENUM_VALUE( "ImGuiInputTextFlags", "ImGuiInputTextFlags_EnterReturnsTrue", ImGuiInputTextFlags_EnterReturnsTrue );
         REGISTER_ENUM_VALUE( "ImGuiInputTextFlags", "ImGuiInputTextFlags_AllowTabInput", ImGuiInputTextFlags_AllowTabInput );
         REGISTER_ENUM_VALUE( "ImGuiInputTextFlags", "ImGuiInputTextFlags_CtrlEnterForNewLine", ImGuiInputTextFlags_CtrlEnterForNewLine );
+
+        REGISTER_ENUM_TYPE( "ImGuiDir" );
+        REGISTER_ENUM_VALUE( "ImGuiDir", "ImGuiDir_Left", ImGuiDir_Left );
+        REGISTER_ENUM_VALUE( "ImGuiDir", "ImGuiDir_Right", ImGuiDir_Right );
+        REGISTER_ENUM_VALUE( "ImGuiDir", "ImGuiDir_Down", ImGuiDir_Down );
+        REGISTER_ENUM_VALUE( "ImGuiDir", "ImGuiDir_Up", ImGuiDir_Up );
+        REGISTER_ENUM_VALUE( "ImGuiDir", "ImGuiDir_None", ImGuiDir_None );
 
         REGISTER_ENUM_TYPE( "ImGuiCol" );
         REGISTER_ENUM_VALUE( "ImGuiCol", "ImGuiCol_Border", ImGuiCol_Border );
@@ -976,6 +983,7 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "void ImGui::TextColored( const vec4& in, const string& in )", ImGui_TextColored );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::SameLine( float = 0.0f, float = -1.0f )", ImGui::SameLine );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::NewLine()", ImGui::NewLine );
+        REGISTER_GLOBAL_FUNCTION( "bool ImGui::ArrowButton( const string& in, ImGuiDir )", ImGui::ArrowButton );
 //        REGISTER_GLOBAL_FUNCTION( "bool ImGui::SliderInt( const string& in, int& in, int, int, int = 0 )", ImGui_SliderInt );
 //        REGISTER_GLOBAL_FUNCTION( "bool ImGui::SliderFloat( const string& in, float& in, float, float, int = 0 )", ImGui_SliderFloat );
 //        REGISTER_GLOBAL_FUNCTION( "bool ImGui::SliderVec2( const string& in, vec2& in, float, float, int = 0 )", ImGui_SliderFloat2 );
@@ -1099,12 +1107,22 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveUShort( const string& in, uint16 )", SaveUInt16 );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveUInt( const string& in, uint32 )", SaveUInt32 );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveULong( const string& in, uint64 )", SaveUInt64 );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<T>& in )", SaveArray );
+        
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<float>& in )", SaveArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<int8>& in )", SaveArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<int16>& in )", SaveArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<int32>& in )", SaveArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<int64>& in )", SaveArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<uint8>& in )", SaveArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<uint16>& in )", SaveArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<uint32>& in )", SaveArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<uint64>& in )", SaveArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<string>& in )", SaveArray );
 
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveString( const string& in, const string& in )", SaveString );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveVec2( const string& in, const vec2& in )", SaveVec2 );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveVec3( const string& in, const vec3& in )", SaveVec3 );
-//        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveVec4( const string& in, const vec4& )", SaveVec4 );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveVec4( const string& in, const vec4& in )", SaveVec4 );
 
         REGISTER_GLOBAL_FUNCTION( "int8 TheNomad::GameSystem::LoadInt8( const string& in, int )", LoadInt8 );
         REGISTER_GLOBAL_FUNCTION( "int16 TheNomad::GameSystem::LoadInt16( const string& in, int )", LoadInt16 );
@@ -1125,12 +1143,22 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "uint16 TheNomad::GameSystem::LoadUShort( const string& in, uint )", LoadUInt16 );
         REGISTER_GLOBAL_FUNCTION( "uint32 TheNomad::GameSystem::LoadUInt( const string& in, uint )", LoadUInt32 );
         REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::GameSystem::LoadULong( const string& in, uint )", LoadUInt64 );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<T>& out )", LoadArray );
+        
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<float>& out )", LoadArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<int8>& out )", LoadArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<int16>& out )", LoadArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<int32>& out )", LoadArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<int64>& out )", LoadArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<uint8>& out )", LoadArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<uint16>& out )", LoadArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<uint32>& out )", LoadArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<uint64>& out )", LoadArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<string>& out )", LoadArray );
 
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadString( const string& in, string& out, int )", LoadString );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadVec2( const string& in, vec2& out, int )", LoadVec2 );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadVec3( const string& in, vec3& out, int )", LoadVec3 );
-//        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadVec4( const string& in, vec4& out, int )", LoadVec4 );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadVec4( const string& in, vec4& out, int )", LoadVec4 );
 
         
 		// these are here because if they change in the map editor or the engine, it'll break sgame
