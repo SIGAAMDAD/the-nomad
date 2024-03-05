@@ -1,11 +1,9 @@
 #include "game.as"
-#include "state.as"
-#include "info.as"
+#include "convar.as"
 
 namespace TheNomad {
 	namespace SGame {
-		shared class EntityObject
-		{
+		shared class EntityObject {
 			EntityObject() {
 			}
 			
@@ -22,7 +20,6 @@ namespace TheNomad {
 				return m_State;
 			}
 			void SetState( uint statenum ) {
-				TheNomad::GameSystem::GameManager.GetInfo( "EntityStates" ).GetInfoInt( statenum );
 			}
 			const TheNomad::GameSystem::LinkEntity& GetLink() const {
 				return m_Link;
@@ -73,7 +70,7 @@ namespace TheNomad {
 				m_EntityList.emplace_back( EntityObject(  ) );
 			}
 			
-			void SpawnAll( const TheNomad::GameSystem::MapData& in mapData )
+			void SpawnAll( const TheNomad::SGame::MapData& in mapData )
 			{
 				ConsolePrint( "Spawning entities...\n" );
 				

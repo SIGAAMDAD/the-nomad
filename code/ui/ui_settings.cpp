@@ -1241,49 +1241,49 @@ static void SettingsMenuGraphics_Draw( void )
                 ui->PlaySelected();
             }
         }
-        ImGui::TableNextRow();
-            
-        ImGui::TableNextColumn();
-        ImGui::TextUnformatted( "GPU Driver Information" );
-        ImGui::TableNextColumn();
-        if ( ImGui::RadioButton( settings.showGPUDriverInfo ? "ON##ShowGPUDriverInfo" : "OFF##ShowGPUDriverInfo", settings.showGPUDriverInfo ) ) {
-            settings.showGPUDriverInfo = !settings.showGPUDriverInfo;
-            ui->PlaySelected();
-        }
-
-        if ( settings.showGPUDriverInfo ) {
-            ImGui::TableNextRow();
-            ImGui::TextUnformatted( "GPU Extensions Count" );
-            ImGui::TableNextColumn();
-            ImGui::Text( "%u", settings.gfx.numExtensions );
-
-            ImGui::TableNextRow();
-            ImGui::TextUnformatted( "GPU Extensions List" );
-            ImGui::TableNextColumn();
-            if ( ImGui::BeginMenu( "Extensions" ) ) {
-                for ( uint32_t i = 0; i < settings.gfx.numExtensions; i++ ) {
-                    switch ( settings.gfx.api ) {
-                    case R_OPENGL: {
-                        ImVec4 color;
-                        if ( settings.gfx.GL_extended->extensions[i].enabled ) {
-                            color = ImVec4( 0.0f, 1.0f, 0.0f, 1.0f );
-                        } else {
-                            color = ImVec4( 1.0f, 0.0f, 0.0f, 1.0f );
-                        }
-                        ImGui::PushStyleColor( ImGuiCol_FrameBg, color );
-                        ImGui::PushStyleColor( ImGuiCol_FrameBgActive, color );
-                        ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, color );
-                        ImGui::MenuItem( settings.gfx.GL_extended->extensions[i].name );
-                        ImGui::PopStyleColor( 3 );
-                        break; }
-                    case R_VULKAN:
-                        N_Error( ERR_FATAL, "Vulkan not implemented" );
-                        break;
-                    };
-                }
-                ImGui::EndMenu();
-            }
-        }
+//        ImGui::TableNextRow();
+//        
+//        ImGui::TableNextColumn();
+//        ImGui::TextUnformatted( "GPU Driver Information" );
+//        ImGui::TableNextColumn();
+//        if ( ImGui::RadioButton( settings.showGPUDriverInfo ? "ON##ShowGPUDriverInfo" : "OFF##ShowGPUDriverInfo", settings.showGPUDriverInfo ) ) {
+//            settings.showGPUDriverInfo = !settings.showGPUDriverInfo;
+//            ui->PlaySelected();
+//        }
+//
+//        if ( settings.showGPUDriverInfo ) {
+//            ImGui::TableNextRow();
+//            ImGui::TextUnformatted( "GPU Extensions Count" );
+//            ImGui::TableNextColumn();
+//            ImGui::Text( "%u", settings.gfx.numExtensions );
+//
+//            ImGui::TableNextRow();
+//            ImGui::TextUnformatted( "GPU Extensions List" );
+//            ImGui::TableNextColumn();
+//            if ( ImGui::BeginMenu( "Extensions" ) ) {
+//                for ( uint32_t i = 0; i < settings.gfx.numExtensions; i++ ) {
+//                    switch ( settings.gfx.api ) {
+//                    case R_OPENGL: {
+//                        ImVec4 color;
+//                        if ( settings.gfx.GL_extended->extensions[i].enabled ) {
+//                            color = ImVec4( 0.0f, 1.0f, 0.0f, 1.0f );
+//                        } else {
+//                            color = ImVec4( 1.0f, 0.0f, 0.0f, 1.0f );
+//                        }
+//                        ImGui::PushStyleColor( ImGuiCol_FrameBg, color );
+//                        ImGui::PushStyleColor( ImGuiCol_FrameBgActive, color );
+//                        ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, color );
+//                        ImGui::MenuItem( settings.gfx.GL_extended->extensions[i].name );
+//                        ImGui::PopStyleColor( 3 );
+//                        break; }
+//                    case R_VULKAN:
+//                        N_Error( ERR_FATAL, "Vulkan not implemented" );
+//                        break;
+//                    };
+//                }
+//                ImGui::EndMenu();
+//            }
+//        }
 
 /*
         ImGui::Begin( "##GPUMemoryInfo", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |

@@ -6,6 +6,8 @@ namespace TheNomad {
 		ConVar@ sgame_MapName;
 		ConVar@ sgame_LevelDebugPrint;
 		ConVar@ sgame_SaveName;
+		ConVar@ sgame_Difficulty;
+		ConVar@ sgame_DebugMode;
 		
 		shared class MapSpawn
 		{
@@ -30,7 +32,7 @@ namespace TheNomad {
 			}
 			
 			void Load( const string& in mapName ) {
-				g_MapName.Set( mapName );
+				TheNomad::Engine::CvarSet( "sgame_MapName", mapName );
 				
 //				TheNomad::Engine::Renderer::RE_LoadWorldMap( mapName );
 			}
@@ -85,13 +87,11 @@ namespace TheNomad {
 			}
 			
 			void OnLoad() {
-				TheNomad::GameSystem::LoadString( "Name", m_Name );
 			}
 			void OnSave() const {
 				TheNomad::GameSystem::BeginSaveSection( GetName() );
 				
-				TheNomad::GameSystem::SaveString( "Name", m_Name );
-				TheNomad::GameSystem::SaveInt( "BestRank", m_nBestRank );
+//				TheNomad::GameSystem::SaveInt( "BestRank", m_nBestRank );
 				TheNomad::GameSystem::SaveInt( "BestDifficulty", m_nBestDifficulty );
 				TheNomad::GameSystem::SaveInt( "MostKills", m_nBestKills );
 				TheNomad::GameSystem::SaveInt( "MaxColleteral", m_nBestCollateral );
@@ -110,15 +110,15 @@ namespace TheNomad {
 			void Start( int nIndex, const string& in name ) {
 				ConsolePrint( "Starting level " + name + "...\n" );
 				
-				if ( g_DebugPrint.GetInt() is 1 ) {
-					ConsolePrint(
-						"[Level Info] ->\n"
-						"Name: " + name + "\n"
-						"Index: " + nIndex + "\n"
-					);
-				}
+//				if ( g_DebugPrint.GetInt() is 1 ) {
+//					ConsolePrint(
+//						"[Level Info] ->\n"
+//						"Name: " + name + "\n"
+//						"Index: " + nIndex + "\n"
+//					);
+//				}
 				
-				m_MapData.Load(  );
+//				m_MapData.Load(  );
 			}
 			void End() {
 				ConsolePrint( "Ending level...\n" );
@@ -133,6 +133,7 @@ namespace TheNomad {
 			string m_Name;
 			
 //			LevelRank m_nBestRank;
+			TheNomad::GameSystem::GameDifficulty m_nBestDifficulty;
 			int m_nBestKills;
 			int m_nBestTime;
 			int m_nBestCollateral;

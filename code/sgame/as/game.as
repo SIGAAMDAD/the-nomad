@@ -147,8 +147,6 @@ namespace TheNomad {
 		};
 		
 		CampaignManager@ Game;
-		ConVar@ sg_difficulty;
-		ConVar@ sg_savename;
 		
 		void Init() {
 			@Game = cast<CampaignManager>( AddSystem( CampaignManager() ) );

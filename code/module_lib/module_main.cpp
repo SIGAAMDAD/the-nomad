@@ -261,11 +261,11 @@ void Module_ASMessage_f( const asSMessageInfo *pMsg, void *param )
     };
 
     if ( error ) {
-        Sys_MessageBox( "*** ERROR DURING MODULE COMPILATION ***",
-            va( "An error occurred during the compilation of a module section\n"
-                "%s:%i:%i %s"
-            , pMsg->section, pMsg->row, pMsg->col, pMsg->message ),
-            false );
+        //Sys_MessageBox( "*** ERROR DURING MODULE COMPILATION ***",
+        //    va( "An error occurred during the compilation of a module section\n"
+        //        "%s:%i:%i %s"
+        //    , pMsg->section, pMsg->row, pMsg->col, pMsg->message ),
+        //    false );
     }
 }
 
@@ -309,11 +309,11 @@ bool CModuleLib::AddDefaultProcs( void ) const {
         return true;
     }
 
+    RegisterScriptHandle( m_pEngine );
     RegisterStdString( m_pEngine );
     RegisterScriptArray( m_pEngine, true );
     RegisterScriptDictionary( m_pEngine );
     RegisterScriptMath( m_pEngine );
-    RegisterScriptHandle( m_pEngine );
 
     ModuleLib_Register_Engine();
     const_cast<CModuleLib *>( this )->m_bRegistered = qtrue;

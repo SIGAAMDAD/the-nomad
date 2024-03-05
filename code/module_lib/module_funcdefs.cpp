@@ -3,7 +3,10 @@
 #include <limits.h>
 #include "aswrappedcall.h"
 #include "imgui_stdlib.h"
+#include "../ui/ui_lib.h"
 
+#include "module_engine/module_bbox.h"
+#include "module_engine/module_linkentity.h"
 #include "module_engine/module_polyvert.h"
 
 //
@@ -35,8 +38,8 @@ using vec4 = glm::vec<4, float, glm::packed_highp>;
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( decl, asFUNCTION( ModuleLib_##funcPtr ), asCALL_GENERIC ) )
 #define REGISTER_OBJECT_TYPE( name, obj, traits ) \
     ValidateObjectType( __func__, name, g_pModuleLib->GetScriptEngine()->RegisterObjectType( name, sizeof(obj), traits | asGetTypeTraits<obj>() ) )
-#define REGISTER_OBJECT_PROPERTY( obj, type, var, offset ) \
-    ValidateObjectProperty( __func__, "" type " " #var "", g_pModuleLib->GetScriptEngine()->RegisterObjectProperty( obj, "" type " " #var "", offset ) )
+#define REGISTER_OBJECT_PROPERTY( obj, var, offset ) \
+    ValidateObjectProperty( __func__, var, g_pModuleLib->GetScriptEngine()->RegisterObjectProperty( obj, var, offset ) )
 #define REGISTER_OBJECT_BEHAVIOUR( obj, type, decl, funcPtr ) \
     ValidateObjectBehaviour( __func__, #type, g_pModuleLib->GetScriptEngine()->RegisterObjectBehaviour( obj, type, decl, funcPtr, asCALL_GENERIC ) )
 #define REGISTER_TYPEDEF( type, alias ) \
@@ -184,6 +187,14 @@ DEFINE_CALLBACK( CvarSetValueGeneric ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
     const string_t *value = (const string_t *)pGeneric->GetArgObject( 1 );
     Cvar_Set( name->c_str(), value->c_str() );
+}
+
+DEFINE_CALLBACK( CvarVariableInteger ) {
+    *(int32_t *)pGeneric->GetAddressOfReturnLocation() = Cvar_VariableInteger( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() );
+}
+
+DEFINE_CALLBACK( CvarVariableFloat ) {
+    *(float *)pGeneric->GetAddressOfReturnLocation() = Cvar_VariableFloat( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() );
 }
 
 DEFINE_CALLBACK( Snd_PlaySfx ) {
@@ -680,28 +691,68 @@ static void ImGui_Text( const string_t *text ) {
     ImGui::TextUnformatted( text->c_str() );
 }
 
-static void ImGui_TextColored( const glm::vec4 *color, const string_t *text ) {
+static void ImGui_TextColored( const vec4 *color, const string_t *text ) {
     ImGui::TextColored( ImVec4( color->r, color->g, color->b, color->a ), text->c_str() );
 }
 
-static bool ImGui_SliderInt( const string_t *label, int *v, int min, int max, ImGuiSliderFlags flags = 0 ) {
+static bool ImGui_SliderInt( asIScriptGeneric *pGeneric ) {
+    const string_t *label = (const string_t *)pGeneric->GetArgObject( 0 );
+    int *v = (int *)pGeneric->GetArgObject( 1 );
+    float min = pGeneric->GetArgFloat( 2 );
+    float max = pGeneric->GetArgFloat( 3 );
+    ImGuiSliderFlags flags = *(int *)pGeneric->GetArgAddress( 4 );
+
     return ImGui::SliderInt( label->c_str(), v, min, max, "%i", flags );
 }
 
-static bool ImGui_SliderFloat( const string_t *label, float *v, float min, float max, ImGuiSliderFlags flags = 0 ) {
-    return ImGui::SliderFloat( label->c_str(), v, min, max, "%f", flags );
+static bool ImGui_SliderFloat( asIScriptGeneric *pGeneric ) {
+    const string_t *label = (const string_t *)pGeneric->GetArgObject( 0 );
+    float *v = (float *)pGeneric->GetArgAddress( 1 );
+    float min = pGeneric->GetArgFloat( 2 );
+    float max = pGeneric->GetArgFloat( 3 );
+    ImGuiSliderFlags flags = *(int *)pGeneric->GetArgAddress( 4 );
+
+    return ImGui::SliderFloat( label->c_str(), v, min, max, "%.3f", flags );
 }
 
-static bool ImGui_SliderFloat2( const string_t *label, glm::vec2 *v, float min, float max, ImGuiSliderFlags flags = 0 ) {
-    return ImGui::SliderFloat2( label->c_str(), &v->x, min, max, "%i", flags );
+static bool ImGui_SliderFloat2( asIScriptGeneric *pGeneric ) {
+    const string_t *label = (const string_t *)pGeneric->GetArgObject( 0 );
+    vec2 *v = (vec2 *)pGeneric->GetArgObject( 1 );
+    float min = pGeneric->GetArgFloat( 2 );
+    float max = pGeneric->GetArgFloat( 3 );
+    ImGuiSliderFlags flags = *(int *)pGeneric->GetArgAddress( 4 );
+
+    return ImGui::SliderFloat2( label->c_str(), &v->x, min, max, "%.3f", flags );
 }
 
-static bool ImGui_SliderFloat3( const string_t *label, glm::vec3 *v, float min, float max, ImGuiSliderFlags flags = 0 ) {
-    return ImGui::SliderFloat3( label->c_str(), &v->x, min, max, "%i", flags );
+static bool ImGui_SliderFloat3( asIScriptGeneric *pGeneric ) {
+    const string_t *label = (const string_t *)pGeneric->GetArgObject( 0 );
+    vec3 *v = (vec3 *)pGeneric->GetArgObject( 1 );
+    float min = pGeneric->GetArgFloat( 2 );
+    float max = pGeneric->GetArgFloat( 3 );
+    ImGuiSliderFlags flags = *(int *)pGeneric->GetArgAddress( 4 );
+
+    return ImGui::SliderFloat3( label->c_str(), &v->x, min, max, "%.3f", flags );
 }
 
-static bool ImGui_SliderFloat4( const string_t *label, glm::vec4 *v, float min, float max, ImGuiSliderFlags flags = 0 ) {
-    return ImGui::SliderFloat4( label->c_str(), &v->x, min, max, "%i", flags );
+static bool ImGui_SliderFloat4( asIScriptGeneric *pGeneric ) {
+    const string_t *label = (const string_t *)pGeneric->GetArgObject( 0 );
+    vec4 *v = (vec4 *)pGeneric->GetArgObject( 1 );
+    float min = pGeneric->GetArgFloat( 2 );
+    float max = pGeneric->GetArgFloat( 3 );
+    ImGuiSliderFlags flags = *(int *)pGeneric->GetArgAddress( 4 );
+
+    return ImGui::SliderFloat4( label->c_str(), &v->x, min, max, "%.3f", flags );
+}
+
+static bool ImGui_SliderAngle( asIScriptGeneric *pGeneric ) {
+    const string_t *label = (const string_t *)pGeneric->GetArgObject( 0 );
+    float *v = (float *)pGeneric->GetArgObject( 1 );
+    float min = pGeneric->GetArgFloat( 2 );
+    float max = pGeneric->GetArgFloat( 3 );
+    ImGuiSliderFlags flags = *(int *)pGeneric->GetArgAddress( 4 );
+
+    return ImGui::SliderAngle( label->c_str(), v, min, max, "%.0f deg", flags );
 }
 
 //
@@ -781,6 +832,8 @@ static const asDWORD script_NOMAD_VERSION = NOMAD_VERSION;
 static const asDWORD script_NOMAD_VERSION_UPDATE = NOMAD_VERSION_UPDATE;
 static const asDWORD script_NOMAD_VERSION_PATCH = NOMAD_VERSION_PATCH;
 
+static const int32_t *script_UI_SELECTED_SOUND = &ui->sfx_select;
+
 void ModuleLib_Register_Engine( void )
 {
 //    SET_NAMESPACE( "TheNomad::Constants" );
@@ -823,6 +876,8 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_VAR( "const uint32 CVAR_TEMP", &script_CVAR_TEMP );
         REGISTER_GLOBAL_VAR( "const uint32 CVAR_SAVE", &script_CVAR_SAVE );
 
+        REGISTER_GLOBAL_VAR( "const int32 UI_SELECTED_SOUND", script_UI_SELECTED_SOUND );
+
         REGISTER_GLOBAL_VAR( "const uint32 NOMAD_VERSION", &script_NOMAD_VERSION );
         REGISTER_GLOBAL_VAR( "const uint32 NOMAD_VERSION_UPDATE", &script_NOMAD_VERSION_UPDATE );
         REGISTER_GLOBAL_VAR( "const uint32 NOMAD_VERSION_PATCH", &script_NOMAD_VERSION_PATCH );
@@ -846,8 +901,8 @@ void ModuleLib_Register_Engine( void )
             REGISTER_OBJECT_BEHAVIOUR( "vec2", asBEHAVE_CONSTRUCT, "void f( float, float )", WRAP_CON( vec2, ( float, float ) ) );
             REGISTER_OBJECT_BEHAVIOUR( "vec2", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( vec2 ) );
 
-            REGISTER_OBJECT_PROPERTY( "vec2", "float", x, offsetof( vec2, x ) );
-            REGISTER_OBJECT_PROPERTY( "vec2", "float", y, offsetof( vec2, y ) );
+            REGISTER_OBJECT_PROPERTY( "vec2", "float x", offsetof( vec2, x ) );
+            REGISTER_OBJECT_PROPERTY( "vec2", "float y", offsetof( vec2, y ) );
 
             REGISTER_METHOD_FUNCTION( "vec2", "vec2& opAssign( const vec2& in )", vec2, operator=, ( const vec2& ), vec2& );
             REGISTER_METHOD_FUNCTION( "vec2", "vec2& opAddAssign( const vec2& in )", vec2, operator+=, ( const vec2& ), vec2& );
@@ -872,9 +927,9 @@ void ModuleLib_Register_Engine( void )
             REGISTER_OBJECT_BEHAVIOUR( "vec3", asBEHAVE_CONSTRUCT, "void f( const vec3& in )", WRAP_CON( vec3, ( const vec3& ) ) );
             REGISTER_OBJECT_BEHAVIOUR( "vec3", asBEHAVE_CONSTRUCT, "void f( float, float, float )", WRAP_CON( vec3, ( float, float, float ) ) );
             REGISTER_OBJECT_BEHAVIOUR( "vec3", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( vec3 ) );
-            REGISTER_OBJECT_PROPERTY( "vec3", "float", x, offsetof( vec3, x ) );
-            REGISTER_OBJECT_PROPERTY( "vec3", "float", y, offsetof( vec3, y ) );
-            REGISTER_OBJECT_PROPERTY( "vec3", "float", z, offsetof( vec3, z ) );
+            REGISTER_OBJECT_PROPERTY( "vec3", "float x", offsetof( vec3, x ) );
+            REGISTER_OBJECT_PROPERTY( "vec3", "float y", offsetof( vec3, y ) );
+            REGISTER_OBJECT_PROPERTY( "vec3", "float z", offsetof( vec3, z ) );
 
             REGISTER_METHOD_FUNCTION( "vec3", "vec3& opAssign( const vec3& in )", vec3, operator=, ( const vec3& ), vec3& );
             REGISTER_METHOD_FUNCTION( "vec3", "vec3& opAddAssign( const vec3& in )", vec3, operator+=, ( const vec3& ), vec3& );
@@ -899,10 +954,10 @@ void ModuleLib_Register_Engine( void )
             REGISTER_OBJECT_BEHAVIOUR( "vec4", asBEHAVE_CONSTRUCT, "void f( const vec4& in )", WRAP_CON( vec4, ( const vec4& ) ) );
             REGISTER_OBJECT_BEHAVIOUR( "vec4", asBEHAVE_CONSTRUCT, "void f( float, float, float, float )", WRAP_CON( vec4, ( float, float, float, float ) ) );
             REGISTER_OBJECT_BEHAVIOUR( "vec4", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( vec3 ) );
-            REGISTER_OBJECT_PROPERTY( "vec4", "float", r, offsetof( vec4, r ) );
-            REGISTER_OBJECT_PROPERTY( "vec4", "float", g, offsetof( vec4, g ) );
-            REGISTER_OBJECT_PROPERTY( "vec4", "float", b, offsetof( vec4, b ) );
-            REGISTER_OBJECT_PROPERTY( "vec4", "float", a, offsetof( vec4, a ) );
+            REGISTER_OBJECT_PROPERTY( "vec4", "float r", offsetof( vec4, r ) );
+            REGISTER_OBJECT_PROPERTY( "vec4", "float g", offsetof( vec4, g ) );
+            REGISTER_OBJECT_PROPERTY( "vec4", "float b", offsetof( vec4, b ) );
+            REGISTER_OBJECT_PROPERTY( "vec4", "float a", offsetof( vec4, a ) );
 
             REGISTER_METHOD_FUNCTION( "vec4", "vec4& opAssign( const vec4& in )", vec4, operator=, ( const vec4& ), vec4& );
             REGISTER_METHOD_FUNCTION( "vec4", "vec4& opAddAssign( const vec4& in )", vec4, operator+=, ( const vec4& ), vec4& );
@@ -971,7 +1026,7 @@ void ModuleLib_Register_Engine( void )
 
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::Begin( const string& in, bool& in = null, const int = 0 )", ImGui::Begin );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::End()", ImGui::End );
-        REGISTER_GLOBAL_FUNCTION( "bool ImGui::BeginTable( const string& in, int, ImGuiTableFlags = 0, const vec2& in = ( 0.0f, 0.0f ), float = 0.0f )", ImGui_BeginTable );
+        REGISTER_GLOBAL_FUNCTION( "bool ImGui::BeginTable( const string& in, int, ImGuiTableFlags = ImGuiTableFlags_None )", ImGui_BeginTable );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::EndTable()", ImGui::EndTable );
         REGISTER_GLOBAL_FUNCTION( "int ImGui::InputText( const string& in, string& out, ImGuiInputTextFlags = 0 )", ImGui_InputText );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::TableNextColumn()", ImGui::TableNextColumn );
@@ -984,14 +1039,32 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "void ImGui::SameLine( float = 0.0f, float = -1.0f )", ImGui::SameLine );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::NewLine()", ImGui::NewLine );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::ArrowButton( const string& in, ImGuiDir )", ImGui::ArrowButton );
-//        REGISTER_GLOBAL_FUNCTION( "bool ImGui::SliderInt( const string& in, int& in, int, int, int = 0 )", ImGui_SliderInt );
-//        REGISTER_GLOBAL_FUNCTION( "bool ImGui::SliderFloat( const string& in, float& in, float, float, int = 0 )", ImGui_SliderFloat );
-//        REGISTER_GLOBAL_FUNCTION( "bool ImGui::SliderVec2( const string& in, vec2& in, float, float, int = 0 )", ImGui_SliderFloat2 );
-//        REGISTER_GLOBAL_FUNCTION( "bool ImGui::SliderVec3( const string& in, vec3& in, float, float, int = 0 )", ImGui_SliderFloat3 );
-//        REGISTER_GLOBAL_FUNCTION( "bool ImGui::SliderVec4( const string& in, vec4& in, float, float, int = 0 )", ImGui_SliderFloat4 );
-//        REGISTER_GLOBAL_FUNCTION( "bool ImGui::SliderAngle( const string& in, float& in, float = -360.0f, float = 360.0f, int = 0 )", ImGui::SliderAngle );
-        REGISTER_GLOBAL_FUNCTION( "bool ImGui::SliderFloat( const string& in, vec3& in, int = 0 )", ImGui::ColorEdit3 );
-        REGISTER_GLOBAL_FUNCTION( "bool ImGui::SliderFloat( const string& in, vec4& in, int = 0 )", ImGui::ColorEdit4 );
+//        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+//            "bool ImGui::SliderInt( const string& in, int&, int, int, int )", asFUNCTION( ImGui_SliderInt ),
+//            asCALL_GENERIC
+//        );
+//        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+//            "bool ImGui::SliderFloat( const string& in, float& in, float, float, int )", asFUNCTION( ImGui_SliderFloat ),
+//            asCALL_GENERIC
+//        );
+//        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+//            "bool ImGui::SliderVec2( const string& in, vec2& in, float, float, int )", asFUNCTION( ImGui_SliderFloat2 ),
+//            asCALL_GENERIC
+//        );
+//        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+//            "bool ImGui::SliderVec3( const string& in, vec3& in, float, float, int )", asFUNCTION( ImGui_SliderFloat3 ),
+//            asCALL_GENERIC
+//        );
+//        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+//            "bool ImGui::SliderVec4( const string& in, vec4& in, float, float, int )", asFUNCTION( ImGui_SliderFloat4 ),
+//            asCALL_GENERIC
+//        );
+//        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+//            "bool ImGui::SliderAngle( const string& in, float& in, float = -360.0f, float = 360.0f, int = 0 )", asFUNCTION( ImGui_SliderAngle ),
+//            asCALL_GENERIC
+//        );
+        REGISTER_GLOBAL_FUNCTION( "bool ImGui::ColorEdit3( const string& in, vec3& in, int = 0 )", ImGui::ColorEdit3 );
+        REGISTER_GLOBAL_FUNCTION( "bool ImGui::ColorEdit4( const string& in, vec4& in, int = 0 )", ImGui::ColorEdit4 );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::Button( const string& in, const vec2& in = vec2( 0.0f ) )", ImGui::Button );
 
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::BeginCombo( const string& in, const string& in )", ImGui::BeginCombo );
@@ -1013,6 +1086,8 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CvarRegister( const string& in, const string& in, uint, int64& out, float& out, int& out, int& out )", CvarRegisterGeneric );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CvarSet( const string& in, const string& in )", CvarSetValueGeneric );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CvarUpdate( const string& in, string& out, int64& out, float& out, int& out, const int )", CvarUpdateGeneric );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CvarVariableInteger( const string& in )", CvarVariableInteger );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CvarVariableFloat( const string& in )", CvarVariableFloat );
 
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdArgc()", CmdArgcGeneric );
         REGISTER_GLOBAL_FUNCTION( "const string& TheNomad::Engine::CmdArgv( uint )", CmdArgvGeneric );
@@ -1071,12 +1146,12 @@ void ModuleLib_Register_Engine( void )
             REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Renderer::PolyVert", "void Set( const vec3& in, const vec3& in, const vec2& in, uint32 )",
                 CModulePolyVert, Set, ( const vec3&, const vec3&, const vec2&, const color4ub_t& ), void );
 
-            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::RE_RenderScene( uint, uint, uint, uint, uint, uint )", RenderScene );
+            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::RenderScene( uint, uint, uint, uint, uint, uint )", RenderScene );
 //            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::RE_AddEntityToScene( int, vec3, uint,  )", AddEntityToScene );
-            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::RE_AddPolyToScene( int, const array<TheNomad::Engine::Renderer::PolyVert>& in )", AddPolyToScene );
-            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::RE_AddSpriteToScene( const vec3& in, int, int )", AddSpriteToScene );
-            REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RE_RegisterShader( const string& in )", RegisterShader );
-            REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RE_RegisterSprite( const string& in, uint, uint, uint, uint )", RegisterSpriteSheet );
+            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddPolyToScene( int, const array<TheNomad::Engine::Renderer::PolyVert>& in )", AddPolyToScene );
+            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddSpriteToScene( const vec3& in, int, int )", AddSpriteToScene );
+            REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RegisterShader( const string& in )", RegisterShader );
+            REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RegisterSprite( const string& in, uint, uint, uint, uint )", RegisterSpriteSheet );
 
             RESET_NAMESPACE();
         }
@@ -1084,6 +1159,30 @@ void ModuleLib_Register_Engine( void )
     
 	SET_NAMESPACE( "TheNomad::GameSystem" );
 	{
+        REGISTER_OBJECT_TYPE( "BBox", CModuleBoundBox, asOBJ_VALUE );
+        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::GameSystem::BBox", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( CModuleBoundBox, ( void ) ) );
+        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::GameSystem::BBox", asBEHAVE_CONSTRUCT, "void f( float, float, const vec3& in )",
+            WRAP_CON( CModuleBoundBox, ( float, float, const glm::vec3& ) ) );
+        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::GameSystem::BBox", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( CModuleBoundBox ) );
+        REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::BBox", "float m_nWidth", offsetof( CModuleBoundBox, width ) );
+        REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::BBox", "float m_nHeight", offsetof( CModuleBoundBox, height ) );
+        REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::BBox", "vec3 m_Mins", offsetof( CModuleBoundBox, mins ) );
+        REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::BBox", "vec3 m_Maxs", offsetof( CModuleBoundBox, maxs ) );
+        REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::BBox", "TheNomad::GameSystem::BBox& opAssign( const TheNomad::GameSystem::BBox& in )",
+            CModuleBoundBox, operator=, ( const CModuleBoundBox& ), CModuleBoundBox& );
+        REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::BBox", "void MakeBounds( const vec3& in )",
+            CModuleBoundBox, MakeBounds, ( const glm::vec3& ), void );
+
+        REGISTER_OBJECT_TYPE( "LinkEntity", CModuleLinkEntity, asOBJ_VALUE );
+        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::GameSystem::LinkEntity", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( CModuleLinkEntity, ( void ) ) );
+        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::GameSystem::LinkEntity", asBEHAVE_CONSTRUCT, "void f( const vec3& in, const BBox& in, uint, uint )",
+            WRAP_CON( CModuleLinkEntity, ( const glm::vec3&, const CModuleBoundBox&, uint32_t, uint32_t ) ) );
+        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::GameSystem::LinkEntity", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( CModuleLinkEntity ) );
+        REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::LinkEntity", "vec3 m_Origin", offsetof( CModuleLinkEntity, m_Origin ) );
+        REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::LinkEntity", "uint32 m_nEntityId", offsetof( CModuleLinkEntity, m_nEntityId ) );
+        REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::LinkEntity", "uint32 m_nEntityType", offsetof( CModuleLinkEntity, m_nEntityType ) );
+        REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::LinkEntity", "BBox m_Bounds", offsetof( CModuleLinkEntity, m_Bounds ) );
+
 		REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::BeginSaveSection( const string& in )", BeginSaveSection );
 		REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::EndSaveSection()", EndSaveSection );
         REGISTER_GLOBAL_FUNCTION( "int TheNomad::GameSystem::FindSaveSection( const string& in )", FindSaveSection );

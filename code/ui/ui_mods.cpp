@@ -44,6 +44,8 @@ void ModsMenu_SaveModList( void )
     uint64_t i;
     fileHandle_t f;
 
+    Con_Printf( "Saving mod list...\n" );
+
     f = FS_FOpenWrite( "_cache/loadlist.txt" );
     if ( f == FS_INVALID_HANDLE ) {
         N_Error( ERR_DROP, "ModsMenu_SaveModList: failed to open file _cache/loadlist.txt" );
@@ -251,6 +253,8 @@ void ModsMenu_Cache( void )
     mods.titleString = strManager->ValueForKey( "MOD_MENU_TITLE" );
     mods.loadString = strManager->ValueForKey( "MOD_MENU_LOAD" );
     mods.backString = strManager->ValueForKey( "MOD_MENU_BACK" );
+
+    ModsMenu_SaveModList();
 }
 
 void UI_ModsMenu( void )

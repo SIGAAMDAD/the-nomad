@@ -6,7 +6,7 @@ namespace TheNomad {
 	// its been put here. This is a shared object
 	// DO NOT MODIFY
 	//
-	class ConVar {
+	shared class ConVar {
 		ConVar() {
 		}
 		ConVar( const string& in name, const string& in value, uint flags, bool bTrackChanges ) {
@@ -40,6 +40,12 @@ namespace TheNomad {
 		uint GetFlags() const {
 			return m_Flags;
 		}
+		int GetModificationCount() const {
+			return m_nModificationCount;
+		}
+		bool Track() const {
+			return m_bTrackChanges;
+		}
 		
 		void Set( const string& in value ) {
 			Engine::CvarSet( m_Name, value );
@@ -57,10 +63,22 @@ namespace TheNomad {
 		private int m_nCvarHandle;
 		private bool m_bTrackChanges;
 	};
+
+	shared class CvarTableEntry {
+		CvarTableEntry() {
+		}
+		CvarTableEntry( ConVar@ var ) {
+			@m_Handle = @var;
+			m_nModificationCount = 0;
+		}
+
+		ConVar@ m_Handle;
+		int m_nModificationCount;
+	};
 	
-	class CvarSystem : TheNomad::GameSystem::GameObject {
+	shared class CvarSystem : TheNomad::GameSystem::GameObject {
 		CvarSystem() {
-//			TheNomad::Engine::CmdArgs::AddCommand( "sgame.list_cvars", this.ListVars_f );
+			TheNomad::Engine::CmdArgs::AddCommand( "sgame.list_cvars", this.ListVars_f );
 		}
 		
 		ConVar@ AddCvar( const string& in name, const string& in value, uint flags, bool bTrackChanges ) {
@@ -70,7 +88,7 @@ namespace TheNomad {
 		}
 		
 		void ListVars_f() {
-			ConsolePrint( "VM " + moduleInfo.name + " Cvars:\n" );
+			ConsolePrint( "VM " + MODULE_NAME + " Cvars:\n" );
 
 			for ( uint i = 0; i < m_CvarCache.size(); i++ ) {
 				ConsolePrint( m_CvarCache[i].GetName() + " " + m_CvarCache[i].GetValue() );
@@ -78,13 +96,20 @@ namespace TheNomad {
 		}
 
 		void OnLoad() {
-
 		}
 		void OnSave() const {
-
 		}
-		void OnRunTic() {
-
+		void OnRunTic() override {
+			// update all cvars
+			for ( uint i = 0; i < m_CvarCache.size(); i++ ) {
+				m_CvarCache[i].m_Handle.Update();
+				if ( m_CvarCache[i].m_nModificationCount != m_CvarCache[i].m_Handle.GetModificationCount()
+					&& m_CvarCache[i].m_Handle.Track() )
+				{
+					ConsolePrint( "Changed \"" + m_CvarCache[i].m_Handle.GetName() + "\" to \""
+						+ m_CvarCache[i].m_Handle.GetValue() + "\"\n" );
+				}
+			}
 		}
 		void OnLevelStart() {
 
@@ -99,7 +124,7 @@ namespace TheNomad {
 		void DrawCvarList() {
 		}
 		
-		private array<ConVar@> m_CvarCache;
+		private array<CvarTableEntry> m_CvarCache;
 	};
 	
 	CvarSystem@ CvarManager = cast<CvarSystem>( TheNomad::GameSystem::AddSystem( CvarSystem() ) );

@@ -2,32 +2,11 @@
 #include "config.as"
 #include "level.as"
 
-shared class ModuleInfo {
-	ModuleInfo() {
-	}
-
-	string version;
-	string name;
-
-	int versionMajor;
-	int versionUpdate;
-	int versionPatch;
-};
-
-ModuleInfo moduleInfo;
-
 void ModuleInfoInit() {
-	moduleInfo.versionMajor = MODULE_VERSION_MAJOR;
-	moduleInfo.versionUpdate = MODULE_VERSION_UPDATE;
-	moduleInfo.versionPatch = MODULE_VERSION_PATCH;
-
-	moduleInfo.name = MODULE_NAME;
-	moduleInfo.version = formatUInt( moduleInfo.versionMajor ) + formatUInt( moduleInfo.versionUpdate )
-		+ formatUInt( moduleInfo.versionPatch );
-	
 	ConsolePrint( "[Module Info]\n" );
-	ConsolePrint( "name: " + moduleInfo.name + "\n" );
-	ConsolePrint( "version: " + moduleInfo.version + "\n" );
+	ConsolePrint( "name: " + MODULE_NAME + "\n" );
+	ConsolePrint( "version: v" + formatInt( MODULE_VERSION_MAJOR ) + "." + formatInt( MODULE_VERSION_UPDATE ) + "."
+		+ formatInt( MODULE_VERSION_PATCH ) + "\n" );
 }
 
 int ModuleInit()
@@ -39,8 +18,17 @@ int ModuleInit()
 	//
 	// register cvars
 	//
-	TheNomad::GameSystem::sg_difficulty = TheNomad::ConVar( "sg_difficulty", "2", CVAR_LATCH | CVAR_TEMP, false );
+	@TheNomad::SGame::sgame_Difficulty = TheNomad::CvarManager.AddCvar( "sgame_Difficulty", "2", CVAR_LATCH | CVAR_TEMP, false );
+	@TheNomad::SGame::sgame_SaveName = TheNomad::CvarManager.AddCvar( "sgame_SaveName", "nomadsv.ngd", CVAR_LATCH | CVAR_TEMP | CVAR_PROTECTED, false );
+	@TheNomad::SGame::sgame_DebugMode = TheNomad::CvarManager.AddCvar( "sgame_DebugMode", "0", CVAR_LATCH | CVAR_TEMP | CVAR_PROTECTED, true );
 
+	if ( TheNomad::SGame::sgame_DebugMode.GetInt() ) {
+		@TheNomad::SGame::sgame_LevelDebugPrint = TheNomad::CvarManager.AddCvar(
+			"sgame_LevelDebugPrint", "1", CVAR_LATCH | CVAR_TEMP | CVAR_PROTECTED, true );
+	} else {
+		@TheNomad::SGame::sgame_LevelDebugPrint = TheNomad::CvarManager.AddCvar(
+			"sgame_LevelDebugPrint", "0", CVAR_LATCH | CVAR_TEMP | CVAR_PROTECTED, true );
+	}
 
 	// init gamesystem
 	TheNomad::GameSystem::Init();
@@ -58,15 +46,15 @@ int ModuleShutdown()
 	return 1;
 }
 
-int ModuleOnKeyEvent( int key, int down ) {
+int ModuleOnKeyEvent( uint key, uint down ) {
 	return 1;
 }
 
-int ModuleOnMouseEvent( int dx, int dy ) {
+int ModuleOnMouseEvent( uint dx, uint dy ) {
 	return 1;
 }
 
-int ModuleOnLevelStart( int index ) {
+int ModuleOnLevelStart( uint index ) {
 	ConsolePrint( "Starting level at index " + index + "\n" );
 
 	return 1;
@@ -91,25 +79,27 @@ int ModuleOnSaveGame()
 
 int ModuleOnLoadGame()
 {
-	const string& savename = TheNomad::SGame::sgame_SaveName.GetString();
-	const string& newsave = TheNomad::CvarVariableString( "sg_savename" );
+//	const string& savename = TheNomad::SGame::sgame_SaveName.GetString();
+//	const string& newsave = TheNomad::CvarVariableString( "sg_savename" );
 	
-	if ( savename == newsave ) {
-		ConsolePrint( "Refusing to load the same save file.\n" );
-		return 0;
-	}
-	
-	TheNomad::SGame::sgame_SaveName.Update();
-	ConsolePrint( "Loading save file \"" + TheNomad::SGame::sgame_SaveName.GetString() + "\"\n" );
-	
-	for ( int i = 0; i < TheNomad::GameSystem::GameSystems.size(); i++ ) {
-		TheNomad::GameSystem::GameSystems[i].OnLoad();
-	}
+//	if ( savename == newsave ) {
+//		ConsolePrint( "Refusing to load the same save file.\n" );
+//		return 0;
+//	}
+//	
+//	TheNomad::SGame::sgame_SaveName.Update();
+//	ConsolePrint( "Loading save file \"" + TheNomad::SGame::sgame_SaveName.GetString() + "\"\n" );
+//	
+//	for ( int i = 0; i < TheNomad::GameSystem::GameSystems.size(); i++ ) {
+//		TheNomad::GameSystem::GameSystems[i].OnLoad();
+//	}
 	
 	return 1;
 }
 
-int ModuleOnRunTic()
+int ModuleOnRunTic( uint msec )
 {
+	
+
 	return 1;
 }
