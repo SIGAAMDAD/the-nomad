@@ -106,9 +106,24 @@ typedef struct {
 } controls_t;
 
 typedef struct {
+    char szConfigFile[MAX_NPATH];
+
+    int cpuAffinity;
+    uint32_t hunkMegs;
+    uint32_t zoneMegs;
+    uint32_t maxModuleStackMemory;
+
+    int alwaysCompileModules;
+    int allowModuleJIT;
+
+    const char *cpuString;
+} engine_t;
+
+typedef struct {
     sound_t sound;
     graphics_t gfx;
     controls_t controls;
+    engine_t performance;
 } initialSettings_t;
 
 typedef struct {
@@ -127,6 +142,7 @@ typedef struct {
     sound_t sound;
     graphics_t gfx;
     controls_t controls;
+    engine_t performance;
 
     graphics_t *presets;
 
@@ -320,6 +336,15 @@ static void SettingsMenu_ApplyAudioChanges( void )
     Cvar_Set( "snd_musicon", va ( "%i", settings.sound.musicOn ) );
 }
 
+static void SettingsMenu_ApplyEngineChanges( void )
+{
+    Cvar_Set( "com_affinityMask", va( "%i", settings.performance.cpuAffinity ) );
+    Cvar_Set( "com_hunkMegs", va( "%u", settings.performance.hunkMegs ) );
+    Cvar_Set( "com_hunkMegs", va( "%u", settings.performance.zoneMegs ) );
+    Cvar_Set( "ml_alwaysCompile", va( "%i", settings.performance.alwaysCompileModules ) );
+    Cvar_Set( "ml_allowJIT", va( "%i", settings.performance.allowModuleJIT ) );
+}
+
 const char *Hunk_CopyString( const char *str, ha_pref pref ) {
     char *out;
     uint64_t len;
@@ -501,8 +526,16 @@ static void SettingsMenu_SetDefault( void )
     settings.sound.masterVol = Cvar_VariableInteger( "snd_mastervol" );
     
     settings.controls.mouseSensitivity = Cvar_VariableInteger( "g_mouseSensitivity" );
-    settings.controls.mouseAccelerate = Cvar_VariableInteger("g_mouseAcceleration");
-    settings.controls.mouseInvert = Cvar_VariableInteger("g_mouseInvert");
+    settings.controls.mouseAccelerate = Cvar_VariableInteger( "g_mouseAcceleration" );
+    settings.controls.mouseInvert = Cvar_VariableInteger( "g_mouseInvert" );
+
+    settings.performance.cpuAffinity = Cvar_VariableInteger( "com_affinityMask" );
+    settings.performance.hunkMegs = Cvar_VariableInteger( "com_hunkMegs" );
+    settings.performance.zoneMegs = Cvar_VariableInteger( "com_zoneMegs" );
+    settings.performance.cpuString = Cvar_VariableString( "sys_cpuString" );
+    settings.performance.allowModuleJIT = Cvar_VariableInteger( "ml_allowJIT" );
+    settings.performance.alwaysCompileModules = Cvar_VariableInteger( "ml_alwaysCompile" );
+    N_strncpyz( settings.performance.szConfigFile, Cvar_VariableString( "com_defaultcfg" ), sizeof( settings.performance.szConfigFile ) );
 
     SettingsMenu_LoadBindings();
 }
@@ -590,6 +623,7 @@ static void SettingsMenuPopup( void )
             ui->PlaySelected();
             SettingsMenu_ApplyAudioChanges();
             SettingsMenu_ApplyGraphicsChanges();
+            SettingsMenu_ApplyEngineChanges();
             settings.confirmation = qfalse;
             settings.modified = qfalse;
             g_pModuleLib->ModuleCall( sgvm, ModuleSaveConfiguration, 0 );
@@ -642,6 +676,7 @@ static void SettingsMenu_ApplyChanges( void )
     if ( ImGui::Button( "APPLY CHANGES" ) ) {
         SettingsMenu_ApplyGraphicsChanges();
         SettingsMenu_ApplyAudioChanges();
+        SettingsMenu_ApplyEngineChanges();
         Cbuf_ExecuteText( EXEC_APPEND, va( "writecfg %s\n", Cvar_VariableString( "com_defaultcfg" ) ) );
         Cbuf_ExecuteText( EXEC_APPEND, "snd_restart\n" );
         settings.modified = qfalse;
@@ -731,6 +766,21 @@ static void SettingsMenu_Update( void )
     if ( initial.sound.musicOn != settings.sound.musicOn ) {
         settings.modified = true;
     }
+    if ( initial.performance.cpuAffinity != settings.performance.cpuAffinity ) {
+        settings.modified = true;
+    }
+    if ( initial.performance.hunkMegs != settings.performance.hunkMegs ) {
+        settings.modified = true;
+    }
+    if ( initial.performance.zoneMegs != settings.performance.zoneMegs ) {
+        settings.modified = true;
+    }
+    if ( initial.performance.allowModuleJIT != settings.performance.allowModuleJIT ) {
+        settings.modified = true;
+    }
+    if ( initial.performance.alwaysCompileModules != settings.performance.alwaysCompileModules ) {
+        settings.modified = true;
+    }
 
     if ( settings.gfx.api == R_OPENGL && initial.gfx.api == R_OPENGL ) {
         if ( settings.gfx.GL_extended->allowSoftwareGL != initial.gfx.GL_extended->allowSoftwareGL ) {
@@ -742,14 +792,26 @@ static void SettingsMenu_Update( void )
     }
 }
 
-static GDR_INLINE void SettingsMenu_Bar( void )
+static void SettingsMenu_Bar( void )
 {
-    if ( ImGui::BeginTabBar( " " ) ) {
+    if ( ImGui::BeginTabBar( "##SettingsMenuBar" ) ) {
+        ImGui::PushStyleColor( ImGuiCol_Tab, ImVec4( 1.0f, 1.0f, 1.0f, 0.0f ) );
+        ImGui::PushStyleColor( ImGuiCol_TabActive, ImVec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
+        ImGui::PushStyleColor( ImGuiCol_TabHovered, ImVec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
+
         if ( ImGui::BeginTabItem( "GRAPHICS" ) ) {
             ui->SetState( STATE_GRAPHICS );
             if ( settings.lastChild != STATE_GRAPHICS ) {
                 ui->PlaySelected();
                 settings.lastChild = STATE_GRAPHICS;
+            }
+            ImGui::EndTabItem();
+        }
+        if ( ImGui::BeginTabItem( "ENGINE" ) ) {
+            ui->SetState( STATE_PERFORMANCE );
+            if ( settings.lastChild != STATE_PERFORMANCE ) {
+                ui->PlaySelected();
+                settings.lastChild = STATE_PERFORMANCE;
             }
             ImGui::EndTabItem();
         }
@@ -777,6 +839,7 @@ static GDR_INLINE void SettingsMenu_Bar( void )
             }
             ImGui::EndTabItem();
         }
+        ImGui::PopStyleColor( 3 );
         ImGui::EndTabBar();
     }
 }
@@ -808,6 +871,97 @@ static GDR_INLINE void SettingsMenu_ExitChild( menustate_t childstate )
         }
     }
     SettingsMenu_Bar();
+}
+
+static void SettingsMenuPerformance_Draw( void )
+{
+    SettingsMenu_ExitChild( STATE_PERFORMANCE );
+    if ( ui->GetState() != STATE_PERFORMANCE ) {
+        return;
+    }
+
+    ImGui::TextUnformatted( "WARNING: DO NOT MODIFY UNLESS YOU KNOW WHAT YOU ARE DOING, YOU COULD FUCK SOMETHING UP!!!" );
+    ImGui::NewLine();
+
+    ImGui::BeginTable( "##PerformanceSettings", 2 );
+    {
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted( "CPU Core Affinity" );
+        ImGui::TableNextColumn();
+        if ( ImGui::ArrowButton( "##CPUAffinityConfigLeft", ImGuiDir_Left ) ) {
+            switch ( settings.performance.cpuAffinity ) {
+            case 2:
+                settings.performance.cpuAffinity = SDL_GetCPUCount();
+                break;
+            default:
+                settings.performance.cpuAffinity -= 2;
+                break;
+            };
+            ui->PlaySelected();
+        }
+        ImGui::SameLine();
+        ImGui::Text( "%i", settings.performance.cpuAffinity );
+        ImGui::SameLine();
+        if ( ImGui::ArrowButton( "##CPUAffinityConfigRight", ImGuiDir_Right ) ) {
+            if ( settings.performance.cpuAffinity == SDL_GetCPUCount() ) {
+                settings.performance.cpuAffinity = 2;
+            } else {
+                settings.performance.cpuAffinity += 2;
+            }
+            ui->PlaySelected();
+        }
+
+        ImGui::TableNextRow();
+
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted( "Hunk Size" );
+        ImGui::TableNextColumn();
+
+        if ( ImGui::SliderInt( "##HunkSizeConfig", (int *)&settings.performance.hunkMegs, 256, 8192, "%u",
+            ImGuiInputTextFlags_EnterReturnsTrue ) )
+        {
+            ui->PlaySelected();
+        }
+
+        ImGui::TableNextRow();
+
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted( "Zone Size" );
+        ImGui::TableNextColumn();
+
+        if ( ImGui::SliderInt( "##ZoneSizeConfig", (int *)&settings.performance.zoneMegs, 24, 8192, "%u",
+            ImGuiInputTextFlags_EnterReturnsTrue ) )
+        {
+            ui->PlaySelected();
+        }
+
+        ImGui::TableNextRow();
+
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted( "Always Compile Modules" );
+        ImGui::TableNextColumn();
+
+        if ( ImGui::RadioButton( settings.performance.alwaysCompileModules ? "ON##AlwaysCompileModules" : "OFF##AlwaysCompileModules",
+            settings.performance.alwaysCompileModules ) )
+        {
+            settings.performance.alwaysCompileModules = !settings.performance.alwaysCompileModules;
+            ui->PlaySelected();
+        }
+
+        ImGui::TableNextRow();
+
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted( "Allow Module JIT" );
+        ImGui::TableNextColumn();
+        
+        if ( ImGui::RadioButton( settings.performance.allowModuleJIT ? "ON##ModuleJIT" : "OFF##ModuleJIT",
+            settings.performance.allowModuleJIT ) )
+        {
+            settings.performance.allowModuleJIT = !settings.performance.allowModuleJIT;
+            ui->PlaySelected();
+        }
+    }
+    ImGui::EndTable();
 }
 
 static void SettingsMenuGraphics_Draw( void )
@@ -1455,6 +1609,9 @@ void SettingsMenu_Draw( void )
     case STATE_GRAPHICS:
         SettingsMenuGraphics_Draw();
         break;
+    case STATE_PERFORMANCE:
+        SettingsMenuPerformance_Draw();
+        break;
     case STATE_AUDIO:
         SettingsMenuAudio_Draw();
         break;
@@ -1503,6 +1660,14 @@ static void SettingsMenu_GetInitial( void ) {
     initial.controls.mouseSensitivity = Cvar_VariableInteger( "g_mouseSensitivity" );
     initial.controls.mouseAccelerate = Cvar_VariableInteger("g_mouseAcceleration");
     initial.controls.mouseInvert = Cvar_VariableInteger("g_mouseInvert");
+
+    initial.performance.cpuAffinity = Cvar_VariableInteger( "com_affinityMask" );
+    initial.performance.hunkMegs = Cvar_VariableInteger( "com_hunkMegs" );
+    initial.performance.zoneMegs = Cvar_VariableInteger( "com_zoneMegs" );
+    initial.performance.cpuString = Cvar_VariableString( "sys_cpuString" );
+    initial.performance.allowModuleJIT = Cvar_VariableInteger( "ml_allowJIT" );
+    initial.performance.alwaysCompileModules = Cvar_VariableInteger( "ml_alwaysCompile" );
+    N_strncpyz( initial.performance.szConfigFile, Cvar_VariableString( "com_defaultcfg" ), sizeof( initial.performance.szConfigFile ) );
 
     initial.controls.keybinds = (bind_t *)Hunk_Alloc( sizeof( *initial.controls.keybinds ) * settings.controls.numBinds, h_high );
     memcpy( initial.controls.keybinds, settings.controls.keybinds, sizeof( *initial.controls.keybinds ) * settings.controls.numBinds );

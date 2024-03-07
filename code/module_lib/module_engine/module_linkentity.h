@@ -17,8 +17,8 @@ public:
     void SetOrigin( const glm::vec3& origin );
     void SetBounds( const CModuleBoundBox& bounds );
 
-    const glm::vec3& GetOrigin( void ) const;
-    const CModuleBoundBox& GetBounds( void ) const;
+    const glm::vec3& GetOrigin( void );
+    const CModuleBoundBox& GetBounds( void );
 
     // internal
     void ToLinkEntity( linkEntity_t *ent );
@@ -58,11 +58,11 @@ void CModuleLinkEntity::SetBounds( const CModuleBoundBox& bounds ) {
     m_Bounds = bounds;
 }
 
-const glm::vec3& CModuleLinkEntity::GetOrigin( void ) const {
+const glm::vec3& CModuleLinkEntity::GetOrigin( void ) {
     return m_Origin;
 }
 
-const CModuleBoundBox& CModuleLinkEntity::GetBounds( void ) const {
+const CModuleBoundBox& CModuleLinkEntity::GetBounds( void ) {
     return m_Bounds;
 }
 

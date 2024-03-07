@@ -28,8 +28,8 @@ meant for temp engine system allocations. Used by allocation callbacks. Blocks c
 
 #define GB(x) (1024*1024*1024*((x)*0.5))
 
-#define HUNK_DEFSIZE 1024
-#define HUNK_MINSIZE 72
+#define HUNK_DEFSIZE 8192
+#define HUNK_MINSIZE 2048
 
 // tunables
 #define USE_MEMSTATIC

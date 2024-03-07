@@ -26,6 +26,7 @@ typedef enum : uint64_t
     STATE_MODS,
 
     STATE_SETTINGS,
+        STATE_PERFORMANCE,
         STATE_GRAPHICS,
         STATE_CONTROLS,
         STATE_AUDIO,

@@ -1162,11 +1162,6 @@ void RegisterStdString_Generic(asIScriptEngine *engine)
 	CheckASCall( engine->RegisterObjectMethod("string", "int findLastNotOf(const string &in, int start = -1) const", asFUNCTION(StringFindLastNotOf_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "void insert(uint pos, const string &in other)", asFUNCTION(StringInsert_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "void erase(uint pos, int count = -1)", asFUNCTION(StringErase_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("string", "ref@ begin()", asFUNCTION(StringIteratorBegin_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectMethod("string", "ref@ end()", asFUNCTION(StringIteratorEnd_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectMethod("string", "ref@ cbegin()", asFUNCTION(StringIteratorCBegin_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectMethod("string", "ref@ cend()", asFUNCTION(StringIteratorCEnd_Generic), asCALL_GENERIC) );
-
 
 	CheckASCall( engine->RegisterGlobalFunction("string formatInt(int64 val, const string &in options = \"\", uint width = 0)", asFUNCTION(formatInt_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterGlobalFunction("string formatUInt(uint64 val, const string &in options = \"\", uint width = 0)", asFUNCTION(formatUInt_Generic), asCALL_GENERIC ) );

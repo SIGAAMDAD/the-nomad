@@ -516,8 +516,8 @@ static void G_Vid_Restart( refShutdownCode_t code )
     // startup all the gamestate memory
     G_StartHunkUsers();
 
-    G_InitSGame();
-    gi.sgameStarted = qtrue;
+//    G_InitSGame();
+//    gi.sgameStarted = qtrue;
 
     // make sure all sounds have updated volumes
     Cbuf_ExecuteText( EXEC_APPEND, "updatevolume\n" );
@@ -931,13 +931,13 @@ void G_StartHunkUsers( void )
         gi.soundStarted = qtrue;
         Snd_Init();
     }
-    if ( !gi.sgameStarted ) {
-        gi.sgameStarted = qtrue;
-        G_InitSGame();
-    }
     if ( !gi.uiStarted ) {
         gi.uiStarted = qtrue;
         G_InitUI();
+    }
+    if ( !gi.sgameStarted ) {
+        gi.sgameStarted = qtrue;
+        G_InitSGame();
     }
 
     // set the marker before loading any map assets

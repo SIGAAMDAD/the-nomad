@@ -16,3 +16,6 @@
 [submodule "deps/libjpeg"]
 	path = deps/libjpeg
 	url = https://github.com/winlibs/libjpeg.git
+[submodule "deps/aatc"]
+	path = deps/aatc
+	url = https://github.com/Sami-Vuorela/aatc.git

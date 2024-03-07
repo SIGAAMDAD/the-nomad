@@ -101,6 +101,10 @@ public:
 	void EnumReferences(asIScriptEngine *engine);
 	void ReleaseAllHandles(asIScriptEngine *engine);
 
+	void *begin( void );
+	void *end( void );
+	const void *cbegin( void ) const;
+	const void *cend( void ) const;
 protected:
 	mutable int     refCount;
 	mutable bool    gcFlag;

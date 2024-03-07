@@ -679,16 +679,138 @@ DEFINE_CALLBACK( PolyVertAssign ) {
     *(CModulePolyVert *)pGeneric->GetAddressOfReturnLocation() = *(CModulePolyVert *)pGeneric->GetArgObject( 0 );
 }
 
-static bool ImGui_InputText( const string_t *label, string_t *str, ImGuiInputTextFlags flags = 0 ) {
-    return ImGui::InputText( label->c_str(), str, flags );
+DEFINE_CALLBACK( GetString ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    string_t *value = (string_t *)pGeneric->GetArgObject( 1 );
+
+    const stringHash_t *hash = strManager->ValueForKey( name->c_str() );
+    *value = hash->value;
 }
 
-static bool ImGui_BeginTable( const string_t *title, int32_t numColumns, ImGuiTableFlags flags ) {
-    return ImGui::BeginTable( title->c_str(), numColumns, flags );
+typedef struct ImGuiManager_s {
+    ImGuiManager_s( void ) {
+        memset( this, 0, sizeof( *this ) );
+    }
+
+    int nWindowStackDepth;
+    int nColorStackDepth;
+    int nStyleVarStackDepth;
+    int nTableStackDepth;
+    int nComboStackDepth;
+} ImGuiManager_t;
+
+static ImGuiManager_t ImGuiManager;
+
+static bool ImGui_BeginCombo( const string_t *label, const string_t *preview ) {
+    ImGuiManager.nComboStackDepth++;
+    return ImGui::BeginCombo( label->c_str(), preview->c_str() );
+}
+
+static void ImGui_EndCombo( void ) {
+    if ( !ImGuiManager.nComboStackDepth ) {
+        N_Error( ERR_DROP, "ImGui::EndCombo: no combo active" );
+    }
+    ImGuiManager.nComboStackDepth--;
+    ImGui::EndCombo();
+}
+
+static bool ImGui_Begin( const string_t *label, bool *open, ImGuiWindowFlags flags ) {
+    ImGuiManager.nWindowStackDepth++;
+    return ImGui::Begin( label->c_str(), open, flags );
+}
+
+static void ImGui_SetWindowSize( const vec2 *size ) {
+    if ( !ImGuiManager.nWindowStackDepth ) {
+        N_Error( ERR_DROP, "ImGui::SetWindowSize: no window active" );
+    }
+    ImGui::SetWindowSize( ImVec2( size->x, size->y ) );
+}
+
+static void ImGui_SetWindowPos( const vec2 *pos ) {
+    if ( !ImGuiManager.nWindowStackDepth ) {
+        N_Error( ERR_DROP, "ImGui::SetWindowPos: no window active" );
+    }
+    ImGui::SetWindowPos( ImVec2( pos->x, pos->y ) );
+}
+
+static void ImGui_End( void ) {
+    if ( !ImGuiManager.nWindowStackDepth ) {
+        N_Error( ERR_DROP, "ImGui::End: no window active" );
+    }
+    ImGuiManager.nWindowStackDepth--;
+    ImGui::End();
+}
+
+static bool ImGui_ArrowButton( const string_t *label, ImGuiDir dir ) {
+    return ImGui::ArrowButton( label->c_str(), dir );
+}
+
+static bool ImGui_Button( const string_t *label, const vec2 *size ) {
+    return ImGui::Button( label->c_str(), ImVec2( size->x, size->y ) );
+}
+
+static void ImGui_PushStyleColor_U32( ImGuiCol idx, ImU32 col ) {
+    ImGui::PushStyleColor( idx, col );
+    ImGuiManager.nColorStackDepth++;
+}
+
+static void ImGui_PushStyleColor_V4( ImGuiCol idx, const vec4 *col ) {
+    ImGui::PushStyleColor( idx, ImVec4( col->r, col->g, col->b, col->a ) );
+    ImGuiManager.nColorStackDepth++;
+}
+
+static void ImGui_PopStyleColor( int amount ) {
+    if ( !ImGuiManager.nColorStackDepth || ImGuiManager.nColorStackDepth - amount < 0 ) {
+        N_Error( ERR_DROP, "ImGui::PopStyleColor: color stack underflow" );
+    }
+    ImGui::PopStyleColor( amount );
+}
+
+static bool ImGui_BeginTable( const string_t *label, int nColumns, ImGuiTableFlags flags ) {
+    ImGuiManager.nTableStackDepth++;
+    return ImGui::BeginTable( label->c_str(), nColumns, flags );
+}
+
+static void ImGui_TableNextColumn( void ) {
+    if ( !ImGuiManager.nTableStackDepth ) {
+        N_Error( ERR_DROP, "ImGui::TableNextColumn: no table active" );
+    }
+    ImGui::TableNextColumn();
+}
+
+static void ImGui_TableNextRow( void ) {
+    if ( !ImGuiManager.nTableStackDepth ) {
+        N_Error( ERR_DROP, "ImGui::TableNextRow: no table active" );
+    }
+    ImGui::TableNextRow();
+}
+
+static void ImGui_EndTable( void ) {
+    if ( !ImGuiManager.nTableStackDepth ) {
+        N_Error( ERR_DROP, "ImGui::EndTable: no table active" );
+    }
+    ImGuiManager.nTableStackDepth--;
+    ImGui::EndTable();
+}
+
+static bool ImGui_Selectable( const string_t *label, bool selected, int, const vec2 * ) {
+    return ImGui::Selectable( label->c_str(), selected );
+}
+
+static bool ImGui_InputText( const string_t *label, string_t *str, ImGuiInputTextFlags flags ) {
+    return ImGui::InputText( label->c_str(), str, flags );
 }
 
 static void ImGui_Text( const string_t *text ) {
     ImGui::TextUnformatted( text->c_str() );
+}
+
+static bool ImGui_ColorEdit3( const string_t *label, vec3 *col, ImGuiColorEditFlags flags ) {
+    return ImGui::ColorEdit3( label->c_str(), (float *)col, flags );
+}
+
+static bool ImGui_ColorEdit4( const string_t *label, vec4 *col, ImGuiColorEditFlags flags ) {
+    return ImGui::ColorEdit4( label->c_str(), (float *)col, flags );
 }
 
 static void ImGui_TextColored( const vec4 *color, const string_t *text ) {
@@ -980,9 +1102,9 @@ void ModuleLib_Register_Engine( void )
     SET_NAMESPACE( "ImGui" );
     { // ImGui
         #undef REGISTER_GLOBAL_FUNCTION
-        #define REGISTER_GLOBAL_FUNCTION( decl, funcPtr ) \
+        #define REGISTER_GLOBAL_FUNCTION( decl, funcPtr, params, returnType ) \
             ValidateFunction( __func__, decl,\
-                g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( decl, WRAP_FN( funcPtr ), asCALL_GENERIC ) )
+                g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( decl, WRAP_FN_PR( funcPtr, params, returnType ), asCALL_GENERIC ) )
         
         RESET_NAMESPACE();
         REGISTER_ENUM_TYPE( "ImGuiTableFlags" );
@@ -991,6 +1113,7 @@ void ModuleLib_Register_Engine( void )
         REGISTER_ENUM_VALUE( "ImGuiTableFlags", "ImGuiTableFlags_Reorderable", ImGuiTableFlags_Reorderable );
 
         REGISTER_ENUM_TYPE( "ImGuiInputTextFlags" );
+        REGISTER_ENUM_VALUE( "ImGuiInputTextFlags", "ImGuiInputTextFlags_None", ImGuiInputTextFlags_None );
         REGISTER_ENUM_VALUE( "ImGuiInputTextFlags", "ImGuiInputTextFlags_EnterReturnsTrue", ImGuiInputTextFlags_EnterReturnsTrue );
         REGISTER_ENUM_VALUE( "ImGuiInputTextFlags", "ImGuiInputTextFlags_AllowTabInput", ImGuiInputTextFlags_AllowTabInput );
         REGISTER_ENUM_VALUE( "ImGuiInputTextFlags", "ImGuiInputTextFlags_CtrlEnterForNewLine", ImGuiInputTextFlags_CtrlEnterForNewLine );
@@ -1024,21 +1147,21 @@ void ModuleLib_Register_Engine( void )
 
         SET_NAMESPACE( "ImGui" );
 
-        REGISTER_GLOBAL_FUNCTION( "bool ImGui::Begin( const string& in, bool& in = null, const int = 0 )", ImGui::Begin );
-        REGISTER_GLOBAL_FUNCTION( "void ImGui::End()", ImGui::End );
-        REGISTER_GLOBAL_FUNCTION( "bool ImGui::BeginTable( const string& in, int, ImGuiTableFlags = ImGuiTableFlags_None )", ImGui_BeginTable );
-        REGISTER_GLOBAL_FUNCTION( "void ImGui::EndTable()", ImGui::EndTable );
-        REGISTER_GLOBAL_FUNCTION( "int ImGui::InputText( const string& in, string& out, ImGuiInputTextFlags = 0 )", ImGui_InputText );
-        REGISTER_GLOBAL_FUNCTION( "void ImGui::TableNextColumn()", ImGui::TableNextColumn );
-        REGISTER_GLOBAL_FUNCTION( "void ImGui::TableNextRow()", ImGui::TableNextRow );
-        REGISTER_GLOBAL_FUNCTION( "void ImGui::PushStyleColor( ImGuiCol, const vec4& in )", static_cast<void (*)( ImGuiCol, const ImVec4& )>( ImGui::PushStyleColor ) );
-        REGISTER_GLOBAL_FUNCTION( "void ImGui::PushStyleColor( ImGuiCol, const uint32 )", static_cast<void (*)( ImGuiCol, ImU32 )>( ImGui::PushStyleColor ) );
-        REGISTER_GLOBAL_FUNCTION( "void ImGui::PopStyleColor( int )", ImGui::PopStyleColor );
-        REGISTER_GLOBAL_FUNCTION( "void ImGui::Text( const string& in )", ImGui_Text );
-        REGISTER_GLOBAL_FUNCTION( "void ImGui::TextColored( const vec4& in, const string& in )", ImGui_TextColored );
-        REGISTER_GLOBAL_FUNCTION( "void ImGui::SameLine( float = 0.0f, float = -1.0f )", ImGui::SameLine );
-        REGISTER_GLOBAL_FUNCTION( "void ImGui::NewLine()", ImGui::NewLine );
-        REGISTER_GLOBAL_FUNCTION( "bool ImGui::ArrowButton( const string& in, ImGuiDir )", ImGui::ArrowButton );
+        REGISTER_GLOBAL_FUNCTION( "bool ImGui::Begin( const string& in, bool& in = null, const int = 0 )", ImGui_Begin, ( const string_t *, bool *, ImGuiWindowFlags ), bool );
+        REGISTER_GLOBAL_FUNCTION( "void ImGui::End()", ImGui_End, ( void ), void );
+        REGISTER_GLOBAL_FUNCTION( "bool ImGui::BeginTable( const string& in, int, ImGuiTableFlags = ImGuiTableFlags_None )", ImGui_BeginTable, ( const string_t *, int, ImGuiTableFlags ), bool );
+        REGISTER_GLOBAL_FUNCTION( "void ImGui::EndTable()", ImGui_EndTable, ( void ), void );
+        REGISTER_GLOBAL_FUNCTION( "bool ImGui::InputText( const string& in, string& out, ImGuiInputTextFlags = 0 )", ImGui_InputText, ( const string_t *, string_t *, ImGuiInputTextFlags ), bool );
+        REGISTER_GLOBAL_FUNCTION( "void ImGui::TableNextColumn()", ImGui_TableNextColumn, ( void ), void );
+        REGISTER_GLOBAL_FUNCTION( "void ImGui::TableNextRow()", ImGui_TableNextRow, ( void ), void );
+        REGISTER_GLOBAL_FUNCTION( "void ImGui::PushStyleColor( ImGuiCol, const vec4& in )", ImGui_PushStyleColor_V4, ( ImGuiCol, const vec4 * ), void );
+        REGISTER_GLOBAL_FUNCTION( "void ImGui::PushStyleColor( ImGuiCol, const uint32 )", ImGui_PushStyleColor_U32, ( ImGuiCol, const ImU32 ), void );
+        REGISTER_GLOBAL_FUNCTION( "void ImGui::PopStyleColor( int = 1 )", ImGui_PopStyleColor, ( int ), void );
+        REGISTER_GLOBAL_FUNCTION( "void ImGui::Text( const string& in )", ImGui_Text, ( const string_t * ), void );
+        REGISTER_GLOBAL_FUNCTION( "void ImGui::TextColored( const vec4& in, const string& in )", ImGui_TextColored, ( const vec4 *, const string_t * ), void );
+        REGISTER_GLOBAL_FUNCTION( "void ImGui::SameLine( float = 0.0f, float = -1.0f )", ImGui::SameLine, ( float, float ), void );
+        REGISTER_GLOBAL_FUNCTION( "void ImGui::NewLine()", ImGui::NewLine, ( void ), void );
+        REGISTER_GLOBAL_FUNCTION( "bool ImGui::ArrowButton( const string& in, ImGuiDir )", ImGui_ArrowButton, ( const string_t *, ImGuiDir ), bool );
 //        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
 //            "bool ImGui::SliderInt( const string& in, int&, int, int, int )", asFUNCTION( ImGui_SliderInt ),
 //            asCALL_GENERIC
@@ -1063,13 +1186,13 @@ void ModuleLib_Register_Engine( void )
 //            "bool ImGui::SliderAngle( const string& in, float& in, float = -360.0f, float = 360.0f, int = 0 )", asFUNCTION( ImGui_SliderAngle ),
 //            asCALL_GENERIC
 //        );
-        REGISTER_GLOBAL_FUNCTION( "bool ImGui::ColorEdit3( const string& in, vec3& in, int = 0 )", ImGui::ColorEdit3 );
-        REGISTER_GLOBAL_FUNCTION( "bool ImGui::ColorEdit4( const string& in, vec4& in, int = 0 )", ImGui::ColorEdit4 );
-        REGISTER_GLOBAL_FUNCTION( "bool ImGui::Button( const string& in, const vec2& in = vec2( 0.0f ) )", ImGui::Button );
+        REGISTER_GLOBAL_FUNCTION( "bool ImGui::ColorEdit3( const string& in, vec3& in, int = 0 )", ImGui_ColorEdit3, ( const string_t *, vec3 *, int ), bool );
+        REGISTER_GLOBAL_FUNCTION( "bool ImGui::ColorEdit4( const string& in, vec4& in, int = 0 )", ImGui_ColorEdit4, ( const string_t *, vec4 *, int ), bool );
+        REGISTER_GLOBAL_FUNCTION( "bool ImGui::Button( const string& in, const vec2& in = vec2( 0.0f ) )", ImGui_Button, ( const string_t *, const vec2 * ), bool );
 
-        REGISTER_GLOBAL_FUNCTION( "bool ImGui::BeginCombo( const string& in, const string& in )", ImGui::BeginCombo );
-        REGISTER_GLOBAL_FUNCTION( "bool ImGui::Selectable( const string& in, bool = false, int = 0, const vec2& in = vec2( 0.0f ) )", static_cast<bool (*)(const char *, bool, int, const ImVec2&)>( ImGui::Selectable ) );
-        REGISTER_GLOBAL_FUNCTION( "void ImGui::EndCombo()", ImGui::EndCombo );
+        REGISTER_GLOBAL_FUNCTION( "bool ImGui::BeginCombo( const string& in, const string& in )", ImGui_BeginCombo, ( const string_t *, const string_t * ), bool );
+        REGISTER_GLOBAL_FUNCTION( "bool ImGui::Selectable( const string& in, bool = false, int = 0, const vec2& in = vec2( 0.0f ) )", ImGui_Selectable, ( const string_t *, bool, int, const vec2 * ), bool );
+        REGISTER_GLOBAL_FUNCTION( "void ImGui::EndCombo()", ImGui_EndCombo, ( void ), void );
 
         #undef REGISTER_GLOBAL_FUNCTION
         #define REGISTER_GLOBAL_FUNCTION( decl, funcPtr ) \
@@ -1079,6 +1202,9 @@ void ModuleLib_Register_Engine( void )
     RESET_NAMESPACE();
 
     SET_NAMESPACE( "TheNomad" );
+    { // Util
+
+    }
 	
 	SET_NAMESPACE( "TheNomad::Engine" );
 	{ // Engine
@@ -1183,6 +1309,17 @@ void ModuleLib_Register_Engine( void )
         REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::LinkEntity", "uint32 m_nEntityType", offsetof( CModuleLinkEntity, m_nEntityType ) );
         REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::LinkEntity", "BBox m_Bounds", offsetof( CModuleLinkEntity, m_Bounds ) );
 
+        REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::LinkEntity", "void SetOrigin( const vec3& in )", CModuleLinkEntity,
+            SetOrigin, ( const glm::vec3& ), void );
+        REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::LinkEntity", "void SetBounds( const BBox& in )", CModuleLinkEntity,
+            SetBounds, ( const CModuleBoundBox& ), void );
+        REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::LinkEntity", "const vec3& GetOrigin( void ) const", CModuleLinkEntity,
+            GetOrigin, ( void ), const glm::vec3& );
+        REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::LinkEntity", "const BBox& GetBounds( void ) const", CModuleLinkEntity,
+            GetBounds, ( void ), const CModuleBoundBox& );
+        
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetString( const string& in, string& out )", GetString );
+
 		REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::BeginSaveSection( const string& in )", BeginSaveSection );
 		REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::EndSaveSection()", EndSaveSection );
         REGISTER_GLOBAL_FUNCTION( "int TheNomad::GameSystem::FindSaveSection( const string& in )", FindSaveSection );
@@ -1276,6 +1413,7 @@ void ModuleLib_Register_Engine( void )
         REGISTER_ENUM_VALUE( "GameDifficulty", "Hard", DIF_NOMAD );
         REGISTER_ENUM_VALUE( "GameDifficulty", "VeryHard", DIF_BLACKDEATH );
         REGISTER_ENUM_VALUE( "GameDifficulty", "TryYourBest", DIF_MINORINCONVENIECE );
+        REGISTER_ENUM_VALUE( "GameDifficulty", "NumDifficulties", NUMDIFS );
 		
 		REGISTER_ENUM_TYPE( "DirType" );
 		REGISTER_ENUM_VALUE( "DirType", "North", DIR_NORTH );

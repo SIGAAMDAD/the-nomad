@@ -330,6 +330,7 @@ public:
 	bool operator!=( const T& value ) const;
 	bool operator==( const T& value ) const;
 	
+	const T& exchange( const T& value, MemoryOrder order = MemoryOrder_SeqCst );
 	const T& load( MemoryOrder order = MemoryOrder_SeqCst ) const;
 	T& load( MemoryOrder order = MemoryOrder_SeqCst );
 	void store( T value, MemoryOrder order = MemoryOrder_SeqCst );
@@ -1214,6 +1215,14 @@ GDR_INLINE const T& CThreadAtomic<T>::load( MemoryOrder order ) const
 	__atomic_load( &m_hValue, &out, order );
 	return out;
 #endif
+}
+
+template<typename T>
+GDR_INLINE const T& CThreadAtomic<T>::exchange( const T& value, MemoryOrder order )
+{
+	const T& out = load( order );
+	store( value, order );
+	return out;
 }
 
 template<typename T>

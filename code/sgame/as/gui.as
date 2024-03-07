@@ -24,6 +24,31 @@ namespace TheNomad::GUI {
         bool m_bClosable;
     };
 
+    interface Widget {
+        void Draw();
+
+        string label;
+        int flags;
+    };
+
+    class Table {
+        Table( const string& in label, int nColumns ) {
+            m_Label = label;
+            m_nColumns = nColumns;
+        }
+
+        void Add() {
+            
+        }
+
+        void Draw() {
+
+        }
+
+        private string m_Label;
+        private int m_nColumns;
+    };
+
     class Button {
         Button( const string& in label ) {
             m_Label = label;
@@ -41,13 +66,13 @@ namespace TheNomad::GUI {
         private string m_Label;
     };
 
-    class Widget {
-        Widget( const WidgetConfig& in config ) {
+    class Window {
+        Window( const WidgetConfig& in config ) {
             m_Config = config;
             m_bOpen = true;
         }
 
-        Widget& opAssign( const WidgetConfig& in config ) {
+        Window& opAssign( const WidgetConfig& in config ) {
             m_Config = config;
             return this;
         }

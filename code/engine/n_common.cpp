@@ -1593,15 +1593,15 @@ void Com_Init( char *commandLine )
 
 	FS_InitFilesystem();
 
-	Com_StartupVariable("logfile");
-	com_logfile = Cvar_Get("logfile", "1", CVAR_TEMP);
-	Cvar_CheckRange(com_logfile, "0", "4", CVT_INT);
-	Cvar_SetDescription(com_logfile, "System console logging:\n"
+	Com_StartupVariable( "logfile" );
+	com_logfile = Cvar_Get( "logfile", "1", CVAR_TEMP );
+	Cvar_CheckRange( com_logfile, "0", "4", CVT_INT );
+	Cvar_SetDescription( com_logfile, "System console logging:\n"
 									" 0 - disabled\n"
 									" 1 - overwrite mode, buffered\n"
 									" 2 - overwrite mode, synced\n"
 									" 3 - append mode, buffered\n"
-									" 4 - append mode, synced\n");
+									" 4 - append mode, synced\n" );
 
 	Com_InitJournals();
 	Com_LoadConfig();
@@ -1628,12 +1628,14 @@ void Com_Init( char *commandLine )
 
 	com_maxfps = Cvar_Get( "com_maxfps", "60", CVAR_LATCH | CVAR_SAVE | CVAR_PROTECTED );
 #ifdef USE_AFFINITY_MASK
-	com_affinityMask = Cvar_Get("com_affinityMask", "", CVAR_ARCHIVE_ND);
+	com_affinityMask = Cvar_Get( "com_affinityMask", "", CVAR_ARCHIVE_ND );
 	Cvar_SetDescription( com_affinityMask, "Bind game process to bitmask-specified CPU core(s), special characters:\n A or a - all default cores\n P or p - performance cores\n E or e - efficiency cores\n 0x<value> - use hexadecimal notation\n + or - can be used to add or exclude particular cores" );
 	com_affinityMask->modified = qfalse;
 #endif
 
-	sys_cpuString = Cvar_Get("sys_cpuString", "detect", CVAR_PROTECTED | CVAR_ROM | CVAR_NORESTART);
+	Cvar_Get( "sys_cpuCount", va( "%i", SDL_GetCPUCount() ), CVAR_PROTECTED | CVAR_ROM | CVAR_NORESTART );
+
+	sys_cpuString = Cvar_Get( "sys_cpuString", "detect", CVAR_PROTECTED | CVAR_ROM | CVAR_NORESTART );
 	if (!N_stricmp(Cvar_VariableString("sys_cpuString"), "detect")) {
 		char vendor[128];
 		Con_Printf("...detecting CPU, found ");

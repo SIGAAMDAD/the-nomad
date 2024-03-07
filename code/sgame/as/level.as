@@ -2,6 +2,8 @@
 
 namespace TheNomad {
 	namespace SGame {
+		string[] SP_DIFF_STRINGS( TheNomad::GameSystem::NumDifficulties );
+
 		ConVar@ sgame_LevelIndex;
 		ConVar@ sgame_MapName;
 		ConVar@ sgame_LevelDebugPrint;

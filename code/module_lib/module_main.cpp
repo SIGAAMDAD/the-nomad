@@ -380,10 +380,6 @@ CModuleLib::CModuleLib( void )
 
 CModuleLib::~CModuleLib()
 {
-    for ( auto it : m_LoadList ) {
-        DeleteObject( it );
-    }
-
     m_pEngine->ShutDownAndRelease();
     asFree( m_pEngine );
 

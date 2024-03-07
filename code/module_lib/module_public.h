@@ -211,7 +211,6 @@ struct CModuleInfo
         Con_Printf( "...loaded module \"%s\", v%i.%i.%i\n", m_szName, m_nModVersionMajor, m_nModVersionUpdate, m_nModVersionPatch );
 	}
 	~CModuleInfo() {
-        DeleteObject( m_pHandle );
 	}
 
 	char m_szName[MAX_NPATH];

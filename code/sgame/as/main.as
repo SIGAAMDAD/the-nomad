@@ -22,13 +22,24 @@ int ModuleInit()
 	@TheNomad::SGame::sgame_SaveName = TheNomad::CvarManager.AddCvar( "sgame_SaveName", "nomadsv.ngd", CVAR_LATCH | CVAR_TEMP | CVAR_PROTECTED, false );
 	@TheNomad::SGame::sgame_DebugMode = TheNomad::CvarManager.AddCvar( "sgame_DebugMode", "0", CVAR_LATCH | CVAR_TEMP | CVAR_PROTECTED, true );
 
-	if ( TheNomad::SGame::sgame_DebugMode.GetInt() ) {
+	if ( int( TheNomad::SGame::sgame_DebugMode.GetInt() ) == 1 ) {
 		@TheNomad::SGame::sgame_LevelDebugPrint = TheNomad::CvarManager.AddCvar(
 			"sgame_LevelDebugPrint", "1", CVAR_LATCH | CVAR_TEMP | CVAR_PROTECTED, true );
 	} else {
 		@TheNomad::SGame::sgame_LevelDebugPrint = TheNomad::CvarManager.AddCvar(
 			"sgame_LevelDebugPrint", "0", CVAR_LATCH | CVAR_TEMP | CVAR_PROTECTED, true );
 	}
+
+	//
+	// register strings
+	//
+	TheNomad::GameSystem::GetString( "SP_DIFF_VERY_EASY", TheNomad::SGame::SP_DIFF_STRINGS[TheNomad::GameSystem::VeryEasy] );
+	TheNomad::GameSystem::GetString( "SP_DIFF_EASY", TheNomad::SGame::SP_DIFF_STRINGS[TheNomad::GameSystem::Easy] );
+	TheNomad::GameSystem::GetString( "SP_DIFF_MEDIUM", TheNomad::SGame::SP_DIFF_STRINGS[TheNomad::GameSystem::Normal] );
+	TheNomad::GameSystem::GetString( "SP_DIFF_HARD", TheNomad::SGame::SP_DIFF_STRINGS[TheNomad::GameSystem::Hard] );
+	TheNomad::GameSystem::GetString( "SP_DIFF_VERY_HARD", TheNomad::SGame::SP_DIFF_STRINGS[TheNomad::GameSystem::VeryHard] );
+
+	config_GameDifficulty = TheNomad::GameSystem::GameDifficulty( TheNomad::SGame::sgame_Difficulty.GetInt() );
 
 	// init gamesystem
 	TheNomad::GameSystem::Init();
@@ -70,7 +81,6 @@ int ModuleOnLevelEnd() {
 
 int ModuleOnSaveGame()
 {
-
 	ConsolePrint( "Saving Game, Please Do Close This App...\n" );
 	
 	

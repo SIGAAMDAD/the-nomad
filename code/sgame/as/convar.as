@@ -78,7 +78,7 @@ namespace TheNomad {
 	
 	shared class CvarSystem : TheNomad::GameSystem::GameObject {
 		CvarSystem() {
-			TheNomad::Engine::CmdArgs::AddCommand( "sgame.list_cvars", this.ListVars_f );
+			TheNomad::Engine::CmdAddCommand( "sgame.list_cvars" );
 		}
 		
 		ConVar@ AddCvar( const string& in name, const string& in value, uint flags, bool bTrackChanges ) {
@@ -91,7 +91,7 @@ namespace TheNomad {
 			ConsolePrint( "VM " + MODULE_NAME + " Cvars:\n" );
 
 			for ( uint i = 0; i < m_CvarCache.size(); i++ ) {
-				ConsolePrint( m_CvarCache[i].GetName() + " " + m_CvarCache[i].GetValue() );
+				ConsolePrint( m_CvarCache[i].m_Handle.GetName() + " " + m_CvarCache[i].m_Handle.GetValue() );
 			}
 		}
 
