@@ -41,6 +41,8 @@ int ModuleInit()
 
 	config_GameDifficulty = TheNomad::GameSystem::GameDifficulty( TheNomad::SGame::sgame_Difficulty.GetInt() );
 
+	TheNomad::SGame::selectedSfx = TheNomad::Engine::SoundSystem::RegisterSfx( "sfx/menu1.wav" );
+
 	// init gamesystem
 	TheNomad::GameSystem::Init();
 

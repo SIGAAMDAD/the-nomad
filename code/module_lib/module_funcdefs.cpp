@@ -198,13 +198,11 @@ DEFINE_CALLBACK( CvarVariableFloat ) {
 }
 
 DEFINE_CALLBACK( Snd_PlaySfx ) {
-    REQUIRE_ARG_COUNT( 1 );
-    Snd_PlaySfx( pGeneric->GetArgWord( 0 ) );
+    Snd_PlaySfx( (sfxHandle_t)pGeneric->GetArgDWord( 0 ) );
 }
 
 DEFINE_CALLBACK( Snd_SetLoopingTrack ) {
-    REQUIRE_ARG_COUNT( 1 );
-    Snd_SetLoopingTrack( pGeneric->GetArgWord( 0 ) );
+    Snd_SetLoopingTrack( (sfxHandle_t)pGeneric->GetArgDWord( 0 ) );
 }
 
 DEFINE_CALLBACK( Snd_ClearLoopingTrack ) {
@@ -212,13 +210,11 @@ DEFINE_CALLBACK( Snd_ClearLoopingTrack ) {
 }
 
 DEFINE_CALLBACK( Snd_RegisterSfx ) {
-    REQUIRE_ARG_COUNT( 1 );
-    pGeneric->SetReturnWord( Snd_RegisterSfx( (const char *)pGeneric->GetArgAddress( 0 ) ) );
+    pGeneric->SetReturnDWord( Snd_RegisterSfx( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
 }
 
 DEFINE_CALLBACK( Snd_RegisterTrack ) {
-    REQUIRE_ARG_COUNT( 1 );
-    pGeneric->SetReturnWord( Snd_RegisterTrack( (const char *)pGeneric->GetArgAddress( 0 ) ) );
+    pGeneric->SetReturnDWord( Snd_RegisterTrack( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
 }
 
 void ModuleLib_Register_FileSystem( void )
@@ -954,8 +950,6 @@ static const asDWORD script_NOMAD_VERSION = NOMAD_VERSION;
 static const asDWORD script_NOMAD_VERSION_UPDATE = NOMAD_VERSION_UPDATE;
 static const asDWORD script_NOMAD_VERSION_PATCH = NOMAD_VERSION_PATCH;
 
-static const int32_t *script_UI_SELECTED_SOUND = &ui->sfx_select;
-
 void ModuleLib_Register_Engine( void )
 {
 //    SET_NAMESPACE( "TheNomad::Constants" );
@@ -997,8 +991,6 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_VAR( "const uint32 CVAR_PROTECTED", &script_CVAR_PROTECTED );
         REGISTER_GLOBAL_VAR( "const uint32 CVAR_TEMP", &script_CVAR_TEMP );
         REGISTER_GLOBAL_VAR( "const uint32 CVAR_SAVE", &script_CVAR_SAVE );
-
-        REGISTER_GLOBAL_VAR( "const int32 UI_SELECTED_SOUND", script_UI_SELECTED_SOUND );
 
         REGISTER_GLOBAL_VAR( "const uint32 NOMAD_VERSION", &script_NOMAD_VERSION );
         REGISTER_GLOBAL_VAR( "const uint32 NOMAD_VERSION_UPDATE", &script_NOMAD_VERSION_UPDATE );

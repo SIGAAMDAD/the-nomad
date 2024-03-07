@@ -10,17 +10,19 @@ namespace TheNomad {
 		ConVar@ sgame_SaveName;
 		ConVar@ sgame_Difficulty;
 		ConVar@ sgame_DebugMode;
+
+		int selectedSfx;
 		
-		shared class MapSpawn
-		{
-			MapSpawn( const vec3& in origin, int nEntityId, TheNomad::GameSystem::EntityType nEntityType ) {
+		shared class MapSpawnData {
+			MapSpawnData( const vec3& in origin, int nEntityId, TheNomad::GameSystem::EntityType nEntityType ) {
 				m_Origin = origin;
 				m_nEntityId = nEntityId;
 				m_nEntityType = nEntityType;
 			}
-			MapSpawn() {
+			MapSpawnData() {
 			}
 			
+//			MapSpawn@ m_Base;
 			vec3 m_Origin;
 			int m_nEntityId;
 			TheNomad::GameSystem::EntityType m_nEntityType;
@@ -46,7 +48,7 @@ namespace TheNomad {
 				
 			}
 			
-			const array<MapSpawn>& GetSpawns() const {
+			const array<MapSpawnData@>& GetSpawns() const {
 				return m_Spawns;
 			}
 			const array<vec3>& GetCheckpoints() const {
@@ -59,7 +61,7 @@ namespace TheNomad {
 				return m_nHeight;
 			}
 			
-			private array<MapSpawn> m_Spawns;
+			private array<MapSpawnData@> m_Spawns;
 			private array<vec3> m_Checkpoints;
 			private int m_nWidth;
 			private int m_nHeight;
