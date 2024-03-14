@@ -286,6 +286,8 @@ void MainMenu_Cache( void )
     PressStart2P = menu.font = FontCache()->AddFontToCache( "fonts/PressStart2P-Regular.ttf" );
     RobotoMono = FontCache()->AddFontToCache( "fonts/RobotoMono/RobotoMono-Bold.ttf" );
 
+    ui->menu_background = menu.background0;
+
     menu.noMenu = qfalse;
     menu.menuHeight = ui->GetConfig().vidHeight;
     menu.menuWidth = ui->GetConfig().vidWidth;

@@ -1,7 +1,39 @@
 namespace TheNomad {
-	namespace FileSystem {
-		shared class FileStream
-		{
+	namespace Engine::FileSystem {
+		//!
+		//!
+		//!
+		shared class IFileStream {
+			~IFileStream() {
+				Close();
+			}
+			
+			bool Open( const string& fileName ) {
+				GameError( "IFileStream::Open: called" );
+			}
+			bool IsOpen() const {
+				return m_hFile != TheNomad::Engine::Constants.InvalidHandle
+			}
+			void Close() {
+				if ( !IsOpen() ) {
+					return;
+				}
+				CloseFile( m_hFile );
+				m_hFile = THeNomad::Engine::Constants.InvalidHandle;
+			}
+			int GetMode() const {
+				return m_OpenMode;
+			}
+			
+			protected int m_hFile;
+			protected int m_OpenMode;
+		};
+		
+		//!
+		//! @class FileStream
+		//! @brief 
+		//!
+		shared class FileStream : IFileStream {
 			FileStream( const string& fileName, int mode ) {
 				m_OpenMode = mode;
 			}
@@ -56,6 +88,31 @@ namespace TheNomad {
 			
 			private int m_OpenMode;
 			private int m_hFile;
+		};
+		
+		class FileManager {
+			FileManager() {
+				m_GameDir = TheNomad::Engine::CvarVariableString( "fs_gamedir" );
+				m_BasePath = TheNomad::Engine::CvarVariableString( "fs_basepath" );
+				m_BaseGame = TheNomad::Engine::CvarVariableString( "fs_basegame" );
+			}
+			
+			const string& GetGameDir() const {
+				return m_GameDir;
+			}
+			const string& GetBasePath() const {
+				return m_BasePath;
+			}
+			const string& GetBaseGame() const {
+				return m_BaseGame;
+			}
+			
+			// various cvars
+			private string m_GameDir;
+			private string m_BasePath;
+			private string m_BaseGame;
+			
+			private uint m_nOpenFiles;
 		};
 	};
 };

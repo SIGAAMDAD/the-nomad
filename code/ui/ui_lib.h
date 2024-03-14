@@ -202,6 +202,8 @@ public:
     sfxHandle_t sfx_select;
     qboolean sfx_scroll_toggle;
 
+    nhandle_t menu_background;
+
     float scale;
     float bias;
 private:

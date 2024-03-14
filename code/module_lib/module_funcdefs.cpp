@@ -4,6 +4,7 @@
 #include "aswrappedcall.h"
 #include "imgui_stdlib.h"
 #include "../ui/ui_lib.h"
+#include "module_stringfactory.hpp"
 
 #include "module_engine/module_bbox.h"
 #include "module_engine/module_linkentity.h"
@@ -17,6 +18,12 @@
 using vec2 = glm::vec<2, float, glm::packed_highp>;
 using vec3 = glm::vec<3, float, glm::packed_highp>;
 using vec4 = glm::vec<4, float, glm::packed_highp>;
+using ivec2 = glm::vec<2, int, glm::packed_highp>;
+using ivec3 = glm::vec<3, int, glm::packed_highp>;
+using ivec4 = glm::vec<4, int, glm::packed_highp>;
+using uvec2 = glm::vec<2, unsigned, glm::packed_highp>;
+using uvec3 = glm::vec<3, unsigned, glm::packed_highp>;
+using uvec4 = glm::vec<4, unsigned, glm::packed_highp>;
 
 #define REQUIRE_ARG_COUNT( amount ) \
     Assert( pGeneric->GetArgCount() == amount )
@@ -189,8 +196,12 @@ DEFINE_CALLBACK( CvarSetValueGeneric ) {
     Cvar_Set( name->c_str(), value->c_str() );
 }
 
+DEFINE_CALLBACK( CvarVariableString ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) string_t( Cvar_VariableString( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
+}
+
 DEFINE_CALLBACK( CvarVariableInteger ) {
-    *(int32_t *)pGeneric->GetAddressOfReturnLocation() = Cvar_VariableInteger( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() );
+    *(int64_t *)pGeneric->GetAddressOfReturnLocation() = Cvar_VariableInteger( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() );
 }
 
 DEFINE_CALLBACK( CvarVariableFloat ) {
@@ -215,13 +226,6 @@ DEFINE_CALLBACK( Snd_RegisterSfx ) {
 
 DEFINE_CALLBACK( Snd_RegisterTrack ) {
     pGeneric->SetReturnDWord( Snd_RegisterTrack( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
-}
-
-void ModuleLib_Register_FileSystem( void )
-{
-    SET_NAMESPACE( "TheNomad::Engine::FileSystem" );
-
-    RESET_NAMESPACE();
 }
 
 DEFINE_CALLBACK( GetMapData ) {
@@ -405,19 +409,19 @@ DEFINE_CALLBACK( LoadVec4 ) {
 
 
 DEFINE_CALLBACK( AddVec4Generic ) {
-    *(vec4 *)pGeneric->GetAddressOfReturnLocation() = *(const vec4 *)pGeneric->GetObject() + *(const vec4 *)pGeneric->GetArgObject( 0 );
+    new ( pGeneric->GetAddressOfReturnLocation() ) vec4( *(const vec4 *)pGeneric->GetObject() + *(const vec4 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( SubVec4Generic ) {
-    *(vec4 *)pGeneric->GetAddressOfReturnLocation() = *(const vec4 *)pGeneric->GetObject() - *(const vec4 *)pGeneric->GetArgObject( 0 );
+    new ( pGeneric->GetAddressOfReturnLocation() ) vec4( *(const vec4 *)pGeneric->GetObject() - *(const vec4 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( MulVec4Generic ) {
-    *(vec4 *)pGeneric->GetAddressOfReturnLocation() = *(const vec4 *)pGeneric->GetObject() * *(const vec4 *)pGeneric->GetArgObject( 0 );
+    new ( pGeneric->GetAddressOfReturnLocation() ) vec4( *(const vec4 *)pGeneric->GetObject() * *(const vec4 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( DivVec4Generic ) {
-    *(vec4 *)pGeneric->GetAddressOfReturnLocation() = *(const vec4 *)pGeneric->GetObject() / *(const vec4 *)pGeneric->GetArgObject( 0 );
+    new ( pGeneric->GetAddressOfReturnLocation() ) vec4( *(const vec4 *)pGeneric->GetObject() / *(const vec4 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( IndexVec4Generic ) {
@@ -439,24 +443,24 @@ DEFINE_CALLBACK( CmpVec4Generic ) {
         cmp = 1;
     }
 
-    *(int32_t *)pGeneric->GetAddressOfReturnLocation() = cmp;
+    pGeneric->SetReturnDWord( (asDWORD)cmp );
 }
 
 
 DEFINE_CALLBACK( AddVec3Generic ) {
-    *(vec3 *)pGeneric->GetAddressOfReturnLocation() = *(const vec3 *)pGeneric->GetObject() + *(const vec3 *)pGeneric->GetArgObject( 0 );
+    new ( pGeneric->GetAddressOfReturnLocation() ) vec3( *(const vec3 *)pGeneric->GetObject() + *(const vec3 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( SubVec3Generic ) {
-    *(vec3 *)pGeneric->GetAddressOfReturnLocation() = *(const vec3 *)pGeneric->GetObject() - *(const vec3 *)pGeneric->GetArgObject( 0 );
+    new ( pGeneric->GetAddressOfReturnLocation() ) vec3( *(const vec3 *)pGeneric->GetObject() - *(const vec3 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( MulVec3Generic ) {
-    *(vec3 *)pGeneric->GetAddressOfReturnLocation() = *(const vec3 *)pGeneric->GetObject() * *(const vec3 *)pGeneric->GetArgObject( 0 );
+    new ( pGeneric->GetAddressOfReturnLocation() ) vec3( *(const vec3 *)pGeneric->GetObject() * *(const vec3 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( DivVec3Generic ) {
-    *(vec3 *)pGeneric->GetAddressOfReturnLocation() = *(const vec3 *)pGeneric->GetObject() / *(const vec3 *)pGeneric->GetArgObject( 0 );
+    new ( pGeneric->GetAddressOfReturnLocation() ) vec3( *(const vec3 *)pGeneric->GetObject() / *(const vec3 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( IndexVec3Generic ) {
@@ -478,23 +482,23 @@ DEFINE_CALLBACK( CmpVec3Generic ) {
         cmp = 1;
     }
 
-    *(int32_t *)pGeneric->GetAddressOfReturnLocation() = cmp;
+    pGeneric->SetReturnDWord( (asDWORD)cmp );
 }
 
 DEFINE_CALLBACK( AddVec2Generic ) {
-    *(vec2 *)pGeneric->GetAddressOfReturnLocation() = *(const vec2 *)pGeneric->GetObject() + *(const vec2 *)pGeneric->GetArgObject( 0 );
+    new ( pGeneric->GetAddressOfReturnLocation() ) vec2( *(const vec2 *)pGeneric->GetObject() + *(const vec2 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( SubVec2Generic ) {
-    *(vec2 *)pGeneric->GetAddressOfReturnLocation() = *(const vec2 *)pGeneric->GetObject() - *(const vec2 *)pGeneric->GetArgObject( 0 );
+    new ( pGeneric->GetAddressOfReturnLocation() ) vec2( *(const vec2 *)pGeneric->GetObject() - *(const vec2 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( MulVec2Generic ) {
-    *(vec2 *)pGeneric->GetAddressOfReturnLocation() = *(const vec2 *)pGeneric->GetObject() * *(const vec2 *)pGeneric->GetArgObject( 0 );
+    new ( pGeneric->GetAddressOfReturnLocation() ) vec2( *(const vec2 *)pGeneric->GetObject() * *(const vec2 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( DivVec2Generic ) {
-    *(vec2 *)pGeneric->GetAddressOfReturnLocation() = *(const vec2 *)pGeneric->GetObject() / *(const vec2 *)pGeneric->GetArgObject( 0 );
+    new ( pGeneric->GetAddressOfReturnLocation() ) vec2( *(const vec2 *)pGeneric->GetObject() / *(const vec2 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( IndexVec2Generic ) {
@@ -516,7 +520,238 @@ DEFINE_CALLBACK( CmpVec2Generic ) {
         cmp = 1;
     }
 
-    *(int32_t *)pGeneric->GetAddressOfReturnLocation() = cmp;
+    pGeneric->SetReturnDWord( (asDWORD)cmp );
+}
+
+
+DEFINE_CALLBACK( AddIVec4Generic ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) ivec4( *(const ivec4 *)pGeneric->GetObject() + *(const ivec4 *)pGeneric->GetArgObject( 0 ) );
+}
+
+DEFINE_CALLBACK( SubIVec4Generic ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) ivec4( *(const ivec4 *)pGeneric->GetObject() - *(const ivec4 *)pGeneric->GetArgObject( 0 ) );
+}
+
+DEFINE_CALLBACK( MulIVec4Generic ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) ivec4( *(const ivec4 *)pGeneric->GetObject() * *(const ivec4 *)pGeneric->GetArgObject( 0 ) );
+}
+
+DEFINE_CALLBACK( DivIVec4Generic ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) ivec4( *(const ivec4 *)pGeneric->GetObject() / *(const ivec4 *)pGeneric->GetArgObject( 0 ) );
+}
+
+DEFINE_CALLBACK( IndexIVec4Generic ) {
+    pGeneric->SetReturnAddress( eastl::addressof( ( *(vec4 *)pGeneric->GetObject() )[ pGeneric->GetArgDWord( 0 ) ] ) );
+}
+
+DEFINE_CALLBACK( EqualsIVec4Generic ) {
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = *(const ivec4 *)pGeneric->GetObject() == *(const ivec4 *)pGeneric->GetArgObject( 0 );
+}
+
+DEFINE_CALLBACK( CmpIVec4Generic ) {
+    const ivec4& b = *(const ivec4 *)pGeneric->GetArgObject( 0 );
+    const ivec4& a = *(const ivec4 *)pGeneric->GetObject();
+
+    int cmp = 0;
+    if ( a.x < b.x && a.y < b.y && a.z < b.z && a.w < b.w ) {
+        cmp = -1;
+    } else if ( b.x < a.x && b.y < a.y && b.z < a.z && b.w < a.w ) {
+        cmp = 1;
+    }
+
+    pGeneric->SetReturnDWord( (asDWORD)cmp );
+}
+
+
+DEFINE_CALLBACK( AddIVec3Generic ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) ivec3( *(const ivec3 *)pGeneric->GetObject() + *(const ivec3 *)pGeneric->GetArgObject( 0 ) );
+}
+
+DEFINE_CALLBACK( SubIVec3Generic ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) ivec3( *(const ivec3 *)pGeneric->GetObject() - *(const ivec3 *)pGeneric->GetArgObject( 0 ) );
+}
+
+DEFINE_CALLBACK( MulIVec3Generic ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) ivec3( *(const ivec3 *)pGeneric->GetObject() * *(const ivec3 *)pGeneric->GetArgObject( 0 ) );
+}
+
+DEFINE_CALLBACK( DivIVec3Generic ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) ivec3( *(const ivec3 *)pGeneric->GetObject() / *(const ivec3 *)pGeneric->GetArgObject( 0 ) );
+}
+
+DEFINE_CALLBACK( IndexIVec3Generic ) {
+    pGeneric->SetReturnAddress( eastl::addressof( ( *(ivec3 *)pGeneric->GetObject() )[ pGeneric->GetArgDWord( 0 ) ] ) );
+}
+
+DEFINE_CALLBACK( EqualsIVec3Generic ) {
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = *(const ivec3 *)pGeneric->GetObject() == *(const ivec3 *)pGeneric->GetArgObject( 0 );
+}
+
+DEFINE_CALLBACK( CmpIVec3Generic ) {
+    const ivec3& b = *(const ivec3 *)pGeneric->GetArgObject( 0 );
+    const ivec3& a = *(const ivec3 *)pGeneric->GetObject();
+
+    int cmp = 0;
+    if ( a.x < b.x && a.y < b.y && a.z < b.z ) {
+        cmp = -1;
+    } else if ( b.x < a.x && b.y < a.y && b.z < a.z ) {
+        cmp = 1;
+    }
+
+    pGeneric->SetReturnDWord( (asDWORD)cmp );
+}
+
+DEFINE_CALLBACK( AddIVec2Generic ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) ivec2( *(const ivec2 *)pGeneric->GetObject() + *(const ivec2 *)pGeneric->GetArgObject( 0 ) );
+}
+
+DEFINE_CALLBACK( SubIVec2Generic ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) ivec2( *(const ivec2 *)pGeneric->GetObject() - *(const ivec2 *)pGeneric->GetArgObject( 0 ) );
+}
+
+DEFINE_CALLBACK( MulIVec2Generic ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) ivec2 ( *(const ivec2 *)pGeneric->GetObject() * *(const ivec2 *)pGeneric->GetArgObject( 0 ) );
+}
+
+DEFINE_CALLBACK( DivIVec2Generic ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) ivec2( *(const ivec2 *)pGeneric->GetObject() / *(const ivec2 *)pGeneric->GetArgObject( 0 ) ) ;
+}
+
+DEFINE_CALLBACK( IndexIVec2Generic ) {
+    pGeneric->SetReturnAddress( eastl::addressof( ( *(ivec2 *)pGeneric->GetObject() )[ pGeneric->GetArgDWord( 0 ) ] ) );
+}
+
+DEFINE_CALLBACK( EqualsIVec2Generic ) {
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = *(const ivec2 *)pGeneric->GetObject() == *(const ivec2 *)pGeneric->GetArgObject( 0 );
+}
+
+DEFINE_CALLBACK( CmpIVec2Generic ) {
+    const ivec2& b = *(const ivec2 *)pGeneric->GetArgObject( 0 );
+    const ivec2& a = *(const ivec2 *)pGeneric->GetObject();
+
+    int cmp = 0;
+    if ( a.x < b.x && a.y < b.y ) {
+        cmp = -1;
+    } else if ( b.x < a.x && b.y < a.y ) {
+        cmp = 1;
+    }
+
+    pGeneric->SetReturnDWord( (asDWORD)cmp );
+}
+
+DEFINE_CALLBACK( AddUVec4Generic ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) uvec4( *(const uvec4 *)pGeneric->GetObject() + *(const uvec4 *)pGeneric->GetArgObject( 0 ) );
+}
+
+DEFINE_CALLBACK( SubUVec4Generic ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) uvec4( *(const uvec4 *)pGeneric->GetObject() - *(const uvec4 *)pGeneric->GetArgObject( 0 ) );
+}
+
+DEFINE_CALLBACK( MulUVec4Generic ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) uvec4( *(const uvec4 *)pGeneric->GetObject() * *(const uvec4 *)pGeneric->GetArgObject( 0 ) );
+}
+
+DEFINE_CALLBACK( DivUVec4Generic ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) uvec4( *(const uvec4 *)pGeneric->GetObject() / *(const uvec4 *)pGeneric->GetArgObject( 0 ) );
+}
+
+DEFINE_CALLBACK( IndexUVec4Generic ) {
+    pGeneric->SetReturnAddress( eastl::addressof( ( *(vec4 *)pGeneric->GetObject() )[ pGeneric->GetArgDWord( 0 ) ] ) );
+}
+
+DEFINE_CALLBACK( EqualsUVec4Generic ) {
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = *(const uvec4 *)pGeneric->GetObject() == *(const uvec4 *)pGeneric->GetArgObject( 0 );
+}
+
+DEFINE_CALLBACK( CmpUVec4Generic ) {
+    const uvec4& b = *(const uvec4 *)pGeneric->GetArgObject( 0 );
+    const uvec4& a = *(const uvec4 *)pGeneric->GetObject();
+
+    int cmp = 0;
+    if ( a.x < b.x && a.y < b.y && a.z < b.z && a.w < b.w ) {
+        cmp = -1;
+    } else if ( b.x < a.x && b.y < a.y && b.z < a.z && b.w < a.w ) {
+        cmp = 1;
+    }
+
+    pGeneric->SetReturnDWord( (asDWORD)cmp );
+}
+
+
+DEFINE_CALLBACK( AddUVec3Generic ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) uvec3( *(const uvec3 *)pGeneric->GetObject() + *(const uvec3 *)pGeneric->GetArgObject( 0 ) );
+}
+
+DEFINE_CALLBACK( SubUVec3Generic ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) uvec3( *(const uvec3 *)pGeneric->GetObject() - *(const uvec3 *)pGeneric->GetArgObject( 0 ) );
+}
+
+DEFINE_CALLBACK( MulUVec3Generic ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) uvec3( *(const uvec3 *)pGeneric->GetObject() * *(const uvec3 *)pGeneric->GetArgObject( 0 ) );
+}
+
+DEFINE_CALLBACK( DivUVec3Generic ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) uvec3( *(const uvec3 *)pGeneric->GetObject() / *(const uvec3 *)pGeneric->GetArgObject( 0 ) );
+}
+
+DEFINE_CALLBACK( IndexUVec3Generic ) {
+    pGeneric->SetReturnAddress( eastl::addressof( ( *(uvec3 *)pGeneric->GetObject() )[ pGeneric->GetArgDWord( 0 ) ] ) );
+}
+
+DEFINE_CALLBACK( EqualsUVec3Generic ) {
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = *(const uvec3 *)pGeneric->GetObject() == *(const uvec3 *)pGeneric->GetArgObject( 0 );
+}
+
+DEFINE_CALLBACK( CmpUVec3Generic ) {
+    const uvec3& b = *(const uvec3 *)pGeneric->GetArgObject( 0 );
+    const uvec3& a = *(const uvec3 *)pGeneric->GetObject();
+
+    int cmp = 0;
+    if ( a.x < b.x && a.y < b.y && a.z < b.z ) {
+        cmp = -1;
+    } else if ( b.x < a.x && b.y < a.y && b.z < a.z ) {
+        cmp = 1;
+    }
+
+    pGeneric->SetReturnDWord( (asDWORD)cmp );
+}
+
+DEFINE_CALLBACK( AddUVec2Generic ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) uvec2( *(const uvec2 *)pGeneric->GetObject() + *(const uvec2 *)pGeneric->GetArgObject( 0 ) );
+}
+
+DEFINE_CALLBACK( SubUVec2Generic ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) uvec2( *(const uvec2 *)pGeneric->GetObject() - *(const uvec2 *)pGeneric->GetArgObject( 0 ) );
+}
+
+DEFINE_CALLBACK( MulUVec2Generic ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) uvec2( *(const uvec2 *)pGeneric->GetObject() * *(const uvec2 *)pGeneric->GetArgObject( 0 ) );
+}
+
+DEFINE_CALLBACK( DivUVec2Generic ) {
+    new ( pGeneric->GetAddressOfReturnLocation() ) uvec2( *(const uvec2 *)pGeneric->GetObject() / *(const uvec2 *)pGeneric->GetArgObject( 0 ) );
+}
+
+DEFINE_CALLBACK( IndexUVec2Generic ) {
+    pGeneric->SetReturnAddress( eastl::addressof( ( *(uvec2 *)pGeneric->GetObject() )[ pGeneric->GetArgDWord( 0 ) ] ) );
+}
+
+DEFINE_CALLBACK( EqualsUVec2Generic ) {
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = *(const uvec2 *)pGeneric->GetObject() == *(const uvec2 *)pGeneric->GetArgObject( 0 );
+}
+
+DEFINE_CALLBACK( CmpUVec2Generic ) {
+    const uvec2& b = *(const uvec2 *)pGeneric->GetArgObject( 0 );
+    const uvec2& a = *(const uvec2 *)pGeneric->GetObject();
+
+    int cmp = 0;
+    if ( a.x < b.x && a.y < b.y ) {
+        cmp = -1;
+    } else if ( b.x < a.x && b.y < a.y ) {
+        cmp = 1;
+    }
+
+    pGeneric->SetReturnDWord( (asDWORD)cmp );
 }
 
 DEFINE_CALLBACK( ConsolePrint ) {
@@ -528,6 +763,19 @@ DEFINE_CALLBACK( GameError ) {
     const string_t *msg = (const string_t *)pGeneric->GetArgAddress( 0 );
     N_Error( ERR_DROP, "%s", msg->c_str() );
 }
+
+DEFINE_CALLBACK( StrICmp ) {
+    const string_t *arg0 = (const string_t *)pGeneric->GetArgObject( 0 );
+    const string_t *arg1 = (const string_t *)pGeneric->GetArgObject( 1 );
+    pGeneric->SetReturnDWord( (asDWORD)N_stricmp( arg0->c_str(), arg1->c_str() ) );
+}
+
+DEFINE_CALLBACK( StrCmp ) {
+    const string_t *arg0 = (const string_t *)pGeneric->GetArgObject( 0 );
+    const string_t *arg1 = (const string_t *)pGeneric->GetArgObject( 1 );
+    pGeneric->SetReturnDWord( (asDWORD)N_strcmp( arg0->c_str(), arg1->c_str() ) );
+}
+
 DEFINE_CALLBACK( RenderScene ) {
     renderSceneRef_t refdef;
     memset( &refdef, 0, sizeof( refdef ) );
@@ -566,6 +814,14 @@ DEFINE_CALLBACK( RegisterSpriteSheet ) {
     const string_t *npath = (const string_t *)pGeneric->GetArgAddress( 0 );
     pGeneric->SetReturnDWord( re.RegisterSpriteSheet( npath->c_str(), pGeneric->GetArgDWord( 1 ), pGeneric->GetArgDWord( 2 ),
         pGeneric->GetArgDWord( 3 ), pGeneric->GetArgDWord( 4 ) ) );
+}
+
+DEFINE_CALLBACK( GetCheckpointData ) {
+
+}
+
+DEFINE_CALLBACK( GetSpawnData ) {
+
 }
 
 DEFINE_CALLBACK( OpenFileRead ) {
@@ -648,6 +904,8 @@ DEFINE_CALLBACK( LoadFile ) {
     FS_FreeFile( v );
 }
 
+
+
 DEFINE_CALLBACK( ModuleAssertion ) {
 }
 
@@ -671,6 +929,10 @@ DEFINE_CALLBACK( CmdRemoveCommandGeneric ) {
     Cmd_RemoveCommand( ( (string_t *)pGeneric->GetArgObject( 0 ) )->c_str() );
 }
 
+DEFINE_CALLBACK( CmdExecuteCommandGeneric ) {
+    Cbuf_ExecuteText( EXEC_APPEND, ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() );
+}
+
 DEFINE_CALLBACK( PolyVertAssign ) {
     *(CModulePolyVert *)pGeneric->GetAddressOfReturnLocation() = *(CModulePolyVert *)pGeneric->GetArgObject( 0 );
 }
@@ -681,6 +943,112 @@ DEFINE_CALLBACK( GetString ) {
 
     const stringHash_t *hash = strManager->ValueForKey( name->c_str() );
     *value = hash->value;
+}
+
+static void JsonGetObject( asIScriptGeneric *pGeneric ) {
+    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObject();
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+
+    if ( !json.contains( name->c_str() ) ) {
+        N_Error( ERR_DROP, "Invalid JSon Object Access of '%s'", name->c_str() );
+    }
+    *(nlohmann::json *)pGeneric->GetAddressOfReturnLocation() = json.at( name->c_str() );
+}
+
+static void ParseJSonFile( asIScriptGeneric *pGeneric ) {
+    const string_t *fileName = (const string_t *)pGeneric->GetArgObject( 0 );
+    const char *path = FS_BuildOSPath( FS_GetBaseGameDir(), NULL, fileName->c_str() );
+    bool success = true;
+
+    Con_DPrintf( "Parsing json file '%s'...\n", path );
+    try {
+        *(nlohmann::json *)pGeneric->GetObject() = nlohmann::json::parse( path );
+    } catch ( const nlohmann::json::exception& e ) {
+        Con_Printf(
+            COLOR_RED "ERROR: nlhomann::json exception occurred when parsing '%s' ->\n "
+            COLOR_RED "\tid: %i\n"
+            COLOR_RED "\tmessage: %s\n"
+        , path, e.id, e.what() );
+        success = false;
+    }
+
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = success;
+}
+
+static void GetJSonStringArray( asIScriptGeneric *pGeneric ) {
+    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObject();
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    CScriptArray *obj = (CScriptArray *)pGeneric->GetArgObject( 1 );
+
+    if ( !json.contains( name->c_str() ) ) {
+        *(bool *)pGeneric->GetAddressOfReturnLocation() = false;
+        return;
+    }
+
+    nlohmann::json& data = json.at( name->c_str() );
+    obj->Resize( data.size() );
+    for ( uint32_t i = 0; i < data.size(); i++ ) {
+        *(string_t *)obj->At( i ) = (string_t &&)eastl::move( data[i] );
+    }
+    
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = true;
+}
+
+static void GetJSonIntArray( asIScriptGeneric *pGeneric ) {
+    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObject();
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    CScriptArray *obj = (CScriptArray *)pGeneric->GetArgObject( 1 );
+
+    if ( !json.contains( name->c_str() ) ) {
+        *(bool *)pGeneric->GetAddressOfReturnLocation() = false;
+        return;
+    }
+
+    nlohmann::json& data = json.at( name->c_str() );
+    obj->Resize( data.size() );
+    for ( uint32_t i = 0; i < data.size(); i++ ) {
+        *(int32_t *)obj->At( i ) = data[i].get<int32_t>();
+    }
+    
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = true;
+}
+
+static void GetJSonUIntArray( asIScriptGeneric *pGeneric ) {
+    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObject();
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    CScriptArray *obj = (CScriptArray *)pGeneric->GetArgObject( 1 );
+
+    if ( !json.contains( name->c_str() ) ) {
+        *(bool *)pGeneric->GetAddressOfReturnLocation() = false;
+        return;
+    }
+
+    nlohmann::json& data = json.at( name->c_str() );
+    obj->Resize( data.size() );
+    for ( uint32_t i = 0; i < data.size(); i++ ) {
+        *(uint32_t *)obj->At( i ) = data[i].get<uint32_t>();
+    }
+    
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = true;
+}
+
+static void GetJSonFloatArray( asIScriptGeneric *pGeneric ) {
+    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObject();
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    CScriptArray *obj = (CScriptArray *)pGeneric->GetArgObject( 1 );
+
+    if ( !json.contains( name->c_str() ) ) {
+        *(bool *)pGeneric->GetAddressOfReturnLocation() = false;
+        return;
+    }
+
+    nlohmann::json& data = json.at( name->c_str() );
+    obj->Resize( data.size() );
+    for ( uint32_t i = 0; i < data.size(); i++ ) {
+        *(float *)obj->At( i ) = data[i].get<float>();
+    }
+    
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = true;
 }
 
 typedef struct ImGuiManager_s {
@@ -809,9 +1177,13 @@ static bool ImGui_ColorEdit4( const string_t *label, vec4 *col, ImGuiColorEditFl
     return ImGui::ColorEdit4( label->c_str(), (float *)col, flags );
 }
 
+// stfu gcc
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-security"
 static void ImGui_TextColored( const vec4 *color, const string_t *text ) {
     ImGui::TextColored( ImVec4( color->r, color->g, color->b, color->a ), text->c_str() );
 }
+#pragma GCC diagnostic pop
 
 static bool ImGui_SliderInt( asIScriptGeneric *pGeneric ) {
     const string_t *label = (const string_t *)pGeneric->GetArgObject( 0 );
@@ -871,6 +1243,10 @@ static bool ImGui_SliderAngle( asIScriptGeneric *pGeneric ) {
     ImGuiSliderFlags flags = *(int *)pGeneric->GetArgAddress( 4 );
 
     return ImGui::SliderAngle( label->c_str(), v, min, max, "%.0f deg", flags );
+}
+
+static bool ImGui_RadioButton( const string_t *label, bool selected ) {
+    return ImGui::RadioButton( label->c_str(), selected );
 }
 
 //
@@ -955,6 +1331,11 @@ void ModuleLib_Register_Engine( void )
 //    SET_NAMESPACE( "TheNomad::Constants" );
     { // Constants
         REGISTER_GLOBAL_VAR( "const int32 FS_INVALID_HANDLE", &script_FS_INVALID_HANDLE );
+
+        REGISTER_GLOBAL_VAR( "const uint32 MAX_TOKEN_CHARS", &script_MAX_TOKEN_CHARS );
+        REGISTER_GLOBAL_VAR( "const uint32 MAX_STRING_CHARS", &script_MAX_STRING_CHARS );
+        REGISTER_GLOBAL_VAR( "const uint32 MAX_STRING_TOKENS", &script_MAX_STRING_TOKENS );
+        REGISTER_GLOBAL_VAR( "const uint32 MAX_NPATH", &script_MAX_NPATH );
 
         REGISTER_GLOBAL_VAR( "const string COLOR_BLACK", &script_COLOR_BLACK );
         REGISTER_GLOBAL_VAR( "const string COLOR_RED", &script_COLOR_RED );
@@ -1067,7 +1448,7 @@ void ModuleLib_Register_Engine( void )
             REGISTER_OBJECT_BEHAVIOUR( "vec4", asBEHAVE_CONSTRUCT, "void f( float )", WRAP_CON( vec4, ( float ) ) );
             REGISTER_OBJECT_BEHAVIOUR( "vec4", asBEHAVE_CONSTRUCT, "void f( const vec4& in )", WRAP_CON( vec4, ( const vec4& ) ) );
             REGISTER_OBJECT_BEHAVIOUR( "vec4", asBEHAVE_CONSTRUCT, "void f( float, float, float, float )", WRAP_CON( vec4, ( float, float, float, float ) ) );
-            REGISTER_OBJECT_BEHAVIOUR( "vec4", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( vec3 ) );
+            REGISTER_OBJECT_BEHAVIOUR( "vec4", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( vec4 ) );
             REGISTER_OBJECT_PROPERTY( "vec4", "float r", offsetof( vec4, r ) );
             REGISTER_OBJECT_PROPERTY( "vec4", "float g", offsetof( vec4, g ) );
             REGISTER_OBJECT_PROPERTY( "vec4", "float b", offsetof( vec4, b ) );
@@ -1088,6 +1469,174 @@ void ModuleLib_Register_Engine( void )
             g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "vec4", "vec4 opSub( const vec4& in ) const", asFUNCTION( ModuleLib_SubVec4Generic ), asCALL_GENERIC );
             g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "vec4", "vec4 opDiv( const vec4& in ) const", asFUNCTION( ModuleLib_DivVec4Generic ), asCALL_GENERIC );
             g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "vec4", "vec4 opMul( const vec4& in ) const", asFUNCTION( ModuleLib_MulVec4Generic ), asCALL_GENERIC );
+        }
+
+        {
+            REGISTER_OBJECT_TYPE( "ivec2", ivec2, asOBJ_VALUE );
+            
+            REGISTER_OBJECT_BEHAVIOUR( "ivec2", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( ivec2, ( void ) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "ivec2", asBEHAVE_CONSTRUCT, "void f( int )", WRAP_CON( ivec2, ( int ) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "ivec2", asBEHAVE_CONSTRUCT, "void f( const ivec2& in )", WRAP_CON( ivec2, ( const ivec2& ) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "ivec2", asBEHAVE_CONSTRUCT, "void f( int, int )", WRAP_CON( ivec2, ( int, int ) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "ivec2", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( ivec2 ) );
+
+            REGISTER_OBJECT_PROPERTY( "ivec2", "int x", offsetof( ivec2, x ) );
+            REGISTER_OBJECT_PROPERTY( "ivec2", "int y", offsetof( ivec2, y ) );
+
+            REGISTER_METHOD_FUNCTION( "ivec2", "ivec2& opAssign( const ivec2& in )", ivec2, operator=, ( const ivec2& ), ivec2& );
+            REGISTER_METHOD_FUNCTION( "ivec2", "ivec2& opAddAssign( const ivec2& in )", ivec2, operator+=, ( const ivec2& ), ivec2& );
+            REGISTER_METHOD_FUNCTION( "ivec2", "ivec2& opSubAssign( const ivec2& in )", ivec2, operator-=, ( const ivec2& ), ivec2& );
+            REGISTER_METHOD_FUNCTION( "ivec2", "ivec2& opMulAssign( const ivec2& in )", ivec2, operator*=, ( const ivec2& ), ivec2& );
+            REGISTER_METHOD_FUNCTION( "ivec2", "ivec2& opDivAssign( const ivec2& in )", ivec2, operator/=, ( const ivec2& ), ivec2& );
+
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "ivec2", "bool opEquals( const ivec2& in ) const", asFUNCTION( ModuleLib_EqualsIVec2Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "ivec2", "int opCmp( const ivec2& in ) const", asFUNCTION( ModuleLib_CmpIVec2Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "ivec2", "int& opIndex( uint )", asFUNCTION( ModuleLib_IndexIVec2Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "ivec2", "const int& opIndex( uint ) const", asFUNCTION( ModuleLib_IndexIVec2Generic ), asCALL_GENERIC );
+
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "ivec2", "ivec2 opAdd( const ivec2& in ) const", asFUNCTION( ModuleLib_AddIVec2Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "ivec2", "ivec2 opSub( const ivec2& in ) const", asFUNCTION( ModuleLib_SubIVec2Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "ivec2", "ivec2 opDiv( const ivec2& in ) const", asFUNCTION( ModuleLib_DivIVec2Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "ivec2", "ivec2 opMul( const ivec2& in ) const", asFUNCTION( ModuleLib_MulIVec2Generic ), asCALL_GENERIC );
+        }
+        {
+            REGISTER_OBJECT_TYPE( "ivec3", ivec3, asOBJ_VALUE );
+            REGISTER_OBJECT_BEHAVIOUR( "ivec3", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( ivec3, ( void ) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "ivec3", asBEHAVE_CONSTRUCT, "void f( int )", WRAP_CON( ivec3, ( int ) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "ivec3", asBEHAVE_CONSTRUCT, "void f( const ivec3& in )", WRAP_CON( ivec3, ( const ivec3& ) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "ivec3", asBEHAVE_CONSTRUCT, "void f( int, int, int )", WRAP_CON( ivec3, ( int, int, int ) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "ivec3", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( ivec3 ) );
+            REGISTER_OBJECT_PROPERTY( "ivec3", "int x", offsetof( ivec3, x ) );
+            REGISTER_OBJECT_PROPERTY( "ivec3", "int y", offsetof( ivec3, y ) );
+            REGISTER_OBJECT_PROPERTY( "ivec3", "int z", offsetof( ivec3, z ) );
+
+            REGISTER_METHOD_FUNCTION( "ivec3", "ivec3& opAssign( const ivec3& in )", ivec3, operator=, ( const ivec3& ), ivec3& );
+            REGISTER_METHOD_FUNCTION( "ivec3", "ivec3& opAddAssign( const ivec3& in )", ivec3, operator+=, ( const ivec3& ), ivec3& );
+            REGISTER_METHOD_FUNCTION( "ivec3", "ivec3& opSubAssign( const ivec3& in )", ivec3, operator-=, ( const ivec3& ), ivec3& );
+            REGISTER_METHOD_FUNCTION( "ivec3", "ivec3& opMulAssign( const ivec3& in )", ivec3, operator*=, ( const ivec3& ), ivec3& );
+            REGISTER_METHOD_FUNCTION( "ivec3", "ivec3& opDivAssign( const ivec3& in )", ivec3, operator/=, ( const ivec3& ), ivec3& );
+
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "ivec3", "bool opEquals( const ivec3& in ) const", asFUNCTION( ModuleLib_EqualsIVec3Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "ivec3", "int opCmp( const ivec3& in ) const", asFUNCTION( ModuleLib_CmpIVec3Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "ivec3", "int& opIndex( uint )", asFUNCTION( ModuleLib_IndexIVec3Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "ivec3", "const int& opIndex( uint ) const", asFUNCTION( ModuleLib_IndexIVec3Generic ), asCALL_GENERIC );
+
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "ivec3", "ivec3 opAdd( const ivec3& in ) const", asFUNCTION( ModuleLib_AddIVec3Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "ivec3", "ivec3 opSub( const ivec3& in ) const", asFUNCTION( ModuleLib_SubIVec3Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "ivec3", "ivec3 opDiv( const ivec3& in ) const", asFUNCTION( ModuleLib_DivIVec3Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "ivec3", "ivec3 opMul( const ivec3& in ) const", asFUNCTION( ModuleLib_MulIVec3Generic ), asCALL_GENERIC );
+        }
+        {
+            REGISTER_OBJECT_TYPE( "ivec4", vec4, asOBJ_VALUE );
+            REGISTER_OBJECT_BEHAVIOUR( "ivec4", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( ivec4, ( void ) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "ivec4", asBEHAVE_CONSTRUCT, "void f( int )", WRAP_CON( ivec4, ( int ) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "ivec4", asBEHAVE_CONSTRUCT, "void f( const ivec4& in )", WRAP_CON( ivec4, ( const ivec4& ) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "ivec4", asBEHAVE_CONSTRUCT, "void f( int, int, int, int )", WRAP_CON( ivec4, ( int, int, int, int ) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "ivec4", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( ivec4 ) );
+            REGISTER_OBJECT_PROPERTY( "ivec4", "int r", offsetof( ivec4, r ) );
+            REGISTER_OBJECT_PROPERTY( "ivec4", "int g", offsetof( ivec4, g ) );
+            REGISTER_OBJECT_PROPERTY( "ivec4", "int b", offsetof( ivec4, b ) );
+            REGISTER_OBJECT_PROPERTY( "ivec4", "int a", offsetof( ivec4, a ) );
+
+            REGISTER_METHOD_FUNCTION( "ivec4", "ivec4& opAssign( const ivec4& in )", ivec4, operator=, ( const ivec4& ), ivec4& );
+            REGISTER_METHOD_FUNCTION( "ivec4", "ivec4& opAddAssign( const ivec4& in )", ivec4, operator+=, ( const ivec4& ), ivec4& );
+            REGISTER_METHOD_FUNCTION( "ivec4", "ivec4& opSubAssign( const ivec4& in )", ivec4, operator-=, ( const ivec4& ), ivec4& );
+            REGISTER_METHOD_FUNCTION( "ivec4", "ivec4& opMulAssign( const ivec4& in )", ivec4, operator*=, ( const ivec4& ), ivec4& );
+            REGISTER_METHOD_FUNCTION( "ivec4", "ivec4& opDivAssign( const ivec4& in )", ivec4, operator/=, ( const ivec4& ), ivec4& );
+
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "ivec4", "bool opEquals( const ivec4& in ) const", asFUNCTION( ModuleLib_EqualsIVec4Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "ivec4", "int opCmp( const ivec4& in ) const", asFUNCTION( ModuleLib_CmpIVec4Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "ivec4", "int& opIndex( uint )", asFUNCTION( ModuleLib_IndexIVec4Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "ivec4", "const int& opIndex( uint ) const", asFUNCTION( ModuleLib_IndexIVec4Generic ), asCALL_GENERIC );
+
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "ivec4", "ivec4 opAdd( const ivec4& in ) const", asFUNCTION( ModuleLib_AddIVec4Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "ivec4", "ivec4 opSub( const ivec4& in ) const", asFUNCTION( ModuleLib_SubIVec4Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "ivec4", "ivec4 opDiv( const ivec4& in ) const", asFUNCTION( ModuleLib_DivIVec4Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "ivec4", "ivec4 opMul( const ivec4& in ) const", asFUNCTION( ModuleLib_MulIVec4Generic ), asCALL_GENERIC );
+        }
+
+        {
+            REGISTER_OBJECT_TYPE( "uvec2", uvec2, asOBJ_VALUE );
+            
+            REGISTER_OBJECT_BEHAVIOUR( "uvec2", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( uvec2, ( void ) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "uvec2", asBEHAVE_CONSTRUCT, "void f( uint )", WRAP_CON( uvec2, ( unsigned ) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "uvec2", asBEHAVE_CONSTRUCT, "void f( const uvec2& in )", WRAP_CON( uvec2, ( const uvec2& ) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "uvec2", asBEHAVE_CONSTRUCT, "void f( uint, uint )", WRAP_CON( uvec2, ( unsigned, unsigned ) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "uvec2", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( uvec2 ) );
+
+            REGISTER_OBJECT_PROPERTY( "uvec2", "uint x", offsetof( uvec2, x ) );
+            REGISTER_OBJECT_PROPERTY( "uvec2", "uint y", offsetof( uvec2, y ) );
+
+            REGISTER_METHOD_FUNCTION( "uvec2", "uvec2& opAssign( const uvec2& in )", uvec2, operator=, ( const uvec2& ), uvec2& );
+            REGISTER_METHOD_FUNCTION( "uvec2", "uvec2& opAddAssign( const uvec2& in )", uvec2, operator+=, ( const uvec2& ), uvec2& );
+            REGISTER_METHOD_FUNCTION( "uvec2", "uvec2& opSubAssign( const uvec2& in )", uvec2, operator-=, ( const uvec2& ), uvec2& );
+            REGISTER_METHOD_FUNCTION( "uvec2", "uvec2& opMulAssign( const uvec2& in )", uvec2, operator*=, ( const uvec2& ), uvec2& );
+            REGISTER_METHOD_FUNCTION( "uvec2", "uvec2& opDivAssign( const uvec2& in )", uvec2, operator/=, ( const uvec2& ), uvec2& );
+
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec2", "bool opEquals( const uvec2& in ) const", asFUNCTION( ModuleLib_EqualsUVec2Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec2", "int opCmp( const uvec2& in ) const", asFUNCTION( ModuleLib_CmpUVec2Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec2", "uint& opIndex( uint )", asFUNCTION( ModuleLib_IndexUVec2Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec2", "const uint& opIndex( uint ) const", asFUNCTION( ModuleLib_IndexUVec2Generic ), asCALL_GENERIC );
+
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec2", "uvec2 opAdd( const uvec2& in ) const", asFUNCTION( ModuleLib_AddUVec2Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec2", "uvec2 opSub( const uvec2& in ) const", asFUNCTION( ModuleLib_SubUVec2Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec2", "uvec2 opDiv( const uvec2& in ) const", asFUNCTION( ModuleLib_DivUVec2Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec2", "uvec2 opMul( const uvec2& in ) const", asFUNCTION( ModuleLib_MulUVec2Generic ), asCALL_GENERIC );
+        }
+        {
+            REGISTER_OBJECT_TYPE( "uvec3", uvec3, asOBJ_VALUE );
+            REGISTER_OBJECT_BEHAVIOUR( "uvec3", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( uvec3, ( void ) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "uvec3", asBEHAVE_CONSTRUCT, "void f( uint )", WRAP_CON( uvec3, ( unsigned ) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "uvec3", asBEHAVE_CONSTRUCT, "void f( const uvec3& in )", WRAP_CON( uvec3, ( const uvec3& ) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "uvec3", asBEHAVE_CONSTRUCT, "void f( uint, uint, uint )", WRAP_CON( uvec3, ( unsigned, unsigned, unsigned ) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "uvec3", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( uvec3 ) );
+            REGISTER_OBJECT_PROPERTY( "uvec3", "uint x", offsetof( uvec3, x ) );
+            REGISTER_OBJECT_PROPERTY( "uvec3", "uint y", offsetof( uvec3, y ) );
+            REGISTER_OBJECT_PROPERTY( "uvec3", "uint z", offsetof( uvec3, z ) );
+
+            REGISTER_METHOD_FUNCTION( "uvec3", "uvec3& opAssign( const uvec3& in )", uvec3, operator=, ( const uvec3& ), uvec3& );
+            REGISTER_METHOD_FUNCTION( "uvec3", "uvec3& opAddAssign( const uvec3& in )", uvec3, operator+=, ( const uvec3& ), uvec3& );
+            REGISTER_METHOD_FUNCTION( "uvec3", "uvec3& opSubAssign( const uvec3& in )", uvec3, operator-=, ( const uvec3& ), uvec3& );
+            REGISTER_METHOD_FUNCTION( "uvec3", "uvec3& opMulAssign( const uvec3& in )", uvec3, operator*=, ( const uvec3& ), uvec3& );
+            REGISTER_METHOD_FUNCTION( "uvec3", "uvec3& opDivAssign( const uvec3& in )", uvec3, operator/=, ( const uvec3& ), uvec3& );
+
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec3", "bool opEquals( const uvec3& in ) const", asFUNCTION( ModuleLib_EqualsUVec3Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec3", "int opCmp( const uvec3& in ) const", asFUNCTION( ModuleLib_CmpUVec3Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec3", "uint& opIndex( uint )", asFUNCTION( ModuleLib_IndexUVec3Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec3", "const uint& opIndex( uint ) const", asFUNCTION( ModuleLib_IndexUVec3Generic ), asCALL_GENERIC );
+
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec3", "uvec3 opAdd( const uvec3& in ) const", asFUNCTION( ModuleLib_AddUVec3Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec3", "uvec3 opSub( const uvec3& in ) const", asFUNCTION( ModuleLib_SubUVec3Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec3", "uvec3 opDiv( const uvec3& in ) const", asFUNCTION( ModuleLib_DivUVec3Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec3", "uvec3 opMul( const uvec3& in ) const", asFUNCTION( ModuleLib_MulUVec3Generic ), asCALL_GENERIC );
+        }
+        {
+            REGISTER_OBJECT_TYPE( "uvec4", uvec4, asOBJ_VALUE );
+            REGISTER_OBJECT_BEHAVIOUR( "uvec4", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( uvec4, ( void ) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "uvec4", asBEHAVE_CONSTRUCT, "void f( uint )", WRAP_CON( uvec4, ( unsigned ) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "uvec4", asBEHAVE_CONSTRUCT, "void f( const uvec4& in )", WRAP_CON( uvec4, ( const uvec4& ) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "uvec4", asBEHAVE_CONSTRUCT, "void f( uint, uint, uint, uint )", WRAP_CON( uvec4, ( unsigned, unsigned, unsigned, unsigned ) ) );
+            REGISTER_OBJECT_BEHAVIOUR( "uvec4", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( uvec4 ) );
+            REGISTER_OBJECT_PROPERTY( "uvec4", "uint r", offsetof( uvec4, r ) );
+            REGISTER_OBJECT_PROPERTY( "uvec4", "uint g", offsetof( uvec4, g ) );
+            REGISTER_OBJECT_PROPERTY( "uvec4", "uint b", offsetof( uvec4, b ) );
+            REGISTER_OBJECT_PROPERTY( "uvec4", "uint a", offsetof( uvec4, a ) );
+
+            REGISTER_METHOD_FUNCTION( "uvec4", "uvec4& opAssign( const uvec4& in )", uvec4, operator=, ( const uvec4& ), uvec4& );
+            REGISTER_METHOD_FUNCTION( "uvec4", "uvec4& opAddAssign( const uvec4& in )", uvec4, operator+=, ( const uvec4& ), uvec4& );
+            REGISTER_METHOD_FUNCTION( "uvec4", "uvec4& opSubAssign( const uvec4& in )", uvec4, operator-=, ( const uvec4& ), uvec4& );
+            REGISTER_METHOD_FUNCTION( "uvec4", "uvec4& opMulAssign( const uvec4& in )", uvec4, operator*=, ( const uvec4& ), uvec4& );
+            REGISTER_METHOD_FUNCTION( "uvec4", "uvec4& opDivAssign( const uvec4& in )", uvec4, operator/=, ( const uvec4& ), uvec4& );
+
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec4", "bool opEquals( const uvec4& in ) const", asFUNCTION( ModuleLib_EqualsUVec4Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec4", "int opCmp( const uvec4& in ) const", asFUNCTION( ModuleLib_CmpUVec4Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec4", "uint& opIndex( uint )", asFUNCTION( ModuleLib_IndexUVec4Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec4", "const uint& opIndex( uint ) const", asFUNCTION( ModuleLib_IndexUVec4Generic ), asCALL_GENERIC );
+
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec4", "uvec4 opAdd( const uvec4& in ) const", asFUNCTION( ModuleLib_AddUVec4Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec4", "uvec4 opSub( const uvec4& in ) const", asFUNCTION( ModuleLib_SubUVec4Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec4", "uvec4 opDiv( const uvec4& in ) const", asFUNCTION( ModuleLib_DivUVec4Generic ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "uvec4", "uvec4 opMul( const uvec4& in ) const", asFUNCTION( ModuleLib_MulUVec4Generic ), asCALL_GENERIC );
         }
     }
 
@@ -1154,6 +1703,7 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "void ImGui::SameLine( float = 0.0f, float = -1.0f )", ImGui::SameLine, ( float, float ), void );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::NewLine()", ImGui::NewLine, ( void ), void );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::ArrowButton( const string& in, ImGuiDir )", ImGui_ArrowButton, ( const string_t *, ImGuiDir ), bool );
+        REGISTER_GLOBAL_FUNCTION( "bool ImGui::RadioButton( const string& in, bool )", ImGui_RadioButton, ( const string_t *, bool ), bool );
 //        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
 //            "bool ImGui::SliderInt( const string& in, int&, int, int, int )", asFUNCTION( ImGui_SliderInt ),
 //            asCALL_GENERIC
@@ -1195,7 +1745,28 @@ void ModuleLib_Register_Engine( void )
 
     SET_NAMESPACE( "TheNomad" );
     { // Util
+        SET_NAMESPACE( "TheNomad::Util" );
 
+        REGISTER_OBJECT_TYPE( "JsonObject", nlohmann::json, asOBJ_VALUE );
+        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonObject", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( nlohmann::json, ( void ) ) );
+        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonObject", asBEHAVE_CONSTRUCT, "void f( const TheNomad::Util::JsonObject& in )", WRAP_CON( nlohmann::json, ( const nlohmann::json& ) ) );
+        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonObject", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( nlohmann::json ) );
+
+        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "bool Parse( const string& in )", asFUNCTION( ParseJSonFile ), asCALL_GENERIC );
+        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "TheNomad::Util::JsonObject& opIndex( const string& in )", asFUNCTION( JsonGetObject ), asCALL_GENERIC );
+        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "TheNomad::Util::JsonObject& GetObject( const string& in )", asFUNCTION( JsonGetObject ), asCALL_GENERIC );
+        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "bool GetStringArray( const string& in, array<string>& out )", asFUNCTION( GetJSonStringArray ), asCALL_GENERIC );
+        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "bool GetIntArray( const string& in, array<int>& out )", asFUNCTION( GetJSonIntArray ), asCALL_GENERIC );
+        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "bool GetUIntArray( const string& in, array<uint>& out )", asFUNCTION( GetJSonUIntArray ), asCALL_GENERIC );
+        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "bool GetFloatArray( const string& in, array<float>& out )", asFUNCTION( GetJSonFloatArray ), asCALL_GENERIC );
+
+        REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StrICmp( const string& in, const string& in )", StrICmp );
+//        REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StrCmp( const string& in, const string& in )", StrCmp );
+//        REGISTER_GLOBAL_FUNCTION( "string TheNomad::Util::SkipPath( const string& in )", SkipPath );
+//        REGISTER_GLOBAL_FUNCTION( "string TheNomad::Util::GetExtension( const string& in )", GetExtension );
+//        REGISTER_GLOBAL_FUNCTION( "string TheNomad::Util::DefaultExtension( const string& in, const string& in )", DefaultExtension );
+
+        RESET_NAMESPACE();
     }
 	
 	SET_NAMESPACE( "TheNomad::Engine" );
@@ -1204,14 +1775,16 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CvarRegister( const string& in, const string& in, uint, int64& out, float& out, int& out, int& out )", CvarRegisterGeneric );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CvarSet( const string& in, const string& in )", CvarSetValueGeneric );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CvarUpdate( const string& in, string& out, int64& out, float& out, int& out, const int )", CvarUpdateGeneric );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CvarVariableInteger( const string& in )", CvarVariableInteger );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CvarVariableFloat( const string& in )", CvarVariableFloat );
+        REGISTER_GLOBAL_FUNCTION( "int64 TheNomad::Engine::CvarVariableInteger( const string& in )", CvarVariableInteger );
+        REGISTER_GLOBAL_FUNCTION( "float TheNomad::Engine::CvarVariableFloat( const string& in )", CvarVariableFloat );
+        REGISTER_GLOBAL_FUNCTION( "string TheNomad::Engine::CvarVariableString( const string& in )", CvarVariableString );
 
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdArgc()", CmdArgcGeneric );
         REGISTER_GLOBAL_FUNCTION( "const string& TheNomad::Engine::CmdArgv( uint )", CmdArgvGeneric );
         REGISTER_GLOBAL_FUNCTION( "const string& TheNomad::Engine::CmdArgs( uint )", CmdArgsGeneric );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdAddCommand( const string& in )", CmdAddCommandGeneric );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdRemoveCommand( const string& in )", CmdRemoveCommandGeneric );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdExecuteCommand( const string& in )", CmdExecuteCommandGeneric );
 
 		{ // SoundSystem
 			SET_NAMESPACE( "TheNomad::Engine::SoundSystem" );
@@ -1418,6 +1991,8 @@ void ModuleLib_Register_Engine( void )
 		REGISTER_ENUM_VALUE( "DirType", "NorthWest", DIR_NORTH_WEST );
 		REGISTER_ENUM_VALUE( "DirType", "Inside", DIR_NULL );
 		
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetCheckpointData( uvec3& out, uint )", GetCheckpointData );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetSpawnData( uvec3& out, uint& out, uint& out, uint )", GetSpawnData );
 	    REGISTER_GLOBAL_FUNCTION( "int TheNomad::GameSystem::GetMapData( array<uint32>& out, array<int32>& out, array<vec3>& out, int& out, int& out )", GetMapData );
     }
 

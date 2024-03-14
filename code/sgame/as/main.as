@@ -109,9 +109,54 @@ int ModuleOnLoadGame()
 	return 1;
 }
 
+void DrawEntity( const TheNomad::SGame::EntityObject@ ent ) {
+//	const TheNomad::SGame::SpriteSheet@ sheet;
+	
+	switch ( ent.GetType() ) {
+	case TheNomad::GameSystem::EntityType::Playr:
+//		cast<PlayrObject>( ent.GetData() ).DrawLegs();
+	case TheNomad::GameSystem::EntityType::Mob:
+	case TheNomad::GameSystem::EntityType::Bot:
+	case TheNomad::GameSystem::EntityType::Item:
+	case TheNomad::GameSystem::EntityType::Weapon:
+//		@sheet = ent.GetSpriteSheet();
+//		TheNomad::Engine::Renderer::AddSpriteToScene( ent.GetOrigin(), sheet.GetShader(), ent.GetState().SpriteOffset() );
+		break;
+	case TheNomad::GameSystem::EntityType::Wall:
+	case TheNomad::GameSystem::EntityType::Air:
+		break; // engine should handle this
+	default:
+		GameError( "DrawEntity: bad type" );
+	};
+}
+
 int ModuleOnRunTic( uint msec )
 {
+	TheNomad::GameSystem::GameManager.SetMsec( msec );
 	
-
+	array<TheNomad::SGame::EntityObject@>& EntList = TheNomad::SGame::EntityManager.GetEntities();
+	
+	for ( uint i = 0; i < EntList.size(); i++ ) {
+		if ( EntList[i].GetFlags() & TheNomad::SGame::EntityFlags::Dead ) {
+			if ( TheNomad::SGame::sgame_Difficulty.GetInt() > TheNomad::GameSystem::GameDifficulty::Hard ) {
+				DeadThink( EntList[i] );
+			}
+			continue;
+		}
+		
+		EntList[i].GetState().Run();
+		EntList[i].Think();
+		
+		// draw entity
+		DrawEntity( EntList[i] );
+		
+		if ( EntList[i].GetState().Done() is true ) {
+			EntList[i].SetState( EntList[i].GetState().Cycle() );
+			continue;
+		}
+	}
+	
+	AddSceneGfx();
+	
 	return 1;
 }

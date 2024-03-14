@@ -105,6 +105,10 @@ namespace TheNomad {
 		
 		shared class CampaignManager : GameObject {
 			CampaignManager() {
+				m_nMaxFrames = TheNomad::Engine::CvarVariableInteger( "com_fps" );
+				m_nMaxFrameTics = TheNomad::Engine::CvarVariableInteger( "sgame_ticrate" );
+				m_nGameMsec = 0;
+				m_nDeltaTics = 0;
 			}
 			
 			void OnLoad() {
@@ -137,20 +141,36 @@ namespace TheNomad {
 				return "CampaignManager";
 			}
 			
-			const array<int>& GetSoundBits() const {
-				return m_SoundBits;
+			uint DeltaTics() const {
+				return m_nDeltaTics;
+			}
+			uint GetGameTic() const {
+				return m_nGameTic;
+			}
+			void SetMsec( uint msec ) {
+				m_nDeltaTics = floor( float( msec - m_nGameMsec ) / m_nMaxFrames ) * m_nMaxFrameTics;
+				m_nGameMsec = msec;
+				
+				m_nGameTic += m_nDeltaTics;
+				if ( m_nGameTic >= m_nMaxFrameTics ) {
+					m_nGameTic = 0;
+				}
 			}
 			
-			private array<int> m_SoundBits;
+			private int m_nDeltaTics;
+			private int m_nGameMsec;
+			private int m_nGameTic;
+			private int m_nMaxFrames;
+			private int m_nMaxFrameTics;
 //			private LevelData@ m_Level;
 //			private MapData@ m_MapData;
 		};
 		
-		CampaignManager@ Game;
+		CampaignManager@ GameManager;
 		
 		void Init() {
-			@Game = cast<CampaignManager>( AddSystem( CampaignManager() ) );
-			Game.OnLoad();
+			@GameManager = cast<CampaignManager>( AddSystem( CampaignManager() ) );
+			GameManager.OnLoad();
 		}
 	};
 };

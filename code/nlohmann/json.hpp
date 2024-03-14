@@ -3373,7 +3373,7 @@ NLOHMANN_JSON_NAMESPACE_END
     template<template<typename U, typename V, typename... Args> class ObjectType =
     eastl::map,
     template<typename U, typename... Args> class ArrayType = eastl::vector,
-    class StringType = eastl::string, class BooleanType = bool,
+    class StringType = string_t, class BooleanType = bool,
     class NumberIntegerType = int32_t,
     class NumberUnsignedType = uint32_t,
     class NumberFloatType = float,

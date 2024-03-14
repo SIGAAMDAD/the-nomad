@@ -22,7 +22,7 @@ bool CUILib::Menu_Option( const char *label )
     ImGui::SameLine();
     retn = ImGui::ArrowButton( label, ImGuiDir_Right );
 
-	if (retn) {
+	if ( retn ) {
 		Snd_PlaySfx( sfx_select );
 	}
 
@@ -31,6 +31,22 @@ bool CUILib::Menu_Option( const char *label )
 
 bool CUILib::Menu_Title( const char *label, float fontScale )
 {
+	refdef_t refdef;
+
+	memset( &refdef, 0, sizeof( refdef ) );
+	refdef.x = 0;
+	refdef.y = 0;
+	refdef.width = gpuConfig.vidWidth;
+	refdef.height = gpuConfig.vidHeight;
+	refdef.flags = RSF_NOWORLDMODEL | RSF_ORTHO_TYPE_SCREENSPACE;
+
+	//
+	// draw the background
+	//
+	re.ClearScene();
+	ui->DrawHandlePic( 0, 0, refdef.width, refdef.height, menu_background );
+	re.RenderScene( &refdef );
+
     ImGui::SetWindowFontScale( 1.5f * scale );
 	if ( state != STATE_MAIN ) {
 	    if ( ImGui::ArrowButton( va( "##BACK%s", label ), ImGuiDir_Left ) ) {

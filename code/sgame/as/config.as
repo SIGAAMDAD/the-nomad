@@ -1,23 +1,7 @@
 #include "game.as"
 
-enum SoundTrack {
-    SoundTrack_MGR,
-    SoundTrack_BlackFlag,
-    SoundTrack_DOOM,
-    SoundTrack_TheNomad,
-
-    NumSoundTracks
-};
-
-TheNomad::GameSystem::GameDifficulty config_GameDifficulty;
-SoundTrack config_SoundTrack;
-
-array<string> soundTrackTitles = {
-    "MGR",
-    "Assassin's Creed IV: Black Flag",
-    "DOOM",
-    "The Nomad"
-};
+TheNomad::GameSystem::GameDifficulty config_GameDifficulty = TheNomad::GameSystem::GameDifficulty( TheNomad::SGame::sgame_Difficulty.GetInt() );
+bool config_AdaptiveSoundtrack = true;
 
 int ModuleDrawConfiguration() {
     ImGui::BeginTable( "##GameDifficultyConfig", 2 );
@@ -52,42 +36,22 @@ int ModuleDrawConfiguration() {
     }
 
     ImGui::TableNextRow();
-
+    
     ImGui::TableNextColumn();
-    ImGui::Text( "Soundtrack" );
+    ImGui:Text( "Adaptive Soundtrack" );
     ImGui::TableNextColumn();
 
-    if ( ImGui::ArrowButton( "##SoundtrackLeft", ImGuiDir_Left ) ) {
-        switch ( config_SoundTrack ) {
-        case SoundTrack::SoundTrack_MGR:
-            config_SoundTrack = SoundTrack::SoundTrack_TheNomad;
-            break;
-        default:
-            config_SoundTrack--;
-            break;
-        };
-        TheNomad::Engine::SoundSystem::PlaySfx( TheNomad::SGame::selectedSfx );
-    }
-    ImGui::SameLine();
-    ImGui::Text( soundTrackTitles[ config_SoundTrack ] );
-    ImGui::SameLine();
-    if ( ImGui::ArrowButton( "##SoundtrackRight", ImGuiDir_Right ) ) {
-        switch ( config_SoundTrack ) {
-        case SoundTrack::SoundTrack_TheNomad:
-            config_SoundTrack = SoundTrack::SoundTrack_MGR;
-            break;
-        default:
-            config_SoundTrack++;
-            break;
-        };
+    if ( ImGui::RadioButton( config_AdaptiveSoundtrack ? "ON##AdaptiveSoundtrackConfig" : "OFF##AdaptiveSoundtrackConfig",
+        config_AdaptiveSoundtrack ) )
+    {
         TheNomad::Engine::SoundSystem::PlaySfx( TheNomad::SGame::selectedSfx );
     }
 
-    ImGui::EndTable();
 	return 1;
 }
 
 int ModuleSaveConfiguration() {
     TheNomad::Engine::CvarSet( "sgame_Difficulty", formatInt( int( config_GameDifficulty ) ) );
+    TheNomad::Engine::CvarSet( "sgame_AdaptiveSoundtrack", formatInt( int( uint( config_AdaptiveSoundtrack ) ) ) );
     return 1;
 }
