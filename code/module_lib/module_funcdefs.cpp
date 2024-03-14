@@ -755,12 +755,12 @@ DEFINE_CALLBACK( CmpUVec2Generic ) {
 }
 
 DEFINE_CALLBACK( ConsolePrint ) {
-    const string_t *msg = (const string_t *)pGeneric->GetArgAddress( 0 );
+    const string_t *msg = (const string_t *)pGeneric->GetArgObject( 0 );
     Con_Printf( "%s", msg->c_str() );
 }
 
 DEFINE_CALLBACK( GameError ) {
-    const string_t *msg = (const string_t *)pGeneric->GetArgAddress( 0 );
+    const string_t *msg = (const string_t *)pGeneric->GetArgObject( 0 );
     N_Error( ERR_DROP, "%s", msg->c_str() );
 }
 
@@ -798,16 +798,16 @@ DEFINE_CALLBACK( AddEntityToScene ) {
 
 DEFINE_CALLBACK( AddPolyToScene ) {
     CScriptArray *pPolyList = (CScriptArray *)pGeneric->GetArgAddress( 1 );
-    re.AddPolyToScene( *(nhandle_t *)pGeneric->GetAddressOfArg( 0 ), (const polyVert_t *)pPolyList->GetBuffer(), pPolyList->GetSize() );
+    re.AddPolyToScene( (nhandle_t)pGeneric->GetArgDWord( 0 ), (const polyVert_t *)pPolyList->GetBuffer(), pPolyList->GetSize() );
 }
 
 DEFINE_CALLBACK( AddSpriteToScene ) {
-    re.AddSpriteToScene( glm::value_ptr( *(const vec3 *)pGeneric->GetArgAddress( 0  ) ), *(nhandle_t *)pGeneric->GetAddressOfArg( 1 ),
+    re.AddSpriteToScene( glm::value_ptr( *(const vec3 *)pGeneric->GetArgObject( 0  ) ), (nhandle_t)pGeneric->GetArgDWord( 1 ),
         *(nhandle_t *)pGeneric->GetArgAddress( 2 ) );
 }
 
 DEFINE_CALLBACK( RegisterShader ) {
-    pGeneric->SetReturnDWord( re.RegisterShader( ( (const string_t *)pGeneric->GetArgAddress( 0 ) )->c_str() ) );
+    pGeneric->SetReturnDWord( re.RegisterShader( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
 }
 
 DEFINE_CALLBACK( RegisterSpriteSheet ) {
@@ -816,12 +816,27 @@ DEFINE_CALLBACK( RegisterSpriteSheet ) {
         pGeneric->GetArgDWord( 3 ), pGeneric->GetArgDWord( 4 ) ) );
 }
 
-DEFINE_CALLBACK( GetCheckpointData ) {
+DEFINE_CALLBACK( LoadMap ) {
+    pGeneric->SetReturnDWord( (asDWORD)G_LoadMap( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
+}
 
+DEFINE_CALLBACK( SetActiveMap ) {
+    nhandle_t hMap = (nhandle_t)pGeneric->GetArgDWord( 0 );
+    uint32_t *nCheckpoints = (uint32_t *)pGeneric->GetAddressOfAr
+
+    G_SetActiveMap();
+}
+
+DEFINE_CALLBACK( GetCheckpointData ) {
+    uvec3 *data = (uvec3 *)pGeneric->GetArgObject( 0 );
+    G_GetCheckpointData( (uvec_t *)data, pGeneric->GetArgDWord( 1 ) );
 }
 
 DEFINE_CALLBACK( GetSpawnData ) {
-
+    uvec3 *origin = (uvec3 *)pGeneric->GetArgObject( 0 );
+    uint32_t *type = (uint32_t *)pGeneric->GetArgAddress( 1 );
+    uint32_t *id = (uint32_t *)pGeneric->GetArgAddress( 2 );
+    G_GetSpawnData( (uvec_t *)origin, type, id, pGeneric->GetArgDWord( 3 ) );
 }
 
 DEFINE_CALLBACK( OpenFileRead ) {
@@ -904,8 +919,6 @@ DEFINE_CALLBACK( LoadFile ) {
     FS_FreeFile( v );
 }
 
-
-
 DEFINE_CALLBACK( ModuleAssertion ) {
 }
 
@@ -914,11 +927,11 @@ DEFINE_CALLBACK( CmdArgcGeneric ) {
 }
 
 DEFINE_CALLBACK( CmdArgvGeneric ) {
-    *(string_t *)pGeneric->GetAddressOfReturnLocation() = Cmd_Argv( pGeneric->GetArgDWord( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) string_t( Cmd_Argv( pGeneric->GetArgDWord( 0 ) ) );
 }
 
 DEFINE_CALLBACK( CmdArgsGeneric ) {
-    *(string_t *)pGeneric->GetAddressOfReturnLocation() = Cmd_ArgsFrom( pGeneric->GetArgDWord( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) string_t( Cmd_ArgsFrom( pGeneric->GetArgDWord( 0 ) ) );
 }
 
 DEFINE_CALLBACK( CmdAddCommandGeneric ) {
@@ -973,6 +986,100 @@ static void ParseJSonFile( asIScriptGeneric *pGeneric ) {
     }
 
     *(bool *)pGeneric->GetAddressOfReturnLocation() = success;
+}
+
+static void GetJSonObject( asIScriptGeneric *pGeneric ) {
+    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObject();
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    nlohmann::json *data = (nlohmann::json *)pGeneric->GetArgObject( 1 );
+
+    if ( !json.contains( name->c_str() ) ) {
+        *(bool *)pGeneric->GetAddressOfReturnLocation() = false;
+        return;
+    }
+
+    *data = (nlohmann::json &&)eastl::move( json.at( name->c_str() ) );
+    
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = true;
+}
+
+static void GetJSonString( asIScriptGeneric *pGeneric ) {
+    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObject();
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    string_t *data = (string_t *)pGeneric->GetArgObject( 1 );
+
+    if ( !json.contains( name->c_str() ) ) {
+        *(bool *)pGeneric->GetAddressOfReturnLocation() = false;
+        return;
+    }
+
+    *data = (string_t &&)eastl::move( json.at( name->c_str() ) );
+    
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = true;
+}
+
+static void GetJSonInt( asIScriptGeneric *pGeneric ) {
+    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObject();
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    int32_t *data = (int32_t *)pGeneric->GetAddressOfArg( 1 );
+
+    if ( !json.contains( name->c_str() ) ) {
+        *(bool *)pGeneric->GetAddressOfReturnLocation() = false;
+        return;
+    }
+
+    *data = json.at( name->c_str() );
+    
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = true;
+}
+
+static void GetJSonUInt( asIScriptGeneric *pGeneric ) {
+    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObject();
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    uint32_t *data = (uint32_t *)pGeneric->GetAddressOfArg( 1 );
+
+    if ( !json.contains( name->c_str() ) ) {
+        *(bool *)pGeneric->GetAddressOfReturnLocation() = false;
+        return;
+    }
+
+    *data = json.at( name->c_str() );
+    
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = true;
+}
+
+static void GetJSonFloat( asIScriptGeneric *pGeneric ) {
+    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObject();
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    float *data = (float *)pGeneric->GetAddressOfArg( 1 );
+
+    if ( !json.contains( name->c_str() ) ) {
+        *(bool *)pGeneric->GetAddressOfReturnLocation() = false;
+        return;
+    }
+
+    *data = json.at( name->c_str() );
+    
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = true;
+}
+
+static void GetJSonObjectArray( asIScriptGeneric *pGeneric ) {
+    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObject();
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    CScriptArray *obj = (CScriptArray *)pGeneric->GetArgObject( 1 );
+
+    if ( !json.contains( name->c_str() ) ) {
+        *(bool *)pGeneric->GetAddressOfReturnLocation() = false;
+        return;
+    }
+
+    nlohmann::json& data = json.at( name->c_str() );
+    obj->Resize( data.size() );
+    for ( uint32_t i = 0; i < data.size(); i++ ) {
+        *(nlohmann::json *)obj->At( i ) = (nlohmann::json &&)eastl::move( data[i] );
+    }
+    
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = true;
 }
 
 static void GetJSonStringArray( asIScriptGeneric *pGeneric ) {
@@ -1993,7 +2100,9 @@ void ModuleLib_Register_Engine( void )
 		
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetCheckpointData( uvec3& out, uint )", GetCheckpointData );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetSpawnData( uvec3& out, uint& out, uint& out, uint )", GetSpawnData );
-	    REGISTER_GLOBAL_FUNCTION( "int TheNomad::GameSystem::GetMapData( array<uint32>& out, array<int32>& out, array<vec3>& out, int& out, int& out )", GetMapData );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SetActiveMap( int, uint& out, uint& out, uint& out, float& in,
+            TheNomad::GameSystem::LinkEntity@ )", SetActiveMap );
+        REGISTER_GLOBAL_FUNCTION( "int LoadMap( const string& in )", LoadMap );
     }
 
     RESET_NAMESPACE();

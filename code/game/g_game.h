@@ -35,14 +35,19 @@ typedef enum
 // the current map loaded or to be loaded
 //
 typedef struct {
-    mapspawn_t spawns[MAX_MAP_SPAWNS];
-    mapcheckpoint_t checkpoints[MAX_MAP_CHECKPOINTS];
+    char name[MAX_NPATH];
 
-    char name[MAX_GDR_PATH];
-    int32_t width;
-    int32_t height;
-    int32_t numSpawns;
-    int32_t numCheckpoints;
+    maptile_t *tiles;
+    mapcheckpoint_t *checkpoints;
+    mapspawn_t *spawns;
+    maplight_t *lights;
+
+    uint32_t width;
+    uint32_t height;
+    uint32_t numTiles;
+    uint32_t numSpawns;
+    uint32_t numCheckpoints;
+    uint32_t numLights;
 } mapinfo_t;
 
 typedef struct linkEntity_s {
@@ -59,7 +64,7 @@ typedef struct {
 	vec3_t start;
 	vec3_t end;
 	vec3_t origin;
-    void *hitData;
+    linkEntity_t *hitData;
 //	float speed;
 	float length;
 	float angle;
@@ -92,13 +97,6 @@ enum
     OCC_THANKSGIVING
 };
 
-typedef struct {
-    mapinfo_t info;
-
-    uint32_t numTiles;
-    maptile_t *tiles;
-} mapinfoReal_t;
-
 typedef enum
 {
 	ET_ITEM,
@@ -113,7 +111,7 @@ typedef enum
 
 typedef struct {
     char **mapList;
-    mapinfoReal_t *infoList;
+    mapinfo_t *infoList;
     uint64_t numMapFiles;
 
     int32_t currentMapLoaded;
@@ -263,7 +261,8 @@ void G_SetCameraData( const vec2_t origin, float zoom, float rotation );
 // g_world.cpp
 //
 void G_InitMapCache( void );
-void G_SetActiveMap( nhandle_t hMap, mapinfo_t *info, int32_t *soundBits, linkEntity_t *activeEnts );
+void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns,
+    uint32_t *nTiles, float *soundBits, linkEntity_t *activeEnts );
 nhandle_t G_LoadMap( const char *name );
 
 //
