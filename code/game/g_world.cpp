@@ -194,8 +194,8 @@ void G_GetSpawnData( uvec3_t xyz, uint32_t *type, uint32_t *id, uint32_t nIndex 
 	}
 	
 	VectorCopy( xyz, info->spawns[ nIndex ].xyz );
-	*type = info->spawns[ nIndex ].entityType;
-	*id = info->spawns[ nIndex ].entityId;
+	*type = info->spawns[ nIndex ].entitytype;
+	*id = info->spawns[ nIndex ].entityid;
 }
 
 void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns, uint32_t *nTiles,
@@ -326,7 +326,7 @@ void CGameWorld::SoundRecursive( int32_t width, int32_t height, float volume, co
 	ivec3_t start, end;
 	vec3_t pos;
 	const float rangeX = ceil( (float)width / 2.0f );
-	const float ranegY = ceil( (float)height / 2.0f );
+	const float rangeY = ceil( (float)height / 2.0f );
 	
 	VectorCopy( pos, origin );
 	Sys_SnapVector( pos );

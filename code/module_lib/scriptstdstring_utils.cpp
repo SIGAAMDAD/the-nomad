@@ -52,7 +52,7 @@ static CScriptArray *StringSplit(const string_t& delim, const string_t& str)
 static void StringSplit_Generic(asIScriptGeneric *gen)
 {
 	// Get the arguments
-	const string_t *str   = (string_t *)gen->GetObject();
+	const string_t *str   = (string_t *)gen->GetObjectData();
 	const string_t *delim = *(string_t **)gen->GetAddressOfArg(0);
 
 	// Return the array by handle

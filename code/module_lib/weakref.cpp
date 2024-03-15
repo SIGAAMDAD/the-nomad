@@ -248,7 +248,7 @@ static void ScriptWeakRefConstruct_Generic(asIScriptGeneric *gen)
 {
 	asITypeInfo *ti = *reinterpret_cast<asITypeInfo**>(gen->GetAddressOfArg(0));
 
-	ScriptWeakRefConstruct(ti, gen->GetObject());
+	ScriptWeakRefConstruct(ti, gen->GetObjectData());
 }
 
 static void ScriptWeakRefConstruct2_Generic(asIScriptGeneric *gen)
@@ -256,25 +256,25 @@ static void ScriptWeakRefConstruct2_Generic(asIScriptGeneric *gen)
 	asITypeInfo *ti = *reinterpret_cast<asITypeInfo**>(gen->GetAddressOfArg(0));
 	void *ref = gen->GetArgAddress(1);
 
-	ScriptWeakRefConstruct2(ti, ref, gen->GetObject());
+	ScriptWeakRefConstruct2(ti, ref, gen->GetObjectData());
 }
 
 static void ScriptWeakRefDestruct_Generic(asIScriptGeneric *gen)
 {
-	CScriptWeakRef *self = reinterpret_cast<CScriptWeakRef*>(gen->GetObject());
+	CScriptWeakRef *self = reinterpret_cast<CScriptWeakRef*>(gen->GetObjectData());
 	self->~CScriptWeakRef();
 }
 
 void CScriptWeakRef_Get_Generic(asIScriptGeneric *gen)
 {
-	CScriptWeakRef *self = reinterpret_cast<CScriptWeakRef*>(gen->GetObject());
+	CScriptWeakRef *self = reinterpret_cast<CScriptWeakRef*>(gen->GetObjectData());
 	gen->SetReturnAddress(self->Get());
 }
 
 void CScriptWeakRef_Assign_Generic(asIScriptGeneric *gen)
 {
 	CScriptWeakRef *other = reinterpret_cast<CScriptWeakRef*>(gen->GetArgAddress(0));
-	CScriptWeakRef *self = reinterpret_cast<CScriptWeakRef*>(gen->GetObject());
+	CScriptWeakRef *self = reinterpret_cast<CScriptWeakRef*>(gen->GetObjectData());
 	*self = *other;
 	gen->SetReturnAddress(self);
 }
@@ -282,7 +282,7 @@ void CScriptWeakRef_Assign_Generic(asIScriptGeneric *gen)
 void CScriptWeakRef_Assign2_Generic(asIScriptGeneric *gen)
 {
 	void *other = gen->GetArgAddress(0);
-	CScriptWeakRef *self = reinterpret_cast<CScriptWeakRef*>(gen->GetObject());
+	CScriptWeakRef *self = reinterpret_cast<CScriptWeakRef*>(gen->GetObjectData());
 
 	// Must increase the refcount of the object, since Set() will decrease it
 	// If this is not done, the object will be destroyed too early since the 
@@ -296,14 +296,14 @@ void CScriptWeakRef_Assign2_Generic(asIScriptGeneric *gen)
 void CScriptWeakRef_Equals_Generic(asIScriptGeneric *gen)
 {
 	CScriptWeakRef *other = reinterpret_cast<CScriptWeakRef*>(gen->GetArgAddress(0));
-	CScriptWeakRef *self = reinterpret_cast<CScriptWeakRef*>(gen->GetObject());
+	CScriptWeakRef *self = reinterpret_cast<CScriptWeakRef*>(gen->GetObjectData());
 	gen->SetReturnByte(*self == *other);
 }
 
 void CScriptWeakRef_Equals2_Generic(asIScriptGeneric *gen)
 {
 	void *other = gen->GetArgAddress(0);
-	CScriptWeakRef *self = reinterpret_cast<CScriptWeakRef*>(gen->GetObject());
+	CScriptWeakRef *self = reinterpret_cast<CScriptWeakRef*>(gen->GetObjectData());
 
 	// Must increase the refcount of the object, since Equals() will decrease it
 	// If this is not done, the object will be destroyed too early since the 

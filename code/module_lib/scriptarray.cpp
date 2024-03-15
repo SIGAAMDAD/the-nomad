@@ -2000,7 +2000,7 @@ static void ScriptArrayTemplateCallback_Generic(asIScriptGeneric *gen)
 static void ScriptArrayAssignment_Generic(asIScriptGeneric *gen)
 {
 	CScriptArray *other = (CScriptArray*)gen->GetArgObject(0);
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	*self = *other;
 	gen->SetReturnObject(self);
 }
@@ -2008,14 +2008,14 @@ static void ScriptArrayAssignment_Generic(asIScriptGeneric *gen)
 static void ScriptArrayEquals_Generic(asIScriptGeneric *gen)
 {
 	CScriptArray *other = (CScriptArray*)gen->GetArgObject(0);
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	gen->SetReturnByte(self->operator==(*other));
 }
 
 static void ScriptArrayFind_Generic(asIScriptGeneric *gen)
 {
 	void *value = gen->GetArgAddress(0);
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	gen->SetReturnDWord(self->Find(value));
 }
 
@@ -2023,14 +2023,14 @@ static void ScriptArrayFind2_Generic(asIScriptGeneric *gen)
 {
 	asUINT index = gen->GetArgDWord(0);
 	void *value = gen->GetArgAddress(1);
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	gen->SetReturnDWord(self->Find(index, value));
 }
 
 static void ScriptArrayFindByRef_Generic(asIScriptGeneric *gen)
 {
 	void *value = gen->GetArgAddress(0);
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	gen->SetReturnDWord(self->FindByRef(value));
 }
 
@@ -2038,14 +2038,14 @@ static void ScriptArrayFindByRef2_Generic(asIScriptGeneric *gen)
 {
 	asUINT index = gen->GetArgDWord(0);
 	void *value = gen->GetArgAddress(1);
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	gen->SetReturnDWord(self->FindByRef(index, value));
 }
 
 static void ScriptArrayAt_Generic(asIScriptGeneric *gen)
 {
 	asUINT index = gen->GetArgDWord(0);
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 
 	gen->SetReturnAddress(self->At(index));
 }
@@ -2054,7 +2054,7 @@ static void ScriptArrayInsertAt_Generic(asIScriptGeneric *gen)
 {
 	asUINT index = gen->GetArgDWord(0);
 	void *value = gen->GetArgAddress(1);
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->InsertAt(index, value);
 }
 
@@ -2062,14 +2062,14 @@ static void ScriptArrayInsertAtArray_Generic(asIScriptGeneric *gen)
 {
 	asUINT index = gen->GetArgDWord(0);
 	CScriptArray *array = (CScriptArray*)gen->GetArgAddress(1);
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->InsertAt(index, *array);
 }
 
 static void ScriptArrayRemoveAt_Generic(asIScriptGeneric *gen)
 {
 	asUINT index = gen->GetArgDWord(0);
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->RemoveAt(index);
 }
 
@@ -2077,26 +2077,26 @@ static void ScriptArrayRemoveRange_Generic(asIScriptGeneric *gen)
 {
 	asUINT start = gen->GetArgDWord(0);
 	asUINT count = gen->GetArgDWord(1);
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->RemoveRange(start, count);
 }
 
 static void ScriptArrayInsertLast_Generic(asIScriptGeneric *gen)
 {
 	void *value = gen->GetArgAddress(0);
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->InsertLast(value);
 }
 
 static void ScriptArrayRemoveLast_Generic(asIScriptGeneric *gen)
 {
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->RemoveLast();
 }
 
 static void ScriptArrayLength_Generic(asIScriptGeneric *gen)
 {
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 
 	gen->SetReturnDWord(self->GetSize());
 }
@@ -2104,7 +2104,7 @@ static void ScriptArrayLength_Generic(asIScriptGeneric *gen)
 static void ScriptArrayResize_Generic(asIScriptGeneric *gen)
 {
 	asUINT size = gen->GetArgDWord(0);
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 
 	self->Resize(size);
 }
@@ -2112,25 +2112,25 @@ static void ScriptArrayResize_Generic(asIScriptGeneric *gen)
 static void ScriptArrayReserve_Generic(asIScriptGeneric *gen)
 {
 	asUINT size = gen->GetArgDWord(0);
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->Reserve(size);
 }
 
 static void ScriptArraySortAsc_Generic(asIScriptGeneric *gen)
 {
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->SortAsc();
 }
 
 static void ScriptArrayReverse_Generic(asIScriptGeneric *gen)
 {
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->Reverse();
 }
 
 static void ScriptArrayIsEmpty_Generic(asIScriptGeneric *gen)
 {
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	*reinterpret_cast<bool*>(gen->GetAddressOfReturnLocation()) = self->IsEmpty();
 }
 
@@ -2138,13 +2138,13 @@ static void ScriptArraySortAsc2_Generic(asIScriptGeneric *gen)
 {
 	asUINT index = gen->GetArgDWord(0);
 	asUINT count = gen->GetArgDWord(1);
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->SortAsc(index, count);
 }
 
 static void ScriptArraySortDesc_Generic(asIScriptGeneric *gen)
 {
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->SortDesc();
 }
 
@@ -2152,7 +2152,7 @@ static void ScriptArraySortDesc2_Generic(asIScriptGeneric *gen)
 {
 	asUINT index = gen->GetArgDWord(0);
 	asUINT count = gen->GetArgDWord(1);
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->SortDesc(index, count);
 }
 
@@ -2161,68 +2161,68 @@ static void ScriptArraySortCallback_Generic(asIScriptGeneric *gen)
 	asIScriptFunction *callback = (asIScriptFunction*)gen->GetArgAddress(0);
 	asUINT startAt = gen->GetArgDWord(1);
 	asUINT count = gen->GetArgDWord(2);
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->Sort(callback, startAt, count);
 }
 
 static void ScriptArrayAddRef_Generic(asIScriptGeneric *gen)
 {
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->AddRef();
 }
 
 static void ScriptArrayRelease_Generic(asIScriptGeneric *gen)
 {
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->Release();
 }
 
 static void ScriptArrayGetRefCount_Generic(asIScriptGeneric *gen)
 {
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	*reinterpret_cast<int*>(gen->GetAddressOfReturnLocation()) = self->GetRefCount();
 }
 
 static void ScriptArraySetFlag_Generic(asIScriptGeneric *gen)
 {
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->SetFlag();
 }
 
 static void ScriptArrayGetFlag_Generic(asIScriptGeneric *gen)
 {
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	*reinterpret_cast<bool*>(gen->GetAddressOfReturnLocation()) = self->GetFlag();
 }
 
 static void ScriptArrayEnumReferences_Generic(asIScriptGeneric *gen)
 {
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	asIScriptEngine *engine = *(asIScriptEngine**)gen->GetAddressOfArg(0);
 	self->EnumReferences(engine);
 }
 
 static void ScriptArrayReleaseAllHandles_Generic(asIScriptGeneric *gen)
 {
-	CScriptArray *self = (CScriptArray*)gen->GetObject();
+	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	asIScriptEngine *engine = *(asIScriptEngine**)gen->GetAddressOfArg(0);
 	self->ReleaseAllHandles(engine);
 }
 
 static void ScriptArrayBegin_Generic( asIScriptGeneric *gen ) {
-	gen->SetReturnAddress( ( (CScriptArray *)gen->GetObject() )->begin() );
+	gen->SetReturnAddress( ( (CScriptArray *)gen->GetObjectData() )->begin() );
 }
 
 static void ScriptArrayEnd_Generic( asIScriptGeneric *gen ) {
-	gen->SetReturnAddress( ( (CScriptArray *)gen->GetObject() )->end() );
+	gen->SetReturnAddress( ( (CScriptArray *)gen->GetObjectData() )->end() );
 }
 
 static void ScriptArrayCBegin_Generic( asIScriptGeneric *gen ) {
-	gen->SetReturnAddress( const_cast<void *>( ( (const CScriptArray *)gen->GetObject() )->cbegin() ) );
+	gen->SetReturnAddress( const_cast<void *>( ( (const CScriptArray *)gen->GetObjectData() )->cbegin() ) );
 }
 
 static void ScriptArrayCEnd_Generic( asIScriptGeneric *gen ) {
-	gen->SetReturnAddress( const_cast<void *>( ( (const CScriptArray *)gen->GetObject() )->cend() ) );
+	gen->SetReturnAddress( const_cast<void *>( ( (const CScriptArray *)gen->GetObjectData() )->cend() ) );
 }
 
 static void RegisterScriptArray_Generic(asIScriptEngine *engine)

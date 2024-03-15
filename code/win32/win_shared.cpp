@@ -55,7 +55,7 @@ qboolean Sys_RandomBytes( byte *string, uint64_t len )
 }
 
 
-#ifdef UNICODE
+#ifdef _UNICODE
 LPWSTR AtoW( const char *s ) 
 {
 	static WCHAR buffer[MAXPRINTMSG*2];
@@ -215,6 +215,8 @@ Sys_FOpen
 FILE *Sys_FOpen( const char *ospath, const char *mode )
 {
 	size_t length;
+	FILE *fp;
+	const TCHAR *path;
 
 	// Windows API ignores all trailing spaces and periods which can get around Quake 3 file system restrictions.
 	length = strlen( ospath );
@@ -222,7 +224,15 @@ FILE *Sys_FOpen( const char *ospath, const char *mode )
 		return NULL;
 	}
 
-	return fopen( ospath, mode );
+	path = AtoW( ospath );
+
+#ifdef _UNICODE
+	wfopen_s( &fp, path, mode );
+#else
+	fopen_s( &fp, path, mode );
+#endif
+
+	return fp;
 }
 
 

@@ -351,41 +351,19 @@ namespace TheNomad::SGame {
 		void AddLevelData( LevelInfoData@ levelData ) {
 			m_LevelInfoDatas.push_back( levelData );
 		}
+
+		const TheNomad::Util::JsonObject& GetLevelInfoByIndex( uint nIndex ) const {
+			return m_LevelInfos[ nIndex ];
+		}
+		TheNomad::Util::JsonObject& GetLevelInfoByIndex( uint nIndex ) {
+			return m_LevelInfos[ nIndex ];
+		}
 		
 		const LevelInfoData@ GetLevelDataByIndex( uint nIndex ) const {
 			return m_LevelInfoDatas[ nIndex ];
 		}
 		LevelInfoData@ GetLevelDataByIndex( uint nIndex ) {
 			return m_LevelInfoDatas[ nIndex ];
-		}
-		
-		const string& GetLevelInfoByIndex( uint nIndex ) const {
-			return m_LevelInfoStrings[ nIndex ];
-		}
-		string& GetLevelInfoByIndex( uint nIndex ) {
-			return m_LevelInfoStrings[ nIndex ];
-		}
-		
-		uint ParseInfos( const array<int8>& in buf, string& out infos ) {
-			TheNomad::Engine::InfoParser parse( buf, infos );
-			return infos.size();
-		}
-		
-		void LoadLevelsFromFile( const string& in fileName ) {
-			uint64			len;
-			int				f;
-			array<int8>		buf;
-			string			infos;
-			
-			len	= TheNomad::Engine::FileSystem::LoadFile( fileName, f, buf );
-			if ( f == FS_INVALID_HANDLE ) {
-				ConsolePrint( COLOR_RED + "ERROR: file '" + fileName + "' not found!\n" );
-				return;
-			}
-			
-			infos.resize( MAX_INFO_VALUE );
-			m_nLevels += ParseInfos( buf, infos );
-			m_LevelInfoStrings.push_back( infos );
 		}
 		
 		const LevelInfoData@ GetLevelInfoByMapName( const string& in mapname ) const {
@@ -397,6 +375,22 @@ namespace TheNomad::SGame {
 				}
 			}
 			return null;
+		}
+
+		void LoadLevelsFromFile( const string& in fileName ) {
+			TheNomad::Util::JsonObject json;
+			array<TheNomad::Util::JsonObject> levels;
+
+			if ( !json.Parse( fileName ) ) {
+				ConsoleWarning( "failed to load level infos from file '" + fileName + "'\n" );
+				return;
+			}
+
+			json.GetObjectArray( "LevelInfo", levels );
+			m_LevelInfos.reserve( levels.size() );
+			for ( uint i = 0; i < levels.size(); i++ ) {
+				m_LevelInfos.push_back( @levels[i] );
+			}
 		}
 		
 		LevelStats& GetStats() {
@@ -410,7 +404,7 @@ namespace TheNomad::SGame {
 			return m_nIndex;
 		}
 		
-		private array<string> m_LevelInfoStrings;
+		private array<TheNomad::Util::JsonObject@> m_LevelInfos;
 		private array<LevelInfoData@> m_LevelInfoDatas;
 		private uint m_nIndex;
 		private uint m_nLevels;
@@ -420,16 +414,6 @@ namespace TheNomad::SGame {
 		private LevelInfoData@ m_Current;
 		private MapData@ m_MapData;
 	};
-	
-	ConVar@ sgame_cheat_DeafMobs;
-	ConVar@ sgame_cheat_BlindMobs;
-	ConVar@ sgame_cheat_InfiniteAmmo;
-	
-	ConVar@ sgame_LevelIndex;
-	ConVar@ sgame_MapName;
-	ConVar@ sgame_LevelDebugPrint;
-	ConVar@ sgame_LevelInfoFile;
-	LevelSystem@ LevelManager;
 	
 	shared class SoundData {
 		SoundData( float decibles, const vec2& in volume, const ivec2& in range, const ivec3& in origin, float diffusion ) {
@@ -468,6 +452,7 @@ namespace TheNomad::SGame {
 		private float m_Decibles;
 	};
 
+	LevelSystem@ LevelManager;
 	ConVar@ sgame_Difficulty;
 	ConVar@ sgame_SaveName;
 	ConVar@ sgame_AdaptiveSoundtrack;
@@ -495,7 +480,7 @@ namespace TheNomad::SGame {
 		if ( sgame_LevelInfoFile.GetString().size() > 0 ) {
 			LevelManager.LoadLevelsFromFile( sgame_LevelInfoFile.GetString() );
 		} else {
-			LevelManager.LoadLevelsFromFile( "scripts/levels.txt" );
+			LevelManager.LoadLevelsFromFile( "scripts/levels.json" );
 		}
 		
 		ConsolePrint( formatUInt( LevelManager.NumLevels() ) + " levels parsed.\n" );
@@ -507,7 +492,7 @@ namespace TheNomad::SGame {
 		
 		mapname.resize( MAX_NPATH );
 		for ( i = 0; i < LevelManager.NumLevels(); i++ ) {
-			const string& infoString = LevelManager.GetLevelInfoByIndex( i );
+			const TheNomad::Util::JsonObject& info = LevelManager.GetLevelInfoByIndex( i );
 			
 			@data = LevelInfoData( TheNomad::Engine::GetInfoValueForKey( infoString, "name" ) );
 			

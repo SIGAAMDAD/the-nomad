@@ -144,7 +144,8 @@ LDLIBS=-L/usr/lib/x86_64-linux-gnu/ \
 #		-leasy_profiler
 SYS=\
 	$(O)/sys/unix_main.o \
-	$(O)/sys/unix_shared.o
+	$(O)/sys/unix_shared.o \
+	$(O)/module_lib/module_virtual_asm_linux.o
 SYS_DIR=$(SDIR)/unix
 else
 INCLUDE+=-Ideps/
@@ -160,6 +161,7 @@ LDLIBS=-L. \
 		-limagehlp \
 		-lpsapi \
 		-ljpeg-9 \
+		-lEASTL \
 		/usr/x86_64-w64-mingw32/lib/libmsvcrt.a \
 		-static-libgcc -static-libstdc++ \
 
@@ -171,6 +173,7 @@ SYS=\
 	$(O)/sys/win_main.o \
 	$(O)/sys/win_shared.o \
 	$(O)/sys/win_syscon.o \
+	$(O)/module_lib/module_virtual_asm_windows.o
 
 SYS_DIR=$(SDIR)/win32
 INCLUDE+=-Idependencies/include/libsndfile -Idependencies/include/boost -I./mingw32/include
@@ -283,7 +286,6 @@ SRC=\
 	$(O)/module_lib/module_renderlib.o \
 	$(O)/module_lib/module_funcdefs.o \
 	$(O)/module_lib/module_jit.o \
-	$(O)/module_lib/module_virtual_asm_linux.o \
 	$(O)/module_lib/module_virtual_asm_x64.o \
 	$(O)/module_lib/debugger.o \
 	$(O)/module_lib/scriptarray.o \

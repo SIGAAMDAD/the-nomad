@@ -213,50 +213,50 @@ asIScriptObject *ScriptObjectCopyFactory(const asCObjectType *objType, void *ori
 
 static void ScriptObject_AddRef_Generic(asIScriptGeneric *gen)
 {
-	asCScriptObject *self = (asCScriptObject*)gen->GetObject();
+	asCScriptObject *self = (asCScriptObject*)gen->GetObjectData();
 	self->AddRef();
 }
 
 static void ScriptObject_Release_Generic(asIScriptGeneric *gen)
 {
-	asCScriptObject *self = (asCScriptObject*)gen->GetObject();
+	asCScriptObject *self = (asCScriptObject*)gen->GetObjectData();
 	self->Release();
 }
 
 static void ScriptObject_GetRefCount_Generic(asIScriptGeneric *gen)
 {
-	asCScriptObject *self = (asCScriptObject*)gen->GetObject();
+	asCScriptObject *self = (asCScriptObject*)gen->GetObjectData();
 	*(int*)gen->GetAddressOfReturnLocation() = self->GetRefCount();
 }
 
 static void ScriptObject_SetFlag_Generic(asIScriptGeneric *gen)
 {
-	asCScriptObject *self = (asCScriptObject*)gen->GetObject();
+	asCScriptObject *self = (asCScriptObject*)gen->GetObjectData();
 	self->SetFlag();
 }
 
 static void ScriptObject_GetFlag_Generic(asIScriptGeneric *gen)
 {
-	asCScriptObject *self = (asCScriptObject*)gen->GetObject();
+	asCScriptObject *self = (asCScriptObject*)gen->GetObjectData();
 	*(bool*)gen->GetAddressOfReturnLocation() = self->GetFlag();
 }
 
 static void ScriptObject_GetWeakRefFlag_Generic(asIScriptGeneric *gen)
 {
-	asCScriptObject *self = (asCScriptObject*)gen->GetObject();
+	asCScriptObject *self = (asCScriptObject*)gen->GetObjectData();
 	*(asILockableSharedBool**)gen->GetAddressOfReturnLocation() = self->GetWeakRefFlag();
 }
 
 static void ScriptObject_EnumReferences_Generic(asIScriptGeneric *gen)
 {
-	asCScriptObject *self = (asCScriptObject*)gen->GetObject();
+	asCScriptObject *self = (asCScriptObject*)gen->GetObjectData();
 	asIScriptEngine *engine = *(asIScriptEngine**)gen->GetAddressOfArg(0);
 	self->EnumReferences(engine);
 }
 
 static void ScriptObject_ReleaseAllHandles_Generic(asIScriptGeneric *gen)
 {
-	asCScriptObject *self = (asCScriptObject*)gen->GetObject();
+	asCScriptObject *self = (asCScriptObject*)gen->GetObjectData();
 	asIScriptEngine *engine = *(asIScriptEngine**)gen->GetAddressOfArg(0);
 	self->ReleaseAllHandles(engine);
 }
@@ -264,7 +264,7 @@ static void ScriptObject_ReleaseAllHandles_Generic(asIScriptGeneric *gen)
 static void ScriptObject_Assignment_Generic(asIScriptGeneric *gen)
 {
 	asCScriptObject *other = *(asCScriptObject**)gen->GetAddressOfArg(0);
-	asCScriptObject *self = (asCScriptObject*)gen->GetObject();
+	asCScriptObject *self = (asCScriptObject*)gen->GetObjectData();
 
 	*self = *other;
 
@@ -274,7 +274,7 @@ static void ScriptObject_Assignment_Generic(asIScriptGeneric *gen)
 static void ScriptObject_Construct_Generic(asIScriptGeneric *gen)
 {
 	asCObjectType *objType = *(asCObjectType**)gen->GetAddressOfArg(0);
-	asCScriptObject *self = (asCScriptObject*)gen->GetObject();
+	asCScriptObject *self = (asCScriptObject*)gen->GetObjectData();
 
 	ScriptObject_Construct(objType, self);
 }

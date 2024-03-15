@@ -691,25 +691,25 @@ void RegisterStdString_Native(asIScriptEngine *engine)
 }
 
 static void ConstructStringGeneric( asIScriptGeneric *gen ) {
-	new ( gen->GetObject() ) string_t();
+	new ( gen->GetObjectData() ) string_t();
 }
 
 static void CopyConstructStringGeneric(asIScriptGeneric *gen)
 {
 	string_t *a = static_cast<string_t *>(gen->GetArgObject(0));
-	new (gen->GetObject()) string_t(*a);
+	new (gen->GetObjectData()) string_t(*a);
 }
 
 static void DestructStringGeneric(asIScriptGeneric *gen)
 {
-	string_t *ptr = static_cast<string_t *>(gen->GetObject());
+	string_t *ptr = static_cast<string_t *>(gen->GetObjectData());
 	ptr->~string_t();
 }
 
 static void AssignStringGeneric(asIScriptGeneric *gen)
 {
 	string_t *a = static_cast<string_t *>(gen->GetArgObject(0));
-	string_t *self = static_cast<string_t *>(gen->GetObject());
+	string_t *self = static_cast<string_t *>(gen->GetObjectData());
 	*self = *a;
 	gen->SetReturnAddress(self);
 }
@@ -717,21 +717,21 @@ static void AssignStringGeneric(asIScriptGeneric *gen)
 static void AddAssignStringGeneric(asIScriptGeneric *gen)
 {
 	string_t *a = static_cast<string_t *>(gen->GetArgObject(0));
-	string_t *self = static_cast<string_t *>(gen->GetObject());
+	string_t *self = static_cast<string_t *>(gen->GetObjectData());
 	*self += *a;
 	gen->SetReturnAddress(self);
 }
 
 static void StringEqualsGeneric(asIScriptGeneric *gen)
 {
-	string_t *a = static_cast<string_t *>(gen->GetObject());
+	string_t *a = static_cast<string_t *>(gen->GetObjectData());
 	string_t *b = static_cast<string_t *>(gen->GetArgAddress(0));
 	*(bool*)gen->GetAddressOfReturnLocation() = (*a == *b);
 }
 
 static void StringCmpGeneric(asIScriptGeneric *gen)
 {
-	string_t *a = static_cast<string_t *>(gen->GetObject());
+	string_t *a = static_cast<string_t *>(gen->GetObjectData());
 	string_t *b = static_cast<string_t *>(gen->GetArgAddress(0));
 
 	int cmp = 0;
@@ -743,7 +743,7 @@ static void StringCmpGeneric(asIScriptGeneric *gen)
 
 static void StringAddGeneric(asIScriptGeneric *gen)
 {
-	string_t *a = static_cast<string_t *>(gen->GetObject());
+	string_t *a = static_cast<string_t *>(gen->GetObjectData());
 	string_t *b = static_cast<string_t *>(gen->GetArgAddress(0));
 	string_t ret_val = *a + *b;
 	gen->SetReturnObject(&ret_val);
@@ -751,25 +751,25 @@ static void StringAddGeneric(asIScriptGeneric *gen)
 
 static void StringLengthGeneric(asIScriptGeneric *gen)
 {
-	string_t *self = static_cast<string_t *>(gen->GetObject());
+	string_t *self = static_cast<string_t *>(gen->GetObjectData());
 	*static_cast<asUINT *>(gen->GetAddressOfReturnLocation()) = (asUINT)self->length();
 }
 
 static void StringIsEmptyGeneric(asIScriptGeneric *gen)
 {
-	string_t *self = reinterpret_cast<string_t *>(gen->GetObject());
+	string_t *self = reinterpret_cast<string_t *>(gen->GetObjectData());
 	*reinterpret_cast<bool *>(gen->GetAddressOfReturnLocation()) = StringIsEmpty(*self);
 }
 
 static void StringResizeGeneric(asIScriptGeneric *gen)
 {
-	string_t *self = static_cast<string_t *>(gen->GetObject());
+	string_t *self = static_cast<string_t *>(gen->GetObjectData());
 	self->resize(*static_cast<asUINT *>(gen->GetAddressOfArg(0)));
 }
 
 static void StringInsert_Generic(asIScriptGeneric *gen)
 {
-	string_t *self = static_cast<string_t *>(gen->GetObject());
+	string_t *self = static_cast<string_t *>(gen->GetObjectData());
 	asUINT pos = gen->GetArgDWord(0);
 	string_t *other = reinterpret_cast<string_t *>(gen->GetArgAddress(1));
 	StringInsert(pos, *other, *self);
@@ -777,7 +777,7 @@ static void StringInsert_Generic(asIScriptGeneric *gen)
 
 static void StringErase_Generic(asIScriptGeneric *gen)
 {
-	string_t *self = static_cast<string_t *>(gen->GetObject());
+	string_t *self = static_cast<string_t *>(gen->GetObjectData());
 	asUINT pos = gen->GetArgDWord(0);
 	int count = int(gen->GetArgDWord(1));
 	StringErase(pos, count, *self);
@@ -787,7 +787,7 @@ static void StringFindFirst_Generic(asIScriptGeneric *gen)
 {
 	string_t *find = reinterpret_cast<string_t*>(gen->GetArgAddress(0));
 	asUINT start = gen->GetArgDWord(1);
-	string_t *self = reinterpret_cast<string_t *>(gen->GetObject());
+	string_t *self = reinterpret_cast<string_t *>(gen->GetObjectData());
 	*reinterpret_cast<int *>(gen->GetAddressOfReturnLocation()) = StringFindFirst(*find, start, *self);
 }
 
@@ -795,7 +795,7 @@ static void StringFindLast_Generic(asIScriptGeneric *gen)
 {
 	string_t *find = reinterpret_cast<string_t*>(gen->GetArgAddress(0));
 	asUINT start = gen->GetArgDWord(1);
-	string_t *self = reinterpret_cast<string_t *>(gen->GetObject());
+	string_t *self = reinterpret_cast<string_t *>(gen->GetObjectData());
 	*reinterpret_cast<int *>(gen->GetAddressOfReturnLocation()) = StringFindLast(*find, start, *self);
 }
 
@@ -803,7 +803,7 @@ static void StringFindFirstOf_Generic(asIScriptGeneric *gen)
 {
 	string_t *find = reinterpret_cast<string_t*>(gen->GetArgAddress(0));
 	asUINT start = gen->GetArgDWord(1);
-	string_t *self = reinterpret_cast<string_t *>(gen->GetObject());
+	string_t *self = reinterpret_cast<string_t *>(gen->GetObjectData());
 	*reinterpret_cast<int *>(gen->GetAddressOfReturnLocation()) = StringFindFirstOf(*find, start, *self);
 }
 
@@ -811,7 +811,7 @@ static void StringFindLastOf_Generic(asIScriptGeneric *gen)
 {
 	string_t *find = reinterpret_cast<string_t*>(gen->GetArgAddress(0));
 	asUINT start = gen->GetArgDWord(1);
-	string_t *self = reinterpret_cast<string_t *>(gen->GetObject());
+	string_t *self = reinterpret_cast<string_t *>(gen->GetObjectData());
 	*reinterpret_cast<int *>(gen->GetAddressOfReturnLocation()) = StringFindLastOf(*find, start, *self);
 }
 
@@ -819,7 +819,7 @@ static void StringFindFirstNotOf_Generic(asIScriptGeneric *gen)
 {
 	string_t *find = reinterpret_cast<string_t*>(gen->GetArgAddress(0));
 	asUINT start = gen->GetArgDWord(1);
-	string_t *self = reinterpret_cast<string_t *>(gen->GetObject());
+	string_t *self = reinterpret_cast<string_t *>(gen->GetObjectData());
 	*reinterpret_cast<int *>(gen->GetAddressOfReturnLocation()) = StringFindFirstNotOf(*find, start, *self);
 }
 
@@ -827,7 +827,7 @@ static void StringFindLastNotOf_Generic(asIScriptGeneric *gen)
 {
 	string_t *find = reinterpret_cast<string_t*>(gen->GetArgAddress(0));
 	asUINT start = gen->GetArgDWord(1);
-	string_t *self = reinterpret_cast<string_t *>(gen->GetObject());
+	string_t *self = reinterpret_cast<string_t *>(gen->GetObjectData());
 	*reinterpret_cast<int *>(gen->GetAddressOfReturnLocation()) = StringFindLastNotOf(*find, start, *self);
 }
 
@@ -882,7 +882,7 @@ static void parseFloat_Generic(asIScriptGeneric *gen)
 static void StringCharAtGeneric(asIScriptGeneric *gen)
 {
 	unsigned int index = gen->GetArgDWord(0);
-	string_t *self = static_cast<string_t *>(gen->GetObject());
+	string_t *self = static_cast<string_t *>(gen->GetObjectData());
 
 	if (index >= self->size())
 	{
@@ -901,7 +901,7 @@ static void StringCharAtGeneric(asIScriptGeneric *gen)
 static void AssignInt2StringGeneric(asIScriptGeneric *gen)
 {
 	asINT64 *a = static_cast<asINT64*>(gen->GetAddressOfArg(0));
-	string_t *self = static_cast<string_t*>(gen->GetObject());
+	string_t *self = static_cast<string_t*>(gen->GetObjectData());
 	*self = va( "%lu", *a );
 	gen->SetReturnAddress(self);
 }
@@ -909,7 +909,7 @@ static void AssignInt2StringGeneric(asIScriptGeneric *gen)
 static void AssignUInt2StringGeneric(asIScriptGeneric *gen)
 {
 	asQWORD *a = static_cast<asQWORD*>(gen->GetAddressOfArg(0));
-	string_t *self = static_cast<string_t*>(gen->GetObject());
+	string_t *self = static_cast<string_t*>(gen->GetObjectData());
 	*self = va( "%lu", *a );
 	gen->SetReturnAddress(self);
 }
@@ -917,7 +917,7 @@ static void AssignUInt2StringGeneric(asIScriptGeneric *gen)
 static void AssignDouble2StringGeneric(asIScriptGeneric *gen)
 {
 	double *a = static_cast<double*>(gen->GetAddressOfArg(0));
-	string_t *self = static_cast<string_t*>(gen->GetObject());
+	string_t *self = static_cast<string_t*>(gen->GetObjectData());
 	*self = va( "%lf", *a );
 	gen->SetReturnAddress(self);
 }
@@ -925,7 +925,7 @@ static void AssignDouble2StringGeneric(asIScriptGeneric *gen)
 static void AssignFloat2StringGeneric(asIScriptGeneric *gen)
 {
 	float *a = static_cast<float*>(gen->GetAddressOfArg(0));
-	string_t *self = static_cast<string_t*>(gen->GetObject());
+	string_t *self = static_cast<string_t*>(gen->GetObjectData());
 	*self = va( "%f", *a );
 	gen->SetReturnAddress(self);
 }
@@ -933,7 +933,7 @@ static void AssignFloat2StringGeneric(asIScriptGeneric *gen)
 static void AssignBool2StringGeneric(asIScriptGeneric *gen)
 {
 	bool *a = static_cast<bool*>(gen->GetAddressOfArg(0));
-	string_t *self = static_cast<string_t*>(gen->GetObject());
+	string_t *self = static_cast<string_t*>(gen->GetObjectData());
 	*self = va( "%s", *a ? "true" : "false" );
 	gen->SetReturnAddress(self);
 }
@@ -941,7 +941,7 @@ static void AssignBool2StringGeneric(asIScriptGeneric *gen)
 static void AddAssignDouble2StringGeneric(asIScriptGeneric *gen)
 {
 	double *a = static_cast<double *>(gen->GetAddressOfArg(0));
-	string_t *self = static_cast<string_t *>(gen->GetObject());
+	string_t *self = static_cast<string_t *>(gen->GetObjectData());
 	*self += va( "%lf", *a );
 	gen->SetReturnAddress(self);
 }
@@ -949,7 +949,7 @@ static void AddAssignDouble2StringGeneric(asIScriptGeneric *gen)
 static void AddAssignFloat2StringGeneric(asIScriptGeneric *gen)
 {
 	float *a = static_cast<float *>(gen->GetAddressOfArg(0));
-	string_t *self = static_cast<string_t *>(gen->GetObject());
+	string_t *self = static_cast<string_t *>(gen->GetObjectData());
 	*self += va( "%f", *a );
 	gen->SetReturnAddress(self);
 }
@@ -957,7 +957,7 @@ static void AddAssignFloat2StringGeneric(asIScriptGeneric *gen)
 static void AddAssignInt2StringGeneric(asIScriptGeneric *gen)
 {
 	asINT64 *a = static_cast<asINT64 *>(gen->GetAddressOfArg(0));
-	string_t *self = static_cast<string_t *>(gen->GetObject());
+	string_t *self = static_cast<string_t *>(gen->GetObjectData());
 	*self += va( "%li", *a );
 	gen->SetReturnAddress(self);
 }
@@ -965,7 +965,7 @@ static void AddAssignInt2StringGeneric(asIScriptGeneric *gen)
 static void AddAssignUInt2StringGeneric(asIScriptGeneric *gen)
 {
 	asQWORD *a = static_cast<asQWORD *>(gen->GetAddressOfArg(0));
-	string_t *self = static_cast<string_t *>(gen->GetObject());
+	string_t *self = static_cast<string_t *>(gen->GetObjectData());
 	*self += va("%lu", *a );
 	gen->SetReturnAddress(self);
 }
@@ -973,14 +973,14 @@ static void AddAssignUInt2StringGeneric(asIScriptGeneric *gen)
 static void AddAssignBool2StringGeneric(asIScriptGeneric *gen)
 {
 	bool *a = static_cast<bool *>(gen->GetAddressOfArg(0));
-	string_t *self = static_cast<string_t *>(gen->GetObject());
+	string_t *self = static_cast<string_t *>(gen->GetObjectData());
 	*self += va( "%s", *a ? "true" : "false" );
 	gen->SetReturnAddress(self);
 }
 
 static void AddString2DoubleGeneric(asIScriptGeneric *gen)
 {
-	string_t *a = static_cast<string_t *>(gen->GetObject());
+	string_t *a = static_cast<string_t *>(gen->GetObjectData());
 	double *b = static_cast<double *>(gen->GetAddressOfArg(0));
 	string_t ret_val = va( "%s%lf", a->c_str(), *b );
 	gen->SetReturnObject(&ret_val);
@@ -988,7 +988,7 @@ static void AddString2DoubleGeneric(asIScriptGeneric *gen)
 
 static void AddString2FloatGeneric(asIScriptGeneric *gen)
 {
-	string_t *a = static_cast<string_t *>(gen->GetObject());
+	string_t *a = static_cast<string_t *>(gen->GetObjectData());
 	float *b = static_cast<float *>(gen->GetAddressOfArg(0));
 	string_t ret_val = va( "%s%f", a->c_str(), *b );
 	gen->SetReturnObject(&ret_val);
@@ -996,7 +996,7 @@ static void AddString2FloatGeneric(asIScriptGeneric *gen)
 
 static void AddString2IntGeneric(asIScriptGeneric *gen)
 {
-	string_t *a = static_cast<string_t *>(gen->GetObject());
+	string_t *a = static_cast<string_t *>(gen->GetObjectData());
 	asINT64 *b = static_cast<asINT64 *>(gen->GetAddressOfArg(0));
 	string_t ret_val = va( "%s%li", a->c_str(), *b );
 	gen->SetReturnObject(&ret_val);
@@ -1004,7 +1004,7 @@ static void AddString2IntGeneric(asIScriptGeneric *gen)
 
 static void AddString2UIntGeneric(asIScriptGeneric *gen)
 {
-	string_t *a = static_cast<string_t *>(gen->GetObject());
+	string_t *a = static_cast<string_t *>(gen->GetObjectData());
 	asQWORD *b = static_cast<asQWORD *>(gen->GetAddressOfArg(0));
 	string_t ret_val = va( "%s%lu", a->c_str(), *b );
 	gen->SetReturnObject(&ret_val);
@@ -1012,7 +1012,7 @@ static void AddString2UIntGeneric(asIScriptGeneric *gen)
 
 static void AddString2BoolGeneric(asIScriptGeneric *gen)
 {
-	string_t *a = static_cast<string_t *>(gen->GetObject());
+	string_t *a = static_cast<string_t *>(gen->GetObjectData());
 	bool *b = static_cast<bool *>(gen->GetAddressOfArg(0));
 	string_t ret_val = va( "%s%s", a->c_str(), ( *b ? "true" : "false" ) );
 	gen->SetReturnObject(&ret_val);
@@ -1021,7 +1021,7 @@ static void AddString2BoolGeneric(asIScriptGeneric *gen)
 static void AddDouble2StringGeneric(asIScriptGeneric *gen)
 {
 	double*a = static_cast<double *>(gen->GetAddressOfArg(0));
-	string_t *b = static_cast<string_t *>(gen->GetObject());
+	string_t *b = static_cast<string_t *>(gen->GetObjectData());
 	string_t ret_val = va( "%lf%s", *a, b->c_str() );
 	gen->SetReturnObject(&ret_val);
 }
@@ -1029,7 +1029,7 @@ static void AddDouble2StringGeneric(asIScriptGeneric *gen)
 static void AddFloat2StringGeneric(asIScriptGeneric *gen)
 {
 	float*a = static_cast<float *>(gen->GetAddressOfArg(0));
-	string_t *b = static_cast<string_t *>(gen->GetObject());
+	string_t *b = static_cast<string_t *>(gen->GetObjectData());
 
 	string_t ret_val = va( "%f%s", *a, b->c_str() );
 	gen->SetReturnObject(&ret_val);
@@ -1038,7 +1038,7 @@ static void AddFloat2StringGeneric(asIScriptGeneric *gen)
 static void AddInt2StringGeneric(asIScriptGeneric *gen)
 {
 	asINT64*a = static_cast<asINT64 *>(gen->GetAddressOfArg(0));
-	string_t *b = static_cast<string_t *>(gen->GetObject());
+	string_t *b = static_cast<string_t *>(gen->GetObjectData());
 	string_t ret_val = va( "%li%s", *a, b->c_str() );
 	gen->SetReturnObject(&ret_val);
 }
@@ -1046,7 +1046,7 @@ static void AddInt2StringGeneric(asIScriptGeneric *gen)
 static void AddUInt2StringGeneric(asIScriptGeneric *gen)
 {
 	asQWORD*a = static_cast<asQWORD *>(gen->GetAddressOfArg(0));
-	string_t *b = static_cast<string_t *>(gen->GetObject());
+	string_t *b = static_cast<string_t *>(gen->GetObjectData());
 	string_t ret_val = va( "%lu%s", *a, b->c_str() );;
 	gen->SetReturnObject(&ret_val);
 }
@@ -1054,7 +1054,7 @@ static void AddUInt2StringGeneric(asIScriptGeneric *gen)
 static void AddBool2StringGeneric(asIScriptGeneric *gen)
 {
 	bool*a = static_cast<bool *>(gen->GetAddressOfArg(0));
-	string_t *b = static_cast<string_t *>(gen->GetObject());
+	string_t *b = static_cast<string_t *>(gen->GetObjectData());
 	string_t ret_val = va( "%s%s", ( *a ? "true" : "false" ), b->c_str() );
 	gen->SetReturnObject(&ret_val);
 }
@@ -1062,7 +1062,7 @@ static void AddBool2StringGeneric(asIScriptGeneric *gen)
 static void StringSubString_Generic(asIScriptGeneric *gen)
 {
 	// Get the arguments
-	string_t *str   = (string_t*)gen->GetObject();
+	string_t *str   = (string_t*)gen->GetObjectData();
 	asUINT  start = *(int*)gen->GetAddressOfArg(0);
 	int     count = *(int*)gen->GetAddressOfArg(1);
 
@@ -1072,25 +1072,25 @@ static void StringSubString_Generic(asIScriptGeneric *gen)
 
 static void StringIteratorBegin_Generic( asIScriptGeneric *gen )
 {
-	string_t *str = (string_t *)gen->GetObject();
+	string_t *str = (string_t *)gen->GetObjectData();
 	gen->SetReturnAddress( str->begin() );
 }
 
 static void StringIteratorEnd_Generic( asIScriptGeneric *gen )
 {
-	string_t *str = (string_t *)gen->GetObject();
+	string_t *str = (string_t *)gen->GetObjectData();
 	gen->SetReturnAddress( str->end() );
 }
 
 static void StringIteratorCBegin_Generic( asIScriptGeneric *gen )
 {
-	const string_t *str = (const string_t *)gen->GetObject();
+	const string_t *str = (const string_t *)gen->GetObjectData();
 	gen->SetReturnAddress( const_cast<char *>( str->cbegin() ) );
 }
 
 static void StringIteratorCEnd_Generic( asIScriptGeneric *gen )
 {
-	const string_t *str = (const string_t *)gen->GetObject();
+	const string_t *str = (const string_t *)gen->GetObjectData();
 	gen->SetReturnAddress( const_cast<char *>( str->cend() ) );
 }
 

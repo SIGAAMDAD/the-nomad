@@ -400,7 +400,7 @@ static LRESULT WINAPI BufferWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 								memcpy( text, tmp + selStart, ( selEnd - selStart ) * sizeof( text[0] ) );
 							}
 							GlobalUnlock( hMem );
-#ifdef UNICODE
+#ifdef _UNICODE
 							SetClipboardData( CF_UNICODETEXT, hMem );
 #else
 							SetClipboardData( CF_TEXT, hMem );
@@ -484,7 +484,7 @@ static LRESULT WINAPI StatusWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM
 							GetWindowText( s_wcd.hwndBuffer, text, len + 1 );
 						}
 						GlobalUnlock( hMem );
-#ifdef UNICODE
+#ifdef _UNICODE
 						SetClipboardData( CF_UNICODETEXT, hMem );
 #else
 						SetClipboardData( CF_TEXT, hMem );
@@ -685,7 +685,7 @@ void Sys_CreateConsole( const char *title, int xPos, int yPos, qboolean useXYpos
 	wc.lpszMenuName  = 0;
 	wc.lpszClassName = DEDCLASS;
 
-	if ( !RegisterClass (&wc) )
+	if ( !RegisterClassA (&wc) )
 		return;
 
 	rect.left = 0;

@@ -214,7 +214,7 @@ void SinglePlayerMenu_Draw( void )
 
             Cvar_SetIntegerValue( "g_levelIndex", 0 );
             
-            Cvar_Set( "mapname", gi.mapCache.infoList[0].info.name );
+            Cvar_Set( "mapname", gi.mapCache.infoList[0].name );
             g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelStart, 1, 0 ); // start a new game
         }
 
@@ -247,7 +247,7 @@ void SinglePlayerMenu_Draw( void )
                 ImGui::TableNextColumn();
                 if ( ImGui::Button( "LOAD" ) ) {
                     Cvar_Set( "sg_savename", sp.saveList[i].name );
-                    Cvar_Set( "mapname", gi.mapCache.infoList[i].info.name );
+                    Cvar_Set( "mapname", gi.mapCache.infoList[i].name );
                     g_pModuleLib->ModuleCall( sgvm, ModuleOnLoadGame, 0 );
                 }
                 ImGui::TableNextColumn();

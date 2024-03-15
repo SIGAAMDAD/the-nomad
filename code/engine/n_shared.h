@@ -953,6 +953,7 @@ typedef enum {
 } renderapi_t;
 
 #ifdef _WIN32
+	#undef alloca
 	#define alloca( x ) _alloca( (x) )
 	#define alloca16( x ) ((void *)((((uintptr_t)_alloca( (x)+15 )) + 15) & ~15))
 #else
@@ -974,8 +975,6 @@ typedef enum {
 #define LUMA( red, green, blue ) ( 0.2126f * ( red ) + 0.7152f * ( green ) + 0.0722f * ( blue ) )
 
 // extra debug stuff
-#ifndef Q3_VM
 #include "n_debug.h"
-#endif
 
 #endif

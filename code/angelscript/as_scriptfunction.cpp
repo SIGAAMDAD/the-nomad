@@ -56,44 +56,44 @@ BEGIN_AS_NAMESPACE
 
 static void ScriptFunction_AddRef_Generic(asIScriptGeneric *gen)
 {
-	asCScriptFunction *self = (asCScriptFunction*)gen->GetObject();
+	asCScriptFunction *self = (asCScriptFunction*)gen->GetObjectData();
 	self->AddRef();
 }
 
 static void ScriptFunction_Release_Generic(asIScriptGeneric *gen)
 {
-	asCScriptFunction *self = (asCScriptFunction*)gen->GetObject();
+	asCScriptFunction *self = (asCScriptFunction*)gen->GetObjectData();
 	self->Release();
 }
 
 static void ScriptFunction_GetRefCount_Generic(asIScriptGeneric *gen)
 {
-	asCScriptFunction *self = (asCScriptFunction*)gen->GetObject();
+	asCScriptFunction *self = (asCScriptFunction*)gen->GetObjectData();
 	*(int*)gen->GetAddressOfReturnLocation() = self->GetRefCount();
 }
 
 static void ScriptFunction_SetFlag_Generic(asIScriptGeneric *gen)
 {
-	asCScriptFunction *self = (asCScriptFunction*)gen->GetObject();
+	asCScriptFunction *self = (asCScriptFunction*)gen->GetObjectData();
 	self->SetFlag();
 }
 
 static void ScriptFunction_GetFlag_Generic(asIScriptGeneric *gen)
 {
-	asCScriptFunction *self = (asCScriptFunction*)gen->GetObject();
+	asCScriptFunction *self = (asCScriptFunction*)gen->GetObjectData();
 	*(bool*)gen->GetAddressOfReturnLocation() = self->GetFlag();
 }
 
 static void ScriptFunction_EnumReferences_Generic(asIScriptGeneric *gen)
 {
-	asCScriptFunction *self = (asCScriptFunction*)gen->GetObject();
+	asCScriptFunction *self = (asCScriptFunction*)gen->GetObjectData();
 	asIScriptEngine *engine = *(asIScriptEngine**)gen->GetAddressOfArg(0);
 	self->EnumReferences(engine);
 }
 
 static void ScriptFunction_ReleaseAllHandles_Generic(asIScriptGeneric *gen)
 {
-	asCScriptFunction *self = (asCScriptFunction*)gen->GetObject();
+	asCScriptFunction *self = (asCScriptFunction*)gen->GetObjectData();
 	asIScriptEngine *engine = *(asIScriptEngine**)gen->GetAddressOfArg(0);
 	self->ReleaseAllHandles(engine);
 }
@@ -108,7 +108,7 @@ static void ScriptFunction_CreateDelegate_Generic(asIScriptGeneric *gen)
 // TODO: operator==
 /*static void ScriptFunction_opEquals_Generic(asIScriptGeneric *gen)
 {
-	asCScriptFunction *funcSelf = (asCScriptFunction*)gen->GetObject();
+	asCScriptFunction *funcSelf = (asCScriptFunction*)gen->GetObjectData();
 	asCScriptFunction *funcOther = (asCScriptFunction*)gen->GetArgAddress(0);
 	*(bool*)gen->GetAddressOfReturnLocation() = *funcSelf == *funcOther;
 }

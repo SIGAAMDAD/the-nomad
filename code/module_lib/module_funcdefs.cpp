@@ -409,32 +409,32 @@ DEFINE_CALLBACK( LoadVec4 ) {
 
 
 DEFINE_CALLBACK( AddVec4Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) vec4( *(const vec4 *)pGeneric->GetObject() + *(const vec4 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) vec4( *(const vec4 *)pGeneric->GetObjectData() + *(const vec4 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( SubVec4Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) vec4( *(const vec4 *)pGeneric->GetObject() - *(const vec4 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) vec4( *(const vec4 *)pGeneric->GetObjectData() - *(const vec4 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( MulVec4Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) vec4( *(const vec4 *)pGeneric->GetObject() * *(const vec4 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) vec4( *(const vec4 *)pGeneric->GetObjectData() * *(const vec4 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( DivVec4Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) vec4( *(const vec4 *)pGeneric->GetObject() / *(const vec4 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) vec4( *(const vec4 *)pGeneric->GetObjectData() / *(const vec4 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( IndexVec4Generic ) {
-    pGeneric->SetReturnAddress( eastl::addressof( ( *(vec4 *)pGeneric->GetObject() )[ pGeneric->GetArgDWord( 0 ) ] ) );
+    pGeneric->SetReturnAddress( eastl::addressof( ( *(vec4 *)pGeneric->GetObjectData() )[ pGeneric->GetArgDWord( 0 ) ] ) );
 }
 
 DEFINE_CALLBACK( EqualsVec4Generic ) {
-    *(bool *)pGeneric->GetAddressOfReturnLocation() = *(const vec4 *)pGeneric->GetObject() == *(const vec4 *)pGeneric->GetArgObject( 0 );
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = *(const vec4 *)pGeneric->GetObjectData() == *(const vec4 *)pGeneric->GetArgObject( 0 );
 }
 
 DEFINE_CALLBACK( CmpVec4Generic ) {
     const vec4& b = *(const vec4 *)pGeneric->GetArgObject( 0 );
-    const vec4& a = *(const vec4 *)pGeneric->GetObject();
+    const vec4& a = *(const vec4 *)pGeneric->GetObjectData();
 
     int cmp = 0;
     if ( a.x < b.x && a.y < b.y && a.z < b.z && a.w < b.w ) {
@@ -448,32 +448,32 @@ DEFINE_CALLBACK( CmpVec4Generic ) {
 
 
 DEFINE_CALLBACK( AddVec3Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) vec3( *(const vec3 *)pGeneric->GetObject() + *(const vec3 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) vec3( *(const vec3 *)pGeneric->GetObjectData() + *(const vec3 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( SubVec3Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) vec3( *(const vec3 *)pGeneric->GetObject() - *(const vec3 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) vec3( *(const vec3 *)pGeneric->GetObjectData() - *(const vec3 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( MulVec3Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) vec3( *(const vec3 *)pGeneric->GetObject() * *(const vec3 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) vec3( *(const vec3 *)pGeneric->GetObjectData() * *(const vec3 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( DivVec3Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) vec3( *(const vec3 *)pGeneric->GetObject() / *(const vec3 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) vec3( *(const vec3 *)pGeneric->GetObjectData() / *(const vec3 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( IndexVec3Generic ) {
-    pGeneric->SetReturnAddress( eastl::addressof( ( *(vec3 *)pGeneric->GetObject() )[ pGeneric->GetArgDWord( 0 ) ] ) );
+    pGeneric->SetReturnAddress( eastl::addressof( ( *(vec3 *)pGeneric->GetObjectData() )[ pGeneric->GetArgDWord( 0 ) ] ) );
 }
 
 DEFINE_CALLBACK( EqualsVec3Generic ) {
-    *(bool *)pGeneric->GetAddressOfReturnLocation() = *(const vec3 *)pGeneric->GetObject() == *(const vec3 *)pGeneric->GetArgObject( 0 );
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = *(const vec3 *)pGeneric->GetObjectData() == *(const vec3 *)pGeneric->GetArgObject( 0 );
 }
 
 DEFINE_CALLBACK( CmpVec3Generic ) {
     const vec3& b = *(const vec3 *)pGeneric->GetArgObject( 0 );
-    const vec3& a = *(const vec3 *)pGeneric->GetObject();
+    const vec3& a = *(const vec3 *)pGeneric->GetObjectData();
 
     int cmp = 0;
     if ( a.x < b.x && a.y < b.y && a.z < b.z ) {
@@ -486,32 +486,32 @@ DEFINE_CALLBACK( CmpVec3Generic ) {
 }
 
 DEFINE_CALLBACK( AddVec2Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) vec2( *(const vec2 *)pGeneric->GetObject() + *(const vec2 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) vec2( *(const vec2 *)pGeneric->GetObjectData() + *(const vec2 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( SubVec2Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) vec2( *(const vec2 *)pGeneric->GetObject() - *(const vec2 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) vec2( *(const vec2 *)pGeneric->GetObjectData() - *(const vec2 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( MulVec2Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) vec2( *(const vec2 *)pGeneric->GetObject() * *(const vec2 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) vec2( *(const vec2 *)pGeneric->GetObjectData() * *(const vec2 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( DivVec2Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) vec2( *(const vec2 *)pGeneric->GetObject() / *(const vec2 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) vec2( *(const vec2 *)pGeneric->GetObjectData() / *(const vec2 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( IndexVec2Generic ) {
-    pGeneric->SetReturnAddress( eastl::addressof( ( *(vec2 *)pGeneric->GetObject() )[ pGeneric->GetArgDWord( 0 ) ] ) );
+    pGeneric->SetReturnAddress( eastl::addressof( ( *(vec2 *)pGeneric->GetObjectData() )[ pGeneric->GetArgDWord( 0 ) ] ) );
 }
 
 DEFINE_CALLBACK( EqualsVec2Generic ) {
-    *(bool *)pGeneric->GetAddressOfReturnLocation() = *(const vec2 *)pGeneric->GetObject() == *(const vec2 *)pGeneric->GetArgObject( 0 );
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = *(const vec2 *)pGeneric->GetObjectData() == *(const vec2 *)pGeneric->GetArgObject( 0 );
 }
 
 DEFINE_CALLBACK( CmpVec2Generic ) {
     const vec2& b = *(const vec2 *)pGeneric->GetArgObject( 0 );
-    const vec2& a = *(const vec2 *)pGeneric->GetObject();
+    const vec2& a = *(const vec2 *)pGeneric->GetObjectData();
 
     int cmp = 0;
     if ( a.x < b.x && a.y < b.y ) {
@@ -525,32 +525,32 @@ DEFINE_CALLBACK( CmpVec2Generic ) {
 
 
 DEFINE_CALLBACK( AddIVec4Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) ivec4( *(const ivec4 *)pGeneric->GetObject() + *(const ivec4 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) ivec4( *(const ivec4 *)pGeneric->GetObjectData() + *(const ivec4 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( SubIVec4Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) ivec4( *(const ivec4 *)pGeneric->GetObject() - *(const ivec4 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) ivec4( *(const ivec4 *)pGeneric->GetObjectData() - *(const ivec4 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( MulIVec4Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) ivec4( *(const ivec4 *)pGeneric->GetObject() * *(const ivec4 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) ivec4( *(const ivec4 *)pGeneric->GetObjectData() * *(const ivec4 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( DivIVec4Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) ivec4( *(const ivec4 *)pGeneric->GetObject() / *(const ivec4 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) ivec4( *(const ivec4 *)pGeneric->GetObjectData() / *(const ivec4 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( IndexIVec4Generic ) {
-    pGeneric->SetReturnAddress( eastl::addressof( ( *(vec4 *)pGeneric->GetObject() )[ pGeneric->GetArgDWord( 0 ) ] ) );
+    pGeneric->SetReturnAddress( eastl::addressof( ( *(vec4 *)pGeneric->GetObjectData() )[ pGeneric->GetArgDWord( 0 ) ] ) );
 }
 
 DEFINE_CALLBACK( EqualsIVec4Generic ) {
-    *(bool *)pGeneric->GetAddressOfReturnLocation() = *(const ivec4 *)pGeneric->GetObject() == *(const ivec4 *)pGeneric->GetArgObject( 0 );
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = *(const ivec4 *)pGeneric->GetObjectData() == *(const ivec4 *)pGeneric->GetArgObject( 0 );
 }
 
 DEFINE_CALLBACK( CmpIVec4Generic ) {
     const ivec4& b = *(const ivec4 *)pGeneric->GetArgObject( 0 );
-    const ivec4& a = *(const ivec4 *)pGeneric->GetObject();
+    const ivec4& a = *(const ivec4 *)pGeneric->GetObjectData();
 
     int cmp = 0;
     if ( a.x < b.x && a.y < b.y && a.z < b.z && a.w < b.w ) {
@@ -564,32 +564,32 @@ DEFINE_CALLBACK( CmpIVec4Generic ) {
 
 
 DEFINE_CALLBACK( AddIVec3Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) ivec3( *(const ivec3 *)pGeneric->GetObject() + *(const ivec3 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) ivec3( *(const ivec3 *)pGeneric->GetObjectData() + *(const ivec3 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( SubIVec3Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) ivec3( *(const ivec3 *)pGeneric->GetObject() - *(const ivec3 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) ivec3( *(const ivec3 *)pGeneric->GetObjectData() - *(const ivec3 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( MulIVec3Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) ivec3( *(const ivec3 *)pGeneric->GetObject() * *(const ivec3 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) ivec3( *(const ivec3 *)pGeneric->GetObjectData() * *(const ivec3 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( DivIVec3Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) ivec3( *(const ivec3 *)pGeneric->GetObject() / *(const ivec3 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) ivec3( *(const ivec3 *)pGeneric->GetObjectData() / *(const ivec3 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( IndexIVec3Generic ) {
-    pGeneric->SetReturnAddress( eastl::addressof( ( *(ivec3 *)pGeneric->GetObject() )[ pGeneric->GetArgDWord( 0 ) ] ) );
+    pGeneric->SetReturnAddress( eastl::addressof( ( *(ivec3 *)pGeneric->GetObjectData() )[ pGeneric->GetArgDWord( 0 ) ] ) );
 }
 
 DEFINE_CALLBACK( EqualsIVec3Generic ) {
-    *(bool *)pGeneric->GetAddressOfReturnLocation() = *(const ivec3 *)pGeneric->GetObject() == *(const ivec3 *)pGeneric->GetArgObject( 0 );
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = *(const ivec3 *)pGeneric->GetObjectData() == *(const ivec3 *)pGeneric->GetArgObject( 0 );
 }
 
 DEFINE_CALLBACK( CmpIVec3Generic ) {
     const ivec3& b = *(const ivec3 *)pGeneric->GetArgObject( 0 );
-    const ivec3& a = *(const ivec3 *)pGeneric->GetObject();
+    const ivec3& a = *(const ivec3 *)pGeneric->GetObjectData();
 
     int cmp = 0;
     if ( a.x < b.x && a.y < b.y && a.z < b.z ) {
@@ -602,32 +602,32 @@ DEFINE_CALLBACK( CmpIVec3Generic ) {
 }
 
 DEFINE_CALLBACK( AddIVec2Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) ivec2( *(const ivec2 *)pGeneric->GetObject() + *(const ivec2 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) ivec2( *(const ivec2 *)pGeneric->GetObjectData() + *(const ivec2 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( SubIVec2Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) ivec2( *(const ivec2 *)pGeneric->GetObject() - *(const ivec2 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) ivec2( *(const ivec2 *)pGeneric->GetObjectData() - *(const ivec2 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( MulIVec2Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) ivec2 ( *(const ivec2 *)pGeneric->GetObject() * *(const ivec2 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) ivec2 ( *(const ivec2 *)pGeneric->GetObjectData() * *(const ivec2 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( DivIVec2Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) ivec2( *(const ivec2 *)pGeneric->GetObject() / *(const ivec2 *)pGeneric->GetArgObject( 0 ) ) ;
+    new ( pGeneric->GetAddressOfReturnLocation() ) ivec2( *(const ivec2 *)pGeneric->GetObjectData() / *(const ivec2 *)pGeneric->GetArgObject( 0 ) ) ;
 }
 
 DEFINE_CALLBACK( IndexIVec2Generic ) {
-    pGeneric->SetReturnAddress( eastl::addressof( ( *(ivec2 *)pGeneric->GetObject() )[ pGeneric->GetArgDWord( 0 ) ] ) );
+    pGeneric->SetReturnAddress( eastl::addressof( ( *(ivec2 *)pGeneric->GetObjectData() )[ pGeneric->GetArgDWord( 0 ) ] ) );
 }
 
 DEFINE_CALLBACK( EqualsIVec2Generic ) {
-    *(bool *)pGeneric->GetAddressOfReturnLocation() = *(const ivec2 *)pGeneric->GetObject() == *(const ivec2 *)pGeneric->GetArgObject( 0 );
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = *(const ivec2 *)pGeneric->GetObjectData() == *(const ivec2 *)pGeneric->GetArgObject( 0 );
 }
 
 DEFINE_CALLBACK( CmpIVec2Generic ) {
     const ivec2& b = *(const ivec2 *)pGeneric->GetArgObject( 0 );
-    const ivec2& a = *(const ivec2 *)pGeneric->GetObject();
+    const ivec2& a = *(const ivec2 *)pGeneric->GetObjectData();
 
     int cmp = 0;
     if ( a.x < b.x && a.y < b.y ) {
@@ -640,32 +640,32 @@ DEFINE_CALLBACK( CmpIVec2Generic ) {
 }
 
 DEFINE_CALLBACK( AddUVec4Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) uvec4( *(const uvec4 *)pGeneric->GetObject() + *(const uvec4 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) uvec4( *(const uvec4 *)pGeneric->GetObjectData() + *(const uvec4 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( SubUVec4Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) uvec4( *(const uvec4 *)pGeneric->GetObject() - *(const uvec4 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) uvec4( *(const uvec4 *)pGeneric->GetObjectData() - *(const uvec4 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( MulUVec4Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) uvec4( *(const uvec4 *)pGeneric->GetObject() * *(const uvec4 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) uvec4( *(const uvec4 *)pGeneric->GetObjectData() * *(const uvec4 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( DivUVec4Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) uvec4( *(const uvec4 *)pGeneric->GetObject() / *(const uvec4 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) uvec4( *(const uvec4 *)pGeneric->GetObjectData() / *(const uvec4 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( IndexUVec4Generic ) {
-    pGeneric->SetReturnAddress( eastl::addressof( ( *(vec4 *)pGeneric->GetObject() )[ pGeneric->GetArgDWord( 0 ) ] ) );
+    pGeneric->SetReturnAddress( eastl::addressof( ( *(vec4 *)pGeneric->GetObjectData() )[ pGeneric->GetArgDWord( 0 ) ] ) );
 }
 
 DEFINE_CALLBACK( EqualsUVec4Generic ) {
-    *(bool *)pGeneric->GetAddressOfReturnLocation() = *(const uvec4 *)pGeneric->GetObject() == *(const uvec4 *)pGeneric->GetArgObject( 0 );
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = *(const uvec4 *)pGeneric->GetObjectData() == *(const uvec4 *)pGeneric->GetArgObject( 0 );
 }
 
 DEFINE_CALLBACK( CmpUVec4Generic ) {
     const uvec4& b = *(const uvec4 *)pGeneric->GetArgObject( 0 );
-    const uvec4& a = *(const uvec4 *)pGeneric->GetObject();
+    const uvec4& a = *(const uvec4 *)pGeneric->GetObjectData();
 
     int cmp = 0;
     if ( a.x < b.x && a.y < b.y && a.z < b.z && a.w < b.w ) {
@@ -679,32 +679,32 @@ DEFINE_CALLBACK( CmpUVec4Generic ) {
 
 
 DEFINE_CALLBACK( AddUVec3Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) uvec3( *(const uvec3 *)pGeneric->GetObject() + *(const uvec3 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) uvec3( *(const uvec3 *)pGeneric->GetObjectData() + *(const uvec3 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( SubUVec3Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) uvec3( *(const uvec3 *)pGeneric->GetObject() - *(const uvec3 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) uvec3( *(const uvec3 *)pGeneric->GetObjectData() - *(const uvec3 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( MulUVec3Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) uvec3( *(const uvec3 *)pGeneric->GetObject() * *(const uvec3 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) uvec3( *(const uvec3 *)pGeneric->GetObjectData() * *(const uvec3 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( DivUVec3Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) uvec3( *(const uvec3 *)pGeneric->GetObject() / *(const uvec3 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) uvec3( *(const uvec3 *)pGeneric->GetObjectData() / *(const uvec3 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( IndexUVec3Generic ) {
-    pGeneric->SetReturnAddress( eastl::addressof( ( *(uvec3 *)pGeneric->GetObject() )[ pGeneric->GetArgDWord( 0 ) ] ) );
+    pGeneric->SetReturnAddress( eastl::addressof( ( *(uvec3 *)pGeneric->GetObjectData() )[ pGeneric->GetArgDWord( 0 ) ] ) );
 }
 
 DEFINE_CALLBACK( EqualsUVec3Generic ) {
-    *(bool *)pGeneric->GetAddressOfReturnLocation() = *(const uvec3 *)pGeneric->GetObject() == *(const uvec3 *)pGeneric->GetArgObject( 0 );
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = *(const uvec3 *)pGeneric->GetObjectData() == *(const uvec3 *)pGeneric->GetArgObject( 0 );
 }
 
 DEFINE_CALLBACK( CmpUVec3Generic ) {
     const uvec3& b = *(const uvec3 *)pGeneric->GetArgObject( 0 );
-    const uvec3& a = *(const uvec3 *)pGeneric->GetObject();
+    const uvec3& a = *(const uvec3 *)pGeneric->GetObjectData();
 
     int cmp = 0;
     if ( a.x < b.x && a.y < b.y && a.z < b.z ) {
@@ -717,32 +717,32 @@ DEFINE_CALLBACK( CmpUVec3Generic ) {
 }
 
 DEFINE_CALLBACK( AddUVec2Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) uvec2( *(const uvec2 *)pGeneric->GetObject() + *(const uvec2 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) uvec2( *(const uvec2 *)pGeneric->GetObjectData() + *(const uvec2 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( SubUVec2Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) uvec2( *(const uvec2 *)pGeneric->GetObject() - *(const uvec2 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) uvec2( *(const uvec2 *)pGeneric->GetObjectData() - *(const uvec2 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( MulUVec2Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) uvec2( *(const uvec2 *)pGeneric->GetObject() * *(const uvec2 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) uvec2( *(const uvec2 *)pGeneric->GetObjectData() * *(const uvec2 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( DivUVec2Generic ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) uvec2( *(const uvec2 *)pGeneric->GetObject() / *(const uvec2 *)pGeneric->GetArgObject( 0 ) );
+    new ( pGeneric->GetAddressOfReturnLocation() ) uvec2( *(const uvec2 *)pGeneric->GetObjectData() / *(const uvec2 *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( IndexUVec2Generic ) {
-    pGeneric->SetReturnAddress( eastl::addressof( ( *(uvec2 *)pGeneric->GetObject() )[ pGeneric->GetArgDWord( 0 ) ] ) );
+    pGeneric->SetReturnAddress( eastl::addressof( ( *(uvec2 *)pGeneric->GetObjectData() )[ pGeneric->GetArgDWord( 0 ) ] ) );
 }
 
 DEFINE_CALLBACK( EqualsUVec2Generic ) {
-    *(bool *)pGeneric->GetAddressOfReturnLocation() = *(const uvec2 *)pGeneric->GetObject() == *(const uvec2 *)pGeneric->GetArgObject( 0 );
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = *(const uvec2 *)pGeneric->GetObjectData() == *(const uvec2 *)pGeneric->GetArgObject( 0 );
 }
 
 DEFINE_CALLBACK( CmpUVec2Generic ) {
     const uvec2& b = *(const uvec2 *)pGeneric->GetArgObject( 0 );
-    const uvec2& a = *(const uvec2 *)pGeneric->GetObject();
+    const uvec2& a = *(const uvec2 *)pGeneric->GetObjectData();
 
     int cmp = 0;
     if ( a.x < b.x && a.y < b.y ) {
@@ -759,9 +759,26 @@ DEFINE_CALLBACK( ConsolePrint ) {
     Con_Printf( "%s", msg->c_str() );
 }
 
+DEFINE_CALLBACK( ConsoleWarning ) {
+    const string_t *msg = (const string_t *)pGeneric->GetArgObject( 0 );
+    Con_Printf( COLOR_YELLOW "WARNING: %s", msg->c_str() );
+}
+
 DEFINE_CALLBACK( GameError ) {
     const string_t *msg = (const string_t *)pGeneric->GetArgObject( 0 );
     N_Error( ERR_DROP, "%s", msg->c_str() );
+}
+
+DEFINE_CALLBACK( StringToInt ) {
+    pGeneric->SetReturnDWord( (asDWORD)atoi( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
+}
+
+DEFINE_CALLBACK( StringToUInt ) {
+    pGeneric->SetReturnDWord( (asDWORD)atoi( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
+}
+
+DEFINE_CALLBACK( StringToFloat ) {
+    pGeneric->SetReturnFloat( N_atof( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
 }
 
 DEFINE_CALLBACK( StrICmp ) {
@@ -791,19 +808,19 @@ DEFINE_CALLBACK( RenderScene ) {
 DEFINE_CALLBACK( AddEntityToScene ) {
     refEntity_t refEntity;
     memset( &refEntity, 0, sizeof( refEntity ) );
-    refEntity.hShader = pGeneric->GetArgWord( 0 );
+    refEntity.hShader = (nhandle_t)pGeneric->GetArgDWord( 0 );
     VectorCopy( refEntity.origin, (float *)pGeneric->GetArgAddress( 1 ) );
     refEntity.flags = pGeneric->GetArgDWord( 2 );
 }
 
 DEFINE_CALLBACK( AddPolyToScene ) {
-    CScriptArray *pPolyList = (CScriptArray *)pGeneric->GetArgAddress( 1 );
+    CScriptArray *pPolyList = (CScriptArray *)pGeneric->GetArgObject( 1 );
     re.AddPolyToScene( (nhandle_t)pGeneric->GetArgDWord( 0 ), (const polyVert_t *)pPolyList->GetBuffer(), pPolyList->GetSize() );
 }
 
 DEFINE_CALLBACK( AddSpriteToScene ) {
     re.AddSpriteToScene( glm::value_ptr( *(const vec3 *)pGeneric->GetArgObject( 0  ) ), (nhandle_t)pGeneric->GetArgDWord( 1 ),
-        *(nhandle_t *)pGeneric->GetArgAddress( 2 ) );
+        (nhandle_t)pGeneric->GetArgDWord( 2 ) );
 }
 
 DEFINE_CALLBACK( RegisterShader ) {
@@ -811,7 +828,7 @@ DEFINE_CALLBACK( RegisterShader ) {
 }
 
 DEFINE_CALLBACK( RegisterSpriteSheet ) {
-    const string_t *npath = (const string_t *)pGeneric->GetArgAddress( 0 );
+    const string_t *npath = (const string_t *)pGeneric->GetArgObject( 0 );
     pGeneric->SetReturnDWord( re.RegisterSpriteSheet( npath->c_str(), pGeneric->GetArgDWord( 1 ), pGeneric->GetArgDWord( 2 ),
         pGeneric->GetArgDWord( 3 ), pGeneric->GetArgDWord( 4 ) ) );
 }
@@ -822,9 +839,13 @@ DEFINE_CALLBACK( LoadMap ) {
 
 DEFINE_CALLBACK( SetActiveMap ) {
     nhandle_t hMap = (nhandle_t)pGeneric->GetArgDWord( 0 );
-    uint32_t *nCheckpoints = (uint32_t *)pGeneric->GetAddressOfAr
+    uint32_t *nCheckpoints = (uint32_t *)pGeneric->GetArgAddress( 1 );
+    uint32_t *nSpawns = (uint32_t *)pGeneric->GetArgAddress( 2 );
+    uint32_t *nTiles = (uint32_t *)pGeneric->GetArgAddress( 3 );
+    float *soundBits = (float *)pGeneric->GetArgAddress( 4 );
+    CModuleLinkEntity *activeEnts = (CModuleLinkEntity *)pGeneric->GetArgObject( 5 );
 
-    G_SetActiveMap();
+    G_SetActiveMap( hMap, nCheckpoints, nSpawns, nTiles, soundBits, &activeEnts->handle );
 }
 
 DEFINE_CALLBACK( GetCheckpointData ) {
@@ -958,8 +979,14 @@ DEFINE_CALLBACK( GetString ) {
     *value = hash->value;
 }
 
+static void JsonAssignObject( asIScriptGeneric *pGeneric ) {
+    nlohmann::json *json = (nlohmann::json *)pGeneric->GetObjectData();
+    *json = *(const nlohmann::json *)pGeneric->GetObjectData();
+    pGeneric->GetEngine()->NotifyGarbageCollectorOfNewObject(  );
+}
+
 static void JsonGetObject( asIScriptGeneric *pGeneric ) {
-    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObject();
+    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObjectData();
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
 
     if ( !json.contains( name->c_str() ) ) {
@@ -975,7 +1002,7 @@ static void ParseJSonFile( asIScriptGeneric *pGeneric ) {
 
     Con_DPrintf( "Parsing json file '%s'...\n", path );
     try {
-        *(nlohmann::json *)pGeneric->GetObject() = nlohmann::json::parse( path );
+        *(nlohmann::json *)pGeneric->GetObjectData() = nlohmann::json::parse( path );
     } catch ( const nlohmann::json::exception& e ) {
         Con_Printf(
             COLOR_RED "ERROR: nlhomann::json exception occurred when parsing '%s' ->\n "
@@ -989,7 +1016,7 @@ static void ParseJSonFile( asIScriptGeneric *pGeneric ) {
 }
 
 static void GetJSonObject( asIScriptGeneric *pGeneric ) {
-    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObject();
+    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObjectData();
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
     nlohmann::json *data = (nlohmann::json *)pGeneric->GetArgObject( 1 );
 
@@ -1004,7 +1031,7 @@ static void GetJSonObject( asIScriptGeneric *pGeneric ) {
 }
 
 static void GetJSonString( asIScriptGeneric *pGeneric ) {
-    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObject();
+    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObjectData();
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
     string_t *data = (string_t *)pGeneric->GetArgObject( 1 );
 
@@ -1019,7 +1046,7 @@ static void GetJSonString( asIScriptGeneric *pGeneric ) {
 }
 
 static void GetJSonInt( asIScriptGeneric *pGeneric ) {
-    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObject();
+    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObjectData();
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
     int32_t *data = (int32_t *)pGeneric->GetAddressOfArg( 1 );
 
@@ -1034,7 +1061,7 @@ static void GetJSonInt( asIScriptGeneric *pGeneric ) {
 }
 
 static void GetJSonUInt( asIScriptGeneric *pGeneric ) {
-    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObject();
+    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObjectData();
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
     uint32_t *data = (uint32_t *)pGeneric->GetAddressOfArg( 1 );
 
@@ -1049,7 +1076,7 @@ static void GetJSonUInt( asIScriptGeneric *pGeneric ) {
 }
 
 static void GetJSonFloat( asIScriptGeneric *pGeneric ) {
-    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObject();
+    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObjectData();
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
     float *data = (float *)pGeneric->GetAddressOfArg( 1 );
 
@@ -1064,7 +1091,7 @@ static void GetJSonFloat( asIScriptGeneric *pGeneric ) {
 }
 
 static void GetJSonObjectArray( asIScriptGeneric *pGeneric ) {
-    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObject();
+    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObjectData();
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
     CScriptArray *obj = (CScriptArray *)pGeneric->GetArgObject( 1 );
 
@@ -1083,7 +1110,7 @@ static void GetJSonObjectArray( asIScriptGeneric *pGeneric ) {
 }
 
 static void GetJSonStringArray( asIScriptGeneric *pGeneric ) {
-    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObject();
+    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObjectData();
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
     CScriptArray *obj = (CScriptArray *)pGeneric->GetArgObject( 1 );
 
@@ -1102,7 +1129,7 @@ static void GetJSonStringArray( asIScriptGeneric *pGeneric ) {
 }
 
 static void GetJSonIntArray( asIScriptGeneric *pGeneric ) {
-    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObject();
+    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObjectData();
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
     CScriptArray *obj = (CScriptArray *)pGeneric->GetArgObject( 1 );
 
@@ -1121,7 +1148,7 @@ static void GetJSonIntArray( asIScriptGeneric *pGeneric ) {
 }
 
 static void GetJSonUIntArray( asIScriptGeneric *pGeneric ) {
-    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObject();
+    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObjectData();
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
     CScriptArray *obj = (CScriptArray *)pGeneric->GetArgObject( 1 );
 
@@ -1140,7 +1167,7 @@ static void GetJSonUIntArray( asIScriptGeneric *pGeneric ) {
 }
 
 static void GetJSonFloatArray( asIScriptGeneric *pGeneric ) {
-    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObject();
+    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObjectData();
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
     CScriptArray *obj = (CScriptArray *)pGeneric->GetArgObject( 1 );
 
@@ -1866,9 +1893,17 @@ void ModuleLib_Register_Engine( void )
         g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "bool GetIntArray( const string& in, array<int>& out )", asFUNCTION( GetJSonIntArray ), asCALL_GENERIC );
         g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "bool GetUIntArray( const string& in, array<uint>& out )", asFUNCTION( GetJSonUIntArray ), asCALL_GENERIC );
         g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "bool GetFloatArray( const string& in, array<float>& out )", asFUNCTION( GetJSonFloatArray ), asCALL_GENERIC );
+        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "bool GetObjectArray( const string& in, array<TheNomad::Util::JsonObject>& out )", asFUNCTION( GetJSonObjectArray ), asCALL_GENERIC );
+        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "bool GetObject( const string& in, TheNomad::Util::JsonObject@ )", asFUNCTION( GetJSonObject ), asCALL_GENERIC );
+        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "bool GetFloat( const string& in, float& out )", asFUNCTION( GetJSonFloat ), asCALL_GENERIC );
+        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "bool GetInt( const string& in, int& out )", asFUNCTION( GetJSonInt ), asCALL_GENERIC );
+        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "bool GetUInt( const string& in, uint& out )", asFUNCTION( GetJSonUInt ), asCALL_GENERIC );
 
         REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StrICmp( const string& in, const string& in )", StrICmp );
-//        REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StrCmp( const string& in, const string& in )", StrCmp );
+        REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StrCmp( const string& in, const string& in )", StrCmp );
+        REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StringToInt( const string& in )", StringToInt );
+        REGISTER_GLOBAL_FUNCTION( "uint TheNomad::Util::StringToUInt( const string& in )", StringToUInt );
+        REGISTER_GLOBAL_FUNCTION( "float TheNomad::Util::StringToFloat( const string& in )", StringToFloat );
 //        REGISTER_GLOBAL_FUNCTION( "string TheNomad::Util::SkipPath( const string& in )", SkipPath );
 //        REGISTER_GLOBAL_FUNCTION( "string TheNomad::Util::GetExtension( const string& in )", GetExtension );
 //        REGISTER_GLOBAL_FUNCTION( "string TheNomad::Util::DefaultExtension( const string& in, const string& in )", DefaultExtension );
@@ -2100,8 +2135,8 @@ void ModuleLib_Register_Engine( void )
 		
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetCheckpointData( uvec3& out, uint )", GetCheckpointData );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetSpawnData( uvec3& out, uint& out, uint& out, uint )", GetSpawnData );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SetActiveMap( int, uint& out, uint& out, uint& out, float& in,
-            TheNomad::GameSystem::LinkEntity@ )", SetActiveMap );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SetActiveMap( int, uint& out, uint& out, uint& out, float& in,"
+            "TheNomad::GameSystem::LinkEntity@ )", SetActiveMap );
         REGISTER_GLOBAL_FUNCTION( "int LoadMap( const string& in )", LoadMap );
     }
 

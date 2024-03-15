@@ -986,7 +986,7 @@ public:
 	virtual void              *GetAuxiliary() const = 0;
 
 	// Object
-	virtual void   *GetObject() = 0;
+	virtual void   *GetObjectData() = 0;
 	virtual int     GetObjectTypeId() const = 0;
 
 	// Arguments

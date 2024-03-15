@@ -3,7 +3,15 @@
 
 #pragma once
 
-#if defined(_WIN32)
+#if defined( _WIN32 )
+	#define WIN32_LEAN_AND_MEAN
+	#ifdef _WIN32_WINNT
+		#undef _WIN32_WINNT
+	#endif
+	#define _WIN32_WINNT _WIN32_WINNT_WIN10
+	#include <synchapi.h>
+	#include <winbase.h>
+
 	typedef void *HANDLE;
 	
 #elif defined(__unix__)
@@ -218,8 +226,8 @@ public:
 	
 	// access handle
 #ifdef _WIN32
-	operator HANDLE( void ) { return GetHandle(); }
-	inline const HANDLE GetHandle( void ) const { return m_hSyncObject; }
+//	operator HANDLE( void ) { return GetHandle(); }
+//	inline const HANDLE GetHandle( void ) const { return m_hSyncObject; }
 #endif
 	
 	// wait for a signal from the object
@@ -269,6 +277,7 @@ public:
 private:
 #ifdef _WIN32
 	SRWLOCK m_hLock;
+//	CRITICAL_SECTION m_hLock;
 	CONDITION_VARIABLE m_hCondition;
 #else
 	pthread_rwlock_t m_hRWLock;
@@ -419,8 +428,8 @@ protected:
 #ifdef _WIN32
 	const ThreadHandle_t GetThreadHandle() const { return (ThreadHandle_t)m_hThread; }
 
-	static unsigned long __stdcall ThreadProc( void * pv );
-	typedef unsigned long (__stdcall *ThreadProc_t)( void * );
+	static uint64_t __stdcall ThreadProc( LPVOID pv );
+	typedef uint64_t (__stdcall *ThreadProc_t)( LPVOID );
 #else
 	static void* ThreadProc( void * pv );
 	typedef void* (*ThreadProc_t)( void * pv );
@@ -448,7 +457,7 @@ private:
 
 #ifdef _WIN32
 	HANDLE 	m_hThread;
-	ThreadId_t m_ThreadId;
+	ThreadId_t m_hThreadId;
 #else
 	pthread_t m_hThreadId;
 	pthread_attr_t m_ThreadAttribs;
@@ -465,7 +474,7 @@ inline CThread *g_pCurThread;
 
 GDR_INLINE CThread::CThread( void ) :
 #ifdef _WIN32
-	m_hThread( NULL ), m_ThreadId( 0 ),
+	m_hThread( NULL ), m_hThreadId( 0 ),
 #else
 	m_hThreadId( 0 ), m_hThreadZombieId( 0 ),
 #endif
@@ -474,18 +483,13 @@ GDR_INLINE CThread::CThread( void ) :
 #ifndef _WIN32
 	pthread_attr_init( &m_ThreadAttribs );
 #endif
-	memset( m_szName, 0, sizeof(m_szName) );
-	m_pThreadInit = (ThreadInit_t *)Z_Malloc( sizeof(*m_pThreadInit), TAG_STATIC );
+	memset( m_szName, 0, sizeof( m_szName ) );
+	m_pThreadInit = (ThreadInit_t *)Z_Malloc( sizeof( *m_pThreadInit ), TAG_STATIC );
 }
 
 GDR_INLINE CThread::~CThread()
 {
-#ifdef _MSC_VER
-	if ( m_hThread )
-#else
-	if ( m_hThreadId )
-#endif
-	{
+	if ( m_hThreadId ) {
 		if ( IsAlive() ) {
 			Con_Printf( COLOR_RED "WARNING: Illegal termination of worker thread! Threads must negotiate an end to the thread before the CThread object is destroyed.\n" );
 			Sys_MessageBox( va( __FILE__ ":%u", __LINE__ ),
@@ -509,11 +513,11 @@ GDR_INLINE const char *CThread::GetName( void )
 {
 	CThreadAutoLock<CThreadMutex> lock( m_hLock );
 	if ( !m_szName[0] ) {
-		memset( m_szName, 0, sizeof(m_szName) );
+		memset( m_szName, 0, sizeof( m_szName ) );
 	#ifdef _WIN32
-		_snprintf( m_szName, sizeof(m_szName) - 1, "Thread(%p/%p)", this, m_hThread );
+		_snprintf( m_szName, sizeof( m_szName ) - 1, "Thread(%p/%p)", this, m_hThread );
 	#else
-		snprintf( m_szName, sizeof(m_szName) - 1, "Thread(%p/0x%04x)", this, (uint32_t)m_hThreadId );
+		snprintf( m_szName, sizeof( m_szName ) - 1, "Thread(%p/0x%04x)", this, (uint32_t)m_hThreadId );
 	#endif
 	}
 	return m_szName;
@@ -522,7 +526,7 @@ GDR_INLINE const char *CThread::GetName( void )
 GDR_INLINE void CThread::SetName( const char *pName )
 {
 	CThreadAutoLock<CThreadMutex> lock( m_hLock );
-	N_strncpyz( m_szName, pName, sizeof(m_szName) );
+	N_strncpyz( m_szName, pName, sizeof( m_szName ) );
 }
 
 
@@ -560,7 +564,7 @@ GDR_INLINE bool CThread::Start( uint64_t nBytesStack )
 		(LPTHREAD_START_ROUTINE)GetThreadProc(),
 		m_pThreadInit,
 		0,
-		(LPDWORD)&m_ThreadId );
+		(LPDWORD)&m_hThreadId );
 
 	if ( !m_hThread ) {
 		AssertMsg1( 0, "Failed to create thread (error 0x%x)", GetLastError() );
@@ -607,7 +611,7 @@ GDR_INLINE bool CThread::Start( uint64_t nBytesStack )
 #endif
 
 #ifdef _WIN32
-	AddThreadHandleToIDMap( m_hThread, m_ThreadId );
+//	AddThreadHandleToIDMap( m_hThread, m_hThreadId );
 	return !!m_hThread;
 #else
 	return !!m_hThreadId;
@@ -718,7 +722,7 @@ GDR_INLINE void CThread::Stop( int exitCode )
 
 #ifdef _WIN32
 			CloseHandle( m_hThread );
-			RemoveThreadHandleToIDMap( m_hThread );
+//			RemoveThreadHandleToIDMap( m_hThread );
 			m_hThread = NULL;
 #else
 			m_hThreadId = 0;
@@ -762,7 +766,7 @@ GDR_INLINE bool CThread::Terminate( int exitCode )
 		return false;
 	}
 	CloseHandle( m_hThread );
-	RemoveThreadHandleToIDMap( m_hThread );
+//	RemoveThreadHandleToIDMap( m_hThread );
 	m_hThread = NULL;
 #else
 	pthread_kill( m_hThreadId, SIGKILL );
@@ -913,7 +917,7 @@ GDR_INLINE void *CThread::ThreadProc( void *pv )
 	CThreadAutoLock<CThreadMutex> lock( pThread->m_hLock );
 #ifdef _WIN32
 	CloseHandle( pThread->m_hThread );
-	RemoveThreadHandleToIDMap( pThread->m_hThread );
+//	RemoveThreadHandleToIDMap( pThread->m_hThread );
 	pThread->m_hThread = NULL;
 #elif defined(POSIX)
 	pThread->m_hThreadZombieId = pThread->m_hThreadId;
@@ -1049,7 +1053,8 @@ GDR_INLINE CThreadMutex::CThreadMutex( void )
 {
 #ifdef _WIN32
 	InitializeSRWLock( &m_hLock );
-	m_hOwnerThread = NULL;
+//	InitializeCriticalSection( &m_hLock );
+	m_hOwnerThread = 0;
 	m_nLockCount = 0;
 #else
 	pthread_mutexattr_init( &m_hAttrib );
@@ -1061,6 +1066,7 @@ GDR_INLINE CThreadMutex::CThreadMutex( void )
 GDR_INLINE CThreadMutex::~CThreadMutex()
 {
 #ifdef _WIN32
+//	DeleteCriticalSection( &m_hLock );
 #else
 	pthread_mutexattr_destroy( &m_hAttrib );
 	pthread_mutex_destroy( &m_hMutex );
@@ -1086,6 +1092,7 @@ GDR_INLINE void CThreadMutex::Lock( void )
 		m_nLockCount++;
 	} else {
 		AcquireSRWLockExclusive( &m_hLock );
+//		EnterCriticalSection( &m_hLock );
 		m_hOwnerThread = currentThreadId;
 		m_nLockCount = 1;
 	}
@@ -1102,6 +1109,7 @@ GDR_INLINE void CThreadMutex::Unlock( void )
 		
 		if ( m_nLockCount == 0 ) {
 			m_hOwnerThread = 0;
+//			LeaveCriticalSection( &m_hLock );
 			ReleaseSRWLockExclusive( &m_hLock );
 		}
 	}
@@ -1275,7 +1283,8 @@ GDR_INLINE CThreadRWMutex::CThreadRWMutex( void )
 	
 #ifdef _WIN32
 	InitializeSRWLock( &m_hLock );
-	InitializeConditionVariable( &m_ReadersDoneCond );
+//	InitializeCriticalSection( &m_hLock );
+	InitializeConditionVariable( &m_hCondition );
 #else
 	pthread_mutex_init( &m_hMutex, NULL );
 	pthread_rwlock_init( &m_hRWLock, NULL );
@@ -1286,6 +1295,7 @@ GDR_INLINE CThreadRWMutex::CThreadRWMutex( void )
 GDR_INLINE CThreadRWMutex::~CThreadRWMutex()
 {
 #ifdef _WIN32
+//	DeleteCriticalSection( &m_hLock );
 #else
 	pthread_mutex_destroy( &m_hMutex );
 	pthread_rwlock_destroy( &m_hRWLock );
@@ -1297,14 +1307,17 @@ GDR_INLINE void CThreadRWMutex::ReadLock( void )
 {
 #ifdef _WIN32
 	AcquireSRWLockShared( &m_hLock );
+//	EnterCriticalSection( &m_hLock );
 	
 	while ( m_nActiveWriters || m_nWaitingWriters ) {
 		SleepConditionVariableSRW( &m_hCondition, &m_hLock, INFINITE, CONDITION_VARIABLE_LOCKMODE_SHARED );
+//		SleepConditionVariableCS( &m_hCondition, &m_hLock, INFINITE );
 	}
 	
 	m_nReaders++;
 	
 	ReleaseSRWLockShared( &m_hLock );
+//	LeaveCriticalSection( &m_hLock );
 #else
 	pthread_rwlock_rdlock( &m_hRWLock );
 	
@@ -1324,6 +1337,7 @@ GDR_INLINE void CThreadRWMutex::ReadUnlock( void )
 {
 #ifdef _WIN32
 	AcquireSRWLockShared( &m_hLock );
+//	EnterCriticalSection( &m_hLock );
 	
 	m_nReaders--;
 	
@@ -1332,6 +1346,7 @@ GDR_INLINE void CThreadRWMutex::ReadUnlock( void )
 	}
 	
 	ReleaseSRWLockShared( &m_hLock );
+//	LeaveCriticalSection( &m_hLock );
 #else
 	pthread_rwlock_rdlock( &m_hRWLock );
 	
@@ -1351,17 +1366,20 @@ GDR_INLINE void CThreadRWMutex::WriteLock( void )
 {
 #ifdef _WIN32
 	AcquireSRWLockExclusive( &m_hLock );
+//	EnterCriticalSection( &m_hLock );
 	
 	m_nWaitingWriters++;
 	
 	while ( m_nReaders || m_nActiveWriters ) {
 		SleepConditionVariableSRW( &m_hCondition, &m_hLock, INFINITE, 0 );
+//		SleepConditionVariableCS( &m_hCondition, &m_hLock, INFINITE );
 	}
 	
 	m_nWaitingWriters--;
 	m_nActiveWriters++;
 	
 	ReleaseSRWLockExclusive( &m_hLock );
+//	LeaveCriticalSection( &m_hLock );
 #else
 	pthread_rwlock_wrlock( &m_hRWLock );
 	
@@ -1384,6 +1402,7 @@ GDR_INLINE void CThreadRWMutex::WriteUnlock( void )
 {
 #ifdef _WIN32
 	AcquireSRWLockExclusive( &m_hLock );
+//	EnterCriticalSection( &m_hLock );
 	
 	m_nActiveWriters--;
 	
@@ -1394,6 +1413,7 @@ GDR_INLINE void CThreadRWMutex::WriteUnlock( void )
 	}
 	
 	ReleaseSRWLockExclusive( &m_hLock );
+//	LeaveCriticalSection( &m_hLock );
 #else
 	pthread_rwlock_wrlock( &m_hRWLock );
 	

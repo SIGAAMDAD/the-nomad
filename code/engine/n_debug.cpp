@@ -394,14 +394,16 @@ void Sys_DebugStacktrace( uint32_t frames )
 	SymLine.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
 
 	pSymbol = g_debugSession.m_pSymbolBuffer;
-	pSymbol->SizeOfStruct = sizeof(SYMBOL_INFO) + ( MAX_SYMBOL_LENGTH - 1 ) * sizeof(TCHAR);
+	pSymbol->SizeOfStruct = sizeof(SYMBOL_INFO) + ( ( MAX_SYMBOL_LENGTH - 1 ) * sizeof(TCHAR) );
 	pSymbol->MaxNameLen = MAX_SYMBOL_LENGTH - 1;
 
 	for ( i = 0; i < nFrames; i++ ) {
 		dwAddr = (DWORD64)g_debugSession.m_pSymbolArray[i];
 
+		memset( pSymbol, 0, pSymbol->SizeOfStruct );
+
 		dwModuleBase = SymGetModuleBase64( hProcess, dwAddr );
-		SymFromAddr( hProcess, dwAddr, NULL, pSymbol );
+		SymFromAddr( hProcess,(DWORD64)( dwAddr ), NULL, pSymbol );
 		SymGetLineFromAddr64( hProcess, dwAddr, &dwDisplacement, &SymLine );
 		SymGetModuleInfo( hProcess, dwModuleBase, &ModuleInfo );
 
@@ -411,8 +413,7 @@ void Sys_DebugStacktrace( uint32_t frames )
 					"  Line: %i\n"
 					"  Name: %s\n"
 					"  File: %s\n"
-				, i, ModuleInfo.ModuleName, dwAddr, SymLine.LineNumber, (char *)pSymbol->Name, SymLine.FileName );
-
+				, frames - i - 1, ModuleInfo.ModuleName, pSymbol->Address, SymLine.LineNumber, (char *)pSymbol->Name, SymLine.FileName );
 	}
 
 #elif defined(POSIX)

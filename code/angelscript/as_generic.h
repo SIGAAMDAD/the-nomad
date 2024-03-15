@@ -58,7 +58,7 @@ public:
 	void              *GetAuxiliary() const;
 
 	// Object
-	void   *GetObject();
+	void   *GetObjectData();
 	int     GetObjectTypeId() const;
 
 	// Arguments

@@ -446,19 +446,19 @@ void ScriptDictionaryListFactory_Generic(asIScriptGeneric *gen)
 
 void ScriptDictionaryAddRef_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObject();
+	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObjectData();
 	dict->AddRef();
 }
 
 void ScriptDictionaryRelease_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObject();
+	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObjectData();
 	dict->Release();
 }
 
 void ScriptDictionaryAssign_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObject();
+	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObjectData();
 	CScriptDictionary *other = *(CScriptDictionary**)gen->GetAddressOfArg(0);
 	*dict = *other;
 	*(CScriptDictionary**)gen->GetAddressOfReturnLocation() = dict;
@@ -466,7 +466,7 @@ void ScriptDictionaryAssign_Generic(asIScriptGeneric *gen)
 
 void ScriptDictionarySet_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObject();
+	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObjectData();
 	dictKey_t *key = *(dictKey_t**)gen->GetAddressOfArg(0);
 	void *ref = *(void**)gen->GetAddressOfArg(1);
 	int typeId = gen->GetArgTypeId(1);
@@ -475,7 +475,7 @@ void ScriptDictionarySet_Generic(asIScriptGeneric *gen)
 
 void ScriptDictionarySetInt_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObject();
+	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObjectData();
 	dictKey_t *key = *(dictKey_t**)gen->GetAddressOfArg(0);
 	void *ref = *(void**)gen->GetAddressOfArg(1);
 	dict->Set(*key, *(asINT64*)ref);
@@ -483,7 +483,7 @@ void ScriptDictionarySetInt_Generic(asIScriptGeneric *gen)
 
 void ScriptDictionarySetFlt_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObject();
+	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObjectData();
 	dictKey_t *key = *(dictKey_t**)gen->GetAddressOfArg(0);
 	void *ref = *(void**)gen->GetAddressOfArg(1);
 	dict->Set(*key, *(double*)ref);
@@ -491,7 +491,7 @@ void ScriptDictionarySetFlt_Generic(asIScriptGeneric *gen)
 
 void ScriptDictionaryGet_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObject();
+	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObjectData();
 	dictKey_t *key = *(dictKey_t**)gen->GetAddressOfArg(0);
 	void *ref = *(void**)gen->GetAddressOfArg(1);
 	int typeId = gen->GetArgTypeId(1);
@@ -500,7 +500,7 @@ void ScriptDictionaryGet_Generic(asIScriptGeneric *gen)
 
 void ScriptDictionaryGetInt_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObject();
+	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObjectData();
 	dictKey_t *key = *(dictKey_t**)gen->GetAddressOfArg(0);
 	void *ref = *(void**)gen->GetAddressOfArg(1);
 	*(bool*)gen->GetAddressOfReturnLocation() = dict->Get(*key, *(asINT64*)ref);
@@ -508,7 +508,7 @@ void ScriptDictionaryGetInt_Generic(asIScriptGeneric *gen)
 
 void ScriptDictionaryGetFlt_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObject();
+	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObjectData();
 	dictKey_t *key = *(dictKey_t**)gen->GetAddressOfArg(0);
 	void *ref = *(void**)gen->GetAddressOfArg(1);
 	*(bool*)gen->GetAddressOfReturnLocation() = dict->Get(*key, *(double*)ref);
@@ -516,7 +516,7 @@ void ScriptDictionaryGetFlt_Generic(asIScriptGeneric *gen)
 
 void ScriptDictionaryExists_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObject();
+	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObjectData();
 	dictKey_t *key = *(dictKey_t**)gen->GetAddressOfArg(0);
 	bool ret = dict->Exists(*key);
 	*(bool*)gen->GetAddressOfReturnLocation() = ret;
@@ -524,79 +524,79 @@ void ScriptDictionaryExists_Generic(asIScriptGeneric *gen)
 
 void ScriptDictionaryIsEmpty_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObject();
+	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObjectData();
 	bool ret = dict->IsEmpty();
 	*(bool*)gen->GetAddressOfReturnLocation() = ret;
 }
 
 void ScriptDictionaryGetSize_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObject();
+	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObjectData();
 	asUINT ret = dict->GetSize();
 	*(asUINT*)gen->GetAddressOfReturnLocation() = ret;
 }
 
 void ScriptDictionaryDelete_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObject();
+	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObjectData();
 	dictKey_t *key = *(dictKey_t**)gen->GetAddressOfArg(0);
 	*(bool*)gen->GetAddressOfReturnLocation() = dict->Delete(*key);
 }
 
 void ScriptDictionaryDeleteAll_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObject();
+	CScriptDictionary *dict = (CScriptDictionary*)gen->GetObjectData();
 	dict->DeleteAll();
 }
 
 static void ScriptDictionaryGetRefCount_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictionary *self = (CScriptDictionary*)gen->GetObject();
+	CScriptDictionary *self = (CScriptDictionary*)gen->GetObjectData();
 	*(int*)gen->GetAddressOfReturnLocation() = self->GetRefCount();
 }
 
 static void ScriptDictionarySetGCFlag_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictionary *self = (CScriptDictionary*)gen->GetObject();
+	CScriptDictionary *self = (CScriptDictionary*)gen->GetObjectData();
 	self->SetGCFlag();
 }
 
 static void ScriptDictionaryGetGCFlag_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictionary *self = (CScriptDictionary*)gen->GetObject();
+	CScriptDictionary *self = (CScriptDictionary*)gen->GetObjectData();
 	*(bool*)gen->GetAddressOfReturnLocation() = self->GetGCFlag();
 }
 
 static void ScriptDictionaryEnumReferences_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictionary *self = (CScriptDictionary*)gen->GetObject();
+	CScriptDictionary *self = (CScriptDictionary*)gen->GetObjectData();
 	asIScriptEngine *engine = *(asIScriptEngine**)gen->GetAddressOfArg(0);
 	self->EnumReferences(engine);
 }
 
 static void ScriptDictionaryReleaseAllReferences_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictionary *self = (CScriptDictionary*)gen->GetObject();
+	CScriptDictionary *self = (CScriptDictionary*)gen->GetObjectData();
 	asIScriptEngine *engine = *(asIScriptEngine**)gen->GetAddressOfArg(0);
 	self->ReleaseAllReferences(engine);
 }
 
 static void CScriptDictionaryGetKeys_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictionary *self = (CScriptDictionary*)gen->GetObject();
+	CScriptDictionary *self = (CScriptDictionary*)gen->GetObjectData();
 	*(CScriptArray**)gen->GetAddressOfReturnLocation() = self->GetKeys();
 }
 
 static void CScriptDictionary_opIndex_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictionary *self = (CScriptDictionary*)gen->GetObject();
+	CScriptDictionary *self = (CScriptDictionary*)gen->GetObjectData();
 	dictKey_t *key = *(dictKey_t**)gen->GetAddressOfArg(0);
 	*(CScriptDictValue**)gen->GetAddressOfReturnLocation() = self->operator[](*key);
 }
 
 static void CScriptDictionary_opIndex_const_Generic(asIScriptGeneric *gen)
 {
-	const CScriptDictionary *self = (const CScriptDictionary*)gen->GetObject();
+	const CScriptDictionary *self = (const CScriptDictionary*)gen->GetObjectData();
 	dictKey_t *key = *(dictKey_t**)gen->GetAddressOfArg(0);
 	*(const CScriptDictValue**)gen->GetAddressOfReturnLocation() = self->operator[](*key);
 }
@@ -981,7 +981,7 @@ static double CScriptDictValue_opConvDouble(CScriptDictValue *obj)
 
 static void CScriptDictValue_opConvDouble_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictValue *self = (CScriptDictValue*)gen->GetObject();
+	CScriptDictValue *self = (CScriptDictValue*)gen->GetObjectData();
 	double value;
 	self->Get(gen->GetEngine(), value);
 	*(double*)gen->GetAddressOfReturnLocation() = value;
@@ -989,7 +989,7 @@ static void CScriptDictValue_opConvDouble_Generic(asIScriptGeneric *gen)
 
 static void CScriptDictValue_opConvInt_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictValue *self = (CScriptDictValue*)gen->GetObject();
+	CScriptDictValue *self = (CScriptDictValue*)gen->GetObjectData();
 	asINT64 value;
 	self->Get(gen->GetEngine(), value);
 	*(asINT64*)gen->GetAddressOfReturnLocation() = value;
@@ -997,55 +997,55 @@ static void CScriptDictValue_opConvInt_Generic(asIScriptGeneric *gen)
 
 static void CScriptDictValue_opCast_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictValue *self = (CScriptDictValue*)gen->GetObject();
+	CScriptDictValue *self = (CScriptDictValue*)gen->GetObjectData();
 	self->Get(gen->GetEngine(), gen->GetArgAddress(0), gen->GetArgTypeId(0));
 }
 
 static void CScriptDictValue_opAssign_int64_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictValue *self = (CScriptDictValue*)gen->GetObject();
+	CScriptDictValue *self = (CScriptDictValue*)gen->GetObjectData();
 	*(CScriptDictValue**)gen->GetAddressOfReturnLocation() = &CScriptDictValue_opAssign((asINT64)gen->GetArgQWord(0), self);
 }
 
 static void CScriptDictValue_opAssign_double_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictValue *self = (CScriptDictValue*)gen->GetObject();
+	CScriptDictValue *self = (CScriptDictValue*)gen->GetObjectData();
 	*(CScriptDictValue**)gen->GetAddressOfReturnLocation() = &CScriptDictValue_opAssign(gen->GetArgDouble(0), self);
 }
 
 static void CScriptDictValue_opAssign_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictValue *self = (CScriptDictValue*)gen->GetObject();
+	CScriptDictValue *self = (CScriptDictValue*)gen->GetObjectData();
 	*(CScriptDictValue**)gen->GetAddressOfReturnLocation() = &CScriptDictValue_opAssign(gen->GetArgAddress(0), gen->GetArgTypeId(0), self);
 }
 
 static void CScriptDictValue_opCopyAssign_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictValue *self = (CScriptDictValue*)gen->GetObject();
+	CScriptDictValue *self = (CScriptDictValue*)gen->GetObjectData();
 	*(CScriptDictValue**)gen->GetAddressOfReturnLocation() = &CScriptDictValue_opAssign(*reinterpret_cast<CScriptDictValue*>(gen->GetArgAddress(0)), self);
 }
 
 static void CScriptDictValue_Construct_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictValue *self = (CScriptDictValue*)gen->GetObject();
+	CScriptDictValue *self = (CScriptDictValue*)gen->GetObjectData();
 	CScriptDictValue_Construct(self);
 }
 
 static void CScriptDictValue_Destruct_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictValue *self = (CScriptDictValue*)gen->GetObject();
+	CScriptDictValue *self = (CScriptDictValue*)gen->GetObjectData();
 	CScriptDictValue_Destruct(self);
 }
 
 static void CScriptDictValue_EnumReferences_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictValue *self = (CScriptDictValue*)gen->GetObject();
+	CScriptDictValue *self = (CScriptDictValue*)gen->GetObjectData();
 	self->EnumReferences(gen->GetEngine());
 }
 
 static void CScriptDictValue_FreeValue_Generic(asIScriptGeneric *gen)
 {
-	CScriptDictValue *self = (CScriptDictValue*)gen->GetObject();
+	CScriptDictValue *self = (CScriptDictValue*)gen->GetObjectData();
 	self->FreeValue(gen->GetEngine());
 }
 

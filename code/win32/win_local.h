@@ -69,7 +69,7 @@
 #define	WINDOW_ESTYLE_FULLSCREEN_MIN (0)
 
 #define T TEXT
-#ifdef UNICODE
+#ifdef _UNICODE
 LPWSTR AtoW( const char *s );
 const char *WtoA( const LPWSTR s );
 #else

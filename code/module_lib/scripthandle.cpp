@@ -230,14 +230,14 @@ void RegisterScriptHandle_Native(asIScriptEngine *engine)
 
 void CScriptHandle_Construct_Generic(asIScriptGeneric *gen)
 {
-	CScriptHandle *self = reinterpret_cast<CScriptHandle*>(gen->GetObject());
+	CScriptHandle *self = reinterpret_cast<CScriptHandle*>(gen->GetObjectData());
 	new(self) CScriptHandle();
 }
 
 void CScriptHandle_ConstructCopy_Generic(asIScriptGeneric *gen)
 {
 	CScriptHandle *other = reinterpret_cast<CScriptHandle*>(gen->GetArgAddress(0));
-	CScriptHandle *self = reinterpret_cast<CScriptHandle*>(gen->GetObject());
+	CScriptHandle *self = reinterpret_cast<CScriptHandle*>(gen->GetObjectData());
 	new(self) CScriptHandle(*other);
 }
 
@@ -245,13 +245,13 @@ void CScriptHandle_ConstructVar_Generic(asIScriptGeneric *gen)
 {
 	void *ref = gen->GetArgAddress(0);
 	int typeId = gen->GetArgTypeId(0);
-	CScriptHandle *self = reinterpret_cast<CScriptHandle*>(gen->GetObject());
+	CScriptHandle *self = reinterpret_cast<CScriptHandle*>(gen->GetObjectData());
 	Construct(self, ref, typeId);
 }
 
 void CScriptHandle_Destruct_Generic(asIScriptGeneric *gen)
 {
-	CScriptHandle *self = reinterpret_cast<CScriptHandle*>(gen->GetObject());
+	CScriptHandle *self = reinterpret_cast<CScriptHandle*>(gen->GetObjectData());
 	self->~CScriptHandle();
 }
 
@@ -259,14 +259,14 @@ void CScriptHandle_Cast_Generic(asIScriptGeneric *gen)
 {
 	void **ref = reinterpret_cast<void**>(gen->GetArgAddress(0));
 	int typeId = gen->GetArgTypeId(0);
-	CScriptHandle *self = reinterpret_cast<CScriptHandle*>(gen->GetObject());
+	CScriptHandle *self = reinterpret_cast<CScriptHandle*>(gen->GetObjectData());
 	self->Cast(ref, typeId);
 }
 
 void CScriptHandle_Assign_Generic(asIScriptGeneric *gen)
 {
 	CScriptHandle *other = reinterpret_cast<CScriptHandle*>(gen->GetArgAddress(0));
-	CScriptHandle *self = reinterpret_cast<CScriptHandle*>(gen->GetObject());
+	CScriptHandle *self = reinterpret_cast<CScriptHandle*>(gen->GetObjectData());
 	*self = *other;
 	gen->SetReturnAddress(self);
 }
@@ -275,7 +275,7 @@ void CScriptHandle_AssignVar_Generic(asIScriptGeneric *gen)
 {
 	void *ref = gen->GetArgAddress(0);
 	int typeId = gen->GetArgTypeId(0);
-	CScriptHandle *self = reinterpret_cast<CScriptHandle*>(gen->GetObject());
+	CScriptHandle *self = reinterpret_cast<CScriptHandle*>(gen->GetObjectData());
 	self->Assign(ref, typeId);
 	gen->SetReturnAddress(self);
 }
@@ -283,7 +283,7 @@ void CScriptHandle_AssignVar_Generic(asIScriptGeneric *gen)
 void CScriptHandle_Equals_Generic(asIScriptGeneric *gen)
 {
 	CScriptHandle *other = reinterpret_cast<CScriptHandle*>(gen->GetArgAddress(0));
-	CScriptHandle *self = reinterpret_cast<CScriptHandle*>(gen->GetObject());
+	CScriptHandle *self = reinterpret_cast<CScriptHandle*>(gen->GetObjectData());
 	gen->SetReturnByte(*self == *other);
 }
 
@@ -291,7 +291,7 @@ void CScriptHandle_EqualsVar_Generic(asIScriptGeneric *gen)
 {
 	void *ref = gen->GetArgAddress(0);
 	int typeId = gen->GetArgTypeId(0);
-	CScriptHandle *self = reinterpret_cast<CScriptHandle*>(gen->GetObject());
+	CScriptHandle *self = reinterpret_cast<CScriptHandle*>(gen->GetObjectData());
 	gen->SetReturnByte(self->Equals(ref, typeId));
 }
 
