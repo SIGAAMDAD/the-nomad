@@ -9,6 +9,7 @@
 #include "module_engine/module_bbox.h"
 #include "module_engine/module_linkentity.h"
 #include "module_engine/module_polyvert.h"
+#include "module_engine/module_json.h"
 
 //
 // c++ compatible wrappers around angelscript engine function calls
@@ -979,212 +980,6 @@ DEFINE_CALLBACK( GetString ) {
     *value = hash->value;
 }
 
-static void JsonAssignObject( asIScriptGeneric *pGeneric ) {
-    nlohmann::json *json = (nlohmann::json *)pGeneric->GetObjectData();
-    *json = *(const nlohmann::json *)pGeneric->GetObjectData();
-    pGeneric->GetEngine()->NotifyGarbageCollectorOfNewObject(  );
-}
-
-static void JsonGetObject( asIScriptGeneric *pGeneric ) {
-    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObjectData();
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-
-    if ( !json.contains( name->c_str() ) ) {
-        N_Error( ERR_DROP, "Invalid JSon Object Access of '%s'", name->c_str() );
-    }
-    *(nlohmann::json *)pGeneric->GetAddressOfReturnLocation() = json.at( name->c_str() );
-}
-
-static void ParseJSonFile( asIScriptGeneric *pGeneric ) {
-    const string_t *fileName = (const string_t *)pGeneric->GetArgObject( 0 );
-    const char *path = FS_BuildOSPath( FS_GetBaseGameDir(), NULL, fileName->c_str() );
-    bool success = true;
-
-    Con_DPrintf( "Parsing json file '%s'...\n", path );
-    try {
-        *(nlohmann::json *)pGeneric->GetObjectData() = nlohmann::json::parse( path );
-    } catch ( const nlohmann::json::exception& e ) {
-        Con_Printf(
-            COLOR_RED "ERROR: nlhomann::json exception occurred when parsing '%s' ->\n "
-            COLOR_RED "\tid: %i\n"
-            COLOR_RED "\tmessage: %s\n"
-        , path, e.id, e.what() );
-        success = false;
-    }
-
-    *(bool *)pGeneric->GetAddressOfReturnLocation() = success;
-}
-
-static void GetJSonObject( asIScriptGeneric *pGeneric ) {
-    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObjectData();
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    nlohmann::json *data = (nlohmann::json *)pGeneric->GetArgObject( 1 );
-
-    if ( !json.contains( name->c_str() ) ) {
-        *(bool *)pGeneric->GetAddressOfReturnLocation() = false;
-        return;
-    }
-
-    *data = (nlohmann::json &&)eastl::move( json.at( name->c_str() ) );
-    
-    *(bool *)pGeneric->GetAddressOfReturnLocation() = true;
-}
-
-static void GetJSonString( asIScriptGeneric *pGeneric ) {
-    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObjectData();
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    string_t *data = (string_t *)pGeneric->GetArgObject( 1 );
-
-    if ( !json.contains( name->c_str() ) ) {
-        *(bool *)pGeneric->GetAddressOfReturnLocation() = false;
-        return;
-    }
-
-    *data = (string_t &&)eastl::move( json.at( name->c_str() ) );
-    
-    *(bool *)pGeneric->GetAddressOfReturnLocation() = true;
-}
-
-static void GetJSonInt( asIScriptGeneric *pGeneric ) {
-    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObjectData();
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    int32_t *data = (int32_t *)pGeneric->GetAddressOfArg( 1 );
-
-    if ( !json.contains( name->c_str() ) ) {
-        *(bool *)pGeneric->GetAddressOfReturnLocation() = false;
-        return;
-    }
-
-    *data = json.at( name->c_str() );
-    
-    *(bool *)pGeneric->GetAddressOfReturnLocation() = true;
-}
-
-static void GetJSonUInt( asIScriptGeneric *pGeneric ) {
-    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObjectData();
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    uint32_t *data = (uint32_t *)pGeneric->GetAddressOfArg( 1 );
-
-    if ( !json.contains( name->c_str() ) ) {
-        *(bool *)pGeneric->GetAddressOfReturnLocation() = false;
-        return;
-    }
-
-    *data = json.at( name->c_str() );
-    
-    *(bool *)pGeneric->GetAddressOfReturnLocation() = true;
-}
-
-static void GetJSonFloat( asIScriptGeneric *pGeneric ) {
-    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObjectData();
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    float *data = (float *)pGeneric->GetAddressOfArg( 1 );
-
-    if ( !json.contains( name->c_str() ) ) {
-        *(bool *)pGeneric->GetAddressOfReturnLocation() = false;
-        return;
-    }
-
-    *data = json.at( name->c_str() );
-    
-    *(bool *)pGeneric->GetAddressOfReturnLocation() = true;
-}
-
-static void GetJSonObjectArray( asIScriptGeneric *pGeneric ) {
-    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObjectData();
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    CScriptArray *obj = (CScriptArray *)pGeneric->GetArgObject( 1 );
-
-    if ( !json.contains( name->c_str() ) ) {
-        *(bool *)pGeneric->GetAddressOfReturnLocation() = false;
-        return;
-    }
-
-    nlohmann::json& data = json.at( name->c_str() );
-    obj->Resize( data.size() );
-    for ( uint32_t i = 0; i < data.size(); i++ ) {
-        *(nlohmann::json *)obj->At( i ) = (nlohmann::json &&)eastl::move( data[i] );
-    }
-    
-    *(bool *)pGeneric->GetAddressOfReturnLocation() = true;
-}
-
-static void GetJSonStringArray( asIScriptGeneric *pGeneric ) {
-    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObjectData();
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    CScriptArray *obj = (CScriptArray *)pGeneric->GetArgObject( 1 );
-
-    if ( !json.contains( name->c_str() ) ) {
-        *(bool *)pGeneric->GetAddressOfReturnLocation() = false;
-        return;
-    }
-
-    nlohmann::json& data = json.at( name->c_str() );
-    obj->Resize( data.size() );
-    for ( uint32_t i = 0; i < data.size(); i++ ) {
-        *(string_t *)obj->At( i ) = (string_t &&)eastl::move( data[i] );
-    }
-    
-    *(bool *)pGeneric->GetAddressOfReturnLocation() = true;
-}
-
-static void GetJSonIntArray( asIScriptGeneric *pGeneric ) {
-    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObjectData();
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    CScriptArray *obj = (CScriptArray *)pGeneric->GetArgObject( 1 );
-
-    if ( !json.contains( name->c_str() ) ) {
-        *(bool *)pGeneric->GetAddressOfReturnLocation() = false;
-        return;
-    }
-
-    nlohmann::json& data = json.at( name->c_str() );
-    obj->Resize( data.size() );
-    for ( uint32_t i = 0; i < data.size(); i++ ) {
-        *(int32_t *)obj->At( i ) = data[i].get<int32_t>();
-    }
-    
-    *(bool *)pGeneric->GetAddressOfReturnLocation() = true;
-}
-
-static void GetJSonUIntArray( asIScriptGeneric *pGeneric ) {
-    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObjectData();
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    CScriptArray *obj = (CScriptArray *)pGeneric->GetArgObject( 1 );
-
-    if ( !json.contains( name->c_str() ) ) {
-        *(bool *)pGeneric->GetAddressOfReturnLocation() = false;
-        return;
-    }
-
-    nlohmann::json& data = json.at( name->c_str() );
-    obj->Resize( data.size() );
-    for ( uint32_t i = 0; i < data.size(); i++ ) {
-        *(uint32_t *)obj->At( i ) = data[i].get<uint32_t>();
-    }
-    
-    *(bool *)pGeneric->GetAddressOfReturnLocation() = true;
-}
-
-static void GetJSonFloatArray( asIScriptGeneric *pGeneric ) {
-    nlohmann::json& json = *(nlohmann::json *)pGeneric->GetObjectData();
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    CScriptArray *obj = (CScriptArray *)pGeneric->GetArgObject( 1 );
-
-    if ( !json.contains( name->c_str() ) ) {
-        *(bool *)pGeneric->GetAddressOfReturnLocation() = false;
-        return;
-    }
-
-    nlohmann::json& data = json.at( name->c_str() );
-    obj->Resize( data.size() );
-    for ( uint32_t i = 0; i < data.size(); i++ ) {
-        *(float *)obj->At( i ) = data[i].get<float>();
-    }
-    
-    *(bool *)pGeneric->GetAddressOfReturnLocation() = true;
-}
-
 typedef struct ImGuiManager_s {
     ImGuiManager_s( void ) {
         memset( this, 0, sizeof( *this ) );
@@ -1881,23 +1676,21 @@ void ModuleLib_Register_Engine( void )
     { // Util
         SET_NAMESPACE( "TheNomad::Util" );
 
-        REGISTER_OBJECT_TYPE( "JsonObject", nlohmann::json, asOBJ_VALUE );
-        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonObject", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( nlohmann::json, ( void ) ) );
-        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonObject", asBEHAVE_CONSTRUCT, "void f( const TheNomad::Util::JsonObject& in )", WRAP_CON( nlohmann::json, ( const nlohmann::json& ) ) );
-        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonObject", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( nlohmann::json ) );
+        REGISTER_OBJECT_TYPE( "JsonObject", CModuleJsonObject, asOBJ_VALUE );
+        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonObject", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( CModuleJsonObject, ( void ) ) );
+        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonObject", asBEHAVE_CONSTRUCT, "void f( const TheNomad::Util::JsonObject& in )", WRAP_CON( CModuleJsonObject, ( const CModuleJsonObject& ) ) );
+        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonObject", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( CModuleJsonObject ) );
 
-        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "bool Parse( const string& in )", asFUNCTION( ParseJSonFile ), asCALL_GENERIC );
-        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "TheNomad::Util::JsonObject& opIndex( const string& in )", asFUNCTION( JsonGetObject ), asCALL_GENERIC );
-        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "TheNomad::Util::JsonObject& GetObject( const string& in )", asFUNCTION( JsonGetObject ), asCALL_GENERIC );
-        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "bool GetStringArray( const string& in, array<string>& out )", asFUNCTION( GetJSonStringArray ), asCALL_GENERIC );
-        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "bool GetIntArray( const string& in, array<int>& out )", asFUNCTION( GetJSonIntArray ), asCALL_GENERIC );
-        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "bool GetUIntArray( const string& in, array<uint>& out )", asFUNCTION( GetJSonUIntArray ), asCALL_GENERIC );
-        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "bool GetFloatArray( const string& in, array<float>& out )", asFUNCTION( GetJSonFloatArray ), asCALL_GENERIC );
-        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "bool GetObjectArray( const string& in, array<TheNomad::Util::JsonObject>& out )", asFUNCTION( GetJSonObjectArray ), asCALL_GENERIC );
-        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "bool GetObject( const string& in, TheNomad::Util::JsonObject@ )", asFUNCTION( GetJSonObject ), asCALL_GENERIC );
-        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "bool GetFloat( const string& in, float& out )", asFUNCTION( GetJSonFloat ), asCALL_GENERIC );
-        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "bool GetInt( const string& in, int& out )", asFUNCTION( GetJSonInt ), asCALL_GENERIC );
-        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( "TheNomad::Util::JsonObject", "bool GetUInt( const string& in, uint& out )", asFUNCTION( GetJSonUInt ), asCALL_GENERIC );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonObject", "void SetInt( const string& in, int )", CModuleJsonObject, SetInt, ( const string_t *, int32_t ), void );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonObject", "void SetUInt( const string& in, uint )", CModuleJsonObject, SetUInt, ( const string_t *, uint32_t ), void );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonObject", "void SetFloat( const string& in, float )", CModuleJsonObject, SetFloat, ( const string_t *, float ), void );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonObject", "bool Parse( const string& in )", CModuleJsonObject, Parse, ( const string_t * ), bool );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonObject", "TheNomad::Util::JsonObject& opAssign( const TheNomad::Util::JsonObject& in )", CModuleJsonObject, operator=, ( const CModuleJsonObject& ), CModuleJsonObject& );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonObject", "bool GetInt( const string& in, int& out )", CModuleJsonObject, GetInt, ( const string_t *, int32_t * ), bool );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonObject", "bool GetUInt( const string& in, uint& out )", CModuleJsonObject, GetUInt, ( const string_t *, uint32_t * ), bool );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonObject", "bool GetFloat( const string& in, float& out )", CModuleJsonObject, GetFloat, ( const string_t *, float * ), bool );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonObject", "bool GetString( const string& in, string& out )", CModuleJsonObject, GetString, ( const string_t *, string_t * ), bool );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonObject", "bool GetBool( const string& in, bool& out )", CModuleJsonObject, GetBool, ( const string_t *, bool * ), bool );
 
         REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StrICmp( const string& in, const string& in )", StrICmp );
         REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StrCmp( const string& in, const string& in )", StrCmp );
@@ -2147,6 +1940,6 @@ void ModuleLib_Register_Engine( void )
 	//
 	
 	REGISTER_GLOBAL_FUNCTION( "void ConsolePrint( const string& in )", ConsolePrint );
-	REGISTER_GLOBAL_FUNCTION( "void GameError( const string& in )", GameError );
-    REGISTER_GLOBAL_FUNCTION( "void Assert( bool bValue )", ModuleAssertion );
+    REGISTER_GLOBAL_FUNCTION( "void ConsoleWarning( const string& in )", ConsoleWarning );
+    REGISTER_GLOBAL_FUNCTION( "void GameError( const string& in )", GameError );
 }

@@ -470,7 +470,7 @@ namespace TheNomad::SGame {
 	void InitLevels() {
 		LevelInfoData@ data;
 		uint i;
-		string mapname;
+		string mapname, levelName;
 		
 		ConsolePrint( "Loading level infos...\n" );
 		
@@ -487,19 +487,27 @@ namespace TheNomad::SGame {
 		
 		// set level numbers
 		for ( i = 0; i < LevelManager.NumLevels(); i++ ) {
-			TheNomad::Engine::SetInfoValueForKey( LevelManager.GetLevelInfoByIndex( i ), "num", formatUInt( i ) );
+			LevelManager.GetLevelInfoByIndex( i ).SetUInt( "num", i );
 		}
 		
 		mapname.resize( MAX_NPATH );
+		levelName.resize( MAX_NPATH );
 		for ( i = 0; i < LevelManager.NumLevels(); i++ ) {
 			const TheNomad::Util::JsonObject& info = LevelManager.GetLevelInfoByIndex( i );
 			
-			@data = LevelInfoData( TheNomad::Engine::GetInfoValueForKey( infoString, "name" ) );
+			if ( !info.GetString( "name", levelName ) ) {
+				ConsoleWarning( "invalid level info, missing variable 'name'\n" );
+				continue;
+			}
+			@data = LevelInfoData( levelName );
 			
 			ConsolePrint( "Loaded level '" + data.m_Name + "'...\n" );
 			
 			for ( uint j = 0; j < data.m_MapHandles.size(); j++ ) {
-				TheNomad::Engine::GetSizedInfoValueForKey( mapname, infoString, "mapname_difficulty_" + formatUInt( j ) );
+				if ( !info.GetString( "mapname_difficulty_" + formatUInt( j ), mapname ) ) {
+					// level currently doesn't support this difficulty
+					continue;
+				}
 				if ( TheNomad::Util::StrICmp( mapname, "none" ) ) {
 					// level currently doesn't support this difficulty
 					continue;
