@@ -184,7 +184,7 @@ static void *G_RefImGuiMalloc( size_t size ) {
 //
 static void G_RefImGuiInit(void *shaderData, const void *importData) {
     IMGUI_CHECKVERSION();
-    ImGui::SetAllocatorFunctions((ImGuiMemAllocFunc)G_RefImGuiMalloc, (ImGuiMemFreeFunc)G_RefImGuiFree);
+    ImGui::SetAllocatorFunctions( (ImGuiMemAllocFunc)G_RefImGuiMalloc, (ImGuiMemFreeFunc)G_RefImGuiFree );
     ImGui::CreateContext();
 
     ImGuiIO& io = ImGui::GetIO();
@@ -192,14 +192,13 @@ static void G_RefImGuiInit(void *shaderData, const void *importData) {
     io.BackendPlatformName = OS_STRING;
 
     // init font cache
-    g_pFontCache = (CUIFontCache *)Hunk_Alloc( sizeof(*g_pFontCache), h_low );
-    ::new ( g_pFontCache ) CUIFontCache();
+    g_pFontCache = new ( Hunk_Alloc( sizeof( *g_pFontCache ), h_low ) ) CUIFontCache();
 
-    if (!N_stricmp( g_renderer->s, "opengl" )) {
+    if ( !N_stricmp( g_renderer->s, "opengl" ) ) {
         ImGui_ImplSDL2_InitForOpenGL( r_window, r_GLcontext );
         ImGui_ImplOpenGL3_Init( shaderData, NULL, (const imguiGL3Import_t *)importData);
     }
-    else if (!N_stricmp( g_renderer->s, "vulkan" )) {
+    else if ( !N_stricmp( g_renderer->s, "vulkan" ) ) {
         ImGui_ImplSDL2_InitForVulkan( r_window );
     }
 }

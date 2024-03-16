@@ -1,3 +1,4 @@
+#include "info.as"
 #include "entity.as"
 #include "level.as"
 
@@ -6,24 +7,31 @@ namespace TheNomad::SGame {
 		MA_GetBehind,
 		MA_SneakAttack,
 	};
+
+	shared enum MobFlags {
+		Deaf      = 0x0001,
+		Blind     = 0x0002,
+		Terrified = 0x0004,
+		Boss      = 0x0008
+	};
 	
-	shared class MobEntity : EntityObject, EntityData {
-		MobEntity() {
+	shared class MobObject : EntityObject {
+		MobObject() {
+			m_EffectString.reserve( MAX_TOKEN_CHARS );
 		}
-		
-		void Think() {
-		}
-		void Spawn() {
-		}
-		void Damage( uint nAmount ) {
-			
-		}
-		
+
 		EntityObject@ GetBase() {
 			return @m_Base;
 		}
 		const EntityObject@ GetBase() const {
 			return @m_Base;
+		}
+
+		AttackInfo@ CurrentAttack() {
+			return @m_CurrentAttack;
+		}
+		const AttackInfo@ CurrentAttack() const{
+			return @m_CurrentAttack;
 		}
 		
 		const EntityObject@ GetTarget() const {
@@ -40,41 +48,47 @@ namespace TheNomad::SGame {
 		private void SpecialBehaviour() {
 		}
 		
-		private void DoAttack( const AttackInfo@ in atk ) {
-			RayCast@ rayData;
+		private void DoAttack( const AttackInfo@ atk ) {
+			TheNomad::GameSystem::RayCast@ rayData;
 			
 			switch ( atk.method ) {
-			case AttackMethod::HitScan:
-				RayCast ray;
+			case AttackMethod::HitScan: {
+				TheNomad::GameSystem::RayCast ray;
 				
 				@rayData = @ray; // force it out of scope
 				
-				ray.origin = m_Origin;
-				ray.length = atk.range;
-				ray.angle = Dir2Angle( m_Direction );
-				ray.link = null;
-				
-				if ( TheNomad::GameSystem::CastRay( ray ) is false ) {
+				ray.m_Origin = m_Link.m_Origin;
+				ray.m_nLength = atk.range;
+				ray.m_nAngle = TheNomad::Util::Dir2Angle( m_Direction );
+				ray.m_nEntityNumber = 0;
+
+				TheNomad::GameSystem::CastRay( @ray );
+
+				if ( ray.m_nEntityNumber == ModObject.EntityManager.NumEntities() ) {
 					return; // got nothing
 				}
-				break;
+				break; }
 			case AttackMethod::Projectile:
-				EntityManager.SpawnProjectile( atk );
+				ModObject.EntityManager.SpawnProjectile( m_Link.m_Origin, m_nAngle, @atk );
 				return; // we'll let the entity manager deal with it now
 			default:
 				// should theoretically NEVER happen
 				GameError( "MobObject::DoAttack: invalid attack method " + formatUInt( uint( atk.method ) ) );
 			};
 			
-			if ( atk.effect.size() ) {
+			if ( atk.effect.size() > 0 ) {
 				// apply effects
-				TheNomad::Engine::CmdExecute( atk.effect + " " + formatUInt( m_Link.GetNum() ) + "\n" );
+				m_EffectString = atk.effect;
+				m_EffectString += " ";
+				m_EffectString += m_Link.m_nEntityNumber;
+				m_EffectString += "\n";
+				TheNomad::Engine::CmdExecuteCommand( m_EffectString );
 			}
 			
-			EntityManager.DamageEntity( this, rayData );
+			ModObject.EntityManager.DamageEntity( GetBase(), rayData, @atk );
 		}
 		private void FightThink() {
-			if ( m_Target is null ) {
+			if ( @m_Target is null ) {
 				// if there's no target, or if the target went out of sight,
 				// then pursue
 				SetState( StateNum::ST_MOB_CHASE );
@@ -82,21 +96,20 @@ namespace TheNomad::SGame {
 			}
 			
 			AttackType attackType;
-			const float dist = Distance( m_Target.GetOrigin, m_Origin );
+			const float dist = TheNomad::Util::Distance( m_Target.GetOrigin(), m_Link.m_Origin );
 			
 			// we need a more specific fighting state
 			if ( m_State.GetID() == StateNum::ST_MOB_FIGHT ) {
-				if ( dist < m_Info.melee.range && m_Info.melee.valid ) {
-					attackType = AttackType::Melee;
-					@m_State = StateManager.GetStateForNum( m_Info.melee.stateId );
-					@m_CurrentAttack = m_Info.melee;
+				@m_CurrentAttack = null;
+				for ( uint i = 0; i < m_Info.attacks.size(); i++ ) {
+					if ( dist < m_Info.attacks[i].range && m_Info.attacks[i].valid ) {
+						attackType = m_Info.attacks[i].type;
+						@m_State = ModObject.StateManager.GetStateForNum( StateNum::ST_MOB_FIGHT_MELEE );
+						@m_CurrentAttack = @m_Info.attacks[i];
+						break;
+					}
 				}
-				else if ( dist < m_Info.missile.range && m_Info.missile.valid ) {
-					attackType = AttackType::Missile;
-					@m_State = StateManager.GetStateForNum( m_Info.missile.stateId );
-					@m_CurrentAttack = m_Info.missile;
-				}
-				else {
+				if ( @m_CurrentAttack is null ) {
 					// move closer
 					SetState( StateNum::ST_MOB_CHASE );
 				}
@@ -110,8 +123,6 @@ namespace TheNomad::SGame {
 			}
 			
 			DoAttack( m_CurrentAttack );
-			
-			m_State.Loop();
 		}
 		
 		private void IdleThink() {
@@ -126,7 +137,10 @@ namespace TheNomad::SGame {
 			}
 		}
 		
-		void Think() override {
+		void Spawn( const vec3& in origin ) {
+
+		}
+		void Think() {
 			switch ( m_State.GetID() ) {
 			case StateNum::ST_MOB_IDLE:
 				IdleThink();
@@ -176,77 +190,69 @@ namespace TheNomad::SGame {
 		}
 		
 		private void TryMove() {
-			RayCast ray;
-			
-			ray.length = GetSpeed();
-			ray.angle = Dir2Angle( m_Direction );
-			ray.origin = m_Origin;
-			
-			if ( TheNomad::GameSystem::CastRay( ray ) is false ) {
+			if ( !TheNomad::GameSystem::CheckWallHit( m_Link.m_Origin, m_Direction ) ) {
 				// move failed, attempt a new direction
 				ShuffleDirection();
 				return;
 			}
 			
 			// NOTE: maybe get some adaptive velocity stuff here?
-			
-			// something in the way
-			if ( ray.link != null ) {
-				ShuffleDirection();
-				return;
-			}
-			
-			m_Origin = ray.origin;
+			m_Link.m_Origin += m_Velocity;
 		}
 		
 		private bool SightCheck() {
-			if ( m_Info.flags & MobFlags::Blind ) {
+			if ( ( m_Info.flags & MobFlags::Blind ) != 0 ) {
 				return false;
 			}
 			
-			RayCast ray;
+			TheNomad::GameSystem::RayCast ray;
+			EntityObject@ ent;
 			
-			ray.length = m_Info.sightRange;
-			ray.origin = m_Origin;
-			ray.angle = Dir2Angle( m_Direction );
+			ray.m_nLength = m_Info.sightRange;
+			ray.m_Origin = m_Link.m_Origin;
+			ray.m_nAngle = TheNomad::Util::Dir2Angle( m_Direction );
+
+			TheNomad::GameSystem::CastRay( @ray );
 			
-			if ( TheNomad::GameSystem::CastRay( ray ) is false ) {
+			if ( ray.m_nEntityNumber == ModObject.EntityManager.NumEntities() ) {
 				return false;
 			}
+			if ( ray.m_nEntityNumber > ModObject.EntityManager.NumEntities() ) {
+				GameError( "MobObject::SightCheck: ray entity number is out of range (" + ray.m_nEntityNumber + ")"  );
+			}
+
+			@ent = @ModObject.EntityManager.GetEntityForNum( ray.m_nEntityNumber );
 			
 			// TODO: make this more advanced
-			if ( ray.link.GetType() != TheNomad::GameSystem::EntityType::Playr ) {
+			if ( ent.GetType() != TheNomad::GameSystem::EntityType::Playr ) {
 				return false;
 			}
 			
-			m_Target = EntityManager.GetEntityForNum( ray.link.GetNum() );
-			if ( m_Target is null ) {
-				// error?
-				DebugPrint( "MobObject::SightCheck: got valid entity in raycast, but link number is invalid (" +
-					formatUInt( ray.link.GetNum() ) + ")\n" );
-				return false;
-			}
-			
-			TheNomad::Engine::SoundSystem::PlaySfx( m_Info.wakeupSfx );
+			@m_Target = @ent;
+			m_EffectString = "Set mob target to ";
+			m_EffectString += ent.GetEntityNum();
+			m_EffectString += "\n";
+			DebugPrint( m_EffectString );
+			m_Info.wakeupSfx.Play();
 			
 			// we got something
 			return true;
 		}
 		private bool SoundCheck() {
-			if ( m_Info.flags & MobFlags::Deaf ) {
+			if ( ( m_Info.flags & MobFlags::Deaf ) != 0 ) {
 				return false;
 			}
+
+			const float rangeX = m_Info.soundRangeX / 2;
+			const float rangeY = m_Info.soundRangeY / 2;
+			const vec3 start( m_Link.m_Origin.x - rangeX, m_Link.m_Origin.y - rangeY, m_Link.m_Origin.z );
+			const vec3 end( m_Link.m_Origin.x + rangeX, m_Link.m_Origin.y + rangeY, m_Link.m_Origin.z );
 			
-			const float rangeX = m_Info.detectionRangeX / 2;
-			const float rangeY = m_Info.detectionRangeY / 2;
-			const vec3 start( m_Origin.x - rangeX, m_Origin.y - rangeY, m_Origin.z );
-			const vec3 end( m_Origin.x + rangeX, m_Origin.y + rangeY, m_Origin.z );
-			
-			const array<float>& soundBits = data.GetSoundBits()[m_Origin.z].GetData();
+			const float[]@ soundBits = ModObject.LevelManager.GetMapData().GetSoundBits()[m_Origin.z].GetData();
 			
 			for ( uint y = uint( start.y ); y != uint( end.y ); y++ ) {
 				for ( uint x = uint( start.x ); x != uint( end.x ); x++ ) {
-					if ( soundBits[ y * data.GetWidth() + x ] - Distance( m_Origin, vec3( x, y, m_Origin.z ) ) >= m_Info.soundTolerance ) {
+					if ( soundBits[y * data.GetWidth() + x] - TheNomad::Util::Distance( m_Link.m_Origin, vec3( x, y, m_Link.m_Origin.z ) ) >= m_Info.soundTolerance ) {
 						return true;
 					}
 				}
@@ -255,9 +261,9 @@ namespace TheNomad::SGame {
 			return false;
 		}
 		
-		EntityObject@ m_Base;
+		private string m_EffectString;
 		private AttackInfo@ m_CurrentAttack;
 		private EntityObject@ m_Target;
-		private const MobInfo@ m_Info;
+		private MobInfo@ m_Info;
 	};
 };

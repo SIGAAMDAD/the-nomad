@@ -30,7 +30,41 @@ static HHOOK WinHook;
 static HWINEVENTHOOK hWinEventHook;
 
 const char *Sys_GetError( void ) {
-	return strerror(::GetLastError());
+	switch ( ::GetLastError() ) {
+	case ERROR_INVALID_FUNCTION: return "ERROR_INVALID_FUNCTION";
+	case ERROR_FILE_NOT_FOUND: return "ERROR_FILE_NOT_FOUND";
+	case ERROR_PATH_NOT_FOUND: return "ERROR_PATH_NOT_FOUND";
+	case ERROR_TOO_MANY_OPEN_FILES: return "ERROR_TOO_MANY_OPEN_FILES";
+	case ERROR_ACCESS_DENIED: return "ERROR_ACCESS_DENIED";
+	case ERROR_INVALID_HANDLE: return "ERROR_INVALID_HANDLE";
+	case ERROR_ARENA_TRASHED: return "ERROR_ARENA_TRASHED";
+	case ERROR_NOT_ENOUGH_MEMORY: return "ERROR_NOT_ENOUGH_MEMORY";
+	case ERROR_INVALID_BLOCK: return "ERROR_INVALID_BLOCK";
+	case ERROR_BAD_ENVIRONMENT: return "ERROR_BAD_ENVIRONMENT";
+	case ERROR_BAD_FORMAT: return "ERROR_BAD_FORMAT";
+	case ERROR_INVALID_ACCESS: return "ERROR_INVALID_ACCESS";
+	case ERROR_INVALID_DATA: return "ERROR_INVALID_DATA";
+	case ERROR_OUTOFMEMORY: return "ERROR_OUT_OF_MEMORY";
+	case ERROR_INVALID_DRIVE: return "ERROR_INVALID_DRIVE";
+	case ERROR_WRITE_FAULT: return "ERROR_WRITE_FAULT";
+	case ERROR_READ_FAULT: return "ERROR_READ_FAULT";
+	case ERROR_HANDLE_EOF: return "ERROR_HANDLE_EOF";
+	case ERROR_NOT_SUPPORTED: return "ERROR_NOT_SUPPORTED";
+	case ERROR_HANDLE_DISK_FULL: return "ERROR_HANDLE_DISK_FULL";
+	case ERROR_BUFFER_OVERFLOW: return "ERROR_BUFFER_OVERFLOW";
+	case ERROR_DRIVE_LOCKED: return "ERROR_DRIVE_LOCKED";
+	case ERROR_OPEN_FAILED: return "ERROR_OPEN_FAILED";
+	case ERROR_BROKEN_PIPE: return "ERROR_BROKEN_PIPE";
+	case ERROR_DISK_FULL: return "ERROR_DISK_FULL";
+	case ERROR_INSUFFICIENT_BUFFER: return "ERROR_INSUFFICIENT_BUFFER";
+	case ERROR_INVALID_NAME: return "ERROR_INVALID_NAME";
+	case ERROR_NEGATIVE_SEEK: return "ERROR_NEGATIVE_SEEK";
+	case ERROR_MAX_THRDS_REACHED: return "ERROR_MAX_THRDS_REACHED";
+	case ERROR_ALREADY_EXISTS: return "ERROR_ALREADY_EXISTS";
+	default:
+		break;
+	};
+	return "Unknown Error";
 }
 
 bool Sys_IsInDebugSession( void ) {
@@ -649,10 +683,12 @@ static LONG WINAPI ExceptionFilter( struct _EXCEPTION_POINTERS *ExceptionInfo )
 	GLimp_Minimize();
 
 	if ( ExceptionInfo->ExceptionRecord->ExceptionCode != EXCEPTION_BREAKPOINT ) {
-		char msg[128], name[MAX_OSPATH];
+		char msg[1024], name[MAX_OSPATH];
 		const char *basename;
 		HMODULE hModule, hKernel32;
 		byte *addr;
+
+		memset( msg, 0, sizeof( msg ) );
 
 		hModule = NULL;
 		name[0] = '\0';
@@ -684,7 +720,6 @@ static LONG WINAPI ExceptionFilter( struct _EXCEPTION_POINTERS *ExceptionInfo )
 			}
 		}
 
-#if 0
 		if ( basename && *basename ) {
 			Com_snprintf( msg, sizeof( msg ), "Exception Code: %s\nException Address: %s@%x\n",
 				GetExceptionName( ExceptionInfo->ExceptionRecord->ExceptionCode ),
@@ -694,7 +729,7 @@ static LONG WINAPI ExceptionFilter( struct _EXCEPTION_POINTERS *ExceptionInfo )
 				GetExceptionName( ExceptionInfo->ExceptionRecord->ExceptionCode ),
 				addr );
 		}
-#endif
+
 		N_Error( ERR_FATAL, "Unhandled exception caught\n%s", msg );
 	}
 

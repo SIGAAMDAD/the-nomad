@@ -5,6 +5,8 @@ namespace TheNomad {
 			ST_MOB_SEARCH,
 			ST_MOB_CHASE,
 			ST_MOB_FIGHT,
+			ST_MOB_FIGHT_MELEE,
+			ST_MOB_FIGHT_MISSILE,
 			ST_MOB_FLEE,
 			ST_MOB_DEAD,
 			
@@ -37,6 +39,10 @@ namespace TheNomad {
 				ConsolePrint( "Id: " + formatUInt( m_nStateNum ) + "\n" );
 				ConsolePrint( "Sprite Offset: " + formatUInt( m_nSpriteOffset ) + "\n" );
 			}
+
+			StateNum GetID() const {
+				return m_nStateNum;
+			}
 			
 			uint SpriteOffset() const {
 				return m_nSpriteOffset;
@@ -63,7 +69,7 @@ namespace TheNomad {
 			// static data
 			private string m_Name;
 			private uint m_nTics;
-			private uint m_nStateNum;
+			private StateNum m_nStateNum;
 			private uint m_nSpriteOffset;
 			private EntityState@ m_NextState;
 		};
@@ -75,6 +81,18 @@ namespace TheNomad {
 			const string& GetName() const {
 				return "EntityStateSystem";
 			}
+			void OnLevelStart() {
+			}
+			void OnLevelEnd() {
+			}
+			void OnSave() const {
+			}
+			void OnLoad() {
+			}
+			void OnRunTic() {
+			}
+			void OnConsoleCommand() {
+			}
 			
 			const EntityState@ GetStateForNum( uint nIndex ) const {
 				return m_StateList[ nIndex ];
@@ -85,9 +103,5 @@ namespace TheNomad {
 			
 			private array<EntityState@> m_StateList;
 		};
-		
-		void LoadStates() {
-			
-		}
 	};
 };

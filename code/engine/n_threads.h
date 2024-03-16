@@ -341,7 +341,7 @@ public:
 	
 	const T& exchange( const T& value, MemoryOrder order = MemoryOrder_SeqCst );
 	const T& load( MemoryOrder order = MemoryOrder_SeqCst ) const;
-	T& load( MemoryOrder order = MemoryOrder_SeqCst );
+	T load( MemoryOrder order = MemoryOrder_SeqCst );
 	void store( T value, MemoryOrder order = MemoryOrder_SeqCst );
 	void add( T value, MemoryOrder order = MemoryOrder_SeqCst );
 	void sub( T value, MemoryOrder order = MemoryOrder_SeqCst );
@@ -1133,54 +1133,63 @@ template<typename T>
 GDR_INLINE const CThreadAtomic<T>& CThreadAtomic<T>::operator++( void )
 {
 	fetch_add();
+	return *this;
 }
 
 template<typename T>
 GDR_INLINE const CThreadAtomic<T>& CThreadAtomic<T>::operator++( int )
 {
 	fetch_add();
+	return *this;
 }
 
 template<typename T>
 GDR_INLINE const CThreadAtomic<T>& CThreadAtomic<T>::operator--( void )
 {
 	fetch_sub();
+	return *this;
 }
 
 template<typename T>
 GDR_INLINE const CThreadAtomic<T>& CThreadAtomic<T>::operator--( int )
 {
 	fetch_sub();
+	return *this;
 }
 
 template<typename T>
 GDR_INLINE const CThreadAtomic<T>& CThreadAtomic<T>::operator+=( const T& value )
 {
 	add( value );
+	return *this;
 }
 
 template<typename T>
 GDR_INLINE const CThreadAtomic<T>& CThreadAtomic<T>::operator-=( const T& value )
 {
 	sub( value );
+	return *this;
 }
 
 template<typename T>
 GDR_INLINE CThreadAtomic<T> CThreadAtomic<T>::operator+( const T& rhs ) const
 {
-	add( rhs );
+	CThreadAtomic<T> v( load() + rhs );
+	return v;
 }
 
 template<typename T>
 GDR_INLINE CThreadAtomic<T> CThreadAtomic<T>::operator-( const T& rhs ) const
 {
-	sub( rhs );
+	CThreadAtomic<T> v( load() - rhs );
+	return v;
 }
 
 template<typename T>
 GDR_INLINE const CThreadAtomic<T>& CThreadAtomic<T>::operator=( const T& value )
 {
 	store( value );
+	return *this;
 }
 
 template<typename T>
@@ -1215,6 +1224,18 @@ GDR_INLINE bool CThreadAtomic<T>::operator==( const T& value ) const
 
 template<typename T>
 GDR_INLINE const T& CThreadAtomic<T>::load( MemoryOrder order ) const
+{
+#ifdef _WIN32
+	return (const T &)InterlockedCompareExchange( (volatile LONG *)&m_hValue, 0, 0 );
+#else
+	T out;
+	__atomic_load( &m_hValue, &out, order );
+	return out;
+#endif
+}
+
+template<typename T>
+GDR_INLINE T CThreadAtomic<T>::load( MemoryOrder order )
 {
 #ifdef _WIN32
 	return (const T &)InterlockedCompareExchange( (volatile LONG *)&m_hValue, 0, 0 );

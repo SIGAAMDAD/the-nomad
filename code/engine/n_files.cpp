@@ -21,6 +21,11 @@ the basepath is the path to the user's current working directory.
 ======================================================================================================
 */
 
+#ifdef _WIN32
+	#define WIN32_LEAN_AND_MEAN
+	#include <io.h>
+#endif
+
 #define MAX_FILE_HANDLES 1024
 #define MAX_FILEHASH_SIZE 256
 #define BASEGAME_DIR "gamedata"
@@ -2000,12 +2005,13 @@ uint64_t FS_Write( const void *buffer, uint64_t size, fileHandle_t f )
 	remaining = size;
 	tries = 0;
 
-#ifdef _WIN32
-	return size;
-#else
 	while (remaining) {
 		block = remaining;
+	#ifdef _WIN32
+		writeCount = write( fileno( fp ), buf, block );
+	#else
 		writeCount = fwrite(buf, 1, block, fp);
+	#endif
 		if (writeCount == 0) {
 			if (!tries) {
 				tries = 1;
@@ -2028,7 +2034,6 @@ uint64_t FS_Write( const void *buffer, uint64_t size, fileHandle_t f )
 	// fflush(fp);
 
 	return size;
-#endif
 }
 
 static uint64_t FS_ReadFromChunk(void *buffer, uint64_t size, fileHandle_t f)
@@ -2082,7 +2087,11 @@ uint64_t FS_Read(void *buffer, uint64_t size, fileHandle_t f)
 
 		while (remaining) {
 			block = remaining;
+		#ifdef _WIN32
+			readCount = read( fileno( handles[f].data.fp ), buf, block );
+		#else
 			readCount = fread(buf, 1, block, handles[f].data.fp);
+		#endif
 			if (readCount == 0) {
 				// we might have been trying to read from a CD, which
 				// sometimes returns a 0 read on windows
@@ -2917,19 +2926,20 @@ void FS_Shutdown(qboolean closeFiles)
 #endif
 
 	// free everything
-	for (p = fs_searchpaths; p; p = next) {
+	for ( p = fs_searchpaths; p; p = next ) {
 		next = p->next;
 
-		if (p->bff) {
-			FS_FreeBFF(p->bff);
+		if ( p->bff ) {
+			FS_FreeBFF( p->bff );
 			p->bff = NULL;
 		}
 
-		Z_Free(p);
+		Z_Free( p );
 	}
 
 	fs_searchpaths = NULL;
 	fs_bffCount = 0;
+
 	fs_bffChunks = 0;
 	fs_dirCount = 0;
 
@@ -2946,22 +2956,19 @@ void FS_Restart( void )
 	// last valid game folder
 	static char lastValidBase[MAX_OSPATH];
 	static char lastValidGame[MAX_OSPATH];
-	const char *defaultcfg;
 
 	static qboolean execConfig = qfalse;
 
 	// free anything we currently have loaded
-	FS_Shutdown(qfalse);
+	FS_Shutdown( qfalse );
 
 	// try to start up normally
 	FS_Startup();
 
-	defaultcfg = Cvar_VariableString( "com_defaultcfg" );
-
 	// if we can't find default.cfg, assume that the paths are
 	// busted and error out now, rather than getting an unreadable
 	// graphics screen when the font fails to load
-	if ( FS_LoadFile( defaultcfg, NULL ) <= 0 ) {
+	if ( FS_LoadFile( "default.cfg", NULL ) <= 0 ) {
 		if (lastValidBase[0]) {
 			Cvar_Set( "fs_basepath", lastValidBase );
 			Cvar_Set( "fs_game", lastValidGame );
@@ -2973,11 +2980,15 @@ void FS_Restart( void )
 			N_Error( ERR_DROP, "Invalid game folder" );
 			return;
 		}
-		N_Error( ERR_FATAL, "Couldn't load %s", defaultcfg );
+		N_Error( ERR_FATAL, "Couldn't load default.cfg" );
 	}
 
-	if (!N_stricmp(fs_gamedirvar->s, lastValidGame) && execConfig) {
-		Cbuf_AddText( va( "exec %s\n", defaultcfg ) );
+	// now check before safeMode
+	if ( !N_stricmp( fs_gamedirvar->s, lastValidGame ) && execConfig ) {
+		// skip the user config if "safe" is on the command line
+		if ( !Com_SafeMode() ) {
+			Cbuf_AddText( "exec " NOMAD_CONFIG "\n" );
+		}
 	}
 
 	execConfig = qfalse;

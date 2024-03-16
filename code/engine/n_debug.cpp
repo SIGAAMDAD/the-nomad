@@ -62,7 +62,8 @@ public:
     char *m_pStacktraceBuffer;
 #elif defined(_WIN32)
 	HANDLE m_hProcess;
-	SYMBOL_INFO *m_pSymbolBuffer;
+	IMAGEHLP_SYMBOL64 *m_pSymbolBuffer;
+	CONTEXT m_Context;
 #endif
     void **m_pSymbolArray;
     FILE *m_pBacktraceFile;
@@ -219,10 +220,14 @@ CDebugSession::CDebugSession( void )
 #elif defined(_WIN32)
 	m_hProcess = GetCurrentProcess();
 
+	memset( &m_Context, 0, sizeof( m_Context ) );
+	m_Context.ContextFlags = CONTEXT_FULL;
+	RtlCaptureContext( &m_Context );
+
 	SymInitialize( m_hProcess, NULL, TRUE );
 
-	m_pSymbolBuffer = (SYMBOL_INFO *)malloc( sizeof(SYMBOL_INFO) + MAX_SYMBOL_LENGTH );
-	if (!m_pSymbolBuffer) {
+	m_pSymbolBuffer = (IMAGEHLP_SYMBOL64 *)calloc( sizeof( *m_pSymbolBuffer ) + MAX_SYMBOL_LENGTH, 1 );
+	if ( !m_pSymbolBuffer ) {
 		Sys_Error( "Failed to allocate sufficient memory for stacktrace buffer" );
 	}
 
@@ -368,44 +373,101 @@ void Sys_DebugString( const char *str )
 
 void Sys_DebugStacktrace( uint32_t frames )
 {
+	if ( com_errorEntered && g_debugSession.m_iErrorReason != ERR_NONE ) {
+        g_debugSession.m_bDoneErrorStackdump = true;
+    }
 #ifdef _WIN32
 	DWORD i;
 	USHORT nFrames;
 	IMAGEHLP_LINE64 SymLine;
 	IMAGEHLP_MODULE64 ModuleInfo;
-	PSYMBOL_INFO pSymbol;
+//	PSYMBOL_INFO64 pSymbol;
+	PIMAGEHLP_SYMBOL64 pSymbol;
 	HMODULE hModule;
 	HANDLE hProcess;
 	DWORD dwDisplacement;
+	DWORD64 dwDisplacement64;
 	DWORD64 dwAddr;
 	DWORD64 dwModuleBase;
-
-	if ( com_errorEntered && g_debugSession.m_iErrorReason != ERR_NONE ) {
-        g_debugSession.m_bDoneErrorStackdump = true;
-    }
-
-	memset( g_debugSession.m_pSymbolArray, 0, sizeof(void *) * MAX_STACKTRACE_FRAMES );
-	nFrames = CaptureStackBackTrace( 2, frames, g_debugSession.m_pSymbolArray, NULL );
+	STACKFRAME64 stackFrame;
+	HANDLE hThread;
+	DWORD image;
 
 	hModule = GetModuleHandle( NULL );
 	hProcess = GetCurrentProcess();
+	hThread = GetCurrentThread();
 
-	ModuleInfo.SizeOfStruct = sizeof(IMAGEHLP_MODULE64);
-	SymLine.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
+	ZeroMemory( &stackFrame, sizeof( stackFrame ) );
+#ifdef _M_IX86
+	image = IMAGE_FILE_MACHINE_I386;
+	stackFrame.AddrPC.Offset = g_debugSession.m_Context.Eip;
+	stackFrame.AddrPC.Mode = AddrModeFlat;
+	stackFrame.AddrFrame.Offset = g_debugSession.m_Context.Ebp;
+	stackFrame.AddrFrame.Mode = AddrModeFlat;
+	stackFrame.AddrStack.Offset = g_debugSession.m_Context.Esp;
+	stackFrame.AddrStack.Mode = AddrModeFlat;
+#elif defined(_M_X64)
+	image = IMAGE_FILE_MACHINE_AMD64;
+	stackFrame.AddrPC.Offset = g_debugSession.m_Context.Rip;
+	stackFrame.AddrPC.Mode = AddrModeFlat;
+	stackFrame.AddrFrame.Offset = g_debugSession.m_Context.Rsp;
+	stackFrame.AddrFrame.Mode = AddrModeFlat;
+	stackFrame.AddrStack.Offset = g_debugSession.m_Context.Rsp;
+	stackFrame.AddrStack.Mode = AddrModeFlat;
+#elif defined(_M_IA64)
+	image = IMAGE_FILE_MACHINE_IA64;
+	stackFrame.AddrPC.Offset = g_debugSession.m_Context.StIIP;
+	stackFrame.AddrPC.Mode = AddrModeFlat;
+	stackFrame.AddrFrame.Offset = g_debugSession.m_Context.IntSp;
+	stackFrame.AddrFrame.Mode = AddrModeFlat;
+	stackFrame.AddrBStore.Offset = g_debugSession.m_Context.RsBSP;
+	stackFrame.AddrBStore.Mode = AddrModeFlat;
+	stackFrame.AddrStack.Offset = g_debugSession.m_Context.IntSp;
+	stackFrame.AddrStack.Mode = AddrModeFlat;
+#endif
+
+	for ( uint32_t i = 0; i < frames; i++ ) {
+		const BOOL result = StackWalk64( image, hProcess, hThread, &stackFrame, &g_debugSession.m_Context, NULL, SymFunctionTableAccess64,
+			SymGetModuleBase64, NULL );
+		if ( !result ) {
+			break;
+		}
+
+		char buffer[ sizeof( SYMBOL_INFO ) + ( MAX_SYM_NAME - 1 ) * sizeof( TCHAR ) ];
+		PSYMBOL_INFO symbol = (PSYMBOL_INFO)buffer;
+		symbol->SizeOfStruct = sizeof( SYMBOL_INFO );
+		symbol->MaxNameLen = MAX_SYM_NAME - 1;
+
+		SymLine.SizeOfStruct = sizeof( IMAGEHLP_LINE64 );
+		SymGetLineFromAddr64( hProcess, stackFrame.AddrPC.Offset, &dwDisplacement, &SymLine );
+		SymGetModuleInfo64( hProcess, symbol->ModBase, &ModuleInfo );
+
+		if ( SymFromAddr( hProcess, stackFrame.AddrPC.Offset, &dwDisplacement64, symbol ) ) {
+			Con_Printf( "[Frame %i] %s\n"
+						"(0x%04lx) %s:%i:%i -> %s\n"
+				, i, ModuleInfo.ModuleName, symbol->Address, SymLine.FileName, SymLine.LineNumber, dwDisplacement, (const char *)symbol->Name );
+		} else {
+			Con_Printf( "SymFromAddr failed: %s\n", Sys_GetError() );
+			Con_Printf( "[Frame %i] (unknown symbol) ???\n", i );
+		}
+	}
+
+/*
+	memset( g_debugSession.m_pSymbolArray, 0, sizeof( void * ) * MAX_STACKTRACE_FRAMES );
+	nFrames = CaptureStackBackTrace( 1, frames, g_debugSession.m_pSymbolArray, NULL );
+
+	ModuleInfo.SizeOfStruct = sizeof( IMAGEHLP_MODULE64 );
+	SymLine.SizeOfStruct = sizeof( IMAGEHLP_LINE64 );
 
 	pSymbol = g_debugSession.m_pSymbolBuffer;
-	pSymbol->SizeOfStruct = sizeof(SYMBOL_INFO) + ( ( MAX_SYMBOL_LENGTH - 1 ) * sizeof(TCHAR) );
-	pSymbol->MaxNameLen = MAX_SYMBOL_LENGTH - 1;
+	pSymbol->SizeOfStruct = sizeof( SYMBOL_INFO ) + ( ( MAX_SYMBOL_LENGTH - 1 ) * sizeof( char ) );
+	pSymbol->MaxNameLength = MAX_SYMBOL_LENGTH - 1;
 
 	for ( i = 0; i < nFrames; i++ ) {
-		dwAddr = (DWORD64)g_debugSession.m_pSymbolArray[i];
-
-		memset( pSymbol, 0, pSymbol->SizeOfStruct );
-
-		dwModuleBase = SymGetModuleBase64( hProcess, dwAddr );
-		SymFromAddr( hProcess,(DWORD64)( dwAddr ), NULL, pSymbol );
-		SymGetLineFromAddr64( hProcess, dwAddr, &dwDisplacement, &SymLine );
-		SymGetModuleInfo( hProcess, dwModuleBase, &ModuleInfo );
+		dwModuleBase = SymGetModuleBase64( hProcess, (DWORD64)g_debugSession.m_pSymbolArray[i] );
+		SymGetSymFromAddr64( hProcess,(DWORD64)( g_debugSession.m_pSymbolArray[i] ), NULL, pSymbol );
+		SymGetLineFromAddr64( hProcess, (DWORD64)g_debugSession.m_pSymbolArray[i], &dwDisplacement, &SymLine );
+		SymGetModuleInfo64( hProcess, dwModuleBase, &ModuleInfo );
 
 		Con_Printf( "[Frame #%i]\n"
 					"  Module Name: %s\n"
@@ -413,17 +475,14 @@ void Sys_DebugStacktrace( uint32_t frames )
 					"  Line: %i\n"
 					"  Name: %s\n"
 					"  File: %s\n"
-				, frames - i - 1, ModuleInfo.ModuleName, pSymbol->Address, SymLine.LineNumber, (char *)pSymbol->Name, SymLine.FileName );
+				, nFrames - i - 1, ModuleInfo.ModuleName, pSymbol->Address, SymLine.LineNumber, (char *)pSymbol->Name, SymLine.FileName );
 	}
+	*/
 
 #elif defined(POSIX)
 	char *buffer;
     int numframes;
     uint64_t fileLength;
-
-	if (com_errorEntered && g_debugSession.m_iErrorReason != ERR_NONE) {
-        g_debugSession.m_bDoneErrorStackdump = true;
-    }
 
     if (g_debugSession.m_pBTState) {
         int skip = 2; // skip this function in backtrace

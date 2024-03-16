@@ -44,18 +44,23 @@ public:
 
     bool Parse( const string_t *fileName );
 
+    CThreadAtomic<int32_t> m_nRefCount;
+    qboolean m_bGCFlag;
     JsonObject handle;
 };
 
 CModuleJsonObject::CModuleJsonObject( void ) {
+    m_nRefCount = 1;
 }
 
 CModuleJsonObject::CModuleJsonObject( JsonObject& json ) {
     handle = json;
+    m_nRefCount = 1;
 }
 
 CModuleJsonObject::CModuleJsonObject( const string_t *fileName ) {
     Parse( fileName );
+    m_nRefCount = 1;
 }
 
 CModuleJsonObject::CModuleJsonObject( const CModuleJsonObject& other ) {
@@ -211,6 +216,17 @@ bool CModuleJsonObject::GetStringArray( const string_t *name, CScriptArray *data
     data->Resize( json.size() );
     for ( uint32_t i = 0; i < json.size(); i++ ) {
         *(string_t *)data->At( i ) = (string_t &&)json.at( i );
+    }
+    return true;
+}
+bool CModuleJsonObject::GetBoolArray( const string_t *name, CScriptArray *data ) {
+    if ( !handle.contains( name->c_str() ) ) {
+        return false;
+    }
+    const JsonObject& json = handle.at( name->c_str() );
+    data->Resize( json.size() );
+    for ( uint32_t i = 0; i < json.size(); i++ ) {
+        *(bool *)data->At( i ) = json.at( i );
     }
     return true;
 }

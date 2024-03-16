@@ -2,10 +2,14 @@
 #include "convar.as"
 #include "spawn.as"
 #include "checkpoint.as"
+#include "json.as"
+#include "sfx.as"
+#include "filesystem.as"
 
 namespace TheNomad::SGame {
 	shared enum LevelRank {
-		RankA = 0,
+		RankS = 0,
+		RankA,
 		RankB,
 		RankC,
 		RankD,
@@ -16,18 +20,22 @@ namespace TheNomad::SGame {
 	};
 	
 	shared class MapSoundData {
-		MapSoundData( float dissonance = TheNomad::Engine::CvarVariableFloat( "sgame_SoundDissonance" ) ) {
+		MapSoundData( float dissonance ) {
 			m_bModified = false;
 			m_nDissonance = dissonance;
+//			m_DataBits.resize( MAX_MAP_WIDTH * MAX_MAP_HEIGHT );
 		}
 		MapSoundData() {
 		}
-		
-		array<float>& GetData() {
+
+		float[] GetCacheData() {
+			return m_DataBits;
+		}
+		float[] GetData() {
 			m_bModified = true;
 			return m_DataBits;
 		}
-		const array<float>& GetData() const {
+		const float[] GetData() const {
 			return m_DataBits;
 		}
 		bool Changed() const {
@@ -55,20 +63,18 @@ namespace TheNomad::SGame {
 		}
 		
 		private float m_nDissonance;
-		private array<float> m_DataBits;
+		private float[] m_DataBits( MAX_MAP_WIDTH * MAX_MAP_HEIGHT );
 		private bool m_bModified;
 	};
 	
 	shared class MapData {
-		MapData( const string& in mapName, uint nMapLevels ) {
+		MapData( const string& in mapName, uint nMapLevels, ModuleObject@ main ) {
 			m_nWidth = 0;
 			m_nHeight = 0;
 			m_Name = mapName;
+			@ModObject = @main;
 			
 			m_SoundBits.resize( nMapLevels );
-			for ( uint i = 0; i < nMapLevels; i++ ) {
-				m_SoundBits[i].resize( MAX_MAP_WIDTH * MAX_MAP_HEIGHT );
-			}
 		}
 		
 		private uint GetCheckpointIndex( const MapCheckpoint@ cp ) const {
@@ -87,16 +93,16 @@ namespace TheNomad::SGame {
 		//
 		void SaveMapCache() const {
 			TheNomad::Engine::FileSystem::OutputStream file;
-			const int mapCacheIdent = (('C'<<24)+('D'<<16)+('M'<<8)+'@');
+			const uint mapCacheMagic = 0xffa53dfe;
 			
-			if ( file.Open( "_cache/" + m_Name + "_mcd.dat" ) is false ) {
+			if ( file.Open( "_cache/" + m_Name + "_mcd.dat" ) == false ) {
 				DebugPrint( "ERROR: failed to create a checkpoint cache for '" + m_Name + "'!\n" );
 				return;
 			}
 			
 			DebugPrint( "Saving cached checkpoint data...\n" );
 			
-			file.WriteInt( mapCacheIdent );
+			file.WriteUInt( mapCacheMagic );
 			file.WriteUInt( m_Spawns.size() );
 			file.WriteUInt( m_Checkpoints.size() );
 			
@@ -105,20 +111,21 @@ namespace TheNomad::SGame {
 			}
 		}
 		
-		bool LoadCheckpointCacheCache() {
+		bool LoadCheckpointCache() {
 			TheNomad::Engine::FileSystem::InputStream file;
-			int ident;
+			uint magic;
 			uint num, index;
-			const int mapCacheIdent = (('C'<<24)+('D'<<16)+('M'<<8)+'@');
+			const uint mapCacheMagic = 0xffa53dfe;
 			
-			if ( file.Open( "_cache/" + m_Name + "_mdc.dat" ) is false ) {
+			if ( file.Open( "_cache/" + m_Name + "_mdc.dat" ) == false ) {
 				ConsolePrint( "no map data cache found.\n" );
 				return false;
 			}
 			
-			file.ReadInt( ident );
-			if ( ident != mapCacheIdent ) {
-				GameError( "LoadMapCache( " + m_Name + " ): found data cache file, but wrong identifier" );
+			file.ReadUInt( magic );
+			if ( magic != mapCacheMagic ) {
+				ConsoleWarning( "LoadCheckpointCache( " + m_Name + " ): found data cache file, but wrong magic! refusing to load.\n" );
+				return false;
 			}
 			
 			file.ReadUInt( num );
@@ -138,7 +145,7 @@ namespace TheNomad::SGame {
 					ConsolePrint( "checkpoint index in data cache file isn't valid, corruption? refusing to load.\n" );
 					return false;
 				}
-				@m_Spawns[i].m_Checkpoint = @m_Checkpooints[index];
+				@m_Spawns[i].m_Checkpoint = @m_Checkpoints[index];
 			}
 			
 			return true;
@@ -147,15 +154,11 @@ namespace TheNomad::SGame {
 		void Load( int hMap ) {
 			uint nCheckpoints, nSpawns, nTiles;
 			uint i;
-			vec3 xyz;
+			uvec3 xyz;
 			
-			bool success = TheNomad::GameSystem::SetActiveMap( hMap, nCheckpoints, nSpawns,
-				nTiles, m_SoundBits.GetData(), EntityManager.GetFirstLink() );
-			
-			if ( success is false ) {
-				GameError( "MapData::Load: failed to set map to " + formatInt( hMap ) + "\n" );
-			}
-			
+			TheNomad::GameSystem::SetActiveMap( hMap, nCheckpoints, nSpawns,
+				nTiles, m_SoundBits[0].GetCacheData(), ModObject.EntityManager.GetEntities()[0].GetLink() );
+
 			m_Checkpoints.reserve( nCheckpoints );
 			
 			//
@@ -178,23 +181,32 @@ namespace TheNomad::SGame {
 				uint id, type;
 				
 				TheNomad::GameSystem::GetSpawnData( xyz, type, id, i );
-				@spawn = MapSpawn( xyz, type, id, null );
+				@spawn = MapSpawn( xyz, id, TheNomad::GameSystem::EntityType( type ) );
+				@spawn.m_Checkpoint = null;
 				
 				m_Spawns.push_back( spawn );
 			}
 			
 			if ( !LoadCheckpointCache() ) {
+				// generate the indexes manually
+
 				float dist;
 				MapCheckpoint@ cp;
 				
 				for ( i = 0; i < nSpawns; i++ ) {
-					dist = Distance( m_Spawns[i].m_Origin, m_Checkpoints[0].m_Origin );
+					dist = TheNomad::Util::Distance( m_Spawns[i].m_Origin, m_Checkpoints[0].m_Origin );
 					for ( uint c = 1; c < nCheckpoints; c++ ) {
-						@cp = m_Checkpoints[c];
-						if ( Distance( cp.m_Origin, m_Spawns[i].m_Origin ) < dist ) {
-							dist = Distance( cp.m_Origin, m_Spawns[i].m_Origin );
+						@cp = @m_Checkpoints[c];
+						if ( TheNomad::Util::Distance( cp.m_Origin, m_Spawns[i].m_Origin ) < dist ) {
+							dist = TheNomad::Util::Distance( cp.m_Origin, m_Spawns[i].m_Origin );
 						}
 					}
+
+					if ( cp is null ) {
+						DebugPrint( "spawn without a checkpoint, discarding.\n" );
+						continue;
+					}
+					cp.AddSpawn( @m_Spawns[i] );
 				}
 			}
 		}
@@ -204,8 +216,21 @@ namespace TheNomad::SGame {
 		}
 		array<MapSoundData>& GetSoundBits() {
 			return m_SoundBits;
-		} 
+		}
+
+		bool SoundBitsChanged() const {
+			for ( uint i = 0; i < m_SoundBits.size(); i++ ) {
+				if ( m_SoundBits[i].Changed() ) {
+					return true;
+				}
+			}
+			return false;
+		}
 		
+		uint NumLevels() const {
+			return m_TileData.size();
+		}
+
 		const array<MapSpawn@>& GetSpawns() const {
 			return m_Spawns;
 		}
@@ -226,40 +251,118 @@ namespace TheNomad::SGame {
 		private array<MapSoundData> m_SoundBits;
 		private int m_nWidth;
 		private int m_nHeight;
+
+		private ModuleObject@ ModObject;
 	};
 	
 	shared class LevelStats {
-		LevelStats() {
+		LevelStats( ModuleObject@ main ) {
 			stylePoints = 0;
 			numKills = 0;
 			numDeaths = 0;
 			collateralScore = 0;
 			isClean = true;
+			drawString.reserve( MAX_STRING_CHARS );
+			time.Run();
+			@ModObject = @main;
+		}
+		LevelStats() {
 		}
 		
-		void Draw() const {
-			const ImGuiWindoFlags windowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize;
+		void Draw( bool endOfLevel ) {
+			ImGuiWindowFlags windowFlags = ImGui::MakeWindowFlags( ImGuiWindowFlags::NoTitleBar | ImGuiWindowFlags::NoMove | ImGuiWindowFlags::NoResize );
+
+			if ( !TheNomad::Engine::IsKeyDown( TheNomad::Engine::KeyNum::Key_Tab ) ) {
+				return;
+			}
 			
 			ImGui::Begin( "##LevelStatsShow", null, windowFlags );
-			ImGui::TextUnformatted( "" );
-			if ( TheNomad::Engine::IsAnyKeyDown() ) {
-				TheNomad::Engine::SoundSystem::PlaySfx( selectedSfx );
+			if ( endOfLevel ) {
+				if ( TheNomad::Engine::IsAnyKeyDown() ) {
+					ModObject.selectedSfx.Play();
+				}
 			}
+			
+			ImGui::BeginTable( "##LevelStatsNumbers", 2 );
+			
+			//
+			// time
+			//
+			ImGui::TableNextColumn();
+			ImGui::Text( "TIME:" );
+			ImGui::TableNextColumn();
+			
+			drawString = time.ElapsedMinutes();
+			drawString += ":";
+			drawString += time.ElapsedSeconds();
+			drawString += ".";
+			drawString += time.ElapsedMilliseconds();
+			ImGui::Text( drawString );
+			ImGui::TextColored( ModObject.sgame_RankStringColors[ time_Rank ], ModObject.sgame_RankStrings[ time_Rank ] );
+			
+			ImGui::TableNextRow();
+			
+			//
+			// kills
+			//
+			ImGui::TableNextColumn();
+			ImGui::Text( "KILLS:" );
+			ImGui::TableNextColumn();
+			drawString = numKills;
+			ImGui::Text( drawString );
+			ImGui::TextColored( ModObject.sgame_RankStringColors[ kills_Rank ], ModObject.sgame_RankStrings[ kills_Rank ] );
+			
+			ImGui::TableNextRow();
+			
+			//
+			// deaths
+			//
+			ImGui::TableNextColumn();
+			ImGui::Text( "DEATHS:" );
+			ImGui::TableNextColumn();
+			drawString = numDeaths;
+			ImGui::Text( drawString );
+			ImGui::TextColored( ModObject.sgame_RankStringColors[ deaths_Rank ], ModObject.sgame_RankStrings[ deaths_Rank ] );
+			
+			ImGui::TableNextRow();
+			
+			//
+			// style
+			//
+			ImGui::TableNextColumn();
+			ImGui::Text( "STYLE:" );
+			ImGui::TableNextColumn();
+			drawString = stylePoints;
+			ImGui::Text( drawString );
+			ImGui::TextColored( ModObject.sgame_RankStringColors[ style_Rank ], ModObject.sgame_RankStrings[ style_Rank ] );
+			
+			ImGui::EndTable();
+			
 			ImGui::End();
 		}
 		
+		private string drawString;
+		TheNomad::Engine::Timer time;
 		uint stylePoints;
 		uint numKills;
 		uint numDeaths;
 		uint collateralScore;
 		bool isClean;
+
+		LevelRank time_Rank;
+		LevelRank style_Rank;
+		LevelRank kills_Rank;
+		LevelRank deaths_Rank;
+
+		ModuleObject@ ModObject;
 	};
 	
 	shared class LevelMapData {
 		LevelMapData() {
 		}
-		LevelMapData( const string& in name ) {
+		LevelMapData( const string& in name, ModuleObject@ main ) {
 			m_Name = name;
+			highStats = LevelStats( @main );
 		}
 		
 		LevelStats highStats;
@@ -271,12 +374,12 @@ namespace TheNomad::SGame {
 	
 	shared class LevelRankData {
 		LevelRankData() {
-			rank = 0;
+			rank = LevelRank::RankS;
 			minStyle = 0;
 			minKills = 0;
 			maxTime = 0;
 			maxDeaths = 0;
-			requireClean = false;
+			requiresClean = false;
 		}
 		
 		LevelRank rank;
@@ -284,7 +387,8 @@ namespace TheNomad::SGame {
 		uint minKills;
 		uint maxTime;
 		uint maxDeaths;
-		bool requireClean; // no warcrimes, no innocent deaths, etc. required for perfect score
+		uint maxCollateral;
+		bool requiresClean; // no warcrimes, no innocent deaths, etc. required for perfect score
 	};
 	
 	shared class LevelInfoData {
@@ -296,56 +400,196 @@ namespace TheNomad::SGame {
 		array<LevelMapData> m_MapHandles;
 		string m_Name;
 		uint m_nIndex;
+		LevelRankData m_RankS;
 		LevelRankData m_RankA;
 		LevelRankData m_RankB;
 		LevelRankData m_RankC;
 		LevelRankData m_RankD;
 		LevelRankData m_RankF;
-		LevelRankData m_RankWereUBotting;
+		LevelRankData m_RankU;
 	};
 	
 	shared class LevelSystem : TheNomad::GameSystem::GameObject {
-		LevelSystem() {
+		LevelSystem( ModuleObject@ main ) {
+			LevelInfoData@ data;
+			uint i;
+			string mapname, levelName;
+			TheNomad::Util::JsonObject rankS, rankA, rankB, rankC, rankD, rankF, rankU;
+			string str;
+
+			ConsolePrint( "Loading level infos...\n" );
+
+			@ModObject = @main;
 			m_nLevels = 0;
 			@m_Current = null;
+
+			if ( ModObject.sgame_LevelInfoFile.GetValue().size() > 0 ) {
+				LoadLevelsFromFile( ModObject.sgame_LevelInfoFile.GetValue() );
+			} else {
+				LoadLevelsFromFile( "scripts/levels.json" );
+			}
+
+			ConsolePrint( formatUInt( NumLevels() ) + " levels parsed.\n" );
+
+			// set level numbers
+			for ( i = 0; i < NumLevels(); i++ ) {
+				GetLevelInfoByIndex( i ).SetUInt( "num", i );
+			}
+
+			mapname.resize( MAX_NPATH );
+			levelName.resize( MAX_NPATH );
+			str.reserve( MAX_STRING_CHARS );
+			for ( i = 0; i < NumLevels(); i++ ) {
+				TheNomad::Util::JsonObject@ info = GetLevelInfoByIndex( i );
+
+				if ( !info.GetString( "name", levelName ) ) {
+					ConsoleWarning( "invalid level info, missing variable 'name'\n" );
+					continue;
+				}
+				@data = LevelInfoData( levelName );
+
+				ConsolePrint( "Loaded level '" + data.m_Name + "'...\n" );
+
+				for ( uint j = 0; j < data.m_MapHandles.size(); j++ ) {
+					if ( !info.GetString( "mapname_difficulty_" + formatUInt( j ), mapname ) ) {
+						// level currently doesn't support this difficulty
+						continue;
+					}
+					if ( mapname == "none" ) {
+						// level currently doesn't support this difficulty
+						continue;
+					}
+
+					data.m_MapHandles.push_back( LevelMapData( mapname, @ModObject ) );
+					data.m_MapHandles.back().mapHandle = TheNomad::GameSystem::LoadMap( mapname );
+					data.m_MapHandles.back().difficulty = TheNomad::GameSystem::GameDifficulty( j );
+
+					if ( data.m_MapHandles.back().mapHandle == FS_INVALID_HANDLE ) {
+						ConsoleWarning( "failed to load map '" + mapname + "' for level '" + data.m_Name + "'\n" );
+					}
+				}
+
+				data.m_nIndex = i;
+
+				if ( !info.GetObject( "RankS", rankS ) ) {
+					ConsoleWarning( "invalid level info, no object for RankS\n" );
+					continue;
+				}
+				if ( !info.GetObject( "RankA", rankA ) ) {
+					ConsoleWarning( "invalid level info, no object for RankA\n" );
+					continue;
+				}
+				if ( !info.GetObject( "RankB", rankB ) ) {
+					ConsoleWarning( "invalid level info, no object for RankB\n" );
+					continue;
+				}
+				if ( !info.GetObject( "RankC", rankC ) ) {
+					ConsoleWarning( "invalid level info, no object for RankC\n" );
+					continue;
+				}
+				if ( !info.GetObject( "RankD", rankD ) ) {
+					ConsoleWarning( "invalid level info, no object for RankD" );
+					continue;
+				}
+				if ( !info.GetObject( "RankF", rankF ) ) {
+					ConsoleWarning( "invalid level info, no object for RankF" );
+					continue;
+				}
+				if ( !info.GetObject( "RankU", rankU ) ) {
+					ConsoleWarning( "invalid level info, no object for RankU" );
+					continue;
+				}
+
+				data.m_RankS.rank = LevelRank::RankS;
+				if ( !LoadLevelRankData( str, "RankS", @data.m_RankS, rankS ) ) {
+					continue;
+				}
+				data.m_RankA.rank = LevelRank::RankA;
+				if ( !LoadLevelRankData( str, "RankA", @data.m_RankA, rankA ) ) {
+					continue;
+				}
+				data.m_RankB.rank = LevelRank::RankB;
+				if ( !LoadLevelRankData( str, "RankB", @data.m_RankB, rankB ) ) {
+					continue;
+				}
+				data.m_RankC.rank = LevelRank::RankC;
+				if ( !LoadLevelRankData( str, "RankC", @data.m_RankC, rankC ) ) {
+					continue;
+				}
+				data.m_RankD.rank = LevelRank::RankD;
+				if ( !LoadLevelRankData( str, "RankD", @data.m_RankD, rankD ) ) {
+					continue;
+				}
+				data.m_RankF.rank = LevelRank::RankF;
+				if ( !LoadLevelRankData( str, "RankF", @data.m_RankF, rankF ) ) {
+					continue;
+				}
+				data.m_RankU.rank = LevelRank::RankWereUBotting;
+				if ( !LoadLevelRankData( str, "RankU", @data.m_RankU, rankU ) ) {
+					continue;
+				}
+			}
 		}
 		
-		void OnRunTic() override {
-			for ( uint i = 0; i < m_Data.GetMap().NumLevels(); i++ ) {
-				if ( !m_Data.GetMap().SoundBitsChanged() ) {
+		void OnRunTic() {
+			for ( uint i = 0; i < m_MapData.NumLevels(); i++ ) {
+				if ( !m_MapData.SoundBitsChanged() ) {
 					continue; // no need for dissonance
 				}
 				
 			}
 		}
+		void OnConsoleCommand() {
+		}
+		void OnLevelEnd() {
+		}
+		void OnSave() const {
+		}
+		void OnLoad() {
+		}
+		const string& GetName() const {
+			return "LevelSystem";
+		}
 		//!
 		//!
 		//!
-		void OnLevelStart() override {
-			const LevelInfoData@ data;
-			const string@ mapname;
+		void OnLevelStart() {
 			int difficulty;
 			
 			// get the level index
-			m_nIndex = TheNomad::CvarVariableInteger( "g_levelIndex" );
-			difficulty = TheNomad::CvarVariableInteger( "sgame_Difficulty" );
+			m_nIndex = TheNomad::Engine::CvarVariableInteger( "g_levelIndex" );
+			difficulty = ModObject.sgame_Difficulty.GetInt();
 			
-			@mapname = @m_LevelInfoDatas[m_nIndex].m_MapHandles[difficulty].m_Name;
+			ConsolePrint( "Loading level \"" + m_LevelInfoDatas[m_nIndex].m_MapHandles[difficulty].m_Name + "\"...\n" );
 			
-			ConsolePrint( "Loading level \"" + mapname + "\"...\n" );
-			
-			if ( int( TheNomad::CvarVariableInteger( "sgame_LevelDebugPrint" ) ) == 1 ) {
+			if ( ModObject.sgame_LevelDebugPrint.GetInt() == 1 ) {
 				
 			}
 			
-			m_Stats = LevelStats();
+			m_RankData = LevelStats();
 			@m_Current = @m_LevelInfoDatas[m_nIndex];
-			
-			@m_MapData = MapData( s );
-		}
-		
-		const string& GetName() const {
-			return "LevelManager";
+			@m_MapData = MapData( m_LevelInfoDatas[m_nIndex].m_MapHandles[difficulty].m_Name, 1, @ModObject );
+
+			switch ( TheNomad::GameSystem::GameDifficulty( difficulty ) ) {
+			case TheNomad::GameSystem::GameDifficulty::VeryEasy:
+				m_nDifficultyScale = 0.5f;
+				break;
+			case TheNomad::GameSystem::GameDifficulty::Easy:
+				m_nDifficultyScale = 1.0f;
+				break;
+			case TheNomad::GameSystem::GameDifficulty::Normal:
+				m_nDifficultyScale = 1.5f;
+				break;
+			case TheNomad::GameSystem::GameDifficulty::Hard:
+				m_nDifficultyScale = 1.90f;
+				break;
+			case TheNomad::GameSystem::GameDifficulty::VeryHard:
+				m_nDifficultyScale = 2.5f;
+				break;
+			case TheNomad::GameSystem::GameDifficulty::TryYourBest:
+				m_nDifficultyScale = 5.0f; // ... ;)
+				break;
+			};
 		}
 		
 		void AddLevelData( LevelInfoData@ levelData ) {
@@ -369,8 +613,8 @@ namespace TheNomad::SGame {
 		const LevelInfoData@ GetLevelInfoByMapName( const string& in mapname ) const {
 			for ( uint i = 0; i < m_LevelInfoDatas.size(); i++ ) {
 				for ( uint a = 0; a < m_LevelInfoDatas[i].m_MapHandles.size(); a++ ) {
-					if ( TheNomad::Util::StrICmp( m_LevelInfoDatas[i].m_MapHandles[a].m_Name, mapname ) ) {
-						return m_LevelInfoDatas[i];
+					if ( TheNomad::Util::StrICmp( m_LevelInfoDatas[i].m_MapHandles[a].m_Name, mapname ) == 0 ) {
+						return @m_LevelInfoDatas[i];
 					}
 				}
 			}
@@ -386,15 +630,54 @@ namespace TheNomad::SGame {
 				return;
 			}
 
-			json.GetObjectArray( "LevelInfo", levels );
-			m_LevelInfos.reserve( levels.size() );
-			for ( uint i = 0; i < levels.size(); i++ ) {
-				m_LevelInfos.push_back( @levels[i] );
+			if ( !json.GetObjectArray( "LevelInfo", levels ) ) {
+				ConsoleWarning( "invalid level info file, no level infos?\n" );
+				return;
 			}
+			m_LevelInfos.insertAt( m_LevelInfos.size() - 1, levels );
+		}
+
+		bool LoadLevelRankData( string& in str, const string& in rankName, LevelRankData@ data, TheNomad::Util::JsonObject& in json ) {
+			str = rankName + "_MinStyle";
+			if ( !json.GetInt( str, data.minStyle ) ) {
+				str = "invalid level info, missing RankData value for '" + rankName + "_MinStyle'\n";
+				ConsoleWarning( str );
+				return false;
+			}
+			str = rankName + "_MinKills";
+			if ( !json.GetInt( str, data.minKills ) ) {
+				str = "invalid level info, missing RankData value for '" + rankName + "_MinKills'\n";
+				ConsoleWarning( str );
+				return false;
+			}
+			str = rankName + "_MaxDeaths";
+			if ( !json.GetInt( str, data.maxDeaths ) ) {
+				str = "invalid level info, missing RankData value for '" + rankName + "_MaxDeaths'\n";
+				ConsoleWarning( str );
+				return false;
+			}
+			str = rankName + "_MaxCollateral";
+			if ( !json.GetInt( str, data.maxCollateral ) ) {
+				str = "invalid level info, missing RankData value for '" + rankName + "_MaxCollateral'\n";
+				ConsoleWarning( str );
+				return false;
+			}
+			str = rankName + "_RequiresClean";
+			if ( !json.GetBool( str, data.requiresClean ) ) {
+				str = "invalid level info, missing RankData value for '" + rankName + "_RequiresClean'\n";
+				ConsoleWarning( str );
+				return false;
+			}
+			
+			return true;
+		}
+
+		float GetDifficultyScale() const {
+			return m_nDifficultyScale;
 		}
 		
 		LevelStats& GetStats() {
-			return m_Stats;
+			return m_RankData;
 		}
 		
 		uint NumLevels() const {
@@ -403,21 +686,41 @@ namespace TheNomad::SGame {
 		uint LoadedIndex() const {
 			return m_nIndex;
 		}
+
+		const MapData@ GetMapData() const {
+			return @m_MapData;
+		}
+		MapData@ GetMapData() {
+			return @m_MapData;
+		}
+
+		const LevelInfoData@ GetCurrentData() const {
+			return @m_Current;
+		}
+		LevelInfoData@ GetCurrentData() {
+			return @m_Current;
+		}
 		
-		private array<TheNomad::Util::JsonObject@> m_LevelInfos;
+		private array<TheNomad::Util::JsonObject> m_LevelInfos;
 		private array<LevelInfoData@> m_LevelInfoDatas;
 		private uint m_nIndex;
 		private uint m_nLevels;
+
+		private float m_nDifficultyScale;
 		
-		private ConVar@ sgame_SoundDissonance;
 		private LevelStats m_RankData;
 		private LevelInfoData@ m_Current;
 		private MapData@ m_MapData;
+
+		private ModuleObject@ ModObject;
 	};
 	
 	shared class SoundData {
-		SoundData( float decibles, const vec2& in volume, const ivec2& in range, const ivec3& in origin, float diffusion ) {
-			m_Loudness = decibles;
+		SoundData( float decibles, const vec2& in volume, const ivec2& in range, const ivec3& in origin, float diffusion,
+			ModuleObject@ main )
+		{
+			@ModObject = @main;
+			m_Decibles = decibles;
 			m_Volume = volume;
 			m_Origin = origin;
 			m_Diffusion = diffusion;
@@ -428,18 +731,17 @@ namespace TheNomad::SGame {
 		void Run() {
 			const float noiseScaleX = m_Volume.x < 1 ? 1 : m_Volume.x;
 			const float noiseScaleY = m_Volume.y < 1 ? 1 : m_Volume.y;
-			const int distanceX = m_Range.x * noiseScaleX / 2;
-			const int distanceY = m_Range.y * noiseScaleY / 2;
+			const int distanceX = m_Range.x * int( floor( noiseScaleX ) ) / 2;
+			const int distanceY = m_Range.y * int( floor( noiseScaleY ) ) / 2;
 			
 			const ivec2 start( m_Origin.x - distanceX, m_Origin.y - distanceY );
 			const ivec2 end( m_Origin.x + distanceX, m_Origin.y + distanceY );
 			
-			// NOTE: may need to redesign this bc/ of shared code bullshit
-			array<array<int>>& soundBits = LevelManager.GetCurrentData().GetMap().GetSoundBits();
+			float[]@ soundBits = ModObject.LevelManager.GetMapData().GetSoundBits()[m_Origin.z].GetData();
 			
 			for ( int y = start.y; y != end.y; y++ ) {
 				for ( int x = start.x; x != end.x; x++ ) {
-					soundBits[origin.z][y * LevelManger.GetCurrentData().GetMap().GetWidth() + x] += m_Decibles;
+					soundBits[y * ModObject.LevelManager.GetMapData().GetWidth() + x] += m_Decibles;
 					m_Decibles -= m_Diffusion;
 				}
 			}
@@ -450,116 +752,7 @@ namespace TheNomad::SGame {
 		private ivec2 m_Range;
 		private float m_Diffusion;
 		private float m_Decibles;
+		
+		private ModuleObject@ ModObject;
 	};
-
-	LevelSystem@ LevelManager;
-	ConVar@ sgame_Difficulty;
-	ConVar@ sgame_SaveName;
-	ConVar@ sgame_AdaptiveSoundtrack;
-	ConVar@ sgame_DebugMode;
-	ConVar@ sgame_cheat_BlindMobs;
-	ConVar@ sgame_cheat_DeafMobs;
-	ConVar@ sgame_cheat_InfiniteAmmo;
-	ConVar@ sgame_LevelDebugPrint;
-	ConVar@ sgame_LevelIndex;
-	ConVar@ sgame_LevelInfoFile;
-	ConVar@ sgame_SoundDissonance;
-	ConVar@ sgame_MapName;
-	string[] SP_DIFF_STRINGS( TheNomad::GameSystem::GameDifficulty::NumDifficulties );
-	
-	void InitLevels() {
-		LevelInfoData@ data;
-		uint i;
-		string mapname, levelName;
-		
-		ConsolePrint( "Loading level infos...\n" );
-		
-		@LevelManager = cast<LevelSystem>( TheNomad::GameSystem::AddSystem( LevelSystem() ) );
-		
-		@sgame_LevelInfoFile = TheNomad::CvarManager.AddCvar( "sgame_LevelInfoFile", "", CVAR_INIT | CVAR_ROM, false );
-		if ( sgame_LevelInfoFile.GetString().size() > 0 ) {
-			LevelManager.LoadLevelsFromFile( sgame_LevelInfoFile.GetString() );
-		} else {
-			LevelManager.LoadLevelsFromFile( "scripts/levels.json" );
-		}
-		
-		ConsolePrint( formatUInt( LevelManager.NumLevels() ) + " levels parsed.\n" );
-		
-		// set level numbers
-		for ( i = 0; i < LevelManager.NumLevels(); i++ ) {
-			LevelManager.GetLevelInfoByIndex( i ).SetUInt( "num", i );
-		}
-		
-		mapname.resize( MAX_NPATH );
-		levelName.resize( MAX_NPATH );
-		for ( i = 0; i < LevelManager.NumLevels(); i++ ) {
-			const TheNomad::Util::JsonObject& info = LevelManager.GetLevelInfoByIndex( i );
-			
-			if ( !info.GetString( "name", levelName ) ) {
-				ConsoleWarning( "invalid level info, missing variable 'name'\n" );
-				continue;
-			}
-			@data = LevelInfoData( levelName );
-			
-			ConsolePrint( "Loaded level '" + data.m_Name + "'...\n" );
-			
-			for ( uint j = 0; j < data.m_MapHandles.size(); j++ ) {
-				if ( !info.GetString( "mapname_difficulty_" + formatUInt( j ), mapname ) ) {
-					// level currently doesn't support this difficulty
-					continue;
-				}
-				if ( TheNomad::Util::StrICmp( mapname, "none" ) ) {
-					// level currently doesn't support this difficulty
-					continue;
-				}
-				
-				data.m_MapHandles.push_back( LevelMapData( @mapname ) );
-				data.m_MapHandles.back().mapHandle = TheNomad::GameSystem::LoadMap( mapname );
-				data.m_MapHandles.back().difficulty = TheNomad::GameSystem::GameDifficulty( j );
-				
-				if ( data.m_MapHandles.back().mapHandle == FS_INVALID_HANDLE ) {
-					ConsoleWarning( "failed to load map '" + mapname + "' for level '" + data.m_Name + "'\n" );
-				}
-			}
-			
-			data.m_nIndex = i;
-			
-			data.m_RankA.rank = RankA;
-			data.m_RankA.minStyle = StringToUInt( TheNomad::Engine::GetInfoValueForKey( infoString, "rank_a_minStyle" ) );
-			data.m_RankA.minKills = StringToUInt( TheNomad::Engine::GetInfoValueForKey( infoString, "rank_a_minKills" ) );
-			data.m_RankA.maxDeaths = StringToUInt( TheNomad::Engine::GetInfoValueForKey( infoString, "rank_a_maxDeaths" ) );
-			data.m_RankA.requiresClean = bool( StringToInt( TheNomad::Engine::GetInfoValueForKey( infoString, "rank_a_requiresClean" ) ) );
-			
-			data.m_RankB.rank = RankB;
-			data.m_RankB.minStyle = StringToUInt( TheNomad::Engine::GetInfoValueForKey( infoString, "rank_b_minStyle" ) );
-			data.m_RankB.minKills = StringToUInt( TheNomad::Engine::GetInfoValueForKey( infoString, "rank_b_minKills" ) );
-			data.m_RankB.maxDeaths = StringToUInt( TheNomad::Engine::GetInfoValueForKey( infoString, "rank_b_maxDeaths" ) );
-			data.m_RankB.requiresClean = bool( StringToInt( TheNomad::Engine::GetInfoValueForKey( infoString, "rank_b_requiresClean" ) ) );
-			
-			data.m_RankC.rank = RankC;
-			data.m_RankC.minStyle = StringToUInt( TheNomad::Engine::GetInfoValueForKey( infoString, "rank_c_minStyle" ) );
-			data.m_RankC.minKills = StringToUInt( TheNomad::Engine::GetInfoValueForKey( infoString, "rank_c_minKills" ) );
-			data.m_RankC.maxDeaths = StringToUInt( TheNomad::Engine::GetInfoValueForKey( infoString, "rank_c_maxDeaths" ) );
-			data.m_RankC.requiresClean = bool( StringToInt( TheNomad::Engine::GetInfoValueForKey( infoString, "rank_c_requiresClean" ) ) );
-			
-			data.m_RankD.rank = RankD;
-			data.m_RankD.minStyle = StringToUInt( TheNomad::Engine::GetInfoValueForKey( infoString, "rank_d_minStyle" ) );
-			data.m_RankD.minKills = StringToUInt( TheNomad::Engine::GetInfoValueForKey( infoString, "rank_d_minKills" ) );
-			data.m_RankD.maxDeaths = StringToUInt( TheNomad::Engine::GetInfoValueForKey( infoString, "rank_d_maxDeaths" ) );
-			data.m_RankD.requiresClean = bool( StringToInt( TheNomad::Engine::GetInfoValueForKey( infoString, "rank_d_requiresClean" ) ) );
-			
-			data.m_RankF.rank = RankF;
-			data.m_RankF.minStyle = StringToUInt( TheNomad::Engine::GetInfoValueForKey( infoString, "rank_f_minStyle" ) );
-			data.m_RankF.minKills = StringToUInt( TheNomad::Engine::GetInfoValueForKey( infoString, "rank_f_minKills" ) );
-			data.m_RankF.maxDeaths = StringToUInt( TheNomad::Engine::GetInfoValueForKey( infoString, "rank_f_maxDeaths" ) );
-			data.m_RankF.requiresClean = bool( StringToInt( TheNomad::Engine::GetInfoValueForKey( infoString, "rank_f_requiresClean" ) ) );
-			
-			data.m_RankWereUBotting.rank = RankWereUBotting;
-			data.m_RankWereUBotting.minStyle = StringToUInt( TheNomad::Engine::GetInfoValueForKey( infoString, "rank_afk_minStyle" ) );
-			data.m_RankWereUBotting.minKills = StringToUInt( TheNomad::Engine::GetInfoValueForKey( infoString, "rank_afk_minKills" ) );
-			data.m_RankWereUBotting.maxDeaths = StringToUInt( TheNomad::Engine::GetInfoValueForKey( infoString, "rank_afk_maxDeaths" ) );
-			data.m_RankWereUBotting.requiresClean = bool( StringToInt( TheNomad::Engine::GetInfoValueForKey( infoString,
-				"rank_afk_requiresClean" ) ) );
-		}
-	}
 };

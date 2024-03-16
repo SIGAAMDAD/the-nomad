@@ -83,7 +83,7 @@ private:
     string_t m_szName;
     asIScriptContext *m_pScriptContext;
     asIScriptModule *m_pScriptModule;
-	UtlVector<asJITFunction> m_Functions;
+	asIScriptObject *m_pInterface;
 	qboolean m_bLoaded;
 
 	int32_t m_nVersionMajor;

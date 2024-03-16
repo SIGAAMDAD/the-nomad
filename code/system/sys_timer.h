@@ -8,19 +8,19 @@
 class CTimer
 {
 public:
-    GDR_INLINE CTimer( void )
+    CTimer( void )
         : m_StartTime( eastl::chrono::system_clock::now() ), m_bRunning( qtrue )
     {
     }
-    GDR_INLINE ~CTimer() {
+    ~CTimer() {
         Stop();
     }
 
-    GDR_INLINE void Run( void ) {
+    void Run( void ) {
         m_bRunning = qtrue;
         m_StartTime = eastl::chrono::system_clock::now();
     }
-    GDR_INLINE void Stop( void ) {
+    void Stop( void ) {
         if (!m_bRunning) {
             return;
         }
@@ -28,16 +28,40 @@ public:
         m_EndTime = eastl::chrono::system_clock::now();
     }
 
-    GDR_INLINE eastl::chrono::milliseconds ElapsedMilliseconds( void ) const {
+    eastl::chrono::milliseconds ElapsedMilliseconds( void ) const {
         return eastl::chrono::duration_cast<eastl::chrono::milliseconds>(
-            (m_bRunning ? eastl::chrono::system_clock::now() : m_EndTime) - m_StartTime
+            ( m_bRunning ? eastl::chrono::system_clock::now() : m_EndTime ) - m_StartTime
         );
     }
 
-    GDR_INLINE eastl::chrono::seconds ElapsedSeconds( void ) const {
+    eastl::chrono::seconds ElapsedSeconds( void ) const {
         return eastl::chrono::duration_cast<eastl::chrono::seconds>(
-            (m_bRunning ? eastl::chrono::system_clock::now() : m_EndTime) - m_StartTime
+            ( m_bRunning ? eastl::chrono::system_clock::now() : m_EndTime ) - m_StartTime
         );
+    }
+    
+    eastl::chrono::seconds ElapsedMinutes( void ) const {
+        return eastl::chrono::duration_cast<eastl::chrono::minutes>(
+            ( m_bRunning ? eastl::chrono::system_clock::now() : m_EndTime ) - m_StartTime
+        );
+    }
+
+    int64_t ElapsedMilliseconds_ML( void ) const {
+        return eastl::chrono::duration_cast<eastl::chrono::milliseconds>(
+            ( m_bRunning ? eastl::chrono::system_clock::now() : m_EndTime ) - m_StartTime
+        ).count();
+    }
+
+    int64_t ElapsedSeconds_ML( void ) const {
+        return eastl::chrono::duration_cast<eastl::chrono::seconds>(
+            ( m_bRunning ? eastl::chrono::system_clock::now() : m_EndTime ) - m_StartTime
+        ).count();
+    }
+    
+    int32_t ElapsedMinutes_ML( void ) const {
+        return eastl::chrono::duration_cast<eastl::chrono::minutes>(
+            ( m_bRunning ? eastl::chrono::system_clock::now() : m_EndTime ) - m_StartTime
+        ).count();
     }
 private:
     eastl::chrono::system_clock::time_point m_StartTime;

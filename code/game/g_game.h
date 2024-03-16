@@ -55,6 +55,7 @@ typedef struct linkEntity_s {
     vec3_t origin;
     uint32_t type;
     uint32_t id;
+    uint32_t entityNumber;
 
     struct linkEntity_s *next;
     struct linkEntity_s *prev;
@@ -64,7 +65,7 @@ typedef struct {
 	vec3_t start;
 	vec3_t end;
 	vec3_t origin;
-    linkEntity_t *hitData;
+    uint32_t entityNumber;
 //	float speed;
 	float length;
 	float angle;

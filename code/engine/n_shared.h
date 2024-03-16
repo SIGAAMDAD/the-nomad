@@ -360,6 +360,20 @@ Compiler Macro Abstraction
 	#endif
 #endif
 
+// dunno WHY microsoft does this, but they do
+#ifdef _WIN32
+//#define strcpy _strcpy
+//#define strncpy _strncpy
+#define open _open
+#define fileno _fileno
+#define read _read
+#define write _write
+//#define sprintf _sprintf
+//#define snprintf _snprintf
+//#define vsprintf _vsprintf
+//#define vsnprintf _vsnprintf
+#endif
+
 #ifndef _NOMAD_VERSION
 #   error a version must be supplied when compiling the engine or a mod
 #endif
@@ -912,6 +926,8 @@ typedef struct {
 #define COLOR_MAGENTA	"^6"
 #define COLOR_WHITE		"^7"
 #define COLOR_RESET		"^8"
+
+#define NOMAD_CONFIG "glnomad.cfg"
 
 extern const vec4_t	g_color_table[ 64 ];
 extern int ColorIndexFromChar( char ccode );

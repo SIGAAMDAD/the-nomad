@@ -106,8 +106,6 @@ typedef struct {
 } controls_t;
 
 typedef struct {
-    char szConfigFile[MAX_NPATH];
-
     int cpuAffinity;
     uint32_t hunkMegs;
     uint32_t zoneMegs;
@@ -535,7 +533,6 @@ static void SettingsMenu_SetDefault( void )
     settings.performance.cpuString = Cvar_VariableString( "sys_cpuString" );
     settings.performance.allowModuleJIT = Cvar_VariableInteger( "ml_allowJIT" );
     settings.performance.alwaysCompileModules = Cvar_VariableInteger( "ml_alwaysCompile" );
-    N_strncpyz( settings.performance.szConfigFile, Cvar_VariableString( "com_defaultcfg" ), sizeof( settings.performance.szConfigFile ) );
 
     SettingsMenu_LoadBindings();
 }
@@ -1667,7 +1664,6 @@ static void SettingsMenu_GetInitial( void ) {
     initial.performance.cpuString = Cvar_VariableString( "sys_cpuString" );
     initial.performance.allowModuleJIT = Cvar_VariableInteger( "ml_allowJIT" );
     initial.performance.alwaysCompileModules = Cvar_VariableInteger( "ml_alwaysCompile" );
-    N_strncpyz( initial.performance.szConfigFile, Cvar_VariableString( "com_defaultcfg" ), sizeof( initial.performance.szConfigFile ) );
 
     initial.controls.keybinds = (bind_t *)Hunk_Alloc( sizeof( *initial.controls.keybinds ) * settings.controls.numBinds, h_high );
     memcpy( initial.controls.keybinds, settings.controls.keybinds, sizeof( *initial.controls.keybinds ) * settings.controls.numBinds );

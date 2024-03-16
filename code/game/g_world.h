@@ -24,11 +24,15 @@ public:
     inline uint32_t GetHeight( void ) const {
         return m_pMapInfo->height;
     }
+    inline uint32_t NumEntities( void ) const {
+        return m_nEntities;
+    }
 private:
     linkEntity_t *m_pActiveEnts;
     linkEntity_t *m_pEndEnt;
     mapinfo_t *m_pMapInfo;
     float *m_pSoundBits;
+    uint32_t m_nEntities;
 
     CThreadRWMutex m_hLock;
 };

@@ -12,6 +12,72 @@ namespace TheNomad::SGame {
 		Heavy,
 		Invul
 	};
+
+	shared enum AmmoType {
+		Bullet = 0,
+		Shell,
+		Rocket,
+		Grenade,
+		Invalid
+	};
+
+	shared enum AttackType {
+		Melee = 0,
+		Missile,
+	};
+
+	shared enum WeaponProperty {
+		TwoHandedBlade       = 0x00000001,
+		OneHandedBlade       = 0x00000002,
+		TwoHandedBlunt       = 0x00000004,
+		OneHandedBlunt       = 0x00000008,
+		TwoHandedPolearm     = 0x00000010,
+		OneHandedPolearm     = 0x00000020,
+		OneHandedSideFirearm = 0x00000040,
+		TwoHandedSideFirearm = 0x00000080,
+		OneHandedPrimFirearm = 0x00000100,
+		TwoHandedPrimFirearm = 0x00000200,
+		SpawnsObject         = 0x10000000,
+
+		None                 = 0x00000000
+	};
+
+	shared class WeaponInfo {
+		WeaponInfo() {
+			ammoType = AmmoType::Invalid;
+			magSize = 0;
+			magMaxStack = 0;
+			damage = 0.0f;
+			range = 0.0f;
+			weaponType = WeaponType::None;
+			hShader = FS_INVALID_HANDLE;
+		}
+
+		string name;
+		int magSize;
+		int magMaxStack;
+		AmmoType ammoType;
+		float damage;
+		float range;
+		WeaponProperty weaponProps;
+		WeaponType weaponType;
+		int hShader;
+	};
+
+	shared class ItemInfo {
+		ItemInfo() {
+			cost = 0;
+			hShader = 0;
+			spriteOffset = 0;
+		}
+
+		string name;
+		string description;
+		string effect;
+		int cost;
+		int hShader;
+		uint spriteOffset;
+	};
 	
 	shared class AttackInfo {
 		AttackInfo() {
@@ -20,7 +86,9 @@ namespace TheNomad::SGame {
 			cooldown = 0;
 			duration = 0;
 			method = AttackMethod::HitScan;
+			type = AttackType::Melee;
 			canParry = true;
+			valid = false;
 		}
 		
 		string name;
@@ -31,7 +99,9 @@ namespace TheNomad::SGame {
 		int cooldown;
 		int duration;
 		AttackMethod method;
+		AttackType type;
 		bool canParry;
+		bool valid;
 	};
 	
 	shared class MobInfo {
@@ -56,7 +126,7 @@ namespace TheNomad::SGame {
 		ArmorType armor;
 		float width;
 		float height;
-		vec3 speed;
+		vec2 speed;
 		float soundTolerance;
 		float smellTolerance;
 		int sightRange;
@@ -64,13 +134,16 @@ namespace TheNomad::SGame {
 		int smellRangeY;
 		int soundRangeX;
 		int soundRangeY;
+		int waitTics; // the duration until the mob has to rethink again
 		uint flags;
-		array<AttackInfo> melee;
-		array<AttackInfo> missile;
+		array<AttackInfo> attacks;
 	};
 	
 	shared class InfoDataManager {
 		InfoDataManager() {
+			ConsolePrint( "Loading mod info files...\n" );
+
+			LoadMobInfos();
 		}
 		
 		const WeaponInfo@ GetWeaponInfo( const string& in name ) const {
@@ -136,78 +209,98 @@ namespace TheNomad::SGame {
 		void AddWeaponInfo( WeaponInfo@ info ) {
 			m_WeaponInfos.push_back( info );
 		}
+
+		bool LoadJSonFile( const string& in fileName, TheNomad::Util::JsonObject& in json ) {
+			array<int8> text;
+			string path;
+
+			path.resize( MAX_NPATH );
+			path = "modules/" + MODULE_NAME + "/" + fileName;
+
+			if ( TheNomad::Engine::FileSystem::LoadFile( path, text ) == 0 ) {
+				return false;
+			}
+
+			return true;
+		}
+
+		bool MissingVar( const string& in infoName, const string& in varName ) {
+			ConsoleWarning( "invalid " + infoName + " info, missing variable '" + varName + "'\n" );
+			return false;
+		}
+
+		bool LoadItemInfo( TheNomad::Util::JsonObject& in json ) {
+			ItemInfo@ info;
+
+			@info = ItemInfo();
+
+			return true;
+		}
+
+		bool LoadMobInfo( TheNomad::Util::JsonObject& in json ) {
+			MobInfo@ info;
+			float[] speed( 2 );
+			string armorType;
+
+			@info = MobInfo();
+			if ( !json.GetString( "Name", info.name ) ) {
+				return MissingVar( "mob", "Name" );
+			}
+			if ( !json.GetInt( "Health", info.health ) ) {
+				return MissingVar( "mob", "Health" );
+			}
+			if ( !json.GetVec2( "Speed", info.speed ) ) {
+				return MissingVar( "mob", "Speed" );
+			}
+			if ( !json.GetString( "ArmorType", armorType ) ) {
+				return MissingVar( "mob", "ArmorType" );
+			}
+			if ( !json.GetInt( "SoundRangeX", info.soundRangeX ) ) {
+				return MissingVar( "mob", "SoundRangeX" );
+			}
+			if ( !json.GetInt( "SoundRangeY", info.soundRangeY ) ) {
+				return MissingVar( "mob", "SoundRangeY" );
+			}
+			if ( !json.GetFloat( "SoundTolerance", info.soundTolerance ) ) {
+				return MissingVar( "mob", "SoundTolerance" );
+			}
+
+			if ( TheNomad::Util::StrICmp( armorType, "none" ) == 0 ) {
+
+			}
+
+			return true;
+		}
+
+		void LoadMobInfos() {
+			TheNomad::Util::JsonObject json;
+			array<TheNomad::Util::JsonObject> mobInfos;
+			string msg;
+
+			msg.reserve( 256 );
+			msg = "Loading mob infos in \"";
+			msg += MODULE_NAME;
+			msg += "\"...\n";
+			ConsolePrint( msg );
+
+			LoadJSonFile( "mobs.json", json );
+			if ( !json.GetObjectArray( "MobInfo", mobInfos ) ) {
+				ConsoleWarning( "no mob infos found in module, skipping.\n" );
+				return;
+			}
+
+			for ( uint i = 0; i < mobInfos.size(); i++ ) {
+				if ( !LoadMobInfo( mobInfos[i] ) ) {
+					msg = "failed to load mob info ";
+					msg += formatUInt( i );
+					msg += "!\n";
+					ConsoleWarning( msg );
+				}
+			}
+		}
 		
 		private array<MobInfo@> m_MobInfos;
 		private array<ItemInfo@> m_ItemInfos;
 		private array<WeaponInfo@> m_WeaponInfos;
 	};
-	
-	InfoDataManager@ InfoManager;
-	
-	InfoDataManager@ GetInfoManager() {
-		return InfoManager;
-	}
-	
-	bool LoadJSonFile( const string& in fileName, TheNomad::Util::JsonObject& in json ) {
-		array<int8> text;
-		string path;
-		
-		path.resize( MAX_NPATH );
-		path = "modules/" + MODULE_NAME + "/" + fileName;
-		
-		if ( TheNomad::Engine::FileSystem::LoadFile( path, text ) is false ) {
-			return false;
-		}
-		
-		return true;
-	}
-	
-	bool LoadItemInfo( TheNomad::Util::JsonObject& in json ) {
-		ItemInfo@ info;
-		TheNomad::Util::JsonObject& data = json.GetObject();
-		
-		@info = ItemInfo();
-		info.name = data.GetString( "name" );
-		info.cost = data;
-	}
-	
-	bool LoadMobInfo( TheNomad::Util::JsonObject& in json ) {
-		MobInfo@ info;
-		TheNomad::Util::JsonObject& data = json.GetObject();
-		
-		@info = MobInfo();
-		info.name = data.GetString( "name" );
-		info.health = data.GetInt( "health" );
-		info.speed = data.GetVec3( "speed" );
-		info.soundTolerance = data.GetFloat( "soundTolerance" );
-		
-		return true;
-	}
-	
-	void LoadMobInfos() {
-		TheNomad::Util::JsonObject json;
-		array<TheNomad::Util::JsonObject> mobInfos;
-		
-		LoadJSonFile( "mobs.txt", json );
-		parse.GetArray( mobInfos );
-		
-		for ( uint i = 0; i < mobInfos.size(); i++ ) {
-			if ( !LoadMobInfo( mobInfos[i] ) ) {
-				
-			}
-		}
-	}
-	
-	void InitInfos() {
-		string token;
-		
-		@InfoManager = InfoDataManager();
-		
-		ConsolePrint( "Loading module infos...\n" );
-		
-		token.resize( MAX_TOKEN_CHARS );
-		LoadMobInfos( token );
-		LoadItemInfos( token );
-		LoadWeaponInfos( token );
-	}
 };

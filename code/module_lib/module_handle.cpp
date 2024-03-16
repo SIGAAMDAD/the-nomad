@@ -4,19 +4,19 @@
 #include "angelscript/as_bytecode.h"
 
 const moduleFunc_t funcDefs[NumFuncs] = {
-    { "ModuleInit", ModuleInit, 0, qtrue },
-    { "ModuleShutdown", ModuleShutdown, 0, qtrue },
-    { "ModuleOnConsoleCommand", ModuleCommandLine, 0, qfalse },
-    { "ModuleDrawConfiguration", ModuleDrawConfiguration, 0, qfalse },
-    { "ModuleSaveConfiguration", ModuleSaveConfiguration, 0, qfalse },
-    { "ModuleOnKeyEvent", ModuleOnKeyEvent, 2, qfalse },
-    { "ModuleOnMouseEvent", ModuleOnMouseEvent, 2, qfalse },
-    { "ModuleOnLevelStart", ModuleOnLevelStart, 1, qfalse },
-    { "ModuleOnLevelEnd", ModuleOnLevelEnd, 0, qfalse },
-    { "ModuleOnRunTic", ModuleOnRunTic, 1, qtrue },
-    { "ModuleOnSaveGame", ModuleOnSaveGame, 0, qfalse },
-    { "ModuleOnLoadGame", ModuleOnLoadGame, 0, qfalse },
-    { "ModuleRewindToLastCheckpoint", ModuleRewindToLastCheckpoint, 0, qfalse },
+    { "ModuleObject::Init", ModuleInit, 0, qtrue },
+    { "ModuleObject::Shutdown", ModuleShutdown, 0, qtrue },
+    { "ModuleObject::OnConsoleCommand", ModuleCommandLine, 0, qfalse },
+    { "ModuleObject::DrawConfiguration", ModuleDrawConfiguration, 0, qfalse },
+    { "ModuleObject::SaveConfiguration", ModuleSaveConfiguration, 0, qfalse },
+    { "ModuleObject::OnKeyEvent", ModuleOnKeyEvent, 2, qfalse },
+    { "ModuleObject::OnMouseEvent", ModuleOnMouseEvent, 2, qfalse },
+    { "ModuleObject::OnLevelStart", ModuleOnLevelStart, 1, qfalse },
+    { "ModuleObject::OnLevelEnd", ModuleOnLevelEnd, 0, qfalse },
+    { "ModuleObject::OnRunTic", ModuleOnRunTic, 1, qtrue },
+    { "ModuleObject::OnSaveGame", ModuleOnSaveGame, 0, qfalse },
+    { "ModuleObject::OnLoadGame", ModuleOnLoadGame, 0, qfalse },
+    { "ModuleObject::RewindToLastCheckpoint", ModuleRewindToLastCheckpoint, 0, qfalse },
 };
 
 CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sourceFiles, int32_t moduleVersionMajor,
@@ -84,7 +84,10 @@ void CModuleHandle::Build( const UtlVector<UtlString>& sourceFiles ) {
         LoadSourceFile( it );
     }
     if ( ( error = g_pModuleLib->GetScriptBuilder()->BuildModule() ) != asSUCCESS ) {
-        N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: failed to build module '%s' -- %s", m_szName.c_str(), AS_PrintErrorString( error ) );
+        Con_Printf( COLOR_RED "ERROR: CModuleHandle::CModuleHandle: failed to build module '%s' -- %s\n", m_szName.c_str(), AS_PrintErrorString( error ) );
+        
+        // clean cache to get rid of any old and/or corrupt code
+        Cbuf_ExecuteText( EXEC_APPEND, "ml.clean_script_cache\n" );
     }
 }
 
@@ -142,14 +145,40 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
 
     retn = (int)m_pScriptContext->GetReturnWord();
 
-    CheckASCall( m_pScriptContext->Unprepare() );
-
     return retn;
 }
 
 bool CModuleHandle::InitCalls( void )
 {
+    asITypeInfo *type;
+
     Con_Printf( "Initializing function procs...\n" );
+
+    type = g_pModuleLib->GetScriptEngine()->GetTypeInfoByName( "ModuleObject" );
+    if ( !type ) {
+        Con_Printf( COLOR_RED "ERROR: invalid module bytecode, no ModuleObject class found\n" );
+        return false;
+    }
+
+//    asIScriptFunction *factory = type->GetFactoryByDecl( "ModuleObject@ ModuleObject()" );
+//    Assert( factory );
+//    CheckASCall( m_pScriptContext->Prepare( factory ) );
+//
+//    switch ( m_pScriptContext->Execute() ) {
+//    case asEXECUTION_ABORTED:
+//    case asEXECUTION_ERROR:
+//    case asEXECUTION_EXCEPTION:
+//        // something happened in there, dunno what
+//        LogExceptionInfo( m_pScriptContext );
+//        break;
+//    case asEXECUTION_SUSPENDED:
+//    case asEXECUTION_FINISHED:
+//    default:
+//        // exited successfully
+//        break;
+//    };
+//    m_pInterface = *(asIScriptObject **)m_pScriptContext->GetAddressOfReturnValue();
+//    Assert( m_pInterface );
 
     memset( m_pFuncTable, 0, sizeof( m_pFuncTable ) );
 
@@ -158,7 +187,8 @@ bool CModuleHandle::InitCalls( void )
             break; // not sgame
         }
         Con_DPrintf( "Checking if module has function '%s'...\n", funcDefs[i].name );
-        m_pFuncTable[i] = m_pScriptModule->GetFunctionByName( funcDefs[i].name );
+//        m_pFuncTable[i] = m_pScriptModule->GetFunctionByName( funcDefs[i].name );
+        m_pFuncTable[i] = type->GetMethodByName( funcDefs[i].name );
         if ( m_pFuncTable[i] ) {
             Con_Printf( COLOR_GREEN "Module \"%s\" registered with proc '%s'.\n", m_szName.c_str(), funcDefs[i].name );
         } else {
@@ -274,6 +304,9 @@ int CModuleHandle::LoadFromCache( void ) {
 
     ret = m_pScriptModule->LoadByteCode( dataStream, NULL );
     if ( ret != asSUCCESS ) {
+        // clean cache to get rid of any old and/or corrupt code
+        Cbuf_ExecuteText( EXEC_APPEND, "ml.clean_script_cache\n" );
+        
         return -1; // just recompile it
     }
 
@@ -290,6 +323,7 @@ void CModuleHandle::ClearMemory( void )
     }
 
     Con_Printf( "CModuleHandle::ClearMemory: clearing memory of '%s'...\n", m_szName.c_str() );
+    CheckASCall( m_pScriptContext->Unprepare() );
 }
 
 asIScriptContext *CModuleHandle::GetContext( void ) {

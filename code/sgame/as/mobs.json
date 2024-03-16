@@ -4,6 +4,10 @@
 		"Id": "MT_GRUNT",
 		"Health": 24,
 		"Armor": "none",
+		"SoundTolerance": 24.0,
+		"SoundRangeX": 8,
+		"SoundRangeY": 8,
+		"Speed": [ 1.75, 1.75 ],
 		"AttackData": [
 			{
 				"Type": "melee",
@@ -30,6 +34,10 @@
 		"Id": "MT_SHOTTY",
 		"Health": 50,
 		"Armor": "light",
+		"SoundTolerance": 14.0,
+		"SoundRangeX": 10,
+		"SoundRangeY": 10,
+		"Speed": [ 1.0, 1.0 ],
 		"AttackData": [
 			{
 				"Type": "melee",

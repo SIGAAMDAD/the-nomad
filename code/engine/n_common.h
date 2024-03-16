@@ -13,6 +13,7 @@ Common functionality for the engine and vm alike
 
 void Sys_SnapVector( float *vector );
 
+qboolean Com_SafeMode( void );
 void Com_Frame( qboolean noDelay );
 int Com_Milliseconds( void );
 qboolean Com_EarlyParseCmdLine( char *commandLine, char *con_title, int title_size, int *vid_xpos, int *vid_ypos );

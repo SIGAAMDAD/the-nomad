@@ -36,8 +36,8 @@ bool CUILib::Menu_Title( const char *label, float fontScale )
 	memset( &refdef, 0, sizeof( refdef ) );
 	refdef.x = 0;
 	refdef.y = 0;
-	refdef.width = gpuConfig.vidWidth;
-	refdef.height = gpuConfig.vidHeight;
+	refdef.width = 1024;
+	refdef.height = 768;
 	refdef.flags = RSF_NOWORLDMODEL | RSF_ORTHO_TYPE_SCREENSPACE;
 
 	//
@@ -988,7 +988,7 @@ Adjusted for resolution and screen aspect ratio
 void CUILib::AdjustFrom1024( float *x, float *y, float *w, float *h ) const
 {
 	// expect valid pointers
-	*x = *x * scale + bias;
+	*x *= scale;
 	*y *= scale;
 	*w *= scale;
 	*h *= scale;

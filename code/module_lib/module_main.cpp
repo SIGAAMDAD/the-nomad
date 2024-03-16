@@ -17,6 +17,7 @@ cvar_t *ml_angelScript_DebugPrint;
 cvar_t *ml_debugMode;
 cvar_t *ml_alwaysCompile;
 cvar_t *ml_allowJIT;
+cvar_t *ml_garbageCollectionIterations;
 
 static CDebugger *s_pDebugger;
 
@@ -29,6 +30,20 @@ static void ML_CleanCache_f( void ) {
         FS_Remove( path );
         FS_HomeRemove( path );
     }
+}
+
+static void ML_GarbageCollectionStats_f( void ) {
+    asUINT currentSize, totalDestroyed, totalDetected, newObjects, totalNewDestroyed;
+    g_pModuleLib->GetScriptEngine()->GetGCStatistics( &currentSize, &totalDestroyed, &totalDetected, &newObjects, &totalNewDestroyed );
+
+    Con_Printf( "--------------------\n" );
+    Con_Printf( "[Garbage Collection Stats]\n" );
+    Con_Printf( "Current Size: %u\n", currentSize );
+    Con_Printf( "Total Destroyed: %u\n", totalDestroyed );
+    Con_Printf( "Total Detected: %u\n", totalDetected );
+    Con_Printf( "New Objects: %u\n", newObjects );
+    Con_Printf( "Total New Destroyed: %u\n", totalNewDestroyed );
+    Con_Printf( "--------------------\n" );
 }
 
 const char *AS_PrintErrorString( int code )
@@ -205,6 +220,19 @@ void CModuleLib::RunModules( EModuleFuncId nCallId, uint32_t nArgs, ... )
     }
     va_end( argptr );
 
+    switch ( nCallId ) {
+    case ModuleOnLevelStart: {
+    case ModuleOnLevelEnd:
+        CTimer time;
+
+        time.Run();
+        Con_DPrintf( "Garbage collection started...\n" );
+        g_pModuleLib->GetScriptEngine()->GarbageCollect( 1, (uint32_t)ml_garbageCollectionIterations->i );
+        time.Stop();
+        Con_DPrintf( "Garbage collection: %llims, %li iterations\n", time.ElapsedMilliseconds().count(), ml_garbageCollectionIterations->i );
+        break; }
+    };
+
     for ( j = 0; j < m_LoadList.size(); j++ ) {
         if ( m_LoadList[i] == sgvm ) {
             continue; // avoid running it twice
@@ -327,7 +355,7 @@ CModuleLib::CModuleLib( void )
     int ret;
 
     g_pModuleLib = this;
-    memset( this, 0, sizeof(*this) );
+    memset( this, 0, sizeof( *this ) );
 
     //
     // init angelscript api
@@ -343,6 +371,9 @@ CModuleLib::CModuleLib( void )
     CheckASCall( m_pEngine->SetEngineProperty( asEP_COMPILER_WARNINGS, true ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_OPTIMIZE_BYTECODE, true ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_INCLUDE_JIT_INSTRUCTIONS, true ) );
+    CheckASCall( m_pEngine->SetEngineProperty( asEP_REQUIRE_ENUM_SCOPE, true ) );
+    CheckASCall( m_pEngine->SetEngineProperty( asEP_USE_CHARACTER_LITERALS, true ) );
+    CheckASCall( m_pEngine->SetEngineProperty( asEP_AUTO_GARBAGE_COLLECT, false ) );
 
     m_pScriptBuilder = new ( Hunk_Alloc( sizeof( *m_pScriptBuilder ), h_high ) ) CScriptBuilder();
     s_pDebugger = new ( Hunk_Alloc( sizeof( *s_pDebugger ), h_high ) ) CDebugger();
@@ -389,7 +420,8 @@ CModuleLib::~CModuleLib()
 
 CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *pExport, version_t nGameVersion )
 {
-    Con_Printf( "InitModuleLib: initializing mod library...\n" );
+    Con_Printf( "---------- InitModuleLib ----------\n" );
+    Con_Printf( "Initializing mod library...\n" );
 
     //
     // init cvars
@@ -402,14 +434,19 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
     Cvar_SetDescription( ml_allowJIT, "Toggle JIT compilation of a module" );
     ml_debugMode = Cvar_Get( "ml_debugMode", "0", CVAR_LATCH | CVAR_TEMP );
     Cvar_SetDescription( ml_debugMode, "Set to 1 whenever a module is being debugged" );
+    ml_garbageCollectionIterations = Cvar_Get( "ml_garbageCollectionIterations", "4", CVAR_LATCH | CVAR_TEMP | CVAR_PRIVATE );
+    Cvar_SetDescription( ml_garbageCollectionIterations, "Sets the number of iterations per garbage collection loop" );
 
     Cmd_AddCommand( "ml.clean_script_cache", ML_CleanCache_f );
+    Cmd_AddCommand( "ml.garbage_collection_stats", ML_GarbageCollectionStats_f );
 
     // init memory manager
     Mem_Init();
     asSetGlobalMemoryFunctions( asAlloc, asFree );
 
     g_pModuleLib = new ( Hunk_Alloc( sizeof( *g_pModuleLib ), h_high ) ) CModuleLib();
+
+    Con_Printf( "--------------------\n" );
 
     return g_pModuleLib;
 }

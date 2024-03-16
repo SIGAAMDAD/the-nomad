@@ -50,18 +50,28 @@ namespace TheNomad::SGame {
 			m_PolyList.resize( TheNomad::Engine::CvarVariableInteger( "sgame_GfxDetail" ) * 15 );
 		}
 		
-		void OnLoad() override {
+		void OnLoad() {
 		}
-		void OnSave() const override {
+		void OnSave() const {
 		}
-		void OnLevelStart() override {
+		void OnRunTic() {
+			for ( uint i = 0; i < m_PolyList.size(); i++ ) {
+				if ( !m_PolyList[i].m_bAlive ) {
+					continue;
+				}
+				m_PolyList[i].RunTic();
+			}
+		}
+		void OnConsoleCommand() {
+		}
+		void OnLevelStart() {
 			// ensure we have the correct amount of polygons allocated
 			
 			if ( m_PolyList.size() != TheNomad::Engine::CvarVariableInteger( "sgame_GfxDetail" ) ) {
 				m_PolyList.resize( TheNomad::Engine::CvarVariableInteger( "sgame_GfxDetail" ) * 15 );
 			}
 		}
-		void OnLevelEnd() override {
+		void OnLevelEnd() {
 			// clear all gfx
 			
 			DebugPrint( "GfxManager::OnLevelEnd: clearing gfx data...\n" );
@@ -101,20 +111,4 @@ namespace TheNomad::SGame {
 		private array<int> m_ExplosionShaders;
 		private array<int> m_ExplosionSfx;
 	};
-	
-	GfxManager@ GfxSystem;
-	
-	GfxManager@ GetGfxManager() {
-		return GfxSystem;
-	}
-	
-	void InitGfx() {
-		@GfxSystem = cast<GfxManager>( TheNomad::GameSystem::AddSystem( GfxManager() ) );
-	}
-	
-	void AddExplosionGfx( const vec3& in origin ) {
-		int shader;
-		
-		shader = PRandom() & GfxSystem.GetExplosionShaders().size();
-	}
 };

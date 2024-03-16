@@ -14,8 +14,11 @@ public:
     CModuleLinkEntity( const glm::vec3& origin, const CModuleBoundBox& bounds, uint32_t nEntityId, uint32_t nEntityType );
     ~CModuleLinkEntity();
 
+    CModuleLinkEntity& operator=( const CModuleLinkEntity& );
+
     void SetOrigin( const glm::vec3& origin );
     void SetBounds( const CModuleBoundBox& bounds );
+    void Update( void );
 
     const glm::vec3& GetOrigin( void );
     const CModuleBoundBox& GetBounds( void );
@@ -27,7 +30,8 @@ public:
     glm::vec3 m_Origin;
     uint32_t m_nEntityId;
     uint32_t m_nEntityType;
-
+    uint32_t m_nEntityNumber;
+    
     linkEntity_t handle;
 };
 
@@ -37,17 +41,28 @@ CModuleLinkEntity::CModuleLinkEntity( void ) {
     g_world.LinkEntity( &handle );
 }
 
-CModuleLinkEntity::CModuleLinkEntity( const glm::vec3& origin, const CModuleBoundBox& bounds, uint32_t nEntityId, uint32_t nEntityType ) {
+CModuleLinkEntity::CModuleLinkEntity( const glm::vec3& origin, const CModuleBoundBox& bounds, uint32_t nEntityId, uint32_t nEntityType )
+{
     m_Origin = origin;
     m_Bounds = bounds;
     m_nEntityType = nEntityType;
     m_nEntityId = nEntityId;
+    m_nEntityNumber = g_world.NumEntities();
     ToLinkEntity( &handle );
     g_world.LinkEntity( &handle );
 }
 
 CModuleLinkEntity::~CModuleLinkEntity() {
     g_world.UnlinkEntity( &handle );
+}
+
+CModuleLinkEntity& CModuleLinkEntity::operator=( const CModuleLinkEntity& other ) {
+    memcpy( this, 0, sizeof( *this ) );
+    return *this;
+}
+
+void CModuleLinkEntity::Update( void ) {
+    ToLinkEntity( &handle );
 }
 
 void CModuleLinkEntity::SetOrigin( const glm::vec3& origin ) {
@@ -72,6 +87,7 @@ void CModuleLinkEntity::ToLinkEntity( linkEntity_t *ent ) {
     VectorCopy( ent->bounds.maxs, m_Bounds.maxs );
     ent->id = m_nEntityId;
     ent->type = m_nEntityType;
+    ent->entityNumber = m_nEntityNumber;
 }
 
 #endif

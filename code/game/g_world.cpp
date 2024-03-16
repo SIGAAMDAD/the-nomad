@@ -238,6 +238,7 @@ void CGameWorld::Init( mapinfo_t *info, float *soundBits, linkEntity_t *activeEn
     m_pMapInfo = info;
     m_pSoundBits = soundBits;
     m_pActiveEnts = activeEnts;
+	m_nEntities = 0;
 
     m_pEndEnt = m_pActiveEnts;
     m_pActiveEnts->next = m_pActiveEnts->prev = m_pActiveEnts;
@@ -248,6 +249,8 @@ void CGameWorld::LinkEntity( linkEntity_t *ent )
 	m_hLock.WriteLock();
     ent->prev = m_pEndEnt;
     ent->next = m_pActiveEnts;
+
+	m_nEntities++;
 
     m_pEndEnt->next = ent;
     m_pEndEnt = ent;
@@ -298,13 +301,13 @@ void CGameWorld::CastRay( ray_t *ray )
 	for ( ;; ) {
         for ( linkEntity_t *it = m_pActiveEnts->next; ; it = it->next ) {
 			if ( BoundsIntersectPoint( &it->bounds, ray->origin ) ) {
-				ray->hitData = it;
+				ray->entityNumber = it->entityNumber;
 				break;
 			}
         }
 
         if ( ray->origin[0] == ray->end[0] && ray->origin[1] == ray->end[1] ) {
-			ray->hitData = NULL;
+			ray->entityNumber = m_nEntities;
 			break;
 		}
 		

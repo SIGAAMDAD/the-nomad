@@ -3,11 +3,13 @@ OS_INCLUDE=-I/usr/include/ -I/usr/local/include/
 COMPILER  =distcc gcc
 LIB_PREFIX=dependencies/libs/linux
 DLL_EXT   =so
+O         =bin/obj/unix
 else
 OS_INCLUDE=-I/usr/x86_64-w64-mingw32/include/
 COMPILER  =distcc x86_64-w64-mingw32-gcc
 LIB_PREFIX=dependencies/libs/windows
 DLL_EXT   =dll
+O         =bin/obj/win32
 endif
 
 ifndef release
@@ -43,7 +45,6 @@ endif
 
 CC       =$(COMPILER) -std=c99
 CFLAGS   =$(FTYPE) $(DEFINES) $(INCLUDE) $(OPTIMIZERS)
-O        =obj
 SDIR     =code
 LIB      =thenomad_opengl_x86-64.$(DLL_EXT)
 

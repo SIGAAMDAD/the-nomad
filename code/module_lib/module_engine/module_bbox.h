@@ -14,6 +14,7 @@ public:
     CModuleBoundBox& operator=( const CModuleBoundBox& );
 
     void MakeBounds( const glm::vec3& origin );
+    const bbox_t ToPOD( void ) const;
 
     glm::vec2 mins;
     glm::vec2 maxs;
@@ -35,6 +36,10 @@ CModuleBoundBox::CModuleBoundBox( float w, float h, const glm::vec3& origin ) {
 CModuleBoundBox& CModuleBoundBox::operator=( const CModuleBoundBox& other ) {
     memcpy( this, eastl::addressof( other ), sizeof( *this ) );
     return *this;
+}
+
+const bbox_t CModuleBoundBox::ToPOD( void ) const {
+    return { .mins = { mins[0], mins[1], mins[2] }, .maxs = { maxs[0], maxs[1], maxs[2] } };
 }
 
 void CModuleBoundBox::MakeBounds( const glm::vec3& origin ) {

@@ -112,8 +112,15 @@ OPTIMIZERS    =\
 			-mfma -msse3 -msse2 -msse -mavx -mavx2 -mmmx -mfpmath=sse
 
 CFLAGS        =-std=c++17 $(FTYPE) -Wno-unused-result $(DEFINES) $(INCLUDE) $(OPTIMIZERS)
+ifndef release
+CFLAGS        +=-Wall
+endif
 CC            =$(COMPILER)
-O             = obj
+ifdef win32
+O             = bin/obj/win64
+else
+O             = bin/obj/unix
+endif
 QVM           = qvm
 SDIR          = code
 COMPILE_SRC   =$(CC) $(CFLAGS) -o $@ -c $<
@@ -133,15 +140,16 @@ DEFINES += -DUSE_VULKAN_API
 endif
 
 ifndef win32
-LDLIBS=-L/usr/lib/x86_64-linux-gnu/ \
+LDLIBS= \
 		-lGL \
-		-lbacktrace \
-		$(LIB_PREFIX)/libEASTL.a \
-		$(LIB_PREFIX)/libopenal.a \
-		-L$(LIB_PREFIX) \
+		libbacktrace.a \
+		libEASTL.a \
+		libopenal.a \
+		-L. \
 		-lSDL2 \
 		-lsndfile \
 #		-leasy_profiler
+
 SYS=\
 	$(O)/sys/unix_main.o \
 	$(O)/sys/unix_shared.o \
@@ -162,8 +170,11 @@ LDLIBS=-L. \
 		-lpsapi \
 		-ljpeg-9 \
 		-lEASTL \
+		-lmsvcrt \
+		-lvcruntime140d \
+		-lvcruntime140_1d \
 		/usr/x86_64-w64-mingw32/lib/libmsvcrt.a \
-		-static-libgcc -static-libstdc++ \
+		-ljpeg \
 
 ifndef release
 LDLIBS+=-ldbghelp
@@ -186,55 +197,53 @@ GAME_DIR=$(O)/game
 
 COMPILE_SRC=$(CC) $(CFLAGS) -o $@ -c $<
 
-ifndef win32 
-JPGOBJ = \
-  	$(O)/game/jpeg/jaricom.o \
-  	$(O)/game/jpeg/jcapimin.o \
-  	$(O)/game/jpeg/jcapistd.o \
-  	$(O)/game/jpeg/jcarith.o \
-  	$(O)/game/jpeg/jccoefct.o  \
-  	$(O)/game/jpeg/jccolor.o \
-  	$(O)/game/jpeg/jcdctmgr.o \
-  	$(O)/game/jpeg/jchuff.o   \
-  	$(O)/game/jpeg/jcinit.o \
-  	$(O)/game/jpeg/jcmainct.o \
-  	$(O)/game/jpeg/jcmarker.o \
-  	$(O)/game/jpeg/jcmaster.o \
-  	$(O)/game/jpeg/jcomapi.o \
-  	$(O)/game/jpeg/jcparam.o \
-  	$(O)/game/jpeg/jcprepct.o \
-  	$(O)/game/jpeg/jcsample.o \
-  	$(O)/game/jpeg/jctrans.o \
-  	$(O)/game/jpeg/jdapimin.o \
-  	$(O)/game/jpeg/jdapistd.o \
-  	$(O)/game/jpeg/jdarith.o \
-  	$(O)/game/jpeg/jdatadst.o \
-  	$(O)/game/jpeg/jdatasrc.o \
-  	$(O)/game/jpeg/jdcoefct.o \
-  	$(O)/game/jpeg/jdcolor.o \
-  	$(O)/game/jpeg/jddctmgr.o \
-  	$(O)/game/jpeg/jdhuff.o \
-  	$(O)/game/jpeg/jdinput.o \
-  	$(O)/game/jpeg/jdmainct.o \
-  	$(O)/game/jpeg/jdmarker.o \
-  	$(O)/game/jpeg/jdmaster.o \
-  	$(O)/game/jpeg/jdmerge.o \
-  	$(O)/game/jpeg/jdpostct.o \
-  	$(O)/game/jpeg/jdsample.o \
-  	$(O)/game/jpeg/jdtrans.o \
-  	$(O)/game/jpeg/jerror.o \
-  	$(O)/game/jpeg/jfdctflt.o \
-  	$(O)/game/jpeg/jfdctfst.o \
-  	$(O)/game/jpeg/jfdctint.o \
-  	$(O)/game/jpeg/jidctflt.o \
-  	$(O)/game/jpeg/jidctfst.o \
-  	$(O)/game/jpeg/jidctint.o \
-  	$(O)/game/jpeg/jmemmgr.o \
-  	$(O)/game/jpeg/jmemnobs.o \
-  	$(O)/game/jpeg/jquant1.o \
-  	$(O)/game/jpeg/jquant2.o \
-  	$(O)/game/jpeg/jutils.o
-endif
+JPGOBJ=\
+	$(O)/libjpeg/jaricom.o \
+  	$(O)/libjpeg/jcapimin.o \
+  	$(O)/libjpeg/jcapistd.o \
+  	$(O)/libjpeg/jcarith.o \
+  	$(O)/libjpeg/jccoefct.o  \
+  	$(O)/libjpeg/jccolor.o \
+  	$(O)/libjpeg/jcdctmgr.o \
+  	$(O)/libjpeg/jchuff.o   \
+  	$(O)/libjpeg/jcinit.o \
+  	$(O)/libjpeg/jcmainct.o \
+  	$(O)/libjpeg/jcmarker.o \
+  	$(O)/libjpeg/jcmaster.o \
+  	$(O)/libjpeg/jcomapi.o \
+  	$(O)/libjpeg/jcparam.o \
+  	$(O)/libjpeg/jcprepct.o \
+  	$(O)/libjpeg/jcsample.o \
+  	$(O)/libjpeg/jctrans.o \
+  	$(O)/libjpeg/jdapimin.o \
+  	$(O)/libjpeg/jdapistd.o \
+  	$(O)/libjpeg/jdarith.o \
+  	$(O)/libjpeg/jdatadst.o \
+  	$(O)/libjpeg/jdatasrc.o \
+  	$(O)/libjpeg/jdcoefct.o \
+  	$(O)/libjpeg/jdcolor.o \
+  	$(O)/libjpeg/jddctmgr.o \
+  	$(O)/libjpeg/jdhuff.o \
+  	$(O)/libjpeg/jdinput.o \
+  	$(O)/libjpeg/jdmainct.o \
+  	$(O)/libjpeg/jdmarker.o \
+  	$(O)/libjpeg/jdmaster.o \
+  	$(O)/libjpeg/jdmerge.o \
+  	$(O)/libjpeg/jdpostct.o \
+  	$(O)/libjpeg/jdsample.o \
+  	$(O)/libjpeg/jdtrans.o \
+  	$(O)/libjpeg/jerror.o \
+  	$(O)/libjpeg/jfdctflt.o \
+  	$(O)/libjpeg/jfdctfst.o \
+  	$(O)/libjpeg/jfdctint.o \
+  	$(O)/libjpeg/jidctflt.o \
+  	$(O)/libjpeg/jidctfst.o \
+  	$(O)/libjpeg/jidctint.o \
+  	$(O)/libjpeg/jmemmgr.o \
+  	$(O)/libjpeg/jmemnobs.o \
+  	$(O)/libjpeg/jquant1.o \
+  	$(O)/libjpeg/jquant2.o \
+  	$(O)/libjpeg/jutils.o
 
 ASOBJS=\
 	$(O)/angelscript/as_atomic.o \
@@ -347,13 +356,13 @@ makedirs:
 	@if [ ! -d $(O)/rendercommon ];then $(MKDIR) $(O)/rendercommon;fi
 	@if [ ! -d $(O)/sys ];then $(MKDIR) $(O)/sys;fi
 	@if [ ! -d $(O)/ui ];then $(MKDIR) $(O)/ui;fi
-	@if [ ! -d $(O)/game/jpeg ];then $(MKDIR) $(O)/game/jpeg;fi
 	@if [ ! -d $(O)/module_lib/ ];then $(MKDIR) $(O)/module_lib;fi
 	@if [ ! -d $(O)/angelscript/ ];then $(MKDIR) $(O)/angelscript;fi
+	@if [ ! -d $(O)/libjpeg/ ];then $(MKDIR) $(O)/libjpeg;fi
 
 targets: makedirs
 	@echo ""
-	@echo "Building thenomad:"
+	@echo "Building $(EXE):"
 	@echo ""
 	@echo "  VERSION: $(VERSION)"
 	@echo "  PLATFORM: $(PLATFORM)"
@@ -397,19 +406,19 @@ $(O)/ui/%.o: $(SDIR)/ui/menulib/%.cpp
 	$(COMPILE_SRC)
 $(O)/sys/%.o: $(SYS_DIR)/%.cpp
 	$(COMPILE_SRC)
-$(O)/game/jpeg/%.o: $(SDIR)/libjpeg/%.c
-	$(COMPILE_C)
 $(O)/module_lib/%.o: $(SDIR)/module_lib/%.cpp
 	$(COMPILE_SRC) -DMODULE_LIB
 $(O)/angelscript/%.o: $(SDIR)/angelscript/%.cpp
 	$(COMPILE_SRC)
+$(O)/libjpeg/%.o: $(SDIR)/libjpeg/%.c
+	$(COMPILE_C)
 
 ifdef win32
 ADD=-flinker-output=exec
 endif
 
-$(EXE): $(SRC) $(COMMON) $(SYS) $(JPGOBJ) $(ASOBJS)
-	$(CC) $(CFLAGS) $(SRC) $(COMMON) $(SYS) $(ADD) $(JPGOBJ) $(ASOBJS) -o $(EXE) $(LDLIBS)
+$(EXE): $(SRC) $(SYS) $(ASOBJS) $(JPGOBJ)
+	$(CC) $(CFLAGS) $(SRC) $(COMMON) $(SYS) $(JPGOBJ) $(ASOBJS) -o $(EXE) $(LDLIBS)
 
 clean.pch:
 	rm $(SDIR)/engine/n_pch_all.h.gch

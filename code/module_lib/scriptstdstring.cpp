@@ -767,6 +767,12 @@ static void StringResizeGeneric(asIScriptGeneric *gen)
 	self->resize(*static_cast<asUINT *>(gen->GetAddressOfArg(0)));
 }
 
+static void StringReserveGeneric( asIScriptGeneric *gen )
+{
+	string_t *self = (string_t *)gen->GetObjectData();
+	self->reserve( *(asUINT *)gen->GetAddressOfArg( 0 ) );
+}
+
 static void StringInsert_Generic(asIScriptGeneric *gen)
 {
 	string_t *self = static_cast<string_t *>(gen->GetObjectData());
@@ -1113,14 +1119,10 @@ void RegisterStdString_Generic(asIScriptEngine *engine)
 	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd(const string &in) const", asFUNCTION(StringAddGeneric), asCALL_GENERIC ) );
 
 	// Register the object methods
-#if AS_USE_ACCESSORS != 1
 	CheckASCall( engine->RegisterObjectMethod("string", "uint length() const", asFUNCTION(StringLengthGeneric), asCALL_GENERIC ) );
-#endif
+	CheckASCall( engine->RegisterObjectMethod("string", "uint size() const", asFUNCTION(StringLengthGeneric), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "void resize(uint)",   asFUNCTION(StringResizeGeneric), asCALL_GENERIC ) );
-#if AS_USE_STLNAMES != 1 && AS_USE_ACCESSORS == 1
-	CheckASCall( engine->RegisterObjectMethod("string", "uint get_length() const property", asFUNCTION(StringLengthGeneric), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("string", "void set_length(uint) property", asFUNCTION(StringResizeGeneric), asCALL_GENERIC ) );
-#endif
+	CheckASCall( engine->RegisterObjectMethod( "string", "void reserve( uint )", asFUNCTION(StringReserveGeneric), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "bool isEmpty() const", asFUNCTION(StringIsEmptyGeneric), asCALL_GENERIC ) );
 
 	// Register the index operator, both as a mutator and as an inspector

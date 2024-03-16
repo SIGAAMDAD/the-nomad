@@ -712,15 +712,19 @@ static void Com_Freeze_f( void ) {
 	}
 }
 
-#define NOMAD_CONFIG "glnomad.cfg"
-
 //
 // Com_LoadConfig: loads the default configuration file
 //
 void Com_LoadConfig( void )
 {
-    Cbuf_ExecuteText(EXEC_APPEND, va("exec %s", Cvar_VariableString( "com_defaultcfg" )));
-    Cbuf_Execute();
+    Cbuf_ExecuteText( EXEC_APPEND, "exec default.cfg\n" );
+    Cbuf_Execute();  // Always execute after exec to prevent text buffer overflowing
+
+	if ( !Com_SafeMode() ) {
+		// skip the user config
+		Cbuf_ExecuteText( EXEC_NOW, "exec " NOMAD_CONFIG "\n" );
+		Cbuf_Execute();
+	}
 }
 
 /*
@@ -774,35 +778,38 @@ void Com_InitJournals(void)
 
 void Com_RestartGame( void )
 {
-	static qboolean gameRestarting = qfalse;
+	static qboolean com_gameRestarting = qfalse;
 
 	// make sure no recursion is possible
-	if (!gameRestarting && com_fullyInitialized) {
-		gameRestarting = qtrue;
-
-		Con_Printf("Com_RestartGame: restarting all engine systems\n");
+	if ( !com_gameRestarting && com_fullyInitialized ) {
+		com_gameRestarting = qtrue;
 
 		G_ShutdownAll();
 		G_ClearMem();
 
-		// reset console history
+		// reset console command history
 		Con_ResetHistory();
 
-		// clear the filesystem before restarting the cvars
+		// shutdown FS early so Cvar_Restart will not reset old game cvars
 		FS_Shutdown( qtrue );
 
-		// reset all cvars
+		// clean out any user an VM created cvars
 		Cvar_Restart( qtrue );
 
 		FS_Restart();
 
-		// reload the config file
+		// load new configuration
 		Com_LoadConfig();
 
 		G_StartHunkUsers();
 
-		gameRestarting = qfalse;
+		com_gameRestarting = qfalse;
 	}
+}
+
+static void Com_GameRestart_f( void ) {
+	Cvar_Set( "fs_game", Cmd_Argv( 1 ) );
+	Com_RestartGame();
 }
 
 /*
@@ -1194,15 +1201,6 @@ const char *Com_VersionString(void)
 	return va("%s v%i.%i.%i", versionType, NOMAD_VERSION, NOMAD_VERSION_UPDATE, NOMAD_VERSION_PATCH);
 }
 
-//
-// Com_GameRestart_f: expose possibility to change current running mod to the user
-//
-static void Com_GameRestart_f(void)
-{
-	Cvar_Set("fs_game", Cmd_Argv(1));
-	Com_RestartGame();
-}
-
 
 
 /*
@@ -1222,28 +1220,52 @@ quake3 set test blah + map test
 ============================================================================
 */
 
-#define	MAX_CONSOLE_LINES 64
+#define	MAX_CONSOLE_LINES 256
 static int	com_numConsoleLines;
 static char	*com_consoleLines[MAX_CONSOLE_LINES];
 
-int I_GetParm(const char *parm)
+int I_GetParm( const char *parm )
 {
 	int i;
 	const char *name;
-    if (!parm)
-        N_Error(ERR_FATAL, "I_GetParm: parm is NULL");
 
-	for (i = 0; i < com_numConsoleLines; i++) {
-		Cmd_TokenizeString(com_consoleLines[i]);
-		if (N_stricmp(Cmd_Argv(0), "set"))
+    if ( !parm ) {
+        N_Error( ERR_FATAL, "I_GetParm: parm is NULL" );
+	}
+
+	for ( i = 0; i < com_numConsoleLines; i++ ) {
+		Cmd_TokenizeString( com_consoleLines[i] );
+		if ( N_stricmp( Cmd_Argv(0), "set" ) )
 			continue;
 		
-		name = Cmd_Argv(1);
-		if (!parm || N_stricmp(name, parm) == 0) {
+		name = Cmd_Argv( 1 );
+		if ( !parm || N_stricmp( name, parm ) == 0 ) {
 			return i;
 		}
     }
     return -1;
+}
+
+/*
+===================
+Com_SafeMode
+
+Check for "safe" on the command line, which will
+skip loading of q3config.cfg
+===================
+*/
+qboolean Com_SafeMode( void ) {
+	int		i;
+
+	for ( i = 0 ; i < com_numConsoleLines ; i++ ) {
+		Cmd_TokenizeString( com_consoleLines[i] );
+		if ( !N_stricmp( Cmd_Argv( 0 ), "safe" )
+			|| !N_stricmp( Cmd_Argv( 0 ), "cvar_restart" ) ) {
+			com_consoleLines[i][0] = '\0';
+			return qtrue;
+		}
+	}
+	return qfalse;
 }
 
 /*
@@ -1558,34 +1580,32 @@ void Com_Init( char *commandLine )
 	Cmd_Init();
 
 	// get the developer cvar set as early as possible
-	Com_StartupVariable( "com_devmode" );
+	Com_StartupVariable( "developer" );
 #ifdef _NOMAD_DEBUG
-	com_devmode = Cvar_Get( "com_devmode", "1", CVAR_INIT | CVAR_PROTECTED );
+	com_devmode = Cvar_Get( "developer", "1", CVAR_INIT | CVAR_PROTECTED );
 #else
-	com_devmode = Cvar_Get( "com_devmode", "0", CVAR_INIT | CVAR_PROTECTED );
+	com_devmode = Cvar_Get( "developer", "0", CVAR_INIT | CVAR_PROTECTED );
 #endif
-	Cvar_CheckRange(com_devmode, "0", "1", CVT_INT);
-	Cvar_SetDescription(com_devmode, "Enables a bunch of extra diagnostics for developers.");
+	Cvar_CheckRange( com_devmode, "0", "1", CVT_INT );
+	Cvar_SetDescription( com_devmode, "Enables a bunch of extra diagnostics for developers." );
 
 	cv = Cvar_Get( "com_version", GLN_VERSION, CVAR_INIT | CVAR_ROM | CVAR_CHEAT );
 	Cvar_SetDescription( cv, "The current game binary's version." );
 
-	Com_StartupVariable( "com_defaultcfg" );
-	Cvar_Get( "com_defaultcfg", NOMAD_CONFIG, CVAR_TEMP | CVAR_INIT );
-
-//	Com_StartupVariable("vm_rtChecks");
-//	vm_rtChecks = Cvar_Get("vm_rtChecks", "15", CVAR_INIT | CVAR_PROTECTED);
-//	Cvar_CheckRange(vm_rtChecks, "0", "15", CVT_INT);
-//	Cvar_SetDescription(vm_rtChecks,
-//		"Runtime checks in compiled vm code, bitmask:\n 1 - program stack overflow\n" \
-//		" 2 - opcode stack overflow\n 4 - jump target range\n 8 - data read/write range");
+/*	Com_StartupVariable("vm_rtChecks");
+	vm_rtChecks = Cvar_Get("vm_rtChecks", "15", CVAR_INIT | CVAR_PROTECTED);
+	Cvar_CheckRange(vm_rtChecks, "0", "15", CVT_INT);
+	Cvar_SetDescription(vm_rtChecks,
+		"Runtime checks in compiled vm code, bitmask:\n 1 - program stack overflow\n" \
+		" 2 - opcode stack overflow\n 4 - jump target range\n 8 - data read/write range");
+	*/
 	
-	com_demo = Cvar_Get("com_demo", "0", CVAR_LATCH);
+	com_demo = Cvar_Get( "com_demo", "0", CVAR_LATCH );
 
-	Com_StartupVariable("com_journal");
-	com_journal = Cvar_Get("com_journal", "0", CVAR_INIT | CVAR_PROTECTED);
-	Cvar_CheckRange(com_journal, "0", "2", CVT_INT);
-	Cvar_SetDescription(com_journal, "When enabled, writes events and its data to 'journal.dat'");
+	Com_StartupVariable( "com_journal" );
+	com_journal = Cvar_Get( "com_journal", "0", CVAR_INIT | CVAR_PROTECTED );
+	Cvar_CheckRange( com_journal, "0", "2", CVT_INT );
+	Cvar_SetDescription( com_journal, "When enabled, writes events and its data to 'journal.dat'" );
 
 	// done early so bind command exists
 	Com_InitKeyCommands();
@@ -1626,6 +1646,7 @@ void Com_Init( char *commandLine )
 	}
 
 	com_maxfps = Cvar_Get( "com_maxfps", "60", CVAR_LATCH | CVAR_SAVE | CVAR_PROTECTED );
+	Cvar_SetDescription( com_maxfps, "Sets the maximum amount frames that can be drawn per second." );
 #ifdef USE_AFFINITY_MASK
 	com_affinityMask = Cvar_Get( "com_affinityMask", "", CVAR_ARCHIVE_ND );
 	Cvar_SetDescription( com_affinityMask, "Bind game process to bitmask-specified CPU core(s), special characters:\n A or a - all default cores\n P or p - performance cores\n E or e - efficiency cores\n 0x<value> - use hexadecimal notation\n + or - can be used to add or exclude particular cores" );
@@ -1635,13 +1656,13 @@ void Com_Init( char *commandLine )
 	Cvar_Get( "sys_cpuCount", va( "%i", SDL_GetCPUCount() ), CVAR_PROTECTED | CVAR_ROM | CVAR_NORESTART );
 
 	sys_cpuString = Cvar_Get( "sys_cpuString", "detect", CVAR_PROTECTED | CVAR_ROM | CVAR_NORESTART );
-	if (!N_stricmp(Cvar_VariableString("sys_cpuString"), "detect")) {
+	if ( !N_stricmp( Cvar_VariableString( "sys_cpuString" ), "detect" ) ) {
 		char vendor[128];
-		Con_Printf("...detecting CPU, found ");
-		Sys_GetProcessorId(vendor);
-		Cvar_Set("sys_cpuString", vendor);
+		Con_Printf( "...detecting CPU, found " );
+		Sys_GetProcessorId( vendor );
+		Cvar_Set( "sys_cpuString", vendor );
 	}
-	Con_Printf("%s\n", Cvar_VariableString("sys_cpuString"));
+	Con_Printf( "%s\n", Cvar_VariableString( "sys_cpuString" ) );
 
 #ifdef USE_AFFINITY_MASK
 	// get initial process affinity - we will respect it when setting custom affinity masks
@@ -1656,7 +1677,7 @@ void Com_Init( char *commandLine )
 #endif
 
 	Cmd_AddCommand( "shutdown", Com_Shutdown_f );
-//	Cmd_AddCommand( "game_restart", Com_GameRestart_f );
+	Cmd_AddCommand( "game_restart", Com_GameRestart_f );
 	Cmd_AddCommand( "quit", Com_Quit_f );
 	Cmd_AddCommand( "exit", Com_Quit_f ); // really just added for convenience...
 	Cmd_AddCommand( "writecfg", Com_WriteConfig_f );

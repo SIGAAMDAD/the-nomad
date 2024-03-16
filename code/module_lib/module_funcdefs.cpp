@@ -5,11 +5,14 @@
 #include "imgui_stdlib.h"
 #include "../ui/ui_lib.h"
 #include "module_stringfactory.hpp"
+#include "../game/g_world.h"
 
 #include "module_engine/module_bbox.h"
 #include "module_engine/module_linkentity.h"
 #include "module_engine/module_polyvert.h"
 #include "module_engine/module_json.h"
+#include "module_engine/module_raycast.h"
+#include "../system/sys_timer.h"
 
 //
 // c++ compatible wrappers around angelscript engine function calls
@@ -170,7 +173,6 @@ DEFINE_CALLBACK( CvarRegisterGeneric ) {
 DEFINE_CALLBACK( CvarUpdateGeneric ) {
     vmCvar_t vmCvar;
 
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
     string_t *value = (string_t *)pGeneric->GetArgObject( 1 );
     asINT64 *intValue = (asINT64 *)pGeneric->GetArgAddress( 2 );
     float *floatValue = (float *)pGeneric->GetArgAddress( 3 );
@@ -229,11 +231,6 @@ DEFINE_CALLBACK( Snd_RegisterTrack ) {
     pGeneric->SetReturnDWord( Snd_RegisterTrack( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
 }
 
-DEFINE_CALLBACK( GetMapData ) {
-    REQUIRE_ARG_COUNT( 3 );
-    CScriptArray *tileData = (CScriptArray *)pGeneric->GetArgAddress( 0 );
-    CScriptArray *soundBits = (CScriptArray *)pGeneric->GetArgAddress( 1 );
-}
 
 DEFINE_CALLBACK( BeginSaveSection ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
@@ -782,6 +779,34 @@ DEFINE_CALLBACK( StringToFloat ) {
     pGeneric->SetReturnFloat( N_atof( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
 }
 
+DEFINE_CALLBACK( DistanceVec3Vec3 ) {
+    const vec3& src = *(const vec3 *)pGeneric->GetArgObject( 0 );
+    const vec3& target = *(const vec3 *)pGeneric->GetArgObject( 1 );
+    pGeneric->SetReturnFloat( disBetweenOBJ( glm::value_ptr( src ), glm::value_ptr( target ) ) );
+}
+
+DEFINE_CALLBACK( BoundsIntersect ) {
+    const bbox_t a = ( (const CModuleBoundBox *)pGeneric->GetArgObject( 0 ) )->ToPOD();
+    const bbox_t b = ( (const CModuleBoundBox *)pGeneric->GetArgObject( 1 ) )->ToPOD();
+
+    pGeneric->SetReturnDWord( (asDWORD)BoundsIntersect( &a, &b ) );
+}
+
+DEFINE_CALLBACK( BoundsIntersectPoint ) {
+    const bbox_t a = ( (const CModuleBoundBox *)pGeneric->GetArgObject( 0 ) )->ToPOD();
+    const vec3& point = *(const vec3 *)pGeneric->GetArgObject( 1 );
+
+    pGeneric->SetReturnDWord( (asDWORD)BoundsIntersectPoint( &a, glm::value_ptr( point ) ) );
+}
+
+DEFINE_CALLBACK( BoundsIntersectSphere ) {
+    const bbox_t a = ( (const CModuleBoundBox *)pGeneric->GetArgObject( 0 ) )->ToPOD();
+    const vec3& point = *(const vec3 *)pGeneric->GetArgObject( 1 );
+    float radius = pGeneric->GetArgFloat( 2 );
+
+    pGeneric->SetReturnDWord( (asDWORD)BoundsIntersectSphere( &a, glm::value_ptr( point ), radius ) );
+}
+
 DEFINE_CALLBACK( StrICmp ) {
     const string_t *arg0 = (const string_t *)pGeneric->GetArgObject( 0 );
     const string_t *arg1 = (const string_t *)pGeneric->GetArgObject( 1 );
@@ -834,6 +859,15 @@ DEFINE_CALLBACK( RegisterSpriteSheet ) {
         pGeneric->GetArgDWord( 3 ), pGeneric->GetArgDWord( 4 ) ) );
 }
 
+DEFINE_CALLBACK( CheckWallHit ) {
+    const vec3& origin = *(const vec3 *)pGeneric->GetArgObject( 0 );
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = g_world.CheckWallHit( glm::value_ptr( origin ), dirtype_t( pGeneric->GetArgDWord( 1 ) ) );
+}
+
+DEFINE_CALLBACK( CastRay ) {
+    g_world.CastRay( (ray_t *)pGeneric->GetArgObject( 0 ) );
+}
+
 DEFINE_CALLBACK( LoadMap ) {
     pGeneric->SetReturnDWord( (asDWORD)G_LoadMap( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
 }
@@ -859,6 +893,14 @@ DEFINE_CALLBACK( GetSpawnData ) {
     uint32_t *type = (uint32_t *)pGeneric->GetArgAddress( 1 );
     uint32_t *id = (uint32_t *)pGeneric->GetArgAddress( 2 );
     G_GetSpawnData( (uvec_t *)origin, type, id, pGeneric->GetArgDWord( 3 ) );
+}
+
+DEFINE_CALLBACK( IsAnyKeyDown ) {
+    pGeneric->SetReturnDWord( (asDWORD)Key_AnyDown() );
+}
+
+DEFINE_CALLBACK( KeyIsDown ) {
+    pGeneric->SetReturnDWord( (asDWORD)Key_IsDown( pGeneric->GetArgDWord( 0 ) ) );
 }
 
 DEFINE_CALLBACK( OpenFileRead ) {
@@ -1201,6 +1243,9 @@ static const string_t script_COLOR_MAGENTA = COLOR_MAGENTA;
 static const string_t script_COLOR_WHITE = COLOR_WHITE;
 static const string_t script_COLOR_RESET = COLOR_RESET;
 
+static const asDWORD script_MAX_MAP_WIDTH = MAX_MAP_WIDTH;
+static const asDWORD script_MAX_MAP_HEIGHT = MAX_MAP_HEIGHT;
+
 static const asQWORD script_MAX_TOKEN_CHARS = MAX_TOKEN_CHARS;
 static const asQWORD script_MAX_STRING_CHARS = MAX_STRING_CHARS;
 static const asQWORD script_MAX_STRING_TOKENS = MAX_STRING_TOKENS;
@@ -1225,6 +1270,9 @@ static const asDWORD script_RT_LIGHTNING = RT_LIGHTNING;
 static const asDWORD script_RT_POLY = RT_POLY;
 
 static const int32_t script_FS_INVALID_HANDLE = FS_INVALID_HANDLE;
+static const asDWORD script_FS_OPEN_READ = (asDWORD)FS_OPEN_READ;
+static const asDWORD script_FS_OPEN_WRITE = (asDWORD)FS_OPEN_WRITE;
+static const asDWORD script_FS_OPEN_APPEND = (asDWORD)FS_OPEN_APPEND;
 
 static const asQWORD script_MAX_INT8 = CHAR_MAX;
 static const asQWORD script_MAX_INT16 = SHRT_MAX;
@@ -1255,16 +1303,25 @@ static const asDWORD script_NOMAD_VERSION = NOMAD_VERSION;
 static const asDWORD script_NOMAD_VERSION_UPDATE = NOMAD_VERSION_UPDATE;
 static const asDWORD script_NOMAD_VERSION_PATCH = NOMAD_VERSION_PATCH;
 
+static const float script_M_PI = M_PI;
+
 void ModuleLib_Register_Engine( void )
 {
 //    SET_NAMESPACE( "TheNomad::Constants" );
     { // Constants
+        REGISTER_GLOBAL_VAR( "const float M_PI", &script_M_PI );
+
         REGISTER_GLOBAL_VAR( "const int32 FS_INVALID_HANDLE", &script_FS_INVALID_HANDLE );
+        REGISTER_GLOBAL_VAR( "const uint32 FS_OPEN_READ", &script_FS_OPEN_READ );
+        REGISTER_GLOBAL_VAR( "const uint32 FS_OPEN_WRITE", &script_FS_OPEN_WRITE );
+        REGISTER_GLOBAL_VAR( "const uint32 FS_OPEN_APPEND", &script_FS_OPEN_APPEND );
 
         REGISTER_GLOBAL_VAR( "const uint32 MAX_TOKEN_CHARS", &script_MAX_TOKEN_CHARS );
         REGISTER_GLOBAL_VAR( "const uint32 MAX_STRING_CHARS", &script_MAX_STRING_CHARS );
         REGISTER_GLOBAL_VAR( "const uint32 MAX_STRING_TOKENS", &script_MAX_STRING_TOKENS );
         REGISTER_GLOBAL_VAR( "const uint32 MAX_NPATH", &script_MAX_NPATH );
+        REGISTER_GLOBAL_VAR( "const uint32 MAX_MAP_WIDTH", &script_MAX_MAP_WIDTH );
+        REGISTER_GLOBAL_VAR( "const uint32 MAX_MAP_HEIGHT", &script_MAX_MAP_HEIGHT );
 
         REGISTER_GLOBAL_VAR( "const string COLOR_BLACK", &script_COLOR_BLACK );
         REGISTER_GLOBAL_VAR( "const string COLOR_RED", &script_COLOR_RED );
@@ -1577,51 +1634,68 @@ void ModuleLib_Register_Engine( void )
                 g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( decl, WRAP_FN_PR( funcPtr, params, returnType ), asCALL_GENERIC ) )
         
         RESET_NAMESPACE();
+
+        REGISTER_ENUM_TYPE( "ImGuiWindowFlags" );
+        REGISTER_ENUM_VALUE( "ImGuiWindowFlags", "NoTitleBar", ImGuiWindowFlags_NoTitleBar );
+        REGISTER_ENUM_VALUE( "ImGuiWindowFlags", "NoResize", ImGuiWindowFlags_NoResize );
+        REGISTER_ENUM_VALUE( "ImGuiWindowFlags", "NoMouseInputs", ImGuiWindowFlags_NoMouseInputs );
+        REGISTER_ENUM_VALUE( "ImGuiWindowFlags", "NoMove", ImGuiWindowFlags_NoMove );
+        REGISTER_ENUM_VALUE( "ImGuiWindowFlags", "NoCollapse", ImGuiWindowFlags_NoCollapse );
+        REGISTER_ENUM_VALUE( "ImGuiWindowFlags", "NoBringToFrontOnFocus", ImGuiWindowFlags_NoBringToFrontOnFocus );
+        REGISTER_ENUM_VALUE( "ImGuiWindowFlags", "NoDecoration", ImGuiWindowFlags_NoDecoration );
+        REGISTER_ENUM_VALUE( "ImGuiWindowFlags", "NoBackground", ImGuiWindowFlags_NoBackground );
+        REGISTER_ENUM_VALUE( "ImGuiWindowFlags", "NoSavedSettings", ImGuiWindowFlags_NoSavedSettings );
+        REGISTER_ENUM_VALUE( "ImGuiWindowFlags", "NoScrollbar", ImGuiWindowFlags_NoScrollbar );
+        REGISTER_ENUM_VALUE( "ImGuiWindowFlags", "AlwaysHorizontalScrollbar", ImGuiWindowFlags_AlwaysHorizontalScrollbar );
+        REGISTER_ENUM_VALUE( "ImGuiWindowFlags", "AlwaysVerticalScrollbar", ImGuiWindowFlags_AlwaysVerticalScrollbar );
+
         REGISTER_ENUM_TYPE( "ImGuiTableFlags" );
-        REGISTER_ENUM_VALUE( "ImGuiTableFlags", "ImGuiTableFlags_None", ImGuiTableFlags_None );
-        REGISTER_ENUM_VALUE( "ImGuiTableFlags", "ImGuiTableFlags_Resizable", ImGuiTableFlags_Resizable );
-        REGISTER_ENUM_VALUE( "ImGuiTableFlags", "ImGuiTableFlags_Reorderable", ImGuiTableFlags_Reorderable );
+        REGISTER_ENUM_VALUE( "ImGuiTableFlags", "None", ImGuiTableFlags_None );
+        REGISTER_ENUM_VALUE( "ImGuiTableFlags", "Resizable", ImGuiTableFlags_Resizable );
+        REGISTER_ENUM_VALUE( "ImGuiTableFlags", "Reorderable", ImGuiTableFlags_Reorderable );
 
         REGISTER_ENUM_TYPE( "ImGuiInputTextFlags" );
-        REGISTER_ENUM_VALUE( "ImGuiInputTextFlags", "ImGuiInputTextFlags_None", ImGuiInputTextFlags_None );
-        REGISTER_ENUM_VALUE( "ImGuiInputTextFlags", "ImGuiInputTextFlags_EnterReturnsTrue", ImGuiInputTextFlags_EnterReturnsTrue );
-        REGISTER_ENUM_VALUE( "ImGuiInputTextFlags", "ImGuiInputTextFlags_AllowTabInput", ImGuiInputTextFlags_AllowTabInput );
-        REGISTER_ENUM_VALUE( "ImGuiInputTextFlags", "ImGuiInputTextFlags_CtrlEnterForNewLine", ImGuiInputTextFlags_CtrlEnterForNewLine );
+        REGISTER_ENUM_VALUE( "ImGuiInputTextFlags", "None", ImGuiInputTextFlags_None );
+        REGISTER_ENUM_VALUE( "ImGuiInputTextFlags", "EnterReturnsTrue", ImGuiInputTextFlags_EnterReturnsTrue );
+        REGISTER_ENUM_VALUE( "ImGuiInputTextFlags", "AllowTabInput", ImGuiInputTextFlags_AllowTabInput );
+        REGISTER_ENUM_VALUE( "ImGuiInputTextFlags", "CtrlEnterForNewLine", ImGuiInputTextFlags_CtrlEnterForNewLine );
 
         REGISTER_ENUM_TYPE( "ImGuiDir" );
-        REGISTER_ENUM_VALUE( "ImGuiDir", "ImGuiDir_Left", ImGuiDir_Left );
-        REGISTER_ENUM_VALUE( "ImGuiDir", "ImGuiDir_Right", ImGuiDir_Right );
-        REGISTER_ENUM_VALUE( "ImGuiDir", "ImGuiDir_Down", ImGuiDir_Down );
-        REGISTER_ENUM_VALUE( "ImGuiDir", "ImGuiDir_Up", ImGuiDir_Up );
-        REGISTER_ENUM_VALUE( "ImGuiDir", "ImGuiDir_None", ImGuiDir_None );
+        REGISTER_ENUM_VALUE( "ImGuiDir", "Left", ImGuiDir_Left );
+        REGISTER_ENUM_VALUE( "ImGuiDir", "Right", ImGuiDir_Right );
+        REGISTER_ENUM_VALUE( "ImGuiDir", "Down", ImGuiDir_Down );
+        REGISTER_ENUM_VALUE( "ImGuiDir", "Up", ImGuiDir_Up );
+        REGISTER_ENUM_VALUE( "ImGuiDir", "None", ImGuiDir_None );
 
         REGISTER_ENUM_TYPE( "ImGuiCol" );
-        REGISTER_ENUM_VALUE( "ImGuiCol", "ImGuiCol_Border", ImGuiCol_Border );
-        REGISTER_ENUM_VALUE( "ImGuiCol", "ImGuiCol_Button", ImGuiCol_Button );
-        REGISTER_ENUM_VALUE( "ImGuiCol", "ImGuiCol_ButtonActive", ImGuiCol_ButtonActive );
-        REGISTER_ENUM_VALUE( "ImGuiCol", "ImGuiCol_ButtonHovered", ImGuiCol_ButtonHovered );
-        REGISTER_ENUM_VALUE( "ImGuiCol", "ImGuiCol_WindowBg", ImGuiCol_WindowBg );
-        REGISTER_ENUM_VALUE( "ImGuiCol", "ImGuiCol_MenuBarBg", ImGuiCol_MenuBarBg );
-        REGISTER_ENUM_VALUE( "ImGuiCol", "ImGuiCol_FrameBg", ImGuiCol_FrameBg );
-        REGISTER_ENUM_VALUE( "ImGuiCol", "ImGuiCol_FrameBgActive", ImGuiCol_FrameBgActive );
-        REGISTER_ENUM_VALUE( "ImGuiCol", "ImGuiCol_FrameBgHovered", ImGuiCol_FrameBgHovered );
-        REGISTER_ENUM_VALUE( "ImGuiCol", "ImGuiCol_CheckMark", ImGuiCol_CheckMark );
-        REGISTER_ENUM_VALUE( "ImGuiCol", "ImGuiCol_PopupBg", ImGuiCol_PopupBg );
-        REGISTER_ENUM_VALUE( "ImGuiCol", "ImGuiCol_ScrollbarBg", ImGuiCol_ScrollbarBg );
-        REGISTER_ENUM_VALUE( "ImGuiCol", "ImGuiCol_ScrollbarGrab", ImGuiCol_ScrollbarGrab );
-        REGISTER_ENUM_VALUE( "ImGuiCol", "ImGuiCol_ScrollbarGrabActive", ImGuiCol_ScrollbarGrabActive );
-        REGISTER_ENUM_VALUE( "ImGuiCol", "ImGuiCol_ScrollbarGrabHovered", ImGuiCol_ScrollbarGrabHovered );
+        REGISTER_ENUM_VALUE( "ImGuiCol", "Border", ImGuiCol_Border );
+        REGISTER_ENUM_VALUE( "ImGuiCol", "Button", ImGuiCol_Button );
+        REGISTER_ENUM_VALUE( "ImGuiCol", "ButtonActive", ImGuiCol_ButtonActive );
+        REGISTER_ENUM_VALUE( "ImGuiCol", "ButtonHovered", ImGuiCol_ButtonHovered );
+        REGISTER_ENUM_VALUE( "ImGuiCol", "WindowBg", ImGuiCol_WindowBg );
+        REGISTER_ENUM_VALUE( "ImGuiCol", "MenuBarBg", ImGuiCol_MenuBarBg );
+        REGISTER_ENUM_VALUE( "ImGuiCol", "FrameBg", ImGuiCol_FrameBg );
+        REGISTER_ENUM_VALUE( "ImGuiCol", "FrameBgActive", ImGuiCol_FrameBgActive );
+        REGISTER_ENUM_VALUE( "ImGuiCol", "FrameBgHovered", ImGuiCol_FrameBgHovered );
+        REGISTER_ENUM_VALUE( "ImGuiCol", "CheckMark", ImGuiCol_CheckMark );
+        REGISTER_ENUM_VALUE( "ImGuiCol", "PopupBg", ImGuiCol_PopupBg );
+        REGISTER_ENUM_VALUE( "ImGuiCol", "ScrollbarBg", ImGuiCol_ScrollbarBg );
+        REGISTER_ENUM_VALUE( "ImGuiCol", "ScrollbarGrab", ImGuiCol_ScrollbarGrab );
+        REGISTER_ENUM_VALUE( "ImGuiCol", "ScrollbarGrabActive", ImGuiCol_ScrollbarGrabActive );
+        REGISTER_ENUM_VALUE( "ImGuiCol", "ScrollbarGrabHovered", ImGuiCol_ScrollbarGrabHovered );
 
         // this isn't currently supported
         CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterFuncdef( "int ImGuiInputTextCalback( ref@ )" ) );
 
         SET_NAMESPACE( "ImGui" );
 
-        REGISTER_GLOBAL_FUNCTION( "bool ImGui::Begin( const string& in, bool& in = null, const int = 0 )", ImGui_Begin, ( const string_t *, bool *, ImGuiWindowFlags ), bool );
+        REGISTER_GLOBAL_FUNCTION( "bool ImGui::Begin( const string& in, ref@, ImGuiWindowFlags = ImGuiWindowFlags::None )", ImGui_Begin, ( const string_t *, bool *, ImGuiWindowFlags ), bool );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::End()", ImGui_End, ( void ), void );
-        REGISTER_GLOBAL_FUNCTION( "bool ImGui::BeginTable( const string& in, int, ImGuiTableFlags = ImGuiTableFlags_None )", ImGui_BeginTable, ( const string_t *, int, ImGuiTableFlags ), bool );
+        REGISTER_GLOBAL_FUNCTION( "void ImGui::SetWindowSize( const vec2& in )", ImGui_SetWindowSize, ( const vec2 * ), void );
+        REGISTER_GLOBAL_FUNCTION( "void ImGui::SetWindowPos( const vec2& in )", ImGui_SetWindowPos, ( const vec2 * ), void );
+        REGISTER_GLOBAL_FUNCTION( "bool ImGui::BeginTable( const string& in, int, ImGuiTableFlags = ImGuiTableFlags::None )", ImGui_BeginTable, ( const string_t *, int, ImGuiTableFlags ), bool );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::EndTable()", ImGui_EndTable, ( void ), void );
-        REGISTER_GLOBAL_FUNCTION( "bool ImGui::InputText( const string& in, string& out, ImGuiInputTextFlags = 0 )", ImGui_InputText, ( const string_t *, string_t *, ImGuiInputTextFlags ), bool );
+        REGISTER_GLOBAL_FUNCTION( "bool ImGui::InputText( const string& in, string& out, ImGuiInputTextFlags = ImGuiInputTextFlags::None )", ImGui_InputText, ( const string_t *, string_t *, ImGuiInputTextFlags ), bool );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::TableNextColumn()", ImGui_TableNextColumn, ( void ), void );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::TableNextRow()", ImGui_TableNextRow, ( void ), void );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::PushStyleColor( ImGuiCol, const vec4& in )", ImGui_PushStyleColor_V4, ( ImGuiCol, const vec4 * ), void );
@@ -1673,43 +1747,13 @@ void ModuleLib_Register_Engine( void )
     RESET_NAMESPACE();
 
     SET_NAMESPACE( "TheNomad" );
-    { // Util
-        SET_NAMESPACE( "TheNomad::Util" );
-
-        REGISTER_OBJECT_TYPE( "JsonObject", CModuleJsonObject, asOBJ_VALUE );
-        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonObject", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( CModuleJsonObject, ( void ) ) );
-        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonObject", asBEHAVE_CONSTRUCT, "void f( const TheNomad::Util::JsonObject& in )", WRAP_CON( CModuleJsonObject, ( const CModuleJsonObject& ) ) );
-        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonObject", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( CModuleJsonObject ) );
-
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonObject", "void SetInt( const string& in, int )", CModuleJsonObject, SetInt, ( const string_t *, int32_t ), void );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonObject", "void SetUInt( const string& in, uint )", CModuleJsonObject, SetUInt, ( const string_t *, uint32_t ), void );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonObject", "void SetFloat( const string& in, float )", CModuleJsonObject, SetFloat, ( const string_t *, float ), void );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonObject", "bool Parse( const string& in )", CModuleJsonObject, Parse, ( const string_t * ), bool );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonObject", "TheNomad::Util::JsonObject& opAssign( const TheNomad::Util::JsonObject& in )", CModuleJsonObject, operator=, ( const CModuleJsonObject& ), CModuleJsonObject& );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonObject", "bool GetInt( const string& in, int& out )", CModuleJsonObject, GetInt, ( const string_t *, int32_t * ), bool );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonObject", "bool GetUInt( const string& in, uint& out )", CModuleJsonObject, GetUInt, ( const string_t *, uint32_t * ), bool );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonObject", "bool GetFloat( const string& in, float& out )", CModuleJsonObject, GetFloat, ( const string_t *, float * ), bool );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonObject", "bool GetString( const string& in, string& out )", CModuleJsonObject, GetString, ( const string_t *, string_t * ), bool );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonObject", "bool GetBool( const string& in, bool& out )", CModuleJsonObject, GetBool, ( const string_t *, bool * ), bool );
-
-        REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StrICmp( const string& in, const string& in )", StrICmp );
-        REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StrCmp( const string& in, const string& in )", StrCmp );
-        REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StringToInt( const string& in )", StringToInt );
-        REGISTER_GLOBAL_FUNCTION( "uint TheNomad::Util::StringToUInt( const string& in )", StringToUInt );
-        REGISTER_GLOBAL_FUNCTION( "float TheNomad::Util::StringToFloat( const string& in )", StringToFloat );
-//        REGISTER_GLOBAL_FUNCTION( "string TheNomad::Util::SkipPath( const string& in )", SkipPath );
-//        REGISTER_GLOBAL_FUNCTION( "string TheNomad::Util::GetExtension( const string& in )", GetExtension );
-//        REGISTER_GLOBAL_FUNCTION( "string TheNomad::Util::DefaultExtension( const string& in, const string& in )", DefaultExtension );
-
-        RESET_NAMESPACE();
-    }
 	
 	SET_NAMESPACE( "TheNomad::Engine" );
 	{ // Engine
         
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CvarRegister( const string& in, const string& in, uint, int64& out, float& out, int& out, int& out )", CvarRegisterGeneric );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CvarSet( const string& in, const string& in )", CvarSetValueGeneric );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CvarUpdate( const string& in, string& out, int64& out, float& out, int& out, const int )", CvarUpdateGeneric );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CvarUpdate( string& out, int64& out, float& out, int& out, const int )", CvarUpdateGeneric );
         REGISTER_GLOBAL_FUNCTION( "int64 TheNomad::Engine::CvarVariableInteger( const string& in )", CvarVariableInteger );
         REGISTER_GLOBAL_FUNCTION( "float TheNomad::Engine::CvarVariableFloat( const string& in )", CvarVariableFloat );
         REGISTER_GLOBAL_FUNCTION( "string TheNomad::Engine::CvarVariableString( const string& in )", CvarVariableString );
@@ -1720,6 +1764,61 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdAddCommand( const string& in )", CmdAddCommandGeneric );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdRemoveCommand( const string& in )", CmdRemoveCommandGeneric );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdExecuteCommand( const string& in )", CmdExecuteCommandGeneric );
+
+        REGISTER_ENUM_TYPE( "KeyNum" );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_A", KEY_A );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_B", KEY_B );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_C", KEY_C );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_D", KEY_D );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_E", KEY_E );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_F", KEY_F );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_G", KEY_G );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_H", KEY_H );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_I", KEY_I );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_J", KEY_J );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_K", KEY_K );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_L", KEY_L );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_M", KEY_M );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_N", KEY_N );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_O", KEY_O );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_P", KEY_P );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_Q", KEY_Q );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_R", KEY_R );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_S", KEY_S );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_T", KEY_T );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_U", KEY_U );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_V", KEY_V );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_W", KEY_W );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_X", KEY_X );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_Y", KEY_Y );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_Z", KEY_Z );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_Tab", KEY_TAB );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_Space", KEY_SPACE );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_BackSpace", KEY_BACKSPACE );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_Alt", KEY_ALT );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_UpArrow", KEY_UP );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_LeftArrow", KEY_LEFT );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_DownArrow", KEY_DOWN );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_RightArrow", KEY_RIGHT );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_Up", KEY_UP );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_Left", KEY_LEFT );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_Down", KEY_DOWN );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_Right", KEY_RIGHT );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_BackSlash", KEY_BACKSLASH );
+        REGISTER_ENUM_VALUE( "KeyNum", "Key_Slash", KEY_SLASH );
+
+        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::IsAnyKeyDown()", IsAnyKeyDown );
+        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::IsKeyDown( KeyNum )", KeyIsDown );
+
+        REGISTER_OBJECT_TYPE( "Timer", CTimer, asOBJ_VALUE );
+        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Engine::Timer", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( CTimer, ( void ) ) );
+        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Engine::Timer", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( CTimer ) );
+
+        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "void Run()", CTimer, Run, ( void ), void );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "void Stop()", CTimer, Stop, ( void ), void );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "int64 ElapsedMilliseconds() const", CTimer, ElapsedMilliseconds_ML, ( void ) const, int64_t );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "int64 ElapsedSeconds() const", CTimer, ElapsedSeconds_ML, ( void ) const, int64_t );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Timer", "int32 ElapsedMinutes() const", CTimer, ElapsedMinutes_ML, ( void ) const, int32_t );
 
 		{ // SoundSystem
 			SET_NAMESPACE( "TheNomad::Engine::SoundSystem" );
@@ -1801,14 +1900,15 @@ void ModuleLib_Register_Engine( void )
 
         REGISTER_OBJECT_TYPE( "LinkEntity", CModuleLinkEntity, asOBJ_VALUE );
         REGISTER_OBJECT_BEHAVIOUR( "TheNomad::GameSystem::LinkEntity", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( CModuleLinkEntity, ( void ) ) );
-        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::GameSystem::LinkEntity", asBEHAVE_CONSTRUCT, "void f( const vec3& in, const BBox& in, uint, uint )",
-            WRAP_CON( CModuleLinkEntity, ( const glm::vec3&, const CModuleBoundBox&, uint32_t, uint32_t ) ) );
+        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::GameSystem::LinkEntity", asBEHAVE_CONSTRUCT, "void f( const vec3& in, const BBox& in, uint, uint )", WRAP_CON( CModuleLinkEntity, ( const glm::vec3&, const CModuleBoundBox&, uint32_t, uint32_t ) ) );
         REGISTER_OBJECT_BEHAVIOUR( "TheNomad::GameSystem::LinkEntity", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( CModuleLinkEntity ) );
         REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::LinkEntity", "vec3 m_Origin", offsetof( CModuleLinkEntity, m_Origin ) );
         REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::LinkEntity", "uint32 m_nEntityId", offsetof( CModuleLinkEntity, m_nEntityId ) );
         REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::LinkEntity", "uint32 m_nEntityType", offsetof( CModuleLinkEntity, m_nEntityType ) );
+        REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::LinkEntity", "uint32 m_nEntityNumber", offsetof( CModuleLinkEntity, m_nEntityNumber ) );
         REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::LinkEntity", "BBox m_Bounds", offsetof( CModuleLinkEntity, m_Bounds ) );
-
+        
+        REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::LinkEntity", "TheNomad::GameSystem::LinkEntity& opAssign( const TheNomad::GameSystem::LinkEntity& in )", CModuleLinkEntity, operator=, ( const CModuleLinkEntity& ), CModuleLinkEntity& );
         REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::LinkEntity", "void SetOrigin( const vec3& in )", CModuleLinkEntity,
             SetOrigin, ( const glm::vec3& ), void );
         REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::LinkEntity", "void SetBounds( const BBox& in )", CModuleLinkEntity,
@@ -1817,6 +1917,17 @@ void ModuleLib_Register_Engine( void )
             GetOrigin, ( void ), const glm::vec3& );
         REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::LinkEntity", "const BBox& GetBounds( void ) const", CModuleLinkEntity,
             GetBounds, ( void ), const CModuleBoundBox& );
+        REGISTER_METHOD_FUNCTION( "TheNomad::GameSystem::LinkEntity", "void Update()", CModuleLinkEntity, Update, ( void ), void );
+        
+//        REGISTER_OBJECT_TYPE( "RayCast", CModuleRayCast, asOBJ_VALUE );
+//        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::GameSystem::RayCast", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( CModuleRayCast, ( void ) ) );
+//        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::GameSystem::RayCast", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( CModuleRayCast ) );
+//        REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::RayCast", "vec3 m_Start", offsetof( ray_t, start ) );
+//        REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::RayCast", "vec3 m_End", offsetof( ray_t, end ) );
+//        REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::RayCast", "vec3 m_Origin", offsetof( ray_t, origin ) );
+//        REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::RayCast", "uint32 m_nEntityNumber", offsetof( ray_t, entityNumber ) );
+//        REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::RayCast", "float m_nLength", offsetof( ray_t, length ) );
+//        REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::RayCast", "float m_nAngle", offsetof( ray_t, angle ) );
         
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetString( const string& in, string& out )", GetString );
 
@@ -1905,6 +2016,7 @@ void ModuleLib_Register_Engine( void )
 		REGISTER_ENUM_VALUE( "EntityType", "Item", ET_ITEM );
 		REGISTER_ENUM_VALUE( "EntityType", "Wall", ET_WALL );
 		REGISTER_ENUM_VALUE( "EntityType", "Weapon", ET_WEAPON );
+        REGISTER_ENUM_VALUE( "EntityType", "NumEntityTypes", NUMENTITYTYPES );
 
         REGISTER_ENUM_TYPE( "GameDifficulty" );
         REGISTER_ENUM_VALUE( "GameDifficulty", "VeryEasy", DIF_NOOB );
@@ -1925,12 +2037,70 @@ void ModuleLib_Register_Engine( void )
 		REGISTER_ENUM_VALUE( "DirType", "West", DIR_WEST );
 		REGISTER_ENUM_VALUE( "DirType", "NorthWest", DIR_NORTH_WEST );
 		REGISTER_ENUM_VALUE( "DirType", "Inside", DIR_NULL );
+
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::CastRay( ref@ )", CastRay );
+        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::GameSystem::CheckWallHit( const vec3& in, TheNomad::GameSystem::DirType )", CheckWallHit );
 		
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetCheckpointData( uvec3& out, uint )", GetCheckpointData );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetSpawnData( uvec3& out, uint& out, uint& out, uint )", GetSpawnData );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SetActiveMap( int, uint& out, uint& out, uint& out, float& in,"
-            "TheNomad::GameSystem::LinkEntity@ )", SetActiveMap );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SetActiveMap( int, uint& out, uint& out, uint& out, float[]& in, "
+            "TheNomad::GameSystem::LinkEntity& in )", SetActiveMap );
         REGISTER_GLOBAL_FUNCTION( "int LoadMap( const string& in )", LoadMap );
+    }
+
+    SET_NAMESPACE( "TheNomad" );
+    { // Util
+        SET_NAMESPACE( "TheNomad::Util" );
+        REGISTER_OBJECT_TYPE( "JsonParser", CModuleJsonObject, asOBJ_VALUE );
+        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( CModuleJsonObject, ( void ) ) );
+        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_CONSTRUCT, "void f( const TheNomad::Util::JsonParser& in )", WRAP_CON( CModuleJsonObject, ( const CModuleJsonObject& ) ) );
+//        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_FACTORY, "ref@ f()", WRAP_FN_PR( CModuleJsonObject::Factory, ( void ), CModuleJsonObject * ) );
+//        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_ADDREF, "void f()", WRAP_MFN_PR( CModuleJsonObject, AddRef, ( void ) const, void ) );
+//        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_RELEASE, "void f()", WRAP_MFN_PR( CModuleJsonObject, Release, ( void ), void ) );
+//        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_ENUMREFS, "void f( int& in )", WRAP_MFN_PR( CModuleJsonObject, EnumReferences, ( asIScriptEngine * ), void ) );
+//        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_RELEASEREFS, "void f( int& in )", WRAP_MFN_PR( CModuleJsonObject, ReleaseAllRefs, ( asIScriptEngine * ), void ) );
+        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( CModuleJsonObject ) );
+
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "void SetInt( const string& in, int )", CModuleJsonObject, SetInt, ( const string_t *, int32_t ), void );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "void SetUInt( const string& in, uint )", CModuleJsonObject, SetUInt, ( const string_t *, uint32_t ), void );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "void SetFloat( const string& in, float )", CModuleJsonObject, SetFloat, ( const string_t *, float ), void );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool Parse( const string& in )", CModuleJsonObject, Parse, ( const string_t * ), bool );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "TheNomad::Util::JsonParser& opAssign( const TheNomad::Util::JsonParser& in )", CModuleJsonObject, operator=, ( const CModuleJsonObject& ), CModuleJsonObject& );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetInt( const string& in, int& out )", CModuleJsonObject, GetInt, ( const string_t *, int32_t * ), bool );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetUInt( const string& in, uint& out )", CModuleJsonObject, GetUInt, ( const string_t *, uint32_t * ), bool );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetFloat( const string& in, float& out )", CModuleJsonObject, GetFloat, ( const string_t *, float * ), bool );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetString( const string& in, string& out )", CModuleJsonObject, GetString, ( const string_t *, string_t * ), bool );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetBool( const string& in, bool& out )", CModuleJsonObject, GetBool, ( const string_t *, bool * ), bool );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetIntArray( const string& in, array<int>& out )", CModuleJsonObject, GetIntArray, ( const string_t *, CScriptArray * ), bool );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetUIntArray( const string& in, array<uint>& out )", CModuleJsonObject, GetUIntArray, ( const string_t *, CScriptArray * ), bool );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetFloatArray( const string& in, array<float>& out )", CModuleJsonObject, GetFloatArray, ( const string_t *, CScriptArray * ), bool );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetStringArray( const string& in, array<string>& out )", CModuleJsonObject, GetStringArray, ( const string_t *, CScriptArray * ), bool );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetBoolArray( const string& in, array<bool>& out )", CModuleJsonObject, GetBoolArray, ( const string_t *, CScriptArray * ), bool );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetObjectArray( const string& in, array<TheNomad::Util::JsonParser>& out )", CModuleJsonObject, GetObjectArray, ( const string_t *, CScriptArray * ), bool );
+
+        REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StrICmp( const string& in, const string& in )", StrICmp );
+        REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StrCmp( const string& in, const string& in )", StrCmp );
+        REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StringToInt( const string& in )", StringToInt );
+        REGISTER_GLOBAL_FUNCTION( "uint TheNomad::Util::StringToUInt( const string& in )", StringToUInt );
+        REGISTER_GLOBAL_FUNCTION( "float TheNomad::Util::StringToFloat( const string& in )", StringToFloat );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+            "float TheNomad::Util::Distance( const vec2& in, const vec2& in )", WRAP_FN_PR( disBetweenOBJ, ( const vec2&, const vec2& ), float ), asCALL_GENERIC );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+            "float TheNomad::Util::Distance( const ivec2& in, const ivec2& in )", WRAP_FN_PR( disBetweenOBJ, ( const glm::ivec2&, const glm::ivec2& ), int ), asCALL_GENERIC );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+            "float TheNomad::Util::Distance( const vec3& in, const vec3& in )", WRAP_FN_PR( disBetweenOBJ, ( const vec3&, const vec3& ), float ), asCALL_GENERIC );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+            "float TheNomad::Util::Distance( const uvec3& in, const uvec3& in )", WRAP_FN_PR( disBetweenOBJ, ( const uvec3_t, const uvec3_t ), unsigned ), asCALL_GENERIC );
+            g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+            "float TheNomad::Util::Distance( const ivec3& in, const ivec3& in )", WRAP_FN_PR( disBetweenOBJ, ( const ivec3_t, const ivec3_t ), int ), asCALL_GENERIC );
+        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Util::BoundsIntersect( const TheNomad::GameSystem::BBox& in, const TheNomad::GameSystem::BBox& in )", BoundsIntersect );
+        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Util::BoundsIntersectPoint( const TheNomad::GameSystem::BBox& in, const vec3& in )", BoundsIntersectPoint );
+        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Util::BoundsIntersectSphere( const TheNomad::GameSystem::BBox& in, const vec3& in, float )", BoundsIntersectSphere );
+//        REGISTER_GLOBAL_FUNCTION( "string TheNomad::Util::SkipPath( const string& in )", SkipPath );
+//        REGISTER_GLOBAL_FUNCTION( "string TheNomad::Util::GetExtension( const string& in )", GetExtension );
+//        REGISTER_GLOBAL_FUNCTION( "string TheNomad::Util::DefaultExtension( const string& in, const string& in )", DefaultExtension );
+
+        RESET_NAMESPACE();
     }
 
     RESET_NAMESPACE();

@@ -296,5 +296,6 @@ extern cvar_t *ml_debugMode;
 extern cvar_t *ml_angelScript_DebugPrint;
 extern cvar_t *ml_alwaysCompile;
 extern cvar_t *ml_allowJIT;
+extern cvar_t *ml_garbageCollectionIterations;
 
 #endif

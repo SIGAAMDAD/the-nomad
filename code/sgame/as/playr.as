@@ -1,17 +1,12 @@
 #include "entity.as"
 #include "level.as"
+#include "item.as"
 #include "game.as"
 
 namespace TheNomad::SGame {
-	// player specific cvars
-	ConVar@ sgame_QuickShotMaxTargets;
-	ConVar@ sgame_QuickShotTime;
-	ConVar@ sgame_QuickShotMaxRange;
-	ConVar@ sgame_MaxPlayerWeapons;
-	
 	shared class Enchantment {
-		Enchantment() {
-		
+		Enchantment( ModuleObject@ main ) {
+			@ModObject = @main;
 		}
 		
 		//
@@ -23,22 +18,18 @@ namespace TheNomad::SGame {
 		
 		private bool m_bActive;
 		private bool m_bAwakened;
-		
+
+		private ModuleObject@ ModObject;
 	};
 	
-	void Enchantment_AddDamage_f() {
-	
-	}
-	
 	shared class QuickShot {
-		QuickShot() {
-			m_Targets.resize( uint( TheNomad::Engine::CvarVariableInteger( "sgame_QuickShotMaxTargets" ) ) );
-			m_nTimeBetweenAcquire = TheNomad::Engine::CvarVariableInteger( "sgame_QuickShotTime" );
-			m_nMaxRange = TheNomad::Engine::CvarVariableFloat( "sgame_QuickShotMaxRange" );
+		QuickShot( ModuleObject@ main ) {
+			m_Targets.resize( sgame_QuickShotMaxTargets );
+			@ModObject = @main;
 		}
 		
 		void Think() {
-			if ( m_nLastTargetTime < m_nTimeBetweenAcquire ) {
+			if ( m_nLastTargetTime < ModObject.sgame_QuickShotTime.GetInt() ) {
 				m_nLastTargetTime++;
 				return;
 			}
@@ -46,13 +37,17 @@ namespace TheNomad::SGame {
 			DebugPrint( "QuickShot thinking...\n" );
 			m_nLastTargetTime = 0;
 			
+			const array<EntityObject@>& EntList = ModObject.EntityManager.GetEntities();
+
 			// NOTE: this might be a little bit slow depending on how many mobs are in the area
-			for ( uint i = 0; i < EntityManager.NumEntities(); i++ ) {
-				if ( m_Targets.find( EntityManager.GetEntity( i ) ) == -1 ) {
+			for ( uint i = 0; i < EntList.size(); i++ ) {
+				if ( m_Targets.find( @EntList[i] ) == -1 ) {
+					if ( TheNomad::Util::Distance( EntList[i].GetOrigin(), m_Origin ) > ModObject.sgame_QuickShotMaxRange.GetFloat() ) {
+						continue // too far away
+					}
 					// make sure we aren't adding a duplicate
-					m_Targets[m_nTargetsFound] = EntityManager.GetEntity( i );
+					m_Targets[m_nTargetsFound] = @EntList[i];
 					DebugPrint( "QuickShot added entity " + formatUInt( i ) + "\n" );
-					m_nTargetsFound = ;
 				}
 			}
 		}
@@ -62,20 +57,22 @@ namespace TheNomad::SGame {
 			m_nLastTargetTime = 0;
 			m_nTargetsFound = 0;
 		}
-		
+
+		private vec3 m_Origin;
 		private array<EntityObject@> m_Targets;
 		private uint m_nTargetsFound;
-		private uint m_nTimeBetweenAcquire;
 		private uint m_nLastTargetTime;
-		private float m_nMaxRange;
+
+		private ModuleObject@ ModObject;
 	};
 	
 	shared class KeyBind {
-		KeyBind() {
+		KeyBind( ModuleObject@ main ) {
 			down[0] = down[1] = 0;
 			downtime = 0;
 			msec = 0;
 			active = false;
+			@ModObject = @main;
 		}
 		
 		void Down() {
@@ -84,7 +81,7 @@ namespace TheNomad::SGame {
 			
 			TheNomad::Engine::CmdArgv( c, 1 );
 			if ( c[0] != 0 ) {
-				k = StringToInt( c );
+				k = TheNomad::Util::StringToInt( c );
 			} else {
 				return;
 			}
@@ -104,7 +101,7 @@ namespace TheNomad::SGame {
 			
 			// save the timestamp for partial frame summing
 			TheNomad::Engine::CmdArgv( c, 2 );
-			downtime = StringToInt( c );
+			downtime = TheNomad::Util::StringToInt( c );
 			
 			active = true;
 		}
@@ -116,7 +113,7 @@ namespace TheNomad::SGame {
 			
 			TheNomad::Engine::CmdArgv( c, 1 );
 			if ( c[0] != 0 ) {
-				k = StringToInt( c );
+				k = TheNomad::Util::StringToInt( c );
 			} else {
 				return;
 			}
@@ -133,11 +130,11 @@ namespace TheNomad::SGame {
 			
 			// save timestamp for partial frame summing
 			TheNomad::Engine::CmdArgv( c, 2 );
-			uptime = StringToInt( c );
+			uptime = TheNomad::Util::StringToInt( c );
 			if ( uptime > 0 ) {
 				msec += uptime - downtime;
 			} else {
-				msec += TheNomad::GameSystem::GameManager.FrameMsec() / 2;
+				msec += ModObject.GameManager.GetGameMsec() / 2;
 			}
 			
 			active = false;
@@ -147,11 +144,20 @@ namespace TheNomad::SGame {
 		uint downtime;
 		uint msec;
 		bool active;
+
+		private ModuleObject@ ModObject;
 	};
 	
-	shared class PlayrObject : EntityObject, EntityData {
+	shared class PlayrObject : EntityObject {
 		PlayrObject() {
-			m_WeaponSlots.resize( uint( TheNomad::Engine::CvarVariableInteger( "sgame_MaxPlayerWeapons" ) ) );
+			m_WeaponSlots.resize( ModObject.sgame_MaxPlayerWeapons.GetInt() );
+
+			key_MoveNorth = KeyBind( @ModObject );
+			key_MoveSouth = KeyBind( @ModObject );
+			key_MoveEast = KeyBind( @ModObject );
+			key_MoveWest = KeyBind( @ModObject );
+			key_Melee = KeyBind( @ModObject );
+			key_Jump = KeyBind( @ModObject );
 		}
 		
 		//
@@ -165,21 +171,20 @@ namespace TheNomad::SGame {
 		void Jump_Up_f() { key_Jump.Up(); }
 		
 		void Quickshot_Down_f() {
-			m_Flags |= PF_QUICKSHOT;
+			return;
+			m_PFlags |= PF_QUICKSHOT;
 			m_QuickShot.Clear();
-			
-			TheNomad::Engine::SoundSystem::PlaySfx( quickshotBeginSfx );
 		}
 		
 		void Quickshot_Up_f() {
+			return;
 			// TODO: perhaps add a special animation for putting the guns away?
 			if ( m_QuickShot.Empty() ) {
-				TheNomad::Engine::SoundSystem::PlaySfx( quickshotEndEmptySfx );
 				return;
 			}
 			
 			m_QuickShot.Activate();
-			m_Flags &= ~PF_QUICKSHOT;
+			m_PFlags &= ~PF_QUICKSHOT;
 		}
 		
 		void Melee_Down_f() {
@@ -207,22 +212,29 @@ namespace TheNomad::SGame {
 		}
 		
 		
-		void Damage( uint nAmount ) override {
+		void Damage( float nAmount ) {
 			if ( m_bEmoting ) {
 				return; // god has blessed thy soul...
 			}
 			
-			
+			m_nHealth -= nAmount;
+
+			if ( m_nHealth < 1 ) {
+				if ( m_nFrameDamage > 0 ) {
+					return; // as long as you're hitting SOMETHING, you cannot die
+				}
+				MobObject.EntityManager.KillEntity( @this );
+			}
 		}
 		
 		uint GetFlags() const {
-			return m_Flags;
+			return m_PFlags;
 		}
 		
 		void Think() override {
-			if ( m_Flags & PF_PARRY ) {
+			if ( m_PFlags & PF_PARRY ) {
 				ParryThink();
-			} else if ( m_Flags & PF_QUICKSHOT ) {
+			} else if ( m_PFlags & PF_QUICKSHOT ) {
 				m_QuickShot.Think();
 			}
 			
@@ -234,72 +246,57 @@ namespace TheNomad::SGame {
 				CombatThink();
 				break;
 			};
+
+			m_nHealth += m_nHealMult * ModObject.sgame_PlayerHealBase.GetFloat();
+			m_nHealMult -= m_nHealMultDecay * ModObject.LevelManager.DifficultyScale();
 		}
 		
-		void CheckParry( EntityObject@ ent ) {
-			if ( TheNomad::Util::BoundsIntersect( ent->GetBounds(), m_ParryBox ) ) {
-				switch ( ent->GetType() ) {
+		bool CheckParry( EntityObject@ ent ) {
+			if ( TheNomad::Util::BoundsIntersect( ent.GetBounds(), m_ParryBox ) ) {
+				switch ( ent.GetType() ) {
 				case TheNomad::GameSystem::EntityType::Projectile:
 					// simply invert the direction and double the speed
-					ent->SetVelocity( ent->GetVelocity() * 2 );
-					ent->SetDirection( TheNomad::GameSystem::GameManager.InverseDirs[ ent->GetDirection() ] );
+					ent.SetVelocity( ent.GetVelocity() * 2 );
+					ent.SetDirection( ModObject.InverseDirs[ ent.GetDirection() ] );
 					break;
 				case TheNomad::GameSystem::EntityType::Mob:
-					if ( ent->GetFlags() & EntityFlags::Dead ) {
-						ent->SetDirection( TheNomad::GameSystem::GameManager.InverseDirs[ ent->GetDirection() ] );
-						ent->();
+					if ( ent.GetFlags() & EntityFlags::Dead ) {
+						ent.SetDirection( ModObject.InverseDirs[ ent.GetDirection() ] );
+						break;
 					} else { // wtf?
 						DebugPrint( "Parry checker triggered on not a flying corpse...\n" );
 					}
-					break;
+					return false;
 				};
-			} else if ( ent->GetType() == TheNomad::GameSystem::Mob ) {
+			} else if ( ent.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
 				// just a normal counter
-				MobObject@ mob = cast<MobObject>( ent->GetData() );
+				MobObject@ mob = cast<MobObject>( ent.GetData() );
 				
-				if ( !mob->CurrentAttack().IsParryable() ) {
+				if ( !mob.CurrentAttack().IsParryable() ) {
 					// unblockable, deal damage
-					EntityManager.DamageEntity( ent, m_Entity );
+					ModObject.EntityManager.DamageEntity( ent, m_Entity );
 				} else {
-					
+					// slap it back
 				}
 			}
+			
+			return true;
 		}
 		
 		private void MakeSound() {
 			if ( m_State.GetID() == StateNum::ST_PLAYR_CROUCH ) {
 				return;
 			}
-			
-			SoundData ;
-			
-			const float noiseScaleX = m_Velocity.x;
-			if ( noiseScaleX < 1 ) {
-				noiseScaleX = 1;
-			}
-			const float noiseScaleY = m_Velocity.y;
-			if ( noiseScaleY < 1 ) {
-				noiseScaleY = 1;
-			}
-			
-			const uint distanceX = 2 * noiseScaleX / 2;
-			const uint distanceY = 2 * noiseScaleY / 2;
-			
-			const ivec2 start( floor( m_Origin.x ) - distanceX, floor( m_Origin.y ) - distanceY );
-			const ivec2 end( floor( m_Origin.x ) + distanceX, floor( m_Origin.y ) + distanceY );
-			
-			for ( int y = start.y; y != end.y; y++ ) {
-				for ( int x = start.x; x != end.x; x++ ) {
-					
-				}
-			}
+
+			SoundData data( m_Velocity.x + m_Velocity.y, vec2( m_Velocity.x, m_Velocity.y ), ivec2( 2, 2 ),
+				ivec3( m_Origin.x, m_Origin.y, m_Origin.z ), 1.0f, @ModObject );
 		}
 		
 		private void IdleThink() {
 			
 		}
 		private void CombatThink() {
-			if ( m_Flags & key_Melee.active ) {
+			if ( m_PFlags & key_Melee.active ) {
 				// check for a parry
 				
 			}
@@ -307,16 +304,18 @@ namespace TheNomad::SGame {
 		private void ParryThink() {
 			m_ParryBox.m_nWidth = 2.5f + m_nParryBoxWidth;
 			m_ParryBox.m_nHeight = 1.0f;
-			m_ParryBox.MakeBounds( vec3( m_Origin.x, m_Origin.y + ( m_Bounds.m_nWidth / 2.0f ) ) );
+			m_ParryBox.MakeBounds( vec3( m_Origin.x + ( m_Link.m_Bounds.m_nWidth / 2.0f ), m_Origin.y ), m_Origin.z );
+
+			if ( m_nParryBoxWidth >= 1.5f ) {
+				return; // maximum
+			}
 			
 			m_nParryBoxWidth += 0.5f;
 		}
 		
-		const uint PF_QUICKSHOT  = 0x00000001;
-		const uint PF_DOUBLEJUMP = 0x00000002;
-		const uint PF_PARRY      = 0x00000004;
-		
-		EntityObject@ m_Entity;
+		uint PF_QUICKSHOT  = 0x00000001;
+		uint PF_DOUBLEJUMP = 0x00000002;
+		uint PF_PARRY      = 0x00000004;
 		
 		private KeyBind key_MoveNorth, key_MoveSouth, key_MoveEast, key_MoveWest;
 		private KeyBind key_Jump, key_Melee;
@@ -324,11 +323,17 @@ namespace TheNomad::SGame {
 		private TheNomad::GameSystem::BBox m_ParryBox;
 		private float m_nParryBoxWidth;
 		
-		private array<Weapon@> m_WeaponSlots;
+		private array<WeaponObject@> m_WeaponSlots;
 		private QuickShot m_QuickShot;
 		private int m_CurrentWeapon;
-		private uint m_Flags;
-		
+		private uint m_PFlags;
+
+		// the amount of damage dealt in the frame
+		private uint m_nFrameDamage;
+
+		private float m_nDamageMult;
+		private float m_nHealMult;
+
 		private bool m_bEmoting;
 	};
 };

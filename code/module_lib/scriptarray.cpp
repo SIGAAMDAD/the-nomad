@@ -2225,6 +2225,17 @@ static void ScriptArrayCEnd_Generic( asIScriptGeneric *gen ) {
 	gen->SetReturnAddress( const_cast<void *>( ( (const CScriptArray *)gen->GetObjectData() )->cend() ) );
 }
 
+static void ScriptArrayBack_Generic( asIScriptGeneric *gen ) {
+	CScriptArray *obj = (CScriptArray *)gen->GetObjectData();
+	gen->SetReturnAddress(
+		(byte *)obj->GetBuffer() +
+		( obj->GetSize() * g_pModuleLib->GetScriptEngine()->GetTypeInfoById( obj->GetElementTypeId() )->GetSize() ) );
+}
+
+static void ScriptArrayFront_Generic( asIScriptGeneric *gen ) {
+	gen->SetReturnAddress( ( (CScriptArray *)gen->GetObjectData() )->GetBuffer() );
+}
+
 static void RegisterScriptArray_Generic(asIScriptEngine *engine)
 {
 	engine->SetTypeInfoUserDataCleanupCallback(CleanupTypeInfoArrayCache, ARRAY_CACHE);
@@ -2268,6 +2279,10 @@ static void RegisterScriptArray_Generic(asIScriptEngine *engine)
 	CheckASCall( engine->RegisterObjectMethod("array<T>", "bool isEmpty() const", asFUNCTION(ScriptArrayIsEmpty_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterFuncdef("bool array<T>::less(const T&in if_handle_then_const a, const T&in if_handle_then_const b)" ) );
 	CheckASCall( engine->RegisterObjectMethod("array<T>", "void sort(const less &in, uint startAt = 0, uint count = uint(-1))", asFUNCTION(ScriptArraySortCallback_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "T& back()", asFUNCTION(ScriptArrayBack_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "const T& back() const", asFUNCTION(ScriptArrayBack_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "T& front()", asFUNCTION(ScriptArrayFront_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "const T& front() const", asFUNCTION(ScriptArrayFront_Generic), asCALL_GENERIC ) );
 #if AS_USE_STLNAMES != 1 && AS_USE_ACCESSORS == 1
 	CheckASCall( engine->RegisterObjectMethod("array<T>", "uint get_length() const property", asFUNCTION(ScriptArrayLength_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("array<T>", "void set_length(uint) property", asFUNCTION(ScriptArrayResize_Generic), asCALL_GENERIC ) );

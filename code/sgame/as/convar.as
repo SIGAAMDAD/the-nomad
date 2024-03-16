@@ -51,7 +51,7 @@ namespace TheNomad {
 			Engine::CvarSet( m_Name, value );
 		}
 		void Update() {
-			Engine::CvarUpdate( m_Name, m_Value, m_IntValue, m_FloatValue, m_nModificationCount, m_nCvarHandle );
+			Engine::CvarUpdate( m_Value, m_IntValue, m_FloatValue, m_nModificationCount, m_nCvarHandle );
 		}
 		
 		private string m_Name;
@@ -95,6 +95,8 @@ namespace TheNomad {
 			}
 		}
 
+		void OnConsoleCommand() {
+		}
 		void OnLoad() {
 		}
 		void OnSave() const {
@@ -112,10 +114,8 @@ namespace TheNomad {
 			}
 		}
 		void OnLevelStart() {
-
 		}
 		void OnLevelEnd() {
-
 		}
 		const string& GetName() const {
 			return "CvarSystem";
@@ -126,6 +126,4 @@ namespace TheNomad {
 		
 		private array<CvarTableEntry> m_CvarCache;
 	};
-	
-	CvarSystem@ CvarManager = cast<CvarSystem>( TheNomad::GameSystem::AddSystem( CvarSystem() ) );
 };
