@@ -87,86 +87,7 @@ shared class ModuleObject {
 //			+ formatInt( MODULE_VERSION_PATCH ) + "\n" );
 	}
 
-	int Init() {
-		ConsolePrint( "----- SG_Init -----\n" );
-
-		ModuleInfoInit();
-
-		@CvarManager = cast<TheNomad::CvarSystem>( AddSystem( TheNomad::CvarSystem() ) );
-
-		//
-		// register cvars
-		//
-		@sgame_Difficulty = CvarManager.AddCvar( "sgame_Difficulty", "2", CVAR_LATCH | CVAR_TEMP, false );
-		@sgame_SaveName = CvarManager.AddCvar( "sgame_SaveName", "nomadsv.ngd", CVAR_LATCH | CVAR_TEMP, false );
-		@sgame_DebugMode = CvarManager.AddCvar( "sgame_DebugMode", "0", CVAR_LATCH | CVAR_TEMP, true );
-		@sgame_GfxDetail = CvarManager.AddCvar( "sgame_GfxDetail", "4", CVAR_LATCH | CVAR_SAVE, true );
-		@sgame_PlayerHealBase = CvarManager.AddCvar( "sgame_PlayerHealBase", "0.25", CVAR_LATCH | CVAR_TEMP, false );
-		@sgame_AdaptiveSoundtrack = CvarManager.AddCvar( "sgame_AdaptiveSoundtrack", "1", CVAR_LATCH | CVAR_SAVE, false );
-		@sgame_MapName = CvarManager.AddCvar( "mapname", "", CVAR_LATCH | CVAR_TEMP );
-		@sgame_SoundDissonance = CvarManager.AddCvar( "sgame_SoundDissonance", "1.5", CVAR_LATCH | CVAR_SAVE, false );
-		@sgame_LevelInfoFile = CvarManager.AddCvar( "sgame_LevelInfoFile", "", CVAR_INIT | CVAR_ROM, false );
-
-		if ( int( sgame_DebugMode.GetInt() ) == 1 ) {
-			@sgame_LevelDebugPrint = CvarManager.AddCvar(
-				"sgame_LevelDebugPrint", "1", CVAR_LATCH | CVAR_TEMP, true );
-		} else {
-			@sgame_LevelDebugPrint = CvarManager.AddCvar(
-				"sgame_LevelDebugPrint", "0", CVAR_LATCH | CVAR_TEMP, true );
-		}
-
-		//
-		// register strings
-		//
-		TheNomad::GameSystem::GetString( "SP_DIFF_VERY_EASY", SP_DIFF_STRINGS[TheNomad::GameSystem::GameDifficulty::VeryEasy] );
-		TheNomad::GameSystem::GetString( "SP_DIFF_EASY", SP_DIFF_STRINGS[TheNomad::GameSystem::GameDifficulty::Easy] );
-		TheNomad::GameSystem::GetString( "SP_DIFF_MEDIUM", SP_DIFF_STRINGS[TheNomad::GameSystem::GameDifficulty::Normal] );
-		TheNomad::GameSystem::GetString( "SP_DIFF_HARD", SP_DIFF_STRINGS[TheNomad::GameSystem::GameDifficulty::Hard] );
-		TheNomad::GameSystem::GetString( "SP_DIFF_VERY_HARD", SP_DIFF_STRINGS[TheNomad::GameSystem::GameDifficulty::VeryHard] );
-
-		selectedSfx.Set( "sfx/menu1.wav" );
-
-		// init globals
-		@Config = ModuleConfig( @this );
-		@GameManager = cast<TheNomad::GameSystem::CampaignManager>( AddSystem( TheNomad::GameSystem::CampaignManager( @this ) ) );
-		@LevelManager = cast<TheNomad::SGame::LevelSystem>( AddSystem( TheNomad::SGame::LevelSystem( @this ) ) );
-		@EntityManager = cast<TheNomad::SGame::EntityManager>( AddSystem( TheNomad::SGame::EntitySystem( @this ) ) );
-		@StateManager = cast<TheNomad::SGame::EntityStateSystem>( AddSystem( TheNomad::SGame::EntityStateSystem() ) );
-		@InfoManager = cast<TheNomad::SGame::InfoDataManager>( AddSystem( TheNomad::SGame::InfoDataManager() ) );
-
-		ConsolePrint( "--------------------\n" );
-		return 1;
-	}
-
-	int OnConsoleCommand() {
-		return 1;
-	}
-
-	int OnSaveGame() {
-		ConsolePrint( "Saving game, please do not close out of this app...\n" );
-		ConsolePrint( "Done.\n" );
-
-		return 1;
-	}
-
-	int OnLoadGame() {
-		return 1;
-	}
-
-	int OnLevelStart() {
-		return 1;
-	}
-
-	int OnLevelEnd() {
-		return 1;
-	}
-
-	int Shutdown() {
-		ConsolePrint( "----- SG_Shutdown -----\n" );
-
-		ConsolePrint( "-----------------------\n" );
-		return 1;
-	}
+	private array<TheNomad::GameSystem::GameObject@> m_GameSystems;
 	
 	TheNomad::ConVar@ sgame_GfxDetail;
 	TheNomad::ConVar@ sgame_QuickShotMaxTargets;
@@ -197,11 +118,96 @@ shared class ModuleObject {
 
 	TheNomad::Engine::SoundSystem::SoundEffect selectedSfx;
 	string[] SP_DIFF_STRINGS( TheNomad::GameSystem::GameDifficulty::NumDifficulties );
-	string[] sgame_RankStrings( LevelRank::NumRanks );
-	vec4[] sgame_RankStringColors( LevelRank::NumRanks );
+	string[] sgame_RankStrings( TheNomad::SGame::LevelRank::NumRanks );
+	vec4[] sgame_RankStringColors( TheNomad::SGame::LevelRank::NumRanks );
 
 	ModuleConfig@ Config;
 };
+
+ModuleObject@ g_ModuleData;
+
+int ModuleInit() {
+	ConsolePrint( "----- SG_Init -----\n" );
+
+	@g_ModuleData = ModuleObject();
+
+	g_ModuleData.InfoInit();
+
+	@g_ModuleData.CvarManager = cast<TheNomad::CvarSystem>( g_ModuleData.AddSystem( TheNomad::CvarSystem() ) );
+
+	//
+	// register cvars
+	//
+	@g_ModuleData.sgame_Difficulty = g_ModuleData.CvarManager.AddCvar( "sgame_Difficulty", "2", CVAR_LATCH | CVAR_TEMP, false );
+	@g_ModuleData.sgame_SaveName = g_ModuleData.CvarManager.AddCvar( "sgame_SaveName", "nomadsv.ngd", CVAR_LATCH | CVAR_TEMP, false );
+	@g_ModuleData.sgame_DebugMode = g_ModuleData.CvarManager.AddCvar( "sgame_DebugMode", "0", CVAR_LATCH | CVAR_TEMP, true );
+	@g_ModuleData.sgame_GfxDetail = g_ModuleData.CvarManager.AddCvar( "sgame_GfxDetail", "4", CVAR_LATCH | CVAR_SAVE, true );
+	@g_ModuleData.sgame_PlayerHealBase = g_ModuleData.CvarManager.AddCvar( "sgame_PlayerHealBase", "0.25", CVAR_LATCH | CVAR_TEMP, false );
+	@g_ModuleData.sgame_AdaptiveSoundtrack = g_ModuleData.CvarManager.AddCvar( "sgame_AdaptiveSoundtrack", "1", CVAR_LATCH | CVAR_SAVE, false );
+	@g_ModuleData.sgame_MapName = g_ModuleData.CvarManager.AddCvar( "mapname", "", CVAR_LATCH | CVAR_TEMP, false );
+	@g_ModuleData.sgame_SoundDissonance = g_ModuleData.CvarManager.AddCvar( "sgame_SoundDissonance", "1.5", CVAR_LATCH | CVAR_SAVE, false );
+	@g_ModuleData.sgame_LevelInfoFile = g_ModuleData.CvarManager.AddCvar( "sgame_LevelInfoFile", "", CVAR_INIT | CVAR_ROM, false );
+
+	if ( int( g_ModuleData.sgame_DebugMode.GetInt() ) == 1 ) {
+		@g_ModuleData.sgame_LevelDebugPrint = g_ModuleData.CvarManager.AddCvar(
+			"sgame_LevelDebugPrint", "1", CVAR_LATCH | CVAR_TEMP, true );
+	} else {
+		@g_ModuleData.sgame_LevelDebugPrint = g_ModuleData.CvarManager.AddCvar(
+			"sgame_LevelDebugPrint", "0", CVAR_LATCH | CVAR_TEMP, true );
+	}
+
+	//
+	// register strings
+	//
+	TheNomad::GameSystem::GetString( "SP_DIFF_VERY_EASY", g_ModuleData.SP_DIFF_STRINGS[TheNomad::GameSystem::GameDifficulty::VeryEasy] );
+	TheNomad::GameSystem::GetString( "SP_DIFF_EASY", g_ModuleData.SP_DIFF_STRINGS[TheNomad::GameSystem::GameDifficulty::Easy] );
+	TheNomad::GameSystem::GetString( "SP_DIFF_MEDIUM", g_ModuleData.SP_DIFF_STRINGS[TheNomad::GameSystem::GameDifficulty::Normal] );
+	TheNomad::GameSystem::GetString( "SP_DIFF_HARD", g_ModuleData.SP_DIFF_STRINGS[TheNomad::GameSystem::GameDifficulty::Hard] );
+	TheNomad::GameSystem::GetString( "SP_DIFF_VERY_HARD", g_ModuleData.SP_DIFF_STRINGS[TheNomad::GameSystem::GameDifficulty::VeryHard] );
+
+	g_ModuleData.selectedSfx.Set( "sfx/menu1.wav" );
+
+	// init globals
+	@g_ModuleData.Config = ModuleConfig( @g_ModuleData );
+	@g_ModuleData.GameManager = cast<TheNomad::GameSystem::CampaignManager>( g_ModuleData.AddSystem( TheNomad::GameSystem::CampaignManager( @g_ModuleData ) ) );
+	@g_ModuleData.LevelManager = cast<TheNomad::SGame::LevelSystem>( g_ModuleData.AddSystem( TheNomad::SGame::LevelSystem( @g_ModuleData ) ) );
+	@g_ModuleData.EntityManager = cast<TheNomad::SGame::EntitySystem>( g_ModuleData.AddSystem( TheNomad::SGame::EntitySystem( @g_ModuleData ) ) );
+	@g_ModuleData.StateManager = cast<TheNomad::SGame::EntityStateSystem>( g_ModuleData.AddSystem( TheNomad::SGame::EntityStateSystem() ) );
+	@g_ModuleData.InfoManager = TheNomad::SGame::InfoDataManager();
+	
+	ConsolePrint( "--------------------\n" );
+	return 1;
+}
+
+int ModuleOnConsoleCommand() {
+	return 1;
+}
+
+int ModuleOnSaveGame() {
+	ConsolePrint( "Saving game, please do not close out of g_ModuleData app...\n" );
+
+	ConsolePrint( "Done.\n" );
+	return 1;
+}
+
+int ModuleOnLoadGame() {
+	return 1;
+}
+
+int ModuleOnLevelStart() {
+	return 1;
+}
+
+int ModuleOnLevelEnd() {
+	return 1;
+}
+
+int ModuleShutdown() {
+	ConsolePrint( "----- SG_Shutdown -----\n" );
+
+	ConsolePrint( "-----------------------\n" );
+	return 1;
+}
 
 shared void DebugPrint( const string& in msg ) {
 	if ( TheNomad::Engine::CvarVariableInteger( "sgame_DebugMode" ) == 0 ) {

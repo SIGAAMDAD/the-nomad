@@ -57,7 +57,7 @@ CModuleLinkEntity::~CModuleLinkEntity() {
 }
 
 CModuleLinkEntity& CModuleLinkEntity::operator=( const CModuleLinkEntity& other ) {
-    memcpy( this, 0, sizeof( *this ) );
+    memcpy( this, eastl::addressof( other ), sizeof( *this ) );
     return *this;
 }
 

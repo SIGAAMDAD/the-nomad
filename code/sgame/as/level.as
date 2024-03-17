@@ -4,7 +4,6 @@
 #include "checkpoint.as"
 #include "json.as"
 #include "sfx.as"
-#include "filesystem.as"
 
 namespace TheNomad::SGame {
 	shared enum LevelRank {
@@ -87,6 +86,7 @@ namespace TheNomad::SGame {
 			return 0;
 		}
 		
+		/*
 		//
 		// SaveCheckpointCache: creates a cachefile containing spawn to checkpoint bindings
 		// to reduce map loading time
@@ -150,7 +150,8 @@ namespace TheNomad::SGame {
 			
 			return true;
 		}
-		
+		*/
+
 		void Load( int hMap ) {
 			uint nCheckpoints, nSpawns, nTiles;
 			uint i;
@@ -187,7 +188,7 @@ namespace TheNomad::SGame {
 				m_Spawns.push_back( spawn );
 			}
 			
-			if ( !LoadCheckpointCache() ) {
+//			if ( !LoadCheckpointCache() ) {
 				// generate the indexes manually
 
 				float dist;
@@ -208,7 +209,7 @@ namespace TheNomad::SGame {
 					}
 					cp.AddSpawn( @m_Spawns[i] );
 				}
-			}
+//			}
 		}
 		
 		const array<MapSoundData>& GetSoundBits() const {
@@ -377,7 +378,7 @@ namespace TheNomad::SGame {
 			rank = LevelRank::RankS;
 			minStyle = 0;
 			minKills = 0;
-			maxTime = 0;
+			minTime = 0;
 			maxDeaths = 0;
 			requiresClean = false;
 		}
@@ -385,7 +386,7 @@ namespace TheNomad::SGame {
 		LevelRank rank;
 		uint minStyle;
 		uint minKills;
-		uint maxTime;
+		uint minTime;
 		uint maxDeaths;
 		uint maxCollateral;
 		bool requiresClean; // no warcrimes, no innocent deaths, etc. required for perfect score
@@ -442,7 +443,7 @@ namespace TheNomad::SGame {
 			for ( i = 0; i < NumLevels(); i++ ) {
 				TheNomad::Util::JsonObject@ info = GetLevelInfoByIndex( i );
 
-				if ( !info.GetString( "name", levelName ) ) {
+				if ( !info.GetString( "Name", levelName ) ) {
 					ConsoleWarning( "invalid level info, missing variable 'name'\n" );
 					continue;
 				}
@@ -451,7 +452,7 @@ namespace TheNomad::SGame {
 				ConsolePrint( "Loaded level '" + data.m_Name + "'...\n" );
 
 				for ( uint j = 0; j < data.m_MapHandles.size(); j++ ) {
-					if ( !info.GetString( "mapname_difficulty_" + formatUInt( j ), mapname ) ) {
+					if ( !info.GetString( "MapnameDifficulty_" + formatUInt( j ), mapname ) ) {
 						// level currently doesn't support this difficulty
 						continue;
 					}
@@ -634,37 +635,40 @@ namespace TheNomad::SGame {
 				ConsoleWarning( "invalid level info file, no level infos?\n" );
 				return;
 			}
-			m_LevelInfos.insertAt( m_LevelInfos.size() - 1, levels );
+			m_LevelInfos.reserve( levels.size() );
+			for ( uint i = 0; i < levels.size(); i++ ) {
+				m_LevelInfos.push_back( levels[i] );
+			}
 		}
 
 		bool LoadLevelRankData( string& in str, const string& in rankName, LevelRankData@ data, TheNomad::Util::JsonObject& in json ) {
-			str = rankName + "_MinStyle";
-			if ( !json.GetInt( str, data.minStyle ) ) {
-				str = "invalid level info, missing RankData value for '" + rankName + "_MinStyle'\n";
+			if ( !json.GetInt( "MinStyle", data.minStyle ) ) {
+				str = "invalid level info, missing RankData value for " + rankName + " 'MinStyle'\n";
 				ConsoleWarning( str );
 				return false;
 			}
-			str = rankName + "_MinKills";
-			if ( !json.GetInt( str, data.minKills ) ) {
-				str = "invalid level info, missing RankData value for '" + rankName + "_MinKills'\n";
+			if ( !json.GetInt( "MinKills", data.minKills ) ) {
+				str = "invalid level info, missing RankData value for " + rankName + " 'MinKills'\n";
 				ConsoleWarning( str );
 				return false;
 			}
-			str = rankName + "_MaxDeaths";
-			if ( !json.GetInt( str, data.maxDeaths ) ) {
-				str = "invalid level info, missing RankData value for '" + rankName + "_MaxDeaths'\n";
+			if ( !json.GetInt( "MaxDeaths", data.maxDeaths ) ) {
+				str = "invalid level info, missing RankData value for " + rankName + " 'MaxDeaths'\n";
 				ConsoleWarning( str );
 				return false;
 			}
-			str = rankName + "_MaxCollateral";
-			if ( !json.GetInt( str, data.maxCollateral ) ) {
-				str = "invalid level info, missing RankData value for '" + rankName + "_MaxCollateral'\n";
+			if ( !json.GetInt( "MaxCollateral", data.maxCollateral ) ) {
+				str = "invalid level info, missing RankData value for " + rankName + " 'MaxCollateral'\n";
 				ConsoleWarning( str );
 				return false;
 			}
-			str = rankName + "_RequiresClean";
-			if ( !json.GetBool( str, data.requiresClean ) ) {
-				str = "invalid level info, missing RankData value for '" + rankName + "_RequiresClean'\n";
+			if ( !json.GetInt( "MinTime", data.minTime ) ) {
+				str = "invalid level info, missing RankData value for " + rankName + " 'MinTime'\n";
+				ConsoleWarning( str );
+				return false;
+			}
+			if ( !json.GetBool( "RequiresClean", data.requiresClean ) ) {
+				str = "invalid level info, missing RankData value for 'RequiresClean'\n";
 				ConsoleWarning( str );
 				return false;
 			}

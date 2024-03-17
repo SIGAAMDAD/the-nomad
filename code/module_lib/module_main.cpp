@@ -76,7 +76,7 @@ const char *AS_PrintErrorString( int code )
     case asMULTIPLE_FUNCTIONS:
         return "multiple matching functions";
     case asCANT_BIND_ALL_FUNCTIONS:
-        return "all imported functions couldn't be bound";
+        return "could not bind all imported module functions";
     case asCONTEXT_NOT_FINISHED:
         return "context not finished";
     case asCONTEXT_NOT_PREPARED:
@@ -404,6 +404,11 @@ CModuleLib::CModuleLib( void )
         }
     } catch ( const std::exception& e ) {
         N_Error( ERR_FATAL, "InitModuleLib: failed to load module directories, std::exception was thrown -> %s", e.what() );
+    }
+
+    // bind all the functions
+    for ( auto& it : m_LoadList ) {
+        CheckASCall( it->m_pHandle->GetModule()->BindAllImportedFunctions() );
     }
 
     #undef CALL

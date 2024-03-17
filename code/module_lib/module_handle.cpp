@@ -4,19 +4,19 @@
 #include "angelscript/as_bytecode.h"
 
 const moduleFunc_t funcDefs[NumFuncs] = {
-    { "ModuleObject::Init", ModuleInit, 0, qtrue },
-    { "ModuleObject::Shutdown", ModuleShutdown, 0, qtrue },
-    { "ModuleObject::OnConsoleCommand", ModuleCommandLine, 0, qfalse },
-    { "ModuleObject::DrawConfiguration", ModuleDrawConfiguration, 0, qfalse },
-    { "ModuleObject::SaveConfiguration", ModuleSaveConfiguration, 0, qfalse },
-    { "ModuleObject::OnKeyEvent", ModuleOnKeyEvent, 2, qfalse },
-    { "ModuleObject::OnMouseEvent", ModuleOnMouseEvent, 2, qfalse },
-    { "ModuleObject::OnLevelStart", ModuleOnLevelStart, 1, qfalse },
-    { "ModuleObject::OnLevelEnd", ModuleOnLevelEnd, 0, qfalse },
-    { "ModuleObject::OnRunTic", ModuleOnRunTic, 1, qtrue },
-    { "ModuleObject::OnSaveGame", ModuleOnSaveGame, 0, qfalse },
-    { "ModuleObject::OnLoadGame", ModuleOnLoadGame, 0, qfalse },
-    { "ModuleObject::RewindToLastCheckpoint", ModuleRewindToLastCheckpoint, 0, qfalse },
+    { "int ModuleInit()", ModuleInit, 0, qtrue },
+    { "int ModuleShutdown()", ModuleShutdown, 0, qtrue },
+    { "int ModuleOnConsoleCommand()", ModuleCommandLine, 0, qfalse },
+    { "int ModuleDrawConfiguration()", ModuleDrawConfiguration, 0, qfalse },
+    { "int ModuleSaveConfiguration()", ModuleSaveConfiguration, 0, qfalse },
+    { "int ModuleOnKeyEvent( uint, uint )", ModuleOnKeyEvent, 2, qfalse },
+    { "int ModuleOnMouseEvent( int, int )", ModuleOnMouseEvent, 2, qfalse },
+    { "int ModuleOnLevelStart( uint )", ModuleOnLevelStart, 1, qfalse },
+    { "int ModuleOnLevelEnd()", ModuleOnLevelEnd, 0, qfalse },
+    { "int ModuleOnRunTic( uint )", ModuleOnRunTic, 1, qtrue },
+    { "int ModuleOnSaveGame()", ModuleOnSaveGame, 0, qfalse },
+    { "int ModuleOnLoadGame()", ModuleOnLoadGame, 0, qfalse },
+    { "int ModuleRewindToLastCheckpoint()", ModuleRewindToLastCheckpoint, 0, qfalse },
 };
 
 CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sourceFiles, int32_t moduleVersionMajor,
@@ -150,15 +150,16 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
 
 bool CModuleHandle::InitCalls( void )
 {
-    asITypeInfo *type;
+//    asIScr *type;
 
     Con_Printf( "Initializing function procs...\n" );
 
-    type = g_pModuleLib->GetScriptEngine()->GetTypeInfoByName( "ModuleObject" );
-    if ( !type ) {
-        Con_Printf( COLOR_RED "ERROR: invalid module bytecode, no ModuleObject class found\n" );
-        return false;
-    }
+//    type = g_pModuleLib->GetScriptEngine()->GetTypeInfoByDecl( "shared class ModuleObject" );
+//    if ( !type ) {
+//        Con_Printf( COLOR_RED "ERROR: invalid module bytecode, no ModuleObject class found\n" );
+//        return false;
+//    }
+//
 
 //    asIScriptFunction *factory = type->GetFactoryByDecl( "ModuleObject@ ModuleObject()" );
 //    Assert( factory );
@@ -187,8 +188,8 @@ bool CModuleHandle::InitCalls( void )
             break; // not sgame
         }
         Con_DPrintf( "Checking if module has function '%s'...\n", funcDefs[i].name );
-//        m_pFuncTable[i] = m_pScriptModule->GetFunctionByName( funcDefs[i].name );
-        m_pFuncTable[i] = type->GetMethodByName( funcDefs[i].name );
+        m_pFuncTable[i] = m_pScriptModule->GetFunctionByDecl( funcDefs[i].name );
+        //m_pFuncTable[i] = type->GetMethodByName( funcDefs[i].name );
         if ( m_pFuncTable[i] ) {
             Con_Printf( COLOR_GREEN "Module \"%s\" registered with proc '%s'.\n", m_szName.c_str(), funcDefs[i].name );
         } else {

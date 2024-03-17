@@ -9,7 +9,9 @@ namespace TheNomad::SGame {
 		IT_Mana, // rage meter refill
 		IT_Stim, // healthpack
 
-		NumItemTypes
+		NumItemTypes,
+
+		None // invalid
 	};
 
 	// custom weapon types will be implemented in Valden in a later version
@@ -21,7 +23,9 @@ namespace TheNomad::SGame {
 		WT_Asturion8Shot, // Asturion 8-shot heavy shotty
 		WT_PlasmaSMG,
 
-		NumWeaponTypes
+		NumWeaponTypes,
+
+		None // invalid
 	};
 
 	shared class WeaponObject : EntityObject {
@@ -44,6 +48,9 @@ namespace TheNomad::SGame {
 	
 	shared class ItemObject : EntityObject {
 		ItemObject() {
+		}
+		ItemObject( ItemType type ) {
+			m_nType = type;
 		}
 		
 		ItemType GetItemType() const {
@@ -80,14 +87,14 @@ namespace TheNomad::SGame {
 			ItemObject@ item;
 
 			for ( @item = @m_ActiveList.m_Next; @item !is null; @item = @item.m_Next ) {
-				if ( TheNomad::Util::BoundsIntersect( bounds, item.m_Link.m_Bounsd ) ) {
+				if ( TheNomad::Util::BoundsIntersect( bounds, item.GetBounds() ) ) {
 					return item;
 				}
 			}
 			return null;
 		}
-		ItemObject@ AddItem( ItemType type, int id ) {
-			ItemObject@ item = ItemObject( type, id );
+		ItemObject@ AddItem( ItemType type ) {
+			ItemObject@ item = ItemObject( type );
 			
 			m_ItemList.push_back( item );
 			@m_ActiveList.m_Prev.m_Next = @item;

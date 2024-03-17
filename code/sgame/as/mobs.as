@@ -248,7 +248,8 @@ namespace TheNomad::SGame {
 			const vec3 start( m_Link.m_Origin.x - rangeX, m_Link.m_Origin.y - rangeY, m_Link.m_Origin.z );
 			const vec3 end( m_Link.m_Origin.x + rangeX, m_Link.m_Origin.y + rangeY, m_Link.m_Origin.z );
 			
-			const float[]@ soundBits = ModObject.LevelManager.GetMapData().GetSoundBits()[m_Origin.z].GetData();
+			const MapData@ data = @ModObject.LevelManager.GetMapData();
+			const float[]@ soundBits = data.GetSoundBits()[uint( floor( m_Link.m_Origin.z ) )].GetData();
 			
 			for ( uint y = uint( start.y ); y != uint( end.y ); y++ ) {
 				for ( uint x = uint( start.x ); x != uint( end.x ); x++ ) {

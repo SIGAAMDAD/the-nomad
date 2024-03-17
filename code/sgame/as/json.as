@@ -6,7 +6,7 @@ namespace TheNomad::Util {
             this = other;
         }
         JsonObject( const string& in fileName ) {
-            handle = JsonParser( fileName );
+            handle.Parse( fileName );
         }
 
         bool Parse( const string& in fileName ) {
@@ -23,7 +23,7 @@ namespace TheNomad::Util {
             handle.SetFloat( name, v );
         }
         void SetString( const string& in name, const string& in v ) {
-            handle.SetString( name, v );
+//            handle.SetString( name, v );
         }
 
         bool GetVec2( const string& in name, vec2& out v ) {
@@ -69,7 +69,18 @@ namespace TheNomad::Util {
             return handle.GetStringArray( name, v );
         }
         bool GetObjectArray( const string& in name, array<JsonObject>& out v ) {
-            return handle.GetObjectArray( name, v );
+            array<JsonParser> values;
+
+            const bool result = handle.GetObjectArray( name, values );
+            if ( !result ) {
+                return false;
+            }
+
+            v.resize( values.size() );
+            for ( uint i = 0; i < values.size(); i++ ) {
+                v[i].handle = values[i];
+            }
+            return true;
         }
 
         private JsonParser handle;

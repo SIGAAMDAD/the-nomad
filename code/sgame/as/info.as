@@ -1,3 +1,5 @@
+#include "item.as"
+
 namespace TheNomad::SGame {
 	shared enum AttackMethod {
 		HitScan = 0,
@@ -61,6 +63,7 @@ namespace TheNomad::SGame {
 		float range;
 		WeaponProperty weaponProps;
 		WeaponType weaponType;
+		uint spriteOffset;
 		int hShader;
 	};
 
@@ -89,6 +92,7 @@ namespace TheNomad::SGame {
 			type = AttackType::Melee;
 			canParry = true;
 			valid = false;
+			spriteOffset = 0;
 		}
 		
 		string name;
@@ -96,17 +100,19 @@ namespace TheNomad::SGame {
 		string description;
 		float damage;
 		float range;
-		int cooldown;
-		int duration;
+		uint cooldown;
+		uint duration;
 		AttackMethod method;
 		AttackType type;
 		bool canParry;
 		bool valid;
+		uint spriteOffset;
+		TheNomad::Engine::SoundSystem::SoundEffect sound;
 	};
 	
 	shared class MobInfo {
 		MobInfo() {
-			health = 0;
+			health = 0.0f;
 			armor = ArmorType::None;
 			width = 0.0f;
 			height = 0.0f;
@@ -119,14 +125,18 @@ namespace TheNomad::SGame {
 			soundRangeX = 0;
 			soundRangeY = 0;
 			flags = 0;
+			waitTics = 0;
+			spriteOffset = 0;
+			hShader = 0;
+			attacks.reserve( 2 );
 		}
 		
 		string name;
-		int health;
+		float health;
 		ArmorType armor;
 		float width;
 		float height;
-		vec2 speed;
+		vec3 speed;
 		float soundTolerance;
 		float smellTolerance;
 		int sightRange;
@@ -134,9 +144,15 @@ namespace TheNomad::SGame {
 		int smellRangeY;
 		int soundRangeX;
 		int soundRangeY;
-		int waitTics; // the duration until the mob has to rethink again
+		uint waitTics; // the duration until the mob has to rethink again
 		uint flags;
+		uint spriteOffset;
+		int hShader;
 		array<AttackInfo> attacks;
+		TheNomad::Engine::SoundSystem::SoundEffect wakeupSfx;
+		TheNomad::Engine::SoundSystem::SoundEffect moveSfx;
+		TheNomad::Engine::SoundSystem::SoundEffect painSfx;
+		TheNomad::Engine::SoundSystem::SoundEffect dieSfx;
 	};
 	
 	shared class InfoDataManager {
@@ -148,7 +164,7 @@ namespace TheNomad::SGame {
 		
 		const WeaponInfo@ GetWeaponInfo( const string& in name ) const {
 			for ( uint i = 0; i < m_WeaponInfos.size(); i++ ) {
-				if ( TheNomad::Util::StrICmp( m_WeaponInfos[i].name, name ) is 0 ) {
+				if ( TheNomad::Util::StrICmp( m_WeaponInfos[i].name, name ) == 0 ) {
 					return m_WeaponInfos[i];
 				}
 			}
@@ -157,7 +173,7 @@ namespace TheNomad::SGame {
 		
 		const ItemInfo@ GetItemInfo( const string& in name ) const {
 			for ( uint i = 0; i < m_ItemInfos.size(); i++ ) {
-				if ( TheNomad::Util::StrICmp( m_ItemInfos[i].name, name ) is 0 ) {
+				if ( TheNomad::Util::StrICmp( m_ItemInfos[i].name, name ) == 0 ) {
 					return m_ItemInfos[i];
 				}
 			}
@@ -166,7 +182,7 @@ namespace TheNomad::SGame {
 		
 		const MobInfo@ GetMobInfo( const string& in name ) const {
 			for ( uint i = 0; i < m_MobInfos.size(); i++ ) {
-				if ( TheNomad::Util::StrICmp( m_MobInfos[i].name, name ) is 0 ) {
+				if ( TheNomad::Util::StrICmp( m_MobInfos[i].name, name ) == 0 ) {
 					return m_MobInfos[i];
 				}
 			}
@@ -175,7 +191,7 @@ namespace TheNomad::SGame {
 		
 		bool WeaponInfoExists( const string& in name ) const {
 			for ( uint i = 0; i < m_WeaponInfos.size(); i++ ) {
-				if ( TheNomad::Util::StrICmp( m_WeaponInfos[i].name, name ) is 0 ) {
+				if ( TheNomad::Util::StrICmp( m_WeaponInfos[i].name, name ) == 0 ) {
 					return true;
 				}
 			}
@@ -184,7 +200,7 @@ namespace TheNomad::SGame {
 		
 		bool ItemInfoExists( const string& in name ) const {
 			for ( uint i = 0; i < m_ItemInfos.size(); i++ ) {
-				if ( TheNomad::Util::StrICmp( m_ItemInfos[i].name, name ) is 0 ) {
+				if ( TheNomad::Util::StrICmp( m_ItemInfos[i].name, name ) == 0 ) {
 					return true;
 				}
 			}
@@ -193,7 +209,7 @@ namespace TheNomad::SGame {
 		
 		bool MobInfoExists( const string& in name ) const {
 			for ( uint i = 0; i < m_MobInfos.size(); i++ ) {
-				if ( TheNomad::Util::StrICmp( m_MobInfos[i].name, name ) is 0 ) {
+				if ( TheNomad::Util::StrICmp( m_MobInfos[i].name, name ) == 0 ) {
 					return true;
 				}
 			}
@@ -249,7 +265,7 @@ namespace TheNomad::SGame {
 			if ( !json.GetInt( "Health", info.health ) ) {
 				return MissingVar( "mob", "Health" );
 			}
-			if ( !json.GetVec2( "Speed", info.speed ) ) {
+			if ( !json.GetVec3( "Speed", info.speed ) ) {
 				return MissingVar( "mob", "Speed" );
 			}
 			if ( !json.GetString( "ArmorType", armorType ) ) {

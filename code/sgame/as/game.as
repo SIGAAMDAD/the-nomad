@@ -116,7 +116,7 @@ namespace TheNomad::GameSystem {
 			return "CampaignManager";
 		}
 		
-		uint DeltaTics() const {
+		uint GetDeltaTics() const {
 			return m_nDeltaTics;
 		}
 		uint GetGameTic() const {
@@ -130,9 +130,9 @@ namespace TheNomad::GameSystem {
 			m_nGameMsec = msec;
 		}
 		
-		private int m_nDeltaTics;
-		private int m_nGameMsec;
-		private int m_nGameTic;
+		private uint m_nDeltaTics;
+		private uint m_nGameMsec;
+		private uint m_nGameTic;
 		private ModuleObject@ ModObject;
 	};
 

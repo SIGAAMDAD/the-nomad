@@ -44,23 +44,23 @@ namespace TheNomad {
 				m_OpenMode = mode;
 			}
 			
-			void WriteChar( const int8 value ) {
-				Write( @value, 1 );
-			}
-			void WriteShort( const int16 value ) {
-				Write( @value, 2 );
-			}
-			void WriteInt( const int32 value ) {
-				Write( @value, 4 );
-			}
-			void WriteLong( const int64 value ) {
-				Write( @value, 8 );
-			}
-			int8 ReadChar();
-			int16 ReadShort();
-			int32 ReadInt();
-			int64 ReadLong();
-			
+//			void WriteChar( const int8 value ) {
+//				Write( @value, 1 );
+//			}
+//			void WriteShort( const int16 value ) {
+//				Write( @value, 2 );
+//			}
+//			void WriteInt( const int32 value ) {
+//				Write( @value, 4 );
+//			}
+//			void WriteLong( const int64 value ) {
+//				Write( @value, 8 );
+//			}
+//			int8 ReadChar() { return 0; }
+//			int16 ReadShort() { return 0; }
+//			int32 ReadInt() { return 0; }
+//			int64 ReadLong() { return 0; }
+//			
 			void Write( const ref@ value, uint64 size ) {
 				Write( value, size, m_hFile );
 			}
@@ -69,7 +69,7 @@ namespace TheNomad {
 				return m_hFile != FS_INVALID_HANDLE;
 			}
 			
-			bool Open( const string& in fileName, int mode ) {
+			bool Open( const string& in fileName, uint mode ) {
 				if ( m_hFile != FS_INVALID_HANDLE ) {
 					Close();
 				}
@@ -79,7 +79,7 @@ namespace TheNomad {
 				
 				if ( mode == FS_OPEN_READ ) {
 					m_hFile = OpenFileRead( fileName );
-				} else if ( mods == FS_OPEN_WRITE ) {
+				} else if ( mode == FS_OPEN_WRITE ) {
 					m_hFile = OpenFileWrite( fileName );
 				} else if ( mode == FS_OPEN_APPEND ) {
 					m_hFile = OpenFileAppend( fileName );
@@ -119,30 +119,30 @@ namespace TheNomad {
 				return true;
 			}
 
-			void ReadByte( uint8& out v ) {
-				Write( @v, 1, m_hFile );
-			}
-			void ReadUShort( uint16& out v ) {
-				Write( @v, 2, m_hFile );
-			}
-			void ReadUInt( uint32& out v ) {
-				Write( @v, 4, m_hFile );
-			}
-			void ReadULong( uint64& out v ) {
-				Write( @v, 8, m_hFile );
-			}
-			void ReadChar( int8& out v ) {
-				Write( @v, 1, m_hFile );
-			}
-			void ReadShort( int16& out v ) {
-				Write( @v, 2, m_hFile );
-			}
-			void ReadInt( int32& out v ) {
-				Write( @v, 4, m_hFile );
-			}
-			void ReadLong( int64& out v ) {
-				Write( @v, 8, m_hFile );
-			}
+//			void ReadByte( uint8& out v ) {
+//				Write( @v, 1, m_hFile );
+//			}
+//			void ReadUShort( uint16& out v ) {
+//				Write( @v, 2, m_hFile );
+//			}
+//			void ReadUInt( uint32& out v ) {
+//				Write( @v, 4, m_hFile );
+//			}
+//			void ReadULong( uint64& out v ) {
+//				Write( @v, 8, m_hFile );
+//			}
+//			void ReadChar( int8& out v ) {
+//				Write( @v, 1, m_hFile );
+//			}
+//			void ReadShort( int16& out v ) {
+//				Write( @v, 2, m_hFile );
+//			}
+//			void ReadInt( int32& out v ) {
+//				Write( @v, 4, m_hFile );
+//			}
+//			void ReadLong( int64& out v ) {
+//				Write( @v, 8, m_hFile );
+//			}
 		};
 		
 		shared class OutputStream : IFileStream {
@@ -171,30 +171,30 @@ namespace TheNomad {
 				return true;
 			}
 
-			void WriteByte( uint8 v ) {
-				Write( @v, 1, m_hFile );
-			}
-			void WriteUShort( uint16 v ) {
-				Write( @v, 2, m_hFile );
-			}
-			void WriteUInt( uint32 v ) {
-				Write( @v, 4, m_hFile );
-			}
-			void WriteULong( uint64 v ) {
-				Write( @v, 8, m_hFile );
-			}
-			void WriteChar( int8 v ) {
-				Write( @v, 1, m_hFile );
-			}
-			void WriteShort( int16 v ) {
-				Write( @v, 2, m_hFile );
-			}
-			void WriteInt( int32 v ) {
-				Write( @v, 4, m_hFile );
-			}
-			void WriteLong( int64 v ) {
-				Write( @v, 8, m_hFile );
-			}
+//			void WriteByte( uint8 v ) {
+//				Write( @v, 1, m_hFile );
+//			}
+//			void WriteUShort( uint16 v ) {
+//				Write( @v, 2, m_hFile );
+//			}
+//			void WriteUInt( uint32 v ) {
+//				Write( @v, 4, m_hFile );
+//			}
+//			void WriteULong( uint64 v ) {
+//				Write( @v, 8, m_hFile );
+//			}
+//			void WriteChar( int8 v ) {
+//				Write( @v, 1, m_hFile );
+//			}
+//			void WriteShort( int16 v ) {
+//				Write( @v, 2, m_hFile );
+//			}
+//			void WriteInt( int32 v ) {
+//				Write( @v, 4, m_hFile );
+//			}
+//			void WriteLong( int64 v ) {
+//				Write( @v, 8, m_hFile );
+//			}
 		};
 
 		shared class FileManager {

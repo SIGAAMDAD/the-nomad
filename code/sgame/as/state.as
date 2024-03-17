@@ -14,6 +14,7 @@ namespace TheNomad {
 			ST_PLAYR_CROUCH,
 			ST_PLAYR_SLIDE,
 			ST_PLAYR_MELEE,
+			ST_PLAYR_COMBAT,
 			
 			NumStates
 		};
@@ -22,7 +23,7 @@ namespace TheNomad {
 			EntityState( const string& in name, uint tics, uint num, uint spriteOffset ) {
 				m_Name = name;
 				m_nTics = tics;
-				m_nStateNum = num;
+				m_nStateNum = StateNum( num );
 				m_nSpriteOffset = spriteOffset;
 				
 				m_Ticker = 0;
@@ -36,7 +37,7 @@ namespace TheNomad {
 				ConsolePrint( "[Entity State Report]\n" );
 				ConsolePrint( "Name: " + m_Name + "\n" );
 				ConsolePrint( "Tics: " + formatUInt( m_nTics ) + "\n" );
-				ConsolePrint( "Id: " + formatUInt( m_nStateNum ) + "\n" );
+				ConsolePrint( "Id: " + formatUInt( uint( m_nStateNum ) ) + "\n" );
 				ConsolePrint( "Sprite Offset: " + formatUInt( m_nSpriteOffset ) + "\n" );
 			}
 
@@ -54,7 +55,7 @@ namespace TheNomad {
 				return m_Ticker;
 			}
 			void Run() {
-				m_Ticker++:
+				m_Ticker++;
 			}
 			void Loop() {
 				m_Ticker = 0;

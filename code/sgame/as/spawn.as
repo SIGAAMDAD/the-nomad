@@ -3,7 +3,7 @@
 namespace TheNomad::SGame {
     shared class MapSpawn {
 		MapSpawn( const uvec3& in origin, uint nEntityId, TheNomad::GameSystem::EntityType nEntityType ) {
-			m_Checkpoint = null;
+			@m_Checkpoint = null;
 			m_Origin = origin;
 			m_nEntityId = nEntityId;
 			m_nEntityType = nEntityType;

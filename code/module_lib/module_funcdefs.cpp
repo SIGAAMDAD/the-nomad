@@ -767,12 +767,24 @@ DEFINE_CALLBACK( GameError ) {
     N_Error( ERR_DROP, "%s", msg->c_str() );
 }
 
+DEFINE_CALLBACK( StringBufferToInt ) {
+    pGeneric->SetReturnDWord( (asDWORD)atoi( (const char *)pGeneric->GetArgAddress( 0 ) ) );
+}
+
+DEFINE_CALLBACK( StringBufferToUInt ) {
+    pGeneric->SetReturnDWord( (asDWORD)atoll( (const char *)pGeneric->GetArgAddress( 0 ) ) );
+}
+
+DEFINE_CALLBACK( StringBufferToFloat ) {
+    pGeneric->SetReturnFloat( N_atof( (const char *)pGeneric->GetArgAddress( 0 ) ) );
+}
+
 DEFINE_CALLBACK( StringToInt ) {
     pGeneric->SetReturnDWord( (asDWORD)atoi( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
 }
 
 DEFINE_CALLBACK( StringToUInt ) {
-    pGeneric->SetReturnDWord( (asDWORD)atoi( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
+    pGeneric->SetReturnDWord( (asDWORD)atoll( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
 }
 
 DEFINE_CALLBACK( StringToFloat ) {
@@ -984,6 +996,12 @@ DEFINE_CALLBACK( LoadFile ) {
 }
 
 DEFINE_CALLBACK( ModuleAssertion ) {
+}
+
+DEFINE_CALLBACK( CmdArgvFixedGeneric ) {
+    char *pBuffer = (char *)pGeneric->GetAddressOfArg( 0 );
+    uint32_t size = pGeneric->GetArgDWord( 1 );
+    Cmd_ArgvBuffer( pGeneric->GetArgDWord( 3 ), pBuffer, size );
 }
 
 DEFINE_CALLBACK( CmdArgcGeneric ) {
@@ -1759,6 +1777,7 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "string TheNomad::Engine::CvarVariableString( const string& in )", CvarVariableString );
 
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdArgc()", CmdArgcGeneric );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdArgvFixed( int8[]& in, uint, uint )", CmdArgvFixedGeneric );
         REGISTER_GLOBAL_FUNCTION( "const string& TheNomad::Engine::CmdArgv( uint )", CmdArgvGeneric );
         REGISTER_GLOBAL_FUNCTION( "const string& TheNomad::Engine::CmdArgs( uint )", CmdArgsGeneric );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdAddCommand( const string& in )", CmdAddCommandGeneric );
@@ -2071,6 +2090,7 @@ void ModuleLib_Register_Engine( void )
         REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetFloat( const string& in, float& out )", CModuleJsonObject, GetFloat, ( const string_t *, float * ), bool );
         REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetString( const string& in, string& out )", CModuleJsonObject, GetString, ( const string_t *, string_t * ), bool );
         REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetBool( const string& in, bool& out )", CModuleJsonObject, GetBool, ( const string_t *, bool * ), bool );
+        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetObject( const string& in, TheNomad::Util::JsonParser& in )", CModuleJsonObject, GetObject, ( const string_t *, CModuleJsonObject * ), bool );
         REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetIntArray( const string& in, array<int>& out )", CModuleJsonObject, GetIntArray, ( const string_t *, CScriptArray * ), bool );
         REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetUIntArray( const string& in, array<uint>& out )", CModuleJsonObject, GetUIntArray, ( const string_t *, CScriptArray * ), bool );
         REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetFloatArray( const string& in, array<float>& out )", CModuleJsonObject, GetFloatArray, ( const string_t *, CScriptArray * ), bool );
@@ -2083,6 +2103,9 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StringToInt( const string& in )", StringToInt );
         REGISTER_GLOBAL_FUNCTION( "uint TheNomad::Util::StringToUInt( const string& in )", StringToUInt );
         REGISTER_GLOBAL_FUNCTION( "float TheNomad::Util::StringToFloat( const string& in )", StringToFloat );
+        REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StringToInt( const int8[]& in )", StringBufferToInt );
+        REGISTER_GLOBAL_FUNCTION( "uint TheNomad::Util::StringToUInt( const int8[]& in )", StringBufferToUInt );
+        REGISTER_GLOBAL_FUNCTION( "float TheNomad::Util::StringToFloat( const int8[]& in )", StringBufferToFloat );
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
             "float TheNomad::Util::Distance( const vec2& in, const vec2& in )", WRAP_FN_PR( disBetweenOBJ, ( const vec2&, const vec2& ), float ), asCALL_GENERIC );
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(

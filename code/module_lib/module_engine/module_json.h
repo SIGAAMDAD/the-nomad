@@ -233,15 +233,30 @@ bool CModuleJsonObject::GetBoolArray( const string_t *name, CScriptArray *data )
 
 
 bool CModuleJsonObject::Parse( const string_t *fileName ) {
+    union {
+        void *v;
+        char *b;
+    } f;
+    uint64_t nLength;
+
+    nLength = FS_LoadFile( fileName->c_str(), &f.v );
+    if ( !nLength || !f.v ) {
+        Con_Printf( COLOR_RED "ERROR: vm requested file load '%s' failed to open\n", fileName->c_str() );
+        return false;
+    }
+
+    Con_Printf( "Parsing json file '%s' at vm request...\n", fileName->c_str() );
     try {
-        handle = JsonObject::parse( fileName->c_str() );
+        handle = JsonObject::parse( f.b, f.b + nLength, nullptr, true, true );
     } catch ( const JsonObject::exception& e ) {
         Con_Printf( COLOR_RED "ERROR: nlohmann::json exception occurred when parsing '%s' ->\n"
                     COLOR_RED "\tid: %i\n"
                     COLOR_RED "\tmessage: %s\n"
         , fileName->c_str(), e.id, e.what() );
+        FS_FreeFile( f.v );
         return false;
     }
+    FS_FreeFile( f.v );
     return true;
 }
 

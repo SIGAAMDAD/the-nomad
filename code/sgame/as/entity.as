@@ -46,8 +46,7 @@ namespace TheNomad::SGame {
 			case TheNomad::GameSystem::EntityType::Bot:
 				break;
 			case TheNomad::GameSystem::EntityType::Item:
-				@m_Data = cast<ref>( ItemObject() );
-				cast<ItemObject>( m_Data ).Spawn( id, origin, @this );
+				@m_Data = cast<ref>( ModObject.ItemManager.AddItem( ItemType( id ) ) );
 				break;
 			case TheNomad::GameSystem::EntityType::Weapon:
 				@m_Data = cast<ref>( WeaponObject() );
@@ -92,8 +91,21 @@ namespace TheNomad::SGame {
 			
 		}
 
+		bool IsProjectile() const {
+			return m_bProjectile;
+		}
+
 		const vec3& GetOrigin() const {
 			return m_Link.m_Origin;
+		}
+		const vec3& GetVelocity() const {
+			return m_Velocity;
+		}
+		vec3& GetVelocity() {
+			return m_Velocity;
+		}
+		void SetVelocity( const vec3& in vel ) {
+			m_Velocity = vel;
 		}
 		TheNomad::GameSystem::EntityType GetType() const {
 			return TheNomad::GameSystem::EntityType( m_Link.m_nEntityType );
@@ -139,6 +151,7 @@ namespace TheNomad::SGame {
 		protected uint m_Flags;
 		protected float m_nAngle;
 		protected TheNomad::GameSystem::DirType m_Direction;
+		protected bool m_bProjectile = false;
 	};
 	
 	shared class EntitySystem : TheNomad::GameSystem::GameObject {
@@ -284,6 +297,16 @@ namespace TheNomad::SGame {
 		void ApplyEntityEffect( EntityObject@ attacker, EntityObject@ target, AttackEffect effect ) {
 		}
 
+		//
+		// DamageEntity: entity v entity
+		//
+		void DamageEntity( EntityObject@ attacker, EntityObject@ target ) {
+
+		}
+
+		//
+		// DamageEntity: mobs v targets
+		//
 		void DamageEntity( EntityObject@ attacker, TheNomad::GameSystem::RayCast& in rayCast, const AttackInfo@ info ) {
 			EntityObject@ target;
 

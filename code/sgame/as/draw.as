@@ -6,13 +6,14 @@ namespace TheNomad::SGame {
 		MarkPoly() {
 		}
 		
-		void Spawn( const vec3& in origin, uint lifeTime, int shader, int spriteOffset ) {
+		void Spawn( const vec3& in origin, uint lifeTime, int shader, int spriteOffset, ModuleObject@ main ) {
 			m_Origin = origin;
 			m_hShader = shader;
 			m_nLifeTime = lifeTime;
 			m_nSpriteOffset = spriteOffset;
 			m_nElapsed = 0;
 			m_bAlive = true;
+			@ModObject = @main;
 		}
 		
 		void RunTic() {
@@ -21,7 +22,7 @@ namespace TheNomad::SGame {
 				return;
 			}
 			
-			m_nElapsed += DeltaTics();
+			m_nElapsed += ModObject.GameManager.GetDeltaTics();
 			
 			TheNomad::Engine::Renderer::AddSpriteToScene( m_Origin, m_hShader, m_nSpriteOffset );
 			
@@ -40,16 +41,26 @@ namespace TheNomad::SGame {
 		float m_nVelocity;
 		bool m_bAlive;
 		int m_hShader;
-		int m_nSpriteOffset;
+		uint m_nSpriteOffset;
 		uint m_nLifeTime;
 		uint m_nElapsed;
+		private ModuleObject@ ModObject;
 	};
 	
 	shared class GfxManager : TheNomad::GameSystem::GameObject {
-		GfxManager() {
+		GfxManager( ModuleObject@ main ) {
 			m_PolyList.resize( TheNomad::Engine::CvarVariableInteger( "sgame_GfxDetail" ) * 15 );
+			@ModObject = @main;
 		}
 		
+		void AddPoly() {
+			for ( uint i = 0; i < m_PolyList.size(); i++ ) {
+				if ( !m_PolyList[i].m_bAlive ) {
+					m_PolyList[i].Spawn( vec3( 0.0f ), 0, 0, 0, @ModObject );
+				}
+			}
+		}
+
 		void OnLoad() {
 		}
 		void OnSave() const {
@@ -67,7 +78,7 @@ namespace TheNomad::SGame {
 		void OnLevelStart() {
 			// ensure we have the correct amount of polygons allocated
 			
-			if ( m_PolyList.size() != TheNomad::Engine::CvarVariableInteger( "sgame_GfxDetail" ) ) {
+			if ( m_PolyList.size() != uint( TheNomad::Engine::CvarVariableInteger( "sgame_GfxDetail" ) ) ) {
 				m_PolyList.resize( TheNomad::Engine::CvarVariableInteger( "sgame_GfxDetail" ) * 15 );
 			}
 		}
@@ -110,5 +121,7 @@ namespace TheNomad::SGame {
 		
 		private array<int> m_ExplosionShaders;
 		private array<int> m_ExplosionSfx;
+
+		private ModuleObject@ ModObject;
 	};
 };
