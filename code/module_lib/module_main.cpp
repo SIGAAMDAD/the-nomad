@@ -30,6 +30,8 @@ static void ML_CleanCache_f( void ) {
         FS_Remove( path );
         FS_HomeRemove( path );
     }
+
+    Cbuf_ExecuteText( EXEC_APPEND, "ui.clear_load_list" );
 }
 
 static void ML_GarbageCollectionStats_f( void ) {
@@ -123,6 +125,8 @@ EASTL_EASTDC_API int Vsnprintf(char32_t* EA_RESTRICT pDestination, size_t n, con
 
 void CModuleLib::LoadModule( const char *pModule )
 {
+    PROFILE_FUNCTION();
+
     CModuleHandle *pHandle;
     nlohmann::json parse;
     UtlVector<UtlString> submodules;
@@ -408,6 +412,10 @@ CModuleLib::CModuleLib( void )
 
     // bind all the functions
     for ( auto& it : m_LoadList ) {
+        if ( !it->m_pHandle->GetModule() ) { // failed to compile or didn't have any source files
+            continue;
+        }
+
         CheckASCall( it->m_pHandle->GetModule()->BindAllImportedFunctions() );
     }
 
@@ -425,6 +433,8 @@ CModuleLib::~CModuleLib()
 
 CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *pExport, version_t nGameVersion )
 {
+    PROFILE_FUNCTION();
+
     Con_Printf( "---------- InitModuleLib ----------\n" );
     Con_Printf( "Initializing mod library...\n" );
 
@@ -435,7 +445,7 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
     Cvar_SetDescription( ml_angelScript_DebugPrint, "Set to 1 if you want verbose AngelScript API logging" );
     ml_alwaysCompile = Cvar_Get( "ml_alwaysCompile", "0", CVAR_INIT | CVAR_PRIVATE | CVAR_SAVE );
     Cvar_SetDescription( ml_alwaysCompile, "Toggle forced compilation of a module every time the game loads as opposed to using cached bytecode" );
-    ml_allowJIT = Cvar_Get( "ml_allowJIT", "1", CVAR_LATCH | CVAR_PRIVATE | CVAR_SAVE );
+    ml_allowJIT = Cvar_Get( "ml_allowJIT", "0", CVAR_LATCH | CVAR_PRIVATE | CVAR_SAVE );
     Cvar_SetDescription( ml_allowJIT, "Toggle JIT compilation of a module" );
     ml_debugMode = Cvar_Get( "ml_debugMode", "0", CVAR_LATCH | CVAR_TEMP );
     Cvar_SetDescription( ml_debugMode, "Set to 1 whenever a module is being debugged" );
@@ -460,6 +470,14 @@ void CModuleLib::Shutdown( void )
 {
     Con_Printf( "CModuleLib::Shutdown: shutting down modules...\n" );
 
+    Cmd_RemoveCommand( "ml.clean_script_cache" );
+    Cmd_RemoveCommand( "ml.garbage_collection_stats" );
+    Cmd_RemoveCommand( "ml_debug.set_script_debug" );
+    Cmd_RemoveCommand( "ml_debug.list_global_vars" );
+    Cmd_RemoveCommand( "ml_debug.list_local_vars" );
+    Cmd_RemoveCommand( "ml_debug.print_value" );
+    Cmd_RemoveCommand( "ml_debug.print_help" );
+
     g_pModuleLib->~CModuleLib();
     g_pModuleLib = NULL;
     Mem_Shutdown();
@@ -478,6 +496,8 @@ CContextMgr *CModuleLib::GetContextManager( void ) {
 }
 
 CModuleInfo *CModuleLib::GetModule( const char *pName ) {
+    PROFILE_FUNCTION();
+
     for ( auto it = m_LoadList.begin(); it != m_LoadList.end(); it++ ) {
         if ( !N_stricmp( ( *it )->m_szName, pName ) ) {
             return *it; // THANK YOU eastl for just being a MOTHERFUCKING POINTER instead of an overcomplicated class
@@ -486,8 +506,7 @@ CModuleInfo *CModuleLib::GetModule( const char *pName ) {
     return NULL;
 }
 
-void CModuleLib::RegisterCvar( const UtlString& name, const UtlString& value, uint32_t flags, bool trackChanges, uint32_t privateFlag )
-{
+void CModuleLib::RegisterCvar( const UtlString& name, const UtlString& value, uint32_t flags, bool trackChanges, uint32_t privateFlag ) {
     vmCvar_t vmCvar;
 
     const auto it = m_CvarList.find( name.c_str() );

@@ -1,5 +1,5 @@
 namespace TheNomad::Engine::SoundSystem {
-    shared class SoundEffect {
+    class SoundEffect {
         SoundEffect() {
             m_hSfx = FS_INVALID_HANDLE;
         }

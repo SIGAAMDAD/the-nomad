@@ -4,34 +4,15 @@
 #include "game.as"
 
 namespace TheNomad::SGame {
-	shared class Enchantment {
-		Enchantment( ModuleObject@ main ) {
-			@ModObject = @main;
-		}
-		
-		//
-		// CheckActivated: checks if the boon has been awakened yet
-		//
-		void CheckActivated() {
-			
-		}
-		
-		private bool m_bActive;
-		private bool m_bAwakened;
-
-		private ModuleObject@ ModObject;
-	};
-	
-	shared class QuickShot {
+	class QuickShot {
 		QuickShot() {
 		}
-		QuickShot( const vec3& in origin, ModuleObject@ main ) {
-			m_Targets.resize( main.sgame_QuickShotMaxTargets.GetInt() );
-			@ModObject = @main;
+		QuickShot( const vec3& in origin ) {
+			m_Targets.resize( sgame_QuickShotMaxTargets.GetInt() );
 		}
 		
 		void Think() {
-			if ( m_nLastTargetTime < uint( ModObject.sgame_QuickShotTime.GetInt() ) ) {
+			if ( m_nLastTargetTime < uint( sgame_QuickShotTime.GetInt() ) ) {
 				m_nLastTargetTime++;
 				return;
 			}
@@ -39,12 +20,12 @@ namespace TheNomad::SGame {
 			DebugPrint( "QuickShot thinking...\n" );
 			m_nLastTargetTime = 0;
 			
-			const array<EntityObject@>@ EntList = @ModObject.EntityManager.GetEntities();
+			const array<EntityObject@>@ EntList = @EntityManager.GetEntities();
 
 			// NOTE: this might be a little bit slow depending on how many mobs are in the area
 			for ( uint i = 0; i < EntList.size(); i++ ) {
 				if ( m_Targets.find( @EntList[i] ) == -1 ) {
-					if ( TheNomad::Util::Distance( EntList[i].GetOrigin(), m_Origin ) > ModObject.sgame_QuickShotMaxRange.GetFloat() ) {
+					if ( TheNomad::Util::Distance( EntList[i].GetOrigin(), m_Origin ) > sgame_QuickShotMaxRange.GetFloat() ) {
 						continue; // too far away
 					}
 					// make sure we aren't adding a duplicate
@@ -64,17 +45,14 @@ namespace TheNomad::SGame {
 		private array<EntityObject@> m_Targets;
 		private uint m_nTargetsFound;
 		private uint m_nLastTargetTime;
-
-		private ModuleObject@ ModObject;
 	};
 	
-	shared class KeyBind {
-		KeyBind( ModuleObject@ main ) {
+	class KeyBind {
+		KeyBind() {
 			down[0] = down[1] = 0;
 			downtime = 0;
 			msec = 0;
 			active = false;
-			@ModObject = @main;
 		}
 		KeyBind() {
 		}
@@ -147,7 +125,7 @@ namespace TheNomad::SGame {
 			if ( uptime > 0 ) {
 				msec += uptime - downtime;
 			} else {
-				msec += ModObject.GameManager.GetGameMsec() / 2;
+				msec += TheNomad::GameSystem::GameManager.GetGameMsec() / 2;
 			}
 			
 			active = false;
@@ -157,20 +135,18 @@ namespace TheNomad::SGame {
 		uint downtime;
 		uint msec;
 		bool active;
-
-		private ModuleObject@ ModObject;
 	};
 	
-	shared class PlayrObject : EntityObject {
+	class PlayrObject : EntityObject {
 		PlayrObject() {
-			m_WeaponSlots.resize( ModObject.sgame_MaxPlayerWeapons.GetInt() );
+			m_WeaponSlots.resize( sgame_MaxPlayerWeapons.GetInt() );
 
-			key_MoveNorth = KeyBind( @ModObject );
-			key_MoveSouth = KeyBind( @ModObject );
-			key_MoveEast = KeyBind( @ModObject );
-			key_MoveWest = KeyBind( @ModObject );
-			key_Melee = KeyBind( @ModObject );
-			key_Jump = KeyBind( @ModObject );
+			key_MoveNorth = KeyBind();
+			key_MoveSouth = KeyBind();
+			key_MoveEast = KeyBind();
+			key_MoveWest = KeyBind();
+			key_Melee = KeyBind();
+			key_Jump = KeyBind();
 		}
 		
 		//
@@ -237,7 +213,7 @@ namespace TheNomad::SGame {
 				if ( m_nFrameDamage > 0 ) {
 					return; // as long as you're hitting SOMETHING, you cannot die
 				}
-				ModObject.EntityManager.KillEntity( @this );
+				EntityManager.KillEntity( @this );
 			}
 		}
 		
@@ -261,8 +237,8 @@ namespace TheNomad::SGame {
 				break;
 			};
 
-			m_nHealth += ModObject.sgame_PlayerHealBase.GetFloat() * m_nHealMult;
-			m_nHealMult -= m_nHealMultDecay * ModObject.LevelManager.GetDifficultyScale();
+			m_nHealth += sgame_PlayerHealBase.GetFloat() * m_nHealMult;
+			m_nHealMult -= m_nHealMultDecay * LevelManager.GetDifficultyScale();
 		}
 		
 		bool CheckParry( EntityObject@ ent ) {
@@ -271,7 +247,7 @@ namespace TheNomad::SGame {
 					// simply invert the direction and double the speed
 					const vec3 v = ent.GetVelocity();
 					ent.SetVelocity( vec3( v.x * 2, v.y * 2, v.z * 2 ) );
-//					ent.SetDirection( ModObject.InverseDirs[ ent.GetDirection() ] );
+//					ent.SetDirection( InverseDirs[ ent.GetDirection() ] );
 				} else {
 					return false;
 				}
@@ -281,7 +257,7 @@ namespace TheNomad::SGame {
 				
 				if ( !mob.CurrentAttack().canParry ) {
 					// unblockable, deal damage
-					ModObject.EntityManager.DamageEntity( @ent, @m_Base );
+					EntityManager.DamageEntity( @ent, @m_Base );
 				} else {
 					// slap it back
 				}
@@ -296,7 +272,7 @@ namespace TheNomad::SGame {
 			}
 
 			SoundData data( m_Velocity.x + m_Velocity.y, vec2( m_Velocity.x, m_Velocity.y ), ivec2( 2, 2 ),
-				ivec3( int( m_Link.m_Origin.x ), int( m_Link.m_Origin.y ), int( m_Link.m_Origin.z ) ), 1.0f, @ModObject );
+				ivec3( int( m_Link.m_Origin.x ), int( m_Link.m_Origin.y ), int( m_Link.m_Origin.z ) ), 1.0f );
 		}
 		
 		private void IdleThink() {

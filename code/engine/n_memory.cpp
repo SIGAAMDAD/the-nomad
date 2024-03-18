@@ -1384,7 +1384,7 @@ qboolean Hunk_CheckMark(void)
 #ifdef _NOMAD_DEBUG
 void *Hunk_AllocDebug (uint64_t size, ha_pref where, const char *name, const char *file, uint64_t line)
 #else
-void *Hunk_Alloc (uint64_t size, const char *name, ha_pref where)
+void *Hunk_Alloc (uint64_t size, ha_pref where)
 #endif
 {
 	void *buf;

@@ -3,7 +3,9 @@
 
 #pragma once
 
+#ifdef __cplusplus
 #include <glm/glm.hpp>
+#endif
 
 // bounding boxes
 typedef struct {
@@ -32,6 +34,8 @@ void ClearBounds( bbox_t *bounds );
 vec_t VectorNormalize2( const vec3_t v, vec3_t out );
 
 float disBetweenOBJ( const vec3_t src, const vec3_t tar );
+
+#ifdef __cplusplus
 unsigned disBetweenOBJ( const uvec3_t src, const uvec3_t tar );
 int disBetweenOBJ( const ivec3_t src, const ivec3_t tar );
 
@@ -42,6 +46,7 @@ int disBetweenOBJ( const glm::ivec2& src, const glm::ivec2& tar );
 float disBetweenOBJ( const glm::vec3& src, const glm::vec3& tar );
 unsigned disBetweenOBJ( const glm::uvec3& src, const glm::uvec3& tar );
 int disBetweenOBJ( const glm::ivec3& src, const glm::ivec3& tar );
+#endif
 
 qboolean BoundsIntersect( const bbox_t *a, const bbox_t *b );
 qboolean BoundsIntersectSphere( const bbox_t *bounds,

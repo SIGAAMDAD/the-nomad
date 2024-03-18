@@ -51,8 +51,8 @@ void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t
     poly = &backendData->polys[r_numPolys];
     vtx = &backendData->polyVerts[r_numPolyVerts];
 
-    pos[0] = origin[0] - ( glState.viewData.camera.origin[0] * 0.5f );
-    pos[1] = glState.viewData.camera.origin[1] - origin[1];
+    pos[0] = origin[0];
+    pos[1] = origin[1];
     pos[2] = origin[2];
 
     poly->verts = vtx;
@@ -85,6 +85,11 @@ void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t num
         return;
     }
 
+    if ( hShader >= rg.numShaders || hShader < 0 ) {
+        ri.Printf( PRINT_WARNING, "RE_AddPolyToScene: out of range hShader '%i'\n", hShader );
+        return;
+    }
+
     poly = &backendData->polys[r_numPolys];
     vt = &backendData->polyVerts[r_numPolyVerts];
 
@@ -92,7 +97,7 @@ void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t num
     poly->hShader = hShader;
     poly->numVerts = numVerts;
 
-    memcpy( vt, verts, sizeof(*vt) * numVerts );
+    memcpy( vt, verts, sizeof( *vt ) * numVerts );
 
     r_numPolyVerts += numVerts;
     r_numPolys++;
@@ -112,7 +117,7 @@ void RE_AddPolyListToScene(const poly_t *polys, uint32_t numPolys)
     }
 
     for (i = 0; i < numPolys; i++) {
-        RE_AddPolyToScene(polys[i].hShader, polys[i].verts, polys[i].numVerts);
+        RE_AddPolyToScene( polys[i].hShader, polys[i].verts, polys[i].numVerts );
     }
 }
 
@@ -158,7 +163,7 @@ void RE_BeginScene( const renderSceneRef_t *fd )
     backend.refdef.entities = &backendData->entities[r_firstSceneEntity];
 
     backend.refdef.numPolys = r_numPolys - r_firstScenePoly;
-    backend.refdef.polys = &backendData->polys[r_firstSceneEntity];
+    backend.refdef.polys = &backendData->polys[r_firstScenePoly];
 
     backend.refdef.drawn = qfalse;
 

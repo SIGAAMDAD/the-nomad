@@ -1,6 +1,7 @@
 #include "module_public.h"
 #include <glm/gtc/type_ptr.hpp>
 #include <limits.h>
+#include "module_alloc.h"
 #include "aswrappedcall.h"
 #include "imgui_stdlib.h"
 #include "../ui/ui_lib.h"
@@ -1325,6 +1326,8 @@ static const float script_M_PI = M_PI;
 
 void ModuleLib_Register_Engine( void )
 {
+    PROFILE_FUNCTION();
+
 //    SET_NAMESPACE( "TheNomad::Constants" );
     { // Constants
         REGISTER_GLOBAL_VAR( "const float M_PI", &script_M_PI );

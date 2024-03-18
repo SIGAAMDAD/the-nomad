@@ -154,7 +154,7 @@ bool CModuleJsonObject::GetString( const string_t *name, string_t *data ) {
     if ( !handle.contains( name->c_str() ) ) {
         return false;
     }
-    *data = (string_t &&)eastl::move( handle.at( name->c_str() ) );
+    *data = handle.at( name->c_str() ).get<std::string>().c_str();
     return true;
 }
 bool CModuleJsonObject::GetBool( const string_t *name, bool *data ) {
@@ -166,6 +166,7 @@ bool CModuleJsonObject::GetBool( const string_t *name, bool *data ) {
 }
 bool CModuleJsonObject::GetObjectArray( const string_t *name, CScriptArray *data ) {
     if ( !handle.contains( name->c_str() ) ) {
+        Con_Printf( "%s: json doesn't contain object array '%s'\n", __func__, name->c_str() );
         return false;
     }
     const JsonObject& json = handle.at( name->c_str() );
@@ -177,6 +178,7 @@ bool CModuleJsonObject::GetObjectArray( const string_t *name, CScriptArray *data
 }
 bool CModuleJsonObject::GetFloatArray( const string_t *name, CScriptArray *data ) {
     if ( !handle.contains( name->c_str() ) ) {
+        Con_Printf( "%s: json doesn't contain float array '%s'\n", __func__, name->c_str() );
         return false;
     }
     const JsonObject& json = handle.at( name->c_str() );
@@ -188,6 +190,7 @@ bool CModuleJsonObject::GetFloatArray( const string_t *name, CScriptArray *data 
 }
 bool CModuleJsonObject::GetIntArray( const string_t *name, CScriptArray *data ) {
     if ( !handle.contains( name->c_str() ) ) {
+        Con_Printf( "%s: json doesn't contain int array '%s'\n", __func__, name->c_str() );
         return false;
     }
     const JsonObject& json = handle.at( name->c_str() );
@@ -199,6 +202,7 @@ bool CModuleJsonObject::GetIntArray( const string_t *name, CScriptArray *data ) 
 }
 bool CModuleJsonObject::GetUIntArray( const string_t *name, CScriptArray *data ) {
     if ( !handle.contains( name->c_str() ) ) {
+        Con_Printf( "%s: json doesn't contain uint array '%s'\n", __func__, name->c_str() );
         return false;
     }
     const JsonObject& json = handle.at( name->c_str() );
@@ -210,17 +214,19 @@ bool CModuleJsonObject::GetUIntArray( const string_t *name, CScriptArray *data )
 }
 bool CModuleJsonObject::GetStringArray( const string_t *name, CScriptArray *data ) {
     if ( !handle.contains( name->c_str() ) ) {
+        Con_Printf( "%s: json doesn't contain string array '%s'\n", __func__, name->c_str() );
         return false;
     }
     const JsonObject& json = handle.at( name->c_str() );
     data->Resize( json.size() );
     for ( uint32_t i = 0; i < json.size(); i++ ) {
-        *(string_t *)data->At( i ) = (string_t &&)json.at( i );
+        *(string_t *)data->At( i ) = json.at( i ).get<std::string>().c_str();
     }
     return true;
 }
 bool CModuleJsonObject::GetBoolArray( const string_t *name, CScriptArray *data ) {
     if ( !handle.contains( name->c_str() ) ) {
+        Con_Printf( "%s: json doesn't contain boolean array '%s'\n", __func__, name->c_str() );
         return false;
     }
     const JsonObject& json = handle.at( name->c_str() );
@@ -241,22 +247,34 @@ bool CModuleJsonObject::Parse( const string_t *fileName ) {
 
     nLength = FS_LoadFile( fileName->c_str(), &f.v );
     if ( !nLength || !f.v ) {
-        Con_Printf( COLOR_RED "ERROR: vm requested file load '%s' failed to open\n", fileName->c_str() );
+        Con_Printf( COLOR_RED "ERROR: failed to open vm requested json file '%s'\n", fileName->c_str() );
         return false;
     }
 
+    Con_Printf( "-----------------\n" );
+    Con_Printf( "JSon data for: %s\n", fileName->c_str() );
+    Con_Printf( "%s", f.b );
+    Con_Printf( "-----------------\n" );
+
     Con_Printf( "Parsing json file '%s' at vm request...\n", fileName->c_str() );
     try {
-        handle = JsonObject::parse( f.b, f.b + nLength, nullptr, true, true );
+        handle = JsonObject::parse( f.b, f.b + nLength );
     } catch ( const JsonObject::exception& e ) {
         Con_Printf( COLOR_RED "ERROR: nlohmann::json exception occurred when parsing '%s' ->\n"
                     COLOR_RED "\tid: %i\n"
                     COLOR_RED "\tmessage: %s\n"
         , fileName->c_str(), e.id, e.what() );
-        FS_FreeFile( f.v );
+        FS_FreeFile( f.b );
         return false;
     }
-    FS_FreeFile( f.v );
+    FS_FreeFile( f.b );
+
+    if ( fileName->c_str() == "modules/nomadmain/scripts/mobs.json" ) {
+        if ( !handle.contains( "MobInfo" ) ) {
+            Assert( false );
+        }
+    }
+
     return true;
 }
 

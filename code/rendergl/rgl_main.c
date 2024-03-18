@@ -44,6 +44,9 @@ void RB_MakeViewMatrix( void )
         ortho[1] = glConfig.vidWidth;
         ortho[2] = glConfig.vidHeight;
         ortho[3] = 0;
+
+        VectorClear( glState.viewData.camera.origin );
+        glState.viewData.camera.zoom = 0.0f;
         break;
     case RSF_ORTHO_TYPE_WORLD:
         ortho[0] = 0;
@@ -165,10 +168,10 @@ void R_DrawPolys( void )
         return;
     }
 
-    RB_SetBatchBuffer( backend.drawBuffer, backend.refdef.polys, sizeof(polyVert_t), backendData->indices, sizeof(glIndex_t) );
+    RB_SetBatchBuffer( backend.drawBuffer, backend.refdef.polys, sizeof( polyVert_t ), backendData->indices, sizeof( glIndex_t ) );
 
     // sort the polys to be more efficient with our shaders
-    R_RadixSort( backend.refdef.polys, backend.refdef.numPolys );
+    R_RadixSort( backend.refdef.polys, r_numPolys );
 
     poly = backend.refdef.polys;
     oldShader = poly->hShader;
@@ -176,7 +179,7 @@ void R_DrawPolys( void )
 
     GLSL_UseProgram( &rg.basicShader );
     
-    for ( i = 0; i < backend.refdef.numPolys; i++ ) {
+    for ( i = 0; i < r_numPolys; i++ ) {
         if ( oldShader != poly->hShader ) {
             // if we have a new shader, flush the current batch
             RB_FlushBatchBuffer();
@@ -378,7 +381,6 @@ nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32
     for ( uint32_t y = 0; y < spriteCountY; y++ ) {
         for ( uint32_t x = 0; x < spriteCountX; x++ ) {
             R_CalcSpriteTextureCoords( x, y, spriteWidth, spriteHeight, sheetWidth, sheetHeight, sheet->sprites[y * spriteCountX + x].texCoords );
-            sprite->hSpriteSheet = handle;
         }
     }
 

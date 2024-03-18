@@ -709,7 +709,6 @@ typedef vec2_t spriteCoord_t[4];
 
 typedef struct {
     spriteCoord_t texCoords;
-    nhandle_t hSpriteSheet;
 } sprite_t;
 
 typedef struct {

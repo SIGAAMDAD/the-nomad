@@ -28,9 +28,6 @@ enum : uint64_t
     ModuleOnSaveGame,
     ModuleOnLoadGame,
 
-    // special sgame stuff
-    ModuleRewindToLastCheckpoint,
-
     NumFuncs
 };
 
@@ -83,7 +80,6 @@ private:
     string_t m_szName;
     asIScriptContext *m_pScriptContext;
     asIScriptModule *m_pScriptModule;
-	asIScriptObject *m_pInterface;
 	qboolean m_bLoaded;
 
 	int32_t m_nVersionMajor;

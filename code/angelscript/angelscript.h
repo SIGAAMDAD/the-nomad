@@ -1685,7 +1685,7 @@ struct asSBCInfo
 	#define asBCTYPE_wW_PTR_ARG asBCTYPE_wW_DW_ARG
 	#define asBCTYPE_rW_PTR_ARG asBCTYPE_rW_DW_ARG
 	#ifndef AS_PTR_SIZE
-		#define AS_PTR_SIZE 1
+//		#define AS_PTR_SIZE 1
 	#endif
 #else
 	#define asBCTYPE_PTR_ARG    asBCTYPE_QW_ARG

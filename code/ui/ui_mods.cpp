@@ -35,6 +35,11 @@ typedef struct {
 
 static modmenu_t mods;
 
+static void ModsMenu_ClearLoadList_f( void ) {
+    FS_Remove( "_cache/loadlist.txt" );
+    FS_HomeRemove( "_cache/loadlist.txt" );
+}
+
 static void ModsMenu_LoadMod( module_t *mod )
 {
 }
@@ -120,6 +125,7 @@ void ModsMenu_Draw( void )
 
     Snd_SetLoopingTrack( mods.ambience );
 
+    ui->EscapeMenuToggle( STATE_MAIN );
     if ( ui->Menu_Title( mods.titleString->value, 1.75f ) ) {
         ui->SetState( STATE_MAIN );
         return;
@@ -238,6 +244,13 @@ static void ModsMenu_Load( void )
     ModsMenu_LoadModList();
     ModsMenu_Sort();
 
+    // we may have some outdated info
+    for ( i = 0; i < mods.numMods; i++ ) {
+        if ( loadList[i]->m_pHandle->IsValid() && !mods.modList[i].valid ) {
+            mods.modList[i].valid = qtrue;
+        }
+    }
+
     Con_Printf( "...Got %lu modules\n", mods.numMods );
 }
 
@@ -255,6 +268,8 @@ void ModsMenu_Cache( void )
     mods.titleString = strManager->ValueForKey( "MOD_MENU_TITLE" );
     mods.loadString = strManager->ValueForKey( "MOD_MENU_LOAD" );
     mods.backString = strManager->ValueForKey( "MOD_MENU_BACK" );
+
+    Cmd_AddCommand( "ui.clear_load_list", ModsMenu_ClearLoadList_f );
 
     ModsMenu_SaveModList();
 }

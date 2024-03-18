@@ -43,9 +43,9 @@ bool CUILib::Menu_Title( const char *label, float fontScale )
 	//
 	// draw the background
 	//
-	re.ClearScene();
-	ui->DrawHandlePic( 0, 0, refdef.width, refdef.height, menu_background );
-	re.RenderScene( &refdef );
+//	re.ClearScene();
+//	ui->DrawHandlePic( 0, 0, refdef.width, refdef.height, menu_background );
+//	re.RenderScene( &refdef );
 
     ImGui::SetWindowFontScale( 1.5f * scale );
 	if ( state != STATE_MAIN ) {

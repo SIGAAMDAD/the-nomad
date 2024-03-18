@@ -3,18 +3,11 @@
 namespace TheNomad {
 	//
 	// ConVar: an implementation of the vmCvar_t, but to make it easier to manage,
-	// its been put here. This is a shared object
+	// its been put here
 	// DO NOT MODIFY
 	//
-	shared class ConVar {
+	class ConVar {
 		ConVar() {
-		}
-		ConVar( const string& in name, const string& in value, uint flags, bool bTrackChanges ) {
-			m_Name = name;
-			m_Value = value;
-			m_Flags = flags;
-			m_bTrackChanges = bTrackChanges;
-			Engine::CvarRegister( name, value, flags, m_IntValue, m_FloatValue, m_nModificationCount, m_nCvarHandle );
 		}
 		
 		void Register( const string& in name, const string& in value, uint flags, bool bTrackChanges ) {
@@ -64,7 +57,7 @@ namespace TheNomad {
 		private bool m_bTrackChanges;
 	};
 
-	shared class CvarTableEntry {
+	class CvarTableEntry {
 		CvarTableEntry() {
 		}
 		CvarTableEntry( ConVar@ var ) {
@@ -76,13 +69,14 @@ namespace TheNomad {
 		int m_nModificationCount;
 	};
 	
-	shared class CvarSystem : TheNomad::GameSystem::GameObject {
+	class CvarSystem : TheNomad::GameSystem::GameObject {
 		CvarSystem() {
 			TheNomad::Engine::CmdAddCommand( "sgame.list_cvars" );
 		}
 		
 		ConVar@ AddCvar( const string& in name, const string& in value, uint flags, bool bTrackChanges ) {
-			ConVar@ var = ConVar( name, value, flags, bTrackChanges );
+			ConVar@ var = ConVar();
+			var.Register(  name, value, flags, bTrackChanges  );
 			m_CvarCache.push_back( var );
 			return var;
 		}
@@ -126,4 +120,6 @@ namespace TheNomad {
 		
 		private array<CvarTableEntry> m_CvarCache;
 	};
+
+	CvarSystem@ CvarManager;
 };

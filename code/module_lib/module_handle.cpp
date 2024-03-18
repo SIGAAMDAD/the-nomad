@@ -11,12 +11,11 @@ const moduleFunc_t funcDefs[NumFuncs] = {
     { "int ModuleSaveConfiguration()", ModuleSaveConfiguration, 0, qfalse },
     { "int ModuleOnKeyEvent( uint, uint )", ModuleOnKeyEvent, 2, qfalse },
     { "int ModuleOnMouseEvent( int, int )", ModuleOnMouseEvent, 2, qfalse },
-    { "int ModuleOnLevelStart( uint )", ModuleOnLevelStart, 1, qfalse },
+    { "int ModuleOnLevelStart()", ModuleOnLevelStart, 0, qfalse },
     { "int ModuleOnLevelEnd()", ModuleOnLevelEnd, 0, qfalse },
     { "int ModuleOnRunTic( uint )", ModuleOnRunTic, 1, qtrue },
     { "int ModuleOnSaveGame()", ModuleOnSaveGame, 0, qfalse },
-    { "int ModuleOnLoadGame()", ModuleOnLoadGame, 0, qfalse },
-    { "int ModuleRewindToLastCheckpoint()", ModuleRewindToLastCheckpoint, 0, qfalse },
+    { "int ModuleOnLoadGame()", ModuleOnLoadGame, 0, qfalse }
 };
 
 CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sourceFiles, int32_t moduleVersionMajor,
@@ -25,6 +24,8 @@ CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sou
     m_nVersionUpdate{ moduleVersionUpdate }, m_nVersionPatch{ moduleVersionPatch }
 {
     int error;
+
+    PROFILE_BLOCK_BEGIN( "Compile Module" );
 
     m_bLoaded = qfalse;
 
@@ -36,16 +37,16 @@ CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sou
     if ( ( error = g_pModuleLib->GetScriptBuilder()->StartNewModule( g_pModuleLib->GetScriptEngine(), pName ) ) != asSUCCESS ) {
         N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: failed to start module '%s' -- %s", pName, AS_PrintErrorString( error ) );
     }
-
+    
     // add standard definitions
     g_pModuleLib->SetHandle( this );
     g_pModuleLib->AddDefaultProcs();
-
     m_pScriptModule = g_pModuleLib->GetScriptEngine()->GetModule( pName, asGM_CREATE_IF_NOT_EXISTS );
+    
     if ( !m_pScriptModule ) {
         N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: GetModule() failed on \"%s\"\n", pName );
     }
-
+    
     switch ( ( error = LoadFromCache() ) ) {
     case 1:
         Con_Printf( "Loaded module bytecode from cache.\n" );
@@ -57,11 +58,11 @@ CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sou
         Con_Printf( COLOR_RED "failed to load module bytecode.\n" );
         break;
     };
-
+    
     if ( error != 1 ) {
         Build( sourceFiles );
     }
-
+    
     m_pScriptContext = g_pModuleLib->GetScriptEngine()->CreateContext();
     if ( !InitCalls() ) {
         return;
@@ -74,6 +75,7 @@ CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sou
 }
 
 CModuleHandle::~CModuleHandle() {
+    g_pModuleLib->GetScriptEngine()->DiscardModule( m_szName.c_str() );
     ClearMemory();
 }
 
@@ -83,11 +85,17 @@ void CModuleHandle::Build( const UtlVector<UtlString>& sourceFiles ) {
     for ( const auto& it : sourceFiles ) {
         LoadSourceFile( it );
     }
-    if ( ( error = g_pModuleLib->GetScriptBuilder()->BuildModule() ) != asSUCCESS ) {
-        Con_Printf( COLOR_RED "ERROR: CModuleHandle::CModuleHandle: failed to build module '%s' -- %s\n", m_szName.c_str(), AS_PrintErrorString( error ) );
-        
-        // clean cache to get rid of any old and/or corrupt code
-        Cbuf_ExecuteText( EXEC_APPEND, "ml.clean_script_cache\n" );
+
+    try {
+        if ( ( error = g_pModuleLib->GetScriptBuilder()->BuildModule() ) != asSUCCESS ) {
+            Con_Printf( COLOR_RED "ERROR: CModuleHandle::CModuleHandle: failed to build module '%s' -- %s\n", m_szName.c_str(), AS_PrintErrorString( error ) );
+
+            // clean cache to get rid of any old and/or corrupt code
+            Cbuf_ExecuteText( EXEC_APPEND, "ml.clean_script_cache\n" );
+        }
+    } catch ( const std::exception& e ) {
+        Con_Printf( COLOR_RED "ERROR: std::exception thrown when loading module \"%s\", %s\n", m_szName.c_str(), e.what() );
+        return;
     }
 }
 
@@ -150,46 +158,13 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
 
 bool CModuleHandle::InitCalls( void )
 {
-//    asIScr *type;
-
     Con_Printf( "Initializing function procs...\n" );
-
-//    type = g_pModuleLib->GetScriptEngine()->GetTypeInfoByDecl( "shared class ModuleObject" );
-//    if ( !type ) {
-//        Con_Printf( COLOR_RED "ERROR: invalid module bytecode, no ModuleObject class found\n" );
-//        return false;
-//    }
-//
-
-//    asIScriptFunction *factory = type->GetFactoryByDecl( "ModuleObject@ ModuleObject()" );
-//    Assert( factory );
-//    CheckASCall( m_pScriptContext->Prepare( factory ) );
-//
-//    switch ( m_pScriptContext->Execute() ) {
-//    case asEXECUTION_ABORTED:
-//    case asEXECUTION_ERROR:
-//    case asEXECUTION_EXCEPTION:
-//        // something happened in there, dunno what
-//        LogExceptionInfo( m_pScriptContext );
-//        break;
-//    case asEXECUTION_SUSPENDED:
-//    case asEXECUTION_FINISHED:
-//    default:
-//        // exited successfully
-//        break;
-//    };
-//    m_pInterface = *(asIScriptObject **)m_pScriptContext->GetAddressOfReturnValue();
-//    Assert( m_pInterface );
 
     memset( m_pFuncTable, 0, sizeof( m_pFuncTable ) );
 
     for ( uint32_t i = 0; i < NumFuncs; i++ ) {
-        if ( i == ModuleRewindToLastCheckpoint && N_stricmp( m_szName.c_str(), "nomadmain" ) ) {
-            break; // not sgame
-        }
         Con_DPrintf( "Checking if module has function '%s'...\n", funcDefs[i].name );
         m_pFuncTable[i] = m_pScriptModule->GetFunctionByDecl( funcDefs[i].name );
-        //m_pFuncTable[i] = type->GetMethodByName( funcDefs[i].name );
         if ( m_pFuncTable[i] ) {
             Con_Printf( COLOR_GREEN "Module \"%s\" registered with proc '%s'.\n", m_szName.c_str(), funcDefs[i].name );
         } else {
@@ -241,6 +216,8 @@ typedef struct {
 } asCodeCacheHeader_t;
 
 void CModuleHandle::SaveToCache( void ) const {
+    PROFILE_FUNCTION();
+    
     CModuleCacheHandle *dataStream;
     const char *path;
     asCodeCacheHeader_t header;
@@ -271,6 +248,8 @@ void CModuleHandle::SaveToCache( void ) const {
 }
 
 int CModuleHandle::LoadFromCache( void ) {
+    PROFILE_FUNCTION();
+
     CModuleCacheHandle *dataStream;
     const char *path;
     asCodeCacheHeader_t header;

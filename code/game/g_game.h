@@ -144,7 +144,8 @@ typedef struct {
     gameState_t oldState;
     gameState_t state;
 
-    nhandle_t consoleShader;
+    nhandle_t consoleShader0;
+    nhandle_t consoleShader1;
     nhandle_t whiteShader;
     nhandle_t charSetShader;
     uint32_t captureWidth;

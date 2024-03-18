@@ -3,7 +3,6 @@
 
 #pragma once
 
-#define GLN_VERSION "GLNomad 1.0 Alpha"
 #define WINDOW_TITLE "The Nomad"
 
 /*
@@ -340,7 +339,7 @@ Compiler Macro Abstraction
 #elif defined(__cplusplus) && (__cplusplus >= 201103)
 	#define FUNC_SIG __func__
 #else
-	#define FUNC_SIG "HZ_FUNC_SIG unknown!"
+	#define FUNC_SIG "FUNC_SIG unknown!"
 #endif
 
 // stack based version of strdup
@@ -411,7 +410,8 @@ Compiler Macro Abstraction
 #define NOMAD_VERSION_PATCH _NOMAD_VERSION_PATCH
 #define VSTR_HELPER(x) #x
 #define VSTR(x) VSTR_HELPER(x)
-#define NOMAD_VERSION_STRING "glnomad v" VSTR(_NOMAD_VERSION) "." VSTR(_NOMAD_VERSION_UPDATE) "." VSTR(_NOMAD_VERSION_PATCH)
+#define NOMAD_VERSION_STRING "v" VSTR(_NOMAD_VERSION) "." VSTR(_NOMAD_VERSION_UPDATE) "." VSTR(_NOMAD_VERSION_PATCH)
+#define GLN_VERSION "The Nomad " NOMAD_VERSION_STRING " Alpha"
 
 // disable name-mangling
 #ifdef __cplusplus
@@ -926,6 +926,32 @@ typedef struct {
 #define COLOR_MAGENTA	"^6"
 #define COLOR_WHITE		"^7"
 #define COLOR_RESET		"^8"
+
+#if defined(_NOMAD_DEBUG) && defined(__cplusplus) && defined(NOMAD_PROFILE)
+	#include <easy/profiler.h>
+
+	#define PROFILE_BEGIN_LISTEN \
+		EASY_PROFILER_ENABLE; \
+		profiler::startListen()
+	
+	#define PROFILE_STOP_LISTEN profiler::stopListen()
+
+	#define PROFILE_SCOPE( name ) EASY_BLOCK( name, profiler::colors::Green )
+	#define PROFILE_BLOCK_BEGIN( name ) PROFILE_SCOPE( name )
+	#define PROFILE_BLOCK_END() EASY_END_BLOCK
+	#ifdef GDR_DLLCOMPILE
+		#define PROFILE_FUNCTION() EASY_FUNCTION( profiler::colors::Blue )
+	#else
+		#define PROFILE_FUNCTION() EASY_FUNCTION( profiler::colors::Magenta )
+	#endif
+#else
+	#define PROFILE_BEGIN_LISTEN
+	#define PROFILE_STOP_LISTEN
+	#define PROFILE_SCOPE( name )
+	#define PROFILE_BLOCK_BEGIN( name )
+	#define PROFILE_BLOCK_END
+	#define PROFILE_FUNCTION()
+#endif
 
 #define NOMAD_CONFIG "glnomad.cfg"
 

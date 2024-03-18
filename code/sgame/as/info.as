@@ -1,13 +1,13 @@
 #include "item.as"
 
 namespace TheNomad::SGame {
-	shared enum AttackMethod {
+	enum AttackMethod {
 		HitScan = 0,
 		Projectile = 1,
 		AreaOfEffect = 2,
 	};
 
-	shared enum ArmorType {
+	enum ArmorType {
 		None = 0,
 		Light,
 		Standard,
@@ -15,7 +15,7 @@ namespace TheNomad::SGame {
 		Invul
 	};
 
-	shared enum AmmoType {
+	enum AmmoType {
 		Bullet = 0,
 		Shell,
 		Rocket,
@@ -23,12 +23,12 @@ namespace TheNomad::SGame {
 		Invalid
 	};
 
-	shared enum AttackType {
+	enum AttackType {
 		Melee = 0,
 		Missile,
 	};
 
-	shared enum WeaponProperty {
+	enum WeaponProperty {
 		TwoHandedBlade       = 0x00000001,
 		OneHandedBlade       = 0x00000002,
 		TwoHandedBlunt       = 0x00000004,
@@ -44,7 +44,7 @@ namespace TheNomad::SGame {
 		None                 = 0x00000000
 	};
 
-	shared class WeaponInfo {
+	class WeaponInfo {
 		WeaponInfo() {
 			ammoType = AmmoType::Invalid;
 			magSize = 0;
@@ -67,7 +67,7 @@ namespace TheNomad::SGame {
 		int hShader;
 	};
 
-	shared class ItemInfo {
+	class ItemInfo {
 		ItemInfo() {
 			cost = 0;
 			hShader = 0;
@@ -82,7 +82,7 @@ namespace TheNomad::SGame {
 		uint spriteOffset;
 	};
 	
-	shared class AttackInfo {
+	class AttackInfo {
 		AttackInfo() {
 			damage = 0;
 			range = 0;
@@ -110,7 +110,7 @@ namespace TheNomad::SGame {
 		TheNomad::Engine::SoundSystem::SoundEffect sound;
 	};
 	
-	shared class MobInfo {
+	class MobInfo {
 		MobInfo() {
 			health = 0.0f;
 			armor = ArmorType::None;
@@ -155,7 +155,7 @@ namespace TheNomad::SGame {
 		TheNomad::Engine::SoundSystem::SoundEffect dieSfx;
 	};
 	
-	shared class InfoDataManager {
+	class InfoDataManager {
 		InfoDataManager() {
 			ConsolePrint( "Loading mod info files...\n" );
 
@@ -227,13 +227,12 @@ namespace TheNomad::SGame {
 		}
 
 		bool LoadJSonFile( const string& in fileName, TheNomad::Util::JsonObject& in json ) {
-			array<int8> text;
 			string path;
 
 			path.resize( MAX_NPATH );
-			path = "modules/" + MODULE_NAME + "/" + fileName;
-
-			if ( TheNomad::Engine::FileSystem::LoadFile( path, text ) == 0 ) {
+			path = "modules/" + MODULE_NAME + "/scripts/" + fileName;
+			if ( !json.Parse( path ) ) {
+				ConsoleWarning( "failed to parse json file '" + path + "'\n" );
 				return false;
 			}
 
@@ -319,4 +318,6 @@ namespace TheNomad::SGame {
 		private array<ItemInfo@> m_ItemInfos;
 		private array<WeaponInfo@> m_WeaponInfos;
 	};
+
+	InfoDataManager@ InfoManager;
 };

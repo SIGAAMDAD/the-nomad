@@ -215,7 +215,7 @@ void SinglePlayerMenu_Draw( void )
             Cvar_SetIntegerValue( "g_levelIndex", 0 );
             
             Cvar_Set( "mapname", gi.mapCache.infoList[0].name );
-            g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelStart, 1, 0 ); // start a new game
+            g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelStart, 0 ); // start a new game
         }
 
         ImGui::NewLine();

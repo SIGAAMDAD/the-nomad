@@ -613,7 +613,7 @@ static void SettingsMenuPopup( void )
 
     ImGui::Begin( va( "%s##SETTINGSMENUPOPUP", title ), NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
                                                             | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse );
-    ImGui::SetWindowPos( ImVec2( 480 * ui->scale, 340 * ui->scale ) );
+    ImGui::SetWindowPos( ImVec2( 200 * ui->scale, 340 * ui->scale ) );
     if (settings.confirmation) {
         ImGui::TextUnformatted( "You made some changes to your settings, would you like to apply them?" );
         if (ImGui::Button( "SAVE CHANGES##SETTINGSMENUPOPUP" )) {
@@ -624,6 +624,16 @@ static void SettingsMenuPopup( void )
             settings.confirmation = qfalse;
             settings.modified = qfalse;
             g_pModuleLib->ModuleCall( sgvm, ModuleSaveConfiguration, 0 );
+            Cbuf_ExecuteText( EXEC_APPEND, "writecfg default.cfg\n" );
+            Cbuf_ExecuteText( EXEC_APPEND, "snd_restart\n" );
+            ImGui::CloseCurrentPopup();
+        }
+        if ( ImGui::Button( "NO##SETTINGSMENUPOPUP" ) ) {
+            ui->PlaySelected();
+            settings.modified = qfalse;
+            settings.confirmation = qfalse;
+            SettingsMenu_SetDefault();
+            Cbuf_ExecuteText( EXEC_APPEND, "snd_restart\n" );
             ImGui::CloseCurrentPopup();
         }
     }
@@ -634,6 +644,8 @@ static void SettingsMenuPopup( void )
             settings.confirmreset = qfalse;
             settings.modified = qfalse;
             ui->PlaySelected();
+            Cbuf_ExecuteText( EXEC_APPEND, "writecfg default.cfg" );
+            Cbuf_ExecuteText( EXEC_APPEND, "snd_restart\n" );
             ImGui::CloseCurrentPopup();
         }
         ImGui::SameLine();
@@ -653,7 +665,7 @@ static void SettingsMenu_ApplyChanges( void )
 {
     const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
                             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_AlwaysAutoResize;
-    ImGui::Begin( "##APPLYCHANGESWINDOW", NULL, windowFlags );
+    ImGui::Begin( "##APPLYCHANGESWINDOWRESET", NULL, windowFlags );
 
     ImGui::SetWindowPos(ImVec2( 8 * ui->scale, 720 * ui->scale ));
 
@@ -663,12 +675,15 @@ static void SettingsMenu_ApplyChanges( void )
         ui->PlaySelected();
     }
 
+    ImGui::End();
+
     if ( !settings.modified ) {
-        ImGui::End();
         return;
     }
 
-    ImGui::SetCursorScreenPos( ImVec2( 260 * ui->scale, 720 * ui->scale ) );
+    ImGui::Begin( "##APPLYCHANGESWINDOWSAVE", NULL, windowFlags );
+
+    ImGui::SetCursorScreenPos( ImVec2( 260 * ui->scale, 725 * ui->scale ) );
     
     if ( ImGui::Button( "APPLY CHANGES" ) ) {
         SettingsMenu_ApplyGraphicsChanges();
@@ -857,6 +872,8 @@ static GDR_INLINE void SettingsMenu_ExitChild( menustate_t childstate )
     if ( ui->GetState() != childstate ) {
         if ( settings.modified ) {
             settings.confirmation = qtrue;
+        } else {
+            return;
         }
     }
     else if ( ui->Menu_Title( "SETTINGS" ) ) {

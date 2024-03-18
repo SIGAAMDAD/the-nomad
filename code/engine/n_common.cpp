@@ -1191,11 +1191,11 @@ const char *Com_VersionString(void)
 	const char *versionType;
 
 #ifdef _NOMAD_DEBUG
-	versionType = "glnomad debug";
+	versionType = "The Nomad Debug";
 #elif defined(_NOMAD_EXPERIMENTAL)
-	versionType = "glnomad experimental";
+	versionType = "The Nomad Experimental";
 #else
-	versionType = "glnomad official";
+	versionType = "The Nomad";
 #endif
 
 	return va("%s v%i.%i.%i", versionType, NOMAD_VERSION, NOMAD_VERSION_UPDATE, NOMAD_VERSION_PATCH);
@@ -1418,12 +1418,13 @@ void Com_Quit_f( void ) {
 		// Sys_Quit will kill this process anyways, so
 		// a corrupt call stack makes no difference
 //		VM_Forced_Unload_Start();
-		G_Shutdown(qtrue);
+		G_Shutdown( qtrue );
 //		VM_Forced_Unload_Done();
 		Com_Shutdown();
+
 		FS_Shutdown( qtrue );
 	}
-	Sys_Exit(EXIT_SUCCESS);
+	Sys_Exit( EXIT_SUCCESS );
 }
 
 /*
@@ -1477,7 +1478,7 @@ static void Com_PrintVersionStrings( const char *commandLine )
 	//
 	if (strstr( commandLine, "--version" ) || strstr( commandLine, "-version" )) {
 		Sys_Print( GLN_VERSION "\n" );
-		Sys_Exit(1);
+		Sys_Exit( 1 );
 	}
 
 	SDL_GetVersion( &sdl_version );
@@ -1519,30 +1520,34 @@ static void Com_PrintVersionStrings( const char *commandLine )
 	Com_VersionString(), version_str);
 }
 
-/*
-static void Com_CrashCheck( void )
+//
+// Com_CheckCrash: checks if the game crashed
+//
+static void Com_CheckCrash( void )
 {
 	FILE *fp;
+	int ret;
 
-	fp = Sys_FOpen( "nomad.pid", "w+" );
+	// shut up compiler
+	ret = 0;
+
+	fp = Sys_FOpen( "nomad.pid", "r" );
 	if ( fp ) {
-		zip_t *zf;
-		zip_source_t *source;
-		int error;
-
-		Sys_MessageBox( "WARNING", "nomad.pid is present meaning the game had an unnatural exit, please report this bug", false );
-
-		zf = zip_open( "crash-report.zip", ZIP_CREATE | ZIP_TRUNCATE, &error );
-		if ( !zf ) {
-			Con_Printf( COLOR_RED "ERROR: Failed to create crash-report.zip, please send the debug.log!\n" );
-			return;
+		ret = Sys_MessageBox( "Safe Mode", "Game shut down unexpectedly the last time it was run.\n"
+			"Would you like to enable safe mode?", true );
+		
+		if ( ret ) {
+			if ( Com_SafeMode() ) {
+				return; // already set
+			}
+			N_strncpyz( com_consoleLines[ com_numConsoleLines ], "safe", sizeof( *com_consoleLines ) );
+			com_numConsoleLines++;
 		}
-
-		source = zip_source_file( zf,  );
-		zip_add( zf, "", );
+	} else {
+		fp = Sys_FOpen( "nomad.pid", "w" );
 	}
+	fclose( fp );
 }
-*/
 
 /*
 * Com_Init: initializes all the engine's systems
@@ -1570,6 +1575,7 @@ void Com_Init( char *commandLine )
 	// prepare enough of the subsystems to handle
 	// cvar and command buffer management
 	Com_ParseCommandLine( commandLine );
+	Com_CheckCrash();
 
 	Cbuf_Init();
 
@@ -1624,6 +1630,8 @@ void Com_Init( char *commandLine )
 
 	Com_InitJournals();
 	Com_LoadConfig();
+
+	PROFILE_BEGIN_LISTEN;
 
 	// override anything from the config files with command line args
 	Com_StartupVariable( NULL );

@@ -890,7 +890,7 @@ static void Con_DrawText( const char *txt )
 		case '\n':
 			if ( usedColor ) {
 				ImGui::PopStyleColor();
-				currentColorIndex = ColorIndex(S_COLOR_WHITE);
+				currentColorIndex = ColorIndex( S_COLOR_WHITE );
 				ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( g_color_table[currentColorIndex] ) );
 				usedColor = qfalse;
 			}
@@ -924,29 +924,39 @@ static void Con_DrawSolidConsole( float frac )
 	static char  conColorString[ MAX_CVAR_VALUE ] = { '\0' };
 	int currentColorIndex, colorIndex;
 	qboolean customColor = qfalse;
-	uint32_t i, x;
+	uint32_t i;
 	float w, h;
+	static float x = 0;
+	static float y = 0;
+	static float changeX = 0.08f;
+	static float changeY = 0.05f;
 	char *text;
 	char buf[ MAX_CVAR_VALUE ], *v[4];
-	refdef_t refdef;
 	const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar;
-
-	memset( &refdef, 0, sizeof(refdef) );
-	refdef.x = 0;
-	refdef.y = 0;
-	refdef.width = (float)gi.gpuConfig.vidWidth;
-	refdef.height = (float)gi.gpuConfig.vidHeight;
-	refdef.time = gi.realtime;
-	refdef.flags = RSF_NOWORLDMODEL;
 
 	w = (float)gi.gpuConfig.vidWidth;
 	h = (float)gi.gpuConfig.vidHeight * 0.75f;
+	
+	if ( x >= 0.3f ) {
+		changeX = -changeX;
+	}
+	if ( y >= 0.1f ) {
+		changeY = -changeY;
+	}
 
-	ImGui::Begin( "ConsoleBackground", NULL, windowFlags );
+	x += changeX / gi.frametime;
+	y += changeY / gi.frametime;
+
+	ImGui::Begin( "ConsoleBackground0", NULL, windowFlags );
 	ImGui::SetWindowPos( ImVec2( 0, 0 ) );
 	ImGui::SetWindowSize( ImVec2( w, h ) );
-	ImGui::Image( (ImTextureID)(intptr_t)gi.consoleShader, ImGui::GetWindowSize() );
+	ImGui::Image( (ImTextureID)(intptr_t)gi.consoleShader0, ImGui::GetWindowSize(), ImVec2( x, y ) );
 	ImGui::End();
+//	ImGui::Begin( "ConsoleBackground1", NULL, windowFlags );
+//	ImGui::SetWindowPos( ImVec2( 0, 0 ) );
+//	ImGui::SetWindowSize( ImVec2( w, h ) );
+//	ImGui::Image( (ImTextureID)(intptr_t)gi.consoleShader1, ImGui::GetWindowSize(), ImVec2( x / 2, y / 2 ) );
+//	ImGui::End();
 
 	ImGui::SetNextWindowFocus();
 	ImGui::Begin( "CommandConsole", NULL, windowFlags | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_AlwaysHorizontalScrollbar );

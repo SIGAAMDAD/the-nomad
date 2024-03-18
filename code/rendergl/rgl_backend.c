@@ -584,10 +584,10 @@ static const void *RB_DrawImage( const void *data ) {
 		VectorCopy4( verts[3].modulate.rgba, backend.color2D );
 	}
 
-	VectorSet( verts[0].xyz, cmd->x, cmd->y, 0 );
-	VectorSet( verts[1].xyz, cmd->x + cmd->w, cmd->y, 0 );
-	VectorSet( verts[2].xyz, cmd->x + cmd->w, cmd->y + cmd->h, 0 );
-	VectorSet( verts[3].xyz, cmd->x, cmd->y + cmd->h, 0 );
+	VectorSet( verts[0].xyz, cmd->x + cmd->w, cmd->y, 0 );
+	VectorSet( verts[1].xyz, cmd->x + cmd->w, cmd->y + cmd->h, 0 );
+	VectorSet( verts[2].xyz, cmd->x, cmd->y + cmd->h, 0 );
+	VectorSet( verts[3].xyz, cmd->x, cmd->y, 0 );
 
 	VectorSet2( verts[0].uv, cmd->u1, cmd->v1 );
 	VectorSet2( verts[1].uv, cmd->u2, cmd->v1 );

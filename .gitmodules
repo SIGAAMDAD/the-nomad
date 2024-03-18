@@ -19,3 +19,6 @@
 [submodule "deps/aatc"]
 	path = deps/aatc
 	url = https://github.com/Sami-Vuorela/aatc.git
+[submodule "deps/easy_profiler"]
+	path = deps/easy_profiler
+	url = https://github.com/yse/easy_profiler

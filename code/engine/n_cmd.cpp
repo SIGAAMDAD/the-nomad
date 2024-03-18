@@ -174,7 +174,9 @@ void Cbuf_InsertText( const char *text )
 	// move the existing command text
 	// [glnomad] changed to memmove, much faster with hardware/SIMD
 #if 1
-	memmove( &cmd_text.data[cmd_text.cursize - 1 + len], &cmd_text.data[cmd_text.cursize - 1], cmd_text.cursize - 1 );
+	if ( cmd_text.cursize ) {
+		memmove( &cmd_text.data[cmd_text.cursize - 1 + len], &cmd_text.data[cmd_text.cursize - 1], cmd_text.cursize - 1 );
+	}
 #else
 	for ( i = cmd_text.cursize - 1 ; i >= 0 ; i-- ) {
 		cmd_text.data[ i + len ] = cmd_text.data[ i ];

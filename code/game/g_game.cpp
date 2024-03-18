@@ -49,7 +49,7 @@ cvar_t *r_debugCamera;
 cvar_t *r_debugCameraSpeed;
 
 static void *renderLib;
-static glm::vec3 pos, worldCameraPos;
+static glm::vec3 pos = glm::vec3( 0.0f ), worldCameraPos;
 
 #if 0
 #if defined(__OS2__) || defined(_WIN32)
@@ -319,14 +319,14 @@ static void G_InitRenderRef(void)
 #if defined (__linux__) && defined(__i386__)
 #define REND_ARCH_STRING "x86"
 #else
-#define REND_ARCH_STRING ARCH_STRING
+#define REND_ARCH_STRING "x64"
 #endif
 
-    snprintf(dllName, sizeof(dllName), DLL_PREFIX "thenomad_%s_" REND_ARCH_STRING DLL_EXT, dllPrefix);
+    snprintf(dllName, sizeof(dllName), DLL_PREFIX "TheNomad.RenderLib-%s." REND_ARCH_STRING DLL_EXT, dllPrefix);
     renderLib = Sys_LoadDLL(dllName);
     if (!renderLib) {
         Cvar_ForceReset( "g_renderer" );
-        snprintf(dllName, sizeof(dllName), DLL_PREFIX "thenomad_%s_" REND_ARCH_STRING DLL_EXT, dllPrefix);
+        snprintf(dllName, sizeof(dllName), DLL_PREFIX "TheNomad.RenderLib-%s." REND_ARCH_STRING DLL_EXT, dllPrefix);
         renderLib = Sys_LoadDLL(dllName);
         if (!renderLib) {
             N_Error(ERR_FATAL, "Failed to load rendering library '%s', possible system error: %s", dllName, Sys_GetDLLError());
@@ -471,7 +471,8 @@ static void G_InitRenderer( void )
     // load the character sets
     gi.charSetShader = re.RegisterShader("gfx/bigchars");
     gi.whiteShader = re.RegisterShader("white");
-    gi.consoleShader = re.RegisterShader("console");
+    gi.consoleShader0 = re.RegisterShader("console0");
+    gi.consoleShader1 = re.RegisterShader("console1");
 }
 
 void G_ShutdownRenderer( refShutdownCode_t code )
@@ -854,7 +855,7 @@ void G_Init( void )
     Con_Printf( "----- Game State Initialization Complete ----\n" );
 }
 
-void G_Shutdown(qboolean quit)
+void G_Shutdown( qboolean quit )
 {
     static qboolean recursive = qfalse;
 
@@ -877,6 +878,10 @@ void G_Shutdown(qboolean quit)
 
     G_ShutdownVMs();
     G_ShutdownRenderer( quit ? REF_UNLOAD_DLL : REF_DESTROY_WINDOW );
+
+    remove( "nomad.pid" );
+
+    PROFILE_STOP_LISTEN
 
     Cmd_RemoveCommand( "demo" );
     Cmd_RemoveCommand( "vid_restart" );

@@ -1,7 +1,7 @@
 #include "spawn.as"
 
 namespace TheNomad::SGame {
-    shared class MapCheckpoint {
+    class MapCheckpoint {
 		MapCheckpoint( const uvec3& in origin ) {
 			m_Origin = origin;
 			m_bPassed = false;

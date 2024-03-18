@@ -4,7 +4,7 @@
 #include "draw.as"
 
 namespace TheNomad::GameSystem {
-	shared interface GameObject {
+	interface GameObject {
 		void OnLoad();
 		void OnSave() const;
 		void OnRunTic();
@@ -14,7 +14,15 @@ namespace TheNomad::GameSystem {
 		const string& GetName() const;
 	};
 
-	shared class SaveSection {
+	array<GameObject@> GameSystems;
+
+	GameObject@ AddSystem( GameObject@ SystemHandle ) {
+		ConsolePrint( "Added GameObject System \"" + SystemHandle.GetName() + "\"\n" );
+		GameSystems.push_back( SystemHandle );
+		return SystemHandle;
+	}
+
+	class SaveSection {
 		SaveSection( const string& in name ) {
 			TheNomad::GameSystem::BeginSaveSection( name );
 		}
@@ -81,11 +89,10 @@ namespace TheNomad::GameSystem {
 		}
 	};
 	
-	shared class CampaignManager : GameObject {
-		CampaignManager( ModuleObject@ main ) {
+	class CampaignManager : GameObject {
+		CampaignManager() {
 			m_nGameMsec = 0;
 			m_nDeltaTics = 0;
-			@ModObject = @main;
 		}
 		
 		void OnLoad() {
@@ -133,26 +140,20 @@ namespace TheNomad::GameSystem {
 		private uint m_nDeltaTics;
 		private uint m_nGameMsec;
 		private uint m_nGameTic;
-		private ModuleObject@ ModObject;
 	};
 
-	shared class RayCast {
+	class RayCast {
 		RayCast() {
-			m_Start = vec3( 0.0f );
-			m_End = vec3( 0.0f );
-			m_Origin = vec3( 0.0f );
-			m_nEntityNumber = 0;
-			m_nLength = 0.0f;
-			m_nAngle = 0.0f;
-			m_Flags = 0;
 		}
 
-		vec3 m_Start;
-		vec3 m_End;
-		vec3 m_Origin;
-	    uint32 m_nEntityNumber;
-		float m_nLength;
-		float m_nAngle;
-	    uint32 m_Flags; // unused for now
+		vec3 m_Start = vec3( 0.0f );
+		vec3 m_End = vec3( 0.0f );
+		vec3 m_Origin = vec3( 0.0f );
+	    uint32 m_nEntityNumber = 0;
+		float m_nLength = 0.0f;
+		float m_nAngle = 0.0f;
+	    uint32 m_Flags = 0; // unused for now
 	};
+
+	CampaignManager@ GameManager;
 };

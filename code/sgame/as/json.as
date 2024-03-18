@@ -1,5 +1,5 @@
 namespace TheNomad::Util {
-    shared class JsonObject {
+    class JsonObject {
         JsonObject() {
         }
         JsonObject( const JsonObject& in other ) {

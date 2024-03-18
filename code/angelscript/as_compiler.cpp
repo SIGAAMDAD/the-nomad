@@ -192,6 +192,7 @@ int asCCompiler::CompileDefaultConstructor(asCBuilder *in_builder, asCScriptCode
 
 int asCCompiler::CompileFactory(asCBuilder *in_builder, asCScriptCode *in_script, asCScriptFunction *in_outFunc)
 {
+	Con_Printf( "Compiling Factory '%s'...\n", in_outFunc->GetName() );
 	Reset(in_builder, in_script, in_outFunc);
 
 	// Insert a JitEntry at the start of the function for JIT compilers

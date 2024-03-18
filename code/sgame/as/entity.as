@@ -5,14 +5,14 @@
 #include "convar.as"
 
 namespace TheNomad::SGame {
-	shared enum AttackEffect {
+	enum AttackEffect {
 		Effect_Knockback = 0,
 		Effect_Stun,
 		Effect_Bleed,
 		Effect_Blind
 	};
 	
-	shared enum EntityFlags {
+	enum EntityFlags {
 		// DUH.
 		Dead      = 0x00000001,
 		// can't move, stationary mob
@@ -27,12 +27,11 @@ namespace TheNomad::SGame {
 		PermaDead = 0x00000020,
 	};
 	
-	shared class EntityObject {
-		EntityObject( TheNomad::GameSystem::EntityType type, uint id, const vec3& in origin, ModuleObject@ main ) {
+	class EntityObject {
+		EntityObject( TheNomad::GameSystem::EntityType type, uint id, const vec3& in origin ) {
 			// just create a temporary bbox to link it in, we'll rebuild every frame anyway
 			TheNomad::GameSystem::BBox bounds( 1.0f, 1.0f, origin );
 			m_Link = TheNomad::GameSystem::LinkEntity( origin, bounds, id, uint( type ) );
-			@ModObject = @main;
 
 			switch ( type ) {
 			case TheNomad::GameSystem::EntityType::Playr:
@@ -46,7 +45,7 @@ namespace TheNomad::SGame {
 			case TheNomad::GameSystem::EntityType::Bot:
 				break;
 			case TheNomad::GameSystem::EntityType::Item:
-				@m_Data = cast<ref>( ModObject.ItemManager.AddItem( ItemType( id ) ) );
+				@m_Data = cast<ref>( ItemManager.AddItem( ItemType( id ) ) );
 				break;
 			case TheNomad::GameSystem::EntityType::Weapon:
 				@m_Data = cast<ref>( WeaponObject() );
@@ -141,7 +140,6 @@ namespace TheNomad::SGame {
 		}
 		protected EntityObject@ m_Base;
 		protected EntityState@ m_State;
-		protected ModuleObject@ ModObject;
 		protected ref@ m_Data;
 		protected TheNomad::GameSystem::LinkEntity m_Link;
 		protected string m_Name;
@@ -154,10 +152,8 @@ namespace TheNomad::SGame {
 		protected bool m_bProjectile = false;
 	};
 	
-	shared class EntitySystem : TheNomad::GameSystem::GameObject {
-		EntitySystem( ModuleObject@ main ) {
-			@ModObject = @main;
-
+	class EntitySystem : TheNomad::GameSystem::GameObject {
+		EntitySystem() {
 			TheNomad::Engine::CmdAddCommand( "sgame.effect_entity_stun" );
 			TheNomad::Engine::CmdAddCommand( "sgame.effect_entity_bleed" );
 			TheNomad::Engine::CmdAddCommand( "sgame.effect_entity_knockback" );
@@ -194,7 +190,7 @@ namespace TheNomad::SGame {
 		void OnRunTic() {
 			for ( uint i = 0; i < m_EntityList.size(); i++ ) {
 				if ( m_EntityList[i].CheckFlags( EntityFlags::Dead ) ) {
-					if ( ModObject.sgame_Difficulty.GetInt() > TheNomad::GameSystem::GameDifficulty::Hard ) {
+					if ( sgame_Difficulty.GetInt() > TheNomad::GameSystem::GameDifficulty::Hard ) {
 						DeadThink( @m_EntityList[i] );
 					}
 					continue;
@@ -241,7 +237,7 @@ namespace TheNomad::SGame {
 		}
 		
 		EntityObject@ Spawn( TheNomad::GameSystem::EntityType type, int id, const vec3& in origin ) {
-			EntityObject@ ent = EntityObject( type, id, origin, @ModObject );
+			EntityObject@ ent = EntityObject( type, id, origin );
 			m_EntityList.push_back( ent );
 			return @ent;
 		}
@@ -324,7 +320,6 @@ namespace TheNomad::SGame {
 		}
 		
 		private array<EntityObject@> m_EntityList;
-		private ModuleObject@ ModObject;
 
 		//
 		// effects
@@ -370,4 +365,6 @@ namespace TheNomad::SGame {
 			ApplyEntityEffect( attacker, target, AttackEffect::Effect_Stun );
 		}
 	};
+
+	EntitySystem@ EntityManager;
 };

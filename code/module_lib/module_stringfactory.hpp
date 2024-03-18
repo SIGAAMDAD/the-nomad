@@ -18,6 +18,8 @@ public:
 	}
 	
 	const void *GetStringConstant( const char *pData, asUINT nLength ) {
+		PROFILE_FUNCTION();
+
 		CThreadAutoLock<CThreadMutex> lock( m_hLock );
 		
 		const string_t str( pData, nLength );
@@ -31,6 +33,8 @@ public:
 		return (const void *)&it->first;
 	}
 	int ReleaseStringConstant( const void *pStr ) {
+		PROFILE_FUNCTION();
+
 		int ret;
 		
 		if ( !pStr ) {
@@ -56,6 +60,8 @@ public:
 		return ret;
 	}
 	int GetRawStringData( const void *pStr, char *pData, asUINT *nLength ) const {
+		PROFILE_FUNCTION();
+
 		if ( !pStr ) {
 			Assert( pStr );
 			return asERROR;

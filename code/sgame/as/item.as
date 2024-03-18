@@ -3,7 +3,7 @@
 #include "convar.as"
 
 namespace TheNomad::SGame {
-	shared enum ItemType {
+	enum ItemType {
 		IT_Weapon = 0,
 		IT_Powerup,
 		IT_Mana, // rage meter refill
@@ -15,7 +15,7 @@ namespace TheNomad::SGame {
 	};
 
 	// custom weapon types will be implemented in Valden in a later version
-	shared enum WeaponType {
+	enum WeaponType {
 		WT_ShottyDB = 0, // double-barreled shotgun (Asturion DB)
 		WT_ShottyFAB, // full-auto shotgun
 		WT_ShottyTriBurst, // 3-burst shotgun
@@ -28,7 +28,7 @@ namespace TheNomad::SGame {
 		None // invalid
 	};
 
-	shared class WeaponObject : EntityObject {
+	class WeaponObject : EntityObject {
 		WeaponObject() {
 		}
 
@@ -46,7 +46,7 @@ namespace TheNomad::SGame {
 		private WeaponType m_nType;
 	};
 	
-	shared class ItemObject : EntityObject {
+	class ItemObject : EntityObject {
 		ItemObject() {
 		}
 		ItemObject( ItemType type ) {
@@ -75,7 +75,7 @@ namespace TheNomad::SGame {
 		ItemObject@ m_Prev;
 	};
 	
-	shared class ItemSystem : TheNomad::GameSystem::GameObject {
+	class ItemSystem : TheNomad::GameSystem::GameObject {
 		ItemSystem() {
 		}
 		
@@ -130,4 +130,6 @@ namespace TheNomad::SGame {
 		private array<ItemObject> m_ItemList;
 		private ItemObject m_ActiveList;
 	};
+
+	ItemSystem@ ItemManager;
 };

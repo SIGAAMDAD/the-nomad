@@ -45,6 +45,7 @@ static UtlSet<asCScriptFunction *> unhandledCalls;
 #endif
 
 const unsigned codePageSize = 65535 * 4;
+//const unsigned codePageSize = MAX_UINT;
 static const void* JUMP_DESTINATION = (void*)(size_t)0x1;
 
 #define offset0 (asBC_SWORDARG0(pOp)*sizeof(asDWORD))
@@ -436,7 +437,7 @@ int asCJITCompiler::CompileFunction(asIScriptFunction *function, asJITFunction *
 	}
 
 	//Get the active page, or create a new one if the current one is missing or too small (256 bytes for the entry and a few ops)
-	if(activePage == 0 || activePage->final || activePage->getFreeSize() < 256)
+	if(activePage == 0 || activePage->final || activePage->getFreeSize() < 1024)
 		activePage = new CodePage(codePageSize, reinterpret_cast<void*>(&toSize));
 	activePage->grab();
 
@@ -452,7 +453,7 @@ int asCJITCompiler::CompileFunction(asIScriptFunction *function, asJITFunction *
 	unsigned currentEAX = EAX_Unknown, nextEAX = EAX_Unknown;
 
 	//Setup the processor as a 32 bit processor, as most angelscript ops work on integers
-	Processor cpu(*activePage, 32);
+	Processor cpu(*activePage, 64);
 	byte* byteStart = (byte*)cpu.op;
 
 	FloatingPointUnit fpu(cpu);
@@ -808,7 +809,7 @@ int asCJITCompiler::CompileFunction(asIScriptFunction *function, asJITFunction *
 		nextEAX = EAX_Unknown;
 
 		if(cpu.op > activePage->getActivePage() + activePage->getFreeSize())
-			throw "Page exceeded...";
+			throw std::runtime_error( "Page exceeded..." );
 
 		op = asEBCInstr(*(asBYTE*)pOp);
 		auto* futureJump = (FutureJump*)jumpTable[pOp - start];
@@ -3586,7 +3587,7 @@ void SystemCall::call_64conv(asSSystemFunctionInterface* func,
 			argOffset += type.GetSizeOnStackDWords() * sizeof(asDWORD);
 		}
 		else {
-			throw "Unsupported argument type in system call.";
+			throw std::runtime_error( "Unsupported argument type in system call." );
 		}
 	}
 
@@ -3792,7 +3793,7 @@ void SystemCall::call_64conv(asSSystemFunctionInterface* func,
 	if(isVirtual) {
 		//Look up pointer from vftable
 		if(containingObj.code == EAX)
-			throw "Virtual function resolver doesn't know object register.";
+			throw std::runtime_error( "Virtual function resolver doesn't know object register." );
 
 		as<void*>(pax) = as<void*>(*containingObj);
 
@@ -3870,7 +3871,7 @@ void SystemCall::call_64conv(asSSystemFunctionInterface* func,
 							as<double>(*temp) = as<double>(xmm1);
 						}
 						else {
-							throw "Not supported.";
+							throw std::runtime_error( "Not supported." );
 						}
 					}
 					else {
@@ -3891,7 +3892,7 @@ void SystemCall::call_64conv(asSSystemFunctionInterface* func,
 							as<asQWORD>(*temp) = as<asQWORD>(edx);
 						}
 						else {
-							throw "Not supported.";
+							throw std::runtime_error( "Not supported." );
 						}
 					}
 				}
@@ -3915,7 +3916,7 @@ void SystemCall::call_64conv(asSSystemFunctionInterface* func,
 				}
 			}
 			else if(sFunc->returnType.GetBehaviour()->destruct > 0) {
-				throw "Destructible returns not permitted here."; //Reference counting and deletion
+				throw std::runtime_error( "Destructible returns not permitted here." ); //Reference counting and deletion
 			}
 		}
 	}
@@ -3934,7 +3935,7 @@ void SystemCall::call_64conv(asSSystemFunctionInterface* func,
 				cpu.pop(ebx);
 			}
 			else
-				throw "Not supported.";
+				throw std::runtime_error( "Not supported." );
 		}
 		else {
 			if(func->hostReturnSize == 1)
@@ -3942,7 +3943,7 @@ void SystemCall::call_64conv(asSSystemFunctionInterface* func,
 			else if(func->hostReturnSize == 2)
 				as<uint64_t>(ebx) = as<uint64_t>(cpu.intReturn64());
 			else
-				throw "Not supported.";
+				throw std::runtime_error( "Not supported." );
 		}
 	}
 
@@ -3956,7 +3957,7 @@ void SystemCall::call_getReturn(asSSystemFunctionInterface* func, asCScriptFunct
 		if(sFunc->returnType.IsObjectHandle()) {
 			if(!acceptReturn) {
 				if(func->returnAutoHandle)
-					throw "Auto handle returns not permitted here."; //Reference counting and deletion
+					throw std::runtime_error( "Auto handle returns not permitted here." ); //Reference counting and deletion
 				return;
 			}
 
@@ -3978,7 +3979,7 @@ void SystemCall::call_getReturn(asSSystemFunctionInterface* func, asCScriptFunct
 		else {
 			if(!acceptReturn) {
 				if(sFunc->DoesReturnOnStack() && sFunc->returnType.GetBehaviour()->destruct > 0)
-					throw "Destructible returns not permitted here."; //Reference counting and deletion
+					throw std::runtime_error( "Destructible returns not permitted here." ); //Reference counting and deletion
 				return;
 			}
 

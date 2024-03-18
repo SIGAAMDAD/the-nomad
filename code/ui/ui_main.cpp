@@ -21,8 +21,7 @@ cvar_t *r_gpuDiagnostics;
 UI_Cache
 =================
 */
-static void UI_Cache_f( void )
-{
+static void UI_Cache_f( void ) {
     Con_Printf( "Caching ui resources...\n" );
 
     TitleMenu_Cache();
@@ -37,7 +36,7 @@ static void UI_Cache_f( void )
 CUIFontCache::CUIFontCache( void ) {
 	Con_Printf( "Initializing font cache...\n" );
 
-	memset( m_FontList, 0, sizeof(m_FontList) );
+	memset( m_FontList, 0, sizeof( m_FontList ) );
 	m_pCurrentFont = NULL;
 }
 
@@ -62,7 +61,7 @@ uiFont_t *CUIFontCache::GetFont( const char *fileName ) {
 
 void CUIFontCache::ClearCache( void ) {
 	ImGui::GetIO().Fonts->Clear();
-	memset( m_FontList, 0, sizeof(m_FontList) );
+	memset( m_FontList, 0, sizeof( m_FontList ) );
 	m_pCurrentFont = NULL;
 }
 
@@ -104,17 +103,17 @@ ImFont *CUIFontCache::AddFontToCache( const char *filename )
 		N_Error( ERR_DROP, "CUIFontCache::AddFontToCache: failed to load font file '%s'", filename );
 	}
 
-	font = (uiFont_t *)Hunk_Alloc( sizeof(*font), h_low );
+	font = (uiFont_t *)Hunk_Alloc( sizeof( *font ), h_high );
 
 	font->m_pNext = m_FontList[hash];
 	m_FontList[hash] = font;
 
 	config.FontDataOwnedByAtlas = false;
-	config.GlyphExtraSpacing.x = -1.0f;
+	config.GlyphExtraSpacing.x = 0.0f;
 
 	N_strncpyz( font->m_szName, filename, sizeof( font->m_szName ) );
 	font->m_nFileSize = size;
-	font->m_pFont = ImGui::GetIO().Fonts->AddFontFromMemoryTTF( f.v, size * ui->scale, 16.0f, &config );
+	font->m_pFont = ImGui::GetIO().Fonts->AddFontFromMemoryTTF( f.v, size, 16.0f * ui->scale, &config );
 
 	FS_FreeFile( f.v );
 
@@ -314,11 +313,12 @@ extern "C" void UI_DrawFPS( bool useWindow = false )
 		if ( !total ) {
 			total = 1;
 		}
-    }
+		fps = 1000 * FPS_FRAMES / total;
+    } else {
+		fps = previous;
+	}
 
-    fps = 1000 * FPS_FRAMES / total;
-
-	if (useWindow) {
+	if ( useWindow ) {
 		ImGui::Text( "%ifps", fps );
 		return;
 	}

@@ -9,7 +9,7 @@ OS_INCLUDE=-I/usr/x86_64-w64-mingw32/include/
 COMPILER  =distcc x86_64-w64-mingw32-gcc
 LIB_PREFIX=dependencies/libs/windows
 DLL_EXT   =dll
-O         =bin/obj/win32
+O         =bin/obj/win64
 endif
 
 ifndef release
@@ -46,7 +46,7 @@ endif
 CC       =$(COMPILER) -std=c99
 CFLAGS   =$(FTYPE) $(DEFINES) $(INCLUDE) $(OPTIMIZERS)
 SDIR     =code
-LIB      =thenomad_opengl_x86-64.$(DLL_EXT)
+LIB      =TheNomad.RenderLib-opengl.x64.$(DLL_EXT)
 
 all: $(LIB)
 
@@ -78,7 +78,7 @@ $(O)/rendergl/%.o: $(SDIR)/rendercommon/%.c
 	$(CC) $(CFLAGS) -shared -fPIC -o $@ -c $<
 
 $(LIB): $(INTERNAL_OBJS)
-	$(CC) $(CFLAGS) $(INTERNAL_OBJS) -shared -fPIC -o $(LIB)
+	$(CC) $(CFLAGS) $(INTERNAL_OBJS) -shared -fPIC -o $(LIB) -lm
 
 clean:
 	rm -rf $(INTERNAL_OBJS)

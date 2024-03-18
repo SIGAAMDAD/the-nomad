@@ -10,7 +10,7 @@ FTYPE     =-Og -g
 endif
 else
 DEBUGDEF  =
-FTYPE     =-Ofast -s
+FTYPE     =-Ofast -g
 endif
 
 ifeq ($(shell uname -m),arm64)
@@ -86,13 +86,21 @@ OS_INCLUDE=-I/usr/include/ -I/usr/local/include/
 COMPILER  =distcc g++
 LIB_PREFIX=dependencies/libs/linux
 DLL_EXT   =so
-EXE		  =TheNomad
+ifdef release
+EXE		  =TheNomad.x64
+else
+EXE       =TheNomad.x64.debug
+endif
 else
 OS_INCLUDE=-I/usr/x86_64-w64-mingw32/include/
 COMPILER  =distcc x86_64-w64-mingw32-g++
 LIB_PREFIX=dependencies/libs/windows
 DLL_EXT   =dll
-EXE		  =TheNomad.exe
+ifdef release
+EXE		  =TheNomad.x64.exe
+else
+EXE       =TheNomad.x64.debug.exe
+endif
 endif
 
 VERSION       = 1
@@ -107,9 +115,10 @@ INCLUDE       =-Idependencies/include/ -Idependencies/include/EA/ -Ideps/squirre
 VERSION_DEFINE=-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPDATE) -D_NOMAD_VERSION_PATCH=$(VERSION_PATCH)
 
 DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -D_NOMAD_ENGINE -DAS_MAX_PORTABILITY
-OPTIMIZERS    =\
+OPTIMIZERS    = \
 			-ffast-math \
-			-mfma -msse3 -msse2 -msse -mavx -mavx2 -mmmx -mfpmath=sse
+			-mfma -msse3 -msse2 -msse -mavx -mavx2 -mmmx -mfpmath=sse \
+			-fno-omit-frame-pointer
 
 CFLAGS        =-std=c++17 $(FTYPE) -Wno-unused-result $(DEFINES) $(INCLUDE) $(OPTIMIZERS)
 ifndef release
@@ -148,7 +157,10 @@ LDLIBS= \
 		-L. \
 		-lSDL2 \
 		-lsndfile \
-#		-leasy_profiler
+
+ifndef release
+#LDLIBS+=-Wl,-Bdynamic libeasy_profiler.so
+endif
 
 SYS=\
 	$(O)/sys/unix_main.o \

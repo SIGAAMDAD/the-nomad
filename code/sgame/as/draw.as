@@ -2,18 +2,17 @@
 #include "game.as"
 
 namespace TheNomad::SGame {
-	shared class MarkPoly {
+	class MarkPoly {
 		MarkPoly() {
 		}
 		
-		void Spawn( const vec3& in origin, uint lifeTime, int shader, int spriteOffset, ModuleObject@ main ) {
+		void Spawn( const vec3& in origin, uint lifeTime, int shader, int spriteOffset ) {
 			m_Origin = origin;
 			m_hShader = shader;
 			m_nLifeTime = lifeTime;
 			m_nSpriteOffset = spriteOffset;
 			m_nElapsed = 0;
 			m_bAlive = true;
-			@ModObject = @main;
 		}
 		
 		void RunTic() {
@@ -22,7 +21,7 @@ namespace TheNomad::SGame {
 				return;
 			}
 			
-			m_nElapsed += ModObject.GameManager.GetDeltaTics();
+			m_nElapsed += TheNomad::GameSystem::GameManager.GetDeltaTics();
 			
 			TheNomad::Engine::Renderer::AddSpriteToScene( m_Origin, m_hShader, m_nSpriteOffset );
 			
@@ -44,19 +43,17 @@ namespace TheNomad::SGame {
 		uint m_nSpriteOffset;
 		uint m_nLifeTime;
 		uint m_nElapsed;
-		private ModuleObject@ ModObject;
 	};
 	
-	shared class GfxManager : TheNomad::GameSystem::GameObject {
-		GfxManager( ModuleObject@ main ) {
+	class GfxManager : TheNomad::GameSystem::GameObject {
+		GfxManager() {
 			m_PolyList.resize( TheNomad::Engine::CvarVariableInteger( "sgame_GfxDetail" ) * 15 );
-			@ModObject = @main;
 		}
 		
 		void AddPoly() {
 			for ( uint i = 0; i < m_PolyList.size(); i++ ) {
 				if ( !m_PolyList[i].m_bAlive ) {
-					m_PolyList[i].Spawn( vec3( 0.0f ), 0, 0, 0, @ModObject );
+					m_PolyList[i].Spawn( vec3( 0.0f ), 0, 0, 0 );
 				}
 			}
 		}
@@ -121,7 +118,7 @@ namespace TheNomad::SGame {
 		
 		private array<int> m_ExplosionShaders;
 		private array<int> m_ExplosionSfx;
-
-		private ModuleObject@ ModObject;
 	};
+	
+	GfxManager@ GfxSystem;
 };

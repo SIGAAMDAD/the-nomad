@@ -3,7 +3,7 @@ namespace TheNomad {
 		//!
 		//!
 		//!
-		shared class IFileStream {
+		class IFileStream {
 			IFileStream( const string& in fileName ) {
 				Open( fileName );
 			}
@@ -36,10 +36,10 @@ namespace TheNomad {
 		};
 		
 		//!
-		//! @shared class FileStream
+		//! @class FileStream
 		//! @brief 
 		//!
-		shared class FileStream : IFileStream {
+		class FileStream : IFileStream {
 			FileStream( const string& in fileName, int mode ) {
 				m_OpenMode = mode;
 			}
@@ -91,7 +91,7 @@ namespace TheNomad {
 			}
 		};
 		
-		shared class InputStream : IFileStream {
+		class InputStream : IFileStream {
 			InputStream( const string& in fileName ) {
 				Open( fileName );
 				m_OpenMode = FS_OPEN_READ;
@@ -145,7 +145,7 @@ namespace TheNomad {
 //			}
 		};
 		
-		shared class OutputStream : IFileStream {
+		class OutputStream : IFileStream {
 			OutputStream( const string& in fileName ) {
 				Open( fileName );
 			}
@@ -197,7 +197,7 @@ namespace TheNomad {
 //			}
 		};
 
-		shared class FileManager {
+		class FileManager {
 			FileManager() {
 				m_GameDir = TheNomad::Engine::CvarVariableString( "fs_gamedir" );
 				m_BasePath = TheNomad::Engine::CvarVariableString( "fs_basepath" );

@@ -19,6 +19,8 @@ void G_ShutdownSGame( void )
 
 void G_InitSGame( void )
 {
+    PROFILE_FUNCTION();
+
     vmInterpret_t interpret;
     CTimer timer;
 
