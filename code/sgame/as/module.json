@@ -1,0 +1,23 @@
+{
+    "module_name": "nomadmain",
+    "dependencies": [],
+    "submodules": [
+        "level.as",
+        "main.as",
+        "convar.as",
+        "game.as",
+        "config.as",
+        "entity.as",
+        "spawn.as",
+        "checkpoint.as",
+        "state.as"
+    ],
+    "version": {
+        "game_version_major": 1,
+        "game_version_update": 1,
+        "game_version_patch": 0,
+        "version_major": 1,
+        "version_update": 0,
+        "version_patch": 0
+    }
+}
