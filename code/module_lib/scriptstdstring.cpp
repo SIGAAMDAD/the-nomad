@@ -1100,12 +1100,29 @@ static void StringIteratorCEnd_Generic( asIScriptGeneric *gen )
 	gen->SetReturnAddress( const_cast<char *>( str->cend() ) );
 }
 
+static void StringFind_Generic( asIScriptGeneric *gen )
+{
+	const string_t *str = (const string_t *)gen->GetObjectData();
+	gen->SetReturnQWord( str->find( (char)gen->GetArgByte( 0 ), 0 ) );
+}
+
+static void StringFindStr_Generic( asIScriptGeneric *gen )
+{
+	const string_t *str = (const string_t *)gen->GetObjectData();
+	const string_t *other = (const string_t *)gen->GetArgObject( 0 );
+	gen->SetReturnQWord( str->find( *other, 0 ) );
+}
+
+static const size_t StringNPos = size_t( -1 );
+
 void RegisterStdString_Generic(asIScriptEngine *engine)
 {
 	// Register the string_t type
 	CheckASCall( engine->RegisterObjectType("string", sizeof(string_t), asOBJ_VALUE | asOBJ_APP_CLASS_CDAK ) );
 
 	CheckASCall( engine->RegisterStringFactory("string", GetStringFactorySingleton()) );
+
+	CheckASCall( engine->RegisterGlobalProperty( "const uint64 StringNPos", const_cast<size_t *>( &StringNPos ) ) );
 
 	// Register the object operator overloads
 	CheckASCall( engine->RegisterObjectBehaviour("string", asBEHAVE_CONSTRUCT,  "void f()",                    asFUNCTION(ConstructStringGeneric), asCALL_GENERIC ) );
@@ -1149,6 +1166,9 @@ void RegisterStdString_Generic(asIScriptEngine *engine)
 	CheckASCall( engine->RegisterObjectMethod("string", "string &opAddAssign(uint64)", asFUNCTION(AddAssignUInt2StringGeneric), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd(uint64) const", asFUNCTION(AddString2UIntGeneric), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "string opAdd_r(uint64) const", asFUNCTION(AddUInt2StringGeneric), asCALL_GENERIC ) );
+
+	CheckASCall( engine->RegisterObjectMethod( "string", "uint64 find( int8 ) const", asFUNCTION( StringFind_Generic ), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "string", "uint64 find( const string& in ) const", asFUNCTION( StringFindStr_Generic ), asCALL_GENERIC ) );
 
 	CheckASCall( engine->RegisterObjectMethod("string", "string &opAssign(bool)", asFUNCTION(AssignBool2StringGeneric), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "string &opAddAssign(bool)", asFUNCTION(AddAssignBool2StringGeneric), asCALL_GENERIC ) );

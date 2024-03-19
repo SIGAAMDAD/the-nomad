@@ -16,6 +16,31 @@
 #include "../system/sys_timer.h"
 
 //
+// ModuleException: we want to throw an exception from the vm to get the modulelib to
+// shut it down
+//
+class ModuleException : public std::exception {
+public:
+    ModuleException() = default;
+    ModuleException( const string_t *msg )
+        : m_szMessage{ msg->c_str() }
+    {
+    }
+    ModuleException( const ModuleException& ) = default;
+    ModuleException( ModuleException&& ) = default;
+    virtual ~ModuleException() = default;
+
+    ModuleException& operator=( const ModuleException& ) = default;
+    ModuleException& operator=( ModuleException&& ) = default;
+
+    const char *what( void ) const noexcept {
+        return m_szMessage.c_str();
+    }
+private:
+    UtlString m_szMessage;
+};
+
+//
 // c++ compatible wrappers around angelscript engine function calls
 //
 
@@ -765,7 +790,7 @@ DEFINE_CALLBACK( ConsoleWarning ) {
 
 DEFINE_CALLBACK( GameError ) {
     const string_t *msg = (const string_t *)pGeneric->GetArgObject( 0 );
-    N_Error( ERR_DROP, "%s", msg->c_str() );
+    throw ModuleException( msg );
 }
 
 DEFINE_CALLBACK( StringBufferToInt ) {
@@ -944,37 +969,168 @@ DEFINE_CALLBACK( OpenFile ) {
 }
 
 DEFINE_CALLBACK( CloseFile ) {
-    fileHandle_t arg = *(fileHandle_t *)pGeneric->GetAddressOfArg( 0 );
+    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
     FS_VM_FClose( arg, H_SGAME );
 }
 
 DEFINE_CALLBACK( GetFileLength ) {
-    fileHandle_t arg = *(fileHandle_t *)pGeneric->GetAddressOfArg( 0 );
+    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
     *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_FileLength( arg, H_SGAME );
 }
 
 DEFINE_CALLBACK( GetFilePosition ) {
-    fileHandle_t arg = *(fileHandle_t *)pGeneric->GetAddressOfArg( 0 );
+    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
     *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_FileTell( arg, H_SGAME );
 }
 
 DEFINE_CALLBACK( FileSetPosition ) {
-    fileHandle_t arg = *(fileHandle_t *)pGeneric->GetAddressOfArg( 0 );
-    uint32_t offset = pGeneric->GetArgDWord( 1 );
+    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
+    uint64_t offset = pGeneric->GetArgQWord( 1 );
     uint32_t whence = pGeneric->GetArgDWord( 2 );
     *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_FileSeek( arg, offset, whence, H_SGAME );
 }
 
-DEFINE_CALLBACK( Write ) {
-    fileHandle_t arg = *(fileHandle_t *)pGeneric->GetAddressOfArg( 0 );
-    const CScriptHandle *handle = (const CScriptHandle *)pGeneric->GetArgObject( 1 );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Write( handle->GetRef(), handle->GetType()->GetSize(), arg, H_SGAME );
+DEFINE_CALLBACK( WriteInt8 ) {
+    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
+    int8_t data = (int8_t)pGeneric->GetArgByte( 0 );
+    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Write( &data, sizeof( data ), arg, H_SGAME );
 }
 
-DEFINE_CALLBACK( Read ) {
-    fileHandle_t arg = *(fileHandle_t *)pGeneric->GetAddressOfArg( 0 );
-    CScriptHandle *handle = (CScriptHandle *)pGeneric->GetArgObject( 1 );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Read( handle->GetRef(), handle->GetType()->GetSize(), arg, H_SGAME );
+DEFINE_CALLBACK( WriteInt16 ) {
+    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
+    int16_t data = (int16_t)pGeneric->GetArgWord( 0 );
+    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Write( &data, sizeof( data ), arg, H_SGAME );
+}
+
+DEFINE_CALLBACK( WriteInt32 ) {
+    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
+    int32_t data = (int32_t)pGeneric->GetArgDWord( 0 );
+    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Write( &data, sizeof( data ), arg, H_SGAME );
+}
+
+DEFINE_CALLBACK( WriteInt64 ) {
+    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
+    int64_t data = (int64_t)pGeneric->GetArgQWord( 0 );
+    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Write( &data, sizeof( data ), arg, H_SGAME );
+}
+
+DEFINE_CALLBACK( WriteUInt8 ) {
+    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
+    uint8_t data = pGeneric->GetArgByte( 0 );
+    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Write( &data, sizeof( data ), arg, H_SGAME );
+}
+
+DEFINE_CALLBACK( WriteUInt16 ) {
+    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
+    uint16_t data = pGeneric->GetArgWord( 0 );
+    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Write( &data, sizeof( data ), arg, H_SGAME );
+}
+
+DEFINE_CALLBACK( WriteUInt32 ) {
+    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
+    uint32_t data = pGeneric->GetArgDWord( 0 );
+    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Write( &data, sizeof( data ), arg, H_SGAME );
+}
+
+DEFINE_CALLBACK( WriteUInt64 ) {
+    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
+    uint64_t data = pGeneric->GetArgQWord( 0 );
+    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Write( &data, sizeof( data ), arg, H_SGAME );
+}
+
+DEFINE_CALLBACK( WriteString ) {
+    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
+    const string_t *data = (const string_t *)pGeneric->GetArgObject( 0 );
+    uint64_t length;
+
+    length = data->size();
+    if ( !FS_VM_Write( &length, sizeof( length ), arg, H_SGAME ) ) {
+        *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = 0;
+        return;
+    }
+
+    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Write( data->c_str(), length, arg, H_SGAME );
+}
+
+DEFINE_CALLBACK( ReadInt8 ) {
+    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
+    int8_t *data = (int8_t *)pGeneric->GetArgAddress( 0 );
+    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Read( data, sizeof( *data ), arg, H_SGAME );
+}
+
+DEFINE_CALLBACK( ReadInt16 ) {
+    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
+    int16_t *data = (int16_t *)pGeneric->GetArgAddress( 0 );
+    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Read( data, sizeof( *data ), arg, H_SGAME );
+}
+
+DEFINE_CALLBACK( ReadInt32 ) {
+    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
+    int32_t *data = (int32_t *)pGeneric->GetArgAddress( 0 );
+    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Read( data, sizeof( *data ), arg, H_SGAME );
+}
+
+DEFINE_CALLBACK( ReadInt64 ) {
+    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
+    int64_t *data = (int64_t *)pGeneric->GetArgAddress( 0 );
+    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Read( data, sizeof( *data ), arg, H_SGAME );
+}
+
+DEFINE_CALLBACK( ReadUInt8 ) {
+    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
+    uint8_t *data = (uint8_t *)pGeneric->GetArgAddress( 0 );
+    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Read( data, sizeof( *data ), arg, H_SGAME );
+}
+
+DEFINE_CALLBACK( ReadUInt16 ) {
+    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
+    uint16_t *data = (uint16_t *)pGeneric->GetArgAddress( 0 );
+    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Read( data, sizeof( *data ), arg, H_SGAME );
+}
+
+DEFINE_CALLBACK( ReadUInt32 ) {
+    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
+    uint32_t *data = (uint32_t *)pGeneric->GetArgAddress( 0 );
+    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Read( data, sizeof( *data ), arg, H_SGAME );
+}
+
+DEFINE_CALLBACK( ReadUInt64 ) {
+    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
+    uint64_t *data = (uint64_t *)pGeneric->GetArgAddress( 0 );
+    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Read( data, sizeof( *data ), arg, H_SGAME );
+}
+
+DEFINE_CALLBACK( ReadString ) {
+    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
+    string_t *data = (string_t *)pGeneric->GetArgObject( 0 );
+    uint64_t length;
+
+    if ( !FS_VM_Read( &length, sizeof( length ), arg, H_SGAME ) ) {
+        *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = 0;
+        return;
+    }
+
+    data->resize( length );
+    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Read( data->data(), length, arg, H_SGAME );
+}
+
+DEFINE_CALLBACK( LoadFileString ) {
+    const string_t *fileName = (const string_t *)pGeneric->GetArgObject( 0 );
+    string_t *buffer = (string_t *)pGeneric->GetArgObject( 1 );
+
+    void *v;
+    const uint64_t length = FS_LoadFile( fileName->c_str(), &v );
+    if ( !length || !v ) {
+        Con_Printf( COLOR_RED "ERROR: failed to load file '%s' at vm request\n", fileName->c_str() );
+        *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = 0;
+        return;
+    }
+
+    buffer->resize( length );
+    memcpy( buffer->data(), v, length );
+    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = length;
+
+    FS_FreeFile( v );
 }
 
 DEFINE_CALLBACK( LoadFile ) {
@@ -994,6 +1150,32 @@ DEFINE_CALLBACK( LoadFile ) {
     *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = length;
 
     FS_FreeFile( v );
+}
+
+DEFINE_CALLBACK( GetModuleDependencies ) {
+    CScriptArray *depList = (CScriptArray *)pGeneric->GetArgObject( 0 );
+    const string_t *modName = (const string_t *)pGeneric->GetArgObject( 1 );
+    const CModuleInfo *info = g_pModuleLib->GetModule( modName->c_str() );
+
+    if ( !info ) {
+        Con_Printf( COLOR_YELLOW "GetModuleDependencies: no such module '%s'!\n", modName->c_str() );
+        return;
+    }
+
+    depList->Resize( info->m_Dependencies.size() );
+    for ( uint64_t i = 0; info->m_Dependencies.size(); i++ ) {
+        *(string_t *)depList->At( i ) = info->m_Dependencies[i];
+    }
+}
+
+DEFINE_CALLBACK( GetModuleList ) {
+    CScriptArray *modList = (CScriptArray *)pGeneric->GetArgObject( 0 );
+    const UtlVector<CModuleInfo *>& loadList = g_pModuleLib->GetLoadList();
+
+    modList->Resize( loadList.size() );
+    for ( uint64_t i = 0; i < loadList.size(); i++ ) {
+        *(string_t *)modList->At( i ) = loadList[i]->m_szName;
+    }
 }
 
 DEFINE_CALLBACK( ModuleAssertion ) {
@@ -1327,6 +1509,8 @@ static const float script_M_PI = M_PI;
 void ModuleLib_Register_Engine( void )
 {
     PROFILE_FUNCTION();
+
+    REGISTER_TYPEDEF( "int8", "char" );
 
 //    SET_NAMESPACE( "TheNomad::Constants" );
     { // Constants
@@ -1867,10 +2051,56 @@ void ModuleLib_Register_Engine( void )
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::FileSystem::CloseFile( int )", CloseFile );
 			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::GetLength( int )", GetFileLength );
 			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::GetPosition( int )", GetFilePosition );
-            REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::SetPosition( int, uint, uint )", FileSetPosition );
-			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::Write( const ref@, uint64, int )", Write );
-			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::Read( ref@, uint64, int )", Read );
+            REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::SetPosition( int, uint64, uint )", FileSetPosition );
 			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::LoadFile( const string& in, array<int8>& out )", LoadFile );
+            REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::LoadFile( const string& in, string& out )", LoadFileString );
+
+            {
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteInt8( char, int )", WriteInt8 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteInt16( int16, int )", WriteInt16 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteInt32( int32, int )", WriteInt32 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteInt64( int64, int )", WriteInt64 );
+
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteUInt8( char, int )", WriteUInt8 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteUInt16( uint16, int )", WriteUInt16 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteUInt32( uint32, int )", WriteUInt32 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteUInt64( uint64, int )", WriteUInt64 );
+
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteChar( char, int )", WriteInt8 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteShort( int16, int )", WriteInt16 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteInt( int32, int )", WriteInt32 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteLong( int64, int )", WriteInt64 );
+
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteByte( char, int )", WriteUInt8 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteUShort( uint16, int )", WriteUInt16 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteUInt( uint32, int )", WriteUInt32 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteULong( uint64, int )", WriteUInt64 );
+
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteString( const string& in, int )", WriteString );
+            }
+            {
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadInt8( char, int )", ReadInt8 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadInt16( int16, int )", ReadInt16 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadInt32( int32, int )", ReadInt32 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadInt64( int64, int )", ReadInt64 );
+
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadUInt8( char, int )", ReadUInt8 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadUInt16( uint16, int  )", ReadUInt16 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadUInt32( uint32, int  )", ReadUInt32 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadUInt64( uint64, int  )", ReadUInt64 );
+
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadChar( char, int )", ReadInt8 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadShort( int16, int )", ReadInt16 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadInt( int32, int )", ReadInt32 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadLong( int64, int )", ReadInt64 );
+
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadByte( char, int )", ReadUInt8 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadUShort( uint16, int )", ReadUInt16 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadUInt( uint32, int )", ReadUInt32 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadULong( uint64, int )", ReadUInt64 );
+
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadString( string& out, int )", ReadString );
+            }
 
             RESET_NAMESPACE();
 		}
@@ -2073,33 +2303,35 @@ void ModuleLib_Register_Engine( void )
     SET_NAMESPACE( "TheNomad" );
     { // Util
         SET_NAMESPACE( "TheNomad::Util" );
-        REGISTER_OBJECT_TYPE( "JsonParser", CModuleJsonObject, asOBJ_VALUE );
-        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( CModuleJsonObject, ( void ) ) );
-        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_CONSTRUCT, "void f( const TheNomad::Util::JsonParser& in )", WRAP_CON( CModuleJsonObject, ( const CModuleJsonObject& ) ) );
+//        REGISTER_OBJECT_TYPE( "JsonParser", CModuleJsonObject, asOBJ_VALUE );
+//        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( CModuleJsonObject, ( void ) ) );
+//        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_CONSTRUCT, "void f( const TheNomad::Util::JsonParser& in )", WRAP_CON( CModuleJsonObject, ( const CModuleJsonObject& ) ) );
 //        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_FACTORY, "ref@ f()", WRAP_FN_PR( CModuleJsonObject::Factory, ( void ), CModuleJsonObject * ) );
 //        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_ADDREF, "void f()", WRAP_MFN_PR( CModuleJsonObject, AddRef, ( void ) const, void ) );
 //        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_RELEASE, "void f()", WRAP_MFN_PR( CModuleJsonObject, Release, ( void ), void ) );
 //        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_ENUMREFS, "void f( int& in )", WRAP_MFN_PR( CModuleJsonObject, EnumReferences, ( asIScriptEngine * ), void ) );
 //        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_RELEASEREFS, "void f( int& in )", WRAP_MFN_PR( CModuleJsonObject, ReleaseAllRefs, ( asIScriptEngine * ), void ) );
-        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( CModuleJsonObject ) );
+//        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( CModuleJsonObject ) );
+//
+//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "void SetInt( const string& in, int )", CModuleJsonObject, SetInt, ( const string_t *, int32_t ), void );
+//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "void SetUInt( const string& in, uint )", CModuleJsonObject, SetUInt, ( const string_t *, uint32_t ), void );
+//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "void SetFloat( const string& in, float )", CModuleJsonObject, SetFloat, ( const string_t *, float ), void );
+//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool Parse( const string& in )", CModuleJsonObject, Parse, ( const string_t * ), bool );
+//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "TheNomad::Util::JsonParser& opAssign( const TheNomad::Util::JsonParser& in )", CModuleJsonObject, operator=, ( const CModuleJsonObject& ), CModuleJsonObject& );
+//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetInt( const string& in, int& out )", CModuleJsonObject, GetInt, ( const string_t *, int32_t * ), bool );
+//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetUInt( const string& in, uint& out )", CModuleJsonObject, GetUInt, ( const string_t *, uint32_t * ), bool );
+//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetFloat( const string& in, float& out )", CModuleJsonObject, GetFloat, ( const string_t *, float * ), bool );
+//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetString( const string& in, string& out )", CModuleJsonObject, GetString, ( const string_t *, string_t * ), bool );
+//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetBool( const string& in, bool& out )", CModuleJsonObject, GetBool, ( const string_t *, bool * ), bool );
+//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetObject( const string& in, TheNomad::Util::JsonParser& in )", CModuleJsonObject, GetObject, ( const string_t *, CModuleJsonObject * ), bool );
+//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetIntArray( const string& in, array<int>& out )", CModuleJsonObject, GetIntArray, ( const string_t *, CScriptArray * ), bool );
+//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetUIntArray( const string& in, array<uint>& out )", CModuleJsonObject, GetUIntArray, ( const string_t *, CScriptArray * ), bool );
+//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetFloatArray( const string& in, array<float>& out )", CModuleJsonObject, GetFloatArray, ( const string_t *, CScriptArray * ), bool );
+//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetStringArray( const string& in, array<string>& out )", CModuleJsonObject, GetStringArray, ( const string_t *, CScriptArray * ), bool );
+//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetBoolArray( const string& in, array<bool>& out )", CModuleJsonObject, GetBoolArray, ( const string_t *, CScriptArray * ), bool );
+//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetObjectArray( const string& in, array<TheNomad::Util::JsonParser>& out )", CModuleJsonObject, GetObjectArray, ( const string_t *, CScriptArray * ), bool );
 
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "void SetInt( const string& in, int )", CModuleJsonObject, SetInt, ( const string_t *, int32_t ), void );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "void SetUInt( const string& in, uint )", CModuleJsonObject, SetUInt, ( const string_t *, uint32_t ), void );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "void SetFloat( const string& in, float )", CModuleJsonObject, SetFloat, ( const string_t *, float ), void );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool Parse( const string& in )", CModuleJsonObject, Parse, ( const string_t * ), bool );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "TheNomad::Util::JsonParser& opAssign( const TheNomad::Util::JsonParser& in )", CModuleJsonObject, operator=, ( const CModuleJsonObject& ), CModuleJsonObject& );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetInt( const string& in, int& out )", CModuleJsonObject, GetInt, ( const string_t *, int32_t * ), bool );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetUInt( const string& in, uint& out )", CModuleJsonObject, GetUInt, ( const string_t *, uint32_t * ), bool );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetFloat( const string& in, float& out )", CModuleJsonObject, GetFloat, ( const string_t *, float * ), bool );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetString( const string& in, string& out )", CModuleJsonObject, GetString, ( const string_t *, string_t * ), bool );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetBool( const string& in, bool& out )", CModuleJsonObject, GetBool, ( const string_t *, bool * ), bool );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetObject( const string& in, TheNomad::Util::JsonParser& in )", CModuleJsonObject, GetObject, ( const string_t *, CModuleJsonObject * ), bool );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetIntArray( const string& in, array<int>& out )", CModuleJsonObject, GetIntArray, ( const string_t *, CScriptArray * ), bool );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetUIntArray( const string& in, array<uint>& out )", CModuleJsonObject, GetUIntArray, ( const string_t *, CScriptArray * ), bool );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetFloatArray( const string& in, array<float>& out )", CModuleJsonObject, GetFloatArray, ( const string_t *, CScriptArray * ), bool );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetStringArray( const string& in, array<string>& out )", CModuleJsonObject, GetStringArray, ( const string_t *, CScriptArray * ), bool );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetBoolArray( const string& in, array<bool>& out )", CModuleJsonObject, GetBoolArray, ( const string_t *, CScriptArray * ), bool );
-        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetObjectArray( const string& in, array<TheNomad::Util::JsonParser>& out )", CModuleJsonObject, GetObjectArray, ( const string_t *, CScriptArray * ), bool );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Util::GetModuleList( array<string>& out )", GetModuleList );
 
         REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StrICmp( const string& in, const string& in )", StrICmp );
         REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StrCmp( const string& in, const string& in )", StrCmp );

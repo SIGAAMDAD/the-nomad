@@ -2,8 +2,8 @@
 #include "convar.as"
 #include "spawn.as"
 #include "checkpoint.as"
-#include "json.as"
 #include "sfx.as"
+#include "util/json.as"
 
 namespace TheNomad::SGame {
 	shared enum LevelRank {
@@ -409,48 +409,48 @@ namespace TheNomad::SGame {
 	class LevelSystem : TheNomad::GameSystem::GameObject {
 		LevelSystem() {
 			LevelInfoData@ data;
-			TheNomad::Util::JsonObject rankS, rankA, rankB, rankC, rankD, rankF, rankU;
+			TheNomad::Util::JsonValue@ value;
+			TheNomad::Util::JsonValue@ rankS, rankA, rankB, rankC, rankD, rankF, rankU;
 			uint i;
 			string str;
-			string mapname, levelName;
+			string mapname;
 
 			ConsolePrint( "Loading level infos...\n" );
 
+			for ( i = 0; i < sgame_ModList.size(); i++ ) {
+				LoadLevelsFromFile( sgame_ModList[i] );
+			}
+
 			m_nLevels = 0;
 			@m_Current = null;
-
-			if ( sgame_LevelInfoFile.GetValue().size() > 0 ) {
-				LoadLevelsFromFile( sgame_LevelInfoFile.GetValue() );
-			} else {
-				LoadLevelsFromFile( "scripts/levels.json" );
-			}
 
 			ConsolePrint( formatUInt( NumLevels() ) + " levels parsed.\n" );
 
 			// set level numbers
 			for ( i = 0; i < NumLevels(); i++ ) {
-				GetLevelInfoByIndex( i ).SetUInt( "num", i );
+				GetLevelInfoByIndex( i )["num"] = i;
 			}
 
-			mapname.resize( MAX_NPATH );
-			levelName.resize( MAX_NPATH );
 			str.reserve( MAX_STRING_CHARS );
 			for ( i = 0; i < NumLevels(); i++ ) {
-				TheNomad::Util::JsonObject@ info = GetLevelInfoByIndex( i );
+				TheNomad::Util::JsonValue@ info = @GetLevelInfoByIndex( i );
 
-				if ( !info.GetString( "Name", levelName ) ) {
+				if ( @info["Name"] is null ) {
 					ConsoleWarning( "invalid level info, missing variable 'name'\n" );
 					continue;
 				}
-				@data = LevelInfoData( levelName );
+				@data = LevelInfoData( string( info["Name"] ) );
 
 				ConsolePrint( "Loaded level '" + data.m_Name + "'...\n" );
 
 				for ( uint j = 0; j < data.m_MapHandles.size(); j++ ) {
-					if ( !info.GetString( "MapnameDifficulty_" + formatUInt( j ), mapname ) ) {
+					@value = @info["MapNameDifficulty_" + formatUInt( j )];
+					if ( @value is null ) {
 						// level currently doesn't support this difficulty
 						continue;
 					}
+
+					mapname = string( value );
 					if ( mapname == "none" ) {
 						// level currently doesn't support this difficulty
 						continue;
@@ -469,161 +469,76 @@ namespace TheNomad::SGame {
 
 				data.m_nIndex = i;
 
-				if ( !info.GetObject( "RankS", rankS ) ) {
+				@rankS = @info["RankS"];
+				@rankA = @info["RankA"];
+				@rankB = @info["RankB"];
+				@rankC = @info["RankC"];
+				@rankD = @info["RankD"];
+				@rankF = @info["RankF"];
+				@rankU = @info["RankU"];
+
+				//
+				// all rank datas must be present
+				//
+				if ( @rankS is null ) {
 					ConsoleWarning( "invalid level info, no object for RankS\n" );
 					continue;
 				}
-				if ( !info.GetObject( "RankA", rankA ) ) {
+				if ( @rankA is null ) {
 					ConsoleWarning( "invalid level info, no object for RankA\n" );
 					continue;
 				}
-				if ( !info.GetObject( "RankB", rankB ) ) {
+				if ( @rankB is null ) {
 					ConsoleWarning( "invalid level info, no object for RankB\n" );
 					continue;
 				}
-				if ( !info.GetObject( "RankC", rankC ) ) {
+				if ( @rankC is null ) {
 					ConsoleWarning( "invalid level info, no object for RankC\n" );
 					continue;
 				}
-				if ( !info.GetObject( "RankD", rankD ) ) {
+				if ( @rankD is null ) {
 					ConsoleWarning( "invalid level info, no object for RankD" );
 					continue;
 				}
-				if ( !info.GetObject( "RankF", rankF ) ) {
+				if ( @rankF is null ) {
 					ConsoleWarning( "invalid level info, no object for RankF" );
 					continue;
 				}
-				if ( !info.GetObject( "RankU", rankU ) ) {
+				if ( @rankU is null ) {
 					ConsoleWarning( "invalid level info, no object for RankU" );
 					continue;
 				}
 
 				data.m_RankS.rank = LevelRank::RankS;
 				if ( !LoadLevelRankData( str, "RankS", @data.m_RankS, rankS ) ) {
-//					continue;
+					continue;
 				}
 				data.m_RankA.rank = LevelRank::RankA;
 				if ( !LoadLevelRankData( str, "RankA", @data.m_RankA, rankA ) ) {
-//					continue;
+					continue;
 				}
 				data.m_RankB.rank = LevelRank::RankB;
 				if ( !LoadLevelRankData( str, "RankB", @data.m_RankB, rankB ) ) {
-//					continue;
+					continue;
 				}
 				data.m_RankC.rank = LevelRank::RankC;
 				if ( !LoadLevelRankData( str, "RankC", @data.m_RankC, rankC ) ) {
-//					continue;
+					continue;
 				}
 				data.m_RankD.rank = LevelRank::RankD;
 				if ( !LoadLevelRankData( str, "RankD", @data.m_RankD, rankD ) ) {
-//					continue;
+					continue;
 				}
 				data.m_RankF.rank = LevelRank::RankF;
 				if ( !LoadLevelRankData( str, "RankF", @data.m_RankF, rankF ) ) {
-//					continue;
+					continue;
 				}
 				data.m_RankU.rank = LevelRank::RankWereUBotting;
 				if ( !LoadLevelRankData( str, "RankU", @data.m_RankU, rankU ) ) {
-//					continue;
-				}
-			}
-		}
-
-	/*
-		void LoadLevelInfo( uint i, string& in mapname, string& in levelName, string& in str, TheNomad::Util::JsonObject@ info ) {
-			LevelInfoData@ data;
-			TheNomad::Util::JsonObject rankS, rankA, rankB, rankC, rankD, rankF, rankU;
-
-			if ( !info.GetString( "Name", levelName ) ) {
-				ConsoleWarning( "invalid level info, missing variable 'name'\n" );
-				return;
-			}
-			@data = LevelInfoData( levelName );
-
-			ConsolePrint( "Loaded level '" + data.m_Name + "'...\n" );
-
-			for ( uint j = 0; j < data.m_MapHandles.size(); j++ ) {
-				if ( !info.GetString( "MapnameDifficulty_" + formatUInt( j ), mapname ) ) {
-					// level currently doesn't support this difficulty
-					return;
-				}
-				if ( mapname == "none" ) {
-					// level currently doesn't support this difficulty
-					return;
-				}
-
-				LevelMapData MapData = LevelMapData( mapname );
-				MapData.mapHandle = TheNomad::GameSystem::LoadMap( mapname );
-				MapData.difficulty = TheNomad::GameSystem::GameDifficulty( j );
-
-				if ( MapData.mapHandle == FS_INVALID_HANDLE ) {
-					ConsoleWarning( "failed to load map '" + mapname + "' for level '" + data.m_Name + "'\n" );
 					continue;
 				}
-				data.m_MapHandles.push_back( MapData );
-			}
-
-			data.m_nIndex = i;
-
-			if ( !info.GetObject( "RankS", rankS ) ) {
-				ConsoleWarning( "invalid level info, no object for RankS\n" );
-				return;
-			}
-			if ( !info.GetObject( "RankA", rankA ) ) {
-				ConsoleWarning( "invalid level info, no object for RankA\n" );
-				return;
-			}
-			if ( !info.GetObject( "RankB", rankB ) ) {
-				ConsoleWarning( "invalid level info, no object for RankB\n" );
-				return;
-			}
-			if ( !info.GetObject( "RankC", rankC ) ) {
-				ConsoleWarning( "invalid level info, no object for RankC\n" );
-				return;
-			}
-			if ( !info.GetObject( "RankD", rankD ) ) {
-				ConsoleWarning( "invalid level info, no object for RankD" );
-				return;
-			}
-			if ( !info.GetObject( "RankF", rankF ) ) {
-				ConsoleWarning( "invalid level info, no object for RankF" );
-				return;
-			}
-			if ( !info.GetObject( "RankU", rankU ) ) {
-				ConsoleWarning( "invalid level info, no object for RankU" );
-				return;
-			}
-
-			data.m_RankS.rank = LevelRank::RankS;
-			if ( !LoadLevelRankData( str, "RankS", @data.m_RankS, rankS ) ) {
-				return;
-			}
-			data.m_RankA.rank = LevelRank::RankA;
-			if ( !LoadLevelRankData( str, "RankA", @data.m_RankA, rankA ) ) {
-				return;
-			}
-			data.m_RankB.rank = LevelRank::RankB;
-			if ( !LoadLevelRankData( str, "RankB", @data.m_RankB, rankB ) ) {
-				return;
-			}
-			data.m_RankC.rank = LevelRank::RankC;
-			if ( !LoadLevelRankData( str, "RankC", @data.m_RankC, rankC ) ) {
-				return;
-			}
-			data.m_RankD.rank = LevelRank::RankD;
-			if ( !LoadLevelRankData( str, "RankD", @data.m_RankD, rankD ) ) {
-				return;
-			}
-			data.m_RankF.rank = LevelRank::RankF;
-			if ( !LoadLevelRankData( str, "RankF", @data.m_RankF, rankF ) ) {
-				return;
-			}
-			data.m_RankU.rank = LevelRank::RankWereUBotting;
-			if ( !LoadLevelRankData( str, "RankU", @data.m_RankU, rankU ) ) {
-				return;
 			}
 		}
-		*/
 		
 		void OnRunTic() {
 			for ( uint i = 0; i < m_MapData.NumLevels(); i++ ) {
@@ -691,10 +606,10 @@ namespace TheNomad::SGame {
 			m_LevelInfoDatas.push_back( levelData );
 		}
 
-		const TheNomad::Util::JsonObject& GetLevelInfoByIndex( uint nIndex ) const {
+		const TheNomad::Util::JsonValue@ GetLevelInfoByIndex( uint nIndex ) const {
 			return m_LevelInfos[ nIndex ];
 		}
-		TheNomad::Util::JsonObject& GetLevelInfoByIndex( uint nIndex ) {
+		TheNomad::Util::JsonValue@ GetLevelInfoByIndex( uint nIndex ) {
 			return m_LevelInfos[ nIndex ];
 		}
 		
@@ -716,57 +631,93 @@ namespace TheNomad::SGame {
 			return null;
 		}
 
-		void LoadLevelsFromFile( const string& in fileName ) {
+		private array<TheNomad::Util::JsonValue@>@ LoadJSonFile( const string& in modName ) {
+			string path;
+			string buffer;
+			array<TheNomad::Util::JsonValue@>@ values;
+			TheNomad::Util::JsonValue@ data;
 			TheNomad::Util::JsonObject json;
-			array<TheNomad::Util::JsonObject> levels;
-
-			if ( !json.Parse( fileName ) ) {
-				ConsoleWarning( "failed to load level infos from file '" + fileName + "'\n" );
-				return;
+			
+			path.reserve( MAX_NPATH );
+			path = "modules/" + modName + "/scripts/levels.json";
+			if ( TheNomad::Engine::FileSystem::LoadFile( path, buffer ) == 0 ) {
+				GameError( "no level info file found for \"" + modName + "\", skipping.\n" );
+				return null;
 			}
-
-			if ( !json.GetObjectArray( "LevelInfo", levels ) ) {
-				ConsoleWarning( "invalid level info file, no level infos?\n" );
-				return;
+			
+			@data = @json.Parse( buffer );
+			@values = cast<array<TheNomad::Util::JsonValue@>@>( @data["LevelInfo"] );
+			
+			if ( @values is null ) {
+				ConsoleWarning( "level info file loaded, but no object named 'LevelInfo' found.\n" );
+				return null;
 			}
+			
+			return @values;
+		}
+
+		void LoadLevelsFromFile( const string& in modName ) {
+			array<TheNomad::Util::JsonValue@>@ levels;
+
+			@levels = LoadJSonFile( modName );
+
 			m_LevelInfos.reserve( levels.size() );
 			for ( uint i = 0; i < levels.size(); i++ ) {
-				m_LevelInfos.push_back( levels[i] );
+				m_LevelInfos.push_back( @levels[i] );
 				m_nLevels++;
 			}
 		}
 
-		bool LoadLevelRankData( string& in str, const string& in rankName, LevelRankData@ data, TheNomad::Util::JsonObject& in json ) {
-			if ( !json.GetInt( "MinKills", data.minKills ) ) {
+		bool LoadLevelRankData( string& in str, const string& in rankName, LevelRankData@ data, TheNomad::Util::JsonValue@ json ) {
+			TheNomad::Util::JsonValue@ value;
+
+			@value = @json["MinKills"];
+			if ( @value is null ) {
 				str = "invalid level info, missing RankData value for " + rankName + " 'MinKills'\n";
 				ConsoleWarning( str );
 				return false;
 			}
-			if ( !json.GetInt( "MinStyle", data.minStyle ) ) {
+			data.minKills = uint( value );
+
+			@value = @json["MinStyle"];
+			if ( @value is null ) {
 				str = "invalid level info, missing RankData value for " + rankName + " 'MinStyle'\n";
 				ConsoleWarning( str );
 				return false;
 			}
-			if ( !json.GetInt( "MaxDeaths", data.maxDeaths ) ) {
+			data.minStyle = uint( value );
+
+			@value = @json["MaxDeaths"];
+			if ( @value is null ) {
 				str = "invalid level info, missing RankData value for " + rankName + " 'MaxDeaths'\n";
 				ConsoleWarning( str );
 				return false;
 			}
-			if ( !json.GetInt( "MaxCollateral", data.maxCollateral ) ) {
+			data.maxDeaths = uint( value );
+
+			@value = @json["MaxCollateral"];
+			if ( @value is null ) {
 				str = "invalid level info, missing RankData value for " + rankName + " 'MaxCollateral'\n";
 				ConsoleWarning( str );
 				return false;
 			}
-			if ( !json.GetInt( "MinTime", data.minTime ) ) {
+			data.maxCollateral = uint( value );
+
+			@value = @json["MinTime"];
+			if ( @value is null ) {
 				str = "invalid level info, missing RankData value for " + rankName + " 'MinTime'\n";
 				ConsoleWarning( str );
 				return false;
 			}
-			if ( !json.GetBool( "RequiresClean", data.requiresClean ) ) {
+			data.minTime = uint( value );
+
+			@value = @json["RequiresClean"];
+			if ( @value is null ) {
 				str = "invalid level info, missing RankData value for 'RequiresClean'\n";
 				ConsoleWarning( str );
 				return false;
 			}
+			data.requiresClean = bool( value );
 			
 			return true;
 		}
@@ -800,7 +751,7 @@ namespace TheNomad::SGame {
 			return @m_Current;
 		}
 		
-		private array<TheNomad::Util::JsonObject> m_LevelInfos;
+		private array<TheNomad::Util::JsonValue@> m_LevelInfos;
 		private array<LevelInfoData@> m_LevelInfoDatas;
 		private uint m_nIndex;
 		private uint m_nLevels;
@@ -847,6 +798,8 @@ namespace TheNomad::SGame {
 		private float m_Diffusion;
 		private float m_Decibles;
 	};
+
+	array<string> sgame_ModList;
 
 	ConVar@ sgame_GfxDetail;
 	ConVar@ sgame_QuickShotMaxTargets;

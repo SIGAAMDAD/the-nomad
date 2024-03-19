@@ -59,6 +59,28 @@ constexpr GDR_INLINE bool operator!=( const CModuleAllocator& a, const eastl::al
 #include "../engine/n_allocator.h"
 #include "../rendercommon/r_public.h"
 
+// literally just meant for json
+template<typename T>
+class CModuleAllocatorTemplated
+{
+public:
+    EASTL_ALLOCATOR_EXPLICIT CModuleAllocatorTemplated( const char* pName = EASTL_NAME_VAL( EASTL_ALLOCATOR_DEFAULT_NAME ) ) { }
+	CModuleAllocatorTemplated( const CModuleAllocatorTemplated& x ) { }
+	CModuleAllocatorTemplated( const CModuleAllocatorTemplated& x, const char* pName ) { }
+
+	CModuleAllocatorTemplated& operator=( const CModuleAllocatorTemplated& x ) = default;
+
+	T* allocate( size_t n, int flags = 0 ) {
+        return (T *)Mem_Alloc( sizeof( T ) );
+    }
+	T* allocate( size_t n, size_t alignment, size_t offset, int flags = 0 ) {
+        return (T *)Mem_Alloc( sizeof( T ) );
+    }
+	void  deallocate( T* p, size_t n ) {
+        Mem_Free( p );
+    }
+};
+
 using UtlString = eastl::fixed_string<char, MAX_STRING_CHARS, true, eastl::allocator_malloc<char>>;
 namespace eastl {
 	// for some reason, the eastl doesn't support eastl::hash<eastl::fixed_string>

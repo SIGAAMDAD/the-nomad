@@ -2,7 +2,7 @@
 
 namespace TheNomad::SGame {
 	enum AttackMethod {
-		HitScan = 0,
+		Hitscan = 0,
 		Projectile = 1,
 		AreaOfEffect = 2,
 	};
@@ -27,6 +27,19 @@ namespace TheNomad::SGame {
 		Melee = 0,
 		Missile,
 	};
+	
+	enum WeaponType {
+		Sidearm,
+		HeavySidearm,
+		Pimary,
+		HeavyPrimary,
+		Grenadier,
+		Melee,
+		LeftArm,
+		RightArm,
+		
+		NumWeaponTypes
+	};
 
 	enum WeaponProperty {
 		TwoHandedBlade       = 0x00000001,
@@ -43,111 +56,199 @@ namespace TheNomad::SGame {
 
 		None                 = 0x00000000
 	};
+	
+	interface InfoLoader {
+		bool Load( TheNomad::Util::JsonValue@ json );
+	};
+	
+	const array<uint> WeaponPropertyBits = {
+		uint( WeaponProperty::TwoHandedBlade ),
+		uint( WeaponProperty::OneHandedBlade ),
+		uint( WeaponProperty::TwoHandedBlunt ),
+		uint( WeaponProperty::OneHandedBlunt ),
+		uint( WeaponProperty::TwoHandedPolearm ),
+		uint( WeaponProperty::OneHandedPolearm ),
+		uint( WeaponProperty::OneHandedSideFirearm ),
+		uint( WeaponProperty::TwoHandedSideFirearm ),
+		uint( WeaponProperty::OneHandedPrimFirearm ),
+		uint( WeaponProperty::TwoHandedPrimFirearm ),
+		uint( WeaponProperty::SpawnsObject )
+	};
+	
+	const array<string> WeaponPropertyStrings = {
+		"TwoHandedBlade",
+		"OneHandedBlade",
+		"TwoHandedBlunt",
+		"OneHandedBlunt",
+		"TwoHandedPolearm",
+		"OneHandedPolearm",
+		"OneHandedSideFirearm",
+		"TwoHandedSideFirearm",
+		"OneHandedPrimFirearm",
+		"TwoHandedPrimFirearm",
+		"SpawnsObject"
+	};
+	
+	const array<string> WeaponTypeStrings = {
+		"Sidearm",
+		"HeavySidearm",
+		"Primary",
+		"HeavyPrimary",
+		"Grenadier",
+		"Melee",
+		"LeftArm",
+		"RightArm"
+	};
+	
+	const array<string> AmmoTypeStrings = {
+		"Bullet",
+		"Shell",
+		"Rocket",
+		"Grenade"
+	};
 
-	class WeaponInfo {
+	class WeaponInfo : InfoLoader {
 		WeaponInfo() {
-			ammoType = AmmoType::Invalid;
-			magSize = 0;
-			magMaxStack = 0;
-			damage = 0.0f;
-			range = 0.0f;
-			weaponType = WeaponType::None;
-			hShader = FS_INVALID_HANDLE;
+		}
+		
+		bool Load( TheNomad::Util::JsonValue@ json ) {
+			string ammo;
+			string type;
+			uint i;
+			const array<TheNomad::Util::JsonValue@>@ props;
+			
+			name = string( json["Name"] );
+			magSize = uint( json["MagSize"] );
+			magMaxStack = uint( json["MagMaxStack"] );
+			type = string( json["WeaponType"] );
+			@props = cast<array<TheNomad::Util::JsonValue@>@>( @json["WeaponProperties"] );
+			ammo = string( json["AmmoType"] );
+			magSize = uint( json["MagSize"] );
+			magMaxStack = uint( json["MagMaxStack"] );
+			damage = float( json["Damage"] );
+			range = float( json["Range"] );
+			spriteOffset = uint( json["SpriteOffset"] );
+			hShader = TheNomad::Engine::Renderer::RegisterShader( string( json["Shader"] ) );
+			
+			for ( i = 0; i < WeaponTypeStrings.size(); i++ ) {
+				if ( TheNomad::Util::StrICmp( type, WeaponTypeStrings[i] ) != 1 ) {
+					weaponType = WeaponType( i );
+					break;
+				}
+			}
+			if ( weaponType == WeaponType::NumWeaponTypes ) {
+				ConsoleWarning( "invalid weapon info, WeaponType '" + type + "' not recognized\n" );
+				return false;
+			}
+			
+			for ( i = 0; i < WeaponPropertyStrings.size(); i++ ) {
+				for ( uint a = 0; a < props.size(); a++ ){
+					if ( TheNomad::Util::StrICmp( string( props[a] ), WeaponPropertyStrings[i] ) != 1 ) {
+						weaponProps = WeaponProperty( uint( weaponProps ) | WeaponPropertyBits[i] );
+					}
+				}
+			}
+			if ( weaponProps == WeaponProperty::None ) {
+				ConsoleWarning( "invalid weapon info, WeaponProperties are invalid (None, abide by physics pls)\n" );
+				return false;
+			}
+			
+			return true;
 		}
 
 		string name;
-		int magSize;
-		int magMaxStack;
-		AmmoType ammoType;
-		float damage;
-		float range;
-		WeaponProperty weaponProps;
-		WeaponType weaponType;
-		uint spriteOffset;
-		int hShader;
+		int magSize = 0;
+		int magMaxStack = 0;
+		AmmoType ammoType = AmmoType::Invalid;
+		float damage = 0.0f;
+		float range = 0.0f;
+		WeaponProperty weaponProps = WeaponProperty::None;
+		WeaponType weaponType = WeaponType::NumWeaponTypes;
+		uint spriteOffset = 0;
+		int hShader = FS_INVALID_HANDLE;
 	};
 
-	class ItemInfo {
+	class ItemInfo : InfoLoader {
 		ItemInfo() {
-			cost = 0;
-			hShader = 0;
-			spriteOffset = 0;
+		}
+		
+		bool Load( TheNomad::Util::JsonValue@ json ) {
+			TheNomad::Util::JsonValue@ str;
+			
+			name = string( json["Name"] );
+			TheNomad::GameSystem::GetString( name, description );
+			@str = @json["Effect"];
+			if ( @str !is null ) {
+				effect = string( str );
+			}
+			
+			cost = int( json["Cost"] );
+			hShader = TheNomad::Engine::Renderer::RegisterShader( string( json["Shader"] ) );
+			spriteOffset = uint( json["SpriteOffset"] );
+			maxStackSize = uint( json["MaxStackSize"] );
+
+			return true;
 		}
 
 		string name;
 		string description;
 		string effect;
-		int cost;
-		int hShader;
-		uint spriteOffset;
+		int cost = 0;
+		int hShader = FS_INVALID_HANDLE;
+		uint spriteOffset = 0;
+		uint maxStackSize = 0;
 	};
 	
-	class AttackInfo {
+	class AttackInfo : InfoLoader {
 		AttackInfo() {
-			damage = 0;
-			range = 0;
-			cooldown = 0;
-			duration = 0;
-			method = AttackMethod::HitScan;
-			type = AttackType::Melee;
-			canParry = true;
-			valid = false;
-			spriteOffset = 0;
+		}
+		
+		bool Load( TheNomad::Util::JsonValue@ json ) {
+			name = string( json["Name"] );
+
+			return true;
 		}
 		
 		string name;
 		string effect;
 		string description;
-		float damage;
-		float range;
-		uint cooldown;
-		uint duration;
-		AttackMethod method;
-		AttackType type;
-		bool canParry;
-		bool valid;
-		uint spriteOffset;
+		float damage = 0.0f;
+		float range = 0.0f;
+		uint cooldown = 0;
+		uint duration = 0;
+		AttackMethod method = AttackMethod::Hitscan;
+		AttackType type = AttackType::Melee;
+		bool canParry = true;
+		bool valid = false;
+		uint spriteOffset = 0;
 		TheNomad::Engine::SoundSystem::SoundEffect sound;
 	};
 	
-	class MobInfo {
+	class MobInfo : InfoLoader {
 		MobInfo() {
-			health = 0.0f;
-			armor = ArmorType::None;
-			width = 0.0f;
-			height = 0.0f;
-			speed = vec3( 0.0f );
-			soundTolerance = 0.0f;
-			smellTolerance = 0.0f;
-			sightRange = 0;
-			smellRangeX = 0;
-			smellRangeY = 0;
-			soundRangeX = 0;
-			soundRangeY = 0;
-			flags = 0;
-			waitTics = 0;
-			spriteOffset = 0;
-			hShader = 0;
-			attacks.reserve( 2 );
+		}
+		
+		bool Load( TheNomad::Util::JsonValue@ json ) {
+			return true;
 		}
 		
 		string name;
-		float health;
-		ArmorType armor;
-		float width;
-		float height;
-		vec3 speed;
-		float soundTolerance;
-		float smellTolerance;
-		int sightRange;
-		int smellRangeX;
-		int smellRangeY;
-		int soundRangeX;
-		int soundRangeY;
-		uint waitTics; // the duration until the mob has to rethink again
-		uint flags;
-		uint spriteOffset;
-		int hShader;
+		float health = 0.0f;
+		ArmorType armor = ArmorType::None;
+		float width = 0.0f;
+		float height = 0.0f;
+		vec3 speed = vec3( 0.0f );
+		float soundTolerance = 0.0f;
+		float smellTolerance = 0.0f;
+		int sightRange = 0;
+		int smellRangeX = 0;
+		int smellRangeY = 0;
+		int soundRangeX = 0;
+		int soundRangeY = 0;
+		uint waitTics = 0; // the duration until the mob has to rethink again
+		uint flags = 0;
+		uint spriteOffset = 0;
+		int hShader = 0;
 		array<AttackInfo> attacks;
 		TheNomad::Engine::SoundSystem::SoundEffect wakeupSfx;
 		TheNomad::Engine::SoundSystem::SoundEffect moveSfx;
@@ -160,6 +261,111 @@ namespace TheNomad::SGame {
 			ConsolePrint( "Loading mod info files...\n" );
 
 			LoadMobInfos();
+			LoadItemInfos();
+			LoadWeaponInfos();
+		}
+		
+		private array<TheNomad::Util::JsonValue@>@ LoadJSonFile( const string& in fileName, const string& in ArrayName ) {
+			string path;
+			string buffer;
+			array<TheNomad::Util::JsonValue@>@ values;
+			TheNomad::Util::JsonValue@ data;
+			TheNomad::Util::JsonObject json;
+			
+			path.reserve( MAX_NPATH );
+			path = "modules/" + MODULE_NAME + "/scripts/" + fileName;
+			if ( TheNomad::Engine::FileSystem::LoadFile( path, buffer ) == 0 ) {
+				ConsolePrint( "no info file found for '" + fileName + "', skipping.\n" );
+				return null;
+			}
+			
+			@data = @json.Parse( buffer );
+			@values = cast<array<TheNomad::Util::JsonValue@>@>( @data[ArrayName] );
+			
+			if ( @values is null ) {
+				ConsoleWarning( "info file loaded, but no object named '" + ArrayName + "' found.\n" );
+				return null;
+			}
+			
+			return @values;
+		}
+		
+		private void LoadMobInfos() {
+			array<TheNomad::Util::JsonValue@>@ infos;
+			MobInfo@ info;
+			string msg;
+			
+			msg = "Loading mob infos from module \"";
+			msg += MODULE_NAME;
+			msg += "\"...\n";
+			ConsolePrint( msg );
+			
+			@infos = @LoadJSonFile( "mobs.json", "MobInfo" );
+			if ( @infos is null ) {
+				return;
+			}
+			
+			for ( uint i = 0; i < infos.size(); i++ ) {
+				@info = MobInfo();
+				if ( !info.Load( @infos[i] ) ) {
+					ConsoleWarning( "failed to load mob info at " + i + ".\n" );
+					continue;
+				}
+				
+				AddMobInfo( @info );
+			}
+		}
+		
+		private void LoadItemInfos() {
+			array<TheNomad::Util::JsonValue@>@ infos;
+			ItemInfo@ info;
+			string msg;
+			
+			msg = "Loading item infos from module \"";
+			msg += MODULE_NAME;
+			msg += "\"...\n";
+			ConsolePrint( msg );
+			
+			@infos = @LoadJSonFile( "items.json", "ItemInfo" );
+			if ( @infos is null ) {
+				return;
+			}
+			
+			for ( uint i = 0; i < infos.size(); i++ ) {
+				@info = ItemInfo();
+				if ( !info.Load( @infos[i] ) ) {
+					ConsoleWarning( "failed to load item info at " + i + ".\n" );
+					continue;
+				}
+				
+				AddItemInfo( @info );
+			}
+		}
+		
+		private void LoadWeaponInfos() {
+			array<TheNomad::Util::JsonValue@>@ infos;
+			WeaponInfo@ info;
+			string msg;
+			
+			msg = "Loading mob infos from module \"";
+			msg += MODULE_NAME;
+			msg += "\"...\n";
+			ConsolePrint( msg );
+			
+			@infos = @LoadJSonFile( "weapon.json", "WeaponInfo" );
+			if ( @infos is null ) {
+				return;
+			}
+			
+			for ( uint i = 0; i < infos.size(); i++ ) {
+				@info = WeaponInfo();
+				if ( !info.Load( @infos[i] ) ) {
+					ConsoleWarning( "failed to load weapon info at " + i + ".\n" );
+					continue;
+				}
+				
+				AddWeaponInfo( @info );
+			}
 		}
 		
 		const WeaponInfo@ GetWeaponInfo( const string& in name ) const {
@@ -224,94 +430,6 @@ namespace TheNomad::SGame {
 		}
 		void AddWeaponInfo( WeaponInfo@ info ) {
 			m_WeaponInfos.push_back( info );
-		}
-
-		bool LoadJSonFile( const string& in fileName, TheNomad::Util::JsonObject& in json ) {
-			string path;
-
-			path.resize( MAX_NPATH );
-			path = "modules/" + MODULE_NAME + "/scripts/" + fileName;
-			if ( !json.Parse( path ) ) {
-				ConsoleWarning( "failed to parse json file '" + path + "'\n" );
-				return false;
-			}
-
-			return true;
-		}
-
-		bool MissingVar( const string& in infoName, const string& in varName ) {
-			ConsoleWarning( "invalid " + infoName + " info, missing variable '" + varName + "'\n" );
-			return false;
-		}
-
-		bool LoadItemInfo( TheNomad::Util::JsonObject& in json ) {
-			ItemInfo@ info;
-
-			@info = ItemInfo();
-
-			return true;
-		}
-
-		bool LoadMobInfo( TheNomad::Util::JsonObject& in json ) {
-			MobInfo@ info;
-			float[] speed( 2 );
-			string armorType;
-
-			@info = MobInfo();
-			if ( !json.GetString( "Name", info.name ) ) {
-				return MissingVar( "mob", "Name" );
-			}
-			if ( !json.GetInt( "Health", info.health ) ) {
-				return MissingVar( "mob", "Health" );
-			}
-			if ( !json.GetVec3( "Speed", info.speed ) ) {
-				return MissingVar( "mob", "Speed" );
-			}
-			if ( !json.GetString( "ArmorType", armorType ) ) {
-				return MissingVar( "mob", "ArmorType" );
-			}
-			if ( !json.GetInt( "SoundRangeX", info.soundRangeX ) ) {
-				return MissingVar( "mob", "SoundRangeX" );
-			}
-			if ( !json.GetInt( "SoundRangeY", info.soundRangeY ) ) {
-				return MissingVar( "mob", "SoundRangeY" );
-			}
-			if ( !json.GetFloat( "SoundTolerance", info.soundTolerance ) ) {
-				return MissingVar( "mob", "SoundTolerance" );
-			}
-
-			if ( TheNomad::Util::StrICmp( armorType, "none" ) == 0 ) {
-
-			}
-
-			return true;
-		}
-
-		void LoadMobInfos() {
-			TheNomad::Util::JsonObject json;
-			array<TheNomad::Util::JsonObject> mobInfos;
-			string msg;
-
-			msg.reserve( 256 );
-			msg = "Loading mob infos in \"";
-			msg += MODULE_NAME;
-			msg += "\"...\n";
-			ConsolePrint( msg );
-
-			LoadJSonFile( "mobs.json", json );
-			if ( !json.GetObjectArray( "MobInfo", mobInfos ) ) {
-				ConsoleWarning( "no mob infos found in module, skipping.\n" );
-				return;
-			}
-
-			for ( uint i = 0; i < mobInfos.size(); i++ ) {
-				if ( !LoadMobInfo( mobInfos[i] ) ) {
-					msg = "failed to load mob info ";
-					msg += formatUInt( i );
-					msg += "!\n";
-					ConsoleWarning( msg );
-				}
-			}
 		}
 		
 		private array<MobInfo@> m_MobInfos;

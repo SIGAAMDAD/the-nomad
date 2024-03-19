@@ -527,7 +527,6 @@ int N_islower( int c )
 	return ( 0 );
 }
 
-
 int N_isupper( int c )
 {
 	if (c >= 'A' && c <= 'Z')

@@ -1,6 +1,7 @@
 #include "entity.as"
 #include "game.as"
 #include "convar.as"
+#include "info.as"
 
 namespace TheNomad::SGame {
 	enum ItemType {
@@ -10,20 +11,6 @@ namespace TheNomad::SGame {
 		IT_Stim, // healthpack
 
 		NumItemTypes,
-
-		None // invalid
-	};
-
-	// custom weapon types will be implemented in Valden in a later version
-	enum WeaponType {
-		WT_ShottyDB = 0, // double-barreled shotgun (Asturion DB)
-		WT_ShottyFAB, // full-auto shotgun
-		WT_ShottyTriBurst, // 3-burst shotgun
-		WT_Murstar, // murstar revolver
-		WT_Asturion8Shot, // Asturion 8-shot heavy shotty
-		WT_PlasmaSMG,
-
-		NumWeaponTypes,
 
 		None // invalid
 	};

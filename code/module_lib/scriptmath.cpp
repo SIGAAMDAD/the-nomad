@@ -3,6 +3,8 @@
 #include <float.h>
 #include <string.h>
 #include "scriptmath.h"
+#include "module_public.h"
+#define AS_USE_FLOAT
 
 #ifdef __BORLANDC__
 #include <cmath>
@@ -58,7 +60,7 @@ BEGIN_AS_NAMESPACE
 
 // The modf function doesn't seem very intuitive, so I'm writing this 
 // function that simply returns the fractional part of the float value
-#if AS_USE_FLOAT
+#ifdef AS_USE_FLOAT
 float fractionf(float v)
 {
 	float intPart;
@@ -144,7 +146,7 @@ void RegisterScriptMath_Native(asIScriptEngine *engine)
 	r = engine->RegisterGlobalFunction("bool closeTo(float, float, float = 0.00001f)", asFUNCTIONPR(closeTo, (float, float, float), bool), asCALL_CDECL); assert( r >= 0 );
 	r = engine->RegisterGlobalFunction("bool closeTo(double, double, double = 0.0000000001)", asFUNCTIONPR(closeTo, (double, double, double), bool), asCALL_CDECL); assert( r >= 0 );
 
-#if AS_USE_FLOAT
+#ifdef AS_USE_FLOAT
 	// Trigonometric functions
 	r = engine->RegisterGlobalFunction("float cos(float)", asFUNCTIONPR(cosf, (float), float), asCALL_CDECL); assert( r >= 0 );
 	r = engine->RegisterGlobalFunction("float sin(float)", asFUNCTIONPR(sinf, (float), float), asCALL_CDECL); assert( r >= 0 );
@@ -198,7 +200,14 @@ void RegisterScriptMath_Native(asIScriptEngine *engine)
 #endif
 }
 
-#if AS_USE_FLOAT
+#define GENERICSTD( x ) \
+void x##_generic( asIScriptGeneric *gen ) \
+{ \
+	int8_t f = *(int8_t*)gen->GetAddressOfArg( 0 ); \
+	*(bool *)gen->GetAddressOfReturnLocation() = x( f ); \
+}
+
+#ifdef AS_USE_FLOAT
 // This macro creates simple generic wrappers for functions of type 'float func(float)'
 #define GENERICff(x) \
 void x##_generic(asIScriptGeneric *gen) \
@@ -276,39 +285,44 @@ void atan2_generic(asIScriptGeneric *gen)
 	*(double*)gen->GetAddressOfReturnLocation() = atan2(f1, f2);
 }
 #endif
+
+GENERICSTD(isdigit)
+GENERICSTD(N_isalpha)
+
 void RegisterScriptMath_Generic(asIScriptEngine *engine)
 {
-	int r;
+	CheckASCall( engine->RegisterGlobalFunction( "bool IsDigit( int8 )", asFUNCTION( isdigit_generic ), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterGlobalFunction( "bool IsAlpha( int8 )", asFUNCTION( N_isalpha_generic ), asCALL_GENERIC ) );
 
-#if AS_USE_FLOAT
+#ifdef AS_USE_FLOAT
 	// Trigonometric functions
-	r = engine->RegisterGlobalFunction("float cos(float)", asFUNCTION(cosf_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("float sin(float)", asFUNCTION(sinf_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("float tan(float)", asFUNCTION(tanf_generic), asCALL_GENERIC); assert( r >= 0 );
+	CheckASCall( engine->RegisterGlobalFunction("float cos(float)", asFUNCTION(cosf_generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterGlobalFunction("float sin(float)", asFUNCTION(sinf_generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterGlobalFunction("float tan(float)", asFUNCTION(tanf_generic), asCALL_GENERIC ) );
 
-	r = engine->RegisterGlobalFunction("float acos(float)", asFUNCTION(acosf_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("float asin(float)", asFUNCTION(asinf_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("float atan(float)", asFUNCTION(atanf_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("float atan2(float,float)", asFUNCTION(atan2f_generic), asCALL_GENERIC); assert( r >= 0 );
+	CheckASCall( engine->RegisterGlobalFunction("float acos(float)", asFUNCTION(acosf_generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterGlobalFunction("float asin(float)", asFUNCTION(asinf_generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterGlobalFunction("float atan(float)", asFUNCTION(atanf_generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterGlobalFunction("float atan2(float,float)", asFUNCTION(atan2f_generic), asCALL_GENERIC ) );
 
 	// Hyberbolic functions
-	r = engine->RegisterGlobalFunction("float cosh(float)", asFUNCTION(coshf_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("float sinh(float)", asFUNCTION(sinhf_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("float tanh(float)", asFUNCTION(tanhf_generic), asCALL_GENERIC); assert( r >= 0 );
+	CheckASCall( engine->RegisterGlobalFunction("float cosh(float)", asFUNCTION(coshf_generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterGlobalFunction("float sinh(float)", asFUNCTION(sinhf_generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterGlobalFunction("float tanh(float)", asFUNCTION(tanhf_generic), asCALL_GENERIC ) );
 
 	// Exponential and logarithmic functions
-	r = engine->RegisterGlobalFunction("float log(float)", asFUNCTION(logf_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("float log10(float)", asFUNCTION(log10f_generic), asCALL_GENERIC); assert( r >= 0 );
+	CheckASCall( engine->RegisterGlobalFunction("float log(float)", asFUNCTION(logf_generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterGlobalFunction("float log10(float)", asFUNCTION(log10f_generic), asCALL_GENERIC ) );
 
 	// Power functions
-	r = engine->RegisterGlobalFunction("float pow(float, float)", asFUNCTION(powf_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("float sqrt(float)", asFUNCTION(sqrtf_generic), asCALL_GENERIC); assert( r >= 0 );
+	CheckASCall( engine->RegisterGlobalFunction("float pow(float, float)", asFUNCTION(powf_generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterGlobalFunction("float sqrt(float)", asFUNCTION(sqrtf_generic), asCALL_GENERIC ) );
 
 	// Nearest integer, absolute value, and remainder functions
-	r = engine->RegisterGlobalFunction("float ceil(float)", asFUNCTION(ceilf_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("float abs(float)", asFUNCTION(fabsf_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("float floor(float)", asFUNCTION(floorf_generic), asCALL_GENERIC); assert( r >= 0 );
-	r = engine->RegisterGlobalFunction("float fraction(float)", asFUNCTION(fractionf_generic), asCALL_GENERIC); assert( r >= 0 );
+	CheckASCall( engine->RegisterGlobalFunction("float ceil(float)", asFUNCTION(ceilf_generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterGlobalFunction("float abs(float)", asFUNCTION(fabsf_generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterGlobalFunction("float floor(float)", asFUNCTION(floorf_generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterGlobalFunction("float fraction(float)", asFUNCTION(fractionf_generic), asCALL_GENERIC ) );
 
 	// Don't register modf because AngelScript already supports the % operator
 #else

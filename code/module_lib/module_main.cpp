@@ -378,6 +378,7 @@ CModuleLib::CModuleLib( void )
     CheckASCall( m_pEngine->SetEngineProperty( asEP_REQUIRE_ENUM_SCOPE, true ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_USE_CHARACTER_LITERALS, true ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_AUTO_GARBAGE_COLLECT, false ) );
+    CheckASCall( m_pEngine->SetEngineProperty( asEP_HEREDOC_TRIM_MODE, 0 ) );
 
     m_pScriptBuilder = new ( Hunk_Alloc( sizeof( *m_pScriptBuilder ), h_high ) ) CScriptBuilder();
     s_pDebugger = new ( Hunk_Alloc( sizeof( *s_pDebugger ), h_high ) ) CDebugger();

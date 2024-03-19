@@ -1540,7 +1540,7 @@ static void Com_CheckCrash( void )
 			if ( Com_SafeMode() ) {
 				return; // already set
 			}
-			N_strncpyz( com_consoleLines[ com_numConsoleLines ], "safe", sizeof( *com_consoleLines ) );
+			com_consoleLines[ com_numConsoleLines ] = CopyString( "safe" );
 			com_numConsoleLines++;
 		}
 	} else {

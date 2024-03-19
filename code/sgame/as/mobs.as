@@ -52,7 +52,7 @@ namespace TheNomad::SGame {
 			TheNomad::GameSystem::RayCast@ rayData;
 			
 			switch ( atk.method ) {
-			case AttackMethod::HitScan: {
+			case AttackMethod::Hitscan: {
 				TheNomad::GameSystem::RayCast ray;
 				
 				@rayData = @ray; // force it out of scope

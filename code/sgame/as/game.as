@@ -1,3 +1,4 @@
+#include "util/util.as"
 #include "entity.as"
 #include "level.as"
 #include "convar.as"

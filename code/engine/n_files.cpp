@@ -355,7 +355,7 @@ static inline qboolean FS_VM_ValidateParms( const char *func, const void *buffer
 	return qtrue;
 }
 
-uint32_t FS_VM_WriteFile( const void *buffer, uint32_t len, fileHandle_t file, handleOwner_t owner )
+uint64_t FS_VM_WriteFile( const void *buffer, uint64_t len, fileHandle_t file, handleOwner_t owner )
 {
 	if ( !FS_VM_ValidateParms( __func__, buffer, file, owner ) ) {
 		return 0;
@@ -382,7 +382,7 @@ fileOffset_t FS_VM_FileTell( fileHandle_t file, handleOwner_t owner )
 	return FS_FileTell( file );
 }
 
-uint32_t FS_VM_Write( const void *buffer, uint32_t len, fileHandle_t file, handleOwner_t owner )
+uint64_t FS_VM_Write( const void *buffer, uint64_t len, fileHandle_t file, handleOwner_t owner )
 {
 	if ( !FS_VM_ValidateParms( __func__, buffer, file, owner ) ) {
 		return 0;
@@ -391,7 +391,7 @@ uint32_t FS_VM_Write( const void *buffer, uint32_t len, fileHandle_t file, handl
 	return FS_Write( buffer, len, file );
 }
 
-uint32_t FS_VM_Read( void *buffer, uint32_t len, fileHandle_t file, handleOwner_t owner )
+uint64_t FS_VM_Read( void *buffer, uint64_t len, fileHandle_t file, handleOwner_t owner )
 {
 	if ( !FS_VM_ValidateParms( __func__, buffer, file, owner ) ) {
 		return 0;
@@ -400,9 +400,9 @@ uint32_t FS_VM_Read( void *buffer, uint32_t len, fileHandle_t file, handleOwner_
 	return FS_Read( buffer, len, file );
 }
 
-uint32_t FS_VM_FOpenFile( const char *npath, fileHandle_t *f, fileMode_t mode, handleOwner_t owner )
+uint64_t FS_VM_FOpenFile( const char *npath, fileHandle_t *f, fileMode_t mode, handleOwner_t owner )
 {
-	uint32_t len;
+	uint64_t len;
 
 	if ( !FS_VM_ValidateParms( __func__, npath, f, owner ) ) {
 		return 0;
@@ -485,13 +485,13 @@ fileHandle_t FS_VM_FOpenWrite( const char *path, handleOwner_t owner )
 	return f;
 }
 
-uint32_t FS_VM_FileLength( fileHandle_t file, handleOwner_t owner )
+uint64_t FS_VM_FileLength( fileHandle_t file, handleOwner_t owner )
 {
 	if ( !FS_VM_ValidateParms( __func__, file, owner ) ) {
 		return 0;
 	}
 
-	return (uint32_t)FS_FileLength( file );
+	return FS_FileLength( file );
 }
 
 fileHandle_t FS_VM_FOpenFileWrite( const char *npath, fileHandle_t *file, handleOwner_t owner )
@@ -508,9 +508,9 @@ fileHandle_t FS_VM_FOpenFileWrite( const char *npath, fileHandle_t *file, handle
 	return *file;
 }
 
-uint32_t FS_VM_FOpenFileRead( const char *npath, fileHandle_t *file, handleOwner_t owner )
+uint64_t FS_VM_FOpenFileRead( const char *npath, fileHandle_t *file, handleOwner_t owner )
 {
-	uint32_t len;
+	uint64_t len;
 
 	if ( !FS_VM_ValidateParms( __func__, npath, file, owner ) ) {
 		return 0;

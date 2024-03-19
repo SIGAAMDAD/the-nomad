@@ -3371,16 +3371,16 @@ NLOHMANN_JSON_NAMESPACE_END
     /// a class to store JSON values
     /// @sa https://json.nlohmann.me/api/basic_json/
     template<template<typename U, typename V, typename... Args> class ObjectType =
-    std::map,
-    template<typename U, typename... Args> class ArrayType = std::vector,
-    class StringType = std::string, class BooleanType = bool,
+    eastl::map,
+    template<typename U, typename... Args> class ArrayType = eastl::vector,
+    class StringType = string_t, class BooleanType = bool,
     class NumberIntegerType = int32_t,
     class NumberUnsignedType = uint32_t,
     class NumberFloatType = float,
-    template<typename U> class AllocatorType = std::allocator,
+    template<typename U> class AllocatorType = CModuleAllocatorTemplated,
     template<typename T, typename SFINAE = void> class JSONSerializer =
     adl_serializer,
-    class BinaryType = std::vector<uint8_t>, // cppcheck-suppress syntaxError
+    class BinaryType = eastl::vector<uint8_t>, // cppcheck-suppress syntaxError
     class CustomBaseClass = void>
     class basic_json;
 

@@ -336,14 +336,14 @@ fileHandle_t FS_VM_FOpenAppend( const char *npath, handleOwner_t owner );
 fileHandle_t FS_VM_FOpenRW( const char *npath, handleOwner_t owner );
 fileOffset_t FS_VM_FileSeek( fileHandle_t file, fileOffset_t offset, uint32_t whence, handleOwner_t owner );
 fileOffset_t FS_VM_FileTell( fileHandle_t file, handleOwner_t owner );
-uint32_t FS_VM_FOpenFile( const char *npath, fileHandle_t *file, fileMode_t mode, handleOwner_t owner );
+uint64_t FS_VM_FOpenFile( const char *npath, fileHandle_t *file, fileMode_t mode, handleOwner_t owner );
 fileHandle_t FS_VM_FOpenFileWrite( const char *npath, fileHandle_t *file, handleOwner_t owner );
-uint32_t FS_VM_FOpenFileRead( const char *npath, fileHandle_t *file, handleOwner_t owner );
+uint64_t FS_VM_FOpenFileRead( const char *npath, fileHandle_t *file, handleOwner_t owner );
 void FS_VM_FClose( fileHandle_t file, handleOwner_t owner );
-uint32_t FS_VM_WriteFile( const void *buffer, uint32_t len, fileHandle_t file, handleOwner_t owner );
-uint32_t FS_VM_Write( const void *buffer, uint32_t len, fileHandle_t file, handleOwner_t owner );
-uint32_t FS_VM_Read( void *buffer, uint32_t len, fileHandle_t file, handleOwner_t owner );
-uint32_t FS_VM_FileLength( fileHandle_t file, handleOwner_t owner );
+uint64_t FS_VM_WriteFile( const void *buffer, uint64_t len, fileHandle_t file, handleOwner_t owner );
+uint64_t FS_VM_Write( const void *buffer, uint64_t len, fileHandle_t file, handleOwner_t owner );
+uint64_t FS_VM_Read( void *buffer, uint64_t len, fileHandle_t file, handleOwner_t owner );
+uint64_t FS_VM_FileLength( fileHandle_t file, handleOwner_t owner );
 
 void FS_VM_CloseFiles(handleOwner_t owner);
 
