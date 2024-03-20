@@ -15,7 +15,11 @@ namespace TheNomad::Util {
 	};
 	
 	class JsonToken {
-		JsonToken( JsonTokenType tokenType = NULL, const string& in value = "" ) {
+		JsonToken( JsonTokenType tokenType = JsonTokenType::NULL, const string& in value = "" ) {
+			m_TokenType = tokenType;
+			m_Value = value;
+		}
+		JsonToken( JsonTokenType tokenType = JsonTokenType::NULL, char value = '' ) {
 			m_TokenType = tokenType;
 			m_Value = value;
 		}
@@ -68,7 +72,7 @@ namespace TheNomad::Util {
 		}
 		
 		private char getNextChar() {
-			buffer = dataStr[pos];
+			buffer = dataStr.substr( pos, 1 )[0];
 			
 			if ( pos < dataStr.size() ) {
 				pos++;
@@ -87,9 +91,8 @@ namespace TheNomad::Util {
 			
 			if ( relativePos > 0 && relativePos < dataStr.size() ) {
 				return dataStr[relativePos];
-			} else {
-				return buffer;
 			}
+			return buffer;
 		}
 		
 		private JsonToken Process() {
@@ -105,58 +108,33 @@ namespace TheNomad::Util {
 			
 			switch ( buffer ) {
 			case '{': return JsonToken( JsonTokenType::BEGIN_OBJECT, buffer );
-			case '}':
-			case '[':
-			case ']':
-			case ',':
-			case ':':
-			case 'n':
-			case 't':
-			case 'f':
-			case '\"':
-			case '-':
+			case '}': return JsonToken( JsonTokenType::END_OBJECT, buffer );
+			case '[': return JsonToken( JsonTokenType::BEGIN_ARRAY, buffer );
+			case ']': return JsonToken( JsonTokenType::END_ARRAY, buffer );
+			case ',': return JsonToken( JsonTokenType::SEP_COMMA, buffer );
+			case ':': return JsonToken( JsonTokenType::SEP_COLON, buffer );
+			case 'n': return readNull();
+			case 't': return readBoolean( true );
+			case 'f': return readBoolean( false );
+			case '\"': return readString( true );
+			case '-': return readNumber();
 			default:
-
-			};
-
-			if ( buffer == char( "{" ) ) {
-				return JsonToken( JsonTokenType::BEGIN_OBJECT, buffer );
-			} else if ( buffer == '}' ) {
-				return JsonToken( JsonTokenType::END_OBJECT, buffer );
-			} else if ( buffer == '[' ) {
-				return JsonToken( JsonTokenType::BEGIN_ARRAY, buffer );
-			} else if ( buffer == ']' ) {
-				return JsonToken( JsonTokenType::END_ARRAY, buffer );
-			} else if ( buffer == ',' ) {
-				return JsonToken( JsonTokenType::SEP_COMMA, buffer );
-			} else if ( buffer == char( ":" ) ) {
-				return JsonToken( JsonTokenType::SEP_COLON, buffer );
-			} else if ( buffer == char( "n" ) ) {
-				return readNull();
-			} else if ( buffer == char( "t" ) ) {
-				return readBoolean( true );
-			} else if ( buffer == char( "f" ) ) {
-				return readBoolean( false );
-			} else if ( buffer == char( "\"" ) ) {
-				return readString( true );
-			} else if ( buffer == char( "-" ) || IsDigit( buffer ) ) {
-				return readNumber();
-			} else {
-				// 判断非标准 key-value
-				if ( IsAlpha( buffer ) ) {
+				if ( IsDigit( buffer ) ) {
+					return readNumber();
+				} else if ( IsAlpha( buffer ) ) {
 					return readString( false );
 				}
-				return JsonToken( JsonTokenType::NULL, "" );
-			}
+				break;
+			};
+			return JsonToken( JsonTokenType::NULL, "" );
 		}
 		
 		private JsonToken readNull() {
-			if ( !( getNextChar() == char( "u" ) && getNextChar() == char( "l" ) && getNextChar() == char( "l" ) ) ) {
+			if ( !( getNextChar() == 'u' && getNextChar() == 'l' && getNextChar() == 'l' ) ) {
 				pos -= 3;
 				return readString( false );
-			} else {
-				return JsonToken( JsonTokenType::NULL, "" );
 			}
+			return JsonToken( JsonTokenType::NULL, "" );
 		}
 		
 		private JsonToken readBoolean( bool expected ) {
@@ -206,7 +184,7 @@ namespace TheNomad::Util {
 			}
 			
 			while ( true ) {
-				string next = getNextChar();
+				char next = getNextChar();
 				
 				if ( !isStandard && IsSpace( buffer ) ) {
 					continue;
@@ -214,27 +192,23 @@ namespace TheNomad::Util {
 				if ( pos < dataStr.size() ) {
 					bool shouldEnd = false;
 					bool isEndTypeStandard = isStandard;
-					for ( i = 0; i < endingCharStandard.length(); i++ ) {
-						if ( endingCharStandard[i] == buffer ) {
-							shouldEnd = true;
-							isEndTypeStandard = true;
-						}
+					if ( buffer == '\"' ) {
+						shouldEnd = true;
+						isEndTypeStandard = true;
 					}
-					for ( i = 0; i < endingCharNonStandard.length(); i++ ) {
-						if ( endingCharNonStandard[i] == buffer ) {
-							shouldEnd = true;
-							isEndTypeStandard = false;
-						}
+					if ( buffer == ':' ) {
+						shouldEnd = true;
+						isEndTypeStandard = false;
 					}
 					if ( !shouldEnd ) {
-						if ( buffer == "\\" && shouldConvertEscape ) { // 处理转义字符
+						if ( buffer == '\\' && shouldConvertEscape ) {
 							strStorage += convertEscape( isStandard );
 						} else {
 							strStorage += buffer;
 						}
 					} else {
 				  		if ( isEndTypeStandard != isStandard ) {
-							return JsonToken( JsonTokenType::ERROR, "(" + initLine + ", " + initCol + "): unexpected end of string");
+							return JsonToken( JsonTokenType::ERROR, "(" + initLine + ":" + initCol + "): unexpected end of string '" + buffer + "'" );
 						}
 						if ( !isStandard ) {
 							pos--;
@@ -242,49 +216,42 @@ namespace TheNomad::Util {
 						break;
 					}
 				} else {
-					return JsonToken( JsonTokenType::ERROR, "(" + initLine + ", " + initCol + "): no end of string" );
+					return JsonToken( JsonTokenType::ERROR, "(" + initLine + ":" + initCol + "): no end of string" );
 				}
 			}
 			return JsonToken( JsonTokenType::STRING, strStorage );
 		}
 
     	private string convertEscape( bool isStandard ) {
-			string storageStr = "";
+			string storageStr;
 			uint i;
-			int8 next = getNextChar();
-	
-			// BUG: Following escape characters are currently not available in AngelScript: \f \b
-			if ( next == char( "\"" ) ) {
-				return "\"";
-			} else if ( next == char( "\'" ) ) {
-				return "\'";
-			} else if ( next == char( "\\" ) ) {
-				return "\\";
-			} else if ( next == char( "n" ) ) {
-				return "\n";
-			} else if ( next == char( "r" ) ) {
-				return "\r";
-			} else if ( next == char( "t" ) ) {
-				return "\t";
-			} else if ( next == char( "/" ) ) {
-				return "/";
-			}
+			char next = getNextChar();
 			
-			if ( next == "u" ) {
+			// BUG: Following escape characters are currently not available in AngelScript: \f \b
+			switch ( next ) {
+			case '\"':
+			case '\'':
+			case '\\':
+			case '\n':
+			case '\r':
+			case '\t':
+			case '/': {
+				string str;
+				str.resize( 1 );
+				str[0] = next;
+				return str; }
+			default:
+				break;
+			};
+			
+			if ( next == 'u' ) {
 				storageStr = "\\u";
 				while ( true ) {
 					getNextChar();
 					if ( pos < dataStr.size() -  1 ) {
 						bool shouldEnd = false;
-						for ( i = 0; i < endingCharStandard.length(); i++) {
-							if ( endingCharStandard[i] == buffer ) {
-								shouldEnd = true;
-							}
-						}
-						for ( i = 0; i < endingCharNonStandard.length(); i++ ) {
-							if ( endingCharNonStandard[i] == buffer ) {
-								shouldEnd = true;
-							}
+						if ( buffer == '\"' || buffer == ':' ) {
+							shouldEnd = true;
 						}
 						if ( shouldEnd ) {
 							pos--;
@@ -314,7 +281,7 @@ namespace TheNomad::Util {
 			while ( true ) {
 				char next = getNextChar();
 				if ( pos < dataStr.size() ) {
-					if ( IsDigit( next ) || next == char( "." ) ) {
+					if ( IsDigit( next ) || next == '.' ) {
 						num += next;
 					} else {
 						pos--;
@@ -327,18 +294,12 @@ namespace TheNomad::Util {
 			return JsonToken( JsonTokenType::NUMBER, num );
 		}
 		
-		private uint pos = 0;
+		private int pos = 0;
 		private uint line = 1;
 		private uint col = 1;
 		private string dataStr = "";
 		private char buffer = 0;
 		private bool shouldConvertEscape = true;
-		private array<string> endingCharStandard = {
-			"\""
-		};
-		private array<string> endingCharNonStandard = {
-			":"
-		};
 		private array<JsonToken@> tokens;
 	};
 };

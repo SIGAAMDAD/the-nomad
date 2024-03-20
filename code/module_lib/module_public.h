@@ -81,11 +81,21 @@ public:
     }
 };
 
+using string_t = eastl::basic_string<char, eastl::allocator_malloc<char>>;
 using UtlString = eastl::fixed_string<char, MAX_STRING_CHARS, true, eastl::allocator_malloc<char>>;
 namespace eastl {
 	// for some reason, the eastl doesn't support eastl::hash<eastl::fixed_string>
 	template<> struct hash<UtlString> {
 		size_t operator()( const UtlString& str ) const {
+			const unsigned char *p = (const unsigned char *)str.c_str(); // To consider: limit p to at most 256 chars.
+			unsigned int c, result = 2166136261U; // We implement an FNV-like string hash.
+			while((c = *p++) != 0) // Using '!=' disables compiler warnings.
+				result = (result * 16777619) ^ c;
+			return (size_t)result;
+		}
+	};
+	template<> struct hash<string_t> {
+		size_t operator()( const string_t& str ) const {
 			const unsigned char *p = (const unsigned char *)str.c_str(); // To consider: limit p to at most 256 chars.
 			unsigned int c, result = 2166136261U; // We implement an FNV-like string hash.
 			while((c = *p++) != 0) // Using '!=' disables compiler warnings.
@@ -106,7 +116,6 @@ using UtlMap = eastl::unordered_map<Key, Value, eastl::hash<Key>, eastl::equal_t
 template<typename Key, typename Compare = eastl::less<Key>>
 using UtlSet = eastl::set<Key, Compare, CModuleAllocator>;
 
-using string_t = eastl::string;
 /*namespace eastl {
 	template<> struct hash<string_t> {
 		size_t operator()( const string_t& str ) const {

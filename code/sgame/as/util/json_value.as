@@ -9,6 +9,7 @@ namespace TheNomad::Util {
 		NULL_VALUE
 	};
 	
+	
 	class JsonValue {
 		JsonValue() {
 			set();
@@ -17,7 +18,7 @@ namespace TheNomad::Util {
 			set( value );
 		}
 		JsonValue( const string& in value ) {
-			set( value);
+			set( value );
 		}
 		JsonValue( int value ) {
 			set( value );
@@ -31,27 +32,11 @@ namespace TheNomad::Util {
 		JsonValue( const dictionary& in value ) {
 			set( value );
 		}
-		JsonValue( array<JsonValue@>@ value ) {
-			set( @value );
-		}
 		JsonValue( dictionary@ value ) {
 			set( @value );
 		}
-
-		JsonValue& opAssign( const JsonValue& in other ) {
-			valueInt = other.valueInt;
-			valueString = other.valueString;
-			valueBoolean = other.valueBoolean;
-			valueReal = other.valueReal;
-			if ( @other.valueArray !is null ) {
-				valueArray = other.valueArray;
-			}
-			if ( @other.valueObject !is null ) {
-				valueObject = other.valueObject;
-			}
-			contentType = JsonValueType( other.contentType );
-
-			return this;
+		JsonValue( array<JsonValue@>@ value ) {
+			set( @value );
 		}
     	
 		private void Reset() {
@@ -68,9 +53,6 @@ namespace TheNomad::Util {
 		}
 		bool opConv() const {
 			return valueBoolean;
-		}
-		string& opConv() {
-			return valueString;
 		}
 		const string& opConv() const {
 			return valueString;
@@ -93,12 +75,19 @@ namespace TheNomad::Util {
 		dictionary@ opConv() {
 			return @valueObject;
 		}
-		
+
 		void set() {
 			Reset();
 			contentType = JsonValueType::NULL_VALUE;
 		}
-		
+		void set( const array<JsonValue@>& in value ) {
+			Reset();
+			contentType = JsonValueType::ARRAY_VALUE;
+			if ( @valueArray is null ) {
+				@valueArray = array<JsonValue@>();
+			}
+			valueArray = value;
+		}
 		void set( bool value ) {
 			Reset();
 			contentType = JsonValueType::BOOLEAN_VALUE;
@@ -119,7 +108,7 @@ namespace TheNomad::Util {
 			contentType = JsonValueType::REAL_VALUE;
 			valueReal = value;
 		}
-		void set( array<JsonValue@>@ value) {
+		void set( array<JsonValue@>@ value ) {
 			Reset();
 			contentType = JsonValueType::ARRAY_VALUE;
 			@valueArray = @value;
@@ -129,8 +118,14 @@ namespace TheNomad::Util {
 			contentType = JsonValueType::OBJECT_VALUE;
 			@valueObject = @value;
 		}
-		void set( const JsonValue@ value ) {
-			this = value;
+		void set( const dictionary& in value ) {
+			Reset();
+			contentType = JsonValueType::OBJECT_VALUE;
+			if ( @valueObject is null ){
+				@valueObject = dictionary();
+			}
+			
+			valueObject = value;
 		}
 		
 		private bool IsANumber( const string& in str) {
@@ -162,28 +157,11 @@ namespace TheNomad::Util {
 
 		JsonValue@ opIndex( int idx ) {
 			if ( contentType != JsonValueType::ARRAY_VALUE ) {
-				GameError( "JsonValue integer indexed but is not an array" );
+				GameError( "JsonValue must be an array type to use an integer indexing operator" );
 			}
-						
-			return get_helper_arr( idx );
-		}
-
-		JsonValue@ get_opIndex( int idx ) {
-			if ( contentType != JsonValueType::ARRAY_VALUE ) {
-				GameError( "JsonValue integer indexed but is not an array" );
-			}
-						
 			return get_helper_arr( idx );
 		}
 		
-		void set_opIndex( int idx, const JsonValue@ value ) {
-			if ( contentType != JsonValueType::ARRAY_VALUE ) {
-				GameError( "JsonValue integer indexed but is not an array" );
-			}
-
-			set_helper_arr( idx, value );
-		}
-
 		JsonValue@ opIndex( const string& in idx ) {
 			if ( contentType != JsonValueType::OBJECT_VALUE ) {
 				if ( contentType == JsonValueType::ARRAY_VALUE ) {
@@ -204,33 +182,10 @@ namespace TheNomad::Util {
 				return JsonValue();
 			}
 			
-			return cast<JsonValue@>( valueObject[idx] );
+			return cast<JsonValue@>( @valueObject[idx] );
 		}
 		
-		JsonValue@ get_opIndex( const string& in idx ) {
-			if ( contentType != JsonValueType::OBJECT_VALUE ) {
-				if ( contentType == JsonValueType::ARRAY_VALUE ) {
-					if ( IsANumber( idx ) ) {
-						int idx_num = StringToInt( idx );
-						return get_helper_arr( idx_num );
-					} else {
-						GameError( "JsonValue keys must be integers when accessing array values" );
-					}
-				} else {
-					GameError( "JsonValue not an array or object" );
-				}
-				return JsonValue();
-			}
-			
-			if ( !valueObject.exists( idx ) ) {
-				ConsoleWarning( "out of range key '" + idx + "' for JsonValue object\n" );
-				return JsonValue();
-			}
-			
-			return cast<JsonValue@>( valueObject[idx] );
-		}
-		
-		void get_opIndex( const string& in idx, const JsonValue@ value ) {
+		void opIndex( const string& in idx, const JsonValue@ value ) {
 			if ( contentType != JsonValueType::OBJECT_VALUE ) {
 				if ( contentType == JsonValueType::ARRAY_VALUE ) {
 					if ( IsANumber( idx ) ) {
@@ -248,8 +203,8 @@ namespace TheNomad::Util {
 		}
 		
 		const string dump() const {
-			JsonObject obj;
-			return obj.dump( this );
+			JsonObject json;
+			return json.dump( this );
 		}
     
 		private JsonValueType contentType = JsonValueType::NULL_VALUE;

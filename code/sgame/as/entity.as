@@ -15,16 +15,14 @@ namespace TheNomad::SGame {
 	enum EntityFlags {
 		// DUH.
 		Dead      = 0x00000001,
-		// can't move, stationary mob
-		Sentry    = 0x00000002,
-		// slightly buffed mob, not yet implemented
-		Leader    = 0x00000004,
 		// can't take damage
-		Invul     = 0x00000008,
+		Invul     = 0x00000002,
 		// doesn't get drawn
-		Invis     = 0x00000010,
+		Invis     = 0x00000004,
 		// doesn't get respawned in Nomad or greater difficulties
-		PermaDead = 0x00000020,
+		PermaDead = 0x00000008,
+
+		None      = 0x00000000
 	};
 	
 	class EntityObject {

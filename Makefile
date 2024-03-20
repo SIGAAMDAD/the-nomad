@@ -316,6 +316,7 @@ SRC=\
 	$(O)/module_lib/scriptstdstring_utils.o \
 	$(O)/module_lib/scriptmath.o \
 	$(O)/module_lib/scripthandle.o \
+	$(O)/module_lib/scriptjson.o \
 	$(O)/module_lib/contextmgr.o \
 	$(O)/module_lib/imgui_stdlib.o \
 	\

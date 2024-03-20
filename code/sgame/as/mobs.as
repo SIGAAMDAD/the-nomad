@@ -7,13 +7,6 @@ namespace TheNomad::SGame {
 		MA_GetBehind,
 		MA_SneakAttack,
 	};
-
-	shared enum MobFlags {
-		Deaf      = 0x0001,
-		Blind     = 0x0002,
-		Terrified = 0x0004,
-		Boss      = 0x0008
-	};
 	
 	class MobObject : EntityObject {
 		MobObject() {
@@ -51,7 +44,7 @@ namespace TheNomad::SGame {
 		private void DoAttack( const AttackInfo@ atk ) {
 			TheNomad::GameSystem::RayCast@ rayData;
 			
-			switch ( atk.method ) {
+			switch ( atk.attackMethod ) {
 			case AttackMethod::Hitscan: {
 				TheNomad::GameSystem::RayCast ray;
 				
@@ -73,7 +66,7 @@ namespace TheNomad::SGame {
 				return; // we'll let the entity manager deal with it now
 			default:
 				// should theoretically NEVER happen
-				GameError( "MobObject::DoAttack: invalid attack method " + formatUInt( uint( atk.method ) ) );
+				GameError( "MobObject::DoAttack: invalid attack method " + formatUInt( uint( atk.attackMethod ) ) );
 			};
 			
 			if ( atk.effect.size() > 0 ) {
@@ -103,7 +96,7 @@ namespace TheNomad::SGame {
 				@m_CurrentAttack = null;
 				for ( uint i = 0; i < m_Info.attacks.size(); i++ ) {
 					if ( dist < m_Info.attacks[i].range && m_Info.attacks[i].valid ) {
-						attackType = m_Info.attacks[i].type;
+						attackType = m_Info.attacks[i].attackType;
 						@m_State = StateManager.GetStateForNum( StateNum::ST_MOB_FIGHT_MELEE );
 						@m_CurrentAttack = @m_Info.attacks[i];
 						break;

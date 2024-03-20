@@ -4,7 +4,7 @@
 			"Name": "Zurgut Grunt",
 			"Id": "MT_GRUNT",
 			"Health": 24,
-			"Armor": "none",
+			"ArmorType": "none",
 			"SoundTolerance": 24.0,
 			"SoundRangeX": 8,
 			"SoundRangeY": 8,
@@ -16,7 +16,6 @@
 					"Damage": 60.0,
 					"Range": 15.0,
 					"Effects": "sgame.effect_entity_stun",
-					"State": "FightMelee",
 					"CanParry": false
 				},
 				{
@@ -25,7 +24,6 @@
 					"Damage": 40.0,
 					"Range": 5.0,
 					"State": "FightMelee",
-					"Effects": "sgame.insta_kill_if_behind",
 					"CanParry": true
 				}
 			]
@@ -34,7 +32,7 @@
 			"Name": "Mercenary",
 			"Id": "MT_SHOTTY",
 			"Health": 50,
-			"Armor": "light",
+			"ArmorType": "light",
 			"SoundTolerance": 14.0,
 			"SoundRangeX": 10,
 			"SoundRangeY": 10,

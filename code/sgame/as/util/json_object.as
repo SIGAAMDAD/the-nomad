@@ -1,5 +1,5 @@
-#include "util/json_value.as"
-#include "util/json_tokenizer.as"
+#include "json_value.as"
+#include "json_tokenizer.as"
 
 namespace TheNomad::Util {
 	class JsonObject {
@@ -66,7 +66,7 @@ namespace TheNomad::Util {
 			string val = tokens[pos].getValue();
 			
 			// check if int or float
-			if ( val.find( "." ) == StringNPos ) {
+			if ( val.find( '.' ) == StringNPos ) {
 				int targetValue = StringToInt( val );
 				return JsonValue( targetValue );
 			} else {
@@ -91,7 +91,7 @@ namespace TheNomad::Util {
 						pos++;
 						result.set( tokens[pos - 2].getValue(), Process() );
 					} else {
-						GameError( "invalid key-value pair in a json object" );
+						GameError( "invlaid key-value pair in a json object" );
 					}
 				}
 				pos++;

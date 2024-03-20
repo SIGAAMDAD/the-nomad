@@ -11,9 +11,9 @@
 #include "module_engine/module_bbox.h"
 #include "module_engine/module_linkentity.h"
 #include "module_engine/module_polyvert.h"
-#include "module_engine/module_json.h"
 #include "module_engine/module_raycast.h"
 #include "../system/sys_timer.h"
+#include "scriptjson.h"
 
 //
 // ModuleException: we want to throw an exception from the vm to get the modulelib to
@@ -358,77 +358,77 @@ DEFINE_CALLBACK( FindSaveSection ) {
 
 DEFINE_CALLBACK( LoadInt8 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    *(int8_t *)pGeneric->GetAddressOfReturnLocation() = g_pArchiveHandler->LoadChar( name->c_str(), *(int32_t *)pGeneric->GetArgAddress( 1 ) );
+    *(int8_t *)pGeneric->GetAddressOfReturnLocation() = g_pArchiveHandler->LoadChar( name->c_str(), (int32_t)pGeneric->GetArgDWord( 1 ) );
 }
 
 DEFINE_CALLBACK( LoadInt16 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    *(int16_t *)pGeneric->GetAddressOfReturnLocation() = g_pArchiveHandler->LoadShort( name->c_str(), *(int32_t *)pGeneric->GetArgAddress( 1 ) );
+    *(int16_t *)pGeneric->GetAddressOfReturnLocation() = g_pArchiveHandler->LoadShort( name->c_str(), (int32_t)pGeneric->GetArgDWord( 1 ) );
 }
 
 DEFINE_CALLBACK( LoadInt32 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    *(int32_t *)pGeneric->GetAddressOfReturnLocation() = g_pArchiveHandler->LoadInt( name->c_str(), *(int32_t *)pGeneric->GetArgAddress( 1 ) );
+    *(int32_t *)pGeneric->GetAddressOfReturnLocation() = g_pArchiveHandler->LoadInt( name->c_str(), (int32_t)pGeneric->GetArgDWord( 1 ) );
 }
 
 DEFINE_CALLBACK( LoadInt64 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    *(int64_t *)pGeneric->GetAddressOfReturnLocation() = g_pArchiveHandler->LoadLong( name->c_str(), *(int32_t *)pGeneric->GetArgAddress( 1 ) );
+    *(int64_t *)pGeneric->GetAddressOfReturnLocation() = g_pArchiveHandler->LoadLong( name->c_str(), (int32_t)pGeneric->GetArgDWord( 1 ) );
 }
 
 DEFINE_CALLBACK( LoadUInt8 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    *(uint8_t *)pGeneric->GetAddressOfReturnLocation() = g_pArchiveHandler->LoadByte( name->c_str(), *(int32_t *)pGeneric->GetArgAddress( 1 ) );
+    *(uint8_t *)pGeneric->GetAddressOfReturnLocation() = g_pArchiveHandler->LoadByte( name->c_str(), (int32_t)pGeneric->GetArgDWord( 1 ) );
 }
 
 DEFINE_CALLBACK( LoadUInt16 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    *(uint16_t *)pGeneric->GetAddressOfReturnLocation() = g_pArchiveHandler->LoadUShort( name->c_str(), *(int32_t *)pGeneric->GetArgAddress( 1 ) );
+    *(uint16_t *)pGeneric->GetAddressOfReturnLocation() = g_pArchiveHandler->LoadUShort( name->c_str(), (int32_t)pGeneric->GetArgDWord( 1 ) );
 }
 
 DEFINE_CALLBACK( LoadUInt32 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    *(uint32_t *)pGeneric->GetAddressOfReturnLocation() = g_pArchiveHandler->LoadUInt( name->c_str(), *(int32_t *)pGeneric->GetArgAddress( 1 ) );
+    *(uint32_t *)pGeneric->GetAddressOfReturnLocation() = g_pArchiveHandler->LoadUInt( name->c_str(), (int32_t)pGeneric->GetArgDWord( 1 ) );
 }
 
 DEFINE_CALLBACK( LoadUInt64 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = g_pArchiveHandler->LoadULong( name->c_str(), *(int32_t *)pGeneric->GetArgAddress( 1 ) );
+    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = g_pArchiveHandler->LoadULong( name->c_str(), (int32_t)pGeneric->GetArgDWord( 1 ) );
 }
 
 DEFINE_CALLBACK( LoadFloat ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    *(float *)pGeneric->GetAddressOfReturnLocation() = g_pArchiveHandler->LoadFloat( name->c_str(), *(int32_t *)pGeneric->GetArgAddress( 1 ) );
+    *(float *)pGeneric->GetAddressOfReturnLocation() = g_pArchiveHandler->LoadFloat( name->c_str(), (int32_t)pGeneric->GetArgDWord( 1 ) );
 }
 
 DEFINE_CALLBACK( LoadString ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
     string_t *arg = (string_t *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->LoadString( name->c_str(), arg, *(int32_t *)pGeneric->GetArgAddress( 2 ) );
+    g_pArchiveHandler->LoadString( name->c_str(), arg, (int32_t)pGeneric->GetArgDWord( 2 ) );
 }
 
 DEFINE_CALLBACK( LoadArray ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
     CScriptArray *arg = (CScriptArray *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->LoadArray( name->c_str(), arg, *(int32_t *)pGeneric->GetArgAddress( 2 ) );
+    g_pArchiveHandler->LoadArray( name->c_str(), arg, (int32_t)pGeneric->GetArgDWord( 2 ) );
 }
 
 DEFINE_CALLBACK( LoadVec2 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
     vec2 *arg = (vec2 *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->LoadVec2( name->c_str(), glm::value_ptr( *arg ), *(int32_t *)pGeneric->GetArgAddress( 2 ) );
+    g_pArchiveHandler->LoadVec2( name->c_str(), glm::value_ptr( *arg ), (int32_t)pGeneric->GetArgDWord( 2 ) );
 }
 
 DEFINE_CALLBACK( LoadVec3 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
     vec3 *arg = (vec3 *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->LoadVec3( name->c_str(), glm::value_ptr( *arg ), *(int32_t *)pGeneric->GetArgAddress( 2 ) );
+    g_pArchiveHandler->LoadVec3( name->c_str(), glm::value_ptr( *arg ), (int32_t)pGeneric->GetArgDWord( 2 ) );
 }
 
 DEFINE_CALLBACK( LoadVec4 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
     glm::vec4 *arg = (glm::vec4 *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->LoadVec4( name->c_str(), glm::value_ptr( *arg ), *(int32_t *)pGeneric->GetArgAddress( 2 ) );
+    g_pArchiveHandler->LoadVec4( name->c_str(), glm::value_ptr( *arg ), (int32_t)pGeneric->GetArgDWord( 2 ) );
 }
 
 
@@ -790,6 +790,7 @@ DEFINE_CALLBACK( ConsoleWarning ) {
 
 DEFINE_CALLBACK( GameError ) {
     const string_t *msg = (const string_t *)pGeneric->GetArgObject( 0 );
+    Con_Printf( COLOR_RED "(ERROR) ModuleException Thrown: %s\n", msg->c_str() );
     throw ModuleException( msg );
 }
 
@@ -2206,6 +2207,8 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveUShort( const string& in, uint16 )", SaveUInt16 );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveUInt( const string& in, uint32 )", SaveUInt32 );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveULong( const string& in, uint64 )", SaveUInt64 );
+
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveFloat( const string& in, float )", SaveFloat );
         
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<float>& in )", SaveArray );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<int8>& in )", SaveArray );
@@ -2238,21 +2241,23 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "int32 TheNomad::GameSystem::LoadInt( const string& in, int )", LoadInt32 );
         REGISTER_GLOBAL_FUNCTION( "int64 TheNomad::GameSystem::LoadLong( const string& in, int )", LoadInt64 );
 
-        REGISTER_GLOBAL_FUNCTION( "uint8 TheNomad::GameSystem::LoadByte( const string& in, uint )", LoadUInt8 );
-        REGISTER_GLOBAL_FUNCTION( "uint16 TheNomad::GameSystem::LoadUShort( const string& in, uint )", LoadUInt16 );
-        REGISTER_GLOBAL_FUNCTION( "uint32 TheNomad::GameSystem::LoadUInt( const string& in, uint )", LoadUInt32 );
-        REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::GameSystem::LoadULong( const string& in, uint )", LoadUInt64 );
+        REGISTER_GLOBAL_FUNCTION( "uint8 TheNomad::GameSystem::LoadByte( const string& in, int )", LoadUInt8 );
+        REGISTER_GLOBAL_FUNCTION( "uint16 TheNomad::GameSystem::LoadUShort( const string& in, int )", LoadUInt16 );
+        REGISTER_GLOBAL_FUNCTION( "uint32 TheNomad::GameSystem::LoadUInt( const string& in, int )", LoadUInt32 );
+        REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::GameSystem::LoadULong( const string& in, int )", LoadUInt64 );
+
+        REGISTER_GLOBAL_FUNCTION( "float TheNomad::GameSystem::LoadFloat( const string& in, int )", LoadFloat );
         
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<float>& out )", LoadArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<int8>& out )", LoadArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<int16>& out )", LoadArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<int32>& out )", LoadArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<int64>& out )", LoadArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<uint8>& out )", LoadArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<uint16>& out )", LoadArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<uint32>& out )", LoadArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<uint64>& out )", LoadArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<string>& out )", LoadArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<float>& out, int )", LoadArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<int8>& out, int )", LoadArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<int16>& out, int )", LoadArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<int32>& out, int )", LoadArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<int64>& out, int )", LoadArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<uint8>& out, int )", LoadArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<uint16>& out, int )", LoadArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<uint32>& out, int )", LoadArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<uint64>& out, int )", LoadArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<string>& out, int )", LoadArray );
 
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadString( const string& in, string& out, int )", LoadString );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadVec2( const string& in, vec2& out, int )", LoadVec2 );
@@ -2303,33 +2308,6 @@ void ModuleLib_Register_Engine( void )
     SET_NAMESPACE( "TheNomad" );
     { // Util
         SET_NAMESPACE( "TheNomad::Util" );
-//        REGISTER_OBJECT_TYPE( "JsonParser", CModuleJsonObject, asOBJ_VALUE );
-//        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( CModuleJsonObject, ( void ) ) );
-//        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_CONSTRUCT, "void f( const TheNomad::Util::JsonParser& in )", WRAP_CON( CModuleJsonObject, ( const CModuleJsonObject& ) ) );
-//        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_FACTORY, "ref@ f()", WRAP_FN_PR( CModuleJsonObject::Factory, ( void ), CModuleJsonObject * ) );
-//        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_ADDREF, "void f()", WRAP_MFN_PR( CModuleJsonObject, AddRef, ( void ) const, void ) );
-//        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_RELEASE, "void f()", WRAP_MFN_PR( CModuleJsonObject, Release, ( void ), void ) );
-//        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_ENUMREFS, "void f( int& in )", WRAP_MFN_PR( CModuleJsonObject, EnumReferences, ( asIScriptEngine * ), void ) );
-//        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_RELEASEREFS, "void f( int& in )", WRAP_MFN_PR( CModuleJsonObject, ReleaseAllRefs, ( asIScriptEngine * ), void ) );
-//        REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Util::JsonParser", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( CModuleJsonObject ) );
-//
-//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "void SetInt( const string& in, int )", CModuleJsonObject, SetInt, ( const string_t *, int32_t ), void );
-//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "void SetUInt( const string& in, uint )", CModuleJsonObject, SetUInt, ( const string_t *, uint32_t ), void );
-//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "void SetFloat( const string& in, float )", CModuleJsonObject, SetFloat, ( const string_t *, float ), void );
-//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool Parse( const string& in )", CModuleJsonObject, Parse, ( const string_t * ), bool );
-//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "TheNomad::Util::JsonParser& opAssign( const TheNomad::Util::JsonParser& in )", CModuleJsonObject, operator=, ( const CModuleJsonObject& ), CModuleJsonObject& );
-//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetInt( const string& in, int& out )", CModuleJsonObject, GetInt, ( const string_t *, int32_t * ), bool );
-//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetUInt( const string& in, uint& out )", CModuleJsonObject, GetUInt, ( const string_t *, uint32_t * ), bool );
-//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetFloat( const string& in, float& out )", CModuleJsonObject, GetFloat, ( const string_t *, float * ), bool );
-//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetString( const string& in, string& out )", CModuleJsonObject, GetString, ( const string_t *, string_t * ), bool );
-//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetBool( const string& in, bool& out )", CModuleJsonObject, GetBool, ( const string_t *, bool * ), bool );
-//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetObject( const string& in, TheNomad::Util::JsonParser& in )", CModuleJsonObject, GetObject, ( const string_t *, CModuleJsonObject * ), bool );
-//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetIntArray( const string& in, array<int>& out )", CModuleJsonObject, GetIntArray, ( const string_t *, CScriptArray * ), bool );
-//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetUIntArray( const string& in, array<uint>& out )", CModuleJsonObject, GetUIntArray, ( const string_t *, CScriptArray * ), bool );
-//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetFloatArray( const string& in, array<float>& out )", CModuleJsonObject, GetFloatArray, ( const string_t *, CScriptArray * ), bool );
-//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetStringArray( const string& in, array<string>& out )", CModuleJsonObject, GetStringArray, ( const string_t *, CScriptArray * ), bool );
-//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetBoolArray( const string& in, array<bool>& out )", CModuleJsonObject, GetBoolArray, ( const string_t *, CScriptArray * ), bool );
-//        REGISTER_METHOD_FUNCTION( "TheNomad::Util::JsonParser", "bool GetObjectArray( const string& in, array<TheNomad::Util::JsonParser>& out )", CModuleJsonObject, GetObjectArray, ( const string_t *, CScriptArray * ), bool );
 
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Util::GetModuleList( array<string>& out )", GetModuleList );
 

@@ -41,6 +41,14 @@ namespace TheNomad::SGame {
 		NumWeaponTypes
 	};
 
+	enum MobFlags {
+		Deaf      = 0x0001,
+		Blind     = 0x0002,
+		Terrified = 0x0004,
+		Boss      = 0x0008,
+		Sentry    = 0x0010,
+	};
+
 	enum WeaponProperty {
 		TwoHandedBlade       = 0x00000001,
 		OneHandedBlade       = 0x00000002,
@@ -58,7 +66,53 @@ namespace TheNomad::SGame {
 	};
 	
 	interface InfoLoader {
-		bool Load( TheNomad::Util::JsonValue@ json );
+		bool Load( json@ json );
+	};
+
+	const array<uint> AttackTypeData = {
+		uint( AttackType::Melee ),
+		uint( AttackType::Missile )
+	};
+
+	const array<string> AttackTypeStrings = {
+		"Melee",
+		"Missile"
+	};
+
+	const array<uint> AttackMethodData = {
+		uint( AttackMethod::Hitscan ),
+		uint( AttackMethod::Projectile ),
+		uint( AttackMethod::AreaOfEffect )
+	};
+
+	const array<string> AttackMethodStrings = {
+		"Hitscan",
+		"Projectile",
+		"AreaOfEffect"
+	};
+
+	const array<string> ArmorTypeStrings = {
+		"None",
+		"Light",
+		"Standard",
+		"Heavy",
+		"Invul"
+	};
+
+	const array<uint> MobFlagBits = {
+		uint( MobFlags::Deaf ),
+		uint( MobFlags::Blind ),
+		uint( MobFlags::Terrified ),
+		uint( MobFlags::Boss ),
+		uint( MobFlags::Sentry )
+	};
+
+	const array<string> MobFlagStrings = {
+		"Deaf",
+		"Blind",
+		"Terrified",
+		"Boss",
+		"Sentry"
 	};
 	
 	const array<uint> WeaponPropertyBits = {
@@ -111,17 +165,17 @@ namespace TheNomad::SGame {
 		WeaponInfo() {
 		}
 		
-		bool Load( TheNomad::Util::JsonValue@ json ) {
+		bool Load( json@ json ) {
 			string ammo;
 			string type;
 			uint i;
-			const array<TheNomad::Util::JsonValue@>@ props;
+			array<json@> props;
 			
 			name = string( json["Name"] );
 			magSize = uint( json["MagSize"] );
 			magMaxStack = uint( json["MagMaxStack"] );
 			type = string( json["WeaponType"] );
-			@props = cast<array<TheNomad::Util::JsonValue@>@>( @json["WeaponProperties"] );
+			props = array<json@>( json["WeaponProperties"] );
 			ammo = string( json["AmmoType"] );
 			magSize = uint( json["MagSize"] );
 			magMaxStack = uint( json["MagMaxStack"] );
@@ -172,20 +226,16 @@ namespace TheNomad::SGame {
 		ItemInfo() {
 		}
 		
-		bool Load( TheNomad::Util::JsonValue@ json ) {
-			TheNomad::Util::JsonValue@ str;
-			
+		bool Load( json@ json ) {
 			name = string( json["Name"] );
 			TheNomad::GameSystem::GetString( name, description );
-			@str = @json["Effect"];
-			if ( @str !is null ) {
-				effect = string( str );
-			}
-			
+			effect = string( json["Effect"] );
 			cost = int( json["Cost"] );
 			hShader = TheNomad::Engine::Renderer::RegisterShader( string( json["Shader"] ) );
 			spriteOffset = uint( json["SpriteOffset"] );
 			maxStackSize = uint( json["MaxStackSize"] );
+			pickupSfx.Set( string( json["PickupSfx"] ) );
+			useSfx.Set( string( json["UseSfx"] ) );
 
 			return true;
 		}
@@ -197,29 +247,74 @@ namespace TheNomad::SGame {
 		int hShader = FS_INVALID_HANDLE;
 		uint spriteOffset = 0;
 		uint maxStackSize = 0;
+		TheNomad::Engine::SoundSystem::SoundEffect pickupSfx;
+		TheNomad::Engine::SoundSystem::SoundEffect useSfx;
 	};
 	
 	class AttackInfo : InfoLoader {
 		AttackInfo() {
 		}
 		
-		bool Load( TheNomad::Util::JsonValue@ json ) {
+		bool Load( json@ json ) {
+			string methodStr;
+			string typeStr;
+			uint i;
+
 			name = string( json["Name"] );
+			id = string( json["Id"] );
+			effect = string( json["Effect"] );
+			damage = float( json["Damage"] );
+			range = float( json["Range"] );
+			cooldown = uint( json["Cooldown"] );
+			duration = uint( json["Duration"] );
+			methodStr = string( json["Method"] );
+			typeStr = string( json["Type"] );
+			canParry = bool( json["CanParry"] );
+			hShader = TheNomad::Engine::Renderer::RegisterShader( string( json["Shader"] ) );
+			spriteOffset = uint( json["SpriteOffset"] );
+			
+			TheNomad::GameSystem::GetString( id + "_DESC", description );
+
+			for ( i = 0; i < AttackMethodStrings.size(); i++ ) {
+				if ( TheNomad::Util::StrICmp( AttackMethodStrings[i], methodStr ) == 0 ) {
+					attackMethod = AttackMethod( AttackMethodData[i] );
+					break;
+				}
+			}
+			if ( i == AttackMethodStrings.size() ) {
+				ConsoleWarning( "invalid attack info, AttackMethod '" + methodStr + "' isn't recognized.\n" );
+				return false;
+			}
+
+			for ( i = 0; i < AttackTypeStrings.size(); i++ ) {
+				if ( TheNomad::Util::StrICmp( AttackTypeStrings[i], typeStr ) == 0 ) {
+					attackType = AttackType( AttackTypeData[i] );
+					break;
+				}
+			}
+			if ( i == AttackTypeStrings.size() ) {
+				ConsoleWarning( "invalid attack info, AttackType '" + typeStr + "' isn't recognized.\n" );
+				return false;
+			}
+			
+			valid = true;
 
 			return true;
 		}
 		
 		string name;
+		string id;
 		string effect;
 		string description;
 		float damage = 0.0f;
 		float range = 0.0f;
 		uint cooldown = 0;
 		uint duration = 0;
-		AttackMethod method = AttackMethod::Hitscan;
-		AttackType type = AttackType::Melee;
+		AttackMethod attackMethod = AttackMethod::Hitscan;
+		AttackType attackType = AttackType::Melee;
 		bool canParry = true;
 		bool valid = false;
+		int hShader = FS_INVALID_HANDLE;
 		uint spriteOffset = 0;
 		TheNomad::Engine::SoundSystem::SoundEffect sound;
 	};
@@ -228,28 +323,171 @@ namespace TheNomad::SGame {
 		MobInfo() {
 		}
 		
-		bool Load( TheNomad::Util::JsonValue@ json ) {
+		bool Load( json@ json ) {
+			string armor;
+			string str;
+			array<json@> values;
+			uint i;
+			
+			if ( !json.get( "Name", name ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'Name'\n" );
+				return false;
+			}
+			if ( !json.get( "Health", health ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'Health'\n" );
+				return false;
+			}
+			if ( !json.get( "ArmorType", armor ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'ArmorType'\n" );
+				return false;
+			}
+			if ( !json.get( "Width", width ) ) 
+			ConsoleWarning( "invalid mob info, missing variable 'Width'\n" );{
+				return false;
+			}
+			if ( !json.get( "Height", height ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'Height'\n" );
+				return false;
+			}
+			if ( !json.get( "SoundTolerance", soundTolerance ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'SoundTolerance'\n" );
+				return false;
+			}
+			if ( !json.get( "SmellTolerance", smellTolerance ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'SmellTolerance'\n" );
+				return false;
+			}
+			if ( !json.get( "SightRadius", sightRadius ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'SightRadius'\n" );
+				return false;
+			}
+			if ( !json.get( "SightRange", sightRange ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'SightRange'\n" );
+				return false;
+			}
+			if ( !json.get( "SoundRangeX", soundRangeX ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'SoundRangeX'\n" );
+				return false;
+			}
+			if ( !json.get( "SoundRangeY", soundRangeY ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'SoundRangeY'\n" );
+				return false;
+			}
+			if ( !json.get( "WaitTics", waitTics ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'WaitTics'\n" );
+				return false;
+			}
+			if ( !json.get( "SpriteOffset", spriteOffset ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'SpriteOffset'\n" );
+				return false;
+			}
+			if ( !json.get( "Shader", str ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'Shader'\n" );
+				return false;
+			} else {
+				hShader = TheNomad::Engine::Renderer::RegisterShader( str );
+			}
+			if ( !json.get( "WakeupSfx", str ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'WakeupSfx'\n" );
+				return false;
+			} else {
+				wakeupSfx.Set( str );
+			}
+			if ( !json.get( "MoveSfx", str ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'MoveSfx'\n" );
+				return false;
+			} else {
+				moveSfx.Set( str );
+			}
+			if ( !json.get( "PainSfx", str ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'PainSfx'\n" );
+				return false;
+			} else {
+				painSfx.Set( str );
+			}
+			if ( !json.get( "DieSfx", str ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'DieSfx'\n" );
+				return false;
+			} else {
+				dieSfx.Set( str );
+			}
+			
+			if ( !json.get( "Flags", values ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'Flags'\n" );
+				return false;
+			}
+			
+			ConsolePrint( "Processing MobFlags for '" + name + "'...\n" );
+			for ( i = 0; i < MobFlagStrings.size(); i++ ) {
+				for ( uint a = 0; a < values.size(); a++ ) {
+					if ( TheNomad::Util::StrICmp( string( values[a] ), MobFlagStrings[i] ) == 0 ) {
+						flags = EntityFlags( uint( flags ) | MobFlagBits[i] );
+					}
+				}
+			}
+			
+			if ( !json.get( "Speed", values ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'Speed'\n" );
+				return false;
+			}
+			
+			if ( values.size() != 3 ) {
+				ConsoleWarning( "invalid mob info, Speed value array is not exactly 3 values.\n" );
+			}
+			for ( i = 0; i < values.size(); i++ ) {
+				speed[i] = float( values[i] );
+			}
+			
+			if ( !json.get( "AttackData", values ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'AttackData'\n" );
+				return false;
+			}
+			if ( values.size() < 1 ) {
+				ConsoleWarning( "mob info has no attack data.\n" );
+			}
+			ConsolePrint( "Processing AttackData for MobInfo '" + name + "'...\n" );
+			for ( i = 0; i < values.size(); i++ ) {
+				AttackInfo@ atk = AttackInfo();
+				if ( !atk.Load( @json ) ) {
+					ConsoleWarning( "failed to load attack info.\n" );
+					return false;
+				}
+				attacks.push_back( @atk );
+			}
+			
+			for ( i = 0; i < ArmorTypeStrings.size(); i++ ) {
+				if ( TheNomad::Util::StrICmp( armor, ArmorTypeStrings[i] ) == 0 ) {
+					armorType = ArmorType( i );
+					break;
+				}
+			}
+			if ( armorType == ArmorType::None ) {
+				ConsoleWarning( "invalid mob info, ArmorType value '" + armor + "' not recognized.\n" );
+				return false;
+			}
+
 			return true;
 		}
 		
 		string name;
 		float health = 0.0f;
-		ArmorType armor = ArmorType::None;
+		ArmorType armorType = ArmorType::None;
 		float width = 0.0f;
 		float height = 0.0f;
 		vec3 speed = vec3( 0.0f );
 		float soundTolerance = 0.0f;
 		float smellTolerance = 0.0f;
+		float sightRadius = 0.0f;
 		int sightRange = 0;
 		int smellRangeX = 0;
 		int smellRangeY = 0;
 		int soundRangeX = 0;
 		int soundRangeY = 0;
 		uint waitTics = 0; // the duration until the mob has to rethink again
-		uint flags = 0;
+		EntityFlags flags = EntityFlags::None;
 		uint spriteOffset = 0;
 		int hShader = 0;
-		array<AttackInfo> attacks;
+		array<AttackInfo@> attacks;
 		TheNomad::Engine::SoundSystem::SoundEffect wakeupSfx;
 		TheNomad::Engine::SoundSystem::SoundEffect moveSfx;
 		TheNomad::Engine::SoundSystem::SoundEffect painSfx;
@@ -265,25 +503,21 @@ namespace TheNomad::SGame {
 			LoadWeaponInfos();
 		}
 		
-		private array<TheNomad::Util::JsonValue@>@ LoadJSonFile( const string& in fileName, const string& in ArrayName ) {
+		private array<json@>@ LoadJSonFile( const string& in fileName, const string& in ArrayName ) {
 			string path;
 			string buffer;
-			array<TheNomad::Util::JsonValue@>@ values;
-			TheNomad::Util::JsonValue@ data;
-			TheNomad::Util::JsonObject json;
+			json@ data;
+			array<json@> values;
 			
 			path.reserve( MAX_NPATH );
 			path = "modules/" + MODULE_NAME + "/scripts/" + fileName;
-			if ( TheNomad::Engine::FileSystem::LoadFile( path, buffer ) == 0 ) {
-				ConsolePrint( "no info file found for '" + fileName + "', skipping.\n" );
+
+			@data = json();
+			if ( !data.ParseFile( path ) ) {
 				return null;
 			}
-			
-			@data = @json.Parse( buffer );
-			@values = cast<array<TheNomad::Util::JsonValue@>@>( @data[ArrayName] );
-			
-			if ( @values is null ) {
-				ConsoleWarning( "info file loaded, but no object named '" + ArrayName + "' found.\n" );
+			if ( !data.get( ArrayName, values ) ) {
+				ConsoleWarning( "info file '" + fileName + "' found, but no infos defined, skipping...\n" );
 				return null;
 			}
 			
@@ -291,7 +525,7 @@ namespace TheNomad::SGame {
 		}
 		
 		private void LoadMobInfos() {
-			array<TheNomad::Util::JsonValue@>@ infos;
+			array<json@>@ infos;
 			MobInfo@ info;
 			string msg;
 			
@@ -317,7 +551,7 @@ namespace TheNomad::SGame {
 		}
 		
 		private void LoadItemInfos() {
-			array<TheNomad::Util::JsonValue@>@ infos;
+			array<json@>@ infos;
 			ItemInfo@ info;
 			string msg;
 			
@@ -343,7 +577,7 @@ namespace TheNomad::SGame {
 		}
 		
 		private void LoadWeaponInfos() {
-			array<TheNomad::Util::JsonValue@>@ infos;
+			array<json@>@ infos;
 			WeaponInfo@ info;
 			string msg;
 			

@@ -3,7 +3,6 @@
 #include "spawn.as"
 #include "checkpoint.as"
 #include "sfx.as"
-#include "util/json.as"
 
 namespace TheNomad::SGame {
 	shared enum LevelRank {
@@ -409,8 +408,7 @@ namespace TheNomad::SGame {
 	class LevelSystem : TheNomad::GameSystem::GameObject {
 		LevelSystem() {
 			LevelInfoData@ data;
-			TheNomad::Util::JsonValue@ value;
-			TheNomad::Util::JsonValue@ rankS, rankA, rankB, rankC, rankD, rankF, rankU;
+			json@ rankS, rankA, rankB, rankC, rankD, rankF, rankU;
 			uint i;
 			string str;
 			string mapname;
@@ -433,24 +431,15 @@ namespace TheNomad::SGame {
 
 			str.reserve( MAX_STRING_CHARS );
 			for ( i = 0; i < NumLevels(); i++ ) {
-				TheNomad::Util::JsonValue@ info = @GetLevelInfoByIndex( i );
+				json@ info = @GetLevelInfoByIndex( i );
+				string levelName = string( info["Name"] );
 
-				if ( @info["Name"] is null ) {
-					ConsoleWarning( "invalid level info, missing variable 'name'\n" );
-					continue;
-				}
-				@data = LevelInfoData( string( info["Name"] ) );
+				@data = LevelInfoData( levelName );
 
 				ConsolePrint( "Loaded level '" + data.m_Name + "'...\n" );
 
 				for ( uint j = 0; j < data.m_MapHandles.size(); j++ ) {
-					@value = @info["MapNameDifficulty_" + formatUInt( j )];
-					if ( @value is null ) {
-						// level currently doesn't support this difficulty
-						continue;
-					}
-
-					mapname = string( value );
+					mapname = string( info[ string( "MapNameDifficulty_" + formatUInt( j ) ) ] );
 					if ( mapname == "none" ) {
 						// level currently doesn't support this difficulty
 						continue;
@@ -606,10 +595,10 @@ namespace TheNomad::SGame {
 			m_LevelInfoDatas.push_back( levelData );
 		}
 
-		const TheNomad::Util::JsonValue@ GetLevelInfoByIndex( uint nIndex ) const {
+		const json@ GetLevelInfoByIndex( uint nIndex ) const {
 			return m_LevelInfos[ nIndex ];
 		}
-		TheNomad::Util::JsonValue@ GetLevelInfoByIndex( uint nIndex ) {
+		json@ GetLevelInfoByIndex( uint nIndex ) {
 			return m_LevelInfos[ nIndex ];
 		}
 		
@@ -631,35 +620,24 @@ namespace TheNomad::SGame {
 			return null;
 		}
 
-		private array<TheNomad::Util::JsonValue@>@ LoadJSonFile( const string& in modName ) {
+		private array<json@>@ LoadJSonFile( const string& in modName ) {
 			string path;
-			string buffer;
-			array<TheNomad::Util::JsonValue@>@ values;
-			TheNomad::Util::JsonValue@ data;
-			TheNomad::Util::JsonObject json;
+			array<json@> values;
+			json@ json;
 			
 			path.reserve( MAX_NPATH );
 			path = "modules/" + modName + "/scripts/levels.json";
-			if ( TheNomad::Engine::FileSystem::LoadFile( path, buffer ) == 0 ) {
-				GameError( "no level info file found for \"" + modName + "\", skipping.\n" );
-				return null;
-			}
 			
-			@data = @json.Parse( buffer );
-			@values = cast<array<TheNomad::Util::JsonValue@>@>( @data["LevelInfo"] );
-			
-			if ( @values is null ) {
-				ConsoleWarning( "level info file loaded, but no object named 'LevelInfo' found.\n" );
-				return null;
-			}
+			@json = @JsonParseFile( path );
+			values = array<json@>( json["LevelInfo"] );
 			
 			return @values;
 		}
 
 		void LoadLevelsFromFile( const string& in modName ) {
-			array<TheNomad::Util::JsonValue@>@ levels;
+			array<json@>@ levels;
 
-			@levels = LoadJSonFile( modName );
+			@levels = @LoadJSonFile( modName );
 
 			m_LevelInfos.reserve( levels.size() );
 			for ( uint i = 0; i < levels.size(); i++ ) {
@@ -668,56 +646,13 @@ namespace TheNomad::SGame {
 			}
 		}
 
-		bool LoadLevelRankData( string& in str, const string& in rankName, LevelRankData@ data, TheNomad::Util::JsonValue@ json ) {
-			TheNomad::Util::JsonValue@ value;
-
-			@value = @json["MinKills"];
-			if ( @value is null ) {
-				str = "invalid level info, missing RankData value for " + rankName + " 'MinKills'\n";
-				ConsoleWarning( str );
-				return false;
-			}
-			data.minKills = uint( value );
-
-			@value = @json["MinStyle"];
-			if ( @value is null ) {
-				str = "invalid level info, missing RankData value for " + rankName + " 'MinStyle'\n";
-				ConsoleWarning( str );
-				return false;
-			}
-			data.minStyle = uint( value );
-
-			@value = @json["MaxDeaths"];
-			if ( @value is null ) {
-				str = "invalid level info, missing RankData value for " + rankName + " 'MaxDeaths'\n";
-				ConsoleWarning( str );
-				return false;
-			}
-			data.maxDeaths = uint( value );
-
-			@value = @json["MaxCollateral"];
-			if ( @value is null ) {
-				str = "invalid level info, missing RankData value for " + rankName + " 'MaxCollateral'\n";
-				ConsoleWarning( str );
-				return false;
-			}
-			data.maxCollateral = uint( value );
-
-			@value = @json["MinTime"];
-			if ( @value is null ) {
-				str = "invalid level info, missing RankData value for " + rankName + " 'MinTime'\n";
-				ConsoleWarning( str );
-				return false;
-			}
-			data.minTime = uint( value );
-
-			@value = @json["RequiresClean"];
-			if ( @value is null ) {
-				str = "invalid level info, missing RankData value for 'RequiresClean'\n";
-				ConsoleWarning( str );
-				return false;
-			}
-			data.requiresClean = bool( value );
+		bool LoadLevelRankData( string& in str, const string& in rankName, LevelRankData@ data, json@ json ) {
+			data.minKills = uint( json["MinKills"] );
+			data.minStyle = uint( json["MinStyle"] );
+			data.maxDeaths = uint( json["MaxDeaths"] );
+			data.maxCollateral = uint( json["MaxCollateral"] );
+			data.minTime = uint( json["MinTime"] );
+			data.requiresClean = bool( json["RequiresClean"] );
 			
 			return true;
 		}
@@ -751,7 +686,7 @@ namespace TheNomad::SGame {
 			return @m_Current;
 		}
 		
-		private array<TheNomad::Util::JsonValue@> m_LevelInfos;
+		private array<json@> m_LevelInfos;
 		private array<LevelInfoData@> m_LevelInfoDatas;
 		private uint m_nIndex;
 		private uint m_nLevels;

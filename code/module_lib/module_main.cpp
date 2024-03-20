@@ -7,6 +7,7 @@
 #include "../game/g_game.h"
 #include <glm/glm.hpp>
 #include <filesystem>
+#include "scriptjson.h"
 #include "module_renderlib.h"
 #include "module_funcdefs.hpp"
 #include "module_stringfactory.hpp"
@@ -346,6 +347,7 @@ bool CModuleLib::AddDefaultProcs( void ) const {
     RegisterScriptArray( m_pEngine, true );
     RegisterScriptDictionary( m_pEngine );
     RegisterScriptMath( m_pEngine );
+    RegisterScriptJson( m_pEngine );
 
     ModuleLib_Register_Engine();
     const_cast<CModuleLib *>( this )->m_bRegistered = qtrue;

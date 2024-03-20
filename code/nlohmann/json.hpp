@@ -4354,7 +4354,7 @@ class exception : public std::exception
     /// the id of the exception
     const int id; // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes)
 
-  protected:
+  public:
     JSON_HEDLEY_NON_NULL(3)
     exception(int id_, const char* what_arg) : id(id_), m(what_arg) {} // NOLINT(bugprone-throw-keyword-missing)
 

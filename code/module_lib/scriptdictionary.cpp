@@ -1,6 +1,7 @@
 #include "module_public.h"
-#include "module_alloc.h"
 #include "scriptdictionary.h"
+
+#define AS_USE_STLNAMES
 
 //------------------------------------------------------------------------
 // Object types are cached as user data to avoid costly runtime lookups
@@ -1124,7 +1125,7 @@ void RegisterScriptDictionary_Native(asIScriptEngine *engine)
 	r = engine->RegisterObjectBehaviour("dictionary", asBEHAVE_ENUMREFS, "void f(int&in)", asMETHOD(CScriptDictionary,EnumReferences), asCALL_THISCALL); Assert( r >= 0 );
 	r = engine->RegisterObjectBehaviour("dictionary", asBEHAVE_RELEASEREFS, "void f(int&in)", asMETHOD(CScriptDictionary,ReleaseAllReferences), asCALL_THISCALL); Assert( r >= 0 );
 
-#if AS_USE_STLNAMES == 1
+#ifdef AS_USE_STLNAMES == 1
 	// Same as isEmpty
 	r = engine->RegisterObjectMethod("dictionary", "bool empty() const", asMETHOD(CScriptDictionary, IsEmpty), asCALL_THISCALL); Assert( r >= 0 );
 	// Same as getSize
