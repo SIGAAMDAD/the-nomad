@@ -2,97 +2,6 @@
 #include "config.as"
 #include "level.as"
 
-namespace TheNomad::Util {
-	bool IntToBool( int64 i ) {
-		return i == 1 ? true : false;
-	}
-
-	bool UIntToBool( uint64 i ) {
-		return i == 1 ? true : false;
-	}
-	
-	bool IntToBool( int32 i ) {
-		return i == 1 ? true : false;
-	}
-
-	bool UIntToBool( uint32 i ) {
-		return i == 1 ? true : false;
-	}
-
-	bool IntToBool( int16 i ) {
-		return i == 1 ? true : false;
-	}
-
-	bool UIntToBool( uint16 i ) {
-		return i == 1 ? true : false;
-	}
-
-	bool StringToBool( const string& in str ) {
-		return StrICmp( str, "true" ) == 0 ? true : false;
-	}
-
-	float DEG2RAD( float x ) {
-		return ( ( x * M_PI ) / 180.0F );
-	}
-
-	float RAD2DEG( float x ) {
-		return ( ( x * 180.0f ) / M_PI );
-	}
-
-	//
-	// Dir2Angle: returns absolute degrees
-	//
-	float Dir2Angle( TheNomad::GameSystem::DirType dir ) {
-		switch ( dir ) {
-		case TheNomad::GameSystem::DirType::North:
-			return 0.0f;
-		case TheNomad::GameSystem::DirType::NorthEast:
-			return 45.0f;
-		case TheNomad::GameSystem::DirType::East:
-			return 90.0f;
-		case TheNomad::GameSystem::DirType::SouthEast:
-			return 135.0f;
-		case TheNomad::GameSystem::DirType::South:
-			return 180.0f;
-		case TheNomad::GameSystem::DirType::SouthWest:
-			return 225.0f;
-		case TheNomad::GameSystem::DirType::West:
-			return 270.0f;
-		case TheNomad::GameSystem::DirType::NorthWest:
-			return 315.0f;
-		default:
-			GameError( "Dir2Angle: invalid dir " + formatUInt( dir ) );
-		};
-		return -1.0f;
-	}
-
-	//
-	// Angle2Dir:
-	//
-	TheNomad::GameSystem::DirType Angle2Dir( float angle ) {
-		if ( angle >= 337.5f && angle <= 22.5f ) {
-			return TheNomad::GameSystem::DirType::North;
-		} else if ( angle >= 22.5f && angle <= 67.5f ) {
-			return TheNomad::GameSystem::DirType::NorthEast;
-		} else if ( angle >= 67.5f && angle <= 112.5f ) {
-			return TheNomad::GameSystem::DirType::East;
-		} else if ( angle >= 112.5f && angle <= 157.5f ) {
-			return TheNomad::GameSystem::DirType::SouthEast;
-		} else if ( angle >= 157.5f && angle <= 202.5f ) {
-			return TheNomad::GameSystem::DirType::South;
-		} else if ( angle >= 202.5f && angle <= 247.5f ) {
-			return TheNomad::GameSystem::DirType::SouthWest;
-		} else if ( angle >= 247.5f && angle <= 292.5f ) {
-			return TheNomad::GameSystem::DirType::West;
-		} else if ( angle >= 292.5f && angle <= 337.5f ) {
-			return TheNomad::GameSystem::DirType::NorthWest;
-		} else {
-			DebugPrint( "Angle2Dir: funny angle " + formatFloat( angle ) + "\n" );
-		}
-		return TheNomad::GameSystem::DirType::North;
-	}
-};
-
 namespace ImGui {
 	ImGuiWindowFlags MakeWindowFlags( uint flags ) {
 		return ImGuiWindowFlags( flags );
@@ -105,6 +14,9 @@ int ModuleInit() {
 //	InfoInit();
 
 	@TheNomad::CvarManager = cast<TheNomad::CvarSystem>( TheNomad::GameSystem::AddSystem( TheNomad::CvarSystem() ) );
+
+	TheNomad::Util::GetModList( TheNomad::SGame::sgame_ModList );
+	ConsolePrint( sgame_ModList.size() + " total mods registered.\n" );
 
 	//
 	// register cvars
