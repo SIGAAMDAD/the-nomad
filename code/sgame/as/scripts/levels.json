@@ -1,0 +1,63 @@
+{
+    "LevelInfo": [
+        {
+            "Name": "In The Dark of The Night",
+            "Credits": "level from vanilla Nomad",
+            "MapnameDifficulty_0": "darkofnight.bmf",
+            "MapnameDifficulty_1": "darkofnight.bmf",
+            "MapnameDifficulty_2": "darkofnight.bmf",
+            "MapnameDifficulty_3": "darkofnight.bmf",
+            "MapnameDifficulty_4": "darkofnight.bmf",
+            "MapnameDifficulty_5": "darkofnight.bmf",
+            "RankS": {
+                "MinKills": "0",
+                "MinStyle": "0",
+                "MaxDeaths": "0",
+                "MinTime": "0",
+                "RequiresClean": true
+            },
+            "RankA": {
+                "MinKills": "0",
+                "MinStyle": "0",
+                "MaxDeaths": "0",
+                "MinTime": "0",
+                "RequiresClean": true
+            },
+            "RankB": {
+                "MinKills": "0",
+                "MinStyle": "0",
+                "MaxDeaths": "0",
+                "MinTime": "0",
+                "RequiresClean": true
+            },
+            "RankC": {
+                "MinKills": "0",
+                "MinStyle": "0",
+                "MaxDeaths": "0",
+                "MinTime": "0",
+                "RequiresClean": true
+            },
+            "RankD": {
+                "MinKills": "0",
+                "MinStyle": "0",
+                "MaxDeaths": "0",
+                "MinTime": "0",
+                "RequiresClean": true
+            },
+            "RankF": {
+                "MinKills": "0",
+                "MinStyle": "0",
+                "MaxDeaths": "0",
+                "MinTime": "0",
+                "RequiresClean": true
+            },
+            "RankU": {
+                "MinKills": "0",
+                "MinStyle": "0",
+                "MaxDeaths": "0",
+                "MinTime": "0",
+                "RequiresClean": true
+            }
+        }
+    ]
+}

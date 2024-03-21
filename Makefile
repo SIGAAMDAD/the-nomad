@@ -114,7 +114,7 @@ USE_VULKAN_API=0
 INCLUDE       =-Idependencies/include/ -Idependencies/include/EA/ -Ideps/squirrel/include -Ideps/squall/ $(OS_INCLUDE) -I. -Icode/
 VERSION_DEFINE=-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPDATE) -D_NOMAD_VERSION_PATCH=$(VERSION_PATCH)
 
-DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -D_NOMAD_ENGINE -DAS_MAX_PORTABILITY
+DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -D_NOMAD_ENGINE -DAS_MAX_PORTABILITY -DUSE_AFFINITY_MASK
 OPTIMIZERS    = \
 			-ffast-math \
 			-mfma -msse3 -msse2 -msse -mavx -mavx2 -mmmx -mfpmath=sse \
@@ -308,7 +308,7 @@ SRC=\
 	$(O)/module_lib/module_funcdefs.o \
 	$(O)/module_lib/module_jit.o \
 	$(O)/module_lib/module_virtual_asm_x64.o \
-	$(O)/module_lib/debugger.o \
+	$(O)/module_lib/module_debugger.o \
 	$(O)/module_lib/scriptarray.o \
 	$(O)/module_lib/scriptbuilder.o \
 	$(O)/module_lib/scriptdictionary.o \

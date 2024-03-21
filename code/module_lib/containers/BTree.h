@@ -286,6 +286,10 @@ template< class objType, class keyType, uint32_t maxChildrenPerNode >
 GDR_INLINE objType *idBTree<objType,keyType,maxChildrenPerNode>::FindSmallestLargerEqual( keyType key ) const {
 	idBTreeNode<objType,keyType> *node;
 
+	if ( !root ) {
+		return NULL;
+	}
+
 	for ( node = root->firstChild; node != NULL; node = node->firstChild ) {
 		while( node->next ) {
 			if ( node->key >= key ) {

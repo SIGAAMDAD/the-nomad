@@ -81,7 +81,60 @@ public:
     }
 };
 
-using string_t = eastl::basic_string<char, eastl::allocator_malloc<char>>;
+class CModuleStringAllocator
+{
+public:
+    EASTL_ALLOCATOR_EXPLICIT CModuleStringAllocator( const char* pName = EASTL_NAME_VAL( EASTL_ALLOCATOR_DEFAULT_NAME ) ) { }
+	CModuleStringAllocator( const CModuleStringAllocator& x ) { }
+	CModuleStringAllocator( const CModuleStringAllocator& x, const char* pName ) { }
+
+	CModuleStringAllocator& operator=( const CModuleStringAllocator& x ) = default;
+
+	void* allocate( size_t n, int flags = 0 ) {
+        return Mem_Alloc( n );
+    }
+	void* allocate( size_t n, size_t alignment, size_t offset, int flags = 0 ) {
+        return Mem_Alloc( n );
+    }
+	void  deallocate( void *p, size_t n ) {
+        Mem_Free( p );
+    }
+};
+
+constexpr GDR_INLINE bool operator==( const CModuleStringAllocator& a, const CModuleStringAllocator& b ) {
+    return true;
+}
+constexpr GDR_INLINE bool operator!=( const CModuleStringAllocator& a, const CModuleStringAllocator& b ) {
+    return false;
+}
+
+constexpr GDR_INLINE bool operator==( const eastl::allocator& a, const CModuleStringAllocator& b ) {
+    return true;
+}
+constexpr GDR_INLINE bool operator!=( const eastl::allocator& a, const CModuleStringAllocator& b ) {
+    return true;
+}
+constexpr GDR_INLINE bool operator==( const CModuleStringAllocator& a, const eastl::allocator& b ) {
+    return true;
+}
+constexpr GDR_INLINE bool operator!=( const CModuleStringAllocator& a, const eastl::allocator& b ) {
+    return true;
+}
+
+constexpr GDR_INLINE bool operator==( const CModuleAllocator& a, const CModuleStringAllocator& b ) {
+    return true;
+}
+constexpr GDR_INLINE bool operator!=( const CModuleAllocator& a, const CModuleStringAllocator& b ) {
+    return true;
+}
+constexpr GDR_INLINE bool operator==( const CModuleStringAllocator& a, const CModuleAllocator& b ) {
+    return true;
+}
+constexpr GDR_INLINE bool operator!=( const CModuleStringAllocator& a, const CModuleAllocator& b ) {
+    return true;
+}
+
+using string_t = eastl::basic_string<char, CModuleStringAllocator>;
 using UtlString = eastl::fixed_string<char, MAX_STRING_CHARS, true, eastl::allocator_malloc<char>>;
 namespace eastl {
 	// for some reason, the eastl doesn't support eastl::hash<eastl::fixed_string>

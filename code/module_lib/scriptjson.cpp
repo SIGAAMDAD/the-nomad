@@ -87,7 +87,8 @@ CScriptJson &CScriptJson::operator =(const string_t &other)
 
 CScriptJson &CScriptJson::operator =(const CScriptArray &other)
 {
-    json js_temp = json::array({});
+    json js_temp;
+
     for (asUINT i = 0; i < other.GetSize(); i++)
     {
         CScriptJson** node  = (CScriptJson**)other.At(i);
@@ -158,11 +159,11 @@ bool CScriptJson::Get(const jsonKey_t &key, bool &value) const
 {
     if(js_info->contains(key.c_str()))
     {
-        if(js_info->is_boolean())
-        {
+//        if(js_info->is_boolean())
+//        {
             value = (*js_info)[key.c_str()];
             return true;
-        }
+//        }
     }
     return false;
 }
@@ -171,11 +172,11 @@ bool CScriptJson::Get(const jsonKey_t &key, json::number_integer_t &value) const
 {
     if(js_info->contains(key.c_str()))
     {
-        if(js_info->is_number())
-        {
+//        if(js_info->is_number())
+//        {
             value = (*js_info)[key.c_str()];
             return true;
-        }
+//        }
     }
     return false;
 }
@@ -300,6 +301,21 @@ const CScriptJson *CScriptJson::operator[](const jsonKey_t &key) const
         ctx->SetException("Invalid access to non-existing value");
 
     return 0;
+}
+
+CScriptJson *CScriptJson::operator[](const uint32_t key)
+{
+    CScriptJson* retVal = Create(engine);
+    retVal->js_info = &(*js_info)[key];
+    // Return the existing value if it exists, else insert an empty value
+    return retVal;
+}
+
+const CScriptJson *CScriptJson::operator[](const uint32_t key) const
+{
+    CScriptJson* retVal = Create(engine);
+    *(retVal->js_info) = (*js_info)[key];
+    return retVal;
 }
 
 bool CScriptJson::Exists(const jsonKey_t &key) const
@@ -567,6 +583,20 @@ static void CScriptJson_opIndex_const_Generic(asIScriptGeneric *gen)
     const CScriptJson *self = (const CScriptJson*)gen->GetObjectData();
     jsonKey_t *key = (jsonKey_t*)gen->GetArgObject(0);
     *(const CScriptJson**)gen->GetAddressOfReturnLocation() = self->operator[](*key);
+}
+
+static void CScriptJson_opIndexUInt_Generic(asIScriptGeneric *gen)
+{
+    CScriptJson *self = (CScriptJson*)gen->GetObjectData();
+    uint32_t key = gen->GetArgDWord(0);
+    *(CScriptJson**)gen->GetAddressOfReturnLocation() = self->operator[]( key );
+}
+
+static void CScriptJson_opIndexUInt_const_Generic(asIScriptGeneric *gen)
+{
+    const CScriptJson *self = (const CScriptJson*)gen->GetObjectData();
+    uint32_t key = gen->GetArgDWord(0);
+    *(const CScriptJson**)gen->GetAddressOfReturnLocation() = self->operator[](key);
 }
 
 static void CScriptJson_ParseFile( asIScriptGeneric *gen ) {
@@ -902,6 +932,11 @@ void RegisterScriptJson_Generic(asIScriptEngine *engine)
     r = engine->RegisterObjectMethod("json", "json &opIndex(const string &in)", asFUNCTION(CScriptJson_opIndex_Generic), asCALL_GENERIC);
     Assert( r >= 0 );
     r = engine->RegisterObjectMethod("json", "const json &opIndex(const string &in) const", asFUNCTION(CScriptJson_opIndex_const_Generic), asCALL_GENERIC);
+    Assert( r >= 0 );
+
+    r = engine->RegisterObjectMethod("json", "json &opIndex( uint )", asFUNCTION(CScriptJson_opIndexUInt_Generic), asCALL_GENERIC);
+    Assert( r >= 0 );
+    r = engine->RegisterObjectMethod("json", "const json &opIndex( uint ) const", asFUNCTION(CScriptJson_opIndexUInt_const_Generic), asCALL_GENERIC);
     Assert( r >= 0 );
 
     CheckASCall( engine->RegisterObjectMethod( "json", "bool ParseFile( const string& in )", asFUNCTION( CScriptJson_ParseFile ), asCALL_GENERIC ) );

@@ -385,7 +385,7 @@ void idDynamicBlockAlloc<type, baseBlockSize, minBlockSize>::Shutdown( void ) {
 
 	for ( block = firstBlock; block != NULL; block = firstBlock ) {
 		firstBlock = block->next;
-		assert( block->IsBaseBlock() );
+		Assert( block->IsBaseBlock() );
 		if ( lockMemory ) {
 //			idLib::sys->UnlockMemory( block, block->GetSize() + sizeof( idDynamicBlock<type> ) );
 		}
@@ -667,7 +667,7 @@ idDynamicBlock<type> *idDynamicBlockAlloc<type, baseBlockSize, minBlockSize>::Re
 	uint32_t alignedBytes = ( num * sizeof( type ) + 15 ) & ~15;
 
 #ifdef DYNAMIC_BLOCK_ALLOC_CHECK
-	assert( block->id[0] == 0x11111111 && block->id[1] == 0x22222222 && block->id[2] == 0x33333333 && block->allocator == (void*)this );
+	Assert( block->id[0] == 0x11111111 && block->id[1] == 0x22222222 && block->id[2] == 0x33333333 && block->allocator == (void*)this );
 #endif
 
 	// if the new size is larger
@@ -731,10 +731,10 @@ idDynamicBlock<type> *idDynamicBlockAlloc<type, baseBlockSize, minBlockSize>::Re
 template<class type, uint32_t baseBlockSize, uint32_t minBlockSize>
 void idDynamicBlockAlloc<type, baseBlockSize, minBlockSize>::FreeInternal( idDynamicBlock<type> *block ) {
 
-	assert( block->node == NULL );
+	Assert( block->node == NULL );
 
 #ifdef DYNAMIC_BLOCK_ALLOC_CHECK
-	assert( block->id[0] == 0x11111111 && block->id[1] == 0x22222222 && block->id[2] == 0x33333333 && block->allocator == (void*)this );
+	Assert( block->id[0] == 0x11111111 && block->id[1] == 0x22222222 && block->id[2] == 0x33333333 && block->allocator == (void*)this );
 #endif
 
 	// try to merge with a next free block

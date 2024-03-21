@@ -540,6 +540,9 @@ void Sys_Sleep( double msec );
 void Sys_LockMemory( void *pAddress, uint64_t nBytes );
 void Sys_UnlockMemory( void *pAddress, uint64_t nBytes );
 
+qboolean Sys_SetAffinityMask( const uint64_t mask );
+uint64_t Sys_GetAffinityMask( void );
+
 void Sys_ClearDLLError( void );
 int Sys_GetDLLErrorCount( void );
 const char *Sys_GetDLLError( void );

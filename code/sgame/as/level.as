@@ -412,6 +412,7 @@ namespace TheNomad::SGame {
 			uint i;
 			string str;
 			string mapname;
+			string levelName;
 
 			ConsolePrint( "Loading level infos...\n" );
 
@@ -432,14 +433,20 @@ namespace TheNomad::SGame {
 			str.reserve( MAX_STRING_CHARS );
 			for ( i = 0; i < NumLevels(); i++ ) {
 				json@ info = @GetLevelInfoByIndex( i );
-				string levelName = string( info["Name"] );
+				if ( !info.get( "Name", levelName ) ) {
+					ConsoleWarning( "invalid level info, Name variable is missing.\n" );
+					continue;
+				}
 
 				@data = LevelInfoData( levelName );
 
 				ConsolePrint( "Loaded level '" + data.m_Name + "'...\n" );
 
 				for ( uint j = 0; j < data.m_MapHandles.size(); j++ ) {
-					mapname = string( info[ string( "MapNameDifficulty_" + formatUInt( j ) ) ] );
+					if ( !info.get( "MapNameDifficulty_" + formatUInt( j ), mapname ) ) {
+						// level currently doesn't support this difficulty
+						continue;
+					}
 					if ( mapname == "none" ) {
 						// level currently doesn't support this difficulty
 						continue;
@@ -467,34 +474,34 @@ namespace TheNomad::SGame {
 				@rankU = @info["RankU"];
 
 				//
-				// all rank datas must be present
+				// all rank infos must be present
 				//
 				if ( @rankS is null ) {
-					ConsoleWarning( "invalid level info, no object for RankS\n" );
+					ConsoleWarning( "invalid level info file, missing object 'RankS'.\n" );
 					continue;
 				}
 				if ( @rankA is null ) {
-					ConsoleWarning( "invalid level info, no object for RankA\n" );
+					ConsoleWarning( "invalid level info file, missing object 'RankA'.\n" );
 					continue;
 				}
 				if ( @rankB is null ) {
-					ConsoleWarning( "invalid level info, no object for RankB\n" );
+					ConsoleWarning( "invalid level info file, missing object 'RankB'.\n" );
 					continue;
 				}
 				if ( @rankC is null ) {
-					ConsoleWarning( "invalid level info, no object for RankC\n" );
+					ConsoleWarning( "invalid level info file, missing object 'RankC'.\n" );
 					continue;
 				}
 				if ( @rankD is null ) {
-					ConsoleWarning( "invalid level info, no object for RankD" );
+					ConsoleWarning( "invalid level info file, missing object 'RankD'.\n" );
 					continue;
 				}
 				if ( @rankF is null ) {
-					ConsoleWarning( "invalid level info, no object for RankF" );
+					ConsoleWarning( "invalid level info file, missing object 'RankF'.\n" );
 					continue;
 				}
 				if ( @rankU is null ) {
-					ConsoleWarning( "invalid level info, no object for RankU" );
+					ConsoleWarning( "invalid level info file, missing object 'RankU'.\n" );
 					continue;
 				}
 
@@ -623,13 +630,21 @@ namespace TheNomad::SGame {
 		private array<json@>@ LoadJSonFile( const string& in modName ) {
 			string path;
 			array<json@> values;
-			json@ json;
+			json@ data;
 			
 			path.reserve( MAX_NPATH );
 			path = "modules/" + modName + "/scripts/levels.json";
 			
-			@json = @JsonParseFile( path );
-			values = array<json@>( json["LevelInfo"] );
+			@data = json();
+			if ( !data.ParseFile( path ) ) {
+				ConsoleWarning( "failed to load level info file '" + path + "', skipping.\n" );
+				return null;
+			}
+
+			if ( !data.get( "LevelInfo", values ) ) {
+				ConsoleWarning( "level info file found, but no level infos found.\n" );
+				return null;
+			}
 			
 			return @values;
 		}
@@ -638,6 +653,9 @@ namespace TheNomad::SGame {
 			array<json@>@ levels;
 
 			@levels = @LoadJSonFile( modName );
+			if ( @levels is null ) {
+				return;
+			}
 
 			m_LevelInfos.reserve( levels.size() );
 			for ( uint i = 0; i < levels.size(); i++ ) {
@@ -647,13 +665,27 @@ namespace TheNomad::SGame {
 		}
 
 		bool LoadLevelRankData( string& in str, const string& in rankName, LevelRankData@ data, json@ json ) {
-			data.minKills = uint( json["MinKills"] );
-			data.minStyle = uint( json["MinStyle"] );
-			data.maxDeaths = uint( json["MaxDeaths"] );
-			data.maxCollateral = uint( json["MaxCollateral"] );
-			data.minTime = uint( json["MinTime"] );
-			data.requiresClean = bool( json["RequiresClean"] );
-			
+			if ( !json.get( "MinKills", data.minKills ) ) {
+				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'MinKills'.\n" );
+				return false;
+			}
+			if ( !json.get( "MinStyle", data.minStyle ) ) {
+				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'MinStyle'.\n" );
+				return false;
+			}
+			if ( !json.get( "MaxDeaths", data.maxDeaths ) ) {
+				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'MaxDeaths'.\n" );
+				return false;
+			}
+			if ( !json.get( "MaxCollateral", data.maxCollateral ) ) {
+				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'MaxCollateral'.\n" );
+				return false;
+			}
+			if ( !json.get( "RequiresClean", data.requiresClean ) ) {
+				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'RequiresClean'.\n" );
+				return false;
+			}
+
 			return true;
 		}
 

@@ -833,7 +833,7 @@ static uint64_t pCoreMask;
 static uint64_t affinityMask; // saved at startup
 #endif
 
-#if (GDRx664 || GDRi386)
+#if defined(GDRx64) || defined(GDRi386)
 
 #ifdef _MSC_VER
 #include <intrin.h>
@@ -1656,6 +1656,7 @@ void Com_Init( char *commandLine )
 	com_maxfps = Cvar_Get( "com_maxfps", "60", CVAR_LATCH | CVAR_SAVE | CVAR_PROTECTED );
 	Cvar_SetDescription( com_maxfps, "Sets the maximum amount frames that can be drawn per second." );
 #ifdef USE_AFFINITY_MASK
+	Com_StartupVariable( "com_affinityMask" );
 	com_affinityMask = Cvar_Get( "com_affinityMask", "", CVAR_ARCHIVE_ND );
 	Cvar_SetDescription( com_affinityMask, "Bind game process to bitmask-specified CPU core(s), special characters:\n A or a - all default cores\n P or p - performance cores\n E or e - efficiency cores\n 0x<value> - use hexadecimal notation\n + or - can be used to add or exclude particular cores" );
 	com_affinityMask->modified = qfalse;

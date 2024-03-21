@@ -2,6 +2,7 @@
 #include "module_alloc.h"
 #include "module_handle.h"
 #include "angelscript/as_bytecode.h"
+#include "module_funcdefs.hpp"
 
 const moduleFunc_t funcDefs[NumFuncs] = {
     { "int ModuleInit()", ModuleInit, 0, qtrue },
@@ -56,6 +57,9 @@ CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sou
         break;
     case -1:
         Con_Printf( COLOR_RED "failed to load module bytecode.\n" );
+
+        // if we have any old or outdated bytecode, we'll want to clean it out
+        Cbuf_ExecuteText( EXEC_APPEND, "ml.clean_script_cache\n" );
         break;
     };
     
@@ -103,7 +107,7 @@ const char *CModuleHandle::GetModulePath( void ) const {
     return va( "modules/%s/", m_szName.c_str() );
 }
 
-void LogExceptionInfo( asIScriptContext *pContext )
+void LogExceptionInfo( asIScriptContext *pContext, void * )
 {
     const asIScriptEngine *pEngine = pContext->GetEngine();
     const asIScriptFunction *pFunc;
@@ -111,7 +115,7 @@ void LogExceptionInfo( asIScriptContext *pContext )
     pFunc = pContext->GetExceptionFunction();
 
     N_Error( ERR_DROP,
-        "exception was thrown on module exit ->\n"
+        "exception was thrown in module ->\n"
         " Module ID: %s\n"
         " Section Name: %s\n"
         " Function: %s\n"
@@ -137,12 +141,28 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
         CheckASCall( m_pScriptContext->SetArgDWord( i, pArgList[i] ) );
     }
 
-    switch ( m_pScriptContext->Execute() ) {
+//    m_pScriptContext->SetExceptionCallback( asFUNCTION( LogExceptionInfo ), NULL, asCALL_GENERIC );
+    
+    try {
+        retn = m_pScriptContext->Execute();
+    } catch ( const ModuleException& e ) {
+        const asIScriptFunction *pFunc = m_pScriptContext->GetSystemFunction();
+        N_Error( ERR_DROP,
+            "exception was thrown in module ->\n"
+            " Module ID: %s\n"
+            " Section Name: %s\n"
+            " Function: %s\n"
+            " Line: %i\n"
+            " Error Message: %s\n"
+        , m_szName.c_str(), pFunc->GetScriptSectionName(), pFunc->GetDeclaration(), m_pScriptContext->GetLineNumber(), e.what() );
+    }
+
+    switch ( retn ) {
     case asEXECUTION_ABORTED:
     case asEXECUTION_ERROR:
     case asEXECUTION_EXCEPTION:
         // something happened in there, dunno what
-        LogExceptionInfo( m_pScriptContext );
+        LogExceptionInfo( m_pScriptContext, NULL );
         break;
     case asEXECUTION_SUSPENDED:
     case asEXECUTION_FINISHED:

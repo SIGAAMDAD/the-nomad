@@ -236,8 +236,8 @@ namespace TheNomad::SGame {
 				return false;
 			}
 
-			const float rangeX = m_Info.soundRangeX / 2;
-			const float rangeY = m_Info.soundRangeY / 2;
+			const float rangeX = m_Info.detectionRangeX / 2;
+			const float rangeY = m_Info.detectionRangeY / 2;
 			const vec3 start( m_Link.m_Origin.x - rangeX, m_Link.m_Origin.y - rangeY, m_Link.m_Origin.z );
 			const vec3 end( m_Link.m_Origin.x + rangeX, m_Link.m_Origin.y + rangeY, m_Link.m_Origin.z );
 			

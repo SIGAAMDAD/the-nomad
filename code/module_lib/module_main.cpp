@@ -3,7 +3,6 @@
 #include "module_public.h"
 #include "angelscript/angelscript.h"
 #include "module_handle.h"
-#include "debugger.h"
 #include "../game/g_game.h"
 #include <glm/glm.hpp>
 #include <filesystem>
@@ -11,6 +10,7 @@
 #include "module_renderlib.h"
 #include "module_funcdefs.hpp"
 #include "module_stringfactory.hpp"
+#include "module_debugger.h"
 
 moduleImport_t moduleImport;
 
@@ -19,8 +19,6 @@ cvar_t *ml_debugMode;
 cvar_t *ml_alwaysCompile;
 cvar_t *ml_allowJIT;
 cvar_t *ml_garbageCollectionIterations;
-
-static CDebugger *s_pDebugger;
 
 static void ML_CleanCache_f( void ) {
     const char *path;
@@ -383,7 +381,7 @@ CModuleLib::CModuleLib( void )
     CheckASCall( m_pEngine->SetEngineProperty( asEP_HEREDOC_TRIM_MODE, 0 ) );
 
     m_pScriptBuilder = new ( Hunk_Alloc( sizeof( *m_pScriptBuilder ), h_high ) ) CScriptBuilder();
-    s_pDebugger = new ( Hunk_Alloc( sizeof( *s_pDebugger ), h_high ) ) CDebugger();
+    g_pDebugger = new ( Hunk_Alloc( sizeof( *g_pDebugger ), h_high ) ) CDebugger();
 
     if ( ml_allowJIT->i ) {
         m_pCompiler = new ( Hunk_Alloc( sizeof( *m_pCompiler ), h_high ) ) asCJITCompiler();
@@ -430,7 +428,7 @@ CModuleLib::~CModuleLib()
     m_pEngine->ShutDownAndRelease();
     asFree( m_pEngine );
 
-    s_pDebugger = NULL;
+    g_pDebugger = NULL;
     g_pStringFactory = NULL;
 }
 

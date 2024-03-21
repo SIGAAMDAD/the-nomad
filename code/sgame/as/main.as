@@ -1,3 +1,4 @@
+#include "util/detail.as"
 #include "game.as"
 #include "config.as"
 #include "level.as"
@@ -15,8 +16,8 @@ int ModuleInit() {
 
 	@TheNomad::CvarManager = cast<TheNomad::CvarSystem>( TheNomad::GameSystem::AddSystem( TheNomad::CvarSystem() ) );
 
-	TheNomad::Util::GetModList( TheNomad::SGame::sgame_ModList );
-	ConsolePrint( sgame_ModList.size() + " total mods registered.\n" );
+	TheNomad::Util::GetModuleList( TheNomad::SGame::sgame_ModList );
+	ConsolePrint( TheNomad::SGame::sgame_ModList.size() + " total mods registered.\n" );
 
 	//
 	// register cvars

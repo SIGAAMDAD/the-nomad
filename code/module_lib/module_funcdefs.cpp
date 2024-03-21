@@ -7,6 +7,7 @@
 #include "../ui/ui_lib.h"
 #include "module_stringfactory.hpp"
 #include "../game/g_world.h"
+#include "module_funcdefs.hpp"
 
 #include "module_engine/module_bbox.h"
 #include "module_engine/module_linkentity.h"
@@ -14,31 +15,6 @@
 #include "module_engine/module_raycast.h"
 #include "../system/sys_timer.h"
 #include "scriptjson.h"
-
-//
-// ModuleException: we want to throw an exception from the vm to get the modulelib to
-// shut it down
-//
-class ModuleException : public std::exception {
-public:
-    ModuleException() = default;
-    ModuleException( const string_t *msg )
-        : m_szMessage{ msg->c_str() }
-    {
-    }
-    ModuleException( const ModuleException& ) = default;
-    ModuleException( ModuleException&& ) = default;
-    virtual ~ModuleException() = default;
-
-    ModuleException& operator=( const ModuleException& ) = default;
-    ModuleException& operator=( ModuleException&& ) = default;
-
-    const char *what( void ) const noexcept {
-        return m_szMessage.c_str();
-    }
-private:
-    UtlString m_szMessage;
-};
 
 //
 // c++ compatible wrappers around angelscript engine function calls

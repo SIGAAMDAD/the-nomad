@@ -72,6 +72,9 @@ public:
 	CScriptJson *operator[](const jsonKey_t &key);
 	const CScriptJson *operator[](const jsonKey_t &key) const;
 
+	CScriptJson *operator[](const uint32_t key);
+	const CScriptJson *operator[](const uint32_t key) const;
+
 	// Returns true if the key is set
 	bool Exists(const jsonKey_t &key) const;
 
