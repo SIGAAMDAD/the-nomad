@@ -5,6 +5,15 @@
 #include "sfx.as"
 
 namespace TheNomad::SGame {
+	import void HellbreakerInit() from "hellbreaker";
+
+	shared enum GameState {
+		Inactive,
+		InLevel,
+		StatsMenu,
+		DeathMenu,
+	};
+
 	shared enum LevelRank {
 		RankS = 0,
 		RankA,
@@ -161,6 +170,11 @@ namespace TheNomad::SGame {
 			TheNomad::GameSystem::SetActiveMap( hMap, nCheckpoints, nSpawns,
 				nTiles, m_SoundBits[0].GetCacheData(), EntityManager.GetEntities()[0].GetLink() );
 
+			// only supporting 1 level rn
+			m_TileData.resize( 1 );
+			m_TileData[0].resize( nTiles );
+			TheNomad::GameSystem::GetTileData( m_TileData[0] );
+
 			m_Checkpoints.reserve( nCheckpoints );
 			
 			//
@@ -218,6 +232,12 @@ namespace TheNomad::SGame {
 		}
 		array<MapSoundData>& GetSoundBits() {
 			return m_SoundBits;
+		}
+		const array<uint>& GetTiles() const {
+			return m_TileData[0];
+		}
+		array<uint>& GetTiles() {
+			return m_TileData[0];
 		}
 
 		bool SoundBitsChanged() const {
@@ -786,6 +806,24 @@ namespace TheNomad::SGame {
 	ConVar@ sgame_LevelInfoFile;
 	ConVar@ sgame_SoundDissonance;
 	ConVar@ sgame_MapName;
+	ConVar@ sgame_MaxEntities;
+	ConVar@ sgame_NoRespawningMobs;
+	ConVar@ sgame_HellbreakerActive;
+	ConVar@ sgame_HellbreakerOn;
+	ConVar@ sgame_MaxFps;
+
+	const array<TheNomad::GameSystem::DirType> InverseDirs = {
+		TheNomad::GameSystem::DirType::South,
+		TheNomad::GameSystem::DirType::SouthWest,
+		TheNomad::GameSystem::DirType::West,
+		TheNomad::GameSystem::DirType::NorthWest,
+		TheNomad::GameSystem::DirType::North,
+		TheNomad::GameSystem::DirType::NorthEast,
+		TheNomad::GameSystem::DirType::East,
+		TheNomad::GameSystem::DirType::SouthEast,
+	};
+
+	GameState GlobalState;
 
 	LevelSystem@ LevelManager;
 

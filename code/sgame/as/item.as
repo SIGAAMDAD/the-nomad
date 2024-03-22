@@ -25,9 +25,8 @@ namespace TheNomad::SGame {
 
 		void Think() {
 		}
-		void Spawn( uint id, const vec3& in origin, EntityObject@ base ) override {
+		void Spawn( uint id, const vec3& in origin ) override {
 			m_nType = WeaponType( id );
-			@m_Base = @base;
 		}
 
 		private WeaponType m_nType;
@@ -46,17 +45,10 @@ namespace TheNomad::SGame {
 
 		void Think() {
 		}
-		void Spawn( uint id, const vec3& in origin, EntityObject@ base ) override {
+		void Spawn( uint id, const vec3& in origin ) override {
 			m_nType = ItemType( id );
-			@m_Base = @base;
 		}
-		const EntityObject@ GetBase() const {
-			return m_Base;
-		}
-		EntityObject@ GetBase() {
-			return m_Base;
-		}
-		
+
 		private ItemType m_nType;
 		ItemObject@ m_Next;
 		ItemObject@ m_Prev;

@@ -14,6 +14,7 @@ namespace TheNomad::SGame {
 		ST_PLAYR_SLIDE,
 		ST_PLAYR_MELEE,
 		ST_PLAYR_COMBAT,
+		ST_PLAYR_DEAD,
 		
 		NumStates
 	};

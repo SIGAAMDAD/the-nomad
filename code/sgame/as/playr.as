@@ -20,7 +20,7 @@ namespace TheNomad::SGame {
 			DebugPrint( "QuickShot thinking...\n" );
 			m_nLastTargetTime = 0;
 			
-			const array<EntityObject@>@ EntList = @EntityManager.GetEntities();
+			array<EntityObject>@ EntList = @EntityManager.GetEntities();
 
 			// NOTE: this might be a little bit slow depending on how many mobs are in the area
 			for ( uint i = 0; i < EntList.size(); i++ ) {
@@ -137,6 +137,112 @@ namespace TheNomad::SGame {
 		bool active;
 	};
 	
+	
+	///
+	/// PMoveData
+	/// a class to buffer user input per frame
+	///
+	class PMoveData {
+		PMoveData() {
+		}
+		
+		private void WalkMove( PlayrObject@ ent ) {
+			vec3 vel;
+			
+			if ( !groundPlane ) {
+				return;
+			}
+			
+			vel = ent.GetVelocity();
+			if ( northmove > 0 ) {
+				vel.y -= northmove / sgame_BaseSpeed.GetFloat();
+			}
+			if ( southmove > 0 ) {
+				vel.y += southmove / sgame_BaseSpeed.GetFloat();
+			}
+			if ( westmove > 0 ) {
+				vel.x -= westmove / sgame_BaseSpeed.GetFloat();
+			}
+			if ( eastmove > 0 ) {
+				vel.x += eastmove / sgame_BaseSpeed.GetFloat();
+			}
+			
+			// clamp that shit, then apply friction
+			for ( uint i = 0; i < 2; i++ ) {
+				vel[i] = TheNomad::Util::Clamp( vel[i], 0.0f, sgame_MaxSpeed.GetFloat() );
+				vel[i] -= ( sgame_GroundFriction.GetFloat() * TheNomad::GameSystem::GameManager.GetDeltaMsec() );
+			}
+			
+			ent.SetVelocity( vel );
+		}
+		
+		private void AirMove() {
+			
+		}
+		
+		void RunTic() {
+			PlayrObject@ obj;
+			ivec2 mousePos;
+			int screenWidth, screenHeight;
+			float angle;
+			TheNomad::GameSystem::DirType dir;
+			
+			@obj = @GetPlayerObject();
+			mousePos = TheNomad::GameSystem::GameManager.GetMousePos();
+			screenWidth = TheNomad::GameSystem::GameManager.GetGPUConfig().screenWidth;
+			screenHeight = TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight;
+			
+			northmove = obj.key_MoveNorth.active ? obj.key_MoveNorth.msec / sgame_MaxFps.GetInt() : 0;
+			southmove = obj.key_MoveSouth.active ? obj.key_MoveSouth.msec / sgame_MaxFps.GetInt() : 0;
+			eastmove = obj.key_MoveEast.active ? obj.key_MoveEast.msec / sgame_MaxFps.GetInt() : 0;
+			westmove = obj.key_MoveWest.active ? obj.key_MoveWest.msec / sgame_MaxFps.GetInt() : 0;
+			upmove = obj.key_Jump.active ? obj.key_Jump.msec / sgame_MaxFps.GetInt() : 0;
+			
+			// set leg sprite
+			if ( eastmove > westmove ) {
+				obj.SetLegFacing( 0 );
+			} else if ( westmove > eastmove ) {
+				obj.SetLegFacing( 1 );
+			}
+			
+			// set torso direction
+			angle = atan2( ( screenWidth / 2 ) - mousePos.x, ( screenHeight / 2 ) - mousePos.y );
+			dir = TheNomad::Util::Angle2Dir( angle );
+			
+			switch ( dir ) {
+			case TheNomad::GameSystem::DirType::North:
+			case TheNomad::GameSystem::DirType::South:
+				break; // not implemented for now
+			case TheNomad::GameSystem::DirType::NorthEast:
+			case TheNomad::GameSystem::DirType::SouthEast:
+			case TheNomad::GameSystem::DirType::East:
+				obj.SetFacing( 0 );
+				break;
+			case TheNomad::GameSystem::DirType::NorthWest:
+			case TheNomad::GameSystem::DirType::SouthWest:
+			case TheNomad::GameSystem::DirType::West:
+				obj.SetFacing( 1 );
+				break;
+			default:
+				break;
+			};
+			
+			if ( obj.key_Jump.active && obj.GetOrigin().z > 0.0f ) {
+				obj.SetFlags( obj.GetFlags() | PF_DOUBLEJUMP );
+			}
+			
+			groundPlane = upmove == 0;
+		}
+		
+		uint northmove = 0;
+		uint southmove = 0;
+		uint eastmove = 0;
+		uint westmove = 0;
+		uint upmove = 0;
+		
+		bool groundPlane = false;
+	};
+	
 	class PlayrObject : EntityObject {
 		PlayrObject() {
 			m_WeaponSlots.resize( sgame_MaxPlayerWeapons.GetInt() );
@@ -147,6 +253,8 @@ namespace TheNomad::SGame {
 			key_MoveWest = KeyBind();
 			key_Melee = KeyBind();
 			key_Jump = KeyBind();
+			
+			EntityManager.SetPlayerObject( @this );
 		}
 		
 		//
@@ -213,11 +321,17 @@ namespace TheNomad::SGame {
 				if ( m_nFrameDamage > 0 ) {
 					return; // as long as you're hitting SOMETHING, you cannot die
 				}
+				TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( dieSfx[ PRandom() & 3 ] );
 				EntityManager.KillEntity( @this );
+			} else {
+				TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( painSfx[ PRandom() & 3 ] );
 			}
 		}
 		
-		uint GetFlags() const {
+		void SetPFlags( uint flags ) {
+			m_PFlags = flags;
+		}
+		uint GetPFlags() const {
 			return m_PFlags;
 		}
 		
@@ -241,13 +355,20 @@ namespace TheNomad::SGame {
 			m_nHealMult -= m_nHealMultDecay * LevelManager.GetDifficultyScale();
 		}
 		
+		private float GetGfxDirection() const {
+			if ( m_Facing == 1 ) {
+				return -( m_Link.m_Bounds.m_nWidth / 2 );
+			}
+			return ( m_Link.m_Bounds.m_nWidth / 2 );
+		}
+		
 		bool CheckParry( EntityObject@ ent ) {
 			if ( TheNomad::Util::BoundsIntersect( ent.GetBounds(), m_ParryBox ) ) {
 				if ( ent.IsProjectile() ) {
 					// simply invert the direction and double the speed
 					const vec3 v = ent.GetVelocity();
 					ent.SetVelocity( vec3( v.x * 2, v.y * 2, v.z * 2 ) );
-//					ent.SetDirection( InverseDirs[ ent.GetDirection() ] );
+					ent.SetDirection( InverseDirs[ ent.GetDirection() ] );
 				} else {
 					return false;
 				}
@@ -257,11 +378,21 @@ namespace TheNomad::SGame {
 				
 				if ( !mob.CurrentAttack().canParry ) {
 					// unblockable, deal damage
-					EntityManager.DamageEntity( @ent, @m_Base );
+					EntityManager.DamageEntity( @ent, @this );
+					return false;
 				} else {
 					// slap it back
+//					if ( mob.GetState().GetTics() <= ( mob.GetState().GetDuration() / 4 ) ) {
+						// counter parry, like in MGR, but more brutal, but for the future...
+//					}
+					// TODO: make dead mobs with ANY velocity flying corpses
+					EntityManager.DamageEntity( @this, @ent );
+					TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( parrySfx );
 				}
 			}
+			
+			// add the fireball
+			GfxManager.AddExplosionGfx( vec3( m_Origin.x + GetGfxDirection(), m_Origin.y, m_Origin.z ) );
 
 			return true;
 		}
@@ -276,18 +407,40 @@ namespace TheNomad::SGame {
 		}
 		
 		private void IdleThink() {
+			ivec2 origin;
 			
+			for ( uint i = 0; i < 2; i++ ) {
+				origin[i] = floor( m_Link.m_Origin[i] );
+			}
+			
+			if ( Pmove.groundPlane ) {
+				const uint flags = LevelManager.GetMapData().GetTiles()[ origin.y * LevelManager.GetMapData().GetWidth() + origin.x ];
+				
+				if ( ( flags & SURFACEPARM_METAL ) != 0 ) {
+					TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( moveMetalSfx );
+				} else if ( ( flags & SURFACEPARM_WOOD ) != 0 ) {
+					TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( moveWoodSfx );
+				} else if ( ( flags & SURFACEPARM_SAND ) != 0 ) {
+					TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( moveSandSfx );
+				} else {
+					// in this case, just use the generic walking sound
+					TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( moveSfx );
+				}
+			} else if ( key_Jump.active ) {
+				TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( jumpSfx );
+			}
 		}
 		private void CombatThink() {
 			if ( key_Melee.active ) {
 				// check for a parry
-				
+				m_PFlags |= PF_PARRY;
 			}
 		}
 		private void ParryThink() {
 			m_ParryBox.m_nWidth = 2.5f + m_nParryBoxWidth;
 			m_ParryBox.m_nHeight = 1.0f;
-			m_ParryBox.MakeBounds( vec3( m_Link.m_Origin.x + ( m_Link.m_Bounds.m_nWidth / 2.0f ), m_Link.m_Origin.y, m_Link.m_Origin.z ) );
+			m_ParryBox.MakeBounds( vec3( m_Link.m_Origin.x + ( m_Link.m_Bounds.m_nWidth / 2.0f ),
+				m_Link.m_Origin.y, m_Link.m_Origin.z ) );
 
 			if ( m_nParryBoxWidth >= 1.5f ) {
 				return; // maximum
@@ -296,12 +449,12 @@ namespace TheNomad::SGame {
 			m_nParryBoxWidth += 0.5f;
 		}
 		
-		uint PF_QUICKSHOT  = 0x00000001;
+		uint PF_PARRY      = 0x00000001;
 		uint PF_DOUBLEJUMP = 0x00000002;
-		uint PF_PARRY      = 0x00000004;
+		uint PF_QUICKSHOT  = 0x00000004;
 		
-		private KeyBind key_MoveNorth, key_MoveSouth, key_MoveEast, key_MoveWest;
-		private KeyBind key_Jump, key_Melee;
+		KeyBind key_MoveNorth, key_MoveSouth, key_MoveEast, key_MoveWest;
+		KeyBind key_Jump, key_Melee;
 		
 		private TheNomad::GameSystem::BBox m_ParryBox;
 		private float m_nParryBoxWidth;
@@ -310,6 +463,15 @@ namespace TheNomad::SGame {
 		private QuickShot m_QuickShot;
 		private uint m_CurrentWeapon;
 		private uint m_PFlags;
+		
+		private TheNomad::Engine::SoundSystem::SoundEffect moveSandSfx;
+		private TheNomad::Engine::SoundSystem::SoundEffect moveWoodSfx;
+		private TheNomad::Engine::SoundSystem::SoundEffect moveMetalSfx;
+		private TheNomad::Engine::SoundSystem::SoundEffect moveSfx;
+		private TheNomad::Engine::SoundSystem::SoundEffect jumpSfx;
+		private TheNomad::Engine::SoundSystem::SoundEffect parrySfx;
+		private TheNomad::Engine::SoundSystem::SoundEffect[] painSfx( 3 );
+		private TheNomad::Engine::SoundSystem::SoundEffect[] dieSfx( 3 );
 
 		// the amount of damage dealt in the frame
 		private uint m_nFrameDamage;
@@ -320,5 +482,11 @@ namespace TheNomad::SGame {
 		private bool m_bEmoting;
 
 		private float m_nHealMultDecay = 1.0f;
+		
+		private PMoveData Pmove;
 	};
+
+	ConVar@ sgame_BaseSpeed;
+	ConVar@ sgame_GroundFriction;
+	ConVar@ sgame_MaxSpeed;
 };

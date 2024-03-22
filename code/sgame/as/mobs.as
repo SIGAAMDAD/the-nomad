@@ -13,13 +13,6 @@ namespace TheNomad::SGame {
 			m_EffectString.reserve( MAX_TOKEN_CHARS );
 		}
 
-		EntityObject@ GetBase() {
-			return @m_Base;
-		}
-		const EntityObject@ GetBase() const {
-			return @m_Base;
-		}
-
 		AttackInfo@ CurrentAttack() {
 			return @m_CurrentAttack;
 		}
@@ -34,11 +27,14 @@ namespace TheNomad::SGame {
 			return m_Target;
 		}
 		
-		
 		private void ChaseThink() {
 		}
 		
 		private void SpecialBehaviour() {
+		}
+
+		MobFlags GetMFlags() const {
+			return m_MFlags;
 		}
 		
 		private void DoAttack( const AttackInfo@ atk ) {
@@ -78,7 +74,7 @@ namespace TheNomad::SGame {
 				TheNomad::Engine::CmdExecuteCommand( m_EffectString );
 			}
 			
-			EntityManager.DamageEntity( GetBase(), rayData, @atk );
+			EntityManager.DamageEntity( @this, rayData, @atk );
 		}
 		private void FightThink() {
 			if ( @m_Target is null ) {
@@ -255,6 +251,7 @@ namespace TheNomad::SGame {
 			return false;
 		}
 		
+		private MobFlags m_MFlags;
 		private string m_EffectString;
 		private AttackInfo@ m_CurrentAttack;
 		private EntityObject@ m_Target;

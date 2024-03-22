@@ -48,6 +48,7 @@ namespace TheNomad::SGame {
 		Terrified = 0x0004,
 		Boss      = 0x0008,
 		Sentry    = 0x0010,
+		PermaDead = 0x0020,
 	};
 
 	enum WeaponProperty {

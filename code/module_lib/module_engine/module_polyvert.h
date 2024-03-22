@@ -23,7 +23,7 @@ public:
     void Clear( void );
     void Set( const glm::vec3& origin, const glm::vec3& worldPos, const glm::vec2& texCoords, const color4ub_t& color );
     void Set( const CModulePolyVert& );
-private:
+
     glm::vec3 m_Origin;
     glm::vec3 m_WorldPos;
     glm::vec2 m_TexCoords;

@@ -335,6 +335,7 @@ extern void         LegalMenu_Draw( void );
 extern void         UI_ModsMenu( void );
 extern void         ModsMenu_Cache( void );
 extern void         ModsMenu_Draw( void );
+extern qboolean     ModsMenu_IsModuleActive( const char *pName );
 
 //
 // ui_single_player.cpp

@@ -198,6 +198,20 @@ void G_GetSpawnData( uvec3_t xyz, uint32_t *type, uint32_t *id, uint32_t nIndex 
 	*id = info->spawns[ nIndex ].entityid;
 }
 
+void G_GetTileData( uint32_t *pTiles ) {
+	const mapinfo_t *info;
+
+	if ( !pTiles ) {
+		N_Error( ERR_DROP, "G_GetTileData: NULL tiles" );
+	}
+	if ( gi.mapCache.currentMapLoaded == FS_INVALID_HANDLE ) {
+		N_Error( ERR_DROP, "G_GetTileData: no map loaded" );
+	}
+
+	info = &gi.mapCache.infoList[ gi.mapCache.currentMapLoaded ];
+	memcpy( pTiles, info->tiles, sizeof( *info->tiles ) * info->numTiles );
+}
+
 void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns, uint32_t *nTiles,
 	float *soundBits, linkEntity_t *activeEnts )
 {

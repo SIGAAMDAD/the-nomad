@@ -40,6 +40,8 @@ int ModuleInit() {
 			"sgame_LevelDebugPrint", "0", CVAR_LATCH | CVAR_TEMP, true );
 	}
 
+	@TheNomad::Engine::SoundSystem::SoundManager = TheNomad::Engine::SoundSystem::SoundScene();
+
 	ModuleConfigInit();
 
 	//

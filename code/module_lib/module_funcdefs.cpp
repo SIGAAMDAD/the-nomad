@@ -15,6 +15,7 @@
 #include "module_engine/module_raycast.h"
 #include "../system/sys_timer.h"
 #include "scriptjson.h"
+#include "module_engine/module_gpuconfig.h"
 
 //
 // c++ compatible wrappers around angelscript engine function calls
@@ -898,6 +899,11 @@ DEFINE_CALLBACK( SetActiveMap ) {
     G_SetActiveMap( hMap, nCheckpoints, nSpawns, nTiles, soundBits, &activeEnts->handle );
 }
 
+DEFINE_CALLBACK( GetTileData ) {
+    uint32_t *data = (uint32_t *)pGeneric->GetArgAddress( 0 );
+    G_GetTileData( data );
+}
+
 DEFINE_CALLBACK( GetCheckpointData ) {
     uvec3 *data = (uvec3 *)pGeneric->GetArgObject( 0 );
     G_GetCheckpointData( (uvec_t *)data, pGeneric->GetArgDWord( 1 ) );
@@ -908,6 +914,15 @@ DEFINE_CALLBACK( GetSpawnData ) {
     uint32_t *type = (uint32_t *)pGeneric->GetArgAddress( 1 );
     uint32_t *id = (uint32_t *)pGeneric->GetArgAddress( 2 );
     G_GetSpawnData( (uvec_t *)origin, type, id, pGeneric->GetArgDWord( 3 ) );
+}
+
+DEFINE_CALLBACK( GetGPUConfig ) {
+    CModuleGPUConfig *config = (CModuleGPUConfig *)pGeneric->GetArgObject( 0 );
+    config->gpuConfig = gi.gpuConfig;
+    config->shaderVersionString = config->gpuConfig.shader_version_str;
+    config->versionString = config->gpuConfig.version_string;
+    config->rendererString = config->gpuConfig.renderer_string;
+    config->extensionsString = config->gpuConfig.extensions_string;
 }
 
 DEFINE_CALLBACK( IsAnyKeyDown ) {
@@ -1155,6 +1170,11 @@ DEFINE_CALLBACK( GetModuleList ) {
     }
 }
 
+DEFINE_CALLBACK( IsModuleActive ) {
+    const string_t *modName = (const string_t *)pGeneric->GetArgObject( 0 );
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = ModsMenu_IsModuleActive( modName->c_str() );
+}
+
 DEFINE_CALLBACK( ModuleAssertion ) {
 }
 
@@ -1334,64 +1354,64 @@ static void ImGui_TextColored( const vec4 *color, const string_t *text ) {
 }
 #pragma GCC diagnostic pop
 
-static bool ImGui_SliderInt( asIScriptGeneric *pGeneric ) {
+static void ImGui_SliderInt( asIScriptGeneric *pGeneric ) {
     const string_t *label = (const string_t *)pGeneric->GetArgObject( 0 );
-    int *v = (int *)pGeneric->GetArgObject( 1 );
-    float min = pGeneric->GetArgFloat( 2 );
-    float max = pGeneric->GetArgFloat( 3 );
+    int32_t *v = (int32_t *)pGeneric->GetArgAddress( 1 );
+    int32_t min = (int32_t)pGeneric->GetArgDWord( 2 );
+    int32_t max = (int32_t)pGeneric->GetArgDWord( 3 );
     ImGuiSliderFlags flags = *(int *)pGeneric->GetArgAddress( 4 );
 
-    return ImGui::SliderInt( label->c_str(), v, min, max, "%i", flags );
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = ImGui::SliderInt( label->c_str(), v, min, max, "%i", flags );
 }
 
-static bool ImGui_SliderFloat( asIScriptGeneric *pGeneric ) {
+static void ImGui_SliderFloat( asIScriptGeneric *pGeneric ) {
     const string_t *label = (const string_t *)pGeneric->GetArgObject( 0 );
     float *v = (float *)pGeneric->GetArgAddress( 1 );
     float min = pGeneric->GetArgFloat( 2 );
     float max = pGeneric->GetArgFloat( 3 );
     ImGuiSliderFlags flags = *(int *)pGeneric->GetArgAddress( 4 );
 
-    return ImGui::SliderFloat( label->c_str(), v, min, max, "%.3f", flags );
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = ImGui::SliderFloat( label->c_str(), v, min, max, "%.3f", flags );
 }
 
-static bool ImGui_SliderFloat2( asIScriptGeneric *pGeneric ) {
+static void ImGui_SliderFloat2( asIScriptGeneric *pGeneric ) {
     const string_t *label = (const string_t *)pGeneric->GetArgObject( 0 );
-    vec2 *v = (vec2 *)pGeneric->GetArgObject( 1 );
+    vec2 *v = (vec2 *)pGeneric->GetArgAddress( 1 );
     float min = pGeneric->GetArgFloat( 2 );
     float max = pGeneric->GetArgFloat( 3 );
     ImGuiSliderFlags flags = *(int *)pGeneric->GetArgAddress( 4 );
 
-    return ImGui::SliderFloat2( label->c_str(), &v->x, min, max, "%.3f", flags );
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = ImGui::SliderFloat2( label->c_str(), (float *)v, min, max, "%.3f", flags );
 }
 
-static bool ImGui_SliderFloat3( asIScriptGeneric *pGeneric ) {
+static void ImGui_SliderFloat3( asIScriptGeneric *pGeneric ) {
     const string_t *label = (const string_t *)pGeneric->GetArgObject( 0 );
-    vec3 *v = (vec3 *)pGeneric->GetArgObject( 1 );
+    vec3 *v = (vec3 *)pGeneric->GetArgAddress( 1 );
     float min = pGeneric->GetArgFloat( 2 );
     float max = pGeneric->GetArgFloat( 3 );
     ImGuiSliderFlags flags = *(int *)pGeneric->GetArgAddress( 4 );
 
-    return ImGui::SliderFloat3( label->c_str(), &v->x, min, max, "%.3f", flags );
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = ImGui::SliderFloat3( label->c_str(), (float *)v, min, max, "%.3f", flags );
 }
 
-static bool ImGui_SliderFloat4( asIScriptGeneric *pGeneric ) {
+static void ImGui_SliderFloat4( asIScriptGeneric *pGeneric ) {
     const string_t *label = (const string_t *)pGeneric->GetArgObject( 0 );
-    vec4 *v = (vec4 *)pGeneric->GetArgObject( 1 );
+    vec4 *v = (vec4 *)pGeneric->GetArgAddress( 1 );
     float min = pGeneric->GetArgFloat( 2 );
     float max = pGeneric->GetArgFloat( 3 );
     ImGuiSliderFlags flags = *(int *)pGeneric->GetArgAddress( 4 );
 
-    return ImGui::SliderFloat4( label->c_str(), &v->x, min, max, "%.3f", flags );
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = ImGui::SliderFloat4( label->c_str(), (float *)v, min, max, "%.3f", flags );
 }
 
-static bool ImGui_SliderAngle( asIScriptGeneric *pGeneric ) {
+static void ImGui_SliderAngle( asIScriptGeneric *pGeneric ) {
     const string_t *label = (const string_t *)pGeneric->GetArgObject( 0 );
-    float *v = (float *)pGeneric->GetArgObject( 1 );
+    float *v = (float *)pGeneric->GetArgAddress( 1 );
     float min = pGeneric->GetArgFloat( 2 );
     float max = pGeneric->GetArgFloat( 3 );
     ImGuiSliderFlags flags = *(int *)pGeneric->GetArgAddress( 4 );
 
-    return ImGui::SliderAngle( label->c_str(), v, min, max, "%.0f deg", flags );
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = ImGui::SliderAngle( label->c_str(), v, min, max, "%.0f deg", flags );
 }
 
 static bool ImGui_RadioButton( const string_t *label, bool selected ) {
@@ -1477,6 +1497,19 @@ static const asDWORD script_CVAR_SAVE = CVAR_SAVE;
 static const asDWORD script_CVAR_TEMP = CVAR_TEMP;
 static const asDWORD script_CVAR_INVALID_HANDLE = CVAR_INVALID_HANDLE;
 
+static const asDWORD script_SURFACEPARM_CHECKPOINT = SURFACEPARM_CHECKPOINT;
+static const asDWORD script_SURFACEPARM_SPAWN = SURFACEPARM_SPAWN;
+static const asDWORD script_SURFACEPARM_FLESH = SURFACEPARM_FLESH;
+static const asDWORD script_SURFACEPARM_LAVA = SURFACEPARM_LAVA;
+static const asDWORD script_SURFACEPARM_METAL = SURFACEPARM_METAL;
+static const asDWORD script_SURFACEPARM_WOOD = SURFACEPARM_WOOD;
+static const asDWORD script_SURFACEPARM_NODAMAGE = SURFACEPARM_NODAMAGE;
+static const asDWORD script_SURFACEPARM_NODLIGHT = SURFACEPARM_NODLIGHT;
+static const asDWORD script_SURFACEPARM_NOMARKS = SURFACEPARM_NOMARKS;
+static const asDWORD script_SURFACEPARM_NOMISSILE = SURFACEPARM_NOMISSILE;
+static const asDWORD script_SURFACEPARM_NOSTEPS = SURFACEPARM_NOSTEPS;
+static const asDWORD script_SURFACEPARM_WATER = SURFACEPARM_WATER;
+
 static const asDWORD script_NOMAD_VERSION = NOMAD_VERSION;
 static const asDWORD script_NOMAD_VERSION_UPDATE = NOMAD_VERSION_UPDATE;
 static const asDWORD script_NOMAD_VERSION_PATCH = NOMAD_VERSION_PATCH;
@@ -1492,6 +1525,19 @@ void ModuleLib_Register_Engine( void )
 //    SET_NAMESPACE( "TheNomad::Constants" );
     { // Constants
         REGISTER_GLOBAL_VAR( "const float M_PI", &script_M_PI );
+
+        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_CHECKPOINT", &script_SURFACEPARM_CHECKPOINT );
+        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_SPAWN", &script_SURFACEPARM_SPAWN );
+        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_FLESH", &script_SURFACEPARM_FLESH );
+        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_LAVA", &script_SURFACEPARM_LAVA );
+        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_METAL", &script_SURFACEPARM_METAL );
+        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_WOOD", &script_SURFACEPARM_WOOD );
+        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_NODAMAGE", &script_SURFACEPARM_NODAMAGE );
+        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_NODLIGHT", &script_SURFACEPARM_NODLIGHT );
+        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_NOMARKS", &script_SURFACEPARM_NOMARKS );
+        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_NOMISSILE", &script_SURFACEPARM_NOMISSILE );
+        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_NOSTEPS", &script_SURFACEPARM_NOSTEPS );
+        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_WATER", &script_SURFACEPARM_WATER );
 
         REGISTER_GLOBAL_VAR( "const int32 FS_INVALID_HANDLE", &script_FS_INVALID_HANDLE );
         REGISTER_GLOBAL_VAR( "const uint32 FS_OPEN_READ", &script_FS_OPEN_READ );
@@ -1830,6 +1876,7 @@ void ModuleLib_Register_Engine( void )
         REGISTER_ENUM_VALUE( "ImGuiWindowFlags", "NoScrollbar", ImGuiWindowFlags_NoScrollbar );
         REGISTER_ENUM_VALUE( "ImGuiWindowFlags", "AlwaysHorizontalScrollbar", ImGuiWindowFlags_AlwaysHorizontalScrollbar );
         REGISTER_ENUM_VALUE( "ImGuiWindowFlags", "AlwaysVerticalScrollbar", ImGuiWindowFlags_AlwaysVerticalScrollbar );
+        REGISTER_ENUM_VALUE( "ImGuiWindowFlags", "AlwaysAutoResize", ImGuiWindowFlags_AlwaysAutoResize );
 
         REGISTER_ENUM_TYPE( "ImGuiTableFlags" );
         REGISTER_ENUM_VALUE( "ImGuiTableFlags", "None", ImGuiTableFlags_None );
@@ -1889,30 +1936,30 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "void ImGui::NewLine()", ImGui::NewLine, ( void ), void );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::ArrowButton( const string& in, ImGuiDir )", ImGui_ArrowButton, ( const string_t *, ImGuiDir ), bool );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::RadioButton( const string& in, bool )", ImGui_RadioButton, ( const string_t *, bool ), bool );
-//        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
-//            "bool ImGui::SliderInt( const string& in, int&, int, int, int )", asFUNCTION( ImGui_SliderInt ),
-//            asCALL_GENERIC
-//        );
-//        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
-//            "bool ImGui::SliderFloat( const string& in, float& in, float, float, int )", asFUNCTION( ImGui_SliderFloat ),
-//            asCALL_GENERIC
-//        );
-//        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
-//            "bool ImGui::SliderVec2( const string& in, vec2& in, float, float, int )", asFUNCTION( ImGui_SliderFloat2 ),
-//            asCALL_GENERIC
-//        );
-//        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
-//            "bool ImGui::SliderVec3( const string& in, vec3& in, float, float, int )", asFUNCTION( ImGui_SliderFloat3 ),
-//            asCALL_GENERIC
-//        );
-//        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
-//            "bool ImGui::SliderVec4( const string& in, vec4& in, float, float, int )", asFUNCTION( ImGui_SliderFloat4 ),
-//            asCALL_GENERIC
-//        );
-//        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
-//            "bool ImGui::SliderAngle( const string& in, float& in, float = -360.0f, float = 360.0f, int = 0 )", asFUNCTION( ImGui_SliderAngle ),
-//            asCALL_GENERIC
-//        );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+            "bool ImGui::SliderInt( const string& in, int& out, int, int, int = 0 )", asFUNCTION( ImGui_SliderInt ),
+            asCALL_GENERIC
+        );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+            "bool ImGui::SliderFloat( const string& in, float& out, float, float, int = 0 )", asFUNCTION( ImGui_SliderFloat ),
+            asCALL_GENERIC
+        );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+            "bool ImGui::SliderVec2( const string& in, vec2& out, float, float, int = 0 )", asFUNCTION( ImGui_SliderFloat2 ),
+            asCALL_GENERIC
+        );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+            "bool ImGui::SliderVec3( const string& in, vec3& out, float, float, int = 0 )", asFUNCTION( ImGui_SliderFloat3 ),
+            asCALL_GENERIC
+        );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+            "bool ImGui::SliderVec4( const string& in, vec4& out, float, float, int = 0 )", asFUNCTION( ImGui_SliderFloat4 ),
+            asCALL_GENERIC
+        );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+            "bool ImGui::SliderAngle( const string& in, float& out, float = -360.0f, float = 360.0f, int = 0 )", asFUNCTION( ImGui_SliderAngle ),
+            asCALL_GENERIC
+        );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::ColorEdit3( const string& in, vec3& in, int = 0 )", ImGui_ColorEdit3, ( const string_t *, vec3 *, int ), bool );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::ColorEdit4( const string& in, vec4& in, int = 0 )", ImGui_ColorEdit4, ( const string_t *, vec4 *, int ), bool );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::Button( const string& in, const vec2& in = vec2( 0.0f ) )", ImGui_Button, ( const string_t *, const vec2 * ), bool );
@@ -2084,6 +2131,19 @@ void ModuleLib_Register_Engine( void )
         { // Renderer
             SET_NAMESPACE( "TheNomad::Engine::Renderer" );
 
+            REGISTER_OBJECT_TYPE( "GPUConfig", CModuleGPUConfig, asOBJ_VALUE );
+
+            REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Engine::Renderer::GPUConfig", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( CModuleGPUConfig, ( void ) ) );
+
+            REGISTER_OBJECT_PROPERTY( "TheNomad::Engine::Renderer::GPUConfig", "string vendor", offsetof( CModuleGPUConfig, vendorString ) );
+            REGISTER_OBJECT_PROPERTY( "TheNomad::Engine::Renderer::GPUConfig", "string renderer", offsetof( CModuleGPUConfig, rendererString ) );
+            REGISTER_OBJECT_PROPERTY( "TheNomad::Engine::Renderer::GPUConfig", "string extensions", offsetof( CModuleGPUConfig, extensionsString ) );
+            REGISTER_OBJECT_PROPERTY( "TheNomad::Engine::Renderer::GPUConfig", "string version", offsetof( CModuleGPUConfig, versionString ) );
+            REGISTER_OBJECT_PROPERTY( "TheNomad::Engine::Renderer::GPUConfig", "string shaderVersion", offsetof( CModuleGPUConfig, shaderVersionString ) );
+            REGISTER_OBJECT_PROPERTY( "TheNomad::Engine::Renderer::GPUConfig", "uint32 screenWidth", offsetof( gpuConfig_t, vidWidth ) );
+            REGISTER_OBJECT_PROPERTY( "TheNomad::Engine::Renderer::GPUConfig", "uint32 screenHeight", offsetof( gpuConfig_t, vidHeight ) );
+            REGISTER_OBJECT_PROPERTY( "TheNomad::Engine::Renderer::GPUConfig", "bool isFullscreen", offsetof( gpuConfig_t, isFullscreen ) );
+
             REGISTER_OBJECT_TYPE( "PolyVert", CModulePolyVert, asOBJ_VALUE );
 
             REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Engine::Renderer::PolyVert", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( CModulePolyVert, ( void ) ) );
@@ -2099,6 +2159,11 @@ void ModuleLib_Register_Engine( void )
                 CModulePolyVert, Set, ( const CModulePolyVert& ), void );
             REGISTER_METHOD_FUNCTION( "TheNomad::Engine::Renderer::PolyVert", "void Set( const vec3& in, const vec3& in, const vec2& in, uint32 )",
                 CModulePolyVert, Set, ( const vec3&, const vec3&, const vec2&, const color4ub_t& ), void );
+            
+            REGISTER_OBJECT_PROPERTY( "TheNomad::Engine::Renderer::PolyVert", "vec3 xyz", offsetof( CModulePolyVert, m_Origin ) );
+            REGISTER_OBJECT_PROPERTY( "TheNomad::Engine::Renderer::PolyVert", "vec3 worldPos", offsetof( CModulePolyVert, m_WorldPos ) );
+            REGISTER_OBJECT_PROPERTY( "TheNomad::Engine::Renderer::PolyVert", "vec3 uv", offsetof( CModulePolyVert, m_TexCoords ) );
+            REGISTER_OBJECT_PROPERTY( "TheNomad::Engine::Renderer::PolyVert", "uint32 color", offsetof( CModulePolyVert, m_Color ) );
 
             REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::RenderScene( uint, uint, uint, uint, uint, uint )", RenderScene );
 //            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::RE_AddEntityToScene( int, vec3, uint,  )", AddEntityToScene );
@@ -2240,6 +2305,8 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadVec3( const string& in, vec3& out, int )", LoadVec3 );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadVec4( const string& in, vec4& out, int )", LoadVec4 );
 
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetGPUConfig( GPUConfig& out )", GetGPUConfig );
+
         
 		// these are here because if they change in the map editor or the engine, it'll break sgame
 		REGISTER_ENUM_TYPE( "EntityType" );
@@ -2270,12 +2337,14 @@ void ModuleLib_Register_Engine( void )
 		REGISTER_ENUM_VALUE( "DirType", "West", DIR_WEST );
 		REGISTER_ENUM_VALUE( "DirType", "NorthWest", DIR_NORTH_WEST );
 		REGISTER_ENUM_VALUE( "DirType", "Inside", DIR_NULL );
+        REGISTER_ENUM_VALUE( "DirType", "NumDirs", NUMDIRS );
 
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::CastRay( ref@ )", CastRay );
         REGISTER_GLOBAL_FUNCTION( "bool TheNomad::GameSystem::CheckWallHit( const vec3& in, TheNomad::GameSystem::DirType )", CheckWallHit );
 		
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetCheckpointData( uvec3& out, uint )", GetCheckpointData );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetSpawnData( uvec3& out, uint& out, uint& out, uint )", GetSpawnData );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetTileData( uint32[]& out )", GetTileData );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SetActiveMap( int, uint& out, uint& out, uint& out, float[]& in, "
             "TheNomad::GameSystem::LinkEntity& in )", SetActiveMap );
         REGISTER_GLOBAL_FUNCTION( "int LoadMap( const string& in )", LoadMap );
@@ -2286,6 +2355,7 @@ void ModuleLib_Register_Engine( void )
         SET_NAMESPACE( "TheNomad::Util" );
 
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Util::GetModuleList( array<string>& out )", GetModuleList );
+        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Util::IsModuleActive( const string& in )", IsModuleActive );
 
         REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StrICmp( const string& in, const string& in )", StrICmp );
         REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StrCmp( const string& in, const string& in )", StrCmp );

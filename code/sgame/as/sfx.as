@@ -17,4 +17,31 @@ namespace TheNomad::Engine::SoundSystem {
 
         private int m_hSfx;
     };
+
+    class SoundScene {
+        SoundScene() {
+            m_Channels.resize( TheNomad::Engine::CvarVariableInteger( "sgame_MaxSoundChannels" ) );
+        }
+        
+        void Flush() {
+            for ( uint i = 0; i < m_nUsedChannels; i++ ) {
+                m_Channels[i].Play();
+            }
+            m_nUsedChannels = 0;
+        }
+
+        void PushSfxToScene( SoundEffect& in sfx ) {
+            if ( m_nUsedChannels == m_Channels.size() ) {
+                return;
+            }
+
+            @m_Channels[ m_nUsedChannels ] = @sfx;
+            m_nUsedChannels++;
+        }
+
+        private array<SoundEffect@> m_Channels;
+        private uint m_nUsedChannels = 0;
+    };
+
+    SoundScene@ SoundManager;
 };

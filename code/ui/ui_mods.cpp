@@ -44,6 +44,17 @@ static void ModsMenu_LoadMod( module_t *mod )
 {
 }
 
+qboolean ModsMenu_IsModuleActive( const char *pName ) {
+    uint64_t i;
+
+    for ( i = 0; i < mods.numMods; i++ ) {
+        if ( !N_strcmp( pName, mods.modList[i].name ) && mods.modList[i].active ) {
+            return qtrue;
+        }
+    }
+    return qfalse;
+}
+
 void ModsMenu_SaveModList( void )
 {
     uint64_t i;
@@ -81,6 +92,8 @@ static void ModsMenu_LoadModList( void )
     text_p = f.b;
     text = &text_p;
 
+    COM_BeginParseSession( "_cache/loadlist.txt" );
+
     while ( 1 ) {
         tok = COM_ParseExt( text, qtrue );
         if ( !tok || !tok[0] ) {
@@ -89,7 +102,7 @@ static void ModsMenu_LoadModList( void )
 
         m = NULL;
         for ( i = 0; i < mods.numMods; i++ ) {
-            if ( !N_stricmp( mods.modList[i].name, tok ) ) {
+            if ( !N_strcmp( mods.modList[i].name, tok ) ) {
                 m = &mods.modList[i];
                 break;
             }

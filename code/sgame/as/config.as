@@ -3,12 +3,19 @@
 
 TheNomad::GameSystem::GameDifficulty config_GameDifficulty;
 bool config_AdaptiveSoundtrack;
+uint config_MaxEntities;
+uint config_GfxDetail;
+
+bool config_ShowNotice = false;
 
 //
 // ModuleConfigInit: initializes all sgame relevant configuration variables
 //
 void ModuleConfigInit() {
     config_AdaptiveSoundtrack = TheNomad::Util::IntToBool( TheNomad::Engine::CvarVariableInteger( "sgame_AdaptiveSoundTrack" ) );
+    config_GameDifficulty = TheNomad::GameSystem::GameDifficulty( TheNomad::Engine::CvarVariableInteger( "sgame_Difficulty" ) );
+    config_MaxEntities = uint( TheNomad::Engine::CvarVariableInteger( "sgame_MaxEntities" ) );
+    config_GfxDetail = uint( TheNomad::Engine::CvarVariableInteger( "sgame_GfxDetail" ) );
 }
 
 void AdjustDifficulty() {
@@ -45,9 +52,12 @@ int ModuleDrawConfiguration() {
 	ImGui::TableNextColumn();
 	ImGui::Text( "Game Difficulty" );
 	ImGui::TableNextColumn();
-    if ( config_GameDifficulty != TheNomad::GameSystem::GameDifficulty::TryYourBest ) {
+    if ( config_GameDifficulty != TheNomad::GameSystem::GameDifficulty::TryYourBest
+    	|| TheNomad::SGame::GlobalState != TheNomad::SGame::GameState::InLevel )
+    {
         AdjustDifficulty();
     } else {
+    	// remember, no pussy
         ImGui::Text( "You CHOSE This, No Pullin' Out Now!" );
     }
 
@@ -63,8 +73,48 @@ int ModuleDrawConfiguration() {
         config_AdaptiveSoundtrack = !config_AdaptiveSoundtrack;
         TheNomad::SGame::selectedSfx.Play();
     }
+    
+    ImGui::TableNextRow();
+    
+    ImGui::TableNextColumn();
+    ImGui::Text( "Max Entities" );
+    ImGui::TableNextColumn();
+    
+    if ( ImGui::SliderInt( "##MaxEntitiesConfig", config_MaxEntities, 100, 1000 ) ) {
+    	TheNomad::SGame::selectedSfx.Play();
+    	if ( config_MaxEntities > uint( TheNomad::SGame::sgame_MaxEntities.GetInt() ) ) {
+    		config_ShowNotice = true;
+    	} else {
+    		config_ShowNotice = false;
+    	}
+    }
+    
+    ImGui::TableNextRow();
+    
+    ImGui::TableNextColumn();
+    ImGui::Text( "Gfx Detail" );
+    ImGui::TableNextColumn();
+    
+    if ( ImGui::SliderInt( "##GfxDetailConfig", config_GfxDetail, 0, 8 ) ) {
+    	TheNomad::SGame::selectedSfx.Play();
+    	if ( config_GfxDetail > uint( TheNomad::SGame::sgame_GfxDetail.GetInt() ) ) {
+    		config_ShowNotice = true;
+    	} else {
+    		config_ShowNotice = false;
+    	}
+    }
 
     ImGui::EndTable();
+    
+    if ( config_ShowNotice ) {
+	    // draw a separate widget to display useful performance information
+	    ImGui::Begin( "Performance Notification##ConfigNoticeWidget", null, ImGui::MakeWindowFlags(
+    		ImGuiWindowFlags::NoMove | ImGuiWindowFlags::NoResize | ImGuiWindowFlags::AlwaysAutoResize
+    		| ImGuiWindowFlags::NoMouseInputs ) );
+   		ImGui::Text( "WARNING: some of the setting changes could have a negative impact on performance" );
+   		ImGui::End();
+   	}
+    
 	return 1;
 }
 

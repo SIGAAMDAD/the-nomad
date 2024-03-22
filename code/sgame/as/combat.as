@@ -4,8 +4,6 @@
 #include "item.as"
 
 namespace TheNomad::SGame {
-	ConVar@ sgame_MusicChangeDelta;
-	
 	class CombatSoundSystem : TheNomad::GameSystem::GameObject {
 		CombatSoundSystem() {
 		}
@@ -46,7 +44,7 @@ namespace TheNomad::SGame {
 				m_Current.m_AmbientTrack.SetLooping();
 			}
 		}
-		const string& GetName() const override {
+		const string& GetName() const {
 			return "CombatSoundSystem";
 		}
 		
@@ -56,10 +54,11 @@ namespace TheNomad::SGame {
 		private const LevelInfoData@ m_Current = null;
 	};
 	
+	ConVar@ sgame_MusicChangeDelta;
 	CombatSoundSystem@ dynamicMusic;
 	
 	void InitDynamicMusic() {
-		if ( sgame_AdaptiveSoundTrack.GetInt() != 1 ) {
+		if ( sgame_AdaptiveSoundtrack.GetInt() != 1 ) {
 			ConsolePrint( "Dynamic combat soundtrack has been toggled off.\n" );
 			return;
 		}
