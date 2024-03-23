@@ -661,6 +661,7 @@ cvar_t *Cvar_Set2(const char *var_name, const char *value, qboolean force)
     if ((var->flags & CVAR_LATCH) && var->latchedString) {
         if (strcmp(value, var->s) == 0) {
             Z_Free(var->latchedString);
+            var->latchedString = NULL;
             return var;
         }
 
@@ -697,6 +698,7 @@ cvar_t *Cvar_Set2(const char *var_name, const char *value, qboolean force)
     else {
         if (var->latchedString) {
             Z_Free(var->latchedString);
+            var->latchedString = NULL;
         }
     }
 
@@ -878,6 +880,7 @@ void Cvar_SetCheatState(void)
             // because of a different var->latchedString
             if (var->latchedString[0]) {
                 Z_Free(var->latchedString);
+                var->latchedString = NULL;
             }
             if (strcmp(var->resetString, var->s))
                 Cvar_Set(var->name, var->resetString);
@@ -1533,7 +1536,7 @@ static cvar_t *Cvar_Unset(cvar_t *cv)
     if (cv->hashNext)
         cv->hashNext->hashPrev = cv->hashPrev;
 
-    memset(cv, '\0', sizeof(*cv));
+    memset(cv, 0, sizeof(*cv));
 
     return next;
 }

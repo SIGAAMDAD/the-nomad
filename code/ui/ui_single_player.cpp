@@ -41,31 +41,6 @@ typedef struct {
     const char *tooltip;
 } dif_t;
 
-// TODO: make this loadable from a file
-static const char *difHardestTitles[] = {
-    "POV: Kazuma",
-    "Dark Souls",
-    "Writing in C++",
-    "Metal Goose Rising: REVENGEANCE",
-    "Hell Itself",
-    "Suicidal Encouragement",
-    "Cope, Seethe, Repeat",
-    "Sounds Like a U Problem",
-    "GIT GUD",
-    "THE MEMES",
-    "Deal With It",
-    "Just A Minor Inconvenience",
-    "YOU vs God",
-    "The Ultimate Bitch-Slap",
-    "GIT REKT",
-    "GET PWNED",
-    "Wish U Had A BFG?",
-    "Skill Issue",
-    "DAKKA",
-    "OOOOF",
-    "So sad, too bad."
-};
-
 static dif_t difficultyTable[NUMDIFS];
 
 void NewGame_DrawNameIssue( void )
@@ -113,7 +88,7 @@ void SinglePlayerMenu_Draw( void )
         ImGui::BeginTable( " ", 2 );
         if (ui->Menu_Option( "New Game" )) {
             ui->SetState( STATE_NEWGAME );
-            sp.hardestIndex = rand() % arraylen(difHardestTitles);
+            sp.hardestIndex = rand() % sp.numHardestStrings;
         }
         ImGui::TableNextRow();
         if (ui->Menu_Option( "Load Game" )) {
@@ -149,7 +124,7 @@ void SinglePlayerMenu_Draw( void )
         mousePos = ImGui::GetCursorScreenPos();
         ImGui::SetCursorScreenPos( ImVec2( mousePos.x, mousePos.y + 10 ) );
         if (sp.diff == DIF_HARDEST) {
-            difName = difHardestTitles[ sp.hardestIndex ];
+            difName = sp.hardestStrings[ sp.hardestIndex ];
         }
         else {
             difName = difficultyTable[ sp.diff ].name;
@@ -159,12 +134,13 @@ void SinglePlayerMenu_Draw( void )
             ImGui::TableNextColumn();
             ImGui::TextUnformatted( "Save Name" );
             ImGui::TableNextColumn();
-            if (ImGui::InputText( " ", sp.name, sizeof(sp.name), ImGuiInputTextFlags_EscapeClearsAll | ImGuiInputTextFlags_EnterReturnsTrue )) {
+            if ( ImGui::InputText( "##SaveNameInput", sp.name, sizeof(sp.name) - 1, ImGuiInputTextFlags_EscapeClearsAll
+                | ImGuiInputTextFlags_EnterReturnsTrue ) )
+            {
                 ui->PlaySelected();
                 // make sure it's an absolute path
-                if ( strchr( sp.name, '/' ) || strchr( sp.name, '\\' ) ) {
-                    N_strncpyz( sp.name, COM_SkipPath( sp.name ), sizeof(sp.name) );
-                }
+                N_strncpyz( sp.name, COM_SkipPath( sp.name ), sizeof( sp.name ) );
+
                 // make sure its a unique name, so we don't get filename collisions
                 for (i = 0; i < sp.numSaves; i++) {
                     if (!N_stricmp( sp.name, sp.saveList[i].name )) {
@@ -208,12 +184,13 @@ void SinglePlayerMenu_Draw( void )
             Key_SetCatcher( 0 );
             Key_ClearStates();
 
-            if ( N_stricmp( Cvar_VariableString( "sg_savename" ), sp.name ) ) {
-                Cvar_Set( "sg_savename", sp.name );
+            if ( N_stricmp( Cvar_VariableString( "sgame_SaveName" ), sp.name ) ) {
+                Cvar_Set( "sgame_SaveName", sp.name );
             }
 
             Cvar_SetIntegerValue( "g_levelIndex", 0 );
             
+            gi.state = GS_LEVEL;
             Cvar_Set( "mapname", gi.mapCache.infoList[0].name );
             g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelStart, 0 ); // start a new game
         }
@@ -246,8 +223,9 @@ void SinglePlayerMenu_Draw( void )
             for (i = 0; i < sp.numSaves; i++) {
                 ImGui::TableNextColumn();
                 if ( ImGui::Button( "LOAD" ) ) {
-                    Cvar_Set( "sg_savename", sp.saveList[i].name );
+                    Cvar_Set( "sgame_SaveName", sp.saveList[i].name );
                     Cvar_Set( "mapname", gi.mapCache.infoList[i].name );
+                    gi.state = GS_LEVEL;
                     g_pModuleLib->ModuleCall( sgvm, ModuleOnLoadGame, 0 );
                 }
                 ImGui::TableNextColumn();
@@ -283,7 +261,9 @@ void SinglePlayerMenu_Cache( void )
     uint64_t i;
     const stringHash_t *hardest;
 
-    memset( &sp, 0, sizeof(sp) );
+    memset( &sp, 0, sizeof( sp ) );
+
+    Key_SetCatcher( KEYCATCH_UI );
     
     //
     // init strings
@@ -319,11 +299,11 @@ void SinglePlayerMenu_Cache( void )
     if ( sp.numSaves ) {
         Cvar_Set( "sg_numSaves", va( "%i", (int32_t)sp.numSaves ) );
 
-        sp.saveList = (saveinfo_t *)Hunk_Alloc( sizeof(saveinfo_t) * sp.numSaves, h_high );
+        sp.saveList = (saveinfo_t *)Hunk_Alloc( sizeof( saveinfo_t ) * sp.numSaves, h_high );
         info = sp.saveList;
 
         for ( i = 0; i < sp.numSaves; i++, info++ ) {
-            N_strncpyz( info->name, fileList[i], sizeof(info->name) );
+            N_strncpyz( info->name, fileList[i], sizeof( info->name ) );
 
             info->index = i;
             if ( !Sys_GetFileStats( &info->stats, info->name ) ) { // this should never fail
@@ -333,8 +313,7 @@ void SinglePlayerMenu_Cache( void )
             if ( !g_pArchiveHandler->LoadPartial( info->name, &info->gd ) ) { // just get the header and basic game information
                 Con_Printf( COLOR_YELLOW "WARNING: Failed to get valid header data from savefile '%s'\n", info->name );
                 info->valid = qfalse;
-            }
-            else {
+            } else {
                 info->valid = qtrue;
             }
         }
@@ -368,16 +347,16 @@ int32_t count_fields( const char *line ) {
             continue;
         }
 
-        switch( *ptr ) {
-            case '\"':
-                fQuote = 1;
-                continue;
-            case ',':
-                cnt++;
-                continue;
-            default:
-                continue;
-        }
+        switch ( *ptr ) {
+        case '\"':
+            fQuote = 1;
+            continue;
+        case ',':
+            cnt++;
+            continue;
+        default:
+            continue;
+        };
     }
 
     if ( fQuote ) {
@@ -414,7 +393,7 @@ char **parse_csv( const char *line ) {
         return NULL;
     }
 
-    buf = (char **)Z_Malloc( sizeof(char *) * ( fieldcnt + 1 ), TAG_GAME );
+    buf = (char **)Z_Malloc( sizeof( char * ) * ( fieldcnt + 1 ), TAG_GAME );
     tmp = (char *)Hunk_AllocateTempMemory( strlen( line ) + 1 );
 
     bptr = buf;
@@ -440,39 +419,37 @@ char **parse_csv( const char *line ) {
             continue;
         }
 
-        switch( *ptr ) {
-            case '\"':
-                fQuote = 1;
-                continue;
-            case '\0':
-                fEnd = 1;
-            case ',':
-                *tptr = '\0';
-                *bptr = CopyUIString( tmp );
+        switch ( *ptr ) {
+        case '\"':
+            fQuote = 1;
+            continue;
+        case '\0':
+            fEnd = 1;
+        case ',':
+            *tptr = '\0';
+            *bptr = CopyUIString( tmp );
 
-                if ( !*bptr ) {
-                    for ( bptr--; bptr >= buf; bptr-- ) {
-                        Z_Free( *bptr );
-                    }
-                    Z_Free( buf );
-                    Hunk_FreeTempMemory( tmp );
-
-                    return NULL;
+            if ( !*bptr ) {
+                for ( bptr--; bptr >= buf; bptr-- ) {
+                    Z_Free( *bptr );
                 }
+                Z_Free( buf );
+                Hunk_FreeTempMemory( tmp );
 
-                bptr++;
-                tptr = tmp;
+                return NULL;
+            }
 
-                if ( fEnd ) {
-                    break;
-                } else {
-                    continue;
-                }
+            bptr++;
+            tptr = tmp;
 
-            default:
-                *tptr++ = *ptr;
-                continue;
-        }
+            if ( fEnd ) {
+                break;
+            }
+            continue;
+        default:
+            *tptr++ = *ptr;
+            continue;
+        };
 
         if ( fEnd ) {
             break;

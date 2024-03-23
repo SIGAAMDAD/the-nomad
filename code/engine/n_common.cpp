@@ -792,6 +792,7 @@ void Com_RestartGame( void )
 
 		// shutdown FS early so Cvar_Restart will not reset old game cvars
 		FS_Shutdown( qtrue );
+		logfile = FS_INVALID_HANDLE;
 
 		// clean out any user an VM created cvars
 		Cvar_Restart( qtrue );
@@ -1579,9 +1580,6 @@ void Com_Init( char *commandLine )
 
 	Cbuf_Init();
 
-	// override anything from the config files with command line args
-	Com_StartupVariable( NULL );
-
 	Z_InitMemory();
 	Cmd_Init();
 
@@ -1657,7 +1655,7 @@ void Com_Init( char *commandLine )
 	Cvar_SetDescription( com_maxfps, "Sets the maximum amount frames that can be drawn per second." );
 #ifdef USE_AFFINITY_MASK
 	Com_StartupVariable( "com_affinityMask" );
-	com_affinityMask = Cvar_Get( "com_affinityMask", "", CVAR_ARCHIVE_ND );
+	com_affinityMask = Cvar_Get( "com_affinityMask", "0x6", CVAR_SAVE | CVAR_LATCH );
 	Cvar_SetDescription( com_affinityMask, "Bind game process to bitmask-specified CPU core(s), special characters:\n A or a - all default cores\n P or p - performance cores\n E or e - efficiency cores\n 0x<value> - use hexadecimal notation\n + or - can be used to add or exclude particular cores" );
 	com_affinityMask->modified = qfalse;
 #endif
@@ -1850,6 +1848,7 @@ void Com_Frame( qboolean noDelay )
 
 #ifdef USE_AFFINITY_MASK
 	if (com_affinityMask->modified) {
+		Con_DPrintf( "Resetting com_affinityMask...\n" );
 		Com_SetAffinityMask( com_affinityMask->s );
 		com_affinityMask->modified = qfalse;
 	}

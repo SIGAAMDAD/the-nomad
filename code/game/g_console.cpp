@@ -172,7 +172,7 @@ typedef struct {
 	vec4_t	color;
 
 	uint32_t viswidth;
-	uint32_t vispage;		
+	uint32_t vispage;
 
 	qboolean newline;
 
@@ -240,7 +240,7 @@ Con_Clear_f
 ================
 */
 static void Con_Clear_f( void ) {
-	memset( &con, 0, sizeof(con) );
+	memset( &con, 0, sizeof( con ) );
 }
 
 						
@@ -311,15 +311,11 @@ Con_ClearNotify
 void Con_ClearNotify( void ) {
 	uint32_t i;
 	
-#if 0
-	for ( i = 0 ; i < NUM_CON_TIMES ; i++ ) {
-		con.contimes[i] = 0;
-	}
-#else
-	con.contime = 0;
-	memset( con.contimes, 0, sizeof(con.contimes) );
-	memset( con.times, 0, sizeof(con.times) );
-#endif
+	//for ( i = 0 ; i < NUM_CON_TIMES ; i++ ) {
+	//	con.contimes[i] = 0;
+	//}
+	memset( con.times, 0, sizeof( con.times ) );
+	memset( con.contimes, 0, sizeof( con.contimes ) );
 }
 
 
@@ -730,7 +726,7 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 			data->BufTextLen = 0;
 			data->InsertChars( data->CursorPos, edit->buffer + data->CursorPos, edit->buffer + edit->cursor );
 		} else {
-			edit->cursor = data->CursorPos = len;
+			data->DeleteChars( 0, data->BufTextLen );
 		}
 	}
 
@@ -795,7 +791,7 @@ static void Con_DrawInput( void ) {
 	ImGui::TextUnformatted( "] " );
 	ImGui::SameLine();
 
-	if ( ImGui::InputText( "", g_consoleField.buffer, sizeof(g_consoleField.buffer) - 1,
+	if ( ImGui::InputText( "##ConsoleInputField", g_consoleField.buffer, sizeof(g_consoleField.buffer) - 1,
 		ImGuiInputTextFlags_CallbackHistory | ImGuiInputTextFlags_CallbackCompletion |
 		ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CtrlEnterForNewLine |
 		( key_overstrikeMode ? ImGuiInputTextFlags_AlwaysOverwrite : 0 ),
@@ -827,14 +823,13 @@ static void Con_DrawInput( void ) {
 			} else {
 				Cbuf_AddText( g_consoleField.buffer+1 );	// valid command
 				Cbuf_AddText( "\n" );
+				// copy line to history buffer
+				Con_SaveField( &g_consoleField );
 	//			Cbuf_AddText( "cmd say " );
 	//			Cbuf_AddText( g_consoleField.buffer );
 	//			Cbuf_AddText( "\n" );
 			}
 		}
-
-		// copy line to history buffer
-		Con_SaveField( &g_consoleField );
 
 		Field_Clear( &g_consoleField );
 		g_consoleField.widthInChars = g_console_field_width;
@@ -850,6 +845,31 @@ DRAWING
 
 ==============================================================================
 */
+
+static qboolean Con_IsValidChar( int c )
+{
+	if ( N_isalpha( c ) ) {
+		return qtrue;
+	}
+	switch ( c ) {
+	case '[':
+	case ']':
+	case '{':
+	case '}':
+	case ':':
+	case '\"':
+	case '\'':
+	case '\\':
+	case '/':
+	case '+':
+	case '*':
+	case '#':
+		return qtrue;
+	default:
+		break;
+	};
+	return qfalse;
+}
 
 static void Con_DrawExternalConsole( void );
 static void Con_DrawText( const char *txt )
@@ -937,10 +957,10 @@ static void Con_DrawSolidConsole( float frac )
 	w = (float)gi.gpuConfig.vidWidth;
 	h = (float)gi.gpuConfig.vidHeight * 0.75f;
 	
-	if ( x >= 0.3f ) {
+	if ( x >= 0.3f || x <= -0.3f ) {
 		changeX = -changeX;
 	}
-	if ( y >= 0.1f ) {
+	if ( y >= 0.1f || y <= -0.1f ) {
 		changeY = -changeY;
 	}
 
@@ -958,8 +978,7 @@ static void Con_DrawSolidConsole( float frac )
 //	ImGui::Image( (ImTextureID)(intptr_t)gi.consoleShader1, ImGui::GetWindowSize(), ImVec2( x / 2, y / 2 ) );
 //	ImGui::End();
 
-	ImGui::SetNextWindowFocus();
-	ImGui::Begin( "CommandConsole", NULL, windowFlags | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_AlwaysHorizontalScrollbar );
+	ImGui::Begin( "CommandConsole", NULL, windowFlags | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_HorizontalScrollbar );
 	ImGui::SetWindowPos( ImVec2( 0, 0 ) );
 	ImGui::SetWindowSize( ImVec2( w, h ) );
 	ImGui::SetWindowFontScale( 1.0f );
@@ -991,12 +1010,12 @@ static void Con_DrawSolidConsole( float frac )
 	// draw from the bottom up
 	{
 		// draw arrows to show the buffer is backscrolled
-		ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( g_color_table[ ColorIndex(S_COLOR_RED) ] ) );
+		ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( g_color_table[ ColorIndex( S_COLOR_RED ) ] ) );
 
-		const uint32_t count = gi.gpuConfig.vidWidth / ImGui::CalcTextSize("^").x / ImGui::GetFont()->Scale;
+		const uint32_t count = gi.gpuConfig.vidWidth / ImGui::GetFontSize();
 
-		for (i = 0; i < count; i++) {
-			ImGui::TextUnformatted("^");
+		for ( i = 0; i < count; i++ ) {
+			ImGui::TextUnformatted( "^" );
 			ImGui::SameLine();
 		}
 		ImGui::PopStyleColor();
@@ -1015,7 +1034,7 @@ static void Con_DrawSolidConsole( float frac )
 	// draw the version
 	//
 	ImGui::Begin( "CommandConsoleVersion", NULL, windowFlags | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_AlwaysAutoResize );
-	ImGui::SetWindowPos( ImVec2( w - 150, h - 48 ) );
+	ImGui::SetWindowPos( ImVec2( w - ( 200 * gi.scale ), h - 48 ) );
 	ImGui::TextUnformatted( GLN_VERSION );
 	ImGui::End();
 }

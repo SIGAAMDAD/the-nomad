@@ -10,8 +10,6 @@ void G_ShutdownSGame( void )
     if ( !sgvm ) {
         return;
     }
-
-    g_pModuleLib->ModuleCall( sgvm, ModuleShutdown, 0 );
     
     sgvm = NULL;
     FS_VM_CloseFiles( H_SGAME );
@@ -61,7 +59,7 @@ qboolean G_SGameCommand( void )
 {
     qboolean bRes;
 
-    if ( !sgvm ) {
+    if ( !sgvm || gi.state != GS_LEVEL ) {
         return qfalse;
     }
 

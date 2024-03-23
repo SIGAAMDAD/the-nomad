@@ -161,10 +161,14 @@ void RE_BeginFrame(stereoFrame_t stereoFrame)
 		return;
 	}
 
+	if ( glContext.ARB_framebuffer_object && r_arb_framebuffer_object->i ) {
+		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo->frameBuffer );
+	}
+
     // unused for now
-    if (glState.currentFbo && 0) {
-//        width = glState.currentFbo->width;
-//        height = glState.currentFbo->height;
+    if ( glState.currentFbo ) {
+        width = glState.currentFbo->width;
+        height = glState.currentFbo->height;
     } else {
         width = glConfig.vidWidth;
         height = glConfig.vidHeight;
@@ -262,6 +266,7 @@ void RE_BeginFrame(stereoFrame_t stereoFrame)
             ri.Error( ERR_FATAL, "RE_BeginFrame() - glGetError() failed (0x%x)!", error );
     }
 
+/*
     if ( glConfig.stereoEnabled ) {
 		if ( !( cmd = R_GetCommandBuffer( sizeof(*cmd) ) ) )
 			return;
@@ -293,6 +298,7 @@ void RE_BeginFrame(stereoFrame_t stereoFrame)
 				cmd->buffer = GL_BACK;
 		}
     }
+	*/
 
 	backend.refdef.stereoFrame = stereoFrame;
 }

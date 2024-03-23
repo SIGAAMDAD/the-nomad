@@ -372,6 +372,7 @@ void RB_IterateShaderStages( shader_t *shader )
 
         GLSL_UseProgram( sp );
 
+		GLSL_SetUniformInt( sp, UNIFORM_NUM_LIGHTS, backend.refdef.numDLights + rg.world->numLights );
         GLSL_SetUniformMatrix4( sp, UNIFORM_MODELVIEWPROJECTION, glState.viewData.camera.viewProjectionMatrix );
 
         GL_State( stageP->stateBits );
@@ -428,8 +429,17 @@ void RB_IterateShaderStages( shader_t *shader )
         GLSL_SetUniformInt( sp, UNIFORM_COLORGEN, stageP->rgbGen );
         GLSL_SetUniformInt( sp, UNIFORM_ALPHAGEN, stageP->alphaGen );
 
-        GL_BindTexture( TB_DIFFUSEMAP, stageP->bundle[0].image );
+        GL_BindTexture( GL_TEXTURE0, stageP->bundle[TB_DIFFUSEMAP].image );
         GLSL_SetUniformInt( sp, UNIFORM_DIFFUSE_MAP, 0 );
+
+		if ( stageP->bundle[TB_NORMALMAP].image ) {
+			GL_BindTexture( GL_TEXTURE1, stageP->bundle[TB_NORMALMAP].image->id );
+			GLSL_SetUniformInt( sp, UNIFORM_NORMAL_MAP, 1 );
+		}
+		if ( stageP->bundle[TB_SPECULARMAP].image ) {
+			GL_BindTexture( GL_TEXTURE2, stageP->bundle[TB_SPECULARMAP].image->id );
+			GLSL_SetUniformInt( sp, UNIFORM_SPECULAR_MAP, 1 );
+		}
 
         //
         // draw

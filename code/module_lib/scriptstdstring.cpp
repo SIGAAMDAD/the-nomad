@@ -15,7 +15,7 @@ CModuleStringFactory *GetStringFactorySingleton( void )
 		
 		CThreadAutoLock<CThreadMutex> lock( mutex );
 		if ( !g_pStringFactory ) {
-			g_pStringFactory = CreateObject<CModuleStringFactory>();
+			g_pStringFactory = new ( Z_Malloc( sizeof( *g_pStringFactory ), TAG_GAME ) ) CModuleStringFactory();
 		}
 	}
 	return g_pStringFactory;

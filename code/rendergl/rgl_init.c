@@ -130,7 +130,8 @@ cvar_t *r_printShaders;
 cvar_t *r_useExtensions;
 cvar_t *r_allowLegacy;
 cvar_t *r_allowShaders;
-cvar_t *r_multisample;
+cvar_t *r_multisampleAmount;
+cvar_t *r_multisampleType;
 cvar_t *r_ignorehwgamma;
 cvar_t *r_drawMode;
 cvar_t *r_glDebug;
@@ -805,7 +806,8 @@ static void R_Register(void)
 	r_stencilBits = ri.Cvar_Get( "r_stencilBits", "8", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_stencilBits, "Stencil buffer size, value decreases Z-buffer depth." );
 
-    r_multisample = ri.Cvar_Get("r_multisample", "0", CVAR_SAVE | CVAR_LATCH);
+    r_multisampleAmount = ri.Cvar_Get( "r_multisampleAmount", "2", CVAR_SAVE | CVAR_LATCH );
+    r_multisampleType = ri.Cvar_Get( "r_multisampleType", "1", CVAR_SAVE | CVAR_LATCH );
 
     r_overBrightBits = ri.Cvar_Get( "r_overBrightBits", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_overBrightBits, "Sets the intensity of overall brightness of texture pixels." );
@@ -1356,8 +1358,8 @@ void R_Init(void)
 
     nglGenQueries( 3, rg.queries );
 
-    if ( glContext.ARB_framebuffer_object && 0 ) {
-//        FBO_Init();
+    if ( glContext.ARB_framebuffer_object ) {
+        FBO_Init();
     }
     
     GLSL_InitGPUShaders();
@@ -1404,6 +1406,7 @@ void RE_Shutdown( refShutdownCode_t code )
     ri.Cmd_RemoveCommand( "gpumeminfo" );
     ri.Cmd_RemoveCommand( "camerainfo" );
     ri.Cmd_RemoveCommand( "unloadworld" );
+    ri.Cmd_RemoveCommand( "shaderlist" );
 
     if ( rg.registered ) {
         R_IssuePendingRenderCommands();
@@ -1413,7 +1416,9 @@ void RE_Shutdown( refShutdownCode_t code )
 
         R_DeleteTextures();
         R_ShutdownGPUBuffers();
+        FBO_Shutdown();
         GLSL_ShutdownGPUShaders();
+
         ri.ImGui_Shutdown();
     }
 
@@ -1429,7 +1434,7 @@ void RE_Shutdown( refShutdownCode_t code )
 
     // free everything
     ri.FreeAll();
-    memset( &rg, 0, sizeof(rg) );
+    memset( &rg, 0, sizeof( rg ) );
     backendData = NULL;
 }
 

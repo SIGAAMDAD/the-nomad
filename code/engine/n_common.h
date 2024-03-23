@@ -361,6 +361,7 @@ uint64_t FS_LoadFile(const char *npath, void **buffer);
 void FS_FClose(fileHandle_t f);
 void FS_ForceFlush(fileHandle_t f);
 void FS_Flush(fileHandle_t f);
+void FS_ClearBFFReferences( int32_t flags );
 
 const char *FS_GetCurrentGameDir( void );
 const char *FS_GetBaseGameDir( void );

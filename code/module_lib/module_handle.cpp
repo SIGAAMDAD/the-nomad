@@ -3,10 +3,10 @@
 #include "module_handle.h"
 #include "angelscript/as_bytecode.h"
 #include "module_funcdefs.hpp"
+#include "module_debugger.h"
 
 const moduleFunc_t funcDefs[NumFuncs] = {
     { "int ModuleInit()", ModuleInit, 0, qtrue },
-    { "int ModuleShutdown()", ModuleShutdown, 0, qtrue },
     { "int ModuleOnConsoleCommand()", ModuleCommandLine, 0, qfalse },
     { "int ModuleDrawConfiguration()", ModuleDrawConfiguration, 0, qfalse },
     { "int ModuleSaveConfiguration()", ModuleSaveConfiguration, 0, qfalse },
@@ -79,7 +79,6 @@ CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sou
 }
 
 CModuleHandle::~CModuleHandle() {
-    g_pModuleLib->GetScriptEngine()->DiscardModule( m_szName.c_str() );
     ClearMemory();
 }
 
@@ -109,7 +108,6 @@ const char *CModuleHandle::GetModulePath( void ) const {
 
 void LogExceptionInfo( asIScriptContext *pContext, void * )
 {
-    const asIScriptEngine *pEngine = pContext->GetEngine();
     const asIScriptFunction *pFunc;
 
     pFunc = pContext->GetExceptionFunction();
@@ -141,20 +139,28 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
         CheckASCall( m_pScriptContext->SetArgDWord( i, pArgList[i] ) );
     }
 
-//    m_pScriptContext->SetExceptionCallback( asFUNCTION( LogExceptionInfo ), NULL, asCALL_GENERIC );
+    if ( ml_debugMode->i && g_pDebugger->m_pModule->m_pHandle == this ) {
+        CheckASCall( m_pScriptContext->SetLineCallback( asMETHOD( CDebugger, LineCallback ), g_pDebugger, asCALL_THISCALL ) );
+    }
     
     try {
         retn = m_pScriptContext->Execute();
     } catch ( const ModuleException& e ) {
-        const asIScriptFunction *pFunc = m_pScriptContext->GetSystemFunction();
+        LogExceptionInfo( m_pScriptContext, NULL );
+    } catch ( const nlohmann::json::exception& e ) {
+        const asIScriptFunction *pFunc;
+        pFunc = m_pScriptContext->GetExceptionFunction();
+    
         N_Error( ERR_DROP,
-            "exception was thrown in module ->\n"
+            "nlohmann::json::exception was thrown in module ->\n"
             " Module ID: %s\n"
             " Section Name: %s\n"
             " Function: %s\n"
             " Line: %i\n"
             " Error Message: %s\n"
-        , m_szName.c_str(), pFunc->GetScriptSectionName(), pFunc->GetDeclaration(), m_pScriptContext->GetLineNumber(), e.what() );
+            " Id: %i\n"
+        ,  pFunc->GetModuleName(), pFunc->GetScriptSectionName(), pFunc->GetDeclaration(), m_pScriptContext->GetExceptionLineNumber(),
+        e.what(), e.id );
     }
 
     switch ( retn ) {
@@ -322,8 +328,20 @@ void CModuleHandle::ClearMemory( void )
         return;
     }
 
+    if ( m_pScriptContext->GetState() == asCONTEXT_ACTIVE ) {
+        m_pScriptContext->Abort();
+    }
+
     Con_Printf( "CModuleHandle::ClearMemory: clearing memory of '%s'...\n", m_szName.c_str() );
+    for ( uint64_t i = 0; i < NumFuncs; i++ ) {
+        if ( m_pFuncTable[i] ) {
+            m_pFuncTable[i]->Release();
+        }
+    }
+
+    CheckASCall( g_pModuleLib->GetScriptEngine()->DiscardModule( m_pScriptModule->GetName() ) );
     CheckASCall( m_pScriptContext->Unprepare() );
+    CheckASCall( m_pScriptContext->Release() );
 }
 
 asIScriptContext *CModuleHandle::GetContext( void ) {

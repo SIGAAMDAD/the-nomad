@@ -89,7 +89,8 @@ namespace TheNomad {
 			}
 		}
 
-		void OnConsoleCommand() {
+		bool OnConsoleCommand( const string& in cmd ) {
+			return false;
 		}
 		void OnLoad() {
 		}

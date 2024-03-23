@@ -40,8 +40,8 @@ void SCR_AdjustFrom640( float *x, float *y, float *w, float *h )
 #endif
 
 	// scale for screen sizes
-	xscale = gi.gpuConfig.vidWidth / 640.0;
-	yscale = gi.gpuConfig.vidHeight / 480.0;
+	xscale = gi.gpuConfig.vidWidth / 1024.0f;
+	yscale = gi.gpuConfig.vidHeight / 768.0f;
 	if ( x ) {
 		*x *= xscale;
 	}

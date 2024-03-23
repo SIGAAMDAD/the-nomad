@@ -2117,6 +2117,34 @@ uint64_t FS_Read(void *buffer, uint64_t size, fileHandle_t f)
 	}
 }
 
+static void FS_PrintSearchPaths( void )
+{
+	const searchpath_t *sp = fs_searchpaths;
+
+	Con_Printf( "\nSearch Paths:\n" );
+	while ( sp ) {
+		if ( sp->dir && sp->access == DIR_STATIC ) {
+			Con_Printf( " * %s\n", sp->dir->path );
+		}
+		sp = sp->next;
+	}
+}
+
+void FS_ClearBFFReferences( int32_t flags )
+{
+	const searchpath_t *sp;
+
+	if ( !flags ) {
+		flags = -1;
+	}
+	for ( sp = fs_searchpaths; sp; sp = sp->next ) {
+		// is the element a bff file and it been referenced?
+		if ( sp->bff ) {
+			sp->bff->referenced &= ~flags;
+		}
+	}
+}
+
 void GDR_DECL FS_Printf(fileHandle_t f, const char *fmt, ...)
 {
 	va_list argptr;
@@ -3157,7 +3185,7 @@ void FS_Startup( void )
 	fs_gamedirvar->modified = qfalse;
 
 	// clear all handles
-	memset( handles, 0, sizeof(handles) );
+//	memset( handles, 0, sizeof(handles) );
 
 #ifdef USE_BFF_CACHE_FILE
 	FS_FreeUnusedCache();

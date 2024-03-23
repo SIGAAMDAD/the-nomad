@@ -934,7 +934,7 @@ typedef struct {
 		EASY_PROFILER_ENABLE; \
 		profiler::startListen()
 	
-	#define PROFILE_STOP_LISTEN profiler::stopListen()
+	#define PROFILE_STOP_LISTEN profiler::dumpBlocksToFile( "engine-profiler-data.prof" ); profiler::stopListen();
 
 	#define PROFILE_SCOPE( name ) EASY_BLOCK( name, profiler::colors::Green )
 	#define PROFILE_BLOCK_BEGIN( name ) PROFILE_SCOPE( name )

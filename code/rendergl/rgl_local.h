@@ -199,6 +199,8 @@ typedef struct texture_s
     imgFlags_t flags;
 } texture_t;
 
+#include "rgl_fbo.h"
+
 enum {
 	ATTRIB_INDEX_POSITION       = 0,
 	ATTRIB_INDEX_TEXCOORD       = 1,
@@ -274,7 +276,7 @@ typedef enum {
     UNIFORM_COUNT
 } uniform_t;
 
-typedef struct
+typedef struct shaderProgram_s
 {
     char name[MAX_GDR_PATH];
 
@@ -853,6 +855,7 @@ typedef struct {
     byte color2D[4];
 
     qboolean depthFill;
+    qboolean framePostProcessed;
     qboolean colorMask[4];
 
     backendCounters_t pc;
@@ -891,7 +894,7 @@ typedef struct {
     uint32_t    rboId;
     uint32_t    shaderId;
 
-    void *currentFbo; // unused
+    fbo_t *currentFbo; // unused
     vertexBuffer_t *currentVao;
     texture_t *currentTexture;
     shaderProgram_t *currentShader;
@@ -1198,7 +1201,8 @@ extern cvar_t *r_printShaders;
 extern cvar_t *r_useExtensions;
 extern cvar_t *r_allowLegacy;
 extern cvar_t *r_allowShaders;
-extern cvar_t *r_multisample;
+extern cvar_t *r_multisampleAmount;
+extern cvar_t *r_multisampleType;
 extern cvar_t *r_ignorehwgamma;
 extern cvar_t *r_drawMode;
 extern cvar_t *r_glDebug;
@@ -1288,6 +1292,7 @@ void GLSL_SetUniformMatrix4(shaderProgram_t *program, uint32_t uniformNum, const
 // rgl_math.c
 //
 qboolean Mat4Compare( const mat4_t a, const mat4_t b );
+void Mat4Ortho( float left, float right, float bottom, float top, float znear, float zfar, mat4_t out );
 void Mat4Dump( const mat4_t in );
 void VectorLerp( vec3_t a, vec3_t b, float lerp, vec3_t c );
 qboolean SpheresIntersect(vec3_t origin1, float radius1, vec3_t origin2, float radius2);

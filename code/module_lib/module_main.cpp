@@ -201,8 +201,8 @@ void CModuleLib::LoadModule( const char *pModule )
     const int32_t versionUpdate = parse[ "version" ][ "version_update" ];
     const int32_t versionPatch = parse[ "version" ][ "version_patch" ];
 
-    pHandle = new ( Hunk_Alloc( sizeof( *pHandle ), h_high ) ) CModuleHandle( pModule, submodules, versionMajor, versionUpdate, versionPatch );
-    m = new ( Hunk_Alloc( sizeof( *m ), h_high ) ) CModuleInfo( parse, pHandle );
+    pHandle = new ( Hunk_Alloc( sizeof( *pHandle ), h_low ) ) CModuleHandle( pModule, submodules, versionMajor, versionUpdate, versionPatch );
+    m = new ( Hunk_Alloc( sizeof( *m ), h_low ) ) CModuleInfo( parse, pHandle );
     m_LoadList.emplace_back( m );
 }
 
@@ -356,7 +356,6 @@ bool CModuleLib::AddDefaultProcs( void ) const {
 CModuleLib::CModuleLib( void )
 {
     const char *path;
-    int ret;
 
     g_pModuleLib = this;
     memset( this, 0, sizeof( *this ) );
@@ -377,14 +376,14 @@ CModuleLib::CModuleLib( void )
     CheckASCall( m_pEngine->SetEngineProperty( asEP_INCLUDE_JIT_INSTRUCTIONS, true ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_REQUIRE_ENUM_SCOPE, true ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_USE_CHARACTER_LITERALS, true ) );
-    CheckASCall( m_pEngine->SetEngineProperty( asEP_AUTO_GARBAGE_COLLECT, false ) );
+    CheckASCall( m_pEngine->SetEngineProperty( asEP_AUTO_GARBAGE_COLLECT, true ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_HEREDOC_TRIM_MODE, 0 ) );
 
-    m_pScriptBuilder = new ( Hunk_Alloc( sizeof( *m_pScriptBuilder ), h_high ) ) CScriptBuilder();
-    g_pDebugger = new ( Hunk_Alloc( sizeof( *g_pDebugger ), h_high ) ) CDebugger();
+    m_pScriptBuilder = new ( Z_Malloc( sizeof( *m_pScriptBuilder ), TAG_GAME ) ) CScriptBuilder();
+    g_pDebugger = new ( Z_Malloc( sizeof( *g_pDebugger ), TAG_GAME ) ) CDebugger();
 
     if ( ml_allowJIT->i ) {
-        m_pCompiler = new ( Hunk_Alloc( sizeof( *m_pCompiler ), h_high ) ) asCJITCompiler();
+        m_pCompiler = new ( Z_Malloc( sizeof( *m_pCompiler ), TAG_GAME ) ) asCJITCompiler();
         CheckASCall( m_pEngine->SetJITCompiler( m_pCompiler ) );
     }
     m_pScriptBuilder->SetIncludeCallback( Module_IncludeCallback_f, NULL );
@@ -411,13 +410,17 @@ CModuleLib::CModuleLib( void )
         N_Error( ERR_FATAL, "InitModuleLib: failed to load module directories, std::exception was thrown -> %s", e.what() );
     }
 
+    Con_DPrintf( "%lu registered procs in modules.\n", m_RegisteredProcs.size() );
+
     // bind all the functions
     for ( auto& it : m_LoadList ) {
         if ( !it->m_pHandle->GetModule() ) { // failed to compile or didn't have any source files
             continue;
         }
 
-        CheckASCall( it->m_pHandle->GetModule()->BindAllImportedFunctions() );
+        // this might fail, yes but, it'll just crash automatically if we're missing a function, and not
+        // all functions have to be imported
+        it->m_pHandle->GetModule()->BindAllImportedFunctions();
     }
 
     #undef CALL
@@ -425,9 +428,26 @@ CModuleLib::CModuleLib( void )
 
 CModuleLib::~CModuleLib()
 {
-    m_pEngine->ShutDownAndRelease();
+    m_pEngine->Release();
+//    m_pEngine->ShutDownAndRelease();
     asFree( m_pEngine );
 
+    m_LoadList.clear();
+    m_CvarList.clear();
+    m_RegisteredProcs.clear();
+    m_bRegistered = qfalse;
+
+    g_pDebugger->~CDebugger();
+    g_pStringFactory->~CModuleStringFactory();
+
+    if ( m_pCompiler ) {
+        m_pCompiler->~asCJITCompiler();
+        Z_Free( m_pCompiler );
+    }
+    Z_Free( g_pDebugger );
+    Z_Free( g_pStringFactory );
+
+    m_pCompiler = NULL;
     g_pDebugger = NULL;
     g_pStringFactory = NULL;
 }
@@ -444,7 +464,7 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
     //
     ml_angelScript_DebugPrint = Cvar_Get( "ml_angelScript_DebugPrint", "1", CVAR_LATCH | CVAR_PRIVATE | CVAR_SAVE );
     Cvar_SetDescription( ml_angelScript_DebugPrint, "Set to 1 if you want verbose AngelScript API logging" );
-    ml_alwaysCompile = Cvar_Get( "ml_alwaysCompile", "0", CVAR_INIT | CVAR_PRIVATE | CVAR_SAVE );
+    ml_alwaysCompile = Cvar_Get( "ml_alwaysCompile", "0", CVAR_LATCH | CVAR_PRIVATE | CVAR_SAVE );
     Cvar_SetDescription( ml_alwaysCompile, "Toggle forced compilation of a module every time the game loads as opposed to using cached bytecode" );
     ml_allowJIT = Cvar_Get( "ml_allowJIT", "0", CVAR_LATCH | CVAR_PRIVATE | CVAR_SAVE );
     Cvar_SetDescription( ml_allowJIT, "Toggle JIT compilation of a module" );
@@ -460,7 +480,7 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
     Mem_Init();
     asSetGlobalMemoryFunctions( asAlloc, asFree );
 
-    g_pModuleLib = new ( Hunk_Alloc( sizeof( *g_pModuleLib ), h_high ) ) CModuleLib();
+    g_pModuleLib = new ( Z_Malloc( sizeof( *g_pModuleLib ), TAG_GAME ) ) CModuleLib();
 
     Con_Printf( "--------------------\n" );
 

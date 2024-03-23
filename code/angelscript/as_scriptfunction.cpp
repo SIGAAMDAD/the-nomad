@@ -1336,7 +1336,9 @@ void asCScriptFunction::ReleaseReferences()
 						// TODO: Write a message showing that the string couldn't be 
 						//       released. Include the first 10 characters and the length
 						//       to make it easier to identify which string it was
-						asASSERT(r >= 0);
+						if ( r != asSUCCESS ) {
+							Con_Printf( COLOR_RED "failed to release string constant!\n" );
+						}
 						break;
 					}
 

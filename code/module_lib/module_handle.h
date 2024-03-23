@@ -14,7 +14,6 @@ typedef uint64_t EModuleFuncId;
 enum : uint64_t
 {
     ModuleInit = 0,
-    ModuleShutdown,
     ModuleCommandLine,
 
     ModuleDrawConfiguration,

@@ -23,8 +23,6 @@ void Module_DebuggerSetActive_f( void ) {
 	
 	Cvar_Set( "ml_debugMode", "1" );
 	Con_Printf( "Setting module '%s' to debug mode.\n", name );
-
-	CheckASCall( mod->m_pHandle->GetContext()->SetLineCallback( asMETHOD( CDebugger, LineCallback ), g_pDebugger, asCALL_THISCALL ) );
 }
 
 static void Module_Debugger_PrintValue_f( void ) {

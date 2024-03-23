@@ -195,6 +195,7 @@ typedef struct {
 } antialiasSetting_t;
 
 static const antialiasSetting_t antialiasSettings[] = {
+    { "None",                       AntiAlias_None },
     { "2x MSAA",                    AntiAlias_2xMSAA },
     { "4x MSAA",                    AntiAlias_4xMSAA },
     { "8x MSAA",                    AntiAlias_8xMSAA },
@@ -322,6 +323,28 @@ static void SettingsMenu_ApplyGraphicsChanges( void )
     Cvar_Set( "r_textureDetail", va( "%i", settings.gfx.texdetail ) );
     Cvar_Set( "r_textureFiltering", va( "%i", settings.gfx.texfilter ) );
     Cvar_Set( "r_gammaAmount", va( "%f", settings.gfx.gamma ) );
+    Cvar_Set( "r_hdr", va( "%i", settings.gfx.hdr ) );
+
+    switch ( settings.gfx.multisamplingIndex ) {
+    case AntiAlias_2xMSAA:
+    case AntiAlias_2xSSAA:
+        Cvar_Set( "r_multisampleAmount", "2" );
+        break;
+    case AntiAlias_4xMSAA:
+    case AntiAlias_4xSSAA:
+        Cvar_Set( "r_multisampleAmount", "4" );
+        break;
+    case AntiAlias_8xMSAA:
+        Cvar_Set( "r_multisampleAmount", "8" );
+        break;
+    case AntiAlias_16xMSAA:
+        Cvar_Set( "r_multisampleAmount", "16" );
+        break;
+    case AntiAlias_32xMSAA:
+        Cvar_Set( "r_multisampleAmount", "32" );
+        break;
+    };
+    Cvar_Set( "r_multisampleType", va( "%i", settings.gfx.multisamplingIndex ) );
 
     Cvar_Set( "g_renderer", RenderAPIString2( settings.gfx.api ) );
 }
@@ -336,7 +359,7 @@ static void SettingsMenu_ApplyAudioChanges( void )
 
 static void SettingsMenu_ApplyEngineChanges( void )
 {
-    Cvar_Set( "com_affinityMask", va( "%i", settings.performance.cpuAffinity ) );
+    Cvar_Set( "com_affinityMask", va( "0x%i", settings.performance.cpuAffinity ) );
     Cvar_Set( "com_hunkMegs", va( "%u", settings.performance.hunkMegs ) );
     Cvar_Set( "com_hunkMegs", va( "%u", settings.performance.zoneMegs ) );
     Cvar_Set( "ml_alwaysCompile", va( "%i", settings.performance.alwaysCompileModules ) );
@@ -493,9 +516,10 @@ static void SettingsMenu_SetDefault( void )
     settings.gfx.texfilterString = TexFilterString( settings.gfx.texfilter );
     settings.gfx.videoMode = Cvar_VariableInteger( "r_mode" );
     settings.gfx.fullscreen = Cvar_VariableInteger( "r_fullscreen" );
-    settings.gfx.multisamplingIndex = Cvar_VariableInteger( "r_multisample" );
+    settings.gfx.multisamplingIndex = Cvar_VariableInteger( "r_multisampleType" );
     settings.gfx.vsync = Cvar_VariableInteger( "r_swapInterval" );
     settings.gfx.gamma = Cvar_VariableFloat( "r_gammaAmount" );
+    settings.gfx.hdr = Cvar_VariableInteger( "r_hdr" );
     settings.gfx.advancedGraphics = false;
     settings.advancedGraphicsStr = RADIOBUTTON_STR( settings.gfx.advancedGraphics );
     settings.useExtensionsStr = RADIOBUTTON_STR( settings.gfx.useExtensions );
@@ -527,7 +551,9 @@ static void SettingsMenu_SetDefault( void )
     settings.controls.mouseAccelerate = Cvar_VariableInteger( "g_mouseAcceleration" );
     settings.controls.mouseInvert = Cvar_VariableInteger( "g_mouseInvert" );
 
-    settings.performance.cpuAffinity = Cvar_VariableInteger( "com_affinityMask" );
+#ifdef USE_AFFINITY_MASK
+    settings.performance.cpuAffinity = Sys_GetAffinityMask();
+#endif
     settings.performance.hunkMegs = Cvar_VariableInteger( "com_hunkMegs" );
     settings.performance.zoneMegs = Cvar_VariableInteger( "com_zoneMegs" );
     settings.performance.cpuString = Cvar_VariableString( "sys_cpuString" );
@@ -624,7 +650,7 @@ static void SettingsMenuPopup( void )
             settings.confirmation = qfalse;
             settings.modified = qfalse;
             g_pModuleLib->ModuleCall( sgvm, ModuleSaveConfiguration, 0 );
-            Cbuf_ExecuteText( EXEC_APPEND, "writecfg default.cfg\n" );
+            Cbuf_ExecuteText( EXEC_APPEND, "writecfg glnomad.cfg\n" );
             Cbuf_ExecuteText( EXEC_APPEND, "snd_restart\n" );
             ImGui::CloseCurrentPopup();
         }
@@ -644,7 +670,7 @@ static void SettingsMenuPopup( void )
             settings.confirmreset = qfalse;
             settings.modified = qfalse;
             ui->PlaySelected();
-            Cbuf_ExecuteText( EXEC_APPEND, "writecfg default.cfg" );
+            Cbuf_ExecuteText( EXEC_APPEND, "writecfg glnomad.cfg" );
             Cbuf_ExecuteText( EXEC_APPEND, "snd_restart\n" );
             ImGui::CloseCurrentPopup();
         }
@@ -689,7 +715,7 @@ static void SettingsMenu_ApplyChanges( void )
         SettingsMenu_ApplyGraphicsChanges();
         SettingsMenu_ApplyAudioChanges();
         SettingsMenu_ApplyEngineChanges();
-        Cbuf_ExecuteText( EXEC_APPEND, va( "writecfg %s\n", Cvar_VariableString( "com_defaultcfg" ) ) );
+        Cbuf_ExecuteText( EXEC_APPEND, "writecfg glnomad.cfg\n" );
         Cbuf_ExecuteText( EXEC_APPEND, "snd_restart\n" );
         settings.modified = qfalse;
         ui->PlaySelected();
@@ -908,7 +934,7 @@ static void SettingsMenuPerformance_Draw( void )
                 settings.performance.cpuAffinity = SDL_GetCPUCount();
                 break;
             default:
-                settings.performance.cpuAffinity -= 2;
+                settings.performance.cpuAffinity--;
                 break;
             };
             ui->PlaySelected();
@@ -918,9 +944,9 @@ static void SettingsMenuPerformance_Draw( void )
         ImGui::SameLine();
         if ( ImGui::ArrowButton( "##CPUAffinityConfigRight", ImGuiDir_Right ) ) {
             if ( settings.performance.cpuAffinity == SDL_GetCPUCount() ) {
-                settings.performance.cpuAffinity = 2;
+                settings.performance.cpuAffinity = 1;
             } else {
-                settings.performance.cpuAffinity += 2;
+                settings.performance.cpuAffinity++;
             }
             ui->PlaySelected();
         }
@@ -1354,7 +1380,11 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::TableNextColumn();
         ImGui::TextUnformatted( "HDR" );
         ImGui::TableNextColumn();
-        ImGui::TextUnformatted( "COMING SOON! :)" );
+        if ( ImGui::RadioButton( settings.gfx.hdr ? "##HDRGraphicsConfigON" : "##HDRGraphicsConfigOFF", settings.gfx.hdr ) ) {
+            settings.gfx.hdr = !settings.gfx.hdr;
+            settings.presetIndex = -1;
+            ui->PlaySelected();
+        }
 
         ImGui::TableNextRow();
 
@@ -1655,7 +1685,8 @@ static void SettingsMenu_GetInitial( void ) {
     initial.gfx.videoMode = Cvar_VariableInteger( "r_mode" );
     initial.gfx.fullscreen = Cvar_VariableInteger( "r_fullscreen" );
     initial.gfx.api = StringToRenderAPI( Cvar_VariableString( "g_renderer" ) );
-    initial.gfx.multisamplingIndex = Cvar_VariableInteger( "r_multisample" );
+    initial.gfx.multisamplingIndex = Cvar_VariableInteger( "r_multisampleType" );
+    initial.gfx.hdr = Cvar_VariableInteger( "r_hdr" );
 
     if ( initial.gfx.api == R_OPENGL ) {
         initial.gfx.GL_extended = (graphics_extended_GL_t *)Hunk_Alloc( sizeof( graphics_extended_GL_t ), h_high );
@@ -1675,7 +1706,9 @@ static void SettingsMenu_GetInitial( void ) {
     initial.controls.mouseAccelerate = Cvar_VariableInteger("g_mouseAcceleration");
     initial.controls.mouseInvert = Cvar_VariableInteger("g_mouseInvert");
 
-    initial.performance.cpuAffinity = Cvar_VariableInteger( "com_affinityMask" );
+#ifdef USE_AFFINITY_MASK
+    initial.performance.cpuAffinity = Sys_GetAffinityMask();
+#endif
     initial.performance.hunkMegs = Cvar_VariableInteger( "com_hunkMegs" );
     initial.performance.zoneMegs = Cvar_VariableInteger( "com_zoneMegs" );
     initial.performance.cpuString = Cvar_VariableString( "sys_cpuString" );
@@ -1716,6 +1749,7 @@ static void SettingsMenu_InitPresets( void )
     p[PRESET_LOW_QUALITY].anisotropicFiltering = 1;
     p[PRESET_LOW_QUALITY].exposure = 1.5f;
     p[PRESET_LOW_QUALITY].geometrydetail = GeomDetail_Low;
+    p[PRESET_LOW_QUALITY].hdr = qfalse;
     p[PRESET_LOW_QUALITY].texquality = 1;
     p[PRESET_LOW_QUALITY].lighting = LIGHTING_STATIC;
     p[PRESET_LOW_QUALITY].multisamplingIndex = AntiAlias_2xMSAA;
@@ -1729,6 +1763,7 @@ static void SettingsMenu_InitPresets( void )
     p[PRESET_NORMAL_QUALITY].anisotropicFiltering = 2;
     p[PRESET_NORMAL_QUALITY].exposure = 1.5f;
     p[PRESET_NORMAL_QUALITY].geometrydetail = GeomDetail_Normal;
+    p[PRESET_NORMAL_QUALITY].hdr = qtrue;
     p[PRESET_NORMAL_QUALITY].texquality = 1;
     p[PRESET_NORMAL_QUALITY].lighting = LIGHTING_STATIC;
     p[PRESET_NORMAL_QUALITY].multisamplingIndex = AntiAlias_8xMSAA;
@@ -1742,6 +1777,7 @@ static void SettingsMenu_InitPresets( void )
     p[PRESET_HIGH_QUALITY].anisotropicFiltering = 3;
     p[PRESET_HIGH_QUALITY].exposure = 1.5f;
     p[PRESET_HIGH_QUALITY].geometrydetail = GeomDetail_High;
+    p[PRESET_HIGH_QUALITY].hdr = qtrue;
     p[PRESET_HIGH_QUALITY].texquality = 1;
     p[PRESET_HIGH_QUALITY].lighting = LIGHTING_DYNAMIC;
     p[PRESET_HIGH_QUALITY].multisamplingIndex = AntiAlias_16xMSAA;
@@ -1755,6 +1791,7 @@ static void SettingsMenu_InitPresets( void )
     p[PRESET_PERFORMANCE].anisotropicFiltering = 0;
     p[PRESET_PERFORMANCE].exposure = 1.5f;
     p[PRESET_PERFORMANCE].geometrydetail = GeomDetail_VeryLow;
+    p[PRESET_PERFORMANCE].hdr = qtrue;
     p[PRESET_PERFORMANCE].texquality = 1;
     p[PRESET_PERFORMANCE].lighting = LIGHTING_STATIC;
     p[PRESET_PERFORMANCE].multisamplingIndex = -1;
@@ -1768,6 +1805,7 @@ static void SettingsMenu_InitPresets( void )
     p[PRESET_ULTRA_HIGH_QUALITY].anisotropicFiltering = 3;
     p[PRESET_ULTRA_HIGH_QUALITY].exposure = 1.5f;
     p[PRESET_ULTRA_HIGH_QUALITY].geometrydetail = GeomDetail_VeryHigh;
+    p[PRESET_ULTRA_HIGH_QUALITY].hdr = qtrue;
     p[PRESET_ULTRA_HIGH_QUALITY].texquality = 1;
     p[PRESET_ULTRA_HIGH_QUALITY].lighting = LIGHTING_DYNAMIC;
     p[PRESET_ULTRA_HIGH_QUALITY].multisamplingIndex = AntiAlias_32xMSAA;

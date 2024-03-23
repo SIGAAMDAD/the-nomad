@@ -87,7 +87,8 @@ namespace TheNomad::SGame {
 		const string& GetName() const {
 			return "ItemSystem";
 		}
-		void OnConsoleCommand() {
+		bool OnConsoleCommand( const string& in cmd ) {
+			return false;
 		}
 		void OnRunTic() {
 		}

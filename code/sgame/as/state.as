@@ -94,7 +94,8 @@ namespace TheNomad::SGame {
 		}
 		void OnRunTic() {
 		}
-		void OnConsoleCommand() {
+		bool OnConsoleCommand( const string& in cmd ) {
+			return false;
 		}
 			
 		const EntityState@ GetStateForNum( uint nIndex ) const {

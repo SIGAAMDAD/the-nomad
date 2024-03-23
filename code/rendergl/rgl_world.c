@@ -189,7 +189,7 @@ GDR_EXPORT void RE_LoadWorldMap(const char *filename)
     theader = &header->tileset;
 
     // swap all the lumps
-    for (uint32_t i = 0; i < sizeof(bmf_t)/4; i++) {
+    for (uint32_t i = 0; i < ( sizeof(bmf_t)/4 ) - sizeof( void * ); i++) {
         ((int32_t *)header)[i] = LittleInt( ((int32_t *)header)[i] );
     }
 

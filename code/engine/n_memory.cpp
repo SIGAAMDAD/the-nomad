@@ -1211,6 +1211,9 @@ void Hunk_Clear(void)
 	G_ShutdownUI();
 	G_ShutdownSGame();
 
+	// reset all of it
+	memset( hunkbase, 0, hunksize );
+
 	hunk_low.tempHighwater = 0;
 	hunk_low.mark = 0;
 	hunk_low.temp = 0;

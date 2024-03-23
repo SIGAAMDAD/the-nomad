@@ -391,7 +391,14 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
     N_strcat(dest, size, "#ifndef M_PI\n#define M_PI 3.14159265358979323846\n#endif\n");
 
     N_strcat( dest, size, "#define USE_TCGEN\n" );
-//    N_strcat( dest, size, "#define USE_" );
+    N_strcat( dest, size, "#define USE_LIGHT\n" );
+
+    if ( r_specularMapping->i ) {
+        N_strcat( dest, size, "#define USE_SPECULARMAP\n" );
+    }
+    if ( r_normalMapping->i ) {
+        N_strcat( dest, size, "#define USE_NORMALMAP\n" );
+    }
 
     /*
     N_strcat(dest, size,

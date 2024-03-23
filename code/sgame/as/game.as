@@ -11,7 +11,7 @@ namespace TheNomad::GameSystem {
 		void OnRunTic();
 		void OnLevelStart();
 		void OnLevelEnd();
-		void OnConsoleCommand();
+		bool OnConsoleCommand( const string& in );
 		const string& GetName() const;
 	};
 
@@ -161,23 +161,24 @@ namespace TheNomad::GameSystem {
 		CampaignManager() {
 			m_nGameMsec = 0;
 			m_nDeltaTics = 0;
+
+			GetGPUGameConfig( m_GPUConfig );
 		}
 		
 		void OnLoad() {
 			int hSection;
 			int numEntities;
+
 			hSection = FindSaveSection( GetName() );
 			if ( hSection == FS_INVALID_HANDLE ) {
 				return;
 			}
 		}
-		void OnConsoleCommand() {
+		bool OnConsoleCommand( const string& in cmd ) {
+			return false;
 		}
 		void OnSave() const {
 			BeginSaveSection( GetName() );
-			
-//			SaveArray( "soundBits", m_SoundBits );
-//			SaveInt( "difficulty", m_Difficulty );
 			
 			EndSaveSection();
 		}
@@ -205,19 +206,25 @@ namespace TheNomad::GameSystem {
 			m_nGameMsec = msec;
 		}
 
-		GPUConfig& GetGPUConfig() {
+		TheNomad::Engine::Renderer::GPUConfig& GetGPUConfig() {
 			return m_GPUConfig;
 		}
 
 		void SetMousePos( const ivec2& in mousePos ) {
 			m_MousePos = mousePos;
 		}
+		ivec2& GetMousePos() {
+			return m_MousePos;
+		}
+		const ivec2& GetMousePos() const {
+			return m_MousePos;
+		}
 		
 		private ivec2 m_MousePos;
 		private uint m_nDeltaTics;
 		private uint m_nGameMsec;
 		private uint m_nGameTic;
-		private GPUConfig m_GPUConfig;
+		private TheNomad::Engine::Renderer::GPUConfig m_GPUConfig;
 	};
 
 	class RayCast {

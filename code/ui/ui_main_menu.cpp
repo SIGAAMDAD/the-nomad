@@ -40,15 +40,15 @@ private:
 };
 
 typedef struct {
-    CUIMenu menu;
+    CUIMenu handle;
     char message[MAXPRINTMSG];
 } errorMessage_t;
 
-static errorMessage_t errorMenu;
+static errorMessage_t *errorMenu;
 
 typedef struct
 {
-    CUIMenu menu;
+    CUIMenu handle;
 
     ImFont *font;
 
@@ -68,7 +68,7 @@ typedef struct
 } mainmenu_t;
 
 ImFont *PressStart2P;
-static mainmenu_t menu;
+static mainmenu_t *menu;
 
 static const char *creditsString =
 "As always, I would not have gotten to this point without the help of many\n"
@@ -96,40 +96,28 @@ void MainMenu_Draw( void )
 {
     uint64_t i;
     float x, y, w, h;
-    refdef_t refdef;
-    polyVert_t verts[4];
     const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
-                            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground;
+                            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus;
 
-    menu.noMenuToggle.Toggle( KEY_F2, menu.noMenu );
+    menu->noMenuToggle.Toggle( KEY_F2, menu->noMenu );
 
     //
     // setup a basic scene
     //
 
-    memset( &refdef, 0, sizeof(refdef) );
-
-    refdef.x = 0;
-    refdef.y = 0;
-    refdef.width = ui->GetConfig().vidWidth;
-    refdef.height = ui->GetConfig().vidHeight;
-
-    refdef.time = ui->GetRealTime();
-    refdef.flags = RSF_NOWORLDMODEL | RSF_ORTHO_TYPE_SCREENSPACE;
-
 //    ImGui::Begin( "MainMenuBackground", NULL, windowFlags | ImGuiWindowFlags_AlwaysAutoResize );
 //    ImGui::SetWindowSize( ImVec2( w, h ) );
-//    ImGui::Image( (void *)(intptr_t)menu.background0, ImVec2( w, h ) );
+//    ImGui::Image( (void *)(intptr_t)menu->background0, ImVec2( w, h ) );
 //    ImGui::End();
 
-    Snd_SetLoopingTrack( menu.ambience );
+    Snd_SetLoopingTrack( menu->ambience );
 
-    if ( menu.font ) {
-        FontCache()->SetActiveFont( menu.font );
+    if ( menu->font ) {
+        FontCache()->SetActiveFont( menu->font );
     }
 
     if ( ImGui::BeginPopupModal( "Engine Error", NULL, windowFlags & ~( ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground ) ) ) {
-        ImGui::TextUnformatted( errorMenu.message );
+        ImGui::TextUnformatted( errorMenu->message );
         if ( Key_AnyDown() ) {
             Snd_PlaySfx( ui->sfx_null );
             ImGui::CloseCurrentPopup();
@@ -137,7 +125,7 @@ void MainMenu_Draw( void )
         ImGui::EndPopup();
     }
 
-    if ( menu.noMenu ) {
+    if ( menu->noMenu ) {
         return; // just the scenery & the music (a bit like Halo 3: ODST, check out halome.nu)...
     }
 
@@ -148,7 +136,7 @@ void MainMenu_Draw( void )
     if (ui->GetState() == STATE_MAIN) {
         ImGui::Begin( "MainMenu", NULL, windowFlags );
         ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth, (float)menu.menuHeight ) );
+        ImGui::SetWindowSize( ImVec2( (float)menu->menuWidth, (float)menu->menuHeight ) );
         ui->Menu_Title( "MAIN MENU" );
 
         const ImVec2 mousePos = ImGui::GetCursorScreenPos();
@@ -190,35 +178,35 @@ void MainMenu_Draw( void )
     else if ( ui->GetState() == STATE_LEGAL ) {
         ImGui::Begin( "MainMenu", NULL, windowFlags );
         ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth, (float)menu.menuHeight ) );
+        ImGui::SetWindowSize( ImVec2( (float)menu->menuWidth, (float)menu->menuHeight ) );
         LegalMenu_Draw();
         ImGui::End();
     }
     else if (ui->GetState() >= STATE_SINGLEPLAYER && ui->GetState() <= STATE_PLAYMISSION) {
         ImGui::Begin( "MainMenu", NULL, windowFlags );
         ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth, (float)menu.menuHeight ) );
+        ImGui::SetWindowSize( ImVec2( (float)menu->menuWidth, (float)menu->menuHeight ) );
         SinglePlayerMenu_Draw();
         ImGui::End();
     }
     else if ( ui->GetState() == STATE_MODS ) {
         ImGui::Begin( "MainMenu", NULL, windowFlags );
         ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth, (float)menu.menuHeight ) );
+        ImGui::SetWindowSize( ImVec2( (float)menu->menuWidth, (float)menu->menuHeight ) );
         ModsMenu_Draw();
         ImGui::End();
     }
     else if (ui->GetState() >= STATE_SETTINGS && ui->GetState() <= STATE_GAMEPLAY) {
         ImGui::Begin( "MainMenu", NULL, windowFlags );
         ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth * 0.75f, (float)menu.menuHeight * 0.75f ) );
+        ImGui::SetWindowSize( ImVec2( (float)menu->menuWidth * 0.75f, (float)menu->menuHeight * 0.75f ) );
         SettingsMenu_Draw();
         ImGui::End();
     }
     else if (ui->GetState() == STATE_CREDITS) {
         ImGui::Begin( "MainMenu", NULL, windowFlags );
         ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth, (float)menu.menuHeight ) );
+        ImGui::SetWindowSize( ImVec2( (float)menu->menuWidth, (float)menu->menuHeight ) );
         ui->EscapeMenuToggle( STATE_MAIN );
         if (ui->Menu_Title( "CREDITS" )) {
             ui->SetState( STATE_MAIN );
@@ -245,8 +233,8 @@ void MainMenu_Cache( void )
 {
     extern ImFont *RobotoMono;
 
-    memset( &menu, 0, sizeof(menu) );
-    memset( &errorMenu, 0, sizeof(errorMenu) );
+    menu = (mainmenu_t *)Hunk_Alloc( sizeof( *menu ), h_high );
+    errorMenu = (errorMessage_t *)Hunk_Alloc( sizeof( *errorMenu ), h_high );
 
     // only use of rand() is determining DIF_HARDEST title
     srand( time( NULL ) );
@@ -256,37 +244,37 @@ void MainMenu_Cache( void )
     Cvar_Get( "g_mouseInvert", "0", CVAR_LATCH | CVAR_SAVE );
 
     // check for errors
-    Cvar_VariableStringBuffer( "com_errorMessage", errorMenu.message, sizeof(errorMenu.message) );
-    if ( errorMenu.message[0] ) {
-        errorMenu.menu.Draw = MainMenu_Draw;
+    Cvar_VariableStringBuffer( "com_errorMessage", errorMenu->message, sizeof(errorMenu->message) );
+    if ( errorMenu->message[0] ) {
+        errorMenu->handle.Draw = MainMenu_Draw;
 
         ui->SetState( STATE_ERROR );
 
         Key_SetCatcher( KEYCATCH_UI );
         ui->ForceMenuOff();
-        ui->PushMenu( &errorMenu.menu );
+        ui->PushMenu( &errorMenu->handle );
 
         ImGui::OpenPopup( "Engine Error" );
 
         return;
     }
 
-    menu.menu.Draw = MainMenu_Draw;
+    menu->handle.Draw = MainMenu_Draw;
 
-    menu.ambience = Snd_RegisterTrack( "music/title.ogg" );
-    menu.background0 = re.RegisterShader( MAIN_MENU_BACKGROUND );
+    menu->ambience = Snd_RegisterTrack( "music/title.ogg" );
+    menu->background0 = re.RegisterShader( MAIN_MENU_BACKGROUND );
 
-    menu.settingsString = strManager->ValueForKey( "MENU_MAIN_SETTINGS" );
-    menu.spString = strManager->ValueForKey( "MENU_MAIN_SINGLEPLAYER" );
+    menu->settingsString = strManager->ValueForKey( "MENU_MAIN_SETTINGS" );
+    menu->spString = strManager->ValueForKey( "MENU_MAIN_SINGLEPLAYER" );
 
-    PressStart2P = menu.font = FontCache()->AddFontToCache( "fonts/PressStart2P-Regular.ttf" );
+    PressStart2P = menu->font = FontCache()->AddFontToCache( "fonts/PressStart2P-Regular.ttf" );
     RobotoMono = FontCache()->AddFontToCache( "fonts/RobotoMono/RobotoMono-Bold.ttf" );
 
-    ui->menu_background = menu.background0;
+    ui->menu_background = menu->background0;
 
-    menu.noMenu = qfalse;
-    menu.menuHeight = ui->GetConfig().vidHeight;
-    menu.menuWidth = ui->GetConfig().vidWidth;
+    menu->noMenu = qfalse;
+    menu->menuHeight = ui->GetConfig().vidHeight;
+    menu->menuWidth = ui->GetConfig().vidWidth;
     ui->SetState( STATE_MAIN );
 }
 
@@ -294,5 +282,5 @@ void UI_MainMenu( void )
 {
     MainMenu_Cache();
 
-    ui->PushMenu( &menu.menu );
+    ui->PushMenu( &menu->handle );
 }

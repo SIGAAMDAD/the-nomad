@@ -66,6 +66,7 @@ INTERNAL_OBJS=\
 	$(O)/rendergl/rgl_texture.o \
 	$(O)/rendergl/rgl_world.o \
 	$(O)/rendergl/rgl_main.o \
+	$(O)/rendergl/rgl_fbo.o \
 	$(O)/rendergl/rgl_math.o \
 	$(O)/rendergl/n_shared.o \
 	$(O)/rendergl/n_math.o \

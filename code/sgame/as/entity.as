@@ -84,16 +84,16 @@ namespace TheNomad::SGame {
 		}
 
 		const EntityState@ GetState() const {
-			return m_State;
+			return @m_State;
 		}
 		EntityState@ GetState() {
-			return m_State;
+			return @m_State;
 		}
 		const ref@ GetData() const {
-			return m_Data;
+			return @m_Data;
 		}
 		ref@ GetData() {
-			return m_Data;
+			return @m_Data;
 		}
 		uint GetFlags() const {
 			return m_Flags;
@@ -106,6 +106,9 @@ namespace TheNomad::SGame {
 		}
 		void SetState( EntityState@ state ) {
 			
+		}
+		void SetFlags( uint flags ) {
+			m_Flags = EntityFlags( flags );
 		}
 		
 		//
@@ -160,11 +163,17 @@ namespace TheNomad::SGame {
 		TheNomad::GameSystem::LinkEntity& GetLink() {
 			return m_Link;
 		}
+		TheNomad::GameSystem::DirType GetDirection() const {
+			return m_Direction;
+		}
 		void Think() {
 			ConsoleWarning( "EntityObject::Think: called\n" );
 		}
 		void Spawn( uint, const vec3& in ) {
 			ConsoleWarning( "EntityObject::Spawn: called\n" );
+		}
+		void SetFacing( int facing ) {
+			m_Facing = facing;
 		}
 		
 		// the entity's current state
@@ -339,7 +348,8 @@ namespace TheNomad::SGame {
 		}
 		void OnLevelEnd() {
 		}
-		void OnConsoleCommand() {
+		bool OnConsoleCommand( const string& in cmd ) {
+			return false;
 		}
 		
 		private void FreeEntity( EntityObject@ ent ) {

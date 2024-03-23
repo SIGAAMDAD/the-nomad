@@ -1,7 +1,7 @@
 #include "g_game.h"
 #include "g_world.h"
 
-CGameWorld g_world;
+CGameWorld *g_world;
 
 static uint64_t CopyLump( void **dest, uint32_t lump, uint64_t size, mapheader_t *header ) {
     uint64_t length, fileofs;
@@ -51,7 +51,7 @@ static qboolean G_LoadLevelFile( const char *filename, mapinfo_t *info )
         return qfalse;
     }
     
-    N_strncpyz( info->name, COM_SkipPath( const_cast<char *>( filename ) ), sizeof( info->name ) );
+//    N_strncpyz( info->name, COM_SkipPath( const_cast<char *>( filename ) ), sizeof( info->name ) );
 
     info->width = header->map.mapWidth;
     info->height = header->map.mapHeight;
@@ -228,7 +228,7 @@ void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns, 
 	*nSpawns = info->numSpawns;
 	*nTiles = info->numTiles;
 	
-	g_world.Init( &gi.mapCache.infoList[ hMap ], soundBits, activeEnts );
+	g_world->Init( &gi.mapCache.infoList[ hMap ], soundBits, activeEnts );
 
 	Cbuf_ExecuteText( EXEC_APPEND, va( "setmap %s 0\n", gi.mapCache.infoList[ hMap ].name ) );
 }

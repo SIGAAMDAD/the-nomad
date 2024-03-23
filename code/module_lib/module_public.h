@@ -350,7 +350,7 @@ public:
         return m_pCurrentHandle;
     }
 
-    UtlVector<UtlString> m_RegisteredProcs;
+    UtlVector<eastl::fixed_string<char, 128, true, CModuleAllocator>> m_RegisteredProcs;
 private:
 	void LoadModule( const char *pModuleName );
 

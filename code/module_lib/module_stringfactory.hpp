@@ -14,7 +14,7 @@ public:
 	CModuleStringFactory( void ) {
 	}
 	~CModuleStringFactory() {
-		Assert( m_StringCache.empty() );
+		m_StringCache.clear();
 	}
 	
 	const void *GetStringConstant( const char *pData, asUINT nLength ) {

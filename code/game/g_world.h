@@ -41,6 +41,6 @@ void G_GetTileData( uint32_t *pTiles );
 void G_GetCheckpointData( uvec3_t xyz, uint32_t nIndex );
 void G_GetSpawnData( uvec3_t xyz, uint32_t *type, uint32_t *id, uint32_t nIndex );
 
-extern CGameWorld g_world;
+extern CGameWorld *g_world;
 
 #endif

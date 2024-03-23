@@ -71,29 +71,29 @@ namespace TheNomad::SGame {
 		bool Load( json@ json );
 	};
 
-	const array<uint> AttackTypeData = {
+	const uint[] AttackTypeData = {
 		uint( AttackType::Melee ),
 		uint( AttackType::Missile )
 	};
 
-	const array<string> AttackTypeStrings = {
+	const string[] AttackTypeStrings = {
 		"Melee",
 		"Missile"
 	};
 
-	const array<uint> AttackMethodData = {
+	const uint[] AttackMethodData = {
 		uint( AttackMethod::Hitscan ),
 		uint( AttackMethod::Projectile ),
 		uint( AttackMethod::AreaOfEffect )
 	};
 
-	const array<string> AttackMethodStrings = {
+	const string[] AttackMethodStrings = {
 		"Hitscan",
 		"Projectile",
 		"AreaOfEffect"
 	};
 
-	const array<string> ArmorTypeStrings = {
+	const string[] ArmorTypeStrings = {
 		"None",
 		"Light",
 		"Standard",
@@ -101,7 +101,7 @@ namespace TheNomad::SGame {
 		"Invul"
 	};
 
-	const array<uint> MobFlagBits = {
+	const uint[] MobFlagBits = {
 		uint( MobFlags::Deaf ),
 		uint( MobFlags::Blind ),
 		uint( MobFlags::Terrified ),
@@ -109,7 +109,7 @@ namespace TheNomad::SGame {
 		uint( MobFlags::Sentry )
 	};
 
-	const array<string> MobFlagStrings = {
+	const string[] MobFlagStrings = {
 		"Deaf",
 		"Blind",
 		"Terrified",
@@ -117,7 +117,7 @@ namespace TheNomad::SGame {
 		"Sentry"
 	};
 	
-	const array<uint> WeaponPropertyBits = {
+	const uint[] WeaponPropertyBits = {
 		uint( WeaponProperty::TwoHandedBlade ),
 		uint( WeaponProperty::OneHandedBlade ),
 		uint( WeaponProperty::TwoHandedBlunt ),
@@ -131,7 +131,7 @@ namespace TheNomad::SGame {
 		uint( WeaponProperty::SpawnsObject )
 	};
 	
-	const array<string> WeaponPropertyStrings = {
+	const string[] WeaponPropertyStrings = {
 		"TwoHandedBlade",
 		"OneHandedBlade",
 		"TwoHandedBlunt",
@@ -145,7 +145,7 @@ namespace TheNomad::SGame {
 		"SpawnsObject"
 	};
 	
-	const array<string> WeaponTypeStrings = {
+	const string[] WeaponTypeStrings = {
 		"Sidearm",
 		"HeavySidearm",
 		"Primary",
@@ -156,7 +156,7 @@ namespace TheNomad::SGame {
 		"RightArm"
 	};
 	
-	const array<string> AmmoTypeStrings = {
+	const string[] AmmoTypeStrings = {
 		"Bullet",
 		"Shell",
 		"Rocket",

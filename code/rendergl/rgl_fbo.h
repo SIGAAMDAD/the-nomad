@@ -33,5 +33,8 @@ typedef struct fbo_s
 
 void FBO_Init( void );
 void FBO_Shutdown( void );
+void FBO_FastBlit( fbo_t *src, ivec4_t srcBox, fbo_t *dst, ivec4_t dstBox, int buffers, int filter );
+void FBO_Blit( fbo_t *src, ivec4_t inSrcBox, vec2_t srcTexScale, fbo_t *dst, ivec4_t dstBox, struct shaderProgram_s *shaderProgram, const vec4_t color, int blend );
+void FBO_Bind( fbo_t *fbo );
 
 #endif

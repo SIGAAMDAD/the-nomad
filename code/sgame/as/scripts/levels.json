@@ -3,60 +3,67 @@
         {
             "Name": "In The Dark of The Night",
             "Credits": "level from vanilla Nomad",
-            "MapnameDifficulty_0": "darkofnight.bmf",
-            "MapnameDifficulty_1": "darkofnight.bmf",
-            "MapnameDifficulty_2": "darkofnight.bmf",
-            "MapnameDifficulty_3": "darkofnight.bmf",
-            "MapnameDifficulty_4": "darkofnight.bmf",
-            "MapnameDifficulty_5": "darkofnight.bmf",
+            "MapNameDifficulty_0": "maps/darkofthenight.bmf",
+            "MapNameDifficulty_1": "maps/darkofthenight.bmf",
+            "MapNameDifficulty_2": "maps/darkofthenight.bmf",
+            "MapNameDifficulty_3": "maps/darkofthenight.bmf",
+            "MapNameDifficulty_4": "maps/darkofthenight.bmf",
+            "MapNameDifficulty_5": "maps/darkofthenight.bmf",
             "RankS": {
-                "MinKills": "0",
-                "MinStyle": "0",
-                "MaxDeaths": "0",
-                "MinTime": "0",
+                "MinKills": 0,
+                "MinStyle": 0,
+                "MaxDeaths": 0,
+                "MinTime": 0,
+                "MaxCollateral": 0,
                 "RequiresClean": true
             },
             "RankA": {
-                "MinKills": "0",
-                "MinStyle": "0",
-                "MaxDeaths": "0",
-                "MinTime": "0",
+                "MinKills": 0,
+                "MinStyle": 0,
+                "MaxDeaths": 0,
+                "MinTime": 0,
+                "MaxCollateral": 0,
                 "RequiresClean": true
             },
             "RankB": {
-                "MinKills": "0",
-                "MinStyle": "0",
-                "MaxDeaths": "0",
-                "MinTime": "0",
-                "RequiresClean": true
+                "MinKills": 0,
+                "MinStyle": 0,
+                "MaxDeaths": 0,
+                "MinTime": 0,
+                "MaxCollateral": 0,
+                "RequiresClean": false
             },
             "RankC": {
-                "MinKills": "0",
-                "MinStyle": "0",
-                "MaxDeaths": "0",
-                "MinTime": "0",
-                "RequiresClean": true
+                "MinKills": 0,
+                "MinStyle": 0,
+                "MaxDeaths": 0,
+                "MinTime": 0,
+                "MaxCollateral": 0,
+                "RequiresClean": false
             },
             "RankD": {
-                "MinKills": "0",
-                "MinStyle": "0",
-                "MaxDeaths": "0",
-                "MinTime": "0",
-                "RequiresClean": true
+                "MinKills": 0,
+                "MinStyle": 0,
+                "MaxDeaths": 0,
+                "MinTime": 0,
+                "MaxCollateral": 0,
+                "RequiresClean": false
             },
             "RankF": {
-                "MinKills": "0",
-                "MinStyle": "0",
-                "MaxDeaths": "0",
-                "MinTime": "0",
-                "RequiresClean": true
+                "MinKills": 0,
+                "MinStyle": 0,
+                "MaxDeaths": 0,
+                "MinTime": 0,
+                "MaxCollateral": 0,
+                "RequiresClean": false
             },
             "RankU": {
-                "MinKills": "0",
-                "MinStyle": "0",
-                "MaxDeaths": "0",
-                "MinTime": "0",
-                "RequiresClean": true
+                "MinKills": 0,
+                "MinStyle": 0,
+                "MaxDeaths": 0,
+                "MinTime": 0,
+                "MaxCollateral": 0,
+                "RequiresClean": false
             }
         }
     ]

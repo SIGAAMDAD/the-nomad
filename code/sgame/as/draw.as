@@ -125,27 +125,20 @@ namespace TheNomad::SGame {
 		
 		void Spawn( const vec3& in org, uint lifeTime, const SpriteSheet@ spriteSheet, const ivec2& in spriteOffset ) {
 			origin = org;
-			hShader = shader;
 			startTime = TheNomad::GameSystem::GameManager.GetGameMsec();
 			endTime = startTime + lifeTime;
 			this.spriteOffset = spriteOffset;
-			alive = true;
 			@this.spriteSheet = @spriteSheet;
 		}
 		
 		void RunTic() {
-			if ( !m_bAlive ) {
-				DebugPrint( "RunTic called on dead poly" );
-				return;
-			}
-			
 			lifeTime += TheNomad::GameSystem::GameManager.GetDeltaMsec();
 			origin += vel;
 
-			DrawRect( origin, vec2( 1.0f, 1.0f ),  );
+			DrawRect( origin, vec2( 1.0f, 1.0f ), @spriteSheet, spriteOffset );
 			
 			if ( lifeTime >= endTime ) {
-				GfxSystem.FreeMarkPoly( @this );
+				GfxManager.FreeMarkPoly( @this );
 			}
 		}
 		
@@ -153,7 +146,6 @@ namespace TheNomad::SGame {
 		vec3 vel = vec3( 0.0f );
 		ivec2 spriteOffset = ivec2( 0 );
 		const SpriteSheet@ spriteSheet;
-		int hShader;
 		uint startTime;
 		uint endTime;
 		uint lifeTime;
@@ -169,9 +161,9 @@ namespace TheNomad::SGame {
 			@m_ActiveMarkPolys.prev = @m_ActiveMarkPolys;
 			@m_FreeMarkPolys = @m_PolyList[0];
 
-			for ( uint i = 0; i < m_PolyList.size() - 1; i++ ) [
+			for ( uint i = 0; i < m_PolyList.size() - 1; i++ ) {
 				@m_PolyList[i].next = @m_PolyList[i + 1];
-			]
+			}
 		}
 
 		void OnLoad() {
@@ -183,7 +175,8 @@ namespace TheNomad::SGame {
 				m_PolyList[i].RunTic();
 			}
 		}
-		void OnConsoleCommand() {
+		bool OnConsoleCommand( const string& in cmd ) {
+			return false;
 		}
 		void OnLevelStart() {
 			// ensure we have the correct amount of polygons allocated
@@ -193,13 +186,6 @@ namespace TheNomad::SGame {
 			}
 		}
 		void OnLevelEnd() {
-			// clear all gfx
-			
-			DebugPrint( "GfxManager::OnLevelEnd: clearing gfx data...\n" );
-			
-			for ( uint i = 0; i < m_PolyList.size(); i++ ) {
-				m_PolyList[i].Clear();
-			}
 		}
 		const string& GetName() const override {
 			return "GfxManager";
@@ -212,7 +198,7 @@ namespace TheNomad::SGame {
 			if ( @m_FreeMarkPolys is null ) {
 				// no free polys, so free the one at the end of the chain
 				// remove the oldest active entity
-				time = m_ActiveMarkPolys.preve.lifeTime;
+				time = m_ActiveMarkPolys.prev.lifeTime;
 				while ( @m_ActiveMarkPolys.prev !is null && time == m_ActiveMarkPolys.prev.lifeTime ) {
 					FreeMarkPoly( @m_ActiveMarkPolys.prev );
 				}

@@ -78,6 +78,7 @@ typedef renderSceneRef_t refdef_t;
 #define LIGHTING_DYNAMIC 1
 
 typedef enum {
+	AntiAlias_None,
 	AntiAlias_2xMSAA,
 	AntiAlias_4xMSAA,
 	AntiAlias_8xMSAA,

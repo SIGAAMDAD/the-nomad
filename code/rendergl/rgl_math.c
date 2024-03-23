@@ -4,7 +4,6 @@
 // Some matrix helper functions
 // FIXME: do these already exist in ioq3 and I don't know about them?
 
-/*
 void Mat4Zero( mat4_t out )
 {
 #if 1
@@ -19,10 +18,10 @@ void Mat4Zero( mat4_t out )
 
 void Mat4Identity( mat4_t out )
 {
-	out[ 0] = 1.0f; out[ 4] = 0.0f; out[ 8] = 0.0f; out[12] = 0.0f;
-	out[ 1] = 0.0f; out[ 5] = 1.0f; out[ 9] = 0.0f; out[13] = 0.0f;
-	out[ 2] = 0.0f; out[ 6] = 0.0f; out[10] = 1.0f; out[14] = 0.0f;
-	out[ 3] = 0.0f; out[ 7] = 0.0f; out[11] = 0.0f; out[15] = 1.0f;
+	out[0][0] = 1.0f; out[1][0] = 0.0f; out[2][0] = 0.0f; out[3][0] = 0.0f;
+	out[0][1] = 0.0f; out[1][1] = 1.0f; out[2][1] = 0.0f; out[3][1] = 0.0f;
+	out[0][2] = 0.0f; out[1][2] = 0.0f; out[2][2] = 1.0f; out[3][2] = 0.0f;
+	out[0][3] = 0.0f; out[1][3] = 0.0f; out[2][3] = 0.0f; out[3][3] = 1.0f;
 }
 
 void Mat4Copy( const mat4_t in, mat4_t out )
@@ -37,37 +36,38 @@ void Mat4Copy( const mat4_t in, mat4_t out )
 #endif
 }
 
+/*
 void Mat4Multiply( const mat4_t in1, const mat4_t in2, mat4_t out )
 {
-	out[ 0] = in1[ 0] * in2[ 0] + in1[ 4] * in2[ 1] + in1[ 8] * in2[ 2] + in1[12] * in2[ 3];
-	out[ 1] = in1[ 1] * in2[ 0] + in1[ 5] * in2[ 1] + in1[ 9] * in2[ 2] + in1[13] * in2[ 3];
-	out[ 2] = in1[ 2] * in2[ 0] + in1[ 6] * in2[ 1] + in1[10] * in2[ 2] + in1[14] * in2[ 3];
-	out[ 3] = in1[ 3] * in2[ 0] + in1[ 7] * in2[ 1] + in1[11] * in2[ 2] + in1[15] * in2[ 3];
+	out[0][0] = in1[0][0] * in2[0][0] + in1[1][0] * in2[0][1] + in1[2][0] * in2[0][2] + in1[3][0] * in2[0][3];
+	out[0][1] = in1[0][1] * in2[0][0] + in1[1][1] * in2[0][1] + in1[2][1] * in2[0][2] + in1[3][1] * in2[0][3];
+	out[0][2] = in1[0][2] * in2[0][0] + in1[1][2] * in2[0][1] + in1[2][2] * in2[0][2] + in1[3][2] * in2[0][3];
+	out[0][3] = in1[0][3] * in2[0][0] + in1[1][3] * in2[0][1] + in1[2][3] * in2[0][2] + in1[3][3] * in2[0][3];
 
-	out[ 4] = in1[ 0] * in2[ 4] + in1[ 4] * in2[ 5] + in1[ 8] * in2[ 6] + in1[12] * in2[ 7];
-	out[ 5] = in1[ 1] * in2[ 4] + in1[ 5] * in2[ 5] + in1[ 9] * in2[ 6] + in1[13] * in2[ 7];
-	out[ 6] = in1[ 2] * in2[ 4] + in1[ 6] * in2[ 5] + in1[10] * in2[ 6] + in1[14] * in2[ 7];
-	out[ 7] = in1[ 3] * in2[ 4] + in1[ 7] * in2[ 5] + in1[11] * in2[ 6] + in1[15] * in2[ 7];
+	out[1][ 4] = in1[ 0] * in2[ 4] + in1[ 4] * in2[ 5] + in1[ 8] * in2[ 6] + in1[12] * in2[ 7];
+	out[1][ 5] = in1[ 1] * in2[ 4] + in1[ 5] * in2[ 5] + in1[ 9] * in2[ 6] + in1[13] * in2[ 7];
+	out[1][ 6] = in1[ 2] * in2[ 4] + in1[ 6] * in2[ 5] + in1[10] * in2[ 6] + in1[14] * in2[ 7];
+	out[1][ 7] = in1[ 3] * in2[ 4] + in1[ 7] * in2[ 5] + in1[11] * in2[ 6] + in1[15] * in2[ 7];
 
-	out[ 8] = in1[ 0] * in2[ 8] + in1[ 4] * in2[ 9] + in1[ 8] * in2[10] + in1[12] * in2[11];
-	out[ 9] = in1[ 1] * in2[ 8] + in1[ 5] * in2[ 9] + in1[ 9] * in2[10] + in1[13] * in2[11];
-	out[10] = in1[ 2] * in2[ 8] + in1[ 6] * in2[ 9] + in1[10] * in2[10] + in1[14] * in2[11];
-	out[11] = in1[ 3] * in2[ 8] + in1[ 7] * in2[ 9] + in1[11] * in2[10] + in1[15] * in2[11];
+	out[2][ 8] = in1[ 0] * in2[ 8] + in1[ 4] * in2[ 9] + in1[ 8] * in2[10] + in1[12] * in2[11];
+	out[2][ 9] = in1[ 1] * in2[ 8] + in1[ 5] * in2[ 9] + in1[ 9] * in2[10] + in1[13] * in2[11];
+	out[2][10] = in1[ 2] * in2[ 8] + in1[ 6] * in2[ 9] + in1[10] * in2[10] + in1[14] * in2[11];
+	out[2][11] = in1[ 3] * in2[ 8] + in1[ 7] * in2[ 9] + in1[11] * in2[10] + in1[15] * in2[11];
 
-	out[12] = in1[ 0] * in2[12] + in1[ 4] * in2[13] + in1[ 8] * in2[14] + in1[12] * in2[15];
-	out[13] = in1[ 1] * in2[12] + in1[ 5] * in2[13] + in1[ 9] * in2[14] + in1[13] * in2[15];
-	out[14] = in1[ 2] * in2[12] + in1[ 6] * in2[13] + in1[10] * in2[14] + in1[14] * in2[15];
-	out[15] = in1[ 3] * in2[12] + in1[ 7] * in2[13] + in1[11] * in2[14] + in1[15] * in2[15];
+	out[3][12] = in1[ 0] * in2[12] + in1[ 4] * in2[13] + in1[ 8] * in2[14] + in1[12] * in2[15];
+	out[3][13] = in1[ 1] * in2[12] + in1[ 5] * in2[13] + in1[ 9] * in2[14] + in1[13] * in2[15];
+	out[3][14] = in1[ 2] * in2[12] + in1[ 6] * in2[13] + in1[10] * in2[14] + in1[14] * in2[15];
+	out[3][15] = in1[ 3] * in2[12] + in1[ 7] * in2[13] + in1[11] * in2[14] + in1[15] * in2[15];
 }
+*/
 
 void Mat4Transform( const mat4_t in1, const vec4_t in2, vec4_t out )
 {
-	out[ 0] = in1[ 0] * in2[ 0] + in1[ 4] * in2[ 1] + in1[ 8] * in2[ 2] + in1[12] * in2[ 3];
-	out[ 1] = in1[ 1] * in2[ 0] + in1[ 5] * in2[ 1] + in1[ 9] * in2[ 2] + in1[13] * in2[ 3];
-	out[ 2] = in1[ 2] * in2[ 0] + in1[ 6] * in2[ 1] + in1[10] * in2[ 2] + in1[14] * in2[ 3];
-	out[ 3] = in1[ 3] * in2[ 0] + in1[ 7] * in2[ 1] + in1[11] * in2[ 2] + in1[15] * in2[ 3];
+	out[0] = in1[0][0] * in2[0] + in1[1][0] * in2[1] + in1[2][0] * in2[2] + in1[3][0] * in2[3];
+	out[1] = in1[0][1] * in2[0] + in1[1][1] * in2[1] + in1[2][1] * in2[2] + in1[3][1] * in2[3];
+	out[2] = in1[0][2] * in2[0] + in1[1][2] * in2[1] + in1[2][2] * in2[2] + in1[3][2] * in2[3];
+	out[3] = in1[0][3] * in2[0] + in1[1][3] * in2[1] + in1[2][3] * in2[2] + in1[3][3] * in2[3];
 }
-*/
 
 //
 // Mat4Compare: returns qfalse if not equal, qtrue otherwise
@@ -92,7 +92,6 @@ void Mat4Dump( const mat4_t in )
 	ri.Printf(PRINT_INFO, "%5.5f %5.5f %5.5f %5.5f\n", in[0][3], in[1][3], in[2][3], in[3][3]);
 }
 
-/*
 void Mat4Translation( vec3_t vec, mat4_t out )
 {
 	out[0][0] = 1.0f; out[1][0] = 0.0f; out[2][0] = 0.0f; out[3][0] = vec[0];
@@ -103,16 +102,17 @@ void Mat4Translation( vec3_t vec, mat4_t out )
 
 void Mat4Ortho( float left, float right, float bottom, float top, float znear, float zfar, mat4_t out )
 {
-	out[ 0] = 2.0f / (right - left); out[ 4] = 0.0f;                  out[ 8] = 0.0f;                  out[12] = -(right + left) / (right - left);
-	out[ 1] = 0.0f;                  out[ 5] = 2.0f / (top - bottom); out[ 9] = 0.0f;                  out[13] = -(top + bottom) / (top - bottom);
-	out[ 2] = 0.0f;                  out[ 6] = 0.0f;                  out[10] = 2.0f / (zfar - znear); out[14] = -(zfar + znear) / (zfar - znear);
-	out[ 3] = 0.0f;                  out[ 7] = 0.0f;                  out[11] = 0.0f;                  out[15] = 1.0f;
+	out[0][0] = 2.0f / (right - left); out[1][0] = 0.0f;                  out[2][0] = 0.0f;                  out[3][0] = -(right + left) / (right - left);
+	out[0][1] = 0.0f;                  out[1][1] = 2.0f / (top - bottom); out[2][1] = 0.0f;                  out[3][1] = -(top + bottom) / (top - bottom);
+	out[0][2] = 0.0f;                  out[1][2] = 0.0f;                  out[2][2] = 2.0f / (zfar - znear); out[3][2] = -(zfar + znear) / (zfar - znear);
+	out[0][3] = 0.0f;                  out[1][3] = 0.0f;                  out[2][3] = 0.0f;                  out[3][3] = 1.0f;
 }
 
 //
 // Mat4Scale: scale is technically meant to be a vec3_t, but for simplicity's sake its just a float
 // adapted from glm::scale(glm::mat4, glm::vec3) to Quake-III-Arena style matrices
 //
+/*
 void Mat4Scale(float scale, const mat4_t in, mat4_t out)
 {
 	out[ 0] = in[ 0] * scale;

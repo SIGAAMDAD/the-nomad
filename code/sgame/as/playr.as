@@ -228,7 +228,7 @@ namespace TheNomad::SGame {
 			};
 			
 			if ( obj.key_Jump.active && obj.GetOrigin().z > 0.0f ) {
-				obj.SetFlags( obj.GetFlags() | PF_DOUBLEJUMP );
+				obj.SetFlags( obj.GetFlags() | obj.PF_DOUBLEJUMP );
 			}
 			
 			groundPlane = upmove == 0;
@@ -308,7 +308,10 @@ namespace TheNomad::SGame {
 		void Emote_f() {
 			m_bEmoting = true;
 		}
-		
+
+		void SetLegFacing( int facing ) {
+			m_LegsFacing = facing;
+		}
 		
 		void Damage( float nAmount ) {
 			if ( m_bEmoting ) {
@@ -321,10 +324,10 @@ namespace TheNomad::SGame {
 				if ( m_nFrameDamage > 0 ) {
 					return; // as long as you're hitting SOMETHING, you cannot die
 				}
-				TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( dieSfx[ PRandom() & 3 ] );
+				TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( dieSfx[ TheNomad::Util::PRandom() & 3 ] );
 				EntityManager.KillEntity( @this );
 			} else {
-				TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( painSfx[ PRandom() & 3 ] );
+				TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( painSfx[ TheNomad::Util::PRandom() & 3 ] );
 			}
 		}
 		
@@ -392,7 +395,7 @@ namespace TheNomad::SGame {
 			}
 			
 			// add the fireball
-			GfxManager.AddExplosionGfx( vec3( m_Origin.x + GetGfxDirection(), m_Origin.y, m_Origin.z ) );
+			GfxManager.AddExplosionGfx( vec3( m_Link.m_Origin.x + GetGfxDirection(), m_Link.m_Origin.y, m_Link.m_Origin.z ) );
 
 			return true;
 		}
@@ -410,7 +413,7 @@ namespace TheNomad::SGame {
 			ivec2 origin;
 			
 			for ( uint i = 0; i < 2; i++ ) {
-				origin[i] = floor( m_Link.m_Origin[i] );
+				origin[i] = int( floor( m_Link.m_Origin[i] ) );
 			}
 			
 			if ( Pmove.groundPlane ) {
@@ -420,8 +423,6 @@ namespace TheNomad::SGame {
 					TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( moveMetalSfx );
 				} else if ( ( flags & SURFACEPARM_WOOD ) != 0 ) {
 					TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( moveWoodSfx );
-				} else if ( ( flags & SURFACEPARM_SAND ) != 0 ) {
-					TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( moveSandSfx );
 				} else {
 					// in this case, just use the generic walking sound
 					TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( moveSfx );
@@ -464,7 +465,6 @@ namespace TheNomad::SGame {
 		private uint m_CurrentWeapon;
 		private uint m_PFlags;
 		
-		private TheNomad::Engine::SoundSystem::SoundEffect moveSandSfx;
 		private TheNomad::Engine::SoundSystem::SoundEffect moveWoodSfx;
 		private TheNomad::Engine::SoundSystem::SoundEffect moveMetalSfx;
 		private TheNomad::Engine::SoundSystem::SoundEffect moveSfx;
@@ -479,14 +479,12 @@ namespace TheNomad::SGame {
 		private float m_nDamageMult;
 		private float m_nHealMult;
 
+		private int m_LegsFacing;
+
 		private bool m_bEmoting;
 
 		private float m_nHealMultDecay = 1.0f;
 		
 		private PMoveData Pmove;
 	};
-
-	ConVar@ sgame_BaseSpeed;
-	ConVar@ sgame_GroundFriction;
-	ConVar@ sgame_MaxSpeed;
 };

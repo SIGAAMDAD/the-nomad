@@ -440,7 +440,6 @@ namespace TheNomad::SGame {
 				LoadLevelsFromFile( sgame_ModList[i] );
 			}
 
-			m_nLevels = 0;
 			@m_Current = null;
 
 			ConsolePrint( formatUInt( NumLevels() ) + " levels parsed.\n" );
@@ -462,13 +461,10 @@ namespace TheNomad::SGame {
 
 				ConsolePrint( "Loaded level '" + data.m_Name + "'...\n" );
 
-				for ( uint j = 0; j < data.m_MapHandles.size(); j++ ) {
+				for ( uint j = 0; j < TheNomad::GameSystem::GameDifficulty::NumDifficulties; j++ ) {
 					if ( !info.get( "MapNameDifficulty_" + formatUInt( j ), mapname ) ) {
-						// level currently doesn't support this difficulty
-						continue;
-					}
-					if ( mapname == "none" ) {
-						// level currently doesn't support this difficulty
+						ConsoleWarning( "invalid level map info for \"" + levelName
+							+ "\", missing value for 'MapNameDifficulty_" + j + "', skipping.\n" );
 						continue;
 					}
 
@@ -553,6 +549,8 @@ namespace TheNomad::SGame {
 				if ( !LoadLevelRankData( str, "RankU", @data.m_RankU, rankU ) ) {
 					continue;
 				}
+
+				m_LevelInfoDatas.push_back( @data );
 			}
 		}
 		
@@ -564,7 +562,9 @@ namespace TheNomad::SGame {
 				
 			}
 		}
-		void OnConsoleCommand() {
+		bool OnConsoleCommand( const string& in cmd ) {
+
+			return false;
 		}
 		void OnLevelEnd() {
 		}
@@ -584,12 +584,10 @@ namespace TheNomad::SGame {
 			// get the level index
 			m_nIndex = TheNomad::Engine::CvarVariableInteger( "g_levelIndex" );
 			difficulty = sgame_Difficulty.GetInt();
+
+			DebugPrint( "Initializing level at " + m_nIndex + ", difficulty set to \"" + SP_DIFF_STRINGS[ difficulty ] + "\".\n" );
 			
 			ConsolePrint( "Loading level \"" + m_LevelInfoDatas[m_nIndex].m_MapHandles[difficulty].m_Name + "\"...\n" );
-			
-			if ( sgame_LevelDebugPrint.GetInt() == 1 ) {
-				
-			}
 			
 			m_RankData = LevelStats();
 			@m_Current = @m_LevelInfoDatas[m_nIndex];
@@ -684,24 +682,24 @@ namespace TheNomad::SGame {
 			}
 		}
 
-		bool LoadLevelRankData( string& in str, const string& in rankName, LevelRankData@ data, json@ json ) {
-			if ( !json.get( "MinKills", data.minKills ) ) {
+		bool LoadLevelRankData( string& in str, const string& in rankName, LevelRankData@ data, json@ src ) {
+			if ( !src.get( "MinKills", data.minKills ) ) {
 				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'MinKills'.\n" );
 				return false;
 			}
-			if ( !json.get( "MinStyle", data.minStyle ) ) {
+			if ( !src.get( "MinStyle", data.minStyle ) ) {
 				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'MinStyle'.\n" );
 				return false;
 			}
-			if ( !json.get( "MaxDeaths", data.maxDeaths ) ) {
+			if ( !src.get( "MaxDeaths", data.maxDeaths ) ) {
 				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'MaxDeaths'.\n" );
 				return false;
 			}
-			if ( !json.get( "MaxCollateral", data.maxCollateral ) ) {
+			if ( !src.get( "MaxCollateral", data.maxCollateral ) ) {
 				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'MaxCollateral'.\n" );
 				return false;
 			}
-			if ( !json.get( "RequiresClean", data.requiresClean ) ) {
+			if ( !src.get( "RequiresClean", data.requiresClean ) ) {
 				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'RequiresClean'.\n" );
 				return false;
 			}
@@ -740,14 +738,14 @@ namespace TheNomad::SGame {
 		
 		private array<json@> m_LevelInfos;
 		private array<LevelInfoData@> m_LevelInfoDatas;
-		private uint m_nIndex;
-		private uint m_nLevels;
+		private uint m_nIndex = 0;
+		private uint m_nLevels = 0;
 
-		private float m_nDifficultyScale;
+		private float m_nDifficultyScale = 1.0f;
 		
-		private LevelStats m_RankData;
-		private LevelInfoData@ m_Current;
-		private MapData@ m_MapData;
+		private LevelStats m_RankData = LevelStats();
+		private LevelInfoData@ m_Current = null;
+		private MapData@ m_MapData = null;
 	};
 	
 	class SoundData {
@@ -788,31 +786,7 @@ namespace TheNomad::SGame {
 
 	array<string> sgame_ModList;
 
-	ConVar@ sgame_GfxDetail;
-	ConVar@ sgame_QuickShotMaxTargets;
-	ConVar@ sgame_QuickShotTime;
-	ConVar@ sgame_QuickShotMaxRange;
-	ConVar@ sgame_MaxPlayerWeapons;
-	ConVar@ sgame_PlayerHealBase;
-	ConVar@ sgame_Difficulty;
-	ConVar@ sgame_SaveName;
-	ConVar@ sgame_AdaptiveSoundtrack;
-	ConVar@ sgame_DebugMode;
-	ConVar@ sgame_cheat_BlindMobs;
-	ConVar@ sgame_cheat_DeafMobs;
-	ConVar@ sgame_cheat_InfiniteAmmo;
-	ConVar@ sgame_LevelDebugPrint;
-	ConVar@ sgame_LevelIndex;
-	ConVar@ sgame_LevelInfoFile;
-	ConVar@ sgame_SoundDissonance;
-	ConVar@ sgame_MapName;
-	ConVar@ sgame_MaxEntities;
-	ConVar@ sgame_NoRespawningMobs;
-	ConVar@ sgame_HellbreakerActive;
-	ConVar@ sgame_HellbreakerOn;
-	ConVar@ sgame_MaxFps;
-
-	const array<TheNomad::GameSystem::DirType> InverseDirs = {
+	const TheNomad::GameSystem::DirType[] InverseDirs = {
 		TheNomad::GameSystem::DirType::South,
 		TheNomad::GameSystem::DirType::SouthWest,
 		TheNomad::GameSystem::DirType::West,

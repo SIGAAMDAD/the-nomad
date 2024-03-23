@@ -485,6 +485,18 @@ static const void *RB_SwapBuffers(const void *data)
 		backend.pc.c_overDraw += sum;
 		ri.Hunk_FreeTempMemory( stencilReadback );
 	}
+	
+	if ( glContext.ARB_framebuffer_object ) {
+//		if ( !backend.framePostProcessed ) {
+			if ( rg.msaaResolveFbo && r_hdr->i ) {
+				// Resolving an RGB16F MSAA FBO to the screen messes with the brightness, so resolve to an RGB16F FBO first
+				FBO_FastBlit( rg.renderFbo, NULL, rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+				FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+			} else {
+				FBO_FastBlit( rg.renderFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+			}
+//		}
+	}
 
     if ( !glState.finishCalled ) {
         nglFinish();
@@ -514,8 +526,9 @@ static const void	*RB_DrawBuffer( const void *data ) {
 	// finish any drawing if needed
 	RB_FlushBatchBuffer();
 
-//	if (glConfig.ARB_framebuffer_object)
-//		FBO_Bind(NULL);
+	if ( glContext.ARB_framebuffer_object ) {
+		FBO_Bind( NULL );
+	}
 
 	nglDrawBuffer( cmd->buffer );
 

@@ -41,7 +41,8 @@ cvar_t *r_customPixelAspect;
 cvar_t *r_colorBits;
 cvar_t *g_stencilBits;
 cvar_t *g_depthBits;
-cvar_t *r_multisample;
+cvar_t *r_multisampleAmount;
+cvar_t *r_multisampleType;
 cvar_t *r_stereoEnabled;
 cvar_t *g_drawBuffer;
 cvar_t *g_paused;
@@ -135,7 +136,7 @@ static void G_RefImGuiNewFrame(void) {
 
     ImGuiStyle& style = ImGui::GetStyle();
 
-    switch ((antialiasType_t)r_multisample->i) {
+    switch ((antialiasType_t)r_multisampleType->i) {
     case AntiAlias_4xMSAA:
     case AntiAlias_8xMSAA:
         style.AntiAliasedFill = true;
@@ -289,7 +290,7 @@ static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, const glm::mat4&
 }
 
 qboolean G_CheckWallHit( const vec3_t origin, dirtype_t dir ) {
-    return g_world.CheckWallHit( origin, dir );
+    return g_world->CheckWallHit( origin, dir );
 }
 
 void G_SetCameraData( const vec2_t origin, float zoom, float rotation ) {
@@ -469,10 +470,25 @@ static void G_InitRenderer( void )
     re.BeginRegistration( &gi.gpuConfig );
 
     // load the character sets
-    gi.charSetShader = re.RegisterShader("gfx/bigchars");
+//    gi.charSetShader = re.RegisterShader("gfx/bigchars");
     gi.whiteShader = re.RegisterShader("white");
     gi.consoleShader0 = re.RegisterShader("console0");
     gi.consoleShader1 = re.RegisterShader("console1");
+
+//    g_console_field_width = ( ( gi.gpuConfig.vidWidth / smallchar_width ) ) - 2;
+
+    // for 1024x768 virtualized screen
+	gi.biasY = 0;
+	gi.biasX = 0;
+	if ( gi.gpuConfig.vidWidth * 768.0f > gi.gpuConfig.vidHeight * 1024.0f ) {
+		// wide screen, scale by height
+		gi.scale = gi.gpuConfig.vidHeight * (1.0f/768.0f);
+		gi.biasX = 0.5f * ( gi.gpuConfig.vidWidth - ( gi.gpuConfig.vidHeight * (1024.0f/768.0f) ) );
+	} else {
+		// no wide screen, scale by width
+		gi.scale = gi.gpuConfig.vidWidth * (1.0f/1024.0f);
+		gi.biasY = 0.5f * ( gi.gpuConfig.vidHeight - ( gi.gpuConfig.vidWidth * (768.0f/1024.0f) ) );
+	}
 }
 
 void G_ShutdownRenderer( refShutdownCode_t code )
@@ -509,7 +525,11 @@ static void G_Vid_Restart( refShutdownCode_t code )
     G_ShutdownArchiveHandler();
 
     g_pModuleLib->Shutdown();
-    g_pModuleLib = NULL;
+
+    // clear resource references
+	FS_ClearBFFReferences( FS_UI_REF | FS_SGAME_REF );
+
+    Cvar_Set( "g_paused", "0" );
 
     G_ClearMem();
 
@@ -574,8 +594,8 @@ static void G_Snd_Restart_f( void )
 static void G_VM_Restart_f( void ) {
     G_ShutdownVMs();
 
-    G_InitSGame();
     G_InitUI();
+    G_InitSGame();
 }
 
 const vidmode_t r_vidModes[NUMVIDMODES] =
@@ -747,19 +767,22 @@ void G_Init( void )
     r_debugCameraSpeed = Cvar_Get( "r_debugCameraSpeed", "1.15", CVAR_TEMP | CVAR_PROTECTED | CVAR_LATCH );
     Cvar_SetDescription( r_debugCameraSpeed, "Sets the movement speed of the debugger camera." );
 
-    r_multisample = Cvar_Get( "r_multisample", "0", CVAR_SAVE | CVAR_LATCH );
-    Cvar_CheckRange( r_multisample, va( "%i", AntiAlias_2xMSAA ), va( "%i", AntiAlias_DSSAA ), CVT_INT );
-    Cvar_SetDescription( r_multisample,
+    r_multisampleType = Cvar_Get( "r_multisampleType", "3", CVAR_SAVE | CVAR_LATCH );
+    Cvar_CheckRange( r_multisampleType, va( "%i", AntiAlias_None ), va( "%i", AntiAlias_DSSAA ), CVT_INT );
+    Cvar_SetDescription( r_multisampleType,
                             "Sets the anti-aliasing type to the desired:\n"
-                            "   0 - 2x MSAA\n"
-                            "   1 - 4x MSAA\n"
-                            "   2 - 8x MSAA\n"
-                            "   3 - 16x MSAA\n"
-                            "   4 - 32x MSAA\n"
-                            "   5 - 2x SSAA\n"
-                            "   6 - 4x SSAA\n"
-                            "   7 - Dynamic SSAA\n"
+                            "   0 - None\n"
+                            "   1 - 2x MSAA\n"
+                            "   2 - 4x MSAA\n"
+                            "   3 - 8x MSAA\n"
+                            "   4 - 16x MSAA\n"
+                            "   5 - 32x MSAA\n"
+                            "   6 - 2x SSAA\n"
+                            "   7 - 4x SSAA\n"
+                            "   8 - Dynamic SSAA\n"
                             "requires \\vid_restart." );
+    r_multisampleAmount = Cvar_Get( "r_multisampleAmount", "8", CVAR_SAVE | CVAR_LATCH );
+    Cvar_CheckRange( r_multisampleAmount, 0, "32", CVT_INT );
 
 	r_noborder = Cvar_Get( "r_noborder", "0", CVAR_ARCHIVE_ND | CVAR_LATCH );
 	Cvar_CheckRange( r_noborder, "0", "1", CVT_INT );
@@ -948,6 +971,7 @@ void G_StartHunkUsers( void )
     Hunk_SetMark();
 
     // cache all maps
+    g_world = new ( Hunk_Alloc( sizeof( *g_world ), h_high ) ) CGameWorld();
     G_InitMapCache();
 }
 
@@ -960,6 +984,11 @@ void G_ShutdownAll( void )
 
     // shutdown VMs
     G_ShutdownVMs();
+
+    // shutdown modulelib
+    g_pModuleLib->Shutdown();
+
+    new ( g_world ) CGameWorld();
 
     // shutdown the renderer
     if ( re.Shutdown ) {

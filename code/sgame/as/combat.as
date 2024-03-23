@@ -54,7 +54,6 @@ namespace TheNomad::SGame {
 		private const LevelInfoData@ m_Current = null;
 	};
 	
-	ConVar@ sgame_MusicChangeDelta;
 	CombatSoundSystem@ dynamicMusic;
 	
 	void InitDynamicMusic() {
