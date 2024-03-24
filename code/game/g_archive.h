@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "../module_lib/module_public.h"
-
 typedef struct {
     char mapName[MAX_GDR_PATH];
     gamedif_t diff;
@@ -96,6 +94,13 @@ typedef struct {
 	ngdsection_read_t *m_pSectionList;
 } ngd_file_t;
 
+#ifndef USE_ALLOC_H
+#include "../module_lib/module_public.h"
+#include "aatc/aatc.hpp"
+#include "aatc/aatc_common.hpp"
+#include "aatc/aatc_container_unordered_map.hpp"
+#include "aatc/aatc_container_vector.hpp"
+
 class CGameArchive
 {
 public:
@@ -125,7 +130,16 @@ public:
 
     void SaveCString( const char *name, const char *data );
     void SaveString( const char *name, const string_t *pData );
-    void SaveArray( const char *name, const CScriptArray *pData );
+
+    void SaveInt8Array( const char *name, const aatc::container::tempspec::vector<int8_t> *pData );
+    void SaveInt16Array( const char *name, const aatc::container::tempspec::vector<int16_t> *pData );
+    void SaveInt32Array( const char *name, const aatc::container::tempspec::vector<int32_t> *pData );
+    void SaveInt64Array( const char *name, const aatc::container::tempspec::vector<int64_t> *pData );
+    void SaveUInt8Array( const char *name, const aatc::container::tempspec::vector<uint8_t> *pData );
+    void SaveUInt16Array( const char *name, const aatc::container::tempspec::vector<uint16_t> *pData );
+    void SaveUInt32Array( const char *name, const aatc::container::tempspec::vector<uint32_t> *pData );
+    void SaveUInt64Array( const char *name, const aatc::container::tempspec::vector<uint64_t> *pData );
+    void SaveFloatArray( const char *name, const aatc::container::tempspec::vector<float> *pData );
 
     float LoadFloat( const char *name, nhandle_t hSection );
 
@@ -146,7 +160,15 @@ public:
     void LoadCString( const char *name, char *pBuffer, int32_t maxLength, nhandle_t hSection );
     void LoadString( const char *name, string_t *pString, nhandle_t hSection );
 
-    void LoadArray( const char *name, CScriptArray *pData, nhandle_t hSection );
+    void LoadInt8Array( const char *name, aatc::container::tempspec::vector<int8_t> *pData, nhandle_t hSection );
+    void LoadInt16Array( const char *name, aatc::container::tempspec::vector<int16_t> *pData, nhandle_t hSection );
+    void LoadInt32Array( const char *name, aatc::container::tempspec::vector<int32_t> *pData, nhandle_t hSection );
+    void LoadInt64Array( const char *name, aatc::container::tempspec::vector<int64_t> *pData, nhandle_t hSection );
+    void LoadUInt8Array( const char *name, aatc::container::tempspec::vector<uint8_t> *pData, nhandle_t hSection );
+    void LoadUInt16Array( const char *name, aatc::container::tempspec::vector<uint16_t> *pData, nhandle_t hSection );
+    void LoadUInt32Array( const char *name, aatc::container::tempspec::vector<uint32_t> *pData, nhandle_t hSection );
+    void LoadUInt64Array( const char *name, aatc::container::tempspec::vector<uint64_t> *pData, nhandle_t hSection );
+    void LoadFloatArray( const char *name, aatc::container::tempspec::vector<float> *pData, nhandle_t hSection );
 
     bool Load( const char *filename );
     bool Save( void );
@@ -157,6 +179,8 @@ public:
     friend void G_InitArchiveHandler( void );
     friend void G_ShutdownArchiveHandler( void );
 private:
+    void SaveArray( const char *func, const char *name, const void *pData, uint32_t nBytes );
+
     void AddField( const char *name, int32_t type, const void *data, uint32_t dataSize );
     bool ValidateHeader( const void *header ) const;
     qboolean LoadArchiveFile( const char *filename, uint64_t index );
@@ -179,5 +203,7 @@ void G_InitArchiveHandler( void );
 void G_ShutdownArchiveHandler( void );
 
 extern CGameArchive *g_pArchiveHandler;
+
+#endif
 
 #endif
