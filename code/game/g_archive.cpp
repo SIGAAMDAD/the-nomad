@@ -437,28 +437,64 @@ void CGameArchive::SaveString( const char *name, const string_t *pData ) {
 	FS_Write( pData->data(), field.dataSize, m_hFile );
 }
 
-void CGameArchive::SaveArray( const char *name, const CScriptArray *pData ) {
+void CGameArchive::SaveArray( const char *func, const char *name, const void *pData, uint32_t nBytes ) {
 	ngdfield_t field;
 
 	if ( !name ) {
-		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
+		N_Error( ERR_DROP, "%s: name is NULL", func );
 	}
 	if ( !pData ) {
-		N_Error( ERR_DROP, "%s: data is NULL", __func__ );
+		N_Error( ERR_DROP, "%s: data is NULL", func );
 	}
 
 	field.nameLength = strlen( name ) + 1;
 	field.type = FT_STRING;
-	field.dataSize = pData->GetSize() * g_pModuleLib->GetScriptEngine()->GetTypeInfoById( pData->GetElementTypeId() )->GetSize();
+	field.dataSize = nBytes;
 	if ( field.nameLength >= MAX_STRING_CHARS ) {
-		N_Error( ERR_DROP, "%s: name '%s' too long", __func__, name );
+		N_Error( ERR_DROP, "%s: name '%s' too long", func, name );
 	}
 
 	FS_Write( &field.nameLength, sizeof( field.nameLength ), m_hFile );
 	FS_Write( name, field.nameLength, m_hFile );
 	FS_Write( &field.type, sizeof( field.type ), m_hFile );
 	FS_Write( &field.dataSize, sizeof( field.dataSize ), m_hFile );
-	FS_Write( pData->GetBuffer(), field.dataSize, m_hFile );
+	FS_Write( pData, nBytes, m_hFile );
+}
+
+void CGameArchive::SaveInt8Array( const char *name, const aatc::container::tempspec::vector<int8_t> *pData ) {
+	SaveArray( __func__, name, pData->container.data(), pData->container.size() * sizeof( int8_t ) );
+}
+
+void CGameArchive::SaveInt16Array( const char *name, const aatc::container::tempspec::vector<int16_t> *pData ) {
+	SaveArray( __func__, name, pData->container.data(), pData->container.size() * sizeof( int16_t ) );
+}
+
+void CGameArchive::SaveInt32Array( const char *name, const aatc::container::tempspec::vector<int32_t> *pData ) {
+	SaveArray( __func__, name, pData->container.data(), pData->container.size() * sizeof( int32_t ) );
+}
+
+void CGameArchive::SaveInt64Array( const char *name, const aatc::container::tempspec::vector<int64_t> *pData ) {
+	SaveArray( __func__, name, pData->container.data(), pData->container.size() * sizeof( int64_t ) );
+}
+
+void CGameArchive::SaveUInt8Array( const char *name, const aatc::container::tempspec::vector<uint8_t> *pData ) {
+	SaveArray( __func__, name, pData->container.data(), pData->container.size() * sizeof( uint8_t ) );
+}
+
+void CGameArchive::SaveUInt16Array( const char *name, const aatc::container::tempspec::vector<uint16_t> *pData ) {
+	SaveArray( __func__, name, pData->container.data(), pData->container.size() * sizeof( uint16_t ) );
+}
+
+void CGameArchive::SaveUInt32Array( const char *name, const aatc::container::tempspec::vector<uint32_t> *pData ) {
+	SaveArray( __func__, name, pData->container.data(), pData->container.size() * sizeof( uint32_t ) );
+}
+
+void CGameArchive::SaveUInt64Array( const char *name, const aatc::container::tempspec::vector<uint64_t> *pData ) {
+	SaveArray( __func__, name, pData->container.data(), pData->container.size() * sizeof( uint64_t ) );
+}
+
+void CGameArchive::SaveFloatArray( const char *name, const aatc::container::tempspec::vector<float> *pData ) {
+	SaveArray( __func__, name, pData->container.data(), pData->container.size() * sizeof( float ) );
 }
 
 const ngdfield_t *CGameArchive::FindField( const char *name, int32_t type, nhandle_t hSection ) const
@@ -702,9 +738,8 @@ void CGameArchive::LoadString( const char *name, string_t *pString, nhandle_t hS
 	N_strncpyz( pString->data(), field->data.str, field->dataSize );
 }
 
-void CGameArchive::LoadArray( const char *name, CScriptArray *pData, nhandle_t hSection ) {
+void CGameArchive::LoadInt8Array( const char *name, aatc::container::tempspec::vector<int8_t> *pData, nhandle_t hSection ) {
 	const ngdfield_t *field;
-	const asITypeInfo *info;
 	
 	if ( !name ) {
 		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
@@ -714,16 +749,191 @@ void CGameArchive::LoadArray( const char *name, CScriptArray *pData, nhandle_t h
 	}
 	
 	field = FindField( name, FT_ARRAY, hSection );
-	info = g_pModuleLib->GetScriptEngine()->GetTypeInfoById( pData->GetElementTypeId() );
 
 	// this should never happen
-	if ( ( pData->GetSize() * info->GetSize() ) % field->dataSize ) {
-		N_Error( ERR_DROP, "%s: bad data type for script array", __func__ );
+	if ( ( pData->container.size() * sizeof( int8_t ) ) % field->dataSize ) {
+		N_Error( ERR_DROP, "%s: bad data type for module vector (funny field size)", __func__ );
 	}
-	if ( pData->GetSize() * info->GetSize() < field->dataSize ) {
-		pData->Resize( field->dataSize / info->GetSize() );
+	if ( pData->container.size() * sizeof( int8_t ) < field->dataSize ) {
+		pData->container.resize( field->dataSize / sizeof( int8_t ) );
 	}
-	memcpy( pData->GetBuffer(), field->data.str, field->dataSize );
+	memcpy( pData->container.data(), field->data.str, field->dataSize );
+}
+
+void CGameArchive::LoadInt16Array( const char *name, aatc::container::tempspec::vector<int16_t> *pData, nhandle_t hSection ) {
+	const ngdfield_t *field;
+	
+	if ( !name ) {
+		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
+	}
+	if ( !hSection ) {
+		N_Error( ERR_DROP, "%s: hSection is invalid", __func__ );
+	}
+	
+	field = FindField( name, FT_ARRAY, hSection );
+
+	// this should never happen
+	if ( ( pData->container.size() * sizeof( int16_t ) ) % field->dataSize ) {
+		N_Error( ERR_DROP, "%s: bad data type for module vector (funny field size)", __func__ );
+	}
+	if ( pData->container.size() * sizeof( int16_t ) < field->dataSize ) {
+		pData->container.resize( field->dataSize / sizeof( int16_t ) );
+	}
+	memcpy( pData->container.data(), field->data.str, field->dataSize );
+}
+
+void CGameArchive::LoadInt32Array( const char *name, aatc::container::tempspec::vector<int32_t> *pData, nhandle_t hSection ) {
+	const ngdfield_t *field;
+	
+	if ( !name ) {
+		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
+	}
+	if ( !hSection ) {
+		N_Error( ERR_DROP, "%s: hSection is invalid", __func__ );
+	}
+	
+	field = FindField( name, FT_ARRAY, hSection );
+
+	// this should never happen
+	if ( ( pData->container.size() * sizeof( int32_t ) ) % field->dataSize ) {
+		N_Error( ERR_DROP, "%s: bad data type for module vector (funny field size)", __func__ );
+	}
+	if ( pData->container.size() * sizeof( int32_t ) < field->dataSize ) {
+		pData->container.resize( field->dataSize / sizeof( int32_t ) );
+	}
+	memcpy( pData->container.data(), field->data.str, field->dataSize );
+}
+
+void CGameArchive::LoadInt64Array( const char *name, aatc::container::tempspec::vector<int64_t> *pData, nhandle_t hSection ) {
+	const ngdfield_t *field;
+	
+	if ( !name ) {
+		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
+	}
+	if ( !hSection ) {
+		N_Error( ERR_DROP, "%s: hSection is invalid", __func__ );
+	}
+	
+	field = FindField( name, FT_ARRAY, hSection );
+
+	// this should never happen
+	if ( ( pData->container.size() * sizeof( int64_t ) ) % field->dataSize ) {
+		N_Error( ERR_DROP, "%s: bad data type for module vector (funny field size)", __func__ );
+	}
+	if ( pData->container.size() * sizeof( int64_t ) < field->dataSize ) {
+		pData->container.resize( field->dataSize / sizeof( int64_t ) );
+	}
+	memcpy( pData->container.data(), field->data.str, field->dataSize );
+}
+
+void CGameArchive::LoadUInt8Array( const char *name, aatc::container::tempspec::vector<uint8_t> *pData, nhandle_t hSection ) {
+	const ngdfield_t *field;
+	
+	if ( !name ) {
+		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
+	}
+	if ( !hSection ) {
+		N_Error( ERR_DROP, "%s: hSection is invalid", __func__ );
+	}
+	
+	field = FindField( name, FT_ARRAY, hSection );
+
+	// this should never happen
+	if ( ( pData->container.size() * sizeof( uint8_t ) ) % field->dataSize ) {
+		N_Error( ERR_DROP, "%s: bad data type for module vector (funny field size)", __func__ );
+	}
+	if ( pData->container.size() * sizeof( uint8_t ) < field->dataSize ) {
+		pData->container.resize( field->dataSize / sizeof( uint8_t ) );
+	}
+	memcpy( pData->container.data(), field->data.str, field->dataSize );
+}
+
+void CGameArchive::LoadUInt16Array( const char *name, aatc::container::tempspec::vector<uint16_t> *pData, nhandle_t hSection ) {
+	const ngdfield_t *field;
+	
+	if ( !name ) {
+		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
+	}
+	if ( !hSection ) {
+		N_Error( ERR_DROP, "%s: hSection is invalid", __func__ );
+	}
+	
+	field = FindField( name, FT_ARRAY, hSection );
+
+	// this should never happen
+	if ( ( pData->container.size() * sizeof( uint16_t ) ) % field->dataSize ) {
+		N_Error( ERR_DROP, "%s: bad data type for module vector (funny field size)", __func__ );
+	}
+	if ( pData->container.size() * sizeof( uint16_t ) < field->dataSize ) {
+		pData->container.resize( field->dataSize / sizeof( uint16_t ) );
+	}
+	memcpy( pData->container.data(), field->data.str, field->dataSize );
+}
+
+void CGameArchive::LoadUInt32Array( const char *name, aatc::container::tempspec::vector<uint32_t> *pData, nhandle_t hSection ) {
+	const ngdfield_t *field;
+	
+	if ( !name ) {
+		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
+	}
+	if ( !hSection ) {
+		N_Error( ERR_DROP, "%s: hSection is invalid", __func__ );
+	}
+	
+	field = FindField( name, FT_ARRAY, hSection );
+
+	// this should never happen
+	if ( ( pData->container.size() * sizeof( uint32_t ) ) % field->dataSize ) {
+		N_Error( ERR_DROP, "%s: bad data type for module vector (funny field size)", __func__ );
+	}
+	if ( pData->container.size() * sizeof( uint32_t ) < field->dataSize ) {
+		pData->container.resize( field->dataSize / sizeof( uint32_t ) );
+	}
+	memcpy( pData->container.data(), field->data.str, field->dataSize );
+}
+
+void CGameArchive::LoadUInt64Array( const char *name, aatc::container::tempspec::vector<uint64_t> *pData, nhandle_t hSection ) {
+	const ngdfield_t *field;
+	
+	if ( !name ) {
+		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
+	}
+	if ( !hSection ) {
+		N_Error( ERR_DROP, "%s: hSection is invalid", __func__ );
+	}
+	
+	field = FindField( name, FT_ARRAY, hSection );
+
+	// this should never happen
+	if ( ( pData->container.size() * sizeof( uint64_t ) ) % field->dataSize ) {
+		N_Error( ERR_DROP, "%s: bad data type for module vector (funny field size)", __func__ );
+	}
+	if ( pData->container.size() * sizeof( uint64_t ) < field->dataSize ) {
+		pData->container.resize( field->dataSize / sizeof( uint64_t ) );
+	}
+	memcpy( pData->container.data(), field->data.str, field->dataSize );
+}
+
+void CGameArchive::LoadFloatArray( const char *name, aatc::container::tempspec::vector<float> *pData, nhandle_t hSection ) {
+	const ngdfield_t *field;
+	
+	if ( !name ) {
+		N_Error( ERR_DROP, "%s: name is NULL", __func__ );
+	}
+	if ( !hSection ) {
+		N_Error( ERR_DROP, "%s: hSection is invalid", __func__ );
+	}
+	
+	field = FindField( name, FT_ARRAY, hSection );
+
+	// this should never happen
+	if ( ( pData->container.size() * sizeof( float ) ) % field->dataSize ) {
+		N_Error( ERR_DROP, "%s: bad data type for module vector (funny field size)", __func__ );
+	}
+	if ( pData->container.size() * sizeof( float ) < field->dataSize ) {
+		pData->container.resize( field->dataSize / sizeof( float ) );
+	}
+	memcpy( pData->container.data(), field->data.str, field->dataSize );
 }
 
 bool CGameArchive::Save( void )
