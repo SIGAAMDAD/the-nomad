@@ -1,12 +1,6 @@
 #include "module_public.h"
 #include "scriptstdstring.h"
-#include "module_alloc.h"
-
-#include "module_alloc.h"
-#include "aatc/aatc.hpp"
-#include "aatc/aatc_common.hpp"
-#include "aatc/aatc_container_map.hpp"
-#include "aatc/aatc_container_vector.hpp"
+#include "scriptarray.h"
 
 // This function takes an input string and splits it into parts by looking
 // for a specified delimiter. Example:
@@ -20,18 +14,15 @@
 //
 // AngelScript signature:
 // vector<string>@ string::split(const string_t& in delim) const
-static aatc:: *StringSplit(const string_t& delim, const string_t& str)
+static aatc::container::tempspec::vector<string_t> *StringSplit(const string_t& delim, const string_t& str)
 {
 	// Obtain a pointer to the engine
 	asIScriptContext *ctx = asGetActiveContext();
 	asIScriptEngine *engine = ctx->GetEngine();
 
-	// TODO: This should only be done once
-	// TODO: This assumes that CScriptArray was already registered
-	asITypeInfo *arrayType = engine->GetTypeInfoByDecl("vector<string>");
-
 	// Create the array object
-	CScriptArray *array = CScriptArray::Create(arrayType);
+	aatc::container::tempspec::vector<string_t> *array =
+		new ( asAllocMem( sizeof( *array ) ) ) aatc::container::tempspec::vector<string_t>();
 
 	// Find the existence of the delimiter in the input string
 	size_t pos = 0, prev = 0;
@@ -39,8 +30,8 @@ static aatc:: *StringSplit(const string_t& delim, const string_t& str)
 	while( (pos = str.find(delim, prev)) != string_t::npos )
 	{
 		// Add the part to the array
-		array->Resize(array->GetSize()+1);
-		((string_t*)array->At(count))->assign(&str[prev], pos-prev);
+		array->container.resize(array->container.size()+1);
+		array->container.at( count ).assign( &str[prev], pos - prev );
 
 		// Find the next part
 		count++;
@@ -48,8 +39,8 @@ static aatc:: *StringSplit(const string_t& delim, const string_t& str)
 	}
 
 	// Add the remaining part
-	array->Resize(array->GetSize()+1);
-	((string_t*)array->At(count))->assign(&str[prev]);
+	array->container.resize(array->container.size()+1);
+	array->container.at( count ).assign(&str[prev]);
 
 	return array;
 }
@@ -61,7 +52,7 @@ static void StringSplit_Generic(asIScriptGeneric *gen)
 	const string_t *delim = *(string_t **)gen->GetAddressOfArg(0);
 
 	// Return the array by handle
-	*(CScriptArray**)gen->GetAddressOfReturnLocation() = StringSplit(*delim, *str);
+	*(aatc::container::tempspec::vector<string_t>**)gen->GetAddressOfReturnLocation() = StringSplit(*delim, *str);
 }
 
 
@@ -79,21 +70,21 @@ static void StringSplit_Generic(asIScriptGeneric *gen)
 //
 // AngelScript signature:
 // string join(const vector<string> &in array, const string_t& in delim)
-static string_t StringJoin(const CScriptArray &array, const string_t& delim)
+static string_t StringJoin(const aatc::container::tempspec::vector<string_t> &array, const string_t& delim)
 {
 	// Create the new string
 	string_t str = "";
-	if( array.GetSize() )
+	if( array.container.size() )
 	{
 		int n;
-		for( n = 0; n < (int)array.GetSize() - 1; n++ )
+		for( n = 0; n < (int)array.container.size() - 1; n++ )
 		{
-			str += *(string_t *)array.At(n);
+			str += array.container.at(n);
 			str += delim;
 		}
 
 		// Add the last part
-		str += *(string_t *)array.At(n);
+		str += array.container.at(n);
 	}
 
 	return str;
@@ -102,7 +93,7 @@ static string_t StringJoin(const CScriptArray &array, const string_t& delim)
 static void StringJoin_Generic(asIScriptGeneric *gen)
 {
 	// Get the arguments
-	CScriptArray  *array = *(CScriptArray **)gen->GetAddressOfArg(0);
+	aatc::container::tempspec::vector<string_t>  *array = *(aatc::container::tempspec::vector<string_t> **)gen->GetAddressOfArg(0);
 	string_t *delim = *(string_t **)gen->GetAddressOfArg(1);
 
 	// Return the string
