@@ -49,15 +49,15 @@ CModuleLinkEntity::CModuleLinkEntity( const glm::vec3& origin, const CModuleBoun
     m_Bounds = bounds;
     m_nEntityType = nEntityType;
     m_nEntityId = nEntityId;
-    m_nEntityNumber = g_world.NumEntities();
+    m_nEntityNumber = g_world->NumEntities();
     m_bLinked = qtrue;
     ToLinkEntity( &handle );
-    g_world.LinkEntity( &handle );
+    g_world->LinkEntity( &handle );
 }
 
 CModuleLinkEntity::~CModuleLinkEntity() {
     if ( m_bLinked ) {
-        g_world.UnlinkEntity( &handle );
+        g_world->UnlinkEntity( &handle );
     }
 }
 

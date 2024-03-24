@@ -19,8 +19,9 @@ const moduleFunc_t funcDefs[NumFuncs] = {
     { "int ModuleOnLoadGame()", ModuleOnLoadGame, 0, qfalse }
 };
 
-CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sourceFiles, int32_t moduleVersionMajor,
-    int32_t moduleVersionUpdate, int32_t moduleVersionPatch )
+CModuleHandle::CModuleHandle( const char *pName, const std::vector<std::string>& sourceFiles, int32_t moduleVersionMajor,
+    int32_t moduleVersionUpdate, int32_t moduleVersionPatch, const std::vector<std::string>& includePaths
+)
     : m_szName( pName ), m_pScriptContext( NULL ), m_pScriptModule( NULL ), m_nVersionMajor{ moduleVersionMajor },
     m_nVersionUpdate{ moduleVersionUpdate }, m_nVersionPatch{ moduleVersionPatch }
 {
@@ -43,6 +44,7 @@ CModuleHandle::CModuleHandle( const char *pName, const UtlVector<UtlString>& sou
     g_pModuleLib->SetHandle( this );
     g_pModuleLib->AddDefaultProcs();
     m_pScriptModule = g_pModuleLib->GetScriptEngine()->GetModule( pName, asGM_CREATE_IF_NOT_EXISTS );
+    m_IncludePaths = eastl::move( includePaths );
     
     if ( !m_pScriptModule ) {
         N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: GetModule() failed on \"%s\"\n", pName );
@@ -82,7 +84,7 @@ CModuleHandle::~CModuleHandle() {
     ClearMemory();
 }
 
-void CModuleHandle::Build( const UtlVector<UtlString>& sourceFiles ) {
+void CModuleHandle::Build( const std::vector<std::string>& sourceFiles ) {
     int error;
 
     for ( const auto& it : sourceFiles ) {
@@ -210,7 +212,7 @@ bool CModuleHandle::InitCalls( void )
     return true;
 }
 
-void CModuleHandle::LoadSourceFile( const UtlString& filename )
+void CModuleHandle::LoadSourceFile( const std::string& filename )
 {
     union {
         void *v;

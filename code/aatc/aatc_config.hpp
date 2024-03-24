@@ -113,10 +113,10 @@ namespace aatc {
 #define aatc_ait_storage_map UtlHashMap
 #define aatc_ait_storage_pair eastl::pair
 #define aatc_acit_vector UtlVector
-#define aatc_acit_list UtlList
-#define aatc_acit_deque UtlDeque
+#define aatc_acit_list eastl::list
+#define aatc_acit_deque eastl::deque
 #define aatc_acit_set UtlSet
-#define aatc_acit_unordered_set UtlUnorderedSet
+#define aatc_acit_unordered_set eastl::unordered_set
 #define aatc_acit_map UtlMap
 #define aatc_acit_unordered_map UtlHashMap
 

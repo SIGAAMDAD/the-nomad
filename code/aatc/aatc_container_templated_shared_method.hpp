@@ -246,7 +246,7 @@ namespace aatc {
 										}
 									#endif
 								}
-								std::pair<typename T_container::T_iterator_native, bool> rr = t->container.insert(*(void**)value);
+								eastl::pair<typename T_container::T_iterator_native, bool> rr = t->container.insert(*(void**)value);
 								if (rr.second) {
 									t->StoreHandle((void**)&(*rr.first), value);
 								}
@@ -448,7 +448,7 @@ namespace aatc {
 									}
 									t->container.erase(it_range_begin, it_range_end);
 								} else {
-									std::vector<void*> objects_to_release;//ohhh my performance
+									eastl::vector<void*> objects_to_release;//ohhh my performance
 
 									objects_to_release.reserve(t->container.size());
 									for (auto it = it_range_begin; it != it_range_end; it++) {
@@ -540,9 +540,9 @@ namespace aatc {
 							functor.func = t->func_cmp;
 
 							if (ascending) {
-								std::sort(t->container.begin(), t->container.end(), functor);
+								eastl::sort(t->container.begin(), t->container.end(), functor);
 							} else {
-								std::sort(t->container.begin(), t->container.end(), common::detail::functor_notcmp_persistent_noconst<void*, detail::scriptfunctor_cmp>(functor));
+								eastl::sort(t->container.begin(), t->container.end(), common::detail::functor_notcmp_persistent_noconst<void*, detail::scriptfunctor_cmp>(functor));
 							}
 
 							t->els->contextcache_Return(functor.cc);
@@ -558,9 +558,9 @@ namespace aatc {
 							functor.funcptr = funcptr;
 
 							if (ascending) {
-								std::sort(t->container.begin(), t->container.end(), functor);
+								eastl::sort(t->container.begin(), t->container.end(), functor);
 							} else {
-								std::sort(t->container.begin(), t->container.end(), common::detail::functor_notcmp_persistent_noconst<void*, detail::scriptfunctor_cmp_customscript>(functor));
+								eastl::sort(t->container.begin(), t->container.end(), common::detail::functor_notcmp_persistent_noconst<void*, detail::scriptfunctor_cmp_customscript>(functor));
 							}
 
 							t->els->contextcache_Return(functor.cc);
@@ -605,14 +605,14 @@ namespace aatc {
 
 									functor.aux_object = aux_object;
 
-									std::sort(t->container.begin(), t->container.end(), functor);
+									eastl::sort(t->container.begin(), t->container.end(), functor);
 								} else {
 									container::shared::scriptcmpfunctor_globalfunction<container::shared::scriptcmpfunctor_internal::dummytype_handle> functor;
 									functor.context = context;
 									functor.func = scriptfunc;
 									functor.reverse_multiplier = reverse_multiplier;
 
-									std::sort(t->container.begin(), t->container.end(), functor);
+									eastl::sort(t->container.begin(), t->container.end(), functor);
 								}
 							} else {
 								void* aux_object = scriptfunc->GetAuxiliary();
@@ -624,14 +624,14 @@ namespace aatc {
 
 									functor.aux_object = aux_object;
 
-									std::sort(t->container.begin(), t->container.end(), functor);
+									eastl::sort(t->container.begin(), t->container.end(), functor);
 								} else {
 									container::shared::scriptcmpfunctor_globalfunction<container::shared::scriptcmpfunctor_internal::dummytype_object> functor;
 									functor.context = context;
 									functor.func = scriptfunc;
 									functor.reverse_multiplier = reverse_multiplier;
 
-									std::sort(t->container.begin(), t->container.end(), functor);
+									eastl::sort(t->container.begin(), t->container.end(), functor);
 								}
 							}
 
@@ -780,7 +780,7 @@ namespace aatc {
 
 							}
 
-							std::size_t oldsize = t->container.size();
+							size_t oldsize = t->container.size();
 							t->container.erase(ii_begin, ii_end);
 							return config::t::sizetype(oldsize - t->container.size());
 						}
@@ -827,13 +827,13 @@ namespace aatc {
 
 							}
 
-							std::size_t oldsize = t->container.size();
+							size_t oldsize = t->container.size();
 							t->container.erase(ii_begin, ii_end);
 							return config::t::sizetype(oldsize - t->container.size());
 						}
 
 						template<typename T_container> config::t::sizetype erase_value(T_container* t, void* value, bool all) {
-							std::size_t oldsize = t->container.size();
+							size_t oldsize = t->container.size();
 
 							if (t->handlemode) { value = *(void**)value; }
 
@@ -905,7 +905,7 @@ namespace aatc {
 								t->els->contextcache_Return(cc);
 							}
 
-							std::size_t sizediff = oldsize - t->container.size();
+							size_t sizediff = oldsize - t->container.size();
 							if (sizediff) { t->safety_iteratorversion_Increment(); }
 							return config::t::sizetype(sizediff);
 						}
@@ -930,7 +930,7 @@ namespace aatc {
 							eq_fi.f = &eq;
 							eq_fi.target = value;
 
-							auto it = std::find_if(t->container.begin(), t->container.end(), eq_fi);
+							auto it = eastl::find_if(t->container.begin(), t->container.end(), eq_fi);
 
 							typename T_container::Iterator result(t);
 							result.it = it;
@@ -944,7 +944,7 @@ namespace aatc {
 
 						template<typename T_container> config::t::sizetype count(T_container* t, void* value) {
 							if (t->handlemode_directcomp) {
-								return (config::t::sizetype)(std::count(t->container.begin(), t->container.end(), *(void**)value));
+								return (config::t::sizetype)(eastl::count(t->container.begin(), t->container.end(), *(void**)value));
 							} else {
 								#if aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
 								if (t->missing_functions & common::CONTAINER_OPERATION::COUNT) {

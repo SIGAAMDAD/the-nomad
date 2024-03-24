@@ -1,21 +1,26 @@
 #include "module_public.h"
 #include "scriptstdstring.h"
-#include "scriptarray.h"
 #include "module_alloc.h"
+
+#include "module_alloc.h"
+#include "aatc/aatc.hpp"
+#include "aatc/aatc_common.hpp"
+#include "aatc/aatc_container_map.hpp"
+#include "aatc/aatc_container_vector.hpp"
 
 // This function takes an input string and splits it into parts by looking
 // for a specified delimiter. Example:
 //
 // string str = "A|B||D";
-// array<string>@ array = str.split("|");
+// vector<string>@ array = str.split("|");
 //
 // The resulting array has the following elements:
 //
 // {"A", "B", "", "D"}
 //
 // AngelScript signature:
-// array<string>@ string::split(const string_t& in delim) const
-static CScriptArray *StringSplit(const string_t& delim, const string_t& str)
+// vector<string>@ string::split(const string_t& in delim) const
+static aatc:: *StringSplit(const string_t& delim, const string_t& str)
 {
 	// Obtain a pointer to the engine
 	asIScriptContext *ctx = asGetActiveContext();
@@ -23,7 +28,7 @@ static CScriptArray *StringSplit(const string_t& delim, const string_t& str)
 
 	// TODO: This should only be done once
 	// TODO: This assumes that CScriptArray was already registered
-	asITypeInfo *arrayType = engine->GetTypeInfoByDecl("array<string>");
+	asITypeInfo *arrayType = engine->GetTypeInfoByDecl("vector<string>");
 
 	// Create the array object
 	CScriptArray *array = CScriptArray::Create(arrayType);
@@ -65,7 +70,7 @@ static void StringSplit_Generic(asIScriptGeneric *gen)
 // delimiter and concatenates the array elements into one delimited string.
 // Example:
 //
-// array<string> array = {"A", "B", "", "D"};
+// vector<string> array = {"A", "B", "", "D"};
 // string str = join(array, "|");
 //
 // The resulting string is:
@@ -73,7 +78,7 @@ static void StringSplit_Generic(asIScriptGeneric *gen)
 // "A|B||D"
 //
 // AngelScript signature:
-// string join(const array<string> &in array, const string_t& in delim)
+// string join(const vector<string> &in array, const string_t& in delim)
 static string_t StringJoin(const CScriptArray &array, const string_t& delim)
 {
 	// Create the new string
@@ -112,13 +117,13 @@ void RegisterStdStringUtils(asIScriptEngine *engine)
 
 	if( strstr(asGetLibraryOptions(), "AS_MAX_PORTABILITY") )
 	{
-		r = engine->RegisterObjectMethod("string", "array<string>@ split(const string& in) const", asFUNCTION(StringSplit_Generic), asCALL_GENERIC); assert(r >= 0);
-		r = engine->RegisterGlobalFunction("string join(const array<string> &in, const string& in)", asFUNCTION(StringJoin_Generic), asCALL_GENERIC); assert(r >= 0);
+		r = engine->RegisterObjectMethod("string", "vector<string>@ split(const string& in) const", asFUNCTION(StringSplit_Generic), asCALL_GENERIC); assert(r >= 0);
+		r = engine->RegisterGlobalFunction("string join(const vector<string> &in, const string& in)", asFUNCTION(StringJoin_Generic), asCALL_GENERIC); assert(r >= 0);
 	}
 	else
 	{
-		r = engine->RegisterObjectMethod("string", "array<string>@ split(const string in) const", asFUNCTION(StringSplit), asCALL_CDECL_OBJLAST); assert(r >= 0);
-		r = engine->RegisterGlobalFunction("string join(const array<string> &in, const string& in)", asFUNCTION(StringJoin), asCALL_CDECL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("string", "vector<string>@ split(const string in) const", asFUNCTION(StringSplit), asCALL_CDECL_OBJLAST); assert(r >= 0);
+		r = engine->RegisterGlobalFunction("string join(const vector<string> &in, const string& in)", asFUNCTION(StringJoin), asCALL_CDECL); assert(r >= 0);
 	}
 }
 

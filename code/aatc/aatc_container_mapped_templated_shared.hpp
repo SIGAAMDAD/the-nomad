@@ -76,7 +76,7 @@ namespace aatc {
 							typename T_container,
 							typename T_param1,
 							typename T_param2,
-							std::size_t default_bucket_count = config::detail::DEFAULT_CONTAINER_UNORDERED_MAP_DEFAULTBUCKETCOUNT
+							size_t default_bucket_count = config::detail::DEFAULT_CONTAINER_UNORDERED_MAP_DEFAULTBUCKETCOUNT
 						> class Hashed : public T_container {
 						public:
 							Hashed(asIScriptEngine* _engine, container::shared::containerfunctor_map::Settings* settings) :
@@ -420,7 +420,7 @@ namespace aatc {
 									}
 									};
 
-									container.insert(std::pair<common::primunion, common::primunion>(pu_key, pu_value));
+									container.insert(eastl::pair<common::primunion, common::primunion>(pu_key, pu_value));
 								}
 							}
 

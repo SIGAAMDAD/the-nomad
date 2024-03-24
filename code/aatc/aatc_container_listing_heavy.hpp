@@ -42,7 +42,7 @@ samivuorela@gmail.com
 #include "aatc_container_map.hpp"
 #include "aatc_container_unordered_map.hpp"
 
-
+#include <EASTL/tuple.h>
 
 BEGIN_AS_NAMESPACE
 namespace aatc {
@@ -52,7 +52,7 @@ namespace aatc {
 
 
 
-				typedef std::tuple<
+				typedef eastl::tuple<
 					container::templated::vector,
 					container::templated::list,
 					container::templated::deque,
@@ -61,7 +61,7 @@ namespace aatc {
 					container::mapped::templated::map,
 					container::mapped::templated::unordered_map
 				> tuple_templated_container_types;
-				static const int tuple_templated_container_types_size = std::tuple_size<tuple_templated_container_types>::value;
+				static const int tuple_templated_container_types_size = eastl::tuple_size<tuple_templated_container_types>::value;
 
 
 

@@ -43,8 +43,8 @@ namespace aatc {
 
 
 		std_Spinlock::std_Spinlock() : state(1) {}
-		void std_Spinlock::lock(){while (state.exchange(0, eastl::memory_order_acquire) == 0);}
-		void std_Spinlock::unlock(){state.store(1, eastl::memory_order_release);}
+		void std_Spinlock::lock(){while (state.exchange(0, MemoryOrder_Acquire) == 0);}
+		void std_Spinlock::unlock(){state.store(1, MemoryOrder_Release);}
 
 
 

@@ -89,13 +89,13 @@ namespace aatc {
 			public:
 				container::shared::container_basicbase* container;
 				int containertype_id;
-				std::vector<void*> objects;
+				UtlVector<void*> objects;
 			};
 			class Container_map{
 			public:
 				container::shared::container_basicbase* container;
 				int containertype_id;
-				std::vector<common::primunion_pair> objects;
+				UtlVector<common::primunion_pair> objects;
 			};
 
 			struct Containertype_metadata {
@@ -103,8 +103,8 @@ namespace aatc {
 				void (*store_handle_in_container_map)(container::shared::container_basicbase* base, common::primunion_pair& item);
 			};
 
-			std::list<Container_1tp> containers_1tp;
-			std::list<Container_map> containers_map;
+			eastl::list<Container_1tp> containers_1tp;
+			eastl::list<Container_map> containers_map;
 
 			Containertype_metadata containertype_metadatas[container::listing::CONTAINER::_COUNT];
 		};

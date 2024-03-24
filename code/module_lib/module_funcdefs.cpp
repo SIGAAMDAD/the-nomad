@@ -1,7 +1,6 @@
 #include "module_public.h"
 #include <glm/gtc/type_ptr.hpp>
 #include <limits.h>
-#include "module_alloc.h"
 #include "aswrappedcall.h"
 #include "imgui_stdlib.h"
 #include "../ui/ui_lib.h"
@@ -16,6 +15,12 @@
 #include "../system/sys_timer.h"
 #include "scriptjson.h"
 #include "module_engine/module_gpuconfig.h"
+
+#include "module_alloc.h"
+#include "aatc/aatc.hpp"
+#include "aatc/aatc_common.hpp"
+#include "aatc/aatc_container_map.hpp"
+#include "aatc/aatc_container_vector.hpp"
 
 //
 // c++ compatible wrappers around angelscript engine function calls
@@ -885,11 +890,11 @@ DEFINE_CALLBACK( RegisterSpriteSheet ) {
 
 DEFINE_CALLBACK( CheckWallHit ) {
     const vec3& origin = *(const vec3 *)pGeneric->GetArgObject( 0 );
-    *(bool *)pGeneric->GetAddressOfReturnLocation() = g_world.CheckWallHit( glm::value_ptr( origin ), dirtype_t( pGeneric->GetArgDWord( 1 ) ) );
+    *(bool *)pGeneric->GetAddressOfReturnLocation() = g_world->CheckWallHit( glm::value_ptr( origin ), dirtype_t( pGeneric->GetArgDWord( 1 ) ) );
 }
 
 DEFINE_CALLBACK( CastRay ) {
-    g_world.CastRay( (ray_t *)pGeneric->GetArgObject( 0 ) );
+    g_world->CastRay( (ray_t *)pGeneric->GetArgObject( 0 ) );
 }
 
 DEFINE_CALLBACK( LoadMap ) {

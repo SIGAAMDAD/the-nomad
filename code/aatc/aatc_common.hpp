@@ -31,6 +31,8 @@
 #ifndef _includedh_aatc_common
 #define _includedh_aatc_common
 
+#include "../engine/n_shared.h"
+#include "../engine/n_threads.h"
 #include "aatc_config.hpp"
 
 

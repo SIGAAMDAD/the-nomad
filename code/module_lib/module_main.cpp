@@ -128,7 +128,7 @@ void CModuleLib::LoadModule( const char *pModule )
 
     CModuleHandle *pHandle;
     nlohmann::json parse;
-    UtlVector<UtlString> submodules;
+    std::vector<std::string> includePaths;
     CModuleInfo *m;
     union {
         void *v;
@@ -192,16 +192,33 @@ void CModuleLib::LoadModule( const char *pModule )
         return;
     }
 
-    submodules.reserve( parse[ "submodules" ].size() );
-    for ( const auto& it : parse[ "submodules" ] ) {
-        submodules.emplace_back( eastl::move( it.get<std::string>().c_str() ) );
+    if ( parse.contains( "includePaths" ) ) {
+        includePaths = eastl::move( parse.at( "includePaths" ) );
+
+        //
+        // check if it already has the default path
+        //
+        bool found = false;
+        const char *path = va( "%s/", pModule );
+        for ( const auto& it : includePaths ) {
+            if ( !N_strcmp( it.c_str(), path ) ) {
+                found = true;
+                break;
+            }
+        }
+        if ( !found ) {
+            includePaths.emplace_back( path );
+        }
+    } else {
+        includePaths.emplace_back( va( "%s/", pModule ) );
     }
 
     const int32_t versionMajor = parse[ "version" ][ "version_major" ];
     const int32_t versionUpdate = parse[ "version" ][ "version_update" ];
     const int32_t versionPatch = parse[ "version" ][ "version_patch" ];
 
-    pHandle = new ( Hunk_Alloc( sizeof( *pHandle ), h_low ) ) CModuleHandle( pModule, submodules, versionMajor, versionUpdate, versionPatch );
+    pHandle = new ( Hunk_Alloc( sizeof( *pHandle ), h_low ) ) CModuleHandle( pModule, parse.at( "submodules" ), versionMajor, versionUpdate, versionPatch,
+        includePaths );
     m = new ( Hunk_Alloc( sizeof( *m ), h_low ) ) CModuleInfo( parse, pHandle );
     m_LoadList.emplace_back( m );
 }
@@ -316,23 +333,28 @@ int Module_IncludeCallback_f( const char *pInclude, const char *pFrom, CScriptBu
     } f;
     uint64_t length;
     const char *path;
+    const std::vector<std::string>& includePaths = g_pModuleLib->GetCurrentHandle()->GetIncludePaths();
 
-    path = va( "%s%s", g_pModuleLib->GetCurrentHandle()->GetModulePath(), pInclude );
-    length = FS_LoadFile( path, &f.v );
-    if ( !length || !f.v ) {
-        g_pModuleLib->GetScriptEngine()->WriteMessage(
-            g_pModuleLib->GetCurrentHandle()->GetModulePath(),
-            0, 0, asMSGTYPE_WARNING, va( "failed to load include preprocessor file \"%s\"", path ) );
-        return -1;
+    for ( const auto& it : includePaths ) {
+        path = va( "%s%s", it.c_str(), pInclude );
+        length = FS_LoadFile( path, &f.v );
+        if ( !length || !f.v ) {
+            continue;
+        }
+
+        pBuilder->AddSectionFromMemory( COM_SkipPath( const_cast<char *>( pInclude ) ), f.b, length );
+        FS_FreeFile( f.v );
+
+        Con_Printf( "Added include file '%s' to '%s'\n", path, pFrom );
+        return 1;
     }
-    pBuilder->AddSectionFromMemory( COM_SkipPath( const_cast<char *>( pInclude ) ), f.b, length );
-    FS_FreeFile( f.v );
-
-    Con_Printf( "Added include file '%s' to '%s'\n", path, pFrom );
 
     (void)unused; // shut up compiler
 
-    return 1;
+    g_pModuleLib->GetScriptEngine()->WriteMessage(
+        g_pModuleLib->GetCurrentHandle()->GetModulePath(),
+        0, 0, asMSGTYPE_WARNING, va( "failed to load include preprocessor file \"%s\"", pInclude ) );
+    return -1;
 }
 
 bool CModuleLib::AddDefaultProcs( void ) const {
@@ -342,8 +364,6 @@ bool CModuleLib::AddDefaultProcs( void ) const {
 
     RegisterScriptHandle( m_pEngine );
     RegisterStdString( m_pEngine );
-    RegisterScriptArray( m_pEngine, true );
-    RegisterScriptDictionary( m_pEngine );
     RegisterScriptMath( m_pEngine );
     RegisterScriptJson( m_pEngine );
 

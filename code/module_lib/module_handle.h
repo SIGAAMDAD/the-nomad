@@ -30,11 +30,14 @@ enum : uint64_t
     NumFuncs
 };
 
+using ModuleIncludePath = eastl::string;
+
 class CModuleHandle
 {
 public:
-    CModuleHandle( const char *pName, const UtlVector<UtlString>& sourceFiles,
-		int32_t moduleVersionMajor, int32_t moduleVersionUpdate, int32_t moduleVersionPatch );
+    CModuleHandle( const char *pName, const std::vector<std::string>& sourceFiles,
+		int32_t moduleVersionMajor, int32_t moduleVersionUpdate, int32_t moduleVersionPatch,
+		const std::vector<std::string>& includePaths );
     ~CModuleHandle();
 
     void SaveToCache( void ) const;
@@ -69,12 +72,17 @@ public:
 	const int32_t *VersionPatch( void ) const {
 		return &m_nVersionPatch;
 	}
+
+	const std::vector<std::string>& GetIncludePaths( void ) const {
+		return m_IncludePaths;
+	}
 private:
-	void Build( const UtlVector<UtlString>& sourceFiles );
+	void Build( const std::vector<std::string>& sourceFiles );
     bool InitCalls( void );
-    void LoadSourceFile( const UtlString& filename );
+    void LoadSourceFile( const std::string& filename );
 
     asIScriptFunction *m_pFuncTable[NumFuncs];
+	std::vector<std::string> m_IncludePaths;
 
     string_t m_szName;
     asIScriptContext *m_pScriptContext;

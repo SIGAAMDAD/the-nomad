@@ -177,7 +177,7 @@ namespace aatc {
 								container_template->container.clear();
 
 								if (container_template->handlemode) {
-									const std::size_t size = val_root->m_children.size();
+									const size_t size = val_root->m_children.size();
 
 									aatc_serializer_specific_storage_global->containers_1tp.push_back(serializer_specific_storage::Container_1tp());
 									serializer_specific_storage::Container_1tp* handle_storage = &(aatc_serializer_specific_storage_global->containers_1tp.back());
@@ -186,12 +186,12 @@ namespace aatc {
 									handle_storage->containertype_id = T_container::containertype_id;
 									handle_storage->objects.assign(size, nullptr);
 
-									for (std::size_t i = 0; i < size; i++) {
+									for (size_t i = 0; i < size; i++) {
 										val_root->m_children[i]->Restore(&(handle_storage->objects.data()[i]), container_template->astypeid_content);
 									}
 								} else {
-									const std::size_t size = val_root->m_children.size();
-									for (std::size_t i = 0; i < size; i++) {
+									const size_t size = val_root->m_children.size();
+									for (size_t i = 0; i < size; i++) {
 										void* serialized_object = nullptr;
 										serialized_object = container_base->engine->CreateScriptObject(container_template->objtype_content);
 										val_root->m_children[i]->Restore(serialized_object, container_template->astypeid_content);
@@ -217,7 +217,7 @@ namespace aatc {
 							container::shared::container_basicbase* container_base = (container::shared::container_basicbase*)ptr;
 							T_container* container = dynamic_cast<T_container*>(container_base);
 
-							const std::size_t size = val_root->m_children.size() / 2;
+							const size_t size = val_root->m_children.size() / 2;
 
 							serializer_specific_storage* storage = aatc_serializer_specific_storage_global;
 
@@ -228,7 +228,7 @@ namespace aatc {
 							storage_container.containertype_id = T_container::containertype_id;
 							storage_container.objects.assign(size, common::primunion_pair());
 
-							for (std::size_t i = 0; i < size; i++) {
+							for (size_t i = 0; i < size; i++) {
 								CSerializedValue* val_key = val_root->m_children[i * 2];
 								CSerializedValue* val_value = val_root->m_children[i * 2 + 1];
 
@@ -367,16 +367,16 @@ namespace aatc {
 
 
 				template<int i> struct actual_serializer_AddUserType {
-					typedef typename std::tuple_element<i, container::listing::heavy::tuple_templated_container_types>::type T_container;
+					typedef typename eastl::tuple_element<i, container::listing::heavy::tuple_templated_container_types>::type T_container;
 
 					void operator()(asIScriptEngine* engine, CSerializer* serializer) {
-						serializer->AddUserType(new usertype::Container<T_container>(engine), T_container::container_tags::scriptname_container);
+						serializer->AddUserType( new usertype::Container<T_container>(engine), T_container::container_tags::scriptname_container );
 					}
 				};
 
 				template<int i> class init_serializer_storage_container_metadata {
 				public:
-					typedef typename std::tuple_element<i, container::listing::heavy::tuple_templated_container_types>::type T_container;
+					typedef typename eastl::tuple_element<i, container::listing::heavy::tuple_templated_container_types>::type T_container;
 					typedef typename T_container::container_tags container_tags;
 					typedef typename container_tags::serializer_insert_value_func container_tags__serializer_insert_value_func;
 					typedef typename container_tags::is_map container_tags__is_map;

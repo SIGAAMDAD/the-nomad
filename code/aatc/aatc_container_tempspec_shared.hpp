@@ -101,8 +101,8 @@ namespace aatc {
 					static T_content defaultvalue;
 
 					//used for error messages to retrieve names without sacrificing runtime performance while errors dont happen
-					static std::string staticname_container;
-					static std::string staticname_content;
+					static string_t staticname_container;
+					static string_t staticname_content;
 
 					Containerbase():
 						container_basicbase(nullptr)
@@ -270,8 +270,8 @@ namespace aatc {
 
 
 				template<typename T_container, typename T_content, int _containertype_id, typename T_container_tags> T_content Containerbase<T_container, T_content, _containertype_id, T_container_tags>::defaultvalue = T_content();
-				template<typename T_container, typename T_content, int _containertype_id, typename T_container_tags> std::string Containerbase<T_container, T_content, _containertype_id, T_container_tags>::staticname_container = "test_container";
-				template<typename T_container, typename T_content, int _containertype_id, typename T_container_tags> std::string Containerbase<T_container, T_content, _containertype_id, T_container_tags>::staticname_content = "test_content";
+				template<typename T_container, typename T_content, int _containertype_id, typename T_container_tags> string_t Containerbase<T_container, T_content, _containertype_id, T_container_tags>::staticname_container = "test_container";
+				template<typename T_container, typename T_content, int _containertype_id, typename T_container_tags> string_t Containerbase<T_container, T_content, _containertype_id, T_container_tags>::staticname_content = "test_content";
 
 
 

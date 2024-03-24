@@ -64,6 +64,7 @@ template<typename T>
 class CModuleAllocatorTemplated
 {
 public:
+
     EASTL_ALLOCATOR_EXPLICIT CModuleAllocatorTemplated( const char* pName = EASTL_NAME_VAL( EASTL_ALLOCATOR_DEFAULT_NAME ) ) { }
 	CModuleAllocatorTemplated( const CModuleAllocatorTemplated& x ) { }
 	CModuleAllocatorTemplated( const CModuleAllocatorTemplated& x, const char* pName ) { }
@@ -184,8 +185,6 @@ using UtlSet = eastl::set<Key, Compare, CModuleAllocator>;
 #include "nlohmann/json.hpp"
 #include "module_handle.h"
 #include "module_buffer.hpp"
-#include "scriptarray.h"
-#include "scriptdictionary.h"
 #include "scriptbuilder.h"
 #include "scriptstdstring.h"
 #include "scriptmath.h"

@@ -262,9 +262,9 @@ namespace aatc {
 							} else {
 								t->safety_iteratorversion_Increment();
 
-								config::t::sizetype delcount = (config::t::sizetype)std::distance(it_range_begin, it_range_end);
+								config::t::sizetype delcount = (config::t::sizetype)eastl::distance(it_range_begin, it_range_end);
 
-								std::vector<std::pair<common::primunion, common::primunion>> old_items;
+								eastl::vector<eastl::pair<common::primunion, common::primunion>> old_items;
 
 								int nonprimitives = (t->datahandlingid_key != common::DATAHANDLINGTYPE::PRIMITIVE) + (t->datahandlingid_value != common::DATAHANDLINGTYPE::PRIMITIVE);
 
@@ -273,7 +273,7 @@ namespace aatc {
 
 									if (nonprimitives == 2) {
 										for (auto it = it_range_begin; it != it_range_end; it++) {
-											std::pair<common::primunion, common::primunion> pp;
+											eastl::pair<common::primunion, common::primunion> pp;
 											pp.first.ptr = (*it).first.ptr;
 											pp.second.ptr = (*it).second.ptr;
 											old_items.push_back(pp);
@@ -281,13 +281,13 @@ namespace aatc {
 									} else {
 										if (t->datahandlingid_key != common::DATAHANDLINGTYPE::PRIMITIVE) {
 											for (auto it = it_range_begin; it != it_range_end; it++) {
-												std::pair<common::primunion, common::primunion> pp;
+												eastl::pair<common::primunion, common::primunion> pp;
 												pp.first.ptr = (*it).first.ptr;
 												old_items.push_back(pp);
 											}
 										} else {
 											for (auto it = it_range_begin; it != it_range_end; it++) {
-												std::pair<common::primunion, common::primunion> pp;
+												eastl::pair<common::primunion, common::primunion> pp;
 												pp.second.ptr = (*it).second.ptr;
 												old_items.push_back(pp);
 											}
@@ -335,7 +335,7 @@ namespace aatc {
 									t->store_Scriptany_to_Primunion(key, insertpair.first, t->datahandlingid_key, t->primitiveid_key, t->typeinfo_key);
 									t->DefaultConstructPrimunion(insertpair.second, t->datahandlingid_value, t->primitiveid_value, t->typeinfo_value);
 
-									std::pair<typename T_container::T_iterator_native,bool> insert_result = t->container.insert(insertpair);
+									eastl::pair<typename T_container::T_iterator_native,bool> insert_result = t->container.insert(insertpair);
 
 									return T_container::Scriptany_ref_from_Primunion(insert_result.first->second, t->datahandlingid_value, t->primitiveid_value);
 								}

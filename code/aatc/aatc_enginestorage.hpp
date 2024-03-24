@@ -95,7 +95,7 @@ namespace aatc {
 				class serializer_helper{
 				public:
 					serializer::funcptr_t_container_basicbase_is_thistype funcptr_is_thistype;
-					std::string container_content_name;
+					string_t container_content_name;
 					serializer::funcptr_t_container_basicbase_process funcptr_process_store;
 					serializer::funcptr_t_container_basicbase_process funcptr_process_restore;
 					serializer::funcptr_t_container_basicbase_process funcptr_process_cleanup;
@@ -106,14 +106,14 @@ namespace aatc {
 
 			containertype_specific_storage containertype_specific_storages[container::listing::CONTAINER::_COUNT];
 
-			std::vector<asIScriptContext*> context_cache;
+			UtlVector<asIScriptContext*> context_cache;
 			config::ait_fastlock context_cache_lock;
 
 			#if aatc_CONFIG_USE_ASADDON_SERIALIZER
-				std::vector<serializer_helper> serializer_tempspec_helpers[container::listing::CONTAINER::_COUNT];
+				UtlVector<serializer_helper> serializer_tempspec_helpers[container::listing::CONTAINER::_COUNT];
 			#endif
 
-			std::set<std::string> registered_funcdefs;
+			UtlSet<eastl::string> registered_funcdefs;
 
 
 			engine_level_storage(asIScriptEngine* engine);
@@ -126,7 +126,7 @@ namespace aatc {
 
 			void Clean();
 
-			void RegisterFuncdefIfNeeded(std::string const& def);
+			void RegisterFuncdefIfNeeded(string_t const& def);
 		};
 
 		//convenience, uses engine level storage, aatc must be initialized
