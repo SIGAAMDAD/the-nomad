@@ -16,12 +16,6 @@
 #include "scriptjson.h"
 #include "module_engine/module_gpuconfig.h"
 
-#include "module_alloc.h"
-#include "aatc/aatc.hpp"
-#include "aatc/aatc_common.hpp"
-#include "aatc/aatc_container_map.hpp"
-#include "aatc/aatc_container_vector.hpp"
-
 //
 // c++ compatible wrappers around angelscript engine function calls
 //
@@ -297,10 +291,67 @@ DEFINE_CALLBACK( SaveUInt64 ) {
     g_pArchiveHandler->SaveULong( name->c_str(), arg );
 }
 
-DEFINE_CALLBACK( SaveArray ) {
+DEFINE_CALLBACK( SaveInt8Array ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const CScriptArray *arg = (const CScriptArray *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->SaveArray( name->c_str(), arg );
+    const aatc::container::tempspec::vector<int8_t> *arg =
+        (const aatc::container::tempspec::vector<int8_t> *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->SaveInt8Array( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( SaveInt16Array ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const aatc::container::tempspec::vector<int16_t> *arg =
+        (const aatc::container::tempspec::vector<int16_t> *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->SaveInt16Array( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( SaveInt32Array ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const aatc::container::tempspec::vector<int32_t> *arg =
+        (const aatc::container::tempspec::vector<int32_t> *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->SaveInt32Array( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( SaveInt64Array ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const aatc::container::tempspec::vector<int64_t> *arg =
+        (const aatc::container::tempspec::vector<int64_t> *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->SaveInt64Array( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( SaveUInt8Array ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const aatc::container::tempspec::vector<uint8_t> *arg =
+        (const aatc::container::tempspec::vector<uint8_t> *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->SaveUInt8Array( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( SaveUInt16Array ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const aatc::container::tempspec::vector<uint16_t> *arg =
+        (const aatc::container::tempspec::vector<uint16_t> *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->SaveUInt16Array( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( SaveUInt32Array ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const aatc::container::tempspec::vector<uint32_t> *arg =
+        (const aatc::container::tempspec::vector<uint32_t> *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->SaveUInt32Array( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( SaveUInt64Array ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const aatc::container::tempspec::vector<uint64_t> *arg =
+        (const aatc::container::tempspec::vector<uint64_t> *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->SaveUInt64Array( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( SaveFloatArray ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const aatc::container::tempspec::vector<float> *arg =
+        (const aatc::container::tempspec::vector<float> *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->SaveFloatArray( name->c_str(), arg );
 }
 
 DEFINE_CALLBACK( SaveFloat ) {
@@ -389,10 +440,67 @@ DEFINE_CALLBACK( LoadString ) {
     g_pArchiveHandler->LoadString( name->c_str(), arg, (int32_t)pGeneric->GetArgDWord( 2 ) );
 }
 
-DEFINE_CALLBACK( LoadArray ) {
+DEFINE_CALLBACK( LoadInt8Array ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    CScriptArray *arg = (CScriptArray *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->LoadArray( name->c_str(), arg, (int32_t)pGeneric->GetArgDWord( 2 ) );
+    aatc::container::tempspec::vector<int8_t> *arg =
+        (aatc::container::tempspec::vector<int8_t> *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->LoadInt8Array( name->c_str(), arg, (int32_t)pGeneric->GetArgDWord( 2 ) );
+}
+
+DEFINE_CALLBACK( LoadInt16Array ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    aatc::container::tempspec::vector<int16_t> *arg =
+        (aatc::container::tempspec::vector<int16_t> *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->LoadInt16Array( name->c_str(), arg, (int32_t)pGeneric->GetArgDWord( 2 ) );
+}
+
+DEFINE_CALLBACK( LoadInt32Array ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    aatc::container::tempspec::vector<int32_t> *arg =
+        (aatc::container::tempspec::vector<int32_t> *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->LoadInt32Array( name->c_str(), arg, (int32_t)pGeneric->GetArgDWord( 2 ) );
+}
+
+DEFINE_CALLBACK( LoadInt64Array ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    aatc::container::tempspec::vector<int64_t> *arg =
+        (aatc::container::tempspec::vector<int64_t> *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->LoadInt64Array( name->c_str(), arg, (int32_t)pGeneric->GetArgDWord( 2 ) );
+}
+
+DEFINE_CALLBACK( LoadUInt8Array ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    aatc::container::tempspec::vector<uint8_t> *arg =
+        (aatc::container::tempspec::vector<uint8_t> *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->LoadUInt8Array( name->c_str(), arg, (int32_t)pGeneric->GetArgDWord( 2 ) );
+}
+
+DEFINE_CALLBACK( LoadUInt16Array ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    aatc::container::tempspec::vector<uint16_t> *arg =
+        (aatc::container::tempspec::vector<uint16_t> *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->LoadUInt16Array( name->c_str(), arg, (int32_t)pGeneric->GetArgDWord( 2 ) );
+}
+
+DEFINE_CALLBACK( LoadUInt32Array ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    aatc::container::tempspec::vector<uint32_t> *arg =
+        (aatc::container::tempspec::vector<uint32_t> *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->LoadUInt32Array( name->c_str(), arg, (int32_t)pGeneric->GetArgDWord( 2 ) );
+}
+
+DEFINE_CALLBACK( LoadUInt64Array ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    aatc::container::tempspec::vector<uint64_t> *arg =
+        (aatc::container::tempspec::vector<uint64_t> *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->LoadUInt64Array( name->c_str(), arg, (int32_t)pGeneric->GetArgDWord( 2 ) );
+}
+
+DEFINE_CALLBACK( LoadFloatArray ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    aatc::container::tempspec::vector<float> *arg =
+        (aatc::container::tempspec::vector<float> *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->LoadFloatArray( name->c_str(), arg, (int32_t)pGeneric->GetArgDWord( 2 ) );
 }
 
 DEFINE_CALLBACK( LoadVec2 ) {
@@ -840,6 +948,10 @@ DEFINE_CALLBACK( StrCmp ) {
     pGeneric->SetReturnDWord( (asDWORD)N_strcmp( arg0->c_str(), arg1->c_str() ) );
 }
 
+DEFINE_CALLBACK( LoadWorld ) {
+    re.LoadWorld( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() );
+}
+
 DEFINE_CALLBACK( ClearScene ) {
     re.ClearScene();
 }
@@ -865,8 +977,9 @@ DEFINE_CALLBACK( AddEntityToScene ) {
 }
 
 DEFINE_CALLBACK( AddPolyToScene ) {
-    CScriptArray *pPolyList = (CScriptArray *)pGeneric->GetArgObject( 1 );
-    re.AddPolyToScene( (nhandle_t)pGeneric->GetArgDWord( 0 ), (const polyVert_t *)pPolyList->GetBuffer(), pPolyList->GetSize() );
+    aatc::container::tempspec::vector<CModulePolyVert> *pPolyList =
+        (aatc::container::tempspec::vector<CModulePolyVert> *)pGeneric->GetArgObject( 1 );
+    re.AddPolyToScene( (nhandle_t)pGeneric->GetArgDWord( 0 ), (const polyVert_t *)pPolyList->container.data(), pPolyList->size() );
 }
 
 DEFINE_CALLBACK( AddSpriteToScene ) {
@@ -944,6 +1057,11 @@ DEFINE_CALLBACK( IsAnyKeyDown ) {
 
 DEFINE_CALLBACK( KeyIsDown ) {
     pGeneric->SetReturnDWord( (asDWORD)Key_IsDown( pGeneric->GetArgDWord( 0 ) ) );
+}
+
+DEFINE_CALLBACK( SetCameraPos ) {
+    const vec2& v = *(const vec2 *)pGeneric->GetArgObject( 0 );
+    G_SetCameraData( glm::value_ptr( v ), 1.6f, 0.0f );
 }
 
 DEFINE_CALLBACK( OpenFileRead ) {
@@ -1140,7 +1258,7 @@ DEFINE_CALLBACK( LoadFileString ) {
 
 DEFINE_CALLBACK( LoadFile ) {
     const string_t *fileName = (const string_t *)pGeneric->GetArgObject( 0 );
-    CScriptArray *buffer = (CScriptArray *)pGeneric->GetArgObject( 1 );
+    aatc::container::tempspec::vector<char> *buffer = (aatc::container::tempspec::vector<char> *)pGeneric->GetArgObject( 1 );
 
     void *v;
     uint64_t length = FS_LoadFile( fileName->c_str(), &v );
@@ -1150,15 +1268,15 @@ DEFINE_CALLBACK( LoadFile ) {
         return;
     }
 
-    buffer->Resize( length );
-    memcpy( buffer->GetBuffer(), v, length );
+    buffer->container.resize( length );
+    memcpy( buffer->container.data(), v, length );
     *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = length;
 
     FS_FreeFile( v );
 }
 
 DEFINE_CALLBACK( GetModuleDependencies ) {
-    CScriptArray *depList = (CScriptArray *)pGeneric->GetArgObject( 0 );
+    aatc::container::tempspec::vector<string_t> *depList = (aatc::container::tempspec::vector<string_t> *)pGeneric->GetArgObject( 0 );
     const string_t *modName = (const string_t *)pGeneric->GetArgObject( 1 );
     const CModuleInfo *info = g_pModuleLib->GetModule( modName->c_str() );
 
@@ -1167,19 +1285,19 @@ DEFINE_CALLBACK( GetModuleDependencies ) {
         return;
     }
 
-    depList->Resize( info->m_Dependencies.size() );
+    depList->container.resize( info->m_Dependencies.size() );
     for ( uint64_t i = 0; info->m_Dependencies.size(); i++ ) {
-        *(string_t *)depList->At( i ) = info->m_Dependencies[i];
+        depList->container.at( i ) = info->m_Dependencies[i].c_str();
     }
 }
 
 DEFINE_CALLBACK( GetModuleList ) {
-    CScriptArray *modList = (CScriptArray *)pGeneric->GetArgObject( 0 );
+    aatc::container::tempspec::vector<string_t> *modList = (aatc::container::tempspec::vector<string_t> *)pGeneric->GetArgObject( 0 );
     const UtlVector<CModuleInfo *>& loadList = g_pModuleLib->GetLoadList();
 
-    modList->Resize( loadList.size() );
+    modList->container.resize( loadList.size() );
     for ( uint64_t i = 0; i < loadList.size(); i++ ) {
-        *(string_t *)modList->At( i ) = loadList[i]->m_szName;
+        modList->container.at( i ) = loadList[i]->m_szName;
     }
 }
 
@@ -1347,6 +1465,10 @@ static bool ImGui_InputText( const string_t *label, string_t *str, ImGuiInputTex
     return ImGui::InputText( label->c_str(), str, flags );
 }
 
+static bool ImGui_InputInt( const string_t *label, int32_t *v, ImGuiInputTextFlags flags ) {
+    return ImGui::InputInt( label->c_str(), v, 1, 100, flags );
+}
+
 static void ImGui_Text( const string_t *text ) {
     ImGui::TextUnformatted( text->c_str() );
 }
@@ -1369,12 +1491,16 @@ static void ImGui_TextColored( const vec4 *color, const string_t *text ) {
 
 static void ImGui_SliderInt( asIScriptGeneric *pGeneric ) {
     const string_t *label = (const string_t *)pGeneric->GetArgObject( 0 );
-    int32_t *v = (int32_t *)pGeneric->GetArgAddress( 1 );
+    int32_t v = (int32_t)pGeneric->GetArgDWord( 1 );
     int32_t min = (int32_t)pGeneric->GetArgDWord( 2 );
     int32_t max = (int32_t)pGeneric->GetArgDWord( 3 );
     ImGuiSliderFlags flags = pGeneric->GetArgDWord( 4 );
 
-    *(bool *)pGeneric->GetAddressOfReturnLocation() = ImGui::SliderInt( label->c_str(), v, min, max, "%i", flags );
+    if ( ImGui::SliderInt( label->c_str(), &v, min, max, "%i", flags ) ) {
+        *(int32_t *)pGeneric->GetAddressOfReturnLocation() = v;
+    } else {
+        *(int32_t *)pGeneric->GetAddressOfReturnLocation() = pGeneric->GetArgDWord( 1 );
+    }
 }
 
 static void ImGui_SliderFloat( asIScriptGeneric *pGeneric ) {
@@ -1938,6 +2064,7 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::BeginTable( const string& in, int, ImGuiTableFlags = ImGuiTableFlags::None )", ImGui_BeginTable, ( const string_t *, int, ImGuiTableFlags ), bool );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::EndTable()", ImGui_EndTable, ( void ), void );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::InputText( const string& in, string& out, ImGuiInputTextFlags = ImGuiInputTextFlags::None )", ImGui_InputText, ( const string_t *, string_t *, ImGuiInputTextFlags ), bool );
+        REGISTER_GLOBAL_FUNCTION( "bool ImGui::InputInt( const string& in, int& out, ImGuiInputTextFlags = ImGuiInputTextFlags::None )", ImGui_InputInt, ( const string_t *, int32_t *, ImGuiInputTextFlags ), bool );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::TableNextColumn()", ImGui_TableNextColumn, ( void ), void );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::TableNextRow()", ImGui_TableNextRow, ( void ), void );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::PushStyleColor( ImGuiCol, const vec4& in )", ImGui_PushStyleColor_V4, ( ImGuiCol, const vec4 * ), void );
@@ -1950,7 +2077,7 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::ArrowButton( const string& in, ImGuiDir )", ImGui_ArrowButton, ( const string_t *, ImGuiDir ), bool );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::RadioButton( const string& in, bool )", ImGui_RadioButton, ( const string_t *, bool ), bool );
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
-            "bool ImGui::SliderInt( const string& in, int& out, int, int, int = 0 )", asFUNCTION( ImGui_SliderInt ),
+            "int ImGui::SliderInt( const string& in, int, int, int, int = 0 )", asFUNCTION( ImGui_SliderInt ),
             asCALL_GENERIC
         );
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
@@ -2089,7 +2216,7 @@ void ModuleLib_Register_Engine( void )
 			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::GetLength( int )", GetFileLength );
 			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::GetPosition( int )", GetFilePosition );
             REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::SetPosition( int, uint64, uint )", FileSetPosition );
-			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::LoadFile( const string& in, array<int8>& out )", LoadFile );
+			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::LoadFile( const string& in, vector<int8>& out )", LoadFile );
             REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::LoadFile( const string& in, string& out )", LoadFileString );
 
             {
@@ -2184,10 +2311,11 @@ void ModuleLib_Register_Engine( void )
             REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::ClearScene()", ClearScene );
             REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::RenderScene( uint, uint, uint, uint, uint, uint )", RenderScene );
 //            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::RE_AddEntityToScene( int, vec3, uint,  )", AddEntityToScene );
-            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddPolyToScene( int, const array<TheNomad::Engine::Renderer::PolyVert>& in )", AddPolyToScene );
+            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddPolyToScene( int, const vector<TheNomad::Engine::Renderer::PolyVert>& in )", AddPolyToScene );
             REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddSpriteToScene( const vec3& in, int, int )", AddSpriteToScene );
             REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RegisterShader( const string& in )", RegisterShader );
             REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RegisterSpriteSheet( const string& in, uint, uint, uint, uint )", RegisterSpriteSheet );
+            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::LoadWorld( const string& in )", LoadWorld );
 
             RESET_NAMESPACE();
         }
@@ -2242,6 +2370,8 @@ void ModuleLib_Register_Engine( void )
         
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetString( const string& in, string& out )", GetString );
 
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SetCameraPos( const vec2& in )", SetCameraPos );
+
 		REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::BeginSaveSection( const string& in )", BeginSaveSection );
 		REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::EndSaveSection()", EndSaveSection );
         REGISTER_GLOBAL_FUNCTION( "int TheNomad::GameSystem::FindSaveSection( const string& in )", FindSaveSection );
@@ -2268,16 +2398,15 @@ void ModuleLib_Register_Engine( void )
 
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveFloat( const string& in, float )", SaveFloat );
         
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<float>& in )", SaveArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<int8>& in )", SaveArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<int16>& in )", SaveArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<int32>& in )", SaveArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<int64>& in )", SaveArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<uint8>& in )", SaveArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<uint16>& in )", SaveArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<uint32>& in )", SaveArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<uint64>& in )", SaveArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<string>& in )", SaveArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const vector<float>& in )", SaveFloatArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const vector<int8>& in )", SaveInt8Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const vector<int16>& in )", SaveInt16Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const vector<int32>& in )", SaveInt32Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const vector<int64>& in )", SaveInt64Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const vector<uint8>& in )", SaveUInt8Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const vector<uint16>& in )", SaveUInt16Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const vector<uint32>& in )", SaveUInt32Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const vector<uint64>& in )", SaveUInt64Array );
 
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveString( const string& in, const string& in )", SaveString );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveVec2( const string& in, const vec2& in )", SaveVec2 );
@@ -2306,16 +2435,15 @@ void ModuleLib_Register_Engine( void )
 
         REGISTER_GLOBAL_FUNCTION( "float TheNomad::GameSystem::LoadFloat( const string& in, int )", LoadFloat );
         
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<float>& out, int )", LoadArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<int8>& out, int )", LoadArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<int16>& out, int )", LoadArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<int32>& out, int )", LoadArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<int64>& out, int )", LoadArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<uint8>& out, int )", LoadArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<uint16>& out, int )", LoadArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<uint32>& out, int )", LoadArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<uint64>& out, int )", LoadArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, array<string>& out, int )", LoadArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, vector<float>& out, int )", LoadFloatArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, vector<int8>& out, int )", LoadInt8Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, vector<int16>& out, int )", LoadInt16Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, vector<int32>& out, int )", LoadInt32Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, vector<int64>& out, int )", LoadInt64Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, vector<uint8>& out, int )", LoadUInt8Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, vector<uint16>& out, int )", LoadUInt16Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, vector<uint32>& out, int )", LoadUInt32Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, vector<uint64>& out, int )", LoadUInt64Array );
 
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadString( const string& in, string& out, int )", LoadString );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadVec2( const string& in, vec2& out, int )", LoadVec2 );
@@ -2371,7 +2499,7 @@ void ModuleLib_Register_Engine( void )
     { // Util
         SET_NAMESPACE( "TheNomad::Util" );
 
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Util::GetModuleList( array<string>& out )", GetModuleList );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Util::GetModuleList( vector<string>& out )", GetModuleList );
         REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Util::IsModuleActive( const string& in )", IsModuleActive );
 
         REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StrICmp( const string& in, const string& in )", StrICmp );
