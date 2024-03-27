@@ -113,7 +113,7 @@ namespace aatc {
 				UtlVector<serializer_helper> serializer_tempspec_helpers[container::listing::CONTAINER::_COUNT];
 			#endif
 
-			UtlSet<eastl::string> registered_funcdefs;
+			UtlSet<string_t> registered_funcdefs;
 
 
 			engine_level_storage(asIScriptEngine* engine);

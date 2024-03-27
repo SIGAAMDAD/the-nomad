@@ -19,7 +19,7 @@ namespace TheNomad::GameSystem {
 
 	GameObject@ AddSystem( GameObject@ SystemHandle ) {
 		ConsolePrint( "Added GameObject System \"" + SystemHandle.GetName() + "\"\n" );
-		GameSystems.push_back( SystemHandle );
+		GameSystems.Add( @SystemHandle );
 		return SystemHandle;
 	}
 
@@ -98,10 +98,7 @@ namespace TheNomad::GameSystem {
 		void SaveIntArray( const string& in name, const array<int>& in value ) const {
 			SaveArray( name, value );
 		}
-		void SaveIntArray( const string& in name, const array<float>& in value ) const {
-			SaveArray( name, value );
-		}
-		void SaveStringArray( const string& in name, const array<string>& in value ) const {
+		void SaveFloatArray( const string& in name, const array<float>& in value ) const {
 			SaveArray( name, value );
 		}
 		void SaveString( const string& in name, const string& in value ) const {

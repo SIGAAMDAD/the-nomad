@@ -27,6 +27,9 @@ Sami Vuorela
 samivuorela@gmail.com
 */
 
+#include "../engine/n_shared.h"
+#include "../engine/n_common.h"
+//#include "../module_lib/module_alloc.h"
 
 #include "aatc_config.hpp"
 #if aatc_CONFIG_USE_ASADDON_SERIALIZER

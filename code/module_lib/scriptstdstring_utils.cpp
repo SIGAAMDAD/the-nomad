@@ -13,15 +13,14 @@
 //
 // AngelScript signature:
 // vector<string>@ string::split(const string_t& in delim) const
-static aatc::container::tempspec::vector<string_t> *StringSplit(const string_t& delim, const string_t& str)
+static CScriptArray *StringSplit(const string_t& delim, const string_t& str)
 {
 	// Obtain a pointer to the engine
 	asIScriptContext *ctx = asGetActiveContext();
 	asIScriptEngine *engine = ctx->GetEngine();
 
 	// Create the array object
-	aatc::container::tempspec::vector<string_t> *array =
-		new ( asAllocMem( sizeof( *array ) ) ) aatc::container::tempspec::vector<string_t>();
+	CScriptArray *array = CScriptArray::Create( g_pModuleLib->GetScriptEngine()->GetTypeInfoByName( "string" ) );
 
 	// Find the existence of the delimiter in the input string
 	size_t pos = 0, prev = 0;
@@ -29,8 +28,8 @@ static aatc::container::tempspec::vector<string_t> *StringSplit(const string_t& 
 	while( (pos = str.find(delim, prev)) != string_t::npos )
 	{
 		// Add the part to the array
-		array->container.resize(array->container.size()+1);
-		array->container.at( count ).assign( &str[prev], pos - prev );
+		array->Resize(array->GetSize()+1);
+		( (string_t *)array->At( count ) )->assign( &str[prev], pos - prev );
 
 		// Find the next part
 		count++;
@@ -38,8 +37,8 @@ static aatc::container::tempspec::vector<string_t> *StringSplit(const string_t& 
 	}
 
 	// Add the remaining part
-	array->container.resize(array->container.size()+1);
-	array->container.at( count ).assign(&str[prev]);
+	array->Resize(array->GetSize()+1);
+	( (string_t *)array->At( count ) )->assign(&str[prev]);
 
 	return array;
 }
@@ -51,7 +50,7 @@ static void StringSplit_Generic(asIScriptGeneric *gen)
 	const string_t *delim = *(string_t **)gen->GetAddressOfArg(0);
 
 	// Return the array by handle
-	*(aatc::container::tempspec::vector<string_t>**)gen->GetAddressOfReturnLocation() = StringSplit(*delim, *str);
+	*(CScriptArray **)gen->GetAddressOfReturnLocation() = StringSplit(*delim, *str);
 }
 
 
@@ -69,21 +68,21 @@ static void StringSplit_Generic(asIScriptGeneric *gen)
 //
 // AngelScript signature:
 // string join(const vector<string> &in array, const string_t& in delim)
-static string_t StringJoin(const aatc::container::tempspec::vector<string_t> &array, const string_t& delim)
+static string_t StringJoin(const CScriptArray &array, const string_t& delim)
 {
 	// Create the new string
 	string_t str = "";
-	if( array.container.size() )
+	if( array.GetSize() )
 	{
 		int n;
-		for( n = 0; n < (int)array.container.size() - 1; n++ )
+		for( n = 0; n < (int)array.GetSize() - 1; n++ )
 		{
-			str += array.container.at(n);
+			str += *(string_t *)array.At(n);
 			str += delim;
 		}
 
 		// Add the last part
-		str += array.container.at(n);
+		str += *(string_t *)array.At(n);
 	}
 
 	return str;
@@ -92,7 +91,7 @@ static string_t StringJoin(const aatc::container::tempspec::vector<string_t> &ar
 static void StringJoin_Generic(asIScriptGeneric *gen)
 {
 	// Get the arguments
-	aatc::container::tempspec::vector<string_t>  *array = *(aatc::container::tempspec::vector<string_t> **)gen->GetAddressOfArg(0);
+	CScriptArray  *array = *(CScriptArray **)gen->GetAddressOfArg(0);
 	string_t *delim = *(string_t **)gen->GetAddressOfArg(1);
 
 	// Return the string

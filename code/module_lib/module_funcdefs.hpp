@@ -28,6 +28,7 @@ private:
     UtlString m_szMessage;
 };
 
+void ModuleLib_Register_Util( void );
 void ModuleLib_Register_Cvar( void );
 void ModuleLib_Register_RenderEngine( void );
 void ModuleLib_Register_Engine( void );

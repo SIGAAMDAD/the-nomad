@@ -10,7 +10,7 @@ namespace TheNomad::SGame {
 		}
 		
 		void AddSpawn( MapSpawn@ spawn ) {
-			m_Spawns.push_back( spawn );
+			m_Spawns.Add( @spawn );
 		}
 		void Activate() {
 			for ( uint i = 0; i < m_Spawns.size(); i++ ) {

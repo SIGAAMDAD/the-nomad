@@ -73,7 +73,7 @@ namespace aatc {
 		class std_Spinlock {
 		public:
 			//std::atomic<int> m_state = ATOMIC_VAR_INIT(1);//this thing useful?
-			CThreadAtomic<int> state;
+			CThreadMutex mutex;
 			std_Spinlock();
 			void lock();
 			void unlock();
@@ -147,7 +147,7 @@ namespace aatc {
 
 
 		/*!\brief Basetype for script refcounted c++ objects to derive from.*/
-		class basetype_refcounted{
+		class basetype_refcounted {
 		public:
 			mutable int refcount;
 
@@ -298,7 +298,7 @@ namespace aatc {
 			void Init();
 		};
 		extern primunion primunion_defaultvalue;
-		typedef std::pair<primunion, primunion> primunion_pair;
+		typedef eastl::pair<primunion, primunion> primunion_pair;
 
 
 

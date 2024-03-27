@@ -108,13 +108,20 @@ const char *CModuleHandle::GetModulePath( void ) const {
     return va( "modules/%s/", m_szName.c_str() );
 }
 
-void LogExceptionInfo( asIScriptContext *pContext, void * )
+void LogExceptionInfo( asIScriptContext *pContext, void *userData )
 {
     const asIScriptFunction *pFunc;
+    const CModuleHandle *pHandle;
+    char msg[4096];
 
     pFunc = pContext->GetExceptionFunction();
+    pHandle = (const CModuleHandle *)userData;
 
-    N_Error( ERR_DROP,
+    Con_Printf( COLOR_RED "ERROR: exception thrown by module, printing a stacktrace...\n" );
+    Cbuf_ExecuteText( EXEC_NOW, va( "ml_debug.set_active \"%s\"", pHandle->GetName().c_str() ) );
+    g_pDebugger->PrintCallstack( pContext );
+
+    Com_snprintf( msg, sizeof( msg ) - 1,
         "exception was thrown in module ->\n"
         " Module ID: %s\n"
         " Section Name: %s\n"
@@ -123,6 +130,8 @@ void LogExceptionInfo( asIScriptContext *pContext, void * )
         " Error Message: %s\n"
     , pFunc->GetModuleName(), pFunc->GetScriptSectionName(), pFunc->GetDeclaration(), pContext->GetExceptionLineNumber(),
     pContext->GetExceptionString() );
+
+    N_Error( ERR_DROP, "%s", msg );
 }
 
 int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pArgList )
@@ -134,21 +143,23 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
         return -1;
     }
 
-    CheckASCall( m_pScriptContext->Prepare( m_pFuncTable[nCallId] ) );
-    CheckASCall( m_pScriptContext->SetExceptionCallback( asFUNCTION( LogExceptionInfo ), NULL, asCALL_CDECL ) );
+    PROFILE_BLOCK_BEGIN( va( "module '%s'", m_szName.c_str() ) );
 
-    for ( i = 0; i < nArgs; i++ ) {
-        CheckASCall( m_pScriptContext->SetArgDWord( i, pArgList[i] ) );
-    }
+    CheckASCall( m_pScriptContext->Prepare( m_pFuncTable[nCallId] ) );
+    CheckASCall( m_pScriptContext->SetExceptionCallback( asFUNCTION( LogExceptionInfo ), this, asCALL_CDECL ) );
 
     if ( ml_debugMode->i && g_pDebugger->m_pModule->m_pHandle == this ) {
         CheckASCall( m_pScriptContext->SetLineCallback( asMETHOD( CDebugger, LineCallback ), g_pDebugger, asCALL_THISCALL ) );
+    }
+
+    for ( i = 0; i < nArgs; i++ ) {
+        CheckASCall( m_pScriptContext->SetArgDWord( i, pArgList[i] ) );
     }
     
     try {
         retn = m_pScriptContext->Execute();
     } catch ( const ModuleException& e ) {
-        LogExceptionInfo( m_pScriptContext, NULL );
+        LogExceptionInfo( m_pScriptContext, this );
     } catch ( const nlohmann::json::exception& e ) {
         const asIScriptFunction *pFunc;
         pFunc = m_pScriptContext->GetExceptionFunction();
@@ -170,7 +181,7 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
     case asEXECUTION_ERROR:
     case asEXECUTION_EXCEPTION:
         // something happened in there, dunno what
-        LogExceptionInfo( m_pScriptContext, NULL );
+        LogExceptionInfo( m_pScriptContext, this );
         break;
     case asEXECUTION_SUSPENDED:
     case asEXECUTION_FINISHED:
@@ -180,6 +191,8 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
     };
 
     retn = (int)m_pScriptContext->GetReturnWord();
+
+    PROFILE_BLOCK_END;
 
     return retn;
 }

@@ -87,10 +87,10 @@ namespace TheNomad::SGame {
 				return;
 			}
 
-			m_SpriteData.reserve( m_nSpriteCountX * m_nSpriteCountY );
+//			m_SpriteData.Reserve( m_nSpriteCountX * m_nSpriteCountY );
 			for ( uint y = 0; y < m_nSpriteCountY; y++ ) {
 				for ( uint x = 0; x < m_nSpriteCountX; x++ ) {
-					m_SpriteData.push_back( Sprite( ivec2( x, y ), sheetSize, spriteSize ) );
+					m_SpriteData.Add( Sprite( ivec2( x, y ), sheetSize, spriteSize ) );
 				}
 			}
 			DebugPrint( "Generated " + m_SpriteData.size() + " sprites for '" + fileName + "'\n" );
@@ -155,13 +155,18 @@ namespace TheNomad::SGame {
 	
 	class GfxSystem : TheNomad::GameSystem::GameObject {
 		GfxSystem() {
-			m_PolyList.resize( TheNomad::Engine::CvarVariableInteger( "sgame_GfxDetail" ) * 15 );
+			const uint numGfx = sgame_GfxDetail.GetInt() * 15;
+
+			m_PolyList.Reserve( numGfx );
+			for ( uint i = 0; i < numGfx; i++ ) {
+				m_PolyList.Add( MarkPoly() );
+			}
 
 			@m_ActiveMarkPolys.next = @m_ActiveMarkPolys;
 			@m_ActiveMarkPolys.prev = @m_ActiveMarkPolys;
 			@m_FreeMarkPolys = @m_PolyList[0];
 
-			for ( uint i = 0; i < m_PolyList.size() - 1; i++ ) {
+			for ( uint i = 0; i < m_PolyList.Count() - 1; i++ ) {
 				@m_PolyList[i].next = @m_PolyList[i + 1];
 			}
 		}
@@ -180,9 +185,9 @@ namespace TheNomad::SGame {
 		}
 		void OnLevelStart() {
 			// ensure we have the correct amount of polygons allocated
-			
-			if ( m_PolyList.size() != uint( TheNomad::Engine::CvarVariableInteger( "sgame_GfxDetail" ) ) ) {
-				m_PolyList.resize( TheNomad::Engine::CvarVariableInteger( "sgame_GfxDetail" ) * 15 );
+
+			while ( m_PolyList.Count() != uint( sgame_GfxDetail.GetInt() ) ) {
+				m_PolyList.RemoveLast();
 			}
 		}
 		void OnLevelEnd() {

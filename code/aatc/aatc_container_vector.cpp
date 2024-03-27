@@ -27,7 +27,9 @@ Sami Vuorela
 samivuorela@gmail.com
 */
 
-
+#include "../engine/n_shared.h"
+#include "../engine/n_common.h"
+//#include "../module_lib/module_alloc.h"
 
 #include "aatc_container_vector.hpp"
 
@@ -110,11 +112,11 @@ namespace aatc {
 					typedef templated::vector T_container;
 
 					register_containerbase<T_container>(rs);
-
-
+					register_container_datalist_base<T_container>( rs );
 
 					register_method::swap<T_container>(rs);
 
+					register_method::native::resize<T_container>(rs);
 					register_method::native::reserve<T_container>(rs);
 
 					register_method::native::push_back<T_container>(rs);

@@ -10,6 +10,17 @@
 
 #include <EASTL/allocator.h>
 #include <EASTL/allocator_malloc.h>
+#include "angelscript/angelscript.h"
+
+const char *AS_PrintErrorString( int code );
+GDR_INLINE void CheckValue( const char *caller, const char *func, int value ) {
+    if ( value < asSUCCESS ) {
+        N_Error( ERR_FATAL, "%s: %s failed -- %s", caller, func, AS_PrintErrorString( value ) );
+    }
+}
+
+#define CheckASCall( call ) \
+    CheckValue( __func__, #call, call )
 
 class CModuleAllocator
 {
@@ -102,6 +113,13 @@ public:
     }
 };
 
+constexpr GDR_INLINE bool operator==( const CModuleAllocator& a, const CModuleAllocator& b ) {
+    return true;
+}
+constexpr GDR_INLINE bool operator!=( const CModuleAllocator& a, const CModuleAllocator& b ) {
+    return false;
+}
+
 constexpr GDR_INLINE bool operator==( const CModuleStringAllocator& a, const CModuleStringAllocator& b ) {
     return true;
 }
@@ -161,12 +179,12 @@ namespace eastl {
 
 template<typename T>
 using UtlStringHashTable = eastl::string_hash_map<T, eastl::hash<const char *>, eastl::str_equal_to<const char *>, CModuleAllocator>;
-template<typename T>
-using UtlVector = eastl::vector<T, CModuleAllocator>;
-template<typename Key, typename Value>
-using UtlHashMap = eastl::hash_map<Key, Value, eastl::hash<Key>, eastl::equal_to<Key>, CModuleAllocator, true>;
-template<typename Key, typename Value>
-using UtlMap = eastl::unordered_map<Key, Value, eastl::hash<Key>, eastl::equal_to<Key>, CModuleAllocator, true>;
+template<typename T, typename Allocator = CModuleAllocator>
+using UtlVector = eastl::vector<T, Allocator>;
+template<typename Key, typename Value, typename Hash = eastl::hash<Key>, typename Predicate = eastl::equal_to<Key>>
+using UtlHashMap = eastl::hash_map<Key, Value, Hash, Predicate, CModuleAllocator, true>;
+template<typename Key, typename Value, typename Hash = eastl::hash<Key>, typename Predicate = eastl::equal_to<Key>>
+using UtlMap = eastl::unordered_map<Key, Value, Hash, Predicate, CModuleAllocator, true>;
 template<typename Key, typename Compare = eastl::less<Key>>
 using UtlSet = eastl::set<Key, Compare, CModuleAllocator>;
 
@@ -186,6 +204,8 @@ using UtlSet = eastl::set<Key, Compare, CModuleAllocator>;
 #include "module_handle.h"
 #include "module_buffer.hpp"
 #include "scriptbuilder.h"
+#include "scriptdictionary.h"
+#include "scriptarray.h"
 #include "scriptstdstring.h"
 #include "scriptmath.h"
 #include "scripthandle.h"
@@ -311,16 +331,6 @@ struct CModuleInfo
 class CContextMgr;
 class CScriptBuilder;
 
-const char *AS_PrintErrorString( int code );
-GDR_INLINE void CheckValue( const char *caller, const char *func, int value ) {
-    if ( value < asSUCCESS ) {
-        N_Error( ERR_FATAL, "%s: %s failed -- %s", caller, func, AS_PrintErrorString( value ) );
-    }
-}
-
-#define CheckASCall( call ) \
-    CheckValue( __func__, #call, call )
-
 class CModuleLib
 {
 public:
@@ -347,6 +357,13 @@ public:
     }
     const CModuleHandle *GetCurrentHandle( void ) const {
         return m_pCurrentHandle;
+    }
+    CModuleHandle *GetCurrentHandle( void ) {
+        return m_pCurrentHandle;
+    }
+
+    inline void AddCleanupId() {
+
     }
 
     UtlVector<eastl::fixed_string<char, 128, true, CModuleAllocator>> m_RegisteredProcs;

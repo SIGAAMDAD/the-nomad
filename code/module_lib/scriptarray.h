@@ -19,8 +19,8 @@
 #define AS_USE_ACCESSORS 0
 #endif
 
-struct SArrayBuffer;
 struct SArrayCache;
+struct SArrayBuffer;
 
 class CScriptArray
 {
@@ -94,6 +94,8 @@ public:
 	void *GetBuffer();
 	const void *GetBuffer( void ) const;
 
+	void Clear( void );
+
 	// GC methods
 	int  GetRefCount();
 	void SetFlag();
@@ -106,12 +108,14 @@ public:
 	const void *cbegin( void ) const;
 	const void *cend( void ) const;
 protected:
-	mutable int     refCount;
+	mutable int32_t refCount;
 	mutable bool    gcFlag;
 	asITypeInfo    *objType;
-	SArrayBuffer   *buffer;
-	int             elementSize;
-	int             subTypeId;
+	asIScriptFunction *subTypeHandleAssignFunc;
+	uint32_t         elementSize;
+	int32_t         subTypeId;
+
+	SArrayBuffer    *buffer;
 
 	// Constructors
 	CScriptArray(asITypeInfo *ot, void *initBuf); // Called from script when initialized with list
@@ -120,6 +124,8 @@ protected:
 	CScriptArray(const CScriptArray &other);
 	virtual ~CScriptArray();
 
+	void AllocBuffer( uint32_t nItems );
+	void DoAllocate( uint32_t nItems );
 	bool  Less(const void *a, const void *b, bool asc);
 	void *GetArrayItemPointer(int index);
 	void *GetDataPointer(void *buffer);
@@ -127,12 +133,10 @@ protected:
 	void  Swap(void *a, void *b);
 	void  Precache();
 	bool  CheckMaxSize(asUINT numElements);
-	void  Resize(int delta, asUINT at);
-	void  CreateBuffer(SArrayBuffer **buf, asUINT numElements);
-	void  DeleteBuffer(SArrayBuffer *buf);
-	void  CopyBuffer(SArrayBuffer *dst, SArrayBuffer *src);
-	void  Construct(SArrayBuffer *buf, asUINT start, asUINT end);
-	void  Destruct(SArrayBuffer *buf, asUINT start, asUINT end);
+	void  CreateBuffer( asUINT numElements);
+	void  CopyBuffer( const CScriptArray& other );
+	void  Construct(byte *buf, asUINT start, asUINT end);
+	void  Destruct(byte *buf, asUINT start, asUINT end);
 	bool  Equals(const void *a, const void *b, asIScriptContext *ctx, SArrayCache *cache) const;
 };
 

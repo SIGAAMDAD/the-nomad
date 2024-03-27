@@ -232,23 +232,8 @@ namespace TheNomad::SGame {
 				return false;
 			}
 
-			const float rangeX = m_Info.detectionRangeX / 2;
-			const float rangeY = m_Info.detectionRangeY / 2;
-			const vec3 start( m_Link.m_Origin.x - rangeX, m_Link.m_Origin.y - rangeY, m_Link.m_Origin.z );
-			const vec3 end( m_Link.m_Origin.x + rangeX, m_Link.m_Origin.y + rangeY, m_Link.m_Origin.z );
-			
-			const MapData@ data = @LevelManager.GetMapData();
-			const float[]@ soundBits = data.GetSoundBits()[uint( floor( m_Link.m_Origin.z ) )].GetData();
-			
-			for ( uint y = uint( start.y ); y != uint( end.y ); y++ ) {
-				for ( uint x = uint( start.x ); x != uint( end.x ); x++ ) {
-					if ( soundBits[y * data.GetWidth() + x] - TheNomad::Util::Distance( m_Link.m_Origin, vec3( x, y, m_Link.m_Origin.z ) ) >= m_Info.soundTolerance ) {
-						return true;
-					}
-				}
-			}
-			
-			return false;
+			// TODO: make a per player event sound recursion function
+			return true;
 		}
 		
 		private MobFlags m_MFlags;

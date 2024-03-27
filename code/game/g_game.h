@@ -48,6 +48,7 @@ typedef struct {
     uint32_t numSpawns;
     uint32_t numCheckpoints;
     uint32_t numLights;
+    uint32_t numLevels;
 } mapinfo_t;
 
 typedef struct linkEntity_s {
@@ -112,7 +113,7 @@ typedef enum
 
 typedef struct {
     char **mapList;
-    mapinfo_t *infoList;
+    mapinfo_t info;
     uint64_t numMapFiles;
 
     int32_t currentMapLoaded;
@@ -265,7 +266,7 @@ void G_SetCameraData( const vec2_t origin, float zoom, float rotation );
 //
 void G_InitMapCache( void );
 void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns,
-    uint32_t *nTiles, float *soundBits, linkEntity_t *activeEnts );
+    uint32_t *nTiles, linkEntity_t *activeEnts );
 nhandle_t G_LoadMap( const char *name );
 
 //

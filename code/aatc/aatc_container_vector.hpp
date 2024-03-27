@@ -55,14 +55,18 @@ namespace aatc {
 				container::listing::tags_of_container::vector
 			> {
 			public:
+				typedef aatc_acit_vector<void*>::value_type value_type;
+
 				vector(asITypeInfo* typeinfo);
 				vector(const vector& other);
+				vector( const std::initializer_list<value_type>& other );
 				vector& operator=(const vector& other);
 				vector& swap(vector& other);
 
 
 
 				void reserve(config::t::sizetype size);
+				void resize( config::t::sizetype size );
 
 				void push_back(void* value);
 				void pop_back();
@@ -111,11 +115,15 @@ namespace aatc {
 				> Containerbase;
 				typedef typename Containerbase::Iterator Iterator;
 
+				typedef aatc_acit_vector<void*>::value_type value_type;
 
 
 				vector() {}
 				vector(const vector& other):
 					Containerbase(other)
+				{}
+				vector( const std::initializer_list<value_type>& other )
+					: Containerbase( other )
 				{}
 				vector& operator=(const vector& other) { Containerbase::operator=(other); return *this; }
 				vector& swap(vector& other) { shared::method::swap(this, other); return *this; }
@@ -133,12 +141,14 @@ namespace aatc {
 				void insert(config::t::sizetype position, const T_content& value) { shared::method::genericcc::insert_position_before_constant(this, position, value); }
 				void insert(const Iterator& position, const T_content& value){ shared::method::native::insert_iterator(this, position, value); }
 
+				void resize( config::t::sizetype size ) { shared::method::native::resize( this, size ); }
+
 				void erase(config::t::sizetype position) { shared::method::genericcc::erase_position_constant(this, position); }
 				void erase(const Iterator& position) { shared::method::native::erase_iterator(this, position); }
 				config::t::sizetype erase(const Iterator& range_begin, const Iterator& range_end) { return shared::method::native::erase_iterator_range(this, range_begin, range_end); }
 				config::t::sizetype erase(config::t::sizetype position_range_begin, config::t::sizetype position_range_end) { return shared::method::genericcc::erase_position_range_constant(this, position_range_begin, position_range_end); }
 
-				config::t::sizetype erase_value(const T_content& value, bool all = false) { shared::method::genericcc::erase_value(this, value, all); }
+				config::t::sizetype erase_value(const T_content& value, bool all = false) { return shared::method::genericcc::erase_value(this, value, all); }
 
 				T_content& operator[](config::t::sizetype position) { return shared::method::native::operator_index_position(this,position); }
 
@@ -157,8 +167,6 @@ namespace aatc {
 					typedef vector T_container;
 
 					register_containerbase<T_container>(rs, n_content);
-
-
 
 					register_method::swap<T_container>(rs);
 
@@ -181,6 +189,8 @@ namespace aatc {
 					register_method::genericcc::erase_value<T_container>(rs);
 
 					register_method::native::operator_index_position<T_container>(rs);
+
+					register_method::native::resize<T_container>( rs );
 
 					register_method::genericcc::sort<T_container>(rs);
 

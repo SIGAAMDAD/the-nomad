@@ -4,13 +4,12 @@
 #pragma once
 
 typedef struct {
-    char mapName[MAX_GDR_PATH];
-    gamedif_t diff;
+    char mapname[MAX_NPATH];
+    gamedif_t dif;
 
-    // bff-specific information
-    char bffName[MAX_BFF_PATH];
-    uint64_t bffId;
-    uint32_t levelIndex;
+    // mod info
+    char **modList;
+    uint64_t numMods;
 } gamedata_t;
 
 typedef struct {
@@ -18,6 +17,7 @@ typedef struct {
 	int32_t nameLength;
 	int32_t type;
 	uint32_t dataSize;
+    uint32_t dataOffset;
 	union {
 		int8_t s8;
 		int16_t s16;
@@ -74,6 +74,9 @@ typedef struct {
     int64_t numFields;
 } ngdsection_write_t;
 
+template<typename Key, typename Value>
+using ArchiveCache = eastl::unordered_map<Key, Value, eastl::hash<Key>, eastl::equal_to<Key>, CZoneAllocator<TAG_SAVEFILE>, true>;
+
 typedef struct ngdsection_read_s
 {
 	char name[MAX_STRING_CHARS];
@@ -81,7 +84,7 @@ typedef struct ngdsection_read_s
 	int64_t size;
 	int64_t numFields;
 	
-	ngdfield_t *m_pFieldList;
+    ArchiveCache<const char *, ngdfield_t *> m_FieldCache;
 	
 	struct ngdsection_read_s *next;
 } ngdsection_read_t;
@@ -94,7 +97,7 @@ typedef struct {
 	ngdsection_read_t *m_pSectionList;
 } ngd_file_t;
 
-#ifndef USE_ALLOC_H
+#ifndef COMPILE_AATC
 #include "../module_lib/module_public.h"
 #include "aatc/aatc.hpp"
 #include "aatc/aatc_common.hpp"
@@ -107,7 +110,7 @@ public:
     CGameArchive( void ) = default;
     ~CGameArchive() = default;
 
-    void BeginSaveSection( const char *name );
+    void BeginSaveSection( const char *moduleName, const char *name );
     void EndSaveSection( void );
 
     const char **GetSaveFiles( uint64_t *nFiles ) const;
@@ -141,6 +144,8 @@ public:
     void SaveUInt64Array( const char *name, const aatc::container::tempspec::vector<uint64_t> *pData );
     void SaveFloatArray( const char *name, const aatc::container::tempspec::vector<float> *pData );
 
+    void SaveArray( const char *pszName, const CScriptArray *pData );
+
     float LoadFloat( const char *name, nhandle_t hSection );
 
     uint8_t LoadByte( const char *name, nhandle_t hSection );
@@ -170,6 +175,8 @@ public:
     void LoadUInt64Array( const char *name, aatc::container::tempspec::vector<uint64_t> *pData, nhandle_t hSection );
     void LoadFloatArray( const char *name, aatc::container::tempspec::vector<float> *pData, nhandle_t hSection );
 
+    void LoadArray( const char *pszName, CScriptArray *pData, nhandle_t hSection );
+
     bool Load( const char *filename );
     bool Save( void );
     bool LoadPartial( const char *filename, gamedata_t *gd );
@@ -187,16 +194,14 @@ private:
     const ngdfield_t *FindField( const char *name, int32_t type, nhandle_t hSection ) const;
 
     fileHandle_t m_hFile;
-    ngdsection_read_t *m_pSectionList;
+    ngdsection_read_t *m_pSectionCache;
     
     int64_t m_nSections;
     int64_t m_nSectionDepth;
     ngdsection_write_t m_Section;
+
+    char **m_ArchiveFileList;
     uint64_t m_nArchiveFiles;
-    
-    char **m_pArchiveFileList;
-    ngd_file_t **m_pArchiveCache;
-    ngd_file_t *m_pCurrentArchive;
 };
 
 void G_InitArchiveHandler( void );

@@ -235,11 +235,15 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::CmdAddCommand( "sgame.set_player_health" );
 			TheNomad::Engine::CmdAddCommand( "sgame.set_player_rage" );
 			
-			m_EntityList.resize( sgame_MaxEntities.GetInt() );
+			m_EntityList.Reserve( sgame_MaxEntities.GetInt() );
 			Init();
 		}
 		
 		private void Init() {
+			for ( uint i = 0; i < uint( sgame_MaxEntities.GetInt() ); i++ ) {
+				m_EntityList.Add( EntityObject() );
+			}
+
 			@m_ActiveEntities.next =
 			@m_ActiveEntities.prev = @m_ActiveEntities;
 			@m_FreeEntities = @m_EntityList[0];
@@ -447,14 +451,14 @@ namespace TheNomad::SGame {
 		EntityObject@ GetEntityForNum( uint nIndex ) {
 			return @m_EntityList[ nIndex ];
 		}
-		const array<EntityObject>& GetEntities() const {
-			return m_EntityList;
+		const array<EntityObject>@ GetEntities() const {
+			return @m_EntityList;
 		}
-		array<EntityObject>& GetEntities() {
-			return m_EntityList;
+		array<EntityObject>@ GetEntities() {
+			return @m_EntityList;
 		}
 		uint NumEntities() const {
-			return m_EntityList.size();
+			return m_EntityList.Count();
 		}
 
 		void SpawnProjectile( const vec3& in origin, float angle, const AttackInfo@ info ) {

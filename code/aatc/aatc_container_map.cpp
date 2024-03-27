@@ -27,7 +27,9 @@ Sami Vuorela
 samivuorela@gmail.com
 */
 
-
+#include "../engine/n_shared.h"
+#include "../engine/n_common.h"
+//#include "../module_lib/module_alloc.h"
 
 #include "aatc_container_map.hpp"
 
@@ -103,7 +105,7 @@ namespace aatc {
 					register_method::insert<T_container>(rs);
 					register_method::erase<T_container>(rs);
 
-					register_method::find<T_container>(rs);
+//					register_method::find<T_container>(rs);
 
 					register_method::find_iterator<T_container>(rs);
 

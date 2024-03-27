@@ -350,49 +350,52 @@ namespace aatc {
 
 					namespace register_method {
 
-						template<typename T_container> static void swap(common::RegistrationState& rs) {
+						template<typename T_container> inline void swap(common::RegistrationState& rs) {
 							rs.Format("%s& %s(%s &inout)", rs.n_container_T, config::scriptname::method::container::swap, rs.n_container_T);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asMETHOD(T_container,swap), asCALL_THISCALL); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_MFN(T_container,swap), asCALL_GENERIC ) );
 						}
 
-						template<typename T_container> static void insert(common::RegistrationState& rs) {
+						template<typename T_container> inline void insert(common::RegistrationState& rs) {
 							rs.Format("void %s(const T_key&in,const T_value&in)", config::scriptname::method::container::insert);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::insert<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::insert<T_container>), asCALL_GENERIC ) );
 						}
 
-						template<typename T_container> static void erase(common::RegistrationState& rs) {
+						template<typename T_container> inline void erase(common::RegistrationState& rs) {
 							rs.Format("void %s(const T_key&in)", config::scriptname::method::container::erase);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::erase<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::erase<T_container>), asCALL_GENERIC ) );
 						}
 
-						template<typename T_container> static void find(common::RegistrationState& rs) {
+						template<typename T_container> inline void find(common::RegistrationState& rs) {
 							rs.Format("T_value& %s(const T_key &in)", config::scriptname::method::container::find);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTIONPR(method::find_value<T_container>,(T_container*, void*),void*), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST_PR(method::find_value<T_container>,(T_container*, void*),void*), asCALL_GENERIC ) );
 
 							rs.Format("T_value& %s(const T_key &in,bool &out)", config::scriptname::method::container::find);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTIONPR(method::find_value<T_container>, (T_container*, void*, bool&), void*), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST_PR(method::find_value<T_container>, (T_container*, void*, bool&), void*), asCALL_GENERIC ) );
 
-							rs.Format("bool %s(const T_key&in)", config::scriptname::method::container::contains);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::contains<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							rs.Format("bool %s(const T_key&in) const", config::scriptname::method::container::contains);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::contains<T_container>), asCALL_GENERIC ) );
 						}
 
-						template<typename T_container> static void find_iterator(common::RegistrationState& rs) {
+						template<typename T_container> inline void find_iterator(common::RegistrationState& rs) {
 							rs.Format("%s %s(const T_key &in)", rs.n_iterator_T, config::scriptname::method::container::find_iterator);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::find_iterator<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::find_iterator<T_container>), asCALL_GENERIC ) );
+
+							rs.Format("%s %s(const T_key &in) const", rs.n_iterator_T, config::scriptname::method::container::find_iterator);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::find_iterator<T_container>), asCALL_GENERIC ) );
 						}
 
-						template<typename T_container> static void erase_iterator(common::RegistrationState& rs) {
+						template<typename T_container> inline void erase_iterator(common::RegistrationState& rs) {
 							rs.Format("bool %s(const %s &in)", config::scriptname::method::container::erase_iterator, rs.n_iterator_T);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::erase_iterator<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::erase_iterator<T_container>), asCALL_GENERIC ) );
 						}
-						template<typename T_container> static void erase_iterator_range(common::RegistrationState& rs) {
+						template<typename T_container> inline void erase_iterator_range(common::RegistrationState& rs) {
 							rs.Format("%s %s(const %s &in,const %s &in)", config::scriptname::t::size, config::scriptname::method::container::erase_iterator, rs.n_iterator_T, rs.n_iterator_T);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::erase_iterator_range<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::erase_iterator_range<T_container>), asCALL_GENERIC ) );
 						}
 
-						template<typename T_container> static void operator_index(common::RegistrationState& rs) {
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, "const T_value& get_opIndex(const T_key &in) const", asFUNCTIONPR(method::find_value<T_container>, (T_container*, void*), void*), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, "void set_opIndex(const T_key&in,const T_value&in)", asFUNCTION(method::insert<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+						template<typename T_container> inline void operator_index(common::RegistrationState& rs) {
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, "const T_value& get_opIndex(const T_key &in) const", WRAP_OBJ_FIRST_PR(method::find_value<T_container>, (T_container*, void*), void*), asCALL_GENERIC ) );
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, "void set_opIndex(const T_key&in,const T_value&in)", WRAP_OBJ_FIRST(method::insert<T_container>), asCALL_GENERIC ) );
 						}
 
 

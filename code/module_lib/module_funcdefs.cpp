@@ -7,6 +7,7 @@
 #include "module_stringfactory.hpp"
 #include "../game/g_world.h"
 #include "module_funcdefs.hpp"
+#include "scriptarray.h"
 
 #include "module_engine/module_bbox.h"
 #include "module_engine/module_linkentity.h"
@@ -31,6 +32,9 @@ using uvec2 = glm::vec<2, unsigned, glm::packed_highp>;
 using uvec3 = glm::vec<3, unsigned, glm::packed_highp>;
 using uvec4 = glm::vec<4, unsigned, glm::packed_highp>;
 
+template<typename T>
+using vector = aatc::container::tempspec::vector<T>;
+
 #define REQUIRE_ARG_COUNT( amount ) \
     Assert( pGeneric->GetArgCount() == amount )
 #define DEFINE_CALLBACK( name ) \
@@ -48,7 +52,7 @@ using uvec4 = glm::vec<4, unsigned, glm::packed_highp>;
     ValidateMethod( __func__, decl, g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( obj, decl, WRAP_MFN_PR( classType, name, parameters, returnType ), asCALL_GENERIC ) )
 #define REGISTER_GLOBAL_FUNCTION( decl, funcPtr ) \
     ValidateFunction( __func__, decl,\
-        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( decl, asFUNCTION( ModuleLib_##funcPtr ), asCALL_GENERIC ) )
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( decl, funcPtr, asCALL_GENERIC ) )
 #define REGISTER_OBJECT_TYPE( name, obj, traits ) \
     ValidateObjectType( __func__, name, g_pModuleLib->GetScriptEngine()->RegisterObjectType( name, sizeof(obj), traits | asGetTypeTraits<obj>() ) )
 #define REGISTER_OBJECT_PROPERTY( obj, var, offset ) \
@@ -195,48 +199,33 @@ DEFINE_CALLBACK( CvarUpdateGeneric ) {
     *modificationCount = vmCvar.modificationCount;
 }
 
-DEFINE_CALLBACK( CvarSetValueGeneric ) {
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const string_t *value = (const string_t *)pGeneric->GetArgObject( 1 );
+static void CvarSetValue( const string_t *name, const string_t *value ) {
     Cvar_Set( name->c_str(), value->c_str() );
 }
 
-DEFINE_CALLBACK( CvarVariableString ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) string_t( Cvar_VariableString( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
+static const string_t *CvarVariableString( const string_t *cvarName ) {
+    return new string_t( Cvar_VariableString( cvarName->c_str() ) );
 }
 
-DEFINE_CALLBACK( CvarVariableInteger ) {
-    *(int64_t *)pGeneric->GetAddressOfReturnLocation() = Cvar_VariableInteger( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() );
+static int64_t CvarVariableInt( const string_t *cvarName ) {
+    return Cvar_VariableInteger( cvarName->c_str() );
 }
 
-DEFINE_CALLBACK( CvarVariableFloat ) {
-    *(float *)pGeneric->GetAddressOfReturnLocation() = Cvar_VariableFloat( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() );
+static float CvarVariableFloat( const string_t *cvarName ) {
+    return Cvar_VariableFloat( cvarName->c_str() );
 }
 
-DEFINE_CALLBACK( Snd_PlaySfx ) {
-    Snd_PlaySfx( (sfxHandle_t)pGeneric->GetArgDWord( 0 ) );
+static nhandle_t SndRegisterSfx( const string_t *npath ) {
+    return Snd_RegisterSfx( npath->c_str() );
 }
 
-DEFINE_CALLBACK( Snd_SetLoopingTrack ) {
-    Snd_SetLoopingTrack( (sfxHandle_t)pGeneric->GetArgDWord( 0 ) );
+static nhandle_t SndRegisterTrack( const string_t *npath ) {
+    return Snd_RegisterTrack( npath->c_str() );
 }
-
-DEFINE_CALLBACK( Snd_ClearLoopingTrack ) {
-    Snd_ClearLoopingTrack();
-}
-
-DEFINE_CALLBACK( Snd_RegisterSfx ) {
-    pGeneric->SetReturnDWord( Snd_RegisterSfx( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
-}
-
-DEFINE_CALLBACK( Snd_RegisterTrack ) {
-    pGeneric->SetReturnDWord( Snd_RegisterTrack( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
-}
-
 
 DEFINE_CALLBACK( BeginSaveSection ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    g_pArchiveHandler->BeginSaveSection( name->c_str() );
+    g_pArchiveHandler->BeginSaveSection( pGeneric->GetFunction()->GetModule()->GetName(), name->c_str() );
 }
 
 DEFINE_CALLBACK( EndSaveSection ) {
@@ -868,131 +857,111 @@ DEFINE_CALLBACK( CmpUVec2Generic ) {
     pGeneric->SetReturnDWord( (asDWORD)cmp );
 }
 
-DEFINE_CALLBACK( ConsolePrint ) {
-    const string_t *msg = (const string_t *)pGeneric->GetArgObject( 0 );
+static void ConsolePrint( const string_t *msg ) {
     Con_Printf( "%s", msg->c_str() );
 }
 
-DEFINE_CALLBACK( ConsoleWarning ) {
-    const string_t *msg = (const string_t *)pGeneric->GetArgObject( 0 );
+static void ConsoleWarning( const string_t *msg ) {
     Con_Printf( COLOR_YELLOW "WARNING: %s", msg->c_str() );
 }
 
-DEFINE_CALLBACK( GameError ) {
-    const string_t *msg = (const string_t *)pGeneric->GetArgObject( 0 );
+static void GameError( const string_t *msg ) {
     Con_Printf( COLOR_RED "(ERROR) ModuleException Thrown: %s\n", msg->c_str() );
     throw ModuleException( msg );
 }
 
-DEFINE_CALLBACK( StringBufferToInt ) {
-    pGeneric->SetReturnDWord( (asDWORD)atoi( (const char *)pGeneric->GetArgAddress( 0 ) ) );
+static int32_t StringBufferToInt( const CScriptArray *pBuffer ) {
+    return atoi( (const char *)pBuffer->GetBuffer() );
 }
 
-DEFINE_CALLBACK( StringBufferToUInt ) {
-    pGeneric->SetReturnDWord( (asDWORD)atoll( (const char *)pGeneric->GetArgAddress( 0 ) ) );
+static uint32_t StringBufferToUInt( const CScriptArray *pBuffer ) {
+    return atoll( (const char *)pBuffer->GetBuffer() );
 }
 
-DEFINE_CALLBACK( StringBufferToFloat ) {
-    pGeneric->SetReturnFloat( N_atof( (const char *)pGeneric->GetArgAddress( 0 ) ) );
+static float StringBufferToFloat( const CScriptArray *pBuffer ) {
+    return N_atof( (const char *)pBuffer->GetBuffer() );
 }
 
-DEFINE_CALLBACK( StringToInt ) {
-    pGeneric->SetReturnDWord( (asDWORD)atoi( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
+static int32_t StringToInt( const string_t *str ) {
+    return atoi( str->c_str() );
 }
 
-DEFINE_CALLBACK( StringToUInt ) {
-    pGeneric->SetReturnDWord( (asDWORD)atoll( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
+static uint32_t StringToUInt( const string_t *str ) {
+    return atoll( str->c_str() );
 }
 
-DEFINE_CALLBACK( StringToFloat ) {
-    pGeneric->SetReturnFloat( N_atof( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
+static float StringToFloat( const string_t *str ) {
+    return N_atof( str->c_str() );
 }
 
-DEFINE_CALLBACK( DistanceVec3Vec3 ) {
-    const vec3& src = *(const vec3 *)pGeneric->GetArgObject( 0 );
-    const vec3& target = *(const vec3 *)pGeneric->GetArgObject( 1 );
-    pGeneric->SetReturnFloat( disBetweenOBJ( glm::value_ptr( src ), glm::value_ptr( target ) ) );
+static bool BoundsIntersect( const CModuleBoundBox *a, const CModuleBoundBox *b ) {
+    const bbox_t a2 = a->ToPOD();
+    const bbox_t b2 = b->ToPOD();
+    return BoundsIntersect( &a2, &b2 );
 }
 
-DEFINE_CALLBACK( BoundsIntersect ) {
-    const bbox_t a = ( (const CModuleBoundBox *)pGeneric->GetArgObject( 0 ) )->ToPOD();
-    const bbox_t b = ( (const CModuleBoundBox *)pGeneric->GetArgObject( 1 ) )->ToPOD();
-
-    pGeneric->SetReturnDWord( (asDWORD)BoundsIntersect( &a, &b ) );
+static bool BoundsIntersectPoint( const CModuleBoundBox *bbox, const vec3 *point ) {
+    const bbox_t a = bbox->ToPOD();
+    return BoundsIntersectPoint( &a, (const float *)point );
 }
 
-DEFINE_CALLBACK( BoundsIntersectPoint ) {
-    const bbox_t a = ( (const CModuleBoundBox *)pGeneric->GetArgObject( 0 ) )->ToPOD();
-    const vec3& point = *(const vec3 *)pGeneric->GetArgObject( 1 );
-
-    pGeneric->SetReturnDWord( (asDWORD)BoundsIntersectPoint( &a, glm::value_ptr( point ) ) );
+static bool BoundsIntersectSphere( const CModuleBoundBox *bbox, const vec3 *point, float radius ) {
+    const bbox_t a = bbox->ToPOD();
+    return BoundsIntersectSphere( &a, (const float *)point,radius  );
 }
 
-DEFINE_CALLBACK( BoundsIntersectSphere ) {
-    const bbox_t a = ( (const CModuleBoundBox *)pGeneric->GetArgObject( 0 ) )->ToPOD();
-    const vec3& point = *(const vec3 *)pGeneric->GetArgObject( 1 );
-    float radius = pGeneric->GetArgFloat( 2 );
-
-    pGeneric->SetReturnDWord( (asDWORD)BoundsIntersectSphere( &a, glm::value_ptr( point ), radius ) );
+static int StrICmp( const string_t *str1, const string_t *str2 ) {
+    return N_stricmp( str1->c_str(), str2->c_str() );
 }
 
-DEFINE_CALLBACK( StrICmp ) {
-    const string_t *arg0 = (const string_t *)pGeneric->GetArgObject( 0 );
-    const string_t *arg1 = (const string_t *)pGeneric->GetArgObject( 1 );
-    pGeneric->SetReturnDWord( (asDWORD)N_stricmp( arg0->c_str(), arg1->c_str() ) );
+static int StrCmp( const string_t *str1, const string_t *str2 ) {
+    return N_strcmp( str1->c_str(), str2->c_str() );
 }
 
-DEFINE_CALLBACK( StrCmp ) {
-    const string_t *arg0 = (const string_t *)pGeneric->GetArgObject( 0 );
-    const string_t *arg1 = (const string_t *)pGeneric->GetArgObject( 1 );
-    pGeneric->SetReturnDWord( (asDWORD)N_strcmp( arg0->c_str(), arg1->c_str() ) );
+static void LoadWorld( const string_t *npath ) {
+    re.LoadWorld( npath->c_str() );
 }
 
-DEFINE_CALLBACK( LoadWorld ) {
-    re.LoadWorld( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() );
-}
-
-DEFINE_CALLBACK( ClearScene ) {
+static void ClearScene( void ) {
     re.ClearScene();
 }
 
 DEFINE_CALLBACK( RenderScene ) {
     renderSceneRef_t refdef;
+    
     memset( &refdef, 0, sizeof( refdef ) );
+    
     refdef.x = pGeneric->GetArgDWord( 0 );
     refdef.y = pGeneric->GetArgDWord( 1 );
     refdef.width = pGeneric->GetArgDWord( 2 );
     refdef.height = pGeneric->GetArgDWord( 3 );
     refdef.flags = pGeneric->GetArgDWord( 4 );
     refdef.time = pGeneric->GetArgDWord( 5 );
+
     re.RenderScene( &refdef );
 }
 
-DEFINE_CALLBACK( AddEntityToScene ) {
+static void AddEntityToScene( nhandle_t hShader, const vec3 *origin, uint32_t flags ) {
     refEntity_t refEntity;
+
     memset( &refEntity, 0, sizeof( refEntity ) );
-    refEntity.hShader = (nhandle_t)pGeneric->GetArgDWord( 0 );
-    VectorCopy( refEntity.origin, (float *)pGeneric->GetArgAddress( 1 ) );
-    refEntity.flags = pGeneric->GetArgDWord( 2 );
+    refEntity.hShader = hShader;
+    VectorCopy( refEntity.origin, *origin );
+    refEntity.flags = flags;
+
+    re.AddEntityToScene( &refEntity );
 }
 
-DEFINE_CALLBACK( AddPolyToScene ) {
-    aatc::container::tempspec::vector<CModulePolyVert> *pPolyList =
-        (aatc::container::tempspec::vector<CModulePolyVert> *)pGeneric->GetArgObject( 1 );
-    re.AddPolyToScene( (nhandle_t)pGeneric->GetArgDWord( 0 ), (const polyVert_t *)pPolyList->container.data(), pPolyList->size() );
+static void AddPolyToScene( nhandle_t hShader, const CScriptArray *pPolyList ) {
+    re.AddPolyToScene( hShader, (const polyVert_t *)pPolyList->GetBuffer(), pPolyList->GetSize() );
 }
 
-DEFINE_CALLBACK( AddSpriteToScene ) {
-    re.AddSpriteToScene( glm::value_ptr( *(const vec3 *)pGeneric->GetArgObject( 0  ) ), (nhandle_t)pGeneric->GetArgDWord( 1 ),
-        (nhandle_t)pGeneric->GetArgDWord( 2 ) );
+static void AddSpriteToScene( const vec3 *origin, nhandle_t hSpriteSheet, nhandle_t hSprite ) {
+    re.AddSpriteToScene( (vec_t *)origin, hSpriteSheet, hSprite );
 }
 
-DEFINE_CALLBACK( RegisterShader ) {
-    pGeneric->SetReturnDWord( re.RegisterShader( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
-}
-
-DEFINE_CALLBACK( RegisterSprite ) {
-    pGeneric->SetReturnDWord( re.RegisterSprite( (nhandle_t)pGeneric->GetArgDWord( 0 ), pGeneric->GetArgDWord( 1 ) ) );
+static nhandle_t RegisterShader( const string_t *npath ) {
+    return re.RegisterShader( npath->c_str() );
 }
 
 DEFINE_CALLBACK( RegisterSpriteSheet ) {
@@ -1001,17 +970,20 @@ DEFINE_CALLBACK( RegisterSpriteSheet ) {
         pGeneric->GetArgDWord( 3 ), pGeneric->GetArgDWord( 4 ) ) );
 }
 
-DEFINE_CALLBACK( CheckWallHit ) {
-    const vec3& origin = *(const vec3 *)pGeneric->GetArgObject( 0 );
-    *(bool *)pGeneric->GetAddressOfReturnLocation() = g_world->CheckWallHit( glm::value_ptr( origin ), dirtype_t( pGeneric->GetArgDWord( 1 ) ) );
+static nhandle_t RegisterSprite( nhandle_t hSpriteSheet, uint32_t nIndex ) {
+    return re.RegisterSprite( hSpriteSheet, nIndex );
 }
 
-DEFINE_CALLBACK( CastRay ) {
-    g_world->CastRay( (ray_t *)pGeneric->GetArgObject( 0 ) );
+static void CastRay( ray_t *ray ) {
+    g_world->CastRay( ray );
 }
 
-DEFINE_CALLBACK( LoadMap ) {
-    pGeneric->SetReturnDWord( (asDWORD)G_LoadMap( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
+static bool CheckWallHit( const vec3 *origin, dirtype_t dir ) {
+    return g_world->CheckWallHit( (const float *)origin, dir );
+}
+
+static nhandle_t LoadMap( const string_t *npath ) {
+    return G_LoadMap( npath->c_str() );
 }
 
 DEFINE_CALLBACK( SetActiveMap ) {
@@ -1019,31 +991,24 @@ DEFINE_CALLBACK( SetActiveMap ) {
     uint32_t *nCheckpoints = (uint32_t *)pGeneric->GetArgAddress( 1 );
     uint32_t *nSpawns = (uint32_t *)pGeneric->GetArgAddress( 2 );
     uint32_t *nTiles = (uint32_t *)pGeneric->GetArgAddress( 3 );
-    float *soundBits = (float *)pGeneric->GetArgAddress( 4 );
     CModuleLinkEntity *activeEnts = (CModuleLinkEntity *)pGeneric->GetArgObject( 5 );
 
-    G_SetActiveMap( hMap, nCheckpoints, nSpawns, nTiles, soundBits, &activeEnts->handle );
+    G_SetActiveMap( hMap, nCheckpoints, nSpawns, nTiles, &activeEnts->handle );
 }
 
-DEFINE_CALLBACK( GetTileData ) {
-    uint32_t *data = (uint32_t *)pGeneric->GetArgAddress( 0 );
-    G_GetTileData( data );
+static CScriptArray *GetTileData( void ) {
+    CScriptArray *tiles = CScriptArray::Create( g_pModuleLib->GetScriptEngine()->GetTypeInfoByName( "uint" ) );
+
+    tiles->Resize( gi.mapCache.info.numLevels );
+    for ( uint32_t i = 0; i < gi.mapCache.info.numLevels; i++ ) {
+        ( (CScriptArray *)tiles->At( i ) )->Resize( gi.mapCache.info.width * gi.mapCache.info.height );
+        G_GetTileData( (uint32_t *)( (CScriptArray *)tiles->At( i ) )->GetBuffer(), i );
+    }
+
+    return tiles;
 }
 
-DEFINE_CALLBACK( GetCheckpointData ) {
-    uvec3 *data = (uvec3 *)pGeneric->GetArgObject( 0 );
-    G_GetCheckpointData( (uvec_t *)data, pGeneric->GetArgDWord( 1 ) );
-}
-
-DEFINE_CALLBACK( GetSpawnData ) {
-    uvec3 *origin = (uvec3 *)pGeneric->GetArgObject( 0 );
-    uint32_t *type = (uint32_t *)pGeneric->GetArgAddress( 1 );
-    uint32_t *id = (uint32_t *)pGeneric->GetArgAddress( 2 );
-    G_GetSpawnData( (uvec_t *)origin, type, id, pGeneric->GetArgDWord( 3 ) );
-}
-
-DEFINE_CALLBACK( GetGPUConfig ) {
-    CModuleGPUConfig *config = (CModuleGPUConfig *)pGeneric->GetArgObject( 0 );
+static void GetGPUConfig( CModuleGPUConfig *config ) {
     config->gpuConfig = gi.gpuConfig;
     config->shaderVersionString = config->gpuConfig.shader_version_str;
     config->versionString = config->gpuConfig.version_string;
@@ -1051,233 +1016,165 @@ DEFINE_CALLBACK( GetGPUConfig ) {
     config->extensionsString = config->gpuConfig.extensions_string;
 }
 
-DEFINE_CALLBACK( IsAnyKeyDown ) {
-    pGeneric->SetReturnDWord( (asDWORD)Key_AnyDown() );
+static void SetCameraPos( const vec2 *pos ) {
+    G_SetCameraData( (const float *)pos, 1.6f, 0.0f );
 }
 
-DEFINE_CALLBACK( KeyIsDown ) {
-    pGeneric->SetReturnDWord( (asDWORD)Key_IsDown( pGeneric->GetArgDWord( 0 ) ) );
+static nhandle_t OpenFileRead( const string_t *fileName ) {
+    return FS_VM_FOpenRead( fileName->c_str(), H_SGAME );
 }
 
-DEFINE_CALLBACK( SetCameraPos ) {
-    const vec2& v = *(const vec2 *)pGeneric->GetArgObject( 0 );
-    G_SetCameraData( glm::value_ptr( v ), 1.6f, 0.0f );
+static nhandle_t OpenFileWrite( const string_t *fileName ) {
+    return FS_VM_FOpenWrite( fileName->c_str(), H_SGAME );
 }
 
-DEFINE_CALLBACK( OpenFileRead ) {
-    const string_t *fileName = (const string_t *)pGeneric->GetArgObject( 0 );
-    *(nhandle_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_FOpenRead( fileName->c_str(), H_SGAME );
+static nhandle_t OpenFileAppend( const string_t *fileName ) {
+    return FS_VM_FOpenAppend( fileName->c_str(), H_SGAME );
 }
 
-DEFINE_CALLBACK( OpenFileWrite ) {
-    const string_t *fileName = (const string_t *)pGeneric->GetArgObject( 0 );
-    *(nhandle_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_FOpenWrite( fileName->c_str(), H_SGAME );
+static nhandle_t OpenFileRW( const string_t *fileName ) {
+    return FS_VM_FOpenRW( fileName->c_str(), H_SGAME );
 }
 
-DEFINE_CALLBACK( OpenFileAppend ) {
-    const string_t *fileName = (const string_t *)pGeneric->GetArgObject( 0 );
-    *(nhandle_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_FOpenAppend( fileName->c_str(), H_SGAME );
+static uint64_t OpenFile( const string_t *fileName, fileHandle_t *hFile, fileMode_t mode ) {
+    return FS_VM_FOpenFile( fileName->c_str(), hFile, mode, H_SGAME );
 }
 
-DEFINE_CALLBACK( OpenFileRW ) {
-    const string_t *fileName = (const string_t *)pGeneric->GetArgObject( 0 );
-    *(nhandle_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_FOpenRW( fileName->c_str(), H_SGAME );
-}
-
-DEFINE_CALLBACK( OpenFile ) {
-    const string_t *fileName = (const string_t *)pGeneric->GetArgObject( 0 );
-    fileHandle_t *hFile = (fileHandle_t *)pGeneric->GetArgAddress( 1 );
-    fileMode_t mode = (fileMode_t )pGeneric->GetArgDWord( 2 );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_FOpenFile( fileName->c_str(), hFile, mode, H_SGAME );
-}
-
-DEFINE_CALLBACK( CloseFile ) {
-    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
+static void CloseFile( fileHandle_t arg ) {
     FS_VM_FClose( arg, H_SGAME );
 }
 
-DEFINE_CALLBACK( GetFileLength ) {
-    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_FileLength( arg, H_SGAME );
+static uint64_t GetFileLength( fileHandle_t arg ) {
+    return FS_VM_FileLength( arg, H_SGAME );
 }
 
-DEFINE_CALLBACK( GetFilePosition ) {
-    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_FileTell( arg, H_SGAME );
+static fileOffset_t GetFilePosition( fileHandle_t arg ) {
+    return FS_VM_FileTell( arg, H_SGAME );
 }
 
-DEFINE_CALLBACK( FileSetPosition ) {
-    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
-    uint64_t offset = pGeneric->GetArgQWord( 1 );
-    uint32_t whence = pGeneric->GetArgDWord( 2 );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_FileSeek( arg, offset, whence, H_SGAME );
+static uint64_t FileSetPosition( fileHandle_t arg, fileOffset_t offset, uint32_t whence ) {
+    return FS_VM_FileSeek( arg, offset, whence, H_SGAME );
 }
 
-DEFINE_CALLBACK( WriteInt8 ) {
-    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
-    int8_t data = (int8_t)pGeneric->GetArgByte( 0 );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Write( &data, sizeof( data ), arg, H_SGAME );
+static uint64_t WriteInt8( fileHandle_t arg, int8_t data ) {
+    return FS_VM_Write( &data, sizeof( data ), arg, H_SGAME );
 }
 
-DEFINE_CALLBACK( WriteInt16 ) {
-    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
-    int16_t data = (int16_t)pGeneric->GetArgWord( 0 );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Write( &data, sizeof( data ), arg, H_SGAME );
+static uint64_t WriteInt16( fileHandle_t arg, int16_t data ) {
+    return FS_VM_Write( &data, sizeof( data ), arg, H_SGAME );
 }
 
-DEFINE_CALLBACK( WriteInt32 ) {
-    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
-    int32_t data = (int32_t)pGeneric->GetArgDWord( 0 );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Write( &data, sizeof( data ), arg, H_SGAME );
+static uint64_t WriteInt32( fileHandle_t arg, int32_t data ) {
+    return FS_VM_Write( &data, sizeof( data ), arg, H_SGAME );
 }
 
-DEFINE_CALLBACK( WriteInt64 ) {
-    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
-    int64_t data = (int64_t)pGeneric->GetArgQWord( 0 );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Write( &data, sizeof( data ), arg, H_SGAME );
+static uint64_t WriteInt64( fileHandle_t arg, int64_t data ) {
+    return FS_VM_Write( &data, sizeof( data ), arg, H_SGAME );
 }
 
-DEFINE_CALLBACK( WriteUInt8 ) {
-    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
-    uint8_t data = pGeneric->GetArgByte( 0 );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Write( &data, sizeof( data ), arg, H_SGAME );
+static uint64_t WriteUInt8( fileHandle_t arg, uint8_t data ) {
+    return FS_VM_Write( &data, sizeof( data ), arg, H_SGAME );
 }
 
-DEFINE_CALLBACK( WriteUInt16 ) {
-    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
-    uint16_t data = pGeneric->GetArgWord( 0 );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Write( &data, sizeof( data ), arg, H_SGAME );
+static uint64_t WriteUInt16( fileHandle_t arg, uint16_t data ) {
+    return FS_VM_Write( &data, sizeof( data ), arg, H_SGAME );
 }
 
-DEFINE_CALLBACK( WriteUInt32 ) {
-    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
-    uint32_t data = pGeneric->GetArgDWord( 0 );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Write( &data, sizeof( data ), arg, H_SGAME );
+static uint64_t WriteUInt32( fileHandle_t arg, uint32_t data ) {
+    return FS_VM_Write( &data, sizeof( data ), arg, H_SGAME );
 }
 
-DEFINE_CALLBACK( WriteUInt64 ) {
-    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
-    uint64_t data = pGeneric->GetArgQWord( 0 );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Write( &data, sizeof( data ), arg, H_SGAME );
+static uint64_t WriteUInt64( fileHandle_t arg, uint64_t data ) {
+    return FS_VM_Write( &data, sizeof( data ), arg, H_SGAME );
 }
 
-DEFINE_CALLBACK( WriteString ) {
-    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
-    const string_t *data = (const string_t *)pGeneric->GetArgObject( 0 );
+static uint64_t WriteString( fileHandle_t arg, string_t *data ) {
     uint64_t length;
 
     length = data->size();
     if ( !FS_VM_Write( &length, sizeof( length ), arg, H_SGAME ) ) {
-        *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = 0;
-        return;
+        return 0;
     }
 
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Write( data->c_str(), length, arg, H_SGAME );
+    return FS_VM_Write( data->c_str(), length, arg, H_SGAME );
 }
 
-DEFINE_CALLBACK( ReadInt8 ) {
-    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
-    int8_t *data = (int8_t *)pGeneric->GetArgAddress( 0 );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Read( data, sizeof( *data ), arg, H_SGAME );
+static uint64_t ReadInt8( fileHandle_t arg, int8_t *data ) {
+    return FS_VM_Read( data, sizeof( *data ), arg, H_SGAME );
 }
 
-DEFINE_CALLBACK( ReadInt16 ) {
-    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
-    int16_t *data = (int16_t *)pGeneric->GetArgAddress( 0 );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Read( data, sizeof( *data ), arg, H_SGAME );
+static uint64_t ReadInt16( fileHandle_t arg, int16_t *data ) {
+    return FS_VM_Read( data, sizeof( *data ), arg, H_SGAME );
 }
 
-DEFINE_CALLBACK( ReadInt32 ) {
-    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
-    int32_t *data = (int32_t *)pGeneric->GetArgAddress( 0 );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Read( data, sizeof( *data ), arg, H_SGAME );
+static uint64_t ReadInt32( fileHandle_t arg, int32_t *data ) {
+    return FS_VM_Read( data, sizeof( *data ), arg, H_SGAME );
 }
 
-DEFINE_CALLBACK( ReadInt64 ) {
-    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
-    int64_t *data = (int64_t *)pGeneric->GetArgAddress( 0 );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Read( data, sizeof( *data ), arg, H_SGAME );
+static uint64_t ReadInt64( fileHandle_t arg, int64_t *data ) {
+    return FS_VM_Read( data, sizeof( *data ), arg, H_SGAME );
 }
 
-DEFINE_CALLBACK( ReadUInt8 ) {
-    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
-    uint8_t *data = (uint8_t *)pGeneric->GetArgAddress( 0 );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Read( data, sizeof( *data ), arg, H_SGAME );
+static uint64_t ReadUInt8( fileHandle_t arg, uint8_t *data ) {
+    return FS_VM_Read( data, sizeof( *data ), arg, H_SGAME );
 }
 
-DEFINE_CALLBACK( ReadUInt16 ) {
-    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
-    uint16_t *data = (uint16_t *)pGeneric->GetArgAddress( 0 );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Read( data, sizeof( *data ), arg, H_SGAME );
+static uint64_t ReadUInt16( fileHandle_t arg, uint16_t *data ) {
+    return FS_VM_Read( data, sizeof( *data ), arg, H_SGAME );
 }
 
-DEFINE_CALLBACK( ReadUInt32 ) {
-    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
-    uint32_t *data = (uint32_t *)pGeneric->GetArgAddress( 0 );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Read( data, sizeof( *data ), arg, H_SGAME );
+static uint64_t ReadUInt32( fileHandle_t arg, uint32_t *data ) {
+    return FS_VM_Read( data, sizeof( *data ), arg, H_SGAME );
 }
 
-DEFINE_CALLBACK( ReadUInt64 ) {
-    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
-    uint64_t *data = (uint64_t *)pGeneric->GetArgAddress( 0 );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Read( data, sizeof( *data ), arg, H_SGAME );
+static uint64_t ReadUInt64( fileHandle_t arg, uint64_t *data ) {
+    return FS_VM_Read( data, sizeof( *data ), arg, H_SGAME );
 }
 
-DEFINE_CALLBACK( ReadString ) {
-    fileHandle_t arg = (fileHandle_t)pGeneric->GetArgDWord( 1 );
-    string_t *data = (string_t *)pGeneric->GetArgObject( 0 );
+static uint64_t ReadString( fileHandle_t arg, string_t *data ) {
     uint64_t length;
 
     if ( !FS_VM_Read( &length, sizeof( length ), arg, H_SGAME ) ) {
-        *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = 0;
-        return;
+        return 0;
     }
 
     data->resize( length );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = FS_VM_Read( data->data(), length, arg, H_SGAME );
+    return FS_VM_Read( data->data(), length, arg, H_SGAME );
 }
 
-DEFINE_CALLBACK( LoadFileString ) {
-    const string_t *fileName = (const string_t *)pGeneric->GetArgObject( 0 );
-    string_t *buffer = (string_t *)pGeneric->GetArgObject( 1 );
-
+static uint64_t LoadFileString( const string_t *fileName, string_t *buffer ) {
     void *v;
     const uint64_t length = FS_LoadFile( fileName->c_str(), &v );
     if ( !length || !v ) {
         Con_Printf( COLOR_RED "ERROR: failed to load file '%s' at vm request\n", fileName->c_str() );
-        *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = 0;
-        return;
+        return length;
     }
 
     buffer->resize( length );
     memcpy( buffer->data(), v, length );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = length;
 
     FS_FreeFile( v );
+
+    return length;
 }
 
-DEFINE_CALLBACK( LoadFile ) {
-    const string_t *fileName = (const string_t *)pGeneric->GetArgObject( 0 );
-    aatc::container::tempspec::vector<char> *buffer = (aatc::container::tempspec::vector<char> *)pGeneric->GetArgObject( 1 );
-
+static uint64_t LoadFile( const string_t *fileName, CScriptArray *buffer ) {
     void *v;
     uint64_t length = FS_LoadFile( fileName->c_str(), &v );
     if ( !length || !v ) {
         Con_Printf( COLOR_RED "ERROR: failed to load file '%s' at vm request\n", fileName->c_str() );
-        *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = 0;
-        return;
+        return 0;
     }
 
-    buffer->container.resize( length );
-    memcpy( buffer->container.data(), v, length );
-    *(uint64_t *)pGeneric->GetAddressOfReturnLocation() = length;
+    buffer->Resize( length );
+    memcpy( buffer->GetBuffer(), v, length );
 
     FS_FreeFile( v );
+
+    return length;
 }
 
-DEFINE_CALLBACK( GetModuleDependencies ) {
-    aatc::container::tempspec::vector<string_t> *depList = (aatc::container::tempspec::vector<string_t> *)pGeneric->GetArgObject( 0 );
-    const string_t *modName = (const string_t *)pGeneric->GetArgObject( 1 );
+static void GetModuelDependencies( CScriptArray *depList, const string_t *modName ) {
     const CModuleInfo *info = g_pModuleLib->GetModule( modName->c_str() );
 
     if ( !info ) {
@@ -1285,68 +1182,68 @@ DEFINE_CALLBACK( GetModuleDependencies ) {
         return;
     }
 
-    depList->container.resize( info->m_Dependencies.size() );
+    depList->Resize( info->m_Dependencies.size() );
     for ( uint64_t i = 0; info->m_Dependencies.size(); i++ ) {
-        depList->container.at( i ) = info->m_Dependencies[i].c_str();
+        *(string_t *)depList->At( i ) = info->m_Dependencies[i].c_str();
     }
 }
 
-DEFINE_CALLBACK( GetModuleList ) {
-    aatc::container::tempspec::vector<string_t> *modList = (aatc::container::tempspec::vector<string_t> *)pGeneric->GetArgObject( 0 );
+static void GetModuleList( CScriptArray *modList ) {
     const UtlVector<CModuleInfo *>& loadList = g_pModuleLib->GetLoadList();
 
-    modList->container.resize( loadList.size() );
+    modList->Resize( loadList.size() );
     for ( uint64_t i = 0; i < loadList.size(); i++ ) {
-        modList->container.at( i ) = loadList[i]->m_szName;
+        string_t *str = (string_t *)modList->At( i );
+        *str = loadList[i]->m_szName;
     }
 }
 
-DEFINE_CALLBACK( IsModuleActive ) {
-    const string_t *modName = (const string_t *)pGeneric->GetArgObject( 0 );
-    *(bool *)pGeneric->GetAddressOfReturnLocation() = ModsMenu_IsModuleActive( modName->c_str() );
+static bool IsModuleActive( const string_t *modName ) {
+    return ModsMenu_IsModuleActive( modName->c_str() );
 }
 
-DEFINE_CALLBACK( ModuleAssertion ) {
+static void ModuleAssertion( bool bCheck ) {
+    asIScriptContext *pContext = g_pModuleLib->GetCurrentHandle()->GetContext();
+    asIScriptFunction *pFunc = pContext->GetSystemFunction();
+
+    if ( bCheck ) {
+        return;
+    }
+
+    N_Error( ERR_DROP,
+        "Module Assertion Exception thrown ->\n"
+        " Line: %i\n"
+        " Section: %s\n"
+        " Module: %s\n"
+    , pContext->GetLineNumber(), pFunc->GetScriptSectionName(), pFunc->GetModuleName() );
 }
 
-DEFINE_CALLBACK( CmdArgvFixedGeneric ) {
-    char *pBuffer = (char *)pGeneric->GetAddressOfArg( 0 );
-    uint32_t size = pGeneric->GetArgDWord( 1 );
-    Cmd_ArgvBuffer( pGeneric->GetArgDWord( 3 ), pBuffer, size );
+static void CmdArgvFixed( CScriptArray *pBuffer, uint32_t nIndex ) {
+    Cmd_ArgvBuffer( nIndex, (char *)pBuffer->GetBuffer(), pBuffer->GetSize() );
 }
 
-DEFINE_CALLBACK( CmdArgcGeneric ) {
-    *(uint32_t *)pGeneric->GetAddressOfReturnLocation() = Cmd_Argc();
+static const string_t *CmdArgv( uint32_t nIndex ) {
+    return new string_t( Cmd_Argv( nIndex ) );
 }
 
-DEFINE_CALLBACK( CmdArgvGeneric ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) string_t( Cmd_Argv( pGeneric->GetArgDWord( 0 ) ) );
+
+static const string_t *CmdArgs( uint32_t nIndex ) {
+    return new string_t( Cmd_ArgsFrom( nIndex ) );
 }
 
-DEFINE_CALLBACK( CmdArgsGeneric ) {
-    new ( pGeneric->GetAddressOfReturnLocation() ) string_t( Cmd_ArgsFrom( pGeneric->GetArgDWord( 0 ) ) );
+static void CmdAddCommand( const string_t *cmd ) {
+    Cmd_AddCommand( cmd->c_str(), NULL );
 }
 
-DEFINE_CALLBACK( CmdAddCommandGeneric ) {
-    Cmd_AddCommand( ( (string_t *)pGeneric->GetArgObject( 0 ) )->c_str(), NULL );
+static void CmdRemoveCommand( const string_t *cmd ) {
+    Cmd_RemoveCommand( cmd->c_str() );
 }
 
-DEFINE_CALLBACK( CmdRemoveCommandGeneric ) {
-    Cmd_RemoveCommand( ( (string_t *)pGeneric->GetArgObject( 0 ) )->c_str() );
+static void CmdExecuteCommand( const string_t *cmd ) {
+    Cbuf_ExecuteText( EXEC_APPEND, cmd->c_str() );
 }
 
-DEFINE_CALLBACK( CmdExecuteCommandGeneric ) {
-    Cbuf_ExecuteText( EXEC_APPEND, ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() );
-}
-
-DEFINE_CALLBACK( PolyVertAssign ) {
-    *(CModulePolyVert *)pGeneric->GetAddressOfReturnLocation() = *(CModulePolyVert *)pGeneric->GetArgObject( 0 );
-}
-
-DEFINE_CALLBACK( GetString ) {
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    string_t *value = (string_t *)pGeneric->GetArgObject( 1 );
-
+static void GetString( const string_t *name, string_t *value ) {
     const stringHash_t *hash = strManager->ValueForKey( name->c_str() );
     *value = hash->value;
 }
@@ -1505,12 +1402,16 @@ static void ImGui_SliderInt( asIScriptGeneric *pGeneric ) {
 
 static void ImGui_SliderFloat( asIScriptGeneric *pGeneric ) {
     const string_t *label = (const string_t *)pGeneric->GetArgObject( 0 );
-    float *v = (float *)pGeneric->GetAddressOfArg( 1 );
+    float v = pGeneric->GetArgFloat( 1 );
     float min = pGeneric->GetArgFloat( 2 );
     float max = pGeneric->GetArgFloat( 3 );
     ImGuiSliderFlags flags = *(int *)pGeneric->GetArgAddress( 4 );
 
-    *(bool *)pGeneric->GetAddressOfReturnLocation() = ImGui::SliderFloat( label->c_str(), v, min, max, "%.3f", flags );
+    if ( ImGui::SliderFloat( label->c_str(), &v, min, max, "%.3f", flags ) ) {
+        *(float *)pGeneric->GetAddressOfReturnLocation() = v;
+    } else {
+        *(float *)pGeneric->GetAddressOfReturnLocation() = pGeneric->GetArgDWord( 1 );
+    }
 }
 
 static void ImGui_SliderFloat2( asIScriptGeneric *pGeneric ) {
@@ -1583,19 +1484,20 @@ static const string_t script_COLOR_RESET = COLOR_RESET;
 static const asDWORD script_MAX_MAP_WIDTH = MAX_MAP_WIDTH;
 static const asDWORD script_MAX_MAP_HEIGHT = MAX_MAP_HEIGHT;
 
-static const asQWORD script_MAX_TOKEN_CHARS = MAX_TOKEN_CHARS;
-static const asQWORD script_MAX_STRING_CHARS = MAX_STRING_CHARS;
-static const asQWORD script_MAX_STRING_TOKENS = MAX_STRING_TOKENS;
-static const asQWORD script_MAX_INFO_KEY = MAX_INFO_KEY;
-static const asQWORD script_MAX_INFO_STRING = MAX_INFO_STRING;
-static const asQWORD script_MAX_INFO_VALUE = MAX_INFO_VALUE;
-static const asQWORD script_MAX_CVAR_NAME = MAX_CVAR_NAME;
-static const asQWORD script_MAX_CVAR_VALUE = MAX_CVAR_VALUE;
-static const asQWORD script_MAX_EDIT_LINE = MAX_EDIT_LINE;
-static const asQWORD script_MAX_NPATH = MAX_NPATH;
-static const asQWORD script_MAX_OSPATH = MAX_OSPATH;
-static const asQWORD script_MAX_VERTS_ON_POLY = MAX_VERTS_ON_POLY;
-static const asQWORD script_MAX_UI_FONTS = MAX_UI_FONTS;
+static const asDWORD script_MAXPRINTMSG = MAXPRINTMSG;
+static const asDWORD script_MAX_TOKEN_CHARS = MAX_TOKEN_CHARS;
+static const asDWORD script_MAX_STRING_CHARS = MAX_STRING_CHARS;
+static const asDWORD script_MAX_STRING_TOKENS = MAX_STRING_TOKENS;
+static const asDWORD script_MAX_INFO_KEY = MAX_INFO_KEY;
+static const asDWORD script_MAX_INFO_STRING = MAX_INFO_STRING;
+static const asDWORD script_MAX_INFO_VALUE = MAX_INFO_VALUE;
+static const asDWORD script_MAX_CVAR_NAME = MAX_CVAR_NAME;
+static const asDWORD script_MAX_CVAR_VALUE = MAX_CVAR_VALUE;
+static const asDWORD script_MAX_EDIT_LINE = MAX_EDIT_LINE;
+static const asDWORD script_MAX_NPATH = MAX_NPATH;
+static const asDWORD script_MAX_OSPATH = MAX_OSPATH;
+static const asDWORD script_MAX_VERTS_ON_POLY = MAX_VERTS_ON_POLY;
+static const asDWORD script_MAX_UI_FONTS = MAX_UI_FONTS;
 
 static const asDWORD script_RSF_NORWORLDMODEL = RSF_NOWORLDMODEL;
 static const asDWORD script_RSF_ORTHO_TYPE_CORDESIAN = RSF_ORTHO_TYPE_CORDESIAN;
@@ -1655,91 +1557,126 @@ static const asDWORD script_NOMAD_VERSION_PATCH = NOMAD_VERSION_PATCH;
 
 static const float script_M_PI = M_PI;
 
+template<typename T>
+static int CompareVec2( const T& a, const T& b ) {
+    int cmp;
+
+    cmp = 0;
+    if ( a.x < b.x && a.y < b.y ) {
+        cmp = -1;
+    } else if ( b.x < a.x && b.y < a.y ) {
+        cmp = 1;
+    }
+    return cmp;
+}
+
+template<typename T>
+static int CompareVec3( const T& a, const T& b ) {
+    int cmp;
+
+    cmp = 0;
+    if ( a.x < b.x && a.y < b.y && a.z < b.z ) {
+        cmp = -1;
+    } else if ( b.x < a.x && b.y < a.y && b.z < a.z ) {
+        cmp = 1;
+    }
+    return cmp;
+}
+
+template<typename T>
+static int CompareVec4( const T& a, const T& b ) {
+    int cmp;
+
+    cmp = 0;
+    if ( a.x < b.x && a.y < b.y && a.z < b.z && a.w < b.w ) {
+        cmp = -1;
+    } else if ( b.x < a.x && b.y < a.y && b.z < a.z && b.w < a.w ) {
+        cmp = 1;
+    }
+    return cmp;
+}
+/*
+template<typename T, typename P, int numElements>
+static void Register_VecType( const char *name, const char *p_name )
+{
+    REGISTER_OBJECT_TYPE( name, T, asOBJ_VALUE );
+
+    REGISTER_OBJECT_BEHAVIOUR( name, asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( T, ( void ) ) );
+    REGISTER_OBJECT_BEHAVIOUR( name, asBEHAVE_CONSTRUCT, va( "void f( const %s& in )", name ), WRAP_CON( T, ( const T& ) ) );
+    
+    switch ( numElements ) {
+    case 4:
+        REGISTER_OBJECT_BEHAVIOUR( name, asBEHAVE_CONSTRUCT, va( "void f( %s, %s, %s, %s )", p_name, p_name, p_name, p_name ), WRAP_CON( T, ( P, P, P, P ) ) );
+        break;
+    case 3:
+        REGISTER_OBJECT_BEHAVIOUR( name, asBEHAVE_CONSTRUCT, va( "void f( %s, %s, %s )", p_name, p_name, p_name ), WRAP_CON( T, ( P, P, P ) ) );
+        break;
+    case 2:
+        REGISTER_OBJECT_BEHAVIOUR( name, asBEHAVE_CONSTRUCT, va( "void f( %s, %s )", p_name, p_name ), WRAP_CON( T, ( P, P ) ) );
+        break;
+    };
+    REGISTER_OBJECT_BEHAVIOUR( name, asBEHAVE_CONSTRUCT, va( "void f( %s )", p_name ), WRAP_CON( T, ( P ) ) );
+    REGISTER_OBJECT_BEHAVIOUR( name, asBEHAVE_DESTRUCT, "void f()", WRAP_DES( T ) );
+
+    REGISTER_METHOD_FUNCTION( name, va( "%s& opAssign( const %s& in )", name, name ), T, operator=, ( const T& ), T& );
+    REGISTER_METHOD_FUNCTION( name, va( "%s& opAddAssign( const %s& in )", name, name ), T, operator+=, ( const T& ), T& );
+    REGISTER_METHOD_FUNCTION( name, va( "%s& opSubAssign( const %s& in )", name, name ), T, operator-=, ( const T& ), T& );
+    REGISTER_METHOD_FUNCTION( name, va( "%s& opMulAssign( const %s& in )", name, name ), T, operator*=, ( const T& ), T& );
+    REGISTER_METHOD_FUNCTION( name, va( "%s& opDivAssign( const %s& in )", name, name ), T, operator/=, ( const T& ), T& );
+
+    REGISTER_METHOD_FUNCTION( name, va( "bool opEquals( const %s& in ) const", name ), T, operator==, ( const T& ), bool );
+    switch ( numElements ) {
+    case 4:
+        REGISTER_OBJECT_PROPERTY( name, va( "%s r", p_name ), offsetof( T, r ) );
+        REGISTER_OBJECT_PROPERTY( name, va( "%s g", p_name ), offsetof( T, g ) );
+        REGISTER_OBJECT_PROPERTY( name, va( "%s b", p_name ), offsetof( T, b ) );
+        REGISTER_OBJECT_PROPERTY( name, va( "%s a", p_name ), offsetof( T, a ) );
+        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( name, va( "int opCmp( const %s& in ) const", name ), WRAP_FN_PR( CompareVec4, ( const T&, const T& ), int ), asCALL_GENERIC );
+        break;
+    case 3:
+        REGISTER_OBJECT_PROPERTY( name, va( "%s x", p_name ), offsetof( T, x ) );
+        REGISTER_OBJECT_PROPERTY( name, va( "%s y", p_name ), offsetof( T, y ) );
+        REGISTER_OBJECT_PROPERTY( name, va( "%s z", p_name ), offsetof( T, z ) );
+        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( name, va( "int opCmp( const %s& in ) const", name ), WRAP_FN_PR( CompareVec3, ( const T&, const T& ), int ), asCALL_GENERIC );
+        break;
+    case 2:
+        REGISTER_OBJECT_PROPERTY( name, va( "%s x", p_name ), offsetof( T, x ) );
+        REGISTER_OBJECT_PROPERTY( name, va( "%s y", p_name ), offsetof( T, y ) );
+        g_pModuleLib->GetScriptEngine()->RegisterObjectMethod( name, va( "int opCmp( const %s& in ) const", name ), WRAP_FN_PR( CompareVec2, ( const T&, const T& ), int ), asCALL_GENERIC );
+        break;
+    };
+    REGISTER_METHOD_FUNCTION( name, va( "%s& opIndex( uint )", p_name ), T, operator[], ( uint32_t ), P& );
+    REGISTER_METHOD_FUNCTION( name, va( "const %s& opIndex( uint ) const", p_name ), T, operator[], ( uint32_t ), const P& );
+
+    REGISTER_METHOD_FUNCTION( name, va( "%s opAdd( const %s& in ) const" ), T, operator+, ( const T& ), T );
+    REGISTER_METHOD_FUNCTION( name, va( "%s opSub( const %s& in ) const" ), T, operator-, ( const T& ), T );
+    REGISTER_METHOD_FUNCTION( name, va( "%s opDiv( const %s& in ) const" ), T, operator/, ( const T& ), T );
+    REGISTER_METHOD_FUNCTION( name, va( "%s opMul( const %s& in ) const" ), T, operator*, ( const T& ), T );
+}
+*/
+
 void ModuleLib_Register_Engine( void )
 {
     PROFILE_FUNCTION();
 
     REGISTER_TYPEDEF( "int8", "char" );
 
-//    SET_NAMESPACE( "TheNomad::Constants" );
-    { // Constants
-        REGISTER_GLOBAL_VAR( "const float M_PI", &script_M_PI );
-
-        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_CHECKPOINT", &script_SURFACEPARM_CHECKPOINT );
-        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_SPAWN", &script_SURFACEPARM_SPAWN );
-        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_FLESH", &script_SURFACEPARM_FLESH );
-        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_LAVA", &script_SURFACEPARM_LAVA );
-        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_METAL", &script_SURFACEPARM_METAL );
-        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_WOOD", &script_SURFACEPARM_WOOD );
-        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_NODAMAGE", &script_SURFACEPARM_NODAMAGE );
-        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_NODLIGHT", &script_SURFACEPARM_NODLIGHT );
-        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_NOMARKS", &script_SURFACEPARM_NOMARKS );
-        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_NOMISSILE", &script_SURFACEPARM_NOMISSILE );
-        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_NOSTEPS", &script_SURFACEPARM_NOSTEPS );
-        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_WATER", &script_SURFACEPARM_WATER );
-
-        REGISTER_GLOBAL_VAR( "const int32 FS_INVALID_HANDLE", &script_FS_INVALID_HANDLE );
-        REGISTER_GLOBAL_VAR( "const uint32 FS_OPEN_READ", &script_FS_OPEN_READ );
-        REGISTER_GLOBAL_VAR( "const uint32 FS_OPEN_WRITE", &script_FS_OPEN_WRITE );
-        REGISTER_GLOBAL_VAR( "const uint32 FS_OPEN_APPEND", &script_FS_OPEN_APPEND );
-
-        REGISTER_GLOBAL_VAR( "const uint32 MAX_TOKEN_CHARS", &script_MAX_TOKEN_CHARS );
-        REGISTER_GLOBAL_VAR( "const uint32 MAX_STRING_CHARS", &script_MAX_STRING_CHARS );
-        REGISTER_GLOBAL_VAR( "const uint32 MAX_STRING_TOKENS", &script_MAX_STRING_TOKENS );
-        REGISTER_GLOBAL_VAR( "const uint32 MAX_NPATH", &script_MAX_NPATH );
-        REGISTER_GLOBAL_VAR( "const uint32 MAX_MAP_WIDTH", &script_MAX_MAP_WIDTH );
-        REGISTER_GLOBAL_VAR( "const uint32 MAX_MAP_HEIGHT", &script_MAX_MAP_HEIGHT );
-
-        REGISTER_GLOBAL_VAR( "const string COLOR_BLACK", &script_COLOR_BLACK );
-        REGISTER_GLOBAL_VAR( "const string COLOR_RED", &script_COLOR_RED );
-        REGISTER_GLOBAL_VAR( "const string COLOR_GREEN", &script_COLOR_GREEN );
-        REGISTER_GLOBAL_VAR( "const string COLOR_YELLOW", &script_COLOR_YELLOW );
-        REGISTER_GLOBAL_VAR( "const string COLOR_BLUE", &script_COLOR_BLUE );
-        REGISTER_GLOBAL_VAR( "const string COLOR_CYAN", &script_COLOR_CYAN );
-        REGISTER_GLOBAL_VAR( "const string COLOR_MAGENTA", &script_COLOR_MAGENTA );
-        REGISTER_GLOBAL_VAR( "const string COLOR_WHITE", &script_COLOR_WHITE );
-        REGISTER_GLOBAL_VAR( "const string COLOR_RESET", &script_COLOR_RESET );
-
-        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_BLACK", &script_S_COLOR_BLACK );
-        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_RED", &script_S_COLOR_RED );
-        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_GREEN", &script_S_COLOR_GREEN );
-        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_YELLOW", &script_S_COLOR_YELLOW );
-        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_BLUE", &script_S_COLOR_BLUE );
-        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_CYAN", &script_S_COLOR_CYAN );
-        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_MAGENTA", &script_S_COLOR_MAGENTA );
-        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_WHITE", &script_S_COLOR_WHITE );
-        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_RESET", &script_S_COLOR_RESET );
-
-        REGISTER_GLOBAL_VAR( "const uint32 RSF_NOWORLDMODEL", &script_RSF_NORWORLDMODEL );
-        REGISTER_GLOBAL_VAR( "const uint32 RSF_ORTHO_TYPE_CORDESIAN", &script_RSF_ORTHO_TYPE_CORDESIAN );
-        REGISTER_GLOBAL_VAR( "const uint32 RSF_ORTHO_TYPE_WORLD", &script_RSF_ORTHO_TYPE_WORLD );
-        REGISTER_GLOBAL_VAR( "const uint32 RSF_ORTHO_TYPE_SCREENSPACE", &script_RSF_ORTHO_TYPE_SCREENSPACE );
-
-        REGISTER_GLOBAL_VAR( "const uint32 CVAR_CHEAT", &script_CVAR_CHEAT );
-        REGISTER_GLOBAL_VAR( "const uint32 CVAR_ROM", &script_CVAR_ROM );
-        REGISTER_GLOBAL_VAR( "const uint32 CVAR_INIT", &script_CVAR_INIT );
-        REGISTER_GLOBAL_VAR( "const uint32 CVAR_LATCH", &script_CVAR_LATCH );
-        REGISTER_GLOBAL_VAR( "const uint32 CVAR_NODEFAULT", &script_CVAR_NODEFAULT );
-        REGISTER_GLOBAL_VAR( "const uint32 CVAR_NORESTART", &script_CVAR_NORESTART );
-        REGISTER_GLOBAL_VAR( "const uint32 CVAR_NOTABCOMPLETE", &script_CVAR_NOTABCOMPLETE );
-        REGISTER_GLOBAL_VAR( "const uint32 CVAR_PROTECTED", &script_CVAR_PROTECTED );
-        REGISTER_GLOBAL_VAR( "const uint32 CVAR_TEMP", &script_CVAR_TEMP );
-        REGISTER_GLOBAL_VAR( "const uint32 CVAR_SAVE", &script_CVAR_SAVE );
-
-        REGISTER_GLOBAL_VAR( "const uint32 NOMAD_VERSION", &script_NOMAD_VERSION );
-        REGISTER_GLOBAL_VAR( "const uint32 NOMAD_VERSION_UPDATE", &script_NOMAD_VERSION_UPDATE );
-        REGISTER_GLOBAL_VAR( "const uint32 NOMAD_VERSION_PATCH", &script_NOMAD_VERSION_PATCH );
-    }
-
-    { // ModuleInfo
-        REGISTER_GLOBAL_VAR( "const int32 MODULE_VERSION_MAJOR", g_pModuleLib->GetCurrentHandle()->VersionMajor() );
-        REGISTER_GLOBAL_VAR( "const int32 MODULE_VERSION_UPDATE", g_pModuleLib->GetCurrentHandle()->VersionUpdate() );
-        REGISTER_GLOBAL_VAR( "const int32 MODULE_VERSION_PATCH", g_pModuleLib->GetCurrentHandle()->VersionPatch() );
-        REGISTER_GLOBAL_VAR( "const string MODULE_NAME", eastl::addressof( g_pModuleLib->GetCurrentHandle()->GetName() ) );
-    }
-
     { // Math
         RESET_NAMESPACE(); // should this be defined at a global level?
+        /*
+        Register_VecType<vec2, float, 2>( "vec2", "float" );
+        Register_VecType<vec3, float, 2>( "vec3", "float" );
+        Register_VecType<vec4, float, 2>( "vec4", "float" );
+
+        Register_VecType<ivec2, int, 2>( "ivec2", "int" );
+        Register_VecType<ivec3, int, 2>( "ivec3", "int" );
+        Register_VecType<ivec4, int, 2>( "ivec4", "int" );
+
+        Register_VecType<uvec2, unsigned, 2>( "uvec2", "uint" );
+        Register_VecType<uvec3, unsigned, 2>( "uvec3", "uint" );
+        Register_VecType<uvec4, unsigned, 2>( "uvec4", "uint" );
+        */
+
         {
             REGISTER_OBJECT_TYPE( "vec2", vec2, asOBJ_VALUE );
             
@@ -2081,7 +2018,7 @@ void ModuleLib_Register_Engine( void )
             asCALL_GENERIC
         );
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
-            "bool ImGui::SliderFloat( const string& in, float& out, float, float, int = 0 )", asFUNCTION( ImGui_SliderFloat ),
+            "float ImGui::SliderFloat( const string& in, float, float, float, int = 0 )", asFUNCTION( ImGui_SliderFloat ),
             asCALL_GENERIC
         );
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
@@ -2111,7 +2048,7 @@ void ModuleLib_Register_Engine( void )
         #undef REGISTER_GLOBAL_FUNCTION
         #define REGISTER_GLOBAL_FUNCTION( decl, funcPtr ) \
             ValidateFunction( __func__, decl,\
-                g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( decl, asFUNCTION( ModuleLib_##funcPtr ), asCALL_GENERIC ) )
+                g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( decl, funcPtr, asCALL_GENERIC ) )
     }
     RESET_NAMESPACE();
 
@@ -2120,20 +2057,22 @@ void ModuleLib_Register_Engine( void )
 	SET_NAMESPACE( "TheNomad::Engine" );
 	{ // Engine
         
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CvarRegister( const string& in, const string& in, uint, int64& out, float& out, int& out, int& out )", CvarRegisterGeneric );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CvarSet( const string& in, const string& in )", CvarSetValueGeneric );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CvarUpdate( string& out, int64& out, float& out, int& out, const int )", CvarUpdateGeneric );
-        REGISTER_GLOBAL_FUNCTION( "int64 TheNomad::Engine::CvarVariableInteger( const string& in )", CvarVariableInteger );
-        REGISTER_GLOBAL_FUNCTION( "float TheNomad::Engine::CvarVariableFloat( const string& in )", CvarVariableFloat );
-        REGISTER_GLOBAL_FUNCTION( "string TheNomad::Engine::CvarVariableString( const string& in )", CvarVariableString );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::CvarRegister( const string& in, const string& in, uint, int64& out, float& out, int& out, int& out )",
+            asFUNCTION( ModuleLib_CvarRegisterGeneric ), asCALL_GENERIC );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::CvarUpdate( string& out, int64& out, float& out, int& out, const int )",
+            asFUNCTION( ModuleLib_CvarUpdateGeneric ), asCALL_GENERIC );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CvarSet( const string& in, const string& in )", WRAP_FN( CvarSetValue ) );
+        REGISTER_GLOBAL_FUNCTION( "int64 TheNomad::Engine::CvarVariableInteger( const string& in )", WRAP_FN( CvarVariableInt ) );
+        REGISTER_GLOBAL_FUNCTION( "float TheNomad::Engine::CvarVariableFloat( const string& in )", WRAP_FN( CvarVariableFloat ) );
+        REGISTER_GLOBAL_FUNCTION( "string TheNomad::Engine::CvarVariableString( const string& in )", WRAP_FN( CvarVariableString ) );
 
-        REGISTER_GLOBAL_FUNCTION( "uint TheNomad::Engine::CmdArgc()", CmdArgcGeneric );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdArgvFixed( int8[]& in, uint, uint )", CmdArgvFixedGeneric );
-        REGISTER_GLOBAL_FUNCTION( "const string& TheNomad::Engine::CmdArgv( uint )", CmdArgvGeneric );
-        REGISTER_GLOBAL_FUNCTION( "const string& TheNomad::Engine::CmdArgs( uint )", CmdArgsGeneric );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdAddCommand( const string& in )", CmdAddCommandGeneric );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdRemoveCommand( const string& in )", CmdRemoveCommandGeneric );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdExecuteCommand( const string& in )", CmdExecuteCommandGeneric );
+        REGISTER_GLOBAL_FUNCTION( "uint TheNomad::Engine::CmdArgc()", WRAP_FN( Cmd_Argc ) );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdArgvFixed( int8[]& in, uint )", WRAP_FN( CmdArgvFixed ) );
+        REGISTER_GLOBAL_FUNCTION( "const string& TheNomad::Engine::CmdArgv( uint )", WRAP_FN( CmdArgv ) );
+        REGISTER_GLOBAL_FUNCTION( "const string& TheNomad::Engine::CmdArgs( uint )", WRAP_FN( CmdArgs ) );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdAddCommand( const string& in )", WRAP_FN( CmdAddCommand ) );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdRemoveCommand( const string& in )", WRAP_FN( CmdRemoveCommand ) );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdExecuteCommand( const string& in )", WRAP_FN( CmdExecuteCommand ) );
 
         REGISTER_ENUM_TYPE( "KeyNum" );
         REGISTER_ENUM_VALUE( "KeyNum", "Key_A", KEY_A );
@@ -2177,8 +2116,8 @@ void ModuleLib_Register_Engine( void )
         REGISTER_ENUM_VALUE( "KeyNum", "Key_BackSlash", KEY_BACKSLASH );
         REGISTER_ENUM_VALUE( "KeyNum", "Key_Slash", KEY_SLASH );
 
-        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::IsAnyKeyDown()", IsAnyKeyDown );
-        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::IsKeyDown( KeyNum )", KeyIsDown );
+        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::IsAnyKeyDown()", WRAP_FN( Key_AnyDown ) );
+        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::IsKeyDown( KeyNum )", WRAP_FN( Key_IsDown ) );
 
         REGISTER_OBJECT_TYPE( "Timer", CTimer, asOBJ_VALUE );
         REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Engine::Timer", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( CTimer, ( void ) ) );
@@ -2195,11 +2134,11 @@ void ModuleLib_Register_Engine( void )
 			
 			// could this be a class, YES, but I won't force it on the modder
 			
-			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::PlaySfx( int )", Snd_PlaySfx );
-			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::SetLoopingTrack( int )", Snd_SetLoopingTrack );
-			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::ClearLoopingTrack()", Snd_ClearLoopingTrack );
-			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::SoundSystem::RegisterSfx( const string& in )", Snd_RegisterSfx );
-			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::SoundSystem::RegisterTrack( const string& in )", Snd_RegisterTrack );
+			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::PlaySfx( int )", WRAP_FN( Snd_PlaySfx ) );
+			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::SetLoopingTrack( int )", WRAP_FN( Snd_SetLoopingTrack ) );
+			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::ClearLoopingTrack()", WRAP_FN( Snd_ClearLoopingTrack ) );
+			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::SoundSystem::RegisterSfx( const string& in )", WRAP_FN( SndRegisterSfx ) );
+			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::SoundSystem::RegisterTrack( const string& in )", WRAP_FN( SndRegisterTrack ) );
 
             RESET_NAMESPACE();
 		}
@@ -2208,62 +2147,62 @@ void ModuleLib_Register_Engine( void )
 			
 			// could this be a class, YES, but I won't force it on the modder
 			
-			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::FileSystem::OpenFileRead( const string& in )", OpenFileRead );
-			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::FileSystem::OpenFileWrite( const string& in )", OpenFileWrite );
-			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::FileSystem::OpenFileAppend( const string& in )", OpenFileAppend );
-			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::OpenFile( const string& in, int, int& out )", OpenFile );
-			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::FileSystem::CloseFile( int )", CloseFile );
-			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::GetLength( int )", GetFileLength );
-			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::GetPosition( int )", GetFilePosition );
-            REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::SetPosition( int, uint64, uint )", FileSetPosition );
-			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::LoadFile( const string& in, vector<int8>& out )", LoadFile );
-            REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::LoadFile( const string& in, string& out )", LoadFileString );
+			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::FileSystem::OpenFileRead( const string& in )", WRAP_FN( OpenFileRead ) );
+			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::FileSystem::OpenFileWrite( const string& in )", WRAP_FN( OpenFileWrite ) );
+			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::FileSystem::OpenFileAppend( const string& in )", WRAP_FN( OpenFileAppend ) );
+			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::OpenFile( const string& in, int, int& out )", WRAP_FN( OpenFile ) );
+			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::FileSystem::CloseFile( int )", WRAP_FN( CloseFile ) );
+			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::GetLength( int )", WRAP_FN( GetFileLength ) );
+			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::GetPosition( int )", WRAP_FN( GetFilePosition ) );
+            REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::SetPosition( int, uint64, uint )", WRAP_FN( FileSetPosition ) );
+			REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::LoadFile( const string& in, array<int8>& out )",WRAP_FN( LoadFile ) );
+            REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::FileSystem::LoadFile( const string& in, string& out )", WRAP_FN( LoadFileString ) );
 
             {
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteInt8( char, int )", WriteInt8 );
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteInt16( int16, int )", WriteInt16 );
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteInt32( int32, int )", WriteInt32 );
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteInt64( int64, int )", WriteInt64 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteInt8( char, int )", WRAP_FN( WriteInt8 ) );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteInt16( int16, int )", WRAP_FN( WriteInt16 ) );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteInt32( int32, int )", WRAP_FN( WriteInt32 ) );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteInt64( int64, int )", WRAP_FN( WriteInt64 ) );
 
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteUInt8( char, int )", WriteUInt8 );
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteUInt16( uint16, int )", WriteUInt16 );
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteUInt32( uint32, int )", WriteUInt32 );
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteUInt64( uint64, int )", WriteUInt64 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteUInt8( char, int )", WRAP_FN( WriteUInt8 ) );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteUInt16( uint16, int )", WRAP_FN( WriteUInt16 ) );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteUInt32( uint32, int )", WRAP_FN( WriteUInt32 ) );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteUInt64( uint64, int )", WRAP_FN( WriteUInt64 ) );
 
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteChar( char, int )", WriteInt8 );
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteShort( int16, int )", WriteInt16 );
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteInt( int32, int )", WriteInt32 );
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteLong( int64, int )", WriteInt64 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteChar( char, int )", WRAP_FN( WriteInt8 ) );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteShort( int16, int )", WRAP_FN( WriteInt16 ) );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteInt( int32, int )", WRAP_FN( WriteInt32 ) );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteLong( int64, int )", WRAP_FN( WriteInt64 ) );
 
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteByte( char, int )", WriteUInt8 );
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteUShort( uint16, int )", WriteUInt16 );
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteUInt( uint32, int )", WriteUInt32 );
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteULong( uint64, int )", WriteUInt64 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteByte( char, int )", WRAP_FN( WriteUInt8 ) );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteUShort( uint16, int )", WRAP_FN( WriteUInt16 ) );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteUInt( uint32, int )", WRAP_FN( WriteUInt32 ) );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteULong( uint64, int )", WRAP_FN( WriteUInt64 ) );
 
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteString( const string& in, int )", WriteString );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::WriteString( const string& in, int )", WRAP_FN( WriteString ) );
             }
             {
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadInt8( char, int )", ReadInt8 );
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadInt16( int16, int )", ReadInt16 );
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadInt32( int32, int )", ReadInt32 );
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadInt64( int64, int )", ReadInt64 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadInt8( char, int )", WRAP_FN( ReadInt8 ) );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadInt16( int16, int )", WRAP_FN( ReadInt16 ) );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadInt32( int32, int )", WRAP_FN( ReadInt32 ) );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadInt64( int64, int )", WRAP_FN( ReadInt64 ) );
 
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadUInt8( char, int )", ReadUInt8 );
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadUInt16( uint16, int  )", ReadUInt16 );
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadUInt32( uint32, int  )", ReadUInt32 );
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadUInt64( uint64, int  )", ReadUInt64 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadUInt8( char, int )", WRAP_FN( ReadUInt8 ) );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadUInt16( uint16, int  )", WRAP_FN( ReadUInt16 ) );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadUInt32( uint32, int  )", WRAP_FN( ReadUInt32 ) );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadUInt64( uint64, int  )", WRAP_FN( ReadUInt64 ) );
 
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadChar( char, int )", ReadInt8 );
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadShort( int16, int )", ReadInt16 );
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadInt( int32, int )", ReadInt32 );
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadLong( int64, int )", ReadInt64 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadChar( char, int )", WRAP_FN( ReadInt8 ) );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadShort( int16, int )", WRAP_FN( ReadInt16 ) );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadInt( int32, int )", WRAP_FN( ReadInt32 ) );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadLong( int64, int )", WRAP_FN( ReadInt64 ) );
 
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadByte( char, int )", ReadUInt8 );
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadUShort( uint16, int )", ReadUInt16 );
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadUInt( uint32, int )", ReadUInt32 );
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadULong( uint64, int )", ReadUInt64 );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadByte( char, int )", WRAP_FN( ReadUInt8 ) );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadUShort( uint16, int )", WRAP_FN( ReadUInt16 ) );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadUInt( uint32, int )", WRAP_FN( ReadUInt32 ) );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadULong( uint64, int )", WRAP_FN( ReadUInt64 ) );
 
-                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadString( string& out, int )", ReadString );
+                REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::FileSystem::ReadString( string& out, int )", WRAP_FN( ReadString ) );
             }
 
             RESET_NAMESPACE();
@@ -2308,14 +2247,15 @@ void ModuleLib_Register_Engine( void )
             REGISTER_OBJECT_PROPERTY( "TheNomad::Engine::Renderer::PolyVert", "vec2 uv", offsetof( CModulePolyVert, m_TexCoords ) );
             REGISTER_OBJECT_PROPERTY( "TheNomad::Engine::Renderer::PolyVert", "uint32 color", offsetof( CModulePolyVert, m_Color ) );
 
-            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::ClearScene()", ClearScene );
-            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::RenderScene( uint, uint, uint, uint, uint, uint )", RenderScene );
+            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::ClearScene()", WRAP_FN( ClearScene ) );
+            g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::Renderer::RenderScene( uint, uint, uint, uint, uint, uint )", asFUNCTION( ModuleLib_RenderScene ), asCALL_GENERIC );
 //            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::RE_AddEntityToScene( int, vec3, uint,  )", AddEntityToScene );
-            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddPolyToScene( int, const vector<TheNomad::Engine::Renderer::PolyVert>& in )", AddPolyToScene );
-            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddSpriteToScene( const vec3& in, int, int )", AddSpriteToScene );
-            REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RegisterShader( const string& in )", RegisterShader );
-            REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RegisterSpriteSheet( const string& in, uint, uint, uint, uint )", RegisterSpriteSheet );
-            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::LoadWorld( const string& in )", LoadWorld );
+            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddPolyToScene( int, const TheNomad::Engine::Renderer::PolyVert[]& in )", WRAP_FN_PR( AddPolyToScene, ( nhandle_t, const CScriptArray * ), void ) );
+            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddSpriteToScene( const vec3& in, int, int )", WRAP_FN( AddSpriteToScene ) );
+            REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RegisterShader( const string& in )", WRAP_FN( RegisterShader ) );
+            g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "int TheNomad::Engine::Renderer::RegisterSpriteSheet( const string& in, uint, uint, uint, uint )", asFUNCTION( ModuleLib_RegisterSpriteSheet ), asCALL_GENERIC );
+            REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RegisterSprite( int, uint )", WRAP_FN( RegisterSprite ) );
+            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::LoadWorld( const string& in )", WRAP_FN( LoadWorld ) );
 
             RESET_NAMESPACE();
         }
@@ -2368,10 +2308,14 @@ void ModuleLib_Register_Engine( void )
 //        REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::RayCast", "float m_nLength", offsetof( ray_t, length ) );
 //        REGISTER_OBJECT_PROPERTY( "TheNomad::GameSystem::RayCast", "float m_nAngle", offsetof( ray_t, angle ) );
         
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetString( const string& in, string& out )", GetString );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetString( const string& in, string& out )", WRAP_FN( GetString ) );
 
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SetCameraPos( const vec2& in )", SetCameraPos );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SetCameraPos( const vec2& in )", WRAP_FN( SetCameraPos ) );
 
+        #undef REGISTER_GLOBAL_FUNCTION
+        #define REGISTER_GLOBAL_FUNCTION( decl, funcPtr ) \
+            ValidateFunction( __func__, decl,\
+                g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( decl, asFUNCTION( ModuleLib_##funcPtr ), asCALL_GENERIC ) )
 		REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::BeginSaveSection( const string& in )", BeginSaveSection );
 		REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::EndSaveSection()", EndSaveSection );
         REGISTER_GLOBAL_FUNCTION( "int TheNomad::GameSystem::FindSaveSection( const string& in )", FindSaveSection );
@@ -2398,15 +2342,15 @@ void ModuleLib_Register_Engine( void )
 
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveFloat( const string& in, float )", SaveFloat );
         
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const vector<float>& in )", SaveFloatArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const vector<int8>& in )", SaveInt8Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const vector<int16>& in )", SaveInt16Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const vector<int32>& in )", SaveInt32Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const vector<int64>& in )", SaveInt64Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const vector<uint8>& in )", SaveUInt8Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const vector<uint16>& in )", SaveUInt16Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const vector<uint32>& in )", SaveUInt32Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const vector<uint64>& in )", SaveUInt64Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const float[]& in )", SaveFloatArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const int8[]& in )", SaveInt8Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const int16[]& in )", SaveInt16Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const int32[]& in )", SaveInt32Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const int64[]& in )", SaveInt64Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const uint8[]& in )", SaveUInt8Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const uint16[]& in )", SaveUInt16Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const uint32[]& in )", SaveUInt32Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const uint64[]& in )", SaveUInt64Array );
 
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveString( const string& in, const string& in )", SaveString );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveVec2( const string& in, const vec2& in )", SaveVec2 );
@@ -2435,22 +2379,26 @@ void ModuleLib_Register_Engine( void )
 
         REGISTER_GLOBAL_FUNCTION( "float TheNomad::GameSystem::LoadFloat( const string& in, int )", LoadFloat );
         
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, vector<float>& out, int )", LoadFloatArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, vector<int8>& out, int )", LoadInt8Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, vector<int16>& out, int )", LoadInt16Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, vector<int32>& out, int )", LoadInt32Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, vector<int64>& out, int )", LoadInt64Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, vector<uint8>& out, int )", LoadUInt8Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, vector<uint16>& out, int )", LoadUInt16Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, vector<uint32>& out, int )", LoadUInt32Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, vector<uint64>& out, int )", LoadUInt64Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, float[]& in, int )", LoadFloatArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, int8[]& in, int )", LoadInt8Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, int16[]& in, int )", LoadInt16Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, int32[]& in, int )", LoadInt32Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, int64[]& in, int )", LoadInt64Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, uint8[]& in, int )", LoadUInt8Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, uint16[]& in, int )", LoadUInt16Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, uint32[]& in, int )", LoadUInt32Array );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, uint64[]& in, int )", LoadUInt64Array );
 
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadString( const string& in, string& out, int )", LoadString );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadVec2( const string& in, vec2& out, int )", LoadVec2 );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadVec3( const string& in, vec3& out, int )", LoadVec3 );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadVec4( const string& in, vec4& out, int )", LoadVec4 );
+        #undef REGISTER_GLOBAL_FUNCTION
+        #define REGISTER_GLOBAL_FUNCTION( decl, funcPtr ) \
+            ValidateFunction( __func__, decl,\
+                g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( decl, funcPtr, asCALL_GENERIC ) )
 
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetGPUGameConfig( TheNomad::Engine::Renderer::GPUConfig& out )", GetGPUConfig );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetGPUGameConfig( TheNomad::Engine::Renderer::GPUConfig& out )", WRAP_FN( GetGPUConfig ) );
 
         
 		// these are here because if they change in the map editor or the engine, it'll break sgame
@@ -2484,32 +2432,32 @@ void ModuleLib_Register_Engine( void )
 		REGISTER_ENUM_VALUE( "DirType", "Inside", DIR_NULL );
         REGISTER_ENUM_VALUE( "DirType", "NumDirs", NUMDIRS );
 
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::CastRay( ref@ )", CastRay );
-        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::GameSystem::CheckWallHit( const vec3& in, TheNomad::GameSystem::DirType )", CheckWallHit );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::CastRay( ref@ )", WRAP_FN( CastRay ) );
+        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::GameSystem::CheckWallHit( const vec3& in, TheNomad::GameSystem::DirType )", WRAP_FN( CheckWallHit ) );
 		
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetCheckpointData( uvec3& out, uint )", GetCheckpointData );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetSpawnData( uvec3& out, uint& out, uint& out, uint )", GetSpawnData );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetTileData( uint32[]& out )", GetTileData );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SetActiveMap( int, uint& out, uint& out, uint& out, float[]& in, "
-            "TheNomad::GameSystem::LinkEntity& in )", SetActiveMap );
-        REGISTER_GLOBAL_FUNCTION( "int LoadMap( const string& in )", LoadMap );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetCheckpointData( uvec3& out, uint )", WRAP_FN( G_GetCheckpointData ) );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetSpawnData( uvec3& out, uint& out, uint& out, uint )", WRAP_FN( G_GetSpawnData ) );
+        REGISTER_GLOBAL_FUNCTION( "array<array<uint>>@ TheNomad::GameSystem::GetTileData()", WRAP_FN( GetTileData ) );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::GameSystem::SetActiveMap( int, uint& out, uint& out, uint& out, "
+            "TheNomad::GameSystem::LinkEntity& in )", asFUNCTION( ModuleLib_SetActiveMap ), asCALL_GENERIC );
+        REGISTER_GLOBAL_FUNCTION( "int LoadMap( const string& in )", WRAP_FN( LoadMap ) );
     }
 
     SET_NAMESPACE( "TheNomad" );
     { // Util
         SET_NAMESPACE( "TheNomad::Util" );
 
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Util::GetModuleList( vector<string>& out )", GetModuleList );
-        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Util::IsModuleActive( const string& in )", IsModuleActive );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Util::GetModuleList( array<string>& out )", WRAP_FN( GetModuleList ) );
+        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Util::IsModuleActive( const string& in )", WRAP_FN( IsModuleActive ) );
 
-        REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StrICmp( const string& in, const string& in )", StrICmp );
-        REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StrCmp( const string& in, const string& in )", StrCmp );
-        REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StringToInt( const string& in )", StringToInt );
-        REGISTER_GLOBAL_FUNCTION( "uint TheNomad::Util::StringToUInt( const string& in )", StringToUInt );
-        REGISTER_GLOBAL_FUNCTION( "float TheNomad::Util::StringToFloat( const string& in )", StringToFloat );
-        REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StringToInt( const int8[]& in )", StringBufferToInt );
-        REGISTER_GLOBAL_FUNCTION( "uint TheNomad::Util::StringToUInt( const int8[]& in )", StringBufferToUInt );
-        REGISTER_GLOBAL_FUNCTION( "float TheNomad::Util::StringToFloat( const int8[]& in )", StringBufferToFloat );
+        REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StrICmp( const string& in, const string& in )", WRAP_FN( StrICmp ) );
+        REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StrCmp( const string& in, const string& in )", WRAP_FN( StrCmp ) );
+        REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StringToInt( const string& in )", WRAP_FN( StringToInt ) );
+        REGISTER_GLOBAL_FUNCTION( "uint TheNomad::Util::StringToUInt( const string& in )", WRAP_FN( StringToUInt ) );
+        REGISTER_GLOBAL_FUNCTION( "float TheNomad::Util::StringToFloat( const string& in )", WRAP_FN( StringToFloat ) );
+        REGISTER_GLOBAL_FUNCTION( "int TheNomad::Util::StringToInt( const int8[]& in )", WRAP_FN( StringBufferToInt ) );
+        REGISTER_GLOBAL_FUNCTION( "uint TheNomad::Util::StringToUInt( const int8[]& in )", WRAP_FN( StringBufferToUInt ) );
+        REGISTER_GLOBAL_FUNCTION( "float TheNomad::Util::StringToFloat( const int8[]& in )", WRAP_FN( StringBufferToFloat ) );
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
             "float TheNomad::Util::Distance( const vec2& in, const vec2& in )", WRAP_FN_PR( disBetweenOBJ, ( const vec2&, const vec2& ), float ), asCALL_GENERIC );
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
@@ -2520,9 +2468,9 @@ void ModuleLib_Register_Engine( void )
             "float TheNomad::Util::Distance( const uvec3& in, const uvec3& in )", WRAP_FN_PR( disBetweenOBJ, ( const uvec3_t, const uvec3_t ), unsigned ), asCALL_GENERIC );
             g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
             "float TheNomad::Util::Distance( const ivec3& in, const ivec3& in )", WRAP_FN_PR( disBetweenOBJ, ( const ivec3_t, const ivec3_t ), int ), asCALL_GENERIC );
-        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Util::BoundsIntersect( const TheNomad::GameSystem::BBox& in, const TheNomad::GameSystem::BBox& in )", BoundsIntersect );
-        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Util::BoundsIntersectPoint( const TheNomad::GameSystem::BBox& in, const vec3& in )", BoundsIntersectPoint );
-        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Util::BoundsIntersectSphere( const TheNomad::GameSystem::BBox& in, const vec3& in, float )", BoundsIntersectSphere );
+        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Util::BoundsIntersect( const TheNomad::GameSystem::BBox& in, const TheNomad::GameSystem::BBox& in )", WRAP_FN_PR( BoundsIntersect, ( const CModuleBoundBox *, const CModuleBoundBox * ), bool ) );
+        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Util::BoundsIntersectPoint( const TheNomad::GameSystem::BBox& in, const vec3& in )", WRAP_FN_PR( BoundsIntersectPoint, ( const CModuleBoundBox *, const vec3 * ), bool ) );
+        REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Util::BoundsIntersectSphere( const TheNomad::GameSystem::BBox& in, const vec3& in, float )", WRAP_FN_PR( BoundsIntersectSphere, ( const CModuleBoundBox *, const vec3 *, float ), bool ) );
 //        REGISTER_GLOBAL_FUNCTION( "string TheNomad::Util::SkipPath( const string& in )", SkipPath );
 //        REGISTER_GLOBAL_FUNCTION( "string TheNomad::Util::GetExtension( const string& in )", GetExtension );
 //        REGISTER_GLOBAL_FUNCTION( "string TheNomad::Util::DefaultExtension( const string& in, const string& in )", DefaultExtension );
@@ -2536,7 +2484,94 @@ void ModuleLib_Register_Engine( void )
 	// misc & global funcdefs
 	//
 	
-	REGISTER_GLOBAL_FUNCTION( "void ConsolePrint( const string& in )", ConsolePrint );
-    REGISTER_GLOBAL_FUNCTION( "void ConsoleWarning( const string& in )", ConsoleWarning );
-    REGISTER_GLOBAL_FUNCTION( "void GameError( const string& in )", GameError );
+	REGISTER_GLOBAL_FUNCTION( "void ConsolePrint( const string& in )", WRAP_FN( ConsolePrint ) );
+    REGISTER_GLOBAL_FUNCTION( "void ConsoleWarning( const string& in )", WRAP_FN( ConsoleWarning ) );
+    REGISTER_GLOBAL_FUNCTION( "void GameError( const string& in )", WRAP_FN( GameError ) );
+
+    //    SET_NAMESPACE( "TheNomad::Constants" );
+    { // Constants
+        REGISTER_GLOBAL_VAR( "const float M_PI", &script_M_PI );
+
+        REGISTER_GLOBAL_VAR( "const vec4 colorBlack", colorBlack );
+        REGISTER_GLOBAL_VAR( "const vec4 colorRed", colorRed );
+        REGISTER_GLOBAL_VAR( "const vec4 colorGreen", colorGreen );
+        REGISTER_GLOBAL_VAR( "const vec4 colorYellow", colorYellow );
+        REGISTER_GLOBAL_VAR( "const vec4 colorBlue", colorBlue );
+        REGISTER_GLOBAL_VAR( "const vec4 colorCyan", colorCyan );
+        REGISTER_GLOBAL_VAR( "const vec4 colorMagenta", colorMagenta );
+        REGISTER_GLOBAL_VAR( "const vec4 colorWhite", colorWhite );
+
+        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_CHECKPOINT", &script_SURFACEPARM_CHECKPOINT );
+        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_SPAWN", &script_SURFACEPARM_SPAWN );
+        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_FLESH", &script_SURFACEPARM_FLESH );
+        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_LAVA", &script_SURFACEPARM_LAVA );
+        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_METAL", &script_SURFACEPARM_METAL );
+        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_WOOD", &script_SURFACEPARM_WOOD );
+        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_NODAMAGE", &script_SURFACEPARM_NODAMAGE );
+        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_NODLIGHT", &script_SURFACEPARM_NODLIGHT );
+        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_NOMARKS", &script_SURFACEPARM_NOMARKS );
+        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_NOMISSILE", &script_SURFACEPARM_NOMISSILE );
+        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_NOSTEPS", &script_SURFACEPARM_NOSTEPS );
+        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_WATER", &script_SURFACEPARM_WATER );
+
+        REGISTER_GLOBAL_VAR( "const int32 FS_INVALID_HANDLE", &script_FS_INVALID_HANDLE );
+        REGISTER_GLOBAL_VAR( "const uint32 FS_OPEN_READ", &script_FS_OPEN_READ );
+        REGISTER_GLOBAL_VAR( "const uint32 FS_OPEN_WRITE", &script_FS_OPEN_WRITE );
+        REGISTER_GLOBAL_VAR( "const uint32 FS_OPEN_APPEND", &script_FS_OPEN_APPEND );
+
+        REGISTER_GLOBAL_VAR( "const uint32 MAXPRINTMSG", &script_MAXPRINTMSG );
+        REGISTER_GLOBAL_VAR( "const uint32 MAX_TOKEN_CHARS", &script_MAX_TOKEN_CHARS );
+        REGISTER_GLOBAL_VAR( "const uint32 MAX_STRING_CHARS", &script_MAX_STRING_CHARS );
+        REGISTER_GLOBAL_VAR( "const uint32 MAX_STRING_TOKENS", &script_MAX_STRING_TOKENS );
+        REGISTER_GLOBAL_VAR( "const uint32 MAX_NPATH", &script_MAX_NPATH );
+        REGISTER_GLOBAL_VAR( "const uint32 MAX_MAP_WIDTH", &script_MAX_MAP_WIDTH );
+        REGISTER_GLOBAL_VAR( "const uint32 MAX_MAP_HEIGHT", &script_MAX_MAP_HEIGHT );
+
+        REGISTER_GLOBAL_VAR( "const string COLOR_BLACK", &script_COLOR_BLACK );
+        REGISTER_GLOBAL_VAR( "const string COLOR_RED", &script_COLOR_RED );
+        REGISTER_GLOBAL_VAR( "const string COLOR_GREEN", &script_COLOR_GREEN );
+        REGISTER_GLOBAL_VAR( "const string COLOR_YELLOW", &script_COLOR_YELLOW );
+        REGISTER_GLOBAL_VAR( "const string COLOR_BLUE", &script_COLOR_BLUE );
+        REGISTER_GLOBAL_VAR( "const string COLOR_CYAN", &script_COLOR_CYAN );
+        REGISTER_GLOBAL_VAR( "const string COLOR_MAGENTA", &script_COLOR_MAGENTA );
+        REGISTER_GLOBAL_VAR( "const string COLOR_WHITE", &script_COLOR_WHITE );
+        REGISTER_GLOBAL_VAR( "const string COLOR_RESET", &script_COLOR_RESET );
+
+        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_BLACK", &script_S_COLOR_BLACK );
+        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_RED", &script_S_COLOR_RED );
+        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_GREEN", &script_S_COLOR_GREEN );
+        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_YELLOW", &script_S_COLOR_YELLOW );
+        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_BLUE", &script_S_COLOR_BLUE );
+        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_CYAN", &script_S_COLOR_CYAN );
+        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_MAGENTA", &script_S_COLOR_MAGENTA );
+        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_WHITE", &script_S_COLOR_WHITE );
+        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_RESET", &script_S_COLOR_RESET );
+
+        REGISTER_GLOBAL_VAR( "const uint32 RSF_NOWORLDMODEL", &script_RSF_NORWORLDMODEL );
+        REGISTER_GLOBAL_VAR( "const uint32 RSF_ORTHO_TYPE_CORDESIAN", &script_RSF_ORTHO_TYPE_CORDESIAN );
+        REGISTER_GLOBAL_VAR( "const uint32 RSF_ORTHO_TYPE_WORLD", &script_RSF_ORTHO_TYPE_WORLD );
+        REGISTER_GLOBAL_VAR( "const uint32 RSF_ORTHO_TYPE_SCREENSPACE", &script_RSF_ORTHO_TYPE_SCREENSPACE );
+
+        REGISTER_GLOBAL_VAR( "const uint32 CVAR_CHEAT", &script_CVAR_CHEAT );
+        REGISTER_GLOBAL_VAR( "const uint32 CVAR_ROM", &script_CVAR_ROM );
+        REGISTER_GLOBAL_VAR( "const uint32 CVAR_INIT", &script_CVAR_INIT );
+        REGISTER_GLOBAL_VAR( "const uint32 CVAR_LATCH", &script_CVAR_LATCH );
+        REGISTER_GLOBAL_VAR( "const uint32 CVAR_NODEFAULT", &script_CVAR_NODEFAULT );
+        REGISTER_GLOBAL_VAR( "const uint32 CVAR_NORESTART", &script_CVAR_NORESTART );
+        REGISTER_GLOBAL_VAR( "const uint32 CVAR_NOTABCOMPLETE", &script_CVAR_NOTABCOMPLETE );
+        REGISTER_GLOBAL_VAR( "const uint32 CVAR_PROTECTED", &script_CVAR_PROTECTED );
+        REGISTER_GLOBAL_VAR( "const uint32 CVAR_TEMP", &script_CVAR_TEMP );
+        REGISTER_GLOBAL_VAR( "const uint32 CVAR_SAVE", &script_CVAR_SAVE );
+
+        REGISTER_GLOBAL_VAR( "const uint32 NOMAD_VERSION", &script_NOMAD_VERSION );
+        REGISTER_GLOBAL_VAR( "const uint32 NOMAD_VERSION_UPDATE", &script_NOMAD_VERSION_UPDATE );
+        REGISTER_GLOBAL_VAR( "const uint32 NOMAD_VERSION_PATCH", &script_NOMAD_VERSION_PATCH );
+    }
+
+    { // ModuleInfo
+        REGISTER_GLOBAL_VAR( "const int32 MODULE_VERSION_MAJOR", g_pModuleLib->GetCurrentHandle()->VersionMajor() );
+        REGISTER_GLOBAL_VAR( "const int32 MODULE_VERSION_UPDATE", g_pModuleLib->GetCurrentHandle()->VersionUpdate() );
+        REGISTER_GLOBAL_VAR( "const int32 MODULE_VERSION_PATCH", g_pModuleLib->GetCurrentHandle()->VersionPatch() );
+        REGISTER_GLOBAL_VAR( "const string MODULE_NAME", eastl::addressof( g_pModuleLib->GetCurrentHandle()->GetName() ) );
+    }
 }

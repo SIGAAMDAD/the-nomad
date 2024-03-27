@@ -1,6 +1,5 @@
 #include "module_public.h"
 #include "scriptjson.h"
-#include "scriptarray.h"
 
 BEGIN_AS_NAMESPACE
 
@@ -146,7 +145,7 @@ void CScriptJson::Set(const jsonKey_t &key, const CScriptArray &value)
     json js_temp = json::array({});
     for (asUINT i = 0; i < value.GetSize(); i++)
     {
-        CScriptJson** node  = (CScriptJson**)value.At(i);
+        CScriptJson** node  = (CScriptJson**)value.At( i );
         if (node && *node)
         {
             js_temp += *(*node)->js_info;
@@ -226,15 +225,13 @@ bool CScriptJson::Get(const jsonKey_t &key, CScriptArray &value) const
         return false;
 
     json& js_temp = (*js_info)[key.c_str()];
-    if ( value.GetSize() < js_temp.size() ) {
-        value.Resize(js_temp.size());
-    }
+    value.Resize(js_temp.size());
 
     for (asUINT i = 0; i < js_temp.size(); ++i)
     {
         CScriptJson* childNode = Create(engine);
         *(childNode->js_info) = js_temp[i];
-        value.SetValue(i, &childNode);
+        value.SetValue( i, &childNode );
         childNode->Release();
     }
     return true;
@@ -267,12 +264,14 @@ string_t CScriptJson::GetString()
 
 CScriptArray* CScriptJson::GetArray()
 {
-    CScriptArray* retVal = CScriptArray::Create(engine->GetTypeInfoByDecl("array<JsonValue@>"));
+    CScriptArray* retVal = CScriptArray::Create( engine->GetTypeInfoByDecl( "array<json@>" ) );
+    
+    retVal->Reserve( js_info->size() );
     for (json::iterator it = js_info->begin(); it != js_info->end(); ++it)
     {
         CScriptJson* childNode = CScriptJson::Create(engine, *it);
 
-        retVal->InsertLast(childNode);
+        retVal->InsertLast( childNode );
         childNode->Release();
     }
     return retVal;
@@ -913,9 +912,9 @@ void RegisterScriptJson_Generic(asIScriptEngine *engine)
     r = engine->RegisterObjectMethod("json", "bool get(const string &in, string&out) const", asFUNCTION(ScriptJsonGetStr_Generic), asCALL_GENERIC);
     Assert( r >= 0 );
 
-    r = engine->RegisterObjectMethod("json", "void set(const string &in, const array<json@>&in)", asFUNCTION(ScriptJsonSetArr_Generic), asCALL_GENERIC);
+    r = engine->RegisterObjectMethod("json", "void set(const string &in, const array<json@>& in)", asFUNCTION(ScriptJsonSetArr_Generic), asCALL_GENERIC);
     Assert( r >= 0 );
-    r = engine->RegisterObjectMethod("json", "bool get(const string &in, array<json@>&out) const", asFUNCTION(ScriptJsonGetArr_Generic), asCALL_GENERIC);
+    r = engine->RegisterObjectMethod("json", "bool get(const string &in, array<json@>& out) const", asFUNCTION(ScriptJsonGetArr_Generic), asCALL_GENERIC);
     Assert( r >= 0 );
 
     r = engine->RegisterObjectMethod("json", "bool exists(const string &in) const", asFUNCTION(ScriptJsonExists_Generic), asCALL_GENERIC);

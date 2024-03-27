@@ -37,6 +37,7 @@ samivuorela@gmail.com
 #include "aatc_enginestorage.hpp"
 #include "aatc_container_shared.hpp"
 #include "aatc_container_listing.hpp"
+#include "../module_lib/aswrappedcall.h"
 
 
 
@@ -96,10 +97,22 @@ namespace aatc {
 					template<typename T_container> T_container* Factory_copy(asITypeInfo* objtype, const T_container& other) {
 						return new T_container(other);
 					}
+					template<typename T_container> T_container* Factory_list( asITypeInfo *objtype, const typename T_container::value_type *buffer ) {
+						T_container *out = new T_container( objtype );
+						const asUINT numElements = *(asUINT *)buffer;
+						
+						out->container.resize( numElements );
+						memcpy( out->container.data(), ( ( (asUINT *)buffer ) + 1 ), numElements * sizeof( *buffer ) );
+
+						return out;
+					}
 				}
 				namespace asglue {
 					template<typename T_container> T_container* Factory_default(asITypeInfo* objtype) {
 						return factory::Factory_default<T_container>(objtype);
+					}
+					template<typename T_container> T_container* Factory_list( asITypeInfo* objType, const typename T_container::value_type *buffer ) {
+						return factory::Factory_list<T_container>( objType, buffer );
 					}
 					template<typename T_container> T_container* Factory_copy(asITypeInfo* objtype, T_container* other) {
 						T_container* result = factory::Factory_copy<T_container>(objtype, *other);
@@ -273,8 +286,7 @@ namespace aatc {
 					//handle input is void* that points at handle which is a void*
 					//handle output is void* that points at handle which is a void*
 					void StoreHandle(void** target, void* ptr_to_handle) {
-						*target = *(void**)ptr_to_handle;
-						engine->AddRefScriptObject(*target, objtype_content);
+						engine->AddRefScriptObject( ( *target = *(void **)ptr_to_handle ), objtype_content);
 					}
 					void* StoreHandle2(void* ptr_to_handle) {
 						void* result = *(void**)ptr_to_handle;
@@ -544,21 +556,21 @@ namespace aatc {
 						template<typename T_iterator> struct current<T_iterator, container::shared::tag::iterator_access::access_is_mutable> {
 							void operator()(common::RegistrationState& rs) const{
 								rs.Format("T& %s()", config::scriptname::method::iterator::access_function);
-								rs.error = rs.engine->RegisterObjectMethod(rs.n_iterator_T, rs.textbuf, asFunctionPtr(iterator_method::current<T_iterator>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+								CheckASCall( rs.engine->RegisterObjectMethod(rs.n_iterator_T, rs.textbuf, WRAP_OBJ_FIRST(iterator_method::current<T_iterator>), asCALL_GENERIC ) );
 
 								rs.Format("T& get_%s()", config::scriptname::method::iterator::access_property);
-								rs.error = rs.engine->RegisterObjectMethod(rs.n_iterator_T, rs.textbuf, asFunctionPtr(iterator_method::current_get<T_iterator>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+								CheckASCall( rs.engine->RegisterObjectMethod(rs.n_iterator_T, rs.textbuf, WRAP_OBJ_FIRST(iterator_method::current_get<T_iterator>), asCALL_GENERIC ) );
 								rs.Format("void set_%s(const T &in)", config::scriptname::method::iterator::access_property);
-								rs.error = rs.engine->RegisterObjectMethod(rs.n_iterator_T, rs.textbuf, asFunctionPtr(iterator_method::current_set<T_iterator>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+								CheckASCall( rs.engine->RegisterObjectMethod(rs.n_iterator_T, rs.textbuf, WRAP_OBJ_FIRST(iterator_method::current_set<T_iterator>), asCALL_GENERIC ) );
 							}
 						};
 						template<typename T_iterator> struct current<T_iterator, container::shared::tag::iterator_access::access_is_const> {
 							void operator()(common::RegistrationState& rs) const {
 								rs.Format("const T& %s()", config::scriptname::method::iterator::access_function);
-								rs.error = rs.engine->RegisterObjectMethod(rs.n_iterator_T, rs.textbuf, asFunctionPtr(iterator_method::current_const<T_iterator>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+								CheckASCall( rs.engine->RegisterObjectMethod(rs.n_iterator_T, rs.textbuf, WRAP_OBJ_FIRST(iterator_method::current_const<T_iterator>), asCALL_GENERIC ) );
 
 								rs.Format("const T& get_%s()", config::scriptname::method::iterator::access_property);
-								rs.error = rs.engine->RegisterObjectMethod(rs.n_iterator_T, rs.textbuf, asFunctionPtr(iterator_method::current_get<T_iterator>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+								CheckASCall( rs.engine->RegisterObjectMethod(rs.n_iterator_T, rs.textbuf, WRAP_OBJ_FIRST(iterator_method::current_get<T_iterator>), asCALL_GENERIC ) );
 							}
 						};
 
@@ -573,36 +585,41 @@ namespace aatc {
 					typedef typename T_container::container_tags container_tags;
 					typedef typename container_tags::iterator_access container_tags__iterator_access;
 
-					rs.error = rs.engine->RegisterObjectType(rs.n_iterator_class_T, sizeof(T_iterator), asOBJ_VALUE | asOBJ_TEMPLATE | asGetTypeTraits<T_iterator>()); assert(rs.error >= 0);
+					CheckASCall( rs.engine->RegisterObjectType(rs.n_iterator_class_T, sizeof(T_iterator), asOBJ_VALUE | asOBJ_TEMPLATE | asGetTypeTraits<T_iterator>()) );
 
-					rs.error = rs.engine->RegisterObjectBehaviour(rs.n_iterator_T, asBEHAVE_CONSTRUCT, "void f(int&in)", asFunctionPtr(T_iterator::static_constructor_default), asCALL_CDECL_OBJLAST); assert(rs.error >= 0);
+					CheckASCall( rs.engine->RegisterObjectBehaviour(rs.n_iterator_T, asBEHAVE_CONSTRUCT, "void f(int&in)", WRAP_OBJ_LAST(T_iterator::static_constructor_default), asCALL_GENERIC) );
 					rs.Format("void f(int&in,const %s &in)", rs.n_iterator_T);
-					rs.error = rs.engine->RegisterObjectBehaviour(rs.n_iterator_T, asBEHAVE_CONSTRUCT, rs.textbuf, asFunctionPtr(T_iterator::static_constructor_copy), asCALL_CDECL_OBJLAST); assert(rs.error >= 0);
+					CheckASCall( rs.engine->RegisterObjectBehaviour(rs.n_iterator_T, asBEHAVE_CONSTRUCT, rs.textbuf, WRAP_OBJ_LAST(T_iterator::static_constructor_copy), asCALL_GENERIC) );
 					rs.Format("void f(int&in,%s@)", rs.n_container_T);
-					rs.error = rs.engine->RegisterObjectBehaviour(rs.n_iterator_T, asBEHAVE_CONSTRUCT, rs.textbuf, asFunctionPtr(T_iterator::static_constructor_parentcontainer), asCALL_CDECL_OBJLAST); assert(rs.error >= 0);
+					CheckASCall( rs.engine->RegisterObjectBehaviour(rs.n_iterator_T, asBEHAVE_CONSTRUCT, rs.textbuf, WRAP_OBJ_LAST(T_iterator::static_constructor_parentcontainer), asCALL_GENERIC) );
 
-					rs.error = rs.engine->RegisterObjectBehaviour(rs.n_iterator_T, asBEHAVE_DESTRUCT, "void f()", asFUNCTION(aatc::common::reghelp::generic_destructor<T_iterator>), asCALL_CDECL_OBJLAST); assert(rs.error >= 0);
+					CheckASCall( rs.engine->RegisterObjectBehaviour(rs.n_iterator_T, asBEHAVE_DESTRUCT, "void f()", WRAP_OBJ_LAST(aatc::common::reghelp::generic_destructor<T_iterator>), asCALL_GENERIC) );
 
 					detail::register_iterator_method::current<T_iterator, container_tags__iterator_access> register_method_current; register_method_current(rs);
 
-					rs.error = rs.engine->RegisterObjectMethod(rs.n_iterator_T, "bool next()", asMETHOD(T_iterator, Next), asCALL_THISCALL); assert(rs.error >= 0);
-					rs.error = rs.engine->RegisterObjectMethod(rs.n_iterator_T, "bool opPreInc()", asMETHOD(T_iterator, Next), asCALL_THISCALL); assert(rs.error >= 0);
-					rs.error = rs.engine->RegisterObjectMethod(rs.n_iterator_T, "bool opPostInc()", asMETHOD(T_iterator, Next), asCALL_THISCALL); assert(rs.error >= 0);
+					CheckASCall( rs.engine->RegisterObjectMethod(rs.n_iterator_T, "bool next()", WRAP_MFN(T_iterator, Next), asCALL_GENERIC) );
+					CheckASCall( rs.engine->RegisterObjectMethod(rs.n_iterator_T, "bool opPreInc()", WRAP_MFN(T_iterator, Next), asCALL_GENERIC) );
+					CheckASCall( rs.engine->RegisterObjectMethod(rs.n_iterator_T, "bool opPostInc()", WRAP_MFN(T_iterator, Next), asCALL_GENERIC) );
 
 					rs.Format("%s& opAssign(const %s &in)", rs.n_iterator_T, rs.n_iterator_T);
-					rs.error = rs.engine->RegisterObjectMethod(rs.n_iterator_T, rs.textbuf, asMETHOD(T_iterator, operator=), asCALL_THISCALL); assert(rs.error >= 0);
+					CheckASCall( rs.engine->RegisterObjectMethod(rs.n_iterator_T, rs.textbuf, WRAP_MFN(T_iterator, operator=), asCALL_GENERIC) );
 
 					rs.Format("bool opEquals(const %s &in)", rs.n_iterator_T);
-					rs.error = rs.engine->RegisterObjectMethod(rs.n_iterator_T, rs.textbuf, asMETHOD(T_iterator, operator==), asCALL_THISCALL); assert(rs.error >= 0);
+					CheckASCall( rs.engine->RegisterObjectMethod(rs.n_iterator_T, rs.textbuf, WRAP_MFN(T_iterator, operator==), asCALL_GENERIC ) );
 
 					rs.Format("bool %s()", config::scriptname::method::iterator::is_end);
-					rs.error = rs.engine->RegisterObjectMethod(rs.n_iterator_T, rs.textbuf, asMETHOD(T_iterator, IsEnd), asCALL_THISCALL); assert(rs.error >= 0);
+					CheckASCall( rs.engine->RegisterObjectMethod(rs.n_iterator_T, rs.textbuf, WRAP_MFN(T_iterator, IsEnd), asCALL_GENERIC) );
 
 					rs.Format("bool %s()", config::scriptname::method::iterator::is_valid);
-					rs.error = rs.engine->RegisterObjectMethod(rs.n_iterator_T, rs.textbuf, asMETHOD(T_iterator, IsValid), asCALL_THISCALL); assert(rs.error >= 0);
+					CheckASCall( rs.engine->RegisterObjectMethod(rs.n_iterator_T, rs.textbuf, WRAP_MFN(T_iterator, IsValid), asCALL_GENERIC) );
 				}
 
-
+				// a custom registration implementation for like list, stack, vector, etc.
+				// contains stuff like initializer_list and other handy dandies
+				template<typename T_container> void register_container_datalist_base( common::RegistrationState& rs ) {
+					rs.Format( "%s@ f(int&in, int&in) {repeat T}", rs.n_container_T );
+					CheckASCall( rs.engine->RegisterObjectBehaviour( rs.n_container_T, asBEHAVE_LIST_FACTORY, rs.textbuf, WRAP_FN_PR(shared::asglue::Factory_list<T_container>, ( asITypeInfo *, const typename T_container::value_type * ), T_container * ), asCALL_GENERIC ) );
+				}
 
 				template<typename T_container> void register_containerbase(common::RegistrationState& rs) {
 					typedef typename T_container::Iterator T_iterator;
@@ -614,43 +631,46 @@ namespace aatc {
 					common::RegistrationState::Format_static(rs.n_iterator_T, common::RegistrationState::bufsize, "%s<T>", rs.n_iterator);
 					common::RegistrationState::Format_static(rs.n_iterator_class_T, common::RegistrationState::bufsize, "%s<class T>", rs.n_iterator);
 
-					rs.error = rs.engine->RegisterObjectType(rs.n_container_class_T, 0, asOBJ_REF | asOBJ_GC | asOBJ_TEMPLATE); assert(rs.error >= 0);
+					Con_Printf( "Registering module container class '%s'...\n", rs.n_container_T );
+
+					CheckASCall( rs.engine->RegisterObjectType(rs.n_container_class_T, 0, asOBJ_REF | asOBJ_GC | asOBJ_TEMPLATE) );
 
 					rs.Format("%s@ f(int&in)", rs.n_container_T);
-					rs.error = rs.engine->RegisterObjectBehaviour(rs.n_container_T, asBEHAVE_FACTORY, rs.textbuf, asFUNCTION(shared::asglue::Factory_default<T_container>), asCALL_CDECL); assert(rs.error >= 0);
+					CheckASCall( rs.engine->RegisterObjectBehaviour(rs.n_container_T, asBEHAVE_FACTORY, rs.textbuf, WRAP_FN(shared::asglue::Factory_default<T_container>), asCALL_GENERIC) );
 					rs.Format("%s@ f(int&in,%s@)", rs.n_container_T, rs.n_container_T);
-					rs.error = rs.engine->RegisterObjectBehaviour(rs.n_container_T, asBEHAVE_FACTORY, rs.textbuf, asFUNCTION(shared::asglue::Factory_copy<T_container>), asCALL_CDECL); assert(rs.error >= 0);
+					CheckASCall( rs.engine->RegisterObjectBehaviour(rs.n_container_T, asBEHAVE_FACTORY, rs.textbuf, WRAP_FN(shared::asglue::Factory_copy<T_container>), asCALL_GENERIC ) );
 					rs.Format("%s& opAssign(%s@)", rs.n_container_T, rs.n_container_T);
-					rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(shared::asglue::Assign<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+					CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(shared::asglue::Assign<T_container>), asCALL_GENERIC) );
 
-					rs.error = rs.engine->RegisterObjectBehaviour(rs.n_container_T, asBEHAVE_ADDREF, "void f()", asMETHOD(T_container, refcount_Add), asCALL_THISCALL); assert(rs.error >= 0);
-					rs.error = rs.engine->RegisterObjectBehaviour(rs.n_container_T, asBEHAVE_RELEASE, "void f()", asMETHOD(T_container, refcount_Release), asCALL_THISCALL); assert(rs.error >= 0);
-					rs.error = rs.engine->RegisterObjectBehaviour(rs.n_container_T, asBEHAVE_SETGCFLAG, "void f()", asMETHODPR(T_container, SetGCFlag, (), void), asCALL_THISCALL); assert(rs.error >= 0);
-					rs.error = rs.engine->RegisterObjectBehaviour(rs.n_container_T, asBEHAVE_GETGCFLAG, "bool f()", asMETHODPR(T_container, GetGCFlag, (), bool), asCALL_THISCALL); assert(rs.error >= 0);
-					rs.error = rs.engine->RegisterObjectBehaviour(rs.n_container_T, asBEHAVE_GETREFCOUNT, "int f()", asMETHODPR(T_container, GetRefCount, (), int), asCALL_THISCALL); assert(rs.error >= 0);
-					rs.error = rs.engine->RegisterObjectBehaviour(rs.n_container_T, asBEHAVE_ENUMREFS, "void f(int&in)", asMETHODPR(T_container, EnumReferences, (asIScriptEngine*), void), asCALL_THISCALL); assert(rs.error >= 0);
-					rs.error = rs.engine->RegisterObjectBehaviour(rs.n_container_T, asBEHAVE_RELEASEREFS, "void f(int&in)", asMETHODPR(T_container, ReleaseAllReferences, (asIScriptEngine*), void), asCALL_THISCALL); assert(rs.error >= 0);
+					CheckASCall( rs.engine->RegisterObjectBehaviour(rs.n_container_T, asBEHAVE_ADDREF, "void f()", WRAP_MFN(T_container, refcount_Add), asCALL_GENERIC ) );
+					CheckASCall( rs.engine->RegisterObjectBehaviour(rs.n_container_T, asBEHAVE_RELEASE, "void f()", WRAP_MFN(T_container, refcount_Release), asCALL_GENERIC ) );
+					CheckASCall( rs.engine->RegisterObjectBehaviour(rs.n_container_T, asBEHAVE_SETGCFLAG, "void f()", WRAP_MFN_PR(common::basetype_refcounted_GC, SetGCFlag, (), void), asCALL_GENERIC ) );
+					CheckASCall( rs.engine->RegisterObjectBehaviour(rs.n_container_T, asBEHAVE_GETGCFLAG, "bool f()", WRAP_MFN_PR(common::basetype_refcounted_GC, GetGCFlag, (), bool), asCALL_GENERIC ) );
+					CheckASCall( rs.engine->RegisterObjectBehaviour(rs.n_container_T, asBEHAVE_GETREFCOUNT, "int f()", WRAP_MFN_PR(common::basetype_refcounted_GC, GetRefCount, (), int), asCALL_GENERIC ) );
+					CheckASCall( rs.engine->RegisterObjectBehaviour(rs.n_container_T, asBEHAVE_ENUMREFS, "void f(int&in)", WRAP_MFN_PR(common::basetype_refcounted_GC, EnumReferences, (asIScriptEngine*), void), asCALL_GENERIC ) );
+					CheckASCall( rs.engine->RegisterObjectBehaviour(rs.n_container_T, asBEHAVE_RELEASEREFS, "void f(int&in)", WRAP_MFN_PR(common::basetype_refcounted_GC, ReleaseAllReferences, (asIScriptEngine*), void), asCALL_GENERIC ) );
 
-
-					rs.error = rs.engine->RegisterObjectBehaviour(rs.n_container_T, asBEHAVE_TEMPLATE_CALLBACK, "bool f(int&in, bool&out)", asFUNCTION(aatc::common::templatecallback_func::templated_singleparam), asCALL_CDECL); assert(rs.error >= 0);
+					CheckASCall( rs.engine->RegisterObjectBehaviour(rs.n_container_T, asBEHAVE_TEMPLATE_CALLBACK, "bool f(int&in, bool&out)", WRAP_FN(aatc::common::templatecallback_func::templated_singleparam), asCALL_GENERIC) );
 
 					rs.Format("void %s(bool)", config::scriptname::method::container::set_directcomp);
-					rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asMETHOD(T_container, SetDirectcomp), asCALL_THISCALL); assert(rs.error >= 0);
+					CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_MFN(T_container, SetDirectcomp), asCALL_GENERIC) );
 
 					rs.Format("void %s()", config::scriptname::method::container::clear);
-					rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asMETHOD(T_container, clear), asCALL_THISCALL); assert(rs.error >= 0);
+					CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_MFN(T_container, clear), asCALL_GENERIC ) );
 					rs.Format("bool %s()", config::scriptname::method::container::empty);
-					rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asMETHOD(T_container, empty), asCALL_THISCALL); assert(rs.error >= 0);
+					CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_MFN(T_container, empty), asCALL_GENERIC ) );
 					rs.Format("%s %s()", config::scriptname::t::size, config::scriptname::method::container::size);
-					rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asMETHOD(T_container, size), asCALL_THISCALL); assert(rs.error >= 0);
+					CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_MFN(T_container, size), asCALL_GENERIC ) );
+					rs.Format("%s %s() const", config::scriptname::t::size, config::scriptname::method::container::size);
+					CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_MFN(T_container, size), asCALL_GENERIC ) );
 
 					register_iterator<T_container, T_iterator>(rs);
 
 					rs.Format("%s %s()", rs.n_iterator_T, config::scriptname::method::container::begin);
-					rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asMETHOD(T_container, begin), asCALL_THISCALL); assert(rs.error >= 0);
+					CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_MFN(T_container, begin), asCALL_GENERIC ) );
 
 					rs.Format("%s %s()", rs.n_iterator_T, config::scriptname::method::container::end);
-					rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asMETHOD(T_container, end), asCALL_THISCALL); assert(rs.error >= 0);
+					CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_MFN(T_container, end), asCALL_GENERIC) );
 				};
 
 

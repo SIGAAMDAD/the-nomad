@@ -736,7 +736,7 @@ void CDebugger::PrintCallstack( asIScriptContext *pContext )
 	for ( asUINT n = 0; n < pContext->GetCallstackSize(); n++ ) {
 	 	nLine = pContext->GetLineNumber( n, 0, &pFileName );
 	 	
-	 	Con_Printf( "%s:%i - %s\n", ( pFileName ? pFileName : "{unnamed}" ), nLine,
+	 	Con_Printf( "[%u] %s/%s:%i - %s\n", n, pContext->GetFunction( n )->GetModuleName(), ( pFileName ? pFileName : "{unnamed}" ), nLine,
 			pContext->GetFunction( n )->GetDeclaration() );
 	}
 }

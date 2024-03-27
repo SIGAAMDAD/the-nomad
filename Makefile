@@ -309,10 +309,10 @@ SRC=\
 	$(O)/module_lib/module_jit.o \
 	$(O)/module_lib/module_virtual_asm_x64.o \
 	$(O)/module_lib/module_debugger.o \
-	$(O)/module_lib/scriptarray.o \
 	$(O)/module_lib/scriptbuilder.o \
-	$(O)/module_lib/scriptdictionary.o \
+	$(O)/module_lib/scriptarray.o \
 	$(O)/module_lib/scriptstdstring.o \
+	$(O)/module_lib/scriptdictionary.o \
 	$(O)/module_lib/scriptstdstring_utils.o \
 	$(O)/module_lib/scriptmath.o \
 	$(O)/module_lib/scripthandle.o \
@@ -423,6 +423,8 @@ $(O)/module_lib/%.o: $(SDIR)/module_lib/%.cpp
 	$(COMPILE_SRC) -DMODULE_LIB
 $(O)/angelscript/%.o: $(SDIR)/angelscript/%.cpp
 	$(COMPILE_SRC)
+$(O)/angelscript/%.o: $(SDIR)/aatc/%.cpp
+	$(COMPILE_SRC) -DCOMPILE_AATC
 $(O)/libjpeg/%.o: $(SDIR)/libjpeg/%.c
 	$(COMPILE_C)
 

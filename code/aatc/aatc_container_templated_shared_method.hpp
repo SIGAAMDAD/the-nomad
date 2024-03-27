@@ -139,7 +139,7 @@ namespace aatc {
 						}
 
 						template<typename T_container> void* back(T_container* t) {
-							#if aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
+							#ifdef aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
 							if (t->empty()) {
 								aatc::common::errorprint::container::access_empty(t->typeinfo_container->GetName(), t->objtype_content->GetName(), config::scriptname::method::container::back);
 								return nullptr;
@@ -153,7 +153,7 @@ namespace aatc {
 							}
 						}
 						template<typename T_container> void* front(T_container* t) {
-							#if aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
+							#ifdef aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
 							if (t->empty()) {
 								aatc::common::errorprint::container::access_empty(t->typeinfo_container->GetName(), t->objtype_content->GetName(), config::scriptname::method::container::back);
 								return nullptr;
@@ -170,7 +170,7 @@ namespace aatc {
 						template<typename T_container> bool erase_value(T_container* t, void* value) {
 							if (t->handlemode) {
 								if (!t->handlemode_directcomp) {
-									#if aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
+									#ifdef aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
 										if (t->missing_functions & common::CONTAINER_OPERATION::ERASE_VALUE) {
 											common::errorprint::container::missingfunctions_operation_missing(t->typeinfo_container->GetName(), t->objtype_content->GetName(), config::scriptname::method::container::erase_value);
 											return 0;
@@ -187,7 +187,7 @@ namespace aatc {
 									return 1;
 								}
 							} else {
-								#if aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
+								#ifdef aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
 									if (t->missing_functions & common::CONTAINER_OPERATION::ERASE_VALUE) {
 										common::errorprint::container::missingfunctions_operation_missing(t->typeinfo_container->GetName(), t->objtype_content->GetName(), config::scriptname::method::container::erase_value);
 										return 0;
@@ -209,7 +209,7 @@ namespace aatc {
 							return 0;
 						}
 						template<typename T_container> void* operator_index_position(T_container* t, config::t::sizetype position) {
-							#if aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
+							#ifdef aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
 							if (t->empty()) {
 								common::errorprint::container::access_empty(t->typeinfo_container->GetName(), t->objtype_content->GetName(), config::scriptname::method::container::operator_index);
 								return nullptr;
@@ -234,12 +234,17 @@ namespace aatc {
 							}
 						}
 
+						template<typename T_container> void resize(T_container* t, config::t::sizetype size) {
+							t->container.resize(size);
+							t->safety_iteratorversion_Increment();
+						}
+
 						template<typename T_container> void insert_value(T_container* t, void* value) {
 							t->safety_iteratorversion_Increment();
 
 							if (t->handlemode) {
 								if (!t->handlemode_directcomp) {
-									#if aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
+									#ifdef aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
 										if (t->missing_functions & common::CONTAINER_OPERATION::INSERT) {
 											common::errorprint::container::missingfunctions_operation_missing(t->typeinfo_container->GetName(), t->objtype_content->GetName(), config::scriptname::method::container::insert);
 											return;
@@ -251,7 +256,7 @@ namespace aatc {
 									t->StoreHandle((void**)&(*rr.first), value);
 								}
 							} else {
-								#if aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
+								#ifdef aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
 									if (t->missing_functions & common::CONTAINER_OPERATION::INSERT) {
 										common::errorprint::container::missingfunctions_operation_missing(t->typeinfo_container->GetName(), t->objtype_content->GetName(), config::scriptname::method::container::insert);
 										return;
@@ -268,7 +273,7 @@ namespace aatc {
 						template<typename T_container> void sort(T_container* t, bool ascending) {
 							if (t->handlemode_directcomp) { return; }
 
-							#if aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
+							#ifdef aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
 							if (t->missing_functions & common::CONTAINER_OPERATION::SORT) {
 								common::errorprint::container::missingfunctions_operation_missing(t->typeinfo_container->GetName(), t->objtype_content->GetName(), config::scriptname::method::container::sort);
 								return;
@@ -387,7 +392,7 @@ namespace aatc {
 
 						template<typename T_container> bool contains(T_container* t, void* value) {
 							if (!t->handlemode_directcomp) {
-								#if aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
+								#ifdef aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
 									if (t->missing_functions & common::CONTAINER_OPERATION::CONTAINS) {
 										common::errorprint::container::missingfunctions_operation_missing(t->typeinfo_container->GetName(), t->objtype_content->GetName(), config::scriptname::method::container::contains);
 										return 0;
@@ -469,7 +474,7 @@ namespace aatc {
 
 						template<typename T_container> typename T_container::Iterator find_iterator(T_container* t, void* value) {
 							if (!t->handlemode_directcomp) {
-								#if aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
+								#ifdef aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
 									if (t->missing_functions & common::CONTAINER_OPERATION::FIND) {
 										common::errorprint::container::missingfunctions_operation_missing(t->typeinfo_container->GetName(), t->objtype_content->GetName(), config::scriptname::method::container::find);
 
@@ -526,7 +531,7 @@ namespace aatc {
 						template<typename T_container> void sort(T_container* t, bool ascending) {
 							if (t->handlemode_directcomp) { return; }
 
-							#if aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
+							#ifdef aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
 							if (t->missing_functions & common::CONTAINER_OPERATION::SORT) {
 								common::errorprint::container::missingfunctions_operation_missing(t->typeinfo_container->GetName(), t->objtype_content->GetName(), config::scriptname::method::container::sort);
 								return;
@@ -540,9 +545,9 @@ namespace aatc {
 							functor.func = t->func_cmp;
 
 							if (ascending) {
-								eastl::sort(t->container.begin(), t->container.end(), functor);
+								std::sort(t->container.begin(), t->container.end(), functor);
 							} else {
-								eastl::sort(t->container.begin(), t->container.end(), common::detail::functor_notcmp_persistent_noconst<void*, detail::scriptfunctor_cmp>(functor));
+								std::sort(t->container.begin(), t->container.end(), common::detail::functor_notcmp_persistent_noconst<void*, detail::scriptfunctor_cmp>(functor));
 							}
 
 							t->els->contextcache_Return(functor.cc);
@@ -558,9 +563,9 @@ namespace aatc {
 							functor.funcptr = funcptr;
 
 							if (ascending) {
-								eastl::sort(t->container.begin(), t->container.end(), functor);
+								std::sort(t->container.begin(), t->container.end(), functor);
 							} else {
-								eastl::sort(t->container.begin(), t->container.end(), common::detail::functor_notcmp_persistent_noconst<void*, detail::scriptfunctor_cmp_customscript>(functor));
+								std::sort(t->container.begin(), t->container.end(), common::detail::functor_notcmp_persistent_noconst<void*, detail::scriptfunctor_cmp_customscript>(functor));
 							}
 
 							t->els->contextcache_Return(functor.cc);
@@ -605,14 +610,14 @@ namespace aatc {
 
 									functor.aux_object = aux_object;
 
-									eastl::sort(t->container.begin(), t->container.end(), functor);
+									std::sort(t->container.begin(), t->container.end(), functor);
 								} else {
 									container::shared::scriptcmpfunctor_globalfunction<container::shared::scriptcmpfunctor_internal::dummytype_handle> functor;
 									functor.context = context;
 									functor.func = scriptfunc;
 									functor.reverse_multiplier = reverse_multiplier;
 
-									eastl::sort(t->container.begin(), t->container.end(), functor);
+									std::sort(t->container.begin(), t->container.end(), functor);
 								}
 							} else {
 								void* aux_object = scriptfunc->GetAuxiliary();
@@ -624,14 +629,14 @@ namespace aatc {
 
 									functor.aux_object = aux_object;
 
-									eastl::sort(t->container.begin(), t->container.end(), functor);
+									std::sort(t->container.begin(), t->container.end(), functor);
 								} else {
 									container::shared::scriptcmpfunctor_globalfunction<container::shared::scriptcmpfunctor_internal::dummytype_object> functor;
 									functor.context = context;
 									functor.func = scriptfunc;
 									functor.reverse_multiplier = reverse_multiplier;
 
-									eastl::sort(t->container.begin(), t->container.end(), functor);
+									std::sort(t->container.begin(), t->container.end(), functor);
 								}
 							}
 
@@ -644,7 +649,7 @@ namespace aatc {
 						*/
 
 						template<typename T_container> void insert_position_before_constant(T_container* t, config::t::sizetype position, void* value) {
-							#if aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
+							#ifdef aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
 							if (t->empty()) {
 								common::errorprint::container::access_empty(t->typeinfo_container->GetName(), t->objtype_content->GetName(), config::scriptname::method::container::insert_position_before);
 								return;
@@ -666,7 +671,7 @@ namespace aatc {
 							}
 						}
 						template<typename T_container> void insert_position_before_linear(T_container* t, config::t::sizetype position, void* value) {
-							#if aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
+							#ifdef aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
 							if (t->empty()) {
 								common::errorprint::container::access_empty(t->typeinfo_container->GetName(), t->objtype_content->GetName(), config::scriptname::method::container::insert_position_before);
 								return;
@@ -690,7 +695,7 @@ namespace aatc {
 						}
 
 						template<typename T_container> void erase_position_constant(T_container* t, config::t::sizetype position) {
-							#if aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
+							#ifdef aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
 							if (t->empty()) {
 								common::errorprint::container::access_empty(t->typeinfo_container->GetName(), t->objtype_content->GetName(), config::scriptname::method::container::erase);
 								return;
@@ -714,7 +719,7 @@ namespace aatc {
 							t->container.erase(ii);
 						}
 						template<typename T_container> void erase_position_linear(T_container* t, config::t::sizetype position) {
-							#if aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
+							#ifdef aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
 							if (t->empty()) {
 								common::errorprint::container::access_empty(t->typeinfo_container->GetName(), t->objtype_content->GetName(), config::scriptname::method::container::erase);
 								return;
@@ -744,7 +749,7 @@ namespace aatc {
 								return 0;
 							}
 
-							#if aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
+							#ifdef aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
 							if (t->empty()) {
 								common::errorprint::container::access_empty(t->typeinfo_container->GetName(), t->objtype_content->GetName(), config::scriptname::method::container::erase);
 								return 0;
@@ -789,7 +794,7 @@ namespace aatc {
 								return 0;
 							}
 
-							#if aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
+							#ifdef aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
 							if (t->empty()) {
 								common::errorprint::container::access_empty(t->typeinfo_container->GetName(), t->objtype_content->GetName(), config::scriptname::method::container::erase);
 								return 0;
@@ -859,7 +864,7 @@ namespace aatc {
 									if (found && all) { continuu = 1; }
 								}
 							} else {
-								#if aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
+								#ifdef aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
 									if (t->missing_functions & common::CONTAINER_OPERATION::ERASE_VALUE) {
 										common::errorprint::container::missingfunctions_operation_missing(t->typeinfo_container->GetName(), t->objtype_content->GetName(), config::scriptname::method::container::erase_value);
 										return 0;
@@ -912,7 +917,7 @@ namespace aatc {
 
 						template<typename T_container> typename T_container::Iterator find_iterator(T_container* t, void* value) {
 							if (!t->handlemode_directcomp) {
-								#if aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
+								#ifdef aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
 								if (t->missing_functions & common::CONTAINER_OPERATION::FIND) {
 									common::errorprint::container::missingfunctions_operation_missing(t->typeinfo_container->GetName(), t->objtype_content->GetName(), config::scriptname::method::container::find);
 
@@ -946,7 +951,7 @@ namespace aatc {
 							if (t->handlemode_directcomp) {
 								return (config::t::sizetype)(eastl::count(t->container.begin(), t->container.end(), *(void**)value));
 							} else {
-								#if aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
+								#ifdef aatc_CONFIG_ENABLE_ERRORCHECK_RUNTIME
 								if (t->missing_functions & common::CONTAINER_OPERATION::COUNT) {
 									common::errorprint::container::missingfunctions_operation_missing(t->typeinfo_container->GetName(), t->objtype_content->GetName(), config::scriptname::method::container::count);
 
@@ -1005,96 +1010,104 @@ namespace aatc {
 
 
 
-					template<typename T_container> static void swap(common::RegistrationState& rs) {
+					template<typename T_container> inline void swap(common::RegistrationState& rs) {
 						rs.Format("%s& %s(%s &inout)", rs.n_container_T, config::scriptname::method::container::swap, rs.n_container_T);
-						rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asMETHOD(T_container,swap), asCALL_THISCALL); assert(rs.error >= 0);
+						CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_MFN(T_container,swap), asCALL_GENERIC ) );
 					}
 
 					namespace native{
 
 
 
-						template<typename T_container> static void push_back(common::RegistrationState& rs) {
+						template<typename T_container> inline void push_back(common::RegistrationState& rs) {
 							rs.Format("void %s(const T&in)", config::scriptname::method::container::push_back);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::native::push_back<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::native::push_back<T_container>), asCALL_GENERIC ) );
 						}
-						template<typename T_container> static void pop_back(common::RegistrationState& rs) {
+						template<typename T_container> inline void pop_back(common::RegistrationState& rs) {
 							rs.Format("void %s()", config::scriptname::method::container::pop_back);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::native::pop_back<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::native::pop_back<T_container>), asCALL_GENERIC ) );
 						}
 
-						template<typename T_container> static void push_front(common::RegistrationState& rs) {
+						template<typename T_container> inline void resize(common::RegistrationState& rs) {
+							rs.Format( "void %s(%s)", config::scriptname::method::container::resize, config::scriptname::t::size );
+							CheckASCall( rs.engine->RegisterObjectMethod( rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST( method::native::resize<T_container> ), asCALL_GENERIC ) );
+						}
+
+						template<typename T_container> inline void push_front(common::RegistrationState& rs) {
 							rs.Format("void %s(const T&in)", config::scriptname::method::container::push_front);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::native::push_front<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::native::push_front<T_container>), asCALL_GENERIC ) );
 						}
-						template<typename T_container> static void pop_front(common::RegistrationState& rs) {
+						template<typename T_container> inline void pop_front(common::RegistrationState& rs) {
 							rs.Format("void %s()", config::scriptname::method::container::pop_front);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::native::pop_front<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::native::pop_front<T_container>), asCALL_GENERIC ) );
 						}
 
-						template<typename T_container> static void back(common::RegistrationState& rs) {
+						template<typename T_container> inline void back(common::RegistrationState& rs) {
 							rs.Format("T& %s()", config::scriptname::method::container::back);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::native::back<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::native::back<T_container>), asCALL_GENERIC ) );
 						}
-						template<typename T_container> static void front(common::RegistrationState& rs) {
+						template<typename T_container> inline void front(common::RegistrationState& rs) {
 							rs.Format("T& %s()", config::scriptname::method::container::front);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::native::front<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::native::front<T_container>), asCALL_GENERIC ) );
 						}
 
-						template<typename T_container> static void erase_value(common::RegistrationState& rs) {
+						template<typename T_container> inline void erase_value(common::RegistrationState& rs) {
 							rs.Format("bool %s(const T&in)", config::scriptname::method::container::erase);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::native::erase_value<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::native::erase_value<T_container>), asCALL_GENERIC ) );
 						}
 
-						template<typename T_container> static void operator_index_position(common::RegistrationState& rs) {
+						template<typename T_container> inline void operator_index_position(common::RegistrationState& rs) {
 							rs.Format("T& %s(%s)", config::scriptname::method::container::operator_index, config::scriptname::t::size);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::native::operator_index_position<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::native::operator_index_position<T_container>), asCALL_GENERIC ) );
+
+							rs.Format("const T& %s(%s) const", config::scriptname::method::container::operator_index, config::scriptname::t::size);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::native::operator_index_position<T_container>), asCALL_GENERIC ) );
 						}
 
-						template<typename T_container> static void reserve(common::RegistrationState& rs) {
+						template<typename T_container> inline void reserve(common::RegistrationState& rs) {
 							rs.Format("void %s(%s)", config::scriptname::method::container::reserve, config::scriptname::t::size);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::native::reserve<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::native::reserve<T_container>), asCALL_GENERIC ) );
 						}
 
-						template<typename T_container> static void insert_value(common::RegistrationState& rs) {
+						template<typename T_container> inline void insert_value(common::RegistrationState& rs) {
 							rs.Format("void %s(const T&in)", config::scriptname::method::container::insert);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::native::insert_value<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::native::insert_value<T_container>), asCALL_GENERIC ) );
 						}
 
-						template<typename T_container> static void sort(common::RegistrationState& rs) {
+						template<typename T_container> inline void sort(common::RegistrationState& rs) {
 							rs.Format("void %s(bool ascending)", config::scriptname::method::container::sort);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::native::sort<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::native::sort<T_container>), asCALL_GENERIC ) );
 
 							rs.Format("void %s(const %s&in funcptr, bool ascending)", config::scriptname::method::container::sort_aatcfuncptr, config::scriptname::funcpointer);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::native::sort_aatcfuncptr<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::native::sort_aatcfuncptr<T_container>), asCALL_GENERIC ) );
 
 							//?&in wont compile in AS 2.31.0 with funcptr as argument
 							//rs.Format("void %s(const ?&in scriptfunc, bool ascending)", config::scriptname::method::container::sort_scriptfunc);
-							//rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::native::sort_aatcfuncptr<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							//CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::native::sort_aatcfuncptr<T_container>), asCALL_GENERIC ) );
 						}
 
-						template<typename T_container> static void contains(common::RegistrationState& rs) {
-							rs.Format("bool %s(const T&in)", config::scriptname::method::container::contains);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::native::contains<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+						template<typename T_container> inline void contains(common::RegistrationState& rs) {
+							rs.Format("bool %s(const T&in) const", config::scriptname::method::container::contains);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::native::contains<T_container>), asCALL_GENERIC ) );
 						}
 
-						template<typename T_container> static void erase_iterator(common::RegistrationState& rs) {
+						template<typename T_container> inline void erase_iterator(common::RegistrationState& rs) {
 							rs.Format("void %s(const %s &in)", config::scriptname::method::container::erase_iterator,rs.n_iterator_T);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::native::erase_iterator<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::native::erase_iterator<T_container>), asCALL_GENERIC ) );
 						}
-						template<typename T_container> static void erase_iterator_range(common::RegistrationState& rs) {
+						template<typename T_container> inline void erase_iterator_range(common::RegistrationState& rs) {
 							rs.Format("%s %s(const %s &in,const %s &in)",config::scriptname::t::size, config::scriptname::method::container::erase_iterator_range, rs.n_iterator_T, rs.n_iterator_T);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::native::erase_iterator_range<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::native::erase_iterator_range<T_container>), asCALL_GENERIC ) );
 						}
 
-						template<typename T_container> static void find_iterator(common::RegistrationState& rs) {
-							rs.Format("%s %s(const T&in)", rs.n_iterator_T, config::scriptname::method::container::find_iterator);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::native::find_iterator<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+						template<typename T_container> inline void find_iterator(common::RegistrationState& rs) {
+							rs.Format("%s %s(const T&in) const", rs.n_iterator_T, config::scriptname::method::container::find_iterator);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::native::find_iterator<T_container>), asCALL_GENERIC ) );
 						}
 
-						template<typename T_container> static void insert_iterator(common::RegistrationState& rs) {
+						template<typename T_container> inline void insert_iterator(common::RegistrationState& rs) {
 							rs.Format("void %s(const %s &in, const T&in)", config::scriptname::method::container::insert_iterator, rs.n_iterator_T);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::native::insert_iterator<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::native::insert_iterator<T_container>), asCALL_GENERIC ) );
 						}
 
 
@@ -1104,63 +1117,63 @@ namespace aatc {
 
 
 
-						template<typename T_container> static void sort(common::RegistrationState& rs) {
+						template<typename T_container> inline void sort(common::RegistrationState& rs) {
 							rs.Format("void %s(bool ascending)", config::scriptname::method::container::sort);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::genericcc::sort<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::genericcc::sort<T_container>), asCALL_GENERIC ) );
 
 							rs.Format("void %s(const %s&in, bool ascending)", config::scriptname::method::container::sort_aatcfuncptr, config::scriptname::funcpointer);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::genericcc::sort_aatcfuncptr<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::genericcc::sort_aatcfuncptr<T_container>), asCALL_GENERIC ) );
 
 							//?&in wont compile in AS 2.31.0 with funcptr as argument
 							//rs.Format("void %s(const ?&in scriptfunc, bool ascending)", config::scriptname::method::container::sort_scriptfunc);
-							//rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::genericcc::sort_aatcfuncptr<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							//CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::genericcc::sort_aatcfuncptr<T_container>), asCALL_GENERIC ) );
 						}
 
-						template<typename T_container> static void insert_position_before_constant(common::RegistrationState& rs) {
+						template<typename T_container> inline void insert_position_before_constant(common::RegistrationState& rs) {
 							rs.Format("void %s(%s, const T&in)", config::scriptname::method::container::insert_position_before, config::scriptname::t::size);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::genericcc::insert_position_before_constant<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::genericcc::insert_position_before_constant<T_container>), asCALL_GENERIC ) );
 						}
-						template<typename T_container> static void insert_position_before_linear(common::RegistrationState& rs) {
+						template<typename T_container> inline void insert_position_before_linear(common::RegistrationState& rs) {
 							rs.Format("void %s(%s, const T&in)", config::scriptname::method::container::insert_position_before, config::scriptname::t::size);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::genericcc::insert_position_before_linear<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::genericcc::insert_position_before_linear<T_container>), asCALL_GENERIC ) );
 						}
 
-						template<typename T_container> static void erase_position_constant(common::RegistrationState& rs) {
+						template<typename T_container> inline void erase_position_constant(common::RegistrationState& rs) {
 							rs.Format("void %s(%s)", config::scriptname::method::container::erase_position, config::scriptname::t::size);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::genericcc::erase_position_constant<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::genericcc::erase_position_constant<T_container>), asCALL_GENERIC ) );
 						}
-						template<typename T_container> static void erase_position_linear(common::RegistrationState& rs) {
+						template<typename T_container> inline void erase_position_linear(common::RegistrationState& rs) {
 							rs.Format("void %s(%s)", config::scriptname::method::container::erase_position, config::scriptname::t::size);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::genericcc::erase_position_linear<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::genericcc::erase_position_linear<T_container>), asCALL_GENERIC ) );
 						}
 
-						template<typename T_container> static void erase_position_range_constant(common::RegistrationState& rs) {
+						template<typename T_container> inline void erase_position_range_constant(common::RegistrationState& rs) {
 							rs.Format("void %s(%s,%s)", config::scriptname::method::container::erase_position_range, config::scriptname::t::size, config::scriptname::t::size);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::genericcc::erase_position_range_constant<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::genericcc::erase_position_range_constant<T_container>), asCALL_GENERIC ) );
 						}
-						template<typename T_container> static void erase_position_range_linear(common::RegistrationState& rs) {
+						template<typename T_container> inline void erase_position_range_linear(common::RegistrationState& rs) {
 							rs.Format("void %s(%s,%s)", config::scriptname::method::container::erase_position_range, config::scriptname::t::size, config::scriptname::t::size);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::genericcc::erase_position_range_linear<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::genericcc::erase_position_range_linear<T_container>), asCALL_GENERIC ) );
 						}
 
-						template<typename T_container> static void erase_value(common::RegistrationState& rs) {
+						template<typename T_container> inline void erase_value(common::RegistrationState& rs) {
 							rs.Format("%s %s(const T&in, bool all = false)", config::scriptname::t::size, config::scriptname::method::container::erase_value);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::genericcc::erase_value<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::genericcc::erase_value<T_container>), asCALL_GENERIC ) );
 						}
 
-						template<typename T_container> static void find_iterator(common::RegistrationState& rs) {
+						template<typename T_container> inline void find_iterator(common::RegistrationState& rs) {
 							rs.Format("%s %s(const T&in)", rs.n_iterator_T, config::scriptname::method::container::find_iterator);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::genericcc::find_iterator<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::genericcc::find_iterator<T_container>), asCALL_GENERIC ) );
 						}
 
-						template<typename T_container> static void contains(common::RegistrationState& rs) {
+						template<typename T_container> inline void contains(common::RegistrationState& rs) {
 							rs.Format("bool %s(const T&in)", config::scriptname::method::container::contains);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::genericcc::contains<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::genericcc::contains<T_container>), asCALL_GENERIC ) );
 						}
 
-						template<typename T_container> static void count(common::RegistrationState& rs) {
-							rs.Format("%s %s(const T&in)", config::scriptname::t::size, config::scriptname::method::container::count);
-							rs.error = rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, asFUNCTION(method::genericcc::count<T_container>), asCALL_CDECL_OBJFIRST); assert(rs.error >= 0);
+						template<typename T_container> inline void count(common::RegistrationState& rs) {
+							rs.Format("%s %s(const T&in) const", config::scriptname::t::size, config::scriptname::method::container::count);
+							CheckASCall( rs.engine->RegisterObjectMethod(rs.n_container_T, rs.textbuf, WRAP_OBJ_FIRST(method::genericcc::count<T_container>), asCALL_GENERIC ) );
 						}
 
 

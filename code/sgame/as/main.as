@@ -3,6 +3,8 @@
 #include "config.as"
 #include "level.as"
 
+string s_DebugMsg;
+
 namespace TheNomad::SGame {
 	//
 	// misc
@@ -62,19 +64,76 @@ namespace ImGui {
 	}
 };
 
-int ModuleInit() {
-	ConsolePrint( "----- SG_Init -----\n" );
+//
+// InitConstants: initializes all variables that won't really change throughout execution
+//
+void InitConstants() {
+	DebugPrint( "Initializing SGame Constants...\n" );
 
-//	InfoInit();
-
-	@TheNomad::CvarManager = cast<TheNomad::CvarSystem>( TheNomad::GameSystem::AddSystem( TheNomad::CvarSystem() ) );
-
-	TheNomad::Util::GetModuleList( TheNomad::SGame::sgame_ModList );
-	ConsolePrint( TheNomad::SGame::sgame_ModList.size() + " total mods registered.\n" );
+	string str;
 
 	//
-	// register cvars
+	// register strings
 	//
+	{
+		TheNomad::GameSystem::GetString( "SP_DIFF_VERY_EASY", TheNomad::SGame::SP_DIFF_STRINGS[TheNomad::GameSystem::GameDifficulty::VeryEasy] );
+		TheNomad::GameSystem::GetString( "SP_DIFF_EASY", TheNomad::SGame::SP_DIFF_STRINGS[TheNomad::GameSystem::GameDifficulty::Easy] );
+		TheNomad::GameSystem::GetString( "SP_DIFF_MEDIUM", TheNomad::SGame::SP_DIFF_STRINGS[TheNomad::GameSystem::GameDifficulty::Normal] );
+		TheNomad::GameSystem::GetString( "SP_DIFF_HARD", TheNomad::SGame::SP_DIFF_STRINGS[TheNomad::GameSystem::GameDifficulty::Hard] );
+		TheNomad::GameSystem::GetString( "SP_DIFF_VERY_HARD", TheNomad::SGame::SP_DIFF_STRINGS[TheNomad::GameSystem::GameDifficulty::VeryHard] );
+
+		TheNomad::GameSystem::GetString( "SP_RANK_S_TITLE", TheNomad::SGame::sgame_RankStrings[TheNomad::SGame::LevelRank::RankS] );
+		TheNomad::GameSystem::GetString( "SP_RANK_A_TITLE", TheNomad::SGame::sgame_RankStrings[TheNomad::SGame::LevelRank::RankA] );
+		TheNomad::GameSystem::GetString( "SP_RANK_B_TITLE", TheNomad::SGame::sgame_RankStrings[TheNomad::SGame::LevelRank::RankB] );
+		TheNomad::GameSystem::GetString( "SP_RANK_C_TITLE", TheNomad::SGame::sgame_RankStrings[TheNomad::SGame::LevelRank::RankC] );
+		TheNomad::GameSystem::GetString( "SP_RANK_D_TITLE", TheNomad::SGame::sgame_RankStrings[TheNomad::SGame::LevelRank::RankD] );
+		TheNomad::GameSystem::GetString( "SP_RANK_F_TITLE", TheNomad::SGame::sgame_RankStrings[TheNomad::SGame::LevelRank::RankF] );
+		TheNomad::GameSystem::GetString( "SP_RANK_U_TITLE", TheNomad::SGame::sgame_RankStrings[TheNomad::SGame::LevelRank::RankWereUBotting] );
+
+		TheNomad::GameSystem::GetString( "SP_RANK_S_COLOR", str );
+		TheNomad::SGame::sgame_RankStringColors[ TheNomad::SGame::LevelRank::RankS ] = TheNomad::Util::StringToColor( str );
+		TheNomad::GameSystem::GetString( "SP_RANK_A_COLOR", str );
+		TheNomad::SGame::sgame_RankStringColors[ TheNomad::SGame::LevelRank::RankA ] = TheNomad::Util::StringToColor( str );
+		TheNomad::GameSystem::GetString( "SP_RANK_B_COLOR", str );
+		TheNomad::SGame::sgame_RankStringColors[ TheNomad::SGame::LevelRank::RankB ] = TheNomad::Util::StringToColor( str );
+		TheNomad::GameSystem::GetString( "SP_RANK_C_COLOR", str );
+		TheNomad::SGame::sgame_RankStringColors[ TheNomad::SGame::LevelRank::RankC ] = TheNomad::Util::StringToColor( str );
+		TheNomad::GameSystem::GetString( "SP_RANK_D_COLOR", str );
+		TheNomad::SGame::sgame_RankStringColors[ TheNomad::SGame::LevelRank::RankD ] = TheNomad::Util::StringToColor( str );
+		TheNomad::GameSystem::GetString( "SP_RANK_F_COLOR", str );
+		TheNomad::SGame::sgame_RankStringColors[ TheNomad::SGame::LevelRank::RankF ] = TheNomad::Util::StringToColor( str );
+		TheNomad::GameSystem::GetString( "SP_RANK_U_COLOR", str );
+		TheNomad::SGame::sgame_RankStringColors[ TheNomad::SGame::LevelRank::RankWereUBotting ] = TheNomad::Util::StringToColor( str );
+
+		TheNomad::GameSystem::GetString( "SP_AMMO_BULLET", TheNomad::SGame::AmmoTypeStrings[ TheNomad::SGame::AmmoType::Bullet ] );
+		TheNomad::GameSystem::GetString( "SP_AMMO_SHELL", TheNomad::SGame::AmmoTypeStrings[ TheNomad::SGame::AmmoType::Shell ] );
+		TheNomad::GameSystem::GetString( "SP_AMMO_ROCKET", TheNomad::SGame::AmmoTypeStrings[ TheNomad::SGame::AmmoType::Rocket ] );
+		TheNomad::GameSystem::GetString( "SP_AMMO_GRENADE", TheNomad::SGame::AmmoTypeStrings[ TheNomad::SGame::AmmoType::Grenade ] );
+
+		TheNomad::GameSystem::GetString( "SP_ARMOR_NONE", TheNomad::SGame::ArmorTypeStrings[ TheNomad::SGame::ArmorType::None ] );
+		TheNomad::GameSystem::GetString( "SP_ARMOR_LIGHT", TheNomad::SGame::ArmorTypeStrings[ TheNomad::SGame::ArmorType::Light ] );
+		TheNomad::GameSystem::GetString( "SP_ARMOR_STANDARD", TheNomad::SGame::ArmorTypeStrings[ TheNomad::SGame::ArmorType::Standard ] );
+		TheNomad::GameSystem::GetString( "SP_ARMOR_HEAVY", TheNomad::SGame::ArmorTypeStrings[ TheNomad::SGame::ArmorType::Heavy ] );
+		TheNomad::GameSystem::GetString( "SP_ARMOR_INVUL", TheNomad::SGame::ArmorTypeStrings[ TheNomad::SGame::ArmorType::Invul ] );
+
+		TheNomad::GameSystem::GetString( "SP_ATK_METHOD_HITSCAN", TheNomad::SGame::AttackMethodStrings[ TheNomad::SGame::AttackMethod::Hitscan ] );
+		TheNomad::GameSystem::GetString( "SP_ATK_METHOD_PROJECTILE", TheNomad::SGame::AttackMethodStrings[ TheNomad::SGame::AttackMethod::Projectile ] );
+		TheNomad::GameSystem::GetString( "SP_ATK_METHOD_AOE", TheNomad::SGame::AttackMethodStrings[ TheNomad::SGame::AttackMethod::AreaOfEffect ] );
+
+		TheNomad::GameSystem::GetString( "SP_WEAPON_TYPE_SIDE", TheNomad::SGame::WeaponTypeStrings[ TheNomad::SGame::WeaponType::Sidearm ] );
+		TheNomad::GameSystem::GetString( "SP_WEAPON_TYPE_HSIDE", TheNomad::SGame::WeaponTypeStrings[ TheNomad::SGame::WeaponType::HeavySidearm ] );
+		TheNomad::GameSystem::GetString( "SP_WEAPON_TYPE_PRIM", TheNomad::SGame::WeaponTypeStrings[ TheNomad::SGame::WeaponType::Primary ] );
+		TheNomad::GameSystem::GetString( "SP_WEAPON_TYPE_HPRIM", TheNomad::SGame::WeaponTypeStrings[ TheNomad::SGame::WeaponType::HeavyPrimary ] );
+		TheNomad::GameSystem::GetString( "SP_WEAPON_TYPE_GRENADIER", TheNomad::SGame::WeaponTypeStrings[ TheNomad::SGame::WeaponType::Grenadier ] );
+		TheNomad::GameSystem::GetString( "SP_WEAPON_TYPE_MELEE", TheNomad::SGame::WeaponTypeStrings[ TheNomad::SGame::WeaponType::Melee ] );
+		TheNomad::GameSystem::GetString( "SP_WEAPON_TYPE_LARM", TheNomad::SGame::WeaponTypeStrings[ TheNomad::SGame::WeaponType::LeftArm ] );
+		TheNomad::GameSystem::GetString( "SP_WEAPON_TYPE_RARM", TheNomad::SGame::WeaponTypeStrings[ TheNomad::SGame::WeaponType::RightArm ] );
+	}
+}
+
+void InitCvars() {
+	ConsolePrint( "Registering SGame Cvars...\n" );
+
 	@TheNomad::SGame::sgame_MaxEntities = TheNomad::CvarManager.AddCvar( "sgame_MaxEntities", "500", CVAR_LATCH | CVAR_SAVE, true );
 	@TheNomad::SGame::sgame_NoRespawningMobs = TheNomad::CvarManager.AddCvar( "sgame_NoRespawningMobs", "0", CVAR_LATCH | CVAR_SAVE, false );
 	@TheNomad::SGame::sgame_HellbreakerActive = TheNomad::CvarManager.AddCvar( "sgame_HellbreakerActive", "0", CVAR_LATCH | CVAR_TEMP, true );
@@ -106,19 +165,31 @@ int ModuleInit() {
 	@TheNomad::SGame::sgame_GroundFriction = TheNomad::CvarManager.AddCvar( "sgame_GroundFriction", "0.9", CVAR_INIT | CVAR_SAVE, true );
 	@TheNomad::SGame::sgame_AirFriction = TheNomad::CvarManager.AddCvar( "sgame_AirFriction", "0.5", CVAR_INIT | CVAR_SAVE, true );
 	@TheNomad::SGame::sgame_MaxSpeed = TheNomad::CvarManager.AddCvar( "sgame_MaxSpeed", "20.5", CVAR_INIT | CVAR_ROM, false );
+}
+
+int ModuleInit() {
+	ConsolePrint( "----- SG_Init -----\n" );
+
+//	InfoInit();
+
+	@TheNomad::CvarManager = cast<TheNomad::CvarSystem>( TheNomad::GameSystem::AddSystem( TheNomad::CvarSystem() ) );
+
+	//
+	// register cvars
+	//
+	InitCvars();
+
+	TheNomad::Util::GetModuleList( TheNomad::SGame::sgame_ModList );
+	ConsolePrint( TheNomad::SGame::sgame_ModList.Count() + " total mods registered.\n" );
+
+	//
+	// init constants
+	//
+	InitConstants();
 
 	@TheNomad::Engine::SoundSystem::SoundManager = TheNomad::Engine::SoundSystem::SoundScene();
 
 	ModuleConfigInit();
-
-	//
-	// register strings
-	//
-	TheNomad::GameSystem::GetString( "SP_DIFF_VERY_EASY", TheNomad::SGame::SP_DIFF_STRINGS[TheNomad::GameSystem::GameDifficulty::VeryEasy] );
-	TheNomad::GameSystem::GetString( "SP_DIFF_EASY", TheNomad::SGame::SP_DIFF_STRINGS[TheNomad::GameSystem::GameDifficulty::Easy] );
-	TheNomad::GameSystem::GetString( "SP_DIFF_MEDIUM", TheNomad::SGame::SP_DIFF_STRINGS[TheNomad::GameSystem::GameDifficulty::Normal] );
-	TheNomad::GameSystem::GetString( "SP_DIFF_HARD", TheNomad::SGame::SP_DIFF_STRINGS[TheNomad::GameSystem::GameDifficulty::Hard] );
-	TheNomad::GameSystem::GetString( "SP_DIFF_VERY_HARD", TheNomad::SGame::SP_DIFF_STRINGS[TheNomad::GameSystem::GameDifficulty::VeryHard] );
 
 	TheNomad::SGame::selectedSfx.Set( "sfx/menu1.wav" );
 
@@ -137,7 +208,7 @@ int ModuleOnConsoleCommand() {
 //	const string command = TheNomad::Engine::CmdArgv( 0 );
 
 	array<TheNomad::GameSystem::GameObject@>@ GameObjects = @TheNomad::GameSystem::GameSystems;
-	for ( uint i = 0; i < GameObjects.size(); i++ ) {
+	for ( uint i = 0; i < GameObjects.Count(); i++ ) {
 		if ( GameObjects[i].OnConsoleCommand( TheNomad::Engine::CmdArgv( 0 ) ) ) {
 			return 1;
 		}
@@ -149,7 +220,7 @@ int ModuleOnSaveGame() {
 	ConsolePrint( "Saving game, please do not close out of app...\n" );
 
 	array<TheNomad::GameSystem::GameObject@>@ GameObjects = @TheNomad::GameSystem::GameSystems;
-	for ( uint i = 0; i < GameObjects.size(); i++ ) {
+	for ( uint i = 0; i < GameObjects.Count(); i++ ) {
 		GameObjects[i].OnSave();
 	}
 
@@ -160,7 +231,7 @@ int ModuleOnSaveGame() {
 
 int ModuleOnLoadGame() {
 	array<TheNomad::GameSystem::GameObject@>@ GameObjects = @TheNomad::GameSystem::GameSystems;
-	for ( uint i = 0; i < GameObjects.size(); i++ ) {
+	for ( uint i = 0; i < GameObjects.Count(); i++ ) {
 		GameObjects[i].OnLoad();
 	}
 	return 1;
@@ -168,7 +239,7 @@ int ModuleOnLoadGame() {
 
 int ModuleOnLevelStart() {
 	array<TheNomad::GameSystem::GameObject@>@ GameObjects = @TheNomad::GameSystem::GameSystems;
-	for ( uint i = 0; i < GameObjects.size(); i++ ) {
+	for ( uint i = 0; i < GameObjects.Count(); i++ ) {
 		GameObjects[i].OnLevelStart();
 	}
 
@@ -177,7 +248,7 @@ int ModuleOnLevelStart() {
 
 int ModuleOnLevelEnd() {
 	array<TheNomad::GameSystem::GameObject@>@ GameObjects = @TheNomad::GameSystem::GameSystems;
-	for ( uint i = 0; i < GameObjects.size(); i++ ) {
+	for ( uint i = 0; i < GameObjects.Count(); i++ ) {
 		GameObjects[i].OnLevelEnd();
 	}
 
@@ -191,6 +262,7 @@ int ModuleOnKeyEvent( uint key, uint down )
 
 int ModuleOnMouseEvent( int dx, int dy )
 {
+	TheNomad::GameSystem::GameManager.SetMousePos( ivec2( dx, dy ) );
 	return 0;
 }
 
@@ -203,7 +275,7 @@ int ModuleOnRunTic( uint msec )
 	const uint flags = RSF_ORTHO_TYPE_WORLD;
 
 	array<TheNomad::GameSystem::GameObject@>@ GameObjects = @TheNomad::GameSystem::GameSystems;
-	for ( uint i = 0; i < GameObjects.size(); i++ ) {
+	for ( uint i = 0; i < GameObjects.Count(); i++ ) {
 		GameObjects[i].OnRunTic();
 	}
 
@@ -213,10 +285,13 @@ int ModuleOnRunTic( uint msec )
 	return 0;
 }
 
-shared void DebugPrint( const string& in msg ) {
-	if ( TheNomad::Engine::CvarVariableInteger( "sgame_DebugMode" ) == 0 ) {
+void DebugPrint( const string& in msg ) {
+	if ( TheNomad::SGame::sgame_DebugMode.GetInt() == 0 ) {
 		return;
 	}
 
-	ConsolePrint( "DEBUG: " + msg );
+	s_DebugMsg = COLOR_GREEN;
+	s_DebugMsg += "DEBUG: ";
+	s_DebugMsg += msg;
+	ConsolePrint( s_DebugMsg );
 }

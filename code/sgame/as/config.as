@@ -6,8 +6,6 @@ bool config_AdaptiveSoundtrack;
 uint config_MaxEntities;
 uint config_GfxDetail;
 
-bool config_ShowNotice = false;
-
 //
 // ModuleConfigInit: initializes all sgame relevant configuration variables
 //
@@ -47,6 +45,8 @@ void AdjustDifficulty() {
 }
 
 int ModuleDrawConfiguration() {
+    uint tmp;
+
     ImGui::BeginTable( "##SGameConfig", 2 );
 
 	ImGui::TableNextColumn();
@@ -80,14 +80,11 @@ int ModuleDrawConfiguration() {
     ImGui::Text( "Max Entities" );
     ImGui::TableNextColumn();
     
-    if ( ImGui::SliderInt( "##MaxEntitiesConfig", config_MaxEntities, 100, 1000 ) ) {
+    tmp = ImGui::SliderInt( "##MaxEntitiesConfig", config_MaxEntities, 100, 1000 );
+    if ( tmp != config_MaxEntities ) {
     	TheNomad::SGame::selectedSfx.Play();
-    	if ( config_MaxEntities > uint( TheNomad::SGame::sgame_MaxEntities.GetInt() ) ) {
-    		config_ShowNotice = true;
-    	} else {
-    		config_ShowNotice = false;
-    	}
     }
+    config_MaxEntities = tmp;
     
     ImGui::TableNextRow();
     
@@ -95,25 +92,13 @@ int ModuleDrawConfiguration() {
     ImGui::Text( "Gfx Detail" );
     ImGui::TableNextColumn();
     
-    if ( ImGui::SliderInt( "##GfxDetailConfig", config_GfxDetail, 0, 8 ) ) {
+    tmp = ImGui::SliderInt( "##GfxDetailConfig", config_GfxDetail, 0, 30 );
+    if ( tmp != config_GfxDetail ) {
     	TheNomad::SGame::selectedSfx.Play();
-    	if ( config_GfxDetail > uint( TheNomad::SGame::sgame_GfxDetail.GetInt() ) ) {
-    		config_ShowNotice = true;
-    	} else {
-    		config_ShowNotice = false;
-    	}
     }
+    config_GfxDetail = tmp;
 
     ImGui::EndTable();
-    
-    if ( config_ShowNotice ) {
-	    // draw a separate widget to display useful performance information
-	    ImGui::Begin( "Performance Notification##ConfigNoticeWidget", null, ImGui::MakeWindowFlags(
-    		ImGuiWindowFlags::NoMove | ImGuiWindowFlags::NoResize | ImGuiWindowFlags::AlwaysAutoResize
-    		| ImGuiWindowFlags::NoMouseInputs ) );
-   		ImGui::Text( "WARNING: some of the setting changes could have a negative impact on performance" );
-   		ImGui::End();
-   	}
     
 	return 1;
 }

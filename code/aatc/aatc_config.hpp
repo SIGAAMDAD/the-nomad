@@ -42,9 +42,14 @@
 
 #include "angelscript/angelscript.h"
 
-
+#include <EASTL/list.h>
+#include <EASTL/deque.h>
 #include <EASTL/algorithm.h>
 #include <EASTL/sort.h>
+#include <EASTL/unordered_set.h>
+#include <EASTL/vector.h>
+#include <EASTL/unordered_map.h>
+#include <EASTL/set.h>
 #include "../module_lib/module_public.h"
 
 
@@ -110,15 +115,17 @@ namespace aatc {
 	ait  = actual implementation type
 	acit = actual container implementation type
 */
-#define aatc_ait_storage_map UtlHashMap
+#define aatc_ait_storage_map eastl::unordered_map
 #define aatc_ait_storage_pair eastl::pair
-#define aatc_acit_vector UtlVector
+#define aatc_acit_array eastl::array
+#define aatc_acit_vector eastl::vector
 #define aatc_acit_list eastl::list
 #define aatc_acit_deque eastl::deque
-#define aatc_acit_set UtlSet
+#define aatc_acit_set eastl::set
+#define aatc_acit_queue eastl::queue
 #define aatc_acit_unordered_set eastl::unordered_set
-#define aatc_acit_map UtlMap
-#define aatc_acit_unordered_map UtlHashMap
+#define aatc_acit_map eastl::map
+#define aatc_acit_unordered_map eastl::unordered_map
 
 
 
@@ -150,7 +157,7 @@ namespace config {
 		//use whatever you use in script (users of angelscript addon scriptstdstring should use std::string here)
 		typedef string_t string;
 
-		typedef int32 sizetype;
+		typedef uint32 sizetype;
 		typedef int32 astypeid;
 
 
@@ -166,82 +173,85 @@ namespace config {
 
 	namespace scriptname {
 		namespace t {
-			static const char* size = "int";
-			static const char* hash = "aatc_hash_t";
+			inline const char *size = "uint32";
+			inline const char *hash = "aatc_hash_t";
 
 			#if aatc_ENABLE_HASHTYPE_BITS == 32
-				static const char* hash_actual = "uint";
+				inline const char *hash_actual = "uint";
 			#elif aatc_ENABLE_HASHTYPE_BITS == 64
-				static const char* hash_actual = "uint64";
+				inline const char *hash_actual = "uint64";
 			#endif
 		};//namespace t
 
 		namespace container {
-			static const char* vector = "vector";
-			static const char* list = "list";
-			static const char* deque = "deque";
-			static const char* set = "set";
-			static const char* unordered_set = "unordered_set";
-			static const char* map = "map";
-			static const char* unordered_map = "unordered_map";
+			inline const char *array = "array";
+			inline const char *vector = "vector";
+			inline const char *list = "list";
+			inline const char *deque = "deque";
+			inline const char *set = "set";
+			inline const char *unordered_set = "unordered_set";
+			inline const char *map = "map";
+			inline const char *unordered_map = "unordered_map";
 		};//namespace container
 
-		static const char* iterator_suffix = "_iterator";
-		static const char* funcpointer = "aatc_funcpointer";
-		static const char* funcdef_cmp_prefix = "aatc_funcdef_cmp_";
+		inline const char *iterator_suffix = "_iterator";
+		inline const char *funcpointer = "aatc_funcpointer";
+		inline const char *funcdef_cmp_prefix = "aatc_funcdef_cmp_";
 
 		namespace method {
 			namespace content {
-				static const char* hash = "hash";
+				inline const char *hash = "hash";
 			};//namespace content
 
 			namespace container {
-				static const char* set_directcomp = "SetDirectcomp";
+				inline const char *set_directcomp = "SetDirectcomp";
 
-				static const char* clear = "clear";
-				static const char* size = "size";
-				static const char* count = "count";
-				static const char* empty = "empty";
-				static const char* swap = "swap";
+				inline const char *clear = "clear";
+				inline const char *size = "size";
+				inline const char *count = "count";
+				inline const char *empty = "empty";
+				inline const char *swap = "swap";
 
-				static const char* front = "front";
-				static const char* back = "back";
-				static const char* push_front = "push_front";
-				static const char* push_back = "push_back";
-				static const char* pop_front = "pop_front";
-				static const char* pop_back = "pop_back";
-				static const char* reserve = "reserve";
-				static const char* insert = "insert";
-				static const char* erase = "erase";
-				static const char* sort = "sort";
-				static const char* sort_scriptfunc = sort;
-				static const char* sort_aatcfuncptr = sort;
-				static const char* contains = "contains";
-				static const char* find = "find";
-				static const char* erase_position = erase;
-				static const char* erase_position_range = erase_position;
-				static const char* erase_value = "erase_value";
-				static const char* insert_position_before = insert;
+				inline const char *front = "front";
+				inline const char *back = "back";
+				inline const char *push_front = "push_front";
+				inline const char *push_back = "push_back";
+				inline const char *pop_front = "pop_front";
+				inline const char *pop_back = "pop_back";
+				
+				inline const char *resize = "resize";
+				inline const char *reserve = "reserve";
+				inline const char *insert = "insert";
+				inline const char *erase = "erase";
+				inline const char *sort = "sort";
+				inline const char *sort_scriptfunc = sort;
+				inline const char *sort_aatcfuncptr = sort;
+				inline const char *contains = "contains";
+				inline const char *find = "find_iterator";
+				inline const char *erase_position = erase;
+				inline const char *erase_position_range = erase_position;
+				inline const char *erase_value = "erase_value";
+				inline const char *insert_position_before = insert;
 
-				static const char* operator_index = "opIndex";
+				inline const char *operator_index = "opIndex";
 
-				static const char* begin = "begin";
-				static const char* end = "end";
-				static const char* find_iterator = "find_iterator";
-				static const char* erase_iterator = erase;
-				static const char* erase_iterator_range = erase_iterator;
-				static const char* insert_iterator = insert;
+				inline const char *begin = "begin";
+				inline const char *end = "end";
+				inline const char *find_iterator = "find";
+				inline const char *erase_iterator = erase;
+				inline const char *erase_iterator_range = erase_iterator;
+				inline const char *insert_iterator = insert;
 			};//namespace container
 
 			namespace iterator {
-				static const char* access_property = "value";
-				static const char* access_property_key = "key";
-				static const char* access_property_value = "value";
-				static const char* access_function = "current";
-				static const char* access_function_key = "current_key";
-				static const char* access_function_value = "current_value";
-				static const char* is_end = "IsEnd";
-				static const char* is_valid = "IsValid";
+				inline const char *access_property = "value";
+				inline const char *access_property_key = "key";
+				inline const char *access_property_value = "value";
+				inline const char *access_function = "current";
+				inline const char *access_function_key = "current_key";
+				inline const char *access_function_value = "current_value";
+				inline const char *is_end = "IsEnd";
+				inline const char *is_valid = "IsValid";
 			};//namespace iterator
 		};//namespace method
 	};//namespace scriptname
@@ -253,14 +263,14 @@ namespace config {
 			ID that the engine level userdata will use.
 			Must not collide with other angelscript addons using engine level userdata;
 		*/
-		static const int engine_userdata_id = 8899;
+		inline const int engine_userdata_id = 8899;
 
 		/*
 			Random magical optimization numbers ahead.
 		*/
 		//this number was used by boost, so it must be legit ... right?
-		static const int DEFAULT_CONTAINER_UNORDERED_SET_DEFAULTBUCKETCOUNT = 11;
-		static const int DEFAULT_CONTAINER_UNORDERED_MAP_DEFAULTBUCKETCOUNT = 11;
+		inline const int DEFAULT_CONTAINER_UNORDERED_SET_DEFAULTBUCKETCOUNT = 11;
+		inline const int DEFAULT_CONTAINER_UNORDERED_MAP_DEFAULTBUCKETCOUNT = 11;
 	};//namespace detail
 
 
@@ -270,7 +280,7 @@ namespace config {
 			/*
 				Happens when trying to access or set an iterator and the container has been modified after iterator construction.
 			*/
-			static const char* container_modified = "Invalid iterator. Container has been modified during iteration.";
+			inline const char *container_modified = "Invalid iterator. Container has been modified during iteration.";
 
 			/*
 				Used by the container if it tries to use an invalid iterator.
@@ -282,7 +292,7 @@ namespace config {
 				myvec.erase(it);//no problem
 				myvec.erase(it);//this line will cause this exception, because the first erase changed the container state and invalidated all iterators
 			*/
-			static const char* is_invalid = "Invalid iterator.";
+			inline const char *is_invalid = "Invalid iterator.";
 		};//namespace iterator
 	};//namespace errormessage
 };//namespace config

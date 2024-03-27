@@ -62,11 +62,10 @@ namespace TheNomad {
 		}
 		CvarTableEntry( ConVar@ var ) {
 			@m_Handle = @var;
-			m_nModificationCount = 0;
 		}
 
-		ConVar@ m_Handle;
-		int m_nModificationCount;
+		ConVar@ m_Handle = null;
+		int m_nModificationCount = 0;
 	};
 	
 	class CvarSystem : TheNomad::GameSystem::GameObject {
@@ -75,10 +74,10 @@ namespace TheNomad {
 		}
 		
 		ConVar@ AddCvar( const string& in name, const string& in value, uint flags, bool bTrackChanges ) {
-			ConVar@ var = ConVar();
-			var.Register(  name, value, flags, bTrackChanges  );
-			m_CvarCache.push_back( var );
-			return var;
+			CvarTableEntry@ var = CvarTableEntry( ConVar() );
+			var.m_Handle.Register(  name, value, flags, bTrackChanges  );
+			m_CvarCache.Add( @var );
+			return @var.m_Handle;
 		}
 		
 		void ListVars_f() {
@@ -98,7 +97,7 @@ namespace TheNomad {
 		}
 		void OnRunTic() override {
 			// update all cvars
-			for ( uint i = 0; i < m_CvarCache.size(); i++ ) {
+			for ( uint i = 0; i < m_CvarCache.Count(); i++ ) {
 				m_CvarCache[i].m_Handle.Update();
 				if ( m_CvarCache[i].m_nModificationCount != m_CvarCache[i].m_Handle.GetModificationCount()
 					&& m_CvarCache[i].m_Handle.Track() )
@@ -119,7 +118,7 @@ namespace TheNomad {
 		void DrawCvarList() {
 		}
 		
-		private array<CvarTableEntry> m_CvarCache;
+		private array<CvarTableEntry@> m_CvarCache;
 	};
 
 	CvarSystem@ CvarManager;

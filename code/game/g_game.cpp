@@ -946,6 +946,10 @@ void G_StartHunkUsers( void )
 {
     G_InitArchiveHandler();
 
+    // cache all maps
+    g_world = new ( Hunk_Alloc( sizeof( *g_world ), h_high ) ) CGameWorld();
+    G_InitMapCache();
+
     if ( !g_pModuleLib ) {
         G_InitModuleLib();
     }
@@ -969,10 +973,6 @@ void G_StartHunkUsers( void )
 
     // set the marker before loading any map assets
     Hunk_SetMark();
-
-    // cache all maps
-    g_world = new ( Hunk_Alloc( sizeof( *g_world ), h_high ) ) CGameWorld();
-    G_InitMapCache();
 }
 
 void G_ShutdownAll( void )

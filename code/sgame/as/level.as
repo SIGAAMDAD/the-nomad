@@ -15,7 +15,7 @@ namespace TheNomad::SGame {
 	};
 
 	shared enum LevelRank {
-		RankS = 0,
+		RankS,
 		RankA,
 		RankB,
 		RankC,
@@ -26,54 +26,6 @@ namespace TheNomad::SGame {
 		NumRanks
 	};
 	
-	class MapSoundData {
-		MapSoundData( float dissonance ) {
-			m_bModified = false;
-			m_nDissonance = dissonance;
-//			m_DataBits.resize( MAX_MAP_WIDTH * MAX_MAP_HEIGHT );
-		}
-		MapSoundData() {
-		}
-
-		float[] GetCacheData() {
-			return m_DataBits;
-		}
-		float[] GetData() {
-			m_bModified = true;
-			return m_DataBits;
-		}
-		const float[] GetData() const {
-			return m_DataBits;
-		}
-		bool Changed() const {
-			return m_bModified;
-		}
-		void Reset() {
-			uint modifiedCount = 0;
-			
-			if ( !m_bModified ) {
-				return;
-			}
-			
-			for ( uint i = 0; i < m_DataBits.size(); i++ ) {
-				if ( m_DataBits[i] <= 0.0f ) {
-					modifiedCount++;
-					continue;
-				}
-				m_DataBits[i] -= m_nDissonance;
-				if ( m_DataBits[i] < 0.0f ) {
-					m_DataBits[i] = 0.0f;
-				}
-			}
-			
-			m_bModified = modifiedCount < m_DataBits.size();
-		}
-		
-		private float m_nDissonance;
-		private float[] m_DataBits( MAX_MAP_WIDTH * MAX_MAP_HEIGHT );
-		private bool m_bModified;
-	};
-	
 	class MapData {
 		MapData() {
 		}
@@ -82,12 +34,10 @@ namespace TheNomad::SGame {
 			m_nWidth = 0;
 			m_nHeight = 0;
 			m_Name = mapName;
-
-			m_SoundBits.resize( nMapLevels );
 		}
 		
 		private uint GetCheckpointIndex( const MapCheckpoint@ cp ) const {
-			for ( uint i = 0; i < m_Checkpoints.size(); i++ ) {
+			for ( uint i = 0; i < m_Checkpoints.Count(); i++ ) {
 				if ( @cp == @m_Checkpoints[i] ) {
 					return i;
 				}
@@ -113,10 +63,10 @@ namespace TheNomad::SGame {
 			DebugPrint( "Saving cached checkpoint data...\n" );
 			
 			file.WriteUInt( mapCacheMagic );
-			file.WriteUInt( m_Spawns.size() );
-			file.WriteUInt( m_Checkpoints.size() );
+			file.WriteUInt( m_Spawns.Count() );
+			file.WriteUInt( m_Checkpoints.Count() );
 			
-			for ( uint i = 0; i < m_Spawns.size(); i++ ) {
+			for ( uint i = 0; i < m_Spawns.Count(); i++ ) {
 				file.WriteUInt( GetCheckpointIndex( m_Spawns[i].m_Checkpoint ) );
 			}
 		}
@@ -139,19 +89,19 @@ namespace TheNomad::SGame {
 			}
 			
 			file.ReadUInt( num );
-			if ( num != m_Spawns.size() ) {
+			if ( num != m_Spawns.Count() ) {
 				ConsolePrint( "spawn count in cache file isn't the same as the one loaded, outdated? refusing to load.\n" );
 				return false;
 			}
 			file.ReadUInt( num );
-			if ( num != m_Checkpoints.size() ) {
+			if ( num != m_Checkpoints.Count() ) {
 				ConsolePrint( "checkpoint count in cache file isn't the same as the one loaded, outdated? refusing to load.\n" );
 				return false;
 			}
 			
-			for ( uint i = 0; i < m_Spawns.size(); i++ ) {
+			for ( uint i = 0; i < m_Spawns.Count(); i++ ) {
 				file.ReadUInt( index );
-				if ( index >= m_Checkpoints.size() ) {
+				if ( index >= m_Checkpoints.Count() ) {
 					ConsolePrint( "checkpoint index in data cache file isn't valid, corruption? refusing to load.\n" );
 					return false;
 				}
@@ -168,14 +118,9 @@ namespace TheNomad::SGame {
 			uvec3 xyz;
 			
 			TheNomad::GameSystem::SetActiveMap( hMap, nCheckpoints, nSpawns,
-				nTiles, m_SoundBits[0].GetCacheData(), EntityManager.GetEntities()[0].GetLink() );
+				nTiles, EntityManager.GetEntities()[0].GetLink() );
 
-			// only supporting 1 level rn
-			m_TileData.resize( 1 );
-			m_TileData[0].resize( nTiles );
-			TheNomad::GameSystem::GetTileData( m_TileData[0] );
-
-			m_Checkpoints.reserve( nCheckpoints );
+			@m_TileData = TheNomad::GameSystem::GetTileData();
 			
 			//
 			// load the checkpoints
@@ -186,7 +131,7 @@ namespace TheNomad::SGame {
 				TheNomad::GameSystem::GetCheckpointData( xyz, i );
 				@cp = MapCheckpoint( xyz );
 				
-				m_Checkpoints.push_back( cp );
+				m_Checkpoints.Add( @cp );
 			}
 			
 			//
@@ -200,7 +145,7 @@ namespace TheNomad::SGame {
 				@spawn = MapSpawn( xyz, id, TheNomad::GameSystem::EntityType( type ) );
 				@spawn.m_Checkpoint = null;
 				
-				m_Spawns.push_back( spawn );
+				m_Spawns.Add( @spawn );
 			}
 			
 //			if ( !LoadCheckpointCache() ) {
@@ -227,30 +172,15 @@ namespace TheNomad::SGame {
 //			}
 		}
 		
-		const array<MapSoundData>& GetSoundBits() const {
-			return m_SoundBits;
+		const array<array<uint>>@ GetTiles() const {
+			return @m_TileData;
 		}
-		array<MapSoundData>& GetSoundBits() {
-			return m_SoundBits;
-		}
-		const array<uint>& GetTiles() const {
-			return m_TileData[0];
-		}
-		array<uint>& GetTiles() {
-			return m_TileData[0];
-		}
-
-		bool SoundBitsChanged() const {
-			for ( uint i = 0; i < m_SoundBits.size(); i++ ) {
-				if ( m_SoundBits[i].Changed() ) {
-					return true;
-				}
-			}
-			return false;
+		array<array<uint>>@ GetTiles() {
+			return @m_TileData;
 		}
 		
 		uint NumLevels() const {
-			return m_TileData.size();
+			return m_TileData.Count();
 		}
 
 		const array<MapSpawn@>& GetSpawns() const {
@@ -269,8 +199,7 @@ namespace TheNomad::SGame {
 		private string m_Name;
 		private array<MapSpawn@> m_Spawns;
 		private array<MapCheckpoint@> m_Checkpoints;
-		private array<array<uint>> m_TileData;
-		private array<MapSoundData> m_SoundBits;
+		private array<array<uint>>@ m_TileData;
 		private int m_nWidth;
 		private int m_nHeight;
 	};
@@ -410,7 +339,6 @@ namespace TheNomad::SGame {
 	class LevelInfoData {
 		LevelInfoData( const string& in name ) {
 			m_Name = name;
-			m_MapHandles.reserve( TheNomad::GameSystem::GameDifficulty::NumDifficulties );
 		}
 		
 		array<LevelMapData> m_MapHandles;
@@ -436,7 +364,7 @@ namespace TheNomad::SGame {
 
 			ConsolePrint( "Loading level infos...\n" );
 
-			for ( i = 0; i < sgame_ModList.size(); i++ ) {
+			for ( i = 0; i < sgame_ModList.Count(); i++ ) {
 				LoadLevelsFromFile( sgame_ModList[i] );
 			}
 
@@ -446,7 +374,7 @@ namespace TheNomad::SGame {
 
 			// set level numbers
 			for ( i = 0; i < NumLevels(); i++ ) {
-				GetLevelInfoByIndex( i )["num"] = i;
+				GetLevelInfoByIndex( i ).set( "num", i );
 			}
 
 			str.reserve( MAX_STRING_CHARS );
@@ -476,7 +404,7 @@ namespace TheNomad::SGame {
 						ConsoleWarning( "failed to load map '" + mapname + "' for level '" + data.m_Name + "'\n" );
 						continue;
 					}
-					data.m_MapHandles.push_back( MapData );
+					data.m_MapHandles.Add( MapData );
 				}
 
 				data.m_nIndex = i;
@@ -550,17 +478,11 @@ namespace TheNomad::SGame {
 					continue;
 				}
 
-				m_LevelInfoDatas.push_back( @data );
+				m_LevelInfoDatas.Add( @data );
 			}
 		}
 		
 		void OnRunTic() {
-			for ( uint i = 0; i < m_MapData.NumLevels(); i++ ) {
-				if ( !m_MapData.SoundBitsChanged() ) {
-					continue; // no need for dissonance
-				}
-				
-			}
 		}
 		bool OnConsoleCommand( const string& in cmd ) {
 
@@ -635,8 +557,8 @@ namespace TheNomad::SGame {
 		}
 		
 		const LevelInfoData@ GetLevelInfoByMapName( const string& in mapname ) const {
-			for ( uint i = 0; i < m_LevelInfoDatas.size(); i++ ) {
-				for ( uint a = 0; a < m_LevelInfoDatas[i].m_MapHandles.size(); a++ ) {
+			for ( uint i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
+				for ( uint a = 0; a < m_LevelInfoDatas[i].m_MapHandles.Count(); a++ ) {
 					if ( TheNomad::Util::StrICmp( m_LevelInfoDatas[i].m_MapHandles[a].m_Name, mapname ) == 0 ) {
 						return @m_LevelInfoDatas[i];
 					}
@@ -675,9 +597,8 @@ namespace TheNomad::SGame {
 				return;
 			}
 
-			m_LevelInfos.reserve( levels.size() );
-			for ( uint i = 0; i < levels.size(); i++ ) {
-				m_LevelInfos.push_back( @levels[i] );
+			for ( uint i = 0; i < levels.Count(); i++ ) {
+				m_LevelInfos.Add( @levels[i] );
 				m_nLevels++;
 			}
 		}
@@ -750,42 +671,21 @@ namespace TheNomad::SGame {
 	
 	class SoundData {
 		SoundData( float decibles, const vec2& in volume, const ivec2& in range, const ivec3& in origin, float diffusion ) {
-			m_Decibles = decibles;
-			m_Volume = volume;
-			m_Origin = origin;
-			m_Diffusion = diffusion;
-			m_Range = range;
-			Run();
 		}
 		
 		void Run() {
-			const float noiseScaleX = m_Volume.x < 1 ? 1 : m_Volume.x;
-			const float noiseScaleY = m_Volume.y < 1 ? 1 : m_Volume.y;
-			const int distanceX = m_Range.x * int( floor( noiseScaleX ) ) / 2;
-			const int distanceY = m_Range.y * int( floor( noiseScaleY ) ) / 2;
-			
-			const ivec2 start( m_Origin.x - distanceX, m_Origin.y - distanceY );
-			const ivec2 end( m_Origin.x + distanceX, m_Origin.y + distanceY );
-			
-			float[]@ soundBits = LevelManager.GetMapData().GetSoundBits()[m_Origin.z].GetData();
-			
-			for ( int y = start.y; y != end.y; y++ ) {
-				for ( int x = start.x; x != end.x; x++ ) {
-					soundBits[y * LevelManager.GetMapData().GetWidth() + x] += m_Decibles;
-					m_Decibles -= m_Diffusion;
-				}
-			}
 		}
-		
-		private ivec3 m_Origin;
-		private vec2 m_Volume;
-		private ivec2 m_Range;
-		private float m_Diffusion;
-		private float m_Decibles;
 	};
 
-	array<string> sgame_ModList;
+	uint GetMapLevel( float elevation ) {
+		uint e;
 
+		e = uint( floor( elevation ) );
+
+		return 0;
+	}
+
+	array<string> sgame_ModList;
 	const TheNomad::GameSystem::DirType[] InverseDirs = {
 		TheNomad::GameSystem::DirType::South,
 		TheNomad::GameSystem::DirType::SouthWest,
@@ -794,7 +694,7 @@ namespace TheNomad::SGame {
 		TheNomad::GameSystem::DirType::North,
 		TheNomad::GameSystem::DirType::NorthEast,
 		TheNomad::GameSystem::DirType::East,
-		TheNomad::GameSystem::DirType::SouthEast,
+		TheNomad::GameSystem::DirType::SouthEast
 	};
 
 	GameState GlobalState;
@@ -803,6 +703,6 @@ namespace TheNomad::SGame {
 
 	TheNomad::Engine::SoundSystem::SoundEffect selectedSfx;
 	string[] SP_DIFF_STRINGS( TheNomad::GameSystem::GameDifficulty::NumDifficulties );
-	string[] sgame_RankStrings( TheNomad::SGame::LevelRank::NumRanks );
-	vec4[] sgame_RankStringColors( TheNomad::SGame::LevelRank::NumRanks );
+	string[] sgame_RankStrings( LevelRank::NumRanks );
+	vec4[] sgame_RankStringColors( LevelRank::NumRanks );
 };

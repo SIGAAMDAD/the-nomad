@@ -12,6 +12,7 @@ typedef struct {
     uint64_t index;
     gamedata_t gd;
     qboolean valid;
+    qboolean *modsLoaded;
 } saveinfo_t;
 
 typedef struct {
@@ -191,7 +192,7 @@ void SinglePlayerMenu_Draw( void )
             Cvar_SetIntegerValue( "g_levelIndex", 0 );
             
             gi.state = GS_LEVEL;
-            Cvar_Set( "mapname", gi.mapCache.infoList[0].name );
+            Cvar_Set( "mapname", *gi.mapCache.mapList );
             g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelStart, 0 ); // start a new game
         }
 
@@ -218,16 +219,40 @@ void SinglePlayerMenu_Draw( void )
         mousePos = ImGui::GetCursorScreenPos();
         ImGui::SetCursorScreenPos( ImVec2( mousePos.x, mousePos.y + 10 ) );
         if ( sp.numSaves ) {
-            ImGui::BeginTable( "Save Slots", 6 );
+            ImGui::BeginTable( "Save Slots", 5 );
             // TODO: add key here
             for (i = 0; i < sp.numSaves; i++) {
                 ImGui::TableNextColumn();
                 if ( ImGui::Button( "LOAD" ) ) {
                     Cvar_Set( "sgame_SaveName", sp.saveList[i].name );
-                    Cvar_Set( "mapname", gi.mapCache.infoList[i].name );
                     gi.state = GS_LEVEL;
                     g_pModuleLib->ModuleCall( sgvm, ModuleOnLoadGame, 0 );
                 }
+                if ( ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled ) ) {
+                    ImGui::BeginTooltip();
+
+                    ImGui::TextUnformatted( "Loaded Mods: " );
+                    for ( uint64_t m = 0; m < sp.saveList[i].gd.numMods; m++ ) {
+                        if ( !sp.saveList[i].modsLoaded[m] ) {
+                            ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
+                            ImGui::PushStyleColor( ImGuiCol_TextDisabled, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
+                            ImGui::PushStyleColor( ImGuiCol_TextSelectedBg, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
+                        }
+
+                        ImGui::TextUnformatted( sp.saveList[i].gd.modList[m] );
+
+                        if ( !sp.saveList[i].modsLoaded[m] ) {
+                            ImGui::PopStyleColor( 3 );
+                        }
+
+                        if ( m != sp.saveList[i].gd.numMods - 1 ) {
+                            ImGui::TextUnformatted( ", " );
+                        }
+                    }
+
+                    ImGui::EndTooltip();
+                }
+
                 ImGui::TableNextColumn();
                 ImGui::Text( "%s", sp.saveList[i].name );
                 ImGui::TableNextColumn();
@@ -235,9 +260,7 @@ void SinglePlayerMenu_Draw( void )
                 ImGui::TableNextColumn();
                 ImGui::Text( "%lu", sp.saveList[i].stats.mtime ); // last used time
                 ImGui::TableNextColumn();
-                ImGui::Text( "%s", sp.saveList[i].gd.bffName );
-                ImGui::TableNextColumn();
-                ImGui::Text( "%s", difficultyTable[ sp.saveList[i].gd.diff ].name );
+                ImGui::Text( "%s", difficultyTable[ sp.saveList[i].gd.dif ].name );
                 ImGui::TableNextRow();
             }
             ImGui::EndTable();
@@ -258,7 +281,7 @@ void SinglePlayerMenu_Cache( void )
 {
     saveinfo_t *info;
     const char **fileList;
-    uint64_t i;
+    uint64_t i, j;
     const stringHash_t *hardest;
 
     memset( &sp, 0, sizeof( sp ) );
@@ -315,6 +338,11 @@ void SinglePlayerMenu_Cache( void )
                 info->valid = qfalse;
             } else {
                 info->valid = qtrue;
+            }
+
+            info->modsLoaded = (qboolean *)Hunk_Alloc( sizeof( *info->modsLoaded ) * info->gd.numMods, h_high );
+            for ( uint64_t a = 0; a < info->gd.numMods; a++ ) {
+                info->modsLoaded[a] = ModsMenu_IsModuleActive( info->gd.modList[a] );
             }
         }
     }

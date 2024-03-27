@@ -11,6 +11,8 @@
 #include "module_funcdefs.hpp"
 #include "module_stringfactory.hpp"
 #include "module_debugger.h"
+#include "scriptarray.h"
+#include "scriptdictionary.h"
 
 moduleImport_t moduleImport;
 
@@ -318,7 +320,7 @@ void Module_ASMessage_f( const asSMessageInfo *pMsg, void *param )
 }
 
 void *asAlloc( size_t nBytes ) {
-    return Mem_Alloc( nBytes );
+    return Mem_ClearedAlloc( nBytes );
 }
 
 void asFree( void *pBuffer ) {
@@ -362,8 +364,10 @@ bool CModuleLib::AddDefaultProcs( void ) const {
         return true;
     }
 
-    RegisterScriptHandle( m_pEngine );
+    RegisterScriptArray( m_pEngine, true );
     RegisterStdString( m_pEngine );
+    RegisterScriptDictionary( m_pEngine );
+    RegisterScriptHandle( m_pEngine );
     RegisterScriptMath( m_pEngine );
     RegisterScriptJson( m_pEngine );
 

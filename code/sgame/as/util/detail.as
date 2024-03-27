@@ -4,14 +4,33 @@ namespace TheNomad::Util {
 		}
 	};
 
+	const vec4& StringToColor( const string& in color ) {
+		if ( StrICmp( color, "black" ) == 0 ) {
+			return colorBlack;
+		} else if ( StrICmp( color, "red" ) == 0 ) {
+			return colorRed;
+		} else if ( StrICmp( color, "green" ) == 0 ) {
+			return colorGreen;
+		} else if ( StrICmp( color, "yellow" ) == 0 ) {
+			return colorYellow;
+		} else if ( StrICmp( color, "blue" ) == 0 ) {
+			return colorBlue;
+		} else if ( StrICmp( color, "cyan" ) == 0 ) {
+			return colorCyan;
+		} else if ( StrICmp( color, "magenta" ) == 0 ) {
+			return colorMagenta;
+		} else {
+			return colorWhite;
+		}
+	}
 
 	//
 	// M_Random
 	// Returns a 0-255 number
 	//
 
-	const uint8[] rndtable = {
-	    0,   8, 109, 220, 222, 241, 149, 107,  75, 248, 254, 140,  16,  66 ,
+	const uint[] rndtable = {
+		0,   8, 109, 220, 222, 241, 149, 107,  75, 248, 254, 140,  16,  66 ,
 	    74,  21, 211,  47,  80, 242, 154,  27, 205, 128, 161,  89,  77,  36 ,
 	    95, 110,  85,  48, 212, 140, 211, 249,  22,  79, 200,  50,  28, 188 ,
 	    52, 140, 202, 120,  68, 145,  62,  70, 184, 190,  91, 197, 152, 224 ,

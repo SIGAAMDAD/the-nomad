@@ -26,11 +26,8 @@ static qboolean G_LoadLevelFile( const char *filename, mapinfo_t *info )
     } f;
     bmf_t *header;
     uint64_t size;
-    char realpath[MAX_NPATH];
 
-    Com_snprintf( realpath, sizeof(realpath), "maps/%s", filename );
-
-    size = FS_LoadFile( realpath, &f.v );
+    size = FS_LoadFile( filename, &f.v );
     if ( !size || !f.v ) {
         Con_Printf( COLOR_YELLOW "WARNING: failed to load map file '%s'\n", filename );
         return qfalse;
@@ -50,8 +47,8 @@ static qboolean G_LoadLevelFile( const char *filename, mapinfo_t *info )
         Con_Printf( COLOR_YELLOW "WARNING: bad map version (%i (it) != %i (this)) in file '%s'\n", header->version, LEVEL_VERSION, filename );
         return qfalse;
     }
-    
-//    N_strncpyz( info->name, COM_SkipPath( const_cast<char *>( filename ) ), sizeof( info->name ) );
+
+	N_strncpyz( info->name, filename, sizeof( info->name ) );
 
     info->width = header->map.mapWidth;
     info->height = header->map.mapHeight;
@@ -59,6 +56,7 @@ static qboolean G_LoadLevelFile( const char *filename, mapinfo_t *info )
     info->numCheckpoints = CopyLump( (void **)&info->checkpoints, LUMP_CHECKPOINTS, sizeof( mapcheckpoint_t ), &header->map );
     info->numSpawns = CopyLump( (void **)&info->spawns, LUMP_SPAWNS, sizeof( mapspawn_t ), &header->map );
     info->numTiles = CopyLump( (void **)&info->tiles, LUMP_TILES, sizeof( maptile_t ), &header->map );
+	info->numLevels = 1;
 
     FS_FreeFile( f.v );
 
@@ -71,11 +69,13 @@ void G_InitMapCache( void )
     nhandle_t file;
     mapinfo_t *info;
     uint64_t i;
+	char path[MAX_NPATH];
+	char **fileList;
 
     Con_Printf( "Caching map files...\n" );
 
     memset( &gi.mapCache, 0, sizeof( gi.mapCache ) );
-    gi.mapCache.mapList = FS_ListFiles( "maps/", ".bmf", &gi.mapCache.numMapFiles );
+    fileList = FS_ListFiles( "maps/", ".bmf", &gi.mapCache.numMapFiles );
 
     if ( !gi.mapCache.numMapFiles ) {
         Con_Printf( "no map files to load.\n" );
@@ -84,15 +84,24 @@ void G_InitMapCache( void )
 
     Con_Printf( "Got %lu map files\n", gi.mapCache.numMapFiles );
 
-    // allocate the info
-    gi.mapCache.infoList = (mapinfo_t *)Hunk_Alloc( sizeof( mapinfo_t ) * gi.mapCache.numMapFiles, h_low );
+	gi.mapCache.mapList = (char **)Hunk_Alloc( sizeof( *gi.mapCache.mapList ) * gi.mapCache.numMapFiles, h_low );
+	for ( i = 0; i < gi.mapCache.numMapFiles; i++ ) {
+		Com_snprintf( path, sizeof( path ) - 1, "maps/%s", fileList[i] );
+		gi.mapCache.mapList[i] = (char *)Hunk_Alloc( strlen( path ) + 1, h_low );
+		strcpy( gi.mapCache.mapList[i], path );
+	}
 
-    info = gi.mapCache.infoList;
-    for ( i = 0; i < gi.mapCache.numMapFiles; i++, info++ ) {
-        if ( !G_LoadLevelFile( gi.mapCache.mapList[i], info ) ) {
-            N_Error( ERR_DROP, "G_InitMapCache: failed to load map file '%s'", gi.mapCache.mapList[i] );
-        }
-    }
+	FS_FreeFileList( fileList );
+
+    // allocate the info
+//    gi.mapCache.infoList = (mapinfo_t *)Hunk_Alloc( sizeof( mapinfo_t ) * gi.mapCache.numMapFiles, h_low );
+//
+//    info = gi.mapCache.infoList;
+//    for ( i = 0; i < gi.mapCache.numMapFiles; i++, info++ ) {
+//        if ( !G_LoadLevelFile( gi.mapCache.mapList[i], info ) ) {
+//            N_Error( ERR_DROP, "G_InitMapCache: failed to load map file '%s'", gi.mapCache.mapList[i] );
+//        }
+//    }
 }
 
 static nhandle_t G_GetMapHandle( const char *name )
@@ -106,8 +115,8 @@ static nhandle_t G_GetMapHandle( const char *name )
 
 	hMap = FS_INVALID_HANDLE;
 	for ( i = 0; i < gi.mapCache.numMapFiles; i++ ) {
-		if ( !N_stricmp( gi.mapCache.infoList[i].name, name ) ) {
-			hMap = (nhandle_t)i;
+		if ( !N_strcmp( gi.mapCache.mapList[i], name ) ) {
+			hMap = (nhandle_t)i + 1;
 			break;
 		}
 	}
@@ -121,14 +130,9 @@ static nhandle_t G_GetMapHandle( const char *name )
 void G_MapInfo_f( void ) {
 	uint64_t i;
 
-    Con_Printf( "---------- Map Info ----------\n" );
+	Con_Printf( "\nMap List:\n" );
     for ( i = 0; i < gi.mapCache.numMapFiles; i++ ) {
-        Con_Printf( "[Map %lu] >\n", i );
-        Con_Printf( "Name: %s\n", gi.mapCache.infoList[i].name );
-        Con_Printf( "Checkpoint Count: %u\n", gi.mapCache.infoList[i].numCheckpoints );
-        Con_Printf( "Spawn Count: %u\n", gi.mapCache.infoList[i].numSpawns );
-        Con_Printf( "Map Width: %u\n", gi.mapCache.infoList[i].width );
-        Con_Printf( "Map Height: %u\n", gi.mapCache.infoList[i].height );
+		Con_Printf( "%s\n", gi.mapCache.mapList[i] );
     }
 }
 
@@ -173,7 +177,7 @@ void G_GetCheckpointData( uvec3_t xyz, uint32_t nIndex ) {
 		N_Error( ERR_DROP, "G_GetCheckpointData: no map loaded" );
 	}
 	
-	info = &gi.mapCache.infoList[ gi.mapCache.currentMapLoaded ];
+	info = &gi.mapCache.info;
 	if ( nIndex >= info->numCheckpoints ) {
 		N_Error( ERR_DROP, "G_GetCheckpointData: index out of range" );
 	}
@@ -188,7 +192,7 @@ void G_GetSpawnData( uvec3_t xyz, uint32_t *type, uint32_t *id, uint32_t nIndex 
 		N_Error( ERR_DROP, "G_GetSpawnData: no map loaded" );
 	}
 	
-	info = &gi.mapCache.infoList[ gi.mapCache.currentMapLoaded ];
+	info = &gi.mapCache.info;
 	if ( nIndex >= info->numSpawns ) {
 		N_Error( ERR_DROP, "G_GetSpawnData: index out of range" );
 	}
@@ -198,7 +202,7 @@ void G_GetSpawnData( uvec3_t xyz, uint32_t *type, uint32_t *id, uint32_t nIndex 
 	*id = info->spawns[ nIndex ].entityid;
 }
 
-void G_GetTileData( uint32_t *pTiles ) {
+void G_GetTileData( uint32_t *pTiles, uint32_t nLevel ) {
 	const mapinfo_t *info;
 
 	if ( !pTiles ) {
@@ -207,30 +211,33 @@ void G_GetTileData( uint32_t *pTiles ) {
 	if ( gi.mapCache.currentMapLoaded == FS_INVALID_HANDLE ) {
 		N_Error( ERR_DROP, "G_GetTileData: no map loaded" );
 	}
+	if ( nLevel >= gi.mapCache.info.numLevels ) {
+		N_Error( ERR_DROP, "G_GetTileData: level index out of range" );
+	}
 
-	info = &gi.mapCache.infoList[ gi.mapCache.currentMapLoaded ];
+	info = &gi.mapCache.info;
 	memcpy( pTiles, info->tiles, sizeof( *info->tiles ) * info->numTiles );
 }
 
-void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns, uint32_t *nTiles,
-	float *soundBits, linkEntity_t *activeEnts )
+void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns, uint32_t *nTiles, linkEntity_t *activeEnts )
 {
-	const mapinfo_t *info;
+	mapinfo_t *info;
 	
-	if ( hMap == FS_INVALID_HANDLE || hMap >= gi.mapCache.numMapFiles ) {
+	if ( hMap == FS_INVALID_HANDLE || ( hMap - 1 ) >= gi.mapCache.numMapFiles ) {
 		N_Error( ERR_DROP, "G_SetActiveMap: handle out of range" );
-	} else if ( !info || !soundBits || !activeEnts ) {
+	} else if ( !activeEnts ) {
 		N_Error( ERR_DROP, "G_SetActiveMap: invalid parameter" );
 	}
 	
-	info = &gi.mapCache.infoList[ hMap ];
-	*nCheckpoints = info->numCheckpoints;
-	*nSpawns = info->numSpawns;
-	*nTiles = info->numTiles;
-	
-	g_world->Init( &gi.mapCache.infoList[ hMap ], soundBits, activeEnts );
+	info = &gi.mapCache.info;
 
-	Cbuf_ExecuteText( EXEC_APPEND, va( "setmap %s 0\n", gi.mapCache.infoList[ hMap ].name ) );
+	if ( !G_LoadLevelFile( gi.mapCache.mapList[ hMap - 1 ], info ) ) {
+		N_Error( ERR_DROP, "G_SetActiveMap: failed to load map level file '%s'", gi.mapCache.mapList[ hMap - 1 ] );
+	}
+	
+	g_world->Init( &gi.mapCache.info, activeEnts );
+
+	Cbuf_ExecuteText( EXEC_APPEND, va( "setmap %s 0\n", gi.mapCache.info.name ) );
 }
 
 CGameWorld::CGameWorld( void ) {
@@ -240,17 +247,13 @@ CGameWorld::CGameWorld( void ) {
 CGameWorld::~CGameWorld() {
 }
 
-void CGameWorld::Init( mapinfo_t *info, float *soundBits, linkEntity_t *activeEnts )
+void CGameWorld::Init( mapinfo_t *info, linkEntity_t *activeEnts )
 {
-    if ( !soundBits ) {
-        N_Error( ERR_DROP, "CGameWorld::Init: invalid soundBits data provided!" );
-    }
     if ( !activeEnts ) {
         N_Error( ERR_DROP, "CGameWorld::Init: invalid activeEnts data provided!" );
     }
 
     m_pMapInfo = info;
-    m_pSoundBits = soundBits;
     m_pActiveEnts = activeEnts;
 	m_nEntities = 0;
 
@@ -335,26 +338,4 @@ void CGameWorld::CastRay( ray_t *ray )
 			ray->origin[1] += sy;
 		}
 	}
-}
-
-void CGameWorld::SoundRecursive( int32_t width, int32_t height, float volume, const vec3_t origin )
-{
-	int32_t y, x;
-	ivec3_t start, end;
-	vec3_t pos;
-	const float rangeX = ceil( (float)width / 2.0f );
-	const float rangeY = ceil( (float)height / 2.0f );
-	
-	VectorCopy( pos, origin );
-	Sys_SnapVector( pos );
-	
-	start[0] = pos[0] - rangeX;
-	start[1] = pos[1] - rangeY;
-	start[2] = pos[2];
-	
-	end[0] = pos[0] + rangeX;
-	end[1] = pos[1] + rangeY;
-	end[2] = pos[2];
-	
-	
 }

@@ -5,6 +5,7 @@
 #define _ScriptJSON_h_
 
 #include "module_public.h"
+#include "scriptarray.h"
 
 typedef string_t jsonKey_t;
 using json = nlohmann::json;

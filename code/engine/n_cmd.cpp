@@ -18,6 +18,24 @@ mostly meant for developers/debugging
 #define MAX_HISTORY 32
 #define MAX_CMD_BUFFER  65536
 
+class CCommandBuffer
+{
+public:
+	CCommandBuffer( void );
+	~CCommandBuffer();
+
+private:
+	int64_t m_nMaxSize;
+	int64_t m_nCurSize;
+	eastl::vector<byte> m_DataBuffer;
+};
+
+cvar_t *com_MaxCommandBufferSize;
+
+CCommandBuffer::CCommandBuffer( void )
+{
+}
+
 typedef struct {
 	byte *data;
 	int64_t maxsize;

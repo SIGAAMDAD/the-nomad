@@ -8,7 +8,7 @@ namespace TheNomad::SGame {
 		QuickShot() {
 		}
 		QuickShot( const vec3& in origin ) {
-			m_Targets.resize( sgame_QuickShotMaxTargets.GetInt() );
+			m_Targets.Reserve( sgame_QuickShotMaxTargets.GetInt() );
 		}
 		
 		void Think() {
@@ -24,12 +24,12 @@ namespace TheNomad::SGame {
 
 			// NOTE: this might be a little bit slow depending on how many mobs are in the area
 			for ( uint i = 0; i < EntList.size(); i++ ) {
-				if ( m_Targets.find( @EntList[i] ) == -1 ) {
+				if ( m_Targets.Find( @EntList[i] ) == -1 ) {
 					if ( TheNomad::Util::Distance( EntList[i].GetOrigin(), m_Origin ) > sgame_QuickShotMaxRange.GetFloat() ) {
 						continue; // too far away
 					}
 					// make sure we aren't adding a duplicate
-					@m_Targets[m_nTargetsFound] = @EntList[i];
+					m_Targets.Add( @EntList[i] );
 					DebugPrint( "QuickShot added entity " + formatUInt( i ) + "\n" );
 				}
 			}
@@ -38,12 +38,11 @@ namespace TheNomad::SGame {
 		void Clear() {
 			DebugPrint( "QuickShot cleared.\n" );
 			m_nLastTargetTime = 0;
-			m_nTargetsFound = 0;
+			m_Targets.Clear();
 		}
 
 		private vec3 m_Origin;
 		private array<EntityObject@> m_Targets;
-		private uint m_nTargetsFound;
 		private uint m_nLastTargetTime;
 	};
 	
@@ -70,7 +69,7 @@ namespace TheNomad::SGame {
 			int8[] c( MAX_TOKEN_CHARS );
 			int k;
 			
-			TheNomad::Engine::CmdArgvFixed( c, MAX_TOKEN_CHARS, 1 );
+			TheNomad::Engine::CmdArgvFixed( c, 1 );
 			if ( c[0] != 0 ) {
 				k = TheNomad::Util::StringToInt( c );
 			} else {
@@ -91,7 +90,7 @@ namespace TheNomad::SGame {
 			}
 			
 			// save the timestamp for partial frame summing
-			TheNomad::Engine::CmdArgvFixed( c, MAX_TOKEN_CHARS, 2 );
+			TheNomad::Engine::CmdArgvFixed( c, 2 );
 			downtime = TheNomad::Util::StringToInt( c );
 			
 			active = true;
@@ -102,7 +101,7 @@ namespace TheNomad::SGame {
 			uint uptime;
 			uint k;
 			
-			TheNomad::Engine::CmdArgvFixed( c, MAX_TOKEN_CHARS, 1 );
+			TheNomad::Engine::CmdArgvFixed( c, 1 );
 			if ( c[0] != 0 ) {
 				k = TheNomad::Util::StringToInt( c );
 			} else {
@@ -120,7 +119,7 @@ namespace TheNomad::SGame {
 			active = false;
 			
 			// save timestamp for partial frame summing
-			TheNomad::Engine::CmdArgvFixed( c, MAX_TOKEN_CHARS, 2 );
+			TheNomad::Engine::CmdArgvFixed( c, 2 );
 			uptime = TheNomad::Util::StringToInt( c );
 			if ( uptime > 0 ) {
 				msec += uptime - downtime;
@@ -245,7 +244,10 @@ namespace TheNomad::SGame {
 	
 	class PlayrObject : EntityObject {
 		PlayrObject() {
-			m_WeaponSlots.resize( sgame_MaxPlayerWeapons.GetInt() );
+			m_WeaponSlots.Reserve( sgame_MaxPlayerWeapons.GetInt() );
+			for ( uint i = 0; i < uint( sgame_MaxPlayerWeapons.GetInt() ); i++ ) {
+				m_WeaponSlots.Add( null );
+			}
 
 			key_MoveNorth = KeyBind();
 			key_MoveSouth = KeyBind();
@@ -417,7 +419,7 @@ namespace TheNomad::SGame {
 			}
 			
 			if ( Pmove.groundPlane ) {
-				const uint flags = LevelManager.GetMapData().GetTiles()[ origin.y * LevelManager.GetMapData().GetWidth() + origin.x ];
+				const uint flags = LevelManager.GetMapData().GetTiles()[ GetMapLevel( m_Link.m_Origin.z ) ][ origin.y * LevelManager.GetMapData().GetWidth() + origin.x ];
 				
 				if ( ( flags & SURFACEPARM_METAL ) != 0 ) {
 					TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( moveMetalSfx );

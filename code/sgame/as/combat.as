@@ -62,7 +62,6 @@ namespace TheNomad::SGame {
 			return;
 		}
 		
-		@sgame_MusicChangeDelta = @TheNomad::CvarManager.AddCvar( "sgame_MusicChangeDelta", "70", CVAR_LATCH | CVAR_TEMP, false );
 		@dynamicMusic = cast<CombatSoundSystem>( TheNomad::GameSystem::AddSystem( CombatSoundSystem() ) );
 	}
 };

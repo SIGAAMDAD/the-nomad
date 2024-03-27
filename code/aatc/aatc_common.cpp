@@ -26,7 +26,9 @@ and must not be misrepresented as being the original software.
 Sami Vuorela
 samivuorela@gmail.com
 */
-
+#include "../engine/n_shared.h"
+#include "../engine/n_common.h"
+//#include "../module_lib/module_alloc.h"
 
 
 #include "aatc_common.hpp"
@@ -42,9 +44,12 @@ namespace aatc {
 
 
 
-		std_Spinlock::std_Spinlock() : state(1) {}
-		void std_Spinlock::lock(){while (state.exchange(0, MemoryOrder_Acquire) == 0);}
-		void std_Spinlock::unlock(){state.store(1, MemoryOrder_Release);}
+//		std_Spinlock::std_Spinlock() : state(1) {}
+//		void std_Spinlock::lock(){while (state.exchange(0, MemoryOrder_Acquire) == 0);}
+//		void std_Spinlock::unlock(){state.store(1, MemoryOrder_Release);}
+		std_Spinlock::std_Spinlock() {}
+		void std_Spinlock::lock( void ) { mutex.Lock(); }
+		void std_Spinlock::unlock( void ) { mutex.Unlock(); }
 
 
 
@@ -406,11 +411,14 @@ namespace aatc {
 			va_list argptr;
 			va_start(argptr, msg);
 
+/*
 			#if __STDC_WANT_SECURE_LIB__
 				vsprintf_s(textbuf, RegistrationState::bufsize, msg, argptr);
 			#else
 				vsprintf(textbuf, msg, argptr);
 			#endif
+*/
+			N_vsnprintf( textbuf, RegistrationState::bufsize, msg, argptr );
 
 			va_end(argptr);
 		}
@@ -418,11 +426,14 @@ namespace aatc {
 			va_list argptr;
 			va_start(argptr, msg);
 
+/*
 			#if __STDC_WANT_SECURE_LIB__
 				vsprintf_s(buffer, buffer_size, msg, argptr);
 			#else
 				vsprintf(buffer, msg, argptr);
 			#endif
+*/
+			N_vsnprintf( buffer, buffer_size, msg, argptr );
 
 			va_end(argptr);
 		}

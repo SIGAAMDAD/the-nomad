@@ -60,6 +60,14 @@ namespace aatc {
 
 
 			namespace tags_of_container {
+				struct array : public shared::tagbase {
+					typedef shared::tag::iterator_access::access_is_mutable iterator_access;
+					typedef shared::tag::is_map::is_not_map is_map;
+					typedef shared::tag::is_associative::is_not_associative is_associative;
+
+					static const char *scriptname_container;
+				};
+
 				struct vector : public shared::tagbase {
 					typedef shared::tag::iterator_access::access_is_mutable iterator_access;
 					typedef shared::tag::serializer_insert_value_func::push_back serializer_insert_value_func;
@@ -125,10 +133,8 @@ namespace aatc {
 
 
 			template<int CONTAINER_ID> void register_container(asIScriptEngine* engine) {}
+			
 			template<int CONTAINER_ID> common::container_operations_bitmask_type errorcheck_missing_functions_make_bitfield_for_template(enginestorage::template_specific_storage* tss) { return 0; }
-
-
-
 			template<> void register_container<CONTAINER::VECTOR>(asIScriptEngine* engine);
 			template<> common::container_operations_bitmask_type errorcheck_missing_functions_make_bitfield_for_template<CONTAINER::VECTOR>(enginestorage::template_specific_storage* tss);
 

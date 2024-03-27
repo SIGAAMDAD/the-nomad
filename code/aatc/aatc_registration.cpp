@@ -28,6 +28,9 @@ samivuorela@gmail.com
 */
 
 
+#include "../engine/n_shared.h"
+#include "../engine/n_common.h"
+//#include "../module_lib/module_alloc.h"
 
 //#include "aatc_internal_lists.hpp"
 #include "aatc.hpp"
@@ -36,7 +39,7 @@ samivuorela@gmail.com
 #include "aatc_enginestorage.hpp"
 #include "aatc_container_listing.hpp"
 #include "aatc_templatemagic.hpp"
-
+#include "../module_lib/aswrappedcall.h"
 
 
 
@@ -77,7 +80,6 @@ namespace aatc {
 		#endif
 
 		{
-			int r = 0;
 			char textbuf[common::RegistrationState::bufsize];
 
 			{//register script_Funcpointer
@@ -85,26 +87,27 @@ namespace aatc {
 
 				const char* n_funcpointer = config::scriptname::funcpointer;
 
-				r = engine->RegisterObjectType(n_funcpointer, 0, asOBJ_REF); assert(r >= 0);
+				CheckASCall( engine->RegisterObjectType(n_funcpointer, 0, asOBJ_REF ) );
 
 				common::RegistrationState::Format_static(textbuf, common::RegistrationState::bufsize, "%s@ f()", n_funcpointer);
 
-				r = engine->RegisterObjectBehaviour(n_funcpointer, asBEHAVE_FACTORY, textbuf, asFUNCTIONPR(script_Funcpointer::Factory, (), script_Funcpointer*), asCALL_CDECL); assert(r >= 0);
-				r = engine->RegisterObjectBehaviour(n_funcpointer, asBEHAVE_ADDREF, "void f()", asMETHOD(script_Funcpointer, refcount_Add), asCALL_THISCALL); assert(r >= 0);
-				r = engine->RegisterObjectBehaviour(n_funcpointer, asBEHAVE_RELEASE, "void f()", asMETHOD(script_Funcpointer, refcount_Release), asCALL_THISCALL); assert(r >= 0);
+				CheckASCall( engine->RegisterObjectBehaviour( n_funcpointer, asBEHAVE_FACTORY, textbuf, WRAP_FN_PR( script_Funcpointer::Factory, (), script_Funcpointer * ), asCALL_GENERIC ) );
 
-				r = engine->RegisterObjectProperty(n_funcpointer, "bool ready", asOFFSET(script_Funcpointer, ready)); assert(r >= 0);
-				r = engine->RegisterObjectProperty(n_funcpointer, "bool is_thiscall", asOFFSET(script_Funcpointer, is_thiscall)); assert(r >= 0);
-				r = engine->RegisterObjectProperty(n_funcpointer, "string funcname", asOFFSET(script_Funcpointer, funcname)); assert(r >= 0);
+				CheckASCall( engine->RegisterObjectBehaviour(n_funcpointer, asBEHAVE_ADDREF, "void f()", WRAP_MFN_PR( script_Funcpointer::basetype_refcounted, refcount_Add, (), void), asCALL_GENERIC ) );
+				CheckASCall( engine->RegisterObjectBehaviour(n_funcpointer, asBEHAVE_RELEASE, "void f()", WRAP_MFN_PR( script_Funcpointer::basetype_refcounted, refcount_Release, (), void), asCALL_GENERIC ) );
 
-				r = engine->RegisterObjectMethod(n_funcpointer, "bool Set(string)", asMETHODPR(script_Funcpointer, Set, (config::t::string), bool), asCALL_THISCALL); assert(r >= 0);
-				r = engine->RegisterObjectMethod(n_funcpointer, "bool Set(string,?&in)", asMETHODPR(script_Funcpointer, Set, (config::t::string, void*, int), bool), asCALL_THISCALL); assert(r >= 0);
-				r = engine->RegisterObjectMethod(n_funcpointer, "void Call()", asMETHOD(script_Funcpointer, scriptsidecall_CallVoid), asCALL_THISCALL); assert(r >= 0);
+				CheckASCall( engine->RegisterObjectProperty(n_funcpointer, "bool ready", asOFFSET(script_Funcpointer, ready)) );
+				CheckASCall( engine->RegisterObjectProperty(n_funcpointer, "bool is_thiscall", asOFFSET(script_Funcpointer, is_thiscall)) );
+				CheckASCall( engine->RegisterObjectProperty(n_funcpointer, "string funcname", asOFFSET(script_Funcpointer, funcname)) );
+
+				CheckASCall( engine->RegisterObjectMethod(n_funcpointer, "bool Set(string)", WRAP_MFN_PR(script_Funcpointer, Set, (config::t::string), bool), asCALL_GENERIC ) );
+				CheckASCall( engine->RegisterObjectMethod(n_funcpointer, "bool Set(string,?&in)", WRAP_MFN_PR(script_Funcpointer, Set, (config::t::string, void*, int), bool), asCALL_GENERIC ) );
+				CheckASCall( engine->RegisterObjectMethod(n_funcpointer, "void Call()", WRAP_MFN_PR(script_Funcpointer, scriptsidecall_CallVoid, (), void), asCALL_GENERIC ) );
 			}
 
 			{//register hash functions
 				common::RegistrationState::Format_static(textbuf, 1000, "%s aatc_Hashfunc_djb2(string &in)", config::scriptname::t::hash_actual);
-				r = engine->RegisterGlobalFunction(textbuf, asFUNCTION(hash::hashfunc::djb2), asCALL_CDECL); assert(r >= 0);
+				CheckASCall( engine->RegisterGlobalFunction(textbuf, WRAP_FN(hash::hashfunc::djb2), asCALL_GENERIC ) );
 			}
 		}
 

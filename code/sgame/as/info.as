@@ -3,36 +3,44 @@
 
 namespace TheNomad::SGame {
 	enum AttackMethod {
-		Hitscan = 0,
-		Projectile = 1,
-		AreaOfEffect = 2,
+		Hitscan,
+		Projectile,
+		AreaOfEffect,
+
+		NumAttackMethods
 	};
 
 	enum ArmorType {
-		None = 0,
+		None,
 		Light,
 		Standard,
 		Heavy,
-		Invul
+		Invul,
+
+		NumArmorTypes
 	};
 
 	enum AmmoType {
-		Bullet = 0,
+		Bullet,
 		Shell,
 		Rocket,
 		Grenade,
-		Invalid
+		Invalid,
+
+		NumAmmoTypes,
 	};
 
 	enum AttackType {
-		Melee = 0,
+		Melee,
 		Missile,
+
+		NumAttackTypes
 	};
 	
 	enum WeaponType {
 		Sidearm,
 		HeavySidearm,
-		Pimary,
+		Primary,
 		HeavyPrimary,
 		Grenadier,
 		Melee,
@@ -66,9 +74,18 @@ namespace TheNomad::SGame {
 
 		None                 = 0x00000000
 	};
+
+	const uint NumMobFlags = 6;
+	const uint NumWeaponProperties = 12;
 	
 	interface InfoLoader {
 		bool Load( json@ json );
+	};
+
+	const uint[] AttackMethodData = {
+		uint( AttackMethod::Hitscan ),
+		uint( AttackMethod::Projectile ),
+		uint( AttackMethod::AreaOfEffect )
 	};
 
 	const uint[] AttackTypeData = {
@@ -79,26 +96,6 @@ namespace TheNomad::SGame {
 	const string[] AttackTypeStrings = {
 		"Melee",
 		"Missile"
-	};
-
-	const uint[] AttackMethodData = {
-		uint( AttackMethod::Hitscan ),
-		uint( AttackMethod::Projectile ),
-		uint( AttackMethod::AreaOfEffect )
-	};
-
-	const string[] AttackMethodStrings = {
-		"Hitscan",
-		"Projectile",
-		"AreaOfEffect"
-	};
-
-	const string[] ArmorTypeStrings = {
-		"None",
-		"Light",
-		"Standard",
-		"Heavy",
-		"Invul"
 	};
 
 	const uint[] MobFlagBits = {
@@ -144,24 +141,11 @@ namespace TheNomad::SGame {
 		"TwoHandedPrimFirearm",
 		"SpawnsObject"
 	};
-	
-	const string[] WeaponTypeStrings = {
-		"Sidearm",
-		"HeavySidearm",
-		"Primary",
-		"HeavyPrimary",
-		"Grenadier",
-		"Melee",
-		"LeftArm",
-		"RightArm"
-	};
-	
-	const string[] AmmoTypeStrings = {
-		"Bullet",
-		"Shell",
-		"Rocket",
-		"Grenade"
-	};
+
+	string[] AmmoTypeStrings( AmmoType::NumAmmoTypes );
+	string[] ArmorTypeStrings( ArmorType::NumArmorTypes );
+	string[] AttackMethodStrings( AttackMethod::NumAttackMethods );
+	string[] WeaponTypeStrings( WeaponType::NumWeaponTypes );
 
 	class WeaponInfo : InfoLoader {
 		WeaponInfo() {
