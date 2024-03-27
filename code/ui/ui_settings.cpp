@@ -364,6 +364,12 @@ static void SettingsMenu_ApplyEngineChanges( void )
     Cvar_Set( "com_hunkMegs", va( "%u", settings.performance.zoneMegs ) );
     Cvar_Set( "ml_alwaysCompile", va( "%i", settings.performance.alwaysCompileModules ) );
     Cvar_Set( "ml_allowJIT", va( "%i", settings.performance.allowModuleJIT ) );
+
+    if ( Cvar_VariableInteger( "g_moduleConfigUpdate" ) ) {
+        g_pModuleLib->ModuleCall( sgvm, ModuleSaveConfiguration, 0 );
+        g_pModuleLib->RunModules( ModuleSaveConfiguration, 0 );
+    }
+    Cvar_Set( "g_moduleConfigUpdate", "0" );
 }
 
 const char *Hunk_CopyString( const char *str, ha_pref pref ) {
@@ -649,7 +655,6 @@ static void SettingsMenuPopup( void )
             SettingsMenu_ApplyEngineChanges();
             settings.confirmation = qfalse;
             settings.modified = qfalse;
-            g_pModuleLib->ModuleCall( sgvm, ModuleSaveConfiguration, 0 );
             Cbuf_ExecuteText( EXEC_APPEND, "writecfg glnomad.cfg\n" );
             Cbuf_ExecuteText( EXEC_APPEND, "snd_restart\n" );
             ImGui::CloseCurrentPopup();
@@ -727,6 +732,9 @@ static void SettingsMenu_Update( void )
 {
     settings.modified = false;
 
+    if ( Cvar_VariableInteger( "g_moduleConfigUpdate" ) ) {
+        settings.modified = true;
+    }
     if ( initial.gfx.anisotropicFiltering != settings.gfx.anisotropicFiltering ) {
         settings.modified = true;
     }
@@ -1823,6 +1831,7 @@ void SettingsMenu_Cache( void ) {
     memset( &settings, 0, sizeof( settings ) );
 
     settings.gfx.api = StringToRenderAPI( Cvar_VariableString( "g_renderer" ) );
+    Cvar_Get( "g_moduleConfigUpdate", "0", CVAR_TEMP );
 
     // get extensions list
     if ( settings.gfx.api == R_OPENGL ) {

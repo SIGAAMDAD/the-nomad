@@ -115,7 +115,7 @@ static nhandle_t G_GetMapHandle( const char *name )
 
 	hMap = FS_INVALID_HANDLE;
 	for ( i = 0; i < gi.mapCache.numMapFiles; i++ ) {
-		if ( !N_strcmp( gi.mapCache.mapList[i], name ) ) {
+		if ( !N_stricmp( gi.mapCache.mapList[i], name ) ) {
 			hMap = (nhandle_t)i + 1;
 			break;
 		}

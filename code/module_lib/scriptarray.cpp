@@ -8,11 +8,11 @@
 typedef struct {
 	uint64_t numAllocs;
 	uint64_t numFrees;
-	uint64_t numBuffers;
 	uint64_t totalBytesAllocated;
 	uint64_t totalBytesFreed;
-	uint64_t currentBytesAllocated;
-	uint64_t overHeadBytes;
+	int64_t numBuffers;
+	int64_t currentBytesAllocated;
+	int64_t overHeadBytes;
 } alloc_stats_t;
 
 static alloc_stats_t memstats;
@@ -21,11 +21,11 @@ static void PrintArrayMemoryStats_f( void ) {
 	Con_Printf( "\nCScriptArray Memory Statistics:\n"
 				"Total Allocations: %lu\n"
 				"Total Deallocations: %lu\n"
-				"Current Buffer Count: %lu\n"
+				"Current Buffer Count: %li\n"
 				"Total Bytes Allocated: %lu\n"
 				"Total Bytes Deallocated: %lu\n"
-				"Current Bytes Allocated: %lu\n"
-				"Overhead Data Size: %lu\n"
+				"Current Bytes Allocated: %li\n"
+				"Overhead Data Size: %li\n"
 	, memstats.numAllocs, memstats.numFrees, memstats.numBuffers, memstats.totalBytesAllocated, memstats.totalBytesFreed,
 	memstats.currentBytesAllocated, memstats.overHeadBytes );
 }
@@ -396,6 +396,8 @@ CScriptArray::CScriptArray(asITypeInfo *ti, void *buf)
 	buffer = NULL;
 	Clear();
 
+	memstats.overHeadBytes += sizeof( *buffer );
+
 	Precache();
 
 	asIScriptEngine *engine = ti->GetEngine();
@@ -491,6 +493,8 @@ CScriptArray::CScriptArray(asUINT length, asITypeInfo *ti)
 	buffer = NULL;
 	Clear();
 
+	memstats.overHeadBytes += sizeof( *buffer );
+
 	Precache();
 
 	// Determine element size
@@ -523,6 +527,8 @@ CScriptArray::CScriptArray(const CScriptArray &other)
 	buffer = NULL;
 	Clear();
 
+	memstats.overHeadBytes += sizeof( *buffer );
+
 	Precache();
 
 	elementSize = other.elementSize;
@@ -546,6 +552,8 @@ CScriptArray::CScriptArray(asUINT length, void *defVal, asITypeInfo *ti)
 	objType->AddRef();
 	buffer = NULL;
 	Clear();
+
+	memstats.overHeadBytes += sizeof( *buffer );
 
 	Precache();
 
@@ -737,7 +745,6 @@ void CScriptArray::AllocBuffer( uint32_t nItems )
 
 		memstats.totalBytesAllocated += buffer->capacity * elementSize;
 		memstats.numAllocs++;
-		memstats.overHeadBytes += sizeof( *buffer );
 		memstats.currentBytesAllocated += buffer->capacity * elementSize;
 	}
 }
@@ -772,7 +779,6 @@ void CScriptArray::DoAllocate( uint32_t nItems )
 
 		memstats.totalBytesAllocated += buffer->capacity * elementSize;
 		memstats.totalBytesFreed += buffer->capacity * elementSize;
-		memstats.overHeadBytes += sizeof( *buf );
 		memstats.numAllocs++;
 		memstats.numFrees++;
 		memstats.currentBytesAllocated += buffer->capacity * elementSize;
@@ -782,7 +788,6 @@ void CScriptArray::DoAllocate( uint32_t nItems )
 
 		memcpy( buf->data, buffer->data, buffer->size * elementSize );
 		userFree( buffer );
-		memstats.overHeadBytes -= sizeof( *buf );
 
 		buffer = buf;
 	}

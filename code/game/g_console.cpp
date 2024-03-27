@@ -693,8 +693,7 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 		|| ( keys[KEY_P].down && keys[KEY_CTRL].down ) )
 	{
 		if ( Con_HistoryGetPrev( &g_consoleField ) ) {
-			data->CursorPos = 0;
-			data->BufTextLen = 0;
+			data->DeleteChars( 0, data->BufTextLen );
 			data->InsertChars( data->CursorPos, edit->buffer + data->CursorPos, edit->buffer + edit->cursor );
 		} else {
 			edit->cursor = data->CursorPos = 0;
@@ -722,8 +721,7 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 		|| ( keys[KEY_N].down && keys[KEY_CTRL].down ) )
 	{
 		if ( Con_HistoryGetNext( &g_consoleField ) ) {
-			data->CursorPos = 0;
-			data->BufTextLen = 0;
+			data->DeleteChars( 0, data->BufTextLen );
 			data->InsertChars( data->CursorPos, edit->buffer + data->CursorPos, edit->buffer + edit->cursor );
 		} else {
 			data->DeleteChars( 0, data->BufTextLen );
@@ -823,13 +821,13 @@ static void Con_DrawInput( void ) {
 			} else {
 				Cbuf_AddText( g_consoleField.buffer+1 );	// valid command
 				Cbuf_AddText( "\n" );
-				// copy line to history buffer
-				Con_SaveField( &g_consoleField );
 	//			Cbuf_AddText( "cmd say " );
 	//			Cbuf_AddText( g_consoleField.buffer );
 	//			Cbuf_AddText( "\n" );
 			}
 		}
+		// copy line to history buffer
+		Con_SaveField( &g_consoleField );
 
 		Field_Clear( &g_consoleField );
 		g_consoleField.widthInChars = g_console_field_width;

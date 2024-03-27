@@ -411,8 +411,7 @@ extern "C" void UI_Refresh( int32_t realtime )
 
 #define TRACE_FRAMES 60
 
-typedef struct
-{
+typedef struct {
 	double cpuFrames[TRACE_FRAMES];
 	uint32_t gpuTimes[TRACE_FRAMES];
 	uint32_t gpuSamples[TRACE_FRAMES];
@@ -427,18 +426,6 @@ typedef struct
 	uint32_t gpuTimeAvg;
 	int32_t gpuTimeIndex;
 	uint32_t gpuTimePrevious;
-
-	uint32_t gpuSamplesMin;
-	uint32_t gpuSamplesMax;
-	uint32_t gpuSamplesAvg;
-	int32_t gpuSamplesIndex;
-	uint32_t gpuSamplesPrevious;
-
-	uint32_t gpuPrimitivesMin;
-	uint32_t gpuPrimitivesMax;
-	uint32_t gpuPrimitivesAvg;
-	int32_t gpuPrimitivesIndex;
-	uint32_t gpuPrimitivesPrevious;
 
 	qboolean cpuNewMin;
 	qboolean cpuNewMax;
@@ -467,7 +454,6 @@ static HANDLE self;
 #include <sys/times.h>
 
 static FILE *cpuInfo;
-static FILE *selfStatus;
 
 static int32_t numProcessors;
 static clock_t lastCPU, lastSysCPU, lastUserCPU;
@@ -494,8 +480,8 @@ CallBeforeMain(Sys_InitCPUMonitor)
 	char line[128];
 
 	cpuInfo = fopen( "/proc/cpuinfo", "r" );
-	if (!cpuInfo) {
-		N_Error( ERR_FATAL, "Sys_InitCPUMonitor: failed to open /proc/cpuinfo in readonly mode!" );
+	if ( !cpuInfo ) {
+		Sys_Error( "Sys_InitCPUMonitor: failed to open /proc/cpuinfo in readonly mode!" );
 	}
 	
 	numProcessors = 0;
@@ -508,6 +494,8 @@ CallBeforeMain(Sys_InitCPUMonitor)
 			numProcessors++;
 		}
 	}
+
+	fclose( cpuInfo );
 #endif
 }
 
@@ -561,61 +549,29 @@ static double Sys_GetCPUUsage( void )
 }
 
 #ifdef __unix__
-//
-// ParseLine: assumes that a digit will be found and the string ends in " Kb"
-//
-int64_t ParseLine( char *line ) {
-	int64_t i;
-	const char *p;
-	
-	p = line;
-	i = strlen( line );
-	
-	while (*p < '0' || *p > '9')
-		p++;
-	
-	line[i - 3] = 0;
-	i = atoi( p );
-	
-	return i;
-}
-
-static int64_t GetValue( const char *name ) {
-	char line[128];
-	int64_t result;
-	size_t len = strlen( name );
-
-	while ( fgets( line, sizeof(line), selfStatus ) != NULL) {
-		if (strncmp( line, name, len ) == 0) {
-			result = ParseLine( line );
-			break;
-		}
-	}
-	
-	return result;
-}
-
 static bool Posix_GetProcessMemoryUsage( uint64_t *virtualMem, uint64_t *physicalMem )
 {
-	char line[128];
-	int64_t result;
+	char line[1024];
+	int64_t unused;
+	FILE *self;
 
-	selfStatus = fopen( "/proc/self/status", "r" );
-	if ( !selfStatus ) {
+	self = fopen( "/proc/self/status", "r" );
+	if ( !self ) {
 		N_Error( ERR_FATAL, "Posix_GetProcessMemoryUsage: failed to open /proc/self/status" );
 	}
-	
-	//
-	// get virtual memory
-	//
-	*virtualMem = GetValue( "VmSize:" );
-	
-	//
-	// get physical (resident) memory
-	//
-	*physicalMem = GetValue( "VmRSS:" );
 
-	fclose( selfStatus );
+	while ( fscanf( self, "%1023s", line ) > 0 ) {
+		if ( strstr( line, "VmRSS:" ) ) {
+			fscanf( self, " %lu", physicalMem );
+		} else if ( strstr( line, "VmSize:" ) ) {
+			fscanf( self, " %lu", virtualMem );
+		}
+	}
+
+	*physicalMem *= 1024;
+	*virtualMem *= 1024;
+
+	fclose( self );
 	
 	return true;
 }
@@ -710,15 +666,11 @@ static void Sys_DrawGPUStats( void )
 
 	Sys_GPUStatFrame( time, &stats->gpuTimeMin, &stats->gpuTimeMax, &stats->gpuTimeAvg, &stats->gpuTimePrevious, stats->gpuTimes,
 		&stats->gpuTimeIndex );
-	Sys_GPUStatFrame( samples, &stats->gpuSamplesMin, &stats->gpuSamplesMax, &stats->gpuSamplesAvg, &stats->gpuSamplesPrevious,
-		stats->gpuSamples, &stats->gpuSamplesIndex );
-	Sys_GPUStatFrame( primitives, &stats->gpuPrimitivesMin, &stats->gpuPrimitivesMax, &stats->gpuPrimitivesAvg, &stats->gpuPrimitivesPrevious,
-		stats->gpuPrimitives, &stats->gpuPrimitivesIndex );
 
 	ImGui::SeparatorText( "GPU Frame Statistics" );
 	ImGui::Text( "Time Elapsed (Average): %u", stats->gpuTimeAvg );
-	ImGui::Text( "Samples Passed (Average): %u", stats->gpuSamplesAvg );
-	ImGui::Text( "Primitives Generated (Average): %u", stats->gpuPrimitivesAvg );
+	ImGui::Text( "Samples Passed: %u", samples );
+	ImGui::Text( "Primitives Generated: %u", primitives );
 }
 
 static void Sys_DrawCPUUsage( void )
@@ -799,7 +751,7 @@ void Sys_DisplayEngineStats( void )
 	if ( RobotoMono ) {
 		FontCache()->SetActiveFont( RobotoMono );
 	}
-	ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * ui->scale );
+	ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 0.75f ) * ui->scale );
 
 	if ( !stats ) {
 		stats = (sys_stats_t *)Hunk_Alloc( sizeof(sys_stats_t), h_low );

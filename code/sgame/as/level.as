@@ -121,6 +121,7 @@ namespace TheNomad::SGame {
 				nTiles, EntityManager.GetEntities()[0].GetLink() );
 
 			@m_TileData = TheNomad::GameSystem::GetTileData();
+			TheNomad::Engine::Renderer::LoadWorld( m_Name );
 			
 			//
 			// load the checkpoints
@@ -515,6 +516,7 @@ namespace TheNomad::SGame {
 			@m_Current = @m_LevelInfoDatas[m_nIndex];
 			@m_MapData = MapData();
 			m_MapData.Init( m_LevelInfoDatas[m_nIndex].m_MapHandles[difficulty].m_Name, 1 );
+			m_MapData.Load( m_LevelInfoDatas[m_nIndex].m_MapHandles[difficulty].mapHandle );
 
 			switch ( TheNomad::GameSystem::GameDifficulty( difficulty ) ) {
 			case TheNomad::GameSystem::GameDifficulty::VeryEasy:

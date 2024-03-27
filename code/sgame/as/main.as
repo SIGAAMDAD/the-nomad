@@ -136,11 +136,11 @@ void InitCvars() {
 
 	@TheNomad::SGame::sgame_MaxEntities = TheNomad::CvarManager.AddCvar( "sgame_MaxEntities", "500", CVAR_LATCH | CVAR_SAVE, true );
 	@TheNomad::SGame::sgame_NoRespawningMobs = TheNomad::CvarManager.AddCvar( "sgame_NoRespawningMobs", "0", CVAR_LATCH | CVAR_SAVE, false );
-	@TheNomad::SGame::sgame_HellbreakerActive = TheNomad::CvarManager.AddCvar( "sgame_HellbreakerActive", "0", CVAR_LATCH | CVAR_TEMP, true );
-	@TheNomad::SGame::sgame_HellbreakerOn = TheNomad::CvarManager.AddCvar( "sgame_HellbreakerOn", "0", CVAR_LATCH | CVAR_TEMP, true );
-	@TheNomad::SGame::sgame_GfxDetail = TheNomad::CvarManager.AddCvar( "sgame_GfxDetail", "10", CVAR_LATCH | CVAR_SAVE, false );
-	@TheNomad::SGame::sgame_Difficulty = TheNomad::CvarManager.AddCvar( "sgame_Difficulty", "2", CVAR_LATCH | CVAR_TEMP, false );
-	@TheNomad::SGame::sgame_DebugMode = TheNomad::CvarManager.AddCvar( "sgame_DebugMode", "0", CVAR_LATCH | CVAR_TEMP, true );
+	@TheNomad::SGame::sgame_HellbreakerActive = TheNomad::CvarManager.AddCvar( "sgame_HellbreakerActive", "0", CVAR_TEMP, true );
+	@TheNomad::SGame::sgame_HellbreakerOn = TheNomad::CvarManager.AddCvar( "sgame_HellbreakerOn", "0", CVAR_TEMP, true );
+	@TheNomad::SGame::sgame_GfxDetail = TheNomad::CvarManager.AddCvar( "sgame_GfxDetail", "10", CVAR_SAVE, false );
+	@TheNomad::SGame::sgame_Difficulty = TheNomad::CvarManager.AddCvar( "sgame_Difficulty", "2", CVAR_TEMP, false );
+	@TheNomad::SGame::sgame_DebugMode = TheNomad::CvarManager.AddCvar( "sgame_DebugMode", "0", CVAR_TEMP, true );
 	@TheNomad::SGame::sgame_MusicChangeDelta = TheNomad::CvarManager.AddCvar( "sgame_MusicChangeDelta", "500", CVAR_LATCH | CVAR_TEMP, false );
 	@TheNomad::SGame::sgame_SoundDissonance = TheNomad::CvarManager.AddCvar( "sgame_SoundDissonance", "2.2", CVAR_LATCH | CVAR_SAVE, false );
 	@TheNomad::SGame::sgame_MaxSoundChannels = TheNomad::CvarManager.AddCvar( "sgame_MaxSoundChannels", "256", CVAR_INIT | CVAR_SAVE, false );

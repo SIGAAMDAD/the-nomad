@@ -529,8 +529,6 @@ static void G_Vid_Restart( refShutdownCode_t code )
     // clear resource references
 	FS_ClearBFFReferences( FS_UI_REF | FS_SGAME_REF );
 
-    Cvar_Set( "g_paused", "0" );
-
     G_ClearMem();
 
     // startup all the gamestate memory
