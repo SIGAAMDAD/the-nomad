@@ -12,9 +12,23 @@ typedef struct {
 	uint64_t totalBytesAllocated;
 	uint64_t totalBytesFreed;
 	uint64_t currentBytesAllocated;
+	uint64_t overHeadBytes;
 } alloc_stats_t;
 
 static alloc_stats_t memstats;
+
+static void PrintArrayMemoryStats_f( void ) {
+	Con_Printf( "\nCScriptArray Memory Statistics:\n"
+				"Total Allocations: %lu\n"
+				"Total Deallocations: %lu\n"
+				"Current Buffer Count: %lu\n"
+				"Total Bytes Allocated: %lu\n"
+				"Total Bytes Deallocated: %lu\n"
+				"Current Bytes Allocated: %lu\n"
+				"Overhead Data Size: %lu\n"
+	, memstats.numAllocs, memstats.numFrees, memstats.numBuffers, memstats.totalBytesAllocated, memstats.totalBytesFreed,
+	memstats.currentBytesAllocated, memstats.overHeadBytes );
+}
 
 // Set the default memory routines
 // Use the angelscript engine's memory routines by default
@@ -628,6 +642,9 @@ CScriptArray::~CScriptArray()
 	if ( objType ) {
 		objType->Release();
 	}
+	memstats.totalBytesFreed += buffer->capacity * elementSize;
+	memstats.numFrees++;
+	memstats.overHeadBytes -= sizeof( *buffer );
 	userFree( buffer );
 }
 
@@ -687,12 +704,16 @@ void CScriptArray::RemoveRange(asUINT start, asUINT count)
 	buffer->size -= count;
 }
 
+//
+// CScriptArray::Clear: resets count, doesn't deallocate the memory
+//
 void CScriptArray::Clear( void )
 {
 	if ( !buffer ) {
 		return;
 	}
 	if ( buffer ) {
+		memstats.currentBytesAllocated -= buffer->capacity * elementSize;
 		Destruct( buffer->data, 0, buffer->size );
 	}
 	buffer->size = 0;
@@ -713,6 +734,11 @@ void CScriptArray::AllocBuffer( uint32_t nItems )
 		}
 		buffer->size = 0;
 		buffer->capacity = nItems * 4;
+
+		memstats.totalBytesAllocated += buffer->capacity * elementSize;
+		memstats.numAllocs++;
+		memstats.overHeadBytes += sizeof( *buffer );
+		memstats.currentBytesAllocated += buffer->capacity * elementSize;
 	}
 }
 
@@ -744,13 +770,19 @@ void CScriptArray::DoAllocate( uint32_t nItems )
 			return;
 		}
 
-		memstats.totalBytesAllocated += nBytes * elementSize;
+		memstats.totalBytesAllocated += buffer->capacity * elementSize;
+		memstats.totalBytesFreed += buffer->capacity * elementSize;
+		memstats.overHeadBytes += sizeof( *buf );
+		memstats.numAllocs++;
+		memstats.numFrees++;
+		memstats.currentBytesAllocated += buffer->capacity * elementSize;
 
 		buf->capacity = buffer->capacity;
 		buf->size = buffer->size;
 
 		memcpy( buf->data, buffer->data, buffer->size * elementSize );
 		userFree( buffer );
+		memstats.overHeadBytes -= sizeof( *buf );
 
 		buffer = buf;
 	}
@@ -2243,6 +2275,10 @@ static void ScriptArrayClear_Generic( asIScriptGeneric *gen ) {
 
 static void RegisterScriptArray_Generic(asIScriptEngine *engine)
 {
+	Cmd_AddCommand( "ml_debug.print_array_memory_stats", PrintArrayMemoryStats_f );
+	
+	memset( &memstats, 0, sizeof( memstats ) );
+
 	engine->SetTypeInfoUserDataCleanupCallback(CleanupTypeInfoArrayCache, ARRAY_CACHE);
 
 	CheckASCall( engine->RegisterObjectType("array<class T>", 0, asOBJ_REF | asOBJ_GC | asOBJ_TEMPLATE ) );

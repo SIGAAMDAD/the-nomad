@@ -522,6 +522,7 @@ void CModuleLib::Shutdown( void )
     Cmd_RemoveCommand( "ml_debug.list_local_vars" );
     Cmd_RemoveCommand( "ml_debug.print_value" );
     Cmd_RemoveCommand( "ml_debug.print_help" );
+    Cmd_RemoveCommand( "ml_debug.print_array_memory_stats" );
 
     g_pModuleLib->~CModuleLib();
     g_pModuleLib = NULL;
