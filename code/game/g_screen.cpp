@@ -1,5 +1,6 @@
 #include "g_game.h"
 #include "../rendercommon/imgui.h"
+#include "g_threads.h"
 
 /*
 ================
@@ -338,24 +339,6 @@ uint32_t SCR_GetBigStringWidth( const char *str ) {
 }
 
 
-static void SCR_DrawScreenField(stereoFrame_t stereoFrame)
-{
-    qboolean uiFullscreen;
-
-    re.BeginFrame(stereoFrame);
-
-	// we're in a level
-	// if the user is ending a level through the pause menu,
-	// we let the ui handle the sgame call
-	if ( gi.mapLoaded ) {
-		g_pModuleLib->ModuleCall( sgvm, ModuleOnRunTic, 2, gi.frametime, com_frameTime );
-	}
-	UI_Refresh( gi.realtime );
-
-    // console draws next
-    Con_DrawConsole();
-}
-
 static uint64_t time_frontend, time_backend;
 
 void SCR_UpdateScreen(void)
@@ -363,6 +346,9 @@ void SCR_UpdateScreen(void)
     static uint32_t recursive;
     static uint64_t framecount;
     static int64_t next_frametime;
+
+	Assert( !g_pRenderThread->IsAlive() );
+	g_pRenderThread->Start();
 
     if (framecount == gi.framecount) {
         int64_t ms = Sys_Milliseconds();
@@ -386,19 +372,22 @@ void SCR_UpdateScreen(void)
 
     // if there is no VM, there are also no rendering comamnds. Stop the renderer in
     // that case
-	SCR_DrawScreenField(STEREO_CENTER);
-	#if 0
-    if (uivm) {
-        if (gi.gpuConfig.stereoEnabled) {
-            SCR_DrawScreenField(STEREO_LEFT);
-            SCR_DrawScreenField(STEREO_RIGHT);
-        }
-        else {
-            SCR_DrawScreenField(STEREO_CENTER);
-        }
-    }
-	#endif
-    re.EndFrame(NULL, NULL);
+	// we're in a level
+	// if the user is ending a level through the pause menu,
+	// we let the ui handle the sgame call
+	if ( gi.mapLoaded ) {
+		g_pModuleLib->ModuleCall( sgvm, ModuleOnRunTic, 2, gi.frametime, com_frameTime );
+	}
+	UI_Refresh( gi.realtime );
+
+    // console draws next
+    Con_DrawConsole();
+
+
+	// draw it all
+	if ( !g_pRenderThread->Join() ) {
+		N_Error( ERR_FATAL, "SCR_UpdateScreen: render thread join timed out, aborting process" );
+	}
 
     recursive = 0;
 }

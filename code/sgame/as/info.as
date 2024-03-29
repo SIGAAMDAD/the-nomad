@@ -154,11 +154,16 @@ namespace TheNomad::SGame {
 		bool Load( json@ json ) {
 			string ammo;
 			string type;
+			string shader;
 			uint i;
 			array<json@> props;
 			
 			if ( !json.get( "Name", name ) ) {
 				ConsoleWarning( "invalid weapon info, missing variable 'Name'\n" );
+				return false;
+			}
+			if ( !json.get( "Id", type ) ) {
+				ConsoleWarning( "invalid weapon info, missing variable 'Id'\n" );
 				return false;
 			}
 			if ( !json.get( "MagSize", magSize ) ) {
@@ -174,16 +179,37 @@ namespace TheNomad::SGame {
 				return false;
 			}
 			if ( !json.get( "WeaponProperties", props ) ) {
+				ConsoleWarning( "invalid weapon info, missing variable 'WeaponProperties'\n" );
 				return false;
 			}
-			ammo = string( json["AmmoType"] );
-			magSize = uint( json["MagSize"] );
-			magMaxStack = uint( json["MagMaxStack"] );
-			damage = float( json["Damage"] );
-			range = float( json["Range"] );
-			hShader = TheNomad::Engine::Renderer::RegisterShader( string( json["Shader"] ) );
-			
-			for ( i = 0; i < WeaponTypeStrings.size(); i++ ) {
+			if ( !json.get( "AmmoType", ammo ) ) {
+				ConsoleWarning( "invalid weapon info, missing variable 'AmmoType'\n" );
+				return false;
+			}
+			if ( !json.get( "MagSize", magSize ) ) {
+				ConsoleWarning( "invalid weapon info, missing variable 'MagSize'\n" );
+				return false;
+			}
+			if ( !json.get( "MagMaxStack", magMaxStack ) ) {
+				ConsoleWarning( "invalid weapon info, missing variable 'MagMaxStack'\n" );
+				return false;
+			}
+			if ( !json.get( "Damage", damage ) ) {
+				ConsoleWarning( "invalid weapon info, missing variable 'Damage'\n" );
+				return false;
+			}
+			if ( !json.get( "Range", range ) ) {
+				ConsoleWarning( "invalid weapon info, missing variable 'Range'\n" );
+				return false;
+			}
+			if ( !json.get( "Shader", shader ) ) {
+				ConsoleWarning( "invalid weapon info, missing variable 'Shader'\n" );
+				return false;
+			} else {
+				hShader = TheNomad::Engine::Renderer::RegisterShader( shader );
+			}
+
+			for ( i = 0; i < WeaponTypeStrings.Count(); i++ ) {
 				if ( TheNomad::Util::StrICmp( type, WeaponTypeStrings[i] ) != 1 ) {
 					weaponType = WeaponType( i );
 					break;
@@ -194,8 +220,8 @@ namespace TheNomad::SGame {
 				return false;
 			}
 			
-			for ( i = 0; i < WeaponPropertyStrings.size(); i++ ) {
-				for ( uint a = 0; a < props.size(); a++ ){
+			for ( i = 0; i < WeaponPropertyStrings.Count(); i++ ) {
+				for ( uint a = 0; a < props.Count(); a++ ){
 					if ( TheNomad::Util::StrICmp( string( props[a] ), WeaponPropertyStrings[i] ) != 1 ) {
 						weaponProps = WeaponProperty( uint( weaponProps ) | WeaponPropertyBits[i] );
 					}
@@ -210,6 +236,7 @@ namespace TheNomad::SGame {
 		}
 
 		string name;
+		string type;
 		int magSize = 0;
 		int magMaxStack = 0;
 		AmmoType ammoType = AmmoType::Invalid;
@@ -264,6 +291,8 @@ namespace TheNomad::SGame {
 				return false;
 			}
 
+			TheNomad::GameSystem::GetString( name + "_DESC", description );
+
 			ConsolePrint( "Loaded item info for '" + name + "'\n" );
 
 			return true;
@@ -272,6 +301,7 @@ namespace TheNomad::SGame {
 		string name;
 		string description;
 		string effect;
+		uint type = 0;
 		int cost = 0;
 		int hShader = FS_INVALID_HANDLE;
 		uint spriteOffsetX = 0;
@@ -341,24 +371,24 @@ namespace TheNomad::SGame {
 			
 			TheNomad::GameSystem::GetString( id + "_DESC", description );
 
-			for ( i = 0; i < AttackMethodStrings.size(); i++ ) {
+			for ( i = 0; i < AttackMethodStrings.Count(); i++ ) {
 				if ( TheNomad::Util::StrICmp( AttackMethodStrings[i], methodStr ) == 0 ) {
 					attackMethod = AttackMethod( AttackMethodData[i] );
 					break;
 				}
 			}
-			if ( i == AttackMethodStrings.size() ) {
+			if ( i == AttackMethodStrings.Count() ) {
 				ConsoleWarning( "invalid attack info, AttackMethod '" + methodStr + "' isn't recognized.\n" );
 				return false;
 			}
 
-			for ( i = 0; i < AttackTypeStrings.size(); i++ ) {
+			for ( i = 0; i < AttackTypeStrings.Count(); i++ ) {
 				if ( TheNomad::Util::StrICmp( AttackTypeStrings[i], typeStr ) == 0 ) {
 					attackType = AttackType( AttackTypeData[i] );
 					break;
 				}
 			}
-			if ( i == AttackTypeStrings.size() ) {
+			if ( i == AttackTypeStrings.Count() ) {
 				ConsoleWarning( "invalid attack info, AttackType '" + typeStr + "' isn't recognized.\n" );
 				return false;
 			}
@@ -492,8 +522,8 @@ namespace TheNomad::SGame {
 			array<string>@ flagValues = @ParseCSV( str );
 			
 			ConsolePrint( "Processing MobFlags for '" + name + "'...\n" );
-			for ( i = 0; i < MobFlagStrings.size(); i++ ) {
-				for ( uint a = 0; a < flagValues.size(); a++ ) {
+			for ( i = 0; i < MobFlagStrings.Count(); i++ ) {
+				for ( uint a = 0; a < flagValues.Count(); a++ ) {
 					if ( TheNomad::Util::StrICmp( flagValues[a], MobFlagStrings[i] ) == 0 ) {
 						flags = EntityFlags( uint( flags ) | MobFlagBits[i] );
 					}
@@ -505,11 +535,11 @@ namespace TheNomad::SGame {
 				return false;
 			}
 			
-			if ( values.size() != 3 ) {
+			if ( values.Count() != 3 ) {
 				ConsoleWarning( "invalid mob info, Speed value array is not exactly 3 values.\n" );
 				return false;
 			}
-			for ( i = 0; i < values.size(); i++ ) {
+			for ( i = 0; i < values.Count(); i++ ) {
 				json data = values[i];
 			}
 			
@@ -517,12 +547,12 @@ namespace TheNomad::SGame {
 				ConsoleWarning( "invalid mob info, missing variable 'AttackData'\n" );
 				return false;
 			}
-			if ( values.size() < 1 ) {
+			if ( values.Count() < 1 ) {
 				ConsoleWarning( "mob info has no attack data.\n" );
 				return false;
 			}
 			ConsolePrint( "Processing AttackData for MobInfo '" + name + "'...\n" );
-			for ( i = 0; i < values.size(); i++ ) {
+			for ( i = 0; i < values.Count(); i++ ) {
 				AttackInfo@ atk = AttackInfo();
 				if ( !atk.Load( @values[i] ) ) {
 					ConsoleWarning( "failed to load attack info.\n" );
@@ -531,13 +561,13 @@ namespace TheNomad::SGame {
 				attacks.push_back( @atk );
 			}
 			
-			for ( i = 0; i < ArmorTypeStrings.size(); i++ ) {
+			for ( i = 0; i < ArmorTypeStrings.Count(); i++ ) {
 				if ( TheNomad::Util::StrICmp( armor, ArmorTypeStrings[i] ) == 0 ) {
 					armorType = ArmorType( i );
 					break;
 				}
 			}
-			if ( i == ArmorTypeStrings.size() ) {
+			if ( i == ArmorTypeStrings.Count() ) {
 				ConsoleWarning( "invalid mob info, ArmorType value '" + armor + "' not recognized.\n" );
 				return false;
 			}
@@ -572,6 +602,10 @@ namespace TheNomad::SGame {
 	class InfoDataManager {
 		InfoDataManager() {
 			ConsolePrint( "Loading mod info files...\n" );
+
+			LoadMobTypes();
+			LoadItemTypes();
+			LoadWeaponTypes();
 
 			LoadMobInfos();
 			LoadItemInfos();
@@ -614,7 +648,7 @@ namespace TheNomad::SGame {
 				return;
 			}
 			
-			for ( uint i = 0; i < infos.size(); i++ ) {
+			for ( uint i = 0; i < infos.Count(); i++ ) {
 				@info = MobInfo();
 				if ( !info.Load( @infos[i] ) ) {
 					ConsoleWarning( "failed to load mob info at " + i + ".\n" );
@@ -640,7 +674,7 @@ namespace TheNomad::SGame {
 				return;
 			}
 			
-			for ( uint i = 0; i < infos.size(); i++ ) {
+			for ( uint i = 0; i < infos.Count(); i++ ) {
 				@info = ItemInfo();
 				if ( !info.Load( @infos[i] ) ) {
 					ConsoleWarning( "failed to load item info at " + i + ".\n" );
@@ -666,7 +700,7 @@ namespace TheNomad::SGame {
 				return;
 			}
 			
-			for ( uint i = 0; i < infos.size(); i++ ) {
+			for ( uint i = 0; i < infos.Count(); i++ ) {
 				@info = WeaponInfo();
 				if ( !info.Load( @infos[i] ) ) {
 					ConsoleWarning( "failed to load weapon info at " + i + ".\n" );
@@ -678,7 +712,7 @@ namespace TheNomad::SGame {
 		}
 		
 		const WeaponInfo@ GetWeaponInfo( const string& in name ) const {
-			for ( uint i = 0; i < m_WeaponInfos.size(); i++ ) {
+			for ( uint i = 0; i < m_WeaponInfos.Count(); i++ ) {
 				if ( TheNomad::Util::StrICmp( m_WeaponInfos[i].name, name ) == 0 ) {
 					return m_WeaponInfos[i];
 				}
@@ -687,7 +721,7 @@ namespace TheNomad::SGame {
 		}
 		
 		const ItemInfo@ GetItemInfo( const string& in name ) const {
-			for ( uint i = 0; i < m_ItemInfos.size(); i++ ) {
+			for ( uint i = 0; i < m_ItemInfos.Count(); i++ ) {
 				if ( TheNomad::Util::StrICmp( m_ItemInfos[i].name, name ) == 0 ) {
 					return m_ItemInfos[i];
 				}
@@ -696,7 +730,7 @@ namespace TheNomad::SGame {
 		}
 		
 		const MobInfo@ GetMobInfo( const string& in name ) const {
-			for ( uint i = 0; i < m_MobInfos.size(); i++ ) {
+			for ( uint i = 0; i < m_MobInfos.Count(); i++ ) {
 				if ( TheNomad::Util::StrICmp( m_MobInfos[i].name, name ) == 0 ) {
 					return m_MobInfos[i];
 				}
@@ -705,7 +739,7 @@ namespace TheNomad::SGame {
 		}
 		
 		bool WeaponInfoExists( const string& in name ) const {
-			for ( uint i = 0; i < m_WeaponInfos.size(); i++ ) {
+			for ( uint i = 0; i < m_WeaponInfos.Count(); i++ ) {
 				if ( TheNomad::Util::StrICmp( m_WeaponInfos[i].name, name ) == 0 ) {
 					return true;
 				}
@@ -714,7 +748,7 @@ namespace TheNomad::SGame {
 		}
 		
 		bool ItemInfoExists( const string& in name ) const {
-			for ( uint i = 0; i < m_ItemInfos.size(); i++ ) {
+			for ( uint i = 0; i < m_ItemInfos.Count(); i++ ) {
 				if ( TheNomad::Util::StrICmp( m_ItemInfos[i].name, name ) == 0 ) {
 					return true;
 				}
@@ -723,12 +757,49 @@ namespace TheNomad::SGame {
 		}
 		
 		bool MobInfoExists( const string& in name ) const {
-			for ( uint i = 0; i < m_MobInfos.size(); i++ ) {
+			for ( uint i = 0; i < m_MobInfos.Count(); i++ ) {
 				if ( TheNomad::Util::StrICmp( m_MobInfos[i].name, name ) == 0 ) {
 					return true;
 				}
 			}
 			return false;
+		}
+
+		const WeaponInfo@ GetWeaponInfo( uint id ) const {
+			for ( uint i = 0; i < m_WeaponInfos.Count(); i++ ) {
+				if ( m_WeaponInfos[i].type == id ) {
+					return @m_WeaponInfos[i];
+				}
+			}
+			return null;
+		}
+
+		const ItemInfo@ GetItemInfo( uint id ) const {
+			for ( uint i = 0; i < m_ItemInfos.Count(); i++ ) {
+				if ( m_ItemInfos[i].type == id ) {
+					return @m_ItemInfos[i];
+				}
+			}
+			return null;
+		}
+
+		const MobInfo@ GetMobInfo( uint id ) const {
+			for ( uint i = 0; i < m_MobInfos.Count(); i++ ) {
+				if ( m_MobInfos[i].type == id ) {
+					return @m_MobInfos[i];
+				}
+			}
+			return null;
+		}
+
+		const dictionary@ GetItemTypes() const {
+			return @m_ItemTypes;
+		}
+		const dictionary@ GetMobTypes() const {
+			return @m_MobTypes;
+		}
+		const dictionary@ GetWeaponTypes() const {
+			return @m_WeaponTypes;
 		}
 		
 		void AddMobInfo( MobInfo@ info ) {
@@ -740,6 +811,10 @@ namespace TheNomad::SGame {
 		void AddWeaponInfo( WeaponInfo@ info ) {
 			m_WeaponInfos.push_back( info );
 		}
+
+		private dictionary@ m_ItemTypes;
+		private dictionary@ m_MobTypes;
+		private dictionary@ m_WeaponTypes;
 		
 		private array<MobInfo@> m_MobInfos;
 		private array<ItemInfo@> m_ItemInfos;

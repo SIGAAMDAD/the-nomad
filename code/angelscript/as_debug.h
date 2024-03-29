@@ -258,7 +258,7 @@ END_AS_NAMESPACE
 #else // !(_MSC_VER && AS_PROFILE)
 
 // Define it so nothing is done
-#define TimeIt(x) 
+#define TimeIt(x) PROFILE_BLOCK_BEGIN( x )
 
 #endif // !(_MSC_VER && AS_PROFILE)
 

@@ -155,6 +155,9 @@ namespace TheNomad::SGame {
 	
 	class GfxSystem : TheNomad::GameSystem::GameObject {
 		GfxSystem() {
+		}
+
+		void OnInit() {
 			const uint numGfx = sgame_GfxDetail.GetInt() * 15;
 
 			m_PolyList.Reserve( numGfx );
@@ -169,6 +172,8 @@ namespace TheNomad::SGame {
 			for ( uint i = 0; i < m_PolyList.Count() - 1; i++ ) {
 				@m_PolyList[i].next = @m_PolyList[i + 1];
 			}
+		}
+		void OnShutdown() {
 		}
 
 		void OnLoad() {

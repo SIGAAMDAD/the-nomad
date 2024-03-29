@@ -1,24 +1,18 @@
 #include "ui_lib.h"
 
 typedef struct module_s {
-    const char *name;       // name of the mod
     qboolean active;        // is it active?
     qboolean valid;         // did it fail to load?
     CModuleInfo *info;      // the stuff the module_lib deals with
     char *dependencies;     // a csv style list of dependencies
+    uint64_t numDependencies;
+    uint64_t bootIndex;
+    qboolean isRequired;
 
-    inline bool operator<( const module_s& other ) const {
-        return N_stricmp( name, other.name ) == -1 ? true : false;
-    }
-    inline bool operator>( const module_s& other ) const {
-        return N_stricmp( other.name, name ) == -1 ? true : false;
-    }
-    inline bool operator==( const module_s& other ) const {
-        return N_stricmp( name, other.name ) == 0;
-    }
-    inline bool operator!=( const module_s& other ) const {
-        return N_stricmp( name, other.name ) != 0;
-    }
+    bool operator<( const module_s& other ) const;
+    bool operator>( const module_s& other ) const;
+    bool operator==( const module_s& other ) const;
+    bool operator!=( const module_s& other ) const;
 } module_t;
 
 typedef struct {
@@ -35,9 +29,38 @@ typedef struct {
 
 static modmenu_t *mods;
 
+//
+// required modules, those made with love, by Your Resident Fiend
+//
+static const char *requiredModules[] = {
+    "nomadmain"
+};
+
+static bool IsRequiredMod( const char *pName ) {
+    for ( const auto& it : requiredModules ) {
+        if ( !N_strcmp( pName, it ) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static void ModsMenu_ClearLoadList_f( void ) {
     FS_Remove( "_cache/loadlist.json" );
     FS_HomeRemove( "_cache/loadlist.json" );
+}
+
+static const module_t *GetModuleFromName( const char *pName )
+{
+    uint64_t i;
+
+    for ( i = 0; i < mods->numMods; i++ ) {
+        if ( !N_strcmp( pName, mods->modList[i].info->m_szName ) && mods->modList[i].active ) {
+            return &mods->modList[i];
+        }
+    }
+
+    return NULL;
 }
 
 static void ModsMenu_LoadMod( module_t *mod ) {
@@ -47,7 +70,7 @@ qboolean ModsMenu_IsModuleActive( const char *pName ) {
     uint64_t i;
 
     for ( i = 0; i < mods->numMods; i++ ) {
-        if ( !N_stricmp( pName, mods->modList[i].name ) && mods->modList[i].active ) {
+        if ( !N_strcmp( pName, mods->modList[i].info->m_szName ) && mods->modList[i].active ) {
             return qtrue;
         }
     }
@@ -65,7 +88,7 @@ void ModsMenu_SaveModList( void )
 
     loadList.resize( mods->numMods );
     for ( i = 0; i < mods->numMods; i++ ) {
-        loadList[i]["Name"] = mods->modList[i].name;
+        loadList[i]["Name"] = mods->modList[i].info->m_szName;
         loadList[i]["Valid"] = mods->modList[i].valid;
         loadList[i]["Active"] = mods->modList[i].active;
     }
@@ -108,9 +131,10 @@ static void ModsMenu_LoadModList( void )
     const nlohmann::json& data = json.at( "LoadList" );
     for ( i = 0; i < mods->numMods; i++ ) {
         for ( const auto& it : data ) {
-            if ( !N_strcmp( mods->modList[i].name, it.at( "Name" ).get<const nlohmann::json::string_t>().c_str() ) ) {
+            if ( !N_strcmp( mods->modList[i].info->m_szName, it.at( "Name" ).get<const nlohmann::json::string_t>().c_str() ) ) {
                 mods->modList[i].valid = it.at( "Valid" );
                 mods->modList[i].active = it.at( "Active" );
+                mods->modList[i].bootIndex = i;
             }
         }
     }
@@ -146,14 +170,14 @@ void ModsMenu_Draw( void )
     ImGui::TableNextRow();
 
     for ( i = 0; i < mods->numMods; i++ ) {
-        if ( !mods->modList[i].valid ) {
+        if ( !mods->modList[i].valid || mods->modList[i].isRequired ) {
             ImGui::PushStyleColor( ImGuiCol_FrameBg, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
             ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
             ImGui::PushStyleColor( ImGuiCol_FrameBgActive, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
         }
         
         ImGui::TableNextColumn();
-        ImGui::TextUnformatted( mods->modList[i].name );
+        ImGui::TextUnformatted( mods->modList[i].info->m_szName );
         if ( ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled ) ) {
             if ( !mods->modList[i].dependencies ) {
                 ImGui::SetItemTooltip( "No Dependencies" );
@@ -171,12 +195,14 @@ void ModsMenu_Draw( void )
             mods->modList[i].info->m_nModVersionPatch );
 
         ImGui::TableNextColumn();
-        if ( ImGui::RadioButton( va( "##Active%s", mods->modList[i].name ), mods->modList[i].active ) ) {
-            mods->modList[i].active = !mods->modList[i].active;
+        if ( ImGui::RadioButton( va( "##Active%s", mods->modList[i].info->m_szName ), mods->modList[i].active ) ) {
+            if ( !mods->modList[i].isRequired ) { // make it const
+                mods->modList[i].active = !mods->modList[i].active;
+            }
         }
         if ( ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled ) ) {
             if ( !mods->modList[i].valid ) {
-                ImGui::SetItemTooltip( "Mod \"%s\" failed to load, check console log for details.", mods->modList[i].name );
+                ImGui::SetItemTooltip( "Mod \"%s\" failed to load, check console log for details.", mods->modList[i].info->m_szName );
             }
         }
 
@@ -192,13 +218,87 @@ void ModsMenu_Draw( void )
     ImGui::PopStyleVar();
 }
 
+static uint64_t GetModLoadIndex( const char *pName ) {
+    uint64_t i;
+
+    for ( i = 0; i < mods->numMods; i++ ) {
+        if ( !N_strcmp( pName, mods->modList[i].info->m_szName ) ) {
+            break;
+        }
+    }
+
+    return i;
+}
+
+inline bool module_s::operator<( const module_s& other ) const {
+    if ( info->m_Dependencies.size() ) {
+        for ( const auto& it : info->m_Dependencies ) {
+            if ( !N_strcmp( other.info->m_szName, it.c_str() ) ) {
+                if ( other.bootIndex > bootIndex ) {
+                    // we need to load the dependency before this one
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+        }
+    }
+    // if we've got no dependencies or it's not a dependency, just sort alphabetically
+    return N_stricmp( info->m_szName, other.info->m_szName ) == -1 ? true : false;
+}
+inline bool module_s::operator>( const module_s& other ) const {
+    if ( info->m_Dependencies.size() ) {
+        for ( const auto& it : info->m_Dependencies ) {
+            if ( !N_strcmp( other.info->m_szName, it.c_str() ) ) {
+                if ( other.bootIndex > bootIndex ) {
+                    // we need to load it after
+                    return false;
+                } else {
+                    return true;
+                }
+            }
+        }
+    }
+    // if we've got no dependencies or it's not a dependency, just sort alphabetically
+    return N_stricmp( other.info->m_szName, info->m_szName ) == 1 ? true : false;
+}
+inline bool module_s::operator==( const module_s& other ) const {
+    return N_stricmp( info->m_szName, other.info->m_szName ) == 0;
+}
+inline bool module_s::operator!=( const module_s& other ) const {
+    return N_stricmp( info->m_szName, other.info->m_szName ) != 0;
+}
+
 /*
 * ModsMenu_Sort: sorts each mod alphabetically, then in load order by dependencies
 */
 static void ModsMenu_Sort( void ) {
-    uint64_t i;
+    uint64_t i, j;
+    uint64_t index;
+    const CModuleInfo *mod;
 
     eastl::sort( mods->modList, mods->modList + mods->numMods );
+/*
+    return;
+
+    for ( i = 0; i < mods->numMods; i++ ) {
+        if ( mods->modList[i].numDependencies ) {
+            //
+            // check if we're loading any dependencies before it.
+            // If so, reorder it to load the dependencies first to
+            // avoid any missing resources issues/errors
+            //
+            for ( j = 0; j < mod->m_Dependencies.size(); j++ ) {
+                index = GetModLoadIndex( mod->m_Dependencies[j].c_str() );
+                
+                // it's loaded after, force a reorder
+                if ( index > i ) {
+
+                }
+            }
+        }
+    }
+*/
 }
 
 static void ModsMenu_Load( void )
@@ -220,10 +320,20 @@ static void ModsMenu_Load( void )
 
     m = mods->modList;
     for ( i = 0; i < mods->numMods; i++ ) {
-        m->name = loadList[i]->m_szName;
         m->info = loadList[i];
         m->valid = loadList[i]->m_pHandle->IsValid();
         m->active = qtrue;
+        m->bootIndex = i;
+        m->isRequired = IsRequiredMod( m->info->m_szName );
+
+        // check if we have any dependencies that either don't exist or aren't properly loaded
+        for ( const auto& it : loadList[i]->m_Dependencies ) {
+            const CModuleInfo *dep = g_pModuleLib->GetModule( it.c_str() );
+
+            if ( !dep || !dep->m_pHandle->IsValid() ) {
+                m->valid = m->active = qfalse;
+            }
+        }
 
         size = 0;
         for ( j = 0; j < loadList[i]->m_Dependencies.size(); j++ ) {
@@ -232,6 +342,7 @@ static void ModsMenu_Load( void )
 
         if ( size ) {
             m->dependencies = (char *)Hunk_Alloc( size, h_high );
+            m->numDependencies = loadList[i]->m_Dependencies.size();
             for ( j = 0; j < loadList[i]->m_Dependencies.size(); j++ ) {
                 if ( j < loadList[i]->m_Dependencies.size() - 1 ) {
                     N_strcat( m->dependencies, size, va( "%s, ", loadList[i]->m_Dependencies[j].c_str() ) );
@@ -239,9 +350,9 @@ static void ModsMenu_Load( void )
                     N_strcat( m->dependencies, size, loadList[i]->m_Dependencies[j].c_str() );
                 }
             }
-            Con_Printf( "Module \"%s\" dependencies: %s\n", m->name, m->dependencies );
+            Con_Printf( "Module \"%s\" dependencies: %s\n", m->info->m_szName, m->dependencies );
         } else {
-            Con_Printf( "Module \"%s\" has no dependencies.\n", m->name );
+            Con_Printf( "Module \"%s\" has no dependencies.\n", m->info->m_szName );
         }
         
         m++;

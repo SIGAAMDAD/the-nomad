@@ -32,12 +32,28 @@ void		Mem_Dump_f( const class idCmdArgs &args );
 void		Mem_DumpCompressed_f( const class idCmdArgs &args );
 void		Mem_AllocDefragBlock( void );
 
+#ifndef _NOMAD_DEBUG
 void *		Mem_Alloc( const uint32_t size );
 void *		Mem_ClearedAlloc( const uint32_t size );
 void		Mem_Free( void *ptr );
 char *		Mem_CopyString( const char *in );
 void *		Mem_Alloc16( const uint32_t size );
 void		Mem_Free16( void *ptr );
+#else
+void *		Mem_AllocDebug( const uint32_t size, const char *fileName, const uint32_t lineNumber );
+void *		Mem_ClearedAllocDebug( const uint32_t size, const char *fileName, const uint32_t lineNumber );
+void		Mem_FreeDebug( void *ptr, const char *fileName, const uint32_t lineNumber );
+char *		Mem_CopyStringDebug( const char *in, const char *fileName, const uint32_t lineNumber );
+void *		Mem_Alloc16Debug( const uint32_t size, const char *fileName, const uint32_t lineNumber );
+void		Mem_Free16Debug( void *ptr, const char *fileName, const uint32_t lineNumber );
+
+#define		Mem_Alloc( size )				Mem_AllocDebug( size, __FILE__, __LINE__ )
+#define		Mem_ClearedAlloc( size )		Mem_ClearedAllocDebug( size, __FILE__, __LINE__ )
+#define		Mem_Free( ptr )					Mem_FreeDebug( ptr, __FILE__, __LINE__ )
+#define		Mem_CopyString( s )				Mem_CopyStringDebug( s, __FILE__, __LINE__ )
+#define		Mem_Alloc16( size )				Mem_Alloc16Debug( size, __FILE__, __LINE__ )
+#define		Mem_Free16( ptr )				Mem_Free16Debug( ptr, __FILE__, __LINE__ )
+#endif
 
 GDR_INLINE void *CModuleAllocator::allocate( size_t n, int flags )
 {

@@ -48,7 +48,7 @@ namespace TheNomad::SGame {
 		private void DrawWeaponStatus() const {
 			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
 			const vec2 screenSize = TheNomad::GameSystem::GameManager.GetGPUConfig().GetScreenSize();
-			const WeaponObject@ weapon = @GetPLayerObject().GetCurrentWeapon();
+			const WeaponObject@ weapon = @GetPlayerObject().GetCurrentWeapon();
 			
 			ImGui::SetCursorScreenPos( vec2( screenSize.x - ( 256.0f * scale ), screenSize.y - ( 16.0f * scale ) ) );
 			

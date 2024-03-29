@@ -6,6 +6,8 @@
 
 namespace TheNomad::GameSystem {
 	interface GameObject {
+		void OnInit();
+		void OnShutdown();
 		void OnLoad();
 		void OnSave() const;
 		void OnRunTic();
@@ -19,6 +21,7 @@ namespace TheNomad::GameSystem {
 
 	GameObject@ AddSystem( GameObject@ SystemHandle ) {
 		ConsolePrint( "Added GameObject System \"" + SystemHandle.GetName() + "\"\n" );
+		SystemHandle.OnInit();
 		GameSystems.Add( @SystemHandle );
 		return SystemHandle;
 	}
@@ -30,6 +33,36 @@ namespace TheNomad::GameSystem {
 
 		bool Found() const {
 			return handle != FS_INVALID_HANDLE;
+		}
+
+		vec2 LoadVec2( const string& in name ) const {
+			vec2 value;
+
+			LoadSection section( name );
+			if ( !section.Found() ) {
+				return vec2( 0.0f );
+			}
+			value.x = section.LoadFloat( name + ".x" );
+			value.y = section.LoadFloat( name + ".y" );
+
+			return value;
+		}
+		vec3 LoadVec3( const string& in name ) const {
+			vec3 value;
+
+			LoadSection section( name );
+			if ( !section.Found() ) {
+				return vec3( 0.0f );
+			}
+			value.x = section.LoadFloat( name + ".x" );
+			value.y = section.LoadFloat( name + ".y" );
+			value.z = section.LoadFloat( name + ".z" );
+
+			return value;
+		}
+
+		float LoadFloat( const string& in name ) const {
+			return TheNomad::GameSystem::LoadFloat( name, handle );
 		}
 
 		uint8 LoadByte( const string& in name ) const {
@@ -94,12 +127,32 @@ namespace TheNomad::GameSystem {
 		~SaveSection() {
 			EndSaveSection();
 		}
-	
-		void SaveIntArray( const string& in name, const array<int>& in value ) const {
-			SaveArray( name, value );
+		
+		void SaveVec2( const string& in name, const vec2& in value ) const {
+			TheNomad::GameSystem::BeginSaveSection( name );
+			this.SaveFloat( name + ".x", value.x );
+			this.SaveFloat( name + ".y", value.y );
+			TheNomad::GameSystem::EndSaveSection();
 		}
-		void SaveFloatArray( const string& in name, const array<float>& in value ) const {
-			SaveArray( name, value );
+		void SaveVec3( const string& in name, const vec3& in value ) const {
+			TheNomad::GameSystem::BeginSaveSection( name );
+			this.SaveFloat( name + ".x", value.x );
+			this.SaveFloat( name + ".y", value.y );
+			this.SaveFloat( name + ".z", value.z );
+			TheNomad::GameSystem::EndSaveSection();
+		}
+
+		void SaveFloat( const string& in name, float value ) const {
+			TheNomad::GameSystem::SaveFloat( name, value );
+		}
+		void SaveArray( const string& in name, const array<uint>& in value ) const {
+			TheNomad::GameSystem::SaveArray( name, value );
+		}
+		void SaveArray( const string& in name, const array<int>& in value ) const {
+			TheNomad::GameSystem::SaveArray( name, value );
+		}
+		void SaveArray( const string& in name, const array<float>& in value ) const {
+			TheNomad::GameSystem::SaveArray( name, value );
 		}
 		void SaveString( const string& in name, const string& in value ) const {
 			TheNomad::GameSystem::SaveString( name, value );
@@ -156,10 +209,17 @@ namespace TheNomad::GameSystem {
 	
 	class CampaignManager : GameObject {
 		CampaignManager() {
+		}
+
+		void OnInit() {
 			m_nGameMsec = 0;
 			m_nDeltaTics = 0;
 
 			GetGPUGameConfig( m_GPUConfig );
+
+			ConsolePrint( "Width: " + m_GPUConfig.screenWidth + "\n" );
+		}
+		void OnShutdown() {
 		}
 		
 		void OnLoad() {

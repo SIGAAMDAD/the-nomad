@@ -355,15 +355,15 @@ public:
 	T load( MemoryOrder order = MemoryOrder_SeqCst );
 	bool compareExchange( const T& expected, const T& desired );
 	void store( const T& value, MemoryOrder order = MemoryOrder_SeqCst );
-	void add( const T& value, MemoryOrder order = MemoryOrder_SeqCst );
-	void sub( const T& value, MemoryOrder order = MemoryOrder_SeqCst );
-	void fetch_add( MemoryOrder order = MemoryOrder_SeqCst );
-	void fetch_sub( MemoryOrder order = MemoryOrder_SeqCst );
+	T add( T value, MemoryOrder order = MemoryOrder_SeqCst );
+	T sub( T value, MemoryOrder order = MemoryOrder_SeqCst );
+	T fetch_add( const T& value = 1, MemoryOrder order = MemoryOrder_SeqCst );
+	T fetch_sub( const T& value = 1, MemoryOrder order = MemoryOrder_SeqCst );
 private:
 #ifdef _WIN32
 	volatile LONG m_hValue;
 #else
-	uint64_t m_hValue;
+	T m_hValue;
 #endif
 };
 
@@ -1244,7 +1244,7 @@ GDR_INLINE const T& CThreadAtomic<T>::load( MemoryOrder order ) const
 #ifdef _WIN32
 	InterlockedExchangeAdd( &m_hValue, 0 );
 #else
-	__sync_fetch_and_add( &m_hValue, 0 );
+	__sync_fetch_and_add( const_cast<volatile T *>( &m_hValue ), 0 );
 #endif
 	return m_hValue;
 }
@@ -1255,7 +1255,7 @@ GDR_INLINE T CThreadAtomic<T>::load( MemoryOrder order )
 #ifdef _WIN32
 	return InterlockedExchangeAdd( &m_hValue, 0 );
 #else
-	return __sync_fetch_and_add( &m_hValue, 0 );
+	return __sync_fetch_and_add( const_cast<T *>( &m_hValue ), 0 );
 #endif
 }
 
@@ -1265,7 +1265,7 @@ GDR_INLINE bool CThreadAtomic<T>::compareExchange( const T& expected, const T& d
 #ifdef _WIN32
 	return InterlockedCompareExchange( (volatile LONG *)&m_hValue, desired, expected ) == expected;
 #else
-	return __sync_bool_compare_and_swap( &m_hValue, expected, desired );
+	return __sync_bool_compare_and_swap( const_cast<T *>( &m_hValue ), expected, desired );
 #endif
 }
 
@@ -1275,7 +1275,7 @@ GDR_INLINE T CThreadAtomic<T>::exchange( const T& value, MemoryOrder order )
 #ifdef _WIN32
 	return InterlockedExchange( &m_hValue, value );
 #else
-	return __sync_lock_test_and_set( &m_hValue, value );
+	return __sync_lock_test_and_set( const_cast<T *>( &m_hValue ), value );
 #endif
 }
 
@@ -1285,40 +1285,40 @@ GDR_INLINE void CThreadAtomic<T>::store( const T& value, MemoryOrder order )
 #ifdef _WIN32
 	InterlockedExchange( &m_hValue, value );
 #else
-	__sync_lock_test_and_set( value );
+	__sync_lock_test_and_set( const_cast<T *>( &m_hValue ), value );
 #endif
 }
 
 template<typename T>
-GDR_INLINE void CThreadAtomic<T>::add( const T& value, MemoryOrder order )
+GDR_INLINE T CThreadAtomic<T>::add( T value, MemoryOrder order )
 {
 #ifdef _WIN32
 	InterlockedExchangeAdd( &m_hValue, value );
 #else
-	__sync_add_and_fetch( &m_hValue, value );
+	return __sync_add_and_fetch( const_cast<T *>( &m_hValue ), value );
 #endif
 }
 
 template<typename T>
-GDR_INLINE void CThreadAtomic<T>::sub( const T& value, MemoryOrder order )
+GDR_INLINE T CThreadAtomic<T>::sub( T value, MemoryOrder order )
 {
 #ifdef _WIN32
 	InterlockedExchangeAdd( &m_hValue, -value );
 #else
-	__sync_sub_and_fetch( &value, &m_hValue, order );
+	return __sync_sub_and_fetch( const_cast<volatile T *>( &value ), const_cast<T *>( &m_hValue ), order );
 #endif
 }
 
 template<typename T>
-GDR_INLINE void CThreadAtomic<T>::fetch_add( MemoryOrder order )
+GDR_INLINE T CThreadAtomic<T>::fetch_add( const T& value, MemoryOrder order )
 {
-	add( 1, order );
+	return add( value, order );
 }
 
 template<typename T>
-GDR_INLINE void CThreadAtomic<T>::fetch_sub( MemoryOrder order )
+GDR_INLINE T CThreadAtomic<T>::fetch_sub( const T& value, MemoryOrder order )
 {
-	sub( 1, order );
+	return sub( value, order );
 }
 
 GDR_INLINE CThreadRWMutex::CThreadRWMutex( void )

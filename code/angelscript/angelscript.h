@@ -54,6 +54,9 @@
  #define AS_NAMESPACE_QUALIFIER ::
 #endif
 
+#include "../engine/n_shared.h"
+extern void GDR_ATTRIBUTE((format(printf, 1, 2))) AS_Printf( const char *fmt, ... );
+
 BEGIN_AS_NAMESPACE
 
 // AngelScript version
@@ -398,8 +401,13 @@ typedef unsigned int   asUINT;
 
 typedef void (*asFUNCTION_t)();
 typedef void (*asGENFUNC_t)(asIScriptGeneric *);
+#ifdef _NOMAD_DEBUG
+typedef void *(*asALLOCFUNC_t)(size_t, const char *, const uint32_t);
+typedef void (*asFREEFUNC_t)(void *, const char *, const uint32_t);
+#else
 typedef void *(*asALLOCFUNC_t)(size_t);
 typedef void (*asFREEFUNC_t)(void *);
+#endif
 typedef void (*asCLEANENGINEFUNC_t)(asIScriptEngine *);
 typedef void (*asCLEANMODULEFUNC_t)(asIScriptModule *);
 typedef void (*asCLEANCONTEXTFUNC_t)(asIScriptContext *);

@@ -70,7 +70,12 @@ namespace TheNomad {
 	
 	class CvarSystem : TheNomad::GameSystem::GameObject {
 		CvarSystem() {
+		}
+
+		void OnInit() {
 			TheNomad::Engine::CmdAddCommand( "sgame.list_cvars" );
+		}
+		void OnShutdown() {
 		}
 		
 		ConVar@ AddCvar( const string& in name, const string& in value, uint flags, bool bTrackChanges ) {

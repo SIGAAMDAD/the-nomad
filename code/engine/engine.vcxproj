@@ -73,7 +73,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>.\Debug\</OutDir>
-    <TargetName>glnomad</TargetName>
+    <TargetName>TheNomad</TargetName>
     <IncludePath>C:\Users\Noah\source\repos\gl-nomad\code\EASTL;C:\Users\Noah\source\repos\gl-nomad\code\;C:\Users\Noah\source\repos\gl-nomad\code\glm\;C:\Users\Noah\source\repos\gl-nomad\dependencies\include\;$(IncludePath)</IncludePath>
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);C:\Users\Noah\source\repos\gl-nomad\dependencies\libraries;C:\Users\Noah\source\repos\gl-nomad\dependencies\libraries\x64-Debug\</LibraryPath>
   </PropertyGroup>
@@ -128,7 +128,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <OutputFile>.\Debug\glnomad.exe</OutputFile>
+      <OutputFile>.\Debug\TheNomad.x64.Debug.exe</OutputFile>
       <ShowProgress>LinkVerbose</ShowProgress>
     </Link>
   </ItemDefinitionGroup>

@@ -135,6 +135,7 @@ void asCCompiler::Reset(asCBuilder *in_builder, asCScriptCode *in_script, asCScr
 
 int asCCompiler::CompileDefaultConstructor(asCBuilder *in_builder, asCScriptCode *in_script, asCScriptNode *in_node, asCScriptFunction *in_outFunc, sClassDeclaration *in_classDecl)
 {
+	AS_Printf( "Compiling default factory for '%s'...\n", in_classDecl->name.AddressOf() );
 	Reset(in_builder, in_script, in_outFunc);
 
 	m_classDecl = in_classDecl;
@@ -192,7 +193,7 @@ int asCCompiler::CompileDefaultConstructor(asCBuilder *in_builder, asCScriptCode
 
 int asCCompiler::CompileFactory(asCBuilder *in_builder, asCScriptCode *in_script, asCScriptFunction *in_outFunc)
 {
-	Con_Printf( "Compiling Factory '%s'...\n", in_outFunc->GetName() );
+	AS_Printf( "Compiling Factory '%s' for '%s'...\n", in_outFunc->GetName(), in_outFunc->GetObjectName() );
 	Reset(in_builder, in_script, in_outFunc);
 
 	// Insert a JitEntry at the start of the function for JIT compilers
@@ -550,6 +551,8 @@ void asCCompiler::CompileMemberInitialization(asCByteCode *bc, bool onlyDefaults
 int asCCompiler::CompileFunction(asCBuilder *in_builder, asCScriptCode *in_script, asCArray<asCString> &in_parameterNames, asCScriptNode *in_func, asCScriptFunction *in_outFunc, sClassDeclaration *in_classDecl)
 {
 	TimeIt("asCCompiler::CompileFunction");
+
+	AS_Printf( "Compiling Function '%s'...\n", in_outFunc->name.AddressOf() );
 
 	Reset(in_builder, in_script, in_outFunc);
 	int buildErrors = builder->numErrors;

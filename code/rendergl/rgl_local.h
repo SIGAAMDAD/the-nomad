@@ -805,8 +805,8 @@ typedef struct {
     uint64_t numIndices;
     uint64_t numVertices;
 
-    tile2d_sprite_t *sprites;
-    uint32_t numTilesetSprites;
+    spriteCoord_t *sprites;
+    uint32_t numSprites;
 
     // frame based draw data
     shader_t *shader;

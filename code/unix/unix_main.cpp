@@ -700,8 +700,12 @@ int Sys_ParseArgs(int argc, const char *argv[])
     return 0;
 }
 
+static void Sys_InitSignals( void );
+
 static void SignalHandle( int signum )
 {
+    Sys_InitSignals();
+
     if ( signum == SIGSEGV ) {
         exit_type = &signals[0];
         Sys_SetError( ERR_SEGGY );
@@ -759,10 +763,8 @@ static void SignalHandle( int signum )
     }
 }
 
-void Sys_Init( void )
+static void Sys_InitSignals( void )
 {
-    tty_err err;
-
     signal( SIGTERM, SignalHandle );
     signal( SIGSEGV, SignalHandle );
     signal( SIGFPE, SignalHandle );
@@ -770,6 +772,11 @@ void Sys_Init( void )
     signal( SIGBUS, SignalHandle );
     signal( SIGTRAP, SignalHandle );
     signal( SIGILL, SignalHandle );
+}
+
+void Sys_Init( void )
+{
+    tty_err err;
 
     // get the initial time base
 	Sys_Milliseconds();

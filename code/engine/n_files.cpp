@@ -1210,6 +1210,8 @@ static char **FS_ListFilteredFiles( const char *path, const char *extension, con
 	const char *x;
 	const searchpath_t *sp;
 
+	PROFILE_FUNCTION();
+
 	if ( !fs_searchpaths ) {
 		N_Error( ERR_FATAL, "Filesystem call made without initialization" );
 	}
@@ -1686,6 +1688,8 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 	uint64_t baseNameLen, fileNameLen;
 	FILE *fp;
 	fileStats_t stats;
+
+	PROFILE_FUNCTION();
 
 	// extract the basename from bffpath
 	basename = strrchr(bffpath, PATH_SEP);
@@ -2981,6 +2985,8 @@ void FS_Shutdown(qboolean closeFiles)
 
 void FS_Restart( void )
 {
+	PROFILE_FUNCTION();
+
 	// last valid game folder
 	static char lastValidBase[MAX_OSPATH];
 	static char lastValidGame[MAX_OSPATH];
@@ -3057,7 +3063,7 @@ void FS_InitFilesystem( void )
 	Com_StartupVariable( "fs_homepath" );
 	Com_StartupVariable( "fs_game" );
 	Com_StartupVariable( "fs_basegame" );
-//	Com_StartupVariable( "fs_copyfiles" );
+	Com_StartupVariable( "fs_copyfiles" );
 	Com_StartupVariable( "fs_restrict" );
 #ifndef USE_BFF_CACHE_FILE
 	Com_StartupVariable( "fs_locked" );
@@ -3083,6 +3089,8 @@ void FS_Startup( void )
 	fs_bffChunks = 0;
 	fs_readCount = 0;
 	fs_writeCount = 0;
+
+	PROFILE_FUNCTION();
 
 	Con_Printf( "\n---------- FS_Startup ----------\n" );
 
@@ -3185,7 +3193,7 @@ void FS_Startup( void )
 	fs_gamedirvar->modified = qfalse;
 
 	// clear all handles
-//	memset( handles, 0, sizeof(handles) );
+	memset( handles, 0, sizeof( handles ) );
 
 #ifdef USE_BFF_CACHE_FILE
 	FS_FreeUnusedCache();

@@ -116,23 +116,23 @@ bool isAligned(const void* const pointer, asUINT alignment)
 // MSVC let's us choose between a couple of different initialization orders.
 #pragma warning(disable: 4073)
 #pragma init_seg(lib)
-asALLOCFUNC_t userAlloc = malloc;
-asFREEFUNC_t  userFree  = free;
+asALLOCFUNC_t _userAlloc = (asALLOCFUNC_t)malloc;
+asFREEFUNC_t  _userFree  = (asFREEFUNC_t)free;
 #ifdef WIP_16BYTE_ALIGN
 #ifdef AS_DEBUG
-asALLOCALIGNEDFUNC_t userAllocAligned = (asALLOCALIGNEDFUNC_t)debugAlignedMalloc;
+asALLOCALIGNEDFUNC_t _userAllocAligned = (asALLOCALIGNEDFUNC_t)debugAlignedMalloc;
 #else
-asALLOCALIGNEDFUNC_t userAllocAligned = alignedMalloc;
+asALLOCALIGNEDFUNC_t _userAllocAligned = alignedMalloc;
 #endif
-asFREEALIGNEDFUNC_t  userFreeAligned  = alignedFree;
+asFREEALIGNEDFUNC_t  _userFreeAligned  = alignedFree;
 #endif
 #else
 // Other compilers will just have to rely on luck.
-asALLOCFUNC_t userAlloc = malloc;
-asFREEFUNC_t  userFree  = free;
+asALLOCFUNC_t _userAlloc = (asALLOCFUNC_t)malloc;
+asFREEFUNC_t  _userFree  = (asFREEFUNC_t)free;
 #ifdef WIP_16BYTE_ALIGN
-asALLOCALIGNEDFUNC_t userAllocAligned = alignedMalloc;
-asFREEALIGNEDFUNC_t  userFreeAligned  = alignedFree;
+asALLOCALIGNEDFUNC_t _userAllocAligned = alignedMalloc;
+asFREEALIGNEDFUNC_t  _userFreeAligned  = alignedFree;
 #endif
 #endif
 
@@ -147,8 +147,8 @@ int asSetGlobalMemoryFunctions(asALLOCFUNC_t allocFunc, asFREEFUNC_t freeFunc)
 	// routine than used when allocating it.
 	asThreadCleanup();
 
-	userAlloc = allocFunc;
-	userFree  = freeFunc;
+	_userAlloc = allocFunc;
+	_userFree  = freeFunc;
 
 	return 0;
 }
@@ -161,8 +161,8 @@ int asResetGlobalMemoryFunctions()
 	// routine than used when allocating it.
 	asThreadCleanup();
 
-	userAlloc = malloc;
-	userFree  = free;
+	_userAlloc = (asALLOCFUNC_t)malloc;
+	_userFree  = (asFREEFUNC_t)free;
 
 	return 0;
 }

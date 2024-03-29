@@ -135,15 +135,15 @@ CDebugger::CDebugger() {
 	g_pDebugger = this;
 
 	Cmd_AddCommand( "ml_debug.set_active", Module_DebuggerSetActive_f );
-	Cmd_AddCommand( "print", Module_Debugger_PrintHelp_f );
-	Cmd_AddCommand( "bt", Module_Debugger_PrintCallstack_f );
-	Cmd_AddCommand( "trace", Module_Debugger_PrintCallstack_f );
-	Cmd_AddCommand( "br", Module_Debugger_AddBreakPoint_f );
-	Cmd_AddCommand( "break", Module_Debugger_AddBreakPoint_f );
-	Cmd_AddCommand( "cont", Module_Debugger_Continue_f );
-	Cmd_AddCommand( "in", Module_Debugger_StepInto_f );
-	Cmd_AddCommand( "out", Module_Debugger_StepOut_f );
-	Cmd_AddCommand( "next", Module_Debugger_StepOver_f );
+	Cmd_AddCommand( "ml_debug.print_help", Module_Debugger_PrintHelp_f );
+	Cmd_AddCommand( "ml_debug.stacktrace", Module_Debugger_PrintCallstack_f );
+	Cmd_AddCommand( "ml_debug.backtrace", Module_Debugger_PrintCallstack_f );
+	Cmd_AddCommand( "ml_debug.clear_breakpoint", Module_Debugger_RemoveBreakPoint_f );
+	Cmd_AddCommand( "ml_debug.set_breakpoint", Module_Debugger_AddBreakPoint_f );
+	Cmd_AddCommand( "ml_debug.continue", Module_Debugger_Continue_f );
+	Cmd_AddCommand( "ml_debug.step_into", Module_Debugger_StepInto_f );
+	Cmd_AddCommand( "ml_debug.step_out", Module_Debugger_StepOut_f );
+	Cmd_AddCommand( "ml_debug.step_over", Module_Debugger_StepOver_f );
 }
 
 CDebugger::~CDebugger() {

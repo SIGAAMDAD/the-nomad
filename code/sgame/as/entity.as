@@ -226,6 +226,9 @@ namespace TheNomad::SGame {
 	
 	class EntitySystem : TheNomad::GameSystem::GameObject {
 		EntitySystem() {
+		}
+		
+		void OnInit() {
 			TheNomad::Engine::CmdAddCommand( "sgame.effect_entity_stun" );
 			TheNomad::Engine::CmdAddCommand( "sgame.effect_entity_bleed" );
 			TheNomad::Engine::CmdAddCommand( "sgame.effect_entity_knockback" );
@@ -236,10 +239,7 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::CmdAddCommand( "sgame.set_player_rage" );
 			
 			m_EntityList.Reserve( sgame_MaxEntities.GetInt() );
-			Init();
-		}
-		
-		private void Init() {
+
 			for ( uint i = 0; i < uint( sgame_MaxEntities.GetInt() ); i++ ) {
 				m_EntityList.Add( EntityObject() );
 			}
@@ -251,6 +251,8 @@ namespace TheNomad::SGame {
 			for ( uint i = 0; i < m_EntityList.size() - 1; i++ ) {
 				@m_EntityList[i].next = @m_EntityList[i + 1];
 			}
+		}
+		void OnShutdown() {
 		}
 
 		void DrawEntity( const EntityObject@ ent ) {
@@ -456,6 +458,9 @@ namespace TheNomad::SGame {
 		}
 		array<EntityObject>@ GetEntities() {
 			return @m_EntityList;
+		}
+		EntityObject@ GetActiveEnts() {
+			return @m_ActiveEntities;
 		}
 		uint NumEntities() const {
 			return m_EntityList.Count();

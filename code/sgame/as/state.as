@@ -84,6 +84,10 @@ namespace TheNomad::SGame {
 		const string& GetName() const {
 			return "EntityStateSystem";
 		}
+		void OnInit() {
+		}
+		void OnShutdown() {
+		}
 		void OnLevelStart() {
 		}
 		void OnLevelEnd() {

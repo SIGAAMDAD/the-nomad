@@ -388,8 +388,6 @@ Compiler Macro Abstraction
 #pragma GCC diagnostic ignored "-Wunused-macros"
 #pragma GCC diagnostic ignored "-Wsign-compare"
 #pragma GCC diagnostic ignored "-Wnoexcept"
-
-#pragma GCC diagnostic error "-Walloca-larger-than=1048576" // prevent stack overflows (allocating more than a mb on the stack)
 #elif defined(__clang__) && defined(__cplusplus)
 #pragma clang diagnostic ignored "-Wold-style-cast" // c style stuff, its more readable without the syntax sugar
 #pragma clang diagnostic ignored "-Wclass-memaccess" // non-trivial copy instead of memcpy
@@ -397,8 +395,6 @@ Compiler Macro Abstraction
 #pragma clang diagnostic ignored "-Wunused-macros"
 #pragma clang diagnostic ignored "-Wsign-compare"
 #pragma clang diagnostic ignored "-Wnoexcept"
-
-#pragma clang diagnostic error "-Walloca-larger-than=1048576" // prevent stack overflows (allocating more than a mb on the stack)
 #endif
 
 #define NOMAD_VERSION_FULL \
@@ -438,6 +434,12 @@ Compiler Macro Abstraction
 #else
 #include <alloca.h>
 #endif
+#endif
+
+#ifdef offsetof
+#undef offsetof
+// GCC's __builtin_offsetof doesn't do well with some template types
+#define offsetof( type, member ) (size_t)( &( ( (type *)0 )->( member ) ) )
 #endif
 
 #ifndef Q3_VM
@@ -927,18 +929,19 @@ typedef struct {
 #define COLOR_WHITE		"^7"
 #define COLOR_RESET		"^8"
 
-#if defined(_NOMAD_DEBUG) && defined(__cplusplus) && defined(NOMAD_PROFILE)
+#if defined(_NOMAD_DEBUG) && defined(__cplusplus)
+	#define USING_EASY_PROFILER
 	#include <easy/profiler.h>
 
 	#define PROFILE_BEGIN_LISTEN \
 		EASY_PROFILER_ENABLE; \
 		profiler::startListen()
 	
-	#define PROFILE_STOP_LISTEN profiler::dumpBlocksToFile( "engine-profiler-data.prof" ); profiler::stopListen();
+	#define PROFILE_STOP_LISTEN profiler::dumpBlocksToFile( "engine_profiler_data.prof" ); profiler::stopListen();
 
 	#define PROFILE_SCOPE( name ) EASY_BLOCK( name, profiler::colors::Green )
 	#define PROFILE_BLOCK_BEGIN( name ) PROFILE_SCOPE( name )
-	#define PROFILE_BLOCK_END() EASY_END_BLOCK
+	#define PROFILE_BLOCK_END EASY_END_BLOCK
 	#ifdef GDR_DLLCOMPILE
 		#define PROFILE_FUNCTION() EASY_FUNCTION( profiler::colors::Blue )
 	#else

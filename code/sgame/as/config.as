@@ -50,6 +50,7 @@ void AdjustDifficulty() {
 
 int ModuleDrawConfiguration() {
     uint tmp;
+    return 0;
 
     ImGui::BeginTable( "##SGameConfig", 2 );
 

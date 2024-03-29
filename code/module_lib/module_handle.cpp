@@ -4,6 +4,7 @@
 #include "angelscript/as_bytecode.h"
 #include "module_funcdefs.hpp"
 #include "module_debugger.h"
+#include "scriptpreprocessor.h"
 
 const moduleFunc_t funcDefs[NumFuncs] = {
     { "int ModuleInit()", ModuleInit, 0, qtrue },
@@ -245,6 +246,31 @@ void CModuleHandle::LoadSourceFile( const std::string& filename )
     }
 
     FS_FreeFile( f.v );
+    /*
+    int retn;
+    fileHandle_t f;
+    Preprocessor macroManager;
+    Preprocessor::FileSource source;
+    eastl::string data;
+    UtlVector<char> out;
+
+    f = FS_FOpenRead( va( "modules/%s/%s", m_szName.c_str(), filename.c_str() ) );
+    if ( f == FS_INVALID_HANDLE ) {
+        N_Error( ERR_DROP, "CModuleHandle::LoadSourceFile: failed to load source file '%s'", filename.c_str() );
+    }
+    data.resize( FS_FileLength( f ) );
+    if ( !FS_Read( data.data(), data.size(), f ) ) {
+        N_Error( ERR_DROP, "CModuleHandle::LoadSourceFile: failed to load source file '%s'", filename.c_str() );
+    }
+    FS_FClose( f );
+
+    macroManager.preprocess( eastl::move( filename.c_str() ), data, source, out );
+    
+    retn = g_pModuleLib->GetScriptBuilder()->AddSectionFromMemory( filename.c_str(), out.data(), out.size() );
+    if ( retn < 0 ) {
+        Con_Printf( COLOR_RED "ERROR: failed to add source file '%s' -- %s\n", filename.c_str(), AS_PrintErrorString( retn ) );
+    }
+    */
 }
 
 #define AS_CACHE_CODE_IDENT (('C'<<24)+('B'<<16)+('S'<<8)+'A')

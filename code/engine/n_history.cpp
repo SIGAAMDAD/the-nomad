@@ -181,10 +181,10 @@ void Field_CompleteFilename(const char *dir, const char *ext, qboolean stripExt,
     matchCount = 0;
     shortestMatch[0] = '\0';
 
-//    FS_FilenameCompletion(dir, ext, stripExt, FindMatches, flags);
+    FS_FilenameCompletion(dir, ext, stripExt, FindMatches, flags);
 
-//    if (!Field_Complete())
-//        FS_FilenameCompletion(dir, ext, stripExt, PrintMatches, flags);
+    if (!Field_Complete())
+        FS_FilenameCompletion(dir, ext, stripExt, PrintMatches, flags);
 }
 
 void Field_CompleteCommand(const char *cmd, qboolean doCommands, qboolean doCvars)

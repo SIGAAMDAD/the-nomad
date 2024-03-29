@@ -7,19 +7,21 @@
 #include "module_stringfactory.hpp"
 #include "../game/g_world.h"
 #include "module_funcdefs.hpp"
-#include "scriptarray.h"
+#include "scriptlib/scriptarray.h"
 
 #include "module_engine/module_bbox.h"
 #include "module_engine/module_linkentity.h"
 #include "module_engine/module_polyvert.h"
 #include "module_engine/module_raycast.h"
 #include "../system/sys_timer.h"
-#include "scriptjson.h"
+#include "scriptlib/scriptjson.h"
 #include "module_engine/module_gpuconfig.h"
 
 //
 // c++ compatible wrappers around angelscript engine function calls
 //
+
+static CThreadMutex g_hRenderLock;
 
 // glm has a lot of very fuzzy template types
 using vec2 = glm::vec<2, float, glm::packed_highp>;
@@ -923,6 +925,7 @@ static void LoadWorld( const string_t *npath ) {
 }
 
 static void ClearScene( void ) {
+    CThreadAutoLock<CThreadMutex> lock( g_hRenderLock );
     re.ClearScene();
 }
 
@@ -938,6 +941,7 @@ DEFINE_CALLBACK( RenderScene ) {
     refdef.flags = pGeneric->GetArgDWord( 4 );
     refdef.time = pGeneric->GetArgDWord( 5 );
 
+    CThreadAutoLock<CThreadMutex> lock( g_hRenderLock );
     re.RenderScene( &refdef );
 }
 
@@ -949,14 +953,17 @@ static void AddEntityToScene( nhandle_t hShader, const vec3 *origin, uint32_t fl
     VectorCopy( refEntity.origin, *origin );
     refEntity.flags = flags;
 
+    CThreadAutoLock<CThreadMutex> lock( g_hRenderLock );
     re.AddEntityToScene( &refEntity );
 }
 
 static void AddPolyToScene( nhandle_t hShader, const CScriptArray *pPolyList ) {
+    CThreadAutoLock<CThreadMutex> lock( g_hRenderLock );
     re.AddPolyToScene( hShader, (const polyVert_t *)pPolyList->GetBuffer(), pPolyList->GetSize() );
 }
 
 static void AddSpriteToScene( const vec3 *origin, nhandle_t hSpriteSheet, nhandle_t hSprite ) {
+    CThreadAutoLock<CThreadMutex> lock( g_hRenderLock );
     re.AddSpriteToScene( (vec_t *)origin, hSpriteSheet, hSprite );
 }
 
@@ -991,21 +998,17 @@ DEFINE_CALLBACK( SetActiveMap ) {
     uint32_t *nCheckpoints = (uint32_t *)pGeneric->GetArgAddress( 1 );
     uint32_t *nSpawns = (uint32_t *)pGeneric->GetArgAddress( 2 );
     uint32_t *nTiles = (uint32_t *)pGeneric->GetArgAddress( 3 );
-    CModuleLinkEntity *activeEnts = (CModuleLinkEntity *)pGeneric->GetArgObject( 5 );
+    CModuleLinkEntity *activeEnts = (CModuleLinkEntity *)pGeneric->GetArgObject( 4 );
 
     G_SetActiveMap( hMap, nCheckpoints, nSpawns, nTiles, &activeEnts->handle );
 }
 
-static CScriptArray *GetTileData( void ) {
-    CScriptArray *tiles = CScriptArray::Create( g_pModuleLib->GetScriptEngine()->GetTypeInfoByName( "uint" ) );
-
+static void GetTileData( CScriptArray *tiles ) {
     tiles->Resize( gi.mapCache.info.numLevels );
     for ( uint32_t i = 0; i < gi.mapCache.info.numLevels; i++ ) {
-        ( (CScriptArray *)tiles->At( i ) )->Resize( gi.mapCache.info.width * gi.mapCache.info.height );
+        ( (CScriptArray *)tiles->At( i ) )->Resize( gi.mapCache.info.numTiles );
         G_GetTileData( (uint32_t *)( (CScriptArray *)tiles->At( i ) )->GetBuffer(), i );
     }
-
-    return tiles;
 }
 
 static void GetGPUConfig( CModuleGPUConfig *config ) {
@@ -2222,9 +2225,12 @@ void ModuleLib_Register_Engine( void )
             REGISTER_OBJECT_PROPERTY( "TheNomad::Engine::Renderer::GPUConfig", "string extensions", offsetof( CModuleGPUConfig, extensionsString ) );
             REGISTER_OBJECT_PROPERTY( "TheNomad::Engine::Renderer::GPUConfig", "string version", offsetof( CModuleGPUConfig, versionString ) );
             REGISTER_OBJECT_PROPERTY( "TheNomad::Engine::Renderer::GPUConfig", "string shaderVersion", offsetof( CModuleGPUConfig, shaderVersionString ) );
-            REGISTER_OBJECT_PROPERTY( "TheNomad::Engine::Renderer::GPUConfig", "uint32 screenWidth", offsetof( gpuConfig_t, vidWidth ) );
-            REGISTER_OBJECT_PROPERTY( "TheNomad::Engine::Renderer::GPUConfig", "uint32 screenHeight", offsetof( gpuConfig_t, vidHeight ) );
-            REGISTER_OBJECT_PROPERTY( "TheNomad::Engine::Renderer::GPUConfig", "bool isFullscreen", offsetof( gpuConfig_t, isFullscreen ) );
+            CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterObjectProperty(
+                "TheNomad::Engine::Renderer::GPUConfig", "uint32 screenWidth", offsetof( CModuleGPUConfig, gpuConfig ), offsetof( gpuConfig_t, vidWidth ) ) );
+            CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterObjectProperty(
+                "TheNomad::Engine::Renderer::GPUConfig", "uint32 screenHeight", offsetof( CModuleGPUConfig, gpuConfig ), offsetof( gpuConfig_t, vidHeight ) ) );
+            CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterObjectProperty(
+                "TheNomad::Engine::Renderer::GPUConfig", "bool isFullscreen", offsetof( CModuleGPUConfig, gpuConfig ), offsetof( gpuConfig_t, isFullscreen ) ) );
 
             REGISTER_OBJECT_TYPE( "PolyVert", CModulePolyVert, asOBJ_VALUE );
 
@@ -2376,8 +2382,6 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "uint16 TheNomad::GameSystem::LoadUShort( const string& in, int )", LoadUInt16 );
         REGISTER_GLOBAL_FUNCTION( "uint32 TheNomad::GameSystem::LoadUInt( const string& in, int )", LoadUInt32 );
         REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::GameSystem::LoadULong( const string& in, int )", LoadUInt64 );
-
-        REGISTER_GLOBAL_FUNCTION( "float TheNomad::GameSystem::LoadFloat( const string& in, int )", LoadFloat );
         
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, float[]& in, int )", LoadFloatArray );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, int8[]& in, int )", LoadInt8Array );
@@ -2388,6 +2392,8 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, uint16[]& in, int )", LoadUInt16Array );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, uint32[]& in, int )", LoadUInt32Array );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, uint64[]& in, int )", LoadUInt64Array );
+
+        REGISTER_GLOBAL_FUNCTION( "float TheNomad::GameSystem::LoadFloat( const string& in, int )", LoadFloat );
 
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadString( const string& in, string& out, int )", LoadString );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadVec2( const string& in, vec2& out, int )", LoadVec2 );
@@ -2437,7 +2443,7 @@ void ModuleLib_Register_Engine( void )
 		
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetCheckpointData( uvec3& out, uint )", WRAP_FN( G_GetCheckpointData ) );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetSpawnData( uvec3& out, uint& out, uint& out, uint )", WRAP_FN( G_GetSpawnData ) );
-        REGISTER_GLOBAL_FUNCTION( "array<array<uint>>@ TheNomad::GameSystem::GetTileData()", WRAP_FN( GetTileData ) );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetTileData( array<array<uint>>@ )", WRAP_FN( GetTileData ) );
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::GameSystem::SetActiveMap( int, uint& out, uint& out, uint& out, "
             "TheNomad::GameSystem::LinkEntity& in )", asFUNCTION( ModuleLib_SetActiveMap ), asCALL_GENERIC );
         REGISTER_GLOBAL_FUNCTION( "int LoadMap( const string& in )", WRAP_FN( LoadMap ) );

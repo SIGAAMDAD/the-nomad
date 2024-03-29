@@ -368,6 +368,8 @@ static sf_count_t SndFile_Seek( sf_count_t offset, int64_t whence, void *file ) 
 
 bool CSoundSource::LoadFile( const char *npath, int64_t tag )
 {
+    PROFILE_FUNCTION();
+
     SNDFILE *sf;
     SF_VIRTUAL_IO vio;
     ALenum format;

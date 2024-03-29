@@ -156,10 +156,10 @@ void RE_BeginScene( const renderSceneRef_t *fd )
     backend.refdef.time = fd->time;
     backend.refdef.floatTime = (double)backend.refdef.time * 0.001f; // -EC-: cast to double
 
-    backend.refdef.numDLights = r_firstSceneDLight - r_numDLights;
+    backend.refdef.numDLights = r_numDLights - r_firstSceneDLight;
     backend.refdef.dlights = backendData->dlights;
     
-    backend.refdef.numEntities = r_firstSceneEntity - r_numEntities;
+    backend.refdef.numEntities = r_numEntities - r_firstSceneEntity;
     backend.refdef.entities = &backendData->entities[r_firstSceneEntity];
 
     backend.refdef.numPolys = r_numPolys - r_firstScenePoly;

@@ -21,7 +21,7 @@ namespace TheNomad::Engine::SoundSystem {
     class SoundScene {
         SoundScene() {
             m_Channels.Reserve( m_nUsedChannels );
-            for ( uint i = 0; i < TheNomad::SGame::sgame_MaxSoundChannels.GetInt(); i++ ) {
+            for ( uint i = 0; i < uint( TheNomad::SGame::sgame_MaxSoundChannels.GetInt() ); i++ ) {
                 m_Channels.Add( null );
             }
         }

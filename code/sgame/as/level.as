@@ -118,9 +118,9 @@ namespace TheNomad::SGame {
 			uvec3 xyz;
 			
 			TheNomad::GameSystem::SetActiveMap( hMap, nCheckpoints, nSpawns,
-				nTiles, EntityManager.GetEntities()[0].GetLink() );
+				nTiles, EntityManager.GetActiveEnts().GetLink() );
 
-			@m_TileData = TheNomad::GameSystem::GetTileData();
+			TheNomad::GameSystem::GetTileData( @m_TileData );
 			TheNomad::Engine::Renderer::LoadWorld( m_Name );
 			
 			//
@@ -200,7 +200,7 @@ namespace TheNomad::SGame {
 		private string m_Name;
 		private array<MapSpawn@> m_Spawns;
 		private array<MapCheckpoint@> m_Checkpoints;
-		private array<array<uint>>@ m_TileData;
+		private array<array<uint>> m_TileData;
 		private int m_nWidth;
 		private int m_nHeight;
 	};
@@ -227,6 +227,7 @@ namespace TheNomad::SGame {
 			
 			ImGui::Begin( "##LevelStatsShow", null, windowFlags );
 			if ( endOfLevel ) {
+				time.Stop();
 				if ( TheNomad::Engine::IsAnyKeyDown() ) {
 					selectedSfx.Play();
 				}
@@ -352,6 +353,14 @@ namespace TheNomad::SGame {
 		LevelRankData m_RankD;
 		LevelRankData m_RankF;
 		LevelRankData m_RankU;
+	};
+
+	class LevelState {
+		LevelState() {
+		}
+
+		LevelStats stats;
+		uint checkpointIndex;
 	};
 	
 	class LevelSystem : TheNomad::GameSystem::GameObject {
@@ -483,7 +492,16 @@ namespace TheNomad::SGame {
 			}
 		}
 		
+		void OnInit() {
+		}
+		void OnShutdown() {
+		}
 		void OnRunTic() {
+			//
+			// checkpoint updates
+			//
+			if ( EntityManager.NumEntities() == 0 ) {
+			}
 		}
 		bool OnConsoleCommand( const string& in cmd ) {
 
@@ -659,6 +677,7 @@ namespace TheNomad::SGame {
 			return @m_Current;
 		}
 		
+		private uint m_CurrentCheckpoint;
 		private array<json@> m_LevelInfos;
 		private array<LevelInfoData@> m_LevelInfoDatas;
 		private uint m_nIndex = 0;

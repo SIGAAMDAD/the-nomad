@@ -9,6 +9,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include "g_threads.h"
 
 CModuleLib *g_pModuleLib;
 CModuleInfo *sgvm;
@@ -463,6 +464,8 @@ static void G_InitModuleLib( void )
 
 static void G_InitRenderer( void )
 {
+    PROFILE_FUNCTION();
+
     if ( !re.BeginRegistration ) {
         G_InitRenderRef();
     }
@@ -498,6 +501,7 @@ void G_ShutdownRenderer( refShutdownCode_t code )
     }
 
     if ( re.Shutdown ) {
+        PROFILE_SCOPE( "Renderer Shutdown" );
         re.Shutdown( code );
     }
 
@@ -513,6 +517,8 @@ void G_ShutdownRenderer( refShutdownCode_t code )
 
 static void G_Vid_Restart( refShutdownCode_t code )
 {
+    PROFILE_FUNCTION();
+
     // shutdown VMs
     G_ShutdownVMs();
 
@@ -716,6 +722,8 @@ extern void G_SetMap_f( void );
 //
 void G_Init( void )
 {
+    PROFILE_FUNCTION();
+
     Con_Printf( "----- Game State Initialization ----\n" );
 
     // clear the hunk before anything
@@ -943,6 +951,8 @@ void G_ShutdownVMs( void ) {
 void G_StartHunkUsers( void )
 {
     G_InitArchiveHandler();
+
+    g_pRenderThread = new ( Hunk_Alloc( sizeof( *g_pRenderThread ), h_high ) ) CRenderThread();
 
     // cache all maps
     g_world = new ( Hunk_Alloc( sizeof( *g_world ), h_high ) ) CGameWorld();

@@ -83,4 +83,3 @@ $(LIB): $(INTERNAL_OBJS)
 
 clean:
 	rm -rf $(INTERNAL_OBJS)
-	rm $(LIB)

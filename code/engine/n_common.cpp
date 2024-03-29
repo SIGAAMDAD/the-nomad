@@ -200,6 +200,8 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error(errorCo
     N_vsnprintf(com_errorMessage, sizeof(com_errorMessage), err, argptr);
     va_end(argptr);
 
+	Cvar_Set( "com_errorMessage", com_errorMessage );
+
 	Cbuf_Init();
 
 	if (code == ERR_DROP) {
@@ -782,6 +784,8 @@ void Com_RestartGame( void )
 
 	// make sure no recursion is possible
 	if ( !com_gameRestarting && com_fullyInitialized ) {
+		PROFILE_SCOPE( "Game Restart" );
+
 		com_gameRestarting = qtrue;
 
 		G_ShutdownAll();
@@ -1567,6 +1571,8 @@ void Com_Init( char *commandLine )
 	if ( Q_setjmp( abortframe ) ) {
 		Sys_Error( "Error during initialization" );
 	}
+	PROFILE_BEGIN_LISTEN;
+	PROFILE_FUNCTION();
 
 	Com_InitPushEvent();
 
@@ -1628,8 +1634,6 @@ void Com_Init( char *commandLine )
 
 	Com_InitJournals();
 	Com_LoadConfig();
-
-	PROFILE_BEGIN_LISTEN;
 
 	// override anything from the config files with command line args
 	Com_StartupVariable( NULL );

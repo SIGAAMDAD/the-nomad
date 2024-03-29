@@ -1249,6 +1249,7 @@ Hunk_SetMark: gets called after level and game vm have been loaded
 void Hunk_SetMark( void )
 {
 	CThreadAutoLock lock( hunkLock );
+	
 	hunk_low.mark = hunk_low.permanent;
 	hunk_high.mark = hunk_high.permanent;
 }

@@ -393,6 +393,7 @@ char *FS_CopyString(const char *s);
 void *FS_LoadLibrary(const char *filename);
 uint64_t FS_GetFileList( const char *path, const char *extension, char *listbuf, uint64_t bufsize );
 
+void FS_FilenameCompletion( const char *dir, const char *ext, qboolean stripExt, void(*callback)(const char *s), uint32_t flags );
 qboolean FS_AllowedExtension(const char *fileName, qboolean allowBFFs, const char **ext);
 qboolean FS_StripExt(char *filename, const char *ext);
 qboolean FS_FileIsInBFF(const char *path);

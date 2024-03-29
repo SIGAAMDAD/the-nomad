@@ -43,10 +43,22 @@
 
 #include "as_config.h"
 
+#ifdef MODULE_LIB
+#include "../module_lib/module_alloc.h"
+#endif
+
 BEGIN_AS_NAMESPACE
 
-extern asALLOCFUNC_t userAlloc;
-extern asFREEFUNC_t  userFree;
+extern asALLOCFUNC_t _userAlloc;
+extern asFREEFUNC_t  _userFree;
+
+#ifdef _NOMAD_DEBUG
+#define userAlloc( size ) _userAlloc( (size), __FILE__, __LINE__ )
+#define userFree( ptr ) _userFree( (ptr), __FILE__, __LINE__ )
+#else
+#define userAlloc( size ) _userAlloc( (size) )
+#define userFree( ptr ) _userFree( (ptr) )
+#endif
 
 #ifdef WIP_16BYTE_ALIGN
 
@@ -55,8 +67,8 @@ extern asFREEFUNC_t  userFree;
 //       aligned memory routines
 typedef void *(*asALLOCALIGNEDFUNC_t)(size_t, size_t);
 typedef void (*asFREEALIGNEDFUNC_t)(void *);
-extern asALLOCALIGNEDFUNC_t userAllocAligned;
-extern asFREEALIGNEDFUNC_t  userFreeAligned;
+extern asALLOCALIGNEDFUNC_t _userAllocAligned;
+extern asFREEALIGNEDFUNC_t  _userFreeAligned;
 typedef void *(*asALLOCALIGNEDFUNCDEBUG_t)(size_t, size_t, const char *, unsigned int);
 
 // The maximum type alignment supported.

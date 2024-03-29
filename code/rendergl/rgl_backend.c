@@ -582,9 +582,8 @@ static const void *RB_ColorMask(const void *data) {
 static const void *RB_DrawImage( const void *data ) {
 	const drawImageCmd_t *cmd;
 	shader_t *shader;
-	vec3_t oldPos;
 	polyVert_t verts[4];
-	uint32_t numVerts, numIndices;
+	uint32_t indices[6];
 
 	cmd = (const drawImageCmd_t *)data;
 
@@ -607,7 +606,22 @@ static const void *RB_DrawImage( const void *data ) {
 	VectorSet2( verts[2].uv, cmd->u2, cmd->v2 );
 	VectorSet2( verts[3].uv, cmd->u1, cmd->v2 );
 
-	RE_AddPolyToScene( shader->index, verts, 4 );
+	indices[0] = 0;
+	indices[1] = 1;
+	indices[2] = 2;
+
+	indices[3] = 3;
+	indices[4] = 2;
+	indices[5] = 0;
+
+	GLSL_UseProgram( &rg.basicShader );
+	RB_MakeViewMatrix();
+
+	RB_SetBatchBuffer( backend.drawBuffer, verts, sizeof( *verts ), indices, sizeof( *indices ) );
+	RB_CommitDrawData( verts, 4, indices, 6 );
+	RB_FlushBatchBuffer();
+
+	GLSL_UseProgram( NULL );
 
 	return (const void *)(cmd + 1);
 }

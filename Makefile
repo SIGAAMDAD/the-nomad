@@ -10,7 +10,7 @@ FTYPE     =-Og -g
 endif
 else
 DEBUGDEF  =
-FTYPE     =-Ofast -g
+FTYPE     =-Ofast -s
 endif
 
 ifeq ($(shell uname -m),arm64)
@@ -159,7 +159,7 @@ LDLIBS= \
 		-lsndfile \
 
 ifndef release
-#LDLIBS+=-Wl,-Bdynamic libeasy_profiler.so
+LDLIBS+=-leasy_profiler
 endif
 
 SYS=\
@@ -300,6 +300,7 @@ SRC=\
 	$(O)/game/g_imgui.o \
 	$(O)/game/g_world.o \
 	$(O)/game/g_jpeg.o \
+	$(O)/game/g_threads.o \
 	\
 	$(O)/module_lib/module_memory.o \
 	$(O)/module_lib/module_main.o \
@@ -317,6 +318,7 @@ SRC=\
 	$(O)/module_lib/scriptmath.o \
 	$(O)/module_lib/scripthandle.o \
 	$(O)/module_lib/scriptjson.o \
+	$(O)/module_lib/scriptpreprocessor.o \
 	$(O)/module_lib/contextmgr.o \
 	$(O)/module_lib/imgui_stdlib.o \
 	\
@@ -421,10 +423,10 @@ $(O)/sys/%.o: $(SYS_DIR)/%.cpp
 	$(COMPILE_SRC)
 $(O)/module_lib/%.o: $(SDIR)/module_lib/%.cpp
 	$(COMPILE_SRC) -DMODULE_LIB
+$(O)/module_lib/%.o: $(SDIR)/module_lib/scriptlib/%.cpp
+	$(COMPILE_SRC) -DMODULE_LIB
 $(O)/angelscript/%.o: $(SDIR)/angelscript/%.cpp
-	$(COMPILE_SRC)
-$(O)/angelscript/%.o: $(SDIR)/aatc/%.cpp
-	$(COMPILE_SRC) -DCOMPILE_AATC
+	$(COMPILE_SRC) -DMODULE_LIB
 $(O)/libjpeg/%.o: $(SDIR)/libjpeg/%.c
 	$(COMPILE_C)
 

@@ -173,7 +173,7 @@ nhandle_t G_LoadMap( const char *name ) {
 void G_GetCheckpointData( uvec3_t xyz, uint32_t nIndex ) {
 	const mapinfo_t *info;
 	
-	if ( gi.mapCache.currentMapLoaded == FS_INVALID_HANDLE ) {
+	if ( !gi.mapCache.info.name[0] ) {
 		N_Error( ERR_DROP, "G_GetCheckpointData: no map loaded" );
 	}
 	
@@ -188,7 +188,7 @@ void G_GetCheckpointData( uvec3_t xyz, uint32_t nIndex ) {
 void G_GetSpawnData( uvec3_t xyz, uint32_t *type, uint32_t *id, uint32_t nIndex ) {
 	const mapinfo_t *info;
 	
-	if ( gi.mapCache.currentMapLoaded == FS_INVALID_HANDLE ) {
+	if ( !gi.mapCache.info.name[0] ) {
 		N_Error( ERR_DROP, "G_GetSpawnData: no map loaded" );
 	}
 	
@@ -208,7 +208,7 @@ void G_GetTileData( uint32_t *pTiles, uint32_t nLevel ) {
 	if ( !pTiles ) {
 		N_Error( ERR_DROP, "G_GetTileData: NULL tiles" );
 	}
-	if ( gi.mapCache.currentMapLoaded == FS_INVALID_HANDLE ) {
+	if ( !gi.mapCache.info.name[0] ) {
 		N_Error( ERR_DROP, "G_GetTileData: no map loaded" );
 	}
 	if ( nLevel >= gi.mapCache.info.numLevels ) {
@@ -216,7 +216,10 @@ void G_GetTileData( uint32_t *pTiles, uint32_t nLevel ) {
 	}
 
 	info = &gi.mapCache.info;
-	memcpy( pTiles, info->tiles, sizeof( *info->tiles ) * info->numTiles );
+
+	for ( uint64_t i = 0; i < info->numTiles; i++ ) {
+		pTiles[i] = info->tiles[i].flags;
+	}
 }
 
 void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns, uint32_t *nTiles, linkEntity_t *activeEnts )
@@ -235,6 +238,9 @@ void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns, 
 		N_Error( ERR_DROP, "G_SetActiveMap: failed to load map level file '%s'", gi.mapCache.mapList[ hMap - 1 ] );
 	}
 	
+	*nCheckpoints = info->numCheckpoints;
+	*nSpawns = info->numSpawns;
+	*nTiles = info->numTiles;
 	g_world->Init( &gi.mapCache.info, activeEnts );
 
 	Cbuf_ExecuteText( EXEC_APPEND, va( "setmap %s 0\n", gi.mapCache.info.name ) );

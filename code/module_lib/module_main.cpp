@@ -6,13 +6,13 @@
 #include "../game/g_game.h"
 #include <glm/glm.hpp>
 #include <filesystem>
-#include "scriptjson.h"
+#include "scriptlib/scriptjson.h"
 #include "module_renderlib.h"
 #include "module_funcdefs.hpp"
 #include "module_stringfactory.hpp"
 #include "module_debugger.h"
-#include "scriptarray.h"
-#include "scriptdictionary.h"
+#include "scriptlib/scriptarray.h"
+#include "scriptlib/scriptdictionary.h"
 
 moduleImport_t moduleImport;
 
@@ -293,6 +293,7 @@ void Module_ASMessage_f( const asSMessageInfo *pMsg, void *param )
     bool error;
 
     error = false;
+
     switch ( pMsg->type ) {
     case asMSGTYPE_ERROR:
         Con_Printf( COLOR_RED "ERROR: [AngelScript](%s:%i:%i) %s\n",
@@ -302,12 +303,12 @@ void Module_ASMessage_f( const asSMessageInfo *pMsg, void *param )
     case asMSGTYPE_WARNING:
         Con_Printf( COLOR_YELLOW "WARNING: [AngelScript](%s:%i:%i) %s\n", pMsg->section, pMsg->row, pMsg->col, pMsg->message );
         break;
-    case asMSGTYPE_INFORMATION:
+    case asMSGTYPE_INFORMATION: {
         if ( !ml_angelScript_DebugPrint->i ) {
             return;
         }
         Con_Printf( "[AngelScript](%s:%i:%i) %s\n", pMsg->section, pMsg->row, pMsg->col, pMsg->message );
-        break;
+        break; }
     };
 
     if ( error ) {
@@ -319,12 +320,44 @@ void Module_ASMessage_f( const asSMessageInfo *pMsg, void *param )
     }
 }
 
-void *asAlloc( size_t nBytes ) {
-    return Mem_ClearedAlloc( nBytes );
+#ifdef _NOMAD_DEBUG
+void *AS_Alloc( size_t nSize, const char *fileName, const uint32_t lineNumber ) {
+    return Mem_AllocDebug( nSize, fileName, lineNumber );
 }
+#else
+void *AS_Alloc( size_t nSize ) {
+    return Mem_Alloc( nSize );
+}
+#endif
 
-void asFree( void *pBuffer ) {
-    Mem_Free( pBuffer );
+#ifdef _NOMAD_DEBUG
+void AS_Free( void *ptr, const char *fileName, const uint32_t lineNumber ) {
+    return Mem_FreeDebug( ptr, fileName, lineNumber );
+}
+#else
+void AS_Free( void *ptr ) {
+    Mem_Free( ptr );
+}
+#endif
+
+/*
+* AS_Printf: a debugging tool used for whenever the angelscript compiler decides
+* to break on me
+*/
+void GDR_ATTRIBUTE((format(printf, 1, 2))) AS_Printf( const char *fmt, ... )
+{
+    va_list argptr;
+    char msg[MAXPRINTMSG];
+
+    if ( !ml_angelScript_DebugPrint->i ) {
+        return;
+    }
+
+    va_start( argptr, fmt );
+    N_vsnprintf( msg, sizeof( msg ) - 1, fmt, argptr );
+    va_end( argptr );
+
+    Con_Printf( COLOR_GREEN "[AngelScript DEBUG]: %s", msg );
 }
 
 int Module_IncludeCallback_f( const char *pInclude, const char *pFrom, CScriptBuilder *pBuilder, void *unused )
@@ -452,9 +485,9 @@ CModuleLib::CModuleLib( void )
 
 CModuleLib::~CModuleLib()
 {
-    m_pEngine->Release();
-//    m_pEngine->ShutDownAndRelease();
-    asFree( m_pEngine );
+//    m_pEngine->Release();
+    m_pEngine->ShutDownAndRelease();
+    asFreeMem( m_pEngine );
 
     m_LoadList.clear();
     m_CvarList.clear();
@@ -502,7 +535,7 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
 
     // init memory manager
     Mem_Init();
-    asSetGlobalMemoryFunctions( asAlloc, asFree );
+    asSetGlobalMemoryFunctions( AS_Alloc, AS_Free );
 
     g_pModuleLib = new ( Z_Malloc( sizeof( *g_pModuleLib ), TAG_GAME ) ) CModuleLib();
 
@@ -517,11 +550,16 @@ void CModuleLib::Shutdown( void )
 
     Cmd_RemoveCommand( "ml.clean_script_cache" );
     Cmd_RemoveCommand( "ml.garbage_collection_stats" );
-    Cmd_RemoveCommand( "ml_debug.set_script_debug" );
-    Cmd_RemoveCommand( "ml_debug.list_global_vars" );
-    Cmd_RemoveCommand( "ml_debug.list_local_vars" );
-    Cmd_RemoveCommand( "ml_debug.print_value" );
-    Cmd_RemoveCommand( "ml_debug.print_help" );
+    Cmd_RemoveCommand( "ml_debug.set_active" );
+	Cmd_RemoveCommand( "ml_debug.print_help" );
+	Cmd_RemoveCommand( "ml_debug.stacktrace" );
+	Cmd_RemoveCommand( "ml_debug.backtrace" );
+	Cmd_RemoveCommand( "ml_debug.clear_breakpoint" );
+	Cmd_RemoveCommand( "ml_debug.set_breakpoint" );
+	Cmd_RemoveCommand( "ml_debug.continue" );
+	Cmd_RemoveCommand( "ml_debug.step_into" );
+	Cmd_RemoveCommand( "ml_debug.step_out" );
+	Cmd_RemoveCommand( "ml_debug.step_over" );
     Cmd_RemoveCommand( "ml_debug.print_array_memory_stats" );
 
     g_pModuleLib->~CModuleLib();

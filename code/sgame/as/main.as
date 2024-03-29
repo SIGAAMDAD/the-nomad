@@ -56,6 +56,7 @@ namespace TheNomad::SGame {
 	ConVar@ sgame_GroundFriction;
 	ConVar@ sgame_AirFriction;
 	ConVar@ sgame_MaxSpeed;
+	ConVar@ sgame_ToggleHUD;
 };
 
 namespace ImGui {
@@ -140,7 +141,7 @@ void InitCvars() {
 	@TheNomad::SGame::sgame_HellbreakerOn = TheNomad::CvarManager.AddCvar( "sgame_HellbreakerOn", "0", CVAR_TEMP, true );
 	@TheNomad::SGame::sgame_GfxDetail = TheNomad::CvarManager.AddCvar( "sgame_GfxDetail", "10", CVAR_SAVE, false );
 	@TheNomad::SGame::sgame_Difficulty = TheNomad::CvarManager.AddCvar( "sgame_Difficulty", "2", CVAR_TEMP, false );
-	@TheNomad::SGame::sgame_DebugMode = TheNomad::CvarManager.AddCvar( "sgame_DebugMode", "0", CVAR_TEMP, true );
+	@TheNomad::SGame::sgame_DebugMode = TheNomad::CvarManager.AddCvar( "sgame_DebugMode", "1", CVAR_TEMP, true );
 	@TheNomad::SGame::sgame_MusicChangeDelta = TheNomad::CvarManager.AddCvar( "sgame_MusicChangeDelta", "500", CVAR_LATCH | CVAR_TEMP, false );
 	@TheNomad::SGame::sgame_SoundDissonance = TheNomad::CvarManager.AddCvar( "sgame_SoundDissonance", "2.2", CVAR_LATCH | CVAR_SAVE, false );
 	@TheNomad::SGame::sgame_MaxSoundChannels = TheNomad::CvarManager.AddCvar( "sgame_MaxSoundChannels", "256", CVAR_INIT | CVAR_SAVE, false );
@@ -165,6 +166,7 @@ void InitCvars() {
 	@TheNomad::SGame::sgame_GroundFriction = TheNomad::CvarManager.AddCvar( "sgame_GroundFriction", "0.9", CVAR_INIT | CVAR_SAVE, true );
 	@TheNomad::SGame::sgame_AirFriction = TheNomad::CvarManager.AddCvar( "sgame_AirFriction", "0.5", CVAR_INIT | CVAR_SAVE, true );
 	@TheNomad::SGame::sgame_MaxSpeed = TheNomad::CvarManager.AddCvar( "sgame_MaxSpeed", "20.5", CVAR_INIT | CVAR_ROM, false );
+	@TheNomad::SGame::sgame_ToggleHUD = TheNomad::CvarManager.AddCvar( "sgame_ToggleHUD", "1", CVAR_TEMP | CVAR_SAVE, true );
 }
 
 int ModuleInit() {
@@ -219,9 +221,8 @@ int ModuleOnConsoleCommand() {
 int ModuleOnSaveGame() {
 	ConsolePrint( "Saving game, please do not close out of app...\n" );
 
-	array<TheNomad::GameSystem::GameObject@>@ GameObjects = @TheNomad::GameSystem::GameSystems;
-	for ( uint i = 0; i < GameObjects.Count(); i++ ) {
-		GameObjects[i].OnSave();
+	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
+		TheNomad::GameSystem::GameSystems[i].OnSave();
 	}
 
 	ConsolePrint( "Done.\n" );
@@ -230,26 +231,23 @@ int ModuleOnSaveGame() {
 }
 
 int ModuleOnLoadGame() {
-	array<TheNomad::GameSystem::GameObject@>@ GameObjects = @TheNomad::GameSystem::GameSystems;
-	for ( uint i = 0; i < GameObjects.Count(); i++ ) {
-		GameObjects[i].OnLoad();
+	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
+		TheNomad::GameSystem::GameSystems[i].OnLoad();
 	}
 	return 1;
 }
 
 int ModuleOnLevelStart() {
-	array<TheNomad::GameSystem::GameObject@>@ GameObjects = @TheNomad::GameSystem::GameSystems;
-	for ( uint i = 0; i < GameObjects.Count(); i++ ) {
-		GameObjects[i].OnLevelStart();
+	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
+		TheNomad::GameSystem::GameSystems[i].OnLevelStart();
 	}
 
 	return 1;
 }
 
 int ModuleOnLevelEnd() {
-	array<TheNomad::GameSystem::GameObject@>@ GameObjects = @TheNomad::GameSystem::GameSystems;
-	for ( uint i = 0; i < GameObjects.Count(); i++ ) {
-		GameObjects[i].OnLevelEnd();
+	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
+		TheNomad::GameSystem::GameSystems[i].OnLevelEnd();
 	}
 
 	return 1;
@@ -271,12 +269,12 @@ int ModuleOnRunTic( uint msec )
 	TheNomad::GameSystem::GameManager.SetMsec( msec );
 
 	TheNomad::Engine::Renderer::ClearScene();
+	TheNomad::GameSystem::SetCameraPos( vec2( 0, 0 ) );
 
 	const uint flags = RSF_ORTHO_TYPE_WORLD;
 
-	array<TheNomad::GameSystem::GameObject@>@ GameObjects = @TheNomad::GameSystem::GameSystems;
-	for ( uint i = 0; i < GameObjects.Count(); i++ ) {
-		GameObjects[i].OnRunTic();
+	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
+		TheNomad::GameSystem::GameSystems[i].OnRunTic();
 	}
 
 	TheNomad::Engine::Renderer::RenderScene( 0, 0, TheNomad::GameSystem::GameManager.GetGPUConfig().screenWidth,

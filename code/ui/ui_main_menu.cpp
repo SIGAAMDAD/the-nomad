@@ -120,6 +120,8 @@ void MainMenu_Draw( void )
         Sys_MessageBox( "Game Error", errorMenu.message, false );
         Snd_PlaySfx( ui->sfx_null );
         memset( &errorMenu, 0, sizeof( errorMenu ) );
+        Cvar_Set( "com_errorMessage", "" );
+        return;
     }
 
     if ( menu.noMenu ) {
@@ -252,9 +254,6 @@ void MainMenu_Cache( void )
         Key_SetCatcher( KEYCATCH_UI );
         ui->ForceMenuOff();
         ui->PushMenu( &errorMenu.handle );
-
-        ImGui::OpenPopup( "Engine Error" );
-
         return;
     }
 

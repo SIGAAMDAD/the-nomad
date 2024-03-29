@@ -236,8 +236,8 @@ static void R_DrawWorld( void )
 
     for (y = 0; y < rg.world->height; y++) {
         for (x = 0; x < rg.world->width; x++) {
-            pos[0] = x - ( glState.viewData.camera.origin[0] * 0.5f );
-            pos[1] = glState.viewData.camera.origin[1] - y;
+            pos[0] = x;
+            pos[1] = -y;
 //            pos[0] = x - (rg.world->width * 0.5f);
 //            pos[1] = rg.world->height - y;
             pos[2] = 0.0f;
