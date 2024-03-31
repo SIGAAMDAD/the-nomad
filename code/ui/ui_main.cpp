@@ -31,6 +31,7 @@ static void UI_Cache_f( void ) {
     SinglePlayerMenu_Cache();
 	LegalMenu_Cache();
 	ModsMenu_Cache();
+	DemoMenu_Cache();
 }
 
 CUIFontCache::CUIFontCache( void ) {
@@ -220,6 +221,7 @@ extern "C" void UI_Shutdown( void )
 
     Cmd_RemoveCommand( "ui.cache" );
 	Cmd_RemoveCommand( "ui.fontinfo" );
+	Cmd_RemoveCommand( "ui.settings_write_bindings" );
 }
 
 // FIXME: call UI_Shutdown instead
@@ -265,6 +267,7 @@ extern "C" void UI_Init( void )
     // add commands
     Cmd_AddCommand( "ui.cache", UI_Cache_f );
 	Cmd_AddCommand( "ui.fontinfo", CUIFontCache::ListFonts_f );
+	Cmd_AddCommand( "ui.settings_write_bindings", UI_SettingsWriteBinds_f );
 }
 
 void Menu_Cache( void )
@@ -295,6 +298,7 @@ extern "C" void UI_DrawFPS( bool useWindow = false )
     int32_t t, frameTime;
     int32_t total, i;
     int32_t fps;
+	extern ImFont *RobotoMono;
 
     fps = 0;
 
@@ -318,6 +322,10 @@ extern "C" void UI_DrawFPS( bool useWindow = false )
 		fps = previous;
 	}
 
+	if ( RobotoMono ) {
+		FontCache()->SetActiveFont( RobotoMono );
+	}
+
 	if ( useWindow ) {
 		ImGui::Text( "%ifps", fps );
 		return;
@@ -325,7 +333,7 @@ extern "C" void UI_DrawFPS( bool useWindow = false )
 
     ImGui::Begin( "DrawFPS##UI", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar
                                         | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoBackground );
-    ImGui::SetWindowPos( ImVec2( 900 * ui->scale, 8 * ui->scale ) );
+    ImGui::SetWindowPos( ImVec2( 1000 * ui->scale + ui->bias, 8 * ui->scale ) );
     ImGui::SetWindowFontScale( 1.5f * ui->scale );
     ImGui::Text( "%ifps", fps );
     ImGui::End();
@@ -339,19 +347,22 @@ extern "C" void UI_DrawDiagnositics( void )
     if (!ui_diagnostics->i) {
         return;
     }
-    else if ( !com_fullyInitialized || !ImGui::GetFont() ) {
+    else if ( !com_fullyInitialized ) {
         return;
     }
 
     Sys_DisplayEngineStats();
 }
 
+extern "C" void UI_ShowDemoMenu( void )
+{
+	ui->SetActiveMenu( UI_MENU_DEMO );
+}
+
 extern "C" void UI_Refresh( int32_t realtime )
 {
 	ui->SetFrameTime( realtime - ui->GetRealTime() );
 	ui->SetRealTime( realtime );
-
-	UI_DrawDiagnositics();
 
 	if ( !ui_active->i ) {
 		ui->EscapeMenuToggle( STATE_PAUSE );
@@ -751,6 +762,7 @@ void Sys_DisplayEngineStats( void )
 	if ( RobotoMono ) {
 		FontCache()->SetActiveFont( RobotoMono );
 	}
+	const float fontScale = ImGui::GetFont()->Scale;
 	ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 0.75f ) * ui->scale );
 
 	if ( !stats ) {
@@ -797,6 +809,8 @@ void Sys_DisplayEngineStats( void )
 	ImGui::Text( "%s", ui->GetConfig().vendor_string );
 	ImGui::Text( "%s", ui->GetConfig().renderer_string );
     ImGui::Text( "%s", ui_cpuString->s );
-	
+
+	ImGui::SetWindowFontScale( fontScale );
+
 	ImGui::End();
 }

@@ -38,16 +38,18 @@
 
 BEGIN_AS_NAMESPACE
 
-asCAtomic::asCAtomic()
+asCAtomic::asCAtomic( void )
 {
 	value = 0;
 }
 
-asDWORD asCAtomic::get() const
+asDWORD asCAtomic::get( void ) const
 {
 	// A very high ref count is highly unlikely. It most likely a problem with
 	// memory that has been overwritten or is being accessed after it was deleted.
-	asASSERT(value < 1000000);
+	if ( value >= 1000000 ) {
+		AS_Printf( COLOR_RED "atomic integer value is really fucking big: %u\n", value );
+	}
 
 	return value;
 }
@@ -56,27 +58,33 @@ void asCAtomic::set(asDWORD val)
 {
 	// A very high ref count is highly unlikely. It most likely a problem with
 	// memory that has been overwritten or is being accessed after it was deleted.
-	asASSERT(value < 1000000);
+	if ( value >= 1000000 ) {
+		AS_Printf( COLOR_RED "atomic integer value is really fucking big: %u\n", value );
+	}
 
 	value = val;
 }
 
-asDWORD asCAtomic::atomicInc()
+asDWORD asCAtomic::atomicInc( void )
 {
 	// A very high ref count is highly unlikely. It most likely a problem with
 	// memory that has been overwritten or is being accessed after it was deleted.
-	asASSERT(value < 1000000);
+	if ( value >= 1000000 ) {
+		AS_Printf( COLOR_RED "atomic integer value is really fucking big: %u\n", value );
+	}
 
-	return asAtomicInc((int&)value);
+	return asAtomicInc( *(int *)&value );
 }
 
-asDWORD asCAtomic::atomicDec()
+asDWORD asCAtomic::atomicDec( void )
 {
 	// A very high ref count is highly unlikely. It most likely a problem with
 	// memory that has been overwritten or is being accessed after it was deleted.
-	asASSERT(value < 1000000);
+	if ( value >= 1000000 ) {
+		AS_Printf( COLOR_RED "atomic integer value is really fucking big: %u\n", value );
+	}
 
-	return asAtomicDec((int&)value);
+	return asAtomicDec( *(int *)&value );
 }
 
 //

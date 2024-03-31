@@ -7,9 +7,11 @@ void G_ShutdownSGame( void )
 {
     Key_SetCatcher( Key_GetCatcher() & ~KEYCATCH_SGAME );
 
-    if ( !sgvm ) {
+    if ( !sgvm /* || Cvar_VariableString( "com_errorMessage" )[0] */ ) {
         return;
     }
+
+    sgvm->m_pHandle->ClearMemory();
     
     sgvm = NULL;
     FS_VM_CloseFiles( H_SGAME );

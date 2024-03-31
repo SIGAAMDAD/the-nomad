@@ -1149,7 +1149,7 @@ Mem_Init
 ==================
 */
 void Mem_Init( void ) {
-	mem_heap = new ( malloc( sizeof( *mem_heap ) ) ) idHeap();
+	mem_heap = new ( Z_Malloc( sizeof( *mem_heap ), TAG_GAME ) ) idHeap();
 	Mem_ClearFrameStats();
 }
 
@@ -1161,7 +1161,8 @@ Mem_Shutdown
 void Mem_Shutdown( void ) {
 	idHeap *m = mem_heap;
 	mem_heap = NULL;
-	delete m;
+	m->~idHeap();
+	Z_Free( m );
 }
 
 /*
@@ -1262,8 +1263,8 @@ void Mem_Dump( const char *fileName ) {
 			FS_Printf( f, "size: %6d KB: %s, line: %d [%s]\r\n", ( b->size >> 10 ), Mem_CleanupFileName(b->fileName), b->lineNumber, dump );
 		}
 		else {
-			FS_Printf( f, "size: %7d B: %s, line: %d [%s], call stack:\r\n", b->size, Mem_CleanupFileName(b->fileName), b->lineNumber, dump );
-//			FS_Printf( f, "size: %7d B: %s, line: %d [%s], call stack: %s\r\n", b->size, Mem_CleanupFileName(b->fileName), b->lineNumber, dump );
+//			FS_Printf( f, "size: %7d B: %s, line: %d [%s], call stack:\r\n", b->size, Mem_CleanupFileName(b->fileName), b->lineNumber, dump );
+			FS_Printf( f, "size: %7d B: %s, line: %d [%s], call stack: %s\r\n", b->size, Mem_CleanupFileName(b->fileName), b->lineNumber, dump );
 		}
 	}
 
@@ -1316,6 +1317,8 @@ void Mem_DumpCompressed( const char *fileName, memorySortType_t memSort, int num
 	allocInfo_t *a, *nexta, *allocInfo = NULL, *sortedAllocInfo = NULL, *prevSorted, *nextSorted;
 	idStr m, funcName;
 	fileHandle_t f;
+
+	Con_Printf( "Dumping compressed memory statistics to '%s', this might take a while...\n", fileName );
 
 	// build list with memory allocations
 	totalSize = 0;
@@ -1436,11 +1439,28 @@ void Mem_DumpCompressed_f( void ) {
 	memorySortType_t memSort = MEMSORT_LOCATION;
 	int numFrames = 0;
 
+	/*
+	if ( Cmd_Argc() < 2 ) {
+		Con_Printf( "memoryDumpCompressed [options] [filename]\n"
+					"options:\n"
+					"  -s     sort on size\n"
+					"  -l     sort on location\n"
+					"  -a     sort on the number of allocations\n"
+					"  -cs1   sort on first function on call stack\n"
+					"  -cs2   sort on second function on call stack\n"
+					"  -cs3   sort on third function on call stack\n"
+					"  -f<X>  only report allocations the last X frames\n"
+					"By default the memory allocations are sorted on location.\n"
+					"By default a 'memorydump.txt' is written if no file name is specified.\n" );
+		return;
+	} */
+
 	// get cmd-line options
 	argNum = 1;
 	arg = Cmd_Argv( argNum );
 	while( arg[0] == '-' ) {
-		arg = Cmd_Argv( ++argNum );
+		argNum++;
+		arg = Cmd_Argv( argNum );
 		if ( idStr::Icmp( arg, "s" ) == 0 ) {
 			memSort = MEMSORT_SIZE;
 		} else if ( idStr::Icmp( arg, "l" ) == 0 ) {
@@ -1462,8 +1482,7 @@ void Mem_DumpCompressed_f( void ) {
 						"By default the memory allocations are sorted on location.\n"
 						"By default a 'memorydump.txt' is written if no file name is specified.\n" );
 			return;
-		}
-		arg = Cmd_Argv( ++argNum );
+		};
 	}
 	if ( argNum >= Cmd_Argc() ) {
 		fileName = "memorydump.txt";
@@ -1674,7 +1693,8 @@ void Mem_Shutdown( void ) {
 
 	idHeap *m = mem_heap;
 	mem_heap = NULL;
-    delete m;
+	m->~idHeap();
+	free( m );
 
 	Cmd_RemoveCommand( "memoryDumpCompressed" );
 	Cmd_RemoveCommand( "memoryDump" );

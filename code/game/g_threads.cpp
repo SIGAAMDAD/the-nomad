@@ -16,6 +16,10 @@ int CRenderThread::Run( void ) {
     EASY_NONSCOPED_BLOCK( "Render Thread" );
 #endif
 
+    if ( com_errorEntered ) {
+        return -1;
+    }
+
     re.BeginFrame( STEREO_CENTER );
     
     return 1;

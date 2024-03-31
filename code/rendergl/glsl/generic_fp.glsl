@@ -77,7 +77,5 @@ void AmbientLight() {
 }
 
 void main() {
-    vec4 color = v_Color;
-    color = vec4(1.0);
-    a_Color = texture2D( u_DiffuseMap, v_TexCoords ) * color;
+    a_Color = texture2D( u_DiffuseMap, v_TexCoords );
 }

@@ -1250,6 +1250,7 @@ void Hunk_SetMark( void )
 {
 	CThreadAutoLock lock( hunkLock );
 	
+	Con_DPrintf( "Setting hunk data marker...\n" );
 	hunk_low.mark = hunk_low.permanent;
 	hunk_high.mark = hunk_high.permanent;
 }
@@ -1257,6 +1258,8 @@ void Hunk_SetMark( void )
 void Hunk_ClearToMark( void )
 {
 	CThreadAutoLock lock( hunkLock );
+
+	Con_DPrintf( "Clearing to set hunk mark...\n" );
 	hunk_low.permanent = hunk_low.temp = hunk_low.mark;
 	hunk_high.permanent = hunk_high.temp = hunk_high.mark;
 }

@@ -16,6 +16,7 @@
 #include "../system/sys_timer.h"
 #include "scriptlib/scriptjson.h"
 #include "module_engine/module_gpuconfig.h"
+#include "scriptlib/scriptconvert.h"
 
 //
 // c++ compatible wrappers around angelscript engine function calls
@@ -181,11 +182,11 @@ DEFINE_CALLBACK( CvarRegisterGeneric ) {
 DEFINE_CALLBACK( CvarUpdateGeneric ) {
     vmCvar_t vmCvar;
 
-    string_t *value = (string_t *)pGeneric->GetArgObject( 1 );
-    asINT64 *intValue = (asINT64 *)pGeneric->GetArgAddress( 2 );
-    float *floatValue = (float *)pGeneric->GetArgAddress( 3 );
-    asINT32 *modificationCount = (asINT32 *)pGeneric->GetArgAddress( 4 );
-    const cvarHandle_t cvarHandle = pGeneric->GetArgWord( 5 );
+    string_t *value = (string_t *)pGeneric->GetArgObject( 0 );
+    asINT64 *intValue = (asINT64 *)pGeneric->GetArgAddress( 1 );
+    float *floatValue = (float *)pGeneric->GetArgAddress( 2 );
+    asINT32 *modificationCount = (asINT32 *)pGeneric->GetArgAddress( 3 );
+    const cvarHandle_t cvarHandle = pGeneric->GetArgWord( 4 );
 
     memset( &vmCvar, 0, sizeof(vmCvar) );
     N_strncpyz( vmCvar.s, value->c_str(), sizeof(vmCvar.s) );
@@ -998,9 +999,8 @@ DEFINE_CALLBACK( SetActiveMap ) {
     uint32_t *nCheckpoints = (uint32_t *)pGeneric->GetArgAddress( 1 );
     uint32_t *nSpawns = (uint32_t *)pGeneric->GetArgAddress( 2 );
     uint32_t *nTiles = (uint32_t *)pGeneric->GetArgAddress( 3 );
-    CModuleLinkEntity *activeEnts = (CModuleLinkEntity *)pGeneric->GetArgObject( 4 );
 
-    G_SetActiveMap( hMap, nCheckpoints, nSpawns, nTiles, &activeEnts->handle );
+    G_SetActiveMap( hMap, nCheckpoints, nSpawns, nTiles );
 }
 
 static void GetTileData( CScriptArray *tiles ) {
@@ -1020,7 +1020,7 @@ static void GetGPUConfig( CModuleGPUConfig *config ) {
 }
 
 static void SetCameraPos( const vec2 *pos ) {
-    G_SetCameraData( (const float *)pos, 1.6f, 0.0f );
+//    G_SetCameraData( (const float *)pos, 1.6f, 0.0f );
 }
 
 static nhandle_t OpenFileRead( const string_t *fileName ) {
@@ -1661,6 +1661,8 @@ static void Register_VecType( const char *name, const char *p_name )
 void ModuleLib_Register_Engine( void )
 {
     PROFILE_FUNCTION();
+
+    CScriptConvert::Register( g_pModuleLib->GetScriptEngine() );
 
     REGISTER_TYPEDEF( "int8", "char" );
 
@@ -2444,8 +2446,7 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetCheckpointData( uvec3& out, uint )", WRAP_FN( G_GetCheckpointData ) );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetSpawnData( uvec3& out, uint& out, uint& out, uint )", WRAP_FN( G_GetSpawnData ) );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetTileData( array<array<uint>>@ )", WRAP_FN( GetTileData ) );
-        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::GameSystem::SetActiveMap( int, uint& out, uint& out, uint& out, "
-            "TheNomad::GameSystem::LinkEntity& in )", asFUNCTION( ModuleLib_SetActiveMap ), asCALL_GENERIC );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::GameSystem::SetActiveMap( int, uint& out, uint& out, uint& out )", asFUNCTION( ModuleLib_SetActiveMap ), asCALL_GENERIC );
         REGISTER_GLOBAL_FUNCTION( "int LoadMap( const string& in )", WRAP_FN( LoadMap ) );
     }
 

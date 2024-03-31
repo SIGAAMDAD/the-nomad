@@ -732,7 +732,7 @@ void CDebugger::PrintCallstack( asIScriptContext *pContext )
 	 
 	pFileName = NULL;
 	nLine = 0;
-	 
+	
 	for ( asUINT n = 0; n < pContext->GetCallstackSize(); n++ ) {
 	 	nLine = pContext->GetLineNumber( n, 0, &pFileName );
 	 	

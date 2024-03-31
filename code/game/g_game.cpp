@@ -520,7 +520,7 @@ static void G_Vid_Restart( refShutdownCode_t code )
     PROFILE_FUNCTION();
 
     // shutdown VMs
-    G_ShutdownVMs();
+    G_ShutdownVMs( qfalse );
 
     // shutdown the renderer and clear the renderer interface
     G_ShutdownRenderer(code);
@@ -529,8 +529,6 @@ static void G_Vid_Restart( refShutdownCode_t code )
     gi.soundStarted = qfalse;
 
     G_ShutdownArchiveHandler();
-
-    g_pModuleLib->Shutdown();
 
     // clear resource references
 	FS_ClearBFFReferences( FS_UI_REF | FS_SGAME_REF );
@@ -596,7 +594,7 @@ static void G_Snd_Restart_f( void )
 }
 
 static void G_VM_Restart_f( void ) {
-    G_ShutdownVMs();
+    G_ShutdownVMs( qfalse );
 
     G_InitUI();
     G_InitSGame();
@@ -905,7 +903,7 @@ void G_Shutdown( qboolean quit )
 
     G_ShutdownArchiveHandler();
 
-    G_ShutdownVMs();
+    G_ShutdownVMs( quit );
     G_ShutdownRenderer( quit ? REF_UNLOAD_DLL : REF_DESTROY_WINDOW );
 
     remove( "nomad.pid" );
@@ -940,8 +938,11 @@ void G_FlushMemory( void ) {
     G_StartHunkUsers();
 }
 
-void G_ShutdownVMs( void ) {
+void G_ShutdownVMs( qboolean quit ) {
     G_ShutdownSGame();
+    if ( g_pModuleLib ) {
+        g_pModuleLib->Shutdown( quit );
+    }
     G_ShutdownUI();
 
     gi.uiStarted = qfalse;
@@ -978,9 +979,6 @@ void G_StartHunkUsers( void )
         gi.sgameStarted = qtrue;
         G_InitSGame();
     }
-
-    // set the marker before loading any map assets
-    Hunk_SetMark();
 }
 
 void G_ShutdownAll( void )
@@ -991,10 +989,7 @@ void G_ShutdownAll( void )
     Snd_StopAll();
 
     // shutdown VMs
-    G_ShutdownVMs();
-
-    // shutdown modulelib
-    g_pModuleLib->Shutdown();
+    G_ShutdownVMs( qfalse );
 
     new ( g_world ) CGameWorld();
 
@@ -1076,16 +1071,18 @@ static void G_MoveCamera( void )
         p.x += 0.05f;
     }
     if (Key_IsDown( KEY_N )) {
-        p.z += 0.05f;
+        p.z += 0.005f;
     }
     if (Key_IsDown( KEY_M )) {
-        p.z -= 0.05f;
+        p.z -= 0.005f;
     }
 }
 
 void G_Frame(int32_t msec, int32_t realMsec)
 {
     uint32_t i, j;
+
+    G_MoveCamera();
 
     // save the msec before checking pause
     gi.realFrameTime = msec;

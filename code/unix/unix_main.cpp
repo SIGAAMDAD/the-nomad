@@ -704,8 +704,6 @@ static void Sys_InitSignals( void );
 
 static void SignalHandle( int signum )
 {
-    Sys_InitSignals();
-
     if ( signum == SIGSEGV ) {
         exit_type = &signals[0];
         Sys_SetError( ERR_SEGGY );
@@ -780,6 +778,8 @@ void Sys_Init( void )
 
     // get the initial time base
 	Sys_Milliseconds();
+
+    Sys_InitSignals();
 
     err = Sys_InitConsole();
 	if ( err == TTY_ENABLED ) {

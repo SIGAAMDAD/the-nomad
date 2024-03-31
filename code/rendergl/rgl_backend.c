@@ -486,7 +486,7 @@ static const void *RB_SwapBuffers(const void *data)
 		ri.Hunk_FreeTempMemory( stencilReadback );
 	}
 	
-	if ( glContext.ARB_framebuffer_object ) {
+	if ( glContext.ARB_framebuffer_object && r_arb_framebuffer_object->i ) {
 //		if ( !backend.framePostProcessed ) {
 			if ( rg.msaaResolveFbo && r_hdr->i ) {
 				// Resolving an RGB16F MSAA FBO to the screen messes with the brightness, so resolve to an RGB16F FBO first

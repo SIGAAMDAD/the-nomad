@@ -16,11 +16,22 @@ CModuleStringFactory *GetStringFactorySingleton( void )
 		
 		CThreadAutoLock<CThreadMutex> lock( mutex );
 		if ( !g_pStringFactory ) {
-			g_pStringFactory = new ( Z_Malloc( sizeof( *g_pStringFactory ), TAG_GAME ) ) CModuleStringFactory();
+			g_pStringFactory = new ( malloc( sizeof( *g_pStringFactory ) ) ) CModuleStringFactory();
 		}
 	}
 	return g_pStringFactory;
 }
+
+struct CStringFactoryDeleter {
+	~CStringFactoryDeleter() {
+		if ( g_pStringFactory ) {
+			g_pStringFactory->~CModuleStringFactory();
+			free( g_pStringFactory );
+		}
+	}
+};
+
+static CStringFactoryDeleter factoryDeleter;
 
 // This macro is used to avoid warnings about unused variables.
 // Usually where the variables are only used in debug mode.

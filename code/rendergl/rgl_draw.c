@@ -372,7 +372,7 @@ void RB_IterateShaderStages( shader_t *shader )
 
         GLSL_UseProgram( sp );
 
-		GLSL_SetUniformInt( sp, UNIFORM_NUM_LIGHTS, backend.refdef.numDLights + rg.world->numLights );
+//		GLSL_SetUniformInt( sp, UNIFORM_NUM_LIGHTS, backend.refdef.numDLights + rg.world->numLights );
         GLSL_SetUniformMatrix4( sp, UNIFORM_MODELVIEWPROJECTION, glState.viewData.camera.viewProjectionMatrix );
 
         GL_State( stageP->stateBits );
@@ -389,6 +389,7 @@ void RB_IterateShaderStages( shader_t *shader )
 			GLSL_SetUniformInt( sp, UNIFORM_ALPHA_TEST, 0 );
 		}
 
+#if 0
 		if ( r_lightmap->i ) {
 			vec4_t v;
 			VectorSet4( v, 1.0f, 0.0f, 0.0f, 1.0f );
@@ -423,22 +424,25 @@ void RB_IterateShaderStages( shader_t *shader )
 			GLSL_SetUniformVec4( sp, UNIFORM_BASECOLOR, baseColor );
 			GLSL_SetUniformVec4( sp, UNIFORM_VERTCOLOR, vertColor );
 		}
-
+#endif
 
 
         GLSL_SetUniformInt( sp, UNIFORM_COLORGEN, stageP->rgbGen );
         GLSL_SetUniformInt( sp, UNIFORM_ALPHAGEN, stageP->alphaGen );
 
-        GL_BindTexture( GL_TEXTURE0, stageP->bundle[TB_DIFFUSEMAP].image );
+		if ( !stageP->bundle[TB_DIFFUSEMAP].image ) {
+			ri.Error( ERR_DROP, "RB_IterateShaderStages: shader has missing diffuseMap stage texture" );
+		}
+        GL_BindTexture( 0, stageP->bundle[TB_DIFFUSEMAP].image );
         GLSL_SetUniformInt( sp, UNIFORM_DIFFUSE_MAP, 0 );
 
 		if ( stageP->bundle[TB_NORMALMAP].image ) {
-			GL_BindTexture( GL_TEXTURE1, stageP->bundle[TB_NORMALMAP].image->id );
+			GL_BindTexture( 1, stageP->bundle[TB_NORMALMAP].image );
 			GLSL_SetUniformInt( sp, UNIFORM_NORMAL_MAP, 1 );
 		}
 		if ( stageP->bundle[TB_SPECULARMAP].image ) {
-			GL_BindTexture( GL_TEXTURE2, stageP->bundle[TB_SPECULARMAP].image->id );
-			GLSL_SetUniformInt( sp, UNIFORM_SPECULAR_MAP, 1 );
+			GL_BindTexture( 2, stageP->bundle[TB_SPECULARMAP].image );
+			GLSL_SetUniformInt( sp, UNIFORM_SPECULAR_MAP, 2 );
 		}
 
         //

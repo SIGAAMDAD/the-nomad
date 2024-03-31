@@ -81,8 +81,6 @@ bool isAligned(const void* const pointer, asUINT alignment);
 
 // We don't overload the new operator as that would affect the application as well
 
-#ifndef AS_DEBUG
-
 	#define asNEW(x)        new(userAlloc(sizeof(x))) x
 	#define asDELETE(ptr,x) {void *tmp = ptr; (ptr)->~x(); userFree(tmp);}
 
@@ -92,24 +90,6 @@ bool isAligned(const void* const pointer, asUINT alignment);
 #ifdef WIP_16BYTE_ALIGN
 	#define asNEWARRAYALIGNED(x,cnt, alignment)  (x*)userAllocAligned(sizeof(x)*cnt, alignment)
 	#define asDELETEARRAYALIGNED(ptr) userFreeAligned(ptr)
-#endif
-
-#else
-
-	typedef void *(*asALLOCFUNCDEBUG_t)(size_t, const char *, unsigned int);
-
-	#define asNEW(x)        new(((asALLOCFUNCDEBUG_t)(userAlloc))(sizeof(x), __FILE__, __LINE__)) x
-	#define asDELETE(ptr,x) {void *tmp = ptr; (ptr)->~x(); userFree(tmp);}
-
-	#define asNEWARRAY(x,cnt)  (x*)((asALLOCFUNCDEBUG_t)(userAlloc))(sizeof(x)*cnt, __FILE__, __LINE__)
-	#define asDELETEARRAY(ptr) userFree(ptr)
-
-#ifdef WIP_16BYTE_ALIGN
-	//TODO: Equivalent of debug allocation function with alignment?
-	#define asNEWARRAYALIGNED(x,cnt, alignment)  (x*)userAllocAligned(sizeof(x)*cnt, alignment)
-	#define asDELETEARRAYALIGNED(ptr) userFreeAligned(ptr)
-#endif
-
 #endif
 
 END_AS_NAMESPACE

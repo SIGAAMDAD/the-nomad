@@ -2,6 +2,7 @@
 #define SCRIPTARRAY_H
 
 #include "../module_public.h"
+#include "../../engine/n_threads.h"
 // Sometimes it may be desired to use the same method names as used by C++ STL.
 // This may for example reduce time when converting code from script to C++ or
 // back.
@@ -107,7 +108,7 @@ public:
 	const void *cbegin( void ) const;
 	const void *cend( void ) const;
 protected:
-	mutable int32_t refCount;
+	mutable CThreadAtomic<int32_t> refCount;
 	mutable bool    gcFlag;
 	asITypeInfo    *objType;
 	asIScriptFunction *subTypeHandleAssignFunc;
@@ -123,8 +124,10 @@ protected:
 	CScriptArray(const CScriptArray &other);
 	virtual ~CScriptArray();
 
+	void DeleteBuffer( SArrayBuffer *buffer );
+
 	void AllocBuffer( uint32_t nItems );
-	void DoAllocate( uint32_t nItems );
+	void DoAllocate( int delta, uint32_t at );
 	bool  Less(const void *a, const void *b, bool asc);
 	void *GetArrayItemPointer(int index);
 	void *GetDataPointer(void *buffer);
@@ -132,10 +135,10 @@ protected:
 	void  Swap(void *a, void *b);
 	void  Precache();
 	bool  CheckMaxSize(asUINT numElements);
-	void  CreateBuffer( asUINT numElements);
-	void  CopyBuffer( const CScriptArray& other );
-	void  Construct(byte *buf, asUINT start, asUINT end);
-	void  Destruct(byte *buf, asUINT start, asUINT end);
+	void  CreateBuffer( SArrayBuffer **buffer, asUINT numElements);
+	void  CopyBuffer( SArrayBuffer *dst, SArrayBuffer *src );
+	void  Construct( SArrayBuffer *buf, asUINT start, asUINT end );
+	void  Destruct( SArrayBuffer *buf, asUINT start, asUINT end );
 	bool  Equals(const void *a, const void *b, asIScriptContext *ctx, SArrayCache *cache) const;
 };
 

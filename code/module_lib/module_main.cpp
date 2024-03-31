@@ -13,8 +13,11 @@
 #include "module_debugger.h"
 #include "scriptlib/scriptarray.h"
 #include "scriptlib/scriptdictionary.h"
+#include "angelscript/as_texts.h"
 
 moduleImport_t moduleImport;
+
+static CModuleLib *s_pModuleInstance;
 
 cvar_t *ml_angelScript_DebugPrint;
 cvar_t *ml_debugMode;
@@ -219,9 +222,9 @@ void CModuleLib::LoadModule( const char *pModule )
     const int32_t versionUpdate = parse[ "version" ][ "version_update" ];
     const int32_t versionPatch = parse[ "version" ][ "version_patch" ];
 
-    pHandle = new ( Hunk_Alloc( sizeof( *pHandle ), h_low ) ) CModuleHandle( pModule, parse.at( "submodules" ), versionMajor, versionUpdate, versionPatch,
+    pHandle = new ( Mem_Alloc( sizeof( *pHandle ) ) ) CModuleHandle( pModule, parse.at( "submodules" ), versionMajor, versionUpdate, versionPatch,
         includePaths );
-    m = new ( Hunk_Alloc( sizeof( *m ), h_low ) ) CModuleInfo( parse, pHandle );
+    m = new ( Mem_Alloc( sizeof( *m ) ) ) CModuleInfo( parse, pHandle );
     m_LoadList.emplace_back( m );
 }
 
@@ -245,11 +248,14 @@ void CModuleLib::RunModules( EModuleFuncId nCallId, uint32_t nArgs, ... )
     switch ( nCallId ) {
     case ModuleOnLevelStart: {
     case ModuleOnLevelEnd:
+    case ModuleOnLoadGame:
+    case ModuleOnSaveGame:
         CTimer time;
 
         time.Run();
         Con_DPrintf( "Garbage collection started...\n" );
-        g_pModuleLib->GetScriptEngine()->GarbageCollect( 1, (uint32_t)ml_garbageCollectionIterations->i );
+        g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE
+            | asGC_FULL_CYCLE, (uint32_t)ml_garbageCollectionIterations->i );
         time.Stop();
         Con_DPrintf( "Garbage collection: %llims, %li iterations\n", time.ElapsedMilliseconds().count(), ml_garbageCollectionIterations->i );
         break; }
@@ -284,6 +290,22 @@ int CModuleLib::ModuleCall( CModuleInfo *pModule, EModuleFuncId nCallId, uint32_
         args[i] = va_arg( argptr, uint32_t );
     }
     va_end( argptr );
+
+    switch ( nCallId ) {
+    case ModuleOnLevelStart: {
+    case ModuleOnLevelEnd:
+    case ModuleOnLoadGame:
+    case ModuleOnSaveGame:
+        CTimer time;
+
+        time.Run();
+        Con_DPrintf( "Garbage collection started...\n" );
+        g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE
+            | asGC_FULL_CYCLE, (uint32_t)ml_garbageCollectionIterations->i );
+        time.Stop();
+        Con_DPrintf( "Garbage collection: %llims, %li iterations\n", time.ElapsedMilliseconds().count(), ml_garbageCollectionIterations->i );
+        break; }
+    };
 
     return pModule->m_pHandle->CallFunc( nCallId, nArgs, args );
 }
@@ -414,7 +436,12 @@ CModuleLib::CModuleLib( void )
 {
     const char *path;
 
+    if ( s_pModuleInstance && s_pModuleInstance->m_pEngine ) {
+        return;
+    }
+
     g_pModuleLib = this;
+
     memset( this, 0, sizeof( *this ) );
 
     //
@@ -426,21 +453,21 @@ CModuleLib::CModuleLib( void )
     }
     CheckASCall( m_pEngine->SetMessageCallback( asFUNCTION( Module_ASMessage_f ), NULL, asCALL_CDECL ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_ALLOW_MULTILINE_STRINGS, true ) );
-    CheckASCall( m_pEngine->SetEngineProperty( asEP_ALLOW_UNSAFE_REFERENCES, false ) );
+    CheckASCall( m_pEngine->SetEngineProperty( asEP_ALLOW_UNSAFE_REFERENCES, true ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_ALWAYS_IMPL_DEFAULT_CONSTRUCT, false ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_COMPILER_WARNINGS, true ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_OPTIMIZE_BYTECODE, true ) );
-    CheckASCall( m_pEngine->SetEngineProperty( asEP_INCLUDE_JIT_INSTRUCTIONS, true ) );
+    CheckASCall( m_pEngine->SetEngineProperty( asEP_INCLUDE_JIT_INSTRUCTIONS, ml_allowJIT->i ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_REQUIRE_ENUM_SCOPE, true ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_USE_CHARACTER_LITERALS, true ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_AUTO_GARBAGE_COLLECT, true ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_HEREDOC_TRIM_MODE, 0 ) );
 
-    m_pScriptBuilder = new ( Z_Malloc( sizeof( *m_pScriptBuilder ), TAG_GAME ) ) CScriptBuilder();
-    g_pDebugger = new ( Z_Malloc( sizeof( *g_pDebugger ), TAG_GAME ) ) CDebugger();
+    m_pScriptBuilder = new ( Mem_Alloc( sizeof( *m_pScriptBuilder ) ) ) CScriptBuilder();
+    g_pDebugger = new ( Mem_Alloc( sizeof( *g_pDebugger ) ) ) CDebugger();
 
     if ( ml_allowJIT->i ) {
-        m_pCompiler = new ( Z_Malloc( sizeof( *m_pCompiler ), TAG_GAME ) ) asCJITCompiler();
+        m_pCompiler = new ( Mem_Alloc( sizeof( *m_pCompiler ) ) ) asCJITCompiler();
         CheckASCall( m_pEngine->SetJITCompiler( m_pCompiler ) );
     }
     m_pScriptBuilder->SetIncludeCallback( Module_IncludeCallback_f, NULL );
@@ -483,30 +510,14 @@ CModuleLib::CModuleLib( void )
     #undef CALL
 }
 
-CModuleLib::~CModuleLib()
-{
-//    m_pEngine->Release();
-    m_pEngine->ShutDownAndRelease();
-    asFreeMem( m_pEngine );
+CModuleLib::~CModuleLib() {
+}
 
-    m_LoadList.clear();
-    m_CvarList.clear();
-    m_RegisteredProcs.clear();
-    m_bRegistered = qfalse;
-
-    g_pDebugger->~CDebugger();
-    g_pStringFactory->~CModuleStringFactory();
-
-    if ( m_pCompiler ) {
-        m_pCompiler->~asCJITCompiler();
-        Z_Free( m_pCompiler );
+static void ML_PrintStringCache_f( void ) {
+    Con_Printf( "Module StringFactory Cache:\n" );
+    for ( const auto& it : g_pStringFactory->m_StringCache ) {
+        Con_Printf( "\"" COLOR_GREEN "%s" COLOR_WHITE "\" references: %i\n", it.first.c_str(), it.second );
     }
-    Z_Free( g_pDebugger );
-    Z_Free( g_pStringFactory );
-
-    m_pCompiler = NULL;
-    g_pDebugger = NULL;
-    g_pStringFactory = NULL;
 }
 
 CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *pExport, version_t nGameVersion )
@@ -532,21 +543,40 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
 
     Cmd_AddCommand( "ml.clean_script_cache", ML_CleanCache_f );
     Cmd_AddCommand( "ml.garbage_collection_stats", ML_GarbageCollectionStats_f );
+    Cmd_AddCommand( "ml_debug.print_string_cache", ML_PrintStringCache_f );
 
     // init memory manager
-    Mem_Init();
     asSetGlobalMemoryFunctions( AS_Alloc, AS_Free );
 
-    g_pModuleLib = new ( Z_Malloc( sizeof( *g_pModuleLib ), TAG_GAME ) ) CModuleLib();
+    if ( !s_pModuleInstance ) {
+        Mem_Init();
+        s_pModuleInstance = new ( Mem_Alloc( sizeof( *s_pModuleInstance ) ) ) CModuleLib();
+    }
+    g_pModuleLib = s_pModuleInstance;
 
     Con_Printf( "--------------------\n" );
 
     return g_pModuleLib;
 }
 
-void CModuleLib::Shutdown( void )
+void CModuleLib::Shutdown( qboolean quit )
 {
+    if ( m_bRecursiveShutdown ) {
+        Con_Printf( COLOR_YELLOW "WARNING: CModuleLib::Shutdown (recursive)\n" );
+        return;
+    }
+    m_bRecursiveShutdown = qtrue;
+
     Con_Printf( "CModuleLib::Shutdown: shutting down modules...\n" );
+
+    if ( Cvar_VariableString( "com_errorMessage" )[0] ) {
+        if ( asGetActiveContext() ) {
+            Cbuf_ExecuteText( EXEC_NOW, va( "ml_debug.set_active \"%s\"", asGetActiveContext()->GetFunction()->GetModuleName() ) );
+            g_pDebugger->PrintCallstack( asGetActiveContext() );
+        }
+
+        // TODO: use the serializer to create a sort of coredump like file for the active script
+    }
 
     Cmd_RemoveCommand( "ml.clean_script_cache" );
     Cmd_RemoveCommand( "ml.garbage_collection_stats" );
@@ -561,10 +591,28 @@ void CModuleLib::Shutdown( void )
 	Cmd_RemoveCommand( "ml_debug.step_out" );
 	Cmd_RemoveCommand( "ml_debug.step_over" );
     Cmd_RemoveCommand( "ml_debug.print_array_memory_stats" );
+    Cmd_RemoveCommand( "ml_debug.print_string_cache" );
 
-    g_pModuleLib->~CModuleLib();
+    m_bRegistered = qfalse;
+
+    if ( quit && m_pScriptBuilder ) {
+        for ( auto& it : m_LoadList ) {
+            if ( it && it->m_pHandle ) {
+                it->m_pHandle->ClearMemory();
+            }
+        }
+
+        if ( m_pCompiler ) {
+            m_pCompiler->~asCJITCompiler();
+        }
+        m_pScriptBuilder->~CScriptBuilder();
+        g_pDebugger->~CDebugger();
+
+        Mem_Shutdown();
+        return;
+    }
+    m_bRecursiveShutdown = qfalse;
     g_pModuleLib = NULL;
-    Mem_Shutdown();
 }
 
 asIScriptEngine *CModuleLib::GetScriptEngine( void ) {

@@ -16,8 +16,8 @@ public:
     void MakeBounds( const glm::vec3& origin );
     const bbox_t ToPOD( void ) const;
 
-    glm::vec2 mins;
-    glm::vec2 maxs;
+    glm::vec3 mins;
+    glm::vec3 maxs;
     float width;
     float height;
 };

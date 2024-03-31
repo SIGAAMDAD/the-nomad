@@ -153,7 +153,7 @@ constexpr GDR_INLINE bool operator!=( const CModuleStringAllocator& a, const CMo
     return true;
 }
 
-using string_t = eastl::basic_string<char, CModuleStringAllocator>;
+using string_t = eastl::basic_string<char, eastl::allocator_malloc<char>>;
 using UtlString = eastl::fixed_string<char, MAX_STRING_CHARS, true, eastl::allocator_malloc<char>>;
 namespace eastl {
 	// for some reason, the eastl doesn't support eastl::hash<eastl::fixed_string>
@@ -337,7 +337,7 @@ public:
     CModuleLib( void );
     ~CModuleLib();
 
-    void Shutdown( void );
+    void Shutdown( qboolean quit );
 	CModuleInfo *GetModule( const char *pName );
 	int ModuleCall( CModuleInfo *pModule, EModuleFuncId nCallId, uint32_t nArgs, ... );
     UtlVector<CModuleInfo *>& GetLoadList( void );
@@ -379,9 +379,9 @@ private:
     UtlHashMap<UtlString, vmCvar_t> m_CvarList;
 
     qboolean m_bRegistered;
+    qboolean m_bRecursiveShutdown;
 
     asCJITCompiler *m_pCompiler;
-
     CModuleHandle *m_pCurrentHandle;
 };
 

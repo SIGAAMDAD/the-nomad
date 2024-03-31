@@ -9,7 +9,7 @@
 class CModuleStringFactory : public asIStringFactory
 {
 public:
-	using CStringCache = eastl::unordered_map<string_t, int32_t, eastl::hash<string_t>, eastl::equal_to<string_t>, CModuleAllocator, true>;
+//	using CStringCache = eastl::unordered_map<string_t, int32_t, eastl::hash<string_t>, eastl::equal_to<string_t>, CModuleAllocator, true>;
 	
 	CModuleStringFactory( void ) {
 	}
@@ -27,7 +27,7 @@ public:
 		if ( it != m_StringCache.end() ) {
 			it->second++;
 		} else {
-			it = m_StringCache.insert( CStringCache::value_type( str, 1 ) ).first;
+			it = m_StringCache.insert( eastl::unordered_map<string_t, int32_t>::value_type( str, 1 ) ).first;
 		}
 		
 		return (const void *)&it->first;
@@ -45,10 +45,10 @@ public:
 		ret = asSUCCESS;
 		
 		CThreadAutoLock<CThreadMutex> lock( m_hLock );
-		const string_t *data = (const string_t *)pStr;
-		auto it = m_StringCache.find( *data );
+		const string_t& data = *(const string_t *)pStr;
+		auto it = m_StringCache.find( data );
 		if ( it == m_StringCache.end() ) {
-			Con_Printf( COLOR_RED "[ERROR] ReleaseStringConstant: invalid string '%s'\n", (const char *)pStr );
+			Con_Printf( COLOR_RED "[ERROR] ReleaseStringConstant: invalid string '%s'\n", data.c_str() );
 			ret = asERROR;
 		} else {
 			it->second--;
@@ -79,7 +79,7 @@ public:
 	}
 	
 	CThreadMutex m_hLock;
-	CStringCache m_StringCache;
+	eastl::unordered_map<string_t, int32_t> m_StringCache;
 };
 
 extern CModuleStringFactory *g_pStringFactory;

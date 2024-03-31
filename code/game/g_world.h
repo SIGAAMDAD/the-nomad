@@ -11,7 +11,7 @@ public:
     CGameWorld( void );
     ~CGameWorld();
 
-    void Init( mapinfo_t *info, linkEntity_t *activeEnts );
+    void Init( mapinfo_t *info );
     void LinkEntity( linkEntity_t *ent );
     void UnlinkEntity( linkEntity_t *ent );
     void CastRay( ray_t *ray );
@@ -27,8 +27,7 @@ public:
         return m_nEntities;
     }
 private:
-    linkEntity_t *m_pActiveEnts;
-    linkEntity_t *m_pEndEnt;
+    linkEntity_t m_ActiveEnts;
     mapinfo_t *m_pMapInfo;
     uint32_t m_nEntities;
 

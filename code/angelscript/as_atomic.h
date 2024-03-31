@@ -43,6 +43,10 @@
 #define AS_ATOMIC_H
 
 #include "as_config.h"
+#include "../engine/n_shared.h"
+#include "../engine/n_common.h"
+#include "../engine/n_threads.h"
+
 
 BEGIN_AS_NAMESPACE
 
@@ -61,7 +65,7 @@ public:
 	asDWORD atomicDec();
 
 protected:
-	asDWORD value;
+   asDWORD value;
 };
 
 END_AS_NAMESPACE

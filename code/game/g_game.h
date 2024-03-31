@@ -251,7 +251,7 @@ void G_ClearState(void);
 void G_FlushMemory(void);
 void G_StartHunkUsers(void);
 void G_ShutdownAll(void);
-void G_ShutdownVMs(void);
+void G_ShutdownVMs( qboolean quit );
 void G_Frame( int32_t msec, int32_t realMsec );
 void G_InitDisplay( gpuConfig_t *config );
 SDL_Window *G_GetSDLWindow(void);
@@ -266,7 +266,7 @@ void G_SetCameraData( const vec2_t origin, float zoom, float rotation );
 //
 void G_InitMapCache( void );
 void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns,
-    uint32_t *nTiles, linkEntity_t *activeEnts );
+    uint32_t *nTiles );
 nhandle_t G_LoadMap( const char *name );
 
 //

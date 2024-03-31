@@ -217,7 +217,7 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error(errorCo
 		Q_longjmp( abortframe, 1 );
 	} else { // ERR_FATAL
 //		VM_Forced_Unload_Start();
-		G_ShutdownVMs();
+		G_ShutdownVMs( qtrue );
 		G_ShutdownRenderer(REF_UNLOAD_DLL);
 		Com_EndRedirect();
 //		VM_Forced_Unload_Done();

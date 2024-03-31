@@ -168,7 +168,7 @@ void asCArray<T>::PushLast(const T &element)
 		if( maxLength == 0 )
 			Allocate(1, false);
 		else
-			Allocate(2*maxLength, true);
+			Allocate(6*maxLength, true);
 
 		if( length == maxLength )
 		{
@@ -184,7 +184,7 @@ template <class T>
 T asCArray<T>::PopLast()
 {
 	asASSERT(length > 0);
-
+	
 	return array[--length];
 }
 

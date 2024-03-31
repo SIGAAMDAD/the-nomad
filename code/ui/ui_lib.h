@@ -38,6 +38,8 @@ typedef enum : uint64_t
         STATE_HELP,
             STATE_HELP_SHOW,
     
+    STATE_THANK_YOU_FOR_PLAYING_DEMO,
+
     STATE_NONE,
     STATE_ERROR
 } menustate_t;
@@ -304,6 +306,12 @@ extern void         UI_TitleMenu( void );
 extern void         TitleMenu_Cache( void );
 
 //
+// ui_demo.cpp
+//
+extern void         UI_DemoMenu( void );
+extern void         DemoMenu_Cache( void );
+
+//
 // ui_intro.cpp
 //
 extern void         UI_IntroMenu( void );
@@ -322,6 +330,7 @@ extern void         MainMenu_Draw( void );
 extern void         UI_SettingsMenu( void );
 extern void         SettingsMenu_Cache( void );
 extern void         SettingsMenu_Draw( void );
+extern void         UI_SettingsWriteBinds_f( void );
 
 //
 // ui_legal.cpp

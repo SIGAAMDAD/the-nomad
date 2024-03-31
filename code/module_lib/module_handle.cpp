@@ -8,6 +8,7 @@
 
 const moduleFunc_t funcDefs[NumFuncs] = {
     { "int ModuleInit()", ModuleInit, 0, qtrue },
+    { "int ModuleShutdown()", ModuleShutdown, 0, qtrue },
     { "int ModuleOnConsoleCommand()", ModuleCommandLine, 0, qfalse },
     { "int ModuleDrawConfiguration()", ModuleDrawConfiguration, 0, qfalse },
     { "int ModuleSaveConfiguration()", ModuleSaveConfiguration, 0, qfalse },
@@ -23,7 +24,7 @@ const moduleFunc_t funcDefs[NumFuncs] = {
 CModuleHandle::CModuleHandle( const char *pName, const std::vector<std::string>& sourceFiles, int32_t moduleVersionMajor,
     int32_t moduleVersionUpdate, int32_t moduleVersionPatch, const std::vector<std::string>& includePaths
 )
-    : m_szName( pName ), m_pScriptContext( NULL ), m_pScriptModule( NULL ), m_nVersionMajor{ moduleVersionMajor },
+    : m_szName{ pName }, m_nVersionMajor{ moduleVersionMajor },
     m_nVersionUpdate{ moduleVersionUpdate }, m_nVersionPatch{ moduleVersionPatch }
 {
     int error;
@@ -74,9 +75,9 @@ CModuleHandle::CModuleHandle( const char *pName, const std::vector<std::string>&
     if ( !InitCalls() ) {
         return;
     }
-
-    m_pScriptModule->SetUserData( this );
-    SaveToCache();
+    m_pScriptContext->AddRef();
+//    m_pScriptModule->SetUserData( this );
+//    SaveToCache();
 
     m_bLoaded = qtrue;
 }
@@ -132,7 +133,7 @@ void LogExceptionInfo( asIScriptContext *pContext, void *userData )
     , pFunc->GetModuleName(), pFunc->GetScriptSectionName(), pFunc->GetDeclaration(), pContext->GetExceptionLineNumber(),
     pContext->GetExceptionString() );
 
-    N_Error( ERR_DROP, "%s", msg );
+    N_Error( ERR_FATAL, "%s", msg );
 }
 
 int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pArgList )
@@ -361,11 +362,13 @@ int CModuleHandle::LoadFromCache( void ) {
 }
 
 /*
-* CModuleHandle::ClearMemory: called whenever restarting vm or exiting
+* CModuleHandle::ClearMemory: called whenever exiting
 */
 void CModuleHandle::ClearMemory( void )
 {
-    if ( !m_pScriptModule ) {
+    uint64_t i;
+
+    if ( !m_pScriptModule || !m_pScriptContext ) {
         return;
     }
 
@@ -374,15 +377,21 @@ void CModuleHandle::ClearMemory( void )
     }
 
     Con_Printf( "CModuleHandle::ClearMemory: clearing memory of '%s'...\n", m_szName.c_str() );
-    for ( uint64_t i = 0; i < NumFuncs; i++ ) {
+    for ( i = 0; i < NumFuncs; i++ ) {
         if ( m_pFuncTable[i] ) {
             m_pFuncTable[i]->Release();
         }
     }
 
-    CheckASCall( g_pModuleLib->GetScriptEngine()->DiscardModule( m_pScriptModule->GetName() ) );
+    g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_FULL_CYCLE | asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE );
+
+    CheckASCall( m_pScriptModule->UnbindAllImportedFunctions() );
+    g_pModuleLib->GetScriptEngine()->DiscardModule( m_szName.c_str() );
     CheckASCall( m_pScriptContext->Unprepare() );
     CheckASCall( m_pScriptContext->Release() );
+
+    m_pScriptModule = NULL;
+    m_pScriptContext = NULL;
 }
 
 asIScriptContext *CModuleHandle::GetContext( void ) {

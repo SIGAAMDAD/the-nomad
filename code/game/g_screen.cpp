@@ -347,8 +347,11 @@ void SCR_UpdateScreen(void)
     static uint64_t framecount;
     static int64_t next_frametime;
 
-	Assert( !g_pRenderThread->IsAlive() );
-	g_pRenderThread->Start();
+//	Assert( !g_pRenderThread->IsAlive() );
+//	g_pRenderThread->Start();
+	re.BeginFrame( STEREO_CENTER );
+
+	UI_DrawDiagnositics();
 
     if (framecount == gi.framecount) {
         int64_t ms = Sys_Milliseconds();
@@ -376,18 +379,36 @@ void SCR_UpdateScreen(void)
 	// if the user is ending a level through the pause menu,
 	// we let the ui handle the sgame call
 	if ( gi.mapLoaded ) {
-		g_pModuleLib->ModuleCall( sgvm, ModuleOnRunTic, 2, gi.frametime, com_frameTime );
+		switch ( g_pModuleLib->ModuleCall( sgvm, ModuleOnRunTic, 1, gi.frametime ) ) {
+		case 1:
+			g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelEnd, 0 );
+			g_pModuleLib->RunModules( ModuleOnLevelEnd, 0 );
+
+			UI_ShowDemoMenu();
+
+			Key_SetCatcher( KEYCATCH_UI );
+			Cvar_Set( "g_paused", "1" );
+
+			// we're only doing this for the demo
+			Cbuf_ExecuteText( EXEC_APPEND, "setmap\n" );
+			gi.state = GS_MENU;
+			break;
+		case 0:
+		default:
+			break;
+		};
 	}
 	UI_Refresh( gi.realtime );
 
     // console draws next
     Con_DrawConsole();
 
+	re.EndFrame( NULL, NULL );
 
 	// draw it all
-	if ( !g_pRenderThread->Join() ) {
-		N_Error( ERR_FATAL, "SCR_UpdateScreen: render thread join timed out, aborting process" );
-	}
+//	if ( !g_pRenderThread->Join() ) {
+//		N_Error( ERR_FATAL, "SCR_UpdateScreen: render thread join timed out, aborting process" );
+//	}
 
     recursive = 0;
 }

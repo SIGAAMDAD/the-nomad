@@ -459,6 +459,8 @@ void Key_WriteBindings( fileHandle_t f )
 		
 		FS_Printf( f, "bind %s \"%s\"" GDR_NEWLINE, Key_KeynumToString(i), keys[i].binding );
 	}
+
+	Cbuf_ExecuteText( EXEC_APPEND, "ui.settings_write_bindings" );
 }
 
 static void Key_Bindlist_f( void )

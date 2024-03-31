@@ -1,4 +1,3 @@
-#include "game.as"
 #include "main.as"
 
 TheNomad::GameSystem::GameDifficulty config_GameDifficulty;
@@ -19,6 +18,8 @@ void ModuleConfigInit() {
     config_MaxSoundChannels = uint( TheNomad::Engine::CvarVariableInteger( "sgame_MaxSoundChannels" ) );
     config_GfxDetail = uint( TheNomad::Engine::CvarVariableInteger( "sgame_GfxDetail" ) );
 }
+
+/*
 
 void AdjustDifficulty() {
     if ( ImGui::ArrowButton( "##GameDifficultyLeft", ImGuiDir::Left ) ) {
@@ -47,8 +48,10 @@ void AdjustDifficulty() {
         TheNomad::SGame::selectedSfx.Play();
     }
 }
+*/
 
 int ModuleDrawConfiguration() {
+    /*
     uint tmp;
     return 0;
 
@@ -60,7 +63,6 @@ int ModuleDrawConfiguration() {
     if ( config_GameDifficulty != TheNomad::GameSystem::GameDifficulty::TryYourBest
     	|| TheNomad::SGame::GlobalState != TheNomad::SGame::GameState::InLevel )
     {
-        AdjustDifficulty();
     } else {
     	// remember, no pussy
         ImGui::Text( "You CHOSE This, No Pullin' Out Now!" );
@@ -148,9 +150,12 @@ int ModuleDrawConfiguration() {
     ImGui::EndTable();
     
 	return 1;
+    */
+    return 1;
 }
 
 int ModuleSaveConfiguration() {
+    /*
     if ( config_MaxEntities != uint( TheNomad::SGame::sgame_MaxEntities.GetInt() ) ) {
         TheNomad::Engine::CvarSet( "sgame_MaxEntities", formatUInt( config_MaxEntities ) );
     }
@@ -160,5 +165,7 @@ int ModuleSaveConfiguration() {
     TheNomad::Engine::CvarSet( "sgame_DebugMode", formatInt( config_DebugPrint ? 1 : 0 )  );
     TheNomad::Engine::CvarSet( "sgame_Difficulty", formatInt( int( config_GameDifficulty ) ) );
     TheNomad::Engine::CvarSet( "sgame_AdaptiveSoundtrack", formatInt( config_AdaptiveSoundtrack ? 1 : 0 ) );
+    return 1;
+    */
     return 1;
 }

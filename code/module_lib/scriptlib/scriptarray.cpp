@@ -58,7 +58,7 @@ static void RegisterScriptArray_Generic(asIScriptEngine *engine);
 struct SArrayBuffer {
 	asDWORD size;
 	asDWORD capacity;
-	byte data[0];
+	byte data[1];
 };
 
 struct SArrayCache
@@ -385,11 +385,8 @@ CScriptArray &CScriptArray::operator=(const CScriptArray &other)
 	if( &other != this &&
 		other.GetArrayObjectType() == GetArrayObjectType() )
 	{
-		// Make sure the arrays are of the same size
 		Resize( other.buffer->size );
-
-		// Copy the value of each element
-		CopyBuffer( other );
+		CopyBuffer( buffer, other.buffer );
 	}
 
 	return *this;
@@ -407,6 +404,8 @@ CScriptArray::CScriptArray(asITypeInfo *ti, void *buf)
 	objType->AddRef();
 	buffer = NULL;
 	Clear();
+
+//	g_pModuleLib->GetModule( asGetActiveContext()->GetSystemFunction()->GetModuleName() )->m_pHandle->AddArrayObject( this );
 
 	memstats.overHeadBytes += sizeof( *buffer );
 
@@ -433,7 +432,7 @@ CScriptArray::CScriptArray(asITypeInfo *ti, void *buf)
 	// Copy the values of the array elements from the buffer
 	if( (ti->GetSubTypeId() & asTYPEID_MASK_OBJECT) == 0 )
 	{
-		CreateBuffer( length );
+		CreateBuffer( &buffer, length );
 
 		// Copy the values of the primitive type into the internal buffer
 		if( length > 0 )
@@ -441,7 +440,7 @@ CScriptArray::CScriptArray(asITypeInfo *ti, void *buf)
 	}
 	else if( ti->GetSubTypeId() & asTYPEID_OBJHANDLE )
 	{
-		CreateBuffer( length );
+		CreateBuffer( &buffer, length );
 
 		// Copy the handles into the internal buffer
 		if( length > 0 )
@@ -457,7 +456,7 @@ CScriptArray::CScriptArray(asITypeInfo *ti, void *buf)
 	{
 		// Only allocate the buffer, but not the objects
 		subTypeId |= asTYPEID_OBJHANDLE;
-		CreateBuffer( length );
+		CreateBuffer( &buffer, length );
 		subTypeId &= ~asTYPEID_OBJHANDLE;
 
 		// Copy the handles into the internal buffer
@@ -475,7 +474,7 @@ CScriptArray::CScriptArray(asITypeInfo *ti, void *buf)
 		// TODO: With C++11 ideally we should be calling the move constructor, instead
 		//       of the copy constructor as the engine will just discard the objects in the
 		//       buffer afterwards.
-		CreateBuffer( length );
+		CreateBuffer( &buffer, length );
 
 		// For value types we need to call the opAssign for each individual object
 		for( asUINT n = 0; n < length; n++ )
@@ -505,6 +504,8 @@ CScriptArray::CScriptArray(asUINT length, asITypeInfo *ti)
 	buffer = NULL;
 	Clear();
 
+//	g_pModuleLib->GetModule( asGetActiveContext()->GetSystemFunction()->GetModuleName() )->m_pHandle->AddArrayObject( this );
+
 	memstats.overHeadBytes += sizeof( *buffer );
 
 	Precache();
@@ -522,7 +523,7 @@ CScriptArray::CScriptArray(asUINT length, asITypeInfo *ti)
 		return;
 	}
 
-	CreateBuffer( length );
+	CreateBuffer( &buffer, length );
 
 	// Notify the GC of the successful creation
 	if( objType->GetFlags() & asOBJ_GC )
@@ -538,6 +539,8 @@ CScriptArray::CScriptArray(const CScriptArray &other)
 	objType->AddRef();
 	buffer = NULL;
 	Clear();
+
+//	g_pModuleLib->GetModule( asGetActiveContext()->GetSystemFunction()->GetModuleName() )->m_pHandle->AddArrayObject( this );
 
 	memstats.overHeadBytes += sizeof( *buffer );
 
@@ -565,6 +568,8 @@ CScriptArray::CScriptArray(asUINT length, void *defVal, asITypeInfo *ti)
 	buffer = NULL;
 	Clear();
 
+//	g_pModuleLib->GetModule( asGetActiveContext()->GetSystemFunction()->GetModuleName() )->m_pHandle->AddArrayObject( this );
+
 	memstats.overHeadBytes += sizeof( *buffer );
 
 	Precache();
@@ -582,7 +587,7 @@ CScriptArray::CScriptArray(asUINT length, void *defVal, asITypeInfo *ti)
 		return;
 	}
 
-	CreateBuffer( length );
+	CreateBuffer( &buffer, length );
 
 	// Notify the GC of the successful creation
 	if( objType->GetFlags() & asOBJ_GC )
@@ -634,7 +639,6 @@ void CScriptArray::SetValue(asUINT index, void *value)
 		void *tmp = *(void**)ptr;
 		*(void**)ptr = *(void**)value;
 		objType->GetEngine()->AddRefScriptObject(*(void**)value, objType->GetSubType());
-		// segfaults, but will this cause a memory leak?
 		if( tmp )
 			objType->GetEngine()->ReleaseScriptObject(tmp, objType->GetSubType());
 	}
@@ -662,10 +666,6 @@ CScriptArray::~CScriptArray()
 	if ( objType ) {
 		objType->Release();
 	}
-	memstats.totalBytesFreed += buffer->capacity * elementSize;
-	memstats.numFrees++;
-	memstats.overHeadBytes -= sizeof( *buffer );
-	arrayUserFree( buffer );
 }
 
 asUINT CScriptArray::GetSize() const
@@ -685,7 +685,7 @@ void CScriptArray::Reserve(asUINT nItems)
 	}
 
 	if ( buffer->capacity < nItems ) {
-		DoAllocate( nItems );
+		DoAllocate( nItems, buffer->size );
 	}
 }
 
@@ -694,7 +694,7 @@ void CScriptArray::Resize(asUINT numElements)
 	if( !CheckMaxSize(numElements) )
 		return;
 
-	DoAllocate( numElements );
+	DoAllocate( (int)numElements - (int)buffer->size, (asUINT)-1 );
 }
 
 void CScriptArray::RemoveRange(asUINT start, asUINT count)
@@ -711,11 +711,12 @@ void CScriptArray::RemoveRange(asUINT start, asUINT count)
 	}
 
 	// Cap count to the end of the array
-	if (start + count > buffer->size)
+	if (start + count > buffer->size) {
 		count = buffer->size - start;
+	}
 
 	// Destroy the elements that are being removed
-	Destruct( buffer->data, start, start + count);
+	Destruct( buffer, start, start + count);
 
 	// Compact the elements
 	// As objects in arrays of objects are not stored inline, it is safe to use memmove here
@@ -725,26 +726,28 @@ void CScriptArray::RemoveRange(asUINT start, asUINT count)
 }
 
 //
-// CScriptArray::Clear: resets count, doesn't deallocate the memory
+// CScriptArray::Clear: resets count
 //
 void CScriptArray::Clear( void )
 {
 	if ( !buffer ) {
 		return;
 	}
-	if ( buffer ) {
-		memstats.currentBytesAllocated -= buffer->capacity * elementSize;
-		Destruct( buffer->data, 0, buffer->size );
-	}
+	
+	memstats.currentBytesAllocated -= buffer->capacity * elementSize;
+	Destruct( buffer, 0, buffer->size );
+	
+	// clear it all
 	buffer->size = 0;
-	buffer->capacity = 0;
+	memset( buffer->data, 0, buffer->capacity );
+
 	memstats.numBuffers--;
 }
 
 void CScriptArray::AllocBuffer( uint32_t nItems )
 {
 	if ( !buffer ) {
-		buffer = (SArrayBuffer *)arrayUserAlloc( sizeof( *buffer ) + ( ( nItems * 4 ) * elementSize ) );
+		buffer = (SArrayBuffer *)arrayUserAlloc( sizeof( *buffer ) - 1 + ( ( nItems * 4 ) * elementSize ) );
 		if ( !buffer ) {
 			asIScriptContext *pContext = asGetActiveContext();
 			if ( pContext ) {
@@ -752,8 +755,9 @@ void CScriptArray::AllocBuffer( uint32_t nItems )
 			}
 			return;
 		}
-		buffer->size = 0;
+		buffer->size = nItems;
 		buffer->capacity = nItems * 4;
+		Construct( buffer, 0, nItems );
 
 		memstats.totalBytesAllocated += buffer->capacity * elementSize;
 		memstats.numAllocs++;
@@ -765,23 +769,38 @@ void CScriptArray::AllocBuffer( uint32_t nItems )
 // CScriptArray::DoAllocate: checks if the buffer is large enough to support
 // nItems, if not, allocate nItems * 4 more
 //
-void CScriptArray::DoAllocate( uint32_t nItems )
+void CScriptArray::DoAllocate( int delta, uint32_t at )
 {
-	uint32_t nBytes;
+	if ( delta < 0 ) {
+		if ( -delta > (int)buffer->size ) {
+			delta = -(int)buffer->size;
+		}
+		if ( at > buffer->size + delta ) {
+			at = buffer->size + delta;
+		}
+	} else if ( delta > 0 ) {
+		// make sure the array size isn't too large for us to handle
+		if ( delta > 0 && !CheckMaxSize( buffer->size + delta ) ) {
+			return;
+		}
+		if ( at > buffer->size ) {
+			at = buffer->size;
+		}
+	}
 
-	if ( !nItems ) {
-		AllocBuffer( 0 );
-		Clear();
+	if ( delta == 0 ) {
 		return;
 	}
-	
-	AllocBuffer( nItems );
-	if ( buffer->size + nItems >= buffer->capacity ) {
-		nBytes = nItems * 4;
-		buffer->capacity += nBytes;
+
+	if ( buffer->size + delta >= buffer->capacity ) {
+		// allocate new space
+		buffer->capacity += delta * 4;
 
 		SArrayBuffer *buf = (SArrayBuffer *)arrayUserAlloc( sizeof( *buf ) + ( buffer->capacity * elementSize ) );
-		if ( !buf ) {
+		if ( buf ) {
+			buf->size = buffer->size + delta;
+			buf->capacity = buffer->capacity;
+		} else {
 			asIScriptContext *pContext = asGetActiveContext();
 			if ( pContext ) {
 				pContext->SetException( "out of memory" );
@@ -789,23 +808,29 @@ void CScriptArray::DoAllocate( uint32_t nItems )
 			return;
 		}
 
-		memstats.totalBytesAllocated += buffer->capacity * elementSize;
-		memstats.totalBytesFreed += buffer->capacity * elementSize;
-		memstats.numAllocs++;
-		memstats.numFrees++;
-		memstats.currentBytesAllocated += buffer->capacity * elementSize;
-
-		buf->capacity = buffer->capacity;
-		buf->size = buffer->size;
-
-		memcpy( buf->data, buffer->data, buffer->size * elementSize );
+		// as objects in arrays of objects are not stored inline, it is safe to use a block copy here
+		// since we're just copying the pointers to objects and not the actual objects.
+		memcpy( buf->data, buffer->data, at * elementSize );
+		if ( at < buffer->size ) {
+			memcpy( buf->data + ( at + delta ) * elementSize, buffer->data + at * elementSize, ( buffer->size - at ) * elementSize );
+		}
+		Construct( buf, at, at + delta );
 		arrayUserFree( buffer );
 
 		buffer = buf;
-	}
-	Construct( buffer->data, buffer->size, buffer->size + nItems );
+	} else if ( delta < 0 ) {
+		Destruct( buffer, at, at - delta );
 
-	buffer->size += nItems;
+		// as objects in arrays of objects are not stored inline, it is safe to use a block copy here
+		// since we're just copying the pointers to objects and not the actual objects.
+		memmove( buffer->data + at * elementSize, buffer->data + ( at - delta ) * elementSize, ( buffer->size -
+			( at - delta ) ) * elementSize );
+		buffer->size += delta;
+	} else {
+		memmove( buffer->data + ( at + delta ) * elementSize, buffer->data + at * elementSize, ( buffer->size - at ) * elementSize );
+		Construct( buffer, at, at + delta );
+		buffer->size += delta;
+	}
 }
 
 // internal
@@ -855,9 +880,8 @@ void CScriptArray::InsertAt(asUINT index, void *value)
 			ctx->SetException("out of range index");
 		return;
 	}
-
-	DoAllocate( 1 );
-	SetValue(index, value);
+	DoAllocate( 1, index );
+	SetValue( index, value );
 }
 
 void CScriptArray::InsertAt(asUINT index, const CScriptArray &arr)
@@ -883,7 +907,7 @@ void CScriptArray::InsertAt(asUINT index, const CScriptArray &arr)
 	}
 
 	const asUINT nItems = arr.GetSize();
-	DoAllocate( index + nItems );
+	DoAllocate( nItems, index );
 	if ( &arr == this ) {
 		for ( n = 0; n < arr.GetSize(); n++ ) {
 			// This const cast is allowed, since we know the
@@ -929,14 +953,20 @@ void CScriptArray::RemoveAt(asUINT index)
 		return;
 	}
 
-	memset( buffer->data + ( index * elementSize ), 0, elementSize );
-	memmove( buffer->data, buffer->data + ( index * elementSize ), ( buffer->size - index ) * elementSize );
+	DoAllocate( -1, index );
 }
 
-void CScriptArray::RemoveLast()
+void CScriptArray::RemoveLast( void )
 {
 	RemoveAt( buffer->size - 1 );
 }
+
+void CScriptArray::DeleteBuffer( SArrayBuffer *buffer )
+{
+	Destruct( buffer, 0, buffer->size );
+	arrayUserFree( buffer );
+}
+
 
 // Return a pointer to the array element. Returns 0 if the index is out of bounds
 const void *CScriptArray::At(asUINT index) const
@@ -992,34 +1022,32 @@ const void *CScriptArray::GetBuffer( void ) const {
 
 
 // internal
-void CScriptArray::CreateBuffer( asUINT nItems)
+void CScriptArray::CreateBuffer( SArrayBuffer **buffer, asUINT nItems )
 {
-	buffer = (SArrayBuffer *)arrayUserAlloc( sizeof( *buffer ) + ( nItems * elementSize ) );
+	*buffer = (SArrayBuffer *)arrayUserAlloc( sizeof( *buffer ) - 1 + ( nItems * elementSize ) );
 
-	if ( !buffer && nItems > 0 ) {
+	if ( *buffer ) {
+		(*buffer)->size = nItems;
+		(*buffer)->capacity = nItems;
+		Construct( *buffer, 0, nItems );
+	} else {
 		asIScriptContext *ctx = asGetActiveContext();
-		if( ctx )
+		if ( ctx ) {
 			ctx->SetException("out of memory");
-	} else if ( !buffer ) {
-		buffer->size = 0;
-		buffer->capacity = 0;
+		}
 		return;
 	}
-
-	buffer->size = nItems;
-	buffer->capacity = nItems;
-	Construct( buffer->data, 0, nItems );
 }
 
 
 // internal
-void CScriptArray::Construct( byte *buf, asUINT start, asUINT end )
+void CScriptArray::Construct( SArrayBuffer *buf, asUINT start, asUINT end )
 {
 	if( (subTypeId & asTYPEID_MASK_OBJECT) && !(subTypeId & asTYPEID_OBJHANDLE) )
 	{
 		// Create an object using the default constructor/factory for each element
-		void **max = (void**)( buf + end * sizeof(void*));
-		void **d = (void**)( buf + start * sizeof(void*));
+		void **max = (void**)( buf->data + end * sizeof(void*));
+		void **d = (void**)( buf->data + start * sizeof(void*));
 
 		asIScriptEngine *engine = objType->GetEngine();
 		asITypeInfo *subType = objType->GetSubType();
@@ -1042,19 +1070,19 @@ void CScriptArray::Construct( byte *buf, asUINT start, asUINT end )
 	else
 	{
 		// Set all elements to zero whether they are handles or primitives
-		void *d = (void*)( buf + start * elementSize );
+		void *d = (void*)( buf->data + start * elementSize );
 		memset(d, 0, (end-start)*elementSize);
 	}
 }
 
 // internal
-void CScriptArray::Destruct(byte *buf, asUINT start, asUINT end)
+void CScriptArray::Destruct(SArrayBuffer *buf, asUINT start, asUINT end)
 {
 	if( subTypeId & asTYPEID_MASK_OBJECT ) {
 		asIScriptEngine *engine = objType->GetEngine();
 
-		void **max = (void **)( buf + end * sizeof( void * ) );
-		void **d = (void **)( buf + start * sizeof( void * ) );
+		void **max = (void **)( buf->data + end * sizeof( void * ) );
+		void **d = (void **)( buf->data + start * sizeof( void * ) );
 
 		for( ; d < max; d++ ) {
 			if( *d )
@@ -1710,22 +1738,18 @@ const void *CScriptArray::cend( void ) const {
 }
 
 // internal
-void CScriptArray::CopyBuffer( const CScriptArray& other )
+void CScriptArray::CopyBuffer( SArrayBuffer *dst, SArrayBuffer *src )
 {
 	asIScriptEngine *engine = objType->GetEngine();
-	
-	if ( !buffer ) {
-		DoAllocate( other.GetSize() );
-	}
 
-	if( subTypeId & asTYPEID_OBJHANDLE ) {
+	if ( subTypeId & asTYPEID_OBJHANDLE ) {
 		// Copy the references and increase the reference counters
-		if( buffer->size > 0 && other.buffer->size > 0 ) {
-			const uint32_t count = buffer->size > other.buffer->size ? other.buffer->size : buffer->size;
+		if ( dst->size > 0 && src->size > 0 ) {
+			const uint32_t count = dst->size > src->size ? src->size : dst->size;
 
-			void **max = (void**)( buffer->data + count * sizeof(void*));
-			void **d   = (void**)buffer->data;
-			void **s   = (void**)const_cast<byte *>( other.buffer->data ); // ... :)
+			void **max = (void**)( dst->data + count * sizeof(void*));
+			void **d   = (void**)dst->data;
+			void **s   = (void**)src->data;
 
 			for ( ; d < max; d++, s++ ) {
 				void *tmp = *d;
@@ -1738,17 +1762,15 @@ void CScriptArray::CopyBuffer( const CScriptArray& other )
 			}
 		}
 	}
-	else
-	{
-		if( buffer->size > 0 && other.buffer->size > 0 )
-		{
-			const uint32_t count = buffer->size > other.buffer->size ? other.buffer->size : buffer->size;
+	else {
+		if ( dst->size > 0 && src->size > 0 ) {
+			const uint32_t count = dst->size > src->size ? src->size : dst->size;
 			if( subTypeId & asTYPEID_MASK_OBJECT )
 			{
 				// Call the assignment operator on all of the objects
-				void **max = (void**)( buffer->data + count * sizeof(void*));
-				void **d   = (void**)buffer->data;
-				void **s   = (void**)const_cast<byte *>( other.buffer->data ); // ... :)
+				void **max = (void**)( dst->data + count * sizeof(void*));
+				void **d   = (void**)dst->data;
+				void **s   = (void**)src->data;
 
 				asITypeInfo *subType = objType->GetSubType();
 				if (subType->GetFlags() & asOBJ_ASHANDLE)
@@ -1784,7 +1806,7 @@ void CScriptArray::CopyBuffer( const CScriptArray& other )
 			else
 			{
 				// Primitives are copied byte for byte
-				memcpy(buffer, other.buffer, count*elementSize);
+				memcpy( dst->data, src->data, count*elementSize );
 			}
 		}
 	}
@@ -1935,7 +1957,11 @@ void CScriptArray::EnumReferences(asIScriptEngine *engine)
 	// If the array is holding handles, then we need to notify the GC of them
 	if( subTypeId & asTYPEID_MASK_OBJECT )
 	{
-		void **d = (void**)buffer;
+		void **d = (void**)buffer->data;
+
+		if ( !buffer ) {
+			return;
+		}
 
 		asITypeInfo *subType = engine->GetTypeInfoById(subTypeId);
 		if ((subType->GetFlags() & asOBJ_REF))
@@ -1964,21 +1990,21 @@ void CScriptArray::EnumReferences(asIScriptEngine *engine)
 void CScriptArray::ReleaseAllHandles(asIScriptEngine *)
 {
 	// Resizing to zero will release everything
-	Clear();
+	Resize( 0 );
 }
 
 void CScriptArray::AddRef() const
 {
 	// Clear the GC flag then increase the counter
 	gcFlag = false;
-	asAtomicInc(refCount);
+	refCount.fetch_add();
 }
 
 void CScriptArray::Release() const
 {
 	// Clearing the GC flag then descrease the counter
 	gcFlag = false;
-	if( asAtomicDec(refCount) == 0 )
+	if( refCount.fetch_sub() == 0 )
 	{
 		// When reaching 0 no more references to this instance
 		// exists and the object should be destroyed
@@ -1990,7 +2016,7 @@ void CScriptArray::Release() const
 // GC behaviour
 int CScriptArray::GetRefCount()
 {
-	return refCount;
+	return refCount.load();
 }
 
 // GC behaviour
@@ -2230,7 +2256,7 @@ static void ScriptArrayRelease_Generic(asIScriptGeneric *gen)
 static void ScriptArrayGetRefCount_Generic(asIScriptGeneric *gen)
 {
 	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
-	*reinterpret_cast<int*>(gen->GetAddressOfReturnLocation()) = self->GetRefCount();
+	*reinterpret_cast<int32_t*>(gen->GetAddressOfReturnLocation()) = self->GetRefCount();
 }
 
 static void ScriptArraySetFlag_Generic(asIScriptGeneric *gen)
@@ -2287,7 +2313,7 @@ static void ScriptArrayFront_Generic( asIScriptGeneric *gen ) {
 }
 
 static void ScriptArrayClear_Generic( asIScriptGeneric *gen ) {
-	( (CScriptArray *)gen->GetObjectData() )->Resize( 0 );
+	( (CScriptArray *)gen->GetObjectData() )->Clear();
 }
 
 static void RegisterScriptArray_Generic(asIScriptEngine *engine)
@@ -2315,6 +2341,8 @@ static void RegisterScriptArray_Generic(asIScriptEngine *engine)
 
 	CheckASCall( engine->RegisterObjectMethod("array<T>", "void InsertAt( uint, const T& in )", asFUNCTION(ScriptArrayInsertAt_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("array<T>", "void InsertAt( uint, const array<T>& in )", asFUNCTION(ScriptArrayInsertAtArray_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void Insert( uint, const T& in )", asFUNCTION(ScriptArrayInsertAt_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void Insert( uint, const array<T>& in )", asFUNCTION(ScriptArrayInsertAtArray_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("array<T>", "void InsertLast( const T& in )", asFUNCTION(ScriptArrayInsertLast_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("array<T>", "void RemoveAt(uint index)", asFUNCTION(ScriptArrayRemoveAt_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("array<T>", "void RemoveLast()", asFUNCTION(ScriptArrayRemoveLast_Generic), asCALL_GENERIC ) );

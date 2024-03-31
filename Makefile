@@ -111,7 +111,7 @@ VERSION_STRING= $(VERSION).$(VERSION_UPDATE).$(VERSION_PATCH)
 USE_OPENGL_API=1
 USE_VULKAN_API=0
 
-INCLUDE       =-Idependencies/include/ -Idependencies/include/EA/ -Ideps/squirrel/include -Ideps/squall/ $(OS_INCLUDE) -I. -Icode/
+INCLUDE       =-Idependencies/include/ -Idependencies/include/EA/ -Ideps/squirrel/include -Ideps/squall/ $(OS_INCLUDE) -I. -Icode/ -I/usr/local/mono-2.0
 VERSION_DEFINE=-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPDATE) -D_NOMAD_VERSION_PATCH=$(VERSION_PATCH)
 
 DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -D_NOMAD_ENGINE -DAS_MAX_PORTABILITY -DUSE_AFFINITY_MASK
@@ -347,6 +347,7 @@ SRC=\
 	$(O)/ui/ui_string_manager.o \
 	$(O)/ui/ui_window.o \
 	$(O)/ui/ui_title.o \
+	$(O)/ui/ui_demo.o \
 	$(O)/ui/ui_settings.o \
 	$(O)/ui/ui_intro.o \
 	$(O)/ui/ui_main_menu.o \
@@ -426,7 +427,11 @@ $(O)/module_lib/%.o: $(SDIR)/module_lib/%.cpp
 $(O)/module_lib/%.o: $(SDIR)/module_lib/scriptlib/%.cpp
 	$(COMPILE_SRC) -DMODULE_LIB
 $(O)/angelscript/%.o: $(SDIR)/angelscript/%.cpp
+ifndef release
+	$(COMPILE_SRC) -DMODULE_LIB -DAS_DEBUG
+else
 	$(COMPILE_SRC) -DMODULE_LIB
+endif
 $(O)/libjpeg/%.o: $(SDIR)/libjpeg/%.c
 	$(COMPILE_C)
 

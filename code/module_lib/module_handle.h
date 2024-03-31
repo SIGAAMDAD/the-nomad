@@ -8,12 +8,14 @@
 #include "angelscript/as_compiler.h"
 #include "angelscript/as_context.h"
 #include "module_jit.h"
+#include "scriptlib/scriptarray.h"
 
 typedef uint64_t EModuleFuncId;
 
 enum : uint64_t
 {
     ModuleInit = 0,
+	ModuleShutdown,
     ModuleCommandLine,
 
     ModuleDrawConfiguration,
@@ -88,6 +90,9 @@ private:
     asIScriptContext *m_pScriptContext;
     asIScriptModule *m_pScriptModule;
 	qboolean m_bLoaded;
+
+	// to force garbage collection
+//	UtlVector<CScriptArray *> m_ScriptArrayObjects;
 
 	int32_t m_nVersionMajor;
 	int32_t m_nVersionUpdate;

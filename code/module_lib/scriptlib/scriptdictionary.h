@@ -7,7 +7,7 @@
 
 #include "../module_public.h"
 #include "scriptarray.h"
-typedef eastl::string dictKey_t;
+typedef string_t dictKey_t;
 
 // Forward declare CScriptDictValue so we can typedef the internal map type
 class CScriptDictValue;

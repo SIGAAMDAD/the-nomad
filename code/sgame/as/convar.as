@@ -44,17 +44,20 @@ namespace TheNomad {
 			Engine::CvarSet( m_Name, value );
 		}
 		void Update() {
+			if ( m_nCvarHandle == FS_INVALID_HANDLE ) {
+				Engine::CvarRegister( m_Name, m_Value, m_Flags, m_IntValue, m_FloatValue, m_nModificationCount, m_nCvarHandle );
+			}
 			Engine::CvarUpdate( m_Value, m_IntValue, m_FloatValue, m_nModificationCount, m_nCvarHandle );
 		}
 		
-		private string m_Name;
-		private string m_Value;
-		private int64 m_IntValue;
-		private float m_FloatValue;
-		private uint m_Flags;
-		private int m_nModificationCount;
-		private int m_nCvarHandle;
-		private bool m_bTrackChanges;
+		private string m_Name = "";
+		private string m_Value = "";
+		private int64 m_IntValue = 0;
+		private float m_FloatValue = 0.0f;
+		private uint m_Flags = 0;
+		private int m_nModificationCount = 0;
+		private int m_nCvarHandle = FS_INVALID_HANDLE;
+		private bool m_bTrackChanges = false;
 	};
 
 	class CvarTableEntry {
@@ -76,12 +79,14 @@ namespace TheNomad {
 			TheNomad::Engine::CmdAddCommand( "sgame.list_cvars" );
 		}
 		void OnShutdown() {
+			m_CvarCache.Clear();
+			TheNomad::Engine::CmdRemoveCommand( "sgame.list_cvars" );
 		}
 		
 		ConVar@ AddCvar( const string& in name, const string& in value, uint flags, bool bTrackChanges ) {
-			CvarTableEntry@ var = CvarTableEntry( ConVar() );
+			CvarTableEntry var = CvarTableEntry( ConVar() );
 			var.m_Handle.Register(  name, value, flags, bTrackChanges  );
-			m_CvarCache.Add( @var );
+			m_CvarCache.Add( var );
 			return @var.m_Handle;
 		}
 		
@@ -107,6 +112,7 @@ namespace TheNomad {
 				if ( m_CvarCache[i].m_nModificationCount != m_CvarCache[i].m_Handle.GetModificationCount()
 					&& m_CvarCache[i].m_Handle.Track() )
 				{
+					m_CvarCache[i].m_nModificationCount = m_CvarCache[i].m_Handle.GetModificationCount();
 					ConsolePrint( "Changed \"" + m_CvarCache[i].m_Handle.GetName() + "\" to \""
 						+ m_CvarCache[i].m_Handle.GetValue() + "\"\n" );
 				}
@@ -123,7 +129,7 @@ namespace TheNomad {
 		void DrawCvarList() {
 		}
 		
-		private array<CvarTableEntry@> m_CvarCache;
+		private array<CvarTableEntry> m_CvarCache;
 	};
 
 	CvarSystem@ CvarManager;

@@ -50,6 +50,12 @@ typedef struct {
 } bind_t;
 
 typedef struct {
+    qboolean debugPrint;
+    int32_t difficulty;
+    uint32_t maxSoundChannels;
+} gameplay_t;
+
+typedef struct {
     const char *texdetailString;
     const char *texfilterString;
 
@@ -381,6 +387,31 @@ const char *Hunk_CopyString( const char *str, ha_pref pref ) {
     N_strncpyz( out, str, len );
 
     return out;
+}
+
+void UI_SettingsWriteBinds_f( void )
+{
+    fileHandle_t f;
+    uint32_t i;
+
+    f = FS_FOpenWrite( "bindings.cfg" );
+    if ( f == FS_INVALID_HANDLE ) {
+        N_Error( ERR_FATAL, "UI_SettingsWriteBinds_f: failed to write bindings" );
+    }
+
+    for ( i = 0; i < settings->controls.numBinds; i++ ) {
+        FS_Printf( f, "\"%s\" \"%s\" %i \"%s\" \"%s\" \"%s\" \"%s\"" GDR_NEWLINE,
+            settings->controls.keybinds[i].command,
+            settings->controls.keybinds[i].label,
+            settings->controls.keybinds[i].id,
+            Key_KeynumToString( settings->controls.keybinds[i].defaultBind1 ),
+            Key_KeynumToString( settings->controls.keybinds[i].defaultBind2 ),
+            Key_KeynumToString( settings->controls.keybinds[i].bind1 ),
+            Key_KeynumToString( settings->controls.keybinds[i].bind2 )
+        );
+    }
+
+    FS_FClose( f );
 }
 
 static void SettingsMenu_LoadBindings( void )

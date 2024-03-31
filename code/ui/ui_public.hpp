@@ -53,12 +53,14 @@ typedef enum : uint64_t {
     UI_MENU_MAIN,
     UI_MENU_PAUSE,
     UI_MENU_NONE,
+    UI_MENU_DEMO,
 
     NUM_UI_MENUS
 } uiMenu_t;
 
 extern "C" void UI_GetHashString( const char *name, char *value );
-
+extern "C" void UI_DrawDiagnositics( void );
+extern "C" void UI_ShowDemoMenu( void );
 extern "C" void UI_Init( void );
 extern "C" void UI_Shutdown( void );
 extern "C" void UI_Refresh( int32_t realtime );

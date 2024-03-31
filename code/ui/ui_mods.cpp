@@ -125,7 +125,7 @@ static void ModsMenu_LoadModList( void )
     FS_FreeFile( b );
 
     if ( json.at( "LoadList" ).size() != mods->numMods ) {
-        N_Error( ERR_DROP, "ModsMenu_LoadModList: bad load list, more mods in list than in memory" );
+        Con_Printf( COLOR_YELLOW "WARNING: ModsMenu_LoadModList: bad load list, mods in list different than in memory\n" );
     }
 
     const nlohmann::json& data = json.at( "LoadList" );

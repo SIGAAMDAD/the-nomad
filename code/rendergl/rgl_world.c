@@ -45,11 +45,10 @@ static void R_LoadTiles(const lump_t *tiles)
 static void R_LoadTileset(const lump_t *sprites, const tile2d_header_t *theader)
 {
     uint32_t count, i;
-    tile2d_sprite_t *in;
-    spriteCoord_t *out;
+    spriteCoord_t *in,*out;
 
-    in = (tile2d_sprite_t *)(fileBase + sprites->fileofs);
-    if (sprites->length % sizeof(*in))
+    in = (spriteCoord_t *)(fileBase + sprites->fileofs);
+    if (sprites->length % sizeof(*out))
         ri.Error(ERR_DROP, "RE_LoadWorldMap: funny lump size (tileset) in %s", r_worldData.name);
     
     count = sprites->length / sizeof(*in);
@@ -58,16 +57,16 @@ static void R_LoadTileset(const lump_t *sprites, const tile2d_header_t *theader)
     r_worldData.sprites = out;
     r_worldData.numSprites = count;
 
-    for ( i = 0; i < count; i++ ) {
-        memcpy( out[i], in[i].uv, sizeof( *out ) );
-    }
+    memcpy( out, in, count * sizeof( *out ) );
 }
 
 static void R_CalcSpriteTextureCoords( uint32_t x, uint32_t y, uint32_t spriteWidth, uint32_t spriteHeight,
     uint32_t sheetWidth, uint32_t sheetHeight, spriteCoord_t *texCoords )
 {
-    const vec2_t min = { (((float)x + 1) * spriteWidth) / sheetWidth, (((float)y + 1) * spriteHeight) / sheetHeight };
-    const vec2_t max = { ((float)x * spriteWidth) / sheetWidth, ((float)y * spriteHeight) / sheetHeight };
+    const vec2_t min = { (((float)x + 1) * (float)spriteWidth) / (float)sheetWidth,
+        (((float)y + 1) * (float)spriteHeight) / (float)sheetHeight };
+    const vec2_t max = { ((float)x * (float)spriteWidth) / (float)sheetWidth,
+        ((float)y * (float)spriteHeight) / (float)sheetHeight };
 
     (*texCoords)[0][0] = min[0];
     (*texCoords)[0][1] = max[1];
@@ -82,13 +81,33 @@ static void R_CalcSpriteTextureCoords( uint32_t x, uint32_t y, uint32_t spriteWi
     (*texCoords)[3][1] = max[1];
 }
 
-static void R_GenerateTexCoords( const tile2d_info_t *info )
+static void R_GenerateTexCoords( tile2d_info_t *info )
 {
     uint32_t y, x;
     uint32_t sheetWidth, sheetHeight;
+    const texture_t *image;
+    char texture[MAX_NPATH];
+
+    COM_StripExtension( info->texture, texture, sizeof( texture ) );
+    if ( texture[ strlen( texture ) - 1 ] == '.' ) {
+        texture[ strlen( texture ) - 1 ] = '\0';
+    }
+
+    r_worldData.shader = R_GetShaderByHandle( RE_RegisterShader( texture ) );
+    if ( r_worldData.shader == rg.defaultShader ) {
+        ri.Error( ERR_DROP, "RE_LoadWorldMap: failed to load shader for '%s'", r_worldData.name );
+    }
+
+    image = r_worldData.shader->stages[0]->bundle[0].image;
+
+    info->tileCountX = image->width / info->tileWidth;
+    info->tileCountY = image->height / info->tileHeight;
 
     sheetWidth = info->tileCountX * info->tileWidth;
     sheetHeight = info->tileCountY * info->tileHeight;
+
+    ri.Printf( PRINT_DEVELOPER, "Generating worldData tileset %ux%u:%ux%u, %u sprites\n", sheetWidth, sheetHeight,
+        info->tileWidth, info->tileHeight, info->numTiles );
 
     for ( y = 0; y < info->tileCountY; y++ ) {
         for ( x = 0; x < info->tileCountX; x++ ) {
@@ -99,8 +118,16 @@ static void R_GenerateTexCoords( const tile2d_info_t *info )
 
     for ( y = 0; y < r_worldData.height; y++ ) {
         for ( x = 0; x < r_worldData.width; x++ ) {
-            memcpy( r_worldData.tiles[ y * r_worldData.width + x ].texcoords,
-                r_worldData.sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ], sizeof( spriteCoord_t ) );
+            VectorCopy2( r_worldData.tiles[ y * r_worldData.width + x ].texcoords[0],
+                r_worldData.sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][0] );
+            VectorCopy2( r_worldData.tiles[ y * r_worldData.width + x ].texcoords[1],
+                r_worldData.sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][1] );
+            VectorCopy2( r_worldData.tiles[ y * r_worldData.width + x ].texcoords[2],
+                r_worldData.sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][2] );
+            VectorCopy2( r_worldData.tiles[ y * r_worldData.width + x ].texcoords[3],
+                r_worldData.sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ][0] );
+//            memcpy( r_worldData.tiles[ y * r_worldData.width + x ].texcoords,
+//                r_worldData.sprites[ r_worldData.tiles[ y * r_worldData.width + x ].index ], sizeof( spriteCoord_t ) );
 
             VectorCopy2( r_worldData.vertices[ ( y * r_worldData.width + x ) + 0].uv,
                 r_worldData.tiles[y * r_worldData.width + x].texcoords[0] );
@@ -251,19 +278,9 @@ void RE_LoadWorldMap(const char *filename)
     R_LoadTileset(&mheader->lumps[LUMP_SPRITES], theader);
 
     R_GenerateDrawData();
-    R_GenerateTexCoords( theader );
+    R_GenerateTexCoords( &theader->info );
 
     rg.world = &r_worldData;
-
-    COM_StripExtension(theader->info.texture, texture, sizeof(texture));
-    if (texture[ strlen(texture) - 1 ] == '.') {
-        texture[ strlen(texture) - 1 ] = '\0';
-    }
-
-    rg.world->shader = R_FindShader( texture );
-    if ( rg.world->shader == rg.defaultShader ) {
-        ri.Error(ERR_DROP, "RE_LoadWorldMap: failed to load shader for '%s'", filename);
-    }
 
     ri.FS_FreeFile( buffer.v );
 }

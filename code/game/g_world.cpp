@@ -140,17 +140,20 @@ void G_SetMap_f( void ) {
 	const char *mapname;
 	nhandle_t hMap;
 
-	if ( Cmd_Argc() < 2 ) {
-		Con_Printf( "usage: setmap <name>\n" );
-		return;
-    }
-
     mapname = Cmd_Argv( 1 );
 
-    if ( !N_stricmp( mapname, "none" ) ) {
-        gi.mapCache.currentMapLoaded = FS_INVALID_HANDLE;
-        return;
-    }
+	if ( !mapname[0] ) {
+		// clear it
+		Cvar_Set( "mapname", "" );
+		Cbuf_ExecuteText( EXEC_NOW, "unloadworld" );
+
+		gi.mapLoaded = qfalse;
+		gi.mapCache.currentMapLoaded = FS_INVALID_HANDLE;
+
+		// clear all allocated map data memory
+		Hunk_ClearToMark();
+		return;
+	}
 
 	hMap = G_GetMapHandle( mapname );
 
@@ -160,6 +163,11 @@ void G_SetMap_f( void ) {
 	}
 
     gi.mapCache.currentMapLoaded = hMap;
+	gi.mapLoaded = qtrue;
+
+	Cvar_Set( "mapname", mapname );
+
+	Con_Printf( "Loaded map '%s'\n", mapname );
 }
 
 nhandle_t G_LoadMap( const char *name ) {
@@ -222,17 +230,20 @@ void G_GetTileData( uint32_t *pTiles, uint32_t nLevel ) {
 	}
 }
 
-void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns, uint32_t *nTiles, linkEntity_t *activeEnts )
+void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns, uint32_t *nTiles )
 {
 	mapinfo_t *info;
 	
 	if ( hMap == FS_INVALID_HANDLE || ( hMap - 1 ) >= gi.mapCache.numMapFiles ) {
 		N_Error( ERR_DROP, "G_SetActiveMap: handle out of range" );
-	} else if ( !activeEnts ) {
+	} else if ( !nCheckpoints || !nSpawns || !nTiles ) {
 		N_Error( ERR_DROP, "G_SetActiveMap: invalid parameter" );
 	}
 	
 	info = &gi.mapCache.info;
+
+	// set the marker before loading any map assets
+    Hunk_SetMark();
 
 	if ( !G_LoadLevelFile( gi.mapCache.mapList[ hMap - 1 ], info ) ) {
 		N_Error( ERR_DROP, "G_SetActiveMap: failed to load map level file '%s'", gi.mapCache.mapList[ hMap - 1 ] );
@@ -241,9 +252,10 @@ void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns, 
 	*nCheckpoints = info->numCheckpoints;
 	*nSpawns = info->numSpawns;
 	*nTiles = info->numTiles;
-	g_world->Init( &gi.mapCache.info, activeEnts );
 
-	Cbuf_ExecuteText( EXEC_APPEND, va( "setmap %s 0\n", gi.mapCache.info.name ) );
+	g_world->Init( &gi.mapCache.info );
+
+	Cbuf_ExecuteText( EXEC_APPEND, va( "setmap %s\n", gi.mapCache.info.name ) );
 }
 
 CGameWorld::CGameWorld( void ) {
@@ -253,30 +265,25 @@ CGameWorld::CGameWorld( void ) {
 CGameWorld::~CGameWorld() {
 }
 
-void CGameWorld::Init( mapinfo_t *info, linkEntity_t *activeEnts )
+void CGameWorld::Init( mapinfo_t *info )
 {
-    if ( !activeEnts ) {
-        N_Error( ERR_DROP, "CGameWorld::Init: invalid activeEnts data provided!" );
-    }
-
-    m_pMapInfo = info;
-    m_pActiveEnts = activeEnts;
 	m_nEntities = 0;
-
-    m_pEndEnt = m_pActiveEnts;
-    m_pActiveEnts->next = m_pActiveEnts->prev = m_pActiveEnts;
+    m_pMapInfo = info;
+    m_ActiveEnts.next =
+	m_ActiveEnts.prev =
+		&m_ActiveEnts;
 }
 
 void CGameWorld::LinkEntity( linkEntity_t *ent )
 {
 	m_hLock.WriteLock();
-    ent->prev = m_pEndEnt;
-    ent->next = m_pActiveEnts;
-
 	m_nEntities++;
 
-    m_pEndEnt->next = ent;
-    m_pEndEnt = ent;
+    m_ActiveEnts.prev->next = ent;
+	ent->prev = m_ActiveEnts.prev;
+	ent->next = &m_ActiveEnts;
+	m_ActiveEnts.prev = ent;
+	
 	m_hLock.WriteUnlock();
 }
 
@@ -294,7 +301,7 @@ qboolean CGameWorld::CheckWallHit( const vec3_t origin, dirtype_t dir )
 	Sys_SnapVector( p );
 	VectorCopy( tmp, p );
 
-    return m_pMapInfo->tiles[ tmp[1] * tmp[0] + m_pMapInfo->width ].sides[dir];
+    return m_pMapInfo->tiles[ tmp[1] * m_pMapInfo->width + tmp[0] ].sides[dir];
 }
 
 void CGameWorld::CastRay( ray_t *ray )
@@ -322,7 +329,7 @@ void CGameWorld::CastRay( ray_t *ray )
 	
 	hitCount = 0;
 	for ( ;; ) {
-        for ( linkEntity_t *it = m_pActiveEnts->next; ; it = it->next ) {
+        for ( linkEntity_t *it = m_ActiveEnts.next; it != &m_ActiveEnts; it = it->next ) {
 			if ( BoundsIntersectPoint( &it->bounds, ray->origin ) ) {
 				ray->entityNumber = it->entityNumber;
 				break;

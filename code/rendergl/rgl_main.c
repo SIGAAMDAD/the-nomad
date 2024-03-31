@@ -236,18 +236,18 @@ static void R_DrawWorld( void )
 
     for (y = 0; y < rg.world->height; y++) {
         for (x = 0; x < rg.world->width; x++) {
-            pos[0] = x;
-            pos[1] = -y;
-//            pos[0] = x - (rg.world->width * 0.5f);
-//            pos[1] = rg.world->height - y;
+//            pos[0] = x;
+//            pos[1] = -y;
+            pos[0] = x - (rg.world->width * 0.5f);
+            pos[1] = rg.world->height - y;
             pos[2] = 0.0f;
 
             // convert the local world coordinates to OpenGL screen coordinates
             R_WorldToGL( vtx, pos );
 
             for (i = 0; i < 4; i++) {
-                VectorCopy2( vtx[i].uv, rg.world->tiles[y * rg.world->width + x].texcoords[i] );
-                VectorSet( vtx[i].worldPos, x, y, 0.0f );
+                VectorCopy2( vtx[i].uv, rg.world->sprites[ rg.world->tiles[y * rg.world->width + x].index ][i] );
+//                VectorSet( vtx[i].worldPos, x, y, 0.0f );
             }
 
             // submit the processed vertices

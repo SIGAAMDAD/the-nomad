@@ -878,6 +878,9 @@ void CUILib::SetActiveMenu( uiMenu_t menu )
     case UI_MENU_TITLE:
         UI_TitleMenu();
 		break;
+	case UI_MENU_DEMO:
+		UI_DemoMenu();
+		break;
 	default:
 #ifdef _NOMAD_DEBUG
 	    Con_Printf("UI_SetActiveMenu: bad enum %lu\n", menu );
