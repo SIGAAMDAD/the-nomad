@@ -461,12 +461,6 @@ extern "C" void UI_Refresh( int32_t realtime )
 			ui->SetFirstDraw( qfalse );
 		}
 	}
-    else {
-		if ( ui->GetState() == STATE_PAUSE ) {
-			return;
-		}
-        ui->SetActiveMenu( UI_MENU_TITLE );
-    }
 /*
 	// draw cursor
 //	ui->SetColor( NULL );

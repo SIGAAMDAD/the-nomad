@@ -250,8 +250,8 @@ static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, float scale, mat
 
     memcpy( &viewProjectionMatrix[0][0], &vpm[0][0], sizeof(mat4_t) );
 
-    model = glm::translate( viewProjectionMatrix, glm::vec3( world[0], world[1], world[2] ) )
-        * glm::scale( viewProjectionMatrix, glm::vec3( scale ) );
+    model = glm::translate( viewProjectionMatrix, glm::vec3( world[0], world[1], world[2] ) );
+//        * glm::scale( viewProjectionMatrix, glm::vec3( scale ) );
     mvp = viewProjectionMatrix * model;
 
     const glm::vec4 positions[4] = {

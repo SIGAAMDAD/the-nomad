@@ -21,6 +21,10 @@ uniform vec4 u_NormalScale;
 uniform uint u_NumLights;
 #endif
 
+#if defined(USE_EXPOSURE_TONE_MAPPING)
+uniform float u_CameraExposure;
+#endif
+
 #if defined(USE_NORMALMAP)
 uniform sampler2D u_NormalMap;
 #endif
@@ -105,8 +109,13 @@ void main() {
 	}
 #endif
 #if defined(USE_HDR)
+#if !defined(USE_EXPOSURE_TONE_MAPPING)
 	// reinhard tone mapping
-	a_Color.rgb /= ( a_Color.rgb + vec3( 1.0 ) );
+	a_Color.rgb = a_Color.rgb / ( a_Color.rgb + vec3( 1.0 ) );
+#else
+	// exposure tone mapping
+	a_Color.rgb = vec3( 1.0 ) - exp( -a_Color.rgb * u_CameraExposure );
+#endif
 #endif
     a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
 }

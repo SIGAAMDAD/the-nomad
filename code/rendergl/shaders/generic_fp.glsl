@@ -82,7 +82,7 @@ void main() {
 
 #if defined(USE_HDR)
 	// reinhard tone mapping
-	a_Color.rgb /= ( a_Color.rgb + vec3( 1.0 ) );
+//	a_Color.rgb /= ( a_Color.rgb + vec3( 1.0 ) );
 #endif
 	a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
 }
