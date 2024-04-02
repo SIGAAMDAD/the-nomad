@@ -351,8 +351,6 @@ void SCR_UpdateScreen(void)
 //	g_pRenderThread->Start();
 	re.BeginFrame( STEREO_CENTER );
 
-	UI_DrawDiagnositics();
-
     if (framecount == gi.framecount) {
         int64_t ms = Sys_Milliseconds();
 
@@ -399,6 +397,7 @@ void SCR_UpdateScreen(void)
 		};
 	}
 	UI_Refresh( gi.realtime );
+	UI_DrawDiagnostics();
 
     // console draws next
     Con_DrawConsole();

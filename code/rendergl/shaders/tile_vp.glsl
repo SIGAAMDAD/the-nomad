@@ -6,6 +6,7 @@ in vec3 a_WorldPos;
 out vec2 v_TexCoords;
 out vec3 v_FragPos;
 out vec4 v_Color;
+out vec3 v_WorldPos;
 
 uniform mat4 u_ModelViewProjection;
 uniform vec4 u_BaseColor;
@@ -121,7 +122,6 @@ vec2 GenTexCoords( int TCGen, vec3 position, vec3 normal, vec3 TCGenVector0, vec
 
 void main()
 {
-	v_Color = a_Color;
 //
 //#if defined(USE_TCGEN)
 //	vec2 texCoords = GenTexCoords( u_TCGen0, a_Position, vec3( 0.0 ), u_TCGen0Vector0, u_TCGen0Vector1 );
@@ -134,7 +134,9 @@ void main()
 //#else
 //	v_TexCoords = texCoords;
 //#endif
+    v_Color = a_Color;
 	v_TexCoords = a_TexCoords;
+	v_WorldPos = a_WorldPos;
 
 	v_FragPos = vec4( u_ModelViewProjection * vec4( a_Position, 1.0 ) ).xyz;
 

@@ -16,7 +16,6 @@ typedef enum : uint64_t
 {
     STATE_MAIN,
         STATE_SINGLEPLAYER,
-            STATE_NAMEISSUE,
             STATE_NEWGAME,
             STATE_LOADGAME,
             STATE_PLAYMISSION,
@@ -351,7 +350,6 @@ extern qboolean     ModsMenu_IsModuleActive( const char *pName );
 //
 extern void         UI_SinglePlayerMenu( void );
 extern void         SinglePlayerMenu_Cache( void );
-extern void         NewGame_DrawNameIssue( void );
 extern void         SinglePlayerMenu_Draw( void );
 
 #include "ui_defs.h"

@@ -24,7 +24,7 @@ const moduleFunc_t funcDefs[NumFuncs] = {
 CModuleHandle::CModuleHandle( const char *pName, const std::vector<std::string>& sourceFiles, int32_t moduleVersionMajor,
     int32_t moduleVersionUpdate, int32_t moduleVersionPatch, const std::vector<std::string>& includePaths
 )
-    : m_szName{ pName }, m_nVersionMajor{ moduleVersionMajor },
+    : m_szName{ pName }, m_nStateStack{ 0 }, m_nVersionMajor{ moduleVersionMajor },
     m_nVersionUpdate{ moduleVersionUpdate }, m_nVersionPatch{ moduleVersionPatch }
 {
     int error;
@@ -79,6 +79,7 @@ CModuleHandle::CModuleHandle( const char *pName, const std::vector<std::string>&
 //    m_pScriptModule->SetUserData( this );
 //    SaveToCache();
 
+    m_nLastCallId = NumFuncs;
     m_bLoaded = qtrue;
 }
 
@@ -136,6 +137,10 @@ void LogExceptionInfo( asIScriptContext *pContext, void *userData )
     N_Error( ERR_FATAL, "%s", msg );
 }
 
+void CModuleHandle::PrepareContext( asIScriptFunction *pFunction )
+{
+}
+
 int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pArgList )
 {
     uint32_t i;
@@ -147,12 +152,81 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
 
     PROFILE_BLOCK_BEGIN( va( "module '%s'", m_szName.c_str() ) );
 
-    CheckASCall( m_pScriptContext->Prepare( m_pFuncTable[nCallId] ) );
     CheckASCall( m_pScriptContext->SetExceptionCallback( asFUNCTION( LogExceptionInfo ), this, asCALL_CDECL ) );
+
+    // prevent a nested call infinite recursion
+    if ( m_nLastCallId == nCallId ) {
+        N_Error( ERR_DROP, "CModuleHandle::CallFunc: recursive nested module call" );
+    }
+    m_nLastCallId = nCallId;
+
+    if ( m_nStateStack ) {
+        // we're running something right now, so push a new state and
+        // call into that instead
+        CheckASCall( m_pScriptContext->PushState() );
+        CheckASCall( m_pScriptContext->Prepare( m_pFuncTable[ nCallId ] ) );
+
+        if ( ml_debugMode->i && g_pDebugger->m_pModule->m_pHandle == this ) {
+            CheckASCall( m_pScriptContext->SetLineCallback( asMETHOD( CDebugger, LineCallback ), g_pDebugger, asCALL_THISCALL ) );
+        }
+    
+        g_pModuleLib->SetHandle( this );
+    
+        for ( i = 0; i < nArgs; i++ ) {
+            CheckASCall( m_pScriptContext->SetArgDWord( i, pArgList[i] ) );
+        }
+        
+        try {
+            retn = m_pScriptContext->Execute();
+        } catch ( const ModuleException& e ) {
+            LogExceptionInfo( m_pScriptContext, this );
+        } catch ( const nlohmann::json::exception& e ) {
+            const asIScriptFunction *pFunc;
+            pFunc = m_pScriptContext->GetExceptionFunction();
+        
+            N_Error( ERR_DROP,
+                "nlohmann::json::exception was thrown in module ->\n"
+                " Module ID: %s\n"
+                " Section Name: %s\n"
+                " Function: %s\n"
+                " Line: %i\n"
+                " Error Message: %s\n"
+                " Id: %i\n"
+            ,  pFunc->GetModuleName(), pFunc->GetScriptSectionName(), pFunc->GetDeclaration(), m_pScriptContext->GetExceptionLineNumber(),
+            e.what(), e.id );
+        }
+    
+        switch ( retn ) {
+        case asEXECUTION_ABORTED:
+        case asEXECUTION_ERROR:
+        case asEXECUTION_EXCEPTION:
+            // something happened in there, dunno what
+            LogExceptionInfo( m_pScriptContext, this );
+            break;
+        case asEXECUTION_SUSPENDED:
+        case asEXECUTION_FINISHED:
+        default:
+            // exited successfully
+            break;
+        };
+    
+        retn = (int)m_pScriptContext->GetReturnWord();
+    
+        PROFILE_BLOCK_END;
+
+        CheckASCall( m_pScriptContext->PopState() );
+
+        m_nStateStack--;
+        return retn;
+    }
+    m_nStateStack++;
+    CheckASCall( m_pScriptContext->Prepare( m_pFuncTable[ nCallId ] ) );
 
     if ( ml_debugMode->i && g_pDebugger->m_pModule->m_pHandle == this ) {
         CheckASCall( m_pScriptContext->SetLineCallback( asMETHOD( CDebugger, LineCallback ), g_pDebugger, asCALL_THISCALL ) );
     }
+
+    g_pModuleLib->SetHandle( this );
 
     for ( i = 0; i < nArgs; i++ ) {
         CheckASCall( m_pScriptContext->SetArgDWord( i, pArgList[i] ) );
@@ -195,6 +269,9 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
     retn = (int)m_pScriptContext->GetReturnWord();
 
     PROFILE_BLOCK_END;
+
+    m_nStateStack--;
+    m_nLastCallId = NumFuncs;
 
     return retn;
 }

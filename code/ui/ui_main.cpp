@@ -28,17 +28,67 @@ static void UI_Cache_f( void ) {
     IntroMenu_Cache();
     MainMenu_Cache();
     SettingsMenu_Cache();
-    SinglePlayerMenu_Cache();
 	LegalMenu_Cache();
 	ModsMenu_Cache();
+	SinglePlayerMenu_Cache();
 	DemoMenu_Cache();
 }
 
 CUIFontCache::CUIFontCache( void ) {
+    union {
+        void *v;
+        char *b;
+    } f;
+    uint64_t nLength;
+	nlohmann::json data;
+
 	Con_Printf( "Initializing font cache...\n" );
 
 	memset( m_FontList, 0, sizeof( m_FontList ) );
 	m_pCurrentFont = NULL;
+
+    nLength = FS_LoadFile( "fonts/font_config.json", &f.v );
+    if ( !nLength || !f.v ) {
+        N_Error( ERR_FATAL, "CUIFontCache::Init: failed to load fonts/font_config.json" );
+    }
+	try {
+		data = nlohmann::json::parse( f.b, f.b + nLength );
+	} catch ( const nlohmann::json::exception& e ) {
+		N_Error( ERR_FATAL,
+			"CUIFontCache::Init: failed to parse fonts/font_config.json, nlohmann::json::exception thrown ->\n"
+			"  id: %i\n"
+			"  what: %s\n"
+		, e.id, e.what() );
+	}
+	if ( !data.contains( "FontList" ) ) {
+		N_Error( ERR_FATAL, "CUIFontCache::Init: font_config missing FontList object array" );
+	}
+
+	for ( const auto& it : data.at( "FontList"  ) ) {
+		if ( !it.contains( "Name" ) ) {
+			N_Error( ERR_FATAL, "CUIFontCache::Init: font config object missing variable 'Name'" );
+		}
+		const nlohmann::json::string_t& name = it.at( "Name" );
+
+		if ( !it.contains( "Scale" ) ) {
+			N_Error( ERR_FATAL, "CUIFontCache::Init: font_config object missing variable 'Scale'" );
+		}
+		const float scale = it.at( "Scale" );
+
+		if ( !it.contains( "Variants" ) ) {
+			N_Error( ERR_FATAL, "CUIFontCache::Init: font_config object missing object array 'Variants'" );
+		}
+
+		for ( const auto& var : it.at( "Variants" ) ) {
+			const nlohmann::json::string_t& variant = var.get<nlohmann::json::string_t>();
+			if ( !AddFontToCache( name.c_str(), variant.c_str(), scale ) ) {
+				N_Error( ERR_FATAL, "CUIFontCache::Init: failed to load font data for 'fonts/%s/%s-%s.ttf'", name.c_str(), name.c_str(),
+					variant.c_str() );
+			}
+		}
+	}
+
+	FS_FreeFile( f.v );
 }
 
 void CUIFontCache::SetActiveFont( ImFont *font )
@@ -71,37 +121,48 @@ void CUIFontCache::Finalize( void ) {
 	ImGui_ImplOpenGL3_CreateFontsTexture();
 }
 
-ImFont *CUIFontCache::AddFontToCache( const char *filename )
+ImFont *CUIFontCache::AddFontToCache( const char *filename, const char *variant, float scale )
 {
 	uiFont_t *font;
 	uint64_t size;
 	uint64_t hash;
 	ImFontConfig config;
+	const char *path;
 	union {
 		void *v;
 		char *b;
 	} f;
+	char rpath[MAX_NPATH];
+	char hashpath[MAX_NPATH];
 
-	hash = Com_GenerateHashValue( filename, MAX_UI_FONTS );
+	COM_StripExtension( filename, rpath, sizeof( rpath ) );
+	if ( rpath[ strlen( rpath ) - 1 ] == '.' ) {
+		rpath[ strlen( rpath) - 1 ] = 0;
+	}
+
+	Com_snprintf( hashpath, sizeof( hashpath ) - 1, "%s-%s", rpath, variant );
+
+	path = va( "fonts/%s/%s.ttf", rpath, hashpath );
+	hash = Com_GenerateHashValue( hashpath, MAX_UI_FONTS );
 
 	//
 	// see if we already have the font in the cache
 	//
 	for ( font = m_FontList[hash]; font; font = font->m_pNext ) {
-		if ( !N_stricmp( font->m_szName, filename ) ) {
+		if ( !N_stricmp( font->m_szName, hashpath ) ) {
 			return font->m_pFont; // its already been loaded
 		}
 	}
 
-	Con_Printf( "CUIFontCache: loading font '%s'...\n", filename );
+	Con_Printf( "CUIFontCache: loading font '%s'...\n", path );
 
-	if ( strlen( filename ) >= MAX_GDR_PATH ) {
-		N_Error( ERR_DROP, "CUIFontCache::AddFontToCache: name '%s' is too long", filename );
+	if ( strlen( hashpath ) >= MAX_NPATH ) {
+		N_Error( ERR_DROP, "CUIFontCache::AddFontToCache: name '%s' is too long", hashpath );
 	}
 
-	size = FS_LoadFile( filename, &f.v );
+	size = FS_LoadFile( path, &f.v );
 	if ( !size || !f.v ) {
-		N_Error( ERR_DROP, "CUIFontCache::AddFontToCache: failed to load font file '%s'", filename );
+		N_Error( ERR_DROP, "CUIFontCache::AddFontToCache: failed to load font file '%s'", path );
 	}
 
 	font = (uiFont_t *)Hunk_Alloc( sizeof( *font ), h_high );
@@ -112,9 +173,9 @@ ImFont *CUIFontCache::AddFontToCache( const char *filename )
 	config.FontDataOwnedByAtlas = false;
 	config.GlyphExtraSpacing.x = 0.0f;
 
-	N_strncpyz( font->m_szName, filename, sizeof( font->m_szName ) );
+	N_strncpyz( font->m_szName, hashpath, sizeof( font->m_szName ) );
 	font->m_nFileSize = size;
-	font->m_pFont = ImGui::GetIO().Fonts->AddFontFromMemoryTTF( f.v, size, 16.0f * ui->scale, &config );
+	font->m_pFont = ImGui::GetIO().Fonts->AddFontFromMemoryTTF( f.v, size, 16.0f * scale, &config );
 
 	FS_FreeFile( f.v );
 
@@ -222,6 +283,7 @@ extern "C" void UI_Shutdown( void )
     Cmd_RemoveCommand( "ui.cache" );
 	Cmd_RemoveCommand( "ui.fontinfo" );
 	Cmd_RemoveCommand( "ui.settings_write_bindings" );
+	Cmd_RemoveCommand( "togglemenu" );
 }
 
 // FIXME: call UI_Shutdown instead
@@ -238,6 +300,10 @@ extern "C" void UI_GetHashString( const char *name, char *value ) {
 	hash = strManager->ValueForKey( name );
 
 	N_strncpyz( value, hash->value, MAX_STRING_CHARS );
+}
+
+static void UI_PauseMenu_f( void ) {
+	ui->SetActiveMenu( UI_MENU_PAUSE );
 }
 
 extern "C" void UI_Init( void )
@@ -268,6 +334,7 @@ extern "C" void UI_Init( void )
     Cmd_AddCommand( "ui.cache", UI_Cache_f );
 	Cmd_AddCommand( "ui.fontinfo", CUIFontCache::ListFonts_f );
 	Cmd_AddCommand( "ui.settings_write_bindings", UI_SettingsWriteBinds_f );
+	Cmd_AddCommand( "togglemenu", UI_PauseMenu_f );
 }
 
 void Menu_Cache( void )
@@ -342,7 +409,7 @@ extern "C" void UI_DrawFPS( bool useWindow = false )
 
 void Sys_DisplayEngineStats( void );
 
-extern "C" void UI_DrawDiagnositics( void )
+extern "C" void UI_DrawDiagnostics( void )
 {
     if (!ui_diagnostics->i) {
         return;
@@ -395,6 +462,9 @@ extern "C" void UI_Refresh( int32_t realtime )
 		}
 	}
     else {
+		if ( ui->GetState() == STATE_PAUSE ) {
+			return;
+		}
         ui->SetActiveMenu( UI_MENU_TITLE );
     }
 /*

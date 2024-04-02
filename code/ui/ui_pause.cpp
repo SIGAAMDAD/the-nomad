@@ -30,7 +30,7 @@ typedef struct
     const stringHash_t *exitToMainMenu;
 } pausemenu_t;
 
-#define PAUSEMENU_VOLUME_CAP 2.0f
+#define PAUSEMENU_VOLUME_CAP 2
 
 static const char *dailyTips[] = {
     "You can parry anything that's a projectile, that includes bullets, flying corpses, blades, etc.",
@@ -195,7 +195,7 @@ void PauseMenu_Cache( void )
     menu.menu.Draw = PauseMenu_Draw;
 
     menu.oldVolume = Cvar_VariableFloat( "snd_musicvol" );
-    Cvar_Set( "snd_musicvol", va( "%f", PAUSEMENU_VOLUME_CAP ) );
+    Cvar_Set( "snd_musicvol", va( "%i", PAUSEMENU_VOLUME_CAP ) );
 
     menu.title = strManager->ValueForKey( "MENU_PAUSE_TITLE" );
     menu.checkpoint = strManager->ValueForKey( "MENU_PAUSE_CHECKPOINT" );

@@ -887,7 +887,7 @@ static void Con_DrawText( const char *txt )
 	if ( RobotoMono ) {
 		FontCache()->SetActiveFont( RobotoMono );
 	} else {
-		RobotoMono = FontCache()->AddFontToCache( "fonts/RobotoMono/RobotoMono-Bold.ttf" );
+		RobotoMono = FontCache()->AddFontToCache( "RobotoMono", "Bold" );
 	}
 
 	for ( i = 0, text = txt; i < len; i++, text++ ) {

@@ -571,7 +571,7 @@ void CModuleLib::Shutdown( qboolean quit )
 
     if ( Cvar_VariableString( "com_errorMessage" )[0] ) {
         if ( asGetActiveContext() ) {
-            Cbuf_ExecuteText( EXEC_NOW, va( "ml_debug.set_active \"%s\"", asGetActiveContext()->GetFunction()->GetModuleName() ) );
+            Cbuf_ExecuteText( EXEC_NOW, va( "ml_debug.set_active \"%s\"", m_pCurrentHandle->GetName().c_str() ) );
             g_pDebugger->PrintCallstack( asGetActiveContext() );
         }
 

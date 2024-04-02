@@ -37,4 +37,10 @@ void FBO_FastBlit( fbo_t *src, ivec4_t srcBox, fbo_t *dst, ivec4_t dstBox, int b
 void FBO_Blit( fbo_t *src, ivec4_t inSrcBox, vec2_t srcTexScale, fbo_t *dst, ivec4_t dstBox, struct shaderProgram_s *shaderProgram, const vec4_t color, int blend );
 void FBO_Bind( fbo_t *fbo );
 
+
+void RB_ToneMap(fbo_t *hdrFbo, ivec4_t hdrBox, fbo_t *ldrFbo, ivec4_t ldrBox, int autoExposure);
+void RB_BokehBlur(fbo_t *src, ivec4_t srcBox, fbo_t *dst, ivec4_t dstBox, float blur);
+void RB_SunRays(fbo_t *srcFbo, ivec4_t srcBox, fbo_t *dstFbo, ivec4_t dstBox);
+void RB_GaussianBlur(float blur);
+
 #endif

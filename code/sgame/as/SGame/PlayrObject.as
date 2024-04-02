@@ -54,9 +54,10 @@ namespace TheNomad::SGame {
 			}
 		}
 		void PrevWeapon_f() {
-			m_CurrentWeapon--;
-			if ( m_CurrentWeapon <= 0 ) {
-				m_CurrentWeapon = m_WeaponSlots.size() - 1;
+			if ( m_CurrentWeapon == 0 ) {
+				m_CurrentWeapon = m_WeaponSlots.Count();
+			} else {
+				m_CurrentWeapon--;
 			}
 		}
 		void SetWeapon_f() {
@@ -71,18 +72,28 @@ namespace TheNomad::SGame {
 		}
 
 		bool Load( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) override {
+			LoadBase( section );
+
 			m_PFlags = section.LoadUInt( "playrFlags" );
-			m_LegsFacing = section.LoadUInt( "legsFacing" );
 			m_Facing = section.LoadUInt( "torsoFacing" );
-			m_nAngle = section.LoadFloat( "angle" );
-			m_Direction = TheNomad::GameSystem::DirType( section.LoadUInt( "direction" ) );
-			m_Flags = EntityFlags( section.LoadUInt( "entityFlags" ) );
-			m_bProjectile = Convert().ToBool( section.LoadUInt( "isProjectile" ) );
 
 			return true;
 		}
 		void Save( const TheNomad::GameSystem::SaveSystem::SaveSection& in section ) const {
-			
+			SaveBase( section );
+
+			section.SaveUInt( "playrFlags", m_PFlags );
+			section.SaveUInt( "legsFacing", m_LegsFacing );
+		}
+
+		float GetHealthMult() const {
+			return m_nHealMult;
+		}
+		float GetDamageMult() const {
+			return m_nDamageMult;
+		}
+		float GetRage() const {
+			return m_nRage;
 		}
 		
 		void Damage( float nAmount ) {
@@ -117,17 +128,28 @@ namespace TheNomad::SGame {
 				m_QuickShot.Think();
 			}
 			
-			switch ( m_State.GetID() ) {
-			case StateNum::ST_PLAYR_IDLE:
-				IdleThink();
-				break; // NOTE: maybe let the player move in combat? (that would require more sprites for the dawgs)
-			case StateNum::ST_PLAYR_COMBAT:
-				CombatThink();
-				break;
-			};
+//			switch ( m_State.GetID() ) {
+//			case StateNum::ST_PLAYR_IDLE:
+//				IdleThink();
+//				break; // NOTE: maybe let the player move in combat? (that would require more sprites for the dawgs)
+//			case StateNum::ST_PLAYR_COMBAT:
+//				CombatThink();
+//				break;
+//			};
 
-			m_nHealth += sgame_PlayerHealBase.GetFloat() * m_nHealMult;
-			m_nHealMult -= m_nHealMultDecay * LevelManager.GetDifficultyScale();
+			if ( m_nHealth < 100.0f ) {
+				m_nHealth += sgame_PlayerHealBase.GetFloat() * m_nHealMult;
+				m_nHealMult -= m_nHealMultDecay * LevelManager.GetDifficultyScale();
+
+				if ( m_nHealth > 100.0f ) {
+					m_nHealth = 100.0f;
+				}
+				if ( m_nHealMult < 0.0f ) {
+					m_nHealMult = 0.0f;
+				}
+			}
+
+			m_HudData.Draw();
 		}
 		
 		private float GetGfxDirection() const {
@@ -253,15 +275,18 @@ namespace TheNomad::SGame {
 		// the amount of damage dealt in the frame
 		private uint m_nFrameDamage = 0;
 
+		// the lore goes: the more and harder you hit The Nomad, the harder and faster they hit back
 		private float m_nDamageMult = 0.0f;
+		private float m_nRage = 0.0f;
+
 		private float m_nHealMult = 0.0f;
+		private float m_nHealMultDecay = 1.0f;
 
 		private int m_LegsFacing = 0;
 
 		private bool m_bEmoting = false;
-
-		private float m_nHealMultDecay = 1.0f;
 		
+		private PlayerDisplayUI m_HudData;
 		private PMoveData Pmove;
 	};
 };

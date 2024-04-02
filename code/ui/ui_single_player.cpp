@@ -7,12 +7,15 @@
 #include "../game/g_archive.h"
 
 typedef struct {
-    char name[MAX_GDR_PATH];
+    char name[MAX_NPATH];
     fileStats_t stats;
     uint64_t index;
     gamedata_t gd;
     qboolean valid;
     qboolean *modsLoaded;
+
+    char creationTime[32];
+    char modificationTime[32];
 } saveinfo_t;
 
 typedef struct {
@@ -21,15 +24,18 @@ typedef struct {
     uint64_t numSaves;
 
     // new game data
-    char name[MAX_GDR_PATH];
+    char name[MAX_NPATH];
     gamedif_t diff;
     uint64_t hardestIndex;
 
     const stringHash_t *newGame;
     const stringHash_t *loadGame;
+    qboolean playedOpen;
 
     char **hardestStrings;
     int32_t numHardestStrings;
+
+    uint64_t currentSave;
 
     const stringHash_t *difficultyDescriptions[NUMDIFS];
 } singleplayer_t;
@@ -44,34 +50,14 @@ typedef struct {
 
 static dif_t difficultyTable[NUMDIFS];
 
-void NewGame_DrawNameIssue( void )
-{
-    if (ImGui::BeginPopupModal( "Save Slot Name Issue" )) {
-        ImGui::Text(
-            "Sorry, but it looks like your save file name is either too long or already exists\n"
-            "if its too long, it must be less than or equal to %lu characters in length, please\n"
-            "shorten your save's name.\n"
-            "if it already exists, then please rename the save slot.\n"
-            "\n"
-            "Sorry for the inconvenience. :)\n"
-            "\n"
-            "Your Resident Fiend,\n"
-            "Noah Van Til\n"
-        , sizeof(sp.name) - 1);
-
-        if (ImGui::Button( "OK" )) {
-            ui->PlaySelected();
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::EndPopup();
-    }
-}
-
 void SinglePlayerMenu_Draw( void )
 {
     ImVec2 mousePos;
     uint64_t i;
     float font_scale;
+    qboolean allGood = qtrue;
+    const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_CollapsingHeader
+                                        | ImGuiTreeNodeFlags_Framed;
 
     switch (ui->GetState()) {
     case STATE_SINGLEPLAYER:
@@ -97,7 +83,7 @@ void SinglePlayerMenu_Draw( void )
         }
         ImGui::TableNextRow();
         if (ui->Menu_Option( "Play Mission (COMING SOON!)" )) { // play any mission found inside the current BFF loaded
-//               ui->SetState( STATE_PLAYMISSION;
+//               ui->SetState( STATE_PLAYMISSION );
         }
         ImGui::EndTable();
         break;
@@ -135,20 +121,10 @@ void SinglePlayerMenu_Draw( void )
             ImGui::TableNextColumn();
             ImGui::TextUnformatted( "Save Name" );
             ImGui::TableNextColumn();
-            if ( ImGui::InputText( "##SaveNameInput", sp.name, sizeof(sp.name) - 1, ImGuiInputTextFlags_EscapeClearsAll
+            if ( ImGui::InputText( "##SaveNameInput", sp.name, sizeof( sp.name ) - 1, ImGuiInputTextFlags_EscapeClearsAll
                 | ImGuiInputTextFlags_EnterReturnsTrue ) )
             {
                 ui->PlaySelected();
-                // make sure it's an absolute path
-                N_strncpyz( sp.name, COM_SkipPath( sp.name ), sizeof( sp.name ) );
-
-                // make sure its a unique name, so we don't get filename collisions
-                for (i = 0; i < sp.numSaves; i++) {
-                    if (!N_stricmp( sp.name, sp.saveList[i].name )) {
-                        ui->SetState( STATE_NAMEISSUE );
-                        ImGui::OpenPopup( "Save Slot Name Issue" );
-                    }
-                }
             }
             
             ImGui::TableNextRow();
@@ -178,22 +154,41 @@ void SinglePlayerMenu_Draw( void )
         ImGui::NewLine();
 
         if ( ImGui::Button( "Open To a Fresh Chapter" ) ) {
-            ui->PlaySelected();
-            ui->SetState( STATE_NONE );
-            ui->SetActiveMenu( UI_MENU_NONE );
-            gi.state = GS_LEVEL;
-            Key_SetCatcher( 0 );
-            Key_ClearStates();
+            // make sure it's an absolute path
+            N_strncpyz( sp.name, COM_SkipPath( sp.name ), sizeof( sp.name ) );
 
-            if ( N_stricmp( Cvar_VariableString( "sgame_SaveName" ), sp.name ) ) {
-                Cvar_Set( "sgame_SaveName", sp.name );
+            // make sure its a unique name, so we don't get filename collisions
+            for ( i = 0; i < sp.numSaves; i++ ) {
+                if ( !N_stricmp( sp.name, sp.saveList[i].name ) ) {
+                    Sys_MessageBox( "Save Name Issue",
+                        "Sorry, but it looks like your save file name is either too long or already exists\n"
+                        "if its too long, it must be less than or equal to %lu characters in length, please\n"
+                        "shorten your save's name.\n"
+                        "if it already exists, then please rename the save slot.\n"
+                        "\n"
+                        "Sorry for the inconvenience. :)\n"
+                        "\n"
+                        "Your Resident Fiend,\n"
+                        "Noah Van Til\n", false );
+                    allGood = qfalse;
+                }
             }
 
-            Cvar_SetIntegerValue( "g_levelIndex", 0 );
-            
-            gi.state = GS_LEVEL;
-            Cvar_Set( "mapname", *gi.mapCache.mapList );
-            g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelStart, 0 ); // start a new game
+            if ( allGood ) {
+                memset( sp.name, 0, sizeof( sp.name ) );
+                ui->PlaySelected();
+                ui->SetState( STATE_NONE );
+                ui->SetActiveMenu( UI_MENU_NONE );
+                gi.state = GS_LEVEL;
+                Key_SetCatcher( KEYCATCH_UI );
+
+                Cvar_Set( "sgame_SaveName", sp.name );
+                Cvar_SetIntegerValue( "g_levelIndex", 0 );
+
+                gi.state = GS_LEVEL;
+                Cvar_Set( "mapname", *gi.mapCache.mapList );
+                g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelStart, 0 ); // start a new game
+            }
         }
 
         ImGui::NewLine();
@@ -212,58 +207,97 @@ void SinglePlayerMenu_Draw( void )
         if (ui->GetState() != STATE_LOADGAME) {
             break;
         }
-        else if (ui->Menu_Title( "LOAD GAME" )) {
+        else if (ui->Menu_Title( "SAVED GAMES" )) {
             ui->SetState( STATE_SINGLEPLAYER );
             break;
         }
         mousePos = ImGui::GetCursorScreenPos();
+        font_scale = ImGui::GetFont()->Scale;
+        const ImVec2& windowSize = ImGui::GetWindowSize();
+        ImGui::SetWindowSize( ImVec2( ui->GetConfig().vidWidth * 0.75f, windowSize.y ) );
         ImGui::SetCursorScreenPos( ImVec2( mousePos.x, mousePos.y + 10 ) );
         if ( sp.numSaves ) {
-            ImGui::BeginTable( "Save Slots", 5 );
-            // TODO: add key here
-            for (i = 0; i < sp.numSaves; i++) {
-                ImGui::TableNextColumn();
-                if ( ImGui::Button( "LOAD" ) ) {
-                    Cvar_Set( "sgame_SaveName", sp.saveList[i].name );
-                    gi.state = GS_LEVEL;
-                    g_pModuleLib->ModuleCall( sgvm, ModuleOnLoadGame, 0 );
-                }
-                if ( ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled ) ) {
-                    ImGui::BeginTooltip();
+            {
+                ImGui::Begin( "##ModList", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove
+                    | ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoTitleBar 
+                    | ImGuiWindowFlags_AlwaysVerticalScrollbar | ImGuiWindowFlags_NoCollapse );
+                ImGui::SetWindowPos( ImVec2( ui->GetConfig().vidWidth * 0.75f, 64 * ui->scale ) );
+                ImGui::SetWindowSize( ImVec2( ui->GetConfig().vidWidth * 0.25f, ui->GetConfig().vidHeight - 10 ) );
 
-                    ImGui::TextUnformatted( "Loaded Mods: " );
-                    for ( uint64_t m = 0; m < sp.saveList[i].gd.numMods; m++ ) {
-                        if ( !sp.saveList[i].modsLoaded[m] ) {
-                            ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
-                            ImGui::PushStyleColor( ImGuiCol_TextDisabled, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
-                            ImGui::PushStyleColor( ImGuiCol_TextSelectedBg, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
-                        }
-
-                        ImGui::TextUnformatted( sp.saveList[i].gd.modList[m] );
-
-                        if ( !sp.saveList[i].modsLoaded[m] ) {
-                            ImGui::PopStyleColor( 3 );
-                        }
-
-                        if ( m != sp.saveList[i].gd.numMods - 1 ) {
-                            ImGui::TextUnformatted( ", " );
-                        }
+                ImGui::SeparatorText( "Loaded Modules" );
+                for ( uint64_t m = 0; m < sp.saveList[sp.currentSave].gd.numMods; m++ ) {
+                    if ( !sp.saveList[sp.currentSave].modsLoaded[m] ) {
+                        ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
+                        ImGui::PushStyleColor( ImGuiCol_TextDisabled, colorRed );
+                        ImGui::PushStyleColor( ImGuiCol_TextSelectedBg, colorRed );
+                    } else {
+                        ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
+                        ImGui::PushStyleColor( ImGuiCol_TextDisabled, colorGreen );
+                        ImGui::PushStyleColor( ImGuiCol_TextSelectedBg, colorGreen );
                     }
 
-                    ImGui::EndTooltip();
+                    ImGui::Text( "%s v%i.%i.%i", sp.saveList[sp.currentSave].gd.modList[m].name,
+                        sp.saveList[sp.currentSave].gd.modList[m].nVersionMajor, sp.saveList[sp.currentSave].gd.modList[m].nVersionUpdate,
+                        sp.saveList[sp.currentSave].gd.modList[m].nVersionPatch );
+                    ImGui::PopStyleColor( 3 );
+
+                    if ( ImGui::IsItemHovered() && !sp.saveList[sp.currentSave].modsLoaded[m] ) {
+                        ImGui::SetTooltip(
+                                    "This module either hasn't been loaded or failed to load, check"
+                                    "the console/logfile for more detailed information" );
+                    }
                 }
 
-                ImGui::TableNextColumn();
-                ImGui::Text( "%s", sp.saveList[i].name );
-                ImGui::TableNextColumn();
-                ImGui::Text( "%lu", sp.saveList[i].stats.ctime ); // creation time
-                ImGui::TableNextColumn();
-                ImGui::Text( "%lu", sp.saveList[i].stats.mtime ); // last used time
-                ImGui::TableNextColumn();
-                ImGui::Text( "%s", difficultyTable[ sp.saveList[i].gd.dif ].name );
-                ImGui::TableNextRow();
+                ImGui::End();
             }
-            ImGui::EndTable();
+
+            // TODO: add key here
+            for (i = 0; i < sp.numSaves; i++) {
+                if ( ImGui::TreeNodeEx( (void *)(uintptr_t)sp.saveList[i].name, treeNodeFlags, sp.saveList[i].name ) ) {
+                    sp.currentSave = i;
+                    if ( !sp.playedOpen ) {
+                        sp.playedOpen = qtrue;
+                        ui->PlaySelected();
+                    }
+                    if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && ImGui::IsMouseDoubleClicked( ImGuiMouseButton_Left ) ) {
+                        ui->PlaySelected();
+                        Cvar_Set( "sgame_SaveName", sp.saveList[i].name );
+                        gi.state = GS_LEVEL;
+                        g_pModuleLib->ModuleCall( sgvm, ModuleOnLoadGame, 0 );
+                    }
+
+                    ImGui::SetWindowFontScale( font_scale * 0.75f );
+
+                    ImGui::BeginTable( va( "Save Slots##%lu", i ), 3 );
+                    {
+                        ImGui::TableNextColumn();
+                        ImGui::TextUnformatted( "Creation Time" );
+
+                        ImGui::TableNextColumn();
+                        ImGui::TextUnformatted( "Last Save Time" );
+
+                        ImGui::TableNextColumn();
+                        ImGui::TextUnformatted( "Difficulty" );
+
+                        ImGui::TableNextRow();
+
+                        ImGui::TableNextColumn();
+                        ImGui::TextUnformatted( sp.saveList[i].creationTime ); // creation time
+
+                        ImGui::TableNextColumn();
+                        ImGui::TextUnformatted( sp.saveList[i].modificationTime ); // last used time
+
+                        ImGui::TableNextColumn();
+                        ImGui::TextUnformatted( difficultyTable[ sp.saveList[i].gd.dif ].name );
+                    }
+                    ImGui::EndTable();
+
+                    ImGui::SetWindowFontScale( font_scale );
+                    ImGui::TreePop();
+                } else {
+                    sp.playedOpen = qfalse;
+                }
+            }
         }
         else {
             ImGui::TextUnformatted( "No Saves" );
@@ -277,12 +311,19 @@ void SinglePlayerMenu_Draw( void )
 char **parse_csv( const char *line );
 int32_t count_fields( const char *line );
 
+static const char *TimeStringToDateString( const char *timeStr )
+{
+    static char out[MAX_NPATH];
+}
+
 void SinglePlayerMenu_Cache( void )
 {
     saveinfo_t *info;
     const char **fileList;
     uint64_t i, j;
+    const char *path;
     const stringHash_t *hardest;
+    struct tm *fileTime;
 
     memset( &sp, 0, sizeof( sp ) );
 
@@ -320,18 +361,24 @@ void SinglePlayerMenu_Cache( void )
     fileList = g_pArchiveHandler->GetSaveFiles( &sp.numSaves );
 
     if ( sp.numSaves ) {
-        Cvar_Set( "sg_numSaves", va( "%i", (int32_t)sp.numSaves ) );
+        Cvar_Set( "sg_numSaves", va( "%li", (int64_t)sp.numSaves ) );
 
-        sp.saveList = (saveinfo_t *)Hunk_Alloc( sizeof( saveinfo_t ) * sp.numSaves, h_high );
+        sp.saveList = (saveinfo_t *)Z_Malloc( sizeof( saveinfo_t ) * sp.numSaves, TAG_SAVEFILE );
         info = sp.saveList;
 
         for ( i = 0; i < sp.numSaves; i++, info++ ) {
             N_strncpyz( info->name, fileList[i], sizeof( info->name ) );
 
             info->index = i;
-            if ( !Sys_GetFileStats( &info->stats, info->name ) ) { // this should never fail
-                N_Error( ERR_DROP, "Failed to stat savefile '%s' even though it exists", info->name );
+            path = FS_BuildOSPath( FS_GetHomePath(), NULL, va( "SaveData/%s", info->name ) );
+            if ( !Sys_GetFileStats( &info->stats, path ) ) { // this should never fail
+                N_Error( ERR_DROP, "Failed to stat savefile '%s' even though it exists", path );
             }
+            fileTime = localtime( &info->stats.ctime );
+            strftime( info->creationTime, sizeof( info->creationTime ) - 1, "%x %-I:%-M:%-S %p", fileTime );
+
+            fileTime = localtime( &info->stats.mtime );
+            strftime( info->modificationTime, sizeof( info->modificationTime ) - 1, "%x %-I:%-M:%-S %p", fileTime );
 
             if ( !g_pArchiveHandler->LoadPartial( info->name, &info->gd ) ) { // just get the header and basic game information
                 Con_Printf( COLOR_YELLOW "WARNING: Failed to get valid header data from savefile '%s'\n", info->name );
@@ -340,9 +387,14 @@ void SinglePlayerMenu_Cache( void )
                 info->valid = qtrue;
             }
 
-            info->modsLoaded = (qboolean *)Hunk_Alloc( sizeof( *info->modsLoaded ) * info->gd.numMods, h_high );
+            info->modsLoaded = (qboolean *)Z_Malloc( sizeof( *info->modsLoaded ) * info->gd.numMods, TAG_SAVEFILE );
             for ( uint64_t a = 0; a < info->gd.numMods; a++ ) {
-                info->modsLoaded[a] = ModsMenu_IsModuleActive( info->gd.modList[a] );
+                info->modsLoaded[a] = g_pModuleLib->GetModule( info->gd.modList[a].name ) != NULL;
+            }
+
+            COM_StripExtension( fileList[i], info->name, sizeof( info->name ) );
+            if ( info->name[ strlen( info->name ) - 1 ] == '.' ) {
+                info->name[ strlen( info->name ) - 1 ] = 0;
             }
         }
     }

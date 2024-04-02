@@ -262,6 +262,14 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 	sp = &rg.imguiShader;
 	shader = R_GetShaderByHandle( hShader );
 
+	//if ( ( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {
+	//	if ( rg.world->shader == shader ) {
+	//		sp = &rg.tileShader;
+	//	}
+	//} else {
+	//	sp = rg.genericShader;
+	//}
+
 	for ( i = 0; i < MAX_SHADER_STAGES; i++ ) {
 		stageP = shader->stages[i];
 
@@ -278,18 +286,18 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 
         GL_State( stageP->stateBits );
         if ( ( stageP->stateBits & GLS_ATEST_BITS ) == GLS_ATEST_GT_0 ) {
-			GLSL_SetUniformInt( sp, UNIFORM_ALPHA_TEST, 1 );
+			GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 1 );
 		}
 		else if ( ( stageP->stateBits & GLS_ATEST_BITS ) == GLS_ATEST_LT_80 ) {
-			GLSL_SetUniformInt( sp, UNIFORM_ALPHA_TEST, 2 );
+			GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 2 );
 		}
 		else if ( ( stageP->stateBits & GLS_ATEST_BITS ) == GLS_ATEST_GE_80 ) {
-			GLSL_SetUniformInt( sp, UNIFORM_ALPHA_TEST, 3 );
+			GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 3 );
 	    }
 		else {
-			GLSL_SetUniformInt( sp, UNIFORM_ALPHA_TEST, 0 );
+			GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 0 );
 		}
-
+	/*
 		if ( r_lightmap->i ) {
 			vec4_t v;
 			VectorSet4( v, 1.0f, 0.0f, 0.0f, 1.0f );
@@ -299,10 +307,11 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 
 			GLSL_SetUniformInt( sp, UNIFORM_TCGEN0, TCGEN_LIGHTMAP );
 		}
-		else {
+		else */
+		{
 			ComputeTexMods( stageP, TB_DIFFUSEMAP, texMatrix, texOffTurb );
-			GLSL_SetUniformVec4( sp, UNIFORM_DIFFUSETEXMATRIX, texMatrix );
-			GLSL_SetUniformVec4( sp, UNIFORM_DIFFUSETEXOFFTURB, texOffTurb );
+			//GLSL_SetUniformVec4( sp, UNIFORM_DIFFUSETEXMATRIX, texMatrix );
+			//GLSL_SetUniformVec4( sp, UNIFORM_DIFFUSETEXOFFTURB, texOffTurb );
 
 			GLSL_SetUniformInt( sp, UNIFORM_TCGEN0, stageP->bundle[0].tcGen );
 			if ( stageP->bundle[0].tcGen == TCGEN_VECTOR ) {
@@ -358,7 +367,13 @@ void RB_IterateShaderStages( shader_t *shader )
     shaderStage_t *stageP;
     shaderProgram_t *sp;
 
-    sp = &rg.basicShader;
+	if ( !( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {
+		if ( rg.world->shader == shader ) {
+			sp = &rg.tileShader;
+		}
+	} else {
+		sp = rg.genericShader;
+	}
 
     for ( i = 0; i < MAX_SHADER_STAGES; i++ ) {
         stageP = shader->stages[i];
@@ -377,16 +392,16 @@ void RB_IterateShaderStages( shader_t *shader )
 
         GL_State( stageP->stateBits );
         if ( ( stageP->stateBits & GLS_ATEST_BITS ) == GLS_ATEST_GT_0 ) {
-			GLSL_SetUniformInt( sp, UNIFORM_ALPHA_TEST, 1 );
+			GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 1 );
 		}
 		else if ( ( stageP->stateBits & GLS_ATEST_BITS ) == GLS_ATEST_LT_80 ) {
-			GLSL_SetUniformInt( sp, UNIFORM_ALPHA_TEST, 2 );
+			GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 2 );
 		}
 		else if ( ( stageP->stateBits & GLS_ATEST_BITS ) == GLS_ATEST_GE_80 ) {
-			GLSL_SetUniformInt( sp, UNIFORM_ALPHA_TEST, 3 );
+			GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 3 );
 	    }
 		else {
-			GLSL_SetUniformInt( sp, UNIFORM_ALPHA_TEST, 0 );
+			GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 0 );
 		}
 
 #if 0
@@ -414,6 +429,7 @@ void RB_IterateShaderStages( shader_t *shader )
 				GLSL_SetUniformVec3( sp, UNIFORM_TCGEN0VECTOR1, vec );
 			}
 		}
+		#endif
 
         {
 			vec4_t baseColor;
@@ -424,11 +440,12 @@ void RB_IterateShaderStages( shader_t *shader )
 			GLSL_SetUniformVec4( sp, UNIFORM_BASECOLOR, baseColor );
 			GLSL_SetUniformVec4( sp, UNIFORM_VERTCOLOR, vertColor );
 		}
-#endif
-
 
         GLSL_SetUniformInt( sp, UNIFORM_COLORGEN, stageP->rgbGen );
         GLSL_SetUniformInt( sp, UNIFORM_ALPHAGEN, stageP->alphaGen );
+		GLSL_SetUniformVec4( sp, UNIFORM_NORMAL_SCALE, stageP->normalScale );
+		GLSL_SetUniformVec4( sp, UNIFORM_SPECULAR_SCALE, stageP->specularScale );
+		GLSL_SetUniformFloat( sp, UNIFORM_GAMMA, r_gammaAmount->f );
 
 		if ( !stageP->bundle[TB_DIFFUSEMAP].image ) {
 			ri.Error( ERR_DROP, "RB_IterateShaderStages: shader has missing diffuseMap stage texture" );
@@ -436,12 +453,28 @@ void RB_IterateShaderStages( shader_t *shader )
         GL_BindTexture( 0, stageP->bundle[TB_DIFFUSEMAP].image );
         GLSL_SetUniformInt( sp, UNIFORM_DIFFUSE_MAP, 0 );
 
+		if ( r_vertexLight->i || r_dynamiclight->i ) {
+			if ( rg.world && !( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {
+				GLSL_SetUniformVec3( sp, UNIFORM_AMBIENTLIGHT, rg.world->ambientLightColor );
+			} else {
+				vec3_t ambient;
+				VectorSet( ambient, 0, 0, 0 );
+				GLSL_SetUniformVec3( sp, UNIFORM_AMBIENTLIGHT, ambient );
+			}
+		}
+
 		if ( stageP->bundle[TB_NORMALMAP].image ) {
 			GL_BindTexture( 1, stageP->bundle[TB_NORMALMAP].image );
+			GLSL_SetUniformInt( sp, UNIFORM_NORMAL_MAP, 1 );
+		} else if ( r_normalMapping->i ) {
+			GL_BindTexture( 1, rg.whiteImage );
 			GLSL_SetUniformInt( sp, UNIFORM_NORMAL_MAP, 1 );
 		}
 		if ( stageP->bundle[TB_SPECULARMAP].image ) {
 			GL_BindTexture( 2, stageP->bundle[TB_SPECULARMAP].image );
+			GLSL_SetUniformInt( sp, UNIFORM_SPECULAR_MAP, 2 );
+		} else if ( r_specularMapping->i ) {
+			GL_BindTexture( 1, rg.whiteImage );
 			GLSL_SetUniformInt( sp, UNIFORM_SPECULAR_MAP, 2 );
 		}
 
@@ -493,11 +526,11 @@ void RB_InstantQuad(vec4_t quadVerts[4])
 	VectorSet2(texCoords[2], 1.0f, 1.0f);
 	VectorSet2(texCoords[3], 0.0f, 1.0f);
 
-	GLSL_UseProgram(&rg.basicShader);
+	GLSL_UseProgram(&rg.genericShader[0]);
 	
     RB_MakeViewMatrix();
-	GLSL_SetUniformMatrix4(&rg.basicShader, UNIFORM_MODELVIEWPROJECTION, glState.viewData.camera.viewProjectionMatrix);
-	GLSL_SetUniformVec4(&rg.basicShader, UNIFORM_COLOR, colorWhite );
+	GLSL_SetUniformMatrix4(&rg.genericShader[0], UNIFORM_MODELVIEWPROJECTION, glState.viewData.camera.viewProjectionMatrix);
+	GLSL_SetUniformVec4(&rg.genericShader[0], UNIFORM_COLOR, colorWhite );
 
 	RB_InstantQuad2(quadVerts, texCoords);
 }

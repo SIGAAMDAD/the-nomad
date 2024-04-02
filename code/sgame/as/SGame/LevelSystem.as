@@ -182,7 +182,6 @@ namespace TheNomad::SGame {
 			}
 		}
 		bool OnConsoleCommand( const string& in cmd ) {
-
 			return false;
 		}
 		void OnLevelEnd() {

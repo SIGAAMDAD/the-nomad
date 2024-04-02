@@ -267,6 +267,8 @@ void RE_LoadWorldMap(const char *filename)
         ((int32_t *)header)[i] = LittleInt( ((int32_t *)header)[i] );
     }
 
+    VectorCopy( r_worldData.ambientLightColor, mheader->ambientLightColor );
+
     r_worldData.width = mheader->mapWidth;
     r_worldData.height = mheader->mapHeight;
     r_worldData.numTiles = r_worldData.width * r_worldData.height;

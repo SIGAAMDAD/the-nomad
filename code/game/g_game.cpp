@@ -242,7 +242,7 @@ const glm::mat4 model = glm::translate( viewProjectionMatrix, glm::vec3( worldCa
 const glm::mat4 mvp = viewProjectionMatrix * model;
 */
 
-static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, mat4_t vpm )
+static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, float scale, mat4_t vpm )
 {
     glm::mat4 viewProjectionMatrix;
     glm::mat4 mvp, model;
@@ -250,14 +250,15 @@ static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, mat4_t vpm )
 
     memcpy( &viewProjectionMatrix[0][0], &vpm[0][0], sizeof(mat4_t) );
 
-    model = glm::translate( viewProjectionMatrix, glm::vec3( world[0], world[1], world[2] ) );
+    model = glm::translate( viewProjectionMatrix, glm::vec3( world[0], world[1], world[2] ) )
+        * glm::scale( viewProjectionMatrix, glm::vec3( scale ) );
     mvp = viewProjectionMatrix * model;
 
     const glm::vec4 positions[4] = {
-        { 0.5f,  0.5f, 0.0f, 1.0f},
-        { 0.5f, -0.5f, 0.0f, 1.0f},
-        {-0.5f, -0.5f, 0.0f, 1.0f},
-        {-0.5f,  0.5f, 0.0f, 1.0f},
+        { 1.0f,  1.0f, 0.0f, 1.0f },
+        { 1.0f,  0.0f, 0.0f, 1.0f },
+        { 0.0f,  0.0f, 0.0f, 1.0f },
+        { 0.0f,  1.0f, 0.0f, 1.0f },
     };
 
     for ( uint32_t i = 0; i < 4; i++ ) {
@@ -278,10 +279,10 @@ static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, const glm::mat4&
     mvp = viewProjectionMatrix * model;
 
     const glm::vec4 positions[4] = {
-        { 0.5f,  0.5f, 0.0f, 1.0f},
-        { 0.5f, -0.5f, 0.0f, 1.0f},
-        {-0.5f, -0.5f, 0.0f, 1.0f},
-        {-0.5f,  0.5f, 0.0f, 1.0f},
+        { 1.0f,  1.0f, 0.0f, 1.0f },
+        { 1.0f,  0.0f, 0.0f, 1.0f },
+        { 0.0f,  0.0f, 0.0f, 1.0f },
+        { 0.0f,  1.0f, 0.0f, 1.0f },
     };
 
     for ( uint32_t i = 0; i < 4; i++ ) {
@@ -991,6 +992,9 @@ void G_ShutdownAll( void )
     // shutdown VMs
     G_ShutdownVMs( qfalse );
 
+    if ( !g_world ) {
+        g_world = (CGameWorld *)Hunk_Alloc( sizeof( *g_world ), h_high );
+    }
     new ( g_world ) CGameWorld();
 
     // shutdown the renderer

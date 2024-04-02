@@ -311,6 +311,16 @@ static void SettingsMenu_ApplyGraphicsChanges( void )
 {
     Cvar_Set( "r_mode", va( "%i", settings->gfx.videoMode ) );
     Cvar_Set( "r_fullscreen", va( "%i", settings->gfx.fullscreen ) );
+    switch ( settings->gfx.lighting ) {
+    case LIGHTING_STATIC:
+        Cvar_Set( "r_vertexLighting", "1" );
+        Cvar_Set( "r_dynamiclighting", "0" );
+        break;
+    case LIGHTING_DYNAMIC:
+        Cvar_Set( "r_vertexLighting", "0" );
+        Cvar_Set( "r_dynamiclighting", "1" );
+        break;
+    };
     switch ( settings->gfx.videoMode ) {
     case -2:
         Cvar_Set( "r_customWidth", va( "%i", gi.desktopWidth ) );

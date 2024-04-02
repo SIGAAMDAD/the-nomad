@@ -215,6 +215,10 @@ void RE_RenderScene( const renderSceneRef_t *fd )
 
     R_RenderView( &parms );
 
+    if ( !( parms.flags & RSF_NOWORLDMODEL ) ) {
+        R_AddPostProcessCmd();
+    }
+
     RE_EndScene();
 
     rg.frontEndMsec += ri.Milliseconds() - startTime;

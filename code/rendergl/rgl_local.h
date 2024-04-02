@@ -240,45 +240,90 @@ typedef enum {
 
 typedef enum {
     UNIFORM_DIFFUSE_MAP = 0,
-    UNIFORM_LIGHT_MAP,
-    UNIFORM_NORMAL_MAP,
-    UNIFORM_SPECULAR_MAP,
+	UNIFORM_LIGHT_MAP,
+	UNIFORM_NORMAL_MAP,
+	UNIFORM_DELUXE_MAP,
+	UNIFORM_SPECULAR_MAP,
+
+	UNIFORM_TEXTURE_MAP,
+	UNIFORM_LEVELS_MAP,
+
+	UNIFORM_SCREENIMAGE_MAP,
+	UNIFORM_SCREENDEPTH_MAP,
+
+	UNIFORM_SHADOW_MAP,
+	UNIFORM_SHADOW_MAP2,
+	UNIFORM_SHADOW_MAP3,
+	UNIFORM_SHADOW_MAP4,
+
+	UNIFORM_SHADOW_MVP,
+	UNIFORM_SHADOW_MVP2,
+	UNIFORM_SHADOW_MVP3,
+	UNIFORM_SHADOW_MVP4,
+
+	UNIFORM_ENABLE_TEXTURES,
+
+	UNIFORM_DIFFUSE_TEXMATRIX,
+	UNIFORM_DIFFUSE_TEXOFFTURB,
+
+	UNIFORM_TCGEN0,
+	UNIFORM_TCGEN0VECTOR0,
+	UNIFORM_TCGEN0VECTOR1,
+
+	UNIFORM_DEFORMGEN,
+	UNIFORM_DEFORMPARAMS,
+
+	UNIFORM_COLORGEN,
+	UNIFORM_ALPHAGEN,
+	UNIFORM_COLOR,
+	UNIFORM_BASECOLOR,
+	UNIFORM_VERTCOLOR,
+
+	UNIFORM_DLIGHTINFO,
+	UNIFORM_LIGHTFORWARD,
+	UNIFORM_LIGHTUP,
+	UNIFORM_LIGHTRIGHT,
+	UNIFORM_LIGHTORIGIN,
+	UNIFORM_MODELLIGHTDIR,
+	UNIFORM_LIGHTRADIUS,
+	UNIFORM_AMBIENTLIGHT,
+	UNIFORM_DIRECTEDLIGHT,
+
+	UNIFORM_MODELVIEWPROJECTION,
+
+	UNIFORM_TIME,
+	UNIFORM_VERTEXLERP,
+	UNIFORM_NORMAL_SCALE,
+	UNIFORM_SPECULAR_SCALE,
+
+	UNIFORM_VIEWINFO, // znear, zfar, width/2, height/2
+	UNIFORM_VIEWORIGIN,
+	UNIFORM_LOCALVIEWORIGIN,
+	UNIFORM_VIEWFORWARD,
+	UNIFORM_VIEWLEFT,
+	UNIFORM_VIEWUP,
+
+	UNIFORM_INVTEXRES,
+	UNIFORM_AUTOEXPOSUREMINMAX,
+	UNIFORM_TONEMINAVGMAXLINEAR,
+
+	UNIFORM_PRIMARYLIGHTORIGIN,
+	UNIFORM_PRIMARYLIGHTCOLOR,
+	UNIFORM_PRIMARYLIGHTAMBIENT,
+	UNIFORM_PRIMARYLIGHTRADIUS,
+
+	UNIFORM_ALPHATEST,
+
+    UNIFORM_GAMMA,
 
     UNIFORM_NUM_LIGHTS,
-    UNIFORM_LIGHT_INFO,
-    UNIFORM_AMBIENT_LIGHT,
-
-    UNIFORM_MODELVIEWPROJECTION,
-    UNIFORM_MODELMATRIX,
-
-    UNIFORM_NORMALSCALE,
-    UNIFORM_SPECULARSCALE,
-
-    UNIFORM_DIFFUSETEXMATRIX,
-    UNIFORM_DIFFUSETEXOFFTURB,
-
-    UNIFORM_COLORGEN,
-    UNIFORM_ALPHAGEN,
-    UNIFORM_COLOR,
-    UNIFORM_BASECOLOR,
-    UNIFORM_VERTCOLOR,
-
-    UNIFORM_TCGEN0,
-    UNIFORM_TCGEN0VECTOR0,
-    UNIFORM_TCGEN0VECTOR1,
-
-    UNIFORM_DEFORMGEN,
-    UNIFORM_DEFORMPARAMS,
-
-    UNIFORM_ALPHA_TEST,
-
 
     UNIFORM_COUNT
 } uniform_t;
 
 typedef struct shaderProgram_s
 {
-    char name[MAX_GDR_PATH];
+    char name[MAX_NPATH];
 
     char *compressedVSCode;
     char *compressedFSCode;
@@ -649,6 +694,17 @@ enum
     NUM_TEXTURE_BUNDLES
 };
 
+typedef enum
+{
+	// material shader stage types
+	ST_COLORMAP = 0,			// vanilla Q3A style shader treatening
+	ST_DIFFUSEMAP = 0,          // treat color and diffusemap the same
+	ST_NORMALMAP,
+	ST_NORMALPARALLAXMAP,
+	ST_SPECULARMAP,
+	ST_GLSL
+} stageType_t;
+
 typedef struct {
     qboolean active;
 
@@ -663,6 +719,11 @@ typedef struct {
     uint32_t stateBits;         // GLS_xxxx mask
 
     byte constantColor[4];      // for CGEN_CONST and AGEN_CONST
+
+    qboolean isDetail;
+    stageType_t type;
+    struct shaderProgram_s *glslShaderGroup;
+    int32_t glslShaderIndex;
 
     vec4_t normalScale;
     vec4_t specularScale;
@@ -727,25 +788,32 @@ typedef struct {
 
 //==================================================================
 
+// renderSceneDef_t holds everything that comes in renderSceneRef_t,
+// as well as the locally generated scene information
 typedef struct {
-    uint32_t x, y, width, height;
+    uint32_t    x, y, width, height;
+
     stereoFrame_t stereoFrame;
 
-    qboolean drawn;
+    qboolean    drawn;
 
-    int64_t time;
-    uint64_t flags;
+    int64_t     time;
+    uint64_t    flags;
 
-    double floatTime;
+    double      floatTime; // rg.refdef.time / 1000.0
+    float       blurFactor;
 
-    uint64_t numEntities;
+    uint64_t    numEntities;
     renderEntityDef_t *entities;
 
-    uint64_t numDLights;
-    dlight_t *dlights;
+    uint64_t    numDLights;
+    dlight_t    *dlights;
 
-    uint64_t numPolys;
-    srfPoly_t *polys;
+    uint64_t    numPolys;
+    srfPoly_t   *polys;
+
+    float       autoExposureMinMax[2];
+	float       toneMinAvgMaxLinear[3];
 } renderSceneDef_t;
 
 typedef struct {
@@ -792,6 +860,8 @@ typedef struct {
 typedef struct {
     char baseName[MAX_GDR_PATH];
     char name[MAX_GDR_PATH];
+
+    vec3_t ambientLightColor;
 
     uint32_t width;
     uint32_t height;
@@ -908,6 +978,27 @@ typedef enum {
     NUMQUERIES
 } query_t;
 
+enum
+{
+	GENERICDEF_USE_TCGEN_AND_TCMOD  = 0x0002,
+	GENERICDEF_USE_RGBAGEN          = 0x0010,
+	GENERICDEF_ALL                  = 0x003F,
+	GENERICDEF_COUNT                = 0x0040,
+};
+
+enum
+{
+	LIGHTDEF_USE_LIGHTMAP        = 0x0001,
+	LIGHTDEF_USE_LIGHT_VECTOR    = 0x0002,
+	LIGHTDEF_USE_LIGHT_VERTEX    = 0x0003,
+	LIGHTDEF_LIGHTTYPE_MASK      = 0x0003,
+	LIGHTDEF_USE_TCGEN_AND_TCMOD = 0x0004,
+	LIGHTDEF_USE_SHADOWMAP       = 0x0008,
+	LIGHTDEF_ALL                 = 0x007F,
+	LIGHTDEF_COUNT               = 0x0080
+};
+
+
 typedef struct
 {
     qboolean				registered;		// cleared at shutdown, set at beginRegistration
@@ -939,14 +1030,13 @@ typedef struct
 	texture_t				*screenScratchImage;
 	texture_t				*textureScratchImage[2];
 	texture_t               *quarterImage[2];
-//	texture_t				*calcLevelsImage;
-//	texture_t				*targetLevelsImage;
-//	texture_t				*fixedLevelsImage;
+	texture_t				*calcLevelsImage;
+	texture_t				*targetLevelsImage;
+	texture_t				*fixedLevelsImage;
 	texture_t				*sunShadowDepthImage[4];
 	texture_t               *screenShadowImage;
 	texture_t               *screenSsaoImage;
 	texture_t				*hdrDepthImage;
-//	texture_t               *renderCubeImage;
 	
 	texture_t				*textureDepthImage;
 
@@ -1004,8 +1094,15 @@ typedef struct
 
     uint64_t frontEndMsec;
 
-    shaderProgram_t basicShader;
+    shaderProgram_t genericShader[GENERICDEF_COUNT];
     shaderProgram_t imguiShader;
+    shaderProgram_t tileShader;
+    shaderProgram_t ssaoShader;
+    shaderProgram_t depthBlurShader[4];
+    shaderProgram_t calclevels4xShader[2];
+    shaderProgram_t down4xShader;
+	shaderProgram_t bokehShader;
+	shaderProgram_t tonemapShader;
 
     qboolean beganQuery;
 
@@ -1019,6 +1116,7 @@ typedef struct
 	float triangleTable[FUNCTABLE_SIZE];
 	float sawToothTable[FUNCTABLE_SIZE];
 	float inverseSawToothTable[FUNCTABLE_SIZE];
+    qboolean vertexLightingAllowed;
 } renderGlobals_t;
 
 extern renderGlobals_t rg;
@@ -1112,6 +1210,8 @@ extern cvar_t *r_drawworld;			    // disable/enable world rendering
 extern cvar_t *r_speeds;				// various levels of information display
 extern cvar_t *r_detailTextures;		// enables/disables detail texturing stages
 
+extern cvar_t  *r_cameraExposure;
+
 extern cvar_t *r_gammaAmount;
 
 extern cvar_t *r_singleShader;			// make most world faces use default shader
@@ -1146,6 +1246,11 @@ extern cvar_t *r_forceToneMap;
 extern cvar_t *r_forceToneMapMin;
 extern cvar_t *r_forceToneMapAvg;
 extern cvar_t *r_forceToneMapMax;
+
+extern cvar_t  *r_autoExposure;
+extern cvar_t  *r_forceAutoExposure;
+extern cvar_t  *r_forceAutoExposureMin;
+extern cvar_t  *r_forceAutoExposureMax;
 
 extern cvar_t *r_depthPrepass;
 extern cvar_t *r_ssao;
@@ -1269,6 +1374,8 @@ void GL_ClientState( int unit, unsigned stateBits );
 void RE_BeginFrame(stereoFrame_t stereoFrame);
 void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec);
 void RB_ExecuteRenderCommands(const void *data);
+
+void R_AddPostProcessCmd( void );
 
 //
 // rgl_extensions.c
@@ -1475,6 +1582,7 @@ typedef struct {
 typedef struct {
     renderCmdType_t commandId;
     viewData_t viewData;
+    renderSceneDef_t refdef;
 } postProcessCmd_t;
 
 typedef struct {

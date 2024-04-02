@@ -96,17 +96,40 @@ void MainMenu_Draw( void )
     uint64_t i;
     float x, y, w, h;
     const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
-                            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus;
+                            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoBackground;
+    renderSceneRef_t refdef;
+    polyVert_t verts[4];
 
     menu.noMenuToggle.Toggle( KEY_F2, menu.noMenu );
 
-    //
-    // setup a basic scene
-    //
+/*
+    x = 0;
+    y = 0;
+    w = ui->GetConfig().vidWidth;
+    h = ui->GetConfig().vidHeight;
 
-//    ImGui::Begin( "MainMenuBackground", NULL, windowFlags | ImGuiWindowFlags_AlwaysAutoResize );
-//    ImGui::SetWindowSize( ImVec2( w, h ) );
-//    ImGui::Image( (void *)(intptr_t)menu.background0, ImVec2( w, h ) );
+    VectorSet( verts[0].xyz, x + w, y, 0.0f );
+    VectorSet( verts[1].xyz, x + w, y + h, 0.0f );
+    VectorSet( verts[2].xyz, x, y + h, 0.0f );
+    VectorSet( verts[3].xyz, 0.0f, 0.0f, 0.0f );
+
+    VectorSet2( verts[0].uv, 1, 0 );
+	VectorSet2( verts[1].uv, 0, 0 );
+	VectorSet2( verts[2].uv, 0, 1 );
+	VectorSet2( verts[3].uv, 1, 1 );
+
+    memset( &refdef, 0, sizeof( refdef ) );
+    refdef.x = 0;
+    refdef.y = 0;
+    refdef.width = w;
+    refdef.height = h;
+    refdef.time = ui->GetFrameTime();
+    refdef.flags = RSF_NOWORLDMODEL | RSF_ORTHO_TYPE_SCREENSPACE;
+*/
+
+//    ImGui::Begin( "MainMenuBackground", NULL, windowFlags & ~( ImGuiWindowFlags_NoResize ) );
+//    ImGui::SetWindowPos( ImVec2( 0.0f, 0.0f ) );
+//    ImGui::Image( (void *)(intptr_t)menu.background0, ImGui::GetWindowSize(), ImVec2( 1, 0 ), ImVec2( 0, 1 ) );
 //    ImGui::End();
 
     Snd_SetLoopingTrack( menu.ambience );
@@ -128,20 +151,22 @@ void MainMenu_Draw( void )
         return; // just the scenery & the music (a bit like Halo 3: ODST, check out halome.nu)...
     }
 
-    if (ui->GetState() == STATE_NAMEISSUE) {
-        NewGame_DrawNameIssue();
-    }
-
     if (ui->GetState() == STATE_MAIN) {
-        ImGui::Begin( "MainMenu", NULL, windowFlags );
+        ImGui::Begin( "##MainMenu", NULL, windowFlags );
         ImGui::SetWindowPos( ImVec2( 0, 0 ) );
         ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth, (float)menu.menuHeight ) );
+        FontCache()->SetActiveFont( menu.font );
+        const float fontScale = ImGui::GetFont()->Scale;
+        ImGui::SetWindowFontScale( ( fontScale * 10.5f ) * ui->scale );
         ui->Menu_Title( "MAIN MENU" );
+        ImGui::SetWindowFontScale( ( fontScale * 1.5f ) * ui->scale );
 
         const ImVec2 mousePos = ImGui::GetCursorScreenPos();
         ImGui::SetCursorScreenPos( ImVec2( mousePos.x, mousePos.y + 10 ) );
 
-        ImGui::BeginTable( " ", 2 );
+        FontCache()->SetActiveFont( PressStart2P );
+
+        ImGui::BeginTable( "##MainMenuTable", 2 );
         if (ui->Menu_Option( "Single Player" )) {
             ui->SetState( STATE_SINGLEPLAYER );
         }
@@ -171,6 +196,7 @@ void MainMenu_Draw( void )
             Sys_Exit( 1 );
         }
         ImGui::EndTable();
+        ImGui::SetWindowFontScale( fontScale );
 
         ImGui::End();
     }
@@ -265,8 +291,9 @@ void MainMenu_Cache( void )
     menu.settingsString = strManager->ValueForKey( "MENU_MAIN_SETTINGS" );
     menu.spString = strManager->ValueForKey( "MENU_MAIN_SINGLEPLAYER" );
 
-    PressStart2P = menu.font = FontCache()->AddFontToCache( "fonts/PressStart2P-Regular.ttf" );
-    RobotoMono = FontCache()->AddFontToCache( "fonts/RobotoMono/RobotoMono-Bold.ttf" );
+    PressStart2P = FontCache()->AddFontToCache( "PressStart2P" );
+    menu.font = FontCache()->AddFontToCache( "AlegreyaSC", "Bold" );
+    RobotoMono = FontCache()->AddFontToCache( "RobotoMono", "Bold" );
 
     ui->menu_background = menu.background0;
 

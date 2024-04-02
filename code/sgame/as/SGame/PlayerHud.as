@@ -62,68 +62,70 @@ namespace TheNomad::SGame {
 			
 			DrawRect( mousePos, vec2( 16.0f, 16.0f ), m_MouseShader, @m_MouseSpriteSheet[m_MouseSpriteIndex] );
 		}
+		*/
 		
 		private void DrawStatusBars() const {
 			const float health = GetPlayerObject().GetHealth();
 			const float rage = GetPlayerObject().GetRage();
-			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
-			const vec2 screenSize = TheNomad::GameSystem::GameManager.GetGPUConfig().GetScreenSize();
+//			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
+			const vec2 screenSize = vec2( TheNomad::GameSystem::GameManager.GetGPUConfig().screenWidth,
+				TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight );
+//			const ImGuiWindowFlags windowFlags = ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove |
+//				ImGuiWindowFlags::NoMouseInputs | ImGuiWindowFlags::NoBackground |
+//				ImGuiWindowFlags::NoBringToFrontOnFocus | ImGuiWindowFlags::AlwaysAutoResize );
 			
-			ImGui::SetCursorScreenPos( vec2( 16.0f * scale, 16.0f * scale ) );
+//			ImGui::Begin( "DisplayPlayerHealth" );
+//			ImGui::SetWindowSize( vec2( 256, 256 ) );
+//			ImGui::SetWindowPos( vec2( 0.0f ) );
+//			ImGui::SetWindowFontScale( 1.5f );
+//			ImGui::Text( "HEALTH" );
 			
 			//
 			// display health
 			//
-			const vec4& healthColor = GetHealthColor();
-			ImGui::PushStyleColor( ImGuiCol_FrameBg, healthColor );
-			ImGui::PushStyleColor( ImGuiCol_FrameBgActive, healthColor );
-			ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, healthColor );
-			ImGui::ProgressBar( health, 256 * scale, 64 * scale, "##DisplayPlayerHealth" );
-			ImGui::PopStyleColor( 3 );
+//			const vec4 healthColor = GetHealthColor( health );
+//			ImGui::PushStyleColor( ImGuiCol::FrameBg, healthColor );
+//			ImGui::PushStyleColor( ImGuiCol::FrameBgActive, healthColor );
+//			ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, healthColor );
+//			ImGui::Text( "HEALTH METER" );
+//			ImGui::ProgressBar( health );
+//			ImGui::PopStyleColor( 3 );
+
+			ImGui::End();
 			
 			//
 			// display rage meter
 			//
-			const vec4& rageColor = GetRageColor();
-			ImGui::PushStyleColor( ImGuiCol_FrameBg, rageColor );
-			ImGui::PushStyleColor( ImGuiCol_FrameBgActive, rageColor );
-			ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, rageColor );
-			ImGui::ProgressBar( rage, 256 * scale, 64 * scale, "##DisplayPlayerRage" );
-			ImGui::PopStyleColor( 3 );
+
+//			ImGui::Begin( "##DisplayPlayerRage", null, windowFlags );
+//			ImGui::SetWindowPos( vec2( 16.0f, 64.0f ) );
+
+//			const vec4 rageColor = GetRageColor( rage );
+//			ImGui::PushStyleColor( ImGuiCol::FrameBg, rageColor );
+//			ImGui::PushStyleColor( ImGuiCol::FrameBgActive, rageColor );
+//			ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, rageColor );
+//			ImGui::Text( "RAGE METER" );
+//			ImGui::ProgressBar( rage );
+//			ImGui::PopStyleColor( 3 );
+
+//			ImGui::End();
 		}
 		
 		void Draw() const {
 			if ( sgame_ToggleHUD.GetInt() == 0 ) {
 				return; // don't draw it
 			}
-			const ImGuiWindowFlags windowFlags = ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove |
-				ImGuiWindowFlags::NoTitleBar | ImGuiWindowFlags::NoMouseInputs | ImGuiWindowFlags::NoBackground |
-				ImGuiWindowFlags::NoBringToFrontOnFocus );
-			const vec2 screenSize = TheNomad::GameSystem::GameManager.GetGPUConfig().GetScreenSize();
-			TheNomad::Engine::Renderer::RenderSceneRef SceneRef;
+			const vec2 screenSize = vec2( TheNomad::GameSystem::GameManager.GetGPUConfig().screenWidth,
+				TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight );
 			
-			ImGui::Begin( "##PlayerHeadsUpDisplay", null windowFlags );
-			
-			ImGui::SetWindowSize( screenSize );
-			ImGui::SetWindowPos( vec2( 0.0f, 0.0f ) );
-			
-			SceneRef.x = 0;
-			SceneRef.y = 0;
-			SceneRef.width = screenSize.x;
-			SceneRef.height = screenSize.y;
-			SceneRef.flags = RSF_ORTHO_TYPE_SCREENSPACE | RSF_NOWORLDMODEL;
-			
-			TheNomad::Engine::ClearScene();
+			TheNomad::Engine::Renderer::ClearScene();
 			
 			DrawStatusBars();
-			DrawMouseReticle();
-			DrawWeaponStatus();
+//			DrawMouseReticle();
+//			DrawWeaponStatus();
 			
-			TheNomad::Engine::Renderer::RenderScene( SceneRef );
-			
-			ImGui::End();
+			TheNomad::Engine::Renderer::RenderScene( 0, 0, screenSize.x, screenSize.y, RSF_ORTHO_TYPE_SCREENSPACE | RSF_NOWORLDMODEL, 0 );
 		}
-		*/
 		
 		private bool m_bChangedWeapon = false;
 	};

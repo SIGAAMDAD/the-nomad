@@ -228,7 +228,7 @@ static nhandle_t SndRegisterTrack( const string_t *npath ) {
 
 DEFINE_CALLBACK( BeginSaveSection ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    g_pArchiveHandler->BeginSaveSection( pGeneric->GetFunction()->GetModule()->GetName(), name->c_str() );
+    g_pArchiveHandler->BeginSaveSection( g_pModuleLib->GetCurrentHandle()->GetName().c_str(), name->c_str() );
 }
 
 DEFINE_CALLBACK( EndSaveSection ) {
@@ -237,49 +237,49 @@ DEFINE_CALLBACK( EndSaveSection ) {
 
 DEFINE_CALLBACK( SaveInt8 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const int8_t arg = *(const int8_t *)pGeneric->GetArgAddress( 1 );
+    const int8_t arg = *(const int8_t *)pGeneric->GetAddressOfArg( 1 );
     g_pArchiveHandler->SaveChar( name->c_str(), arg );
 }
 
 DEFINE_CALLBACK( SaveInt16 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const int16_t arg = *(const int16_t *)pGeneric->GetArgAddress( 1 );
+    const int16_t arg = *(const int16_t *)pGeneric->GetAddressOfArg( 1 );
     g_pArchiveHandler->SaveShort( name->c_str(), arg );
 }
 
 DEFINE_CALLBACK( SaveInt32 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const int32_t arg = *(const int32_t *)pGeneric->GetArgAddress( 1 );
+    const int32_t arg = *(const int32_t *)pGeneric->GetAddressOfArg( 1 );
     g_pArchiveHandler->SaveInt( name->c_str(), arg );
 }
 
 DEFINE_CALLBACK( SaveInt64 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const int64_t arg = *(const int64_t *)pGeneric->GetArgAddress( 1 );
+    const int64_t arg = *(const int64_t *)pGeneric->GetAddressOfArg( 1 );
     g_pArchiveHandler->SaveLong( name->c_str(), arg );
 }
 
 DEFINE_CALLBACK( SaveUInt8 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const uint8_t arg = *(const uint8_t *)pGeneric->GetArgAddress( 1 );
+    const uint8_t arg = *(const uint8_t *)pGeneric->GetAddressOfArg( 1 );
     g_pArchiveHandler->SaveByte( name->c_str(), arg );
 }
 
 DEFINE_CALLBACK( SaveUInt16 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const uint16_t arg = *(const uint16_t *)pGeneric->GetArgAddress( 1 );
+    const uint16_t arg = *(const uint16_t *)pGeneric->GetAddressOfArg( 1 );
     g_pArchiveHandler->SaveUShort( name->c_str(), arg );
 }
 
 DEFINE_CALLBACK( SaveUInt32 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const uint32_t arg = *(const uint32_t *)pGeneric->GetArgAddress( 1 );
+    const uint32_t arg = *(const uint32_t *)pGeneric->GetAddressOfArg( 1 );
     g_pArchiveHandler->SaveUInt( name->c_str(), arg );
 }
 
 DEFINE_CALLBACK( SaveUInt64 ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const uint64_t arg = *(const uint64_t *)pGeneric->GetArgAddress( 1 );
+    const uint64_t arg = *(const uint64_t *)pGeneric->GetAddressOfArg( 1 );
     g_pArchiveHandler->SaveULong( name->c_str(), arg );
 }
 
@@ -1251,58 +1251,24 @@ static void GetString( const string_t *name, string_t *value ) {
     *value = hash->value;
 }
 
-typedef struct ImGuiManager_s {
-    ImGuiManager_s( void ) {
-        memset( this, 0, sizeof( *this ) );
-    }
-
-    int nWindowStackDepth;
-    int nColorStackDepth;
-    int nStyleVarStackDepth;
-    int nTableStackDepth;
-    int nComboStackDepth;
-} ImGuiManager_t;
-
-static ImGuiManager_t ImGuiManager;
-
 static bool ImGui_BeginCombo( const string_t *label, const string_t *preview ) {
-    ImGuiManager.nComboStackDepth++;
     return ImGui::BeginCombo( label->c_str(), preview->c_str() );
 }
 
-static void ImGui_EndCombo( void ) {
-    if ( !ImGuiManager.nComboStackDepth ) {
-        N_Error( ERR_DROP, "ImGui::EndCombo: no combo active" );
-    }
-    ImGuiManager.nComboStackDepth--;
-    ImGui::EndCombo();
-}
-
 static bool ImGui_Begin( const string_t *label, bool *open, ImGuiWindowFlags flags ) {
-    ImGuiManager.nWindowStackDepth++;
     return ImGui::Begin( label->c_str(), open, flags );
 }
 
-static void ImGui_SetWindowSize( const vec2 *size ) {
-    if ( !ImGuiManager.nWindowStackDepth ) {
-        N_Error( ERR_DROP, "ImGui::SetWindowSize: no window active" );
-    }
-    ImGui::SetWindowSize( ImVec2( size->x, size->y ) );
+static void ImGui_End( void ) {
+    ImGui::End();
 }
 
 static void ImGui_SetWindowPos( const vec2 *pos ) {
-    if ( !ImGuiManager.nWindowStackDepth ) {
-        N_Error( ERR_DROP, "ImGui::SetWindowPos: no window active" );
-    }
     ImGui::SetWindowPos( ImVec2( pos->x, pos->y ) );
 }
 
-static void ImGui_End( void ) {
-    if ( !ImGuiManager.nWindowStackDepth ) {
-        N_Error( ERR_DROP, "ImGui::End: no window active" );
-    }
-    ImGuiManager.nWindowStackDepth--;
-    ImGui::End();
+static void ImGui_SetWindowSize( const vec2 *size ) {
+    ImGui::SetWindowSize( ImVec2( size->x, size->y ) );
 }
 
 static bool ImGui_ArrowButton( const string_t *label, ImGuiDir dir ) {
@@ -1315,46 +1281,14 @@ static bool ImGui_Button( const string_t *label, const vec2 *size ) {
 
 static void ImGui_PushStyleColor_U32( ImGuiCol idx, ImU32 col ) {
     ImGui::PushStyleColor( idx, col );
-    ImGuiManager.nColorStackDepth++;
 }
 
 static void ImGui_PushStyleColor_V4( ImGuiCol idx, const vec4 *col ) {
     ImGui::PushStyleColor( idx, ImVec4( col->r, col->g, col->b, col->a ) );
-    ImGuiManager.nColorStackDepth++;
-}
-
-static void ImGui_PopStyleColor( int amount ) {
-    if ( !ImGuiManager.nColorStackDepth || ImGuiManager.nColorStackDepth - amount < 0 ) {
-        N_Error( ERR_DROP, "ImGui::PopStyleColor: color stack underflow" );
-    }
-    ImGui::PopStyleColor( amount );
 }
 
 static bool ImGui_BeginTable( const string_t *label, int nColumns, ImGuiTableFlags flags ) {
-    ImGuiManager.nTableStackDepth++;
     return ImGui::BeginTable( label->c_str(), nColumns, flags );
-}
-
-static void ImGui_TableNextColumn( void ) {
-    if ( !ImGuiManager.nTableStackDepth ) {
-        N_Error( ERR_DROP, "ImGui::TableNextColumn: no table active" );
-    }
-    ImGui::TableNextColumn();
-}
-
-static void ImGui_TableNextRow( void ) {
-    if ( !ImGuiManager.nTableStackDepth ) {
-        N_Error( ERR_DROP, "ImGui::TableNextRow: no table active" );
-    }
-    ImGui::TableNextRow();
-}
-
-static void ImGui_EndTable( void ) {
-    if ( !ImGuiManager.nTableStackDepth ) {
-        N_Error( ERR_DROP, "ImGui::EndTable: no table active" );
-    }
-    ImGuiManager.nTableStackDepth--;
-    ImGui::EndTable();
 }
 
 static bool ImGui_Selectable( const string_t *label, bool selected, int, const vec2 * ) {
@@ -1461,6 +1395,10 @@ static bool ImGui_RadioButton( const string_t *label, bool selected ) {
     return ImGui::RadioButton( label->c_str(), selected );
 }
 
+static void ImGui_ProgressBar( float fraction, const vec2& size, const string_t *overlay ) {
+    ImGui::ProgressBar( fraction, ImVec2( size.x, size.y ), overlay->c_str() );
+}
+
 //
 // script globals
 //
@@ -1559,6 +1497,8 @@ static const asDWORD script_NOMAD_VERSION_UPDATE = NOMAD_VERSION_UPDATE;
 static const asDWORD script_NOMAD_VERSION_PATCH = NOMAD_VERSION_PATCH;
 
 static const float script_M_PI = M_PI;
+static const float script_FLT_MAX = FLT_MAX;
+static const float script_FLT_MIN = FLT_MIN;
 
 template<typename T>
 static int CompareVec2( const T& a, const T& b ) {
@@ -1665,6 +1605,12 @@ void ModuleLib_Register_Engine( void )
     CScriptConvert::Register( g_pModuleLib->GetScriptEngine() );
 
     REGISTER_TYPEDEF( "int8", "char" );
+
+    { // Constants
+        REGISTER_GLOBAL_VAR( "const float M_PI", &script_M_PI );
+        REGISTER_GLOBAL_VAR( "const float FLT_MIN", &script_FLT_MIN );
+        REGISTER_GLOBAL_VAR( "const float FLT_MAX", &script_FLT_MAX );
+    }
 
     { // Math
         RESET_NAMESPACE(); // should this be defined at a global level?
@@ -1945,6 +1891,7 @@ void ModuleLib_Register_Engine( void )
         RESET_NAMESPACE();
 
         REGISTER_ENUM_TYPE( "ImGuiWindowFlags" );
+        REGISTER_ENUM_VALUE( "ImGuiWindowFlags", "None", ImGuiWindowFlags_None );
         REGISTER_ENUM_VALUE( "ImGuiWindowFlags", "NoTitleBar", ImGuiWindowFlags_NoTitleBar );
         REGISTER_ENUM_VALUE( "ImGuiWindowFlags", "NoResize", ImGuiWindowFlags_NoResize );
         REGISTER_ENUM_VALUE( "ImGuiWindowFlags", "NoMouseInputs", ImGuiWindowFlags_NoMouseInputs );
@@ -1999,25 +1946,29 @@ void ModuleLib_Register_Engine( void )
 
         SET_NAMESPACE( "ImGui" );
 
-        REGISTER_GLOBAL_FUNCTION( "bool ImGui::Begin( const string& in, ref@, ImGuiWindowFlags = ImGuiWindowFlags::None )", ImGui_Begin, ( const string_t *, bool *, ImGuiWindowFlags ), bool );
+        REGISTER_GLOBAL_FUNCTION( "bool ImGui::Begin( const string& in, ref@ = null, ImGuiWindowFlags = ImGuiWindowFlags::None )", ImGui_Begin, ( const string_t *, bool *, ImGuiWindowFlags ), bool );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::End()", ImGui_End, ( void ), void );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::SetWindowSize( const vec2& in )", ImGui_SetWindowSize, ( const vec2 * ), void );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::SetWindowPos( const vec2& in )", ImGui_SetWindowPos, ( const vec2 * ), void );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::BeginTable( const string& in, int, ImGuiTableFlags = ImGuiTableFlags::None )", ImGui_BeginTable, ( const string_t *, int, ImGuiTableFlags ), bool );
-        REGISTER_GLOBAL_FUNCTION( "void ImGui::EndTable()", ImGui_EndTable, ( void ), void );
+        REGISTER_GLOBAL_FUNCTION( "void ImGui::SetWindowFontScale( float )", ImGui::SetWindowFontScale, ( float ), void );
+        REGISTER_GLOBAL_FUNCTION( "float ImGui::GetFontScale()", ImGui::GetFontSize, ( void ), float );
+        REGISTER_GLOBAL_FUNCTION( "void ImGui::EndTable()", ImGui::EndTable, ( void ), void );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::InputText( const string& in, string& out, ImGuiInputTextFlags = ImGuiInputTextFlags::None )", ImGui_InputText, ( const string_t *, string_t *, ImGuiInputTextFlags ), bool );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::InputInt( const string& in, int& out, ImGuiInputTextFlags = ImGuiInputTextFlags::None )", ImGui_InputInt, ( const string_t *, int32_t *, ImGuiInputTextFlags ), bool );
-        REGISTER_GLOBAL_FUNCTION( "void ImGui::TableNextColumn()", ImGui_TableNextColumn, ( void ), void );
-        REGISTER_GLOBAL_FUNCTION( "void ImGui::TableNextRow()", ImGui_TableNextRow, ( void ), void );
+        REGISTER_GLOBAL_FUNCTION( "bool ImGui::TableNextColumn()", ImGui::TableNextColumn, ( void ), bool );
+        REGISTER_GLOBAL_FUNCTION( "void ImGui::TableNextRow( int = 0, float = 0 )", ImGui::TableNextRow, ( ImGuiTableRowFlags, float ), void );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::PushStyleColor( ImGuiCol, const vec4& in )", ImGui_PushStyleColor_V4, ( ImGuiCol, const vec4 * ), void );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::PushStyleColor( ImGuiCol, const uint32 )", ImGui_PushStyleColor_U32, ( ImGuiCol, const ImU32 ), void );
-        REGISTER_GLOBAL_FUNCTION( "void ImGui::PopStyleColor( int = 1 )", ImGui_PopStyleColor, ( int ), void );
+        REGISTER_GLOBAL_FUNCTION( "void ImGui::PopStyleColor( int = 1 )", ImGui::PopStyleColor, ( int ), void );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::Text( const string& in )", ImGui_Text, ( const string_t * ), void );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::TextColored( const vec4& in, const string& in )", ImGui_TextColored, ( const vec4 *, const string_t * ), void );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::SameLine( float = 0.0f, float = -1.0f )", ImGui::SameLine, ( float, float ), void );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::NewLine()", ImGui::NewLine, ( void ), void );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::ArrowButton( const string& in, ImGuiDir )", ImGui_ArrowButton, ( const string_t *, ImGuiDir ), bool );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::RadioButton( const string& in, bool )", ImGui_RadioButton, ( const string_t *, bool ), bool );
+        REGISTER_GLOBAL_FUNCTION( "void ImGui::SetCursorScreenPos( const vec2& in )", ImGui::SetCursorScreenPos, ( const ImVec2& ), void );
+        REGISTER_GLOBAL_FUNCTION( "void ImGui::ProgressBar( float, const vec2& in = vec2( -FLT_MIN, 0.0f ), const string& in = \"\" )", ImGui_ProgressBar, ( float, const vec2&, const string_t * ), void );
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
             "int ImGui::SliderInt( const string& in, int, int, int, int = 0 )", asFUNCTION( ImGui_SliderInt ),
             asCALL_GENERIC
@@ -2048,7 +1999,7 @@ void ModuleLib_Register_Engine( void )
 
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::BeginCombo( const string& in, const string& in )", ImGui_BeginCombo, ( const string_t *, const string_t * ), bool );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::Selectable( const string& in, bool = false, int = 0, const vec2& in = vec2( 0.0f ) )", ImGui_Selectable, ( const string_t *, bool, int, const vec2 * ), bool );
-        REGISTER_GLOBAL_FUNCTION( "void ImGui::EndCombo()", ImGui_EndCombo, ( void ), void );
+        REGISTER_GLOBAL_FUNCTION( "void ImGui::EndCombo()", ImGui::EndCombo, ( void ), void );
 
         #undef REGISTER_GLOBAL_FUNCTION
         #define REGISTER_GLOBAL_FUNCTION( decl, funcPtr ) \
@@ -2401,6 +2352,7 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadVec2( const string& in, vec2& out, int )", LoadVec2 );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadVec3( const string& in, vec3& out, int )", LoadVec3 );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadVec4( const string& in, vec4& out, int )", LoadVec4 );
+
         #undef REGISTER_GLOBAL_FUNCTION
         #define REGISTER_GLOBAL_FUNCTION( decl, funcPtr ) \
             ValidateFunction( __func__, decl,\
@@ -2497,8 +2449,6 @@ void ModuleLib_Register_Engine( void )
 
     //    SET_NAMESPACE( "TheNomad::Constants" );
     { // Constants
-        REGISTER_GLOBAL_VAR( "const float M_PI", &script_M_PI );
-
         REGISTER_GLOBAL_VAR( "const vec4 colorBlack", colorBlack );
         REGISTER_GLOBAL_VAR( "const vec4 colorRed", colorRed );
         REGISTER_GLOBAL_VAR( "const vec4 colorGreen", colorGreen );

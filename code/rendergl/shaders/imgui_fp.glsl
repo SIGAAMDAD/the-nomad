@@ -2,18 +2,17 @@
 out vec4 a_Color;
 #endif
 
-in vec2 v_TexCoords;
-in vec3 v_FragPos;
+in vec2 v_TexCoord;
 in vec4 v_Color;
 
 uniform sampler2D u_DiffuseMap;
+uniform float u_GammaAmount;
 
 #if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
 uniform vec4 u_SpecularScale;
 uniform vec4 u_NormalScale;
-uniform uint u_NumLights;
 
-uniform vec4 u_AmbientColor;
+uniform vec3 u_AmbientColor;
 uniform float u_AmbientIntensity;
 #endif
 
@@ -60,22 +59,12 @@ vec3 CalcDiffuse(vec3 diffuseAlbedo, float NH, float EH, float roughness)
 #endif
 }
 
-void applyLighting() {
-#if defined(USE_SPECULARMAP)
-    a_Color.rgb += texture( u_SpecularMap, v_TexCoords ).rgb;
-#endif
-#if defined(USE_LIGHT)
-    if ( u_NumLights == uint( 0 ) )
-#endif
-	{
-        a_Color.rgb += texture( u_DiffuseMap, v_TexCoords ).rgb;
-    }
-}
-
-void AmbientLight() {
-//    vec3 color = u_AmbientColor + u_AmbientIntensity;
-}
-
 void main() {
-    a_Color = texture2D( u_DiffuseMap, v_TexCoords );
+    a_Color = v_Color * texture2D( u_DiffuseMap, v_TexCoord );
+
+#if defined(USE_HDR)
+	// reinhard tone mapping
+//	a_Color.rgb /= ( a_Color.rgb + vec3( 1.0 ) );
+#endif
+    a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
 }

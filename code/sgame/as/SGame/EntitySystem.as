@@ -184,14 +184,14 @@ namespace TheNomad::SGame {
 				}
 
 				if ( @m_EntityList[i].GetState() is null ) {
-					continue;
+//					continue;
 				} else {
-					m_EntityList[i].GetState().Run();
+//					m_EntityList[i].GetState().Run();
 				}
 
 				switch ( m_EntityList[i].GetType() ) {
 				case TheNomad::GameSystem::EntityType::Playr: {
-					cast<PlayrObject>( m_EntityList[i].GetData() ).Think();
+					cast<PlayrObject>( @m_EntityList[i] ).Think();
 					break; }
 				case TheNomad::GameSystem::EntityType::Mob: {
 					cast<MobObject>( m_EntityList[i].GetData() ).Think();
@@ -214,10 +214,10 @@ namespace TheNomad::SGame {
 				// draw entity
 				DrawEntity( m_EntityList[i] );
 				
-				if ( m_EntityList[i].GetState().Done() ) {
-					m_EntityList[i].SetState( m_EntityList[i].GetState().Cycle() );
-					continue;
-				}
+//				if ( m_EntityList[i].GetState().Done() ) {
+//					m_EntityList[i].SetState( m_EntityList[i].GetState().Cycle() );
+//					continue;
+//				}
 			}
 		}
 		void OnLevelStart() {

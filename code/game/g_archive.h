@@ -3,12 +3,21 @@
 
 #pragma once
 
+#include "../engine/n_cvar.h"
+
+typedef struct {
+    char name[MAX_NPATH];
+    int32_t nVersionMajor;
+    int32_t nVersionUpdate;
+    int32_t nVersionPatch;
+} modlist_t;
+
 typedef struct {
     char mapname[MAX_NPATH];
     gamedif_t dif;
 
     // mod info
-    char **modList;
+    modlist_t *modList;
     uint64_t numMods;
 } gamedata_t;
 
@@ -94,20 +103,20 @@ typedef struct {
 	
 	ngdheader_t header;
 	
+    uint64_t m_nSections;
 	ngdsection_read_t *m_pSectionList;
 } ngd_file_t;
 
-#ifndef COMPILE_AATC
-#include "../module_lib/module_public.h"
+typedef struct save_file_cache_s {
+} save_file_cache_t;
+
 #include "aatc/aatc.hpp"
-#include "aatc/aatc_common.hpp"
-#include "aatc/aatc_container_unordered_map.hpp"
 #include "aatc/aatc_container_vector.hpp"
 
 class CGameArchive
 {
 public:
-    CGameArchive( void ) = default;
+    CGameArchive( void );
     ~CGameArchive() = default;
 
     void BeginSaveSection( const char *moduleName, const char *name );
@@ -178,10 +187,12 @@ public:
     void LoadArray( const char *pszName, CScriptArray *pData, nhandle_t hSection );
 
     bool Load( const char *filename );
-    bool Save( void );
+    bool Save( const char *filename = Cvar_VariableString( "sgame_SaveName" ) );
     bool LoadPartial( const char *filename, gamedata_t *gd );
 
     nhandle_t GetSection( const char *name );
+
+    void InitCache( void );
 
     friend void G_InitArchiveHandler( void );
     friend void G_ShutdownArchiveHandler( void );
@@ -194,21 +205,20 @@ private:
     const ngdfield_t *FindField( const char *name, int32_t type, nhandle_t hSection ) const;
 
     fileHandle_t m_hFile;
-    ngdsection_read_t *m_pSectionCache;
     
     int64_t m_nSections;
     int64_t m_nSectionDepth;
     ngdsection_write_t m_Section;
 
-    char **m_ArchiveFileList;
+    ngd_file_t **m_pArchiveCache;
+    char **m_pArchiveFileList;
     uint64_t m_nArchiveFiles;
+    uint64_t m_nCurrentArchive;
 };
 
 void G_InitArchiveHandler( void );
 void G_ShutdownArchiveHandler( void );
 
 extern CGameArchive *g_pArchiveHandler;
-
-#endif
 
 #endif

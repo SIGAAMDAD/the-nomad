@@ -79,6 +79,7 @@ public:
 		return m_IncludePaths;
 	}
 private:
+	void PrepareContext( asIScriptFunction *pFunction );
 	void Build( const std::vector<std::string>& sourceFiles );
     bool InitCalls( void );
     void LoadSourceFile( const std::string& filename );
@@ -90,6 +91,9 @@ private:
     asIScriptContext *m_pScriptContext;
     asIScriptModule *m_pScriptModule;
 	qboolean m_bLoaded;
+
+	uint32_t m_nStateStack;
+	EModuleFuncId m_nLastCallId;
 
 	// to force garbage collection
 //	UtlVector<CScriptArray *> m_ScriptArrayObjects;

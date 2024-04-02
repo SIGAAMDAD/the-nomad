@@ -150,10 +150,30 @@ void RE_DrawImage( float x, float y, float w, float h, float u1, float v1, float
 	cmd->v2 = v2;
 }
 
+/*
+=============
+R_AddPostProcessCmd
+
+=============
+*/
+void R_AddPostProcessCmd( void ) {
+	postProcessCmd_t	*cmd;
+
+	cmd = R_GetCommandBuffer( sizeof( *cmd ) );
+	if ( !cmd ) {
+		return;
+	}
+	cmd->commandId = RC_POSTPROCESS;
+
+	cmd->refdef = backend.refdef;
+	cmd->viewData = glState.viewData;
+}
+
 void RE_BeginFrame(stereoFrame_t stereoFrame)
 {
     int width, height;
     unsigned clearBits;
+	int i;
     mat4_t matrix;
 	drawBufferCmd_t *cmd = NULL;
 
@@ -163,6 +183,24 @@ void RE_BeginFrame(stereoFrame_t stereoFrame)
 
 	if ( glContext.ARB_framebuffer_object && r_arb_framebuffer_object->i ) {
 		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo->frameBuffer );
+	}
+
+	GLSL_UseProgram( &rg.bokehShader );
+	GLSL_SetUniformInt( &rg.bokehShader, UNIFORM_TEXTURE_MAP, TB_DIFFUSEMAP );
+
+	GLSL_UseProgram( &rg.tonemapShader );
+	GLSL_SetUniformInt( &rg.tonemapShader, UNIFORM_TEXTURE_MAP, TB_COLORMAP );
+    GLSL_SetUniformInt( &rg.tonemapShader, UNIFORM_LEVELS_MAP, TB_LEVELSMAP );
+
+	for ( i = 0; i < 2; i++ ) {
+		GLSL_UseProgram( &rg.calclevels4xShader[i] );
+		GLSL_SetUniformInt( &rg.calclevels4xShader[i], UNIFORM_TEXTURE_MAP, TB_DIFFUSEMAP );
+	}
+
+	for ( i = 0; i < 4; i++ ) {
+		GLSL_UseProgram( &rg.depthBlurShader[i] );
+		GLSL_SetUniformInt( &rg.depthBlurShader[i], UNIFORM_SCREENIMAGE_MAP, TB_COLORMAP );
+        GLSL_SetUniformInt( &rg.depthBlurShader[i], UNIFORM_SCREENDEPTH_MAP, TB_LIGHTMAP );
 	}
 
     // unused for now

@@ -41,6 +41,8 @@ cvar_t *r_drawworld;
 cvar_t *r_speeds;
 cvar_t *r_detailTextures;
 
+cvar_t  *r_cameraExposure;
+
 cvar_t *r_gammaAmount;
 
 cvar_t *r_singleShader;
@@ -75,6 +77,11 @@ cvar_t *r_forceToneMap;
 cvar_t *r_forceToneMapMin;
 cvar_t *r_forceToneMapAvg;
 cvar_t *r_forceToneMapMax;
+
+cvar_t  *r_autoExposure;
+cvar_t  *r_forceAutoExposure;
+cvar_t  *r_forceAutoExposureMin;
+cvar_t  *r_forceAutoExposureMax;
 
 cvar_t *r_depthPrepass;
 cvar_t *r_ssao;
@@ -774,7 +781,7 @@ static void R_Register(void)
     r_arb_texture_compression = ri.Cvar_Get("r_arb_texture_compression", "0", CVAR_SAVE | CVAR_LATCH);
     ri.Cvar_SetDescription(r_arb_texture_compression, "Enables texture compression.");
     r_arb_framebuffer_object = ri.Cvar_Get("r_arb_framebuffer_object", "1", CVAR_SAVE | CVAR_LATCH);
-    ri.Cvar_SetDescription(r_arb_framebuffer_object, "Enables post-processing via multiple framebuffers.\n");
+    ri.Cvar_SetDescription(r_arb_framebuffer_object, "Enables post-processing via multiple framebuffers.");
     r_arb_vertex_array_object = ri.Cvar_Get("r_arb_vertex_array_object", "0", CVAR_SAVE | CVAR_LATCH);
     ri.Cvar_SetDescription(r_arb_vertex_array_object, "Enables use of vertex array object extensions.\nNOTE: only really matters if OpenGL version < 3.3");
     r_arb_vertex_buffer_object = ri.Cvar_Get("r_arb_vertex_buffer_object", "1", CVAR_SAVE | CVAR_LATCH);
@@ -826,6 +833,25 @@ static void R_Register(void)
 	r_forceToneMapMin = ri.Cvar_Get( "r_forceToneMapMin", "-8.0", CVAR_CHEAT );
 	r_forceToneMapAvg = ri.Cvar_Get( "r_forceToneMapAvg", "-2.0", CVAR_CHEAT );
 	r_forceToneMapMax = ri.Cvar_Get( "r_forceToneMapMax", "0.0", CVAR_CHEAT );
+
+    r_sunShadows = ri.Cvar_Get( "r_sunShadows", "1", CVAR_SAVE | CVAR_LATCH );
+	r_shadowFilter = ri.Cvar_Get( "r_shadowFilter", "1", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_shadowFilter, "Enable filtering shadows for a smoother look (0 - No. 1 - Some. 2 - Much)." );
+	r_shadowBlur = ri.Cvar_Get("r_shadowBlur", "0", CVAR_SAVE | CVAR_LATCH);
+	r_shadowMapSize = ri.Cvar_Get("r_shadowMapSize", "1024", CVAR_SAVE | CVAR_LATCH);
+	ri.Cvar_SetDescription( r_shadowMapSize, "Size of each cascaded shadow map." );
+	r_shadowCascadeZNear = ri.Cvar_Get( "r_shadowCascadeZNear", "8", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_shadowCascadeZNear, "Near plane for shadow cascade frustums." );
+	r_shadowCascadeZFar = ri.Cvar_Get( "r_shadowCascadeZFar", "1024", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_shadowCascadeZFar, "Far plane for shadow cascade frustums." );
+	r_shadowCascadeZBias = ri.Cvar_Get( "r_shadowCascadeZBias", "0", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_shadowCascadeZBias, "Z-bias for shadow cascade frustums." );
+
+    r_forceSun = ri.Cvar_Get( "r_forceSun", "0", CVAR_CHEAT );
+	r_forceSunLightScale = ri.Cvar_Get( "r_forceSunLightScale", "1.0", CVAR_CHEAT );
+	r_forceSunAmbientScale = ri.Cvar_Get( "r_forceSunAmbientScale", "0.5", CVAR_CHEAT );
+	r_drawSunRays = ri.Cvar_Get( "r_drawSunRays", "0", CVAR_SAVE | CVAR_LATCH );
+	r_sunlightMode = ri.Cvar_Get( "r_sunlightMode", "1", CVAR_SAVE | CVAR_LATCH );
 
     r_drawMode = ri.Cvar_Get( "r_drawMode", "2", CVAR_SAVE | CVAR_LATCH );
     ri.Cvar_SetDescription( r_drawMode,
@@ -938,6 +964,10 @@ static void R_Register(void)
     ri.Cvar_CheckRange( r_mappedBuffers, "0", "1", CVT_INT );
     ri.Cvar_SetDescription( r_mappedBuffers, "Toggles whether or not vertex and index buffer data is mapped into cpu memory." );
 
+    r_vertexLight = ri.Cvar_Get( "r_vertexLight", "0", CVAR_SAVE | CVAR_LATCH );
+	ri.Cvar_SetDescription( r_vertexLight, "Set to 1 to use vertex light instead of lightmaps, collapse all multi-stage shaders into single-stage ones, might cause rendering artifacts." );
+    
+
     r_ignoreGLErrors = ri.Cvar_Get( "r_ignoreGLErrors", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_ignoreGLErrors, "Ignore OpenGL errors." );
 	r_fastsky = ri.Cvar_Get( "r_fastsky", "0", CVAR_SAVE );
@@ -955,6 +985,14 @@ static void R_Register(void)
 	r_gammaAmount = ri.Cvar_Get( "r_gammaAmount", "1", CVAR_SAVE );
 	ri.Cvar_CheckRange( r_gammaAmount, "0.5", "3", CVT_FLOAT );
 	ri.Cvar_SetDescription( r_gammaAmount, "Gamma correction factor." );
+
+    r_autoExposure = ri.Cvar_Get( "r_autoExposure", "1", CVAR_SAVE );
+	ri.Cvar_SetDescription( r_autoExposure, "Do automatic exposure based on scene brightness. Hardcoded to -2 to 2 on maps that don't specify otherwise. Requires r_hdr, r_postProcess, and r_toneMap." );
+	r_forceAutoExposure = ri.Cvar_Get( "r_forceAutoExposure", "0", CVAR_CHEAT );
+	r_forceAutoExposureMin = ri.Cvar_Get( "r_forceAutoExposureMin", "-2.0", CVAR_CHEAT );
+	r_forceAutoExposureMax = ri.Cvar_Get( "r_forceAutoExposureMax", "2.0", CVAR_CHEAT );
+
+	r_cameraExposure = ri.Cvar_Get( "r_cameraExposure", "1", CVAR_CHEAT );
 
     r_printShaders = ri.Cvar_Get( "r_printShaders", "0", 0 );
 	ri.Cvar_SetDescription( r_printShaders, "Debugging tool to print on console of the number of shaders used." );
@@ -1473,6 +1511,11 @@ void *RE_GetImGuiTextureData( nhandle_t hShader )
     return (void *)(intptr_t)shader->stages[0]->bundle[0].image->id;
 }
 
+void R_VertexLighting( qboolean allowed )
+{
+    rg.vertexLightingAllowed = allowed;
+}
+
 GDR_EXPORT renderExport_t *GDR_DECL GetRenderAPI( uint32_t version, refimport_t *import )
 {
     static renderExport_t re;
@@ -1513,6 +1556,7 @@ GDR_EXPORT renderExport_t *GDR_DECL GetRenderAPI( uint32_t version, refimport_t 
     re.SetColor = RE_SetColor;
     re.DrawImage = RE_DrawImage;
 
+    re.VertexLighting = R_VertexLighting;
     re.CanMinimize = NULL;
     re.ThrottleBackend = NULL;
     re.FinishBloom = NULL;

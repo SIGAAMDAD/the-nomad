@@ -35,23 +35,20 @@ static void TitleMenu_Draw( void )
                             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_AlwaysAutoResize;
 
     font_scale = ImGui::GetFont()->Scale;
-
-//    ImGui::PushFont( title.font );
+    FontCache()->SetActiveFont( title.font );
 
     // setup window
     ImGui::Begin( "TitleMenu", NULL, windowFlags );
-    ImGui::SetWindowFontScale( font_scale * 6.5f * ui->scale );
-    ImGui::SetWindowPos( ImVec2( 480 * ui->scale, 64 * ui->scale ) );
+    ImGui::SetWindowFontScale( ( font_scale * 4.5f ) * ui->scale );
+    ImGui::SetWindowPos( ImVec2( 300 * ui->scale, 64 * ui->scale ) );
     ImGui::TextUnformatted( title.thenomad->value );
     ImGui::End();
 
     ImGui::Begin( "TitleMenu2", NULL, windowFlags );
-    ImGui::SetWindowFontScale( font_scale * 2.5f * ui->scale );
+    ImGui::SetWindowFontScale( ( font_scale * 1.25f ) * ui->scale );
     ImGui::SetWindowPos( ImVec2( 360 * ui->scale, 700 * ui->scale ) );
     ImGui::TextUnformatted( title.enterGame->value );
     ImGui::End();
-
-//    ImGui::PopFont();
 
     // if the console's open, don't catch
     if ( Key_GetCatcher() & KEYCATCH_CONSOLE ) {
@@ -74,7 +71,7 @@ void TitleMenu_Cache( void )
 
     title.menu.Draw = TitleMenu_Draw;
 
-    title.font = FontCache()->AddFontToCache( "fonts/PressStart2P-Regular.ttf" );
+    title.font = FontCache()->AddFontToCache( "PressStart2P", "Regular" );
 
     title.thenomad = strManager->ValueForKey("MENU_LOGO_STRING");
     title.enterGame = strManager->ValueForKey("MENU_TITLE_ENTER_GAME");

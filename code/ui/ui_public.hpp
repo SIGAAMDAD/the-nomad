@@ -30,7 +30,7 @@ public:
     ~CUIFontCache();
 
     void ClearCache( void );
-    ImFont *AddFontToCache( const char *filename );
+    ImFont *AddFontToCache( const char *filename, const char *variant = "Regular", float scale = 1.0f );
     void Finalize( void );
     void SetActiveFont( ImFont *font );
     uiFont_t *GetFont( const char *fileName );
@@ -59,7 +59,7 @@ typedef enum : uint64_t {
 } uiMenu_t;
 
 extern "C" void UI_GetHashString( const char *name, char *value );
-extern "C" void UI_DrawDiagnositics( void );
+extern "C" void UI_DrawDiagnostics( void );
 extern "C" void UI_ShowDemoMenu( void );
 extern "C" void UI_Init( void );
 extern "C" void UI_Shutdown( void );

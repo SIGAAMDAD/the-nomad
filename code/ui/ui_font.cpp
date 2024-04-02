@@ -4,8 +4,7 @@ CUIFontManager *fontManager;
 
 CUIFont::CUIFont( void )
 {
-    fontHandle = NULL;
-    memset(name,  0, sizeof(name));
+    
 }
 
 CUIFont::~CUIFont() {

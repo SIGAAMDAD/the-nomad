@@ -137,7 +137,7 @@ void R_WorldToGL( drawVert_t *verts, vec3_t pos )
 {
     vec3_t xyz[4];
 
-    ri.GLM_TransformToGL( pos, xyz, glState.viewData.camera.viewProjectionMatrix );
+    ri.GLM_TransformToGL( pos, xyz, 1.0f, glState.viewData.camera.viewProjectionMatrix );
 
     for (uint32_t i = 0; i < 4; ++i)
         VectorCopy( verts[i].xyz, xyz[i] );
@@ -147,10 +147,28 @@ void R_WorldToGL2( polyVert_t *verts, vec3_t pos )
 {
     vec3_t xyz[4];
 
-    ri.GLM_TransformToGL( pos, xyz, glState.viewData.camera.viewProjectionMatrix );
+    ri.GLM_TransformToGL( pos, xyz, 1.0f, glState.viewData.camera.viewProjectionMatrix );
 
     for (uint32_t i = 0; i < 4; ++i)
         VectorCopy( verts[i].xyz, xyz[i] );
+}
+
+void R_ScreenToGL( polyVert_t *verts )
+{
+    vec3_t xyz[4];
+    vec3_t pos;
+    int i;
+    float scale;
+
+    VectorCopy( pos, verts[3].xyz );
+
+    scale = verts[0].xyz[0] * verts[0].xyz[1];
+
+    ri.GLM_TransformToGL( pos, xyz, scale, glState.viewData.camera.viewProjectionMatrix );
+
+    for ( i = 0; i < 4; i++ ) {
+        VectorCopy( verts[i].xyz, xyz[i] );
+    }
 }
 
 /*
@@ -177,7 +195,7 @@ void R_DrawPolys( void )
     oldShader = poly->hShader;
     backend.drawBatch.shader = R_GetShaderByHandle( oldShader );
 
-    GLSL_UseProgram( &rg.basicShader );
+    GLSL_UseProgram( &rg.genericShader[0] );
     
     for ( i = 0; i < r_numPolys; i++ ) {
         if ( oldShader != poly->hShader ) {
@@ -188,6 +206,18 @@ void R_DrawPolys( void )
         }
 
         startIndex = backendData->numIndices;
+
+        switch ( backend.refdef.flags & RSF_ORTHO_BITS ) {
+        case RSF_ORTHO_TYPE_SCREENSPACE: {
+            R_ScreenToGL( poly->verts );
+            break; }
+        case RSF_ORTHO_TYPE_WORLD:
+            // done already in rgl_scene.c
+            break;
+        case RSF_ORTHO_TYPE_CORDESIAN:
+        default:
+            break;
+        };
 
         // generate fan indexes into the buffer
         for ( i = 0; i < poly->numVerts - 2; i++ ) {
@@ -236,10 +266,10 @@ static void R_DrawWorld( void )
 
     for (y = 0; y < rg.world->height; y++) {
         for (x = 0; x < rg.world->width; x++) {
-//            pos[0] = x;
-//            pos[1] = -y;
-            pos[0] = x - (rg.world->width * 0.5f);
+            pos[0] = x;
             pos[1] = rg.world->height - y;
+//            pos[0] = x - (rg.world->width * 0.5f);
+//            pos[1] = rg.world->height - y;
             pos[2] = 0.0f;
 
             // convert the local world coordinates to OpenGL screen coordinates
@@ -247,7 +277,7 @@ static void R_DrawWorld( void )
 
             for (i = 0; i < 4; i++) {
                 VectorCopy2( vtx[i].uv, rg.world->sprites[ rg.world->tiles[y * rg.world->width + x].index ][i] );
-//                VectorSet( vtx[i].worldPos, x, y, 0.0f );
+                VectorSet( vtx[i].worldPos, x, y, 0.0f );
             }
 
             // submit the processed vertices
@@ -270,7 +300,7 @@ void R_RenderView( const viewData_t *parms )
     // setup the correct matrices
     RB_MakeViewMatrix();
 
-    // issue all currently queued rendering commands
+    // draw any queued up images
     R_IssuePendingRenderCommands();
 
     // draw the tilemap
@@ -278,8 +308,6 @@ void R_RenderView( const viewData_t *parms )
 
     // render all submitted sgame polygons
     R_DrawPolys();
-
-    GLSL_UseProgram( NULL );
 }
 
 
@@ -302,6 +330,7 @@ static void R_CalcSpriteTextureCoords( uint32_t x, uint32_t y, uint32_t spriteWi
     texCoords[3][1] = max[1];
 }
 
+/*
 void R_ScreenToGL(vec3_t *xyz)
 {
     xyz[0][0] = 2.0f * xyz[0][0] / glConfig.vidWidth - 1.0f;
@@ -317,6 +346,7 @@ void R_ScreenToGL(vec3_t *xyz)
 	xyz[3][1] = 1.0f - 2.0f * xyz[3][1] / glConfig.vidHeight;
 }
 
+*/
 nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32_t sheetHeight, uint32_t spriteWidth, uint32_t spriteHeight )
 {
     spriteSheet_t *sheet;

@@ -72,6 +72,7 @@ qboolean CGameArchive::LoadArchiveFile( const char *filename, uint64_t index )
     fileHandle_t hFile;
 	ngdsection_read_t *section;
 	ngdfield_t *field;
+	ngd_file_t *file;
 	char name[MAX_STRING_CHARS];
 	
 	hFile = FS_FOpenRead( filename );
@@ -89,11 +90,14 @@ qboolean CGameArchive::LoadArchiveFile( const char *filename, uint64_t index )
 	FS_Read( header.gamedata.mapname, sizeof( header.gamedata.mapname ), hFile );
 	FS_Read( &header.gamedata.dif, sizeof( header.gamedata.dif ), hFile );
 	FS_Read( &header.gamedata.numMods, sizeof( header.gamedata.numMods ), hFile );
-	FS_Read( &bufSize, sizeof( bufSize ), hFile );
-	FS_FileSeek( hFile, bufSize, FS_SEEK_CUR );
 
-	m_pSectionCache = (ngdsection_read_t *)Z_Malloc( sizeof( *m_pSectionCache ) * header.numSections, TAG_SAVEFILE );
-	section = m_pSectionCache;
+	FS_FileSeek( hFile, sizeof( *header.gamedata.modList ) * MAX_NPATH * header.gamedata.numMods, FS_SEEK_CUR );
+
+	file = (ngd_file_t *)Z_Malloc( sizeof( *file ) * header.numSections, TAG_SAVEFILE );
+	file->m_pSectionList = (ngdsection_read_t *)( file + 1 );
+
+	file->m_nSections = header.numSections;
+	section = file->m_pSectionList;
 	
 	for ( i = 0; i < header.numSections; i++ ) {
 		FS_Read( &nameLength, sizeof( nameLength ), hFile );
@@ -188,9 +192,56 @@ qboolean CGameArchive::LoadArchiveFile( const char *filename, uint64_t index )
 	}
 
 	FS_FileSeek( hFile, 0, FS_SEEK_SET );
+
+	m_pArchiveCache[ index ] = file;
 	m_hFile = hFile;
 	
 	return qtrue;
+}
+
+static void G_SaveGame_f( void )
+{
+	const char *filename;
+	char path[MAX_NPATH];
+
+	filename = Cmd_Argv( 1 );
+
+	if ( *filename ) {
+		COM_StripExtension( filename, path, sizeof( path ) );
+		COM_DefaultExtension( path, sizeof( path ), ".ngd" );
+		filename = Cvar_VariableString( "sgame_SaveName" );
+	} else {
+		Com_snprintf( path, sizeof( path ) - 1, "%s", Cvar_VariableString( "sgame_SaveName" ) );
+		COM_DefaultExtension( path, sizeof( path ), ".ngd" );
+		filename = path;
+	}
+	g_pArchiveHandler->Save( path );
+}
+
+CGameArchive::CGameArchive( void )
+{
+	uint64_t i, size;
+	char *namePtr;
+	char **fileList;
+
+	Con_Printf( "G_InitArchiveHandler: initializing save file cache...\n" );
+
+	fileList = FS_ListFiles( "SaveData", ".ngd", &m_nArchiveFiles );
+	m_pArchiveCache = (ngd_file_t **)Z_Malloc( sizeof( *m_pArchiveCache ) * m_nArchiveFiles, TAG_SAVEFILE );
+
+	m_pArchiveFileList = (char **)Z_Malloc( sizeof( *fileList ) * m_nArchiveFiles, TAG_SAVEFILE );
+	for ( i = 0; i < m_nArchiveFiles; i++ ) {
+		size = strlen( fileList[i] ) + 1;
+		m_pArchiveFileList[i] = (char *)Z_Malloc( size, TAG_SAVEFILE );
+		N_strncpyz( m_pArchiveFileList[i], fileList[i], size );
+		LoadArchiveFile( fileList[i], i );
+
+		Con_Printf( "...Cached save file '%s'\n", fileList[i] );
+	}
+
+	FS_FreeFileList( fileList );
+
+	Cmd_AddCommand( "sgame.save_game", G_SaveGame_f );
 }
 
 void G_InitArchiveHandler( void )
@@ -199,20 +250,19 @@ void G_InitArchiveHandler( void )
 		return;
 	}
 
-	g_pArchiveHandler = new ( Hunk_Alloc( sizeof( *g_pArchiveHandler ), h_high ) ) CGameArchive();
-
-	g_pArchiveHandler->m_ArchiveFileList = FS_ListFiles( "SaveData", ".ngd", &g_pArchiveHandler->m_nArchiveFiles );
+	g_pArchiveHandler = new ( Hunk_Alloc( sizeof( *g_pArchiveHandler ), h_low ) ) CGameArchive();
 }
 
 void G_ShutdownArchiveHandler( void ) {
 	Con_Printf( "G_ShutdownArchiveHandler: clearing save file cache...\n" );
 
+	Z_FreeTags( TAG_SAVEFILE, TAG_SAVEFILE );
 	g_pArchiveHandler = NULL;
 }
 
 const char **CGameArchive::GetSaveFiles( uint64_t *nFiles ) const {
 	*nFiles = m_nArchiveFiles;
-	return (const char **)m_ArchiveFileList;
+	return (const char **)m_pArchiveFileList;
 }
 
 void CGameArchive::BeginSaveSection( const char *moduleName, const char *name )
@@ -500,7 +550,7 @@ const ngdfield_t *CGameArchive::FindField( const char *name, int32_t type, nhand
 {
 	const ngdsection_read_t *section;
 
-	section = &m_pSectionCache[ hSection ];
+	section = &m_pArchiveCache[ m_nCurrentArchive ]->m_pSectionList[ hSection ];
 	const auto it = section->m_FieldCache.find( name );
 
 	if ( it == section->m_FieldCache.end() ) {
@@ -1000,7 +1050,10 @@ void CGameArchive::LoadArray( const char *pszName, CScriptArray *pData, nhandle_
 	}
 }
 
-bool CGameArchive::Save( void )
+// NOTE: NEVER CHANGE THIS, IF U DO, YOU'LL BREAK SAVEFILES!!!!
+#define HEADER_SIZE ( sizeof( ngdvalidation_t ) + ( sizeof( uint64_t ) * 2 ) + MAX_NPATH ) + sizeof( gamedif_t )
+
+bool CGameArchive::Save( const char *filename )
 {
 	const char *path;
 	ngdheader_t header;
@@ -1018,15 +1071,15 @@ bool CGameArchive::Save( void )
 	if ( m_nSectionDepth ) {
 		N_Error( ERR_DROP, "CGameArchive::Save: called when writing a section" );
 	}
+	
+	g_pModuleLib->ModuleCall( sgvm, ModuleOnSaveGame, 0 );
 
-	path = va( "SaveData/%s.ngd", Cvar_VariableString( "sg_SaveName" ) );
+	path = va( "SaveData/%s", filename );
 	m_hFile = FS_FOpenWrite( path );
 	if ( m_hFile == FS_INVALID_HANDLE ) {
 		Con_Printf( COLOR_RED "ERROR: failed to create save file '%s'!\n", path );
 		return false;
 	}
-	
-	g_pModuleLib->ModuleCall( sgvm, ModuleOnSaveGame, 0 );
 
 	const UtlVector<CModuleInfo *>& loadList = g_pModuleLib->GetLoadList();
 	
@@ -1035,24 +1088,10 @@ bool CGameArchive::Save( void )
 	header.gamedata.dif = (gamedif_t)Cvar_VariableInteger( "sgame_Difficulty" );
 	header.gamedata.numMods = loadList.size();
 
-	size = 0;
 	for ( const auto& it : loadList ) {
-		if ( !ModsMenu_IsModuleActive( it->m_szName ) ) {
+		if ( !it->m_pHandle->IsValid() ) {
 			header.gamedata.numMods--;
-		} else {
-			size += PAD( strlen( it->m_szName ) + 1, sizeof( uintptr_t ) );
 		}
-	}
-	size += PAD( sizeof( char * ) * header.gamedata.numMods, sizeof( uintptr_t ) );
-
-	header.gamedata.modList = (char **)alloca16( size );
-	memset( header.gamedata.modList, 0, size );
-
-	namePtr = (char *)header.gamedata.modList;
-	for ( i = 0; i < loadList.size(); i++ ) {
-		strcpy( namePtr, loadList[i]->m_szName );
-		header.gamedata.modList[i] = namePtr;
-		namePtr += PAD( strlen( loadList[i]->m_szName ) + 1, sizeof( uintptr_t ) );
 	}
 	
 	header.validation.ident = IDENT;
@@ -1063,9 +1102,17 @@ bool CGameArchive::Save( void )
 	FS_Write( &header.validation, sizeof( header.validation ), m_hFile );
 	FS_Write( &header.numSections, sizeof( header.numSections ), m_hFile );
 	FS_Write( header.gamedata.mapname, sizeof( header.gamedata.mapname ), m_hFile );
+	FS_Write( &header.gamedata.dif, sizeof( header.gamedata.dif ), m_hFile );
 	FS_Write( &header.gamedata.numMods, sizeof( header.gamedata.numMods ), m_hFile );
-	FS_Write( &size, sizeof( size ), m_hFile );
-	FS_Write( header.gamedata.modList, size, m_hFile );
+
+	for ( i = 0; i < header.gamedata.numMods; i++ ) {
+		if ( loadList[i]->m_pHandle->IsValid() ) {
+			FS_Write( loadList[i]->m_szName, sizeof( loadList[i]->m_szName ), m_hFile );
+			FS_Write( &loadList[i]->m_nModVersionMajor, sizeof( loadList[i]->m_nModVersionMajor ), m_hFile );
+			FS_Write( &loadList[i]->m_nModVersionUpdate, sizeof( loadList[i]->m_nModVersionUpdate ), m_hFile );
+			FS_Write( &loadList[i]->m_nModVersionPatch, sizeof( loadList[i]->m_nModVersionPatch ), m_hFile );
+		}
+	}
 
 	for ( const auto& it : loadList ) {
 		partFiles = FS_ListFiles( FS_BuildOSPath( FS_GetHomePath(), NULL, va( "SaveData/%s/", it->m_szName ) ), ".prt", &nPartFiles );
@@ -1095,6 +1142,17 @@ bool CGameArchive::Save( void )
 
 	m_nSections = 0;
 
+	//
+	// reload the file list
+	//
+	Z_FreeTags( TAG_SAVEFILE, TAG_SAVEFILE );
+	m_pArchiveCache = NULL;
+	m_pArchiveFileList = NULL;
+	m_nArchiveFiles = 0;
+	m_nCurrentArchive = 0;
+	CGameArchive();
+	SinglePlayerMenu_Cache();
+
 	return true;
 }
 
@@ -1104,9 +1162,9 @@ nhandle_t CGameArchive::GetSection( const char *name )
 	int64_t i;
 
 	section = NULL;
-	for ( i = 0; i < m_nSections; i++ ) {
-		if ( !N_strcmp( m_pSectionCache[i].name, name ) ) {
-			section = &m_pSectionCache[i];
+	for ( i = 0; i < m_pArchiveCache[ m_nCurrentArchive ]->m_nSections; i++ ) {
+		if ( !N_strcmp( m_pArchiveCache[ m_nCurrentArchive ]->m_pSectionList[i].name, name ) ) {
+			section = &m_pArchiveCache[ m_nCurrentArchive ]->m_pSectionList[i];
 			break;
 		}
 	}
@@ -1122,6 +1180,7 @@ bool CGameArchive::LoadPartial( const char *filename, gamedata_t *gd )
     fileHandle_t f;
     ngdheader_t header;
 	uint64_t i, size;
+	char *namePtr;
 
     if ( FS_FileIsInBFF( filename ) ) {
         N_Error(ERR_FATAL, "Savefile '%s' was in a bff, bffs are for game resources, not save data", filename);
@@ -1136,7 +1195,7 @@ bool CGameArchive::LoadPartial( const char *filename, gamedata_t *gd )
     // validate the header
     //
 
-    if ( FS_FileLength( f ) < sizeof(header) ) {
+    if ( FS_FileLength( f ) < HEADER_SIZE ) {
         Con_Printf( COLOR_RED "CGameArchive::Load: failed to load savefile because the file is too small to contain a header.\n" );
         return false;
     }
@@ -1146,10 +1205,31 @@ bool CGameArchive::LoadPartial( const char *filename, gamedata_t *gd )
 	FS_Read( gd->mapname, sizeof( gd->mapname ), f );
 	FS_Read( &gd->dif, sizeof( gd->dif ), f );
 	FS_Read( &gd->numMods, sizeof( gd->numMods ), f );
-	FS_Read( &size, sizeof( size ), f );
 
-	gd->modList = (char **)Hunk_Alloc( size, h_low );
-	FS_Read( gd->modList, size, f );
+	if ( gd->numMods ) {
+		gd->modList = (modlist_t *)Z_Malloc( sizeof( *gd->modList ) * gd->numMods, TAG_SAVEFILE );
+		for ( i = 0; i < gd->numMods; i++ ) {
+			FS_Read( gd->modList[i].name, sizeof( gd->modList[i].name ), f );
+			FS_Read( &gd->modList[i].nVersionMajor, sizeof( gd->modList[i].nVersionMajor ), f );
+			FS_Read( &gd->modList[i].nVersionUpdate, sizeof( gd->modList[i].nVersionUpdate ), f );
+			FS_Read( &gd->modList[i].nVersionPatch, sizeof( gd->modList[i].nVersionPatch ), f );
+		}
+	}
+	Con_DPrintf(
+				"Loaded partial header:\n"
+				" [mapname] %s\n"
+				" [difficulty] %i\n"
+				" [modCount] %lu\n"
+				" [modList] "
+	, gd->mapname, (int32_t)gd->dif, gd->numMods );
+
+	for ( i = 0; i < gd->numMods; i++ ) {
+		Con_DPrintf( "%s", gd->modList[i].name );
+		if ( i != gd->numMods - 1 ) {
+			Con_DPrintf( ", " );
+		}
+	}
+	Con_DPrintf( "\n" );
 
     if ( !ValidateHeader( &header ) ) {
         return false;
@@ -1163,11 +1243,11 @@ bool CGameArchive::LoadPartial( const char *filename, gamedata_t *gd )
 bool CGameArchive::Load( const char *name )
 {
 	uint64_t i;
-	
-	m_pSectionCache = NULL;
-	
+
+	m_nCurrentArchive = m_nArchiveFiles;
 	for ( i = 0; i < m_nArchiveFiles; i++ ) {
-		if ( !N_strcmp( name, m_ArchiveFileList[i] ) ) {
+		if ( !N_strcmp( name, m_pArchiveCache[i]->name ) ) {
+			m_nCurrentArchive = i;
 			break;
 		}
 	}
@@ -1176,17 +1256,7 @@ bool CGameArchive::Load( const char *name )
 		N_Error( ERR_DROP, "CGameArchive::Load: attempted to load non-existing save file (... HOW?)" );
 	}
 
-	if ( !LoadArchiveFile( m_ArchiveFileList[i], i ) ) {
-		N_Error( ERR_DROP, "CGameArchive::Load: failed to load an invalid save file" );
-	}
-
 	g_pModuleLib->ModuleCall( sgvm, ModuleOnLoadGame, 0 );
-
-	for ( i = 0; i < m_nSections; i++ ) {
-		m_pSectionCache[i].m_FieldCache.clear();
-	}
-
-	Z_FreeTags( TAG_SAVEFILE, TAG_SAVEFILE );
 
 	return true;
 }

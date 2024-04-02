@@ -44,6 +44,7 @@ static const keyname_t keynames[] = {
 	{ "y", KEY_Y },
 	{ "z", KEY_Z },
 
+	{ "ESCAPE", KEY_ESCAPE },
 	{ "ALT", KEY_ALT },
 	{ "SHIFT", KEY_SHIFT },
 	{ "CTRL", KEY_CTRL },
@@ -572,6 +573,10 @@ static void G_KeyDownEvent(uint32_t key, uint32_t time)
 			Key_SetCatcher( Key_GetCatcher() & ~KEYCATCH_SGAME );
 //			VM_Call( sgvm, 1, SGAME_EVENT_HANDLING, SGAME_EVENT_NONE );
 			return;
+		}
+
+		if ( gi.mapLoaded ) {
+			Cbuf_ExecuteText( EXEC_APPEND, "togglepausemenu\n" );
 		}
 
 		if ( !( Key_GetCatcher() & KEYCATCH_UI ) ) {

@@ -237,7 +237,6 @@ int ModuleOnSaveGame() {
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnSave();
 	}
-
 	ConsolePrint( "Done.\n" );
 
 	return 1;
