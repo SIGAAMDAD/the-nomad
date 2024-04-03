@@ -491,9 +491,9 @@ static const void *RB_SwapBuffers(const void *data)
 			if ( rg.msaaResolveFbo && r_hdr->i ) {
 				// Resolving an RGB16F MSAA FBO to the screen messes with the brightness, so resolve to an RGB16F FBO first
 				FBO_FastBlit( rg.renderFbo, NULL, rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
-				FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+				FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 			} else {
-				FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+				FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 			}
 		}
 	}
@@ -508,6 +508,8 @@ static const void *RB_SwapBuffers(const void *data)
 	}
 
     ri.GLimp_EndFrame();
+
+	backend.framePostProcessed = qfalse;
 
     return (const void *)(cmd + 1);
 }
@@ -546,7 +548,7 @@ static const void *RB_PostProcess(const void *data)
 	if ( rg.msaaResolveFbo ) {
 		// Resolve the MSAA before anything else
 		// Can't resolve just part of the MSAA FBO, so multiple views will suffer a performance hit here
-		FBO_FastBlit( rg.renderFbo, NULL, rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+//		FBO_FastBlit( rg.renderFbo, NULL, rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 		srcFbo = rg.msaaResolveFbo;
 	}
 
@@ -575,7 +577,7 @@ static const void *RB_PostProcess(const void *data)
 			RB_ToneMap(srcFbo, srcBox, NULL, dstBox, autoExposure);
 		}
 		else if (r_cameraExposure->f == 0.0f ) {
-			FBO_FastBlit( srcFbo, srcBox, NULL, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+//			FBO_FastBlit( srcFbo, srcBox, NULL, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
 		}
 		else {
 			vec4_t color;
@@ -585,16 +587,16 @@ static const void *RB_PostProcess(const void *data)
 			color[2] = pow( 2, r_cameraExposure->f ); //exp2(r_cameraExposure->f);
 			color[3] = 1.0f;
 
-			FBO_Blit( srcFbo, srcBox, NULL, NULL, dstBox, NULL, color, 0 );
+//			FBO_Blit( srcFbo, srcBox, NULL, NULL, dstBox, NULL, color, 0 );
 		}
 	}
 
 	if ( r_drawSunRays->i ) {
-		RB_SunRays( NULL, srcBox, NULL, dstBox );
+//		RB_SunRays( NULL, srcBox, NULL, dstBox );
 	}
 
 	if ( 1 ) {
-		RB_BokehBlur( NULL, srcBox, NULL, dstBox, backend.refdef.blurFactor );
+//		RB_BokehBlur( NULL, srcBox, NULL, dstBox, backend.refdef.blurFactor );
 	} else {
 		RB_GaussianBlur( backend.refdef.blurFactor );
 	}

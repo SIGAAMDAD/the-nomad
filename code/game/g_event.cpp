@@ -576,7 +576,7 @@ static void G_KeyDownEvent(uint32_t key, uint32_t time)
 		}
 
 		if ( gi.mapLoaded ) {
-			Cbuf_ExecuteText( EXEC_APPEND, "togglepausemenu\n" );
+			Cbuf_ExecuteText( EXEC_APPEND, "togglemenu\n" );
 		}
 
 		if ( !( Key_GetCatcher() & KEYCATCH_UI ) ) {

@@ -352,61 +352,6 @@ UI_Refresh
 =================
 */
 
-#define FPS_FRAMES 6
-extern "C" void UI_DrawFPS( bool useWindow = false )
-{
-    if (ui_diagnostics->i < 1) {
-        return;
-    }
-
-    static int32_t previousTimes[FPS_FRAMES];
-    static int32_t index;
-    static int32_t previous;
-    int32_t t, frameTime;
-    int32_t total, i;
-    int32_t fps;
-	extern ImFont *RobotoMono;
-
-    fps = 0;
-
-    t = Sys_Milliseconds();
-    frameTime = t - previous;
-    previous = t;
-
-    previousTimes[index % FPS_FRAMES] = frameTime;
-    index++;
-    if (index > FPS_FRAMES) {
-        // average multiple frames together to smooth changes out a bit
-		total = 0;
-		for ( i = 0 ; i < FPS_FRAMES ; i++ ) {
-			total += previousTimes[i];
-		}
-		if ( !total ) {
-			total = 1;
-		}
-		fps = 1000 * FPS_FRAMES / total;
-    } else {
-		fps = previous;
-	}
-
-	if ( RobotoMono ) {
-		FontCache()->SetActiveFont( RobotoMono );
-	}
-
-	if ( useWindow ) {
-		ImGui::Text( "%ifps", fps );
-		return;
-	}
-
-    ImGui::Begin( "DrawFPS##UI", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar
-                                        | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoBackground );
-    ImGui::SetWindowPos( ImVec2( 1000 * ui->scale + ui->bias, 8 * ui->scale ) );
-    ImGui::SetWindowFontScale( 1.5f * ui->scale );
-    ImGui::Text( "%ifps", fps );
-    ImGui::End();
-}
-
-
 void Sys_DisplayEngineStats( void );
 
 extern "C" void UI_DrawDiagnostics( void )
@@ -804,7 +749,6 @@ void Sys_DisplayEngineStats( void )
 	}
     // draw the fps
 	else if ( ui_diagnostics->i == 1 ) {
-		UI_DrawFPS();
         return;
 	}
 
@@ -859,7 +803,6 @@ void Sys_DisplayEngineStats( void )
 	//
 
 
-	UI_DrawFPS( true );
 	ImGui::Text( "Frame Number: %lu", com_frameNumber );
 
 	Sys_DrawCPUUsage();

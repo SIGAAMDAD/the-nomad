@@ -2075,6 +2075,10 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::IsAnyKeyDown()", WRAP_FN( Key_AnyDown ) );
         REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::IsKeyDown( KeyNum )", WRAP_FN( Key_IsDown ) );
 
+        SET_NAMESPACE( "TheNomad::Engine::System" );
+        REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::System::Milliseconds()", WRAP_FN( Sys_Milliseconds ) );
+        SET_NAMESPACE( "TheNomad::Engine" );
+
         REGISTER_OBJECT_TYPE( "Timer", CTimer, asOBJ_VALUE );
         REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Engine::Timer", asBEHAVE_CONSTRUCT, "void f()", WRAP_CON( CTimer, ( void ) ) );
         REGISTER_OBJECT_BEHAVIOUR( "TheNomad::Engine::Timer", asBEHAVE_DESTRUCT, "void f()", WRAP_DES( CTimer ) );

@@ -10,6 +10,7 @@ typedef struct module_s {
     qboolean allDepsActive;
 
 	module_s& operator=( module_s& other );
+	module_s& operator=( const module_s& other );
 	bool operator==( const UtlString& other ) const;
 	bool operator!=( const UtlString& other ) const;
     bool operator<( const module_s& other ) const;
@@ -123,7 +124,6 @@ static void ModsMenu_LoadModList( void )
     char *b;
     uint64_t nLength;
     uint32_t i;
-    module_t *m;
     nlohmann::json json;
 
     nLength = FS_LoadFile( "_cache/loadlist.json", (void **)&b );
@@ -154,12 +154,15 @@ static void ModsMenu_LoadModList( void )
         }
     }
     for ( i = 0; i < mods->numMods; i++ ) {
-    	eastl::swap( mods->modList[i], mods->modList[ mods->modList[i].bootIndex ] );
+		module_t m = mods->modList[ mods->modList[i].bootIndex ];
+		mods->modList[ mods->modList[i].bootIndex ] = mods->modList[i];
+		mods->modList[i] = m;
     }
 }
 
-static void ModsMenu_DrawListing( const module_t *mod, qboolean dimColor )
+static void ModsMenu_DrawListing( module_t *mod, qboolean dimColor )
 {
+	uint32_t j;
 	const int index = (int)( mods->modList - mod );
 	
 	ImGui::TableNextColumn();
@@ -184,7 +187,7 @@ static void ModsMenu_DrawListing( const module_t *mod, qboolean dimColor )
 			
 			if ( it != mod->info->m_Dependencies.end() ) {
 				// turn it off, but not permanently
-				it->active = qfalse;
+				mods->modList[ GetModLoadIndex( it->c_str() ) ].active = qfalse;
 			}
 		}
 	}
@@ -195,7 +198,8 @@ static void ModsMenu_DrawListing( const module_t *mod, qboolean dimColor )
 		ImGui::PushStyleColor( ImGuiCol_FrameBg, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
 		ImGui::PushStyleColor( ImGuiCol_FrameBgActive, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
 		ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
-		ImGui::MenuItem( "(!) " );
+		ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4( 0.0f, 0.0f, 0.0f, 1.0f ) );
+		ImGui::Text( "(!)" );
 		if ( ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayShort ) ) {
 			ImGui::BeginTooltip();
 			ImGui::SeparatorText( "this module depends on" );
@@ -204,7 +208,7 @@ static void ModsMenu_DrawListing( const module_t *mod, qboolean dimColor )
 			}
 			ImGui::EndTooltip();
 		}
-		ImGui::PopStyleColor( 5 );
+		ImGui::PopStyleColor( 6 );
 		ImGui::SameLine();
 	}
 }
@@ -262,42 +266,44 @@ void ModsMenu_Draw( void )
 			ImGui::EndDragDropSource();
 		}
 		if ( ImGui::BeginDragDropTarget() ) {
-			ImGuiPayload *data = ImGui::AcceptDragDropPayload( "##ModLoadListDragDropPayload" );
-			if ( data->DataSize != sizeof( *mods->modList ) ) {
-				Assert( data->DataSize == sizeof( *mods->modList ) );
-				N_Error( ERR_FATAL, "ModsMenu_Draw: drag drop payload dataSize mismatch" );
-			}
-			module_t *m = (module_t *)data->Data;
-			qboolean reject = qfalse;
-			
-			// check if they're trying to load before or after dependencies
-			if ( m->numDependencies ) {
-				for ( const auto& it : m->info->m_Dependencies ) {
-					if ( GetModLoadIndex( it.c_str() ) > i ) {
-						reject = qtrue;
+			const ImGuiPayload *data = ImGui::AcceptDragDropPayload( "##ModLoadListDragDropPayload" );
+			if ( data ) {
+				if ( data->DataSize != sizeof( *mods->modList ) ) {
+					Assert( data->DataSize == sizeof( *mods->modList ) );
+					N_Error( ERR_FATAL, "ModsMenu_Draw: drag drop payload dataSize mismatch" );
+				}
+				module_t *m = (module_t *)const_cast<ImGuiPayload *>( data )->Data;
+				qboolean reject = qfalse;
+
+				// check if they're trying to load before or after dependencies
+				if ( m->numDependencies ) {
+					for ( const auto& it : m->info->m_Dependencies ) {
+						if ( GetModLoadIndex( it.c_str() ) > i ) {
+							reject = qtrue;
+						}
+					}
+					// is this a dependency?
+					for ( j = 0; j < mods->numMods; j++ ) {
+						const auto it = eastl::find( mods->modList[j].info->m_Dependencies.cbegin(),
+							mods->modList[j].info->m_Dependencies.cend(), m->info->m_szName );
+						if ( it != mods->modList[j].info->m_Dependencies.cend() ) {
+							reject = i < j;
+						}
 					}
 				}
-				// is this a dependency?
-				for ( j = 0; j < mods->numMods; j++ ) {
-					const auto it = eastl::find( mods->modList[j].info->m_Dependencies.cbegin(),
-						mods->modList[j].info->m_Dependencies.cend(), m->info->m_szName );
-					if ( it != mods->modList[j].info->m_Dependencies.cend() ) {
-						reject = i < j;
+
+				if ( !reject ) {
+					eastl::swap( *m, *( m + 1 ) );
+
+					// shuffle the list
+					memmove( mods->modList + ( mods->numMods - 1 ), m + 1,
+						sizeof( *mods->modList ) * ( ( mods->modList - m ) + 1 ) );
+					for ( j = 0; j < mods->numMods; j++ ) {
+						mods->modList[j].bootIndex = j;
 					}
+					// write it to disk
+					ModsMenu_SaveModList();
 				}
-			}
-			
-			if ( !reject ) {
-				eastl::swap( *m, *( m + 1 ) );
-				
-				// shuffle the list
-				memmove( mods->modList + ( mods->numMods - 1 ), m + 1,
-					sizeof( *mods->modList ) * ( ( mods->modList - m ) + 1 ) );
-				for ( j = 0; j < mods->numMods; j++ ) {
-					mods->modList[j].bootIndex = j;
-				}
-				// write it to disk
-				ModsMenu_SaveModList();
 			}
 			
 			ImGui::EndDragDropTarget();
@@ -326,10 +332,20 @@ void ModsMenu_Draw( void )
 
 inline module_s& module_s::operator=( module_s& other ) {
 	info = other.info;
-	dependencies = other.dependencies;
 	active = other.active;
 	valid = other.valid;
-	numDependencies = other.numDependenices;
+	numDependencies = other.numDependencies;
+	bootIndex = other.bootIndex;
+	isRequired = other.isRequired;
+	allDepsActive = other.allDepsActive;
+	return *this;
+}
+
+inline module_s& module_s::operator=( const module_s& other ) {
+	info = const_cast<CModuleInfo *>( other.info );
+	active = other.active;
+	valid = other.valid;
+	numDependencies = other.numDependencies;
 	bootIndex = other.bootIndex;
 	isRequired = other.isRequired;
 	allDepsActive = other.allDepsActive;
@@ -364,7 +380,7 @@ static void ModsMenu_Sort( void ) {
     uint32_t i, j;
     const CModuleInfo *mod;
 	
-	uint32_t index, newIndex, oldIndex;
+	uint32_t index;
 	// a bit-packed 64 bit array of indexes
 	uint64_t *sortedList;
 	
@@ -399,18 +415,17 @@ static void ModsMenu_Sort( void ) {
 		}
 	}
 	for ( i = 0; i < mods->numMods; i++ ) {
-		// manually swap that shit
-		if ( ( (uint32_t *)&sortedList[i] )[0] == ( (uint32_t *)&sortedList[i] )[1] ) {
-			continue;
-		}
-		eastl::swap( mods->modList[ ( (uint32_t *)&sortedList[i] )[0] ], mods->modList[ ( (uint32_t *)&sortedList[i] )[1] ] );
+		// manually swap
+		module_t m = mods->modList[ ( (uint32_t *)&sortedList[i] )[1] ];
+		mods->modList[ ( (uint32_t *)&sortedList[i] )[1] ] = mods->modList[ ( (uint32_t *)&sortedList[i] )[0] ];
+		mods->modList[ ( (uint32_t *)&sortedList[i] )[0] ] = m;
 	}
 }
 
 static void ModsMenu_Load( void )
 {
     uint32_t i, j;
-    module_t *m;
+	module_t *m;
 
     Con_Printf( "Caching module info data...\n" );
 
@@ -440,8 +455,8 @@ static void ModsMenu_Load( void )
         }
         
         if ( loadList[i]->m_Dependencies.size() ) {
-        	Con_Printf( "Module \"%s\" has dependencies: " );
-        	for ( j = 0; j < loadList[i]->m_Depdencies.size(); j++ ) {
+        	Con_Printf( "Module \"%s\" has dependencies: ", m->info->m_szName );
+        	for ( j = 0; j < loadList[i]->m_Dependencies.size(); j++ ) {
         		if ( j < loadList[i]->m_Dependencies.size() - 1 ) {
         			Con_Printf( ", " );
         		}
@@ -460,7 +475,7 @@ static void ModsMenu_Load( void )
         if ( mods->modList[i].info->m_pHandle->IsValid() && !mods->modList[i].valid ) {
             mods->modList[i].valid = qtrue;
             
-            for ( const auto& it : mods->modList[i].m_Dependencies ) {
+            for ( const auto& it : mods->modList[i].info->m_Dependencies ) {
             	const auto dep = eastl::find( loadList.cbegin(), loadList.cend(), it );
             	
             	if ( dep == loadList.cend() ) {
@@ -471,7 +486,7 @@ static void ModsMenu_Load( void )
         }
     }
 
-    Con_Printf( "...Got %lu modules\n", mods->numMods );
+    Con_Printf( "...Got %u modules\n", mods->numMods );
 }
 
 void ModsMenu_Cache( void )
@@ -485,7 +500,7 @@ void ModsMenu_Cache( void )
 	size += PAD( sizeof( *mods->modList ) * g_pModuleLib->GetLoadList().size(), sizeof( uintptr_t ) );
     mods = (modmenu_t *)Hunk_Alloc( size, h_high );
     memset( mods, 0, size );
-    if ( g_pModuleLibe->GetLoadList().size() ) {
+    if ( g_pModuleLib->GetLoadList().size() ) {
 	    mods->modList = (module_t *)( mods + 1 );
 	}
 

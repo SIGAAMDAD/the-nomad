@@ -1062,22 +1062,22 @@ static void G_MoveCamera( void )
 
     glm::vec3& p = pos;
 
-    if (Key_IsDown( KEY_W )) {
+    if ( ImGui::IsKeyDown( ImGuiKey_W ) ) {
         p.y += 0.05f;
     }
-    if (Key_IsDown( KEY_S )) {
+    if ( ImGui::IsKeyDown( ImGuiKey_S ) ) {
         p.y -= 0.05f;
     }
-    if (Key_IsDown( KEY_A )) {
+    if ( ImGui::IsKeyDown( ImGuiKey_A ) ) {
         p.x -= 0.05f;
     }
-    if (Key_IsDown( KEY_D )) {
+    if ( ImGui::IsKeyDown( ImGuiKey_D ) ) {
         p.x += 0.05f;
     }
-    if (Key_IsDown( KEY_N )) {
+    if ( ImGui::IsKeyDown( ImGuiKey_M ) ) {
         p.z += 0.005f;
     }
-    if (Key_IsDown( KEY_M )) {
+    if ( ImGui::IsKeyDown( ImGuiKey_N ) ) {
         p.z -= 0.005f;
     }
 }
@@ -1085,8 +1085,6 @@ static void G_MoveCamera( void )
 void G_Frame(int32_t msec, int32_t realMsec)
 {
     uint32_t i, j;
-
-    G_MoveCamera();
 
     // save the msec before checking pause
     gi.realFrameTime = msec;
@@ -1101,6 +1099,8 @@ void G_Frame(int32_t msec, int32_t realMsec)
 
     // update the screen
     SCR_UpdateScreen();
+
+    G_MoveCamera();
 
     gi.framecount++;
 }

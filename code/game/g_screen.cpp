@@ -371,7 +371,9 @@ void SCR_UpdateScreen(void)
     }
     recursive = 1;
 
-    // if there is no VM, there are also no rendering comamnds. Stop the renderer in
+	UI_Refresh( gi.realtime );
+	UI_DrawDiagnostics();
+	// if there is no VM, there are also no rendering comamnds. Stop the renderer in
     // that case
 	// we're in a level
 	// if the user is ending a level through the pause menu,
@@ -396,8 +398,6 @@ void SCR_UpdateScreen(void)
 			break;
 		};
 	}
-	UI_Refresh( gi.realtime );
-	UI_DrawDiagnostics();
 
     // console draws next
     Con_DrawConsole();

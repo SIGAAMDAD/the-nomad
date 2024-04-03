@@ -460,7 +460,7 @@ static void Com_PumpKeyEvents(void)
 
 		switch (event.type) {
 		case SDL_KEYDOWN:
-			Com_QueueEvent( in_eventTime, SE_KEY, Com_TranslateSDL2ToQ3Key( &event.key.keysym, qtrue ), qtrue, 0, NULL );
+//			Com_QueueEvent( in_eventTime, SE_KEY, Com_TranslateSDL2ToQ3Key( &event.key.keysym, qtrue ), qtrue, 0, NULL );
 			break;
 		case SDL_KEYUP:
 			Com_QueueEvent( in_eventTime, SE_KEY, Com_TranslateSDL2ToQ3Key( &event.key.keysym, qfalse ), qfalse, 0, NULL );

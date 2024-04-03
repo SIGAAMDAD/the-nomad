@@ -65,6 +65,9 @@ namespace TheNomad::GameSystem {
 		float GetUIScale() const {
 			return m_nUIScale;
 		}
+		float GetUIBias() const {
+			return m_nUIBias;
+		}
 		uint GetGameMsec() const {
 			return m_nGameMsec;
 		}

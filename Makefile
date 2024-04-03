@@ -114,7 +114,7 @@ USE_VULKAN_API=0
 INCLUDE       =-Idependencies/include/ -Idependencies/include/EA/ -Ideps/squirrel/include -Ideps/squall/ $(OS_INCLUDE) -I. -Icode/ -I/usr/local/mono-2.0
 VERSION_DEFINE=-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPDATE) -D_NOMAD_VERSION_PATCH=$(VERSION_PATCH)
 
-DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -D_NOMAD_ENGINE -DAS_MAX_PORTABILITY -DUSE_AFFINITY_MASK
+DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -D_NOMAD_ENGINE -DUSE_AFFINITY_MASK
 OPTIMIZERS    = \
 			-ffast-math \
 			-mfma -msse3 -msse2 -msse -mavx -mavx2 -mmmx -mfpmath=sse \
@@ -154,6 +154,7 @@ LDLIBS= \
 		libbacktrace.a \
 		libEASTL.a \
 		libopenal.a \
+		TheNomad.ASLib.x64.a \
 		-L. \
 		-lSDL2 \
 		-lsndfile \
@@ -256,37 +257,6 @@ JPGOBJ=\
   	$(O)/libjpeg/jquant1.o \
   	$(O)/libjpeg/jquant2.o \
   	$(O)/libjpeg/jutils.o
-
-ASOBJS=\
-	$(O)/angelscript/as_atomic.o \
-	$(O)/angelscript/as_builder.o \
-	$(O)/angelscript/as_bytecode.o \
-	$(O)/angelscript/as_callfunc_x86.o \
-	$(O)/angelscript/as_callfunc.o \
-	$(O)/angelscript/as_compiler.o \
-	$(O)/angelscript/as_configgroup.o \
-	$(O)/angelscript/as_context.o \
-	$(O)/angelscript/as_datatype.o \
-	$(O)/angelscript/as_gc.o \
-	$(O)/angelscript/as_generic.o \
-	$(O)/angelscript/as_globalproperty.o \
-	$(O)/angelscript/as_memory.o \
-	$(O)/angelscript/as_module.o \
-	$(O)/angelscript/as_objecttype.o \
-	$(O)/angelscript/as_outputbuffer.o \
-	$(O)/angelscript/as_parser.o \
-	$(O)/angelscript/as_restore.o \
-	$(O)/angelscript/as_scriptcode.o \
-	$(O)/angelscript/as_scriptengine.o \
-	$(O)/angelscript/as_scriptfunction.o \
-	$(O)/angelscript/as_scriptnode.o \
-	$(O)/angelscript/as_scriptobject.o \
-	$(O)/angelscript/as_string_util.o \
-	$(O)/angelscript/as_string.o \
-	$(O)/angelscript/as_thread.o \
-	$(O)/angelscript/as_tokenizer.o \
-	$(O)/angelscript/as_typeinfo.o \
-	$(O)/angelscript/as_variablescope.o \
 
 SRC=\
 	$(O)/game/g_game.o \

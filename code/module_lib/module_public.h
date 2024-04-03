@@ -316,6 +316,10 @@ struct CModuleInfo
 	~CModuleInfo() {
 	}
 
+    inline bool operator==( const UtlString& other ) const {
+        return N_stricmp( m_szName, other.c_str() ) == 0;
+    }
+
 	char m_szName[MAX_NPATH];
 	UtlVector<UtlString> m_Dependencies;
 
@@ -327,6 +331,10 @@ struct CModuleInfo
 
 	version_t m_GameVersion;
 };
+
+inline bool operator==( CModuleInfo *const m1, const UtlString& m2 ) {
+    return *m1 == m2;
+}
 
 class CContextMgr;
 class CScriptBuilder;
