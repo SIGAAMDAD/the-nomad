@@ -230,7 +230,7 @@ void CSoundSource::Init( void )
     m_iSource = 0;
 
     if ( m_iBuffer == 0 ) {
-        ALCall( alGenBuffers( 1, &m_iBuffer) );
+        ALCall( alGenBuffers( 1, &m_iBuffer ) );
     }
     m_iType = 0;
     m_bLoop = false;
@@ -335,6 +335,9 @@ void CSoundSource::Stop( void ) {
     if ( !IsPlaying() && !IsLooping() ) {
         return; // nothing's playing
     }
+    if ( m_iTag == TAG_MUSIC ) {
+        ALCall( alSourcei( m_iSource, AL_BUFFER, 0 ) );
+    }
     ALCall( alSourceStop( m_iSource ) );
 }
 
@@ -378,8 +381,7 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     void *buffer;
     uint64_t length;
     const char *ospath;
-    void *data;
-    uint64_t dataSize;
+    eastl::vector<short> data;
 
     m_iTag = tag;
 
@@ -429,28 +431,11 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     // allocate the buffer
     Alloc();
 
-    switch ( m_iType ) {
-    default:
-    case SNDBUF_16BIT:
-        dataSize = sizeof( short );
-        break;
-    case SNDBUF_8BIT:
-        dataSize = sizeof( char );
-        break;
-    case SNDBUF_DOUBLE:
-        dataSize = sizeof( double );
-        break;
-    case SNDBUF_FLOAT:
-        dataSize = sizeof( float );
-        break;
-    };
+    data.resize( m_hFData.channels * m_hFData.frames );
 
-    dataSize *= m_hFData.channels * m_hFData.frames;
-    data = Hunk_AllocateTempMemory( dataSize );
-
-    if ( !sf_read_raw( sf, data, dataSize ) ) {
+    if ( !sf_read_short( sf, data.data(), data.size() * sizeof( short ) ) ) {
         N_Error( ERR_FATAL, "CSoundSource::LoadFile(%s): failed to read %lu bytes from audio stream, sf_strerror(): %s\n",
-            npath, dataSize, sf_strerror( sf ) );
+            npath, data.size() * sizeof( short ), sf_strerror( sf ) );
     }
     
     sf_close( sf );
@@ -466,17 +451,16 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     if ( tag == TAG_SFX && m_iSource == 0 ) {
         ALCall( alGenSources( 1, &m_iSource ) );
     }
-
-    ALCall( alBufferData( m_iBuffer, format, data, dataSize, m_hFData.samplerate ) );
-    ALCall( alSourcei( m_iSource, AL_BUFFER, m_iBuffer ) );
+    ALCall( alBufferData( m_iBuffer, format, data.data(), data.size() * sizeof( short ), m_hFData.samplerate ) );
 
     if ( tag == TAG_SFX ) {
         ALCall( alSourcef( m_iSource, AL_GAIN, snd_sfxvol->f ) );
+        ALCall( alSourcei( m_iSource, AL_BUFFER, m_iBuffer ) );
     } else if (tag == TAG_MUSIC) {
         ALCall( alSourcef( m_iSource, AL_GAIN, snd_musicvol->f ) );
+        ALCall( alSourcei( m_iSource, AL_BUFFER, 0 ) );
     }
 
-    Hunk_FreeTempMemory( data );
     FS_FreeFile( buffer );
 
     return true;
@@ -720,31 +704,29 @@ void Snd_SetLoopingTrack( sfxHandle_t handle ) {
         return; // already playing
     }
 
-    if ( !sndManager->m_pCurrentTrack ) {
-        sndManager->m_pCurrentTrack = track;
-        sndManager->m_pCurrentTrack->Play( true );
-        sndManager->m_pQueuedTrack = NULL;
-    } else {
-        ALCall( alSourcei( sndManager->m_pCurrentTrack->GetSource(), AL_LOOPING, AL_FALSE ) );
-        sndManager->m_pQueuedTrack = track;
-    }
+    Snd_ClearLoopingTrack();
+
+    Con_DPrintf( "Setting music track to %i...\n", handle );
+
+    ALCall( alSourcei( sndManager->GetMusicSource(), AL_BUFFER, 0 ) );
+    ALCall( alSourcei( sndManager->GetMusicSource(), AL_BUFFER, track->GetBuffer() ) );
+    sndManager->m_pCurrentTrack = track;
+    sndManager->m_pCurrentTrack->Play( true );
 }
 
 void Snd_ClearLoopingTrack( void ) {
-    if ( !snd_musicon->i || !sndManager->m_pCurrentTrack || !sndManager->m_pCurrentTrack->IsLooping() ) {
+    if ( !snd_musicon->i || !sndManager->m_pCurrentTrack ) {
         return;
     }
 
-    // stop the track and pop it
-    sndManager->m_pCurrentTrack->Stop();
+    Con_DPrintf( "Clearing current track...\n" );
 
-    // play the next track
-    if ( sndManager->m_pQueuedTrack ) {
-        sndManager->m_pCurrentTrack = sndManager->m_pQueuedTrack;
-        sndManager->m_pCurrentTrack->Play();
-        ALCall( alSourcei( sndManager->m_pCurrentTrack->GetSource(), AL_LOOPING, AL_TRUE ) );
-        sndManager->m_pQueuedTrack = NULL;
-    }
+    // stop the track and pop it
+    ALCall( alSourcei( sndManager->GetMusicSource(), AL_LOOPING, AL_FALSE ) );
+    ALCall( alSourceStop( sndManager->GetMusicSource() ) );
+    ALCall( alSourcei( sndManager->GetMusicSource(), AL_BUFFER, 0 ) );
+
+    sndManager->m_pCurrentTrack = NULL;
 }
 
 static void Snd_AudioInfo_f( void )

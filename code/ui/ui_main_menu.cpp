@@ -131,8 +131,9 @@ void MainMenu_Draw( void )
 //    ImGui::SetWindowPos( ImVec2( 0.0f, 0.0f ) );
 //    ImGui::Image( (void *)(intptr_t)menu.background0, ImGui::GetWindowSize(), ImVec2( 1, 0 ), ImVec2( 0, 1 ) );
 //    ImGui::End();
-
-    Snd_SetLoopingTrack( menu.ambience );
+    if ( ui->GetState() != STATE_MODS ) {
+        Snd_SetLoopingTrack( menu.ambience );
+    }
 
     if ( menu.font ) {
         FontCache()->SetActiveFont( menu.font );
@@ -235,7 +236,6 @@ void MainMenu_Draw( void )
         ui->EscapeMenuToggle( STATE_MAIN );
         if (ui->Menu_Title( "CREDITS" )) {
             ui->SetState( STATE_MAIN );
-            return;
         }
         else {
             ImGui::TextWrapped( "%s", creditsString );

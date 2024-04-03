@@ -16,6 +16,8 @@ cvar_t *ui_active;
 cvar_t *ui_diagnostics;
 cvar_t *r_gpuDiagnostics;
 
+static cvar_t *com_drawFPS;
+
 /*
 =================
 UI_Cache
@@ -246,6 +248,9 @@ static void UI_RegisterCvars( void )
 	r_gpuDiagnostics = Cvar_Get( "r_gpuDiagnostics", "0", CVAR_LATCH | CVAR_SAVE );
 #endif
 
+	com_drawFPS = Cvar_Get( "com_drawFPS", "0", CVAR_SAVE );
+	Cvar_SetDescription( com_drawFPS, "Toggles displaying the average amount of frames drawn per second." );
+
 #ifdef _NOMAD_DEBUG
 	ui_diagnostics = Cvar_Get( "ui_diagnostics", "3", CVAR_LATCH | CVAR_PROTECTED | CVAR_SAVE );
 #else
@@ -253,10 +258,9 @@ static void UI_RegisterCvars( void )
 #endif
 	Cvar_SetDescription( ui_diagnostics, "Displays various engine performance diagnostics:\n"
 											" 0 - disabled\n"
-											" 1 - display fps\n"
-											" 2 - display gpu memory usage\n"
-											" 3 - display cpu memory usage\n"
-											" 4 - SHOW ME EVERYTHING!!!!\n" );
+											" 1 - display gpu memory usage\n"
+											" 2 - display cpu memory usage\n"
+											" 3 - SHOW ME EVERYTHING!!!!\n" );
 }
 
 void UI_UpdateCvars( void )
@@ -304,6 +308,56 @@ extern "C" void UI_GetHashString( const char *name, char *value ) {
 
 static void UI_PauseMenu_f( void ) {
 	ui->SetActiveMenu( UI_MENU_PAUSE );
+}
+
+#define FPS_FRAMES 6
+extern "C" void UI_DrawFPS( void )
+{
+	if ( !com_drawFPS->i ) {
+		return;
+	}
+
+	static int32_t previousTimes[FPS_FRAMES];
+	static int32_t index;
+	static int32_t previous;
+	int32_t t, frameTime;
+    int32_t total, i;
+    int32_t fps;
+	extern ImFont *RobotoMono;
+
+	if ( RobotoMono ) {
+		FontCache()->SetActiveFont( RobotoMono );
+	}
+
+    fps = 0;
+
+    t = Sys_Milliseconds();
+    frameTime = t - previous;
+    previous = t;
+
+    previousTimes[index % FPS_FRAMES] = frameTime;
+    index++;
+    if ( index > FPS_FRAMES ) {
+        // average multiple frames together to smooth changes out a bit
+		total = 0;
+		for ( i = 0; i < FPS_FRAMES; i++ ) {
+			total += previousTimes[i];
+		}
+		if ( total == 0 ) {
+			total = 1;
+		}
+		fps = 1000 * FPS_FRAMES / total;
+    } else {
+		fps = previous;
+	}
+
+    ImGui::Begin( "DrawFPS##UI", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar
+                                        | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMouseInputs
+										| ImGuiWindowFlags_NoBackground );
+    ImGui::SetWindowPos( ImVec2( 1000 * ui->scale + ui->bias, 8 * ui->scale ) );
+    ImGui::SetWindowFontScale( 1.5f * ui->scale );
+    ImGui::Text( "%ifps", fps );
+    ImGui::End();
 }
 
 extern "C" void UI_Init( void )
@@ -375,6 +429,8 @@ extern "C" void UI_Refresh( int32_t realtime )
 {
 	ui->SetFrameTime( realtime - ui->GetRealTime() );
 	ui->SetRealTime( realtime );
+
+	UI_DrawFPS();
 
 	if ( !ui_active->i ) {
 		ui->EscapeMenuToggle( STATE_PAUSE );
@@ -747,10 +803,6 @@ void Sys_DisplayEngineStats( void )
 	if ( !ui_diagnostics->i ) {
 		return;
 	}
-    // draw the fps
-	else if ( ui_diagnostics->i == 1 ) {
-        return;
-	}
 
 	if ( ui->GetState() == STATE_CREDITS || ui->GetState() == STATE_LEGAL || ImGui::IsWindowCollapsed() ) {
 		// pay respects, don't block the words
@@ -778,13 +830,13 @@ void Sys_DisplayEngineStats( void )
 	}
 
 	// draw the cpu usage chart
-	if ( ui_diagnostics->i == 2 ) {
+	if ( ui_diagnostics->i == 1 ) {
 		Sys_GetCPUStats();
 		Sys_DrawCPUUsage();
         return;
     }
 	// draw memory statistics
-	else if ( ui_diagnostics->i == 3 ) {
+	else if ( ui_diagnostics->i == 2 ) {
         Sys_GetMemoryUsage( stats );
 
         Sys_DrawMemoryUsage();
@@ -801,7 +853,7 @@ void Sys_DisplayEngineStats( void )
 	//
 	// draw EVERYTHING
 	//
-
+	UI_DrawFPS();
 
 	ImGui::Text( "Frame Number: %lu", com_frameNumber );
 

@@ -19,7 +19,6 @@ namespace TheNomad::SGame {
 	ConVar@ sgame_GfxDetail;
 	ConVar@ sgame_Difficulty;
 	ConVar@ sgame_DebugMode;
-	ConVar@ sgame_DrawFPS;
 
 	//
 	// sound system
@@ -171,7 +170,6 @@ void InitCvars() {
 	@TheNomad::SGame::sgame_AirFriction = TheNomad::CvarManager.AddCvar( "sgame_AirFriction", "0.5", CVAR_INIT | CVAR_SAVE, true );
 	@TheNomad::SGame::sgame_MaxSpeed = TheNomad::CvarManager.AddCvar( "sgame_MaxSpeed", "20.5", CVAR_INIT | CVAR_ROM, false );
 	@TheNomad::SGame::sgame_ToggleHUD = TheNomad::CvarManager.AddCvar( "sgame_ToggleHUD", "1", CVAR_TEMP | CVAR_SAVE, true );
-	@TheNomad::SGame::sgame_DrawFPS = TheNomad::CvarManager.AddCvar( "sgame_DrawFPS", "1", CVAR_SAVE, false );
 }
 
 int ModuleInit() {
@@ -281,63 +279,11 @@ int ModuleOnMouseEvent( int dx, int dy )
 	return 0;
 }
 
-const int FPS_FRAMES = 6;
-int[] previousTimes( FPS_FRAMES );
-int index;
-int previous;
-string fpsString;
-
-void DrawFPS()
-{
-    int t, frameTime;
-    int total, i;
-    int fps;
-	const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
-	const float bias = TheNomad::GameSystem::GameManager.GetUIBias();
-
-	if ( fpsString.size() == 0 ) {
-		fpsString.reserve( 64 );
-	}
-
-    fps = 0;
-
-    t = TheNomad::Engine::System::Milliseconds();
-    frameTime = t - previous;
-    previous = t;
-
-    previousTimes[index % FPS_FRAMES] = frameTime;
-    index++;
-    if ( index > FPS_FRAMES ) {
-        // average multiple frames together to smooth changes out a bit
-		total = 0;
-		for ( i = 0; i < FPS_FRAMES; i++ ) {
-			total += previousTimes[i];
-		}
-		if ( total == 0 ) {
-			total = 1;
-		}
-		fps = 1000 * FPS_FRAMES / total;
-    } else {
-		fps = previous;
-	}
-
-    ImGui::Begin( "DrawFPS##UI", null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoMove | ImGuiWindowFlags::AlwaysAutoResize | ImGuiWindowFlags::NoTitleBar
-                                        | ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMouseInputs | ImGuiWindowFlags::NoBackground ) );
-    ImGui::SetWindowPos( vec2( 1000 * scale + bias, 8 * scale ) );
-    ImGui::SetWindowFontScale( 1.5f * scale );
-	fpsString = fps;
-    ImGui::Text( fpsString );
-    ImGui::End();
-}
 
 int ModuleOnRunTic( uint msec )
 {
 	if ( TheNomad::SGame::GlobalState == TheNomad::SGame::GameState::EndOfLevel ) {
 		return 1;
-	}
-
-	if ( TheNomad::SGame::sgame_DrawFPS.GetInt() == 1 ) {
-		DrawFPS();
 	}
 
 	TheNomad::GameSystem::GameManager.SetMsec( msec );

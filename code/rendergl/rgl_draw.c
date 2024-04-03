@@ -262,14 +262,6 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 	sp = &rg.imguiShader;
 	shader = R_GetShaderByHandle( hShader );
 
-	//if ( ( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {
-	//	if ( rg.world->shader == shader ) {
-	//		sp = &rg.tileShader;
-	//	}
-	//} else {
-	//	sp = rg.genericShader;
-	//}
-
 	for ( i = 0; i < MAX_SHADER_STAGES; i++ ) {
 		stageP = shader->stages[i];
 
@@ -279,10 +271,6 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
         if ( !stageP ) {
             break;
         }
-
-        GLSL_UseProgram( sp );
-
-        GLSL_SetUniformMatrix4( sp, UNIFORM_MODELVIEWPROJECTION, glState.viewData.camera.viewProjectionMatrix );
 
         GL_State( stageP->stateBits );
         if ( ( stageP->stateBits & GLS_ATEST_BITS ) == GLS_ATEST_GT_0 ) {

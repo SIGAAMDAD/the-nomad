@@ -162,6 +162,9 @@ typedef struct {
     gpuConfig_t gpuConfig;
 
     mapCache_t mapCache;
+    
+    float cameraZoom;
+    vec3_t cameraPos;
 } gameInfo_t;
 
 extern field_t g_consoleField;

@@ -233,8 +233,9 @@ static void Key_CompleteUnbind(const char *args, uint32_t argnum)
 		// skip "unbind "
 		const char *p = Com_SkipTokens(args, 1, " ");
 
-//		if (p > args)
-//			Field_CompleteKeyname();
+		if (p > args) {
+			Field_CompleteKeyname();
+		}
 	}
 }
 

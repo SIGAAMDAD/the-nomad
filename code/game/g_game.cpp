@@ -48,10 +48,8 @@ cvar_t *r_stereoEnabled;
 cvar_t *g_drawBuffer;
 cvar_t *g_paused;
 cvar_t *r_debugCamera;
-cvar_t *r_debugCameraSpeed;
 
 static void *renderLib;
-static glm::vec3 pos = glm::vec3( 0.0f ), worldCameraPos;
 
 #if 0
 #if defined(__OS2__) || defined(_WIN32)
@@ -205,20 +203,20 @@ static void G_RefImGuiInit(void *shaderData, const void *importData) {
     }
 }
 
-static void GLM_MakeVPM( vec4_t ortho, float *zoom, float zNear, float zFar, vec3_t origin, mat4_t vpm,
+static void GLM_MakeVPM( const vec4_t ortho, float *zoom, float zNear, float zFar, vec3_t origin, mat4_t vpm,
     mat4_t projection, mat4_t view )
 {
     glm::mat4 viewProjectionMatrix, projectionMatrix, viewMatrix, transpose;
 
-    *zoom = pos.z;
     projectionMatrix = glm::ortho( ortho[0], ortho[1], ortho[2], ortho[3], zNear, zFar );
-    transpose = glm::translate( glm::mat4( 1.0f ), glm::vec3( pos[0], pos[1], 0.0f ) )
-                                * glm::scale( glm::mat4( 1.0f ), glm::vec3( *zoom ));
+    transpose = glm::translate( glm::mat4( 1.0f ), glm::vec3( gi.cameraPos[0], gi.cameraPos[1], 0.0f ) )
+                * glm::scale( glm::mat4( 1.0f ), glm::vec3( gi.cameraZoom ) );
     viewMatrix = glm::inverse( transpose );
 
-    VectorCopy( origin, pos );
-    
     viewProjectionMatrix = projectionMatrix * viewMatrix;
+
+    VectorCopy( origin, gi.cameraPos );
+    *zoom = gi.cameraZoom;
 
     memcpy( &projection[0][0], &projectionMatrix[0][0], sizeof(mat4_t) );
     memcpy( &view[0][0], &viewMatrix[0][0], sizeof(mat4_t) );
@@ -293,15 +291,6 @@ static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, const glm::mat4&
 
 qboolean G_CheckWallHit( const vec3_t origin, dirtype_t dir ) {
     return g_world->CheckWallHit( origin, dir );
-}
-
-void G_SetCameraData( const vec2_t origin, float zoom, float rotation ) {
-    if ( r_debugCamera->i ) {
-        return;
-    }
-
-    VectorCopy2( pos, origin );
-    pos[2] = zoom;
 }
 
 static void G_InitRenderRef(void)
@@ -716,6 +705,28 @@ static void G_LogGamestate_f( void ) {
 extern void G_MapInfo_f( void );
 extern void G_SetMap_f( void );
 
+static void G_SetCameraPos_f( void )
+{
+    vec3_t xyz;
+    int i;
+
+    if ( Cmd_Argc() != 4 ) {
+        Con_Printf( "usage: setcamerapos <x> <y> <z>\n" );
+        return;
+    }
+
+    for ( i = 0; i < 3; i++ ) {
+        xyz[i] = N_atof( Cmd_Argv( i + 1 ) );
+        if ( N_isnan( xyz[i] ) ) {
+            Con_Printf( COLOR_YELLOW "WARNING: a parameter you gave has a NaN component\n" );
+            return;
+        }
+    }
+    Con_Printf( "Setting camera origin to [ %.3f, %.3f, %.3f ]\n", xyz[0], xyz[1], xyz[2] );
+
+    VectorCopy( gi.cameraPos, xyz );
+}
+
 //
 // G_Init: called every time a new level is loaded
 //
@@ -729,8 +740,6 @@ void G_Init( void )
     Hunk_Clear();
 
     G_ClearState();
-
-    Cvar_Get( "com_restarting", "0", CVAR_PRIVATE | CVAR_TEMP | CVAR_PROTECTED );
 
     r_allowLegacy = Cvar_Get( "r_allowLegacy", "0", CVAR_SAVE | CVAR_LATCH );
     Cvar_SetDescription( r_allowLegacy, "Allow the use of old OpenGL API versions, requires \\r_drawMode 0 or 1 and \\r_allowShaders 0" );
@@ -767,11 +776,6 @@ void G_Init( void )
 	Cvar_CheckRange( vid_ypos, NULL, NULL, CVT_INT );
 	Cvar_SetDescription( vid_ypos, "Saves/sets window Y-coordinate when windowed, requires \\vid_restart." );
 
-    r_debugCamera = Cvar_Get( "r_debugCamera", "0", CVAR_TEMP | CVAR_PROTECTED | CVAR_LATCH );
-    Cvar_SetDescription( r_debugCamera, "Overrides the camera controller for renderer debugging." );
-    r_debugCameraSpeed = Cvar_Get( "r_debugCameraSpeed", "1.15", CVAR_TEMP | CVAR_PROTECTED | CVAR_LATCH );
-    Cvar_SetDescription( r_debugCameraSpeed, "Sets the movement speed of the debugger camera." );
-
     r_multisampleType = Cvar_Get( "r_multisampleType", "3", CVAR_SAVE | CVAR_LATCH );
     Cvar_CheckRange( r_multisampleType, va( "%i", AntiAlias_None ), va( "%i", AntiAlias_DSSAA ), CVT_INT );
     Cvar_SetDescription( r_multisampleType,
@@ -801,6 +805,8 @@ void G_Init( void )
                             "   -1 - use \\r_customWidth and \\r_customHeight\n"
                             " 0..N - enter \\modelist for details"
                         );
+    
+    r_debugCamera = Cvar_Get( "r_debugCamera", "0", CVAR_TEMP | CVAR_PRIVATE );
 
 	r_fullscreen = Cvar_Get( "r_fullscreen", "1", CVAR_SAVE | CVAR_LATCH );
     Cvar_CheckRange(r_fullscreen, "0", "1", CVT_INT);
@@ -879,6 +885,7 @@ void G_Init( void )
     Cmd_AddCommand( "gamestate", G_LogGamestate_f );
     Cmd_AddCommand( "setmap", G_SetMap_f );
     Cmd_AddCommand( "mapinfo", G_MapInfo_f );
+    Cmd_AddCommand( "setcamerapos", G_SetCameraPos_f );
 
     Con_Printf( "----- Game State Initialization Complete ----\n" );
 }
@@ -920,6 +927,7 @@ void G_Shutdown( qboolean quit )
     Cmd_RemoveCommand( "togglephotomode" );
     Cmd_RemoveCommand( "viewmemory" );
     Cmd_RemoveCommand( "gamestate" );
+    Cmd_RemoveCommand( "setcamerapos" );
 
     Key_SetCatcher( 0 );
     Con_Printf( "-------------------------------\n" );
@@ -1054,31 +1062,29 @@ void G_ClearMem(void)
     }
 }
 
-static void G_MoveCamera( void )
+static void G_MoveCamera_f( void )
 {
     if ( !r_debugCamera->i ) {
         return;
     }
 
-    glm::vec3& p = pos;
-
-    if ( ImGui::IsKeyDown( ImGuiKey_W ) ) {
-        p.y += 0.05f;
+    if ( keys[KEY_W].down ) {
+        gi.cameraPos[1] += 0.05f;
     }
-    if ( ImGui::IsKeyDown( ImGuiKey_S ) ) {
-        p.y -= 0.05f;
+    if ( keys[KEY_S].down ) {
+        gi.cameraPos[1] -= 0.05f;
     }
-    if ( ImGui::IsKeyDown( ImGuiKey_A ) ) {
-        p.x -= 0.05f;
+    if ( keys[KEY_A].down ) {
+        gi.cameraPos[0] -= 0.05f;
     }
-    if ( ImGui::IsKeyDown( ImGuiKey_D ) ) {
-        p.x += 0.05f;
+    if ( keys[KEY_D].down ) {
+        gi.cameraPos[0] += 0.05f;
     }
-    if ( ImGui::IsKeyDown( ImGuiKey_M ) ) {
-        p.z += 0.005f;
+    if ( keys[KEY_N].down ) {
+        gi.cameraZoom += 0.005f;
     }
-    if ( ImGui::IsKeyDown( ImGuiKey_N ) ) {
-        p.z -= 0.005f;
+    if ( keys[KEY_M].down ) {
+        gi.cameraZoom -= 0.005f;
     }
 }
 
@@ -1091,6 +1097,8 @@ void G_Frame(int32_t msec, int32_t realMsec)
     gi.frametime = msec;
     gi.realtime += gi.frametime;
 
+    G_MoveCamera_f();
+
     // update sound
     Snd_Update( gi.realtime );
 
@@ -1099,8 +1107,6 @@ void G_Frame(int32_t msec, int32_t realMsec)
 
     // update the screen
     SCR_UpdateScreen();
-
-    G_MoveCamera();
 
     gi.framecount++;
 }

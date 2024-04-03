@@ -238,7 +238,7 @@ void ModsMenu_Draw( void )
     style = eastl::addressof( ImGui::GetStyle() );
     style->ItemSpacing.y = 50.0f;
    	
-   	ImGui::BeginTable( "##ModLoadList", 4 );
+   	ImGui::BeginTable( "##ModLoadList", 5 );
    	
    	ImGui::TableNextColumn();
    	ImGui::TextUnformatted( "Active" );
@@ -248,6 +248,9 @@ void ModsMenu_Draw( void )
    	ImGui::TextUnformatted( "Mod Version" );
    	ImGui::TableNextColumn();
    	ImGui::TextUnformatted( "Game Version" );
+	ImGui::TableNextColumn();
+
+	ImGui::TableNextRow();
    	
    	for ( i = 0; i < mods->numMods; i++ ) {
    		Com_snprintf( loadId, sizeof( loadId ) - 1, "%s##ModLoad%i", mods->modList[i].info->m_szName, i );
@@ -260,8 +263,11 @@ void ModsMenu_Draw( void )
 	   	}
 		
 		ModsMenu_DrawListing( &mods->modList[i], dimColor );
+
 		if ( ImGui::BeginDragDropSource() ) {
-			ImGui::SetDragDropPayload( "##ModLoadListDragDropPayload", &mods->modList[i], sizeof( *mods->modList ) );
+			module_t *m = (module_t *)ImGui::MemAlloc( sizeof( *m ) );
+			*m = mods->modList[i];
+			ImGui::SetDragDropPayload( "##ModLoadListDragDropPayload", m, sizeof( *mods->modList ) );
 			ModsMenu_DrawListing( &mods->modList[i], dimColor );
 			ImGui::EndDragDropSource();
 		}
@@ -304,6 +310,7 @@ void ModsMenu_Draw( void )
 					// write it to disk
 					ModsMenu_SaveModList();
 				}
+				ImGui::MemFree( m );
 			}
 			
 			ImGui::EndDragDropTarget();
@@ -318,6 +325,24 @@ void ModsMenu_Draw( void )
 		
 		if ( dimColor ) {
 			ImGui::PopStyleColor( 3 );
+		}
+
+		ImGui::TableNextColumn();
+
+		if ( ImGui::ArrowButton( "##ModsMenuConfigUp", ImGuiDir_Up ) ) {
+			if ( i == 0 ) {
+				eastl::swap( mods->modList[ mods->numMods - 1 ], mods->modList[i] );
+			} else {
+				eastl::swap( mods->modList[ i - 1 ], mods->modList[i] );
+			}
+		}
+		ImGui::SameLine();
+		if ( ImGui::ArrowButton( "##ModsMenuConfigDown", ImGuiDir_Down ) ) {
+			if ( i == mods->numMods - 1 ) {
+				eastl::swap( mods->modList[ i + 1 ], mods->modList[i] );
+			} else {
+				eastl::swap( *mods->modList, mods->modList[i] );
+			}
 		}
 		
 		if ( i < mods->numMods - 1 ) {

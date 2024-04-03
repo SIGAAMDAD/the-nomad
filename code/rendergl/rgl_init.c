@@ -171,6 +171,8 @@ cvar_t *r_arb_sync;
 
 cvar_t *r_screenshotJpegQuality;
 
+static cvar_t *r_debugCamera;
+
 renderGlobals_t rg;
 glstate_t glState;
 gpuConfig_t glConfig;
@@ -770,13 +772,13 @@ static void GpuInfo_f( void )
 	}
 }
 
-static void R_Register(void)
+static void R_Register( void )
 {
     //
     // latched and archived variables
     //
-    r_useExtensions = ri.Cvar_Get("r_useExtensions", "1", CVAR_SAVE | CVAR_LATCH);
-    ri.Cvar_SetDescription(r_useExtensions, "Use all of the OpenGL extensions your card is capable of.");
+    r_useExtensions = ri.Cvar_Get( "r_useExtensions", "1", CVAR_SAVE | CVAR_LATCH );
+    ri.Cvar_SetDescription( r_useExtensions, "Use all of the OpenGL extensions your card is capable of." );
 
     r_arb_texture_compression = ri.Cvar_Get("r_arb_texture_compression", "0", CVAR_SAVE | CVAR_LATCH);
     ri.Cvar_SetDescription(r_arb_texture_compression, "Enables texture compression.");
@@ -923,6 +925,9 @@ static void R_Register(void)
     //
     r_lightmap = ri.Cvar_Get( "r_lightmap", "0", 0 );
 	ri.Cvar_SetDescription( r_lightmap, "Show only lightmaps on all world surfaces." );
+
+    r_debugCamera = ri.Cvar_Get( "r_debugCamera", "0", CVAR_PRIVATE | CVAR_TEMP );
+    ri.Cvar_SetDescription( r_debugCamera, "Toggles free camera movement, used for photomode." );
 
 
     //
@@ -1310,7 +1315,7 @@ static void R_CameraInfo_f( void ) {
 
     ri.Printf( PRINT_INFO, "\n" );
     ri.Printf( PRINT_INFO, "Origin: %f, %f\n", glState.viewData.camera.origin[0], glState.viewData.camera.origin[1] );
-    ri.Printf( PRINT_INFO, "Zoom: %f\n", glState.viewData.camera.origin[2] );
+    ri.Printf( PRINT_INFO, "Zoom: %f\n", glState.viewData.camera.zoom );
     ri.Printf( PRINT_INFO, "Aspect: %f\n", glState.viewData.camera.aspect );
 }
 
@@ -1439,12 +1444,10 @@ void RE_Shutdown( refShutdownCode_t code )
     ri.Printf(PRINT_INFO, "RE_Shutdown( %i )\n", code);
 
     ri.Cmd_RemoveCommand( "texturelist" );
+    ri.Cmd_RemoveCommand( "shaderlist" );
     ri.Cmd_RemoveCommand( "screenshot" );
     ri.Cmd_RemoveCommand( "gpuinfo" );
     ri.Cmd_RemoveCommand( "gpumeminfo" );
-    ri.Cmd_RemoveCommand( "camerainfo" );
-    ri.Cmd_RemoveCommand( "unloadworld" );
-    ri.Cmd_RemoveCommand( "shaderlist" );
 
     if ( rg.registered ) {
         R_IssuePendingRenderCommands();
