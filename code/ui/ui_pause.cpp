@@ -211,7 +211,9 @@ void UI_PauseMenu( void )
 {
     // force as top level menu
     ui->ForceMenuOff();
+    Key_ClearStates();
     Key_SetCatcher( KEYCATCH_UI );
+    ui->PlaySelected();
 
     PauseMenu_Cache();
 }

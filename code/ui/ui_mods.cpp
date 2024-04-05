@@ -20,11 +20,13 @@ typedef struct module_s {
 } module_t;
 
 typedef struct {
+	module_t *modList;
     uint32_t numMods;
-    module_t *modList;
 
     nhandle_t backgroundShader;
     nhandle_t ambience;
+    
+    uint32_t selectedMod;
     
     const stringHash_t *titleString;
     const stringHash_t *loadString;
@@ -83,10 +85,10 @@ static void ModsMenu_LoadMod( module_t *mod ) {
 }
 
 qboolean ModsMenu_IsModuleActive( const char *pName ) {
-    uint64_t i;
+    uint32_t i;
 
     for ( i = 0; i < mods->numMods; i++ ) {
-        if ( !N_strcmp( pName, mods->modList[i].info->m_szName ) && mods->modList[i].active ) {
+        if ( !N_strcmp( pName, mods->modList[i].info->m_szName ) && ( mods->modList[i].active || mods->modList[i].valid ) ) {
             return qtrue;
         }
     }
@@ -95,27 +97,47 @@ qboolean ModsMenu_IsModuleActive( const char *pName ) {
 
 void ModsMenu_SaveModList( void )
 {
-    uint64_t i;
+    uint32_t i, j;
     nlohmann::json json;
     nlohmann::json::array_t loadList;
     fileHandle_t f;
 
     Con_Printf( "Saving mod list...\n" );
-
-    loadList.resize( mods->numMods );
-    for ( i = 0; i < mods->numMods; i++ ) {
-        loadList[i]["Name"] = mods->modList[i].info->m_szName;
-        loadList[i]["Valid"] = mods->modList[i].valid;
-        loadList[i]["Active"] = mods->modList[i].active;
-    }
-    json["LoadList"] = eastl::move( loadList );
-
+    
     f = FS_FOpenWrite( "_cache/loadlist.json" );
     if ( f == FS_INVALID_HANDLE ) {
-        N_Error( ERR_DROP, "ModsMenu_SaveModList: failed to save _cache/loadlist.json" );
+    	N_Error( ERR_DROP, "ModsMenu_SaveModList: failed to save _cache/loadlist.json" );
     }
-    const nlohmann::json::string_t&& data = json.dump( 1, '\t' );
-    FS_Printf( f, "%s", data.c_str() );
+    
+    FS_Printf( f, "{\n" );
+    FS_Printf( f, "\t\"LoadList\": [\n" );
+    for ( i = 0; i < mods->numMods; i++ ) {
+    	FS_Printf( f,
+    		"\t\t{\n"
+    		"\t\t\t\"Name\": \"%s\",\n"
+    		"\t\t\t\"Valid\": %i,\n"
+    		"\t\t\t\"Active\": %i,\n"
+    		"\t\t\t\"Dependencies\": [\n"
+    		, mods->modList[i].info->m_szName, mods->modList[i].valid, mods->modList[i].active );
+    	
+    	for ( j = 0; j < mods->modList[i].numDependencies; j++ ) {
+    		FS_Printf( f, "\t\t\t\t\"%s\"", mods->modList[i].info->m_Dependencies[j].c_str() );
+    		if ( j != mods->modList[i].numDependencies - 1 ) {
+    			FS_Printf( f, "," );
+    		}
+    		FS_Printf( f, "\n" );
+    	}
+		FS_Printf( f, "\t\t\t]\n" );
+    	
+    	if ( i != mods->numMods - 1 ) {
+    		FS_Printf( f, "\t\t},\n" );
+    	} else {
+    		FS_Printf( f, "\t\t}\n" );
+    	}
+    }
+    FS_Printf( f, "\t]\n" );
+    FS_Printf( f, "}\n" );
+    
     FS_FClose( f );
 }
 
@@ -160,10 +182,35 @@ static void ModsMenu_LoadModList( void )
     }
 }
 
+static void ModToggleActive( module_t *mod, qboolean valid )
+{
+	uint32_t i, j;
+	if ( valid ) {
+		mod->active = !mod->active;
+	} else {
+		return;
+	}
+	
+	// toggle anything thay may depend on this mod
+	for ( i = 0; i < mods->numMods; i++ ) {
+		for ( j = 0; j < mods->modList[i].info->m_Dependencies.size(); j++ ) {
+			if ( N_strcmp( mod->info->m_szName, mods->modList[i].info->m_Dependencies[j].c_str() ) == 0 ) {
+				module_t *m = eastl::find( mods->modList, mods->modList + mods->numMods, mods->modList[i].info->m_Dependencies[j] );
+				if ( m != &mods->modList[ mods->numMods ] ) {
+					m->active = mod->active;
+				} else {
+					Con_Printf( COLOR_YELLOW "WARNING: weird module dependency mismatch.\n" );
+				}
+			}
+		}
+	}
+}
+
 static void ModsMenu_DrawListing( module_t *mod, qboolean dimColor )
 {
 	uint32_t j;
 	const int index = (int)( mods->modList - mod );
+	const qboolean active = ( mod->active && mod->valid ) || mod->isRequired;
 	
 	ImGui::TableNextColumn();
 	if ( dimColor ) {
@@ -172,25 +219,21 @@ static void ModsMenu_DrawListing( module_t *mod, qboolean dimColor )
 		ImGui::PushStyleColor( ImGuiCol_FrameBgActive, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
 		ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
 	}
+	
+	if ( active ) {
+		ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, ImVec4( 0.71f, 0.65f, 0.26f, 1.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_FrameBgActive, ImVec4( 0.71f, 0.65f, 0.26f, 1.0f ) );
+	}
 	if ( ImGui::RadioButton( mod->active ? va( "##ModLoad%iON", index ) : va( "##ModLoad%iOFF", index ),
 		mod->active ) )
 	{
 		ui->PlaySelected();
-		if ( !dimColor ) {
-			mod->active = !mod->active;
-		}
-		
-		// disable anything thay may depend on this mod
-		for ( j = 0; j < mods->numMods; j++ ) {
-			auto it = eastl::find( mod->info->m_Dependencies.begin(),
-				mod->info->m_Dependencies.end(), mod->info->m_szName );
-			
-			if ( it != mod->info->m_Dependencies.end() ) {
-				// turn it off, but not permanently
-				mods->modList[ GetModLoadIndex( it->c_str() ) ].active = qfalse;
-			}
-		}
+		ModToggleActive( mod, !dimColor );
 	}
+	if ( active ) {
+		ImGui::PopStyleColor( 2 );
+	}
+	
 	ImGui::TableNextColumn();
 	if ( mod->info->m_Dependencies.size() ) {
 		ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( 0.71f, 0.65f, 0.26f, 1.0f ) );
@@ -200,17 +243,61 @@ static void ModsMenu_DrawListing( module_t *mod, qboolean dimColor )
 		ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
 		ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4( 0.0f, 0.0f, 0.0f, 1.0f ) );
 		ImGui::Text( "(!)" );
+		ImGui::PopStyleColor( 6 );
 		if ( ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayShort ) ) {
 			ImGui::BeginTooltip();
+			const float fontScale = ImGui::GetFont()->Scale;
+			ImGui::SetWindowFontScale( fontScale * 1.5f );
 			ImGui::SeparatorText( "this module depends on" );
 			for ( const auto& it : mod->info->m_Dependencies ) {
 				ImGui::TextUnformatted( it.c_str() );
 			}
+			ImGui::SetWindowFontScale( fontScale );
 			ImGui::EndTooltip();
 		}
-		ImGui::PopStyleColor( 6 );
 		ImGui::SameLine();
 	}
+	if ( mod->info->m_GameVersion.m_nVersionMajor != NOMAD_VERSION
+		|| mod->info->m_GameVersion.m_nVersionUpdate != NOMAD_VERSION_UPDATE )
+	{
+		ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( 1.0f, 0.0f, 0.0f, 1.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_TextDisabled, ImVec4( 1.0f, 0.0f, 0.0f, 1.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_FrameBg, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_FrameBgActive, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4( 0.0f, 0.0f, 0.0f, 1.0f ) );
+		ImGui::Text( "(!)" );
+		ImGui::PopStyleColor( 6 );
+		if ( ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayShort ) ) {
+			ImGui::BeginTooltip();
+			ImGui::TextUnformatted( "this module has been built with an outdated/unsupported game version" );
+			// not really my fault if the modder hasn't update their shit
+			ImGui::TextUnformatted( "NOTE: GDR Software is not responsible for any unstable experiences when using this mod" );
+			ImGui::EndTooltip();
+		}
+		ImGui::SameLine();
+	}
+}
+
+static qboolean IsLoadedAfter( const module_t *mod, const module_t *dep ) {
+	return ( dep > mod );
+}
+
+static qboolean IsLoadedBefore( const module_t *mod, const module_t *dep ) {
+	return ( dep > mod );
+}
+
+static qboolean IsDependentOn( const module_t *mod, const module_t *dep ) {
+	if ( !mod->info ) {
+		Con_Printf( COLOR_YELLOW "WARNING: bad mod info\n" );
+		return qfalse;
+	}
+	for ( uint32_t i = 0; i < mod->info->m_Dependencies.size(); i++ ) {
+		if ( !N_stricmp( mod->info->m_Dependencies[i].c_str(), dep->info->m_szName ) ) {
+			return qtrue;
+		}
+	}
+	return qfalse;
 }
 
 void ModsMenu_Draw( void )
@@ -219,9 +306,10 @@ void ModsMenu_Draw( void )
     const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
                             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground;
     ImGuiStyle *style;
-    ImVec2 windowPos, cursorPos, windowSize;
     char loadId[MAX_STRING_CHARS];
     qboolean dimColor;
+    const float fontScale = ImGui::GetFont()->Scale;
+    extern ImFont *RobotoMono;
     
     Snd_SetLoopingTrack( mods->ambience );
     
@@ -232,14 +320,12 @@ void ModsMenu_Draw( void )
         return;
     }
     
-    windowPos = ImGui::GetWindowPos();
-    cursorPos = ImGui::GetCursorPos();
-    windowSize = ImGui::GetWindowSize();
     style = eastl::addressof( ImGui::GetStyle() );
     style->ItemSpacing.y = 50.0f;
    	
    	ImGui::BeginTable( "##ModLoadList", 5 );
    	
+   	ImGui::SetWindowFontScale( ( fontScale * 1.5f ) * ui->scale );
    	ImGui::TableNextColumn();
    	ImGui::TextUnformatted( "Active" );
    	ImGui::TableNextColumn();
@@ -249,72 +335,46 @@ void ModsMenu_Draw( void )
    	ImGui::TableNextColumn();
    	ImGui::TextUnformatted( "Game Version" );
 	ImGui::TableNextColumn();
+	ImGui::SetWindowFontScale( ( fontScale * 1.75f ) * ui->scale );
+	
+	if ( RobotoMono ) {
+		FontCache()->SetActiveFont( RobotoMono );
+	}
 
 	ImGui::TableNextRow();
    	
    	for ( i = 0; i < mods->numMods; i++ ) {
    		Com_snprintf( loadId, sizeof( loadId ) - 1, "%s##ModLoad%i", mods->modList[i].info->m_szName, i );
    		ImGui::PushID( i );
-   		
-   		if ( mods->modList[i].isRequired || !mods->modList[i].allDepsActive ) {
+
+		if ( mods->modList[i].isRequired || !mods->modList[i].allDepsActive ) {
 	   		dimColor = qtrue;
 	   	} else {
 	   		dimColor = qfalse;
 	   	}
+   		
+   		if ( Key_IsDown( KEY_UP ) ) {
+   			ui->PlaySelected();
+   			if ( mods->selectedMod == 0 ) {
+   				mods->selectedMod = mods->numMods - 1;
+   			} else {
+	   			mods->selectedMod--;
+	   		}
+		}
+   		if ( Key_IsDown( KEY_DOWN ) ) {
+   			ui->PlaySelected();
+   			mods->selectedMod++;
+   			if ( mods->selectedMod >= mods->numMods ) {
+   				mods->selectedMod = 0;
+   			}
+   		}
+   		if ( Key_IsDown( KEY_ENTER ) ) {
+   			ui->PlaySelected();
+   			ModToggleActive( &mods->modList[ mods->selectedMod ], !dimColor );
+   		}
 		
 		ModsMenu_DrawListing( &mods->modList[i], dimColor );
-
-		if ( ImGui::BeginDragDropSource() ) {
-			module_t *m = (module_t *)ImGui::MemAlloc( sizeof( *m ) );
-			*m = mods->modList[i];
-			ImGui::SetDragDropPayload( "##ModLoadListDragDropPayload", m, sizeof( *mods->modList ) );
-			ModsMenu_DrawListing( &mods->modList[i], dimColor );
-			ImGui::EndDragDropSource();
-		}
-		if ( ImGui::BeginDragDropTarget() ) {
-			const ImGuiPayload *data = ImGui::AcceptDragDropPayload( "##ModLoadListDragDropPayload" );
-			if ( data ) {
-				if ( data->DataSize != sizeof( *mods->modList ) ) {
-					Assert( data->DataSize == sizeof( *mods->modList ) );
-					N_Error( ERR_FATAL, "ModsMenu_Draw: drag drop payload dataSize mismatch" );
-				}
-				module_t *m = (module_t *)const_cast<ImGuiPayload *>( data )->Data;
-				qboolean reject = qfalse;
-
-				// check if they're trying to load before or after dependencies
-				if ( m->numDependencies ) {
-					for ( const auto& it : m->info->m_Dependencies ) {
-						if ( GetModLoadIndex( it.c_str() ) > i ) {
-							reject = qtrue;
-						}
-					}
-					// is this a dependency?
-					for ( j = 0; j < mods->numMods; j++ ) {
-						const auto it = eastl::find( mods->modList[j].info->m_Dependencies.cbegin(),
-							mods->modList[j].info->m_Dependencies.cend(), m->info->m_szName );
-						if ( it != mods->modList[j].info->m_Dependencies.cend() ) {
-							reject = i < j;
-						}
-					}
-				}
-
-				if ( !reject ) {
-					eastl::swap( *m, *( m + 1 ) );
-
-					// shuffle the list
-					memmove( mods->modList + ( mods->numMods - 1 ), m + 1,
-						sizeof( *mods->modList ) * ( ( mods->modList - m ) + 1 ) );
-					for ( j = 0; j < mods->numMods; j++ ) {
-						mods->modList[j].bootIndex = j;
-					}
-					// write it to disk
-					ModsMenu_SaveModList();
-				}
-				ImGui::MemFree( m );
-			}
-			
-			ImGui::EndDragDropTarget();
-		}
+		
 		ImGui::TextUnformatted( mods->modList[i].info->m_szName );
 		ImGui::TableNextColumn();
 		ImGui::Text( "v%i.%i.%i", mods->modList[i].info->m_nModVersionMajor, mods->modList[i].info->m_nModVersionUpdate,
@@ -328,20 +388,30 @@ void ModsMenu_Draw( void )
 		}
 
 		ImGui::TableNextColumn();
-
+		
+		module_t *swap = NULL;
 		if ( ImGui::ArrowButton( "##ModsMenuConfigUp", ImGuiDir_Up ) ) {
+			ui->PlaySelected();
 			if ( i == 0 ) {
-				eastl::swap( mods->modList[ mods->numMods - 1 ], mods->modList[i] );
+				swap = &mods->modList[ mods->numMods - 1 ];
 			} else {
-				eastl::swap( mods->modList[ i - 1 ], mods->modList[i] );
+				swap = &mods->modList[ i - 1 ];
 			}
 		}
 		ImGui::SameLine();
 		if ( ImGui::ArrowButton( "##ModsMenuConfigDown", ImGuiDir_Down ) ) {
+			ui->PlaySelected();
 			if ( i == mods->numMods - 1 ) {
-				eastl::swap( mods->modList[ i + 1 ], mods->modList[i] );
+				swap = &mods->modList[ 0 ];
 			} else {
-				eastl::swap( *mods->modList, mods->modList[i] );
+				swap = &mods->modList[ i + 1 ];
+			}
+		}
+		if ( swap ) {
+			if ( !IsDependentOn( swap, &mods->modList[i] )
+				&& !IsDependentOn( &mods->modList[i], swap ) )
+			{
+				eastl::swap( *swap, mods->modList[i] );
 			}
 		}
 		
@@ -378,73 +448,30 @@ inline module_s& module_s::operator=( const module_s& other ) {
 }
 
 inline bool module_s::operator<( const module_s& other ) const {
-    return N_stricmp( info->m_szName, other.info->m_szName ) == -1 ? true : false;
+	if ( IsDependentOn( eastl::addressof( other ), this ) ) {
+		return true;
+	}
+    return N_strcmp( info->m_szName, other.info->m_szName ) == 1 ? true : false;
 }
 inline bool module_s::operator>( const module_s& other ) const {
-    return N_stricmp( other.info->m_szName, info->m_szName ) == 1 ? true : false;
+	if ( IsDependentOn( this, eastl::addressof( other ) ) ) {
+		return false;
+	}
+    return N_strcmp( other.info->m_szName, info->m_szName ) == -1 ? true : false;
 }
 inline bool module_s::operator==( const module_s& other ) const {
-    return N_stricmp( info->m_szName, other.info->m_szName ) == 0;
+    return N_strcmp( info->m_szName, other.info->m_szName ) == 0;
 }
 inline bool module_s::operator!=( const module_s& other ) const {
-    return N_stricmp( info->m_szName, other.info->m_szName ) != 0;
+    return N_strcmp( info->m_szName, other.info->m_szName ) != 0;
 }
 
 inline bool module_s::operator==( const UtlString& other ) const {
-	return N_stricmp( info->m_szName, other.c_str() ) == 0;
+	return N_strcmp( info->m_szName, other.c_str() ) == 0;
 }
 
 inline bool module_s::operator!=( const UtlString& other ) const {
-	return N_stricmp( info->m_szName, other.c_str() ) != 0;
-}
-
-/*
-* ModsMenu_Sort: sorts each mod alphabetically, then in load order by dependencies
-*/
-static void ModsMenu_Sort( void ) {
-    uint32_t i, j;
-    const CModuleInfo *mod;
-	
-	uint32_t index;
-	// a bit-packed 64 bit array of indexes
-	uint64_t *sortedList;
-	
-	// sort alphabetically first
-	eastl::sort( mods->modList, mods->modList + mods->numMods );
-	
-	sortedList = (uint64_t *)alloca( sizeof( *sortedList ) * mods->numMods );
-	memset( sortedList, 0, sizeof( *sortedList ) * mods->numMods );
-	
-	// now sort by dependencies
-	for ( i = 0; i < mods->numMods; i++ ) {
-		if ( mods->modList[i].numDependencies ) {
-			mod = mods->modList[i].info;
-			//
-			// check if we're loading any dependencies before it.
-			// If so, reorder it to load the dependencies first to
-			// avoid any missing resources issues/errors
-			//
-			for ( j = 0; j < mod->m_Dependencies.size(); j++ ) {
-				index = GetModLoadIndex( mod->m_Dependencies[j].c_str() );
-				
-				// it's loaded after, force a reorder
-				if ( index < i ) {
-					//eastl::swap( mods->modList[i], mods->modList[index] );
-					( (uint32_t *)&sortedList[i] )[0] = i; // store the index of the module
-					( (uint32_t *)&sortedList[i] )[1] = index; // store the index of the dependency
-				} else {
-					( (uint32_t *)&sortedList[i] )[0] = i;
-					( (uint32_t *)&sortedList[i] )[1] = i;
-				}
-			}
-		}
-	}
-	for ( i = 0; i < mods->numMods; i++ ) {
-		// manually swap
-		module_t m = mods->modList[ ( (uint32_t *)&sortedList[i] )[1] ];
-		mods->modList[ ( (uint32_t *)&sortedList[i] )[1] ] = mods->modList[ ( (uint32_t *)&sortedList[i] )[0] ];
-		mods->modList[ ( (uint32_t *)&sortedList[i] )[0] ] = m;
-	}
+	return N_strcmp( info->m_szName, other.c_str() ) != 0;
 }
 
 static void ModsMenu_Load( void )
@@ -469,6 +496,7 @@ static void ModsMenu_Load( void )
         m->active = qtrue;
         m->bootIndex = i;
         m->isRequired = IsRequiredMod( m->info->m_szName );
+		m->numDependencies = loadList[i]->m_Dependencies.size();
 
         // check if we have any dependencies that either don't exist or aren't properly loaded
         for ( const auto& it : loadList[i]->m_Dependencies ) {
@@ -487,29 +515,42 @@ static void ModsMenu_Load( void )
         		}
         		Con_Printf( "%s", loadList[i]->m_Dependencies[j].c_str() );
         	}
+        	Con_Printf( "\n" );
         }
         
         m++;
     }
 
     ModsMenu_LoadModList();
-    ModsMenu_Sort();
+    eastl::sort( mods->modList, mods->modList + mods->numMods );
 
-    // we may have some outdated info
+	// check for missing dependencies
     for ( i = 0; i < mods->numMods; i++ ) {
-        if ( mods->modList[i].info->m_pHandle->IsValid() && !mods->modList[i].valid ) {
-            mods->modList[i].valid = qtrue;
-            
-            for ( const auto& it : mods->modList[i].info->m_Dependencies ) {
-            	const auto dep = eastl::find( loadList.cbegin(), loadList.cend(), it );
-            	
-            	if ( dep == loadList.cend() ) {
-            		mods->modList[i].allDepsActive = qfalse;
-            		break;
-            	}
-            }
-        }
+		bool done = false;
+		mods->modList[i].allDepsActive = qtrue;
+    	for ( const auto& it : mods->modList[i].info->m_Dependencies ) {
+			for ( j = 0; j < mods->numMods; j++ ) {
+				if ( N_strcmp( mods->modList[j].info->m_szName, it.c_str() ) == 0 ) {
+					if ( !mods->modList[j].info->m_pHandle->IsValid() ) {
+						mods->modList[i].allDepsActive = qfalse;
+						done = true;
+						break;
+					}
+				}
+			}
+			if ( done ) {
+				break;
+			}
+		}
+    	mods->modList[i].active = mods->modList[i].valid = mods->modList[i].allDepsActive;
     }
+
+	// check for required modules
+	for ( i = 0; i < mods->numMods; i++ ) {
+		if ( !N_stricmp( mods->modList[i].info->m_szName, "nomadmain" ) ) {
+			mods->modList[i].isRequired = qtrue;
+		}
+	}
 
     Con_Printf( "...Got %u modules\n", mods->numMods );
 }
