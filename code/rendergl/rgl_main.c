@@ -207,18 +207,6 @@ void R_DrawPolys( void )
 
         startIndex = backendData->numIndices;
 
-        switch ( backend.refdef.flags & RSF_ORTHO_BITS ) {
-        case RSF_ORTHO_TYPE_SCREENSPACE: {
-            R_ScreenToGL( poly->verts );
-            break; }
-        case RSF_ORTHO_TYPE_WORLD:
-            // done already in rgl_scene.c
-            break;
-        case RSF_ORTHO_TYPE_CORDESIAN:
-        default:
-            break;
-        };
-
         // generate fan indexes into the buffer
         for ( i = 0; i < poly->numVerts - 2; i++ ) {
             backendData->indices[backendData->numIndices + 0] = numVerts;

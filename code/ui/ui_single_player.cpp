@@ -28,9 +28,13 @@ typedef struct {
     gamedif_t diff;
     uint64_t hardestIndex;
 
+	const stringHash_t *title;
     const stringHash_t *newGame;
+    const stringHash_t *newGameSaveNamePrompt;
+    const stringHash_t *newGameBegin;
     const stringHash_t *loadGame;
-    qboolean playedOpen;
+    const stringHash_t *loadGameTitle;
+    const stringHash_t *playMission;
 
     char **hardestStrings;
     int32_t numHardestStrings;
@@ -59,30 +63,30 @@ void SinglePlayerMenu_Draw( void )
     const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_CollapsingHeader
                                         | ImGuiTreeNodeFlags_Framed;
 
-    switch (ui->GetState()) {
+    switch ( ui->GetState() ) {
     case STATE_SINGLEPLAYER:
         ui->EscapeMenuToggle( STATE_MAIN );
-        if (ui->GetState() != STATE_SINGLEPLAYER) {
+        if ( ui->GetState() != STATE_SINGLEPLAYER ) {
             break;
-        }
-        else if (ui->Menu_Title( "SINGLE PLAYER" )) {
+        } else if ( ui->Menu_Title( sp.title->value ) ) {
             ui->SetState( STATE_MAIN );
             break;
         }
         mousePos = ImGui::GetCursorScreenPos();
         ImGui::SetCursorScreenPos( ImVec2( mousePos.x, mousePos.y + 10 ) );
         
-        ImGui::BeginTable( " ", 2 );
-        if (ui->Menu_Option( "New Game" )) {
+        ImGui::BeginTable( "##SinglePlayerOptions", 2 );
+        if ( ui->Menu_Option( sp.newGame->value ) ) {
             ui->SetState( STATE_NEWGAME );
             sp.hardestIndex = rand() % sp.numHardestStrings;
         }
         ImGui::TableNextRow();
-        if (ui->Menu_Option( "Load Game" )) {
+        if ( ui->Menu_Option( sp.loadGame->value ) ) {
             ui->SetState( STATE_LOADGAME );
         }
         ImGui::TableNextRow();
-        if (ui->Menu_Option( "Play Mission (COMING SOON!)" )) { // play any mission found inside the current BFF loaded
+        if (ui->Menu_Option( va( "%s COMMING SOON! :)", sp.playMission->value ) ) ) {
+        	// play any mission found inside the current mods loaded
 //               ui->SetState( STATE_PLAYMISSION );
         }
         ImGui::EndTable();
@@ -100,7 +104,7 @@ void SinglePlayerMenu_Draw( void )
             sp.hardestIndex = 0;
             break;
         }
-        else if (ui->Menu_Title( "NEW GAME" )) {
+        else if (ui->Menu_Title( sp.newGame->value )) {
             // reset to 0
             memset( sp.name, 0, sizeof(sp.name) );
             sp.diff = DIF_NOOB;
@@ -112,14 +116,13 @@ void SinglePlayerMenu_Draw( void )
         ImGui::SetCursorScreenPos( ImVec2( mousePos.x, mousePos.y + 10 ) );
         if (sp.diff == DIF_HARDEST) {
             difName = sp.hardestStrings[ sp.hardestIndex ];
-        }
-        else {
+        } else {
             difName = difficultyTable[ sp.diff ].name;
         }
-        ImGui::BeginTable( " ", 2 );
+        ImGui::BeginTable( "##SinglePlayerBeginNewGame", 2 );
         {
             ImGui::TableNextColumn();
-            ImGui::TextUnformatted( "Save Name" );
+            ImGui::TextUnformatted( sp.newGameSaveNamePrompt->value );
             ImGui::TableNextColumn();
             if ( ImGui::InputText( "##SaveNameInput", sp.name, sizeof( sp.name ) - 1, ImGuiInputTextFlags_EscapeClearsAll
                 | ImGuiInputTextFlags_EnterReturnsTrue ) )
@@ -129,7 +132,7 @@ void SinglePlayerMenu_Draw( void )
             
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
-            ImGui::TextUnformatted( "Difficulty" );
+            ImGui::TextUnformatted( "Difficulty" ); // NOTE: perhaps call this "Plot Armor Amount"?
             ImGui::TableNextColumn();
             if (ImGui::BeginMenu( va("%s", difName) )) {
                 for (i = 0; i < NUMDIFS; i++) {
@@ -153,13 +156,13 @@ void SinglePlayerMenu_Draw( void )
 
         ImGui::NewLine();
 
-        if ( ImGui::Button( "Open To a Fresh Chapter" ) ) {
+        if ( ImGui::Button( sp.newGameBegin->value ) ) {
             // make sure it's an absolute path
             N_strncpyz( sp.name, COM_SkipPath( sp.name ), sizeof( sp.name ) );
 
             // make sure its a unique name, so we don't get filename collisions
             for ( i = 0; i < sp.numSaves; i++ ) {
-                if ( !N_stricmp( sp.name, sp.saveList[i].name ) ) {
+                if ( N_strcmp( sp.name, sp.saveList[i].name ) == 0 ) {
                     Sys_MessageBox( "Save Name Issue",
                         "Sorry, but it looks like your save file name is either too long or already exists\n"
                         "if its too long, it must be less than or equal to %lu characters in length, please\n"
@@ -204,10 +207,9 @@ void SinglePlayerMenu_Draw( void )
         break; }
     case STATE_LOADGAME: {
         ui->EscapeMenuToggle( STATE_SINGLEPLAYER );
-        if (ui->GetState() != STATE_LOADGAME) {
+        if ( ui->GetState() != STATE_LOADGAME ) {
             break;
-        }
-        else if (ui->Menu_Title( "SAVED GAMES" )) {
+        } else if ( ui->Menu_Title( sp.loadGame->value ) ) {
             ui->SetState( STATE_SINGLEPLAYER );
             break;
         }
@@ -219,8 +221,7 @@ void SinglePlayerMenu_Draw( void )
         if ( sp.numSaves ) {
             {
                 ImGui::Begin( "##ModList", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove
-                    | ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoTitleBar 
-                    | ImGuiWindowFlags_AlwaysVerticalScrollbar | ImGuiWindowFlags_NoCollapse );
+                    | ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse );
                 ImGui::SetWindowPos( ImVec2( ui->GetConfig().vidWidth * 0.75f, 64 * ui->scale ) );
                 ImGui::SetWindowSize( ImVec2( ui->GetConfig().vidWidth * 0.25f, ui->GetConfig().vidHeight - 10 ) );
 
@@ -237,7 +238,8 @@ void SinglePlayerMenu_Draw( void )
                     }
 
                     ImGui::Text( "%s v%i.%i.%i", sp.saveList[sp.currentSave].gd.modList[m].name,
-                        sp.saveList[sp.currentSave].gd.modList[m].nVersionMajor, sp.saveList[sp.currentSave].gd.modList[m].nVersionUpdate,
+                        sp.saveList[sp.currentSave].gd.modList[m].nVersionMajor,
+                        sp.saveList[sp.currentSave].gd.modList[m].nVersionUpdate,
                         sp.saveList[sp.currentSave].gd.modList[m].nVersionPatch );
                     ImGui::PopStyleColor( 3 );
 
@@ -255,9 +257,8 @@ void SinglePlayerMenu_Draw( void )
             for (i = 0; i < sp.numSaves; i++) {
                 if ( ImGui::TreeNodeEx( (void *)(uintptr_t)sp.saveList[i].name, treeNodeFlags, sp.saveList[i].name ) ) {
                     sp.currentSave = i;
-                    if ( !sp.playedOpen ) {
-                        sp.playedOpen = qtrue;
-                        ui->PlaySelected();
+                    if ( !ImGui::IsItemClicked( ImGuiMouseButton_Left ) && ImGui::IsMouseClicked( ImGuiMouseButton_Left ) ) {
+                    	ui->PlaySelected();
                     }
                     if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && ImGui::IsMouseDoubleClicked( ImGuiMouseButton_Left ) ) {
                         ui->PlaySelected();
@@ -294,8 +295,6 @@ void SinglePlayerMenu_Draw( void )
 
                     ImGui::SetWindowFontScale( font_scale );
                     ImGui::TreePop();
-                } else {
-                    sp.playedOpen = qfalse;
                 }
             }
         }
@@ -347,8 +346,14 @@ void SinglePlayerMenu_Cache( void )
     difficultyTable[DIF_BLACKDEATH].name = strManager->ValueForKey( "SP_DIFF_VERY_HARD" )->value;
     difficultyTable[DIF_BLACKDEATH].tooltip = strManager->ValueForKey( "SP_DIFF_4_DESC" )->value;
 
+	sp.title = strManager->ValueForKey( "SP_MENU_TITLE" );	
+	sp.newGameBegin = strManager->ValueForKey( "SP_BEGIN_NEWGAME" );
+	sp.loadGameTitle = strManager->ValueForKey( "SP_LOADGAME_TITLE" );
     sp.newGame = strManager->ValueForKey( "SP_NEWGAME" );
     sp.loadGame = strManager->ValueForKey( "SP_LOADGAME" );
+    sp.playMission = strManager->ValueForKey( "SP_PLAY_MISSION" );
+    sp.newGameSaveNamePrompt = strManager->ValueForKey( "SP_SAVE_NAME_PROMPT" );
+    
     hardest = strManager->ValueForKey( "SP_DIFF_THE_MEMES" );
     sp.hardestStrings = parse_csv( hardest->value );
     sp.numHardestStrings = count_fields( hardest->value );

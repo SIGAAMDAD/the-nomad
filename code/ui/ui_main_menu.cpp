@@ -98,25 +98,14 @@ void MainMenu_Draw( void )
     const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
                             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoBackground;
     renderSceneRef_t refdef;
-    polyVert_t verts[4];
 
     menu.noMenuToggle.Toggle( KEY_F2, menu.noMenu );
 
-/*
+
     x = 0;
     y = 0;
     w = ui->GetConfig().vidWidth;
     h = ui->GetConfig().vidHeight;
-
-    VectorSet( verts[0].xyz, x + w, y, 0.0f );
-    VectorSet( verts[1].xyz, x + w, y + h, 0.0f );
-    VectorSet( verts[2].xyz, x, y + h, 0.0f );
-    VectorSet( verts[3].xyz, 0.0f, 0.0f, 0.0f );
-
-    VectorSet2( verts[0].uv, 1, 0 );
-	VectorSet2( verts[1].uv, 0, 0 );
-	VectorSet2( verts[2].uv, 0, 1 );
-	VectorSet2( verts[3].uv, 1, 1 );
 
     memset( &refdef, 0, sizeof( refdef ) );
     refdef.x = 0;
@@ -125,7 +114,10 @@ void MainMenu_Draw( void )
     refdef.height = h;
     refdef.time = ui->GetFrameTime();
     refdef.flags = RSF_NOWORLDMODEL | RSF_ORTHO_TYPE_SCREENSPACE;
-*/
+
+    re.ClearScene();
+    re.DrawImage( 0, 0, refdef.width, refdef.height, 1, 0, 0, 1, menu.background0 );
+    re.RenderScene( &refdef );
 
 //    ImGui::Begin( "MainMenuBackground", NULL, windowFlags & ~( ImGuiWindowFlags_NoResize ) );
 //    ImGui::SetWindowPos( ImVec2( 0.0f, 0.0f ) );
