@@ -46,7 +46,6 @@ void RB_MakeViewMatrix( void )
         ortho[3] = 0;
 
         VectorClear( glState.viewData.camera.origin );
-        glState.viewData.camera.zoom = 0.0f;
         break;
     case RSF_ORTHO_TYPE_WORLD:
         ortho[0] = 0;
@@ -65,7 +64,8 @@ void RB_MakeViewMatrix( void )
     };
 
     ri.GLM_MakeVPM( ortho, &glState.viewData.camera.zoom, glState.viewData.zNear, glState.viewData.zFar, glState.viewData.camera.origin,
-        glState.viewData.camera.viewProjectionMatrix, glState.viewData.camera.projectionMatrix, glState.viewData.camera.viewMatrix );
+        glState.viewData.camera.viewProjectionMatrix, glState.viewData.camera.projectionMatrix, glState.viewData.camera.viewMatrix,
+        viewFlags );
 }
 
 /*
@@ -182,7 +182,7 @@ void R_DrawPolys( void )
     nhandle_t oldShader;
 
     // no polygon submissions this frame
-    if ( !r_numPolys && !r_numPolyVerts ) {
+    if ( !r_numPolys && !r_numPolyVerts || ( backend.refdef.flags & RSF_ORTHO_BITS ) == RSF_ORTHO_TYPE_SCREENSPACE ) {
         return;
     }
 

@@ -122,7 +122,8 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glDeleteQueries, GLsizei n, const GLuint *ids ) \
     NGL( void, glBeginQuery, GLenum target, GLuint id ) \
     NGL( void, glEndQuery, GLenum target ) \
-    NGL( void, glGetQueryObjectiv, GLuint id, GLenum pname, GLuint *params )
+    NGL( void, glGetQueryObjectiv, GLuint id, GLenum pname, GLuint *params ) \
+    NGL( void, glOrtho, GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat far, GLfloat near ) \
 
 #define NGL_List_Procs \
     NGL( void, glListBase, GLuint base ) \

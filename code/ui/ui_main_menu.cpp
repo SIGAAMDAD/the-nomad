@@ -54,7 +54,9 @@ typedef struct
     nhandle_t background1;
     sfxHandle_t ambience;
 
+    const stringHash_t *logoString;
     const stringHash_t *spString;
+    const stringHash_t *modsString;
     const stringHash_t *settingsString;
 
     int32_t menuWidth;
@@ -94,35 +96,12 @@ static const collaborator_t collaborators[] = {
 void MainMenu_Draw( void )
 {
     uint64_t i;
-    float x, y, w, h;
     const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
                             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoBackground;
-    renderSceneRef_t refdef;
 
     menu.noMenuToggle.Toggle( KEY_F2, menu.noMenu );
 
-
-    x = 0;
-    y = 0;
-    w = ui->GetConfig().vidWidth;
-    h = ui->GetConfig().vidHeight;
-
-    memset( &refdef, 0, sizeof( refdef ) );
-    refdef.x = 0;
-    refdef.y = 0;
-    refdef.width = w;
-    refdef.height = h;
-    refdef.time = ui->GetFrameTime();
-    refdef.flags = RSF_NOWORLDMODEL | RSF_ORTHO_TYPE_SCREENSPACE;
-
-    re.ClearScene();
-    re.DrawImage( 0, 0, refdef.width, refdef.height, 1, 0, 0, 1, menu.background0 );
-    re.RenderScene( &refdef );
-
-//    ImGui::Begin( "MainMenuBackground", NULL, windowFlags & ~( ImGuiWindowFlags_NoResize ) );
-//    ImGui::SetWindowPos( ImVec2( 0.0f, 0.0f ) );
-//    ImGui::Image( (void *)(intptr_t)menu.background0, ImGui::GetWindowSize(), ImVec2( 1, 0 ), ImVec2( 0, 1 ) );
-//    ImGui::End();
+    ui->menu_background = menu.background0;
     if ( ui->GetState() != STATE_MODS ) {
         Snd_SetLoopingTrack( menu.ambience );
     }
@@ -151,7 +130,7 @@ void MainMenu_Draw( void )
         FontCache()->SetActiveFont( menu.font );
         const float fontScale = ImGui::GetFont()->Scale;
         ImGui::SetWindowFontScale( ( fontScale * 10.5f ) * ui->scale );
-        ui->Menu_Title( "MAIN MENU" );
+        ui->Menu_Title( menu.logoString->value );
         ImGui::SetWindowFontScale( ( fontScale * 1.5f ) * ui->scale );
 
         const ImVec2 mousePos = ImGui::GetCursorScreenPos();
@@ -160,7 +139,7 @@ void MainMenu_Draw( void )
         FontCache()->SetActiveFont( PressStart2P );
 
         ImGui::BeginTable( "##MainMenuTable", 2 );
-        if (ui->Menu_Option( "Single Player" )) {
+        if (ui->Menu_Option( menu.spString->value )) {
             ui->SetState( STATE_SINGLEPLAYER );
         }
         ImGui::TableNextRow();
@@ -186,7 +165,7 @@ void MainMenu_Draw( void )
         ImGui::TableNextRow();
         if (ui->Menu_Option( "Exit To Desktop" )) {
             // TODO: possibly add in a DOOM-like exit popup?
-            Sys_Exit( 1 );
+            Cbuf_ExecuteText( EXEC_APPEND, "quit\n" );
         }
         ImGui::EndTable();
         ImGui::SetWindowFontScale( fontScale );
@@ -252,8 +231,6 @@ void MainMenu_Cache( void )
 
     memset( &menu, 0, sizeof( menu ) );
     memset( &errorMenu, 0, sizeof( errorMenu ) );
-//    menu = (mainmenu_t *)Hunk_Alloc( sizeof( *menu ), h_high );
-//    errorMenu = (errorMessage_t *)Z_Malloc( sizeof( *errorMenu ), h_high );
 
     // only use of rand() is determining DIF_HARDEST title
     srand( time( NULL ) );
@@ -278,16 +255,16 @@ void MainMenu_Cache( void )
     menu.handle.Draw = MainMenu_Draw;
 
     menu.ambience = Snd_RegisterTrack( "music/title.ogg" );
-    menu.background0 = re.RegisterShader( MAIN_MENU_BACKGROUND );
+    menu.background0 = re.RegisterShader( "menu/mainbackground" );
 
+    menu.logoString = strManager->ValueForKey( "MENU_LOGO_STRING" );
     menu.settingsString = strManager->ValueForKey( "MENU_MAIN_SETTINGS" );
     menu.spString = strManager->ValueForKey( "MENU_MAIN_SINGLEPLAYER" );
+    menu.modsString = strManager->ValueForKey( "MENU_MAIN_MODS" );
 
     PressStart2P = FontCache()->AddFontToCache( "PressStart2P" );
     menu.font = FontCache()->AddFontToCache( "AlegreyaSC", "Bold" );
     RobotoMono = FontCache()->AddFontToCache( "RobotoMono", "Bold" );
-
-    ui->menu_background = menu.background0;
 
     menu.noMenu = qfalse;
     menu.menuHeight = ui->GetConfig().vidHeight;

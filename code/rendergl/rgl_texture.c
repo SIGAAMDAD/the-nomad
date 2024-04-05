@@ -1,7 +1,6 @@
 #include "rgl_local.h"
 #include <ctype.h>
 
-#if 0
 static void *Image_Malloc(size_t size) {
 	return ri.Malloc(size);
 }
@@ -9,13 +8,14 @@ static void *Image_Realloc(void *ptr, size_t nsize) {
 	return ri.Realloc(ptr, nsize);
 }
 static void Image_Free(void *ptr) {
-	ri.Free(ptr);
+	if ( ptr ) {
+		ri.Free(ptr);
+	}
 }
 
 #define STBI_MALLOC(size) Image_Malloc(size)
 #define STBI_REALLOC(ptr,nsize) Image_Realloc(ptr,nsize)
 #define STBI_FREE(ptr) Image_Free(ptr)
-#endif
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
@@ -2283,6 +2283,14 @@ static GLenum PixelDataFormatFromInternalFormat(GLenum internalFormat)
 	case GL_DEPTH_COMPONENT24_ARB:
 	case GL_DEPTH_COMPONENT32_ARB:
 		return GL_DEPTH_COMPONENT;
+	case GL_RGB8:
+	case GL_RGB4:
+	case GL_RGB10:
+	case GL_RGB12:
+	case GL_RGB16:
+		return GL_RGB;
+	case GL_RGBA8:
+	case GL_RGBA4:
 	default:
 		return GL_RGBA;
 	};
@@ -2348,14 +2356,6 @@ texture_t *R_CreateImage(  const char *name, byte *pic, uint32_t width, uint32_t
 	nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, gl_filter_min);
 	nglTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, gl_filter_max);
 
-#ifdef GL_UNPACK_ROW_LENGTH
-	if ( !N_stricmp( COM_GetExtension( name ), "fimg" ) ) {
-		// Not on WebGL/ES
-	    nglPixelStorei( GL_UNPACK_ROW_LENGTH, 0 );
-		dataType = GL_UNSIGNED_BYTE;
-	}
-#endif
-
 	GL_LogComment("-- (%s) -- glTexImage2D(GL_TEXTURE_2D, 0, 0x%04x, %i, %i, 0, 0x%04x, 0x%04x, %p)", name, internalFormat, width, height, picFormat, dataType, pic);
 	nglTexImage2D( GL_TEXTURE_2D, 0, internalFormat, width, height, 0, picFormat, dataType, pic );
 
@@ -2377,6 +2377,7 @@ texture_t *R_CreateImage(  const char *name, byte *pic, uint32_t width, uint32_t
 // Prototype for dds loader function which isn't common to both renderers
 void R_LoadDDS(const char *filename, byte **pic, uint32_t *width, uint32_t *height, GLenum *picFormat, uint32_t *numMips);
 
+/*
 static void LoadImageFile(const char *name, byte **pic, uint32_t *width, uint32_t *height, int *channels)
 {
 	uint64_t size;
@@ -2385,6 +2386,7 @@ static void LoadImageFile(const char *name, byte **pic, uint32_t *width, uint32_
 		void *v;
 		byte *b;
 	} buffer;
+	fileHandle_t f;
 
 	//
 	// load the file
@@ -2394,10 +2396,10 @@ static void LoadImageFile(const char *name, byte **pic, uint32_t *width, uint32_
 		return;
 	}
 
-	out = stbi_load_from_memory(buffer.b, size, (int *)width, (int *)height, channels, 0);
-	if (!out) {
-		ri.FS_FreeFile(buffer.b);
-		ri.Printf(PRINT_DEVELOPER, "LoadImageFile: stbi_load_from_memory(%s) failed, failure reason: %s\n", name, stbi_failure_reason());
+	out = stbi_load_from_memory( buffer.b, size, (int *)width, (int *)height, channels, 3 );
+	if ( !out ) {
+		ri.FS_FreeFile( buffer.b );
+		ri.Printf( PRINT_DEVELOPER, "LoadImageFile: stbi_load_from_memory(%s) failed, failure reason: %s\n", name, stbi_failure_reason() );
 		return;
 	}
 
@@ -2405,6 +2407,68 @@ static void LoadImageFile(const char *name, byte **pic, uint32_t *width, uint32_
 
 	*pic = out;
 }
+*/
+
+typedef struct
+{
+	const char *ext;
+	void (*ImageLoader)( const char *, unsigned char **, int *, int * );
+} imageExtToLoaderMap_t;
+
+static void R_LoadDummy( const char *, unsigned char **, int *, int * ) {
+}
+
+static int stbi_eof( void *userData ) {
+	fileHandle_t fd = *(fileHandle_t *)userData;
+	return ri.FS_FileTell( fd ) >= ri.FS_FileLength( fd );
+}
+
+static int stbi_read( void *userData, char *buffer, int size ) {
+	return ri.FS_Read( buffer, size, *(fileHandle_t *)userData );
+}
+
+static void stbi_skip( void *userData, int skip ) {
+	if ( skip < 0 ) {
+		ri.FS_FileSeek( *(fileHandle_t *)userData, ri.FS_FileTell( *(fileHandle_t *)userData ) - ( skip * -1 ), FS_SEEK_SET );
+	} else {
+		ri.FS_FileSeek( *(fileHandle_t *)userData, skip, FS_SEEK_CUR );
+	}
+}
+
+static void R_LoadPNG2( const char *filename, unsigned char **pic, int *width, int *height ) {
+	union {
+		void *v;
+		char *b;
+	} f;
+	int channels;
+	uint64_t nLength;
+
+	nLength = ri.FS_LoadFile( filename, &f.v );
+	if ( !nLength || !f.v ) {
+		return;
+	}
+
+	*pic = stbi_load_from_memory( f.b, (int)nLength, width, height, &channels, 3 );
+	if ( !*pic ) {
+		ri.Printf( PRINT_WARNING, "R_LoadPNG: stbi_load_from_memory(%s) failed, failure reason: %s\n", filename, stbi_failure_reason() );
+		return;
+	}
+
+	ri.FS_FreeFile( f.v );
+}
+
+// Note that the ordering indicates the order of preference used
+// when there are multiple images of different formats available
+static const imageExtToLoaderMap_t imageLoaders[] = {
+	{ "png",  R_LoadPNG2 },
+	{ "tga",  R_LoadTGA },
+	{ "jpg",  R_LoadJPG },
+	{ "jpeg", R_LoadJPG },
+	{ "pcx",  R_LoadPCX },
+	{ "bmp",  R_LoadBMP }
+};
+
+static const int numImageLoaders = arraylen( imageLoaders );
 
 /*
 =================
@@ -2416,10 +2480,12 @@ Loads any of the supported image types into a canonical
 */
 static void R_LoadImage( const char *name, byte **pic, uint32_t *width, uint32_t *height, GLenum *picFormat, uint32_t *numMips )
 {
-	char localName[ MAX_GDR_PATH ];
+	qboolean orgNameFailed = qfalse;
+	char localName[ MAX_NPATH ];
 	const char *ext;
 	const char *altName;
-	int channels;
+	int orgLoader = -1;
+	int i;
 
 	*pic = NULL;
 	*width = 0;
@@ -2433,66 +2499,24 @@ static void R_LoadImage( const char *name, byte **pic, uint32_t *width, uint32_t
 
 	// If compressed textures are enabled, try loading a DDS first, it'll load fastest
 	if (r_arb_texture_compression->i) {
-		char ddsName[MAX_GDR_PATH];
+		char ddsName[MAX_NPATH];
 
 		COM_StripExtension(name, ddsName, MAX_GDR_PATH);
 		N_strcat(ddsName, MAX_GDR_PATH, ".dds");
 
-		// not for now...
-//		R_LoadDDS(ddsName, pic, width, height, picFormat, numMips);
+		R_LoadDDS(ddsName, pic, width, height, picFormat, numMips);
 
 		// If loaded, we're done.
 		if (*pic)
 			return;
 	}
 
-	// check if it's a raw font bitmap, most likely from the imgui backend
-	if ( !N_stricmp( ext, "fimg" ) ) {
-		const int32_t ident = (('g'<<24)+('m'<<16)+('i'<<8)+'f');
-		uint64_t size;
-		char *buf;
-		byte *out;
-
-		size = ri.FS_LoadFile( name, (void **)&buf );
-		if ( !size || !buf ) {
-			ri.Error( ERR_DROP, "R_LoadImage: failed to load image file '%s'", name );
-		}
-
-		if ( ( (int32_t *)buf )[0] != ident ) {
-			ri.Error( ERR_DROP, "R_LoadImage: failed to load image file '%s' because its identifier was incorrect", name );
-		}
-
-		*width = ((int32_t *)buf)[1];
-		*height = ((int32_t *)buf)[2];
-
-		if ( size != *width * *height * 4 + 12 ) {
-			ri.Error( ERR_DROP, "R_LoadImage: failed to load image file '%s' because it has an invalid size", name );
-		}
-
-		// create a copy of the same data, its inefficient, but hopefully should only happen once per R_Init
-		out = (byte *)malloc( *width * *height * 4 );
-		memcpy( out, (byte *)buf + 12, *width * *height * 4 );
-
-		ri.FS_FreeFile( buf );
-
-		*picFormat = GL_RGBA;
-		*pic = out;
-
-		return;
-	}
-
-	// now we just use stb_image
-	LoadImageFile(name, pic, width, height, &channels);
-	if (channels == 3)
-		*picFormat = GL_RGB8;
-
-#if 0
 	if( *ext )
 	{
 		// Look for the correct loader and use it
 		for( i = 0; i < numImageLoaders; i++ )
 		{
-			if( !Q_stricmp( ext, imageLoaders[ i ].ext ) )
+			if( !N_stricmp( ext, imageLoaders[ i ].ext ) )
 			{
 				// Load
 				imageLoaders[ i ].ImageLoader( localName, pic, width, height );
@@ -2542,7 +2566,6 @@ static void R_LoadImage( const char *name, byte **pic, uint32_t *width, uint32_t
 			break;
 		}
 	}
-#endif
 }
 
 /*
@@ -2714,12 +2737,8 @@ texture_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags )
 	}
 #endif
 
-	image = R_CreateImage( ( char * ) name, pic, width, height, type, flags, GL_RGBA, picFormat );
-#if 0
+	image = R_CreateImage( name, pic, width, height, type, flags, GL_RGBA8, picFormat );
 	ri.Free( pic );
-#else
-	free( pic ); // not in the zone heap
-#endif
 	return image;
 }
 

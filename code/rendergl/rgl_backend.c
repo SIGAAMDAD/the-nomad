@@ -796,6 +796,8 @@ static const void *RB_DrawImage( const void *data ) {
 	shader_t *shader;
 	uint32_t numVerts;
 	uint32_t numIndices;
+	polyVert_t *verts;
+	uint32_t *indices;
 
 	cmd = (const drawImageCmd_t *)data;
 
@@ -807,50 +809,58 @@ static const void *RB_DrawImage( const void *data ) {
 			backendData->indices, sizeof( glIndex_t ) );
 	}
 	backend.drawBatch.shader = shader;
-
-	numIndices = backend.drawBatch.idxOffset;
 	numVerts = backend.drawBatch.vtxOffset;
-	backend.drawBatch.idxOffset += 6;
-	backend.drawBatch.vtxOffset += 4;
+	numIndices = backend.drawBatch.idxOffset;
+	verts = &backendData->polyVerts[ numVerts ];
+	indices = &backendData->indices[ numIndices ];
 
 	{
 		uint16_t color[4];
 
 		VectorScale4( backend.color2D, 257, color );
 
-		VectorCopy4( backendData->polyVerts[ numVerts ].modulate.rgba, color );
-		VectorCopy4( backendData->polyVerts[ numVerts + 1 ].modulate.rgba, color );
-		VectorCopy4( backendData->polyVerts[ numVerts + 2 ].modulate.rgba, color );
-		VectorCopy4( backendData->polyVerts[ numVerts + 3 ].modulate.rgba, color );
+		VectorCopy4( verts[0].modulate.rgba, color );
+		VectorCopy4( verts[1].modulate.rgba, color );
+		VectorCopy4( verts[2].modulate.rgba, color );
+		VectorCopy4( verts[3].modulate.rgba, color );
 	}
 
-	backendData->polyVerts[ numVerts ].xyz[0] = cmd->x;
-	backendData->polyVerts[ numVerts ].xyz[1] = cmd->y;
-	backendData->polyVerts[ numVerts ].xyz[2] = 0;
+	verts[0].xyz[0] = cmd->x;
+	verts[0].xyz[1] = cmd->y;
+	verts[0].xyz[2] = 0;
 
-	backendData->polyVerts[ numVerts ].uv[0] = cmd->u1;
-	backendData->polyVerts[ numVerts ].uv[1] = cmd->v1;
+	verts[0].uv[0] = cmd->u1;
+	verts[0].uv[1] = cmd->v1;
 
-	backendData->polyVerts[ numVerts + 1 ].xyz[0] = cmd->x + cmd->w;
-	backendData->polyVerts[ numVerts + 1 ].xyz[1] = cmd->y;
-	backendData->polyVerts[ numVerts + 1 ].xyz[2] = 0;
+	verts[1].xyz[0] = cmd->x + cmd->w;
+	verts[1].xyz[1] = cmd->y;
+	verts[1].xyz[2] = 0;
 
-	backendData->polyVerts[ numVerts + 1 ].uv[0] = cmd->u2;
-	backendData->polyVerts[ numVerts + 1 ].uv[1] = cmd->v1;
+	verts[1].uv[0] = cmd->u2;
+	verts[1].uv[1] = cmd->v1;
 
-	backendData->polyVerts[ numVerts + 2 ].xyz[0] = cmd->x + cmd->w;
-	backendData->polyVerts[ numVerts + 2 ].xyz[1] = cmd->y + cmd->h;
-	backendData->polyVerts[ numVerts + 2 ].xyz[2] = 0;
+	verts[2].xyz[0] = cmd->x + cmd->w;
+	verts[2].xyz[1] = cmd->y + cmd->h;
+	verts[2].xyz[2] = 0;
 
-	backendData->polyVerts[ numVerts + 2 ].uv[0] = cmd->u2;
-	backendData->polyVerts[ numVerts + 2 ].uv[1] = cmd->v2;
+	verts[2].uv[0] = cmd->u2;
+	verts[2].uv[1] = cmd->v2;
 
-	backendData->polyVerts[ numVerts + 3 ].xyz[0] = cmd->x;
-	backendData->polyVerts[ numVerts + 3 ].xyz[1] = cmd->y + cmd->h;
-	backendData->polyVerts[ numVerts + 3 ].xyz[2] = 0;
+	verts[3].xyz[0] = cmd->x;
+	verts[3].xyz[1] = cmd->y + cmd->h;
+	verts[3].xyz[2] = 0;
 
-	backendData->polyVerts[ numVerts + 3 ].uv[0] = cmd->u1;
-	backendData->polyVerts[ numVerts + 3 ].uv[1] = cmd->v2;
+	verts[3].uv[0] = cmd->u1;
+	verts[3].uv[1] = cmd->v2;
+
+	indices[0] = numVerts;
+	indices[1] = numVerts + 1;
+	indices[2] = numVerts + 2;
+	indices[3] = numVerts + 0;
+	indices[4] = numVerts + 2;
+	indices[5] = numVerts + 3;
+
+	RB_CommitDrawData( verts, 4, indices, 6 );
 
 	return (const void *)( cmd + 1 );
 }

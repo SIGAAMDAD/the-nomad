@@ -83,6 +83,8 @@ static void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL G_RefPrintf( int leve
     case PRINT_WARNING:
         Con_Printf( COLOR_YELLOW "WARNING: %s", msg );
         break;
+    case PRINT_ERROR:
+        Con_Printf( COLOR_RED "ERROR: %s", msg );
     default:
         N_Error( ERR_FATAL, "G_RefPrintf: Bad print level" );
     };
@@ -204,16 +206,20 @@ static void G_RefImGuiInit(void *shaderData, const void *importData) {
 }
 
 static void GLM_MakeVPM( const vec4_t ortho, float *zoom, float zNear, float zFar, vec3_t origin, mat4_t vpm,
-    mat4_t projection, mat4_t view )
+    mat4_t projection, mat4_t view, uint32_t orthoFlags )
 {
     glm::mat4 viewProjectionMatrix, projectionMatrix, viewMatrix, transpose;
 
     projectionMatrix = glm::ortho( ortho[0], ortho[1], ortho[2], ortho[3], zNear, zFar );
-    transpose = glm::translate( glm::mat4( 1.0f ), glm::vec3( gi.cameraPos[0], gi.cameraPos[1], 0.0f ) )
-                * glm::scale( glm::mat4( 1.0f ), glm::vec3( gi.cameraZoom ) );
-    viewMatrix = glm::inverse( transpose );
-
-    viewProjectionMatrix = projectionMatrix * viewMatrix;
+    if ( !( orthoFlags & RSF_ORTHO_TYPE_SCREENSPACE ) ) {
+        transpose = glm::translate( glm::mat4( 1.0f ), glm::vec3( gi.cameraPos[0], gi.cameraPos[1], 0.0f ) )
+                    * glm::scale( glm::mat4( 1.0f ), glm::vec3( gi.cameraZoom ) );
+        viewMatrix = glm::inverse( transpose );
+        viewProjectionMatrix = projectionMatrix * viewMatrix;
+    } else {
+        viewMatrix = glm::mat4( 1.0f );
+        viewProjectionMatrix = projectionMatrix;
+    }
 
     VectorCopy( origin, gi.cameraPos );
     *zoom = gi.cameraZoom;

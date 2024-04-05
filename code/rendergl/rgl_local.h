@@ -55,6 +55,7 @@ typedef uint32_t glIndex_t;
 #define PRINT_INFO 0
 #define PRINT_DEVELOPER 1
 #define PRINT_WARNING 2
+#define PRINT_ERROR 3
 
 #define MAX_CALC_PSHADOWS    64
 #define MAX_DRAWN_PSHADOWS    16 // do not increase past 32, because bit flags are used on surfaces
@@ -1508,6 +1509,14 @@ void RB_CommitDrawData( const void *verts, uint32_t numVerts, const void *indice
 
 void RE_BeginFrame(stereoFrame_t stereoFrame);
 void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec);
+
+
+
+void R_LoadBMP( const char *name, byte **pic, int *width, int *height );
+void R_LoadJPG( const char *name, byte **pic, int *width, int *height );
+void R_LoadPCX( const char *name, byte **pic, int *width, int *height );
+void R_LoadPNG( const char *name, byte **pic, int *width, int *height );
+void R_LoadTGA( const char *name, byte **pic, int *width, int *height );
 
 /*
 =============================================================

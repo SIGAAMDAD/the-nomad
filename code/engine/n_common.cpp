@@ -1422,11 +1422,8 @@ void Com_Quit_f( void ) {
 		// which would trigger an unload of active VM error.
 		// Sys_Quit will kill this process anyways, so
 		// a corrupt call stack makes no difference
-//		VM_Forced_Unload_Start();
 		G_Shutdown( qtrue );
-//		VM_Forced_Unload_Done();
 		Com_Shutdown();
-
 		FS_Shutdown( qtrue );
 	}
 	Sys_Exit( EXIT_SUCCESS );

@@ -2950,6 +2950,7 @@ void FS_Shutdown(qboolean closeFiles)
 			}
 			
 			FS_FClose( i );
+			memset( &handles[i], 0, sizeof( handles[i] ) );
 		}
 	}
 
@@ -3037,7 +3038,7 @@ static void FS_ListOpenFiles_f(void)
 	fileHandleData_t *f;
 
 	f = handles;
-	for (i = 0; i < MAX_FILE_HANDLES; i++, f++) {
+	for (i = 1; i < MAX_FILE_HANDLES; i++, f++) {
 		if (!f->data.stream)
 			continue;
 		

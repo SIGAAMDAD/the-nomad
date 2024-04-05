@@ -1071,13 +1071,13 @@ static void CollapseStagesToLightall( shaderStage_t *diffuse, shaderStage_t *nor
 			VectorCopy4( normal->normalScale, diffuse->normalScale );
 		}
 		else if ( ( lightmap || useLightVector || useLightVertex ) && ( diffuseTex = diffuse->bundle[TB_DIFFUSEMAP].image ) != NULL ) {
-			char normalName[MAX_GDR_PATH];
+			char normalName[MAX_NPATH];
 			texture_t *normalTex;
 			imgFlags_t normalFlags = ( diffuseTex->flags & ~IMGFLAG_GENNORMALMAP ) | IMGFLAG_NOLIGHTSCALE;
 			
 			// try a normalheight image first
-			COM_StripExtension( diffuseTex->imgName, normalName, MAX_GDR_PATH );
-			N_strcat( normalName, MAX_GDR_PATH, "_nh" );
+			COM_StripExtension( diffuseTex->imgName, normalName, MAX_NPATH );
+			N_strcat( normalName, MAX_NPATH, "_nh" );
 
 			normalTex = R_FindImageFile( normalName, IMGTYPE_NORMALHEIGHT, normalFlags );
 
@@ -1109,12 +1109,12 @@ static void CollapseStagesToLightall( shaderStage_t *diffuse, shaderStage_t *nor
 			VectorCopy4( specular->specularScale, diffuse->specularScale );
 		}
 		else if ( ( lightmap || useLightVector || useLightVertex ) && ( diffuseTex = diffuse->bundle[TB_DIFFUSEMAP].image ) != NULL ) {
-			char specularName[MAX_GDR_PATH];
+			char specularName[MAX_NPATH];
 			texture_t *specularTex;
 			imgFlags_t specularFlags = ( diffuseTex->flags & ~IMGFLAG_GENNORMALMAP ) | IMGFLAG_NOLIGHTSCALE;
 
-			COM_StripExtension( diffuseTex->imgName, specularName, MAX_GDR_PATH );
-			N_strcat( specularName, MAX_GDR_PATH, "_s" );
+			COM_StripExtension( diffuseTex->imgName, specularName, MAX_NPATH );
+			N_strcat( specularName, MAX_NPATH, "_s" );
 
 			specularTex = R_FindImageFile(specularName, IMGTYPE_COLORALPHA, specularFlags);
 
@@ -1388,7 +1388,7 @@ default shader if the real one can't be found.
 */
 shader_t *R_FindShaderByName( const char *name )
 {
-	char		strippedName[MAX_GDR_PATH];
+	char		strippedName[MAX_NPATH];
 	uint64_t	hash;
 	shader_t	*sh;
 
@@ -1446,7 +1446,7 @@ most world construction surfaces.
 ===============
 */
 shader_t *R_FindShader( const char *name ) {
-	char		strippedName[MAX_GDR_PATH];
+	char		strippedName[MAX_NPATH];
 	uint64_t	hash;
 	const char	*shaderText;
 	texture_t	*image;
@@ -1724,8 +1724,8 @@ way to ask for different implicit lighting modes (vertex, lightmap, etc)
 nhandle_t RE_RegisterShaderLightMap( const char *name ) {
 	shader_t	*sh;
 
-	if ( strlen( name ) >= MAX_GDR_PATH ) {
-		ri.Printf( PRINT_INFO, "Shader name exceeds MAX_GDR_PATH\n" );
+	if ( strlen( name ) >= MAX_NPATH ) {
+		ri.Printf( PRINT_INFO, "Shader name exceeds MAX_NPATH\n" );
 		return 0;
 	}
 
@@ -1762,8 +1762,8 @@ nhandle_t RE_RegisterShader( const char *name ) {
 		return 0;
 	}
 
-	if ( strlen( name ) >= MAX_GDR_PATH ) {
-		ri.Printf( PRINT_INFO, "Shader name exceeds MAX_GDR_PATH\n" );
+	if ( strlen( name ) >= MAX_NPATH ) {
+		ri.Printf( PRINT_INFO, "Shader name exceeds MAX_NPATH\n" );
 		return 0;
 	}
 
@@ -1811,8 +1811,8 @@ shader_t *R_GetShaderByHandle( nhandle_t hShader ) {
 
 static int loadShaderBuffers( char **shaderFiles, const uint64_t numShaderFiles, char **buffers )
 {
-	char filename[MAX_GDR_PATH+8];
-	char shaderName[MAX_GDR_PATH];
+	char filename[MAX_NPATH+8];
+	char shaderName[MAX_NPATH];
 	const char *p, *tok;
 	uint64_t summand, sum = 0;
 	uint64_t shaderLine;

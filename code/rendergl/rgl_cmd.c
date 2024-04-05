@@ -301,7 +301,7 @@ void RE_BeginFrame(stereoFrame_t stereoFrame)
 
         R_IssuePendingRenderCommands();
         if ( ( error = nglGetError() ) != GL_NO_ERROR )
-            ri.Error( ERR_FATAL, "RE_BeginFrame() - glGetError() failed (0x%x)!", error );
+            ri.Error( ERR_FATAL, "RE_BeginFrame() - glGetError() failed (0x%04x)!", error );
     }
 
 /*

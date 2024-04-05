@@ -904,6 +904,8 @@ void RB_FlushBatchBuffer( void )
 
     backend.drawBatch.idxOffset = 0;
     backend.drawBatch.vtxOffset = 0;
+
+	backend.drawBatch.shader = NULL;
 }
 
 void RB_CommitDrawData( const void *verts, uint32_t numVerts, const void *indices, uint32_t numIndices )

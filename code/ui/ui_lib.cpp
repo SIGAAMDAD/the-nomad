@@ -36,16 +36,16 @@ bool CUILib::Menu_Title( const char *label, float fontScale )
 	memset( &refdef, 0, sizeof( refdef ) );
 	refdef.x = 0;
 	refdef.y = 0;
-	refdef.width = 1024;
-	refdef.height = 768;
+	refdef.width = gpuConfig.vidWidth;
+	refdef.height = gpuConfig.vidHeight;
 	refdef.flags = RSF_NOWORLDMODEL | RSF_ORTHO_TYPE_SCREENSPACE;
 
 	//
 	// draw the background
 	//
-//	re.ClearScene();
-//	ui->DrawHandlePic( 0, 0, refdef.width, refdef.height, menu_background );
-//	re.RenderScene( &refdef );
+    re.ClearScene();
+    re.DrawImage( 0, 0, refdef.width, refdef.height, 0, 0, 1, 1, menu_background );
+    re.RenderScene( &refdef );
 
     ImGui::SetWindowFontScale( 1.5f * scale );
 	if ( state != STATE_MAIN ) {

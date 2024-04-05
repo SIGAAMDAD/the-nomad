@@ -174,6 +174,7 @@ extern gameInfo_t gi;
 #define PRINT_INFO 0
 #define PRINT_DEVELOPER 1
 #define PRINT_WARNING 2
+#define PRINT_ERROR 3
 
 extern uint32_t g_console_field_width;
 extern uint32_t bigchar_width;
@@ -363,7 +364,9 @@ qboolean G_SGameCommand( void );
 
 struct CModuleInfo;
 
+#ifdef __cplusplus
 extern CModuleInfo *sgvm;
+#endif
 extern renderExport_t re;
 
 #endif

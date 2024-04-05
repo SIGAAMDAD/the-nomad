@@ -311,6 +311,7 @@ void ModsMenu_Draw( void )
     const float fontScale = ImGui::GetFont()->Scale;
     extern ImFont *RobotoMono;
     
+	ui->menu_background = mods->backgroundShader;
     Snd_SetLoopingTrack( mods->ambience );
     
     ui->EscapeMenuToggle( STATE_MAIN );

@@ -45,6 +45,7 @@ typedef struct {
 } singleplayer_t;
 
 extern ImFont *RobotoMono;
+extern ImFont *PressStart2P;
 static singleplayer_t sp;
 
 typedef struct {
@@ -64,7 +65,7 @@ void SinglePlayerMenu_Draw( void )
                                         | ImGuiTreeNodeFlags_Framed;
 
     switch ( ui->GetState() ) {
-    case STATE_SINGLEPLAYER:
+    case STATE_SINGLEPLAYER: {
         ui->EscapeMenuToggle( STATE_MAIN );
         if ( ui->GetState() != STATE_SINGLEPLAYER ) {
             break;
@@ -75,6 +76,8 @@ void SinglePlayerMenu_Draw( void )
         mousePos = ImGui::GetCursorScreenPos();
         ImGui::SetCursorScreenPos( ImVec2( mousePos.x, mousePos.y + 10 ) );
         
+
+        FontCache()->SetActiveFont( PressStart2P );
         ImGui::BeginTable( "##SinglePlayerOptions", 2 );
         if ( ui->Menu_Option( sp.newGame->value ) ) {
             ui->SetState( STATE_NEWGAME );
@@ -90,7 +93,7 @@ void SinglePlayerMenu_Draw( void )
 //               ui->SetState( STATE_PLAYMISSION );
         }
         ImGui::EndTable();
-        break;
+        break; }
     case STATE_NEWGAME: {
 
         ImGui::SetWindowSize( ImVec2( (float)ui->GetConfig().vidWidth * 0.75f, ImGui::GetWindowSize().y ) );
@@ -112,6 +115,7 @@ void SinglePlayerMenu_Draw( void )
             ui->SetState( STATE_SINGLEPLAYER );
             break;
         }
+
         mousePos = ImGui::GetCursorScreenPos();
         ImGui::SetCursorScreenPos( ImVec2( mousePos.x, mousePos.y + 10 ) );
         if (sp.diff == DIF_HARDEST) {
@@ -121,6 +125,7 @@ void SinglePlayerMenu_Draw( void )
         }
         ImGui::BeginTable( "##SinglePlayerBeginNewGame", 2 );
         {
+            FontCache()->SetActiveFont( PressStart2P );
             ImGui::TableNextColumn();
             ImGui::TextUnformatted( sp.newGameSaveNamePrompt->value );
             ImGui::TableNextColumn();
@@ -209,7 +214,7 @@ void SinglePlayerMenu_Draw( void )
         ui->EscapeMenuToggle( STATE_SINGLEPLAYER );
         if ( ui->GetState() != STATE_LOADGAME ) {
             break;
-        } else if ( ui->Menu_Title( sp.loadGame->value ) ) {
+        } else if ( ui->Menu_Title( sp.loadGame->value, 2.25f ) ) {
             ui->SetState( STATE_SINGLEPLAYER );
             break;
         }
@@ -253,11 +258,11 @@ void SinglePlayerMenu_Draw( void )
                 ImGui::End();
             }
 
-            // TODO: add key here
+            FontCache()->SetActiveFont( PressStart2P );
             for (i = 0; i < sp.numSaves; i++) {
                 if ( ImGui::TreeNodeEx( (void *)(uintptr_t)sp.saveList[i].name, treeNodeFlags, sp.saveList[i].name ) ) {
                     sp.currentSave = i;
-                    if ( !ImGui::IsItemClicked( ImGuiMouseButton_Left ) && ImGui::IsMouseClicked( ImGuiMouseButton_Left ) ) {
+                    if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && ImGui::IsMouseClicked( ImGuiMouseButton_Left ) ) {
                     	ui->PlaySelected();
                     }
                     if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && ImGui::IsMouseDoubleClicked( ImGuiMouseButton_Left ) ) {
