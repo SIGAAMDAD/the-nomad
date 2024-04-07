@@ -1,10 +1,10 @@
 in vec3 a_Position;
-in vec2 a_TexCoord;
+in vec2 a_TexCoords;
 in vec4 a_Color;
 
 uniform mat4 u_ModelViewProjection;
 
-out vec2 v_TexCoord;
+out vec2 v_TexCoords;
 out vec4 v_Color;
 
 uniform vec4 u_BaseColor;
@@ -39,7 +39,7 @@ vec4 CalcColor(vec3 position, vec3 normal)
 	{
 		float incoming = clamp(dot(normal, u_ModelLightDir), 0.0, 1.0);
 
-//		color.rgb = clamp(u_DirectedLight * incoming + u_AmbientLight, 0.0, 1.0);
+		color.rgb = clamp(u_DirectedLight * incoming + u_AmbientLight, 0.0, 1.0);
 	}
 	
 	vec3 viewer = u_LocalViewOrigin - position;
@@ -99,10 +99,10 @@ float CalcLightAttenuation( float point, float normDist )
 #if defined(USE_TCGEN)
 vec2 GenTexCoords( int TCGen, vec3 position, vec3 normal, vec3 TCGenVector0, vec3 TCGenVector1 )
 {
-	vec2 tex = a_TexCoord;
+	vec2 tex = a_TexCoords;
 
 	if ( TCGen == TCGEN_LIGHTMAP ) {
-	//	tex = a_TexCoord1.st;
+		tex = a_TexCoords.st;
 	}
 	else if ( TCGen == TCGEN_ENVIRONMENT_MAPPED ) {
 		vec3 viewer = normalize( u_WorldPos - position );
@@ -120,23 +120,7 @@ vec2 GenTexCoords( int TCGen, vec3 position, vec3 normal, vec3 TCGenVector0, vec
 
 void main()
 {
-#if defined(USE_RGBAGEN)
-    v_Color = CalcColor( a_Position, a_Normal );
-#else
-    v_Color = u_VertColor * a_Color + u_BaseColor;
-#endif
-
-#if defined(USE_TCGEN)
-	vec2 texCoords = GenTexCoords( u_TCGen0, a_Position, vec3( 0.0 ), u_TCGen0Vector0, u_TCGen0Vector1 );
-#else
-	vec2 texCoords = a_TexCoord;
-#endif
-
-#if defined(USE_TCMOD)
-	v_TexCoord = ModTexCoords( texCoords, position, u_DiffuseTexMatrix, u_DiffuseTexOffTurb );
-#else
-	v_TexCoord = texCoords;
-#endif
+	v_TexCoords = a_TexCoords;
     v_Color = a_Color;
     gl_Position = u_ModelViewProjection * vec4( a_Position.xy, 0, 1 );
 }

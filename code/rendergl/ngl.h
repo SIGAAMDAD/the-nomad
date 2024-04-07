@@ -221,7 +221,7 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glDeleteSamplers, GLsizei n, const GLuint *samplers ) \
     NGL( void, glSamplerParameteri, GLuint sampler, GLenum pname, GLint param ) \
     NGL( void, glSamplerParameterf, GLuint sampler, GLenum pname, GLfloat param ) \
-//    NGL( void, glGenerateMipmap, GLenum target ) \
+    NGL( void, glGenerateMipmap, GLenum target )
 
 #define NGL_FBO_Procs \
     NGL( void, glGenFramebuffers, GLsizei n, GLuint *buffers ) \

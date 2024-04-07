@@ -145,12 +145,12 @@ cvar_t *r_glDebug;
 cvar_t *r_textureBits;
 cvar_t *r_stencilBits;
 cvar_t *r_textureDetail;
-cvar_t *r_textureFiltering;
 cvar_t *r_drawBuffer;
 cvar_t *r_customWidth;
 cvar_t *r_customHeight;
 cvar_t *r_mappedBuffers;
 cvar_t *r_glDiagnostics;
+cvar_t *r_colorMipLevels;
 
 cvar_t *r_maxPolys;
 cvar_t *r_maxEntities;
@@ -166,6 +166,7 @@ cvar_t *r_arb_framebuffer_object;
 cvar_t *r_arb_vertex_array_object;
 cvar_t *r_arb_vertex_buffer_object;
 cvar_t *r_arb_texture_filter_anisotropic;
+cvar_t *r_arb_texture_max_anisotropy;
 cvar_t *r_arb_texture_float;
 cvar_t *r_arb_sync;
 
@@ -793,7 +794,10 @@ static void R_Register( void )
     ri.Cvar_CheckRange( r_arb_sync, "0", "1", CVT_INT );
 
     r_arb_texture_filter_anisotropic = ri.Cvar_Get("r_arb_texture_filter_anisotropic", "1", CVAR_SAVE | CVAR_LATCH);
-    ri.Cvar_SetDescription(r_arb_texture_filter_anisotropic, "Enabled anisotropic filtering.");
+    ri.Cvar_SetDescription( r_arb_texture_filter_anisotropic, "Enabled anisotropic filtering." );
+    r_arb_texture_max_anisotropy = ri.Cvar_Get( "r_arb_texture_max_anisotropy", "8", CVAR_SAVE | CVAR_LATCH );
+    ri.Cvar_SetDescription( r_arb_texture_max_anisotropy, "Sets maximum anisotropic level for your graphics driver. Requires \\r_arb_texture_filter_anisotropic 1." );
+
     r_arb_texture_float = ri.Cvar_Get("r_arb_texture_float", "1", CVAR_SAVE | CVAR_LATCH);
     ri.Cvar_SetDescription(r_arb_texture_float, "Enables HDR framebuffer.");
 
@@ -889,7 +893,10 @@ static void R_Register( void )
 	r_baseGloss = ri.Cvar_Get( "r_baseGloss", "0.3", CVAR_SAVE | CVAR_LATCH );
 	r_glossType = ri.Cvar_Get("r_glossType", "1", CVAR_SAVE | CVAR_LATCH);
 	r_dlightMode = ri.Cvar_Get( "r_dlightMode", "0", CVAR_SAVE | CVAR_LATCH );
-	ri.Cvar_SetDescription( r_dlightMode, "Dynamic light mode:\n 0: VQ3 'fake' dynamic lights\n 1: High-quality per-pixel dynamic lights, slightly faster than VQ3's on modern hardware\n 2: Same as 1 but applies to all MD3 models too" );
+	ri.Cvar_SetDescription( r_dlightMode,
+                            "Dynamic light mode:\n"
+                            " 0: Software processed per-polygon dynamic lights\n"
+                            " 1: High quality per-pixel dynamic lighting done in a shader, slower than per-vertex lighting" );
 	r_pshadowDist = ri.Cvar_Get( "r_pshadowDist", "128", CVAR_SAVE );
 	r_mergeLightmaps = ri.Cvar_Get( "r_mergeLightmaps", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_mergeLightmaps, "Merge small lightmaps into 2 or fewer giant lightmaps." );
@@ -962,6 +969,8 @@ static void R_Register( void )
     r_picmip = ri.Cvar_Get("r_picmip", "0", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_CheckRange( r_picmip, "0", "16", CVT_INT );
 	ri.Cvar_SetDescription( r_picmip, "Set texture quality, lower is better." );
+    r_colorMipLevels = ri.Cvar_Get ("r_colorMipLevels", "0", CVAR_LATCH );
+	ri.Cvar_SetDescription( r_colorMipLevels, "Debugging tool to artificially color different mipmap levels so that they are more apparent." );
 	r_roundImagesDown = ri.Cvar_Get("r_roundImagesDown", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_roundImagesDown, "When images are scaled, round images down instead of up." );
 
@@ -975,18 +984,30 @@ static void R_Register( void )
 
     r_ignoreGLErrors = ri.Cvar_Get( "r_ignoreGLErrors", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_ignoreGLErrors, "Ignore OpenGL errors." );
-	r_fastsky = ri.Cvar_Get( "r_fastsky", "0", CVAR_SAVE );
-	ri.Cvar_SetDescription( r_fastsky, "Draw flat colored skies." );
-    r_drawSun = ri.Cvar_Get( "r_drawSun", "0", CVAR_SAVE );
-	ri.Cvar_SetDescription( r_drawSun, "Draw sun shader in skies." );
+//	r_fastsky = ri.Cvar_Get( "r_fastsky", "0", CVAR_SAVE );
+//	ri.Cvar_SetDescription( r_fastsky, "Draw flat colored skies." );
+//    r_drawSun = ri.Cvar_Get( "r_drawSun", "0", CVAR_SAVE );
+//	ri.Cvar_SetDescription( r_drawSun, "Draw sun shader in skies." );
     r_dynamiclight = ri.Cvar_Get( "r_dynamiclight", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_dynamiclight, "Enables dynamic lighting." );
 	r_dlightBacks = ri.Cvar_Get( "r_dlightBacks", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_dlightBacks, "Whether or not dynamic lights should light up back-face culled geometry." );
 	r_finish = ri.Cvar_Get( "r_finish", "0", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_finish, "Force a glFinish call after rendering a scene." );
-	r_textureMode = ri.Cvar_Get( "r_textureMode", "Trilinear", CVAR_SAVE );
-	ri.Cvar_SetDescription( r_textureMode, "Texture interpolation mode:\n GL_NEAREST: Nearest neighbor interpolation and will therefore appear similar to Quake II except with the added colored lighting\n GL_LINEAR: Linear interpolation and will appear to blend in objects that are closer than the resolution that the textures are set as\n GL_NEAREST_MIPMAP_NEAREST: Nearest neighbor interpolation with mipmapping for bilinear hardware, mipmapping will blend objects that are farther away than the resolution that they are set as\n GL_LINEAR_MIPMAP_NEAREST: Linear interpolation with mipmapping for bilinear hardware\n GL_NEAREST_MIPMAP_LINEAR: Nearest neighbor interpolation with mipmapping for trilinear hardware\n GL_LINEAR_MIPMAP_LINEAR: Linear interpolation with mipmapping for trilinear hardware" );
+	r_textureMode = ri.Cvar_Get( "r_textureMode", "Nearest", CVAR_SAVE );
+	ri.Cvar_SetDescription( r_textureMode,
+                            "Texture interpolation mode:\n"
+                            " Bilinear: Linear interpolation and will appear to blend in objects that are closer than the resolution that the textures are set as\n"
+                            " Nearest: Nearest neighbor interpolation and will cause the texture to look pixelated. Use for the most retro look and feel\n"
+                            " Linear Nearest: Linear magnification filter, Nearest minification filter\n"
+                            " Nearest Linear: Nearest magnification filter, Linear minification filter"
+//                            " GL_NEAREST: Nearest neighbor interpolation and will therefore appear similar to Quake II except with the added colored lighting\n"
+//                            " GL_LINEAR: Linear interpolation and will appear to blend in objects that are closer than the resolution that the textures are set as\n"
+//                            " GL_NEAREST_MIPMAP_NEAREST: Nearest neighbor interpolation with mipmapping for bilinear hardware, mipmapping will blend objects that are farther away than the resolution that they are set as\n"
+//                            " GL_LINEAR_MIPMAP_NEAREST: Linear interpolation with mipmapping for bilinear hardware\n"
+//                            " GL_NEAREST_MIPMAP_LINEAR: Nearest neighbor interpolation with mipmapping for trilinear hardware\n"
+//                            " GL_LINEAR_MIPMAP_LINEAR: Linear interpolation with mipmapping for trilinear hardware"
+    );
 	r_gammaAmount = ri.Cvar_Get( "r_gammaAmount", "1", CVAR_SAVE );
 	ri.Cvar_CheckRange( r_gammaAmount, "0.5", "3", CVT_FLOAT );
 	ri.Cvar_SetDescription( r_gammaAmount, "Gamma correction factor." );
@@ -1002,10 +1023,8 @@ static void R_Register( void )
     r_printShaders = ri.Cvar_Get( "r_printShaders", "0", 0 );
 	ri.Cvar_SetDescription( r_printShaders, "Debugging tool to print on console of the number of shaders used." );
 
-    r_textureDetail = ri.Cvar_Get("r_textureDetail", va("%i", TexDetail_Normie), CVAR_SAVE | CVAR_LATCH);
-    ri.Cvar_CheckRange(r_textureDetail, va("%i", TexDetail_MSDOS), va("%i", TexDetail_GPUvsGod), CVT_INT);
-    r_textureFiltering = ri.Cvar_Get("r_textureFiltering", va("%i", TexFilter_Trilinear), CVAR_SAVE | CVAR_LATCH);
-    ri.Cvar_CheckRange(r_textureFiltering, va("%i", TexFilter_Linear), va("%i", TexFilter_Trilinear), CVT_INT);
+    r_textureDetail = ri.Cvar_Get( "r_textureDetail", va( "%i", TexDetail_Normie ), CVAR_SAVE | CVAR_LATCH );
+    ri.Cvar_CheckRange(r_textureDetail, va( "%i", TexDetail_MSDOS ), va( "%i", TexDetail_GPUvsGod ), CVT_INT );
 
     r_speeds = ri.Cvar_Get("r_speeds", "0", CVAR_SAVE | CVAR_LATCH);
 	ri.Cvar_SetDescription( r_speeds,
@@ -1257,6 +1276,7 @@ static void R_InitImGui(void)
 static void R_AllocBackend( void ) {
     uint64_t size;
     uint64_t polyVertBytes;
+    uint64_t vertBytes;
     uint64_t polyBytes;
     uint64_t indexBytes;
     uint64_t dlightBytes;
@@ -1266,6 +1286,7 @@ static void R_AllocBackend( void ) {
         ri.Cvar_Set( "r_maxPolys", va( "%i", MAX_BATCH_QUADS ) );
     }
 
+    vertBytes = PAD( sizeof( srfVert_t ) * r_maxPolys->i * 4, sizeof(uintptr_t) );
     polyVertBytes = PAD( sizeof(polyVert_t) * r_maxPolys->i * 4, sizeof(uintptr_t) );
     polyBytes = PAD( sizeof(srfPoly_t) * r_maxPolys->i, sizeof(uintptr_t) );
     indexBytes = PAD( sizeof(glIndex_t) * r_maxPolys->i * 6, sizeof(uintptr_t) );
@@ -1274,6 +1295,7 @@ static void R_AllocBackend( void ) {
 
     size = 0;
     size += PAD( sizeof(renderBackendData_t), sizeof(uintptr_t) );
+    size += PAD( sizeof(srfVert_t) * r_maxPolys->i * 4, sizeof(uintptr_t) );
     size += PAD( sizeof(polyVert_t) * r_maxPolys->i * 4, sizeof(uintptr_t) );
     size += PAD( sizeof(srfPoly_t) * r_maxPolys->i, sizeof(uintptr_t) );
     size += PAD( sizeof(glIndex_t) * r_maxPolys->i * 6, sizeof(uintptr_t) );
@@ -1281,7 +1303,8 @@ static void R_AllocBackend( void ) {
     size += PAD( sizeof(dlight_t) * r_maxDLights->i, sizeof(uintptr_t) );
 
     backendData = (renderBackendData_t *)ri.Malloc( size );
-    backendData->polyVerts = (polyVert_t *)( backendData + 1 );
+    backendData->verts = (srfVert_t *)( backendData + 1 );
+    backendData->polyVerts = (polyVert_t *)( backendData->verts + r_maxPolys->i * 4 );
     backendData->polys = (srfPoly_t *)( backendData->polyVerts + r_maxPolys->i * 4 );
     backendData->indices = (glIndex_t *)( backendData->polys + r_maxPolys->i * 6 );
     backendData->entities = (renderEntityDef_t *)( backendData->indices + r_maxPolys->i * 6 );
@@ -1290,6 +1313,7 @@ static void R_AllocBackend( void ) {
     ri.Printf( PRINT_DEVELOPER,
         COLOR_CYAN "---------- Renderer Backend Allocation Info ----------\n"
         COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated to renderer backend\n"
+        COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated for vertices\n" 
         COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated for polygon vertices\n"
         COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated for polygons\n"
         COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated for polygon indices\n"
@@ -1297,6 +1321,7 @@ static void R_AllocBackend( void ) {
         COLOR_CYAN "%-10lu Bytes : %-8.04lf KiB : %-4.04lf MiB allocated for dynamic lights\n"
         COLOR_CYAN "--------------------\n"
     , size, ( (double)size / 1024 ), ( (double)size / 1024 / 1024 ),
+    vertBytes, ( (double)vertBytes / 1024 ), ( (double)vertBytes / 1024 / 1024 ),
     polyVertBytes, ( (double)polyVertBytes / 1024 ), ( (double)polyVertBytes / 1024 / 1024 ),
     polyBytes, ( (double)polyBytes / 1024 ), ( (double)polyBytes / 1024 / 1024 ),
     indexBytes, ( (double)indexBytes / 1024 ), ( (double)indexBytes / 1024 / 1024 ),
@@ -1336,17 +1361,17 @@ static void R_InitSamplers( void )
 {
     nglGenSamplers( MAX_TEXTURE_UNITS, rg.samplers );
 
-    nglSamplerParameteri( rg.samplers[TexFilter_Linear], GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-    nglSamplerParameteri( rg.samplers[TexFilter_Linear], GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+    nglSamplerParameteri( rg.samplers[TexFilter_Bilinear], GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    nglSamplerParameteri( rg.samplers[TexFilter_Bilinear], GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 
     nglSamplerParameteri( rg.samplers[TexFilter_Nearest], GL_TEXTURE_MIN_FILTER, GL_NEAREST );
     nglSamplerParameteri( rg.samplers[TexFilter_Nearest], GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 
-    nglSamplerParameteri( rg.samplers[TexFilter_Bilinear], GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-    nglSamplerParameteri( rg.samplers[TexFilter_Bilinear], GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+    nglSamplerParameteri( rg.samplers[TexFilter_LinearNearest], GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+    nglSamplerParameteri( rg.samplers[TexFilter_LinearNearest], GL_TEXTURE_MAG_FILTER, GL_NEAREST );
 
-    nglSamplerParameteri( rg.samplers[TexFilter_Nearest], GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-    nglSamplerParameteri( rg.samplers[TexFilter_Nearest], GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+    nglSamplerParameteri( rg.samplers[TexFilter_NearestLinear], GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+    nglSamplerParameteri( rg.samplers[TexFilter_NearestLinear], GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 }
 
 void R_Init(void)
@@ -1488,7 +1513,7 @@ Touch all images to make sure they are resident (probably obsolete on modern sys
 */
 void RE_EndRegistration(void) {
     R_IssuePendingRenderCommands();
-    RB_ShowImages();
+//    RB_ShowImages(); // not doing it here
 }
 
 void RE_GetConfig(gpuConfig_t *config) {

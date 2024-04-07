@@ -396,8 +396,8 @@ void Menu_Cache( void )
     ui->rb_off = re.RegisterShader( "gfx/rb_off" );
 
     ui->whiteShader = re.RegisterShader( "white" );
-    ui->menubackShader = re.RegisterShader( "menuback" );
 }
+
 /*
 =================
 UI_Refresh
@@ -423,6 +423,25 @@ extern "C" void UI_ShowDemoMenu( void )
 	ui->SetActiveMenu( UI_MENU_DEMO );
 }
 
+extern "C" void UI_DrawMenuBackground( void )
+{
+	refdef_t refdef;
+
+	memset( &refdef, 0, sizeof( refdef ) );
+	refdef.x = 0;
+	refdef.y = 0;
+	refdef.width = ui->GetConfig().vidWidth;
+	refdef.height = ui->GetConfig().vidHeight;
+	refdef.flags = RSF_NOWORLDMODEL | RSF_ORTHO_TYPE_SCREENSPACE;
+
+	//
+	// draw the background
+	//
+    re.ClearScene();
+    re.DrawImage( 0, 0, refdef.width, refdef.height, 0, 0, 1, 1, ui->menu_background );
+    re.RenderScene( &refdef );
+}
+
 extern "C" void UI_Refresh( int32_t realtime )
 {
 	ui->SetFrameTime( realtime - ui->GetRealTime() );
@@ -446,7 +465,7 @@ extern "C" void UI_Refresh( int32_t realtime )
 
 	if ( ui->GetCurrentMenu() ) {
 		if (ui->GetCurrentMenu()->fullscreen) {
-            ui->DrawHandlePic( 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, ui->menubackShader );
+			UI_DrawMenuBackground();
 		}
 
 		if (ui->GetCurrentMenu()->Draw) {

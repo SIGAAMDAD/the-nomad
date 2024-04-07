@@ -1,8 +1,6 @@
 #include "ui_lib.h"
 #include "../game/g_archive.h"
 
-#define MAIN_MENU_BACKGROUND "menuback"
-
 class CToggleKey
 {
 public:
@@ -119,7 +117,7 @@ void MainMenu_Draw( void )
         return;
     }
 
-    if ( menu.noMenu ) {
+    if ( menu.noMenu || Key_GetCatcher() & KEYCATCH_CONSOLE ) {
         return; // just the scenery & the music (a bit like Halo 3: ODST, check out halome.nu)...
     }
 
@@ -267,6 +265,7 @@ void MainMenu_Cache( void )
     RobotoMono = FontCache()->AddFontToCache( "RobotoMono", "Bold" );
 
     menu.noMenu = qfalse;
+    menu.handle.fullscreen = qtrue;
     menu.menuHeight = ui->GetConfig().vidHeight;
     menu.menuWidth = ui->GetConfig().vidWidth;
     ui->SetState( STATE_MAIN );

@@ -290,7 +290,7 @@ void RE_BeginFrame(stereoFrame_t stereoFrame)
     //
     // texture filtering
     //
-    if ( r_textureFiltering->modified ) {
+    if ( r_textureMode->modified ) {
         R_IssuePendingRenderCommands();
         R_UpdateTextures();
     }

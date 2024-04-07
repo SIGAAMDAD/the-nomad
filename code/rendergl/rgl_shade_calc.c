@@ -52,7 +52,7 @@ static float *TableForFunc( genFunc_t func )
 /*
 ** EvalWaveForm
 **
-** Evaluates a given waveForm_t, referencing backEnd.refdef.time directly
+** Evaluates a given waveForm_t, referencing backend.refdef.time directly
 */
 static float EvalWaveForm( const waveForm_t *wf ) 
 {
@@ -199,33 +199,36 @@ RB_CalcBulgeVertexes
 
 ========================
 */
-/*
 static void RB_CalcBulgeVertexes( deformStage_t *ds ) {
 	int i;
-	const float *st = ( const float * ) tess.texCoords[0];
-	float		*xyz = ( float * ) tess.xyz;
-	int16_t	*normal = tess.normal[0];
+	uint32_t st;
+	uint32_t xyz;
+	uint32_t normal;
 	float now;
+	polyVert_t *vtx = (polyVert_t *)backend.drawBuffer->vertex.data;
 
-	now = backEnd.refdef.time * ds->bulgeSpeed * 0.001;
+	now = backend.refdef.time * ds->bulgeSpeed * 0.001;
 
-	for ( i = 0; i < backend.drawBatch.vtxOffset; i++, xyz += 4, st += 2, normal += 4 ) {
+	for ( i = 0; i < backend.drawBatch.vtxOffset; i++, xyz++, st++, normal++ ) {
 		int64_t off;
 		float scale;
 		vec3_t fNormal;
 
-		R_VaoUnpackNormal(fNormal, normal);
+	#if 0
+		R_VaoUnpackNormal(fNormal, vtx[normal].normal);
+	#else
+		VectorSet( fNormal, 1.0f, 1.0f, 1.0f );
+	#endif
 
-		off = (float)( FUNCTABLE_SIZE / (M_PI*2) ) * ( st[0] * ds->bulgeWidth + now );
+		off = (float)( FUNCTABLE_SIZE / (M_PI*2) ) * ( vtx[st].uv[0] * ds->bulgeWidth + now );
 
 		scale = rg.sinTable[ off & FUNCTABLE_MASK ] * ds->bulgeHeight;
 			
-		xyz[0] += fNormal[0] * scale;
-		xyz[1] += fNormal[1] * scale;
-		xyz[2] += fNormal[2] * scale;
+		vtx[xyz].xyz[0] += fNormal[0] * scale;
+		vtx[xyz].xyz[1] += fNormal[1] * scale;
+		vtx[xyz].xyz[2] += fNormal[2] * scale;
 	}
 }
-*/
 
 
 /*
@@ -345,9 +348,9 @@ GlobalVectorToLocal
 ==================
 */
 static void GlobalVectorToLocal( const vec3_t in, vec3_t out ) {
-//	out[0] = DotProduct( in, backEnd.or.axis[0] );
-//	out[1] = DotProduct( in, backEnd.or.axis[1] );
-//	out[2] = DotProduct( in, backEnd.or.axis[2] );
+//	out[0] = DotProduct( in, backend.or.axis[0] );
+//	out[1] = DotProduct( in, backend.or.axis[1] );
+//	out[2] = DotProduct( in, backend.or.axis[2] );
 }
 
 /*
@@ -380,12 +383,12 @@ static void AutospriteDeform( void ) {
 	tess.numIndexes = 0;
 	tess.firstIndex = 0;
 
-	if ( backEnd.currentEntity != &rg.worldEntity ) {
-		GlobalVectorToLocal( backEnd.viewParms.or.axis[1], leftDir );
-		GlobalVectorToLocal( backEnd.viewParms.or.axis[2], upDir );
+	if ( backend.currentEntity != &rg.worldEntity ) {
+//		GlobalVectorToLocal( backend.viewParms.or.axis[1], leftDir );
+//		GlobalVectorToLocal( backend.viewParms.or.axis[2], upDir );
 	} else {
-		VectorCopy( backEnd.viewParms.or.axis[1], leftDir );
-		VectorCopy( backEnd.viewParms.or.axis[2], upDir );
+//		VectorCopy( backend.viewParms.or.axis[1], leftDir );
+//		VectorCopy( backend.viewParms.or.axis[2], upDir );
 	}
 
 	for ( i = 0 ; i < oldVerts ; i+=4 ) {
@@ -403,14 +406,14 @@ static void AutospriteDeform( void ) {
 		VectorScale( leftDir, radius, left );
 		VectorScale( upDir, radius, up );
 
-		if ( backEnd.viewParms.isMirror ) {
+		if ( backend.viewParms.isMirror ) {
 			VectorSubtract( vec3_origin, left, left );
 		}
 
 	  // compensate for scale in the axes if necessary
-  	if ( backEnd.currentEntity->e.nonNormalizedAxes ) {
+  	if ( backend.currentEntity->e.nonNormalizedAxes ) {
       float axisLength;
-		  axisLength = VectorLength( backEnd.currentEntity->e.axis[0] );
+		  axisLength = VectorLength( backend.currentEntity->e.axis[0] );
   		if ( !axisLength ) {
 	  		axisLength = 0;
   		} else {
@@ -442,24 +445,23 @@ static const unsigned int edgeVerts[6][2] = {
 	{ 2, 3 }
 };
 
-/*
 static void Autosprite2Deform( void ) {
 	int		i, j, k;
 	int		indexes;
-	float	*xyz;
+	polyVert_t	*xyz;
 	vec3_t	forward;
 
 	if ( backend.drawBatch.vtxOffset & 3 ) {
-		ri.Printf( PRINT_WARNING, "Autosprite2 shader %s had odd vertex count\n", tess.shader->name );
+		ri.Printf( PRINT_WARNING, "Autosprite2 shader %s had odd vertex count\n", backend.drawBatch.shader->name );
 	}
-	if ( tess.numIndexes != ( backend.drawBatch.vtxOffset >> 2 ) * 6 ) {
-		ri.Printf( PRINT_WARNING, "Autosprite2 shader %s had odd index count\n", tess.shader->name );
+	if ( backend.drawBatch.idxOffset != ( backend.drawBatch.vtxOffset >> 2 ) * 6 ) {
+		ri.Printf( PRINT_WARNING, "Autosprite2 shader %s had odd index count\n", backend.drawBatch.shader->name );
 	}
 
-	if ( backEnd.currentEntity != &rg.worldEntity ) {
-		GlobalVectorToLocal( backEnd.viewParms.or.axis[0], forward );
+	if ( backend.currentEntity != &rg.worldEntity ) {
+//		GlobalVectorToLocal( .or.axis[0], forward );
 	} else {
-		VectorCopy( backEnd.viewParms.or.axis[0], forward );
+//		VectorCopy( backend.viewParms.or.axis[0], forward );
 	}
 
 	// this is a lot of work for two triangles...
@@ -470,10 +472,11 @@ static void Autosprite2Deform( void ) {
 		int		nums[2];
 		vec3_t	mid[2];
 		vec3_t	major, minor;
-		float	*v1, *v2;
+		polyVert_t	*v1, *v2;
 
 		// find the midpoint
-		xyz = tess.xyz[i];
+		ri.Error( ERR_FATAL, "%s: called", __func__ );
+		xyz = &( (polyVert_t *)backend.drawBuffer->vertex.data )[i];
 
 		// identify the two shortest edges
 		nums[0] = nums[1] = 0;
@@ -486,7 +489,7 @@ static void Autosprite2Deform( void ) {
 			v1 = xyz + 4 * edgeVerts[j][0];
 			v2 = xyz + 4 * edgeVerts[j][1];
 
-			VectorSubtract( v1, v2, temp );
+			VectorSubtract( v1->xyz, v2->xyz, temp );
 			
 			l = DotProduct( temp, temp );
 			if ( l < lengths[0] ) {
@@ -504,9 +507,9 @@ static void Autosprite2Deform( void ) {
 			v1 = xyz + 4 * edgeVerts[nums[j]][0];
 			v2 = xyz + 4 * edgeVerts[nums[j]][1];
 
-			mid[j][0] = 0.5f * (v1[0] + v2[0]);
-			mid[j][1] = 0.5f * (v1[1] + v2[1]);
-			mid[j][2] = 0.5f * (v1[2] + v2[2]);
+			mid[j][0] = 0.5f * (v1->xyz[0] + v2->xyz[0]);
+			mid[j][1] = 0.5f * (v1->xyz[1] + v2->xyz[1]);
+			mid[j][2] = 0.5f * (v1->xyz[2] + v2->xyz[2]);
 		}
 
 		// find the vector of the major axis
@@ -528,23 +531,22 @@ static void Autosprite2Deform( void ) {
 			// we need to see which direction this edge
 			// is used to determine direction of projection
 			for ( k = 0 ; k < 5 ; k++ ) {
-				if ( tess.indexes[ indexes + k ] == i + edgeVerts[nums[j]][0]
-					&& tess.indexes[ indexes + k + 1 ] == i + edgeVerts[nums[j]][1] ) {
+				if ( ( (uint32_t *)backend.drawBuffer->index.data )[ indexes + k ] == i + edgeVerts[nums[j]][0]
+					&& ( (uint32_t *)backend.drawBuffer->index.data )[ indexes + k + 1 ] == i + edgeVerts[nums[j]][1] ) {
 					break;
 				}
 			}
 
 			if ( k == 5 ) {
-				VectorMA( mid[j], l, minor, v1 );
-				VectorMA( mid[j], -l, minor, v2 );
+				VectorMA( mid[j], l, minor, v1->xyz );
+				VectorMA( mid[j], -l, minor, v2->xyz );
 			} else {
-				VectorMA( mid[j], -l, minor, v1 );
-				VectorMA( mid[j], l, minor, v2 );
+				VectorMA( mid[j], -l, minor, v1->xyz );
+				VectorMA( mid[j], l, minor, v2->xyz );
 			}
 		}
 	}
 }
-*/
 
 /*
 =====================
@@ -552,25 +554,24 @@ RB_DeformTessGeometry
 
 =====================
 */
-/*
 void RB_DeformTessGeometry( void ) {
 	int		i;
 	deformStage_t	*ds;
 
-	if(!ShaderRequiresCPUDeforms(tess.shader))
+	if(!ShaderRequiresCPUDeforms(backend.drawBatch.shader))
 	{
 		// we don't need the following CPU deforms
 		return;
 	}
 
-	for ( i = 0 ; i < tess.shader->numDeforms ; i++ ) {
-		ds = &tess.shader->deforms[ i ];
+	for ( i = 0 ; i < backend.drawBatch.shader->numDeforms ; i++ ) {
+		ds = &backend.drawBatch.shader->deforms[ i ];
 
 		switch ( ds->deformation ) {
         case DEFORM_NONE:
             break;
 		case DEFORM_NORMALS:
-			RB_CalcDeformNormals( ds );
+//			RB_CalcDeformNormals( ds );
 			break;
 		case DEFORM_WAVE:
 			RB_CalcDeformVertexes( ds );
@@ -582,10 +583,10 @@ void RB_DeformTessGeometry( void ) {
 			RB_CalcMoveVertexes( ds );
 			break;
 		case DEFORM_PROJECTION_SHADOW:
-			RB_ProjectionShadowDeform();
+//			RB_ProjectionShadowDeform();
 			break;
 		case DEFORM_AUTOSPRITE:
-			AutospriteDeform();
+//			AutospriteDeform();
 			break;
 		case DEFORM_AUTOSPRITE2:
 			Autosprite2Deform();
@@ -598,12 +599,12 @@ void RB_DeformTessGeometry( void ) {
 		case DEFORM_TEXT5:
 		case DEFORM_TEXT6:
 		case DEFORM_TEXT7:
-			DeformText( backEnd.refdef.text[ds->deformation - DEFORM_TEXT0] );
+			ri.Error( ERR_FATAL, "Deform text not supported yet!" );
+//			DeformText( backend.refdef.text[ds->deformation - DEFORM_TEXT0] );
 			break;
 		}
 	}
 }
-*/
 
 /*
 ====================================================================
@@ -699,11 +700,11 @@ void RB_CalcFogTexCoords( float *st ) {
 	fog = rg.world->fogs + tess.fogNum;
 
 	// all fogging distance is based on world Z units
-	VectorSubtract( backEnd.or.origin, backEnd.viewParms.or.origin, local );
-	fogDistanceVector[0] = -backEnd.or.modelMatrix[2];
-	fogDistanceVector[1] = -backEnd.or.modelMatrix[6];
-	fogDistanceVector[2] = -backEnd.or.modelMatrix[10];
-	fogDistanceVector[3] = DotProduct( local, backEnd.viewParms.or.axis[0] );
+	VectorSubtract( backend.or.origin, backend.viewParms.or.origin, local );
+	fogDistanceVector[0] = -backend.or.modelMatrix[2];
+	fogDistanceVector[1] = -backend.or.modelMatrix[6];
+	fogDistanceVector[2] = -backend.or.modelMatrix[10];
+	fogDistanceVector[3] = DotProduct( local, backend.viewParms.or.axis[0] );
 
 	// scale the fog vectors based on the fog's thickness
 	fogDistanceVector[0] *= fog->tcScale;
@@ -713,15 +714,15 @@ void RB_CalcFogTexCoords( float *st ) {
 
 	// rotate the gradient vector for this orientation
 	if ( fog->hasSurface ) {
-		fogDepthVector[0] = fog->surface[0] * backEnd.or.axis[0][0] + 
-			fog->surface[1] * backEnd.or.axis[0][1] + fog->surface[2] * backEnd.or.axis[0][2];
-		fogDepthVector[1] = fog->surface[0] * backEnd.or.axis[1][0] + 
-			fog->surface[1] * backEnd.or.axis[1][1] + fog->surface[2] * backEnd.or.axis[1][2];
-		fogDepthVector[2] = fog->surface[0] * backEnd.or.axis[2][0] + 
-			fog->surface[1] * backEnd.or.axis[2][1] + fog->surface[2] * backEnd.or.axis[2][2];
-		fogDepthVector[3] = -fog->surface[3] + DotProduct( backEnd.or.origin, fog->surface );
+		fogDepthVector[0] = fog->surface[0] * backend.or.axis[0][0] + 
+			fog->surface[1] * backend.or.axis[0][1] + fog->surface[2] * backend.or.axis[0][2];
+		fogDepthVector[1] = fog->surface[0] * backend.or.axis[1][0] + 
+			fog->surface[1] * backend.or.axis[1][1] + fog->surface[2] * backend.or.axis[1][2];
+		fogDepthVector[2] = fog->surface[0] * backend.or.axis[2][0] + 
+			fog->surface[1] * backend.or.axis[2][1] + fog->surface[2] * backend.or.axis[2][2];
+		fogDepthVector[3] = -fog->surface[3] + DotProduct( backend.or.origin, fog->surface );
 
-		eyeT = DotProduct( backEnd.or.viewOrigin, fogDepthVector ) + fogDepthVector[3];
+		eyeT = DotProduct( backend.or.viewOrigin, fogDepthVector ) + fogDepthVector[3];
 	} else {
 		eyeT = 1;	// non-surface fog always has eye inside
 	}

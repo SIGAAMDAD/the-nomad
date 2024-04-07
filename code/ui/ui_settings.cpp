@@ -168,6 +168,22 @@ typedef struct {
     const vidmode_t *mode;
 } vidmodeSetting_t;
 
+static const char *textureFilters[] = {
+    "Bilinear",
+    "Nearest",
+    "LinearNearest",
+    "NearestLinear"
+};
+
+static textureFilter_t TexFilterInt( const char *str ) {
+    for ( int i = 0; i < arraylen( textureFilters ); i++ ) {
+        if ( !N_stricmp( textureFilters[i], str ) ) {
+            return (textureFilter_t)i;
+        }
+    }
+    return NumTexFilters;
+}
+
 static const char *vidmodeSettings[NUMVIDMODES+2] = {
     { "Native Resolution (%ix%i)",  }, //NULL },
     { "Custom Resolution (%ix%i)",  }, //NULL },
@@ -268,22 +284,6 @@ const char *TexDetailString( textureDetail_t detail )
     };
     N_Error( ERR_FATAL, "Invalid texture detail %i", (int)detail );
 
-    // silence compiler warning
-    return NULL;
-}
-
-const char *TexFilterString( textureFilter_t filter )
-{
-    switch (filter) {
-    case TexFilter_Linear: return "Linear";
-    case TexFilter_Nearest: return "Nearest";
-    case TexFilter_Bilinear: return "Bilinear";
-    case TexFilter_Trilinear: return "Trilinear";
-    default:
-        break;
-    };
-    N_Error( ERR_FATAL, "Invalid texture filter %i", (int)filter );
-    
     // silence compiler warning
     return NULL;
 }
@@ -558,9 +558,10 @@ static void SettingsMenu_SetDefault( void )
     settings->gfx.customWidth = Cvar_VariableInteger( "r_customWidth" );
     settings->gfx.customHeight = Cvar_VariableInteger( "r_customHeight" );
     settings->gfx.texdetail = (textureDetail_t)Cvar_VariableInteger( "r_textureDetail" );
-    settings->gfx.texfilter = (textureFilter_t)Cvar_VariableInteger( "r_textureFiltering" );
     settings->gfx.texdetailString = TexDetailString( settings->gfx.texdetail );
-    settings->gfx.texfilterString = TexFilterString( settings->gfx.texfilter );
+    settings->gfx.texfilterString = Cvar_VariableString( "r_textureMode" );
+    settings->gfx.texfilter = TexFilterInt( settings->gfx.texfilterString );
+
     settings->gfx.videoMode = Cvar_VariableInteger( "r_mode" );
     settings->gfx.fullscreen = Cvar_VariableInteger( "r_fullscreen" );
     settings->gfx.multisamplingIndex = Cvar_VariableInteger( "r_multisampleType" );
@@ -1137,14 +1138,14 @@ static void SettingsMenuGraphics_Draw( void )
 
         if ( ImGui::ArrowButton( "##TextureFilteringLeft", ImGuiDir_Left ) ) {
             switch ( settings->gfx.texfilter ) {
-            case TexFilter_Linear:
-                settings->gfx.texfilter = TexFilter_Trilinear;
+            case TexFilter_Bilinear:
+                settings->gfx.texfilter = TexFilter_NearestLinear;;
                 break;
             default:
                 settings->gfx.texfilter = (textureFilter_t)( (unsigned)settings->gfx.texfilter - 1 );
                 break;
             };
-            settings->gfx.texfilterString = TexFilterString( settings->gfx.texfilter );
+            settings->gfx.texfilterString = textureFilters[ (uint32_t)settings->gfx.texfilter ];
             settings->presetIndex = -1;
             ui->PlaySelected();
         }
@@ -1153,14 +1154,14 @@ static void SettingsMenuGraphics_Draw( void )
         ImGui::SameLine();
         if ( ImGui::ArrowButton( "##TextureFilteringRight", ImGuiDir_Right ) ) {
             switch ( settings->gfx.texfilter ) {
-            case TexFilter_Trilinear:
-                settings->gfx.texfilter = TexFilter_Linear;
+            case TexFilter_NearestLinear:
+                settings->gfx.texfilter = TexFilter_Bilinear;
                 break;
             default:
                 settings->gfx.texfilter = (textureFilter_t)( (unsigned)settings->gfx.texfilter + 1 );
                 break;
             };
-            settings->gfx.texfilterString = TexFilterString( settings->gfx.texfilter );
+            settings->gfx.texfilterString = textureFilters[ (uint32_t)settings->gfx.texfilter ];
             settings->presetIndex = -1;
             ui->PlaySelected();
         }
@@ -1803,7 +1804,7 @@ static void SettingsMenu_InitPresets( void )
     p[PRESET_LOW_QUALITY].lighting = LIGHTING_STATIC;
     p[PRESET_LOW_QUALITY].multisamplingIndex = AntiAlias_2xMSAA;
     p[PRESET_LOW_QUALITY].texdetailString = TexDetailString( p[PRESET_LOW_QUALITY].texdetail );
-    p[PRESET_LOW_QUALITY].texfilterString = TexFilterString( p[PRESET_LOW_QUALITY].texfilter );
+    p[PRESET_LOW_QUALITY].texfilterString = textureFilters[ (uint32_t)p[PRESET_LOW_QUALITY].texfilter ];
 
     p[PRESET_NORMAL_QUALITY].texdetail = TexDetail_Normie;
     p[PRESET_NORMAL_QUALITY].texfilter = TexFilter_Nearest;
@@ -1817,7 +1818,7 @@ static void SettingsMenu_InitPresets( void )
     p[PRESET_NORMAL_QUALITY].lighting = LIGHTING_STATIC;
     p[PRESET_NORMAL_QUALITY].multisamplingIndex = AntiAlias_8xMSAA;
     p[PRESET_NORMAL_QUALITY].texdetailString = TexDetailString( p[PRESET_NORMAL_QUALITY].texdetail );
-    p[PRESET_NORMAL_QUALITY].texfilterString = TexFilterString( p[PRESET_NORMAL_QUALITY].texfilter );
+    p[PRESET_NORMAL_QUALITY].texfilterString = textureFilters[ (uint32_t)p[PRESET_NORMAL_QUALITY].texfilter ];
 
     p[PRESET_HIGH_QUALITY].texdetail = TexDetail_ExpensiveShitWeveGotHere;
     p[PRESET_HIGH_QUALITY].texfilter = TexFilter_Nearest;
@@ -1831,7 +1832,7 @@ static void SettingsMenu_InitPresets( void )
     p[PRESET_HIGH_QUALITY].lighting = LIGHTING_DYNAMIC;
     p[PRESET_HIGH_QUALITY].multisamplingIndex = AntiAlias_16xMSAA;
     p[PRESET_HIGH_QUALITY].texdetailString = TexDetailString( p[PRESET_HIGH_QUALITY].texdetail );
-    p[PRESET_HIGH_QUALITY].texfilterString = TexFilterString( p[PRESET_HIGH_QUALITY].texfilter );
+    p[PRESET_HIGH_QUALITY].texfilterString = textureFilters[ (uint32_t)p[PRESET_HIGH_QUALITY].texfilter ];
 
     p[PRESET_PERFORMANCE].texdetail = TexDetail_IntegratedGPU;
     p[PRESET_PERFORMANCE].texfilter = TexFilter_Nearest;
@@ -1845,7 +1846,7 @@ static void SettingsMenu_InitPresets( void )
     p[PRESET_PERFORMANCE].lighting = LIGHTING_STATIC;
     p[PRESET_PERFORMANCE].multisamplingIndex = -1;
     p[PRESET_PERFORMANCE].texdetailString = TexDetailString( p[PRESET_PERFORMANCE].texdetail );
-    p[PRESET_PERFORMANCE].texfilterString = TexFilterString( p[PRESET_PERFORMANCE].texfilter );
+    p[PRESET_PERFORMANCE].texfilterString = textureFilters[ (uint32_t)p[PRESET_PERFORMANCE].texfilter ];
 
     p[PRESET_ULTRA_HIGH_QUALITY].texdetail = TexDetail_GPUvsGod;
     p[PRESET_ULTRA_HIGH_QUALITY].texfilter = TexFilter_Nearest;
@@ -1859,7 +1860,7 @@ static void SettingsMenu_InitPresets( void )
     p[PRESET_ULTRA_HIGH_QUALITY].lighting = LIGHTING_DYNAMIC;
     p[PRESET_ULTRA_HIGH_QUALITY].multisamplingIndex = AntiAlias_32xMSAA;
     p[PRESET_ULTRA_HIGH_QUALITY].texdetailString = TexDetailString( p[PRESET_ULTRA_HIGH_QUALITY].texdetail );
-    p[PRESET_ULTRA_HIGH_QUALITY].texfilterString = TexFilterString( p[PRESET_ULTRA_HIGH_QUALITY].texfilter );
+    p[PRESET_ULTRA_HIGH_QUALITY].texfilterString = textureFilters[ (uint32_t)p[PRESET_ULTRA_HIGH_QUALITY].texfilter ];
 }
 
 void SettingsMenu_Cache( void ) {

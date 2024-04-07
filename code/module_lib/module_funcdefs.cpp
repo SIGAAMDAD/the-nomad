@@ -946,11 +946,11 @@ DEFINE_CALLBACK( RenderScene ) {
     re.RenderScene( &refdef );
 }
 
-static void AddEntityToScene( nhandle_t hShader, const vec3 *origin, uint32_t flags ) {
+static void AddEntityToScene( nhandle_t sheetNum, const vec3 *origin, uint32_t flags ) {
     refEntity_t refEntity;
 
     memset( &refEntity, 0, sizeof( refEntity ) );
-    refEntity.hShader = hShader;
+    refEntity.sheetNum = sheetNum;
     VectorCopy( refEntity.origin, *origin );
     refEntity.flags = flags;
 

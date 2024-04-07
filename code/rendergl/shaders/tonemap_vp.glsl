@@ -1,5 +1,5 @@
 in vec3 a_Position;
-in vec4 a_TexCoord0;
+in vec4 a_LightCoords;
 
 uniform mat4 u_ModelViewProjection;
 uniform vec3 u_ToneMinAvgMaxLinear;
@@ -21,6 +21,6 @@ float FilmicTonemap(float x)
 
 void main() {
 	gl_Position = u_ModelViewProjection * vec4(a_Position, 1.0);
-	v_TexCoords = a_TexCoord0.st;
+	v_TexCoords = a_LightCoords.st;
 	v_InvWhite = 1.0 / FilmicTonemap(u_ToneMinAvgMaxLinear.z - u_ToneMinAvgMaxLinear.x);
 }

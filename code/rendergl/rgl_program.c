@@ -18,6 +18,10 @@ extern const char *fallbackShader_calclevels4x_vp;
 extern const char *fallbackShader_calclevels4x_fp;
 extern const char *fallbackShader_tonemap_vp;
 extern const char *fallbackShader_tonemap_fp;
+extern const char *fallbackShader_lightall_vp;
+extern const char *fallbackShader_lightall_fp;
+extern const char *fallbackShader_texturecolor_vp;
+extern const char *fallbackShader_texturecolor_fp;
 
 #define GLSL_VERSION_ATLEAST(major,minor) (glContext.glslVersionMajor > (major) || (glContext.versionMajor == (major) && glContext.glslVersionMinor >= minor))
 
@@ -414,6 +418,8 @@ static void GLSL_ShowProgramUniforms(GLuint program)
 
 static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *dest, uint64_t size)
 {
+    float fbufWidthScale, fbufHeightScale;
+
     dest[0] = '\0';
 
     // OpenGL version from 3.3 and up have corresponding glsl versions
@@ -448,26 +454,6 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
 
     N_strcat(dest, size, "#ifndef M_PI\n#define M_PI 3.14159265358979323846\n#endif\n");
 
-    N_strcat( dest, size, "#define USE_TCGEN\n" );
-    N_strcat( dest, size, "#define USE_LIGHT\n" );
-
-    if ( r_pbr->i ) {
-        N_strcat( dest, size, "#define USE_PBR\n" );
-    }
-    if ( r_hdr->i ) {
-        N_strcat( dest, size, "#define USE_HDR\n" );
-    }
-    if ( r_specularMapping->i ) {
-        N_strcat( dest, size, "#define USE_SPECULARMAP\n" );
-    }
-    if ( r_normalMapping->i ) {
-        N_strcat( dest, size, "#define USE_NORMALMAP\n" );
-    }
-    if ( !( r_normalMapping->i || r_specularMapping->i ) ) {
-        N_strcat( dest, size, "#define USE_FAST_LIGHT\n" );
-    }
-
-    /*
     N_strcat(dest, size,
 					 va("#ifndef deformGen_t\n"
 						"#define deformGen_t\n"
@@ -485,7 +471,7 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
 						DGEN_WAVE_SAWTOOTH,
 						DGEN_WAVE_INVERSE_SAWTOOTH,
 						DGEN_BULGE,
-						DGEN_MOVE)); */
+						DGEN_MOVE));
 
 	N_strcat(dest, size,
 					 va("#ifndef tcGen_t\n"
@@ -517,6 +503,19 @@ static void GLSL_PrepareHeader(GLenum shaderType, const GLchar *extra, char *des
 								"#endif\n",
 								AGEN_LIGHTING_SPECULAR,
 								AGEN_PORTAL));
+
+    fbufWidthScale = 1.0f / ((float)glConfig.vidWidth);
+	fbufHeightScale = 1.0f / ((float)glConfig.vidHeight);
+	N_strcat(dest, size,
+			 va("#ifndef r_FBufScale\n#define r_FBufScale vec2(%f, %f)\n#endif\n", fbufWidthScale, fbufHeightScale));
+
+    if ( r_pbr->i ) {
+        N_strcat( dest, size, "#define USE_PBR\n" );
+    }
+
+    if ( extra ) {
+        N_strcat( dest, size, extra );
+    }
 
     // OK we added a lot of stuff but if we do something bad in the GLSL shaders then we want the proper line
 	// so we have to reset the line counting
@@ -562,11 +561,20 @@ static int GLSL_InitGPUShader2(shaderProgram_t *program, const char *name, uint3
         }
     }
 
+    if ( attribs & ATTRIB_NORMAL ) {
+        nglBindAttribLocation( program->programId, ATTRIB_INDEX_NORMAL, "a_Normal" );
+    }
     if ( attribs & ATTRIB_POSITION ) {
         nglBindAttribLocation( program->programId, ATTRIB_INDEX_POSITION, "a_Position" );
     }
+    if ( attribs & ATTRIB_TANGENT ) {
+        nglBindAttribLocation( program->programId, ATTRIB_INDEX_TANGENT, "a_Tangent" );
+    }
+    if ( attribs & ATTRIB_LIGHTCOORD ) {
+        nglBindAttribLocation( program->programId, ATTRIB_INDEX_LIGHTCOORD, "a_LightCoords" );
+    }
     if ( attribs & ATTRIB_TEXCOORD ) {
-        nglBindAttribLocation( program->programId, ATTRIB_INDEX_TEXCOORD, "a_TexCoord" );
+        nglBindAttribLocation( program->programId, ATTRIB_INDEX_TEXCOORD, "a_TexCoords" );
     }
     if ( attribs & ATTRIB_COLOR ) {
         nglBindAttribLocation( program->programId, ATTRIB_INDEX_COLOR, "a_Color" );
@@ -832,19 +840,12 @@ void GLSL_SetUniformMatrix4(shaderProgram_t *program, uint32_t uniformNum, const
     nglUniformMatrix4fv(uniforms[uniformNum], 1, GL_FALSE, &m[0][0]);
 }
 
-
-enum {
-    SHADER_BASIC,
-
-    NUM_SHADER_DEFS
-};
-
-void GLSL_InitGPUShaders(void)
+void GLSL_InitGPUShaders( void )
 {
     uint64_t start, end;
     uint64_t i;
     uint32_t attribs;
-    uint32_t numEtcShaders = 0, numGenShaders = 0;
+    uint32_t numEtcShaders = 0, numGenShaders = 0, numLightShaders = 0;
     char extradefines[MAX_STRING_CHARS];
 
     rg.numPrograms = 0;
@@ -855,29 +856,163 @@ void GLSL_InitGPUShaders(void)
 
     start = ri.Milliseconds();
 
-//    for ( i = 0; i < GENERICDEF_COUNT; i++ ) {
-//        attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_NORMAL | ATTRIB_COLOR;
-//    }
+    for ( i = 0; i < GENERICDEF_COUNT; i++ ) {
+        attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_COLOR;
 
-    attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_COLOR;
-    if ( !GLSL_InitGPUShader( &rg.genericShader[0], "generic", attribs, qtrue, NULL, qtrue, fallbackShader_generic_vp, fallbackShader_generic_fp ) ) {
-        ri.Error( ERR_FATAL, "Could not load generic shader" );
+        extradefines[0] = '\0';
+
+        if ( i & GENERICDEF_USE_DEFORM_VERTEXES ) {
+            N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_DEFORM_VERTEXES\n" );
+        }
+        if ( i & GENERICDEF_USE_TCGEN_AND_TCMOD ) {
+            N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_TCMOD\n" );
+            N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_TCGEN\n" );
+        }
+
+        if ( i & GENERICDEF_USE_RGBAGEN ) {
+            N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_RGBGEN\n" );
+        }
+
+        if ( !GLSL_InitGPUShader( &rg.genericShader[i], "generic", attribs, qtrue, extradefines, qtrue, fallbackShader_generic_vp, fallbackShader_generic_fp ) ) {
+            ri.Error( ERR_FATAL, "Could not load generic shader!" );
+        }
+
+        GLSL_InitUniforms( &rg.genericShader[i] );
+
+        GLSL_FinishGPUShader( &rg.genericShader[i] );
+
+        numGenShaders++;
     }
-    GLSL_InitUniforms( &rg.genericShader[0] );
-    GLSL_FinishGPUShader( &rg.genericShader[0] );
-    numGenShaders++;
+
+    attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD;
+    if ( !GLSL_InitGPUShader( &rg.textureColorShader, "texturecolor", attribs, qtrue, extradefines, qtrue, fallbackShader_texturecolor_vp, fallbackShader_texturecolor_fp ) ) {
+        ri.Error( ERR_FATAL, "Could not load texturecolor shader!" );
+    }
+    GLSL_InitUniforms( &rg.textureColorShader );
+    GLSL_FinishGPUShader( &rg.textureColorShader );
+
+    for ( i = 0; i < LIGHTDEF_COUNT; i++ ) {
+        int lightType = i & LIGHTDEF_LIGHTTYPE_MASK;
+        qboolean fastLight = !( r_normalMapping->i || r_specularMapping->i );
+
+        // skip impossible combos
+		if ( ( i & LIGHTDEF_USE_PARALLAXMAP ) && !r_parallaxMapping->i ) {
+			continue;
+        }
+
+		if ( ( i & LIGHTDEF_USE_SHADOWMAP ) && ( !lightType || !r_sunlightMode->i ) ) {
+			continue;
+        }
+
+        attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_COLOR;
+        extradefines[0] = '\0';
+
+        if ( r_dlightMode->i >= 2 ) {
+            N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_SHADOWMAP\n" );
+        }
+        if ( glContext.swizzleNormalmap ) {
+            N_strcat( extradefines, sizeof( extradefines ) - 1, "#define SWIZZLE_NORMALMAP\n" );
+        }
+
+        if ( lightType ) {
+            N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_LIGHT\n" );
+            if ( fastLight ) {
+                N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_FAST_LIGHT\n" );
+            }
+
+            switch ( lightType ) {
+            case LIGHTDEF_USE_LIGHTMAP: {
+                N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_LIGHTMAP\n" );
+                if ( r_deluxeMapping->i && !fastLight ) {
+                    N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_DELUXEMAP\n" );
+                }
+                break; }
+            case LIGHTDEF_USE_LIGHT_VECTOR:
+                N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_LIGHT_VECTOR\n" );
+                break;
+            case LIGHTDEF_USE_LIGHT_VERTEX:
+                N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_LIGHT_VERTEX\n" );
+                break;
+            default:
+                break;
+            };
+
+            if ( r_normalMapping->i ) {
+    			N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_NORMALMAP\n" );
+
+    			attribs |= ATTRIB_TANGENT;
+    			
+                if ( ( i & LIGHTDEF_USE_PARALLAXMAP ) && r_parallaxMapping->i ) {
+    				N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_PARALLAXMAP\n" );
+    				if ( r_parallaxMapping->i > 1 ) {
+    					N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_RELIEFMAP\n" );
+                    }
+    			    if ( r_parallaxMapShadows->i ) {
+    					N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_PARALLAXMAP_SHADOWS\n" );
+                    }
+    				N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define r_parallaxMapOffset %f\n", r_parallaxMapOffset->f ) );
+    			}
+    		}
+    		if ( r_specularMapping->i ) {
+    			N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_SPECULARMAP\n" );
+            }
+            if ( r_deluxeSpecular->f > 0.000001f ) {
+                N_strcat( extradefines, sizeof( extradefines ) - 1, va( "#define r_deluxeSpecular %f\n", r_deluxeSpecular->f ) );
+            }
+
+            switch ( r_glossType->i ) {
+			case 0:
+			default:
+				N_strcat( extradefines, sizeof( extradefines ) - 1, "#define GLOSS_IS_GLOSS\n" );
+				break;
+			case 1:
+				N_strcat( extradefines, sizeof( extradefines ) - 1, "#define GLOSS_IS_SMOOTHNESS\n" );
+				break;
+			case 2:
+				N_strcat( extradefines, sizeof( extradefines ) - 1, "#define GLOSS_IS_ROUGHNESS\n" );
+				break;
+			case 3:
+			    N_strcat( extradefines, sizeof( extradefines ) - 1, "#define GLOSS_IS_SHININESS\n" );
+				break;
+			};
+        }
+
+        if ( i & LIGHTDEF_USE_SHADOWMAP ) {
+			N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_SHADOWMAP\n" );
+
+			if ( r_sunlightMode->i == 1 ) {
+				N_strcat( extradefines, sizeof( extradefines ) - 1, "#define SHADOWMAP_MODULATE\n" );
+            } else if ( r_sunlightMode->i == 2 ) {
+				N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_PRIMARY_LIGHT\n" );
+            }
+		}
+
+		if ( i & LIGHTDEF_USE_TCGEN_AND_TCMOD ) {
+			N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_TCGEN\n" );
+			N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_TCMOD\n" );
+		}
+
+        if ( !GLSL_InitGPUShader( &rg.lightallShader[i], "lightall", attribs, qtrue, extradefines, qtrue, fallbackShader_lightall_vp, fallbackShader_lightall_fp ) ) {
+            ri.Error( ERR_FATAL, "Could not load lightall shader!" );
+        }
+
+        GLSL_InitUniforms( &rg.lightallShader[i] );
+        GLSL_FinishGPUShader( &rg.lightallShader[i] );
+
+        numLightShaders++;
+    }
 
     attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_COLOR;
     if ( !GLSL_InitGPUShader( &rg.imguiShader, "imgui", attribs, qtrue, NULL, qtrue, fallbackShader_imgui_vp, fallbackShader_imgui_fp ) ) {
-        ri.Error( ERR_FATAL, "Could not load imgui shader" );
+        ri.Error( ERR_FATAL, "Could not load imgui shader!" );
     }
     GLSL_InitUniforms( &rg.imguiShader );
     GLSL_FinishGPUShader( &rg.imguiShader );
     numGenShaders++;
 
-    attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_COLOR | ATTRIB_NORMAL | ATTRIB_WORLDPOS;
+    attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_COLOR | ATTRIB_WORLDPOS;
     if ( !GLSL_InitGPUShader( &rg.tileShader, "tile", attribs, qtrue, NULL, qtrue, fallbackShader_tile_vp, fallbackShader_tile_fp ) ) {
-        ri.Error( ERR_FATAL, "Could not load tile shader" );
+        ri.Error( ERR_FATAL, "Could not load tile shader!" );
     }
     GLSL_InitUniforms( &rg.tileShader );
     GLSL_FinishGPUShader( &rg.tileShader );
@@ -952,8 +1087,8 @@ void GLSL_InitGPUShaders(void)
 
     end = ri.Milliseconds();
 
-    ri.Printf(PRINT_INFO, "...loaded %u GLSL shaders (%u gen %u etc) in %5.2f seconds\n",
-        rg.numPrograms, numGenShaders, numEtcShaders, ( end - start ) / 1000.0);
+    ri.Printf(PRINT_INFO, "...loaded %u GLSL shaders (%u gen %u etc %u light) in %5.2f seconds\n",
+        rg.numPrograms, numGenShaders, numEtcShaders, numLightShaders, ( end - start ) / 1000.0);
 }
 
 void GLSL_ShutdownGPUShaders(void)
@@ -962,18 +1097,24 @@ void GLSL_ShutdownGPUShaders(void)
 
     ri.Printf(PRINT_INFO, "---------- GLSL_ShutdownGPUShaders -----------\n");
 
-    for (i = 0; i < ATTRIB_INDEX_COUNT; i++)
-        nglDisableVertexAttribArray(i);
+    for ( i = 0; i < ATTRIB_INDEX_COUNT; i++ ) {
+        nglDisableVertexAttribArray( i );
+    }
     
     GL_BindNullProgram();
 
-    GLSL_DeleteGPUShader( &rg.genericShader[0] );
     GLSL_DeleteGPUShader( &rg.imguiShader );
     GLSL_DeleteGPUShader( &rg.tileShader );
     GLSL_DeleteGPUShader( &rg.tonemapShader );
     GLSL_DeleteGPUShader( &rg.bokehShader );
     GLSL_DeleteGPUShader( &rg.down4xShader );
 
+    for ( i = 0; i < GENERICDEF_COUNT; i++ ) {
+        GLSL_DeleteGPUShader( &rg.genericShader[i] );
+    }
+    for ( i = 0; i < LIGHTDEF_COUNT; i++ ) {
+        GLSL_DeleteGPUShader( &rg.lightallShader[i] );
+    }
     for ( i = 0; i < 4; i++ ) {
         GLSL_DeleteGPUShader( &rg.depthBlurShader[i] );
     }
@@ -990,4 +1131,48 @@ void GLSL_UseProgram(shaderProgram_t *program)
         backend.pc.c_glslShaderBinds++;
         glState.currentShader = program;
     }
+}
+
+shaderProgram_t *GLSL_GetGenericShaderProgram(int stage)
+{
+	const shaderStage_t *pStage = backend.drawBatch.shader->stages[stage];
+	int shaderAttribs = 0;
+
+	switch (pStage->rgbGen) {
+	case CGEN_LIGHTING_DIFFUSE:
+		shaderAttribs |= GENERICDEF_USE_RGBAGEN;
+		break;
+	default:
+		break;
+	};
+
+	switch (pStage->alphaGen) {
+	case AGEN_LIGHTING_SPECULAR:
+	case AGEN_PORTAL:
+		shaderAttribs |= GENERICDEF_USE_RGBAGEN;
+		break;
+	default:
+		break;
+	};
+
+    if ( backend.drawBatch.shader->numDeforms == 0 && pStage->bundle[0].numTexMods == 0 ) {
+        return &rg.genericShader[shaderAttribs];
+    }
+
+	if ( pStage->bundle[0].tcGen != TCGEN_TEXTURE )
+	{
+		shaderAttribs |= GENERICDEF_USE_TCGEN_AND_TCMOD;
+	}
+
+	if (backend.drawBatch.shader->numDeforms && !ShaderRequiresCPUDeforms(backend.drawBatch.shader))
+	{
+		shaderAttribs |= GENERICDEF_USE_DEFORM_VERTEXES;
+	}
+
+	if (pStage->bundle[0].numTexMods)
+	{
+		shaderAttribs |= GENERICDEF_USE_TCGEN_AND_TCMOD;
+	}
+
+	return &rg.genericShader[shaderAttribs];
 }

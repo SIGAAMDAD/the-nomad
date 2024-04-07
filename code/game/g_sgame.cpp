@@ -26,6 +26,9 @@ void G_InitSGame( void )
 
     timer.Run();
     interpret = (vmInterpret_t)Cvar_VariableInteger( "vm_sgame" );
+
+    // allow vertex lighting for in-game elements
+    re.VertexLighting( qtrue );
     
     sgvm = g_pModuleLib->GetModule( "nomadmain" );
     if ( !sgvm ) {
@@ -40,7 +43,7 @@ void G_InitSGame( void )
 
     // have the renderer touch all its images, so they are present
     // on the card even if the driver does deferred loading
-//    re.EndRegistration();
+    re.EndRegistration();
 
     // make sure everything is paged in
     if ( !Sys_LowPhysicalMemory() ) {

@@ -4,6 +4,37 @@ void R_DrawElements( uint32_t numElements, uintptr_t nOffset ) {
     nglDrawElements( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, BUFFER_OFFSET(nOffset) );
 }
 
+/*
+================
+DrawTris
+
+Draws triangle outlines for debugging
+================
+*/
+static void DrawTris( void ) {
+	GL_BindTexture( TB_COLORMAP, rg.whiteImage );
+
+	GL_State( GLS_POLYMODE_LINE | GLS_DEPTHMASK_TRUE );
+	nglDepthRange( 0, 0 );
+
+	{
+		shaderProgram_t *sp = &rg.textureColorShader;
+		vec4_t color;
+
+		GLSL_UseProgram( sp );
+		
+		GLSL_SetUniformMatrix4( sp, UNIFORM_MODELVIEWPROJECTION, glState.viewData.camera.viewProjectionMatrix );
+		VectorSet4( color, 1, 1, 1, 1);
+		GLSL_SetUniformVec4( sp, UNIFORM_COLOR, color );
+		GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 0 );
+		GLSL_SetUniformInt( sp, UNIFORM_TEXTURE_MAP, TB_DIFFUSEMAP );
+
+		R_DrawElements( backend.drawBatch.idxOffset, 0 );
+	}
+
+	nglDepthRange( 0, 1 );
+}
+
 static void ComputeTexMods( shaderStage_t *pStage, uint32_t bundleNum, float *outMatrix, float *outOffTurb )
 {
 	uint32_t tm;
@@ -30,7 +61,7 @@ static void ComputeTexMods( shaderStage_t *pStage, uint32_t bundleNum, float *ou
 			RB_CalcTurbulentFactors(&bundle->texMods[tm].wave, &outOffTurb[2], &outOffTurb[3]);
 			break;
 		case TMOD_ENTITY_TRANSLATE:
-//			RB_CalcScrollTexMatrix( backEnd.currentEntity->e.shaderTexCoord, matrix );
+			RB_CalcScrollTexMatrix( backend.currentEntity->e.shaderTexCoord, matrix );
 			break;
 		case TMOD_SCROLL:
 			RB_CalcScrollTexMatrix( bundle->texMods[tm].scroll,
@@ -98,10 +129,9 @@ static void ComputeShaderColors( const shaderStage_t *pStage, vec4_t baseColor, 
 		|| ((blend & GLS_DSTBLEND_BITS) == GLS_DSTBLEND_SRC_COLOR)
 		|| ((blend & GLS_DSTBLEND_BITS) == GLS_DSTBLEND_ONE_MINUS_SRC_COLOR);
 
-//	qboolean is2DDraw = backEnd.currentEntity == &backEnd.entity2D;
+//	qboolean is2DDraw = backend.currentEntity == &backend.entity2D;
 
-//	float overbright = ( isBlend ) ? 1.0f : (float)( 1 << rg.overbrightBits );
-    const float overbright = 1.0f;
+	float overbright = ( isBlend ) ? 1.0f : (float)( 1 << rg.overbrightBits );
 
 //	const fog_t *fog;
 
@@ -163,24 +193,24 @@ static void ComputeShaderColors( const shaderStage_t *pStage, vec4_t baseColor, 
 		baseColor[2] = ((unsigned char *)(&fog->colorInt))[2] / 255.0f;
 		baseColor[3] = ((unsigned char *)(&fog->colorInt))[3] / 255.0f;
 		break; */
-	case CGEN_ENTITY:
-/*		if (backEnd.currentEntity)
+	case CGEN_ENTITY: {
+		if (backend.currentEntity)
 		{
 			baseColor[0] = backend.currentEntity->e.shader.rgba[0] / 255.0f;
 			baseColor[1] = backend.currentEntity->e.shader.rgba[1] / 255.0f;
 			baseColor[2] = backend.currentEntity->e.shader.rgba[2] / 255.0f;
 			baseColor[3] = backend.currentEntity->e.shader.rgba[3] / 255.0f;
-		} */
-		break;
-	case CGEN_ONE_MINUS_ENTITY:
-/*		if (backEnd.currentEntity)
+		}
+		break; }
+	case CGEN_ONE_MINUS_ENTITY: {
+		if (backend.currentEntity)
 		{
 			baseColor[0] = 1.0f - backend.currentEntity->e.shader.rgba[0] / 255.0f;
 			baseColor[1] = 1.0f - backend.currentEntity->e.shader.rgba[1] / 255.0f;
 			baseColor[2] = 1.0f - backend.currentEntity->e.shader.rgba[2] / 255.0f;
 			baseColor[3] = 1.0f - backend.currentEntity->e.shader.rgba[3] / 255.0f;
-		} */
-		break;
+		}
+		break; }
 	case CGEN_IDENTITY:
 	case CGEN_LIGHTING_DIFFUSE:
 		baseColor[0] =
@@ -206,20 +236,20 @@ static void ComputeShaderColors( const shaderStage_t *pStage, vec4_t baseColor, 
 		baseColor[3] = RB_CalcWaveAlphaSingle( &pStage->alphaWave );
 		vertColor[3] = 0.0f;
 		break;
-/*	case AGEN_ENTITY:
-		if (backEnd.currentEntity)
+	case AGEN_ENTITY: {
+		if (backend.currentEntity)
 		{
-			baseColor[3] = backEnd.currentEntity->e.shader.rgba[3] / 255.0f;
+			baseColor[3] = backend.currentEntity->e.shader.rgba[3] / 255.0f;
 		}
 		vertColor[3] = 0.0f;
-		break;
-	case AGEN_ONE_MINUS_ENTITY:
-		if (backEnd.currentEntity)
+		break; }
+	case AGEN_ONE_MINUS_ENTITY: {
+		if (backend.currentEntity)
 		{
-			baseColor[3] = 1.0f - backEnd.currentEntity->e.shader.rgba[3] / 255.0f;
+			baseColor[3] = 1.0f - backend.currentEntity->e.shader.rgba[3] / 255.0f;
 		}
 		vertColor[3] = 0.0f;
-		break;*/
+		break; }
 	case AGEN_VERTEX:
 		baseColor[3] = 0.0f;
 		vertColor[3] = 1.0f;
@@ -248,6 +278,46 @@ static void ComputeShaderColors( const shaderStage_t *pStage, vec4_t baseColor, 
 	}
 #endif
 }
+
+static void ComputeDeformValues(int *deformGen, float deformParams[5])
+{
+	// u_DeformGen
+	*deformGen = DGEN_NONE;
+	if(!ShaderRequiresCPUDeforms(backend.drawBatch.shader))
+	{
+		deformStage_t  *ds;
+
+		// only support the first one
+		ds = &backend.drawBatch.shader->deforms[0];
+
+		switch (ds->deformation)
+		{
+			case DEFORM_WAVE:
+				*deformGen = ds->deformationWave.func;
+
+				deformParams[0] = ds->deformationWave.base;
+				deformParams[1] = ds->deformationWave.amplitude;
+				deformParams[2] = ds->deformationWave.phase;
+				deformParams[3] = ds->deformationWave.frequency;
+				deformParams[4] = ds->deformationSpread;
+				break;
+
+			case DEFORM_BULGE:
+				*deformGen = DGEN_BULGE;
+
+				deformParams[0] = 0;
+				deformParams[1] = ds->bulgeHeight; // amplitude
+				deformParams[2] = ds->bulgeWidth;  // phase
+				deformParams[3] = ds->bulgeSpeed;  // frequency
+				deformParams[4] = 0;
+				break;
+
+			default:
+				break;
+		}
+	}
+}
+
 
 /*
 * RB_DrawShaderStages: RB_IterateShaderStages but for imgui textures
@@ -330,7 +400,7 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 
 		// custom texture filtering
 		if ( stageP->bundle[0].filter != -1 ) {
-			nglBindSampler( TB_DIFFUSEMAP, rg.samplers[stageP->bundle[0].filter] );
+			nglBindSampler( TB_DIFFUSEMAP, rg.samplers[ stageP->bundle[0].filter ] );
 		}
 
         //
@@ -352,20 +422,25 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 void RB_IterateShaderStages( shader_t *shader )
 {
     uint32_t i;
-    shaderStage_t *stageP;
-    shaderProgram_t *sp;
+	int deformGen;
+	float deformParams[5];
+	uint32_t numLights;
 
+	numLights = backend.refdef.numDLights;
 	if ( !( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {
-		if ( rg.world->shader == shader ) {
-			sp = &rg.tileShader;
-		}
-	} else {
-		sp = rg.genericShader;
+		numLights += rg.world->numLights;
 	}
 
-    for ( i = 0; i < MAX_SHADER_STAGES; i++ ) {
-        stageP = shader->stages[i];
+	backend.drawBatch.shaderTime = backend.refdef.floatTime - backend.drawBatch.shader->timeOffset;
+	if (backend.drawBatch.shader->clampTime && backend.drawBatch.shaderTime >= backend.drawBatch.shader->clampTime) {
+		backend.drawBatch.shaderTime = backend.drawBatch.shader->clampTime;
+	}
 
+	ComputeDeformValues( &deformGen, deformParams );
+
+    for ( i = 0; i < MAX_SHADER_STAGES; i++ ) {
+        shaderStage_t *stageP = shader->stages[i];
+		shaderProgram_t *sp;
 		vec4_t texMatrix;
 		vec4_t texOffTurb;
 
@@ -373,10 +448,54 @@ void RB_IterateShaderStages( shader_t *shader )
             break;
         }
 
+		if ( backend.depthFill ) {
+			if ( stageP->glslShaderGroup == rg.lightallShader ) {
+				int index = 0;
+
+				if ( stageP->stateBits & GLS_ATEST_BITS ) {
+					index |= LIGHTDEF_USE_TCGEN_AND_TCMOD;
+				}
+
+				sp = &stageP->glslShaderGroup[ index ];
+			} else {
+				int shaderAttribs = 0;
+
+				if ( backend.drawBatch.shader->numDeforms && !ShaderRequiresCPUDeforms( backend.drawBatch.shader ) ) {
+					shaderAttribs |= GENERICDEF_USE_DEFORM_VERTEXES;
+				}
+				if ( stageP->stateBits ) {
+					shaderAttribs |= GENERICDEF_USE_TCGEN_AND_TCMOD;
+				}
+
+				sp = &rg.genericShader[ shaderAttribs ];
+			}
+		}
+		else if ( stageP->glslShaderGroup == rg.lightallShader ) {
+			int index = stageP->glslShaderIndex;
+
+			if ( r_sunlightMode->i && ( glState.viewData.flags & RSF_USE_SUNLIGHT ) && ( index & LIGHTDEF_LIGHTTYPE_MASK ) ) {
+				index |= LIGHTDEF_USE_SHADOWMAP;
+			}
+
+			if ( r_lightmap->i && ( ( index & LIGHTDEF_LIGHTTYPE_MASK ) == LIGHTDEF_USE_LIGHTMAP ) ) {
+				index = LIGHTDEF_USE_TCGEN_AND_TCMOD;
+			}
+
+			sp = &stageP->glslShaderGroup[ index ];
+			backend.pc.c_lightallDraws++;
+		}
+		else {
+			sp = GLSL_GetGenericShaderProgram( i );
+			backend.pc.c_genericDraws++;
+		}
+
         GLSL_UseProgram( sp );
 
-//		GLSL_SetUniformInt( sp, UNIFORM_NUM_LIGHTS, backend.refdef.numDLights + rg.world->numLights );
+		GLSL_SetUniformInt( sp, UNIFORM_NUM_LIGHTS, numLights );
         GLSL_SetUniformMatrix4( sp, UNIFORM_MODELVIEWPROJECTION, glState.viewData.camera.viewProjectionMatrix );
+		GLSL_SetUniformVec3( sp, UNIFORM_LOCALVIEWORIGIN, vec3_origin );
+
+		GLSL_SetUniformInt( sp, UNIFORM_DEFORMGEN, deformGen );
 
         GL_State( stageP->stateBits );
         if ( ( stageP->stateBits & GLS_ATEST_BITS ) == GLS_ATEST_GT_0 ) {
@@ -392,32 +511,31 @@ void RB_IterateShaderStages( shader_t *shader )
 			GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 0 );
 		}
 
-#if 0
+
 		if ( r_lightmap->i ) {
 			vec4_t v;
 			VectorSet4( v, 1.0f, 0.0f, 0.0f, 1.0f );
-			GLSL_SetUniformVec4( sp, UNIFORM_DIFFUSETEXMATRIX, v );
+			GLSL_SetUniformVec4( sp, UNIFORM_DIFFUSE_TEXMATRIX, v );
 			VectorSet4( v, 0.0f, 0.0f, 0.0f, 0.0f );
-			GLSL_SetUniformVec4( sp, UNIFORM_DIFFUSETEXOFFTURB, v );
+			GLSL_SetUniformVec4( sp, UNIFORM_DIFFUSE_TEXOFFTURB, v );
 
 			GLSL_SetUniformInt( sp, UNIFORM_TCGEN0, TCGEN_LIGHTMAP );
 		}
 		else {
 			ComputeTexMods( stageP, TB_DIFFUSEMAP, texMatrix, texOffTurb );
-			GLSL_SetUniformVec4( sp, UNIFORM_DIFFUSETEXMATRIX, texMatrix );
-			GLSL_SetUniformVec4( sp, UNIFORM_DIFFUSETEXOFFTURB, texOffTurb );
 
+			GLSL_SetUniformVec4( sp, UNIFORM_DIFFUSE_TEXMATRIX, texMatrix );
+			GLSL_SetUniformVec4( sp, UNIFORM_DIFFUSE_TEXOFFTURB, texOffTurb );
 			GLSL_SetUniformInt( sp, UNIFORM_TCGEN0, stageP->bundle[0].tcGen );
+
 			if ( stageP->bundle[0].tcGen == TCGEN_VECTOR ) {
 				vec3_t vec;
-
 				VectorCopy( stageP->bundle[0].tcGenVectors[0], vec );
 				GLSL_SetUniformVec3( sp, UNIFORM_TCGEN0VECTOR0, vec );
 				VectorCopy( stageP->bundle[0].tcGenVectors[1], vec );
 				GLSL_SetUniformVec3( sp, UNIFORM_TCGEN0VECTOR1, vec );
 			}
 		}
-		#endif
 
         {
 			vec4_t baseColor;
@@ -435,6 +553,34 @@ void RB_IterateShaderStages( shader_t *shader )
 		GLSL_SetUniformVec4( sp, UNIFORM_SPECULAR_SCALE, stageP->specularScale );
 		GLSL_SetUniformFloat( sp, UNIFORM_GAMMA, r_gammaAmount->f );
 
+		// custom texture filtering
+		if ( stageP->bundle[0].filter != -1 ) {
+			nglBindSampler( TB_DIFFUSEMAP, rg.samplers[stageP->bundle[0].filter] );
+		}
+
+		{
+			qboolean light = qtrue;
+			qboolean fastLight = !( r_normalMapping->i || r_specularMapping->i );
+
+			if ( light && !fastLight ) {
+				if ( stageP->bundle[TB_NORMALMAP].image ) {
+					GL_BindTexture( 1, stageP->bundle[TB_NORMALMAP].image );
+					GLSL_SetUniformInt( sp, UNIFORM_NORMAL_MAP, 1 );
+				} else if ( r_normalMapping->i ) {
+					GL_BindTexture( 1, rg.whiteImage );
+					GLSL_SetUniformInt( sp, UNIFORM_NORMAL_MAP, 1 );
+				}
+
+				if ( stageP->bundle[TB_SPECULARMAP].image ) {
+					GL_BindTexture( 2, stageP->bundle[TB_SPECULARMAP].image );
+					GLSL_SetUniformInt( sp, UNIFORM_SPECULAR_MAP, 2 );
+				} else if ( r_specularMapping->i ) {
+					GL_BindTexture( 1, rg.whiteImage );
+					GLSL_SetUniformInt( sp, UNIFORM_SPECULAR_MAP, 2 );
+				}
+			}
+		}
+
 		if ( !stageP->bundle[TB_DIFFUSEMAP].image ) {
 			ri.Error( ERR_DROP, "RB_IterateShaderStages: shader has missing diffuseMap stage texture" );
 		}
@@ -451,26 +597,15 @@ void RB_IterateShaderStages( shader_t *shader )
 			}
 		}
 
-		if ( stageP->bundle[TB_NORMALMAP].image ) {
-			GL_BindTexture( 1, stageP->bundle[TB_NORMALMAP].image );
-			GLSL_SetUniformInt( sp, UNIFORM_NORMAL_MAP, 1 );
-		} else if ( r_normalMapping->i ) {
-			GL_BindTexture( 1, rg.whiteImage );
-			GLSL_SetUniformInt( sp, UNIFORM_NORMAL_MAP, 1 );
-		}
-		if ( stageP->bundle[TB_SPECULARMAP].image ) {
-			GL_BindTexture( 2, stageP->bundle[TB_SPECULARMAP].image );
-			GLSL_SetUniformInt( sp, UNIFORM_SPECULAR_MAP, 2 );
-		} else if ( r_specularMapping->i ) {
-			GL_BindTexture( 1, rg.whiteImage );
-			GLSL_SetUniformInt( sp, UNIFORM_SPECULAR_MAP, 2 );
-		}
-
         //
         // draw
         //
         R_DrawElements( backend.drawBatch.idxOffset, 0 );
     }
+
+	if ( r_glDebug->i ) {
+//		DrawTris();
+	}
 }
 
 /*
@@ -509,13 +644,22 @@ void RB_InstantQuad(vec4_t quadVerts[4])
 {
 	vec2_t texCoords[4];
 
+	backend.refdef.x = 0;
+	backend.refdef.y = 0;
+	backend.refdef.width = glConfig.vidWidth;
+	backend.refdef.height = glConfig.vidHeight;
+	backend.refdef.time = backend.refdef.time;
+	backend.refdef.flags = RSF_ORTHO_TYPE_SCREENSPACE | RSF_NOWORLDMODEL;
+	
+	glState.viewData.flags = backend.refdef.flags;
+
 	VectorSet2(texCoords[0], 0.0f, 0.0f);
 	VectorSet2(texCoords[1], 1.0f, 0.0f);
 	VectorSet2(texCoords[2], 1.0f, 1.0f);
 	VectorSet2(texCoords[3], 0.0f, 1.0f);
 
 	GLSL_UseProgram(&rg.genericShader[0]);
-	
+
     RB_MakeViewMatrix();
 	GLSL_SetUniformMatrix4(&rg.genericShader[0], UNIFORM_MODELVIEWPROJECTION, glState.viewData.camera.viewProjectionMatrix);
 	GLSL_SetUniformVec4(&rg.genericShader[0], UNIFORM_COLOR, colorWhite );

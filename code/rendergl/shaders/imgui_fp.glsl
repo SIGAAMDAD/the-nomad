@@ -2,7 +2,7 @@
 out vec4 a_Color;
 #endif
 
-in vec2 v_TexCoord;
+in vec2 v_TexCoords;
 in vec4 v_Color;
 
 uniform sampler2D u_DiffuseMap;
@@ -60,11 +60,11 @@ vec3 CalcDiffuse(vec3 diffuseAlbedo, float NH, float EH, float roughness)
 }
 
 void main() {
-    a_Color = v_Color * texture2D( u_DiffuseMap, v_TexCoord );
+    a_Color = v_Color * texture2D( u_DiffuseMap, v_TexCoords );
 
 #if defined(USE_HDR)
 	// reinhard tone mapping
-//	a_Color.rgb /= ( a_Color.rgb + vec3( 1.0 ) );
+	a_Color.rgb /= ( a_Color.rgb + vec3( 1.0 ) );
 #endif
     a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
 }

@@ -1,4 +1,14 @@
+#include "../game/g_game.h"
+#include "ui_public.hpp"
+#include "ui_menu.h"
 #include "ui_lib.h"
+#include "ui_window.h"
+#include "../engine/n_allocator.h"
+#include "ui_string_manager.h"
+#include "ui_table.h"
+#include "../rendergl/ngl.h"
+#include "../rendercommon/imgui_impl_opengl3.h"
+#include "../rendercommon/imgui.h"
 
 typedef struct {
 	// graphics
@@ -14,8 +24,6 @@ typedef struct {
 	qboolean enableToneMapping;
     qboolean enablePbr;
 	int toneMappingType;
-	
-	// advanced graphics
 	qboolean useNormalMapping;
 	qboolean useSpecularMapping;
 	uint32_t maxPolys;
@@ -26,7 +34,6 @@ typedef struct {
 	uint32_t maxParticles;
 	uint32_t maxCorpses;
 	uint32_t maxEntities;
-	
 	
 	// sound
 	uint32_t maxSoundChannels;
@@ -55,6 +62,11 @@ typedef struct {
 	performance_t performance;
 	video_t video;
 	audio_t audio;
+
+	qboolean rebinding;
+	qboolean paused;
+	qboolean confirmation;
+	qboolean modified;
 } settings_t;
 
 static settings_t *initial;
@@ -67,6 +79,11 @@ static void SettingsMenu_GetInitial( void )
 	settings->performance.enableBloom = Cvar_VariableInteger( "r_bloom" );
 }
 
+static void SettingsMenu_SetDefault( void )
+{
+	settings->performance.anisotropicFiltering = Cvar_VariableFloat( "r" );
+}
+
 static void SettingsMenu_SetInitial( void )
 {
 }
@@ -76,52 +93,29 @@ static void SettingsMenu_SaveVideo( void )
 	if ( settings->video.vsync != initial->video.vsync ) {
 		Cvar_Set( "r_swapInterval", va( "%i", settings->video.vsync ) );
 	}
+	if ( settings->video.exposure != initial->video.exposure ) {
+		Cvar_Set( "r_autoExposure", va( "%f", settings->video.exposure ) );
+	}
 }
 
-static void SettingsMenu_SavePerformance( bool needRestart )
+static void SettingsMenu_SavePerformance( void )
 {
-	bool restartFramebuffer;
-	
-	if ( settings->performance.enableHdr != initial->performance.enableHdr ) {
-		restartFramebuffer = true;
-	}
-	if ( settings->performance.enablePbr != initial->performance.enablePbr ) {
-		restartFramebuffer = true;
-	}
-	
-	if ( !needRestart && restartFramebuffer ) {
-		Cbuf_ExecuteText( EXEC_APPEND, "renderlib.restart_framebuffer\n" );
-	}
 }
 
 static void SettingsMenu_Save( void )
 {
-	bool needRestart;
-	
-	needRestart = false;
-	
-	// we'll need a restart if we're changing anything physical
-	if ( settings->video.windowMode != initial->video.windowMode ) {
-		needRestart = true;
-	}
-	if ( settings->video.api != initial->video.api ) {
-		needRestart = true;
-	}
-	if ( settings->video.screenWidth != initial->video.screenWdith
-		|| settings->video.screenHeight != initial->video.screenHeight )
-	{
-		needRestart = true;
-	}
-	
 	SettingsMenu_SaveVideo();
-	SettingsMenu_SavePerformance( needRestart );
+	SettingsMenu_SavePerformance();
 	
 	SettingsMenu_GetInitial();
 	SettingsMenu_SetInitial();
 	
-	if ( needRestart ) {
-		Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n" );
-	}
+	Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n" );
+}
+
+static void SettingsMenu_Bar( void )
+{
+
 }
 
 static void SettingsMenu_ExitChild( menustate_t childstate )
@@ -157,10 +151,14 @@ static void SettingsMenu_ExitChild( menustate_t childstate )
 
 static void SetHint( const char *label, const char *hint )
 {
-	const int windowFlags = ;
+	const int windowFlags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMouseInputs
+						| ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus;
 	
 	if ( ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) ) {
 		ImGui::Begin( va( "##Tooltip%s", label ), NULL, windowFlags );
+		ImGui::SetWindowPos( ImVec2( 900 * ui->scale, 300 * ui->scale ) );
+		ImGui::SeparatorText( label );
+		ImGui::TextUnformatted( hint );
 		ImGui::End();
 	}
 }
@@ -171,7 +169,7 @@ static void SettingsMenu_Performance_Draw( void ) {
 		return;
 	}
 	
-	perfomance_t *performance;
+	performance_t *performance;
 	const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_CollapsingHeader;
 	int i;
 	static const char *antiAliasing[] = {
@@ -182,10 +180,31 @@ static void SettingsMenu_Performance_Draw( void ) {
 		"16x MSAA##AntiAliasingGraphicsPerformanceSettingsConfigSelectable_4",
 		"32x MSAA##AntiAliasingGraphicsPerformanceSettingsConfigSelectable_5",
 	};
+	static const char *anisotropicFiltering[] = {
+		"None##AnisotropicFilteringGraphicsPerformanceSettingsConfigSelectable_0",
+		"2x##AnisotropicFilteringGraphicsPerformanceSettingsConfigSelectable_1",
+		"4x##AnisotropicFilteringGraphicsPerformanceSettingsConfigSelectable_2",
+		"8x##AnisotropicFilteringGraphicsPerformanceSettingsConfigSelectable_3",
+		"16x##AnisotropicFilteringGraphicsPerformanceSettingsConfigSelectable_4",
+		"32x##AnisotropicFilteringGraphicsPerformanceSettingsConfigSelectable_5",
+	};
+	static const char *textureFiltering[] = {
+		"Nearest##TextureFilteringGraphicsPerformanceSettingsConfigSelectable_0",
+		"Bilinear##TextureFilteringGraphicsPerformanceSettingsConfigSelectable_1",
+		"Linear Nearest##TextureFilteringGraphicsPerformanceSettingsConfigSelectable_2",
+		"Nearest Linear##TextureFilteringGraphicsPerformanceSettingsConfigSelectable_3"
+	};
+	static const char *textureDetail[] = {
+		"MSDOS",
+		"Integrated GPU",
+		"Normie",
+		"Expensive Shit We've Got Here!",
+		"GPU vs God"
+	};
 	
 	performance = &settings->performance;
 	
-	if ( ImGui::TreeNodeEx( (void *)(uintptr_t)"##GraphicsPerformanceSettingsConfigNode", "Graphics", treeNodeFlags ) {
+	if ( ImGui::TreeNodeEx( (void *)(uintptr_t)"##GraphicsPerformanceSettingsConfigNode", "Graphics", treeNodeFlags ) ) {
 		ImGui::BeginTable( "##PerformanceSettingsGraphicsConfigTable", 4 );
 		{
 			ImGui::TableNextColumn();
@@ -301,11 +320,11 @@ static void SettingsMenu_Performance_Draw( void ) {
 			SetHint( "Vertex Lighting", "Enables per vertex lighting done in software, much faster but lesser quality" );
 			ImGui::TableNextColumn();
 			ImGui::TableNextColumn();
-			if ( ImGui::RadioButton( performance->vertexLighting ? "ON##VertexLightingGraphicsPerformanceSettingsConfigON" :
-				"OFF##VertexLightingGraphicsPerformanceSettingsConfigOFF", performance->vertexLighting ) )
+			if ( ImGui::RadioButton( performance->enableVertexLighting ? "ON##VertexLightingGraphicsPerformanceSettingsConfigON" :
+				"OFF##VertexLightingGraphicsPerformanceSettingsConfigOFF", performance->enableVertexLighting ) )
 			{
 				ui->PlaySelected();
-				performance->vertexLighting = !performance->vertexLighting;
+				performance->enableVertexLighting = !performance->enableVertexLighting;
 			}
 			ImGui::TableNextColumn();
 			
@@ -316,11 +335,11 @@ static void SettingsMenu_Performance_Draw( void ) {
 			SetHint( "Dymamic Lighting", "Enables higher quality per pixel lighting done in a shader along with dynamic lights" );
 			ImGui::TableNextColumn();
 			ImGui::TableNextColumn();
-			if ( ImGui::RadioButton( performance->dynamicLighting ? "ON##DynamicLightingGraphicsPerformanceSettingsConfigON" :
-				"OFF##DynamicLightingGraphicsPerformanceSettingsConfigOFF", performance->dynamicLighting ) )
+			if ( ImGui::RadioButton( performance->enableDynamicLighting ? "ON##DynamicLightingGraphicsPerformanceSettingsConfigON" :
+				"OFF##DynamicLightingGraphicsPerformanceSettingsConfigOFF", performance->enableDynamicLighting ) )
 			{
 				ui->PlaySelected();
-				performance->dynamicLighting = !performance->dynamicLighting;
+				performance->enableDynamicLighting = !performance->enableDynamicLighting;
 			}
 			ImGui::TableNextColumn();
 			
@@ -330,26 +349,25 @@ static void SettingsMenu_Performance_Draw( void ) {
 			ImGui::TextUnformatted( "Enable Shadows" );
 			ImGui::TableNextColumn();
 			ImGui::TableNextColumn();
-			if ( ImGui::RadioButton( performance->shadows ? "ON##ShadowsGraphicsPerformanceSettingsConfigON" :
-				"OFF##ShadowsGraphicsPerformanceSettingsConfigOFF", performance->shadows ) )
+			if ( ImGui::RadioButton( performance->enableShadows ? "ON##ShadowsGraphicsPerformanceSettingsConfigON" :
+				"OFF##ShadowsGraphicsPerformanceSettingsConfigOFF", performance->enableShadows ) )
 			{
 				ui->PlaySelected();
-				performance->shadows = !performance->shadows;
+				performance->enableShadows = !performance->enableShadows;
 			}
 			ImGui::TableNextColumn();
 			
 			ImGui::TableNextRow();
-			
-			ImGui::TableNextColumn();
-			ImGui::TextUnformatted( "Shadow Quality" );
-			ImGui::TableNextColumn();
+
+
+			ImGui::TableNextRow();
 			
 		}
 		ImGui::EndTable();
 		ImGui::TreePop();
 	}
 		
-	if ( ImGui::TreeNodeEx( (void *)(uintptr_t)"##AdvancedPerformanceSettingsConfigNode", "Advanced", treeNodeFlags ) {
+	if ( ImGui::TreeNodeEx( (void *)(uintptr_t)"##AdvancedPerformanceSettingsConfigNode", "Advanced", treeNodeFlags ) ) {
 		ImGui::BeginTable( "##PerformanceSettingsAdvancedConfigTable", 4 );
 		{
 			ImGui::TableNextColumn();
@@ -457,4 +475,8 @@ void SettingsMenu_Cache( void )
 	SettingsMenu_InitPresets();
 	SettingsMenu_GetInitial();
 	SettingsMenu_GetDefault();
+
+	settings->confirmation = qfalse;
+    settings->modified = qfalse;
+    settings->paused = Cvar_VariableInteger( "sg_paused" );
 }

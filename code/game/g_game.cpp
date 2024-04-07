@@ -471,8 +471,7 @@ static void G_InitRenderer( void )
     // load the character sets
 //    gi.charSetShader = re.RegisterShader("gfx/bigchars");
     gi.whiteShader = re.RegisterShader("white");
-    gi.consoleShader0 = re.RegisterShader("console0");
-    gi.consoleShader1 = re.RegisterShader("console1");
+    gi.consoleShader0 = re.RegisterShader("console");
 
 //    g_console_field_width = ( ( gi.gpuConfig.vidWidth / smallchar_width ) ) - 2;
 
@@ -1032,6 +1031,7 @@ void G_ShutdownAll( void )
 */
 void G_ClearState( void ) {
     memset( &gi, 0, sizeof(gi) );
+    gi.state = GS_INACTIVE;
 }
 
 qboolean G_CheckPaused( void ) {
@@ -1100,7 +1100,7 @@ void G_Frame(int32_t msec, int32_t realMsec)
 
     // save the msec before checking pause
     gi.realFrameTime = msec;
-    gi.frametime = msec;
+    gi.frametime = gi.frametime - msec;
     gi.realtime += gi.frametime;
 
     G_MoveCamera_f();

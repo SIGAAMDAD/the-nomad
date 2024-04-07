@@ -176,28 +176,31 @@ void R_ScreenToGL( polyVert_t *verts )
 */
 void R_DrawPolys( void )
 {
-    uint64_t i;
-    uint64_t startIndex, numVerts;
+    uint64_t i, j;
+    uint64_t startIndex, firstVert;
     const srfPoly_t *poly;
     nhandle_t oldShader;
+    srfVert_t *vtx;
+    vec3_t normal, edge1, edge2;
 
     // no polygon submissions this frame
     if ( !r_numPolys && !r_numPolyVerts || ( backend.refdef.flags & RSF_ORTHO_BITS ) == RSF_ORTHO_TYPE_SCREENSPACE ) {
         return;
     }
 
-    RB_SetBatchBuffer( backend.drawBuffer, backend.refdef.polys, sizeof( polyVert_t ), backendData->indices, sizeof( glIndex_t ) );
+    RB_SetBatchBuffer( backend.drawBuffer, backendData->verts, sizeof( srfVert_t ), backendData->indices, sizeof( glIndex_t ) );
 
     // sort the polys to be more efficient with our shaders
-    R_RadixSort( backend.refdef.polys, r_numPolys );
+    R_RadixSort( backend.refdef.polys, backend.refdef.numPolys );
 
     poly = backend.refdef.polys;
     oldShader = poly->hShader;
     backend.drawBatch.shader = R_GetShaderByHandle( oldShader );
+    vtx = backendData->verts;
 
     GLSL_UseProgram( &rg.genericShader[0] );
     
-    for ( i = 0; i < r_numPolys; i++ ) {
+    for ( i = 0; i < backend.refdef.numPolys; i++ ) {
         if ( oldShader != poly->hShader ) {
             // if we have a new shader, flush the current batch
             RB_FlushBatchBuffer();
@@ -208,16 +211,30 @@ void R_DrawPolys( void )
         startIndex = backendData->numIndices;
 
         // generate fan indexes into the buffer
-        for ( i = 0; i < poly->numVerts - 2; i++ ) {
-            backendData->indices[backendData->numIndices + 0] = numVerts;
-            backendData->indices[backendData->numIndices + 1] = numVerts + i + 1;
-            backendData->indices[backendData->numIndices + 2] = numVerts + i + 2;
+        for ( j = 0; j < poly->numVerts - 2; j++ ) {
+            backendData->indices[backendData->numIndices + 0] = backend.drawBatch.vtxOffset;
+            backendData->indices[backendData->numIndices + 1] = backend.drawBatch.vtxOffset + j + 1;
+            backendData->indices[backendData->numIndices + 2] = backend.drawBatch.vtxOffset + j + 2;
             backendData->numIndices += 3;
+
+            VectorSubtract( poly->verts[j].xyz, poly->verts[j + 1].xyz, edge1 );
+            VectorSubtract( poly->verts[j].xyz, poly->verts[j + 2].xyz, edge2 );
+            CrossProduct( edge1, edge2, normal );
         }
-        numVerts += poly->numVerts;
+
+        firstVert = (uint64_t)( backendData->verts - vtx );
+        for ( j = 0; j < poly->numVerts; j++ ) {
+            VectorCopy( vtx->xyz, poly->verts[j].xyz );
+            R_VaoPackNormal( vtx->normal, normal );
+            VectorCopy2( vtx->st, poly->verts[j].uv );
+            VectorCopy2( vtx->lightmap, poly->verts[j].uv );
+            R_CalcTangentVectors( (drawVert_t *)vtx );
+            vtx++;
+        }
 
         // submit to draw buffer
-        RB_CommitDrawData( poly->verts, poly->numVerts, &backendData->indices[startIndex], backendData->numIndices - startIndex );
+        RB_CommitDrawData( &backendData->verts[ firstVert ], poly->numVerts, &backendData->indices[startIndex],
+            backendData->numIndices - startIndex );
         
         poly++;
     }
@@ -485,7 +502,7 @@ vec_t R_CalcTangentSpace( vec3_t tangent, vec3_t bitangent, const vec3_t normal,
 	return handedness;
 }
 
-qboolean R_CalcTangentVectors(drawVert_t * dv[3])
+qboolean R_CalcTangentVectors(drawVert_t dv[3])
 {
 	int             i;
 	float           bb, s, t;
@@ -493,7 +510,7 @@ qboolean R_CalcTangentVectors(drawVert_t * dv[3])
 
 
 	/* calculate barycentric basis for the triangle */
-	bb = (dv[1]->uv[0] - dv[0]->uv[0]) * (dv[2]->uv[1] - dv[0]->uv[1]) - (dv[2]->uv[0] - dv[0]->uv[0]) * (dv[1]->uv[1] - dv[0]->uv[1]);
+	bb = (dv[1].uv[0] - dv[0].uv[0]) * (dv[2].uv[1] - dv[0].uv[1]) - (dv[2].uv[0] - dv[0].uv[0]) * (dv[1].uv[1] - dv[0].uv[1]);
 	if(fabs(bb) < 0.00000001f)
 		return qfalse;
 
@@ -504,39 +521,39 @@ qboolean R_CalcTangentVectors(drawVert_t * dv[3])
 		vec3_t normal, bitangent, nxt;
 
 		// calculate s tangent vector
-		s = dv[i]->uv[0] + 10.0f;
-		t = dv[i]->uv[1];
-		bary[0] = ((dv[1]->uv[0] - s) * (dv[2]->uv[1] - t) - (dv[2]->uv[0] - s) * (dv[1]->uv[1] - t)) / bb;
-		bary[1] = ((dv[2]->uv[0] - s) * (dv[0]->uv[1] - t) - (dv[0]->uv[0] - s) * (dv[2]->uv[1] - t)) / bb;
-		bary[2] = ((dv[0]->uv[0] - s) * (dv[1]->uv[1] - t) - (dv[1]->uv[0] - s) * (dv[0]->uv[1] - t)) / bb;
+		s = dv[i].uv[0] + 10.0f;
+		t = dv[i].uv[1];
+		bary[0] = ((dv[1].uv[0] - s) * (dv[2].uv[1] - t) - (dv[2].uv[0] - s) * (dv[1].uv[1] - t)) / bb;
+		bary[1] = ((dv[2].uv[0] - s) * (dv[0].uv[1] - t) - (dv[0].uv[0] - s) * (dv[2].uv[1] - t)) / bb;
+		bary[2] = ((dv[0].uv[0] - s) * (dv[1].uv[1] - t) - (dv[1].uv[0] - s) * (dv[0].uv[1] - t)) / bb;
 
-		tangent[0] = bary[0] * dv[0]->xyz[0] + bary[1] * dv[1]->xyz[0] + bary[2] * dv[2]->xyz[0];
-		tangent[1] = bary[0] * dv[0]->xyz[1] + bary[1] * dv[1]->xyz[1] + bary[2] * dv[2]->xyz[1];
-		tangent[2] = bary[0] * dv[0]->xyz[2] + bary[1] * dv[1]->xyz[2] + bary[2] * dv[2]->xyz[2];
+		tangent[0] = bary[0] * dv[0].xyz[0] + bary[1] * dv[1].xyz[0] + bary[2] * dv[2].xyz[0];
+		tangent[1] = bary[0] * dv[0].xyz[1] + bary[1] * dv[1].xyz[1] + bary[2] * dv[2].xyz[1];
+		tangent[2] = bary[0] * dv[0].xyz[2] + bary[1] * dv[1].xyz[2] + bary[2] * dv[2].xyz[2];
 
-		VectorSubtract(tangent, dv[i]->xyz, tangent);
+		VectorSubtract(tangent, dv[i].xyz, tangent);
 		VectorNormalize(tangent);
 
 		// calculate t tangent vector
-		s = dv[i]->uv[0];
-		t = dv[i]->uv[1] + 10.0f;
-		bary[0] = ((dv[1]->uv[0] - s) * (dv[2]->uv[1] - t) - (dv[2]->uv[0] - s) * (dv[1]->uv[1] - t)) / bb;
-		bary[1] = ((dv[2]->uv[0] - s) * (dv[0]->uv[1] - t) - (dv[0]->uv[0] - s) * (dv[2]->uv[1] - t)) / bb;
-		bary[2] = ((dv[0]->uv[0] - s) * (dv[1]->uv[1] - t) - (dv[1]->uv[0] - s) * (dv[0]->uv[1] - t)) / bb;
+		s = dv[i].uv[0];
+		t = dv[i].uv[1] + 10.0f;
+		bary[0] = ((dv[1].uv[0] - s) * (dv[2].uv[1] - t) - (dv[2].uv[0] - s) * (dv[1].uv[1] - t)) / bb;
+		bary[1] = ((dv[2].uv[0] - s) * (dv[0].uv[1] - t) - (dv[0].uv[0] - s) * (dv[2].uv[1] - t)) / bb;
+		bary[2] = ((dv[0].uv[0] - s) * (dv[1].uv[1] - t) - (dv[1].uv[0] - s) * (dv[0].uv[1] - t)) / bb;
 
-		bitangent[0] = bary[0] * dv[0]->xyz[0] + bary[1] * dv[1]->xyz[0] + bary[2] * dv[2]->xyz[0];
-		bitangent[1] = bary[0] * dv[0]->xyz[1] + bary[1] * dv[1]->xyz[1] + bary[2] * dv[2]->xyz[1];
-		bitangent[2] = bary[0] * dv[0]->xyz[2] + bary[1] * dv[1]->xyz[2] + bary[2] * dv[2]->xyz[2];
+		bitangent[0] = bary[0] * dv[0].xyz[0] + bary[1] * dv[1].xyz[0] + bary[2] * dv[2].xyz[0];
+		bitangent[1] = bary[0] * dv[0].xyz[1] + bary[1] * dv[1].xyz[1] + bary[2] * dv[2].xyz[1];
+		bitangent[2] = bary[0] * dv[0].xyz[2] + bary[1] * dv[1].xyz[2] + bary[2] * dv[2].xyz[2];
 
-		VectorSubtract(bitangent, dv[i]->xyz, bitangent);
+		VectorSubtract(bitangent, dv[i].xyz, bitangent);
 		VectorNormalize(bitangent);
 
 		// store bitangent handedness
-		R_VaoUnpackNormal(normal, dv[i]->normal);
+		R_VaoUnpackNormal(normal, dv[i].normal);
 		CrossProduct(normal, tangent, nxt);
 		tangent[3] = (DotProduct(nxt, bitangent) < 0.0f) ? -1.0f : 1.0f;
 
-		R_VaoPackTangent(dv[i]->tangent, tangent);
+		R_VaoPackTangent(dv[i].tangent, tangent);
 
 		// debug code
 		//% Sys_FPrintf( SYS_VRB, "%d S: (%f %f %f) T: (%f %f %f)\n", i,

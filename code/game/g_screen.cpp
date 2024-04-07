@@ -33,12 +33,10 @@ void SCR_AdjustFrom640( float *x, float *y, float *w, float *h )
 	float	xscale;
 	float	yscale;
 
-#if 0
-		// adjust for wide screens
-		if ( gi.gpuConfig.vidWidth * 480 > gi.gpuConfig.vidHeight * 640 ) {
-			*x += 0.5 * ( gi.gpuConfig.vidWidth - ( gi.gpuConfig.vidHeight * 640 / 480 ) );
-		}
-#endif
+	// adjust for wide screens
+	if ( gi.gpuConfig.vidWidth * 768.0f > gi.gpuConfig.vidHeight * 1024.0f ) {
+		*x += 0.5 * ( gi.gpuConfig.vidWidth - ( gi.gpuConfig.vidHeight * 1024.0f / 768.0f ) );
+	}
 
 	// scale for screen sizes
 	xscale = gi.gpuConfig.vidWidth / 1024.0f;

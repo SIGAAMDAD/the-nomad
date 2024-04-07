@@ -125,7 +125,6 @@ typedef struct
     int maxSamples;
     int maxColorAttachments;
     int maxRenderBufferSize;
-
     float maxAnisotropy;
 
     qboolean ARB_gl_spirv;
@@ -146,9 +145,14 @@ typedef struct
 
 typedef struct {
     renderEntityRef_t e;
-    vec3_t ambientLight;
-    vec3_t lightDir;
+
+    qboolean needDlights; // true for anything submitted throught RE_AddEntityToScene
+    qboolean lightingCalculated;
+    int ambientLightInt;  // 32 bit rgba packed
+    vec3_t ambientLight;  // color normalized to 0-255
+    vec3_t lightDir;      // normalized direction towards light, in world space
     vec3_t directedLight;
+    qboolean intShaderTime;
 } renderEntityDef_t;
 
 typedef enum
@@ -186,16 +190,14 @@ typedef struct texture_s
     struct texture_s *next;     // for hash search
     struct texture_s *list;     // for listing
 
-    uint32_t width, height;     // source image
-    uint32_t uploadWidth;       // adter power of two but not including clamp to MAX_TEXTURE_SIZE
-    uint32_t uploadHeight;
-    uint32_t id;                // GL texture binding
+    int width, height;          // source image
+    int uploadWidth;            // after power of two but not including clamp to MAX_TEXTURE_SIZE
+    int uploadHeight;
+    GLuint id;                  // GL texture binding
 
     uint64_t frameUsed;
 
-    byte *imgBuffer;            // cached image file
-
-    uint32_t internalFormat;
+    GLint internalFormat;
     imgType_t type;
     imgFlags_t flags;
 } texture_t;
@@ -206,26 +208,33 @@ enum {
 	ATTRIB_INDEX_POSITION       = 0,
 	ATTRIB_INDEX_TEXCOORD       = 1,
     ATTRIB_INDEX_COLOR          = 2,
-    ATTRIB_INDEX_NORMAL         = 3,
-    ATTRIB_INDEX_WORLDPOS       = 4,
+    ATTRIB_INDEX_WORLDPOS       = 3,
+    ATTRIB_INDEX_LIGHTCOORD     = 4,
+    ATTRIB_INDEX_NORMAL         = 5,
+    ATTRIB_INDEX_TANGENT        = 6,
+    ATTRIB_INDEX_BITANGENT      = 7,
 	
 	ATTRIB_INDEX_COUNT
 };
 
 enum
 {
-    ATTRIB_POSITION             = BIT(ATTRIB_INDEX_POSITION),
-    ATTRIB_NORMAL               = BIT(ATTRIB_INDEX_NORMAL),
-	ATTRIB_TEXCOORD             = BIT(ATTRIB_INDEX_TEXCOORD),
-    ATTRIB_COLOR                = BIT(ATTRIB_INDEX_COLOR),
-    ATTRIB_WORLDPOS             = BIT(ATTRIB_INDEX_WORLDPOS),
+    ATTRIB_POSITION             = BIT( ATTRIB_INDEX_POSITION ),
+    ATTRIB_NORMAL               = BIT( ATTRIB_INDEX_NORMAL ),
+	ATTRIB_TEXCOORD             = BIT( ATTRIB_INDEX_TEXCOORD ),
+    ATTRIB_COLOR                = BIT( ATTRIB_INDEX_COLOR ),
+    ATTRIB_WORLDPOS             = BIT( ATTRIB_INDEX_WORLDPOS ),
+    ATTRIB_LIGHTCOORD           = BIT( ATTRIB_INDEX_LIGHTCOORD ),
+    ATTRIB_TANGENT              = BIT( ATTRIB_INDEX_TANGENT ),
+    ATTRIB_BITANGENT            = BIT( ATTRIB_INDEX_BITANGENT ),
 
 	ATTRIB_BITS =
         ATTRIB_POSITION |
         ATTRIB_TEXCOORD | 
         ATTRIB_COLOR |
         ATTRIB_NORMAL |
-        ATTRIB_WORLDPOS
+        ATTRIB_WORLDPOS |
+        ATTRIB_LIGHTCOORD
 };
 
 typedef enum {
@@ -378,13 +387,14 @@ typedef struct dlight_s
 // normal is unused
 typedef struct
 {
-    vec3_t xyz;
-    vec3_t worldPos;
-    vec2_t uv;
-    vec2_t lightmap;
-    int16_t tangent[4];
-    int16_t normal[4];
-    uint16_t color[4];
+    vec3_t          xyz;
+    vec3_t          worldPos;
+	vec2_t          uv;
+	vec2_t          lightmap;
+	int16_t         normal[4];
+	int16_t         tangent[4];
+	int16_t         lightdir[4];
+	uint16_t        color[4];
 } drawVert_t;
 
 // when sgame directly specifies a polygon, it becomes a srfPoly_t
@@ -394,6 +404,20 @@ typedef struct {
     uint32_t        numVerts;
     polyVert_t      *verts; // later becomes a drawVert_t
 } srfPoly_t;
+
+typedef struct {
+    vec3_t          xyz;
+    vec3_t          worldPos;
+	vec2_t          st;
+	vec2_t          lightmap;
+	int16_t         normal[4];
+	int16_t         tangent[4];
+	int16_t         lightdir[4];
+	uint16_t        color[4];
+#ifdef DEBUG_OPTIMIZEVERTICES
+//	unsigned int    id;
+#endif
+} srfVert_t;
 
 typedef struct {
     nhandle_t hSpriteSheet;
@@ -523,6 +547,24 @@ typedef enum {
 	DEFORM_TEXT7
 } deform_t;
 
+// deformVertexes types that can be handled by the GPU
+typedef enum
+{
+	// do not edit: same as genFunc_t
+
+	DGEN_NONE,
+	DGEN_WAVE_SIN,
+	DGEN_WAVE_SQUARE,
+	DGEN_WAVE_TRIANGLE,
+	DGEN_WAVE_SAWTOOTH,
+	DGEN_WAVE_INVERSE_SAWTOOTH,
+	DGEN_WAVE_NOISE,
+
+	// do not edit until this line
+
+	DGEN_BULGE,
+	DGEN_MOVE
+} deformGen_t;
 
 typedef enum {
 	AGEN_IDENTITY,
@@ -642,8 +684,7 @@ typedef struct {
 } texModInfo_t;
 
 
-//#define MAX_IMAGE_ANIMATIONS		24
-//#define MAX_IMAGE_ANIMATIONS_VQ3	8
+#define MAX_IMAGE_ANIMATIONS		24
 
 #define LIGHTMAP_INDEX_NONE			0
 #define LIGHTMAP_INDEX_SHADER		1
@@ -651,8 +692,8 @@ typedef struct {
 
 typedef struct {
 	texture_t		*image;
-//	uint32_t		numImageAnimations;
-//	double			imageAnimationSpeed;	// -EC- set to double
+	uint32_t		numImageAnimations;
+	double			imageAnimationSpeed;	// -EC- set to double
 
 	texCoordGen_t	tcGen;
 	vec3_t			tcGenVectors[2];
@@ -664,12 +705,10 @@ typedef struct {
 
     textureFilter_t filter;
 
-/*
-	int				videoMapHandle;
-	int				lightmap;				// LIGHTMAP_INDEX_NONE, LIGHTMAP_INDEX_SHADER, LIGHTMAP_INDEX_OFFSET
+
+	int32_t			videoMapHandle;
 	qboolean		isVideoMap;
 	qboolean		isScreenMap;
-*/
 } textureBundle_t;
 
 #define TESS_ST0	1<<0
@@ -717,11 +756,12 @@ typedef struct {
     waveForm_t alphaWave;
     alphaGen_t alphaGen;
 
-    uint32_t stateBits;         // GLS_xxxx mask
-
     byte constantColor[4];      // for CGEN_CONST and AGEN_CONST
 
+    uint32_t stateBits;         // GLS_xxxx mask
+
     qboolean isDetail;
+
     stageType_t type;
     struct shaderProgram_s *glslShaderGroup;
     int32_t glslShaderIndex;
@@ -731,7 +771,10 @@ typedef struct {
 } shaderStage_t;
 
 typedef struct shader_s {
-    char name[MAX_GDR_PATH];
+    char name[MAX_NPATH];
+
+    uint32_t		numDeforms;
+	deformStage_t	deforms[MAX_SHADER_DEFORMS];
 
     shaderStage_t *stages[MAX_SHADER_STAGES];
 
@@ -743,7 +786,7 @@ typedef struct shader_s {
 
     qboolean explicitlyDefined;     // found in a .shader file
 
-    uint32_t surfaceFlags;          // if explicitly defined this will have SURFPARM_* flags
+    uint32_t surfaceFlags;          // if explicitly defined this will have SURFACEPARM_* flags
 
     uint32_t vertexAttribs;         // not all shaders will need all data to be gathered
     
@@ -759,6 +802,9 @@ typedef struct shader_s {
 								    // still keep a name allocated for it, so if
 								    // something calls RE_RegisterShader again with
 								    // the same name, we don't try looking for it again
+
+    double	clampTime;                                  // time this shader is clamped to - set to double for frameloss fix -EC-
+	double	timeOffset;                                 // current time offset for this shader - set to double for frameloss fix -EC-
 
     struct shader_s *next;
 } shader_t;
@@ -898,6 +944,8 @@ typedef struct {
     uint32_t c_bufferBinds;
     uint32_t c_surfaces;
     uint32_t c_overDraw;
+    uint32_t c_lightallDraws;
+    uint32_t c_genericDraws;
 } backendCounters_t;
 
 
@@ -920,6 +968,8 @@ typedef struct {
     glRingbuffer_t indexRB;
 
     shader_t *shader;
+
+    double shaderTime;
 } batch_t;
 
 typedef struct {
@@ -934,6 +984,7 @@ typedef struct {
     vertexBuffer_t *drawBuffer;
 
     renderSceneDef_t refdef;
+    renderEntityDef_t *currentEntity;
 
     batch_t drawBatch;
 } renderBackend_t;
@@ -981,10 +1032,11 @@ typedef enum {
 
 enum
 {
+    GENERICDEF_USE_DEFORM_VERTEXES  = 0x0001,
 	GENERICDEF_USE_TCGEN_AND_TCMOD  = 0x0002,
-	GENERICDEF_USE_RGBAGEN          = 0x0010,
-	GENERICDEF_ALL                  = 0x003F,
-	GENERICDEF_COUNT                = 0x0040,
+	GENERICDEF_USE_RGBAGEN          = 0x0004,
+	GENERICDEF_ALL                  = 0x000F,
+	GENERICDEF_COUNT                = 0x0010,
 };
 
 enum
@@ -994,9 +1046,10 @@ enum
 	LIGHTDEF_USE_LIGHT_VERTEX    = 0x0003,
 	LIGHTDEF_LIGHTTYPE_MASK      = 0x0003,
 	LIGHTDEF_USE_TCGEN_AND_TCMOD = 0x0004,
-	LIGHTDEF_USE_SHADOWMAP       = 0x0008,
-	LIGHTDEF_ALL                 = 0x007F,
-	LIGHTDEF_COUNT               = 0x0080
+    LIGHTDEF_USE_PARALLAXMAP     = 0x0008,
+	LIGHTDEF_USE_SHADOWMAP       = 0x0010,
+	LIGHTDEF_ALL                 = 0x002F,
+	LIGHTDEF_COUNT               = 0x0030
 };
 
 
@@ -1011,13 +1064,16 @@ typedef struct
 
 	uint32_t	   			frameSceneNum;	// zeroed at RE_BeginFrame
 
+    qboolean                needScreenMap;
+
 	qboolean				worldMapLoaded;
 	qboolean				worldDeluxeMapping;
 	vec3_t                  toneMinAvgMaxLevel;
+    renderEntityDef_t       worldEntity;
 	world_t					*world;
 
 	texture_t				*defaultImage;
-//	texture_t				*scratchImage[ MAX_VIDEO_HANDLES ];
+	texture_t				*scratchImage[ MAX_VIDEO_HANDLES ];
 //	texture_t				*fogImage;
 	texture_t				*dlightImage;	// inverse-quare highlight for projective adding
 	texture_t				*flareImage;
@@ -1093,9 +1149,12 @@ typedef struct
     uint32_t identityLightByte;
     uint32_t overbrightBits;
 
+
+
     uint64_t frontEndMsec;
 
     shaderProgram_t genericShader[GENERICDEF_COUNT];
+    shaderProgram_t lightallShader[LIGHTDEF_COUNT];
     shaderProgram_t imguiShader;
     shaderProgram_t tileShader;
     shaderProgram_t ssaoShader;
@@ -1104,6 +1163,7 @@ typedef struct
     shaderProgram_t down4xShader;
 	shaderProgram_t bokehShader;
 	shaderProgram_t tonemapShader;
+    shaderProgram_t textureColorShader;
 
     qboolean beganQuery;
 
@@ -1315,12 +1375,12 @@ extern cvar_t *r_glDebug;
 extern cvar_t *r_textureBits;
 extern cvar_t *r_stencilBits;
 extern cvar_t *r_textureDetail;
-extern cvar_t *r_textureFiltering;
 extern cvar_t *r_drawBuffer;
 extern cvar_t *r_customWidth;
 extern cvar_t *r_customHeight;
 extern cvar_t *r_mappedBuffers;
 extern cvar_t *r_glDiagnostics;
+extern cvar_t *r_colorMipLevels;
 
 extern cvar_t *r_maxPolys;
 extern cvar_t *r_maxEntities;
@@ -1336,8 +1396,36 @@ extern cvar_t *r_arb_framebuffer_object;
 extern cvar_t *r_arb_vertex_array_object;
 extern cvar_t *r_arb_vertex_buffer_object;
 extern cvar_t *r_arb_texture_filter_anisotropic;
+extern cvar_t *r_arb_texture_max_anisotropy;
 extern cvar_t *r_arb_texture_float;
 extern cvar_t *r_arb_sync;
+
+//====================================================================
+
+static GDR_INLINE qboolean ShaderRequiresCPUDeforms(const shader_t * shader)
+{
+	if(shader->numDeforms) {
+		const deformStage_t *ds = &shader->deforms[0];
+
+		if (shader->numDeforms > 1)
+			return qtrue;
+
+		switch (ds->deformation)
+		{
+			case DEFORM_WAVE:
+			case DEFORM_BULGE:
+				// need CPU deforms at high level-times to avoid floating point precision loss
+				return ( backend.refdef.floatTime != (float)backend.refdef.floatTime );
+
+			default:
+				return qtrue;
+		}
+	}
+
+	return qfalse;
+}
+
+//====================================================================
 
 static GDR_INLINE int VectorCompare4(const vec4_t v1, const vec4_t v2)
 {
@@ -1395,6 +1483,7 @@ void GLSL_SetUniformVec2(shaderProgram_t *program, uint32_t uniformNum, const ve
 void GLSL_SetUniformVec3(shaderProgram_t *program, uint32_t uniformNum, const vec3_t v);
 void GLSL_SetUniformVec4(shaderProgram_t *program, uint32_t uniformNum, const vec4_t v);
 void GLSL_SetUniformMatrix4(shaderProgram_t *program, uint32_t uniformNum, const mat4_t m);
+shaderProgram_t *GLSL_GetGenericShaderProgram(int stage);
 
 //
 // rgl_math.c
@@ -1418,9 +1507,9 @@ texture_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags )
 void R_GammaCorrect( byte *buffer, uint64_t bufSize );
 void R_UpdateTextures( void );
 void R_InitTextures(void);
-texture_t *R_CreateImage(  const char *name, byte *pic, uint32_t width, uint32_t height, imgType_t type, imgFlags_t flags, int internalFormat, GLenum picFormat );
+texture_t *R_CreateImage(  const char *name, byte *pic, int width, int height, imgType_t type, imgFlags_t flags, int internalFormat );
 
-extern int32_t gl_filter_min, gl_filter_max;
+extern int gl_filter_min, gl_filter_max;
 
 //
 // rgl_shade_calc.c
@@ -1448,6 +1537,7 @@ void RE_BeginRegistration(gpuConfig_t *config);
 nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32_t sheetHeight, uint32_t spriteWidth, uint32_t spriteHeight );
 nhandle_t RE_RegisterSprite( nhandle_t hSpriteSheet, uint32_t index );
 void R_WorldToGL2( polyVert_t *verts, vec3_t pos );
+qboolean R_CalcTangentVectors(drawVert_t dv[3]);
 
 //
 // rgl_scene.c
@@ -1601,6 +1691,7 @@ typedef struct {
     renderEntityDef_t *entities;
 
     glIndex_t *indices;
+    srfVert_t *verts;
     polyVert_t *polyVerts;
     srfPoly_t *polys;
 

@@ -872,7 +872,7 @@ int ImGui_ImplOpenGL3_CreateDeviceObjects(void)
     bd->AttribLocationProjMtx = renderImport.glGetUniformLocation(imguiShader, "u_ModelViewProjection");
     bd->AttribLocationGamma = renderImport.glGetUniformLocation(imguiShader, "u_GammaAmount");
     bd->AttribLocationVtxPos = (GLuint)renderImport.glGetAttribLocation(imguiShader, "a_Position");
-    bd->AttribLocationVtxUV = (GLuint)renderImport.glGetAttribLocation(imguiShader, "a_TexCoord");
+    bd->AttribLocationVtxUV = (GLuint)renderImport.glGetAttribLocation(imguiShader, "a_TexCoords");
     bd->AttribLocationVtxColor = (GLuint)renderImport.glGetAttribLocation(imguiShader, "a_Color");
 
     // Create buffers

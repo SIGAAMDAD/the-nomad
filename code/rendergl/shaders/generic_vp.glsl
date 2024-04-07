@@ -39,7 +39,7 @@ vec4 CalcColor(vec3 position, vec3 normal)
 	{
 		float incoming = clamp(dot(normal, u_ModelLightDir), 0.0, 1.0);
 
-//		color.rgb = clamp(u_DirectedLight * incoming + u_AmbientLight, 0.0, 1.0);
+		color.rgb = clamp(u_DirectedLight * incoming + u_AmbientLight, 0.0, 1.0);
 	}
 	
 	vec3 viewer = u_LocalViewOrigin - position;
@@ -102,10 +102,10 @@ vec2 GenTexCoords( int TCGen, vec3 position, vec3 normal, vec3 TCGenVector0, vec
 	vec2 tex = a_TexCoords;
 
 	if ( TCGen == TCGEN_LIGHTMAP ) {
-	//	tex = a_TexCoord1.st;
+		tex = a_TexCoords.st;
 	}
 	else if ( TCGen == TCGEN_ENVIRONMENT_MAPPED ) {
-		vec3 viewer = normalize( u_WorldPos - position );
+		vec3 viewer = normalize( vec3( 0.0 ) - position );
 		vec2 ref = reflect( viewer, normal ).yz;
 		tex.s = ref.x * -0.5 + 0.5;
 		tex.t = ref.y *  0.5 + 0.5;
@@ -121,19 +121,18 @@ vec2 GenTexCoords( int TCGen, vec3 position, vec3 normal, vec3 TCGenVector0, vec
 void main()
 {
 	v_Color = a_Color;
-//
+
 //#if defined(USE_TCGEN)
 //	vec2 texCoords = GenTexCoords( u_TCGen0, a_Position, vec3( 0.0 ), u_TCGen0Vector0, u_TCGen0Vector1 );
 //#else
-//	vec2 texCoords = a_TexCoords;
+	vec2 texCoords = a_TexCoords;
 //#endif
-//
-//#if defined(USE_TCMOD)
-//	v_TexCoords = ModTexCoords( texCoords, a_Position, u_DiffuseTexMatrix, u_DiffuseTexOffTurb );
-//#else
-//	v_TexCoords = texCoords;
-//#endif
-	v_TexCoords = a_TexCoords;
+
+#if defined(USE_TCMOD)
+	v_TexCoords = ModTexCoords( texCoords, a_Position, u_DiffuseTexMatrix, u_DiffuseTexOffTurb );
+#else
+	v_TexCoords = texCoords;
+#endif
 
 	v_FragPos = vec4( u_ModelViewProjection * vec4( a_Position, 1.0 ) ).xyz;
 

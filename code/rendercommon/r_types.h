@@ -13,6 +13,7 @@
 #define RSF_ORTHO_BITS					0x000f
 
 #define RSF_NOWORLDMODEL				0x0010 // used when rendering the ui, but can be used with sgame
+#define RSF_USE_SUNLIGHT				0x0020
 #define RSF_CONFIG_BITS					0x00f0
 
 #define MAX_VERTS_ON_POLY				1024
@@ -30,13 +31,6 @@ typedef struct {
 	polyVert_t *verts;
 } poly_t;
 
-typedef struct {
-	vec2_t topLeft;
-	vec2_t topRight;
-	vec2_t bottomLeft;
-	vec2_t bottomRight;
-} entityTexCoords_t;
-
 typedef enum {
 	RT_LIGHTNING,
 	RT_SPRITE,			// from a sprite sheet (a mob or player)
@@ -46,16 +40,28 @@ typedef enum {
 } renderEntityType_t;
 
 typedef struct {
-	entityTexCoords_t texCoords;
+	// texturing
+	nhandle_t sheetNum;  // sprite sheet index
+	nhandle_t spriteId;  // sprite id
+
+	int renderfx;
+
+	vec3_t lightingOrigin; // RF_LIGHTING_ORIGIN
 	vec3_t origin;
-	color4ub_t modulate;
+	uint64_t frame;
 
 	uint32_t flags;
 
-	// sprite information
-	nhandle_t hShader;
-	color4ub_t shaderRGBA;		// colors used by rgbGen entity shaders
-	float rotation;
+	// misc
+	color4ub_t	shader;
+	float		shaderTexCoord[2];	// texture coordinates used by tcMod entity modifiers
+
+	// subtracted from refdef time to control effect start times
+	floatint_t	shaderTime;			// -EC- set to union
+
+	// extra sprite information
+	float		radius;
+	float		rotation;
 } renderEntityRef_t;
 
 typedef struct {
@@ -110,11 +116,11 @@ typedef enum {
 } geometryDetail_t;
 
 typedef enum
-{							// [min, mag]
-    TexFilter_Linear,       // GL_LINEAR GL_LINEAR
-    TexFilter_Nearest,      // GL_NEAREST GL_NEAREST
-    TexFilter_Bilinear,     // GL_NEAREST GL_LINEAR
-    TexFilter_Trilinear,    // GL_LINEAR GL_NEAREST
+{							 // [min, mag]
+    TexFilter_Bilinear,      // GL_LINEAR GL_LINEAR
+    TexFilter_Nearest,       // GL_NEAREST GL_NEAREST
+    TexFilter_LinearNearest, // GL_LINEAR GL_NEAREST
+    TexFilter_NearestLinear, // GL_NEAREST GL_LINEAR
 
 	NumTexFilters
 } textureFilter_t;

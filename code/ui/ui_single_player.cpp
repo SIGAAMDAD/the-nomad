@@ -88,7 +88,7 @@ void SinglePlayerMenu_Draw( void )
             ui->SetState( STATE_LOADGAME );
         }
         ImGui::TableNextRow();
-        if (ui->Menu_Option( va( "%s COMMING SOON! :)", sp.playMission->value ) ) ) {
+        if (ui->Menu_Option( va( "%s COMING SOON! :)", sp.playMission->value ) ) ) {
         	// play any mission found inside the current mods loaded
 //               ui->SetState( STATE_PLAYMISSION );
         }
@@ -261,10 +261,10 @@ void SinglePlayerMenu_Draw( void )
             FontCache()->SetActiveFont( PressStart2P );
             for (i = 0; i < sp.numSaves; i++) {
                 if ( ImGui::TreeNodeEx( (void *)(uintptr_t)sp.saveList[i].name, treeNodeFlags, sp.saveList[i].name ) ) {
-                    sp.currentSave = i;
-                    if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && ImGui::IsMouseClicked( ImGuiMouseButton_Left ) ) {
+                    if ( ImGui::IsMouseClicked( ImGuiMouseButton_Left ) ) {
                     	ui->PlaySelected();
                     }
+                    sp.currentSave = i;
                     if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && ImGui::IsMouseDoubleClicked( ImGuiMouseButton_Left ) ) {
                         ui->PlaySelected();
                         Cvar_Set( "sgame_SaveName", sp.saveList[i].name );
@@ -350,6 +350,8 @@ void SinglePlayerMenu_Cache( void )
 
     difficultyTable[DIF_BLACKDEATH].name = strManager->ValueForKey( "SP_DIFF_VERY_HARD" )->value;
     difficultyTable[DIF_BLACKDEATH].tooltip = strManager->ValueForKey( "SP_DIFF_4_DESC" )->value;
+
+    difficultyTable[DIF_MINORINCONVENIECE].tooltip = "PAIN."; // no changing this one, because that's the most accurate description
 
 	sp.title = strManager->ValueForKey( "SP_MENU_TITLE" );	
 	sp.newGameBegin = strManager->ValueForKey( "SP_BEGIN_NEWGAME" );

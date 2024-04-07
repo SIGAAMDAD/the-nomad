@@ -796,7 +796,7 @@ static const void *RB_DrawImage( const void *data ) {
 	shader_t *shader;
 	uint32_t numVerts;
 	uint32_t numIndices;
-	polyVert_t *verts;
+	srfVert_t *verts;
 	uint32_t *indices;
 
 	cmd = (const drawImageCmd_t *)data;
@@ -805,13 +805,13 @@ static const void *RB_DrawImage( const void *data ) {
 
 	if ( backend.drawBatch.shader != shader ) {
 		RB_FlushBatchBuffer();
-		RB_SetBatchBuffer( backend.drawBuffer, backendData->polyVerts, sizeof( polyVert_t ),
+		RB_SetBatchBuffer( backend.drawBuffer, backendData->verts, sizeof( srfVert_t ),
 			backendData->indices, sizeof( glIndex_t ) );
 	}
 	backend.drawBatch.shader = shader;
 	numVerts = backend.drawBatch.vtxOffset;
 	numIndices = backend.drawBatch.idxOffset;
-	verts = &backendData->polyVerts[ numVerts ];
+	verts = &backendData->verts[ numVerts ];
 	indices = &backendData->indices[ numIndices ];
 
 	{
@@ -819,39 +819,39 @@ static const void *RB_DrawImage( const void *data ) {
 
 		VectorScale4( backend.color2D, 257, color );
 
-		VectorCopy4( verts[0].modulate.rgba, color );
-		VectorCopy4( verts[1].modulate.rgba, color );
-		VectorCopy4( verts[2].modulate.rgba, color );
-		VectorCopy4( verts[3].modulate.rgba, color );
+//		VectorCopy4( verts[0].modulate.rgba, color );
+//		VectorCopy4( verts[1].modulate.rgba, color );
+//		VectorCopy4( verts[2].modulate.rgba, color );
+//		VectorCopy4( verts[3].modulate.rgba, color );
 	}
 
 	verts[0].xyz[0] = cmd->x;
 	verts[0].xyz[1] = cmd->y;
 	verts[0].xyz[2] = 0;
 
-	verts[0].uv[0] = cmd->u1;
-	verts[0].uv[1] = cmd->v1;
+	verts[0].st[0] = cmd->u1;
+	verts[0].st[1] = cmd->v1;
 
 	verts[1].xyz[0] = cmd->x + cmd->w;
 	verts[1].xyz[1] = cmd->y;
 	verts[1].xyz[2] = 0;
 
-	verts[1].uv[0] = cmd->u2;
-	verts[1].uv[1] = cmd->v1;
+	verts[1].st[0] = cmd->u2;
+	verts[1].st[1] = cmd->v1;
 
 	verts[2].xyz[0] = cmd->x + cmd->w;
 	verts[2].xyz[1] = cmd->y + cmd->h;
 	verts[2].xyz[2] = 0;
 
-	verts[2].uv[0] = cmd->u2;
-	verts[2].uv[1] = cmd->v2;
+	verts[2].st[0] = cmd->u2;
+	verts[2].st[1] = cmd->v2;
 
 	verts[3].xyz[0] = cmd->x;
 	verts[3].xyz[1] = cmd->y + cmd->h;
 	verts[3].xyz[2] = 0;
 
-	verts[3].uv[0] = cmd->u1;
-	verts[3].uv[1] = cmd->v2;
+	verts[3].st[0] = cmd->u1;
+	verts[3].st[1] = cmd->v2;
 
 	indices[0] = numVerts;
 	indices[1] = numVerts + 1;

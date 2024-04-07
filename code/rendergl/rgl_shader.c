@@ -497,11 +497,11 @@ static qboolean ParseStage(shaderStage_t *stage, const char **text)
 				return qfalse;
 			}
 
-			if (!N_stricmp(tok, "$whiteimage")) {
+			if ( !N_stricmp(tok, "$whiteimage") ) {
 				stage->bundle[0].image = rg.whiteImage;
 				continue;
 			}
-			else if (!N_stricmp(tok, "$lightmap")) {
+			else if ( !N_stricmp(tok, "$lightmap") ) {
 				stage->bundle[0].isLightmap = qtrue;
 				stage->bundle[0].image = rg.whiteImage;
 			}
@@ -530,41 +530,40 @@ static qboolean ParseStage(shaderStage_t *stage, const char **text)
 		//
 		// clampmap <name>
 		//
-		else if ( !N_stricmp( tok, "clampmap") || ( !N_stricmp( tok, "screenMap" ) && r_extendedShader ) ) {
-			imgFlags_t flags;
-
-			/*
-			if ( !N_stricmp( tok, "screenMap" ) ) {
-				flags = IMGFLAG_NONE;
-				if ( glContext.ARB_framebuffer_object ) {
-					stage->bundle[0].isScreenMap = qtrue;
-					shader.hasScreenMap = qtrue;
-					tr.needScreenMap = qtrue;
-				}
-			} else
-			*/
-			{
-				flags = IMGFLAG_CLAMPTOEDGE;
-			}
+		else if ( !N_stricmp( tok, "clampmap" ) ) {
+			imgType_t type = IMGTYPE_COLORALPHA;
+			imgFlags_t flags = IMGFLAG_CLAMPTOEDGE;
 
 			tok = COM_ParseExt( text, qfalse );
 			if ( !tok[0] ) {
-				ri.Printf( PRINT_WARNING, "WARNING: missing parameter for '%s' keyword in shader '%s'\n",
-					/* stage->bundle[0].isScreenMap */ 0 ? "screenMap" : "clampMap", shader.name );
+				ri.Printf( PRINT_WARNING, "missing parameter for 'clampmap' keyword in shader '%s'\n", shader.name );
 				return qfalse;
 			}
 
 			if ( !shader.noMipMaps ) {
 				flags |= IMGFLAG_MIPMAP;
 			}
+
 			if ( !shader.noPicMip ) {
 				flags |= IMGFLAG_PICMIP;
 			}
-			if ( shader.noLightScale ) {
+
+			if ( stage->type == ST_NORMALMAP || stage->type == ST_NORMALPARALLAXMAP ) {
+				type = IMGTYPE_NORMAL;
 				flags |= IMGFLAG_NOLIGHTSCALE;
+
+				if ( stage->type == ST_NORMALPARALLAXMAP ) {
+					type = IMGTYPE_NORMALHEIGHT;
+				}
+			}
+			else {
+				if ( r_genNormalMaps->i ) {
+					flags |= IMGFLAG_GENNORMALMAP;
+				}
 			}
 
-			stage->bundle[0].image = R_FindImageFile( tok, IMGTYPE_COLORALPHA, flags );
+
+			stage->bundle[0].image = R_FindImageFile( tok, type, flags );
 			if ( !stage->bundle[0].image ) {
 				ri.Printf( PRINT_WARNING, "WARNING: R_FindImageFile could not find '%s' in shader '%s'\n", tok, shader.name );
 				return qfalse;
@@ -750,7 +749,7 @@ static qboolean ParseStage(shaderStage_t *stage, const char **text)
 			}
 		}
 		//
-		// texFilter <linear|nearest|bilinear|trilinear>
+		// texFilter <bilinear|nearest|linear_nearest|nearest_linear|default>
 		//
 		else if ( !N_stricmp( tok, "texFilter" ) ) {
 			tok = COM_ParseExt( text, qfalse );
@@ -759,22 +758,58 @@ static qboolean ParseStage(shaderStage_t *stage, const char **text)
 				ri.Printf( PRINT_WARNING, "missing parameters for texFilter in shader '%s'\n", shader.name );
 				continue;
 			}
-			if ( !N_stricmp( tok, "linear" ) ) {
-				stage->bundle[0].filter = TexFilter_Linear;
+			if ( !N_stricmp( tok, "bilinear" ) ) {
+				stage->bundle[0].filter = TexFilter_Bilinear;
 			}
 			else if ( !N_stricmp( tok, "nearest" ) ) {
 				stage->bundle[0].filter = TexFilter_Nearest;
 			}
-			else if ( !N_stricmp( tok, "bilinear" ) ) {
-				stage->bundle[0].filter = TexFilter_Bilinear;
+			else if ( !N_stricmp( tok, "linear_nearest" ) ) {
+				stage->bundle[0].filter = TexFilter_LinearNearest;
 			}
-			else if ( !N_stricmp( tok, "trilinear" ) ) {
-				stage->bundle[0].filter = TexFilter_Trilinear;
+			else if ( !N_stricmp( tok, "nearest_linear" ) ) {
+				stage->bundle[0].filter = TexFilter_NearestLinear;
+			}
+			else if ( !N_stricmp( tok, "default" ) ) {
+				continue;
 			}
 			else {
 				stage->bundle[0].filter = NumTexFilters;
 				ri.Printf( PRINT_WARNING, "unknown texFilter parameter '%s' in shader '%s'\n", tok, shader.name );
 				continue;
+			}
+		}
+		//
+		// stage <type>
+		//
+		else if ( !N_stricmp( tok, "stage" ) ) {
+			tok = COM_ParseExt( text, qfalse );
+			if ( !tok[0] ) {
+				ri.Printf( PRINT_WARNING, "missing parameters for stage in shader '%s'\n", shader.name );
+				continue;
+			}
+
+			if ( !N_stricmp( tok, "diffuseMap" ) ) {
+				stage->type = ST_DIFFUSEMAP;
+			}
+			else if ( !N_stricmp( tok, "normalMap" ) || !N_stricmp( tok, "bumpMap" ) || !N_stricmp( tok, "heightMap" ) ) {
+				stage->type = ST_NORMALMAP;
+				VectorSet4( stage->normalScale, r_baseNormalX->f, r_baseNormalY->f, 1.0f, r_baseParallax->f );
+			}
+			else if ( !N_stricmp( tok, "normalParallaxMap" ) || !N_stricmp( tok, "bumpParallaxMap" ) || !N_stricmp( tok, "heightParallaxMap" ) ) {
+				if ( r_parallaxMapping->i ) {
+					stage->type = ST_NORMALPARALLAXMAP;
+				} else {
+					stage->type = ST_NORMALMAP;
+				}
+				VectorSet4( stage->normalScale, r_baseNormalX->f, r_baseNormalY->f, 1.0f, r_baseParallax->f );
+			}
+			else if ( !N_stricmp( tok, "specularMap" ) ) {
+				stage->type = ST_SPECULARMAP;
+				VectorSet4( stage->specularScale, 1.0f, 1.0f, 1.0f, 1.0f );
+			}
+			else {
+				ri.Printf( PRINT_WARNING, "unknown stage parameter '%s' in shader '%s'\n", tok, shader.name );
 			}
 		}
 		//
@@ -1035,17 +1070,139 @@ static qboolean ParseShader( const char **text )
 //====================================================
 
 
+/*
+====================
+FindLightingStages
+
+Find proper stage for dlight pass
+====================
+*/
+#define GLS_BLEND_BITS (GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS)
+static void FindLightingStages( void )
+{
+	int i;
+	shader.lightingStage = -1;
+
+	if ( /* shader.isSky || */ ( shader.surfaceFlags & (SURFACEPARM_NODLIGHT /* | SURFACEPARM_SKY */) ) || shader.sort > SS_OPAQUE ) {
+		return;
+	}
+
+	for ( i = 0; i < MAX_SHADER_STAGES; i++ ) {
+		if ( !stages[i].bundle[0].isLightmap ) {
+			if ( stages[i].bundle[0].tcGen != TCGEN_TEXTURE )
+				continue;
+			if ( (stages[i].stateBits & GLS_BLEND_BITS) == (GLS_SRCBLEND_ONE | GLS_DSTBLEND_ONE) )
+				continue;
+			if ( stages[i].rgbGen == CGEN_IDENTITY && (stages[i].stateBits & GLS_BLEND_BITS) == (GLS_SRCBLEND_DST_COLOR | GLS_DSTBLEND_ZERO) ) {
+				if ( shader.lightingStage >= 0 ) {
+					continue;
+				}
+			}
+			shader.lightingStage = i;
+		}
+	}
+}
+
+
+/*
+=================
+VertexLightingCollapse
+
+If vertex lighting is enabled, only render a single
+pass, trying to guess which is the correct one to best approximate
+what it is supposed to look like.
+=================
+*/
+static void VertexLightingCollapse( void ) {
+	int		stage;
+	shaderStage_t	*bestStage;
+	int		bestImageRank;
+	int		rank;
+
+	// if we aren't opaque, just use the first pass
+	if ( shader.sort == SS_OPAQUE ) {
+
+		// pick the best texture for the single pass
+		bestStage = &stages[0];
+		bestImageRank = -999999;
+
+		for ( stage = 0; stage < MAX_SHADER_STAGES; stage++ ) {
+			shaderStage_t *pStage = &stages[stage];
+
+			if ( !pStage->active ) {
+				break;
+			}
+			rank = 0;
+
+			if ( pStage->bundle[0].isLightmap ) {
+				rank -= 100;
+			}
+			if ( pStage->bundle[0].tcGen != TCGEN_TEXTURE ) {
+				rank -= 5;
+			}
+			if ( pStage->bundle[0].numTexMods ) {
+				rank -= 5;
+			}
+			if ( pStage->rgbGen != CGEN_IDENTITY && pStage->rgbGen != CGEN_IDENTITY_LIGHTING ) {
+				rank -= 3;
+			}
+
+			if ( rank > bestImageRank  ) {
+				bestImageRank = rank;
+				bestStage = pStage;
+			}
+		}
+
+		stages[0].bundle[0] = bestStage->bundle[0];
+		stages[0].stateBits &= ~( GLS_DSTBLEND_BITS | GLS_SRCBLEND_BITS );
+		stages[0].stateBits |= GLS_DEPTHMASK_TRUE;
+		if ( shader.lightmapIndex == LIGHTMAP_NONE ) {
+			stages[0].rgbGen = CGEN_LIGHTING_DIFFUSE;
+		} else {
+			stages[0].rgbGen = CGEN_EXACT_VERTEX;
+		}
+		stages[0].alphaGen = AGEN_SKIP;
+	} else {
+		// don't use a lightmap (tesla coils)
+		if ( stages[0].bundle[0].isLightmap ) {
+			stages[0] = stages[1];
+		}
+
+		// if we were in a cross-fade cgen, hack it to normal
+		if ( stages[0].rgbGen == CGEN_ONE_MINUS_ENTITY || stages[1].rgbGen == CGEN_ONE_MINUS_ENTITY ) {
+			stages[0].rgbGen = CGEN_IDENTITY_LIGHTING;
+		}
+		if ( ( stages[0].rgbGen == CGEN_WAVEFORM && stages[0].rgbWave.func == GF_SAWTOOTH )
+			&& ( stages[1].rgbGen == CGEN_WAVEFORM && stages[1].rgbWave.func == GF_INVERSE_SAWTOOTH ) ) {
+			stages[0].rgbGen = CGEN_IDENTITY_LIGHTING;
+		}
+		if ( ( stages[0].rgbGen == CGEN_WAVEFORM && stages[0].rgbWave.func == GF_INVERSE_SAWTOOTH )
+			&& ( stages[1].rgbGen == CGEN_WAVEFORM && stages[1].rgbWave.func == GF_SAWTOOTH ) ) {
+			stages[0].rgbGen = CGEN_IDENTITY_LIGHTING;
+		}
+	}
+
+	for ( stage = 1; stage < MAX_SHADER_STAGES; stage++ ) {
+		shaderStage_t *pStage = &stages[stage];
+
+		if ( !pStage->active ) {
+			break;
+		}
+
+		memset( pStage, 0, sizeof( *pStage ) );
+	}
+}
+
 static void ComputeVertexAttribs(void)
 {
     uint32_t i, stage;
 
     // dlights always need ATTRIB_NORMAL
-    shader.vertexAttribs = ATTRIB_POSITION | ATTRIB_NORMAL;
+    shader.vertexAttribs = ATTRIB_POSITION | ATTRIB_COLOR;
 
     if (shader.defaultShader) {
         shader.vertexAttribs |= ATTRIB_TEXCOORD;
     }
-
     
 }
 
@@ -1093,9 +1250,6 @@ static void CollapseStagesToLightall( shaderStage_t *diffuse, shaderStage_t *nor
 				diffuse->bundle[TB_NORMALMAP] = diffuse->bundle[0];
 				diffuse->bundle[TB_NORMALMAP].image = normalTex;
 
-//				if ( parallax && r_parallaxMapping->i )
-//					defs |= LIGHTDEF_USE_PARALLAXMAP;
-
 				VectorSet4( diffuse->normalScale, r_baseNormalX->f, r_baseNormalY->f, 1.0f, r_baseParallax->f );
 			}
 		}
@@ -1104,7 +1258,7 @@ static void CollapseStagesToLightall( shaderStage_t *diffuse, shaderStage_t *nor
 	if ( r_specularMapping->i ) {
 		texture_t *diffuseTex;
 		if ( specular ) {
-			//ri.Printf(PRINT_ALL, ", specularmap %s", specular->bundle[0].image[0]->imgName);
+			//ri.Printf(PRINT_ALL, ", specularmap %s", specular->bundle[0].image->imgName);
 			diffuse->bundle[TB_SPECULARMAP] = specular->bundle[0];
 			VectorCopy4( specular->specularScale, diffuse->specularScale );
 		}
@@ -1127,10 +1281,9 @@ static void CollapseStagesToLightall( shaderStage_t *diffuse, shaderStage_t *nor
 		}
 	}
 
-//	if (tcgen || diffuse->bundle[0].numTexMods)
-//	{
-//		defs |= LIGHTDEF_USE_TCGEN_AND_TCMOD;
-//	}
+	if (tcgen || diffuse->bundle[0].numTexMods) {
+		defs |= LIGHTDEF_USE_TCGEN_AND_TCMOD;
+	}
 
 	//ri.Printf(PRINT_ALL, ".\n");
 
@@ -1240,13 +1393,14 @@ InitShader
 */
 static void InitShader(const char *name, int32_t lightmapIndex)
 {
-	memset( &shader, 0, sizeof(shader) );
+	memset( &shader, 0, sizeof( shader ) );
 	N_strncpyz( shader.name, name, sizeof(shader.name) );
 
 	shader.lightmapIndex = lightmapIndex;
 
 	for ( uint32_t i = 0 ; i < MAX_SHADER_STAGES ; i++ ) {
 		stages[i].bundle[0].texMods = texMods[i];
+		stages[i].bundle[0].numTexMods = 0; // fixes two images one screen bug
 
 		// default normal/specular
 		VectorSet4( stages[i].normalScale, 0.0f, 0.0f, 0.0f, 0.0f );
@@ -1260,6 +1414,305 @@ static void InitShader(const char *name, int32_t lightmapIndex)
 			stages[i].specularScale[3] = r_baseGloss->f;
 		}
 	}
+}
+
+
+static int CollapseStagesToGLSL(void)
+{
+	int i, j, numStages;
+	qboolean skip = qfalse;
+
+	// skip shaders with deforms
+	if (shader.numDeforms != 0)
+	{
+		skip = qtrue;
+	}
+
+	if (!skip)
+	{
+		// if 2+ stages and first stage is lightmap, switch them
+		// this makes it easier for the later bits to process
+		if (stages[0].active && stages[0].bundle[0].tcGen == TCGEN_LIGHTMAP && stages[1].active)
+		{
+			int blendBits = stages[1].stateBits & ( GLS_DSTBLEND_BITS | GLS_SRCBLEND_BITS );
+
+			if (blendBits == (GLS_DSTBLEND_SRC_COLOR | GLS_SRCBLEND_ZERO)
+				|| blendBits == (GLS_DSTBLEND_ZERO | GLS_SRCBLEND_DST_COLOR))
+			{
+				int stateBits0 = stages[0].stateBits;
+				int stateBits1 = stages[1].stateBits;
+				shaderStage_t swapStage;
+
+				swapStage = stages[0];
+				stages[0] = stages[1];
+				stages[1] = swapStage;
+
+				stages[0].stateBits = stateBits0;
+				stages[1].stateBits = stateBits1;
+			}
+		}
+	}
+
+	if (!skip)
+	{
+		// scan for shaders that aren't supported
+		for (i = 0; i < MAX_SHADER_STAGES; i++)
+		{
+			shaderStage_t *pStage = &stages[i];
+
+			if (!pStage->active)
+				continue;
+
+			//if (pStage->adjustColorsForFog)
+			//{
+			//	skip = qtrue;
+			//	break;
+			//}
+
+			if (pStage->bundle[0].tcGen == TCGEN_LIGHTMAP)
+			{
+				int blendBits = pStage->stateBits & ( GLS_DSTBLEND_BITS | GLS_SRCBLEND_BITS );
+				
+				if (blendBits != (GLS_DSTBLEND_SRC_COLOR | GLS_SRCBLEND_ZERO)
+					&& blendBits != (GLS_DSTBLEND_ZERO | GLS_SRCBLEND_DST_COLOR))
+				{
+					skip = qtrue;
+					break;
+				}
+			}
+
+			switch(pStage->bundle[0].tcGen)
+			{
+				case TCGEN_TEXTURE:
+				case TCGEN_LIGHTMAP:
+				case TCGEN_ENVIRONMENT_MAPPED:
+				case TCGEN_VECTOR:
+					break;
+				default:
+					skip = qtrue;
+					break;
+			}
+
+			switch(pStage->alphaGen)
+			{
+				case AGEN_LIGHTING_SPECULAR:
+				case AGEN_PORTAL:
+					skip = qtrue;
+					break;
+				default:
+					break;
+			}
+		}
+	}
+
+	if (!skip)
+	{
+		qboolean usedLightmap = qfalse;
+
+		for (i = 0; i < MAX_SHADER_STAGES; i++)
+		{
+			shaderStage_t *pStage = &stages[i];
+			shaderStage_t *diffuse, *normal, *specular, *lightmap;
+			qboolean parallax, tcgen, diffuselit, vertexlit;
+
+			if (!pStage->active)
+				continue;
+
+			// skip normal and specular maps
+			if (pStage->type != ST_COLORMAP)
+				continue;
+
+			// skip lightmaps
+			if (pStage->bundle[0].tcGen == TCGEN_LIGHTMAP)
+				continue;
+
+			diffuse  = pStage;
+			normal   = NULL;
+			parallax = qfalse;
+			specular = NULL;
+			lightmap = NULL;
+
+			// we have a diffuse map, find matching normal, specular, and lightmap
+			for (j = i + 1; j < MAX_SHADER_STAGES; j++)
+			{
+				shaderStage_t *pStage2 = &stages[j];
+
+				if (!pStage2->active)
+					continue;
+
+				switch(pStage2->type)
+				{
+					case ST_NORMALMAP:
+						if (!normal)
+						{
+							normal = pStage2;
+						}
+						break;
+
+					case ST_NORMALPARALLAXMAP:
+						if (!normal)
+						{
+							normal = pStage2;
+							parallax = qtrue;
+						}
+						break;
+
+					case ST_SPECULARMAP:
+						if (!specular)
+						{
+							specular = pStage2;
+						}
+						break;
+
+					case ST_COLORMAP:
+						if (pStage2->bundle[0].tcGen == TCGEN_LIGHTMAP)
+						{
+							int blendBits = pStage->stateBits & ( GLS_DSTBLEND_BITS | GLS_SRCBLEND_BITS );
+
+							// Only add lightmap to blendfunc filter stage if it's the first time lightmap is used
+							// otherwise it will cause the shader to be darkened by the lightmap multiple times.
+							if (!usedLightmap || (blendBits != (GLS_DSTBLEND_SRC_COLOR | GLS_SRCBLEND_ZERO)
+								&& blendBits != (GLS_DSTBLEND_ZERO | GLS_SRCBLEND_DST_COLOR)))
+							{
+								lightmap = pStage2;
+								usedLightmap = qtrue;
+							}
+						}
+						break;
+
+					default:
+						break;
+				}
+			}
+
+			tcgen = qfalse;
+			if (diffuse->bundle[0].tcGen == TCGEN_ENVIRONMENT_MAPPED
+			    || diffuse->bundle[0].tcGen == TCGEN_LIGHTMAP
+			    || diffuse->bundle[0].tcGen == TCGEN_VECTOR)
+			{
+				tcgen = qtrue;
+			}
+
+			diffuselit = qfalse;
+			if (diffuse->rgbGen == CGEN_LIGHTING_DIFFUSE)
+			{
+				diffuselit = qtrue;
+			}
+
+			vertexlit = qfalse;
+			if (diffuse->rgbGen == CGEN_VERTEX_LIT || diffuse->rgbGen == CGEN_EXACT_VERTEX_LIT)
+			{
+				vertexlit = qtrue;
+			}
+
+			CollapseStagesToLightall(diffuse, normal, specular, lightmap, diffuselit, vertexlit, parallax, tcgen);
+		}
+
+		// deactivate lightmap stages
+		for (i = 0; i < MAX_SHADER_STAGES; i++)
+		{
+			shaderStage_t *pStage = &stages[i];
+
+			if (!pStage->active)
+				continue;
+
+			if (pStage->bundle[0].tcGen == TCGEN_LIGHTMAP)
+			{
+				pStage->active = qfalse;
+			}
+		}
+	}
+
+	// deactivate normal and specular stages
+	for (i = 0; i < MAX_SHADER_STAGES; i++)
+	{
+		shaderStage_t *pStage = &stages[i];
+
+		if (!pStage->active)
+			continue;
+
+		if (pStage->type == ST_NORMALMAP)
+		{
+			pStage->active = qfalse;
+		}
+
+		if (pStage->type == ST_NORMALPARALLAXMAP)
+		{
+			pStage->active = qfalse;
+		}
+
+		if (pStage->type == ST_SPECULARMAP)
+		{
+			pStage->active = qfalse;
+		}			
+	}
+
+	// remove inactive stages
+	numStages = 0;
+	for (i = 0; i < MAX_SHADER_STAGES; i++)
+	{
+		if (!stages[i].active)
+			continue;
+
+		if (i == numStages)
+		{
+			numStages++;
+			continue;
+		}
+
+		stages[numStages] = stages[i];
+		stages[i].active = qfalse;
+		numStages++;
+	}
+
+	// convert any remaining lightmap stages to a lighting pass with a white texture
+	// only do this with r_sunlightMode non-zero, as it's only for correct shadows.
+	if ( r_sunlightMode->i /* && shader.numDeforms == 0 */ ) {
+		for  (i = 0; i < MAX_SHADER_STAGES; i++ ) {
+			shaderStage_t *pStage = &stages[i];
+
+			if ( !pStage->active ) {
+				continue;
+			}
+
+			//if (pStage->adjustColorsForFog)
+			//	continue;
+
+			if ( pStage->bundle[TB_DIFFUSEMAP].tcGen == TCGEN_LIGHTMAP ) {
+				pStage->glslShaderGroup = rg.lightallShader;
+				pStage->glslShaderIndex = LIGHTDEF_USE_LIGHTMAP;
+				pStage->bundle[TB_LIGHTMAP] = pStage->bundle[TB_DIFFUSEMAP];
+				pStage->bundle[TB_DIFFUSEMAP].image = rg.whiteImage;
+				pStage->bundle[TB_DIFFUSEMAP].isLightmap = qfalse;
+				pStage->bundle[TB_DIFFUSEMAP].tcGen = TCGEN_TEXTURE;
+			}
+		}
+	}
+
+	// convert any remaining lightingdiffuse stages to a lighting pass
+	if (shader.numDeforms == 0)
+	{
+		for (i = 0; i < MAX_SHADER_STAGES; i++) {
+			shaderStage_t *pStage = &stages[i];
+
+			if (!pStage->active)
+				continue;
+
+			//if (pStage->adjustColorsForFog)
+			//	continue;
+
+			if (pStage->rgbGen == CGEN_LIGHTING_DIFFUSE)
+			{
+				pStage->glslShaderGroup = rg.lightallShader;
+				pStage->glslShaderIndex = LIGHTDEF_USE_LIGHT_VECTOR;
+
+				if (pStage->bundle[0].tcGen != TCGEN_TEXTURE || pStage->bundle[0].numTexMods != 0)
+					pStage->glslShaderIndex |= LIGHTDEF_USE_TCGEN_AND_TCMOD;
+			}
+		}
+	}
+
+	return numStages;
 }
 
 static shader_t *FinishShader(void)
@@ -1374,6 +1827,37 @@ static shader_t *FinishShader(void)
 	if ( shader.sort == SS_BAD ) {
 		shader.sort = SS_OPAQUE;
 	}
+
+	//
+	// if we are in r_vertexLight mode, never use a lightmap texture
+	//
+	if ( stage > 1 && ( (r_vertexLight->i && rg.vertexLightingAllowed) || glConfig.hardwareType == GLHW_PERMEDIA2 ) ) {
+		VertexLightingCollapse();
+		hasLightmapStage = qfalse;
+	}
+
+	//
+	// look for multitexture potential
+	//
+	stage = CollapseStagesToGLSL();
+
+	if ( shader.lightmapIndex >= 0 && !hasLightmapStage ) {
+		if (vertexLightmap) {
+			ri.Printf( PRINT_DEVELOPER, "WARNING: shader '%s' has VERTEX forced lightmap!\n", shader.name );
+		} else {
+			ri.Printf( PRINT_DEVELOPER, "WARNING: shader '%s' has lightmap but no lightmap stage!\n", shader.name );
+			shader.lightmapIndex = LIGHTMAP_NONE;
+		}
+	}
+
+	FindLightingStages();
+
+	// fogonly shaders don't have any normal passes
+//	if (stage == 0 /* && !shader.isSky */)
+//		shader.sort = SS_FOG;
+
+	// determine which vertex attributes this shader needs
+	ComputeVertexAttribs();
 
     return GeneratePermanentShader();
 }

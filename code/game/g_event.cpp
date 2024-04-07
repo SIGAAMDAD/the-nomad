@@ -151,14 +151,14 @@ static const keyname_t keynames[] = {
 	{ "PAD0_DPAD_LEFT", KEY_PAD0_DPAD_LEFT },
 	{ "PAD0_DPAD_RIGHT", KEY_PAD0_DPAD_RIGHT },
 
-	{ "PAD0_LEFTSTICK_LEFT", KEY_PAD0_LEFTSTICK_LEFT },
-	{ "PAD0_LEFTSTICK_RIGHT", KEY_PAD0_LEFTSTICK_RIGHT },
-	{ "PAD0_LEFTSTICK_UP", KEY_PAD0_LEFTSTICK_UP },
-	{ "PAD0_LEFTSTICK_DOWN", KEY_PAD0_LEFTSTICK_DOWN },
-	{ "PAD0_RIGHTSTICK_LEFT", KEY_PAD0_RIGHTSTICK_LEFT },
-	{ "PAD0_RIGHTSTICK_RIGHT", KEY_PAD0_RIGHTSTICK_RIGHT },
-	{ "PAD0_RIGHTSTICK_UP", KEY_PAD0_RIGHTSTICK_UP },
-	{ "PAD0_RIGHTSTICK_DOWN", KEY_PAD0_RIGHTSTICK_DOWN },
+	{ "PAD0_LEFTSTICKEY_LEFT", KEY_PAD0_LEFTSTICK_LEFT },
+	{ "PAD0_LEFTSTICKEY_RIGHT", KEY_PAD0_LEFTSTICK_RIGHT },
+	{ "PAD0_LEFTSTICKEY_UP", KEY_PAD0_LEFTSTICK_UP },
+	{ "PAD0_LEFTSTICKEY_DOWN", KEY_PAD0_LEFTSTICK_DOWN },
+	{ "PAD0_RIGHTSTICKEY_LEFT", KEY_PAD0_RIGHTSTICK_LEFT },
+	{ "PAD0_RIGHTSTICKEY_RIGHT", KEY_PAD0_RIGHTSTICK_RIGHT },
+	{ "PAD0_RIGHTSTICKEY_UP", KEY_PAD0_RIGHTSTICK_UP },
+	{ "PAD0_RIGHTSTICKEY_DOWN", KEY_PAD0_RIGHTSTICK_DOWN },
 	{ "PAD0_LEFTTRIGGER", KEY_PAD0_LEFTTRIGGER },
 	{ "PAD0_RIGHTTRIGGER", KEY_PAD0_RIGHTTRIGGER },
 
@@ -202,38 +202,38 @@ void Key_SetOverstrikeMode( qboolean overstrike ) {
 	key_overstrikeMode = overstrike;
 }
 
-static void Key_CompleteBind(const char *args, uint32_t argnum)
+static void Key_CompleteBind(const char *argi, uint32_t argnum)
 {
 	const char *p;
 
 	if (argnum == 2) {
 		// skip "bind "
-		p = Com_SkipTokens(args, 1, " ");
+		p = Com_SkipTokens(argi, 1, " ");
 
-		if (p > args)
+		if (p > argi)
 			Field_CompleteKeyname();
 	}
 	else if (argnum >= 3) {
 		uint32_t key;
 
 		// skip "bind <key> "
-		p = Com_SkipTokens(args, 2, " ");
+		p = Com_SkipTokens(argi, 2, " ");
 		if (*p == '\0' && (key = Key_StringToKeynum(Cmd_Argv(1))) >= 0) {
 			Field_CompleteKeyBind(key);
 		}
-		else if (p > args) {
+		else if (p > argi) {
 			Field_CompleteCommand(p, qtrue, qtrue);
 		}
 	}
 }
 
-static void Key_CompleteUnbind(const char *args, uint32_t argnum)
+static void Key_CompleteUnbind(const char *argi, uint32_t argnum)
 {
 	if (argnum) {
 		// skip "unbind "
-		const char *p = Com_SkipTokens(args, 1, " ");
+		const char *p = Com_SkipTokens(argi, 1, " ");
 
-		if (p > args) {
+		if (p > argi) {
 			Field_CompleteKeyname();
 		}
 	}
@@ -241,7 +241,7 @@ static void Key_CompleteUnbind(const char *args, uint32_t argnum)
 
 /*
 Key_StringToKeynum: Returns a key number to be used to index keys[] by looking at
-the given string.  Single ascii characters return themselves, while the K_* names are matched up.
+the given string.  Single ascii characters return themselves, while the KEY_* names are matched up.
 
 0x11 will be interpreted as raw hex, which will allow new controllers
 
@@ -277,7 +277,7 @@ uint32_t Key_StringToKeynum( const char *str )
 }
 
 /*
-Key_KeynumToString: returns a string (either a single ascii char, a SDLK_* name, o a 0x11 hex string) for the
+Key_KeynumToString: returns a string (either a single ascii char, a SDLKEY_* name, o a 0x11 hex string) for the
 given keynum
 */
 const char *Key_KeynumToString(uint32_t keynum)
@@ -373,7 +373,7 @@ void Key_SetBinding(uint32_t keynum, const char *binding)
 		return;
 	}
 
-	// free old bindings
+	// free old bindingi
 	if (keys[keynum].binding) {
 		Z_Free(keys[keynum].binding);
 	}
@@ -462,7 +462,7 @@ void Key_WriteBindings( fileHandle_t f )
 		FS_Printf( f, "bind %s \"%s\"" GDR_NEWLINE, Key_KeynumToString(i), keys[i].binding );
 	}
 
-	Cbuf_ExecuteText( EXEC_APPEND, "ui.settings_write_bindings" );
+	Cbuf_ExecuteText( EXEC_APPEND, "ui.settingi_write_bindingi" );
 }
 
 static void Key_Bindlist_f( void )
@@ -531,6 +531,465 @@ void Key_ParseBinding(uint32_t key, qboolean down, uint32_t time)
 	}
 }
 
+static void Field_CharEvent( field_t *edit, int ch );
+
+/*
+=============================================================================
+
+EDIT FIELDS
+
+=============================================================================
+*/
+
+
+/*
+===================
+Field_Draw
+
+Handles horizontal scrolling and cursor blinking
+x, y, and width are in pixels
+===================
+*/
+static void Field_VariableSizeDraw( field_t *edit, int x, int y, int width, int size, qboolean showCursor,
+		qboolean noColorEscape ) {
+	int		len;
+	int		drawLen;
+	int		prestep;
+	int		cursorChar;
+	char	str[MAX_STRING_CHARS], *s;
+	int		i;
+	int		curColor;
+
+	drawLen = edit->widthInChars - 1; // - 1 so there is always a space for the cursor
+	len = strlen( edit->buffer );
+
+	// guarantee that cursor will be visible
+	if ( len <= drawLen ) {
+		prestep = 0;
+	} else {
+		if ( edit->scroll + drawLen > len ) {
+			edit->scroll = len - drawLen;
+			if ( edit->scroll < 0 ) {
+				edit->scroll = 0;
+			}
+		}
+		prestep = edit->scroll;
+	}
+
+	if ( prestep + drawLen > len ) {
+		drawLen = len - prestep;
+	}
+
+	// extract <drawLen> characters from the field at <prestep>
+	if ( drawLen >= MAX_STRING_CHARS ) {
+		N_Error( ERR_DROP, "drawLen >= MAX_STRING_CHARS" );
+	}
+
+	memcpy( str, edit->buffer + prestep, drawLen );
+	str[ drawLen ] = '\0';
+
+	// color tracking
+	curColor = S_COLOR_WHITE;
+
+	if ( prestep > 0 ) {
+		// we need to track last actual color because we cut some text before
+		s = edit->buffer;
+		for ( i = 0; i < prestep + 1; i++, s++ ) {
+			if ( Q_IsColorString( s ) ) {
+				curColor = *(s+1);
+				s++;
+			}
+		}
+		// scroll marker
+		// FIXME: force white color?
+		if ( str[0] ) {
+			str[0] = '<';
+		}
+	}
+
+	// draw it
+	if ( size == smallchar_width ) {
+		SCR_DrawSmallStringExt( x, y, str, g_color_table[ ColorIndexFromChar( curColor ) ],
+			qfalse, noColorEscape );
+		if ( len > drawLen + prestep ) {
+			SCR_DrawSmallChar( x + ( edit->widthInChars - 1 ) * size, y, '>' );
+		}
+	} else {
+		if ( len > drawLen + prestep ) {
+			SCR_DrawStringExt( x + ( edit->widthInChars - 1 ) * BIGCHAR_WIDTH, y, size, ">",
+				g_color_table[ ColorIndex( S_COLOR_WHITE ) ], qfalse, noColorEscape );
+		}
+		// draw big string with drop shadow
+		SCR_DrawStringExt( x, y, BIGCHAR_WIDTH, str, g_color_table[ ColorIndexFromChar( curColor ) ],
+			qfalse, noColorEscape );
+	}
+
+	// draw the cursor
+	if ( showCursor ) {
+		if ( gi.realtime & 256 ) {
+			return;		// off blink
+		}
+
+		if ( key_overstrikeMode ) {
+			cursorChar = 11;
+		} else {
+			cursorChar = 10;
+		}
+
+		i = drawLen - strlen( str );
+
+		if ( size == smallchar_width ) {
+			SCR_DrawSmallChar( x + ( edit->cursor - prestep - i ) * size, y, cursorChar );
+		} else {
+			str[0] = cursorChar;
+			str[1] = '\0';
+			SCR_DrawBigString( x + ( edit->cursor - prestep - i ) * BIGCHAR_WIDTH, y, str, 1.0, qfalse );
+		}
+	}
+}
+
+
+void Field_Draw( field_t *edit, uint32_t x, uint32_t y, uint32_t width, qboolean showCursor, qboolean noColorEscape )
+{
+	Field_VariableSizeDraw( edit, x, y, width, smallchar_width, showCursor, noColorEscape );
+}
+
+
+void Field_BigDraw( field_t *edit, int x, int y, int width, qboolean showCursor, qboolean noColorEscape )
+{
+	Field_VariableSizeDraw( edit, x, y, width, bigchar_width, showCursor, noColorEscape );
+}
+
+
+/*
+================
+Field_Paste
+================
+*/
+static void Field_Paste( field_t *edit ) {
+	char	*cbd;
+	int		pasteLen, i;
+
+	cbd = Sys_GetClipboardData();
+
+	if ( !cbd ) {
+		return;
+	}
+
+	// send as if typed, so insert / overstrike works properly
+	pasteLen = strlen( cbd );
+	for ( i = 0 ; i < pasteLen ; i++ ) {
+		Field_CharEvent( edit, cbd[i] );
+	}
+
+	Z_Free( cbd );
+}
+
+
+/*
+=================
+Field_NextWord
+=================
+*/
+static void Field_SeekWord( field_t *edit, int direction )
+{
+	if ( direction > 0 ) {
+		while ( edit->buffer[ edit->cursor ] == ' ' )
+			edit->cursor++;
+		while ( edit->buffer[ edit->cursor ] != '\0' && edit->buffer[ edit->cursor ] != ' ' )
+			edit->cursor++;
+		while ( edit->buffer[ edit->cursor ] == ' ' )
+			edit->cursor++;
+	} else {
+		while ( edit->cursor > 0 && edit->buffer[ edit->cursor-1 ] == ' ' )
+			edit->cursor--;
+		while ( edit->cursor > 0 && edit->buffer[ edit->cursor-1 ] != ' ' )
+			edit->cursor--;
+		if ( edit->cursor == 0 && ( edit->buffer[ 0 ] == '/' || edit->buffer[ 0 ] == '\\' ) )
+			edit->cursor++;
+	}
+}
+
+
+/*
+=================
+Field_KeyDownEvent
+
+Performs the basic line editing functions for the console,
+in-game talk, and menu fields
+
+Key events are used for non-printable characters, others are gotten from char events.
+=================
+*/
+static void Field_KeyDownEvent( field_t *edit, int key ) {
+	int		len;
+
+	// shift-insert is paste
+	if ( ( ( key == KEY_INSERT ) || ( key == KEY_KP_INSERT ) ) && keys[KEY_SHIFT].down ) {
+		Field_Paste( edit );
+		return;
+	}
+
+	len = strlen( edit->buffer );
+
+	switch ( key ) {
+		case KEY_DELETE:
+			if ( edit->cursor < len ) {
+				memmove( edit->buffer + edit->cursor,
+					edit->buffer + edit->cursor + 1, len - edit->cursor );
+			}
+			break;
+
+		case KEY_RIGHT:
+			if ( edit->cursor < len ) {
+				if ( keys[ KEY_CTRL ].down ) {
+					Field_SeekWord( edit, 1 );
+				} else {
+					edit->cursor++;
+				}
+			}
+			break;
+
+		case KEY_LEFT:
+			if ( edit->cursor > 0 ) {
+				if ( keys[ KEY_CTRL ].down ) {
+					Field_SeekWord( edit, -1 );
+				} else {
+					edit->cursor--;
+				}
+			}
+			break;
+
+		case KEY_HOME:
+			edit->cursor = 0;
+			break;
+
+		case KEY_END:
+			edit->cursor = len;
+			break;
+
+		case KEY_INSERT:
+			key_overstrikeMode = !key_overstrikeMode;
+			break;
+
+		default:
+			break;
+	}
+
+	// Change scroll if cursor is no longer visible
+	if ( edit->cursor < edit->scroll ) {
+		edit->scroll = edit->cursor;
+	} else if ( edit->cursor >= edit->scroll + edit->widthInChars && edit->cursor <= len ) {
+		edit->scroll = edit->cursor - edit->widthInChars + 1;
+	}
+}
+
+
+/*
+==================
+Field_CharEvent
+==================
+*/
+static void Field_CharEvent( field_t *edit, int ch ) {
+	int		len;
+
+	if ( ch == 'v' - 'a' + 1 ) {	// ctrl-v is paste
+		Field_Paste( edit );
+		return;
+	}
+
+	if ( ch == 'c' - 'a' + 1 ) {	// ctrl-c clears the field
+		Field_Clear( edit );
+		return;
+	}
+
+	len = strlen( edit->buffer );
+
+	if ( ch == 'h' - 'a' + 1 )	{	// ctrl-h is backspace
+		if ( edit->cursor > 0 ) {
+			memmove( edit->buffer + edit->cursor - 1,
+				edit->buffer + edit->cursor, len + 1 - edit->cursor );
+			edit->cursor--;
+			if ( edit->cursor < edit->scroll )
+			{
+				edit->scroll--;
+			}
+		}
+		return;
+	}
+
+	if ( ch == 'a' - 'a' + 1 ) {	// ctrl-a is home
+		edit->cursor = 0;
+		edit->scroll = 0;
+		return;
+	}
+
+	if ( ch == 'e' - 'a' + 1 ) {	// ctrl-e is end
+		edit->cursor = len;
+		edit->scroll = edit->cursor - edit->widthInChars;
+		return;
+	}
+
+	//
+	// ignore any other non printable chars
+	//
+	if ( ch < ' ' ) {
+		return;
+	}
+
+	if ( key_overstrikeMode ) {
+		// - 2 to leave room for the leading slash and trailing \0
+		if ( edit->cursor == MAX_EDIT_LINE - 2 )
+			return;
+		edit->buffer[edit->cursor] = ch;
+		edit->cursor++;
+	} else {	// insert mode
+		// - 2 to leave room for the leading slash and trailing \0
+		if ( len == MAX_EDIT_LINE - 2 ) {
+			return; // all full
+		}
+		memmove( edit->buffer + edit->cursor + 1,
+			edit->buffer + edit->cursor, len + 1 - edit->cursor );
+		edit->buffer[edit->cursor] = ch;
+		edit->cursor++;
+	}
+
+
+	if ( edit->cursor >= edit->widthInChars ) {
+		edit->scroll++;
+	}
+
+	if ( edit->cursor == len + 1) {
+		edit->buffer[edit->cursor] = '\0';
+	}
+}
+
+
+/*
+=============================================================================
+
+CONSOLE LINE EDITING
+
+==============================================================================
+*/
+
+/*
+====================
+Console_Key
+
+Handles history and console scrollback
+====================
+*/
+static void Console_Key( int key ) {
+	// ctrl-L clears screen
+	if ( key == 'l' && keys[KEY_CTRL].down ) {
+		Cbuf_AddText( "clear\n" );
+		return;
+	}
+
+	// enter finishes the line
+	if ( key == KEY_ENTER || key == KEY_KP_ENTER ) {
+		// if not in the game explicitly prepend a slash if needed
+		if ( gi.state != GS_LEVEL
+			&& g_consoleField.buffer[0] != '\0'
+			&& g_consoleField.buffer[0] != '\\'
+			&& g_consoleField.buffer[0] != '/' ) {
+			char	temp[MAX_EDIT_LINE-1];
+
+			N_strncpyz( temp, g_consoleField.buffer, sizeof( temp ) );
+			Com_snprintf( g_consoleField.buffer, sizeof( g_consoleField.buffer ), "\\%s", temp );
+			g_consoleField.cursor++;
+		}
+
+		Con_Printf( "]%s\n", g_consoleField.buffer );
+
+		// leading slash is an explicit command
+		if ( g_consoleField.buffer[0] == '\\' || g_consoleField.buffer[0] == '/' ) {
+			Cbuf_AddText( g_consoleField.buffer+1 );	// valid command
+			Cbuf_AddText( "\n" );
+		} else {
+			// other text will be chat messages
+			if ( !g_consoleField.buffer[0] ) {
+				return;	// empty lines just scroll the console without adding to history
+			} else {
+//				Cbuf_AddText( "cmd say " );
+				Cbuf_AddText( g_consoleField.buffer );
+				Cbuf_AddText( "\n" );
+			}
+		}
+
+		// copy line to history buffer
+		Con_SaveField( &g_consoleField );
+
+		Field_Clear( &g_consoleField );
+		g_consoleField.widthInChars = g_console_field_width;
+
+		if ( gi.state == GS_INACTIVE ) {
+			SCR_UpdateScreen ();	// force an update, because the command
+		}							// may take some time
+		return;
+	}
+
+	// command completion
+
+	if (key == KEY_TAB) {
+		Field_AutoComplete(&g_consoleField);
+		return;
+	}
+
+	// command history (ctrl-p ctrl-n for unix style)
+
+	if ( (key == KEY_WHEEL_UP && keys[KEY_SHIFT].down) || ( key == KEY_UP ) || ( key == KEY_KP_UP ) ||
+		 ( ( tolower(key) == 'p' ) && keys[KEY_CTRL].down ) ) {
+		Con_HistoryGetPrev( &g_consoleField );
+		g_consoleField.widthInChars = g_console_field_width;
+		return;
+	}
+
+	if ( (key == KEY_WHEEL_DOWN && keys[KEY_SHIFT].down) || ( key == KEY_DOWN ) || ( key == KEY_KP_DOWN ) ||
+		 ( ( tolower(key) == 'n' ) && keys[KEY_CTRL].down ) ) {
+		Con_HistoryGetNext( &g_consoleField );
+		g_consoleField.widthInChars = g_console_field_width;
+		return;
+	}
+
+	// console scrolling
+	if ( key == KEY_PAGEUP || key == KEY_WHEEL_UP ) {
+		if ( keys[KEY_CTRL].down ) {	// hold <ctrl> to accelerate scrolling
+			Con_PageUp( 0 );		// by one visible page
+		} else {
+			Con_PageUp( 1 );
+		}
+		return;
+	}
+
+	if ( key == KEY_PAGEDOWN || key == KEY_WHEEL_DOWN ) {
+		if ( keys[KEY_CTRL].down ) {	// hold <ctrl> to accelerate scrolling
+			Con_PageDown( 0 );		// by one visible page
+		} else {
+			Con_PageDown( 1 );
+		}
+		return;
+	}
+
+	// ctrl-home = top of console
+	if ( key == KEY_HOME && keys[KEY_CTRL].down ) {
+		Con_Top();
+		return;
+	}
+
+	// ctrl-end = bottom of console
+	if ( key == KEY_END && keys[KEY_CTRL].down ) {
+		Con_Bottom();
+		return;
+	}
+
+	// pass to the normal editline routine
+	Field_KeyDownEvent( &g_consoleField, key );
+}
+
+//============================================================================
+
 static void G_KeyDownEvent(uint32_t key, uint32_t time)
 {
 	keys[key].down = qtrue;
@@ -588,6 +1047,7 @@ static void G_KeyDownEvent(uint32_t key, uint32_t time)
 	}
 
 	if ( Key_GetCatcher() & KEYCATCH_CONSOLE ) {
+		Console_Key( key );
 	} else if ( Key_GetCatcher() & KEYCATCH_UI ) {
 	} else if ( Key_GetCatcher() & KEYCATCH_SGAME ) {
 		if ( sgvm ) {
