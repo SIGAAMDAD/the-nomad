@@ -103,27 +103,9 @@ static int ImGuiInputTextCallback_Basic( ImGuiInputTextCallbackData *data )
     return 1;
 }
 
-static int ImGuiInputTextCallback_Completion( ImGuiInputTextCallbackData *data )
-{
-    mfield_t *field = (mfield_t *)data->UserData;
-
-    if (Key_IsDown(KEY_CTRL) && Key_IsDown(KEY_A)) {
-        data->SelectAll();
-    }
-    if (Key_IsDown(KEY_DELETE)) {
-        if (data->HasSelection()) {
-            // delete chars inside selection
-            data->DeleteChars(data->SelectionStart, data->SelectionEnd - data->SelectionStart);
-        }
-    }
-}
 
 void CUIWindow::TextInput( const char *label, char *buffer, uint64_t size ) const {
     ImGui::InputText( label, buffer, size, ImGuiInputTextFlags_CallbackEdit, ImGuiInputTextCallback_Basic );
-}
-
-void CUIWindow::TextInputWithCompletion( const char *label, mfield_t *buffer ) const {
-    ImGui::InputText( label, buffer->buffer, buffer->widthInChars, ImGuiInputTextFlags_CallbackAlways, ImGuiInputTextCallback_Completion, buffer );
 }
 
 void CUIWindow::DrawStringCentered( const char *str ) const

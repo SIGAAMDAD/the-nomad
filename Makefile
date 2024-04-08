@@ -313,13 +313,11 @@ SRC=\
 	$(O)/ui/ui_main.o \
 	$(O)/ui/ui_lib.o \
 	$(O)/ui/ui_menu.o \
-	$(O)/ui/ui_mfield.o \
 	$(O)/ui/ui_string_manager.o \
 	$(O)/ui/ui_window.o \
 	$(O)/ui/ui_title.o \
 	$(O)/ui/ui_demo.o \
 	$(O)/ui/ui_settings.o \
-	$(O)/ui/ui_intro.o \
 	$(O)/ui/ui_main_menu.o \
 	$(O)/ui/ui_single_player.o \
 	$(O)/ui/ui_pause.o \

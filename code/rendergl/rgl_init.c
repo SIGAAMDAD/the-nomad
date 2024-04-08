@@ -1466,7 +1466,7 @@ void RE_BeginRegistration(gpuConfig_t *config)
 
 void RE_Shutdown( refShutdownCode_t code )
 {
-    ri.Printf(PRINT_INFO, "RE_Shutdown( %i )\n", code);
+    ri.Printf( PRINT_INFO, "RE_Shutdown( %i )\n", code );
 
     ri.Cmd_RemoveCommand( "texturelist" );
     ri.Cmd_RemoveCommand( "shaderlist" );

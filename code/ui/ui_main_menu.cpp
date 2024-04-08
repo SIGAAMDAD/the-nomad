@@ -1,50 +1,34 @@
 #include "ui_lib.h"
 #include "../game/g_archive.h"
 
-class CToggleKey
-{
-public:
-    CToggleKey( void )
-        : toggleOn( qtrue )
-    {
-    }
-    ~CToggleKey() { }
-
-    void Toggle( uint32_t key, qboolean& toggleVar ) {
-        if (Key_IsDown( key )) {
-            if (toggleOn) {
-                toggleOn = qfalse;
-                toggleVar = ~toggleVar;
-            }
-        }
-        else {
-            toggleOn = qtrue;
-        }
-    }
-    void Toggle( uint32_t key ) {
-        if (Key_IsDown( key )) {
-            if (toggleOn) {
-                toggleOn = qfalse;
-            }
-        }
-        else {
-            toggleOn = qtrue;
-        }
-    }
-    qboolean On( void ) const { return toggleOn; }
-    void Set( qboolean toggle ) { toggleOn = toggle; }
-private:
-    qboolean toggleOn;
-};
+#define ID_SINGEPLAYER      1
+#define ID_MODS             2
+#define ID_SETTINGS         3
+#define ID_CREDITS          4
+#define ID_EXIT             5
+#define ID_TABLE            6
 
 typedef struct {
-    CUIMenu handle;
+    menuframework_t menu;
     char message[MAXPRINTMSG];
 } errorMessage_t;
 
-typedef struct
-{
-    CUIMenu handle;
+typedef struct {
+    menuframework_t menu;
+
+    menutable_t table;
+
+    menutext_t singleplayer;
+    menutext_t mods;
+    menutext_t settings;
+    menutext_t credits;
+    menutext_t exitGame;
+    
+    menuarrow_t spArrow;
+    menuarrow_t modsArrow;
+    menuarrow_t settingsArrow;
+    menuarrow_t creditsArrow;
+    menuarrow_t exitArrow;
 
     ImFont *font;
 
@@ -56,40 +40,64 @@ typedef struct
     const stringHash_t *spString;
     const stringHash_t *modsString;
     const stringHash_t *settingsString;
+    const stringHash_t *exitString;
 
     int32_t menuWidth;
     int32_t menuHeight;
 
-    CToggleKey noMenuToggle;
-
+    qboolean toggleKey;
     qboolean noMenu; // do we just want the scenery?
 } mainmenu_t;
 
 ImFont *PressStart2P;
 static errorMessage_t errorMenu;
-static mainmenu_t menu;
+static mainmenu_t s_main;
 
-static const char *creditsString =
-"As always, I would not have gotten to this point without the help of many\n"
-"I would like to take the time to thank the following people for contributing\n"
-"to this massive project\n";
+static void MainMenu_EventCallback( void *item, int event )
+{
+    const menucommon_t *self;
 
-static const char *signingOffString =
-"Sincerely,\nYour Resident Fiend,\nNoah Van Til";
+    if ( event != EVENT_ACTIVATED ) {
+        return;
+    }
 
-typedef struct {
-    const char *name;
-    const char *reason;
-} collaborator_t;
+    self = (const menucommon_t *)item;
 
-static const collaborator_t collaborators[] = {
-    { "Ben Pavlovic", "Some weapon ideas, created the name of the hardest difficulty: \"Just A Minor Inconvience\"" },
-    { "Tucker Kemnitz", "Art, ideas for some NPCs" },
-    { "Alpeca Grenade", "A music piece" },
-    { "Jack Rosenthal", "A couple of ideas" },
-    { "My Family & Friends", "Helping me get through some tough times" },
-    { "My Father", "Giving me feedback, tips and tricks for programming when I was struggling, and helped test the first working version" },
-};
+    switch ( self->id ) {
+    case ID_SINGEPLAYER:
+        UI_SinglePlayerMenu();
+        ui->SetState( STATE_SINGLEPLAYER );
+        break;
+    case ID_MODS:
+        ui->SetState( STATE_MODS );
+        break;
+    case ID_SETTINGS:
+        ui->SetState( STATE_SETTINGS );
+        break;
+    case ID_CREDITS:
+        ui->SetState( STATE_CREDITS );
+        break;
+    case ID_EXIT:
+        Cbuf_ExecuteText( EXEC_APPEND, "quit\n" );
+        break;
+    case ID_TABLE:
+        break;
+    default:
+        N_Error( ERR_DROP, "MainMeu_EventCallback: unknown item id %i", self->id );
+    };
+}
+
+void MainMenu_ToggleMenu( void ) {
+    if ( Key_IsDown( KEY_F2 ) ) {
+        if ( s_main.noMenu ) {
+            s_main.toggleKey = qfalse;
+            s_main.noMenu = !s_main.noMenu;
+        }
+    }
+    else {
+        s_main.toggleKey = qtrue;
+    }
+}
 
 void MainMenu_Draw( void )
 {
@@ -97,111 +105,56 @@ void MainMenu_Draw( void )
     const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
                             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoBackground;
 
-    menu.noMenuToggle.Toggle( KEY_F2, menu.noMenu );
+    MainMenu_ToggleMenu();
 
-    ui->menu_background = menu.background0;
-    if ( ui->GetState() != STATE_MODS ) {
-        Snd_SetLoopingTrack( menu.ambience );
+    ui->menubackShader = s_main.background0;
+
+    if ( s_main.font ) {
+        FontCache()->SetActiveFont( s_main.font );
     }
 
-    if ( menu.font ) {
-        FontCache()->SetActiveFont( menu.font );
+    if ( s_main.noMenu || Key_GetCatcher() & KEYCATCH_CONSOLE ) {
+        return; // just the scenery & the music (a bit like Halo 3: ODST, check out halome.nu)...
     }
 
     // show the user WTF just happened
     if ( errorMenu.message[0] ) {
         Sys_MessageBox( "Game Error", errorMenu.message, false );
-        Snd_PlaySfx( ui->sfx_null );
-        memset( &errorMenu, 0, sizeof( errorMenu ) );
-        Cvar_Set( "com_errorMessage", "" );
-        return;
-    }
-
-    if ( menu.noMenu || Key_GetCatcher() & KEYCATCH_CONSOLE ) {
-        return; // just the scenery & the music (a bit like Halo 3: ODST, check out halome.nu)...
-    }
-
-    if (ui->GetState() == STATE_MAIN) {
-        ImGui::Begin( "##MainMenu", NULL, windowFlags );
-        ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth, (float)menu.menuHeight ) );
-        FontCache()->SetActiveFont( menu.font );
-        const float fontScale = ImGui::GetFont()->Scale;
-        ImGui::SetWindowFontScale( ( fontScale * 10.5f ) * ui->scale );
-        ui->Menu_Title( menu.logoString->value );
-        ImGui::SetWindowFontScale( ( fontScale * 1.5f ) * ui->scale );
-
-        const ImVec2 mousePos = ImGui::GetCursorScreenPos();
-        ImGui::SetCursorScreenPos( ImVec2( mousePos.x, mousePos.y + 10 ) );
-
-        FontCache()->SetActiveFont( PressStart2P );
-
-        ImGui::BeginTable( "##MainMenuTable", 2 );
-        if (ui->Menu_Option( menu.spString->value )) {
-            ui->SetState( STATE_SINGLEPLAYER );
-        }
-        ImGui::TableNextRow();
-        if ( ui->Menu_Option( "Tales Around the Campfire" ) ) {
-            ui->SetState( STATE_MODS );
-        }
-        ImGui::TableNextRow();
-        if (ui->Menu_Option( "Settings" )) {
-            ui->SetState( STATE_SETTINGS );
-        }
-        ImGui::TableNextRow();
-        if ( ui->Menu_Option( "Legal Stuff" ) ) {
-            ui->SetState( STATE_LEGAL );
-        }
-        ImGui::TableNextRow();
-        if (ui->Menu_Option( "Credits" )) {
-            ui->SetState( STATE_CREDITS );
-        }
-        ImGui::TableNextRow();
-        if (ui->Menu_Option( "Exit To Title Screen" )) {
-            ui->PopMenu();
-        }
-        ImGui::TableNextRow();
-        if (ui->Menu_Option( "Exit To Desktop" )) {
-            // TODO: possibly add in a DOOM-like exit popup?
-            Cbuf_ExecuteText( EXEC_APPEND, "quit\n" );
-        }
-        ImGui::EndTable();
-        ImGui::SetWindowFontScale( fontScale );
-
-        ImGui::End();
+    } else {
+        Menu_Draw( &s_main.menu );
     }
     else if ( ui->GetState() == STATE_LEGAL ) {
         ImGui::Begin( "MainMenu", NULL, windowFlags );
         ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth, (float)menu.menuHeight ) );
+        ImGui::SetWindowSize( ImVec2( (float)s_main.menuWidth, (float)s_main.menuHeight ) );
         LegalMenu_Draw();
         ImGui::End();
     }
     else if (ui->GetState() >= STATE_SINGLEPLAYER && ui->GetState() <= STATE_PLAYMISSION) {
         ImGui::Begin( "MainMenu", NULL, windowFlags );
         ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth, (float)menu.menuHeight ) );
+        ImGui::SetWindowSize( ImVec2( (float)s_main.menuWidth, (float)s_main.menuHeight ) );
         SinglePlayerMenu_Draw();
         ImGui::End();
     }
     else if ( ui->GetState() == STATE_MODS ) {
         ImGui::Begin( "MainMenu", NULL, windowFlags );
         ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth, (float)menu.menuHeight ) );
+        ImGui::SetWindowSize( ImVec2( (float)s_main.menuWidth, (float)s_main.menuHeight ) );
         ModsMenu_Draw();
         ImGui::End();
     }
     else if (ui->GetState() >= STATE_SETTINGS && ui->GetState() <= STATE_GAMEPLAY) {
         ImGui::Begin( "MainMenu", NULL, windowFlags );
         ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth * 0.75f, (float)menu.menuHeight * 0.75f ) );
+        ImGui::SetWindowSize( ImVec2( (float)s_main.menuWidth * 0.75f, (float)s_main.menuHeight * 0.75f ) );
         SettingsMenu_Draw();
         ImGui::End();
     }
     else if (ui->GetState() == STATE_CREDITS) {
         ImGui::Begin( "MainMenu", NULL, windowFlags );
         ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-        ImGui::SetWindowSize( ImVec2( (float)menu.menuWidth, (float)menu.menuHeight ) );
+        ImGui::SetWindowSize( ImVec2( (float)s_main.menuWidth, (float)s_main.menuHeight ) );
         ui->EscapeMenuToggle( STATE_MAIN );
         if (ui->Menu_Title( "CREDITS" )) {
             ui->SetState( STATE_MAIN );
@@ -227,7 +180,7 @@ void MainMenu_Cache( void )
 {
     extern ImFont *RobotoMono;
 
-    memset( &menu, 0, sizeof( menu ) );
+    memset( &s_main, 0, sizeof( s_main ) );
     memset( &errorMenu, 0, sizeof( errorMenu ) );
 
     // only use of rand() is determining DIF_HARDEST title
@@ -240,40 +193,140 @@ void MainMenu_Cache( void )
     // check for errors
     Cvar_VariableStringBuffer( "com_errorMessage", errorMenu.message, sizeof(errorMenu.message) );
     if ( errorMenu.message[0] ) {
-        errorMenu.handle.Draw = MainMenu_Draw;
-
-        ui->SetState( STATE_ERROR );
-
         Key_SetCatcher( KEYCATCH_UI );
-        ui->ForceMenuOff();
-        ui->PushMenu( &errorMenu.handle );
+
+        errorMenu.menu.draw = MainMenu_Draw;
+        errorMenu.menu.key = ErrorMessage_Key;
+        errorMenu.menu.fullscreen = qtrue;
+
+        UI_ForceMenuOff();
+        UI_PushMenu( &errorMenu.menu );
+
         return;
     }
 
-    menu.handle.Draw = MainMenu_Draw;
-
-    menu.ambience = Snd_RegisterTrack( "music/title.ogg" );
-    menu.background0 = re.RegisterShader( "menu/mainbackground" );
-
-    menu.logoString = strManager->ValueForKey( "MENU_LOGO_STRING" );
-    menu.settingsString = strManager->ValueForKey( "MENU_MAIN_SETTINGS" );
-    menu.spString = strManager->ValueForKey( "MENU_MAIN_SINGLEPLAYER" );
-    menu.modsString = strManager->ValueForKey( "MENU_MAIN_MODS" );
-
     PressStart2P = FontCache()->AddFontToCache( "PressStart2P" );
-    menu.font = FontCache()->AddFontToCache( "AlegreyaSC", "Bold" );
+    s_main.font = FontCache()->AddFontToCache( "AlegreyaSC", "Bold" );
     RobotoMono = FontCache()->AddFontToCache( "RobotoMono", "Bold" );
 
-    menu.noMenu = qfalse;
-    menu.handle.fullscreen = qtrue;
-    menu.menuHeight = ui->GetConfig().vidHeight;
-    menu.menuWidth = ui->GetConfig().vidWidth;
-    ui->SetState( STATE_MAIN );
+    s_main.noMenu = qfalse;
+    s_main.toggleKey = qtrue;
+    ui->menubackShader = s_main.background0;
+
+    s_main.menu.titleFontScale = 10.5f;
+    s_main.menu.textFontScale = 1.5f;
+
+    s_main.logoString = strManager->ValueForKey( "MENU_LOGO_STRING" );
+    s_main.settingsString = strManager->ValueForKey( "MENU_MAIN_SETTINGS" );
+    s_main.spString = strManager->ValueForKey( "MENU_MAIN_SINGLEPLAYER" );
+    s_main.modsString = strManager->ValueForKey( "MENU_MAIN_MODS" );
+    s_main.exitString = strManager->ValueForKey( "MENU_MAIN_EXIT" );
+
+    s_main.table.generic.name = "##MainMenuOptionsTable";
+    s_main.table.generic.type = MTYPE_TABLE;
+    s_main.table.generic.id = ID_TABLE;
+    s_main.table.columns = 2;
+
+    s_main.singleplayer.generic.name = StringDup( s_main.spString, "SinglePlayerMainMenuOption" );
+    s_main.singleplayer.generic.type = MTYPE_TEXT;
+    s_main.singleplayer.generic.id = ID_SINGEPLAYER;
+    s_main.singleplayer.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
+    s_main.singleplayer.generic.eventcallback = MainMenu_EventCallback;
+    s_main.singleplayer.text = s_main.spString->value;
+    VectorCopy4( s_main.singleplayer.color, colorWhite );
+
+    s_main.mods.generic.name = StringDup( s_main.modsString, "ModsMainMenuOption" );
+    s_main.mods.generic.type = MTYPE_TEXT;
+    s_main.mods.generic.id = ID_MODS;
+    s_main.mods.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
+    s_main.mods.generic.eventcallback = MainMenu_EventCallback;
+    s_main.mods.text = s_main.modsString->value;
+    VectorCopy4( s_main.mods.color, colorWhite );
+
+    s_main.settings.generic.name = StringDup( s_main.settingsString, "SettingsMainMenuOption" );
+    s_main.settings.generic.type = MTYPE_TEXT;
+    s_main.settings.generic.id = ID_SETTINGS;
+    s_main.settings.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
+    s_main.settings.generic.eventcallback = MainMenu_EventCallback;
+    s_main.settings.text = s_main.settingsString->value;
+    VectorCopy4( s_main.settings.color, colorWhite );
+
+    s_main.credits.generic.name = "Credits##MainMenuOption";
+    s_main.credits.generic.type = MTYPE_TEXT;
+    s_main.credits.generic.id = ID_CREDITS;
+    s_main.credits.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
+    s_main.credits.generic.eventcallback = MainMenu_EventCallback;
+    s_main.credits.text = "Credits";
+    VectorCopy4( s_main.credits.color, colorWhite );
+
+    s_main.exitGame.generic.name = StringDup( s_main.exitString, "ExitGameMenuOption" );
+    s_main.exitGame.generic.type = MTYPE_TEXT;
+    s_main.exitGame.generic.id = ID_EXIT;
+    s_main.exitGame.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
+    s_main.exitGame.generic.eventcallback = MainMenu_EventCallback;
+    s_main.exitGame.text = s_main.exitString->value;
+    VectorCopy4( s_main.exitGame.color, colorWhite );
+
+    s_main.spArrow.generic.name = StringDup( s_main.spString, "SinglePlayerMainMenuArrow" );
+    s_main.spArrow.generic.type = MTYPE_ARROW;
+    s_main.spArrow.generic.id = ID_SINGEPLAYER;
+    s_main.spArrow.generic.eventcallback = MainMenu_EventCallback;
+    s_main.spArrow.direction = ImGuiDir_Right;
+
+    s_main.modsArrow.generic.name = StringDup( s_main.modsString, "ModsMainMenuArrow" );
+    s_main.modsArrow.generic.type = MTYPE_ARROW;
+    s_main.modsArrow.generic.id = ID_MODS;
+    s_main.modsArrow.generic.eventcallback = MainMenu_EventCallback;
+    s_main.modsArrow.direction = ImGuiDir_Right;
+
+    s_main.settingsArrow.generic.name = StringDup( s_main.settingsString, "SettingsMainMenuArrow" );
+    s_main.settingsArrow.generic.type = MTYPE_ARROW;
+    s_main.settingsArrow.generic.id = ID_SETTINGS;
+    s_main.settingsArrow.generic.eventcallback = MainMenu_EventCallback;
+    s_main.settingsArrow.direction = ImGuiDir_Right;
+
+    s_main.creditsArrow.generic.name = "Credits##CreditsMainMenuArrow";
+    s_main.creditsArrow.generic.type = MTYPE_ARROW;
+    s_main.creditsArrow.generic.id = ID_CREDITS;
+    s_main.creditsArrow.generic.eventcallback = MainMenu_EventCallback;
+    s_main.creditsArrow.direction = ImGuiDir_Right;
+
+    s_main.exitArrow.generic.name = StringDup( s_main.exitString, "ExitGameMainMenuArrow" );
+    s_main.exitArrow.generic.type = MTYPE_ARROW;
+    s_main.exitArrow.generic.id = ID_EXIT;
+    s_main.exitArrow.generic.eventcallback = MainMenu_EventCallback;
+    s_main.exitArrow.direction = ImGuiDir_Right;
+
+    s_main.ambience = Snd_RegisterTrack( "music/title.ogg" );
+    s_main.background0 = re.RegisterShader( "menu/mainbackground" );
+
+    Menu_AddItem( &s_main.menu, &s_main.table );
+
+    Table_AddRow( &s_main.table );
+    Table_AddItem( &s_main.table, &s_main.singleplayer );
+    Table_AddItem( &s_main.table, &s_main.spArrow );
+
+    Table_AddRow( &s_main.table );
+    Table_AddItem( &s_main.table, &s_main.mods );
+    Table_AddItem( &s_main.table, &s_main.modsArrow );
+
+    Table_AddRow( &s_main.table );
+    Table_AddItem( &s_main.table, &s_main.settings );
+    Table_AddItem( &s_main.table, &s_main.settingsArrow );
+
+    Table_AddRow( &s_main.table );
+    Table_AddItem( &s_main.table, &s_main.credits );
+    Table_AddItem( &s_main.table, &s_main.creditsArrow );
+
+    Table_AddRow( &s_main.table );
+    Table_AddItem( &s_main.table, &s_main.exitGame );
+    Table_AddItem( &s_main.table, &s_main.exitArrow );
+
+    Key_SetCatcher( KEYCATCH_UI );
+    ui->menusp = 0;
+    UI_PushMenu( &s_main.menu );
 }
 
-void UI_MainMenu( void )
-{
+void UI_MainMenu( void ) {
     MainMenu_Cache();
-
-    ui->PushMenu( &menu.handle );
 }

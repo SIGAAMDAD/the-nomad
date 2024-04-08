@@ -2290,7 +2290,7 @@ static void R_LoadPNG2( const char *filename, unsigned char **pic, int *width, i
 // Note that the ordering indicates the order of preference used
 // when there are multiple images of different formats available
 static const imageExtToLoaderMap_t imageLoaders[] = {
-//	{ "png",  R_LoadPNG2 },
+	{ "png",  R_LoadPNG },
 	{ "tga",  R_LoadTGA },
 	{ "jpg",  R_LoadJPG },
 	{ "jpeg", R_LoadJPG },

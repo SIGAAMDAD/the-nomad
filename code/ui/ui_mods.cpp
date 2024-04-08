@@ -23,6 +23,12 @@ typedef struct {
 	module_t *modList;
     uint32_t numMods;
 
+	menuframework_t menu;
+
+	menutext_t title;
+
+	menutable_t table;
+
     nhandle_t backgroundShader;
     nhandle_t ambience;
     

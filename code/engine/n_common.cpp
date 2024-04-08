@@ -458,7 +458,7 @@ static void Com_PumpKeyEvents(void)
 			ImGui_ImplSDL2_ProcessEvent(&event);
 		}
 
-		switch (event.type) {
+		switch ( event.type ) {
 		case SDL_KEYDOWN:
 			Com_QueueEvent( in_eventTime, SE_KEY, Com_TranslateSDL2ToQ3Key( &event.key.keysym, qtrue ), qtrue, 0, NULL );
 			break;

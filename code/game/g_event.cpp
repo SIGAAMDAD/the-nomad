@@ -17,6 +17,8 @@ static const keyname_t keynames[] = {
 	{ "MOUSE_LEFT", KEY_MOUSE_LEFT },
 	{ "MOUSE_MIDDLE", KEY_MOUSE_MIDDLE },
 	{ "MOUSE_RIGHT", KEY_MOUSE_RIGHT },
+	{ "MOUSE_4", KEY_MOUSE_BUTTON_4 },
+	{ "MOUSE_5", KEY_MOUSE_BUTTON_5 },
 	{ "a", KEY_A },
 	{ "b", KEY_B },
 	{ "c", KEY_C },
@@ -291,51 +293,55 @@ const char *Key_KeynumToString(uint32_t keynum)
 	}
 
 	// manual overrides for keys that show up as ASCII but really shouldn't show up as ASCII
-	switch (keynum) {
+	switch ( keynum ) {
+	case KEY_MOUSE_BUTTON_4:
+		return "Mouse Button 4";
+	case KEY_MOUSE_BUTTON_5:
+		return "Mouse Button 5";
 	case KEY_MOUSE_LEFT:
-		return "MOUSE_LEFT";
+		return "Left Mouse";
 	case KEY_MOUSE_RIGHT:
-		return "MOUSE_RIGHT";
+		return "Right Mouse";
 	case KEY_MOUSE_MIDDLE:
-		return "MOUSE_MIDDLE";
+		return "Middle Mouse";
 	case KEY_WHEEL_DOWN:
-		return "WHEEL_DOWN";
+		return "Mouse Wheel Down";
 	case KEY_WHEEL_UP:
-		return "WHEEL_UP";
+		return "Mouse Wheel Up";
     case KEY_TAB: // shows up as '+'
-        return "TAB";
+        return "Tab";
     case KEY_SHIFT:
-        return "SHIFT";
+        return "Shift";
     case KEY_ALT:
-        return "ALT";
+        return "Alt";
     case KEY_CTRL:
-        return "CTRL";
+        return "Ctrl";
     case KEY_HOME:
-        return "HOME";
+        return "Home";
     case KEY_SPACE:
-        return "SPACE";
+        return "Space";
     case KEY_BACKSPACE:
-        return "BACKSPACE";
+        return "Backspace";
     case KEY_ENTER:
-        return "ENTER";
+        return "Enter";
     case KEY_PAGEUP:
-        return "PAGEUP";
+        return "PageUp";
     case KEY_PAGEDOWN:
-        return "PAGEDOWN";
+        return "PageDown";
     case KEY_END:
-        return "END";
+        return "End";
     case KEY_DELETE:
-        return "DELETE";
+        return "Delete";
     case KEY_INSERT:
-        return "INSERT";
+        return "Insert";
     case KEY_UP:
-        return "UPARROW";
+        return "Up Arrow";
     case KEY_DOWN:
-        return "DOWNARROW";
+        return "Down Arrow";
     case KEY_LEFT:
-        return "LEFTARROW";
+        return "Left Arrow";
     case KEY_RIGHT:
-        return "RIGHTARROW";
+        return "Right Arrow";
     default:
         break;
 	};
@@ -462,7 +468,7 @@ void Key_WriteBindings( fileHandle_t f )
 		FS_Printf( f, "bind %s \"%s\"" GDR_NEWLINE, Key_KeynumToString(i), keys[i].binding );
 	}
 
-	Cbuf_ExecuteText( EXEC_APPEND, "ui.settingi_write_bindingi" );
+	Cbuf_ExecuteText( EXEC_APPEND, "ui.settingi_write_bindings" );
 }
 
 static void Key_Bindlist_f( void )

@@ -23,6 +23,8 @@ typedef struct {
 	qboolean enableSSAO;
 	qboolean enableToneMapping;
     qboolean enablePbr;
+	qboolean enableLighting;
+	qboolean enableFastLighting;
 	int toneMappingType;
 	qboolean useNormalMapping;
 	qboolean useSpecularMapping;
@@ -38,6 +40,27 @@ typedef struct {
 	// sound
 	uint32_t maxSoundChannels;
 } performance_t;
+
+typedef struct {
+    const char *command;
+    const char *label;
+    int32_t id;
+    int32_t defaultBind1;
+    int32_t defaultBind2;
+    int32_t bind1;
+    int32_t bind2;
+} bind_t;
+
+typedef struct {
+    bind_t *keybinds;
+    uint32_t numBinds;
+
+    int32_t mouseSensitivity;
+    uint32_t rebindIndex;
+
+    qboolean mouseAccelerate;
+    qboolean mouseInvert;
+} controls_t;
 
 typedef struct {
 	int windowMode;
@@ -58,11 +81,25 @@ typedef struct {
 	qboolean musicOn;
 } audio_t;
 
+#define ID_PERFORMANCE				1
+#define ID_VIDEO					2
+#define ID_AUDIO					3
+#define ID_CONTROLS					4
+#define ID_GAMEPLAY					5
+#define ID_MULTISAMPLING			6
+#define ID_ANISOTROPICFILTERING		7
+
 typedef struct {
 	performance_t performance;
 	video_t video;
 	audio_t audio;
+	controls_t controls;
 
+	CUIMenu handle;
+
+	menuframework_t menu;
+
+	menustate_t lastChild;
 	qboolean rebinding;
 	qboolean paused;
 	qboolean confirmation;
@@ -71,6 +108,26 @@ typedef struct {
 
 static settings_t *initial;
 static settings_t *settings;
+
+static void SettingsMenu_EventCallback( void *generic, int event )
+{
+	if ( event != EVENT_ACTIVATED ) {
+		return;
+	}
+
+	switch ( ( (menucommon_t *)generic )->id ) {
+	case ID_PERFORMANCE:
+		break;
+	case ID_VIDEO:
+		break;
+	case ID_CONTROLS:
+		break;
+	case ID_GAMEPLAY:
+		break;
+	case ID_MULTISAMPLING:
+		break;
+	};
+}
 
 static void SettingsMenu_GetInitial( void )
 {
@@ -113,9 +170,57 @@ static void SettingsMenu_Save( void )
 	Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n" );
 }
 
+
 static void SettingsMenu_Bar( void )
 {
+    if ( ImGui::BeginTabBar( "##SettingsMenuBar" ) ) {
+        ImGui::PushStyleColor( ImGuiCol_Tab, ImVec4( 1.0f, 1.0f, 1.0f, 0.0f ) );
+        ImGui::PushStyleColor( ImGuiCol_TabActive, ImVec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
+        ImGui::PushStyleColor( ImGuiCol_TabHovered, ImVec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
 
+        if ( ImGui::BeginTabItem( "GRAPHICS" ) ) {
+            ui->SetState( STATE_GRAPHICS );
+            if ( settings->lastChild != STATE_GRAPHICS ) {
+                ui->PlaySelected();
+                settings->lastChild = STATE_GRAPHICS;
+            }
+            ImGui::EndTabItem();
+        }
+        if ( ImGui::BeginTabItem( "ENGINE" ) ) {
+            ui->SetState( STATE_PERFORMANCE );
+            if ( settings->lastChild != STATE_PERFORMANCE ) {
+                ui->PlaySelected();
+                settings->lastChild = STATE_PERFORMANCE;
+            }
+            ImGui::EndTabItem();
+        }
+        if ( ImGui::BeginTabItem( "AUDIO" ) ) {
+            ui->SetState( STATE_AUDIO );
+            if ( settings->lastChild != STATE_AUDIO ) {
+                ui->PlaySelected();
+                settings->lastChild = STATE_AUDIO;
+            }
+            ImGui::EndTabItem();
+        }
+        if ( ImGui::BeginTabItem( "CONTROLS" ) ) {
+            ui->SetState( STATE_CONTROLS );
+            if ( settings->lastChild != STATE_CONTROLS ) {
+                ui->PlaySelected();
+                settings->lastChild = STATE_CONTROLS;
+            }
+            ImGui::EndTabItem();
+        }
+        if ( ImGui::BeginTabItem( "GAMEPLAY" ) ) {
+            ui->SetState( STATE_GAMEPLAY );
+            if ( settings->lastChild != STATE_GAMEPLAY ) {
+                ui->PlaySelected();
+                settings->lastChild = STATE_GAMEPLAY;
+            }
+            ImGui::EndTabItem();
+        }
+        ImGui::PopStyleColor( 3 );
+        ImGui::EndTabBar();
+    }
 }
 
 static void SettingsMenu_ExitChild( menustate_t childstate )
@@ -147,6 +252,170 @@ static void SettingsMenu_ExitChild( menustate_t childstate )
 		}
 	}
 	SettingsMenu_Bar();
+}
+
+
+const char *Hunk_CopyString( const char *str, ha_pref pref ) {
+    char *out;
+    uint64_t len;
+
+    len = strlen( str ) + 1;
+    out = (char *)Hunk_Alloc( len, pref );
+    N_strncpyz( out, str, len );
+
+    return out;
+}
+
+void UI_SettingsWriteBinds_f( void )
+{
+    fileHandle_t f;
+    uint32_t i;
+
+    f = FS_FOpenWrite( "bindings.cfg" );
+    if ( f == FS_INVALID_HANDLE ) {
+        N_Error( ERR_FATAL, "UI_SettingsWriteBinds_f: failed to write bindings" );
+    }
+
+    for ( i = 0; i < settings->controls.numBinds; i++ ) {
+        FS_Printf( f, "\"%s\" \"%s\" %i \"%s\" \"%s\" \"%s\" \"%s\"" GDR_NEWLINE,
+            settings->controls.keybinds[i].command,
+            settings->controls.keybinds[i].label,
+            settings->controls.keybinds[i].id,
+            Key_KeynumToString( settings->controls.keybinds[i].defaultBind1 ),
+            Key_KeynumToString( settings->controls.keybinds[i].defaultBind2 ),
+            Key_KeynumToString( settings->controls.keybinds[i].bind1 ),
+            Key_KeynumToString( settings->controls.keybinds[i].bind2 )
+        );
+    }
+
+    FS_FClose( f );
+}
+
+static void SettingsMenu_LoadBindings( void )
+{
+    union {
+        void *v;
+        char *b;
+    } f;
+    const char **text, *text_p, *tok;
+    bind_t *bind;
+    uint64_t i;
+
+    FS_LoadFile( "bindings.cfg", &f.v );
+    if ( !f.v ) {
+        N_Error( ERR_DROP, "SettingsMenu_Cache: no bindings file" );
+    }
+
+    text_p = f.b;
+    text = &text_p;
+
+    COM_BeginParseSession( "bindings.cfg" );
+
+    settings->controls.numBinds = 0;
+    while ( 1 ) {
+        tok = COM_ParseExt( text, qtrue );
+        if ( !tok || !tok[0] ) {
+            break;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( !tok[0] ) {
+            COM_ParseError( "missing parameter for keybind 'label'" );
+            break;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( !tok[0] ) {
+            COM_ParseError( "missing paramter for keybind 'id'" );
+            break;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( !tok[0] ) {
+            COM_ParseError( "missing paramter for keybind 'defaultBinding1'" );
+            break;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( !tok[0] ) {
+            COM_ParseError( "missing paramter for keybind 'defaultBinding2'" );
+            break;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( !tok[0] ) {
+            COM_ParseError( "missing paramter for keybind 'bind1'" );
+            break;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( !tok[0] ) {
+            COM_ParseError( "missing paramter for keybind 'bind2'" );
+            break;
+        }
+
+        settings->controls.numBinds++;
+    }
+
+    settings->controls.keybinds = (bind_t *)Hunk_Alloc( sizeof( *settings->controls.keybinds ) * settings->controls.numBinds, h_high );
+    text_p = f.b;
+    text = &text_p;
+
+    bind = settings->controls.keybinds;
+    for ( i = 0; i < settings->controls.numBinds; i++ ) {
+        tok = COM_ParseExt( text, qtrue );
+        if ( !tok || !tok[0] ) {
+            break;
+        }
+        bind->command = Hunk_CopyString( tok, h_high );
+
+        tok = COM_ParseExt( text, qfalse );
+        bind->label = Hunk_CopyString( tok, h_high );
+
+        tok = COM_ParseExt( text, qfalse );
+        bind->id = atoi( tok );
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( tok[0] != '-' && tok[1] != '1' ) {
+            bind->defaultBind1 = Key_StringToKeynum( tok );
+        } else {
+            bind->defaultBind1 = -1;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( tok[0] != '-' && tok[1] != '1' ) {
+            bind->defaultBind2 = Key_StringToKeynum( tok );
+        } else {
+            bind->defaultBind2 = -1;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( tok[0] != '-' && tok[1] != '1' ) {
+            bind->bind1 = Key_StringToKeynum( tok );
+        } else {
+            bind->bind1 = -1;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( tok[0] != '-' && tok[1] != '1' ) {
+            bind->bind2 = Key_StringToKeynum( tok );
+        } else {
+            bind->bind2 = -1;
+        }
+
+        if ( bind->defaultBind1 != -1 ) {
+            bind->bind1 = bind->defaultBind1;
+        }
+        if ( bind->defaultBind2 != -1 ) {
+            bind->bind2 = bind->defaultBind2;
+        }
+
+        Con_Printf( "Added keybind \"%s\": \"%s\"\n", bind->command, bind->label );
+
+        bind++;
+    }
+
+    FS_FreeFile( f.v );
 }
 
 static void SetHint( const char *label, const char *hint )
@@ -204,7 +473,7 @@ static void SettingsMenu_Performance_Draw( void ) {
 	
 	performance = &settings->performance;
 	
-	if ( ImGui::TreeNodeEx( (void *)(uintptr_t)"##GraphicsPerformanceSettingsConfigNode", "Graphics", treeNodeFlags ) ) {
+	if ( ImGui::TreeNodeEx( (void *)(uintptr_t)"##GraphicsPerformanceSettingsConfigNode", treeNodeFlags, "Graphics" ) ) {
 		ImGui::BeginTable( "##PerformanceSettingsGraphicsConfigTable", 4 );
 		{
 			ImGui::TableNextColumn();
@@ -359,15 +628,39 @@ static void SettingsMenu_Performance_Draw( void ) {
 			
 			ImGui::TableNextRow();
 
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted( "Enable Lighting" );
+			ImGui::TableNextColumn();
+			ImGui::TableNextColumn();
+			if ( ImGui::RadioButton( performance->enableLighting ? "ON##LightingGraphicsPerformanceSettingsConfigON" :
+				"OFF##LightingGraphicsPerformanceSettingsConfigOFF", performance->enableLighting ) )
+			{
+				ui->PlaySelected();
+				performance->enableLighting = !performance->enableLighting;
+			}
+			ImGui::TableNextColumn();
 
 			ImGui::TableNextRow();
 			
+			ImGui::TableNextColumn();
+			ImGui::TextUnformatted( "Enable Fast Lighting" );
+			ImGui::TableNextColumn();
+			ImGui::TableNextColumn();
+			if ( ImGui::RadioButton( performance->enableFastLighting ? "ON##FastLightingGraphicsPerformanceSettingsConfigON"
+				: "OFF##FastLightingGraphicsPerformanceSettingsConfigOFF", performance->enableFastLighting ) )
+			{
+				ui->PlaySelected();
+				performance->enableFastLighting = !performance->enableFastLighting;
+			}
+			ImGui::TableNextColumn();
+
+			ImGui::TableNextRow();
 		}
 		ImGui::EndTable();
 		ImGui::TreePop();
 	}
 		
-	if ( ImGui::TreeNodeEx( (void *)(uintptr_t)"##AdvancedPerformanceSettingsConfigNode", "Advanced", treeNodeFlags ) ) {
+	if ( ImGui::TreeNodeEx( (void *)(uintptr_t)"##AdvancedPerformanceSettingsConfigNode", treeNodeFlags, "Advanced" ) ) {
 		ImGui::BeginTable( "##PerformanceSettingsAdvancedConfigTable", 4 );
 		{
 			ImGui::TableNextColumn();
@@ -407,6 +700,24 @@ static void SettingsMenu_Performance_Draw( void ) {
 		ImGui::EndTable();
 		ImGui::TreePop();
 	}
+}
+
+static void SettingsMenu_Video_Draw( void )
+{
+	video_t *video;
+
+	video = &settings->video;
+
+	ImGui::BeginTable( "##VideoSettingsConfigTable", 4 );
+	{
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted( "Window Mode" );
+		ImGui::TableNextColumn();
+		if ( ImGui::ArrowButton( "",  ) ) {
+
+		}
+	}
+	ImGui::EndTable();
 }
 
 static void SettingsMenu_Audio_Draw( void )

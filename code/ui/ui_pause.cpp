@@ -11,6 +11,7 @@ typedef enum {
 typedef struct
 {
     CUIMenu menu;
+    menuframework_t pause;
     
     uint32_t numDailyTips;
     char *dailyTips[MAX_DAILY_TIPS];
@@ -203,6 +204,8 @@ void PauseMenu_Cache( void )
     menu.resume = strManager->ValueForKey( "MENU_PAUSE_RESUME" );
     menu.settings = strManager->ValueForKey( "MENU_PAUSE_SETTINGS" );
     menu.exitToMainMenu = strManager->ValueForKey( "MENU_PAUSE_ETMM" );
+
+    menu.pause.fullscreen = qfalse;
 
     ui->PushMenu( &menu.menu );
 }

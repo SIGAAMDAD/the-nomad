@@ -6,7 +6,7 @@
 #include "ui_string_manager.h"
 #include "../rendercommon/imgui_impl_opengl3.h"
 
-CUILib *ui;
+uiGlobals_t *ui;
 CUIFontCache *g_pFontCache;
 
 cvar_t *ui_language;
@@ -27,7 +27,6 @@ static void UI_Cache_f( void ) {
     Con_Printf( "Caching ui resources...\n" );
 
     TitleMenu_Cache();
-    IntroMenu_Cache();
     MainMenu_Cache();
     SettingsMenu_Cache();
 	LegalMenu_Cache();
@@ -275,10 +274,10 @@ void UI_UpdateCvars( void )
 
 extern "C" void UI_Shutdown( void )
 {
-    if ( ui ) {
-        ui->Shutdown();
-		ui = NULL;
-    }
+	ui->activemenu = NULL;
+	memset( ui->stack, 0, sizeof( ui->stack ) );
+	ui->menusp = 0;
+
     if ( strManager ) {
         strManager->Shutdown();
 		strManager = NULL;
@@ -306,7 +305,7 @@ extern "C" void UI_GetHashString( const char *name, char *value ) {
 }
 
 static void UI_PauseMenu_f( void ) {
-	ui->SetActiveMenu( UI_MENU_PAUSE );
+	UI_SetActiveMenu( UI_MENU_PAUSE );
 }
 
 #define FPS_FRAMES 6
@@ -367,8 +366,7 @@ extern "C" void UI_Init( void )
     UI_RegisterCvars();
 
     // init the library
-    ui = (CUILib *)Hunk_Alloc( sizeof( *ui ), h_high );
-    ui->Init(); // we could call ::new
+	ui = (uiGlobals_t *)Hunk_Alloc( sizeof( *ui ), h_high );
 
     // init the string manager
     strManager = (CUIStringManager *)Hunk_Alloc( sizeof( *strManager ), h_high );
@@ -379,7 +377,7 @@ extern "C" void UI_Init( void )
         N_Error( ERR_DROP, "UI_Init: no language loaded" );
     }
 
-    ui->SetActiveMenu( UI_MENU_TITLE );
+    UI_SetActiveMenu( UI_MENU_TITLE );
 
     UI_Cache_f();
 
@@ -391,9 +389,6 @@ extern "C" void UI_Init( void )
 
 void Menu_Cache( void )
 {
-    ui->charset = re.RegisterShader( "gfx/bigchars" );
-    ui->rb_on = re.RegisterShader( "gfx/rb_on" );
-    ui->rb_off = re.RegisterShader( "gfx/rb_off" );
 
     ui->whiteShader = re.RegisterShader( "white" );
 }
@@ -420,7 +415,7 @@ extern "C" void UI_DrawDiagnostics( void )
 
 extern "C" void UI_ShowDemoMenu( void )
 {
-	ui->SetActiveMenu( UI_MENU_DEMO );
+	UI_SetActiveMenu( UI_MENU_DEMO );
 }
 
 extern "C" void UI_DrawMenuBackground( void )
@@ -430,8 +425,8 @@ extern "C" void UI_DrawMenuBackground( void )
 	memset( &refdef, 0, sizeof( refdef ) );
 	refdef.x = 0;
 	refdef.y = 0;
-	refdef.width = ui->GetConfig().vidWidth;
-	refdef.height = ui->GetConfig().vidHeight;
+	refdef.width = ui->gpuConfig.vidWidth;
+	refdef.height = ui->gpuConfig.vidHeight;
 	refdef.flags = RSF_NOWORLDMODEL | RSF_ORTHO_TYPE_SCREENSPACE;
 
 	//
@@ -444,15 +439,15 @@ extern "C" void UI_DrawMenuBackground( void )
 
 extern "C" void UI_Refresh( int32_t realtime )
 {
-	ui->SetFrameTime( realtime - ui->GetRealTime() );
-	ui->SetRealTime( realtime );
+	ui->realtime = realtime;
+	ui->frametime = ui->frametime - realtime;
 
 	UI_DrawFPS();
 
 	if ( !ui_active->i ) {
-		ui->EscapeMenuToggle( STATE_PAUSE );
-		if ( ui->GetState() != STATE_NONE ) {
-			ui->SetActiveMenu( UI_MENU_PAUSE );
+		UI_EscapeMenuToggle( STATE_PAUSE );
+		if ( ui->state != STATE_NONE ) {
+			UI_SetActiveMenu( UI_MENU_PAUSE );
 		}
 		return;
 	}
@@ -471,13 +466,13 @@ extern "C" void UI_Refresh( int32_t realtime )
 		if (ui->GetCurrentMenu()->Draw) {
 			ui->GetCurrentMenu()->Draw();
 		} else {
-			Menu_Draw( ui->GetCurrentMenu() );
+//			Menu_Draw( ui->GetCurrentMenu() );
 		}
 
-		if( ui->GetFirstDraw() ) {
-			ui->MouseEvent( 0, 0 );
-			ui->SetFirstDraw( qfalse );
-		}
+//		if( ui->GetFirstDraw() ) {
+//			ui->MouseEvent( 0, 0 );
+//			ui->SetFirstDraw( qfalse );
+//		}
 	}
 /*
 	// draw cursor

@@ -44,7 +44,6 @@ public:
 
     // input functions
     void TextInput( const char *label, char *buffer, uint64_t size ) const;
-    void TextInputWithCompletion( const char *label, mfield_t *buffer ) const;
 private:
     const char *name;
 

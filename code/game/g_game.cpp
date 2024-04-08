@@ -1602,8 +1602,8 @@ void G_InitDisplay(gpuConfig_t *config)
     gi.desktopWidth = mode.w;
     gi.desktopHeight = mode.h;
 
-    if (!G_GetModeInfo(&config->vidWidth, &config->vidHeight, &config->windowAspect, r_mode->i,
-        "", mode.w, mode.h, r_fullscreen->i))
+    if ( !G_GetModeInfo( &config->vidWidth, &config->vidHeight, &config->windowAspect, r_mode->i,
+        "", mode.w, mode.h, r_fullscreen->i ) )
     {
         Con_Printf("Invalid r_mode, resetting...\n");
         Cvar_ForceReset("r_mode");

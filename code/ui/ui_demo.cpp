@@ -3,7 +3,7 @@
 
 #include "ui_lib.h"
 
-static CUIMenu *demo;
+static menuframework_t *demo;
 
 // NOTE: this will change with each major version
 #define DEMO_STRING \

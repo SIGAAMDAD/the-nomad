@@ -7,21 +7,6 @@
 #include "../game/g_archive.h"
 
 typedef struct {
-    char name[MAX_NPATH];
-    fileStats_t stats;
-    uint64_t index;
-    gamedata_t gd;
-    qboolean valid;
-    qboolean *modsLoaded;
-
-    char creationTime[32];
-    char modificationTime[32];
-} saveinfo_t;
-
-typedef struct {
-    // load game data
-    saveinfo_t *saveList;
-    uint64_t numSaves;
 
     // new game data
     char name[MAX_NPATH];
@@ -40,6 +25,8 @@ typedef struct {
     int32_t numHardestStrings;
 
     uint64_t currentSave;
+
+    menuframework_t menu;
 
     const stringHash_t *difficultyDescriptions[NUMDIFS];
 } singleplayer_t;
@@ -315,11 +302,6 @@ void SinglePlayerMenu_Draw( void )
 char **parse_csv( const char *line );
 int32_t count_fields( const char *line );
 
-static const char *TimeStringToDateString( const char *timeStr )
-{
-    static char out[MAX_NPATH];
-}
-
 void SinglePlayerMenu_Cache( void )
 {
     saveinfo_t *info;
@@ -330,8 +312,6 @@ void SinglePlayerMenu_Cache( void )
     struct tm *fileTime;
 
     memset( &sp, 0, sizeof( sp ) );
-
-    Key_SetCatcher( KEYCATCH_UI );
     
     //
     // init strings
@@ -364,52 +344,12 @@ void SinglePlayerMenu_Cache( void )
     hardest = strManager->ValueForKey( "SP_DIFF_THE_MEMES" );
     sp.hardestStrings = parse_csv( hardest->value );
     sp.numHardestStrings = count_fields( hardest->value );
+}
 
-    //
-    // init savefiles
-    //
-
-    sp.numSaves = 0;
-    fileList = g_pArchiveHandler->GetSaveFiles( &sp.numSaves );
-
-    if ( sp.numSaves ) {
-        Cvar_Set( "sg_numSaves", va( "%li", (int64_t)sp.numSaves ) );
-
-        sp.saveList = (saveinfo_t *)Z_Malloc( sizeof( saveinfo_t ) * sp.numSaves, TAG_SAVEFILE );
-        info = sp.saveList;
-
-        for ( i = 0; i < sp.numSaves; i++, info++ ) {
-            N_strncpyz( info->name, fileList[i], sizeof( info->name ) );
-
-            info->index = i;
-            path = FS_BuildOSPath( FS_GetHomePath(), NULL, va( "SaveData/%s", info->name ) );
-            if ( !Sys_GetFileStats( &info->stats, path ) ) { // this should never fail
-                N_Error( ERR_DROP, "Failed to stat savefile '%s' even though it exists", path );
-            }
-            fileTime = localtime( &info->stats.ctime );
-            strftime( info->creationTime, sizeof( info->creationTime ) - 1, "%x %-I:%-M:%-S %p", fileTime );
-
-            fileTime = localtime( &info->stats.mtime );
-            strftime( info->modificationTime, sizeof( info->modificationTime ) - 1, "%x %-I:%-M:%-S %p", fileTime );
-
-            if ( !g_pArchiveHandler->LoadPartial( info->name, &info->gd ) ) { // just get the header and basic game information
-                Con_Printf( COLOR_YELLOW "WARNING: Failed to get valid header data from savefile '%s'\n", info->name );
-                info->valid = qfalse;
-            } else {
-                info->valid = qtrue;
-            }
-
-            info->modsLoaded = (qboolean *)Z_Malloc( sizeof( *info->modsLoaded ) * info->gd.numMods, TAG_SAVEFILE );
-            for ( uint64_t a = 0; a < info->gd.numMods; a++ ) {
-                info->modsLoaded[a] = g_pModuleLib->GetModule( info->gd.modList[a].name ) != NULL;
-            }
-
-            COM_StripExtension( fileList[i], info->name, sizeof( info->name ) );
-            if ( info->name[ strlen( info->name ) - 1 ] == '.' ) {
-                info->name[ strlen( info->name ) - 1 ] = 0;
-            }
-        }
-    }
+void UI_SinglePlayerMenu( void )
+{
+    UI_PushMenu( &sp.menu );
+    Key_SetCatcher( KEYCATCH_UI );
 }
 
 //
