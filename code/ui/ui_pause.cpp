@@ -8,10 +8,19 @@ typedef enum {
 
 #define MAX_DAILY_TIPS 1024
 
+#define _
+
 typedef struct
 {
     CUIMenu menu;
     menuframework_t pause;
+
+    menutext_t title;
+    menutext_t help;
+    menutext_t resume;
+    menutext_t settings;
+    menutext_t checkpoint;
+    menutext_t exitToMainMenu;
     
     uint32_t numDailyTips;
     char *dailyTips[MAX_DAILY_TIPS];
@@ -23,12 +32,12 @@ typedef struct
     qboolean exitToMM;
     qboolean settingsMenu;
 
-    const stringHash_t *title;
-    const stringHash_t *help;
-    const stringHash_t *resume;
-    const stringHash_t *settings;
-    const stringHash_t *checkpoint;
-    const stringHash_t *exitToMainMenu;
+    const stringHash_t *titleString;
+    const stringHash_t *helpString;
+    const stringHash_t *resumeString;
+    const stringHash_t *settingsString;
+    const stringHash_t *checkpointString;
+    const stringHash_t *exitToMainMenuString;
 } pausemenu_t;
 
 #define PAUSEMENU_VOLUME_CAP 2
@@ -48,6 +57,17 @@ static const char *helpStrings[NUMHELPSTRINGS][2] = {
 
 // PAUSE. REWIND. PLAY.
 static pausemenu_t menu;
+
+static void PauseMenu_EventCallback( void *generic, int event )
+{
+    const menucommon_t *self;
+
+    self = (const menucommon_t *)generic;
+
+    switch ( self->id ) {
+    
+    };
+}
 
 static void PauseMenu_Help( void )
 {
@@ -198,14 +218,17 @@ void PauseMenu_Cache( void )
     menu.oldVolume = Cvar_VariableFloat( "snd_musicvol" );
     Cvar_Set( "snd_musicvol", va( "%i", PAUSEMENU_VOLUME_CAP ) );
 
-    menu.title = strManager->ValueForKey( "MENU_PAUSE_TITLE" );
-    menu.checkpoint = strManager->ValueForKey( "MENU_PAUSE_CHECKPOINT" );
-    menu.help = strManager->ValueForKey( "MENU_PAUSE_HELP" );
-    menu.resume = strManager->ValueForKey( "MENU_PAUSE_RESUME" );
-    menu.settings = strManager->ValueForKey( "MENU_PAUSE_SETTINGS" );
-    menu.exitToMainMenu = strManager->ValueForKey( "MENU_PAUSE_ETMM" );
+    menu.titleString = strManager->ValueForKey( "MENU_PAUSE_TITLE" );
+    menu.checkpointString = strManager->ValueForKey( "MENU_PAUSE_CHECKPOINT" );
+    menu.helpString = strManager->ValueForKey( "MENU_PAUSE_HELP" );
+    menu.resumeString = strManager->ValueForKey( "MENU_PAUSE_RESUME" );
+    menu.settingsString = strManager->ValueForKey( "MENU_PAUSE_SETTINGS" );
+    menu.exitToMainMenuString = strManager->ValueForKey( "MENU_PAUSE_ETMM" );
 
     menu.pause.fullscreen = qfalse;
+
+    menu.title.generic.name = StringDup( menu.titleString, "##PauseMenuString" );
+    menu.title.generic.eventcallback = ;
 
     ui->PushMenu( &menu.menu );
 }
