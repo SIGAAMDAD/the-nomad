@@ -2,9 +2,6 @@
 
 typedef struct {
     menuframework_t menu;
-
-    menutext_t title;
-    menutext_t message;
 } creditsMenu_t;
 
 static creditsMenu_t credits;
@@ -53,10 +50,16 @@ void CreditsMenu_Cache( void )
 {
     memset( &credits, 0, sizeof( credits ) );
 
-    credits.message.text = creditsString;
+    credits.menu.draw = CreditsMenu_Draw;
+    credits.menu.flags = MENU_DEFAULT_FLAGS;
+    credits.menu.x = 0;
+    credits.menu.y = 0;
+    credits.menu.width = ui->gpuConfig.vidWidth;
+    credits.menu.height = ui->gpuConfig.vidHeight;
 }
 
 void UI_CreditsMenu( void )
 {
-
+    CreditsMenu_Cache();
+    UI_PushMenu( &credits.menu );
 }

@@ -370,7 +370,6 @@ void SCR_UpdateScreen(void)
     recursive = 1;
 
 	UI_Refresh( gi.realtime );
-	UI_DrawDiagnostics();
 	// if there is no VM, there are also no rendering comamnds. Stop the renderer in
     // that case
 	// we're in a level

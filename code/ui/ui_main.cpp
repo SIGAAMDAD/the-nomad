@@ -33,6 +33,8 @@ static void UI_Cache_f( void ) {
 	ModsMenu_Cache();
 	SinglePlayerMenu_Cache();
 	DemoMenu_Cache();
+	LoadGameMenu_Cache();
+	NewGameMenu_Cache();
 }
 
 CUIFontCache::CUIFontCache( void ) {
@@ -377,8 +379,27 @@ extern "C" void UI_Init( void )
         N_Error( ERR_DROP, "UI_Init: no language loaded" );
     }
 
-    UI_SetActiveMenu( UI_MENU_TITLE );
+	//
+    // init strings
+    //
+    difficultyTable[DIF_NOOB].name = strManager->ValueForKey( "SP_DIFF_VERY_EASY" )->value;
+    difficultyTable[DIF_NOOB].tooltip = strManager->ValueForKey( "SP_DIFF_0_DESC" )->value;
 
+    difficultyTable[DIF_RECRUIT].name = strManager->ValueForKey( "SP_DIFF_EASY" )->value;
+    difficultyTable[DIF_RECRUIT].tooltip = strManager->ValueForKey( "SP_DIFF_1_DESC" )->value;
+
+    difficultyTable[DIF_MERC].name = strManager->ValueForKey( "SP_DIFF_MEDIUM" )->value;
+    difficultyTable[DIF_MERC].tooltip = strManager->ValueForKey( "SP_DIFF_2_DESC" )->value;
+
+    difficultyTable[DIF_NOMAD].name = strManager->ValueForKey( "SP_DIFF_HARD" )->value;
+    difficultyTable[DIF_NOMAD].tooltip = strManager->ValueForKey( "SP_DIFF_3_DESC" )->value;
+
+    difficultyTable[DIF_BLACKDEATH].name = strManager->ValueForKey( "SP_DIFF_VERY_HARD" )->value;
+    difficultyTable[DIF_BLACKDEATH].tooltip = strManager->ValueForKey( "SP_DIFF_4_DESC" )->value;
+
+    difficultyTable[DIF_MINORINCONVENIECE].tooltip = "PAIN."; // no changing this one, because that's the most accurate description
+
+    UI_SetActiveMenu( UI_MENU_MAIN );
     UI_Cache_f();
 
     // add commands
@@ -398,20 +419,6 @@ void Menu_Cache( void )
 UI_Refresh
 =================
 */
-
-void Sys_DisplayEngineStats( void );
-
-extern "C" void UI_DrawDiagnostics( void )
-{
-    if (!ui_diagnostics->i) {
-        return;
-    }
-    else if ( !com_fullyInitialized ) {
-        return;
-    }
-
-    Sys_DisplayEngineStats();
-}
 
 extern "C" void UI_ShowDemoMenu( void )
 {
@@ -433,7 +440,7 @@ extern "C" void UI_DrawMenuBackground( void )
 	// draw the background
 	//
     re.ClearScene();
-    re.DrawImage( 0, 0, refdef.width, refdef.height, 0, 0, 1, 1, ui->menu_background );
+    re.DrawImage( 0, 0, refdef.width, refdef.height, 0, 0, 1, 1, ui->menubackShader );
     re.RenderScene( &refdef );
 }
 
@@ -445,8 +452,8 @@ extern "C" void UI_Refresh( int32_t realtime )
 	UI_DrawFPS();
 
 	if ( !ui_active->i ) {
-		UI_EscapeMenuToggle( STATE_PAUSE );
-		if ( ui->state != STATE_NONE ) {
+		UI_EscapeMenuToggle();
+		if ( ui->menustate != UI_MENU_NONE ) {
 			UI_SetActiveMenu( UI_MENU_PAUSE );
 		}
 		return;
@@ -458,15 +465,15 @@ extern "C" void UI_Refresh( int32_t realtime )
 
 	UI_UpdateCvars();
 
-	if ( ui->GetCurrentMenu() ) {
-		if (ui->GetCurrentMenu()->fullscreen) {
+	if ( ui->activemenu ) {
+		if ( ui->activemenu->fullscreen ) {
 			UI_DrawMenuBackground();
 		}
 
-		if (ui->GetCurrentMenu()->Draw) {
-			ui->GetCurrentMenu()->Draw();
+		if ( ui->activemenu->draw ) {
+			ui->activemenu->draw();
 		} else {
-//			Menu_Draw( ui->GetCurrentMenu() );
+			Menu_Draw( ui->activemenu );
 		}
 
 //		if( ui->GetFirstDraw() ) {
@@ -496,7 +503,7 @@ extern "C" void UI_Refresh( int32_t realtime )
 	*/
 }
 
-
+/*
 #define TRACE_FRAMES 60
 
 typedef struct {
@@ -885,3 +892,4 @@ void Sys_DisplayEngineStats( void )
 
 	ImGui::End();
 }
+*/

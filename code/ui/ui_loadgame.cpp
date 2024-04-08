@@ -41,7 +41,9 @@ static void LoadGameMenu_Draw( void )
     const int treeNodeFlags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_CollapsingHeader
                             | ImGuiTreeNodeFlags_Framed;
 
-    ImGui::Begin( "MainMenu##SinglePlayerLoadGameMenu", NULL, loadGame.menu.flags );
+    ImGui::Begin( loadGame.menu.name, NULL, loadGame.menu.flags );
+    ImGui::SetWindowSize( ImVec2( loadGame.menu.width, loadGame.menu.height ) );
+    ImGui::SetWindowPos( ImVec2( loadGame.menu.x, loadGame.menu.y ) );
 
     UI_EscapeMenuToggle();
     if ( UI_MenuTitle( loadGame.title->value, 2.25f ) ) {
@@ -136,6 +138,7 @@ static void LoadGameMenu_Draw( void )
     else {
         ImGui::TextUnformatted( "No Saves" );
     }
+    ImGui::End();
 }
 
 void LoadGameMenu_Cache( void )
@@ -146,6 +149,12 @@ void LoadGameMenu_Cache( void )
     const char *path;
     const stringHash_t *hardest;
     struct tm *fileTime;
+
+    loadGame.menu.draw = LoadGameMenu_Draw;
+    loadGame.menu.flags = MENU_DEFAULT_FLAGS;
+    loadGame.menu.name = "LoadGameMenu##MainMenuLoadGameConfig";
+
+    loadGame.title = strManager->ValueForKey( "SP_LOADGAME_TITLE" );
 
     //
     // init savefiles
@@ -196,5 +205,5 @@ void LoadGameMenu_Cache( void )
 
 void UI_LoadGameMenu( void )
 {
-
+    UI_PushMenu( &loadGame.menu );
 }

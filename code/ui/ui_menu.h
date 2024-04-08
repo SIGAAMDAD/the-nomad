@@ -18,6 +18,7 @@
 #define MTYPE_ARROW         7
 #define MTYPE_TREE          8
 #define MTYPE_NESTED        9
+#define MTYPE_LIST          10
 
 #define QMF_BLINK				0x00000001
 #define QMF_SMALLFONT			0x00000002
@@ -153,6 +154,15 @@ typedef struct {
     const char *offstring;
     qboolean curvalue;
 } menuswitch_t;
+
+typedef struct {
+    menucommon_t generic;
+
+    qboolean useTable;
+    int curitem;
+    int numitems;
+    const char *itemnames[64];
+} menulist_t;
 
 typedef struct {
     menucommon_t generic;

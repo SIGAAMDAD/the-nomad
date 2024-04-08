@@ -66,16 +66,15 @@ static void MainMenu_EventCallback( void *item, int event )
     switch ( self->id ) {
     case ID_SINGEPLAYER:
         UI_SinglePlayerMenu();
-        ui->SetState( STATE_SINGLEPLAYER );
         break;
     case ID_MODS:
-        ui->SetState( STATE_MODS );
+        UI_ModsMenu();
         break;
     case ID_SETTINGS:
-        ui->SetState( STATE_SETTINGS );
+        UI_SettingsMenu();
         break;
     case ID_CREDITS:
-        ui->SetState( STATE_CREDITS );
+        UI_CreditsMenu();
         break;
     case ID_EXIT:
         Cbuf_ExecuteText( EXEC_APPEND, "quit\n" );
@@ -87,7 +86,7 @@ static void MainMenu_EventCallback( void *item, int event )
     };
 }
 
-void MainMenu_ToggleMenu( void ) {
+static void MainMenu_ToggleMenu( void ) {
     if ( Key_IsDown( KEY_F2 ) ) {
         if ( s_main.noMenu ) {
             s_main.toggleKey = qfalse;
@@ -107,8 +106,6 @@ void MainMenu_Draw( void )
 
     MainMenu_ToggleMenu();
 
-    ui->menubackShader = s_main.background0;
-
     if ( s_main.font ) {
         FontCache()->SetActiveFont( s_main.font );
     }
@@ -120,59 +117,11 @@ void MainMenu_Draw( void )
     // show the user WTF just happened
     if ( errorMenu.message[0] ) {
         Sys_MessageBox( "Game Error", errorMenu.message, false );
+        Cvar_Set( "com_errorMessage", "" );
+        UI_MainMenu();
+        Snd_PlaySfx( ui->sfx_null );
     } else {
         Menu_Draw( &s_main.menu );
-    }
-    else if ( ui->GetState() == STATE_LEGAL ) {
-        ImGui::Begin( "MainMenu", NULL, windowFlags );
-        ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-        ImGui::SetWindowSize( ImVec2( (float)s_main.menuWidth, (float)s_main.menuHeight ) );
-        LegalMenu_Draw();
-        ImGui::End();
-    }
-    else if (ui->GetState() >= STATE_SINGLEPLAYER && ui->GetState() <= STATE_PLAYMISSION) {
-        ImGui::Begin( "MainMenu", NULL, windowFlags );
-        ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-        ImGui::SetWindowSize( ImVec2( (float)s_main.menuWidth, (float)s_main.menuHeight ) );
-        SinglePlayerMenu_Draw();
-        ImGui::End();
-    }
-    else if ( ui->GetState() == STATE_MODS ) {
-        ImGui::Begin( "MainMenu", NULL, windowFlags );
-        ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-        ImGui::SetWindowSize( ImVec2( (float)s_main.menuWidth, (float)s_main.menuHeight ) );
-        ModsMenu_Draw();
-        ImGui::End();
-    }
-    else if (ui->GetState() >= STATE_SETTINGS && ui->GetState() <= STATE_GAMEPLAY) {
-        ImGui::Begin( "MainMenu", NULL, windowFlags );
-        ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-        ImGui::SetWindowSize( ImVec2( (float)s_main.menuWidth * 0.75f, (float)s_main.menuHeight * 0.75f ) );
-        SettingsMenu_Draw();
-        ImGui::End();
-    }
-    else if (ui->GetState() == STATE_CREDITS) {
-        ImGui::Begin( "MainMenu", NULL, windowFlags );
-        ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-        ImGui::SetWindowSize( ImVec2( (float)s_main.menuWidth, (float)s_main.menuHeight ) );
-        ui->EscapeMenuToggle( STATE_MAIN );
-        if (ui->Menu_Title( "CREDITS" )) {
-            ui->SetState( STATE_MAIN );
-        }
-        else {
-            ImGui::TextWrapped( "%s", creditsString );
-            ImGui::NewLine();
-            for (const auto& it : collaborators) {
-                ImGui::Bullet();
-                ImGui::TextWrapped( "%-24s %s", it.name, it.reason );
-            }
-            ImGui::TextUnformatted( signingOffString );
-
-            ImGui::End();
-        }
-    }
-    else {
-        N_Error( ERR_FATAL, "Invalid UI State" ); // should NEVER happen
     }
 }
 
@@ -196,7 +145,6 @@ void MainMenu_Cache( void )
         Key_SetCatcher( KEYCATCH_UI );
 
         errorMenu.menu.draw = MainMenu_Draw;
-        errorMenu.menu.key = ErrorMessage_Key;
         errorMenu.menu.fullscreen = qtrue;
 
         UI_ForceMenuOff();

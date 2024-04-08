@@ -131,6 +131,13 @@ typedef struct {
 
 extern uiGlobals_t *ui;
 
+typedef struct {
+    const char *name;
+    const char *tooltip;
+} dif_t;
+
+extern dif_t difficultyTable[NUMDIFS];
+
 extern void UI_EscapeMenuToggle( void );
 extern qboolean UI_MenuTitle( const char *label, float scale = 3.75f );
 extern qboolean UI_MenuOption( const char *label );
@@ -141,6 +148,25 @@ extern void UI_SetActiveMenu( uiMenu_t menu );
 extern void UI_ForceMenuOff( void );
 extern void UI_PushMenu( menuframework_t *menu );
 extern void UI_PopMenu( void );
+
+
+//
+// ui_loadgame.cpp
+//
+extern void         UI_LoadGameMenu( void );
+extern void         LoadGameMenu_Cache( void );
+
+//
+// ui_newgame.cpp
+//
+extern void         UI_NewGameMenu( void );
+extern void         NewGameMenu_Cache( void );
+
+//
+// ui_credits.cpp
+//
+extern void         UI_CreditsMenu( void );
+extern void         CreditsMenu_Cache( void );
 
 //
 // ui_pause.cpp

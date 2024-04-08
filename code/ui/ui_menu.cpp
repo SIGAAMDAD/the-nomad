@@ -55,6 +55,8 @@ static void Text_Draw( menutext_t *text );
 static void RadioButton_Draw( menuswitch_t *button );
 static void RadioButton_Init( menuswitch_t *button );
 
+static void List_Draw( menulist_t *list );
+
 static void Button_Draw( menubutton_t *button );
 
 static void Field_CharEvent( ImGuiInputTextCallbackData *data, int ch );
@@ -209,6 +211,49 @@ static void Button_Draw( menubutton_t *button )
 	if ( ImGui::Button( button->generic.name ) ) {
 		Snd_PlaySfx( ui->sfx_select );
 		button->generic.eventcallback( button, EVENT_ACTIVATED );
+	}
+}
+
+static void List_Draw( menulist_t *list )
+{
+	int i;
+
+	Assert( list->generic.type == MTYPE_LIST );
+
+	if ( list->useTable ) {
+		ImGui::TableNextColumn();
+		if ( ImGui::ArrowButton( va( "##%sLeft", list->generic.name ), ImGuiDir_Left ) ) {
+
+		}
+		ImGui::TableNextColumn();
+		if ( ImGui::BeginCombo( va( "##%sDropDown", list->generic.name ), list->itemnames[list->curitem] ) ) {
+			for ( i = 0; i < list->numitems; i++ ) {
+				if ( ImGui::Selectable( va( "%s##%sSelectable_%i", list->itemnames[i], list->itemnames[i], i ), list->curitem == i ) ) {
+					Snd_PlaySfx( ui->sfx_select );
+					list->curitem = i;
+				}
+			}
+			ImGui::EndCombo();
+		}
+		ImGui::TableNextColumn();
+		if ( ImGui::ArrowButton( va( "##%sRight", list->generic.name ), ImGuiDir_Right ) ) {
+		}
+	}
+	else {
+		if ( ImGui::BeginCombo( va( "%s##%sDropDown", list->generic.name, list->generic.name ), list->itemnames[list->curitem] ) ) {
+			for ( i = 0; i < list->numitems; i++ ) {
+				if ( ImGui::Selectable( va( "%s##%sSelectable_%i", list->itemnames[i], list->itemnames[i], i ), list->curitem == i ) ) {
+					list->curitem = i;
+					if ( list->generic.eventcallback ) {
+						list->generic.eventcallback( list, EVENT_ACTIVATED );
+					}
+				}
+			}
+			ImGui::EndCombo();
+		}
+		if ( ImGui::IsItemClicked() ) {
+			Snd_PlaySfx( ui->sfx_select );
+		}
 	}
 }
 
@@ -439,6 +484,9 @@ static void Menu_DrawItemGeneric( menucommon_t *generic )
 		break;
 	case MTYPE_SLIDER:
 		Slider_Draw( (menuslider_t *)generic );
+		break;
+	case MTYPE_LIST:
+		List_Draw( (menulist_t *)generic );
 		break;
 	};
 
