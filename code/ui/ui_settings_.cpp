@@ -10,166 +10,27 @@
 #include "../rendercommon/imgui_impl_opengl3.h"
 #include "../rendercommon/imgui.h"
 
-typedef struct {
-	// graphics
-	int multisampleType;
-	int anisotropicFiltering;
-	qboolean enablePostProcessing;
-	qboolean enableBloom;
-	qboolean enableHdr;
-	qboolean enableShadows;
-	qboolean enableVertexLighting;
-	qboolean enableDynamicLighting;
-	qboolean enableSSAO;
-	qboolean enableToneMapping;
-    qboolean enablePbr;
-	qboolean enableLighting;
-	qboolean enableFastLighting;
-	int toneMappingType;
-	qboolean useNormalMapping;
-	qboolean useSpecularMapping;
-	uint32_t maxPolys;
-	uint32_t maxEntities;
-	uint32_t maxDLights;
-	
-	// gameplay
-	uint32_t maxParticles;
-	uint32_t maxCorpses;
-	uint32_t maxEntities;
-	
-	// sound
-	uint32_t maxSoundChannels;
-} performance_t;
+#define ID_PERFORMANCE				0
+#define ID_VIDEO					1
+#define ID_AUDIO					2
+#define ID_CONTROLS					3
+#define ID_GAMEPLAY					4
+#define ID_TABLE					5
 
 typedef struct {
-    const char *command;
-    const char *label;
-    int32_t id;
-    int32_t defaultBind1;
-    int32_t defaultBind2;
-    int32_t bind1;
-    int32_t bind2;
-} bind_t;
-
-typedef struct {
-    bind_t *keybinds;
-    uint32_t numBinds;
-
-    int32_t mouseSensitivity;
-    uint32_t rebindIndex;
-
-    qboolean mouseAccelerate;
-    qboolean mouseInvert;
-} controls_t;
-
-typedef struct {
-	int windowMode;
-	int screenWidth;
-	int screenHeight;
-	int vsync;
-	int api;
-	int maxfps;
-	float exposure;
-	float gamma;
-} video_t;
-
-typedef struct {
-	int masterVol;
-	int sfxVol;
-	int musicVol;
-	qboolean sfxOn;
-	qboolean musicOn;
-} audio_t;
-
-#define ID_PERFORMANCE				1
-#define ID_VIDEO					2
-#define ID_AUDIO					3
-#define ID_CONTROLS					4
-#define ID_GAMEPLAY					5
-#define ID_MULTISAMPLING			6
-#define ID_ANISOTROPICFILTERING		7
-
-typedef struct {
-	performance_t performance;
-	video_t video;
-	audio_t audio;
-	controls_t controls;
-
-	CUIMenu handle;
-
 	menuframework_t menu;
 
-	menustate_t lastChild;
-	qboolean rebinding;
-	qboolean paused;
-	qboolean confirmation;
-	qboolean modified;
+	menutext_t video;
+	menutext_t performance;
+	menutext_t audio;
+	menutext_t controls;
+	menutext_t gameplay;
+
+	menutab_t tabs;
 } settings_t;
 
 static settings_t *initial;
 static settings_t *settings;
-
-static void SettingsMenu_EventCallback( void *generic, int event )
-{
-	if ( event != EVENT_ACTIVATED ) {
-		return;
-	}
-
-	switch ( ( (menucommon_t *)generic )->id ) {
-	case ID_PERFORMANCE:
-		break;
-	case ID_VIDEO:
-		break;
-	case ID_CONTROLS:
-		break;
-	case ID_GAMEPLAY:
-		break;
-	case ID_MULTISAMPLING:
-		break;
-	};
-}
-
-static void SettingsMenu_GetInitial( void )
-{
-	settings->performance.enableHdr = Cvar_VariableInteger( "r_hdr" );
-	settings->performance.enablePbr = Cvar_VariableInteger( "r_pbr" );
-	settings->performance.enableBloom = Cvar_VariableInteger( "r_bloom" );
-}
-
-static void SettingsMenu_SetDefault( void )
-{
-	settings->performance.anisotropicFiltering = Cvar_VariableFloat( "r" );
-}
-
-static void SettingsMenu_SetInitial( void )
-{
-}
-
-static void SettingsMenu_SaveVideo( void )
-{
-	if ( settings->video.vsync != initial->video.vsync ) {
-		Cvar_Set( "r_swapInterval", va( "%i", settings->video.vsync ) );
-	}
-	if ( settings->video.exposure != initial->video.exposure ) {
-		Cvar_Set( "r_autoExposure", va( "%f", settings->video.exposure ) );
-	}
-}
-
-static void SettingsMenu_SavePerformance( void )
-{
-}
-
-static void SettingsMenu_Save( void )
-{
-	SettingsMenu_SaveVideo();
-	SettingsMenu_SavePerformance();
-	
-	SettingsMenu_GetInitial();
-	SettingsMenu_SetInitial();
-	
-	Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n" );
-}
-
 
 static void SettingsMenu_Bar( void )
 {
@@ -783,11 +644,24 @@ void SettingsMenu_Cache( void )
 	settings = (settings_t *)Hunk_Alloc( sizeof( *settings ), h_high );
 	initial = (settings_t *)Hunk_Alloc( sizeof( *initial ), h_high );
 	
-	SettingsMenu_InitPresets();
-	SettingsMenu_GetInitial();
-	SettingsMenu_GetDefault();
+	settings->menu.fullscreen = qtrue;
+	settings->menu.x = 0;
+	settings->menu.y = 0;
+	settings->menu.width = ui->gpuConfig.vidWidth;
+	settings->menu.height = ui->gpuConfig.vidHeight;
+	settings->menu.name = "Settings##SettingsMenu";
+	settings->menu.titleFontScale = 3.5f;
+	settings->menu.textFontScale = 1.5f;
 
-	settings->confirmation = qfalse;
-    settings->modified = qfalse;
-    settings->paused = Cvar_VariableInteger( "sg_paused" );
+	settings->tabs.generic.type = MTYPE_TAB;
+	settings->tabs.generic.eventcallback = SettingsMenu_EventCallback;
+	settings->tabs.generic.font = FontCache()->AddFontToCache( "AlegreyaSC", "Bold" );
+	settings->tabs.numitems = ID_TABLE;
+	settings->tabs.items[0] = (menucommon_t *)&settings->video;
+	settings->tabs.items[1] = (menucommon_t *)&settings->performance;
+	settings->tabs.items[2] = (menucommon_t *)&settings->audio;
+	settings->tabs.items[3] = (menucommon_t *)&settings->controls;
+	settings->tabs.items[4] = (menucommon_t *)&settings->gameplay;
+
+	Menu_AddItem( &settings->menu, &settings->tabs );
 }

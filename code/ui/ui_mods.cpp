@@ -25,10 +25,6 @@ typedef struct {
 
 	menuframework_t menu;
 
-	menutext_t title;
-
-	menutable_t table;
-
     nhandle_t backgroundShader;
     nhandle_t ambience;
     
@@ -233,7 +229,7 @@ static void ModsMenu_DrawListing( module_t *mod, qboolean dimColor )
 	if ( ImGui::RadioButton( mod->active ? va( "##ModLoad%iON", index ) : va( "##ModLoad%iOFF", index ),
 		mod->active ) )
 	{
-		ui->PlaySelected();
+		Snd_PlaySfx( ui->sfx_select );
 		ModToggleActive( mod, !dimColor );
 	}
 	if ( active ) {
@@ -317,12 +313,12 @@ void ModsMenu_Draw( void )
     const float fontScale = ImGui::GetFont()->Scale;
     extern ImFont *RobotoMono;
     
-	ui->menu_background = mods->backgroundShader;
+	ui->menubackShader = mods->backgroundShader;
     Snd_SetLoopingTrack( mods->ambience );
     
-    ui->EscapeMenuToggle( STATE_MAIN );
-    if ( ui->Menu_Title( mods->titleString->value, 1.75f ) ) {
-        ui->SetState( STATE_MAIN );
+	UI_EscapeMenuToggle();
+    if ( UI_MenuTitle( mods->titleString->value, 1.75f ) ) {
+		UI_MainMenu();
         ModsMenu_SaveModList();
         return;
     }
@@ -361,7 +357,7 @@ void ModsMenu_Draw( void )
 	   	}
    		
    		if ( Key_IsDown( KEY_UP ) ) {
-   			ui->PlaySelected();
+			Snd_PlaySfx( ui->sfx_select );
    			if ( mods->selectedMod == 0 ) {
    				mods->selectedMod = mods->numMods - 1;
    			} else {
@@ -369,14 +365,14 @@ void ModsMenu_Draw( void )
 	   		}
 		}
    		if ( Key_IsDown( KEY_DOWN ) ) {
-   			ui->PlaySelected();
+			Snd_PlaySfx( ui->sfx_select );
    			mods->selectedMod++;
    			if ( mods->selectedMod >= mods->numMods ) {
    				mods->selectedMod = 0;
    			}
    		}
    		if ( Key_IsDown( KEY_ENTER ) ) {
-   			ui->PlaySelected();
+			Snd_PlaySfx( ui->sfx_select );
    			ModToggleActive( &mods->modList[ mods->selectedMod ], !dimColor );
    		}
 		
@@ -398,7 +394,7 @@ void ModsMenu_Draw( void )
 		
 		module_t *swap = NULL;
 		if ( ImGui::ArrowButton( "##ModsMenuConfigUp", ImGuiDir_Up ) ) {
-			ui->PlaySelected();
+			Snd_PlaySfx( ui->sfx_select );
 			if ( i == 0 ) {
 				swap = &mods->modList[ mods->numMods - 1 ];
 			} else {
@@ -407,7 +403,7 @@ void ModsMenu_Draw( void )
 		}
 		ImGui::SameLine();
 		if ( ImGui::ArrowButton( "##ModsMenuConfigDown", ImGuiDir_Down ) ) {
-			ui->PlaySelected();
+			Snd_PlaySfx( ui->sfx_select );
 			if ( i == mods->numMods - 1 ) {
 				swap = &mods->modList[ 0 ];
 			} else {
@@ -577,6 +573,11 @@ void ModsMenu_Cache( void )
 	    mods->modList = (module_t *)( mods + 1 );
 	}
 
+	mods->menu.draw = ModsMenu_Draw;
+	mods->menu.fullscreen = qtrue;
+	mods->menu.width = ui->gpuConfig.vidWidth;
+	mods->menu.height = ui->gpuConfig.vidHeight;
+
     ModsMenu_Load();
 	
     mods->ambience = Snd_RegisterTrack( "music/tales_around_the_campfire.ogg" );
@@ -594,5 +595,5 @@ void ModsMenu_Cache( void )
 void UI_ModsMenu( void )
 {
 	Key_SetCatcher( KEYCATCH_UI );
-    ModsMenu_Cache();
+	UI_PushMenu( &mods->menu );
 }

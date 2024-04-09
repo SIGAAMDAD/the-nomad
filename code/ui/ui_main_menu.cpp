@@ -181,7 +181,7 @@ void MainMenu_Cache( void )
     s_main.singleplayer.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
     s_main.singleplayer.generic.eventcallback = MainMenu_EventCallback;
     s_main.singleplayer.text = s_main.spString->value;
-    VectorCopy4( s_main.singleplayer.color, colorWhite );
+    s_main.singleplayer.color = color_white;
 
     s_main.mods.generic.name = StringDup( s_main.modsString, "ModsMainMenuOption" );
     s_main.mods.generic.type = MTYPE_TEXT;
@@ -189,7 +189,7 @@ void MainMenu_Cache( void )
     s_main.mods.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
     s_main.mods.generic.eventcallback = MainMenu_EventCallback;
     s_main.mods.text = s_main.modsString->value;
-    VectorCopy4( s_main.mods.color, colorWhite );
+    s_main.mods.color = color_white;
 
     s_main.settings.generic.name = StringDup( s_main.settingsString, "SettingsMainMenuOption" );
     s_main.settings.generic.type = MTYPE_TEXT;
@@ -197,7 +197,7 @@ void MainMenu_Cache( void )
     s_main.settings.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
     s_main.settings.generic.eventcallback = MainMenu_EventCallback;
     s_main.settings.text = s_main.settingsString->value;
-    VectorCopy4( s_main.settings.color, colorWhite );
+    s_main.settings.color = color_white;
 
     s_main.credits.generic.name = "Credits##MainMenuOption";
     s_main.credits.generic.type = MTYPE_TEXT;
@@ -205,7 +205,7 @@ void MainMenu_Cache( void )
     s_main.credits.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
     s_main.credits.generic.eventcallback = MainMenu_EventCallback;
     s_main.credits.text = "Credits";
-    VectorCopy4( s_main.credits.color, colorWhite );
+    s_main.credits.color = color_white;
 
     s_main.exitGame.generic.name = StringDup( s_main.exitString, "ExitGameMenuOption" );
     s_main.exitGame.generic.type = MTYPE_TEXT;
@@ -213,7 +213,7 @@ void MainMenu_Cache( void )
     s_main.exitGame.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
     s_main.exitGame.generic.eventcallback = MainMenu_EventCallback;
     s_main.exitGame.text = s_main.exitString->value;
-    VectorCopy4( s_main.exitGame.color, colorWhite );
+    s_main.exitGame.color = color_white;
 
     s_main.spArrow.generic.name = StringDup( s_main.spString, "SinglePlayerMainMenuArrow" );
     s_main.spArrow.generic.type = MTYPE_ARROW;

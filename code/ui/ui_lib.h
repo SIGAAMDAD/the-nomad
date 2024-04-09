@@ -74,13 +74,13 @@ extern void			Menu_Cache( void );
 //extern vec4_t		menu_red_color;
 //extern vec4_t		menu_black_color;
 //extern vec4_t		menu_dim_color;
-//extern vec4_t		color_black;
-//extern vec4_t		color_white;
-//extern vec4_t		color_yellow;
-//extern vec4_t		color_blue;
-//extern vec4_t		color_orange;
-//extern vec4_t		color_red;
-//extern vec4_t		color_dim;
+extern vec4_t		color_black;
+extern vec4_t		color_white;
+extern vec4_t		color_yellow;
+extern vec4_t		color_blue;
+extern vec4_t		color_orange;
+extern vec4_t		color_red;
+extern vec4_t		color_dim;
 //extern vec4_t		name_color;
 //extern vec4_t		list_color;
 //extern vec4_t		listbar_color;
@@ -149,6 +149,40 @@ extern void UI_ForceMenuOff( void );
 extern void UI_PushMenu( menuframework_t *menu );
 extern void UI_PopMenu( void );
 
+//
+// ui_video.cpp
+//
+extern void         UI_VideoSettingsMenu( void );
+extern void         VideoSettingsMenu_Cache( void );
+extern void         VideoSettingsMenu_Save( void );
+
+//
+// ui_performance.cpp
+//
+extern void         UI_PerformanceSettingsMenu( void );
+extern void         PerformanceSettingsMenu_Cache( void );
+extern void         PerformanceSettingsMenu_Save( void );
+
+//
+// ui_audio.cpp
+//
+extern void         UI_AudioSettingsMenu( void );
+extern void         AudioSettingsMenu_Cache( void );
+extern void         AudioSettingsMenu_Save( void );
+
+//
+// ui_controls.cpp
+//
+extern void         UI_ContolsSettingsMenu( void );
+extern void         ControlsSettingsMenu_Cache( void );
+extern void         ControlsSettingsMenu_Save( void );
+
+//
+// ui_gameplay.cpp
+//
+extern void         UI_GameplaySettingsMenu( void );
+extern void         GameplaySettingsMenu_Cache( void );
+extern void         GameplaySettingsMenu_Save( void );
 
 //
 // ui_loadgame.cpp

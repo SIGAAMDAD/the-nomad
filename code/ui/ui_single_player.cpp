@@ -33,7 +33,7 @@ static void SinglePlayerMenu_EventCallback( void *ptr, int event )
 
     switch ( ( (menucommon_t *)ptr )->id ) {
     case ID_NEWGAME:
-        UI_SinglePlayerMenu();
+        UI_NewGameMenu();
         break;
     case ID_LOADGAME:
         UI_LoadGameMenu();

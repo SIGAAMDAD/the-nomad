@@ -24,25 +24,24 @@ static void DemoMenu_Draw( void )
     ImGui::End();
 
     if ( Key_AnyDown() ) {
-        ui->PopMenu();
-        ui->SetActiveMenu( UI_MENU_MAIN );
-        ui->SetState( STATE_MAIN );
-        ui->PlaySelected();
+        UI_PopMenu();
+        UI_ForceMenuOff();
+        ui->menusp = 0;
+
+        UI_SetActiveMenu( UI_MENU_MAIN );        
         return;
     }
 }
 
 void DemoMenu_Cache( void )
 {
-    demo = (CUIMenu *)Hunk_Alloc( sizeof( *demo ), h_high );
+    demo = (menuframework_t *)Hunk_Alloc( sizeof( *demo ), h_high );
 
-    demo->Draw = DemoMenu_Draw;
-    ui->SetState( STATE_THANK_YOU_FOR_PLAYING_DEMO );
+    demo->draw = DemoMenu_Draw;
+    demo->fullscreen = qfalse;
 }
 
 void UI_DemoMenu( void )
 {
-    DemoMenu_Cache();
-
-    ui->PushMenu( demo );
+    UI_PushMenu( demo );
 }

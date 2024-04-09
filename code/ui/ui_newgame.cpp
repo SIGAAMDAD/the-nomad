@@ -5,7 +5,11 @@ typedef struct {
     
     menufield_t saveName;
     menubutton_t beginGame;
+
+    menuarrow_t difArrowLeft;
+    menuarrow_t difArrowRight;
     menulist_t difList;
+    menutable_t difTable;
 
     gamedif_t diff;
 
@@ -81,6 +85,42 @@ static void NewGameMenu_Draw( void )
 int32_t count_fields( const char *line );
 char **parse_csv( const char *line );
 
+static void NewGameMenu_ArrowLeft( void *ptr, int event )
+{
+    int item;
+
+    if ( event != EVENT_ACTIVATED ) {
+        return;
+    }
+
+    item = ( (menulist_t *)ptr )->curitem;
+    if ( item == 0 ) {
+        item = ( (menulist_t *)ptr )->numitems - 1;
+    } else {
+        item--;
+    }
+
+    ( (menulist_t *)ptr )->curitem = item;
+}
+
+static void NewGameMenu_ArrowRight( void *ptr, int event )
+{
+    int item;
+
+    if ( event != EVENT_ACTIVATED ) {
+        return;
+    }
+
+    item = ( (menulist_t *)ptr )->curitem;
+    if ( item == ( (menulist_t *)ptr )->numitems - 1 ) {
+        item = 0;
+    } else {
+        item++;
+    }
+
+    ( (menulist_t *)ptr )->curitem = item;
+}
+
 void NewGameMenu_Cache( void )
 {
     int i;
@@ -116,24 +156,38 @@ void NewGameMenu_Cache( void )
     newGame.beginGame.generic.type = MTYPE_BUTTON;
     newGame.beginGame.generic.id = ID_BEGINGAME;
 
+    newGame.difArrowLeft.generic.id = ID_DIFFICULTY;
+    newGame.difArrowLeft.generic.eventcallback = NewGameMenu_ArrowLeft;
+    newGame.difArrowLeft.generic.name = "##DifficultySinglePlayerMenuLeft";
+    newGame.difArrowLeft.direction = ImGuiDir_Left;
+
+    newGame.difArrowLeft.generic.id = ID_DIFFICULTY;
+    newGame.difArrowLeft.generic.eventcallback = NewGameMenu_ArrowRight;
+    newGame.difArrowLeft.generic.name = "##DifficultySinglePlayerMenuRight";
+    newGame.difArrowLeft.direction = ImGuiDir_Right;
+
     newGame.difList.generic.name = "Difficulty##SinglePlayerMenuDifficultyConfig";
     newGame.difList.generic.eventcallback = NewGameMenu_EventCallback;
     newGame.difList.generic.type = MTYPE_LIST;
     newGame.difList.generic.id = ID_DIFFICULTY;
     newGame.difList.numitems = (int)NUMDIFS;
-    newGame.difList.useTable = qfalse;
     for ( i = 0; i < NUMDIFS; i++ ) {
         newGame.difList.itemnames[i] = difficultyTable[i].name;
     }
 
     Menu_AddItem( &newGame.menu, &newGame.saveName );
-    Menu_AddItem( &newGame.menu, &newGame.difList );
+    Menu_AddItem( &newGame.menu, &newGame.difTable );
+ 
+    Table_AddItem( &newGame.difTable, &newGame.difArrowLeft );
+    Table_AddItem( &newGame.difTable, &newGame.difList );
+    Table_AddItem( &newGame.difTable, &newGame.difArrowRight );
+
     Menu_AddItem( &newGame.menu, &newGame.beginGame );
 }
 
 void UI_NewGameMenu( void )
 {
-
+    UI_PushMenu( &newGame.menu );
 }
 
 

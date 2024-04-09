@@ -24,17 +24,10 @@ typedef struct {
 } loadGameMenu_t;
 
 static loadGameMenu_t loadGame;
-extern ImFont *PressStart2P;
-
-typedef struct {
-    const char *name;
-    const char *tooltip;
-} dif_t;
-
-static dif_t difficultyTable[NUMDIFS];
 
 static void LoadGameMenu_Draw( void )
 {
+    extern ImFont *PressStart2P;
     ImVec2 mousePos;
     float font_scale;
     uint64_t i;

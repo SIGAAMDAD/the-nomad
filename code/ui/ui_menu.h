@@ -16,31 +16,28 @@
 #define MTYPE_RADIOBUTTON   5
 #define MTYPE_FIELD         6
 #define MTYPE_ARROW         7
-#define MTYPE_TREE          8
-#define MTYPE_NESTED        9
-#define MTYPE_LIST          10
+#define MTYPE_LIST          8
+#define MTYPE_CUSTOM        9
+#define MTYPE_TREE          10
+#define MTYPE_LISTEXT       11
+#define MTYPE_TAB           12
 
-#define QMF_BLINK				0x00000001
-#define QMF_SMALLFONT			0x00000002
-#define QMF_LEFT_JUSTIFY		0x00000004
-#define QMF_CENTER_JUSTIFY		0x00000008
-#define QMF_RIGHT_JUSTIFY		0x00000010
-#define QMF_NUMBERSONLY			0x00000020	// edit field is only numbers
-#define QMF_HIGHLIGHT			0x00000040
-#define QMF_HIGHLIGHT_IF_FOCUS	0x00000080	// steady focus
-#define QMF_PULSEIFFOCUS		0x00000100	// pulse if focus
-#define QMF_HASMOUSEFOCUS		0x00000200
-#define QMF_NOONOFFTEXT			0x00000400
-#define QMF_MOUSEONLY			0x00000800	// only mouse input allowed
-#define QMF_HIDDEN				0x00001000	// skips drawing
-#define QMF_GRAYED				0x00002000	// grays and disables
-#define QMF_INACTIVE			0x00004000	// disables any input
-#define QMF_NODEFAULTINIT		0x00008000	// skip default initialization
-#define QMF_OWNERDRAW			0x00010000
-#define QMF_PULSE				0x00020000
-#define QMF_LOWERCASE			0x00040000	// edit field is all lower case
-#define QMF_UPPERCASE			0x00080000	// edit field is all upper case
-#define QMF_SILENT				0x00100000
+#define QMF_BLINK               0x00000001
+#define QMF_SMALLFONT           0x00000002
+#define QMF_NUMBERSONLY         0x00000004 // edit field is only numbers
+#define QMF_HIGHLIGHT           0x00000008
+#define QMF_HIGHLIGHT_IF_FOCUS  0x00000010 // steady focus
+#define QMF_PULSEIFFOCUS	        0x00000020 // pulse if focus
+#define QMF_HASMOUSEFOCUS       0x00000040
+#define QMF_NOONOFFTEXT         0x00000080
+#define QMF_MOUSEONLY           0x00000100 // only mouse input allowed
+#define QMF_HIDDEN              0x00000200 // skips drawing
+#define QMF_GRAYED              0x00000400 // grays and disables
+#define QMF_INACTIVE            0x00000800 // disables any input
+#define QMF_OWNERDRAW           0x00001000
+#define QMF_PULSE               0x00002000
+#define QMF_SILENT              0x00004000 // don't make any sounds
+#define QMF_CUSTOMFONT          0x00008000 // use a custom font
 
 // callback notifications
 #define EVENT_GOTFOCUS				1
@@ -77,7 +74,7 @@ typedef struct {
 typedef struct {
     const char *name;
     menuframework_t *parent;
-
+	
     int type;
     int id;
     int x, y;
@@ -86,11 +83,11 @@ typedef struct {
     int right;
     int bottom;
     unsigned flags;
-    qboolean hovered;
+    qboolean focused;
     ImFont *font;
-
-    void (*draw)( void *self );
+    
     void (*eventcallback)( void *self, int id );
+    void (*ownerdraw)( void *self );
 } menucommon_t;
 
 typedef struct {
@@ -98,7 +95,7 @@ typedef struct {
 
     char buffer[MAX_EDIT_LINE];
 
-    vec4_t color;
+    float *color;
     int widthInChars;
     int cursor;
     int scroll;
@@ -107,19 +104,23 @@ typedef struct {
 
 typedef struct {
     menucommon_t generic;
-    vec4_t color;
+    
+    float *color;
     int direction;
 } menuarrow_t;
 
 typedef struct {
     menucommon_t generic;
-    vec4_t color;
+    
+    float *color;
+    nhandle_t shader;
+    nhandle_t focusshader;
 } menubutton_t;
 
 typedef struct {
     menucommon_t generic;
 
-    vec4_t color;
+    float *color;
 
     float minvalue;
     float maxvalue;
@@ -132,8 +133,8 @@ typedef struct {
 
 typedef struct {
     menucommon_t generic;
-
-    vec4_t color;
+	
+	float *color;
     const char *text;
 } menutext_t;
 
@@ -149,25 +150,48 @@ typedef struct {
 typedef struct {
     menucommon_t generic;
     
-    vec4_t color;
-    const char *onstring;
-    const char *offstring;
+    float *color;
     qboolean curvalue;
 } menuswitch_t;
 
 typedef struct {
     menucommon_t generic;
-
-    qboolean useTable;
+    
     int curitem;
     int numitems;
-    const char *itemnames[64];
+    const char **itemnames;
 } menulist_t;
 
 typedef struct {
-    menucommon_t generic;
-    menuframework_t data;
-} menu_nested_t;
+	menucommon_t generic;
+	
+	int curitem;
+	int numitems;
+	menucommon_t *items[128];
+} menutree_t;
+
+typedef struct {
+	menucommon_t generic;
+	
+	int curitem;
+	int numitems;
+	menucommon_t *items[128];
+} menulistex_t;
+
+typedef struct {
+	menucommon_t generic;
+	
+	float *tabColorActive;
+	float *tabColorFocused;
+	float *tabColor;
+	int curitem;
+	int numitems;
+	menucommon_t *items[128];
+} menutab_t;
+
+typedef struct {
+	menucommon_t generic;
+} menucustom_t;
 
 extern void Table_AddRow( menutable_t *table );
 extern void Table_AddItem( menutable_t *table, void *item );

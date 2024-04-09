@@ -26,15 +26,20 @@ UI_Cache
 static void UI_Cache_f( void ) {
     Con_Printf( "Caching ui resources...\n" );
 
-    TitleMenu_Cache();
     MainMenu_Cache();
     SettingsMenu_Cache();
-	LegalMenu_Cache();
 	ModsMenu_Cache();
 	SinglePlayerMenu_Cache();
 	DemoMenu_Cache();
 	LoadGameMenu_Cache();
 	NewGameMenu_Cache();
+	PauseMenu_Cache();
+	CreditsMenu_Cache();
+	VideoSettingsMenu_Cache();
+	PerformanceSettingsMenu_Cache();
+	AudioSettingsMenu_Cache();
+	ControlsSettingsMenu_Cache();
+	GameplaySettingsMenu_Cache();
 }
 
 CUIFontCache::CUIFontCache( void ) {
