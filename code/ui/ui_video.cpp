@@ -21,6 +21,9 @@ typedef struct {
 } videoOptionsInfo_t;
 
 static videoOptionsInfo_t s_videoOptionsInfo;
+extern menutab_t settingsTabs;
+extern menubutton_t settingsResetDefaults;
+extern menubutton_t settingsSave;
 
 static void VideoSettingsMenu_EventCallback( void *ptr, int event )
 {
@@ -72,15 +75,10 @@ void VideoSettingsMenu_Cache( void )
     s_videoOptionsInfo.menu.y = 0;
     s_videoOptionsInfo.menu.name = "Video##SettingsMenu";
 
-    s_videoOptionsInfo.tabs.generic.type = MTYPE_TAB;
-    s_videoOptionsInfo.tabs.generic.name = "##SettingsMenuTabs";
-    s_videoOptionsInfo.tabs.generic.eventcallback = VideoSettingsMenu_EventCallback;
-    s_videoOptionsInfo.tabs.numitems = ID_TABLE;
-    s_videoOptionsInfo.tabs.items[0] = (menucommon_t *)&s_videoOptionsInfo.video;
-    s_videoOptionsInfo.tabs.items[1] = (menucommon_t *)&s_videoOptionsInfo.performance;
-    s_videoOptionsInfo.tabs.items[2] = (menucommon_t *)&s_videoOptionsInfo.audio;
-    s_videoOptionsInfo.tabs.items[3] = (menucommon_t *)&s_videoOptionsInfo.controls;
-    s_videoOptionsInfo.tabs.items[4] = (menucommon_t *)&s_videoOptionsInfo.gameplay;
+    Menu_AddItem( &s_videoOptionsInfo.menu, &settingsTabs );
+
+    Menu_AddItem( &s_videoOptionsInfo.menu, &settingsResetDefaults );
+    Menu_AddItem( &s_videoOptionsInfo.menu, &settingsSave );
 }
 
 void UI_VideoSettingsMenu( void )

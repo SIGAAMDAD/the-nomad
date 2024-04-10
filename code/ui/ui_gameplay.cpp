@@ -10,13 +10,6 @@
 typedef struct {
     menuframework_t menu;
 
-    menutext_t video;
-    menutext_t performance;
-    menutext_t audio;
-    menutext_t controls;
-    menutext_t gameplay;
-
-    menutab_t tabs;
     menutable_t table;
 
     menutext_t difficulty;
@@ -25,6 +18,9 @@ typedef struct {
 
 static gameplayOptionsInfo_t s_gameplayOptionsInfo;
 
+extern menutab_t settingsTabs;
+extern menubutton_t settingsResetDefaults;
+extern menubutton_t settingsSave;
 static void GameplaySettingsMenu_EventCallback( void *ptr, int event )
 {
     if ( event != EVENT_ACTIVATED ) {
@@ -62,19 +58,16 @@ void GameplaySettingsMenu_Cache( void )
     s_gameplayOptionsInfo.menu.fullscreen = qtrue;
     s_gameplayOptionsInfo.menu.width = ui->gpuConfig.vidWidth;
     s_gameplayOptionsInfo.menu.height = ui->gpuConfig.vidHeight;
+    s_gameplayOptionsInfo.menu.textFontScale = 1.5f;
+    s_gameplayOptionsInfo.menu.titleFontScale = 3.5f;
     s_gameplayOptionsInfo.menu.x = 0;
     s_gameplayOptionsInfo.menu.y = 0;
     s_gameplayOptionsInfo.menu.name = "Audio##SettingsMenu";
 
-    s_gameplayOptionsInfo.tabs.generic.type = MTYPE_TAB;
-    s_gameplayOptionsInfo.tabs.generic.name = "##SettingsMenuTabs";
-    s_gameplayOptionsInfo.tabs.generic.eventcallback = GameplaySettingsMenu_EventCallback;
-    s_gameplayOptionsInfo.tabs.numitems = ID_TABLE;
-    s_gameplayOptionsInfo.tabs.items[0] = (menucommon_t *)&s_gameplayOptionsInfo.video;
-    s_gameplayOptionsInfo.tabs.items[1] = (menucommon_t *)&s_gameplayOptionsInfo.performance;
-    s_gameplayOptionsInfo.tabs.items[2] = (menucommon_t *)&s_gameplayOptionsInfo.audio;
-    s_gameplayOptionsInfo.tabs.items[3] = (menucommon_t *)&s_gameplayOptionsInfo.controls;
-    s_gameplayOptionsInfo.tabs.items[4] = (menucommon_t *)&s_gameplayOptionsInfo.gameplay;
+    Menu_AddItem( &s_gameplayOptionsInfo.menu, &settingsTabs );
+
+    Menu_AddItem( &s_gameplayOptionsInfo.menu, &settingsSave );
+    Menu_AddItem( &s_gameplayOptionsInfo.menu, &settingsResetDefaults );
 }
 
 void UI_GameplaySettingsMenu( void )

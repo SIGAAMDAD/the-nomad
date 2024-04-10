@@ -213,8 +213,6 @@ void FBO_Init( void )
 		R_CheckFBO( rg.renderFbo );
 
 	    rg.msaaResolveFbo = FBO_Create( "msaaResolve", rg.renderDepthImage->width, rg.renderDepthImage->height );
-//		FBO_CreateBuffer( rg.msaaResolveFbo, GL_RGBA8, 0, multisample );
-//		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, multisample );
 		FBO_AttachImage( rg.msaaResolveFbo, rg.renderImage, GL_COLOR_ATTACHMENT0 );
 		FBO_AttachImage( rg.msaaResolveFbo, rg.renderDepthImage, GL_DEPTH_ATTACHMENT );
 	}
@@ -229,7 +227,6 @@ void FBO_Init( void )
 	if ( rg.hdrDepthImage ) {
 		rg.hdrDepthFbo = FBO_Create( "_hdrDepth", rg.hdrDepthImage->width, rg.hdrDepthImage->height );
 		FBO_CreateBuffer( rg.hdrDepthFbo, GL_RGBA16F, 0, multisample );
-//		FBO_AttachImage( rg.hdrDepthFbo, rg.hdrDepthImage, GL_COLOR_ATTACHMENT0 );
 		R_CheckFBO( rg.hdrDepthFbo );
 	}
 

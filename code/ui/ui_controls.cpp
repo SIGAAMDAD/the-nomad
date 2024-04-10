@@ -7,6 +7,12 @@
 #define ID_GAMEPLAY     4
 #define ID_TABLE        5
 
+#define ID_SETDEFAULTS  0
+#define ID_SAVECONFIG   1
+
+#define ID_MOUSE_SENSITIVITY   0
+#define ID_MOUSE_ACCELERATION  1
+
 typedef struct {
     const char *command;
     const char *label;
@@ -15,60 +21,43 @@ typedef struct {
     int32_t defaultBind2;
     int32_t bind1;
     int32_t bind2;
+    
+    menutext_t binding;
+    menutext_t name;
 } bind_t;
 
 typedef struct {
-    const char *name;
-
-} configcvar_t;
-
-typedef struct {
     bind_t *keybinds;
+    bind_t *rebindKey;
     int numBinds;
+    
+    qboolean waitingforkey;
+    qboolean rebinding;
 
     menuframework_t menu;
 
-    menutext_t video;
-    menutext_t performance;
-    menutext_t audio;
-    menutext_t controls;
-    menutext_t gameplay;
+    menutext_t mouseAcceleration;
 
-    menutab_t tabs;
-    menutable_t table;
+    menutext_t mouseSensitivity;
+    menutext_t mouseAcceleration;
+
+    menutext_t bindText;
+
+    menuarrow_t mouseSensitivityLeft;
+    menuarrow_t mouseSensitivityRight;
+    menuslider_t mouseSensitivitySlider;
+    menuswitch_t mouseAccelerationButton;
+
+    menucustom_t empty;
+
+    menutable_t mouseTable;
+    menutable_t keybindTable;
 } controlsOptionsInfo_t;
 
 static controlsOptionsInfo_t s_controlsOptionsInfo;
-
-static void ControlsSettingsMenu_EventCallback( void *ptr, int event )
-{
-    if ( event != EVENT_ACTIVATED ) {
-        return;
-    }
-
-    switch ( ( (menucommon_t *)ptr )->id ) {
-    case ID_VIDEO:
-        UI_PopMenu();
-        UI_VideoSettingsMenu();
-        break;
-    case ID_PERFORMANCE:
-        UI_PopMenu();
-        UI_PerformanceSettingsMenu();
-        break;
-    case ID_AUDIO:
-        UI_PopMenu();
-        UI_AudioSettingsMenu();
-        break;
-    case ID_CONTROLS:
-        break;
-    case ID_GAMEPLAY:
-        UI_PopMenu();
-        UI_GameplaySettingsMenu();
-        break;
-    default:
-        break;
-    };
-}
+extern menutab_t settingsTabs;
+extern menubutton_t settingsResetDefaults;
+extern menubutton_t settingsSave;
 
 const char *Hunk_CopyString( const char *str, ha_pref pref ) {
     char *out;
@@ -233,8 +222,161 @@ static void SettingsMenu_LoadBindings( void )
     FS_FreeFile( f.v );
 }
 
+static void ControlsMenu_DrawKey( void *self )
+{
+	char bind[MAX_STRING_CHARS];
+	char bind2[MAX_STRING_CHARS];
+	bind_t *keybind;
+	
+	keybind = &s_controlsOptionsInfo.keybinds[ ( (menutext_t *)self )->generic.id ];
+	
+	if ( keybind->bind1 == -1 ) {
+		N_strncpyz( bind, "???", sizeof( bind ) );
+	}
+	else {
+		N_strncpyz( bind, Key_KeynumToString( keybind->bind1 ), sizeof( bind ) );
+		N_strupr( bind );
+		
+		if ( keybind->bind2 != -1 ) {
+			N_strncpyz( bind2, Key_KeynumToString( keybind->bind2 ), sizeof( bind2 ) );
+			N_strupr( bind2 );
+			
+			N_strcat( bind, sizeof( bind ) - 1, " or " );
+			N_strcat( bind, sizeof( bind ) - 1, bind2 );
+		}
+	}
+	ImGui::TextUnformatted( bind );
+}
+
+static void ControlsMenu_ConfirmOverwrite( qboolean result )
+{
+	if ( !result ) {
+		s_controlsOptionsInfo.rebinding = qfalse;
+		Snd_PlaySfx( ui->sfx_select );
+	} else {
+		
+	}
+}
+
+static void ControlsMenu_Rebind( void )
+{
+	int i;
+    const char *binding;
+	
+	ImGui::Begin( "##RebindPopup", NULL, MENU_DEFAULT_FLAGS & ~( ImGuiWindowFlags_NoBackground ) );
+	ImGui::SetWindowFocus();
+	ImGui::SetWindowPos( ImVec2( ui->gpuConfig.vidWidth * 0.5f, ui->gpuConfig.vidHeight * 0.5f ) );
+	ImGui::TextUnformatted( "Press Any Key..." );
+	
+	for ( i = 0; i < NUMKEYS; i++ ) {
+        if ( Key_IsDown( i ) ) {
+            s_controlsOptionsInfo.rebinding = qfalse;
+            binding = Key_GetBinding( i );
+
+            if ( binding != NULL ) {
+                if ( s_controlsOptionsInfo.keybinds[ Key_GetKey( binding ) ].bind1 != -1 ) {
+                	// we're overwriting a binding, warn them
+                	UI_ConfirmMenu( "WARNING: You are overwriting another binding, are you sure you want to do this?\n",
+                		NULL, ControlsMenu_ConfirmOverwrite );
+                	ImGui::End();
+                	return;
+                }
+            }
+
+            if ( s_controlsOptionsInfo.rebindKey->bind1 != -1 ) {
+                Con_Printf( "setting double-binding for key \"%s\".\n",
+                    Key_GetBinding( s_controlsOptionsInfo.rebindKey->bind1 ) );
+                
+                s_controlsOptionsInfo.rebindKey->bind2 = i;
+            } else {
+            	s_controlsOptionsInfo.rebindKey->bind1 = i;
+            }
+            Cbuf_ExecuteText( EXEC_APPEND, va( "bind %s \"%s\"\n",
+                Key_KeynumToString( i ),
+                s_controlsOptionsInfo.rebindKey->command ) );
+            
+            s_controlsOptionsInfo.rebinding = qfalse;
+        }
+	}
+	
+	ImGui::End();
+}
+
+static void ControlsMenu_Draw( void )
+{
+	Menu_Draw( &s_controlsOptionsInfo.menu );
+	
+	if ( s_controlsOptionsInfo.rebinding ) {
+	}
+}
+
+static void ControlsMenu_RebindEvent( void *ptr, int event )	
+{
+	uint64_t i;
+	bind_t *keybind;
+	
+	if ( event != EVENT_ACTIVATED ) {
+		return;
+	}
+	
+	s_controlsOptionsInfo.rebinding = qtrue;
+	s_controlsOptionsInfo.rebindKey = (bind_t *)ptr;
+}
+
+static void Controls_MenuEvent( void *ptr, int event )
+{
+	if ( event != EVENT_ACTIVATED ) {
+		return;
+	}
+	
+	switch ( ( (menucommon_t *)ptr )->id ) {
+	case ID_SETDEFAULTS:
+		
+		break;
+	case ID_SAVECONFIG:
+        Cvar_Set( "g_mouseAcceleration", "" );
+		UI_SettingsWriteBinds_f();
+		break;
+	default:
+		break;
+	};
+}
+
+static void ControlsSettingsMenu_EventCallback( void *ptr, int event )
+{
+    if ( event != EVENT_ACTIVATED ) {
+        return;
+    }
+
+    switch ( ( (menucommon_t *)ptr )->id ) {
+    case ID_VIDEO:
+        UI_PopMenu();
+        UI_VideoSettingsMenu();
+        break;
+    case ID_PERFORMANCE:
+        UI_PopMenu();
+        UI_PerformanceSettingsMenu();
+        break;
+    case ID_AUDIO:
+        UI_PopMenu();
+        UI_AudioSettingsMenu();
+        break;
+    case ID_CONTROLS:
+        break;
+    case ID_GAMEPLAY:
+        UI_PopMenu();
+        UI_GameplaySettingsMenu();
+        break;
+    default:
+        break;
+    };
+}
+
 void ControlsSettingsMenu_Cache( void )
 {
+	uint64_t i;
+	int maxBinds;
+	
     memset( &s_controlsOptionsInfo, 0, sizeof( s_controlsOptionsInfo ) );
 
     s_controlsOptionsInfo.menu.fullscreen = qtrue;
@@ -243,16 +385,106 @@ void ControlsSettingsMenu_Cache( void )
     s_controlsOptionsInfo.menu.x = 0;
     s_controlsOptionsInfo.menu.y = 0;
     s_controlsOptionsInfo.menu.name = "Controls##SettingsMenu";
+    
+    Con_Printf( "Loading control bindings...\n" );
+    SettingsMenu_LoadBindings();
+    
+    if ( s_controlsOptionsInfo.numBinds >= ( MAX_TABLE_ITEMS / 2 ) ) {
+    	Con_Printf( COLOR_YELLOW "WARNING: too many keybinds, maximum is %i\n", (int)( MAX_TABLE_ITEMS / 2 ) );
+    }
+    
+    // init menu widgets
+    for ( i = 0; i < s_controlsOptionsInfo.numBinds; i++ ) {
+    	s_controlsOptionsInfo.keybinds[i].binding.generic.type = MTYPE_TEXT;
+    	s_controlsOptionsInfo.keybinds[i].binding.generic.id = i;
+    	s_controlsOptionsInfo.keybinds[i].binding.generic.flags = QMF_HIGHLIGHT_IF_FOCUS | QMF_OWNERDRAW;
+    	s_controlsOptionsInfo.keybinds[i].binding.generic.ownerdraw = ControlsMenu_DrawKey;
+    	s_controlsOptionsInfo.keybinds[i].binding.generic.eventcallback = ControlsMenu_RebindEvent;
+    	s_controlsOptionsInfo.keybinds[i].binding.color = color_white;
+    	
+    	s_controlsOptionsInfo.keybinds[i].name.generic.type = MTYPE_TEXT;
+    	s_controlsOptionsInfo.keybinds[i].name.generic.id = i;
+    	s_controlsOptionsInfo.keybinds[i].name.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
+    	s_controlsOptionsInfo.keybinds[i].name.color = color_white;
+    }
 
-    s_controlsOptionsInfo.tabs.generic.type = MTYPE_TAB;
-    s_controlsOptionsInfo.tabs.generic.name = "##SettingsMenuTabs";
-    s_controlsOptionsInfo.tabs.generic.eventcallback = ControlsSettingsMenu_EventCallback;
-    s_controlsOptionsInfo.tabs.numitems = ID_TABLE;
-    s_controlsOptionsInfo.tabs.items[0] = (menucommon_t *)&s_controlsOptionsInfo.video;
-    s_controlsOptionsInfo.tabs.items[1] = (menucommon_t *)&s_controlsOptionsInfo.performance;
-    s_controlsOptionsInfo.tabs.items[2] = (menucommon_t *)&s_controlsOptionsInfo.audio;
-    s_controlsOptionsInfo.tabs.items[3] = (menucommon_t *)&s_controlsOptionsInfo.controls;
-    s_controlsOptionsInfo.tabs.items[4] = (menucommon_t *)&s_controlsOptionsInfo.gameplay;
+    s_controlsOptionsInfo.mouseSensitivity.generic.type = MTYPE_TEXT;
+    s_controlsOptionsInfo.mouseSensitivity.generic.id = ID_MOUSE_SENSITIVITY;
+    s_controlsOptionsInfo.mouseSensitivity.generic.eventcallback = ControlsSettingsMenu_EventCallback;
+    s_controlsOptionsInfo.mouseSensitivity.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
+    s_controlsOptionsInfo.mouseSensitivity.generic.font = FontCache()->AddFontToCache( "AlegreyaSC", "Bold" );
+    s_controlsOptionsInfo.mouseSensitivity.text = "Mouse Sensitivity";
+    s_controlsOptionsInfo.mouseSensitivity.color = color_white;
+
+    s_controlsOptionsInfo.mouseSensitivityLeft.generic.type = MTYPE_ARROW;
+    s_controlsOptionsInfo.mouseSensitivityLeft.generic.id = ID_MOUSE_SENSITIVITY;
+    s_controlsOptionsInfo.mouseSensitivityLeft.generic.eventcallback = MenuEvent_ArrowLeft;
+    s_controlsOptionsInfo.mouseSensitivityLeft.generic.name = "##MouseSensitivitySettingsConfigLeft";
+    s_controlsOptionsInfo.mouseSensitivityLeft.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
+    s_controlsOptionsInfo.mouseSensitivityLeft.generic.font = FontCache()->AddFontToCache( "AlegreyaSC", "Bold" );
+    s_controlsOptionsInfo.mouseSensitivityLeft.direction = ImGuiDir_Left;
+
+    s_controlsOptionsInfo.mouseSensitivityRight.generic.type = MTYPE_ARROW;
+    s_controlsOptionsInfo.mouseSensitivityRight.generic.id = ID_MOUSE_SENSITIVITY;
+    s_controlsOptionsInfo.mouseSensitivityRight.generic.eventcallback = MenuEvent_ArrowRight;
+    s_controlsOptionsInfo.mouseSensitivityRight.generic.name = "##MouseSensitivitySettingsConfigRight";
+    s_controlsOptionsInfo.mouseSensitivityRight.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
+    s_controlsOptionsInfo.mouseSensitivityRight.generic.font = FontCache()->AddFontToCache( "AlegreyaSC", "Bold" );
+    s_controlsOptionsInfo.mouseSensitivityRight.direction = ImGuiDir_Right;
+
+    s_controlsOptionsInfo.mouseSensitivitySlider.generic.type = MTYPE_SLIDER;
+    s_controlsOptionsInfo.mouseSensitivitySlider.generic.id = ID_MOUSE_SENSITIVITY;
+    s_controlsOptionsInfo.mouseSensitivitySlider.generic.eventcallback = ControlsSettingsMenu_EventCallback;
+    s_controlsOptionsInfo.mouseSensitivitySlider.generic.name = "##MouseSensitivitySettingsConfigSlider";
+    s_controlsOptionsInfo.mouseSensitivitySlider.generic.type = MTYPE_SLIDER;
+    s_controlsOptionsInfo.mouseSensitivitySlider.isIntegral = qfalse;
+    s_controlsOptionsInfo.mouseSensitivitySlider.minvalue = 1.0f;
+    s_controlsOptionsInfo.mouseSensitivitySlider.maxvalue = 100.0f;
+    s_controlsOptionsInfo.mouseSensitivitySlider.curvalue = Cvar_VariableFloat( "g_mouseSensitivity" );
+
+    s_controlsOptionsInfo.mouseAcceleration.generic.type = MTYPE_TEXT;
+    s_controlsOptionsInfo.mouseAcceleration.generic.id = ID_MOUSE_ACCELERATION;
+    s_controlsOptionsInfo.mouseAcceleration.generic.eventcallback = ControlsSettingsMenu_EventCallback;
+    s_controlsOptionsInfo.mouseAcceleration.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
+    s_controlsOptionsInfo.mouseAcceleration.generic.font = FontCache()->AddFontToCache( "AlegreyaSC", "Bold" );
+    s_controlsOptionsInfo.mouseAcceleration.text = "Mouse Acceleration";
+    s_controlsOptionsInfo.mouseAcceleration.color = color_white;
+
+    s_controlsOptionsInfo.mouseAccelerationButton.generic.type = MTYPE_RADIOBUTTON;
+    s_controlsOptionsInfo.mouseAccelerationButton.generic.id = ID_MOUSE_ACCELERATION;
+    s_controlsOptionsInfo.mouseAccelerationButton.generic.eventcallback = ControlsSettingsMenu_EventCallback;
+    s_controlsOptionsInfo.mouseAccelerationButton.generic.name = "##MouseAccelerationSettingsConfigButton";
+    s_controlsOptionsInfo.mouseAccelerationButton.generic.font = FontCache()->AddFontToCache( "AlegreyaSC", "Bold" );
+    s_controlsOptionsInfo.mouseAccelerationButton.curvalue = Cvar_VariableInteger( "g_mouseAccelerate" );
+    s_controlsOptionsInfo.mouseAccelerationButton.color = color_white;
+
+    Menu_AddItem( &s_controlsOptionsInfo.menu, &settingsTabs );
+    
+    Menu_AddItem( &s_controlsOptionsInfo.menu, &s_controlsOptionsInfo.mouseTable );
+
+    Table_AddRow( &s_controlsOptionsInfo.mouseTable );
+    Table_AddItem( &s_controlsOptionsInfo.mouseTable, &s_controlsOptionsInfo.mouseSensitivity );
+    Table_AddItem( &s_controlsOptionsInfo.mouseTable, &s_controlsOptionsInfo.mouseSensitivityLeft );
+    Table_AddItem( &s_controlsOptionsInfo.mouseTable, &s_controlsOptionsInfo.mouseSensitivitySlider );
+    Table_AddItem( &s_controlsOptionsInfo.mouseTable, &s_controlsOptionsInfo.mouseSensitivityRight );
+
+    Table_AddRow( &s_controlsOptionsInfo.mouseTable );
+    Table_AddItem( &s_controlsOptionsInfo.mouseTable, &s_controlsOptionsInfo.mouseAcceleration );
+    Table_AddItem( &s_controlsOptionsInfo.mouseTable, &s_controlsOptionsInfo.empty );
+    Table_AddItem( &s_controlsOptionsInfo.mouseTable, &s_controlsOptionsInfo.mouseAccelerationButton );
+    Table_AddItem( &s_controlsOptionsInfo.mouseTable, &s_controlsOptionsInfo.empty );
+
+    Menu_AddItem( &s_controlsOptionsInfo.menu, &s_controlsOptionsInfo.keybindTable );
+	
+	maxBinds = MAX_TABLE_ITEMS / 2;
+	for ( i = 0; i < maxBinds; i++ ) {
+		Table_AddRow( &s_controlsOptionsInfo.keybindTable );
+		Table_AddItem( &s_controlsOptionsInfo.keybindTable, &s_controlsOptionsInfo.keybinds[i].name );
+		Table_AddItem( &s_controlsOptionsInfo.keybindTable, &s_controlsOptionsInfo.keybinds[i].binding );
+	}
+	
+	Menu_AddItem( &s_controlsOptionsInfo.menu, &settingsResetDefaults );
+	Menu_AddItem( &s_controlsOptionsInfo.menu, &settingsSave );
 }
 
 void UI_ControlsSettingsMenu( void )

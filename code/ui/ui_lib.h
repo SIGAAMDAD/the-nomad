@@ -150,6 +150,11 @@ extern void UI_PushMenu( menuframework_t *menu );
 extern void UI_PopMenu( void );
 
 //
+// ui_confirm.cpp
+//
+extern void         UI_ConfirmMenu( const char *question, void (*draw)( void ), void (*action)( qboolean result ) );
+
+//
 // ui_video.cpp
 //
 extern void         UI_VideoSettingsMenu( void );

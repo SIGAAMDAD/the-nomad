@@ -25,12 +25,13 @@ typedef struct {
 	menutext_t audio;
 	menutext_t controls;
 	menutext_t gameplay;
-
-	menutab_t tabs;
 } settings_t;
 
 static settings_t *initial;
 static settings_t *settings;
+menutab_t settingsTabs;
+menubutton_t settingsResetDefaults;
+menubutton_t settingsSave;
 
 static void SettingsMenu_Bar( void )
 {
@@ -563,24 +564,6 @@ static void SettingsMenu_Performance_Draw( void ) {
 	}
 }
 
-static void SettingsMenu_Video_Draw( void )
-{
-	video_t *video;
-
-	video = &settings->video;
-
-	ImGui::BeginTable( "##VideoSettingsConfigTable", 4 );
-	{
-		ImGui::TableNextColumn();
-		ImGui::TextUnformatted( "Window Mode" );
-		ImGui::TableNextColumn();
-		if ( ImGui::ArrowButton( "",  ) ) {
-
-		}
-	}
-	ImGui::EndTable();
-}
-
 static void SettingsMenu_Audio_Draw( void )
 {
 	audio_t *audio;
@@ -653,15 +636,14 @@ void SettingsMenu_Cache( void )
 	settings->menu.titleFontScale = 3.5f;
 	settings->menu.textFontScale = 1.5f;
 
-	settings->tabs.generic.type = MTYPE_TAB;
-	settings->tabs.generic.eventcallback = SettingsMenu_EventCallback;
-	settings->tabs.generic.font = FontCache()->AddFontToCache( "AlegreyaSC", "Bold" );
-	settings->tabs.numitems = ID_TABLE;
-	settings->tabs.items[0] = (menucommon_t *)&settings->video;
-	settings->tabs.items[1] = (menucommon_t *)&settings->performance;
-	settings->tabs.items[2] = (menucommon_t *)&settings->audio;
-	settings->tabs.items[3] = (menucommon_t *)&settings->controls;
-	settings->tabs.items[4] = (menucommon_t *)&settings->gameplay;
+	settingsTabs.generic.type = MTYPE_TAB;
+	settingsTabs.generic.font = FontCache()->AddFontToCache( "AlegreyaSC", "Bold" );
+	settingsTabs.numitems = ID_TABLE;
+	settingsTabs.items[0] = (menucommon_t *)&settings->video;
+	settingsTabs.items[1] = (menucommon_t *)&settings->performance;
+	settingsTabs.items[2] = (menucommon_t *)&settings->audio;
+	settingsTabs.items[3] = (menucommon_t *)&settings->controls;
+	settingsTabs.items[4] = (menucommon_t *)&settings->gameplay;
 
-	Menu_AddItem( &settings->menu, &settings->tabs );
+	Menu_AddItem( &settings->menu, &settingsTabs );
 }

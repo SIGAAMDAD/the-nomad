@@ -2242,11 +2242,8 @@ static void LoadImageFile(const char *name, byte **pic, uint32_t *width, uint32_
 typedef struct
 {
 	const char *ext;
-	void (*ImageLoader)( const char *, unsigned char **, int *, int * );
+	void (*ImageLoader)( const char *, unsigned char **, int *, int *, int * );
 } imageExtToLoaderMap_t;
-
-static void R_LoadDummy( const char *, unsigned char **, int *, int * ) {
-}
 
 static int stbi_eof( void *userData ) {
 	fileHandle_t fd = *(fileHandle_t *)userData;
@@ -2265,12 +2262,11 @@ static void stbi_skip( void *userData, int skip ) {
 	}
 }
 
-static void R_LoadPNG2( const char *filename, unsigned char **pic, int *width, int *height ) {
+static void R_LoadPNG2( const char *filename, unsigned char **pic, int *width, int *height, int *channels ) {
 	union {
 		void *v;
 		char *b;
 	} f;
-	int channels;
 	uint64_t nLength;
 
 	nLength = ri.FS_LoadFile( filename, &f.v );
@@ -2278,7 +2274,7 @@ static void R_LoadPNG2( const char *filename, unsigned char **pic, int *width, i
 		return;
 	}
 
-	*pic = stbi_load_from_memory( f.b, (int)nLength, width, height, &channels, 3 );
+	*pic = stbi_load_from_memory( f.b, (int)nLength, width, height, channels, 3 );
 	if ( !*pic ) {
 		ri.Printf( PRINT_WARNING, "R_LoadPNG: stbi_load_from_memory(%s) failed, failure reason: %s\n", filename, stbi_failure_reason() );
 		return;
@@ -2290,7 +2286,7 @@ static void R_LoadPNG2( const char *filename, unsigned char **pic, int *width, i
 // Note that the ordering indicates the order of preference used
 // when there are multiple images of different formats available
 static const imageExtToLoaderMap_t imageLoaders[] = {
-	{ "png",  R_LoadPNG },
+	{ "png",  R_LoadPNG2 },
 	{ "tga",  R_LoadTGA },
 	{ "jpg",  R_LoadJPG },
 	{ "jpeg", R_LoadJPG },
@@ -2316,6 +2312,7 @@ static void R_LoadImage( const char *name, byte **pic, uint32_t *width, uint32_t
 	const char *altName;
 	int orgLoader = -1;
 	int i;
+	int channels;
 
 	*pic = NULL;
 	*width = 0;
@@ -2328,45 +2325,41 @@ static void R_LoadImage( const char *name, byte **pic, uint32_t *width, uint32_t
 	ext = COM_GetExtension( localName );
 
 	// If compressed textures are enabled, try loading a DDS first, it'll load fastest
-	if (r_arb_texture_compression->i) {
+	if ( r_arb_texture_compression->i ) {
 		char ddsName[MAX_NPATH];
 
-		COM_StripExtension(name, ddsName, MAX_NPATH);
-		N_strcat(ddsName, MAX_NPATH, ".dds");
+		COM_StripExtension( name, ddsName, MAX_NPATH );
+		N_strcat( ddsName, MAX_NPATH, ".dds" );
 
-		R_LoadDDS(ddsName, pic, width, height, picFormat, numMips);
+		R_LoadDDS( ddsName, pic, width, height, picFormat, numMips );
 
 		// If loaded, we're done.
-		if (*pic)
+		if ( *pic ) {
 			return;
+		}
 	}
 
-	if( *ext )
-	{
+	if ( *ext ) {
 		// Look for the correct loader and use it
-		for( i = 0; i < numImageLoaders; i++ )
-		{
-			if( !N_stricmp( ext, imageLoaders[ i ].ext ) )
-			{
+		for ( i = 0; i < numImageLoaders; i++ ) {
+			if ( !N_stricmp( ext, imageLoaders[ i ].ext ) ) {
 				// Load
-				imageLoaders[ i ].ImageLoader( localName, pic, width, height );
+				imageLoaders[ i ].ImageLoader( localName, pic, width, height, &channels );
 				break;
 			}
 		}
 
 		// A loader was found
-		if( i < numImageLoaders )
-		{
-			if( *pic == NULL )
-			{
+		if ( i < numImageLoaders ) {
+			if ( *pic == NULL ) {
 				// Loader failed, most likely because the file isn't there;
 				// try again without the extension
 				orgNameFailed = qtrue;
 				orgLoader = i;
 				COM_StripExtension( name, localName, MAX_NPATH );
 			}
-			else
-			{
+			else {
+				*picFormat = channels == 4 ? GL_RGBA8 : GL_RGB8;
 				// Something loaded
 				return;
 			}
@@ -2375,20 +2368,18 @@ static void R_LoadImage( const char *name, byte **pic, uint32_t *width, uint32_t
 
 	// Try and find a suitable match using all
 	// the image formats supported
-	for( i = 0; i < numImageLoaders; i++ )
-	{
-		if (i == orgLoader)
+	for ( i = 0; i < numImageLoaders; i++ ) {
+		if ( i == orgLoader ) {
 			continue;
+		}
 
 		altName = va( "%s.%s", localName, imageLoaders[ i ].ext );
 
 		// Load
-		imageLoaders[ i ].ImageLoader( altName, pic, width, height );
+		imageLoaders[ i ].ImageLoader( altName, pic, width, height, &channels );
 
-		if( *pic )
-		{
-			if( orgNameFailed )
-			{
+		if ( *pic ) {
+			if ( orgNameFailed ) {
 				ri.Printf( PRINT_DEVELOPER, "WARNING: %s not present, using %s instead\n",
 						name, altName );
 			}
@@ -2396,6 +2387,7 @@ static void R_LoadImage( const char *name, byte **pic, uint32_t *width, uint32_t
 			break;
 		}
 	}
+	*picFormat = channels == 4 ? GL_RGBA8 : GL_RGB8;
 }
 
 /*
@@ -2416,7 +2408,7 @@ texture_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags )
 	uint64_t hash;
 	imgFlags_t checkFlagsTrue, checkFlagsFalse;
 
-	if (!name) {
+	if ( !name ) {
 		return NULL;
 	}
 
@@ -2551,17 +2543,16 @@ texture_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags )
 	}
 
 	// force mipmaps off if image is compressed but doesn't have enough mips
-	if ((flags & IMGFLAG_MIPMAP) && picFormat != GL_RGBA8 && picFormat != GL_SRGB8_ALPHA8_EXT)
-	{
-		int wh = MAX(width, height);
+	if ( ( flags & IMGFLAG_MIPMAP ) && picFormat != GL_RGBA8 && picFormat != GL_SRGB8_ALPHA8_EXT ) {
+		int wh = MAX( width, height );
 		int neededMips = 0;
-		while (wh)
-		{
+		while ( wh ) {
 			neededMips++;
 			wh >>= 1;
 		}
-		if (neededMips > picNumMips)
+		if ( neededMips > picNumMips ) {
 			flags &= ~IMGFLAG_MIPMAP;
+		}
 	}
 
 	image = R_CreateImage( name, pic, width, height, type, flags, 0 );
@@ -2570,14 +2561,14 @@ texture_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags )
 }
 
 #define DEFAULT_SIZE 16
-static void R_CreateDefaultTexture(void)
+static void R_CreateDefaultTexture( void )
 {
 	uint32_t x;
 	byte data[DEFAULT_SIZE][DEFAULT_SIZE][4];
 
 	// the default image will be a box, to allow you to see the mapping coordinates
 	memset( data, 32, sizeof( data ) );
-	for ( x = 0 ; x < DEFAULT_SIZE ; x++ ) {
+	for ( x = 0; x < DEFAULT_SIZE; x++ ) {
 		data[0][x][0] =
 		data[0][x][1] =
 		data[0][x][2] =
@@ -2601,7 +2592,7 @@ static void R_CreateDefaultTexture(void)
 	rg.defaultImage = R_CreateImage( "*default", (byte *)data, DEFAULT_SIZE, DEFAULT_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_MIPMAP, 0 );
 }
 
-static void R_CreateBuiltinTextures(void)
+static void R_CreateBuiltinTextures( void )
 {
 	uint32_t x, y;
 	byte data[DEFAULT_SIZE][DEFAULT_SIZE][4];
@@ -2614,8 +2605,8 @@ static void R_CreateBuiltinTextures(void)
 
 	// with overbright bits active, we need an image which is some fraction of full color,
 	// for default lightmaps, etc
-	for (x=0 ; x<DEFAULT_SIZE ; x++) {
-		for (y=0 ; y<DEFAULT_SIZE ; y++) {
+	for ( x = 0; x < DEFAULT_SIZE; x++ ) {
+		for ( y = 0; y < DEFAULT_SIZE; y++ ) {
 			data[y][x][0] = 
 			data[y][x][1] = 
 			data[y][x][2] = rg.identityLightByte;
@@ -2640,21 +2631,25 @@ static void R_CreateBuiltinTextures(void)
 		height = glConfig.vidHeight;
 
 		hdrFormat = GL_RGBA8;
-		if (r_hdr->i && glContext.ARB_texture_float)
+		if ( r_hdr->i && glContext.ARB_texture_float ) {
 			hdrFormat = GL_RGBA16F_ARB;
+		}
 
 		rgbFormat = GL_RGBA8;
 
 		rg.renderImage = R_CreateImage( "_render", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, hdrFormat );
 
-		if ( r_shadowBlur->i )
+		if ( r_shadowBlur->i ) {
 			rg.screenScratchImage = R_CreateImage( "screenScratch", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat );
+		}
 
-		if ( r_shadowBlur->i || r_ssao->i)
+		if ( r_shadowBlur->i || r_ssao->i ) {
 			rg.hdrDepthImage = R_CreateImage( "*hdrDepth", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_R32F );
-//
-//		if (r_drawSunRays->integer)
-//			tr.sunRaysImage = R_CreateImage("*sunRays", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat);
+		}
+		
+		if ( r_drawSunRays->i ) {
+			rg.sunRaysImage = R_CreateImage("*sunRays", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat);
+		}
 
 		rg.renderDepthImage  = R_CreateImage( "*renderdepth",  NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );
 		rg.textureDepthImage = R_CreateImage( "*texturedepth", NULL, PSHADOW_MAP_SIZE, PSHADOW_MAP_SIZE, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );

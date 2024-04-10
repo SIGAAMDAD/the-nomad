@@ -9,6 +9,8 @@
 uiGlobals_t *ui;
 CUIFontCache *g_pFontCache;
 
+ImFont *AlegreyaSC;
+
 cvar_t *ui_language;
 cvar_t *ui_cpuString;
 cvar_t *ui_printStrings;

@@ -29,7 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "rvk_local.h"
 #endif
 
-void R_LoadJPG( const char *filename, unsigned char **pic, int *width, int *height )
+void R_LoadJPG( const char *filename, unsigned char **pic, int *width, int *height, int *channels )
 {
 	ri.G_LoadJPG( filename, pic, width, height );
 }

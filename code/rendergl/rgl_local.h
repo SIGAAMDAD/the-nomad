@@ -1271,7 +1271,7 @@ extern cvar_t *r_drawworld;			    // disable/enable world rendering
 extern cvar_t *r_speeds;				// various levels of information display
 extern cvar_t *r_detailTextures;		// enables/disables detail texturing stages
 
-extern cvar_t  *r_cameraExposure;
+extern cvar_t *r_cameraExposure;
 
 extern cvar_t *r_gammaAmount;
 
@@ -1602,11 +1602,11 @@ void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec);
 
 
 
-void R_LoadBMP( const char *name, byte **pic, int *width, int *height );
-void R_LoadJPG( const char *name, byte **pic, int *width, int *height );
-void R_LoadPCX( const char *name, byte **pic, int *width, int *height );
-void R_LoadPNG( const char *name, byte **pic, int *width, int *height );
-void R_LoadTGA( const char *name, byte **pic, int *width, int *height );
+void R_LoadBMP( const char *name, byte **pic, int *width, int *height, int *channels );
+void R_LoadJPG( const char *name, byte **pic, int *width, int *height, int *channels );
+void R_LoadPCX( const char *name, byte **pic, int *width, int *height, int *channels );
+void R_LoadPNG( const char *name, byte **pic, int *width, int *height, int *channels );
+void R_LoadTGA( const char *name, byte **pic, int *width, int *height, int *channels );
 
 /*
 =============================================================

@@ -6,7 +6,7 @@
 #include "ui_string_manager.h"
 
 #define MAX_TABLE_ITEMS 528
-#define MAX_MENU_ITEMS 1024
+#define MAX_MENU_ITEMS 528
 
 #define MTYPE_NULL          0
 #define MTYPE_TEXT          1
@@ -27,7 +27,7 @@
 #define QMF_NUMBERSONLY         0x00000004 // edit field is only numbers
 #define QMF_HIGHLIGHT           0x00000008
 #define QMF_HIGHLIGHT_IF_FOCUS  0x00000010 // steady focus
-#define QMF_PULSEIFFOCUS	        0x00000020 // pulse if focus
+#define QMF_PULSEIFFOCUS        0x00000020 // pulse if focus
 #define QMF_HASMOUSEFOCUS       0x00000040
 #define QMF_NOONOFFTEXT         0x00000080
 #define QMF_MOUSEONLY           0x00000100 // only mouse input allowed
@@ -38,6 +38,8 @@
 #define QMF_PULSE               0x00002000
 #define QMF_SILENT              0x00004000 // don't make any sounds
 #define QMF_CUSTOMFONT          0x00008000 // use a custom font
+#define QMF_SAMELINE_NEXT       0x00010000
+#define QMF_SAMELINE_PREV       0x00020000
 
 // callback notifications
 #define EVENT_GOTFOCUS				1
@@ -56,8 +58,8 @@ typedef struct {
     float titleFontScale;
     float textFontScale;
 
-    int cursor;
-    int cursor_prev;
+//    int cursor;
+//    int cursor_prev;
 
     int flags;
     int x;
@@ -77,11 +79,11 @@ typedef struct {
 	
     int type;
     int id;
-    int x, y;
-    int left;
-    int top;
-    int right;
-    int bottom;
+//    int x, y;
+//    int left;
+//    int top;
+//    int right;
+//    int bottom;
     unsigned flags;
     qboolean focused;
     ImFont *font;
@@ -192,6 +194,9 @@ typedef struct {
 typedef struct {
 	menucommon_t generic;
 } menucustom_t;
+
+extern void MenuEvent_ArrowLeft( void *ptr, int event );
+extern void MenuEvent_ArrowRight( void *ptr, int event );
 
 extern void Table_AddRow( menutable_t *table );
 extern void Table_AddItem( menutable_t *table, void *item );

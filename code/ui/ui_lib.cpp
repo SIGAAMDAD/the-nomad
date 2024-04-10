@@ -36,6 +36,8 @@ qboolean UI_MenuTitle( const char *label, float fontScale )
 	refdef.time = 0;
 	refdef.flags = RSF_NOWORLDMODEL | RSF_ORTHO_TYPE_SCREENSPACE;
 
+	FontCache()->SetActiveFont( AlegreyaSC );
+
 	ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
     ImGui::SetWindowFontScale( fontScale * ui->scale );
     ImGui::TextUnformatted( label );
@@ -80,7 +82,7 @@ void UI_PushMenu( menuframework_t *menu )
 {
 	int i;
 
-    // avoid stacking meuns invoked by hotkeys
+    // avoid stacking menus invoked by hotkeys
     for ( i = 0; i < ui->menusp; i++ ) {
         if ( ui->stack[i] == menu ) {
             ui->menusp = i;
@@ -98,8 +100,8 @@ void UI_PushMenu( menuframework_t *menu )
     ui->activemenu = menu;
 
     // default cursor position
-    menu->cursor = 0;
-    menu->cursor_prev = 0;
+//    menu->cursor = 0;
+//    menu->cursor_prev = 0;
 
     Key_SetCatcher( KEYCATCH_UI );
 }

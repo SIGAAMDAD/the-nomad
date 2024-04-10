@@ -344,7 +344,7 @@ static void List_Draw( menulist_t *list )
 	int flags;
 
 	Assert( list->generic.type == MTYPE_LIST );
-	
+
 	if ( ImGui::BeginCombo( va( "%s##%sDropDown", list->generic.name, list->generic.name ), list->itemnames[list->curitem] ) ) {
 		if ( ImGui::IsItemActive() && ImGui::IsItemClicked() && !( list->generic.flags & QMF_SILENT ) ) {
 			Snd_PlaySfx( ui->sfx_select );
@@ -372,16 +372,22 @@ static void Table_Draw( menutable_t *table )
 	Assert( table->generic.type == MTYPE_TABLE );
 
 	ImGui::BeginTable( table->generic.name, table->columns );
-	for ( i = 0; i < table->rows; i++ ) {
-		for ( c = 0; c < table->columns; c++ ) {
-			ImGui::TableNextColumn();
 
-			generic = table->items[i * table->columns + c];
+	if ( table->generic.flags & QMF_OWNERDRAW && table->generic.ownerdraw ) {
+		table->generic.ownerdraw( table );
+	}
+	else {
+		for ( i = 0; i < table->rows; i++ ) {
+			for ( c = 0; c < table->columns; c++ ) {
+				ImGui::TableNextColumn();
 
-			Menu_DrawItemGeneric( generic );
-		}
-		if ( i != table->rows - 1 ) {
-			ImGui::TableNextRow();
+				generic = table->items[i * table->columns + c];
+
+				Menu_DrawItemGeneric( generic );
+			}
+			if ( i != table->rows - 1 ) {
+				ImGui::TableNextRow();
+			}
 		}
 	}
 	ImGui::EndTable();
@@ -404,7 +410,11 @@ static void Text_Draw( menutext_t *text )
 		ImGui::PushStyleColor( ImGuiCol_Text, text->color );
 		colorChanged = qtrue;
 	}
-	ImGui::TextUnformatted( text->text );
+	if ( text->generic.flags & QMF_OWNERDRAW && text->generic.ownerdraw ) {
+		text->generic.ownerdraw( text );
+	} else {
+		ImGui::TextUnformatted( text->text );
+	}
 
 	if ( colorChanged ) {
 		ImGui::PopStyleColor();
@@ -511,6 +521,10 @@ static void Menu_DrawItemGeneric( menucommon_t *generic )
 		};
 	}
 
+	if ( generic->flags & QMF_SAMELINE_PREV ) {
+		ImGui::SameLine();
+	}
+
 	switch ( generic->type ) {
 	case MTYPE_NULL:
 	default:
@@ -549,6 +563,10 @@ static void Menu_DrawItemGeneric( menucommon_t *generic )
 		Tree_Draw( (menutree_t *)generic );
 		break;
 	};
+
+	if ( generic->flags & QMF_SAMELINE_NEXT ) {
+		ImGui::SameLine();
+	}
 
 	generic->focused = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
 
@@ -591,6 +609,40 @@ void Menu_Draw( menuframework_t *menu ) {
 	Menu_DrawItemList( menu->items, menu->nitems );
 
 	ImGui::End();
+}
+
+void MenuEvent_ArrowLeft( void *ptr, int event )
+{
+	int item;
+
+	if ( event != EVENT_ACTIVATED ) {
+		return;
+	}
+
+	item = ( (menulist_t *)ptr )->curitem;
+	if ( item == 0 ) {
+		item = ( (menulist_t *)ptr )->numitems - 1;
+	} else {
+		item--;
+	}
+	( (menulist_t *)ptr )->curitem = item;
+}
+
+void MenuEvent_ArrowRight( void *ptr, int event )
+{
+	int item;
+
+	if ( event != EVENT_ACTIVATED ) {
+		return;
+	}
+
+	item = ( (menulist_t *)ptr )->curitem;
+	if ( item >= ( (menulist_t *)ptr )->numitems - 1 ) {
+		item = 0;
+	} else {
+		item++;
+	}
+	( (menulist_t *)ptr )->curitem = item;
 }
 
 void Table_AddRow( menutable_t *table ) {

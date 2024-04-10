@@ -141,6 +141,8 @@ void NewGameMenu_Cache( void )
     newGame.menu.flags = MENU_DEFAULT_FLAGS;
     newGame.menu.width = ui->gpuConfig.vidWidth * 0.75f;
     newGame.menu.height = ui->gpuConfig.vidHeight;
+    newGame.menu.titleFontScale = 3.5f;
+    newGame.menu.textFontScale = 1.5f;
     newGame.menu.x = 0;
     newGame.menu.y = 0;
     newGame.menu.name = "SinglePlayer##MainMenuSinglePlayerNewGame";
