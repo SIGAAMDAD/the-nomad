@@ -6,6 +6,8 @@
 #define ID_CONTROLS     3
 #define ID_GAMEPLAY     4
 #define ID_TABLE        5
+#define ID_SETDEFAULTS  6
+#define ID_SAVECONFIG   7
 
 typedef struct {
     menuframework_t menu;
@@ -16,11 +18,11 @@ typedef struct {
     menutext_t debug;
 } gameplayOptionsInfo_t;
 
-static gameplayOptionsInfo_t s_gameplayOptionsInfo;
-
+static gameplayOptionsInfo_t *s_gameplayOptionsInfo;
 extern menutab_t settingsTabs;
 extern menubutton_t settingsResetDefaults;
 extern menubutton_t settingsSave;
+
 static void GameplaySettingsMenu_EventCallback( void *ptr, int event )
 {
     if ( event != EVENT_ACTIVATED ) {
@@ -42,7 +44,7 @@ static void GameplaySettingsMenu_EventCallback( void *ptr, int event )
         break;
     case ID_CONTROLS:
         UI_PopMenu();
-        UI_ContolsSettingsMenu();
+        UI_ControlsSettingsMenu();
         break;
     case ID_GAMEPLAY:
         break;
@@ -51,27 +53,39 @@ static void GameplaySettingsMenu_EventCallback( void *ptr, int event )
     };
 }
 
+void GameplaySettingsMenu_Save( void )
+{
+}
+
+void GameplaySettingsMenu_SetDefaults( void )
+{
+}
+
 void GameplaySettingsMenu_Cache( void )
 {
-    memset( &s_gameplayOptionsInfo, 0, sizeof( s_gameplayOptionsInfo ) );
+    if ( !ui->uiAllocated ) {
+        s_gameplayOptionsInfo = (gameplayOptionsInfo_t *)Hunk_Alloc( sizeof( *s_gameplayOptionsInfo ), h_high );
+    }
+    memset( s_gameplayOptionsInfo, 0, sizeof( *s_gameplayOptionsInfo ) );
 
-    s_gameplayOptionsInfo.menu.fullscreen = qtrue;
-    s_gameplayOptionsInfo.menu.width = ui->gpuConfig.vidWidth;
-    s_gameplayOptionsInfo.menu.height = ui->gpuConfig.vidHeight;
-    s_gameplayOptionsInfo.menu.textFontScale = 1.5f;
-    s_gameplayOptionsInfo.menu.titleFontScale = 3.5f;
-    s_gameplayOptionsInfo.menu.x = 0;
-    s_gameplayOptionsInfo.menu.y = 0;
-    s_gameplayOptionsInfo.menu.name = "Audio##SettingsMenu";
+    s_gameplayOptionsInfo->menu.fullscreen = qtrue;
+    s_gameplayOptionsInfo->menu.width = ui->gpuConfig.vidWidth;
+    s_gameplayOptionsInfo->menu.height = ui->gpuConfig.vidHeight;
+    s_gameplayOptionsInfo->menu.textFontScale = 1.5f;
+    s_gameplayOptionsInfo->menu.titleFontScale = 3.5f;
+    s_gameplayOptionsInfo->menu.flags = MENU_DEFAULT_FLAGS;
+    s_gameplayOptionsInfo->menu.x = 0;
+    s_gameplayOptionsInfo->menu.y = 0;
+    s_gameplayOptionsInfo->menu.name = "Audio##SettingsMenu";
 
-    Menu_AddItem( &s_gameplayOptionsInfo.menu, &settingsTabs );
+    Menu_AddItem( &s_gameplayOptionsInfo->menu, &settingsTabs );
 
-    Menu_AddItem( &s_gameplayOptionsInfo.menu, &settingsSave );
-    Menu_AddItem( &s_gameplayOptionsInfo.menu, &settingsResetDefaults );
+    Menu_AddItem( &s_gameplayOptionsInfo->menu, &settingsSave );
+    Menu_AddItem( &s_gameplayOptionsInfo->menu, &settingsResetDefaults );
 }
 
 void UI_GameplaySettingsMenu( void )
 {
     GameplaySettingsMenu_Cache();
-    UI_PushMenu( &s_gameplayOptionsInfo.menu );
+    UI_PushMenu( &s_gameplayOptionsInfo->menu );
 }

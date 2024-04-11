@@ -313,15 +313,20 @@ SRC=\
 	$(O)/ui/ui_main.o \
 	$(O)/ui/ui_lib.o \
 	$(O)/ui/ui_menu.o \
+	$(O)/ui/ui_credits.o \
 	$(O)/ui/ui_string_manager.o \
-	$(O)/ui/ui_window.o \
-	$(O)/ui/ui_title.o \
 	$(O)/ui/ui_demo.o \
 	$(O)/ui/ui_settings.o \
 	$(O)/ui/ui_main_menu.o \
 	$(O)/ui/ui_single_player.o \
 	$(O)/ui/ui_pause.o \
-	$(O)/ui/ui_legal.o \
+	$(O)/ui/ui_newgame.o \
+	$(O)/ui/ui_loadgame.o \
+	$(O)/ui/ui_performance.o \
+	$(O)/ui/ui_video.o \
+	$(O)/ui/ui_audio.o \
+	$(O)/ui/ui_controls.o \
+	$(O)/ui/ui_gameplay.o \
 	$(O)/ui/ui_mods.o \
 
 MAKE=make

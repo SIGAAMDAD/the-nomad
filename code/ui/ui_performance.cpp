@@ -6,6 +6,8 @@
 #define ID_CONTROLS     3
 #define ID_GAMEPLAY     4
 #define ID_TABLE        5
+#define ID_SETDEFAULTS  6
+#define ID_SAVECONFIG   7
 
 #define ID_MULTISAMPLETYPE         0
 #define ID_ANISOTROPICFILTER       1
@@ -35,8 +37,8 @@ typedef struct {
 
     menutext_t multisampleType;
     menutext_t anisotropicFiltering;
-    menutext_t textureDetailList;
-    menutext_t textureFilterList;
+    menutext_t textureDetail;
+    menutext_t textureFilter;
     menutext_t enableAmbientOcclusion;
     menutext_t enableSSAO;
     menutext_t enableHDR;
@@ -87,7 +89,7 @@ typedef struct {
     menuslider_t maxSoundChannelsSlider;
 } performanceOptionsInfo_t;
 
-static performanceOptionsInfo_t s_performanceOptionsInfo;
+static performanceOptionsInfo_t *s_performanceOptionsInfo;
 extern menutab_t settingsTabs;
 extern menubutton_t settingsResetDefaults;
 extern menubutton_t settingsSave;
@@ -111,7 +113,7 @@ static void PerformanceSettingsMenu_EventCallback( void *ptr, int event )
         break;
     case ID_CONTROLS:
         UI_PopMenu();
-        UI_ContolsSettingsMenu();
+        UI_ControlsSettingsMenu();
         break;
     case ID_GAMEPLAY:
         UI_PopMenu();
@@ -120,6 +122,61 @@ static void PerformanceSettingsMenu_EventCallback( void *ptr, int event )
     default:
         break;
     };
+}
+
+void PerformanceSettingsMenu_Save( void )
+{
+    Cvar_SetIntegerValue( "r_multisampleType", s_performanceOptionsInfo->multisampleList.curitem );
+
+    switch ( s_performanceOptionsInfo->multisampleList.curitem ) {
+    case AntiAlias_2xMSAA:
+        Cvar_SetIntegerValue( "r_multisampleAmount", 2 );
+        break;
+    case AntiAlias_4xMSAA:
+        Cvar_SetIntegerValue( "r_multisampleAmount", 4 );
+        break;
+    case AntiAlias_8xMSAA:
+        Cvar_SetIntegerValue( "r_multisampleAmount", 8 );
+        break;
+    case AntiAlias_16xMSAA:
+        Cvar_SetIntegerValue( "r_multisampleAmount", 16 );
+        break;
+    case AntiAlias_32xMSAA:
+        Cvar_SetIntegerValue( "r_multisampleAmount", 32 );
+        break;
+    };
+
+    Cvar_Set( "r_arb_texture_filter_anisotropic", va( "%i", s_performanceOptionsInfo->anisotropyList.curitem ? 1 : 0 ) );
+    switch ( s_performanceOptionsInfo->anisotropyList.curitem ) {
+    case 0:
+        Cvar_SetIntegerValue( "r_arb_texture_max_anisotropy", 0 );
+        break;
+    case 2:
+        Cvar_SetIntegerValue( "r_arb_texture_max_anisotropy", 2 );
+        break;
+    case 4:
+        Cvar_SetIntegerValue( "r_arb_texture_max_anisotropy", 4 );
+        break;
+    case 8:
+        Cvar_SetIntegerValue( "r_arb_texture_max_anisotropy", 8 );
+        break;
+    case 16:
+        Cvar_SetIntegerValue( "r_arb_texture_max_anisotropy", 16 );
+        break;
+    case 32:
+        Cvar_SetIntegerValue( "r_arb_texture_max_anisotropy", 32 );
+        break;
+    };
+
+    Cvar_SetIntegerValue( "r_normalMapping", s_performanceOptionsInfo->enableNormalMapsButton.curvalue );
+    Cvar_SetIntegerValue( "r_specularMapping", s_performanceOptionsInfo->enableSpecularMapsButton.curvalue );
+    Cvar_SetIntegerValue( "r_bloom", s_performanceOptionsInfo->enableBloomButton.curvalue );
+    Cvar_Set( "r_textureMode", s_performanceOptionsInfo->textureDetailList.itemnames[ s_performanceOptionsInfo->textureFilterList.curitem ] );
+    Cvar_SetIntegerValue( "r_textureFiltering", s_performanceOptionsInfo->textureFilterList.curitem );
+}
+
+void PerformanceSettingsMenu_SetDefaults( void )
+{
 }
 
 void PerformanceSettingsMenu_Cache( void )
@@ -156,28 +213,32 @@ void PerformanceSettingsMenu_Cache( void )
         "Exposure"
     };
 
-    memset( &s_performanceOptionsInfo, 0, sizeof( s_performanceOptionsInfo ) );
+    if ( !ui->uiAllocated ) {
+        s_performanceOptionsInfo = (performanceOptionsInfo_t *)Hunk_Alloc( sizeof( *s_performanceOptionsInfo ), h_high );
+    }
+    memset( s_performanceOptionsInfo, 0, sizeof( *s_performanceOptionsInfo ) );
 
-    s_performanceOptionsInfo.menu.fullscreen = qtrue;
-    s_performanceOptionsInfo.menu.width = ui->gpuConfig.vidWidth;
-    s_performanceOptionsInfo.menu.height = ui->gpuConfig.vidHeight;
-    s_performanceOptionsInfo.menu.titleFontScale = 3.5f;
-    s_performanceOptionsInfo.menu.textFontScale = 1.5f;
-    s_performanceOptionsInfo.menu.x = 0;
-    s_performanceOptionsInfo.menu.y = 0;
-    s_performanceOptionsInfo.menu.name = "Performance##SettingsMenu";
+    s_performanceOptionsInfo->menu.fullscreen = qtrue;
+    s_performanceOptionsInfo->menu.width = ui->gpuConfig.vidWidth;
+    s_performanceOptionsInfo->menu.height = ui->gpuConfig.vidHeight;
+    s_performanceOptionsInfo->menu.titleFontScale = 3.5f;
+    s_performanceOptionsInfo->menu.textFontScale = 1.5f;
+    s_performanceOptionsInfo->menu.x = 0;
+    s_performanceOptionsInfo->menu.y = 0;
+    s_performanceOptionsInfo->menu.name = "Performance##SettingsMenu";
+    s_performanceOptionsInfo->menu.flags = MENU_DEFAULT_FLAGS;
 
-    s_performanceOptionsInfo.multisampleType.generic.type = MTYPE_TEXT;
-    s_performanceOptionsInfo.multisampleType.generic.id = ID_MULTISAMPLETYPE;
+    s_performanceOptionsInfo->multisampleType.generic.type = MTYPE_TEXT;
+    s_performanceOptionsInfo->multisampleType.generic.id = ID_MULTISAMPLETYPE;
 
-    Menu_AddItem( &s_performanceOptionsInfo.menu, &settingsTabs );
+    Menu_AddItem( &s_performanceOptionsInfo->menu, &settingsTabs );
 
-    Menu_AddItem( &s_performanceOptionsInfo.menu, &settingsSave );
-    Menu_AddItem( &s_performanceOptionsInfo.menu, &settingsResetDefaults );
+    Menu_AddItem( &s_performanceOptionsInfo->menu, &settingsSave );
+    Menu_AddItem( &s_performanceOptionsInfo->menu, &settingsResetDefaults );
 }
 
 void UI_PerformanceSettingsMenu( void )
 {
     PerformanceSettingsMenu_Cache();
-    UI_PushMenu( &s_performanceOptionsInfo.menu );
+    UI_PushMenu( &s_performanceOptionsInfo->menu );
 }

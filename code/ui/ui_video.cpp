@@ -6,6 +6,8 @@
 #define ID_CONTROLS     3
 #define ID_GAMEPLAY     4
 #define ID_TABLE        5
+#define ID_SETDEFAULTS  6
+#define ID_SAVECONFIG   7
 
 typedef struct {
     menuframework_t menu;
@@ -20,7 +22,7 @@ typedef struct {
     menutable_t table;
 } videoOptionsInfo_t;
 
-static videoOptionsInfo_t s_videoOptionsInfo;
+static videoOptionsInfo_t *s_videoOptionsInfo;
 extern menutab_t settingsTabs;
 extern menubutton_t settingsResetDefaults;
 extern menubutton_t settingsSave;
@@ -44,7 +46,7 @@ static void VideoSettingsMenu_EventCallback( void *ptr, int event )
         break;
     case ID_CONTROLS:
         UI_PopMenu();
-        UI_ContolsSettingsMenu();
+        UI_ControlsSettingsMenu();
         break;
     case ID_GAMEPLAY:
         UI_PopMenu();
@@ -55,34 +57,37 @@ static void VideoSettingsMenu_EventCallback( void *ptr, int event )
     };
 }
 
+void VideoSettingsMenu_Save( void )
+{
+}
+
+void VideoSettingsMenu_SetDefaults( void )
+{
+}
+
 void VideoSettingsMenu_Cache( void )
 {
-    static const char *difficulties[] = {
-        difficultyTable[ DIF_NOOB ].name,
-        difficultyTable[ DIF_RECRUIT ].name,
-        difficultyTable[ DIF_MERC ].name,
-        difficultyTable[ DIF_NOMAD ].name,
-        difficultyTable[ DIF_BLACKDEATH ].name,
-        "Just A Minor Inconvenience"
-    };
+    if ( !ui->uiAllocated ) {
+        s_videoOptionsInfo = (videoOptionsInfo_t *)Hunk_Alloc( sizeof( *s_videoOptionsInfo ), h_high );
+    }
 
-    memset( &s_videoOptionsInfo, 0, sizeof( s_videoOptionsInfo ) );
+    memset( s_videoOptionsInfo, 0, sizeof( *s_videoOptionsInfo ) );
 
-    s_videoOptionsInfo.menu.fullscreen = qtrue;
-    s_videoOptionsInfo.menu.width = ui->gpuConfig.vidWidth;
-    s_videoOptionsInfo.menu.height = ui->gpuConfig.vidHeight;
-    s_videoOptionsInfo.menu.x = 0;
-    s_videoOptionsInfo.menu.y = 0;
-    s_videoOptionsInfo.menu.name = "Video##SettingsMenu";
+    s_videoOptionsInfo->menu.fullscreen = qtrue;
+    s_videoOptionsInfo->menu.width = ui->gpuConfig.vidWidth;
+    s_videoOptionsInfo->menu.height = ui->gpuConfig.vidHeight;
+    s_videoOptionsInfo->menu.x = 0;
+    s_videoOptionsInfo->menu.y = 0;
+    s_videoOptionsInfo->menu.name = "Video##SettingsMenu";
 
-    Menu_AddItem( &s_videoOptionsInfo.menu, &settingsTabs );
+    Menu_AddItem( &s_videoOptionsInfo->menu, &settingsTabs );
 
-    Menu_AddItem( &s_videoOptionsInfo.menu, &settingsResetDefaults );
-    Menu_AddItem( &s_videoOptionsInfo.menu, &settingsSave );
+    Menu_AddItem( &s_videoOptionsInfo->menu, &settingsResetDefaults );
+    Menu_AddItem( &s_videoOptionsInfo->menu, &settingsSave );
 }
 
 void UI_VideoSettingsMenu( void )
 {
     VideoSettingsMenu_Cache();
-    UI_PushMenu( &s_videoOptionsInfo.menu );
+    UI_PushMenu( &s_videoOptionsInfo->menu );
 }

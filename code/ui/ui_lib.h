@@ -120,6 +120,8 @@ typedef struct {
     nhandle_t arrow_vert_bot;
     nhandle_t arrow_vert_top;
 
+    qboolean uiAllocated;
+
     float scale;
     float bias;
 
@@ -160,6 +162,7 @@ extern void         UI_ConfirmMenu( const char *question, void (*draw)( void ), 
 extern void         UI_VideoSettingsMenu( void );
 extern void         VideoSettingsMenu_Cache( void );
 extern void         VideoSettingsMenu_Save( void );
+extern void         VideoSettingsMenu_SetDefaults( void );
 
 //
 // ui_performance.cpp
@@ -167,6 +170,7 @@ extern void         VideoSettingsMenu_Save( void );
 extern void         UI_PerformanceSettingsMenu( void );
 extern void         PerformanceSettingsMenu_Cache( void );
 extern void         PerformanceSettingsMenu_Save( void );
+extern void         PerformanceSettingsMenu_SetDefaults( void );
 
 //
 // ui_audio.cpp
@@ -174,13 +178,15 @@ extern void         PerformanceSettingsMenu_Save( void );
 extern void         UI_AudioSettingsMenu( void );
 extern void         AudioSettingsMenu_Cache( void );
 extern void         AudioSettingsMenu_Save( void );
+extern void         AudioSettingsMenu_SetDefaults( void );
 
 //
 // ui_controls.cpp
 //
-extern void         UI_ContolsSettingsMenu( void );
+extern void         UI_ControlsSettingsMenu( void );
 extern void         ControlsSettingsMenu_Cache( void );
 extern void         ControlsSettingsMenu_Save( void );
+extern void         ControlsSettingsMenu_SetDefaults( void );
 
 //
 // ui_gameplay.cpp
@@ -188,6 +194,7 @@ extern void         ControlsSettingsMenu_Save( void );
 extern void         UI_GameplaySettingsMenu( void );
 extern void         GameplaySettingsMenu_Cache( void );
 extern void         GameplaySettingsMenu_Save( void );
+extern void         GameplaySettingsMenu_SetDefaults( void );
 
 //
 // ui_loadgame.cpp
@@ -243,7 +250,6 @@ extern void         MainMenu_Draw( void );
 //
 extern void         UI_SettingsMenu( void );
 extern void         SettingsMenu_Cache( void );
-extern void         SettingsMenu_Draw( void );
 extern void         UI_SettingsWriteBinds_f( void );
 
 //

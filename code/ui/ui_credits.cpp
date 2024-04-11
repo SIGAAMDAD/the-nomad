@@ -8,7 +8,7 @@ typedef struct {
     menutext_t playTesters;
 } creditsMenu_t;
 
-static creditsMenu_t s_credits;
+static creditsMenu_t *s_credits;
 
 // NOTE: this will be updated every time I actually get a new playtester,
 // although the update won't be sent out until the patch is done
@@ -52,42 +52,45 @@ void CreditsMenu_Cache( void )
     static const char *signingOffString =
     "Sincerely, Your Resident Fiend,\nNoah Van Til";
 
-    memset( &s_credits, 0, sizeof( s_credits ) );
+    if ( !ui->uiAllocated ) {
+        s_credits = (creditsMenu_t *)Hunk_Alloc( sizeof( *s_credits ), h_high );
+    }
+    memset( s_credits, 0, sizeof( *s_credits ) );
 
-    s_credits.menu.flags = MENU_DEFAULT_FLAGS;
-    s_credits.menu.x = 0;
-    s_credits.menu.y = 0;
-    s_credits.menu.width = ui->gpuConfig.vidWidth;
-    s_credits.menu.height = ui->gpuConfig.vidHeight;
-    s_credits.menu.fullscreen = qtrue;
-    s_credits.menu.textFontScale = 1.5f;
-    s_credits.menu.titleFontScale = 3.5f;
-    s_credits.menu.name = "Credits##MainMenuTheNomadCredits";
+    s_credits->menu.flags = MENU_DEFAULT_FLAGS;
+    s_credits->menu.x = 0;
+    s_credits->menu.y = 0;
+    s_credits->menu.width = ui->gpuConfig.vidWidth;
+    s_credits->menu.height = ui->gpuConfig.vidHeight;
+    s_credits->menu.fullscreen = qtrue;
+    s_credits->menu.textFontScale = 1.5f;
+    s_credits->menu.titleFontScale = 3.5f;
+    s_credits->menu.name = "Credits##MainMenuTheNomadCredits";
 
-    s_credits.creditsString.generic.type = MTYPE_TEXT;
-    s_credits.creditsString.generic.font = FontCache()->AddFontToCache( "RobotoMono", "Bold" );
-    s_credits.creditsString.text = creditsString;
-    s_credits.creditsString.color = color_white;
+    s_credits->creditsString.generic.type = MTYPE_TEXT;
+    s_credits->creditsString.generic.font = FontCache()->AddFontToCache( "RobotoMono", "Bold" );
+    s_credits->creditsString.text = creditsString;
+    s_credits->creditsString.color = color_white;
 
-    s_credits.signingOff.generic.type = MTYPE_TEXT;
-    s_credits.signingOff.generic.font = FontCache()->AddFontToCache( "RobotoMono", "Bold" );
-    s_credits.signingOff.text = signingOffString;
-    s_credits.signingOff.color = color_white;
+    s_credits->signingOff.generic.type = MTYPE_TEXT;
+    s_credits->signingOff.generic.font = FontCache()->AddFontToCache( "RobotoMono", "Bold" );
+    s_credits->signingOff.text = signingOffString;
+    s_credits->signingOff.color = color_white;
 
-    s_credits.playTesters.generic.type = MTYPE_TEXT;
-    s_credits.playTesters.generic.font = FontCache()->AddFontToCache( "RobotoMono", "Bold" );
-    s_credits.playTesters.generic.flags = QMF_OWNERDRAW;
-    s_credits.playTesters.generic.ownerdraw = CreditsMenu_DrawPlayTesters;
-    s_credits.playTesters.text = "And I would also like to give thanks to the many people who are playtesting this game:\n";
-    s_credits.playTesters.color = color_white;
+    s_credits->playTesters.generic.type = MTYPE_TEXT;
+    s_credits->playTesters.generic.font = FontCache()->AddFontToCache( "RobotoMono", "Bold" );
+    s_credits->playTesters.generic.flags = QMF_OWNERDRAW;
+    s_credits->playTesters.generic.ownerdraw = CreditsMenu_DrawPlayTesters;
+    s_credits->playTesters.text = "And I would also like to give thanks to the many people who are playtesting this game:\n";
+    s_credits->playTesters.color = color_white;
 
-    Menu_AddItem( &s_credits.menu, &s_credits.creditsString );
-    Menu_AddItem( &s_credits.menu, &s_credits.playTesters );
-    Menu_AddItem( &s_credits.menu, &s_credits.signingOff );
+    Menu_AddItem( &s_credits->menu, &s_credits->creditsString );
+    Menu_AddItem( &s_credits->menu, &s_credits->playTesters );
+    Menu_AddItem( &s_credits->menu, &s_credits->signingOff );
 }
 
 void UI_CreditsMenu( void )
 {
     CreditsMenu_Cache();
-    UI_PushMenu( &s_credits.menu );
+    UI_PushMenu( &s_credits->menu );
 }

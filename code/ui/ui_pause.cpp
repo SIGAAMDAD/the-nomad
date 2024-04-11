@@ -86,6 +86,7 @@ void PauseMenu_Cache( void )
     s_pauseMenu.menu.name = titleString->value;
     s_pauseMenu.menu.titleFontScale = 3.5f;
     s_pauseMenu.menu.textFontScale = 1.5f;
+    s_pauseMenu.menu.flags = MENU_DEFAULT_FLAGS;
 
     s_pauseMenu.resume.generic.type = MTYPE_TEXT;
     s_pauseMenu.resume.generic.id = ID_RESUME;

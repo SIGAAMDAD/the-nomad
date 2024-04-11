@@ -60,6 +60,7 @@ typedef struct {
 
 //    int cursor;
 //    int cursor_prev;
+    sfxHandle_t track;
 
     int flags;
     int x;

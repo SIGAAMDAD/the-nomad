@@ -105,6 +105,7 @@ void MainMenu_Draw( void )
                             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoBackground;
 
     MainMenu_ToggleMenu();
+    ui->menubackShader = s_main.background0;
 
     if ( s_main.font ) {
         FontCache()->SetActiveFont( s_main.font );
@@ -157,25 +158,28 @@ void MainMenu_Cache( void )
     s_main.font = FontCache()->AddFontToCache( "AlegreyaSC", "Bold" );
     RobotoMono = FontCache()->AddFontToCache( "RobotoMono", "Bold" );
 
-    s_main.noMenu = qfalse;
-    s_main.toggleKey = qtrue;
-    ui->menubackShader = s_main.background0;
-
-    s_main.menu.titleFontScale = 10.5f;
-    s_main.menu.textFontScale = 1.5f;
-
     s_main.logoString = strManager->ValueForKey( "MENU_LOGO_STRING" );
     s_main.settingsString = strManager->ValueForKey( "MENU_MAIN_SETTINGS" );
     s_main.spString = strManager->ValueForKey( "MENU_MAIN_SINGLEPLAYER" );
     s_main.modsString = strManager->ValueForKey( "MENU_MAIN_MODS" );
     s_main.exitString = strManager->ValueForKey( "MENU_MAIN_EXIT" );
 
+    s_main.menu.titleFontScale = 6.5f;
+    s_main.menu.textFontScale = 1.5f;
+    s_main.menu.name = s_main.logoString->value;
+    s_main.menu.x = 0;
+    s_main.menu.y = 0;
+    s_main.menu.width = ui->gpuConfig.vidWidth;
+    s_main.menu.height = ui->gpuConfig.vidHeight;
+    s_main.menu.fullscreen = qtrue;
+    s_main.menu.draw = MainMenu_Draw;
+    s_main.menu.flags = MENU_DEFAULT_FLAGS;
+
     s_main.table.generic.name = "##MainMenuOptionsTable";
     s_main.table.generic.type = MTYPE_TABLE;
     s_main.table.generic.id = ID_TABLE;
     s_main.table.columns = 2;
 
-    s_main.singleplayer.generic.name = StringDup( s_main.spString, "SinglePlayerMainMenuOption" );
     s_main.singleplayer.generic.type = MTYPE_TEXT;
     s_main.singleplayer.generic.id = ID_SINGEPLAYER;
     s_main.singleplayer.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
@@ -183,7 +187,6 @@ void MainMenu_Cache( void )
     s_main.singleplayer.text = s_main.spString->value;
     s_main.singleplayer.color = color_white;
 
-    s_main.mods.generic.name = StringDup( s_main.modsString, "ModsMainMenuOption" );
     s_main.mods.generic.type = MTYPE_TEXT;
     s_main.mods.generic.id = ID_MODS;
     s_main.mods.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
@@ -191,7 +194,6 @@ void MainMenu_Cache( void )
     s_main.mods.text = s_main.modsString->value;
     s_main.mods.color = color_white;
 
-    s_main.settings.generic.name = StringDup( s_main.settingsString, "SettingsMainMenuOption" );
     s_main.settings.generic.type = MTYPE_TEXT;
     s_main.settings.generic.id = ID_SETTINGS;
     s_main.settings.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
@@ -199,7 +201,6 @@ void MainMenu_Cache( void )
     s_main.settings.text = s_main.settingsString->value;
     s_main.settings.color = color_white;
 
-    s_main.credits.generic.name = "Credits##MainMenuOption";
     s_main.credits.generic.type = MTYPE_TEXT;
     s_main.credits.generic.id = ID_CREDITS;
     s_main.credits.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
@@ -207,7 +208,6 @@ void MainMenu_Cache( void )
     s_main.credits.text = "Credits";
     s_main.credits.color = color_white;
 
-    s_main.exitGame.generic.name = StringDup( s_main.exitString, "ExitGameMenuOption" );
     s_main.exitGame.generic.type = MTYPE_TEXT;
     s_main.exitGame.generic.id = ID_EXIT;
     s_main.exitGame.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
@@ -215,38 +215,42 @@ void MainMenu_Cache( void )
     s_main.exitGame.text = s_main.exitString->value;
     s_main.exitGame.color = color_white;
 
-    s_main.spArrow.generic.name = StringDup( s_main.spString, "SinglePlayerMainMenuArrow" );
+    s_main.spArrow.generic.name = "##CampaignMainMenuArrowRight";
     s_main.spArrow.generic.type = MTYPE_ARROW;
     s_main.spArrow.generic.id = ID_SINGEPLAYER;
     s_main.spArrow.generic.eventcallback = MainMenu_EventCallback;
     s_main.spArrow.direction = ImGuiDir_Right;
 
-    s_main.modsArrow.generic.name = StringDup( s_main.modsString, "ModsMainMenuArrow" );
+    s_main.modsArrow.generic.name = "##ModsMainMenuArrowRight";
     s_main.modsArrow.generic.type = MTYPE_ARROW;
     s_main.modsArrow.generic.id = ID_MODS;
     s_main.modsArrow.generic.eventcallback = MainMenu_EventCallback;
     s_main.modsArrow.direction = ImGuiDir_Right;
 
-    s_main.settingsArrow.generic.name = StringDup( s_main.settingsString, "SettingsMainMenuArrow" );
+    s_main.settingsArrow.generic.name = "##SettingsMainMenuArrowRight";
     s_main.settingsArrow.generic.type = MTYPE_ARROW;
     s_main.settingsArrow.generic.id = ID_SETTINGS;
     s_main.settingsArrow.generic.eventcallback = MainMenu_EventCallback;
     s_main.settingsArrow.direction = ImGuiDir_Right;
 
-    s_main.creditsArrow.generic.name = "Credits##CreditsMainMenuArrow";
+    s_main.creditsArrow.generic.name = "##CreditsMainMenuArrowRight";
     s_main.creditsArrow.generic.type = MTYPE_ARROW;
     s_main.creditsArrow.generic.id = ID_CREDITS;
     s_main.creditsArrow.generic.eventcallback = MainMenu_EventCallback;
     s_main.creditsArrow.direction = ImGuiDir_Right;
 
-    s_main.exitArrow.generic.name = StringDup( s_main.exitString, "ExitGameMainMenuArrow" );
+    s_main.exitArrow.generic.name = "##ExitGameMainMenuArrowRight";
     s_main.exitArrow.generic.type = MTYPE_ARROW;
     s_main.exitArrow.generic.id = ID_EXIT;
     s_main.exitArrow.generic.eventcallback = MainMenu_EventCallback;
     s_main.exitArrow.direction = ImGuiDir_Right;
 
-    s_main.ambience = Snd_RegisterTrack( "music/title.ogg" );
+    s_main.menu.track = Snd_RegisterTrack( "music/title.ogg" );
     s_main.background0 = re.RegisterShader( "menu/mainbackground" );
+
+    s_main.noMenu = qfalse;
+    s_main.toggleKey = qtrue;
+    ui->menubackShader = s_main.background0;
 
     Menu_AddItem( &s_main.menu, &s_main.table );
 

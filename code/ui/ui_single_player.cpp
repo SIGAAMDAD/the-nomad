@@ -9,21 +9,16 @@
 #define ID_PLAMISSION   2
 
 typedef struct {
-	const stringHash_t *titleString;
-    const stringHash_t *newGameString;
-    const stringHash_t *loadGameString;
-    const stringHash_t *playMissionString;
-
     menuframework_t menu;
 
     menutext_t newGame;
     menutext_t loadGame;
     menutext_t playMission;
-} singleplayer_t;
+} campaignMenu_t;
 
 extern ImFont *RobotoMono;
 extern ImFont *PressStart2P;
-static singleplayer_t sp;
+static campaignMenu_t *s_campaignMenu;
 
 static void SinglePlayerMenu_EventCallback( void *ptr, int event )
 {
@@ -45,198 +40,64 @@ static void SinglePlayerMenu_EventCallback( void *ptr, int event )
     };
 }
 
-char **parse_csv( const char *line );
-int32_t count_fields( const char *line );
-
 void SinglePlayerMenu_Cache( void )
 {
-    memset( &sp, 0, sizeof( sp ) );
+    const stringHash_t *titleString;
+    const stringHash_t *newGameString;
+    const stringHash_t *loadGameString;
+    const stringHash_t *playMissionString;
 
-	sp.titleString = strManager->ValueForKey( "SP_MENU_TITLE" );	
-    sp.newGameString = strManager->ValueForKey( "SP_NEWGAME" );
-    sp.loadGameString = strManager->ValueForKey( "SP_LOADGAME" );
-    sp.playMissionString = strManager->ValueForKey( "SP_PLAY_MISSION" );
+    if ( !ui->uiAllocated ) {
+        s_campaignMenu = (campaignMenu_t *)Hunk_Alloc( sizeof( *s_campaignMenu ), h_high );
+    }
+    memset( s_campaignMenu, 0, sizeof( *s_campaignMenu ) );
 
-    sp.menu.name = "SinglePlayerMenu##MainMenuSinglePlayerConfig";
-    sp.menu.flags = MENU_DEFAULT_FLAGS;
-    sp.menu.x = 0;
-    sp.menu.y = 0;
-    sp.menu.width = ui->gpuConfig.vidWidth;
-    sp.menu.height = ui->gpuConfig.vidHeight;
-    sp.menu.fullscreen = qtrue;
+	titleString = strManager->ValueForKey( "SP_MENU_TITLE" );	
+    newGameString = strManager->ValueForKey( "SP_NEWGAME" );
+    loadGameString = strManager->ValueForKey( "SP_LOADGAME" );
+    playMissionString = strManager->ValueForKey( "SP_PLAY_MISSION" );
 
-    sp.newGame.generic.name = StringDup( sp.newGameString, "SinglePlayerNewGameOption" );
-    sp.newGame.generic.type = MTYPE_TEXT;
-    sp.newGame.generic.id = ID_NEWGAME;
-    sp.newGame.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
-    sp.newGame.generic.eventcallback = SinglePlayerMenu_EventCallback;
-    sp.newGame.text = sp.newGameString->value;
-    VectorCopy4( sp.newGame.color, colorWhite );
+    s_campaignMenu->menu.name = titleString->value;
+    s_campaignMenu->menu.flags = MENU_DEFAULT_FLAGS;
+    s_campaignMenu->menu.x = 0;
+    s_campaignMenu->menu.y = 0;
+    s_campaignMenu->menu.titleFontScale = 3.5f;
+    s_campaignMenu->menu.textFontScale = 1.5f;
+    s_campaignMenu->menu.width = ui->gpuConfig.vidWidth;
+    s_campaignMenu->menu.height = ui->gpuConfig.vidHeight;
+    s_campaignMenu->menu.fullscreen = qtrue;
 
-    sp.loadGame.generic.name = StringDup( sp.loadGameString, "SinglePlayerLoadGameOption" );
-    sp.loadGame.generic.type = MTYPE_TEXT;
-    sp.loadGame.generic.id = ID_LOADGAME;
-    sp.loadGame.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
-    sp.loadGame.generic.eventcallback = SinglePlayerMenu_EventCallback;
-    sp.loadGame.text = sp.loadGameString->value;
-    VectorCopy4( sp.loadGame.color, colorWhite );
+    s_campaignMenu->newGame.generic.name = StringDup( newGameString, "SinglePlayerNewGameOption" );
+    s_campaignMenu->newGame.generic.type = MTYPE_TEXT;
+    s_campaignMenu->newGame.generic.id = ID_NEWGAME;
+    s_campaignMenu->newGame.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
+    s_campaignMenu->newGame.generic.eventcallback = SinglePlayerMenu_EventCallback;
+    s_campaignMenu->newGame.text = newGameString->value;
+    s_campaignMenu->newGame.color = color_white;
 
-    sp.playMission.generic.name = StringDup( sp.playMissionString, "SinglePlayerPlayMissionOption" );
-    sp.playMission.generic.type = MTYPE_TEXT;
-    sp.playMission.generic.id = ID_PLAMISSION;
-    sp.playMission.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
-    sp.playMission.generic.eventcallback = SinglePlayerMenu_EventCallback;
-    sp.playMission.text = sp.playMissionString->value;
-    VectorCopy4( sp.playMission.color, colorWhite );
+    s_campaignMenu->loadGame.generic.name = StringDup( loadGameString, "SinglePlayerLoadGameOption" );
+    s_campaignMenu->loadGame.generic.type = MTYPE_TEXT;
+    s_campaignMenu->loadGame.generic.id = ID_LOADGAME;
+    s_campaignMenu->loadGame.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
+    s_campaignMenu->loadGame.generic.eventcallback = SinglePlayerMenu_EventCallback;
+    s_campaignMenu->loadGame.text = loadGameString->value;
+    s_campaignMenu->loadGame.color = color_white;
 
-    Menu_AddItem( &sp.menu, &sp.newGame );
-    Menu_AddItem( &sp.menu, &sp.loadGame );
-    Menu_AddItem( &sp.menu, &sp.playMission );
+    s_campaignMenu->playMission.generic.name = StringDup( playMissionString, "SinglePlayerPlayMissionOption" );
+    s_campaignMenu->playMission.generic.type = MTYPE_TEXT;
+    s_campaignMenu->playMission.generic.id = ID_PLAMISSION;
+    s_campaignMenu->playMission.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
+    s_campaignMenu->playMission.generic.eventcallback = SinglePlayerMenu_EventCallback;
+    s_campaignMenu->playMission.text = playMissionString->value;
+    s_campaignMenu->playMission.color = color_white;
+
+    Menu_AddItem( &s_campaignMenu->menu, &s_campaignMenu->newGame );
+    Menu_AddItem( &s_campaignMenu->menu, &s_campaignMenu->loadGame );
+    Menu_AddItem( &s_campaignMenu->menu, &s_campaignMenu->playMission );
 }
 
 void UI_SinglePlayerMenu( void )
 {
-    UI_PushMenu( &sp.menu );
+    UI_PushMenu( &s_campaignMenu->menu );
     Key_SetCatcher( KEYCATCH_UI );
-}
-
-//
-// a small csv parser for c, credits to semitrivial for this
-// https://github.com/semitrivial/csv_parser.git
-//
-
-void free_csv_line( char **parsed ) {
-    char **ptr;
-
-    for ( ptr = parsed; *ptr; ptr++ ) {
-        Z_Free( *ptr );
-    }
-
-    Z_Free( parsed );
-}
-
-int32_t count_fields( const char *line ) {
-    const char *ptr;
-    int32_t cnt, fQuote;
-
-    for ( cnt = 1, fQuote = 0, ptr = line; *ptr; ptr++ ) {
-        if ( fQuote ) {
-            if ( *ptr == '\"' ) {
-                fQuote = 0;
-            }
-            continue;
-        }
-
-        switch ( *ptr ) {
-        case '\"':
-            fQuote = 1;
-            continue;
-        case ',':
-            cnt++;
-            continue;
-        default:
-            continue;
-        };
-    }
-
-    if ( fQuote ) {
-        return -1;
-    }
-
-    return cnt;
-}
-
-static char *CopyUIString( const char *str ) {
-    char *out;
-    uint64_t len;
-
-    len = strlen( str ) + 1;
-    out = (char *)Z_Malloc( len, TAG_GAME );
-    N_strncpyz( out, str, len );
-
-    return out;
-}
-
-/*
- *  Given a string containing no linebreaks, or containing line breaks
- *  which are escaped by "double quotes", extract a NULL-terminated
- *  array of strings, one for every cell in the row.
- */
-char **parse_csv( const char *line ) {
-    char **buf, **bptr, *tmp, *tptr;
-    const char *ptr;
-    int32_t fieldcnt, fQuote, fEnd;
-
-    fieldcnt = count_fields( line );
-
-    if ( fieldcnt == -1 ) {
-        return NULL;
-    }
-
-    buf = (char **)Z_Malloc( sizeof( char * ) * ( fieldcnt + 1 ), TAG_GAME );
-    tmp = (char *)Hunk_AllocateTempMemory( strlen( line ) + 1 );
-
-    bptr = buf;
-
-    for ( ptr = line, fQuote = 0, *tmp = '\0', tptr = tmp, fEnd = 0; ; ptr++ ) {
-        if ( fQuote ) {
-            if ( !*ptr ) {
-                break;
-            }
-
-            if ( *ptr == '\"' ) {
-                if ( ptr[1] == '\"' ) {
-                    *tptr++ = '\"';
-                    ptr++;
-                    continue;
-                }
-                fQuote = 0;
-            }
-            else {
-                *tptr++ = *ptr;
-            }
-
-            continue;
-        }
-
-        switch ( *ptr ) {
-        case '\"':
-            fQuote = 1;
-            continue;
-        case '\0':
-            fEnd = 1;
-        case ',':
-            *tptr = '\0';
-            *bptr = CopyUIString( tmp );
-
-            if ( !*bptr ) {
-                for ( bptr--; bptr >= buf; bptr-- ) {
-                    Z_Free( *bptr );
-                }
-                Z_Free( buf );
-                Hunk_FreeTempMemory( tmp );
-
-                return NULL;
-            }
-
-            bptr++;
-            tptr = tmp;
-
-            if ( fEnd ) {
-                break;
-            }
-            continue;
-        default:
-            *tptr++ = *ptr;
-            continue;
-        };
-
-        if ( fEnd ) {
-            break;
-        }
-    }
-
-    *bptr = NULL;
-    Hunk_FreeTempMemory( tmp );
-    return buf;
 }

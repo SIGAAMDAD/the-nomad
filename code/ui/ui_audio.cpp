@@ -6,6 +6,8 @@
 #define ID_CONTROLS     3
 #define ID_GAMEPLAY     4
 #define ID_TABLE        5
+#define ID_SETDEFAULTS  6
+#define ID_SAVECONFIG   7
 
 #define ID_SFXON        0
 #define ID_MUSICON      1
@@ -59,7 +61,7 @@ static void AudioSettingsMenu_EventCallback( void *ptr, int event )
         break;
     case ID_CONTROLS:
         UI_PopMenu();
-        UI_ContolsSettingsMenu();
+        UI_ControlsSettingsMenu();
         break;
     case ID_GAMEPLAY:
         UI_PopMenu();
@@ -79,6 +81,10 @@ void AudioSettingsMenu_Save( void )
     Cvar_SetIntegerValue( "snd_mastervol", s_audioOptionsInfo.masterVol.curvalue );
 }
 
+void AudioSettingsMenu_SetDefaults( void )
+{
+}
+
 void AudioSettingsMenu_Cache( void )
 {
     memset( &s_audioOptionsInfo, 0, sizeof( s_audioOptionsInfo ) );
@@ -89,6 +95,9 @@ void AudioSettingsMenu_Cache( void )
     s_audioOptionsInfo.menu.x = 0;
     s_audioOptionsInfo.menu.y = 0;
     s_audioOptionsInfo.menu.name = "Audio##SettingsMenu";
+    s_audioOptionsInfo.menu.flags = MENU_DEFAULT_FLAGS;
+    s_audioOptionsInfo.menu.textFontScale = 1.5f;
+    s_audioOptionsInfo.menu.titleFontScale = 3.5f;
 
     s_audioOptionsInfo.tabs.generic.type = MTYPE_TAB;
     s_audioOptionsInfo.tabs.generic.name = "##SettingsMenuTabs";

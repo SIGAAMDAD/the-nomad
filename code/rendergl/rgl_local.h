@@ -1080,6 +1080,7 @@ typedef struct
 	texture_t				*whiteImage;			// full of 0xff
 	texture_t				*identityLightImage;	// full of tr.identityLightByte	
 
+//    texture_t               *bloomImage;
 	texture_t				*renderImage;
 	texture_t				*sunRaysImage;
 	texture_t				*renderDepthImage;
@@ -1315,6 +1316,7 @@ extern cvar_t  *r_forceAutoExposureMax;
 
 extern cvar_t *r_depthPrepass;
 extern cvar_t *r_ssao;
+extern cvar_t *r_bloom;
 
 extern cvar_t *r_normalMapping;
 extern cvar_t *r_specularMapping;

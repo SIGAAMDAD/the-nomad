@@ -1,5 +1,8 @@
 #if !defined(GLSL_LEGACY)
-out vec4 a_Color;
+layout( location = 0 ) out vec4 a_Color;
+#if defined(USE_BLOOM) && defined(USE_HDR)
+layout( location = 1 ) out vec4 a_BrightColor;
+#endif
 #endif
 
 in vec2 v_TexCoords;
@@ -81,8 +84,23 @@ void main() {
     a_Color = texture2D( u_DiffuseMap, v_TexCoords );
 
 #if defined(USE_HDR)
+#if !defined(USE_EXPOSURE_TONE_MAPPING)
 	// reinhard tone mapping
-	a_Color.rgb /= ( a_Color.rgb + vec3( 1.0 ) );
+	a_Color.rgb = a_Color.rgb / ( a_Color.rgb + vec3( 1.0 ) );
+#else
+	// exposure tone mapping
+	a_Color.rgb = vec3( 1.0 ) - exp( -a_Color.rgb * u_CameraExposure );
+#endif
+
+#if defined(USE_BLOOM)
+	// check whether fragment output is higher than threshold, if so output as brightness color
+	float brightness = dot( a_Color.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );
+	if ( brightness > 1.0 ) {
+		a_BrightColor = vec4( a_Color.rgb, 1.0 );
+	} else {
+		a_BrightColor = vec4( 0.0, 0.0, 0.0, 1.0 );
+	}
+#endif
 #endif
 	a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
 }

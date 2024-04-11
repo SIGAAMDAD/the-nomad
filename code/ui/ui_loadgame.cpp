@@ -23,7 +23,7 @@ typedef struct {
     const stringHash_t *title;
 } loadGameMenu_t;
 
-static loadGameMenu_t loadGame;
+static loadGameMenu_t *s_loadGame;
 
 static void LoadGameMenu_Draw( void )
 {
@@ -34,12 +34,12 @@ static void LoadGameMenu_Draw( void )
     const int treeNodeFlags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_CollapsingHeader
                             | ImGuiTreeNodeFlags_Framed;
 
-    ImGui::Begin( loadGame.menu.name, NULL, loadGame.menu.flags );
-    ImGui::SetWindowSize( ImVec2( loadGame.menu.width, loadGame.menu.height ) );
-    ImGui::SetWindowPos( ImVec2( loadGame.menu.x, loadGame.menu.y ) );
+    ImGui::Begin( s_loadGame->menu.name, NULL, s_loadGame->menu.flags );
+    ImGui::SetWindowSize( ImVec2( s_loadGame->menu.width, s_loadGame->menu.height ) );
+    ImGui::SetWindowPos( ImVec2( s_loadGame->menu.x, s_loadGame->menu.y ) );
 
     UI_EscapeMenuToggle();
-    if ( UI_MenuTitle( loadGame.title->value, 2.25f ) ) {
+    if ( UI_MenuTitle( s_loadGame->title->value, 2.25f ) ) {
         Snd_PlaySfx( ui->sfx_back );
         UI_PopMenu();
 
@@ -54,15 +54,15 @@ static void LoadGameMenu_Draw( void )
     ImGui::SetWindowSize( ImVec2( ui->gpuConfig.vidWidth * 0.75f, windowSize.y ) );
     
     ImGui::SetCursorScreenPos( ImVec2( mousePos.x, mousePos.y + 10 ) );
-    if ( loadGame.numSaves ) {
+    if ( s_loadGame->numSaves ) {
         {
             ImGui::Begin( "##ModList", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove
                 | ImGuiWindowFlags_NoMouseInputs | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse );
             ImGui::SetWindowPos( ImVec2( ui->gpuConfig.vidWidth * 0.75f, 64 * ui->scale ) );
             ImGui::SetWindowSize( ImVec2( ui->gpuConfig.vidWidth * 0.25f, ui->gpuConfig.vidHeight - 10 ) );
             ImGui::SeparatorText( "Loaded Modules" );
-            for ( uint64_t m = 0; m < loadGame.saveList[loadGame.currentSave].gd.numMods; m++ ) {
-                if ( !loadGame.saveList[loadGame.currentSave].modsLoaded[m] ) {
+            for ( uint64_t m = 0; m < s_loadGame->saveList[s_loadGame->currentSave].gd.numMods; m++ ) {
+                if ( !s_loadGame->saveList[s_loadGame->currentSave].modsLoaded[m] ) {
                     ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
                     ImGui::PushStyleColor( ImGuiCol_TextDisabled, colorRed );
                     ImGui::PushStyleColor( ImGuiCol_TextSelectedBg, colorRed );
@@ -71,12 +71,12 @@ static void LoadGameMenu_Draw( void )
                     ImGui::PushStyleColor( ImGuiCol_TextDisabled, colorGreen );
                     ImGui::PushStyleColor( ImGuiCol_TextSelectedBg, colorGreen );
                 }
-                ImGui::Text( "%s v%i.%i.%i", loadGame.saveList[loadGame.currentSave].gd.modList[m].name,
-                    loadGame.saveList[loadGame.currentSave].gd.modList[m].nVersionMajor,
-                    loadGame.saveList[loadGame.currentSave].gd.modList[m].nVersionUpdate,
-                    loadGame.saveList[loadGame.currentSave].gd.modList[m].nVersionPatch );
+                ImGui::Text( "%s v%i.%i.%i", s_loadGame->saveList[s_loadGame->currentSave].gd.modList[m].name,
+                    s_loadGame->saveList[s_loadGame->currentSave].gd.modList[m].nVersionMajor,
+                    s_loadGame->saveList[s_loadGame->currentSave].gd.modList[m].nVersionUpdate,
+                    s_loadGame->saveList[s_loadGame->currentSave].gd.modList[m].nVersionPatch );
                 ImGui::PopStyleColor( 3 );
-                if ( ImGui::IsItemHovered() && !loadGame.saveList[loadGame.currentSave].modsLoaded[m] ) {
+                if ( ImGui::IsItemHovered() && !s_loadGame->saveList[s_loadGame->currentSave].modsLoaded[m] ) {
                     ImGui::SetTooltip(
                                 "This module either hasn't been loaded or failed to load, check"
                                 "the console/logfile for more detailed information" );
@@ -85,16 +85,16 @@ static void LoadGameMenu_Draw( void )
             ImGui::End();
         }
         FontCache()->SetActiveFont( PressStart2P );
-        for ( i = 0; i < loadGame.numSaves; i++ ) {
-            if ( ImGui::TreeNodeEx( (void *)(uintptr_t)loadGame.saveList[i].name, treeNodeFlags, loadGame.saveList[i].name ) ) {
+        for ( i = 0; i < s_loadGame->numSaves; i++ ) {
+            if ( ImGui::TreeNodeEx( (void *)(uintptr_t)s_loadGame->saveList[i].name, treeNodeFlags, s_loadGame->saveList[i].name ) ) {
                 if ( ImGui::IsMouseClicked( ImGuiMouseButton_Left ) ) {
                     Snd_PlaySfx( ui->sfx_select );
                 }
-                loadGame.currentSave = i;
+                s_loadGame->currentSave = i;
 
                 if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && ImGui::IsMouseDoubleClicked( ImGuiMouseButton_Left ) ) {
                     Snd_PlaySfx( ui->sfx_select );
-                    Cvar_Set( "sgame_SaveName", loadGame.saveList[i].name );
+                    Cvar_Set( "sgame_SaveName", s_loadGame->saveList[i].name );
                     gi.state = GS_LEVEL;
                     g_pModuleLib->ModuleCall( sgvm, ModuleOnLoadGame, 0 );
                 }
@@ -114,13 +114,13 @@ static void LoadGameMenu_Draw( void )
                     ImGui::TableNextRow();
                     
                     ImGui::TableNextColumn();
-                    ImGui::TextUnformatted( loadGame.saveList[i].creationTime ); // creation time
+                    ImGui::TextUnformatted( s_loadGame->saveList[i].creationTime ); // creation time
                     
                     ImGui::TableNextColumn();
-                    ImGui::TextUnformatted( loadGame.saveList[i].modificationTime ); // last used time
+                    ImGui::TextUnformatted( s_loadGame->saveList[i].modificationTime ); // last used time
                     
                     ImGui::TableNextColumn();
-                    ImGui::TextUnformatted( difficultyTable[ loadGame.saveList[i].gd.dif ].name );
+                    ImGui::TextUnformatted( difficultyTable[ s_loadGame->saveList[i].gd.dif ].name );
                 }
                 ImGui::EndTable();
                 ImGui::SetWindowFontScale( font_scale );
@@ -143,26 +143,38 @@ void LoadGameMenu_Cache( void )
     const stringHash_t *hardest;
     struct tm *fileTime;
 
-    loadGame.menu.draw = LoadGameMenu_Draw;
-    loadGame.menu.flags = MENU_DEFAULT_FLAGS;
-    loadGame.menu.name = "LoadGameMenu##MainMenuLoadGameConfig";
+    if ( !ui->uiAllocated ) {
+        s_loadGame = (loadGameMenu_t *)Hunk_Alloc( sizeof( *s_loadGame ), h_high );
+    }
+    memset( s_loadGame, 0, sizeof( *s_loadGame ) );
 
-    loadGame.title = strManager->ValueForKey( "SP_LOADGAME_TITLE" );
+    s_loadGame->title = strManager->ValueForKey( "SP_LOADGAME_TITLE" );
+
+    s_loadGame->menu.draw = LoadGameMenu_Draw;
+    s_loadGame->menu.flags = MENU_DEFAULT_FLAGS;
+    s_loadGame->menu.name = s_loadGame->title->value;
+    s_loadGame->menu.x = 0;
+    s_loadGame->menu.y = 0;
+    s_loadGame->menu.width = ui->gpuConfig.vidWidth;
+    s_loadGame->menu.height = ui->gpuConfig.vidHeight;
+    s_loadGame->menu.fullscreen = qtrue;
+    s_loadGame->menu.titleFontScale = 3.5f;
+    s_loadGame->menu.textFontScale = 1.5f;
 
     //
     // init savefiles
     //
 
-    loadGame.numSaves = 0;
-    fileList = g_pArchiveHandler->GetSaveFiles( &loadGame.numSaves );
+    s_loadGame->numSaves = 0;
+    fileList = g_pArchiveHandler->GetSaveFiles( &s_loadGame->numSaves );
 
-    if ( loadGame.numSaves ) {
-        Cvar_Set( "sg_numSaves", va( "%li", (int64_t)loadGame.numSaves ) );
+    if ( s_loadGame->numSaves ) {
+        Cvar_Set( "sg_numSaves", va( "%li", (int64_t)s_loadGame->numSaves ) );
 
-        loadGame.saveList = (saveinfo_t *)Z_Malloc( sizeof( saveinfo_t ) * loadGame.numSaves, TAG_SAVEFILE );
-        info = loadGame.saveList;
+        s_loadGame->saveList = (saveinfo_t *)Z_Malloc( sizeof( saveinfo_t ) * s_loadGame->numSaves, TAG_SAVEFILE );
+        info = s_loadGame->saveList;
 
-        for ( i = 0; i < loadGame.numSaves; i++, info++ ) {
+        for ( i = 0; i < s_loadGame->numSaves; i++, info++ ) {
             N_strncpyz( info->name, fileList[i], sizeof( info->name ) );
 
             info->index = i;
@@ -198,5 +210,5 @@ void LoadGameMenu_Cache( void )
 
 void UI_LoadGameMenu( void )
 {
-    UI_PushMenu( &loadGame.menu );
+    UI_PushMenu( &s_loadGame->menu );
 }

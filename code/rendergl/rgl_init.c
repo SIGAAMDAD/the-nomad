@@ -85,6 +85,7 @@ cvar_t  *r_forceAutoExposureMax;
 
 cvar_t *r_depthPrepass;
 cvar_t *r_ssao;
+cvar_t *r_bloom;
 
 cvar_t *r_normalMapping;
 cvar_t *r_specularMapping;
@@ -870,6 +871,8 @@ static void R_Register( void )
 	ri.Cvar_SetDescription( r_depthPrepass, "Do a depth-only pass before rendering. Speeds up rendering in cases where advanced features are used. Required for r_sunShadows." );
 	r_ssao = ri.Cvar_Get( "r_ssao", "0", CVAR_LATCH | CVAR_SAVE );
 	ri.Cvar_SetDescription( r_ssao, "Enable screen-space ambient occlusion." );
+    r_bloom = ri.Cvar_Get( "r_bloom", "1", CVAR_SAVE );
+    ri.Cvar_SetDescription( r_bloom, "Enables framebuffer based bloom to make light sources stand out, requires \\r_hdr.\n" );
 
     r_normalMapping = ri.Cvar_Get( "r_normalMapping", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_normalMapping, "Enable normal maps for materials that support it." );
@@ -986,8 +989,8 @@ static void R_Register( void )
 	ri.Cvar_SetDescription( r_ignoreGLErrors, "Ignore OpenGL errors." );
 //	r_fastsky = ri.Cvar_Get( "r_fastsky", "0", CVAR_SAVE );
 //	ri.Cvar_SetDescription( r_fastsky, "Draw flat colored skies." );
-//    r_drawSun = ri.Cvar_Get( "r_drawSun", "0", CVAR_SAVE );
-//	ri.Cvar_SetDescription( r_drawSun, "Draw sun shader in skies." );
+    r_drawSun = ri.Cvar_Get( "r_drawSun", "0", CVAR_SAVE );
+	ri.Cvar_SetDescription( r_drawSun, "Draw sun shader in skies." );
     r_dynamiclight = ri.Cvar_Get( "r_dynamiclight", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_dynamiclight, "Enables dynamic lighting." );
 	r_dlightBacks = ri.Cvar_Get( "r_dlightBacks", "1", CVAR_SAVE );

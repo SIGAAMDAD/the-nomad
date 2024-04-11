@@ -573,19 +573,22 @@ void ModsMenu_Cache( void )
 	    mods->modList = (module_t *)( mods + 1 );
 	}
 
+	mods->titleString = strManager->ValueForKey( "MOD_MENU_TITLE" );
+    mods->loadString = strManager->ValueForKey( "MOD_MENU_LOAD" );
+    mods->backString = strManager->ValueForKey( "MOD_MENU_BACK" );
+
 	mods->menu.draw = ModsMenu_Draw;
 	mods->menu.fullscreen = qtrue;
 	mods->menu.width = ui->gpuConfig.vidWidth;
 	mods->menu.height = ui->gpuConfig.vidHeight;
+	mods->menu.name = mods->titleString->value;
+	mods->menu.track = Snd_RegisterTrack( "music/tales_around_the_campfire.ogg" );
 
     ModsMenu_Load();
 	
-    mods->ambience = Snd_RegisterTrack( "music/tales_around_the_campfire.ogg" );
     mods->backgroundShader = re.RegisterShader( "menu/tales_around_the_campfire" );
 
-    mods->titleString = strManager->ValueForKey( "MOD_MENU_TITLE" );
-    mods->loadString = strManager->ValueForKey( "MOD_MENU_LOAD" );
-    mods->backString = strManager->ValueForKey( "MOD_MENU_BACK" );
+	ui->menubackShader = mods->backgroundShader;
 
     Cmd_AddCommand( "ui.clear_load_list", ModsMenu_ClearLoadList_f );
 

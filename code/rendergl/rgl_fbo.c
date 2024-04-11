@@ -209,6 +209,15 @@ void FBO_Init( void )
 	if ( multisample && glContext.ARB_framebuffer_multisample ) {
 		rg.renderFbo = FBO_Create( "render", rg.renderDepthImage->width, rg.renderDepthImage->height );
 		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, multisample );
+		if ( r_bloom->i ) {
+			FBO_CreateBuffer( rg.renderFbo, hdrFormat, 1, multisample );
+
+			GLuint buffers[2];
+			buffers[0] = GL_COLOR_ATTACHMENT0;
+			buffers[1] = GL_COLOR_ATTACHMENT1;
+
+			nglDrawBuffers( 2, buffers );
+		}
 		FBO_CreateBuffer( rg.renderFbo, GL_DEPTH_COMPONENT24, 0, multisample );
 		R_CheckFBO( rg.renderFbo );
 
@@ -279,7 +288,6 @@ void FBO_Shutdown( void )
 
 void FBO_BlitFromTexture( struct texture_s *src, vec4_t inSrcTexCorners, vec2_t inSrcTexScale, fbo_t *dst, ivec4_t inDstBox, struct shaderProgram_s *shaderProgram, const vec4_t inColor, int blend )
 {
-	return;
 	ivec4_t dstBox;
 	vec4_t color;
 	vec4_t quadVerts[4];
@@ -363,9 +371,11 @@ void FBO_BlitFromTexture( struct texture_s *src, vec4_t inSrcTexCorners, vec2_t 
 	
 	GLSL_SetUniformMatrix4(shaderProgram, UNIFORM_MODELVIEWPROJECTION, projection);
 	GLSL_SetUniformVec4(shaderProgram, UNIFORM_COLOR, color);
-//	GLSL_SetUniformVec2(shaderProgram, UNIFORM_INVTEXRES, invTexRes);
+	GLSL_SetUniformVec2(shaderProgram, UNIFORM_INVTEXRES, invTexRes);
 //	GLSL_SetUniformVec2(shaderProgram, UNIFORM_AUTOEXPOSUREMINMAX, rg.refdef.autoExposureMinMax);
 //	GLSL_SetUniformVec3(shaderProgram, UNIFORM_TONEMINAVGMAXLINEAR, rg.refdef.toneMinAvgMaxLinear);
+
+
 
 	RB_InstantQuad2(quadVerts, texCoords);
 
@@ -374,7 +384,6 @@ void FBO_BlitFromTexture( struct texture_s *src, vec4_t inSrcTexCorners, vec2_t 
 
 void FBO_Blit( fbo_t *src, ivec4_t inSrcBox, vec2_t srcTexScale, fbo_t *dst, ivec4_t dstBox, struct shaderProgram_s *shaderProgram, const vec4_t color, int blend )
 {
-	return;
 	vec4_t srcTexCorners;
 
 	if ( !src ) {

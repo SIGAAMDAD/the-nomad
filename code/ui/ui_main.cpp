@@ -17,6 +17,7 @@ cvar_t *ui_printStrings;
 cvar_t *ui_active;
 cvar_t *ui_diagnostics;
 cvar_t *r_gpuDiagnostics;
+dif_t difficultyTable[NUMDIFS];
 
 static cvar_t *com_drawFPS;
 
@@ -37,11 +38,6 @@ static void UI_Cache_f( void ) {
 	NewGameMenu_Cache();
 	PauseMenu_Cache();
 	CreditsMenu_Cache();
-	VideoSettingsMenu_Cache();
-	PerformanceSettingsMenu_Cache();
-	AudioSettingsMenu_Cache();
-	ControlsSettingsMenu_Cache();
-	GameplaySettingsMenu_Cache();
 }
 
 CUIFontCache::CUIFontCache( void ) {
@@ -283,9 +279,12 @@ void UI_UpdateCvars( void )
 
 extern "C" void UI_Shutdown( void )
 {
-	ui->activemenu = NULL;
-	memset( ui->stack, 0, sizeof( ui->stack ) );
-	ui->menusp = 0;
+	if ( ui ) {
+		ui->activemenu = NULL;
+		memset( ui->stack, 0, sizeof( ui->stack ) );
+		ui->menusp = 0;
+		ui->uiAllocated = qfalse;
+	}
 
     if ( strManager ) {
         strManager->Shutdown();
@@ -406,8 +405,32 @@ extern "C" void UI_Init( void )
 
     difficultyTable[DIF_MINORINCONVENIECE].tooltip = "PAIN."; // no changing this one, because that's the most accurate description
 
+	// cache redundant calulations
+	re.GetConfig( &ui->gpuConfig );
+
+	// for 640x480 virtualized screen
+	ui->scale = ui->gpuConfig.vidHeight * ( 1.0f / 768.0f );
+	if ( ui->gpuConfig.vidWidth * 768.0f > ui->gpuConfig.vidHeight * 1024.0f ) {
+		// wide screen
+		ui->bias = 0.5f * ( ui->gpuConfig.vidWidth - ( ui->gpuConfig.vidHeight * ( 1024.0f / 768.0f ) ) );
+	}
+	else {
+		// no wide screen
+		ui->bias = 0.0f;
+	}
+
+	// initialize the menu system
+	Menu_Cache();
+
+	ui->activemenu = NULL;
+	ui->menusp     = 0;
+
+	ui->uiAllocated = qfalse;
+
+	UI_Cache_f();
     UI_SetActiveMenu( UI_MENU_MAIN );
-    UI_Cache_f();
+
+	ui->uiAllocated = qtrue;
 
     // add commands
     Cmd_AddCommand( "ui.cache", UI_Cache_f );
@@ -417,7 +440,6 @@ extern "C" void UI_Init( void )
 
 void Menu_Cache( void )
 {
-
     ui->whiteShader = re.RegisterShader( "white" );
 }
 
@@ -475,6 +497,9 @@ extern "C" void UI_Refresh( int32_t realtime )
 	if ( ui->activemenu ) {
 		if ( ui->activemenu->fullscreen ) {
 			UI_DrawMenuBackground();
+		}
+		if ( ui->activemenu->track != FS_INVALID_HANDLE ) {
+			Snd_SetLoopingTrack( ui->activemenu->track );
 		}
 
 		if ( ui->activemenu->draw ) {

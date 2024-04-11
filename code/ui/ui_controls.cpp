@@ -6,9 +6,8 @@
 #define ID_CONTROLS     3
 #define ID_GAMEPLAY     4
 #define ID_TABLE        5
-
-#define ID_SETDEFAULTS  0
-#define ID_SAVECONFIG   1
+#define ID_SETDEFAULTS  6
+#define ID_SAVECONFIG   7
 
 #define ID_MOUSE_SENSITIVITY   0
 #define ID_MOUSE_ACCELERATION  1
@@ -35,8 +34,6 @@ typedef struct {
     qboolean rebinding;
 
     menuframework_t menu;
-
-    menutext_t mouseAcceleration;
 
     menutext_t mouseSensitivity;
     menutext_t mouseAcceleration;
@@ -372,6 +369,14 @@ static void ControlsSettingsMenu_EventCallback( void *ptr, int event )
     };
 }
 
+void ControlsSettingsMenu_Save( void )
+{
+}
+
+void ControlsSettingsMenu_SetDefaults( void )
+{
+}
+
 void ControlsSettingsMenu_Cache( void )
 {
 	uint64_t i;
@@ -385,6 +390,9 @@ void ControlsSettingsMenu_Cache( void )
     s_controlsOptionsInfo.menu.x = 0;
     s_controlsOptionsInfo.menu.y = 0;
     s_controlsOptionsInfo.menu.name = "Controls##SettingsMenu";
+    s_controlsOptionsInfo.menu.flags = MENU_DEFAULT_FLAGS;
+    s_controlsOptionsInfo.menu.titleFontScale = 3.5f;
+    s_controlsOptionsInfo.menu.textFontScale = 1.5f;
     
     Con_Printf( "Loading control bindings...\n" );
     SettingsMenu_LoadBindings();

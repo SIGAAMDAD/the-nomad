@@ -2629,6 +2629,16 @@ static void R_CreateBuiltinTextures( void )
 
 		width = glConfig.vidWidth;
 		height = glConfig.vidHeight;
+		switch ( r_multisampleType->i ) {
+		case AntiAlias_2xSSAA:
+			width *= 2;
+			height *= 2;
+			break;
+		case AntiAlias_4xSSAA:
+			width *= 4;
+			height *= 4;
+			break;
+		};
 
 		hdrFormat = GL_RGBA8;
 		if ( r_hdr->i && glContext.ARB_texture_float ) {
@@ -2649,6 +2659,10 @@ static void R_CreateBuiltinTextures( void )
 		
 		if ( r_drawSunRays->i ) {
 			rg.sunRaysImage = R_CreateImage("*sunRays", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, rgbFormat);
+		}
+
+		if ( r_bloom->i && r_hdr->i ) {
+//			rg.bloomImage = R_CreateImage( "", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA16F );
 		}
 
 		rg.renderDepthImage  = R_CreateImage( "*renderdepth",  NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );

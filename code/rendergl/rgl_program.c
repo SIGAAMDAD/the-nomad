@@ -893,7 +893,7 @@ void GLSL_InitGPUShaders( void )
 
     for ( i = 0; i < LIGHTDEF_COUNT; i++ ) {
         int lightType = i & LIGHTDEF_LIGHTTYPE_MASK;
-        qboolean fastLight = !( r_normalMapping->i || r_specularMapping->i );
+        qboolean fastLight = !( r_normalMapping->i || r_specularMapping->i || r_bloom->i );
 
         // skip impossible combos
 		if ( ( i & LIGHTDEF_USE_PARALLAXMAP ) && !r_parallaxMapping->i ) {
@@ -918,6 +918,10 @@ void GLSL_InitGPUShaders( void )
             N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_LIGHT\n" );
             if ( fastLight ) {
                 N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_FAST_LIGHT\n" );
+            }
+
+            if ( r_bloom->i ) {
+                N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_BLOOM\n" );
             }
 
             switch ( lightType ) {
