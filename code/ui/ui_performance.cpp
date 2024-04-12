@@ -653,6 +653,7 @@ void PerformanceSettingsMenu_Cache( void )
     s_performanceOptionsInfo->tabs.generic.type = MTYPE_TAB;
     s_performanceOptionsInfo->tabs.generic.id = ID_TABLE;
     s_performanceOptionsInfo->tabs.generic.eventcallback = PerformanceSettingsMenu_EventCallback;
+    s_performanceOptionsInfo->tabs.generic.name = "##SettingsMenuTabBar";
     s_performanceOptionsInfo->tabs.numitems = ID_TABLE;
     s_performanceOptionsInfo->tabs.items[0] = (menucommon_t *)&s_performanceOptionsInfo->video;
 	s_performanceOptionsInfo->tabs.items[1] = (menucommon_t *)&s_performanceOptionsInfo->performance;
