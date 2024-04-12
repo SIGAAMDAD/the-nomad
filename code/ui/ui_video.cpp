@@ -119,6 +119,7 @@ void VideoSettingsMenu_Cache( void )
     s_videoOptionsInfo->tabs.generic.type = MTYPE_TAB;
 	s_videoOptionsInfo->tabs.generic.font = FontCache()->AddFontToCache( "AlegreyaSC", "Bold" );
 	s_videoOptionsInfo->tabs.numitems = ID_TABLE;
+	s_videoOptionsInfo->tabs.name = "##SettingsMenuTabBar";
 	s_videoOptionsInfo->tabs.items[0] = (menucommon_t *)&s_videoOptionsInfo->video;
 	s_videoOptionsInfo->tabs.items[1] = (menucommon_t *)&s_videoOptionsInfo->performance;
 	s_videoOptionsInfo->tabs.items[2] = (menucommon_t *)&s_videoOptionsInfo->audio;
