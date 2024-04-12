@@ -318,7 +318,7 @@ static void TabList_Draw( menutab_t *tab )
 		ImGui::PushStyleColor( ImGuiCol_TabHovered, tab->tabColorFocused );
 		ImGui::PushStyleColor( ImGuiCol_TabActive, tab->tabColorActive );
 		for ( i = 0; i < tab->numitems; i++ ) {
-			if ( ImGui::BeginTabItem( tab->items[i]->name ) ) {
+			if ( ImGui::BeginTabItem( ( (menutext_t *)tab->items[i] )->text ) ) {
 				if ( tab->curitem != i ) {
 					if ( !( tab->generic.flags & QMF_SILENT ) && !( tab->items[i]->flags & QMF_SILENT ) ) {
 						Snd_PlaySfx( ui->sfx_select );

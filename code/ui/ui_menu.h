@@ -108,6 +108,7 @@ typedef struct {
 typedef struct {
     menucommon_t generic;
     
+    menucommon_t *data;
     float *color;
     int direction;
 } menuarrow_t;

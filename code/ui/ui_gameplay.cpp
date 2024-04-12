@@ -12,16 +12,21 @@
 typedef struct {
     menuframework_t menu;
 
-    menutable_t table;
+    menutext_t video;
+    menutext_t performance;
+    menutext_t audio;
+    menutext_t controls;
+    menutext_t gameplay;
+
+    menutab_t tabs;
+    menubutton_t save;
+    menubutton_t setDefaults;
 
     menutext_t difficulty;
     menutext_t debug;
 } gameplayOptionsInfo_t;
 
 static gameplayOptionsInfo_t *s_gameplayOptionsInfo;
-extern menutab_t settingsTabs;
-extern menubutton_t settingsResetDefaults;
-extern menubutton_t settingsSave;
 
 static void GameplaySettingsMenu_EventCallback( void *ptr, int event )
 {
@@ -68,6 +73,41 @@ void GameplaySettingsMenu_Cache( void )
     }
     memset( s_gameplayOptionsInfo, 0, sizeof( *s_gameplayOptionsInfo ) );
 
+    s_gameplayOptionsInfo->video.generic.type = MTYPE_TEXT;
+    s_gameplayOptionsInfo->video.generic.id = ID_VIDEO;
+    s_gameplayOptionsInfo->video.generic.eventcallback = GameplaySettingsMenu_EventCallback;
+    s_gameplayOptionsInfo->video.generic.font = AlegreyaSC;
+    s_gameplayOptionsInfo->video.text = "Video##VideoSettingsMenuTabBar";
+    s_gameplayOptionsInfo->video.color = color_white;
+    
+    s_gameplayOptionsInfo->performance.generic.type = MTYPE_TEXT;
+    s_gameplayOptionsInfo->performance.generic.id = ID_PERFORMANCE;
+    s_gameplayOptionsInfo->performance.generic.eventcallback = GameplaySettingsMenu_EventCallback;
+    s_gameplayOptionsInfo->performance.generic.font = AlegreyaSC;
+    s_gameplayOptionsInfo->performance.text = "Performance##PerformanceSettingsMenuTabBar";
+    s_gameplayOptionsInfo->performance.color = color_white;
+    
+    s_gameplayOptionsInfo->audio.generic.type = MTYPE_TEXT;
+    s_gameplayOptionsInfo->audio.generic.id = ID_AUDIO;
+    s_gameplayOptionsInfo->audio.generic.eventcallback = GameplaySettingsMenu_EventCallback;
+    s_gameplayOptionsInfo->audio.generic.font = AlegreyaSC;
+    s_gameplayOptionsInfo->audio.text = "Audio##AudioSettingsMenuTabBar";
+    s_gameplayOptionsInfo->audio.color = color_white;
+    
+    s_gameplayOptionsInfo->controls.generic.type = MTYPE_TEXT;
+    s_gameplayOptionsInfo->controls.generic.id = ID_CONTROLS;
+    s_gameplayOptionsInfo->controls.generic.eventcallback = GameplaySettingsMenu_EventCallback;
+    s_gameplayOptionsInfo->controls.generic.font = AlegreyaSC;
+    s_gameplayOptionsInfo->controls.text = "Controls##ControlsSettingsMenuTabBar";
+    s_gameplayOptionsInfo->controls.color = color_white;
+    
+    s_gameplayOptionsInfo->gameplay.generic.type = MTYPE_TEXT;
+    s_gameplayOptionsInfo->gameplay.generic.id = ID_GAMEPLAY;
+    s_gameplayOptionsInfo->gameplay.generic.eventcallback = GameplaySettingsMenu_EventCallback;
+    s_gameplayOptionsInfo->gameplay.generic.font = AlegreyaSC;
+    s_gameplayOptionsInfo->gameplay.text = "Gameplay##GameplaySettingsMenuTabBar";
+    s_gameplayOptionsInfo->gameplay.color = color_white;
+
     s_gameplayOptionsInfo->menu.fullscreen = qtrue;
     s_gameplayOptionsInfo->menu.width = ui->gpuConfig.vidWidth;
     s_gameplayOptionsInfo->menu.height = ui->gpuConfig.vidHeight;
@@ -76,12 +116,12 @@ void GameplaySettingsMenu_Cache( void )
     s_gameplayOptionsInfo->menu.flags = MENU_DEFAULT_FLAGS;
     s_gameplayOptionsInfo->menu.x = 0;
     s_gameplayOptionsInfo->menu.y = 0;
-    s_gameplayOptionsInfo->menu.name = "Audio##SettingsMenu";
+    s_gameplayOptionsInfo->menu.name = "Gameplay";
 
-    Menu_AddItem( &s_gameplayOptionsInfo->menu, &settingsTabs );
+    Menu_AddItem( &s_gameplayOptionsInfo->menu, &s_gameplayOptionsInfo->tabs );
 
-    Menu_AddItem( &s_gameplayOptionsInfo->menu, &settingsSave );
-    Menu_AddItem( &s_gameplayOptionsInfo->menu, &settingsResetDefaults );
+    Menu_AddItem( &s_gameplayOptionsInfo->menu, &s_gameplayOptionsInfo->setDefaults );
+    Menu_AddItem( &s_gameplayOptionsInfo->menu, &s_gameplayOptionsInfo->save );
 }
 
 void UI_GameplaySettingsMenu( void )
