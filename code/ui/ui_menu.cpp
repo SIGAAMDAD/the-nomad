@@ -185,8 +185,6 @@ static void Button_Draw( menubutton_t *button )
 	Assert( button->generic.type == MTYPE_BUTTON );
 
 	if ( ImGui::Button( button->generic.name ) ) {
-		Snd_PlaySfx( ui->sfx_select );
-		button->generic.eventcallback( button, EVENT_ACTIVATED );
 	}
 }
 
@@ -195,8 +193,6 @@ static void Arrow_Draw( menuarrow_t *arrow )
 	Assert( arrow->generic.type == MTYPE_ARROW );
 
 	if ( ImGui::ArrowButton( arrow->generic.name, arrow->direction ) ) {
-		Snd_PlaySfx( ui->sfx_select );
-		arrow->generic.eventcallback( arrow, EVENT_ACTIVATED );
 	}
 }
 
@@ -216,12 +212,10 @@ static void Slider_Draw( menuslider_t *slider )
 
 	if ( slider->isIntegral ) {
 		if ( ImGui::SliderInt( slider->generic.name, (int *)&slider->curvalue, (int)slider->minvalue, (int)slider->maxvalue, "%d", flags ) ) {
-			Snd_PlaySfx( ui->sfx_select );
 		}
 		slider->curvalue = (int)Com_Clamp( slider->minvalue, slider->maxvalue, slider->curvalue );
 	} else {
 		if ( ImGui::SliderFloat( slider->generic.name, &slider->curvalue, (int)slider->minvalue, (int)slider->maxvalue, "%.3f", flags ) ) {
-			Snd_PlaySfx( ui->sfx_select );
 		}
 		slider->curvalue = Com_Clamp( slider->minvalue, slider->maxvalue, slider->curvalue );
 	}
@@ -235,13 +229,13 @@ static void RadioButton_Draw( menuswitch_t *button )
 		button->curvalue ) )
 	{
 		if ( !( button->generic.flags & QMF_INACTIVE ) ) {
-			if ( !( button->generic.flags & QMF_SILENT ) ) {
-				Snd_PlaySfx( ui->sfx_select );
-			}
 			button->curvalue = !button->curvalue;
-			if ( button->generic.eventcallback ) {
-				button->generic.eventcallback( button, EVENT_ACTIVATED );
-			}
+		}
+		if ( !( button->generic.flags & QMF_SILENT ) ) {
+			Snd_PlaySfx( ui->sfx_select );
+		}
+		if ( button->generic.eventcallback ) {
+			button->generic.eventcallback( button, EVENT_ACTIVATED );
 		}
 	}
 }
@@ -251,9 +245,6 @@ static void ListEx_Draw( menulistex_t *list )
 	int i;
 
 	if ( ImGui::BeginMenu( list->generic.name, ( list->generic.flags & QMF_INACTIVE ) ) ) {
-		if ( ImGui::IsItemActive() && ImGui::IsItemClicked() && !( list->generic.flags & QMF_SILENT ) ) {
-			Snd_PlaySfx( ui->sfx_select );
-		}
 		for ( i = 0; i < list->numitems; i++ ) {
 			if ( list->items[i]->flags & QMF_OWNERDRAW ) {
 				list->items[i]->ownerdraw( list->items[i] );
@@ -281,9 +272,6 @@ static void ListEx_Draw( menulistex_t *list )
 		}
 		ImGui::EndMenu();
 	}
-	if ( !ImGui::IsItemActive() && ImGui::IsItemClicked() && !( list->generic.flags & QMF_SILENT ) ) {
-		Snd_PlaySfx( ui->sfx_select );
-	}
 }
 
 static void Tree_Draw( menutree_t *tree )
@@ -293,14 +281,8 @@ static void Tree_Draw( menutree_t *tree )
 	flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_CollapsingHeader;
 	
 	if ( ImGui::TreeNodeEx( (void *)(uintptr_t)tree->generic.name, flags, tree->generic.name ) ) {
-		if ( ImGui::IsItemClicked() && !( tree->generic.flags & QMF_SILENT ) ) {
-			Snd_PlaySfx( ui->sfx_select );
-		}
 		Menu_DrawItemList( (void **)tree->items, tree->numitems );
 		ImGui::TreePop();
-	}
-	else if ( !ImGui::IsItemActive() && ImGui::IsItemClicked() && !( tree->generic.flags & QMF_SILENT ) ) {
-		Snd_PlaySfx( ui->sfx_select );
 	}
 }
 
@@ -311,7 +293,7 @@ static void TabList_Draw( menutab_t *tab )
 	Assert( tab->generic.type == MTYPE_TAB );
 	
 	if ( ImGui::BeginTabBar( tab->generic.name ) ) {
-		if ( ImGui::IsItemActive() && ImGui::IsItemClicked() && !( tab->generic.flags & QMF_SILENT ) ) {
+		if ( ImGui::IsItemClicked() && !( tab->generic.flags & QMF_SILENT ) ) {
 			Snd_PlaySfx( ui->sfx_select );
 		}
 		ImGui::PushStyleColor( ImGuiCol_Tab, tab->tabColor );
@@ -320,20 +302,21 @@ static void TabList_Draw( menutab_t *tab )
 		for ( i = 0; i < tab->numitems; i++ ) {
 			if ( ImGui::BeginTabItem( ( (menutext_t *)tab->items[i] )->text ) ) {
 				if ( tab->curitem != i ) {
-					if ( !( tab->generic.flags & QMF_SILENT ) && !( tab->items[i]->flags & QMF_SILENT ) ) {
+					if ( !( tab->items[i]->flags & QMF_SILENT ) ) {
 						Snd_PlaySfx( ui->sfx_select );
 					}
 					tab->curitem = i;
-					if ( tab->generic.eventcallback ) {
-						tab->generic.eventcallback( tab, EVENT_ACTIVATED );
+					if ( tab->items[i]->eventcallback ) {
+						tab->items[i]->eventcallback( tab->items[i], EVENT_ACTIVATED );
 					}
+					ImGui::EndTabItem();
 				}
-				ImGui::EndTabItem();
 			}
 		}
+		ImGui::PopStyleColor( 3 );
 		ImGui::EndTabBar();
 	}
-	if ( !ImGui::IsItemActive() && ImGui::IsItemClicked() && !( tab->generic.flags & QMF_SILENT ) ) {
+	else if ( !ImGui::IsItemActivated() && ImGui::IsItemClicked() && !( tab->generic.flags & QMF_SILENT ) ) {
 		Snd_PlaySfx( ui->sfx_select );
 	}
 }
@@ -345,12 +328,26 @@ static void List_Draw( menulist_t *list )
 
 	Assert( list->generic.type == MTYPE_LIST );
 
+	if ( ImGui::ArrowButton( "##%sLeft", ImGuiDir_Left ) ) {
+		if ( !( list->generic.flags & QMF_SILENT ) ) {
+			Snd_PlaySfx( ui->sfx_select );
+		}
+		if ( list->curitem == 0 ) {
+			list->curitem = list->numitems - 1;
+		} else {
+			list->curitem--;
+		}
+	}
+	ImGui::SameLine();
 	if ( ImGui::BeginCombo( va( "%s##%sDropDown", list->generic.name, list->generic.name ), list->itemnames[list->curitem] ) ) {
-		if ( ImGui::IsItemActive() && ImGui::IsItemClicked() && !( list->generic.flags & QMF_SILENT ) ) {
+		if ( ImGui::IsItemClicked() && !( list->generic.flags & QMF_SILENT ) ) {
 			Snd_PlaySfx( ui->sfx_select );
 		}
 		for ( i = 0; i < list->numitems; i++ ) {
 			if ( ImGui::Selectable( va( "%s##%sSelectable_%i", list->itemnames[i], list->itemnames[i], i ), list->curitem == i ) ) {
+				if ( !( list->generic.flags & QMF_SILENT ) ) {
+					Snd_PlaySfx( ui->sfx_select );
+				}
 				list->curitem = i;
 				if ( list->generic.eventcallback ) {
 					list->generic.eventcallback( list, EVENT_ACTIVATED );
@@ -359,8 +356,19 @@ static void List_Draw( menulist_t *list )
 		}
 		ImGui::EndCombo();
 	}
-	if ( !ImGui::IsItemActive() && ImGui::IsItemClicked() && !( list->generic.flags & QMF_SILENT ) ) {
+	else if ( !ImGui::IsItemActivated() && ImGui::IsItemClicked() && !( list->generic.flags & QMF_SILENT ) ) {
 		Snd_PlaySfx( ui->sfx_select );
+	}
+	ImGui::SameLine();
+	if ( ImGui::ArrowButton( "##%sRight", ImGuiDir_Right ) ) {
+		if ( !( list->generic.flags & QMF_SILENT ) ) {
+			Snd_PlaySfx( ui->sfx_select );
+		}
+		if ( list->curitem >= list->numitems - 1 ) {
+			list->curitem = 0;
+		} else {
+			list->curitem++;
+		}
 	}
 }
 
@@ -414,6 +422,15 @@ static void Text_Draw( menutext_t *text )
 		text->generic.ownerdraw( text );
 	} else {
 		ImGui::TextUnformatted( text->text );
+	}
+
+	if ( ImGui::IsItemClicked() ) {
+		if ( !( text->generic.flags & QMF_SILENT ) ) {
+			Snd_PlaySfx( ui->sfx_select );
+		}
+		if ( text->generic.eventcallback ) {
+			text->generic.eventcallback( text, EVENT_ACTIVATED );
+		}
 	}
 
 	if ( colorChanged ) {
@@ -569,12 +586,6 @@ static void Menu_DrawItemGeneric( menucommon_t *generic )
 	}
 
 	generic->focused = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
-
-	if ( ImGui::IsItemClicked() && !( generic->flags & QMF_GRAYED ) ) {
-		if ( generic->eventcallback ) {
-			generic->eventcallback( generic, EVENT_ACTIVATED );
-		}
-	}
 	ImGui::PopStyleColor( colorDepth );
 
 	ImGui::SetWindowFontScale( fontScale * ui->scale );
@@ -593,7 +604,7 @@ static void Menu_DrawItemList( void **items, int numitems )
 }
 
 void Menu_Draw( menuframework_t *menu ) {
-	ImGui::Begin( menu->name, NULL, menu->flags );
+	ImGui::Begin( va( "%s##%sMainMenu", menu->name, menu->name ), NULL, menu->flags );
 	ImGui::SetWindowPos( ImVec2( menu->x, menu->y ) );
 	ImGui::SetWindowSize( ImVec2( menu->width, menu->height ) );
 
@@ -619,13 +630,17 @@ void MenuEvent_ArrowLeft( void *ptr, int event )
 		return;
 	}
 
-	item = ( (menulist_t *)ptr )->curitem;
-	if ( item == 0 ) {
-		item = ( (menulist_t *)ptr )->numitems - 1;
-	} else {
-		item--;
-	}
-	( (menulist_t *)ptr )->curitem = item;
+	switch ( ( (menuarrow_t *)ptr )->data->type ) {
+	case MTYPE_LIST: {
+		item = ( (menulist_t *)( (menuarrow_t *)ptr )->data )->curitem;
+		if ( item == 0 ) {
+			item = ( (menulist_t *)( (menuarrow_t *)ptr )->data )->numitems - 1;
+		} else {
+			item--;
+		}
+		( (menulist_t *)( (menuarrow_t *)ptr )->data )->curitem = item;
+		break; }
+	};
 }
 
 void MenuEvent_ArrowRight( void *ptr, int event )
@@ -636,13 +651,17 @@ void MenuEvent_ArrowRight( void *ptr, int event )
 		return;
 	}
 
-	item = ( (menulist_t *)ptr )->curitem;
-	if ( item >= ( (menulist_t *)ptr )->numitems - 1 ) {
-		item = 0;
-	} else {
-		item++;
-	}
-	( (menulist_t *)ptr )->curitem = item;
+	switch ( ( (menuarrow_t *)ptr )->data->type ) {
+	case MTYPE_LIST: {
+		item = ( (menulist_t *)( (menuarrow_t *)ptr )->data )->curitem;
+		if ( item >= ( (menulist_t *)( (menuarrow_t *)ptr )->data )->numitems - 1 ) {
+			item = 0;
+		} else {
+			item++;
+		}
+		( (menulist_t *)( (menuarrow_t *)ptr )->data )->curitem = item;
+		break; }
+	};
 }
 
 void Table_AddRow( menutable_t *table ) {

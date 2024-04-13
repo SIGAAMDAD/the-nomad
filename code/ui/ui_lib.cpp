@@ -47,8 +47,8 @@ qboolean UI_MenuTitle( const char *label, float fontScale )
 	cursorPos = ImGui::GetCursorScreenPos();
 
 //	ImGui::SetWindowFontScale( 1.5f * scale );
-	ImGui::SetCursorScreenPos( ImVec2( 16 * ui->scale, 700 * ui->scale ) );
-	if ( ui->menustate != UI_MENU_MAIN ) {
+	ImGui::SetCursorScreenPos( ImVec2( 16 * ui->scale, 680 * ui->scale ) );
+	if ( ui->menusp > 1 ) {
 		ImGui::Image( (ImTextureID)(uintptr_t)( ui->backHovered ? ui->back_1 : ui->back_0 ), ImVec2( 256 * ui->scale, 72 * ui->scale ) );
 		ui->backHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
 		if ( ImGui::IsItemClicked() ) {

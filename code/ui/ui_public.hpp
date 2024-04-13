@@ -68,5 +68,6 @@ extern "C" void UI_Refresh( int32_t realtime );
 // commonly used fonts in the UI system
 extern ImFont *AlegreyaSC;
 extern ImFont *RobotoMono;
+extern ImFont *PressStart2P;
 
 #endif

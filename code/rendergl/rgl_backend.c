@@ -548,7 +548,7 @@ static const void *RB_PostProcess(const void *data)
 	if ( rg.msaaResolveFbo ) {
 		// Resolve the MSAA before anything else
 		// Can't resolve just part of the MSAA FBO, so multiple views will suffer a performance hit here
-//		FBO_FastBlit( rg.renderFbo, NULL, rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+		FBO_FastBlit( rg.renderFbo, NULL, rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
 		srcFbo = rg.msaaResolveFbo;
 	}
 
@@ -576,8 +576,8 @@ static const void *RB_PostProcess(const void *data)
 			autoExposure = r_autoExposure->i || r_forceAutoExposure->i;
 			RB_ToneMap(srcFbo, srcBox, NULL, dstBox, autoExposure);
 		}
-		else if (r_cameraExposure->f == 0.0f ) {
-//			FBO_FastBlit( srcFbo, srcBox, NULL, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+		else if ( r_cameraExposure->f == 0.0f ) {
+			FBO_FastBlit( srcFbo, srcBox, NULL, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
 		}
 		else {
 			vec4_t color;
@@ -587,7 +587,7 @@ static const void *RB_PostProcess(const void *data)
 			color[2] = pow( 2, r_cameraExposure->f ); //exp2(r_cameraExposure->f);
 			color[3] = 1.0f;
 
-//			FBO_Blit( srcFbo, srcBox, NULL, NULL, dstBox, NULL, color, 0 );
+			FBO_Blit( srcFbo, srcBox, NULL, NULL, dstBox, NULL, color, 0 );
 		}
 	}
 

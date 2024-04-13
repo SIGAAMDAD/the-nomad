@@ -109,7 +109,8 @@ static uniformInfo_t uniformsInfo[UNIFORM_COUNT] = {
 
     { "u_GammaAmount",          GLSL_FLOAT },
 
-    { "u_NumLights",            GLSL_INT }
+    { "u_NumLights",            GLSL_INT },
+    { "u_Exposure",             GLSL_FLOAT }
 };
 
 static shaderProgram_t *hashTable[MAX_RENDER_SHADERS];
@@ -872,6 +873,15 @@ void GLSL_InitGPUShaders( void )
         if ( i & GENERICDEF_USE_RGBAGEN ) {
             N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_RGBGEN\n" );
         }
+//        if ( r_bloom->i ) {
+//            N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_BLOOM\n" );
+//        }
+//        if ( r_toneMap->i && r_toneMapType->i == 1 ) {
+//            N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_EXPOSURE_TONE_MAPPING\n" );
+//        }
+        if ( r_hdr->i ) {
+            N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_HDR\n" );
+        }
 
         if ( !GLSL_InitGPUShader( &rg.genericShader[i], "generic", attribs, qtrue, extradefines, qtrue, fallbackShader_generic_vp, fallbackShader_generic_fp ) ) {
             ri.Error( ERR_FATAL, "Could not load generic shader!" );
@@ -920,8 +930,14 @@ void GLSL_InitGPUShaders( void )
                 N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_FAST_LIGHT\n" );
             }
 
-            if ( r_bloom->i ) {
-                N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_BLOOM\n" );
+//            if ( r_bloom->i && r_postProcess->i && r_arb_framebuffer_object->i ) {
+//                N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_BLOOM\n" );
+//            }
+//            if ( r_toneMap->i && r_toneMapType->i == 1 ) {
+//                N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_EXPOSURE_TONE_MAPPING\n" );
+//            }
+            if ( r_hdr->i && r_postProcess->i && r_arb_framebuffer_object->i ) {
+                N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_HDR\n" );
             }
 
             switch ( lightType ) {

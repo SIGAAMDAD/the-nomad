@@ -328,6 +328,8 @@ typedef enum {
 
     UNIFORM_NUM_LIGHTS,
 
+    UNIFORM_EXPOSURE,
+
     UNIFORM_COUNT
 } uniform_t;
 
@@ -859,6 +861,11 @@ typedef struct {
     uint64_t    numPolys;
     srfPoly_t   *polys;
 
+    float       sunShadowMvp[4][16];
+	float       sunDir[4];
+	float       sunCol[4];
+	float       sunAmbCol[4];
+
     float       autoExposureMinMax[2];
 	float       toneMinAvgMaxLinear[3];
 } renderSceneDef_t;
@@ -1303,6 +1310,7 @@ extern cvar_t *r_floatLightmap;
 extern cvar_t *r_postProcess;
 extern cvar_t *r_lightmap;
 
+extern cvar_t *r_toneMapType;
 extern cvar_t *r_toneMap;
 extern cvar_t *r_forceToneMap;
 extern cvar_t *r_forceToneMapMin;

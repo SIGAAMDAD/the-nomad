@@ -322,11 +322,6 @@ SRC=\
 	$(O)/ui/ui_pause.o \
 	$(O)/ui/ui_newgame.o \
 	$(O)/ui/ui_loadgame.o \
-	$(O)/ui/ui_performance.o \
-	$(O)/ui/ui_video.o \
-	$(O)/ui/ui_audio.o \
-	$(O)/ui/ui_controls.o \
-	$(O)/ui/ui_gameplay.o \
 	$(O)/ui/ui_mods.o \
 
 MAKE=make

@@ -315,6 +315,10 @@ void ModsMenu_Draw( void )
     
 	ui->menubackShader = mods->backgroundShader;
     Snd_SetLoopingTrack( mods->ambience );
+
+	ImGui::Begin( "##ModsMenuMainMenuConfigMenu", NULL, mods->menu.flags );
+	ImGui::SetWindowSize( ImVec2( mods->menu.width, mods->menu.height ) );
+	ImGui::SetWindowPos( ImVec2( mods->menu.x, mods->menu.y ) );
     
 	UI_EscapeMenuToggle();
     if ( UI_MenuTitle( mods->titleString->value, 1.75f ) ) {
@@ -426,6 +430,8 @@ void ModsMenu_Draw( void )
    	}
    	
     ImGui::EndTable();
+
+	ImGui::End();
 }
 
 inline module_s& module_s::operator=( module_s& other ) {
@@ -579,6 +585,7 @@ void ModsMenu_Cache( void )
 
 	mods->menu.draw = ModsMenu_Draw;
 	mods->menu.fullscreen = qtrue;
+	mods->menu.flags = MENU_DEFAULT_FLAGS;
 	mods->menu.width = ui->gpuConfig.vidWidth;
 	mods->menu.height = ui->gpuConfig.vidHeight;
 	mods->menu.name = mods->titleString->value;

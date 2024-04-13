@@ -19,67 +19,1159 @@
 #define ID_SETDEFAULTS  6
 #define ID_SAVECONFIG   7
 
+#define PRESET_LOW         0
+#define PRESET_NORMAL      1
+#define PRESET_PERFORMANCE 2
+#define PRESET_QUALITY     3
+#define PRESET_CUSTOM      4
+#define NUM_PRESETS        5
+
 typedef struct {
+    const char *command;
+    const char *label;
+    int32_t id;
+    int32_t defaultBind1;
+    int32_t defaultBind2;
+    int32_t bind1;
+    int32_t bind2;
+    
+    menutext_t binding;
+    menutext_t name;
+} bind_t;
+
+typedef struct {
+	const char **windowModes;
+	const char **windowSizes;
+	const char **vsyncList;
+
+	int numWindowModes;
+	int numWindowSizes;
+	int numVSync;
+
+	int vsync;
+	int windowMode;
+	int windowResolution;
+	int windowWidth;
+	int windowHeight;
+
+	float gamma;
+	float exposure;
+} videoSettings_t;
+
+typedef struct {
+	const char **multisampleTypes;
+	const char **anisotropyTypes;
+	const char **textureDetails;
+	const char **textureFilters;
+
+	int numMultisampleTypes;
+	int numAnisotropyTypes;
+	int numTextureDetails;
+	int numTextureFilters;
+
+	int multisampleType;
+	int anisotropicFilter;
+	int textureDetail;
+	int textureFilter;
+
+	int toneMappingType;
+
+	int vertexLighting;
+	int dynamicLighting;
+	int bloom;
+	int pbr;
+	int hdr;
+	int postProcessing;
+	int normalMapping;
+	int specularMapping;
+	int depthMapping;
+	int toneMapping;
+} performanceSettings_t;
+
+typedef struct {
+	int sfxVolume;
+	int musicVolume;
+	int masterVolume;
+
+	// size = uint16_t
+	int sfxOn;
+	int musicOn;
+} audioSettings_t;
+
+typedef struct {
+	bind_t *keybinds;
+	uint64_t numBinds;
+
+	int mouseAcceleration;
+	float mouseSensitivity;
+
+	bind_t *rebindKey;
+} controlsSettings_t;
+
+typedef struct {
+	int mouseCursor;
+	int difficulty;
+	int debugPrint;
+} gameplaySettings_t;
+
+typedef struct settingsMenu_s {
 	menuframework_t menu;
-} settings_t;
 
-static settings_t *initial;
-static settings_t *settings;
+	struct settingsMenu_s *presets;
 
-static void SettingsMenu_EventCallback( void *ptr, int event )
+	nhandle_t save_0;
+	nhandle_t save_1;
+
+	nhandle_t reset_0;
+	nhandle_t reset_1;
+
+	int lastChild;
+
+	qboolean saveHovered;
+	qboolean setDefaultsHovered;
+
+	performanceSettings_t performance;
+	videoSettings_t video;
+	audioSettings_t audio;
+	controlsSettings_t controls;
+
+	const char *hintLabel;
+	const char *hintMessage;
+} settingsMenu_t;
+
+static settingsMenu_t *s_settingsMenu;
+
+const char *Hunk_CopyString( const char *str, ha_pref pref ) {
+    char *out;
+    uint64_t len;
+
+    len = strlen( str ) + 1;
+    out = (char *)Hunk_Alloc( len, pref );
+    N_strncpyz( out, str, len );
+
+    return out;
+}
+
+void UI_SettingsWriteBinds_f( void )
 {
-	if ( event != EVENT_ACTIVATED ) {
+    fileHandle_t f;
+    uint32_t i;
+
+    f = FS_FOpenWrite( "bindings.cfg" );
+    if ( f == FS_INVALID_HANDLE ) {
+        N_Error( ERR_FATAL, "UI_SettingsWriteBinds_f: failed to write bindings" );
+    }
+
+    for ( i = 0; i < s_settingsMenu->controls.numBinds; i++ ) {
+        FS_Printf( f, "\"%s\" \"%s\" %i \"%s\" \"%s\" \"%s\" \"%s\"" GDR_NEWLINE,
+            s_settingsMenu->controls.keybinds[i].command,
+            s_settingsMenu->controls.keybinds[i].label,
+            s_settingsMenu->controls.keybinds[i].id,
+            Key_KeynumToString( s_settingsMenu->controls.keybinds[i].defaultBind1 ),
+            Key_KeynumToString( s_settingsMenu->controls.keybinds[i].defaultBind2 ),
+            Key_KeynumToString( s_settingsMenu->controls.keybinds[i].bind1 ),
+            Key_KeynumToString( s_settingsMenu->controls.keybinds[i].bind2 )
+        );
+    }
+
+    FS_FClose( f );
+}
+
+static void SettingsMenu_LoadBindings( void )
+{
+    union {
+        void *v;
+        char *b;
+    } f;
+    const char **text, *text_p, *tok;
+    bind_t *bind;
+    uint64_t i;
+
+    FS_LoadFile( "bindings.cfg", &f.v );
+    if ( !f.v ) {
+        N_Error( ERR_DROP, "SettingsMenu_Cache: no bindings file" );
+    }
+
+    text_p = f.b;
+    text = &text_p;
+
+    COM_BeginParseSession( "bindings.cfg" );
+
+    s_settingsMenu->controls.numBinds = 0;
+    while ( 1 ) {
+        tok = COM_ParseExt( text, qtrue );
+        if ( !tok || !tok[0] ) {
+            break;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( !tok[0] ) {
+            COM_ParseError( "missing parameter for keybind 'label'" );
+            break;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( !tok[0] ) {
+            COM_ParseError( "missing paramter for keybind 'id'" );
+            break;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( !tok[0] ) {
+            COM_ParseError( "missing paramter for keybind 'defaultBinding1'" );
+            break;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( !tok[0] ) {
+            COM_ParseError( "missing paramter for keybind 'defaultBinding2'" );
+            break;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( !tok[0] ) {
+            COM_ParseError( "missing paramter for keybind 'bind1'" );
+            break;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( !tok[0] ) {
+            COM_ParseError( "missing paramter for keybind 'bind2'" );
+            break;
+        }
+
+        s_settingsMenu->controls.numBinds++;
+    }
+
+    s_settingsMenu->controls.keybinds = (bind_t *)Hunk_Alloc( sizeof( *s_settingsMenu->controls.keybinds ) * s_settingsMenu->controls.numBinds, h_high );
+    text_p = f.b;
+    text = &text_p;
+
+    bind = s_settingsMenu->controls.keybinds;
+    for ( i = 0; i < s_settingsMenu->controls.numBinds; i++ ) {
+        tok = COM_ParseExt( text, qtrue );
+        if ( !tok || !tok[0] ) {
+            break;
+        }
+        bind->command = Hunk_CopyString( tok, h_high );
+
+        tok = COM_ParseExt( text, qfalse );
+        bind->label = Hunk_CopyString( tok, h_high );
+
+        tok = COM_ParseExt( text, qfalse );
+        bind->id = atoi( tok );
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( tok[0] != '-' && tok[1] != '1' ) {
+            bind->defaultBind1 = Key_StringToKeynum( tok );
+        } else {
+            bind->defaultBind1 = -1;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( tok[0] != '-' && tok[1] != '1' ) {
+            bind->defaultBind2 = Key_StringToKeynum( tok );
+        } else {
+            bind->defaultBind2 = -1;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( tok[0] != '-' && tok[1] != '1' ) {
+            bind->bind1 = Key_StringToKeynum( tok );
+        } else {
+            bind->bind1 = -1;
+        }
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( tok[0] != '-' && tok[1] != '1' ) {
+            bind->bind2 = Key_StringToKeynum( tok );
+        } else {
+            bind->bind2 = -1;
+        }
+
+        if ( bind->defaultBind1 != -1 ) {
+            bind->bind1 = bind->defaultBind1;
+        }
+        if ( bind->defaultBind2 != -1 ) {
+            bind->bind2 = bind->defaultBind2;
+        }
+
+        Con_Printf( "Added keybind \"%s\": \"%s\"\n", bind->command, bind->label );
+
+        bind++;
+    }
+
+	Con_Printf( "Loaded %lu bindings.\n", s_settingsMenu->controls.numBinds );
+
+    FS_FreeFile( f.v );
+}
+
+static void SettingsMenu_InitPresets( void ) {
+	s_settingsMenu->presets = (settingsMenu_t *)Hunk_Alloc( sizeof( *s_settingsMenu->presets ) * NUM_PRESETS, h_high );
+}
+
+static void SettingsMenu_TabBar( void ) {
+	if ( ImGui::BeginTabBar( "##SettingsMenuTabBar" ) ) {
+		ImGui::PushStyleColor( ImGuiCol_Tab, ImVec4( 1.0f, 1.0f, 1.0f, 0.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_TabActive, ImVec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_TabHovered, ImVec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
+
+		FontCache()->SetActiveFont( AlegreyaSC );
+		if ( ImGui::BeginTabItem( "Video" ) ) {
+			if ( s_settingsMenu->lastChild != ID_VIDEO ) {
+				s_settingsMenu->lastChild = ID_VIDEO;
+				Snd_PlaySfx( ui->sfx_select );
+			}
+			ImGui::EndTabItem();
+		}
+		if ( ImGui::BeginTabItem( "Performance" ) ) {
+			if ( s_settingsMenu->lastChild != ID_PERFORMANCE ) {
+				s_settingsMenu->lastChild = ID_PERFORMANCE;
+				Snd_PlaySfx( ui->sfx_select );
+			}
+			ImGui::EndTabItem();
+		}
+		if ( ImGui::BeginTabItem( "Audio" ) ) {
+			if ( s_settingsMenu->lastChild != ID_AUDIO ) {
+				s_settingsMenu->lastChild = ID_AUDIO;
+				Snd_PlaySfx( ui->sfx_select );
+			}
+			ImGui::EndTabItem();
+		}
+		if ( ImGui::BeginTabItem( "Controls" ) ) {
+			if ( s_settingsMenu->lastChild != ID_CONTROLS ) {
+				s_settingsMenu->lastChild = ID_CONTROLS;
+				Snd_PlaySfx( ui->sfx_select );
+			}
+			ImGui::EndTabItem();
+		}
+		if ( ImGui::BeginTabItem( "Gameplay" ) ) {
+			if ( s_settingsMenu->lastChild != ID_GAMEPLAY ) {
+				s_settingsMenu->lastChild = ID_GAMEPLAY;
+				Snd_PlaySfx( ui->sfx_select );
+			}
+			ImGui::EndTabItem();
+		}
+
+		ImGui::PopStyleColor( 3 );
+		ImGui::EndTabBar();
+	}
+}
+
+static void SettingsMenu_Text( const char *name, const char *hint )
+{
+	ImGui::TextUnformatted( name );
+	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) || ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled
+		| ImGuiHoveredFlags_DelayNone ) )
+	{
+		s_settingsMenu->hintLabel = name;
+		s_settingsMenu->hintMessage = hint;
+	}
+}
+
+static void SettingsMenu_List( const char *label, const char **itemnames, int numitems, int *curitem, bool enabled )
+{
+	int i;
+
+	if ( ImGui::BeginCombo( va( "##%sSettingsMenuConfigList", label ), itemnames[*curitem] ) ) {
+		if ( ImGui::IsItemActivated() && ImGui::IsItemClicked() && enabled ) {
+			Snd_PlaySfx( ui->sfx_select );
+		}
+		for ( i = 0; i < numitems; i++ ) {
+			if ( ImGui::Selectable( va( "%s##%sSettingsMenuConfigList", itemnames[i], label ), ( *curitem == i ) ) ) {
+				if ( enabled ) {
+					Snd_PlaySfx( ui->sfx_select );
+					*curitem = i;
+				}
+			}
+		}
+		ImGui::EndCombo();
+	}
+	if ( !ImGui::IsItemActivated() && ImGui::IsItemClicked() && enabled ) {
+		Snd_PlaySfx( ui->sfx_select );
+	}
+}
+
+static void SettingsMenu_MultiAdjustable( const char *name, const char *label, const char *hint, const char **itemnames, int numitems,
+	int *curitem, bool enabled )
+{
+	if ( !enabled ) {
+		ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_FrameBg, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_FrameBgActive, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
+	}
+
+	ImGui::TableNextColumn();
+	SettingsMenu_Text( name, hint );
+	ImGui::TableNextColumn();
+	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigLeft", label ), ImGuiDir_Left ) ) {
+		if ( enabled ) {
+			Snd_PlaySfx( ui->sfx_select );
+			( *curitem )--;
+			if ( *curitem < 0 ) {
+				*curitem = 0;
+			}
+		}
+	}
+	ImGui::SameLine();
+	SettingsMenu_List( label, itemnames, numitems, curitem, enabled );
+	ImGui::SameLine();
+	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigRight", label ), ImGuiDir_Right ) ) {
+		Snd_PlaySfx( ui->sfx_select );
+		( *curitem )++;
+		if ( *curitem > numitems - 1 ) {
+			*curitem = numitems - 1;
+		}
+	}
+
+	if ( !enabled ) {
+		ImGui::PopStyleColor( 4 );
+	}
+}
+
+static void SettingsMenu_MultiSliderFloat( const char *name, const char *label, const char *hint, float *curvalue, float minvalue, float maxvalue,
+	float delta )
+{
+	ImGui::TableNextColumn();
+	SettingsMenu_Text( name, hint );
+	ImGui::TableNextColumn();
+	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigLeft", label ), ImGuiDir_Left ) ) {
+		Snd_PlaySfx( ui->sfx_select );
+		( *curvalue ) -= delta;
+		if ( *curvalue < minvalue ) {
+			*curvalue = minvalue;
+		}
+	}
+	ImGui::SameLine();
+	if ( ImGui::SliderFloat( va( "##%sSettingsMenuConfigSlider", label ), curvalue, minvalue, maxvalue ) ) {
+		Snd_PlaySfx( ui->sfx_select );
+	}
+	ImGui::SameLine();
+	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigRight", label ), ImGuiDir_Right ) ) {
+		Snd_PlaySfx( ui->sfx_select );
+		( *curvalue ) += delta;
+		if ( *curvalue > maxvalue ) {
+			*curvalue = maxvalue;
+		}
+	}
+}
+
+static void SettingsMenu_MultiSliderInt( const char *name, const char *label, const char *hint, int *curvalue, int minvalue, int maxvalue,
+	int delta, bool enabled )
+{
+	if ( !enabled ) {
+		ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_FrameBg, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_FrameBgActive, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
+	}
+
+	ImGui::TableNextColumn();
+	SettingsMenu_Text( name, hint );
+	ImGui::TableNextColumn();
+	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigLeft", label ), ImGuiDir_Left ) ) {
+		if ( enabled ) {
+			Snd_PlaySfx( ui->sfx_select );
+			( *curvalue ) -= delta;
+			if ( *curvalue < minvalue ) {
+				*curvalue = minvalue;
+			}
+		}
+	}
+	ImGui::SameLine();
+	if ( ImGui::SliderInt( va( "##%sSettingsMenuConfigSlider", label ), curvalue, minvalue, maxvalue, "%d", enabled ? 0 : ImGuiSliderFlags_NoInput ) ) {
+		if ( enabled ) {
+			Snd_PlaySfx( ui->sfx_select );
+		}
+	}
+	ImGui::SameLine();
+	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigRight", label ), ImGuiDir_Right ) ) {
+		if ( enabled ) {
+			Snd_PlaySfx( ui->sfx_select );
+			( *curvalue ) += delta;
+			if ( *curvalue > maxvalue ) {
+				*curvalue = maxvalue;
+			}
+		}
+	}
+
+	if ( !enabled ) {
+		ImGui::PopStyleColor( 4 );
+	}
+}
+
+static void SettingsMenu_RadioButton( const char *name, const char *label, const char *hint, int *curvalue, bool enabled )
+{
+	if ( !enabled ) {
+		ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_FrameBg, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_FrameBgActive, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
+		ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, ImVec4( 0.75f, 0.75f, 0.75f, 1.0f ) );
+	}
+
+	ImGui::TableNextColumn();
+	SettingsMenu_Text( name, hint );
+	ImGui::TableNextColumn();
+	if ( ImGui::RadioButton( *curvalue ? va( "ON##%sSettingsMenuConfigButtonON", label ) : va( "OFF##%sSettingsMenuConfigButtonOFF", label ),
+		*curvalue ) )
+	{
+		if ( enabled ) {
+			Snd_PlaySfx( ui->sfx_select );
+			*curvalue = !*curvalue;
+		}
+	}
+
+	if ( !enabled ) {
+		ImGui::PopStyleColor( 4 );
+	}
+}
+
+static int32_t SettingsMenu_GetBindIndex( const char *bind )
+{
+	int32_t i;
+
+	for ( i = 0; i < s_settingsMenu->controls.numBinds; i++ ) {
+		if ( !N_stricmp( s_settingsMenu->controls.keybinds[i].command, bind ) ) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+static void SettingsMenu_Rebind( void )
+{
+    int32_t bind;
+    uint32_t i;
+    int ret;
+    const char *binding;
+	float width;
+	float height;
+	float x, y;
+
+	x = 256 * ui->scale;
+	y = 128 * ui->scale;
+	width = ( ui->gpuConfig.vidWidth * 0.5f ) - ( x * 0.5f );
+	height = ( ui->gpuConfig.vidHeight * 0.5f ) - ( y * 0.5f );
+	
+	ImGui::Begin( "##RebindKeyPopup", NULL, MENU_DEFAULT_FLAGS & ~( ImGuiWindowFlags_NoBackground ) );
+	ImGui::SetWindowFocus( "##RebindKeyPopup" );
+	ImGui::SetWindowPos( ImVec2( x, y ) );
+	ImGui::SetWindowSize( ImVec2( width, height ) );
+
+	if ( Key_IsDown( KEY_ESCAPE ) ) {
+		keys[KEY_ESCAPE].down = qfalse;
+		s_settingsMenu->controls.rebindKey = NULL;
+		Snd_PlaySfx( ui->sfx_select );
+		ImGui::End();
 		return;
 	}
 
-	switch ( ( (menucommon_t *)ptr )->id ) {
-	case ID_SAVECONFIG:
-		VideoSettingsMenu_Save();
-		PerformanceSettingsMenu_Save();
-		AudioSettingsMenu_Save();
-		ControlsSettingsMenu_Save();
-		GameplaySettingsMenu_Save();
-		break;
-	case ID_SETDEFAULTS:
-		VideoSettingsMenu_SetDefaults();
-		PerformanceSettingsMenu_SetDefaults();
-		AudioSettingsMenu_SetDefaults();
-		ControlsSettingsMenu_SetDefaults();
-		GameplaySettingsMenu_SetDefaults();
-		break;
-	};
+	ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 3.0f ) * ui->scale );
+	ImGui::TextUnformatted( "Press Any Key..." );
+
+    for ( i = 0; i < NUMKEYS; i++ ) {
+        if ( Key_IsDown( i ) ) {
+            binding = Key_GetBinding( i );
+
+            if ( binding != NULL ) {
+				const int32_t index = SettingsMenu_GetBindIndex( binding );
+                if ( s_settingsMenu->controls.keybinds[ index ].bind1 != -1 ) {
+                    // we're overwriting a binding, warn them
+                    ret = Sys_MessageBox( "WARNING",
+                        va( "You are overwriting another binding, are you sure about this? (\"%s\" = \"%s\")",
+                            Key_KeynumToString( s_settingsMenu->controls.keybinds[ index ].defaultBind1 ),
+                            binding ),
+                        true );
+                    
+                    if ( ret == 0 ) {
+						Snd_PlaySfx( ui->sfx_select );
+                    } else {
+						s_settingsMenu->controls.rebindKey->defaultBind1 = i;
+						Snd_PlaySfx( ui->sfx_select );
+					}
+					ImGui::End();
+					return;
+                }
+				else if ( s_settingsMenu->controls.keybinds[ index ].bind2 != -1 ) {
+                    // we're overwriting a binding, warn them
+                    ret = Sys_MessageBox( "WARNING",
+                        va( "You are overwriting another binding, are you sure about this? (\"%s\" = \"%s\")",
+                            Key_KeynumToString( s_settingsMenu->controls.keybinds[ index ].defaultBind2 ),
+                            binding ),
+                        true );
+                    
+                    if ( ret == 0 ) {
+						Snd_PlaySfx( ui->sfx_select );
+                    } else {
+						s_settingsMenu->controls.rebindKey->defaultBind2 = i;
+						Snd_PlaySfx( ui->sfx_select );
+					}
+					ImGui::End();
+					return;
+                }
+            }
+
+            if ( s_settingsMenu->controls.rebindKey->defaultBind1 != -1 ) {
+                Con_Printf( "setting double-binding for key \"%s\".\n",
+                    Key_GetBinding( s_settingsMenu->controls.rebindKey->defaultBind1 ) );
+
+                s_settingsMenu->controls.rebindKey->defaultBind2 = i;
+            } else {
+				s_settingsMenu->controls.rebindKey->defaultBind1 = i;
+            }
+            Cbuf_ExecuteText( EXEC_APPEND, va( "bind %s \"%s\"\n",
+                Key_KeynumToString( i ),
+                s_settingsMenu->controls.rebindKey->command ) );
+
+			s_settingsMenu->controls.rebindKey = NULL;
+			ImGui::End();
+			return;
+        }
+    }
+	ImGui::End();
 }
 
-static void SettingsMenu_InitPresets( void )
+static void SettingsMenu_DrawHint( void )
 {
+	int flags;
+
+	if ( !s_settingsMenu->hintLabel && !s_settingsMenu->hintMessage ) {
+		return;
+	}
+
+	flags = ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar
+			| ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize;
+	ImGui::Begin( "##SettingsMenuHintWindow", NULL, flags );
+	ImGui::SetWindowPos( ImVec2( s_settingsMenu->menu.width, 100 * ui->scale ) );
+	ImGui::SetWindowSize( ImVec2( ui->gpuConfig.vidWidth - s_settingsMenu->menu.width, 256 * ui->scale ) );
+
+	ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 2.5f ) * ui->scale );
+	ImGui::TextUnformatted( s_settingsMenu->hintLabel );
+	ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 1.0f ) * ui->scale );
+	ImGui::TextWrapped( "%s", s_settingsMenu->hintMessage );
+
+	ImGui::End();
+}
+
+static void ControlsMenu_Draw( void )
+{
+	uint64_t i;
+	char bind[1024];
+	char bind2[1024];
+
+	FontCache()->SetActiveFont( RobotoMono );
+	
+	ImGui::BeginTable( "##ControlsSettingsMenuConfigTable", 2 );
+	{
+		SettingsMenu_RadioButton( "Mouse Acceleration", "MouseAcceleration",
+			"Toggles mouse acceleration",
+			&s_settingsMenu->controls.mouseAcceleration, true );
+	
+		ImGui::TableNextRow();
+		
+		SettingsMenu_MultiSliderFloat( "Mouse Sensitivity", "MouseSensitivity",
+			"Sets the speed of the mouse",
+			&s_settingsMenu->controls.mouseSensitivity, 1.0f, 50.0f, 1.0f );
+
+		ImGui::TableNextRow();
+
+		ImGui::Separator();
+
+		ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 3.5f ) * ui->scale );
+		
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted( "Binding" );
+		ImGui::TableNextColumn();
+		ImGui::TextUnformatted( "Key" );
+
+		ImGui::TableNextRow();
+
+		ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 1.5f ) * ui->scale );
+
+		for ( i = 0; i < s_settingsMenu->controls.numBinds; i++ ) {
+			ImGui::TableNextColumn();
+			if ( s_settingsMenu->controls.keybinds[i].bind1 == -1 ) {
+				strcpy( bind, "???" );
+			}
+			else {
+				strcpy( bind, Key_KeynumToString( s_settingsMenu->controls.keybinds[i].bind1 ) );
+				
+				if ( s_settingsMenu->controls.keybinds[i].bind2 != - 1 ) {
+					strcpy( bind2, Key_KeynumToString( s_settingsMenu->controls.keybinds[i].bind2 ) );
+					N_strcat( bind, sizeof( bind ) - 1, " or " );
+					N_strcat( bind, sizeof( bind ) - 1, bind2 );
+				}
+			}
+			ImGui::TextUnformatted( s_settingsMenu->controls.keybinds[i].label );
+			ImGui::TableNextColumn();
+			if ( ImGui::Button( bind ) ) {
+				s_settingsMenu->controls.rebindKey = &s_settingsMenu->controls.keybinds[i];
+			}
+			if ( i != s_settingsMenu->controls.numBinds - 1 ) {
+				ImGui::TableNextRow();
+			}
+		}
+	}
+	ImGui::EndTable();
+}
+
+static void PerformanceMenu_Draw( void )
+{
+	FontCache()->SetActiveFont( RobotoMono );
+
+	ImGui::BeginTable( "##PerformanceSettingsMenuConfigTable", 2 );
+	{
+		SettingsMenu_MultiAdjustable( "Anti-Aliasing", "AntiAliasing",
+			"Sets anti-aliasing technique used by the engine",
+			s_settingsMenu->performance.multisampleTypes, s_settingsMenu->performance.numMultisampleTypes,
+			&s_settingsMenu->performance.multisampleType,
+			s_settingsMenu->performance.postProcessing );
+
+		ImGui::TableNextRow();
+
+		SettingsMenu_MultiAdjustable( "Anisotropic Filtering", "AnisotropicFiltering",
+			"",
+			s_settingsMenu->performance.anisotropyTypes, s_settingsMenu->performance.numAnisotropyTypes,
+			&s_settingsMenu->performance.anisotropicFilter, true );
+
+		ImGui::TableNextRow();
+
+		SettingsMenu_MultiAdjustable( "Texture Quality", "TextureQuality",
+			"Sets the quality of textures rendered, may effect performance",
+			s_settingsMenu->performance.textureDetails, s_settingsMenu->performance.numTextureDetails,
+			&s_settingsMenu->performance.textureDetail, true );
+
+		ImGui::TableNextRow();
+
+		SettingsMenu_MultiAdjustable( "Texture Filtering", "TextureFiltering",
+			"Sets the type of texture filtering",
+			s_settingsMenu->performance.textureFilters, s_settingsMenu->performance.numTextureFilters,
+			&s_settingsMenu->performance.textureFilter, true );
+	}
+	ImGui::EndTable();
+}
+
+static void AudioMenu_Draw( void )
+{
+	FontCache()->SetActiveFont( RobotoMono );
+
+	ImGui::BeginTable( "##AudioSettingsMenuConfigTable", 2 );
+	{
+		SettingsMenu_MultiSliderInt( "Master Volume", "MasterVolume",
+			"Sets overall volume",
+			&s_settingsMenu->audio.masterVolume, 0, 100, 1,
+			s_settingsMenu->audio.musicOn && s_settingsMenu->audio.sfxOn );
+		
+		ImGui::TableNextRow();
+		
+		SettingsMenu_MultiSliderInt( "Music Volume", "MusicVolume",
+			"Sets the music volume",
+			&s_settingsMenu->audio.musicVolume, 0, 100, 1, s_settingsMenu->audio.musicOn );
+		
+		ImGui::TableNextRow();
+		
+		SettingsMenu_MultiSliderInt( "Sound Effects Volume", "SoundEffectsVolume",
+			"Sets the sound effects volume",
+			&s_settingsMenu->audio.sfxVolume, 0, 100, 1, s_settingsMenu->audio.sfxOn );
+		
+		ImGui::TableNextRow();
+
+		SettingsMenu_RadioButton( "Music On", "MusicOn",
+			"Toggles music",
+			&s_settingsMenu->audio.musicOn, true );
+
+		ImGui::TableNextRow();
+
+		SettingsMenu_RadioButton( "Sound Effects On", "SoundEffectsOn",
+			"Toggles sound effects",
+			&s_settingsMenu->audio.sfxOn, true );
+	}
+	ImGui::EndTable();
+}
+
+static void VideoMenu_Draw( void )
+{
+	FontCache()->SetActiveFont( RobotoMono );
+
+	ImGui::BeginTable( "##VideoSettingsMenuConfigTable", 2 );
+	{
+
+		SettingsMenu_MultiAdjustable( "Window Mode", "WindowMode",
+			"Sets how the game's window is handled",
+			s_settingsMenu->video.windowModes, s_settingsMenu->video.numWindowModes, &s_settingsMenu->video.windowMode, true );
+
+		ImGui::TableNextRow();
+
+		SettingsMenu_MultiAdjustable( "Window Resoluiton", "Resolution",
+			"Sets the game window's size",
+			s_settingsMenu->video.windowSizes, s_settingsMenu->video.numWindowSizes, &s_settingsMenu->video.windowResolution, true );
+
+		ImGui::TableNextRow();
+
+		SettingsMenu_MultiAdjustable( "VSync", "VSync",
+			"Toggles when a frame will be rendered, vertical tearing may occur if disabled.\n"
+			"NOTE: setting this to \"Enabled\" will force a maximum of your moniter's refresh rate.",
+			s_settingsMenu->video.vsyncList, s_settingsMenu->video.numVSync, &s_settingsMenu->video.vsync, true );
+
+		ImGui::TableNextRow();
+
+		SettingsMenu_MultiSliderFloat( "Gamma", "Gamma",
+			"Sets gamma linear light correction factor",
+			&s_settingsMenu->video.gamma, 0.5f, 3.0f, 0.10f );
+
+		ImGui::TableNextRow();
+		
+		SettingsMenu_MultiSliderFloat( "Exposure", "Exposure",
+			"Sets exposure level when rendered in a scene",
+			&s_settingsMenu->video.exposure, 0.10f, 10.0f, 1.0f );
+	}
+	ImGui::EndTable();
+}
+
+static void VideoMenu_Save( void )
+{
+	Cvar_SetIntegerValue( "r_noborder", s_settingsMenu->video.windowMode > 1 );
+	Cvar_SetIntegerValue( "r_fullscreen", !( s_settingsMenu->video.windowMode % 2 ) );
+	Cvar_SetIntegerValue( "r_customWidth", s_settingsMenu->video.windowWidth );
+	Cvar_SetIntegerValue( "r_customHeight", s_settingsMenu->video.windowHeight );
+	Cvar_SetIntegerValue( "r_mode", s_settingsMenu->video.windowResolution );
+}
+
+static void PerformanceMenu_Save( void )
+{
+	bool restart;
+	
+	restart = false;
+
+	if ( s_settingsMenu->performance.hdr != Cvar_VariableInteger( "r_hdr" ) ) {
+		if ( Cvar_Flags( "r_hdr" ) & CVAR_LATCH ) {
+			restart = true;
+		}
+		Cvar_SetIntegerValue( "r_hdr", s_settingsMenu->performance.hdr );
+	}
+
+	if ( s_settingsMenu->performance.multisampleType != Cvar_VariableInteger( "r_multisampleType" ) ) {
+		if ( Cvar_Flags( "r_multisampleType" ) & CVAR_LATCH ) {
+			restart = true;
+		}
+		Cvar_SetIntegerValue( "r_multisampleType", s_settingsMenu->performance.multisampleType );
+
+		switch ( s_settingsMenu->performance.multisampleType ) {
+		case AntiAlias_None:
+		case AntiAlias_TSAA:
+		case AntiAlias_FXAA:
+			// no framebuffer attachements needed for these
+			Cvar_Set( "r_multisampleAmount", "0" );
+			break;
+		case AntiAlias_2xMSAA:
+		case AntiAlias_2xSSAA:
+			Cvar_Set( "r_multisampleAmount", "2" );
+			break;
+		case AntiAlias_4xMSAA:
+		case AntiAlias_4xSSAA:
+			Cvar_Set( "r_multisampleAmount", "4" );
+			break;
+		case AntiAlias_8xMSAA:
+			Cvar_Set( "r_multisampleAmount", "8" );
+			break;
+		case AntiAlias_16xMSAA:
+			Cvar_Set( "r_multisampleAmount", "16" );
+			break;
+		case AntiAlias_32xMSAA:
+			Cvar_Set( "r_multisampleAmount", "32" );
+			break;
+		};
+	}
+
+	if ( N_stricmp( Cvar_VariableString( "r_textureMode" ),
+		s_settingsMenu->performance.textureFilters[ s_settingsMenu->performance.textureFilter ] ) )
+	{
+		if ( Cvar_Flags( "r_textureMode" ) & CVAR_LATCH ) {
+			restart = true;
+		}
+		Cvar_Set( "r_textureMode", s_settingsMenu->performance.textureFilters[ s_settingsMenu->performance.textureFilter ] );
+	}
+
+	if ( s_settingsMenu->performance.textureDetail != Cvar_VariableInteger( "r_textureDetail" ) ) {
+		if ( Cvar_Flags( "r_textureDetail" ) & CVAR_LATCH ) {
+			restart = true;
+		}
+		Cvar_SetIntegerValue( "r_textureDetail", s_settingsMenu->performance.textureDetail );
+	}
+	if ( s_settingsMenu->performance.pbr != Cvar_VariableInteger( "r_pbr" ) ) {
+		if ( Cvar_Flags( "r_pbr" ) & CVAR_LATCH ) {
+			restart = true;
+		}
+		Cvar_SetIntegerValue( "r_pbr", s_settingsMenu->performance.pbr );
+	}
+	if ( s_settingsMenu->performance.bloom != Cvar_VariableInteger( "r_bloom" ) ) {
+		if ( Cvar_Flags( "r_bloom" ) & CVAR_LATCH ) {
+			restart = true;
+		}
+		Cvar_SetIntegerValue( "r_bloom", s_settingsMenu->performance.bloom );
+	}
+	if ( s_settingsMenu->performance.postProcessing != Cvar_VariableInteger( "r_postProcess" ) ) {
+		if ( Cvar_Flags( "r_postProcess" ) & CVAR_LATCH ) {
+			restart = true;
+		}
+		Cvar_SetIntegerValue( "r_postProcess", s_settingsMenu->performance.postProcessing );
+	}
+	
+}
+
+static void AudioMenu_Save( void )
+{
+	Cvar_SetIntegerValue( "snd_mastervol", s_settingsMenu->audio.masterVolume );
+	Cvar_SetIntegerValue( "snd_sfxvol", s_settingsMenu->audio.sfxVolume );
+	Cvar_SetIntegerValue( "snd_musicvol", s_settingsMenu->audio.musicVolume );
+	Cvar_SetIntegerValue( "snd_sfxon", s_settingsMenu->audio.sfxOn );
+	Cvar_SetIntegerValue( "snd_musicon", s_settingsMenu->audio.musicOn );
+}
+
+static void SettingsMenu_Draw( void )
+{
+	const int windowFlags = MENU_DEFAULT_FLAGS;
+
+	if ( s_settingsMenu->controls.rebindKey ) {
+		SettingsMenu_Rebind();
+	}
+
+	SettingsMenu_DrawHint();
+
+	ImGui::Begin( "SettingsMenu##MainMenuSettingsConfigThingy", NULL, windowFlags );
+	ImGui::SetWindowSize( ImVec2( s_settingsMenu->menu.width, s_settingsMenu->menu.height ) );
+	ImGui::SetWindowPos( ImVec2( s_settingsMenu->menu.x, s_settingsMenu->menu.y ) );
+
+	UI_EscapeMenuToggle();
+	if ( UI_MenuTitle( "Settings" ) ) {
+		UI_PopMenu();
+	}
+
+	ImGui::SetWindowFontScale( ( 1.5f * ImGui::GetFont()->Scale ) * ui->scale );
+	SettingsMenu_TabBar();
+
+	switch ( s_settingsMenu->lastChild ) {
+	case ID_VIDEO:
+		VideoMenu_Draw();
+		break;
+	case ID_PERFORMANCE:
+		PerformanceMenu_Draw();
+		break;
+	case ID_AUDIO:
+		AudioMenu_Draw();
+		break;
+	case ID_CONTROLS:
+		ControlsMenu_Draw();
+		break;
+	case ID_GAMEPLAY:
+		break;
+	};
+
+	//
+	// draw the other widgets (save/setdefaults)
+	//
+	ImGui::SetCursorScreenPos( ImVec2( 256 * ui->scale, 680 * ui->scale ) );
+	ImGui::Image( (ImTextureID)(uintptr_t)( s_settingsMenu->saveHovered ? s_settingsMenu->save_1 : s_settingsMenu->save_0 ),
+		ImVec2( 256 * ui->scale, 72 * ui->scale ) );
+	s_settingsMenu->saveHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
+	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+		Snd_PlaySfx( ui->sfx_select );
+		switch ( s_settingsMenu->lastChild ) {
+		case ID_VIDEO:
+			VideoMenu_Save();
+			break;
+		case ID_PERFORMANCE:
+			PerformanceMenu_Save();
+			break;
+		case ID_AUDIO:
+			AudioMenu_Save();
+			break;
+		case ID_CONTROLS:
+			break;
+		case ID_GAMEPLAY:
+			break;
+		};
+	}
+
+	ImGui::SetCursorScreenPos( ImVec2( 528 * ui->scale, 680 * ui->scale ) );
+	ImGui::Image( (ImTextureID)(uintptr_t)( s_settingsMenu->setDefaultsHovered ? s_settingsMenu->reset_1 : s_settingsMenu->reset_0 ),
+		ImVec2( 256 * ui->scale, 72 * ui->scale ) );
+	s_settingsMenu->setDefaultsHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
+	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+		Snd_PlaySfx( ui->sfx_select );
+		switch ( s_settingsMenu->lastChild ) {
+		case ID_VIDEO:
+			break;
+		case ID_PERFORMANCE:
+			break;
+		case ID_AUDIO:
+			break;
+		case ID_CONTROLS:
+			break;
+		case ID_GAMEPLAY:
+			break;
+		};
+	}
+
+	ImGui::End();
 }
 
 void SettingsMenu_Cache( void )
 {
-	if ( !ui->uiAllocated ) {
-		settings = (settings_t *)Hunk_Alloc( sizeof( *settings ), h_high );
-		initial = (settings_t *)Hunk_Alloc( sizeof( *initial ), h_high );
-	}
-	memset( settings, 0, sizeof( *settings ) );
-	memset( initial, 0, sizeof( *initial ) );
-	
-	settings->menu.fullscreen = qtrue;
-	settings->menu.x = 0;
-	settings->menu.y = 0;
-	settings->menu.width = ui->gpuConfig.vidWidth;
-	settings->menu.height = ui->gpuConfig.vidHeight;
-	settings->menu.name = "Settings##SettingsMenu";
-	settings->menu.titleFontScale = 3.5f;
-	settings->menu.textFontScale = 1.5f;
+	int i;
+	const char *textureMode;
+	static const char *s_multisampleTypes[] = {
+		"None",
+	    "2x MSAA",
+	    "4x MSAA",
+	    "8x MSAA",
+	    "16x MSAA",
+	    "32x MSAA",
+	    "2x SSAA",
+	    "4x SSAA",
+		"TSAA",
+		"FXAA"
+	};
+	static const char *s_anisotropyTypes[] = {
+	    "2x",
+	    "4x",
+	    "8x",
+	    "16x",
+	    "32x"
+	};
+	static const char *s_textureDetail[] = {
+	    "MS-DOS",
+	    "Integrated GPU",
+	    "Normie",
+	    "Expensive Shit We've Got Here!",
+	    "GPU vs GOD"
+	};
+	static const char *s_textureFilters[] = {
+	    "Bilinear",
+	    "Nearest",
+	    "Linear Nearest",
+	    "Nearest Linear"
+	};
+	static const char *s_toneMappingTypes[] = {
+	    "Reinhard",
+	    "Exposure"
+	};
 
-	VideoSettingsMenu_Cache();
-	PerformanceSettingsMenu_Cache();
-	AudioSettingsMenu_Cache();
-	ControlsSettingsMenu_Cache();
-	GameplaySettingsMenu_Cache();
+	static const char *s_windowModes[] = {
+		"Windowed",
+		"Fullscreen",
+		"Borderless Windowed",
+		"Borderless Fullscreen",
+	};
+	static const char *s_windowSizes[] = {
+		"Native Resolution",
+		"Custom Resolution",
+		"1024x768",
+	    "1280x720",
+	    "1600x900",
+	    "1920x1080",
+	    "2048x1536",
+	    "3840x2160",
+	};
+	static const char *s_vsync[] = {
+		"Adaptive",
+		"Disabled",
+		"Enabled",
+	};
+
+	if ( !ui->uiAllocated ) {
+		s_settingsMenu = (settingsMenu_t *)Hunk_Alloc( sizeof( *s_settingsMenu ), h_high );
+		SettingsMenu_InitPresets();
+		SettingsMenu_LoadBindings();
+	}
+	
+	s_settingsMenu->menu.fullscreen = qtrue;
+	s_settingsMenu->menu.x = 0;
+	s_settingsMenu->menu.y = 0;
+	s_settingsMenu->menu.draw = SettingsMenu_Draw;
+	s_settingsMenu->menu.width = ui->gpuConfig.vidWidth * 0.60f;
+	s_settingsMenu->menu.height = ui->gpuConfig.vidHeight;
+	s_settingsMenu->menu.titleFontScale = 3.5f;
+	s_settingsMenu->menu.textFontScale = 1.5f;
+	s_settingsMenu->lastChild = ID_VIDEO;
+
+	s_settingsMenu->video.windowResolution = Cvar_VariableInteger( "r_mode" ) + 2;
+	s_settingsMenu->video.vsync = Cvar_VariableInteger( "r_swapInterval" ) + 1;
+	s_settingsMenu->video.gamma = Cvar_VariableFloat( "r_gammaAmount" );
+	s_settingsMenu->video.windowMode = Cvar_VariableInteger( "r_fullscreen" );
+	if ( Cvar_VariableInteger( "r_noborder" ) ) {
+		s_settingsMenu->video.windowMode += 2;
+	}
+
+	switch ( Cvar_VariableInteger( "r_arb_texture_max_anisotropy" ) ) {
+	case 0:
+		s_settingsMenu->performance.anisotropicFilter = 0;
+		break;
+	case 2:
+		s_settingsMenu->performance.anisotropicFilter = 1;
+		break;
+	case 4:
+		s_settingsMenu->performance.anisotropicFilter = 2;
+		break;
+	case 8:
+		s_settingsMenu->performance.anisotropicFilter = 3;
+		break;
+	case 16:
+		s_settingsMenu->performance.anisotropicFilter = 4;
+		break;
+	case 32:
+		s_settingsMenu->performance.anisotropicFilter = 5;
+		break;
+	};
+
+	s_settingsMenu->performance.multisampleType = Cvar_VariableInteger( "r_multisampleType" );
+	s_settingsMenu->performance.depthMapping = Cvar_VariableInteger( "r_parallaxMapping" );
+	s_settingsMenu->performance.specularMapping = Cvar_VariableInteger( "r_specularMapping" );
+	s_settingsMenu->performance.normalMapping = Cvar_VariableInteger( "r_normalMapping" );
+	s_settingsMenu->performance.postProcessing = Cvar_VariableInteger( "r_postProcess" );
+	s_settingsMenu->performance.toneMappingType = Cvar_VariableInteger( "r_toneMapType" );
+	s_settingsMenu->performance.toneMapping = Cvar_VariableInteger( "r_toneMap" );
+	s_settingsMenu->performance.textureDetail = Cvar_VariableInteger( "r_textureDetail" );
+	s_settingsMenu->performance.bloom = Cvar_VariableInteger( "r_bloom" );
+	s_settingsMenu->performance.hdr = Cvar_VariableInteger( "r_hdr" );
+	s_settingsMenu->performance.pbr = Cvar_VariableInteger( "r_pbr" );
+	
+	textureMode = Cvar_VariableString( "r_textureMode" );
+	for ( i = 0; i < arraylen( s_textureDetail ); i++ ) {
+		if ( !N_stricmp( textureMode, s_textureDetail[i] ) ) {
+			s_settingsMenu->performance.textureFilter = i;
+			break;
+		}
+	}
+
+	s_settingsMenu->performance.multisampleTypes = s_multisampleTypes;
+	s_settingsMenu->performance.anisotropyTypes = s_anisotropyTypes;
+	s_settingsMenu->performance.textureDetails = s_textureDetail;
+	s_settingsMenu->performance.textureFilters = s_textureFilters;
+
+	s_settingsMenu->video.vsyncList = s_vsync;
+	s_settingsMenu->video.windowModes = s_windowModes;
+	s_settingsMenu->video.windowSizes = s_windowSizes;
+
+	s_settingsMenu->performance.numMultisampleTypes = arraylen( s_multisampleTypes );
+	s_settingsMenu->performance.numAnisotropyTypes = arraylen( s_anisotropyTypes );
+	s_settingsMenu->performance.numTextureDetails = arraylen( s_textureDetail );
+	s_settingsMenu->performance.numTextureFilters = arraylen( s_textureFilters );
+	
+	s_settingsMenu->video.numVSync = arraylen( s_vsync );
+	s_settingsMenu->video.numWindowModes = arraylen( s_windowModes );
+	s_settingsMenu->video.numWindowSizes = arraylen( s_windowSizes );
+
+	s_settingsMenu->save_0 = re.RegisterShader( "menu/save_0" );
+	s_settingsMenu->save_1 = re.RegisterShader( "menu/save_1" );
+
+	s_settingsMenu->reset_0 = re.RegisterShader( "menu/reset_0" );
+	s_settingsMenu->reset_1 = re.RegisterShader( "menu/reset_1" );
 }
 
 void UI_SettingsMenu( void )
 {
-	UI_VideoSettingsMenu();
+	SettingsMenu_Cache();
+	UI_PushMenu( &s_settingsMenu->menu );
 }

@@ -298,10 +298,13 @@ const char *Key_KeynumToString(uint32_t keynum)
 		return "Mouse Button 4";
 	case KEY_MOUSE_BUTTON_5:
 		return "Mouse Button 5";
+	case SDL_BUTTON_LEFT:
 	case KEY_MOUSE_LEFT:
 		return "Left Mouse";
+	case SDL_BUTTON_RIGHT:
 	case KEY_MOUSE_RIGHT:
 		return "Right Mouse";
+	case SDL_BUTTON_MIDDLE:
 	case KEY_MOUSE_MIDDLE:
 		return "Middle Mouse";
 	case KEY_WHEEL_DOWN:

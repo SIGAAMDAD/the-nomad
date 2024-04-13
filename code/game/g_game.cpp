@@ -781,8 +781,8 @@ void G_Init( void )
 	Cvar_CheckRange( vid_ypos, NULL, NULL, CVT_INT );
 	Cvar_SetDescription( vid_ypos, "Saves/sets window Y-coordinate when windowed, requires \\vid_restart." );
 
-    r_multisampleType = Cvar_Get( "r_multisampleType", "3", CVAR_SAVE | CVAR_LATCH );
-    Cvar_CheckRange( r_multisampleType, va( "%i", AntiAlias_None ), va( "%i", AntiAlias_DSSAA ), CVT_INT );
+    r_multisampleType = Cvar_Get( "r_multisampleType", "1", CVAR_SAVE | CVAR_LATCH );
+    Cvar_CheckRange( r_multisampleType, va( "%i", AntiAlias_None ), va( "%i", AntiAlias_FXAA ), CVT_INT );
     Cvar_SetDescription( r_multisampleType,
                             "Sets the anti-aliasing type to the desired:\n"
                             "   0 - None\n"

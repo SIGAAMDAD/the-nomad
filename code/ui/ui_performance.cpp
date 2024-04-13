@@ -72,24 +72,6 @@ typedef struct {
 
     menutext_t maxSoundChannels;
 
-    menuarrow_t multisampleLeft;
-    menuarrow_t multisampleRight;
-    menuarrow_t anisotropyLeft;
-    menuarrow_t anisotropyRight;
-    menuarrow_t textureDetailLeft;
-    menuarrow_t textureDetailRight;
-    menuarrow_t textureFilterLeft;
-    menuarrow_t textureFilterRight;
-    menuarrow_t maxCorpsesLeft;
-    menuarrow_t maxCorpsesRight;
-    menuarrow_t maxDLightsLeft;
-    menuarrow_t maxDLightsRight;
-    menuarrow_t toneMappingTypeLeft;
-    menuarrow_t toneMappingTypeRight;
-
-    menuarrow_t maxSoundChannelsLeft;
-    menuarrow_t maxSoundChannelsRight;
-
     menulist_t multisampleList;
     menulist_t anisotropyList;
     menulist_t textureDetailList;
@@ -152,7 +134,21 @@ static void PerformanceSettingsMenu_EventCallback( void *ptr, int event )
 
 void PerformanceSettingsMenu_SetDefaults( void )
 {
-    Cvar_Reset( "r_hdr" );
+    Cvar_ForceReset( "r_hdr" );
+    Cvar_ForceReset( "r_pbr" );
+    Cvar_ForceReset( "r_ssao" );
+    Cvar_ForceReset( "r_toneMap" );
+    Cvar_ForceReset( "r_toneMapType" );
+    Cvar_ForceReset( "r_specularMapping" );
+    Cvar_ForceReset( "r_normalMapping" );
+    Cvar_ForceReset( "r_multisampleType" );
+    Cvar_ForceReset( "r_multisampleAmount" );
+    Cvar_ForceReset( "r_arb_texture_max_anisotropy" );
+    Cvar_ForceReset( "r_textureMode" );
+    Cvar_ForceReset( "r_textureDetail" );
+    Cvar_ForceReset( "r_postProcess" );
+    Cvar_ForceReset( "r_vertexLight" );
+    Cvar_ForceReset( "r_dynamiclight" );
 }
 
 void PerformanceSettingsMenu_Save( void )
@@ -200,8 +196,8 @@ void PerformanceSettingsMenu_Save( void )
 	
 	Cvar_SetIntegerValue( "r_normalMapping", s_performanceOptionsInfo->enableNormalMapsButton.curvalue );
 	Cvar_SetIntegerValue( "r_specularMapping", s_performanceOptionsInfo->enableSpecularMapsButton.curvalue );
-	Cvar_Set( "r_textureMode", s_performanceOptionsInfo->textureDetailList.itemnames[s_performanceOptionsInfo->textureDetailList.curitem] );
-	Cvar_SetIntegerValue( "r_textureFilter", s_performanceOptionsInfo->textureFilterList.curitem );
+	Cvar_Set( "r_textureMode", s_performanceOptionsInfo->textureFilterList.itemnames[s_performanceOptionsInfo->textureFilterList.curitem] );
+	Cvar_SetIntegerValue( "r_textureDetail", s_performanceOptionsInfo->textureDetailList.curitem );
 	
 	switch ( s_performanceOptionsInfo->anisotropyList.curitem ) {
 	case 0:
@@ -289,6 +285,9 @@ void PerformanceSettingsMenu_Cache( void )
 {
 	PROFILE_FUNCTION();
 	
+    static vec4_t tabColor = { 1.0f, 1.0f, 1.0f, 0.0f };
+    static vec4_t tabColorActive = { 0.0f, 1.0f, 0.0f, 1.0f };
+    static vec4_t tabColorFocused = { 0.0f, 1.0f, 0.0f, 1.0f };
 	static menucommon_t empty;
     static const char *multisampleTypes[] = {
         "2x MSAA",
@@ -341,39 +340,40 @@ void PerformanceSettingsMenu_Cache( void )
     s_performanceOptionsInfo->video.generic.id = ID_VIDEO;
     s_performanceOptionsInfo->video.generic.eventcallback = PerformanceSettingsMenu_EventCallback;
     s_performanceOptionsInfo->video.generic.font = AlegreyaSC;
-    s_performanceOptionsInfo->video.text = "Video##VideoSettingsMenuTabBar";
+    s_performanceOptionsInfo->video.text = "Video";
     s_performanceOptionsInfo->video.color = color_white;
     
     s_performanceOptionsInfo->performance.generic.type = MTYPE_TEXT;
     s_performanceOptionsInfo->performance.generic.id = ID_PERFORMANCE;
     s_performanceOptionsInfo->performance.generic.eventcallback = PerformanceSettingsMenu_EventCallback;
     s_performanceOptionsInfo->performance.generic.font = AlegreyaSC;
-    s_performanceOptionsInfo->performance.text = "Performance##PerformanceSettingsMenuTabBar";
+    s_performanceOptionsInfo->performance.text = "Performance";
     s_performanceOptionsInfo->performance.color = color_white;
     
     s_performanceOptionsInfo->audio.generic.type = MTYPE_TEXT;
     s_performanceOptionsInfo->audio.generic.id = ID_AUDIO;
     s_performanceOptionsInfo->audio.generic.eventcallback = PerformanceSettingsMenu_EventCallback;
     s_performanceOptionsInfo->audio.generic.font = AlegreyaSC;
-    s_performanceOptionsInfo->audio.text = "Audio##AudioSettingsMenuTabBar";
+    s_performanceOptionsInfo->audio.text = "Audio";
     s_performanceOptionsInfo->audio.color = color_white;
     
     s_performanceOptionsInfo->controls.generic.type = MTYPE_TEXT;
     s_performanceOptionsInfo->controls.generic.id = ID_CONTROLS;
     s_performanceOptionsInfo->controls.generic.eventcallback = PerformanceSettingsMenu_EventCallback;
     s_performanceOptionsInfo->controls.generic.font = AlegreyaSC;
-    s_performanceOptionsInfo->controls.text = "Controls##ControlsSettingsMenuTabBar";
+    s_performanceOptionsInfo->controls.text = "Controls";
     s_performanceOptionsInfo->controls.color = color_white;
     
     s_performanceOptionsInfo->gameplay.generic.type = MTYPE_TEXT;
     s_performanceOptionsInfo->gameplay.generic.id = ID_GAMEPLAY;
     s_performanceOptionsInfo->gameplay.generic.eventcallback = PerformanceSettingsMenu_EventCallback;
     s_performanceOptionsInfo->gameplay.generic.font = AlegreyaSC;
-    s_performanceOptionsInfo->gameplay.text = "Gameplay##GameplaySettingsMenuTabBar";
+    s_performanceOptionsInfo->gameplay.text = "Gameplay";
     s_performanceOptionsInfo->gameplay.color = color_white;
     
     s_performanceOptionsInfo->menu.fullscreen = qtrue;
-    s_performanceOptionsInfo->menu.width = ui->gpuConfig.vidWidth;
+    s_performanceOptionsInfo->menu.flags = MENU_DEFAULT_FLAGS;
+    s_performanceOptionsInfo->menu.width = ui->gpuConfig.vidWidth * 0.75f;
     s_performanceOptionsInfo->menu.height = ui->gpuConfig.vidHeight;
     s_performanceOptionsInfo->menu.titleFontScale = 3.5f;
     s_performanceOptionsInfo->menu.textFontScale = 1.5f;
@@ -506,118 +506,6 @@ void PerformanceSettingsMenu_Cache( void )
     s_performanceOptionsInfo->maxSoundChannels.text = "Max Sound Channels";
     s_performanceOptionsInfo->maxSoundChannels.color = color_white;
     
-    s_performanceOptionsInfo->multisampleLeft.generic.type = MTYPE_ARROW;
-    s_performanceOptionsInfo->multisampleLeft.generic.id = ID_MULTISAMPLETYPE;
-    s_performanceOptionsInfo->multisampleLeft.generic.eventcallback = MenuEvent_ArrowLeft;
-    s_performanceOptionsInfo->multisampleLeft.generic.name = "##AntiAliasingPerformanceSettingsMenuConfigLeft";
-    s_performanceOptionsInfo->multisampleLeft.direction = ImGuiDir_Left;
-    s_performanceOptionsInfo->multisampleLeft.color = color_white;
-    s_performanceOptionsInfo->multisampleLeft.data = (menucommon_t *)&s_performanceOptionsInfo->multisampleList;
-    
-    s_performanceOptionsInfo->multisampleRight.generic.type = MTYPE_ARROW;
-    s_performanceOptionsInfo->multisampleRight.generic.id = ID_MULTISAMPLETYPE;
-    s_performanceOptionsInfo->multisampleRight.generic.eventcallback = MenuEvent_ArrowRight;
-    s_performanceOptionsInfo->multisampleRight.generic.name = "##AntiAliasingPerformanceSettingsMenuConfigRight";
-    s_performanceOptionsInfo->multisampleRight.direction = ImGuiDir_Right;
-    s_performanceOptionsInfo->multisampleRight.color = color_white;
-    s_performanceOptionsInfo->multisampleRight.data = (menucommon_t *)&s_performanceOptionsInfo->multisampleRight;
-    
-    s_performanceOptionsInfo->toneMappingTypeLeft.generic.type = MTYPE_ARROW;
-    s_performanceOptionsInfo->toneMappingTypeLeft.generic.id = ID_TONEMAPPINGTYPE;
-    s_performanceOptionsInfo->toneMappingTypeLeft.generic.eventcallback = MenuEvent_ArrowLeft;
-    s_performanceOptionsInfo->toneMappingTypeLeft.generic.name = "##ToneMappingTypePerformanceSettingsMenuConfigLeft";
-    s_performanceOptionsInfo->toneMappingTypeLeft.direction = ImGuiDir_Left;
-    s_performanceOptionsInfo->toneMappingTypeLeft.color = color_white;
-    s_performanceOptionsInfo->toneMappingTypeLeft.data = (menucommon_t *)&s_performanceOptionsInfo->toneMappingTypeList;
-    
-    s_performanceOptionsInfo->toneMappingTypeRight.generic.type = MTYPE_ARROW;
-    s_performanceOptionsInfo->toneMappingTypeRight.generic.id = ID_TONEMAPPINGTYPE;
-    s_performanceOptionsInfo->toneMappingTypeRight.generic.eventcallback = MenuEvent_ArrowRight;
-    s_performanceOptionsInfo->toneMappingTypeRight.generic.name = "##ToneMappingTypePerformanceSettingsMenuConfigRight";
-    s_performanceOptionsInfo->toneMappingTypeRight.direction = ImGuiDir_Right;
-    s_performanceOptionsInfo->toneMappingTypeRight.color = color_white;
-    s_performanceOptionsInfo->toneMappingTypeRight.data = (menucommon_t *)&s_performanceOptionsInfo->toneMappingTypeList;
-   	
-    s_performanceOptionsInfo->anisotropyLeft.generic.type = MTYPE_ARROW;
-    s_performanceOptionsInfo->anisotropyLeft.generic.id = ID_ANISOTROPICFILTERING;
-    s_performanceOptionsInfo->anisotropyLeft.generic.eventcallback = MenuEvent_ArrowLeft;
-    s_performanceOptionsInfo->anisotropyLeft.generic.name = "##AnisotropicFilteringPerformanceSettingsMenuConfigLeft";
-    s_performanceOptionsInfo->anisotropyLeft.direction = ImGuiDir_Left;
-    s_performanceOptionsInfo->anisotropyLeft.color = color_white;
-    s_performanceOptionsInfo->anisotropyLeft.data = (menucommon_t *)&s_performanceOptionsInfo->anisotropyList;
-    
-    s_performanceOptionsInfo->anisotropyRight.generic.type = MTYPE_ARROW;
-    s_performanceOptionsInfo->anisotropyRight.generic.id = ID_ANISOTROPICFILTERING;
-    s_performanceOptionsInfo->anisotropyRight.generic.eventcallback = MenuEvent_ArrowRight;
-    s_performanceOptionsInfo->anisotropyRight.generic.name = "##AnisotropicFilteringPerformanceSettingsMenuConfigRight";
-    s_performanceOptionsInfo->anisotropyRight.direction = ImGuiDir_Right;
-    s_performanceOptionsInfo->anisotropyRight.color = color_white;
-    s_performanceOptionsInfo->anisotropyRight.data = (menucommon_t *)&s_performanceOptionsInfo->anisotropyList;
-    
-    s_performanceOptionsInfo->textureDetailLeft.generic.type = MTYPE_ARROW;
-    s_performanceOptionsInfo->textureDetailLeft.generic.id = ID_TEXTUREDETAIL;
-    s_performanceOptionsInfo->textureDetailLeft.generic.eventcallback = MenuEvent_ArrowLeft;
-    s_performanceOptionsInfo->textureDetailLeft.generic.name = "##TextureDetailPerformanceSettingsMenuConfigLeft";
-    s_performanceOptionsInfo->textureDetailLeft.direction = ImGuiDir_Left;
-    s_performanceOptionsInfo->textureDetailLeft.color = color_white;
-    s_performanceOptionsInfo->textureDetailLeft.data = (menucommon_t *)&s_performanceOptionsInfo->textureDetailList;
-    
-    s_performanceOptionsInfo->textureDetailRight.generic.type = MTYPE_ARROW;
-    s_performanceOptionsInfo->textureDetailRight.generic.id = ID_TEXTUREDETAIL;
-    s_performanceOptionsInfo->textureDetailRight.generic.eventcallback = MenuEvent_ArrowRight;
-    s_performanceOptionsInfo->textureDetailRight.generic.name = "##TextureDetailPerformanceSettingsMenuConfigRight";
-    s_performanceOptionsInfo->textureDetailRight.direction = ImGuiDir_Right;
-    s_performanceOptionsInfo->textureDetailRight.color = color_white;
-    s_performanceOptionsInfo->textureDetailRight.data = (menucommon_t *)&s_performanceOptionsInfo->textureDetailList;
-    
-    s_performanceOptionsInfo->textureFilterLeft.generic.type = MTYPE_ARROW;
-    s_performanceOptionsInfo->textureFilterLeft.generic.id = ID_TEXTUREFILTER;
-    s_performanceOptionsInfo->textureFilterLeft.generic.eventcallback = MenuEvent_ArrowLeft;
-    s_performanceOptionsInfo->textureFilterLeft.generic.name = "##TextureFilteringPerformanceSettingsMenuConfigLeft";
-    s_performanceOptionsInfo->textureFilterLeft.direction = ImGuiDir_Left;
-    s_performanceOptionsInfo->textureFilterLeft.color = color_white;
-    s_performanceOptionsInfo->textureFilterLeft.data = (menucommon_t *)&s_performanceOptionsInfo->textureFilterList;
-    
-    s_performanceOptionsInfo->textureFilterRight.generic.type = MTYPE_ARROW;
-    s_performanceOptionsInfo->textureFilterRight.generic.id = ID_TEXTUREFILTER;
-    s_performanceOptionsInfo->textureFilterRight.generic.eventcallback = MenuEvent_ArrowRight;
-    s_performanceOptionsInfo->textureFilterRight.generic.name = "##TextureFilteringPerformanceSettingsMenuConfigRight";
-    s_performanceOptionsInfo->textureFilterRight.direction = ImGuiDir_Right;
-    s_performanceOptionsInfo->textureFilterRight.color = color_white;
-    s_performanceOptionsInfo->textureFilterRight.data = (menucommon_t *)&s_performanceOptionsInfo->textureFilterList;
-    
-    s_performanceOptionsInfo->maxCorpsesLeft.generic.type = MTYPE_ARROW;
-    s_performanceOptionsInfo->maxCorpsesLeft.generic.id = ID_MAXCORPSES;
-    s_performanceOptionsInfo->maxCorpsesLeft.generic.eventcallback = PerformanceMenu_SliderLeft;
-    s_performanceOptionsInfo->maxCorpsesLeft.generic.name = "##MaxCorpsesPerformanceSettingsMenuConfigLeft";
-    s_performanceOptionsInfo->maxCorpsesLeft.direction = ImGuiDir_Left;
-    s_performanceOptionsInfo->maxCorpsesLeft.color = color_white;
-    s_performanceOptionsInfo->maxCorpsesLeft.data = (menucommon_t *)&s_performanceOptionsInfo->maxCorpsesSlider;
-    
-    s_performanceOptionsInfo->maxCorpsesRight.generic.type = MTYPE_ARROW;
-    s_performanceOptionsInfo->maxCorpsesRight.generic.id = ID_MAXCORPSES;
-    s_performanceOptionsInfo->maxCorpsesRight.generic.eventcallback = PerformanceMenu_SliderRight;
-    s_performanceOptionsInfo->maxCorpsesRight.generic.name = "##MaxCorpsesPerformanceSettingsMenuConfigRight";
-    s_performanceOptionsInfo->maxCorpsesRight.direction = ImGuiDir_Right;
-    s_performanceOptionsInfo->maxCorpsesRight.color = color_white;
-    s_performanceOptionsInfo->maxCorpsesRight.data = (menucommon_t *)&s_performanceOptionsInfo->maxCorpsesSlider;
-    
-    s_performanceOptionsInfo->maxDLightsLeft.generic.type = MTYPE_ARROW;
-    s_performanceOptionsInfo->maxDLightsLeft.generic.id = ID_MAXDLIGHTS;
-    s_performanceOptionsInfo->maxDLightsLeft.generic.eventcallback = PerformanceMenu_SliderLeft;
-    s_performanceOptionsInfo->maxDLightsLeft.generic.name = "##MaxDLightsPerformanceSettingsMenuConfigLeft";
-    s_performanceOptionsInfo->maxDLightsLeft.direction = ImGuiDir_Left;
-    s_performanceOptionsInfo->maxDLightsLeft.color = color_white;
-    s_performanceOptionsInfo->maxDLightsLeft.data = (menucommon_t *)&s_performanceOptionsInfo->maxDLightsSlider;
-    
-    s_performanceOptionsInfo->maxDLightsRight.generic.type = MTYPE_ARROW;
-    s_performanceOptionsInfo->maxDLightsRight.generic.id = ID_MAXCORPSES;
-    s_performanceOptionsInfo->maxDLightsRight.generic.eventcallback = PerformanceMenu_SliderRight;
-    s_performanceOptionsInfo->maxDLightsRight.generic.name = "##MaxDLightsPerformanceSettingsMenuConfigRight";
-    s_performanceOptionsInfo->maxDLightsRight.direction = ImGuiDir_Right;
-    s_performanceOptionsInfo->maxDLightsRight.color = color_white;
-    s_performanceOptionsInfo->maxDLightsRight.data = (menucommon_t *)&s_performanceOptionsInfo->maxDLightsSlider;
-    
     s_performanceOptionsInfo->textureDetailList.generic.type = MTYPE_LIST;
     s_performanceOptionsInfo->textureDetailList.generic.id = ID_TEXTUREDETAIL;
     s_performanceOptionsInfo->textureDetailList.generic.name = "##TextureDetailPerformanceSettingsMenuConfigList";
@@ -652,7 +540,11 @@ void PerformanceSettingsMenu_Cache( void )
     
     s_performanceOptionsInfo->tabs.generic.type = MTYPE_TAB;
     s_performanceOptionsInfo->tabs.generic.id = ID_TABLE;
+    s_performanceOptionsInfo->tabs.generic.name = "##SettingsMenuTabBar";
     s_performanceOptionsInfo->tabs.generic.eventcallback = PerformanceSettingsMenu_EventCallback;
+    s_performanceOptionsInfo->tabs.tabColor = tabColor;
+    s_performanceOptionsInfo->tabs.tabColorActive = tabColorActive;
+    s_performanceOptionsInfo->tabs.tabColorFocused = tabColorFocused;
     s_performanceOptionsInfo->tabs.numitems = ID_TABLE;
     s_performanceOptionsInfo->tabs.items[0] = (menucommon_t *)&s_performanceOptionsInfo->video;
 	s_performanceOptionsInfo->tabs.items[1] = (menucommon_t *)&s_performanceOptionsInfo->performance;
@@ -662,7 +554,7 @@ void PerformanceSettingsMenu_Cache( void )
 	
 	s_performanceOptionsInfo->graphicsTable.generic.type = MTYPE_TABLE;
 	s_performanceOptionsInfo->graphicsTable.generic.name = "##PerformanceSettingsMenuConfigTable";
-	s_performanceOptionsInfo->graphicsTable.columns = 4;
+	s_performanceOptionsInfo->graphicsTable.columns = 2;
 	
 	{
 		PROFILE_SCOPE( "Performance Menu Register" );
@@ -673,24 +565,18 @@ void PerformanceSettingsMenu_Cache( void )
 	    
 	    Table_AddRow( &s_performanceOptionsInfo->graphicsTable );
 	    Table_AddItem( &s_performanceOptionsInfo->graphicsTable, &s_performanceOptionsInfo->multisampleType );
-	    Table_AddItem( &s_performanceOptionsInfo->graphicsTable, &s_performanceOptionsInfo->multisampleLeft );
 	    Table_AddItem( &s_performanceOptionsInfo->graphicsTable, &s_performanceOptionsInfo->multisampleList );
-	    Table_AddItem( &s_performanceOptionsInfo->graphicsTable, &s_performanceOptionsInfo->multisampleRight );
 	    
 	    Table_AddRow( &s_performanceOptionsInfo->graphicsTable );
 	    Table_AddItem( &s_performanceOptionsInfo->graphicsTable, &s_performanceOptionsInfo->anisotropicFiltering );
-	    Table_AddItem( &s_performanceOptionsInfo->graphicsTable, &s_performanceOptionsInfo->anisotropyLeft );
 	    Table_AddItem( &s_performanceOptionsInfo->graphicsTable, &s_performanceOptionsInfo->anisotropyList );
-	    Table_AddItem( &s_performanceOptionsInfo->graphicsTable, &s_performanceOptionsInfo->anisotropyRight );
 		
 	    Table_AddRow( &s_performanceOptionsInfo->graphicsTable );
 	    Table_AddItem( &s_performanceOptionsInfo->graphicsTable, &s_performanceOptionsInfo->textureFilter );
-	    Table_AddItem( &s_performanceOptionsInfo->graphicsTable, &s_performanceOptionsInfo->textureFilterLeft );
 	    Table_AddItem( &s_performanceOptionsInfo->graphicsTable, &s_performanceOptionsInfo->textureFilterList );
-	    Table_AddItem( &s_performanceOptionsInfo->graphicsTable, &s_performanceOptionsInfo->textureFilterRight );
 	
-	    Menu_AddItem( &s_performanceOptionsInfo->menu, &s_performanceOptionsInfo->save );
-	    Menu_AddItem( &s_performanceOptionsInfo->menu, &s_performanceOptionsInfo->setDefaults );
+//	    Menu_AddItem( &s_performanceOptionsInfo->menu, &s_performanceOptionsInfo->save );
+//	    Menu_AddItem( &s_performanceOptionsInfo->menu, &s_performanceOptionsInfo->setDefaults );
 	}
 }
 

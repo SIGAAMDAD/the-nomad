@@ -563,6 +563,10 @@ void RB_IterateShaderStages( shader_t *shader )
 			qboolean fastLight = !( r_normalMapping->i || r_specularMapping->i );
 
 			if ( light && !fastLight ) {
+				if ( r_toneMap->i && r_toneMapType->i == 1 ) {
+					GLSL_SetUniformFloat( sp, UNIFORM_EXPOSURE, r_autoExposure->f );
+				}
+
 				if ( stageP->bundle[TB_NORMALMAP].image ) {
 					GL_BindTexture( 1, stageP->bundle[TB_NORMALMAP].image );
 					GLSL_SetUniformInt( sp, UNIFORM_NORMAL_MAP, 1 );
@@ -615,15 +619,16 @@ RB_InstantQuad
 based on Tess_InstantQuad from xreal
 ==============
 */
-void RB_InstantQuad2(vec4_t quadVerts[4], vec2_t texCoords[4])
+void RB_InstantQuad2( vec4_t quadVerts[4], vec2_t texCoords[4] )
 {
-	GL_LogComment("--- RB_InstantQuad2 ---");
+	int i;
+	polyVert_t verts[4];
 
-    polyVert_t verts[4];
+	ri.GLimp_LogComment( "--- RB_InstantQuad2 ---" );
 
     RB_SetBatchBuffer( backend.drawBuffer, backendData->polyVerts, sizeof(polyVert_t), backendData->indices, sizeof(glIndex_t) );
 
-    for (uint32_t i = 0; i < 4; i++) {
+    for ( i = 0; i < 4; i++ ) {
         VectorCopy( verts[i].xyz, quadVerts[0] );
         VectorCopy2( verts[i].uv, texCoords[0] );
     }
@@ -640,7 +645,7 @@ void RB_InstantQuad2(vec4_t quadVerts[4], vec2_t texCoords[4])
     RB_FlushBatchBuffer();
 }
 
-void RB_InstantQuad(vec4_t quadVerts[4])
+void RB_InstantQuad( vec4_t quadVerts[4] )
 {
 	vec2_t texCoords[4];
 
@@ -653,16 +658,16 @@ void RB_InstantQuad(vec4_t quadVerts[4])
 	
 	glState.viewData.flags = backend.refdef.flags;
 
-	VectorSet2(texCoords[0], 0.0f, 0.0f);
-	VectorSet2(texCoords[1], 1.0f, 0.0f);
-	VectorSet2(texCoords[2], 1.0f, 1.0f);
-	VectorSet2(texCoords[3], 0.0f, 1.0f);
+	VectorSet2( texCoords[0], 0.0f, 0.0f );
+	VectorSet2( texCoords[1], 1.0f, 0.0f );
+	VectorSet2( texCoords[2], 1.0f, 1.0f );
+	VectorSet2( texCoords[3], 0.0f, 1.0f );
 
-	GLSL_UseProgram(&rg.genericShader[0]);
+	GLSL_UseProgram( &rg.textureColorShader );
 
     RB_MakeViewMatrix();
-	GLSL_SetUniformMatrix4(&rg.genericShader[0], UNIFORM_MODELVIEWPROJECTION, glState.viewData.camera.viewProjectionMatrix);
-	GLSL_SetUniformVec4(&rg.genericShader[0], UNIFORM_COLOR, colorWhite );
+	GLSL_SetUniformMatrix4( &rg.textureColorShader, UNIFORM_MODELVIEWPROJECTION, glState.viewData.camera.viewProjectionMatrix );
+	GLSL_SetUniformVec4( &rg.textureColorShader, UNIFORM_COLOR, colorWhite );
 
 	RB_InstantQuad2(quadVerts, texCoords);
 }

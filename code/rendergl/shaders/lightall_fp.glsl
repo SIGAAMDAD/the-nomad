@@ -259,18 +259,6 @@ vec4 hitCube(vec3 ray, vec3 pos, vec3 invSize, float lod, samplerCube tex)
 
 void main()
 {
-	a_Color = v_Color * texture2D( u_DiffuseMap, v_TexCoords.st );
-
-#if defined(USE_HDR)
-	// reinhard tone mapping
-	a_Color.rgb /= ( a_Color.rgb + vec3( 1.0 ) );
-#endif
-//    a_Color.rgb = pow( a_Color.rgb, vec3( 1.0 / u_GammaAmount ) );
-}
-
-/*
-void main()
-{
 	vec3 viewDir, lightColor, ambientColor, reflectance;
 	vec3 L, N, E, H;
 	float NL, NH, NE, EH, attenuation;
@@ -530,4 +518,3 @@ void main()
 
 	a_Color.a = alpha;
 }
-*/

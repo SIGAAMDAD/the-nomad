@@ -214,7 +214,8 @@ void Con_ToggleConsole_f( void ) {
 	g_consoleField.widthInChars = g_console_field_width;
 
 	Con_ClearNotify();
-	Key_SetCatcher( Key_GetCatcher() ^ KEYCATCH_CONSOLE );
+	Key_ClearStates();
+	Key_SetCatcher( KEYCATCH_CONSOLE );
 }
 
 /*
@@ -1673,6 +1674,10 @@ static void Con_DrawInput( void ) {
 		return;
 	}
 
+	ImGui::PushStyleColor( ImGuiCol_FrameBg, ImVec4( 1.0f, 1.0f, 1.0f, 0.0f ) );
+	ImGui::PushStyleColor( ImGuiCol_FrameBgActive, ImVec4( 1.0f, 1.0f, 1.0f, 0.0f ) );
+	ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, ImVec4( 1.0f, 1.0f, 1.0f, 0.0f ) );
+
 	ImGui::NewLine();
 	ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( g_color_table[ ColorIndex( S_COLOR_WHITE ) ] ) );
 	ImGui::TextUnformatted( "] " );
@@ -1722,7 +1727,7 @@ static void Con_DrawInput( void ) {
 		g_consoleField.widthInChars = g_console_field_width;
 	}
 
-	ImGui::PopStyleColor();
+	ImGui::PopStyleColor( 4 );
 }
 
 /*

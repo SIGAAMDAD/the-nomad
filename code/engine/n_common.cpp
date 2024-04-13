@@ -492,7 +492,13 @@ static void Com_PumpKeyEvents(void)
 			break;
 		case SDL_MOUSEBUTTONUP:
 		case SDL_MOUSEBUTTONDOWN:
-			Com_QueueEvent( com_frameTime, SE_KEY, event.button.button, (event.type == SDL_MOUSEBUTTONDOWN ? qtrue : qfalse), 0, NULL );
+			if ( event.button.button == SDL_BUTTON_LEFT ) {
+				Com_QueueEvent( com_frameTime, SE_KEY, KEY_MOUSE_LEFT, (event.type == SDL_MOUSEBUTTONDOWN ? qtrue : qfalse), 0, NULL );
+			} else if ( event.button.button == SDL_BUTTON_RIGHT ) {
+				Com_QueueEvent( com_frameTime, SE_KEY, KEY_MOUSE_RIGHT, (event.type == SDL_MOUSEBUTTONDOWN ? qtrue : qfalse), 0, NULL );
+			} else if ( event.button.button == SDL_BUTTON_MIDDLE ) {
+				Com_QueueEvent( com_frameTime, SE_KEY, KEY_MOUSE_MIDDLE, (event.type == SDL_MOUSEBUTTONDOWN ? qtrue : qfalse), 0, NULL );
+			}
 			break;
 		case SDL_MOUSEWHEEL:
 			if (event.wheel.y > 0) {
@@ -2049,12 +2055,13 @@ static void Com_SortList( char **list, uint64_t n )
 	const char *m;
 	char *temp;
 	uint64_t i, j;
+
 	i = 0;
 	j = n;
 	m = list[ n >> 1 ];
 	do {
-		while ( strcmp( list[i], m ) < 0 ) i++;
-		while ( strcmp( list[j], m ) > 0 ) j--;
+		while ( N_strcmp( list[i], m ) < 0 ) i++;
+		while ( N_strcmp( list[j], m ) > 0 ) j--;
 		if ( i <= j ) {
 			temp = list[i];
 			list[i] = list[j];

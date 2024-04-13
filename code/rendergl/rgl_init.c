@@ -72,6 +72,7 @@ cvar_t *r_floatLightmap;
 cvar_t *r_postProcess;
 cvar_t *r_lightmap;
 
+cvar_t *r_toneMapType;
 cvar_t *r_toneMap;
 cvar_t *r_forceToneMap;
 cvar_t *r_forceToneMapMin;
@@ -820,8 +821,11 @@ static void R_Register( void )
 	r_stencilBits = ri.Cvar_Get( "r_stencilBits", "8", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_stencilBits, "Stencil buffer size, value decreases Z-buffer depth." );
 
-    r_multisampleAmount = ri.Cvar_Get( "r_multisampleAmount", "2", CVAR_SAVE | CVAR_LATCH );
-    r_multisampleType = ri.Cvar_Get( "r_multisampleType", "1", CVAR_SAVE | CVAR_LATCH );
+    r_multisampleAmount = ri.Cvar_Get( "r_multisampleAmount", "2", CVAR_SAVE );
+    ri.Cvar_CheckRange( r_multisampleAmount, "0", "32", CVT_INT );
+    r_multisampleType = ri.Cvar_Get( "r_multisampleType", "1", CVAR_SAVE );
+    ri.Cvar_CheckRange( r_multisampleType, va( "%i", AntiAlias_None ), va( "%i", AntiAlias_FXAA ), CVT_INT );
+    ri.Cvar_SetDescription( r_multisampleType, "Sets the desired anti-aliasing technique. Requires \\r_postProcess" );
 
     r_overBrightBits = ri.Cvar_Get( "r_overBrightBits", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_overBrightBits, "Sets the intensity of overall brightness of texture pixels." );
@@ -834,7 +838,12 @@ static void R_Register( void )
 	r_postProcess = ri.Cvar_Get( "r_postProcess", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_postProcess, "Enable post-processing." );
 
-	r_toneMap = ri.Cvar_Get( "r_toneMap", "1", CVAR_SAVE );
+    r_toneMapType = ri.Cvar_Get( "r_toneMapType", "0", CVAR_SAVE | CVAR_LATCH );
+    ri.Cvar_SetDescription( r_toneMapType,
+                            "Sets the desired tone mapping technique:\n"
+                            " 0: Reinhard tone mapping, faster, but non adjustable brightness level leading to darker areas losing quality\n"
+                            " 1: Exposure tone mapping, slightly slower, but adjustable brightness level" );
+	r_toneMap = ri.Cvar_Get( "r_toneMap", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_toneMap, "Enable tone mapping. Requires r_hdr and r_postProcess." );
 	r_forceToneMap = ri.Cvar_Get( "r_forceToneMap", "0", CVAR_CHEAT );
 	r_forceToneMapMin = ri.Cvar_Get( "r_forceToneMapMin", "-8.0", CVAR_CHEAT );
@@ -863,9 +872,9 @@ static void R_Register( void )
     r_drawMode = ri.Cvar_Get( "r_drawMode", "2", CVAR_SAVE | CVAR_LATCH );
     ri.Cvar_SetDescription( r_drawMode,
                             "Sets the rendering mode (see OpenGL docs if you want more info):\n"
-                            "   0 - immediate mode, deprecated in modern GPUs\n"
-                            "   1 - client buffered, cpu buffers, but uses glDrawElements\n"
-                            "   2 - gpu buffered, gpu and cpu buffers, most supported and (probably) the fastest" );
+                            " 0: immediate mode, deprecated in modern GPUs\n"
+                            " 1: client buffered, cpu buffers, but uses glDrawElements\n"
+                            " 2: gpu buffered, gpu and cpu buffers, most supported and (probably) the fastest" );
 
     r_depthPrepass = ri.Cvar_Get( "r_depthPrepass", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_depthPrepass, "Do a depth-only pass before rendering. Speeds up rendering in cases where advanced features are used. Required for r_sunShadows." );
@@ -1011,7 +1020,7 @@ static void R_Register( void )
 //                            " GL_NEAREST_MIPMAP_LINEAR: Nearest neighbor interpolation with mipmapping for trilinear hardware\n"
 //                            " GL_LINEAR_MIPMAP_LINEAR: Linear interpolation with mipmapping for trilinear hardware"
     );
-	r_gammaAmount = ri.Cvar_Get( "r_gammaAmount", "1", CVAR_SAVE );
+	r_gammaAmount = ri.Cvar_Get( "r_gammaAmount", "2.2", CVAR_SAVE );
 	ri.Cvar_CheckRange( r_gammaAmount, "0.5", "3", CVT_FLOAT );
 	ri.Cvar_SetDescription( r_gammaAmount, "Gamma correction factor." );
 

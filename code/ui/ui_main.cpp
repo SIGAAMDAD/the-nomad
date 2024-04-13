@@ -441,6 +441,11 @@ extern "C" void UI_Init( void )
 void Menu_Cache( void )
 {
     ui->whiteShader = re.RegisterShader( "white" );
+	ui->back_0 = re.RegisterShader( "menu/backbutton0" );
+	ui->back_1 = re.RegisterShader( "menu/backbutton1" );
+	ui->sfx_select = Snd_RegisterSfx( "sfx/menu1.wav" );
+	ui->sfx_back = Snd_RegisterSfx( "sfx/menu3.wav" );
+	ui->sfx_null = Snd_RegisterSfx( "sfx/menu4.wav" );
 }
 
 /*

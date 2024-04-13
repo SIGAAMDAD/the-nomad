@@ -165,6 +165,13 @@ void FBO_Bind( fbo_t *fbo )
 
     GL_BindFramebuffer( GL_FRAMEBUFFER, fbo ? fbo->frameBuffer : 0 );
     glState.currentFbo = fbo;
+
+	if ( fbo == rg.renderFbo && r_bloom->i && r_hdr->i ) {
+		GLuint buffers[2];
+		buffers[0] = GL_COLOR_ATTACHMENT0;
+		buffers[1] = GL_COLOR_ATTACHMENT1;
+		nglDrawBuffers( 2, buffers );
+	}
 }
 
 void FBO_Init( void )
@@ -211,12 +218,6 @@ void FBO_Init( void )
 		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, multisample );
 		if ( r_bloom->i ) {
 			FBO_CreateBuffer( rg.renderFbo, hdrFormat, 1, multisample );
-
-			GLuint buffers[2];
-			buffers[0] = GL_COLOR_ATTACHMENT0;
-			buffers[1] = GL_COLOR_ATTACHMENT1;
-
-			nglDrawBuffers( 2, buffers );
 		}
 		FBO_CreateBuffer( rg.renderFbo, GL_DEPTH_COMPONENT24, 0, multisample );
 		R_CheckFBO( rg.renderFbo );
@@ -357,23 +358,23 @@ void FBO_BlitFromTexture( struct texture_s *src, vec4_t inSrcTexCorners, vec2_t 
 
 	GL_BindTexture( TB_COLORMAP, src );
 
-	VectorSet4(quadVerts[0], dstBox[0], dstBox[1], 0.0f, 1.0f);
-	VectorSet4(quadVerts[1], dstBox[2], dstBox[1], 0.0f, 1.0f);
-	VectorSet4(quadVerts[2], dstBox[2], dstBox[3], 0.0f, 1.0f);
-	VectorSet4(quadVerts[3], dstBox[0], dstBox[3], 0.0f, 1.0f);
+	VectorSet4( quadVerts[0], dstBox[0], dstBox[1], 0.0f, 1.0f );
+	VectorSet4( quadVerts[1], dstBox[2], dstBox[1], 0.0f, 1.0f );
+	VectorSet4( quadVerts[2], dstBox[2], dstBox[3], 0.0f, 1.0f );
+	VectorSet4( quadVerts[3], dstBox[0], dstBox[3], 0.0f, 1.0f );
 
 	invTexRes[0] /= src->width;
 	invTexRes[1] /= src->height;
 
 	GL_State( blend );
 
-	GLSL_UseProgram(shaderProgram );
+	GLSL_UseProgram( shaderProgram );
 	
-	GLSL_SetUniformMatrix4(shaderProgram, UNIFORM_MODELVIEWPROJECTION, projection);
-	GLSL_SetUniformVec4(shaderProgram, UNIFORM_COLOR, color);
-	GLSL_SetUniformVec2(shaderProgram, UNIFORM_INVTEXRES, invTexRes);
-//	GLSL_SetUniformVec2(shaderProgram, UNIFORM_AUTOEXPOSUREMINMAX, rg.refdef.autoExposureMinMax);
-//	GLSL_SetUniformVec3(shaderProgram, UNIFORM_TONEMINAVGMAXLINEAR, rg.refdef.toneMinAvgMaxLinear);
+	GLSL_SetUniformMatrix4( shaderProgram, UNIFORM_MODELVIEWPROJECTION, projection );
+	GLSL_SetUniformVec4( shaderProgram, UNIFORM_COLOR, color );
+	GLSL_SetUniformVec2( shaderProgram, UNIFORM_INVTEXRES, invTexRes );
+	GLSL_SetUniformVec2( shaderProgram, UNIFORM_AUTOEXPOSUREMINMAX, backend.refdef.autoExposureMinMax );
+	GLSL_SetUniformVec3( shaderProgram, UNIFORM_TONEMINAVGMAXLINEAR, backend.refdef.toneMinAvgMaxLinear );
 
 
 
