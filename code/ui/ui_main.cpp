@@ -244,7 +244,7 @@ static void UI_RegisterCvars( void )
     Cvar_CheckRange( ui_printStrings, "0", "1", CVT_INT );
     Cvar_SetDescription( ui_printStrings, "Print value strings set by the language ui file" );
 
-    ui_active = Cvar_Get( "g_paused", "1", CVAR_LATCH | CVAR_TEMP );
+    ui_active = Cvar_Get( "g_paused", "1", CVAR_TEMP );
 
 #ifdef _NOMAD_DEBUG
 	r_gpuDiagnostics = Cvar_Get( "r_gpuDiagnostics", "1", CVAR_LATCH | CVAR_SAVE );
@@ -294,6 +294,7 @@ extern "C" void UI_Shutdown( void )
     Cmd_RemoveCommand( "ui.cache" );
 	Cmd_RemoveCommand( "ui.fontinfo" );
 	Cmd_RemoveCommand( "ui.settings_write_bindings" );
+	Cmd_RemoveCommand( "togglepausemenu" );
 }
 
 // FIXME: call UI_Shutdown instead
@@ -436,6 +437,7 @@ extern "C" void UI_Init( void )
     Cmd_AddCommand( "ui.cache", UI_Cache_f );
 	Cmd_AddCommand( "ui.fontinfo", CUIFontCache::ListFonts_f );
 	Cmd_AddCommand( "ui.settings_write_bindings", UI_SettingsWriteBinds_f );
+	Cmd_AddCommand( "togglepausemenu", UI_PauseMenu_f );
 }
 
 void Menu_Cache( void )
@@ -485,13 +487,13 @@ extern "C" void UI_Refresh( int32_t realtime )
 
 	UI_DrawFPS();
 
-	if ( !ui_active->i ) {
-		UI_EscapeMenuToggle();
-		if ( ui->menustate != UI_MENU_NONE ) {
-			UI_SetActiveMenu( UI_MENU_PAUSE );
-		}
-		return;
-	}
+//	if ( !ui_active->i ) {
+//		UI_EscapeMenuToggle();
+//		if ( ui->menustate != UI_MENU_NONE ) {
+//			UI_SetActiveMenu( UI_MENU_PAUSE );
+//		}
+//		return;
+//	}
 
 	if ( !( Key_GetCatcher() & KEYCATCH_UI ) ) {
 		return;

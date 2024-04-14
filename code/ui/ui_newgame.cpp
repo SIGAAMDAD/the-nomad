@@ -2,24 +2,24 @@
 
 typedef struct {
     menuframework_t menu;
-    
-    menufield_t saveName;
-    menubutton_t beginGame;
 
-    menuarrow_t difArrowLeft;
-    menuarrow_t difArrowRight;
-    menulist_t difList;
-    menutable_t difTable;
+    char saveName[MAX_NPATH];
 
-    gamedif_t diff;
+    int diff;
 
+    const char **difficultyList;
     char **hardestStrings;
     int64_t numHardestStrings;
     int64_t hardestIndex;
 
     const stringHash_t *title;
-    const stringHash_t *s_newGameSaveNamePrompt;
-    const stringHash_t *s_newGameBegin;
+    const stringHash_t *newGameSaveNamePrompt;
+    const stringHash_t *newGameBegin;
+
+    nhandle_t accept_0;
+    nhandle_t accept_1;
+
+    qboolean acceptHovered;
 } newGameMenu_t;
 
 #define ID_BEGINGAME        1
@@ -30,99 +30,120 @@ static newGameMenu_t *s_newGame;
 
 static void BeginNewGame( void )
 {
-    memset( s_newGame->saveName.buffer, 0, sizeof( s_newGame->saveName.buffer ) );
-
-    UI_ForceMenuOff();
-    ui->menusp = 0;
-    ui->activemenu = NULL;
+    UI_SetActiveMenu( UI_MENU_PAUSE );
 
     gi.state = GS_LEVEL;
 
-    Cvar_Set( "sgame_SaveName", s_newGame->saveName.buffer );
+    N_strncpyz( s_newGame->saveName, COM_SkipPath( s_newGame->saveName ), sizeof( s_newGame->saveName ) );
+
+    Cvar_Set( "g_paused", "0" );
+    Cvar_Set( "sgame_SaveName", s_newGame->saveName );
     Cvar_SetIntegerValue( "g_levelIndex", 0 );
     Cvar_Set( "mapname", *gi.mapCache.mapList );
+
+    memset( s_newGame->saveName, 0, sizeof( s_newGame->saveName ) );
 
     // start a new game
     g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelStart, 0 );
 }
 
-static void NewGameMenu_EventCallback( void *ptr, int event )
+static void NewGameMenu_Draw( void )
 {
-    if ( event != EVENT_ACTIVATED ) {
+    int i;
+
+    ImGui::Begin( s_newGame->menu.name, NULL, s_newGame->menu.flags );
+    ImGui::SetWindowSize( ImVec2( s_newGame->menu.width, s_newGame->menu.height ) );
+    ImGui::SetWindowPos( ImVec2( s_newGame->menu.x, s_newGame->menu.y ) );
+
+    UI_EscapeMenuToggle();
+    if ( UI_MenuTitle( s_newGame->title->value, s_newGame->menu.titleFontScale ) ) {
+        UI_PopMenu();
         return;
     }
 
-    switch ( ( (menucommon_t *)ptr )->id ) {
-    case ID_SAVENAMEPROMPT:
-        break;
-    case ID_BEGINGAME:
+    ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * s_newGame->menu.textFontScale ) * ui->scale );
+
+    ImGui::BeginTable( "##SinglePlayerMenuNewGameConfigTable", 2 );
+    {
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted( s_newGame->newGameBegin->value );
+        ImGui::TableNextColumn();
+        if ( ImGui::InputText( "##SinglePlayerMenuSaveNamePromptInput", s_newGame->saveName, sizeof( s_newGame->saveName ) - 1,
+            ImGuiInputTextFlags_EnterReturnsTrue ) )
+        {
+            Snd_PlaySfx( ui->sfx_select );
+        }
+
+        ImGui::TableNextRow();
+
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted( "Difficulty" );
+        ImGui::TableNextColumn();
+        if ( ImGui::ArrowButton( "##DifficultySinglePlayerMenuConfigLeft", ImGuiDir_Left ) ) {
+            Snd_PlaySfx( ui->sfx_select );
+            s_newGame->diff--;
+            if ( s_newGame->diff <= DIF_NOOB ) {
+                s_newGame->diff = DIF_HARDEST;
+            }
+        }
+        ImGui::SameLine();
+        if ( ImGui::BeginCombo( "##SinglePlayerMenuDifficultyConfigList", s_newGame->difficultyList[ (int)s_newGame->diff ] ) ) {
+            if ( ImGui::IsItemActivated() && ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+                Snd_PlaySfx( ui->sfx_select );
+            }
+            for ( i = 0; i < NUMDIFS; i++ ) {
+                if ( ImGui::Selectable( va( "%s##%sSinglePlayerMenuDifficultySelectable_%i", s_newGame->difficultyList[ i ],
+                    s_newGame->difficultyList[ i ], i ), ( s_newGame->diff == i ) ) )
+                {
+                    Snd_PlaySfx( ui->sfx_select );
+                    s_newGame->diff = i;
+                }
+            }
+            ImGui::EndCombo();
+        }
+        if ( !ImGui::IsItemActivated() && ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+            Snd_PlaySfx( ui->sfx_select );
+        }
+        ImGui::SameLine();
+        if ( ImGui::ArrowButton( "##DifficultySinglePlayerMenuConfigRight", ImGuiDir_Right ) ) {
+            Snd_PlaySfx( ui->sfx_select );
+            s_newGame->diff++;
+            if ( s_newGame->diff > DIF_HARDEST ) {
+                s_newGame->diff = DIF_NOOB;
+            }
+        }
+    }
+    ImGui::EndTable();
+
+    ImGui::SetCursorScreenPos( ImVec2( 970 * ui->scale, 680 * ui->scale ) );
+    ImGui::Image( (ImTextureID)(uintptr_t)( s_newGame->acceptHovered ? s_newGame->accept_1 : s_newGame->accept_0 ),
+		ImVec2( 256 * ui->scale, 72 * ui->scale ) );
+	s_newGame->acceptHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
+	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+		Snd_PlaySfx( ui->sfx_select );
         BeginNewGame();
-        break;
-    case ID_DIFFICULTY:
-        s_newGame->diff = (gamedif_t)s_newGame->difList.curitem;
-        break;
-    };
-}
+	}
 
-static void NewGameMenu_Draw( void )
-{
-    float font_scale;
+    ImGui::SetCursorScreenPos( ImVec2( 16 * ui->scale, 300 * ui->scale ) );
 
-    Menu_Draw( &s_newGame->menu );
+/*
+    FontCache()->SetActiveFont( AlegreyaSC );
+    ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 3.75f ) * ui->scale );
+    ImGui::TextUnformatted( "Difficulty Description" );
+    ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 1.75f ) * ui->scale );
+*/
 
     FontCache()->SetActiveFont( RobotoMono );
+    ImGui::TextWrapped( "%s", difficultyTable[ (int)s_newGame->diff ].tooltip );
 
-    ImGui::Begin( "DifficultyDescription", NULL, MENU_DEFAULT_FLAGS );
-    font_scale = ImGui::GetFont()->Scale;
-    ImGui::SetWindowFontScale( font_scale * 3.75f );
-    ImGui::TextUnformatted( "Difficulty Description" );
-    ImGui::SetWindowFontScale( font_scale * 2.75f );
-    ImGui::TextWrapped( "%s", difficultyTable[(int32_t)s_newGame->diff].tooltip );
     ImGui::End();
 }
 
 int32_t count_fields( const char *line );
 char **parse_csv( const char *line );
 
-static void NewGameMenu_ArrowLeft( void *ptr, int event )
-{
-    int item;
-
-    if ( event != EVENT_ACTIVATED ) {
-        return;
-    }
-
-    item = ( (menulist_t *)ptr )->curitem;
-    if ( item == 0 ) {
-        item = ( (menulist_t *)ptr )->numitems - 1;
-    } else {
-        item--;
-    }
-
-    ( (menulist_t *)ptr )->curitem = item;
-}
-
-static void NewGameMenu_ArrowRight( void *ptr, int event )
-{
-    int item;
-
-    if ( event != EVENT_ACTIVATED ) {
-        return;
-    }
-
-    item = ( (menulist_t *)ptr )->curitem;
-    if ( item == ( (menulist_t *)ptr )->numitems - 1 ) {
-        item = 0;
-    } else {
-        item++;
-    }
-
-    ( (menulist_t *)ptr )->curitem = item;
-}
-
 void NewGameMenu_Cache( void )
 {
-    int i;
     const stringHash_t *hardest;
 
     hardest = strManager->ValueForKey( "SP_DIFF_THE_MEMES" );
@@ -146,56 +167,24 @@ void NewGameMenu_Cache( void )
     };
 
     s_newGame->title = strManager->ValueForKey( "SP_NEWGAME" );
-    s_newGame->s_newGameSaveNamePrompt = strManager->ValueForKey( "SP_SAVE_NAME_PROMPT" );
-    s_newGame->s_newGameBegin = strManager->ValueForKey( "SP_BEGIN_NEWGAME" );
+    s_newGame->newGameSaveNamePrompt = strManager->ValueForKey( "SP_SAVE_NAME_PROMPT" );
+    s_newGame->newGameBegin = strManager->ValueForKey( "SP_BEGIN_NEWGAME" );
 
+    s_newGame->menu.name = "##SinglePlayerNewGameMenu";
     s_newGame->menu.fullscreen = qtrue;
     s_newGame->menu.draw = NewGameMenu_Draw;
     s_newGame->menu.flags = MENU_DEFAULT_FLAGS;
-    s_newGame->menu.width = ui->gpuConfig.vidWidth * 0.75f;
+    s_newGame->menu.width = ui->gpuConfig.vidWidth;
     s_newGame->menu.height = ui->gpuConfig.vidHeight;
     s_newGame->menu.titleFontScale = 3.5f;
     s_newGame->menu.textFontScale = 1.5f;
     s_newGame->menu.x = 0;
     s_newGame->menu.y = 0;
-    s_newGame->menu.name = s_newGame->title->value;
 
-    s_newGame->saveName.generic.name = StringDup( s_newGame->s_newGameSaveNamePrompt, "SaveNamePrompt" );
-    s_newGame->saveName.generic.eventcallback = NewGameMenu_EventCallback;
-    s_newGame->saveName.generic.type = MTYPE_FIELD;
-    s_newGame->saveName.generic.id = ID_SAVENAMEPROMPT;
-    s_newGame->saveName.maxchars = MAX_NPATH;
+    s_newGame->difficultyList = difficulties;
 
-    s_newGame->beginGame.generic.name = StringDup( s_newGame->s_newGameBegin, "BeginNewGame" );
-    s_newGame->beginGame.generic.eventcallback = NewGameMenu_EventCallback;
-    s_newGame->beginGame.generic.type = MTYPE_BUTTON;
-    s_newGame->beginGame.generic.id = ID_BEGINGAME;
-
-    s_newGame->difArrowLeft.generic.id = ID_DIFFICULTY;
-    s_newGame->difArrowLeft.generic.eventcallback = MenuEvent_ArrowLeft;
-    s_newGame->difArrowLeft.generic.name = "##DifficultySinglePlayerMenuLeft";
-    s_newGame->difArrowLeft.direction = ImGuiDir_Left;
-
-    s_newGame->difArrowLeft.generic.id = ID_DIFFICULTY;
-    s_newGame->difArrowLeft.generic.eventcallback = MenuEvent_ArrowRight;
-    s_newGame->difArrowLeft.generic.name = "##DifficultySinglePlayerMenuRight";
-    s_newGame->difArrowLeft.direction = ImGuiDir_Right;
-
-    s_newGame->difList.generic.name = "Difficulty##SinglePlayerMenuDifficultyConfig";
-    s_newGame->difList.generic.eventcallback = NewGameMenu_EventCallback;
-    s_newGame->difList.generic.type = MTYPE_LIST;
-    s_newGame->difList.generic.id = ID_DIFFICULTY;
-    s_newGame->difList.numitems = (int)NUMDIFS;
-    s_newGame->difList.itemnames = difficulties;
-
-    Menu_AddItem( &s_newGame->menu, &s_newGame->saveName );
-    Menu_AddItem( &s_newGame->menu, &s_newGame->difTable );
- 
-    Table_AddItem( &s_newGame->difTable, &s_newGame->difArrowLeft );
-    Table_AddItem( &s_newGame->difTable, &s_newGame->difList );
-    Table_AddItem( &s_newGame->difTable, &s_newGame->difArrowRight );
-
-    Menu_AddItem( &s_newGame->menu, &s_newGame->beginGame );
+    s_newGame->accept_0 = re.RegisterShader( "menu/accept_0" );
+    s_newGame->accept_1 = re.RegisterShader( "menu/accept_1" );
 }
 
 void UI_NewGameMenu( void )
@@ -257,7 +246,7 @@ static char *CopyUIString( const char *str ) {
     uint64_t len;
 
     len = strlen( str ) + 1;
-    out = (char *)Z_Malloc( len, TAG_GAME );
+    out = (char *)Hunk_Alloc( len, h_high );
     N_strncpyz( out, str, len );
 
     return out;
@@ -279,7 +268,7 @@ char **parse_csv( const char *line ) {
         return NULL;
     }
 
-    buf = (char **)Z_Malloc( sizeof( char * ) * ( fieldcnt + 1 ), TAG_GAME );
+    buf = (char **)Hunk_Alloc( sizeof( char * ) * ( fieldcnt + 1 ), h_high );
     tmp = (char *)Hunk_AllocateTempMemory( strlen( line ) + 1 );
 
     bptr = buf;
@@ -317,9 +306,9 @@ char **parse_csv( const char *line ) {
 
             if ( !*bptr ) {
                 for ( bptr--; bptr >= buf; bptr-- ) {
-                    Z_Free( *bptr );
+//                    Z_Free( *bptr );
                 }
-                Z_Free( buf );
+//                Z_Free( buf );
                 Hunk_FreeTempMemory( tmp );
 
                 return NULL;

@@ -175,7 +175,7 @@ void UI_SetActiveMenu( uiMenu_t menu )
 		UI_ForceMenuOff();
 		break;
 	case UI_MENU_PAUSE:
-		Cvar_Set( "g_paused", "1" );
+//		Cvar_Set( "g_paused", "1" );
 		Key_SetCatcher( KEYCATCH_UI );
 		UI_PauseMenu();
 		break;

@@ -843,14 +843,14 @@ void G_Init( void )
     g_drawBuffer = Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
 	Cvar_SetDescription( g_drawBuffer, "Specifies buffer to draw from: GL_FRONT or GL_BACK." );
 
-    g_paused = Cvar_Get( "g_paused", "1", CVAR_LATCH | CVAR_TEMP );
+    g_paused = Cvar_Get( "g_paused", "1", CVAR_TEMP );
     Cvar_CheckRange( g_paused, "0", "1", CVT_INT );
     Cvar_SetDescription( g_paused, "Set to 1 when in the pause menu." );
 
     g_renderer = Cvar_Get( "g_renderer", "opengl", CVAR_SAVE | CVAR_LATCH );
     Cvar_SetDescription( g_renderer,
-                        "Set your desired renderer, valid options: opengl, vulkan\n"
-                        "NOTICE: Vulkan rendering not supported yet... *will be tho soon :)*\n"
+                        "Set your desired renderer, valid options: opengl, vulkan, sdl2, d3d11\n"
+                        "NOTICE: Vulkan, SDL2, and DirectX 11 rendering not supported yet... *will be tho soon :)*\n"
                         "requires \\vid_restart when changed"
                         );
     
