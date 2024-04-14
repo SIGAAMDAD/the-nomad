@@ -332,7 +332,7 @@ void ModsMenu_Draw( void )
    	
    	ImGui::BeginTable( "##ModLoadList", 5 );
    	
-   	ImGui::SetWindowFontScale( ( fontScale * 1.5f ) * ui->scale );
+   	ImGui::SetWindowFontScale( ( fontScale * 1.5f ) );
    	ImGui::TableNextColumn();
    	ImGui::TextUnformatted( "Active" );
    	ImGui::TableNextColumn();
@@ -342,7 +342,7 @@ void ModsMenu_Draw( void )
    	ImGui::TableNextColumn();
    	ImGui::TextUnformatted( "Game Version" );
 	ImGui::TableNextColumn();
-	ImGui::SetWindowFontScale( ( fontScale * 1.75f ) * ui->scale );
+	ImGui::SetWindowFontScale( ( fontScale * 1.75f ) );
 	
 	if ( RobotoMono ) {
 		FontCache()->SetActiveFont( RobotoMono );

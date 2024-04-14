@@ -40,16 +40,15 @@ typedef struct {
 } bind_t;
 
 typedef struct {
-	const char **windowModes;
 	const char **windowSizes;
 	const char **vsyncList;
 
-	int numWindowModes;
 	int numWindowSizes;
 	int numVSync;
 
 	int vsync;
-	int windowMode;
+	int fullscreen;
+	int noborder;
 	int windowResolution;
 	int windowWidth;
 	int windowHeight;
@@ -63,11 +62,13 @@ typedef struct {
 	const char **anisotropyTypes;
 	const char **textureDetails;
 	const char **textureFilters;
+	const char **toneMappingTypes;
 
 	int numMultisampleTypes;
 	int numAnisotropyTypes;
 	int numTextureDetails;
 	int numTextureFilters;
+	int numToneMappingTypes;
 
 	int multisampleType;
 	int anisotropicFilter;
@@ -785,6 +786,20 @@ static void PerformanceMenu_Draw( void )
 		
 		ImGui::TableNextRow();
 
+		SettingsMenu_RadioButton( "Tone Mapping", "ToneMapping",
+			"Enables a more diverse range of colors when applying lighting to a scene",
+			&s_settingsMenu->performance.toneMapping, true );
+
+		ImGui::TableNextRow();
+
+		SettingsMenu_MultiAdjustable( "Tone Mapping Type", "ToneMappingType",
+			"Sets the desired tone mapping type.\n"
+			"NOTE: Reinhard uses a fixed range, and makes darker spots less detailed, Exposure uses an adjustable level",
+			s_settingsMenu->performance.toneMappingTypes, s_settingsMenu->performance.numToneMappingTypes,
+			&s_settingsMenu->performance.toneMappingType, s_settingsMenu->performance.toneMapping );
+
+		ImGui::TableNextRow();
+
 		SettingsMenu_RadioButton( "Bump/Normal Mapping", "BumpMapping",
 			"Toggles usage of normal maps",
 			&s_settingsMenu->performance.normalMapping, true );
@@ -855,9 +870,15 @@ static void VideoMenu_Draw( void )
 	ImGui::BeginTable( "##VideoSettingsMenuConfigTable", 2 );
 	{
 
-		SettingsMenu_MultiAdjustable( "Window Mode", "WindowMode",
-			"Sets how the game's window is handled",
-			s_settingsMenu->video.windowModes, s_settingsMenu->video.numWindowModes, &s_settingsMenu->video.windowMode, true );
+		SettingsMenu_RadioButton( "Fullscreen", "Fullscreen",
+			"Sets the game's window mode to fullscreen",
+			&s_settingsMenu->video.fullscreen, true );
+
+		ImGui::TableNextRow();
+	
+		SettingsMenu_RadioButton( "Borderless", "Borderless",
+			"Sets the game's window mode to bordless",
+			&s_settingsMenu->video.noborder, true );
 
 		ImGui::TableNextRow();
 
@@ -889,11 +910,13 @@ static void VideoMenu_Draw( void )
 
 static void VideoMenu_Save( void )
 {
-	Cvar_SetIntegerValue( "r_noborder", s_settingsMenu->video.windowMode > 1 );
-	Cvar_SetIntegerValue( "r_fullscreen", !( s_settingsMenu->video.windowMode % 2 ) );
+	Cvar_SetIntegerValue( "r_fullscreen", s_settingsMenu->video.fullscreen );
+	Cvar_SetIntegerValue( "r_noborder", s_settingsMenu->video.noborder );
 	Cvar_SetIntegerValue( "r_customWidth", s_settingsMenu->video.windowWidth );
 	Cvar_SetIntegerValue( "r_customHeight", s_settingsMenu->video.windowHeight );
-	Cvar_SetIntegerValue( "r_mode", s_settingsMenu->video.windowResolution );
+	Cvar_SetIntegerValue( "r_mode", s_settingsMenu->video.windowResolution - 2 );
+
+	Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n" );
 }
 
 static void PerformanceMenu_Save( void )
@@ -901,10 +924,11 @@ static void PerformanceMenu_Save( void )
 	Cvar_SetIntegerValue( "r_multisampleType", s_settingsMenu->performance.multisampleType );
 	switch ( s_settingsMenu->performance.multisampleType ) {
 	case AntiAlias_None:
-	case AntiAlias_TSAA:
-	case AntiAlias_FXAA:
-		// no framebuffer attachements needed for these
 		Cvar_Set( "r_multisampleAmount", "0" );
+		break;
+	case AntiAlias_TAA:
+	case AntiAlias_SMAA:
+	case AntiAlias_FXAA:
 		break;
 	case AntiAlias_2xMSAA:
 	case AntiAlias_2xSSAA:
@@ -926,15 +950,17 @@ static void PerformanceMenu_Save( void )
 	};
 
 	Cvar_Set( "r_textureMode", s_settingsMenu->performance.textureFilters[ s_settingsMenu->performance.textureFilter ] );
-	Cvar_SetIntegerValue( "r_normalMapping", s_settingsMenu->performance.normalMapping );
-	Cvar_SetIntegerValue( "r_specularMapping", s_settingsMenu->performance.specularMapping );
-	Cvar_SetIntegerValue( "r_parallaxMapping", s_settingsMenu->performance.depthMapping );
 	Cvar_SetIntegerValue( "r_textureDetail", s_settingsMenu->performance.textureDetail );
+	Cvar_SetIntegerValue( "r_normalMapping", s_settingsMenu->performance.normalMapping );
 	Cvar_SetIntegerValue( "r_pbr", s_settingsMenu->performance.pbr );
 	Cvar_SetIntegerValue( "r_bloom", s_settingsMenu->performance.bloom );
 	Cvar_SetIntegerValue( "r_postProcess", s_settingsMenu->performance.postProcessing );
 	Cvar_SetIntegerValue( "r_vertexLight", s_settingsMenu->performance.vertexLighting );
 	Cvar_SetIntegerValue( "r_dynamiclight", s_settingsMenu->performance.dynamicLighting );
+	Cvar_SetIntegerValue( "r_toneMap", s_settingsMenu->performance.toneMapping );
+	Cvar_SetIntegerValue( "r_toneMapType", s_settingsMenu->performance.toneMappingType );
+
+	Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n" );
 }
 
 static void AudioMenu_Save( void )
@@ -973,8 +999,9 @@ static void SettingsMenu_Draw( void )
 		UI_PopMenu();
 	}
 
-	ImGui::SetWindowFontScale( ( 1.5f * ImGui::GetFont()->Scale ) * ui->scale );
+	ImGui::SetWindowFontScale( ( 1.2f * ImGui::GetFont()->Scale ) * ui->scale );
 	SettingsMenu_TabBar();
+	ImGui::SetWindowFontScale( ( 1.5f * ImGui::GetFont()->Scale ) * ui->scale );
 
 	switch ( s_settingsMenu->lastChild ) {
 	case ID_VIDEO:
@@ -1002,13 +1029,13 @@ static void SettingsMenu_Draw( void )
 	s_settingsMenu->saveHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
 	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
 		Snd_PlaySfx( ui->sfx_select );
-		Cbuf_ExecuteText( EXEC_APPEND, "writeconfig " NOMAD_CONFIG "\n" );
+		Cbuf_ExecuteText( EXEC_APPEND, "writecfg " NOMAD_CONFIG "\n" );
 		switch ( s_settingsMenu->lastChild ) {
 		case ID_VIDEO:
-		case ID_PERFORMANCE:
 			VideoMenu_Save();
+			break;
+		case ID_PERFORMANCE:
 			PerformanceMenu_Save();
-			Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n" );
 			break;
 		case ID_AUDIO:
 			AudioMenu_Save();
@@ -1057,8 +1084,9 @@ void SettingsMenu_Cache( void )
 	    "32x MSAA",
 	    "2x SSAA",
 	    "4x SSAA",
-		"TSAA",
-		"FXAA"
+//		"TAA",
+//		"SMAA",
+//		"FXAA"
 	};
 	static const char *s_anisotropyTypes[] = {
 	    "2x",
@@ -1083,13 +1111,6 @@ void SettingsMenu_Cache( void )
 	static const char *s_toneMappingTypes[] = {
 	    "Reinhard",
 	    "Exposure"
-	};
-
-	static const char *s_windowModes[] = {
-		"Windowed",
-		"Fullscreen",
-		"Borderless Windowed",
-		"Borderless Fullscreen",
 	};
 	static const char *s_windowSizes[] = {
 		"Native Resolution",
@@ -1134,10 +1155,8 @@ void SettingsMenu_Cache( void )
 	s_settingsMenu->video.windowResolution = Cvar_VariableInteger( "r_mode" ) + 2;
 	s_settingsMenu->video.vsync = Cvar_VariableInteger( "r_swapInterval" ) + 1;
 	s_settingsMenu->video.gamma = Cvar_VariableFloat( "r_gammaAmount" );
-	s_settingsMenu->video.windowMode = Cvar_VariableInteger( "r_fullscreen" );
-	if ( Cvar_VariableInteger( "r_noborder" ) ) {
-		s_settingsMenu->video.windowMode += 2;
-	}
+	s_settingsMenu->video.fullscreen = Cvar_VariableInteger( "r_fullscreen" );
+	s_settingsMenu->video.noborder = Cvar_VariableInteger( "r_noborder" );
 
 	switch ( Cvar_VariableInteger( "r_arb_texture_max_anisotropy" ) ) {
 	case 0:
@@ -1180,22 +1199,22 @@ void SettingsMenu_Cache( void )
 		}
 	}
 
+	s_settingsMenu->performance.toneMappingTypes = s_toneMappingTypes;
 	s_settingsMenu->performance.multisampleTypes = s_multisampleTypes;
 	s_settingsMenu->performance.anisotropyTypes = s_anisotropyTypes;
 	s_settingsMenu->performance.textureDetails = s_textureDetail;
 	s_settingsMenu->performance.textureFilters = s_textureFilters;
 
 	s_settingsMenu->video.vsyncList = s_vsync;
-	s_settingsMenu->video.windowModes = s_windowModes;
 	s_settingsMenu->video.windowSizes = s_windowSizes;
 
 	s_settingsMenu->performance.numMultisampleTypes = arraylen( s_multisampleTypes );
 	s_settingsMenu->performance.numAnisotropyTypes = arraylen( s_anisotropyTypes );
 	s_settingsMenu->performance.numTextureDetails = arraylen( s_textureDetail );
 	s_settingsMenu->performance.numTextureFilters = arraylen( s_textureFilters );
+	s_settingsMenu->performance.numToneMappingTypes = arraylen( s_toneMappingTypes );
 	
 	s_settingsMenu->video.numVSync = arraylen( s_vsync );
-	s_settingsMenu->video.numWindowModes = arraylen( s_windowModes );
 	s_settingsMenu->video.numWindowSizes = arraylen( s_windowSizes );
 
 	s_settingsMenu->save_0 = re.RegisterShader( "menu/save_0" );
@@ -1205,8 +1224,7 @@ void SettingsMenu_Cache( void )
 	s_settingsMenu->reset_1 = re.RegisterShader( "menu/reset_1" );
 }
 
-void UI_SettingsMenu( void )
-{
+void UI_SettingsMenu( void ) {
 	SettingsMenu_Cache();
 	UI_PushMenu( &s_settingsMenu->menu );
 }

@@ -402,7 +402,7 @@ static int ImGui_ImplSDL2_Init(SDL_Window* window, SDL_Renderer* renderer)
 #endif
 
     // Setup backend capabilities flags
-    ImGui_ImplSDL2_Data* bd = (ImGui_ImplSDL2_Data *)Z_Malloc( sizeof(*bd), TAG_RENDERER );
+    ImGui_ImplSDL2_Data* bd = (ImGui_ImplSDL2_Data *)Hunk_Alloc( sizeof(*bd), h_low );
     memset(bd, 0, sizeof(*bd));
     io.BackendPlatformUserData = (void*)bd;
     io.BackendPlatformName = "imgui_impl_sdl2";

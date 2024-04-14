@@ -303,10 +303,6 @@ void G_LoadJPG( const char *filename, byte **pic, int32_t *width, int32_t *heigh
 //
 void Con_DrawConsole( void );
 void Con_RunConsole( void );
-void Con_PageUp( uint32_t lines );
-void Con_PageDown( uint32_t lines );
-void Con_Top( void );
-void Con_Bottom( void );
 void Con_Close( void );
 void G_ConsolePrint( const char *txt );
 void Con_CheckResize( void );

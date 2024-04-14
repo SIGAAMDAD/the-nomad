@@ -99,7 +99,7 @@ static void LoadGameMenu_Draw( void )
                     g_pModuleLib->ModuleCall( sgvm, ModuleOnLoadGame, 0 );
                 }
 
-                ImGui::SetWindowFontScale( font_scale * 0.75f );
+                ImGui::SetWindowFontScale( ( font_scale * 0.75f ) * ui->scale );
                 ImGui::BeginTable( va( "Save Slots##%lu", i ), 3 );
                 {
                     ImGui::TableNextColumn();
@@ -123,7 +123,7 @@ static void LoadGameMenu_Draw( void )
                     ImGui::TextUnformatted( difficultyTable[ s_loadGame->saveList[i].gd.dif ].name );
                 }
                 ImGui::EndTable();
-                ImGui::SetWindowFontScale( font_scale );
+                ImGui::SetWindowFontScale( ( font_scale ) * ui->scale );
                 ImGui::TreePop();
             }
         }

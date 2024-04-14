@@ -68,92 +68,55 @@ using vector = aatc::container::tempspec::vector<T>;
 #define SET_NAMESPACE( name ) g_pModuleLib->GetScriptEngine()->SetDefaultNamespace( name )
 #define RESET_NAMESPACE() g_pModuleLib->GetScriptEngine()->SetDefaultNamespace( "" )
 
-static bool Add( const char *name ) {
-    for ( const auto& it : g_pModuleLib->m_RegisteredProcs ) {
-        if ( !N_strcmp( name, it.c_str() ) ) {
-            return false;
-        }
-    }
-    g_pModuleLib->m_RegisteredProcs.emplace_back( name );
-    return true;
-}
-
 static void ValidateEnumType( const char *func, const char *name, int result ) {
-    if ( !Add( name ) ) {
-        return;
-    }
     if ( result < 0 ) {
         N_Error( ERR_DROP, "%s: failed to register enumeration type %s -- %s", func, name, AS_PrintErrorString( result ) );
     }
 }
 
 static void ValidateEnumValue( const char *func, const char *name, int result ) {
-    if ( !Add( name ) ) {
-        return;
-    }
     if ( result < 0 ) {
         N_Error( ERR_DROP, "%s: failed to register enumeration value %s -- %s", func, name, AS_PrintErrorString( result ) );
     }
 }
 
 static void ValidateFunction( const char *func, const char *name, int result ) {
-    if ( !Add( name ) ) {
-        return;
-    }
     if ( result < 0 ) {
         N_Error( ERR_DROP, "%s: failed to register global function %s -- %s", func, name, AS_PrintErrorString( result ) );
     }
 }
 
 static void ValidateMethod( const char *func, const char *name, int result ) {
-    if ( !Add( name ) ) {
-        return;
-    }
     if ( result < 0 ) {
         N_Error( ERR_DROP, "%s: failed to register method function %s -- %s", func, name, AS_PrintErrorString( result ) );
     }
 }
 
 static void ValidateObjectType( const char *func, const char *name, int result ) {
-    if ( !Add( name ) ) {
-        return;
-    }
     if ( result < 0 ) {
         N_Error( ERR_DROP, "%s: failed to register object type %s -- %s", func, name, AS_PrintErrorString( result ) );
     }
 }
 
 static void ValidateObjectBehaviour( const char *func, const char *name, int result ) {
-    if ( !Add( name ) ) {
-        return;
-    }
     if ( result < 0 ) {
         N_Error( ERR_DROP, "%s: failed to register object behaviour %s -- %s", func, name, AS_PrintErrorString( result ) );
     }
 }
 
 static void ValidateObjectProperty( const char *func, const char *name, int result ) {
-    if ( !Add( name ) ) {
-        return;
-    }
     if ( result < 0 ) {
         N_Error( ERR_DROP, "%s: failed to register object property %s -- %s", func, name, AS_PrintErrorString( result ) );
     }
 }
 
 static void ValidateTypedef( const char *func, const char *name, int result ) {
-    if ( !Add( name ) ) {
-        return;
-    }
     if ( result < 0 ) {
         N_Error( ERR_DROP, "%s: failed to register typedef %s -- %s", func, name, AS_PrintErrorString( result ) );
     }
 }
 
 static void ValidateGlobalVar( const char *func, const char *name, int result ) {
-    if ( !Add( name ) ) {
-        return;
-    }
     if ( result < 0 ) {
         N_Error( ERR_DROP, "%s: failed to register global variable %s -- %s", func, name, AS_PrintErrorString( result ) );
     }

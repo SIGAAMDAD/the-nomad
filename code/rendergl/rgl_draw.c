@@ -560,6 +560,16 @@ void RB_IterateShaderStages( shader_t *shader )
 			nglBindSampler( TB_DIFFUSEMAP, rg.samplers[stageP->bundle[0].filter] );
 		}
 
+		if ( r_multisampleType->i == AntiAlias_FXAA ) {
+			vec2_t screenSize;
+			VectorSet2( screenSize, glConfig.vidWidth, glConfig.vidHeight );
+			GLSL_SetUniformVec2( sp, UNIFORM_SCREEN_SIZE, screenSize );
+		}
+
+		if ( r_toneMapType->i == 1 ) {
+			GLSL_SetUniformFloat( sp, UNIFORM_EXPOSURE, r_autoExposure->f );
+		}
+
 		{
 			qboolean light = qtrue;
 			qboolean fastLight = !( r_normalMapping->i || r_specularMapping->i );

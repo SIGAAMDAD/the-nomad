@@ -50,11 +50,37 @@ void Com_AddLoadResource( const char *title, nhandle_t (*fn)( const char * ) );
 void Com_LoadResources( void );
 
 // md4 functions
-uint32_t Com_BlockChecksum (const void *buffer, uint64_t length);
+uint32_t Com_BlockChecksum ( const void *buffer, uint64_t length );
+void Com_RandomBytes( byte *string, int len );
 
 //int		COM_ParseInfos( const char *buf, int max, char infos[][MAX_INFO_STRING] );
 
 char *COM_ParseComplex( const char **data_p, qboolean allowLineBreak );
+
+extern	cvar_t	*com_developer;
+extern	cvar_t	*com_dedicated;
+extern	cvar_t	*com_speeds;
+extern	cvar_t	*com_timescale;
+extern	cvar_t	*com_viewlog;			// 0 = hidden, 1 = visible, 2 = minimized
+extern	cvar_t	*com_version;
+extern	cvar_t	*com_journal;
+
+/*
+
+--- low memory ----
+---mark---
+renderer initialization (shaders, etc)
+sgame vm
+renderer map
+imgui
+
+---free---
+
+temp file loading
+--- high memory ---
+
+*/
+
 
 typedef enum {
 	TK_GENEGIC = 0, // for single-char tokens

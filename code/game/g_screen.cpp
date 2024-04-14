@@ -339,7 +339,15 @@ uint32_t SCR_GetBigStringWidth( const char *str ) {
 
 static uint64_t time_frontend, time_backend;
 
-void SCR_UpdateScreen(void)
+/*
+==================
+SCR_UpdateScreen
+
+This is called every frame, and can also be called explicitly to flush
+text to the screen.
+==================
+*/
+void SCR_UpdateScreen( void )
 {
     static uint32_t recursive;
     static uint64_t framecount;
@@ -349,10 +357,10 @@ void SCR_UpdateScreen(void)
 //	g_pRenderThread->Start();
 	re.BeginFrame( STEREO_CENTER );
 
-    if (framecount == gi.framecount) {
+    if ( framecount == gi.framecount ) {
         int64_t ms = Sys_Milliseconds();
 
-        if (next_frametime && ms - next_frametime < 0) {
+        if ( next_frametime && ms - next_frametime < 0 ) {
             re.ThrottleBackend();
         }
         else {
@@ -364,8 +372,8 @@ void SCR_UpdateScreen(void)
         framecount = gi.framecount;
     }
 
-    if (++recursive > 2) {
-        N_Error(ERR_FATAL, "G_UpdateScreen: recursively called");
+    if ( ++recursive > 2 ) {
+        N_Error( ERR_FATAL, "G_UpdateScreen: recursively called" );
     }
     recursive = 1;
 
@@ -399,7 +407,11 @@ void SCR_UpdateScreen(void)
     // console draws next
     Con_DrawConsole();
 
-	re.EndFrame( NULL, NULL );
+	if ( com_speeds->i ) {
+		re.EndFrame( &time_frontend, &time_backend );
+	} else {
+		re.EndFrame( NULL, NULL );
+	}
 
 	// draw it all
 //	if ( !g_pRenderThread->Join() ) {

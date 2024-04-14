@@ -39,16 +39,16 @@ qboolean UI_MenuTitle( const char *label, float fontScale )
 	FontCache()->SetActiveFont( AlegreyaSC );
 
 	ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
-    ImGui::SetWindowFontScale( fontScale * ui->scale );
+    ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * fontScale ) * ui->scale );
     ImGui::TextUnformatted( label );
-    ImGui::SetWindowFontScale( 1.0f * ui->scale );
+    ImGui::SetWindowFontScale( 1.0f );
 	ImGui::PopStyleColor();
 
 	cursorPos = ImGui::GetCursorScreenPos();
 
 //	ImGui::SetWindowFontScale( 1.5f * scale );
 	ImGui::SetCursorScreenPos( ImVec2( 16 * ui->scale, 680 * ui->scale ) );
-	if ( ui->menusp > 1 ) {
+	if ( ui->menusp >= 2 ) {
 		ImGui::Image( (ImTextureID)(uintptr_t)( ui->backHovered ? ui->back_1 : ui->back_0 ), ImVec2( 256 * ui->scale, 72 * ui->scale ) );
 		ui->backHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
 		if ( ImGui::IsItemClicked() ) {
@@ -58,7 +58,7 @@ qboolean UI_MenuTitle( const char *label, float fontScale )
 	}
 	ImGui::SetCursorScreenPos( cursorPos );
 
-	ImGui::SetWindowFontScale( 1.0f * ui->scale );
+	ImGui::SetWindowFontScale( 1.0f );
 
     return false;
 }

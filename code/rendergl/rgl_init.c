@@ -705,13 +705,11 @@ static void R_ScreenShotJPEG_f( void ) {
 
 static void GpuInfo_f( void ) 
 {
-	const char *enablestrings[] =
-	{
+	const char *enablestrings[] = {
 		"disabled",
 		"enabled"
 	};
-	const char *fsstrings[] =
-	{
+	const char *fsstrings[] = {
 		"windowed",
 		"fullscreen"
 	};
@@ -726,7 +724,7 @@ static void GpuInfo_f( void )
 
 		nglGetIntegerv( GL_NUM_EXTENSIONS, &numExtensions );
 		for ( i = 0; i < numExtensions; i++ ) {
-            if (i > 64) {
+            if ( i > 64 ) {
                 break;
             }
 			ri.Printf( PRINT_INFO, "%s ", nglGetStringi( GL_EXTENSIONS, i ) );
@@ -747,12 +745,10 @@ static void GpuInfo_f( void )
 	else {
 		ri.Printf( PRINT_INFO, "N/A\n" );
 	}
-	if ( glConfig.deviceSupportsGamma )
-	{
+	if ( glConfig.deviceSupportsGamma ) {
 		ri.Printf( PRINT_INFO, "GAMMA: hardware w/ %d overbright bits\n", rg.overbrightBits );
 	}
-	else
-	{
+	else {
 		ri.Printf( PRINT_INFO, "GAMMA: software w/ %d overbright bits\n", rg.overbrightBits );
 	}
 
@@ -952,8 +948,8 @@ static void R_Register( void )
     //
     // archived variables that can change any time
     //
-    r_customWidth = ri.Cvar_Get( "r_customWidth", "1980", CVAR_SAVE | CVAR_LATCH );
-	r_customHeight = ri.Cvar_Get( "r_customHeight", "1080", CVAR_SAVE | CVAR_LATCH );
+    r_customWidth = ri.Cvar_Get( "r_customWidth", "1980", CVAR_SAVE );
+	r_customHeight = ri.Cvar_Get( "r_customHeight", "1080", CVAR_SAVE );
 
 #ifdef _NOMAD_DEBUG
     r_glDiagnostics = ri.Cvar_Get( "r_gpuDiagnostics", "1", CVAR_SAVE | CVAR_LATCH );
@@ -1020,7 +1016,7 @@ static void R_Register( void )
 //                            " GL_NEAREST_MIPMAP_LINEAR: Nearest neighbor interpolation with mipmapping for trilinear hardware\n"
 //                            " GL_LINEAR_MIPMAP_LINEAR: Linear interpolation with mipmapping for trilinear hardware"
     );
-	r_gammaAmount = ri.Cvar_Get( "r_gammaAmount", "2.2", CVAR_SAVE );
+	r_gammaAmount = ri.Cvar_Get( "r_gammaAmount", "1.0", CVAR_SAVE );
 	ri.Cvar_CheckRange( r_gammaAmount, "0.5", "3", CVT_FLOAT );
 	ri.Cvar_SetDescription( r_gammaAmount, "Gamma correction factor." );
 
@@ -1314,7 +1310,7 @@ static void R_AllocBackend( void ) {
     size += PAD( sizeof(renderEntityDef_t) * r_maxEntities->i, sizeof(uintptr_t) );
     size += PAD( sizeof(dlight_t) * r_maxDLights->i, sizeof(uintptr_t) );
 
-    backendData = (renderBackendData_t *)ri.Malloc( size );
+    backendData = (renderBackendData_t *)ri.Hunk_Alloc( size, h_low );
     backendData->verts = (srfVert_t *)( backendData + 1 );
     backendData->polyVerts = (polyVert_t *)( backendData->verts + r_maxPolys->i * 4 );
     backendData->polys = (srfPoly_t *)( backendData->polyVerts + r_maxPolys->i * 4 );

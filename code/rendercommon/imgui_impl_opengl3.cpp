@@ -309,12 +309,12 @@ void ImGui_ImplOpenGL3_Init(void *shaderData, const char *glsl_version, const im
     IM_ASSERT(io.BackendRendererUserData == nullptr && "Already initialized a renderer backend!");
 
     // Setup backend capabilities flags
-    bd = (ImGui_ImplOpenGL3_Data *)Z_Malloc( sizeof(*bd), TAG_IMGUI );
+    bd = (ImGui_ImplOpenGL3_Data *)Hunk_Alloc( sizeof(*bd), h_low );
     memset(bd, 0, sizeof(*bd));
     io.BackendRendererUserData = (void *)bd;
     io.BackendRendererName = "imgui_impl_opengl3";
 
-    r_gamma = Cvar_Get("r_gammaAmount", "1", CVAR_SAVE | CVAR_LATCH);
+    r_gamma = Cvar_Get( "r_gammaAmount", "1.0", CVAR_SAVE );
 
     // Query for GL version (e.g. 320 for GL 3.2)
 #if defined(IMGUI_IMPL_OPENGL_ES2)

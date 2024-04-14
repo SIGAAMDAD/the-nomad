@@ -99,11 +99,11 @@ static void *G_RefRealloc(void *ptr, uint64_t nsize) {
 }
 
 static void G_RefFreeAll(void) {
-    Z_FreeTags(TAG_RENDERER, TAG_RENDERER);
+    Z_FreeTags( TAG_RENDERER, TAG_RENDERER );
 }
 
 static void G_RefImGuiFree(void *ptr, void *) {
-    if (ptr != NULL) {
+    if ( ptr != NULL ) {
         Z_Free( ptr );
     }
 }
@@ -761,12 +761,12 @@ void G_Init( void )
     r_stereoEnabled = Cvar_Get( "r_stereoEnabled", "0", CVAR_SAVE | CVAR_LATCH );
 	Cvar_SetDescription( r_stereoEnabled, "Enable stereo rendering for techniques like shutter glasses." );
 
-	r_swapInterval = Cvar_Get( "r_swapInterval", "1", CVAR_SAVE | CVAR_LATCH );
+	r_swapInterval = Cvar_Get( "r_swapInterval", "1", CVAR_SAVE );
 	Cvar_SetDescription( r_swapInterval,
                         "V-blanks to wait before swapping buffers."
                         "\n  0: No V-Sync\n  1: Synced to the monitor's refresh rate.\n -1: Adaptive V-Sync" );
     
-	r_displayRefresh = Cvar_Get( "r_displayRefresh", "0", CVAR_LATCH );
+	r_displayRefresh = Cvar_Get( "r_displayRefresh", "0", CVAR_TEMP );
 	Cvar_CheckRange( r_displayRefresh, "0", "500", CVT_INT );
 	Cvar_SetDescription( r_displayRefresh,
                         "Override monitor refresh rate in fullscreen mode:\n"
@@ -781,29 +781,31 @@ void G_Init( void )
 	Cvar_CheckRange( vid_ypos, NULL, NULL, CVT_INT );
 	Cvar_SetDescription( vid_ypos, "Saves/sets window Y-coordinate when windowed, requires \\vid_restart." );
 
-    r_multisampleType = Cvar_Get( "r_multisampleType", "1", CVAR_SAVE | CVAR_LATCH );
+    r_multisampleType = Cvar_Get( "r_multisampleType", "1", CVAR_SAVE );
     Cvar_CheckRange( r_multisampleType, va( "%i", AntiAlias_None ), va( "%i", AntiAlias_FXAA ), CVT_INT );
     Cvar_SetDescription( r_multisampleType,
                             "Sets the anti-aliasing type to the desired:\n"
-                            "   0 - None\n"
-                            "   1 - 2x MSAA\n"
-                            "   2 - 4x MSAA\n"
-                            "   3 - 8x MSAA\n"
-                            "   4 - 16x MSAA\n"
-                            "   5 - 32x MSAA\n"
-                            "   6 - 2x SSAA\n"
-                            "   7 - 4x SSAA\n"
-                            "   8 - Dynamic SSAA\n"
+                            " 0: None\n"
+                            " 1: 2x MSAA\n"
+                            " 2: 4x MSAA\n"
+                            " 3: 8x MSAA\n"
+                            " 4: 16x MSAA\n"
+                            " 5: 32x MSAA\n"
+                            " 6: 2x SSAA\n"
+                            " 7: 4x SSAA\n"
+                            " 8: TAA\n"
+                            " 9: SMAA\n"
+                            " 10: FXAA\n"
                             "requires \\vid_restart." );
-    r_multisampleAmount = Cvar_Get( "r_multisampleAmount", "8", CVAR_SAVE | CVAR_LATCH );
+    r_multisampleAmount = Cvar_Get( "r_multisampleAmount", "8", CVAR_SAVE );
     Cvar_CheckRange( r_multisampleAmount, 0, "32", CVT_INT );
 
-	r_noborder = Cvar_Get( "r_noborder", "0", CVAR_ARCHIVE_ND | CVAR_LATCH );
+	r_noborder = Cvar_Get( "r_noborder", "0", CVAR_ARCHIVE_ND );
 	Cvar_CheckRange( r_noborder, "0", "1", CVT_INT );
 	Cvar_SetDescription( r_noborder, "Setting to 1 will remove window borders and title bar in windowed mode, hold ALT to drag & drop it with opened console." );
 
-	r_mode = Cvar_Get( "r_mode", "-2", CVAR_SAVE | CVAR_LATCH );
-	Cvar_CheckRange( r_mode, "-2", va("%lu", numVidModes - 1), CVT_INT );
+	r_mode = Cvar_Get( "r_mode", "-2", CVAR_SAVE );
+	Cvar_CheckRange( r_mode, "-2", va( "%lu", numVidModes - 1 ), CVT_INT );
 	Cvar_SetDescription( r_mode,
                             "Set video mode:\n"
                             "   -2 - use current desktop resolution\n"
@@ -813,18 +815,18 @@ void G_Init( void )
     
     r_debugCamera = Cvar_Get( "r_debugCamera", "0", CVAR_TEMP | CVAR_PRIVATE );
 
-	r_fullscreen = Cvar_Get( "r_fullscreen", "1", CVAR_SAVE | CVAR_LATCH );
+	r_fullscreen = Cvar_Get( "r_fullscreen", "1", CVAR_SAVE );
     Cvar_CheckRange(r_fullscreen, "0", "1", CVT_INT);
 	Cvar_SetDescription( r_fullscreen, "Fullscreen mode. Set to 0 for windowed mode." );
 
 	r_customPixelAspect = Cvar_Get( "r_customPixelAspect", "1", CVAR_ARCHIVE_ND | CVAR_LATCH );
 	Cvar_SetDescription( r_customPixelAspect, "Enables custom aspect of the screen, with \\r_mode 1." );
 
-	r_customWidth = Cvar_Get( "r_customWidth", "1980", CVAR_SAVE | CVAR_LATCH );
+	r_customWidth = Cvar_Get( "r_customWidth", "1980", CVAR_SAVE );
 	Cvar_CheckRange( r_customWidth, "4", NULL, CVT_INT );
 	Cvar_SetDescription( r_customWidth, "Custom width to use with \\r_mode -1." );
 
-	r_customHeight = Cvar_Get( "r_customHeight", "1080", CVAR_SAVE | CVAR_LATCH );
+	r_customHeight = Cvar_Get( "r_customHeight", "1080", CVAR_SAVE );
 	Cvar_CheckRange( r_customHeight, "4", NULL, CVT_INT );
 	Cvar_SetDescription( r_customHeight, "Custom height to use with \\r_mode -1." );
 
@@ -967,10 +969,9 @@ void G_StartHunkUsers( void )
 {
     G_InitArchiveHandler();
 
-    g_pRenderThread = new ( Hunk_Alloc( sizeof( *g_pRenderThread ), h_high ) ) CRenderThread();
+    g_pRenderThread = new ( Hunk_Alloc( sizeof( *g_pRenderThread ), h_low ) ) CRenderThread();
 
     // cache all maps
-    g_world = new ( Hunk_Alloc( sizeof( *g_world ), h_high ) ) CGameWorld();
     G_InitMapCache();
 
     if ( !g_pModuleLib ) {
@@ -1005,11 +1006,6 @@ void G_ShutdownAll( void )
     // shutdown VMs
     G_ShutdownVMs( qfalse );
 
-    if ( !g_world ) {
-        g_world = (CGameWorld *)Hunk_Alloc( sizeof( *g_world ), h_high );
-    }
-    new ( g_world ) CGameWorld();
-
     // shutdown the renderer
     if ( re.Shutdown ) {
         if ( !com_errorEntered ) {
@@ -1023,7 +1019,7 @@ void G_ShutdownAll( void )
     gi.rendererStarted = qfalse;
     gi.soundStarted = qfalse;
 
-    Hunk_ClearToMark();
+    g_world = NULL;
 }
 
 /*
@@ -1094,27 +1090,30 @@ static void G_MoveCamera_f( void )
     }
 }
 
-void G_Frame(int32_t msec, int32_t realMsec)
+void G_Frame( int msec, int realMsec )
 {
     uint32_t i, j;
 
     // save the msec before checking pause
-    gi.realFrameTime = msec;
-    gi.frametime = gi.frametime - msec;
-    gi.realtime += gi.frametime;
+    gi.realFrameTime = realMsec;
+    
+    // decide the simulation time
+    gi.frametime = msec;
+    gi.realtime += msec;
+//    gi.frametime = gi.frametime - msec;
+//    gi.realtime += gi.frametime;
 
     G_MoveCamera_f();
 
-    // update sound
-    Snd_Update( gi.realtime );
+    // update the screen
+    gi.framecount++;
+    SCR_UpdateScreen();
+
+    // update audio
+    Snd_Update( realMsec );
 
     // run the console
     Con_RunConsole();
-
-    // update the screen
-    SCR_UpdateScreen();
-
-    gi.framecount++;
 }
 
 void G_MouseEvent( int dx, int dy ) {

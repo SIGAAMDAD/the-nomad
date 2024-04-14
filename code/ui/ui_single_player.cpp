@@ -16,8 +16,6 @@ typedef struct {
     menutext_t playMission;
 } campaignMenu_t;
 
-extern ImFont *RobotoMono;
-extern ImFont *PressStart2P;
 static campaignMenu_t *s_campaignMenu;
 
 static void SinglePlayerMenu_EventCallback( void *ptr, int event )

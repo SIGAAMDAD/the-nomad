@@ -31,9 +31,13 @@ errorCode_t com_errorCode;
 #ifdef USE_AFFINITY_MASK
 cvar_t *com_affinityMask;
 #endif
+cvar_t *com_speeds;
 cvar_t *sys_cpuString;
 cvar_t *com_devmode;
 cvar_t *com_version;
+cvar_t *com_viewlog;
+cvar_t *com_timescale;
+cvar_t *com_fixedtime;
 static int lastTime;
 int com_frameTime;
 uint64_t com_frameNumber = 0;
@@ -1565,6 +1569,7 @@ static void Com_CheckCrash( void )
 void Com_Init( char *commandLine )
 {
 	cvar_t *cv;
+	const char *s;
 
 	com_fullyInitialized = qfalse;
 
@@ -1669,6 +1674,18 @@ void Com_Init( char *commandLine )
 	com_affinityMask->modified = qfalse;
 #endif
 
+	com_timescale = Cvar_Get( "timescale", "1", CVAR_CHEAT );
+	Cvar_CheckRange( com_timescale, "0", NULL, CVT_FLOAT );
+	Cvar_SetDescription( com_timescale, "System timing factor:\n < 1: Slows the game down\n = 1: Regular speed\n > 1: Speeds the game up" );
+	com_fixedtime = Cvar_Get( "fixedtime", "0", CVAR_CHEAT );
+	Cvar_SetDescription( com_fixedtime, "Toggle the rendering of every frame the game will wait until each frame is completely rendered before sending the next frame." );
+//	com_showtrace = Cvar_Get( "com_showtrace", "0", CVAR_CHEAT );
+//	Cvar_SetDescription( com_showtrace, "Debugging tool that prints out trace information." );
+	com_viewlog = Cvar_Get( "viewlog", "0", 0 );
+	Cvar_SetDescription( com_viewlog, "Toggle the display of the startup console window over the game screen." );
+	com_speeds = Cvar_Get( "com_speeds", "0", 0 );
+	Cvar_SetDescription( com_speeds, "Prints speed information per frame to the console. Used for debugging." );
+
 	Cvar_Get( "sys_cpuCount", va( "%i", SDL_GetCPUCount() ), CVAR_PROTECTED | CVAR_ROM | CVAR_NORESTART );
 
 	sys_cpuString = Cvar_Get( "sys_cpuString", "detect", CVAR_PROTECTED | CVAR_ROM | CVAR_NORESTART );
@@ -1679,6 +1696,8 @@ void Com_Init( char *commandLine )
 		Cvar_Set( "sys_cpuString", vendor );
 	}
 	Con_Printf( "%s\n", Cvar_VariableString( "sys_cpuString" ) );
+
+	Cvar_Get( "com_errorMessage", "", CVAR_ROM | CVAR_NORESTART );
 
 #ifdef USE_AFFINITY_MASK
 	// get initial process affinity - we will respect it when setting custom affinity masks
@@ -1697,6 +1716,11 @@ void Com_Init( char *commandLine )
 	Cmd_AddCommand( "quit", Com_Quit_f );
 	Cmd_AddCommand( "exit", Com_Quit_f ); // really just added for convenience...
 	Cmd_AddCommand( "writecfg", Com_WriteConfig_f );
+	Cmd_AddCommand( "writeconfig", Com_WriteConfig_f );
+
+	s = va( "%s %s %s", GLN_VERSION, OS_STRING, __DATE__ );
+	com_version = Cvar_Get( "version", s, CVAR_PROTECTED | CVAR_ROM );
+	Cvar_SetDescription( com_version, "Read-only CVAR to see the version of the game." );
 
 //	VM_Init();
 
@@ -2028,6 +2052,26 @@ void Sys_SnapVector( float *vector )
 
 #endif // clang
 
+/*
+==================
+Com_RandomBytes
+
+fills string array with len random bytes, preferably from the OS randomizer
+==================
+*/
+void Com_RandomBytes( byte *string, int len )
+{
+	int i;
+
+	if ( Sys_RandomBytes( string, len ) ) {
+		return;
+	}
+
+	Con_Printf( COLOR_YELLOW "Com_RandomBytes: using weak randomization\n" );
+	srand( time( NULL ) );
+	for( i = 0; i < len; i++ )
+		string[i] = (unsigned char)( rand() % 256 );
+}
 
 static qboolean strgtr(const char *s0, const char *s1)
 {

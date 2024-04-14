@@ -86,23 +86,23 @@ public:
 
 	// Enumerate included script sections
 	unsigned int GetSectionCount() const;
-	UtlString  GetSectionName(unsigned int idx) const;
+	const UtlString&  GetSectionName(unsigned int idx) const;
 
-#if AS_PROCESS_METADATA == 1
+#ifdef AS_PROCESS_METADATA
 	// Get metadata declared for classes, interfaces, and enums
-	UtlVector<UtlString> GetMetadataForType(int typeId);
+	const UtlVector<UtlString>& GetMetadataForType(int typeId);
 
 	// Get metadata declared for functions
-	UtlVector<UtlString> GetMetadataForFunc(asIScriptFunction *func);
+	const UtlVector<UtlString>& GetMetadataForFunc(asIScriptFunction *func);
 
 	// Get metadata declared for global variables
-	UtlVector<UtlString> GetMetadataForVar(int varIdx);
+	const UtlVector<UtlString>& GetMetadataForVar(int varIdx);
 
 	// Get metadata declared for class variables
-	UtlVector<UtlString> GetMetadataForTypeProperty(int typeId, int varIdx);
+	const UtlVector<UtlString>& GetMetadataForTypeProperty(int typeId, int varIdx);
 
 	// Get metadata declared for class methods
-	UtlVector<UtlString> GetMetadataForTypeMethod(int typeId, asIScriptFunction *method);
+	const UtlVector<UtlString>& GetMetadataForTypeMethod(int typeId, asIScriptFunction *method);
 #endif
 
 protected:
@@ -127,7 +127,7 @@ protected:
 	PRAGMACALLBACK_t  pragmaCallback;
 	void             *pragmaParam;
 
-#if AS_PROCESS_METADATA == 1
+#ifdef AS_PROCESS_METADATA
 	int  ExtractMetadata(int pos, UtlVector<UtlString> &outMetadata);
 	int  ExtractDeclaration(int pos, UtlString &outName, UtlString &outDeclaration, int &outType);
 
@@ -143,7 +143,8 @@ protected:
 	// Temporary structure for storing metadata and declaration
 	struct SMetadataDecl
 	{
-		SMetadataDecl(UtlVector<UtlString> m, UtlString n, UtlString d, int t, UtlString c, UtlString ns) : metadata(m), name(n), declaration(d), type(t), parentClass(c), nameSpace(ns) {}
+		SMetadataDecl( const UtlVector<UtlString>& m, const UtlString& n, const UtlString& d, int t, const UtlString& c, const UtlString& ns )
+			: metadata(m), name(n), declaration(d), type(t), parentClass(c), nameSpace(ns) {}
 		UtlVector<UtlString> metadata;
 		UtlString              name;
 		UtlString              declaration;
@@ -156,19 +157,19 @@ protected:
 	UtlString currentNamespace;
 
 	// Storage of metadata for global declarations
-	eastl::unordered_map<int, UtlVector<UtlString> > typeMetadataMap;
-	eastl::unordered_map<int, UtlVector<UtlString> > funcMetadataMap;
-	eastl::unordered_map<int, UtlVector<UtlString> > varMetadataMap;
+	UtlHashMap<int, UtlVector<UtlString> > typeMetadataMap;
+	UtlHashMap<int, UtlVector<UtlString> > funcMetadataMap;
+	UtlHashMap<int, UtlVector<UtlString> > varMetadataMap;
 
 	// Storage of metadata for class member declarations
 	struct SClassMetadata
 	{
 		SClassMetadata(const UtlString& aName) : className(aName) {}
 		UtlString className;
-		eastl::unordered_map<int, UtlVector<UtlString> > funcMetadataMap;
-		eastl::unordered_map<int, UtlVector<UtlString> > varMetadataMap;
+		UtlHashMap<int, UtlVector<UtlString> > funcMetadataMap;
+		UtlHashMap<int, UtlVector<UtlString> > varMetadataMap;
 	};
-	eastl::unordered_map<int, SClassMetadata> classMetadataMap;
+	UtlHashMap<int, SClassMetadata> classMetadataMap;
 
 #endif
 

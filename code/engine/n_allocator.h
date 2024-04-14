@@ -44,6 +44,7 @@ GDR_INLINE void CHunkTempAllocator::deallocate( void *ptr, size_t )
 	Hunk_FreeTempMemory( ptr );
 }
 
+template<ha_pref where>
 class CHunkAllocator
 {
 public:
@@ -65,17 +66,20 @@ private:
 	#endif
 };
 
-GDR_INLINE void *CHunkAllocator::allocate( size_t n, int flags )
+template<ha_pref where>
+GDR_INLINE void *CHunkAllocator<where>::allocate( size_t n, int flags )
 {
-    return Hunk_Alloc( n, h_low );
+    return Hunk_Alloc( n, where );
 }
 
-GDR_INLINE void *CHunkAllocator::allocate( size_t n, size_t alignment, size_t offset, int flags )
+template<ha_pref where>
+GDR_INLINE void *CHunkAllocator<where>::allocate( size_t n, size_t alignment, size_t offset, int flags )
 {
-    return Hunk_Alloc( n, h_low );
+    return Hunk_Alloc( n, where );
 }
 
-GDR_INLINE void CHunkAllocator::deallocate( void *ptr, size_t )
+template<ha_pref where>
+GDR_INLINE void CHunkAllocator<where>::deallocate( void *ptr, size_t )
 {
 }
 

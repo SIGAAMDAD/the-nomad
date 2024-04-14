@@ -93,7 +93,7 @@ qboolean CGameArchive::LoadArchiveFile( const char *filename, uint64_t index )
 
 	FS_FileSeek( hFile, sizeof( *header.gamedata.modList ) * MAX_NPATH * header.gamedata.numMods, FS_SEEK_CUR );
 
-	file = (ngd_file_t *)Z_Malloc( sizeof( *file ) * header.numSections, TAG_SAVEFILE );
+	file = (ngd_file_t *)Hunk_Alloc( sizeof( *file ) * header.numSections, h_low );
 	file->m_pSectionList = (ngdsection_read_t *)( file + 1 );
 
 	file->m_nSections = header.numSections;
@@ -127,7 +127,7 @@ qboolean CGameArchive::LoadArchiveFile( const char *filename, uint64_t index )
 					filename, section->name, i );
 			}
 			
-			field = (ngdfield_t *)Z_Malloc( PAD( sizeof( *field ) + nameLength, sizeof( uintptr_t ) ), TAG_SAVEFILE );
+			field = (ngdfield_t *)Hunk_Alloc( PAD( sizeof( *field ) + nameLength, sizeof( uintptr_t ) ), h_low );
 			field->name = (char *)( field + 1 );
 			field->dataOffset = FS_FileTell( hFile );
 			field->nameLength = nameLength;
@@ -227,12 +227,12 @@ CGameArchive::CGameArchive( void )
 	Con_Printf( "G_InitArchiveHandler: initializing save file cache...\n" );
 
 	fileList = FS_ListFiles( "SaveData", ".ngd", &m_nArchiveFiles );
-	m_pArchiveCache = (ngd_file_t **)Z_Malloc( sizeof( *m_pArchiveCache ) * m_nArchiveFiles, TAG_SAVEFILE );
+	m_pArchiveCache = (ngd_file_t **)Hunk_Alloc( sizeof( *m_pArchiveCache ) * m_nArchiveFiles, h_low );
 
-	m_pArchiveFileList = (char **)Z_Malloc( sizeof( *fileList ) * m_nArchiveFiles, TAG_SAVEFILE );
+	m_pArchiveFileList = (char **)Hunk_Alloc( sizeof( *fileList ) * m_nArchiveFiles, h_low );
 	for ( i = 0; i < m_nArchiveFiles; i++ ) {
 		size = strlen( fileList[i] ) + 1;
-		m_pArchiveFileList[i] = (char *)Z_Malloc( size, TAG_SAVEFILE );
+		m_pArchiveFileList[i] = (char *)Hunk_Alloc( size, h_low );
 		N_strncpyz( m_pArchiveFileList[i], fileList[i], size );
 		LoadArchiveFile( fileList[i], i );
 
@@ -254,9 +254,6 @@ void G_InitArchiveHandler( void )
 }
 
 void G_ShutdownArchiveHandler( void ) {
-	Con_Printf( "G_ShutdownArchiveHandler: clearing save file cache...\n" );
-
-	Z_FreeTags( TAG_SAVEFILE, TAG_SAVEFILE );
 	g_pArchiveHandler = NULL;
 }
 
@@ -1207,7 +1204,7 @@ bool CGameArchive::LoadPartial( const char *filename, gamedata_t *gd )
 	FS_Read( &gd->numMods, sizeof( gd->numMods ), f );
 
 	if ( gd->numMods ) {
-		gd->modList = (modlist_t *)Z_Malloc( sizeof( *gd->modList ) * gd->numMods, TAG_SAVEFILE );
+		gd->modList = (modlist_t *)Hunk_Alloc( sizeof( *gd->modList ) * gd->numMods, h_high );
 		for ( i = 0; i < gd->numMods; i++ ) {
 			FS_Read( gd->modList[i].name, sizeof( gd->modList[i].name ), f );
 			FS_Read( &gd->modList[i].nVersionMajor, sizeof( gd->modList[i].nVersionMajor ), f );

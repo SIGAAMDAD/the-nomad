@@ -168,6 +168,188 @@ void FBO_Bind( fbo_t *fbo )
 	GL_CheckErrors();
 }
 
+static void FBO_Clear( fbo_t *fbo )
+{
+	int i;
+
+	if ( fbo->frameBuffer ) {
+		nglDeleteFramebuffers( 1, &fbo->frameBuffer );
+	}
+	for ( i = 0; i < glContext.maxColorAttachments; i++ ) {
+		if ( fbo->colorBuffers[i] ) {
+			nglDeleteRenderbuffers( 1, &fbo->colorBuffers[i] );
+		}
+	}
+
+	if ( fbo->depthBuffer ) {
+		nglDeleteRenderbuffers( 1, &fbo->depthBuffer );
+	}
+
+	if ( fbo->stencilBuffer ) {
+		nglDeleteRenderbuffers( 1, &fbo->stencilBuffer );
+	}
+
+	if ( fbo->frameBuffer ) {
+		nglDeleteFramebuffers( 1, &fbo->frameBuffer );
+	}
+}
+
+static void FBO_Restart_f( void )
+{
+	int hdrFormat, multisample;
+	int width, height;
+	int i;
+
+	if ( !glContext.ARB_framebuffer_object || !r_arb_framebuffer_object->i ) {
+		return;
+	}
+
+	ri.Printf( PRINT_INFO, "------- FBO_Restart -------\n" );
+
+	rg.numFBOs = 0;
+	multisample = 0;
+
+	GL_CheckErrors();
+
+	R_IssuePendingRenderCommands();
+
+	width = glConfig.vidWidth;
+	height = glConfig.vidHeight;
+	switch ( r_multisampleType->i ) {
+	case AntiAlias_2xSSAA:
+		width *= 2;
+		height *= 2;
+		break;
+	case AntiAlias_4xSSAA:
+		width *= 4;
+		height *= 4;
+		break;
+	};
+
+	hdrFormat = GL_RGBA8;
+	if ( r_hdr->i && glContext.ARB_texture_float ) {
+		hdrFormat = GL_RGBA16F_ARB;
+		ri.Printf( PRINT_DEVELOPER, "Using HDR framebuffer format.\n" );
+	}
+
+	if ( glContext.ARB_framebuffer_multisample ) {
+		nglGetIntegerv( GL_MAX_SAMPLES, &multisample );
+	}
+	
+	if ( r_multisampleAmount->i < multisample ) {
+		multisample = r_multisampleAmount->i;
+	}
+
+	if ( multisample < 2 || !glContext.ARB_framebuffer_blit ) {
+		multisample = 0;
+	}
+
+	if ( multisample != r_multisampleAmount->i ) {
+		ri.Cvar_Set( "r_multisampleAmount", va( "%i", multisample ) );
+	}
+
+	if ( multisample && glContext.ARB_framebuffer_multisample ) {
+		if ( rg.renderFbo ) {
+			FBO_Clear( rg.renderFbo );
+			rg.renderFbo->width = width;
+			rg.renderFbo->height = height;
+		} else {
+			rg.renderFbo = FBO_Create( "_render", width, height );
+		}
+		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, multisample );
+		FBO_CreateBuffer( rg.renderFbo, GL_DEPTH24_STENCIL8, 0, multisample );
+		if ( r_bloom->i ) {
+			GLuint buffers[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+			FBO_CreateBuffer( rg.renderFbo, hdrFormat, 1, multisample );
+			nglDrawBuffers( 2, buffers );
+		}
+		R_CheckFBO( rg.renderFbo );
+
+		if ( rg.msaaResolveFbo ) {
+			FBO_Clear( rg.msaaResolveFbo );
+			rg.msaaResolveFbo->width = width;
+			rg.msaaResolveFbo->height = height;
+		} else {
+		    rg.msaaResolveFbo = FBO_Create( "_msaaResolve", width, height );
+		}
+		FBO_CreateBuffer( rg.msaaResolveFbo, hdrFormat, 0, 0 );
+		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, 0 );
+		R_CheckFBO( rg.msaaResolveFbo );
+	}
+	else if ( r_hdr->i ) {
+		if ( rg.renderFbo ) {
+			FBO_Clear( rg.renderFbo );
+			rg.renderFbo->width = width;
+			rg.renderFbo->height = height;
+		} else {
+			rg.renderFbo = FBO_Create( "_render", width, height );
+		}
+		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, 0 );
+		FBO_CreateBuffer( rg.renderFbo, GL_DEPTH24_STENCIL8, 0, 0 );
+		R_CheckFBO( rg.renderFbo );
+	}
+
+	// clear render buffer
+	// this fixes the corrupt screen bug with r_hdr 1 on older hardware
+	if ( rg.renderFbo ) {
+		GL_BindFramebuffer( GL_FRAMEBUFFER, rg.renderFbo->frameBuffer );
+		nglClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	}
+
+	if ( rg.hdrDepthImage ) {
+		if ( rg.hdrDepthFbo ) {
+			FBO_Clear( rg.hdrDepthFbo );
+			rg.hdrDepthFbo->width = width;
+			rg.hdrDepthFbo->height = height;
+		} else {
+			rg.hdrDepthFbo = FBO_Create( "_hdrDepth", rg.hdrDepthImage->width, rg.hdrDepthImage->height );
+		}
+		FBO_CreateBuffer( rg.hdrDepthFbo, GL_RGBA16F, 0, multisample );
+		R_CheckFBO( rg.hdrDepthFbo );
+	}
+
+	if ( rg.screenSsaoImage ) {
+		if ( rg.screenSsaoFbo ) {
+			FBO_Clear( rg.screenSsaoFbo );
+		} else {
+			rg.screenSsaoFbo = FBO_Create( "_screenSsao", rg.screenSsaoImage->width, rg.screenSsaoImage->height );
+		}
+		FBO_AttachImage( rg.screenSsaoFbo, rg.screenSsaoImage, GL_COLOR_ATTACHMENT0 );
+	}
+
+	if ( rg.targetLevelsImage ) {
+		if ( rg.targetLevelsFbo ) {
+			FBO_Clear( rg.targetLevelsFbo );
+			rg.targetLevelsFbo->width = rg.targetLevelsImage->width;
+			rg.targetLevelsFbo->height = rg.targetLevelsImage->height;
+		} else {
+			rg.targetLevelsFbo = FBO_Create( "_targetlevels", rg.targetLevelsImage->width, rg.targetLevelsImage->height );
+		}
+		FBO_AttachImage( rg.targetLevelsFbo, rg.targetLevelsImage, GL_COLOR_ATTACHMENT0 );
+		R_CheckFBO( rg.targetLevelsFbo );
+	}
+
+	if ( rg.quarterImage[0] ) {
+		for ( i = 0; i < 2; i++ ) {
+			if ( rg.quarterFbo[i] ) {
+				FBO_Clear( rg.quarterFbo[i] );
+				rg.quarterFbo[i]->width = rg.quarterImage[i]->width;
+				rg.quarterFbo[i]->height = rg.quarterImage[i]->height;
+			} else {
+				rg.quarterFbo[i] = FBO_Create( va( "_quarter%d", i ), rg.quarterImage[i]->width, rg.quarterImage[i]->height );
+			}
+			FBO_CreateBuffer( rg.quarterFbo[i], GL_RGBA8, i, 0 );
+//			FBO_AttachImage( rg.quarterFbo[i], rg.quarterImage[i], GL_COLOR_ATTACHMENT0 );
+			R_CheckFBO( rg.quarterFbo[i] );
+		}
+	}
+
+	GL_CheckErrors();
+
+	GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
+	glState.currentFbo = NULL;
+}
+
 void FBO_Init( void )
 {
 	int hdrFormat, multisample;
@@ -176,7 +358,7 @@ void FBO_Init( void )
 
 	ri.Printf( PRINT_INFO, "------- FBO_Init -------\n" );
 
-	if ( !glContext.ARB_framebuffer_object || !r_arb_framebuffer_object->i || !r_multisampleType->i ) {
+	if ( !glContext.ARB_framebuffer_object || !r_arb_framebuffer_object->i ) {
 		return;
 	}
 
@@ -282,6 +464,8 @@ void FBO_Init( void )
 
 	GL_BindFramebuffer( GL_FRAMEBUFFER, 0 );
 	glState.currentFbo = NULL;
+
+	ri.Cmd_AddCommand( "vid_restart_fbo", FBO_Restart_f );
 }
 
 void FBO_Shutdown( void )
@@ -295,14 +479,16 @@ void FBO_Shutdown( void )
 		return;
 	}
 
+	ri.Cmd_RemoveCommand( "vid_restart_fbo" );
+
 	FBO_Bind( NULL );
 
 	for ( i = 0; i < rg.numFBOs; i++ ) {
 		fbo = rg.fbos[i];
 
 		for ( j = 0; j < glContext.maxColorAttachments; j++ ) {
-			if ( fbo->colorBuffers[i] ) {
-				nglDeleteRenderbuffers( 1, &fbo->colorBuffers[i] );
+			if ( fbo->colorBuffers[j] ) {
+				nglDeleteRenderbuffers( 1, &fbo->colorBuffers[j] );
 			}
 		}
 

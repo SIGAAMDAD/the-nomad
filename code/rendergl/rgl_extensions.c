@@ -163,20 +163,21 @@ void R_InitExtensions(void)
     //
     ext = "GL_ARB_texture_filter_anisotropic";
     glContext.ARB_texture_filter_anisotropic = qfalse;
-    if (R_HasExtension(ext)) {
+    if ( R_HasExtension( ext ) ) {
         nglGetFloatv( GL_MAX_TEXTURE_MAX_ANISOTROPY, &glContext.maxAnisotropy );
         glContext.ARB_texture_filter_anisotropic = r_arb_texture_filter_anisotropic->i;
 
-        if (glContext.maxAnisotropy <= 0) {
-            ri.Printf(PRINT_INFO, "... GL_ARB_texture_filter_anisotropic not property supported\n");
+        if ( glContext.maxAnisotropy <= 0 ) {
+            ri.Printf( PRINT_INFO, "... GL_ARB_texture_filter_anisotropic not property supported\n" );
             glContext.ARB_texture_filter_anisotropic = qfalse;
         }
         else {
-            ri.Printf(PRINT_INFO, "...using GL_ARB_texture_filter_anisotropic (max: %f)\n", glContext.maxAnisotropy);
+            ri.Printf( PRINT_INFO, "...using GL_ARB_texture_filter_anisotropic (max: %f)\n", glContext.maxAnisotropy );
+            glContext.ARB_texture_filter_anisotropic = qtrue;
         }
     }
     else {
-        ri.Printf(PRINT_INFO, result[EXT_NOTFOUND], ext);
+        ri.Printf( PRINT_INFO, result[EXT_NOTFOUND], ext );
     }
 
     ri.Cvar_Set( "r_arb_texture_max_anisotropy", va( "%i", (int)glContext.maxAnisotropy ) );

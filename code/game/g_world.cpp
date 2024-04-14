@@ -84,6 +84,8 @@ void G_InitMapCache( void )
 
     Con_Printf( "Got %lu map files\n", gi.mapCache.numMapFiles );
 
+	g_world = new ( Hunk_Alloc( sizeof( *g_world ), h_low ) ) CGameWorld();
+
 	gi.mapCache.mapList = (char **)Hunk_Alloc( sizeof( *gi.mapCache.mapList ) * gi.mapCache.numMapFiles, h_low );
 	for ( i = 0; i < gi.mapCache.numMapFiles; i++ ) {
 		Com_snprintf( path, sizeof( path ) - 1, "maps/%s", fileList[i] );
@@ -233,6 +235,7 @@ void G_GetTileData( uint32_t *pTiles, uint32_t nLevel ) {
 void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns, uint32_t *nTiles )
 {
 	mapinfo_t *info;
+	uint64_t start, size;
 	
 	if ( hMap == FS_INVALID_HANDLE || ( hMap - 1 ) >= gi.mapCache.numMapFiles ) {
 		N_Error( ERR_DROP, "G_SetActiveMap: handle out of range" );

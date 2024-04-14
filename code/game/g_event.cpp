@@ -889,6 +889,7 @@ Console_Key
 Handles history and console scrollback
 ====================
 */
+/*
 static void Console_Key( int key ) {
 	// ctrl-L clears screen
 	if ( key == 'l' && keys[KEY_CTRL].down ) {
@@ -996,6 +997,7 @@ static void Console_Key( int key ) {
 	// pass to the normal editline routine
 	Field_KeyDownEvent( &g_consoleField, key );
 }
+*/
 
 //============================================================================
 
@@ -1056,7 +1058,7 @@ static void G_KeyDownEvent(uint32_t key, uint32_t time)
 	}
 
 	if ( Key_GetCatcher() & KEYCATCH_CONSOLE ) {
-		Console_Key( key );
+//		Console_Key( key );
 	} else if ( Key_GetCatcher() & KEYCATCH_UI ) {
 	} else if ( Key_GetCatcher() & KEYCATCH_SGAME ) {
 		if ( sgvm ) {

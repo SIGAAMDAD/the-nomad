@@ -459,8 +459,14 @@ void CModuleHandle::ClearMemory( void )
             m_pFuncTable[i]->Release();
         }
     }
+    for ( i = 0; i < m_pScriptModule->GetFunctionCount(); i++ ) {
+        asIScriptFunction *pFunc = m_pScriptModule->GetFunctionByIndex( i );
+        if ( pFunc ) {
+            pFunc->Release();
+        }
+    }
 
-    g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_FULL_CYCLE | asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE );
+    g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_FULL_CYCLE | asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE, 10 );
 
     CheckASCall( m_pScriptModule->UnbindAllImportedFunctions() );
     g_pModuleLib->GetScriptEngine()->DiscardModule( m_szName.c_str() );

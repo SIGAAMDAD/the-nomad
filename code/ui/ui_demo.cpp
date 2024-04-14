@@ -11,7 +11,7 @@ typedef struct {
     nhandle_t sitesShader;
 } demoMenu_t;
 
-static demoMenu_t s_demo;
+static demoMenu_t *s_demo;
 
 // NOTE: this will change with each major version
 #define DEMO_STRING \
@@ -31,7 +31,7 @@ static void DemoMenu_Draw( void )
     ImGui::TextUnformatted( DEMO_STRING );
     ImGui::NewLine();
 
-    ImGui::Image( (ImTextureID)(uintptr_t)s_demo.discordShader, ImVec2( 256 * ui->scale, 256 * ui->scale ) );
+    ImGui::Image( (ImTextureID)(uintptr_t)s_demo->discordShader, ImVec2( 256 * ui->scale, 256 * ui->scale ) );
     if ( ImGui::IsItemClicked() ) {
         Snd_PlaySfx( ui->sfx_select );
         // TODO: slap that shit in here
@@ -39,7 +39,7 @@ static void DemoMenu_Draw( void )
 
     ImGui::SameLine();
 
-    ImGui::Image( (ImTextureID)(uintptr_t)s_demo.sitesShader, ImVec2( 256 * ui->scale, 256 * ui->scale ) );
+    ImGui::Image( (ImTextureID)(uintptr_t)s_demo->sitesShader, ImVec2( 256 * ui->scale, 256 * ui->scale ) );
     if ( ImGui::IsItemClicked() ) {
         Snd_PlaySfx( ui->sfx_select );
         SDL_OpenURL( "https://sites.google.com/view/gdrgames" );
@@ -59,17 +59,20 @@ static void DemoMenu_Draw( void )
 
 void DemoMenu_Cache( void )
 {
-    memset( &s_demo, 0, sizeof( s_demo ) );
+    if ( !ui->uiAllocated ) {
+        s_demo = (demoMenu_t *)Hunk_Alloc( sizeof( *s_demo ), h_high );
+    }
+    memset( s_demo, 0, sizeof( *s_demo ) );
 
-    s_demo.menu.draw = DemoMenu_Draw;
-    s_demo.menu.fullscreen = qfalse;
+    s_demo->menu.draw = DemoMenu_Draw;
+    s_demo->menu.fullscreen = qfalse;
 
-    s_demo.discordShader = re.RegisterShader( "menu/demo/discordIcon" );
-    s_demo.sitesShader = re.RegisterShader( "menu/demo/sitesIcon" );
+    s_demo->discordShader = re.RegisterShader( "menu/demo/discordIcon" );
+    s_demo->sitesShader = re.RegisterShader( "menu/demo/sitesIcon" );
 }
 
 void UI_DemoMenu( void )
 {
     DemoMenu_Cache();
-    UI_PushMenu( &s_demo.menu );
+    UI_PushMenu( &s_demo->menu );
 }

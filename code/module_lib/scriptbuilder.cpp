@@ -12,10 +12,6 @@
 #include <unistd.h> // For getcwd()
 #endif
 
-// Helper functions
-static UtlString GetCurrentDir();
-static UtlString GetAbsolutePath(const UtlString &path);
-
 
 CScriptBuilder::CScriptBuilder()
 {
@@ -70,7 +66,7 @@ unsigned int CScriptBuilder::GetSectionCount() const
 	return (unsigned int)(includedScripts.size());
 }
 
-UtlString CScriptBuilder::GetSectionName(unsigned int idx) const
+const UtlString& CScriptBuilder::GetSectionName(unsigned int idx) const
 {
 	if( idx >= includedScripts.size() ) return "";
 
@@ -90,11 +86,10 @@ int CScriptBuilder::AddSectionFromFile(const char *filename)
 {
 	// The file name stored in the set should be the fully resolved name because
 	// it is possible to name the same file in multiple ways using relative paths.
-	const UtlString fullpath = GetAbsolutePath(filename);
+	const char *fullpath = COM_SkipPath( const_cast<char *>( filename ) );
 
-	if( IncludeIfNotAlreadyIncluded(fullpath.c_str()) )
-	{
-		int r = LoadScriptSection(fullpath.c_str());
+	if( IncludeIfNotAlreadyIncluded( fullpath ) ) {
+		int r = LoadScriptSection( fullpath );
 		if( r < 0 )
 			return r;
 		else
@@ -139,7 +134,7 @@ void CScriptBuilder::ClearAll()
 {
 	includedScripts.clear();
 
-#if AS_PROCESS_METADATA == 1
+#ifdef AS_PROCESS_METADATA
 	currentClass = "";
 	currentNamespace = "";
 
@@ -167,6 +162,21 @@ bool CScriptBuilder::IncludeIfNotAlreadyIncluded(const char *filename)
 
 int CScriptBuilder::LoadScriptSection(const char *filename)
 {
+	union {
+		char *b;
+		void *v;
+	} f;
+	uint64_t nLength;
+	int ret;
+
+	nLength = FS_LoadFile( filename, &f.v );
+	if ( !nLength || !f.v ) {
+		engine->WriteMessage( filename, 0, 0, asMSGTYPE_ERROR, va( "Failed to load script file '%s'",
+			COM_SkipPath( const_cast<char *>( filename ) ) ) );
+		return -1;
+	}
+
+	/*
 	// Open the script file
 	UtlString scriptFile = filename;
 #if _MSC_VER >= 1500 && !defined(__S3E__)
@@ -212,9 +222,13 @@ int CScriptBuilder::LoadScriptSection(const char *filename)
 		engine->WriteMessage(filename, 0, 0, asMSGTYPE_ERROR, msg.c_str());
 		return -1;
 	}
+	*/
 
 	// Process the script section even if it is zero length so that the name is registered
-	return ProcessScriptSection(code.c_str(), (unsigned int)(code.length()), filename, 0);
+	ret = ProcessScriptSection( f.b, nLength, filename, 0 );
+	FS_FreeFile( f.v );
+
+	return ret;
 }
 
 int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length, const char *sectionname, int lineOffset)
@@ -583,7 +597,7 @@ int CScriptBuilder::Build()
 			int typeId = module->GetTypeIdByDecl(decl->declaration.c_str());
 			assert( typeId >= 0 );
 			if( typeId >= 0 )
-				typeMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(typeId, decl->metadata));
+				typeMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(typeId, decl->metadata));
 		}
 		else if( decl->type == MDT_FUNC )
 		{
@@ -593,17 +607,17 @@ int CScriptBuilder::Build()
 				asIScriptFunction *func = module->GetFunctionByDecl(decl->declaration.c_str());
 				assert( func );
 				if( func )
-					funcMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
+					funcMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
 			}
 			else
 			{
 				// Find the method id
 				int typeId = module->GetTypeIdByDecl(decl->parentClass.c_str());
 				assert( typeId > 0 );
-				eastl::unordered_map<int, SClassMetadata>::iterator it = classMetadataMap.find(typeId);
+				UtlHashMap<int, SClassMetadata>::iterator it = classMetadataMap.find(typeId);
 				if( it == classMetadataMap.end() )
 				{
-					classMetadataMap.insert(eastl::unordered_map<int, SClassMetadata>::value_type(typeId, SClassMetadata(decl->parentClass)));
+					classMetadataMap.insert(UtlHashMap<int, SClassMetadata>::value_type(typeId, SClassMetadata(decl->parentClass)));
 					it = classMetadataMap.find(typeId);
 				}
 
@@ -611,7 +625,7 @@ int CScriptBuilder::Build()
 				asIScriptFunction *func = type->GetMethodByDecl(decl->declaration.c_str());
 				assert( func );
 				if( func )
-					it->second.funcMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
+					it->second.funcMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
 			}
 		}
 		else if( decl->type == MDT_VIRTPROP )
@@ -621,30 +635,30 @@ int CScriptBuilder::Build()
 				// Find the global virtual property accessors
 				asIScriptFunction *func = module->GetFunctionByName(("get_" + decl->declaration).c_str());
 				if( func )
-					funcMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
+					funcMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
 				func = module->GetFunctionByName(("set_" + decl->declaration).c_str());
 				if( func )
-					funcMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
+					funcMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
 			}
 			else
 			{
 				// Find the method virtual property accessors
 				int typeId = module->GetTypeIdByDecl(decl->parentClass.c_str());
 				assert( typeId > 0 );
-				eastl::unordered_map<int, SClassMetadata>::iterator it = classMetadataMap.find(typeId);
+				UtlHashMap<int, SClassMetadata>::iterator it = classMetadataMap.find(typeId);
 				if( it == classMetadataMap.end() )
 				{
-					classMetadataMap.insert(eastl::unordered_map<int, SClassMetadata>::value_type(typeId, SClassMetadata(decl->parentClass)));
+					classMetadataMap.insert(UtlHashMap<int, SClassMetadata>::value_type(typeId, SClassMetadata(decl->parentClass)));
 					it = classMetadataMap.find(typeId);
 				}
 
 				asITypeInfo *type = engine->GetTypeInfoById(typeId);
 				asIScriptFunction *func = type->GetMethodByName(("get_" + decl->declaration).c_str());
 				if( func )
-					it->second.funcMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
+					it->second.funcMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
 				func = type->GetMethodByName(("set_" + decl->declaration).c_str());
 				if( func )
-					it->second.funcMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
+					it->second.funcMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
 			}
 		}
 		else if( decl->type == MDT_VAR )
@@ -655,7 +669,7 @@ int CScriptBuilder::Build()
 				int varIdx = module->GetGlobalVarIndexByName(decl->declaration.c_str());
 				assert( varIdx >= 0 );
 				if( varIdx >= 0 )
-					varMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(varIdx, decl->metadata));
+					varMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(varIdx, decl->metadata));
 			}
 			else
 			{
@@ -663,10 +677,10 @@ int CScriptBuilder::Build()
 				assert( typeId > 0 );
 
 				// Add the classes if needed
-				eastl::unordered_map<int, SClassMetadata>::iterator it = classMetadataMap.find(typeId);
+				UtlHashMap<int, SClassMetadata>::iterator it = classMetadataMap.find(typeId);
 				if( it == classMetadataMap.end() )
 				{
-					classMetadataMap.insert(eastl::unordered_map<int, SClassMetadata>::value_type(typeId, SClassMetadata(decl->parentClass)));
+					classMetadataMap.insert(UtlHashMap<int, SClassMetadata>::value_type(typeId, SClassMetadata(decl->parentClass)));
 					it = classMetadataMap.find(typeId);
 				}
 
@@ -688,7 +702,7 @@ int CScriptBuilder::Build()
 
 				// If found, add it
 				assert( idx >= 0 );
-				if( idx >= 0 ) it->second.varMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(idx, decl->metadata));
+				if( idx >= 0 ) it->second.varMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(idx, decl->metadata));
 			}
 		}
 		else if (decl->type == MDT_FUNC_OR_VAR)
@@ -698,13 +712,13 @@ int CScriptBuilder::Build()
 				// Find the global variable index
 				int varIdx = module->GetGlobalVarIndexByName(decl->name.c_str());
 				if (varIdx >= 0)
-					varMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(varIdx, decl->metadata));
+					varMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(varIdx, decl->metadata));
 				else
 				{
 					asIScriptFunction *func = module->GetFunctionByDecl(decl->declaration.c_str());
 					assert(func);
 					if (func)
-						funcMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
+						funcMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
 				}
 			}
 			else
@@ -713,10 +727,10 @@ int CScriptBuilder::Build()
 				assert(typeId > 0);
 
 				// Add the classes if needed
-				eastl::unordered_map<int, SClassMetadata>::iterator it = classMetadataMap.find(typeId);
+				UtlHashMap<int, SClassMetadata>::iterator it = classMetadataMap.find(typeId);
 				if (it == classMetadataMap.end())
 				{
-					classMetadataMap.insert(eastl::unordered_map<int, SClassMetadata>::value_type(typeId, SClassMetadata(decl->parentClass)));
+					classMetadataMap.insert(UtlHashMap<int, SClassMetadata>::value_type(typeId, SClassMetadata(decl->parentClass)));
 					it = classMetadataMap.find(typeId);
 				}
 
@@ -738,7 +752,7 @@ int CScriptBuilder::Build()
 
 				// If found, add it
 				if (idx >= 0) 
-					it->second.varMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(idx, decl->metadata));
+					it->second.varMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(idx, decl->metadata));
 				else
 				{
 					// Look for the matching method instead
@@ -746,7 +760,7 @@ int CScriptBuilder::Build()
 					asIScriptFunction *func = type->GetMethodByDecl(decl->declaration.c_str());
 					assert(func);
 					if (func)
-						it->second.funcMetadataMap.insert(eastl::unordered_map<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
+						it->second.funcMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
 				}
 			}
 		}
@@ -1029,20 +1043,20 @@ int CScriptBuilder::ExtractDeclaration(int pos, UtlString &name, UtlString &decl
 	return start;
 }
 
-UtlVector<UtlString> CScriptBuilder::GetMetadataForType(int typeId)
+const UtlVector<UtlString>& CScriptBuilder::GetMetadataForType(int typeId)
 {
-	eastl::unordered_map<int,UtlVector<UtlString> >::iterator it = typeMetadataMap.find(typeId);
+	UtlHashMap<int,UtlVector<UtlString> >::iterator it = typeMetadataMap.find(typeId);
 	if( it != typeMetadataMap.end() )
 		return it->second;
 
 	return UtlVector<UtlString>();
 }
 
-UtlVector<UtlString> CScriptBuilder::GetMetadataForFunc(asIScriptFunction *func)
+const UtlVector<UtlString>& CScriptBuilder::GetMetadataForFunc(asIScriptFunction *func)
 {
 	if( func )
 	{
-		eastl::unordered_map<int,UtlVector<UtlString> >::iterator it = funcMetadataMap.find(func->GetId());
+		UtlHashMap<int,UtlVector<UtlString> >::iterator it = funcMetadataMap.find(func->GetId());
 		if( it != funcMetadataMap.end() )
 			return it->second;
 	}
@@ -1050,34 +1064,34 @@ UtlVector<UtlString> CScriptBuilder::GetMetadataForFunc(asIScriptFunction *func)
 	return UtlVector<UtlString>();
 }
 
-UtlVector<UtlString> CScriptBuilder::GetMetadataForVar(int varIdx)
+const UtlVector<UtlString>& CScriptBuilder::GetMetadataForVar(int varIdx)
 {
-	eastl::unordered_map<int,UtlVector<UtlString> >::iterator it = varMetadataMap.find(varIdx);
+	UtlHashMap<int,UtlVector<UtlString> >::iterator it = varMetadataMap.find(varIdx);
 	if( it != varMetadataMap.end() )
 		return it->second;
 
 	return UtlVector<UtlString>();
 }
 
-UtlVector<UtlString> CScriptBuilder::GetMetadataForTypeProperty(int typeId, int varIdx)
+const UtlVector<UtlString>& CScriptBuilder::GetMetadataForTypeProperty(int typeId, int varIdx)
 {
-	eastl::unordered_map<int, SClassMetadata>::iterator typeIt = classMetadataMap.find(typeId);
+	UtlHashMap<int, SClassMetadata>::iterator typeIt = classMetadataMap.find(typeId);
 	if(typeIt == classMetadataMap.end()) return UtlVector<UtlString>();
 
-	eastl::unordered_map<int, UtlVector<UtlString> >::iterator propIt = typeIt->second.varMetadataMap.find(varIdx);
+	UtlHashMap<int, UtlVector<UtlString> >::iterator propIt = typeIt->second.varMetadataMap.find(varIdx);
 	if(propIt == typeIt->second.varMetadataMap.end()) return UtlVector<UtlString>();
 
 	return propIt->second;
 }
 
-UtlVector<UtlString> CScriptBuilder::GetMetadataForTypeMethod(int typeId, asIScriptFunction *method)
+const UtlVector<UtlString>& CScriptBuilder::GetMetadataForTypeMethod(int typeId, asIScriptFunction *method)
 {
 	if( method )
 	{
-		eastl::unordered_map<int, SClassMetadata>::iterator typeIt = classMetadataMap.find(typeId);
+		UtlHashMap<int, SClassMetadata>::iterator typeIt = classMetadataMap.find(typeId);
 		if (typeIt == classMetadataMap.end()) return UtlVector<UtlString>();
 
-		eastl::unordered_map<int, UtlVector<UtlString> >::iterator methodIt = typeIt->second.funcMetadataMap.find(method->GetId());
+		UtlHashMap<int, UtlVector<UtlString> >::iterator methodIt = typeIt->second.funcMetadataMap.find(method->GetId());
 		if(methodIt == typeIt->second.funcMetadataMap.end()) return UtlVector<UtlString>();
 
 		return methodIt->second;
@@ -1087,96 +1101,6 @@ UtlVector<UtlString> CScriptBuilder::GetMetadataForTypeMethod(int typeId, asIScr
 }
 #endif
 
-UtlString GetAbsolutePath(const UtlString &file)
-{
-	UtlString str = file;
-
-	// If this is a relative path, complement it with the current path
-	if( !((str.length() > 0 && (str[0] == '/' || str[0] == '\\')) ||
-		  str.find(":") != UtlString::npos) )
-	{
-		str = GetCurrentDir() + "/" + str;
-	}
-
-	// Replace backslashes for forward slashes
-	size_t pos = 0;
-	while( (pos = str.find("\\", pos)) != UtlString::npos )
-		str[pos] = '/';
-
-	// Replace /./ with /
-	pos = 0;
-	while( (pos = str.find("/./", pos)) != UtlString::npos )
-		str.erase(pos+1, 2);
-
-	// For each /../ remove the parent dir and the /../
-	pos = 0;
-	while( (pos = str.find("/../")) != UtlString::npos )
-	{
-		size_t pos2 = str.rfind("/", pos-1);
-		if( pos2 != UtlString::npos )
-			str.erase(pos2, pos+3-pos2);
-		else
-		{
-			// The path is invalid
-			break;
-		}
-	}
-
-	return str;
-}
-
-UtlString GetCurrentDir()
-{
-	char buffer[1024];
-#if defined(_MSC_VER) || defined(_WIN32)
-	#ifdef _WIN32_WCE
-	static TCHAR apppath[MAX_PATH] = TEXT("");
-	if (!apppath[0])
-	{
-		GetModuleFileName(NULL, apppath, MAX_PATH);
-
-		int appLen = _tcslen(apppath);
-
-		// Look for the last backslash in the path, which would be the end
-		// of the path itself and the start of the filename.  We only want
-		// the path part of the exe's full-path filename
-		// Safety is that we make sure not to walk off the front of the
-		// array (in case the path is nothing more than a filename)
-		while (appLen > 1)
-		{
-			if (apppath[appLen-1] == TEXT('\\'))
-				break;
-			appLen--;
-		}
-
-		// Terminate the UtlString after the trailing backslash
-		apppath[appLen] = TEXT('\0');
-	}
-		#ifdef _UNICODE
-	wcstombs(buffer, apppath, min(1024, wcslen(apppath)*sizeof(wchar_t)));
-		#else
-	memcpy(buffer, apppath, min(1024, strlen(apppath)));
-		#endif
-
-	return buffer;
-	#elif defined(__S3E__)
-	// Marmalade uses its own portable C library
-	return getcwd(buffer, (int)1024);
-	#elif _XBOX_VER >= 200
-	// XBox 360 doesn't support the getcwd function, just use the root folder
-	return "game:/";
-	#elif defined(_M_ARM)
-	// TODO: How to determine current working dir on Windows Phone?
-	return "";
-	#else
-	return _getcwd(buffer, (int)1024);
-	#endif // _MSC_VER
-#elif defined(__APPLE__) || defined(__linux__)
-	return getcwd(buffer, 1024);
-#else
-	return "";
-#endif
-}
 
 END_AS_NAMESPACE
 

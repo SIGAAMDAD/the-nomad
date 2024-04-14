@@ -222,9 +222,9 @@ void CModuleLib::LoadModule( const char *pModule )
     const int32_t versionUpdate = parse[ "version" ][ "version_update" ];
     const int32_t versionPatch = parse[ "version" ][ "version_patch" ];
 
-    pHandle = new ( Mem_Alloc( sizeof( *pHandle ) ) ) CModuleHandle( pModule, parse.at( "submodules" ), versionMajor, versionUpdate, versionPatch,
+    pHandle = new ( Hunk_Alloc( sizeof( *pHandle ), h_high ) ) CModuleHandle( pModule, parse.at( "submodules" ), versionMajor, versionUpdate, versionPatch,
         includePaths );
-    m = new ( Mem_Alloc( sizeof( *m ) ) ) CModuleInfo( parse, pHandle );
+    m = new ( Hunk_Alloc( sizeof( *m ), h_high ) ) CModuleInfo( parse, pHandle );
     m_LoadList.emplace_back( m );
 }
 
@@ -447,7 +447,7 @@ CModuleLib::CModuleLib( void )
     //
     // init angelscript api
     //
-    m_pEngine = asCreateScriptEngine();
+    m_pEngine = dynamic_cast<asCScriptEngine *>( asCreateScriptEngine() );
     if ( !m_pEngine ) {
         N_Error( ERR_DROP, "CModuleLib::Init: failed to create an AngelScript Engine context" );
     }
@@ -463,11 +463,11 @@ CModuleLib::CModuleLib( void )
     CheckASCall( m_pEngine->SetEngineProperty( asEP_AUTO_GARBAGE_COLLECT, true ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_HEREDOC_TRIM_MODE, 0 ) );
 
-    m_pScriptBuilder = new ( Mem_Alloc( sizeof( *m_pScriptBuilder ) ) ) CScriptBuilder();
-    g_pDebugger = new ( Mem_Alloc( sizeof( *g_pDebugger ) ) ) CDebugger();
+    m_pScriptBuilder = new ( Hunk_Alloc( sizeof( *m_pScriptBuilder ), h_high ) ) CScriptBuilder();
+    g_pDebugger = new ( Hunk_Alloc( sizeof( *g_pDebugger ), h_high ) ) CDebugger();
 
     if ( ml_allowJIT->i ) {
-        m_pCompiler = new ( Mem_Alloc( sizeof( *m_pCompiler ) ) ) asCJITCompiler();
+        m_pCompiler = new ( Hunk_Alloc( sizeof( *m_pCompiler ), h_high ) ) asCJITCompiler();
         CheckASCall( m_pEngine->SetJITCompiler( m_pCompiler ) );
     }
     m_pScriptBuilder->SetIncludeCallback( Module_IncludeCallback_f, NULL );
@@ -493,8 +493,6 @@ CModuleLib::CModuleLib( void )
     } catch ( const std::exception& e ) {
         N_Error( ERR_FATAL, "InitModuleLib: failed to load module directories, std::exception was thrown -> %s", e.what() );
     }
-
-    Con_DPrintf( "%lu registered procs in modules.\n", m_RegisteredProcs.size() );
 
     // bind all the functions
     for ( auto& it : m_LoadList ) {
@@ -546,13 +544,9 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
     Cmd_AddCommand( "ml_debug.print_string_cache", ML_PrintStringCache_f );
 
     // init memory manager
+    Mem_Init();
     asSetGlobalMemoryFunctions( AS_Alloc, AS_Free );
-
-    if ( !s_pModuleInstance ) {
-        Mem_Init();
-        s_pModuleInstance = new ( Mem_Alloc( sizeof( *s_pModuleInstance ) ) ) CModuleLib();
-    }
-    g_pModuleLib = s_pModuleInstance;
+    g_pModuleLib = new ( Hunk_Alloc( sizeof( *g_pModuleLib ), h_high ) ) CModuleLib();
 
     Con_Printf( "--------------------\n" );
 
@@ -561,6 +555,8 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
 
 void CModuleLib::Shutdown( qboolean quit )
 {
+    uint64_t i;
+
     if ( m_bRecursiveShutdown ) {
         Con_Printf( COLOR_YELLOW "WARNING: CModuleLib::Shutdown (recursive)\n" );
         return;
@@ -577,6 +573,8 @@ void CModuleLib::Shutdown( qboolean quit )
 
         // TODO: use the serializer to create a sort of coredump like file for the active script
     }
+
+    m_pEngine->GarbageCollect( asGC_DESTROY_GARBAGE | asGC_DETECT_GARBAGE, 50 );
 
     Cmd_RemoveCommand( "ml.clean_script_cache" );
     Cmd_RemoveCommand( "ml.garbage_collection_stats" );
@@ -595,24 +593,83 @@ void CModuleLib::Shutdown( qboolean quit )
 
     m_bRegistered = qfalse;
 
-    if ( quit && m_pScriptBuilder ) {
-        for ( auto& it : m_LoadList ) {
-            if ( it && it->m_pHandle ) {
-                it->m_pHandle->ClearMemory();
-            }
+    for ( auto& it : m_LoadList ) {
+        if ( it && it->m_pHandle ) {
+            it->m_pHandle->CallFunc( ModuleShutdown, 0, NULL );
+            it->m_pHandle->ClearMemory();
         }
-
-        if ( m_pCompiler ) {
-            m_pCompiler->~asCJITCompiler();
-        }
-        m_pScriptBuilder->~CScriptBuilder();
-        g_pDebugger->~CDebugger();
-
-        Mem_Shutdown();
-        return;
     }
+    m_LoadList.clear();
+
+    //
+    // AngelScript is a fucking pain to release, so we're just gonna free up what we can
+    // instead of getting a weird segfault from the library
+    //
+    for ( i = 0; i < m_pEngine->GetObjectTypeCount(); i++ ) {
+        asITypeInfo *pType = m_pEngine->GetObjectTypeByIndex( i );
+        if ( pType ) {
+            pType->Release();
+        }
+    }
+    for ( i = 0; i < m_pEngine->GetTypedefCount(); i++ ) {
+        asITypeInfo *pType = m_pEngine->GetTypedefByIndex( i );
+        if ( pType ) {
+            pType->Release();
+        }
+    }
+    for ( i = 0; i < m_pEngine->GetEnumCount(); i++ ) {
+        asITypeInfo *pEnum = m_pEngine->GetEnumByIndex( i );
+        if ( pEnum ) {
+            pEnum->Release();
+        }
+    }
+    for ( i = 0; i < m_pEngine->GetFuncdefCount(); i++ ) {
+        asITypeInfo *pFuncDef = m_pEngine->GetFuncdefByIndex( i );
+        if ( pFuncDef ) {
+            pFuncDef->Release();
+        }
+    }
+    for ( i = 0; i < m_pEngine->GetGlobalFunctionCount(); i++ ) {
+        asIScriptFunction *pFunc = m_pEngine->GetGlobalFunctionByIndex( i );
+        if ( pFunc ) {
+            pFunc->Release();
+        }
+    }
+    for ( i = 0; i < m_pEngine->GetModuleCount(); i++ ) {
+        asIScriptModule *pModule = m_pEngine->GetModuleByIndex( i );
+        if ( pModule ) {
+            pModule->Discard();
+        }
+    }
+    for ( i = 0; i < m_pEngine->registeredEnums.GetLength(); i++ ) {
+        asCEnumType *enumType = m_pEngine->registeredEnums[i];
+        if ( enumType ) {
+            enumType->Release();
+        }
+    }
+    for ( i = 0; i < m_pEngine->registeredTemplateTypes.GetLength(); i++ ) {
+        asCObjectType *objType = m_pEngine->registeredTemplateTypes[i];
+        if ( objType ) {
+            objType->ReleaseAllProperties();
+            objType->ReleaseAllFunctions();
+            objType->Release();
+        }
+    }
+    g_pStringFactory->~CModuleStringFactory();
+    g_pStringFactory = NULL;
+    asThreadCleanup();
+
+    if ( m_pCompiler ) {
+        m_pCompiler->~asCJITCompiler();
+    }
+    m_pScriptBuilder->~CScriptBuilder();
+    g_pDebugger->~CDebugger();
+
+    Mem_Shutdown();
+
     m_bRecursiveShutdown = qfalse;
     g_pModuleLib = NULL;
+    g_pDebugger = NULL;
 }
 
 asIScriptEngine *CModuleLib::GetScriptEngine( void ) {
@@ -636,22 +693,6 @@ CModuleInfo *CModuleLib::GetModule( const char *pName ) {
         }
     }
     return NULL;
-}
-
-void CModuleLib::RegisterCvar( const UtlString& name, const UtlString& value, uint32_t flags, bool trackChanges, uint32_t privateFlag ) {
-    vmCvar_t vmCvar;
-
-    const auto it = m_CvarList.find( name.c_str() );
-    if ( it != m_CvarList.cend() ) {
-        Con_Printf( "CModuleLib::RegisterCvar: vmCvar '%s' already registered.\n", name.c_str() );
-        return;
-    }
-
-    memset( &vmCvar, 0, sizeof(vmCvar) );
-    Cvar_Register( &vmCvar, name.c_str(), value.c_str(), flags, privateFlag );
-    m_CvarList.emplace( name.c_str(), vmCvar );
-
-    Con_Printf( "Registered VM CVar \"%s\" with default value of \"%s\"\n", name.c_str(), value.c_str() );
 }
 
 UtlVector<CModuleInfo *>& CModuleLib::GetLoadList( void ) {

@@ -10,6 +10,8 @@ uiGlobals_t *ui;
 CUIFontCache *g_pFontCache;
 
 ImFont *AlegreyaSC;
+ImFont *PressStart2P;
+ImFont *RobotoMono;
 
 cvar_t *ui_language;
 cvar_t *ui_cpuString;

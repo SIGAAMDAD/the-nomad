@@ -21,6 +21,10 @@ uniform vec3 u_AmbientColor;
 uniform float u_AmbientIntensity;
 #endif
 
+#if defined(USE_HDR) && defined(USE_EXPOSURE_TONE_MAPPING)
+uniform float u_Exposure;
+#endif
+
 #if defined(USE_NORMALMAP)
 uniform sampler2D u_NormalMap;
 #endif
@@ -89,7 +93,7 @@ void main() {
 	a_Color.rgb = a_Color.rgb / ( a_Color.rgb + vec3( 1.0 ) );
 #else
 	// exposure tone mapping
-	a_Color.rgb = vec3( 1.0 ) - exp( -a_Color.rgb * u_CameraExposure );
+	a_Color.rgb = vec3( 1.0 ) - exp( -a_Color.rgb * u_Exposure );
 #endif
 
 #if defined(USE_BLOOM)

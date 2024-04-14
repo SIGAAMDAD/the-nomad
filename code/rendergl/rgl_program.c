@@ -110,7 +110,9 @@ static uniformInfo_t uniformsInfo[UNIFORM_COUNT] = {
     { "u_GammaAmount",          GLSL_FLOAT },
 
     { "u_NumLights",            GLSL_INT },
-    { "u_Exposure",             GLSL_FLOAT }
+    { "u_Exposure",             GLSL_FLOAT },
+
+    { "u_ScreenSize",           GLSL_VEC2 }
 };
 
 static shaderProgram_t *hashTable[MAX_RENDER_SHADERS];
@@ -957,6 +959,10 @@ void GLSL_InitGPUShaders( void )
                 break;
             };
 
+            if ( r_multisampleType->i == AntiAlias_FXAA ) {
+                N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_FXAA\n" );
+            }
+
             if ( r_normalMapping->i ) {
     			N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_NORMALMAP\n" );
 
@@ -1023,7 +1029,12 @@ void GLSL_InitGPUShaders( void )
     }
 
     attribs = ATTRIB_POSITION | ATTRIB_TEXCOORD | ATTRIB_COLOR;
-    if ( !GLSL_InitGPUShader( &rg.imguiShader, "imgui", attribs, qtrue, NULL, qtrue, fallbackShader_imgui_vp, fallbackShader_imgui_fp ) ) {
+
+    extradefines[0] = '\0';
+    if ( r_multisampleType->i == AntiAlias_FXAA ) {
+        N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_FXAA\n" );
+    }
+    if ( !GLSL_InitGPUShader( &rg.imguiShader, "imgui", attribs, qtrue, extradefines, qtrue, fallbackShader_imgui_vp, fallbackShader_imgui_fp ) ) {
         ri.Error( ERR_FATAL, "Could not load imgui shader!" );
     }
     GLSL_InitUniforms( &rg.imguiShader );

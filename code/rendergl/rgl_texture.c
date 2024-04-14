@@ -33,6 +33,7 @@ static texture_t *hashTable[FILE_HASH_SIZE];
 */
 void R_GammaCorrect( byte *buffer, uint64_t bufSize ) {
 	uint64_t i;
+	ri.Printf( PRINT_DEVELOPER, "----- R_GammaCorrect ------" );
 
 	for ( i = 0; i < bufSize; i++ ) {
 		buffer[i] = s_gammatable[buffer[i]];
@@ -2065,7 +2066,7 @@ static void Upload32( byte *data, int x, int y, int width, int height, GLenum pi
 		c = width*height;
 		scan = data;
 
-		if (type == IMGTYPE_COLORALPHA) {
+		if ( type == IMGTYPE_COLORALPHA ) {
 			if( r_greyscale->i ) {
 				for ( i = 0; i < c; i++ ) {
 					byte luma = LUMA(scan[i*4], scan[i*4 + 1], scan[i*4 + 2]);
@@ -2084,12 +2085,14 @@ static void Upload32( byte *data, int x, int y, int width, int height, GLenum pi
 			}
 
 			// This corresponds to what the OpenGL1 renderer does.
-//			if (!(flags & IMGFLAG_NOLIGHTSCALE) && (scaled || mipmap))
-//				R_LightScaleTexture(data, width, height, !mipmap);
+			if ( !( flags & IMGFLAG_NOLIGHTSCALE ) /* && ( scaled || mipmap ) */ ) {
+				R_LightScaleTexture( data, width, height, !mipmap );
+			}
 		}
 
-		if (glContext.swizzleNormalmap && (type == IMGTYPE_NORMAL || type == IMGTYPE_NORMALHEIGHT))
-			RawImage_SwizzleRA(data, width, height);
+		if ( glContext.swizzleNormalmap && ( type == IMGTYPE_NORMAL || type == IMGTYPE_NORMALHEIGHT ) ) {
+			RawImage_SwizzleRA( data, width, height );
+		}
 	}
 
 	if (cubemap) {
@@ -2104,7 +2107,7 @@ static void Upload32( byte *data, int x, int y, int width, int height, GLenum pi
 		}
 	}
 	else {
-		RawImage_UploadTexture(image->id, data, x, y, width, height, GL_TEXTURE_2D, picFormat, numMips, internalFormat, type, flags, qfalse);
+		RawImage_UploadTexture( image->id, data, x, y, width, height, GL_TEXTURE_2D, picFormat, numMips, internalFormat, type, flags, qfalse );
 	}
 
 }

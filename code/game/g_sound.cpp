@@ -9,7 +9,7 @@
 //#include <ogg/ogg.h>
 //#include <vorbis/vorbisfile.h>
 
-#define MAX_SOUND_SOURCES 1024
+#define MAX_SOUND_SOURCES 2048
 #define MAX_MUSIC_QUEUE 12
 
 #define CLAMP_VOLUME 10.0f
@@ -381,7 +381,7 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     void *buffer;
     uint64_t length;
     const char *ospath;
-    eastl::vector<short> data;
+    short *data;
 
     m_iTag = tag;
 
@@ -431,11 +431,10 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     // allocate the buffer
     Alloc();
 
-    data.resize( m_hFData.channels * m_hFData.frames );
-
-    if ( !sf_read_short( sf, data.data(), data.size() * sizeof( short ) ) ) {
+    data = (short *)Hunk_AllocateTempMemory( sizeof( *data ) * m_hFData.channels * m_hFData.frames );
+    if ( !sf_read_short( sf, data, sizeof( *data ) * m_hFData.channels * m_hFData.frames ) ) {
         N_Error( ERR_FATAL, "CSoundSource::LoadFile(%s): failed to read %lu bytes from audio stream, sf_strerror(): %s\n",
-            npath, data.size() * sizeof( short ), sf_strerror( sf ) );
+            npath, sizeof( *data ) * m_hFData.channels * m_hFData.frames, sf_strerror( sf ) );
     }
     
     sf_close( sf );
@@ -451,7 +450,7 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     if ( tag == TAG_SFX && m_iSource == 0 ) {
         ALCall( alGenSources( 1, &m_iSource ) );
     }
-    ALCall( alBufferData( m_iBuffer, format, data.data(), data.size() * sizeof( short ), m_hFData.samplerate ) );
+    ALCall( alBufferData( m_iBuffer, format, data, sizeof( *data ) * m_hFData.channels * m_hFData.frames, m_hFData.samplerate ) );
 
     if ( tag == TAG_SFX ) {
         ALCall( alSourcef( m_iSource, AL_GAIN, snd_sfxvol->f ) );
@@ -461,6 +460,7 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
         ALCall( alSourcei( m_iSource, AL_BUFFER, 0 ) );
     }
 
+    Hunk_FreeTempMemory( data );
     FS_FreeFile( buffer );
 
     return true;
@@ -501,12 +501,14 @@ void CSoundManager::Shutdown( void )
     uint64_t i;
     trackQueue_t *pTrack, *pNext;
 
-    for ( i = 0; i < m_nSources; i++ ) {
+    for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
+        if ( !m_pSources[i] ) {
+            continue;
+        }
         m_pSources[i]->Shutdown();
     }
 
     memset( m_pSources, 0, sizeof( m_pSources ) );
-    m_nSources = 0;
     m_bRegistered = false;
 
     ALCall( alDeleteSources( 1, &m_iMusicSource ) );
@@ -544,7 +546,10 @@ void CSoundManager::Restart( void )
     Init();
 
     // reload all sources
-    for ( i = 0; i < m_nSources; i++ ) {
+    for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
+        if ( !m_pSources[i] ) {
+            continue;
+        }
         m_pSources[i]->Init();
         m_pSources[i]->LoadFile( m_pSources[i]->GetName(), m_pSources[i]->GetTag() );
     }
@@ -581,7 +586,7 @@ CSoundSource *CSoundManager::InitSource( const char *filename, int64_t tag )
 
     m_hAllocLock.Lock();
 
-    src = (CSoundSource *)Z_Malloc( sizeof( *src ), (memtag_t)tag );
+    src = (CSoundSource *)Hunk_Alloc( sizeof( *src ), h_low );
     memset( src, 0, sizeof( *src ) );
     src->Init();
 
@@ -812,14 +817,21 @@ static void Snd_UpdateVolume_f( void ) {
 */
 void Snd_Update( int32_t msec )
 {
+    uint64_t i;
+    CSoundSource *source;
+
     if ( snd_mastervol->modified ) {
         snd_sfxvol->modified = qtrue;
         snd_musicvol->modified = qtrue;
     }
     if ( snd_sfxvol->modified ) {
-        for ( uint64_t i = 0; i < sndManager->NumSources(); i++ ) {
-            if ( sndManager->GetSources()[i]->GetTag() == TAG_SFX ) {
-                sndManager->GetSources()[i]->SetVolume();
+        for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
+            source = sndManager->GetSource( i );
+            if ( !source ) {
+                continue;
+            }
+            if ( source->GetTag() == TAG_SFX ) {
+                source->SetVolume();
             }
         }
         snd_sfxvol->modified = qfalse;
@@ -835,13 +847,20 @@ void Snd_Update( int32_t msec )
 
 static void Snd_ListFiles_f( void )
 {
-    Con_Printf( "\n---------- Snd_ListFiles_f ----------\n" );
-    Con_Printf( "Total sound files loaded: %lu\n", sndManager->NumSources() );
+    uint64_t i, numFiles;
 
-    for ( uint64_t i = 0; i < sndManager->NumSources(); i++ ) {
+    Con_Printf( "\n---------- Snd_ListFiles_f ----------\n" );
+
+    numFiles = 0;
+    for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
+        if ( !sndManager->GetSource( i ) ) {
+            continue;
+        }
+        numFiles++;
         Con_Printf( "[Sound File #%lu]\n", i );
-        Con_Printf( "path: %s\n", sndManager->GetSources()[i]->GetName() );
+        Con_Printf( "path: %s\n", sndManager->GetSource( i )->GetName() );
     }
+    Con_Printf( "Total sound files loaded: %lu\n", numFiles );
 }
 
 void Snd_Init( void )
@@ -873,7 +892,7 @@ void Snd_Init( void )
     Con_Printf("---------- Snd_Init ----------\n");
 
     // init sound manager
-    sndManager = (CSoundManager *)Z_Malloc( sizeof(*sndManager), TAG_GAME );
+    sndManager = (CSoundManager *)Hunk_Alloc( sizeof( *sndManager ), h_low );
     sndManager->Init();
 
     Cmd_AddCommand( "snd.setvolume", Snd_SetVolume_f );

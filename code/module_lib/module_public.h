@@ -369,12 +369,6 @@ public:
     CModuleHandle *GetCurrentHandle( void ) {
         return m_pCurrentHandle;
     }
-
-    inline void AddCleanupId() {
-
-    }
-
-    UtlVector<eastl::fixed_string<char, 128, true, CModuleAllocator>> m_RegisteredProcs;
 private:
 	void LoadModule( const char *pModuleName );
 
@@ -382,9 +376,7 @@ private:
 
 	CScriptBuilder *m_pScriptBuilder;
 	CContextMgr *m_pContextManager;
-	asIScriptEngine *m_pEngine;
-
-    UtlHashMap<UtlString, vmCvar_t> m_CvarList;
+	asCScriptEngine *m_pEngine;
 
     qboolean m_bRegistered;
     qboolean m_bRecursiveShutdown;

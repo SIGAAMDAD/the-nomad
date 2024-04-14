@@ -330,6 +330,8 @@ typedef enum {
 
     UNIFORM_EXPOSURE,
 
+    UNIFORM_SCREEN_SIZE,
+
     UNIFORM_COUNT
 } uniform_t;
 
@@ -1156,8 +1158,6 @@ typedef struct
     float identityLight;
     uint32_t identityLightByte;
     uint32_t overbrightBits;
-
-
 
     uint64_t frontEndMsec;
 
