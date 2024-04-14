@@ -1134,6 +1134,9 @@ static void SettingsMenu_Draw( void )
 	UI_EscapeMenuToggle();
 	if ( UI_MenuTitle( "Settings" ) ) {
 		UI_PopMenu();
+
+		ImGui::End();
+		return;
 	}
 
 	ImGui::SetWindowFontScale( ( 1.2f * ImGui::GetFont()->Scale ) * ui->scale );

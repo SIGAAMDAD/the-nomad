@@ -27,9 +27,6 @@ static loadGameMenu_t *s_loadGame;
 
 static void LoadGameMenu_Draw( void )
 {
-    extern ImFont *PressStart2P;
-    ImVec2 mousePos;
-    float font_scale;
     uint64_t i;
     const int treeNodeFlags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_CollapsingHeader
                             | ImGuiTreeNodeFlags_Framed;
@@ -40,20 +37,14 @@ static void LoadGameMenu_Draw( void )
 
     UI_EscapeMenuToggle();
     if ( UI_MenuTitle( s_loadGame->title->value, 2.25f ) ) {
-        Snd_PlaySfx( ui->sfx_back );
         UI_PopMenu();
 
         ImGui::End();
         return;
     }
-    mousePos = ImGui::GetCursorScreenPos();
-    font_scale = ImGui::GetFont()->Scale;
 
-    const ImVec2& windowSize = ImGui::GetWindowSize();
+    ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 1.5f ) * ui->scale );
     
-    ImGui::SetWindowSize( ImVec2( ui->gpuConfig.vidWidth * 0.75f, windowSize.y ) );
-    
-    ImGui::SetCursorScreenPos( ImVec2( mousePos.x, mousePos.y + 10 ) );
     if ( s_loadGame->numSaves ) {
         {
             ImGui::Begin( "##ModList", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove
@@ -87,19 +78,21 @@ static void LoadGameMenu_Draw( void )
         FontCache()->SetActiveFont( PressStart2P );
         for ( i = 0; i < s_loadGame->numSaves; i++ ) {
             if ( ImGui::TreeNodeEx( (void *)(uintptr_t)s_loadGame->saveList[i].name, treeNodeFlags, s_loadGame->saveList[i].name ) ) {
-                if ( ImGui::IsMouseClicked( ImGuiMouseButton_Left ) ) {
+                if ( ImGui::IsItemActivated() && ImGui::IsMouseClicked( ImGuiMouseButton_Left ) ) {
                     Snd_PlaySfx( ui->sfx_select );
                 }
                 s_loadGame->currentSave = i;
 
                 if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && ImGui::IsMouseDoubleClicked( ImGuiMouseButton_Left ) ) {
                     Snd_PlaySfx( ui->sfx_select );
+                    Cvar_SetIntegerValue( "sgame_Difficulty", s_loadGame->saveList[i].gd.dif );
                     Cvar_Set( "sgame_SaveName", s_loadGame->saveList[i].name );
                     gi.state = GS_LEVEL;
                     g_pModuleLib->ModuleCall( sgvm, ModuleOnLoadGame, 0 );
+                    Cbuf_ExecuteText( EXEC_APPEND, s_loadGame->saveList[i].gd.mapname );
                 }
 
-                ImGui::SetWindowFontScale( ( font_scale * 0.75f ) * ui->scale );
+                ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 1.05f ) * ui->scale );
                 ImGui::BeginTable( va( "Save Slots##%lu", i ), 3 );
                 {
                     ImGui::TableNextColumn();
@@ -123,7 +116,6 @@ static void LoadGameMenu_Draw( void )
                     ImGui::TextUnformatted( difficultyTable[ s_loadGame->saveList[i].gd.dif ].name );
                 }
                 ImGui::EndTable();
-                ImGui::SetWindowFontScale( ( font_scale ) * ui->scale );
                 ImGui::TreePop();
             }
         }
@@ -155,7 +147,7 @@ void LoadGameMenu_Cache( void )
     s_loadGame->menu.name = s_loadGame->title->value;
     s_loadGame->menu.x = 0;
     s_loadGame->menu.y = 0;
-    s_loadGame->menu.width = ui->gpuConfig.vidWidth;
+    s_loadGame->menu.width = ui->gpuConfig.vidWidth * 0.75f;
     s_loadGame->menu.height = ui->gpuConfig.vidHeight;
     s_loadGame->menu.fullscreen = qtrue;
     s_loadGame->menu.titleFontScale = 3.5f;
