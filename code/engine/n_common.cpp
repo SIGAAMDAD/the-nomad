@@ -475,23 +475,25 @@ static void Com_PumpKeyEvents(void)
 				}
 				break;
 			case SDL_WINDOWEVENT_MINIMIZED:
-			case SDL_WINDOWEVENT_FOCUS_LOST:
-				Cvar_Set( "g_paused", "1" );
+			case SDL_WINDOWEVENT_FOCUS_LOST: {
+				if ( gi.state == GS_LEVEL && gi.mapLoaded && !Cvar_VariableInteger( "g_paused" ) ) {
+					Cbuf_ExecuteText( EXEC_APPEND, "togglepausemenu\n" );
+				}
 				Key_ClearStates();
-				break;
+				break; }
 			};
 			break;
 		case SDL_QUIT:
 			Cbuf_ExecuteText( EXEC_NOW, "quit\n" );
 			break;
 		case SDL_MOUSEMOTION:
-			if (!event.motion.xrel && !event.motion.yrel) {
+			if ( !event.motion.xrel && !event.motion.yrel ) {
 				break;
 			}
 			Com_QueueEvent( com_frameTime, SE_MOUSE, event.motion.xrel, event.motion.yrel, 0, NULL );
 			break;
 		case SDL_MOUSEBUTTONUP:
-		case SDL_MOUSEBUTTONDOWN:
+		case SDL_MOUSEBUTTONDOWN: {
 			if ( event.button.button == SDL_BUTTON_LEFT ) {
 				Com_QueueEvent( com_frameTime, SE_KEY, KEY_MOUSE_LEFT, (event.type == SDL_MOUSEBUTTONDOWN ? qtrue : qfalse), 0, NULL );
 			} else if ( event.button.button == SDL_BUTTON_RIGHT ) {
@@ -499,17 +501,17 @@ static void Com_PumpKeyEvents(void)
 			} else if ( event.button.button == SDL_BUTTON_MIDDLE ) {
 				Com_QueueEvent( com_frameTime, SE_KEY, KEY_MOUSE_MIDDLE, (event.type == SDL_MOUSEBUTTONDOWN ? qtrue : qfalse), 0, NULL );
 			}
-			break;
-		case SDL_MOUSEWHEEL:
-			if (event.wheel.y > 0) {
+			break; }
+		case SDL_MOUSEWHEEL: {
+			if ( event.wheel.y > 0 ) {
 				Com_QueueEvent( com_frameTime, SE_KEY, KEY_WHEEL_UP, qtrue, 0, NULL );
 				Com_QueueEvent( com_frameTime, SE_KEY, KEY_WHEEL_UP, qfalse, 0, NULL );
 			}
-			else if (event.wheel.y < 0) {
+			else if ( event.wheel.y < 0 ) {
 				Com_QueueEvent( com_frameTime, SE_KEY, KEY_WHEEL_DOWN, qtrue, 0, NULL );
 				Com_QueueEvent( com_frameTime, SE_KEY, KEY_WHEEL_DOWN, qtrue, 0, NULL );
 			}
-			break;
+			break; }
 		default:
 			break;
 		};

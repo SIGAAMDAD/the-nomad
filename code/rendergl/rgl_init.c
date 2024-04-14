@@ -41,7 +41,7 @@ cvar_t *r_drawworld;
 cvar_t *r_speeds;
 cvar_t *r_detailTextures;
 
-cvar_t  *r_cameraExposure;
+cvar_t *r_cameraExposure;
 
 cvar_t *r_gammaAmount;
 

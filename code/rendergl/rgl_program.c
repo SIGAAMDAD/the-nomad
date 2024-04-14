@@ -930,12 +930,12 @@ void GLSL_InitGPUShaders( void )
                 N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_FAST_LIGHT\n" );
             }
 
-//            if ( r_bloom->i && r_postProcess->i && r_arb_framebuffer_object->i ) {
-//                N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_BLOOM\n" );
-//            }
-//            if ( r_toneMap->i && r_toneMapType->i == 1 ) {
-//                N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_EXPOSURE_TONE_MAPPING\n" );
-//            }
+            if ( r_bloom->i && r_postProcess->i && r_arb_framebuffer_object->i ) {
+                N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_BLOOM\n" );
+            }
+            if ( r_toneMap->i && r_toneMapType->i == 1 ) {
+                N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_EXPOSURE_TONE_MAPPING\n" );
+            }
             if ( r_hdr->i && r_postProcess->i && r_arb_framebuffer_object->i ) {
                 N_strcat( extradefines, sizeof( extradefines ) - 1, "#define USE_HDR\n" );
             }

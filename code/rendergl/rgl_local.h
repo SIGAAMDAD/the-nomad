@@ -1087,7 +1087,7 @@ typedef struct
 	texture_t				*whiteImage;			// full of 0xff
 	texture_t				*identityLightImage;	// full of tr.identityLightByte	
 
-//    texture_t               *bloomImage;
+    texture_t               *bloomImage;
 	texture_t				*renderImage;
 	texture_t				*sunRaysImage;
 	texture_t				*renderDepthImage;

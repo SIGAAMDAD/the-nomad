@@ -431,9 +431,11 @@ void RB_IterateShaderStages( shader_t *shader )
 		numLights += rg.world->numLights;
 	}
 
-	backend.drawBatch.shaderTime = backend.refdef.floatTime - backend.drawBatch.shader->timeOffset;
-	if (backend.drawBatch.shader->clampTime && backend.drawBatch.shaderTime >= backend.drawBatch.shader->clampTime) {
-		backend.drawBatch.shaderTime = backend.drawBatch.shader->clampTime;
+	if ( backend.drawBatch.shader ) {
+		backend.drawBatch.shaderTime = backend.refdef.floatTime - backend.drawBatch.shader->timeOffset;
+		if ( backend.drawBatch.shader->clampTime && backend.drawBatch.shaderTime >= backend.drawBatch.shader->clampTime ) {
+			backend.drawBatch.shaderTime = backend.drawBatch.shader->clampTime;
+		}
 	}
 
 	ComputeDeformValues( &deformGen, deformParams );

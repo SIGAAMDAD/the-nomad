@@ -646,9 +646,12 @@ static void SettingsMenu_DrawHint( void )
 	ImGui::SetWindowPos( ImVec2( s_settingsMenu->menu.width, 100 * ui->scale ) );
 	ImGui::SetWindowSize( ImVec2( ui->gpuConfig.vidWidth - s_settingsMenu->menu.width, 256 * ui->scale ) );
 
-	ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 2.5f ) * ui->scale );
+	FontCache()->SetActiveFont( AlegreyaSC );
+	ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 1.5f ) * ui->scale );
 	ImGui::TextUnformatted( s_settingsMenu->hintLabel );
-	ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 1.0f ) * ui->scale );
+
+	FontCache()->SetActiveFont( RobotoMono );
+	ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 2.0f ) * ui->scale );
 	ImGui::TextWrapped( "%s", s_settingsMenu->hintMessage );
 
 	ImGui::End();
@@ -748,6 +751,61 @@ static void PerformanceMenu_Draw( void )
 			"Sets the type of texture filtering",
 			s_settingsMenu->performance.textureFilters, s_settingsMenu->performance.numTextureFilters,
 			&s_settingsMenu->performance.textureFilter, true );
+
+		ImGui::TableNextRow();
+
+		SettingsMenu_RadioButton( "HDR", "HDR",
+			"Enables HDR (High Dynamic Range) texture/framebuffer usage, uses more GPU memory but allows for much more "
+			"range in rendered color palette",
+			&s_settingsMenu->performance.hdr, s_settingsMenu->performance.postProcessing );
+		
+		ImGui::TableNextRow();
+
+		SettingsMenu_RadioButton( "PBR", "PBR",
+			"Enables Physically Based Rendering (PBR) for a more realistic texture look.",
+			&s_settingsMenu->performance.pbr, true );
+		
+		ImGui::TableNextRow();
+
+		SettingsMenu_RadioButton( "Bloom", "Bloom",
+			"Enables bloom to make light sources stand out more in an environment",
+			&s_settingsMenu->performance.bloom, s_settingsMenu->performance.postProcessing );
+
+		ImGui::TableNextRow();
+
+		SettingsMenu_RadioButton( "Vertex Lighting", "VertexLighting",
+			"Enables per-vertex software lighting",
+			&s_settingsMenu->performance.vertexLighting, true );
+		
+		ImGui::TableNextRow();
+
+		SettingsMenu_RadioButton( "Dynamic Lighting", "DynamicLighting",
+			"Enables per-pixel hardware accelerated lighting, slower than vertex lighting, but much higher quality",
+			&s_settingsMenu->performance.dynamicLighting, true );
+		
+		ImGui::TableNextRow();
+
+		SettingsMenu_RadioButton( "Bump/Normal Mapping", "BumpMapping",
+			"Toggles usage of normal maps",
+			&s_settingsMenu->performance.normalMapping, true );
+		
+		ImGui::TableNextRow();
+
+		SettingsMenu_RadioButton( "Specular Mapping", "SpecularMapping",
+			"Toggles usage of specular maps",
+			&s_settingsMenu->performance.specularMapping, true );
+		
+		ImGui::TableNextRow();
+
+		SettingsMenu_RadioButton( "Depth (Parallax) Mapping", "ParallaxMapping",
+			"Toggles usage of parallax maps",
+			&s_settingsMenu->performance.depthMapping, true );
+		
+		ImGui::TableNextRow();
+
+		SettingsMenu_RadioButton( "Post Processing", "PostProcessing",
+			"Toggles multiple framebuffers being used to apply special affects to a frame",
+			&s_settingsMenu->performance.postProcessing, true );
 	}
 	ImGui::EndTable();
 }
@@ -840,84 +898,43 @@ static void VideoMenu_Save( void )
 
 static void PerformanceMenu_Save( void )
 {
-	bool restart;
-	
-	restart = false;
+	Cvar_SetIntegerValue( "r_multisampleType", s_settingsMenu->performance.multisampleType );
+	switch ( s_settingsMenu->performance.multisampleType ) {
+	case AntiAlias_None:
+	case AntiAlias_TSAA:
+	case AntiAlias_FXAA:
+		// no framebuffer attachements needed for these
+		Cvar_Set( "r_multisampleAmount", "0" );
+		break;
+	case AntiAlias_2xMSAA:
+	case AntiAlias_2xSSAA:
+		Cvar_Set( "r_multisampleAmount", "2" );
+		break;
+	case AntiAlias_4xMSAA:
+	case AntiAlias_4xSSAA:
+		Cvar_Set( "r_multisampleAmount", "4" );
+		break;
+	case AntiAlias_8xMSAA:
+		Cvar_Set( "r_multisampleAmount", "8" );
+		break;
+	case AntiAlias_16xMSAA:
+		Cvar_Set( "r_multisampleAmount", "16" );
+		break;
+	case AntiAlias_32xMSAA:
+		Cvar_Set( "r_multisampleAmount", "32" );
+		break;
+	};
 
-	if ( s_settingsMenu->performance.hdr != Cvar_VariableInteger( "r_hdr" ) ) {
-		if ( Cvar_Flags( "r_hdr" ) & CVAR_LATCH ) {
-			restart = true;
-		}
-		Cvar_SetIntegerValue( "r_hdr", s_settingsMenu->performance.hdr );
-	}
-
-	if ( s_settingsMenu->performance.multisampleType != Cvar_VariableInteger( "r_multisampleType" ) ) {
-		if ( Cvar_Flags( "r_multisampleType" ) & CVAR_LATCH ) {
-			restart = true;
-		}
-		Cvar_SetIntegerValue( "r_multisampleType", s_settingsMenu->performance.multisampleType );
-
-		switch ( s_settingsMenu->performance.multisampleType ) {
-		case AntiAlias_None:
-		case AntiAlias_TSAA:
-		case AntiAlias_FXAA:
-			// no framebuffer attachements needed for these
-			Cvar_Set( "r_multisampleAmount", "0" );
-			break;
-		case AntiAlias_2xMSAA:
-		case AntiAlias_2xSSAA:
-			Cvar_Set( "r_multisampleAmount", "2" );
-			break;
-		case AntiAlias_4xMSAA:
-		case AntiAlias_4xSSAA:
-			Cvar_Set( "r_multisampleAmount", "4" );
-			break;
-		case AntiAlias_8xMSAA:
-			Cvar_Set( "r_multisampleAmount", "8" );
-			break;
-		case AntiAlias_16xMSAA:
-			Cvar_Set( "r_multisampleAmount", "16" );
-			break;
-		case AntiAlias_32xMSAA:
-			Cvar_Set( "r_multisampleAmount", "32" );
-			break;
-		};
-	}
-
-	if ( N_stricmp( Cvar_VariableString( "r_textureMode" ),
-		s_settingsMenu->performance.textureFilters[ s_settingsMenu->performance.textureFilter ] ) )
-	{
-		if ( Cvar_Flags( "r_textureMode" ) & CVAR_LATCH ) {
-			restart = true;
-		}
-		Cvar_Set( "r_textureMode", s_settingsMenu->performance.textureFilters[ s_settingsMenu->performance.textureFilter ] );
-	}
-
-	if ( s_settingsMenu->performance.textureDetail != Cvar_VariableInteger( "r_textureDetail" ) ) {
-		if ( Cvar_Flags( "r_textureDetail" ) & CVAR_LATCH ) {
-			restart = true;
-		}
-		Cvar_SetIntegerValue( "r_textureDetail", s_settingsMenu->performance.textureDetail );
-	}
-	if ( s_settingsMenu->performance.pbr != Cvar_VariableInteger( "r_pbr" ) ) {
-		if ( Cvar_Flags( "r_pbr" ) & CVAR_LATCH ) {
-			restart = true;
-		}
-		Cvar_SetIntegerValue( "r_pbr", s_settingsMenu->performance.pbr );
-	}
-	if ( s_settingsMenu->performance.bloom != Cvar_VariableInteger( "r_bloom" ) ) {
-		if ( Cvar_Flags( "r_bloom" ) & CVAR_LATCH ) {
-			restart = true;
-		}
-		Cvar_SetIntegerValue( "r_bloom", s_settingsMenu->performance.bloom );
-	}
-	if ( s_settingsMenu->performance.postProcessing != Cvar_VariableInteger( "r_postProcess" ) ) {
-		if ( Cvar_Flags( "r_postProcess" ) & CVAR_LATCH ) {
-			restart = true;
-		}
-		Cvar_SetIntegerValue( "r_postProcess", s_settingsMenu->performance.postProcessing );
-	}
-	
+	Cvar_Set( "r_textureMode", s_settingsMenu->performance.textureFilters[ s_settingsMenu->performance.textureFilter ] );
+	Cvar_SetIntegerValue( "r_normalMapping", s_settingsMenu->performance.normalMapping );
+	Cvar_SetIntegerValue( "r_specularMapping", s_settingsMenu->performance.specularMapping );
+	Cvar_SetIntegerValue( "r_parallaxMapping", s_settingsMenu->performance.depthMapping );
+	Cvar_SetIntegerValue( "r_textureDetail", s_settingsMenu->performance.textureDetail );
+	Cvar_SetIntegerValue( "r_pbr", s_settingsMenu->performance.pbr );
+	Cvar_SetIntegerValue( "r_bloom", s_settingsMenu->performance.bloom );
+	Cvar_SetIntegerValue( "r_postProcess", s_settingsMenu->performance.postProcessing );
+	Cvar_SetIntegerValue( "r_vertexLight", s_settingsMenu->performance.vertexLighting );
+	Cvar_SetIntegerValue( "r_dynamiclight", s_settingsMenu->performance.dynamicLighting );
 }
 
 static void AudioMenu_Save( void )
@@ -927,6 +944,14 @@ static void AudioMenu_Save( void )
 	Cvar_SetIntegerValue( "snd_musicvol", s_settingsMenu->audio.musicVolume );
 	Cvar_SetIntegerValue( "snd_sfxon", s_settingsMenu->audio.sfxOn );
 	Cvar_SetIntegerValue( "snd_musicon", s_settingsMenu->audio.musicOn );
+}
+
+static void ControlsMenu_Save( void )
+{
+	Cvar_SetIntegerValue( "g_mouseAcceleration", s_settingsMenu->controls.mouseAcceleration );
+	Cvar_SetFloatValue( "g_mouseSensitivity", s_settingsMenu->controls.mouseSensitivity );
+
+	UI_SettingsWriteBinds_f();
 }
 
 static void SettingsMenu_Draw( void )
@@ -977,17 +1002,19 @@ static void SettingsMenu_Draw( void )
 	s_settingsMenu->saveHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
 	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
 		Snd_PlaySfx( ui->sfx_select );
+		Cbuf_ExecuteText( EXEC_APPEND, "writeconfig " NOMAD_CONFIG "\n" );
 		switch ( s_settingsMenu->lastChild ) {
 		case ID_VIDEO:
-			VideoMenu_Save();
-			break;
 		case ID_PERFORMANCE:
+			VideoMenu_Save();
 			PerformanceMenu_Save();
+			Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n" );
 			break;
 		case ID_AUDIO:
 			AudioMenu_Save();
 			break;
 		case ID_CONTROLS:
+			ControlsMenu_Save();
 			break;
 		case ID_GAMEPLAY:
 			break;
@@ -1096,6 +1123,14 @@ void SettingsMenu_Cache( void )
 	s_settingsMenu->menu.textFontScale = 1.5f;
 	s_settingsMenu->lastChild = ID_VIDEO;
 
+	s_settingsMenu->audio.masterVolume = Cvar_VariableInteger( "snd_mastervol" );
+	s_settingsMenu->audio.musicVolume = Cvar_VariableInteger( "snd_musicvol" );
+	s_settingsMenu->audio.sfxVolume = Cvar_VariableInteger( "snd_sfxvol" );
+	s_settingsMenu->audio.musicOn = Cvar_VariableInteger( "snd_musicon" );
+	s_settingsMenu->audio.sfxOn = Cvar_VariableInteger( "snd_sfxon" );
+
+	s_settingsMenu->video.windowWidth = Cvar_VariableInteger( "r_customWidth" );
+	s_settingsMenu->video.windowHeight = Cvar_VariableInteger( "r_customHeight" );
 	s_settingsMenu->video.windowResolution = Cvar_VariableInteger( "r_mode" ) + 2;
 	s_settingsMenu->video.vsync = Cvar_VariableInteger( "r_swapInterval" ) + 1;
 	s_settingsMenu->video.gamma = Cvar_VariableFloat( "r_gammaAmount" );

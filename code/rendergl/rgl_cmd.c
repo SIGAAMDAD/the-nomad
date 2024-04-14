@@ -260,14 +260,11 @@ void RE_BeginFrame(stereoFrame_t stereoFrame)
 			ri.Cvar_Set( "r_measureOverdraw", "0" );
 			r_measureOverdraw->modified = qfalse;
 		}
-#if 0
-		else if ( r_shadows->integer == 2 )
-		{
+		else if ( r_shadows->i == 2 ) {
 			ri.Printf( PRINT_INFO, "Warning: stencil shadows and overdraw measurement are mutually exclusive\n" );
 			ri.Cvar_Set( "r_measureOverdraw", "0" );
 			r_measureOverdraw->modified = qfalse;
 		}
-#endif
 		else {
 			R_IssuePendingRenderCommands();
 			nglEnable( GL_STENCIL_TEST );
@@ -293,6 +290,7 @@ void RE_BeginFrame(stereoFrame_t stereoFrame)
     if ( r_textureMode->modified ) {
         R_IssuePendingRenderCommands();
         R_UpdateTextures();
+		r_textureMode->modified = qfalse;
     }
 
     // check for errors
@@ -304,7 +302,7 @@ void RE_BeginFrame(stereoFrame_t stereoFrame)
             ri.Error( ERR_FATAL, "RE_BeginFrame() - glGetError() failed (0x%04x)!", error );
     }
 
-/*
+	/*
     if ( glConfig.stereoEnabled ) {
 		if ( !( cmd = R_GetCommandBuffer( sizeof(*cmd) ) ) )
 			return;

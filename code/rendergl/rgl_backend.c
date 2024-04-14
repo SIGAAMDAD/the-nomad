@@ -491,9 +491,17 @@ static const void *RB_SwapBuffers(const void *data)
 			if ( rg.msaaResolveFbo && r_hdr->i ) {
 				// Resolving an RGB16F MSAA FBO to the screen messes with the brightness, so resolve to an RGB16F FBO first
 				FBO_FastBlit( rg.renderFbo, NULL, rg.msaaResolveFbo, NULL, GL_COLOR_BUFFER_BIT, GL_NEAREST );
-				FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+				if ( r_multisampleType->i == AntiAlias_2xSSAA || r_multisampleType->i == AntiAlias_4xSSAA ) {
+					FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_LINEAR );
+				} else {
+					FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+				}
 			} else {
-				FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+				if ( r_multisampleType->i == AntiAlias_2xSSAA || r_multisampleType->i == AntiAlias_4xSSAA ) {
+					FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_LINEAR );
+				} else {
+					FBO_FastBlit( rg.msaaResolveFbo, NULL, NULL, NULL, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+				}
 			}
 		}
 	}
@@ -527,7 +535,8 @@ static const void *RB_PostProcess(const void *data)
 	ivec4_t srcBox, dstBox;
 	qboolean autoExposure;
 
-	backend.refdef.blurFactor = 0.0;
+	backend.refdef.blurFactor = 0.0f;
+	backend.drawBatch.shader = rg.defaultShader;
 
 	// finish any drawing if needed
 	if ( backend.drawBatch.idxOffset ) {
@@ -592,11 +601,11 @@ static const void *RB_PostProcess(const void *data)
 	}
 
 	if ( r_drawSunRays->i ) {
-//		RB_SunRays( NULL, srcBox, NULL, dstBox );
+		RB_SunRays( NULL, srcBox, NULL, dstBox );
 	}
 
 	if ( 1 ) {
-//		RB_BokehBlur( NULL, srcBox, NULL, dstBox, backend.refdef.blurFactor );
+		RB_BokehBlur( NULL, srcBox, NULL, dstBox, backend.refdef.blurFactor );
 	} else {
 		RB_GaussianBlur( backend.refdef.blurFactor );
 	}
@@ -745,12 +754,10 @@ static const void	*RB_DrawBuffer( const void *data ) {
 	nglDrawBuffer( cmd->buffer );
 
 	// clear screen for debugging
-#if 0
 	if ( r_clear->i ) {
 		nglClearColor( 1, 0, 0.5, 1 );
 		nglClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	}
-#endif
 
 	return (const void *)(cmd + 1);
 }

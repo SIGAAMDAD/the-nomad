@@ -57,7 +57,6 @@ static void R_SetVertexPointers(const vertexAttrib_t attribs[ATTRIB_INDEX_COUNT]
 {
 	uint32_t attribBit;
 	const vertexAttrib_t *vAtb;
-	ri.Printf( PRINT_DEVELOPER, "Settings vertex attrib bits...\n" );
 
     for (uint64_t i = 0; i < ATTRIB_INDEX_COUNT; i++) {
 		attribBit = 1 << i;

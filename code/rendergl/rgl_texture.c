@@ -75,7 +75,7 @@ static uint64_t generateHashValue( const char *fname )
 	return hash;
 }
 
-void R_UpdateTextures(void)
+void R_UpdateTextures( void )
 {
     uint32_t i;
     texture_t *t;
@@ -90,6 +90,8 @@ void R_UpdateTextures(void)
         ri.Cvar_Reset( "r_textureMode" );
         return;
     }
+
+	ri.Printf( PRINT_INFO, "Updating textures...\n" );
 
 	gl_filter_min = filters[i].min;
 	gl_filter_max = filters[i].mag;
@@ -1629,6 +1631,34 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 			else if (!forceNoCompression && glContext.textureCompression == TC_S3TC_ARB) {
 				internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 			}
+			else if ( r_textureDetail->i == TexDetail_GPUvsGod ) {
+				if ( r_hdr->i ) {
+					internalFormat = GL_RGB32F_ARB;
+				} else {
+					internalFormat = GL_RGB16;
+				}
+			}
+			else if ( r_textureDetail->i == TexDetail_ExpensiveShitWeveGotHere ) {
+				if ( r_hdr->i ) {
+					internalFormat = GL_RGB16F_ARB;
+				} else {
+					internalFormat = GL_RGB12;
+				}
+			}
+			else if ( r_textureDetail->i == TexDetail_Normie ) {
+				internalFormat = GL_RGB5;
+			}
+			else if ( r_textureDetail->i == TexDetail_IntegratedGPU ) {
+				internalFormat = GL_RGB4;
+			}
+			else if ( r_textureDetail->i == TexDetail_MSDOS ) {
+				ri.Error( ERR_DROP, "RawImage_GetFormat: normal mapping enabled on MS-DOS!\n" );
+				internalFormat = GL_RGB2_EXT;
+			}
+			else {
+				internalFormat = GL_RGB;
+			}
+			/*
 			else if (r_textureBits->i == 16) {
 				internalFormat = GL_RGB5;
 			}
@@ -1638,6 +1668,7 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 			else {
 				internalFormat = GL_RGB;
 			}
+			*/
 		}
 	}
 	else if (lightMap) {
@@ -1669,15 +1700,43 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 				else if ( !forceNoCompression && glContext.textureCompression == TC_S3TC ) {
 					internalFormat = GL_RGB4_S3TC;
 				}
+				else if ( r_textureDetail->i == TexDetail_GPUvsGod ) {
+					if ( r_hdr->i ) {
+						internalFormat = GL_RGB32F_ARB;
+					} else {
+						internalFormat = GL_RGB16;
+					}
+				}
+				else if ( r_textureDetail->i == TexDetail_ExpensiveShitWeveGotHere ) {
+					if ( r_hdr->i ) {
+						internalFormat = GL_RGB16F_ARB;
+					} else {
+						internalFormat = GL_RGB12;
+					}
+				}
+				else if ( r_textureDetail->i == TexDetail_Normie ) {
+					internalFormat = GL_RGB8;
+				}
+				else if ( r_textureDetail->i == TexDetail_IntegratedGPU ) {
+					internalFormat = GL_RGB4;
+				}
+				else if ( r_textureDetail->i == TexDetail_MSDOS ) {
+					internalFormat = GL_RGB2_EXT;
+				}
+				else {
+					internalFormat = GL_RGB8;
+				}
+				/*
 				else if ( r_textureBits->i == 16 ) {
+					if ( r_hdr->i ) {
+						internalFormat = GL_RGBA16F;
+					}
 					internalFormat = GL_RGB5;
 				}
 				else if ( r_textureBits->i == 32 ) {
 					internalFormat = GL_RGB8;
 				}
-				else {
-					internalFormat = GL_RGB;
-				}
+				*/
 			}
 		}
 		else if ( samples == 4 ) {
@@ -1695,10 +1754,18 @@ static GLenum RawImage_GetFormat(const byte *data, uint32_t numPixels, GLenum pi
 					internalFormat = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
 				}
 				else if ( r_textureDetail->i == TexDetail_GPUvsGod ) {
-					internalFormat = GL_RGBA16;
+					if ( r_hdr->i ) {
+						internalFormat = GL_RGBA32F;
+					} else {
+						internalFormat = GL_RGBA16;
+					}
 				}
 				else if ( r_textureDetail->i == TexDetail_ExpensiveShitWeveGotHere ) {
-					internalFormat = GL_RGBA12;
+					if ( r_hdr->i ) {
+						internalFormat = GL_RGBA16F;
+					} else {
+						internalFormat = GL_RGBA12;
+					}
 				}
 				else if ( r_textureDetail->i == TexDetail_Normie ) {
 					internalFormat = GL_RGBA8;
@@ -2662,7 +2729,7 @@ static void R_CreateBuiltinTextures( void )
 		}
 
 		if ( r_bloom->i && r_hdr->i ) {
-//			rg.bloomImage = R_CreateImage( "", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA16F );
+//			rg.bloomImage = R_CreateImage( "*bloom", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA16F );
 		}
 
 		rg.renderDepthImage  = R_CreateImage( "*renderdepth",  NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );
