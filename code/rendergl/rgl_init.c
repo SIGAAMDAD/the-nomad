@@ -132,6 +132,8 @@ cvar_t *r_ignoreGLErrors;
 cvar_t *r_overBrightBits;
 cvar_t *r_mapOverBrightBits;
 
+cvar_t *r_imageSharpenAmount;
+
 cvar_t *r_showImages;
 
 cvar_t *r_printShaders;
@@ -833,6 +835,10 @@ static void R_Register( void )
 	r_floatLightmap = ri.Cvar_Get( "r_floatLightmap", "0", CVAR_SAVE | CVAR_LATCH );
 	r_postProcess = ri.Cvar_Get( "r_postProcess", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_postProcess, "Enable post-processing." );
+
+    r_imageSharpenAmount = ri.Cvar_Get( "r_imageSharpenAmount", "1.0", CVAR_SAVE );
+    ri.Cvar_CheckRange( r_imageSharpenAmount, "0.5", "5.0", CVT_FLOAT );
+    ri.Cvar_SetDescription( r_imageSharpenAmount, "Sets the amount of sharpening applied per-pixel to a rendered texture" );
 
     r_toneMapType = ri.Cvar_Get( "r_toneMapType", "0", CVAR_SAVE | CVAR_LATCH );
     ri.Cvar_SetDescription( r_toneMapType,

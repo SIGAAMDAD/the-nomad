@@ -314,7 +314,6 @@ void ModsMenu_Draw( void )
     extern ImFont *RobotoMono;
     
 	ui->menubackShader = mods->backgroundShader;
-    Snd_SetLoopingTrack( mods->ambience );
 
 	ImGui::Begin( "##ModsMenuMainMenuConfigMenu", NULL, mods->menu.flags );
 	ImGui::SetWindowSize( ImVec2( mods->menu.width, mods->menu.height ) );

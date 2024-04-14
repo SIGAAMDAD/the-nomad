@@ -316,6 +316,9 @@ extern "C" void UI_GetHashString( const char *name, char *value ) {
 }
 
 static void UI_PauseMenu_f( void ) {
+	if ( gi.state != GS_LEVEL || !gi.mapLoaded ) {
+		return;
+	}
 	UI_SetActiveMenu( UI_MENU_PAUSE );
 }
 

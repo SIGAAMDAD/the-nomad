@@ -586,10 +586,12 @@ static int Con_TextCallback( ImGuiInputTextCallbackData *data )
 
 	if ( keys[KEY_TAB].down ) {
 		Field_AutoComplete( &g_consoleField );
+		
+		data->CursorPos = 0;
+		data->BufTextLen = 0;
+		data->InsertChars( 0, g_consoleField.buffer );
 
-		if ( g_consoleField.cursor > data->CursorPos ) {
-			data->InsertChars( data->CursorPos, edit->buffer + data->CursorPos, edit->buffer + edit->cursor );
-		}
+		data->CursorPos = g_consoleField.cursor;
 	}
 
 	// command history (ctrl-p ctrl-n for unix style)
@@ -792,6 +794,7 @@ static void Con_DrawText( const char *txt )
 	len = strlen( txt );
 
 	ImGui::GetStyle().ItemSpacing.y = 0.5f;
+	ImGui::GetStyle().ItemSpacing.x = 0.0f;
 
 	if ( RobotoMono ) {
 		FontCache()->SetActiveFont( RobotoMono );
@@ -831,7 +834,7 @@ static void Con_DrawText( const char *txt )
 			s[0] = *text;
 			s[1] = 0;
 
-			ImGui::TextUnformatted( s );
+			ImGui::TextWrapped( s );
 			ImGui::SameLine();
 			break;
 		};
@@ -854,6 +857,7 @@ static void Con_DrawSolidConsole( float frac )
 	qboolean customColor = qfalse;
 	uint32_t i;
 	char *text;
+	float height;
 	renderSceneRef_t refdef;
 	char buf[ MAX_CVAR_VALUE ], *v[4];
 	const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar;
@@ -862,20 +866,25 @@ static void Con_DrawSolidConsole( float frac )
 	refdef.x = 0;
 	refdef.y = 0;
 	refdef.width = gi.gpuConfig.vidWidth;
-	refdef.height = gi.gpuConfig.vidHeight * frac;
-	refdef.time = gi.realtime * 0.001f;
-//	refdef.time = -( gi.frametime - gi.realFrameTime ) * 0.10f;
+	refdef.height = gi.gpuConfig.vidHeight;
+//	refdef.time = gi.frametime * 0.001f;
+	refdef.time = -( gi.frametime - gi.realFrameTime ) * 0.10f;
 	refdef.flags = RSF_NOWORLDMODEL | RSF_ORTHO_TYPE_SCREENSPACE;
 
-	re.ClearScene();
-	re.DrawImage( 0, 0, refdef.width, refdef.height, 0, 0, 1, 1, gi.consoleShader0 );
-	re.RenderScene( &refdef );
+	height = gi.gpuConfig.vidHeight * frac;
+	if ( (int)height <= 0 ) {
+		return;
+	}
 
-	ImGui::Begin( "CommandConsole", NULL, windowFlags | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_HorizontalScrollbar );
+	// draw the background
+	height = frac * gi.gpuConfig.vidHeight;
+	re.ClearScene();
+
+	ImGui::Begin( "CommandConsole", NULL, windowFlags | ImGuiWindowFlags_NoBackground );
 	ImGui::SetWindowPos( ImVec2( 0, 0 ) );
-	ImGui::SetWindowSize( ImVec2( refdef.width, refdef.height ) );
-	ImGui::SetWindowFontScale( 1.0f );
-	ImGui::PushTextWrapPos( refdef.width );
+	ImGui::SetWindowSize( ImVec2( refdef.width, height ) );
+	ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * con_scale->f );
+//	ImGui::PushTextWrapPos( refdef.width );
 
 	// custom console background color
 	if ( con_color->s[0] ) {
@@ -894,10 +903,10 @@ static void Con_DrawSolidConsole( float frac )
 			}
 		}
 		ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( conColorValue ) );
+		ImGui::Image( (ImTextureID)(uintptr_t)gi.whiteShader, ImVec2( (float)refdef.width, height ) );
 		customColor = qtrue;
 	} else {
-		VectorSet4( con.color, 0.0f, 0.0f, 0.0f, 1.0f );
-		ImGui::PushStyleColor( ImGuiCol_WindowBg, con.color );
+		re.DrawImage( 0, 0, refdef.width, height, 0, 0, 1, 1, gi.consoleShader );
 	}
 
 	// draw from the bottom up
@@ -927,9 +936,10 @@ static void Con_DrawSolidConsole( float frac )
 	// draw the version
 	//
 	ImGui::Begin( "CommandConsoleVersion", NULL, windowFlags | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_AlwaysAutoResize );
-	ImGui::SetWindowPos( ImVec2( refdef.width - ( 200 * gi.scale ), refdef.height - 48 ) );
+	ImGui::SetWindowPos( ImVec2( refdef.width - ( 200 * gi.scale ), height - 48 ) );
 	ImGui::TextUnformatted( GLN_VERSION );
 	ImGui::End();
+	re.RenderScene( &refdef );
 }
 
 static void Con_DrawNotify( void ) {
@@ -982,7 +992,7 @@ void Con_DrawConsole( void ) {
 	// check for console width changes from a vid mode change
 	Con_CheckResize();
 
-	if ( Key_GetCatcher() & KEYCATCH_CONSOLE ) {
+	if ( con.displayFrac ) {
 		Con_DrawSolidConsole( con.displayFrac );
 	} else {
 		// draw notify lines
@@ -1005,22 +1015,22 @@ void Con_RunConsole( void )
 {
 	// decide on the destination height of the console
 	if ( Key_GetCatcher( ) & KEYCATCH_CONSOLE )
-		con.finalFrac = 0.5;	// half screen
+		con.finalFrac = 0.75f;	// half screen
 	else
-		con.finalFrac = 0.0;	// none visible
+		con.finalFrac = 0.0f;	// none visible
 	
 	// scroll towards the destination height
 	if ( con.finalFrac < con.displayFrac ) {
-		con.displayFrac -= con_conspeed->f * gi.realtime * 0.001;
-//		con.displayFrac -= con_conspeed->f * ( -( gi.frametime - gi.realFrameTime ) * 0.10f ) * 0.001f;
+//		con.displayFrac -= con_conspeed->f * gi.frametime * 0.001;
+		con.displayFrac -= con_conspeed->f * ( -( gi.frametime - gi.realFrameTime ) * 0.10f ) * 0.001f;
 		if ( con.finalFrac > con.displayFrac ) {
 			con.displayFrac = con.finalFrac;
 		}
 
 	}
 	else if ( con.finalFrac > con.displayFrac ) {
-		con.displayFrac += con_conspeed->f * gi.realtime * 0.001;
-//		con.displayFrac += con_conspeed->f * ( -( gi.frametime - gi.realFrameTime ) * 0.10f ) * 0.001f;
+//		con.displayFrac += con_conspeed->f * gi.frametime * 0.001;
+		con.displayFrac += con_conspeed->f * ( -( gi.frametime - gi.realFrameTime ) * 0.10f ) * 0.001f;
 		if ( con.finalFrac < con.displayFrac ) {
 			con.displayFrac = con.finalFrac;
 		}

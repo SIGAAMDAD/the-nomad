@@ -110,9 +110,10 @@ static uniformInfo_t uniformsInfo[UNIFORM_COUNT] = {
     { "u_GammaAmount",          GLSL_FLOAT },
 
     { "u_NumLights",            GLSL_INT },
-    { "u_Exposure",             GLSL_FLOAT },
 
-    { "u_ScreenSize",           GLSL_VEC2 }
+    { "u_Exposure",             GLSL_FLOAT },
+    { "u_ScreenSize",           GLSL_VEC2 },
+    { "u_SharpenAmount",        GLSL_FLOAT }
 };
 
 static shaderProgram_t *hashTable[MAX_RENDER_SHADERS];
@@ -120,7 +121,7 @@ static shaderProgram_t *hashTable[MAX_RENDER_SHADERS];
 #define SHADER_CACHE_FILE_NAME "shadercache.dat"
 
 typedef struct {
-    char name[MAX_GDR_PATH];
+    char name[MAX_NPATH];
     uint32_t fmt;
     void *data;
     uint64_t size;

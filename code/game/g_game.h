@@ -138,15 +138,14 @@ typedef struct {
     
     uint64_t lastVidRestart;
 
-    int32_t mouseDx[2], mouseDy[2];	// added to by mouse events
-	int32_t mouseIndex;
-    vec3_t viewangles;
+//    int32_t mouseDx[2], mouseDy[2];	// added to by mouse events
+//	int32_t mouseIndex;
+//    vec3_t viewangles;
     
     gameState_t oldState;
     gameState_t state;
 
-    nhandle_t consoleShader0;
-    nhandle_t consoleShader1;
+    nhandle_t consoleShader;
     nhandle_t whiteShader;
     nhandle_t charSetShader;
     uint32_t captureWidth;

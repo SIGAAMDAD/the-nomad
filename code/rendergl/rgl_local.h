@@ -329,8 +329,8 @@ typedef enum {
     UNIFORM_NUM_LIGHTS,
 
     UNIFORM_EXPOSURE,
-
     UNIFORM_SCREEN_SIZE,
+    UNIFORM_SHARPENING,
 
     UNIFORM_COUNT
 } uniform_t;
@@ -1304,6 +1304,8 @@ extern cvar_t *r_intensity;
 extern cvar_t *r_skipBackEnd;
 
 extern cvar_t *r_externalGLSL;
+
+extern cvar_t *r_imageSharpenAmount;
 
 extern cvar_t *r_hdr;
 extern cvar_t *r_floatLightmap;

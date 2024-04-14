@@ -65,7 +65,7 @@ qboolean UI_MenuTitle( const char *label, float fontScale )
 
 void UI_EscapeMenuToggle( void )
 {
-    if ( Key_IsDown( KEY_ESCAPE ) ) {
+    if ( Key_IsDown( KEY_ESCAPE ) && ui->menustate != UI_MENU_MAIN ) {
         if ( ui->escapeToggle ) {
             ui->escapeToggle = qfalse;
 			UI_PopMenu();

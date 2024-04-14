@@ -471,7 +471,7 @@ static void G_InitRenderer( void )
     // load the character sets
 //    gi.charSetShader = re.RegisterShader("gfx/bigchars");
     gi.whiteShader = re.RegisterShader("white");
-    gi.consoleShader0 = re.RegisterShader("console");
+    gi.consoleShader = re.RegisterShader("console");
 
 //    g_console_field_width = ( ( gi.gpuConfig.vidWidth / smallchar_width ) ) - 2;
 
@@ -745,6 +745,9 @@ void G_Init( void )
     Hunk_Clear();
 
     G_ClearState();
+
+    Cvar_Get( "g_mouseAcceleration", "0", CVAR_SAVE );
+    Cvar_Get( "g_mouseSensitivity", "10.0", CVAR_SAVE );
 
     r_allowLegacy = Cvar_Get( "r_allowLegacy", "0", CVAR_SAVE | CVAR_LATCH );
     Cvar_SetDescription( r_allowLegacy, "Allow the use of old OpenGL API versions, requires \\r_drawMode 0 or 1 and \\r_allowShaders 0" );
@@ -1098,10 +1101,10 @@ void G_Frame( int msec, int realMsec )
     gi.realFrameTime = realMsec;
     
     // decide the simulation time
-    gi.frametime = msec;
-    gi.realtime += msec;
-//    gi.frametime = gi.frametime - msec;
-//    gi.realtime += gi.frametime;
+//    gi.frametime = msec;
+//    gi.realtime += msec;
+    gi.frametime = gi.frametime - msec;
+    gi.realtime += gi.frametime;
 
     G_MoveCamera_f();
 

@@ -1688,6 +1688,8 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 	uint64_t baseNameLen, fileNameLen;
 	FILE *fp;
 	fileStats_t stats;
+	char *tempBuf;
+	uint64_t outSize;
 
 	PROFILE_FUNCTION();
 
@@ -1812,7 +1814,7 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 
 		if ( !curFile->size ) {
 			fclose( fp );
-			Con_Printf( COLOR_RED "ERROR: bad chunk size at %lu\n", i);
+			Con_Printf( COLOR_RED "ERROR: bad chunk size at %lu\n", i );
 			return NULL;
 		}
 
@@ -1823,12 +1825,17 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 		bff->hashTable[hash] = curFile;
 		curFile->bytesRead = 0;
 
-		// read the chunk data
-		curFile->buf = (char *)Z_Malloc( curFile->size, TAG_BFF );
-		if ( !fread( curFile->buf, curFile->size, 1, fp ) ) {
-			fclose( fp );
-			Con_DPrintf("Error reading chunk buffer at %lu\n", i);
-			return NULL;
+		if ( header.compression != COMPRESS_NONE ) {
+			N_Error( ERR_FATAL, "Compression not supported yet!" );
+		}
+		else {
+			// read the chunk data
+			curFile->buf = (char *)Z_Malloc( curFile->size, TAG_BFF );
+			if ( !fread( curFile->buf, curFile->size, 1, fp ) ) {
+				fclose( fp );
+				Con_DPrintf( "Error reading chunk buffer at %lu\n", i );
+				return NULL;
+			}
 		}
 
 		curFile++;
@@ -1837,8 +1844,10 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 	bff->checksum = Com_BlockChecksum( bff, size );
 	bff->checksum = LittleInt( bff->checksum );
 
+	Con_Printf( "Loaded bff resource file with md4 blockchecksum %u\n", bff->checksum );
+
 #ifdef USE_BFF_CACHE_FILE
-	FS_InsertBFFToCache(bff);
+	FS_InsertBFFToCache( bff );
 #endif
 
 	fclose( fp );

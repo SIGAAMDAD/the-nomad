@@ -26,6 +26,16 @@
 #define PRESET_CUSTOM      4
 #define NUM_PRESETS        5
 
+#define ID_MOVENORTH       0
+#define ID_MOVEWEST        1
+#define ID_MOVESOUTH       2
+#define ID_MOVEEAST        3
+#define ID_UPMOVE          4
+#define ID_WEAPONNEXT      5
+#define ID_WEAPONPREV      6
+#define ID_USEWEAPON       7
+#define ID_ALTUSEWEAPON    8
+
 typedef struct {
     const char *command;
     const char *label;
@@ -34,9 +44,6 @@ typedef struct {
     int32_t defaultBind2;
     int32_t bind1;
     int32_t bind2;
-    
-    menutext_t binding;
-    menutext_t name;
 } bind_t;
 
 typedef struct {
@@ -55,6 +62,7 @@ typedef struct {
 
 	float gamma;
 	float exposure;
+	float sharpening;
 } videoSettings_t;
 
 typedef struct {
@@ -138,9 +146,50 @@ typedef struct settingsMenu_s {
 
 	const char *hintLabel;
 	const char *hintMessage;
+
+	qboolean modified;
 } settingsMenu_t;
 
 static settingsMenu_t *s_settingsMenu;
+static settingsMenu_t *s_initial;
+
+static const bind_t s_defaultKeybinds[] = {
+	{ "+northmove", "move north", ID_MOVENORTH, KEY_W, -1, -1, -1 },
+	{ "+westmove", "move west", ID_MOVEWEST, KEY_A, -1, -1, -1 },
+	{ "+southmove", "move south", ID_MOVESOUTH, KEY_S, -1, -1, -1 },
+	{ "+eastmove", "move east", ID_MOVEEAST, KEY_D, -1, -1, -1 },
+	{ "+upmove", "jump", ID_UPMOVE, KEY_SPACE, -1, -1, -1 },
+	{ "weaponnext", "next weapon", ID_WEAPONNEXT, KEY_WHEEL_DOWN, -1, -1, -1 },
+	{ "weaponprev", "prev weapon", ID_WEAPONPREV, KEY_WHEEL_UP, -1, -1, -1 },
+	{ "+useweapon", "use weapon", ID_USEWEAPON, KEY_MOUSE_LEFT, -1, -1, -1 },
+	{ "+altuseweapon", "use weapon alt fire", ID_ALTUSEWEAPON, KEY_MOUSE_RIGHT, -1, -1, -1 }
+};
+
+static void SettingsMenu_GetInitial( void )
+{
+	if ( !ui->uiAllocated ) {
+		s_initial = (settingsMenu_t *)Hunk_Alloc( sizeof( *s_initial ), h_high );
+		s_initial->controls.keybinds = (bind_t *)Hunk_Alloc( sizeof( bind_t ) * s_settingsMenu->controls.numBinds, h_high );
+		
+		memcpy( s_initial->controls.keybinds, s_settingsMenu->controls.keybinds, sizeof( bind_t ) * s_settingsMenu->controls.numBinds );
+	}
+	s_initial->controls.mouseAcceleration = s_settingsMenu->controls.mouseAcceleration;
+	s_initial->controls.mouseSensitivity = s_settingsMenu->controls.mouseSensitivity;
+
+	s_initial->performance = s_settingsMenu->performance;
+	s_initial->video = s_settingsMenu->video;
+	s_initial->audio = s_settingsMenu->audio;
+}
+
+static void SettingsMenu_CheckModified( void )
+{
+	if ( s_settingsMenu->performance.multisampleType != s_initial->performance.multisampleType ) {
+		s_settingsMenu->modified = qtrue;
+	}
+	if ( s_settingsMenu->performance.anisotropicFilter != s_initial->performance.anisotropicFilter ) {
+		s_settingsMenu->modified = qtrue;
+	}
+}
 
 const char *Hunk_CopyString( const char *str, ha_pref pref ) {
     char *out;
@@ -244,6 +293,9 @@ static void SettingsMenu_LoadBindings( void )
         s_settingsMenu->controls.numBinds++;
     }
 
+	if ( s_settingsMenu->controls.numBinds < arraylen( s_defaultKeybinds ) ) {
+		N_Error( ERR_DROP, "SettinsgMenu_LoadBindings: not enough bindings (defaults are missing)" );
+	}
     s_settingsMenu->controls.keybinds = (bind_t *)Hunk_Alloc( sizeof( *s_settingsMenu->controls.keybinds ) * s_settingsMenu->controls.numBinds, h_high );
     text_p = f.b;
     text = &text_p;
@@ -904,6 +956,12 @@ static void VideoMenu_Draw( void )
 		SettingsMenu_MultiSliderFloat( "Exposure", "Exposure",
 			"Sets exposure level when rendered in a scene",
 			&s_settingsMenu->video.exposure, 0.10f, 10.0f, 1.0f );
+		
+		ImGui::TableNextRow();
+		
+		SettingsMenu_MultiSliderFloat( "Sharpening", "ImageSharpening",
+			"Sets the amount of sharpening applied to a rendered texture",
+			&s_settingsMenu->video.sharpening, 0.5f, 5.0f, 0.1f );
 	}
 	ImGui::EndTable();
 }
@@ -915,6 +973,7 @@ static void VideoMenu_Save( void )
 	Cvar_SetIntegerValue( "r_customWidth", s_settingsMenu->video.windowWidth );
 	Cvar_SetIntegerValue( "r_customHeight", s_settingsMenu->video.windowHeight );
 	Cvar_SetIntegerValue( "r_mode", s_settingsMenu->video.windowResolution - 2 );
+	Cvar_SetFloatValue( "r_imageSharpenAmount", s_settingsMenu->video.sharpening );
 
 	Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n" );
 }
@@ -978,6 +1037,84 @@ static void ControlsMenu_Save( void )
 	Cvar_SetFloatValue( "g_mouseSensitivity", s_settingsMenu->controls.mouseSensitivity );
 
 	UI_SettingsWriteBinds_f();
+}
+
+static void PerformanceMenu_SetDefault( void )
+{
+	int i;
+	const char *textureMode;
+
+	switch ( Cvar_VariableInteger( "r_arb_texture_max_anisotropy" ) ) {
+	case 0:
+		s_settingsMenu->performance.anisotropicFilter = 0;
+		break;
+	case 2:
+		s_settingsMenu->performance.anisotropicFilter = 1;
+		break;
+	case 4:
+		s_settingsMenu->performance.anisotropicFilter = 2;
+		break;
+	case 8:
+		s_settingsMenu->performance.anisotropicFilter = 3;
+		break;
+	case 16:
+		s_settingsMenu->performance.anisotropicFilter = 4;
+		break;
+	case 32:
+		s_settingsMenu->performance.anisotropicFilter = 5;
+		break;
+	};
+
+	s_settingsMenu->performance.multisampleType = Cvar_VariableInteger( "r_multisampleType" );
+	s_settingsMenu->performance.depthMapping = Cvar_VariableInteger( "r_parallaxMapping" );
+	s_settingsMenu->performance.specularMapping = Cvar_VariableInteger( "r_specularMapping" );
+	s_settingsMenu->performance.normalMapping = Cvar_VariableInteger( "r_normalMapping" );
+	s_settingsMenu->performance.postProcessing = Cvar_VariableInteger( "r_postProcess" );
+	s_settingsMenu->performance.toneMappingType = Cvar_VariableInteger( "r_toneMapType" );
+	s_settingsMenu->performance.toneMapping = Cvar_VariableInteger( "r_toneMap" );
+	s_settingsMenu->performance.textureDetail = Cvar_VariableInteger( "r_textureDetail" );
+	s_settingsMenu->performance.bloom = Cvar_VariableInteger( "r_bloom" );
+	s_settingsMenu->performance.hdr = Cvar_VariableInteger( "r_hdr" );
+	s_settingsMenu->performance.pbr = Cvar_VariableInteger( "r_pbr" );
+	
+	textureMode = Cvar_VariableString( "r_textureMode" );
+	for ( i = 0; i < s_settingsMenu->performance.numTextureDetails; i++ ) {
+		if ( !N_stricmp( textureMode, s_settingsMenu->performance.textureDetails[i] ) ) {
+			s_settingsMenu->performance.textureFilter = i;
+			break;
+		}
+	}
+}
+
+static void VideoMenu_SetDefault( void )
+{
+	s_settingsMenu->video.windowWidth = Cvar_VariableInteger( "r_customWidth" );
+	s_settingsMenu->video.windowHeight = Cvar_VariableInteger( "r_customHeight" );
+	s_settingsMenu->video.windowResolution = Cvar_VariableInteger( "r_mode" ) + 2;
+	s_settingsMenu->video.vsync = Cvar_VariableInteger( "r_swapInterval" ) + 1;
+	s_settingsMenu->video.gamma = Cvar_VariableFloat( "r_gammaAmount" );
+	s_settingsMenu->video.fullscreen = Cvar_VariableInteger( "r_fullscreen" );
+	s_settingsMenu->video.noborder = Cvar_VariableInteger( "r_noborder" );
+	s_settingsMenu->video.sharpening = Cvar_VariableFloat( "r_imageSharpenAmount" );
+}
+
+static void AudioMenu_SetDefault( void )
+{
+	s_settingsMenu->audio.masterVolume = Cvar_VariableInteger( "snd_mastervol" );
+	s_settingsMenu->audio.musicVolume = Cvar_VariableInteger( "snd_musicvol" );
+	s_settingsMenu->audio.sfxVolume = Cvar_VariableInteger( "snd_sfxvol" );
+	s_settingsMenu->audio.musicOn = Cvar_VariableInteger( "snd_musicon" );
+	s_settingsMenu->audio.sfxOn = Cvar_VariableInteger( "snd_sfxon" );
+}
+
+static void ControlsMenu_SetDefault( void )
+{
+	s_settingsMenu->controls.mouseAcceleration = Cvar_VariableInteger( "g_mouseAcceleration" );
+	s_settingsMenu->controls.mouseSensitivity = Cvar_VariableFloat( "g_mouseSensitivity" );
+
+	if ( ui->uiAllocated ) {
+		memcpy( s_settingsMenu->controls.keybinds, s_defaultKeybinds, sizeof( s_defaultKeybinds ) );
+	}
 }
 
 static void SettingsMenu_Draw( void )
@@ -1056,12 +1193,16 @@ static void SettingsMenu_Draw( void )
 		Snd_PlaySfx( ui->sfx_select );
 		switch ( s_settingsMenu->lastChild ) {
 		case ID_VIDEO:
+			VideoMenu_SetDefault();
 			break;
 		case ID_PERFORMANCE:
+			PerformanceMenu_SetDefault();
 			break;
 		case ID_AUDIO:
+			AudioMenu_SetDefault();
 			break;
 		case ID_CONTROLS:
+			ControlsMenu_SetDefault();
 			break;
 		case ID_GAMEPLAY:
 			break;
@@ -1073,8 +1214,6 @@ static void SettingsMenu_Draw( void )
 
 void SettingsMenu_Cache( void )
 {
-	int i;
-	const char *textureMode;
 	static const char *s_multisampleTypes[] = {
 		"None",
 	    "2x MSAA",
@@ -1133,6 +1272,8 @@ void SettingsMenu_Cache( void )
 		SettingsMenu_InitPresets();
 		SettingsMenu_LoadBindings();
 	}
+	s_settingsMenu->hintLabel = NULL;
+	s_settingsMenu->hintMessage = NULL;
 	
 	s_settingsMenu->menu.fullscreen = qtrue;
 	s_settingsMenu->menu.x = 0;
@@ -1144,61 +1285,6 @@ void SettingsMenu_Cache( void )
 	s_settingsMenu->menu.textFontScale = 1.5f;
 	s_settingsMenu->lastChild = ID_VIDEO;
 
-	s_settingsMenu->audio.masterVolume = Cvar_VariableInteger( "snd_mastervol" );
-	s_settingsMenu->audio.musicVolume = Cvar_VariableInteger( "snd_musicvol" );
-	s_settingsMenu->audio.sfxVolume = Cvar_VariableInteger( "snd_sfxvol" );
-	s_settingsMenu->audio.musicOn = Cvar_VariableInteger( "snd_musicon" );
-	s_settingsMenu->audio.sfxOn = Cvar_VariableInteger( "snd_sfxon" );
-
-	s_settingsMenu->video.windowWidth = Cvar_VariableInteger( "r_customWidth" );
-	s_settingsMenu->video.windowHeight = Cvar_VariableInteger( "r_customHeight" );
-	s_settingsMenu->video.windowResolution = Cvar_VariableInteger( "r_mode" ) + 2;
-	s_settingsMenu->video.vsync = Cvar_VariableInteger( "r_swapInterval" ) + 1;
-	s_settingsMenu->video.gamma = Cvar_VariableFloat( "r_gammaAmount" );
-	s_settingsMenu->video.fullscreen = Cvar_VariableInteger( "r_fullscreen" );
-	s_settingsMenu->video.noborder = Cvar_VariableInteger( "r_noborder" );
-
-	switch ( Cvar_VariableInteger( "r_arb_texture_max_anisotropy" ) ) {
-	case 0:
-		s_settingsMenu->performance.anisotropicFilter = 0;
-		break;
-	case 2:
-		s_settingsMenu->performance.anisotropicFilter = 1;
-		break;
-	case 4:
-		s_settingsMenu->performance.anisotropicFilter = 2;
-		break;
-	case 8:
-		s_settingsMenu->performance.anisotropicFilter = 3;
-		break;
-	case 16:
-		s_settingsMenu->performance.anisotropicFilter = 4;
-		break;
-	case 32:
-		s_settingsMenu->performance.anisotropicFilter = 5;
-		break;
-	};
-
-	s_settingsMenu->performance.multisampleType = Cvar_VariableInteger( "r_multisampleType" );
-	s_settingsMenu->performance.depthMapping = Cvar_VariableInteger( "r_parallaxMapping" );
-	s_settingsMenu->performance.specularMapping = Cvar_VariableInteger( "r_specularMapping" );
-	s_settingsMenu->performance.normalMapping = Cvar_VariableInteger( "r_normalMapping" );
-	s_settingsMenu->performance.postProcessing = Cvar_VariableInteger( "r_postProcess" );
-	s_settingsMenu->performance.toneMappingType = Cvar_VariableInteger( "r_toneMapType" );
-	s_settingsMenu->performance.toneMapping = Cvar_VariableInteger( "r_toneMap" );
-	s_settingsMenu->performance.textureDetail = Cvar_VariableInteger( "r_textureDetail" );
-	s_settingsMenu->performance.bloom = Cvar_VariableInteger( "r_bloom" );
-	s_settingsMenu->performance.hdr = Cvar_VariableInteger( "r_hdr" );
-	s_settingsMenu->performance.pbr = Cvar_VariableInteger( "r_pbr" );
-	
-	textureMode = Cvar_VariableString( "r_textureMode" );
-	for ( i = 0; i < arraylen( s_textureDetail ); i++ ) {
-		if ( !N_stricmp( textureMode, s_textureDetail[i] ) ) {
-			s_settingsMenu->performance.textureFilter = i;
-			break;
-		}
-	}
-
 	s_settingsMenu->performance.toneMappingTypes = s_toneMappingTypes;
 	s_settingsMenu->performance.multisampleTypes = s_multisampleTypes;
 	s_settingsMenu->performance.anisotropyTypes = s_anisotropyTypes;
@@ -1208,14 +1294,21 @@ void SettingsMenu_Cache( void )
 	s_settingsMenu->video.vsyncList = s_vsync;
 	s_settingsMenu->video.windowSizes = s_windowSizes;
 
+	s_settingsMenu->video.numVSync = arraylen( s_vsync );
+	s_settingsMenu->video.numWindowSizes = arraylen( s_windowSizes );
+
 	s_settingsMenu->performance.numMultisampleTypes = arraylen( s_multisampleTypes );
 	s_settingsMenu->performance.numAnisotropyTypes = arraylen( s_anisotropyTypes );
 	s_settingsMenu->performance.numTextureDetails = arraylen( s_textureDetail );
 	s_settingsMenu->performance.numTextureFilters = arraylen( s_textureFilters );
 	s_settingsMenu->performance.numToneMappingTypes = arraylen( s_toneMappingTypes );
-	
-	s_settingsMenu->video.numVSync = arraylen( s_vsync );
-	s_settingsMenu->video.numWindowSizes = arraylen( s_windowSizes );
+
+	SettingsMenu_GetInitial();
+
+	PerformanceMenu_SetDefault();
+	VideoMenu_SetDefault();
+	AudioMenu_SetDefault();
+	ControlsMenu_SetDefault();
 
 	s_settingsMenu->save_0 = re.RegisterShader( "menu/save_0" );
 	s_settingsMenu->save_1 = re.RegisterShader( "menu/save_1" );

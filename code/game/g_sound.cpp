@@ -238,16 +238,17 @@ void CSoundSource::Init( void )
 
 void CSoundSource::Shutdown( void )
 {
+    // stop the source if we're playing anything
+    if ( IsPlaying() ) {
+        ALCall( alSourceStop( m_iSource ) );
+    }
+    ALCall( alSourcei( m_iSource, AL_BUFFER, AL_NONE ) );
     if ( m_iTag != TAG_MUSIC ) {
-        // stop the source if we're playing anything
-        if ( IsPlaying() ) {
-            ALCall( alSourceStop( m_iSource ) );
-        }
-
-        ALCall( alSourcei( m_iSource, AL_BUFFER, AL_NONE ) );
         ALCall( alDeleteSources( 1, &m_iSource ) );
     }
-    ALCall( alDeleteBuffers( 1, &m_iBuffer ) );
+    if ( m_iBuffer ) {
+        ALCall( alDeleteBuffers( 1, &m_iBuffer ) );
+    }
 
     m_iBuffer = 0;
     m_iSource = 0;

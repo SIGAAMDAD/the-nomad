@@ -1630,6 +1630,9 @@ void Com_Init( char *commandLine )
 	// done early so bind command exists
 	Com_InitKeyCommands();
 
+	// allocate the stack based hunk allocator
+	Hunk_InitMemory();
+
 	FS_InitFilesystem();
 
 	Com_StartupVariable( "logfile" );
@@ -1645,11 +1648,10 @@ void Com_Init( char *commandLine )
 	Com_InitJournals();
 	Com_LoadConfig();
 
+	// old hunk alloc here
+
 	// override anything from the config files with command line args
 	Com_StartupVariable( NULL );
-
-	// allocate the stack based hunk allocator
-	Hunk_InitMemory();
 
 	// if any archived cvars are modified after this, we will trigger a writing
 	// of the config file

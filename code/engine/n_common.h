@@ -65,6 +65,13 @@ extern	cvar_t	*com_viewlog;			// 0 = hidden, 1 = visible, 2 = minimized
 extern	cvar_t	*com_version;
 extern	cvar_t	*com_journal;
 
+#define COMPRESS_NONE 0
+#define COMPRESS_ZLIB 1
+#define COMPRESS_BZIP2 2
+
+char *Compress( void *buf, uint64_t buflen, uint64_t *outlen, int compression );
+char *Decompress( void *buf, uint64_t buflen, uint64_t *outlen, int compression );
+
 /*
 
 --- low memory ----
