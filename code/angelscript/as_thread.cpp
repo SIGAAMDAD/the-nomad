@@ -273,6 +273,7 @@ int asCThreadManager::CleanupLocalData()
 	}
 	return 0;
 #endif
+	threadManager = NULL;
 }
 
 asCThreadLocalData *asCThreadManager::GetLocalData()

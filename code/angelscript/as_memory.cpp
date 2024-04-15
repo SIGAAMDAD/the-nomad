@@ -159,7 +159,6 @@ int asResetGlobalMemoryFunctions()
 	// Clean-up thread local memory before changing the allocation routines to avoid 
 	// potential problem with trying to free memory using a different allocation
 	// routine than used when allocating it.
-	asThreadCleanup();
 
 	_userAlloc = (asALLOCFUNC_t)malloc;
 	_userFree  = (asFREEFUNC_t)free;

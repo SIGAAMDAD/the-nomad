@@ -803,12 +803,13 @@ void Com_RestartGame( void )
 		G_ShutdownAll();
 		G_ClearMem();
 
+		Com_Shutdown();
+
 		// reset console command history
 		Con_ResetHistory();
 
 		// shutdown FS early so Cvar_Restart will not reset old game cvars
 		FS_Shutdown( qtrue );
-		logfile = FS_INVALID_HANDLE;
 
 		// clean out any user an VM created cvars
 		Cvar_Restart( qtrue );
@@ -817,6 +818,8 @@ void Com_RestartGame( void )
 
 		// load new configuration
 		Com_LoadConfig();
+
+		G_Init();
 
 		G_StartHunkUsers();
 

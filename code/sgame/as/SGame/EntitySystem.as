@@ -117,7 +117,12 @@ namespace TheNomad::SGame {
 
 			DebugPrint( "Loading item data from save file...\n" );
 
-			m_EntityList.Reserve( numEntities );
+			if ( numEntities == 0 ) {
+				return;
+			}
+
+			m_EntityList.Clear();
+
 			for ( uint i = 0; i < numEntities; i++ ) {
 				TheNomad::GameSystem::SaveSystem::LoadSection data( "entity_" + i );
 				if ( !data.Found() ) {

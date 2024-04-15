@@ -2959,9 +2959,9 @@ void FS_Shutdown(qboolean closeFiles)
 			}
 			
 			FS_FClose( i );
-			memset( &handles[i], 0, sizeof( handles[i] ) );
 		}
 	}
+	memset( handles, 0, sizeof( handles ) );
 
 #ifdef USE_BFF_CACHE_FILE
 	FS_ResetCacheReferences();
@@ -3201,9 +3201,6 @@ void FS_Startup( void )
 
 	// we just loaded, it's not modified
 	fs_gamedirvar->modified = qfalse;
-
-	// clear all handles
-	memset( handles, 0, sizeof( handles ) );
 
 #ifdef USE_BFF_CACHE_FILE
 	FS_FreeUnusedCache();

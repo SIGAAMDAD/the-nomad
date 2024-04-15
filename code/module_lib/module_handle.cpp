@@ -466,10 +466,33 @@ void CModuleHandle::ClearMemory( void )
         }
     }
 
+    for ( i = 0; i < m_pScriptModule->GetEnumCount(); i++ ) {
+        asITypeInfo *enumType = m_pScriptModule->GetEnumByIndex( i );
+        if ( enumType ) {
+            enumType->Release();
+        }
+    }
+    for ( i = 0; i < m_pScriptModule->GetFunctionCount(); i++ ) {
+        asIScriptFunction *pFunc = m_pScriptModule->GetFunctionByIndex( i );
+        if ( pFunc ) {
+            pFunc->Release();
+        }
+    }
+    for ( i = 0; i < m_pScriptModule->GetObjectTypeCount(); i++ ) {
+        asITypeInfo *pType = m_pScriptModule->GetObjectTypeByIndex( i );
+        if ( pType ) {
+            pType->Release();
+        }
+    }
+    for ( i = 0; i < m_pScriptModule->GetGlobalVarCount(); i++ ) {
+        m_pScriptModule->RemoveGlobalVar( i );
+    }
+    m_pScriptModule->ResetGlobalVars();
+    m_pScriptModule->UnbindAllImportedFunctions();
+    m_pScriptModule->Discard();
+
     g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_FULL_CYCLE | asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE, 10 );
 
-    CheckASCall( m_pScriptModule->UnbindAllImportedFunctions() );
-    g_pModuleLib->GetScriptEngine()->DiscardModule( m_szName.c_str() );
     CheckASCall( m_pScriptContext->Unprepare() );
     CheckASCall( m_pScriptContext->Release() );
 

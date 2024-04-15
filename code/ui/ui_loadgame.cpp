@@ -20,6 +20,10 @@ typedef struct {
 
     uint64_t currentSave;
 
+    nhandle_t play_0;
+    nhandle_t play_1;
+    qboolean playHovered;
+
     const stringHash_t *title;
 } loadGameMenu_t;
 
@@ -83,15 +87,6 @@ static void LoadGameMenu_Draw( void )
                 }
                 s_loadGame->currentSave = i;
 
-                if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && ImGui::IsMouseDoubleClicked( ImGuiMouseButton_Left ) ) {
-                    Snd_PlaySfx( ui->sfx_select );
-                    Cvar_SetIntegerValue( "sgame_Difficulty", s_loadGame->saveList[i].gd.dif );
-                    Cvar_Set( "sgame_SaveName", s_loadGame->saveList[i].name );
-                    gi.state = GS_LEVEL;
-                    g_pModuleLib->ModuleCall( sgvm, ModuleOnLoadGame, 0 );
-                    Cbuf_ExecuteText( EXEC_APPEND, s_loadGame->saveList[i].gd.mapname );
-                }
-
                 ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 1.05f ) * ui->scale );
                 ImGui::BeginTable( va( "Save Slots##%lu", i ), 3 );
                 {
@@ -117,6 +112,19 @@ static void LoadGameMenu_Draw( void )
                 }
                 ImGui::EndTable();
                 ImGui::TreePop();
+                
+                ImGui::SetCursorScreenPos( ImVec2( 528 * ui->scale, 680 * ui->scale ) );
+                ImGui::Image( (ImTextureID)(uintptr_t)( s_loadGame->playHovered ? s_loadGame->play_1 : s_loadGame->play_0 ),
+	            	ImVec2( 256 * ui->scale, 72 * ui->scale ) );
+	            s_loadGame->playHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
+	            if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+	            	Snd_PlaySfx( ui->sfx_select );
+	            	Cvar_SetIntegerValue( "sgame_Difficulty", s_loadGame->saveList[i].gd.dif );
+                    Cvar_Set( "sgame_SaveName", s_loadGame->saveList[i].name );
+                    gi.state = GS_LEVEL;
+                    g_pModuleLib->ModuleCall( sgvm, ModuleOnLoadGame, 0 );
+                    Cbuf_ExecuteText( EXEC_APPEND, s_loadGame->saveList[i].gd.mapname );
+	            }
             }
         }
     }
@@ -126,32 +134,13 @@ static void LoadGameMenu_Draw( void )
     ImGui::End();
 }
 
-void LoadGameMenu_Cache( void )
+static void LoadGameMenu_InitSaveFiles( void )
 {
+    struct tm *fileTime;
     saveinfo_t *info;
     const char **fileList;
     uint64_t i, j;
     const char *path;
-    const stringHash_t *hardest;
-    struct tm *fileTime;
-
-    if ( !ui->uiAllocated ) {
-        s_loadGame = (loadGameMenu_t *)Hunk_Alloc( sizeof( *s_loadGame ), h_high );
-    }
-    memset( s_loadGame, 0, sizeof( *s_loadGame ) );
-
-    s_loadGame->title = strManager->ValueForKey( "SP_LOADGAME_TITLE" );
-
-    s_loadGame->menu.draw = LoadGameMenu_Draw;
-    s_loadGame->menu.flags = MENU_DEFAULT_FLAGS;
-    s_loadGame->menu.name = s_loadGame->title->value;
-    s_loadGame->menu.x = 0;
-    s_loadGame->menu.y = 0;
-    s_loadGame->menu.width = ui->gpuConfig.vidWidth * 0.75f;
-    s_loadGame->menu.height = ui->gpuConfig.vidHeight;
-    s_loadGame->menu.fullscreen = qtrue;
-    s_loadGame->menu.titleFontScale = 3.5f;
-    s_loadGame->menu.textFontScale = 1.5f;
 
     //
     // init savefiles
@@ -163,7 +152,7 @@ void LoadGameMenu_Cache( void )
     if ( s_loadGame->numSaves ) {
         Cvar_Set( "sg_numSaves", va( "%li", (int64_t)s_loadGame->numSaves ) );
 
-        s_loadGame->saveList = (saveinfo_t *)Z_Malloc( sizeof( saveinfo_t ) * s_loadGame->numSaves, TAG_SAVEFILE );
+        s_loadGame->saveList = (saveinfo_t *)Hunk_Alloc( sizeof( saveinfo_t ) * s_loadGame->numSaves, h_high );
         info = s_loadGame->saveList;
 
         for ( i = 0; i < s_loadGame->numSaves; i++, info++ ) {
@@ -187,7 +176,7 @@ void LoadGameMenu_Cache( void )
                 info->valid = qtrue;
             }
 
-            info->modsLoaded = (qboolean *)Z_Malloc( sizeof( *info->modsLoaded ) * info->gd.numMods, TAG_SAVEFILE );
+            info->modsLoaded = (qboolean *)Hunk_Alloc( sizeof( *info->modsLoaded ) * info->gd.numMods, h_high );
             for ( uint64_t a = 0; a < info->gd.numMods; a++ ) {
                 info->modsLoaded[a] = g_pModuleLib->GetModule( info->gd.modList[a].name ) != NULL;
             }
@@ -198,6 +187,34 @@ void LoadGameMenu_Cache( void )
             }
         }
     }
+}
+
+void LoadGameMenu_Cache( void )
+{
+    const stringHash_t *hardest;
+
+    if ( !ui->uiAllocated ) {
+        s_loadGame = (loadGameMenu_t *)Hunk_Alloc( sizeof( *s_loadGame ), h_high );
+    }
+    memset( s_loadGame, 0, sizeof( *s_loadGame ) );
+
+    s_loadGame->title = strManager->ValueForKey( "SP_LOADGAME_TITLE" );
+
+    s_loadGame->menu.draw = LoadGameMenu_Draw;
+    s_loadGame->menu.flags = MENU_DEFAULT_FLAGS;
+    s_loadGame->menu.name = s_loadGame->title->value;
+    s_loadGame->menu.x = 0;
+    s_loadGame->menu.y = 0;
+    s_loadGame->menu.width = ui->gpuConfig.vidWidth * 0.75f;
+    s_loadGame->menu.height = ui->gpuConfig.vidHeight;
+    s_loadGame->menu.fullscreen = qtrue;
+    s_loadGame->menu.titleFontScale = 3.5f;
+    s_loadGame->menu.textFontScale = 1.5f;
+
+    s_loadGame->play_0 = re.RegisterShader( "menu/play_0" );
+    s_loadGame->play_1 = re.RegisterShader( "menu/play_1" );
+
+    LoadGameMenu_InitSaveFiles();
 }
 
 void UI_LoadGameMenu( void )

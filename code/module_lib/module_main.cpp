@@ -555,7 +555,7 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
 
 void CModuleLib::Shutdown( qboolean quit )
 {
-    uint64_t i;
+    uint64_t i, j;
 
     if ( m_bRecursiveShutdown ) {
         Con_Printf( COLOR_YELLOW "WARNING: CModuleLib::Shutdown (recursive)\n" );
@@ -565,7 +565,7 @@ void CModuleLib::Shutdown( qboolean quit )
 
     Con_Printf( "CModuleLib::Shutdown: shutting down modules...\n" );
 
-    if ( Cvar_VariableString( "com_errorMessage" )[0] ) {
+    if ( com_errorEntered ) {
         if ( asGetActiveContext() ) {
             Cbuf_ExecuteText( EXEC_NOW, va( "ml_debug.set_active \"%s\"", m_pCurrentHandle->GetName().c_str() ) );
             g_pDebugger->PrintCallstack( asGetActiveContext() );
@@ -597,6 +597,7 @@ void CModuleLib::Shutdown( qboolean quit )
         if ( it && it->m_pHandle ) {
             it->m_pHandle->CallFunc( ModuleShutdown, 0, NULL );
             it->m_pHandle->ClearMemory();
+            it->m_pHandle->~CModuleHandle();
         }
     }
     m_LoadList.clear();
@@ -635,12 +636,6 @@ void CModuleLib::Shutdown( qboolean quit )
             pFunc->Release();
         }
     }
-    for ( i = 0; i < m_pEngine->GetModuleCount(); i++ ) {
-        asIScriptModule *pModule = m_pEngine->GetModuleByIndex( i );
-        if ( pModule ) {
-            pModule->Discard();
-        }
-    }
     for ( i = 0; i < m_pEngine->registeredEnums.GetLength(); i++ ) {
         asCEnumType *enumType = m_pEngine->registeredEnums[i];
         if ( enumType ) {
@@ -655,8 +650,8 @@ void CModuleLib::Shutdown( qboolean quit )
             objType->Release();
         }
     }
-    g_pStringFactory->~CModuleStringFactory();
-    g_pStringFactory = NULL;
+//    g_pStringFactory->~CModuleStringFactory();
+//    g_pStringFactory = NULL;
     asThreadCleanup();
 
     if ( m_pCompiler ) {
