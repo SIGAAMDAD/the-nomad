@@ -545,7 +545,11 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
 
     // init memory manager
     Mem_Init();
+
+    // FIXME: angelscript's thread manager is fucking broken on unix (stalls forever)
+//    asCThreadManager::Prepare( new ( Mem_Alloc( sizeof( asCThreadManager ) ) ) asIThreadManager() );
     asSetGlobalMemoryFunctions( AS_Alloc, AS_Free );
+
     g_pModuleLib = new ( Hunk_Alloc( sizeof( *g_pModuleLib ), h_high ) ) CModuleLib();
 
     Con_Printf( "--------------------\n" );
@@ -611,36 +615,35 @@ void CModuleLib::Shutdown( qboolean quit )
         if ( pType ) {
             pType->Release();
         }
+        m_pEngine->registeredObjTypes.RemoveIndex( i );
     }
     for ( i = 0; i < m_pEngine->GetTypedefCount(); i++ ) {
         asITypeInfo *pType = m_pEngine->GetTypedefByIndex( i );
         if ( pType ) {
             pType->Release();
         }
-    }
-    for ( i = 0; i < m_pEngine->GetEnumCount(); i++ ) {
-        asITypeInfo *pEnum = m_pEngine->GetEnumByIndex( i );
-        if ( pEnum ) {
-            pEnum->Release();
-        }
+        m_pEngine->registeredTypeDefs.RemoveIndex( i );
     }
     for ( i = 0; i < m_pEngine->GetFuncdefCount(); i++ ) {
         asITypeInfo *pFuncDef = m_pEngine->GetFuncdefByIndex( i );
         if ( pFuncDef ) {
             pFuncDef->Release();
         }
+        m_pEngine->funcDefs.RemoveIndex( i );
     }
     for ( i = 0; i < m_pEngine->GetGlobalFunctionCount(); i++ ) {
         asIScriptFunction *pFunc = m_pEngine->GetGlobalFunctionByIndex( i );
         if ( pFunc ) {
             pFunc->Release();
         }
+        m_pEngine->globalProperties.RemoveIndex( i );
     }
     for ( i = 0; i < m_pEngine->registeredEnums.GetLength(); i++ ) {
         asCEnumType *enumType = m_pEngine->registeredEnums[i];
         if ( enumType ) {
             enumType->Release();
         }
+        m_pEngine->registeredEnums.RemoveIndex( i );
     }
     for ( i = 0; i < m_pEngine->registeredTemplateTypes.GetLength(); i++ ) {
         asCObjectType *objType = m_pEngine->registeredTemplateTypes[i];
@@ -649,10 +652,12 @@ void CModuleLib::Shutdown( qboolean quit )
             objType->ReleaseAllFunctions();
             objType->Release();
         }
+        m_pEngine->registeredTemplateTypes.RemoveIndex( i );
     }
 //    g_pStringFactory->~CModuleStringFactory();
 //    g_pStringFactory = NULL;
-    asThreadCleanup();
+
+//    asCThreadManager::Unprepare();
 
     if ( m_pCompiler ) {
         m_pCompiler->~asCJITCompiler();

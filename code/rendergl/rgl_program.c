@@ -705,8 +705,6 @@ static void GLSL_DeleteGPUShader(shaderProgram_t *program)
         }
 
         nglDeleteProgram( program->programId );
-
-        memset( program, 0, sizeof(*program) );
     }
 }
 

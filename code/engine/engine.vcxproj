@@ -157,20 +157,16 @@
     <ClInclude Include="..\game\g_archive.h" />
     <ClInclude Include="..\game\g_game.h" />
     <ClInclude Include="..\game\g_sound.h" />
-    <ClInclude Include="..\game\g_vmimgui.h" />
+    <ClInclude Include="..\game\g_world.h" />
+    <ClInclude Include="..\module_lib\module_public.hpp.h" />
     <ClInclude Include="..\rendercommon\r_public.h" />
     <ClInclude Include="..\rendercommon\r_types.h" />
-    <ClInclude Include="..\sgame\sg_public.h" />
     <ClInclude Include="..\system\sys_thread.h" />
     <ClInclude Include="..\system\sys_timer.h" />
-    <ClInclude Include="..\ui\ui_defs.h" />
     <ClInclude Include="..\ui\ui_lib.h" />
     <ClInclude Include="..\ui\ui_menu.h" />
     <ClInclude Include="..\ui\ui_public.h" />
-    <ClInclude Include="..\ui\ui_strings.h" />
     <ClInclude Include="..\ui\ui_string_manager.h" />
-    <ClInclude Include="..\ui\ui_string_table.h" />
-    <ClInclude Include="..\ui\ui_window.h" />
     <ClInclude Include="..\win32\resource.h" />
     <ClInclude Include="..\win32\win_local.h" />
     <ClInclude Include="gln_files.h" />
@@ -180,7 +176,6 @@
     <ClInclude Include="n_debug.h" />
     <ClInclude Include="n_shared.h" />
     <ClInclude Include="n_steam.h" />
-    <ClInclude Include="vm_local.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\game\g_archive.cpp" />
@@ -198,8 +193,11 @@
     <ClCompile Include="..\ui\ui_settings.cpp" />
     <ClCompile Include="..\ui\ui_single_player.cpp" />
     <ClCompile Include="..\ui\ui_string_manager.cpp" />
-    <ClCompile Include="..\ui\ui_title.cpp" />
-    <ClCompile Include="..\ui\ui_window.cpp" />
+    <ClCompile Include="..\ui\ui_loadgame.cpp" />
+    <ClCompile Include="..\ui\ui_newgame.cpp" />
+    <ClCompile Include="..\ui\ui_mods.cpp" />
+    <ClCompile Include="..\ui\ui_credits.cpp" />
+    <ClCompile Include="..\ui\ui_demo.cpp" />
     <ClCompile Include="..\win32\win_main.cpp" />
     <ClCompile Include="..\win32\win_shared.cpp" />
     <ClCompile Include="..\win32\win_syscon.cpp" />

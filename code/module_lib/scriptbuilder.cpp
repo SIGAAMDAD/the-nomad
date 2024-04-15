@@ -584,7 +584,7 @@ int CScriptBuilder::Build()
 	if( r < 0 )
 		return r;
 
-#if AS_PROCESS_METADATA == 1
+#ifdef AS_PROCESS_METADATA
 	// After the script has been built, the metadata UtlStrings should be
 	// stored for later lookup by function id, type id, and variable index
 	for( int n = 0; n < (int)foundDeclarations.size(); n++ )
