@@ -3,6 +3,8 @@
 #include "SGame/PlayrObject.as"
 
 namespace TheNomad::SGame {
+	const uint ENTITYNUM_INVALID = uint( ~0 );
+
     class EntityObject {
 		EntityObject( TheNomad::GameSystem::EntityType type, uint id, const vec3& in origin ) {
 			Init( type, id, origin );
@@ -36,6 +38,9 @@ namespace TheNomad::SGame {
 		}
 		ref@ GetData() {
 			return @m_Data;
+		}
+		int GetShader() const {
+			return m_hShader;
 		}
 		uint GetFlags() const {
 			return m_Flags;
@@ -79,6 +84,12 @@ namespace TheNomad::SGame {
 		bool IsProjectile() const {
 			return m_bProjectile;
 		}
+		SpriteSheet@ GetSpriteSheet() {
+			return @m_SpriteSheet;
+		}
+		const SpriteSheet@ GetSpriteSheet() const {
+			return @m_SpriteSheet;
+		}
 
 		//
 		// setters
@@ -86,7 +97,7 @@ namespace TheNomad::SGame {
 		void SetHealth( float nHealth ) {
 			m_nHealth = nHealth;
 		}
-		void SetState( StateNum statenum ) {
+		void SetState( uint statenum ) {
 			
 		}
 		void SetState( EntityState@ state ) {
@@ -206,7 +217,7 @@ namespace TheNomad::SGame {
 		// renderer data
 		//
 		protected int m_hShader = FS_INVALID_HANDLE;
-		protected int m_hSpriteSheet = FS_INVALID_HANDLE;
+		protected SpriteSheet@ m_SpriteSheet = null;
 		
 		// linked list stuff
 		EntityObject@ next = null;

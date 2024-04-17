@@ -53,7 +53,7 @@ namespace TheNomad::SGame {
 		bool Done() const {
 			return m_Ticker == m_nTics;
 		}
-		uint Tics() const {
+		uint GetTics() const {
 			return m_Ticker;
 		}
 		void Run() {

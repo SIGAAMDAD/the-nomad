@@ -547,10 +547,9 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
     Mem_Init();
 
     // FIXME: angelscript's thread manager is fucking broken on unix (stalls forever)
-//    asCThreadManager::Prepare( new ( Mem_Alloc( sizeof( asCThreadManager ) ) ) asIThreadManager() );
     asSetGlobalMemoryFunctions( AS_Alloc, AS_Free );
 
-    g_pModuleLib = new ( Hunk_Alloc( sizeof( *g_pModuleLib ), h_high ) ) CModuleLib();
+    g_pModuleLib = new ( Hunk_Alloc( sizeof( *g_pModuleLib ), h_low ) ) CModuleLib();
 
     Con_Printf( "--------------------\n" );
 
@@ -578,8 +577,6 @@ void CModuleLib::Shutdown( qboolean quit )
         // TODO: use the serializer to create a sort of coredump like file for the active script
     }
 
-    m_pEngine->GarbageCollect( asGC_DESTROY_GARBAGE | asGC_DETECT_GARBAGE, 50 );
-
     Cmd_RemoveCommand( "ml.clean_script_cache" );
     Cmd_RemoveCommand( "ml.garbage_collection_stats" );
     Cmd_RemoveCommand( "ml_debug.set_active" );
@@ -604,60 +601,22 @@ void CModuleLib::Shutdown( qboolean quit )
             it->m_pHandle->~CModuleHandle();
         }
     }
-    m_LoadList.clear();
 
-    //
-    // AngelScript is a fucking pain to release, so we're just gonna free up what we can
-    // instead of getting a weird segfault from the library
-    //
-    for ( i = 0; i < m_pEngine->GetObjectTypeCount(); i++ ) {
-        asITypeInfo *pType = m_pEngine->GetObjectTypeByIndex( i );
-        if ( pType ) {
-            pType->Release();
-        }
-        m_pEngine->registeredObjTypes.RemoveIndex( i );
-    }
-    for ( i = 0; i < m_pEngine->GetTypedefCount(); i++ ) {
-        asITypeInfo *pType = m_pEngine->GetTypedefByIndex( i );
-        if ( pType ) {
-            pType->Release();
-        }
-        m_pEngine->registeredTypeDefs.RemoveIndex( i );
-    }
-    for ( i = 0; i < m_pEngine->GetFuncdefCount(); i++ ) {
-        asITypeInfo *pFuncDef = m_pEngine->GetFuncdefByIndex( i );
-        if ( pFuncDef ) {
-            pFuncDef->Release();
-        }
-        m_pEngine->funcDefs.RemoveIndex( i );
-    }
-    for ( i = 0; i < m_pEngine->GetGlobalFunctionCount(); i++ ) {
-        asIScriptFunction *pFunc = m_pEngine->GetGlobalFunctionByIndex( i );
-        if ( pFunc ) {
-            pFunc->Release();
-        }
-        m_pEngine->globalProperties.RemoveIndex( i );
-    }
-    for ( i = 0; i < m_pEngine->registeredEnums.GetLength(); i++ ) {
-        asCEnumType *enumType = m_pEngine->registeredEnums[i];
-        if ( enumType ) {
-            enumType->Release();
-        }
-        m_pEngine->registeredEnums.RemoveIndex( i );
-    }
-    for ( i = 0; i < m_pEngine->registeredTemplateTypes.GetLength(); i++ ) {
-        asCObjectType *objType = m_pEngine->registeredTemplateTypes[i];
-        if ( objType ) {
-            objType->ReleaseAllProperties();
-            objType->ReleaseAllFunctions();
-            objType->Release();
-        }
-        m_pEngine->registeredTemplateTypes.RemoveIndex( i );
-    }
-//    g_pStringFactory->~CModuleStringFactory();
-//    g_pStringFactory = NULL;
+    g_pStringFactory->m_StringCache.clear();
 
-//    asCThreadManager::Unprepare();
+    if ( !quit ) {
+        if ( sgvm ) {
+            ModuleCall( sgvm, ModuleShutdown, 0 );
+            RunModules( ModuleShutdown, 0 );
+        }
+        
+        m_pEngine->GarbageCollect( asGC_DESTROY_GARBAGE | asGC_DETECT_GARBAGE, 50 );
+        m_bRecursiveShutdown = qfalse;
+        g_pModuleLib = NULL;
+        g_pDebugger = NULL;
+
+        return;
+    }
 
     if ( m_pCompiler ) {
         m_pCompiler->~asCJITCompiler();
@@ -665,6 +624,7 @@ void CModuleLib::Shutdown( qboolean quit )
     m_pScriptBuilder->~CScriptBuilder();
     g_pDebugger->~CDebugger();
 
+    // everything is automatically released when this is called
     Mem_Shutdown();
 
     m_bRecursiveShutdown = qfalse;

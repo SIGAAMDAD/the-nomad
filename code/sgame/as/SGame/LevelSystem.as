@@ -12,7 +12,9 @@
 #include "SGame/GfxSystem.as"
 
 namespace TheNomad::SGame {
+	// hellbreaker add-on, toggled with "sgame_hellbreaker"
     import void HellbreakerInit() from "hellbreaker";
+	import bool HellbreakerRunTic() from "hellbreaker";
 
     enum LevelRank {
 		RankS,

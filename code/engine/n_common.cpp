@@ -810,7 +810,7 @@ void Com_RestartGame( void )
 
 		// shutdown FS early so Cvar_Restart will not reset old game cvars
 		FS_Shutdown( qtrue );
-
+		
 		// clean out any user an VM created cvars
 		Cvar_Restart( qtrue );
 
@@ -1633,9 +1633,6 @@ void Com_Init( char *commandLine )
 	// done early so bind command exists
 	Com_InitKeyCommands();
 
-	// allocate the stack based hunk allocator
-	Hunk_InitMemory();
-
 	FS_InitFilesystem();
 
 	Com_StartupVariable( "logfile" );
@@ -1651,7 +1648,8 @@ void Com_Init( char *commandLine )
 	Com_InitJournals();
 	Com_LoadConfig();
 
-	// old hunk alloc here
+	// allocate the stack based hunk allocator
+	Hunk_InitMemory();
 
 	// override anything from the config files with command line args
 	Com_StartupVariable( NULL );

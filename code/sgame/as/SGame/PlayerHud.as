@@ -1,16 +1,25 @@
+#include "SGame/DisplayNotification.as"
+#include "SGame/HudOverlay.as"
+
 namespace TheNomad::SGame {
-	class DisplayNotification {
-		void Draw() {
-			
-		}
-	};
 	class PlayerDisplayUI {
 		PlayerDisplayUI() {
+			@m_WeaponIcons = SpriteSheet(  ); // TODO: THIS
 		}
 		
-		void NotifyChangedWeapon() {
-			m_bChangedWeapon = true;
+		void Init( PlayrObject@ parent ) {
+			@m_Parent = @parent;
 			
+			// init shaders
+			m_BloodScreenSplatter.origin = vec2( 0.0f, 0.0f );
+			m_BloodScreenSplatter.size = vec2( 0.0f, 0.0f );
+			m_BloodScreenSplatter.hShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/blood_screen" );
+			
+			m_HealthBar.origin = vec2( 0.0f, 0.0f );
+			m_HealthBar.hShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/health_bar" );
+			
+			m_HealthBarEmpty.origin = vec2( 0.0f, 0.0f );
+			m_HealthBarEmpty.hShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/health_empty" );
 		}
 		
 		private const vec4 GetRageColor( float rage ) const {
@@ -26,70 +35,79 @@ namespace TheNomad::SGame {
 				return colorGreen;
 			}
 		}
-		/*
-		
-		private void DrawRect( const vec2& in pos, const vec2& in size, int hShader, const Sprite@ sprite ) const {
-			TheNomad::Engine::Renderer::PolyVert[] verts( 4 );
-			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
-			const float sizeX = size.x / 2;
-			const float sizeY = size.y / 2;
-			
-			verts[0].xyz = vec3( pos.x + ( sizeX * scale ), pos.y, 0.0f );
-			verts[1].xyz = vec3( pos.x + ( sizeX * scale ), pos.y + ( sizeY * scale ), 0.0f );
-			verts[2].xyz = vec3( pos.x, pos.y + ( sizeY * scale ), 0.0f );
-			verts[3].xyz = vec3( pos.x, pos.y, 0.0f );
-			
-			for ( uint i = 0; i < 4; i++ ) {
-				verts[i].uv = sprite[i];
-			}
-			
-			TheNomad::Engine::Renderer::AddPolyToScene( hShader, verts );
-		}
 		
 		private void DrawWeaponStatus() const {
 			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
-			const vec2 screenSize = TheNomad::GameSystem::GameManager.GetGPUConfig().GetScreenSize();
-			const WeaponObject@ weapon = @GetPlayerObject().GetCurrentWeapon();
+			const ivec2 screenSize = TheNomad::GameSystem::GameManager.GetScreenSize();
+			const WeaponObject@ weapon;
+			const SpriteSheet@ sheet;
+			const vec2[]@ texCoords;
+			int hShader;
+			vec2 pos, size;
 			
-			ImGui::SetCursorScreenPos( vec2( screenSize.x - ( 256.0f * scale ), screenSize.y - ( 16.0f * scale ) ) );
-			
-			DrawRect( ImGui::GetCursorScreenPos(), vec2( 32.0f, 32.0f ), weapon.GetIconShader(), @weapon.Sprite() );
+			@weapon = @m_Parent.GetCurrentWeapon();
+			hShader = weapon.GetShader();
+
+			return;
+
+			size = weapon.GetSpriteSheet().GetSpriteSize();
+			pos.x = ( screenSize.x - 8 ) - ( 256 * scale );
+			pos.y = ( screenSize.y - 8 ) - ( 72 * scale );
+
+			@sheet = @weapon.GetSpriteSheet();
+			if ( @sheet !is null ) {
+				@texCoords = @sheet[ weapon.GetSpriteIndex() ].GetTexCoords();
+				TheNomad::Engine::Renderer::DrawImage( pos.x, pos.y, size.x, size.y,
+					texCoords[0][0], texCoords[0][1], texCoords[2][0], texCoords[2][1],
+					hShader );
+			}
+			else {
+				// standalone shader
+				TheNomad::Engine::Renderer::DrawImage( pos.x, pos.y, size.x, size.y, 0, 0, 1, 1, hShader );
+			}
 		}
 		
 		private void DrawMouseReticle() const {
 			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
-			const vec2 mousePos = TheNomad::GameSystem::GameManager.GetMousePos();
+			const ivec2 screenSize = TheNomad::GameSystem::GameManager.GetScreenSize();
+			int hShader;
 			
-			DrawRect( mousePos, vec2( 16.0f, 16.0f ), m_MouseShader, @m_MouseSpriteSheet[m_MouseSpriteIndex] );
 		}
-		*/
+		
+		private void DrawHealthBar() const {
+			int hShader;
+			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
+			const ivec2 screenSize = TheNomad::GameSystem::GameManager.GetScreenSize();
+			float health = m_Parent.GetHealth();
+			
+			if ( health < 10.0f ) {
+				// draw a red overlay if we're really low on health
+				m_BloodScreenSplatter.Draw();
+			}
+			
+//			m_HealthBar.size[0] = TheNomad::Util::Lerp( 256, 256, health ) * scale;
+		}
 		
 		private void DrawStatusBars() const {
 			const float health = GetPlayerObject().GetHealth();
 			const float rage = GetPlayerObject().GetRage();
-//			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
+			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
 			const vec2 screenSize = vec2( TheNomad::GameSystem::GameManager.GetGPUConfig().screenWidth,
 				TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight );
-//			const ImGuiWindowFlags windowFlags = ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove |
-//				ImGuiWindowFlags::NoMouseInputs | ImGuiWindowFlags::NoBackground |
-//				ImGuiWindowFlags::NoBringToFrontOnFocus | ImGuiWindowFlags::AlwaysAutoResize );
+			const ImGuiWindowFlags windowFlags = ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove |
+				ImGuiWindowFlags::NoMouseInputs | ImGuiWindowFlags::NoBackground |
+				ImGuiWindowFlags::NoBringToFrontOnFocus | ImGuiWindowFlags::AlwaysAutoResize );
 			
-//			ImGui::Begin( "DisplayPlayerHealth" );
-//			ImGui::SetWindowSize( vec2( 256, 256 ) );
-//			ImGui::SetWindowPos( vec2( 0.0f ) );
-//			ImGui::SetWindowFontScale( 1.5f );
-//			ImGui::Text( "HEALTH" );
 			
 			//
 			// display health
 			//
-//			const vec4 healthColor = GetHealthColor( health );
-//			ImGui::PushStyleColor( ImGuiCol::FrameBg, healthColor );
-//			ImGui::PushStyleColor( ImGuiCol::FrameBgActive, healthColor );
-//			ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, healthColor );
-//			ImGui::Text( "HEALTH METER" );
-//			ImGui::ProgressBar( health );
-//			ImGui::PopStyleColor( 3 );
+			const vec4 healthColor = GetHealthColor( health );
+			ImGui::PushStyleColor( ImGuiCol::FrameBg, healthColor );
+			ImGui::PushStyleColor( ImGuiCol::FrameBgActive, healthColor );
+			ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, healthColor );
+			ImGui::ProgressBar( health );
+			ImGui::PopStyleColor( 3 );
 
 			ImGui::End();
 			
@@ -97,38 +115,45 @@ namespace TheNomad::SGame {
 			// display rage meter
 			//
 
-//			ImGui::Begin( "##DisplayPlayerRage", null, windowFlags );
-//			ImGui::SetWindowPos( vec2( 16.0f, 64.0f ) );
+			ImGui::Begin( "##DisplayPlayerRage", null, windowFlags );
+			ImGui::SetWindowPos( vec2( 16.0f, 64.0f ) );
 
-//			const vec4 rageColor = GetRageColor( rage );
-//			ImGui::PushStyleColor( ImGuiCol::FrameBg, rageColor );
-//			ImGui::PushStyleColor( ImGuiCol::FrameBgActive, rageColor );
-//			ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, rageColor );
-//			ImGui::Text( "RAGE METER" );
-//			ImGui::ProgressBar( rage );
-//			ImGui::PopStyleColor( 3 );
-
-//			ImGui::End();
+			const vec4 rageColor = GetRageColor( rage );
+			ImGui::PushStyleColor( ImGuiCol::FrameBg, rageColor );
+			ImGui::PushStyleColor( ImGuiCol::FrameBgActive, rageColor );
+			ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, rageColor );
+			ImGui::ProgressBar( rage );
+			ImGui::PopStyleColor( 3 );
+			
+			ImGui::End();
 		}
 		
 		void Draw() const {
 			if ( sgame_ToggleHUD.GetInt() == 0 ) {
 				return; // don't draw it
 			}
+			
+			uint time;
 			const vec2 screenSize = vec2( TheNomad::GameSystem::GameManager.GetGPUConfig().screenWidth,
 				TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight );
+			
+			
 			
 			TheNomad::Engine::Renderer::ClearScene();
 			
 			DrawStatusBars();
-//			DrawMouseReticle();
-//			DrawWeaponStatus();
+			DrawMouseReticle();
+			DrawWeaponStatus();
 			
-			TheNomad::Engine::Renderer::RenderScene( 0, 0, screenSize.x, screenSize.y, RSF_ORTHO_TYPE_SCREENSPACE | RSF_NOWORLDMODEL, 0 );
+			TheNomad::Engine::Renderer::RenderScene( 0, 0, uint( screenSize.x ), uint( screenSize.y ),
+				RSF_ORTHO_TYPE_SCREENSPACE | RSF_NOWORLDMODEL, 0 );
 		}
+
+		private HudOverlay m_HealthBar;
+		private HudOverlay m_HealthBarEmpty;
+		private HudOverlay m_BloodScreenSplatter;
 		
-		private bool m_bChangedWeapon = false;
+		private SpriteSheet@ m_WeaponIcons = null;
+		private PlayrObject@ m_Parent = null;
 	};
-	
-	PlayerDisplayUI@ HUDManager;
 };

@@ -1,9 +1,4 @@
 namespace TheNomad::Util {
-	class Convert {
-		Convert() {
-		}
-	};
-
 	const vec4& StringToColor( const string& in color ) {
 		if ( StrICmp( color, "black" ) == 0 ) {
 			return colorBlack;
@@ -177,36 +172,33 @@ namespace TheNomad::Util {
 		return true;
 	}
 
-	uint BoolToUInt( bool b ) {
-		return b ? 1 : 0;
-	}
-	
-	int BoolToInt( bool b ) {
-		return b ? 1 : 0;
-	}
-	
-	bool IntToBool( int64 i ) {
-		return i == 1 ? true : false;
+	float DotProduct( const vec3& in a, const vec3& in b ) {
+		return ( a[0]*b[0] + a[1]*b[1] + a[2]*b[2] );
 	}
 
-	bool UIntToBool( uint64 i ) {
-		return i == 1 ? true : false;
-	}
-	
-	bool IntToBool( int32 i ) {
-		return i == 1 ? true : false;
+	float VectorLength( const vec3& in v ) {
+		return sqrt( DotProduct( v, v ) );
 	}
 
-	bool UIntToBool( uint32 i ) {
-		return i == 1 ? true : false;
+	float NormalizeVector( vec3& out v ) {
+		float length, ilength;
+
+		length = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+
+		if ( length > 0.0f ) {
+			ilength = 1.0f / float( sqrt( length ) );
+			/* sqrt(length) = length * (1 / sqrt(length)) */
+			length *= ilength;
+			v[0] *= ilength;
+			v[1] *= ilength;
+			v[2] *= ilength;
+		}
+		
+		return length;
 	}
 
-	bool IntToBool( int16 i ) {
-		return i == 1 ? true : false;
-	}
-
-	bool UIntToBool( uint16 i ) {
-		return i == 1 ? true : false;
+	float Lerp( float a, float b, float f ) {
+		return ( a * ( 1.0f - f ) ) + ( b * f );
 	}
 
 	bool StringToBool( const string& in str ) {

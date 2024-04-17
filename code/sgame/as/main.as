@@ -4,7 +4,6 @@
 #include "GameSystem/GameSystem.as"
 #include "SGame/InfoSystem/InfoDataManager.as"
 #include "SGame/LevelSystem.as"
-#include "config.as"
 
 string s_DebugMsg;
 
@@ -12,54 +11,53 @@ namespace TheNomad::SGame {
 	//
 	// misc
 	//
-	ConVar@ sgame_NoRespawningMobs;
-	ConVar@ sgame_MaxEntities;
-	ConVar@ sgame_HellbreakerActive;
-	ConVar@ sgame_HellbreakerOn;
-	ConVar@ sgame_GfxDetail;
-	ConVar@ sgame_Difficulty;
-	ConVar@ sgame_DebugMode;
+	ConVar sgame_NoRespawningMobs;
+	ConVar sgame_MaxEntities;
+	ConVar sgame_HellbreakerActive;
+	ConVar sgame_HellbreakerOn;
+	ConVar sgame_GfxDetail;
+	ConVar sgame_Difficulty;
+	ConVar sgame_DebugMode;
 
 	//
 	// sound system
 	//
-	ConVar@ sgame_MusicChangeDelta;
-	ConVar@ sgame_SoundDissonance;
-	ConVar@ sgame_MaxSoundChannels;
-	ConVar@ sgame_AdaptiveSoundtrack;
+	ConVar sgame_MusicChangeDelta;
+	ConVar sgame_MaxSoundChannels;
+	ConVar sgame_AdaptiveSoundtrack;
 
 	//
 	// cheats
 	//
-	ConVar@ sgame_cheat_BlindMobs;
-	ConVar@ sgame_cheat_DeafMobs;
-	ConVar@ sgame_cheat_InfiniteAmmo;
-	ConVar@ sgame_cheat_InfiniteHealth;
-	ConVar@ sgame_cheat_InfiniteRage;
-	ConVar@ sgame_cheat_GodMode;
-	ConVar@ sgame_cheats_enabled;
+	ConVar sgame_cheat_BlindMobs;
+	ConVar sgame_cheat_DeafMobs;
+	ConVar sgame_cheat_InfiniteAmmo;
+	ConVar sgame_cheat_InfiniteHealth;
+	ConVar sgame_cheat_InfiniteRage;
+	ConVar sgame_cheat_GodMode;
+	ConVar sgame_cheats_enabled;
 
 	//
 	// cvars that are used by the engine
 	//
-	ConVar@ sgame_LevelIndex;
-	ConVar@ sgame_MapName;
-	ConVar@ sgame_MaxFps;
-	ConVar@ sgame_SaveName;
+	ConVar sgame_LevelIndex;
+	ConVar sgame_MapName;
+	ConVar sgame_MaxFps;
+	ConVar sgame_SaveName;
 
 	//
-	// player specific
+	// game specific
 	//
-	ConVar@ sgame_QuickShotMaxTargets;
-	ConVar@ sgame_QuickShotTime;
-	ConVar@ sgame_QuickShotMaxRange;
-	ConVar@ sgame_MaxPlayerWeapons;
-	ConVar@ sgame_PlayerHealBase;
-	ConVar@ sgame_BaseSpeed;
-	ConVar@ sgame_GroundFriction;
-	ConVar@ sgame_AirFriction;
-	ConVar@ sgame_MaxSpeed;
-	ConVar@ sgame_ToggleHUD;
+	ConVar sgame_QuickShotMaxTargets;
+	ConVar sgame_QuickShotTime;
+	ConVar sgame_QuickShotMaxRange;
+	ConVar sgame_PlayerHealBase;
+	ConVar sgame_BaseSpeed;
+	ConVar sgame_GroundFriction;
+	ConVar sgame_AirFriction;
+	ConVar sgame_MaxSpeed;
+	ConVar sgame_ToggleHUD;
+	ConVar sgame_Friction;
 };
 
 namespace ImGui {
@@ -138,38 +136,37 @@ void InitConstants() {
 void InitCvars() {
 	ConsolePrint( "Registering SGame Cvars...\n" );
 
-	@TheNomad::SGame::sgame_MaxEntities = TheNomad::CvarManager.AddCvar( "sgame_MaxEntities", "500", CVAR_LATCH | CVAR_SAVE, true );
-	@TheNomad::SGame::sgame_NoRespawningMobs = TheNomad::CvarManager.AddCvar( "sgame_NoRespawningMobs", "0", CVAR_LATCH | CVAR_SAVE, false );
-	@TheNomad::SGame::sgame_HellbreakerActive = TheNomad::CvarManager.AddCvar( "sgame_HellbreakerActive", "0", CVAR_TEMP, true );
-	@TheNomad::SGame::sgame_HellbreakerOn = TheNomad::CvarManager.AddCvar( "sgame_HellbreakerOn", "0", CVAR_TEMP, true );
-	@TheNomad::SGame::sgame_GfxDetail = TheNomad::CvarManager.AddCvar( "sgame_GfxDetail", "10", CVAR_SAVE, false );
-	@TheNomad::SGame::sgame_Difficulty = TheNomad::CvarManager.AddCvar( "sgame_Difficulty", "2", CVAR_TEMP, false );
-	@TheNomad::SGame::sgame_DebugMode = TheNomad::CvarManager.AddCvar( "sgame_DebugMode", "1", CVAR_TEMP, true );
-	@TheNomad::SGame::sgame_MusicChangeDelta = TheNomad::CvarManager.AddCvar( "sgame_MusicChangeDelta", "500", CVAR_LATCH | CVAR_TEMP, false );
-	@TheNomad::SGame::sgame_SoundDissonance = TheNomad::CvarManager.AddCvar( "sgame_SoundDissonance", "2.2", CVAR_LATCH | CVAR_SAVE, false );
-	@TheNomad::SGame::sgame_MaxSoundChannels = TheNomad::CvarManager.AddCvar( "sgame_MaxSoundChannels", "256", CVAR_INIT | CVAR_SAVE, false );
-	@TheNomad::SGame::sgame_AdaptiveSoundtrack = TheNomad::CvarManager.AddCvar( "sgame_AdaptiveSoundtrack", "1", CVAR_LATCH | CVAR_SAVE, false );
-	@TheNomad::SGame::sgame_cheat_BlindMobs = TheNomad::CvarManager.AddCvar( "sgame_cheat_BlindMobs", "0", CVAR_CHEAT | CVAR_SAVE, false );
-	@TheNomad::SGame::sgame_cheat_DeafMobs = TheNomad::CvarManager.AddCvar( "sgame_cheat_DeafMobs", "0", CVAR_CHEAT | CVAR_SAVE, false );
-	@TheNomad::SGame::sgame_cheat_InfiniteAmmo = TheNomad::CvarManager.AddCvar( "sgame_cheat_InfiniteAmmo", "0", CVAR_CHEAT | CVAR_SAVE, false );
-	@TheNomad::SGame::sgame_cheat_InfiniteHealth = TheNomad::CvarManager.AddCvar( "sgame_cheat_InfiniteHealth", "0", CVAR_CHEAT | CVAR_SAVE, false );
-	@TheNomad::SGame::sgame_cheat_InfiniteRage = TheNomad::CvarManager.AddCvar( "sgame_cheat_InfiniteRage", "0", CVAR_CHEAT | CVAR_SAVE, false );
-	@TheNomad::SGame::sgame_cheat_GodMode = TheNomad::CvarManager.AddCvar( "sgame_cheat_GodMode", "0", CVAR_CHEAT | CVAR_SAVE, false );
-	@TheNomad::SGame::sgame_cheats_enabled = TheNomad::CvarManager.AddCvar( "sgame_cheats_enabled", "0", CVAR_CHEAT | CVAR_SAVE, false );
-	@TheNomad::SGame::sgame_LevelIndex = TheNomad::CvarManager.AddCvar( "g_levelIndex", "0", CVAR_LATCH | CVAR_TEMP, false );
-	@TheNomad::SGame::sgame_MapName = TheNomad::CvarManager.AddCvar( "mapname", "", CVAR_LATCH | CVAR_TEMP, false );
-	@TheNomad::SGame::sgame_MaxFps = TheNomad::CvarManager.AddCvar( "com_maxfps", "60", CVAR_LATCH | CVAR_SAVE, false );
-	@TheNomad::SGame::sgame_SaveName = TheNomad::CvarManager.AddCvar( "sgame_SaveName", "nomadsv.ngd", CVAR_LATCH | CVAR_TEMP, false );
-	@TheNomad::SGame::sgame_QuickShotMaxTargets = TheNomad::CvarManager.AddCvar( "sgame_QuickShotMaxTargets", "20", CVAR_LATCH | CVAR_TEMP, false );
-	@TheNomad::SGame::sgame_QuickShotTime = TheNomad::CvarManager.AddCvar( "sgame_QuickShotTime", "100", CVAR_LATCH | CVAR_TEMP, false );
-	@TheNomad::SGame::sgame_QuickShotMaxRange = TheNomad::CvarManager.AddCvar( "sgame_QuickShotMaxRange", "40", CVAR_LATCH | CVAR_TEMP, false );
-	@TheNomad::SGame::sgame_MaxPlayerWeapons = TheNomad::CvarManager.AddCvar( "sgame_MaxPlayerWeapons", "11", CVAR_ROM | CVAR_INIT, false );
-	@TheNomad::SGame::sgame_PlayerHealBase = TheNomad::CvarManager.AddCvar( "sgame_PlayerHealBase", "0.05", CVAR_INIT | CVAR_SAVE, true );
-	@TheNomad::SGame::sgame_BaseSpeed = TheNomad::CvarManager.AddCvar( "sgame_BaseSpeed", "1.15", CVAR_INIT | CVAR_SAVE, true );
-	@TheNomad::SGame::sgame_GroundFriction = TheNomad::CvarManager.AddCvar( "sgame_GroundFriction", "0.9", CVAR_INIT | CVAR_SAVE, true );
-	@TheNomad::SGame::sgame_AirFriction = TheNomad::CvarManager.AddCvar( "sgame_AirFriction", "0.5", CVAR_INIT | CVAR_SAVE, true );
-	@TheNomad::SGame::sgame_MaxSpeed = TheNomad::CvarManager.AddCvar( "sgame_MaxSpeed", "20.5", CVAR_INIT | CVAR_ROM, false );
-	@TheNomad::SGame::sgame_ToggleHUD = TheNomad::CvarManager.AddCvar( "sgame_ToggleHUD", "1", CVAR_TEMP | CVAR_SAVE, true );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_MaxEntities, "sgame_MaxEntities", "500", CVAR_SAVE, true );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_NoRespawningMobs, "sgame_NoRespawningMobs", "0", CVAR_SAVE, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_HellbreakerActive, "sgame_HellbreakerActive", "0", CVAR_TEMP, true );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_HellbreakerOn, "sgame_HellbreakerOn", "0", CVAR_TEMP, true );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_GfxDetail, "sgame_GfxDetail", "10", CVAR_SAVE, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_Difficulty, "sgame_Difficulty", "2", CVAR_TEMP, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_DebugMode, "sgame_DebugMode", "1", CVAR_TEMP, true );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_MusicChangeDelta, "sgame_MusicChangeDelta", "500", CVAR_TEMP, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_MaxSoundChannels, "sgame_MaxSoundChannels", "256", CVAR_SAVE, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_AdaptiveSoundtrack, "sgame_AdaptiveSoundtrack", "1", CVAR_SAVE, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_cheat_BlindMobs, "sgame_cheat_BlindMobs", "0", CVAR_CHEAT | CVAR_SAVE, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_cheat_DeafMobs, "sgame_cheat_DeafMobs", "0", CVAR_CHEAT | CVAR_SAVE, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_cheat_InfiniteAmmo, "sgame_cheat_InfiniteAmmo", "0", CVAR_CHEAT | CVAR_SAVE, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_cheat_InfiniteHealth, "sgame_cheat_InfiniteHealth", "0", CVAR_CHEAT | CVAR_SAVE, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_cheat_InfiniteRage, "sgame_cheat_InfiniteRage", "0", CVAR_CHEAT | CVAR_SAVE, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_cheat_GodMode, "sgame_cheat_GodMode", "0", CVAR_CHEAT | CVAR_SAVE, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_cheats_enabled, "sgame_cheats_enabled", "0", CVAR_CHEAT | CVAR_SAVE, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_LevelIndex, "g_levelIndex", "0", CVAR_LATCH | CVAR_TEMP, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_MapName, "mapname", "", CVAR_LATCH | CVAR_TEMP, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_MaxFps, "com_maxfps", "60", CVAR_LATCH | CVAR_SAVE, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_SaveName, "sgame_SaveName", "nomadsv.ngd", CVAR_TEMP, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_QuickShotMaxTargets, "sgame_QuickShotMaxTargets", "20", CVAR_TEMP, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_QuickShotTime, "sgame_QuickShotTime", "100", CVAR_TEMP, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_QuickShotMaxRange, "sgame_QuickShotMaxRange", "40", CVAR_TEMP, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_PlayerHealBase, "sgame_PlayerHealBase", "0.05", CVAR_SAVE, true );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_BaseSpeed, "sgame_BaseSpeed", "1.15", CVAR_SAVE, true );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_GroundFriction, "sgame_GroundFriction", "0.9", CVAR_SAVE, true );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_AirFriction, "sgame_AirFriction", "0.5", CVAR_SAVE, true );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_MaxSpeed, "sgame_MaxSpeed", "20.5", CVAR_TEMP, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_ToggleHUD, "sgame_ToggleHUD", "1", CVAR_SAVE, true );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_Friction, "sgame_Friction", "0.05", CVAR_TEMP, true );
 }
 
 int ModuleInit() {
@@ -206,10 +203,13 @@ int ModuleInit() {
 }
 
 int ModuleShutdown() {
+	TheNomad::SGame::sgame_ModList.Clear();
+
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnShutdown();
 		@TheNomad::GameSystem::GameSystems[i] = null;
 	}
+	@TheNomad::CvarManager = null;
 	@TheNomad::GameSystem::GameManager = null;
 	@TheNomad::SGame::LevelManager = null;
 	@TheNomad::SGame::EntityManager = null;

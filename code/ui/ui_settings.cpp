@@ -35,6 +35,7 @@
 #define ID_WEAPONPREV      6
 #define ID_USEWEAPON       7
 #define ID_ALTUSEWEAPON    8
+#define NUMKEYBINDS        9
 
 typedef struct {
     const char *command;
@@ -108,8 +109,7 @@ typedef struct {
 } audioSettings_t;
 
 typedef struct {
-	bind_t *keybinds;
-	uint64_t numBinds;
+	bind_t keybinds[NUMKEYBINDS];
 
 	int mouseAcceleration;
 	float mouseSensitivity;
@@ -153,7 +153,7 @@ typedef struct settingsMenu_s {
 static settingsMenu_t *s_settingsMenu;
 static settingsMenu_t *s_initial;
 
-static const bind_t s_defaultKeybinds[] = {
+static const bind_t s_defaultKeybinds[NUMKEYBINDS] = {
 	{ "+northmove", "move north", ID_MOVENORTH, KEY_W, -1, -1, -1 },
 	{ "+westmove", "move west", ID_MOVEWEST, KEY_A, -1, -1, -1 },
 	{ "+southmove", "move south", ID_MOVESOUTH, KEY_S, -1, -1, -1 },
@@ -169,13 +169,8 @@ static void SettingsMenu_GetInitial( void )
 {
 	if ( !ui->uiAllocated ) {
 		s_initial = (settingsMenu_t *)Hunk_Alloc( sizeof( *s_initial ), h_high );
-		s_initial->controls.keybinds = (bind_t *)Hunk_Alloc( sizeof( bind_t ) * s_settingsMenu->controls.numBinds, h_high );
-		
-		memcpy( s_initial->controls.keybinds, s_settingsMenu->controls.keybinds, sizeof( bind_t ) * s_settingsMenu->controls.numBinds );
 	}
-	s_initial->controls.mouseAcceleration = s_settingsMenu->controls.mouseAcceleration;
-	s_initial->controls.mouseSensitivity = s_settingsMenu->controls.mouseSensitivity;
-
+	s_initial->controls = s_settingsMenu->controls;
 	s_initial->performance = s_settingsMenu->performance;
 	s_initial->video = s_settingsMenu->video;
 	s_initial->audio = s_settingsMenu->audio;
@@ -202,31 +197,6 @@ const char *Hunk_CopyString( const char *str, ha_pref pref ) {
     return out;
 }
 
-void UI_SettingsWriteBinds_f( void )
-{
-    fileHandle_t f;
-    uint32_t i;
-
-    f = FS_FOpenWrite( "bindings.cfg" );
-    if ( f == FS_INVALID_HANDLE ) {
-        N_Error( ERR_FATAL, "UI_SettingsWriteBinds_f: failed to write bindings" );
-    }
-
-    for ( i = 0; i < s_settingsMenu->controls.numBinds; i++ ) {
-        FS_Printf( f, "\"%s\" \"%s\" %i \"%s\" \"%s\" \"%s\" \"%s\"" GDR_NEWLINE,
-            s_settingsMenu->controls.keybinds[i].command,
-            s_settingsMenu->controls.keybinds[i].label,
-            s_settingsMenu->controls.keybinds[i].id,
-            Key_KeynumToString( s_settingsMenu->controls.keybinds[i].defaultBind1 ),
-            Key_KeynumToString( s_settingsMenu->controls.keybinds[i].defaultBind2 ),
-            Key_KeynumToString( s_settingsMenu->controls.keybinds[i].bind1 ),
-            Key_KeynumToString( s_settingsMenu->controls.keybinds[i].bind2 )
-        );
-    }
-
-    FS_FClose( f );
-}
-
 static void SettingsMenu_LoadBindings( void )
 {
     union {
@@ -247,61 +217,11 @@ static void SettingsMenu_LoadBindings( void )
 
     COM_BeginParseSession( "bindings.cfg" );
 
-    s_settingsMenu->controls.numBinds = 0;
-    while ( 1 ) {
-        tok = COM_ParseExt( text, qtrue );
-        if ( !tok || !tok[0] ) {
-            break;
-        }
-
-        tok = COM_ParseExt( text, qfalse );
-        if ( !tok[0] ) {
-            COM_ParseError( "missing parameter for keybind 'label'" );
-            break;
-        }
-
-        tok = COM_ParseExt( text, qfalse );
-        if ( !tok[0] ) {
-            COM_ParseError( "missing paramter for keybind 'id'" );
-            break;
-        }
-
-        tok = COM_ParseExt( text, qfalse );
-        if ( !tok[0] ) {
-            COM_ParseError( "missing paramter for keybind 'defaultBinding1'" );
-            break;
-        }
-
-        tok = COM_ParseExt( text, qfalse );
-        if ( !tok[0] ) {
-            COM_ParseError( "missing paramter for keybind 'defaultBinding2'" );
-            break;
-        }
-
-        tok = COM_ParseExt( text, qfalse );
-        if ( !tok[0] ) {
-            COM_ParseError( "missing paramter for keybind 'bind1'" );
-            break;
-        }
-
-        tok = COM_ParseExt( text, qfalse );
-        if ( !tok[0] ) {
-            COM_ParseError( "missing paramter for keybind 'bind2'" );
-            break;
-        }
-
-        s_settingsMenu->controls.numBinds++;
-    }
-
-	if ( s_settingsMenu->controls.numBinds < arraylen( s_defaultKeybinds ) ) {
-		N_Error( ERR_DROP, "SettinsgMenu_LoadBindings: not enough bindings (defaults are missing)" );
-	}
-    s_settingsMenu->controls.keybinds = (bind_t *)Hunk_Alloc( sizeof( *s_settingsMenu->controls.keybinds ) * s_settingsMenu->controls.numBinds, h_high );
     text_p = f.b;
     text = &text_p;
 
     bind = s_settingsMenu->controls.keybinds;
-    for ( i = 0; i < s_settingsMenu->controls.numBinds; i++ ) {
+    for ( i = 0; i < arraylen( s_defaultKeybinds ); i++ ) {
         tok = COM_ParseExt( text, qtrue );
         if ( !tok || !tok[0] ) {
             break;
@@ -353,8 +273,6 @@ static void SettingsMenu_LoadBindings( void )
 
         bind++;
     }
-
-	Con_Printf( "Loaded %lu bindings.\n", s_settingsMenu->controls.numBinds );
 
     FS_FreeFile( f.v );
 }
@@ -584,7 +502,7 @@ static int32_t SettingsMenu_GetBindIndex( const char *bind )
 {
 	int32_t i;
 
-	for ( i = 0; i < s_settingsMenu->controls.numBinds; i++ ) {
+	for ( i = 0; i < arraylen( s_defaultKeybinds ); i++ ) {
 		if ( !N_stricmp( s_settingsMenu->controls.keybinds[i].command, bind ) ) {
 			return i;
 		}
@@ -745,7 +663,7 @@ static void ControlsMenu_Draw( void )
 
 		ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 1.5f ) * ui->scale );
 
-		for ( i = 0; i < s_settingsMenu->controls.numBinds; i++ ) {
+		for ( i = 0; i < arraylen( s_defaultKeybinds ); i++ ) {
 			ImGui::TableNextColumn();
 			if ( s_settingsMenu->controls.keybinds[i].bind1 == -1 ) {
 				strcpy( bind, "???" );
@@ -764,7 +682,7 @@ static void ControlsMenu_Draw( void )
 			if ( ImGui::Button( bind ) ) {
 				s_settingsMenu->controls.rebindKey = &s_settingsMenu->controls.keybinds[i];
 			}
-			if ( i != s_settingsMenu->controls.numBinds - 1 ) {
+			if ( i != NUMKEYBINDS - 1 ) {
 				ImGui::TableNextRow();
 			}
 		}
@@ -776,6 +694,7 @@ static void PerformanceMenu_Draw( void )
 {
 	FontCache()->SetActiveFont( RobotoMono );
 
+	ImGui::SetWindowSize( ImVec2( s_settingsMenu->menu.width * 0.90f, s_settingsMenu->menu.height ) );
 	ImGui::BeginTable( "##PerformanceSettingsMenuConfigTable", 2 );
 	{
 		SettingsMenu_MultiAdjustable( "Anti-Aliasing", "AntiAliasing",
@@ -875,6 +794,8 @@ static void PerformanceMenu_Draw( void )
 			&s_settingsMenu->performance.postProcessing, true );
 	}
 	ImGui::EndTable();
+	ImGui::SetWindowSize( ImVec2( s_settingsMenu->menu.width, s_settingsMenu->menu.height ) );
+
 }
 
 static void AudioMenu_Draw( void )
@@ -1035,8 +956,6 @@ static void ControlsMenu_Save( void )
 {
 	Cvar_SetIntegerValue( "g_mouseAcceleration", s_settingsMenu->controls.mouseAcceleration );
 	Cvar_SetFloatValue( "g_mouseSensitivity", s_settingsMenu->controls.mouseSensitivity );
-
-	UI_SettingsWriteBinds_f();
 }
 
 static void PerformanceMenu_SetDefault( void )
@@ -1273,7 +1192,6 @@ void SettingsMenu_Cache( void )
 	if ( !ui->uiAllocated ) {
 		s_settingsMenu = (settingsMenu_t *)Hunk_Alloc( sizeof( *s_settingsMenu ), h_high );
 		SettingsMenu_InitPresets();
-		SettingsMenu_LoadBindings();
 	}
 	s_settingsMenu->hintLabel = NULL;
 	s_settingsMenu->hintMessage = NULL;

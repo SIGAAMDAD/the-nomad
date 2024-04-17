@@ -79,21 +79,23 @@ namespace TheNomad {
 			TheNomad::Engine::CmdAddCommand( "sgame.list_cvars" );
 		}
 		void OnShutdown() {
+			for ( uint i = 0; i < m_CvarCache.Count(); i++ ) {
+				@m_CvarCache[i].m_Handle = null;
+			}
 			m_CvarCache.Clear();
 			TheNomad::Engine::CmdRemoveCommand( "sgame.list_cvars" );
 		}
 		
-		ConVar@ AddCvar( const string& in name, const string& in value, uint flags, bool bTrackChanges ) {
-			CvarTableEntry var = CvarTableEntry( ConVar() );
-			var.m_Handle.Register(  name, value, flags, bTrackChanges  );
+		void AddCvar( ConVar@ cvar, const string& in name, const string& in value, uint flags, bool bTrackChanges ) {
+			CvarTableEntry var = CvarTableEntry( @cvar );
+			var.m_Handle.Register( name, value, flags, bTrackChanges  );
 			m_CvarCache.Add( var );
-			return @var.m_Handle;
 		}
 		
 		void ListVars_f() {
 			ConsolePrint( "VM " + MODULE_NAME + " Cvars:\n" );
 
-			for ( uint i = 0; i < m_CvarCache.size(); i++ ) {
+			for ( uint i = 0; i < m_CvarCache.Count(); i++ ) {
 				ConsolePrint( m_CvarCache[i].m_Handle.GetName() + " " + m_CvarCache[i].m_Handle.GetValue() );
 			}
 		}

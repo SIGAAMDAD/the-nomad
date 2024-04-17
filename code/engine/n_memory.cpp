@@ -904,9 +904,10 @@ void Z_InitSmallZoneMemory( void ) {
 	uint64_t size;
 
 	size = 512 * 1024;
-	memset( zoneBuf, 0, sizeof(zoneBuf) );
+
+	memset( zoneBuf, 0, sizeof( zoneBuf ) );
 	smallzone = (memzone_t *)zoneBuf;
-	Z_ClearZone(smallzone, smallzone, size, 1);
+	Z_ClearZone( smallzone, smallzone, size, 1 );
 }
 
 void Z_InitMemory( void )

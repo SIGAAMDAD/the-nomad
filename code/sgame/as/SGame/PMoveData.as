@@ -31,7 +31,7 @@ namespace TheNomad::SGame {
 			// clamp that shit, then apply friction
 			for ( uint i = 0; i < 2; i++ ) {
 				vel[i] = TheNomad::Util::Clamp( vel[i], 0.0f, sgame_MaxSpeed.GetFloat() );
-				vel[i] -= ( sgame_GroundFriction.GetFloat() * TheNomad::GameSystem::GameManager.GetDeltaMsec() );
+				vel[i] -= ( sgame_GroundFriction.GetFloat() * TheNomad::GameSystem::GameManager.GetDeltaTics() );
 			}
 			
 			ent.SetVelocity( vel );
@@ -89,7 +89,7 @@ namespace TheNomad::SGame {
 			};
 			
 			if ( obj.key_Jump.active && obj.GetOrigin().z > 0.0f ) {
-				obj.SetFlags( obj.GetFlags() | obj.PF_DOUBLEJUMP );
+				obj.SetFlags( obj.GetFlags() | PF_DOUBLEJUMP );
 			}
 			
 			groundPlane = upmove == 0;

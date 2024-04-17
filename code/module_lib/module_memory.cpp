@@ -1149,7 +1149,10 @@ Mem_Init
 ==================
 */
 void Mem_Init( void ) {
-	mem_heap = new ( Hunk_Alloc( sizeof( *mem_heap ), h_low ) ) idHeap();
+	if ( mem_heap != NULL ) {
+		return;
+	}
+	mem_heap = new ( malloc( sizeof( *mem_heap ) ) ) idHeap();
 	Mem_ClearFrameStats();
 }
 
@@ -1162,6 +1165,7 @@ void Mem_Shutdown( void ) {
 	idHeap *m = mem_heap;
 	mem_heap = NULL;
 	m->~idHeap();
+	free( m );
 }
 
 /*
@@ -1663,7 +1667,10 @@ Mem_Init
 ==================
 */
 void Mem_Init( void ) {
-	mem_heap = new ( Hunk_Alloc( sizeof( *mem_heap ), h_low ) ) idHeap();
+	if ( mem_heap != NULL ) {
+		return;
+	}
+	mem_heap = new ( malloc( sizeof( *mem_heap ) ) ) idHeap();
 	Cmd_AddCommand( "memoryDumpCompressed", Mem_DumpCompressed_f );
 	Cmd_AddCommand( "memoryDump", Mem_Dump_f );
 
@@ -1693,6 +1700,7 @@ void Mem_Shutdown( void ) {
 	idHeap *m = mem_heap;
 	mem_heap = NULL;
 	m->~idHeap();
+	free( m );
 
 	Cmd_RemoveCommand( "memoryDumpCompressed" );
 	Cmd_RemoveCommand( "memoryDump" );

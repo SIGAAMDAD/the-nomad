@@ -186,7 +186,7 @@ namespace TheNomad::SGame::InfoSystem {
 			}
 		}
 		
-		const WeaponInfo@ GetWeaponInfo( const string& in name ) const {
+		WeaponInfo@ GetWeaponInfo( const string& in name ) {
 			for ( uint i = 0; i < m_WeaponInfos.Count(); i++ ) {
 				if ( TheNomad::Util::StrICmp( m_WeaponInfos[i].name, name ) == 0 ) {
 					return m_WeaponInfos[i];
@@ -195,7 +195,7 @@ namespace TheNomad::SGame::InfoSystem {
 			return null;
 		}
 		
-		const ItemInfo@ GetItemInfo( const string& in name ) const {
+		ItemInfo@ GetItemInfo( const string& in name ) {
 			for ( uint i = 0; i < m_ItemInfos.Count(); i++ ) {
 				if ( TheNomad::Util::StrICmp( m_ItemInfos[i].name, name ) == 0 ) {
 					return m_ItemInfos[i];
@@ -204,7 +204,7 @@ namespace TheNomad::SGame::InfoSystem {
 			return null;
 		}
 		
-		const MobInfo@ GetMobInfo( const string& in name ) const {
+		MobInfo@ GetMobInfo( const string& in name ) {
 			for ( uint i = 0; i < m_MobInfos.Count(); i++ ) {
 				if ( TheNomad::Util::StrICmp( m_MobInfos[i].name, name ) == 0 ) {
 					return m_MobInfos[i];
@@ -240,7 +240,7 @@ namespace TheNomad::SGame::InfoSystem {
 			return false;
 		}
 
-		const WeaponInfo@ GetWeaponInfo( uint id ) const {
+		WeaponInfo@ GetWeaponInfo( uint id ) {
 			for ( uint i = 0; i < m_WeaponInfos.Count(); i++ ) {
 				if ( m_WeaponInfos[i].type == id ) {
 					return @m_WeaponInfos[i];
@@ -249,7 +249,7 @@ namespace TheNomad::SGame::InfoSystem {
 			return null;
 		}
 
-		const ItemInfo@ GetItemInfo( uint id ) const {
+		ItemInfo@ GetItemInfo( uint id ) {
 			for ( uint i = 0; i < m_ItemInfos.Count(); i++ ) {
 				if ( m_ItemInfos[i].type == id ) {
 					return @m_ItemInfos[i];
@@ -258,7 +258,7 @@ namespace TheNomad::SGame::InfoSystem {
 			return null;
 		}
 
-		const MobInfo@ GetMobInfo( uint id ) const {
+		MobInfo@ GetMobInfo( uint id ) {
 			for ( uint i = 0; i < m_MobInfos.Count(); i++ ) {
 				if ( m_MobInfos[i].type == id ) {
 					return @m_MobInfos[i];
@@ -351,19 +351,30 @@ namespace TheNomad::SGame::InfoSystem {
 		Boss      = 0x0008,
 		Sentry    = 0x0010,
 		PermaDead = 0x0020,
+
+		None      = 0x0000
 	};
 
 	enum WeaponProperty {
-		TwoHandedBlade       = 0x00000001,
-		OneHandedBlade       = 0x00000002,
-		TwoHandedBlunt       = 0x00000004,
-		OneHandedBlunt       = 0x00000008,
-		TwoHandedPolearm     = 0x00000010,
-		OneHandedPolearm     = 0x00000020,
-		OneHandedSideFirearm = 0x00000040,
-		TwoHandedSideFirearm = 0x00000080,
-		OneHandedPrimFirearm = 0x00000100,
-		TwoHandedPrimFirearm = 0x00000200,
+		OneHandedBlade       = 0x00000101,
+		OneHandedBlunt       = 0x00001002,
+		OneHandedPolearm     = 0x00010003,
+		OneHandedSideFirearm = 0x00100004,
+		OneHandedPrimFirearm = 0x00100005,
+
+		TwoHandedBlade       = 0x00000110,
+		TwoHandedBlunt       = 0x00001020,
+		TwoHandedPolearm     = 0x00010030,
+		TwoHandedSideFirearm = 0x00100040,
+		TwoHandedPrimFirearm = 0x00100050,
+
+		IsOneHanded          = 0x0000000f,
+		IsTwoHanded          = 0x000000f0,
+		IsBladed             = 0x00000f00,
+		IsBlunt              = 0x0000f000,
+		IsPolearm            = 0x000f0000,
+		IsFirearm            = 0x00f00000,
+
 		SpawnsObject         = 0x10000000,
 
 		None                 = 0x00000000

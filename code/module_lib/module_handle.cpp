@@ -152,6 +152,10 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
 
     PROFILE_BLOCK_BEGIN( va( "module '%s'", m_szName.c_str() ) );
 
+    if ( !m_pFuncTable[ nCallId ] ) {
+        return 1; // just wasn't registered, any required func procs will have thrown an error in init stage
+    }
+
     CheckASCall( m_pScriptContext->SetExceptionCallback( asFUNCTION( LogExceptionInfo ), this, asCALL_CDECL ) );
 
     // prevent a nested call infinite recursion

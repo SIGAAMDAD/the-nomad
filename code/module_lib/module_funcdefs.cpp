@@ -941,6 +941,12 @@ DEFINE_CALLBACK( RegisterSpriteSheet ) {
         pGeneric->GetArgDWord( 3 ), pGeneric->GetArgDWord( 4 ) ) );
 }
 
+DEFINE_CALLBACK( DrawImage ) {
+    re.DrawImage( pGeneric->GetArgFloat( 0 ), pGeneric->GetArgFloat( 1 ), pGeneric->GetArgFloat( 2 ), pGeneric->GetArgFloat( 3 ),
+        pGeneric->GetArgFloat( 4 ), pGeneric->GetArgFloat( 5 ), pGeneric->GetArgFloat( 6 ), pGeneric->GetArgFloat( 7 ),
+        (nhandle_t)pGeneric->GetArgDWord( 0 ) );
+}
+
 static nhandle_t RegisterSprite( nhandle_t hSpriteSheet, uint32_t nIndex ) {
     return re.RegisterSprite( hSpriteSheet, nIndex );
 }
@@ -2182,6 +2188,7 @@ void ModuleLib_Register_Engine( void )
             g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "int TheNomad::Engine::Renderer::RegisterSpriteSheet( const string& in, uint, uint, uint, uint )", asFUNCTION( ModuleLib_RegisterSpriteSheet ), asCALL_GENERIC );
             REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RegisterSprite( int, uint )", WRAP_FN( RegisterSprite ) );
             REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::LoadWorld( const string& in )", WRAP_FN( LoadWorld ) );
+            g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::Renderer::DrawImage( float, float, float, float, float, float, float, float, int )", asFUNCTION( ModuleLib_DrawImage ), asCALL_GENERIC );
 
             RESET_NAMESPACE();
         }

@@ -181,6 +181,7 @@ namespace TheNomad::SGame::InfoSystem {
 		int sightRange = 0;
 		int detectionRangeX = 0;
 		int detectionRangeY = 0;
+		MobFlags mobFlags = MobFlags::None;
 		uint waitTics = 0; // the duration until the mob has to rethink again
 		EntityFlags flags = EntityFlags::None;
 		uint spriteOffsetX = 0;

@@ -22,8 +22,9 @@ namespace TheNomad::SGame {
 	class Sprite {
 		Sprite() {
 		}
-		Sprite( const ivec2& in offset, const vec2& in sheetSize, const vec2& in spriteSize ) {
+		Sprite( const ivec2& in offset, const vec2& in sheetSize, const vec2& in spriteSize, int hShader ) {
 			Set( offset, sheetSize, spriteSize );
+			m_hShader = hShader;
 		}
 
 		Sprite& opAssign( const Sprite& in other ) {
@@ -59,7 +60,15 @@ namespace TheNomad::SGame {
 		vec2& opIndex( uint nIndex ) {
 			return m_TexCoords[ nIndex ];
 		}
+		const vec2[]@ GetTexCoords() const {
+			return @m_TexCoords;
+		}
+
+		int GetShader() const {
+			return m_hShader;
+		}
 
 		private vec2[] m_TexCoords( 4 );
+		private int m_hShader = FS_INVALID_HANDLE;
 	};
 };

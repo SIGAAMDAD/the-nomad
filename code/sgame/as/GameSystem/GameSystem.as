@@ -55,8 +55,12 @@ namespace TheNomad::GameSystem {
 		const string& GetName() const {
 			return "CampaignManager";
 		}
+
+		const ivec2 GetScreenSize() const {
+			return ivec2( m_GPUConfig.screenWidth, m_GPUConfig.screenHeight );
+		}
 		
-		uint GetDeltaMsec() const {
+		uint GetDeltaTics() const {
 			return m_nDeltaTics;
 		}
 		uint GetGameTic() const {

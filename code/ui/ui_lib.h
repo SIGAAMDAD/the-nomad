@@ -210,7 +210,6 @@ extern void         MainMenu_Draw( void );
 //
 extern void         UI_SettingsMenu( void );
 extern void         SettingsMenu_Cache( void );
-extern void         UI_SettingsWriteBinds_f( void );
 
 //
 // ui_legal.cpp

@@ -357,10 +357,14 @@ namespace TheNomad::SGame {
 		//
 		// DamageEntity: mobs v targets
 		//
-		void DamageEntity( EntityObject@ attacker, TheNomad::GameSystem::RayCast& in rayCast, const InfoSystem::AttackInfo@ info ) {
+		void DamageEntity( MobObject@ attacker, TheNomad::GameSystem::RayCast@ rayCast, const InfoSystem::AttackInfo@ info ) {
 			EntityObject@ target;
 
-			@target = m_EntityList[ rayCast.m_nEntityNumber ];
+			if ( @rayCast is null ) {
+				return; // not a hitscan
+			}
+
+			@target = @m_EntityList[ rayCast.m_nEntityNumber ];
 			if ( target.GetType() == TheNomad::GameSystem::EntityType::Playr ) {
 				// check for a parry
 				PlayrObject@ p = cast<PlayrObject>( target.GetData() );

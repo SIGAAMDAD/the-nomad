@@ -5,14 +5,14 @@ namespace TheNomad::SGame {
 		
 		void Spawn( const vec3& in org, uint lifeTime, const SpriteSheet@ spriteSheet, const ivec2& in spriteOffset ) {
 			origin = org;
-			startTime = TheNomad::GameSystem::GameManager.GetGameMsec();
+			startTime = TheNomad::GameSystem::GameManager.GetGameTic();
 			endTime = startTime + lifeTime;
 			this.spriteOffset = spriteOffset;
 			@this.spriteSheet = @spriteSheet;
 		}
 		
 		void RunTic() {
-			lifeTime += TheNomad::GameSystem::GameManager.GetDeltaMsec();
+			lifeTime += TheNomad::GameSystem::GameManager.GetDeltaTics();
 			origin += vel;
 
 			DrawRect( origin, vec2( 1.0f, 1.0f ), @spriteSheet, spriteOffset );

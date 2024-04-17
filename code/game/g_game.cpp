@@ -1005,6 +1005,7 @@ void G_ShutdownAll( void )
 
     // clear and mute all sounds until next registration
     Snd_StopAll();
+    Snd_Shutdown();
 
     // shutdown VMs
     G_ShutdownVMs( qfalse );

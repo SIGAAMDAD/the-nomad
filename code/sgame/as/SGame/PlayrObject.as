@@ -5,13 +5,159 @@
 #include "SGame/PlayerHud.as"
 
 namespace TheNomad::SGame {
+	class WeaponMode {
+		WeaponMode() {
+		}
+		WeaponMode( uint weaponBits ) {
+			bits = weaponBits;
+		}
+
+		uint bits;
+	};
+
+	const WeaponMode[] sgame_WeaponModeList = {
+		WeaponMode( InfoSystem::WeaponProperty::OneHandedBlade | InfoSystem::WeaponProperty::TwoHandedBlade ),
+		WeaponMode( InfoSystem::WeaponProperty::OneHandedBlunt | InfoSystem::WeaponProperty::TwoHandedBlunt ),
+		WeaponMode( InfoSystem::WeaponProperty::OneHandedPolearm | InfoSystem::WeaponProperty::TwoHandedPolearm ),
+		WeaponMode( InfoSystem::WeaponProperty::OneHandedSideFirearm | InfoSystem::WeaponProperty::OneHandedPrimFirearm
+			| InfoSystem::WeaponProperty::TwoHandedSideFirearm | InfoSystem::WeaponProperty::TwoHandedPrimFirearm ),
+	};
+
+	const uint PF_PARRY        = 0x00000001;
+	const uint PF_DOUBLEJUMP   = 0x00000002;
+	const uint PF_QUICKSHOT    = 0x00000004;
+	const uint PF_DUELWIELDING = 0x00000008;
+	
+	class Emote {
+		Emote() {
+		}
+		Emote( uint time, int hShader, const string& in spriteSheet, const vec2& in spriteSize, const vec2& in sheetSize ) {
+			m_nDuration = time;
+			m_hShader = hShader;
+			@m_DrawData = SpriteSheet( spriteSheet, spriteSize, sheetSize );
+		}
+		
+		void Activate() {
+			m_nLifeTime = 0;
+//			m_nEndTime = GameSystem::GameManager.GetGameTics() + m_nDuration;
+		}
+		void Draw() {
+//			m_nLifeTime += GameSystem::GameManager.GetDeltaTics();
+			if ( m_nLifeTime >= m_nEndTime ) {
+				return;
+			}
+		}
+		
+		SpriteSheet@ m_DrawData = null;
+		int m_hShader = FS_INVALID_HANDLE;
+		uint m_nEndTime = 0;
+		uint m_nDuration = 0;
+		uint m_nLifeTime = 0;
+	};
+	
     class PlayrObject : EntityObject {
 		PlayrObject() {
-			for ( uint i = 0; i < uint( sgame_MaxPlayerWeapons.GetInt() ); i++ ) {
-				m_WeaponSlots.Add( null );
-			}
+			@m_WeaponSlots[0] = @m_HeavyPrimary;
+			@m_WeaponSlots[1] = @m_HeavySidearm;
+			@m_WeaponSlots[2] = @m_LightPrimary;
+			@m_WeaponSlots[3] = @m_LightSidearm;
+			@m_WeaponSlots[4] = @m_Melee1;
+			@m_WeaponSlots[5] = @m_Melee2;
+			@m_WeaponSlots[6] = @m_RightArm;
+			@m_WeaponSlots[7] = @m_LeftArm;
+			@m_WeaponSlots[8] = @m_Ordnance;
 			
 			EntityManager.SetPlayerObject( @this );
+			m_HudData.Init( @this );
+		}
+		
+		/*
+		private bool TryOneHanded( HandMode hand, const WeaponObject@ handWeapon, const WeaponObject@ otherWeapon ) {
+			if ( hand != HandMode::Empty ) {
+				if ( ( handWeapon.IsTwoHanded() && handWeapon.IsOneHanded() ) && @otherWeapon is @handWeapon ) {
+					// being used by both arms, switch to one-handed
+					return true;
+				}
+			}
+			return false;
+		}
+		
+		private WeaponObject@ GetEmptyHand() {
+			if ( TryOneHanded( m_LeftHandMode, @m_LeftHandWeapon, @m_RightHandWeapon ) ) {
+				m_LeftHandMode = HandMode::OneHanded;
+				m_RightHandMode = HandMode::Empty;
+				@m_RightHandWeapon = @m_RightArm;
+				return @m_RightHandWeapon;
+			}
+			else if ( TryOneHanded( m_RightHandMode, @m_RightHandWeapon, @m_LeftHandWeapon ) ) {
+				m_RightHandMode = HandMode::OneHanded;
+				m_LeftHandMode = HandMode::Empty;
+				@m_LeftHandWeapon = @m_LeftArm;
+				return @m_LeftHandWeapon;
+			}
+		}
+		*/
+		
+		private void SwitchWeaponWielding( InfoSystem::WeaponProperty& in hand, InfoSystem::WeaponProperty& in otherHand,
+			WeaponObject@ weapon, WeaponObject@ other )
+		{
+			switch ( InfoSystem::WeaponProperty( uint( hand ) & InfoSystem::WeaponProperty::IsOneHanded ) ) {
+			case InfoSystem::WeaponProperty::OneHandedPolearm:
+			case InfoSystem::WeaponProperty::OneHandedBlunt:
+			case InfoSystem::WeaponProperty::OneHandedBlade:
+			case InfoSystem::WeaponProperty::OneHandedSideFirearm:
+			case InfoSystem::WeaponProperty::OneHandedPrimFirearm:
+				if ( weapon.IsTwoHanded() ) {
+					// set to two-handed
+					hand = InfoSystem::WeaponProperty( uint( hand ) & ~uint( InfoSystem::WeaponProperty::IsOneHanded ) );
+					otherHand = hand;
+					@other = @weapon;
+					return;
+				}
+				break;
+			case InfoSystem::WeaponProperty::None:
+			default:
+				// nothing in that hand
+				break;
+			};
+			
+			switch ( InfoSystem::WeaponProperty( uint( hand ) & InfoSystem::WeaponProperty::IsTwoHanded ) ) {
+			case InfoSystem::WeaponProperty::TwoHandedPolearm:
+			case InfoSystem::WeaponProperty::TwoHandedBlunt:
+			case InfoSystem::WeaponProperty::TwoHandedBlade:
+			case InfoSystem::WeaponProperty::TwoHandedSideFirearm:
+			case InfoSystem::WeaponProperty::TwoHandedPrimFirearm:
+				if ( weapon.IsOneHanded() ) {
+					// set to one-handed
+					hand = InfoSystem::WeaponProperty( uint( hand ) & ~InfoSystem::WeaponProperty::IsTwoHanded );
+					@other = null;
+					return;
+				}
+				break;
+			case InfoSystem::WeaponProperty::None:
+			default:
+				// nothing in that hand
+				break;
+			};
+			
+			// if we're here, its most likely that the player is using a two-handed weapon that
+			// can't be wielded one-handed or they're duel wielding something
+		}
+		
+		private void SwitchWeaponMode( InfoSystem::WeaponProperty& in hand, const WeaponObject@ weapon ) {
+			// weapon mode order (default)
+			// blade -> blunt -> polearm -> firearm
+			
+			// the weapon mode list doesn't contain hand bits
+			const uint handBits = ( uint( hand ) & uint( InfoSystem::WeaponProperty::IsTwoHanded ) ) |
+				( uint( hand ) & uint( InfoSystem::WeaponProperty::IsOneHanded ) );
+			
+			// find the next most suitable mode
+			for ( uint i = 0; i < sgame_WeaponModeList.Count(); i++ ) {
+				if ( ( uint( weapon.GetProperties() ) & sgame_WeaponModeList[i].bits ) != 0 ) {
+					hand = InfoSystem::WeaponProperty( ( uint( weapon.GetProperties() ) & sgame_WeaponModeList[i].bits ) | handBits );
+				}
+			}
 		}
 		
 		//
@@ -23,25 +169,51 @@ namespace TheNomad::SGame {
 		void MoveSouth_Down_f() { key_MoveSouth.Down(); }
 		void Jump_Down_f() { key_Jump.Down(); }
 		void Jump_Up_f() { key_Jump.Up(); }
-		
-		void Quickshot_Down_f() {
-			return;
-//			m_PFlags |= PF_QUICKSHOT;
-//			m_QuickShot.Clear();
-//			m_QuickShot = QuickShot( m_Link.m_Origin, @ModObject );
+		void Quickshot_Down_f() { }
+		void Quickshot_Up_f() { }
+		void SwitchWeaponWielding_f() {
+			switch ( m_nHandsUsed ) {
+			case 0:
+				SwitchWeaponWielding( m_LeftHandMode, m_RightHandMode, @m_LeftHandWeapon, @m_RightHandWeapon );
+				break;
+			case 1:
+			case 2:
+				SwitchWeaponWielding( m_RightHandMode, m_LeftHandMode, @m_RightHandWeapon, @m_LeftHandWeapon );
+				break;
+			};
 		}
-		
-		void Quickshot_Up_f() {
-			return;
-			// TODO: perhaps add a special animation for putting the guns away?
-//			if ( m_QuickShot.Empty() ) {
-//				return;
-//			}
-			
-//			m_QuickShot.Activate();
-//			m_PFlags &= ~PF_QUICKSHOT;
+		void SwitchWeaponMode_f() {
+			switch ( m_nHandsUsed ) {
+			case 0:
+				SwitchWeaponMode( m_LeftHandMode, @m_LeftHandWeapon );
+				break;
+			case 1:
+				SwitchWeaponMode( m_RightHandMode, @m_RightHandWeapon );
+				break;
+			case 2: {
+				const uint bits = uint( m_LeftHandMode );
+				SwitchWeaponMode( m_LeftHandMode, @m_LeftHandWeapon );
+				if ( bits == uint( m_LeftHandMode ) ) {
+					SwitchWeaponMode( m_RightHandMode, @m_RightHandWeapon );
+				}
+				break; }
+			default:
+				break;
+			};
 		}
-		
+		void SwitchHand_f() {
+			switch ( m_nHandsUsed ) {
+			case 0:
+				m_nHandsUsed = 1;
+				break;
+			case 1:
+				m_nHandsUsed = 0;
+				break;
+			case 2:
+			default:
+				break; // can't switch if we're using both hands for one weapon
+			};
+		}
 		void Melee_Down_f() {
 			m_nParryBoxWidth = 0.0f;
 			SetState( StateNum::ST_PLAYR_MELEE );
@@ -49,7 +221,7 @@ namespace TheNomad::SGame {
 		
 		void NextWeapon_f() {
 			m_CurrentWeapon++;
-			if ( m_CurrentWeapon >= m_WeaponSlots.size() ) {
+			if ( m_CurrentWeapon >= m_WeaponSlots.Count() ) {
 				m_CurrentWeapon = 0;
 			}
 		}
@@ -60,11 +232,34 @@ namespace TheNomad::SGame {
 				m_CurrentWeapon--;
 			}
 		}
-		void SetWeapon_f() {
-			
+		void UseWeapon_f() {
+			m_WeaponSlots[ m_CurrentWeapon ].Use( cast<EntityObject@>( @this ) );
+		}
+		void AltUseWeapon_f() {
+			m_WeaponSlots[ m_CurrentWeapon ].UseAlt( cast<EntityObject@>( @this ) );
+		}
+		void UseItem_f() {
+		}
+		void PickupItem_f() {
 		}
 		void Emote_f() {
 			m_bEmoting = true;
+//			m_nEmoteLifeTime = 0;
+//			m_nEmoteEndTime = GameSystem::GameManager.GetGameMsec() + m_SelectedEmote.m_nDuration;
+		}
+		void EmoteWheel_Down_f() {
+//			m_bEmoteWheelActive = true;
+		}
+		void EmoteWheel_Up_f() {
+//			m_bEmoteWheelActive = false;
+		}
+		
+		void DrawEmoteWheel() {
+//			if ( !m_bEmoteWheelActive ) {
+//				DebugPrint( "DrawEmoteWheel: called when inactive.\n" );
+//				return;
+//			}
+			
 		}
 
 		void SetLegFacing( int facing ) {
@@ -120,6 +315,13 @@ namespace TheNomad::SGame {
 		uint GetPFlags() const {
 			return m_PFlags;
 		}
+
+		WeaponObject@ GetCurrentWeapon() {
+			return @m_WeaponSlots[m_CurrentWeapon];
+		}
+		const WeaponObject@ GetCurrentWeapon() const {
+			return @m_WeaponSlots[m_CurrentWeapon];
+		}
 		
 		void Think() override {
 			if ( ( m_PFlags & PF_PARRY ) != 0 ) {
@@ -169,7 +371,8 @@ namespace TheNomad::SGame {
 				} else {
 					return false;
 				}
-			} else if ( ent.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
+			}
+			else if ( ent.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
 				// just a normal counter
 				MobObject@ mob = cast<MobObject>( ent.GetData() );
 				
@@ -177,11 +380,13 @@ namespace TheNomad::SGame {
 					// unblockable, deal damage
 					EntityManager.DamageEntity( @ent, @this );
 					return false;
-				} else {
+				}
+				else {
 					// slap it back
-//					if ( mob.GetState().GetTics() <= ( mob.GetState().GetDuration() / 4 ) ) {
+					if ( mob.GetState().GetTics() <= ( mob.GetState().GetTics() / 4 ) ) {
 						// counter parry, like in MGR, but more brutal, but for the future...
-//					}
+					}
+					
 					// TODO: make dead mobs with ANY velocity flying corpses
 					EntityManager.DamageEntity( @this, @ent );
 					TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( parrySfx );
@@ -198,9 +403,19 @@ namespace TheNomad::SGame {
 			if ( m_State.GetID() == StateNum::ST_PLAYR_CROUCH ) {
 				return;
 			}
-
-			SoundData data( m_Velocity.x + m_Velocity.y, vec2( m_Velocity.x, m_Velocity.y ), ivec2( 2, 2 ),
-				ivec3( int( m_Link.m_Origin.x ), int( m_Link.m_Origin.y ), int( m_Link.m_Origin.z ) ), 1.0f );
+			
+			array<EntityObject@>@ entList = @EntityManager.GetEntities();
+			for ( uint i = 0; i < entList.Count(); i++ ) {
+				if ( entList[i].GetType() != TheNomad::GameSystem::EntityType::Mob ) {
+					continue;
+				}
+				
+				MobObject@ mob = cast<MobObject@>( @entList[i] );
+				if ( TheNomad::Util::Distance( mob.GetOrigin(), m_Link.m_Origin ) < cast<InfoSystem::MobInfo>( mob.GetInfo() ).soundTolerance ) {
+					// is there a wall there?
+					
+				}
+			}
 		}
 		
 		private void IdleThink() {
@@ -249,17 +464,24 @@ namespace TheNomad::SGame {
 			m_nHealth = 100.0f;
 		}
 		
-		uint PF_PARRY      = 0x00000001;
-		uint PF_DOUBLEJUMP = 0x00000002;
-		uint PF_QUICKSHOT  = 0x00000004;
-		
 		KeyBind key_MoveNorth, key_MoveSouth, key_MoveEast, key_MoveWest;
 		KeyBind key_Jump, key_Melee;
 		
 		private TheNomad::GameSystem::BBox m_ParryBox;
 		private float m_nParryBoxWidth;
 		
-		private array<WeaponObject@> m_WeaponSlots;
+		// 9 weapons in total
+		private WeaponObject@[] m_WeaponSlots( 9 );
+		private WeaponObject m_HeavyPrimary;
+		private WeaponObject m_HeavySidearm;
+		private WeaponObject m_LightPrimary;
+		private WeaponObject m_LightSidearm;
+		private WeaponObject m_Melee1;
+		private WeaponObject m_Melee2;
+		private WeaponObject m_RightArm;
+		private WeaponObject m_LeftArm;
+		private WeaponObject m_Ordnance;
+		
 		private QuickShot m_QuickShot;
 		private uint m_CurrentWeapon = 0;
 		private uint m_PFlags = 0;
@@ -274,6 +496,13 @@ namespace TheNomad::SGame {
 
 		// the amount of damage dealt in the frame
 		private uint m_nFrameDamage = 0;
+		
+		// what does the player have in their hands?
+		private int m_nHandsUsed = 0; // 0 for left, 1 for right, 2 if two-handed
+		private WeaponObject@ m_LeftHandWeapon = null;
+		private WeaponObject@ m_RightHandWeapon = null;
+		private InfoSystem::WeaponProperty m_LeftHandMode = InfoSystem::WeaponProperty::None;
+		private InfoSystem::WeaponProperty m_RightHandMode = InfoSystem::WeaponProperty::None;
 
 		// the lore goes: the more and harder you hit The Nomad, the harder and faster they hit back
 		private float m_nDamageMult = 0.0f;

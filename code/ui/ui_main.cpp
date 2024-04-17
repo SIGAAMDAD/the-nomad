@@ -295,7 +295,6 @@ extern "C" void UI_Shutdown( void )
 
     Cmd_RemoveCommand( "ui.cache" );
 	Cmd_RemoveCommand( "ui.fontinfo" );
-	Cmd_RemoveCommand( "ui.settings_write_bindings" );
 	Cmd_RemoveCommand( "togglepausemenu" );
 }
 
@@ -441,7 +440,6 @@ extern "C" void UI_Init( void )
     // add commands
     Cmd_AddCommand( "ui.cache", UI_Cache_f );
 	Cmd_AddCommand( "ui.fontinfo", CUIFontCache::ListFonts_f );
-	Cmd_AddCommand( "ui.settings_write_bindings", UI_SettingsWriteBinds_f );
 	Cmd_AddCommand( "togglepausemenu", UI_PauseMenu_f );
 }
 
