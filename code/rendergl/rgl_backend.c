@@ -767,10 +767,10 @@ static const void *RB_SetColor(const void *data) {
 
 	cmd = (const setColorCmd_t *)data;
 
-	backend.color2D[0] = cmd->color[0] * 255;
-	backend.color2D[1] = cmd->color[1] * 255;
-	backend.color2D[2] = cmd->color[2] * 255;
-	backend.color2D[3] = cmd->color[3] * 255;
+	backend.color2D[0] = cmd->color[0]/* * 255*/;
+	backend.color2D[1] = cmd->color[1]/* * 255*/;
+	backend.color2D[2] = cmd->color[2]/* * 255*/;
+	backend.color2D[3] = cmd->color[3]/* * 255*/;
 
 	return (const void *)( cmd + 1 );
 }
@@ -783,17 +783,15 @@ static const void *RB_ColorMask(const void *data) {
 	// finish any drawing if needed
 	RB_FlushBatchBuffer();
 	
-#if 0
-	if (glConfig.ARB_framebuffer_object) {
+	if ( glContext.ARB_framebuffer_object ) {
 		// reverse color mask, so 0 0 0 0 is the default
 		backend.colorMask[0] = !cmd->rgba[0];
 		backend.colorMask[1] = !cmd->rgba[1];
 		backend.colorMask[2] = !cmd->rgba[2];
 		backend.colorMask[3] = !cmd->rgba[3];
 	}
-#endif
 
-	nglColorMask(cmd->rgba[0], cmd->rgba[1], cmd->rgba[2], cmd->rgba[3]);
+	nglColorMask( cmd->rgba[0], cmd->rgba[1], cmd->rgba[2], cmd->rgba[3] );
 
 	return (const void *)( cmd + 1 );
 }
@@ -801,36 +799,45 @@ static const void *RB_ColorMask(const void *data) {
 static const void *RB_DrawImage( const void *data ) {
 	const drawImageCmd_t *cmd;
 	shader_t *shader;
-	uint32_t numVerts;
-	uint32_t numIndices;
+	uint32_t numVerts, numIndices;
 	srfVert_t *verts;
 	uint32_t *indices;
 
 	cmd = (const drawImageCmd_t *)data;
 
 	shader = cmd->shader;
-
 	if ( backend.drawBatch.shader != shader ) {
-		RB_FlushBatchBuffer();
+		if ( backend.drawBatch.idxOffset ) {
+			RB_FlushBatchBuffer();
+		}
 		RB_SetBatchBuffer( backend.drawBuffer, backendData->verts, sizeof( srfVert_t ),
 			backendData->indices, sizeof( glIndex_t ) );
 	}
+
+	verts = backend.drawBatch.vertices;
+	indices = backend.drawBatch.indices;
+
 	backend.drawBatch.shader = shader;
 	numVerts = backend.drawBatch.vtxOffset;
 	numIndices = backend.drawBatch.idxOffset;
-	verts = &backendData->verts[ numVerts ];
-	indices = &backendData->indices[ numIndices ];
 
+	R_VaoPackColor( verts[0].color, backend.color2D );
+	R_VaoPackColor( verts[1].color, backend.color2D );
+	R_VaoPackColor( verts[2].color, backend.color2D );
+	R_VaoPackColor( verts[3].color, backend.color2D );
+	/*
 	{
+
 		uint16_t color[4];
 
 		VectorScale4( backend.color2D, 257, color );
 
-//		VectorCopy4( verts[0].modulate.rgba, color );
-//		VectorCopy4( verts[1].modulate.rgba, color );
-//		VectorCopy4( verts[2].modulate.rgba, color );
-//		VectorCopy4( verts[3].modulate.rgba, color );
+		VectorCopy4( verts[0].modulate.rgba, color );
+		VectorCopy4( verts[1].modulate.rgba, color );
+		VectorCopy4( verts[2].modulate.rgba, color );
+		VectorCopy4( verts[3].modulate.rgba, color );
 	}
+	*/
 
 	verts[0].xyz[0] = cmd->x;
 	verts[0].xyz[1] = cmd->y;

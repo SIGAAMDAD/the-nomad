@@ -5,6 +5,8 @@ namespace TheNomad::SGame {
 	class PlayerDisplayUI {
 		PlayerDisplayUI() {
 			@m_WeaponIcons = SpriteSheet(  ); // TODO: THIS
+
+			m_DisplayStr.reserve( 24 );
 		}
 		
 		void Init( PlayrObject@ parent ) {
@@ -16,10 +18,12 @@ namespace TheNomad::SGame {
 			m_BloodScreenSplatter.hShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/blood_screen" );
 			
 			m_HealthBar.origin = vec2( 0.0f, 0.0f );
+			m_HealthBar.size.y = 72.0f;
+			m_HealthBar.color = vec4( 1.0f, 0.0f, 0.0f, 1.0f );
 			m_HealthBar.hShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/health_bar" );
 			
 			m_HealthBarEmpty.origin = vec2( 0.0f, 0.0f );
-			m_HealthBarEmpty.hShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/health_empty" );
+//			m_HealthBarEmpty.hShader = TheNomad::Engine::Renderer::RegisterShader( "gfx/hud/health_empty" );
 		}
 		
 		private const vec4 GetRageColor( float rage ) const {
@@ -74,58 +78,55 @@ namespace TheNomad::SGame {
 			
 		}
 		
-		private void DrawHealthBar() const {
+		private void DrawHealthBar() {
 			int hShader;
 			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
 			const ivec2 screenSize = TheNomad::GameSystem::GameManager.GetScreenSize();
-			float health = m_Parent.GetHealth();
+			const float health = m_Parent.GetHealth();
 			
 			if ( health < 10.0f ) {
 				// draw a red overlay if we're really low on health
 				m_BloodScreenSplatter.Draw();
 			}
+
+			if ( Engine::CvarVariableInteger( "g_paused" ) == 1 ) {
+				return;
+			}
+
+			m_HealthBar.size.x = ( 256 * ( health * 0.01f ) ) * scale;
 			
-//			m_HealthBar.size[0] = TheNomad::Util::Lerp( 256, 256, health ) * scale;
+			ImGui::PushStyleColor( ImGuiCol::FrameBg, vec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
+			ImGui::PushStyleColor( ImGuiCol::FrameBgActive, vec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
+			ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, vec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
+
+			ImGui::Begin( "##HealthBar", null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove
+				| ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoBackground | ImGuiWindowFlags::NoTitleBar
+				| ImGuiWindowFlags::NoScrollbar ) );
+			ImGui::SetWindowPos( m_HealthBar.origin );
+			ImGui::SetWindowSize( vec2( 500 * scale, 42 * scale ) );
+			ImGui::SetWindowFontScale( 2.0f * scale );
+			ImGui::ProgressBar( health, vec2( 350 * scale, 26 * scale ) );
+			ImGui::SameLine();
+			m_DisplayStr = formatFloat( health, "", 4, 2 );
+			m_DisplayStr += "%";
+			ImGui::Text( m_DisplayStr );
+			ImGui::SetWindowFontScale( 1.0f );
+			ImGui::End();
+
+			ImGui::PopStyleColor( 3 );
+		}
+
+		private void DrawRageBar() {
+			int hShader;
+			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
+			const ivec2 screenSize = TheNomad::GameSystem::GameManager.GetScreenSize();
+			const float rage = m_Parent.GetRage();
+
+
 		}
 		
 		private void DrawStatusBars() const {
-			const float health = GetPlayerObject().GetHealth();
-			const float rage = GetPlayerObject().GetRage();
-			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
-			const vec2 screenSize = vec2( TheNomad::GameSystem::GameManager.GetGPUConfig().screenWidth,
-				TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight );
-			const ImGuiWindowFlags windowFlags = ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove |
-				ImGuiWindowFlags::NoMouseInputs | ImGuiWindowFlags::NoBackground |
-				ImGuiWindowFlags::NoBringToFrontOnFocus | ImGuiWindowFlags::AlwaysAutoResize );
-			
-			
-			//
-			// display health
-			//
-			const vec4 healthColor = GetHealthColor( health );
-			ImGui::PushStyleColor( ImGuiCol::FrameBg, healthColor );
-			ImGui::PushStyleColor( ImGuiCol::FrameBgActive, healthColor );
-			ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, healthColor );
-			ImGui::ProgressBar( health );
-			ImGui::PopStyleColor( 3 );
-
-			ImGui::End();
-			
-			//
-			// display rage meter
-			//
-
-			ImGui::Begin( "##DisplayPlayerRage", null, windowFlags );
-			ImGui::SetWindowPos( vec2( 16.0f, 64.0f ) );
-
-			const vec4 rageColor = GetRageColor( rage );
-			ImGui::PushStyleColor( ImGuiCol::FrameBg, rageColor );
-			ImGui::PushStyleColor( ImGuiCol::FrameBgActive, rageColor );
-			ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, rageColor );
-			ImGui::ProgressBar( rage );
-			ImGui::PopStyleColor( 3 );
-			
-			ImGui::End();
+			DrawHealthBar();
 		}
 		
 		void Draw() const {
@@ -152,6 +153,8 @@ namespace TheNomad::SGame {
 		private HudOverlay m_HealthBar;
 		private HudOverlay m_HealthBarEmpty;
 		private HudOverlay m_BloodScreenSplatter;
+		
+		private string m_DisplayStr;
 		
 		private SpriteSheet@ m_WeaponIcons = null;
 		private PlayrObject@ m_Parent = null;

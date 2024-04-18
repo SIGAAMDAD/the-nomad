@@ -201,7 +201,7 @@ void R_ImageList_f( void )
 		case GL_RGBA16F_ARB:
 			format = "RGBA16F";
 			// 8 bytes per pixel
-			estSize *= 8;
+			estSize *= 16;
 			break;
 		case GL_RGBA16:
 			format = "RGBA16 ";
@@ -213,9 +213,16 @@ void R_ImageList_f( void )
 		case GL_RGBA8:
 		case GL_RGBA12:
 		case GL_RGBA:
+		case GL_RGB12:
 			format = "RGBA   ";
 			// 4 bytes per pixel
 			estSize *= 4;
+			break;
+		case GL_RGBA32F_ARB:
+		case GL_RGB32F_ARB:
+			format = "RGBA32F ";
+			// 16 bytes per pixel?
+			estSize *= 16;
 			break;
 		case GL_LUMINANCE8:
 		case GL_LUMINANCE:
@@ -224,6 +231,7 @@ void R_ImageList_f( void )
 			break;
 		case GL_RGB5:
 		case GL_RGB8:
+		case GL_RGB2_EXT:
 		case GL_RGB:
 			format = "RGB    ";
 			// 3 bytes per pixel?
@@ -275,7 +283,7 @@ void R_ImageList_f( void )
 			estSize *= 4;
 			break;
 		default:
-			ri.Printf( PRINT_WARNING, "unknown texture format 0x%04u\n", image->internalFormat );
+			ri.Printf( PRINT_WARNING, "unknown texture format 0x%04i\n", image->internalFormat );
 		};
 
 		// mipmap adds about 50%

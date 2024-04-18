@@ -19,6 +19,9 @@
 #include <cglm/affine.h>
 */
 
+#define SHADER_MAX_VERTEXES 1000
+#define SHADER_MAX_INDEXES (6*SHADER_MAX_VERTEXES)
+
 #define MAX_RENDER_BUFFERS 2048
 #define MAX_RENDER_PROGRAMS 2048
 #define MAX_RENDER_TEXTURES 2048
@@ -982,7 +985,8 @@ typedef struct {
 } batch_t;
 
 typedef struct {
-    byte color2D[4];
+//    byte color2D[4];
+    float color2D[4];
 
     qboolean depthFill;
     qboolean framePostProcessed;

@@ -66,6 +66,8 @@ namespace TheNomad::SGame {
 			@m_WeaponSlots[6] = @m_RightArm;
 			@m_WeaponSlots[7] = @m_LeftArm;
 			@m_WeaponSlots[8] = @m_Ordnance;
+
+			m_nHealth = 100.0f;
 			
 			EntityManager.SetPlayerObject( @this );
 			m_HudData.Init( @this );

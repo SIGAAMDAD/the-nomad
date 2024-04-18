@@ -398,36 +398,40 @@ static string_t formatUInt(asQWORD value, const string_t& options, asQWORD width
 
 // AngelScript signature:
 // string_t formatFloat(double val, const string_t& in options, uint width, uint precision)
-static string_t formatFloat(double value, const string_t& options, asUINT width, asUINT precision)
+static const char *formatFloat(double value, const string_t& options, asUINT width, asUINT precision)
 {
-	bool leftJustify = options.find("l") != string_t::npos;
-	bool padWithZero = options.find("0") != string_t::npos;
-	bool alwaysSign  = options.find("+") != string_t::npos;
-	bool spaceOnSign = options.find(" ") != string_t::npos;
-	bool expSmall    = options.find("e") != string_t::npos;
-	bool expLarge    = options.find("E") != string_t::npos;
+	static char *buf;
+	int length;
+	char fmt[64];
+	char *p;
 
-	string_t fmt = "%";
-	if( leftJustify ) fmt += "-";
-	if( alwaysSign ) fmt += "+";
-	if( spaceOnSign ) fmt += " ";
-	if( padWithZero ) fmt += "0";
+	const string_t::size_type prefix = options.find( '0' );
 
-	fmt += "*.*";
+	fmt[0] = '%';
+	if ( options.find( 'l' ) != string_t::npos ) {
+		N_strcat( fmt, sizeof( fmt ) - 1, "-" );
+	}
+	if ( options.find( '+' ) != string_t::npos ) {
+		N_strcat( fmt, sizeof( fmt ) - 1, "+" );
+	}
+	if ( options.find( ' ' ) != string_t::npos ) {
+		N_strcat( fmt, sizeof( fmt ) - 1, " " );
+	}
+	if ( prefix != string_t::npos ) {
+		N_strcat( fmt, sizeof( fmt ) - 1, "0" );
+	}
+	N_strcat( fmt, sizeof( fmt ) - 1, "*.*" );
+	if ( options.find( 'e' ) != string_t::npos ) {
+		N_strcat( fmt, sizeof( fmt ) - 1, "e" );
+	} else if ( options.find( 'E' ) != string_t::npos ) {
+		N_strcat( fmt, sizeof( fmt ) - 1, "E" );
+	} else {
+		N_strcat( fmt, sizeof( fmt ) - 1, "f" );
+	}
 
-	if( expSmall ) fmt += "e";
-	else if( expLarge ) fmt += "E";
-	else fmt += "f";
-
-	string_t buf;
-	buf.resize(width+precision+50);
-#if _MSC_VER >= 1400 && !defined(__S3E__)
-	// MSVC 8.0 / 2005 or newer
-	sprintf_s(&buf[0], buf.size(), fmt.c_str(), width, precision, value);
-#else
-	sprintf(&buf[0], fmt.c_str(), width, precision, value);
-#endif
-	buf.resize(strlen(&buf[0]));
+	length = width + precision + 64;
+	buf = (char *)alloca( length );
+	Com_snprintf( buf, length - 1, fmt, width, precision, value );
 
 	return buf;
 }
@@ -936,7 +940,7 @@ static void AssignDouble2StringGeneric(asIScriptGeneric *gen)
 {
 	double *a = static_cast<double*>(gen->GetAddressOfArg(0));
 	string_t *self = static_cast<string_t*>(gen->GetObjectData());
-	*self = va( "%lf", *a );
+	*self = va( "%0.02lf", *a );
 	gen->SetReturnAddress(self);
 }
 
@@ -944,7 +948,7 @@ static void AssignFloat2StringGeneric(asIScriptGeneric *gen)
 {
 	float *a = static_cast<float*>(gen->GetAddressOfArg(0));
 	string_t *self = static_cast<string_t*>(gen->GetObjectData());
-	*self = va( "%f", *a );
+	*self = va( "%0.02f", *a );
 	gen->SetReturnAddress(self);
 }
 
@@ -960,7 +964,7 @@ static void AddAssignDouble2StringGeneric(asIScriptGeneric *gen)
 {
 	double *a = static_cast<double *>(gen->GetAddressOfArg(0));
 	string_t *self = static_cast<string_t *>(gen->GetObjectData());
-	*self += va( "%lf", *a );
+	*self += va( "%0.02lf", *a );
 	gen->SetReturnAddress(self);
 }
 
@@ -968,7 +972,7 @@ static void AddAssignFloat2StringGeneric(asIScriptGeneric *gen)
 {
 	float *a = static_cast<float *>(gen->GetAddressOfArg(0));
 	string_t *self = static_cast<string_t *>(gen->GetObjectData());
-	*self += va( "%f", *a );
+	*self += va( "%0.02f", *a );
 	gen->SetReturnAddress(self);
 }
 
@@ -1000,7 +1004,7 @@ static void AddString2DoubleGeneric(asIScriptGeneric *gen)
 {
 	string_t *a = static_cast<string_t *>(gen->GetObjectData());
 	double *b = static_cast<double *>(gen->GetAddressOfArg(0));
-	string_t ret_val = va( "%s%lf", a->c_str(), *b );
+	string_t ret_val = va( "%s%0.02lf", a->c_str(), *b );
 	gen->SetReturnObject(&ret_val);
 }
 
@@ -1008,7 +1012,7 @@ static void AddString2FloatGeneric(asIScriptGeneric *gen)
 {
 	string_t *a = static_cast<string_t *>(gen->GetObjectData());
 	float *b = static_cast<float *>(gen->GetAddressOfArg(0));
-	string_t ret_val = va( "%s%f", a->c_str(), *b );
+	string_t ret_val = va( "%s%0.02f", a->c_str(), *b );
 	gen->SetReturnObject(&ret_val);
 }
 
@@ -1040,7 +1044,7 @@ static void AddDouble2StringGeneric(asIScriptGeneric *gen)
 {
 	double*a = static_cast<double *>(gen->GetAddressOfArg(0));
 	string_t *b = static_cast<string_t *>(gen->GetObjectData());
-	string_t ret_val = va( "%lf%s", *a, b->c_str() );
+	string_t ret_val = va( "%0.02lf%s", *a, b->c_str() );
 	gen->SetReturnObject(&ret_val);
 }
 
@@ -1049,7 +1053,7 @@ static void AddFloat2StringGeneric(asIScriptGeneric *gen)
 	float*a = static_cast<float *>(gen->GetAddressOfArg(0));
 	string_t *b = static_cast<string_t *>(gen->GetObjectData());
 
-	string_t ret_val = va( "%f%s", *a, b->c_str() );
+	string_t ret_val = va( "%0.02f%s", *a, b->c_str() );
 	gen->SetReturnObject(&ret_val);
 }
 

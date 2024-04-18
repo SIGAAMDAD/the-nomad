@@ -947,6 +947,11 @@ DEFINE_CALLBACK( DrawImage ) {
         (nhandle_t)pGeneric->GetArgDWord( 0 ) );
 }
 
+DEFINE_CALLBACK( SetColor ) {
+    // glm::vec4 has the same exact data layout as a vec4_t (i checked), we'll be fine
+    re.SetColor( (const float *)pGeneric->GetArgAddress( 0 ) );
+}
+
 static nhandle_t RegisterSprite( nhandle_t hSpriteSheet, uint32_t nIndex ) {
     return re.RegisterSprite( hSpriteSheet, nIndex );
 }
@@ -2188,6 +2193,7 @@ void ModuleLib_Register_Engine( void )
             g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "int TheNomad::Engine::Renderer::RegisterSpriteSheet( const string& in, uint, uint, uint, uint )", asFUNCTION( ModuleLib_RegisterSpriteSheet ), asCALL_GENERIC );
             REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RegisterSprite( int, uint )", WRAP_FN( RegisterSprite ) );
             REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::LoadWorld( const string& in )", WRAP_FN( LoadWorld ) );
+            g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::Renderer::SetColor( const vec4& in color )", asFUNCTION( ModuleLib_SetColor ), asCALL_GENERIC );
             g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::Renderer::DrawImage( float, float, float, float, float, float, float, float, int )", asFUNCTION( ModuleLib_DrawImage ), asCALL_GENERIC );
 
             RESET_NAMESPACE();
