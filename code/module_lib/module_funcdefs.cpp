@@ -944,7 +944,7 @@ DEFINE_CALLBACK( RegisterSpriteSheet ) {
 DEFINE_CALLBACK( DrawImage ) {
     re.DrawImage( pGeneric->GetArgFloat( 0 ), pGeneric->GetArgFloat( 1 ), pGeneric->GetArgFloat( 2 ), pGeneric->GetArgFloat( 3 ),
         pGeneric->GetArgFloat( 4 ), pGeneric->GetArgFloat( 5 ), pGeneric->GetArgFloat( 6 ), pGeneric->GetArgFloat( 7 ),
-        (nhandle_t)pGeneric->GetArgDWord( 0 ) );
+        (nhandle_t)pGeneric->GetArgDWord( 8 ) );
 }
 
 DEFINE_CALLBACK( SetColor ) {
