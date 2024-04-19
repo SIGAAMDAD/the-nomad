@@ -32,8 +32,7 @@ typedef struct {
 
     ImFont *font;
 
-    nhandle_t background0;
-    nhandle_t background1;
+    nhandle_t background;
     sfxHandle_t ambience;
 
     const stringHash_t *logoString;
@@ -104,14 +103,14 @@ void MainMenu_Draw( void )
                             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoBackground;
 
     MainMenu_ToggleMenu();
-    ui->menubackShader = s_main->background0;
+    ui->menubackShader = s_main->background;
 
     if ( s_main->font ) {
         FontCache()->SetActiveFont( s_main->font );
     }
 
-    if ( s_main->noMenu || Key_GetCatcher() & KEYCATCH_CONSOLE ) {
-        return; // just the scenery & the music (a bit like Halo 3: ODST, check out halome.nu)...
+    if ( s_main->noMenu ) {
+        return; // just the scenery & the music
     }
 
     // show the user WTF just happened
@@ -247,11 +246,11 @@ void MainMenu_Cache( void )
     s_main->exitArrow.direction = ImGuiDir_Right;
 
     s_main->menu.track = Snd_RegisterTrack( "music/title.ogg" );
-    s_main->background0 = re.RegisterShader( "menu/mainbackground" );
+    s_main->background = re.RegisterShader( "menu/mainbackground" );
 
     s_main->noMenu = qfalse;
     s_main->toggleKey = qtrue;
-    ui->menubackShader = s_main->background0;
+    ui->menubackShader = s_main->background;
 
     Menu_AddItem( &s_main->menu, &s_main->table );
 

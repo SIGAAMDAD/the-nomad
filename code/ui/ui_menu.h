@@ -47,7 +47,7 @@
 #define EVENT_ACTIVATED			    3
 
 #define MENU_DEFAULT_FLAGS ( ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar \
-                        | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse )
+                        | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus )
 
 typedef struct {
     void (*draw)( void );

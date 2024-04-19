@@ -965,7 +965,7 @@ extern int ColorIndexFromChar( char ccode );
 #define	MAKERGBA( v, r, g, b, a ) v[0]=r;v[1]=g;v[2]=b;v[3]=a
 
 void Con_AddText(const char *msg);
-void Con_DrawConsole(void);
+void Con_DrawConsole( qboolean open );
 void Con_Init(void);
 void Con_Shutdown(void);
 

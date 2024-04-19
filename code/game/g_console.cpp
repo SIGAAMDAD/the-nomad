@@ -212,11 +212,7 @@ void Con_ToggleConsole_f( void ) {
 
 	// set the scroll to the absolute bottom
 	if ( Key_GetCatcher() & KEYCATCH_CONSOLE ) {
-		Con_DrawConsole();
-
-		ImGui::Begin( "CommandConsole", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar );
-		ImGui::SetScrollHereY();
-		ImGui::End();
+		Con_DrawConsole( qtrue );
 	}
 }
 
@@ -270,7 +266,7 @@ static void Con_Dump_f( void )
 
 	Con_Printf( "Dumped console text to %s.\n", filename );
 	
-	bufferlen = sizeof(con.text);
+	bufferlen = con.used;
 	buffer = (char *)Hunk_AllocateTempMemory( bufferlen );
 
 	// write the remaining lines
@@ -848,7 +844,7 @@ Con_DrawSolidConsole
 Draws the console with the solid background
 ================
 */
-static void Con_DrawSolidConsole( float frac )
+static void Con_DrawSolidConsole( float frac, qboolean open )
 {
 	static float conColorValue[4] = { 0.0, 0.0, 0.0, 0.0 };
 	// for cvar value change tracking
@@ -930,6 +926,10 @@ static void Con_DrawSolidConsole( float frac )
 
 	Con_DrawInput();
 
+	if ( open ) {
+		ImGui::SetScrollHereY();
+	}
+
 	ImGui::End();
 
 	//
@@ -987,13 +987,13 @@ static void Con_DrawNotify( void ) {
 Con_DrawConsole
 ==================
 */
-void Con_DrawConsole( void ) {
+void Con_DrawConsole( qboolean open ) {
 
 	// check for console width changes from a vid mode change
 	Con_CheckResize();
 
 	if ( con.displayFrac ) {
-		Con_DrawSolidConsole( con.displayFrac );
+		Con_DrawSolidConsole( con.displayFrac, open );
 	} else {
 		// draw notify lines
 		if ( gi.state == GS_LEVEL ) {

@@ -125,6 +125,8 @@ typedef struct {
     float scale;
     float bias;
 
+    nhandle_t backdrop;
+
 //    menustate_t state;
     uiMenu_t menustate;
     qboolean escapeToggle;

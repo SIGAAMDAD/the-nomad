@@ -54,28 +54,30 @@ namespace TheNomad::SGame {
 		}
 		
 		void OnInit() {
-			TheNomad::Engine::CmdAddCommand( "sgame.effect_entity_stun" );
-			TheNomad::Engine::CmdAddCommand( "sgame.effect_entity_bleed" );
-			TheNomad::Engine::CmdAddCommand( "sgame.effect_entity_knockback" );
-			TheNomad::Engine::CmdAddCommand( "sgame.effect_entity_flameon" );
-			TheNomad::Engine::CmdAddCommand( "sgame.add_player_health" );
-			TheNomad::Engine::CmdAddCommand( "sgame.add_player_rage" );
-			TheNomad::Engine::CmdAddCommand( "sgame.set_player_health" );
-			TheNomad::Engine::CmdAddCommand( "sgame.set_player_rage" );
+			Engine::CmdAddCommand( "sgame.effect_entity_stun" );
+			Engine::CmdAddCommand( "sgame.effect_entity_bleed" );
+			Engine::CmdAddCommand( "sgame.effect_entity_knockback" );
+			Engine::CmdAddCommand( "sgame.effect_entity_flameon" );
+			Engine::CmdAddCommand( "sgame.add_player_health" );
+			Engine::CmdAddCommand( "sgame.add_player_rage" );
+			Engine::CmdAddCommand( "sgame.set_player_health" );
+			Engine::CmdAddCommand( "sgame.set_player_rage" );
+			Engine::CmdAddCommand( "sgame.print_player_state" );
 		}
 		void OnShutdown() {
-			TheNomad::Engine::CmdRemoveCommand( "sgame.effect_entity_stun" );
-			TheNomad::Engine::CmdRemoveCommand( "sgame.effect_entity_bleed" );
-			TheNomad::Engine::CmdRemoveCommand( "sgame.effect_entity_knockback" );
-			TheNomad::Engine::CmdRemoveCommand( "sgame.effect_entity_flameon" );
-			TheNomad::Engine::CmdRemoveCommand( "sgame.add_player_health" );
-			TheNomad::Engine::CmdRemoveCommand( "sgame.add_player_rage" );
-			TheNomad::Engine::CmdRemoveCommand( "sgame.set_player_health" );
-			TheNomad::Engine::CmdRemoveCommand( "sgame.set_player_rage" );
+			Engine::CmdRemoveCommand( "sgame.effect_entity_stun" );
+			Engine::CmdRemoveCommand( "sgame.effect_entity_bleed" );
+			Engine::CmdRemoveCommand( "sgame.effect_entity_knockback" );
+			Engine::CmdRemoveCommand( "sgame.effect_entity_flameon" );
+			Engine::CmdRemoveCommand( "sgame.add_player_health" );
+			Engine::CmdRemoveCommand( "sgame.add_player_rage" );
+			Engine::CmdRemoveCommand( "sgame.set_player_health" );
+			Engine::CmdRemoveCommand( "sgame.set_player_rage" );
+			Engine::CmdRemoveCommand( "sgame.print_player_state" );
 		}
 
 		void DrawEntity( const EntityObject@ ent ) {
-		//	const TheNomad::SGame::SpriteSheet@ sheet;
+		//	const SGame::SpriteSheet@ sheet;
 			switch ( ent.GetType() ) {
 			case TheNomad::GameSystem::EntityType::Playr: {
 		//		cast<PlayrObject>( ent.GetData() ).DrawLegs();
@@ -91,7 +93,7 @@ namespace TheNomad::SGame {
 				break; }
 			case TheNomad::GameSystem::EntityType::Weapon: {
 		//		@sheet = ent.GetSpriteSheet();
-		//		TheNomad::Engine::Renderer::AddSpriteToScene( ent.GetOrigin(), sheet.GetShader(),
+		//		Engine::Renderer::AddSpriteToScene( ent.GetOrigin(), sheet.GetShader(),
 		//			ent.GetState().SpriteOffset() );
 				break; }
 			case TheNomad::GameSystem::EntityType::Wall: {
@@ -248,8 +250,11 @@ namespace TheNomad::SGame {
 			@m_PlayrObject = null;
 		}
 		bool OnConsoleCommand( const string& in cmd ) {
-			if ( TheNomad::Util::StrICmp( cmd, "sgame.list_items" ) == 0 ) {
+			if ( Util::StrICmp( cmd, "sgame.list_items" ) == 0 ) {
 				ListActiveItems();
+			}
+			else if ( Util::StrICmp( cmd, "sgame.print_player_state" ) == 0 ) {
+				PrintPlayerState();
 			}
 
 			return false;
@@ -307,7 +312,7 @@ namespace TheNomad::SGame {
 				@obj = cast<PlayrObject>( ent.GetData() );
 				
 				// is hellbreaker available?
-				if ( sgame_HellbreakerOn.GetInt() != 0 && TheNomad::Util::IsModuleActive( "hellbreaker" )
+				if ( sgame_HellbreakerOn.GetInt() != 0 && Util::IsModuleActive( "hellbreaker" )
 					&& sgame_HellbreakerActive.GetInt() == 0 /* ensure there's no recursion */ )
 				{
 					HellbreakerInit();
@@ -392,7 +397,7 @@ namespace TheNomad::SGame {
 		ItemObject@ FindItemInBounds( const TheNomad::GameSystem::BBox& in bounds ) {
 			ItemObject@ item;
 			for ( @item = cast<ItemObject>( @m_ActiveItems.next ); @item !is @m_ActiveItems; @item = cast<ItemObject>( @item.next ) ) {
-				if ( TheNomad::Util::BoundsIntersect( bounds, item.GetBounds() ) ) {
+				if ( Util::BoundsIntersect( bounds, item.GetBounds() ) ) {
 					return @item;
 				}
 			}
@@ -409,6 +414,16 @@ namespace TheNomad::SGame {
 			return item;
 		}
 
+		private void PrintPlayerState() const {
+			string msg;
+			msg.reserve( MAX_STRING_CHARS );
+
+			msg = "\nPlayer State:\n";
+			msg += "Health: " + m_PlayrObject.GetHealth() + "\n";
+			msg += "Rage: " + m_PlayrObject.GetRage() + "\n";
+
+			ConsolePrint( msg );
+		}
 		private void ListActiveItems() {
 			string msg;
 			msg.reserve( MAX_STRING_CHARS );
@@ -448,7 +463,7 @@ namespace TheNomad::SGame {
 			// sgame.effect_entity_knockback <attacker_num>
 
 			EntityObject@ target, attacker;
-			const uint attackerNum = Convert().ToUInt( TheNomad::Engine::CmdArgv( 1 ) );
+			const uint attackerNum = Convert().ToUInt( Engine::CmdArgv( 1 ) );
 
 			@attacker = GetEntityForNum( attackerNum );
 			if ( attacker is null ) {
@@ -468,7 +483,7 @@ namespace TheNomad::SGame {
 			// sgame.effect_entity_stun <attacker_num>
 
 			EntityObject@ target, attacker;
-			const uint attackerNum = Convert().ToUInt( TheNomad::Engine::CmdArgv( 1 ) );
+			const uint attackerNum = Convert().ToUInt( Engine::CmdArgv( 1 ) );
 
 			@attacker = GetEntityForNum( attackerNum );
 			if ( attacker is null ) {

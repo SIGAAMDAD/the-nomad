@@ -44,18 +44,13 @@ vec4 CalcColor(vec3 position, vec3 normal)
 	
 	vec3 viewer = u_LocalViewOrigin - position;
 
-	if (u_AlphaGen == AGEN_LIGHTING_SPECULAR)
-	{
+	if ( u_AlphaGen == AGEN_LIGHTING_SPECULAR ) {
 		vec3 lightDir = normalize(vec3(-960.0, 1980.0, 96.0) - position);
 		vec3 reflected = -reflect(lightDir, normal);
 		
 		color.a = clamp(dot(reflected, normalize(viewer)), 0.0, 1.0);
 		color.a *= color.a;
 		color.a *= color.a;
-	}
-	else if (u_AlphaGen == AGEN_PORTAL)
-	{
-		color.a = clamp(length(viewer) / u_PortalRange, 0.0, 1.0);
 	}
 	
 	return color;
@@ -120,13 +115,13 @@ vec2 GenTexCoords( int TCGen, vec3 position, vec3 normal, vec3 TCGenVector0, vec
 
 void main()
 {
-	v_Color = a_Color;
+	v_Color = u_VertColor * a_Color + u_BaseColor;
 
-//#if defined(USE_TCGEN)
-//	vec2 texCoords = GenTexCoords( u_TCGen0, a_Position, vec3( 0.0 ), u_TCGen0Vector0, u_TCGen0Vector1 );
-//#else
+#if defined(USE_TCGEN)
+	vec2 texCoords = GenTexCoords( u_TCGen0, a_Position, vec3( 0.0 ), u_TCGen0Vector0, u_TCGen0Vector1 );
+#else
 	vec2 texCoords = a_TexCoords;
-//#endif
+#endif
 
 #if defined(USE_TCMOD)
 	v_TexCoords = ModTexCoords( texCoords, a_Position, u_DiffuseTexMatrix, u_DiffuseTexOffTurb );

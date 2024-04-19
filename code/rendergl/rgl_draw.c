@@ -355,21 +355,21 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 		else {
 			GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 0 );
 		}
-	/*
+		
 		if ( r_lightmap->i ) {
 			vec4_t v;
 			VectorSet4( v, 1.0f, 0.0f, 0.0f, 1.0f );
-			GLSL_SetUniformVec4( sp, UNIFORM_DIFFUSETEXMATRIX, v );
+			GLSL_SetUniformVec4( sp, UNIFORM_DIFFUSE_TEXMATRIX, v );
 			VectorSet4( v, 0.0f, 0.0f, 0.0f, 0.0f );
-			GLSL_SetUniformVec4( sp, UNIFORM_DIFFUSETEXOFFTURB, v );
+			GLSL_SetUniformVec4( sp, UNIFORM_DIFFUSE_TEXOFFTURB, v );
 
 			GLSL_SetUniformInt( sp, UNIFORM_TCGEN0, TCGEN_LIGHTMAP );
 		}
-		else */
+		else
 		{
 			ComputeTexMods( stageP, TB_DIFFUSEMAP, texMatrix, texOffTurb );
-			//GLSL_SetUniformVec4( sp, UNIFORM_DIFFUSETEXMATRIX, texMatrix );
-			//GLSL_SetUniformVec4( sp, UNIFORM_DIFFUSETEXOFFTURB, texOffTurb );
+			GLSL_SetUniformVec4( sp, UNIFORM_DIFFUSE_TEXMATRIX, texMatrix );
+			GLSL_SetUniformVec4( sp, UNIFORM_DIFFUSE_TEXOFFTURB, texOffTurb );
 
 			GLSL_SetUniformInt( sp, UNIFORM_TCGEN0, stageP->bundle[0].tcGen );
 			if ( stageP->bundle[0].tcGen == TCGEN_VECTOR ) {

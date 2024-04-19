@@ -451,6 +451,13 @@ void Menu_Cache( void )
 	ui->sfx_select = Snd_RegisterSfx( "sfx/menu1.wav" );
 	ui->sfx_back = Snd_RegisterSfx( "sfx/menu3.wav" );
 	ui->sfx_null = Snd_RegisterSfx( "sfx/menu4.wav" );
+
+	ui->backdrop = re.RegisterShader( "menu/mainbackdrop" );
+
+    // IT MUST BE THERE!
+    if ( !FS_LoadFile( "textures/coconut.jpg", NULL ) || ui->backdrop == FS_INVALID_HANDLE ) {
+        N_Error( ERR_FATAL, "Menu_Cache: could not load coconut.jpg" );
+    }
 }
 
 /*
@@ -498,6 +505,22 @@ extern "C" void UI_Refresh( int32_t realtime )
 //		return;
 //	}
 
+	{
+        refdef_t refdef;
+
+        memset( &refdef, 0, sizeof( refdef ) );
+        refdef.x = 0;
+        refdef.y = 0;
+        refdef.width = ui->gpuConfig.vidWidth;
+        refdef.height = ui->gpuConfig.vidHeight;
+        refdef.time = 0;
+        refdef.flags = RSF_ORTHO_TYPE_SCREENSPACE | RSF_NOWORLDMODEL;
+
+        re.ClearScene();
+        re.DrawImage( 0, 0, refdef.width, refdef.height, 0, 0, 1, 1, ui->backdrop );
+		re.RenderScene( &refdef );
+    }
+
 	if ( !( Key_GetCatcher() & KEYCATCH_UI ) ) {
 		return;
 	}
@@ -512,10 +535,12 @@ extern "C" void UI_Refresh( int32_t realtime )
 			Snd_SetLoopingTrack( ui->activemenu->track );
 		}
 
-		if ( ui->activemenu->draw ) {
-			ui->activemenu->draw();
-		} else {
-			Menu_Draw( ui->activemenu );
+		if ( !( Key_GetCatcher() & KEYCATCH_CONSOLE ) ) {
+			if ( ui->activemenu->draw ) {
+				ui->activemenu->draw();
+			} else {
+				Menu_Draw( ui->activemenu );
+			}
 		}
 
 //		if( ui->GetFirstDraw() ) {

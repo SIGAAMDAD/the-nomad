@@ -7,7 +7,7 @@ namespace TheNomad::SGame {
 		}
 		
 		void Draw() const {
-//			Engine::Renderer::SetColor( color );
+			Engine::Renderer::SetColor( color );
 			Engine::Renderer::DrawImage( origin.x, origin.y, size.x, size.y, 0, 0, 1, 1, hShader );
 		}
 		

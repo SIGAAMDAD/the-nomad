@@ -153,7 +153,7 @@ constexpr GDR_INLINE bool operator!=( const CModuleStringAllocator& a, const CMo
     return true;
 }
 
-using string_t = eastl::basic_string<char, eastl::allocator_malloc<char>>;
+using string_t = eastl::fixed_string<char, 256, true, eastl::allocator_malloc<char>>;
 using UtlString = eastl::fixed_string<char, MAX_STRING_CHARS, true, eastl::allocator_malloc<char>>;
 namespace eastl {
 	// for some reason, the eastl doesn't support eastl::hash<eastl::fixed_string>

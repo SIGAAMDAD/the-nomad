@@ -310,130 +310,23 @@ static void StringResize(asQWORD l, string_t& str)
 
 // AngelScript signature:
 // string_t formatInt(int64 val, const string_t& in options, uint width)
-static string_t formatInt(asINT64 value, const string_t& options, asQWORD width)
+static string_t formatInt(asINT64 value, const string_t& format)
 {
-	const bool leftJustify = options.find("l") != string_t::npos;
-	const bool padWithZero = options.find("0") != string_t::npos;
-	const bool alwaysSign  = options.find("+") != string_t::npos;
-	const bool spaceOnSign = options.find(" ") != string_t::npos;
-	const bool hexSmall    = options.find("h") != string_t::npos;
-	const bool hexLarge    = options.find("H") != string_t::npos;
-	string_t fmt = "%";
-
-	if ( leftJustify ) fmt.append( "-" );
-	if ( alwaysSign ) fmt.append( "+" );
-	if ( spaceOnSign ) fmt.append( " " );
-	if ( padWithZero ) fmt.append( "0" );
-
-#ifdef _WIN32
-	fmt.append( "*I64" );
-#else
-#ifdef _LP64
-	fmt.append( "*l" );
-#else
-	fmt += "*ll";
-#endif
-#endif
-
-	if( hexSmall ) fmt += "x";
-	else if( hexLarge ) fmt += "X";
-	else fmt += "d";
-
-	string_t buf;
-	buf.resize( width + 30 );
-#if _MSC_VER >= 1400 && !defined(__S3E__)
-	// MSVC 8.0 / 2005 or newer
-	sprintf_s(&buf[0], buf.size(), fmt.c_str(), width, value);
-#else
-	sprintf(&buf[0], fmt.c_str(), width, value);
-#endif
-	buf.resize(strlen(&buf[0]));
-
-	return buf;
+	return va( format.c_str(), value );
 }
 
 // AngelScript signature:
 // string_t formatUInt(uint64 val, const string_t& in options, uint width)
-static string_t formatUInt(asQWORD value, const string_t& options, asQWORD width)
+static string_t formatUInt(asQWORD value, const string_t& format)
 {
-	bool leftJustify = options.find("l") != string_t::npos;
-	bool padWithZero = options.find("0") != string_t::npos;
-	bool alwaysSign  = options.find("+") != string_t::npos;
-	bool spaceOnSign = options.find(" ") != string_t::npos;
-	bool hexSmall    = options.find("h") != string_t::npos;
-	bool hexLarge    = options.find("H") != string_t::npos;
-
-	string_t fmt = "%";
-	if( leftJustify ) fmt += "-";
-	if( alwaysSign ) fmt += "+";
-	if( spaceOnSign ) fmt += " ";
-	if( padWithZero ) fmt += "0";
-
-#ifdef _WIN32
-	fmt += "*I64";
-#else
-#ifdef _LP64
-	fmt += "*l";
-#else
-	fmt += "*ll";
-#endif
-#endif
-
-	if( hexSmall ) fmt += "x";
-	else if( hexLarge ) fmt += "X";
-	else fmt += "u";
-
-	string_t buf;
-	buf.resize(width+30);
-#if _MSC_VER >= 1400 && !defined(__S3E__)
-	// MSVC 8.0 / 2005 or newer
-	sprintf_s(&buf[0], buf.size(), fmt.c_str(), width, value);
-#else
-	sprintf(&buf[0], fmt.c_str(), width, value);
-#endif
-	buf.resize(strlen(&buf[0]));
-
-	return buf;
+	return va( format.c_str(), value );
 }
 
 // AngelScript signature:
 // string_t formatFloat(double val, const string_t& in options, uint width, uint precision)
-static const char *formatFloat(double value, const string_t& options, asUINT width, asUINT precision)
+static string_t formatFloat(double value, const string_t& format)
 {
-	static char *buf;
-	int length;
-	char fmt[64];
-	char *p;
-
-	const string_t::size_type prefix = options.find( '0' );
-
-	fmt[0] = '%';
-	if ( options.find( 'l' ) != string_t::npos ) {
-		N_strcat( fmt, sizeof( fmt ) - 1, "-" );
-	}
-	if ( options.find( '+' ) != string_t::npos ) {
-		N_strcat( fmt, sizeof( fmt ) - 1, "+" );
-	}
-	if ( options.find( ' ' ) != string_t::npos ) {
-		N_strcat( fmt, sizeof( fmt ) - 1, " " );
-	}
-	if ( prefix != string_t::npos ) {
-		N_strcat( fmt, sizeof( fmt ) - 1, "0" );
-	}
-	N_strcat( fmt, sizeof( fmt ) - 1, "*.*" );
-	if ( options.find( 'e' ) != string_t::npos ) {
-		N_strcat( fmt, sizeof( fmt ) - 1, "e" );
-	} else if ( options.find( 'E' ) != string_t::npos ) {
-		N_strcat( fmt, sizeof( fmt ) - 1, "E" );
-	} else {
-		N_strcat( fmt, sizeof( fmt ) - 1, "f" );
-	}
-
-	length = width + precision + 64;
-	buf = (char *)alloca( length );
-	Com_snprintf( buf, length - 1, fmt, width, precision, value );
-
-	return buf;
+	return va( format.c_str(), value );
 }
 
 // AngelScript signature:
@@ -856,26 +749,22 @@ static void StringFindLastNotOf_Generic(asIScriptGeneric *gen)
 static void formatInt_Generic(asIScriptGeneric *gen)
 {
 	asINT64 val = gen->GetArgQWord(0);
-	string_t *options = reinterpret_cast<string_t*>(gen->GetArgAddress(1));
-	asUINT width = gen->GetArgDWord(2);
-	new(gen->GetAddressOfReturnLocation()) string_t(formatInt(val, *options, width));
+	string_t *fmt = reinterpret_cast<string_t*>(gen->GetArgAddress(1));
+	new(gen->GetAddressOfReturnLocation()) string_t(formatInt(val, *fmt));
 }
 
 static void formatUInt_Generic(asIScriptGeneric *gen)
 {
 	asQWORD val = gen->GetArgQWord(0);
-	string_t *options = reinterpret_cast<string_t*>(gen->GetArgAddress(1));
-	asUINT width = gen->GetArgDWord(2);
-	new(gen->GetAddressOfReturnLocation()) string_t(formatUInt(val, *options, width));
+	string_t *fmt = reinterpret_cast<string_t*>(gen->GetArgAddress(1));
+	new(gen->GetAddressOfReturnLocation()) string_t(formatUInt(val, *fmt));
 }
 
 static void formatFloat_Generic(asIScriptGeneric *gen)
 {
 	double val = gen->GetArgDouble(0);
-	string_t *options = reinterpret_cast<string_t*>(gen->GetArgAddress(1));
-	asUINT width = gen->GetArgDWord(2);
-	asUINT precision = gen->GetArgDWord(3);
-	new(gen->GetAddressOfReturnLocation()) string_t(formatFloat(val, *options, width, precision));
+	string_t *fmt = reinterpret_cast<string_t*>(gen->GetArgAddress(1));
+	new(gen->GetAddressOfReturnLocation()) string_t(formatFloat(val, *fmt));
 }
 
 static void parseInt_Generic(asIScriptGeneric *gen)
@@ -1203,9 +1092,9 @@ void RegisterStdString_Generic(asIScriptEngine *engine)
 	CheckASCall( engine->RegisterObjectMethod("string", "void insert(uint pos, const string &in other)", asFUNCTION(StringInsert_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("string", "void erase(uint pos, int count = -1)", asFUNCTION(StringErase_Generic), asCALL_GENERIC ) );
 
-	CheckASCall( engine->RegisterGlobalFunction("string formatInt(int64 val, const string &in options = \"\", uint width = 0)", asFUNCTION(formatInt_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterGlobalFunction("string formatUInt(uint64 val, const string &in options = \"\", uint width = 0)", asFUNCTION(formatUInt_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterGlobalFunction("string formatFloat(double val, const string &in options = \"\", uint width = 0, uint precision = 0)", asFUNCTION(formatFloat_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterGlobalFunction("string formatInt(int64 val, const string& in formatting = \"%i\")", asFUNCTION(formatInt_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterGlobalFunction("string formatUInt(uint64 val, const string& formatting = \"%u\")", asFUNCTION(formatUInt_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterGlobalFunction("string formatFloat(double val, const string& in formatting = \"%0.02f\")", asFUNCTION(formatFloat_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterGlobalFunction("int64 parseInt(const string &in, uint base = 10, uint &out byteCount = 0)", asFUNCTION(parseInt_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterGlobalFunction("uint64 parseUInt(const string &in, uint base = 10, uint &out byteCount = 0)", asFUNCTION(parseUInt_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterGlobalFunction("double parseFloat(const string &in, uint &out byteCount = 0)", asFUNCTION(parseFloat_Generic), asCALL_GENERIC ) );

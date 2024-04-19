@@ -290,11 +290,12 @@ int ModuleOnRunTic( uint msec )
 
 	const uint flags = RSF_ORTHO_TYPE_WORLD;
 
+	TheNomad::Engine::Renderer::ClearScene();
+
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnRunTic();
 	}
 
-	TheNomad::Engine::Renderer::ClearScene();
 	TheNomad::Engine::Renderer::RenderScene( 0, 0, TheNomad::GameSystem::GameManager.GetGPUConfig().screenWidth,
 		TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight, flags, TheNomad::GameSystem::GameManager.GetGameMsec() );
 
