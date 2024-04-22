@@ -71,6 +71,12 @@ namespace eastl
 	class allocator_malloc
 	{
 	public:
+		typedef T value_type;
+		typedef T* pointer;
+		typedef const T* const_pointer;
+		typedef T& reference;
+		typedef const T& const_reference;
+
 		allocator_malloc(const char* = NULL)
 			{ }
 
@@ -88,13 +94,29 @@ namespace eastl
 
 		bool operator!=(const allocator_malloc<T>&)
 			{ return false; }
+		
+		T* allocate(size_t n, int /*flags*/ = 0)
+			{ return (T *)malloc(n); }
 
+		T* allocate(size_t n, size_t alignment, size_t alignmentOffset, int /*flags*/ = 0)
+		{
+			#ifdef EASTL_ALIGNED_MALLOC_AVAILABLE
+				if((alignmentOffset % alignment) == 0) // We check for (offset % alignmnent == 0) instead of (offset == 0) because any block which is aligned on e.g. 64 also is aligned at an offset of 64 by definition. 
+					return (T *)memalign(alignment, n); // memalign is more consistently available than posix_memalign.
+			#else
+				if((alignment <= EASTL_SYSTEM_ALLOCATOR_MIN_ALIGNMENT) && ((alignmentOffset % alignment) == 0))
+					return (T *)malloc(n);
+			#endif
+			return NULL;
+		}
+
+#if 0
 		void* allocate(size_t n, int /*flags*/ = 0)
 			{ return malloc(n); }
 
 		void* allocate(size_t n, size_t alignment, size_t alignmentOffset, int /*flags*/ = 0)
 		{
-			#if EASTL_ALIGNED_MALLOC_AVAILABLE
+			#ifdef EASTL_ALIGNED_MALLOC_AVAILABLE
 				if((alignmentOffset % alignment) == 0) // We check for (offset % alignmnent == 0) instead of (offset == 0) because any block which is aligned on e.g. 64 also is aligned at an offset of 64 by definition. 
 					return memalign(alignment, n); // memalign is more consistently available than posix_memalign.
 			#else
@@ -103,6 +125,7 @@ namespace eastl
 			#endif
 			return NULL;
 		}
+#endif
 
 		void deallocate(void* p, size_t /*n*/)
 			{ free(p); }

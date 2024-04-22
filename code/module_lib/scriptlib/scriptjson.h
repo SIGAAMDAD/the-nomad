@@ -30,7 +30,7 @@ class CScriptJson
 public:
 	// Factory functions
 	static CScriptJson *Create(asIScriptEngine *engine);
-	static CScriptJson *Create(asIScriptEngine *engine, json js);
+	static CScriptJson *Create(asIScriptEngine *engine, const json& js);
 
 	// Reference counting
 	void AddRef() const;
@@ -62,7 +62,7 @@ public:
 	bool Get(const jsonKey_t &key, CScriptArray &value) const;
 
     bool            GetBool();
-    string_t        GetString();
+    string_t		GetString();
     json::number_integer_t GetNumber();
 	json::number_unsigned_t GetUNumber();
     json::number_float_t   GetReal();
@@ -93,7 +93,7 @@ public:
 
 	int GetRefCount();
 
-    json             *js_info = NULL;
+    json             js_info = { 0 };
 
 private:
 	// Since the dictionary uses the asAllocMem and asFreeMem functions to allocate memory

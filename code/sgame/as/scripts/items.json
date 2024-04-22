@@ -1,98 +1,53 @@
 {
-	"WeaponInfo": [
+	"ItemInfo": [
 		{
-			"Id": "sidearm_a",
-			"Name": "Murstar Revolver",
-			"Type": "sidearm",
-			"Cost": 200,
-			"Icon": "icons/iconw_murstar",
-			"PickupSfx": "sfx/items/pickup_murstar.ogg",
-			"UseSfx": "sfx/items/use_murstar.ogg",
-			"WeaponProps": {
-				"Damage": 80.0,
-				"Range": 55.0,
-				"Accuracy": 100.0
-			}
-		},
-		{
-			"Id": "primary_a",
-			"Name": "Plasma SMG",
-			"Type": "primary",
-			"Cost": 10,
-			"Icon": "icons/iconw_plasma",
-			"PickupSfx": "sfx/items/pickup_plasma.ogg",
-			"UseSfx": "sfx/items/use_plasma.ogg",
-			"WeaponProps": {
-				"Damage": 15.6,
-				"Range": 25.0,
-				"Accuracy": 60.2
-			}
-		},
-		{
-			"Id": "primary_b",
-			"Name": "Double Barrel",
-			"Type": "primary",
-			"Cost": 20,
-			"Icon": "icons/iconw_db",
-			"PickupSfx": "sfx/items/pickup_db.ogg",
-			"UseSfx": "sfx/item/use_db.ogg",
-			"WeaponProps": {
-				"BulletType": "shell",
-				"BulletCount": 2,
-				"Damage": 70.0,
-				"Range": 30.9,
-				"Accuracy": 88.1
-			}
-		}
-	],
-	"PowerupInfo": [
-		{
+			"Type": "Powerup",
 			"Id": "powerup_a",
 			"Name": "Trigger Happy",
-			"Effects": "toggle_powerup 0",
+			"Effect": "toggle_powerup 0",
 			"Duration": 50
 		},
 		{
+			"Type": "Powerup",
 			"Id": "powerup_b",
 			"Name": "Endless Anger",
-			"Effects": "toggle_powerup 1",
+			"Effect": "toggle_powerup 1",
 			"Duration": 5
-		}
-	],
-	"MiscInfo": [
+		},
 		{
-			"Id": "health_pack",
+			"Type": "Consumable",
+			"Id": "item_stimpack",
 			"Name": "Stim Pack",
 			"Cost": 10,
-			"Effects": "add_health_mult 5.0"
+			"Effect": "add_health_mult 5.0"
 		},
 		{
-			"Id": "bullet_pack",
-			"name": "Bullets",
-			"type": "ammo",
-			"ammotype": "bullet",
-			"effects": "add_player_bullet_ammo 15"
+			"Type": "Consumable",
+			"Id": "item_ammopack",
+			"Name": "Bullets",
+			"AmmoType": "bullet",
+			"Effect": "add_player_bullet_ammo 15"
 		},
 		{
-			"Id": "shell_pack",
+			"Type": "Consumable",
+			"Id": "item_shellpack",
 			"Name": "Shells",
-			"Type": "ammo",
-			"AmmoType": "shells",
-			"Effects": "add_player_shell_ammo 12"
+			"AmmoType": "shell",
+			"Effect": "add_player_shell_ammo 12"
 		},
 		{
-			"Id": "rocket_pack",
+			"Type": "Consumable",
+			"Id": "item_rocketpack",
 			"Name": "Rockets",
-			"Type": "ammo",
-			"AmmoType": "rockets",
-			"Effects": "add_player_rocket_ammo 5"
+			"AmmoType": "rocket",
+			"Effect": "add_player_rocket_ammo 5"
 		},
 		{
-			"Id": "grenade_pack",
+			"Type": "Consumable",
+			"Id": "item_grenadepack",
 			"Name": "Grenades",
-			"Type": "ammo",
-			"AmmoType": "grenades",
-			"Effects": "add_player_rocket_ammo 5"
+			"AmmoType": "grenade",
+			"Effect": "add_player_rocket_ammo 5"
 		}
 	]
 }

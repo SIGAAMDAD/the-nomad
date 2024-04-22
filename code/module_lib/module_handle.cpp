@@ -4,7 +4,6 @@
 #include "angelscript/as_bytecode.h"
 #include "module_funcdefs.hpp"
 #include "module_debugger.h"
-#include "scriptpreprocessor.h"
 
 const moduleFunc_t funcDefs[NumFuncs] = {
     { "int ModuleInit()", ModuleInit, 0, qtrue },
@@ -21,8 +20,8 @@ const moduleFunc_t funcDefs[NumFuncs] = {
     { "int ModuleOnLoadGame()", ModuleOnLoadGame, 0, qfalse }
 };
 
-CModuleHandle::CModuleHandle( const char *pName, const std::vector<std::string>& sourceFiles, int32_t moduleVersionMajor,
-    int32_t moduleVersionUpdate, int32_t moduleVersionPatch, const std::vector<std::string>& includePaths
+CModuleHandle::CModuleHandle( const char *pName, const nlohmann::json& sourceFiles, int32_t moduleVersionMajor,
+    int32_t moduleVersionUpdate, int32_t moduleVersionPatch, const nlohmann::json& includePaths
 )
     : m_szName{ pName }, m_nStateStack{ 0 }, m_nVersionMajor{ moduleVersionMajor },
     m_nVersionUpdate{ moduleVersionUpdate }, m_nVersionPatch{ moduleVersionPatch }
@@ -87,7 +86,7 @@ CModuleHandle::~CModuleHandle() {
     ClearMemory();
 }
 
-void CModuleHandle::Build( const std::vector<std::string>& sourceFiles ) {
+void CModuleHandle::Build( const nlohmann::json& sourceFiles ) {
     int error;
 
     for ( const auto& it : sourceFiles ) {
@@ -120,7 +119,9 @@ void LogExceptionInfo( asIScriptContext *pContext, void *userData )
     pFunc = pContext->GetExceptionFunction();
     pHandle = (const CModuleHandle *)userData;
 
-    Con_Printf( COLOR_RED "ERROR: exception thrown by module, printing a stacktrace...\n" );
+    Con_Printf( COLOR_RED "ERROR: exception thrown by module \"%s\": %s\n", pHandle->GetName().c_str(),
+        Cvar_VariableString( "com_errorMessage" ) );
+    Con_Printf( COLOR_RED "Printing stacktrace...\n" );
     Cbuf_ExecuteText( EXEC_NOW, va( "ml_debug.set_active \"%s\"", pHandle->GetName().c_str() ) );
     g_pDebugger->PrintCallstack( pContext );
 
@@ -308,7 +309,7 @@ bool CModuleHandle::InitCalls( void )
     return true;
 }
 
-void CModuleHandle::LoadSourceFile( const std::string& filename )
+void CModuleHandle::LoadSourceFile( const string_t& filename )
 {
     union {
         void *v;

@@ -300,7 +300,11 @@ void G_LoadJPG( const char *filename, byte **pic, int32_t *width, int32_t *heigh
 //
 // g_console.cpp
 //
+#ifdef __cplusplus
 void Con_DrawConsole( qboolean open = qfalse );
+#else
+void Con_DrawConsole( qboolean open );
+#endif
 void Con_RunConsole( void );
 void Con_Close( void );
 void G_ConsolePrint( const char *txt );

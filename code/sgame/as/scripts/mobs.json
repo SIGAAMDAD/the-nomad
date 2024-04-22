@@ -2,7 +2,7 @@
 	"MobInfo": [
 		{
 			"Name": "Zurgut Grunt",
-			"Id": "MT_GRUNT",
+			"Type": "mob_grunt",
 			"Health": 24,
 			"ArmorType": "None",
 			"SoundTolerance": 24.0,
@@ -17,7 +17,7 @@
 			"WaitTics": 15,
 			"SpriteOffsetX": 0,
 			"SpriteOffsetY": 0,
-			"Shader": "sprites/mobs/grunt",
+			"Sprite": "sprites/mobs/grunt",
 			"WakeupSfx": "sfx/mobs/grunt_wakeup.ogg",
 			"PainSfx": "sfx/mobs/grunt_pain.ogg",
 			"DieSfx": "sfx/mobs/grunt_die.ogg",
@@ -27,7 +27,7 @@
 			"AttackData": [
 				{
 					"Id": "MOB_GRUNT_ATTACK_BOMB",
-					"Type": "melee",
+					"Type": "Melee",
 					"Method": "AreaOfEffect",
 					"Damage": 60.0,
 					"Range": 15.0,
@@ -37,11 +37,11 @@
 					"SpriteOffsetY": 0,
 					"Cooldown": 0,
 					"Duration": 1000,
-					"Shader": "sprites/mobs/grunt"
+					"Sprite": "sprites/mobs/grunt"
 				},
 				{
 					"Id": "MOB_GRUNT_ATTACK_HAMMERTIME",
-					"Type": "melee",
+					"Type": "Melee",
 					"Method": "AreaOfEffect",
 					"Damage": 40.0,
 					"Range": 5.0,
@@ -51,13 +51,13 @@
 					"SpriteOffsetY": 0,
 					"Cooldown": 1000,
 					"Duration": 1000,
-					"Shader": "sprites/mobs/grunt"
+					"Sprite": "sprites/mobs/grunt"
 				}
 			]
 		},
 		{
 			"Name": "Mercenary",
-			"Id": "MT_SHOTTY",
+			"Type": "mob_mercenary",
 			"Health": 50,
 			"ArmorType": "Light",
 			"SoundTolerance": 14.0,
@@ -72,7 +72,7 @@
 			"WaitTics": 15,
 			"SpriteOffsetX": 0,
 			"SpriteOffsetY": 0,
-			"Shader": "sprites/mob/mercenary",
+			"Sprite": "sprites/mobs/mercenary",
 			"WakeupSfx": "sfx/mobs/merc_wakeup.ogg",
 			"PainSfx": "sfx/mobs/merc_pain.ogg",
 			"DieSfx": "sfx/mobs/merc_die.ogg",
@@ -82,8 +82,8 @@
 			"AttackData": [
 				{
 					"Id": "MOB_MERC_ATTACK_SLAP",
-					"Type": "melee",
-					"Method": "Hitscan",
+					"Type": "Melee",
+					"Method": "RayCast",
 					"Damage": 43.0,
 					"Range": 1.0,
 					"Effects": "sgame.effect_entity_stun",
@@ -93,22 +93,22 @@
 					"SpriteOffsetY": 0,
 					"Cooldown": 2000,
 					"Duration": 1000,
-					"Shader": "sprites/mobs/mercenary"
+					"Sprite": "sprites/mobs/mercenary"
 				},
 				{
 					"Id": "MOB_MERC_ATTACK_SHOOT",
-					"Type": "missile",
+					"Type": "Missile",
 					"Method": "Hitscan",
 					"Damage": 10.0,
 					"Range": 15.0,
-					"BulletType": "shell",
+					"BulletType": "Shell",
 					"BulletCount": 5,
 					"CanParry": true,
 					"SpriteOffsetX": 0,
 					"SpriteOffsetY": 0,
 					"Cooldown": 2000,
 					"Duration": 2000,
-					"Shader": "sprites/mobs/mercenary"
+					"Sprite": "sprites/mobs/mercenary"
 				}
 			]
 		}

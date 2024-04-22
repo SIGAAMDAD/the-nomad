@@ -11,8 +11,8 @@ typedef struct module_s {
 
 	module_s& operator=( module_s& other );
 	module_s& operator=( const module_s& other );
-	bool operator==( const UtlString& other ) const;
-	bool operator!=( const UtlString& other ) const;
+	bool operator==( const string_t& other ) const;
+	bool operator!=( const string_t& other ) const;
     bool operator<( const module_s& other ) const;
     bool operator>( const module_s& other ) const;
     bool operator==( const module_s& other ) const;
@@ -474,11 +474,11 @@ inline bool module_s::operator!=( const module_s& other ) const {
     return N_strcmp( info->m_szName, other.info->m_szName ) != 0;
 }
 
-inline bool module_s::operator==( const UtlString& other ) const {
+inline bool module_s::operator==( const string_t& other ) const {
 	return N_strcmp( info->m_szName, other.c_str() ) == 0;
 }
 
-inline bool module_s::operator!=( const UtlString& other ) const {
+inline bool module_s::operator!=( const string_t& other ) const {
 	return N_strcmp( info->m_szName, other.c_str() ) != 0;
 }
 

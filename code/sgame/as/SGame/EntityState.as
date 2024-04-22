@@ -26,7 +26,7 @@ namespace TheNomad::SGame {
 		void SetInfo( const string& in name, uint tics, uint num, uint spriteOffset ) {
 			m_Name = name;
 			m_nTics = tics;
-			m_nStateNum = StateNum( num );
+			m_nStateNum = num;
 			m_nSpriteOffset = spriteOffset;
 			
 			m_Ticker = 0;
@@ -40,10 +40,10 @@ namespace TheNomad::SGame {
 			ConsolePrint( "[Entity State Report]\n" );
 			ConsolePrint( "Name: " + m_Name + "\n" );
 			ConsolePrint( "Tics: " + formatUInt( m_nTics ) + "\n" );
-			ConsolePrint( "Id: " + formatUInt( uint( m_nStateNum ) ) + "\n" );
+			ConsolePrint( "Id: " + formatUInt( m_nStateNum ) + "\n" );
 			ConsolePrint( "Sprite Offset: " + formatUInt( m_nSpriteOffset ) + "\n" );
 		}
-		StateNum GetID() const {
+		uint GetID() const {
 			return m_nStateNum;
 		}
 		
@@ -72,7 +72,7 @@ namespace TheNomad::SGame {
 		// static data
 		private string m_Name;
 		private uint m_nTics;
-		private StateNum m_nStateNum;
+		private uint m_nStateNum;
 		private uint m_nSpriteOffset;
 		private EntityState@ m_NextState;
 	};

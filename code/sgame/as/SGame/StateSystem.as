@@ -73,7 +73,7 @@ namespace TheNomad::SGame {
 		void OnRunTic() {
 		}
 		bool OnConsoleCommand( const string& in cmd ) {
-			if ( TheNomad::Util::StrICmp( cmd, "sgame.state_info_list" ) == 0 ) {
+			if ( Util::StrICmp( cmd, "sgame.state_info_list" ) == 0 ) {
 				
 			}
 			

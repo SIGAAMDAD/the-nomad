@@ -5,14 +5,14 @@
 // for a specified delimiter. Example:
 //
 // string str = "A|B||D";
-// vector<string>@ array = str.split("|");
+// Array<string>@ array = str.split("|");
 //
 // The resulting array has the following elements:
 //
 // {"A", "B", "", "D"}
 //
 // AngelScript signature:
-// vector<string>@ string::split(const string_t& in delim) const
+// Array<string>@ string::split(const string_t& in delim) const
 static CScriptArray *StringSplit(const string_t& delim, const string_t& str)
 {
 	// Obtain a pointer to the engine
@@ -59,7 +59,7 @@ static void StringSplit_Generic(asIScriptGeneric *gen)
 // delimiter and concatenates the array elements into one delimited string.
 // Example:
 //
-// vector<string> array = {"A", "B", "", "D"};
+// Array<string> array = {"A", "B", "", "D"};
 // string str = join(array, "|");
 //
 // The resulting string is:
@@ -67,7 +67,7 @@ static void StringSplit_Generic(asIScriptGeneric *gen)
 // "A|B||D"
 //
 // AngelScript signature:
-// string join(const vector<string> &in array, const string_t& in delim)
+// string join(const Array<string> &in array, const string_t& in delim)
 static string_t StringJoin(const CScriptArray &array, const string_t& delim)
 {
 	// Create the new string
@@ -106,13 +106,13 @@ void RegisterStdStringUtils(asIScriptEngine *engine)
 
 	if( strstr(asGetLibraryOptions(), "AS_MAX_PORTABILITY") )
 	{
-		r = engine->RegisterObjectMethod("string", "vector<string>@ split(const string& in) const", asFUNCTION(StringSplit_Generic), asCALL_GENERIC); assert(r >= 0);
-		r = engine->RegisterGlobalFunction("string join(const vector<string> &in, const string& in)", asFUNCTION(StringJoin_Generic), asCALL_GENERIC); assert(r >= 0);
+		r = engine->RegisterObjectMethod("string", "Array<string>@ split(const string& in) const", asFUNCTION(StringSplit_Generic), asCALL_GENERIC); assert(r >= 0);
+		r = engine->RegisterGlobalFunction("string join(const Array<string> &in, const string& in)", asFUNCTION(StringJoin_Generic), asCALL_GENERIC); assert(r >= 0);
 	}
 	else
 	{
-		r = engine->RegisterObjectMethod("string", "vector<string>@ split(const string in) const", asFUNCTION(StringSplit), asCALL_CDECL_OBJLAST); assert(r >= 0);
-		r = engine->RegisterGlobalFunction("string join(const vector<string> &in, const string& in)", asFUNCTION(StringJoin), asCALL_CDECL); assert(r >= 0);
+		r = engine->RegisterObjectMethod("string", "Array<string>@ split(const string in) const", asFUNCTION(StringSplit), asCALL_CDECL_OBJLAST); assert(r >= 0);
+		r = engine->RegisterGlobalFunction("string join(const Array<string> &in, const string& in)", asFUNCTION(StringJoin), asCALL_CDECL); assert(r >= 0);
 	}
 }
 

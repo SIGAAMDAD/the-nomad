@@ -35,9 +35,6 @@ using uvec2 = glm::vec<2, unsigned, glm::packed_highp>;
 using uvec3 = glm::vec<3, unsigned, glm::packed_highp>;
 using uvec4 = glm::vec<4, unsigned, glm::packed_highp>;
 
-template<typename T>
-using vector = aatc::container::tempspec::vector<T>;
-
 #define REQUIRE_ARG_COUNT( amount ) \
     Assert( pGeneric->GetArgCount() == amount )
 #define DEFINE_CALLBACK( name ) \
@@ -246,69 +243,6 @@ DEFINE_CALLBACK( SaveUInt64 ) {
     g_pArchiveHandler->SaveULong( name->c_str(), arg );
 }
 
-DEFINE_CALLBACK( SaveInt8Array ) {
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const aatc::container::tempspec::vector<int8_t> *arg =
-        (const aatc::container::tempspec::vector<int8_t> *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->SaveInt8Array( name->c_str(), arg );
-}
-
-DEFINE_CALLBACK( SaveInt16Array ) {
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const aatc::container::tempspec::vector<int16_t> *arg =
-        (const aatc::container::tempspec::vector<int16_t> *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->SaveInt16Array( name->c_str(), arg );
-}
-
-DEFINE_CALLBACK( SaveInt32Array ) {
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const aatc::container::tempspec::vector<int32_t> *arg =
-        (const aatc::container::tempspec::vector<int32_t> *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->SaveInt32Array( name->c_str(), arg );
-}
-
-DEFINE_CALLBACK( SaveInt64Array ) {
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const aatc::container::tempspec::vector<int64_t> *arg =
-        (const aatc::container::tempspec::vector<int64_t> *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->SaveInt64Array( name->c_str(), arg );
-}
-
-DEFINE_CALLBACK( SaveUInt8Array ) {
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const aatc::container::tempspec::vector<uint8_t> *arg =
-        (const aatc::container::tempspec::vector<uint8_t> *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->SaveUInt8Array( name->c_str(), arg );
-}
-
-DEFINE_CALLBACK( SaveUInt16Array ) {
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const aatc::container::tempspec::vector<uint16_t> *arg =
-        (const aatc::container::tempspec::vector<uint16_t> *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->SaveUInt16Array( name->c_str(), arg );
-}
-
-DEFINE_CALLBACK( SaveUInt32Array ) {
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const aatc::container::tempspec::vector<uint32_t> *arg =
-        (const aatc::container::tempspec::vector<uint32_t> *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->SaveUInt32Array( name->c_str(), arg );
-}
-
-DEFINE_CALLBACK( SaveUInt64Array ) {
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const aatc::container::tempspec::vector<uint64_t> *arg =
-        (const aatc::container::tempspec::vector<uint64_t> *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->SaveUInt64Array( name->c_str(), arg );
-}
-
-DEFINE_CALLBACK( SaveFloatArray ) {
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    const aatc::container::tempspec::vector<float> *arg =
-        (const aatc::container::tempspec::vector<float> *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->SaveFloatArray( name->c_str(), arg );
-}
-
 DEFINE_CALLBACK( SaveFloat ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
     const float arg = pGeneric->GetArgFloat( 1 );
@@ -319,6 +253,12 @@ DEFINE_CALLBACK( SaveString ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
     const string_t *arg = (const string_t *)pGeneric->GetArgObject( 1 );
     g_pArchiveHandler->SaveString( name->c_str(), arg );
+}
+
+DEFINE_CALLBACK( SaveArray ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const CScriptArray *arg = (const CScriptArray *)pGeneric->GetArgObject( 1 );
+    g_pArchiveHandler->SaveArray( name->c_str(), arg );
 }
 
 DEFINE_CALLBACK( SaveVec2 ) {
@@ -393,69 +333,6 @@ DEFINE_CALLBACK( LoadString ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
     string_t *arg = (string_t *)pGeneric->GetArgObject( 1 );
     g_pArchiveHandler->LoadString( name->c_str(), arg, (int32_t)pGeneric->GetArgDWord( 2 ) );
-}
-
-DEFINE_CALLBACK( LoadInt8Array ) {
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    aatc::container::tempspec::vector<int8_t> *arg =
-        (aatc::container::tempspec::vector<int8_t> *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->LoadInt8Array( name->c_str(), arg, (int32_t)pGeneric->GetArgDWord( 2 ) );
-}
-
-DEFINE_CALLBACK( LoadInt16Array ) {
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    aatc::container::tempspec::vector<int16_t> *arg =
-        (aatc::container::tempspec::vector<int16_t> *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->LoadInt16Array( name->c_str(), arg, (int32_t)pGeneric->GetArgDWord( 2 ) );
-}
-
-DEFINE_CALLBACK( LoadInt32Array ) {
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    aatc::container::tempspec::vector<int32_t> *arg =
-        (aatc::container::tempspec::vector<int32_t> *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->LoadInt32Array( name->c_str(), arg, (int32_t)pGeneric->GetArgDWord( 2 ) );
-}
-
-DEFINE_CALLBACK( LoadInt64Array ) {
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    aatc::container::tempspec::vector<int64_t> *arg =
-        (aatc::container::tempspec::vector<int64_t> *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->LoadInt64Array( name->c_str(), arg, (int32_t)pGeneric->GetArgDWord( 2 ) );
-}
-
-DEFINE_CALLBACK( LoadUInt8Array ) {
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    aatc::container::tempspec::vector<uint8_t> *arg =
-        (aatc::container::tempspec::vector<uint8_t> *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->LoadUInt8Array( name->c_str(), arg, (int32_t)pGeneric->GetArgDWord( 2 ) );
-}
-
-DEFINE_CALLBACK( LoadUInt16Array ) {
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    aatc::container::tempspec::vector<uint16_t> *arg =
-        (aatc::container::tempspec::vector<uint16_t> *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->LoadUInt16Array( name->c_str(), arg, (int32_t)pGeneric->GetArgDWord( 2 ) );
-}
-
-DEFINE_CALLBACK( LoadUInt32Array ) {
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    aatc::container::tempspec::vector<uint32_t> *arg =
-        (aatc::container::tempspec::vector<uint32_t> *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->LoadUInt32Array( name->c_str(), arg, (int32_t)pGeneric->GetArgDWord( 2 ) );
-}
-
-DEFINE_CALLBACK( LoadUInt64Array ) {
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    aatc::container::tempspec::vector<uint64_t> *arg =
-        (aatc::container::tempspec::vector<uint64_t> *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->LoadUInt64Array( name->c_str(), arg, (int32_t)pGeneric->GetArgDWord( 2 ) );
-}
-
-DEFINE_CALLBACK( LoadFloatArray ) {
-    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
-    aatc::container::tempspec::vector<float> *arg =
-        (aatc::container::tempspec::vector<float> *)pGeneric->GetArgObject( 1 );
-    g_pArchiveHandler->LoadFloatArray( name->c_str(), arg, (int32_t)pGeneric->GetArgDWord( 2 ) );
 }
 
 DEFINE_CALLBACK( LoadVec2 ) {
@@ -832,7 +709,6 @@ static void ConsoleWarning( const string_t *msg ) {
 }
 
 static void GameError( const string_t *msg ) {
-    Con_Printf( COLOR_RED "(ERROR) ModuleException Thrown: %s\n", msg->c_str() );
     throw ModuleException( msg );
 }
 
@@ -2274,22 +2150,24 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveInt( const string& in, int32 )", SaveInt32 );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveLong( const string& in, int64 )", SaveInt64 );
 
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<int8>& in )", SaveArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<int16>& in )", SaveArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<int32>& in )", SaveArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<int64>& in )", SaveArray );
+
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<uint8>& in )", SaveArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<uint16>& in )", SaveArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<uint32>& in )", SaveArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<uint64>& in )", SaveArray );
+
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<float>& in )", SaveArray );
+        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const array<string>& in )", SaveArray );
+
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveByte( const string& in, uint8 )", SaveUInt8 );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveUShort( const string& in, uint16 )", SaveUInt16 );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveUInt( const string& in, uint32 )", SaveUInt32 );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveULong( const string& in, uint64 )", SaveUInt64 );
-
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveFloat( const string& in, float )", SaveFloat );
-        
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const float[]& in )", SaveFloatArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const int8[]& in )", SaveInt8Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const int16[]& in )", SaveInt16Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const int32[]& in )", SaveInt32Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const int64[]& in )", SaveInt64Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const uint8[]& in )", SaveUInt8Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const uint16[]& in )", SaveUInt16Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const uint32[]& in )", SaveUInt32Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveArray( const string& in, const uint64[]& in )", SaveUInt64Array );
 
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveString( const string& in, const string& in )", SaveString );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SaveVec2( const string& in, const vec2& in )", SaveVec2 );
@@ -2315,17 +2193,6 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "uint16 TheNomad::GameSystem::LoadUShort( const string& in, int )", LoadUInt16 );
         REGISTER_GLOBAL_FUNCTION( "uint32 TheNomad::GameSystem::LoadUInt( const string& in, int )", LoadUInt32 );
         REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::GameSystem::LoadULong( const string& in, int )", LoadUInt64 );
-        
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, float[]& in, int )", LoadFloatArray );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, int8[]& in, int )", LoadInt8Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, int16[]& in, int )", LoadInt16Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, int32[]& in, int )", LoadInt32Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, int64[]& in, int )", LoadInt64Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, uint8[]& in, int )", LoadUInt8Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, uint16[]& in, int )", LoadUInt16Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, uint32[]& in, int )", LoadUInt32Array );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadArray( const string& in, uint64[]& in, int )", LoadUInt64Array );
-
         REGISTER_GLOBAL_FUNCTION( "float TheNomad::GameSystem::LoadFloat( const string& in, int )", LoadFloat );
 
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::LoadString( const string& in, string& out, int )", LoadString );

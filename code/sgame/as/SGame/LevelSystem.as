@@ -267,7 +267,6 @@ namespace TheNomad::SGame {
 			array<json@> values;
 			json@ data;
 			
-			path.reserve( MAX_NPATH );
 			path = "modules/" + modName + "/scripts/levels.json";
 			
 			@data = json();

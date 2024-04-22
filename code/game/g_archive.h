@@ -110,9 +110,6 @@ typedef struct {
 typedef struct save_file_cache_s {
 } save_file_cache_t;
 
-#include "aatc/aatc.hpp"
-#include "aatc/aatc_container_vector.hpp"
-
 class CGameArchive
 {
 public:
@@ -142,17 +139,6 @@ public:
 
     void SaveCString( const char *name, const char *data );
     void SaveString( const char *name, const string_t *pData );
-
-    void SaveInt8Array( const char *name, const aatc::container::tempspec::vector<int8_t> *pData );
-    void SaveInt16Array( const char *name, const aatc::container::tempspec::vector<int16_t> *pData );
-    void SaveInt32Array( const char *name, const aatc::container::tempspec::vector<int32_t> *pData );
-    void SaveInt64Array( const char *name, const aatc::container::tempspec::vector<int64_t> *pData );
-    void SaveUInt8Array( const char *name, const aatc::container::tempspec::vector<uint8_t> *pData );
-    void SaveUInt16Array( const char *name, const aatc::container::tempspec::vector<uint16_t> *pData );
-    void SaveUInt32Array( const char *name, const aatc::container::tempspec::vector<uint32_t> *pData );
-    void SaveUInt64Array( const char *name, const aatc::container::tempspec::vector<uint64_t> *pData );
-    void SaveFloatArray( const char *name, const aatc::container::tempspec::vector<float> *pData );
-
     void SaveArray( const char *pszName, const CScriptArray *pData );
 
     float LoadFloat( const char *name, nhandle_t hSection );
@@ -173,17 +159,6 @@ public:
 
     void LoadCString( const char *name, char *pBuffer, int32_t maxLength, nhandle_t hSection );
     void LoadString( const char *name, string_t *pString, nhandle_t hSection );
-
-    void LoadInt8Array( const char *name, aatc::container::tempspec::vector<int8_t> *pData, nhandle_t hSection );
-    void LoadInt16Array( const char *name, aatc::container::tempspec::vector<int16_t> *pData, nhandle_t hSection );
-    void LoadInt32Array( const char *name, aatc::container::tempspec::vector<int32_t> *pData, nhandle_t hSection );
-    void LoadInt64Array( const char *name, aatc::container::tempspec::vector<int64_t> *pData, nhandle_t hSection );
-    void LoadUInt8Array( const char *name, aatc::container::tempspec::vector<uint8_t> *pData, nhandle_t hSection );
-    void LoadUInt16Array( const char *name, aatc::container::tempspec::vector<uint16_t> *pData, nhandle_t hSection );
-    void LoadUInt32Array( const char *name, aatc::container::tempspec::vector<uint32_t> *pData, nhandle_t hSection );
-    void LoadUInt64Array( const char *name, aatc::container::tempspec::vector<uint64_t> *pData, nhandle_t hSection );
-    void LoadFloatArray( const char *name, aatc::container::tempspec::vector<float> *pData, nhandle_t hSection );
-
     void LoadArray( const char *pszName, CScriptArray *pData, nhandle_t hSection );
 
     bool Load( const char *filename );

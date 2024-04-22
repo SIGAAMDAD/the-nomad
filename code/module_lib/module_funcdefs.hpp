@@ -10,9 +10,15 @@
 class ModuleException : public std::exception {
 public:
     ModuleException() = default;
-    ModuleException( const string_t *msg )
-        : m_szMessage{ msg->c_str() }
+    ModuleException( const char *msg )
+        : m_szMessage{ msg }
     {
+        Cvar_Set( "com_errorMessage", msg );
+    }
+    ModuleException( const string_t *msg )
+        : m_szMessage{ eastl::move( *msg ) }
+    {
+        Cvar_Set( "com_errorMessage", msg->c_str() );
     }
     ModuleException( const ModuleException& ) = default;
     ModuleException( ModuleException&& ) = default;
@@ -25,7 +31,7 @@ public:
         return m_szMessage.c_str();
     }
 private:
-    UtlString m_szMessage;
+    string_t m_szMessage;
 };
 
 void ModuleLib_Register_Util( void );

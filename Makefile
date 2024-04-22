@@ -155,6 +155,7 @@ LDLIBS= \
 		libEASTL.a \
 		libopenal.a \
 		TheNomad.ASLib.x64.a \
+		libfoonathan_memory-0.7.3.a \
 		-L. \
 		-lSDL2 \
 		-lsndfile \
@@ -288,7 +289,6 @@ SRC=\
 	$(O)/module_lib/scriptmath.o \
 	$(O)/module_lib/scripthandle.o \
 	$(O)/module_lib/scriptjson.o \
-	$(O)/module_lib/scriptpreprocessor.o \
 	$(O)/module_lib/contextmgr.o \
 	$(O)/module_lib/imgui_stdlib.o \
 	\

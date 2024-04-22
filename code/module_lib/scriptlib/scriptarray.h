@@ -1,5 +1,5 @@
-#ifndef SCRIPTARRAY_H
-#define SCRIPTARRAY_H
+#ifndef __SCRIPTARRAY_H__
+#define __SCRIPTARRAY_H__
 
 #include "../module_public.h"
 #include "../../engine/n_threads.h"
@@ -142,6 +142,6 @@ protected:
 	bool  Equals(const void *a, const void *b, asIScriptContext *ctx, SArrayCache *cache) const;
 };
 
-void RegisterScriptArray(asIScriptEngine *engine, bool defaultArray);
+void RegisterScriptArray(asIScriptEngine *engine);
 
 #endif

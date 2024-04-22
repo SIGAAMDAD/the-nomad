@@ -13,7 +13,6 @@
 #include "module_debugger.h"
 #include "scriptlib/scriptarray.h"
 #include "scriptlib/scriptdictionary.h"
-#include "angelscript/as_texts.h"
 
 moduleImport_t moduleImport;
 
@@ -133,7 +132,7 @@ void CModuleLib::LoadModule( const char *pModule )
 
     CModuleHandle *pHandle;
     nlohmann::json parse;
-    std::vector<std::string> includePaths;
+    nlohmann::json includePaths;
     CModuleInfo *m;
     union {
         void *v;
@@ -159,37 +158,37 @@ void CModuleLib::LoadModule( const char *pModule )
     //
     // validate its an actual config
     //
-    if ( !parse.contains( "submodules" ) ) {
-        Con_Printf( COLOR_RED "ERROR: invalid module configuration for \"%s\", no array 'submodules'\n", pModule );
+    if ( !parse.contains( "SubModules" ) ) {
+        Con_Printf( COLOR_RED "ERROR: invalid module configuration for \"%s\", no array 'SubModules'\n", pModule );
         return;
     }
-    if ( !parse.contains( "dependencies" ) ) {
-        Con_Printf( COLOR_RED "ERROR: invalid module configuration for \"%s\", no array 'depedencies'\n", pModule );
+    if ( !parse.contains( "DependedModules" ) ) {
+        Con_Printf( COLOR_RED "ERROR: invalid module configuration for \"%s\", no array 'DependedModules'\n", pModule );
         return;
     }
-    if ( parse.contains( "version" ) ) {
-        if ( !parse.at( "version" ).contains( "game_version_major" ) ) {
-            Con_Printf( COLOR_RED "ERROR: invalid module configuration for \"%s\", no value for 'game_version_major'\n", pModule );
+    if ( parse.contains( "Version" ) ) {
+        if ( !parse.at( "Version" ).contains( "GameVersionMajor" ) ) {
+            Con_Printf( COLOR_RED "ERROR: invalid module configuration for \"%s\", no value for 'GameVersionMajor'\n", pModule );
             return;
         }
-        if ( !parse.at( "version" ).contains( "game_version_update" ) ) {
-            Con_Printf( COLOR_RED "ERROR: invalid module configuration for \"%s\", no value for 'game_version_update'\n", pModule );
+        if ( !parse.at( "Version" ).contains( "GameVersionUpdate" ) ) {
+            Con_Printf( COLOR_RED "ERROR: invalid module configuration for \"%s\", no value for 'GameVersionUpdate'\n", pModule );
             return;
         }
-        if ( !parse.at( "version" ).contains( "game_version_patch" ) ) {
-            Con_Printf( COLOR_RED "ERROR: invalid module configuration for \"%s\", no value for 'game_version_patch'\n", pModule );
+        if ( !parse.at( "Version" ).contains( "GameVersionPatch" ) ) {
+            Con_Printf( COLOR_RED "ERROR: invalid module configuration for \"%s\", no value for 'GameVersionPatch'\n", pModule );
             return;
         }
-        if ( !parse.at( "version" ).contains( "version_major" ) ) {
-            Con_Printf( COLOR_RED "ERROR: invalid module configuration for \"%s\", no value for 'version_major'\n", pModule );
+        if ( !parse.at( "Version" ).contains( "VersionMajor" ) ) {
+            Con_Printf( COLOR_RED "ERROR: invalid module configuration for \"%s\", no value for 'VersionMajor'\n", pModule );
             return;
         }
-        if ( !parse.at( "version" ).contains( "version_update" ) ) {
-            Con_Printf( COLOR_RED "ERROR: invalid module configuration for \"%s\", no value for 'version_update'\n", pModule );
+        if ( !parse.at( "Version" ).contains( "VersionUpdate" ) ) {
+            Con_Printf( COLOR_RED "ERROR: invalid module configuration for \"%s\", no value for 'VersionUpdate'\n", pModule );
             return;
         }
-        if ( !parse.at( "version" ).contains( "version_patch" ) ) {
-            Con_Printf( COLOR_RED "ERROR: invalid module configuration for \"%s\", no value for 'version_patch'\n", pModule );
+        if ( !parse.at( "Version" ).contains( "VersionPatch" ) ) {
+            Con_Printf( COLOR_RED "ERROR: invalid module configuration for \"%s\", no value for 'VersionPatch'\n", pModule );
             return;
         }
     } else {
@@ -197,8 +196,8 @@ void CModuleLib::LoadModule( const char *pModule )
         return;
     }
 
-    if ( parse.contains( "includePaths" ) ) {
-        includePaths = eastl::move( parse.at( "includePaths" ) );
+    if ( parse.contains( "IncludePaths" ) ) {
+        includePaths = eastl::move( parse.at( "IncludePaths" ) );
 
         //
         // check if it already has the default path
@@ -206,7 +205,7 @@ void CModuleLib::LoadModule( const char *pModule )
         bool found = false;
         const char *path = va( "%s/", pModule );
         for ( const auto& it : includePaths ) {
-            if ( !N_strcmp( it.c_str(), path ) ) {
+            if ( !N_strcmp( it.get<string_t>().c_str(), path ) ) {
                 found = true;
                 break;
             }
@@ -218,13 +217,13 @@ void CModuleLib::LoadModule( const char *pModule )
         includePaths.emplace_back( va( "%s/", pModule ) );
     }
 
-    const int32_t versionMajor = parse[ "version" ][ "version_major" ];
-    const int32_t versionUpdate = parse[ "version" ][ "version_update" ];
-    const int32_t versionPatch = parse[ "version" ][ "version_patch" ];
+    const int32_t versionMajor = parse[ "Version" ][ "VersionMajor" ];
+    const int32_t versionUpdate = parse[ "Version" ][ "VersionUpdate" ];
+    const int32_t versionPatch = parse[ "Version" ][ "VersionPatch" ];
 
-    pHandle = new ( Hunk_Alloc( sizeof( *pHandle ), h_high ) ) CModuleHandle( pModule, parse.at( "submodules" ), versionMajor, versionUpdate, versionPatch,
+    pHandle = new ( Hunk_Alloc( sizeof( *pHandle ), h_low ) ) CModuleHandle( pModule, parse.at( "SubModules" ), versionMajor, versionUpdate, versionPatch,
         includePaths );
-    m = new ( Hunk_Alloc( sizeof( *m ), h_high ) ) CModuleInfo( parse, pHandle );
+    m = new ( Hunk_Alloc( sizeof( *m ), h_low ) ) CModuleInfo( parse, pHandle );
     m_LoadList.emplace_back( m );
 }
 
@@ -344,20 +343,24 @@ void Module_ASMessage_f( const asSMessageInfo *pMsg, void *param )
 
 #ifdef _NOMAD_DEBUG
 void *AS_Alloc( size_t nSize, const char *fileName, const uint32_t lineNumber ) {
+//    return Z_MallocDebug( nSize, TAG_MODULES, "AS_Alloc", fileName, lineNumber );
     return Mem_AllocDebug( nSize, fileName, lineNumber );
 }
 #else
 void *AS_Alloc( size_t nSize ) {
+//    return Z_Malloc( nSize, TAG_MODULES );
     return Mem_Alloc( nSize );
 }
 #endif
 
 #ifdef _NOMAD_DEBUG
 void AS_Free( void *ptr, const char *fileName, const uint32_t lineNumber ) {
-    return Mem_FreeDebug( ptr, fileName, lineNumber );
+//    Z_Free( ptr );
+    Mem_FreeDebug( ptr, fileName, lineNumber );
 }
 #else
 void AS_Free( void *ptr ) {
+//    Z_Free( ptr );
     Mem_Free( ptr );
 }
 #endif
@@ -390,10 +393,10 @@ int Module_IncludeCallback_f( const char *pInclude, const char *pFrom, CScriptBu
     } f;
     uint64_t length;
     const char *path;
-    const std::vector<std::string>& includePaths = g_pModuleLib->GetCurrentHandle()->GetIncludePaths();
+    const nlohmann::json& includePaths = g_pModuleLib->GetCurrentHandle()->GetIncludePaths();
 
     for ( const auto& it : includePaths ) {
-        path = va( "%s%s", it.c_str(), pInclude );
+        path = va( "%s%s", it.get<string_t>().c_str(), pInclude );
         length = FS_LoadFile( path, &f.v );
         if ( !length || !f.v ) {
             continue;
@@ -419,7 +422,7 @@ bool CModuleLib::AddDefaultProcs( void ) const {
         return true;
     }
 
-    RegisterScriptArray( m_pEngine, true );
+    RegisterScriptArray( m_pEngine );
     RegisterStdString( m_pEngine );
     RegisterScriptDictionary( m_pEngine );
     RegisterScriptHandle( m_pEngine );
@@ -460,14 +463,14 @@ CModuleLib::CModuleLib( void )
     CheckASCall( m_pEngine->SetEngineProperty( asEP_INCLUDE_JIT_INSTRUCTIONS, ml_allowJIT->i ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_REQUIRE_ENUM_SCOPE, true ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_USE_CHARACTER_LITERALS, true ) );
-    CheckASCall( m_pEngine->SetEngineProperty( asEP_AUTO_GARBAGE_COLLECT, true ) );
+    CheckASCall( m_pEngine->SetEngineProperty( asEP_AUTO_GARBAGE_COLLECT, false ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_HEREDOC_TRIM_MODE, 0 ) );
 
-    m_pScriptBuilder = new ( Hunk_Alloc( sizeof( *m_pScriptBuilder ), h_high ) ) CScriptBuilder();
-    g_pDebugger = new ( Hunk_Alloc( sizeof( *g_pDebugger ), h_high ) ) CDebugger();
+    m_pScriptBuilder = new ( Hunk_Alloc( sizeof( *m_pScriptBuilder ), h_low ) ) CScriptBuilder();
+    g_pDebugger = new ( Hunk_Alloc( sizeof( *g_pDebugger ), h_low ) ) CDebugger();
 
     if ( ml_allowJIT->i ) {
-        m_pCompiler = new ( Hunk_Alloc( sizeof( *m_pCompiler ), h_high ) ) asCJITCompiler();
+        m_pCompiler = new ( Hunk_Alloc( sizeof( *m_pCompiler ), h_low ) ) asCJITCompiler();
         CheckASCall( m_pEngine->SetJITCompiler( m_pCompiler ) );
     }
     m_pScriptBuilder->SetIncludeCallback( Module_IncludeCallback_f, NULL );
@@ -512,9 +515,17 @@ CModuleLib::~CModuleLib() {
 }
 
 static void ML_PrintStringCache_f( void ) {
+    uint64_t i;
+
     Con_Printf( "Module StringFactory Cache:\n" );
-    for ( const auto& it : g_pStringFactory->m_StringCache ) {
-        Con_Printf( "\"" COLOR_GREEN "%s" COLOR_WHITE "\" references: %i\n", it.first.c_str(), it.second );
+
+    auto it = g_pStringFactory->m_StringCache.cbegin();
+    for ( i = 0; i < g_pStringFactory->m_StringCache.size(); i++, it++ ) {
+    #ifdef USE_STRINGCACHE_MAP
+        Con_Printf( "%8lu: 0x%08lx (%i references)", i, (uintptr_t)(void *)it->first.c_str(), it->second );
+    #else
+        Con_Printf( "%8lu: 0x%08lx (%i references)", i, (uintptr_t)(void *)it->c_str(), it->refCount );
+    #endif
     }
 }
 
@@ -601,8 +612,11 @@ void CModuleLib::Shutdown( qboolean quit )
             it->m_pHandle->~CModuleHandle();
         }
     }
+    m_LoadList.clear();
 
-    g_pStringFactory->m_StringCache.clear();
+    if ( g_pStringFactory ) {
+        g_pStringFactory->m_StringCache.clear();
+    }
 
     if ( !quit ) {
         if ( sgvm ) {
@@ -618,14 +632,16 @@ void CModuleLib::Shutdown( qboolean quit )
         return;
     }
 
-    if ( m_pCompiler ) {
-        m_pCompiler->~asCJITCompiler();
-    }
-    m_pScriptBuilder->~CScriptBuilder();
-    g_pDebugger->~CDebugger();
+    if ( m_bRegistered ) {
+        if ( m_pCompiler ) {
+            m_pCompiler->~asCJITCompiler();
+        }
+        m_pScriptBuilder->~CScriptBuilder();
+        g_pDebugger->~CDebugger();
 
-    // everything is automatically released when this is called
-    Mem_Shutdown();
+        // everything is automatically released when this is called
+        Mem_Shutdown();
+    }
 
     m_bRecursiveShutdown = qfalse;
     g_pModuleLib = NULL;

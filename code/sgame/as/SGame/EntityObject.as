@@ -33,12 +33,6 @@ namespace TheNomad::SGame {
 		EntityState@ GetState() {
 			return @m_State;
 		}
-		const ref@ GetData() const {
-			return @m_Data;
-		}
-		ref@ GetData() {
-			return @m_Data;
-		}
 		int GetShader() const {
 			return m_hShader;
 		}
@@ -178,9 +172,6 @@ namespace TheNomad::SGame {
 		
 		// the entity's current state
 		protected EntityState@ m_State = null;
-		
-		// can only be a reference to a class that inherits from EntityObject, otherwise, it'll crash
-		protected ref@ m_Data = null;
 		
 		// engine data, for physics
 		protected TheNomad::GameSystem::LinkEntity m_Link;

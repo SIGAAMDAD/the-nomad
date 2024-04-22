@@ -12,11 +12,11 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid item info, missing variable 'Name'\n" );
 				return false;
 			}
-			if ( !json.get( "Type", str ) ) {
-				ConsoleWarning( "invalid item info, missing variable 'Type'\n" );
+			if ( !json.get( "Id", str ) ) {
+				ConsoleWarning( "invalid item info, missing variable 'Id'\n" );
 				return false;
 			} else {
-				if ( !InfoManager.GetItemTypes().TryGetValue( str, this.type ) ) {
+				if ( !InfoManager.GetItemTypes().TryGetValue( str, type ) ) {
 					GameError( "invalid item info, Type \"" + str + "\" wasn't found" );
 				}
 			}
@@ -28,11 +28,11 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid item info, missing variable 'Cost'\n" );
 				return false;
 			}
-			if ( !json.get( "Shader", str ) ) {
-				ConsoleWarning( "invalid item info, missing variable 'Shader'\n" );
+			if ( !json.get( "Icon", str ) ) {
+				ConsoleWarning( "invalid item info, missing variable 'Icon'\n" );
 				return false;
 			} else {
-				hShader = TheNomad::Engine::Renderer::RegisterShader( str );
+				hIconShader = TheNomad::Engine::Renderer::RegisterShader( str );
 			}
 			if ( !json.get( "SpriteOffsetX", spriteOffsetX ) ) {
 				ConsoleWarning( "invalid item info, missing variable 'SpriteOffsetX'\n" );
@@ -45,10 +45,14 @@ namespace TheNomad::SGame::InfoSystem {
 			if ( !json.get( "PickupSfx", str ) ) {
 				ConsoleWarning( "invalid item info, missing variable 'PickupSfx'\n" );
 				return false;
+			} else {
+				pickupSfx.Set( str );
 			}
 			if ( !json.get( "UseSfx", str ) ) {
 				ConsoleWarning( "invalid item info, missing variable 'UseSfx'\n" );
 				return false;
+			} else {
+				useSfx.Set( str );
 			}
 
 			TheNomad::GameSystem::GetString( name + "_DESC", description );
@@ -63,10 +67,11 @@ namespace TheNomad::SGame::InfoSystem {
 		string effect;
 		uint type = 0;
 		int cost = 0;
-		int hShader = FS_INVALID_HANDLE;
 		uint spriteOffsetX = 0;
 		uint spriteOffsetY = 0;
 		uint maxStackSize = 0;
+
+		int hIconShader = FS_INVALID_HANDLE;
 		TheNomad::Engine::SoundSystem::SoundEffect pickupSfx;
 		TheNomad::Engine::SoundSystem::SoundEffect useSfx;
 	};

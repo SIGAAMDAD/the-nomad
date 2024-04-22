@@ -95,7 +95,6 @@ namespace TheNomad::SGame {
 			ImGui::PushStyleColor( ImGuiCol::FrameBgActive, vec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
 			ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, vec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
 
-//			ImGui::SetCursorScreenPos( m_HealthBar.origin );
 			ImGui::SetWindowFontScale( 2.0f * scale );
 			ImGui::ProgressBar( health, vec2( 350 * scale, 26 * scale ) );
 			ImGui::SameLine();
@@ -116,8 +115,6 @@ namespace TheNomad::SGame {
 			ImGui::PushStyleColor( ImGuiCol::FrameBgActive, vec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
 			ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, vec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
 
-//			ImGui::SetCursorScreenPos( m_RageBar.origin );
-//			ImGui::SetWindowSize( vec2( 500 * scale, 42 * scale ) );
 			ImGui::SetWindowFontScale( 2.0f * scale );
 			ImGui::ProgressBar( rage, vec2( 350 * scale, 26 * scale ) );
 			ImGui::SameLine();
@@ -133,6 +130,7 @@ namespace TheNomad::SGame {
 			ImGui::Begin( "##StatusBars", null, ImGui::MakeWindowFlags( ImGuiWindowFlags::NoResize | ImGuiWindowFlags::NoMove
 				| ImGuiWindowFlags::NoCollapse | ImGuiWindowFlags::NoBackground | ImGuiWindowFlags::NoTitleBar
 				| ImGuiWindowFlags::NoScrollbar ) );
+			ImGui::SetWindowPos( vec2( 0.0f, 0.0f ) );
 			ImGui::SetWindowSize( vec2( float( screenSize.x ), float( screenSize.y ) ) );
 			DrawRageBar();
 			DrawHealthBar();

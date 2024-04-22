@@ -1,15 +1,16 @@
 {
-    "module_name": "hellbreaker",
-    "dependencies": [ "nomadmain" ],
-    "submodules": [
+    "Name": "hellbreaker",
+    "Id": "hellbreaker",
+    "DependedModules": [ "nomadmain" ],
+    "SubModules": [
         "hellbreaker.as"
     ],
-    "version": {
-        "game_version_major": 1,
-        "game_version_update": 1,
-        "game_version_patch": 0,
-        "version_major": 1,
-        "version_update": 0,
-        "version_patch": 0
+    "Version": {
+        "GameVersionMajor": 1,
+        "GameVersionUpdate": 1,
+        "GameVersionPatch": 0,
+        "VersionMajor": 1,
+        "VersionUpdate": 0,
+        "VersionPatch": 0
     }
 }

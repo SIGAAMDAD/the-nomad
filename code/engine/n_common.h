@@ -461,6 +461,7 @@ typedef enum {
 	TAG_SFX,
 	TAG_MUSIC,
 	TAG_HUNK,
+	TAG_MODULES,
 
 	TAG_COUNT
 } memtag_t;

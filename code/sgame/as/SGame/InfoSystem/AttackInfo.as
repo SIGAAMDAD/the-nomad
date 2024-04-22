@@ -9,6 +9,7 @@ namespace TheNomad::SGame::InfoSystem {
 			string methodStr;
 			string typeStr;
 			string shader;
+			string bullet;
 			uint i;
 
 			if ( !json.get( "Id", id ) ) {
@@ -44,8 +45,8 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid mob attack info, missing variable 'CanParry'\n" );
 				return false;
 			}
-			if ( !json.get( "Shader", shader ) ) {
-				ConsoleWarning( "invalid mob attack info, missing variable 'Shader'\n" );
+			if ( !json.get( "Sprite", shader ) ) {
+				ConsoleWarning( "invalid mob attack info, missing variable 'Sprite'\n" );
 				return false;
 			} else {
 				hShader = TheNomad::Engine::Renderer::RegisterShader( shader );
@@ -59,11 +60,11 @@ namespace TheNomad::SGame::InfoSystem {
 				return false;
 			}
 			
-			TheNomad::GameSystem::GetString( id + "_DESC", description );
+			GameSystem::GetString( id + "_DESC", description );
 
 			for ( i = 0; i < AttackMethodStrings.Count(); i++ ) {
-				if ( TheNomad::Util::StrICmp( AttackMethodStrings[i], methodStr ) == 0 ) {
-					attackMethod = AttackMethod( AttackMethodData[i] );
+				if ( Util::StrICmp( AttackMethodStrings[i], methodStr ) == 0 ) {
+					attackMethod = AttackMethod( i );
 					break;
 				}
 			}
@@ -73,8 +74,8 @@ namespace TheNomad::SGame::InfoSystem {
 			}
 
 			for ( i = 0; i < AttackTypeStrings.Count(); i++ ) {
-				if ( TheNomad::Util::StrICmp( AttackTypeStrings[i], typeStr ) == 0 ) {
-					attackType = AttackType( AttackTypeData[i] );
+				if ( Util::StrICmp( AttackTypeStrings[i], typeStr ) == 0 ) {
+					attackType = AttackType( i );
 					break;
 				}
 			}
@@ -82,6 +83,26 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid attack info, AttackType '" + typeStr + "' isn't recognized.\n" );
 				return false;
 			}
+
+			switch ( attackMethod ) {
+			case AttackMethod::Hitscan: {
+				if ( !json.get( "BulletType", bullet ) ) {
+					ConsoleWarning( "invalid attack info, marked as Hitscan but missing variable 'BulletType'\n" );
+					return false;
+				}
+				if ( !json.get( "BulletCount", bulletCount ) ) {
+					ConsoleWarning( "invalid attack info, marked as Hitscan but missing variable 'BulletCount'\n" );
+					return false;
+				}
+				@bulletType = InfoManager.GetAmmoInfo( bullet );
+				if ( @bulletType is null ) {
+					ConsoleWarning( "invalid attack info, marked as Hitscan but BulletType is invalid\n" );
+					return false;
+				}
+				break; }
+			default:
+				break;
+			};
 
 			ConsolePrint( "Loaded mob attack info '" + id + "'\n" );
 			
@@ -95,6 +116,8 @@ namespace TheNomad::SGame::InfoSystem {
 		string description;
 		float damage = 0.0f;
 		float range = 0.0f;
+		AmmoInfo@ bulletType = null;
+		uint bulletCount = 0;
 		uint cooldown = 0;
 		uint duration = 0;
 		AttackMethod attackMethod = AttackMethod::Hitscan;

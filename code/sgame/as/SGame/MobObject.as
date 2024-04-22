@@ -12,7 +12,6 @@ namespace TheNomad::SGame {
 	
 	class MobObject : EntityObject {
 		MobObject() {
-			m_EffectString.resize( MAX_STRING_CHARS );
 		}
 
 		InfoSystem::AttackInfo@ CurrentAttack() {
@@ -79,11 +78,7 @@ namespace TheNomad::SGame {
 			
 			if ( atk.effect.size() > 0 ) {
 				// apply effects
-				m_EffectString = atk.effect;
-				m_EffectString += " ";
-				m_EffectString += m_Link.m_nEntityNumber;
-				m_EffectString += "\n";
-				TheNomad::Engine::CmdExecuteCommand( m_EffectString );
+				TheNomad::Engine::CmdExecuteCommand( atk.effect + " " + m_Link.m_nEntityNumber + "\n" );
 			}
 			
 			EntityManager.DamageEntity( @this, @rayData, @atk );
@@ -146,10 +141,7 @@ namespace TheNomad::SGame {
 			m_nAngle = atan2( m_Link.m_Origin.x - m_Target.GetOrigin().x, m_Link.m_Origin.y - m_Target.GetOrigin().y );
 			m_Direction = TheNomad::Util::Angle2Dir( m_nAngle );
 			
-			m_EffectString = "Set mob target to ";
-			m_EffectString += m_Target.GetEntityNum();
-			m_EffectString += "\n";
-			DebugPrint( m_EffectString );
+			DebugPrint( "Set mob target to " + m_Target.GetEntityNum() + "\n" );
 		}
 		
 		private void ShuffleDirection() {
@@ -299,10 +291,7 @@ namespace TheNomad::SGame {
 			}
 			
 			@m_Target = @ent;
-			m_EffectString = "Set mob target to ";
-			m_EffectString += ent.GetEntityNum();
-			m_EffectString += "\n";
-			DebugPrint( m_EffectString );
+			DebugPrint( "Set mob target to " + ent.GetEntityNum() + "\n" );
 			m_Info.wakeupSfx.Play();
 			
 			// we got something
@@ -383,7 +372,6 @@ namespace TheNomad::SGame {
 		}
 		
 		private InfoSystem::MobFlags m_MFlags;
-		private string m_EffectString;
 		private InfoSystem::AttackInfo@ m_CurrentAttack;
 		private EntityObject@ m_Target;
 		private InfoSystem::MobInfo@ m_Info;

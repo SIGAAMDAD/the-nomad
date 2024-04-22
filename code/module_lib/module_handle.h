@@ -37,9 +37,9 @@ using ModuleIncludePath = eastl::string;
 class CModuleHandle
 {
 public:
-    CModuleHandle( const char *pName, const std::vector<std::string>& sourceFiles,
+    CModuleHandle( const char *pName, const nlohmann::json& sourceFiles,
 		int32_t moduleVersionMajor, int32_t moduleVersionUpdate, int32_t moduleVersionPatch,
-		const std::vector<std::string>& includePaths );
+		const nlohmann::json& includePaths );
     ~CModuleHandle();
 
     void SaveToCache( void ) const;
@@ -75,17 +75,17 @@ public:
 		return &m_nVersionPatch;
 	}
 
-	const std::vector<std::string>& GetIncludePaths( void ) const {
+	const nlohmann::json& GetIncludePaths( void ) const {
 		return m_IncludePaths;
 	}
 private:
 	void PrepareContext( asIScriptFunction *pFunction );
-	void Build( const std::vector<std::string>& sourceFiles );
+	void Build( const nlohmann::json& sourceFiles );
     bool InitCalls( void );
-    void LoadSourceFile( const std::string& filename );
+    void LoadSourceFile( const string_t& filename );
 
     asIScriptFunction *m_pFuncTable[NumFuncs];
-	std::vector<std::string> m_IncludePaths;
+	nlohmann::json m_IncludePaths;
 
     string_t m_szName;
     asIScriptContext *m_pScriptContext;
@@ -94,9 +94,6 @@ private:
 
 	uint32_t m_nStateStack;
 	EModuleFuncId m_nLastCallId;
-
-	// to force garbage collection
-//	UtlVector<CScriptArray *> m_ScriptArrayObjects;
 
 	int32_t m_nVersionMajor;
 	int32_t m_nVersionUpdate;

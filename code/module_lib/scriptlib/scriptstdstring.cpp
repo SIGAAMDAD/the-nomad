@@ -3,6 +3,7 @@
 	#include <locale.h> // setlocale()
 #endif
 #include "../../engine/n_threads.h"
+#include "../aswrappedcall.h"
 
 #include "../module_stringfactory.hpp"
 #include "../module_public.h"
@@ -37,14 +38,15 @@ static CStringFactoryDeleter factoryDeleter;
 // Usually where the variables are only used in debug mode.
 #define UNUSED_VAR(x) (void)(x)
 
-static void ConstructString(string_t *thisPointer)
+static void ConstructString( string_t *thisPointer )
 {
-	new(thisPointer) string_t();
+	new ( thisPointer ) string_t();
 }
 
 static void CopyConstructString(const string_t& other, string_t *thisPointer)
 {
-	new(thisPointer) string_t(other);
+	thisPointer->clear();
+	thisPointer->append( other.cbegin(), other.cend() );
 }
 
 static void DestructString(string_t *thisPointer)
@@ -605,8 +607,12 @@ static void ConstructStringGeneric( asIScriptGeneric *gen ) {
 
 static void CopyConstructStringGeneric(asIScriptGeneric *gen)
 {
-	string_t *a = static_cast<string_t *>(gen->GetArgObject(0));
-	new (gen->GetObjectData()) string_t(*a);
+	const string_t *a = (string_t *)gen->GetArgObject( 0 );
+	string_t *obj = (string_t *)gen->GetObjectData();
+
+	new ( obj ) string_t();
+	obj->append( a->cbegin(), a->cend() );
+//	new (gen->GetObjectData()) string_t(*a);
 }
 
 static void DestructStringGeneric(asIScriptGeneric *gen)
@@ -1028,6 +1034,17 @@ void RegisterStdString_Generic(asIScriptEngine *engine)
 	CheckASCall( engine->RegisterStringFactory("string", GetStringFactorySingleton()) );
 
 	CheckASCall( engine->RegisterGlobalProperty( "const uint64 StringNPos", const_cast<size_t *>( &StringNPos ) ) );
+
+	#define REGISTER_BEHAVIOUR( decl, type, funcPtr ) \
+		CheckASCall( engine->RegisterObjectBehaviour( "string", type, decl, funcPtr, asCALL_GENERIC ) )
+	#define REGISTER_METHOD( decl, funcPtr ) \
+		CheckASCall( engine->RegisterObjectMethod( "string", decl, funcPtr, asCALL_GENERIC ) )
+
+//	REGISTER_BEHAVIOUR( "void f()", asBEHAVE_CONSTRUCT, WRAP_CON( string_t, ( void ) ) );
+//	REGISTER_BEHAVIOUR( "void f( const string& in )", asBEHAVE_CONSTRUCT, WRAP_CON( string_t, ( const string_t& ) ) );
+//	REGISTER_BEHAVIOUR( "void f()", asBEHAVE_DESTRUCT, WRAP_DES( string_t ) );
+
+//	REGISTER_METHOD( "string& opAssign( const string& in )", WRAP );
 
 	// Register the object operator overloads
 	CheckASCall( engine->RegisterObjectBehaviour("string", asBEHAVE_CONSTRUCT,  "void f()",                    asFUNCTION(ConstructStringGeneric), asCALL_GENERIC ) );

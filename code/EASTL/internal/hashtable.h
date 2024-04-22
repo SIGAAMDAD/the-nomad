@@ -1343,7 +1343,7 @@ namespace eastl
 			mnBucketCount(0),
 			mnElementCount(0),
 			mRehashPolicy(),
-			mAllocator(allocator)
+			mAllocator( allocator )
 	{
 		if(nBucketCount < 2)  // If we are starting in an initially empty state, with no memory allocation done.
 			reset_lose_memory();

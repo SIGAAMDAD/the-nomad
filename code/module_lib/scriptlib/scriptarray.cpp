@@ -52,8 +52,8 @@ void CScriptArray::SetMemoryFunctions(asALLOCFUNC_t allocFunc, asFREEFUNC_t free
 	_arrayUserFree = freeFunc;
 }
 
-static void RegisterScriptArray_Native(asIScriptEngine *engine);
-static void RegisterScriptArray_Generic(asIScriptEngine *engine);
+static void RegisterScriptList_Native(asIScriptEngine *engine);
+static void RegisterScriptList_Generic(asIScriptEngine *engine);
 
 struct SArrayBuffer {
 	asDWORD size;
@@ -151,7 +151,7 @@ CScriptArray* CScriptArray::Create(asITypeInfo *ti)
 // subtype at compile time, instead of at runtime. The output argument dontGarbageCollect
 // allow the callback to tell the engine if the template instance type shouldn't be garbage collected,
 // i.e. no asOBJ_GC flag.
-static bool ScriptArrayTemplateCallback(asITypeInfo *ti, bool *dontGarbageCollect = NULL)
+static bool ScriptListTemplateCallback(asITypeInfo *ti, bool *dontGarbageCollect = NULL)
 {
 	// Make sure the subtype can be instantiated with a default factory/constructor,
 	// otherwise we won't be able to instantiate the elements.
@@ -270,20 +270,17 @@ static bool ScriptArrayTemplateCallback(asITypeInfo *ti, bool *dontGarbageCollec
 }
 
 // Registers the template array type
-void RegisterScriptArray(asIScriptEngine *engine, bool defaultArray)
+void RegisterScriptArray(asIScriptEngine *engine)
 {
 	if( strstr(asGetLibraryOptions(), "AS_MAX_PORTABILITY") == 0 )
-		RegisterScriptArray_Native(engine);
+		RegisterScriptList_Native(engine);
 	else
-		RegisterScriptArray_Generic(engine);
-
-	if( defaultArray )
-	{
-		CheckASCall( engine->RegisterDefaultArrayType("array<T>") );
-	}
+		RegisterScriptList_Generic(engine);
+	
+	engine->RegisterDefaultArrayType( "array<T>" );
 }
 
-static void RegisterScriptArray_Native(asIScriptEngine *engine)
+static void RegisterScriptList_Native(asIScriptEngine *engine)
 {
 	int r = 0;
 	UNUSED_VAR(r);
@@ -295,7 +292,7 @@ static void RegisterScriptArray_Native(asIScriptEngine *engine)
 	r = engine->RegisterObjectType("array<class T>", 0, asOBJ_REF | asOBJ_GC | asOBJ_TEMPLATE); Assert( r >= 0 );
 
 	// Register a callback for validating the subtype before it is used
-//	r = engine->RegisterObjectBehaviour("array<T>", asBEHAVE_TEMPLATE_CALLBACK, "bool f(int&in, bool&out)", asFUNCTION(ScriptArrayTemplateCallback), asCALL_CDECL); Assert( r >= 0 );
+//	r = engine->RegisterObjectBehaviour("array<T>", asBEHAVE_TEMPLATE_CALLBACK, "bool f(int&in, bool&out)", asFUNCTION(ScriptListTemplateCallback), asCALL_CDECL); Assert( r >= 0 );
 
 	// Templates receive the object type as the first parameter. To the script writer this is hidden
 	r = engine->RegisterObjectBehaviour("array<T>", asBEHAVE_FACTORY, "array<T>@ f(int&in)", asFUNCTIONPR(CScriptArray::Create, (asITypeInfo*), CScriptArray*), asCALL_CDECL); Assert( r >= 0 );
@@ -2034,14 +2031,14 @@ bool CScriptArray::GetFlag()
 //--------------------------------------------
 // Generic calling conventions
 
-static void ScriptArrayFactory_Generic(asIScriptGeneric *gen)
+static void ScriptListFactory_Generic(asIScriptGeneric *gen)
 {
 	asITypeInfo *ti = *(asITypeInfo**)gen->GetAddressOfArg(0);
 
 	*reinterpret_cast<CScriptArray**>(gen->GetAddressOfReturnLocation()) = CScriptArray::Create(ti);
 }
 
-static void ScriptArrayFactory2_Generic(asIScriptGeneric *gen)
+static void ScriptListFactory2_Generic(asIScriptGeneric *gen)
 {
 	asITypeInfo *ti = *(asITypeInfo**)gen->GetAddressOfArg(0);
 	asUINT length = gen->GetArgDWord(1);
@@ -2049,7 +2046,7 @@ static void ScriptArrayFactory2_Generic(asIScriptGeneric *gen)
 	*reinterpret_cast<CScriptArray**>(gen->GetAddressOfReturnLocation()) = CScriptArray::Create(ti, length);
 }
 
-static void ScriptArrayListFactory_Generic(asIScriptGeneric *gen)
+static void ScriptListListFactory_Generic(asIScriptGeneric *gen)
 {
 	asITypeInfo *ti = *(asITypeInfo**)gen->GetAddressOfArg(0);
 	void *buf = gen->GetArgAddress(1);
@@ -2057,7 +2054,7 @@ static void ScriptArrayListFactory_Generic(asIScriptGeneric *gen)
 	*reinterpret_cast<CScriptArray**>(gen->GetAddressOfReturnLocation()) = CScriptArray::Create(ti, buf);
 }
 
-static void ScriptArrayFactoryDefVal_Generic(asIScriptGeneric *gen)
+static void ScriptListFactoryDefVal_Generic(asIScriptGeneric *gen)
 {
 	asITypeInfo *ti = *(asITypeInfo**)gen->GetAddressOfArg(0);
 	asUINT length = gen->GetArgDWord(1);
@@ -2066,14 +2063,14 @@ static void ScriptArrayFactoryDefVal_Generic(asIScriptGeneric *gen)
 	*reinterpret_cast<CScriptArray**>(gen->GetAddressOfReturnLocation()) = CScriptArray::Create(ti, length, defVal);
 }
 
-static void ScriptArrayTemplateCallback_Generic(asIScriptGeneric *gen)
+static void ScriptListTemplateCallback_Generic(asIScriptGeneric *gen)
 {
 	asITypeInfo *ti = *(asITypeInfo**)gen->GetAddressOfArg(0);
 	bool *dontGarbageCollect = *(bool**)gen->GetAddressOfArg(1);
-	*reinterpret_cast<bool*>(gen->GetAddressOfReturnLocation()) = ScriptArrayTemplateCallback(ti, dontGarbageCollect);
+	*reinterpret_cast<bool*>(gen->GetAddressOfReturnLocation()) = ScriptListTemplateCallback(ti, dontGarbageCollect);
 }
 
-static void ScriptArrayAssignment_Generic(asIScriptGeneric *gen)
+static void ScriptListAssignment_Generic(asIScriptGeneric *gen)
 {
 	CScriptArray *other = (CScriptArray*)gen->GetArgObject(0);
 	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
@@ -2081,21 +2078,21 @@ static void ScriptArrayAssignment_Generic(asIScriptGeneric *gen)
 	gen->SetReturnObject(self);
 }
 
-static void ScriptArrayEquals_Generic(asIScriptGeneric *gen)
+static void ScriptListEquals_Generic(asIScriptGeneric *gen)
 {
 	CScriptArray *other = (CScriptArray*)gen->GetArgObject(0);
 	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	gen->SetReturnByte(self->operator==(*other));
 }
 
-static void ScriptArrayFind_Generic(asIScriptGeneric *gen)
+static void ScriptListFind_Generic(asIScriptGeneric *gen)
 {
 	void *value = gen->GetArgAddress(0);
 	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	gen->SetReturnDWord(self->Find(value));
 }
 
-static void ScriptArrayFind2_Generic(asIScriptGeneric *gen)
+static void ScriptListFind2_Generic(asIScriptGeneric *gen)
 {
 	asUINT index = gen->GetArgDWord(0);
 	void *value = gen->GetArgAddress(1);
@@ -2103,14 +2100,14 @@ static void ScriptArrayFind2_Generic(asIScriptGeneric *gen)
 	gen->SetReturnDWord(self->Find(index, value));
 }
 
-static void ScriptArrayFindByRef_Generic(asIScriptGeneric *gen)
+static void ScriptListFindByRef_Generic(asIScriptGeneric *gen)
 {
 	void *value = gen->GetArgAddress(0);
 	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	gen->SetReturnDWord(self->FindByRef(value));
 }
 
-static void ScriptArrayFindByRef2_Generic(asIScriptGeneric *gen)
+static void ScriptListFindByRef2_Generic(asIScriptGeneric *gen)
 {
 	asUINT index = gen->GetArgDWord(0);
 	void *value = gen->GetArgAddress(1);
@@ -2118,7 +2115,7 @@ static void ScriptArrayFindByRef2_Generic(asIScriptGeneric *gen)
 	gen->SetReturnDWord(self->FindByRef(index, value));
 }
 
-static void ScriptArrayAt_Generic(asIScriptGeneric *gen)
+static void ScriptListAt_Generic(asIScriptGeneric *gen)
 {
 	asUINT index = gen->GetArgDWord(0);
 	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
@@ -2126,7 +2123,7 @@ static void ScriptArrayAt_Generic(asIScriptGeneric *gen)
 	gen->SetReturnAddress(self->At(index));
 }
 
-static void ScriptArrayInsertAt_Generic(asIScriptGeneric *gen)
+static void ScriptListInsertAt_Generic(asIScriptGeneric *gen)
 {
 	asUINT index = gen->GetArgDWord(0);
 	void *value = gen->GetArgAddress(1);
@@ -2134,7 +2131,7 @@ static void ScriptArrayInsertAt_Generic(asIScriptGeneric *gen)
 	self->InsertAt(index, value);
 }
 
-static void ScriptArrayInsertAtArray_Generic(asIScriptGeneric *gen)
+static void ScriptListInsertAtArray_Generic(asIScriptGeneric *gen)
 {
 	asUINT index = gen->GetArgDWord(0);
 	CScriptArray *array = (CScriptArray*)gen->GetArgAddress(1);
@@ -2142,14 +2139,14 @@ static void ScriptArrayInsertAtArray_Generic(asIScriptGeneric *gen)
 	self->InsertAt(index, *array);
 }
 
-static void ScriptArrayRemoveAt_Generic(asIScriptGeneric *gen)
+static void ScriptListRemoveAt_Generic(asIScriptGeneric *gen)
 {
 	asUINT index = gen->GetArgDWord(0);
 	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->RemoveAt(index);
 }
 
-static void ScriptArrayRemoveRange_Generic(asIScriptGeneric *gen)
+static void ScriptListRemoveRange_Generic(asIScriptGeneric *gen)
 {
 	asUINT start = gen->GetArgDWord(0);
 	asUINT count = gen->GetArgDWord(1);
@@ -2157,27 +2154,27 @@ static void ScriptArrayRemoveRange_Generic(asIScriptGeneric *gen)
 	self->RemoveRange(start, count);
 }
 
-static void ScriptArrayInsertLast_Generic(asIScriptGeneric *gen)
+static void ScriptListInsertLast_Generic(asIScriptGeneric *gen)
 {
 	void *value = gen->GetArgAddress(0);
 	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->InsertLast(value);
 }
 
-static void ScriptArrayRemoveLast_Generic(asIScriptGeneric *gen)
+static void ScriptListRemoveLast_Generic(asIScriptGeneric *gen)
 {
 	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->RemoveLast();
 }
 
-static void ScriptArrayLength_Generic(asIScriptGeneric *gen)
+static void ScriptListLength_Generic(asIScriptGeneric *gen)
 {
 	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 
 	gen->SetReturnDWord(self->GetSize());
 }
 
-static void ScriptArrayResize_Generic(asIScriptGeneric *gen)
+static void ScriptListResize_Generic(asIScriptGeneric *gen)
 {
 	asUINT size = gen->GetArgDWord(0);
 	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
@@ -2185,32 +2182,32 @@ static void ScriptArrayResize_Generic(asIScriptGeneric *gen)
 	self->Resize(size);
 }
 
-static void ScriptArrayReserve_Generic(asIScriptGeneric *gen)
+static void ScriptListReserve_Generic(asIScriptGeneric *gen)
 {
 	asUINT size = gen->GetArgDWord(0);
 	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->Reserve(size);
 }
 
-static void ScriptArraySortAsc_Generic(asIScriptGeneric *gen)
+static void ScriptListSortAsc_Generic(asIScriptGeneric *gen)
 {
 	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->SortAsc();
 }
 
-static void ScriptArrayReverse_Generic(asIScriptGeneric *gen)
+static void ScriptListReverse_Generic(asIScriptGeneric *gen)
 {
 	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->Reverse();
 }
 
-static void ScriptArrayIsEmpty_Generic(asIScriptGeneric *gen)
+static void ScriptListIsEmpty_Generic(asIScriptGeneric *gen)
 {
 	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	*reinterpret_cast<bool*>(gen->GetAddressOfReturnLocation()) = self->IsEmpty();
 }
 
-static void ScriptArraySortAsc2_Generic(asIScriptGeneric *gen)
+static void ScriptListSortAsc2_Generic(asIScriptGeneric *gen)
 {
 	asUINT index = gen->GetArgDWord(0);
 	asUINT count = gen->GetArgDWord(1);
@@ -2218,13 +2215,13 @@ static void ScriptArraySortAsc2_Generic(asIScriptGeneric *gen)
 	self->SortAsc(index, count);
 }
 
-static void ScriptArraySortDesc_Generic(asIScriptGeneric *gen)
+static void ScriptListSortDesc_Generic(asIScriptGeneric *gen)
 {
 	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->SortDesc();
 }
 
-static void ScriptArraySortDesc2_Generic(asIScriptGeneric *gen)
+static void ScriptListSortDesc2_Generic(asIScriptGeneric *gen)
 {
 	asUINT index = gen->GetArgDWord(0);
 	asUINT count = gen->GetArgDWord(1);
@@ -2232,7 +2229,7 @@ static void ScriptArraySortDesc2_Generic(asIScriptGeneric *gen)
 	self->SortDesc(index, count);
 }
 
-static void ScriptArraySortCallback_Generic(asIScriptGeneric *gen)
+static void ScriptListSortCallback_Generic(asIScriptGeneric *gen)
 {
 	asIScriptFunction *callback = (asIScriptFunction*)gen->GetArgAddress(0);
 	asUINT startAt = gen->GetArgDWord(1);
@@ -2241,155 +2238,155 @@ static void ScriptArraySortCallback_Generic(asIScriptGeneric *gen)
 	self->Sort(callback, startAt, count);
 }
 
-static void ScriptArrayAddRef_Generic(asIScriptGeneric *gen)
+static void ScriptListAddRef_Generic(asIScriptGeneric *gen)
 {
 	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->AddRef();
 }
 
-static void ScriptArrayRelease_Generic(asIScriptGeneric *gen)
+static void ScriptListRelease_Generic(asIScriptGeneric *gen)
 {
 	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->Release();
 }
 
-static void ScriptArrayGetRefCount_Generic(asIScriptGeneric *gen)
+static void ScriptListGetRefCount_Generic(asIScriptGeneric *gen)
 {
 	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	*reinterpret_cast<int32_t*>(gen->GetAddressOfReturnLocation()) = self->GetRefCount();
 }
 
-static void ScriptArraySetFlag_Generic(asIScriptGeneric *gen)
+static void ScriptListSetFlag_Generic(asIScriptGeneric *gen)
 {
 	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	self->SetFlag();
 }
 
-static void ScriptArrayGetFlag_Generic(asIScriptGeneric *gen)
+static void ScriptListGetFlag_Generic(asIScriptGeneric *gen)
 {
 	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	*reinterpret_cast<bool*>(gen->GetAddressOfReturnLocation()) = self->GetFlag();
 }
 
-static void ScriptArrayEnumReferences_Generic(asIScriptGeneric *gen)
+static void ScriptListEnumReferences_Generic(asIScriptGeneric *gen)
 {
 	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	asIScriptEngine *engine = *(asIScriptEngine**)gen->GetAddressOfArg(0);
 	self->EnumReferences(engine);
 }
 
-static void ScriptArrayReleaseAllHandles_Generic(asIScriptGeneric *gen)
+static void ScriptListReleaseAllHandles_Generic(asIScriptGeneric *gen)
 {
 	CScriptArray *self = (CScriptArray*)gen->GetObjectData();
 	asIScriptEngine *engine = *(asIScriptEngine**)gen->GetAddressOfArg(0);
 	self->ReleaseAllHandles(engine);
 }
 
-static void ScriptArrayBegin_Generic( asIScriptGeneric *gen ) {
+static void ScriptListBegin_Generic( asIScriptGeneric *gen ) {
 	gen->SetReturnAddress( ( (CScriptArray *)gen->GetObjectData() )->begin() );
 }
 
-static void ScriptArrayEnd_Generic( asIScriptGeneric *gen ) {
+static void ScriptListEnd_Generic( asIScriptGeneric *gen ) {
 	gen->SetReturnAddress( ( (CScriptArray *)gen->GetObjectData() )->end() );
 }
 
-static void ScriptArrayCBegin_Generic( asIScriptGeneric *gen ) {
+static void ScriptListCBegin_Generic( asIScriptGeneric *gen ) {
 	gen->SetReturnAddress( const_cast<void *>( ( (const CScriptArray *)gen->GetObjectData() )->cbegin() ) );
 }
 
-static void ScriptArrayCEnd_Generic( asIScriptGeneric *gen ) {
+static void ScriptListCEnd_Generic( asIScriptGeneric *gen ) {
 	gen->SetReturnAddress( const_cast<void *>( ( (const CScriptArray *)gen->GetObjectData() )->cend() ) );
 }
 
-static void ScriptArrayBack_Generic( asIScriptGeneric *gen ) {
+static void ScriptListBack_Generic( asIScriptGeneric *gen ) {
 	CScriptArray *obj = (CScriptArray *)gen->GetObjectData();
 	gen->SetReturnAddress(
 		(byte *)obj->GetBuffer() +
 		( obj->GetSize() * g_pModuleLib->GetScriptEngine()->GetTypeInfoById( obj->GetElementTypeId() )->GetSize() ) );
 }
 
-static void ScriptArrayFront_Generic( asIScriptGeneric *gen ) {
+static void ScriptListFront_Generic( asIScriptGeneric *gen ) {
 	gen->SetReturnAddress( ( (CScriptArray *)gen->GetObjectData() )->GetBuffer() );
 }
 
-static void ScriptArrayClear_Generic( asIScriptGeneric *gen ) {
+static void ScriptListClear_Generic( asIScriptGeneric *gen ) {
 	( (CScriptArray *)gen->GetObjectData() )->Clear();
 }
 
-static void RegisterScriptArray_Generic(asIScriptEngine *engine)
+static void RegisterScriptList_Generic(asIScriptEngine *engine)
 {
-	Cmd_AddCommand( "ml_debug.print_array_memory_stats", PrintArrayMemoryStats_f );
+	Cmd_AddCommand( "ml_debug.print_list_memory_stats", PrintArrayMemoryStats_f );
 	
 	memset( &memstats, 0, sizeof( memstats ) );
 
 	engine->SetTypeInfoUserDataCleanupCallback(CleanupTypeInfoArrayCache, ARRAY_CACHE);
 
 	CheckASCall( engine->RegisterObjectType("array<class T>", 0, asOBJ_REF | asOBJ_GC | asOBJ_TEMPLATE ) );
-	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_TEMPLATE_CALLBACK, "bool f(int&in, bool&out)", asFUNCTION( ScriptArrayTemplateCallback_Generic ), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_TEMPLATE_CALLBACK, "bool f(int&in, bool&out)", asFUNCTION( ScriptListTemplateCallback_Generic ), asCALL_GENERIC ) );
 
 	CScriptArray::SetMemoryFunctions( AS_Alloc, AS_Free );
 
-	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_FACTORY, "array<T>@ f(int&in)", asFUNCTION(ScriptArrayFactory_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_FACTORY, "array<T>@ f(int&in, uint length) explicit", asFUNCTION(ScriptArrayFactory2_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_FACTORY, "array<T>@ f(int&in, uint length, const T &in value)", asFUNCTION(ScriptArrayFactoryDefVal_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_LIST_FACTORY, "array<T>@ f(int&in, int&in) {repeat T}", asFUNCTION(ScriptArrayListFactory_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_ADDREF, "void f()", asFUNCTION(ScriptArrayAddRef_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_RELEASE, "void f()", asFUNCTION(ScriptArrayRelease_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "T &opIndex(uint index)", asFUNCTION(ScriptArrayAt_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "const T &opIndex(uint index) const", asFUNCTION(ScriptArrayAt_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "array<T> &opAssign(const array<T>&in)", asFUNCTION(ScriptArrayAssignment_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_FACTORY, "array<T>@ f(int&in)", asFUNCTION(ScriptListFactory_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_FACTORY, "array<T>@ f(int&in, uint length) explicit", asFUNCTION(ScriptListFactory2_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_FACTORY, "array<T>@ f(int&in, uint length, const T &in value)", asFUNCTION(ScriptListFactoryDefVal_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_LIST_FACTORY, "array<T>@ f(int&in, int&in) {repeat T}", asFUNCTION(ScriptListListFactory_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_ADDREF, "void f()", asFUNCTION(ScriptListAddRef_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_RELEASE, "void f()", asFUNCTION(ScriptListRelease_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "T &opIndex(uint index)", asFUNCTION(ScriptListAt_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "const T &opIndex(uint index) const", asFUNCTION(ScriptListAt_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "array<T> &opAssign(const array<T>&in)", asFUNCTION(ScriptListAssignment_Generic), asCALL_GENERIC ) );
 
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void InsertAt( uint, const T& in )", asFUNCTION(ScriptArrayInsertAt_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void InsertAt( uint, const array<T>& in )", asFUNCTION(ScriptArrayInsertAtArray_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void Insert( uint, const T& in )", asFUNCTION(ScriptArrayInsertAt_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void Insert( uint, const array<T>& in )", asFUNCTION(ScriptArrayInsertAtArray_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void InsertLast( const T& in )", asFUNCTION(ScriptArrayInsertLast_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void RemoveAt(uint index)", asFUNCTION(ScriptArrayRemoveAt_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void RemoveLast()", asFUNCTION(ScriptArrayRemoveLast_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void Erase(uint index)", asFUNCTION(ScriptArrayRemoveAt_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "uint Size() const", asFUNCTION(ScriptArrayLength_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "uint Count() const", asFUNCTION(ScriptArrayLength_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void Reserve( uint )", asFUNCTION(ScriptArrayReserve_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "int Find(const T&in if_handle_then_const value) const", asFUNCTION(ScriptArrayFind_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "int Find(uint startAt, const T&in if_handle_then_const value) const", asFUNCTION(ScriptArrayFind2_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void Add(const T&in value)", asFUNCTION(ScriptArrayInsertLast_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void Clear()", asFUNCTION(ScriptArrayClear_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void InsertAt( uint, const T& in )", asFUNCTION(ScriptListInsertAt_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void InsertAt( uint, const array<T>& in )", asFUNCTION(ScriptListInsertAtArray_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void Insert( uint, const T& in )", asFUNCTION(ScriptListInsertAt_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void Insert( uint, const array<T>& in )", asFUNCTION(ScriptListInsertAtArray_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void InsertLast( const T& in )", asFUNCTION(ScriptListInsertLast_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void RemoveAt(uint index)", asFUNCTION(ScriptListRemoveAt_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void RemoveLast()", asFUNCTION(ScriptListRemoveLast_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void Erase(uint index)", asFUNCTION(ScriptListRemoveAt_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "uint Size() const", asFUNCTION(ScriptListLength_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "uint Count() const", asFUNCTION(ScriptListLength_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void Reserve( uint )", asFUNCTION(ScriptListReserve_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "int Find(const T&in if_handle_then_const value) const", asFUNCTION(ScriptListFind_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "int Find(uint startAt, const T&in if_handle_then_const value) const", asFUNCTION(ScriptListFind2_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void Add(const T&in value)", asFUNCTION(ScriptListInsertLast_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void Clear()", asFUNCTION(ScriptListClear_Generic), asCALL_GENERIC) );
 
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void insertAt( uint, const T&in value)", asFUNCTION(ScriptArrayInsertAt_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void insertAt( uint, const array<T>& arr)", asFUNCTION(ScriptArrayInsertAtArray_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void insertLast(const T&in value)", asFUNCTION(ScriptArrayInsertLast_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void push_back(const T&in value)", asFUNCTION(ScriptArrayInsertLast_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void removeAt(uint index)", asFUNCTION(ScriptArrayRemoveAt_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void erase(uint index)", asFUNCTION(ScriptArrayRemoveAt_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void removeLast()", asFUNCTION(ScriptArrayRemoveLast_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void pop_back()", asFUNCTION(ScriptArrayRemoveLast_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void removeRange(uint start, uint count)", asFUNCTION(ScriptArrayRemoveRange_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "uint length() const", asFUNCTION(ScriptArrayLength_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "uint size() const", asFUNCTION(ScriptArrayLength_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void reserve(uint length)", asFUNCTION(ScriptArrayReserve_Generic), asCALL_GENERIC ) );
-//	CheckASCall( engine->RegisterObjectMethod("array<T>", "void resize(uint length)", asFUNCTION(ScriptArrayResize_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void sortAsc()", asFUNCTION(ScriptArraySortAsc_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void sortAsc(uint startAt, uint count)", asFUNCTION(ScriptArraySortAsc2_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void sortDesc()", asFUNCTION(ScriptArraySortDesc_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void sortDesc(uint startAt, uint count)", asFUNCTION(ScriptArraySortDesc2_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void reverse()", asFUNCTION(ScriptArrayReverse_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "int find(const T&in if_handle_then_const value) const", asFUNCTION(ScriptArrayFind_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "int find(uint startAt, const T&in if_handle_then_const value) const", asFUNCTION(ScriptArrayFind2_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "int findByRef(const T&in if_handle_then_const value) const", asFUNCTION(ScriptArrayFindByRef_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "int findByRef(uint startAt, const T&in if_handle_then_const value) const", asFUNCTION(ScriptArrayFindByRef2_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "bool opEquals(const array<T>&in) const", asFUNCTION(ScriptArrayEquals_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "bool isEmpty() const", asFUNCTION(ScriptArrayIsEmpty_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void insertAt( uint, const T&in value)", asFUNCTION(ScriptListInsertAt_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void insertAt( uint, const array<T>& arr)", asFUNCTION(ScriptListInsertAtArray_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void insertLast(const T&in value)", asFUNCTION(ScriptListInsertLast_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void push_back(const T&in value)", asFUNCTION(ScriptListInsertLast_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void removeAt(uint index)", asFUNCTION(ScriptListRemoveAt_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void erase(uint index)", asFUNCTION(ScriptListRemoveAt_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void removeLast()", asFUNCTION(ScriptListRemoveLast_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void pop_back()", asFUNCTION(ScriptListRemoveLast_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void removeRange(uint start, uint count)", asFUNCTION(ScriptListRemoveRange_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "uint length() const", asFUNCTION(ScriptListLength_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "uint size() const", asFUNCTION(ScriptListLength_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void reserve(uint length)", asFUNCTION(ScriptListReserve_Generic), asCALL_GENERIC ) );
+//	CheckASCall( engine->RegisterObjectMethod("array<T>", "void resize(uint length)", asFUNCTION(ScriptListResize_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void sortAsc()", asFUNCTION(ScriptListSortAsc_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void sortAsc(uint startAt, uint count)", asFUNCTION(ScriptListSortAsc2_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void sortDesc()", asFUNCTION(ScriptListSortDesc_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void sortDesc(uint startAt, uint count)", asFUNCTION(ScriptListSortDesc2_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void reverse()", asFUNCTION(ScriptListReverse_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "int find(const T&in if_handle_then_const value) const", asFUNCTION(ScriptListFind_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "int find(uint startAt, const T&in if_handle_then_const value) const", asFUNCTION(ScriptListFind2_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "int findByRef(const T&in if_handle_then_const value) const", asFUNCTION(ScriptListFindByRef_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "int findByRef(uint startAt, const T&in if_handle_then_const value) const", asFUNCTION(ScriptListFindByRef2_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "bool opEquals(const array<T>&in) const", asFUNCTION(ScriptListEquals_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "bool isEmpty() const", asFUNCTION(ScriptListIsEmpty_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterFuncdef("bool array<T>::less(const T&in if_handle_then_const a, const T&in if_handle_then_const b)" ) );
-	CheckASCall( engine->RegisterObjectMethod("array<T>", "void sort(const less &in, uint startAt = 0, uint count = uint(-1))", asFUNCTION(ScriptArraySortCallback_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod( "array<T>", "T& back()", asFUNCTION(ScriptArrayBack_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod( "array<T>", "const T& back() const", asFUNCTION(ScriptArrayBack_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod( "array<T>", "T& front()", asFUNCTION(ScriptArrayFront_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod( "array<T>", "const T& front() const", asFUNCTION(ScriptArrayFront_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_GETREFCOUNT, "int f()", asFUNCTION(ScriptArrayGetRefCount_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_SETGCFLAG, "void f()", asFUNCTION(ScriptArraySetFlag_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_GETGCFLAG, "bool f()", asFUNCTION(ScriptArrayGetFlag_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_ENUMREFS, "void f(int&in)", asFUNCTION(ScriptArrayEnumReferences_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_RELEASEREFS, "void f(int&in)", asFUNCTION(ScriptArrayReleaseAllHandles_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod("array<T>", "void sort(const less &in, uint startAt = 0, uint count = uint(-1))", asFUNCTION(ScriptListSortCallback_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "T& back()", asFUNCTION(ScriptListBack_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "const T& back() const", asFUNCTION(ScriptListBack_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "T& front()", asFUNCTION(ScriptListFront_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "const T& front() const", asFUNCTION(ScriptListFront_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_GETREFCOUNT, "int f()", asFUNCTION(ScriptListGetRefCount_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_SETGCFLAG, "void f()", asFUNCTION(ScriptListSetFlag_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_GETGCFLAG, "bool f()", asFUNCTION(ScriptListGetFlag_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_ENUMREFS, "void f(int&in)", asFUNCTION(ScriptListEnumReferences_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_RELEASEREFS, "void f(int&in)", asFUNCTION(ScriptListReleaseAllHandles_Generic), asCALL_GENERIC ) );
 }
 
 END_AS_NAMESPACE

@@ -1,0 +1,48 @@
+{
+    "WeaponInfo": [
+		{
+			"Id": "sidearm_murstar",
+			"Name": "Murstar Revolver",
+			"Type": "Sidearm",
+			"Cost": 200,
+			"Icon": "icons/iconw_murstar",
+			"PickupSfx": "sfx/items/pickup_murstar.ogg",
+			"UseSfx": "sfx/items/use_murstar.ogg",
+			"MagSize": 7,
+			"AmmoType": "Bullet",
+			"WeaponProperties": [
+				"OneHandedSidearmFirearm",
+				"OneHandedBlunt"
+			]
+		},
+		{
+			"Id": "primary_plasma_smg",
+			"Name": "Plasma SMG",
+			"Type": "Primary",
+			"Cost": 10,
+			"Icon": "icons/iconw_plasma",
+			"PickupSfx": "sfx/items/pickup_plasma.ogg",
+			"UseSfx": "sfx/items/use_plasma.ogg",
+			"MagSize": 40,
+			"AmmoType": "Bullet",
+			"WeaponProperties": [
+				"OneHandedPrimaryFirearm",
+				"OneHandedSidearmFirearm",
+				"TwoHandedBlunt",
+				"OneHandedBlunt"
+			]
+		},
+		{
+			"Id": "primary_double_barrel",
+			"Name": "Asturion Double-Barrel",
+			"Type": "Primary",
+			"Cost": 20,
+			"Icon": "icons/iconw_db",
+			"PickupSfx": "sfx/items/pickup_db.ogg",
+			"UseSfx": "sfx/item/use_db.ogg",
+			"MagSize": 2,
+			"AmmoType": "Shell",
+			"WeaponProperties": [ "TwoHandedPrimaryFirearm", "TwoHandedBlunt" ]
+		}
+	]
+}

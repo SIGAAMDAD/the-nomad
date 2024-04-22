@@ -374,7 +374,7 @@ namespace TheNomad::SGame {
 			}
 			else if ( ent.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
 				// just a normal counter
-				MobObject@ mob = cast<MobObject>( ent.GetData() );
+				MobObject@ mob = cast<MobObject@>( @ent );
 				
 				if ( !mob.CurrentAttack().canParry ) {
 					// unblockable, deal damage

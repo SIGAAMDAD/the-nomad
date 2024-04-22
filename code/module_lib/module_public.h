@@ -6,6 +6,13 @@
 #include "../engine/n_shared.h"
 #include "../game/g_game.h"
 
+#include <foonathan/memory/container.hpp>
+#include <foonathan/memory/namespace_alias.hpp>
+#include <foonathan/memory/virtual_memory.hpp>
+#include <foonathan/memory/memory_arena.hpp>
+#include <foonathan/memory/memory_pool.hpp>
+#include <string>
+
 #include <glm/glm.hpp>
 
 #include <EASTL/allocator.h>
@@ -65,7 +72,9 @@ constexpr GDR_INLINE bool operator!=( const CModuleAllocator& a, const eastl::al
 #include <EASTL/sort.h>
 #include <EASTL/string_hash_map.h>
 #include <EASTL/unordered_map.h>
+#include <EASTL/array.h>
 #include <EASTL/functional.h>
+#include <EASTL/string_view.h>
 
 #include "../engine/n_allocator.h"
 #include "../rendercommon/r_public.h"
@@ -153,7 +162,9 @@ constexpr GDR_INLINE bool operator!=( const CModuleStringAllocator& a, const CMo
     return true;
 }
 
-using string_t = eastl::fixed_string<char, 256, true, eastl::allocator_malloc<char>>;
+using string_view_t = eastl::basic_string_view<char>;
+using string_t = eastl::fixed_string<char, 256, true, memory::std_allocator<char, memory::virtual_memory_allocator>>;
+//using string_t = eastl::basic_string<char, memory::std_allocator<char, memory::virtual_memory_allocator>>;
 using UtlString = eastl::fixed_string<char, MAX_STRING_CHARS, true, eastl::allocator_malloc<char>>;
 namespace eastl {
 	// for some reason, the eastl doesn't support eastl::hash<eastl::fixed_string>
@@ -294,20 +305,21 @@ inline void DeleteObject( T *pObject ) {
 struct CModuleInfo
 {
 	CModuleInfo( nlohmann::json& parse, CModuleHandle *pHandle ) {
-		N_strncpyz( m_szName, parse["module_name"].get<std::string>().c_str(), MAX_NPATH );
+		N_strncpyz( m_szName, parse["Name"].get<string_t>().c_str(), MAX_NPATH );
+        N_strncpyz( m_szId, parse["Id"].get<string_t>().c_str(), MAX_NPATH );
         
-        m_Dependencies.reserve( parse[ "dependencies" ].size() );
-        for ( const auto& it : parse[ "dependencies" ] ) {
-            m_Dependencies.emplace_back( eastl::move( it.get<std::string>().c_str() ) );
+        m_Dependencies.reserve( parse.at( "DependedModules" ).size() );
+        for ( const auto& it : parse.at( "DependedModules" ) ) {
+            m_Dependencies.emplace_back( eastl::move( it.get<string_t>() ) );
         }
 
-		m_GameVersion.m_nVersionMajor = parse["version"]["game_version_major"];
-		m_GameVersion.m_nVersionUpdate = parse["version"]["game_version_update"];
-		m_GameVersion.m_nVersionPatch = parse["version"]["game_version_patch"];
+		m_GameVersion.m_nVersionMajor = parse["Version"]["GameVersionMajor"];
+		m_GameVersion.m_nVersionUpdate = parse["Version"]["GameVersionUpdate"];
+		m_GameVersion.m_nVersionPatch = parse["Version"]["GameVersionPatch"];
 
-		m_nModVersionMajor = parse["version"]["version_major"];
-		m_nModVersionUpdate = parse["version"]["version_update"];
-		m_nModVersionPatch = parse["version"]["version_patch"];
+		m_nModVersionMajor = parse["Version"]["VersionMajor"];
+		m_nModVersionUpdate = parse["Version"]["VersionUpdate"];
+		m_nModVersionPatch = parse["Version"]["VersionPatch"];
 
 		m_pHandle = pHandle;
 
@@ -321,7 +333,8 @@ struct CModuleInfo
     }
 
 	char m_szName[MAX_NPATH];
-	UtlVector<UtlString> m_Dependencies;
+    char m_szId[MAX_NPATH];
+	UtlVector<string_t> m_Dependencies;
 
 	CModuleHandle *m_pHandle;
 	

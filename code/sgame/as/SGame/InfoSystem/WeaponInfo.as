@@ -6,11 +6,11 @@ namespace TheNomad::SGame::InfoSystem {
 		}
 		
 		bool Load( json@ json ) {
-			string ammo;
 			string type;
 			string shader;
 			uint i;
 			array<json@> props;
+			string ammo;
 			
 			if ( !json.get( "Name", name ) ) {
 				ConsoleWarning( "invalid weapon info, missing variable 'Name'\n" );
@@ -28,12 +28,8 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid weapon info, missing variable 'MagSize'\n" );
 				return false;
 			}
-			if ( !json.get( "MagMaxStack", magMaxStack ) ) {
-				ConsoleWarning( "invalid weapon info, missing variable 'MagMaxStack'\n" );
-				return false;
-			}
-			if ( !json.get( "WeaponType", type ) ) {
-				ConsoleWarning( "invalid weapon info, missing variable 'WeaponType'\n" );
+			if ( !json.get( "Type", type ) ) {
+				ConsoleWarning( "invalid weapon info, missing variable 'Type'\n" );
 				return false;
 			}
 			if ( !json.get( "WeaponProperties", props ) ) {
@@ -44,31 +40,27 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid weapon info, missing variable 'AmmoType'\n" );
 				return false;
 			}
-			if ( !json.get( "MagSize", magSize ) ) {
-				ConsoleWarning( "invalid weapon info, missing variable 'MagSize'\n" );
-				return false;
-			}
-			if ( !json.get( "MagMaxStack", magMaxStack ) ) {
-				ConsoleWarning( "invalid weapon info, missing variable 'MagMaxStack'\n" );
-				return false;
-			}
-			if ( !json.get( "Damage", damage ) ) {
-				ConsoleWarning( "invalid weapon info, missing variable 'Damage'\n" );
-				return false;
-			}
-			if ( !json.get( "Range", range ) ) {
-				ConsoleWarning( "invalid weapon info, missing variable 'Range'\n" );
-				return false;
-			}
-			if ( !json.get( "Shader", shader ) ) {
-				ConsoleWarning( "invalid weapon info, missing variable 'Shader'\n" );
+			if ( !json.get( "Icon", shader ) ) {
+				ConsoleWarning( "invalid weapon info, missing variable 'Icon'\n" );
 				return false;
 			} else {
-				hShader = TheNomad::Engine::Renderer::RegisterShader( shader );
+				hIconShader = Engine::Renderer::RegisterShader( shader );
 			}
 
+			ConsolePrint( "Processing AmmoType for WeaponInfo '" + name + "'...\n" );
+			for ( i = 0; i < AmmoTypeStrings.Count(); i++ ) {
+				if ( Util::StrICmp( AmmoTypeStrings[i], ammo ) != 1 ) {
+					ammoType = AmmoType( i );
+					break;
+				}
+			}
+			if ( ammoType == AmmoType::Invalid ) {
+				ConsoleWarning( "invalid weapon info, AmmoType isn't valid ( Invalid, abide by physics pls ;) )\n" );
+			}
+			
+			ConsolePrint( "Processing WeaponType for WeaponInfo '" + name + "'...\n" );
 			for ( i = 0; i < WeaponTypeStrings.Count(); i++ ) {
-				if ( TheNomad::Util::StrICmp( type, WeaponTypeStrings[i] ) != 1 ) {
+				if ( Util::StrICmp( type, WeaponTypeStrings[i] ) != 1 ) {
 					weaponType = WeaponType( i );
 					break;
 				}
@@ -78,15 +70,16 @@ namespace TheNomad::SGame::InfoSystem {
 				return false;
 			}
 			
+			ConsolePrint( "Processing WeaponProperties for WeaponInfo '" + name + "'...\n" );
 			for ( i = 0; i < WeaponPropertyStrings.Count(); i++ ) {
 				for ( uint a = 0; a < props.Count(); a++ ){
-					if ( TheNomad::Util::StrICmp( string( props[a] ), WeaponPropertyStrings[i] ) != 1 ) {
+					if ( Util::StrICmp( string( props[a] ), WeaponPropertyStrings[i] ) != 1 ) {
 						weaponProps = WeaponProperty( uint( weaponProps ) | WeaponPropertyBits[i] );
 					}
 				}
 			}
 			if ( weaponProps == WeaponProperty::None ) {
-				ConsoleWarning( "invalid weapon info, WeaponProperties are invalid (None, abide by physics pls)\n" );
+				ConsoleWarning( "invalid weapon info, WeaponProperties are invalid ( None, abide by physics pls ;) )\n" );
 				return false;
 			}
 			
@@ -95,15 +88,15 @@ namespace TheNomad::SGame::InfoSystem {
 
 		string name;
 		uint type = 0;
-		int magSize = 0;
-		int magMaxStack = 0;
-		AmmoType ammoType = AmmoType::Invalid;
-		float damage = 0.0f;
-		float range = 0.0f;
+		uint magSize = 0; // maximum shots before cooldown
+		AmmoType ammoType = AmmoType::Invalid; // ammo types allowed
 		WeaponProperty weaponProps = WeaponProperty::None;
 		WeaponType weaponType = WeaponType::NumWeaponTypes;
 		uint spriteOffsetX = 0;
 		uint spriteOffsetY = 0;
-		int hShader = FS_INVALID_HANDLE;
+
+		int hIconShader = FS_INVALID_HANDLE;
+		TheNomad::Engine::SoundSystem::SoundEffect useSfx;
+		TheNomad::Engine::SoundSystem::SoundEffect pickupSfx;
 	};
 };

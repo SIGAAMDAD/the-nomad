@@ -76,11 +76,11 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid mob info, missing variable 'SpriteOffsetY'\n" );
 				return false;
 			}
-			if ( !json.get( "Shader", str ) ) {
-				ConsoleWarning( "invalid mob info, missing variable 'Shader'\n" );
+			if ( !json.get( "Sprite", str ) ) {
+				ConsoleWarning( "invalid mob info, missing variable 'Sprite'\n" );
 				return false;
 			} else {
-				hShader = TheNomad::Engine::Renderer::RegisterShader( str );
+				hShader = Engine::Renderer::RegisterShader( str );
 			}
 			if ( !json.get( "WakeupSfx", str ) ) {
 				ConsoleWarning( "invalid mob info, missing variable 'WakeupSfx'\n" );
@@ -117,7 +117,7 @@ namespace TheNomad::SGame::InfoSystem {
 			ConsolePrint( "Processing MobFlags for '" + name + "'...\n" );
 			for ( i = 0; i < MobFlagStrings.Count(); i++ ) {
 				for ( uint a = 0; a < flagValues.Count(); a++ ) {
-					if ( TheNomad::Util::StrICmp( flagValues[a], MobFlagStrings[i] ) == 0 ) {
+					if ( Util::StrICmp( flagValues[a], MobFlagStrings[i] ) == 0 ) {
 						flags = EntityFlags( uint( flags ) | MobFlagBits[i] );
 					}
 				}
@@ -129,7 +129,7 @@ namespace TheNomad::SGame::InfoSystem {
 			}
 			
 			if ( values.Count() != 3 ) {
-				ConsoleWarning( "invalid mob info, Speed value array is not exactly 3 values.\n" );
+				ConsoleWarning( "invalid mob info, Speed value List is not exactly 3 values.\n" );
 				return false;
 			}
 			for ( i = 0; i < values.Count(); i++ ) {
@@ -151,11 +151,11 @@ namespace TheNomad::SGame::InfoSystem {
 					ConsoleWarning( "failed to load attack info.\n" );
 					return false;
 				}
-				attacks.push_back( @atk );
+				attacks.Add( @atk );
 			}
 			
 			for ( i = 0; i < ArmorTypeStrings.Count(); i++ ) {
-				if ( TheNomad::Util::StrICmp( armor, ArmorTypeStrings[i] ) == 0 ) {
+				if ( Util::StrICmp( armor, ArmorTypeStrings[i] ) == 0 ) {
 					armorType = ArmorType( i );
 					break;
 				}

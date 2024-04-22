@@ -258,7 +258,10 @@ void CSoundSource::Shutdown( void )
 
 void CSoundSource::SetVolume( void ) const
 {
-    ALCall(alSourcef( m_iSource, AL_GAIN, snd_sfxvol->f / CLAMP_VOLUME ));
+    if ( m_iTag == TAG_MUSIC || m_iSource == 0 ) {
+        return;
+    }
+    ALCall( alSourcef( m_iSource, AL_GAIN, snd_sfxvol->f / CLAMP_VOLUME ) );
 }
 
 ALenum CSoundSource::Format( void ) const

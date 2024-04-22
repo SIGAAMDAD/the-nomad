@@ -4,6 +4,7 @@
 #include "SGame/InfoSystem/MobInfo.as"
 #include "SGame/InfoSystem/ItemInfo.as"
 #include "SGame/InfoSystem/WeaponInfo.as"
+#include "SGame/InfoSystem/AmmoInfo.as"
 
 namespace TheNomad::SGame::InfoSystem {
     class InfoDataManager {
@@ -11,10 +12,6 @@ namespace TheNomad::SGame::InfoSystem {
 			ConsolePrint( "Loading mod info files...\n" );
 
 			LoadEntityIds();
-
-			LoadMobInfos();
-			LoadItemInfos();
-			LoadWeaponInfos();
 		}
 
 		private array<json@>@ LoadJSonFile( string& in path, const string& in modName, const string& in fileName,
@@ -23,7 +20,7 @@ namespace TheNomad::SGame::InfoSystem {
 			json@ data;
 			array<json@> values;
 			
-			path = "modules/" + MODULE_NAME + "/scripts/" + fileName;
+			path = "modules/" + modName + "/scripts/" + fileName;
 
 			@data = json();
 			if ( !data.ParseFile( path ) ) {
@@ -44,8 +41,6 @@ namespace TheNomad::SGame::InfoSystem {
 			array<json@> values;
 			string name;
 			uint id;
-
-			path.reserve( MAX_NPATH );
 
 			@data = json();
 			for ( uint i = 0; i < sgame_ModList.Count(); i++ ) {
@@ -71,6 +66,25 @@ namespace TheNomad::SGame::InfoSystem {
 						m_MobTypes[ name ] = id;
 					}
 				}
+				DebugPrint( "Loaded " + m_MobTypes.Count() + " mob types.\n" );
+
+				//
+				// load the ammo infos
+				//
+				if ( !data.get( "AmmoData", values ) ) {
+					ConsoleWarning( "entity data info file for \"" + sgame_ModList[i] + "\" has no ammo data\n" );
+				} else {
+					for ( uint a = 0; a < values.Count(); a++ ) {
+						if ( !values[a].get( "Name", name ) ) {
+							GameError( "invalid entity data info file, AmmoData object missing variable 'Name'" );
+						}
+						if ( !values[a].get( "Id", id ) ) {
+							GameError( "invalid entity data info file, AmmoData object missing variable 'Id'" );
+						}
+						m_AmmoTypes[ name ] = id;
+					}
+				}
+				DebugPrint( "Loaded " + m_AmmoTypes.Count() + " ammo types.\n" );
 
 				//
 				// load item infos
@@ -88,6 +102,7 @@ namespace TheNomad::SGame::InfoSystem {
 						m_ItemTypes[ name ] = id;
 					}
 				}
+				DebugPrint( "Loaded " + m_ItemTypes.Count() + " item types.\n" );
 
 				//
 				// load weapon infos
@@ -105,15 +120,15 @@ namespace TheNomad::SGame::InfoSystem {
 						m_WeaponTypes[ name ] = id;
 					}
 				}
+				DebugPrint( "Loaded " + m_WeaponTypes.Count() + " weapon datas.\n" );
 			}
 		}
 		
-		private void LoadMobInfos() {
+		void LoadMobInfos() {
 			array<json@>@ infos;
 			MobInfo@ info;
 			string path;
 
-			path.reserve( MAX_NPATH );
 			for ( uint i = 0; i < sgame_ModList.Count(); i++ ) {
 				ConsolePrint( "Loading mob infos from module \"" + sgame_ModList[i] + "\"...\n" );
 
@@ -121,6 +136,7 @@ namespace TheNomad::SGame::InfoSystem {
 				if ( @infos is null ) {
 					return;
 				}
+				ConsolePrint( "Got " + infos.Count() + " mob infos.\n" );
 			
 				for ( uint a = 0; a < infos.Count(); a++ ) {
 					@info = MobInfo();
@@ -134,12 +150,11 @@ namespace TheNomad::SGame::InfoSystem {
 			}
 		}
 		
-		private void LoadItemInfos() {
+		void LoadItemInfos() {
 			array<json@>@ infos;
 			ItemInfo@ info;
 			string path;
 
-			path.reserve( MAX_NPATH );
 			for ( uint i = 0; i < sgame_ModList.Count(); i++ ) {
 				ConsolePrint( "Loading item infos from module \"" + sgame_ModList[i] + "\"...\n" );
 
@@ -159,13 +174,37 @@ namespace TheNomad::SGame::InfoSystem {
 				}
 			}
 		}
+
+		void LoadAmmoInfos() {
+			array<json@>@ infos;
+			AmmoInfo@ info;
+			string path;
+
+			for ( uint i = 0; i < sgame_ModList.Count(); i++ ) {
+				ConsolePrint( "Loading ammo infos from module \"" + sgame_ModList[i] + "\"...\n" );
+
+				@infos = @LoadJSonFile( path, sgame_ModList[i], "ammo.json", "AmmoInfo" );
+				if ( @infos is null ) {
+					return;
+				}
+			
+				for ( uint a = 0; a < infos.Count(); a++ ) {
+					@info = AmmoInfo();
+					if ( !info.Load( @infos[a] ) ) {
+						ConsoleWarning( "failed to load ammo info at " + a + "\n" );
+						continue;
+					}
+					
+					m_AmmoInfos.Add( @info );
+				}
+			}
+		}
 		
-		private void LoadWeaponInfos() {
+		void LoadWeaponInfos() {
 			array<json@>@ infos;
 			WeaponInfo@ info;
 			string path;
 
-			path.reserve( MAX_NPATH );
 			for ( uint i = 0; i < sgame_ModList.Count(); i++ ) {
 				ConsolePrint( "Loading weapon infos from module \"" + sgame_ModList[i] + "\"...\n" );
 
@@ -185,10 +224,19 @@ namespace TheNomad::SGame::InfoSystem {
 				}
 			}
 		}
+
+		AmmoInfo@ GetAmmoInfo( const string& in name ) {
+			for ( uint i = 0; i < m_AmmoInfos.Count(); i++ ) {
+				if ( Util::StrICmp( m_AmmoInfos[i].name, name ) == 0 ) {
+					return m_AmmoInfos[i];
+				}
+			}
+			return null;
+		}
 		
 		WeaponInfo@ GetWeaponInfo( const string& in name ) {
 			for ( uint i = 0; i < m_WeaponInfos.Count(); i++ ) {
-				if ( TheNomad::Util::StrICmp( m_WeaponInfos[i].name, name ) == 0 ) {
+				if ( Util::StrICmp( m_WeaponInfos[i].name, name ) == 0 ) {
 					return m_WeaponInfos[i];
 				}
 			}
@@ -197,7 +245,7 @@ namespace TheNomad::SGame::InfoSystem {
 		
 		ItemInfo@ GetItemInfo( const string& in name ) {
 			for ( uint i = 0; i < m_ItemInfos.Count(); i++ ) {
-				if ( TheNomad::Util::StrICmp( m_ItemInfos[i].name, name ) == 0 ) {
+				if ( Util::StrICmp( m_ItemInfos[i].name, name ) == 0 ) {
 					return m_ItemInfos[i];
 				}
 			}
@@ -206,7 +254,7 @@ namespace TheNomad::SGame::InfoSystem {
 		
 		MobInfo@ GetMobInfo( const string& in name ) {
 			for ( uint i = 0; i < m_MobInfos.Count(); i++ ) {
-				if ( TheNomad::Util::StrICmp( m_MobInfos[i].name, name ) == 0 ) {
+				if ( Util::StrICmp( m_MobInfos[i].name, name ) == 0 ) {
 					return m_MobInfos[i];
 				}
 			}
@@ -215,7 +263,7 @@ namespace TheNomad::SGame::InfoSystem {
 		
 		bool WeaponInfoExists( const string& in name ) const {
 			for ( uint i = 0; i < m_WeaponInfos.Count(); i++ ) {
-				if ( TheNomad::Util::StrICmp( m_WeaponInfos[i].name, name ) == 0 ) {
+				if ( Util::StrICmp( m_WeaponInfos[i].name, name ) == 0 ) {
 					return true;
 				}
 			}
@@ -224,7 +272,7 @@ namespace TheNomad::SGame::InfoSystem {
 		
 		bool ItemInfoExists( const string& in name ) const {
 			for ( uint i = 0; i < m_ItemInfos.Count(); i++ ) {
-				if ( TheNomad::Util::StrICmp( m_ItemInfos[i].name, name ) == 0 ) {
+				if ( Util::StrICmp( m_ItemInfos[i].name, name ) == 0 ) {
 					return true;
 				}
 			}
@@ -233,7 +281,7 @@ namespace TheNomad::SGame::InfoSystem {
 		
 		bool MobInfoExists( const string& in name ) const {
 			for ( uint i = 0; i < m_MobInfos.Count(); i++ ) {
-				if ( TheNomad::Util::StrICmp( m_MobInfos[i].name, name ) == 0 ) {
+				if ( Util::StrICmp( m_MobInfos[i].name, name ) == 0 ) {
 					return true;
 				}
 			}
@@ -244,6 +292,15 @@ namespace TheNomad::SGame::InfoSystem {
 			for ( uint i = 0; i < m_WeaponInfos.Count(); i++ ) {
 				if ( m_WeaponInfos[i].type == id ) {
 					return @m_WeaponInfos[i];
+				}
+			}
+			return null;
+		}
+		
+		AmmoInfo@ GetAmmoInfo( AmmoType id ) {
+			for ( uint i = 0; i < m_AmmoInfos.Count(); i++ ) {
+				if ( ( m_AmmoInfos[i].baseType & id ) != 0 ) {
+					return @m_AmmoInfos[i];
 				}
 			}
 			return null;
@@ -276,28 +333,41 @@ namespace TheNomad::SGame::InfoSystem {
 		const dictionary@ GetWeaponTypes() const {
 			return @m_WeaponTypes;
 		}
+		const dictionary@ GetAmmoTypes() const {
+			return @m_AmmoTypes;
+		}
 		
 		void AddMobInfo( MobInfo@ info ) {
-			m_MobInfos.push_back( info );
+			m_MobInfos.Add( info );
 		}
 		void AddItemInfo( ItemInfo@ info ) {
-			m_ItemInfos.push_back( info );
+			m_ItemInfos.Add( info );
 		}
 		void AddWeaponInfo( WeaponInfo@ info ) {
-			m_WeaponInfos.push_back( info );
+			m_WeaponInfos.Add( info );
 		}
 
-		private dictionary@ m_ItemTypes;
-		private dictionary@ m_MobTypes;
-		private dictionary@ m_WeaponTypes;
+		private dictionary m_ItemTypes;
+		private dictionary m_MobTypes;
+		private dictionary m_WeaponTypes;
+		private dictionary m_AmmoTypes;
 		
 		private array<MobInfo@> m_MobInfos;
 		private array<ItemInfo@> m_ItemInfos;
 		private array<WeaponInfo@> m_WeaponInfos;
+		private array<AmmoInfo@> m_AmmoInfos;
+	};
+
+	enum ItemType {
+		Powerup,
+		Consumable,
+
+		NumItemTypes
 	};
 
     enum AttackMethod {
 		Hitscan,
+		RayCast, // for melee without the AOE
 		Projectile,
 		AreaOfEffect,
 
@@ -355,6 +425,31 @@ namespace TheNomad::SGame::InfoSystem {
 		None      = 0x0000
 	};
 
+	enum AmmoProperty {
+		Heavy               = 0x0001,
+		Light               = 0x0002,
+		Pellets             = 0x0003,
+		TypeBits            = 0x000f,
+
+		NoPenetration       = 0x0010,
+		ArmorPiercing       = 0x0020,
+		HollowPoint         = 0x0030,
+		PenetrationBits     = 0x00f0,
+
+		Flechette           = 0x0100,
+		Buckshot            = 0x0200,
+		Shrapnel            = 0x0300,
+		Slug                = 0x0400,
+		ShotgunBullshitBits = 0x0f00,
+
+		Explosive           = 0x1000,
+		Incendiary          = 0x2000,
+		Tracer              = 0x3000,
+		ExtBulletBits       = 0xf000,
+
+		None                = 0x0000
+	};
+
 	enum WeaponProperty {
 		OneHandedBlade       = 0x00000101,
 		OneHandedBlunt       = 0x00001002,
@@ -380,20 +475,6 @@ namespace TheNomad::SGame::InfoSystem {
 		None                 = 0x00000000
 	};
 
-	const uint NumMobFlags = 6;
-	const uint NumWeaponProperties = 12;
-
-	const uint[] AttackMethodData = {
-		uint( AttackMethod::Hitscan ),
-		uint( AttackMethod::Projectile ),
-		uint( AttackMethod::AreaOfEffect )
-	};
-
-	const uint[] AttackTypeData = {
-		uint( AttackType::Melee ),
-		uint( AttackType::Missile )
-	};
-
 	const string[] AttackTypeStrings = {
 		"Melee",
 		"Missile"
@@ -413,6 +494,11 @@ namespace TheNomad::SGame::InfoSystem {
 		"Terrified",
 		"Boss",
 		"Sentry"
+	};
+
+	const string[] ItemTypeStrings = {
+		"Powerup",
+		"Consumable"
 	};
 	
 	const uint[] WeaponPropertyBits = {
@@ -436,17 +522,61 @@ namespace TheNomad::SGame::InfoSystem {
 		"OneHandedBlunt",
 		"TwoHandedPolearm",
 		"OneHandedPolearm",
-		"OneHandedSideFirearm",
-		"TwoHandedSideFirearm",
-		"OneHandedPrimFirearm",
-		"TwoHandedPrimFirearm",
+		"OneHandedSidearmFirearm",
+		"TwoHandedSidearmFirearm",
+		"OneHandedPrimaryFirearm",
+		"TwoHandedPrimaryFirearm",
 		"SpawnsObject"
 	};
 
-	string[] AmmoTypeStrings( AmmoType::NumAmmoTypes );
-	string[] ArmorTypeStrings( ArmorType::NumArmorTypes );
-	string[] AttackMethodStrings( AttackMethod::NumAttackMethods );
-	string[] WeaponTypeStrings( WeaponType::NumWeaponTypes );
+	const string[] AmmoPropertyStrings = {
+		"Heavy",
+		"Light",
+		"Pellets",
+
+		"NoPenetration",
+		"ArmorPiercing",
+		"HollowPoint",
+
+		"Flechette",
+		"Buckshot",
+		"Shrapnel",
+		"Slug",
+
+		"Explosive",
+		"Incendiary",
+		"Tracer"
+	};
+
+	const string[] AmmoTypeStrings = {
+		"Bullet",
+		"Shell",
+		"Grenade",
+		"Rocket"
+	};
+	const string[] ArmorTypeStrings = {
+		"None",
+		"Light",
+		"Standard",
+		"Heavy",
+		"Invul"
+	};
+	const string[] AttackMethodStrings = {
+		"Hitscan",
+		"RayCast",
+		"Projectile",
+		"AreaOfEffect"
+	};
+	const string[] WeaponTypeStrings = {
+		"Sidearm",
+		"HeavySidearm",
+		"Primary",
+		"HeavyPrimary",
+		"Grenadier",
+		"Melee",
+		"LeftArm",
+		"RightArm"
+	};
 
     InfoDataManager@ InfoManager;
 };

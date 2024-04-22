@@ -1716,7 +1716,8 @@ typedef EASTL_SSIZE_T eastl_ssize_t; // Signed version of eastl_size_t. Concept 
 #endif
 
 #ifndef EASTLFree
-	#define EASTLFree(allocator, p, size) (allocator).deallocate((void*)(p), (size)) // Important to cast to void* as p may be non-const.
+	#define EASTLFree(allocator, p, size) (allocator).deallocate((p), (size)) // Important to cast to void* as p may be non-const.
+//	#define EASTLFree(allocator, p, size) (allocator).deallocate((void *)(p), (size)) // Important to cast to void* as p may be non-const.
 #endif
 
 #ifndef EASTLAllocatorType

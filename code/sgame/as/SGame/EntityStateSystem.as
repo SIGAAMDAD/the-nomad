@@ -30,8 +30,8 @@ namespace TheNomad::SGame {
 		EntityState@ GetStateForNum( uint nIndex ) {
 			return m_StateList[ nIndex ];
 		}
-			
-		private array<EntityState@> m_StateList;
+		
+		private List<EntityState@> m_StateList;
 	};
 
 	EntityStateSystem@ StateManager;

@@ -1494,7 +1494,111 @@ void Hunk_Log(void) {
 	Hunk_SmallLog();
 }
 
-void Hunk_InitMemory(void)
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#else
+#include <sys/mman.h>
+#endif
+
+static size_t GetPageSize( void )
+{
+#ifdef _WIN32
+	if ( sizeof( size_t ) < sizeof( DWORD ) ) {
+		Con_Printf( COLOR_RED "WARNING: sizeof( size_t ) < sizeof( DWORD ), possible loss of data.\n" );
+	}
+
+	SYSTEM_INFO info{};
+	GetSystemInfo( &info );
+	return info.dwPageSize;
+#else
+	return sysconf( _SC_PAGE_SIZE );
+#endif
+}
+
+static void *Sys_AllocVirtual( size_t nBytes )
+{
+#ifdef _WIN32
+#if (_MSC_VER <= 1900) || WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+    return VirtualAlloc( NULL, PAD( nBytes, GetPageSize() ), MEM_RESERVE, PAGE_READWRITE );
+#else
+    return VirtualAllocFromApp( NULL, PAD( nBytes, GetPageSize() ), MEM_RESERVE, PAGE_READWRITE );
+#endif
+#else
+	void *pData = mmap( NULL, PAD( nBytes, GetPageSize() ), PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0 );
+	if ( !pData || pData == MAP_FAILED ) {
+		return NULL;
+	}
+	return pData;
+#endif
+}
+
+static void *Sys_CommitVirtualMemory( void *pData, size_t nBytes )
+{
+#ifdef _WIN32
+    void *pRegion =
+#if (_MSC_VER <= 1900) || WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+        VirtualAlloc( pData, PAD( nBytes, GetPageSize() ), MEM_COMMIT, PAGE_READWRITE );
+#else
+        VirtualAllocFromApp( pData, PAD( nBytes, GetPageSize() ), MEM_COMMIT,
+                            PAGE_READWRITE );
+#endif
+	return pRegion;
+#else
+	const size_t size = PAD( nBytes, GetPageSize() );
+	if ( mprotect( pData, size, PROT_WRITE | PROT_READ ) == -1 ) {
+		return NULL;
+	}
+#ifdef MADV_WILLNEED
+	madvise( pData, size, MADV_WILLNEED );
+#elif defined(POSIX_MADV_WILLNEED)
+	posix_madvise( pData, size, POSIX_MADV_WILLNEED );
+#endif
+	return pData;
+#endif
+}
+
+static void Sys_DecommitVirtualMemory( void *pData, size_t nBytes )
+{
+#ifdef _WIN32
+	VirtualFree( pData, PAD( nBytes, GetPageSize() ), MEM_DECOMMIT );
+#else
+	const size_t size = PAD( nBytes, GetPageSize() );
+#ifdef MADV_FREE
+	madvise( pData, size, MADV_FREE );
+#elif defined(MADV_DONTNEED)
+	madvise( pData, size, MADV_DONTNEED );
+#elif defined(POSIX_MADV_DONTNEED)
+	posix_madvise( pData, size, POSIX_MADV_DONTNEED );
+#endif
+
+	if ( mprotect( pData, size, PROT_NONE ) == -1 ) {
+		N_Error( ERR_FATAL, "Sys_DecommitVirtualMemory: mprotect PROT_NONE failed" );
+	}
+#endif
+}
+
+static void Sys_ReleaseVirtual( void *pData, size_t nBytes )
+{
+#ifdef _WIN32
+	VirtualFree( pData, 0u, MEM_RELEASE );
+#else
+	if ( munmap( pData, PAD( nBytes, GetPageSize() ) ) == -1 ) {
+		Con_Printf( COLOR_RED "ERROR: munmap failed on %lu!\n", nBytes );
+	}
+#endif
+}
+
+static void *hunkorig = NULL;
+static void Hunk_ReleaseMemory( void )
+{
+	if ( hunkbase ) {
+		Sys_DecommitVirtualMemory( hunkorig, hunksize );
+		Sys_ReleaseVirtual( hunkorig, hunksize );
+	}
+}
+
+void Hunk_InitMemory( void )
 {
     cvar_t *cv;
 
@@ -1512,11 +1616,13 @@ void Hunk_InitMemory(void)
 	Cvar_SetDescription( cv, "The size of the hunk memory segment." );
 
 	hunksize = cv->i * 1024 * 1024;
-	hunkbase = (byte *)calloc( hunksize + (com_cacheLine - 1), 1 );
+	hunkbase = (byte *)calloc( hunksize + ( com_cacheLine - 1 ), 1 );
 	if ( !hunkbase ) {
 		Sys_SetError( ERR_OUT_OF_MEMORY );
 		N_Error( ERR_FATAL, "Hunk data failed to allocate %lu megs", hunksize / (1024*1024) );
 	}
+
+//	Sys_CommitVirtualMemory( hunkbase, hunksize );
 
 	// cacheline align
 	hunkbase = (byte *)PADP( hunkbase, com_cacheLine );

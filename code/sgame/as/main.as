@@ -106,30 +106,6 @@ void InitConstants() {
 		TheNomad::SGame::sgame_RankStringColors[ TheNomad::SGame::LevelRank::RankF ] = TheNomad::Util::StringToColor( str );
 		TheNomad::GameSystem::GetString( "SP_RANK_U_COLOR", str );
 		TheNomad::SGame::sgame_RankStringColors[ TheNomad::SGame::LevelRank::RankWereUBotting ] = TheNomad::Util::StringToColor( str );
-
-		TheNomad::GameSystem::GetString( "SP_AMMO_BULLET", TheNomad::SGame::InfoSystem::AmmoTypeStrings[ TheNomad::SGame::InfoSystem::AmmoType::Bullet ] );
-		TheNomad::GameSystem::GetString( "SP_AMMO_SHELL", TheNomad::SGame::InfoSystem::AmmoTypeStrings[ TheNomad::SGame::InfoSystem::AmmoType::Shell ] );
-		TheNomad::GameSystem::GetString( "SP_AMMO_ROCKET", TheNomad::SGame::InfoSystem::AmmoTypeStrings[ TheNomad::SGame::InfoSystem::AmmoType::Rocket ] );
-		TheNomad::GameSystem::GetString( "SP_AMMO_GRENADE", TheNomad::SGame::InfoSystem::AmmoTypeStrings[ TheNomad::SGame::InfoSystem::AmmoType::Grenade ] );
-
-		TheNomad::GameSystem::GetString( "SP_ARMOR_NONE", TheNomad::SGame::InfoSystem::ArmorTypeStrings[ TheNomad::SGame::InfoSystem::ArmorType::None ] );
-		TheNomad::GameSystem::GetString( "SP_ARMOR_LIGHT", TheNomad::SGame::InfoSystem::ArmorTypeStrings[ TheNomad::SGame::InfoSystem::ArmorType::Light ] );
-		TheNomad::GameSystem::GetString( "SP_ARMOR_STANDARD", TheNomad::SGame::InfoSystem::ArmorTypeStrings[ TheNomad::SGame::InfoSystem::ArmorType::Standard ] );
-		TheNomad::GameSystem::GetString( "SP_ARMOR_HEAVY", TheNomad::SGame::InfoSystem::ArmorTypeStrings[ TheNomad::SGame::InfoSystem::ArmorType::Heavy ] );
-		TheNomad::GameSystem::GetString( "SP_ARMOR_INVUL", TheNomad::SGame::InfoSystem::ArmorTypeStrings[ TheNomad::SGame::InfoSystem::ArmorType::Invul ] );
-
-		TheNomad::GameSystem::GetString( "SP_ATK_METHOD_HITSCAN", TheNomad::SGame::InfoSystem::AttackMethodStrings[ TheNomad::SGame::InfoSystem::AttackMethod::Hitscan ] );
-		TheNomad::GameSystem::GetString( "SP_ATK_METHOD_PROJECTILE", TheNomad::SGame::InfoSystem::AttackMethodStrings[ TheNomad::SGame::InfoSystem::AttackMethod::Projectile ] );
-		TheNomad::GameSystem::GetString( "SP_ATK_METHOD_AOE", TheNomad::SGame::InfoSystem::AttackMethodStrings[ TheNomad::SGame::InfoSystem::AttackMethod::AreaOfEffect ] );
-
-		TheNomad::GameSystem::GetString( "SP_WEAPON_TYPE_SIDE", TheNomad::SGame::InfoSystem::WeaponTypeStrings[ TheNomad::SGame::InfoSystem::WeaponType::Sidearm ] );
-		TheNomad::GameSystem::GetString( "SP_WEAPON_TYPE_HSIDE", TheNomad::SGame::InfoSystem::WeaponTypeStrings[ TheNomad::SGame::InfoSystem::WeaponType::HeavySidearm ] );
-		TheNomad::GameSystem::GetString( "SP_WEAPON_TYPE_PRIM", TheNomad::SGame::InfoSystem::WeaponTypeStrings[ TheNomad::SGame::InfoSystem::WeaponType::Primary ] );
-		TheNomad::GameSystem::GetString( "SP_WEAPON_TYPE_HPRIM", TheNomad::SGame::InfoSystem::WeaponTypeStrings[ TheNomad::SGame::InfoSystem::WeaponType::HeavyPrimary ] );
-		TheNomad::GameSystem::GetString( "SP_WEAPON_TYPE_GRENADIER", TheNomad::SGame::InfoSystem::WeaponTypeStrings[ TheNomad::SGame::InfoSystem::WeaponType::Grenadier ] );
-		TheNomad::GameSystem::GetString( "SP_WEAPON_TYPE_MELEE", TheNomad::SGame::InfoSystem::WeaponTypeStrings[ TheNomad::SGame::InfoSystem::WeaponType::Melee ] );
-		TheNomad::GameSystem::GetString( "SP_WEAPON_TYPE_LARM", TheNomad::SGame::InfoSystem::WeaponTypeStrings[ TheNomad::SGame::InfoSystem::WeaponType::LeftArm ] );
-		TheNomad::GameSystem::GetString( "SP_WEAPON_TYPE_RARM", TheNomad::SGame::InfoSystem::WeaponTypeStrings[ TheNomad::SGame::InfoSystem::WeaponType::RightArm ] );
 	}
 }
 
@@ -197,6 +173,10 @@ int ModuleInit() {
 	@TheNomad::SGame::EntityManager = cast<TheNomad::SGame::EntitySystem>( TheNomad::GameSystem::AddSystem( TheNomad::SGame::EntitySystem() ) );
 	@TheNomad::SGame::StateManager = cast<TheNomad::SGame::EntityStateSystem>( TheNomad::GameSystem::AddSystem( TheNomad::SGame::EntityStateSystem() ) );
 	@TheNomad::SGame::InfoSystem::InfoManager = TheNomad::SGame::InfoSystem::InfoDataManager();
+	TheNomad::SGame::InfoSystem::InfoManager.LoadMobInfos();
+	TheNomad::SGame::InfoSystem::InfoManager.LoadItemInfos();
+	TheNomad::SGame::InfoSystem::InfoManager.LoadAmmoInfos();
+	TheNomad::SGame::InfoSystem::InfoManager.LoadWeaponInfos();
 	
 	ConsolePrint( "--------------------\n" );
 	return 1;

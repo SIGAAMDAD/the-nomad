@@ -80,7 +80,7 @@ namespace TheNomad::SGame {
 		//	const SGame::SpriteSheet@ sheet;
 			switch ( ent.GetType() ) {
 			case TheNomad::GameSystem::EntityType::Playr: {
-		//		cast<PlayrObject>( ent.GetData() ).DrawLegs();
+		//		cast<PlayrObject>( @ent ).DrawLegs();
 				break; }
 			case TheNomad::GameSystem::EntityType::Mob: {
 
@@ -135,17 +135,17 @@ namespace TheNomad::SGame {
 
 				switch ( TheNomad::GameSystem::EntityType( data.LoadUInt( "type" ) ) ) {
 				case TheNomad::GameSystem::EntityType::Playr: {
-					if ( !cast<PlayrObject>( ent.GetData() ).Load( data ) ) {
+					if ( !cast<PlayrObject>( @ent ).Load( data ) ) {
 						GameError( "EntitySystem::OnLoad: failed to load player data" );
 					}
 					break; }
 				case TheNomad::GameSystem::EntityType::Mob: {
-					if ( !cast<MobObject>( ent.GetData() ).Load( data ) ) {
+					if ( !cast<MobObject>( @ent ).Load( data ) ) {
 						GameError( "EntitySystem::OnLoad: failed to load mob data" );
 					}
 					break; }
 				case TheNomad::GameSystem::EntityType::Item: {
-					if ( !cast<ItemObject>( ent.GetData() ).Load( data ) ) {
+					if ( !cast<ItemObject>( @ent ).Load( data ) ) {
 						GameError( "EntitySystem::OnLoad: failed to load item data" );
 					}
 					break; }
@@ -167,13 +167,13 @@ namespace TheNomad::SGame {
 				section.SaveUInt( "type", m_EntityList[i].GetType() );
 				switch ( m_EntityList[i].GetType() ) {
 				case TheNomad::GameSystem::EntityType::Mob:
-					section.SaveUInt( "id", cast<MobObject>( m_EntityList[i].GetData() ).GetMobType() );
+					section.SaveUInt( "id", cast<MobObject>( @m_EntityList[i] ).GetMobType() );
 					break;
 				case TheNomad::GameSystem::EntityType::Item:
-					section.SaveUInt( "id", cast<ItemObject>( m_EntityList[i].GetData() ).GetItemType() );
+					section.SaveUInt( "id", cast<ItemObject>( @m_EntityList[i] ).GetItemType() );
 					break;
 				case TheNomad::GameSystem::EntityType::Weapon:
-					section.SaveUInt( "id", cast<WeaponObject>( m_EntityList[i].GetData() ).GetWeaponID() );
+					section.SaveUInt( "id", cast<WeaponObject>( @m_EntityList[i] ).GetWeaponID() );
 					break;
 				};
 			}
@@ -201,7 +201,7 @@ namespace TheNomad::SGame {
 					cast<PlayrObject>( @m_EntityList[i] ).Think();
 					break; }
 				case TheNomad::GameSystem::EntityType::Mob: {
-					cast<MobObject>( m_EntityList[i].GetData() ).Think();
+					cast<MobObject>( @m_EntityList[i] ).Think();
 					break; }
 				case TheNomad::GameSystem::EntityType::Bot:
 					break;
@@ -300,7 +300,7 @@ namespace TheNomad::SGame {
 		void DeadThink( EntityObject@ ent ) {
 			if ( ent.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
 				if ( sgame_Difficulty.GetInt() < uint( TheNomad::GameSystem::GameDifficulty::VeryHard )
-					|| sgame_NoRespawningMobs.GetInt() == 1 || ( cast<MobObject>( ent.GetData() ).GetMFlags() & InfoSystem::MobFlags::PermaDead ) != 0 )
+					|| sgame_NoRespawningMobs.GetInt() == 1 || ( cast<MobObject>( @ent ).GetMFlags() & InfoSystem::MobFlags::PermaDead ) != 0 )
 				{
 					return; // no respawning for this one
 				} else {
@@ -309,7 +309,7 @@ namespace TheNomad::SGame {
 			} else if ( ent.GetType() == TheNomad::GameSystem::EntityType::Playr ) {
 				PlayrObject@ obj;
 				
-				@obj = cast<PlayrObject>( ent.GetData() );
+				@obj = cast<PlayrObject>( @ent );
 				
 				// is hellbreaker available?
 				if ( sgame_HellbreakerOn.GetInt() != 0 && Util::IsModuleActive( "hellbreaker" )
@@ -372,7 +372,7 @@ namespace TheNomad::SGame {
 			@target = @m_EntityList[ rayCast.m_nEntityNumber ];
 			if ( target.GetType() == TheNomad::GameSystem::EntityType::Playr ) {
 				// check for a parry
-				PlayrObject@ p = cast<PlayrObject>( target.GetData() );
+				PlayrObject@ p = cast<PlayrObject@>( @target );
 				
 				if ( p.CheckParry( @attacker ) ) {
 					return; // don't deal damage
@@ -396,7 +396,7 @@ namespace TheNomad::SGame {
 		}
 		ItemObject@ FindItemInBounds( const TheNomad::GameSystem::BBox& in bounds ) {
 			ItemObject@ item;
-			for ( @item = cast<ItemObject>( @m_ActiveItems.next ); @item !is @m_ActiveItems; @item = cast<ItemObject>( @item.next ) ) {
+			for ( @item = cast<ItemObject@>( @m_ActiveItems.next ); @item !is @m_ActiveItems; @item = cast<ItemObject>( @item.next ) ) {
 				if ( Util::BoundsIntersect( bounds, item.GetBounds() ) ) {
 					return @item;
 				}
@@ -406,7 +406,7 @@ namespace TheNomad::SGame {
 		ItemObject@ AddItem( uint type, const vec3& in origin ) {
 			ItemObject@ item;
 
-			@item = cast<ItemObject>( @Spawn( TheNomad::GameSystem::EntityType::Item, type, origin ) );
+			@item = cast<ItemObject@>( @Spawn( TheNomad::GameSystem::EntityType::Item, type, origin ) );
 			@m_ActiveItems.prev.next = @item;
 			@item.prev = @m_ActiveItems.prev;
 			@item.next = @m_ActiveItems;
@@ -470,7 +470,7 @@ namespace TheNomad::SGame {
 				GameError( "Effect_Knockback_f triggered on null attacker" );
 			}
 
-			@target = cast<MobObject>( attacker.GetData() ).GetTarget();
+			@target = cast<MobObject@>( @attacker ).GetTarget();
 			if ( target is null ) {
 				ConsoleWarning( "Effect_Knockback_f triggered but no target\n" );
 				return;
@@ -490,7 +490,7 @@ namespace TheNomad::SGame {
 				GameError( "Effect_Stun_f triggered on null attacker" );
 			}
 
-			@target = cast<MobObject>( attacker.GetData() ).GetTarget();
+			@target = cast<MobObject@>(@ attacker ).GetTarget();
 			if ( target is null ) {
 				ConsoleWarning( "Effect_Stun_f triggered but no target\n" );
 				return;
