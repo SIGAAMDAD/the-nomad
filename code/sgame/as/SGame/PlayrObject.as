@@ -5,21 +5,11 @@
 #include "SGame/PlayerHud.as"
 
 namespace TheNomad::SGame {
-	class WeaponMode {
-		WeaponMode() {
-		}
-		WeaponMode( uint weaponBits ) {
-			bits = weaponBits;
-		}
-
-		uint bits;
-	};
-
-	const WeaponMode[] sgame_WeaponModeList = {
-		WeaponMode( InfoSystem::WeaponProperty::OneHandedBlade | InfoSystem::WeaponProperty::TwoHandedBlade ),
-		WeaponMode( InfoSystem::WeaponProperty::OneHandedBlunt | InfoSystem::WeaponProperty::TwoHandedBlunt ),
-		WeaponMode( InfoSystem::WeaponProperty::OneHandedPolearm | InfoSystem::WeaponProperty::TwoHandedPolearm ),
-		WeaponMode( InfoSystem::WeaponProperty::OneHandedSideFirearm | InfoSystem::WeaponProperty::OneHandedPrimFirearm
+	const uint[] sgame_WeaponModeList = {
+		uint( InfoSystem::WeaponProperty::OneHandedBlade | InfoSystem::WeaponProperty::TwoHandedBlade ),
+		uint( InfoSystem::WeaponProperty::OneHandedBlunt | InfoSystem::WeaponProperty::TwoHandedBlunt ),
+		uint( InfoSystem::WeaponProperty::OneHandedPolearm | InfoSystem::WeaponProperty::TwoHandedPolearm ),
+		uint( InfoSystem::WeaponProperty::OneHandedSideFirearm | InfoSystem::WeaponProperty::OneHandedPrimFirearm
 			| InfoSystem::WeaponProperty::TwoHandedSideFirearm | InfoSystem::WeaponProperty::TwoHandedPrimFirearm ),
 	};
 
@@ -154,10 +144,20 @@ namespace TheNomad::SGame {
 			
 			// find the next most suitable mode
 			for ( uint i = 0; i < sgame_WeaponModeList.Count(); i++ ) {
-				if ( ( uint( weapon.GetProperties() ) & sgame_WeaponModeList[i].bits ) != 0 ) {
-					hand = InfoSystem::WeaponProperty( ( uint( weapon.GetProperties() ) & sgame_WeaponModeList[i].bits ) | handBits );
+				if ( ( uint( weapon.GetProperties() ) & sgame_WeaponModeList[i] ) != 0 ) {
+					hand = InfoSystem::WeaponProperty( ( uint( weapon.GetProperties() ) & sgame_WeaponModeList[i] ) | handBits );
 				}
 			}
+		}
+		private uint GetCurrentWeaponMode() const {
+			switch ( m_nHandsUsed ) {
+			case 0:
+				return uint( m_LeftHandMode );
+			case 1:
+			case 2:
+				return uint( m_RightHandMode );
+			};
+			return 0;
 		}
 		
 		//
@@ -233,7 +233,7 @@ namespace TheNomad::SGame {
 			}
 		}
 		void UseWeapon_f() {
-			m_WeaponSlots[ m_CurrentWeapon ].Use( cast<EntityObject@>( @this ) );
+			m_WeaponSlots[ m_CurrentWeapon ].Use( cast<EntityObject@>( @this ), GetCurrentWeaponMode() );
 		}
 		void AltUseWeapon_f() {
 			m_WeaponSlots[ m_CurrentWeapon ].UseAlt( cast<EntityObject@>( @this ) );

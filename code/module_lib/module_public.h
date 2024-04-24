@@ -92,10 +92,10 @@ public:
 	CModuleAllocatorTemplated& operator=( const CModuleAllocatorTemplated& x ) = default;
 
 	T* allocate( size_t n, int flags = 0 ) {
-        return (T *)Mem_Alloc( sizeof( T ) );
+        return (T *)Mem_ClearedAlloc( sizeof( T ) );
     }
 	T* allocate( size_t n, size_t alignment, size_t offset, int flags = 0 ) {
-        return (T *)Mem_Alloc( sizeof( T ) );
+        return (T *)Mem_ClearedAlloc( sizeof( T ) );
     }
 	void  deallocate( T* p, size_t n ) {
         Mem_Free( p );
@@ -163,7 +163,7 @@ constexpr GDR_INLINE bool operator!=( const CModuleStringAllocator& a, const CMo
 }
 
 using string_view_t = eastl::basic_string_view<char>;
-using string_t = eastl::fixed_string<char, 256, true, memory::std_allocator<char, memory::virtual_memory_allocator>>;
+using string_t = eastl::fixed_string<char, 256, true, eastl::allocator_malloc<char>>;
 //using string_t = eastl::basic_string<char, memory::std_allocator<char, memory::virtual_memory_allocator>>;
 using UtlString = eastl::fixed_string<char, MAX_STRING_CHARS, true, eastl::allocator_malloc<char>>;
 namespace eastl {
@@ -198,18 +198,6 @@ template<typename Key, typename Value, typename Hash = eastl::hash<Key>, typenam
 using UtlMap = eastl::unordered_map<Key, Value, Hash, Predicate, CModuleAllocator, true>;
 template<typename Key, typename Compare = eastl::less<Key>>
 using UtlSet = eastl::set<Key, Compare, CModuleAllocator>;
-
-/*namespace eastl {
-	template<> struct hash<string_t> {
-		size_t operator()( const string_t& str ) const {
-			const unsigned char *p = (const unsigned char *)str.c_str(); // To consider: limit p to at most 256 chars.
-			unsigned int c, result = 2166136261U; // We implement an FNV-like string hash.
-			while((c = *p++) != 0) // Using '!=' disables compiler warnings.
-				result = (result * 16777619) ^ c;
-			return (size_t)result;
-		}
-	};
-};*/
 
 #include "nlohmann/json.hpp"
 #include "module_handle.h"

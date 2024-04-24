@@ -386,7 +386,7 @@ bool CScriptDictionary::IsEmpty() const
 
 asUINT CScriptDictionary::GetSize() const
 {
-	return asUINT(m_Dict.size());
+	return asUINT( m_Dict.size() );
 }
 
 bool CScriptDictionary::Delete(const dictKey_t &key)
@@ -1192,6 +1192,7 @@ void RegisterScriptDictionary_Generic(asIScriptEngine *engine)
 	CheckASCall( engine->RegisterObjectMethod("dictionary", "array<string>@ Keys() const", asFUNCTION(CScriptDictionaryGetKeys_Generic), asCALL_GENERIC) );
 	CheckASCall( engine->RegisterObjectMethod("dictionary", "bool Contains(const string& in) const", asFUNCTION(ScriptDictionaryExists_Generic), asCALL_GENERIC) );
 	CheckASCall( engine->RegisterObjectMethod("dictionary", "bool Remove(const string& in)", asFUNCTION(ScriptDictionaryDelete_Generic), asCALL_GENERIC) );
+	CheckASCall( engine->RegisterObjectMethod("dictionary", "void Clear()", asFUNCTION(ScriptDictionaryDeleteAll_Generic), asCALL_GENERIC) );
 
 	CheckASCall( engine->RegisterObjectMethod("dictionary", "bool TryGetValue(const string &in, ?&out) const", asFUNCTION(ScriptDictionaryGet_Generic), asCALL_GENERIC) );
 	CheckASCall( engine->RegisterObjectMethod("dictionary", "bool TryGetValue(const string &in, int64&out) const", asFUNCTION(ScriptDictionaryGetInt_Generic), asCALL_GENERIC) );
@@ -1205,16 +1206,6 @@ void RegisterScriptDictionary_Generic(asIScriptEngine *engine)
 
 	CheckASCall( engine->RegisterObjectMethod("dictionary", "void set(const string &in, const double&in)", asFUNCTION(ScriptDictionarySetFlt_Generic), asCALL_GENERIC) );
 	CheckASCall( engine->RegisterObjectMethod("dictionary", "bool get(const string &in, double&out) const", asFUNCTION(ScriptDictionaryGetFlt_Generic), asCALL_GENERIC) );
-
-	CheckASCall( engine->RegisterObjectMethod( "dictionary", "int find( const string& in ) const", asFUNCTION( ScriptDictionaryExists_Generic ), asCALL_GENERIC ) );
-
-	CheckASCall( engine->RegisterObjectMethod("dictionary", "bool exists(const string &in) const", asFUNCTION(ScriptDictionaryExists_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectMethod("dictionary", "bool isEmpty() const", asFUNCTION(ScriptDictionaryIsEmpty_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectMethod("dictionary", "uint getSize() const", asFUNCTION(ScriptDictionaryGetSize_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectMethod("dictionary", "bool delete(const string &in)", asFUNCTION(ScriptDictionaryDelete_Generic), asCALL_GENERIC) );
-	CheckASCall( engine->RegisterObjectMethod("dictionary", "void deleteAll()", asFUNCTION(ScriptDictionaryDeleteAll_Generic), asCALL_GENERIC) );
-
-	CheckASCall( engine->RegisterObjectMethod("dictionary", "array<string> @getKeys() const", asFUNCTION(CScriptDictionaryGetKeys_Generic), asCALL_GENERIC) );
 
 	CheckASCall( engine->RegisterObjectMethod("dictionary", "dictionaryValue &opIndex(const string &in)", asFUNCTION(CScriptDictionary_opIndex_Generic), asCALL_GENERIC) );
 	CheckASCall( engine->RegisterObjectMethod("dictionary", "const dictionaryValue &opIndex(const string &in) const", asFUNCTION(CScriptDictionary_opIndex_const_Generic), asCALL_GENERIC) );

@@ -56,24 +56,30 @@ namespace TheNomad::SGame {
 		uint GetTics() const {
 			return m_Ticker;
 		}
-		void Run() {
-			m_Ticker++;
-		}
-		void Loop() {
-			m_Ticker = 0;
+		EntityState@ Run() {
+			m_Ticker += TheNomad::GameSystem::GameManager.GetDeltaTics();
+			if ( m_Ticker >= m_nTics ) {
+				return @m_NextState !is null ? m_NextState.GetID() : @StateManager.GetStateForNum( m_nStateNum + 1 );
+			}
+			m_Animation.Run();
+			return @this;
 		}
 		EntityState@ Cycle() {
 			return m_NextState;
 		}
+		void SetAnimation( Animation@ anim ) {
+			@m_Animation = @anim;
+		}
 		
 		// runtime data
-		private uint m_Ticker;
+		private uint m_Ticker = 0;
 		
 		// static data
 		private string m_Name;
-		private uint m_nTics;
-		private uint m_nStateNum;
-		private uint m_nSpriteOffset;
-		private EntityState@ m_NextState;
+		private uint m_nTics = 0;
+		private uint m_nStateNum = 0;
+		private uint m_nSpriteOffset = 0;
+		private EntityState@ m_NextState = null;
+		private Animation@ m_Animation = null;
 	};
 };

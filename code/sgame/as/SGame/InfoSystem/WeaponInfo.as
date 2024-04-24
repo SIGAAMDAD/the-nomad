@@ -28,6 +28,14 @@ namespace TheNomad::SGame::InfoSystem {
 				ConsoleWarning( "invalid weapon info, missing variable 'MagSize'\n" );
 				return false;
 			}
+			if ( !json.get( "Damage", damage ) ) {
+				ConsoleWarning( "invalid weapon info, missing variable 'Damage'\n" );
+				return false;
+			}
+			if ( !json.get( "Range", range ) ) {
+				ConsoleWarning( "invalid weapon info, missing variable 'Range'\n" );
+				return false;
+			}
 			if ( !json.get( "Type", type ) ) {
 				ConsoleWarning( "invalid weapon info, missing variable 'Type'\n" );
 				return false;
@@ -88,6 +96,8 @@ namespace TheNomad::SGame::InfoSystem {
 
 		string name;
 		uint type = 0;
+		float damage = 0.0f;
+		float range = 0.0f;
 		uint magSize = 0; // maximum shots before cooldown
 		AmmoType ammoType = AmmoType::Invalid; // ammo types allowed
 		WeaponProperty weaponProps = WeaponProperty::None;

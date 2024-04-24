@@ -173,7 +173,7 @@ ImFont *CUIFontCache::AddFontToCache( const char *filename, const char *variant,
 		N_Error( ERR_DROP, "CUIFontCache::AddFontToCache: failed to load font file '%s'", path );
 	}
 
-	font = (uiFont_t *)Hunk_Alloc( sizeof( *font ), h_high );
+	font = (uiFont_t *)Hunk_Alloc( sizeof( *font ), h_low );
 
 	font->m_pNext = m_FontList[hash];
 	m_FontList[hash] = font;

@@ -343,25 +343,25 @@ void Module_ASMessage_f( const asSMessageInfo *pMsg, void *param )
 
 #ifdef _NOMAD_DEBUG
 void *AS_Alloc( size_t nSize, const char *fileName, const uint32_t lineNumber ) {
-//    return Z_MallocDebug( nSize, TAG_MODULES, "AS_Alloc", fileName, lineNumber );
-    return Mem_AllocDebug( nSize, fileName, lineNumber );
+    return Z_MallocDebug( nSize, TAG_MODULES, "AS_Alloc", fileName, lineNumber );
+//    return Mem_AllocDebug( nSize, fileName, lineNumber );
 }
 #else
 void *AS_Alloc( size_t nSize ) {
-//    return Z_Malloc( nSize, TAG_MODULES );
-    return Mem_Alloc( nSize );
+    return Z_Malloc( nSize, TAG_MODULES );
+//    return Mem_Alloc( nSize );
 }
 #endif
 
 #ifdef _NOMAD_DEBUG
 void AS_Free( void *ptr, const char *fileName, const uint32_t lineNumber ) {
-//    Z_Free( ptr );
-    Mem_FreeDebug( ptr, fileName, lineNumber );
+    Z_Free( ptr );
+//    Mem_FreeDebug( ptr, fileName, lineNumber );
 }
 #else
 void AS_Free( void *ptr ) {
-//    Z_Free( ptr );
-    Mem_Free( ptr );
+    Z_Free( ptr );
+//    Mem_Free( ptr );
 }
 #endif
 
@@ -487,7 +487,7 @@ CModuleLib::CModuleLib( void )
         // this is really inefficient but it'll do for now
         for ( const auto& it : std::filesystem::directory_iterator{ path } ) {
             if ( it.is_directory() ) {
-                const std::string path = it.path().filename().string();
+                const std::string path = eastl::move( it.path().filename().string() );
                 Con_Printf( "...found module directory \"%s\".\n", path.c_str() );
 
                 LoadModule( path.c_str() );

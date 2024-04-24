@@ -4,6 +4,7 @@
 
 namespace TheNomad::SGame {
 	const uint ENTITYNUM_INVALID = uint( ~0 );
+	const uint ENTITYNUM_WALL = uint( ~0 ) - 1;
 
     class EntityObject {
 		EntityObject( TheNomad::GameSystem::EntityType type, uint id, const vec3& in origin ) {
@@ -21,6 +22,9 @@ namespace TheNomad::SGame {
 		//
 		// getters
 		//
+		float GetAngle() const {
+			return m_nAngle;
+		}
 		float GetHealth() const {
 			return m_nHealth;
 		}

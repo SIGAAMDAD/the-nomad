@@ -10,6 +10,8 @@
 			"UseSfx": "sfx/items/use_murstar.ogg",
 			"MagSize": 7,
 			"AmmoType": "Bullet",
+			"Range": 55.0,
+			"Damage": 78.0,
 			"WeaponProperties": [
 				"OneHandedSidearmFirearm",
 				"OneHandedBlunt"
@@ -25,6 +27,8 @@
 			"UseSfx": "sfx/items/use_plasma.ogg",
 			"MagSize": 40,
 			"AmmoType": "Bullet",
+			"Range": 42.0,
+			"Damage": 23.5,
 			"WeaponProperties": [
 				"OneHandedPrimaryFirearm",
 				"OneHandedSidearmFirearm",
@@ -42,6 +46,8 @@
 			"UseSfx": "sfx/item/use_db.ogg",
 			"MagSize": 2,
 			"AmmoType": "Shell",
+			"Range": 55.0,
+			"Damage": 81.9,
 			"WeaponProperties": [ "TwoHandedPrimaryFirearm", "TwoHandedBlunt" ]
 		}
 	]
