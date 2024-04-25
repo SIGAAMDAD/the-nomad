@@ -163,8 +163,44 @@ qboolean Sys_SetAffinityMask( const uint64_t mask )
 }
 #endif // USE_AFFINITY_MASK
 
+uint64_t Sys_GetPageSize( void )
+{
+	if ( sizeof( size_t ) < sizeof( DWORD ) ) {
+		Con_Printf( COLOR_RED "WARNING: sizeof( size_t ) < sizeof( DWORD ), possible loss of data.\n" );
+	}
 
- 
+	SYSTEM_INFO info{};
+	GetSystemInfo( &info );
+	return info.dwPageSize;
+}
+
+void *Sys_AllocVirtualMemory( uint64_t nBytes )
+{
+#if (_MSC_VER <= 1900) || WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+    return VirtualAlloc( NULL, PAD( nBytes, Sys_GetPageSize() ), MEM_RESERVE, PAGE_READWRITE );
+#else
+    return VirtualAllocFromApp( NULL, PAD( nBytes, Sys_GetPageSize() ), MEM_RESERVE, PAGE_READWRITE );
+#endif
+}
+
+void *Sys_CommitVirtualMemory( void *pMemory, uint64_t nBytes )
+{
+#if (_MSC_VER <= 1900) || WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+    return VirtualAlloc( pMemory, PAD( nBytes, Sys_GetPageSize() ), MEM_COMMIT, PAGE_READWRITE );
+#else
+    return VirtualAllocFromApp( pMemory, PAD( nBytes, Sys_GetPageSize() ), MEM_COMMIT, PAGE_READWRITE );
+#endif
+}
+
+void Sys_DecommitVirtualMemory( void *pMemory, uint64_t nBytes )
+{
+	VirtualFree( pMemory, PAD( nBytes, Sys_GetPageSize() ), MEM_DECOMMIT );
+}
+
+void Sys_ReleaseVirtualMemory( void *pMemory, uint64_t nBytes )
+{
+	VirtualFree( pMemory, 0u, MEM_RELEASE );
+}
 
 qboolean Sys_GetFileStats( fileStats_t *stats, const char *filename )
 {

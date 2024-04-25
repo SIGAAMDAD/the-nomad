@@ -159,6 +159,8 @@ LDLIBS= \
 		-L. \
 		-lSDL2 \
 		-lsndfile \
+		-lz \
+		-lbz2
 
 ifndef release
 LDLIBS+=-leasy_profiler
@@ -302,6 +304,7 @@ SRC=\
 	$(O)/engine/n_memory.o \
 	$(O)/engine/n_debug.o \
 	$(O)/engine/md4.o \
+	$(O)/engine/decompress.o \
 	\
 	$(O)/rendercommon/imgui.o \
 	$(O)/rendercommon/imgui_draw.o \

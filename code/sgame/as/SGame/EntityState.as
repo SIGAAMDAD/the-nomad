@@ -59,7 +59,7 @@ namespace TheNomad::SGame {
 		EntityState@ Run() {
 			m_Ticker += TheNomad::GameSystem::GameManager.GetDeltaTics();
 			if ( m_Ticker >= m_nTics ) {
-				return @m_NextState !is null ? m_NextState.GetID() : @StateManager.GetStateForNum( m_nStateNum + 1 );
+				return @m_NextState !is null ? @m_NextState : @StateManager.GetStateForNum( m_nStateNum + 1 );
 			}
 			m_Animation.Run();
 			return @this;

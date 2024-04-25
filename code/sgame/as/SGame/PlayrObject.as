@@ -13,10 +13,12 @@ namespace TheNomad::SGame {
 			| InfoSystem::WeaponProperty::TwoHandedSideFirearm | InfoSystem::WeaponProperty::TwoHandedPrimFirearm ),
 	};
 
-	const uint PF_PARRY        = 0x00000001;
+	const uint PF_CROUCHING    = 0x00000001;
 	const uint PF_DOUBLEJUMP   = 0x00000002;
-	const uint PF_QUICKSHOT    = 0x00000004;
-	const uint PF_DUELWIELDING = 0x00000008;
+	const uint PF_PARRY        = 0x00000004;
+	const uint PF_QUICKSHOT    = 0x00000008;
+	const uint PF_DUELWIELDING = 0x00000010;
+	const uint PF_SLIDING      = 0x00000020;
 	
 	class Emote {
 		Emote() {
@@ -260,6 +262,13 @@ namespace TheNomad::SGame {
 //				return;
 //			}
 			
+		}
+
+		bool IsSliding() const {
+			return ( m_PFlags & PF_SLIDING ) != 0;
+		}
+		bool IsCrouching() const {
+			return ( m_PFlags & PF_CROUCHING ) != 0;
 		}
 
 		void SetLegFacing( int facing ) {

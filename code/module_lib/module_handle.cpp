@@ -227,6 +227,8 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
     m_nStateStack++;
     CheckASCall( m_pScriptContext->Prepare( m_pFuncTable[ nCallId ] ) );
 
+    g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE, 1 );
+
     if ( ml_debugMode->i && g_pDebugger->m_pModule->m_pHandle == this ) {
         CheckASCall( m_pScriptContext->SetLineCallback( asMETHOD( CDebugger, LineCallback ), g_pDebugger, asCALL_THISCALL ) );
     }
@@ -459,47 +461,15 @@ void CModuleHandle::ClearMemory( void )
     }
 
     Con_Printf( "CModuleHandle::ClearMemory: clearing memory of '%s'...\n", m_szName.c_str() );
+
     for ( i = 0; i < NumFuncs; i++ ) {
         if ( m_pFuncTable[i] ) {
             m_pFuncTable[i]->Release();
         }
     }
-    for ( i = 0; i < m_pScriptModule->GetFunctionCount(); i++ ) {
-        asIScriptFunction *pFunc = m_pScriptModule->GetFunctionByIndex( i );
-        if ( pFunc ) {
-            pFunc->Release();
-        }
-    }
 
-    for ( i = 0; i < m_pScriptModule->GetEnumCount(); i++ ) {
-        asITypeInfo *enumType = m_pScriptModule->GetEnumByIndex( i );
-        if ( enumType ) {
-            enumType->Release();
-        }
-    }
-    for ( i = 0; i < m_pScriptModule->GetFunctionCount(); i++ ) {
-        asIScriptFunction *pFunc = m_pScriptModule->GetFunctionByIndex( i );
-        if ( pFunc ) {
-            pFunc->Release();
-        }
-    }
-    for ( i = 0; i < m_pScriptModule->GetObjectTypeCount(); i++ ) {
-        asITypeInfo *pType = m_pScriptModule->GetObjectTypeByIndex( i );
-        if ( pType ) {
-            pType->Release();
-        }
-    }
-    for ( i = 0; i < m_pScriptModule->GetGlobalVarCount(); i++ ) {
-        m_pScriptModule->RemoveGlobalVar( i );
-    }
-    m_pScriptModule->ResetGlobalVars();
     m_pScriptModule->UnbindAllImportedFunctions();
-    m_pScriptModule->Discard();
-
-    g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_FULL_CYCLE | asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE, 10 );
-
     CheckASCall( m_pScriptContext->Unprepare() );
-    CheckASCall( m_pScriptContext->Release() );
 
     m_pScriptModule = NULL;
     m_pScriptContext = NULL;

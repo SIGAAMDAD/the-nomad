@@ -59,7 +59,7 @@ namespace TheNomad::SGame {
 			@entList = EntityManager.GetEntities();
 			for ( uint i = 0; i < entList.Count(); i++ ) {
 				if ( Util::BoundsIntersectPoint( bounds, entList[i].GetOrigin() ) ) {
-					const float dist = Util::Distance( origin, entList[i].GetOrigin() );
+					const float dist = Util::Distance( m_Link.m_Origin, entList[i].GetOrigin() );
 					if ( dist < 1.0f ) { // immediate impact range means death
 //						EntityManager.KillEntity( @ent, @entList[i] );
 						damage += m_Info.damage;
@@ -78,14 +78,14 @@ namespace TheNomad::SGame {
 			return 0.0f;
 		}
 		private float UseBlunt( EntityObject@ ent, float damage, uint weaponMode ) const {
-			const vec3& origin = ent.GetOrigin();
+			const vec3 origin = ent.GetOrigin();
 			const float angle = ent.GetAngle();
 			TheNomad::GameSystem::BBox bounds;
 			
 			return damage;
 		}
 		private float UsePolearm( EntityObject@ ent, float damage, uint weaponMode ) const {
-			const vec3& origin = ent.GetOrigin();
+			const vec3 origin = ent.GetOrigin();
 			const float angle = ent.GetAngle();
 			vec3 end;
 			
@@ -94,7 +94,7 @@ namespace TheNomad::SGame {
 			end.z = m_Info.range * sin( angle );
 			
 			if ( EntityManager.EntityIntersectsLine( origin, end ) ) {
-				m_Info.damageSfx.Play();
+				m_Info.useSfx.Play();
 				// pike, bannerlord mode (you crouch to get a spear brace), high-risk, high-reward
 				if ( cast<PlayrObject@>( @ent ).IsCrouching() || cast<PlayrObject@>( @ent ).IsSliding() ) {
 					return 1000.0f; // it's an insta-kill for most mobs
@@ -116,7 +116,7 @@ namespace TheNomad::SGame {
 				return 0.0f; // hit nothing or a wall
 			}
 			
-			EntityManager.DamageEntity( @ent, @ray );
+//			EntityManager.DamageEntity( @ent, @ray );
 			
 			// health mult doesn't matter on harder difficulties if the player is attacking with a firearm,
 			// that is, unless, the player is very close to the enemy

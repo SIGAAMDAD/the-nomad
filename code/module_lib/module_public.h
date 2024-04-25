@@ -377,7 +377,7 @@ private:
 
 	CScriptBuilder *m_pScriptBuilder;
 	CContextMgr *m_pContextManager;
-	asCScriptEngine *m_pEngine;
+	asIScriptEngine *m_pEngine;
 
     qboolean m_bRegistered;
     qboolean m_bRecursiveShutdown;

@@ -19,6 +19,25 @@ namespace TheNomad::Util {
 		}
 	}
 
+	float Swap( float a, float b ) {
+		float tmp = a;
+		a = b;
+		b = tmp;
+		return tmp;
+	}
+	int Swap( int a, int b ) {
+		int tmp = 0;
+		a = b;
+		b = tmp;
+		return tmp;
+	}
+	uint Swap( uint a, uint b ) {
+		uint tmp = 0;
+		a = b;
+		b = tmp;
+		return tmp;
+	}
+
 	//
 	// M_Random
 	// Returns a 0-255 number

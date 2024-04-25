@@ -47,11 +47,11 @@ static void *GetMemory( uint64_t size )
 {
     void *buf;
     
-    buf = calloc( size, 1 );
-    if ( !buf ) {
+    buf = malloc( size );
+	if ( !buf ) {
         N_Error( ERR_FATAL, "GetMemory: failed to allocate %lu bytes", size );
     }
-    return buf;
+    return memset( buf, 0, size );
 }
 
 static char *Compress_BZIP2( void *buf, uint64_t buflen, uint64_t *outlen )
@@ -63,7 +63,7 @@ static char *Compress_BZIP2( void *buf, uint64_t buflen, uint64_t *outlen )
 	Con_Printf( "Compressing %lu bytes with bzip2...\n", buflen );
 
 	len = buflen;
-	out = (char *)Hunk_AllocateTempMemory( buflen );
+	out = (char *)GetMemory( buflen );
 
 	ret = BZ2_bzBuffToBuffCompress( out, &len, (char *)buf, buflen, 9, 4, 50 );
 	if ( !CheckBZIP2( ret, buflen, "Compression" ) ) {
@@ -73,7 +73,7 @@ static char *Compress_BZIP2( void *buf, uint64_t buflen, uint64_t *outlen )
 	Con_Printf( "Successful compression of %lu to %u bytes with bzip2.\n", buflen, len );
 	newbuf = (char *)Z_Malloc( len, TAG_BFF );
 	memcpy( newbuf, out, len );
-	Hunk_FreeTempMemory( out );
+	free( out );
 	*outlen = len;
 
 	return newbuf;
@@ -111,7 +111,7 @@ static char *Compress_ZLIB( void *buf, uint64_t buflen, uint64_t *outlen )
 	const uint64_t expectedLen = buflen / 2;
 	int ret;
 
-	out = (char *)Hunk_AllocateTempMemory( buflen );
+	out = (char *)GetMemory( buflen );
 
 #if 0
 	stream.zalloc = zalloc;

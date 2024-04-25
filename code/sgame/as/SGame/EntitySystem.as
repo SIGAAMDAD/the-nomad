@@ -343,6 +343,60 @@ namespace TheNomad::SGame {
 			return m_EntityList.Count();
 		}
 
+		private bool BoundsIntersectLine( const vec3& in start, const vec3& in end, const TheNomad::GameSystem::BBox& in bounds ) {
+			float minX = start.x;
+			float maxX = end.x;
+			
+			if ( start.x > end.x ) {
+				minX = end.x;
+				maxX = start.x;
+			}
+			if ( maxX > bounds.m_Maxs.x ) {
+				maxX = bounds.m_Maxs.x;
+			}
+			if ( minX < bounds.m_Mins.x ) {
+				minX = bounds.m_Mins.x;
+			}
+			if ( minX > maxX ) {
+				return false;
+			}
+
+			float minY = start.y;
+			float maxY = end.y;
+
+			const float deltaX = end.x - start.x;
+
+			if ( abs( deltaX ) > 0.0000001f ) {
+				float a = ( end.y - start.y ) / deltaX;
+				float b = start.y - a * start.x;
+				minY = a * minX + b;
+				maxY = a * maxX + b;
+			}
+
+			if ( minY > maxY ) {
+				Util::Swap( maxY, maxX );
+			}
+			if ( maxY > bounds.m_Maxs.y ) {
+				maxY = bounds.m_Maxs.y;
+			}
+			if ( minY < bounds.m_Mins.y ) {
+				minY = bounds.m_Mins.y;
+			}
+			if ( minY > maxY ) {
+				return false;
+			}
+			return true;
+		}
+
+		bool EntityIntersectsLine( const vec3& in origin, const vec3& in end ) {
+			for ( uint i = 0; i < m_EntityList.Count(); i++ ) {
+				if ( BoundsIntersectLine( origin, end, m_EntityList[i].GetBounds() ) ) {
+					return true;
+				}
+			}
+			return false;
+		}
+
 		void SpawnProjectile( const vec3& in origin, float angle, const InfoSystem::AttackInfo@ info ) {
 
 		}

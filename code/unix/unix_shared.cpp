@@ -379,6 +379,56 @@ uint64_t Sys_EventSubtime( uint64_t time )
     return ret;
 }
 
+uint64_t Sys_GetPageSize( void )
+{
+	return sysconf( _SC_PAGE_SIZE );
+}
+
+void *Sys_AllocVirtualMemory( size_t nBytes )
+{
+	void *pData = mmap( NULL, PAD( nBytes, Sys_GetPageSize() ), PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0 );
+	if ( !pData || pData == MAP_FAILED ) {
+		return NULL;
+	}
+	return pData;
+}
+
+void *Sys_CommitVirtualMemory( void *pMemory, size_t nBytes )
+{
+	const size_t size = PAD( nBytes, Sys_GetPageSize() );
+	if ( mprotect( pMemory, size, PROT_WRITE | PROT_READ ) == -1 ) {
+		return NULL;
+	}
+#ifdef MADV_WILLNEED
+	madvise( pMemory, size, MADV_WILLNEED );
+#elif defined(POSIX_MADV_WILLNEED)
+	posix_madvise( pMemory, size, POSIX_MADV_WILLNEED );
+#endif
+	return pMemory;
+}
+
+void Sys_DecommitVirtualMemory( void *pMemory, size_t nBytes )
+{
+	const size_t size = PAD( nBytes, Sys_GetPageSize() );
+#ifdef MADV_FREE
+	madvise( pMemory, size, MADV_FREE );
+#elif defined(MADV_DONTNEED)
+	madvise( pMemory, size, MADV_DONTNEED );
+#elif defined(POSIX_MADV_DONTNEED)
+	posix_madvise( pMemory, size, POSIX_MADV_DONTNEED );
+#endif
+	if ( mprotect( pMemory, size, PROT_NONE ) == -1 ) {
+		N_Error( ERR_FATAL, "Sys_DecommitVirtualMemory: mprotect PROT_NONE failed" );
+	}
+}
+
+void Sys_ReleaseVirtualMemory( void *pMemory, size_t nBytes )
+{
+	if ( munmap( pMemory, PAD( nBytes, Sys_GetPageSize() ) ) == -1 ) {
+		Con_Printf( COLOR_RED "ERROR: munmap failed on %lu!\n", nBytes );
+	}
+}
+
 /*
 * Sys_LockMemory: sets pAddress to ROM, if it wasn't in read permissions before,
 * this'll probably fail

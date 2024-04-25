@@ -108,7 +108,7 @@ typedef struct memzone_s {
 static CThreadMutex commonLock;
 
 uint64_t hunksize;
-byte* hunkbase;
+byte *hunkbase;
 extern fileHandle_t logfile;
 
 #define HUNKID 0x553dfa2
@@ -619,7 +619,7 @@ void *Z_Alloc( uint64_t size, memtag_t tag )
 {
 	uint32_t extra;
 #ifdef _NOMAD_DEBUG
-		uint64_t allocSize;
+	uint64_t allocSize;
 #endif
 #ifndef USE_MULTI_SEGMENT
 	memblock_t *start, *rover;
@@ -928,12 +928,12 @@ void Z_InitMemory( void )
 
 	mainsize = cv->i * 1024 * 1024;
 
-	mainzone = (memzone_t *)calloc(mainsize, 1);
+	mainzone = (memzone_t *)calloc( mainsize, 1 );
 	if (!mainzone) {
 		Sys_SetError( ERR_OUT_OF_MEMORY );
 		N_Error(ERR_FATAL, "Main zone memory segment failed to allocate %lu megs", mainsize / (1024*1024));
 	}
-	Z_ClearZone(mainzone, mainzone, mainsize, 1);
+	Z_ClearZone( mainzone, mainzone, mainsize, 1 );
 }
 
 static const char *tagName[ TAG_COUNT ] = {
@@ -1203,9 +1203,9 @@ Goals:
 
 
 /*
-Hunk_Clear: gets called whenever a new level is loaded or is being shutdown
+* Hunk_Clear: gets called whenever a new level is loaded or is being shutdown
 */
-void Hunk_Clear(void)
+void Hunk_Clear( void )
 {
 	CThreadAutoLock lock( hunkLock );
 
@@ -1228,7 +1228,7 @@ void Hunk_Clear(void)
 	hunk_permanent = &hunk_low;
 	hunk_temp = &hunk_high;
 
-	Con_Printf("Hunk_Clear: reset the hunk ok\n");
+	Con_Printf( "Hunk_Clear: reset the hunk ok\n" );
 //	VM_Clear();
 
 	hunkblocks = NULL;
@@ -1494,110 +1494,6 @@ void Hunk_Log(void) {
 	Hunk_SmallLog();
 }
 
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#else
-#include <sys/mman.h>
-#endif
-
-static size_t GetPageSize( void )
-{
-#ifdef _WIN32
-	if ( sizeof( size_t ) < sizeof( DWORD ) ) {
-		Con_Printf( COLOR_RED "WARNING: sizeof( size_t ) < sizeof( DWORD ), possible loss of data.\n" );
-	}
-
-	SYSTEM_INFO info{};
-	GetSystemInfo( &info );
-	return info.dwPageSize;
-#else
-	return sysconf( _SC_PAGE_SIZE );
-#endif
-}
-
-static void *Sys_AllocVirtual( size_t nBytes )
-{
-#ifdef _WIN32
-#if (_MSC_VER <= 1900) || WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-    return VirtualAlloc( NULL, PAD( nBytes, GetPageSize() ), MEM_RESERVE, PAGE_READWRITE );
-#else
-    return VirtualAllocFromApp( NULL, PAD( nBytes, GetPageSize() ), MEM_RESERVE, PAGE_READWRITE );
-#endif
-#else
-	void *pData = mmap( NULL, PAD( nBytes, GetPageSize() ), PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0 );
-	if ( !pData || pData == MAP_FAILED ) {
-		return NULL;
-	}
-	return pData;
-#endif
-}
-
-static void *Sys_CommitVirtualMemory( void *pData, size_t nBytes )
-{
-#ifdef _WIN32
-    void *pRegion =
-#if (_MSC_VER <= 1900) || WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
-        VirtualAlloc( pData, PAD( nBytes, GetPageSize() ), MEM_COMMIT, PAGE_READWRITE );
-#else
-        VirtualAllocFromApp( pData, PAD( nBytes, GetPageSize() ), MEM_COMMIT,
-                            PAGE_READWRITE );
-#endif
-	return pRegion;
-#else
-	const size_t size = PAD( nBytes, GetPageSize() );
-	if ( mprotect( pData, size, PROT_WRITE | PROT_READ ) == -1 ) {
-		return NULL;
-	}
-#ifdef MADV_WILLNEED
-	madvise( pData, size, MADV_WILLNEED );
-#elif defined(POSIX_MADV_WILLNEED)
-	posix_madvise( pData, size, POSIX_MADV_WILLNEED );
-#endif
-	return pData;
-#endif
-}
-
-static void Sys_DecommitVirtualMemory( void *pData, size_t nBytes )
-{
-#ifdef _WIN32
-	VirtualFree( pData, PAD( nBytes, GetPageSize() ), MEM_DECOMMIT );
-#else
-	const size_t size = PAD( nBytes, GetPageSize() );
-#ifdef MADV_FREE
-	madvise( pData, size, MADV_FREE );
-#elif defined(MADV_DONTNEED)
-	madvise( pData, size, MADV_DONTNEED );
-#elif defined(POSIX_MADV_DONTNEED)
-	posix_madvise( pData, size, POSIX_MADV_DONTNEED );
-#endif
-
-	if ( mprotect( pData, size, PROT_NONE ) == -1 ) {
-		N_Error( ERR_FATAL, "Sys_DecommitVirtualMemory: mprotect PROT_NONE failed" );
-	}
-#endif
-}
-
-static void Sys_ReleaseVirtual( void *pData, size_t nBytes )
-{
-#ifdef _WIN32
-	VirtualFree( pData, 0u, MEM_RELEASE );
-#else
-	if ( munmap( pData, PAD( nBytes, GetPageSize() ) ) == -1 ) {
-		Con_Printf( COLOR_RED "ERROR: munmap failed on %lu!\n", nBytes );
-	}
-#endif
-}
-
-static void *hunkorig = NULL;
-static void Hunk_ReleaseMemory( void )
-{
-	if ( hunkbase ) {
-		Sys_DecommitVirtualMemory( hunkorig, hunksize );
-		Sys_ReleaseVirtual( hunkorig, hunksize );
-	}
-}
-
 void Hunk_InitMemory( void )
 {
     cvar_t *cv;
@@ -1621,8 +1517,6 @@ void Hunk_InitMemory( void )
 		Sys_SetError( ERR_OUT_OF_MEMORY );
 		N_Error( ERR_FATAL, "Hunk data failed to allocate %lu megs", hunksize / (1024*1024) );
 	}
-
-//	Sys_CommitVirtualMemory( hunkbase, hunksize );
 
 	// cacheline align
 	hunkbase = (byte *)PADP( hunkbase, com_cacheLine );

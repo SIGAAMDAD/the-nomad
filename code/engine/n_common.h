@@ -556,23 +556,27 @@ void Sys_Print(const char *msg);
 void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error( const char *fmt, ... );
 char *Sys_GetClipboardData( void );
 
-const char *Sys_pwd(void);
-void *Sys_LoadDLL(const char *name);
-void Sys_CloseDLL(void *handle);
-void *Sys_GetProcAddress(void *handle, const char *name);
-const char *Sys_GetError(void);
-void GDR_NORETURN Sys_Exit(int code);
-qboolean Sys_GetFileStats(fileStats_t *stats, const char *path);
-void Sys_FreeFileList(char **list);
-void Sys_ListFilteredFiles(const char *basedir, const char *subdirs, const char *filter, char **list, uint64_t *numfiles);
-char **Sys_ListFiles(const char *directory, const char *extension, const char *filter, uint64_t *numfiles, qboolean wantsubs);
-const char *Sys_DefaultHomePath(void);
-const char *Sys_DefaultBasePath(void);
-qboolean Sys_RandomBytes(byte *s, uint64_t len);
+const char *Sys_pwd( void );
+void *Sys_LoadDLL( const char *name );
+void Sys_CloseDLL( void *handle );
+void *Sys_GetProcAddress( void *handle, const char *name );
+const char *Sys_GetError( void );
+void GDR_NORETURN Sys_Exit( int code );
+qboolean Sys_GetFileStats( fileStats_t *stats, const char *path );
+void Sys_FreeFileList( char **list );
+void Sys_ListFilteredFiles( const char *basedir, const char *subdirs, const char *filter, char **list, uint64_t *numfiles );
+char **Sys_ListFiles( const char *directory, const char *extension, const char *filter, uint64_t *numfiles, qboolean wantsubs );
+const char *Sys_DefaultHomePath( void );
+const char *Sys_DefaultBasePath( void );
+qboolean Sys_RandomBytes( byte *s, uint64_t len );
 
 qboolean Sys_LowPhysicalMemory( void );
 void Sys_Sleep( double msec );
 
+void *Sys_AllocVirtualMemory( uint64_t nBytes );
+void Sys_ReleaseVirtualMemory( void *pMemory, uint64_t nBytes );
+void *Sys_CommitVirtualMemory( void *pMemory, uint64_t nBytes );
+void Sys_DecommitVirtualMemory( void *pMemory, uint64_t nBytes );
 void Sys_LockMemory( void *pAddress, uint64_t nBytes );
 void Sys_UnlockMemory( void *pAddress, uint64_t nBytes );
 

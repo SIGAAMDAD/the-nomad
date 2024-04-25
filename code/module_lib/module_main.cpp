@@ -13,6 +13,8 @@
 #include "module_debugger.h"
 #include "scriptlib/scriptarray.h"
 #include "scriptlib/scriptdictionary.h"
+#define JEMALLOC_NO_RENAME
+#include <jemalloc/jemalloc.h>
 
 moduleImport_t moduleImport;
 
@@ -342,26 +344,26 @@ void Module_ASMessage_f( const asSMessageInfo *pMsg, void *param )
 }
 
 #ifdef _NOMAD_DEBUG
-void *AS_Alloc( size_t nSize, const char *fileName, const uint32_t lineNumber ) {
-    return Z_MallocDebug( nSize, TAG_MODULES, "AS_Alloc", fileName, lineNumber );
-//    return Mem_AllocDebug( nSize, fileName, lineNumber );
+void *AS_Alloc( size_t nSize, const char *pFilename, uint32_t lineNumber ) {
+//    return Z_Malloc( nSize, TAG_MODULES );
+    return Mem_Alloc( nSize );
 }
 #else
 void *AS_Alloc( size_t nSize ) {
-    return Z_Malloc( nSize, TAG_MODULES );
-//    return Mem_Alloc( nSize );
+//    return Z_Malloc( nSize, TAG_MODULES );
+    return Mem_Alloc( nSize );
 }
 #endif
 
 #ifdef _NOMAD_DEBUG
-void AS_Free( void *ptr, const char *fileName, const uint32_t lineNumber ) {
-    Z_Free( ptr );
-//    Mem_FreeDebug( ptr, fileName, lineNumber );
+void AS_Free( void *ptr, const char *pFilename, uint32_t lineNumber ) {
+//    Z_Free( ptr );
+    Mem_Free( ptr );
 }
 #else
 void AS_Free( void *ptr ) {
-    Z_Free( ptr );
-//    Mem_Free( ptr );
+//    Z_Free( ptr );
+    Mem_Free( ptr );
 }
 #endif
 
@@ -603,8 +605,7 @@ void CModuleLib::Shutdown( qboolean quit )
     Cmd_RemoveCommand( "ml_debug.print_array_memory_stats" );
     Cmd_RemoveCommand( "ml_debug.print_string_cache" );
 
-    m_bRegistered = qfalse;
-
+    m_pEngine->GarbageCollect( asGC_FULL_CYCLE | asGC_DESTROY_GARBAGE | asGC_DETECT_GARBAGE, 100 );
     for ( auto& it : m_LoadList ) {
         if ( it && it->m_pHandle ) {
             it->m_pHandle->CallFunc( ModuleShutdown, 0, NULL );
@@ -613,36 +614,21 @@ void CModuleLib::Shutdown( qboolean quit )
         }
     }
     m_LoadList.clear();
-
-    if ( g_pStringFactory ) {
-        g_pStringFactory->m_StringCache.clear();
-    }
-
-    if ( !quit ) {
-        if ( sgvm ) {
-            ModuleCall( sgvm, ModuleShutdown, 0 );
-            RunModules( ModuleShutdown, 0 );
-        }
-        
-        m_pEngine->GarbageCollect( asGC_DESTROY_GARBAGE | asGC_DETECT_GARBAGE, 50 );
-        m_bRecursiveShutdown = qfalse;
-        g_pModuleLib = NULL;
-        g_pDebugger = NULL;
-
-        return;
-    }
-
+    
     if ( m_bRegistered ) {
         if ( m_pCompiler ) {
             m_pCompiler->~asCJITCompiler();
         }
         m_pScriptBuilder->~CScriptBuilder();
         g_pDebugger->~CDebugger();
+    }
 
+    if ( quit ) {
         // everything is automatically released when this is called
         Mem_Shutdown();
     }
 
+    m_bRegistered = qfalse;
     m_bRecursiveShutdown = qfalse;
     g_pModuleLib = NULL;
     g_pDebugger = NULL;

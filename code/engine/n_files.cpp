@@ -10,7 +10,7 @@
 
 THE NOMAD FILESYSTEM
 
-All of glnomad's resources camn be accesse through a series of searchpaths that are structured hierarichally.
+All of The Nomad's resources camn be accesse through a series of searchpaths that are structured hierarichally.
 
 A "npath" is a system independent reference to a file. All npaths are terminated by a zero, and any path
 separators are illegal within one. This is done so that no file outside of the dedicated system can be accessed
@@ -1686,6 +1686,7 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 	uint64_t chunkSize;
 	uint64_t gameNameLen;
 	uint64_t baseNameLen, fileNameLen;
+	int64_t compressedSize;
 	FILE *fp;
 	fileStats_t stats;
 	char *tempBuf;
@@ -1759,7 +1760,7 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 			COLOR_YELLOW "==== WARNING: bff version found in header isn't the same as this program's ====\n" COLOR_RESET
 			"\tHeader Version: %hi\n\tProgram BFF Version: %hi\n", header.version, BFF_VERSION );
 	}
-	if ( !fread( gameName, sizeof(gameName), 1, fp ) ) {
+	if ( !fread( gameName, sizeof( gameName ), 1, fp ) ) {
 		fclose( fp );
 		N_Error( ERR_FATAL, "FS_LoadBFF: failed to read gameName" );
 	}
@@ -1767,12 +1768,12 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 	hashSize = FS_BFFHashSize( header.numChunks );
 
 	size = 0;
-	size += sizeof(*bff) + sizeof(*bff->buildBuffer) * header.numChunks + hashSize * sizeof(*bff->hashTable);
+	size += sizeof(*bff) + sizeof(*bff->buildBuffer) * header.numChunks + hashSize * sizeof( *bff->hashTable );
 	size += PAD( fileNameLen, sizeof(uintptr_t) );
 	size += PAD( baseNameLen, sizeof(uintptr_t) );
 
 	bff = (bffFile_t *)Z_Malloc( size, TAG_BFF );
-	memset(bff, 0, size);
+	memset( bff, 0, size );
 
 	bff->numfiles = header.numChunks;
 	bff->hashSize = hashSize;
@@ -1794,11 +1795,12 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 	
 	curFile = bff->buildBuffer;
 	for ( i = 0; i < bff->numfiles; i++ ) {
-		if ( !fread( &curFile->nameLen, sizeof(curFile->nameLen), 1, fp ) ) {
+		if ( !fread( &curFile->nameLen, sizeof( curFile->nameLen ), 1, fp ) ) {
 			fclose( fp );
 			Con_Printf( COLOR_RED "ERROR: failed reading chunk nameLen at %lu\n", i );
 			return NULL;
 		}
+		curFile->nameLen = LittleLong( curFile->nameLen );
 
 		curFile->name = (char *)Z_Malloc( curFile->nameLen, TAG_BFF );
 		if ( !fread( curFile->name, curFile->nameLen, 1, fp ) ) {
@@ -1806,11 +1808,13 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 			Con_Printf( COLOR_RED "ERROR: failed reading chunk name at %lu\n", i );
 			return NULL;
 		}
-		if ( !fread( &curFile->size, sizeof(curFile->size), 1, fp ) ) {
+		if ( !fread( &curFile->size, sizeof( curFile->size ), 1, fp ) ) {
 			fclose( fp );
 			Con_Printf( COLOR_RED "ERROR: failed reading read chunk size at %lu\n", i );
 			return NULL;
 		}
+
+		curFile->size = LittleLong( curFile->size );
 
 		if ( !curFile->size ) {
 			fclose( fp );
@@ -1826,7 +1830,23 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 		curFile->bytesRead = 0;
 
 		if ( header.compression != COMPRESS_NONE ) {
-			N_Error( ERR_FATAL, "Compression not supported yet!" );
+			uint64_t outLen;
+
+			if ( !fread( &compressedSize, sizeof( compressedSize ), 1, fp ) ) {
+				fclose( fp );
+				Con_Printf( COLOR_RED "ERROR: failed reading read chunk compressed size at %lu\n", i );
+				return NULL;
+			}
+
+			outLen = LittleLong( compressedSize );
+			tempBuf = (char *)Z_Malloc( curFile->size, TAG_STATIC );
+			if ( !fread( tempBuf, curFile->size, 1, fp ) ) {
+				fclose( fp );
+				Con_DPrintf( "Error reading chunk buffer at %lu\n", i );
+				return NULL;
+			}
+			curFile->buf = Decompress( tempBuf, curFile->size, &outLen, header.compression );
+			Z_Free( tempBuf );
 		}
 		else {
 			// read the chunk data
@@ -2991,6 +3011,8 @@ void FS_Shutdown(qboolean closeFiles)
 	Cmd_RemoveCommand( "fs_restart" );
 	Cmd_RemoveCommand( "lsof" );
 	Cmd_RemoveCommand( "addmod" );
+
+	Z_FreeTags( TAG_BFF, TAG_BFF );
 }
 
 void FS_Restart( void )
