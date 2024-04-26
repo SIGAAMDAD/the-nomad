@@ -48,6 +48,14 @@ namespace TheNomad::GameSystem::SaveSystem {
 			return value;
         }
 
+		bool LoadBool( const string& in name ) const {
+			return Convert().ToBool( TheNomad::GameSystem::LoadUInt( name, handle ) );
+		}
+
+		void LoadString( const string& in name, string& in str ) const {
+			TheNomad::GameSystem::LoadString( name, str, handle );
+		}
+
 		float LoadFloat( const string& in name ) const {
 			return TheNomad::GameSystem::LoadFloat( name, handle );
 		}

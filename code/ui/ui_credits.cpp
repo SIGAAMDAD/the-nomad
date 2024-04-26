@@ -35,6 +35,8 @@ static void CreditsMenu_DrawPlayTesters( void *self )
     ImGui::NewLine();
 }
 
+// NOTE: Antonini karma mechanic
+
 void CreditsMenu_Cache( void )
 {
     static const char *creditsString =
@@ -47,7 +49,7 @@ void CreditsMenu_Cache( void )
     "- Alpeca Grenade: A music piece\n"
     "- Jack Rosenthal: A couple of ideas\n"
     "- My Family & Friends: Helping me get through some tough times\n"
-    "- My Father: Giving me feedback, tips and tricks for programming when I was struggling, and helped test the first working version\n";
+    "\n";
 
     static const char *signingOffString =
     "Sincerely, Your Resident Fiend,\nNoah Van Til";
@@ -65,7 +67,7 @@ void CreditsMenu_Cache( void )
     s_credits->menu.fullscreen = qtrue;
     s_credits->menu.textFontScale = 1.5f;
     s_credits->menu.titleFontScale = 3.5f;
-    s_credits->menu.name = "Credits##MainMenuTheNomadCredits";
+    s_credits->menu.name = "Credits";
 
     s_credits->creditsString.generic.type = MTYPE_TEXT;
     s_credits->creditsString.generic.font = FontCache()->AddFontToCache( "RobotoMono", "Bold" );

@@ -421,8 +421,7 @@ public:
 	// time has elapsed, more or less. Duration is in milliseconds
 	static void Sleep( uint64_t duration );
 protected:
-	enum Flags
-	{
+	enum Flags {
 		SUPPORT_STOP_PROTOCOL = 1 << 0
 	};
 

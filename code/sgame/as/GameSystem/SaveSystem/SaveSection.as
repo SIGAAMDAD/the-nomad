@@ -29,6 +29,10 @@ namespace TheNomad::GameSystem::SaveSystem {
             TheNomad::GameSystem::EndSaveSection();
         }
 
+		void SaveBool( const string& in name, bool value ) const {
+			TheNomad::GameSystem::SaveUInt( name, Convert().ToUInt( value ) );
+		}
+
 		void SaveFloat( const string& in name, float value ) const {
 			TheNomad::GameSystem::SaveFloat( name, value );
 		}

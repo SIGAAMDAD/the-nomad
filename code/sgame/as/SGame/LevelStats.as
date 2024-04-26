@@ -18,7 +18,6 @@ namespace TheNomad::SGame {
 			
 			ImGui::Begin( "##LevelStatsShow", null, windowFlags );
 			if ( endOfLevel ) {
-				time.Stop();
 				if ( TheNomad::Engine::IsAnyKeyDown() ) {
 					selectedSfx.Play();
 				}
@@ -33,7 +32,7 @@ namespace TheNomad::SGame {
 			ImGui::Text( "TIME:" );
 			ImGui::TableNextColumn();
 
-			ImGui::Text( m_TimeMinutes + ":" + m_TimeSeconds + "." + m_TimeMilliseconds );
+			ImGui::Text( formatUInt( m_TimeMinutes ) + ":" + m_TimeSeconds + "." + m_TimeMilliseconds );
 			ImGui::TextColored( sgame_RankStringColors[ time_Rank ], sgame_RankStrings[ time_Rank ] );
 			
 			ImGui::TableNextRow();
@@ -44,7 +43,7 @@ namespace TheNomad::SGame {
 			ImGui::TableNextColumn();
 			ImGui::Text( "KILLS:" );
 			ImGui::TableNextColumn();
-			ImGui::Text( numKills );
+			ImGui::Text( formatUInt( numKills ) );
 			ImGui::TextColored( sgame_RankStringColors[ kills_Rank ], sgame_RankStrings[ kills_Rank ] );
 			
 			ImGui::TableNextRow();
@@ -55,7 +54,7 @@ namespace TheNomad::SGame {
 			ImGui::TableNextColumn();
 			ImGui::Text( "DEATHS:" );
 			ImGui::TableNextColumn();
-			ImGui::Text( numDeaths );
+			ImGui::Text( formatUInt( numDeaths ) );
 			ImGui::TextColored( sgame_RankStringColors[ deaths_Rank ], sgame_RankStrings[ deaths_Rank ] );
 			
 			ImGui::TableNextRow();
@@ -66,7 +65,7 @@ namespace TheNomad::SGame {
 			ImGui::TableNextColumn();
 			ImGui::Text( "STYLE:" );
 			ImGui::TableNextColumn();
-			ImGui::Text( stylePoints );
+			ImGui::Text( formatUInt( stylePoints ) );
 			ImGui::TextColored( sgame_RankStringColors[ style_Rank ], sgame_RankStrings[ style_Rank ] );
 			
 			ImGui::EndTable();
@@ -84,6 +83,7 @@ namespace TheNomad::SGame {
 		uint collateralScore = 0;
 		bool isClean = true;
 
+		LevelRank total_Rank = LevelRank::RankS;
 		LevelRank time_Rank = LevelRank::RankS;
 		LevelRank style_Rank = LevelRank::RankS;
 		LevelRank kills_Rank = LevelRank::RankS;

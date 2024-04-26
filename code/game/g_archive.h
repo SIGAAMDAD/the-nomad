@@ -4,6 +4,20 @@
 #pragma once
 
 #include "../engine/n_cvar.h"
+#include <EASTL/stack.h>
+
+#define MAX_SAVE_FIELD_NAME 128
+#define MAX_SAVE_SECTION_NAME 64
+#define MAX_SAVE_SECTION_DEPTH 64
+
+// this is inspired by a problem some people may have experienced with games that allow for multiple mods and saving that mod
+// data to the actual save file. That's my experience with Bannerlord. If you define this, then each different section will
+// also write an additional .prt file containing that individual data so that if the main save file is corrupted, someone
+// can still use the existing uncorrupted .prt files to reconstruct the clean save data. This does, hovewever, use much more
+// disk space especially depending on how much the game saves
+#ifndef SAVEFILE_MOD_SAFETY
+    #define SAVEFILE_MOD_SAFETY
+#endif
 
 typedef struct {
     char name[MAX_NPATH];
@@ -25,8 +39,8 @@ typedef struct {
 	char *name;
 	int32_t nameLength;
 	int32_t type;
-	uint32_t dataSize;
-    uint32_t dataOffset;
+	int32_t dataSize;
+    int32_t dataOffset;
 	union {
 		int8_t s8;
 		int16_t s16;
@@ -78,9 +92,13 @@ typedef struct {
 } ngdheader_t;
 
 typedef struct {
-    char name[MAX_STRING_CHARS];
-    int64_t size;
-    int64_t numFields;
+    char name[MAX_SAVE_FIELD_NAME];
+    int32_t nameLength;
+    int32_t numFields;
+#ifdef SAVEFILE_MOD_SAFETY
+    fileHandle_t hFile;
+#endif
+    uint32_t offset;
 } ngdsection_write_t;
 
 template<typename Key, typename Value>
@@ -88,22 +106,19 @@ using ArchiveCache = eastl::unordered_map<Key, Value, eastl::hash<Key>, eastl::e
 
 typedef struct ngdsection_read_s
 {
-	char name[MAX_STRING_CHARS];
-	int64_t nameLength;
-	int64_t size;
-	int64_t numFields;
+	char name[MAX_SAVE_FIELD_NAME];
+	int32_t nameLength;
+	int32_t size;
+	int32_t numFields;
 	
     ArchiveCache<const char *, ngdfield_t *> m_FieldCache;
-	
-	struct ngdsection_read_s *next;
 } ngdsection_read_t;
 
 typedef struct {
-	char name[MAX_OSPATH];
+	char name[MAX_NPATH];
 	
-	ngdheader_t header;
-	
-    uint64_t m_nSections;
+    int64_t m_nSections;
+    uint64_t m_nMods;
 	ngdsection_read_t *m_pSectionList;
 } ngd_file_t;
 
@@ -179,11 +194,13 @@ private:
     qboolean LoadArchiveFile( const char *filename, uint64_t index );
     const ngdfield_t *FindField( const char *name, int32_t type, nhandle_t hSection ) const;
 
+//    fileHandle_t m_szSectionStack[MAX_SAVE_SECTION_DEPTH];
     fileHandle_t m_hFile;
     
     int64_t m_nSections;
     int64_t m_nSectionDepth;
-    ngdsection_write_t m_Section;
+    ngdsection_write_t *m_pSection;
+    ngdsection_write_t m_szSectionStack[MAX_SAVE_SECTION_DEPTH];
 
     ngd_file_t **m_pArchiveCache;
     char **m_pArchiveFileList;

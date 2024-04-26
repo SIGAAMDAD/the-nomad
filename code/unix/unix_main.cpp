@@ -138,7 +138,7 @@ qboolean Sys_LowPhysicalMemory( void )
 #if 1
     uint64_t pageSize = sysconf( _SC_PAGESIZE );
     uint64_t numPhysPages = sysconf( _SC_AVPHYS_PAGES );
-    return (pageSize * numPhysPages) < MEM_THRESHOLD ? qtrue : qfalse;
+    return ( pageSize * numPhysPages ) < MEM_THRESHOLD ? qtrue : qfalse;
 #else
     struct statfs buf;
     size_t memLeft;

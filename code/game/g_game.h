@@ -14,6 +14,7 @@
 #include "../system/sys_timer.h"
 #include <SDL2/SDL.h>
 #include "../ui/ui_public.hpp"
+#include <EASTL/stack.h>
 #endif
 
 typedef enum
@@ -164,6 +165,10 @@ typedef struct {
     
     float cameraZoom;
     vec3_t cameraPos;
+
+#ifdef __cplusplus
+    eastl::stack<CThread *> m_LoadStack;
+#endif
 } gameInfo_t;
 
 extern field_t g_consoleField;

@@ -9,6 +9,41 @@
 //#include <ogg/ogg.h>
 //#include <vorbis/vorbisfile.h>
 
+class CSoundThread : public CThread
+{
+public:
+    CSoundThread( const char *pszFileName, memtag_t nTag, ALuint *pSource, ALuint nBuffer );
+    virtual ~CSoundThread() override;
+
+    inline void GetInfo( SF_INFO *pInfo ) const {
+        *pInfo = m_hFData;
+    }
+    inline bool Loaded( void ) const {
+        return m_nFileLength && m_pFileBuffer;
+    }
+private:
+    inline ALenum Format( void ) const {
+        return m_hFData.channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
+    }
+
+	virtual int Run( void ) override;
+	virtual void OnExit( void ) override;
+
+    char m_szName[MAX_NPATH];
+
+    SF_INFO m_hFData;
+
+    ALuint *m_pSource;
+    ALuint m_nBuffer;
+    memtag_t m_nTag;
+
+    uint64_t m_nFileLength;
+    void *m_pFileBuffer;
+
+    uint64_t m_nBufferLength;
+    short *m_pData;
+};
+
 #define MAX_SOUND_SOURCES 2048
 #define MAX_MUSIC_QUEUE 12
 
@@ -129,8 +164,8 @@ private:
     uint32_t m_iTag;
 
     // AL data
-    uint32_t m_iSource;
-    uint32_t m_iBuffer;
+    ALuint m_iSource;
+    ALuint m_iBuffer;
 
     bool m_bLoop;
 
@@ -256,16 +291,14 @@ void CSoundSource::Shutdown( void )
 }
 
 
-void CSoundSource::SetVolume( void ) const
-{
+void CSoundSource::SetVolume( void ) const {
     if ( m_iTag == TAG_MUSIC || m_iSource == 0 ) {
         return;
     }
     ALCall( alSourcef( m_iSource, AL_GAIN, snd_sfxvol->f / CLAMP_VOLUME ) );
 }
 
-ALenum CSoundSource::Format( void ) const
-{
+ALenum CSoundSource::Format( void ) const {
     return m_hFData.channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
 }
 
@@ -377,6 +410,7 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
 {
     PROFILE_FUNCTION();
 
+/*
     SNDFILE *sf;
     SF_VIRTUAL_IO vio;
     ALenum format;
@@ -386,12 +420,13 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     uint64_t length;
     const char *ospath;
     short *data;
+*/
+    CSoundThread *thread;
 
     m_iTag = tag;
 
     // clear audio file data before anything
     memset( &m_hFData, 0, sizeof( m_hFData ) );
-    memset( &vio, 0, sizeof( vio ) );
 
     N_strncpyz( m_pName, npath, sizeof( m_pName ) );
 
@@ -400,15 +435,16 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     // it again
     sndManager->AddSourceToHash( this );
 
-    length = FS_LoadFile( npath, &buffer );
-
-    if ( !length || !buffer ) {
-        Con_Printf( COLOR_RED "CSoundSource::LoadFile: failed to load file '%s'.\n", npath );
+    thread = CreateStackObject( CSoundThread, npath, (memtag_t)tag, &m_iSource, m_iBuffer );
+    if ( !thread->Loaded() ) {
         return false;
     }
-
-    fp = tmpfile();
-    AssertMsg( fp, "Failed to open temprorary file!" );
+    // 6KB stack should be more than enough
+    if ( !thread->Start( 6*1024 ) ) {
+        N_Error( ERR_DROP, "CSoundSource::LoadFile: failed to start sound loader thread" );
+    }
+    thread->GetInfo( &m_hFData );
+    thread->Join();
 
 /*
     vio.get_filelen = SndFile_GetFileLen;
@@ -423,49 +459,6 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
         return false;
     }
 */
-    fwrite( buffer, length, 1, fp );
-    fseek( fp, 0L, SEEK_SET );
-    
-    sf = sf_open_fd( fileno( fp ), SFM_READ, &m_hFData, SF_FALSE );
-    if ( !sf ) {
-        Con_Printf( COLOR_YELLOW "WARNING: libsndfile sf_open_fd failed on '%s', sf_strerror(): %s\n", npath, sf_strerror( sf ) );
-        return false;
-    }
-    
-    // allocate the buffer
-    Alloc();
-
-    data = (short *)Hunk_AllocateTempMemory( sizeof( *data ) * m_hFData.channels * m_hFData.frames );
-    if ( !sf_read_short( sf, data, sizeof( *data ) * m_hFData.channels * m_hFData.frames ) ) {
-        N_Error( ERR_FATAL, "CSoundSource::LoadFile(%s): failed to read %lu bytes from audio stream, sf_strerror(): %s\n",
-            npath, sizeof( *data ) * m_hFData.channels * m_hFData.frames, sf_strerror( sf ) );
-    }
-    
-    sf_close( sf );
-    fclose( fp );
-
-    format = Format();
-    if ( format == 0 ) {
-        Con_Printf( COLOR_RED "Bad soundfile format for '%s', refusing to load\n", npath );
-        return false;
-    }
-
-    // generate a brand new source for each individual sfx
-    if ( tag == TAG_SFX && m_iSource == 0 ) {
-        ALCall( alGenSources( 1, &m_iSource ) );
-    }
-    ALCall( alBufferData( m_iBuffer, format, data, sizeof( *data ) * m_hFData.channels * m_hFData.frames, m_hFData.samplerate ) );
-
-    if ( tag == TAG_SFX ) {
-        ALCall( alSourcef( m_iSource, AL_GAIN, snd_sfxvol->f ) );
-        ALCall( alSourcei( m_iSource, AL_BUFFER, m_iBuffer ) );
-    } else if (tag == TAG_MUSIC) {
-        ALCall( alSourcef( m_iSource, AL_GAIN, snd_musicvol->f ) );
-        ALCall( alSourcei( m_iSource, AL_BUFFER, 0 ) );
-    }
-
-    Hunk_FreeTempMemory( data );
-    FS_FreeFile( buffer );
 
     return true;
 }
@@ -517,7 +510,8 @@ void CSoundManager::Shutdown( void )
 
     ALCall( alDeleteSources( 1, &m_iMusicSource ) );
 
-    Z_FreeTags( TAG_SFX, TAG_MUSIC );
+    Z_FreeTags( TAG_SFX );
+    Z_FreeTags( TAG_MUSIC );
 
     Cmd_RemoveCommand( "snd.setvolume" );
     Cmd_RemoveCommand( "snd.toggle" );
@@ -869,29 +863,33 @@ static void Snd_ListFiles_f( void )
 
 void Snd_Init( void )
 {
-    snd_sfxon = Cvar_Get( "snd_sfxon", "1", CVAR_SAVE | CVAR_LATCH );
+    snd_sfxon = Cvar_Get( "snd_sfxon", "1", CVAR_SAVE );
     Cvar_CheckRange( snd_sfxon, "0", "1", CVT_INT );
-    Cvar_SetDescription( snd_sfxon, "Toggles sound effects on or off." );
+    Cvar_SetDescription( snd_sfxon, "Toggles sound effects." );
 
-    snd_musicon = Cvar_Get( "snd_musicon", "1", CVAR_SAVE | CVAR_LATCH );
+    snd_musicon = Cvar_Get( "snd_musicon", "1", CVAR_SAVE );
     Cvar_CheckRange( snd_musicon, "0", "1", CVT_INT );
-    Cvar_SetDescription( snd_musicon, "Toggles music on or off." );
+    Cvar_SetDescription( snd_musicon, "Toggles music." );
 
-    snd_sfxvol = Cvar_Get( "snd_sfxvol", "50", CVAR_SAVE | CVAR_LATCH );
+    snd_sfxvol = Cvar_Get( "snd_sfxvol", "50", CVAR_SAVE );
     Cvar_CheckRange( snd_sfxvol, "0", "100", CVT_INT );
     Cvar_SetDescription( snd_sfxvol, "Sets global sound effects volume." );
 
-    snd_musicvol = Cvar_Get( "snd_musicvol", "80", CVAR_SAVE | CVAR_LATCH );
+    snd_musicvol = Cvar_Get( "snd_musicvol", "80", CVAR_SAVE );
     Cvar_CheckRange( snd_musicvol, "0", "100", CVT_INT );
     Cvar_SetDescription( snd_musicvol, "Sets volume for music." );
 
-    snd_mastervol = Cvar_Get( "snd_mastervol", "80", CVAR_SAVE | CVAR_LATCH );
+    snd_mastervol = Cvar_Get( "snd_mastervol", "80", CVAR_SAVE );
     Cvar_CheckRange( snd_mastervol, "0", "100", CVT_INT );
     Cvar_SetDescription( snd_mastervol, "Sets the cap for sfx and music volume." );
 
+#ifdef _NOMAD_DEBUG
+    snd_debugPrint = Cvar_Get( "snd_debugPrint", "1", CVAR_TEMP );
+#else
     snd_debugPrint = Cvar_Get( "snd_debugPrint", "0", CVAR_CHEAT | CVAR_TEMP );
+#endif
     Cvar_CheckRange( snd_debugPrint, "0", "1", CVT_INT );
-    Cvar_SetDescription( snd_debugPrint, "Toggles OpenAL-soft debug messages, don't use if you aren't a developer." );
+    Cvar_SetDescription( snd_debugPrint, "Toggles OpenAL-soft debug messages." );
 
     Con_Printf("---------- Snd_Init ----------\n");
 
@@ -903,4 +901,87 @@ void Snd_Init( void )
     Cmd_AddCommand( "snd.toggle", Snd_Toggle_f );
     Cmd_AddCommand( "snd.updatevolume", Snd_UpdateVolume_f );
     Cmd_AddCommand( "snd.list_files", Snd_ListFiles_f );
+}
+
+CSoundThread::CSoundThread( const char *pszFileName, memtag_t nTag, ALuint *pSource, ALuint nBuffer ) {
+    memset( this, 0, sizeof( *this ) );
+
+    m_nFileLength = FS_LoadFile( pszFileName, &m_pFileBuffer );
+    if ( !m_nFileLength || !m_pFileBuffer ) {
+        Con_Printf( COLOR_RED "CSoundSource::LoadFile: failed to load file '%s'.\n", pszFileName );
+        return;
+    }
+
+    N_strncpyz( m_szName, pszFileName, sizeof( m_szName ) );
+    m_pSource = pSource;
+    m_nBuffer = nBuffer;
+    m_nTag = nTag;
+}
+
+CSoundThread::~CSoundThread() {
+    if ( m_nFileLength && m_pFileBuffer ) {
+        FS_FreeFile( m_pFileBuffer );
+    }
+}
+
+int CSoundThread::Run( void ) {
+    PROFILE_FUNCTION();
+
+    SNDFILE *sf;
+    SF_VIRTUAL_IO vio;
+    ALenum format;
+    FILE *fp;
+
+    if ( !Loaded() ) {
+        return -1;
+    }
+    
+    CThreadAutoLock<CThreadMutex> lock( m_hLock );
+
+    fp = tmpfile();
+    AssertMsg( fp, "Failed to open temprorary file!" );
+
+    fwrite( m_pFileBuffer, m_nFileLength, 1, fp );
+    fseek( fp, 0L, SEEK_SET );
+    
+    sf = sf_open_fd( fileno( fp ), SFM_READ, &m_hFData, SF_FALSE );
+    if ( !sf ) {
+        Con_Printf( COLOR_YELLOW "WARNING: libsndfile sf_open_fd failed on '%s', sf_strerror(): %s\n",
+            m_szName, sf_strerror( sf ) );
+        return false;
+    }
+
+    m_pData = (short *)Hunk_AllocateTempMemory( sizeof( *m_pData ) * m_hFData.channels * m_hFData.frames );
+    if ( !sf_read_short( sf, m_pData, sizeof( *m_pData ) * m_hFData.channels * m_hFData.frames ) ) {
+        N_Error( ERR_FATAL, "CSoundSource::LoadFile(%s): failed to read %lu bytes from audio stream, sf_strerror(): %s\n",
+            m_szName, sizeof( *m_pData ) * m_hFData.channels * m_hFData.frames, sf_strerror( sf ) );
+    }
+    
+    sf_close( sf );
+    fclose( fp );
+
+    format = Format();
+    if ( format == 0 ) {
+        Con_Printf( COLOR_RED "Bad soundfile format for '%s', refusing to load\n", m_szName );
+        return false;
+    }
+
+    // generate a brand new source for each individual sfx
+    if ( m_nTag == TAG_SFX && *m_pSource == 0 ) {
+        ALCall( alGenSources( 1, m_pSource ) );
+    }
+    ALCall( alBufferData( m_nBuffer, format, m_pData, sizeof( *m_pData ) * m_hFData.channels * m_hFData.frames, m_hFData.samplerate ) );
+
+    if ( m_nTag == TAG_SFX ) {
+        ALCall( alSourcef( *m_pSource, AL_GAIN, snd_sfxvol->f ) );
+        ALCall( alSourcei( *m_pSource, AL_BUFFER, m_nBuffer ) );
+    } else if ( m_nTag == TAG_MUSIC ) {
+        ALCall( alSourcef( *m_pSource, AL_GAIN, snd_musicvol->f ) );
+        ALCall( alSourcei( *m_pSource, AL_BUFFER, 0 ) );
+    }
+
+    Hunk_FreeTempMemory( m_pData );
+}
+
+void CSoundThread::OnExit( void ) {
 }

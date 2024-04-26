@@ -3,7 +3,7 @@ namespace TheNomad::SGame {
 		QuickShot() {
 		}
 		QuickShot( const vec3& in origin ) {
-			m_Targets.Reserve( sgame_QuickShotMaxTargets.GetInt() );
+			m_Targets.Resize( sgame_QuickShotMaxTargets.GetInt() );
 		}
 		
 		void Think() {
@@ -24,8 +24,11 @@ namespace TheNomad::SGame {
 						continue; // too far away
 					}
 					// make sure we aren't adding a duplicate
-					m_Targets.Add( @EntList[i] );
-					DebugPrint( "QuickShot added entity " + formatUInt( i ) + "\n" );
+					if ( m_nTargetCount >= m_Targets.Count() ) {
+						m_nTargetCount = 0;
+					}
+					@m_Targets[ m_nTargetCount++ ] = @EntList[i];
+					DebugPrint( "QuickShot added entity " + i + "\n" );
 				}
 			}
 		}
@@ -33,11 +36,13 @@ namespace TheNomad::SGame {
 		void Clear() {
 			DebugPrint( "QuickShot cleared.\n" );
 			m_nLastTargetTime = 0;
+			m_nTargetCount = 0;
 			m_Targets.Clear();
 		}
 
-		private vec3 m_Origin;
+		private vec3 m_Origin = vec3( 0.0f );
 		private array<EntityObject@> m_Targets;
-		private uint m_nLastTargetTime;
+		private uint m_nTargetCount = 0;
+		private uint m_nLastTargetTime = 0;
 	};
 };

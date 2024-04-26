@@ -75,7 +75,7 @@ static void GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL G_RefPrintf( int leve
 
     switch ( level ) {
     case PRINT_INFO:
-        Con_Printf( "%s", msg);
+        Con_Printf( "%s", msg );
         break;
     case PRINT_DEVELOPER:
         Con_DPrintf( "%s", msg );
@@ -94,12 +94,12 @@ static void *G_RefMalloc( uint64_t size ) {
     return Z_Malloc( size, TAG_RENDERER );
 }
 
-static void *G_RefRealloc(void *ptr, uint64_t nsize) {
+static void *G_RefRealloc( void *ptr, uint64_t nsize ) {
     return Z_Realloc( ptr, nsize, TAG_RENDERER );
 }
 
-static void G_RefFreeAll(void) {
-    Z_FreeTags( TAG_RENDERER, TAG_RENDERER );
+static void G_RefFreeAll( void ) {
+    Z_FreeTags( TAG_RENDERER );
 }
 
 static void G_RefImGuiFree(void *ptr, void *) {
@@ -122,7 +122,7 @@ static void G_RefImGuiShutdown(void) {
     ImGui::DestroyContext();
 
     // clean everything up
-    Z_FreeTags( TAG_IMGUI, TAG_IMGUI );
+    Z_FreeTags( TAG_IMGUI );
 }
 
 static void G_RefImGuiNewFrame(void) {
@@ -732,9 +732,29 @@ static void G_SetCameraPos_f( void )
     VectorCopy( gi.cameraPos, xyz );
 }
 
-//
-// G_Init: called every time a new level is loaded
-//
+void G_AddThreadToLoadQueue( CThread *pThread ) {
+    gi.m_LoadStack.push( pThread );
+}
+
+static void G_LoadResource_f( void ) {
+    float progress;
+    CThread *pThread;
+
+    while ( gi.m_LoadStack.size() ) {
+        pThread = gi.m_LoadStack.top();
+
+        // 10 KiB stack should be plenty
+        if ( !pThread->Start( 10 * 1024 ) ) {
+            N_Error( ERR_FATAL, "G_LoadResources: failed to start thread '%s'", pThread->GetName() );
+        }
+
+        gi.m_LoadStack.pop();
+    }
+}
+
+/*
+* G_Init: called every time a new level is loaded
+*/
 void G_Init( void )
 {
     PROFILE_FUNCTION();
@@ -864,6 +884,8 @@ void G_Init( void )
         Cvar_ForceReset( "g_renderer" );
     }
 
+    gi.m_LoadStack.get_container().reserve( 2048 );
+
     // init sound
     Snd_Init();
     gi.soundStarted = qtrue;
@@ -896,6 +918,8 @@ void G_Init( void )
     Cmd_AddCommand( "setmap", G_SetMap_f );
     Cmd_AddCommand( "mapinfo", G_MapInfo_f );
     Cmd_AddCommand( "setcamerapos", G_SetCameraPos_f );
+
+    gi.m_LoadStack.get_container().clear();
 
     Con_Printf( "----- Game State Initialization Complete ----\n" );
 }
@@ -1030,8 +1054,7 @@ void G_ShutdownAll( void )
 * G_ClearState: clears current gamestate
 */
 void G_ClearState( void ) {
-    memset( &gi, 0, sizeof(gi) );
-    gi.state = GS_INACTIVE;
+    memset( &gi, 0, sizeof( gi ) );
 }
 
 qboolean G_CheckPaused( void ) {
@@ -1052,10 +1075,10 @@ void G_Restart( void ) {
 /*
 * G_ClearMem: clears all the game's hunk memory
 */
-void G_ClearMem(void)
+void G_ClearMem( void )
 {
     // clear all game memory
-    Z_FreeTags( TAG_GAME, TAG_GAME );
+    Z_FreeTags( TAG_GAME );
 
     // if not in a level, clear the whole hunk
     if ( !gi.mapLoaded ) {

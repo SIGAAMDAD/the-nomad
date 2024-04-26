@@ -36,12 +36,7 @@ meant for temp engine system allocations. Used by allocation callbacks. Blocks c
 #define USE_MULTI_SEGMENT
 #define USE_TRASH_TEST
 
-// 100 MiB
 #define MAINZONE_DEFSIZE 56
-#define MAINZONE_MINSIZE 46
-// 40 MiB
-#define SMALLZONE_DEFSIZE (80*1024*1024+sizeof(memzone_t))
-#define SMALLZONE_MINSIZE (70*1024*1024+sizeof(memzone_t))
 
 #define RETRYAMOUNT (256*1024)
 
@@ -578,20 +573,25 @@ void Z_Free( void *ptr ) {
 Z_FreeTags
 ================
 */
-uint64_t Z_FreeTags( memtag_t lowtag, memtag_t hightag )
+uint64_t Z_FreeTags( memtag_t tag )
 {
 	uint64_t count;
+	uint64_t size;
 	memzone_t	*zone;
 	memblock_t	*block, *freed;
 
 	zone = mainzone;
 	count = 0;
+	size = 0;
 	for ( block = zone->blocklist.next ; ; ) {
-		if ( block->tag >= lowtag && block->tag <= hightag && block->id == ZONEID ) {
-			if ( block->prev->tag == TAG_FREE )
+		if ( block->tag == tag && block->id == ZONEID ) {
+			if ( block->prev->tag == TAG_FREE ) {
 				freed = block->prev;  // current block will be merged with previous
-			else
+			} else {
 				freed = block; // will leave in place
+			}
+			
+			size += block->size;
 			Z_Free( (void*)( block + 1 ) );
 			block = freed;
 			count++;
@@ -601,6 +601,7 @@ uint64_t Z_FreeTags( memtag_t lowtag, memtag_t hightag )
 		}
 		block = block->next;
 	}
+	Con_Printf( "Z_FreeTags: tag %i, %lu bytes released.\n", (int)tag, size );
 
 	return count;
 }
@@ -900,7 +901,7 @@ void Z_LogHeap( void ) {
 }
 
 void Z_InitSmallZoneMemory( void ) {
-	static byte zoneBuf[512 * 1024];
+	static byte zoneBuf[ 512 * 1024 ];
 	uint64_t size;
 
 	size = 512 * 1024;
@@ -939,14 +940,18 @@ void Z_InitMemory( void )
 static const char *tagName[ TAG_COUNT ] = {
     "TAG_FREE",
 	"TAG_STATIC",
+	"TAG_SAVEFILE",
 	"TAG_BFF",
 	"TAG_SEARCH_PATH",
+	"TAG_SEARCH_DIR",
 	"TAG_RENDERER",
 	"TAG_GAME",
+	"TAG_IMGUI",
 	"TAG_SMALL",
 	"TAG_SFX",
 	"TAG_MUSIC",
-	"TAG_HUNK"
+	"TAG_HUNK",
+	"TAG_MODULES"
 };
 
 typedef struct zone_stats_s {
@@ -959,6 +964,10 @@ typedef struct zone_stats_s {
 	uint64_t resourceBytes;
 	uint64_t filesystemBytes;
 	uint64_t hunkLeftOverBytes;
+	uint64_t moduleBytes;
+	uint64_t archiveFileBytes;
+	uint64_t musicBytes;
+	uint64_t sfxBytes;
 	uint64_t freeBytes;
 	uint64_t freeBlocks;
 	uint64_t freeSmallest;
@@ -1009,14 +1018,30 @@ static void Zone_Stats( const char *name, const memzone_t *z, qboolean printDeta
 			case TAG_IMGUI:
 				st.imguiBytes += block->size;
 				break;
+			case TAG_MODULES:
+				st.moduleBytes += block->size;
+				break;
+			case TAG_SFX:
+				st.sfxBytes += block->size;
+				break;
+			case TAG_MUSIC:
+				st.musicBytes += block->size;
+				break;
+			case TAG_SAVEFILE:
+				st.archiveFileBytes += block->size;
+				break;
+			default:
+				N_Error( ERR_FATAL, "Zone_Stats( %s ): invalid memtag %i", name, block->tag );
 			};
 		} else {
 			st.freeBytes += block->size;
 			st.freeBlocks++;
-			if ( block->size > st.freeLargest )
+			if ( block->size > st.freeLargest ) {
 				st.freeLargest = block->size;
-			if ( block->size < st.freeSmallest )
+			}
+			if ( block->size < st.freeSmallest ) {
 				st.freeSmallest = block->size;
+			}
 		}
 		if ( block->next == &zone->blocklist ) {
 			break; // all blocks have been hit
@@ -1087,7 +1112,7 @@ static void Com_Meminfo_f( void )
 	Con_Printf( "%8lu unused highwater\n", unused );
 	Con_Printf( "\n" );
 
-	Zone_Stats( "main", mainzone, !N_stricmp( Cmd_Argv(1), "main" ) || !N_stricmp( Cmd_Argv(1), "all" ), &st );
+	Zone_Stats( "main", mainzone, !N_stricmp( Cmd_Argv( 1 ), "main" ) || !N_stricmp( Cmd_Argv( 1 ), "all" ), &st );
 	Con_Printf( "%8lu bytes total main zone\n\n", mainzone->size );
 	Con_Printf( "%8lu bytes in %lu main zone blocks%s\n", st.zoneBytes, st.zoneBlocks,
 		st.zoneSegments > 1 ? va( " and %lu segments", st.zoneSegments ) : "" );
@@ -1096,6 +1121,10 @@ static void Com_Meminfo_f( void )
 	Con_Printf( "        %8lu bytes in imgui\n", st.imguiBytes );
 	Con_Printf( "        %8lu bytes in filesystem\n", st.filesystemBytes );
 	Con_Printf( "        %8lu bytes in resources\n", st.resourceBytes );
+	Con_Printf( "        %8lu bytes in modules\n", st.moduleBytes );
+	Con_Printf( "        %8lu bytes in save file cache\n", st.archiveFileBytes );
+	Con_Printf( "        %8lu bytes in sound effects\n", st.sfxBytes );
+	Con_Printf( "        %8lu bytes in music\n", st.musicBytes );
 	Con_Printf( "        %8lu bytes in leaked hunk memory\n", st.hunkLeftOverBytes );
 	Con_Printf( "        %8lu bytes in other\n", st.zoneBytes - ( st.rendererBytes + st.gameBytes + st.imguiBytes + st.filesystemBytes +
 																	st.hunkLeftOverBytes + st.resourceBytes ) );
@@ -1104,7 +1133,7 @@ static void Com_Meminfo_f( void )
 		Con_Printf( "        (largest: %lu bytes, smallest: %lu bytes)\n\n", st.freeLargest, st.freeSmallest );
 	}
 
-	Zone_Stats( "small", smallzone, !N_stricmp( Cmd_Argv(1), "small" ) || !N_stricmp( Cmd_Argv(1), "all" ), &st );
+	Zone_Stats( "small", smallzone, !N_stricmp( Cmd_Argv( 1 ), "small" ) || !N_stricmp( Cmd_Argv( 1 ), "all" ), &st );
 	Con_Printf( "%8lu bytes total small zone\n\n", smallzone->size );
 	Con_Printf( "%8lu bytes in %lu small zone blocks%s\n", st.zoneBytes, st.zoneBlocks,
 		st.zoneSegments > 1 ? va( " and %lu segments", st.zoneSegments ) : "" );

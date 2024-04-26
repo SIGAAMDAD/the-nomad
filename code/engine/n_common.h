@@ -485,13 +485,13 @@ void *Z_Malloc(uint64_t size, memtag_t tag);
 void *S_Malloc(uint64_t size);
 #endif
 void Z_Free(void *ptr);
-uint64_t Z_FreeTags(memtag_t lowtag, memtag_t hightag);
-uint64_t Z_AvailableMemory(void);
-char *CopyString(const char *str);
+uint64_t Z_FreeTags( memtag_t tag );
+uint64_t Z_AvailableMemory( void );
+char *CopyString( const char *str );
 
-void Z_InitSmallZoneMemory(void);
-void Z_InitMemory(void);
-void Hunk_InitMemory(void);
+void Z_InitSmallZoneMemory( void );
+void Z_InitMemory( void );
+void Hunk_InitMemory( void );
 
 #ifdef _NOMAD_DEBUG
 void *Hunk_AllocDebug( uint64_t size, ha_pref preference, const char *name, const char *file, uint64_t line );
@@ -499,28 +499,22 @@ void *Hunk_AllocDebug( uint64_t size, ha_pref preference, const char *name, cons
 #else
 void *Hunk_Alloc( uint64_t size, ha_pref preference );
 #endif
-void Hunk_Clear(void);
-void *Hunk_AllocateTempMemory(uint64_t size);
-void Hunk_FreeTempMemory(void *buffer);
-void Hunk_ClearTempMemory(void);
-uint64_t Hunk_MemoryRemaining(void);
-void Hunk_Log(void);
-void Hunk_SmallLog(void);
-qboolean Hunk_CheckMark(void);
-void Hunk_ClearToMark( void );
-void Hunk_SetMark( void );
-void Hunk_Print(void);
-void Hunk_Check(void);
-void Hunk_InitMemory(void);
-qboolean Hunk_TempIsClear(void);
-
-uint64_t Com_TouchMemory(void);
-
-typedef struct vm_s vm_t;
-
+void Hunk_Clear( void );
+void *Hunk_AllocateTempMemory( uint64_t size );
+void Hunk_FreeTempMemory( void *buffer );
+void Hunk_ClearTempMemory( void );
+uint64_t Hunk_MemoryRemaining( void );
+void Hunk_Log( void );
+void Hunk_SmallLog( void );
+qboolean Hunk_CheckMark( void );
+void Hunk_ClearToMark( void  );
+void Hunk_SetMark( void  );
+void Hunk_InitMemory( void );
+qboolean Hunk_TempIsClear( void );
+uint64_t Com_TouchMemory( void );
 
 /*
-System calls, engine only stuff
+* System calls, engine only stuff
 */
 
 typedef struct {

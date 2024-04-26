@@ -122,8 +122,8 @@ static void LoadGameMenu_Draw( void )
 	            	Cvar_SetIntegerValue( "sgame_Difficulty", s_loadGame->saveList[i].gd.dif );
                     Cvar_Set( "sgame_SaveName", s_loadGame->saveList[i].name );
                     gi.state = GS_LEVEL;
-                    g_pModuleLib->ModuleCall( sgvm, ModuleOnLoadGame, 0 );
-                    Cbuf_ExecuteText( EXEC_APPEND, s_loadGame->saveList[i].gd.mapname );
+                    g_pArchiveHandler->Load( s_loadGame->saveList[i].name );
+                    Cbuf_ExecuteText( EXEC_APPEND, va( "setmap \"%s\"\n", s_loadGame->saveList[i].gd.mapname ) );
 	            }
             }
         }

@@ -13,10 +13,13 @@
 
 .ngd save file layout:
 
-section    |  name   |  value  | type
-----------------------------------------
-HEADER     | ident   | !ngd    | int32
-HEADER     | version | N/A     | uint64
+section    |  name         |  value               | type
+--------------------------------------------------------
+HEADER     | ident         | !ngd                 | int32
+HEADER     | versionMajor  | NOMAD_VERSION_MAJOR  | uint16
+HEADER     | versionUpdate | NOMAD_VERSION_UPDATE | uint16
+HEADER     | versionPatch  | NOMAD_VERSION_PATCH  | uint32
+HEADER     | numSections   | N/A                  | int64
 
 */
 
@@ -63,25 +66,141 @@ bool CGameArchive::ValidateHeader( const void *data ) const
 	return true;
 }
 
+static void G_ListMods( const char *pSaveFile, uint64_t nMods, fileHandle_t hFile ) {
+	uint64_t i;
+	char name[MAX_NPATH];
+	int32_t versionMajor, versionUpdate, versionPatch;
+	
+	Con_Printf( "%lu mods located in save file '%s'\n", nMods, pSaveFile );
+	for ( i = 0; i < nMods; i++ ) {
+		FS_Read( name, sizeof( name ), hFile );
+		FS_Read( &versionMajor, sizeof( versionMajor ), hFile );
+		FS_Read( &versionUpdate, sizeof( versionUpdate ), hFile );
+		FS_Read( &versionPatch, sizeof( versionPatch ), hFile );
+
+		versionMajor = LittleInt( versionMajor );
+		versionUpdate = LittleInt( versionUpdate );
+		versionPatch = LittleInt( versionPatch );
+
+		Con_Printf( "%lu: %s v%i.%i.%i\n", i, name, versionMajor, versionUpdate, versionPatch );
+	}
+}
+
+static ngdfield_t *G_LoadArchiveField( const char *pSaveFile, fileHandle_t hFile )
+{
+	uint64_t size;
+	int32_t nameLength;
+	int32_t dataSize;
+	int32_t type;
+	char szName[MAX_SAVE_FIELD_NAME];
+	ngdfield_t *field;
+
+	memset( szName, 0, sizeof( szName ) );
+
+	FS_Read( &nameLength, sizeof( nameLength ), hFile );
+	nameLength = LittleInt( nameLength );
+
+	FS_Read( szName, nameLength, hFile );
+	if ( nameLength != strlen( szName ) + 1 ) {
+		N_Error( ERR_DROP,
+			"CGameArchive::LoadArchiveFile: failed to load save '%s', field '%s', nameLength != strlen( szName )"
+		, pSaveFile, szName );
+	}
+
+	FS_Read( &type, sizeof( type ), hFile );
+	type = LittleInt( type );
+
+	switch ( type ) {
+	case FT_ARRAY: {
+		FS_Read( &dataSize, sizeof( dataSize ), hFile );
+		if ( !dataSize ) {
+			N_Error( ERR_DROP,
+				"CGameArchive::LoadArchiveFile: failed to load save '%s', field '%s' (type = array), dataSize is corrupt"
+			, pSaveFile, szName );
+		}
+		break; }
+	case FT_CHAR:
+	case FT_UCHAR:
+		dataSize = sizeof( uint8_t );
+		break;
+	case FT_SHORT:
+	case FT_USHORT:
+		dataSize = sizeof( uint16_t );
+		break;
+	case FT_INT:
+	case FT_UINT:
+		dataSize = sizeof( uint32_t );
+		break;
+	case FT_LONG:
+	case FT_ULONG:
+		dataSize = sizeof( uint64_t );
+		break;
+	case FT_FLOAT:
+		dataSize = sizeof( float );
+		break;
+	case FT_VECTOR2:
+		dataSize = sizeof( vec2_t );
+		break;
+	case FT_VECTOR3:
+		dataSize = sizeof( vec3_t );
+		break;
+	case FT_VECTOR4:
+		dataSize = sizeof( vec4_t );
+		break;
+	case FT_STRING: {
+		FS_Read( &dataSize, sizeof( dataSize ), hFile );
+		if ( !dataSize ) {
+			N_Error( ERR_DROP,
+				"CGameArchive::LoadArchiveFile: failed to load save '%s', field '%s' (type = string), dataSize is corrupt"
+			, pSaveFile, szName );
+		}
+		break; }
+	};
+	dataSize = LittleInt( dataSize );
+
+	size = 0;
+	size += PAD( sizeof( *field ), sizeof( uintptr_t ) );
+	size += PAD( nameLength, sizeof( uintptr_t ) );
+	size += PAD( dataSize, sizeof( uintptr_t ) );
+
+	field = (ngdfield_t *)Z_Malloc( size, TAG_SAVEFILE );
+	memset( field, 0, size );
+	field->name = (char *)( field + 1 );
+	field->dataSize = dataSize;
+	field->type = type;
+	field->nameLength = nameLength;
+	strcpy( field->name, szName );
+
+	return field;
+}
+
 qboolean CGameArchive::LoadArchiveFile( const char *filename, uint64_t index )
 {
 	ngdheader_t header;
-    uint32_t i, j;
-	int64_t nameLength, size, numFields;
+    int64_t i, j;
+	int32_t nameLength, numFields;
+	uint64_t size;
 	uint64_t bufSize;
     fileHandle_t hFile;
 	ngdsection_read_t *section;
 	ngdfield_t *field;
 	ngd_file_t *file;
-	char name[MAX_STRING_CHARS];
+	char name[MAX_SAVE_SECTION_NAME];
 	
 	hFile = FS_FOpenRead( filename );
 	if ( hFile == FS_INVALID_HANDLE ) {
 		Con_Printf( COLOR_RED "ERROR: failed to open save file '%s'!\n", filename );
 		return false;
 	}
+
+	N_strncpyz( name, COM_SkipPath( const_cast<char *>( filename ) ), sizeof( name ) );
 	
 	FS_Read( &header.validation, sizeof( header.validation ), hFile );
+	header.validation.ident = LittleInt( header.validation.ident );
+	header.validation.version.m_nVersionMajor = LittleShort( header.validation.version.m_nVersionMajor );
+	header.validation.version.m_nVersionUpdate = LittleShort( header.validation.version.m_nVersionUpdate );
+	header.validation.version.m_nVersionPatch = LittleInt( header.validation.version.m_nVersionPatch );
+
 	if ( !ValidateHeader( &header ) ) {
 		return false;
 	}
@@ -91,107 +210,55 @@ qboolean CGameArchive::LoadArchiveFile( const char *filename, uint64_t index )
 	FS_Read( &header.gamedata.dif, sizeof( header.gamedata.dif ), hFile );
 	FS_Read( &header.gamedata.numMods, sizeof( header.gamedata.numMods ), hFile );
 
-	FS_FileSeek( hFile, sizeof( *header.gamedata.modList ) * MAX_NPATH * header.gamedata.numMods, FS_SEEK_CUR );
+	header.numSections = LittleLong( header.numSections );
+	header.gamedata.dif = (gamedif_t)LittleInt( header.gamedata.dif );
+	header.gamedata.numMods = LittleLong( header.gamedata.numMods );
 
-	file = (ngd_file_t *)Hunk_Alloc( sizeof( *file ) * header.numSections, h_low );
+	// skip past the mod data
+	G_ListMods( name, header.gamedata.numMods, hFile );
+	//FS_FileSeek( hFile, ( MAX_NPATH + ( sizeof( int32_t ) * 3 ) ) * header.gamedata.numMods, FS_SEEK_CUR );
+
+	size = PAD( sizeof( *file ) + ( sizeof( *file->m_pSectionList ) * header.numSections ), sizeof( uintptr_t ) );
+
+	file = (ngd_file_t *)Z_Malloc( size, TAG_SAVEFILE );
+	memset( file, 0, size );
+
 	file->m_pSectionList = (ngdsection_read_t *)( file + 1 );
-
+	strcpy( file->name, name );
 	file->m_nSections = header.numSections;
 	section = file->m_pSectionList;
-	
-	for ( i = 0; i < header.numSections; i++ ) {
-		FS_Read( &nameLength, sizeof( nameLength ), hFile );
-		
-		if ( nameLength >= MAX_STRING_CHARS ) {
-			N_Error( ERR_DROP, "(LoadArchiveFile) save file '%s' has corrupt section\n", filename );
-		}
-		
-		FS_Read( name, nameLength, hFile );
-		FS_Read( &size, sizeof( size ), hFile );
-		FS_Read( &numFields, sizeof( numFields ), hFile );
-		
-		if ( !size ) {
-			N_Error( ERR_DROP, "(LoadArchiveFile) bad section size at %s", section->name );
-		}
 
+	Con_DPrintf( "Adding save file '%s' to cache with %li sections...\n", name, header.numSections );
+	
+	for ( i = 0; i < header.numSections; i++ ) {		
+		FS_Read( &nameLength, sizeof( nameLength ), hFile );
+		nameLength = LittleInt( nameLength );
+		if ( !nameLength || nameLength >= MAX_SAVE_SECTION_NAME ) {
+			N_Error( ERR_DROP, "CGameArchive::LoadArchiveFile: failed to load save file '%s', section %li nameLength is invalid"
+				, name, i );
+		}
+		FS_Read( name, nameLength, hFile );
+		if ( nameLength != strlen( name ) + 1 ) {
+			N_Error( ERR_DROP, "CGameArchive::LoadArchiveFile: failed to load save file '%s', section %li nameLength != strlen( name )"
+				, name, i );
+		}
+		FS_Read( &numFields, sizeof( numFields ), hFile );
+		numFields = LittleInt( numFields );
+
+		memset( section, 0, sizeof( *section ) );
 		section->m_FieldCache.reserve( numFields );
 		section->numFields = numFields;
-		N_strncpyz( section->name, name, sizeof( section->name ) );
+		strcpy( section->name, name );
 		section->nameLength = nameLength;
 
 		for ( j = 0; j < section->numFields; j++ ) {
-			FS_Read( &nameLength, sizeof( field->nameLength ), hFile );
-
-			if ( !nameLength || nameLength >= MAX_STRING_CHARS ) {
-				N_Error( ERR_DROP, "(LoadArchiveFile) failed to load save '%s', field name length is corrupt at section '%s' (index %i)",
-					filename, section->name, i );
-			}
-			
-			field = (ngdfield_t *)Hunk_Alloc( PAD( sizeof( *field ) + nameLength, sizeof( uintptr_t ) ), h_low );
-			field->name = (char *)( field + 1 );
-			field->dataOffset = FS_FileTell( hFile );
-			field->nameLength = nameLength;
-
-			FS_Read( field->name, field->nameLength, hFile );
-			FS_Read( &field->type, sizeof( field->type ), hFile );
-			
-			switch ( field->type ) {
-			case FT_ARRAY:
-				FS_Read( &field->dataSize, sizeof( field->dataSize ), hFile );
-				break;
-			case FT_CHAR:
-				field->dataSize = sizeof( int8_t );
-				break;
-			case FT_SHORT:
-				field->dataSize = sizeof( int16_t );
-				break;
-			case FT_INT:
-				field->dataSize = sizeof( int32_t );
-				break;
-			case FT_LONG:
-				field->dataSize = sizeof( int64_t );
-				break;
-			case FT_UCHAR:
-				field->dataSize = sizeof( uint8_t );
-				break;
-			case FT_USHORT:
-				field->dataSize = sizeof( uint16_t );
-				break;
-			case FT_UINT:
-				field->dataSize = sizeof( uint32_t );
-				break;
-			case FT_ULONG:
-				field->dataSize = sizeof( uint64_t );
-				break;
-			case FT_FLOAT:
-				field->dataSize = sizeof( float );
-				break;
-			case FT_VECTOR2:
-				field->dataSize = sizeof( vec2_t );
-				break;
-			case FT_VECTOR3:
-				field->dataSize = sizeof( vec3_t );
-				break;
-			case FT_VECTOR4:
-				field->dataSize = sizeof( vec4_t );
-				break;
-			case FT_STRING:
-				FS_Read( &field->dataSize, sizeof( field->dataSize ), hFile );
-				if ( !field->dataSize ) {
-					N_Error( ERR_DROP, "(LoadArchiveFile) failed to load save '%s', field '%s', dataSize is corrupt", filename, field->name );
-				}
-				break;
-			};
-
+			field = G_LoadArchiveField( name, hFile );
 			section->m_FieldCache.try_emplace( field->name, field );
-
 			FS_FileSeek( hFile, field->dataSize, FS_SEEK_CUR );
 		}
-
 		section++;
 	}
-
-	FS_FileSeek( hFile, 0, FS_SEEK_SET );
+	FS_FClose( hFile );
 
 	m_pArchiveCache[ index ] = file;
 	m_hFile = hFile;
@@ -221,27 +288,33 @@ static void G_SaveGame_f( void )
 CGameArchive::CGameArchive( void )
 {
 	uint64_t i, size;
-	char *namePtr;
 	char **fileList;
+	char *namePtr;
 
 	Con_Printf( "G_InitArchiveHandler: initializing save file cache...\n" );
 
 	fileList = FS_ListFiles( "SaveData", ".ngd", &m_nArchiveFiles );
-	m_pArchiveCache = (ngd_file_t **)Hunk_Alloc( sizeof( *m_pArchiveCache ) * m_nArchiveFiles, h_low );
+	m_pArchiveCache = (ngd_file_t **)Z_Malloc( sizeof( *m_pArchiveCache ) * m_nArchiveFiles, TAG_SAVEFILE );
 
-	m_pArchiveFileList = (char **)Hunk_Alloc( sizeof( *fileList ) * m_nArchiveFiles, h_low );
+	size = PAD( sizeof( *fileList ) * m_nArchiveFiles, sizeof( uintptr_t ) );
 	for ( i = 0; i < m_nArchiveFiles; i++ ) {
-		size = strlen( fileList[i] ) + 1;
-		m_pArchiveFileList[i] = (char *)Hunk_Alloc( size, h_low );
-		N_strncpyz( m_pArchiveFileList[i], fileList[i], size );
+		size += PAD( strlen( fileList[i] ) + 1, sizeof( uintptr_t ) );
+	}
+
+	m_pArchiveFileList = (char **)Z_Malloc( size, TAG_SAVEFILE );
+	memset( m_pArchiveFileList, 0, size );
+
+	namePtr = (char *)m_pArchiveFileList;
+	for ( i = 0; i < m_nArchiveFiles; i++ ) {
+		m_pArchiveFileList[i] = namePtr;
+		strcpy( m_pArchiveFileList[i], fileList[i] );
 		LoadArchiveFile( fileList[i], i );
+		namePtr += strlen( fileList[i] ) + 1;
 
 		Con_Printf( "...Cached save file '%s'\n", fileList[i] );
 	}
 
 	FS_FreeFileList( fileList );
-
-	Cmd_AddCommand( "sgame.save_game", G_SaveGame_f );
 }
 
 void G_InitArchiveHandler( void )
@@ -251,10 +324,13 @@ void G_InitArchiveHandler( void )
 	}
 
 	g_pArchiveHandler = new ( Hunk_Alloc( sizeof( *g_pArchiveHandler ), h_low ) ) CGameArchive();
+	Cmd_AddCommand( "sgame.save_game", G_SaveGame_f );
 }
 
 void G_ShutdownArchiveHandler( void ) {
+	g_pArchiveHandler->~CGameArchive();
 	g_pArchiveHandler = NULL;
+	Cmd_RemoveCommand( "sgame.save_game" );
 }
 
 const char **CGameArchive::GetSaveFiles( uint64_t *nFiles ) const {
@@ -265,50 +341,65 @@ const char **CGameArchive::GetSaveFiles( uint64_t *nFiles ) const {
 void CGameArchive::BeginSaveSection( const char *moduleName, const char *name )
 {
 	const char *path;
-	uint32_t nameLength = strlen( name );
+	int64_t nameLength = strlen( name ) + 1;
 	
-	if ( nameLength >= MAX_STRING_CHARS ) {
+	if ( nameLength >= MAX_SAVE_SECTION_NAME ) {
 		N_Error( ERR_DROP, "CGameArchive::AddSection: section name '%s' is longer than %i characters, please shorten, like seriously",
-			name, MAX_STRING_CHARS );
+			name, MAX_SAVE_SECTION_NAME - 1 );
 	}
-	
+	if ( m_nSectionDepth >= MAX_SAVE_SECTION_DEPTH ) {
+		N_Error( ERR_DROP, "CGameArchive::AddSection: section stack overflow" );
+	}
+
 	Con_DPrintf( "Adding section '%s' to archive file...\n", name );
 
-	path = va( "SaveData/%s/%s.prt", moduleName, name );
-	m_hFile = FS_FOpenWrite( path );
-	if ( m_hFile == FS_INVALID_HANDLE ) {
-		N_Error( ERR_DROP, "CGameArchive::BeginSaveSection: failed to create save section file '%s'", path );
+	m_pSection = &m_szSectionStack[ m_nSectionDepth++ ];
+
+	memset( m_pSection, 0, sizeof( *m_pSection ) );
+	m_pSection->offset = FS_FileTell( m_hFile );
+	m_pSection->numFields = 0;
+	m_pSection->nameLength = strlen( name ) + 1;
+	N_strncpyz( m_pSection->name, name, sizeof( m_pSection->name ) );
+
+	FS_Write( &m_pSection->nameLength, sizeof( m_pSection->nameLength ), m_hFile );
+	FS_Write( m_pSection->name, m_pSection->nameLength, m_hFile );
+	FS_Write( &m_pSection->numFields, sizeof( m_pSection->numFields ), m_hFile );
+#ifdef SAVEFILE_MOD_SAFETY
+	path = FS_BuildOSPath( FS_GetHomePath(), NULL, va( "SaveData/%s/%s.prt", moduleName, name ) );
+	m_pSection->hFile = FS_FOpenWrite( path );
+	if ( m_pSection->hFile == FS_INVALID_HANDLE ) {
+		N_Error( ERR_DROP, "CGameArchive::BeginSaveSection: failed to create file '%s' in write-only mode", path );
 	}
-
-	m_Section.size = 0;
-	m_Section.numFields = 0;
-	N_strncpyz( m_Section.name, name, sizeof( m_Section.name ) );
-
-	nameLength++;
-
-	FS_Write( &nameLength, sizeof( nameLength ), m_hFile );
-	FS_Write( m_Section.name, nameLength, m_hFile );
-	FS_Write( &m_Section.size, sizeof( m_Section.size ), m_hFile );
-	FS_Write( &m_Section.numFields, sizeof( m_Section.numFields ), m_hFile );
-
-	m_nSectionDepth++;
+	FS_Write( &m_pSection->nameLength, sizeof( m_pSection->nameLength ), m_pSection->hFile );
+	FS_Write( m_pSection->name, m_pSection->nameLength, m_pSection->hFile );
+	FS_Write( &m_pSection->numFields, sizeof( m_pSection->numFields ), m_pSection->hFile );
+#endif
 }
 
 void CGameArchive::EndSaveSection( void )
 {
-	const uint32_t nameLength = strlen( m_Section.name ) + 1;
-	
-	FS_FileSeek( m_hFile, 0, FS_SEEK_SET );
-	FS_Write( &nameLength, sizeof(nameLength), m_hFile );
-	FS_Write( m_Section.name, nameLength, m_hFile );
-	FS_Write( &m_Section.size, sizeof(m_Section.size), m_hFile );
-	FS_Write( &m_Section.numFields, sizeof(m_Section.numFields), m_hFile );
-	
-	FS_FClose( m_hFile );
-	m_hFile = FS_INVALID_HANDLE;
+	const uint64_t pos = FS_FileTell( m_hFile );
+
+	FS_FileSeek( m_hFile, m_pSection->offset, FS_SEEK_SET );
+	FS_Write( &m_pSection->nameLength, sizeof( m_pSection->nameLength ), m_hFile );
+	FS_Write( m_pSection->name, m_pSection->nameLength, m_hFile );
+	FS_Write( &m_pSection->numFields, sizeof( m_pSection->numFields ), m_hFile );
+	FS_FileSeek( m_hFile, pos, FS_SEEK_SET );
+
+#ifdef SAVEFILE_MOD_SAFETY
+	FS_FileSeek( m_pSection->hFile, 0, FS_SEEK_SET );
+	FS_Write( &m_pSection->nameLength, sizeof( m_pSection->nameLength ), m_pSection->hFile );
+	FS_Write( m_pSection->name, m_pSection->nameLength, m_pSection->hFile );
+	FS_Write( &m_pSection->numFields, sizeof( m_pSection->numFields ), m_pSection->hFile );
+	FS_FClose( m_pSection->hFile );
+#endif
+
+	Con_DPrintf( "Finished save section '%s' with %i fields\n", m_pSection->name, m_pSection->numFields );
 	
 	m_nSectionDepth--;
 	m_nSections++;
+
+	m_pSection = &m_szSectionStack[ m_nSectionDepth - 1 ];
 }
 
 void CGameArchive::AddField( const char *name, int32_t type, const void *data, uint32_t dataSize )
@@ -316,25 +407,31 @@ void CGameArchive::AddField( const char *name, int32_t type, const void *data, u
 	ngdfield_t field;
 	int64_t i;
 	
-	m_Section.numFields++;
+	m_pSection->numFields++;
 
 	field.type = type;
 	field.dataSize = dataSize;
 	field.nameLength = strlen( name ) + 1;
 
-	if ( field.nameLength >= MAX_STRING_CHARS ) {
+	if ( field.nameLength >= MAX_SAVE_FIELD_NAME ) {
 		N_Error( ERR_DROP, "%s: name '%s' too long", __func__, name );
 	}
 	
 	for ( i = 0; i < m_nSectionDepth; i++ ) {
-		Con_DPrintf( "- " );
+		Con_DPrintf( "-" );
 	}
-	Con_DPrintf( "Adding field %s to save file.\n", name );
+	Con_DPrintf( "> Adding field %s to save file.\n", name );
 
-	FS_Write( &field.nameLength, sizeof(field.nameLength), m_hFile );
+	FS_Write( &field.nameLength, sizeof( field.nameLength ), m_hFile );
 	FS_Write( name, field.nameLength, m_hFile );
-	FS_Write( &field.type, sizeof(field.type), m_hFile );
+	FS_Write( &field.type, sizeof( field.type ), m_hFile );
 	FS_Write( data, dataSize, m_hFile );
+#ifdef SAVEFILE_MOD_SAFETY
+	FS_Write( &field.nameLength, sizeof( field.nameLength ), m_pSection->hFile );
+	FS_Write( name, field.nameLength, m_pSection->hFile );
+	FS_Write( &field.type, sizeof( field.type ), m_pSection->hFile );
+	FS_Write( data, dataSize, m_pSection->hFile );
+#endif
 }
 
 void CGameArchive::SaveFloat( const char *name, float data ) {
@@ -437,21 +534,27 @@ void CGameArchive::SaveCString( const char *name, const char *data ) {
 		N_Error( ERR_DROP, "%s: data is NULL", __func__ );
 	}
 
+	m_pSection->numFields++;
+
 	field.nameLength = strlen( name ) + 1;
 	field.type = FT_STRING;
 	field.dataSize = strlen( data ) + 1;
-	if ( field.nameLength >= MAX_STRING_CHARS ) {
+	if ( field.nameLength >= MAX_SAVE_FIELD_NAME ) {
 		N_Error( ERR_DROP, "%s: name '%s' too long", __func__, name );
 	}
-	if ( field.dataSize >= MAX_STRING_CHARS ) {
-		N_Error( ERR_DROP, "%s: string too long", __func__ );
-	}
 
-	FS_Write( &field.nameLength, sizeof(field.nameLength), m_hFile );
+	FS_Write( &field.nameLength, sizeof( field.nameLength ), m_hFile );
 	FS_Write( name, field.nameLength, m_hFile );
-	FS_Write( &field.type, sizeof(field.type), m_hFile );
+	FS_Write( &field.type, sizeof( field.type ), m_hFile );
 	FS_Write( &field.dataSize, sizeof(field.dataSize), m_hFile );
 	FS_Write( data, field.dataSize, m_hFile );
+#ifdef SAVEFILE_MOD_SAFETY
+	FS_Write( &field.nameLength, sizeof( field.nameLength ), m_pSection->hFile );
+	FS_Write( name, field.nameLength, m_pSection->hFile );
+	FS_Write( &field.type, sizeof( field.type ), m_pSection->hFile );
+	FS_Write( &field.dataSize, sizeof(field.dataSize), m_pSection->hFile );
+	FS_Write( data, field.dataSize, m_pSection->hFile );
+#endif
 }
 
 void CGameArchive::SaveString( const char *name, const string_t *pData ) {
@@ -464,18 +567,27 @@ void CGameArchive::SaveString( const char *name, const string_t *pData ) {
 		N_Error( ERR_DROP, "%s: data is NULL", __func__ );
 	}
 
+	m_pSection->numFields++;
+
 	field.nameLength = strlen( name ) + 1;
 	field.type = FT_STRING;
 	field.dataSize = pData->size() + 1;
-	if ( field.nameLength >= MAX_STRING_CHARS ) {
+	if ( field.nameLength >= MAX_SAVE_FIELD_NAME ) {
 		N_Error( ERR_DROP, "%s: name '%s' too long", __func__, name );
 	}
-
-	FS_Write( &field.nameLength, sizeof(field.nameLength), m_hFile );
+	
+	FS_Write( &field.nameLength, sizeof( field.nameLength ), m_hFile );
 	FS_Write( name, field.nameLength, m_hFile );
-	FS_Write( &field.type, sizeof(field.type), m_hFile );
-	FS_Write( &field.dataSize, sizeof(field.dataSize), m_hFile );
+	FS_Write( &field.type, sizeof( field.type ), m_hFile );
+	FS_Write( &field.dataSize, sizeof( field.dataSize ), m_hFile );
 	FS_Write( pData->data(), field.dataSize, m_hFile );
+#ifdef SAVEFILE_MOD_SAFETY
+	FS_Write( &field.nameLength, sizeof( field.nameLength ), m_pSection->hFile );
+	FS_Write( name, field.nameLength, m_pSection->hFile );
+	FS_Write( &field.type, sizeof( field.type ), m_pSection->hFile );
+	FS_Write( &field.dataSize, sizeof( field.dataSize ), m_pSection->hFile );
+	FS_Write( pData->data(), field.dataSize, m_pSection->hFile );
+#endif
 }
 
 void CGameArchive::SaveArray( const char *name, const CScriptArray *pData )
@@ -494,10 +606,12 @@ void CGameArchive::SaveArray( const char *func, const char *name, const void *pD
 		N_Error( ERR_DROP, "%s: data is NULL", func );
 	}
 
+	m_pSection->numFields++;
+
 	field.nameLength = strlen( name ) + 1;
 	field.type = FT_STRING;
 	field.dataSize = nBytes;
-	if ( field.nameLength >= MAX_STRING_CHARS ) {
+	if ( field.nameLength >= MAX_SAVE_FIELD_NAME ) {
 		N_Error( ERR_DROP, "%s: name '%s' too long", func, name );
 	}
 
@@ -506,6 +620,13 @@ void CGameArchive::SaveArray( const char *func, const char *name, const void *pD
 	FS_Write( &field.type, sizeof( field.type ), m_hFile );
 	FS_Write( &field.dataSize, sizeof( field.dataSize ), m_hFile );
 	FS_Write( pData, nBytes, m_hFile );
+#ifdef SAVEFILE_MOD_SAFETY
+	FS_Write( &field.nameLength, sizeof( field.nameLength ), m_pSection->hFile );
+	FS_Write( name, field.nameLength, m_pSection->hFile );
+	FS_Write( &field.type, sizeof( field.type ), m_pSection->hFile );
+	FS_Write( &field.dataSize, sizeof( field.dataSize ), m_pSection->hFile );
+	FS_Write( pData, nBytes, m_pSection->hFile );
+#endif
 }
 
 const ngdfield_t *CGameArchive::FindField( const char *name, int32_t type, nhandle_t hSection ) const
@@ -516,7 +637,9 @@ const ngdfield_t *CGameArchive::FindField( const char *name, int32_t type, nhand
 	const auto it = section->m_FieldCache.find( name );
 
 	if ( it == section->m_FieldCache.end() ) {
-		N_Error( ERR_DROP, "CGameArchive::FindField: incompatible mod with save file, couldn't find field '%s'", name );
+		// we'll let the modder handle this
+		Con_Printf( COLOR_YELLOW "WARNING: incompatible mod with save file, couldn't find field '%s'\n", name );
+		return NULL;
 	}
 	if ( it->second->type != type ) {
 		N_Error( ERR_DROP, "CGameArchive::FindField: save file corrupt or incompatible mod, field type doesn't match type given for '%s'", name );
@@ -814,9 +937,6 @@ void CGameArchive::LoadArray( const char *pszName, CScriptArray *pData, nhandle_
 	}
 }
 
-// NOTE: NEVER CHANGE THIS, IF U DO, YOU'LL BREAK SAVEFILES!!!!
-#define HEADER_SIZE ( sizeof( ngdvalidation_t ) + ( sizeof( uint64_t ) * 2 ) + MAX_NPATH ) + sizeof( gamedif_t )
-
 bool CGameArchive::Save( const char *filename )
 {
 	const char *path;
@@ -836,7 +956,7 @@ bool CGameArchive::Save( const char *filename )
 		N_Error( ERR_DROP, "CGameArchive::Save: called when writing a section" );
 	}
 	
-	g_pModuleLib->ModuleCall( sgvm, ModuleOnSaveGame, 0 );
+//	g_pModuleLib->ModuleCall( sgvm, ModuleOnSaveGame, 0 );
 
 	path = va( "SaveData/%s", filename );
 	m_hFile = FS_FOpenWrite( path );
@@ -845,7 +965,7 @@ bool CGameArchive::Save( const char *filename )
 		return false;
 	}
 
-	const UtlVector<CModuleInfo *>& loadList = g_pModuleLib->GetLoadList();
+	UtlVector<CModuleInfo *>& loadList = g_pModuleLib->GetLoadList();
 	
 	memset( &header, 0, sizeof( header ) );
 	N_strncpyz( header.gamedata.mapname, Cvar_VariableString( "mapname" ), sizeof( header.gamedata.mapname ) );
@@ -857,6 +977,9 @@ bool CGameArchive::Save( const char *filename )
 			header.gamedata.numMods--;
 		}
 	}
+
+	m_nSectionDepth = 0;
+	m_nSections = 0;
 	
 	header.validation.ident = IDENT;
 	header.validation.version.m_nVersionMajor = NOMAD_VERSION;
@@ -878,9 +1001,12 @@ bool CGameArchive::Save( const char *filename )
 		}
 	}
 
-	for ( const auto& it : loadList ) {
-		partFiles = FS_ListFiles( FS_BuildOSPath( FS_GetHomePath(), NULL, va( "SaveData/%s/", it->m_szName ) ), ".prt", &nPartFiles );
+	for ( auto& it : loadList ) {
+//		path = FS_BuildOSPath( FS_GetHomePath(), NULL, va( "SaveData/%s", it->m_szName ) );
+		Con_DPrintf( "Adding module '%s' save sections from '%s'...\n", it->m_szName, path );
 
+		g_pModuleLib->ModuleCall( it, ModuleOnSaveGame, 0 );
+/*
 		for ( i = 0; i < nPartFiles; i++ ) {
 			length = FS_LoadFile( partFiles[i], &f.v );
 			if ( !length || !f.v ) {
@@ -896,26 +1022,28 @@ bool CGameArchive::Save( const char *filename )
 		}
 
 		FS_FreeFileList( partFiles );
+		*/
 	}
+
+	header.numSections = m_nSections;
+	FS_FileSeek( m_hFile, 0, FS_SEEK_SET );
+
+	FS_Write( &header.validation, sizeof( header.validation ), m_hFile );
+	FS_Write( &header.numSections, sizeof( header.numSections ), m_hFile );
 	
 	FS_FClose( m_hFile );
 	
 	//
 	// save to steam
 	//
-
-	m_nSections = 0;
+#ifdef NOMAD_STEAM_BUILD
+#endif
 
 	//
-	// reload the file list
+	// reset the cache
 	//
-	Z_FreeTags( TAG_SAVEFILE, TAG_SAVEFILE );
-	m_pArchiveCache = NULL;
-	m_pArchiveFileList = NULL;
-	m_nArchiveFiles = 0;
-	m_nCurrentArchive = 0;
+	Z_FreeTags( TAG_SAVEFILE );
 	CGameArchive();
-	SinglePlayerMenu_Cache();
 
 	return true;
 }
@@ -951,7 +1079,7 @@ bool CGameArchive::LoadPartial( const char *filename, gamedata_t *gd )
     }
 
     f = FS_FOpenRead( filename );
-    if (f == FS_INVALID_HANDLE) {
+    if ( f == FS_INVALID_HANDLE ) {
         return false;
     }
 
@@ -959,7 +1087,8 @@ bool CGameArchive::LoadPartial( const char *filename, gamedata_t *gd )
     // validate the header
     //
 
-    if ( FS_FileLength( f ) < HEADER_SIZE ) {
+	size = sizeof( ngdvalidation_t ) + sizeof( uint64_t ) + sizeof( gamedif_t ) + MAX_NPATH;
+    if ( FS_FileLength( f ) < size ) {
         Con_Printf( COLOR_RED "CGameArchive::Load: failed to load savefile because the file is too small to contain a header.\n" );
         return false;
     }
@@ -971,7 +1100,7 @@ bool CGameArchive::LoadPartial( const char *filename, gamedata_t *gd )
 	FS_Read( &gd->numMods, sizeof( gd->numMods ), f );
 
 	if ( gd->numMods ) {
-		gd->modList = (modlist_t *)Hunk_Alloc( sizeof( *gd->modList ) * gd->numMods, h_high );
+		gd->modList = (modlist_t *)Z_Malloc( sizeof( *gd->modList ) * gd->numMods, TAG_SAVEFILE );
 		for ( i = 0; i < gd->numMods; i++ ) {
 			FS_Read( gd->modList[i].name, sizeof( gd->modList[i].name ), f );
 			FS_Read( &gd->modList[i].nVersionMajor, sizeof( gd->modList[i].nVersionMajor ), f );
@@ -1007,20 +1136,52 @@ bool CGameArchive::LoadPartial( const char *filename, gamedata_t *gd )
 bool CGameArchive::Load( const char *name )
 {
 	uint64_t i;
+	char szName[MAX_NPATH];
+	uint64_t offset;
+	bool found;
+
+	N_strncpyz( szName, name, sizeof( szName ) );
+	COM_DefaultExtension( szName, sizeof( szName ), ".ngd" );
+
+	Con_Printf( "Loading save file '%s', please do not close out of the game...\n", szName );
 
 	m_nCurrentArchive = m_nArchiveFiles;
+	found = false;
 	for ( i = 0; i < m_nArchiveFiles; i++ ) {
-		if ( !N_strcmp( name, m_pArchiveCache[i]->name ) ) {
+		if ( !N_stricmp( szName, m_pArchiveCache[i]->name ) ) {
 			m_nCurrentArchive = i;
+			found = true;
 			break;
 		}
 	}
-	
-	if ( i == m_nArchiveFiles ) {
+	if ( !found ) {
 		N_Error( ERR_DROP, "CGameArchive::Load: attempted to load non-existing save file (... HOW?)" );
 	}
 
-	g_pModuleLib->ModuleCall( sgvm, ModuleOnLoadGame, 0 );
+	for ( i = 0; i < m_pArchiveCache[ m_nCurrentArchive ]->m_nSections; i++ ) {
+		Con_DPrintf( "%lu: %-24s %-8i\n", i, m_pArchiveCache[ m_nCurrentArchive ]->m_pSectionList[i].name,
+			m_pArchiveCache[ m_nCurrentArchive ]->m_pSectionList[i].size );
+	}
+
+	UtlVector<CModuleInfo *>& loadList = g_pModuleLib->GetLoadList();
+
+	m_hFile = FS_FOpenRead( szName );
+	if ( m_hFile == FS_INVALID_HANDLE ) {
+		N_Error( ERR_DROP, "CGameArchive::Load: failed to open save file '%s'", szName );
+	}
+
+	offset = 0;
+	offset += sizeof( ngdvalidation_t );
+	offset += sizeof( uint64_t ); // numSections
+	offset += MAX_NPATH; // mapname
+	offset += sizeof( gamedif_t ); // difficulty
+	offset += m_pArchiveCache[ m_nCurrentArchive ]->m_nMods * ( MAX_NPATH + ( sizeof( int32_t ) * 3 ) );
+
+	FS_FileSeek( m_hFile, offset, FS_SEEK_CUR );
+	for ( auto& it : loadList ) {
+		g_pModuleLib->ModuleCall( it, ModuleOnLoadGame, 0 );
+	}
+	FS_FClose( m_hFile );
 
 	return true;
 }

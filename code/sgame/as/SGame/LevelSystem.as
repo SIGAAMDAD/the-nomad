@@ -38,6 +38,7 @@ namespace TheNomad::SGame {
 
     class LevelSystem : TheNomad::GameSystem::GameObject {
 		LevelSystem() {
+			m_PassedCheckpointSfx.Set( "sfx/misc/pass_checkpoint.ogg" );
 		}
 		
 		void OnInit() {
@@ -58,7 +59,6 @@ namespace TheNomad::SGame {
 
 			ConsolePrint( formatUInt( NumLevels() ) + " levels parsed.\n" );
 
-			str.reserve( MAX_STRING_CHARS );
 			for ( i = 0; i < NumLevels(); i++ ) {
 				json@ info = @m_LevelInfos[ i ];
 				if ( !info.get( "Name", levelName ) ) {
@@ -166,22 +166,41 @@ namespace TheNomad::SGame {
 		void OnShutdown() {
 		}
 		void OnRunTic() {
+			if ( GlobalState == GameState::EndOfLevel ) {
+				m_RankData.Draw( true, m_LevelTimer );
+				return;
+			}
+			
 			//
 			// checkpoint updates
 			//
-			if ( EntityManager.NumEntities() == 0 && m_MapData.GetCheckpoints().Count() != 0 ) {
+			if ( EntityManager.NumEntities() == 1 && m_MapData.GetCheckpoints().Count() != 0 ) {
 				if ( m_CurrentCheckpoint >= m_MapData.GetCheckpoints().Count() ) {
+					m_LevelTimer.Stop(); // kill the timer
 					GlobalState = GameState::EndOfLevel;
 					return;
 				}
 				DebugPrint( "Setting checkpoint " + m_CurrentCheckpoint + " to completed.\n" );
 				m_MapData.GetCheckpoints()[ m_CurrentCheckpoint ].m_bPassed = true;
 				m_CurrentCheckpoint++;
+				m_bNewCheckpoint = true;
 			}
-
-			for ( uint i = 0; i < m_MapData.GetCheckpoints().Count(); i++ ) {
-
+			// check if we are passing it
+			if ( PlayerPassedCheckpoint() ) {
+				m_PassedCheckpointSfx.Play();
+				m_bNewCheckpoint = false;
+				
+				MapCheckpoint@ cp = @m_MapData.GetCheckpoints()[ m_CurrentCheckpoint ];
+				for ( uint i = 0; i < cp.m_Spawns.Count(); i++ ) {
+					EntityManager.Spawn( cp.m_Spawns[i].m_nEntityType, cp.m_Spawns[i].m_nEntityId,
+						vec3( float( cp.m_Spawns[i].m_Origin.x ), float( cp.m_Spawns[i].m_Origin.y ),
+						float( cp.m_Spawns[i].m_Origin.z ) ) );
+				}
+				
+				TheNomad::Engine::CmdExecuteCommand( "sgame.save_game\n" );
 			}
+			
+			m_RankData.Draw( false, m_LevelTimer );
 		}
 		bool OnConsoleCommand( const string& in cmd ) {
 			return false;
@@ -191,8 +210,106 @@ namespace TheNomad::SGame {
 			@m_Current = null;
 		}
 		void OnSave() const {
+			const LevelStats@ stats;
+			uint i, a;
+			
+			DebugPrint( "Archiving level stats...\n" );
+			
+			TheNomad::GameSystem::SaveSystem::SaveSection section( GetName() );
+			section.SaveUInt( "NumLevels", m_LevelInfoDatas.Count() );
+			for ( i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
+				section.SaveString( "LevelNames" + i, m_LevelInfoDatas[i].m_Name );
+			}
+			
+			// save individual stats for each level
+			for ( i = 0; i < m_LevelInfoDatas.Count(); i++ ) {
+				// each section is a different .prt file, so the stats will remain per save-slot unless overwritten
+				// hopefully this doesn't lead to other mods overwriting to data if two levels have the same name,
+				// but that is a rare case and possibly a user/modder error
+				TheNomad::GameSystem::SaveSystem::SaveSection save( m_LevelInfoDatas[i].m_Name + "_RankData" );
+				
+				// we don't use NumDifficulties because a map doesn't have to be registered with all difficulties
+				save.SaveUInt( "MapCount", m_LevelInfoDatas[i].m_MapHandles.Count() );
+				for ( a = 0; a < m_LevelInfoDatas[i].m_MapHandles.Count(); a++ ) {
+					@stats = m_LevelInfoDatas[i].m_MapHandles[a].highStats;
+					
+					//
+					// save the ranks, then the actual numbers (for the perfectionists)
+					//
+					
+					save.SaveUInt( "GameDifficulty", uint( m_LevelInfoDatas[i].m_MapHandles[a].difficulty ) );
+					
+					save.SaveUInt( "Rank", uint( stats.total_Rank ) );
+					save.SaveUInt( "TimeRank", uint( stats.time_Rank ) );
+					save.SaveUInt( "KillsRank", uint( stats.kills_Rank ) );
+					save.SaveUInt( "StyleRank", uint( stats.style_Rank ) );
+					save.SaveUInt( "DeathsRank", uint( stats.deaths_Rank ) );
+					
+					save.SaveBool( "CleanRun", stats.isClean );
+					save.SaveUInt( "TimeMilliseconds", uint( stats.m_TimeMilliseconds ) );
+					save.SaveUInt( "TimeSeconds", uint( stats.m_TimeSeconds ) );
+					save.SaveUInt( "TimeMinutes", uint( stats.m_TimeMinutes ) );
+					
+					save.SaveUInt( "NumKills", stats.numKills );
+					save.SaveUInt( "StylePoints", stats.stylePoints );
+					save.SaveUInt( "CollateralScore", stats.collateralScore );
+					save.SaveUInt( "NumDeaths", stats.numDeaths );
+				}
+			}
 		}
 		void OnLoad() {
+			LevelStats@ stats;
+			LevelInfoData@ data;
+			uint i, a;
+			string name;
+			TheNomad::GameSystem::SaveSystem::LoadSection load( GetName() );
+			
+			DebugPrint( "Loading level stats...\n" );
+			if ( !load.Found() ) {
+				GameError( "LevelSystem::OnLoad: save file corruption, section 'LevelStats' not found!" );
+			}
+			
+			const uint numLevels = load.LoadUInt( "NumLevels" );
+			if ( numLevels != m_LevelInfoDatas.Count() ) {
+				m_LevelInfoDatas.Clear();
+				m_LevelInfoDatas.Resize( numLevels );
+			}
+			for ( i = 0; i < numLevels; i++ ) {
+				load.LoadString( "LevelNames" + i, name );
+				
+				@data = @m_LevelInfoDatas[i];
+				TheNomad::GameSystem::SaveSystem::LoadSection section( name + "_RankData" );
+				if ( !section.Found() ) {
+					GameError( "LevelSystem::OnLoad: save file corruption, section '" + name + "_RankData' not found!" );
+				}
+				
+				// there might be some levels in the save that just aren't present with the mods loaded
+				data.m_nIndex = i;
+				
+				const uint mapCount = section.LoadUInt( "MapCount" );
+				data.m_MapHandles.Resize( mapCount );
+				for ( a = 0; a < mapCount; a++ ) {
+					@stats = @data.m_MapHandles[a].highStats;
+					
+					data.m_MapHandles[a].difficulty = TheNomad::GameSystem::GameDifficulty( section.LoadUInt( "GameDifficulty" ) );
+					
+					stats.total_Rank = LevelRank( section.LoadUInt( "Rank" ) );
+					stats.time_Rank = LevelRank( section.LoadUInt( "TimeRank" ) );
+					stats.kills_Rank = LevelRank( section.LoadUInt( "KillsRank" ) );
+					stats.style_Rank = LevelRank( section.LoadUInt( "StyleRank" ) );
+					stats.deaths_Rank = LevelRank( section.LoadUInt( "DeathsRank" ) );
+					
+					stats.isClean = section.LoadBool( "CleanRun" );
+					stats.m_TimeMilliseconds = section.LoadUInt( "TimeMilliseconds" );
+					stats.m_TimeSeconds = section.LoadUInt( "TimeSeconds" );
+					stats.m_TimeMinutes = section.LoadUInt( "TimeMinutes" );
+					
+					stats.numKills = section.LoadUInt( "NumKills" );
+					stats.stylePoints = section.LoadUInt( "StylePoints" );
+					stats.collateralScore = section.LoadUInt( "CollateralScore" );
+					stats.numDeaths = section.LoadUInt( "NumDeaths" );
+				}
+			}
 		}
 		const string& GetName() const {
 			return "LevelSystem";
@@ -238,10 +355,15 @@ namespace TheNomad::SGame {
 				m_nDifficultyScale = 5.0f; // ... ;)
 				break;
 			};
+			
+			m_LevelTimer.Run();
 		}
 		
+		//
+		// AddLevelData: for manual level infos
+		//
 		void AddLevelData( LevelInfoData@ levelData ) {
-			m_LevelInfoDatas.push_back( levelData );
+			m_LevelInfoDatas.Add( @levelData );
 		}
 		
 		const LevelInfoData@ GetLevelDataByIndex( uint nIndex ) const {
@@ -322,6 +444,13 @@ namespace TheNomad::SGame {
 
 			return true;
 		}
+		
+		private bool PlayerPassedCheckpoint() const {
+			const vec3 origin = EntityManager.GetPlayerObject().GetOrigin();
+			return m_MapData.GetCheckpoints()[ m_CurrentCheckpoint ].m_Origin ==
+				uvec3( uint( origin.x ), uint( origin.y ), uint( origin.z ) )
+				&& !m_MapData.GetCheckpoints()[ m_CurrentCheckpoint ].m_bPassed;
+		}
 
 		float GetDifficultyScale() const {
 			return m_nDifficultyScale;
@@ -352,25 +481,21 @@ namespace TheNomad::SGame {
 			return @m_Current;
 		}
 		
-		private uint m_CurrentCheckpoint;
+		private TheNomad::Engine::Timer m_LevelTimer;
+		private uint m_CurrentCheckpoint = 0;
 		private array<json@> m_LevelInfos;
 		private array<LevelInfoData@> m_LevelInfoDatas;
 		private uint m_nIndex = 0;
 		private uint m_nLevels = 0;
+		
+		private bool m_bNewCheckpoint = true;
+		private TheNomad::Engine::SoundSystem::SoundEffect m_PassedCheckpointSfx;
 
 		private float m_nDifficultyScale = 1.0f;
 		
 		private LevelStats m_RankData = LevelStats();
 		private LevelInfoData@ m_Current = null;
 		private MapData@ m_MapData = null;
-	};
-
-	class SoundData {
-		SoundData( float decibles, const vec2& in volume, const ivec2& in range, const ivec3& in origin, float diffusion ) {
-		}
-		
-		void Run() {
-		}
 	};
 
 	uint GetMapLevel( float elevation ) {
