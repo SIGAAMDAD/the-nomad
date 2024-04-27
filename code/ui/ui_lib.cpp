@@ -64,7 +64,6 @@ qboolean UI_MenuTitle( const char *label, float fontScale )
 	ImVec2 cursorPos;
 	renderSceneRef_t refdef;
 	extern cvar_t *in_joystick;
-	qboolean mouseActive;
 
 	memset( &refdef, 0, sizeof( refdef ) );
 	refdef.x = 0;
@@ -83,7 +82,6 @@ qboolean UI_MenuTitle( const char *label, float fontScale )
 	ImGui::PopStyleColor();
 
 	cursorPos = ImGui::GetCursorScreenPos();
-	SDL_ShowCursor( mouseActive );
 
 //	ImGui::SetWindowFontScale( 1.5f * scale );
 	ImGui::SetCursorScreenPos( ImVec2( 16 * ui->scale, 680 * ui->scale ) );
@@ -216,7 +214,6 @@ void UI_SetActiveMenu( uiMenu_t menu )
         break;
 	};
 }
-
 
 /*
 ================

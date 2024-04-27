@@ -217,12 +217,9 @@ static void FBO_Restart_f( void )
 	height = glConfig.vidHeight;
 	switch ( r_multisampleType->i ) {
 	case AntiAlias_2xSSAA:
+	case AntiAlias_4xSSAA:
 		width *= 2;
 		height *= 2;
-		break;
-	case AntiAlias_4xSSAA:
-		width *= 4;
-		height *= 4;
 		break;
 	};
 
@@ -373,12 +370,9 @@ void FBO_Init( void )
 	height = glConfig.vidHeight;
 	switch ( r_multisampleType->i ) {
 	case AntiAlias_2xSSAA:
+	case AntiAlias_4xSSAA:
 		width *= 2;
 		height *= 2;
-		break;
-	case AntiAlias_4xSSAA:
-		width *= 4;
-		height *= 4;
 		break;
 	};
 

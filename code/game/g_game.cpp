@@ -95,13 +95,13 @@ static void G_RefFreeAll( void ) {
     Z_FreeTags( TAG_RENDERER );
 }
 
-static void G_RefImGuiFree(void *ptr, void *) {
+static void G_RefImGuiFree( void *ptr, void * ) {
     if ( ptr != NULL ) {
         Z_Free( ptr );
     }
 }
 
-static void G_RefImGuiShutdown(void) {
+static void G_RefImGuiShutdown( void ) {
     ImGuiIO& io = ImGui::GetIO();
     io.BackendRendererName = NULL;
     io.BackendRendererUserData = NULL;
@@ -118,7 +118,7 @@ static void G_RefImGuiShutdown(void) {
     Z_FreeTags( TAG_IMGUI );
 }
 
-static void G_RefImGuiNewFrame(void) {
+static void G_RefImGuiNewFrame( void ) {
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableSetMousePos;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
@@ -130,18 +130,15 @@ static void G_RefImGuiNewFrame(void) {
 
     ImGuiStyle& style = ImGui::GetStyle();
 
-    switch ((antialiasType_t)r_multisampleType->i) {
+    switch ( r_multisampleType->i ) {
+    case AntiAlias_2xMSAA:
     case AntiAlias_4xMSAA:
-    case AntiAlias_8xMSAA:
         style.AntiAliasedFill = true;
         break;
     case AntiAlias_16xMSAA:
     case AntiAlias_32xMSAA:
         style.AntiAliasedLines = true;
         style.AntiAliasedFill = true;
-        break;
-    default:
-        // its ssaa
         break;
     };
 
@@ -150,7 +147,7 @@ static void G_RefImGuiNewFrame(void) {
     ImGui::NewFrame();
 }
 
-static void G_RefImGuiDraw(void) {
+static void G_RefImGuiDraw( void ) {
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
 }
