@@ -3,8 +3,10 @@
 #include "../game/g_game.h"
 #ifdef USE_LOCAL_HEADERS
 #   include "SDL2/SDL.h"
+#   include "SDL2/SDL_haptic.h"
 #else
 #   include <SDL2/SDL.h>
+#   include <SDL2/SDL_haptic.h>
 #endif
 #include "sdl_glw.h"
 #include "../rendercommon/imgui_impl_sdl2.h"
@@ -15,6 +17,7 @@ static cvar_t *in_keyboardDebug;
 static cvar_t *in_forceCharset;
 
 static SDL_GameController *gamepad;
+static SDL_Haptic *haptic;
 static SDL_Joystick *stick;
 
 static qboolean mouseAvailable = qfalse;
@@ -26,6 +29,8 @@ cvar_t *in_joystick;
 cvar_t *in_joystickThreshold;
 cvar_t *in_joystickNo;
 cvar_t *in_joystickUseAnalog;
+cvar_t *in_haptic;
+cvar_t *in_mode;
 
 static cvar_t *j_pitch;
 static cvar_t *j_yaw;
@@ -37,7 +42,6 @@ static cvar_t *j_yaw_axis;
 static cvar_t *j_forward_axis;
 static cvar_t *j_side_axis;
 static cvar_t *j_up_axis;
-
 
 static cvar_t *g_consoleKeys;
 
@@ -499,6 +503,37 @@ struct {
 } stick_state;
 
 
+static void IN_InitHaptic( void )
+{
+	if ( !in_haptic->i ) {
+		return;
+	}
+
+	if ( haptic ) {
+		SDL_HapticClose( haptic );
+	}
+
+	haptic = NULL;
+
+	if ( !SDL_WasInit( SDL_INIT_HAPTIC ) ) {
+		Con_DPrintf( "Calling SDL_Init(SDL_INIT_HAPTIC)...\n" );
+		if ( SDL_Init( SDL_INIT_HAPTIC ) != 0 ) {
+			Con_DPrintf( "SDL_Init(SDL_INIT_HAPTIC) failed: %s\n", SDL_GetError() );
+			return;
+		}
+		Con_DPrintf( "SDL_Init(SDL_INIT_HAPTIC) passed.\n" );
+	}
+	if ( SDL_JoystickIsHaptic( stick ) ) {
+		haptic = SDL_HapticOpenFromJoystick( stick );
+		if ( !haptic ) {
+			
+		}
+	} else {
+		Con_Printf( "Current controller doesn't support haptic feedback.\n" );
+		return;
+	}
+}
+
 /*
 ===============
 IN_InitJoystick
@@ -511,15 +546,17 @@ static void IN_InitJoystick( void )
 	int total = 0;
 	char buf[16384] = "";
 
-	if (gamepad)
-		SDL_GameControllerClose(gamepad);
+	if ( gamepad ) {
+		SDL_GameControllerClose( gamepad );
+	}
 
-	if (stick != NULL)
-		SDL_JoystickClose(stick);
+	if ( stick != NULL ) {
+		SDL_JoystickClose( stick );
+	}
 
 	stick = NULL;
 	gamepad = NULL;
-	memset(&stick_state, '\0', sizeof (stick_state));
+	memset( &stick_state, '\0', sizeof( stick_state ) );
 
 	// SDL 2.0.4 requires SDL_INIT_JOYSTICK to be initialized separately from
 	// SDL_INIT_GAMECONTROLLER for SDL_JoystickOpen() to work correctly,
@@ -578,6 +615,8 @@ static void IN_InitJoystick( void )
 		Con_DPrintf( "No joystick opened: %s\n", SDL_GetError() );
 		return;
 	}
+
+	IN_InitHaptic();
 
 	if ( SDL_IsGameController( in_joystickNo->i ) ) {
 		gamepad = SDL_GameControllerOpen( in_joystickNo->i );
@@ -643,26 +682,31 @@ static qboolean KeyToAxisAndSign( int keynum, int *outAxis, int *outSign )
 
 	*outSign = 0;
 
-	if (N_stricmp(bind, "+forward") == 0)
+	if (N_stricmp(bind, "+northmove") == 0)
 	{
 		*outAxis = j_forward_axis->i;
 		*outSign = j_forward->f > 0.0f ? 1 : -1;
 	}
-	else if (N_stricmp(bind, "+back") == 0)
+	else if (N_stricmp(bind, "+southmove") == 0)
 	{
 		*outAxis = j_forward_axis->i;
 		*outSign = j_forward->f > 0.0f ? -1 : 1;
 	}
-	else if (N_stricmp(bind, "+moveleft") == 0)
+	else if (N_stricmp(bind, "+westmove") == 0)
 	{
 		*outAxis = j_side_axis->i;
 		*outSign = j_side->f > 0.0f ? -1 : 1;
 	}
-	else if (N_stricmp(bind, "+moveright") == 0)
+	else if (N_stricmp(bind, "+eastmove") == 0)
 	{
 		*outAxis = j_side_axis->i;
 		*outSign = j_side->f > 0.0f ? 1 : -1;
 	}
+	else if ( N_stricmp( bind, "+upmove" ) == 0 ) {
+		*outAxis = j_up_axis->i;
+		*outSign = j_up->f > 0.0f ? 1 : -1;
+	}
+	/*
 	else if (N_stricmp(bind, "+lookup") == 0)
 	{
 		*outAxis = j_pitch_axis->i;
@@ -693,6 +737,7 @@ static qboolean KeyToAxisAndSign( int keynum, int *outAxis, int *outSign )
 		*outAxis = j_up_axis->i;
 		*outSign = j_up->f > 0.0f ? -1 : 1;
 	}
+	*/
 
 	return *outSign != 0;
 }
@@ -715,6 +760,9 @@ static void IN_GamepadMove( void )
 	for ( i = 0; i < SDL_CONTROLLER_BUTTON_MAX; i++ ) {
 		qboolean pressed = SDL_GameControllerGetButton( gamepad, (SDL_GameControllerButton)( SDL_CONTROLLER_BUTTON_A + i ) );
 		if ( pressed != stick_state.buttons[i] ) {
+			if ( in_mode->i == 0 ) {
+				Cvar_Set( "in_mode", "1" );
+			}
 #if SDL_VERSION_ATLEAST( 2, 0, 14 )
 			if ( i >= SDL_CONTROLLER_BUTTON_MISC1 ) {
 				Com_QueueEvent(in_eventTime, SE_KEY, KEY_PAD0_MISC1 + i - SDL_CONTROLLER_BUTTON_MISC1, pressed, 0, NULL);
@@ -753,6 +801,9 @@ static void IN_GamepadMove( void )
 		axis = (int)(32767 * ((axis < 0) ? -f : f));
 
 		if ( axis != oldAxis ) {
+			if ( in_mode->i == 0 ) {
+				Cvar_Set( "in_mode", "1" );
+			}
 			const int negMap[SDL_CONTROLLER_AXIS_MAX] = { KEY_PAD0_LEFTSTICK_LEFT,  KEY_PAD0_LEFTSTICK_UP,   KEY_PAD0_RIGHTSTICK_LEFT,  KEY_PAD0_RIGHTSTICK_UP, 0, 0 };
 			const int posMap[SDL_CONTROLLER_AXIS_MAX] = { KEY_PAD0_LEFTSTICK_RIGHT, KEY_PAD0_LEFTSTICK_DOWN, KEY_PAD0_RIGHTSTICK_RIGHT, KEY_PAD0_RIGHTSTICK_DOWN, KEY_PAD0_LEFTTRIGGER, KEY_PAD0_RIGHTTRIGGER };
 
@@ -822,6 +873,9 @@ static void IN_GamepadMove( void )
 	if ( in_joystickUseAnalog->i ) {
 		for ( i = 0; i < MAX_JOYSTICK_AXIS; i++ ) {
 			if ( translatedAxesSet[i] ) {
+				if ( in_mode->i == 0 ) {
+					Cvar_Set( "in_mode", "1" );
+				}
 				Com_QueueEvent( in_eventTime, SE_JOYSTICK_AXIS, i, translatedAxes[i], 0, NULL );
 			}
 		}
@@ -875,6 +929,10 @@ static void IN_JoyMove( void )
 				balldx *= 2;
 			if (abs(balldy) > 1)
 				balldy *= 2;
+			
+			if ( in_mode->i == 0 ) {
+				Cvar_Set( "in_mode", "1" );
+			}
 			Com_QueueEvent( in_eventTime, SE_MOUSE, balldx, balldy, 0, NULL );
 		}
 	}
@@ -890,6 +948,9 @@ static void IN_JoyMove( void )
 			qboolean pressed = (SDL_JoystickGetButton(stick, i) != 0);
 			if (pressed != stick_state.buttons[i])
 			{
+				if ( in_mode->i == 0 ) {
+					Cvar_Set( "in_mode", "1" );
+				}
 				Com_QueueEvent( in_eventTime, SE_KEY, KEY_JOY1 + i, pressed, 0, NULL );
 				stick_state.buttons[i] = pressed;
 			}
@@ -913,6 +974,9 @@ static void IN_JoyMove( void )
 		for( i = 0; i < 4; i++ ) {
 			if( ((Uint8 *)&hats)[i] != ((Uint8 *)&stick_state.oldhats)[i] ) {
 				// release event
+				if ( in_mode->i == 0 ) {
+					Cvar_Set( "in_mode", "1" );
+				}
 				switch( ((Uint8 *)&stick_state.oldhats)[i] ) {
 					case SDL_HAT_UP:
 						Com_QueueEvent( in_eventTime, SE_KEY, hat_keys[4*i + 0], qfalse, 0, NULL );
@@ -1001,6 +1065,9 @@ static void IN_JoyMove( void )
 
 				if ( axis != stick_state.oldaaxes[i] )
 				{
+					if ( in_mode->i == 0 ) {
+						Cvar_Set( "in_mode", "1" );
+					}
 					Com_QueueEvent( in_eventTime, SE_JOYSTICK_AXIS, i, axis, 0, NULL );
 					stick_state.oldaaxes[i] = axis;
 				}
@@ -1027,10 +1094,16 @@ static void IN_JoyMove( void )
 	{
 		for( i = 0; i < 16; i++ ) {
 			if( ( axes & ( 1 << i ) ) && !( stick_state.oldaxes & ( 1 << i ) ) ) {
+				if ( in_mode->i == 0 ) {
+					Cvar_Set( "in_mode", "1" );
+				}
 				Com_QueueEvent( in_eventTime, SE_KEY, joy_keys[i], qtrue, 0, NULL );
 			}
 
 			if( !( axes & ( 1 << i ) ) && ( stick_state.oldaxes & ( 1 << i ) ) ) {
+				if ( in_mode->i == 0 ) {
+					Cvar_Set( "in_mode", "1" );
+				}
 				Com_QueueEvent( in_eventTime, SE_KEY, joy_keys[i], qfalse, 0, NULL );
 			}
 		}
@@ -1054,7 +1127,7 @@ void HandleEvents( void )
 	in_eventTime = Sys_Milliseconds();
 
 	while ( SDL_PollEvent( &e ) ) {
-		if ( Key_GetCatcher() & KEYCATCH_CONSOLE || Key_GetCatcher() & KEYCATCH_UI ) {
+		if ( ( Key_GetCatcher() & KEYCATCH_CONSOLE || Key_GetCatcher() & KEYCATCH_UI ) && ImGui::GetCurrentContext() ) {
 			ImGui_ImplSDL2_ProcessEvent( &e );
 		}
 
@@ -1063,6 +1136,10 @@ void HandleEvents( void )
 			if ( e.key.repeat && Key_GetCatcher() == 0 )
 				break;
 			key = IN_TranslateSDLToQ3Key( &e.key.keysym, qtrue );
+
+			if ( in_mode->i == 1 ) {
+				Cvar_Set( "in_mode", "0" );
+			}
 
 			if ( key == KEY_ENTER && keys[KEY_ALT].down ) {
 				Cvar_SetIntegerValue( "r_fullscreen", glw_state.isFullscreen ? 0 : 1 );
@@ -1135,6 +1212,10 @@ void HandleEvents( void )
 			}
 			break;
 		case SDL_MOUSEMOTION:
+			if ( in_mode->i == 1 ) {
+//				Cvar_Set( "in_mode", "0" );
+			}
+
 			if( mouseActive ) {
 				if ( !e.motion.xrel && !e.motion.yrel )
 					break;
@@ -1143,19 +1224,24 @@ void HandleEvents( void )
 			break;
 		case SDL_MOUSEBUTTONDOWN:
 		case SDL_MOUSEBUTTONUP: {
-				int b;
-				switch ( e.button.button ) {
-				case SDL_BUTTON_LEFT:   b = KEY_MOUSE_LEFT;     break;
-				case SDL_BUTTON_MIDDLE: b = KEY_MOUSE_MIDDLE;   break;
-				case SDL_BUTTON_RIGHT:  b = KEY_MOUSE_RIGHT;    break;
-				case SDL_BUTTON_X1:     b = KEY_MOUSE_BUTTON_4; break;
-				case SDL_BUTTON_X2:     b = KEY_MOUSE_BUTTON_5; break;
-				default:                b = KEY_AUX1 + ( e.button.button - SDL_BUTTON_X2 + 1 ) % 16; break;
-				};
-				Com_QueueEvent( in_eventTime, SE_KEY, b,
-					( e.type == SDL_MOUSEBUTTONDOWN ? qtrue : qfalse ), 0, NULL );
+			int b;
+			Cvar_Set( "in_mode", "0" );
+
+			switch ( e.button.button ) {
+			case SDL_BUTTON_LEFT:   b = KEY_MOUSE_LEFT;     break;
+			case SDL_BUTTON_MIDDLE: b = KEY_MOUSE_MIDDLE;   break;
+			case SDL_BUTTON_RIGHT:  b = KEY_MOUSE_RIGHT;    break;
+			case SDL_BUTTON_X1:     b = KEY_MOUSE_BUTTON_4; break;
+			case SDL_BUTTON_X2:     b = KEY_MOUSE_BUTTON_5; break;
+			default:                b = KEY_AUX1 + ( e.button.button - SDL_BUTTON_X2 + 1 ) % 16; break;
+			};
+			Com_QueueEvent( in_eventTime, SE_KEY, b,
+				( e.type == SDL_MOUSEBUTTONDOWN ? qtrue : qfalse ), 0, NULL );
 			break; }
 		case SDL_MOUSEWHEEL:
+			if ( in_mode->i == 1 ) {
+				Cvar_Set( "in_mode", "0" );
+			}
 			if ( e.wheel.y > 0 ) {
 				Com_QueueEvent( in_eventTime, SE_KEY, KEY_WHEEL_UP, qtrue, 0, NULL );
 				Com_QueueEvent( in_eventTime, SE_KEY, KEY_WHEEL_UP, qfalse, 0, NULL );
@@ -1166,6 +1252,7 @@ void HandleEvents( void )
 			}
 			break;
 		case SDL_CONTROLLERDEVICEADDED:
+			Cvar_Set( "in_mode", "1" );
 		case SDL_CONTROLLERDEVICEREMOVED:
 			if ( in_joystick->i ) {
 				IN_InitJoystick();
@@ -1257,6 +1344,12 @@ void IN_Init( void )
 
 	Con_DPrintf( "\n------- Input Initialization -------\n" );
 
+	in_mode = Cvar_Get( "in_mode", "0", CVAR_SAVE );
+	Cvar_SetDescription( in_mode,
+		"Sets how the game recieves user input:\n"
+		" 0 - keyboard & mouse\n"
+		" 1 - controller\n" );
+
 	in_keyboardDebug = Cvar_Get( "in_keyboardDebug", "0", CVAR_SAVE );
 	Cvar_SetDescription( in_keyboardDebug, "Print keyboard debug info." );
 	in_forceCharset = Cvar_Get( "in_forceCharset", "1", CVAR_ARCHIVE_ND );
@@ -1270,6 +1363,9 @@ void IN_Init( void )
 		"  0 - disable mouse input\n"
 		"  1 - di/raw mouse\n"
 		" -1 - win32 mouse" );
+	
+	in_haptic = Cvar_Get( "in_haptic", "1", CVAR_SAVE | CVAR_LATCH );
+	Cvar_SetDescription( in_haptic, "Whether or not haptic feedback is on." );
 
 	in_joystick = Cvar_Get( "in_joystick", "1", CVAR_SAVE | CVAR_LATCH );
 	Cvar_SetDescription( in_joystick, "Whether or not joystick support is on." );

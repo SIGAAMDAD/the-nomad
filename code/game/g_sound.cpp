@@ -236,7 +236,6 @@ void CSoundSource::Init( void )
 
 void CSoundSource::Shutdown( void )
 {
-    return;
     // stop the source if we're playing anything
     if ( IsPlaying() ) {
         ALCall( alSourceStop( m_iSource ) );
@@ -447,6 +446,8 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
         return false;
     }
 
+    ALCall( alGenBuffers( 1, &m_iBuffer ) );
+
     // generate a brand new source for each individual sfx
     if ( tag == TAG_SFX && m_iSource == 0 ) {
         ALCall( alGenSources( 1, &m_iSource ) );
@@ -582,9 +583,8 @@ CSoundSource *CSoundManager::InitSource( const char *filename, int64_t tag )
 
     src = (CSoundSource *)Hunk_Alloc( sizeof( *src ), h_low );
     memset( src, 0, sizeof( *src ) );
-    src->Init();
 
-    if (tag == TAG_MUSIC) {
+    if ( tag == TAG_MUSIC ) {
         if ( !alIsSource( m_iMusicSource ) ) { // make absolutely sure its a valid source
             ALCall( alGenSources( 1, &m_iMusicSource ));
         }

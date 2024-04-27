@@ -108,14 +108,17 @@ static void G_RefImGuiShutdown( void ) {
     io.BackendLanguageUserData = NULL;
     io.BackendFlags = ImGuiBackendFlags_None;
 
+    Con_Printf( "ImGui_Shutdown: shutting down ImGui renderer backend...\n" );
+
     FontCache()->ClearCache();
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
+    ImGui::SetCurrentContext( NULL );
 
     // clean everything up
-    Z_FreeTags( TAG_IMGUI );
+//    Z_FreeTags( TAG_IMGUI );
 }
 
 static void G_RefImGuiNewFrame( void ) {
@@ -185,6 +188,8 @@ static void G_RefImGuiInit( void *shaderData, const void *importData ) {
     ImGuiIO& io = ImGui::GetIO();
 
     io.BackendPlatformName = OS_STRING;
+
+    Con_Printf( "-------- ImGui_Init( %s ) --------\n", g_renderer->s );
 
     // init font cache
     g_pFontCache = new ( Hunk_Alloc( sizeof( *g_pFontCache ), h_low ) ) CUIFontCache();
@@ -313,26 +318,26 @@ static void G_InitRenderRef(void)
 #define REND_ARCH_STRING "x64"
 #endif
 
-    snprintf(dllName, sizeof(dllName), DLL_PREFIX "TheNomad.RenderLib-%s." REND_ARCH_STRING DLL_EXT, dllPrefix);
+    snprintf( dllName, sizeof( dllName ), DLL_PREFIX "TheNomad.RenderLib-%s." REND_ARCH_STRING DLL_EXT, dllPrefix );
     renderLib = Sys_LoadDLL(dllName);
-    if (!renderLib) {
+    if ( !renderLib ) {
         Cvar_ForceReset( "g_renderer" );
-        snprintf(dllName, sizeof(dllName), DLL_PREFIX "TheNomad.RenderLib-%s." REND_ARCH_STRING DLL_EXT, dllPrefix);
-        renderLib = Sys_LoadDLL(dllName);
-        if (!renderLib) {
-            N_Error(ERR_FATAL, "Failed to load rendering library '%s', possible system error: %s", dllName, Sys_GetDLLError());
+        snprintf( dllName, sizeof( dllName ), DLL_PREFIX "TheNomad.RenderLib-%s." REND_ARCH_STRING DLL_EXT, dllPrefix );
+        renderLib = Sys_LoadDLL( dllName );
+        if ( !renderLib ) {
+            N_Error( ERR_FATAL, "Failed to load rendering library '%s', possible system error: %s", dllName, Sys_GetDLLError() );
         }
     }
 
-    GetRenderAPI = (GetRenderAPI_t)Sys_GetProcAddress(renderLib, "GetRenderAPI");
-    if (!GetRenderAPI) {
-        N_Error(ERR_FATAL, "Can't load symbol GetRenderAPI");
+    GetRenderAPI = (GetRenderAPI_t)Sys_GetProcAddress( renderLib, "GetRenderAPI" );
+    if ( !GetRenderAPI ) {
+        N_Error( ERR_FATAL, "Can't load symbol GetRenderAPI" );
         return;
     }
 
     g_renderer->modified = qfalse;
 
-    memset(&import, 0, sizeof(import));
+    memset( &import, 0, sizeof( import ) );
 
     import.Cmd_AddCommand = Cmd_AddCommand;
     import.Cmd_RemoveCommand = Cmd_RemoveCommand;
@@ -413,7 +418,7 @@ static void G_InitRenderRef(void)
 
     Con_Printf( "-------------------------------\n" );
 	if ( !ret ) {
-		N_Error (ERR_FATAL, "Couldn't initialize refresh" );
+		N_Error( ERR_FATAL, "Couldn't initialize refresh" );
 	}
 
     re = *ret;
@@ -470,7 +475,7 @@ static void G_InitRenderer( void )
 
 //    g_console_field_width = ( ( gi.gpuConfig.vidWidth / smallchar_width ) ) - 2;
 
-    // for 1024x768 virtualized screen
+    // for 1920x1080 virtualized screen
 	gi.biasY = 0;
 	gi.biasX = 0;
 	if ( gi.gpuConfig.vidWidth * 768.0f > gi.gpuConfig.vidHeight * 1024.0f ) {
@@ -592,16 +597,26 @@ static void G_VM_Restart_f( void ) {
 
 const vidmode_t r_vidModes[NUMVIDMODES] =
 {
-//	{ "Mode  0: 320x240",			320,	240,	1 },
-//	{ "Mode  1: 640x480",			640,	480,	1 },
-//	{ "Mode  2: 800x600",			800,	600,	1 },
-	{ "Mode  0: 1024x768",			1024,	768,	1 },
-	{ "Mode  1: 1280x720",			1280,	720,	1 },
-	{ "Mode  2: 1600x900",			1600,	900,	1 },
-	{ "Mode  3: 1920x1080",			1920,	1080,	1 },
-    { "Mode  4: 2048x1536",			2048,	1536,	1 },
-	{ "Mode  5: 3840x2160",			3840,	2160,	1 },
-//	{ "Mode  9: 4096x2160 (4K)",	4096,	2160,	1 }
+    { "Mode  0: 1024x768",      1024,   768,    1 },
+    { "Mode  1: 1280x720",      1280,   720,    1 },
+    { "Mode  2: 1280x800",      1280,   800,    1 },
+    { "Mode  3: 1280x1024",     1280,   1024,   1 },
+    { "Mode  4: 1440x900",      1440,   900,    1 },
+    { "Mode  5: 1440x960",      1440,   960,    1 },
+    { "Mode  6: 1600x900",      1600,   900,    1 },
+    { "Mode  7: 1600x1200",     1600,   1200,   1 },
+    { "Mode  8: 1600x1050",     1600,   1050,   1 },
+    { "Mode  9: 1920x800",      1920,   800,    1 },
+    { "Mode 10: 1920x1080",     1920,   1080,   1 },
+    { "Mode 11: 1920x1200",     1920,   1200,   1 },
+    { "Mode 12: 1920x1280",     1920,   1280,   1 },
+    { "Mode 13: 2560x1080",     2560,   1080,   1 },
+    { "Mode 14: 2560x1440",     2560,   1440,   1 },
+    { "Mode 15: 2560x1600",     2560,   1600,   1 },
+    { "Mode 16: 2880x1620",     2880,   1620,   1 },
+    { "Mode 17: 3200x1800",     3200,   1800,   1 },
+    { "Mode 18: 3840x1600",     3840,   1600,   1 },
+    { "Mode 19: 3840x2160",     3840,   2160,   1 }
 };
 static const int64_t numVidModes = (int64_t)arraylen( r_vidModes );
 

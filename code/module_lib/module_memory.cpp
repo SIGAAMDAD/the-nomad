@@ -36,6 +36,12 @@ If you have questions concerning this license or the applicable additional terms
 	#define USE_LIBC_MALLOC		0
 #endif
 
+#ifndef MEMHEAP_DEBUG
+	#ifdef _NOMAD_DEBUG
+	#define MEMHEAP_DEBUG
+	#endif
+#endif
+
 #ifndef CRASH_ON_STATIC_ALLOCATION
 	#define CRASH_ON_STATIC_ALLOCATION
 #endif
@@ -70,7 +76,7 @@ public:
 private:
 
 	enum {
-		ALIGN = 8									// memory alignment in bytes
+		ALIGN = 16									// memory alignment in bytes
 	};
 
 	enum {
@@ -407,6 +413,11 @@ idHeap::FreePageReal
 */
 void idHeap::FreePageReal( idHeap::page_s *p ) {
 	Assert( p );
+#ifdef MEMHEAP_DEBUG
+	if ( p ) {
+		Con_DPrintf( "Releasing page 0x%08lx, %u bytes\n", (uintptr_t)(void *)p, p->dataSize );
+	}
+#endif
 	::free( p );
 }
 
@@ -417,8 +428,11 @@ idHeap::ReleaseSwappedPages
   releases the swap page to OS
 ================
 */
-void idHeap::ReleaseSwappedPages () {
+void idHeap::ReleaseSwappedPages( void ) {
 	if ( swapPage ) {
+	#ifdef MEMHEAP_DEBUG
+		Con_DPrintf( "Release swapPage 0x%08lx, %u bytes\n", (uintptr_t)(void *)swapPage, swapPage->dataSize );
+	#endif
 		FreePageReal( swapPage );
 	}
 	swapPage = NULL;
@@ -457,6 +471,10 @@ idHeap::page_s* idHeap::AllocatePage( uint32_t bytes ) {
 		p->firstFree = NULL;
 		p->largestFree = 0;
 		OSAllocs++;
+	
+	#ifdef MEMHEAP_DEBUG
+		Con_DPrintf( "Allocated page 0x%08lx, %u bytes\n", (uintptr_t)(void *)p, p->dataSize );
+	#endif
 	}
 
 	p->prev = NULL;
@@ -948,8 +966,8 @@ void idHeap::LargeFree( void *ptr) {
 
 static idHeap *			mem_heap = NULL;
 static memoryStats_t	mem_total_allocs = { 0, 0x0fffffff, -1, 0 };
-static memoryStats_t	mem_frame_allocs;
-static memoryStats_t	mem_frame_frees;
+static memoryStats_t	mem_frame_allocs = { 0, 0, 0, 0 };
+static memoryStats_t	mem_frame_frees = { 0, 0, 0, 0 };
 
 /*
 ==================
@@ -1149,10 +1167,10 @@ Mem_Init
 ==================
 */
 void Mem_Init( void ) {
-	if ( mem_heap != NULL ) {
-		return;
-	}
-	mem_heap = new ( malloc( sizeof( *mem_heap ) ) ) idHeap();
+//	if ( mem_heap != NULL ) {
+//		return;
+//	}
+	mem_heap = new ( Hunk_Alloc( sizeof( *mem_heap ), h_high ) ) idHeap();
 	Mem_ClearFrameStats();
 }
 
@@ -1165,7 +1183,7 @@ void Mem_Shutdown( void ) {
 	idHeap *m = mem_heap;
 	mem_heap = NULL;
 	m->~idHeap();
-	free( m );
+//	free( m );
 }
 
 /*

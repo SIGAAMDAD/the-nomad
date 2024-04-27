@@ -88,6 +88,23 @@ extern vec4_t		color_dim;
 //extern vec4_t		text_color_normal;
 //extern vec4_t		text_color_highlight;
 
+#define VIRT_KEYBOARD_ASCII     0
+#define VIRT_KEYBOARD_SYMBOLS   1
+#define NUM_VIRT_KEYBOARD_MODES 2
+
+typedef struct {
+    char *pBuffer;
+    int bufTextLen;
+    int bufMaxLen;
+
+    int cursorPos;
+
+    int mode;
+    int caps;
+    qboolean open;
+    qboolean keyToggle;
+} virtualKeyboard_t;
+
 typedef struct {
     int frametime;
     int realtime;
@@ -121,6 +138,7 @@ typedef struct {
     nhandle_t arrow_vert_top;
 
     qboolean uiAllocated;
+    virtualKeyboard_t virtKeyboard;
 
     float scale;
     float bias;
@@ -152,6 +170,8 @@ extern void UI_SetActiveMenu( uiMenu_t menu );
 extern void UI_ForceMenuOff( void );
 extern void UI_PushMenu( menuframework_t *menu );
 extern void UI_PopMenu( void );
+extern int UI_TextInput( const char *label, char *pBuffer, size_t bufSize, ImGuiInputTextFlags flags = ImGuiInputTextFlags_EnterReturnsTrue );
+extern int UI_VirtualKeyboard( const char *pName, char *pBuffer, size_t nBufSize );
 
 //
 // ui_confirm.cpp

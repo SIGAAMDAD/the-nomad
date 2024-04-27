@@ -416,6 +416,7 @@ Compiler Macro Abstraction
 #define GO_AWAY_MANGLE extern
 #endif
 
+
 #ifdef Q3_VM
 #include "../sgame/sg_lib.h"
 #else

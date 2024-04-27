@@ -16,10 +16,10 @@
 */
 
 typedef struct {
-	int32_t	num;
-	int32_t	minSize;
-	int32_t	maxSize;
-	int32_t	totalSize;
+	int64_t	num;
+	int64_t	totalSize;
+	int64_t	minSize;
+	int64_t	maxSize;
 } memoryStats_t;
 
 void		Mem_Init( void );

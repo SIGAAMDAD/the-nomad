@@ -572,6 +572,7 @@ CModuleLib *InitModuleLib( const moduleImport_t *pImport, const renderExport_t *
 void CModuleLib::Shutdown( qboolean quit )
 {
     uint64_t i, j;
+    memoryStats_t allocs, frees;
 
     if ( m_bRecursiveShutdown ) {
         Con_Printf( COLOR_YELLOW "WARNING: CModuleLib::Shutdown (recursive)\n" );
@@ -623,10 +624,21 @@ void CModuleLib::Shutdown( qboolean quit )
         g_pDebugger->~CDebugger();
     }
 
-    if ( quit ) {
-        // everything is automatically released when this is called
-        Mem_Shutdown();
-    }
+    asSetThreadManager( NULL );
+
+    Mem_GetFrameStats( allocs, frees );
+    Con_Printf( "\n" );
+    Con_Printf( "Allocated Bytes: %li\n", allocs.totalSize );
+    Con_Printf( "Total Allocations: %li\n", allocs.num );
+    Con_Printf( "Biggest Allocation: %li\n", allocs.maxSize );
+    Con_Printf( "Smallest Allocation: %li\n", allocs.minSize );
+    Con_Printf( "Released Bytes: %li\n", frees.totalSize );
+    Con_Printf( "Total Frees: %li\n", frees.num );
+    Con_Printf( "Biggest Free: %li\n", frees.maxSize );
+    Con_Printf( "Smallest Free: %li\n", frees.minSize );
+
+    // everything is automatically released when this is called
+    Mem_Shutdown();
 
     m_bRegistered = qfalse;
     m_bRecursiveShutdown = qfalse;

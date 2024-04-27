@@ -567,6 +567,7 @@ extern "C"
 	AS_API asIScriptContext *asGetActiveContext();
 
 	// Thread support
+	AS_API void				 asSetThreadManager( asIThreadManager *pThreadManager );
 	AS_API int               asPrepareMultithread(asIThreadManager *externalMgr = 0);
 	AS_API void              asUnprepareMultithread();
 	AS_API asIThreadManager *asGetThreadManager();

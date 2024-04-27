@@ -34,8 +34,8 @@ static qboolean GamepadUsed( void )
 	if ( keys[ KEY_PAD0_START ].down ) { return qtrue; }
 	if ( keys[ KEY_PAD0_LEFTSTICK_CLICK ].down ) { return qtrue; }
 	if ( keys[ KEY_PAD0_RIGHTSTICK_CLICK ].down ) { return qtrue; }
-	if ( keys[ KEY_PAD0_LEFTSHOULDER ].down ) { return qtrue; }
-	if ( keys[ KEY_PAD0_RIGHTSHOULDER ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_LEFTBUTTON ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_RIGHTBUTTON ].down ) { return qtrue; }
 	if ( keys[ KEY_PAD0_DPAD_UP ].down ) { return qtrue; }
 	if ( keys[ KEY_PAD0_DPAD_DOWN ].down ) { return qtrue; }
 	if ( keys[ KEY_PAD0_DPAD_LEFT ].down ) { return qtrue; }
@@ -269,6 +269,266 @@ void UI_DrawHandlePic( float x, float y, float w, float h, nhandle_t hShader )
 	
 	UI_AdjustFrom1024( &x, &y, &w, &h );
 	re.DrawImage( x, y, w, h, s0, t0, s1, t1, hShader );
+}
+
+/*
+* UI_VirtualKeypoard: creates a somewhat similar experience to the Xbox One/PS4 on-screen gamepad keyboard
+*/
+int UI_VirtualKeyboard( const char *pName, char *pBuffer, size_t nBufSize )
+{
+	int ret;
+	ImVec2 csize, bsize;
+	int n, i;
+	char *endPtr;
+	char key;
+	ImGuiID id;
+
+	ret = 0;
+	if ( !ui->virtKeyboard.open ) {
+		return 0;
+	}
+	if ( !pName || !pBuffer ) {
+		return ret;
+	}
+
+	const int windowFlags = ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar
+		| ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoCollapse;
+
+    csize = ImGui::GetContentRegionAvail();
+    n = ( csize.y / 5 ); // height / 5 button rows
+
+    ImGuiStyle& style = ImGui::GetStyle();
+
+	FontCache()->SetActiveFont( RobotoMono );
+
+	if ( ui->virtKeyboard.bufTextLen < 0 ) {
+		ui->virtKeyboard.bufTextLen = 0;
+	}
+	if ( ui->virtKeyboard.cursorPos < 0 ) {
+		ui->virtKeyboard.cursorPos = 0;
+	}
+
+    if ( ImGui::Begin( pName, NULL, windowFlags ) ) {
+		//ImGui::SetWindowSize( ImVec2( ( n * 4 ) + style.WindowPadding.x, n * 5 ) );
+		ImGui::SetWindowSize( ImVec2( 800 * ui->scale, ( ( SCREEN_HEIGHT / 2 ) - 32 ) * ui->scale ) );
+		ImGui::SetWindowPos( ImVec2( 256 * ui->scale, 380 * ui->scale ) );
+    	csize = ImGui::GetContentRegionAvail(); // now inside this child
+    	n = ( csize.y / 5 ) - style.ItemSpacing.y; // button size
+    	bsize = ImVec2( n, n ); // buttons are square
+
+		ImGui::SetWindowFontScale( ( 1.5f * ImGui::GetFont()->Scale ) );
+
+		if ( Key_IsDown( KEY_PAD0_LEFTSTICK_DOWN ) ) {
+			if ( !ui->virtKeyboard.keyToggle ) {
+				ui->virtKeyboard.keyToggle = qtrue;
+				ui->virtKeyboard.caps = !ui->virtKeyboard.caps;
+			}
+		} else {
+			ui->virtKeyboard.keyToggle = qfalse;
+		}
+		if ( Key_IsDown( KEY_PAD0_LEFTBUTTON ) ) {
+			if ( !ui->virtKeyboard.keyToggle ) {
+				ui->virtKeyboard.keyToggle = qtrue;
+				if ( ui->virtKeyboard.cursorPos > -1 ) {
+					ui->virtKeyboard.cursorPos--;
+				}
+			}
+		} else {
+			ui->virtKeyboard.keyToggle = qfalse;
+		}
+		if ( Key_IsDown( KEY_PAD0_RIGHTBUTTON ) ) {
+			if ( !ui->virtKeyboard.keyToggle ) {
+				ui->virtKeyboard.keyToggle = qtrue;
+				ui->virtKeyboard.cursorPos++;
+				if ( ui->virtKeyboard.cursorPos >= ui->virtKeyboard.bufTextLen ) {
+					ui->virtKeyboard.cursorPos = ui->virtKeyboard.bufTextLen;
+				}
+			}
+		} else {
+			ui->virtKeyboard.keyToggle = qfalse;
+		}
+		if ( Key_IsDown( KEY_PAD0_START ) ) {
+			ui->virtKeyboard.open = qfalse;
+			return 1;
+		}
+		if ( Key_IsDown( KEY_PAD0_X ) ) {
+			if ( !ui->virtKeyboard.keyToggle ) {
+				ui->virtKeyboard.keyToggle = qtrue;
+				if ( ui->virtKeyboard.bufTextLen > -1 ) {
+					ui->virtKeyboard.cursorPos--;
+					ui->virtKeyboard.pBuffer[ui->virtKeyboard.bufTextLen--] = '\0';
+				}
+				ret = 1;
+			}
+		} else {
+			ui->virtKeyboard.keyToggle = qfalse;
+		}
+		if ( Key_IsDown( KEY_PAD0_Y ) ) {
+			if ( !ui->virtKeyboard.keyToggle ) {
+				ui->virtKeyboard.keyToggle = qtrue;
+				if ( ui->virtKeyboard.bufTextLen < ui->virtKeyboard.bufMaxLen ) {
+					ui->virtKeyboard.pBuffer[ui->virtKeyboard.bufTextLen++] = ' ';
+					ui->virtKeyboard.pBuffer[ui->virtKeyboard.bufTextLen + 1] = '\0';
+					ui->virtKeyboard.cursorPos++;
+				}
+				ret = 1;
+			}
+		} else {
+			ui->virtKeyboard.keyToggle = qfalse;
+		}
+
+		bsize = ImVec2( 64, 64 );
+
+//        ImGui::PushStyleVar( ImGuiStyleVar_FrameRounding, 6 );
+
+		switch ( ui->virtKeyboard.mode ) {
+		case VIRT_KEYBOARD_ASCII: {
+			
+			static const char keyboardNumbersAlt[11] = {
+				'!', '@', '#', '$', '%', '^', '&', '*', '(', ')'
+			};
+			static const char keyboardData[4][10] = {
+				{ '1', '2', '3', '4', '5', '6', '7', '8', '9', '0' },
+				{ 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p' },
+				{ 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', '\'' },
+				{ 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', '?' }
+			};
+			
+			if ( ImGui::Button( "Cursor Left (LB)", ImVec2( 128 * ui->scale, bsize.y ) ) ) {
+				if ( ui->virtKeyboard.cursorPos > -1 ) {
+					ui->virtKeyboard.cursorPos--;
+				}
+				ret = 1;
+			}
+			ImGui::SameLine();
+
+			for ( i = 0; i < arraylen( *keyboardData ); i++ ) {
+				const char data[2] = { ui->virtKeyboard.caps ? keyboardNumbersAlt[i] : keyboardData[0][i], '\0' };
+				if ( ImGui::Button( data, bsize ) ) {
+					if ( ui->virtKeyboard.bufTextLen < ui->virtKeyboard.bufMaxLen ) {
+						ui->virtKeyboard.pBuffer[ui->virtKeyboard.bufTextLen++] = *data;
+						ui->virtKeyboard.pBuffer[ui->virtKeyboard.bufTextLen + 1] = '\0';
+						ui->virtKeyboard.cursorPos++;
+					}
+					ret = 1;
+				}
+				ImGui::SameLine();
+			}
+
+			if ( ImGui::Button( "Cursor Right (RB)", ImVec2( 136 * ui->scale, bsize.y ) ) ) {
+				if ( ui->virtKeyboard.cursorPos < ui->virtKeyboard.bufMaxLen ) {
+					ui->virtKeyboard.cursorPos++;
+				}
+				ret = 1;
+			}
+
+			ImGui::NewLine();
+
+			if ( ImGui::Button( "Caps (L-Stick Down)", ImVec2( 172 * ui->scale, bsize.y ) ) ) {
+				ui->virtKeyboard.caps = !ui->virtKeyboard.caps;
+			}
+			ImGui::SameLine();
+
+			for ( i = 0; i < arraylen( *keyboardData ); i++ ) {
+				const char data[2] = { ui->virtKeyboard.caps ? toupper( keyboardData[1][i] ) : keyboardData[1][i], '\0' };
+				if ( ImGui::Button( data, bsize ) ) {
+					if ( ui->virtKeyboard.bufTextLen < ui->virtKeyboard.bufMaxLen ) {
+						ui->virtKeyboard.pBuffer[ui->virtKeyboard.bufTextLen++] = *data;
+						ui->virtKeyboard.pBuffer[ui->virtKeyboard.bufTextLen + 1] = '\0';
+						ui->virtKeyboard.cursorPos++;
+					}
+					ret = 1;
+				}
+				ImGui::SameLine();
+			}
+
+			ImGui::NewLine();
+
+			if ( ImGui::Button( "Symbols (LT)", ImVec2( 128 * ui->scale, bsize.y ) ) ) {
+//				ui->virtKeyboard.mode = VIRT_KEYBOARD_SYMBOLS;
+				ret = 1;
+			}
+			ImGui::SameLine();
+
+			for ( i = 0; i < arraylen( *keyboardData ); i++ ) {
+				char data[2];
+				if ( N_isalpha( keyboardData[2][i] ) && ui->virtKeyboard.caps ) {
+					data[0] = toupper( keyboardData[2][i] );
+				} else {
+					data[0] = keyboardData[2][i];
+				}
+				data[1] = '\0';
+				if ( ImGui::Button( data, bsize ) ) {
+					if ( ui->virtKeyboard.bufTextLen < ui->virtKeyboard.bufMaxLen ) {
+						ui->virtKeyboard.pBuffer[ui->virtKeyboard.bufTextLen++] = *data;
+						ui->virtKeyboard.pBuffer[ui->virtKeyboard.bufTextLen + 1] = '\0';
+						ui->virtKeyboard.cursorPos++;
+					}
+					ret = 1;
+				}
+				ImGui::SameLine();
+			}
+
+			ImGui::NewLine();
+
+			for ( i = 0; i < arraylen( *keyboardData ); i++ ) {
+				char data[2];
+				if ( N_isalpha( keyboardData[3][i] ) && ui->virtKeyboard.caps ) {
+					data[0] = toupper( keyboardData[3][i] );
+				} else {
+					data[0] = keyboardData[3][i];
+				}
+				data[1] = '\0';
+				if ( ImGui::Button( data, bsize ) ) {
+					if ( ui->virtKeyboard.bufTextLen < ui->virtKeyboard.bufMaxLen ) {
+						ui->virtKeyboard.pBuffer[ui->virtKeyboard.bufTextLen++] = *data;
+						ui->virtKeyboard.pBuffer[ui->virtKeyboard.bufTextLen + 1] = '\0';
+						ui->virtKeyboard.cursorPos++;
+					}
+					ret = 1;
+				}
+				ImGui::SameLine();
+			}
+
+			if ( ImGui::Button( "Enter (START)", ImVec2( 128 * ui->scale, bsize.y ) ) ) {
+				ret = 1;
+				ui->virtKeyboard.open = qfalse;
+			}
+
+			ImGui::NewLine();
+
+			const ImVec2 windowSize = ImGui::GetWindowSize();
+			if ( ImGui::Button( "Space (Y)", ImVec2( ( windowSize.x / 2 ) - 4, bsize.y ) ) ) {
+				if ( ui->virtKeyboard.bufTextLen < ui->virtKeyboard.bufMaxLen ) {
+					ui->virtKeyboard.pBuffer[ui->virtKeyboard.bufTextLen++] = ' ';
+					ui->virtKeyboard.pBuffer[ui->virtKeyboard.bufTextLen + 1] = '\0';
+					ui->virtKeyboard.cursorPos++;
+				}
+				ret = 1;
+			}
+			ImGui::SameLine();
+			if ( ImGui::Button( "Backspace (X)", ImVec2( ( windowSize.x / 2 ) - 4, bsize.y ) ) ) {
+				if ( ui->virtKeyboard.bufTextLen > -1 ) {
+					ui->virtKeyboard.cursorPos--;
+					ui->virtKeyboard.pBuffer[ui->virtKeyboard.bufTextLen--] = '\0';
+				}
+				ret = 1;
+			}
+
+			break; }
+		case VIRT_KEYBOARD_SYMBOLS: {
+			if ( ImGui::Button( "Tab", bsize ) ) {
+				ui->virtKeyboard.pBuffer[ui->virtKeyboard.bufTextLen++] = '\t';
+				ui->virtKeyboard.pBuffer[ui->virtKeyboard.bufTextLen + 1] = '\0';
+				ui->virtKeyboard.cursorPos += 4;
+				ret = 1;
+			}
+			break; }
+		};
+		ImGui::End();
+	}
+
+    return ret;
 }
 
 /*

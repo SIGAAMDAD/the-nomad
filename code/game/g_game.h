@@ -184,6 +184,8 @@ extern uint32_t smallchar_height;
 extern qboolean gw_minimized;
 extern qboolean gw_active;
 
+extern cvar_t *in_mode;
+
 // non api specific renderer cvars
 extern cvar_t *vid_xpos;
 extern cvar_t *vid_ypos;
@@ -226,17 +228,28 @@ typedef struct {
 	float		pixelAspect;		// pixel width / height
 } vidmode_t;
 
-typedef enum
-{
-//    VIDMODE_640x480,
-//    VIDMODE_800x600,
-
+// NOTE: these resolutions are taken from AC4 Black Flag
+typedef enum {
     // minimum resolution needed to run
     VIDMODE_1024x768,
     VIDMODE_1280x720,
+    VIDMODE_1280x800,
+    VIDMODE_1280x1024,
+    VIDMODE_1440x900,
+    VIDMODE_1440x960,
     VIDMODE_1600x900,
+    VIDMODE_1600x1200,
+    VIDMODE_1600x1050,
+    VIDMODE_1920x800,
     VIDMODE_1920x1080,
-    VIDMODE_2048x1536,
+    VIDMODE_1920x1200,
+    VIDMODE_1920x1280,
+    VIDMODE_2560x1080,
+    VIDMODE_2560x1440,
+    VIDMODE_2560x1600,
+    VIDMODE_2880x1620,
+    VIDMODE_3200x1800,
+    VIDMODE_3840x1600,
     VIDMODE_3840x2160,
 
     NUMVIDMODES
