@@ -287,29 +287,19 @@ static void G_SaveGame_f( void )
 
 CGameArchive::CGameArchive( void )
 {
-	uint64_t i, size;
+	uint64_t i;
 	char **fileList;
-	char *namePtr;
 
 	Con_Printf( "G_InitArchiveHandler: initializing save file cache...\n" );
 
 	fileList = FS_ListFiles( "SaveData", ".ngd", &m_nArchiveFiles );
 	m_pArchiveCache = (ngd_file_t **)Z_Malloc( sizeof( *m_pArchiveCache ) * m_nArchiveFiles, TAG_SAVEFILE );
 
-	size = PAD( sizeof( *fileList ) * m_nArchiveFiles, sizeof( uintptr_t ) );
+	m_pArchiveFileList = (char **)Z_Malloc( sizeof( *m_pArchiveFileList ) * m_nArchiveFiles, TAG_SAVEFILE );
 	for ( i = 0; i < m_nArchiveFiles; i++ ) {
-		size += PAD( strlen( fileList[i] ) + 1, sizeof( uintptr_t ) );
-	}
-
-	m_pArchiveFileList = (char **)Z_Malloc( size, TAG_SAVEFILE );
-	memset( m_pArchiveFileList, 0, size );
-
-	namePtr = (char *)m_pArchiveFileList;
-	for ( i = 0; i < m_nArchiveFiles; i++ ) {
-		m_pArchiveFileList[i] = namePtr;
+		m_pArchiveFileList[i] = (char *)Z_Malloc( strlen( fileList[i] ) + 1, TAG_SAVEFILE );
 		strcpy( m_pArchiveFileList[i], fileList[i] );
 		LoadArchiveFile( fileList[i], i );
-		namePtr += strlen( fileList[i] ) + 1;
 
 		Con_Printf( "...Cached save file '%s'\n", fileList[i] );
 	}

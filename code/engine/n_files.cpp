@@ -73,8 +73,13 @@ typedef struct bffFile_s
 	uint32_t handlesUsed;
 	uint32_t checksum;
 
+#ifdef USE_HANDLE_CACHE
+	struct bffFile_s	*next_h;						// double-linked list of unreferenced paks with open file handles
+	struct bffFile_s	*prev_h;
+#endif
+
 	// caching subsystem
-#ifdef USE_BFF_CACHE_FILE
+#ifdef USE_BFF_CACHE
 	uint32_t namehash;
 	fileOffset_t size;
 	fileTime_t mtime;
@@ -132,16 +137,26 @@ typedef struct searchpath_s
 
 static CThreadMutex	fs_mutex;
 static bffFile_t	**fs_archives;
+#define MAX_BASEGAMES 4
+static  char		basegame_str[MAX_OSPATH], *basegames[MAX_BASEGAMES];
+static  int			basegame_cnt;
+static  const char  *basegame = ""; /* last value in array */
 
 static searchpath_t *fs_searchpaths;
 static cvar_t		*fs_homepath;
-#ifdef USE_BFF_CACHE_FILE
+#ifdef USE_HANDLE_CACHE
 static cvar_t		*fs_locked;
+#endif
+#ifdef __APPLE__
+// Also search the .app bundle for .bff files
+static cvar_t		*fs_apppath;
+#endif
+#ifdef NOMAD_STEAM_APP
+static cvar_t		*fs_steampath;
 #endif
 static cvar_t		*fs_debug;
 static cvar_t		*fs_restrict;
 static cvar_t		*fs_basepath;
-static cvar_t		*fs_steampath;
 static cvar_t		*fs_basegame;
 static cvar_t		*fs_gamedirvar;
 static char			fs_gamedir[MAX_OSPATH]; // this will be a single file name with no separators
@@ -1078,6 +1093,7 @@ fileHandle_t FS_OpenFileMapping( const char *path, qboolean temp )
 
 	return fd;
 */
+	return fd;
 }
 
 void FS_SetBFFIndex( uint64_t index )
@@ -2588,6 +2604,28 @@ qboolean FS_StripExt( char *filename, const char *ext )
 	return qfalse;
 }
 
+/*
+================
+FS_IsBaseGame
+================
+*/
+static qboolean FS_IsBaseGame( const char *game )
+{
+	int i;
+
+	if ( game == NULL || *game == '\0' ) {
+		return qtrue;
+	}
+
+	for ( i = 0; i < basegame_cnt; i++ ) {
+		if ( N_stricmp( basegames[i], game ) == 0 ) {
+			return qtrue;
+		}
+	}
+
+	return qfalse;
+}
+
 uint64_t FS_LoadStack(void)
 {
 	return fs_loadStack;
@@ -2853,24 +2891,22 @@ static void FS_ReorderSearchPaths(void)
 	searchpath_t *path;
 	uint64_t i, ndirs, nbffs, cnt;
 
-	cnt = fs_bffCount + fs_dirCount;
+	cnt = fs_bffCount;
 	if (cnt == 0)
 		return;
 	
 	// relink path chains in the following order:
 	// 1. files
 	// 2. directories
-	list = (searchpath_t **)Z_Malloc(cnt * sizeof(*list), TAG_SEARCH_PATH);
+	list = (searchpath_t **)Z_Malloc( cnt * sizeof( *list ), TAG_STATIC );
 	bffs = list;
-	dirs = list + fs_dirCount + fs_bffCount;
 
 	nbffs = ndirs = 0;
 	path = fs_searchpaths;
 	while (path) {
-		if (path->bff || path->access != DIR_STATIC)
+		if (path->bff || path->access != DIR_STATIC) {
 			bffs[nbffs++] = path;
-		else
-			dirs[ndirs++] = path;
+		}
 		
 		path = path->next;
 	}
@@ -3011,8 +3047,6 @@ void FS_Shutdown(qboolean closeFiles)
 	Cmd_RemoveCommand( "fs_restart" );
 	Cmd_RemoveCommand( "lsof" );
 	Cmd_RemoveCommand( "addmod" );
-
-	Z_FreeTags( TAG_BFF, TAG_BFF );
 }
 
 void FS_Restart( void )
@@ -3063,17 +3097,18 @@ void FS_Restart( void )
 	N_strncpyz( lastValidGame, fs_gamedirvar->s, sizeof( lastValidGame ) );
 }
 
-static void FS_ListOpenFiles_f(void)
+static void FS_ListOpenFiles_f( void )
 {
 	uint64_t i;
 	fileHandleData_t *f;
 
 	f = handles;
-	for (i = 1; i < MAX_FILE_HANDLES; i++, f++) {
-		if (!f->data.stream)
+	for ( i = 1; i < MAX_FILE_HANDLES; i++, f++ ) {
+		if ( !f->data.stream ) {
 			continue;
+		}
 		
-		Con_Printf("%2lu %2s %s\n", i, FS_OwnerName(f->owner), f->name);
+		Con_Printf( "%2lu %2s %s\n", i, FS_OwnerName( f->owner ), f->name );
 	}
 }
 
@@ -3112,8 +3147,9 @@ void FS_InitFilesystem( void )
 
 void FS_Startup( void )
 {
-	const char *homepath;
+	const char *homePath;
 	CTimer timer;
+	int i;
 
 	fs_bffCount = 0;
 	fs_loadStack = 0;
@@ -3128,93 +3164,126 @@ void FS_Startup( void )
 
 	fs_debug = Cvar_Get( "fs_debug", "0", 0 );
 	Cvar_SetDescription( fs_debug, "Debugging tool for the filesystem. Run the game in debug mode. Prints additional information regarding read files into the console." );
-	fs_basepath = Cvar_Get("fs_basepath", Sys_DefaultBasePath(), CVAR_INIT | CVAR_PROTECTED | CVAR_PRIVATE);
-	Cvar_SetDescription(fs_basepath, "Write-protected CVar specifying the path to the installation folder of the game.");
-	Cvar_SetGroup(fs_basepath, CVG_FILESYSTEM);
+	fs_basepath = Cvar_Get( "fs_basepath", Sys_DefaultBasePath(), CVAR_INIT | CVAR_PROTECTED | CVAR_PRIVATE );
+	Cvar_SetDescription( fs_basepath, "Write-protected CVar specifying the path to the installation folder of the game." );
+	Cvar_SetGroup( fs_basepath, CVG_FILESYSTEM );
 
-	fs_basegame = Cvar_Get("fs_basegame", BASEGAME_DIR, CVAR_PRIVATE | CVAR_PROTECTED);
-	Cvar_SetDescription(fs_basegame, "CVar specifying the path to the base game folder.");
-	Cvar_SetGroup(fs_basegame, CVG_FILESYSTEM);
+	fs_basegame = Cvar_Get( "fs_basegame", BASEGAME_DIR, CVAR_PRIVATE | CVAR_PROTECTED );
+	Cvar_SetDescription( fs_basegame, "CVar specifying the path to the base game folder." );
+	Cvar_SetGroup( fs_basegame, CVG_FILESYSTEM );
 
-#ifdef GLNOMAD_STEAP_APP
-	fs_steampath = Cvar_Get("fs_steampath", Sys_GetSteamPath(), CVAR_INIT | CVAR_PROTECTED | CVAR_PRIVATE);
-	Cvar_SetDescription(fs_steampath, "CVar specifying the path to the steam data folder.");
-	Cvar_SetGroup(fs_steampath, CVG_FILESYSTEM);
-#endif
+	/* parse fs_basegame cvar */
+	if ( basegame_cnt == 0 || N_stricmp( basegame, fs_basegame->s ) ) {
+		N_strncpyz( basegame_str, fs_basegame->s, sizeof( basegame_str ) );
+		basegame_cnt = Com_Split( basegame_str, basegames, arraylen( basegames ), '/' );
+		/* set up basegame on last item from the list */
+		basegame = basegames[0];
+		for ( i = 1; i < basegame_cnt; i++ ) {
+			if ( *basegames[i] != '\0' ) {
+				basegame = basegames[i];
+			}
+		}
+		/* change fs_basegame cvar to last item */
+		Cvar_Set( "fs_basegame", basegame );
+	}
+	if ( !fs_basegame->s[0] || !*basegame || basegame_cnt == 0 ) {
+		N_Error( ERR_FATAL, "* fs_basegame not set *" );
+	}
 
-#ifdef USE_BFF_CACHE_FILE
-	fs_locked = Cvar_Get("fs_locked", "0", CVAR_INIT);
-	Cvar_SetDescription(fs_locked, "Set file handle policy for bff archive files:\n"
+#ifdef USE_HANDLE_CACHE
+	fs_locked = Cvar_Get( "fs_locked", "0", CVAR_INIT );
+	Cvar_SetDescription( fs_locked, "Set file handle policy for bff files:\n"
 		" 0 - release after use, unlimited number of bff files can be loaded\n"
-		" 1 - keep file handle locked, more consistent, total bff files count limited to ~1k-4k\n");
+		" 1 - keep file handle locked, more consistent, total bff files count limited to ~1k-4k\n" );
 #endif
 
-	if (!fs_basegame->s[0]) {
-		N_Error(ERR_FATAL, "* fs_basegame not set *");
+#ifdef NOMAD_STEAM_APP
+	fs_steampath = Cvar_Get( "fs_steampath", Sys_GetSteamPath(), CVAR_INIT | CVAR_PROTECTED | CVAR_PRIVATE );
+	Cvar_SetDescription( fs_steampath, "CVar specifying the path to the steam data folder." );
+	Cvar_SetGroup( fs_steampath, CVG_FILESYSTEM );
+#endif
+
+	homePath = Sys_DefaultHomePath();
+	if ( !homePath || !homePath[0] ) {
+		homePath = fs_basepath->s;
 	}
 
-	homepath = Sys_DefaultHomePath();
-	if (!homepath || !homepath[0]) {
-		homepath = fs_basepath->s;
-	}
-
-	fs_homepath = Cvar_Get("fs_homepath", homepath, CVAR_INIT | CVAR_PROTECTED | CVAR_PRIVATE);
+	fs_homepath = Cvar_Get( "fs_homepath", homePath, CVAR_INIT | CVAR_PROTECTED | CVAR_PRIVATE );
 	Cvar_SetDescription( fs_homepath, "Directory to store user configuration and downloaded files." );
 
-	fs_gamedirvar = Cvar_Get("fs_gamedir", "", CVAR_INIT | CVAR_SYSTEMINFO);
-	Cvar_CheckRange(fs_gamedirvar, NULL, NULL, CVT_FSPATH);
-	Cvar_SetDescription(fs_gamedirvar, "Specify an alternate mod directory and run the game with this mod.");
+	fs_gamedirvar = Cvar_Get( "fs_gamedir", "", CVAR_INIT | CVAR_SYSTEMINFO );
+	Cvar_CheckRange( fs_gamedirvar, NULL, NULL, CVT_FSPATH );
+	Cvar_SetDescription( fs_gamedirvar, "Specify an alternate mod directory and run the game with this mod." );
 
-	if (!N_stricmp(fs_basegame->s, fs_gamedirvar->s)) {
-		Cvar_ForceReset("fs_gamedir");
+	if ( !N_stricmp( fs_basegame->s, fs_gamedirvar->s ) ) {
+		Cvar_ForceReset( "fs_gamedir" );
 	}
 
 	timer.Run();
 
+#ifdef USE_BFF_CACHE
 #ifdef USE_BFF_CACHE_FILE
 	FS_LoadCache();
 #endif
+#endif
 
 	// add search path elements in reverse priority order
-#ifdef GLNOMAD_STEAM_APP
-	if (fs_steampath->s[0]) {
-		FS_AddGameDirectory(fs_steampath->s, fs_basegame->s);
+#ifdef NOMAD_STEAM_APP
+	if ( fs_steampath->s[0] ) {
+		// handle multiple basegames:
+		for ( i = 0; i < basegame_cnt; i++ ) {
+			FS_AddGameDirectory( fs_steampath->s, basegames[i] );
+		}
+		FS_AddGameDirectory( fs_steampath->s, fs_basegame->s );
 	}
 #endif
 
-	if (fs_basepath->s[0]) {
-		FS_AddGameDirectory(fs_basepath->s, fs_basegame->s);
+#ifdef __APPLE__
+	fs_apppath = Cvar_Get( "fs_apppath", Sys_DefaultAppPath(), CVAR_INIT|CVAR_PROTECTED );
+	// Make MacOSX also include the base path included with the .app bundle
+	if ( fs_apppath->s[0] ) {
+		FS_AddGameDirectory( fs_apppath->s, fs_basegame->s );
+	}
+#endif
+
+	if ( fs_basepath->s[0] ) {
+		// handle multiple basegames:
+		for ( i = 0; i < basegame_cnt; i++ ) {
+			FS_AddGameDirectory( fs_basepath->s, basegames[i] );
+		}
 	}
 	// fs_homepath is somewhat particular to *nix systems, only add if relevant
-	if (fs_homepath->s[0] && N_stricmp(fs_homepath->s, fs_basegame->s)) {
-		FS_AddGameDirectory(fs_homepath->s, fs_basegame->s);
+	// NOTE: same filtering below for mods and basegame
+	if ( fs_homepath->s[0] && N_stricmp( fs_homepath->s, fs_basegame->s ) ) {
+		// handle multiple basegames:
+		for (i = 0; i < basegame_cnt; i++) {
+			FS_AddGameDirectory( fs_homepath->s, basegames[i] );
+		}
 	}
-
 
 	// check for additional game folder for mods
-	if (fs_gamedirvar->s[0] && N_stricmp(fs_gamedirvar->s, fs_basegame->s)) {
-#ifdef GLNOMAD_STEAM_APP
-		if (fs_steampath->s[0]) {
-			FS_AddGameDirectory(fs_steampath->s, fs_gamedirvar->s);
+	if ( fs_gamedirvar->s[0] && !FS_IsBaseGame( fs_gamedirvar->s ) ) {
+#ifdef NOMAD_STEAM_APP
+		if ( fs_steampath->s[0] ) {
+			FS_AddGameDirectory( fs_steampath->s, fs_gamedirvar->s );
 		}
 #endif
-		if (fs_basepath->s[0]) {
-			FS_AddGameDirectory(fs_basepath->s, fs_gamedirvar->s);
+		if ( fs_basepath->s[0] ) {
+			FS_AddGameDirectory( fs_basepath->s, fs_gamedirvar->s );
 		}
-		if (fs_homepath->s[0] && N_stricmp(fs_homepath->s, fs_basepath->s)) {
-			FS_AddGameDirectory(fs_homepath->s, fs_gamedirvar->s);
+		if ( fs_homepath->s[0] && N_stricmp( fs_homepath->s, fs_basepath->s ) ) {
+			FS_AddGameDirectory( fs_homepath->s, fs_gamedirvar->s );
 		}
 	}
-
-//	FS_ReorderSearchPaths();
+	
 
 	timer.Stop();
 
 	Con_Printf(
 		"fs_gamedir: %s\n"
 		"fs_basepath: %s\n"
-		"fs_basegame: %s\n",
-	fs_gamedirvar->s, fs_basepath->s, fs_basegame->s);
+		"fs_basegame: %s\n"
+	, fs_gamedirvar->s, fs_basepath->s, fs_basegame->s );
 
 	Con_Printf( "...loaded in %5.5lf milliseconds\n", (double)timer.ElapsedMilliseconds().count() );
 
@@ -3224,9 +3293,11 @@ void FS_Startup( void )
 	// we just loaded, it's not modified
 	fs_gamedirvar->modified = qfalse;
 
-#ifdef USE_BFF_CACHE_FILE
+#ifdef USE_BFF_CACHE
 	FS_FreeUnusedCache();
+#ifdef USE_BFF_CACHE_FILE
 	FS_SaveCache();
+#endif
 #endif
 	
 	Cmd_AddCommand("dir", FS_ShowDir_f);
@@ -3431,7 +3502,11 @@ static uint64_t FS_GetModList(char *listbuf, uint64_t bufSize)
 	qboolean bDrop = qfalse;
 
 	// paths to search for mods
-	cvar_t *const *paths[] = { &fs_basepath, &fs_homepath, &fs_steampath };
+	cvar_t *const *paths[] = { &fs_basepath, &fs_homepath
+#ifdef NOMAD_STEAM_APP
+		, &fs_steampath
+#endif
+	};
 
 	*listbuf = '\0';
 	nMods = nTotal = 0;

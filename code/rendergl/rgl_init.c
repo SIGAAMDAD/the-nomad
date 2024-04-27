@@ -1365,8 +1365,6 @@ static void R_UnloadWorld_f( void ) {
         return;
     }
 
-    R_ShutdownBuffer( rg.world->buffer );
-
     rg.world = NULL;
     rg.worldMapLoaded = qfalse;
 }

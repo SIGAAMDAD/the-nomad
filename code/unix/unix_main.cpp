@@ -1,14 +1,7 @@
 #include "../engine/n_shared.h"
 #include "../engine/n_common.h"
 #include "../game/g_game.h"
-#include <execinfo.h>
-#include <sys/vfs.h>
-#include <unistd.h>
-#include <signal.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <termios.h>
-#include <sys/resource.h>
+#include "unix_local.h"
 
 #define SYS_BACKTRACE_MAX 1024
 #define MEM_THRESHOLD (96*1024*1024)
@@ -33,8 +26,7 @@ typedef enum {
 	TTY_ERROR
 } tty_err;
 
-void Sys_ShutdownConsole( void );
-tty_err Sys_InitConsole( void );
+tty_err Sys_ConsoleInputInit( void );
 
 bool Sys_IsInDebugSession( void )
 {
@@ -150,13 +142,7 @@ qboolean Sys_LowPhysicalMemory( void )
 #endif
 }
 
-typedef struct {
-    uint32_t id;
-    qboolean safe;
-    const char *str;
-} exittype_t;
-
-static const exittype_t signals[] = {
+const exittype_t signals[] = {
     { SIGSEGV,  qfalse, "segmentation violation" },
     { SIGBUS,   qfalse, "bus error" },
     { SIGABRT,  qfalse, "abnormal program termination" },
@@ -167,13 +153,15 @@ static const exittype_t signals[] = {
     { 0,        qtrue,  "No System Error "}
 };
 
-static const exittype_t *exit_type;
+const exittype_t *exit_type;
 
 //
 // Sys_MessageBox: adapted slightly from the source engine
 //
 int Sys_MessageBox( const char *title, const char *text, bool ShowOkAndCancelButton )
 {
+    extern SDL_Window *SDL_window;
+
     int buttonid = 0;
     SDL_MessageBoxData boxData = { 0 };
     SDL_MessageBoxButtonData buttonData[] = {
@@ -181,7 +169,7 @@ int Sys_MessageBox( const char *title, const char *text, bool ShowOkAndCancelBut
         { SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 0, "Cancel"  },
     };
 
-    boxData.window = G_GetSDLWindow();
+    boxData.window = SDL_window;
     boxData.title = title;
     boxData.message = text;
     boxData.numbuttons = ShowOkAndCancelButton ? 2 : 1;
@@ -229,6 +217,31 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error( cons
 	Sys_Exit( -1 ); // bk010104 - use single exit point.
 }
 
+// never exit without calling this, or your terminal will be left in a pretty bad state
+void Sys_ConsoleInputShutdown( void )
+{
+	if ( ttycon_on )
+	{
+//		Com_Printf( "Shutdown tty console\n" ); // -EC-
+		tty_Back(); // delete "]" ? -EC-
+		tcsetattr( STDIN_FILENO, TCSADRAIN, &tty_tc );
+	}
+
+	// Restore blocking to stdin reads
+	if ( stdin_active )
+	{
+		fcntl( STDIN_FILENO, F_SETFL, stdin_flags );
+//		fcntl( STDIN_FILENO, F_SETFL, fcntl( STDIN_FILENO, F_GETFL, 0 ) & ~O_NONBLOCK );
+	}
+
+	memset( &tty_con, 0, sizeof( tty_con ) );
+
+	stdin_active = qfalse;
+	ttycon_on = qfalse;
+
+	ttycon_hide = 0;
+}
+
 void GDR_NORETURN Sys_Exit( int code )
 {
     const char *err;
@@ -250,8 +263,8 @@ void GDR_NORETURN Sys_Exit( int code )
             Con_Printf( "Exiting with Engine Error\n" );
         }
     }
-    Sys_ShutdownConsole();
-    if ( code == 0 || code == 1 ) {
+    Sys_ConsoleInputShutdown();
+    if ( code == 0 ) {
         Con_Printf( "Exiting App (EXIT_SUCCESS)\n" );
     }
 
@@ -262,13 +275,24 @@ void GDR_NORETURN Sys_Exit( int code )
     exit( EXIT_SUCCESS );
 }
 
+/*
+=================
+Sys_SendKeyEvents
+
+Platform-dependent event handling
+=================
+*/
+void Sys_SendKeyEvents( void )
+{
+    HandleEvents();
+}
 
 void fpe_exception_handler( int signum )
 {
     signal( SIGFPE, fpe_exception_handler );
 }
 
-void Catch_Signal(int signum)
+void Catch_Signal( int signum )
 {
     for (uint32_t i = 0; i < arraylen(signals); i++) {
         if (signals[i].id == signum)
@@ -278,7 +302,67 @@ void Catch_Signal(int signum)
         exit_type = &signals[arraylen(signals) - 1];
     }
     
-    Sys_Exit(-1);
+    Sys_Exit( -1 );
+}
+
+/*
+==================
+CON_SigCont
+Reinitialize console input after receiving SIGCONT, as on Linux the terminal seems to lose all
+set attributes if user did CTRL+Z and then does fg again.
+==================
+*/
+void CON_SigCont( int signum )
+{
+	Sys_ConsoleInputInit();
+}
+
+/*
+==================
+Sys_Sleep
+
+Block execution for msec or until input is received.
+==================
+*/
+void Sys_Sleep( int msec ) {
+	struct timeval timeout;
+	fd_set fdset;
+	int res;
+
+	//if ( msec == 0 )
+	//	return;
+
+	if ( msec < 0 ) {
+		// special case: wait for console input or network packet
+		if ( stdin_active ) {
+			msec = 300;
+			do {
+				FD_ZERO( &fdset );
+				FD_SET( STDIN_FILENO, &fdset );
+				timeout.tv_sec = msec / 1000;
+				timeout.tv_usec = (msec % 1000) * 1000;
+				res = select( STDIN_FILENO + 1, &fdset, NULL, NULL, &timeout );
+			} while ( res == 0 );
+		} else {
+			// can happen only if no map loaded
+			// which means we totally stuck as stdin is also disabled :P
+			//usleep( 300 * 1000 );
+		}
+		return;
+	}
+#if 1
+	usleep( msec * 1000 );
+#else
+	if ( com_dedicated->integer && stdin_active ) {
+		FD_ZERO( &fdset );
+		FD_SET( STDIN_FILENO, &fdset );
+		timeout.tv_sec = msec / 1000;
+		timeout.tv_usec = (msec % 1000) * 1000;
+		select( STDIN_FILENO + 1, &fdset, NULL, NULL, &timeout );
+	} else {
+		usleep( msec * 1000 );
+	}
+#endif
 }
 
 static const struct Q3ToAnsiColorTable_s
@@ -326,25 +410,42 @@ void Sys_ShutdownConsole(void)
     ttycon_hide = 0;
 }
 
-void Sys_SigCont(int signum)
+void CON_SigTStp( int signum )
 {
-    Sys_InitConsole();
+	sigset_t mask;
+
+	tty_FlushIn();
+	Sys_ConsoleInputShutdown();
+
+	sigemptyset( &mask );
+	sigaddset( &mask, SIGTSTP );
+	sigprocmask( SIG_UNBLOCK, &mask, NULL );
+
+	signal( SIGTSTP, SIG_DFL );
+
+	kill( getpid(),  SIGTSTP );
 }
 
-void Sys_SigTStp(int signum)
+
+void Sys_SigCont(int signum)
+{
+    Sys_ConsoleInputInit();
+}
+
+void Sys_SigTStp( int signum )
 {
     sigset_t mask;
 
     tty_FlushIn();
     Sys_ShutdownConsole();
 
-    sigemptyset(&mask);
-    sigaddset(&mask, SIGTSTP);
-    sigprocmask(SIG_UNBLOCK, &mask, NULL);
+    sigemptyset( &mask );
+    sigaddset( &mask, SIGTSTP );
+    sigprocmask( SIG_UNBLOCK, &mask, NULL );
 
-    signal(SIGTSTP, SIG_DFL);
+    signal( SIGTSTP, SIG_DFL );
 
-    kill(getpid(), SIGTSTP);
+    kill( getpid(), SIGTSTP );
 }
 
 static qboolean printableChar( char c ) {
@@ -565,7 +666,7 @@ const char *Sys_GetError(void) {
     return strerror( errno );
 }
 
-tty_err Sys_InitConsole( void )
+tty_err Sys_ConsoleInputInit( void )
 {
     struct termios tc;
     struct rlimit limit;
@@ -578,10 +679,10 @@ tty_err Sys_InitConsole( void )
     Con_Printf("Sys_InitConsole: initializing logging\n");
 
     // if SIGCONT is recieved, reinitialize the console
-    signal(SIGCONT, Sys_SigCont);
+    signal(SIGCONT, CON_SigCont);
 
     if (signal(SIGTSTP, SIG_IGN) == SIG_DFL) {
-        signal(SIGTSTP, Sys_SigTStp);
+        signal(SIGTSTP, CON_SigTStp);
     }
 
     stdin_flags = fcntl(STDIN_FILENO, F_GETFL, 0);
@@ -620,17 +721,150 @@ tty_err Sys_InitConsole( void )
     tty_Hide();
     tty_Show();
 
-    err = getrlimit( RLIMIT_CORE, &limit );
-    if ( err != 0 ) {
-        Con_Printf( COLOR_YELLOW "WARNING: failed to set core dump file limit.\n" );
-    }
-
-    if ( limit.rlim_max < 1 ) {
-        limit.rlim_max = 1;
-    }
-    setrlimit( RLIMIT_CORE, &limit );
-
     return TTY_ENABLED;
+}
+
+void Sys_ConfigureFPU( void )  // bk001213 - divide by zero
+{
+#ifdef __linux__
+#ifdef __i386
+#ifdef __GLIBC__
+#ifndef NDEBUG
+	// bk0101022 - enable FPE's in debug mode
+	static int fpu_word = _FPU_DEFAULT & ~(_FPU_MASK_ZM | _FPU_MASK_IM);
+	int current = 0;
+	_FPU_GETCW( current );
+	if ( current!=fpu_word)
+	{
+#if 0
+		Con_Printf("FPU Control 0x%x (was 0x%x)\n", fpu_word, current );
+		_FPU_SETCW( fpu_word );
+		_FPU_GETCW( current );
+		assert(fpu_word==current);
+#endif
+	}
+#else // NDEBUG
+	static int fpu_word = _FPU_DEFAULT;
+	_FPU_SETCW( fpu_word );
+#endif // NDEBUG
+#endif // __GLIBC__
+#endif // __i386
+#endif // __linux
+}
+
+#ifdef __APPLE__
+static char binaryPath[ MAX_OSPATH ] = { 0 };
+static char installPath[ MAX_OSPATH ] = { 0 };
+
+
+/*
+=================
+Sys_SetBinaryPath
+=================
+*/
+static void Sys_SetBinaryPath( const char *path )
+{
+	char *d;
+	N_strncpyz( binaryPath, path, sizeof( binaryPath ) );
+
+	d = dirname( binaryPath );
+	if ( d != NULL && d != binaryPath ) {
+		N_strncpyz( binaryPath, d, sizeof( binaryPath ) );
+	}
+}
+
+
+/*
+=================
+Sys_SetDefaultBasePath
+=================
+*/
+static void Sys_SetDefaultBasePath( const char *path )
+{
+	N_strncpyz( installPath, path, sizeof( installPath ) );
+}
+
+
+/*
+=================
+Sys_StripAppBundle
+Discovers if passed dir is suffixed with the directory structure of a Mac OS X
+.app bundle. If it is, the .app directory structure is stripped off the end and
+the result is returned. If not, dir is returned untouched.
+=================
+*/
+// Used to determine where to store user-specific files
+static char *Sys_StripAppBundle( char *dir )
+{
+	static char cwd[MAX_OSPATH];
+
+	N_strncpyz( cwd, dir, sizeof( cwd ) );
+	if ( strcmp( basename( cwd ), "MacOS" ) != 0 ) { 
+		return dir;
+	}
+
+	N_strncpyz( cwd, dirname( cwd ), sizeof( cwd ) );
+	if ( strcmp( basename( cwd ), "Contents" ) != 0 ) {
+		return dir;
+	}
+
+	N_strncpyz( cwd, dirname( cwd ), sizeof( cwd ) ); 
+	if ( strstr( basename( cwd ), ".app") == NULL ) {
+		return dir;
+	}
+
+	N_strncpyz( cwd, dirname( cwd ), sizeof( cwd ) );
+
+	return cwd;
+}
+
+
+/*
+=================
+Sys_DefaultAppPath
+=================
+*/
+char *Sys_DefaultAppPath( void )
+{
+	return binaryPath;
+}
+#endif // __APPLE__
+
+const char *Sys_DefaultBasePath( void )
+{
+#ifdef __APPLE__
+    if ( installPath[0] != '\0' ) {
+        return installPath;
+    }
+#endif
+    return Sys_pwd();
+}
+
+const char *Sys_DefaultHomePath( void )
+{
+    // used to determine where to store user-specific files
+    static char homePath[MAX_OSPATH];
+
+    const char *p;
+
+    if (*homePath)
+        return homePath;
+    
+    if ((p = getenv("HOME")) != NULL) {
+        N_strncpyz(homePath, p, sizeof(homePath));
+#ifdef MACOS_X
+        N_strcat(homePath, sizeof(homePath), "/Library/Application Support/TheNomad");
+#else
+        N_strcat(homePath, sizeof(homePath), "/.thenomad");
+#endif
+        if ( mkdir( homePath, 0750 ) ) {
+            if ( errno != EEXIST ) {
+                N_Error( ERR_DROP, "Unable to create directory \"%s\", error is %s(%d)", homePath, strerror( errno ), errno );
+            }
+        }
+        return homePath;
+    }
+    return ""; // assume current directory
 }
 
 void Sys_PrintBinVersion( const char* name )
@@ -640,7 +874,7 @@ void Sys_PrintBinVersion( const char* name )
 	const char *sep = "==============================================================";
 
 	Con_Printf( "\n\n%s\n", sep );
-	Con_Printf( "Linux \"The Nomad\" Full Executable  [%s %s]\n", date, time );
+	Con_Printf( "Linux \"The Nomad\" Full Executable [%s %s]\n", date, time );
 	Con_Printf( " local install: %s\n", name );
 	Con_Printf( "%s\n\n", sep );
 }
@@ -661,8 +895,7 @@ const char *Sys_BinName( const char *arg0 )
 {
 	static char dst[ PATH_MAX ];
 
-#ifdef _NOMAD_DEBUG
-
+#ifndef _NOMAD_DEBUG
 #if defined (__linux__)
 	int n = readlink( "/proc/self/exe", dst, PATH_MAX - 1 );
 
@@ -673,13 +906,11 @@ const char *Sys_BinName( const char *arg0 )
 #elif defined (__APPLE__)
 	uint32_t bufsize = sizeof( dst );
 
-	if ( _NSGetExecutablePath( dst, &bufsize ) == -1 )
-	{
+	if ( _NSGetExecutablePath( dst, &bufsize ) == -1 ) {
 		N_strncpyz( dst, arg0, PATH_MAX );
 	}
 #else
-
-#warning Sys_BinName not implemented
+    #warning Sys_BinName not implemented
 	N_strncpyz( dst, arg0, PATH_MAX );
 #endif
 
@@ -689,131 +920,55 @@ const char *Sys_BinName( const char *arg0 )
 	return dst;
 }
 
-int Sys_ParseArgs(int argc, const char *argv[])
+static int Sys_ParseArgs( int argc, const char* argv[] )
 {
-    if (argc == 2) {
-        if ((!strcmp(argv[1], "--version")) || (!strcmp(argv[1], "-v"))) {
-            Sys_PrintBinVersion(Sys_BinName(argv[0]));
-            return 1;
-        }
-    }
-    return 0;
-}
-
-static void Sys_InitSignals( void );
-
-static void SignalHandle( int signum )
-{
-    if ( signum == SIGSEGV ) {
-        exit_type = &signals[0];
-        Sys_SetError( ERR_SEGGY );
-        Sys_Error( "An unrecoverable error has occured within the engine, please click OK and report this error.\n\n(FOR DEVELOPERS) Memory Access Violation (SIGSEGV)" );
-    }
-    else if ( signum == SIGABRT ) {
-        exit_type = &signals[2];
-        Sys_SetError( ERR_ASSERTION );
-        Sys_Error( "An unrecoverable error has occured within the engine, please click OK and report this error.\n\n(FOR DEVELOPERS) Debug Assertion (SIGABRT)" );
-    }
-    else if ( signum == SIGTERM ) {
-        Con_DPrintf( "Recieved SIGTERM, ignoring.\n" );
-        signal( SIGTERM, SignalHandle );
-    }
-    else if ( signum == SIGBUS ) {
-        exit_type = &signals[1];
-        Sys_SetError( ERR_BUS );
-        Sys_Error( "An unrecoverable error has occured within the engine, please click OK and report this error.\n\n(FOR DEVELOPERS) Invalid memory address access (SIGBUS)" );
-    }
-    else if ( signum == SIGILL ) {
-        exit_type = &signals[5];
-        Sys_Error( "An unrecoverable error has occured within the engine, please click OK and report this error.\n\n(FOR DEVELOPERS) Illegal CPU instruction (SIGILL)" );
-    }
-    else if ( signum == SIGFPE ) {
-        static qboolean recursive = qfalse;
-        Con_DPrintf( "FPE Triggered...\n" );
-        Sys_DebugStacktrace( 1024 ); // do a stack dump
-
-        if ( !recursive ) {
-            Sys_MessageBox( "Engine Warning", "A Floating Point Exception was caught", false );
-            recursive = qtrue;
-            signal( SIGFPE, SignalHandle );
-        }
-        else {
-            Sys_Error( "An unrecoverable error has occured within the engine, please click OK and report this error.\n\n(FOR DEVELOPERS) Divide by zero or somethin'?? (SIGFPE)" );
-        }
-    }
-    else if ( signum == SIGTRAP ) {
-        static qboolean recursive = qfalse;
-        Con_DPrintf( "DebugBreak Triggered...\n" );
-        Sys_DebugStacktrace( 1024 ); // do a stack dump
-
-        // debug traps woun't happen unless we have a dedicated debug binary
-        if ( !recursive ) {
-            Sys_MessageBox( "DebugBreak Triggered", "A DebugBreak was triggered", false );
-            recursive = qtrue;
-            signal( SIGTRAP, SignalHandle );
-        }
-        else {
-            Sys_Error( "DebugBreak triggered twice!" );
-        }
-    }
-    else {
-        Con_DPrintf( "Unknown signal (%i)... Wtf?\n", signum );
-    }
-}
-
-static void Sys_InitSignals( void )
-{
-    signal( SIGTERM, SignalHandle );
-    signal( SIGSEGV, SignalHandle );
-    signal( SIGFPE, SignalHandle );
-    signal( SIGABRT, SignalHandle );
-    signal( SIGBUS, SignalHandle );
-    signal( SIGTRAP, SignalHandle );
-    signal( SIGILL, SignalHandle );
-}
-
-void Sys_Init( void )
-{
-    tty_err err;
-
-    // get the initial time base
-	Sys_Milliseconds();
-
-    Sys_InitSignals();
-
-    err = Sys_InitConsole();
-	if ( err == TTY_ENABLED ) {
-		Con_Printf( "Started tty console (use +set ttycon 0 to disable)\n" );
-	}
-	else {
-		if ( err == TTY_ERROR ) {
-			Con_Printf( "stdin is not a tty, tty console mode failed\n" );
-            ttycon_on = qfalse;
+	if ( argc == 2 ) {
+		if ( ( !strcmp( argv[1], "--version" ) ) || ( !strcmp( argv[1], "-v" ) ) ) {
+			Sys_PrintBinVersion( Sys_BinName( argv[0] ) );
+			return 1;
 		}
 	}
+
+	return 0;
 }
 
 int main( int argc, char **argv )
 {
-    char con_title[MAX_CVAR_VALUE];
+    char con_title[ MAX_CVAR_VALUE ];
     int xpos, ypos;
     char *cmdline;
     int len, i;
+    tty_err err;
 
 #ifdef __APPLE__
 	// This is passed if we are launched by double-clicking
-	if ( argc >= 2 && N_strncmp( argv[1], "-psn", 4 ) == 0 )
+	if ( argc >= 2 && N_strncmp( argv[1], "-psn", 4 ) == 0 ) {
 		argc = 1;
+    }
+#endif
+
+    if ( Sys_ParseArgs( argc, (const char **)argv ) ) {
+        return 0; // print version and exit
+    }
+
+#ifdef __APPLE__
+    Sys_SetBinaryPath( argv[ 0 ] );
+    Sys_SetDefaultBasePath( Sys_StripAppBundle( binaryPath ) );
 #endif
 
     // merge the command line, this is kinda silly
 	for ( len = 1, i = 1; i < argc; i++ )
 		len += strlen( argv[i] ) + 1;
 
+    Con_Printf( "Working directory: %s\n", Sys_pwd() );
+
+    InitSig();
+
 	cmdline = (char *)malloc( len );
     if (!cmdline) { // oh shit
-        write(STDERR_FILENO, "malloc() failed, out of memory\n", strlen("malloc() failed, out of memory\n"));
-        _Exit(EXIT_FAILURE);
+        write( STDERR_FILENO, "malloc() failed, out of memory, FREE UP SOME GODDAMN MEMORY\n",
+            sizeof( "malloc() failed, out of memory, FREE UP SOME GODDAMN MEMORY\n" ) );
+        _Exit( EXIT_FAILURE );
     }
 	*cmdline = '\0';
 	for ( i = 1; i < argc; i++ ) {
@@ -822,12 +977,37 @@ int main( int argc, char **argv )
         
 		strcat( cmdline, argv[i] );
 	}
+    Com_EarlyParseCmdLine( cmdline, con_title, sizeof( con_title ), &xpos, &ypos );
 
-    Sys_Init();
+    // get initial time base
+    Sys_Milliseconds();
+
+    err = Sys_ConsoleInputInit();
+    if ( err == TTY_ENABLED ) {
+        Con_Printf( "Started tty console (use +set ttycon 0 to disable)\n" );
+    }
+    else {
+        if ( err == TTY_ERROR ) {
+            Con_Printf( "stdin is not a tty, tty console mode failed\n" );
+			Cvar_Set( "ttycon", "0" );
+        }
+    }
     
     Com_Init( cmdline );
 
-	while (1) {
+    // Sys_ConsoleInputInit() might be called in signal handler
+	// so modify/init any cvars here
+	ttycon = Cvar_Get( "ttycon", "1", 0 );
+	Cvar_SetDescription( ttycon, "Enable access to input/output console terminal." );
+	ttycon_ansicolor = Cvar_Get( "ttycon_ansicolor", "0", CVAR_SAVE );
+	Cvar_SetDescription( ttycon_ansicolor, "Convert in-game color codes to ANSI color codes in console terminal." );
+
+	while ( 1 ) {
+#ifdef __linux__
+        Sys_ConfigureFPU();
+#endif
+        // check for other input devices
+        IN_Frame();
 		// run the game
 		Com_Frame( qfalse );
 	}

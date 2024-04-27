@@ -23,10 +23,48 @@ qboolean UI_MenuOption( const char *label )
 	return retn;
 }
 
+static qboolean GamepadUsed( void )
+{
+	if ( keys[ KEY_PAD0_A ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_B ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_X ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_Y ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_BACK ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_GUIDE ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_START ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_LEFTSTICK_CLICK ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_RIGHTSTICK_CLICK ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_LEFTSHOULDER ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_RIGHTSHOULDER ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_DPAD_UP ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_DPAD_DOWN ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_DPAD_LEFT ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_DPAD_RIGHT ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_LEFTSTICK_LEFT ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_LEFTSTICK_RIGHT ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_LEFTSTICK_UP ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_LEFTSTICK_DOWN ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_RIGHTSTICK_LEFT ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_RIGHTSTICK_RIGHT ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_RIGHTSTICK_UP ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_RIGHTSTICK_DOWN ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_LEFTTRIGGER ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_RIGHTTRIGGER ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_MISC1 ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_PADDLE1 ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_PADDLE2 ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_PADDLE3 ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_PADDLE4 ].down ) { return qtrue; }
+	if ( keys[ KEY_PAD0_TOUCHPAD ].down ) { return qtrue; }
+	return qfalse;
+}
+
 qboolean UI_MenuTitle( const char *label, float fontScale )
 {
 	ImVec2 cursorPos;
 	renderSceneRef_t refdef;
+	extern cvar_t *in_joystick;
+	qboolean mouseActive;
 
 	memset( &refdef, 0, sizeof( refdef ) );
 	refdef.x = 0;
@@ -45,6 +83,7 @@ qboolean UI_MenuTitle( const char *label, float fontScale )
 	ImGui::PopStyleColor();
 
 	cursorPos = ImGui::GetCursorScreenPos();
+	SDL_ShowCursor( mouseActive );
 
 //	ImGui::SetWindowFontScale( 1.5f * scale );
 	ImGui::SetCursorScreenPos( ImVec2( 16 * ui->scale, 680 * ui->scale ) );
@@ -61,21 +100,6 @@ qboolean UI_MenuTitle( const char *label, float fontScale )
 	ImGui::SetWindowFontScale( 1.0f );
 
     return false;
-}
-
-void UI_EscapeMenuToggle( void )
-{
-    if ( Key_IsDown( KEY_ESCAPE ) && ui->menustate != UI_MENU_MAIN ) {
-        if ( ui->escapeToggle ) {
-            ui->escapeToggle = qfalse;
-			UI_PopMenu();
-
-			Snd_PlaySfx( ui->sfx_back );
-        }
-    }
-    else {
-        ui->escapeToggle = qtrue;
-    }
 }
 
 void UI_PushMenu( menuframework_t *menu )

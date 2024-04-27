@@ -16,12 +16,6 @@ CModuleInfo *sgvm;
 renderExport_t re;
 gameInfo_t gi;
 
-// only one gl context is allowed at a time
-static void *r_GLcontext = NULL;
-static SDL_Window *r_window = NULL;
-static SDL_Renderer *r_context = NULL;
-
-static cvar_t *cl_title;
 cvar_t *r_glDebug;
 cvar_t *r_allowLegacy;
 cvar_t *r_displayRefresh;
@@ -44,7 +38,6 @@ cvar_t *g_stencilBits;
 cvar_t *g_depthBits;
 cvar_t *r_multisampleAmount;
 cvar_t *r_multisampleType;
-cvar_t *r_stereoEnabled;
 cvar_t *g_drawBuffer;
 cvar_t *g_paused;
 cvar_t *r_debugCamera;
@@ -184,7 +177,10 @@ static void *G_RefImGuiMalloc( size_t size ) {
 // G_RefImGuiInit: called during internal renderer initialization
 // renderContext can be either a SDL_GLContext or SDL_Renderer, or NULL if using D3D11, Vulkan, or Metal
 //
-static void G_RefImGuiInit(void *shaderData, const void *importData) {
+static void G_RefImGuiInit( void *shaderData, const void *importData ) {
+    extern SDL_Window *SDL_window;
+    extern SDL_GLContext SDL_glContext;
+
     IMGUI_CHECKVERSION();
     ImGui::SetAllocatorFunctions( (ImGuiMemAllocFunc)G_RefImGuiMalloc, (ImGuiMemFreeFunc)G_RefImGuiFree );
     ImGui::CreateContext();
@@ -197,11 +193,11 @@ static void G_RefImGuiInit(void *shaderData, const void *importData) {
     g_pFontCache = new ( Hunk_Alloc( sizeof( *g_pFontCache ), h_low ) ) CUIFontCache();
 
     if ( !N_stricmp( g_renderer->s, "opengl" ) ) {
-        ImGui_ImplSDL2_InitForOpenGL( r_window, r_GLcontext );
+        ImGui_ImplSDL2_InitForOpenGL( SDL_window, SDL_glContext );
         ImGui_ImplOpenGL3_Init( shaderData, NULL, (const imguiGL3Import_t *)importData);
     }
     else if ( !N_stricmp( g_renderer->s, "vulkan" ) ) {
-        ImGui_ImplSDL2_InitForVulkan( r_window );
+        ImGui_ImplSDL2_InitForVulkan( SDL_window );
     }
 }
 
@@ -363,6 +359,7 @@ static void G_InitRenderRef(void)
 
     import.GLimp_Init = G_InitDisplay;
     import.GLimp_InitGamma = GLimp_InitGamma;
+#ifdef USE_OPENGL_API
     import.GLimp_EndFrame = GLimp_EndFrame;
     import.GLimp_SetGamma = GLimp_SetGamma;
     import.GLimp_LogComment = GLimp_LogComment;
@@ -370,6 +367,7 @@ static void G_InitRenderRef(void)
     import.GLimp_Minimize = GLimp_Minimize;
     import.GLimp_HideFullscreenWindow = GLimp_HideFullscreenWindow;
     import.GL_GetProcAddress = GL_GetProcAddress;
+#endif
 
     import.G_SetScaling = G_SetScaling;
     import.G_SaveJPGToBuffer = G_SaveJPGToBuffer;
@@ -610,7 +608,7 @@ const vidmode_t r_vidModes[NUMVIDMODES] =
 };
 static const int64_t numVidModes = (int64_t)arraylen( r_vidModes );
 
-qboolean G_GetModeInfo( int *width, int *height, float *windowAspect, int mode, const char *modeFS, uint32_t dw, uint32_t dh, qboolean fullscreen )
+qboolean G_GetModeInfo( int *width, int *height, float *windowAspect, int mode, const char *modeFS, int dw, int dh, qboolean fullscreen )
 {
 	const vidmode_t *vm;
 	float pixelAspect;
@@ -732,31 +730,13 @@ static void G_SetCameraPos_f( void )
     VectorCopy( gi.cameraPos, xyz );
 }
 
-void G_AddThreadToLoadQueue( CThread *pThread ) {
-    gi.m_LoadStack.push( pThread );
-}
-
-static void G_LoadResource_f( void ) {
-    float progress;
-    CThread *pThread;
-
-    while ( gi.m_LoadStack.size() ) {
-        pThread = gi.m_LoadStack.top();
-
-        // 10 KiB stack should be plenty
-        if ( !pThread->Start( 10 * 1024 ) ) {
-            N_Error( ERR_FATAL, "G_LoadResources: failed to start thread '%s'", pThread->GetName() );
-        }
-
-        gi.m_LoadStack.pop();
-    }
-}
-
 /*
 * G_Init: called every time a new level is loaded
 */
 void G_Init( void )
 {
+    cvar_t *temp;
+
     PROFILE_FUNCTION();
 
     Con_Printf( "----- Game State Initialization ----\n" );
@@ -775,8 +755,8 @@ void G_Init( void )
     r_glDebug = Cvar_Get( "r_glDebug", "1", CVAR_SAVE | CVAR_LATCH );
     Cvar_SetDescription( r_glDebug, "Toggles OpenGL driver debug logging." );
 
-    cl_title = Cvar_Get( "g_title", WINDOW_TITLE, CVAR_INIT | CVAR_PROTECTED );
-    Cvar_SetDescription( cl_title, "Sets the name of the application's window." );
+    temp = Cvar_Get( "window_title", WINDOW_TITLE, CVAR_INIT | CVAR_PROTECTED );
+    Cvar_SetDescription( temp, "Sets the name of the application's window." );
 
     r_allowSoftwareGL = Cvar_Get( "r_allowSoftwareGL", "0", CVAR_LATCH );
 	Cvar_SetDescription( r_allowSoftwareGL, "Toggle the use of the default software OpenGL driver supplied by the Operating System." );
@@ -884,8 +864,6 @@ void G_Init( void )
         Cvar_ForceReset( "g_renderer" );
     }
 
-    gi.m_LoadStack.get_container().reserve( 2048 );
-
     // init sound
     Snd_Init();
     gi.soundStarted = qtrue;
@@ -918,8 +896,6 @@ void G_Init( void )
     Cmd_AddCommand( "setmap", G_SetMap_f );
     Cmd_AddCommand( "mapinfo", G_MapInfo_f );
     Cmd_AddCommand( "setcamerapos", G_SetCameraPos_f );
-
-    gi.m_LoadStack.get_container().clear();
 
     Con_Printf( "----- Game State Initialization Complete ----\n" );
 }
@@ -1143,17 +1119,18 @@ void G_Frame( int msec, int realMsec )
     Con_RunConsole();
 }
 
-void G_MouseEvent( int dx, int dy ) {
-}
-
 /*
 ===========================================
 
 GLimp functions are in here until I decide
 to move them somewhere else
 
+
+DONE BITCH!
 ===========================================
 */
+
+#if 0
 
 typedef struct {
     FILE *logfile;
@@ -1650,3 +1627,4 @@ void G_InitDisplay(gpuConfig_t *config)
     // init OpenGL
     GLimp_Init( config );
 }
+#endif

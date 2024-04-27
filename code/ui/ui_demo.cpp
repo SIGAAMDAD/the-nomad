@@ -52,7 +52,7 @@ static void DemoMenu_Draw( void )
         UI_ForceMenuOff();
         ui->menusp = 0;
 
-        UI_SetActiveMenu( UI_MENU_MAIN );        
+        UI_SetActiveMenu( UI_MENU_MAIN );
         return;
     }
 }

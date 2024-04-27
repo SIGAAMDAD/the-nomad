@@ -43,15 +43,6 @@ void R_VaoUnpackNormal(vec3_t v, int16_t *pack)
 	v[2] = pack[2] / 32767.0f;
 }
 
-static qboolean R_BufferExists(const char *name)
-{
-	for ( uint64_t i = 0; i < rg.numBuffers; i++ ) {
-		if ( !N_stricmp( name, rg.buffers[i]->name ) ) {
-			return qtrue;
-		}
-	}
-	return qfalse;
-}
 
 static void R_SetVertexPointers(const vertexAttrib_t attribs[ATTRIB_INDEX_COUNT])
 {
@@ -707,6 +698,7 @@ vertexBuffer_t *R_AllocateBuffer(const char *name, void *vertices, uint32_t vert
     vertexBuffer_t *buf;
 	GLenum usage;
 	uint32_t namelen;
+	uint64_t i;
 
 	switch (type) {
 	case BUFFER_STATIC:
@@ -723,19 +715,22 @@ vertexBuffer_t *R_AllocateBuffer(const char *name, void *vertices, uint32_t vert
 		ri.Error(ERR_FATAL, "Bad glUsage %i", type);
 	};
 
-	if (R_BufferExists( name )) {
-		ri.Error( ERR_DROP, "R_AllocateBuffer: buffer '%s' already exists", name );
+	for ( i = 0; i < rg.numBuffers; i++ ) {
+		if ( !N_stricmp( rg.buffers[i]->name, name ) ) {
+			return rg.buffers[i];
+		}
 	}
-	if (rg.numBuffers == MAX_RENDER_BUFFERS) {
+
+	if ( rg.numBuffers == MAX_RENDER_BUFFERS ) {
 		ri.Error(ERR_DROP, "R_AllocateBuffer: MAX_RENDER_BUFFERS hit");
 	}
 
-    // these buffers are only allocated on a per vm basis
     buf = rg.buffers[rg.numBuffers] = ri.Hunk_Alloc( sizeof(*buf), h_low );
 	memset( buf, 0, sizeof(*buf) );
     rg.numBuffers++;
 
     buf->type = type;
+	N_strncpyz( buf->name, name, sizeof( buf->name ) );
 
 	nglGenVertexArrays(1, (GLuint *)&buf->vaoId);
 	nglBindVertexArray(buf->vaoId);

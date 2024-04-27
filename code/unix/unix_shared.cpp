@@ -215,46 +215,18 @@ char **Sys_ListFiles(const char *directory, const char *extension, const char *f
     return listCopy;
 }
 
-void Sys_FreeFileList(char **list)
+void Sys_FreeFileList( char **list )
 {
-    if (!list)
+    uint64_t i;
+
+    if ( !list ) {
         return;
-    
-    for (uint64_t i = 0; list[i]; i++) {
-        Z_Free(list[i]);
     }
-    Z_Free(list);
-}
-
-const char *Sys_DefaultBasePath(void)
-{
-    return Sys_pwd();
-}
-
-const char *Sys_DefaultHomePath(void)
-{
-    // used to determine where to store user-specific files
-    static char homePath[MAX_OSPATH];
-
-    const char *p;
-
-    if (*homePath)
-        return homePath;
     
-    if ((p = getenv("HOME")) != NULL) {
-        N_strncpyz(homePath, p, sizeof(homePath));
-#ifdef MACOS_X
-        N_strcat(homePath, sizeof(homePath), "/Library/Application Support/TheNomad");
-#else
-        N_strcat(homePath, sizeof(homePath), "/.thenomad");
-#endif
-        if (mkdir(homePath, 0750)) {
-            if (errno != EEXIST)
-                N_Error(ERR_DROP, "Unable to create directory \"%s\", error is %s(%d)", homePath, strerror(errno), errno);
-        }
-        return homePath;
+    for ( i = 0; list[i]; i++ ) {
+        Z_Free( list[i] );
     }
-    return ""; // assume current directory
+    Z_Free( list );
 }
 
 /*

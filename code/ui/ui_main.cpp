@@ -296,6 +296,8 @@ extern "C" void UI_Shutdown( void )
     Cmd_RemoveCommand( "ui.cache" );
 	Cmd_RemoveCommand( "ui.fontinfo" );
 	Cmd_RemoveCommand( "togglepausemenu" );
+	Cmd_RemoveCommand( "ui_escapemenutoggle" );
+	Cmd_RemoveCommand( "ui_togglebackgroundonly" );
 }
 
 // FIXME: call UI_Shutdown instead
@@ -369,6 +371,19 @@ extern "C" void UI_DrawFPS( void )
     ImGui::SetWindowFontScale( 1.5f * ui->scale );
     ImGui::Text( "%ifps", fps );
     ImGui::End();
+}
+
+void UI_EscapeMenuToggle( void )
+{
+    if ( ( Key_IsDown( KEY_ESCAPE ) || Key_IsDown( KEY_PAD0_B ) ) &&  ui->menusp > 1 ) {
+		if ( !ui->escapeToggle ) {
+			ui->escapeToggle = qtrue;
+			UI_PopMenu();
+			Snd_PlaySfx( ui->sfx_back );
+		}
+    } else {
+		ui->escapeToggle = qfalse;
+	}
 }
 
 extern "C" void UI_Init( void )
@@ -492,6 +507,8 @@ extern "C" void UI_DrawMenuBackground( void )
 
 extern "C" void UI_Refresh( int32_t realtime )
 {
+	extern cvar_t *in_joystick;
+
 	ui->realtime = realtime;
 	ui->frametime = ui->frametime - realtime;
 

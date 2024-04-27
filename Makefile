@@ -170,6 +170,7 @@ endif
 SYS=\
 	$(O)/sys/unix_main.o \
 	$(O)/sys/unix_shared.o \
+	$(O)/sys/unix_signals.o \
 	$(O)/module_lib/module_virtual_asm_linux.o
 SYS_DIR=$(SDIR)/unix
 else
@@ -327,6 +328,9 @@ SRC=\
 	$(O)/ui/ui_newgame.o \
 	$(O)/ui/ui_loadgame.o \
 	$(O)/ui/ui_mods.o \
+	\
+	$(O)/sdl/sdl_input.o \
+	$(O)/sdl/sdl_glimp.o \
 
 MAKE=make
 
@@ -347,6 +351,7 @@ makedirs:
 	@if [ ! -d $(O)/module_lib/ ];then $(MKDIR) $(O)/module_lib;fi
 	@if [ ! -d $(O)/angelscript/ ];then $(MKDIR) $(O)/angelscript;fi
 	@if [ ! -d $(O)/libjpeg/ ];then $(MKDIR) $(O)/libjpeg;fi
+	@if [ ! -d $(O)/sdl ];then $(MKDIR) $(O)/sdl;fi
 
 targets: makedirs
 	@echo ""
@@ -393,6 +398,8 @@ $(O)/ui/%.o: $(SDIR)/ui/%.cpp
 $(O)/ui/%.o: $(SDIR)/ui/menulib/%.cpp
 	$(COMPILE_SRC)
 $(O)/sys/%.o: $(SYS_DIR)/%.cpp
+	$(COMPILE_SRC)
+$(O)/sdl/%.o: $(SDIR)/sdl/%.cpp
 	$(COMPILE_SRC)
 $(O)/module_lib/%.o: $(SDIR)/module_lib/%.cpp
 	$(COMPILE_SRC) -DMODULE_LIB

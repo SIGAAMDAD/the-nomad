@@ -193,6 +193,12 @@ static void Arrow_Draw( menuarrow_t *arrow )
 	Assert( arrow->generic.type == MTYPE_ARROW );
 
 	if ( ImGui::ArrowButton( arrow->generic.name, arrow->direction ) ) {
+		if ( !( arrow->generic.flags & QMF_SILENT ) ) {
+			Snd_PlaySfx( ui->sfx_select );
+		}
+		if ( arrow->generic.eventcallback ) {
+			arrow->generic.eventcallback( arrow, EVENT_ACTIVATED );
+		}
 	}
 }
 
@@ -212,6 +218,9 @@ static void Slider_Draw( menuslider_t *slider )
 
 	if ( slider->isIntegral ) {
 		if ( ImGui::SliderInt( slider->generic.name, (int *)&slider->curvalue, (int)slider->minvalue, (int)slider->maxvalue, "%d", flags ) ) {
+			if ( !( slider->generic.flags & QMF_SILENT ) ) {
+				Snd_PlaySfx( ui->sfx_select );
+			}
 		}
 		slider->curvalue = (int)Com_Clamp( slider->minvalue, slider->maxvalue, slider->curvalue );
 	} else {
@@ -407,6 +416,10 @@ static void Text_Draw( menutext_t *text )
 
 	Assert( text->generic.type == MTYPE_TEXT );
 
+	ImGui::PushStyleColor( ImGuiCol_Button, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+	ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+	ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+
 	colorChanged = qfalse;
 	if ( text->generic.flags & QMF_GRAYED ) {
 		ImGui::PushStyleColor( ImGuiCol_Text, colorMdGrey );
@@ -421,10 +434,10 @@ static void Text_Draw( menutext_t *text )
 	if ( text->generic.flags & QMF_OWNERDRAW && text->generic.ownerdraw ) {
 		text->generic.ownerdraw( text );
 	} else {
-		ImGui::TextUnformatted( text->text );
+		ImGui::Button( text->text, ImVec2( 0, ( 32 * text->generic.parent->textFontScale ) * ui->scale ) ); // for joysticks
 	}
 
-	if ( ImGui::IsItemClicked() ) {
+	if ( ImGui::IsItemClicked() || ImGui::IsItemActivated() ) {
 		if ( !( text->generic.flags & QMF_SILENT ) ) {
 			Snd_PlaySfx( ui->sfx_select );
 		}
@@ -436,6 +449,8 @@ static void Text_Draw( menutext_t *text )
 	if ( colorChanged ) {
 		ImGui::PopStyleColor();
 	}
+
+	ImGui::PopStyleColor( 3 );
 }
 
 static void Menu_DrawItemGeneric( menucommon_t *generic )

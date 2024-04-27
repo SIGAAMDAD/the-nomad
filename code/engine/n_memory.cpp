@@ -1030,6 +1030,10 @@ static void Zone_Stats( const char *name, const memzone_t *z, qboolean printDeta
 			case TAG_SAVEFILE:
 				st.archiveFileBytes += block->size;
 				break;
+			case TAG_SMALL:
+			case TAG_FREE:
+			case TAG_STATIC:
+				break;
 			default:
 				N_Error( ERR_FATAL, "Zone_Stats( %s ): invalid memtag %i", name, block->tag );
 			};

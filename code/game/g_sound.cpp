@@ -1,48 +1,11 @@
 #include "g_game.h"
 #include "g_sound.h"
-#include "../engine/n_threads.h"
-
 #include <ALsoft/al.h>
 #include <ALsoft/alc.h>
 #include <ALsoft/alext.h>
 #include <sndfile.h>
 //#include <ogg/ogg.h>
 //#include <vorbis/vorbisfile.h>
-
-class CSoundThread : public CThread
-{
-public:
-    CSoundThread( const char *pszFileName, memtag_t nTag, ALuint *pSource, ALuint nBuffer );
-    virtual ~CSoundThread() override;
-
-    inline void GetInfo( SF_INFO *pInfo ) const {
-        *pInfo = m_hFData;
-    }
-    inline bool Loaded( void ) const {
-        return m_nFileLength && m_pFileBuffer;
-    }
-private:
-    inline ALenum Format( void ) const {
-        return m_hFData.channels == 1 ? AL_FORMAT_MONO16 : AL_FORMAT_STEREO16;
-    }
-
-	virtual int Run( void ) override;
-	virtual void OnExit( void ) override;
-
-    char m_szName[MAX_NPATH];
-
-    SF_INFO m_hFData;
-
-    ALuint *m_pSource;
-    ALuint m_nBuffer;
-    memtag_t m_nTag;
-
-    uint64_t m_nFileLength;
-    void *m_pFileBuffer;
-
-    uint64_t m_nBufferLength;
-    short *m_pData;
-};
 
 #define MAX_SOUND_SOURCES 2048
 #define MAX_MUSIC_QUEUE 12
@@ -240,19 +203,19 @@ const char *CSoundSource::GetName( void ) const {
 
 bool CSoundSource::IsPaused( void ) const {
     ALint state;
-    ALCall( alGetSourcei( m_iSource, AL_SOURCE_STATE, &state ) );
+    alGetSourcei( m_iSource, AL_SOURCE_STATE, &state );
     return state == AL_PAUSED;
 }
 
 bool CSoundSource::IsPlaying( void ) const {
     ALint state;
-    ALCall( alGetSourcei( m_iSource, AL_SOURCE_STATE, &state ) );
+    alGetSourcei( m_iSource, AL_SOURCE_STATE, &state );
     return state == AL_PLAYING;
 }
 
 bool CSoundSource::IsLooping( void ) const {
     ALint state;
-    ALCall( alGetSourcei( m_iSource, AL_SOURCE_STATE, &state ) );
+    alGetSourcei( m_iSource, AL_SOURCE_STATE, &state );
     return state == AL_LOOPING;
 }
 
@@ -273,16 +236,17 @@ void CSoundSource::Init( void )
 
 void CSoundSource::Shutdown( void )
 {
+    return;
     // stop the source if we're playing anything
     if ( IsPlaying() ) {
         ALCall( alSourceStop( m_iSource ) );
     }
-    ALCall( alSourcei( m_iSource, AL_BUFFER, AL_NONE ) );
-    if ( m_iTag != TAG_MUSIC ) {
-        ALCall( alDeleteSources( 1, &m_iSource ) );
-    }
-    if ( m_iBuffer ) {
+    if ( m_iBuffer != 0 && m_iTag != TAG_MUSIC ) {
+        ALCall( alSourcei( m_iSource, AL_BUFFER, AL_NONE ) );
         ALCall( alDeleteBuffers( 1, &m_iBuffer ) );
+    }
+    if ( m_iTag != TAG_MUSIC && m_iSource != 0 ) {
+        ALCall( alDeleteSources( 1, &m_iSource ) );
     }
 
     m_iBuffer = 0;
@@ -295,7 +259,7 @@ void CSoundSource::SetVolume( void ) const {
     if ( m_iTag == TAG_MUSIC || m_iSource == 0 ) {
         return;
     }
-    ALCall( alSourcef( m_iSource, AL_GAIN, snd_sfxvol->f / CLAMP_VOLUME ) );
+    alSourcef( m_iSource, AL_GAIN, snd_sfxvol->f / CLAMP_VOLUME );
 }
 
 ALenum CSoundSource::Format( void ) const {
@@ -356,16 +320,16 @@ void CSoundSource::Play( bool loop )
         return;
     }
     if ( loop ) {
-        ALCall( alSourcei( m_iSource, AL_LOOPING, AL_TRUE ) );
+        alSourcei( m_iSource, AL_LOOPING, AL_TRUE );
     }
-    ALCall( alSourcePlay( m_iSource ) );
+    alSourcePlay( m_iSource );
 }
 
 void CSoundSource::Pause( void ) {
     if ( !IsPlaying() && !IsLooping() ) {
         return;
     }
-    ALCall( alSourcePause( m_iSource ) );
+    alSourcePause( m_iSource );
 }
 
 void CSoundSource::Stop( void ) {
@@ -373,9 +337,9 @@ void CSoundSource::Stop( void ) {
         return; // nothing's playing
     }
     if ( m_iTag == TAG_MUSIC ) {
-        ALCall( alSourcei( m_iSource, AL_BUFFER, 0 ) );
+        alSourcei( m_iSource, AL_BUFFER, 0 );
     }
-    ALCall( alSourceStop( m_iSource ) );
+    alSourceStop( m_iSource );
 }
 
 static sf_count_t SndFile_Read( void *data, sf_count_t size, void *file ) {
@@ -410,7 +374,6 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
 {
     PROFILE_FUNCTION();
 
-/*
     SNDFILE *sf;
     SF_VIRTUAL_IO vio;
     ALenum format;
@@ -420,13 +383,12 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     uint64_t length;
     const char *ospath;
     short *data;
-*/
-    CSoundThread *thread;
 
     m_iTag = tag;
 
     // clear audio file data before anything
     memset( &m_hFData, 0, sizeof( m_hFData ) );
+    memset( &vio, 0, sizeof( vio ) );
 
     N_strncpyz( m_pName, npath, sizeof( m_pName ) );
 
@@ -435,16 +397,15 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     // it again
     sndManager->AddSourceToHash( this );
 
-    thread = CreateStackObject( CSoundThread, npath, (memtag_t)tag, &m_iSource, m_iBuffer );
-    if ( !thread->Loaded() ) {
+    length = FS_LoadFile( npath, &buffer );
+
+    if ( !length || !buffer ) {
+        Con_Printf( COLOR_RED "CSoundSource::LoadFile: failed to load file '%s'.\n", npath );
         return false;
     }
-    // 6KB stack should be more than enough
-    if ( !thread->Start( 6*1024 ) ) {
-        N_Error( ERR_DROP, "CSoundSource::LoadFile: failed to start sound loader thread" );
-    }
-    thread->GetInfo( &m_hFData );
-    thread->Join();
+
+    fp = tmpfile();
+    AssertMsg( fp, "Failed to open temprorary file!" );
 
 /*
     vio.get_filelen = SndFile_GetFileLen;
@@ -459,6 +420,49 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
         return false;
     }
 */
+    fwrite( buffer, length, 1, fp );
+    fseek( fp, 0L, SEEK_SET );
+    
+    sf = sf_open_fd( fileno( fp ), SFM_READ, &m_hFData, SF_FALSE );
+    if ( !sf ) {
+        Con_Printf( COLOR_YELLOW "WARNING: libsndfile sf_open_fd failed on '%s', sf_strerror(): %s\n", npath, sf_strerror( sf ) );
+        return false;
+    }
+    
+    // allocate the buffer
+    Alloc();
+
+    data = (short *)Hunk_AllocateTempMemory( sizeof( *data ) * m_hFData.channels * m_hFData.frames );
+    if ( !sf_read_short( sf, data, sizeof( *data ) * m_hFData.channels * m_hFData.frames ) ) {
+        N_Error( ERR_FATAL, "CSoundSource::LoadFile(%s): failed to read %lu bytes from audio stream, sf_strerror(): %s\n",
+            npath, sizeof( *data ) * m_hFData.channels * m_hFData.frames, sf_strerror( sf ) );
+    }
+    
+    sf_close( sf );
+    fclose( fp );
+
+    format = Format();
+    if ( format == 0 ) {
+        Con_Printf( COLOR_RED "Bad soundfile format for '%s', refusing to load\n", npath );
+        return false;
+    }
+
+    // generate a brand new source for each individual sfx
+    if ( tag == TAG_SFX && m_iSource == 0 ) {
+        ALCall( alGenSources( 1, &m_iSource ) );
+    }
+    ALCall( alBufferData( m_iBuffer, format, data, sizeof( *data ) * m_hFData.channels * m_hFData.frames, m_hFData.samplerate ) );
+
+    if ( tag == TAG_SFX ) {
+        ALCall( alSourcef( m_iSource, AL_GAIN, snd_sfxvol->f ) );
+        ALCall( alSourcei( m_iSource, AL_BUFFER, m_iBuffer ) );
+    } else if ( tag == TAG_MUSIC ) {
+        ALCall( alSourcef( m_iSource, AL_GAIN, snd_musicvol->f ) );
+        ALCall( alSourcei( m_iSource, AL_BUFFER, 0 ) );
+    }
+
+    Hunk_FreeTempMemory( data );
+    FS_FreeFile( buffer );
 
     return true;
 }
@@ -505,8 +509,9 @@ void CSoundManager::Shutdown( void )
         m_pSources[i]->Shutdown();
     }
 
-    memset( m_pSources, 0, sizeof( m_pSources ) );
+    m_nSources = 0;
     m_bRegistered = false;
+    memset( m_pSources, 0, sizeof( m_pSources ) );
 
     ALCall( alDeleteSources( 1, &m_iMusicSource ) );
 
@@ -542,15 +547,6 @@ void CSoundManager::Restart( void )
     
     // re-init
     Init();
-
-    // reload all sources
-    for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
-        if ( !m_pSources[i] ) {
-            continue;
-        }
-        m_pSources[i]->Init();
-        m_pSources[i]->LoadFile( m_pSources[i]->GetName(), m_pSources[i]->GetTag() );
-    }
 }
 
 //
@@ -711,8 +707,8 @@ void Snd_SetLoopingTrack( sfxHandle_t handle ) {
 
     Con_DPrintf( "Setting music track to %i...\n", handle );
 
-    ALCall( alSourcei( sndManager->GetMusicSource(), AL_BUFFER, 0 ) );
-    ALCall( alSourcei( sndManager->GetMusicSource(), AL_BUFFER, track->GetBuffer() ) );
+    alSourcei( sndManager->GetMusicSource(), AL_BUFFER, 0 );
+    alSourcei( sndManager->GetMusicSource(), AL_BUFFER, track->GetBuffer() );
     sndManager->m_pCurrentTrack = track;
     sndManager->m_pCurrentTrack->Play( true );
 }
@@ -725,9 +721,9 @@ void Snd_ClearLoopingTrack( void ) {
     Con_DPrintf( "Clearing current track...\n" );
 
     // stop the track and pop it
-    ALCall( alSourcei( sndManager->GetMusicSource(), AL_LOOPING, AL_FALSE ) );
-    ALCall( alSourceStop( sndManager->GetMusicSource() ) );
-    ALCall( alSourcei( sndManager->GetMusicSource(), AL_BUFFER, 0 ) );
+    alSourcei( sndManager->GetMusicSource(), AL_LOOPING, AL_FALSE );
+    alSourceStop( sndManager->GetMusicSource() );
+    alSourcei( sndManager->GetMusicSource(), AL_BUFFER, 0 );
 
     sndManager->m_pCurrentTrack = NULL;
 }
@@ -835,7 +831,7 @@ void Snd_Update( int32_t msec )
         snd_sfxvol->modified = qfalse;
     }
     if ( snd_musicvol->modified ) {
-        ALCall( alSourcef( sndManager->GetMusicSource(), AL_GAIN, CLAMP( snd_musicvol->f, 0.0f, snd_mastervol->f ) / CLAMP_VOLUME ) );
+        alSourcef( sndManager->GetMusicSource(), AL_GAIN, CLAMP( snd_musicvol->f, 0.0f, snd_mastervol->f ) / CLAMP_VOLUME );
         snd_musicvol->modified = qfalse;
     }
     if ( sndManager->m_pCurrentTrack && !sndManager->m_pCurrentTrack->IsPlaying() || sndManager->m_pQueuedTrack ) {
@@ -901,87 +897,4 @@ void Snd_Init( void )
     Cmd_AddCommand( "snd.toggle", Snd_Toggle_f );
     Cmd_AddCommand( "snd.updatevolume", Snd_UpdateVolume_f );
     Cmd_AddCommand( "snd.list_files", Snd_ListFiles_f );
-}
-
-CSoundThread::CSoundThread( const char *pszFileName, memtag_t nTag, ALuint *pSource, ALuint nBuffer ) {
-    memset( this, 0, sizeof( *this ) );
-
-    m_nFileLength = FS_LoadFile( pszFileName, &m_pFileBuffer );
-    if ( !m_nFileLength || !m_pFileBuffer ) {
-        Con_Printf( COLOR_RED "CSoundSource::LoadFile: failed to load file '%s'.\n", pszFileName );
-        return;
-    }
-
-    N_strncpyz( m_szName, pszFileName, sizeof( m_szName ) );
-    m_pSource = pSource;
-    m_nBuffer = nBuffer;
-    m_nTag = nTag;
-}
-
-CSoundThread::~CSoundThread() {
-    if ( m_nFileLength && m_pFileBuffer ) {
-        FS_FreeFile( m_pFileBuffer );
-    }
-}
-
-int CSoundThread::Run( void ) {
-    PROFILE_FUNCTION();
-
-    SNDFILE *sf;
-    SF_VIRTUAL_IO vio;
-    ALenum format;
-    FILE *fp;
-
-    if ( !Loaded() ) {
-        return -1;
-    }
-    
-    CThreadAutoLock<CThreadMutex> lock( m_hLock );
-
-    fp = tmpfile();
-    AssertMsg( fp, "Failed to open temprorary file!" );
-
-    fwrite( m_pFileBuffer, m_nFileLength, 1, fp );
-    fseek( fp, 0L, SEEK_SET );
-    
-    sf = sf_open_fd( fileno( fp ), SFM_READ, &m_hFData, SF_FALSE );
-    if ( !sf ) {
-        Con_Printf( COLOR_YELLOW "WARNING: libsndfile sf_open_fd failed on '%s', sf_strerror(): %s\n",
-            m_szName, sf_strerror( sf ) );
-        return false;
-    }
-
-    m_pData = (short *)Hunk_AllocateTempMemory( sizeof( *m_pData ) * m_hFData.channels * m_hFData.frames );
-    if ( !sf_read_short( sf, m_pData, sizeof( *m_pData ) * m_hFData.channels * m_hFData.frames ) ) {
-        N_Error( ERR_FATAL, "CSoundSource::LoadFile(%s): failed to read %lu bytes from audio stream, sf_strerror(): %s\n",
-            m_szName, sizeof( *m_pData ) * m_hFData.channels * m_hFData.frames, sf_strerror( sf ) );
-    }
-    
-    sf_close( sf );
-    fclose( fp );
-
-    format = Format();
-    if ( format == 0 ) {
-        Con_Printf( COLOR_RED "Bad soundfile format for '%s', refusing to load\n", m_szName );
-        return false;
-    }
-
-    // generate a brand new source for each individual sfx
-    if ( m_nTag == TAG_SFX && *m_pSource == 0 ) {
-        ALCall( alGenSources( 1, m_pSource ) );
-    }
-    ALCall( alBufferData( m_nBuffer, format, m_pData, sizeof( *m_pData ) * m_hFData.channels * m_hFData.frames, m_hFData.samplerate ) );
-
-    if ( m_nTag == TAG_SFX ) {
-        ALCall( alSourcef( *m_pSource, AL_GAIN, snd_sfxvol->f ) );
-        ALCall( alSourcei( *m_pSource, AL_BUFFER, m_nBuffer ) );
-    } else if ( m_nTag == TAG_MUSIC ) {
-        ALCall( alSourcef( *m_pSource, AL_GAIN, snd_musicvol->f ) );
-        ALCall( alSourcei( *m_pSource, AL_BUFFER, 0 ) );
-    }
-
-    Hunk_FreeTempMemory( m_pData );
-}
-
-void CSoundThread::OnExit( void ) {
 }

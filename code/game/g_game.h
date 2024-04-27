@@ -14,7 +14,6 @@
 #include "../system/sys_timer.h"
 #include <SDL2/SDL.h>
 #include "../ui/ui_public.hpp"
-#include <EASTL/stack.h>
 #endif
 
 typedef enum
@@ -138,11 +137,11 @@ typedef struct {
     qboolean togglePhotomode;
     
     uint64_t lastVidRestart;
-
-//    int32_t mouseDx[2], mouseDy[2];	// added to by mouse events
-//	int32_t mouseIndex;
-//    vec3_t viewangles;
     
+    int mouseDx[2], mouseDy[2]; // added to by mouse events
+    int mouseIndex;
+    int joystickAxis[MAX_JOYSTICK_AXIS];
+
     gameState_t oldState;
     gameState_t state;
 
@@ -165,10 +164,6 @@ typedef struct {
     
     float cameraZoom;
     vec3_t cameraPos;
-
-#ifdef __cplusplus
-    eastl::stack<CThread *> m_LoadStack;
-#endif
 } gameInfo_t;
 
 extern field_t g_consoleField;
@@ -186,6 +181,9 @@ extern uint32_t bigchar_height;
 extern uint32_t smallchar_width;
 extern uint32_t smallchar_height;
 
+extern qboolean gw_minimized;
+extern qboolean gw_active;
+
 // non api specific renderer cvars
 extern cvar_t *vid_xpos;
 extern cvar_t *vid_ypos;
@@ -199,6 +197,8 @@ extern cvar_t *r_aspectRatio;
 extern cvar_t *r_driver;
 extern cvar_t *r_noborder;
 extern cvar_t *r_drawFPS;
+extern cvar_t *r_allowLegacy;
+extern cvar_t *r_glDebug;
 extern cvar_t *r_swapInterval;
 extern cvar_t *r_mode;
 extern cvar_t *r_customPixelAspect;
@@ -247,23 +247,21 @@ extern const vidmode_t r_vidModes[NUMVIDMODES];
 //
 // g_game.cpp
 //
-void G_Init(void);
+qboolean G_GetModeInfo( int *width, int *height, float *windowAspect, int mode, const char *modeFS, int dw, int dh, qboolean fullscreen );
+void G_Init( void );
 void G_StartHunkUsers(void);
 void G_Shutdown(qboolean quit);
 void G_ClearMem(void);
 void G_Restart(void);
 void G_ShutdownRenderer(refShutdownCode_t code);
 qboolean G_GameCommand(void);
-qboolean G_WindowMinimized( void );
-void G_ClearState(void);
-void G_FlushMemory(void);
-void G_StartHunkUsers(void);
-void G_ShutdownAll(void);
+void G_ClearState( void );
+void G_FlushMemory( void );
+void G_StartHunkUsers( void );
+void G_ShutdownAll( void );
 void G_ShutdownVMs( qboolean quit );
-void G_Frame( int32_t msec, int32_t realMsec );
+void G_Frame( int msec, int realMsec );
 void G_InitDisplay( gpuConfig_t *config );
-SDL_Window *G_GetSDLWindow(void);
-SDL_GLContext G_GetGLContext( void );
 void GLimp_Minimize( void );
 qboolean G_CheckPaused( void );
 qboolean G_CheckWallHit( const vec3_t origin, dirtype_t dir );
@@ -316,8 +314,8 @@ void G_ConsolePrint( const char *txt );
 void Con_CheckResize( void );
 void Con_ClearNotify( void );
 void Con_ToggleConsole_f( void );
-uint32_t Con_ExternalWindowID( void );
-void Con_ExternalWindowEvent( uint32_t value );
+
+void HandleEvents( void );
 
 // platform-specific
 void GLimp_InitGamma( gpuConfig_t *config );
@@ -333,19 +331,25 @@ void GLimp_LogComment( const char *msg );
 void *GL_GetProcAddress( const char *name );
 #endif
 
-//
-// g_input.cpp
-//
-void G_MouseEvent( int32_t dx, int32_t dy /*, int time*/ );
-void G_InitInput( void );
-void G_ShutdownInput( void );
+// Vulkan
+#ifdef USE_VULKAN_API
+#undef USE_VULKAN_API
+#endif
+#ifdef USE_VULKAN_API
+void VKimp_Init( gpuConfig_t *config );
+void VKimp_Shutdown( qboolean unloadDLL );
+void *VK_GetInstanceProcAddr( VkInstance instance, const char *name );
+qboolean VK_CreateSurface( VkInstance instance, VkSurfaceKHR *pSurface );
+#endif
 
 extern qboolean key_overstrikeMode;
 
 //
 // g_event.cpp
 //
-void G_KeyEvent(uint32_t keynum, qboolean down, uint32_t time);
+void G_MouseEvent( int dx, int dy );
+void G_KeyEvent( uint32_t keynum, qboolean down, uint32_t time );
+void G_JoystickEvent( int axis, int value, int time );
 void Field_Draw( field_t *edit, uint32_t x, uint32_t y, uint32_t width, qboolean showCursor, qboolean noColorEscape );
 void Field_BigDraw( field_t *edit, uint32_t x, uint32_t y, uint32_t width, qboolean showCursor, qboolean noColorEscape );
 qboolean Key_AnyDown(void);

@@ -21,6 +21,10 @@ static uint32_t com_pushedEventsHead;
 static uint32_t com_pushedEventsTail;
 static sysEvent_t com_pushedEvents[MAX_PUSHED_EVENTS];
 
+// renderer window states
+qboolean gw_minimized = qfalse;
+qboolean gw_active = qtrue;
+
 uint32_t com_fps;
 int CPU_flags;
 cvar_t *com_demo;
@@ -448,6 +452,7 @@ static keynum_t Com_TranslateSDL2ToQ3Key( SDL_Keysym *keysym, qboolean down )
 	return key;
 }
 
+/*
 static void Com_PumpKeyEvents(void)
 {
 	SDL_Event event;
@@ -471,13 +476,13 @@ static void Com_PumpKeyEvents(void)
 			break;
 		case SDL_WINDOWEVENT:
 			switch (event.window.event) {
-			case SDL_WINDOWEVENT_MOVED:
+			case SDL_WINDOWEVENT_MOVED: {
 				if (!((SDL_GetWindowFlags(G_GetSDLWindow()) & SDL_WINDOW_FULLSCREEN) && (SDL_GetWindowFlags(G_GetSDLWindow()) & SDL_WINDOW_FULLSCREEN_DESKTOP))
 				&& G_GetSDLWindow() && !(SDL_GetWindowFlags(G_GetSDLWindow()) & SDL_WINDOW_MINIMIZED)) {
 //					Cvar_SetIntegerValue( "vid_xpos", event.window.data1 );
 //					Cvar_SetIntegerValue( "vid_ypos", event.window.data2 );
 				}
-				break;
+				break; }
 			case SDL_WINDOWEVENT_MINIMIZED:
 			case SDL_WINDOWEVENT_FOCUS_LOST: {
 				if ( gi.state == GS_LEVEL && gi.mapLoaded && !Cvar_VariableInteger( "g_paused" ) ) {
@@ -521,6 +526,7 @@ static void Com_PumpKeyEvents(void)
 		};
 	}
 }
+*/
 
 static sysEvent_t Com_GetSystemEvent(void)
 {
@@ -532,7 +538,7 @@ static sysEvent_t Com_GetSystemEvent(void)
 	if (eventHead - eventTail > 0)
 		return eventQueue[(eventTail++) & MASK_QUEUED_EVENTS];
 	
-	Com_PumpKeyEvents();
+	Sys_SendKeyEvents();
 
 	evTime = Sys_Milliseconds();
 
@@ -559,15 +565,15 @@ static sysEvent_t Com_GetSystemEvent(void)
 	return ev;
 }
 
-static sysEvent_t Com_GetRealEvent(void)
+static sysEvent_t Com_GetRealEvent( void )
 {
 	// get or save an event from/to the journal file
-	if (com_journalFile != FS_INVALID_HANDLE) {
+	if ( com_journalFile != FS_INVALID_HANDLE ) {
 		uint64_t r;
 		sysEvent_t ev;
 
 		if (com_journal->i == JOURNAL_PLAYBACK) {
-			Com_PumpKeyEvents();
+			Sys_SendKeyEvents();
 			r = FS_Read(&ev, ev.evPtrLength, com_journalFile);
 			if (r != sizeof(ev)) {
 				N_Error(ERR_FATAL, "Error reading from journal file");
@@ -660,7 +666,7 @@ uint64_t Com_EventLoop(void)
 		ev = Com_GetEvent();
 
 		// no more events are available
-		if (ev.evType == SE_NONE) {
+		if ( ev.evType == SE_NONE ) {
 			return ev.evTime;
 		}
 
@@ -669,7 +675,12 @@ uint64_t Com_EventLoop(void)
 			G_KeyEvent( ev.evValue, (qboolean)ev.evValue2, ev.evTime );
 			break;
 		case SE_MOUSE:
-			G_MouseEvent(ev.evValue, ev.evValue2);
+			G_MouseEvent( ev.evValue, ev.evValue2 );
+			break;
+		case SE_JOYSTICK_AXIS:
+			G_JoystickEvent( ev.evValue, ev.evValue2, ev.evTime );
+			break;
+		case SE_CHAR:
 			break;
 		case SE_CONSOLE:
 			Cbuf_AddText((char *)ev.evPtr);

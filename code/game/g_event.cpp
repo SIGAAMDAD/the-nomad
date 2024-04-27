@@ -177,6 +177,27 @@ static const keyname_t keynames[] = {
 static ImGuiKey EngineKeyToImGuiKey(uint32_t key);
 static void Field_CharEvent( field_t *edit, uint32_t ch );
 
+void G_MouseEvent( int dx, int dy /*, int time */ )
+{
+	if ( Key_GetCatcher() & KEYCATCH_SGAME ) {
+		g_pModuleLib->ModuleCall( sgvm, 2, ModuleOnMouseEvent, 2, dx, dy );
+	} else {
+		gi.mouseDx[gi.mouseIndex] += dx;
+		gi.mouseDy[gi.mouseIndex] += dy;
+	}
+}
+
+/*
+* G_JoystickEvent: joystick values stay set until changed
+*/
+void G_JoystickEvent( int axis, int value, int time ) {
+	if ( axis < 0 || axis >= MAX_JOYSTICK_AXIS ) {
+		N_Error( ERR_DROP, "G_JoystickEvent: bad axis %i", axis );
+	} else {
+		gi.joystickAxis[axis] = value;
+	}
+}
+
 nkey_t keys[NUMKEYS];
 
 qboolean Key_AnyDown(void)

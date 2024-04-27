@@ -23,12 +23,6 @@ typedef struct {
     menutext_t settings;
     menutext_t credits;
     menutext_t exitGame;
-    
-    menuarrow_t spArrow;
-    menuarrow_t modsArrow;
-    menuarrow_t settingsArrow;
-    menuarrow_t creditsArrow;
-    menuarrow_t exitArrow;
 
     ImFont *font;
 
@@ -44,7 +38,6 @@ typedef struct {
     int32_t menuWidth;
     int32_t menuHeight;
 
-    qboolean toggleKey;
     qboolean noMenu; // do we just want the scenery?
 } mainmenu_t;
 
@@ -85,15 +78,7 @@ static void MainMenu_EventCallback( void *item, int event )
 }
 
 static void MainMenu_ToggleMenu( void ) {
-    if ( Key_IsDown( KEY_F2 ) ) {
-        if ( s_main->noMenu ) {
-            s_main->toggleKey = qfalse;
-            s_main->noMenu = !s_main->noMenu;
-        }
-    }
-    else {
-        s_main->toggleKey = qtrue;
-    }
+    s_main->noMenu = !s_main->noMenu;
 }
 
 void MainMenu_Draw( void )
@@ -102,7 +87,6 @@ void MainMenu_Draw( void )
     const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse |
                             ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoBackground;
 
-    MainMenu_ToggleMenu();
     ui->menubackShader = s_main->background;
 
     if ( s_main->font ) {
@@ -215,6 +199,7 @@ void MainMenu_Cache( void )
     s_main->exitGame.text = s_main->exitString->value;
     s_main->exitGame.color = color_white;
 
+    /*
     s_main->spArrow.generic.name = "##CampaignMainMenuArrowRight";
     s_main->spArrow.generic.type = MTYPE_ARROW;
     s_main->spArrow.generic.id = ID_SINGEPLAYER;
@@ -244,39 +229,26 @@ void MainMenu_Cache( void )
     s_main->exitArrow.generic.id = ID_EXIT;
     s_main->exitArrow.generic.eventcallback = MainMenu_EventCallback;
     s_main->exitArrow.direction = ImGuiDir_Right;
+    */
 
     s_main->menu.track = Snd_RegisterTrack( "music/title.ogg" );
     s_main->background = re.RegisterShader( "menu/mainbackground" );
 
     s_main->noMenu = qfalse;
-    s_main->toggleKey = qtrue;
     ui->menubackShader = s_main->background;
 
-    Menu_AddItem( &s_main->menu, &s_main->table );
-
-    Table_AddRow( &s_main->table );
-    Table_AddItem( &s_main->table, &s_main->singleplayer );
-    Table_AddItem( &s_main->table, &s_main->spArrow );
-
-    Table_AddRow( &s_main->table );
-    Table_AddItem( &s_main->table, &s_main->mods );
-    Table_AddItem( &s_main->table, &s_main->modsArrow );
-
-    Table_AddRow( &s_main->table );
-    Table_AddItem( &s_main->table, &s_main->settings );
-    Table_AddItem( &s_main->table, &s_main->settingsArrow );
-
-    Table_AddRow( &s_main->table );
-    Table_AddItem( &s_main->table, &s_main->credits );
-    Table_AddItem( &s_main->table, &s_main->creditsArrow );
-
-    Table_AddRow( &s_main->table );
-    Table_AddItem( &s_main->table, &s_main->exitGame );
-    Table_AddItem( &s_main->table, &s_main->exitArrow );
+//    Menu_AddItem( &s_main->menu, &s_main->table );
+    Menu_AddItem( &s_main->menu, &s_main->singleplayer );
+    Menu_AddItem( &s_main->menu, &s_main->mods );
+    Menu_AddItem( &s_main->menu, &s_main->settings );
+    Menu_AddItem( &s_main->menu, &s_main->credits );
+    Menu_AddItem( &s_main->menu, &s_main->exitGame );
 
     Key_SetCatcher( KEYCATCH_UI );
     ui->menusp = 0;
     UI_PushMenu( &s_main->menu );
+
+    Cmd_AddCommand( "ui_togglebackgroundonly", MainMenu_ToggleMenu );
 }
 
 void UI_MainMenu( void ) {

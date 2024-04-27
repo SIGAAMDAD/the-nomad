@@ -150,6 +150,7 @@ void G_SetMap_f( void ) {
 		Cbuf_ExecuteText( EXEC_NOW, "unloadworld" );
 
 		gi.mapLoaded = qfalse;
+		gi.state = GS_INACTIVE;
 		gi.mapCache.currentMapLoaded = FS_INVALID_HANDLE;
 
 		// clear all allocated map data memory

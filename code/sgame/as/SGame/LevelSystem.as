@@ -167,7 +167,7 @@ namespace TheNomad::SGame {
 		}
 		void OnRunTic() {
 			if ( GlobalState == GameState::EndOfLevel ) {
-				m_RankData.Draw( true, m_LevelTimer );
+//				m_RankData.Draw( true, m_LevelTimer );
 				return;
 			}
 			
@@ -175,20 +175,20 @@ namespace TheNomad::SGame {
 			// checkpoint updates
 			//
 			if ( EntityManager.NumEntities() == 1 && m_MapData.GetCheckpoints().Count() != 0 ) {
-				if ( m_CurrentCheckpoint >= m_MapData.GetCheckpoints().Count() ) {
+				if ( m_CurrentCheckpoint == m_MapData.GetCheckpoints().Count() - 1 ) {
 					m_LevelTimer.Stop(); // kill the timer
 					GlobalState = GameState::EndOfLevel;
 					return;
 				}
-				DebugPrint( "Setting checkpoint " + m_CurrentCheckpoint + " to completed.\n" );
-				m_MapData.GetCheckpoints()[ m_CurrentCheckpoint ].m_bPassed = true;
-				m_CurrentCheckpoint++;
-				m_bNewCheckpoint = true;
+
 			}
 			// check if we are passing it
 			if ( PlayerPassedCheckpoint() ) {
 				m_PassedCheckpointSfx.Play();
-				m_bNewCheckpoint = false;
+				m_MapData.GetCheckpoints()[ m_CurrentCheckpoint ].m_bPassed = true;
+
+				DebugPrint( "Setting checkpoint " + m_CurrentCheckpoint + " to completed.\n" );
+				m_CurrentCheckpoint++;
 				
 				MapCheckpoint@ cp = @m_MapData.GetCheckpoints()[ m_CurrentCheckpoint ];
 				for ( uint i = 0; i < cp.m_Spawns.Count(); i++ ) {

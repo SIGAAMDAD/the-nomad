@@ -178,6 +178,25 @@ typedef void (*cmdfunc_t)(void);
 #define MAX_CMD_LINE		1024
 #define MAX_CMD_BUFFER  	65536
 
+
+/*
+==============================================================
+
+NON-PORTABLE SYSTEM SERVICES
+
+==============================================================
+*/
+
+typedef enum {
+	AXIS_SIDE,
+	AXIS_FORWARD,
+	AXIS_UP,
+	AXIS_ROLL,
+	AXIS_YAW,
+	AXIS_PITCH,
+	MAX_JOYSTICK_AXIS
+} joystickAxis_t;
+
 typedef enum {
   // bk001129 - make sure SE_NONE is zero
 	SE_NONE = 0,		// evTime is still valid
@@ -438,6 +457,9 @@ void FS_FreeFileList(char **list);
 char **FS_ListFiles(const char *path, const char *extension, uint64_t *numfiles);
 char *FS_ReadLine(char *buf, uint64_t size, fileHandle_t f);
 
+// customizable window title
+extern char cl_title[ MAX_CVAR_VALUE ];
+
 extern int CPU_flags;
 
 // x86 flags
@@ -514,7 +536,7 @@ qboolean Hunk_TempIsClear( void );
 uint64_t Com_TouchMemory( void );
 
 /*
-* System calls, engine only stuff
+* OS specific operations
 */
 
 typedef struct {
@@ -550,6 +572,7 @@ void Sys_Print(const char *msg);
 void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error( const char *fmt, ... );
 char *Sys_GetClipboardData( void );
 
+void Sys_SendKeyEvents( void );
 const char *Sys_pwd( void );
 void *Sys_LoadDLL( const char *name );
 void Sys_CloseDLL( void *handle );

@@ -1031,9 +1031,7 @@ static void ControlsMenu_SetDefault( void )
 	s_settingsMenu->controls.mouseAcceleration = Cvar_VariableInteger( "g_mouseAcceleration" );
 	s_settingsMenu->controls.mouseSensitivity = Cvar_VariableFloat( "g_mouseSensitivity" );
 
-	if ( ui->uiAllocated ) {
-		memcpy( s_settingsMenu->controls.keybinds, s_defaultKeybinds, sizeof( s_defaultKeybinds ) );
-	}
+	memcpy( s_settingsMenu->controls.keybinds, s_defaultKeybinds, sizeof( s_defaultKeybinds ) );
 }
 
 static void SettingsMenu_Draw( void )
