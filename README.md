@@ -4,18 +4,24 @@
 ## Current Build
 The currently release version of the game is a Demo Alpha Test, so expect lots of bugs. If you do find a bug, please do me a favor and report it, after all, I can only fix bugs that I know about.
 
+## WIP Features
+Here's a complete list of things I plan to put into the game:
+- Desert Sea Shanties
+- Desert Brigs
+- mercenaries
+
 ## Requirements
 ### Minimum
 Note that this engine is NOT multithreaded, it will be in the future however when I do a full-scale rewrite
 
 __CPU__ | __GPU__ | __RAM__ | __OS__
 --------|---------|---------|-------
-Intel i5, 2 or more cores | IGPU is fine | 8 Gb | Windows 10 or Ubuntu
+Intel i5, 2 or more cores | IGPU is fine | 4 Gb | Windows 10 or Ubuntu
 
 ### Recommended
 __CPU__ | __GPU__ | __RAM__ | __OS__
 --------|---------|---------|-------
-Intel i5, 4 or more cores | NVidia GTX 1050 Ti or better | 16 Gb | Windows 10 or Ubuntu
+Intel i7, 4 or more cores | NVidia GTX 1050 Ti or better | 16 Gb | Windows 10 or Ubuntu
 
 ## The Technical Details
 Unless you're into programming, this won't really be interesting...
