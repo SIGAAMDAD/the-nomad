@@ -10,6 +10,7 @@
 
 typedef struct {
     menuframework_t menu;
+    const CModuleCrashData *crashData;
     char message[MAXPRINTMSG];
 } errorMessage_t;
 
@@ -81,6 +82,22 @@ static void MainMenu_ToggleMenu( void ) {
     s_main->noMenu = !s_main->noMenu;
 }
 
+/*
+* MainMenu_DrawCrashWindow: since module crashes almost always aren't fatal,
+* we can display exactly what happened without any engine failures (for the most part)
+*/
+static void MainMenu_DrawCrashWindow( void )
+{
+    const int windowFlags = ImGuiWindowFlags_NoCollapse;
+    const int treeNodeFlags = ImGuiTreeNodeFlags_CollapsingHeader | ImGuiTreeNodeFlags_Framed;
+
+    ImGui::BeginPopupModal( "Crash Report", NULL, windowFlags );
+    if ( ImGui::TreeNodeEx( (void *)(uintptr_t)"Stacktrace", treeNodeFlags, "Stacktrace" ) ) {
+
+    }
+    ImGui::EndPopup();
+}
+
 void MainMenu_Draw( void )
 {
     uint64_t i;
@@ -101,6 +118,7 @@ void MainMenu_Draw( void )
     if ( s_errorMenu->message[0] ) {
         Sys_MessageBox( "Game Error", s_errorMenu->message, false );
         Cvar_Set( "com_errorMessage", "" );
+        UI_PopMenu();
         UI_MainMenu();
         Snd_PlaySfx( ui->sfx_null );
     } else {
@@ -117,20 +135,14 @@ void MainMenu_Cache( void )
     memset( s_main, 0, sizeof( *s_main ) );
     memset( s_errorMenu, 0, sizeof( *s_errorMenu ) );
 
-    // only use of rand() is determining DIF_HARDEST title
-    srand( time( NULL ) );
-
-    // setup base values
-    Cvar_Get( "g_mouseAcceleration", "0", CVAR_LATCH | CVAR_SAVE );
-    Cvar_Get( "g_mouseInvert", "0", CVAR_LATCH | CVAR_SAVE );
-
     // check for errors
-    Cvar_VariableStringBuffer( "com_errorMessage", s_errorMenu->message, sizeof(s_errorMenu->message) );
+    Cvar_VariableStringBuffer( "com_errorMessage", s_errorMenu->message, sizeof( s_errorMenu->message ) );
     if ( s_errorMenu->message[0] ) {
         Key_SetCatcher( KEYCATCH_UI );
 
         s_errorMenu->menu.draw = MainMenu_Draw;
         s_errorMenu->menu.fullscreen = qtrue;
+        s_errorMenu->crashData = eastl::addressof( g_pModuleLib->GetCrashData() );
 
         UI_ForceMenuOff();
         UI_PushMenu( &s_errorMenu->menu );
@@ -247,8 +259,6 @@ void MainMenu_Cache( void )
     Key_SetCatcher( KEYCATCH_UI );
     ui->menusp = 0;
     UI_PushMenu( &s_main->menu );
-
-    Cmd_AddCommand( "ui_togglebackgroundonly", MainMenu_ToggleMenu );
 }
 
 void UI_MainMenu( void ) {

@@ -175,7 +175,7 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Con_DPrintf(const char *fmt,
 	Con_Printf( COLOR_CYAN "%s", msg );
 }
 
-void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error(errorCode_t code, const char *err, ...)
+void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error( errorCode_t code, const char *err, ... )
 {
 	va_list argptr;
 	static uint64_t lastErrorTime;
@@ -183,15 +183,15 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error(errorCo
 	uint64_t currentTime;
 	static qboolean calledSystemError = qfalse;
 
-	if (com_errorEntered) {
-		if (!calledSystemError) {
+	if ( com_errorEntered ) {
+		if ( !calledSystemError ) {
 			calledSystemError = qtrue;
-			Sys_Error("recursive error after: %s", com_errorMessage);
+			Sys_Error( "recursive error after: %s", com_errorMessage );
 		}
 	}
 	com_errorEntered = qtrue;
 
-	Cvar_Set( "com_errorCode", va( "%i" , code) );
+	Cvar_Set( "com_errorCode", va( "%i" , code ) );
 
 	// if we are getting a solid stream of ERR_DROP, do an ERR_FATAL
 	currentTime = Sys_Milliseconds();
@@ -204,15 +204,15 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error(errorCo
 	}
 	lastErrorTime = currentTime;
 
-	va_start(argptr, err);
-    N_vsnprintf(com_errorMessage, sizeof(com_errorMessage), err, argptr);
-    va_end(argptr);
+	va_start( argptr, err );
+    N_vsnprintf( com_errorMessage, sizeof( com_errorMessage ), err, argptr );
+    va_end( argptr );
 
 	Cvar_Set( "com_errorMessage", com_errorMessage );
 
 	Cbuf_Init();
 
-	if (code == ERR_DROP) {
+	if ( code == ERR_DROP ) {
 		Con_Printf( "********************\nERROR: %s\n********************\n",
 			com_errorMessage );
 //		VM_Forced_Unload_Start();
@@ -226,7 +226,7 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error(errorCo
 	} else { // ERR_FATAL
 //		VM_Forced_Unload_Start();
 		G_ShutdownVMs( qtrue );
-		G_ShutdownRenderer(REF_UNLOAD_DLL);
+		G_ShutdownRenderer( REF_UNLOAD_DLL );
 		Com_EndRedirect();
 //		VM_Forced_Unload_Done();
 	}
@@ -234,7 +234,7 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error(errorCo
 	Com_Shutdown();
 
 	calledSystemError = qtrue;
-	Sys_Error("%s", com_errorMessage);
+	Sys_Error( "%s", com_errorMessage );
 }
 
 
@@ -813,8 +813,6 @@ void Com_RestartGame( void )
 
 		G_ShutdownAll();
 		G_ClearMem();
-
-		Com_Shutdown();
 
 		// reset console command history
 		Con_ResetHistory();
@@ -1926,7 +1924,7 @@ void Com_Frame( qboolean noDelay )
 	Com_EventLoop();
 	Cbuf_Execute();
 
-	G_Frame( msec, 0 );
+	G_Frame( msec, com_frameTime );
 
 	// run framerate diagnostics
 

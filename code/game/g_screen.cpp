@@ -385,10 +385,16 @@ void SCR_UpdateScreen( void )
 	// we let the ui handle the sgame call
 	if ( gi.mapLoaded && gi.state == GS_LEVEL && !( Key_GetCatcher() & KEYCATCH_CONSOLE ) ) {
 		switch ( g_pModuleLib->ModuleCall( sgvm, ModuleOnRunTic, 1, gi.frametime ) ) {
+		case 0:
+		default:
+			break;
 		case 1:
 			g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelEnd, 0 );
 			g_pModuleLib->RunModules( ModuleOnLevelEnd, 0 );
-
+			break;
+		case 2:
+			break; // its showing the stats window
+		case 3:
 			UI_ShowDemoMenu();
 
 			Key_SetCatcher( KEYCATCH_UI );
@@ -397,9 +403,6 @@ void SCR_UpdateScreen( void )
 			// we're only doing this for the demo
 			Cbuf_ExecuteText( EXEC_APPEND, "setmap\n" );
 			gi.state = GS_MENU;
-			break;
-		case 0:
-		default:
 			break;
 		};
 	}

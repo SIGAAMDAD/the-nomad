@@ -355,7 +355,7 @@ void CGameArchive::BeginSaveSection( const char *moduleName, const char *name )
 	FS_Write( m_pSection->name, m_pSection->nameLength, m_hFile );
 	FS_Write( &m_pSection->numFields, sizeof( m_pSection->numFields ), m_hFile );
 #ifdef SAVEFILE_MOD_SAFETY
-	path = FS_BuildOSPath( FS_GetHomePath(), NULL, va( "SaveData/%s/%s.prt", moduleName, name ) );
+	path = va( "SaveData/%s/%s.prt", moduleName, name );
 	m_pSection->hFile = FS_FOpenWrite( path );
 	if ( m_pSection->hFile == FS_INVALID_HANDLE ) {
 		N_Error( ERR_DROP, "CGameArchive::BeginSaveSection: failed to create file '%s' in write-only mode", path );
@@ -992,8 +992,7 @@ bool CGameArchive::Save( const char *filename )
 	}
 
 	for ( auto& it : loadList ) {
-//		path = FS_BuildOSPath( FS_GetHomePath(), NULL, va( "SaveData/%s", it->m_szName ) );
-		Con_DPrintf( "Adding module '%s' save sections from '%s'...\n", it->m_szName, path );
+		Con_DPrintf( "Adding module '%s' save sections...\n", it->m_szName );
 
 		g_pModuleLib->ModuleCall( it, ModuleOnSaveGame, 0 );
 /*
@@ -1063,10 +1062,6 @@ bool CGameArchive::LoadPartial( const char *filename, gamedata_t *gd )
     ngdheader_t header;
 	uint64_t i, size;
 	char *namePtr;
-
-    if ( FS_FileIsInBFF( filename ) ) {
-        N_Error(ERR_FATAL, "Savefile '%s' was in a bff, bffs are for game resources, not save data", filename);
-    }
 
     f = FS_FOpenRead( filename );
     if ( f == FS_INVALID_HANDLE ) {

@@ -305,6 +305,7 @@ SRC=\
 	$(O)/engine/n_math.o \
 	$(O)/engine/n_memory.o \
 	$(O)/engine/n_debug.o \
+	$(O)/engine/n_steam.o \
 	$(O)/engine/md4.o \
 	$(O)/engine/decompress.o \
 	\
@@ -331,6 +332,11 @@ SRC=\
 	\
 	$(O)/sdl/sdl_input.o \
 	$(O)/sdl/sdl_glimp.o \
+
+ifdef build_steam
+CFLAGS+=-DNOMAD_STEAM_APP
+LDLIBS+= -Wl,-rpath="." -lsteam_api
+endif
 
 MAKE=make
 

@@ -2,6 +2,7 @@
 #include "n_common.h"
 #include "../game/g_game.h"
 #include "n_threads.h"
+#include "../game/imgui_memory_editor.h"
 
 /*
 ===============================
@@ -1144,6 +1145,120 @@ static void Com_Meminfo_f( void )
 	Con_Printf( "        %8lu bytes in %lu free blocks\n", st.freeBytes, st.freeBlocks );
 	if ( st.freeBlocks > 1 ) {
 		Con_Printf( "        (largest: %lu bytes, smallest: %lu bytes)\n\n", st.freeLargest, st.freeSmallest );
+	}
+}
+
+void Com_DrawMemoryView_Hunk( void )
+{
+	MemoryEditor editor;
+
+	ImGui::Text( "hunk_temp: %s", hunk_temp == &hunk_low ? "hunk_low" : "hunk_high" );
+	ImGui::Text( "hunk_permanent: %s", hunk_permanent == &hunk_high ? "high_high" : "hunk_low" );
+
+	ImGui::SeparatorText( "Hunk Low" );
+	ImGui::Text( "used: %lu", hunk_low_used );
+	ImGui::Text( "mark: %lu", hunk_low.mark );
+	ImGui::Text( "permanent: %lu", hunk_low.permanent );
+	ImGui::Text( "temp: %lu", hunk_low.temp );
+	ImGui::Text( "tempHighwater: %lu", hunk_low.tempHighwater );
+
+	ImGui::SeparatorText( "Hunk High" );
+	ImGui::Text( "used: %lu", hunk_high_used );
+	ImGui::Text( "mark: %lu", hunk_high.mark );
+	ImGui::Text( "permanent: %lu", hunk_high.permanent );
+	ImGui::Text( "temp: %lu", hunk_high.temp );
+	ImGui::Text( "tempHighwater: %lu", hunk_high.tempHighwater );
+}
+
+void Com_DrawMemoryView_Zone( void )
+{
+	MemoryEditor editor;
+	zone_stats_t stats;
+	memblock_t *block;
+
+	#ifdef USE_MEMSTATIC
+		ImGui::TextUnformatted( "USE_MEMSTATIC: true" );
+	#else
+		ImGui::TextUnformatted( "USE_MEMSTATIC: false" );
+	#endif
+	#ifdef USE_TRASH_TEST
+		ImGui::TextUnformatted( "USE_TRASH_TEST: true" );
+	#else
+		ImGui::TextUnformatted( "USE_TRASH_TEST: false" );
+	#endif
+	#ifdef USE_MULTI_SEGMENT
+		ImGui::TextUnformatted( "USE_MULTI_SEGMENT: true" );
+	#else
+		ImGui::TextUnformatted( "USE_MULTI_SEGMENT: false" );
+	#endif
+
+	ImGui::SeparatorText( "Small Zone Memory" );
+	Zone_Stats( "smallzone", smallzone, qfalse, &stats );
+
+	if ( ImGui::CollapsingHeader( "Show Memory##SmallZoneShowMemory" ) ) {
+		editor.DrawWindow( "Small Zone##SmallZoneShowMemoryWindow", smallzone, 512 * 1024 + sizeof( memzone_t ),
+			(size_t)(void *)smallzone );
+	}
+
+	ImGui::Text( "size: %lu", smallzone->size );
+	ImGui::Text( "used: %lu", smallzone->used );
+
+	ImGui::Text( "freeBlocks: %lu", stats.freeBlocks );
+	ImGui::Text( "freeBytes: %lu", stats.freeBytes );
+	ImGui::Text( "freeLargest: %lu", stats.freeLargest );
+	ImGui::Text( "freeSmallest: %lu", stats.freeSmallest );
+	ImGui::Text( "zoneBlocks: %lu", stats.zoneBlocks );
+	ImGui::Text( "zoneBytes: %lu", stats.zoneBytes );
+	ImGui::Text( "zoneSegments: %lu", stats.zoneSegments );
+	
+	if ( ImGui::CollapsingHeader( "BlockList##SmallZoneMemory" ) ) {
+		for ( block = smallzone->blocklist.next; block != &smallzone->blocklist; block = block->next ) {
+			ImGui::Text( "[Block 0x%08lx]", (uintptr_t)(void *)block );
+			ImGui::Text( "size: %lu", block->size );
+			ImGui::Text( "tag: %s", tagName[ block->tag ] );
+			ImGui::Text( "next: 0x%08lx", (uintptr_t)(void *)block->next );
+			ImGui::Text( "prev: 0x%08lx", (uintptr_t)(void *)block->prev );
+			if ( ImGui::CollapsingHeader( va( "Show Memory##SmallZoneBlockList%p", (void *)block ) ) ) {
+				editor.DrawWindow( va( "Small Zone Block 0x%08lx##MainZoneBlockListWindow%p", (uintptr_t)(void *)block,
+					(void *)block ), block, block->size + sizeof( memblock_t ), (size_t)(void *)block );
+			}
+			ImGui::NewLine();
+		}
+	}
+	
+	ImGui::SeparatorText( "Main Zone Memory" );
+	Zone_Stats( "mainzone", mainzone, qfalse, &stats );
+
+	if ( ImGui::CollapsingHeader( "Show Memory##MainZoneShowMemory" ) ) {
+		editor.DrawWindow( "Main Zone##MainZoneShowMemoryWindow", mainzone,
+			( Cvar_VariableInteger( "com_zoneMegs" ) * 1024 * 1024 ) + sizeof( memzone_t ),
+			(size_t)(void *)mainzone );
+	}
+
+	ImGui::Text( "size: %lu", mainzone->size );
+	ImGui::Text( "used: %lu", mainzone->used );
+
+	ImGui::Text( "freeBlocks: %lu", stats.freeBlocks );
+	ImGui::Text( "freeBytes: %lu", stats.freeBytes );
+	ImGui::Text( "freeLargest: %lu", stats.freeLargest );
+	ImGui::Text( "freeSmallest: %lu", stats.freeSmallest );
+	ImGui::Text( "zoneBlocks: %lu", stats.zoneBlocks );
+	ImGui::Text( "zoneBytes: %lu", stats.zoneBytes );
+	ImGui::Text( "zoneSegments: %lu", stats.zoneSegments );
+
+	if ( ImGui::CollapsingHeader( "BlockList##MainZoneMemory" ) ) {
+		for ( block = mainzone->blocklist.next; block != &mainzone->blocklist; block = block->next ) {
+			ImGui::Text( "[Block 0x%08lx]", (uintptr_t)(void *)block );
+			ImGui::Text( "size: %lu", block->size );
+			ImGui::Text( "tag: %s", tagName[ block->tag ] );
+			ImGui::Text( "next: 0x%08lx", (uintptr_t)(void *)block->next );
+			ImGui::Text( "prev: 0x%08lx", (uintptr_t)(void *)block->prev );
+			if ( ImGui::CollapsingHeader( va( "Show Memory##MainZoneBlockList%p", (void *)block ) ) ) {
+				editor.DrawWindow( va( "Main Zone Block 0x%08lx##MainZoneBlockListWindow%p", (uintptr_t)(void *)block,
+					(void *)block ), block, block->size + sizeof( memblock_t ), (size_t)(void *)block );
+			}
+			ImGui::NewLine();
+		}
 	}
 }
 

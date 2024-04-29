@@ -119,6 +119,8 @@ typedef struct {
     int32_t currentMapLoaded;
 } mapCache_t;
 
+#define	MAX_CONFIGSTRINGS	1024
+
 typedef struct {
     char mapname[MAX_NPATH];
 

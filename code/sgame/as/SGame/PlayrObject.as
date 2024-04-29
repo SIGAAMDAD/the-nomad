@@ -358,6 +358,8 @@ namespace TheNomad::SGame {
 				if ( m_nHealMult < 0.0f ) {
 					m_nHealMult = 0.0f;
 				}
+
+				TheNomad::Engine::CmdExecuteCommand( "in_haptic_rumble 0.5 300\n" );
 			}
 
 			m_HudData.Draw();

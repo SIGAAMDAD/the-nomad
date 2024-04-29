@@ -340,6 +340,21 @@ inline bool operator==( CModuleInfo *const m1, const UtlString& m2 ) {
 class CContextMgr;
 class CScriptBuilder;
 
+class CModuleCrashData
+{
+public:
+    CModuleCrashData( const char *pType, CModuleHandle *pModule )
+        : m_pExceptionType( pType ), m_pMainModule( pModule )
+    { }
+    CModuleCrashData( void ) = default;
+    CModuleCrashData( const CModuleCrashData & ) = default;
+    ~CModuleCrashData() = default;
+
+    const char *m_pExceptionType;
+    CModuleHandle *m_pMainModule;
+    eastl::vector<CModuleHandle *> m_InvolvedModules;
+};
+
 class CModuleLib
 {
 public:
@@ -370,6 +385,12 @@ public:
     CModuleHandle *GetCurrentHandle( void ) {
         return m_pCurrentHandle;
     }
+    qboolean ShowCrashReport( void ) const {
+        return m_bCrashWindow;
+    }
+    const CModuleCrashData& GetCrashData( void ) const {
+        return m_CrashData;
+    }
 private:
 	void LoadModule( const char *pModuleName );
 
@@ -384,6 +405,9 @@ private:
 
     asCJITCompiler *m_pCompiler;
     CModuleHandle *m_pCurrentHandle;
+
+    CModuleCrashData m_CrashData;
+    qboolean m_bCrashWindow;
 };
 
 extern moduleImport_t moduleImport;

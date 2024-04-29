@@ -780,6 +780,7 @@ float Com_Clamp( float min, float max, float value );
 //
 // key / value info strings
 //
+void Info_Print( const char *s );
 const char *Info_ValueForKey( const char *s, const char *key );
 void Info_Tokenize( const char *s );
 const char *Info_ValueForKeyToken( const char *key );

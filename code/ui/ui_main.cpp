@@ -5,6 +5,8 @@
 #include "ui_window.h"
 #include "ui_string_manager.h"
 #include "../rendercommon/imgui_impl_opengl3.h"
+#include "../rendercommon/imgui_internal.h"
+#include "../game/imgui_memory_editor.h"
 
 uiGlobals_t *ui;
 CUIFontCache *g_pFontCache;
@@ -19,6 +21,7 @@ cvar_t *ui_printStrings;
 cvar_t *ui_active;
 cvar_t *ui_diagnostics;
 cvar_t *r_gpuDiagnostics;
+cvar_t *ui_debugOverlay;
 dif_t difficultyTable[NUMDIFS];
 
 static cvar_t *com_drawFPS;
@@ -231,20 +234,24 @@ const char *UI_LangToString( int32_t lang )
 
 static void UI_RegisterCvars( void )
 {
-    ui_language = Cvar_Get( "ui_language", "0", CVAR_LATCH | CVAR_SAVE );
-    Cvar_CheckRange( ui_language, va("%lu", LANGUAGE_ENGLISH), va("%lu", NUMLANGS), CVT_INT );
+    ui_language = Cvar_Get( "ui_language", "english", CVAR_LATCH | CVAR_SAVE );
     Cvar_SetDescription( ui_language,
-                        "Sets the game's language:\n"
-                        "  0 - English\n"
-                        "  1 - Spanish (Not Supported Yet)\n"
-                        "  2 - German (Not Supported Yet)\n"
+                        "Sets the game's language: american_english, british_english, spanish, german\n"
+						"Currently only english is supported, but I'm looking for some translators :)"
                     );
 
-    ui_cpuString = Cvar_Get("sys_cpuString", "detect", CVAR_PROTECTED | CVAR_ROM | CVAR_NORESTART);
+    ui_cpuString = Cvar_Get( "sys_cpuString", "detect", CVAR_PROTECTED | CVAR_ROM | CVAR_NORESTART );
 
-    ui_printStrings = Cvar_Get( "ui_printStrings", "1", CVAR_LATCH | CVAR_SAVE | CVAR_PRIVATE);
+    ui_printStrings = Cvar_Get( "ui_printStrings", "1", CVAR_LATCH | CVAR_SAVE | CVAR_PRIVATE );
     Cvar_CheckRange( ui_printStrings, "0", "1", CVT_INT );
     Cvar_SetDescription( ui_printStrings, "Print value strings set by the language ui file" );
+
+#ifdef _NOMAD_DEBUG
+	ui_debugOverlay = Cvar_Get( "ui_debugOverlay", "1", 0 );
+#else
+	ui_debugOverlay = Cvar_Get( "ui_debugOverlay", "0", 0 );
+#endif
+	Cvar_SetDescription( ui_debugOverlay, "Draws an overlay of various debugging statistics." );
 
     ui_active = Cvar_Get( "g_paused", "1", CVAR_TEMP );
 
@@ -258,25 +265,15 @@ static void UI_RegisterCvars( void )
 	Cvar_SetDescription( com_drawFPS, "Toggles displaying the average amount of frames drawn per second." );
 
 #ifdef _NOMAD_DEBUG
-	ui_diagnostics = Cvar_Get( "ui_diagnostics", "3", CVAR_LATCH | CVAR_PROTECTED | CVAR_SAVE );
+	ui_diagnostics = Cvar_Get( "ui_diagnostics", "3", CVAR_PROTECTED | CVAR_SAVE );
 #else
-	ui_diagnostics = Cvar_Get( "ui_diagnostics", "0", CVAR_LATCH | CVAR_PROTECTED | CVAR_SAVE );
+	ui_diagnostics = Cvar_Get( "ui_diagnostics", "0", CVAR_PROTECTED | CVAR_SAVE );
 #endif
 	Cvar_SetDescription( ui_diagnostics, "Displays various engine performance diagnostics:\n"
 											" 0 - disabled\n"
 											" 1 - display gpu memory usage\n"
 											" 2 - display cpu memory usage\n"
 											" 3 - SHOW ME EVERYTHING!!!!\n" );
-}
-
-void UI_UpdateCvars( void )
-{
-    if ( ui_language->modified ) {
-        if ( !strManager->LanguageLoaded( (language_t)ui_language->i ) ) {
-            strManager->LoadFile( va( "scripts/ui_strings_%s.txt", UI_LangToString( ui_language->i ) ) );
-        }
-        ui_language->modified = qfalse;
-    }
 }
 
 extern "C" void UI_Shutdown( void )
@@ -296,8 +293,6 @@ extern "C" void UI_Shutdown( void )
     Cmd_RemoveCommand( "ui.cache" );
 	Cmd_RemoveCommand( "ui.fontinfo" );
 	Cmd_RemoveCommand( "togglepausemenu" );
-	Cmd_RemoveCommand( "ui_escapemenutoggle" );
-	Cmd_RemoveCommand( "ui_togglebackgroundonly" );
 }
 
 // FIXME: call UI_Shutdown instead
@@ -373,6 +368,112 @@ extern "C" void UI_DrawFPS( void )
     ImGui::End();
 }
 
+/*
+* UI_DrawDebugOverlay: basically a stand-in for gdb when I can't directly read the game's
+* memory on a computer
+*/
+static void UI_DrawDebugOverlay( void )
+{
+	const int treeNodeFlags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_CollapsingHeader;
+	MemoryEditor memEditor;
+	uint64_t i;
+
+	ImGui::Begin( "Debug Tools##DebugOverlay" );
+	ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * 1.25f * ui->scale );
+
+	if ( ImGui::CollapsingHeader( "GameInfo##GameState" ) ) {
+		ImGui::Text( "mapname: %s", gi.mapname );
+		ImGui::Text( "mapLoaded: %s", gi.mapLoaded ? "yes" : "no" );
+		ImGui::Text( "state: %i", gi.state );
+		ImGui::Text( "cameraPos: %f, %f, %f", gi.cameraPos[0], gi.cameraPos[1], gi.cameraPos[2] );
+		ImGui::Text( "cameraZoom: %f", gi.cameraZoom );
+		ImGui::Text( "scale: %f", gi.scale );
+		ImGui::Text( "soundStarted: %s", gi.soundStarted ? "true" : "false" );
+		ImGui::Text( "uiStarted: %s", gi.uiStarted ? "true" : "false" );
+		ImGui::Text( "sgameStarted: %s", gi.sgameStarted ? "true" : "false" );
+		ImGui::Text( "rendererStarted: %s", gi.rendererStarted ? "true" : "false" );
+		ImGui::Text( "framecount: %i", gi.framecount );
+		ImGui::Text( "frametime: %i", gi.frametime );
+		ImGui::Text( "realtime: %i", gi.realtime );
+		ImGui::Text( "realFrametime: %i", gi.realFrameTime );
+		ImGui::Text( "mouseDx: %i, %i", gi.mouseDx[0], gi.mouseDx[1] );
+		ImGui::Text( "mouseDy: %i, %i", gi.mouseDy[0], gi.mouseDy[1] );
+		ImGui::Text( "mouseIndex: %i", gi.mouseIndex );
+		ImGui::Text( "joystickAxis: %i, %i, %i, %i, %i, %i", gi.joystickAxis[0], gi.joystickAxis[1], gi.joystickAxis[2],
+			gi.joystickAxis[3], gi.joystickAxis[4], gi.joystickAxis[5] );
+		ImGui::Text( "togglePhotoMode: %s", gi.togglePhotomode ? "true" : "false" );
+	}
+	if ( ImGui::CollapsingHeader( "MapCache##GameStateMapCache" ) ) {	
+		ImGui::Text( "currentMapLoaded: %i", gi.mapCache.currentMapLoaded );
+		ImGui::Text( "numMapFiles: %lu", gi.mapCache.numMapFiles );
+
+		for ( i = 0; i < gi.mapCache.numMapFiles; i++ ) {
+			ImGui::Text( "mapList[%lu]: %s", i, gi.mapCache.mapList[i] );
+		}
+		
+		ImGui::Text( "info.name: %s", gi.mapCache.info.name );
+		ImGui::Text( "info.width: %u", gi.mapCache.info.width );
+		ImGui::Text( "info.height: %u", gi.mapCache.info.height );
+		ImGui::Text( "info.numSpawns: %u", gi.mapCache.info.numSpawns );
+		ImGui::Text( "info.numCheckpoints: %u", gi.mapCache.info.numCheckpoints );
+		ImGui::Text( "info.numLevels: %u", gi.mapCache.info.numLevels );
+		ImGui::Text( "info.numLights: %u", gi.mapCache.info.numLights );
+		ImGui::Text( "info.numTiles: %u", gi.mapCache.info.numTiles );
+	}
+	if ( ImGui::CollapsingHeader( "Zone Memory" ) ) {
+		Com_DrawMemoryView_Zone();
+	}
+	if ( ImGui::CollapsingHeader( "Hunk Memory" ) ) {
+		Com_DrawMemoryView_Hunk();
+	}
+	if ( ImGui::CollapsingHeader( "ModuleLib##ModuleLib" ) ) {
+
+		const UtlVector<CModuleInfo *>& loadList = g_pModuleLib->GetLoadList();
+		for ( i = 0; i < loadList.size(); i++ ) {
+			ImGui::Text( "LoadList[%lu]: Name: %s", i, loadList[i]->m_szName );
+			ImGui::Text( "LoadList[%lu]: Id: %s", i, loadList[i]->m_szId );
+			ImGui::Text( "LoadList[%lu]: GameVersionMajor: %hu", i, loadList[i]->m_GameVersion.m_nVersionMajor );
+			ImGui::Text( "LoadList[%lu]: GameVersionUpdate: %hu", i, loadList[i]->m_GameVersion.m_nVersionUpdate );
+			ImGui::Text( "LoadList[%lu]: GameVersionMajor: %u", i, loadList[i]->m_GameVersion.m_nVersionPatch );
+			ImGui::Text( "LoadList[%lu]: VersionMajor: %i", i, loadList[i]->m_nModVersionMajor );
+			ImGui::Text( "LoadList[%lu]: VersionUpdate: %i", i, loadList[i]->m_nModVersionUpdate );
+			ImGui::Text( "LoadList[%lu]: VersionPatch: %i", i, loadList[i]->m_nModVersionPatch );
+			ImGui::Text( "LoadList[%lu]: Handle: 0x%08lx", i, (uintptr_t)(void *)loadList[i]->m_pHandle );
+
+			if ( ImGui::CollapsingHeader( va( "Handle##ModuleLibLoadListHandle%lu", i ) ) ) {
+				ImGui::Text( "LoadList[%lu]: Handle.ModulePath: %s", i, loadList[i]->m_pHandle->GetModulePath() );
+				ImGui::Text( "LoadList[%lu]: Handle.Valid: %s", i, loadList[i]->m_pHandle->IsValid() ? "yes" : "no" );
+			}
+		}
+		if ( ImGui::CollapsingHeader( "ModuleLib Memory Manager" ) ) {
+			memoryStats_t active, allocs, frees;
+
+			Mem_DrawMemoryEdit();
+
+			Mem_GetStats( active );
+			Mem_GetFrameStats( allocs, frees );
+
+			ImGui::SeparatorText( "Frame" );
+			ImGui::Text( "[allocs] maxSize: %li", allocs.maxSize );
+			ImGui::Text( "[allocs] minSize: %li", allocs.minSize );
+			ImGui::Text( "[allocs] totalSize: %li", allocs.totalSize );
+			ImGui::Text( "[allocs] num: %li", allocs.num );
+			ImGui::TextUnformatted( "----------------------------" );
+			ImGui::Text( "[frees] maxSize: %li", frees.maxSize );
+			ImGui::Text( "[frees] minSize: %li", frees.minSize );
+			ImGui::Text( "[frees] totalSize: %li", frees.totalSize );
+			ImGui::Text( "[frees] num: %li", frees.num );
+
+			ImGui::SeparatorText( "Actual" );
+			ImGui::Text( "maxSize: %li", active.maxSize );
+			ImGui::Text( "minSize: %li", active.minSize );
+			ImGui::Text( "totalSize: %li", active.totalSize );
+			ImGui::Text( "num: %li", active.num );
+		}
+	}
+	ImGui::End();
+}
+
 void UI_EscapeMenuToggle( void )
 {
     if ( ( Key_IsDown( KEY_ESCAPE ) || Key_IsDown( KEY_PAD0_B ) ) &&  ui->menusp > 1 ) {
@@ -400,7 +501,7 @@ extern "C" void UI_Init( void )
     strManager = (CUIStringManager *)Hunk_Alloc( sizeof( *strManager ), h_high );
     strManager->Init();
     // load the language string file
-    strManager->LoadFile( va( "scripts/ui_strings_%s.txt", UI_LangToString( ui_language->i ) ) );
+    strManager->LoadFile( va( "scripts/ui_strings_%s.txt", ui_language->s ) );
     if ( !strManager->NumLangsLoaded() ) {
         N_Error( ERR_DROP, "UI_Init: no language loaded" );
     }
@@ -505,6 +606,16 @@ extern "C" void UI_DrawMenuBackground( void )
     re.RenderScene( &refdef );
 }
 
+extern "C" void UI_AddJoystickKeyEvents( void )
+{
+	ImGuiIO& io = ImGui::GetIO();
+	
+	io.AddKeyEvent( ImGuiKey_DownArrow, Key_IsDown( KEY_PAD0_LEFTSTICK_DOWN ) );
+	io.AddKeyEvent( ImGuiKey_UpArrow, Key_IsDown( KEY_PAD0_LEFTSTICK_UP ) );
+	io.AddKeyEvent( ImGuiKey_LeftArrow, Key_IsDown( KEY_PAD0_LEFTSTICK_LEFT ) );
+	io.AddKeyEvent( ImGuiKey_RightArrow, Key_IsDown( KEY_PAD0_LEFTSTICK_RIGHT ) );
+}
+
 extern "C" void UI_Refresh( int32_t realtime )
 {
 	extern cvar_t *in_joystick;
@@ -542,7 +653,13 @@ extern "C" void UI_Refresh( int32_t realtime )
 		return;
 	}
 
-	UI_UpdateCvars();
+	if ( ui_debugOverlay->i ) {
+		UI_DrawDebugOverlay();
+	}
+
+	if ( in_joystick->i ) {
+		UI_AddJoystickKeyEvents();
+	}
 
 	if ( ui->activemenu ) {
 		if ( ui->activemenu->fullscreen ) {

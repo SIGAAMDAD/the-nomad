@@ -29,17 +29,14 @@ If you have questions concerning this license or the applicable additional terms
 #include "module_public.h"
 #include "Str.h"
 #include "Str.cpp"
-#include <EASTL/linked_array.h>
-#include <EASTL/linked_ptr.h>
+#include "../game/imgui_memory_editor.h"
 
 #ifndef USE_LIBC_MALLOC
-	#define USE_LIBC_MALLOC		0
+//	#define USE_LIBC_MALLOC		0
 #endif
 
 #ifndef MEMHEAP_DEBUG
-	#ifdef _NOMAD_DEBUG
-	#define MEMHEAP_DEBUG
-	#endif
+//	#define MEMHEAP_DEBUG 0
 #endif
 
 #ifndef CRASH_ON_STATIC_ALLOCATION
@@ -73,6 +70,7 @@ public:
 	void			Free16( void *p );				// free 16 byte aligned memory
 	uint32_t		Msize( void *p );				// return size of data block
 	void			Dump( void  );
+	void			DrawEditorView( void );
 private:
 
 	enum {
@@ -956,6 +954,45 @@ void idHeap::LargeFree( void *ptr) {
 	FreePage(pg);
 }
 
+void idHeap::DrawEditorView( void )
+{
+	const int treeNodeFlags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_CollapsingHeader;
+	MemoryEditor memEditor;
+	idHeap::page_s *pg;
+	
+	if ( ImGui::CollapsingHeader( "Small Heap Pages##ModuleLibMemoryEditorSmallPages" ) ) {
+		for ( pg = smallFirstUsedPage; pg; pg = pg->next ) {
+			memEditor.DrawContents( pg->data, pg->dataSize, (size_t)(uintptr_t)pg->data );
+		}
+		ImGui::TreePop();
+	}
+
+	if ( smallCurPage ) {
+		if ( ImGui::CollapsingHeader( "Small Heap Active Page##ModuleLibMemoryEditorSmallHeapActive" ) ) {
+			pg = smallCurPage;
+			memEditor.DrawContents( pg->data, pg->dataSize, (size_t)(uintptr_t)pg->data );
+		}
+	}
+
+	if ( ImGui::CollapsingHeader( "Completely Used Medium Heap Pages##ModuleLibMemoryEditorMediumFullPages" ) ) {
+		for ( pg = mediumFirstUsedPage; pg; pg = pg->next ) {
+			memEditor.DrawContents( pg->data, pg->dataSize, (size_t)(uintptr_t)pg->data );
+		}
+	}
+
+	if ( ImGui::CollapsingHeader( "Partially Used Medium Heap Pages##ModuleLibMemoryEditorMediumPartialPages" ) ) {
+		for ( pg = mediumFirstFreePage; pg; pg = pg->next ) {
+			memEditor.DrawContents( pg->data, pg->dataSize, (size_t)(uintptr_t)pg->data );
+		}
+	}
+
+	if ( ImGui::CollapsingHeader( "Completely Used Large Heap Pages##ModuleLibMemoryEditorLargeHeap" ) ) {
+		for ( pg = largeFirstUsedPage; pg; pg = pg->next ) {
+			memEditor.DrawContents( pg->data, pg->dataSize, (size_t)(uintptr_t)pg->data );
+		}
+	}
+}
+
 //===============================================================
 //
 //	memory allocation all in one place
@@ -968,6 +1005,10 @@ static idHeap *			mem_heap = NULL;
 static memoryStats_t	mem_total_allocs = { 0, 0x0fffffff, -1, 0 };
 static memoryStats_t	mem_frame_allocs = { 0, 0, 0, 0 };
 static memoryStats_t	mem_frame_frees = { 0, 0, 0, 0 };
+
+void Mem_DrawMemoryEdit( void ) {
+	mem_heap->DrawEditorView();
+}
 
 /*
 ==================

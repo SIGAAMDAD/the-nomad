@@ -135,7 +135,7 @@ void LogExceptionInfo( asIScriptContext *pContext, void *userData )
     , pFunc->GetModuleName(), pFunc->GetScriptSectionName(), pFunc->GetDeclaration(), pContext->GetExceptionLineNumber(),
     pContext->GetExceptionString() );
 
-    N_Error( ERR_FATAL, "%s", msg );
+    N_Error( ERR_DROP, "%s", msg );
 }
 
 void CModuleHandle::PrepareContext( asIScriptFunction *pFunction )

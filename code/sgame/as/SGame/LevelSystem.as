@@ -166,8 +166,8 @@ namespace TheNomad::SGame {
 		void OnShutdown() {
 		}
 		void OnRunTic() {
-			if ( GlobalState == GameState::EndOfLevel ) {
-//				m_RankData.Draw( true, m_LevelTimer );
+			if ( GlobalState == GameState::StatsMenu ) {
+				m_RankData.Draw( true, m_LevelTimer );
 				return;
 			}
 			
@@ -177,7 +177,7 @@ namespace TheNomad::SGame {
 			if ( EntityManager.NumEntities() == 1 && m_MapData.GetCheckpoints().Count() != 0 ) {
 				if ( m_CurrentCheckpoint == m_MapData.GetCheckpoints().Count() - 1 ) {
 					m_LevelTimer.Stop(); // kill the timer
-					GlobalState = GameState::EndOfLevel;
+					GlobalState = GameState::StatsMenu;
 					return;
 				}
 
@@ -447,7 +447,7 @@ namespace TheNomad::SGame {
 		
 		private bool PlayerPassedCheckpoint() const {
 			const vec3 origin = EntityManager.GetPlayerObject().GetOrigin();
-			return m_MapData.GetCheckpoints()[ m_CurrentCheckpoint ].m_Origin ==
+			return m_MapaData.GetCheckpoints()[ m_CurrentCheckpoint ].m_Origin ==
 				uvec3( uint( origin.x ), uint( origin.y ), uint( origin.z ) )
 				&& !m_MapData.GetCheckpoints()[ m_CurrentCheckpoint ].m_bPassed;
 		}

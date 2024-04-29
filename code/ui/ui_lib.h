@@ -97,12 +97,15 @@ typedef struct {
     int bufTextLen;
     int bufMaxLen;
 
-    int cursorPos;
-
     int mode;
     int caps;
     qboolean open;
-    qboolean keyToggle;
+
+    qboolean capsToggle;
+    qboolean backspaceToggle;
+    qboolean spaceToggle;
+    qboolean doneToggle;
+    qboolean modeToggle;
 } virtualKeyboard_t;
 
 typedef struct {

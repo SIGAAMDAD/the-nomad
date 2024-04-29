@@ -6,7 +6,9 @@ namespace TheNomad::SGame {
 		}
 		
 		void Draw( bool endOfLevel, const TheNomad::Engine::Timer& in timer ) {
-			ImGuiWindowFlags windowFlags = ImGui::MakeWindowFlags( ImGuiWindowFlags::NoTitleBar | ImGuiWindowFlags::NoMove | ImGuiWindowFlags::NoResize );
+			ImGuiWindowFlags windowFlags = ImGui::MakeWindowFlags( ImGuiWindowFlags::NoTitleBar | ImGuiWindowFlags::NoMove
+				| ImGuiWindowFlags::NoResize );
+			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
 
 			if ( !TheNomad::Engine::IsKeyDown( TheNomad::Engine::KeyNum::Key_Tab ) ) {
 				return;
@@ -18,9 +20,15 @@ namespace TheNomad::SGame {
 			
 			ImGui::Begin( "##LevelStatsShow", null, windowFlags );
 			if ( endOfLevel ) {
+				ImGui::SetWindowPos( vec2( 256 * scale, 64 * scale ) );
+				ImGui::SetWindowSize( vec2( 764 * scale, 500 * scale ) );
 				if ( TheNomad::Engine::IsAnyKeyDown() ) {
 					selectedSfx.Play();
+					GlobalState = GameState::EndOfLevel;
 				}
+			} else {
+				ImGui::SetWindowPos( vec2( 16 * scale, 16 * scale ) );
+				ImGui::SetWindowSize( vec2( 256 * scale, 72 * scale ) );
 			}
 			
 			ImGui::BeginTable( "##LevelStatsNumbers", 2 );

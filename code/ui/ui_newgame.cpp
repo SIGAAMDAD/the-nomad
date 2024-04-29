@@ -47,20 +47,10 @@ static void BeginNewGame( void )
     g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelStart, 0 );
 }
 
-static int UI_VirtualKeyboardCallback( ImGuiInputTextCallbackData *pData ) {
-	pData->BufTextLen = ui->virtKeyboard.bufTextLen;
-	pData->BufSize = ui->virtKeyboard.bufMaxLen;
-	pData->CursorPos = ui->virtKeyboard.cursorPos;
-
-	return 1;
-}
-
 static void NewGameMenu_Draw( void )
 {
     int i;
     extern cvar_t *in_joystick;
-    ImGuiInputTextCallback callback;
-    ImGuiInputTextFlags flags;
 
     ImGui::Begin( s_newGame->menu.name, NULL, s_newGame->menu.flags );
     ImGui::SetWindowSize( ImVec2( s_newGame->menu.width, s_newGame->menu.height ) );
@@ -86,21 +76,16 @@ static void NewGameMenu_Draw( void )
         ImGui::TextUnformatted( s_newGame->newGameBegin->value );
         ImGui::TableNextColumn();
 
-    	callback = NULL;
-        flags = ImGuiInputTextFlags_EnterReturnsTrue;
-    	if ( in_mode->i == 1 && ui->virtKeyboard.open ) {
-    		callback = UI_VirtualKeyboardCallback;
-    		flags |= ImGuiInputTextFlags_CallbackAlways;
-    	}
         if ( in_mode->i == 1 ) {
-            if ( ImGui::Button( va( "%s##SinglePlayerMenuSaveNamePromptInput", s_newGame->saveName ),
+            char buf[MAX_STRING_CHARS];
+
+            if ( ImGui::Button( va( "%s##SinglePlayerMenuSaveNamePromptInput", buf ),
                 ImVec2( 528 * ui->scale, 72 * ui->scale ) ) )
             {
                 // accessing it through the controller, toggle the on-screen keyboard
                 ui->virtKeyboard.open = qtrue;
                 ui->virtKeyboard.bufMaxLen = sizeof( s_newGame->saveName );
                 ui->virtKeyboard.bufTextLen = strlen( s_newGame->saveName );
-                ui->virtKeyboard.cursorPos = ui->virtKeyboard.bufTextLen;
                 ui->virtKeyboard.pBuffer = s_newGame->saveName;
 
         		Snd_PlaySfx( ui->sfx_select );
@@ -112,7 +97,7 @@ static void NewGameMenu_Draw( void )
             }
         } else if ( in_mode->i == 0 ) {
             if ( ImGui::InputText( "##SinglePlayerMenuSaveNamePromptInput", s_newGame->saveName, sizeof( s_newGame->saveName ) - 1,
-                flags ) )
+                ImGuiInputTextFlags_EnterReturnsTrue ) )
             {
                 Snd_PlaySfx( ui->sfx_select );
             }

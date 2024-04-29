@@ -894,14 +894,12 @@ int ImGui_ImplOpenGL3_CreateDeviceObjects(void)
 void ImGui_ImplOpenGL3_DestroyDeviceObjects(void)
 {
     ImGui_ImplOpenGL3_Data *bd = ImGui_ImplOpenGL3_GetBackendData();
-    if (bd->VboHandle)
-    {
-        renderImport.glDeleteBuffers(1, &bd->VboHandle);
+    if ( bd->VboHandle ) {
+        renderImport.glDeleteBuffers( 1, &bd->VboHandle );
         bd->VboHandle = 0;
     }
-    if (bd->ElementsHandle)
-    {
-        renderImport.glDeleteBuffers(1, &bd->ElementsHandle);
+    if ( bd->ElementsHandle ) {
+        renderImport.glDeleteBuffers( 1, &bd->ElementsHandle );
         bd->ElementsHandle = 0;
     }
     ImGui_ImplOpenGL3_DestroyFontsTexture();

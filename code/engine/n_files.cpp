@@ -5,21 +5,12 @@
 #include "../system/sys_thread.h"
 #include "gln_files.h"
 
-/*
-======================================================================================================
-
-THE NOMAD FILESYSTEM
-
-All of The Nomad's resources camn be accesse through a series of searchpaths that are structured hierarichally.
-
-A "npath" is a system independent reference to a file. All npaths are terminated by a zero, and any path
-separators are illegal within one. This is done so that no file outside of the dedicated system can be accessed
-accidentally.
-
-the basepath is the path to the user's current working directory.
-
-======================================================================================================
-*/
+// every time a new demo bff file is built, this checksum must be updated.
+// the easiest way to get it is to just run the game and see what it spits out
+#define	DEMO_BFF0_CHECKSUM	0
+static const uint32_t bff_checksums[] = {
+	317812776u
+};
 
 #ifdef _WIN32
 	#define WIN32_LEAN_AND_MEAN
@@ -29,6 +20,7 @@ the basepath is the path to the user's current working directory.
 #define MAX_FILE_HANDLES 1024
 #define MAX_FILEHASH_SIZE 256
 #define BASEGAME_DIR "gamedata"
+#define BASEDEMO_DIR "gamedata/demos"
 
 #define HEADER_MAGIC 0x5f3759df
 #define BFF_IDENT (('B'<<24)+('F'<<16)+('F'<<8)+'I')
@@ -72,6 +64,8 @@ typedef struct bffFile_s
 	uint32_t referenced;
 	uint32_t handlesUsed;
 	uint32_t checksum;
+	uint32_t pure_checksum;
+	qboolean exclude;
 
 #ifdef USE_HANDLE_CACHE
 	struct bffFile_s	*next_h;						// double-linked list of unreferenced paks with open file handles
@@ -142,7 +136,9 @@ static  char		basegame_str[MAX_OSPATH], *basegames[MAX_BASEGAMES];
 static  int			basegame_cnt;
 static  const char  *basegame = ""; /* last value in array */
 
+static uint32_t		fs_checksumFeed;
 static searchpath_t *fs_searchpaths;
+static cvar_t		*fs_excludeReference;
 static cvar_t		*fs_homepath;
 #ifdef USE_HANDLE_CACHE
 static cvar_t		*fs_locked;
@@ -1378,6 +1374,28 @@ void FS_FreeFileList( char **list )
 }
 
 /*
+================
+FS_IsBaseGame
+================
+*/
+static qboolean FS_IsBaseGame( const char *game )
+{
+	int i;
+
+	if ( game == NULL || *game == '\0' ) {
+		return qtrue;
+	}
+
+	for ( i = 0; i < basegame_cnt; i++ ) {
+		if ( N_stricmp( basegames[i], game ) == 0 ) {
+			return qtrue;
+		}
+	}
+
+	return qfalse;
+}
+
+/*
 =================
 FS_ConvertFilename
 
@@ -2179,6 +2197,408 @@ static void FS_PrintSearchPaths( void )
 	}
 }
 
+/*
+===================
+FS_CheckGDRBffs
+
+Checks that bff0.bff is present and its checksum is correct
+Note: If you're building a game that doesn't depend on the
+The Nomad media bff0.bff, you'll want to remove this function
+===================
+*/
+static void FS_CheckGDRBffs( void )
+{
+	const searchpath_t *path;
+	const char *bffBasename;
+	qboolean founddemo = qfalse;
+	unsigned foundBff = 0;
+
+	for ( path = fs_searchpaths; path; path = path->next ) {
+		if ( !path->bff ) {
+			continue;
+		}
+
+		bffBasename = path->bff->bffBasename;
+
+		if ( !N_stricmpn( path->bff->bffGamename, BASEDEMO_DIR, MAX_OSPATH )
+		   && !N_stricmpn( bffBasename, "bff0", MAX_OSPATH ) )
+		{
+			founddemo = qtrue;
+
+			if ( path->bff->checksum == DEMO_BFF0_CHECKSUM ) {
+				Con_Printf( "\n\n"
+						"**************************************************\n"
+						"WARNING: It looks like you're using bff0.bff\n"
+						"from the demo. This may work fine, but it is not\n"
+						"guaranteed or supported.\n"
+						"**************************************************\n\n\n" );
+			}
+		}
+		else if ( !N_stricmpn( path->bff->bffGamename, BASEGAME_DIR, MAX_OSPATH )
+			&& strlen( bffBasename ) == 4 && !N_stricmpn( bffBasename, "pak", 3 )
+			&& bffBasename[3] >= '0' && bffBasename[3] <= '8' )
+		{
+			if ( path->bff->checksum != bff_checksums[bffBasename[3]-'0'] ) {
+				FS_PrintSearchPaths();
+
+				if ( bffBasename[3] == '0' ) {
+					Con_Printf("\n\n"
+						"**************************************************\n"
+						"ERROR: bff0.bff is present but its checksum (%u)\n"
+						"is not correct. Please re-copy bff0.bff from your\n"
+						"legitimate installation.\n"
+						"**************************************************\n\n\n",
+						path->bff->checksum );
+				}
+				else {
+					Con_Printf( "\n\n"
+						"**************************************************\n"
+						"ERROR: bff%d.bff is present but its checksum (%u)\n"
+						"is not correct. Please re-install " GLN_VERSION " \n"
+						"bff files\n"
+						"**************************************************\n\n\n",
+						bffBasename[3]-'0', path->bff->checksum );
+				}
+				N_Error( ERR_FATAL, "\n* You need to install correct The Nomad files in order to play *" );
+			}
+
+			foundBff |= 1 << ( bffBasename[3] - '0' );
+		}
+	}
+
+	if ( !founddemo && ( foundBff & 0x1ff ) != 0x1ff ) {
+		FS_PrintSearchPaths();
+
+		if ( ( foundBff & 1 ) != 1 ) {
+			Con_Printf( "\n\n"
+			"bff0.bff is missing. Please copy it\n"
+			"from your legitimate installation.\n");
+		}
+
+		if ( ( foundBff & 0x1fe ) != 0x1fe ) {
+			Con_Printf( "\n\n"
+			GLN_VERSION " files are missing. Please\n"
+			"re-install the game.\n");
+		}
+
+		Con_Printf( "\n\n"
+			"Also check that your TheNomad.x64 executable is in\n"
+			"the correct place and that every file\n"
+			"in the %s directory is present and readable.\n", BASEGAME_DIR );
+
+		if ( !fs_gamedirvar->s[0] || !N_stricmp( fs_gamedirvar->s, BASEGAME_DIR ) ) {
+			N_Error( ERR_FATAL, "\n*** you need to install The Nomad in order to play ***" );
+		}
+	}
+}
+
+
+/*
+=====================
+FS_LoadedBFFChecksums
+
+Returns a space separated string containing the checksums of all loaded bff files.
+=====================
+*/
+const char *FS_LoadedBFFChecksums( qboolean *overflowed ) {
+	static char	info[BIG_INFO_STRING];
+	const searchpath_t *search;
+	char buf[ 32 ];
+	char *s, *max;
+	size_t len;
+
+	s = info;
+	info[0] = '\0';
+	max = &info[sizeof( info ) - 1];
+	*overflowed = qfalse;
+
+	for ( search = fs_searchpaths ; search ; search = search->next ) {
+		// is the element a pak file?
+		if ( !search->bff ) {
+			continue;
+		}
+
+		if ( search->bff->exclude ) {
+			continue;
+		}
+
+		if ( info[0] ) {
+			len = sprintf( buf, " %i", search->bff->checksum );
+		} else {
+			len = sprintf( buf, "%i", search->bff->checksum );
+		}
+
+		if ( s + len > max ) {
+			*overflowed = qtrue;
+			break;
+		}
+
+		s = N_stradd( s, buf );
+	}
+
+	return info;
+}
+
+
+/*
+=====================
+FS_LoadedBFFNames
+
+Returns a space separated string containing the names of all loaded bff files.
+=====================
+*/
+const char *FS_LoadedBFFNames( void ) {
+	static char	info[BIG_INFO_STRING];
+	const searchpath_t *search;
+	char *s, *max;
+	size_t len;
+
+	s = info;
+	info[0] = '\0';
+	max = &info[sizeof( info ) - 1];
+
+	for ( search = fs_searchpaths ; search ; search = search->next ) {
+		// is the element a pak file?
+		if ( !search->bff )
+			continue;
+
+		if ( search->bff->exclude )
+			continue;
+
+		len = strlen( search->bff->bffBasename );
+		if ( info[0] ) {
+			len++;
+		}
+
+		if ( s + len > max )
+			break;
+
+		if ( info[0] ) {
+			s = N_stradd( s, " " );
+		}
+
+		s = N_stradd( s, search->bff->bffBasename );
+	}
+
+	return info;
+}
+
+
+/*
+=====================
+FS_ReferencedBFFChecksums
+
+Returns a space separated string containing the checksums of all referenced bff files.
+=====================
+*/
+const char *FS_ReferencedBFFChecksums( void ) {
+	static char	info[BIG_INFO_STRING];
+	const searchpath_t *search;
+
+	info[0] = '\0';
+
+	for ( search = fs_searchpaths; search; search = search->next ) {
+		// is the element a bff file?
+		if ( search->bff ) {
+			if ( search->bff->exclude ) {
+				continue;
+			}
+			if ( search->bff->referenced || !FS_IsBaseGame( search->bff->bffGamename ) ) {
+				N_strcat( info, sizeof( info ), va( "%i ", search->bff->checksum ) );
+			}
+		}
+	}
+
+	return info;
+}
+
+
+/*
+=====================
+FS_ReferencedBFFPureChecksums
+
+Returns a space separated string containing the pure checksums of all referenced bff files.
+If g_validate_purity is enabled, we'll use this for validation 
+
+The string has a specific order, "sgame ui @ ref1 ref2 ref3 ..."
+=====================
+*/
+const char *FS_ReferencedBFFPureChecksums( uint64_t maxlen ) {
+	static char	info[ MAX_STRING_CHARS*2 ];
+	char *s, *max;
+	const searchpath_t	*search;
+	int nFlags, numPaks, checksum;
+
+	max = info + maxlen; // maxlen is always smaller than MAX_STRING_CHARS so we can overflow a bit
+	s = info;
+	*s = '\0';
+
+	checksum = fs_checksumFeed;
+	numPaks = 0;
+	for ( nFlags = FS_SGAME_REF; nFlags; nFlags = nFlags >> 1 ) {
+		if ( nFlags & FS_GENERAL_REF ) {
+			// add a delimiter between must haves and general refs
+			s = N_stradd( s, "@ " );
+			if ( s > max ) // client-side overflow
+				break;
+		}
+		for ( search = fs_searchpaths ; search ; search = search->next ) {
+			// is the element a pak file and has it been referenced based on flag?
+			if ( search->bff && ( search->bff->referenced & nFlags ) ) {
+				s = N_stradd( s, va( "%i ", search->bff->pure_checksum ) );
+				if ( s > max ) // client-side overflow
+					break;
+				if ( nFlags & (FS_SGAME_REF | FS_UI_REF) ) {
+					break;
+				}
+				checksum ^= search->bff->pure_checksum;
+				numPaks++;
+			}
+		}
+	}
+
+	// last checksum is the encoded number of referenced pk3s
+	checksum ^= numPaks;
+	s = N_stradd( s, va( "%i ", checksum ) );
+	if ( s > max ) { 
+		// client-side overflow
+		Con_Printf( COLOR_YELLOW "WARNING: pure checksum list is too long (%lu), you might be not able to play!\n", (uintptr_t)( s - info ) );
+		*max = '\0';
+	}
+	
+	return info;
+}
+
+
+/*
+=====================
+FS_ExcludeReference
+=====================
+*/
+qboolean FS_ExcludeReference( void ) {
+	const searchpath_t *search;
+	const char *bffName;
+	int i, nargs;
+	qboolean x;
+
+	if ( fs_excludeReference->s[0] == '\0' ) {
+		return qfalse;
+	}
+
+	Cmd_TokenizeStringIgnoreQuotes( fs_excludeReference->s );
+	nargs = Cmd_Argc();
+	x = qfalse;
+
+	for ( search = fs_searchpaths ; search ; search = search->next ) {
+		if ( search->bff ) {
+			if ( !search->bff->referenced ) {
+				continue;
+			}
+			bffName = va( "%s/%s", search->bff->bffGamename, search->bff->bffBasename );
+			for ( i = 0; i < nargs; i++ ) {
+				if ( N_stricmp( Cmd_Argv( i ), bffName ) == 0 ) {
+					search->bff->exclude = qtrue;
+					x = qtrue;
+					break;
+				}
+			}
+		}
+	}
+
+	return x;
+}
+
+
+/*
+=====================
+FS_ReferencedBFFNames
+
+Returns a space separated string containing the names of all referenced bff files.
+=====================
+*/
+const char *FS_ReferencedBFFNames( void ) {
+	static char	info[BIG_INFO_STRING];
+	const searchpath_t *search;
+	const char *bffName;
+	info[0] = '\0';
+
+	// we want to return ALL bff's from the fs_game path
+	// and referenced one's from nomadmain
+	for ( search = fs_searchpaths ; search ; search = search->next ) {
+		// is the element a pak file?
+		if ( search->bff ) {
+			if ( search->bff->exclude ) {
+				continue;
+			}
+			if ( search->bff->referenced || !FS_IsBaseGame( search->bff->bffGamename ) ) {
+				bffName = va( "%s/%s", search->bff->bffGamename, search->bff->bffBasename );
+				if ( *info != '\0' ) {
+					N_strcat( info, sizeof( info ), " " );
+				}
+				N_strcat( info, sizeof( info ), bffName );
+			}
+		}
+	}
+
+	return info;
+}
+
+
+/*
+=====================
+FS_ClearBFFReferences
+=====================
+*/
+void FS_ClearBFFReferences( uint32_t flags ) {
+	const searchpath_t *search;
+
+	if ( !flags ) {
+		flags = -1;
+	}
+	for ( search = fs_searchpaths; search; search = search->next ) {
+		// is the element a pak file and has it been referenced?
+		if ( search->bff ) {
+			search->bff->referenced &= ~flags;
+		}
+	}
+}
+
+
+/*
+=====================
+FS_ApplyDirPolicy
+
+Set access rights for directories
+=====================
+*/
+static void FS_SetDirPolicy( diraccess_t policy ) {
+	searchpath_t *search;
+
+	for ( search = fs_searchpaths ; search ; search = search->next ) {
+		if ( search->dir && search->access != DIR_STATIC ) {
+			search->access = policy;
+		}
+	}
+}
+
+/*
+================
+FS_InvalidGameDir
+return true if path is a reference to current directory or directory traversal
+or a sub-directory
+================
+*/
+qboolean FS_InvalidGameDir( const char *gamedir ) 
+{
+	if ( !strcmp( gamedir, "." ) || !strcmp( gamedir, ".." )
+		|| strchr( gamedir, '/' ) || strchr( gamedir, '\\' ) ) {
+		return qtrue;
+	}
+
+	return qfalse;
+}
+
+
 void FS_ClearBFFReferences( int32_t flags )
 {
 	const searchpath_t *sp;
@@ -2599,28 +3019,6 @@ qboolean FS_StripExt( char *filename, const char *ext )
 	if ( !N_stricmp( filename, ext ) )  {
 		filename[0] = '\0';
 		return qtrue;
-	}
-
-	return qfalse;
-}
-
-/*
-================
-FS_IsBaseGame
-================
-*/
-static qboolean FS_IsBaseGame( const char *game )
-{
-	int i;
-
-	if ( game == NULL || *game == '\0' ) {
-		return qtrue;
-	}
-
-	for ( i = 0; i < basegame_cnt; i++ ) {
-		if ( N_stricmp( basegames[i], game ) == 0 ) {
-			return qtrue;
-		}
 	}
 
 	return qfalse;
@@ -3162,7 +3560,11 @@ void FS_Startup( void )
 
 	Con_Printf( "\n---------- FS_Startup ----------\n" );
 
+#ifdef _NOMAD_DEBUG
+	fs_debug = Cvar_Get( "fs_debug", "1", 0 );
+#else
 	fs_debug = Cvar_Get( "fs_debug", "0", 0 );
+#endif
 	Cvar_SetDescription( fs_debug, "Debugging tool for the filesystem. Run the game in debug mode. Prints additional information regarding read files into the console." );
 	fs_basepath = Cvar_Get( "fs_basepath", Sys_DefaultBasePath(), CVAR_INIT | CVAR_PROTECTED | CVAR_PRIVATE );
 	Cvar_SetDescription( fs_basepath, "Write-protected CVar specifying the path to the installation folder of the game." );
@@ -3171,6 +3573,12 @@ void FS_Startup( void )
 	fs_basegame = Cvar_Get( "fs_basegame", BASEGAME_DIR, CVAR_PRIVATE | CVAR_PROTECTED );
 	Cvar_SetDescription( fs_basegame, "CVar specifying the path to the base game folder." );
 	Cvar_SetGroup( fs_basegame, CVG_FILESYSTEM );
+
+	fs_excludeReference = Cvar_Get( "fs_excludeReference", "", CVAR_ARCHIVE_ND | CVAR_LATCH );
+	Cvar_SetDescription( fs_excludeReference,
+		"Exclude specified bff files from download list.\n"
+		"Format is <moddir>/<bffname> (without .bff suffix), you may list multiple entries separated by space." );
+
 
 	/* parse fs_basegame cvar */
 	if ( basegame_cnt == 0 || N_stricmp( basegame, fs_basegame->s ) ) {

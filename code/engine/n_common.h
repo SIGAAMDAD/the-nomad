@@ -415,6 +415,15 @@ void FS_ForceFlush(fileHandle_t f);
 void FS_Flush(fileHandle_t f);
 void FS_ClearBFFReferences( int32_t flags );
 
+qboolean FS_InvalidGameDir( const char *gamedir );;
+
+const char *FS_LoadedBFFChecksums( qboolean *overflowed );
+const char *FS_ReferencedBFFChecksums( void );
+const char *FS_LoadedBFFNames( void );
+const char *FS_ReferencedBFFPureChecksums( uint64_t maxlen );
+qboolean FS_ExcludeReference( void );
+const char *FS_ReferencedBFFNames( void );
+
 const char *FS_GetCurrentGameDir( void );
 const char *FS_GetBaseGameDir( void );
 const char *FS_GetBasePath( void );
@@ -510,6 +519,9 @@ void Z_Free(void *ptr);
 uint64_t Z_FreeTags( memtag_t tag );
 uint64_t Z_AvailableMemory( void );
 char *CopyString( const char *str );
+
+void Com_DrawMemoryView_Hunk( void );
+void Com_DrawMemoryView_Zone( void );
 
 void Z_InitSmallZoneMemory( void );
 void Z_InitMemory( void );

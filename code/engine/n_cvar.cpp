@@ -1676,7 +1676,7 @@ static void Cvar_Trim_f(void)
 Cvar_InfoString
 =====================
 */
-const char *Cvar_InfoString(uint32_t bit, qboolean *truncated)
+const char *Cvar_InfoString( int bit, qboolean *truncated )
 {
     static char info[MAX_INFO_STRING];
     const cvar_t *user_vars[MAX_CVARS];
@@ -1698,34 +1698,35 @@ const char *Cvar_InfoString(uint32_t bit, qboolean *truncated)
     vm_count = 0;
     allSet = qtrue; // this will be qfalse on overflow
 
-    for (var = cvar_vars; var; var = var->next) {
-        if (var->name && (var->flags & bit)) {
+    for ( var = cvar_vars; var; var = var->next ) {
+        if ( var->name && ( var->flags & bit ) ) {
             // put vm/user-created cvars to the end
-            if (var->flags & (CVAR_USER_CREATED | CVAR_VM_CREATED)) {
-                if (var->flags & CVAR_USER_CREATED)
+            if ( var->flags & ( CVAR_USER_CREATED | CVAR_VM_CREATED ) ) {
+                if ( var->flags & CVAR_USER_CREATED ) {
                     user_vars[user_count++] = var;
-                else
+                } else {
                     vm_vars[vm_count++] = var;
+                }
             }
             else {
-//                allSet &= Info_SetValueForKey(info, var->name, var->s);
+                allSet &= Info_SetValueForKey( info, var->name, var->s );
             }
         }
     }
 
     // add vm-created cvars
-    for (i = 0; i < vm_count; i++) {
+    for ( i = 0; i < vm_count; i++ ) {
         var = vm_vars[i];
-//        allSet &= Info_SetValueForKey(info, var->name, var->s);
+        allSet &= Info_SetValueForKey( info, var->name, var->s );
     }
 
     // add user-created cvars
-    for (i = 0; i < user_count; i++) {
+    for ( i = 0; i < user_count; i++ ) {
         var = user_vars[i];
-//        allSet &= Info_SetValueForKey(info, var->name, var->s);
+        allSet &= Info_SetValueForKey( info, var->name, var->s );
     }
 
-    if (truncated) {
+    if ( truncated ) {
         *truncated = (qboolean)!allSet;
     }
 
@@ -1739,7 +1740,7 @@ Cvar_InfoString_Big
   handles large info strings ( CS_SYSTEMINFO )
 =====================
 */
-const char *Cvar_InfoString_Big(uint32_t bit, qboolean *truncated)
+const char *Cvar_InfoString_Big( int bit, qboolean *truncated )
 {
     static char info[BIG_INFO_STRING];
     const cvar_t *var;
@@ -1748,12 +1749,13 @@ const char *Cvar_InfoString_Big(uint32_t bit, qboolean *truncated)
     info[0] = '\0';
     allSet = qtrue;
 
-    for (var = cvar_vars; var; var = var->next) {
-//        if (var->name && (var->flags & bit))
-//            allSet &= Info_SetValueForKey_s(info, sizeof(info), var->name, var->s);
+    for ( var = cvar_vars; var; var = var->next ) {
+        if ( var->name && ( var->flags & bit ) ) {
+            allSet &= Info_SetValueForKey_s( info, sizeof( info ), var->name, var->s );
+        }
     }
 
-    if (truncated) {
+    if ( truncated ) {
         *truncated = (qboolean)!allSet;
     }
 

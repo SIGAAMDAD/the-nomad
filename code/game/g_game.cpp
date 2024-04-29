@@ -10,6 +10,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include "g_threads.h"
+#include "../engine/n_steam.h"
 
 CModuleLib *g_pModuleLib;
 CModuleInfo *sgvm;
@@ -114,11 +115,11 @@ static void G_RefImGuiShutdown( void ) {
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
-    ImGui::DestroyContext();
+    //ImGui::DestroyContext();
     ImGui::SetCurrentContext( NULL );
 
     // clean everything up
-//    Z_FreeTags( TAG_IMGUI );
+    Z_FreeTags( TAG_IMGUI );
 }
 
 static void G_RefImGuiNewFrame( void ) {
@@ -514,30 +515,50 @@ static void G_Vid_Restart( refShutdownCode_t code )
 {
     PROFILE_FUNCTION();
 
+    // clear and mute all sounds until next registration
+    Snd_DisableSounds();
+
     // shutdown VMs
     G_ShutdownVMs( qfalse );
 
     // shutdown the renderer and clear the renderer interface
-    G_ShutdownRenderer(code);
+	G_ShutdownRenderer( code ); // REF_KEEP_CONTEXT, REF_KEEP_WINDOW, REF_DESTROY_WINDOW
+
+    // clear bff references
+    FS_ClearBFFReferences( FS_SGAME_REF );
 
     Snd_Shutdown();
     gi.soundStarted = qfalse;
 
     G_ShutdownArchiveHandler();
 
-    // clear resource references
-	FS_ClearBFFReferences( FS_UI_REF | FS_SGAME_REF );
-
     G_ClearMem();
 
     // startup all the gamestate memory
     G_StartHunkUsers();
 
-//    G_InitSGame();
-//    gi.sgameStarted = qtrue;
-
     // make sure all sounds have updated volumes
     Cbuf_ExecuteText( EXEC_APPEND, "updatevolume\n" );
+}
+
+
+/*
+==================
+G_PK3List_f
+==================
+*/
+void G_OpenedBFFList_f( void ) {
+	Con_Printf( "Opened BFF Names: %s\n", FS_LoadedBFFNames() );
+}
+
+
+/*
+==================
+G_PureList_f
+==================
+*/
+static void G_ReferencedBFFList_f( void ) {
+	Con_Printf( "Referenced BFF Names: %s\n", FS_ReferencedBFFNames() );
 }
 
 /*
@@ -551,22 +572,17 @@ static void G_ViewMemory_f( void ) {
     Con_Printf( "Viewing memory of hunk block.\n" );
 }
 
-static void G_PlayDemo_f(void)
+static void G_PlayDemo_f( void )
 {
 
 }
 
 static void G_Vid_Restart_f( void )
 {
-    if ( N_stricmp( Cmd_Argv( 1 ), "keep_window" ) == 0 ) {
+    if ( N_stricmp( Cmd_Argv( 1 ), "keep_window" ) == 0 || N_stricmp( Cmd_Argv( 1 ), "fast" ) == 0 ) {
         // fast path: keep window
         G_Vid_Restart( REF_KEEP_WINDOW );
-    }
-    else if ( N_stricmp( Cmd_Argv( 1 ), "fast" ) == 0 ) {
-        // fast path: keep context
-        G_Vid_Restart( REF_KEEP_CONTEXT );
-    }
-    else {
+    } else {
         if ( gi.lastVidRestart ) {
             if ( abs( (long)( gi.lastVidRestart - Sys_Milliseconds() ) ) < 500 ) {
                 // don't allow vid restart too quickly after a first one
@@ -577,13 +593,19 @@ static void G_Vid_Restart_f( void )
     }
 }
 
-//
-// G_Snd_Restart_f: Restarts the sound subsystem
-// The sgame and ui must also be forced to restart
-// because the handles will be invalid
-//
+/*
+=================
+G_Snd_Restart_f
+
+Restart the sound subsystem
+The cgame and game must also be forced to restart because
+handles will be invalid
+=================
+*/
 static void G_Snd_Restart_f( void )
 {
+    Snd_Shutdown();
+
     // sound will be reinitialized by vid restart
     G_Vid_Restart( REF_KEEP_CONTEXT );
 }
@@ -751,15 +773,14 @@ void G_Init( void )
 
     PROFILE_FUNCTION();
 
+    SteamApp_Init();
+
     Con_Printf( "----- Game State Initialization ----\n" );
 
     // clear the hunk before anything
     Hunk_Clear();
 
     G_ClearState();
-
-    Cvar_Get( "g_mouseAcceleration", "0", CVAR_SAVE );
-    Cvar_Get( "g_mouseSensitivity", "10.0", CVAR_SAVE );
 
     r_allowLegacy = Cvar_Get( "r_allowLegacy", "0", CVAR_SAVE | CVAR_LATCH );
     Cvar_SetDescription( r_allowLegacy, "Allow the use of old OpenGL API versions, requires \\r_drawMode 0 or 1 and \\r_allowShaders 0" );
@@ -908,6 +929,8 @@ void G_Init( void )
     Cmd_AddCommand( "setmap", G_SetMap_f );
     Cmd_AddCommand( "mapinfo", G_MapInfo_f );
     Cmd_AddCommand( "setcamerapos", G_SetCameraPos_f );
+    Cmd_AddCommand( "referenced_bffs", G_ReferencedBFFList_f );
+    Cmd_AddCommand( "opened_bffs", G_OpenedBFFList_f );
 
     Con_Printf( "----- Game State Initialization Complete ----\n" );
 }
@@ -936,6 +959,8 @@ void G_Shutdown( qboolean quit )
     G_ShutdownVMs( quit );
     G_ShutdownRenderer( quit ? REF_UNLOAD_DLL : REF_DESTROY_WINDOW );
 
+    SteamApp_Shutdown();
+
     remove( "nomad.pid" );
 
     PROFILE_STOP_LISTEN
@@ -950,6 +975,8 @@ void G_Shutdown( qboolean quit )
     Cmd_RemoveCommand( "viewmemory" );
     Cmd_RemoveCommand( "gamestate" );
     Cmd_RemoveCommand( "setcamerapos" );
+    Cmd_RemoveCommand( "referenced_bffs" );
+    Cmd_RemoveCommand( "opened_bffs" );
 
     Key_SetCatcher( 0 );
     Con_Printf( "-------------------------------\n" );
@@ -1025,10 +1052,9 @@ void G_ShutdownAll( void )
     // shutdown the renderer
     if ( re.Shutdown ) {
         if ( !com_errorEntered ) {
-            G_ShutdownRenderer( REF_DESTROY_WINDOW ); // shutdown renderer & window
-        }
-        else {
             re.Shutdown( REF_KEEP_CONTEXT ); // don't destroy the window or context, kill the buffers tho
+        } else {
+            G_ShutdownRenderer( REF_DESTROY_WINDOW ); // shutdown renderer & window
         }
     }
 
@@ -1065,9 +1091,6 @@ void G_Restart( void ) {
 */
 void G_ClearMem( void )
 {
-    // clear all game memory
-    Z_FreeTags( TAG_GAME );
-
     // if not in a level, clear the whole hunk
     if ( !gi.mapLoaded ) {
         // clear the whole hunk
@@ -1085,22 +1108,48 @@ static void G_MoveCamera_f( void )
         return;
     }
 
-    if ( keys[KEY_W].down ) {
+    if ( keys[KEY_W].down || keys[KEY_PAD0_LEFTSTICK_UP].down ) {
         gi.cameraPos[1] += 0.05f;
     }
-    if ( keys[KEY_S].down ) {
+    if ( keys[KEY_S].down || keys[KEY_PAD0_LEFTSTICK_DOWN].down ) {
         gi.cameraPos[1] -= 0.05f;
     }
-    if ( keys[KEY_A].down ) {
+    if ( keys[KEY_A].down || keys[KEY_PAD0_LEFTSTICK_LEFT].down ) {
         gi.cameraPos[0] -= 0.05f;
     }
-    if ( keys[KEY_D].down ) {
+    if ( keys[KEY_D].down || keys[KEY_PAD0_LEFTSTICK_RIGHT].down ) {
         gi.cameraPos[0] += 0.05f;
     }
-    if ( keys[KEY_N].down ) {
+    if ( keys[KEY_N].down || keys[KEY_PAD0_RIGHTSTICK_UP].down ) {
         gi.cameraZoom += 0.005f;
     }
-    if ( keys[KEY_M].down ) {
+    if ( keys[KEY_M].down || keys[KEY_PAD0_RIGHTSTICK_DOWN].bound ) {
+        gi.cameraZoom -= 0.005f;
+    }
+}
+
+static void G_PhotoMode( void )
+{
+    if ( !gi.togglePhotomode ) {
+        return;
+    }
+
+    if ( keys[KEY_W].down || keys[KEY_PAD0_LEFTSTICK_UP].down ) {
+        gi.cameraPos[1] += 0.05f;
+    }
+    if ( keys[KEY_S].down || keys[KEY_PAD0_LEFTSTICK_DOWN].down ) {
+        gi.cameraPos[1] -= 0.05f;
+    }
+    if ( keys[KEY_A].down || keys[KEY_PAD0_LEFTSTICK_LEFT].down ) {
+        gi.cameraPos[0] -= 0.05f;
+    }
+    if ( keys[KEY_D].down || keys[KEY_PAD0_LEFTSTICK_RIGHT].down ) {
+        gi.cameraPos[0] += 0.05f;
+    }
+    if ( keys[KEY_N].down || keys[KEY_PAD0_RIGHTSTICK_UP].down ) {
+        gi.cameraZoom += 0.005f;
+    }
+    if ( keys[KEY_M].down || keys[KEY_PAD0_RIGHTSTICK_DOWN].bound ) {
         gi.cameraZoom -= 0.005f;
     }
 }
@@ -1113,10 +1162,10 @@ void G_Frame( int msec, int realMsec )
     gi.realFrameTime = realMsec;
     
     // decide the simulation time
-//    gi.frametime = msec;
-//    gi.realtime += msec;
-    gi.frametime = gi.frametime - msec;
-    gi.realtime += gi.frametime;
+    gi.frametime = msec;
+    gi.realtime += msec;
+//    gi.frametime = gi.frametime - msec;
+//    gi.realtime += gi.frametime;
 
     G_MoveCamera_f();
 
@@ -1130,513 +1179,3 @@ void G_Frame( int msec, int realMsec )
     // run the console
     Con_RunConsole();
 }
-
-/*
-===========================================
-
-GLimp functions are in here until I decide
-to move them somewhere else
-
-
-DONE BITCH!
-===========================================
-*/
-
-#if 0
-
-typedef struct {
-    FILE *logfile;
-    qboolean isFullscreen;
-    qboolean minimized;
-    gpuConfig_t *config;
-    uint32_t desktop_width;
-    uint32_t desktop_height;
-    uint32_t window_width;
-    uint32_t window_height;
-    uint32_t moniter_count;
-} glState_t;
-
-static glState_t glState;
-
-void GLimp_Shutdown( qboolean unloadDLL )
-{
-    SDL_DestroyWindow( r_window );
-    r_window = NULL;
-
-    if ( unloadDLL ) {
-        SDL_QuitSubSystem( SDL_INIT_VIDEO );
-    }
-}
-
-/*
-===============
-GLimp_Minimize
-
-Minimize the game so that user is back at the desktop
-===============
-*/
-void GLimp_Minimize( void )
-{
-	SDL_MinimizeWindow( r_window );
-}
-
-void GLimp_LogComment( const char *comment )
-{
-}
-
-SDL_Window *G_GetSDLWindow( void ) {
-    return r_window;
-}
-
-static int GLimp_CreateBaseWindow( gpuConfig_t *config )
-{
-    uint32_t windowFlags;
-    uint32_t contextFlags;
-    int32_t depthBits, stencilBits, colorBits;
-    int32_t perChannelColorBits;
-    int32_t x, y;
-    int32_t i;
-
-    // set window flags
-    windowFlags = SDL_WINDOW_OPENGL;
-    if ( r_fullscreen->i ) {
-        // custom fullscreen or native?
-        if ( r_mode->i == -2 ) {
-            windowFlags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-        }
-        else {
-            windowFlags |= SDL_WINDOW_FULLSCREEN;
-        }
-    }
-    if ( r_noborder->i ) {
-        windowFlags |= SDL_WINDOW_BORDERLESS;
-    }
-
-    // destroy existing context if it exists
-    if  ( r_GLcontext ) {
-        SDL_GL_DeleteContext( r_GLcontext );
-        r_GLcontext = NULL;
-    }
-    if ( r_window ) {
-        SDL_GetWindowPosition( r_window, &x, &y );
-        Con_DPrintf( "Existing window at %ix%i before destruction\n", x, y );
-        SDL_DestroyWindow( r_window );
-        r_window = NULL;
-    }
-
-    colorBits = r_colorBits->i;
-    if ( colorBits == 0 || colorBits > 32 ) {
-        colorBits = 32;
-    }
-    if ( g_depthBits->i == 0 ) {
-        // implicitly assume Z-buffer depth == desktop color depth
-        if ( colorBits > 16 ) {
-            depthBits = 24;
-        } else {
-            depthBits = 16;
-        }
-    }
-    else {
-        depthBits = g_depthBits->i;
-    }
-
-    stencilBits = g_stencilBits->i;
-
-    // do not allow stencil if Z-buffer depth likely won't contain it
-    if ( depthBits < 24 ) {
-        stencilBits = 0;
-    }
-    
-    for ( i = 0; i < 16; i++ ) {
-        int testColorBits, testDepthBits, testStencilBits;
-        int realColorBits[3];
-
-		// 0 - default
-		// 1 - minus colorBits
-		// 2 - minus depthBits
-		// 3 - minus stencil
-		if ( ( i % 4 ) == 0 && i ) {
-			// one pass, reduce
-			switch ( i / 4 ) {
-			case 2:
-				if ( colorBits == 24 ) {
-					colorBits = 16;
-                }
-				break;
-			case 1:
-				if ( depthBits == 24 ) {
-					depthBits = 16;
-				} else if ( depthBits == 16 ) {
-					depthBits = 8;
-                }
-			case 3:
-				if ( stencilBits == 24 ) {
-					stencilBits = 16;
-                } else if ( stencilBits == 16 ) {
-					stencilBits = 8;
-                }
-			};
-		}
-
-		testColorBits = colorBits;
-		testDepthBits = depthBits;
-		testStencilBits = stencilBits;
-
-		if ( ( i % 4 ) == 3 ) { // reduce colorBits
-			if ( testColorBits == 24 ) {
-				testColorBits = 16;
-            }
-		}
-
-		if ( ( i % 4 ) == 2 ) { // reduce depthBits
-			if ( testDepthBits == 24 ) {
-				testDepthBits = 16;
-            } else if ( testDepthBits == 16 ) {
-				testDepthBits = 8;
-            }
-		}
-
-		if ( ( i % 4 ) == 1 ) { // reduce stencilBits
-			if ( testStencilBits == 24 ) {
-				testStencilBits = 16;
-            } else if ( testStencilBits == 16 ) {
-				testStencilBits = 8;
-            } else {
-				testStencilBits = 0;
-            }
-		}
-
-		if ( testColorBits == 24 ) {
-			perChannelColorBits = 8;
-        } else {
-			perChannelColorBits = 4;
-        }
-        
-        SDL_GL_SetAttribute( SDL_GL_RED_SIZE, perChannelColorBits );
-        SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE, perChannelColorBits );
-        SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE, perChannelColorBits );
-
-        SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, testDepthBits );
-        SDL_GL_SetAttribute( SDL_GL_STENCIL_SIZE, testStencilBits );
-
-        SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 0 );
-        SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, 0 );
-
-        contextFlags = 0;
-        if ( r_glDebug->i ) {
-            contextFlags |= SDL_GL_CONTEXT_DEBUG_FLAG;
-        }
-        if ( !r_allowLegacy->i ) {
-//            contextFlags |= SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG;
-        }
-
-        // set the recommended version, this is not mandatory,
-        // however if your driver isn't >= 3.3, that'll be
-        // deprecated stuff
-        SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 3 );
-        SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 3 );
-        SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY );
-
-        if ( contextFlags ) {
-            SDL_GL_SetAttribute( SDL_GL_CONTEXT_FLAGS, contextFlags );
-        }
-
-        if (r_stereoEnabled->i) {
-            SDL_GL_SetAttribute(SDL_GL_STEREO, 1);
-        }
-        else {
-            SDL_GL_SetAttribute(SDL_GL_STEREO, 0);
-        }
-
-        SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-
-        if (!r_allowSoftwareGL->i) {
-            SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-        }
-
-        // [glnomad] make sure we only create ONE window
-        if (!r_window) {
-            if ((r_window = SDL_CreateWindow(cl_title->s, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-            config->vidWidth, config->vidHeight, windowFlags)) == NULL) {
-                Con_DPrintf("SDL_CreateWindow(%s, %i, %i, %x) failed: %s",
-                    cl_title->s, config->vidWidth, config->vidHeight, windowFlags, SDL_GetError());
-                return -1;
-            }
-        }
-        if (r_fullscreen->i) {
-            SDL_DisplayMode mode;
-
-	    	switch ( testColorBits ) {
-	    	case 16: mode.format = SDL_PIXELFORMAT_RGB565; break;
-	    	case 24: mode.format = SDL_PIXELFORMAT_RGB24;  break;
-            case 32: mode.format = SDL_PIXELFORMAT_RGBA32; break;
-	    	default: Con_DPrintf( "testColorBits is %d, can't fullscreen\n", testColorBits ); continue;
-	    	};
-
-	    	mode.w = config->vidWidth;
-	    	mode.h = config->vidHeight;
-	    	mode.refresh_rate = Cvar_VariableInteger( "r_displayRefresh" );
-	    	mode.driverdata = NULL;
-
-	    	if ( SDL_SetWindowDisplayMode( r_window, &mode ) < 0 ) {
-	    		Con_DPrintf( "SDL_SetWindowDisplayMode failed: %s\n", SDL_GetError( ) );
-	    		continue;
-	    	}
-
-	    	if ( SDL_GetWindowDisplayMode( r_window, &mode ) >= 0 ) {
-	    		config->displayFrequency = mode.refresh_rate;
-	    		config->vidWidth = mode.w;
-	    		config->vidHeight = mode.h;
-	    	}
-        }
-        if ( !r_GLcontext ) {
-			if ( ( r_GLcontext = SDL_GL_CreateContext( r_window ) ) == NULL ) {
-				Con_DPrintf( "SDL_GL_CreateContext failed: %s\n", SDL_GetError( ) );
-				SDL_DestroyWindow( r_window );
-				r_window = NULL;
-				continue;
-			}
-		}
-		if ( SDL_GL_SetSwapInterval( r_swapInterval->i ) == -1 ) {
-            // NOTE: if you get negative swap isn't supported, that just means dynamic
-            // vsync isn't available
-			Con_DPrintf( "SDL_GL_SetSwapInterval failed: %s\n", SDL_GetError( ) );
-		}
-		SDL_GL_GetAttribute( SDL_GL_RED_SIZE, &realColorBits[0] );
-		SDL_GL_GetAttribute( SDL_GL_GREEN_SIZE, &realColorBits[1] );
-		SDL_GL_GetAttribute( SDL_GL_BLUE_SIZE, &realColorBits[2] );
-		SDL_GL_GetAttribute( SDL_GL_DEPTH_SIZE, &config->depthBits );
-		SDL_GL_GetAttribute( SDL_GL_STENCIL_SIZE, &config->stencilBits );
-
-		config->colorBits = realColorBits[0] + realColorBits[1] + realColorBits[2];
-    }
-    Con_Printf( "Using %d color bits, %d depth, %d stencil display.\n",
-        config->colorBits, config->depthBits, config->stencilBits );
-
-    if (r_window) {
-#ifdef GLNOMAD_ICON_INCLUDE
-        SDL_Surface *icon = SDL_CreateRGBSurfaceFrom(
-            (void *)WINDOW_ICON.pixel_data,
-            WINDOW_ICON.width,
-            WINDOW_ICON.height,
-            WINDOW_ICON.bytes_per_pixel * 8,
-            WINDOW_ICON.bytes_per_pixel * WINDOW_ICON.width
-#ifdef GDR_LITTLE_ENDIAN
-			0x000000FF, 0x0000FF00, 0x00FF0000, 0xFF000000
-#else
-			0xFF000000, 0x00FF0000, 0x0000FF00, 0x000000FF
-#endif
-        );
-        if (icon) {
-            SDL_SetWindowIcon(r_window, icon);
-            SDL_FreeSurface(icon);
-        }
-        else {
-            Con_DPrintf("SDL_CreateRGBSurfaceFrom(WINDOW_ICON) == NULL\n"); // just to let us know
-        }
-#endif
-    }
-    else {
-        Con_Printf("Failed video initialization\n");
-        return -1;
-    }
-    SDL_GL_MakeCurrent(r_window, r_GLcontext);
-    SDL_GL_GetDrawableSize(r_window, &config->vidWidth, &config->vidHeight);
-
-    return 1;
-}
-
-//
-// GLimp_Init: will initialize a new OpenGL
-// window and context handle, will also handle all
-// the cvar stuff
-//
-void GLimp_Init(gpuConfig_t *config)
-{
-    uint32_t width, height;
-    uint32_t windowFlags;
-    float windowAspect;
-    SDL_DisplayMode dm;
-
-    Con_Printf("---------- GLimp_Init ----------\n");
-
-    if (!SDL_WasInit(SDL_INIT_VIDEO)) {
-        if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-            N_Error(ERR_FATAL, "SDL_Init(SDL_INIT_VIDEO) Failed: %s", SDL_GetError());
-            return;
-        }
-    }
-
-    if (SDL_GetDesktopDisplayMode( 0, &dm ) != 0) {
-        N_Error( ERR_FATAL, "SDL_GetDesktopDisplayMode failed: %s", SDL_GetError() );
-    }
-
-    gi.desktopWidth = dm.w;
-    gi.desktopHeight = dm.h;
-
-    const char *driverName;
-
-    if (!GLimp_CreateBaseWindow(config)) {
-        N_Error(ERR_FATAL, "Failed to init OpenGL\n");
-    }
-
-    driverName = SDL_GetCurrentVideoDriver();
-
-    Con_Printf("SDL using driver \"%s\"\n", driverName);
-
-    // These values force the UI to disable driver selection
-	config->driverType = GLDRV_ICD;
-	config->hardwareType = GLHW_GENERIC;
-
-    Key_ClearStates();
-}
-
-void GLimp_EndFrame(void)
-{
-    // don't flip if drawing to front buffer
-    if (N_stricmp(g_drawBuffer->s, "GL_FRONT") != 0) {
-        SDL_GL_SwapWindow(r_window);
-    }
-}
-
-void *GL_GetProcAddress(const char *name)
-{
-    return SDL_GL_GetProcAddress(name);
-}
-
-void GLimp_HideFullscreenWindow(void)
-{
-    if (r_window && glState.isFullscreen) {
-        SDL_HideWindow(r_window);
-    }
-}
-
-static Uint16 r[256];
-static Uint16 g[256];
-static Uint16 b[256];
-
-void GLimp_InitGamma( gpuConfig_t *config )
-{
-	config->deviceSupportsGamma = qfalse;
-
-	if ( SDL_GetWindowGammaRamp( r_window, r, g, b ) == 0 ) {
-		config->deviceSupportsGamma = SDL_SetWindowBrightness( r_window, 1.0f ) >= 0 ? qtrue : qfalse;
-	}
-}
-
-
-/*
-=================
-GLimp_SetGamma
-=================
-*/
-void GLimp_SetGamma( unsigned char red[256], unsigned char green[256], unsigned char blue[256] )
-{
-	Uint16 table[3][256];
-	uint32_t i, j;
-
-	for ( i = 0; i < 256; i++ ) {
-		table[0][i] = ( ( ( Uint16 ) red[i] ) << 8 ) | red[i];
-		table[1][i] = ( ( ( Uint16 ) green[i] ) << 8 ) | green[i];
-		table[2][i] = ( ( ( Uint16 ) blue[i] ) << 8 ) | blue[i];
-	}
-
-#ifdef _WIN32
-#include <windows.h>
-
-	// Win2K and newer put this odd restriction on gamma ramps...
-	{
-		//OSVERSIONINFO	vinfo;
-		//vinfo.dwOSVersionInfoSize = sizeof( vinfo );
-		//GetVersionEx( &vinfo );
-		//if( vinfo.dwMajorVersion >= 5 && vinfo.dwPlatformId == VER_PLATFORM_WIN32_NT )
-		{
-			qboolean clamped = qfalse;
-			for ( j = 0 ; j < 3 ; j++ ) {
-				for ( i = 0 ; i < 128 ; i++ ) {
-					if ( table[ j ] [ i] > ( ( 128 + i ) << 8 ) ) {
-						table[ j ][ i ] = ( 128 + i ) << 8;
-						clamped = qtrue;
-					}
-				}
-
-				if ( table[ j ] [127 ] > 254 << 8 ) {
-					table[ j ][ 127 ] = 254 << 8;
-					clamped = qtrue;
-				}
-			}
-			if ( clamped ) {
-				Con_DPrintf( "performing gamma clamp.\n" );
-			}
-		}
-	}
-#endif
-
-	// enforce constantly increasing
-	for ( j = 0; j < 3; j++ ) {
-		for ( i = 1; i < 256; i++) {
-			if ( table[j][i] < table[j][i-1] ) {
-				table[j][i] = table[j][i-1];
-            }
-		}
-	}
-
-	if ( SDL_SetWindowGammaRamp( r_window, table[0], table[1], table[2] ) < 0 ) {
-		Con_DPrintf( "SDL_SetWindowGammaRamp() failed: %s\n", SDL_GetError() );
-	}
-}
-
-
-SDL_GLContext G_GetGLContext( void ) {
-    return r_GLcontext;
-}
-
-qboolean G_WindowMinimized( void ) {
-    return (qboolean)(SDL_GetWindowFlags( r_window ) & SDL_WINDOW_MINIMIZED);
-}
-
-//
-// G_InitDisplay: called during renderer init
-//
-void G_InitDisplay(gpuConfig_t *config)
-{
-    SDL_DisplayMode mode;
-
-    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-        N_Error(ERR_FATAL, "SDL_Init(SDL_INIT_VIDEO) Failed: %s", SDL_GetError());
-    }
-    if (SDL_GetDesktopDisplayMode(0, &mode) != 0) {
-        Con_Printf(COLOR_YELLOW "SDL_GetDesktopDisplayMode() Failed: %s\n", SDL_GetError());
-        Con_Printf(COLOR_YELLOW "Setting mode to default of 1920x1080\n");
-
-        mode.refresh_rate = 60;
-        mode.w = 1920;
-        mode.h = 1080;
-    }
-
-    gi.desktopWidth = mode.w;
-    gi.desktopHeight = mode.h;
-
-    if ( !G_GetModeInfo( &config->vidWidth, &config->vidHeight, &config->windowAspect, r_mode->i,
-        "", mode.w, mode.h, r_fullscreen->i ) )
-    {
-        Con_Printf("Invalid r_mode, resetting...\n");
-        Cvar_ForceReset("r_mode");
-        if (!G_GetModeInfo(&config->vidWidth, &config->vidHeight, &config->windowAspect, r_mode->i,
-            "", mode.w, mode.h, r_fullscreen->i))
-        {
-            Con_Printf(COLOR_YELLOW "Could not determine video mode, setting to default of 1920x1080\n");
-
-            config->vidWidth = 1920;
-            config->vidHeight = 1080;
-            config->windowAspect = 1;
-        }
-    }
-
-    Con_Printf("Setting up display\n");
-    Con_Printf("...setting mode %li\n", r_mode->i);
-    
-    // init OpenGL
-    GLimp_Init( config );
-}
-#endif

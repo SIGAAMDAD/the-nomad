@@ -18,15 +18,15 @@ typedef struct {
     menutext_t checkpoint;
     menutext_t exitToMainMenu;
 
+    menutext_t dailyTipText;
+
+    char **dailyTips;
+    uint64_t numDailyTips;
+
     int oldVolume;
 } pauseMenu_t;
 
 #define PAUSEMENU_VOLUME_CAP 2
-
-static const char *dailyTips[] = {
-    "You can parry anything that's a projectile, that includes bullets, flying corpses, blades, etc.",
-    "The grappling hook deals a little bit of damage every time it hooks onto an enemy",
-};
 
 // PAUSE. REWIND. PLAY.
 static pauseMenu_t *s_pauseMenu;
@@ -58,11 +58,19 @@ static void PauseMenu_EventCallback( void *ptr, int event )
         gi.mapLoaded = qfalse;
         gi.state = GS_INACTIVE;
         g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelEnd, 0 );
+        g_pModuleLib->RunModules( ModuleOnLevelEnd, 0 );
         Cbuf_ExecuteText( EXEC_APPEND, "unloadworld\n" );
         break;
     default:
         break;
     };
+}
+
+static void DailyTip_Draw( void *ptr )
+{
+    ImGui::SetCursorScreenPos( ImVec2( 800 * ui->scale, 100 * ui->scale ) );
+    ImGui::SeparatorText( "Tip of the Day" );
+    ImGui::TextUnformatted( s_pauseMenu->dailyTipText.text );
 }
 
 static void PauseMenu_Draw( void )
@@ -71,7 +79,55 @@ static void PauseMenu_Draw( void )
         return;
     }
 
+    FontCache()->SetActiveFont( RobotoMono );
     Menu_Draw( &s_pauseMenu->menu );
+}
+
+static void PauseMenu_LoadDailyTips( void )
+{
+    union {
+        char *b;
+        void *v;
+    } f;
+    const char *tok;
+    const char **text_p, *text;
+    uint64_t i;
+
+    FS_LoadFile( "dailytips.txt", &f.v );
+    if ( !f.v ) {
+        N_Error( ERR_DROP, "PauseMenu_Cache: failed to load dailytips.txt" );
+    }
+
+    text = f.b;
+    text_p = (const char **)&text;
+
+    while ( 1 ) {
+        tok = COM_ParseExt( text_p, qtrue );
+        if ( !tok[0] ) {
+            break;
+        }
+
+        s_pauseMenu->numDailyTips++;
+    }
+
+    text = f.b;
+    text_p = (const char **)&text;
+
+    s_pauseMenu->dailyTips = (char **)Hunk_Alloc( sizeof( *s_pauseMenu->dailyTips ) * s_pauseMenu->numDailyTips, h_high );
+    i = 0;
+    while ( 1 ) {
+        tok = COM_ParseExt( text_p, qtrue );
+        if ( !tok[0] ) {
+            break;
+        }
+
+        s_pauseMenu->dailyTips[i] = (char *)Hunk_Alloc( strlen( tok ) + 1, h_high );
+        strcpy( s_pauseMenu->dailyTips[i], tok );
+        i++;
+    }
+    Con_Printf( "%lu daily tips loaded.\n", s_pauseMenu->numDailyTips );
+
+    FS_FreeFile( f.v );
 }
 
 void PauseMenu_Cache( void )
@@ -85,8 +141,8 @@ void PauseMenu_Cache( void )
 
     if ( !ui->uiAllocated ) {
         s_pauseMenu = (pauseMenu_t *)Hunk_Alloc( sizeof( *s_pauseMenu ), h_high );
+        PauseMenu_LoadDailyTips();
     }
-    memset( s_pauseMenu, 0, sizeof( *s_pauseMenu ) );
 
     titleString = strManager->ValueForKey( "MENU_PAUSE_TITLE" );
     resumeString = strManager->ValueForKey( "MENU_PAUSE_RESUME" );
@@ -137,6 +193,12 @@ void PauseMenu_Cache( void )
     s_pauseMenu->exitToMainMenu.text = exitToMainMenuString->value;
     s_pauseMenu->exitToMainMenu.color = color_white;
 
+    s_pauseMenu->dailyTipText.generic.type = MTYPE_TEXT;
+    s_pauseMenu->dailyTipText.generic.flags = QMF_OWNERDRAW;
+    s_pauseMenu->dailyTipText.generic.ownerdraw = DailyTip_Draw;
+    srand( Sys_Milliseconds() );
+    s_pauseMenu->dailyTipText.text = s_pauseMenu->dailyTips[ rand() & s_pauseMenu->numDailyTips ];
+
     s_pauseMenu->oldVolume = Cvar_VariableFloat( "snd_musicvol" );
     Cvar_Set( "snd_musicvol", va( "%i", PAUSEMENU_VOLUME_CAP ) );
 
@@ -144,6 +206,7 @@ void PauseMenu_Cache( void )
     Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->checkpoint );
     Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->help );
     Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->exitToMainMenu );
+    Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->dailyTipText );
 }
 
 void UI_PauseMenu( void )

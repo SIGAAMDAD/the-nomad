@@ -4,6 +4,7 @@
 #include "GameSystem/GameSystem.as"
 #include "SGame/InfoSystem/InfoDataManager.as"
 #include "SGame/LevelSystem.as"
+#include "Engine/CommandSystem/CommandManager.as"
 
 string s_DebugMsg;
 
@@ -132,7 +133,7 @@ void InitCvars() {
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_LevelIndex, "g_levelIndex", "0", CVAR_LATCH | CVAR_TEMP, false );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_MapName, "mapname", "", CVAR_LATCH | CVAR_TEMP, false );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_MaxFps, "com_maxfps", "60", CVAR_LATCH | CVAR_SAVE, false );
-	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_SaveName, "sgame_SaveName", "nomadsv.ngd", CVAR_TEMP, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_SaveName, "sgame_SaveName", "nomadsv", CVAR_TEMP, false );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_QuickShotMaxTargets, "sgame_QuickShotMaxTargets", "20", CVAR_TEMP, false );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_QuickShotTime, "sgame_QuickShotTime", "100", CVAR_TEMP, false );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_QuickShotMaxRange, "sgame_QuickShotMaxRange", "40", CVAR_TEMP, false );
@@ -201,12 +202,12 @@ int ModuleShutdown() {
 }
 
 int ModuleOnConsoleCommand() {
-//	const string command = TheNomad::Engine::CmdArgv( 0 );
+	const string cmd = TheNomad::Engine::CmdArgv( 0 );
 
-	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
-		if ( TheNomad::GameSystem::GameSystems[i].OnConsoleCommand( TheNomad::Engine::CmdArgv( 0 ) ) ) {
-			return 1;
-		}
+	if ( TheNomad::Engine::CommandSystem::CmdManager.CheckGameCommand( cmd )
+		|| TheNomad::Engine::CommandSystem::CmdManager.CheckCommand( cmd ) )
+	{
+		return 1;
 	}
 	return 0;
 }
@@ -235,8 +236,6 @@ int ModuleOnLevelStart() {
 		TheNomad::GameSystem::GameSystems[i].OnLevelStart();
 	}
 
-	TheNomad::SGame::EntityManager.SetPlayerObject( cast<TheNomad::SGame::PlayrObject>( @TheNomad::SGame::EntityManager.Spawn( TheNomad::GameSystem::EntityType::Playr, 0, vec3( 0.0 ) ) ) );
-
 	return 1;
 }
 
@@ -248,22 +247,20 @@ int ModuleOnLevelEnd() {
 	return 1;
 }
 
-int ModuleOnKeyEvent( uint key, uint down )
-{
+int ModuleOnKeyEvent( uint key, uint down ) {
 	return 0;
 }
 
-int ModuleOnMouseEvent( int dx, int dy )
-{
+int ModuleOnMouseEvent( int dx, int dy ) {
 	TheNomad::GameSystem::GameManager.SetMousePos( ivec2( dx, dy ) );
 	return 0;
 }
 
-
-int ModuleOnRunTic( uint msec )
-{
-	if ( TheNomad::SGame::GlobalState == TheNomad::SGame::GameState::EndOfLevel ) {
+int ModuleOnRunTic( uint msec ) {
+	if ( TheNomad::SGame::GlobalState == TheNomad::SGame::GameState::StatsMenu ) {
 		return 1;
+	} else if ( TheNomad::SGame::GlobalState == TheNomad::SGame::GameState::EndOfLevel ) {
+		return 2;
 	}
 
 	TheNomad::GameSystem::GameManager.SetMsec( msec );

@@ -22,6 +22,8 @@ typedef struct {
 	int64_t	maxSize;
 } memoryStats_t;
 
+void		Mem_DrawMemoryEdit( void );
+
 void		Mem_Init( void );
 void		Mem_Shutdown( void );
 void		Mem_EnableLeakTest( const char *name );

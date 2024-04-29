@@ -7,6 +7,8 @@
 
 extern uint32_t cvar_modifiedFlags;
 
+const char *Cvar_InfoString( int bit, qboolean *truncated );
+const char *Cvar_InfoString_Big( int bit, qboolean *truncated );
 void Cvar_ResetGroup( cvarGroup_t group, qboolean resetModifiedFlags );
 int Cvar_CheckGroup(cvarGroup_t group);
 void Cvar_ForceReset(const char *name);

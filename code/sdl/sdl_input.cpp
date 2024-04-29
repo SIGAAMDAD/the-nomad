@@ -502,10 +502,42 @@ struct {
 	unsigned int oldhats;
 } stick_state;
 
+static void IN_HapticRumble( void )
+{
+	uint32_t length;
+	float strength;
+
+	if ( !in_haptic->i || !haptic ) {
+		Con_Printf( "Haptic device not active.\n" );
+		return;
+	}
+
+	if ( Cmd_Argc() != 3 ) {
+		Con_Printf( "usage: in_haptic_rumble <strength> <duration (milliseconds)>\n" );
+		return;
+	}
+
+	length = (uint32_t)atol( Cmd_Argv( 2 ) );
+
+	strength = N_atof( Cmd_Argv( 1 ) );
+	if ( N_isnan( strength ) ) {
+		Con_Printf( "IN_HapticRumble: strength is NaN\n" );
+		return;
+	}
+
+	Con_DPrintf( "Activating haptic rumble: %0.02f %ums\n", strength, length );
+
+	if ( SDL_HapticRumblePlay( haptic, strength, length ) != 0 ) {
+		Con_Printf( "Haptic rumble failed: %s\n", SDL_GetError() );
+	}
+}
 
 static void IN_InitHaptic( void )
 {
-	if ( !in_haptic->i ) {
+	int total = 0;
+	int index = 0;
+
+	if ( !in_haptic->i || !in_joystick->i || !stick ) {
 		return;
 	}
 
@@ -516,22 +548,45 @@ static void IN_InitHaptic( void )
 	haptic = NULL;
 
 	if ( !SDL_WasInit( SDL_INIT_HAPTIC ) ) {
-		Con_DPrintf( "Calling SDL_Init(SDL_INIT_HAPTIC)...\n" );
+		Con_Printf( "Calling SDL_Init(SDL_INIT_HAPTIC)...\n" );
 		if ( SDL_Init( SDL_INIT_HAPTIC ) != 0 ) {
-			Con_DPrintf( "SDL_Init(SDL_INIT_HAPTIC) failed: %s\n", SDL_GetError() );
+			Con_Printf( "SDL_Init(SDL_INIT_HAPTIC) failed: %s\n", SDL_GetError() );
 			return;
 		}
-		Con_DPrintf( "SDL_Init(SDL_INIT_HAPTIC) passed.\n" );
+		Con_Printf( "SDL_Init(SDL_INIT_HAPTIC) passed.\n" );
 	}
-	if ( SDL_JoystickIsHaptic( stick ) ) {
-		haptic = SDL_HapticOpenFromJoystick( stick );
-		if ( !haptic ) {
-			
-		}
-	} else {
+
+	total = SDL_NumHaptics();
+	Con_Printf( "%i possible haptic devices\n", total );
+	
+	if ( !SDL_JoystickIsHaptic( stick ) ) {
 		Con_Printf( "Current controller doesn't support haptic feedback.\n" );
 		return;
 	}
+
+	haptic = SDL_HapticOpenFromJoystick( stick );
+	if ( !haptic ) {
+		Con_Printf( "No haptic device opened: %s\n", SDL_GetError() );
+		return;
+	}
+
+	index = SDL_HapticIndex( haptic );
+	if ( index == -1 ) {
+		SDL_HapticClose( haptic );
+		Con_Printf( "Haptic device index is negative: %s\n", SDL_GetError() );
+		return;
+	}
+
+	if ( SDL_HapticRumbleInit( haptic ) != 0 ) {
+		SDL_HapticClose( haptic );
+		Con_Printf( "Haptic device rumble could not be initialized: %s\n", SDL_GetError() );
+		return;
+	}
+
+	Con_Printf( "Haptic Device %i opened\n", index );
+	Con_Printf( "Name:       %s\n", SDL_HapticName( index ) );
+	Con_Printf( "Axes:       %i\n", SDL_HapticNumAxes( haptic ) );
+	Con_Printf( "MaxEffects: %i\n", SDL_HapticNumEffects( haptic ) );
 }
 
 /*
@@ -563,25 +618,25 @@ static void IN_InitJoystick( void )
 	// despite https://wiki.libsdl.org/SDL_Init (retrieved 2016-08-16)
 	// indicating SDL_INIT_JOYSTICK should be initialized automatically.
 	if ( !SDL_WasInit( SDL_INIT_JOYSTICK ) ) {
-		Con_DPrintf( "Calling SDL_Init(SDL_INIT_JOYSTICK)...\n" );
+		Con_Printf( "Calling SDL_Init(SDL_INIT_JOYSTICK)...\n" );
 		if ( SDL_Init( SDL_INIT_JOYSTICK ) != 0 ) {
-			Con_DPrintf( "SDL_Init(SDL_INIT_JOYSTICK) failed: %s\n", SDL_GetError() );
+			Con_Printf( "SDL_Init(SDL_INIT_JOYSTICK) failed: %s\n", SDL_GetError() );
 			return;
 		}
-		Con_DPrintf( "SDL_Init(SDL_INIT_JOYSTICK) passed.\n" );
+		Con_Printf( "SDL_Init(SDL_INIT_JOYSTICK) passed.\n" );
 	}
 
 	if ( !SDL_WasInit( SDL_INIT_GAMECONTROLLER ) ) {
-		Con_DPrintf( "Calling SDL_Init(SDL_INIT_GAMECONTROLLER)...\n" );
+		Con_Printf( "Calling SDL_Init(SDL_INIT_GAMECONTROLLER)...\n" );
 		if ( SDL_Init( SDL_INIT_GAMECONTROLLER ) != 0 ) {
-			Con_DPrintf( "SDL_Init(SDL_INIT_GAMECONTROLLER) failed: %s\n", SDL_GetError() );
+			Con_Printf( "SDL_Init(SDL_INIT_GAMECONTROLLER) failed: %s\n", SDL_GetError() );
 			return;
 		}
-		Con_DPrintf( "SDL_Init(SDL_INIT_GAMECONTROLLER) passed.\n" );
+		Con_Printf( "SDL_Init(SDL_INIT_GAMECONTROLLER) passed.\n" );
 	}
 
 	total = SDL_NumJoysticks();
-	Con_DPrintf( "%d possible joysticks\n", total );
+	Con_Printf( "%i possible joysticks\n", total );
 
 	// Print list and build cvar to allow ui to select joystick.
 	for ( i = 0; i < total; i++ ) {
@@ -612,7 +667,7 @@ static void IN_InitJoystick( void )
 	stick = SDL_JoystickOpen( in_joystickNo->i );
 
 	if ( stick == NULL ) {
-		Con_DPrintf( "No joystick opened: %s\n", SDL_GetError() );
+		Con_Printf( "No joystick opened: %s\n", SDL_GetError() );
 		return;
 	}
 
@@ -622,14 +677,14 @@ static void IN_InitJoystick( void )
 		gamepad = SDL_GameControllerOpen( in_joystickNo->i );
 	}
 
-	Con_DPrintf( "Joystick %li opened\n", in_joystickNo->i );
-	Con_DPrintf( "Name:       %s\n", SDL_JoystickNameForIndex(in_joystickNo->i ) );
-	Con_DPrintf( "Axes:       %i\n", SDL_JoystickNumAxes( stick ) );
-	Con_DPrintf( "Hats:       %i\n", SDL_JoystickNumHats( stick ) );
-	Con_DPrintf( "Buttons:    %i\n", SDL_JoystickNumButtons( stick ) );
-	Con_DPrintf( "Balls:      %i\n", SDL_JoystickNumBalls( stick ) );
-	Con_DPrintf( "Use Analog: %s\n", in_joystickUseAnalog->i ? "Yes" : "No" );
-	Con_DPrintf( "Is gamepad: %s\n", gamepad ? "Yes" : "No" );
+	Con_Printf( "Joystick %li opened\n", in_joystickNo->i );
+	Con_Printf( "Name:       %s\n", SDL_JoystickNameForIndex(in_joystickNo->i ) );
+	Con_Printf( "Axes:       %i\n", SDL_JoystickNumAxes( stick ) );
+	Con_Printf( "Hats:       %i\n", SDL_JoystickNumHats( stick ) );
+	Con_Printf( "Buttons:    %i\n", SDL_JoystickNumButtons( stick ) );
+	Con_Printf( "Balls:      %i\n", SDL_JoystickNumBalls( stick ) );
+	Con_Printf( "Use Analog: %s\n", in_joystickUseAnalog->i ? "Yes" : "No" );
+	Con_Printf( "Is gamepad: %s\n", gamepad ? "Yes" : "No" );
 
 	SDL_JoystickEventState( SDL_QUERY );
 	SDL_GameControllerEventState( SDL_QUERY );
@@ -659,6 +714,12 @@ static void IN_ShutdownJoystick( void )
 	if ( stick ) {
 		SDL_JoystickClose( stick );
 		stick = NULL;
+	}
+
+	if ( SDL_WasInit( SDL_INIT_HAPTIC ) ) {
+		SDL_HapticClose( haptic );
+		haptic = NULL;
+		SDL_QuitSubSystem( SDL_INIT_HAPTIC );
 	}
 
 	SDL_QuitSubSystem( SDL_INIT_GAMECONTROLLER );
@@ -701,10 +762,6 @@ static qboolean KeyToAxisAndSign( int keynum, int *outAxis, int *outSign )
 	{
 		*outAxis = j_side_axis->i;
 		*outSign = j_side->f > 0.0f ? 1 : -1;
-	}
-	else if ( N_stricmp( bind, "+upmove" ) == 0 ) {
-		*outAxis = j_up_axis->i;
-		*outSign = j_up->f > 0.0f ? 1 : -1;
 	}
 	/*
 	else if (N_stricmp(bind, "+lookup") == 0)
@@ -1412,7 +1469,8 @@ void IN_Init( void )
 	IN_InitJoystick();
 
 	Cmd_AddCommand( "minimize", IN_Minimize );
-	Cmd_AddCommand( "input.restart", IN_Restart );
+	Cmd_AddCommand( "in_restart", IN_Restart );
+	Cmd_AddCommand( "in_haptic_rumble", IN_HapticRumble );
 
 	Con_DPrintf( "------------------------------------\n" );
 }
@@ -1428,7 +1486,8 @@ void IN_Shutdown( void )
 	IN_ShutdownJoystick();
 
     Cmd_RemoveCommand( "minimize" );
-    Cmd_RemoveCommand( "input.restart" );
+    Cmd_RemoveCommand( "in_restart" );
+	Cmd_RemoveCommand( "in_haptic_rumble" );
 }
 
 void IN_Frame( void )

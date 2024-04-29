@@ -310,6 +310,7 @@ void ModsMenu_Draw( void )
     ImGuiStyle *style;
     char loadId[MAX_STRING_CHARS];
     qboolean dimColor;
+	float itemSpacing;
     const float fontScale = ImGui::GetFont()->Scale;
     extern ImFont *RobotoMono;
     
@@ -327,6 +328,7 @@ void ModsMenu_Draw( void )
     }
     
     style = eastl::addressof( ImGui::GetStyle() );
+	itemSpacing = style->ItemSpacing.y;
     style->ItemSpacing.y = 50.0f;
    	
    	ImGui::BeginTable( "##ModLoadList", 5 );
@@ -431,6 +433,8 @@ void ModsMenu_Draw( void )
     ImGui::EndTable();
 
 	ImGui::End();
+
+	style->ItemSpacing.y = itemSpacing;
 }
 
 inline module_s& module_s::operator=( module_s& other ) {
