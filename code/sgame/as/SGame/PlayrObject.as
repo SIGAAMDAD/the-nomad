@@ -358,8 +358,9 @@ namespace TheNomad::SGame {
 				if ( m_nHealMult < 0.0f ) {
 					m_nHealMult = 0.0f;
 				}
-
-				TheNomad::Engine::CmdExecuteCommand( "in_haptic_rumble 0.5 300\n" );
+				if ( m_nHealth <= 10.0f ) {
+					TheNomad::Engine::CmdExecuteCommand( "in_haptic_rumble 0.5 300\n" );
+				}
 			}
 
 			m_HudData.Draw();
@@ -472,7 +473,8 @@ namespace TheNomad::SGame {
 
 		void Spawn( uint id, const vec3& in origin ) override {
 			m_Link.m_Origin = origin;
-			m_nHealth = 0.0f;
+			m_nHealth = 100.0f;
+			m_nRage = 100.0f;
 		}
 		
 		KeyBind key_MoveNorth, key_MoveSouth, key_MoveEast, key_MoveWest;

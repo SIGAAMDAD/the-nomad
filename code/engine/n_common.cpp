@@ -1250,8 +1250,8 @@ quake3 set test blah + map test
 */
 
 #define	MAX_CONSOLE_LINES 256
-static int	com_numConsoleLines;
-static char	*com_consoleLines[MAX_CONSOLE_LINES];
+static int com_numConsoleLines;
+static eastl::vector<char *> com_consoleLines;
 
 int I_GetParm( const char *parm )
 {
@@ -1264,7 +1264,7 @@ int I_GetParm( const char *parm )
 
 	for ( i = 0; i < com_numConsoleLines; i++ ) {
 		Cmd_TokenizeString( com_consoleLines[i] );
-		if ( N_stricmp( Cmd_Argv(0), "set" ) )
+		if ( N_stricmp( Cmd_Argv( 0 ), "set" ) )
 			continue;
 		
 		name = Cmd_Argv( 1 );
@@ -1336,7 +1336,7 @@ Com_ParseCommandLine
 Break it up into multiple console lines
 ==================
 */
-static void Com_ParseCommandLine( char *commandLine )
+void Com_ParseCommandLine( char *commandLine )
 {
 	static int parsed = 0;
 	int inq;
@@ -1345,7 +1345,11 @@ static void Com_ParseCommandLine( char *commandLine )
 		return;
 
 	inq = 0;
-	com_consoleLines[0] = commandLine;
+//	com_consoleLines[0] = commandLine;
+	if ( !com_consoleLines.size() ) {
+		com_consoleLines.reserve( MAX_CONSOLE_LINES );
+		com_consoleLines.emplace_back( commandLine );
+	}
 
 	while ( *commandLine ) {
 		if (*commandLine == '"') {
@@ -1353,11 +1357,11 @@ static void Com_ParseCommandLine( char *commandLine )
 		}
 		// look for a + separating character
 		// if commandLine came from a file, we might have real line separators
-		if ( (*commandLine == '+' && !inq) || *commandLine == '\n'  || *commandLine == '\r' ) {
+		if ( ( *commandLine == '+' && !inq ) || *commandLine == '\n'  || *commandLine == '\r' ) {
 			if ( com_numConsoleLines == MAX_CONSOLE_LINES ) {
-				break;
+				com_consoleLines.reserve( MAX_CONSOLE_LINES );
 			}
-			com_consoleLines[com_numConsoleLines] = commandLine + 1;
+			com_consoleLines.emplace_back( commandLine + 1 );
 			com_numConsoleLines++;
 			*commandLine = '\0';
 		}

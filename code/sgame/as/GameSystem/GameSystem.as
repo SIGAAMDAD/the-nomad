@@ -1,8 +1,8 @@
-#include "GameSystem/GameObject.as"
 #include "GameSystem/Constants.as"
 #include "GameSystem/SaveSystem/LoadSection.as"
 #include "GameSystem/SaveSystem/SaveSection.as"
 #include "GameSystem/SaveSystem/ObjectDataSync.as"
+//#include "GameSystem/GameObject.as"
 
 namespace TheNomad::GameSystem {
     class CampaignManager : GameObject {
@@ -84,17 +84,17 @@ namespace TheNomad::GameSystem {
 			return m_GPUConfig;
 		}
 
-		void SetMousePos( const ivec2& in mousePos ) {
+		void SetMousePos( const uvec2& in mousePos ) {
 			m_MousePos = mousePos;
 		}
-		ivec2& GetMousePos() {
+		uvec2& GetMousePos() {
 			return m_MousePos;
 		}
-		const ivec2& GetMousePos() const {
+		const uvec2& GetMousePos() const {
 			return m_MousePos;
 		}
 
-		private ivec2 m_MousePos;
+		private uvec2 m_MousePos;
 		private uint m_nDeltaTics;
 		private uint m_nGameMsec;
 		private uint m_nGameTic;
@@ -109,7 +109,7 @@ namespace TheNomad::GameSystem {
 		ConsolePrint( "Added GameObject System \"" + SystemHandle.GetName() + "\"\n" );
 		SystemHandle.OnInit();
 		GameSystems.Add( @SystemHandle );
-		return SystemHandle;
+		return @SystemHandle;
 	}
 
 	class RayCast {

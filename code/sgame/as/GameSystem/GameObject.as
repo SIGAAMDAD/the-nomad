@@ -1,3 +1,4 @@
+
 namespace TheNomad::GameSystem {
     interface GameObject {
 		void OnInit();

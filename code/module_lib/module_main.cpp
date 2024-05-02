@@ -100,6 +100,12 @@ const char *AS_PrintErrorString( int code )
         return "initialization of global vars failed";
     case asNO_MODULE:
         return "no module was found";
+    case asWRONG_CONFIG_GROUP:
+        return "already registered in another config group";
+    case asLOWER_ARRAY_DIMENSION_NOT_REGISTERED:
+        return "array templated subtype not registered yet";
+    case asMODULE_IS_IN_USE:
+        return "module is referred to by active object or from the engine";
     default:
         break;
     };
@@ -278,6 +284,7 @@ int CModuleLib::ModuleCall( CModuleInfo *pModule, EModuleFuncId nCallId, uint32_
     va_list argptr;
     uint32_t i;
     uint32_t args[16];
+    const char *name;
 
     if ( !pModule ) {
         N_Error( ERR_FATAL, "CModuleLib::ModuleCall: invalid module" );
@@ -293,6 +300,21 @@ int CModuleLib::ModuleCall( CModuleInfo *pModule, EModuleFuncId nCallId, uint32_
     va_end( argptr );
 
     switch ( nCallId ) {
+    case ModuleOnLevelStart:
+        name = "OnLevelStart";
+        break;
+    case ModuleOnLevelEnd:
+        name = "OnLevelEnd";
+        break;
+    case ModuleOnSaveGame:
+        name = "OnSaveGame";
+        break;
+    case ModuleOnLoadGame:
+        name = "OnLoadGame";
+        break;
+    };
+
+    switch ( nCallId ) {
     case ModuleOnLevelStart: {
     case ModuleOnLevelEnd:
     case ModuleOnLoadGame:
@@ -300,7 +322,7 @@ int CModuleLib::ModuleCall( CModuleInfo *pModule, EModuleFuncId nCallId, uint32_
         CTimer time;
 
         time.Run();
-        Con_DPrintf( "Garbage collection started...\n" );
+        Con_DPrintf( "Garbage collection started (%s)...\n", name );
         g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE | asGC_DESTROY_GARBAGE
             | asGC_FULL_CYCLE, (uint32_t)ml_garbageCollectionIterations->i );
         time.Stop();
@@ -425,9 +447,37 @@ bool CModuleLib::AddDefaultProcs( void ) const {
     }
 
     RegisterScriptArray( m_pEngine );
-    RegisterStdString( m_pEngine );
-    RegisterScriptDictionary( m_pEngine );
+    RegisterStdString_Generic( g_pModuleLib->GetScriptEngine() );
     RegisterScriptHandle( m_pEngine );
+
+    CheckASCall( g_pModuleLib->GetScriptEngine()->SetDefaultNamespace( "TheNomad::GameSystem" ) );
+    CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterface( "GameObject" ) );
+    CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
+        "void OnInit()" ) );
+    CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
+        "void OnShutdown()" ) );
+    CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
+        "void OnLevelStart()" ) );
+    CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
+        "void OnLevelEnd()" ) );
+    CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
+        "void OnRunTic()" ) );
+//  CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
+//      "void OnKeyEvent( uint key, uint down )" ) );
+//  CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
+//      "void OnMouseEvent( uint dx, uint dy )" ) );
+    CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
+        "bool OnConsoleCommand( const string& in )" ) );
+    CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
+        "void OnLoad()" ) );
+    CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
+        "void OnSave() const" ) );
+    CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
+        "const string& GetName() const" ) );
+    CheckASCall( g_pModuleLib->GetScriptEngine()->SetDefaultNamespace( "" ) );
+
+//    RegisterStdString( m_pEngine );
+    RegisterScriptDictionary( m_pEngine );
     RegisterScriptMath( m_pEngine );
     RegisterScriptJson( m_pEngine );
 
@@ -467,6 +517,7 @@ CModuleLib::CModuleLib( void )
     CheckASCall( m_pEngine->SetEngineProperty( asEP_USE_CHARACTER_LITERALS, true ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_AUTO_GARBAGE_COLLECT, false ) );
     CheckASCall( m_pEngine->SetEngineProperty( asEP_HEREDOC_TRIM_MODE, 0 ) );
+    CheckASCall( m_pEngine->SetEngineProperty( asEP_INIT_GLOBAL_VARS_AFTER_BUILD, true ) );
 
     m_pScriptBuilder = new ( Hunk_Alloc( sizeof( *m_pScriptBuilder ), h_low ) ) CScriptBuilder();
     g_pDebugger = new ( Hunk_Alloc( sizeof( *g_pDebugger ), h_low ) ) CDebugger();

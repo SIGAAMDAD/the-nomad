@@ -3,6 +3,8 @@
 #include "n_steam.h"
 #include "n_common.h"
 #include "n_cvar.h"
+#include <EASTL/vector.h>
+#include <EASTL/map.h>
 
 // define this only in release builds, but of course if we're debugging steam tho
 //#define NOMAD_STEAM_APP
@@ -56,16 +58,35 @@ private:
 
 typedef struct {
     const char *pName;
+    const char *pDescription;
     qboolean bAchieved;
 } achievement_t;
 
 class CSteamAchievementManager
 {
 public:
+    CSteamAchievementManager( void );
+    ~CSteamAchievementManager();
+
+    void AddAchievement( const char *pName, const char *pDescription );
 private:
+    eastl::vector<achievement_t> m_Achievements;
 };
 
 static CSteamManager *s_pSteamManager;
+
+CSteamAchievementManager::CSteamAchievementManager( void )
+{
+}
+
+void CSteamAchievementManager::AddAchievement( const char *pName, const char *pDescription ) {
+    achievement_t ach;
+    ach.pName = pName;
+    ach.pDescription = pDescription;
+    ach.bAchieved = qfalse;
+
+    m_Achievements.emplace_back( ach );
+}
 
 CSteamManager::CSteamManager( void ) {
 }
@@ -150,6 +171,7 @@ void CSteamManager::LoadUserInfo( void )
         N_strncpyz( szUserDataFolder, COLOR_RED "FAILED", sizeof( szUserDataFolder ) - 1 );
     }
 
+    LogInfo( "SteamUser.Id: %lu\n", m_nSteamUserId );
     LogInfo( "SteamUser.IndividualAccount: %s\n", m_pSteamUser->GetSteamID().BIndividualAccount() ? "true" : "false" );
     LogInfo( "SteamUser.UserDataFolder: %s\n", szUserDataFolder );
     LogInfo( "SteamUser.IsVipAccount: %s\n", m_bVipAccount ? "true" : "false" );
@@ -176,16 +198,36 @@ void CSteamManager::LoadDLC( void )
 
 void CSteamManager::LoadAppInfo( void )
 {
+    char szCommandLine[MAX_CMD_BUFFER];
+    uint32 nTimedTrialSecondsAllowed, nTimedTrialSecondsPlayed;
+    bool bIsTimedTrial;
+
     Cvar_Set( "ui_language", SteamApps()->GetCurrentGameLanguage() );
     m_nAppId = SteamApps()->GetAppBuildId();
     SteamApps()->GetAppInstallDir( m_nAppId, m_szInstallDir, sizeof( m_szInstallDir ) );
 
+    memset( szCommandLine, 0, sizeof( szCommandLine ) );
+    SteamApps()->GetLaunchCommandLine( szCommandLine, sizeof( szCommandLine ) );
+    if ( *szCommandLine ) {
+        Com_ParseCommandLine( szCommandLine );
+    }
+
+    if ( ( bIsTimedTrial = SteamApps()->BIsTimedTrial( &nTimedTrialSecondsAllowed, &nTimedTrialSecondsPlayed ) ) ) {
+        if ( nTimedTrialSecondsPlayed > nTimedTrialSecondsAllowed ) {
+            N_Error( ERR_FATAL, "*** STEAM *** Time Trial has expired" );
+        }
+    }
+
+    LogInfo( "Language: %s\n", SteamApps()->GetCurrentGameLanguage() );
     LogInfo( "AppId: %u\n", m_nAppId );
     LogInfo( "InstallDir: %s\n", m_szInstallDir );
+    LogInfo( "IsTimedTrial: %s\n", bIsTimedTrial ? "true" : "false" );
 }
 
 void CSteamManager::Init( void )
 {
+    LoadAppInfo();
+
     LoadUserInfo();
 
     // ... ;)

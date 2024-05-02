@@ -20,7 +20,7 @@ namespace TheNomad::SGame {
 		}
 		void OnRunTic() {
 		}
-		bool OnConsoleCommand( const string& in cmd ) {
+		bool OnConsoleCommand() {
 			return false;
 		}
 			

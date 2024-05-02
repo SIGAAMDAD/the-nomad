@@ -206,7 +206,7 @@ void PauseMenu_Cache( void )
     Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->checkpoint );
     Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->help );
     Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->exitToMainMenu );
-    Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->dailyTipText );
+//    Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->dailyTipText );
 }
 
 void UI_PauseMenu( void )

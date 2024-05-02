@@ -31,6 +31,7 @@ namespace TheNomad::SGame {
     enum GameState {
 		Inactive,
 		InLevel,
+		LevelFinish,
 		EndOfLevel,
 		StatsMenu,
 		DeathMenu,
@@ -166,6 +167,8 @@ namespace TheNomad::SGame {
 		void OnShutdown() {
 		}
 		void OnRunTic() {
+			MapCheckpoint@ cp = null;
+
 			if ( GlobalState == GameState::StatsMenu ) {
 				m_RankData.Draw( true, m_LevelTimer );
 				return;
@@ -174,23 +177,21 @@ namespace TheNomad::SGame {
 			//
 			// checkpoint updates
 			//
-			if ( EntityManager.NumEntities() == 1 && m_MapData.GetCheckpoints().Count() != 0 ) {
-				if ( m_CurrentCheckpoint == m_MapData.GetCheckpoints().Count() - 1 ) {
-					m_LevelTimer.Stop(); // kill the timer
-					GlobalState = GameState::StatsMenu;
-					return;
-				}
-
-			}
+			
 			// check if we are passing it
-			if ( PlayerPassedCheckpoint() ) {
+			if ( ( @cp = @PlayerPassedCheckpoint() ) !is null ) {
 				m_PassedCheckpointSfx.Play();
-				m_MapData.GetCheckpoints()[ m_CurrentCheckpoint ].m_bPassed = true;
+				cp.m_bPassed = true;
 
 				DebugPrint( "Setting checkpoint " + m_CurrentCheckpoint + " to completed.\n" );
-				m_CurrentCheckpoint++;
+
+				// done with the level?
+				if ( @cp is @m_MapData.GetCheckpoints()[ m_MapData.GetCheckpoints().Count() - 1 ] ) {
+					m_LevelTimer.Stop(); // kill the timer
+					GlobalState = GameState::LevelFinish;
+					return;
+				}
 				
-				MapCheckpoint@ cp = @m_MapData.GetCheckpoints()[ m_CurrentCheckpoint ];
 				for ( uint i = 0; i < cp.m_Spawns.Count(); i++ ) {
 					EntityManager.Spawn( cp.m_Spawns[i].m_nEntityType, cp.m_Spawns[i].m_nEntityId,
 						vec3( float( cp.m_Spawns[i].m_Origin.x ), float( cp.m_Spawns[i].m_Origin.y ),
@@ -336,27 +337,47 @@ namespace TheNomad::SGame {
 			m_MapData.Load( m_LevelInfoDatas[m_nIndex].m_MapHandles[difficulty].mapHandle );
 
 			switch ( TheNomad::GameSystem::GameDifficulty( difficulty ) ) {
-			case TheNomad::GameSystem::GameDifficulty::VeryEasy:
+			case TheNomad::GameSystem::GameDifficulty::VeryEasy: // Noob
 				m_nDifficultyScale = 0.5f;
 				break;
-			case TheNomad::GameSystem::GameDifficulty::Easy:
+			case TheNomad::GameSystem::GameDifficulty::Easy: // Recruit
+				m_nDifficultyScale = 0.75f;
+				break;
+			case TheNomad::GameSystem::GameDifficulty::Normal: // Mercenary
 				m_nDifficultyScale = 1.0f;
 				break;
-			case TheNomad::GameSystem::GameDifficulty::Normal:
-				m_nDifficultyScale = 1.5f;
-				break;
-			case TheNomad::GameSystem::GameDifficulty::Hard:
+			case TheNomad::GameSystem::GameDifficulty::Hard: // Nomad
 				m_nDifficultyScale = 1.90f;
 				break;
-			case TheNomad::GameSystem::GameDifficulty::VeryHard:
+			case TheNomad::GameSystem::GameDifficulty::VeryHard: // The Black Death
 				m_nDifficultyScale = 2.5f;
 				break;
-			case TheNomad::GameSystem::GameDifficulty::TryYourBest:
+			case TheNomad::GameSystem::GameDifficulty::TryYourBest: // MemeMode
 				m_nDifficultyScale = 5.0f; // ... ;)
 				break;
 			};
 			
+			// check if there's a player spawn at index 0, as that is required for all levels.
+			// Even if it's a cinematic where the camera will not be on the player, they must
+			// always be active and alive for the level to actually be running
+			if ( m_MapData.GetSpawns().Count() < 1 ) {
+				ForcePlayerSpawn();
+			} else {
+				const MapSpawn@ spawn = @m_MapData.GetSpawns()[ 0 ];
+				if ( spawn.m_nEntityType != TheNomad::GameSystem::EntityType::Playr ) {
+					ForcePlayerSpawn();
+				}
+			}
+			
 			m_LevelTimer.Run();
+		}
+		
+		private void ForcePlayerSpawn() {
+			MapSpawn spawn( uvec3( 0, 0, 0 ), 0, TheNomad::GameSystem::EntityType::Playr );
+
+			ConsoleWarning( "LevelSystem::OnLevelStart: the first spawn in a level must always be the player!\n" );
+			ConsolePrint( "Forcing player spawn...\n" );
+			m_MapData.GetSpawns().InsertAt( 0, spawn );
 		}
 		
 		//
@@ -444,12 +465,18 @@ namespace TheNomad::SGame {
 
 			return true;
 		}
-		
-		private bool PlayerPassedCheckpoint() const {
+
+		private MapCheckpoint@ PlayerPassedCheckpoint() {
 			const vec3 origin = EntityManager.GetPlayerObject().GetOrigin();
-			return m_MapaData.GetCheckpoints()[ m_CurrentCheckpoint ].m_Origin ==
-				uvec3( uint( origin.x ), uint( origin.y ), uint( origin.z ) )
-				&& !m_MapData.GetCheckpoints()[ m_CurrentCheckpoint ].m_bPassed;
+			array<MapCheckpoint>@ checkpoints = @m_MapData.GetCheckpoints();
+			const uvec3 pos = uvec3( uint( origin.x ), uint( origin.y ), uint( origin.z ) );
+
+			for ( uint i = 0; i < checkpoints.Count(); i++ ) {
+				if ( checkpoints[i].m_Origin == pos && !checkpoints[i].m_bPassed ) {
+					return @checkpoints[i];
+				}
+			}
+			return null;
 		}
 
 		float GetDifficultyScale() const {
@@ -514,6 +541,6 @@ namespace TheNomad::SGame {
 
 	TheNomad::Engine::SoundSystem::SoundEffect selectedSfx;
 	string[] SP_DIFF_STRINGS( TheNomad::GameSystem::GameDifficulty::NumDifficulties );
-	string[] sgame_RankStrings( LevelRank::NumRanks );
-	vec4[] sgame_RankStringColors( LevelRank::NumRanks );
+	string[] sgame_RankStrings( TheNomad::SGame::LevelRank::NumRanks );
+	vec4[] sgame_RankStringColors( TheNomad::SGame::LevelRank::NumRanks );
 };

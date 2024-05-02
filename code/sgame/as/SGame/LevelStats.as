@@ -10,7 +10,7 @@ namespace TheNomad::SGame {
 				| ImGuiWindowFlags::NoResize );
 			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
 
-			if ( !TheNomad::Engine::IsKeyDown( TheNomad::Engine::KeyNum::Key_Tab ) ) {
+			if ( !TheNomad::Engine::IsKeyDown( TheNomad::Engine::KeyNum::Tab ) && GlobalState != GameState::StatsMenu ) {
 				return;
 			}
 

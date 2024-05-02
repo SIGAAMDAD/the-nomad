@@ -493,8 +493,8 @@ CScriptArray::CScriptArray(asITypeInfo *ti, void *buf)
 
 CScriptArray::CScriptArray(asUINT length, asITypeInfo *ti)
 {
-	// The object type should be the template instance of the Array
-	Assert( ti && N_stricmp( ti->GetName(), "Array" ) == 0 );
+	// The object type should be the template instance of the array
+	Assert( ti && N_stricmp( ti->GetName(), "array" ) == 0 );
 
 	memstats.numBuffers++;
 	refCount = 1;

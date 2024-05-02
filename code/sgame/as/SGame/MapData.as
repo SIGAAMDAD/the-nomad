@@ -12,8 +12,8 @@ namespace TheNomad::SGame {
 			m_Name = mapName;
 		}
 		
-		private int GetCheckpointIndex( const MapCheckpoint@ cp ) const {
-			return m_Checkpoints.Find( @cp );
+		private int GetCheckpointIndex( const MapCheckpoint& in cp ) const {
+			return m_Checkpoints.Find( cp );
 		}
 		
 		/*
@@ -97,26 +97,26 @@ namespace TheNomad::SGame {
 			// load the checkpoints
 			//
 			for ( i = 0; i < nCheckpoints; i++ ) {
-				MapCheckpoint@ cp;
+				MapCheckpoint cp;
 				
 				TheNomad::GameSystem::GetCheckpointData( xyz, i );
-				@cp = MapCheckpoint( xyz );
+				cp = MapCheckpoint( xyz );
 				
-				m_Checkpoints.Add( @cp );
+				m_Checkpoints.Add( cp );
 			}
 			
 			//
 			// load in spawns
 			//
 			for ( i = 0; i < nSpawns; i++ ) {
-				MapSpawn@ spawn;
+				MapSpawn spawn;
 				uint id, type;
 				
 				TheNomad::GameSystem::GetSpawnData( xyz, type, id, i );
-				@spawn = MapSpawn( xyz, id, TheNomad::GameSystem::EntityType( type ) );
+				spawn = MapSpawn( xyz, id, TheNomad::GameSystem::EntityType( type ) );
 				@spawn.m_Checkpoint = null;
 				
-				m_Spawns.Add( @spawn );
+				m_Spawns.Add( spawn );
 			}
 			
 //			if ( !LoadCheckpointCache() ) {
@@ -144,7 +144,8 @@ namespace TheNomad::SGame {
 				}
 //			}
 
-			DebugPrint( "Map \"" + m_Name + "\" loaded with " + m_Checkpoints.Count() + " checkpoints, " + m_Spawns.Count() + " spawns.\n" );
+			DebugPrint( "Map \"" + m_Name + "\" loaded with " + m_Checkpoints.Count() + " checkpoints, " +
+				m_Spawns.Count() + " spawns.\n" );
 		}
 		
 		const array<array<uint>>@ GetTiles() const {
@@ -158,10 +159,16 @@ namespace TheNomad::SGame {
 			return m_TileData.Count();
 		}
 
-		const array<MapSpawn@>& GetSpawns() const {
+		const array<MapSpawn>& GetSpawns() const {
 			return m_Spawns;
 		}
-		const array<MapCheckpoint@>& GetCheckpoints() const {
+		const array<MapCheckpoint>& GetCheckpoints() const {
+			return m_Checkpoints;
+		}
+		array<MapSpawn>& GetSpawns() {
+			return m_Spawns;
+		}
+		array<MapCheckpoint>& GetCheckpoints() {
 			return m_Checkpoints;
 		}
 		int GetWidth() const {
@@ -172,8 +179,8 @@ namespace TheNomad::SGame {
 		}
 		
 		private string m_Name;
-		private array<MapSpawn@> m_Spawns;
-		private array<MapCheckpoint@> m_Checkpoints;
+		private array<MapSpawn> m_Spawns;
+		private array<MapCheckpoint> m_Checkpoints;
 		private array<array<uint>> m_TileData;
 		private int m_nWidth = 0;
 		private int m_nHeight = 0;

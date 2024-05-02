@@ -234,12 +234,10 @@ namespace TheNomad::SGame {
 			@m_ActiveEntities.next =
 				@m_ActiveEntities;
 
-			const array<MapSpawn@>@ spawns = @LevelManager.GetMapData().GetSpawns();
+			const array<MapSpawn>@ spawns = @LevelManager.GetMapData().GetSpawns();
 			for ( uint i = 0; i < spawns.Count(); i++ ) {
-				switch ( spawns[i].m_nEntityType ) {
-				case TheNomad::GameSystem::EntityType::Mob:
-					break;
-				};
+				Spawn( spawns[i].m_nEntityType, spawns[i].m_nEntityId,
+					vec3( spawns[i].m_Origin.x, spawns[i].m_Origin.y, spawns[i].m_Origin.z ) );
 			}
 
 			DebugPrint( "Found " + m_EntityList.Count() + " entity spawns.\n" );
@@ -267,15 +265,21 @@ namespace TheNomad::SGame {
 			case TheNomad::GameSystem::EntityType::Playr:
 				@ent = PlayrObject();
 				ent.Init( type, id, origin );
-				cast<PlayrObject>( @ent ).Spawn( id, origin );
+				cast<PlayrObject@>( @ent ).Spawn( id, origin );
 				break;
 			case TheNomad::GameSystem::EntityType::Mob:
-				cast<MobObject>( @ent ).Spawn( id, origin );
+				@ent = MobObject();
+				cast<MobObject@>( @ent ).Spawn( id, origin );
 				break;
 			case TheNomad::GameSystem::EntityType::Bot:
 				break;
 			case TheNomad::GameSystem::EntityType::Item:
+				@ent = ItemObject();
+				cast<ItemObject@>( @ent ).Spawn( id, origin );
+				break;
 			case TheNomad::GameSystem::EntityType::Weapon:
+				@ent = WeaponObject();
+				cast<WeaponObject@>( @ent ).Spawn( id, origin );
 				break;
 			case TheNomad::GameSystem::EntityType::Wall:
 				GameError( "WALLS DON'T THINK, THEY ACT" );

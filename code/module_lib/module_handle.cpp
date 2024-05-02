@@ -4,10 +4,25 @@
 #include "angelscript/as_bytecode.h"
 #include "module_funcdefs.hpp"
 #include "module_debugger.h"
+#include "angelscript/as_scriptobject.h"
 
 const moduleFunc_t funcDefs[NumFuncs] = {
-    { "int ModuleInit()", ModuleInit, 0, qtrue },
-    { "int ModuleShutdown()", ModuleShutdown, 0, qtrue },
+    /*
+    { "int Init()", ModuleInit, 0, qtrue },
+    { "int Shutdown()", ModuleShutdown, 0, qtrue },
+    { "int OnConsoleCommand()", ModuleCommandLine, 0, qfalse },
+    { "int DrawConfiguration()", ModuleDrawConfiguration, 0, qfalse },
+    { "int SaveConfiguration()", ModuleSaveConfiguration, 0, qfalse },
+    { "int OnKeyEvent( uint, uint )", ModuleOnKeyEvent, 2, qfalse },
+    { "int OnMouseEvent( int, int )", ModuleOnMouseEvent, 2, qfalse },
+    { "int OnLevelStart()", ModuleOnLevelStart, 0, qfalse },
+    { "int OnLevelEnd()", ModuleOnLevelEnd, 0, qfalse },
+    { "int OnRunTic( uint )", ModuleOnRunTic, 1, qtrue },
+    { "int OnSaveGame()", ModuleOnSaveGame, 0, qfalse },
+    { "int OnLoadGame()", ModuleOnLoadGame, 0, qfalse }
+    */
+    { "int ModuleOnInit()", ModuleInit, 0, qtrue },
+    { "int ModuleOnShutdown()", ModuleShutdown, 0, qtrue },
     { "int ModuleOnConsoleCommand()", ModuleCommandLine, 0, qfalse },
     { "int ModuleDrawConfiguration()", ModuleDrawConfiguration, 0, qfalse },
     { "int ModuleSaveConfiguration()", ModuleSaveConfiguration, 0, qfalse },
@@ -40,10 +55,8 @@ CModuleHandle::CModuleHandle( const char *pName, const nlohmann::json& sourceFil
     if ( ( error = g_pModuleLib->GetScriptBuilder()->StartNewModule( g_pModuleLib->GetScriptEngine(), pName ) ) != asSUCCESS ) {
         N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: failed to start module '%s' -- %s", pName, AS_PrintErrorString( error ) );
     }
-    
-    // add standard definitions
+
     g_pModuleLib->SetHandle( this );
-    g_pModuleLib->AddDefaultProcs();
     m_pScriptModule = g_pModuleLib->GetScriptEngine()->GetModule( pName, asGM_CREATE_IF_NOT_EXISTS );
     m_IncludePaths = eastl::move( includePaths );
     
@@ -65,6 +78,9 @@ CModuleHandle::CModuleHandle( const char *pName, const nlohmann::json& sourceFil
         Cbuf_ExecuteText( EXEC_APPEND, "ml.clean_script_cache\n" );
         break;
     };
+
+    // add standard definitions
+    g_pModuleLib->AddDefaultProcs();
     
     if ( error != 1 ) {
         Build( sourceFiles );
@@ -170,6 +186,7 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
         // call into that instead
         CheckASCall( m_pScriptContext->PushState() );
         CheckASCall( m_pScriptContext->Prepare( m_pFuncTable[ nCallId ] ) );
+//        CheckASCall( m_pScriptContext->SetObject( m_pEntryPoint ) );
 
         if ( ml_debugMode->i && g_pDebugger->m_pModule->m_pHandle == this ) {
             CheckASCall( m_pScriptContext->SetLineCallback( asMETHOD( CDebugger, LineCallback ), g_pDebugger, asCALL_THISCALL ) );
@@ -197,7 +214,7 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
                 " Line: %i\n"
                 " Error Message: %s\n"
                 " Id: %i\n"
-            ,  pFunc->GetModuleName(), pFunc->GetScriptSectionName(), pFunc->GetDeclaration(), m_pScriptContext->GetExceptionLineNumber(),
+            , pFunc->GetModuleName(), pFunc->GetScriptSectionName(), pFunc->GetDeclaration(), m_pScriptContext->GetExceptionLineNumber(),
             e.what(), e.id );
         }
     
@@ -226,6 +243,7 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
     }
     m_nStateStack++;
     CheckASCall( m_pScriptContext->Prepare( m_pFuncTable[ nCallId ] ) );
+//    CheckASCall( m_pScriptContext->SetObject( m_pEntryPoint ) );
 
     g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE, 1 );
 
@@ -283,13 +301,40 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
     return retn;
 }
 
+void CModuleHandle::RegisterGameObject( void )
+{
+}
+
 bool CModuleHandle::InitCalls( void )
 {
+//    asIScriptFunction *pFactory;
+    uint32_t i;
+
     Con_Printf( "Initializing function procs...\n" );
+
+/*
+    m_pModuleObject = m_pScriptModule->GetTypeInfoByDecl( "ModuleObject" );
+    if ( !m_pModuleObject ) {
+        Con_Printf( COLOR_RED "Module \"%s\" not registered with required AngelScript Object 'ModuleObject'\n", m_szName.c_str() );
+        return false;
+    }
+
+    pFactory = m_pModuleObject->GetFactoryByDecl( "ModuleObject@ ModuleObject()" );
+    if ( !pFactory ) {
+        Con_Printf( COLOR_RED "Module \"%s\" has ModuleObject class registered but no default factory\n", m_szName.c_str() );
+        return false;
+    }
+
+    CheckASCall( m_pScriptContext->Prepare( pFactory ) );
+    CheckASCall( m_pScriptContext->Execute() );
+
+    m_pEntryPoint = *(asIScriptObject **)m_pScriptContext->GetAddressOfReturnValue();
+    AssertMsg( m_pEntryPoint, "Failed to create a ModuleObject instance!" );
+*/
 
     memset( m_pFuncTable, 0, sizeof( m_pFuncTable ) );
 
-    for ( uint32_t i = 0; i < NumFuncs; i++ ) {
+    for ( i = 0; i < NumFuncs; i++ ) {
         Con_DPrintf( "Checking if module has function '%s'...\n", funcDefs[i].name );
         m_pFuncTable[i] = m_pScriptModule->GetFunctionByDecl( funcDefs[i].name );
         if ( m_pFuncTable[i] ) {
@@ -304,7 +349,8 @@ bool CModuleHandle::InitCalls( void )
         }
 
         if ( m_pFuncTable[i]->GetParamCount() != funcDefs[i].expectedArgs ) {
-            Con_Printf( COLOR_RED "Module \"%s\" has proc '%s' but not the correct args (%u).\n", m_szName.c_str(), funcDefs[i].name, funcDefs[i].expectedArgs );
+            Con_Printf( COLOR_RED "Module \"%s\" has proc '%s' but not the correct args (%u).\n", m_szName.c_str(), funcDefs[i].name,
+                funcDefs[i].expectedArgs );
             return false;
         }
     }
@@ -467,6 +513,9 @@ void CModuleHandle::ClearMemory( void )
             m_pFuncTable[i]->Release();
         }
     }
+
+//    m_pEntryPoint->Release();
+//    m_pModuleObject->Release();
 
     m_pScriptModule->UnbindAllImportedFunctions();
     CheckASCall( m_pScriptContext->Unprepare() );

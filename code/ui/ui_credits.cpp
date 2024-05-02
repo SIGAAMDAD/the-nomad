@@ -2,10 +2,6 @@
 
 typedef struct {
     menuframework_t menu;
-
-    menutext_t signingOff;
-    menutext_t creditsString;
-    menutext_t playTesters;
 } creditsMenu_t;
 
 static creditsMenu_t *s_credits;
@@ -21,39 +17,50 @@ static const char *s_currentPlayTesters[] = {
     "Nicky"
 };
 
-static void CreditsMenu_DrawPlayTesters( void *self )
+static void CreditsMenu_Draw( void )
 {
     menutext_t *text;
     int i;
 
-    text = (menutext_t *)self;
+    ImGui::Begin( "##MainMenuCreditsMenuTheNomad", NULL, s_credits->menu.flags );
 
-    ImGui::TextUnformatted( text->text );
+    UI_EscapeMenuToggle();
+    if ( UI_MenuTitle( s_credits->menu.name, s_credits->menu.titleFontScale ) ) {
+        UI_PopMenu();
+        return;
+    }
+
+    FontCache()->SetActiveFont( RobotoMono );
+
+    ImGui::TextUnformatted(
+        "I would not have gotten to this point without the help of many.\n"
+        "I would like to take the time to thank the following people for contributing\n"
+        "to this massive project:\n"
+        "\n"
+        "- Ben Pavlovic: Some weapon ideas, created the name & concept of the hardest\n"
+        "difficulty: \"Just A Minor Inconvience\"\n"
+        "- Tucker Kemnitz: Art, ideas for some NPCs\n"
+        "- Alpeca Grenade: A music piece (titled \"The Whispering Winds\")\n"
+        "- Jack Rosenthal: A couple of ideas\n"
+        "- My Family & Friends: Helping me get through some tough times\n"
+        "\n"
+    );
+
+    ImGui::TextUnformatted( "And I would also like to give thanks to the many people who are playtesting this game:\n" );
     for ( i = 0; i < arraylen( s_currentPlayTesters ); i++ ) {
         ImGui::BulletText( "%s", s_currentPlayTesters[i] );
     }
     ImGui::NewLine();
+
+    ImGui::TextUnformatted( "Sincerely, Your Resident Fiend,\nNoah Van Til" );
+
+    ImGui::End();
 }
 
 // NOTE: Antonini karma mechanic
 
 void CreditsMenu_Cache( void )
 {
-    static const char *creditsString =
-    "I would not have gotten to this point without the help of many.\n"
-    "I would like to take the time to thank the following people for contributing\n"
-    "to this massive project:\n"
-    "\n"
-    "- Ben Pavlovic: Some weapon ideas, created the name of the hardest difficulty: \"Just A Minor Inconvience\"\n"
-    "- Tucker Kemnitz: Art, ideas for some NPCs\n"
-    "- Alpeca Grenade: A music piece\n"
-    "- Jack Rosenthal: A couple of ideas\n"
-    "- My Family & Friends: Helping me get through some tough times\n"
-    "\n";
-
-    static const char *signingOffString =
-    "Sincerely, Your Resident Fiend,\nNoah Van Til";
-
     if ( !ui->uiAllocated ) {
         s_credits = (creditsMenu_t *)Hunk_Alloc( sizeof( *s_credits ), h_high );
     }
@@ -62,6 +69,7 @@ void CreditsMenu_Cache( void )
     s_credits->menu.flags = MENU_DEFAULT_FLAGS;
     s_credits->menu.x = 0;
     s_credits->menu.y = 0;
+    s_credits->menu.draw = CreditsMenu_Draw;
     s_credits->menu.width = ui->gpuConfig.vidWidth;
     s_credits->menu.height = ui->gpuConfig.vidHeight;
     s_credits->menu.fullscreen = qtrue;
@@ -69,6 +77,7 @@ void CreditsMenu_Cache( void )
     s_credits->menu.titleFontScale = 3.5f;
     s_credits->menu.name = "Credits";
 
+/*
     s_credits->creditsString.generic.type = MTYPE_TEXT;
     s_credits->creditsString.generic.font = FontCache()->AddFontToCache( "RobotoMono", "Bold" );
     s_credits->creditsString.text = creditsString;
@@ -85,10 +94,11 @@ void CreditsMenu_Cache( void )
     s_credits->playTesters.generic.ownerdraw = CreditsMenu_DrawPlayTesters;
     s_credits->playTesters.text = "And I would also like to give thanks to the many people who are playtesting this game:\n";
     s_credits->playTesters.color = color_white;
+*/
 
-    Menu_AddItem( &s_credits->menu, &s_credits->creditsString );
-    Menu_AddItem( &s_credits->menu, &s_credits->playTesters );
-    Menu_AddItem( &s_credits->menu, &s_credits->signingOff );
+//    Menu_AddItem( &s_credits->menu, &s_credits->creditsString );
+//    Menu_AddItem( &s_credits->menu, &s_credits->playTesters );
+//    Menu_AddItem( &s_credits->menu, &s_credits->signingOff );
 }
 
 void UI_CreditsMenu( void )

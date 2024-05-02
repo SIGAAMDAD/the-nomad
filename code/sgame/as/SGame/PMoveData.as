@@ -43,7 +43,7 @@ namespace TheNomad::SGame {
 		
 		void RunTic() {
 			PlayrObject@ obj;
-			ivec2 mousePos;
+			uvec2 mousePos;
 			int screenWidth, screenHeight;
 			float angle;
 			TheNomad::GameSystem::DirType dir;

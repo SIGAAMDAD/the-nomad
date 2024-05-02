@@ -207,8 +207,8 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error( cons
     
     Sys_MessageBox( "Engine Error", text, false );
 
-    msg = va("Sys_Error: %s\n", text);
-    write(STDERR_FILENO, msg, strlen(msg));
+    msg = va( "Sys_Error: %s\n", text );
+    write( STDERR_FILENO, msg, strlen( msg ) );
     
     // fprintf COULD call malloc, and if we're out of memory, this would not do anything
     // but make even more problems
@@ -251,22 +251,7 @@ void GDR_NORETURN Sys_Exit( int code )
     const bool debug = false;
 #endif
 
-    if ( code == -1 ) {
-        if ( exit_type ) {
-            err = exit_type->str;
-        } else {
-            err = "No System Error";
-        }
-        if ( N_stricmp( "No System Error", err ) != 0 ) {
-            Con_Printf( "Exiting with System Error: %s\n", err );
-        } else {
-            Con_Printf( "Exiting with Engine Error\n" );
-        }
-    }
     Sys_ConsoleInputShutdown();
-    if ( code == 0 ) {
-        Con_Printf( "Exiting App (EXIT_SUCCESS)\n" );
-    }
 
     if ( code == -1 ) {
         exit( EXIT_FAILURE );

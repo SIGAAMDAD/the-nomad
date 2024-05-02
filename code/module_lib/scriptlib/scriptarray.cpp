@@ -391,8 +391,14 @@ CScriptArray &CScriptArray::operator=(const CScriptArray &other)
 
 CScriptArray::CScriptArray(asITypeInfo *ti, void *buf)
 {
+	if ( !ti ) {
+		N_Error( ERR_FATAL, "CScriptArray::CScriptArray: typeInfo is NULL" );
+	}
+	if ( N_stricmp( ti->GetName(), "array" ) ) {
+		N_Error( ERR_FATAL, "CScriptArray::CScriptArray: typeInfo isn't an array" );
+	}
 	// The object type should be the template instance of the array
-	Assert( ti && N_stricmp( ti->GetName(), "array" ) == 0 );
+	Assert( ti && !N_stricmp( ti->GetName(), "array" ) );
 
 	memstats.numBuffers++;
 	refCount = 1;
@@ -401,8 +407,6 @@ CScriptArray::CScriptArray(asITypeInfo *ti, void *buf)
 	objType->AddRef();
 	buffer = NULL;
 	Clear();
-
-//	g_pModuleLib->GetModule( asGetActiveContext()->GetSystemFunction()->GetModuleName() )->m_pHandle->AddArrayObject( this );
 
 	memstats.overHeadBytes += sizeof( *buffer );
 
@@ -490,8 +494,14 @@ CScriptArray::CScriptArray(asITypeInfo *ti, void *buf)
 
 CScriptArray::CScriptArray(asUINT length, asITypeInfo *ti)
 {
+	if ( !ti ) {
+		N_Error( ERR_FATAL, "CScriptArray::CScriptArray: typeInfo is NULL" );
+	}
+	if ( N_stricmp( ti->GetName(), "array" ) ) {
+		N_Error( ERR_FATAL, "CScriptArray::CScriptArray: typeInfo isn't an array" );
+	}
 	// The object type should be the template instance of the array
-	Assert( ti && N_stricmp( ti->GetName(), "array" ) == 0 );
+	Assert( ti && !N_stricmp( ti->GetName(), "array" ) );
 
 	memstats.numBuffers++;
 	refCount = 1;
@@ -500,8 +510,6 @@ CScriptArray::CScriptArray(asUINT length, asITypeInfo *ti)
 	objType->AddRef();
 	buffer = NULL;
 	Clear();
-
-//	g_pModuleLib->GetModule( asGetActiveContext()->GetSystemFunction()->GetModuleName() )->m_pHandle->AddArrayObject( this );
 
 	memstats.overHeadBytes += sizeof( *buffer );
 
@@ -555,7 +563,7 @@ CScriptArray::CScriptArray(const CScriptArray &other)
 CScriptArray::CScriptArray(asUINT length, void *defVal, asITypeInfo *ti)
 {
 	// The object type should be the template instance of the array
-	Assert( ti && N_stricmp( ti->GetName(), "array" ) == 0 );
+	Assert( ti && !N_stricmp( ti->GetName(), "array" ) );
 
 	memstats.numBuffers++;
 	refCount = 1;

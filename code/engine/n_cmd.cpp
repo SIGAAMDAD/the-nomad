@@ -24,6 +24,8 @@ public:
 	CCommandBuffer( void );
 	~CCommandBuffer();
 
+	void Init( void );
+	void AddText( const char *text );
 private:
 	int64_t m_nMaxSize;
 	int64_t m_nCurSize;
@@ -34,6 +36,18 @@ cvar_t *com_MaxCommandBufferSize;
 
 CCommandBuffer::CCommandBuffer( void )
 {
+	m_DataBuffer.reserve( MAX_CMD_BUFFER );
+}
+
+CCommandBuffer::~CCommandBuffer()
+{
+}
+
+void CCommandBuffer::Init( void )
+{
+	memset( m_DataBuffer.data(), 0, m_DataBuffer.size() );
+	m_nMaxSize = MAX_CMD_BUFFER;
+	m_nCurSize = 0;
 }
 
 typedef struct {
@@ -85,7 +99,7 @@ Cbuf_Init
 */
 void Cbuf_Init( void )
 {
-	memset( cmd_text_buf, 0, sizeof(cmd_text_buf) );
+	memset( cmd_text_buf, 0, sizeof( cmd_text_buf ) );
 	cmd_text.data = cmd_text_buf;
 	cmd_text.maxsize = MAX_CMD_BUFFER;
 	cmd_text.cursize = 0;
@@ -430,7 +444,7 @@ static char cmd_tokenized[BIG_INFO_STRING+MAX_STRING_TOKENS];
 static char *cmd_argv[MAX_STRING_TOKENS];
 static char cmd_cmd[BIG_INFO_STRING];
 
-static char cmd_history[MAX_HISTORY][BIG_INFO_STRING];
+//static char cmd_history[MAX_HISTORY][BIG_INFO_STRING];
 static uint32_t cmd_historyused;
 
 uint32_t Cmd_Argc( void ) {
@@ -762,12 +776,12 @@ void Cmd_RemoveCommandSafe( const char *cmd_name )
 
 /*
 ============
-Cmd_RemoveCgameCommands
+Cmd_RemoveSgameCommands
 
-Remove cgame-created commands
+Remove sgame-created commands
 ============
 */
-void Cmd_RemoveCgameCommands( void )
+void Cmd_RemoveSgameCommands( void )
 {
 	const cmd_t *cmd;
 	qboolean removed;

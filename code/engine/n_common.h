@@ -45,6 +45,8 @@ uintptr_t COM_Compress( char *data_p );
 void COM_ParseError( const char *format, ... ) GDR_ATTRIBUTE((format(printf, 1, 2)));
 void COM_ParseWarning( const char *format, ... ) GDR_ATTRIBUTE((format(printf, 1, 2)));
 
+void Com_ParseCommandLine( char *commandLine );
+
 void Com_BeginLoadingScreen( void );
 void Com_AddLoadResource( const char *title, nhandle_t (*fn)( const char * ) );
 void Com_LoadResources( void );

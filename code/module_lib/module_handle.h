@@ -79,15 +79,18 @@ public:
 		return m_IncludePaths;
 	}
 private:
+	void RegisterGameObject( void );
 	void PrepareContext( asIScriptFunction *pFunction );
 	void Build( const nlohmann::json& sourceFiles );
     bool InitCalls( void );
     void LoadSourceFile( const string_t& filename );
 
-    asIScriptFunction *m_pFuncTable[NumFuncs];
-	nlohmann::json m_IncludePaths;
+	string_t m_szName;
 
-    string_t m_szName;
+	asIScriptFunction *m_pFuncTable[NumFuncs];
+//	asIScriptObject *m_pEntryPoint;
+//	asITypeInfo *m_pModuleObject;
+
     asIScriptContext *m_pScriptContext;
     asIScriptModule *m_pScriptModule;
 	qboolean m_bLoaded;
@@ -98,6 +101,8 @@ private:
 	int32_t m_nVersionMajor;
 	int32_t m_nVersionUpdate;
 	int32_t m_nVersionPatch;
+
+	nlohmann::json m_IncludePaths;
 };
 
 class CModuleContextHandle : public asIScriptContext
