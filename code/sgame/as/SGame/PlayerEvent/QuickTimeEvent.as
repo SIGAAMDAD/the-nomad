@@ -19,34 +19,28 @@ namespace TheNomad::SGame {
             return true;
         }
         void Activate( PlayrObject@ ent ) {
-            m_bActive = true;
+            ConsoleWarning( "QuickTimeEvent::Activate: called\n" );
         }
         void OnRunTic( PlayrObject@ ent ) {
-            switch ( m_nType ) {
-            case QuickTimeEventType::QTE_ButtonMash:
-                RunButtonMash();
-                break;
-            case QuickTimeEventType::QTE_ButtonPress:
-                RunButtonPress();
-                break;
-            case QuickTimeEventType::QTE_PrecisionButton:
-                RunPrecisionButton();
-                break;
-            };
+            ConsoleWarning( "QuickTimeEvent::OnRunTic: called\n" );
         }
 
-        private void RunButtonMash( void ) {
+        protected QuickTimeEventType m_nType = QuickTimeEventType::QTE_ButtonMash;
+        protected bool m_bActive = false;
+        protected uint m_nDuration = 0;
+        protected uint m_nLifeTime = 0;
+    };
 
+    class ButtonMashEvent : QuickTimeEvent {
+        ButtonMashEvent( TheNomad::Engine::KeyNum keyboardNum, TheNomad::Engine::KeyNum gamepadNum ) {
+            super();
+
+            m_KeyboardNum = keyboardNum;
+            m_GamepadNum = gamepadNum;
         }
 
-        private void RunButtonPress( void ) {
-
-        }
-
-        private void RunPrecisionButton() {
-        }
-
-        QuickTimeEventType m_nType = QuickTimeEventType::QTE_ButtonMash;
-        bool m_bActive = false;
+        private TheNomad::Engine::KeyNum m_KeyboardNum = TheNomad::Engine::KeyNum::X;
+        private TheNomad::Engine::KeyNum m_GamepadNum = TheNomad::Engine::KeyNum::X;
+        private uint m_nClicks;
     };
 };

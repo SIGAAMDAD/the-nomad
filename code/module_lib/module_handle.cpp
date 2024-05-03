@@ -188,7 +188,7 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
         CheckASCall( m_pScriptContext->Prepare( m_pFuncTable[ nCallId ] ) );
 //        CheckASCall( m_pScriptContext->SetObject( m_pEntryPoint ) );
 
-        if ( ml_debugMode->i && g_pDebugger->m_pModule->m_pHandle == this ) {
+        if ( ml_debugMode->i && g_pDebugger->m_pModule && g_pDebugger->m_pModule->m_pHandle == this ) {
             CheckASCall( m_pScriptContext->SetLineCallback( asMETHOD( CDebugger, LineCallback ), g_pDebugger, asCALL_THISCALL ) );
         }
     
@@ -247,7 +247,7 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
 
     g_pModuleLib->GetScriptEngine()->GarbageCollect( asGC_DETECT_GARBAGE, 1 );
 
-    if ( ml_debugMode->i && g_pDebugger->m_pModule->m_pHandle == this ) {
+    if ( ml_debugMode->i && g_pDebugger->m_pModule && g_pDebugger->m_pModule->m_pHandle == this ) {
         CheckASCall( m_pScriptContext->SetLineCallback( asMETHOD( CDebugger, LineCallback ), g_pDebugger, asCALL_THISCALL ) );
     }
 

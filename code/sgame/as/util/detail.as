@@ -52,8 +52,10 @@ namespace TheNomad::Util {
 		} else if ( StrICmp( color, "gold" ) == 0 ) {
 			return colorGold;
 		} else {
-			return colorWhite;
+			GameError( "invalid color" );
+//			return colorWhite;
 		}
+		return colorWhite;
 	}
 
 	float Swap( float a, float b ) {

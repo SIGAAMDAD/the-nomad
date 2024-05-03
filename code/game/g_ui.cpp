@@ -266,7 +266,7 @@ static intptr_t GDR_DECL UI_DllSyscall(intptr_t arg, uint32_t numArgs, ...)
     return G_UISystemCalls(args);
 }
 
-void G_ShutdownUI(void)
+void G_ShutdownUI( void )
 {
     Key_SetCatcher(Key_GetCatcher() & ~KEYCATCH_UI);
     

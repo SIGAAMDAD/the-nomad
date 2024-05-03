@@ -162,20 +162,23 @@ DEFINE_CALLBACK( CvarUpdateGeneric ) {
     *modificationCount = vmCvar.modificationCount;
 }
 
-static void CvarSetValue( const string_t *name, const string_t *value ) {
+static void CvarSetValue( asIScriptGeneric *pGeneric ) {
+    const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
+    const string_t *value = (const string_t *)pGeneric->GetArgObject( 1 );
     Cvar_Set( name->c_str(), value->c_str() );
 }
 
-static const string_t *CvarVariableString( const string_t *cvarName ) {
-    return new string_t( Cvar_VariableString( cvarName->c_str() ) );
+static void CvarVariableString( asIScriptGeneric *pGeneric ) {
+    ::new ( pGeneric->GetAddressOfReturnLocation() ) string_t( Cvar_VariableString(
+        ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
 }
 
-static int64_t CvarVariableInt( const string_t *cvarName ) {
-    return Cvar_VariableInteger( cvarName->c_str() );
+static void CvarVariableInt( asIScriptGeneric *pGeneric ) {
+    pGeneric->SetReturnQWord( Cvar_VariableInteger( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
 }
 
-static float CvarVariableFloat( const string_t *cvarName ) {
-    return Cvar_VariableFloat( cvarName->c_str() );
+static void CvarVariableFloat( asIScriptGeneric *pGeneric ) {
+    pGeneric->SetReturnFloat( Cvar_VariableFloat( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
 }
 
 static nhandle_t SndRegisterSfx( const string_t *npath ) {
@@ -1922,10 +1925,14 @@ void ModuleLib_Register_Engine( void )
             asFUNCTION( ModuleLib_CvarRegisterGeneric ), asCALL_GENERIC );
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::CvarUpdate( string& out, int64& out, float& out, int& out, const int )",
             asFUNCTION( ModuleLib_CvarUpdateGeneric ), asCALL_GENERIC );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CvarSet( const string& in, const string& in )", WRAP_FN( CvarSetValue ) );
-        REGISTER_GLOBAL_FUNCTION( "int64 TheNomad::Engine::CvarVariableInteger( const string& in )", WRAP_FN( CvarVariableInt ) );
-        REGISTER_GLOBAL_FUNCTION( "float TheNomad::Engine::CvarVariableFloat( const string& in )", WRAP_FN( CvarVariableFloat ) );
-        REGISTER_GLOBAL_FUNCTION( "string TheNomad::Engine::CvarVariableString( const string& in )", WRAP_FN( CvarVariableString ) );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::CvarSet( const string& in, const string& in )",
+            asFUNCTION( CvarSetValue ), asCALL_GENERIC );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "int64 TheNomad::Engine::CvarVariableInteger( const string& in )",
+            asFUNCTION( CvarVariableInt ), asCALL_GENERIC );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "float TheNomad::Engine::CvarVariableFloat( const string& in )",
+            asFUNCTION( CvarVariableFloat ), asCALL_GENERIC );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "string TheNomad::Engine::CvarVariableString( const string& in )",
+            asFUNCTION( CvarVariableString ), asCALL_GENERIC );
 
         REGISTER_GLOBAL_FUNCTION( "uint TheNomad::Engine::CmdArgc()", WRAP_FN( Cmd_Argc ) );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::CmdArgvFixed( int8[]& in, uint )", WRAP_FN( CmdArgvFixed ) );

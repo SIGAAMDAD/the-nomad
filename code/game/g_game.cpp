@@ -1016,10 +1016,6 @@ void G_StartHunkUsers( void )
     // cache all maps
     G_InitMapCache();
 
-    if ( !g_pModuleLib ) {
-        G_InitModuleLib();
-    }
-
     if ( !gi.rendererStarted ) {
         gi.rendererStarted = qtrue;
         G_InitRenderer();
@@ -1027,6 +1023,9 @@ void G_StartHunkUsers( void )
     if ( !gi.soundStarted ) {
         gi.soundStarted = qtrue;
         Snd_Init();
+    }
+    if ( !g_pModuleLib ) {
+        G_InitModuleLib();
     }
     if ( !gi.uiStarted ) {
         gi.uiStarted = qtrue;

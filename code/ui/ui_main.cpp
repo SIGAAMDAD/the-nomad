@@ -141,7 +141,9 @@ uiFont_t *CUIFontCache::GetFont( const char *fileName ) {
 }
 
 void CUIFontCache::ClearCache( void ) {
-	ImGui::GetIO().Fonts->Clear();
+	if ( ImGui::GetCurrentContext() && ImGui::GetIO().Fonts ) {
+		ImGui::GetIO().Fonts->Clear();
+	}
 	memset( m_FontList, 0, sizeof( m_FontList ) );
 	m_pCurrentFont = NULL;
 }
@@ -325,6 +327,10 @@ extern "C" void UI_Shutdown( void )
         strManager->Shutdown();
 		strManager = NULL;
     }
+
+	if ( FontCache() ) {
+		FontCache()->ClearCache();
+	}
 
     Cmd_RemoveCommand( "ui.cache" );
 	Cmd_RemoveCommand( "ui.fontinfo" );

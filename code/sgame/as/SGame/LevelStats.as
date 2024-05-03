@@ -9,7 +9,8 @@ namespace TheNomad::SGame {
 			const float fontScale = ImGui::GetFontScale();
 			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
 			ImGuiWindowFlags windowFlags = ImGui::MakeWindowFlags( ImGuiWindowFlags::NoTitleBar | ImGuiWindowFlags::NoMove
-				| ImGuiWindowFlags::NoResize | ImGuiWindowFlags::AlwaysHorizontalScrollbar | ImGuiWindowFlags::AlwaysVerticalScrollbar );
+				| ImGuiWindowFlags::NoResize | ImGuiWindowFlags::AlwaysHorizontalScrollbar | ImGuiWindowFlags::AlwaysVerticalScrollbar
+				| ImGuiWindowFlags::NoBringToFrontOnFocus );
 			
 			ImGui::Begin( "##LevelStatsShow", null, windowFlags );
 
@@ -19,7 +20,7 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::UserInterface::SetActiveFont( TheNomad::Engine::UserInterface::Font_RobotoMono );
 			ImGui::SetWindowFontScale( fontScale * 1.0f );
 
-			ImGui::Text( sgame_MapName.GetValue() );
+			ImGui::Text( TheNomad::Engine::CvarVariableString( "mapname" ) );
 			
 			ImGui::BeginTable( "##LevelStatsNumbersEndOfLevel", 2 );
 			{
@@ -27,7 +28,7 @@ namespace TheNomad::SGame {
 
 				ImGui::BeginTable( "##LevelStatsIndividualEndOfLevel", 3 );
 				{
-					ImGui::SetWindowFontScale( ( fontScale * 3.25f ) );
+					ImGui::SetWindowFontScale( ( fontScale * 2.0f ) );
 
 					ImGui::TableNextColumn();
 					ImGui::Text( "TIME" );
@@ -65,8 +66,9 @@ namespace TheNomad::SGame {
 				ImGui::TableNextColumn();
 
 				ImGui::PushStyleColor( ImGuiCol::Text, sgame_RankStringColors[ total_Rank ] );
-				ImGui::SetWindowFontScale( ( fontScale * 5.5f ) );
+				ImGui::SetWindowFontScale( ( fontScale * 4.5f ) );
 				ImGui::Text( sgame_RankStrings[ total_Rank ] );
+				ImGui::SetWindowFontScale( ( fontScale * 2.0f ) );
 				ImGui::PopStyleColor();
 
 				ImGui::TableNextRow();
@@ -94,8 +96,10 @@ namespace TheNomad::SGame {
 				ImGui::Text( "CHALLENGE: " );
 
 				if ( isClean ) {
+					ImGui::Text( "- " );
+					ImGui::SameLine();
 					ImGui::PushStyleColor( ImGuiCol::Text, colorGreen );
-					ImGui::Text( "- CLEAN RUN" );
+					ImGui::Text( "CLEAN RUN" );
 					ImGui::PopStyleColor();
 				}
 				
@@ -103,7 +107,6 @@ namespace TheNomad::SGame {
 			}
 			ImGui::EndTable();
 			
-//			ImGui::SetCursorScreenPos( vec2( 72 * scale, 24 * scale ) );
 			if ( ImGui::Button( "DONE" ) ) {
 				selectedSfx.Play();
 				GlobalState = GameState::EndOfLevel;
