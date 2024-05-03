@@ -1165,6 +1165,22 @@ static bool ImGui_ColorEdit4( const string_t *label, vec4 *col, ImGuiColorEditFl
     return ImGui::ColorEdit4( label->c_str(), (float *)col, flags );
 }
 
+static float ImGui_GetFontScale( void ) {
+    const ImFont *pFont = ImGui::GetFont();
+    return pFont ? pFont->Scale : 1.0f;
+}
+
+static void FontCache_RegisterFont( asIScriptGeneric *pGeneric ) {
+    const string_t *pName = (const string_t *)pGeneric->GetArgObject( 0 );
+    const string_t *pVariant = (const string_t *)pGeneric->GetArgObject( 1 );
+    const float fScale = pGeneric->GetArgFloat( 2 );
+    pGeneric->SetReturnDWord( (asUINT)FontCache()->RegisterFont( pName->c_str(), pVariant->c_str(), fScale ) );
+}
+
+static void FontCache_SetActiveFont( asIScriptGeneric *pGeneric ) {
+    FontCache()->SetActiveFont( (nhandle_t)pGeneric->GetArgDWord( 0 ) );
+}
+
 // stfu gcc
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wformat-security"
@@ -1820,6 +1836,9 @@ void ModuleLib_Register_Engine( void )
         REGISTER_ENUM_VALUE( "ImGuiCol", "ButtonHovered", ImGuiCol_ButtonHovered );
         REGISTER_ENUM_VALUE( "ImGuiCol", "WindowBg", ImGuiCol_WindowBg );
         REGISTER_ENUM_VALUE( "ImGuiCol", "MenuBarBg", ImGuiCol_MenuBarBg );
+        REGISTER_ENUM_VALUE( "ImGuiCol", "Text", ImGuiCol_Text );
+        REGISTER_ENUM_VALUE( "ImGuiCol", "TextDisabled", ImGuiCol_TextDisabled );
+        REGISTER_ENUM_VALUE( "ImGuiCol", "TextSelectedBg", ImGuiCol_TextSelectedBg );
         REGISTER_ENUM_VALUE( "ImGuiCol", "FrameBg", ImGuiCol_FrameBg );
         REGISTER_ENUM_VALUE( "ImGuiCol", "FrameBgActive", ImGuiCol_FrameBgActive );
         REGISTER_ENUM_VALUE( "ImGuiCol", "FrameBgHovered", ImGuiCol_FrameBgHovered );
@@ -1838,7 +1857,7 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "void ImGui::SetWindowPos( const vec2& in )", ImGui_SetWindowPos, ( const vec2 * ), void );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::BeginTable( const string& in, int, ImGuiTableFlags = ImGuiTableFlags::None )", ImGui_BeginTable, ( const string_t *, int, ImGuiTableFlags ), bool );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::SetWindowFontScale( float )", ImGui::SetWindowFontScale, ( float ), void );
-        REGISTER_GLOBAL_FUNCTION( "float ImGui::GetFontScale()", ImGui::GetFontSize, ( void ), float );
+        REGISTER_GLOBAL_FUNCTION( "float ImGui::GetFontScale()", ImGui_GetFontScale, ( void ), float );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::EndTable()", ImGui::EndTable, ( void ), void );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::InputText( const string& in, string& out, ImGuiInputTextFlags = ImGuiInputTextFlags::None )", ImGui_InputText, ( const string_t *, string_t *, ImGuiInputTextFlags ), bool );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::InputInt( const string& in, int& out, ImGuiInputTextFlags = ImGuiInputTextFlags::None )", ImGui_InputInt, ( const string_t *, int32_t *, ImGuiInputTextFlags ), bool );
@@ -2084,6 +2103,18 @@ void ModuleLib_Register_Engine( void )
 
             RESET_NAMESPACE();
 		}
+        { // UserInterface
+            SET_NAMESPACE( "TheNomad::Engine::UserInterface" );
+
+            CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+                "int TheNomad::Engine::UserInterface::RegisterFont( const string& in, const string& in = \"Regular\", float = 1.0f )",
+                asFUNCTION( FontCache_RegisterFont ),
+                asCALL_GENERIC ) );
+            
+            CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+                "void TheNomad::Engine::UserInterface::SetActiveFont( int )", asFUNCTION( FontCache_SetActiveFont ),
+                asCALL_GENERIC ) );
+        }
         { // Renderer
             SET_NAMESPACE( "TheNomad::Engine::Renderer" );
 
@@ -2363,15 +2394,6 @@ void ModuleLib_Register_Engine( void )
 
     //    SET_NAMESPACE( "TheNomad::Constants" );
     { // Constants
-        REGISTER_GLOBAL_VAR( "const vec4 colorBlack", colorBlack );
-        REGISTER_GLOBAL_VAR( "const vec4 colorRed", colorRed );
-        REGISTER_GLOBAL_VAR( "const vec4 colorGreen", colorGreen );
-        REGISTER_GLOBAL_VAR( "const vec4 colorYellow", colorYellow );
-        REGISTER_GLOBAL_VAR( "const vec4 colorBlue", colorBlue );
-        REGISTER_GLOBAL_VAR( "const vec4 colorCyan", colorCyan );
-        REGISTER_GLOBAL_VAR( "const vec4 colorMagenta", colorMagenta );
-        REGISTER_GLOBAL_VAR( "const vec4 colorWhite", colorWhite );
-
         REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_CHECKPOINT", &script_SURFACEPARM_CHECKPOINT );
         REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_SPAWN", &script_SURFACEPARM_SPAWN );
         REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_FLESH", &script_SURFACEPARM_FLESH );

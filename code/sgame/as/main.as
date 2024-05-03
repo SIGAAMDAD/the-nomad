@@ -153,6 +153,7 @@ int ModuleOnInit() {
 	//
 	// register cvars
 	//
+
 	InitCvars();
 
 	TheNomad::Util::GetModuleList( TheNomad::SGame::sgame_ModList );
@@ -161,13 +162,17 @@ int ModuleOnInit() {
 	//
 	// init constants
 	//
+
 	InitConstants();
 
 	@TheNomad::Engine::SoundSystem::SoundManager = TheNomad::Engine::SoundSystem::SoundFrameData();
 
 	TheNomad::SGame::selectedSfx.Set( "sfx/menu1.wav" );
 
+	//
 	// init globals
+	//
+
 	@TheNomad::GameSystem::GameManager = cast<TheNomad::GameSystem::CampaignManager@>( TheNomad::GameSystem::AddSystem( TheNomad::GameSystem::CampaignManager() ) );
 	@TheNomad::SGame::LevelManager = cast<TheNomad::SGame::LevelSystem@>( TheNomad::GameSystem::AddSystem( TheNomad::SGame::LevelSystem() ) );
 	@TheNomad::SGame::EntityManager = cast<TheNomad::SGame::EntitySystem@>( TheNomad::GameSystem::AddSystem( TheNomad::SGame::EntitySystem() ) );
@@ -265,6 +270,7 @@ int ModuleOnRunTic( uint msec ) {
 		TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::StatsMenu;
 		return 1;
 	} else if ( TheNomad::SGame::GlobalState == TheNomad::SGame::GameState::EndOfLevel ) {
+		TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::Inactive;
 		return 3;
 	}
 

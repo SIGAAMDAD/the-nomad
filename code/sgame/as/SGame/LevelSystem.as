@@ -232,7 +232,7 @@ namespace TheNomad::SGame {
 				// we don't use NumDifficulties because a map doesn't have to be registered with all difficulties
 				save.SaveUInt( "MapCount", m_LevelInfoDatas[i].m_MapHandles.Count() );
 				for ( a = 0; a < m_LevelInfoDatas[i].m_MapHandles.Count(); a++ ) {
-					@stats = m_LevelInfoDatas[i].m_MapHandles[a].highStats;
+					@stats = @m_LevelInfoDatas[i].m_MapHandles[a].highStats;
 					
 					//
 					// save the ranks, then the actual numbers (for the perfectionists)

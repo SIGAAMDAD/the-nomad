@@ -1,4 +1,39 @@
+const vec4 colorBlack  = vec4( 0.0f, 0.0f, 0.0f, 1.0f );
+const vec4 colorRed    = vec4( 1.0f, 0.0f, 0.0f, 1.0f );
+const vec4 colorGreen  = vec4( 0.0f, 1.0f, 0.0f, 1.0f );
+const vec4 colorBlue   = vec4( 0.0f, 0.0f, 1.0f, 1.0f );
+const vec4 colorYellow = vec4( 1.0f, 1.0f, 0.0f, 1.0f );
+const vec4 colorMagenta= vec4( 1.0f, 0.0f, 1.0f, 1.0f );
+const vec4 colorCyan   = vec4( 0.0f, 1.0f, 1.0f, 1.0f );
+const vec4 colorWhite  = vec4( 1.0f, 1.0f, 1.0f, 1.0f );
+const vec4 colorLtGrey = vec4( 0.75f, 0.75f, 0.75f, 1.0f );
+const vec4 colorMdGrey = vec4( 0.5f, 0.5f, 0.5f, 1.0f );
+const vec4 colorDkGrey = vec4( 0.25f, 0.25f, 0.25f, 1.0f );
+const vec4 colorGold   = vec4( 0.71f, 0.65f, 0.26f, 1.0f );
+
 namespace TheNomad::Util {
+	array<string>@ ParseCSV( const string& in str ) {
+	    array<string> values;
+	    string data;
+
+	    for ( uint i = 0; i < str.size(); i++ ) {
+	        switch ( str[i] ) {
+	        case ',':
+	            values.Add( data );
+	            data = "";
+	            i++;
+	            break;
+	        case ' ':
+	            break; // ignore it
+	        default:
+	            data += str[i];
+	            break;
+	        };
+	    }
+	
+	    return @values;
+	}
+
 	const vec4& StringToColor( const string& in color ) {
 		if ( StrICmp( color, "black" ) == 0 ) {
 			return colorBlack;
@@ -14,6 +49,8 @@ namespace TheNomad::Util {
 			return colorCyan;
 		} else if ( StrICmp( color, "magenta" ) == 0 ) {
 			return colorMagenta;
+		} else if ( StrICmp( color, "gold" ) == 0 ) {
+			return colorGold;
 		} else {
 			return colorWhite;
 		}

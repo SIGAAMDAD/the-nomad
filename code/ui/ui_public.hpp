@@ -32,8 +32,10 @@ public:
     void ClearCache( void );
     ImFont *AddFontToCache( const char *filename, const char *variant = "Regular", float scale = 1.0f );
     void Finalize( void );
-    void SetActiveFont( ImFont *font );
+    void SetActiveFont( ImFont *pFont );
+    void SetActiveFont( nhandle_t hFont );
     uiFont_t *GetFont( const char *fileName );
+    nhandle_t RegisterFont( const char *filename, const char *variant, float scale );
 
     static void ListFonts_f( void );
 private:

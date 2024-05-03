@@ -21,14 +21,19 @@ static void CreditsMenu_Draw( void )
 {
     menutext_t *text;
     int i;
+    const float fontScale = ImGui::GetFont()->Scale;
 
     ImGui::Begin( "##MainMenuCreditsMenuTheNomad", NULL, s_credits->menu.flags );
+    ImGui::SetWindowPos( ImVec2( s_credits->menu.x, s_credits->menu.y ) );
+    ImGui::SetWindowSize( ImVec2( s_credits->menu.width, s_credits->menu.height ) );
 
     UI_EscapeMenuToggle();
     if ( UI_MenuTitle( s_credits->menu.name, s_credits->menu.titleFontScale ) ) {
         UI_PopMenu();
         return;
     }
+
+    ImGui::SetWindowFontScale( ( fontScale * s_credits->menu.textFontScale ) * ui->scale );
 
     FontCache()->SetActiveFont( RobotoMono );
 

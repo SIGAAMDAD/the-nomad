@@ -117,6 +117,25 @@ void CUIFontCache::SetActiveFont( ImFont *font )
 	ImGui::PushFont( font );
 }
 
+void CUIFontCache::SetActiveFont( nhandle_t hFont )
+{
+	if ( !ImGui::GetIO().Fonts->IsBuilt() ) {
+		Finalize();
+	}
+
+	if ( hFont == FS_INVALID_HANDLE || !m_FontList[ hFont ] ) {
+		return;
+	}
+
+	if ( m_pCurrentFont ) {
+		ImGui::PopFont();
+	}
+
+	m_pCurrentFont = m_FontList[ hFont ]->m_pFont;
+
+	ImGui::PushFont( m_pCurrentFont );
+}
+
 uiFont_t *CUIFontCache::GetFont( const char *fileName ) {
 	return m_FontList[ Com_GenerateHashValue( fileName, MAX_UI_FONTS ) ];
 }
@@ -130,6 +149,23 @@ void CUIFontCache::ClearCache( void ) {
 void CUIFontCache::Finalize( void ) {
 	ImGui::GetIO().Fonts->Build();
 	ImGui_ImplOpenGL3_CreateFontsTexture();
+}
+
+nhandle_t CUIFontCache::RegisterFont( const char *filename, const char *variant, float scale ) {
+	uint64_t hash;
+	char rpath[MAX_NPATH];
+	char hashpath[MAX_NPATH];
+
+	COM_StripExtension( filename, rpath, sizeof( rpath ) );
+	if ( rpath[ strlen( rpath ) - 1 ] == '.' ) {
+		rpath[ strlen( rpath) - 1 ] = 0;
+	}
+	Com_snprintf( hashpath, sizeof( hashpath ) - 1, "%s-%s", rpath, variant );
+
+	hash = Com_GenerateHashValue( hashpath, MAX_UI_FONTS );
+	AddFontToCache( filename, variant, scale );
+
+	return hash;
 }
 
 ImFont *CUIFontCache::AddFontToCache( const char *filename, const char *variant, float scale )

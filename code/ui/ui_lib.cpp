@@ -191,6 +191,7 @@ void UI_SetActiveMenu( uiMenu_t menu )
 
 	switch ( menu ) {
 	case UI_MENU_NONE:
+		FontCache()->SetActiveFont( RobotoMono );
 		Key_SetCatcher( Key_GetCatcher() & ~KEYCATCH_UI );
 		Key_ClearStates();
 		Cvar_Set( "g_paused", "0" );
