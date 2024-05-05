@@ -28,3 +28,6 @@
 [submodule "deps/memory"]
 	path = deps/memory
 	url = https://github.com/foonathan/memory.git
+[submodule "deps/implot"]
+	path = deps/implot
+	url = https://github.com/epezent/implot.git

@@ -15,6 +15,10 @@
 #include <sys/stat.h>
 #include <sys/resource.h>
 
+// NOTE: __ANDROID__ checks should ALWAYS be after __linux__ checks
+#ifdef __ANDROID__
+#endif
+
 // Input subsystem
 void IN_Init( void );
 void IN_Frame( void );

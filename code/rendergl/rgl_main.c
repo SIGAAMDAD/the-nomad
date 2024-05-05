@@ -217,6 +217,7 @@ void R_DrawPolys( void )
             backendData->indices[backendData->numIndices + 2] = backend.drawBatch.vtxOffset + j + 2;
             backendData->numIndices += 3;
 
+            // generate normals
             VectorSubtract( poly->verts[j].xyz, poly->verts[j + 1].xyz, edge1 );
             VectorSubtract( poly->verts[j].xyz, poly->verts[j + 2].xyz, edge2 );
             CrossProduct( edge1, edge2, normal );
@@ -249,6 +250,7 @@ static void R_DrawWorld( void )
     uint32_t i;
     vec3_t pos;
     drawVert_t *vtx;
+    vec3_t edge1, edge2, normal;
 
     if ((backend.refdef.flags & RSF_NOWORLDMODEL)) {
         // nothing to draw
@@ -280,9 +282,17 @@ static void R_DrawWorld( void )
             // convert the local world coordinates to OpenGL screen coordinates
             R_WorldToGL( vtx, pos );
 
-            for (i = 0; i < 4; i++) {
+            // generate normals
+            VectorSubtract( vtx->xyz, vtx->xyz + 1, edge1 );
+            VectorSubtract( vtx->xyz, vtx->xyz + 3, edge2 );
+            CrossProduct( edge1, edge2, normal );
+
+            for ( i = 0; i < 4; i++ ) {
                 VectorCopy2( vtx[i].uv, rg.world->sprites[ rg.world->tiles[y * rg.world->width + x].index ][i] );
                 VectorSet( vtx[i].worldPos, x, y, 0.0f );
+
+                R_VaoPackNormal( vtx[i].normal, normal );
+                R_CalcTangentVectors( vtx );
             }
 
             // submit the processed vertices

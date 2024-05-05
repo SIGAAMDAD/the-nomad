@@ -23,6 +23,9 @@ static void DemoMenu_Draw( void )
 {
     const int windowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize
         | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse;
+    bool done;
+
+    done = true;
 
     ImGui::Begin( "##DemoMenu", NULL, windowFlags );
     ImGui::SetWindowFontScale( 2.5f * gi.scale );
@@ -34,7 +37,8 @@ static void DemoMenu_Draw( void )
     ImGui::Image( (ImTextureID)(uintptr_t)s_demo->discordShader, ImVec2( 256 * ui->scale, 256 * ui->scale ) );
     if ( ImGui::IsItemClicked() ) {
         Snd_PlaySfx( ui->sfx_select );
-        // TODO: slap that shit in here
+        done = false;
+        // TODO:
     }
 
     ImGui::SameLine();
@@ -43,11 +47,12 @@ static void DemoMenu_Draw( void )
     if ( ImGui::IsItemClicked() ) {
         Snd_PlaySfx( ui->sfx_select );
         SDL_OpenURL( "https://sites.google.com/view/gdrgames" );
+        done = false;
     }
 
     ImGui::End();
 
-    if ( Key_AnyDown() ) {
+    if ( Key_AnyDown() && done ) {
         UI_PopMenu();
         UI_ForceMenuOff();
         ui->menusp = 0;

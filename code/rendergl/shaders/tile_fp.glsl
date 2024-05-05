@@ -51,7 +51,21 @@ uniform float u_AmbientIntensity;
 #if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
 uniform vec4 u_SpecularScale;
 uniform vec4 u_NormalScale;
-uniform uint u_NumLights;
+uniform int u_NumLights;
+
+struct Light {
+    vec4 color;
+    uvec2 origin;
+    float brightness;
+    float range;
+    float linear;
+    float quadratic;
+    float constant;
+    int type;
+};
+layout( std140, binding = 0 ) uniform u_LightBuffer {
+    Light u_LightData[MAX_MAP_LIGHTS];
+};
 #endif
 
 #if defined(USE_EXPOSURE_TONE_MAPPING)
@@ -75,6 +89,45 @@ uniform vec2 u_ScreenSize;
 #endif
 
 uniform int u_AlphaTest;
+
+#if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
+//
+// CalcPointLight: don't modify, straight from Valden
+//
+vec3 CalcPointLight( Light light ) {
+    vec3 diffuse = a_Color.rgb;
+    float dist = distance( v_WorldPos, vec3( light.origin, v_WorldPos.z ) );
+    float diff = 0.0;
+    float range = light.range;
+    if ( dist <= light.range ) {
+        diff = 1.0 - abs( dist / range );
+    }
+    diff += light.brightness;
+    diffuse = min( diff * ( diffuse + vec3( light.color ) ), diffuse );
+
+    vec3 lightDir = vec3( 0.0 );
+    vec3 viewDir = normalize( v_WorldPos - vec3( light.origin, 0.0 ) );
+    vec3 halfwayDir = normalize( lightDir + viewDir );
+
+    vec3 reflectDir = reflect( -lightDir, v_WorldPos );
+    float spec = pow( max( dot( v_WorldPos, reflectDir ), 0.0 ), 1.0 );
+
+#if defined(USE_SPECULARMAP)
+    vec3 specular = spec * texture( u_SpecularMap, v_TexCoords ).rgb;
+#else
+    vec3 specular = vec3( 0.0 );
+#endif
+
+    range = light.range + light.brightness;
+    float attenuation = ( light.constant + light.linear * range
+        + light.quadratic * ( range * range ) );
+    
+    diffuse *= attenuation;
+    specular *= attenuation;
+
+    return diffuse + specular;
+}
+#endif
 
 float CalcLightAttenuation(float point, float normDist)
 {
@@ -105,31 +158,34 @@ vec3 CalcDiffuse(vec3 diffuseAlbedo, float NH, float EH, float roughness)
 #endif
 }
 
-#if defined(USE_NORMALMAP)
 void CalcNormal() {
-    vec3 normal = texture2D( u_NormalMap, v_TexCoords ).rgb;
+#if defined(USE_NORMALMAP)
+    vec3 normal = texture( u_NormalMap, v_TexCoords ).rgb;
     normal = normalize( normal * 2.0 - 1.0 );
     a_Color.rgb *= normal * 0.5 + 0.5;
+#endif
 }
-#endif
 
-void applyLighting() {
-#if defined(USE_NORMALMAP)
+void ApplyLighting() {
+    a_Color = texture( u_DiffuseMap, v_TexCoords );
     CalcNormal();
-#endif
 #if defined(USE_SPECULARMAP)
-    a_Color.rgb += texture2D( u_SpecularMap, v_TexCoords ).rgb;
+    if ( u_NumLights == 0 ) {
+        a_Color.rgb += texture( u_SpecularMap, v_TexCoords ).rgb;
+    }
 #endif
 #if defined(USE_LIGHT) && !defined(USE_FAST_LIGHT)
-    if ( u_NumLights == uint( 0 ) )
-#endif
-	{
-        a_Color.rgb += texture2D( u_DiffuseMap, v_TexCoords ).rgb;
+    for ( int i = 0; i < u_NumLights; i++ ) {
+        switch ( lights[i].type ) {
+        case POINT_LIGHT:
+            a_Color.rgb += CalcPointLight( u_LightData[i] );
+            break;
+        case DIRECTION_LIGHT:
+            break;
+        };
     }
-
-#if defined(USE_LIGHT)
-    a_Color.rgb *= u_AmbientColor;
 #endif
+    a_Color.rgb += texture( u_DiffuseMap, v_TexCoords ).rgb;
 }
 
 #if defined(USE_FXAA)
@@ -337,7 +393,7 @@ vec4 sharpenImage( sampler2D tex, vec2 pos )
 void main() {
     a_Color = sharpenImage( u_DiffuseMap, v_TexCoords );
 
-    applyLighting();
+    ApplyLighting();
 
 #if defined(USE_BLOOM) && !defined(USE_FAST_LIGHT)
 	const float brightness = dot( a_Color.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );

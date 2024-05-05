@@ -564,13 +564,12 @@ typedef struct {
 #define MUTEX_TYPE_SHARED 1
 #define MUTEX_TYPE_RECURSIVE 2
 
-const char *Sys_GetSteamPath( void );
 uint64_t Sys_Milliseconds( void );
 FILE *Sys_FOpen( const char *filepath, const char *mode );
 
 int Sys_MessageBox( const char *title, const char *text, bool ShowOkAndCancelButton );
 
-void Sys_GetRAMUsage( uint64_t *virt, uint64_t *phys );
+void Sys_GetRAMUsage( uint64_t *curVirt, uint64_t *curPhys, uint64_t *peakVirt, uint64_t *peakPhys );
 
 uint64_t Sys_GetCacheLine( void );
 uint64_t Sys_GetPageSize( void );
@@ -586,6 +585,7 @@ void Sys_Print(const char *msg);
 void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Sys_Error( const char *fmt, ... );
 char *Sys_GetClipboardData( void );
 
+double Sys_CalculateCPUFreq( void );
 void Sys_SendKeyEvents( void );
 const char *Sys_pwd( void );
 void *Sys_LoadDLL( const char *name );

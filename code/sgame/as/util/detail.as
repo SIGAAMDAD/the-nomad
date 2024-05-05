@@ -51,9 +51,10 @@ namespace TheNomad::Util {
 			return colorMagenta;
 		} else if ( StrICmp( color, "gold" ) == 0 ) {
 			return colorGold;
+		} else if ( StrICmp( color, "white" ) == 0 ) {
+			return colorWhite;
 		} else {
-			GameError( "invalid color" );
-//			return colorWhite;
+			ConsoleWarning( "StringToColor: invalid color string \"" + color + "\"\n" );
 		}
 		return colorWhite;
 	}

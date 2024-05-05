@@ -131,25 +131,39 @@ void LogExceptionInfo( asIScriptContext *pContext, void *userData )
     const asIScriptFunction *pFunc;
     const CModuleHandle *pHandle;
     char msg[4096];
+    const char *err;
 
     pFunc = pContext->GetExceptionFunction();
     pHandle = (const CModuleHandle *)userData;
+    err = Cvar_VariableString( "com_errorMessage" );
 
-    Con_Printf( COLOR_RED "ERROR: exception thrown by module \"%s\": %s\n", pHandle->GetName().c_str(),
-        Cvar_VariableString( "com_errorMessage" ) );
+    Con_Printf( COLOR_RED "ERROR: exception thrown by module \"%s\": %s\n", pHandle->GetName().c_str(), err );
     Con_Printf( COLOR_RED "Printing stacktrace...\n" );
     Cbuf_ExecuteText( EXEC_NOW, va( "ml_debug.set_active \"%s\"", pHandle->GetName().c_str() ) );
     g_pDebugger->PrintCallstack( pContext );
 
-    Com_snprintf( msg, sizeof( msg ) - 1,
-        "exception was thrown in module ->\n"
-        " Module ID: %s\n"
-        " Section Name: %s\n"
-        " Function: %s\n"
-        " Line: %i\n"
-        " Error Message: %s\n"
-    , pFunc->GetModuleName(), pFunc->GetScriptSectionName(), pFunc->GetDeclaration(), pContext->GetExceptionLineNumber(),
-    pContext->GetExceptionString() );
+    if ( *err ) {
+        Com_snprintf( msg, sizeof( msg ) - 1,
+            "exception was thrown in module ->\n"
+            " Module ID: %s\n"
+            " Section Name: %s\n"
+            " Function: %s\n"
+            " Line: %i\n"
+            " Error Type: %s\n"
+            " Error Message: %s\n"
+        , pFunc->GetModuleName(), pFunc->GetScriptSectionName(), pFunc->GetDeclaration(), pContext->GetExceptionLineNumber(),
+        pContext->GetExceptionString(), err );
+    } else {
+        Com_snprintf( msg, sizeof( msg ) - 1,
+            "exception was thrown in module ->\n"
+            " Module ID: %s\n"
+            " Section Name: %s\n"
+            " Function: %s\n"
+            " Line: %i\n"
+            " Error Message: %s\n"
+        , pFunc->GetModuleName(), pFunc->GetScriptSectionName(), pFunc->GetDeclaration(), pContext->GetExceptionLineNumber(),
+        pContext->GetExceptionString() );
+    }
 
     N_Error( ERR_DROP, "%s", msg );
 }
@@ -271,7 +285,7 @@ int CModuleHandle::CallFunc( EModuleFuncId nCallId, uint32_t nArgs, uint32_t *pA
             " Section Name: %s\n"
             " Function: %s\n"
             " Line: %i\n"
-            " Error Message: %s\n"
+            " Error MEssage: %s\n"
             " Id: %i\n"
         ,  pFunc->GetModuleName(), pFunc->GetScriptSectionName(), pFunc->GetDeclaration(), m_pScriptContext->GetExceptionLineNumber(),
         e.what(), e.id );

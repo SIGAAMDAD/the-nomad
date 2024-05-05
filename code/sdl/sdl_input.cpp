@@ -16,9 +16,9 @@
 static cvar_t *in_keyboardDebug;
 static cvar_t *in_forceCharset;
 
-static SDL_GameController *gamepad;
-static SDL_Haptic *haptic;
-static SDL_Joystick *stick;
+SDL_GameController *gamepad;
+SDL_Haptic *haptic;
+SDL_Joystick *stick;
 
 static qboolean mouseAvailable = qfalse;
 static qboolean mouseActive = qfalse;
@@ -678,7 +678,7 @@ static void IN_InitJoystick( void )
 	}
 
 	Con_Printf( "Joystick %li opened\n", in_joystickNo->i );
-	Con_Printf( "Name:       %s\n", SDL_JoystickNameForIndex(in_joystickNo->i ) );
+	Con_Printf( "Name:       %s\n", SDL_JoystickNameForIndex( in_joystickNo->i ) );
 	Con_Printf( "Axes:       %i\n", SDL_JoystickNumAxes( stick ) );
 	Con_Printf( "Hats:       %i\n", SDL_JoystickNumHats( stick ) );
 	Con_Printf( "Buttons:    %i\n", SDL_JoystickNumButtons( stick ) );

@@ -7,6 +7,8 @@
 #include "../rendercommon/imgui_impl_opengl3.h"
 #include "../rendercommon/imgui_internal.h"
 #include "../game/imgui_memory_editor.h"
+#include "../rendercommon/implot.h"
+#define FPS_FRAMES 60
 
 uiGlobals_t *ui;
 CUIFontCache *g_pFontCache;
@@ -332,6 +334,10 @@ extern "C" void UI_Shutdown( void )
 		FontCache()->ClearCache();
 	}
 
+	if ( ui_debugOverlay && ui_debugOverlay->i ) {
+		ImPlot::DestroyContext();
+	}
+
     Cmd_RemoveCommand( "ui.cache" );
 	Cmd_RemoveCommand( "ui.fontinfo" );
 	Cmd_RemoveCommand( "togglepausemenu" );
@@ -360,14 +366,14 @@ static void UI_PauseMenu_f( void ) {
 	UI_SetActiveMenu( UI_MENU_PAUSE );
 }
 
-#define FPS_FRAMES 6
+static int32_t previousTimes[FPS_FRAMES];
+
 extern "C" void UI_DrawFPS( void )
 {
 	if ( !com_drawFPS->i ) {
 		return;
 	}
 
-	static int32_t previousTimes[FPS_FRAMES];
 	static int32_t index;
 	static int32_t previous;
 	int32_t t, frameTime;
@@ -410,110 +416,250 @@ extern "C" void UI_DrawFPS( void )
     ImGui::End();
 }
 
-/*
-* UI_DrawDebugOverlay: basically a stand-in for gdb when I can't directly read the game's
-* memory on a computer
-*/
+static uint32_t gpu_BackEndPreviousTimes[FPS_FRAMES];
+static int32_t gpu_BackEndFrameTimeIndex;
+static uint32_t gpu_BackEndFrameTimePrevious;
+
+static uint32_t gpu_FrontEndPreviousTimes[FPS_FRAMES];
+static int32_t gpu_FrontEndFrameTimeIndex;
+static uint32_t gpu_FrontEndFrameTimePrevious;
+
+extern "C" uint32_t GPU_CalcFrameTime( uint64_t gpuTime, uint32_t *times, uint32_t *previous, int32_t *index )
+{
+	uint32_t frameTime;
+	uint32_t total, i;
+	uint32_t realTime;
+
+	frameTime = gpuTime - *previous;
+	*previous = gpuTime;
+
+	times[ *index % FPS_FRAMES ] = frameTime;
+	(*index)++;
+	if ( *index > FPS_FRAMES ) {
+        // average multiple frames together to smooth changes out a bit
+		total = 0;
+		for ( i = 0; i < FPS_FRAMES; i++ ) {
+			total += times[i];
+		}
+		if ( total == 0 ) {
+			total = 1;
+		}
+		realTime = 1000.0f * FPS_FRAMES / total;
+    } else {
+		realTime = *previous;
+	}
+
+	return realTime;
+}
+
 static void UI_DrawDebugOverlay( void )
 {
-	const int treeNodeFlags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_CollapsingHeader;
-	MemoryEditor memEditor;
 	uint64_t i;
 
-	ImGui::Begin( "Debug Tools##DebugOverlay" );
-	ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * 1.25f * ui->scale );
+	if ( ImGui::Begin( "Input Debug##DebugOverlayInputSystem" ) ) {
+		extern cvar_t *in_joystick;
 
-	if ( ImGui::CollapsingHeader( "GameInfo##GameState" ) ) {
-		ImGui::Text( "mapname: %s", gi.mapname );
-		ImGui::Text( "mapLoaded: %s", gi.mapLoaded ? "yes" : "no" );
-		ImGui::Text( "state: %i", gi.state );
-		ImGui::Text( "cameraPos: %f, %f, %f", gi.cameraPos[0], gi.cameraPos[1], gi.cameraPos[2] );
-		ImGui::Text( "cameraZoom: %f", gi.cameraZoom );
-		ImGui::Text( "scale: %f", gi.scale );
-		ImGui::Text( "soundStarted: %s", gi.soundStarted ? "true" : "false" );
-		ImGui::Text( "uiStarted: %s", gi.uiStarted ? "true" : "false" );
-		ImGui::Text( "sgameStarted: %s", gi.sgameStarted ? "true" : "false" );
-		ImGui::Text( "rendererStarted: %s", gi.rendererStarted ? "true" : "false" );
-		ImGui::Text( "framecount: %i", gi.framecount );
-		ImGui::Text( "frametime: %i", gi.frametime );
-		ImGui::Text( "realtime: %i", gi.realtime );
-		ImGui::Text( "realFrametime: %i", gi.realFrameTime );
-		ImGui::Text( "mouseDx: %i, %i", gi.mouseDx[0], gi.mouseDx[1] );
-		ImGui::Text( "mouseDy: %i, %i", gi.mouseDy[0], gi.mouseDy[1] );
-		ImGui::Text( "mouseIndex: %i", gi.mouseIndex );
-		ImGui::Text( "joystickAxis: %i, %i, %i, %i, %i, %i", gi.joystickAxis[0], gi.joystickAxis[1], gi.joystickAxis[2],
-			gi.joystickAxis[3], gi.joystickAxis[4], gi.joystickAxis[5] );
-		ImGui::Text( "togglePhotoMode: %s", gi.togglePhotomode ? "true" : "false" );
-	}
-	if ( ImGui::CollapsingHeader( "MapCache##GameStateMapCache" ) ) {	
-		ImGui::Text( "currentMapLoaded: %i", gi.mapCache.currentMapLoaded );
-		ImGui::Text( "numMapFiles: %lu", gi.mapCache.numMapFiles );
-
-		for ( i = 0; i < gi.mapCache.numMapFiles; i++ ) {
-			ImGui::Text( "mapList[%lu]: %s", i, gi.mapCache.mapList[i] );
+		if ( in_joystick->i ) {
+			ImGui::TextUnformatted( "Joystick: Enabled" );
+		} else {
+			ImGui::TextUnformatted( "Joystick: Disabled" );
 		}
-		
-		ImGui::Text( "info.name: %s", gi.mapCache.info.name );
-		ImGui::Text( "info.width: %u", gi.mapCache.info.width );
-		ImGui::Text( "info.height: %u", gi.mapCache.info.height );
-		ImGui::Text( "info.numSpawns: %u", gi.mapCache.info.numSpawns );
-		ImGui::Text( "info.numCheckpoints: %u", gi.mapCache.info.numCheckpoints );
-		ImGui::Text( "info.numLevels: %u", gi.mapCache.info.numLevels );
-		ImGui::Text( "info.numLights: %u", gi.mapCache.info.numLights );
-		ImGui::Text( "info.numTiles: %u", gi.mapCache.info.numTiles );
-	}
-	if ( ImGui::CollapsingHeader( "Zone Memory" ) ) {
-		Com_DrawMemoryView_Zone();
-	}
-	if ( ImGui::CollapsingHeader( "Hunk Memory" ) ) {
-		Com_DrawMemoryView_Hunk();
-	}
-	if ( ImGui::CollapsingHeader( "ModuleLib##ModuleLib" ) ) {
 
-		const UtlVector<CModuleInfo *>& loadList = g_pModuleLib->GetLoadList();
-		for ( i = 0; i < loadList.size(); i++ ) {
-			ImGui::Text( "LoadList[%lu]: Name: %s", i, loadList[i]->m_szName );
-			ImGui::Text( "LoadList[%lu]: Id: %s", i, loadList[i]->m_szId );
-			ImGui::Text( "LoadList[%lu]: GameVersionMajor: %hu", i, loadList[i]->m_GameVersion.m_nVersionMajor );
-			ImGui::Text( "LoadList[%lu]: GameVersionUpdate: %hu", i, loadList[i]->m_GameVersion.m_nVersionUpdate );
-			ImGui::Text( "LoadList[%lu]: GameVersionMajor: %u", i, loadList[i]->m_GameVersion.m_nVersionPatch );
-			ImGui::Text( "LoadList[%lu]: VersionMajor: %i", i, loadList[i]->m_nModVersionMajor );
-			ImGui::Text( "LoadList[%lu]: VersionUpdate: %i", i, loadList[i]->m_nModVersionUpdate );
-			ImGui::Text( "LoadList[%lu]: VersionPatch: %i", i, loadList[i]->m_nModVersionPatch );
-			ImGui::Text( "LoadList[%lu]: Handle: 0x%08lx", i, (uintptr_t)(void *)loadList[i]->m_pHandle );
+		ImGui::Text( "Input Mode: %s", in_mode->i == 0 ? "Keyboard & Mouse" : "GamePad/Controller" );
 
-			if ( ImGui::CollapsingHeader( va( "Handle##ModuleLibLoadListHandle%lu", i ) ) ) {
-				ImGui::Text( "LoadList[%lu]: Handle.ModulePath: %s", i, loadList[i]->m_pHandle->GetModulePath() );
-				ImGui::Text( "LoadList[%lu]: Handle.Valid: %s", i, loadList[i]->m_pHandle->IsValid() ? "yes" : "no" );
+		ImGui::End();
+	}
+
+	if ( ImGui::Begin( "GPU Debug##DebugOverlayGPUDriver" ) ) {
+		char *p;
+		char str[256];
+		uint32_t gpu_FrameTime, gpu_FrameSamples, gpu_FramePrimitives;
+		uint64_t frameTime;
+		static uint32_t frameTimes[60];
+		for ( i = 0; i < arraylen( frameTimes ); i++ ) {
+			frameTimes[i] = i;
+		}
+
+		ImGui::Text( "Vendor: %s", ui->gpuConfig.vendor_string );
+		ImGui::Text( "Version: %s", ui->gpuConfig.version_string );
+		ImGui::Text( "GPU Driver: %s", ui->gpuConfig.renderer_string );
+		ImGui::Text( "GPU Renderer: %s", g_renderer->s );
+		if ( !N_stricmp( g_renderer->s, "opengl" ) || !N_stricmp( g_renderer->s, "vulkan" ) ) {
+			ImGui::Text( "GLSL Version: %s", ui->gpuConfig.shader_version_str );
+		} else if ( !N_stricmp( g_renderer->s, "d3d11" ) ) {
+			ImGui::Text( "HLSL Version: %s", ui->gpuConfig.shader_version_str );
+		}
+
+		re.GetGPUFrameStats( &gpu_FrameTime, &gpu_FrameSamples, &gpu_FramePrimitives );
+		frameTime = GPU_CalcFrameTime( time_backend, gpu_BackEndPreviousTimes, &gpu_BackEndFrameTimePrevious, &gpu_BackEndFrameTimeIndex );
+		frameTime = GPU_CalcFrameTime( time_frontend, gpu_FrontEndPreviousTimes, &gpu_FrontEndFrameTimePrevious,
+			&gpu_FrontEndFrameTimeIndex );
+
+		ImGui::Text( "Frame Primitives: %u", gpu_FramePrimitives );
+		ImGui::Text( "Frame Samples: %u", gpu_FrameSamples );
+		ImGui::Text( "Frame Time: %u", gpu_FrameTime );
+		ImGui::Text( "BackEnd Frame Time: %lu", time_backend );
+		ImGui::Text( "FrontEnd Frame Time: %lu", time_frontend );
+
+		if ( ImPlot::BeginPlot( "GPU Profiler" ) ) {
+			ImPlot::SetupAxes( "Time (ms)", "Frame Time (MS)" );
+			ImPlot::SetupAxesLimits( 0.0f, 1000.0f, 0.0f, 60.0f );
+			ImPlot::PushStyleVar( ImPlotStyleVar_FillAlpha, 0.25f );
+			ImPlot::PlotShaded( "Renderer FrontEnd Time", frameTimes, gpu_FrontEndPreviousTimes, FPS_FRAMES );
+			ImPlot::PlotShaded( "Renderer BackeEnd Time", frameTimes, gpu_BackEndPreviousTimes, FPS_FRAMES );
+			ImPlot::PopStyleVar();
+			ImPlot::EndPlot();
+		}
+
+		ImGui::TextUnformatted( "Extensions Used:" );
+		if ( Cvar_VariableInteger( "r_arb_shader_storage_buffer_object" ) ) {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
+			ImGui::TextUnformatted( "  GL_ARB_shader_storage_buffer_object" );
+			ImGui::PopStyleColor();
+		} else {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
+			ImGui::TextUnformatted( "  GL_ARB_shader_storage_buffer_object" );
+			ImGui::PopStyleColor();
+		}
+		if ( Cvar_VariableInteger( "r_arb_map_buffer_range" ) ) {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
+			ImGui::TextUnformatted( "  GL_ARB_map_buffer_range" );
+			ImGui::PopStyleColor();
+		} else {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
+			ImGui::TextUnformatted( "  GL_ARB_map_buffer_range" );
+			ImGui::PopStyleColor();
+		}
+		if ( Cvar_VariableInteger( "r_arb_framebuffer_object" ) ) {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
+			ImGui::TextUnformatted( "  GL_ARB_framebuffer_object" );
+			ImGui::PopStyleColor();
+		} else {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
+			ImGui::TextUnformatted( "  GL_ARB_framebuffer_object" );
+			ImGui::PopStyleColor();
+		}
+		if ( Cvar_VariableInteger( "r_arb_vertex_buffer_object" ) ) {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
+			ImGui::TextUnformatted( "  GL_ARB_vertex_buffer_object" );
+			ImGui::PopStyleColor();
+		} else {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
+			ImGui::TextUnformatted( "  GL_ARB_vertex_buffer_object" );
+			ImGui::PopStyleColor();
+		}
+		if ( Cvar_VariableInteger( "r_arb_vertex_array_object" ) ) {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
+			ImGui::TextUnformatted( "  GL_ARB_vertex_array_object" );
+			ImGui::PopStyleColor();
+		} else {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
+			ImGui::TextUnformatted( "  GL_ARB_vertex_array_object" );
+			ImGui::PopStyleColor();
+		}
+		if ( Cvar_VariableInteger( "r_arb_sync" ) ) {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
+			ImGui::TextUnformatted( "  GL_ARB_sync" );
+			ImGui::PopStyleColor();
+		} else {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
+			ImGui::TextUnformatted( "  GL_ARB_sync" );
+			ImGui::PopStyleColor();
+		}
+		if ( Cvar_VariableInteger( "r_arb_texture_float" ) ) {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
+			ImGui::TextUnformatted( "  GL_ARB_texture_float" );
+			ImGui::PopStyleColor();
+		} else {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
+			ImGui::TextUnformatted( "  GL_ARB_texture_float" );
+			ImGui::PopStyleColor();
+		}
+		if ( Cvar_VariableInteger( "r_arb_texture_filter_anisotropic" ) ) {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
+			ImGui::TextUnformatted( "  GL_ARB_texture_filter_anisotropic" );
+			ImGui::PopStyleColor();
+		} else {
+			ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
+			ImGui::TextUnformatted( "  GL_ARB_texture_filter_anisotropic" );
+			ImGui::PopStyleColor();
+		}
+
+		ImGui::TextUnformatted( "Extensions Found:" );
+		p = str;
+		for ( i = 0; i < sizeof( ui->gpuConfig.extensions_string ); i++ ) {
+			if ( !ui->gpuConfig.extensions_string[i] ) {
+				break;
+			} else if ( ui->gpuConfig.extensions_string[i] == ' ' ) {
+				*p = '\0';
+				ImGui::Text( "  %s", str );
+				p = str;
+			} else {
+				*p++ = ui->gpuConfig.extensions_string[i];
 			}
 		}
-		if ( ImGui::CollapsingHeader( "ModuleLib Memory Manager" ) ) {
-			memoryStats_t active, allocs, frees;
-
-			Mem_DrawMemoryEdit();
-
-			Mem_GetStats( active );
-			Mem_GetFrameStats( allocs, frees );
-
-			ImGui::SeparatorText( "Frame" );
-			ImGui::Text( "[allocs] maxSize: %li", allocs.maxSize );
-			ImGui::Text( "[allocs] minSize: %li", allocs.minSize );
-			ImGui::Text( "[allocs] totalSize: %li", allocs.totalSize );
-			ImGui::Text( "[allocs] num: %li", allocs.num );
-			ImGui::TextUnformatted( "----------------------------" );
-			ImGui::Text( "[frees] maxSize: %li", frees.maxSize );
-			ImGui::Text( "[frees] minSize: %li", frees.minSize );
-			ImGui::Text( "[frees] totalSize: %li", frees.totalSize );
-			ImGui::Text( "[frees] num: %li", frees.num );
-
-			ImGui::SeparatorText( "Actual" );
-			ImGui::Text( "maxSize: %li", active.maxSize );
-			ImGui::Text( "minSize: %li", active.minSize );
-			ImGui::Text( "totalSize: %li", active.totalSize );
-			ImGui::Text( "num: %li", active.num );
-		}
+		ImGui::End();
 	}
-	ImGui::End();
+
+	if ( ImGui::Begin( "System Debug##DebugOverlaySystemData" ) ) {
+		uint64_t virtMem, physMem, peakVirt, peakPhys;
+		double cpuFreq;
+		const char *cpuFreqSuffix;
+		static int32_t frameTimes[60];
+		for ( i = 0; i < arraylen( frameTimes ); i++ ) {
+			frameTimes[i] = i;
+		}
+
+		Sys_GetRAMUsage( &virtMem, &physMem, &peakVirt, &peakPhys );
+		cpuFreq = Sys_CalculateCPUFreq();
+
+		ImGui::Text( "CPU Processor: %s", ui_cpuString->s );
+		ImGui::Text( "CPU Cores: %i", SDL_GetCPUCount() );
+		ImGui::Text( "CPU CacheLine: %lu", com_cacheLine );
+
+		cpuFreqSuffix = "Hz";
+		if ( cpuFreq > 1000.0f ) {
+			cpuFreq /= 1000;
+			cpuFreqSuffix = "KHz";
+		}
+		if ( cpuFreq > 1000.0f ) {
+			cpuFreq /= 1000.0f;
+			cpuFreqSuffix = "MHz";
+		}
+		if ( cpuFreq > 1000.0f ) {
+			cpuFreq /= 1000.0f;
+			cpuFreqSuffix = "GHz";
+		}
+		ImGui::Text( "CPU: %lf %s", cpuFreq, cpuFreqSuffix );
+
+		ImGui::Text( "Stack Memory: %lu", Sys_StackMemoryRemaining() );
+		ImGui::Text( "Current Virtual Memory: %lu", virtMem );
+		ImGui::Text( "Current Physical Memory: %lu", physMem );
+		ImGui::Text( "Peak Virtual Memory: %lu", peakVirt );
+		ImGui::Text( "Peak Physical Memory: %lu", peakPhys );
+
+		if ( ImPlot::BeginPlot( "Profiler" ) ) {
+			ImPlot::SetupAxes( "Time (ms)", "Frame Time (Engine)" );
+			ImPlot::SetupAxesLimits( 0.0f, 1000.0f, 0.0f, 60.0f );
+			ImPlot::PushStyleVar( ImPlotStyleVar_FillAlpha, 0.25f );
+			ImPlot::PlotShaded( "Frame Time", frameTimes, previousTimes, FPS_FRAMES );
+			ImPlot::PopStyleVar();
+			ImPlot::EndPlot();
+		}
+		
+		ImGui::End();
+	}
+
+	if ( ImGui::Begin( "ModuleLib Debug##DebugOverlayModuleLib" ) ) {
+		const UtlVector<CModuleInfo *>& loadList = g_pModuleLib->GetLoadList();
+
+		ImGui::Text( "ModuleCount: %lu", loadList.size() );
+		for ( i = 0; i < loadList.size(); i++ ) {
+			ImGui::Text( "  [%lu]: %s v%i.%i.%i", i, loadList[i]->m_szName, loadList[i]->m_nModVersionMajor,
+				loadList[i]->m_nModVersionUpdate, loadList[i]->m_nModVersionPatch );
+		}
+		ImGui::End();
+	}
 }
 
 void UI_EscapeMenuToggle( void )
@@ -594,6 +740,10 @@ extern "C" void UI_Init( void )
     UI_SetActiveMenu( UI_MENU_MAIN );
 
 	ui->uiAllocated = qtrue;
+
+	if ( ui_debugOverlay->i ) {
+		ImPlot::CreateContext();
+	}
 
     // add commands
     Cmd_AddCommand( "ui.cache", UI_Cache_f );

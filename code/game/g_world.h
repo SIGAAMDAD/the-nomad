@@ -36,7 +36,7 @@ private:
 
 void G_GetTileData( uint32_t *pTiles, uint32_t nLevel );
 void G_GetCheckpointData( uvec3_t xyz, uint32_t nIndex );
-void G_GetSpawnData( uvec3_t xyz, uint32_t *type, uint32_t *id, uint32_t nIndex );
+void G_GetSpawnData( uvec3_t xyz, uint32_t *type, uint32_t *id, uint32_t nIndex, uint32_t *pCheckpointIndex );
 
 extern CGameWorld *g_world;
 

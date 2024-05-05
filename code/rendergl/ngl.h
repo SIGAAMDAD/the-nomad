@@ -264,7 +264,9 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glBufferDataARB, GLenum target, GLsizeiptr size, const GLvoid *data, GLenum usage ) \
     NGL( void, glBufferSubDataARB, GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data ) \
     NGL( void, glUnmapBufferARB, GLenum target ) \
-    NGL( void*, glMapBufferARB, GLenum target, GLbitfield access )
+    NGL( void*, glMapBufferARB, GLenum target, GLbitfield access ) \
+    NGL( void, glBindBufferRangeARB, GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size ) \
+    NGL( void, glBindBufferBaseARB, GLenum target, GLuint index, GLuint buffer )
 
 #define NGL_Buffer_Procs \
     NGL( void, glGenBuffers, GLsizei n, GLuint *buffers ) \
@@ -274,8 +276,8 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glBufferSubData, GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid *data ) \
     NGL( void*, glMapBuffer, GLenum target, GLbitfield access ) \
     NGL( void, glUnmapBuffer, GLenum target ) \
-    NGL( void, glBindBufferBase, GLenum target, GLuint first, GLsizei count, const GLuint *buffers ) \
-    NGL( void, glBindBufferRange, GLenum target, GLuint first, GLsizei count, const GLuint *buffers, const GLintptr *offsets, const GLsizeiptr *sizes ) \
+    NGL( void, glBindBufferRange, GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size ) \
+    NGL( void, glBindBufferBase, GLenum target, GLuint index, GLuint buffer )
 
 #define NGL_VertexShaderARB_Procs \
     NGL( void, glBindAttribLocationARB, GLhandleARB programObj, GLuint index, const GLcharARB *name) \

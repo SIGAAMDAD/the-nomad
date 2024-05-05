@@ -3,11 +3,11 @@
 
 CGameWorld *g_world;
 
-static uint64_t CopyLump( void **dest, uint32_t lump, uint64_t size, mapheader_t *header ) {
+static uint64_t CopyLump( void **dest, uint32_t lump, uint64_t size, bmf_t *header ) {
     uint64_t length, fileofs;
 
-    length = header->lumps[lump].length;
-    fileofs = header->lumps[lump].fileofs;
+    length = header->map.lumps[lump].length;
+    fileofs = header->map.lumps[lump].fileofs;
 
     if ( length % size ) {
         N_Error( ERR_DROP, "CopyLump: funny lump size" );
@@ -53,9 +53,9 @@ static qboolean G_LoadLevelFile( const char *filename, mapinfo_t *info )
     info->width = header->map.mapWidth;
     info->height = header->map.mapHeight;
 
-    info->numCheckpoints = CopyLump( (void **)&info->checkpoints, LUMP_CHECKPOINTS, sizeof( mapcheckpoint_t ), &header->map );
-    info->numSpawns = CopyLump( (void **)&info->spawns, LUMP_SPAWNS, sizeof( mapspawn_t ), &header->map );
-    info->numTiles = CopyLump( (void **)&info->tiles, LUMP_TILES, sizeof( maptile_t ), &header->map );
+    info->numCheckpoints = CopyLump( (void **)&info->checkpoints, LUMP_CHECKPOINTS, sizeof( mapcheckpoint_t ), header );
+    info->numSpawns = CopyLump( (void **)&info->spawns, LUMP_SPAWNS, sizeof( mapspawn_t ), header );
+    info->numTiles = CopyLump( (void **)&info->tiles, LUMP_TILES, sizeof( maptile_t ), header );
 	info->numLevels = 1;
 
     FS_FreeFile( f.v );
@@ -196,11 +196,14 @@ void G_GetCheckpointData( uvec3_t xyz, uint32_t nIndex ) {
 	VectorCopy( xyz, info->checkpoints[ nIndex ].xyz );
 }
 
-void G_GetSpawnData( uvec3_t xyz, uint32_t *type, uint32_t *id, uint32_t nIndex ) {
+void G_GetSpawnData( uvec3_t xyz, uint32_t *type, uint32_t *id, uint32_t nIndex, uint32_t *pCheckpointIndex ) {
 	const mapinfo_t *info;
 	
 	if ( !gi.mapCache.info.name[0] ) {
 		N_Error( ERR_DROP, "G_GetSpawnData: no map loaded" );
+	}
+	if ( !type || !id || !pCheckpointIndex ) {
+		N_Error( ERR_DROP, "G_GetSpawnData: invalid parameter" );
 	}
 	
 	info = &gi.mapCache.info;
@@ -211,6 +214,9 @@ void G_GetSpawnData( uvec3_t xyz, uint32_t *type, uint32_t *id, uint32_t nIndex 
 	VectorCopy( xyz, info->spawns[ nIndex ].xyz );
 	*type = info->spawns[ nIndex ].entitytype;
 	*id = info->spawns[ nIndex ].entityid;
+	*pCheckpointIndex = info->spawns[ nIndex ].checkpoint;
+
+	Con_DPrintf( "spawn[%u] has checkpoint %u\n", nIndex, info->spawns[nIndex].checkpoint );
 }
 
 void G_GetTileData( uint32_t *pTiles, uint32_t nLevel ) {

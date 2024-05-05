@@ -173,6 +173,8 @@ cvar_t *r_arb_texture_filter_anisotropic;
 cvar_t *r_arb_texture_max_anisotropy;
 cvar_t *r_arb_texture_float;
 cvar_t *r_arb_sync;
+cvar_t *r_arb_shader_storage_buffer_object;
+cvar_t *r_arb_map_buffer_range;
 
 cvar_t *r_screenshotJpegQuality;
 
@@ -767,6 +769,10 @@ static void GpuInfo_f( void )
     ri.Printf( PRINT_INFO, "GL_ARB_vertex_array_object: %s\n", enablestrings[glContext.ARB_vertex_array_object]);
     ri.Printf( PRINT_INFO, "GL_ARB_vertex_buffer_object: %s\n", enablestrings[glContext.ARB_vertex_buffer_object]);
     ri.Printf( PRINT_INFO, "GL_ARB_vertex_shader: %s\n", enablestrings[glContext.ARB_vertex_shader]);
+    ri.Printf( PRINT_INFO, "GL_ARG_sync: %s\n", enablestrings[ glContext.ARB_sync ] );
+    ri.Printf( PRINT_INFO, "GL_ARB_map_buffer_range: %s\n", enablestrings[ glContext.ARB_map_buffer_range ] );
+    ri.Printf( PRINT_INFO, "GL_ARB_buffer_storage: %s\n", enablestrings[ glContext.ARB_buffer_storage ] );
+    ri.Printf( PRINT_INFO, "GL_ARB_shader_storage_buffer_object: %s\n", enablestrings[ glContext.ARB_shader_storage_buffer_object ] );
 
 	if ( r_finish->i ) {
 		ri.Printf( PRINT_INFO, "Forcing glFinish\n" );
@@ -797,6 +803,13 @@ static void R_Register( void )
     ri.Cvar_SetDescription( r_arb_texture_filter_anisotropic, "Enabled anisotropic filtering." );
     r_arb_texture_max_anisotropy = ri.Cvar_Get( "r_arb_texture_max_anisotropy", "8", CVAR_SAVE | CVAR_LATCH );
     ri.Cvar_SetDescription( r_arb_texture_max_anisotropy, "Sets maximum anisotropic level for your graphics driver. Requires \\r_arb_texture_filter_anisotropic 1." );
+
+    r_arb_map_buffer_range = ri.Cvar_Get( "r_arb_map_buffer_range", "0", CVAR_LATCH | CVAR_SAVE );
+
+    r_arb_shader_storage_buffer_object = ri.Cvar_Get( "r_arb_shader_storage_buffer_object", "0", CVAR_LATCH | CVAR_SAVE );
+    ri.Cvar_SetDescription( r_arb_shader_storage_buffer_object,
+        "Enables usage of Shader Storage Buffer Objects (SSBO) instead of Uniform Buffer Objects (UBO).\n"
+        "SSBOs can hold much more data and are dynamically sizeable, but are generally slower than UBOs." );
 
     r_arb_texture_float = ri.Cvar_Get("r_arb_texture_float", "1", CVAR_SAVE | CVAR_LATCH);
     ri.Cvar_SetDescription(r_arb_texture_float, "Enables HDR framebuffer.");

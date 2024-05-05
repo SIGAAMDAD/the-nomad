@@ -84,9 +84,11 @@ static void R_CalcSpriteTextureCoords( uint32_t x, uint32_t y, uint32_t spriteWi
 static void R_GenerateTexCoords( tile2d_info_t *info )
 {
     uint32_t y, x;
+    uint32_t i;
     uint32_t sheetWidth, sheetHeight;
     const texture_t *image;
     char texture[MAX_NPATH];
+    vec3_t tmp1, tmp2;
 
     COM_StripExtension( info->texture, texture, sizeof( texture ) );
     if ( texture[ strlen( texture ) - 1 ] == '.' ) {
@@ -151,8 +153,8 @@ void R_GenerateDrawData( void )
     r_worldData.numIndices = r_worldData.width * r_worldData.height * 6;
     r_worldData.numVertices = r_worldData.width * r_worldData.height * 4;
 
-    r_worldData.indices = ri.Hunk_Alloc( sizeof(glIndex_t) * r_worldData.numIndices, h_low );
-    r_worldData.vertices = ri.Hunk_Alloc( sizeof(drawVert_t) * r_worldData.numVertices, h_low );
+    r_worldData.indices = ri.Hunk_Alloc( sizeof( glIndex_t ) * r_worldData.numIndices, h_low );
+    r_worldData.vertices = ri.Hunk_Alloc( sizeof( drawVert_t ) * r_worldData.numVertices, h_low );
 
     r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, r_worldData.numVertices * sizeof(drawVert_t), NULL,
                                         r_worldData.numIndices * sizeof(glIndex_t), BUFFER_FRAME );
@@ -161,44 +163,51 @@ void R_GenerateDrawData( void )
     attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
 	attribs[ATTRIB_INDEX_TEXCOORD].enabled		= qtrue;
 	attribs[ATTRIB_INDEX_COLOR].enabled			= qtrue;
-	attribs[ATTRIB_INDEX_NORMAL].enabled		= qfalse;
+	attribs[ATTRIB_INDEX_NORMAL].enabled		= qtrue;
     attribs[ATTRIB_INDEX_WORLDPOS].enabled      = qtrue;
+    attribs[ATTRIB_INDEX_TANGENT].enabled       = qtrue;
 
 	attribs[ATTRIB_INDEX_POSITION].count		= 3;
 	attribs[ATTRIB_INDEX_TEXCOORD].count		= 2;
 	attribs[ATTRIB_INDEX_COLOR].count			= 4;
 	attribs[ATTRIB_INDEX_NORMAL].count			= 4;
     attribs[ATTRIB_INDEX_WORLDPOS].count        = 3;
+    attribs[ATTRIB_INDEX_TANGENT].count			= 4;
 
 	attribs[ATTRIB_INDEX_POSITION].type			= GL_FLOAT;
 	attribs[ATTRIB_INDEX_TEXCOORD].type			= GL_FLOAT;
 	attribs[ATTRIB_INDEX_COLOR].type			= GL_UNSIGNED_SHORT;
 	attribs[ATTRIB_INDEX_NORMAL].type			= GL_SHORT;
     attribs[ATTRIB_INDEX_WORLDPOS].type         = GL_FLOAT;
+    attribs[ATTRIB_INDEX_TANGENT].type          = GL_SHORT;
 
 	attribs[ATTRIB_INDEX_POSITION].index		= ATTRIB_INDEX_POSITION;
 	attribs[ATTRIB_INDEX_TEXCOORD].index		= ATTRIB_INDEX_TEXCOORD;
 	attribs[ATTRIB_INDEX_COLOR].index			= ATTRIB_INDEX_COLOR;
 	attribs[ATTRIB_INDEX_NORMAL].index			= ATTRIB_INDEX_NORMAL;
     attribs[ATTRIB_INDEX_WORLDPOS].index        = ATTRIB_INDEX_WORLDPOS;
+    attribs[ATTRIB_INDEX_TANGENT].index         = ATTRIB_INDEX_TANGENT;
 
 	attribs[ATTRIB_INDEX_POSITION].normalized	= GL_FALSE;
 	attribs[ATTRIB_INDEX_TEXCOORD].normalized	= GL_FALSE;
 	attribs[ATTRIB_INDEX_COLOR].normalized		= GL_TRUE;
 	attribs[ATTRIB_INDEX_NORMAL].normalized		= GL_TRUE;
     attribs[ATTRIB_INDEX_WORLDPOS].normalized   = GL_FALSE;
+    attribs[ATTRIB_INDEX_TANGENT].normalized    = GL_TRUE;
 
 	attribs[ATTRIB_INDEX_POSITION].offset		= offsetof( drawVert_t, xyz );
 	attribs[ATTRIB_INDEX_TEXCOORD].offset		= offsetof( drawVert_t, uv );
 	attribs[ATTRIB_INDEX_COLOR].offset			= offsetof( drawVert_t, color );
-	attribs[ATTRIB_INDEX_NORMAL].offset			= 0;
+	attribs[ATTRIB_INDEX_NORMAL].offset			= offsetof( drawVert_t, normal );
     attribs[ATTRIB_INDEX_WORLDPOS].offset       = offsetof( drawVert_t, worldPos );
+    attribs[ATTRIB_INDEX_TANGENT].offset        = offsetof( drawVert_t, tangent );
 
-	attribs[ATTRIB_INDEX_POSITION].stride		= sizeof(drawVert_t);
-	attribs[ATTRIB_INDEX_TEXCOORD].stride		= sizeof(drawVert_t);
-	attribs[ATTRIB_INDEX_COLOR].stride			= sizeof(drawVert_t);
-	attribs[ATTRIB_INDEX_NORMAL].stride			= sizeof(drawVert_t);
-    attribs[ATTRIB_INDEX_WORLDPOS].stride       = sizeof(drawVert_t);
+	attribs[ATTRIB_INDEX_POSITION].stride		= sizeof( drawVert_t );
+	attribs[ATTRIB_INDEX_TEXCOORD].stride		= sizeof( drawVert_t );
+	attribs[ATTRIB_INDEX_COLOR].stride			= sizeof( drawVert_t );
+	attribs[ATTRIB_INDEX_NORMAL].stride			= sizeof( drawVert_t );
+    attribs[ATTRIB_INDEX_WORLDPOS].stride       = sizeof( drawVert_t );
+    attribs[ATTRIB_INDEX_WORLDPOS].stride       = sizeof( drawVert_t );
 
     // cache the indices so that we aren't calculating these every frame (there could be thousands)
     for ( i = 0, offset = 0; i < r_worldData.numIndices; i += 6, offset += 4 ) {
@@ -212,12 +221,39 @@ void R_GenerateDrawData( void )
     }
 }
 
+static void R_ProcessLights( void )
+{
+    shaderLight_t *lights;
+    const maplight_t *data;
+    uint32_t i;
+
+    if ( !r_worldData.numLights ) {
+        return;
+    }
+
+    lights = (shaderLight_t *)ri.Hunk_Alloc( sizeof( *lights ) * r_worldData.numLights, h_low );
+
+    data = r_worldData.lights;
+    for ( i = 0; i < r_worldData.numLights; i++ ) {
+        VectorCopy4( lights[i].color, data[i].color );
+        VectorCopy2( lights[i].origin, data[i].origin );
+        lights[i].brightness = data[i].brightness;
+        lights[i].range = data[i].range;
+        lights[i].constant = data[i].constant;
+        lights[i].linear = data[i].linear;
+        lights[i].quadratic = data[i].quadratic;
+        lights[i].type = data[i].type;
+    }
+
+    memcpy( rg.lightData->data, lights, sizeof( *lights ) * r_worldData.numLights );
+}
+
 void RE_LoadWorldMap(const char *filename)
 {
     bmf_t *header;
     mapheader_t *mheader;
     tile2d_header_t *theader;
-    char texture[MAX_GDR_PATH];
+    char texture[MAX_NPATH];
     union {
         byte *b;
         void *v;
@@ -225,7 +261,7 @@ void RE_LoadWorldMap(const char *filename)
 
     ri.Printf(PRINT_INFO, "------ RE_LoadWorldMap( %s ) ------\n", filename);
 
-    if (strlen(filename) >= MAX_GDR_PATH) {
+    if (strlen(filename) >= MAX_NPATH) {
         ri.Error(ERR_DROP, "RE_LoadWorldMap: name '%s' too long", filename);
     }
 
@@ -279,6 +315,7 @@ void RE_LoadWorldMap(const char *filename)
 
     R_LoadTileset(&mheader->lumps[LUMP_SPRITES], theader);
 
+//    R_ProcessLights();
     R_GenerateDrawData();
     R_GenerateTexCoords( &theader->info );
 

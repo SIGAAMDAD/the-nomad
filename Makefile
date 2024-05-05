@@ -111,7 +111,8 @@ VERSION_STRING= $(VERSION).$(VERSION_UPDATE).$(VERSION_PATCH)
 USE_OPENGL_API=1
 USE_VULKAN_API=0
 
-INCLUDE       =-Idependencies/include/ -Idependencies/include/EA/ -Ideps/squirrel/include -Ideps/squall/ $(OS_INCLUDE) -I. -Icode/ -I/usr/local/mono-2.0
+INCLUDE       =-Idependencies/include/ -Idependencies/include/EA/ -Ideps/squirrel/include -Ideps/squall/ $(OS_INCLUDE) \
+	-I. -Icode/ -I/usr/local/mono-2.0 -Ideps/
 VERSION_DEFINE=-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPDATE) -D_NOMAD_VERSION_PATCH=$(VERSION_PATCH)
 ERRORS        =-Werror=return-type
 
@@ -157,6 +158,7 @@ LDLIBS= \
 		libopenal.a \
 		TheNomad.ASLib.x64.a \
 		libfoonathan_memory-0.7.3.a \
+		/usr/local/lib/libcoredumper.a \
 		-L. \
 		-lSDL2 \
 		-lsndfile \
@@ -315,6 +317,8 @@ SRC=\
 	$(O)/rendercommon/imgui_tables.o \
 	$(O)/rendercommon/imgui_impl_sdl2.o \
 	$(O)/rendercommon/imgui_impl_opengl3.o \
+	$(O)/rendercommon/implot.o \
+	$(O)/rendercommon/implot_items.o \
 	\
 	$(O)/ui/ui_main.o \
 	$(O)/ui/ui_lib.o \

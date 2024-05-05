@@ -337,7 +337,7 @@ uint32_t SCR_GetBigStringWidth( const char *str ) {
 }
 
 
-static uint64_t time_frontend, time_backend;
+uint64_t time_frontend, time_backend;
 
 /*
 ==================
@@ -352,6 +352,7 @@ void SCR_UpdateScreen( void )
     static uint32_t recursive;
     static uint64_t framecount;
     static int64_t next_frametime;
+	extern cvar_t *ui_debugOverlay;
 
 //	Assert( !g_pRenderThread->IsAlive() );
 //	g_pRenderThread->Start();
@@ -383,7 +384,7 @@ void SCR_UpdateScreen( void )
 	// we're in a level
 	// if the user is ending a level through the pause menu,
 	// we let the ui handle the sgame call
-	if ( gi.mapLoaded && gi.state == GS_LEVEL && !( Key_GetCatcher() & KEYCATCH_CONSOLE ) ) {
+	if ( gi.mapLoaded && gi.state == GS_LEVEL || gi.state == GS_STATS_MENU && !( Key_GetCatcher() & KEYCATCH_CONSOLE ) ) {
 		switch ( g_pModuleLib->ModuleCall( sgvm, ModuleOnRunTic, 1, gi.frametime ) ) {
 		case 0:
 		default:
@@ -393,6 +394,7 @@ void SCR_UpdateScreen( void )
 			g_pModuleLib->RunModules( ModuleOnLevelEnd, 0 );
 			break;
 		case 2:
+			gi.state = GS_STATS_MENU;
 			break; // its showing the stats window
 		case 3:
 			UI_ShowDemoMenu();
@@ -410,7 +412,7 @@ void SCR_UpdateScreen( void )
     // console draws next
     Con_DrawConsole();
 
-	if ( com_speeds->i ) {
+	if ( ui_debugOverlay->i ) {
 		re.EndFrame( &time_frontend, &time_backend );
 	} else {
 		re.EndFrame( NULL, NULL );

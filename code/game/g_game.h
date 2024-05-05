@@ -24,6 +24,7 @@ typedef enum
     GS_LEVEL,
     GS_PAUSE,
     GS_SETTINGS,
+    GS_STATS_MENU,
     GS_MEMORY_VIEW,
 
     NUM_GAME_STATES
@@ -293,6 +294,7 @@ nhandle_t G_LoadMap( const char *name );
 //
 // g_screen.cpp
 //
+extern uint64_t time_frontend, time_backend;;
 uint32_t SCR_GetBigStringWidth( const char *str ); // returns in virtual 640x480 coordinates
 void SCR_AdjustFrom640( float *x, float *y, float *w, float *h );
 void SCR_FillRect( float x, float y, float width, float height,  const float *color );

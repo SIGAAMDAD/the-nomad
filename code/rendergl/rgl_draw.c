@@ -448,7 +448,7 @@ void RB_IterateShaderStages( shader_t *shader )
 
         if ( !stageP ) {
             break;
-        }
+		}
 
 		if ( backend.depthFill ) {
 			if ( stageP->glslShaderGroup == rg.lightallShader ) {
@@ -492,6 +492,10 @@ void RB_IterateShaderStages( shader_t *shader )
 		}
 
         GLSL_UseProgram( sp );
+
+		if ( rg.world && rg.world->numLights ) {
+			GLSL_ShaderBufferData( sp, UNIFORM_LIGHTDATA, rg.lightData );
+		}
 
 		GLSL_SetUniformInt( sp, UNIFORM_NUM_LIGHTS, numLights );
         GLSL_SetUniformMatrix4( sp, UNIFORM_MODELVIEWPROJECTION, glState.viewData.camera.viewProjectionMatrix );

@@ -19,7 +19,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 
-qboolean Sys_RandomBytes(byte *s, uint64_t len)
+qboolean Sys_RandomBytes( byte *s, uint64_t len )
 {
     FILE *fp;
 
@@ -42,15 +42,13 @@ void Sys_Sleep( double msec ) {
     usleep( msec * 1000.0f );
 }
 
-//
-// Sys_StackMemoryRemaining: returns the amount of stack we have left
-//
+/*
+* Sys_StackMemoryRemaining: returns the maximum amount of process stack memory
+*/
 uint64_t Sys_StackMemoryRemaining( void )
 {
     struct rlimit limit;
-    
     getrlimit( RLIMIT_STACK, &limit );
-
     return limit.rlim_cur;
 }
 
@@ -229,14 +227,171 @@ void Sys_FreeFileList( char **list )
     Z_Free( list );
 }
 
+void Sys_GetRAMUsage( uint64_t *curVirt, uint64_t *curPhys, uint64_t *peakVirt, uint64_t *peakPhys )
+{
+    FILE *fp;
+    char buf[1024];
+
+    *curVirt = *peakVirt = 0;
+    *curPhys = *peakPhys = 0;
+
+    fp = fopen( "/proc/self/status", "r" );
+    if ( !fp ) {
+        return;
+    }
+
+    while ( fscanf( fp, " %1023s", buf ) == 1 ) {
+        if ( strstr( buf, "VmRSS:" ) ) {
+            fscanf( fp, " %lu", curPhys );
+        }
+        if ( strstr( buf, "VmHWM:" ) ) {
+            fscanf( fp, " %lu", peakPhys );
+        }
+        if ( strstr( buf, "VmSize:" ) ) {
+            fscanf( fp, " %lu", curVirt );
+        }
+        if ( strstr( buf, "VmPeak:" ) ) {
+            fscanf( fp, " %lu", peakVirt );
+        }
+    }
+
+    fclose( fp );
+}
+
+
+#define rdtsc( x ) \
+    __asm__ __volatile__ ( "rdtsc" : "=A" ( x ) )
+
+class CTimeVal
+{
+public:
+    CTimeVal( void ) = default;
+    CTimeVal& operator=( const CTimeVal& val ) { m_TimeVal = val.m_TimeVal; }
+    inline double operator-( const CTimeVal& left ) {
+        uint64_t left_us = (uint64_t)left.m_TimeVal.tv_sec * 1000000 + left.m_TimeVal.tv_usec;
+	    uint64_t right_us = (uint64_t)m_TimeVal.tv_sec * 1000000 + m_TimeVal.tv_usec;
+	    uint64_t diff_us = left_us - right_us;
+	    return diff_us / 1000000.0f;
+    }
+
+    timeval m_TimeVal;
+};
+
+// Compute the positive difference between two 64 bit numbers.
+static inline double diff( double v1, double v2 ) {
+    double d = v1 - v2;
+    return d >= 0 ? d : -d;
+}
+
+
+#ifdef OSX
+double GetCPUFreqFromPROC( void )
+{
+    int mib[2] = { CTL_HW, HW_CPU_FREQ };
+    uint64_t frequency = 0;
+    size_t len = sizeof( frequency );
+
+    if ( sysctl( mib, 2, &frequency, &len, NULL, 0 ) == -1 ) {
+        return 0;
+    }
+    return (double)frequency;
+}
+#else
+double GetCPUFreqFromPROC( void )
+{
+    double mhz = 0;
+    char line[1024], *s, search_str[] = "cpu MHz";
+    FILE *fp; 
+    
+    // open proc/cpuinfo
+    if ( ( fp = fopen( "/proc/cpuinfo", "r" ) ) == NULL ) {
+	    return 0;
+    }
+
+    // ignore all lines until we reach MHz information
+    while ( fgets( line, 1024, fp ) != NULL ) { 
+    	if ( strstr( line, search_str ) != NULL ) {
+	        // ignore all characters in line up to :
+	        for ( s = line; *s && ( *s != ':' ); ++s )
+                ;
+	        // get MHz number
+	        if ( *s && ( sscanf( s+1, "%lf", &mhz ) == 1 ) ) {
+		        break;
+            }
+	    }
+    }
+
+    if ( fp ) {
+        fclose( fp );
+    }
+
+    return mhz * 1000000.0f;
+}
+#endif
+
+
+double Sys_CalculateCPUFreq( void )
+{
+#ifdef __linux__
+	const char *pFreq = getenv( "CPU_MHZ" );
+	if ( pFreq ) {
+		double retVal = 1000000.0f;
+		return retVal * (double)atoll( pFreq );
+	}
+#endif
+
+    // Compute the period. Loop until we get 3 consecutive periods that
+    // are the same to within a small error. The error is chosen
+    // to be +/- 0.02% on a P-200.
+    const double error = 40000.0f;
+    const int max_iterations = 600;
+    int count;
+    double period, period1 = error * 2, period2 = 0,  period3 = 0;
+
+    for ( count = 0; count < max_iterations; count++ ) {
+        CTimeVal start_time, end_time;
+        uint64_t start_tsc, end_tsc;
+
+        gettimeofday( &start_time.m_TimeVal, 0 );
+        rdtsc( start_tsc );
+        usleep( 5000 ); // sleep for 5 msec
+        gettimeofday( &end_time.m_TimeVal, 0 );
+        rdtsc( end_tsc );
+
+        period3 = ( end_tsc - start_tsc) / (end_time - start_time );
+        if ( diff( period1, period2 ) <= error && diff( period2, period3 ) <= error && diff( period1, period3 ) <= error ) {
+ 	        break;
+        }
+        period1 = period2;
+        period2 = period3;
+    }
+
+    if ( count == max_iterations ) {
+	    return GetCPUFreqFromPROC(); // fall back to /proc
+    }
+
+    // Set the period to the average period measured.
+    period = ( period1 + period2 + period3 ) / 3;
+
+    // Some Pentiums have broken TSCs that increment very
+    // slowly or unevenly. 
+    if ( period < 10000000.0f ) {
+	    return GetCPUFreqFromPROC(); // fall back to /proc
+    }
+
+    return period;
+}
+
+
+
 /*
-Sys_GetFileStats: returns qtrue if the file exists
+* Sys_GetFileStats: returns qtrue if the file exists
 */
-qboolean Sys_GetFileStats(fileStats_t *stats, const char *path)
+qboolean Sys_GetFileStats( fileStats_t *stats, const char *path )
 {
     struct stat fdata;
 
-    if (stat(path, &fdata) != -1) {
+    if ( stat( path, &fdata ) != -1 ) {
         stats->mtime = fdata.st_mtime;
         stats->ctime = fdata.st_ctime;
         stats->exists = qtrue;

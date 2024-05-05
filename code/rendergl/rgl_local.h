@@ -39,6 +39,8 @@
 #define GLN_INDEX_TYPE GL_UNSIGNED_INT
 typedef uint32_t glIndex_t;
 
+// set a hard limit of 2 MiB per uniform buffer
+#define MAX_UNIFORM_BUFFER_SIZE ( 2*1024*1024 )
 #define MAX_UNIFORM_BUFFERS 512
 #define MAX_VERTEX_BUFFERS 1024
 #define MAX_FRAMEBUFFERS 64
@@ -144,6 +146,7 @@ typedef struct
     qboolean ARB_vertex_shader;
     qboolean ARB_texture_compression;
     qboolean ARB_sync;
+    qboolean ARB_shader_storage_buffer_object;
 } glContext_t;
 
 typedef struct {
@@ -335,6 +338,8 @@ typedef enum {
     UNIFORM_SCREEN_SIZE,
     UNIFORM_SHARPENING,
 
+    UNIFORM_LIGHTDATA,
+
     UNIFORM_COUNT
 } uniform_t;
 
@@ -348,6 +353,8 @@ typedef struct shaderProgram_s
     uint32_t vertexBufLen;
     uint32_t fragmentBufLen;
 
+    uint32_t numBuffers;
+
     uint32_t programId;
     uint32_t vertexId;
     uint32_t fragmentId;
@@ -359,16 +366,32 @@ typedef struct shaderProgram_s
     char *uniformBuffer;
 } shaderProgram_t;
 
-typedef struct
-{
+/*
+* GLSL uniform buffer alignment doesn't play well with
+* maplight_t or dlight_t
+*/
+typedef struct {
+    vec4_t color;
+    uvec2_t origin;
+    float brightness;
+    float range;
+    float linear;
+    float quadratic;
+    float constant;
+    int type;
+} shaderLight_t;
+
+typedef struct {
+    char *name;
     shaderProgram_t *shader;
+    byte *data;
+    qboolean externalBuffer;
     uint32_t id;
     uint32_t binding;
     uint64_t size;
 } uniformBuffer_t;
 
-typedef enum
-{
+typedef enum {
     DL_POINT,       // point light
     DL_SPOT,        // spot light
     DL_SKY,         // sky light
@@ -1028,11 +1051,13 @@ typedef struct {
     uint32_t    writeFboId;
     uint32_t    rboId;
     uint32_t    shaderId;
+    uint32_t    uboId;
 
-    fbo_t *currentFbo; // unused
+    fbo_t *currentFbo;
     vertexBuffer_t *currentVao;
     texture_t *currentTexture;
     shaderProgram_t *currentShader;
+    uniformBuffer_t *currentUbo;
 } glstate_t;
 
 typedef enum {
@@ -1139,6 +1164,11 @@ typedef struct
 	uint32_t				lightmapSize;
 	texture_t				**lightmaps;
 	texture_t				**deluxemaps;
+
+    uniformBuffer_t         *lightData;
+
+    uniformBuffer_t *uniformBuffers[MAX_UNIFORM_BUFFERS];
+    uint64_t numUniformBuffers;
 
     spriteSheet_t *sheets[MAX_RENDER_SPRITESHEETS];
     uint32_t numSpriteSheets;
@@ -1415,6 +1445,8 @@ extern cvar_t *r_arb_texture_filter_anisotropic;
 extern cvar_t *r_arb_texture_max_anisotropy;
 extern cvar_t *r_arb_texture_float;
 extern cvar_t *r_arb_sync;
+extern cvar_t *r_arb_shader_storage_buffer_object;
+extern cvar_t *r_arb_map_buffer_range;
 
 //====================================================================
 
@@ -1499,6 +1531,8 @@ void GLSL_SetUniformVec2(shaderProgram_t *program, uint32_t uniformNum, const ve
 void GLSL_SetUniformVec3(shaderProgram_t *program, uint32_t uniformNum, const vec3_t v);
 void GLSL_SetUniformVec4(shaderProgram_t *program, uint32_t uniformNum, const vec4_t v);
 void GLSL_SetUniformMatrix4(shaderProgram_t *program, uint32_t uniformNum, const mat4_t m);
+void GLSL_ShaderBufferData( shaderProgram_t *shader, uint32_t uniformNum, uniformBuffer_t *buffer );
+uniformBuffer_t *GLSL_InitUniformBuffer( const char *name, byte *buffer, uint64_t bufSize );
 shaderProgram_t *GLSL_GetGenericShaderProgram(int stage);
 
 //

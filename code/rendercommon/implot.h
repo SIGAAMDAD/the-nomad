@@ -45,7 +45,7 @@
 // [SECTION] Obsolete API
 
 #pragma once
-#include "imgui.h"
+#include "rendercommon/imgui.h"
 
 //-----------------------------------------------------------------------------
 // [SECTION] Macros and Defines
@@ -590,7 +590,7 @@ typedef ImPlotPoint (*ImPlotGetter)(int idx, void* user_data);
 // Callback signature for axis transform.
 typedef double (*ImPlotTransform)(double value, void* user_data);
 
-namespace ImGui {
+namespace ImPlot {
 
 //-----------------------------------------------------------------------------
 // [SECTION] Contexts

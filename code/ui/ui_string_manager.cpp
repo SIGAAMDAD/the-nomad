@@ -16,15 +16,15 @@ void CUIStringManager::Shutdown( void ) {
 
 static language_t StringToLanguage( const char *tok )
 {
-    if (!N_stricmp(tok, "English")) {
-        Con_Printf("Language selected: English\n");
+    if ( !N_stricmp( tok, "English" ) ) {
+        Con_Printf( "Language selected: English\n" );
         return LANGUAGE_ENGLISH;
-    } else if (!N_stricmp(tok, "Spanish")) {
-        Con_Printf("Language selected: Spanish\n");
+    } else if ( !N_stricmp( tok, "Spanish" ) ) {
+        Con_Printf( "Language selected: Spanish\n" );
         return LANGUAGE_SPANISH;
     }
 
-    COM_ParseWarning("unknown language parameter '%s', setting default of english", tok);
+    COM_ParseWarning( "unknown language parameter '%s', setting default of english", tok );
     return LANGUAGE_ENGLISH;
 }
 

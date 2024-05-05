@@ -856,6 +856,16 @@ DEFINE_CALLBACK( SetActiveMap ) {
     G_SetActiveMap( hMap, nCheckpoints, nSpawns, nTiles );
 }
 
+static void GetSpawnData( asIScriptGeneric *pGeneric ) {
+    uvec3 *xyz = (uvec3 *)pGeneric->GetArgObject( 0 );
+    uint32_t *type = (uint32_t *)pGeneric->GetArgAddress( 1 );
+    uint32_t *id = (uint32_t *)pGeneric->GetArgAddress( 2 );
+    uint32_t spawnIndex = pGeneric->GetArgDWord( 3 );
+    uint32_t *pCheckpointIndex = (uint32_t *)pGeneric->GetArgAddress( 4 );
+
+    G_GetSpawnData( (uvec_t *)xyz, type, id, spawnIndex, pCheckpointIndex );
+}
+
 static void GetTileData( CScriptArray *tiles ) {
     tiles->Resize( gi.mapCache.info.numLevels );
     for ( uint32_t i = 0; i < gi.mapCache.info.numLevels; i++ ) {
@@ -1387,8 +1397,6 @@ static const asDWORD script_CVAR_SAVE = CVAR_SAVE;
 static const asDWORD script_CVAR_TEMP = CVAR_TEMP;
 static const asDWORD script_CVAR_INVALID_HANDLE = CVAR_INVALID_HANDLE;
 
-static const asDWORD script_SURFACEPARM_CHECKPOINT = SURFACEPARM_CHECKPOINT;
-static const asDWORD script_SURFACEPARM_SPAWN = SURFACEPARM_SPAWN;
 static const asDWORD script_SURFACEPARM_FLESH = SURFACEPARM_FLESH;
 static const asDWORD script_SURFACEPARM_LAVA = SURFACEPARM_LAVA;
 static const asDWORD script_SURFACEPARM_METAL = SURFACEPARM_METAL;
@@ -1877,6 +1885,7 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::RadioButton( const string& in, bool )", ImGui_RadioButton, ( const string_t *, bool ), bool );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::SetCursorScreenPos( const vec2& in )", ImGui::SetCursorScreenPos, ( const ImVec2& ), void );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::ProgressBar( float, const vec2& in = vec2( -FLT_MIN, 0.0f ), const string& in = \"\" )", ImGui_ProgressBar, ( float, const vec2&, const string_t * ), void );
+        REGISTER_GLOBAL_FUNCTION( "void ImGui::Separator()", ImGui::Separator, ( void ), void );
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
             "int ImGui::SliderInt( const string& in, int, int, int, int = 0 )", asFUNCTION( ImGui_SliderInt ),
             asCALL_GENERIC
@@ -2348,7 +2357,8 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "bool TheNomad::GameSystem::CheckWallHit( const vec3& in, TheNomad::GameSystem::DirType )", WRAP_FN( CheckWallHit ) );
 		
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetCheckpointData( uvec3& out, uint )", WRAP_FN( G_GetCheckpointData ) );
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetSpawnData( uvec3& out, uint& out, uint& out, uint )", WRAP_FN( G_GetSpawnData ) );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::GameSystem::GetSpawnData( uvec3& out, uint& out, uint& out, uint, uint& out )",
+            asFUNCTION( GetSpawnData ), asCALL_GENERIC );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetTileData( array<array<uint>>@ )", WRAP_FN( GetTileData ) );
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::GameSystem::SetActiveMap( int, uint& out, uint& out, uint& out )", asFUNCTION( ModuleLib_SetActiveMap ), asCALL_GENERIC );
         REGISTER_GLOBAL_FUNCTION( "int LoadMap( const string& in )", WRAP_FN( LoadMap ) );
@@ -2401,8 +2411,6 @@ void ModuleLib_Register_Engine( void )
 
     //    SET_NAMESPACE( "TheNomad::Constants" );
     { // Constants
-        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_CHECKPOINT", &script_SURFACEPARM_CHECKPOINT );
-        REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_SPAWN", &script_SURFACEPARM_SPAWN );
         REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_FLESH", &script_SURFACEPARM_FLESH );
         REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_LAVA", &script_SURFACEPARM_LAVA );
         REGISTER_GLOBAL_VAR( "const uint32 SURFACEPARM_METAL", &script_SURFACEPARM_METAL );

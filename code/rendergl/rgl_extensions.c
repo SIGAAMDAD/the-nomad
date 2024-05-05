@@ -73,6 +73,27 @@ void R_InitExtensions(void)
         ri.Printf( PRINT_INFO, result[EXT_NOTFOUND], ext );
     }
 
+    ri.Cvar_Set( "r_arb_sync", va( "%i", glContext.ARB_sync ) );
+
+    //
+    // ARB_shader_storage_buffer_object
+    //
+    ext = "GL_ARB_shader_storage_buffer_object";
+    glContext.ARB_shader_storage_buffer_object = qfalse;
+    if ( NGL_VERSION_ATLEAST( 4, 4 ) || R_HasExtension( ext ) ) {
+        glContext.ARB_shader_storage_buffer_object = r_arb_shader_storage_buffer_object->i;
+
+        if ( !r_arb_shader_storage_buffer_object->i ) {
+            ri.Printf( PRINT_INFO, result[ EXT_IGNORE ], ext );
+        } else {
+            ri.Printf( PRINT_INFO, result[ EXT_USING ], ext );
+        }
+    } else {
+        ri.Printf( PRINT_INFO, result[ EXT_NOTFOUND ], ext );
+    }
+
+    ri.Cvar_Set( "r_arb_shader_storage_buffer_object", va( "%i", glContext.ARB_shader_storage_buffer_object ) );
+
     //
     // ARB_map_buffer_range
     //
@@ -93,6 +114,8 @@ void R_InitExtensions(void)
         ri.Printf(PRINT_INFO, result[EXT_NOTFOUND], ext);
     }
 
+    ri.Cvar_Set( "r_arb_map_buffer_range", va( "%i", glContext.ARB_map_buffer_range ) );
+
     //
     // ARB_vertex_array_object
     //
@@ -104,7 +127,7 @@ void R_InitExtensions(void)
             glContext.ARB_vertex_array_object = qtrue;
         }
         else {
-            glContext.ARB_vertex_array_object = !!r_arb_vertex_array_object;
+            glContext.ARB_vertex_array_object = !!r_arb_vertex_array_object->i;
         }
 
         NGL_VertexArrayARB_Procs
@@ -121,12 +144,14 @@ void R_InitExtensions(void)
         ri.Printf(PRINT_INFO, result[EXT_NOTFOUND], ext);
     }
 
+    ri.Cvar_Set( "r_arb_vertex_array_object", va( "%i", glContext.ARB_vertex_array_object ) );
+
     //
     // ARB_gl_spirv
     //
     ext = "GL_ARB_gl_spirv";
     glContext.ARB_gl_spirv = qfalse;
-    if (NGL_VERSION_ATLEAST(4, 0) || R_HasExtension(ext)) {
+    if ( NGL_VERSION_ATLEAST( 4, 0 ) || R_HasExtension( ext ) ) {
         NGL_GLSL_SPIRV_Procs
     }
     else {
@@ -138,13 +163,13 @@ void R_InitExtensions(void)
     //
     ext = "GL_ARB_vertex_buffer_object";
     glContext.ARB_vertex_buffer_object = qfalse;
-    if (NGL_VERSION_ATLEAST(3, 0) || R_HasExtension(ext)) {
+    if ( NGL_VERSION_ATLEAST( 3, 0 ) || R_HasExtension( ext ) ) {
         NGL_BufferARB_Procs
         
-        glContext.ARB_vertex_buffer_object = qtrue;
+        glContext.ARB_vertex_buffer_object = r_arb_vertex_buffer_object->i;
 
-        if (!nglGenBuffersARB || !nglDeleteBuffersARB || !nglBindBufferARB || !nglBufferDataARB || !nglBufferSubDataARB) {
-            ri.Printf(PRINT_INFO, result[EXT_FAILED], ext);
+        if (!nglGenBuffersARB || !nglDeleteBuffersARB || !nglBindBufferARB || !nglBufferDataARB || !nglBufferSubDataARB ) {
+            ri.Printf( PRINT_INFO, result[EXT_FAILED], ext);
             glContext.vboTarget = GL_ARRAY_BUFFER;
             glContext.iboTarget = GL_ELEMENT_ARRAY_BUFFER;
             glContext.ARB_vertex_buffer_object = qfalse;
@@ -157,6 +182,8 @@ void R_InitExtensions(void)
     else {
         ri.Printf(PRINT_INFO, result[EXT_NOTFOUND], ext);
     }
+
+    ri.Cvar_Set( "r_arb_vertex_buffer_object", va( "%i", glContext.ARB_vertex_buffer_object ) );
 
     //
     // ARB_texture_filter_anisotropic

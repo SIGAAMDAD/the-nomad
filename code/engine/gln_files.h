@@ -7,6 +7,9 @@
 * GLN_FILES: these definitions must stay the same in any "The Nomad" extension or project
 */
 
+#include <stdint.h>
+#include <stdlib.h>
+
 typedef float vec_t;
 typedef int32_t ivec_t;
 typedef uint32_t uvec_t;
@@ -43,9 +46,26 @@ typedef enum { qfalse = 0, qtrue = 1 } qboolean;
 #endif
 #endif
 
+#ifndef MAX_OSPATH
+    #ifdef _WIN32
+        #define MAX_OSPATH _PATH_MAX
+    #elif defined(__unix__)
+        #include <unistd.h>
+        #include <limits.h>
+        #define MAX_OSPATH PATH_MAX
+    #endif
+#endif
+
 #ifndef MAX_NPATH
 #define MAX_NPATH 64
 #endif
+
+#ifndef MAX_GDR_PATH
+#define MAX_GDR_PATH 64
+#endif
+
+// the minimum size in bytes a lump should be before compressing it
+#define COMPRESSED_LUMP_SIZE (4*1024*1024)
 
 #define COMPRESS_NONE 0
 #define COMPRESS_ZLIB 1
@@ -162,10 +182,9 @@ typedef struct {
 #define LUMP_CHECKPOINTS 1
 #define LUMP_SPAWNS 2
 #define LUMP_LIGHTS 3
-#define LUMP_VERTICES 4
-#define LUMP_INDICES 5
-#define LUMP_SPRITES 6
-#define NUMLUMPS 7
+#define LUMP_SPRITES 4
+#define LUMP_SECRETS 5
+#define NUMLUMPS 6
 
 #define TILETYPE_CHECKPOINT       0x0001
 #define TILETYPE_SPAWN            0x0002
@@ -182,24 +201,20 @@ typedef struct {
 #define SURFACEPARM_NODLIGHT        0x08000000 // dynamic lighting will not be applied to this tile
 #define SURFACEPARM_NOMARKS         0x00100000 // no gfx will be drawn on this tile
 #define SURFACEPARM_NOMISSILE       0x00200000 // missiles will not explode when hitting this tile, even if it is marked as solid
-#define SURFACEPARM_CHECKPOINT      0x00400000
-#define SURFACEPARM_SPAWN           0x00800000
 
-typedef enum {
-    light_point = 0,
-    light_spotlight,
-    light_area
-} lighttype_t;
+#define LIGHT_POINT       0
+#define LIGHT_DIRECTIONAL 1
 
 typedef struct {
     vec4_t color;
     uvec3_t origin;
+    float angle;
     float brightness;
     float range;
     float linear;
     float quadratic;
     float constant;
-    lighttype_t type;
+    int type;
 } maplight_t;
 
 typedef struct {
@@ -249,6 +264,7 @@ typedef struct {
     uvec3_t xyz;
     uint32_t entitytype;
     uint32_t entityid;
+    uint32_t checkpoint;
 } mapspawn_t;
 
 typedef struct {

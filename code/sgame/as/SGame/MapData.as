@@ -110,15 +110,18 @@ namespace TheNomad::SGame {
 			//
 			for ( i = 0; i < nSpawns; i++ ) {
 				MapSpawn spawn;
-				uint id, type;
+				uint id, type, checkpoint;
 				
-				TheNomad::GameSystem::GetSpawnData( xyz, type, id, i );
+				TheNomad::GameSystem::GetSpawnData( xyz, type, id, i, checkpoint );
 				spawn = MapSpawn( xyz, id, TheNomad::GameSystem::EntityType( type ) );
-				@spawn.m_Checkpoint = null;
+
+				DebugPrint( "Spawn " + i + " linked to checkpoint " + checkpoint + "\n" );
+				@spawn.m_Checkpoint = @m_Checkpoints[ checkpoint ];
 				
 				m_Spawns.Add( spawn );
 			}
 			
+			/*
 //			if ( !LoadCheckpointCache() ) {
 				// generate the indexes manually
 
@@ -143,6 +146,7 @@ namespace TheNomad::SGame {
 					DebugPrint( "Spawn " + i + " linked to checkpoint " + c + "\n" );
 				}
 //			}
+			*/
 
 			DebugPrint( "Map \"" + m_Name + "\" loaded with " + m_Checkpoints.Count() + " checkpoints, " +
 				m_Spawns.Count() + " spawns.\n" );

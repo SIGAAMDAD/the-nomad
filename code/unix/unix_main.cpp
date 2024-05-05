@@ -277,19 +277,6 @@ void fpe_exception_handler( int signum )
     signal( SIGFPE, fpe_exception_handler );
 }
 
-void Catch_Signal( int signum )
-{
-    for (uint32_t i = 0; i < arraylen(signals); i++) {
-        if (signals[i].id == signum)
-            exit_type = &signals[i];
-    }
-    if ( !exit_type ) {
-        exit_type = &signals[arraylen(signals) - 1];
-    }
-    
-    Sys_Exit( -1 );
-}
-
 /*
 ==================
 CON_SigCont
@@ -375,7 +362,7 @@ static const char *getANSIcolor( char Q3color ) {
 	return NULL;
 }
 
-void Sys_ShutdownConsole(void)
+void Sys_ShutdownConsole( void )
 {
     if (ttycon_on) {
         tty_Back();
@@ -434,66 +421,68 @@ void Sys_SigTStp( int signum )
 }
 
 static qboolean printableChar( char c ) {
-	if ( ( c >= ' ' && c <= '~' ) || c == '\n' || c == '\r' || c == '\t' )
+	if ( ( c >= ' ' && c <= '~' ) || c == '\n' || c == '\r' || c == '\t' ) {
 		return qtrue;
-	else
-		return qfalse;
+	}
+	return qfalse;
 }
 
-void Sys_ANSIColorMsg(const char *msg, char *buffer, uint64_t bufSize)
+void Sys_ANSIColorMsg( const char *msg, char *buffer, uint64_t bufSize )
 {
     uint64_t msgLength;
     uint64_t i;
     char tmpbuf[8];
     const char *ANSIcolor;
 
-    if (!msg || !buffer)
+    if ( !msg || !buffer ) {
         return;
+	}
 
-    msgLength = strlen(msg);
+    msgLength = strlen( msg );
     i = 0;
     buffer[0] = '\0';
 
-    while (i < msgLength) {
-        if (msg[i] == '\n') {
-            snprintf(tmpbuf, sizeof(tmpbuf), "%c[0m\n", 0x1B);
-            strncat(buffer, tmpbuf, bufSize - 1);
+    while ( i < msgLength ) {
+        if ( msg[i] == '\n' ) {
+            snprintf( tmpbuf, sizeof( tmpbuf ), "%c[0m\n", 0x1B );
+            strncat( buffer, tmpbuf, bufSize - 1 );
             i += 1;
         }
-        else if (msg[i] == Q_COLOR_ESCAPE && (ANSIcolor = getANSIcolor(msg[i+1])) != NULL) {
-            snprintf(tmpbuf, sizeof(tmpbuf), "%c[%sm", 0x1B, ANSIcolor);
-            strncat(buffer, tmpbuf, bufSize - 1);
+        else if ( msg[i] == Q_COLOR_ESCAPE && ( ANSIcolor = getANSIcolor( msg[i+1] ) ) != NULL ) {
+            snprintf( tmpbuf, sizeof(tmpbuf), "%c[%sm", 0x1B, ANSIcolor );
+            strncat( buffer, tmpbuf, bufSize - 1 );
             i += 2;
         }
         else {
-            if (printableChar(msg[i])) {
-                snprintf(tmpbuf, sizeof(tmpbuf), "%c", msg[i]);
-                strncat(buffer, tmpbuf, bufSize - 1);
+            if ( printableChar( msg[i] ) ) {
+                snprintf( tmpbuf, sizeof( tmpbuf ), "%c", msg[i] );
+                strncat( buffer, tmpbuf, bufSize - 1 );
             }
             i += 1;
         }
     }
 }
 
-void Sys_Print(const char *msg)
+void Sys_Print( const char *msg )
 {
     char printmsg[MAXPRINTMSG];
     size_t len;
 
-    memset(printmsg, 0, sizeof(printmsg));
+    memset( printmsg, 0, sizeof( printmsg ) );
 
-    if (ttycon_on) {
+    if ( ttycon_on ) {
         tty_Hide();
     }
-    if (ttycon_color_on) {
-        Sys_ANSIColorMsg(msg, printmsg, sizeof(printmsg));
-        len = strlen(printmsg);
+    if ( ttycon_color_on ) {
+        Sys_ANSIColorMsg( msg, printmsg, sizeof( printmsg ) );
+        len = strlen( printmsg );
     }
     else {
         char *out = printmsg;
-        while (*msg != '\0' && out < printmsg + sizeof(printmsg)) {
-            if (printableChar(*msg))
+        while ( *msg != '\0' && out < printmsg + sizeof( printmsg ) ) {
+            if ( printableChar( *msg ) ) {
                 *out++ = *msg;
+			}
             msg++;
         }
         len = out - printmsg;
@@ -516,12 +505,12 @@ char *Sys_ConsoleInput( void )
 
     if ( ttycon_on ) {
 		avail = read( STDIN_FILENO, &key, 1 );
-		if (avail != -1) {
+		if ( avail != -1 ) {
 			// we have something
 			// backspace?
 			// NOTE TTimo testing a lot of values .. seems it's the only way to get it to work everywhere
-			if ((key == tty_erase) || (key == 127) || (key == 8)) {
-				if (tty_con.cursor > 0) {
+			if ( ( key == tty_erase ) || ( key == 127 ) || ( key == 8 ) ) {
+				if ( tty_con.cursor > 0 ) {
 					tty_con.cursor--;
 					tty_con.buffer[tty_con.cursor] = '\0';
 					tty_Back();
@@ -530,8 +519,8 @@ char *Sys_ConsoleInput( void )
 			}
 
 			// check if this is a control char
-			if (key && key < ' ') {
-				if (key == '\n') {
+			if ( key && key < ' ' ) {
+				if ( key == '\n' ) {
 					// push it in history
 					Con_SaveField( &tty_con );
 					s = tty_con.buffer;
@@ -543,7 +532,7 @@ char *Sys_ConsoleInput( void )
 					return text;
 				}
 
-				if (key == '\t') {
+				if ( key == '\t' ) {
 					tty_Hide();
 					Field_AutoComplete( &tty_con );
 					tty_Show();
@@ -647,27 +636,27 @@ char *Sys_ConsoleInput( void )
 	return NULL;
 }
 
-const char *Sys_GetError(void) {
+const char *Sys_GetError( void ) {
     return strerror( errno );
 }
 
 tty_err Sys_ConsoleInputInit( void )
 {
     struct termios tc;
-    struct rlimit limit;
+    struct rlimit64 limit;
     int err;
     const char *term;
 
     signal( SIGTTIN, SIG_IGN );
     signal( SIGTTOU, SIG_IGN );
 
-    Con_Printf("Sys_InitConsole: initializing logging\n");
+    Con_Printf( "Sys_InitConsole: initializing logging\n" );
 
     // if SIGCONT is recieved, reinitialize the console
-    signal(SIGCONT, CON_SigCont);
+    signal( SIGCONT, CON_SigCont );
 
-    if (signal(SIGTSTP, SIG_IGN) == SIG_DFL) {
-        signal(SIGTSTP, CON_SigTStp);
+    if ( signal( SIGTSTP, SIG_IGN ) == SIG_DFL ) {
+        signal( SIGTSTP, CON_SigTStp);
     }
 
     stdin_flags = fcntl(STDIN_FILENO, F_GETFL, 0);
@@ -677,19 +666,19 @@ tty_err Sys_ConsoleInputInit( void )
     }
 
     // set non-blocking mode
-    fcntl(STDIN_FILENO, F_SETFL, stdin_flags | O_NONBLOCK);
+    fcntl( STDIN_FILENO, F_SETFL, stdin_flags | O_NONBLOCK );
     stdin_active = qtrue;
 
     ttycon_color_on = qtrue;
 
-    term = getenv("TERM");
-    if (isatty(STDIN_FILENO) != 1 || !term || !strcmp(term, "dumb") || !strcmp(term, "raw")) {
+    term = getenv( "TERM" );
+    if ( isatty( STDIN_FILENO ) != 1 || !term || !strcmp( term, "dumb" ) || !strcmp( term, "raw" ) ) {
         ttycon_on = qfalse;
         return TTY_DISABLED;
     }
 
-    Field_Clear(&tty_con);
-    tcgetattr(STDIN_FILENO, &tty_tc);
+    Field_Clear( &tty_con );
+    tcgetattr( STDIN_FILENO, &tty_tc );
     tty_erase = tty_tc.c_cc[VERASE];
     tty_eof = tty_tc.c_cc[VEOF];
     tc = tty_tc;
@@ -698,13 +687,20 @@ tty_err Sys_ConsoleInputInit( void )
     tc.c_iflag &= ~( ISTRIP | INPCK );
     tc.c_cc[VMIN] = 1;
     tc.c_cc[VTIME] = 0;
-    tcsetattr(STDIN_FILENO, TCSADRAIN, &tc);
+    tcsetattr( STDIN_FILENO, TCSADRAIN, &tc );
 
     ttycon_color_on = qtrue;
     ttycon_on = qtrue;
 
     tty_Hide();
     tty_Show();
+
+	if ( getrlimit64( RLIMIT_CORE, &limit ) == -1 ) {
+		Con_Printf( COLOR_YELLOW "WARNING: getrlimit64( RLIMIT_CORE ) failed, %s\n", Sys_GetError() );
+	} else {
+		limit.rlim_cur = limit.rlim_max = UINT64_MAX;
+		setrlimit64( RLIMIT_CORE, &limit );
+	}
 
     return TTY_ENABLED;
 }
@@ -719,8 +715,7 @@ void Sys_ConfigureFPU( void )  // bk001213 - divide by zero
 	static int fpu_word = _FPU_DEFAULT & ~(_FPU_MASK_ZM | _FPU_MASK_IM);
 	int current = 0;
 	_FPU_GETCW( current );
-	if ( current!=fpu_word)
-	{
+	if ( current != fpu_word ) {
 #if 0
 		Con_Printf("FPU Control 0x%x (was 0x%x)\n", fpu_word, current );
 		_FPU_SETCW( fpu_word );
@@ -834,13 +829,13 @@ const char *Sys_DefaultHomePath( void )
 
     if (*homePath)
         return homePath;
-    
-    if ((p = getenv("HOME")) != NULL) {
-        N_strncpyz(homePath, p, sizeof(homePath));
+
+    if ( ( p = getenv( "HOME" ) ) != NULL ) {
+        N_strncpyz( homePath, p, sizeof( homePath ) );
 #ifdef MACOS_X
-        N_strcat(homePath, sizeof(homePath), "/Library/Application Support/TheNomad");
+        N_strcat( homePath, sizeof( homePath ), "/Library/Application Support/TheNomad" );
 #else
-        N_strcat(homePath, sizeof(homePath), "/.thenomad");
+        N_strcat( homePath, sizeof( homePath ), "/.thenomad" );
 #endif
         if ( mkdir( homePath, 0750 ) ) {
             if ( errno != EEXIST ) {
@@ -950,7 +945,7 @@ int main( int argc, char **argv )
     InitSig();
 
 	cmdline = (char *)malloc( len );
-    if (!cmdline) { // oh shit
+    if ( !cmdline ) { // oh shit
         write( STDERR_FILENO, "malloc() failed, out of memory, FREE UP SOME GODDAMN MEMORY\n",
             sizeof( "malloc() failed, out of memory, FREE UP SOME GODDAMN MEMORY\n" ) );
         _Exit( EXIT_FAILURE );
