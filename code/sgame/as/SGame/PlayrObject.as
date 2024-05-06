@@ -340,7 +340,7 @@ namespace TheNomad::SGame {
 				dieSfx[ TheNomad::Util::PRandom() & dieSfx.Count() ].Play();
 				EntityManager.KillEntity( @this );
 				
-				TheNomad::Util::HapticRumble( 0.	80f, 4000 );
+				TheNomad::Util::HapticRumble( 0.80f, 4000 );
 			} else {
 				painSfx[ TheNomad::Util::PRandom() & painSfx.Count() ].Play();
 				
