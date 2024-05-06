@@ -213,6 +213,7 @@ namespace TheNomad::SGame {
 		uint collateralScore = 0;
 		bool isClean = true;
 		uint totalScore = 0;
+		uint numSecrets = 0;
 
 		LevelRank total_Rank = LevelRank::RankS;
 		LevelRank time_Rank = LevelRank::RankS;

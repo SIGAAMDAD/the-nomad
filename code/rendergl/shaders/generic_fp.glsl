@@ -130,7 +130,6 @@ void CalcNormal() {
 }
 
 void ApplyLighting() {
-    a_Color = texture( u_DiffuseMap, v_TexCoords );
     CalcNormal();
 #if defined(USE_SPECULARMAP)
     if ( u_NumLights == 0 ) {
@@ -148,7 +147,7 @@ void ApplyLighting() {
         };
     }
 #endif
-    a_Color.rgb += texture( u_DiffuseMap, v_TexCoords ).rgb;
+//    a_Color.rgb = texture( u_DiffuseMap, v_TexCoords ).rgb;
 }
 
 // -- Sharpening --

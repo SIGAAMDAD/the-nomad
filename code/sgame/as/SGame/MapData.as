@@ -1,5 +1,6 @@
 #include "SGame/MapCheckpoint.as"
 #include "SGame/MapSpawn.as"
+#include "SGame/MapSecret.as"
 
 namespace TheNomad::SGame {
     class MapData {
@@ -183,6 +184,7 @@ namespace TheNomad::SGame {
 		}
 		
 		private string m_Name;
+		private array<MapSecret> m_Secrets;
 		private array<MapSpawn> m_Spawns;
 		private array<MapCheckpoint> m_Checkpoints;
 		private array<array<uint>> m_TileData;

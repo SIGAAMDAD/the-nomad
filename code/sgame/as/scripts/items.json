@@ -5,49 +5,54 @@
 			"Id": "powerup_a",
 			"Name": "Trigger Happy",
 			"Effect": "toggle_powerup 0",
-			"Duration": 50
+			"Duration": 50,
+			"Cost": 0,
+			"Icon": "icons/iconpw_pewpew"
 		},
 		{
 			"Type": "Powerup",
 			"Id": "powerup_b",
 			"Name": "Endless Anger",
 			"Effect": "toggle_powerup 1",
-			"Duration": 5
+			"Duration": 5,
+			"Cost": 0,
+			"Icon": "icons/iconpw_angry"
 		},
 		{
 			"Type": "Consumable",
 			"Id": "item_stimpack",
 			"Name": "Stim Pack",
 			"Cost": 10,
-			"Effect": "add_health_mult 5.0"
+			"Effect": "add_health_mult 5.0",
+			"Icon": "icons/icon_healthpack"
 		},
 		{
 			"Type": "Consumable",
 			"Id": "item_ammopack",
 			"Name": "Bullets",
-			"AmmoType": "bullet",
-			"Effect": "add_player_bullet_ammo 15"
+			"Effect": "add_player_ammo bullet 15",
+			"Cost": 20
 		},
 		{
 			"Type": "Consumable",
 			"Id": "item_shellpack",
 			"Name": "Shells",
-			"AmmoType": "shell",
-			"Effect": "add_player_shell_ammo 12"
+			"Effect": "add_player_ammo shell 12",
+			"Cost": 20
 		},
 		{
 			"Type": "Consumable",
 			"Id": "item_rocketpack",
 			"Name": "Rockets",
-			"AmmoType": "rocket",
-			"Effect": "add_player_rocket_ammo 5"
+			"Effect": "add_player_ammo rocket 5",
+			"Cost": 15
 		},
 		{
 			"Type": "Consumable",
 			"Id": "item_grenadepack",
 			"Name": "Grenades",
-			"AmmoType": "grenade",
-			"Effect": "add_player_rocket_ammo 5"
+			"Effect": "add_playet_ammo grenade 5",
+			"Cost": 20
 		}
 	]
 }

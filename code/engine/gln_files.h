@@ -60,8 +60,8 @@ typedef enum { qfalse = 0, qtrue = 1 } qboolean;
 #define MAX_NPATH 64
 #endif
 
-#ifndef MAX_GDR_PATH
-#define MAX_GDR_PATH 64
+#ifndef MAX_NPATH
+#define MAX_NPATH 64
 #endif
 
 // the minimum size in bytes a lump should be before compressing it
@@ -109,7 +109,7 @@ typedef struct {
     uint64_t ident;
     uint64_t version;
 
-    char name[MAX_GDR_PATH];
+    char name[MAX_NPATH];
     uint32_t minfilter;
     uint32_t magfilter;
     uint32_t wrapS;
@@ -140,7 +140,7 @@ typedef struct {
     uint32_t tileCountY;
     uint32_t compression; // only for sprites
     uint64_t compressedSize; // only for sprites
-    char texture[MAX_GDR_PATH]; // store a texture inside of a tileset
+    char texture[MAX_NPATH]; // store a texture inside of a tileset
 } tile2d_info_t;
 
 typedef struct {
@@ -171,6 +171,7 @@ typedef struct {
 #define MAX_MAP_SPAWNS 1024
 #define MAX_MAP_CHECKPOINTS 256
 #define MAX_MAP_LIGHTS 256
+#define MAX_MAP_SECRETS 256
 
 #define MAX_MAP_WIDTH 1024
 #define MAX_MAP_HEIGHT 1024
@@ -217,6 +218,14 @@ typedef struct {
     int type;
 } maplight_t;
 
+//
+// mapsecret_t: unless the level exit is a secret, the checkpoint trigger
+// index should never the be the last checkpoint in the map
+//
+typedef struct {
+    uint32_t trigger; // checkpoint index
+} mapsecret_t;
+
 typedef struct {
     vec2_t texcoords[4];
     byte sides[DIR_NULL]; // for physics
@@ -233,7 +242,7 @@ typedef struct {
 } mapvert_t;
 
 typedef struct {
-    char name[MAX_GDR_PATH];
+    char name[MAX_NPATH];
     uint32_t minfilter;
     uint32_t magfilter;
     uint32_t wrapS;
@@ -248,7 +257,7 @@ typedef struct {
 } maptexture_t;
 
 typedef struct {
-    char name[MAX_GDR_PATH];
+    char name[MAX_NPATH];
     uint32_t numTiles;
     uint32_t tileWidth;
     uint32_t tileHeight;
@@ -256,6 +265,9 @@ typedef struct {
     uint64_t compressedSize;
 } maptileset_t;
 
+//
+// mapcheckpoint_t: the last checkpoint in the list is always the level's exit
+//
 typedef struct {
     uvec3_t xyz;
 } mapcheckpoint_t;
