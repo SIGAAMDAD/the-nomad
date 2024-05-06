@@ -12,40 +12,14 @@ namespace TheNomad::SGame {
 		uint( InfoSystem::WeaponProperty::OneHandedSideFirearm | InfoSystem::WeaponProperty::OneHandedPrimFirearm
 			| InfoSystem::WeaponProperty::TwoHandedSideFirearm | InfoSystem::WeaponProperty::TwoHandedPrimFirearm ),
 	};
-
-	const uint PF_CROUCHING    = 0x00000001;
-	const uint PF_DOUBLEJUMP   = 0x00000002;
-	const uint PF_PARRY        = 0x00000004;
-	const uint PF_QUICKSHOT    = 0x00000008;
-	const uint PF_DUELWIELDING = 0x00000010;
-	const uint PF_SLIDING      = 0x00000020;
 	
-	class Emote {
-		Emote() {
-		}
-		Emote( uint time, int hShader, const string& in spriteSheet, const vec2& in spriteSize, const vec2& in sheetSize ) {
-			m_nDuration = time;
-			m_hShader = hShader;
-			@m_DrawData = SpriteSheet( spriteSheet, spriteSize, sheetSize );
-		}
-		
-		void Activate() {
-			m_nLifeTime = 0;
-//			m_nEndTime = GameSystem::GameManager.GetGameTics() + m_nDuration;
-		}
-		void Draw() {
-//			m_nLifeTime += GameSystem::GameManager.GetDeltaTics();
-			if ( m_nLifeTime >= m_nEndTime ) {
-				return;
-			}
-		}
-		
-		SpriteSheet@ m_DrawData = null;
-		int m_hShader = FS_INVALID_HANDLE;
-		uint m_nEndTime = 0;
-		uint m_nDuration = 0;
-		uint m_nLifeTime = 0;
-	};
+	
+	#define PF_CROUCHING     0x00000001
+	#define PF_DOUBLEJUMP    0x00000002
+	#define PF_PARRY         0x00000004
+	#define PF_QUICKSHOT     0x00000008
+	#define PF_DUELWIELDING  0x00000010
+	#define PF_SLIDING       0x00000020
 	
     class PlayrObject : EntityObject {
 		PlayrObject() {
@@ -61,6 +35,31 @@ namespace TheNomad::SGame {
 			
 			EntityManager.SetPlayerObject( @this );
 			m_HudData.Init( @this );
+			
+			//
+			// add keybind commands
+			//
+			
+			// these specific movement commands MUST NOT CHANGE as they are hardcoded into the engine
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.MoveNorth_Down_f, "+north" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.MoveNorth_Up_f, "-north" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.MoveSouth_Down_f, "+south" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.MoveSouth_Up_f, "-south" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.MoveWest_Down_f, "+west" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.MoveWest_Up_f, "-west" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.MoveEast_Down_f, "+east" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.MoveEast_Up_f, "-east" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.Jump_Down_f, "+up" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.Jump_Up_f, "-up" );
+			
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.Crouch_Down_f, "+crouch" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.Crouch_Up_f, "-scrouch" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.Dash_Down_f, "+dash" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.Dash_Up_f, "-dash" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.UseWeapon_Down_f, "+useweap" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.UseWeapon_Up_f, "-useweap" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.AltUseWeapon_Down_f, "+altuseweap" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.AltUseWeapon_Up_f, "-altuseweap" );
 		}
 		
 		/*
@@ -171,9 +170,17 @@ namespace TheNomad::SGame {
 		void MoveSouth_Down_f() { key_MoveSouth.Down(); }
 		void Jump_Down_f() { key_Jump.Down(); }
 		void Jump_Up_f() { key_Jump.Up(); }
-		void Quickshot_Down_f() { }
-		void Quickshot_Up_f() { }
+		
+		void Quickshot_Down_f() {
+			m_PFlags |= PF_QUICKSHOT;
+			beginQuickshotSfx.Play();
+		}
+		void Quickshot_Up_f() {
+			m_PFlags &= ~PF_QUICKSHOT;
+			endQuickshotSfx.Play();
+		}
 		void SwitchWeaponWielding_f() {
+			weaponFancySfx.Play();
 			switch ( m_nHandsUsed ) {
 			case 0:
 				SwitchWeaponWielding( m_LeftHandMode, m_RightHandMode, @m_LeftHandWeapon, @m_RightHandWeapon );
@@ -185,6 +192,7 @@ namespace TheNomad::SGame {
 			};
 		}
 		void SwitchWeaponMode_f() {
+			weaponFancySfx.Play();
 			switch ( m_nHandsUsed ) {
 			case 0:
 				SwitchWeaponMode( m_LeftHandMode, @m_LeftHandWeapon );
@@ -216,9 +224,30 @@ namespace TheNomad::SGame {
 				break; // can't switch if we're using both hands for one weapon
 			};
 		}
+		void Crouch_Down_f() {
+			if ( key_MoveNorth.active || key_MoveSouth.active || key_MoveWest.active || key_MoveEast.active ) {
+				m_PFlags |= PF_SLIDING;
+				beginSlidingSfx.Play();
+				@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_SLIDING );
+			} else {
+				m_PFlags |= PF_CROUCH;
+				crouchSfxDown.Play();
+				@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_CROUCH );
+			}
+		}
+		void Crouch_Up_f() {
+			if ( ( m_PFlags & PF_CROUCH ) != 0 ) {
+				crouchSfxUp.Play();
+			}
+			m_PFlags &= ~( PF_CROUCH | PF_SLIDING );
+		}
+		
 		void Melee_Down_f() {
 			m_nParryBoxWidth = 0.0f;
-			SetState( StateNum::ST_PLAYR_MELEE );
+			@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_MELEE );
+		}
+		void Melee_Up_f() {
+			@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE );
 		}
 		
 		void NextWeapon_f() {
@@ -226,20 +255,19 @@ namespace TheNomad::SGame {
 			if ( m_CurrentWeapon >= m_WeaponSlots.Count() ) {
 				m_CurrentWeapon = 0;
 			}
+			m_WeaponSlots[ m_CurrentWeapon ].GetInfo().equipSfx.Play();
 		}
 		void PrevWeapon_f() {
-			if ( m_CurrentWeapon == 0 ) {
+			m_CurrentWeapon--;
+			if ( m_CurrentWeapon < 0 ) {
 				m_CurrentWeapon = m_WeaponSlots.Count();
-			} else {
-				m_CurrentWeapon--;
 			}
+			m_WeaponSlots[ m_CurrentWeapon ].GetInfo().equipSfx.Play();
 		}
-		void UseWeapon_f() {
-			m_WeaponSlots[ m_CurrentWeapon ].Use( cast<EntityObject@>( @this ), GetCurrentWeaponMode() );
-		}
-		void AltUseWeapon_f() {
-			m_WeaponSlots[ m_CurrentWeapon ].UseAlt( cast<EntityObject@>( @this ) );
-		}
+		void UseWeapon_Down_f() { m_bUseWeapon = true; }
+		void UseWeapon_Up_f() { m_bUseWeapon = false; }
+		void AltUseWeapon_Down_f() { m_bAltUseWeapon = true; }
+		void AltUseWeapon_Up_f() { m_bAltUseWeapon = false; }
 		void UseItem_f() {
 		}
 		void PickupItem_f() {
@@ -279,7 +307,6 @@ namespace TheNomad::SGame {
 			LoadBase( section );
 
 			m_PFlags = section.LoadUInt( "playrFlags" );
-			m_Facing = section.LoadUInt( "torsoFacing" );
 
 			return true;
 		}
@@ -287,9 +314,8 @@ namespace TheNomad::SGame {
 			SaveBase( section );
 
 			section.SaveUInt( "playrFlags", m_PFlags );
-			section.SaveUInt( "legsFacing", m_LegsFacing );
 		}
-
+		
 		float GetHealthMult() const {
 			return m_nHealMult;
 		}
@@ -311,10 +337,14 @@ namespace TheNomad::SGame {
 				if ( m_nFrameDamage > 0 ) {
 					return; // as long as you're hitting SOMETHING, you cannot die
 				}
-				TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( dieSfx[ TheNomad::Util::PRandom() & 3 ] );
+				dieSfx[ TheNomad::Util::PRandom() & dieSfx.Count() ].Play();
 				EntityManager.KillEntity( @this );
+				
+				TheNomad::Util::HapticRumble( 0.	80f, 4000 );
 			} else {
-				TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( painSfx[ TheNomad::Util::PRandom() & 3 ] );
+				painSfx[ TheNomad::Util::PRandom() & painSfx.Count() ].Play();
+				
+				TheNomad::Util::HapticRumble( 0.50f, 300 );
 			}
 		}
 		
@@ -333,20 +363,31 @@ namespace TheNomad::SGame {
 		}
 		
 		void Think() override {
+			ivec3 origin;
+			
 			if ( ( m_PFlags & PF_PARRY ) != 0 ) {
 				ParryThink();
 			} else if ( ( m_PFlags & PF_QUICKSHOT ) != 0 ) {
 				m_QuickShot.Think();
 			}
 			
-//			switch ( m_State.GetID() ) {
-//			case StateNum::ST_PLAYR_IDLE:
-//				IdleThink();
-//				break; // NOTE: maybe let the player move in combat? (that would require more sprites for the dawgs)
-//			case StateNum::ST_PLAYR_COMBAT:
-//				CombatThink();
-//				break;
-//			};
+			if ( m_bUseWeapon ) {
+				m_CurrentWeapon.Use( cast<EntityObject@>( @this ), GetCurrentWeaponMode() );
+			} else if ( m_bUseAltWeapon ) {
+				m_CurrentWeapon.UseAlt( cast<EntityObject@>( @this ), GetCurrentWeaponMode() );
+			}
+			
+			for ( uint i = 0; i < 3; i++ ) {
+				origin[i] = int( floor( m_Link.m_Origin[i] ) );
+			}
+			
+			// run a movement frame
+			Pmove.RunTic();
+
+			if ( m_nHealth <= 15.0f ) {
+				// if there's another haptic going on, we don't want to annihilate their hands
+				TheNomad::Util::HapticRumble( 0.	50f, 1000 );
+			}
 
 			if ( m_nHealth < 100.0f ) {
 				m_nHealth += sgame_PlayerHealBase.GetFloat() * m_nHealMult;
@@ -357,9 +398,6 @@ namespace TheNomad::SGame {
 				}
 				if ( m_nHealMult < 0.0f ) {
 					m_nHealMult = 0.0f;
-				}
-				if ( m_nHealth <= 10.0f ) {
-					TheNomad::Engine::CmdExecuteCommand( "in_haptic_rumble 0.5 300\n" );
 				}
 			}
 
@@ -373,24 +411,25 @@ namespace TheNomad::SGame {
 			return ( m_Link.m_Bounds.m_nWidth / 2 );
 		}
 		
-		bool CheckParry( EntityObject@ ent ) {
-			if ( TheNomad::Util::BoundsIntersect( ent.GetBounds(), m_ParryBox ) ) {
+		//
+		// PlayrObject::CheckParry: called from DamageEntity mob v player
+		//
+		bool CheckParry( EntityObject@ ent, const InfoSystem::AttackInfo@ info ) {
+			if ( Util::BoundsIntersect( ent.GetBounds(), m_ParryBox ) ) {
 				if ( ent.IsProjectile() ) {
 					// simply invert the direction and double the speed
 					const vec3 v = ent.GetVelocity();
 					ent.SetVelocity( vec3( v.x * 2, v.y * 2, v.z * 2 ) );
-					ent.SetDirection( GameSystem::InverseDirs[ ent.GetDirection() ] );
-				} else {
-					return false;
+					ent.SetAngle( ent.GetAngle() * 2.0f / M_PI / 360.0f );
+					ent.SetDirection( TheNomad::GameSystem::InverseDirs[ ent.GetDirection() ] );
 				}
 			}
-			else if ( ent.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
+			if ( ent.GetType() == TheNomad::GameSystem::EntityType::Mob && !ent.IsProjectile() ) {
 				// just a normal counter
 				MobObject@ mob = cast<MobObject@>( @ent );
 				
-				if ( !mob.CurrentAttack().canParry ) {
+				if ( info.canParry ) {
 					// unblockable, deal damage
-					EntityManager.DamageEntity( @ent, @this );
 					return false;
 				}
 				else {
@@ -401,9 +440,12 @@ namespace TheNomad::SGame {
 					
 					// TODO: make dead mobs with ANY velocity flying corpses
 					EntityManager.DamageEntity( @this, @ent );
-					TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( parrySfx );
+					parrySfx.Play();
 				}
 			}
+			
+			// add in the haptic
+			TheNomad::Engine::CmdExecuteCommand( "in_haptic_rumble 0.8 500" );
 			
 			// add the fireball
 			GfxManager.AddExplosionGfx( vec3( m_Link.m_Origin.x + GetGfxDirection(), m_Link.m_Origin.y, m_Link.m_Origin.z ) );
@@ -411,7 +453,7 @@ namespace TheNomad::SGame {
 			return true;
 		}
 		
-		private void MakeSound() {
+		void MakeSound() {
 			if ( m_State.GetID() == StateNum::ST_PLAYR_CROUCH ) {
 				return;
 			}
@@ -422,42 +464,32 @@ namespace TheNomad::SGame {
 					continue;
 				}
 				
+				const vec2 detection = vec2( mob.GetInfo().detectionRangeX, mob.GetInfo().detectionRangeY );
+				
 				MobObject@ mob = cast<MobObject@>( @entList[i] );
-				if ( TheNomad::Util::Distance( mob.GetOrigin(), m_Link.m_Origin ) < cast<InfoSystem::MobInfo>( mob.GetInfo() ).soundTolerance ) {
+				const float dist = Util::Distance( mob.GetOrigin(), m_Link.m_Origin );
+				if ( dist < detection.length() ) {
 					// is there a wall there?
+					TheNomad::GameSystem::RayCast ray;
+					const vec3& origin = mob.GetOrigin();
 					
+					ray.m_nLength = dist;
+					ray.m_nAngle = atan2( ( origin.x - m_Link.m_Origin.x ), ( origin.y - m_Link.m_Origin.y ) );
+					ray.m_Origin = m_Link.m_Origin;
+					
+					TheNomad::GameSystem::CastRay( @ray );
+					if ( ray.m_nEntityNumber == ENTITYNUM_INVALID || ray.m_nEntityNumber == ENTITYNUM_WALL ) {
+						continue; // hit a wall or dead air, no detection
+					}
+					
+					mob.SetAlert( @this, dist );
 				}
 			}
 		}
 		
-		private void IdleThink() {
-			ivec2 origin;
-			
-			for ( uint i = 0; i < 2; i++ ) {
-				origin[i] = int( floor( m_Link.m_Origin[i] ) );
-			}
-			
-			if ( Pmove.groundPlane ) {
-				const uint flags = LevelManager.GetMapData().GetTiles()[ GetMapLevel( m_Link.m_Origin.z ) ][ origin.y * LevelManager.GetMapData().GetWidth() + origin.x ];
-				
-				if ( ( flags & SURFACEPARM_METAL ) != 0 ) {
-					TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( moveMetalSfx );
-				} else if ( ( flags & SURFACEPARM_WOOD ) != 0 ) {
-					TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( moveWoodSfx );
-				} else {
-					// in this case, just use the generic walking sound
-					TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( moveSfx );
-				}
-			} else if ( key_Jump.active ) {
-				TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( jumpSfx );
-			}
-		}
-		private void CombatThink() {
-			if ( key_Melee.active ) {
-				// check for a parry
-				m_PFlags |= PF_PARRY;
-			}
-		}
+		///
+		/// PlayrObject::ParryThink: calculates the bounds of the parry box
+		///
 		private void ParryThink() {
 			m_ParryBox.m_nWidth = 2.5f + m_nParryBoxWidth;
 			m_ParryBox.m_nHeight = 1.0f;
@@ -477,11 +509,65 @@ namespace TheNomad::SGame {
 			m_nRage = 100.0f;
 		}
 		
+		// custom draw because of adaptive weapons and leg sprites
+		void Draw() override {
+			int hLegSprite = FS_INVALID_HANDLE;
+			
+			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, m_SpriteSheet.GetHandle(),
+				m_SpriteSheet[ m_State.GetSpriteOffset().y * m_State.GetSpriteOffset().x + m_State.GetAnimation().GetFrame() ] );
+			
+			//
+			// draw the legs
+			//
+			hLegSprite = m_LegsFacing;
+			if ( m_Velocity == vec3( 0.0f ) ) {
+				// not moving at all, just draw idle legs
+				if ( !Pmove.groundPlane ) {
+					// static air legs
+					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_AIR + m_LegsFacing );
+				} else {
+					// idle ground legs
+					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND + m_LegsFacing );
+				}
+			}
+			else if ( !Pmove.groundPlane ) {
+				// we're in the air, modify the legs to show a bit of momentum control
+				if ( m_Velocity.z < 0.0f ) {
+					// falling down
+					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_FALL_AIR + m_LegsFacing );
+				}
+				else if ( m_Debuff == AttackEffect::Stunned ) {
+					// player is literally flying through the air
+					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_STUN_AIR + m_LegsFacing );
+				}
+				else {
+					// ascending
+					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_ASCENDING + m_LegsFacing );
+				}
+			}
+			else {
+				// moving on the ground
+				if ( m_Debuff == AttackEffect::Stunned ) {
+					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_STUN_GROUND + m_LegsFacing );
+				} else {
+					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_MOVE_GROUND + m_LegsFacing );
+				}
+			}
+			
+			hLegSprite = m_LegState.GetSpriteOffset().y * m_LegSpriteSheet.GetSpriteCount().x +
+				m_LegState.GetSpriteOffset().x + m_LegState.GetAnimation().GetFrame();
+			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, m_SpriteSheet.GetHandle(),
+				m_SpriteSheet[ hLegSprite ] );
+		}
+		
 		KeyBind key_MoveNorth, key_MoveSouth, key_MoveEast, key_MoveWest;
 		KeyBind key_Jump, key_Melee;
 		
 		private TheNomad::GameSystem::BBox m_ParryBox;
 		private float m_nParryBoxWidth;
+		
+		// toggled with "sgame_SaveLastUsedWeaponModes"
+		private InfoSystem::WeaponProperty[] m_WeaponModes( 9 );
 		
 		// 9 weapons in total
 		private WeaponObject@[] m_WeaponSlots( 9 );
@@ -494,21 +580,24 @@ namespace TheNomad::SGame {
 		private WeaponObject m_RightArm;
 		private WeaponObject m_LeftArm;
 		private WeaponObject m_Ordnance;
+		private int m_CurrentWeapon = 0;
 		
 		private QuickShot m_QuickShot;
-		private uint m_CurrentWeapon = 0;
 		private uint m_PFlags = 0;
 		
-		private TheNomad::Engine::SoundSystem::SoundEffect moveWoodSfx;
-		private TheNomad::Engine::SoundSystem::SoundEffect moveMetalSfx;
-		private TheNomad::Engine::SoundSystem::SoundEffect moveSfx;
-		private TheNomad::Engine::SoundSystem::SoundEffect jumpSfx;
+		// sound effects
 		private TheNomad::Engine::SoundSystem::SoundEffect parrySfx;
+		private TheNomad::Engine::SoundSystem::SoundEffect counterParrySfx;
+		private TheNomad::Engine::SoundSystem::SoundEffect beginQuickshotSfx;
+		private TheNomad::Engine::SoundSystem::SoundEffect endQuickshotSfx;
+		private TheNomad::Engine::SoundSystem::SoundEffect beginSlideSfx;
+		private TheNomad::Engine::SoundSystem::SoundEffect crouchDownSfx;
+		private TheNomad::Engine::SoundSystem::SoundEffect crouchUpSfx;
 		private TheNomad::Engine::SoundSystem::SoundEffect[] painSfx( 3 );
 		private TheNomad::Engine::SoundSystem::SoundEffect[] dieSfx( 3 );
 
 		// the amount of damage dealt in the frame
-		private uint m_nFrameDamage = 0;
+		private float m_nFrameDamage = 0.0f;
 		
 		// what does the player have in their hands?
 		private int m_nHandsUsed = 0; // 0 for left, 1 for right, 2 if two-handed
@@ -516,18 +605,23 @@ namespace TheNomad::SGame {
 		private WeaponObject@ m_RightHandWeapon = null;
 		private InfoSystem::WeaponProperty m_LeftHandMode = InfoSystem::WeaponProperty::None;
 		private InfoSystem::WeaponProperty m_RightHandMode = InfoSystem::WeaponProperty::None;
+		
+		private bool m_bUseWeapon = false;
+		private bool m_bAltUseWeapon = false;
 
-		// the lore goes: the more and harder you hit The Nomad, the harder and faster they hit back
+		// the lore goes: the harder and faster you hit The Nomad, the harder and faster they hit back
 		private float m_nDamageMult = 0.0f;
 		private float m_nRage = 0.0f;
 
 		private float m_nHealMult = 0.0f;
 		private float m_nHealMultDecay = 1.0f;
-
+		
+		private SpriteSheet@ m_LegSpriteSheet;
 		private int m_LegsFacing = 0;
 
 		private bool m_bEmoting = false;
 		
+		private EntityState@ m_LegState;
 		private PlayerDisplayUI m_HudData;
 		private PMoveData Pmove;
 	};
