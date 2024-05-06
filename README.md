@@ -8,7 +8,22 @@ The currently release version of the game is a Demo Alpha Test, so expect lots o
 Here's a complete list of things I plan to put into the game:
 - Desert Sea Shanties
 - Desert Brigs
-- mercenaries
+- Mercenaries
+- Mercenary Guilds
+- Renown System
+- Stealth Mechanics (cover, hiding spots, essentially a dumbed down version of AC Unity)
+- Executions
+- Zandatsu (ripping out the heart inside of the gatorade)
+- Blade Mode
+- Grenades
+- Fear
+- Shadow Mapping
+- Light Mapping
+- Shadow System
+- Spotlights/Directional Lights
+- Bladed Weapons
+- Counter parries
+
 
 ## Requirements
 ### Minimum
