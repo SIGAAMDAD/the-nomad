@@ -109,7 +109,7 @@ Radix sort with 4 byte size buckets
 */
 static void R_RadixSort( srfPoly_t *source, uint32_t size )
 {
-    srfPoly_t *scratch = (srfPoly_t *)ri.Hunk_AllocateTempMemory( sizeof(*scratch) * r_maxPolys->i );
+    srfPoly_t *scratch = (srfPoly_t *)ri.Hunk_AllocateTempMemory( sizeof( *scratch ) * r_maxPolys->i );
     if ( !scratch ) {
         N_Error( ERR_FATAL, "R_RadixSort: failed to allocate sufficient memory for scratch sort buffer" );
     }
@@ -123,7 +123,7 @@ static void R_RadixSort( srfPoly_t *source, uint32_t size )
     R_Radix( 2, size, scratch, source );
     R_Radix( 1, size, source, scratch );
     R_Radix( 0, size, scratch, source );
-#endif //Q3_LITTLE_ENDIAN
+#endif //GDR_LITTLE_ENDIAN
     ri.Hunk_FreeTempMemory( scratch );
 }
 
@@ -143,14 +143,16 @@ void R_WorldToGL( drawVert_t *verts, vec3_t pos )
         VectorCopy( verts[i].xyz, xyz[i] );
 }
 
-void R_WorldToGL2( polyVert_t *verts, vec3_t pos )
+void R_WorldToGL2( polyVert_t *verts, vec3_t pos, uint32_t numVerts )
 {
     vec3_t xyz[4];
+    uint32_t i;
 
     ri.GLM_TransformToGL( pos, xyz, 1.0f, glState.viewData.camera.viewProjectionMatrix );
 
-    for (uint32_t i = 0; i < 4; ++i)
+    for ( i = 0; i < numVerts; ++i ) {
         VectorCopy( verts[i].xyz, xyz[i] );
+    }
 }
 
 void R_ScreenToGL( polyVert_t *verts )
@@ -178,7 +180,7 @@ void R_DrawPolys( void )
 {
     uint64_t i, j;
     uint64_t startIndex, firstVert;
-    const srfPoly_t *poly;
+    srfPoly_t *poly;
     nhandle_t oldShader;
     srfVert_t *vtx;
     vec3_t normal, edge1, edge2;
@@ -210,11 +212,15 @@ void R_DrawPolys( void )
 
         startIndex = backendData->numIndices;
 
+        if ( ( backend.refdef.flags & RSF_ORTHO_BITS ) == RSF_ORTHO_TYPE_WORLD ) {
+            R_WorldToGL2( poly->verts, poly->verts[0].worldPos, poly->numVerts );
+        }
+
         // generate fan indexes into the buffer
         for ( j = 0; j < poly->numVerts - 2; j++ ) {
-            backendData->indices[backendData->numIndices + 0] = backend.drawBatch.vtxOffset;
-            backendData->indices[backendData->numIndices + 1] = backend.drawBatch.vtxOffset + j + 1;
-            backendData->indices[backendData->numIndices + 2] = backend.drawBatch.vtxOffset + j + 2;
+            backendData->indices[ backendData->numIndices + 0 ] = backend.drawBatch.vtxOffset;
+            backendData->indices[ backendData->numIndices + 1 ] = backend.drawBatch.vtxOffset + j + 1;
+            backendData->indices[ backendData->numIndices + 2 ] = backend.drawBatch.vtxOffset + j + 2;
             backendData->numIndices += 3;
 
             // generate normals
@@ -234,7 +240,7 @@ void R_DrawPolys( void )
         }
 
         // submit to draw buffer
-        RB_CommitDrawData( &backendData->verts[ firstVert ], poly->numVerts, &backendData->indices[startIndex],
+        RB_CommitDrawData( &backendData->verts[ firstVert ], poly->numVerts, &backendData->indices[ startIndex ],
             backendData->numIndices - startIndex );
         
         poly++;

@@ -43,8 +43,11 @@ void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t
         return;
     }
 
+    if ( !rg.sheets[ hSpriteSheet ] ) {
+        return;
+    }
     if ( r_numPolyVerts + 4 >= r_maxPolys->i * 4 ) {
-        ri.Printf(PRINT_DEVELOPER, "RE_AddPolyToScene: r_maxPolyVerts hit, dropping %i vertices\n", 4);
+        ri.Printf( PRINT_DEVELOPER, "RE_AddPolyToScene: r_maxPolyVerts hit, dropping %i vertices\n", 4 );
         return;
     }
     
@@ -60,10 +63,8 @@ void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t
     poly->hShader = rg.sheets[hSpriteSheet]->hShader;
 
     for ( i = 0; i < 4; i++ ) {
-        VectorCopy2( vtx[i].uv, rg.sheets[hSpriteSheet]->sprites[hSprite].texCoords[i] );
+        VectorCopy2( vtx[i].uv, rg.sheets[ hSpriteSheet ]->sprites[ hSprite ].texCoords[i] );
     }
-
-    R_WorldToGL2( vtx, pos );
 
     r_numPolyVerts += 4;
     r_numPolys++;

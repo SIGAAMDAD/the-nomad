@@ -15,6 +15,10 @@ namespace TheNomad::SGame {
 		ST_PLAYR_MELEE,
 		ST_PLAYR_COMBAT,
 		ST_PLAYR_DEAD,
+		ST_PLAYR_LEGS_IDLE_GROUND,
+		ST_PLAYR_LEGS_ASCENDING,
+		ST_PLAYR_LEGS_IDLE_AIR,
+		ST_PLAYR_LEGS_FALL_AIR,
 		
 		NumStates
 	};
@@ -45,6 +49,10 @@ namespace TheNomad::SGame {
 		}
 		uint GetID() const {
 			return m_nStateNum;
+		}
+
+		void Reset() {
+			m_nTicker = m_nTics;
 		}
 		
 		uint SpriteOffset() const {

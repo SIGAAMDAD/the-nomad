@@ -12,6 +12,19 @@ const vec4 colorDkGrey = vec4( 0.25f, 0.25f, 0.25f, 1.0f );
 const vec4 colorGold   = vec4( 0.71f, 0.65f, 0.26f, 1.0f );
 
 namespace TheNomad::Util {
+	const vec3 Vec3Origin = vec3( 0.0f, 0.0f, 0.0f );
+	const vec2 Vec2Origin = vec2( 0.0f, 0.0f, 0.0f );
+
+	uint32 ColorAsUInt32( const vec4& in color ) {
+		// convert color components to value between 0 and 255.
+	    const uint32 r = 255 * uint32( color.r );
+		const uint32 g = 255 * uint32( color.g );
+	    const uint32 b = 255 * uint32( color.b );
+
+    	// combine the color components in a single value of the form 0xAaBbGgRr
+	    return 0xFF000000 | r | ( b << 16 ) | ( g << 8 );
+	}
+
 	array<string>@ ParseCSV( const string& in str ) {
 	    array<string> values;
 	    string data;

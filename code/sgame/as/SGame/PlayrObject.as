@@ -14,13 +14,14 @@ namespace TheNomad::SGame {
 	};
 	
 	
-	#define PF_CROUCHING     0x00000001
-	#define PF_DOUBLEJUMP    0x00000002
-	#define PF_PARRY         0x00000004
-	#define PF_QUICKSHOT     0x00000008
-	#define PF_DUELWIELDING  0x00000010
-	#define PF_SLIDING       0x00000020
+	const uint PF_CROUCHING     = 0x00000001;
+	const uint PF_DOUBLEJUMP    = 0x00000002;
+	const uint PF_PARRY         = 0x00000004;
+	const uint PF_QUICKSHOT     = 0x00000008;
+	const uint PF_DUELWIELDING  = 0x00000010;
+	const uint PF_SLIDING       = 0x00000020;
 	
+	[ModuleShared]
     class PlayrObject : EntityObject {
 		PlayrObject() {
 			@m_WeaponSlots[0] = @m_HeavyPrimary;

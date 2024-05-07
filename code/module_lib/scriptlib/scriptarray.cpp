@@ -55,20 +55,6 @@ void CScriptArray::SetMemoryFunctions(asALLOCFUNC_t allocFunc, asFREEFUNC_t free
 static void RegisterScriptList_Native(asIScriptEngine *engine);
 static void RegisterScriptList_Generic(asIScriptEngine *engine);
 
-struct SArrayBuffer {
-	asDWORD size;
-	asDWORD capacity;
-	byte data[1];
-};
-
-struct SArrayCache
-{
-	asIScriptFunction *cmpFunc;
-	asIScriptFunction *eqFunc;
-	int cmpFuncReturnCode; // To allow better error message in case of multiple matches
-	int eqFuncReturnCode;
-};
-
 // We just define a number here that we assume nobody else is using for
 // object type user data. The add-ons have reserved the numbers 1000
 // through 1999 for this purpose, so we should be fine.
@@ -803,7 +789,7 @@ void CScriptArray::DoAllocate( int delta, uint32_t at )
 
 		SArrayBuffer *buf = (SArrayBuffer *)arrayUserAlloc( sizeof( *buf ) + ( buffer->capacity * elementSize ) );
 		if ( buf ) {
-			buf->size = buffer->size + delta;
+			buf->size = buffer->size;
 			buf->capacity = buffer->capacity;
 		} else {
 			asIScriptContext *pContext = asGetActiveContext();
@@ -1726,21 +1712,6 @@ void CScriptArray::Sort(asIScriptFunction *func, asUINT startAt, asUINT count)
 	}
 }
 
-void *CScriptArray::begin( void ) {
-	return buffer;
-}
-
-void *CScriptArray::end( void ) {
-	return buffer->data + ( elementSize * buffer->size );
-}
-
-const void *CScriptArray::cbegin( void ) const {
-	return buffer->data;
-}
-
-const void *CScriptArray::cend( void ) const {
-	return buffer->data + ( elementSize * buffer->size );
-}
 
 // internal
 void CScriptArray::CopyBuffer( SArrayBuffer *dst, SArrayBuffer *src )
@@ -2290,33 +2261,6 @@ static void ScriptListReleaseAllHandles_Generic(asIScriptGeneric *gen)
 	self->ReleaseAllHandles(engine);
 }
 
-static void ScriptListBegin_Generic( asIScriptGeneric *gen ) {
-	gen->SetReturnAddress( ( (CScriptArray *)gen->GetObjectData() )->begin() );
-}
-
-static void ScriptListEnd_Generic( asIScriptGeneric *gen ) {
-	gen->SetReturnAddress( ( (CScriptArray *)gen->GetObjectData() )->end() );
-}
-
-static void ScriptListCBegin_Generic( asIScriptGeneric *gen ) {
-	gen->SetReturnAddress( const_cast<void *>( ( (const CScriptArray *)gen->GetObjectData() )->cbegin() ) );
-}
-
-static void ScriptListCEnd_Generic( asIScriptGeneric *gen ) {
-	gen->SetReturnAddress( const_cast<void *>( ( (const CScriptArray *)gen->GetObjectData() )->cend() ) );
-}
-
-static void ScriptListBack_Generic( asIScriptGeneric *gen ) {
-	CScriptArray *obj = (CScriptArray *)gen->GetObjectData();
-	gen->SetReturnAddress(
-		(byte *)obj->GetBuffer() +
-		( obj->GetSize() * g_pModuleLib->GetScriptEngine()->GetTypeInfoById( obj->GetElementTypeId() )->GetSize() ) );
-}
-
-static void ScriptListFront_Generic( asIScriptGeneric *gen ) {
-	gen->SetReturnAddress( ( (CScriptArray *)gen->GetObjectData() )->GetBuffer() );
-}
-
 static void ScriptListClear_Generic( asIScriptGeneric *gen ) {
 	( (CScriptArray *)gen->GetObjectData() )->Clear();
 }
@@ -2384,10 +2328,6 @@ static void RegisterScriptList_Generic(asIScriptEngine *engine)
 	CheckASCall( engine->RegisterObjectMethod("array<T>", "bool isEmpty() const", asFUNCTION(ScriptListIsEmpty_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterFuncdef("bool array<T>::less(const T&in if_handle_then_const a, const T&in if_handle_then_const b)" ) );
 	CheckASCall( engine->RegisterObjectMethod("array<T>", "void sort(const less &in, uint startAt = 0, uint count = uint(-1))", asFUNCTION(ScriptListSortCallback_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod( "array<T>", "T& back()", asFUNCTION(ScriptListBack_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod( "array<T>", "const T& back() const", asFUNCTION(ScriptListBack_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod( "array<T>", "T& front()", asFUNCTION(ScriptListFront_Generic), asCALL_GENERIC ) );
-	CheckASCall( engine->RegisterObjectMethod( "array<T>", "const T& front() const", asFUNCTION(ScriptListFront_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_GETREFCOUNT, "int f()", asFUNCTION(ScriptListGetRefCount_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_SETGCFLAG, "void f()", asFUNCTION(ScriptListSetFlag_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectBehaviour("array<T>", asBEHAVE_GETGCFLAG, "bool f()", asFUNCTION(ScriptListGetFlag_Generic), asCALL_GENERIC ) );

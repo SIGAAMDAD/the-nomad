@@ -99,7 +99,8 @@ namespace TheNomad::SGame {
 			
 		}
 		void SetState( EntityState@ state ) {
-			
+			@m_State = @state;
+			m_State.Reset();
 		}
 		void SetFlags( uint flags ) {
 			m_Flags = EntityFlags( flags );
@@ -162,6 +163,8 @@ namespace TheNomad::SGame {
 		}
 		void Think() {
 			ConsoleWarning( "EntityObject::Think: called\n" );
+		}
+		void Draw() {
 		}
 		void Spawn( uint, const vec3& in ) {
 			ConsoleWarning( "EntityObject::Spawn: called\n" );

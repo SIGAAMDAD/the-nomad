@@ -54,26 +54,18 @@ namespace TheNomad::SGame {
 		}
 		
 		void OnInit() {
-			Engine::CmdAddCommand( "sgame.effect_entity_stun" );
-			Engine::CmdAddCommand( "sgame.effect_entity_bleed" );
-			Engine::CmdAddCommand( "sgame.effect_entity_knockback" );
-			Engine::CmdAddCommand( "sgame.effect_entity_flameon" );
-			Engine::CmdAddCommand( "sgame.add_player_health" );
-			Engine::CmdAddCommand( "sgame.add_player_rage" );
-			Engine::CmdAddCommand( "sgame.set_player_health" );
-			Engine::CmdAddCommand( "sgame.set_player_rage" );
-			Engine::CmdAddCommand( "sgame.print_player_state" );
+			Engine::CommandSystem::CmdManager.AddCommand( Engine::CommandSystem::CommandFunc( @this.Effect_EntityStun_f, 
+				"sgame.effect_entity_stun" ) );
+			Engine::CommandSystem::CmdManager.AddCommand( Engine::CommandSystem::CommandFunc( @this.Effect_EntityBleed_f, 
+				"sgame.effect_entity_bleed" ) );
+			Engine::CommandSystem::CmdManager.AddCommand( Engine::CommandSystem::CommandFunc( @this.Effect_EntityKnockback_f, 
+				"sgame.effect_entity_knockback" ) );
+			Engine::CommandSystem::CmdManager.AddCommand( Engine::CommandSystem::CommandFunc( @this.Effect_EntityImmolate_f, 
+				"sgame.effect_entity_immolate" ) );
+			Engine::CommandSystem::CmdManager.AddCommand( Engine::CommandSystem::CommandFunc( @this.PrintPlayerState_f, 
+				"sgame.print_player_state" ) );
 		}
 		void OnShutdown() {
-			Engine::CmdRemoveCommand( "sgame.effect_entity_stun" );
-			Engine::CmdRemoveCommand( "sgame.effect_entity_bleed" );
-			Engine::CmdRemoveCommand( "sgame.effect_entity_knockback" );
-			Engine::CmdRemoveCommand( "sgame.effect_entity_flameon" );
-			Engine::CmdRemoveCommand( "sgame.add_player_health" );
-			Engine::CmdRemoveCommand( "sgame.add_player_rage" );
-			Engine::CmdRemoveCommand( "sgame.set_player_health" );
-			Engine::CmdRemoveCommand( "sgame.set_player_rage" );
-			Engine::CmdRemoveCommand( "sgame.print_player_state" );
 		}
 
 		void DrawEntity( const EntityObject@ ent ) {
@@ -110,6 +102,7 @@ namespace TheNomad::SGame {
 		void OnLoad() {
 			EntityObject@ ent;
 			TheNomad::GameSystem::SaveSystem::LoadSection section( GetName() );
+
 			if ( !section.Found() ) {
 				ConsoleWarning( "EntitySystem::OnLoad: no save section for entity data found\n" );
 				return;
@@ -117,35 +110,43 @@ namespace TheNomad::SGame {
 
 			const uint numEntities = section.LoadUInt( "NumEntities" );
 
-			DebugPrint( "Loading item data from save file...\n" );
+			DebugPrint( "Loading entity data from save file...\n" );
 
 			if ( numEntities == 0 ) {
 				return;
 			}
 
-			m_EntityList.Clear();
+			m_EntityList.Resize( numEntities );
 
 			for ( uint i = 0; i < numEntities; i++ ) {
-				TheNomad::GameSystem::SaveSystem::LoadSection data( "entity_" + i );
+				TheNomad::GameSystem::SaveSystem::LoadSection data( "EntityData_" + i );
 				if ( !data.Found() ) {
-					GameError( "EntitySystem::OnLoad: save section \"entity_" + i + "\" not found" );
+					GameError( "EntitySystem::OnLoad: save section \"EntityData_" + i + "\" not found" );
+				}
+
+				// be more efficient with our memory
+				if ( @m_EntityList[i] is null ) {
+					@ent = EntityObject();
+					@m_EntityList[i] = @ent;
+				} else {
+					@ent = @m_EntityList[i];
 				}
 
 				@ent = EntityObject();
 
 				switch ( TheNomad::GameSystem::EntityType( data.LoadUInt( "type" ) ) ) {
 				case TheNomad::GameSystem::EntityType::Playr: {
-					if ( !cast<PlayrObject>( @ent ).Load( data ) ) {
+					if ( !cast<PlayrObject@>( @ent ).Load( data ) ) {
 						GameError( "EntitySystem::OnLoad: failed to load player data" );
 					}
 					break; }
 				case TheNomad::GameSystem::EntityType::Mob: {
-					if ( !cast<MobObject>( @ent ).Load( data ) ) {
+					if ( !cast<MobObject@>( @ent ).Load( data ) ) {
 						GameError( "EntitySystem::OnLoad: failed to load mob data" );
 					}
 					break; }
 				case TheNomad::GameSystem::EntityType::Item: {
-					if ( !cast<ItemObject>( @ent ).Load( data ) ) {
+					if ( !cast<ItemObject@>( @ent ).Load( data ) ) {
 						GameError( "EntitySystem::OnLoad: failed to load item data" );
 					}
 					break; }
@@ -153,7 +154,6 @@ namespace TheNomad::SGame {
 					GameError( "EntityObject::OnLoad: invalid entity type" );
 					break;
 				};
-				m_EntityList.Add( @ent );
 			}
 
 			DebugPrint( "Loaded " + m_EntityList.Count() + " entities.\n" );
@@ -164,62 +164,67 @@ namespace TheNomad::SGame {
 			DebugPrint( "Saving entity data...\n" );
 
 			for ( uint i = 0; i < m_EntityList.Count(); i++ ) {
-				section.SaveUInt( "type", m_EntityList[i].GetType() );
-				switch ( m_EntityList[i].GetType() ) {
-				case TheNomad::GameSystem::EntityType::Mob:
-					section.SaveUInt( "id", cast<MobObject>( @m_EntityList[i] ).GetMobType() );
-					break;
-				case TheNomad::GameSystem::EntityType::Item:
-					section.SaveUInt( "id", cast<ItemObject>( @m_EntityList[i] ).GetItemType() );
-					break;
-				case TheNomad::GameSystem::EntityType::Weapon:
-					section.SaveUInt( "id", cast<WeaponObject>( @m_EntityList[i] ).GetWeaponID() );
-					break;
-				};
+				TheNomad::GameSystem::SaveSystem::SaveSection section( "EntityData_" + i );
+				m_EntityList[i].OnSave();
 			}
 		}
 		void OnRunTic() {
+			EntityObject@ ent;
+			
 			for ( uint i = 0; i < m_EntityList.Count(); i++ ) {
-				if ( m_EntityList[i].CheckFlags( EntityFlags::Dead ) ) {
-					if ( sgame_Difficulty.GetInt() > TheNomad::GameSystem::GameDifficulty::Hard ) {
-						DeadThink( @m_EntityList[i] );
-					} else {
+				@ent = @m_EntityList[i];
+
+				if ( ent.CheckFlags( EntityFlags::Dead ) ) {
+					if ( ( sgame_Difficulty.GetInt() > TheNomad::GameSystem::GameDifficulty::Hard
+						&& ent.GetType() == TheNomad::GameSystem::EntityType::Mob )
+						|| ent.GetType() == TheNomad::GameSystem::EntityType::Playr )
+					{
+						DeadThink( @ent );
+					}
+					else {
 						// remove it
+						if ( ent.GetType() == TheNomad::GameSystem::EntityType::Item ) {
+							// unlink the item
+							RemoveItem( cast<ItemObject@>( @ent ) );
+						}
 						m_EntityList.RemoveAt( i );
 					}
 					continue;
 				}
 
-				if ( @m_EntityList[i].GetState() is null ) {
-//					continue;
+				if ( @ent.GetState() is null ) {
+					DebugPrint( "EntitySystem::OnRunTic: null entity state\n" );
+					continue;
 				} else {
-//					m_EntityList[i].GetState().Run();
+					ent.SetState( @ent.GetState().Run() );
 				}
 
-				switch ( m_EntityList[i].GetType() ) {
+				switch ( ent.GetType() ) {
 				case TheNomad::GameSystem::EntityType::Playr: {
-					cast<PlayrObject>( @m_EntityList[i] ).Think();
+					cast<PlayrObject@>( @ent ).Think();
 					break; }
 				case TheNomad::GameSystem::EntityType::Mob: {
-					cast<MobObject>( @m_EntityList[i] ).Think();
+					cast<MobObject@>( @ent ).Think();
 					break; }
 				case TheNomad::GameSystem::EntityType::Bot:
 					break;
 				case TheNomad::GameSystem::EntityType::Item:
-				case TheNomad::GameSystem::EntityType::Weapon:
+					cast<ItemObject@>( @ent ).Think();
 					break;
+				case TheNomad::GameSystem::EntityType::Weapon:
+					break; // thinking happens in owner entity
 				case TheNomad::GameSystem::EntityType::Wall:
 					GameError( "WALLS DON'T THINK, THEY ACT" );
 					break;
 				default:
-					GameError( "EntityManager::OnRunTic: invalid entity type " + formatUInt( uint( m_EntityList[i].GetType() ) ) );
+					GameError( "EntityManager::OnRunTic: invalid entity type " + formatUInt( uint( ent.GetType() ) ) );
 				};
 
 				// update engine data
-				m_EntityList[i].GetLink().Update();
+				ent.GetLink().Update();
 				
 				// draw entity
-				DrawEntity( m_EntityList[i] );
+				ent.Draw();
 				
 //				if ( m_EntityList[i].GetState().Done() ) {
 //					m_EntityList[i].SetState( m_EntityList[i].GetState().Cycle() );
@@ -402,19 +407,97 @@ namespace TheNomad::SGame {
 		}
 
 		void SpawnProjectile( const vec3& in origin, float angle, const InfoSystem::AttackInfo@ info ) {
-
+			EntityObject@ obj = @Spawn( TheNomad::GameSystem::EntityType::Weapon, info.type, origin );
+			obj.SetProjectile( true );
 		}
 
-		void KillEntity( EntityObject@ ent ) {
+		private void GenObituary( EntityObject@ attacker, EntityObject@ target, const InfoSystem::AttackInfo@ info ) {
+			if ( target.GetType() != TheNomad::GameSystem::EntityType::Playr ) {
+				// unless it's the player, we don't care about the death
+				return;
+			}
+			
+			string message = cast<PlayrObject@>( @target ).GetName();
+			
+			if ( @attacker is null ) {
+				if ( target.GetVelocity() > Util::Vec3Origin || target.GetVelocity() > Util::Vec3Origin ) {
+					// killed by impact
+					if ( target.GetVelocity().z != 0.0f ) {
+						message += " thought they could fly";
+					}  else {
+						message += " was met by the reality of physics";
+					}
+				} else {
+					// player was killed by unknown reasons
+					message += " was killed by strange and mysterious forces beyond our control...";
+				}
+			}
+			else {
+				// actual death
+				
+			}
+			
+			ConsolePrint( message + "\n" );
+		}
+		
+		private void KillEntity( EntityObject@ attacker, EntityObject@ target ) {
+			if ( target.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
+				MobObject@ mob = cast<MobObject@>( @target );
+				
+				// respawn mobs on VeryHard
+				if ( uint( sgame_Difficulty.GetInt() ) >= uint( TheNomad::GameSystem::GameDifficulty::VeryHard )
+					&& sgame_NoRespawningMobs.GetInt() != 1 && ( uint( mob.GetMFlags() ) & InfoSystem::MobFlags::PermaDead ) == 0 )
+				{
+					// ST_MOB_DEAD only used with respawning mobs
+					target.SetState( cast<InfoSystem::MobInfo@>( @target.GetInfo() ).type + StateNum::ST_MOB_DEAD );
+				}
+				else {
+					@target.prev.next = @target.next;
+					@target.next.prev = @target.prev;
+				}
+			}
+			else if ( target.GetType() == TheNomad::GameSystem::EntityType::Playr ) {
+				target.SetState( StateNum::ST_PLAYR_DEAD );
+			}
+		}
+		
+		void KillEntity( EntityObject@ attacker, EntityObject@ target, const InfoSystem::AttackInfo@ info ) {
+			GenObituary( @attacker, @target, @info );
+			KillEntity( @attacker, @target );
 		}
 		void ApplyEntityEffect( EntityObject@ attacker, EntityObject@ target, AttackEffect effect ) {
 		}
-
+		
 		//
 		// DamageEntity: entity v entity
+		// NOTE: damage is only ever used when calling from a WeaponObject
 		//
-		void DamageEntity( EntityObject@ attacker, EntityObject@ target ) {
+		void DamageEntity( EntityObject@ attacker, TheNomad::GameSystem::RayCast@ rayCast, float damage = 1.0f ) {
+			if ( @rayCast is null ) {
+				return;
+			} else if ( rayCast.m_nEntityNumber == ENTITYNUM_INVALID || rayCast.m_nEntityNumber == ENTITYNUM_WALL ) {
+				return; // got nothing
+			}
 			
+			switch ( attacker.GetType() ) {
+			case TheNomad::GameSystem::EntityType::Mob: {
+				m_PlayrObject.Damage( cast<MobObject@>( @attacker ).GetCurrentAttack().damage );
+				break; }
+			case TheNomad::GameSystem::EntityType::Playr: {
+				EntityObject@ target = @m_EntityList[ rayCast.m_nEntityNumber ];
+				
+				if ( target.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
+					cast<MobObject@>( @target ).Damage( damage );
+				} else if ( target.GetType() == TheNomad::GameSystem::EntityType::Bot ) {
+					// TODO: calculate collateral damage here
+				}
+				// any other entity is just an inanimate object
+				// TODO: add explosive objects
+				
+				break; }
+			default:
+				GameError( "EntitySystem::Damage: invalid entity type " + uint( attacker.GetType() ) );
+			};
 		}
 
 		//
@@ -548,7 +631,7 @@ namespace TheNomad::SGame {
 				GameError( "Effect_Stun_f triggered on null attacker" );
 			}
 
-			@target = cast<MobObject@>(@ attacker ).GetTarget();
+			@target = cast<MobObject@>( @attacker ).GetTarget();
 			if ( target is null ) {
 				ConsoleWarning( "Effect_Stun_f triggered but no target\n" );
 				return;

@@ -1586,7 +1586,7 @@ qboolean R_HasExtension(const char *ext);
 void RE_BeginRegistration(gpuConfig_t *config);
 nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32_t sheetHeight, uint32_t spriteWidth, uint32_t spriteHeight );
 nhandle_t RE_RegisterSprite( nhandle_t hSpriteSheet, uint32_t index );
-void R_WorldToGL2( polyVert_t *verts, vec3_t pos );
+void R_WorldToGL2( polyVert_t *verts, vec3_t pos, uint32_t numVerts );
 qboolean R_CalcTangentVectors(drawVert_t dv[3]);
 
 //
