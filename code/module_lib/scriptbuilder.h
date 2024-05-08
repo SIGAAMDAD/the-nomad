@@ -39,7 +39,7 @@ typedef int (*INCLUDECALLBACK_t)(const char *include, const char *from, CScriptB
 // This callback will be called for each #pragma directive encountered by the builder.
 // The application can interpret the pragmaText and decide what do to based on that.
 // If the callback returns a negative value the builder will report an error and abort the compilation.
-typedef int(*PRAGMACALLBACK_t)(const UtlString &pragmaText, CScriptBuilder &builder, void *userParam);
+typedef int(*PRAGMACALLBACK_t)(const UtlString& pragmaText, CScriptBuilder& builder, void *userParam);
 
 // Helper class for loading and pre-processing script files to
 // support include directives and metadata declarations
@@ -88,7 +88,6 @@ public:
 	unsigned int GetSectionCount() const;
 	const UtlString&  GetSectionName(unsigned int idx) const;
 
-#ifdef AS_PROCESS_METADATA
 	// Get metadata declared for classes, interfaces, and enums
 	const UtlVector<UtlString>& GetMetadataForType(int typeId);
 
@@ -103,8 +102,6 @@ public:
 
 	// Get metadata declared for class methods
 	const UtlVector<UtlString>& GetMetadataForTypeMethod(int typeId, asIScriptFunction *method);
-#endif
-
 protected:
 	void ClearAll();
 	int  Build();
@@ -127,12 +124,10 @@ protected:
 	PRAGMACALLBACK_t  pragmaCallback;
 	void             *pragmaParam;
 
-#ifdef AS_PROCESS_METADATA
 	int  ExtractMetadata(int pos, UtlVector<UtlString> &outMetadata);
 	int  ExtractDeclaration(int pos, UtlString &outName, UtlString &outDeclaration, int &outType);
 
-	enum METADATATYPE
-	{
+	enum METADATATYPE {
 		MDT_TYPE = 1,
 		MDT_FUNC = 2,
 		MDT_VAR = 3,
@@ -141,8 +136,7 @@ protected:
 	};
 
 	// Temporary structure for storing metadata and declaration
-	struct SMetadataDecl
-	{
+	struct SMetadataDecl {
 		SMetadataDecl( const UtlVector<UtlString>& m, const UtlString& n, const UtlString& d, int t, const UtlString& c, const UtlString& ns )
 			: metadata(m), name(n), declaration(d), type(t), parentClass(c), nameSpace(ns) {}
 		UtlVector<UtlString> metadata;
@@ -162,16 +156,13 @@ protected:
 	UtlHashMap<int, UtlVector<UtlString> > varMetadataMap;
 
 	// Storage of metadata for class member declarations
-	struct SClassMetadata
-	{
+	struct SClassMetadata {
 		SClassMetadata(const UtlString& aName) : className(aName) {}
 		UtlString className;
 		UtlHashMap<int, UtlVector<UtlString> > funcMetadataMap;
 		UtlHashMap<int, UtlVector<UtlString> > varMetadataMap;
 	};
 	UtlHashMap<int, SClassMetadata> classMetadataMap;
-
-#endif
 
 #ifdef _WIN32
 	// On Windows the filenames are case insensitive so the comparisons to

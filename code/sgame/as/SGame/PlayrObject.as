@@ -14,7 +14,7 @@ namespace TheNomad::SGame {
 	};
 	
 	
-	const uint PF_CROUCHING     = 0x00000001;
+	const uint PF_CROUCHINGING     = 0x00000001;
 	const uint PF_DOUBLEJUMP    = 0x00000002;
 	const uint PF_PARRY         = 0x00000004;
 	const uint PF_QUICKSHOT     = 0x00000008;
@@ -42,25 +42,43 @@ namespace TheNomad::SGame {
 			//
 			
 			// these specific movement commands MUST NOT CHANGE as they are hardcoded into the engine
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.MoveNorth_Down_f, "+north" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.MoveNorth_Up_f, "-north" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.MoveSouth_Down_f, "+south" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.MoveSouth_Up_f, "-south" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.MoveWest_Down_f, "+west" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.MoveWest_Up_f, "-west" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.MoveEast_Down_f, "+east" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.MoveEast_Up_f, "-east" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.Jump_Down_f, "+up" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.Jump_Up_f, "-up" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Down_f ), "+north" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Up_f ), "-north" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_Down_f ), "+south" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_Up_f ), "-south" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveWest_Down_f ), "+west" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveWest_Up_f ), "-west" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveEast_Down_f ), "+east" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveEast_Up_f ), "-east" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Jump_Down_f ), "+up" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Jump_Up_f ), "-up" );
 			
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.Crouch_Down_f, "+crouch" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.Crouch_Up_f, "-scrouch" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.Dash_Down_f, "+dash" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.Dash_Up_f, "-dash" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.UseWeapon_Down_f, "+useweap" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.UseWeapon_Up_f, "-useweap" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.AltUseWeapon_Down_f, "+altuseweap" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this.AltUseWeapon_Up_f, "-altuseweap" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Crouch_Down_f ), "+crouch" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Crouch_Up_f ), "-scrouch" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Dash_Down_f ), "+dash" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Dash_Up_f ), "-dash" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.UseWeapon_Down_f ), "+useweap" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.UseWeapon_Up_f ), "-useweap" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.AltUseWeapon_Down_f ), "+altuseweap" );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.AltUseWeapon_Up_f ), "-altuseweap" );
 		}
 		
 		/*
@@ -169,6 +187,10 @@ namespace TheNomad::SGame {
 		void MoveNorth_Down_f() { key_MoveNorth.Down(); }
 		void MoveSouth_Up_f() { key_MoveSouth.Up(); }
 		void MoveSouth_Down_f() { key_MoveSouth.Down(); }
+		void MoveEast_Down_f() { key_MoveEast.Down(); }
+		void MoveEast_Up_f() { key_MoveEast.Up(); }
+		void MoveWest_Down_f() { key_MoveWest.Down(); }
+		void MoveWest_Up_f() { key_MoveWest.Up(); }
 		void Jump_Down_f() { key_Jump.Down(); }
 		void Jump_Up_f() { key_Jump.Up(); }
 		
@@ -231,16 +253,16 @@ namespace TheNomad::SGame {
 				beginSlidingSfx.Play();
 				@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_SLIDING );
 			} else {
-				m_PFlags |= PF_CROUCH;
+				m_PFlags |= PF_CROUCHING;
 				crouchSfxDown.Play();
 				@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_CROUCH );
 			}
 		}
 		void Crouch_Up_f() {
-			if ( ( m_PFlags & PF_CROUCH ) != 0 ) {
+			if ( ( m_PFlags & PF_CROUCHING ) != 0 ) {
 				crouchSfxUp.Play();
 			}
-			m_PFlags &= ~( PF_CROUCH | PF_SLIDING );
+			m_PFlags &= ~( PF_CROUCHING | PF_SLIDING );
 		}
 		
 		void Melee_Down_f() {
@@ -297,7 +319,7 @@ namespace TheNomad::SGame {
 			return ( m_PFlags & PF_SLIDING ) != 0;
 		}
 		bool IsCrouching() const {
-			return ( m_PFlags & PF_CROUCHING ) != 0;
+			return ( m_PFlags & PF_CROUCHINGING ) != 0;
 		}
 
 		void SetLegFacing( int facing ) {

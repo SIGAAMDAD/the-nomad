@@ -1,4 +1,5 @@
 #include "../engine/n_shared.h"
+#include "../engine/gln_files.h"
 #include "../engine/n_common.h"
 
 #if defined(__SSE2__) || defined(_MSC_SSE2_)
@@ -294,6 +295,23 @@ float NormalizeColor( const vec3_t in, vec3_t out ) {
 		out[2] = in[2] / max;
 	}
 	return max;
+}
+
+dirtype_t Angle2Dir( float angle ) {
+	//TODO:
+	return NUMDIRS;
+}
+
+float Dir2Angle( dirtype_t dir ) {
+	//TODO:
+	return 0.0f;
+}
+
+dirtype_t DirFromPoint( const vec3_t v ) {
+//	float angle;
+
+//	angle = atan2( v[0], v[1] );
+	return (dirtype_t)( (int)round( 8.0f * atan2( v[0], v[1] ) / ( 2.0f * M_PI ) + (int)NUMDIRS ) % (int)NUMDIRS );
 }
 
 /*

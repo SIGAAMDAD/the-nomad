@@ -24,6 +24,13 @@
 
 static CThreadMutex g_hRenderLock;
 
+// singletons defined here because AngelScript doesn't let you do it in the scripting
+static asIScriptObject *s_pEntitySystem;
+static asIScriptObject *s_pGameSystem;
+static asIScriptObject *s_pStateSystem;
+static asIScriptObject *s_pGfxSystem;
+static asIScriptObject *s_pRandomSystem;
+
 // glm has a lot of very fuzzy template types
 using vec2 = glm::vec<2, float, glm::packed_highp>;
 using vec3 = glm::vec<3, float, glm::packed_highp>;
@@ -1372,6 +1379,9 @@ static const asDWORD script_FS_OPEN_READ = (asDWORD)FS_OPEN_READ;
 static const asDWORD script_FS_OPEN_WRITE = (asDWORD)FS_OPEN_WRITE;
 static const asDWORD script_FS_OPEN_APPEND = (asDWORD)FS_OPEN_APPEND;
 
+static const asDWORD script_ENTITYNUM_INVALID = ENTITYNUM_INVALID;
+static const asDWORD script_ENTITYNUM_WALL = ENTITYNUM_INVALID - 1;
+
 static const asQWORD script_MAX_INT8 = CHAR_MAX;
 static const asQWORD script_MAX_INT16 = SHRT_MAX;
 static const asQWORD script_MAX_INT32 = INT_MAX;
@@ -1517,6 +1527,12 @@ static void Register_VecType( const char *name, const char *p_name )
 void ModuleLib_Register_Engine( void )
 {
     PROFILE_FUNCTION();
+
+    // reset SGame singletons
+    s_pEntitySystem = NULL;
+    s_pGameSystem = NULL;
+    s_pStateSystem = NULL;
+    s_pGfxSystem = NULL;
 
     CScriptConvert::Register( g_pModuleLib->GetScriptEngine() );
 
@@ -2474,9 +2490,29 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_VAR( "const uint32 NOMAD_VERSION_UPDATE", &script_NOMAD_VERSION_UPDATE );
         REGISTER_GLOBAL_VAR( "const uint32 NOMAD_VERSION_PATCH", &script_NOMAD_VERSION_PATCH );
 
-//        SET_NAMESPACE( "TheNomad::GameSystem" );
-//        REGISTER_GLOBAL_VAR( "array<TheNomad::GameSystem::GameObject@> GameSystems", g_pModuleLib->GetGameObjects() );
-//        RESET_NAMESPACE();
+        REGISTER_GLOBAL_VAR( "const uint32 GAME_VERSION", &script_NOMAD_VERSION );
+        REGISTER_GLOBAL_VAR( "const uint32 GAME_VERSION_UPDATE", &script_NOMAD_VERSION_UPDATE );
+        REGISTER_GLOBAL_VAR( "const uint32 GAME_VERSION_PATCH", &script_NOMAD_VERSION_PATCH );
+
+        REGISTER_GLOBAL_VAR( "const uint32 ENTITYNUM_INVALID", &script_ENTITYNUM_INVALID );
+        REGISTER_GLOBAL_VAR( "const uint32 ENTITYNUM_WALL", &script_ENTITYNUM_WALL );
+
+        REGISTER_GLOBAL_VAR( "const vec3 Vec3Origin", vec3_origin );
+        REGISTER_GLOBAL_VAR( "const vec2 Vec2Origin", vec2_origin );
+
+        REGISTER_GLOBAL_VAR( "const vec4 colorGreen", colorGreen );
+        REGISTER_GLOBAL_VAR( "const vec4 colorBlack", colorBlack );
+        REGISTER_GLOBAL_VAR( "const vec4 colorYellow", colorYellow );
+        REGISTER_GLOBAL_VAR( "const vec4 colorBlue", colorBlue );
+        REGISTER_GLOBAL_VAR( "const vec4 colorRed", colorRed );
+        REGISTER_GLOBAL_VAR( "const vec4 colorMagenta", colorMagenta );
+        REGISTER_GLOBAL_VAR( "const vec4 colorCyan", colorCyan );
+        REGISTER_GLOBAL_VAR( "const vec4 colorWhite", colorWhite );
+        REGISTER_GLOBAL_VAR( "const vec4 colorGold", colorGold );
+
+    #ifdef _NOMAD_DEBUG
+        g_pModuleLib->GetScriptBuilder()->DefineWord( "NOMAD_DEBUG" );
+    #endif
     }
 
     { // ModuleInfo

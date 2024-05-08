@@ -3,6 +3,19 @@
 
 CGameWorld *g_world;
 
+const dirtype_t inversedirs[NUMDIRS] = {
+	DIR_SOUTH,
+    DIR_SOUTH_WEST,
+    DIR_WEST,
+    DIR_NORTH_WEST,
+    DIR_NORTH,
+    DIR_NORTH_EAST,
+    DIR_EAST,
+    DIR_SOUTH_EAST,
+
+	DIR_NULL, // inside
+};
+
 static uint64_t CopyLump( void **dest, uint32_t lump, uint64_t size, bmf_t *header ) {
     uint64_t length, fileofs;
 
@@ -322,7 +335,9 @@ void CGameWorld::CastRay( ray_t *ray )
 	float e2;
 	float angle2;
 	uint32_t hitCount;
-	ivec3_t pos, end;
+	ivec3_t end;
+	vec3_t pos;
+	dirtype_t rayDir;
 	
 	// calculate the endpoint
 	angle2 = DEG2RAD( ray->angle );
@@ -342,12 +357,19 @@ void CGameWorld::CastRay( ray_t *ray )
         for ( linkEntity_t *it = m_ActiveEnts.next; it != &m_ActiveEnts; it = it->next ) {
 			if ( BoundsIntersectPoint( &it->bounds, ray->origin ) ) {
 				ray->entityNumber = it->entityNumber;
-				break;
+				return;
 			}
-        }
+		}
+		VectorCopy( pos, ray->origin );
+		Sys_SnapVector( pos );
+		rayDir = inversedirs[ DirFromPoint( pos ) ];
 
-        if ( ray->origin[0] == ray->end[0] && ray->origin[1] == ray->end[1] ) {
-			ray->entityNumber = m_nEntities;
+        if ( ray->origin[0] >= ray->end[0] || ray->origin[1] >= ray->end[1] ) {
+			ray->entityNumber = ENTITYNUM_INVALID;
+			break;
+		} else if ( m_pMapInfo->tiles[ (unsigned)pos[1] * m_pMapInfo->width + (unsigned)pos[0] ].sides[ rayDir ] ) {
+			// hit a wall
+			ray->entityNumber = ENTITYNUM_WALL;
 			break;
 		}
 		

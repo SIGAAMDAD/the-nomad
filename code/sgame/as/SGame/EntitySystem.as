@@ -44,26 +44,11 @@ namespace TheNomad::SGame {
 		None      = 0x00000000
 	};
 
-	EntitySystem@ EntityManager;
-	PlayrObject@ GetPlayerObject() {
-		return @EntityManager.GetPlayerObject();
-	}
-
     class EntitySystem : TheNomad::GameSystem::GameObject {
 		EntitySystem() {
 		}
 		
 		void OnInit() {
-			Engine::CommandSystem::CmdManager.AddCommand( Engine::CommandSystem::CommandFunc( @this.Effect_EntityStun_f, 
-				"sgame.effect_entity_stun" ) );
-			Engine::CommandSystem::CmdManager.AddCommand( Engine::CommandSystem::CommandFunc( @this.Effect_EntityBleed_f, 
-				"sgame.effect_entity_bleed" ) );
-			Engine::CommandSystem::CmdManager.AddCommand( Engine::CommandSystem::CommandFunc( @this.Effect_EntityKnockback_f, 
-				"sgame.effect_entity_knockback" ) );
-			Engine::CommandSystem::CmdManager.AddCommand( Engine::CommandSystem::CommandFunc( @this.Effect_EntityImmolate_f, 
-				"sgame.effect_entity_immolate" ) );
-			Engine::CommandSystem::CmdManager.AddCommand( Engine::CommandSystem::CommandFunc( @this.PrintPlayerState_f, 
-				"sgame.print_player_state" ) );
 		}
 		void OnShutdown() {
 		}
@@ -164,8 +149,8 @@ namespace TheNomad::SGame {
 			DebugPrint( "Saving entity data...\n" );
 
 			for ( uint i = 0; i < m_EntityList.Count(); i++ ) {
-				TheNomad::GameSystem::SaveSystem::SaveSection section( "EntityData_" + i );
-				m_EntityList[i].OnSave();
+				TheNomad::GameSystem::SaveSystem::SaveSection data( "EntityData_" + i );
+				m_EntityList[i].Save( data );
 			}
 		}
 		void OnRunTic() {
@@ -255,9 +240,6 @@ namespace TheNomad::SGame {
 		bool OnConsoleCommand( const string& in cmd ) {
 			if ( Util::StrICmp( cmd, "sgame.list_items" ) == 0 ) {
 				ListActiveItems();
-			}
-			else if ( Util::StrICmp( cmd, "sgame.print_player_state" ) == 0 ) {
-				PrintPlayerState();
 			}
 
 			return false;
@@ -407,7 +389,7 @@ namespace TheNomad::SGame {
 		}
 
 		void SpawnProjectile( const vec3& in origin, float angle, const InfoSystem::AttackInfo@ info ) {
-			EntityObject@ obj = @Spawn( TheNomad::GameSystem::EntityType::Weapon, info.type, origin );
+			EntityObject@ obj = @Spawn( TheNomad::GameSystem::EntityType::Weapon, info.projectileEntityType, origin );
 			obj.SetProjectile( true );
 		}
 
@@ -420,7 +402,7 @@ namespace TheNomad::SGame {
 			string message = cast<PlayrObject@>( @target ).GetName();
 			
 			if ( @attacker is null ) {
-				if ( target.GetVelocity() > Util::Vec3Origin || target.GetVelocity() > Util::Vec3Origin ) {
+				if ( target.GetVelocity() > Vec3Origin || target.GetVelocity() > Vec3Origin ) {
 					// killed by impact
 					if ( target.GetVelocity().z != 0.0f ) {
 						message += " thought they could fly";
@@ -461,7 +443,7 @@ namespace TheNomad::SGame {
 			}
 		}
 		
-		void KillEntity( EntityObject@ attacker, EntityObject@ target, const InfoSystem::AttackInfo@ info ) {
+		void KillEntity( EntityObject@ attacker, EntityObject@ target, InfoSystem::AttackInfo@ info ) {
 			GenObituary( @attacker, @target, @info );
 			KillEntity( @attacker, @target );
 		}
@@ -481,14 +463,13 @@ namespace TheNomad::SGame {
 			
 			switch ( attacker.GetType() ) {
 			case TheNomad::GameSystem::EntityType::Mob: {
-				m_PlayrObject.Damage( cast<MobObject@>( @attacker ).GetCurrentAttack().damage );
+				m_EntityList[ ray.m_nEntityNumber ].Damage( cast<MobObject@>( @attacker ).GetCurrentAttack().damage );
 				break; }
 			case TheNomad::GameSystem::EntityType::Playr: {
 				EntityObject@ target = @m_EntityList[ rayCast.m_nEntityNumber ];
 				
-				if ( target.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
-					cast<MobObject@>( @target ).Damage( damage );
-				} else if ( target.GetType() == TheNomad::GameSystem::EntityType::Bot ) {
+				target.Damage( damage );
+				if ( target.GetType() == TheNomad::GameSystem::EntityType::Bot ) {
 					// TODO: calculate collateral damage here
 				}
 				// any other entity is just an inanimate object
@@ -499,30 +480,6 @@ namespace TheNomad::SGame {
 				GameError( "EntitySystem::Damage: invalid entity type " + uint( attacker.GetType() ) );
 			};
 		}
-
-		//
-		// DamageEntity: mobs v targets
-		//
-		void DamageEntity( MobObject@ attacker, TheNomad::GameSystem::RayCast@ rayCast, const InfoSystem::AttackInfo@ info ) {
-			EntityObject@ target;
-
-			if ( @rayCast is null ) {
-				return; // not a hitscan
-			}
-
-			@target = @m_EntityList[ rayCast.m_nEntityNumber ];
-			if ( target.GetType() == TheNomad::GameSystem::EntityType::Playr ) {
-				// check for a parry
-				PlayrObject@ p = cast<PlayrObject@>( @target );
-				
-				if ( p.CheckParry( @attacker ) ) {
-					return; // don't deal damage
-				}
-			}
-
-			target.Damage( info.damage );
-		}
-
 		void SetPlayerObject( PlayrObject@ obj ) {
 			@m_PlayrObject = @obj;
 		}
@@ -555,16 +512,6 @@ namespace TheNomad::SGame {
 			return item;
 		}
 
-		private void PrintPlayerState() const {
-			string msg;
-			msg.reserve( MAX_STRING_CHARS );
-
-			msg = "\nPlayer State:\n";
-			msg += "Health: " + m_PlayrObject.GetHealth() + "\n";
-			msg += "Rage: " + m_PlayrObject.GetRage() + "\n";
-
-			ConsolePrint( msg );
-		}
 		private void ListActiveItems() {
 			string msg;
 			msg.reserve( MAX_STRING_CHARS );
@@ -596,11 +543,11 @@ namespace TheNomad::SGame {
 		// effects
 		//
 		
-		void Effect_Bleed_f() {
+		void Effect_EntityBleed_f() {
 			// sgame.effect_entity_bleed <attacker_num>
 		}
 
-		void Effect_Knockback_f() {
+		void Effect_EntityKnockback_f() {
 			// sgame.effect_entity_knockback <attacker_num>
 
 			EntityObject@ target, attacker;
@@ -608,19 +555,23 @@ namespace TheNomad::SGame {
 
 			@attacker = GetEntityForNum( attackerNum );
 			if ( attacker is null ) {
-				GameError( "Effect_Knockback_f triggered on null attacker" );
+				GameError( "Effect_EntityKnockback_f triggered on null attacker" );
 			}
 
 			@target = cast<MobObject@>( @attacker ).GetTarget();
 			if ( target is null ) {
-				ConsoleWarning( "Effect_Knockback_f triggered but no target\n" );
+				ConsoleWarning( "Effect_EntityKnockback_f triggered but no target\n" );
 				return;
 			}
 
 			ApplyEntityEffect( attacker, target, AttackEffect::Effect_Knockback );
 		}
 
-		void Effect_Stun_f() {
+		void Effect_EntityImmolate_f() {
+			// sgame.effect_entity_knockback <attacker_num>
+		}
+
+		void Effect_EntityStun_f() {
 			// sgame.effect_entity_stun <attacker_num>
 
 			EntityObject@ target, attacker;
@@ -628,16 +579,18 @@ namespace TheNomad::SGame {
 
 			@attacker = GetEntityForNum( attackerNum );
 			if ( attacker is null ) {
-				GameError( "Effect_Stun_f triggered on null attacker" );
+				GameError( "Effect_EntityStun_f triggered on null attacker" );
 			}
 
 			@target = cast<MobObject@>( @attacker ).GetTarget();
 			if ( target is null ) {
-				ConsoleWarning( "Effect_Stun_f triggered but no target\n" );
+				ConsoleWarning( "Effect_EntityStun_f triggered but no target\n" );
 				return;
 			}
 
 			ApplyEntityEffect( attacker, target, AttackEffect::Effect_Stun );
 		}
 	};
+
+	EntitySystem@ EntityManager;
 };

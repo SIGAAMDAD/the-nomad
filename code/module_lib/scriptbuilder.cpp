@@ -134,7 +134,6 @@ void CScriptBuilder::ClearAll()
 {
 	includedScripts.clear();
 
-#ifdef AS_PROCESS_METADATA
 	currentClass = "";
 	currentNamespace = "";
 
@@ -142,14 +141,12 @@ void CScriptBuilder::ClearAll()
 	typeMetadataMap.clear();
 	funcMetadataMap.clear();
 	varMetadataMap.clear();
-#endif
 }
 
 bool CScriptBuilder::IncludeIfNotAlreadyIncluded(const char *filename)
 {
 	UtlString scriptFile = filename;
-	if( includedScripts.find(scriptFile) != includedScripts.end() )
-	{
+	if ( includedScripts.find(scriptFile) != includedScripts.end() ) {
 		// Already included
 		return false;
 	}
@@ -234,6 +231,7 @@ int CScriptBuilder::LoadScriptSection(const char *filename)
 int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length, const char *sectionname, int lineOffset)
 {
 	UtlVector<UtlString> includes;
+	unsigned int row, col;
 
 	// Perform a superficial parsing of the script first to store the metadata
 	if( length )
@@ -241,13 +239,13 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 	else
 		modifiedScript = script;
 
-	// First perform the checks for #if directives to exclude code that shouldn't be compiled
+	// First perform the checks for preprocessor directives to exclude code that shouldn't be compiled
 	unsigned int pos = 0;
 	int nested = 0;
-	while( pos < modifiedScript.size() )
-	{
+	while( pos < modifiedScript.size() ) {
 		asUINT len = 0;
 		asETokenClass t = engine->ParseToken(&modifiedScript[pos], modifiedScript.size() - pos, &len);
+
 		if( t == asTC_UNKNOWN && modifiedScript[pos] == '#' && (pos + 1 < modifiedScript.size()) )
 		{
 			int start = pos++;
@@ -288,6 +286,8 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 					{
 						nested++;
 					}
+				} else {
+					engine->WriteMessage( sectionname, 0, 0, asMSGTYPE_ERROR, "invalid #if directive, no condition" );
 				}
 			}
 			else if( token == "endif" )
@@ -297,6 +297,8 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 				{
 					OverwriteCode(start, pos-start);
 					nested--;
+				} else {
+					engine->WriteMessage( sectionname, 0, 0, asMSGTYPE_ERROR, "#endif directive without a #if or #ifdef" );
 				}
 			}
 		}
@@ -304,31 +306,24 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 			pos += len;
 	}
 
-#if AS_PROCESS_METADATA == 1
 	// Preallocate memory
 	UtlString name, declaration;
 	UtlVector<UtlString> metadata;
-	declaration.reserve(100);
-#endif
 
 	// Then check for meta data and pre-processor directives
 	pos = 0;
-	while( pos < modifiedScript.size() )
-	{
+	while( pos < modifiedScript.size() ) {
 		asUINT len = 0;
 		asETokenClass t = engine->ParseToken(&modifiedScript[pos], modifiedScript.size() - pos, &len);
-		if( t == asTC_COMMENT || t == asTC_WHITESPACE )
-		{
+		if( t == asTC_COMMENT || t == asTC_WHITESPACE ) {
 			pos += len;
 			continue;
 		}
 		UtlString token;
 		token.assign(&modifiedScript[pos], len);
 
-#if AS_PROCESS_METADATA == 1
 		// Skip possible decorators before class and interface declarations
-		if (token == "shared" || token == "abstract" || token == "mixin" || token == "external")
-		{
+		if (token == "shared" || token == "abstract" || token == "mixin" || token == "external") {
 			pos += len;
 			continue;
 		}
@@ -453,10 +448,8 @@ int CScriptBuilder::ProcessScriptSection(const char *script, unsigned int length
 				foundDeclarations.push_back(decl);
 			}
 		}
-		else
-#endif
 		// Is this a preprocessor directive?
-		if( token == "#" && (pos + 1 < modifiedScript.size()) )
+		else if( token == "#" && (pos + 1 < modifiedScript.size()) )
 		{
 			int start = pos++;
 
@@ -584,7 +577,6 @@ int CScriptBuilder::Build()
 	if( r < 0 )
 		return r;
 
-#ifdef AS_PROCESS_METADATA
 	// After the script has been built, the metadata UtlStrings should be
 	// stored for later lookup by function id, type id, and variable index
 	for( int n = 0; n < (int)foundDeclarations.size(); n++ )
@@ -766,7 +758,6 @@ int CScriptBuilder::Build()
 		}
 	}
 	module->SetDefaultNamespace("");
-#endif
 
 	return 0;
 }
@@ -863,7 +854,6 @@ void CScriptBuilder::OverwriteCode(int start, int len)
 	}
 }
 
-#if AS_PROCESS_METADATA == 1
 int CScriptBuilder::ExtractMetadata(int pos, UtlVector<UtlString> &metadata)
 {
 	metadata.clear();
@@ -1099,7 +1089,6 @@ const UtlVector<UtlString>& CScriptBuilder::GetMetadataForTypeMethod(int typeId,
 
 	return UtlVector<UtlString>();
 }
-#endif
 
 
 END_AS_NAMESPACE

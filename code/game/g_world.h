@@ -34,10 +34,15 @@ private:
     CThreadRWMutex m_hLock;
 };
 
+#define ENTITYNUM_INVALID (unsigned)( ~0 )
+#define ENTITYNUM_WALL ENTITYNUM_INVALID - 1
+
 void G_GetTileData( uint32_t *pTiles, uint32_t nLevel );
 void G_GetCheckpointData( uvec3_t xyz, uint32_t nIndex );
 void G_GetSpawnData( uvec3_t xyz, uint32_t *type, uint32_t *id, uint32_t nIndex, uint32_t *pCheckpointIndex );
+void G_GetSecretData( uint32_t *pCheckpointIndex, uint32_t nIndex );
 
+extern const dirtype_t inversedirs[NUMDIRS];
 extern CGameWorld *g_world;
 
 #endif

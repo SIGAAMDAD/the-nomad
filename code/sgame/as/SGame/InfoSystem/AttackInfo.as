@@ -1,7 +1,7 @@
 #include "SGame/InfoSystem/InfoDataManager.as"
 
 namespace TheNomad::SGame::InfoSystem {
-    class AttackInfo : InfoLoader {
+   	class AttackInfo : InfoLoader {
 		AttackInfo() {
 		}
 		
@@ -114,6 +114,7 @@ namespace TheNomad::SGame::InfoSystem {
 		string id;
 		string effect;
 		string description;
+		uint projectileEntityType = 0;
 		float damage = 0.0f;
 		float range = 0.0f;
 		AmmoInfo@ bulletType = null;

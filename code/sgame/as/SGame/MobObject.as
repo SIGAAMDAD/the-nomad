@@ -14,10 +14,10 @@ namespace TheNomad::SGame {
 		MobObject() {
 		}
 
-		InfoSystem::AttackInfo@ CurrentAttack() {
+		InfoSystem::AttackInfo@ GetCurrentAttack() {
 			return @m_CurrentAttack;
 		}
-		const InfoSystem::AttackInfo@ CurrentAttack() const{
+		const InfoSystem::AttackInfo@ GetCurrentAttack() const{
 			return @m_CurrentAttack;
 		}
 		

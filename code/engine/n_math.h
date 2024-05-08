@@ -6,6 +6,7 @@
 #ifdef __cplusplus
 #include <glm/glm.hpp>
 #endif
+#include "gln_files.h"
 
 // bounding boxes
 typedef struct {
@@ -47,6 +48,10 @@ float disBetweenOBJ( const glm::vec3& src, const glm::vec3& tar );
 unsigned disBetweenOBJ( const glm::uvec3& src, const glm::uvec3& tar );
 int disBetweenOBJ( const glm::ivec3& src, const glm::ivec3& tar );
 #endif
+
+dirtype_t Angle2Dir( float angle );
+float Dir2Angle( dirtype_t dir );
+dirtype_t DirFromPoint( const vec3_t v );
 
 qboolean BoundsIntersect( const bbox_t *a, const bbox_t *b );
 qboolean BoundsIntersectSphere( const bbox_t *bounds,

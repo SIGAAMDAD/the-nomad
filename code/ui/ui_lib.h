@@ -61,6 +61,8 @@ extern cvar_t *ui_active;
 extern const char *UI_LangToString( int32_t lang );
 
 extern void			Menu_Cache( void );
+
+extern vec4_t colorGold;
 //extern sfxHandle_t	menu_in_sound;
 //extern sfxHandle_t	menu_move_sound;
 //extern sfxHandle_t	menu_out_sound;

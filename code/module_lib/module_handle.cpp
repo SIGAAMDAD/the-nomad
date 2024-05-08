@@ -91,6 +91,7 @@ CModuleHandle::CModuleHandle( const char *pName, const nlohmann::json& sourceFil
         return;
     }
     m_pScriptContext->AddRef();
+
 //    m_pScriptModule->SetUserData( this );
 //    SaveToCache();
 
