@@ -68,7 +68,7 @@ namespace TheNomad::SGame {
 			
 			// set torso direction
 			angle = atan2( ( screenWidth / 2 ) - mousePos.x, ( screenHeight / 2 ) - mousePos.y );
-			dir = TheNomad::Util::Angle2Dir( angle );
+			dir = Util::Angle2Dir( angle );
 			
 			switch ( dir ) {
 			case TheNomad::GameSystem::DirType::North:
@@ -89,7 +89,8 @@ namespace TheNomad::SGame {
 			};
 			
 			if ( obj.key_Jump.active && obj.GetOrigin().z > 0.0f ) {
-				obj.SetFlags( obj.GetFlags() | PF_DOUBLEJUMP );
+				// pressed jump again or we're falling, trigger jump
+				obj.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_DOUBLEJUMP ) );
 			}
 			
 			groundPlane = upmove == 0;

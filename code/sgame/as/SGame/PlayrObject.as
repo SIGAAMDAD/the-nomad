@@ -1,8 +1,10 @@
 #include "Engine/SoundSystem/SoundFrameData.as"
 #include "SGame/KeyBind.as"
-#include "SGame/QuickShot.as"
-#include "SGame/PMoveData.as"
-#include "SGame/PlayerHud.as"
+#include "SGame/PlayerSystem/QuickShot.as"
+#include "SGame/PlayerSystem/PMoveData.as"
+#include "SGame/PlayerSystem/PlayerHud.as"
+#include "SGame/PlayerSystem/SplitScreen.as"
+#include "SGame/PlayerSystem/StyleTracker.as"
 
 namespace TheNomad::SGame {
 	const uint[] sgame_WeaponModeList = {
@@ -12,14 +14,6 @@ namespace TheNomad::SGame {
 		uint( InfoSystem::WeaponProperty::OneHandedSideFirearm | InfoSystem::WeaponProperty::OneHandedPrimFirearm
 			| InfoSystem::WeaponProperty::TwoHandedSideFirearm | InfoSystem::WeaponProperty::TwoHandedPrimFirearm ),
 	};
-	
-	
-	const uint PF_CROUCHINGING     = 0x00000001;
-	const uint PF_DOUBLEJUMP    = 0x00000002;
-	const uint PF_PARRY         = 0x00000004;
-	const uint PF_QUICKSHOT     = 0x00000008;
-	const uint PF_DUELWIELDING  = 0x00000010;
-	const uint PF_SLIDING       = 0x00000020;
 	
 	[ModuleShared]
     class PlayrObject : EntityObject {
@@ -36,49 +30,6 @@ namespace TheNomad::SGame {
 			
 			EntityManager.SetPlayerObject( @this );
 			m_HudData.Init( @this );
-			
-			//
-			// add keybind commands
-			//
-			
-			// these specific movement commands MUST NOT CHANGE as they are hardcoded into the engine
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Down_f ), "+north" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Up_f ), "-north" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_Down_f ), "+south" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_Up_f ), "-south" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveWest_Down_f ), "+west" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveWest_Up_f ), "-west" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveEast_Down_f ), "+east" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveEast_Up_f ), "-east" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Jump_Down_f ), "+up" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Jump_Up_f ), "-up" );
-			
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Crouch_Down_f ), "+crouch" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Crouch_Up_f ), "-scrouch" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Dash_Down_f ), "+dash" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Dash_Up_f ), "-dash" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.UseWeapon_Down_f ), "+useweap" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.UseWeapon_Up_f ), "-useweap" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.AltUseWeapon_Down_f ), "+altuseweap" );
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.AltUseWeapon_Up_f ), "-altuseweap" );
 		}
 		
 		/*
@@ -108,7 +59,7 @@ namespace TheNomad::SGame {
 		}
 		*/
 		
-		private void SwitchWeaponWielding( InfoSystem::WeaponProperty& in hand, InfoSystem::WeaponProperty& in otherHand,
+		void SwitchWeaponWielding( InfoSystem::WeaponProperty& in hand, InfoSystem::WeaponProperty& in otherHand,
 			WeaponObject@ weapon, WeaponObject@ other )
 		{
 			switch ( InfoSystem::WeaponProperty( uint( hand ) & InfoSystem::WeaponProperty::IsOneHanded ) ) {
@@ -153,8 +104,7 @@ namespace TheNomad::SGame {
 			// if we're here, its most likely that the player is using a two-handed weapon that
 			// can't be wielded one-handed or they're duel wielding something
 		}
-		
-		private void SwitchWeaponMode( InfoSystem::WeaponProperty& in hand, const WeaponObject@ weapon ) {
+		void SwitchWeaponMode( InfoSystem::WeaponProperty& in hand, const WeaponObject@ weapon ) {
 			// weapon mode order (default)
 			// blade -> blunt -> polearm -> firearm
 			
@@ -169,7 +119,7 @@ namespace TheNomad::SGame {
 				}
 			}
 		}
-		private uint GetCurrentWeaponMode() const {
+		uint GetCurrentWeaponMode() const {
 			switch ( m_nHandsUsed ) {
 			case 0:
 				return uint( m_LeftHandMode );
@@ -183,6 +133,7 @@ namespace TheNomad::SGame {
 		//
 		// controls
 		//
+		/*
 		void MoveNorth_Up_f() { key_MoveNorth.Up(); }
 		void MoveNorth_Down_f() { key_MoveNorth.Down(); }
 		void MoveSouth_Up_f() { key_MoveSouth.Up(); }
@@ -195,7 +146,7 @@ namespace TheNomad::SGame {
 		void Jump_Up_f() { key_Jump.Up(); }
 		
 		void Quickshot_Down_f() {
-			m_PFlags |= PF_QUICKSHOT;
+			@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_QUICKSHOT );
 			beginQuickshotSfx.Play();
 		}
 		void Quickshot_Up_f() {
@@ -249,11 +200,9 @@ namespace TheNomad::SGame {
 		}
 		void Crouch_Down_f() {
 			if ( key_MoveNorth.active || key_MoveSouth.active || key_MoveWest.active || key_MoveEast.active ) {
-				m_PFlags |= PF_SLIDING;
 				beginSlidingSfx.Play();
 				@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_SLIDING );
 			} else {
-				m_PFlags |= PF_CROUCHING;
 				crouchSfxDown.Play();
 				@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_CROUCH );
 			}
@@ -306,6 +255,7 @@ namespace TheNomad::SGame {
 		void EmoteWheel_Up_f() {
 //			m_bEmoteWheelActive = false;
 		}
+		*/
 		
 		void DrawEmoteWheel() {
 //			if ( !m_bEmoteWheelActive ) {
@@ -316,10 +266,10 @@ namespace TheNomad::SGame {
 		}
 
 		bool IsSliding() const {
-			return ( m_PFlags & PF_SLIDING ) != 0;
+			return m_State.GetID() == StateNum::ST_PLAYR_SLIDING;
 		}
 		bool IsCrouching() const {
-			return ( m_PFlags & PF_CROUCHINGING ) != 0;
+			return m_State.GetID() == StateNum::ST_PLAYR_CROUCHING;
 		}
 
 		void SetLegFacing( int facing ) {
@@ -371,13 +321,6 @@ namespace TheNomad::SGame {
 			}
 		}
 		
-		void SetPFlags( uint flags ) {
-			m_PFlags = flags;
-		}
-		uint GetPFlags() const {
-			return m_PFlags;
-		}
-
 		WeaponObject@ GetCurrentWeapon() {
 			return @m_WeaponSlots[m_CurrentWeapon];
 		}
@@ -388,9 +331,7 @@ namespace TheNomad::SGame {
 		void Think() override {
 			ivec3 origin;
 			
-			if ( ( m_PFlags & PF_PARRY ) != 0 ) {
-				ParryThink();
-			} else if ( ( m_PFlags & PF_QUICKSHOT ) != 0 ) {
+			if ( m_State.GetID() == StateNum::ST_PLAYR_QUICKSHOT ) {
 				m_QuickShot.Think();
 			}
 			
@@ -444,7 +385,7 @@ namespace TheNomad::SGame {
 					const vec3 v = ent.GetVelocity();
 					ent.SetVelocity( vec3( v.x * 2, v.y * 2, v.z * 2 ) );
 					ent.SetAngle( ent.GetAngle() * 2.0f / M_PI / 360.0f );
-					ent.SetDirection( TheNomad::GameSystem::InverseDirs[ ent.GetDirection() ] );
+					ent.SetDirection( InverseDirs[ ent.GetDirection() ] );
 				}
 			}
 			if ( ent.GetType() == TheNomad::GameSystem::EntityType::Mob && !ent.IsProjectile() ) {
@@ -477,7 +418,7 @@ namespace TheNomad::SGame {
 		}
 		
 		void MakeSound() {
-			if ( m_State.GetID() == StateNum::ST_PLAYR_CROUCH ) {
+			if ( m_State.GetID() == StateNum::ST_PLAYR_CROUCHING ) {
 				return;
 			}
 			
@@ -537,7 +478,7 @@ namespace TheNomad::SGame {
 			int hLegSprite = FS_INVALID_HANDLE;
 			
 			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, m_SpriteSheet.GetHandle(),
-				m_SpriteSheet[ m_State.GetSpriteOffset().y * m_State.GetSpriteOffset().x + m_State.GetAnimation().GetFrame() ] );
+				m_SpriteSheet[ m_State.GetSpriteOffset().y * m_State.GetSpriteOffset().x + m_State.GetAnimation().GetFrame() + m_Facing ] );
 			
 			//
 			// draw the legs
@@ -547,38 +488,38 @@ namespace TheNomad::SGame {
 				// not moving at all, just draw idle legs
 				if ( !Pmove.groundPlane ) {
 					// static air legs
-					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_AIR + m_LegsFacing );
+					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_AIR );
 				} else {
 					// idle ground legs
-					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND + m_LegsFacing );
+					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_GROUND );
 				}
 			}
 			else if ( !Pmove.groundPlane ) {
 				// we're in the air, modify the legs to show a bit of momentum control
 				if ( m_Velocity.z < 0.0f ) {
 					// falling down
-					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_FALL_AIR + m_LegsFacing );
+					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_FALL_AIR );
 				}
 				else if ( m_Debuff == AttackEffect::Stunned ) {
 					// player is literally flying through the air
-					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_STUN_AIR + m_LegsFacing );
+					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_STUN_AIR );
 				}
 				else {
 					// ascending
-					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_ASCENDING + m_LegsFacing );
+					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_ASCENDING );
 				}
 			}
 			else {
 				// moving on the ground
 				if ( m_Debuff == AttackEffect::Stunned ) {
-					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_STUN_GROUND + m_LegsFacing );
+					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_STUN_GROUND );
 				} else {
-					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_MOVE_GROUND + m_LegsFacing );
+					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_MOVE_GROUND );
 				}
 			}
 			
 			hLegSprite = m_LegState.GetSpriteOffset().y * m_LegSpriteSheet.GetSpriteCount().x +
-				m_LegState.GetSpriteOffset().x + m_LegState.GetAnimation().GetFrame();
+				m_LegState.GetSpriteOffset().x + m_LegState.GetAnimation().GetFrame() + m_LegsFacing;
 			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, m_SpriteSheet.GetHandle(),
 				m_SpriteSheet[ hLegSprite ] );
 		}
@@ -587,35 +528,35 @@ namespace TheNomad::SGame {
 		KeyBind key_Jump, key_Melee;
 		
 		private TheNomad::GameSystem::BBox m_ParryBox;
-		private float m_nParryBoxWidth;
+		float m_nParryBoxWidth;
 		
 		// toggled with "sgame_SaveLastUsedWeaponModes"
 		private InfoSystem::WeaponProperty[] m_WeaponModes( 9 );
 		
 		// 9 weapons in total
-		private WeaponObject@[] m_WeaponSlots( 9 );
-		private WeaponObject m_HeavyPrimary;
-		private WeaponObject m_HeavySidearm;
-		private WeaponObject m_LightPrimary;
-		private WeaponObject m_LightSidearm;
-		private WeaponObject m_Melee1;
-		private WeaponObject m_Melee2;
-		private WeaponObject m_RightArm;
-		private WeaponObject m_LeftArm;
-		private WeaponObject m_Ordnance;
-		private int m_CurrentWeapon = 0;
+		WeaponObject@[] m_WeaponSlots( 9 );
+		WeaponObject m_HeavyPrimary;
+		WeaponObject m_HeavySidearm;
+		WeaponObject m_LightPrimary;
+		WeaponObject m_LightSidearm;
+		WeaponObject m_Melee1;
+		WeaponObject m_Melee2;
+		WeaponObject m_RightArm;
+		WeaponObject m_LeftArm;
+		WeaponObject m_Ordnance;
+		int m_CurrentWeapon = 0;
 		
 		private QuickShot m_QuickShot;
-		private uint m_PFlags = 0;
 		
 		// sound effects
 		private TheNomad::Engine::SoundSystem::SoundEffect parrySfx;
 		private TheNomad::Engine::SoundSystem::SoundEffect counterParrySfx;
-		private TheNomad::Engine::SoundSystem::SoundEffect beginQuickshotSfx;
-		private TheNomad::Engine::SoundSystem::SoundEffect endQuickshotSfx;
-		private TheNomad::Engine::SoundSystem::SoundEffect beginSlideSfx;
-		private TheNomad::Engine::SoundSystem::SoundEffect crouchDownSfx;
-		private TheNomad::Engine::SoundSystem::SoundEffect crouchUpSfx;
+		TheNomad::Engine::SoundSystem::SoundEffect beginQuickshotSfx;
+		TheNomad::Engine::SoundSystem::SoundEffect endQuickshotSfx;
+		TheNomad::Engine::SoundSystem::SoundEffect beginSlideSfx;
+		TheNomad::Engine::SoundSystem::SoundEffect crouchDownSfx;
+		TheNomad::Engine::SoundSystem::SoundEffect crouchUpSfx;
+		TheNomad::Engine::SoundSystem::SoundEffect dashSfx;
 		private TheNomad::Engine::SoundSystem::SoundEffect[] painSfx( 3 );
 		private TheNomad::Engine::SoundSystem::SoundEffect[] dieSfx( 3 );
 
@@ -623,14 +564,14 @@ namespace TheNomad::SGame {
 		private float m_nFrameDamage = 0.0f;
 		
 		// what does the player have in their hands?
-		private int m_nHandsUsed = 0; // 0 for left, 1 for right, 2 if two-handed
-		private WeaponObject@ m_LeftHandWeapon = null;
-		private WeaponObject@ m_RightHandWeapon = null;
-		private InfoSystem::WeaponProperty m_LeftHandMode = InfoSystem::WeaponProperty::None;
-		private InfoSystem::WeaponProperty m_RightHandMode = InfoSystem::WeaponProperty::None;
+		int m_nHandsUsed = 0; // 0 for left, 1 for right, 2 if two-handed
+		WeaponObject@ m_LeftHandWeapon = null;
+		WeaponObject@ m_RightHandWeapon = null;
+		InfoSystem::WeaponProperty m_LeftHandMode = InfoSystem::WeaponProperty::None;
+		InfoSystem::WeaponProperty m_RightHandMode = InfoSystem::WeaponProperty::None;
 		
-		private bool m_bUseWeapon = false;
-		private bool m_bAltUseWeapon = false;
+		bool m_bUseWeapon = false;
+		bool m_bAltUseWeapon = false;
 
 		// the lore goes: the harder and faster you hit The Nomad, the harder and faster they hit back
 		private float m_nDamageMult = 0.0f;
@@ -642,7 +583,7 @@ namespace TheNomad::SGame {
 		private SpriteSheet@ m_LegSpriteSheet;
 		private int m_LegsFacing = 0;
 
-		private bool m_bEmoting = false;
+		bool m_bEmoting = false;
 		
 		private EntityState@ m_LegState;
 		private PlayerDisplayUI m_HudData;
