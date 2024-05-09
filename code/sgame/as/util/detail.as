@@ -1,4 +1,8 @@
 namespace TheNomad::Util {
+	void HapticRumble( uint nPlayerIndex, float nStrength, uint nTime ) {
+		TheNomad::Engine::CmdExecuteCommand( "in_haptic_rumble " + nPlayerIndex + " " + nStrength + " " + nTime +  "\n" );
+	}
+
 	uint32 ColorAsUInt32( const vec4& in color ) {
 		// convert color components to value between 0 and 255.
 	    const uint32 r = 255 * uint32( color.r );

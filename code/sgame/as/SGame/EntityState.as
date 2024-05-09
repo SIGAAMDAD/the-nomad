@@ -12,15 +12,22 @@ namespace TheNomad::SGame {
 		ST_PLAYR_IDLE,
 		ST_PLAYR_CROUCHING,
 		ST_PLAYR_SLIDING,
+		ST_PLAYR_DOUBLEJUMP,
 		ST_PLAYR_DASH,
 		ST_PLAYR_MELEE,
 		ST_PLAYR_COMBAT,
 		ST_PLAYR_DEAD,
 		ST_PLAYR_QUICKSHOT,
+		
+		// legs on ground states
 		ST_PLAYR_LEGS_IDLE_GROUND,
-		ST_PLAYR_LEGS_ASCENDING,
+		ST_PLAYR_LEGS_MOVE_GROUND,
+		ST_PLAYR_LEGS_STUN_GROUND,
+
+		// legs in air states
 		ST_PLAYR_LEGS_IDLE_AIR,
 		ST_PLAYR_LEGS_FALL_AIR,
+		ST_PLAYR_LEGS_STUN_AIR,
 		
 		NumStates
 	};
@@ -29,11 +36,11 @@ namespace TheNomad::SGame {
 		EntityState() {
 		}
 
-		void SetInfo( const string& in name, uint tics, uint num, uint spriteOffset ) {
+		void SetInfo( const string& in name, uint tics, uint num, const uvec2& in spriteOffset ) {
 			m_Name = name;
 			m_nTics = tics;
 			m_nStateNum = num;
-			m_nSpriteOffset = spriteOffset;
+			m_SpriteOffset = spriteOffset;
 			
 			m_nTicker = 0;
 		}
@@ -47,7 +54,7 @@ namespace TheNomad::SGame {
 			ConsolePrint( "Name: " + m_Name + "\n" );
 			ConsolePrint( "Tics: " + formatUInt( m_nTics ) + "\n" );
 			ConsolePrint( "Id: " + formatUInt( m_nStateNum ) + "\n" );
-			ConsolePrint( "Sprite Offset: " + formatUInt( m_nSpriteOffset ) + "\n" );
+			ConsolePrint( "Sprite Offset: [" + m_nSpriteOffset.x + ", " + m_nSpriteOffset.y + "]\n" );
 		}
 		uint GetID() const {
 			return m_nStateNum;
@@ -57,8 +64,8 @@ namespace TheNomad::SGame {
 			m_nTicker = m_nTics;
 		}
 		
-		uint SpriteOffset() const {
-			return m_nSpriteOffset;
+		const uvec2& SpriteOffset() const {
+			return m_SpriteOffset;
 		}
 		bool Done() const {
 			return m_nTicker == m_nTics;
@@ -81,15 +88,15 @@ namespace TheNomad::SGame {
 			@m_Animation = @anim;
 		}
 		
-		// runtime data
-		private uint m_nTicker = 0;
-		
 		// static data
 		private string m_Name;
-		private uint m_nTics = 0;
-		private uint m_nStateNum = 0;
-		private uint m_nSpriteOffset = 0;
+		private uvec2 m_SpriteOffset = uvec2( 0 );
 		private EntityState@ m_NextState = null;
 		private Animation@ m_Animation = null;
+		private uint m_nTics = 0;
+		private uint m_nStateNum = 0;
+
+		// runtime data
+		private uint m_nTicker = 0;
 	};
 };

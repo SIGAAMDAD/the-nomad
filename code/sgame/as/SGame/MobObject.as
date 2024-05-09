@@ -59,7 +59,7 @@ namespace TheNomad::SGame {
 				
 				ray.m_Origin = m_Link.m_Origin;
 				ray.m_nLength = atk.range;
-				ray.m_nAngle = TheNomad::Util::Dir2Angle( m_Direction );
+				ray.m_nAngle = m_PhysicsObject.GetAngle();
 				ray.m_nEntityNumber = 0;
 
 				TheNomad::GameSystem::CastRay( @ray );
@@ -69,7 +69,7 @@ namespace TheNomad::SGame {
 				}
 				break; }
 			case InfoSystem::AttackMethod::Projectile:
-				EntityManager.SpawnProjectile( m_Link.m_Origin, m_nAngle, @atk );
+				EntityManager.SpawnProjectile( m_Link.m_Origin, m_PhysicsObject.GetAngle(), @atk );
 				return; // we'll let the entity manager deal with it now
 			default:
 				// should theoretically NEVER happen
@@ -97,10 +97,12 @@ namespace TheNomad::SGame {
 			m_MFlags = m_Info.mobFlags;
 			m_hShader = m_Info.hShader;
 //			m_hSpriteSheet = m_Info.hSpriteSheet;
-			@m_State = @StateManager.GetStateForNum( m_Info.type + StateNum::ST_MOB_IDLE );
+			SetState( StateNum::ST_MOB_IDLE );
+
+			m_PhysicsObject.Init( @this, m_Info.speed, vec3( 100.0f ) );
 		}
 		
-		void Damage( EntityObject@ source, float nAmount ) {
+		void Damage( EntityObject@ attacker, float nAmount ) {
 			m_nHealth -= nAmount;
 			if ( m_nHealth < 0.0f ) {
 				if ( m_nHealth <= -m_Info.health ) {
@@ -108,27 +110,29 @@ namespace TheNomad::SGame {
 //					EntityManager.GibbEntity( @this );
 				}
 				TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( m_Info.dieSfx );
-				EntityManager.KillEntity( cast<EntityObject@>( @this ) );
+				EntityManager.KillEntity( @attacker, @cast<EntityObject@>( @this ) );
 				return;
 			}
 			
 			TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( m_Info.painSfx );
 			
-			if ( @source !is @m_Target ) {
-				SetTarget( @source );
+			if ( @attacker !is @m_Target ) {
+				SetTarget( @attacker );
 			}
 		}
 		
 		void Think() {
 			switch ( m_State.GetID() - m_Info.type ) {
 			case StateNum::ST_MOB_IDLE:
-				Mob_IdleThink( m_Link.m_nEntityNumber );
+				IdleThink();
 				break;
+			case StateNum::ST_MOB_FIGHT_MELEE:
+			case StateNum::ST_MOB_FIGHT_MISSILE:
 			case StateNum::ST_MOB_FIGHT:
-				Mob_FightThink( m_Link.m_nEntityNumber );
+				FightThink();
 				break;
 			case StateNum::ST_MOB_CHASE:
-				Mob_ChaseThink( m_Link.m_nEntityNumber );
+				ChaseThink();
 				break;
 			default:
 				GameError( "MobEntity::Think: invalid mob state " + formatUInt( m_State.GetID() ) + "\n" );
@@ -138,8 +142,8 @@ namespace TheNomad::SGame {
 		
 		private void SetTarget( EntityObject@ newTarget ) {
 			@m_Target = @newTarget;
-			m_nAngle = atan2( m_Link.m_Origin.x - m_Target.GetOrigin().x, m_Link.m_Origin.y - m_Target.GetOrigin().y );
-			m_Direction = TheNomad::Util::Angle2Dir( m_nAngle );
+			m_PhysicsObject.SetAngle( atan2( m_Link.m_Origin.x - m_Target.GetOrigin().x, m_Link.m_Origin.y - m_Target.GetOrigin().y ) );
+			m_Direction = Util::Angle2Dir( m_PhysicsObject.GetAngle() );
 			
 			DebugPrint( "Set mob target to " + m_Target.GetEntityNum() + "\n" );
 		}
@@ -150,6 +154,7 @@ namespace TheNomad::SGame {
 			} else {
 				m_Direction--;
 			}
+			m_PhysicsObject.SetAngle( Util::Dir2Angle( m_Direction ) );
 		}
 		
 		private float GetSpeed() const {
@@ -183,25 +188,24 @@ namespace TheNomad::SGame {
 		private bool CheckCollision() const {
 			TheNomad::GameSystem::RayCast ray;
 			
-			ray.m_nLength = TheNomad::Util::VectorLength( m_Info.speed );
-			ray.m_nAngle = m_nAngle;
+			ray.m_nLength = Util::VectorLength( m_Info.speed );
+			ray.m_nAngle = m_PhysicsObject.GetAngle();
 			ray.m_Origin = m_Link.m_Origin;
 			
 			TheNomad::GameSystem::CastRay( @ray );
 			
-			if ( ray.m_nEntityNumber == ENTITYNUM_INVALID ) {
+			if ( ray.m_nEntityNumber == ENTITYNUM_INVALID || ray.m_nEntityNumber == ENTITYNUM_WALL ) {
+				// is there a wall in the way?
+				if ( ray.m_nEntityNumber == ENTITYNUM_WALL ) {
+					ShuffleDirection();
+					return true;
+				}
 				return false;
 			} else if ( ray.m_nEntityNumber >= EntityManager.NumEntities() ) {
 				GameError( "MobObject::CheckCollision: out of range entity number" );
 			}
 
-			// is there a wall in the way?
-			if ( EntityManager.GetEntityForNum( ray.m_nEntityNumber ).GetType() == TheNomad::GameSystem::EntityType::Wall ) {
-				ShuffleDirection();
-				return true;
-			}
-			// we can move
-			
+			// we can move	
 			return true;
 		}
 		
@@ -212,27 +216,18 @@ namespace TheNomad::SGame {
 			
 			if ( @m_Target !is null ) {
 				// get closer to target
-				m_nAngle = atan2( m_Link.m_Origin.x - m_Target.GetOrigin().x, m_Link.m_Origin.y - m_Target.GetOrigin().y );
+				m_PhysicsObject.SetAngle( atan2( m_Link.m_Origin.x - m_Target.GetOrigin().x, m_Link.m_Origin.y - m_Target.GetOrigin().y ) );
 			}
 			
-			const uint flags = LevelManager.GetMapData().GetTiles()[ uint( m_Link.m_Origin.y ) * LevelManager.GetMapData().GetWidth() +
-				uint( m_Link.m_Origin.x ) ][ GetMapLevel( m_Link.m_Origin.z ) ];
-			
+			const uint flags = LevelManager.GetMapData().GetTile( m_Link.m_Origin );
+
 			if ( ( flags & SURFACEPARM_WOOD ) != 0 ) {
 				
 			} else if ( ( flags & SURFACEPARM_WATER ) != 0 ) {
 				
 			}
-			
-			m_Velocity.x -= sgame_Friction.GetFloat();
-			m_Velocity.y -= sgame_Friction.GetFloat();
-			
-			for ( uint i = 0; i < 3; i++ ) {
-				m_Velocity[i] = TheNomad::Util::Clamp( m_Velocity[i], 0.0f, m_Info.speed[i] );
-			}
-			
-			// NOTE: maybe get some adaptive velocity stuff here?
-			m_Link.m_Origin += m_Velocity;
+
+			m_PhysicsObject.OnRunTic();
 		}
 		
 		//===========================================================
@@ -250,15 +245,15 @@ namespace TheNomad::SGame {
 			vec3 delta, pos, p;
 			EntityObject@ ent;
 			
-			delta.x = cos( m_nAngle );
-			delta.y = sin( m_nAngle );
+			delta.x = cos( m_PhysicsObject.GetAngle() );
+			delta.y = sin( m_PhysicsObject.GetAngle() );
 			delta.z = 0.0f;
 			
 			pos = EntityManager.GetPlayerObject().GetOrigin() - m_Link.m_Origin;
 			
-			p = TheNomad::Util::NormalizeVector( pos );
+			p = Util::NormalizeVector( pos );
 			
-			if ( TheNomad::Util::DotProduct( pos, delta ) > cos( m_Info.sightRadius ) ) {
+			if ( Util::DotProduct( pos, delta ) > cos( m_Info.sightRadius ) ) {
 				return false;
 			}
 			
@@ -270,7 +265,7 @@ namespace TheNomad::SGame {
 			ray.m_nAngle = m_nAngle;
 			TheNomad::GameSystem::CastRay( @ray );
 			
-			if ( ray.m_nEntityNumber == ENTITYNUM_INVALID ) {
+			if ( ray.m_nEntityNumber == ENTITYNUM_INVALID || ray.m_nEntityNumber == ENTITYNUM_WALL ) {
 				return false;
 			} else if ( ray.m_nEntityNumber >= EntityManager.NumEntities() ) {
 				GameError( "MobObject::SightCheck: ray entity number is out of range (" + ray.m_nEntityNumber + ")"  );
@@ -282,8 +277,9 @@ namespace TheNomad::SGame {
 			if ( ent.GetType() != TheNomad::GameSystem::EntityType::Playr ) {
 				if ( @m_Target is @ent ) {
 					// set them facing the target
-					m_nAngle = atan2( m_Link.m_Origin.x - m_Target.GetOrigin().x, m_Link.m_Origin.y - m_Target.GetOrigin().y );
-					m_Direction = TheNomad::Util::Angle2Dir( m_nAngle );
+					m_PhysicsObject.SetAngle( atan2( m_Link.m_Origin.x - m_Target.GetOrigin().x,
+						m_Link.m_Origin.y - m_Target.GetOrigin().y ) );
+					m_Direction = Util::Angle2Dir( m_PhysicsObject.GetAngle() );
 					return true; // might be infightinh
 				} else {
 					return false;
@@ -326,15 +322,15 @@ namespace TheNomad::SGame {
 			}
 			
 			InfoSystem::AttackType attackType;
-			const float dist = TheNomad::Util::Distance( m_Target.GetOrigin(), m_Link.m_Origin );
+			const float dist = Util::Distance( m_Target.GetOrigin(), m_Link.m_Origin );
 			
 			// we need a more specific fighting state
-			if ( m_State.GetID() == StateNum::ST_MOB_FIGHT ) {
+			if ( m_State.GetID() - m_Info.type == StateNum::ST_MOB_FIGHT ) {
 				@m_CurrentAttack = null;
-				for ( uint i = 0; i < m_Info.attacks.size(); i++ ) {
+				for ( uint i = 0; i < m_Info.attacks.Count(); i++ ) {
 					if ( dist < m_Info.attacks[i].range && m_Info.attacks[i].valid ) {
 						attackType = m_Info.attacks[i].attackType;
-						@m_State = StateManager.GetStateForNum( StateNum::ST_MOB_FIGHT_MELEE );
+						SetState( StateNum::ST_MOB_FIGHT_MELEE );
 						@m_CurrentAttack = @m_Info.attacks[i];
 						break;
 					}
@@ -345,14 +341,8 @@ namespace TheNomad::SGame {
 				}
 				return; // cycle it
 			}
-			m_State.Run();
 			
-			// wait for it...
-			if ( m_State.GetTics() < m_CurrentAttack.cooldown ) {
-				return;
-			}
-			
-			DoAttack( m_CurrentAttack );
+			DoAttack( @m_CurrentAttack );
 		}
 		
 		private void IdleThink() {
@@ -366,9 +356,13 @@ namespace TheNomad::SGame {
 			if ( m_State.GetTics() > m_Info.waitTics ) {
 				if ( SoundCheck() || SightCheck() ) {
 					SetState( StateNum::ST_MOB_FIGHT );
-					return;
 				}
 			}
+		}
+
+		void SetState( StateNum stateNum ) {
+			@m_State = @StateManager.GetStateForNum( m_Info.type + stateNum );
+			m_State.Reset();
 		}
 		
 		private InfoSystem::MobFlags m_MFlags;

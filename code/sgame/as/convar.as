@@ -106,6 +106,8 @@ namespace TheNomad {
 		}
 		void OnSave() const {
 		}
+		void OnRenderScene() {
+		}
 		void OnRunTic() override {
 			// update all cvars
 			for ( uint i = 0; i < m_CvarCache.Count(); i++ ) {

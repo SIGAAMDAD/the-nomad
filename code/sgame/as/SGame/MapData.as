@@ -71,17 +71,24 @@ namespace TheNomad::SGame {
 			return m_TileData.Count();
 		}
 
-		const array<MapSpawn>& GetSpawns() const {
-			return m_Spawns;
+		uint GetLevel( const TheNomad::GameSystem::BBox& in bounds ) const {
+			const uint level = uint( floor( bounds.m_nMins.z + bounds.m_nMaxs.z ) );
+			return level;
 		}
-		const array<MapCheckpoint>& GetCheckpoints() const {
-			return m_Checkpoints;
+		uint GetTile( const vec3& in origin, const TheNomad::GameSystem::BBox& in bounds ) const {
+			return m_TileData[ GetLevel( bounds ) ][ uint( origin.y ) * m_nWidth + uint( origin.x ) ];
 		}
-		array<MapSpawn>& GetSpawns() {
-			return m_Spawns;
+		const array<MapSpawn>@ GetSpawns() const {
+			return @m_Spawns;
 		}
-		array<MapCheckpoint>& GetCheckpoints() {
-			return m_Checkpoints;
+		const array<MapCheckpoint>@ GetCheckpoints() const {
+			return @m_Checkpoints;
+		}
+		array<MapSpawn>@ GetSpawns() {
+			return @m_Spawns;
+		}
+		array<MapCheckpoint>@ GetCheckpoints() {
+			return @m_Checkpoints;
 		}
 		int GetWidth() const {
 			return m_nWidth;

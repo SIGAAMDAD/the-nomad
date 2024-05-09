@@ -166,6 +166,8 @@ namespace TheNomad::SGame {
 		}
 		void OnShutdown() {
 		}
+		void OnRenderScene() {
+		}
 		void OnRunTic() {
 			MapCheckpoint@ cp = null;
 

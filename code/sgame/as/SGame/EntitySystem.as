@@ -21,10 +21,10 @@ namespace TheNomad::SGame {
 	};
 	
 	enum AttackEffect {
-		Effect_Knockback = 0,
-		Effect_Stun,
-		Effect_Bleed,
-		Effect_Blind,
+		Knockback = 0,
+		Stunned,
+		Bleeding,
+		Blinded,
 		
 		None
 	};
@@ -153,6 +153,16 @@ namespace TheNomad::SGame {
 				m_EntityList[i].Save( data );
 			}
 		}
+		void OnRenderScene() {
+			EntityObject@ ent;
+
+			for ( uint i = 0; i < m_EntityList.Count(); i++ ) {
+				@ent = @m_EntityList[i];
+
+				// draw
+				ent.Draw();
+			}
+		}
 		void OnRunTic() {
 			EntityObject@ ent;
 			
@@ -208,9 +218,6 @@ namespace TheNomad::SGame {
 				// update engine data
 				ent.GetLink().Update();
 				
-				// draw entity
-				ent.Draw();
-				
 //				if ( m_EntityList[i].GetState().Done() ) {
 //					m_EntityList[i].SetState( m_EntityList[i].GetState().Cycle() );
 //					continue;
@@ -218,16 +225,28 @@ namespace TheNomad::SGame {
 			}
 		}
 		void OnLevelStart() {
+			vec2 size;
+
 			DebugPrint( "Spawning entities...\n" );
 
-			@m_ActiveEntities.prev =
-			@m_ActiveEntities.next =
-				@m_ActiveEntities;
-
-			const array<MapSpawn>@ spawns = @LevelManager.GetMapData().GetSpawns();
+			array<MapSpawn>@ spawns = @LevelManager.GetMapData().GetSpawns();
 			for ( uint i = 0; i < spawns.Count(); i++ ) {
+				switch ( spawns[i].m_nEntityType ) {
+				case TheNomad::GameSystem::EntityType::Playr:
+					size = vec2( sgame_PlayerWidth.GetFloat(), sgame_PlayerHeight.GetFloat() );
+					break;
+				case TheNomad::GameSystem::EntityType::Mob: {
+					const InfoSystem::MobInfo@ info = @InfoSystem::InfoManager.GetMobInfo( spawns[i].m_nEntityId );
+					size = vec2( info.width, info.height );
+					break; }
+				case TheNomad::GameSystem::EntityType::Weapon:
+				case TheNomad::GameSystem::EntityType::Item:
+					size = vec2( 1.0f ); // always at least 1 tile large
+					break;
+				};
+
 				Spawn( spawns[i].m_nEntityType, spawns[i].m_nEntityId,
-					vec3( spawns[i].m_Origin.x, spawns[i].m_Origin.y, spawns[i].m_Origin.z ) );
+					vec3( spawns[i].m_Origin.x, spawns[i].m_Origin.y, spawns[i].m_Origin.z ), size );
 			}
 
 			DebugPrint( "Found " + m_EntityList.Count() + " entity spawns.\n" );
@@ -245,7 +264,7 @@ namespace TheNomad::SGame {
 			return false;
 		}
 		
-		private EntityObject@ AllocEntity( TheNomad::GameSystem::EntityType type, uint id, const vec3& in origin ) {
+		private EntityObject@ AllocEntity( TheNomad::GameSystem::EntityType type, uint id, const vec3& in origin, const vec2& in size ) {
 			EntityObject@ ent;
 
 			switch ( type ) {
@@ -275,32 +294,30 @@ namespace TheNomad::SGame {
 				GameError( "EntityManager::Spawn: invalid entity type " + id );
 			};
 
-			@m_ActiveEntities.prev.next = @ent;
-			@ent.next = @m_ActiveEntities;
-			@ent.prev = @m_ActiveEntities.prev;
+			ent.GetBounds().m_nWidth = size.x;
+			ent.GetBounds().m_nHeight = size.y;
+			ent.GetBounds().MakeBounds( origin );
 
 			m_EntityList.Add( @ent );
 			
 			return @ent;
 		}
 		
-		EntityObject@ Spawn( TheNomad::GameSystem::EntityType type, int id, const vec3& in origin ) {
-			return @AllocEntity( type, id, origin );
+		EntityObject@ Spawn( TheNomad::GameSystem::EntityType type, int id, const vec3& in origin, const vec2& in size ) {
+			return @AllocEntity( type, id, origin, size );
 		}
 		
 		void DeadThink( EntityObject@ ent ) {
 			if ( ent.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
 				if ( sgame_Difficulty.GetInt() < uint( TheNomad::GameSystem::GameDifficulty::VeryHard )
-					|| sgame_NoRespawningMobs.GetInt() == 1 || ( cast<MobObject>( @ent ).GetMFlags() & InfoSystem::MobFlags::PermaDead ) != 0 )
+					|| sgame_NoRespawningMobs.GetInt() == 1 || ( cast<MobObject@>( @ent ).GetMFlags() & InfoSystem::MobFlags::PermaDead ) != 0 )
 				{
 					return; // no respawning for this one
 				} else {
 					// TODO: add respawn code here
 				}
 			} else if ( ent.GetType() == TheNomad::GameSystem::EntityType::Playr ) {
-				PlayrObject@ obj;
-				
-				@obj = cast<PlayrObject>( @ent );
+				PlayrObject@ obj = cast<PlayrObject@>( @ent );
 				
 				// is hellbreaker available?
 				if ( sgame_HellbreakerOn.GetInt() != 0 && Util::IsModuleActive( "hellbreaker" )
@@ -326,9 +343,6 @@ namespace TheNomad::SGame {
 		}
 		array<EntityObject@>@ GetEntities() {
 			return @m_EntityList;
-		}
-		EntityObject@ GetActiveEnts() {
-			return @m_ActiveEntities;
 		}
 		uint NumEntities() const {
 			return m_EntityList.Count();
@@ -388,12 +402,12 @@ namespace TheNomad::SGame {
 			return false;
 		}
 
-		void SpawnProjectile( const vec3& in origin, float angle, const InfoSystem::AttackInfo@ info ) {
-			EntityObject@ obj = @Spawn( TheNomad::GameSystem::EntityType::Weapon, info.projectileEntityType, origin );
+		void SpawnProjectile( const vec3& in origin, float angle, InfoSystem::AttackInfo@ info, const vec2& in size ) {
+			EntityObject@ obj = @Spawn( TheNomad::GameSystem::EntityType::Weapon, info.projectileEntityType, origin, size );
 			obj.SetProjectile( true );
 		}
 
-		private void GenObituary( EntityObject@ attacker, EntityObject@ target, const InfoSystem::AttackInfo@ info ) {
+		private void GenObituary( EntityObject@ attacker, EntityObject@ target, InfoSystem::AttackInfo@ info ) {
 			if ( target.GetType() != TheNomad::GameSystem::EntityType::Playr ) {
 				// unless it's the player, we don't care about the death
 				return;
@@ -422,7 +436,12 @@ namespace TheNomad::SGame {
 			ConsolePrint( message + "\n" );
 		}
 		
-		private void KillEntity( EntityObject@ attacker, EntityObject@ target ) {
+		void KillEntity( EntityObject@ attacker, EntityObject@ target ) {
+			if ( attacker.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
+				// write an obituary for the player
+				GenObituary( @attacker, @target, @cast<MobObject@>( @attacker ).GetCurrentAttack() );
+			}
+			// TODO: make the enemies nearby declare the infighting individual a traitor
 			if ( target.GetType() == TheNomad::GameSystem::EntityType::Mob ) {
 				MobObject@ mob = cast<MobObject@>( @target );
 				
@@ -431,7 +450,7 @@ namespace TheNomad::SGame {
 					&& sgame_NoRespawningMobs.GetInt() != 1 && ( uint( mob.GetMFlags() ) & InfoSystem::MobFlags::PermaDead ) == 0 )
 				{
 					// ST_MOB_DEAD only used with respawning mobs
-					target.SetState( cast<InfoSystem::MobInfo@>( @target.GetInfo() ).type + StateNum::ST_MOB_DEAD );
+					target.SetState( StateNum::ST_MOB_DEAD );
 				}
 				else {
 					@target.prev.next = @target.next;
@@ -441,11 +460,6 @@ namespace TheNomad::SGame {
 			else if ( target.GetType() == TheNomad::GameSystem::EntityType::Playr ) {
 				target.SetState( StateNum::ST_PLAYR_DEAD );
 			}
-		}
-		
-		void KillEntity( EntityObject@ attacker, EntityObject@ target, InfoSystem::AttackInfo@ info ) {
-			GenObituary( @attacker, @target, @info );
-			KillEntity( @attacker, @target );
 		}
 		void ApplyEntityEffect( EntityObject@ attacker, EntityObject@ target, AttackEffect effect ) {
 		}
@@ -463,12 +477,12 @@ namespace TheNomad::SGame {
 			
 			switch ( attacker.GetType() ) {
 			case TheNomad::GameSystem::EntityType::Mob: {
-				m_EntityList[ ray.m_nEntityNumber ].Damage( cast<MobObject@>( @attacker ).GetCurrentAttack().damage );
+				m_EntityList[ rayCast.m_nEntityNumber ].Damage( @attacker, cast<MobObject@>( @attacker ).GetCurrentAttack().damage );
 				break; }
 			case TheNomad::GameSystem::EntityType::Playr: {
 				EntityObject@ target = @m_EntityList[ rayCast.m_nEntityNumber ];
 				
-				target.Damage( damage );
+				target.Damage( @attacker, damage );
 				if ( target.GetType() == TheNomad::GameSystem::EntityType::Bot ) {
 					// TODO: calculate collateral damage here
 				}
@@ -504,7 +518,7 @@ namespace TheNomad::SGame {
 		ItemObject@ AddItem( uint type, const vec3& in origin ) {
 			ItemObject@ item;
 
-			@item = cast<ItemObject@>( @Spawn( TheNomad::GameSystem::EntityType::Item, type, origin ) );
+			@item = cast<ItemObject@>( @Spawn( TheNomad::GameSystem::EntityType::Item, type, origin, vec2( 1.0f ) ) );
 			@m_ActiveItems.prev.next = @item;
 			@item.prev = @m_ActiveItems.prev;
 			@item.next = @m_ActiveItems;
@@ -513,9 +527,6 @@ namespace TheNomad::SGame {
 		}
 
 		private void ListActiveItems() {
-			string msg;
-			msg.reserve( MAX_STRING_CHARS );
-
 //			ConsolePrint( "Active Game Items:\n" );
 //			for ( uint i = 0; i < m_ItemList.Count(); i++ ) {
 //				msg = "(";
@@ -536,7 +547,6 @@ namespace TheNomad::SGame {
 		
 		private array<EntityObject@> m_EntityList;
 		private ItemObject m_ActiveItems;
-		private EntityObject m_ActiveEntities;
 		private PlayrObject@ m_PlayrObject;
 		
 		//
@@ -564,7 +574,7 @@ namespace TheNomad::SGame {
 				return;
 			}
 
-			ApplyEntityEffect( attacker, target, AttackEffect::Effect_Knockback );
+			ApplyEntityEffect( attacker, target, AttackEffect::Knockback );
 		}
 
 		void Effect_EntityImmolate_f() {
@@ -588,7 +598,7 @@ namespace TheNomad::SGame {
 				return;
 			}
 
-			ApplyEntityEffect( attacker, target, AttackEffect::Effect_Stun );
+			ApplyEntityEffect( attacker, target, AttackEffect::Stunned );
 		}
 	};
 

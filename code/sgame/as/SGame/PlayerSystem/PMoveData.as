@@ -48,7 +48,7 @@ namespace TheNomad::SGame {
 			float angle;
 			TheNomad::GameSystem::DirType dir;
 			
-			@obj = @GetPlayerObject();
+			@obj = @EntityManager.GetPlayerObject();
 			mousePos = TheNomad::GameSystem::GameManager.GetMousePos();
 			screenWidth = TheNomad::GameSystem::GameManager.GetGPUConfig().screenWidth;
 			screenHeight = TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight;

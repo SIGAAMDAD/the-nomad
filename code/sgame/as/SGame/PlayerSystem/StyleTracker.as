@@ -13,14 +13,14 @@ namespace TheNomad::SGame {
 	class StyleData {
 		StyleData() {
 		}
-		StyleData( const string& in name, uint score, const vec3& in color ) {
+		StyleData( const string& in name, uint score, const vec4& in color ) {
 			m_Title = name;
 			m_nStyleScore = score;
 			m_Color = color;
 		}
 		
 		string m_Title;
-		vec3 m_Color = vec3( 0.0f );
+		vec4 m_Color = vec4( 0.0f );
 		uint m_nStyleScore = 0;
 	};
 	
@@ -66,9 +66,9 @@ namespace TheNomad::SGame {
 			m_nTimeSinceLastPush = TheNomad::GameSystem::GameManager.GetGameTic();
 			
 			if ( m_nMultiplier >= 1.0f ) {
-				m_nTotalStyle += m_StyleData[ uint( type ) ].m_nStyleScore * m_nMultiplier;
+				m_nTotalStyle += uint( ceil( float( m_StyleTitles[ uint( type ) ].m_nStyleScore ) * m_nMultiplier ) );
 			} else {
-				m_nTotalStyle += m_StyleData[ uint( type ) ].m_nStyleScore;
+				m_nTotalStyle += m_StyleTitles[ uint( type ) ].m_nStyleScore;
 			}
 		}
 		void PushKill( CauseOfDeath cause ) {
@@ -101,7 +101,7 @@ namespace TheNomad::SGame {
 			
 		}
 		
-		void Draw() const {
+		void Draw() {
 			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
 			
 			// add up to the mult
@@ -125,7 +125,6 @@ namespace TheNomad::SGame {
 			}
 			
 			for ( uint i = 0; i < m_StyleStack.Count(); i++ ) {
-				ImGui::Text(  );
 			}
 			
 			ImGui::NewLine();
@@ -170,5 +169,5 @@ namespace TheNomad::SGame {
 		private uint m_nTotalStyle = 0;
 	};
 
-	StyleTracker@ StyleData;
+	StyleTracker StyleInfo;
 };

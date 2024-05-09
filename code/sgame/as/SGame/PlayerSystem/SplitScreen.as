@@ -10,8 +10,8 @@ namespace TheNomad::SGame {
 		
 		private void ModifyOrigin( const vec3& in bounds, vec3& out origin, const vec2& in offset ) {
 			// add just a little bit of an offset so that we aren't clipping into each other
-			pos.x += ( bounds.x / 2.0f ) + offset.x;
-			pos.y += ( bounds.y / 2.0f ) + offset.t;
+			origin.x += ( bounds.x / 2.0f ) + offset.x;
+			origin.y += ( bounds.y / 2.0f ) + offset.y;
 		}
 		void Init() {
 			m_nPlayerCount = int( TheNomad::Engine::CvarVariableInteger( "in_numInputDevices" ) );
@@ -21,17 +21,17 @@ namespace TheNomad::SGame {
 				GameError( "SplitScreen::Init: in_numInputDevices is greater than 4 or less than 0" );
 			}
 			
-			@m_PlayerData[0] = @EntityManager.GetEntityForNum( 0 );
+			@m_PlayerData[0] = cast<PlayrObject@>( @EntityManager.GetEntityForNum( 0 ) );
 			if ( m_nPlayerCount > 1 ) {
-				ModifyOrigin( m_PlayerData[0].GetBounds().m_nMaxs, pos, vec2( 0.5f, 0.0f ) );
+				ModifyOrigin( m_PlayerData[0].GetBounds().m_Maxs, pos, vec2( 0.5f, 0.0f ) );
 				@m_PlayerData[1] = @EntityManager.Spawn( TheNomad::GameSystem::EntityType::Playr, 0, pos );
 			}
 			if ( m_nPlayerCount > 2 ) {
-				ModifyOrigin( m_PlayerData[1].GetBounds().m_nMaxs, pos, vec2( 0.5f, 0.5f );
+				ModifyOrigin( m_PlayerData[1].GetBounds().m_Maxs, pos, vec2( 0.5f, 0.5f ) );
 				@m_PlayerData[2] = @EntityManager.Spawn( TheNomad::GameSystem::EntityType::Playr, 0, pos );
 			}
 			if ( m_nPlayerCount > 3 ) {
-				ModifyOrigin( m_PlayerData[0].GetBounds().m_nMaxs, pos, vec2( 0.0f, 0.5f ) );
+				ModifyOrigin( m_PlayerData[0].GetBounds().m_Maxs, pos, vec2( 0.0f, 0.5f ) );
 				@m_PlayerData[3] = @EntityManager.Spawn( TheNomad::GameSystem::EntityType::Playr, 0, pos );
 			}
 			
@@ -98,7 +98,7 @@ namespace TheNomad::SGame {
 		private PlayrObject@ GetPlayerIndex() const {
 			if ( TheNomad::Engine::CmdArgc() == 4 ) {
 				// its a co-op input, get the player index
-				index = Convert().ToInt( TheNomad::Engine::CmdArgv( 3 ) );
+				const int index = Convert().ToInt( TheNomad::Engine::CmdArgv( 3 ) );
 				if ( index > 4 || index < 0 ) {
 					GameError( "SplitScreen: invalid player index " + index );
 				}
@@ -121,7 +121,7 @@ namespace TheNomad::SGame {
 		}
 		void UseWeapon_Down_f() { GetPlayerIndex().m_bUseWeapon = true; }
 		void UseWeapon_Up_f() { GetPlayerIndex().m_bUseWeapon = false; }
-		void AltUseWeapon_Down_f() { GetPlayerIndex().m_bAltUsegWeapon = true; }
+		void AltUseWeapon_Down_f() { GetPlayerIndex().m_bAltUseWeapon = true; }
 		void AltUseWeapon_Up_f() { GetPlayerIndex().m_bAltUseWeapon = false; }
 		void MoveNorth_Down_f() { GetPlayerIndex().key_MoveNorth.Down(); }
 		void MoveNorth_Up_f() { GetPlayerIndex().key_MoveNorth.Up(); }
@@ -208,7 +208,7 @@ namespace TheNomad::SGame {
 				obj.beginSlidingSfx.Play();
 				obj.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_SLIDING ) );
 			} else {
-				obj.crouchSfxDown.Play();
+				obj.crouchDownSfx.Play();
 				obj.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_CROUCHING ) );
 			}
 		}
@@ -216,7 +216,7 @@ namespace TheNomad::SGame {
 			PlayrObject@ obj = GetPlayerIndex();
 			
 			if ( obj.IsCrouching() ) {
-				obj.crouchSfxUp.Play();
+				obj.crouchUpSfx.Play();
 			}
 			obj.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE ) );
 		}
@@ -235,10 +235,10 @@ namespace TheNomad::SGame {
 			PlayrObject@ obj = GetPlayerIndex();
 			
 			obj.m_CurrentWeapon++;
-			if ( obj.m_CurrentWeapon >= obj.m_WeaponSlots.Count() ) {
+			if ( obj.m_CurrentWeapon >= int( obj.m_WeaponSlots.Count() ) ) {
 				obj.m_CurrentWeapon = 0;
 			}
-			cast<InfoSystem::WeaponInfo@>( @obj.m_WeaponSlots[ obj.m_CurrentWeapon ].GetInfo() ).equipSfx.Play();
+			cast<const InfoSystem::WeaponInfo@>( @obj.m_WeaponSlots[ obj.m_CurrentWeapon ].GetInfo() ).equipSfx.Play();
 		}
 		void PrevWeapon_f() {
 			PlayrObject@ obj = GetPlayerIndex();
@@ -247,14 +247,14 @@ namespace TheNomad::SGame {
 			if ( obj.m_CurrentWeapon < 0 ) {
 				obj.m_CurrentWeapon = obj.m_WeaponSlots.Count();
 			}
-			cast<InfoSystem::WeaponInfo@>( @obj.m_WeaponSlots[ obj.m_CurrentWeapon ].GetInfo() ).equipSfx.Play();
+			cast<const InfoSystem::WeaponInfo@>( @obj.m_WeaponSlots[ obj.m_CurrentWeapon ].GetInfo() ).equipSfx.Play();
 		}
 		
 		private void RenderScene( const uvec2& in scenePos, const uvec2& in sceneSize, const vec3& in origin ) {
 			const uint flags = RSF_ORTHO_TYPE_WORLD;
 			
 			// snap to the player's position
-			TheNomad::GameSystem::SetCameraPosition( vec2( origin.x, origin.y ) );
+			TheNomad::GameSystem::SetCameraPos( vec2( origin.x, origin.y ) );
 			
 			TheNomad::Engine::Renderer::ClearScene();
 			for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
@@ -262,6 +262,14 @@ namespace TheNomad::SGame {
 			}
 			TheNomad::Engine::Renderer::RenderScene( scenePos.x, scenePos.y, sceneSize.x, sceneSize.y, flags, 
 				TheNomad::GameSystem::GameManager.GetGameTic()  );
+		}
+
+		uint GetPlayerIndex( PlayrObject@ obj ) {
+			int index = m_PlayerData.Find( @obj );
+			if ( index == -1 ) {
+				GameError( "SplitScreen::GetPlayerIndex: bad index" );
+			}
+			return uint( index );
 		}
 		
 		void Draw() {
@@ -272,21 +280,19 @@ namespace TheNomad::SGame {
 				TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight );
 			
 			switch ( m_nPlayerCount ) {
-			default:
-				GameError( "SplitScreen::Init: in_numInputDevices is greater than 4 or less than 0" );
 			case 1:
 				RenderScene( pos, size, m_PlayerData[0].GetOrigin() );
 				break;
 			case 2:
-				size.x >>>= 1;
+				size.x /= 2;
 				RenderScene( pos, size, m_PlayerData[0].GetOrigin() );
 				
 				pos.x += size.x;
 				RenderScene( pos, size, m_PlayerData[1].GetOrigin() );
 				break;
 			case 3:
-				size.x >>>= 1;
-				size.y >>>= 1;
+				size.x /= 2;
+				size.y /= 2;
 				RenderScene( pos, size, m_PlayerData[0].GetOrigin() );
 				
 				pos.x += size.x;
@@ -294,12 +300,12 @@ namespace TheNomad::SGame {
 				
 				pos.x = 0;
 				pos.y += size.y;
-				size.x <<<= 1;
+				size.x *= 2;
 				RenderScene( pos, size, m_PlayerData[2].GetOrigin() );
 				break;
 			case 4:
-				size.x >>>= 1;
-				size.y >>>= 1;
+				size.x /= 2;
+				size.y /= 2;
 				RenderScene( pos, size, m_PlayerData[0].GetOrigin() );
 				
 				pos.x += size.x;
@@ -312,6 +318,8 @@ namespace TheNomad::SGame {
 				pos.x += size.x;
 				RenderScene( pos, size, m_PlayerData[3].GetOrigin() );
 				break;
+			default:
+				GameError( "SplitScreen::Init: in_numInputDevices is greater than 4 or less than 0" );
 			};
 		}
 		

@@ -106,6 +106,8 @@ namespace TheNomad::SGame {
 			return @poly;
 		}
 
+		void OnRenderScene() {
+		}
 
 		//
 		// FreeMarkPoly: only MarkPoly when its finished should ever call this, or AllocMarkPoly

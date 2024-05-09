@@ -429,7 +429,8 @@ int Module_IncludeCallback_f( const char *pInclude, const char *pFrom, CScriptBu
         pBuilder->AddSectionFromMemory( COM_SkipPath( const_cast<char *>( pInclude ) ), f.b, length );
         FS_FreeFile( f.v );
 
-        Con_Printf( "Added include file '%s' to '%s'\n", path, pFrom );
+        g_pModuleLib->GetScriptEngine()->WriteMessage( g_pModuleLib->GetCurrentHandle()->GetModulePath(),
+            0, 0, asMSGTYPE_INFORMATION, va( "Added include file \"%s\" to \"%s\"\n", path, pFrom ) );
         return 1;
     }
 
@@ -437,7 +438,7 @@ int Module_IncludeCallback_f( const char *pInclude, const char *pFrom, CScriptBu
 
     g_pModuleLib->GetScriptEngine()->WriteMessage(
         g_pModuleLib->GetCurrentHandle()->GetModulePath(),
-        0, 0, asMSGTYPE_WARNING, va( "failed to load include preprocessor file \"%s\"", pInclude ) );
+        0, 0, asMSGTYPE_WARNING, va( "failed to load include preprocessor file \"%s\" from \"%s\"", pInclude, pFrom ) );
     return -1;
 }
 
@@ -466,6 +467,8 @@ bool CModuleLib::AddDefaultProcs( void ) const {
 //      "void OnKeyEvent( uint key, uint down )" ) );
 //  CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
 //      "void OnMouseEvent( uint dx, uint dy )" ) );
+    CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
+        "void OnRenderScene()" ) );
     CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",
         "bool OnConsoleCommand( const string& in )" ) );
     CheckASCall( g_pModuleLib->GetScriptEngine()->RegisterInterfaceMethod( "GameObject",

@@ -27,7 +27,7 @@ namespace TheNomad::SGame {
 				return;
 			}
 
-//			m_SpriteData.Reserve( m_nSpriteCountX * m_nSpriteCountY );
+			m_SpriteData.Reserve( m_nSpriteCountX * m_nSpriteCountY );
 			for ( uint y = 0; y < m_nSpriteCountY; y++ ) {
 				for ( uint x = 0; x < m_nSpriteCountX; x++ ) {
 					m_SpriteData.Add( Sprite( ivec2( x, y ), sheetSize, spriteSize, m_hShader ) );
@@ -35,7 +35,6 @@ namespace TheNomad::SGame {
 			}
 			DebugPrint( "Generated " + m_SpriteData.size() + " sprites for '" + fileName + "'\n" );
 		}
-
 		const Sprite& opIndex( uint nIndex ) const {
 			return m_SpriteData[ nIndex ];
 		}

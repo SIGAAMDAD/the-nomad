@@ -2510,10 +2510,7 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_VAR( "const vec4 colorWhite", colorWhite );
         REGISTER_GLOBAL_VAR( "const vec4 colorGold", colorGold );
 
-        SET_NAMESPACE( "TheNomad::GameSystem" );
-        REGISTER_GLOBAL_VAR( "const TheNomad::GameSystem::DirType[] InverseDirs",
-            inversedirs );
-        RESET_NAMESPACE();
+        REGISTER_GLOBAL_VAR( "const TheNomad::GameSystem::DirType[] InverseDirs", inversedirs );
 
     #ifdef _NOMAD_DEBUG
         g_pModuleLib->GetScriptBuilder()->DefineWord( "NOMAD_DEBUG" );

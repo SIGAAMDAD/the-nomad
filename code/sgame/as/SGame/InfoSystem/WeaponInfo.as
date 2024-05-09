@@ -108,5 +108,6 @@ namespace TheNomad::SGame::InfoSystem {
 		int hIconShader = FS_INVALID_HANDLE;
 		TheNomad::Engine::SoundSystem::SoundEffect useSfx;
 		TheNomad::Engine::SoundSystem::SoundEffect pickupSfx;
+		TheNomad::Engine::SoundSystem::SoundEffect equipSfx;
 	};
 };

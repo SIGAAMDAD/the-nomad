@@ -51,6 +51,8 @@ namespace TheNomad::GameSystem {
 		}
 		void OnLevelEnd() {
 		}
+		void OnRenderScene() {
+		}
 		const string& GetName() const {
 			return "CampaignManager";
 		}

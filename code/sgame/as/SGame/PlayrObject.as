@@ -271,6 +271,9 @@ namespace TheNomad::SGame {
 		bool IsCrouching() const {
 			return m_State.GetID() == StateNum::ST_PLAYR_CROUCHING;
 		}
+		bool IsDoubleJumping() const {
+			return m_State.GetID() == StateNum::ST_PLAYR_DOUBLEJUMP;
+		}
 
 		void SetLegFacing( int facing ) {
 			m_LegsFacing = facing;
@@ -279,14 +282,10 @@ namespace TheNomad::SGame {
 		bool Load( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) override {
 			LoadBase( section );
 
-			m_PFlags = section.LoadUInt( "playrFlags" );
-
 			return true;
 		}
 		void Save( const TheNomad::GameSystem::SaveSystem::SaveSection& in section ) const {
 			SaveBase( section );
-
-			section.SaveUInt( "playrFlags", m_PFlags );
 		}
 		
 		float GetHealthMult() const {
@@ -299,7 +298,7 @@ namespace TheNomad::SGame {
 			return m_nRage;
 		}
 		
-		void Damage( float nAmount ) {
+		void Damage( EntityObject@ attacker, float nAmount ) {
 			if ( m_bEmoting ) {
 				return; // god has blessed thy soul...
 			}
@@ -310,47 +309,42 @@ namespace TheNomad::SGame {
 				if ( m_nFrameDamage > 0 ) {
 					return; // as long as you're hitting SOMETHING, you cannot die
 				}
-				dieSfx[ TheNomad::Util::PRandom() & dieSfx.Count() ].Play();
-				EntityManager.KillEntity( @this );
+				dieSfx[ Util::PRandom() & dieSfx.Count() ].Play();
+				EntityManager.KillEntity( @attacker, @this );
 				
-				TheNomad::Util::HapticRumble( 0.80f, 4000 );
+				Util::HapticRumble( ScreenData.GetPlayerIndex( @this ), 0.80f, 4000 );
 			} else {
-				painSfx[ TheNomad::Util::PRandom() & painSfx.Count() ].Play();
+				painSfx[ Util::PRandom() & painSfx.Count() ].Play();
 				
-				TheNomad::Util::HapticRumble( 0.50f, 300 );
+				Util::HapticRumble( ScreenData.GetPlayerIndex( @this ), 0.50f, 300 );
 			}
 		}
 		
 		WeaponObject@ GetCurrentWeapon() {
-			return @m_WeaponSlots[m_CurrentWeapon];
+			return @m_WeaponSlots[ m_CurrentWeapon ];
 		}
 		const WeaponObject@ GetCurrentWeapon() const {
-			return @m_WeaponSlots[m_CurrentWeapon];
+			return @m_WeaponSlots[ m_CurrentWeapon ];
 		}
 		
 		void Think() override {
-			ivec3 origin;
-			
 			if ( m_State.GetID() == StateNum::ST_PLAYR_QUICKSHOT ) {
 				m_QuickShot.Think();
 			}
 			
 			if ( m_bUseWeapon ) {
-				m_CurrentWeapon.Use( cast<EntityObject@>( @this ), GetCurrentWeaponMode() );
-			} else if ( m_bUseAltWeapon ) {
-				m_CurrentWeapon.UseAlt( cast<EntityObject@>( @this ), GetCurrentWeaponMode() );
+				m_CurrentWeapon.Use( @cast<EntityObject@>( @this ), uint( GetCurrentWeaponMode() ) );
+			} else if ( m_bAltUseWeapon ) {
+				m_CurrentWeapon.UseAlt( @cast<EntityObject@>( @this ), uint( GetCurrentWeaponMode() ) );
 			}
-			
-			for ( uint i = 0; i < 3; i++ ) {
-				origin[i] = int( floor( m_Link.m_Origin[i] ) );
-			}
+		
 			
 			// run a movement frame
 			Pmove.RunTic();
 
 			if ( m_nHealth <= 15.0f ) {
 				// if there's another haptic going on, we don't want to annihilate their hands
-				TheNomad::Util::HapticRumble( 0.	50f, 1000 );
+				Util::HapticRumble( ScreenData.GetPlayerIndex( @this ), 0.50f, 1000 );
 			}
 
 			if ( m_nHealth < 100.0f ) {
@@ -409,7 +403,7 @@ namespace TheNomad::SGame {
 			}
 			
 			// add in the haptic
-			TheNomad::Engine::CmdExecuteCommand( "in_haptic_rumble 0.8 500" );
+			Util::HapticRumble( ScreenData.GetPlayerIndex( @this ), 0.80f, 500 );
 			
 			// add the fireball
 			GfxManager.AddExplosionGfx( vec3( m_Link.m_Origin.x + GetGfxDirection(), m_Link.m_Origin.y, m_Link.m_Origin.z ) );
@@ -484,7 +478,7 @@ namespace TheNomad::SGame {
 			// draw the legs
 			//
 			hLegSprite = m_LegsFacing;
-			if ( m_Velocity == vec3( 0.0f ) ) {
+			if ( m_PhysicsObject.GetVelocity() == Vec3Origin ) {
 				// not moving at all, just draw idle legs
 				if ( !Pmove.groundPlane ) {
 					// static air legs
@@ -496,7 +490,7 @@ namespace TheNomad::SGame {
 			}
 			else if ( !Pmove.groundPlane ) {
 				// we're in the air, modify the legs to show a bit of momentum control
-				if ( m_Velocity.z < 0.0f ) {
+				if ( _PhysicsObject.GetVelocity().z < 0.0f ) {
 					// falling down
 					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_FALL_AIR );
 				}
@@ -506,7 +500,7 @@ namespace TheNomad::SGame {
 				}
 				else {
 					// ascending
-					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_ASCENDING );
+					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_IDLE_AIR );
 				}
 			}
 			else {
@@ -520,7 +514,7 @@ namespace TheNomad::SGame {
 			
 			hLegSprite = m_LegState.GetSpriteOffset().y * m_LegSpriteSheet.GetSpriteCount().x +
 				m_LegState.GetSpriteOffset().x + m_LegState.GetAnimation().GetFrame() + m_LegsFacing;
-			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, m_SpriteSheet.GetHandle(),
+			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, m_SpriteSheet.GetShader(),
 				m_SpriteSheet[ hLegSprite ] );
 		}
 		
@@ -553,10 +547,11 @@ namespace TheNomad::SGame {
 		private TheNomad::Engine::SoundSystem::SoundEffect counterParrySfx;
 		TheNomad::Engine::SoundSystem::SoundEffect beginQuickshotSfx;
 		TheNomad::Engine::SoundSystem::SoundEffect endQuickshotSfx;
-		TheNomad::Engine::SoundSystem::SoundEffect beginSlideSfx;
+		TheNomad::Engine::SoundSystem::SoundEffect beginSlidingSfx;
 		TheNomad::Engine::SoundSystem::SoundEffect crouchDownSfx;
 		TheNomad::Engine::SoundSystem::SoundEffect crouchUpSfx;
 		TheNomad::Engine::SoundSystem::SoundEffect dashSfx;
+		TheNomad::Engine::SoundSystem::SoundEffect weaponFancySfx;
 		private TheNomad::Engine::SoundSystem::SoundEffect[] painSfx( 3 );
 		private TheNomad::Engine::SoundSystem::SoundEffect[] dieSfx( 3 );
 

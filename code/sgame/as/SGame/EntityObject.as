@@ -1,6 +1,7 @@
 #include "SGame/EntityState.as"
-#include "SGame/StateSystem.as"
+#include "SGame/EntityStateSystem.as"
 #include "SGame/PlayrObject.as"
+#include "Engine/Physics/PhysicsObject.as"
 
 namespace TheNomad::SGame {
     class EntityObject {
@@ -20,7 +21,7 @@ namespace TheNomad::SGame {
 		// getters
 		//
 		float GetAngle() const {
-			return m_nAngle;
+			return m_PhysicsObject.GetAngle();
 		}
 		float GetHealth() const {
 			return m_nHealth;
@@ -49,7 +50,7 @@ namespace TheNomad::SGame {
 		uint GetEntityNum() const {
 			return m_Link.m_nEntityNumber;
 		}
-		const TheNomad::GameSystem::BBox& GetBounds() const {
+		TheNomad::GameSystem::BBox& GetBounds() {
 			return m_Link.m_Bounds;
 		}
 		const TheNomad::GameSystem::LinkEntity& GetLink() const {
@@ -68,10 +69,10 @@ namespace TheNomad::SGame {
 			return m_Link.m_Origin;
 		}
 		const vec3& GetVelocity() const {
-			return m_Velocity;
+			return m_PhysicsObject.GetVelocity();
 		}
 		vec3& GetVelocity() {
-			return m_Velocity;
+			return m_PhysicsObject.GetVelocity();
 		}
 		TheNomad::GameSystem::EntityType GetType() const {
 			return TheNomad::GameSystem::EntityType( m_Link.m_nEntityType );
@@ -92,8 +93,9 @@ namespace TheNomad::SGame {
 		void SetHealth( float nHealth ) {
 			m_nHealth = nHealth;
 		}
-		void SetState( uint statenum ) {
-			
+		void SetState( StateNum stateNum ) {
+			@m_State = @StateManager.GetStateForNum( stateNum );
+			m_State.Reset();
 		}
 		void SetState( EntityState@ state ) {
 			@m_State = @state;
@@ -106,7 +108,7 @@ namespace TheNomad::SGame {
 			m_bProjectile = bProjectile;
 		}
 		void SetVelocity( const vec3& in vel ) {
-			m_Velocity = vel;
+			m_PhysicsObject.SetVelocity( vel );
 		}
 		void SetOrigin( const vec3& in origin ) {
 			m_Link.m_Origin = origin;
@@ -124,24 +126,17 @@ namespace TheNomad::SGame {
 
 		protected void LoadBase( const TheNomad::GameSystem::SaveSystem::LoadSection& in section ) {
 			m_Link.m_Origin = section.LoadVec3( "origin" );
-			m_nHealth = section.LoadFloat( "health" );
+			m_Link.m_nEntityId = section.LoadUInt( "id" );
+			m_Link.m_nEntityType = TheNomad::GameSystem::EntityType( section.LoadUInt( "type" ) );
 			m_Flags = EntityFlags( section.LoadUInt( "flags" ) );
-			m_nAngle = section.LoadFloat( "angle" );
-			m_Facing = section.LoadInt( "torsoFacing" );
-			m_Direction = TheNomad::GameSystem::DirType( section.LoadUInt( "direction" ) );
-			m_bProjectile = Convert().ToBool( section.LoadUInt( "isProjectile" ) );
+			m_bProjectile = section.LoadBool( "isProjectile" );
 		}
 
 		protected void SaveBase( const TheNomad::GameSystem::SaveSystem::SaveSection& in section ) const {
-			section.SaveVec3( "origin", m_Link.m_Origin );
-			section.SaveFloat( "health", m_nHealth );
 			section.SaveUInt( "flags", uint( m_Flags ) );
-			section.SaveFloat( "angle", m_nAngle );
-			section.SaveInt( "torsoFacing", m_Facing );
-			section.SaveUInt( "direction", uint( m_Direction ) );
-			section.SaveUInt( "isProjectile", Convert().ToUInt( m_bProjectile ) );
 			section.SaveUInt( "type", uint( m_Link.m_nEntityType ) );
 			section.SaveUInt( "id",  m_Link.m_nEntityId );
+			section.SaveBool( "isProjectile", m_bProjectile );
 		}
 		
 		//
@@ -155,7 +150,7 @@ namespace TheNomad::SGame {
 		void Save( const TheNomad::GameSystem::SaveSystem::SaveSection& in section ) const {
 			ConsoleWarning( "EntityObject::Save: callled\n" );
 		}
-		void Damage( float nAmount ) {
+		void Damage( EntityObject@ attacker, float nAmount ) {
 			ConsoleWarning( "EntityObject::Damage: called\n" );
 		}
 		void Think() {
@@ -173,19 +168,19 @@ namespace TheNomad::SGame {
 		bool CheckFlags( uint flags ) const {
 			return ( m_Flags & flags ) != 0;
 		}
-		
-		// the entity's current state
-		protected EntityState@ m_State = null;
-		
+
+		// mostly meant for debugging
+		protected string m_Name;
+
+		// used for physics in the modules
+		protected TheNomad::Engine::Physics::PhysicsObject m_PhysicsObject;
+
 		// engine data, for physics
 		protected TheNomad::GameSystem::LinkEntity m_Link;
 		
-		// mostly meant for debugging
-		protected string m_Name;
-		
-		// need for speed
-		protected vec3 m_Velocity = vec3( 0.0f );
-		
+		// the entity's current state
+		protected EntityState@ m_State = null;
+				
 		// current effect the entity's suffereing from
 		protected AttackEffect m_Debuff = AttackEffect::None;
 		
@@ -195,8 +190,6 @@ namespace TheNomad::SGame {
 		// flags, some are specific
 		protected EntityFlags m_Flags = EntityFlags::None;
 		
-		// angle's really only used for telling direction
-		protected float m_nAngle = 0.0f;
 		protected TheNomad::GameSystem::DirType m_Direction = TheNomad::GameSystem::DirType::North;
 		
 		// is it a projectile?

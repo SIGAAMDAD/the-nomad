@@ -827,7 +827,7 @@ qboolean BoundsIntersect( const bbox_t *a, const bbox_t *b )
 		a->maxs[2] < b->mins[2] ||
 		a->mins[0] > b->maxs[0] ||
 		a->mins[1] > b->maxs[1] ||
-		a->mins[2] > b->maxs[2])
+		a->mins[2] > b->maxs[2] )
 	{
 		return qfalse;
 	}

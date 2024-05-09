@@ -43,13 +43,13 @@ const bbox_t CModuleBoundBox::ToPOD( void ) const {
 }
 
 void CModuleBoundBox::MakeBounds( const glm::vec3& origin ) {
-    mins[0] = origin[0] - height;
-	mins[1] = origin[1] - width;
-	mins[2] = origin[2];
+    mins[0] = origin[0] - ( width / 2 );
+	mins[1] = origin[1] - ( height / 2 );
+	mins[2] = origin[2] + ( height / 2 );
 
-	maxs[0] = origin[0] + height;
-	maxs[1] = origin[1] + width;
-	maxs[2] = origin[2];
+	maxs[0] = origin[0] + ( width / 2 );
+	maxs[1] = origin[1] + ( height / 2 );
+	maxs[2] = origin[2] + ( height / 2 );
 }
 
 #endif
