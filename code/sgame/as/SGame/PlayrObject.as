@@ -119,15 +119,15 @@ namespace TheNomad::SGame {
 				}
 			}
 		}
-		uint GetCurrentWeaponMode() const {
+		InfoSystem::WeaponProperty GetCurrentWeaponMode() {
 			switch ( m_nHandsUsed ) {
 			case 0:
-				return uint( m_LeftHandMode );
+				return m_LeftHandMode;
 			case 1:
 			case 2:
-				return uint( m_RightHandMode );
+				return m_RightHandMode;
 			};
-			return 0;
+			return InfoSystem::WeaponProperty::None;
 		}
 		
 		//
@@ -331,11 +331,11 @@ namespace TheNomad::SGame {
 			if ( m_State.GetID() == StateNum::ST_PLAYR_QUICKSHOT ) {
 				m_QuickShot.Think();
 			}
-			
+
 			if ( m_bUseWeapon ) {
-				m_CurrentWeapon.Use( @cast<EntityObject@>( @this ), uint( GetCurrentWeaponMode() ) );
+				GetCurrentWeapon().Use( cast<EntityObject@>( @this ), GetCurrentWeaponMode() );
 			} else if ( m_bAltUseWeapon ) {
-				m_CurrentWeapon.UseAlt( @cast<EntityObject@>( @this ), uint( GetCurrentWeaponMode() ) );
+				GetCurrentWeapon().UseAlt( cast<EntityObject@>( @this ), GetCurrentWeaponMode() );
 			}
 		
 			
@@ -397,7 +397,7 @@ namespace TheNomad::SGame {
 					}
 					
 					// TODO: make dead mobs with ANY velocity flying corpses
-					EntityManager.DamageEntity( @this, @ent );
+					EntityManager.DamageEntity( cast<EntityObject@>( @this ), @ent );
 					parrySfx.Play();
 				}
 			}
@@ -421,15 +421,15 @@ namespace TheNomad::SGame {
 				if ( entList[i].GetType() != TheNomad::GameSystem::EntityType::Mob ) {
 					continue;
 				}
-				
-				const vec2 detection = vec2( mob.GetInfo().detectionRangeX, mob.GetInfo().detectionRangeY );
-				
 				MobObject@ mob = cast<MobObject@>( @entList[i] );
+				InfoSystem::MobInfo@ info = cast<InfoSystem::MobInfo@>( @mob.GetInfo() );
+				const vec3 detection = vec3( float( info.detectionRangeX ), float( info.detectionRangeY ), 0.0f );
 				const float dist = Util::Distance( mob.GetOrigin(), m_Link.m_Origin );
-				if ( dist < detection.length() ) {
+
+				if ( dist < Util::VectorLength( detection ) ) {
 					// is there a wall there?
 					TheNomad::GameSystem::RayCast ray;
-					const vec3& origin = mob.GetOrigin();
+					const vec3 origin = mob.GetOrigin();
 					
 					ray.m_nLength = dist;
 					ray.m_nAngle = atan2( ( origin.x - m_Link.m_Origin.x ), ( origin.y - m_Link.m_Origin.y ) );
@@ -471,8 +471,8 @@ namespace TheNomad::SGame {
 		void Draw() override {
 			int hLegSprite = FS_INVALID_HANDLE;
 			
-			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, m_SpriteSheet.GetHandle(),
-				m_SpriteSheet[ m_State.GetSpriteOffset().y * m_State.GetSpriteOffset().x + m_State.GetAnimation().GetFrame() + m_Facing ] );
+			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, m_SpriteSheet.GetShader(), m_State.GetSpriteOffset().y
+				* m_SpriteSheet.GetSpriteCountX() + m_State.GetSpriteOffset().x + m_State.GetAnimation().GetFrame() + m_Facing );
 			
 			//
 			// draw the legs
@@ -490,7 +490,7 @@ namespace TheNomad::SGame {
 			}
 			else if ( !Pmove.groundPlane ) {
 				// we're in the air, modify the legs to show a bit of momentum control
-				if ( _PhysicsObject.GetVelocity().z < 0.0f ) {
+				if ( m_PhysicsObject.GetVelocity().z < 0.0f ) {
 					// falling down
 					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_FALL_AIR );
 				}
@@ -512,10 +512,9 @@ namespace TheNomad::SGame {
 				}
 			}
 			
-			hLegSprite = m_LegState.GetSpriteOffset().y * m_LegSpriteSheet.GetSpriteCount().x +
+			hLegSprite = m_LegState.GetSpriteOffset().y * m_LegSpriteSheet.GetSpriteCountX() +
 				m_LegState.GetSpriteOffset().x + m_LegState.GetAnimation().GetFrame() + m_LegsFacing;
-			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, m_SpriteSheet.GetShader(),
-				m_SpriteSheet[ hLegSprite ] );
+			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, m_SpriteSheet.GetShader(), hLegSprite );
 		}
 		
 		KeyBind key_MoveNorth, key_MoveSouth, key_MoveEast, key_MoveWest;

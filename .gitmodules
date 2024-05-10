@@ -34,3 +34,6 @@
 [submodule "deps/asmjit"]
 	path = deps/asmjit
 	url = https://github.com/asmjit/asmjit.git
+[submodule "deps/asaot"]
+	path = deps/asaot
+	url = https://github.com/quarnster/asaot.git

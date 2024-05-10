@@ -13,7 +13,7 @@ namespace TheNomad::SGame {
 		verts[3].xyz = vec3( origin.x, origin.y, 0.0f );
 
 		for ( uint i = 0; i < 4; i++ ) {
-			verts[i].uv = sheet[offset.y * sheet.SpriteCountX() + offset.x][i];
+			verts[i].uv = sheet[offset.y * sheet.GetSpriteCountX() + offset.x][i];
 		}
 
 		TheNomad::Engine::Renderer::AddPolyToScene( sheet.GetShader(), verts );

@@ -62,7 +62,7 @@ namespace TheNomad::SGame {
 		TheNomad::GameSystem::DirType GetDirection() const {
 			return m_Direction;
 		}
-		const InfoSystem::InfoLoader@ GetInfo() const {
+		InfoSystem::InfoLoader@ GetInfo() {
 			return @m_InfoData;
 		}
 		const vec3& GetOrigin() const {
@@ -118,6 +118,9 @@ namespace TheNomad::SGame {
 		}
 		void SetFacing( int facing ) {
 			m_Facing = facing;
+		}
+		void SetAngle( float nAngle ) {
+			m_PhysicsObject.SetAngle( nAngle );
 		}
 
 		//
@@ -199,7 +202,7 @@ namespace TheNomad::SGame {
 		protected int m_Facing = 0;
 		
 		// cached info
-		protected const InfoSystem::InfoLoader@ m_InfoData = null;
+		protected InfoSystem::InfoLoader@ m_InfoData = null;
 		
 		//
 		// renderer data

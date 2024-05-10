@@ -468,20 +468,12 @@ namespace TheNomad::SGame {
 		// DamageEntity: entity v entity
 		// NOTE: damage is only ever used when calling from a WeaponObject
 		//
-		void DamageEntity( EntityObject@ attacker, TheNomad::GameSystem::RayCast@ rayCast, float damage = 1.0f ) {
-			if ( @rayCast is null ) {
-				return;
-			} else if ( rayCast.m_nEntityNumber == ENTITYNUM_INVALID || rayCast.m_nEntityNumber == ENTITYNUM_WALL ) {
-				return; // got nothing
-			}
-			
+		void DamageEntity( EntityObject@ attacker, EntityObject@ target, float damage = 1.0f ) {
 			switch ( attacker.GetType() ) {
 			case TheNomad::GameSystem::EntityType::Mob: {
-				m_EntityList[ rayCast.m_nEntityNumber ].Damage( @attacker, cast<MobObject@>( @attacker ).GetCurrentAttack().damage );
+				target.Damage( @attacker, cast<MobObject@>( @attacker ).GetCurrentAttack().damage );
 				break; }
 			case TheNomad::GameSystem::EntityType::Playr: {
-				EntityObject@ target = @m_EntityList[ rayCast.m_nEntityNumber ];
-				
 				target.Damage( @attacker, damage );
 				if ( target.GetType() == TheNomad::GameSystem::EntityType::Bot ) {
 					// TODO: calculate collateral damage here
@@ -494,10 +486,19 @@ namespace TheNomad::SGame {
 				GameError( "EntitySystem::Damage: invalid entity type " + uint( attacker.GetType() ) );
 			};
 		}
+		void DamageEntity( EntityObject@ attacker, TheNomad::GameSystem::RayCast@ rayCast, float damage = 1.0f ) {
+			if ( @rayCast is null ) {
+				return;
+			} else if ( rayCast.m_nEntityNumber == ENTITYNUM_INVALID || rayCast.m_nEntityNumber == ENTITYNUM_WALL ) {
+				return; // got nothing
+			}
+
+			DamageEntity( @attacker, @m_EntityList[ rayCast.m_nEntityNumber ], damage );
+		}
+
 		void SetPlayerObject( PlayrObject@ obj ) {
 			@m_PlayrObject = @obj;
 		}
-
 		PlayrObject@ GetPlayerObject() {
 			return @m_PlayrObject;
 		}

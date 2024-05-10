@@ -134,7 +134,7 @@ namespace TheNomad::SGame {
 		//
 		// WeaponObject::Use: returns the amount of damage dealt
 		//
-		float Use( EntityObject@ ent, uint weaponMode ) {
+		float Use( EntityObject@ ent, const uint weaponMode ) {
 			float damage;
 			
 			damage = m_Info.damage;
@@ -167,7 +167,7 @@ namespace TheNomad::SGame {
 			
 			return 0.0f;
 		}
-		float UseAlt( EntityObject@ ent ) {
+		float UseAlt( EntityObject@ ent, uint weaponMode ) {
 			float damage = 0.0f;
 
 			return damage;

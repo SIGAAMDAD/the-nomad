@@ -45,14 +45,16 @@ namespace TheNomad::SGame {
 		const vec2& GetSpriteSize() const {
 			return m_SpriteSize;
 		}
-
+		uint GetSpriteCount() const {
+			return m_nSpriteCountX * m_nSpriteCountY;
+		}
 		int GetShader() const {
 			return m_hShader;
 		}
-		uint SpriteCountX() const {
+		uint GetSpriteCountX() const {
 			return m_nSpriteCountX;
 		}
-		uint SpriteCountY() const {
+		uint GetSpriteCountY() const {
 			return m_nSpriteCountY;
 		}
 

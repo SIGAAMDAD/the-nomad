@@ -148,6 +148,8 @@ void InitCvars() {
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_ToggleHUD, "sgame_ToggleHUD", "1", CVAR_SAVE, true );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_Friction, "sgame_Friction", "0.05", CVAR_TEMP, true );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_Gravity, "sgame_Gravity", "0.9", CVAR_TEMP, true );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_PlayerWidth, "sgame_PlayerWidth", "1.0", CVAR_TEMP, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_PlayerHeight, "sgame_PlayerHeight", "1.0", CVAR_TEMP, false );
 }
 
 int ModuleOnInit() {
@@ -187,6 +189,8 @@ int ModuleOnInit() {
 	TheNomad::SGame::InfoSystem::InfoManager.LoadItemInfos();
 	TheNomad::SGame::InfoSystem::InfoManager.LoadAmmoInfos();
 	TheNomad::SGame::InfoSystem::InfoManager.LoadWeaponInfos();
+
+	TheNomad::SGame::ScreenData.Init();
 
 	TheNomad::SGame::InitCheatCodes();
 

@@ -54,7 +54,7 @@ namespace TheNomad::SGame {
 			ConsolePrint( "Name: " + m_Name + "\n" );
 			ConsolePrint( "Tics: " + formatUInt( m_nTics ) + "\n" );
 			ConsolePrint( "Id: " + formatUInt( m_nStateNum ) + "\n" );
-			ConsolePrint( "Sprite Offset: [" + m_nSpriteOffset.x + ", " + m_nSpriteOffset.y + "]\n" );
+			ConsolePrint( "Sprite Offset: [" + m_SpriteOffset.x + ", " + m_SpriteOffset.y + "]\n" );
 		}
 		uint GetID() const {
 			return m_nStateNum;
@@ -64,7 +64,7 @@ namespace TheNomad::SGame {
 			m_nTicker = m_nTics;
 		}
 		
-		const uvec2& SpriteOffset() const {
+		const uvec2& GetSpriteOffset() const {
 			return m_SpriteOffset;
 		}
 		bool Done() const {
@@ -83,6 +83,9 @@ namespace TheNomad::SGame {
 		}
 		EntityState@ Cycle() {
 			return m_NextState;
+		}
+		Animation@ GetAnimation() {
+			return @m_Animation;
 		}
 		void SetAnimation( Animation@ anim ) {
 			@m_Animation = @anim;
