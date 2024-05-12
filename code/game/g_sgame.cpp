@@ -64,7 +64,7 @@ qboolean G_SGameCommand( void )
 {
     qboolean bRes;
 
-    if ( !sgvm || gi.state != GS_LEVEL ) {
+    if ( !sgvm ) {
         return qfalse;
     }
 

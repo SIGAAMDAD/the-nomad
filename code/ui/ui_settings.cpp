@@ -154,11 +154,11 @@ static settingsMenu_t *s_settingsMenu;
 static settingsMenu_t *s_initial;
 
 static const bind_t s_defaultKeybinds[NUMKEYBINDS] = {
-	{ "+northmove", "move north", ID_MOVENORTH, KEY_W, -1, -1, -1 },
-	{ "+westmove", "move west", ID_MOVEWEST, KEY_A, -1, -1, -1 },
-	{ "+southmove", "move south", ID_MOVESOUTH, KEY_S, -1, -1, -1 },
-	{ "+eastmove", "move east", ID_MOVEEAST, KEY_D, -1, -1, -1 },
-	{ "+upmove", "jump", ID_UPMOVE, KEY_SPACE, -1, -1, -1 },
+	{ "+north", "move north", ID_MOVENORTH, KEY_W, -1, -1, -1 },
+	{ "+west", "move west", ID_MOVEWEST, KEY_A, -1, -1, -1 },
+	{ "+south", "move south", ID_MOVESOUTH, KEY_S, -1, -1, -1 },
+	{ "+east", "move east", ID_MOVEEAST, KEY_D, -1, -1, -1 },
+	{ "+jump", "jump", ID_UPMOVE, KEY_SPACE, -1, -1, -1 },
 	{ "weaponnext", "next weapon", ID_WEAPONNEXT, KEY_WHEEL_DOWN, -1, -1, -1 },
 	{ "weaponprev", "prev weapon", ID_WEAPONPREV, KEY_WHEEL_UP, -1, -1, -1 },
 	{ "+useweapon", "use weapon", ID_USEWEAPON, KEY_MOUSE_LEFT, -1, -1, -1 },

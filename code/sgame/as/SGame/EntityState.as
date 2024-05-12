@@ -56,6 +56,17 @@ namespace TheNomad::SGame {
 					GameError( "invalid state info, Entity \"" + base + "\" doesn't exist" );
 				}
 			}
+			if ( data.get( "NextState", base ) ) {
+				if ( Util::StrICmp( base, "this" ) == 0 ) {
+					// this is a flip-flop state
+					@m_NextState = @this;
+				} else {
+					@m_NextState = @StateManager.GetStateById( base );
+					if ( @m_NextState is null ) {
+						GameError( "invalid state info, variable NextState \"" + base + "\" isn't a valid state" );
+					}
+				}
+			}
 			if ( !data.get( "BaseNum", base ) ) {
 				ConsoleWarning( "invalid state info, missing variable 'BaseNum'\n" );
 				return false;
@@ -63,8 +74,17 @@ namespace TheNomad::SGame {
 				if ( !StateManager.GetBaseStateCache().TryGetValue( base, m_nStateNum ) ) {
 					GameError( "invalid state info, variable BaseNum \"" + base + "\" isn't a valid state" );
 				}
-				ConsolePrint( "State \"" + m_Name + "\" registered with ID " + m_nStateNum + " and offset of " + m_nStateOffset + "\n" );
 			}
+
+			if ( @m_NextState is null ) {
+				@m_NextState = @StateManager.GetStateForNum( ( m_nStateNum + m_nStateOffset ) + 1 );
+			}
+			if ( @m_NextState is null ) {
+				ConsoleWarning( "EntityState::Load: next state is null\n" );
+			}
+
+			ConsolePrint( "State \"" + m_Name + "\" registered with ID " + m_nStateNum + " and offset of " + m_nStateOffset +
+				", with next state \"" + m_NextState.m_Name + "\"\n" );
 
 			return true;
 		}

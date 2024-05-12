@@ -119,6 +119,10 @@ namespace TheNomad::SGame {
 		void OnInit() {
 			uint i;
 
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.ListStateCache_f ), "sgame.state_cache", false
+			);
+
 			InitBaseStateCache();
 
 			ConsolePrint( "Loading state data...\n" );

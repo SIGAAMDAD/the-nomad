@@ -8,18 +8,15 @@ namespace TheNomad::Engine::CommandSystem {
     class Command {
         Command() {
         }
-        Command( const string& in name, CommandFunc@ fn ) {
+        Command( const string& in name, CommandFunc@ fn, bool isLevelCommand ) {
             m_Name = name;
             @m_Function = @fn;
-        }
-        Command( const string& in name, TheNomad::GameSystem::GameObject@ obj ) {
-            m_Name = name;
-            @m_GameObject = @obj;
+            m_bLevelCommand = isLevelCommand;
         }
 
         string m_Name;
         CommandFunc@ m_Function = null;
-        TheNomad::GameSystem::GameObject@ m_GameObject = null;
+        bool m_bLevelCommand = false;
     };
 
     class CommandManager {
@@ -36,32 +33,22 @@ namespace TheNomad::Engine::CommandSystem {
 
         bool CheckCommand( const string& in name ) const {
             for ( uint i = 0; i < m_CommandList.Count(); i++ ) {
-                if ( Util::StrICmp( name, m_CommandList[i].m_Name ) == 0 ) {
+                if ( name == m_CommandList[i].m_Name ) {
+                    if ( m_CommandList[i].m_bLevelCommand && TheNomad::SGame::GlobalState != TheNomad::SGame::GameState::InLevel ) {
+                        continue;
+                    }
                     m_CommandList[i].m_Function();
                     return true;
                 }
             }
             return false;
         }
-        bool CheckGameCommand( const string& in name ) const {
-            for ( uint i = 0; i < m_CommandList.Count(); i++ ) {
-                if ( @m_CommandList[i].m_GameObject !is null && m_CommandList[i].m_GameObject.OnConsoleCommand( name ) ) {
-                    return true;
-                }
-            }
-            return false;
-        }
 
-        void AddCommand( CommandFunc@ fn, const string& in name ) {
-            m_CommandList.Add( Command( name, @fn ) );
+        void AddCommand( CommandFunc@ fn, const string& in name, bool levelCommand ) {
+            m_CommandList.Add( Command( name, @fn, levelCommand ) );
             TheNomad::Engine::CmdAddCommand( name );
             DebugPrint( "Added SGame command \"" + name + "\".\n" );
         }
-//        void AddCommand( TheNomad::GameSystem::GameObject@ obj, const string& in name ) {
-//            m_CommandList.Add( Command( name, @obj ) );
-//            TheNomad::Engine::CmdAddCommand( name );
-//            DebugPrint( "Added GameObject command \"" + name + "\".\n" );
-//        }
 
         private array<Command> m_CommandList;
     };

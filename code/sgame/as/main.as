@@ -191,6 +191,7 @@ int ModuleOnInit() {
 	TheNomad::SGame::InfoSystem::InfoManager.LoadWeaponInfos();
 
 	TheNomad::SGame::InitCheatCodes();
+	TheNomad::SGame::ScreenData.Init();
 
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnInit();
@@ -222,9 +223,8 @@ int ModuleOnShutdown() {
 int ModuleOnConsoleCommand() {
 	const string cmd = TheNomad::Engine::CmdArgv( 0 );
 
-	if ( TheNomad::Engine::CommandSystem::CmdManager.CheckGameCommand( cmd )
-		|| TheNomad::Engine::CommandSystem::CmdManager.CheckCommand( cmd ) )
-	{
+	DebugPrint( "Checking for command \"" + cmd + "\"...\n" );
+	if ( TheNomad::Engine::CommandSystem::CmdManager.CheckCommand( cmd ) ) {
 		return 1;
 	}
 
@@ -254,7 +254,7 @@ int ModuleOnLevelStart() {
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLevelStart();
 	}
-	TheNomad::SGame::ScreenData.Init();
+	TheNomad::SGame::ScreenData.InitPlayers();
 	return 1;
 }
 

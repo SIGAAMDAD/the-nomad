@@ -99,6 +99,10 @@ namespace TheNomad::SGame {
 		}
 		void SetState( EntityState@ state ) {
 			@m_State = @state;
+			if ( @m_State is null ) {
+				ConsoleWarning( "null state\n" );
+				return;
+			}
 			m_State.Reset();
 		}
 		void SetFlags( uint flags ) {
