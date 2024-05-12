@@ -25,10 +25,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <SDL2/SDL.h>
 #include "../game/g_game.h"
 #ifdef USE_OPENGL_API
-#include "rgl_local.h"
+#include "../rendergl/rgl_local.h"
+#include "../rendergl/stb_image.h"
 #endif
 #ifdef USE_VULKAN_API
-#include "rvk_local.h"
+#include "../rendervk/rvk_local.h"
+#include "../rendervk/stb_image.h"
 #endif
 
 

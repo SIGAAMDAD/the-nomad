@@ -22,11 +22,14 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "../engine/n_shared.h"
 #include "../rendercommon/r_public.h"
+#include "../game/g_game.h"
 #ifdef USE_OPENGL_API
-#include "rgl_local.h"
+#include "../rendergl/rgl_local.h"
+#include "../rendergl/stb_image.h"
 #endif
 #ifdef USE_VULKAN_API
-#include "rvk_local.h"
+#include "../rendervk/rvk_local.h"
+#include "../rendervk/stb_image.h"
 #endif
 
 typedef struct {
@@ -119,35 +122,29 @@ void R_LoadBMP( const char *name, byte **pic, int *width, int *height, int *chan
 	bmpHeader.importantColors = LittleLong( * ( int * ) buf_p );
 	buf_p += 4;
 
-	if ( bmpHeader.bitsPerPixel == 8 )
-	{
-		if (buf_p + sizeof(bmpHeader.palette) > end)
+	if ( bmpHeader.bitsPerPixel == 8 ) {
+		if ( buf_p + sizeof( bmpHeader.palette ) > end ) {
 			ri.Error( ERR_DROP, "LoadBMP: header too short (%s)", name );
-
+		}
 		memcpy( bmpHeader.palette, buf_p, sizeof( bmpHeader.palette ) );
 	}
 
-	if (buffer.b + bmpHeader.bitmapDataOffset > end)
-	{
+	if ( buffer.b + bmpHeader.bitmapDataOffset > end ) {
 		ri.Error( ERR_DROP, "LoadBMP: invalid offset value in header (%s)", name );
 	}
 
 	buf_p = buffer.b + bmpHeader.bitmapDataOffset;
 
-	if ( bmpHeader.id[0] != 'B' && bmpHeader.id[1] != 'M' ) 
-	{
+	if ( bmpHeader.id[0] != 'B' && bmpHeader.id[1] != 'M' )  {
 		ri.Error( ERR_DROP, "LoadBMP: only Windows-style BMP files supported (%s)", name );
 	}
-	if ( bmpHeader.fileSize != (unsigned int)length )
-	{
+	if ( bmpHeader.fileSize != (unsigned int)length ) {
 		ri.Error( ERR_DROP, "LoadBMP: header size does not match file size (%u vs. %lu) (%s)", bmpHeader.fileSize, length, name );
 	}
-	if ( bmpHeader.compression != 0 )
-	{
+	if ( bmpHeader.compression != 0 ) {
 		ri.Error( ERR_DROP, "LoadBMP: only uncompressed BMP files supported (%s)", name );
 	}
-	if ( bmpHeader.bitsPerPixel < 8 )
-	{
+	if ( bmpHeader.bitsPerPixel < 8 ) {
 		ri.Error( ERR_DROP, "LoadBMP: monochrome and 4-bit BMP files not supported (%s)", name );
 	}
 

@@ -29,7 +29,7 @@ VERSION_DEFINE=-D_NOMAD_VERSION=$(VERSION) -D_NOMAD_VERSION_UPDATE=$(VERSION_UPD
 
 .PHONY: all clean
 
-DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -DGDR_DLLCOMPILE -Werror=implicit-function-declaration -Werror=incompatible-pointer-types -D_NOMAD_ENGINE -DHQ_BLUR
+DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -DUSE_OPENGL_API -DGDR_DLLCOMPILE -Werror=implicit-function-declaration -Werror=incompatible-pointer-types -D_NOMAD_ENGINE -DHQ_BLUR
 OPTIMIZERS    =\
 				-fexpensive-optimizations \
 				-funroll-loops \
@@ -73,6 +73,7 @@ INTERNAL_OBJS=\
 	$(O)/rendergl/r_image_pcx.o \
 	$(O)/rendergl/r_image_png.o \
 	$(O)/rendergl/r_image_tga.o \
+	$(O)/rendergl/r_image_webp.o \
 	$(O)/rendergl/r_noise.o \
 	$(O)/rendergl/n_shared.o \
 	$(O)/rendergl/n_math.o \
@@ -86,7 +87,7 @@ $(O)/rendergl/%.o: $(SDIR)/rendercommon/%.c
 	$(CC) $(CFLAGS) -shared -fPIC -o $@ -c $<
 
 $(LIB): $(INTERNAL_OBJS)
-	$(CC) $(CFLAGS) $(INTERNAL_OBJS) -shared -fPIC -o $(LIB) -lm
+	$(CC) $(CFLAGS) $(INTERNAL_OBJS) -shared -fPIC -o $(LIB) -lm -lwebp
 
 clean:
 	rm -rf $(INTERNAL_OBJS)

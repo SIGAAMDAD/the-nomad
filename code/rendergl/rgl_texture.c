@@ -2285,8 +2285,7 @@ texture_t *R_CreateImage( const char *name, byte *pic, int width, int height, im
 // Prototype for dds loader function which isn't common to both renderers
 void R_LoadDDS(const char *filename, byte **pic, uint32_t *width, uint32_t *height, GLenum *picFormat, uint32_t *numMips);
 
-/*
-static void LoadImageFile(const char *name, byte **pic, uint32_t *width, uint32_t *height, int *channels)
+static void LoadImageFile( const char *name, byte **pic, int *width, int *height, int *channels )
 {
 	uint64_t size;
 	byte *out;
@@ -2299,23 +2298,22 @@ static void LoadImageFile(const char *name, byte **pic, uint32_t *width, uint32_
 	//
 	// load the file
 	//
-	size = ri.FS_LoadFile(name, &buffer.v);
-	if (!buffer.b || size == 0) {
+	size = ri.FS_LoadFile( name, &buffer.v );
+	if ( !buffer.b || size == 0 ) {
 		return;
 	}
 
-	out = stbi_load_from_memory( buffer.b, size, (int *)width, (int *)height, channels, 3 );
+	out = stbi_load_from_memory( buffer.b, size, width, height, channels, STBI_rgb );
 	if ( !out ) {
 		ri.FS_FreeFile( buffer.b );
 		ri.Printf( PRINT_DEVELOPER, "LoadImageFile: stbi_load_from_memory(%s) failed, failure reason: %s\n", name, stbi_failure_reason() );
 		return;
 	}
 
-	ri.FS_FreeFile(buffer.v);
+	ri.FS_FreeFile( buffer.v );
 
 	*pic = out;
 }
-*/
 
 typedef struct
 {
@@ -2369,7 +2367,8 @@ static const imageExtToLoaderMap_t imageLoaders[] = {
 	{ "jpg",  R_LoadJPG },
 	{ "jpeg", R_LoadJPG },
 	{ "pcx",  R_LoadPCX },
-	{ "bmp",  R_LoadBMP }
+	{ "bmp",  R_LoadBMP },
+	{ "webp", R_LoadWebp }
 };
 
 static const int numImageLoaders = arraylen( imageLoaders );
@@ -2382,7 +2381,7 @@ Loads any of the supported image types into a canonical
 32 bit format.
 =================
 */
-static void R_LoadImage( const char *name, byte **pic, uint32_t *width, uint32_t *height, GLenum *picFormat, uint32_t *numMips )
+static void R_LoadImage( const char *name, byte **pic, int *width, int *height, GLenum *picFormat, uint32_t *numMips )
 {
 	qboolean orgNameFailed = qfalse;
 	char localName[ MAX_NPATH ];
@@ -2390,7 +2389,7 @@ static void R_LoadImage( const char *name, byte **pic, uint32_t *width, uint32_t
 	const char *altName;
 	int orgLoader = -1;
 	int i;
-	int channels;
+	int channels = 3;
 
 	*pic = NULL;
 	*width = 0;

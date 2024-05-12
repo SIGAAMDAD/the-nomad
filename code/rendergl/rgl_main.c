@@ -270,15 +270,12 @@ static void R_DrawWorld( void )
     // prepare the batch
     RB_SetBatchBuffer( rg.world->buffer, rg.world->vertices, sizeof(drawVert_t), rg.world->indices, sizeof(glIndex_t) );
 
-    // submit the indices, we won't be ever changing those
-    RB_CommitDrawData( NULL, 0, rg.world->indices, rg.world->numIndices );
-
     backend.drawBatch.shader = rg.world->shader;
 
     vtx = rg.world->vertices;
 
-    for (y = 0; y < rg.world->height; y++) {
-        for (x = 0; x < rg.world->width; x++) {
+    for ( y = 0; y < rg.world->height; y++ ) {
+        for ( x = 0; x < rg.world->width; x++ ) {
             pos[0] = x;
             pos[1] = rg.world->height - y;
 //            pos[0] = x - (rg.world->width * 0.5f);
@@ -301,12 +298,17 @@ static void R_DrawWorld( void )
                 R_CalcTangentVectors( vtx );
             }
 
-            // submit the processed vertices
-            RB_CommitDrawData( vtx, 4, NULL, 0 );
-
             vtx += 4;
         }
     }
+
+    // submit
+    nglBufferData( GL_ARRAY_BUFFER, rg.world->buffer->vertex.size, NULL, rg.world->buffer->vertex.glUsage );
+    nglBufferData( GL_ELEMENT_ARRAY_BUFFER, rg.world->buffer->index.size, NULL, rg.world->buffer->index.glUsage );
+
+    nglBufferSubData( GL_ARRAY_BUFFER, 0, rg.world->buffer->vertex.size, rg.world->vertices );
+    nglBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, rg.world->buffer->index.size, rg.world->indices );
+//    RB_CommitDrawData( rg.world->vertices, rg.world->numVertices, rg.world->indices, rg.world->numIndices );
 
     // flush it we have anything left in there
     RB_FlushBatchBuffer();

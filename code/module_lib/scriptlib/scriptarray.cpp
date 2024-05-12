@@ -789,7 +789,7 @@ void CScriptArray::DoAllocate( int delta, uint32_t at )
 
 		SArrayBuffer *buf = (SArrayBuffer *)arrayUserAlloc( sizeof( *buf ) + ( buffer->capacity * elementSize ) );
 		if ( buf ) {
-			buf->size = buffer->size;
+			buf->size = buffer->size + delta;
 			buf->capacity = buffer->capacity;
 		} else {
 			asIScriptContext *pContext = asGetActiveContext();
@@ -2303,6 +2303,7 @@ static void RegisterScriptList_Generic(asIScriptEngine *engine)
 	CheckASCall( engine->RegisterObjectMethod("array<T>", "void Add(const T&in value)", asFUNCTION(ScriptListInsertLast_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("array<T>", "void Clear()", asFUNCTION(ScriptListClear_Generic), asCALL_GENERIC) );
 	CheckASCall( engine->RegisterObjectMethod("array<T>", "void Resize( uint )", asFUNCTION(ScriptListResize_Generic), asCALL_GENERIC ) );
+	CheckASCall( engine->RegisterObjectMethod( "array<T>", "void Reserve( uint )", asFUNCTION( ScriptListReserve_Generic ), asCALL_GENERIC ) );
 
 	CheckASCall( engine->RegisterObjectMethod("array<T>", "void insertAt( uint, const T&in value)", asFUNCTION(ScriptListInsertAt_Generic), asCALL_GENERIC ) );
 	CheckASCall( engine->RegisterObjectMethod("array<T>", "void insertAt( uint, const array<T>& arr)", asFUNCTION(ScriptListInsertAtArray_Generic), asCALL_GENERIC ) );

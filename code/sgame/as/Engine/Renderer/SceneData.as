@@ -15,9 +15,7 @@ namespace TheNomad::Engine::Renderer {
             m_PolyCache.Clear();
         }
         void OnRunTic() {
-            for ( uint i = 0; m_PolyCache.Count(); i++ ) {
-                
-            }
+            m_nUsedPolys = 0;
         }
 
         void DrawLine( const vec3& in start, const vec3& in end, int hShader, const vec4& in color ) {
@@ -34,9 +32,12 @@ namespace TheNomad::Engine::Renderer {
             endVert.worldPos = end;
             endVert.uv = vec2( 1, 1 );
 
-            
+            if ( m_nUsedPolys >= m_PolyCache.Count() ) {
+                m_PolyCache.Reserve( 1024 );
+            }
         }
         
         private array<PolyVert> m_PolyCache;
+        private uint m_nUsedPolys = 0;
     };
 };

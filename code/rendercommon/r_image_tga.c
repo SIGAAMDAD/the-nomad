@@ -25,10 +25,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <SDL2/SDL.h>
 #include "../game/g_game.h"
 #ifdef USE_OPENGL_API
-#include "rgl_local.h"
+#include "../rendergl/rgl_local.h"
+#include "../rendergl/stb_image.h"
 #endif
 #ifdef USE_VULKAN_API
-#include "rvk_local.h"
+#include "../rendervk/rvk_local.h"
+#include "../rendervk/stb_image.h"
 #endif
 
 
@@ -74,12 +76,11 @@ void R_LoadTGA( const char *name, byte **pic, int *width, int *height, int *chan
 	// load the file
 	//
 	length = ri.FS_LoadFile( name, &buffer.v );
-	if (!buffer.b || length < 0) {
+	if ( !buffer.b || length < 0 ) {
 		return;
 	}
 
-	if(length < 18)
-	{
+	if( length < 18 ) {
 		ri.Error( ERR_DROP, "LoadTGA: header too short (%s)", name );
 	}
 
@@ -90,34 +91,52 @@ void R_LoadTGA( const char *name, byte **pic, int *width, int *height, int *chan
 	targa_header.colormap_type = buf_p[1];
 	targa_header.image_type = buf_p[2];
 
-	memcpy(&targa_header.colormap_index, &buf_p[3], 2);
-	memcpy(&targa_header.colormap_length, &buf_p[5], 2);
+	memcpy( &targa_header.colormap_index, &buf_p[3], 2 );
+	memcpy( &targa_header.colormap_length, &buf_p[5], 2 );
 	targa_header.colormap_size = buf_p[7];
-	memcpy(&targa_header.x_origin, &buf_p[8], 2);
-	memcpy(&targa_header.y_origin, &buf_p[10], 2);
-	memcpy(&targa_header.width, &buf_p[12], 2);
-	memcpy(&targa_header.height, &buf_p[14], 2);
+	memcpy( &targa_header.x_origin, &buf_p[8], 2 );
+	memcpy( &targa_header.y_origin, &buf_p[10], 2 );
+	memcpy( &targa_header.width, &buf_p[12], 2 );
+	memcpy( &targa_header.height, &buf_p[14], 2 );
 	targa_header.pixel_size = buf_p[16];
 	targa_header.attributes = buf_p[17];
 
-	targa_header.colormap_index = LittleShort(targa_header.colormap_index);
-	targa_header.colormap_length = LittleShort(targa_header.colormap_length);
-	targa_header.x_origin = LittleShort(targa_header.x_origin);
-	targa_header.y_origin = LittleShort(targa_header.y_origin);
-	targa_header.width = LittleShort(targa_header.width);
-	targa_header.height = LittleShort(targa_header.height);
+	targa_header.colormap_index = LittleShort( targa_header.colormap_index );
+	targa_header.colormap_length = LittleShort( targa_header.colormap_length );
+	targa_header.x_origin = LittleShort( targa_header.x_origin );
+	targa_header.y_origin = LittleShort( targa_header.y_origin );
+	targa_header.width = LittleShort( targa_header.width );
+	targa_header.height = LittleShort( targa_header.height );
 
 	buf_p += 18;
 
-	if (targa_header.image_type!=2
-		&& targa_header.image_type!=10
+/*
+	ri.Printf( PRINT_DEVELOPER,
+		"Loading .tga file:\n"
+		"  id_length: %hu\n"
+		"  colormap_index: %hu\n"
+		"  colormap_length: %hu\n"
+		"  colormap_size: %hu\n"
+		"  x_origin: %hu\n"
+		"  y_origin: %hu\n"
+		"  width: %hu\n"
+		"  height: %hu\n"
+		"  pixel_size: %hu\n"
+		"  attributes: %hu\n"
+		"  image_type: %hu\n"
+	, targa_header.id_length, targa_header.colormap_index, targa_header.colormap_length, targa_header.colormap_size,
+	targa_header.x_origin, targa_header.y_origin, targa_header.width, targa_header.height, targa_header.pixel_size, targa_header.attributes,
+	targa_header.image_type );
+*/
+
+	if ( targa_header.image_type != 2
+		&& targa_header.image_type != 10
 		&& targa_header.image_type != 3 )
 	{
-		ri.Error( ERR_DROP, "LoadTGA: Only type 2 (RGB), 3 (gray), and 10 (RGB) TGA images supported" );
+		ri.Error( ERR_DROP, "LoadTGA: Only type 2 (RGB), 3 (gray), and 10 (RGB) TGA images supported." );
 	}
 
-	if ( targa_header.colormap_type != 0 )
-	{
+	if ( targa_header.colormap_type != 0 ) {
 		ri.Error( ERR_DROP, "LoadTGA: colormaps not supported" );
 	}
 

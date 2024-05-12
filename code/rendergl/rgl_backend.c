@@ -325,9 +325,9 @@ void GL_State( uint32_t stateBits )
 }
 
 
-static const char *GL_ErrorString(GLenum error)
+const char *GL_ErrorString( GLenum error )
 {
-    switch (error) {
+    switch ( error ) {
     case GL_INVALID_ENUM:
         return "GL_INVALID_ENUM";
     case GL_INVALID_FRAMEBUFFER_OPERATION:
@@ -346,7 +346,7 @@ static const char *GL_ErrorString(GLenum error)
     return "Unknown Error Code";
 }
 
-void GL_CheckErrors(void)
+void GL_CheckErrors( void )
 {
     GLenum error = nglGetError();
 

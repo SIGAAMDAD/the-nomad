@@ -760,6 +760,21 @@ void Menu_Cache( void )
 	ui->sfx_back = Snd_RegisterSfx( "sfx/menu3.wav" );
 	ui->sfx_null = Snd_RegisterSfx( "sfx/menu4.wav" );
 
+	ui->controller_start = re.RegisterShader( "menu/xbox_start" );
+	ui->controller_back = re.RegisterShader( "menu/xbox_back" );
+	ui->controller_a = re.RegisterShader( "menu/xbox_button_a" );
+	ui->controller_b = re.RegisterShader( "menu/xbox_button_b" );
+	ui->controller_x = re.RegisterShader( "menu/xbox_button_x" );
+	ui->controller_y = re.RegisterShader( "menu/xbox_button_y" );
+	ui->controller_dpad_down = re.RegisterShader( "menu/dpad_down" );
+	ui->controller_dpad_up = re.RegisterShader( "menu/dpad_up" );
+	ui->controller_dpad_left = re.RegisterShader( "menu/dpad_left" );
+	ui->controller_dpad_right = re.RegisterShader( "menu/dpad_right" );
+	ui->controller_left_button = re.RegisterShader( "menu/left_button" );
+	ui->controller_right_button = re.RegisterShader( "menu/right_button" );
+	ui->controller_left_trigger = re.RegisterShader( "menu/left_trigger" );
+	ui->controller_right_trigger = re.RegisterShader( "menu/right_trigger" );
+
 	ui->backdrop = re.RegisterShader( "menu/mainbackdrop" );
 
     // IT MUST BE THERE!
@@ -801,7 +816,10 @@ extern "C" void UI_DrawMenuBackground( void )
 extern "C" void UI_AddJoystickKeyEvents( void )
 {
 	ImGuiIO& io = ImGui::GetIO();
-	
+
+	io.AddKeyEvent( ImGuiKey_Escape, Key_IsDown( KEY_PAD0_BACK ) );
+	io.AddKeyEvent( ImGuiKey_Enter, Key_IsDown( KEY_PAD0_START ) );
+
 	io.AddKeyEvent( ImGuiKey_DownArrow, Key_IsDown( KEY_PAD0_LEFTSTICK_DOWN ) );
 	io.AddKeyEvent( ImGuiKey_UpArrow, Key_IsDown( KEY_PAD0_LEFTSTICK_UP ) );
 	io.AddKeyEvent( ImGuiKey_LeftArrow, Key_IsDown( KEY_PAD0_LEFTSTICK_LEFT ) );

@@ -22,9 +22,7 @@ namespace TheNomad::SGame {
 			uint i;
 			uvec3 xyz;
 			
-			TheNomad::GameSystem::SetActiveMap( hMap, nCheckpoints, nSpawns,
-				nTiles );
-
+			TheNomad::GameSystem::SetActiveMap( hMap, nCheckpoints, nSpawns, nTiles );
 			TheNomad::GameSystem::GetTileData( @m_TileData );
 			TheNomad::Engine::Renderer::LoadWorld( m_Name );
 			
@@ -52,12 +50,13 @@ namespace TheNomad::SGame {
 
 				DebugPrint( "Spawn " + i + " linked to checkpoint " + checkpoint + "\n" );
 				@spawn.m_Checkpoint = @m_Checkpoints[ checkpoint ];
+				spawn.m_Checkpoint.m_Spawns.Add( @spawn );
 				
 				m_Spawns.Add( spawn );
 			}
 
 			DebugPrint( "Map \"" + m_Name + "\" loaded with " + m_Checkpoints.Count() + " checkpoints, " +
-				m_Spawns.Count() + " spawns, and " + m_Secrets.Count + " secrets.\n" );
+				m_Spawns.Count() + " spawns, and " + m_Secrets.Count() + " secrets.\n" );
 		}
 		
 		const array<array<uint>>@ GetTiles() const {
@@ -72,7 +71,7 @@ namespace TheNomad::SGame {
 		}
 
 		uint GetLevel( const TheNomad::GameSystem::BBox& in bounds ) const {
-			const uint level = uint( floor( bounds.m_nMins.z + bounds.m_nMaxs.z ) );
+			const uint level = uint( floor( bounds.m_Mins.z + bounds.m_Maxs.z ) );
 			return level;
 		}
 		uint GetTile( const vec3& in origin, const TheNomad::GameSystem::BBox& in bounds ) const {

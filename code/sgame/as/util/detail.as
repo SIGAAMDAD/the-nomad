@@ -1,3 +1,11 @@
+// essentially assert() but in angelscript
+void Assert( const bool condition, const string& in msg )
+{
+	if ( !condition ) {
+		GameError( "Assertion failure: " + msg );
+	}
+}
+
 namespace TheNomad::Util {
 	void HapticRumble( uint nPlayerIndex, float nStrength, uint nTime ) {
 		TheNomad::Engine::CmdExecuteCommand( "in_haptic_rumble " + nPlayerIndex + " " + nStrength + " " + nTime +  "\n" );

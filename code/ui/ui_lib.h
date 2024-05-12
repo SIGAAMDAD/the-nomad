@@ -142,6 +142,23 @@ typedef struct {
     nhandle_t arrow_vert_bot;
     nhandle_t arrow_vert_top;
 
+    // xbox specific
+    nhandle_t controller_x;
+    nhandle_t controller_y;
+    nhandle_t controller_a;
+    nhandle_t controller_b;
+
+    nhandle_t controller_start;
+    nhandle_t controller_back;
+    nhandle_t controller_dpad_up;
+    nhandle_t controller_dpad_down;
+    nhandle_t controller_dpad_left;
+    nhandle_t controller_dpad_right;
+    nhandle_t controller_left_trigger;
+    nhandle_t controller_left_button;
+    nhandle_t controller_right_trigger;
+    nhandle_t controller_right_button;
+
     qboolean uiAllocated;
     virtualKeyboard_t virtKeyboard;
 

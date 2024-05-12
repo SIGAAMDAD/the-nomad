@@ -2,6 +2,7 @@
 #include "GameSystem/SaveSystem/SaveSection.as"
 #include "GameSystem/SaveSystem/ObjectDataSync.as"
 #include "Engine/UserInterface/FontCache.as"
+#include "Engine/ResourceCache.as"
 
 namespace TheNomad::GameSystem {
     class CampaignManager : GameObject {
@@ -108,7 +109,6 @@ namespace TheNomad::GameSystem {
 
 	GameObject@ AddSystem( GameObject@ SystemHandle ) {
 		ConsolePrint( "Added GameObject System \"" + SystemHandle.GetName() + "\"\n" );
-		SystemHandle.OnInit();
 		GameSystems.Add( @SystemHandle );
 		return @SystemHandle;
 	}

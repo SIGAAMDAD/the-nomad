@@ -6,6 +6,14 @@
 #define offset1 (asBC_SWORDARG1( pByteCode ) * sizeof( asDWORD ) )
 #define offset2 (asBC_SWORDARG2( pByteCode ) * sizeof( asDWORD ) )
 
+#define FUNCTION_RESERVE_SPACE 5 * sizeof( void * )
+
+#ifdef _WIN32
+#define GDR_STDCALL __stdcall
+#else
+#define GDR_STDCALL
+#endif
+
 static void OutputJitLog( const asmjit::StringLogger& logger );
 
 #if defined(GDRx64)
@@ -23,7 +31,7 @@ class CScriptJITCompiler : public asIJITCompiler
 {
 public:
 	CScriptJITCompiler( void );
-	~CScriptJITCompiler();
+	virtual ~CScriptJITCompiler() override;
 	int CompileFunction( asIScriptFunction *pFunction, asJITFunction *pOutPut );
 	void ReleaseJITFunction( asJITFunction func );
 
@@ -31,15 +39,49 @@ public:
     asmjit::ErrorHandler *GetErrorHandler( void );
     void CompileJITFunction( asDWORD *pByteCode, asDWORD *pEnd, asIScriptFunction *pFunction );
 private:
+//	void EmitNullPointerException( int nIndex, EVMAbortException iReason );
+//	void EmitThrowException( EVMAbortException iReason );
+//	asmjit::Label EmitThrowExceptionLabel( EVMAbortException iReason );
+//	void ThrowException( int iReason );
+	
 	asmjit::JitRuntime m_RunTime;
 	asmjit::CodeHolder m_CodeHolder;
 	asmjit::FileLogger *m_pLogger;
+	Assembler m_Assembler;
 	JitCompiler *m_pCompiler;
 	
 	FILE *m_pFileHandle;
 	uint8_t **m_pActiveJumpTable;
 	asUINT m_nCurrentTableSize;
-};
+}
+
+/*
+void EmitNullPointerException( int nIndex, EVMAbortException iReason );
+
+void CScriptJITCompiler::ThrowException( int iReason )
+{
+	ThrowAbortException( (EVMAbortException)iReason, NULL );
+}
+
+void CScriptJITCompiler::EmitThrowException( EVMAbortException iReason )
+{
+	auto call = CreateCall<void, int>( &CScriptJITCompiler::ThrowException );
+	call->SetArg( 0, asmjit::imm( iReason ) );
+}
+
+asmjit::Label CScriptJITCompiler::EmitThrowExceptionLabel( EVMAbortException iReason )
+{
+	JitLineInfo info;
+	auto label = m_Assembler.newLabel();
+	auto cursor = m_Assembler.getCursor();
+	
+	m_Assembler.bind( label );
+	EmitThrowException( iReason );
+	m_Assembler.setCursor( cursor );
+	
+	return label;
+}
+*/
 
 CScriptJITCompiler::CScriptJITCompiler( void )
 {
@@ -76,28 +118,124 @@ void CScriptJITCompiler::SetErrorHandler( asmjit::ErrorHandler *err )
 	m_CodeHolder.setErrorHandler( err );
 }
 
+static inline native::Gp IntArg( uint8_t index, uint8_t arg )
+{
+	
+}
+
+static inline unsigned FindPushBatchSize( asDWORD *pNextOp, asDWORD *pEndOfByteCode )
+{
+	unsigned bytes;
+	
+	bytes = 0;
+	
+	while ( pNextOp < pEndOfByteCode ) {
+		asEBCInstr op = (asEBCInstr)*(byte *)pNextOp;
+		switch ( op ) {
+		case asBC_PshC4:
+		case asBC_PshV4:
+		case asBC_PshG4:
+		case asBC_TYPEID:
+			bytes += sizeof( asDWORD );
+			break;
+		case asBC_PshV8:
+		case asBC_PshC8:
+			bytes += sizeof( asQWORD );
+			break;
+		case asBC_PSF:
+		case asBC_PshVPtr:
+		case asBC_PshRPtr:
+		case asBC_PshNull:
+		case asBC_FuncPtr:
+		case asBC_OBJTYPE:
+		case asBC_PGA:
+		case asBC_VAR:
+		case asBC_PshGPtr:
+			bytes += sizeof( void * );
+			break;
+		default:
+			return bytes;
+		};
+		pNextOp += asBCTypeSize[ asBCInfo[op].type ];
+	}
+	return bytes;
+}
+
+static void GDR_STDCALL AllocScriptObject( asCObjectType *pType, asCScriptFunction *pConstructor,
+	asIScriptEngine *pEngine, asSVMRegisters *pRegisters )
+{
+	void *mem;
+	
+	mem = ( (asCScriptEngine *)pEngine )->CallAlloc( pType );
+	
+}
+
 void CScriptJITCompiler::CompileJITFunction( asDWORD *pByteCode, asDWORD *pEnd, asIScriptFunction *pFunction )
 {
 	asmjit::FuncFrame funcFrame;
 	asmjit::FuncDetail func;
 	asmjit::Label label, epilog, jump;
 	asmjit::FuncArgsAssignment argMapper;
-	Register zax, zdx, zsi, zdi;
+	Register eax, esi, ebp, edx, ebx, esp, edi, ecx;
+	Register rax, rsi, rbp, rdx, rbx, rsp, rdi, rcx;
+	Register ax, bx, cx, dx;
 	Builder emitter;
 	asEBCInstr opCode;
-	size_t firstEntry;
-	
+	bool firstJitEntry;
+	bool waitingForEntry;
+	unsigned reservedPushBytes = 0;
 	Assembler a( &m_CodeHolder );
+	volatile byte *retPtr;
+	
+	// NOTE: using 32 bit instructions will zero the top of the 64 bit reigsters, but that's only the 32 bit registers, not the 16 bit ones
+	// NOTE: mov can only have one argument that is a variable, moving register value to register value is fine
+	// NOTE: mov can only move registers of the same size
+	// NOTE: 64 bit registers cannot take in a 64 bit immediate value, only a 32 bit value which it will then sign extend
+	
+	// 64 bit registers
+	// rax, rbx, rcx, rdx, rsi, rdi, rsp, rbp, rip, r8, r9, r10, r11, r12, r13, r14, r15
+	// accessing the other register versions of r8+ are as simple as r[number]D (32 bit), r[number]W (16 bit), r[number]B (8 byte)
+	
+	// 32 bit registers
+	// NOTE: cx is the low 16 bits of 'ecx', and ch & cl are parts of cx
+	// general purpose: eax, ebx, ecx, edx
+	// index regs: esi, edi, ebp, esi
+	// instruction pointer: eip
+	
+	// 16 bit registers
+	// general purpose: ax, bx, cx, dx
+	// index regs: si, di, bp, sp
+	// instruction pointer ip
+	// segment registers: cs, ds, es, ss, fs, gs
+	
+	// 8 bit reigters
+	// general purpose: ah, al, bh, bl, ch, cl, dh, dl
+	
+	// ip - instruction pointer
+	// bp - frame pointer
+	// ax - scratch register
+	
+	eax = native::eax;
+	edx = native::edx;
+	esi = native::esi;
+	ebp = native::ebp;
+	ebx = native::ebx;
+	esp = native::esp;
+	edi = native::edi;
+	ecx = native::ecx;
+	
+	rax = native::rax;
+	rdx = native::rdx;
+	rsi = native::rsi;
+	rbx = native::rbx;
+	rsp = native::rsp;
+	rsi = native::rsi;
+	rcx = native::rcx;
 	
 	label = a.newLabel();
 	epilog = a.newLabel();
 	jump = a.newLabel();
 	a.bind( label );
-	
-	zax = a.zax();
-	zdx = a.zdx();
-	zsi = a.zsi();
-	zdi = a.zdi();
 	
 	// setup the function
 	func.init( asmjit::FuncSignatureT<void, asSVMRegisters *, asPWORD>( asmjit::CallConvId::kCDecl ), m_RunTime.environment() );
@@ -106,140 +244,148 @@ void CScriptJITCompiler::CompileJITFunction( asDWORD *pByteCode, asDWORD *pEnd, 
 	funcFrame.setPreservedFP();
 	
 	argMapper.setFuncDetail( &func );
-	argMapper.assignAll( zax, zdx );
+	argMapper.assignAll( rax, rdx );
 	argMapper.updateFuncFrame( funcFrame );
 	
 	emitter.emitProlog( funcFrame );
 	emitter.emitArgsAssignment( funcFrame, argMapper );
 	
-	// assembly offset
-	firstEntry = a.offset();
-	
 	// initialize FPU
 	a.finit();
+	
+	// push unmutable registers (these registers must retain their value after we leave our function)
+	a.push( esi );
+	a.push( edi );
+	a.push( ebx );
+	a.push( ebp );
+	
+	// reserve two pointers for various things
+	a.sub( esp, FUNCTION_RESERVE_SPACE );
+	
+	// x64
+	a.mov( ebp, edi );
+	a.mov( rax, esi );
+	
+	//TODO:x86
+	
+	a.mov( rdi, ptr( ebp, offsetof( asSVMRegisters, stackFramePointer ) ) ); // VM frame pointer
+	a.mov( esi, ptr( ebp, offsetof( asSVMRegisters, stackPointer ) ) ); // VM stack pointer
+	a.mov( rbx, ptr( ebp, offsetof( asSVMRegisters, valueRegister ) ) ); // VM temporary
+	
+	// jump to the section of the function we'll actually be executing
+	a.jmp( rax );
+	
+	retPtr = (volatile byte *)pByteCode;
+	
+	a.mov( ptr( ebp, offsetof( asSVMRegisters, programPointer ) ), rdx );
+	a.mov( ptr( ebp, offsetof( asSVMRegisters, stackFramePointer ) ), rdi );
+	a.mov( ptr( ebp, offsetof( asSVMRegisters, stackPointer ) ), esi );
+	a.mov( ptr( ebp, offsetof( asSVMRegisters, valueRegister ) ), rbx );
+	
+	// pop reserved and saved pointers
+	a.add( esp, FUNCTION_RESERVE_SPACE );
+	a.pop( ebp );
+	a.pop( ebx );
+	a.pop( edi );
+	a.pop( esi );
+	a.ret();
+	
+	auto Return = [&]( bool bExpected ) {
+		// set rdx to the bytecode pointer so the vm can be returned to the correct state
+		a.mov( rdx, (uintptr_t)(void *)pByteCode );
+		a.jmp( (uintptr_t)(volatile void *)retPtr );
+		waitingForEntry = bExpected;
+	};
 	
     // asSVMRegister::stackPointer is essentially esi
 	while ( pByteCode < pEnd ) {
 		opCode = asEBCInstr( *(byte *)pByteCode );
 		
+	#define pushPrep( size ) \
+		if ( reservedPushBytes == 0 ) { \
+			reservedPushBytes = FindPushBatchSize( pByteCode, pEnd ); \
+			a.sub( esi, reservedPushBytes ); \
+		} \
+		reservedPushBytes += size;
+		
 		switch ( opCode ) {
-		case asBC_PopPtr:
+		default:
+			// undefined opCode, force a debug break
+			a.int3();
 			break;
-		case asBC_CpyVtoV4:
-            a.mov( a.zbx(), ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ) );
-            a.inc( ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ) );
-            a.inc( ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, programPointer ) ) );
-            a.mov( a.zbx(), ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ) );
-			break;
-		case asBC_PshGPtr:
-			a.mov( a.zbx(), ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ) );
-			a.lea( a.zcx(), ptr( a.zbx(), -AS_PTR_SIZE ) );
-			break;
-		case asBC_PshC4:
-			a.dec( ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ) );
-			a.mov( a.zbx(), ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ) );
-			a.mov( a.zcx(), ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, programPointer ) ) );
-			a.mov( dword_ptr( a.zbx() ), a.zcx() );
-			a.mov( ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ), a.zbx() );
-			a.add( a.zcx(), 2 );
-			break;
-		case asBC_PshC8:
-            a.dec( ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ) );
-			a.mov( a.zbx(), ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ) );
-			a.mov( a.zcx(), ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, programPointer ) ) );
-			a.mov( qword_ptr( a.zbx() ), a.zcx() );
-			a.mov( ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ), a.zbx() );
-			a.add( a.zcx(), 2 );
-			break;
-		case asBC_PshNull:
-            // mov %ebx [eax+stackPointer]
-            // lea %ecx [ebx+$AS_PTR_SIZE]
-			a.mov( a.zbx(), ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ) );
-            a.lea( a.zcx(), ptr( a.zbx(), -AS_PTR_SIZE ) );
-            a.mov( ptr( a.zbx() ), a.zcx() );
-            a.mov( native::ptr( a.zbx() ), NULL );
-            a.mov( ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ), a.zbx() );
-            a.inc( ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, programPointer ) ) );
-			break;
-        case asBC_PshV4:
-            a.sub( native::dword_ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ), -AS_PTR_SIZE );
-            a.mov( a.zbx(), ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ) );
-            a.mov( a.zcx(), ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackFramePointer ) ) );
-            a.sub( a.zcx(), ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, programPointer ) ) );
-            a.mov( ptr( a.zbx() ), a.zcx() );
-            a.mov( a.zbx(), ptr( a.zbx() ) );
-            a.mov( ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ), a.zbx() );
-            a.inc( ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, programPointer ) ) );
-            break;
-		case asBC_PshV8:
-			a.sub( native::qword_ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ), -AS_PTR_SIZE );
-            a.mov( a.zbx(), ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ) );
-            a.mov( a.zcx(), ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackFramePointer ) ) );
-            a.sub( a.zcx(), ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, programPointer ) ) );
-            a.mov( ptr( a.zbx() ), a.zcx() );
-            a.mov( a.zbx(), ptr( a.zbx() ) );
-            a.mov( ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ), a.zbx() );
-            a.inc( ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, programPointer ) ) );
-			break;
-        case asBC_INCi8:
-            // mov %ebx [eax+stackPointer]
-            // inc %ebx
-            // mov %eax %ebx
-            a.mov( a.zbx(), native::byte_ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ) );
-            a.inc( a.zbx() );
-            a.mov( native::byte_ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ), a.zbx() );
-            break;
-        case asBC_INCi16:
-            // mov %ebx [eax+stackPointer]
-            // inc %ebx
-            // mov %eax %ebx
-            a.mov( a.zbx(), native::word_ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ) );
-            a.inc( a.zbx() );
-            a.mov( native::word_ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ), a.zbx() );
-            break;
-        case asBC_INCi:
-            // mov %ebx [eax+stackPointer]
-            // inc %ebx
-            // mov %eax %ebx
-            a.mov( a.zbx(), native::dword_ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ) );
-            a.inc( a.zbx() );
-            a.mov( native::dword_ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ), a.zbx() );
-			break;
-        case asBC_INCi64:
-            // mov %ebx [eax+stackPointer]
-            // inc %ebx
-            // mov %eax %ebx
-            a.mov( a.zbx(), native::qword_ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ) );
-            a.inc( a.zbx() );
-            a.mov( native::qword_ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ), a.zbx() );
-            break;
+		case asBC_JitEntry: {
+			if ( !firstJitEntry ) {
+				firstJitEntry = (void *)pByteCode;
+			}
+			break; }
 		case asBC_SUSPEND:
 			a.nop();
 			break;
-		case asBC_JMP:
-			a.jmp( jump );
+		case asBC_PshVPtr:
+			pushPrep( sizeof( void * ) );
+			a.mov( rax, ptr( edi, -offset0 ) );
+			a.mov( ptr( edi, reservedPushBytes ), rax );
 			break;
-		case asBC_RET:
-			a.jmp( epilog );
+		case asBC_PshRPtr:
+			pushPrep( sizeof( void * ) );
+			a.mov( rax, ptr( edi, -offset0 ) );
+			a.mov( ptr( esi, reservedPushBytes ), rax );
 			break;
-		case asBC_JNZ:
-			a.jnz( jump );
+		case asBC_PopPtr:
+			a.mov( ebx, ptr( eax, offsetof( asSVMRegisters, stackPointer ) ) );
+			a.lea( ecx, ptr( ebx, AS_PTR_SIZE ) );
+			a.mov( ptr( eax, offsetof( asSVMRegisters, stackPointer ) ), ecx );
+			a.inc( ptr( eax, offsetof( asSVMRegisters, programPointer ) ) );
 			break;
-		case asBC_JS:
-			a.js( jump );
+		case asBC_PSF:
+			pushPrep( sizeof( void * ) );
+			a.mov( rax, ptr( edi, -offset0 ) );
+			a.mov( ptr( esi, reservedPushBytes ), rax );
 			break;
-		case asBC_JNS:
-			a.jns( jump );
+		case asBC_PshV4:
+			pushPrep( sizeof( asDWORD ) );
+			a.mov( ebx, ptr( eax, offsetof( asSVMRegisters, stackPointer ) ) );
+			a.mov( ecx, ptr( eax, offsetof( asSVMRegisters, stackFramePointer ) ) );
+			a.sub( ecx, ptr( eax, offsetof( asSVMRegisters, programPointer ) ) );
+			a.mov( ebx, ptr( ecx ) );
+			a.mov( ebx, ptr( ebx ) );
+			a.mov( ptr( eax, offsetof( asSVMRegisters, stackPointer ) ), ebx );
+			a.inc( ptr( eax, offsetof( asSVMRegisters, programPointer ) ) );
 			break;
-		case asBC_JNP:
-			a.jnp( jump );
+		case asBC_PshV8:
+			pushPrep( sizeof( asQWORD ) );
+			a.mov( ebx, ptr( eax, offsetof( asSVMRegisters, stackPointer ) ) );
+			a.mov( ecx, ptr( eax, offsetof( asSVMRegisters, stackFramePointer ) ) );
+			a.sub( ecx, ptr( eax, offsetof( asSVMRegisters, programPointer ) ) );
+			a.mov( ebx, ptr( ecx ) );
+			a.mov( ebx, ptr( ebx ) );
+			a.mov( ptr( eax, offsetof( asSVMRegisters, stackPointer ) ), ebx );
+			a.inc( ptr( eax, offsetof( asSVMRegisters, programPointer ) ) );
 			break;
-		case asBC_JZ:
-			a.jz( jump );
-			break;
-        case asBC_TYPEID:
-            
+		case asBC_PshNull:
+			a.mov( rbx, ptr( rax, offsetof( asSVMRegisters, stackPointer ) ) );
+            a.lea( rcx, ptr( rbx, -AS_PTR_SIZE ) );
+            a.mov( ptr( rbx ), rcx );
+            a.mov( native::qword_ptr( rbx ), NULL );
+            a.mov( ptr( eax, offsetof( asSVMRegisters, stackPointer ) ), rbx );
+            a.inc( ptr( eax, offsetof( asSVMRegisters, programPointer ) ) );
             break;
+		case asBC_PshC4:
+			pushPrep( sizeof( asDWORD ) );
+			a.mov( ebx, ptr( eax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ) );
+			a.mov( ecx, ptr( eax, ASMJIT_OFFSET_OF( asSVMRegisters, programPointer ) ) );
+			a.mov( dword_ptr( ebx ), ecx );
+			a.mov( ptr( eax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ), ebx );
+			a.add( ecx, 2 );
+			break;
+		case asBC_PshC8:
+			pushPrep( sizeof( asQWORD ) );
+			a.mov( ebx, ptr( eax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ) );
+			a.mov( ecx, ptr( eax, ASMJIT_OFFSET_OF( asSVMRegisters, programPointer ) ) );
+			a.mov( qword_ptr( ebx ), ecx );
+			a.mov( ptr( eax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ), ebx );
+			a.add( ecx, 2 );
+			break;
 		};
 	}
 	// bind a jump table target

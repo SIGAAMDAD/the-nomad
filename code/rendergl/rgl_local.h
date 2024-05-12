@@ -845,8 +845,6 @@ typedef struct shader_s {
 * Sprite Sheets
 */
 
-typedef vec2_t spriteCoord_t[4];
-
 typedef struct {
     spriteCoord_t texCoords;
 } sprite_t;
@@ -1511,6 +1509,7 @@ void GL_ClientState( int unit, unsigned stateBits );
 void RE_BeginFrame(stereoFrame_t stereoFrame);
 void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec);
 void RB_ExecuteRenderCommands(const void *data);
+const char *GL_ErrorString( GLenum error );
 
 void R_AddPostProcessCmd( void );
 
@@ -1650,8 +1649,7 @@ void RB_CommitDrawData( const void *verts, uint32_t numVerts, const void *indice
 void RE_BeginFrame(stereoFrame_t stereoFrame);
 void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec);
 
-
-
+void R_LoadWebp( const char *name, byte **pic, int *width, int *height, int *channels );
 void R_LoadBMP( const char *name, byte **pic, int *width, int *height, int *channels );
 void R_LoadJPG( const char *name, byte **pic, int *width, int *height, int *channels );
 void R_LoadPCX( const char *name, byte **pic, int *width, int *height, int *channels );

@@ -956,19 +956,14 @@ static void Con_DrawNotify( void ) {
 
 	ImGui::PushStyleColor( ImGuiCol_Text, g_color_table[ ColorIndex( S_COLOR_WHITE ) ] );
 
-	for ( i = con.contime - NUM_CON_TIMES + 1; i <= con.current; i++ ) {
-		if ( i < 0 ) {
-			continue;
-		}
-		time = con.contimes[i % NUM_CON_TIMES];
-		if (time == 0) {
-			continue;
-		}
-		time = gi.realtime - time;
+	for ( i = 0; i < NUM_CON_TIMES; i++ ) {
+		time = gi.realtime - con.contimes[ i ];
 		if ( time >= con_notifytime->f * 1000 ) {
+			// clear it
+			*con.times[ i ] = '\0';
 			continue;
 		}
-		text = con.times[ i % NUM_CON_TIMES ];
+		text = con.times[ i ];
 
 		Con_DrawText( text );
 	}

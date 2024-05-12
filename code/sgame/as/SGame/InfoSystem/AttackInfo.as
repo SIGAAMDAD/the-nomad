@@ -114,7 +114,6 @@ namespace TheNomad::SGame::InfoSystem {
 		string id;
 		string effect;
 		string description;
-		uint projectileEntityType = 0;
 		float damage = 0.0f;
 		float range = 0.0f;
 		AmmoInfo@ bulletType = null;
@@ -129,5 +128,10 @@ namespace TheNomad::SGame::InfoSystem {
 		uint spriteOffsetX = 0;
 		uint spriteOffsetY = 0;
 		TheNomad::Engine::SoundSystem::SoundEffect sound;
+
+		// projectile specific vars
+		uint projectileEntityType = 0;
+		float projectileWidth = 0.0f;
+		float projectileHeight = 0.0f;
 	};
 };

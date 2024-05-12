@@ -58,7 +58,8 @@ namespace TheNomad::SGame {
 			
 			@m_State = @StateManager.GetStateById( state );
 			if ( @m_State is null ) {
-				ConsoleWarning( "invalid animation info, State '" + state + "' isn't valid" );
+				ConsoleWarning( "invalid animation info, State \"" + state + "\" isn't valid\n" );
+				return false;
 			}
 			m_State.SetAnimation( @this );
 			

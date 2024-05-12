@@ -127,6 +127,8 @@ typedef struct {
 #define TILE2D_MAGIC 0xfda218891
 #define TILE2D_VERSION 0
 
+typedef vec2_t spriteCoord_t[4];
+
 typedef struct {
     vec2_t uv[4];
     uint32_t index;

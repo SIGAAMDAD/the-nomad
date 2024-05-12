@@ -42,11 +42,13 @@ typedef struct {
     mapcheckpoint_t *checkpoints;
     mapspawn_t *spawns;
     maplight_t *lights;
+    mapsecret_t *secrets;
 
     uint32_t width;
     uint32_t height;
     uint32_t numTiles;
     uint32_t numSpawns;
+    uint32_t numSecrets;
     uint32_t numCheckpoints;
     uint32_t numLights;
     uint32_t numLevels;
@@ -166,7 +168,11 @@ typedef struct {
     mapCache_t mapCache;
     
     float cameraZoom;
+#ifdef __cplusplus
+    glm::vec3 cameraPos;
+#else
     vec3_t cameraPos;
+#endif
 } gameInfo_t;
 
 extern field_t g_consoleField;

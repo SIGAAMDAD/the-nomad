@@ -453,7 +453,7 @@ int asCJITCompiler::CompileFunction(asIScriptFunction *function, asJITFunction *
 	unsigned currentEAX = EAX_Unknown, nextEAX = EAX_Unknown;
 
 	//Setup the processor as a 32 bit processor, as most angelscript ops work on integers
-	Processor cpu(*activePage, 64);
+	Processor cpu(*activePage, 32);
 	byte* byteStart = (byte*)cpu.op;
 
 	FloatingPointUnit fpu(cpu);

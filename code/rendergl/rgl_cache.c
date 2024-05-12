@@ -468,8 +468,8 @@ void RB_SetBatchBuffer( vertexBuffer_t *buffer, void *vertexBuffer, uintptr_t vt
     backend.drawBatch.vtxDataSize = vtxSize;
     backend.drawBatch.idxDataSize = idxSize;
 
-    backend.drawBatch.maxVertices = buffer->vertex.size / vtxSize;
-    backend.drawBatch.maxIndices = buffer->index.size / idxSize;
+    backend.drawBatch.maxVertices = buffer->vertex.size;
+    backend.drawBatch.maxIndices = buffer->index.size;
 
     backend.drawBatch.vertices = vertexBuffer;
     backend.drawBatch.indices = indexBuffer;
@@ -505,8 +505,8 @@ void RB_FlushBatchBuffer( void )
 	buf = backend.drawBatch.buffer;
 
 	// orphan the old buffers so that we don't stall on it
-	nglBufferData( GL_ELEMENT_ARRAY_BUFFER, backend.drawBatch.buffer->vertex.size, NULL, backend.drawBatch.buffer->index.glUsage );
-	nglBufferData( GL_ARRAY_BUFFER, backend.drawBatch.buffer->index.size, NULL, backend.drawBatch.buffer->vertex.glUsage );
+	nglBufferData( GL_ELEMENT_ARRAY_BUFFER, backend.drawBatch.maxVertices, NULL, backend.drawBatch.buffer->index.glUsage );
+	nglBufferData( GL_ARRAY_BUFFER, backend.drawBatch.maxIndices, NULL, backend.drawBatch.buffer->vertex.glUsage );
 
 	switch ( buf->vertex.usage ) {
 	case BUF_GL_MAPPED: {
@@ -534,23 +534,26 @@ void RB_FlushBatchBuffer( void )
 
 void RB_CommitDrawData( const void *verts, uint32_t numVerts, const void *indices, uint32_t numIndices )
 {
-    if ( numVerts >= backend.drawBatch.maxVertices ) {
-        ri.Error( ERR_DROP, "RB_CommitDrawData: numVerts >= backend.drawBatch.maxVertices (%i >= %i)", numVerts, backend.drawBatch.maxVertices );
+    if ( numVerts > backend.drawBatch.maxVertices / backend.drawBatch.vtxDataSize ) {
+        ri.Error( ERR_DROP, "RB_CommitDrawData: numVerts > backend.drawBatch.maxVertices (%i > %li)", numVerts,
+			backend.drawBatch.maxVertices / backend.drawBatch.vtxDataSize );
     }
-    if ( numIndices >= backend.drawBatch.maxIndices ) {
-        ri.Error( ERR_DROP, "RB_CommitDrawData: numIndices >= backend.drawBatch.maxIndices (%i >= %i)", numIndices, backend.drawBatch.maxIndices );
+    if ( numIndices > backend.drawBatch.maxIndices / backend.drawBatch.idxDataSize ) {
+        ri.Error( ERR_DROP, "RB_CommitDrawData: numIndices > backend.drawBatch.maxIndices (%i > %li)", numIndices,
+			backend.drawBatch.maxIndices / backend.drawBatch.idxDataSize );
     }
 
     // do we need to flush?
-    if ( backend.drawBatch.vtxOffset + numVerts >= backend.drawBatch.maxVertices
-    	|| backend.drawBatch.idxOffset + numIndices >= backend.drawBatch.maxIndices )
+    if ( backend.drawBatch.vtxOffset + numVerts > backend.drawBatch.maxVertices
+    	|| backend.drawBatch.idxOffset + numIndices > backend.drawBatch.maxIndices
+		&& ( backend.drawBatch.vtxOffset > 0 && backend.drawBatch.idxOffset > 0 ) )
 	{
         RB_FlushBatchBuffer();
     }
 
     //
     // copy the data into the client side buffer
-    //s
+    //
 
     // we could be submitting either indices or vertices
     if ( verts ) {

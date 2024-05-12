@@ -15,7 +15,6 @@ namespace TheNomad::SGame {
 			| InfoSystem::WeaponProperty::TwoHandedSideFirearm | InfoSystem::WeaponProperty::TwoHandedPrimFirearm ),
 	};
 	
-	[ModuleShared]
     class PlayrObject : EntityObject {
 		PlayrObject() {
 			@m_WeaponSlots[0] = @m_HeavyPrimary;
@@ -465,6 +464,15 @@ namespace TheNomad::SGame {
 			m_Link.m_Origin = origin;
 			m_nHealth = 100.0f;
 			m_nRage = 100.0f;
+			@m_SpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/raio_base", 32, 32, 528, 528 );
+			if ( @m_SpriteSheet is null ) {
+				GameError( "PlayrObject::Spawn: failed to initialize sprite sheet" );
+			}
+
+			@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE );
+			if ( @m_State is null ) {
+				GameError( "PlayrObject::Spawn: failed to initialize idle state" );
+			}
 		}
 		
 		// custom draw because of adaptive weapons and leg sprites
@@ -472,7 +480,7 @@ namespace TheNomad::SGame {
 			int hLegSprite = FS_INVALID_HANDLE;
 			
 			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, m_SpriteSheet.GetShader(), m_State.GetSpriteOffset().y
-				* m_SpriteSheet.GetSpriteCountX() + m_State.GetSpriteOffset().x + m_State.GetAnimation().GetFrame() + m_Facing );
+				* m_SpriteSheet.GetSpriteCountX() + m_State.GetSpriteOffset().x + m_Facing );
 			
 			//
 			// draw the legs
@@ -512,9 +520,9 @@ namespace TheNomad::SGame {
 				}
 			}
 			
-			hLegSprite = m_LegState.GetSpriteOffset().y * m_LegSpriteSheet.GetSpriteCountX() +
-				m_LegState.GetSpriteOffset().x + m_LegState.GetAnimation().GetFrame() + m_LegsFacing;
-			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, m_SpriteSheet.GetShader(), hLegSprite );
+//			hLegSprite = m_LegState.GetSpriteOffset().y * m_LegSpriteSheet.GetSpriteCountX() +
+//				m_LegState.GetSpriteOffset().x + m_LegState.GetAnimation().GetFrame() + m_LegsFacing;
+//			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, m_SpriteSheet.GetShader(), hLegSprite );
 		}
 		
 		KeyBind key_MoveNorth, key_MoveSouth, key_MoveEast, key_MoveWest;

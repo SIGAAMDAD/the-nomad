@@ -1,37 +1,4 @@
 namespace TheNomad::SGame {
-    enum StateNum {
-		ST_MOB_IDLE,
-		ST_MOB_SEARCH,
-		ST_MOB_CHASE,
-		ST_MOB_FIGHT,
-		ST_MOB_FIGHT_MELEE,
-		ST_MOB_FIGHT_MISSILE,
-		ST_MOB_FLEE,
-		ST_MOB_DEAD,
-		
-		ST_PLAYR_IDLE,
-		ST_PLAYR_CROUCHING,
-		ST_PLAYR_SLIDING,
-		ST_PLAYR_DOUBLEJUMP,
-		ST_PLAYR_DASH,
-		ST_PLAYR_MELEE,
-		ST_PLAYR_COMBAT,
-		ST_PLAYR_DEAD,
-		ST_PLAYR_QUICKSHOT,
-		
-		// legs on ground states
-		ST_PLAYR_LEGS_IDLE_GROUND,
-		ST_PLAYR_LEGS_MOVE_GROUND,
-		ST_PLAYR_LEGS_STUN_GROUND,
-
-		// legs in air states
-		ST_PLAYR_LEGS_IDLE_AIR,
-		ST_PLAYR_LEGS_FALL_AIR,
-		ST_PLAYR_LEGS_STUN_AIR,
-		
-		NumStates
-	};
-	
 	class EntityState {
 		EntityState() {
 		}
@@ -52,12 +19,58 @@ namespace TheNomad::SGame {
 		void Log() const {
 			ConsolePrint( "[Entity State Report]\n" );
 			ConsolePrint( "Name: " + m_Name + "\n" );
-			ConsolePrint( "Tics: " + formatUInt( m_nTics ) + "\n" );
-			ConsolePrint( "Id: " + formatUInt( m_nStateNum ) + "\n" );
+			ConsolePrint( "Tics: " + m_nTics + "\n" );
+			ConsolePrint( "Id: " + m_nStateNum + m_nStateOffset + "\n" );
 			ConsolePrint( "Sprite Offset: [" + m_SpriteOffset.x + ", " + m_SpriteOffset.y + "]\n" );
 		}
+
+		bool Load( json@ data ) {
+			array<json@> values;
+			string base;
+
+			if ( !data.get( "Id", m_Name ) ) {
+				ConsoleWarning( "invalid state info, missing variable 'Id'\n" );
+				return false;
+			}
+			if ( !data.get( "SpriteOffset", values ) ) {
+				ConsoleWarning( "invalid state info, missing variable 'SpriteOffset'\n" );
+				return false;
+			} else {
+				if ( values.Count() != 2 ) {
+					GameError( "invalid state info, variable 'SpriteOffset' is not a uvec2" );
+				}
+				m_SpriteOffset.x = uint( values[0] );
+				m_SpriteOffset.y = uint( values[1] );
+			}
+			if ( !data.get( "Tics", m_nTics ) ) {
+				ConsoleWarning( "invalid state info, missing variable 'Tics'\n" );
+				return false;
+			}
+			if ( !data.get( "Entity", base ) ) {
+				ConsoleWarning( "invalid state info, missing variable 'Entity'\n" );
+				return false;
+			} else {
+				if ( Util::StrICmp( base, "player" ) == 0 ) {
+					m_nStateOffset = 0;
+				} else if ( !InfoSystem::InfoManager.GetMobTypes().TryGetValue( base, m_nStateOffset ) ) {
+					GameError( "invalid state info, Entity \"" + base + "\" doesn't exist" );
+				}
+			}
+			if ( !data.get( "BaseNum", base ) ) {
+				ConsoleWarning( "invalid state info, missing variable 'BaseNum'\n" );
+				return false;
+			} else {
+				if ( !StateManager.GetBaseStateCache().TryGetValue( base, m_nStateNum ) ) {
+					GameError( "invalid state info, variable BaseNum \"" + base + "\" isn't a valid state" );
+				}
+				ConsolePrint( "State \"" + m_Name + "\" registered with ID " + m_nStateNum + " and offset of " + m_nStateOffset + "\n" );
+			}
+
+			return true;
+		}
+
 		uint GetID() const {
-			return m_nStateNum;
+			return m_nStateNum + m_nStateOffset;
 		}
 
 		void Reset() {
@@ -76,7 +89,7 @@ namespace TheNomad::SGame {
 		EntityState@ Run() {
 			m_nTicker += TheNomad::GameSystem::GameManager.GetDeltaTics();
 			if ( m_nTicker >= m_nTics ) {
-				return @m_NextState !is null ? @m_NextState : @StateManager.GetStateForNum( m_nStateNum + 1 );
+				return @m_NextState !is null ? @m_NextState : @StateManager.GetStateForNum( ( m_nStateNum + m_nStateOffset ) + 1 );
 			}
 			m_Animation.Run();
 			return @this;
@@ -98,6 +111,7 @@ namespace TheNomad::SGame {
 		private Animation@ m_Animation = null;
 		private uint m_nTics = 0;
 		private uint m_nStateNum = 0;
+		private uint m_nStateOffset = 0;
 
 		// runtime data
 		private uint m_nTicker = 0;

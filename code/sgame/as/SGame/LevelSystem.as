@@ -197,7 +197,7 @@ namespace TheNomad::SGame {
 				for ( uint i = 0; i < cp.m_Spawns.Count(); i++ ) {
 					EntityManager.Spawn( cp.m_Spawns[i].m_nEntityType, cp.m_Spawns[i].m_nEntityId,
 						vec3( float( cp.m_Spawns[i].m_Origin.x ), float( cp.m_Spawns[i].m_Origin.y ),
-						float( cp.m_Spawns[i].m_Origin.z ) ) );
+						float( cp.m_Spawns[i].m_Origin.z ) ), vec2( 0.0f, 0.0f ) );
 				}
 				
 				TheNomad::Engine::CmdExecuteCommand( "sgame.save_game\n" );
@@ -362,7 +362,7 @@ namespace TheNomad::SGame {
 			// check if there's a player spawn at index 0, as that is required for all levels.
 			// Even if it's a cinematic where the camera will not be on the player, they must
 			// always be active and alive for the level to actually be running
-			if ( m_MapData.GetSpawns().Count() < 1 ) {
+			if ( m_MapData.GetSpawns().Count() < 1 || m_MapData.GetCheckpoints().Count() < 1 ) {
 				ForcePlayerSpawn();
 			} else {
 				const MapSpawn@ spawn = @m_MapData.GetSpawns()[ 0 ];
@@ -380,6 +380,14 @@ namespace TheNomad::SGame {
 			ConsoleWarning( "LevelSystem::OnLevelStart: the first spawn in a level must always be the player!\n" );
 			ConsolePrint( "Forcing player spawn...\n" );
 			m_MapData.GetSpawns().InsertAt( 0, spawn );
+			if ( m_MapData.GetCheckpoints().Count() == 0 ) {
+				ConsoleWarning( "LevelSystem::OnLevelStart: at least one checkpoint is required per level\n" );
+				ConsolePrint( "Forcing mandatory checkpoint...\n" );
+
+				MapCheckpoint cp = MapCheckpoint( uvec3( 0, 0, 0 ) );
+				m_MapData.GetCheckpoints().InsertAt( 0, cp );
+			}
+			m_MapData.GetCheckpoints()[0].m_Spawns.Add( @spawn );
 		}
 		
 		//

@@ -190,9 +190,11 @@ int ModuleOnInit() {
 	TheNomad::SGame::InfoSystem::InfoManager.LoadAmmoInfos();
 	TheNomad::SGame::InfoSystem::InfoManager.LoadWeaponInfos();
 
-	TheNomad::SGame::ScreenData.Init();
-
 	TheNomad::SGame::InitCheatCodes();
+
+	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
+		TheNomad::GameSystem::GameSystems[i].OnInit();
+	}
 
 	ConsolePrint( "--------------------\n" );
 
@@ -249,10 +251,10 @@ int ModuleOnLoadGame() {
 }
 
 int ModuleOnLevelStart() {
-	TheNomad::GameSystem::SetCameraPos( vec2( 0, 0 ) );
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLevelStart();
 	}
+	TheNomad::SGame::ScreenData.Init();
 	return 1;
 }
 
@@ -285,16 +287,11 @@ int ModuleOnRunTic( uint msec ) {
 
 	TheNomad::GameSystem::GameManager.SetMsec( msec );
 
-	const uint flags = RSF_ORTHO_TYPE_WORLD;
-
-	TheNomad::Engine::Renderer::ClearScene();
-
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnRunTic();
 	}
 
-	TheNomad::Engine::Renderer::RenderScene( 0, 0, TheNomad::GameSystem::GameManager.GetGPUConfig().screenWidth,
-		TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight, flags, TheNomad::GameSystem::GameManager.GetGameMsec() );
+	TheNomad::SGame::ScreenData.Draw();
 	
 	return TheNomad::SGame::GlobalState == TheNomad::SGame::GameState::StatsMenu ? 2 : 0;
 }

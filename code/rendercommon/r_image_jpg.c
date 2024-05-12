@@ -23,10 +23,12 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../engine/n_shared.h"
 #include "../rendercommon/r_public.h"
 #ifdef USE_OPENGL_API
-#include "rgl_local.h"
+#include "../rendergl/rgl_local.h"
+#include "../rendergl/stb_image.h"
 #endif
 #ifdef USE_VULKAN_API
-#include "rvk_local.h"
+#include "../rendervk/rvk_local.h"
+#include "../rendervk/stb_image.h"
 #endif
 
 void R_LoadJPG( const char *filename, unsigned char **pic, int *width, int *height, int *channels )

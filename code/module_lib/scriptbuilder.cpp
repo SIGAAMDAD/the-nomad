@@ -587,7 +587,7 @@ int CScriptBuilder::Build()
 		{
 			// Find the type id
 			int typeId = module->GetTypeIdByDecl(decl->declaration.c_str());
-			assert( typeId >= 0 );
+			Assert( typeId >= 0 );
 			if( typeId >= 0 )
 				typeMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(typeId, decl->metadata));
 		}
@@ -597,7 +597,7 @@ int CScriptBuilder::Build()
 			{
 				// Find the function id
 				asIScriptFunction *func = module->GetFunctionByDecl(decl->declaration.c_str());
-				assert( func );
+				Assert( func );
 				if( func )
 					funcMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
 			}
@@ -605,7 +605,7 @@ int CScriptBuilder::Build()
 			{
 				// Find the method id
 				int typeId = module->GetTypeIdByDecl(decl->parentClass.c_str());
-				assert( typeId > 0 );
+				Assert( typeId > 0 );
 				UtlHashMap<int, SClassMetadata>::iterator it = classMetadataMap.find(typeId);
 				if( it == classMetadataMap.end() )
 				{
@@ -615,7 +615,7 @@ int CScriptBuilder::Build()
 
 				asITypeInfo *type = engine->GetTypeInfoById(typeId);
 				asIScriptFunction *func = type->GetMethodByDecl(decl->declaration.c_str());
-				assert( func );
+				Assert( func );
 				if( func )
 					it->second.funcMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
 			}
@@ -636,7 +636,7 @@ int CScriptBuilder::Build()
 			{
 				// Find the method virtual property accessors
 				int typeId = module->GetTypeIdByDecl(decl->parentClass.c_str());
-				assert( typeId > 0 );
+				Assert( typeId > 0 );
 				UtlHashMap<int, SClassMetadata>::iterator it = classMetadataMap.find(typeId);
 				if( it == classMetadataMap.end() )
 				{
@@ -659,14 +659,14 @@ int CScriptBuilder::Build()
 			{
 				// Find the global variable index
 				int varIdx = module->GetGlobalVarIndexByName(decl->declaration.c_str());
-				assert( varIdx >= 0 );
+				Assert( varIdx >= 0 );
 				if( varIdx >= 0 )
 					varMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(varIdx, decl->metadata));
 			}
 			else
 			{
 				int typeId = module->GetTypeIdByDecl(decl->parentClass.c_str());
-				assert( typeId > 0 );
+				Assert( typeId > 0 );
 
 				// Add the classes if needed
 				UtlHashMap<int, SClassMetadata>::iterator it = classMetadataMap.find(typeId);
@@ -693,7 +693,7 @@ int CScriptBuilder::Build()
 				}
 
 				// If found, add it
-				assert( idx >= 0 );
+				Assert( idx >= 0 );
 				if( idx >= 0 ) it->second.varMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(idx, decl->metadata));
 			}
 		}
@@ -708,7 +708,7 @@ int CScriptBuilder::Build()
 				else
 				{
 					asIScriptFunction *func = module->GetFunctionByDecl(decl->declaration.c_str());
-					assert(func);
+					Assert(func);
 					if (func)
 						funcMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
 				}
@@ -716,7 +716,7 @@ int CScriptBuilder::Build()
 			else
 			{
 				int typeId = module->GetTypeIdByDecl(decl->parentClass.c_str());
-				assert(typeId > 0);
+				Assert(typeId > 0);
 
 				// Add the classes if needed
 				UtlHashMap<int, SClassMetadata>::iterator it = classMetadataMap.find(typeId);
@@ -750,7 +750,7 @@ int CScriptBuilder::Build()
 					// Look for the matching method instead
 					asITypeInfo *type = engine->GetTypeInfoById(typeId);
 					asIScriptFunction *func = type->GetMethodByDecl(decl->declaration.c_str());
-					assert(func);
+					Assert(func);
 					if (func)
 						it->second.funcMetadataMap.insert(UtlHashMap<int, UtlVector<UtlString> >::value_type(func->GetId(), decl->metadata));
 				}

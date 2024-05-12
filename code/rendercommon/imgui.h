@@ -26,6 +26,7 @@
 #define IMGUI_VERSION       "1.90.0"
 #define IMGUI_VERSION_NUM   19000
 #define IMGUI_HAS_TABLE
+#define IMGUI_DISABLE_OBSOLETE_KEYIO
 
 /*
 

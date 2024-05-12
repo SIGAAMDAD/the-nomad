@@ -310,10 +310,9 @@ void RE_LoadWorldMap(const char *filename)
     r_worldData.numTiles = r_worldData.width * r_worldData.height;
 
     // load into heap
+    R_LoadTileset(&mheader->lumps[LUMP_SPRITES], theader);
     R_LoadTiles(&mheader->lumps[LUMP_TILES]);
     R_LoadLights(&mheader->lumps[LUMP_LIGHTS]);
-
-    R_LoadTileset(&mheader->lumps[LUMP_SPRITES], theader);
 
 //    R_ProcessLights();
     R_GenerateDrawData();

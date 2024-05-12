@@ -24,13 +24,6 @@
 
 static CThreadMutex g_hRenderLock;
 
-// singletons defined here because AngelScript doesn't let you do it in the scripting
-static asIScriptObject *s_pEntitySystem;
-static asIScriptObject *s_pGameSystem;
-static asIScriptObject *s_pStateSystem;
-static asIScriptObject *s_pGfxSystem;
-static asIScriptObject *s_pRandomSystem;
-
 // glm has a lot of very fuzzy template types
 using vec2 = glm::vec<2, float, glm::packed_highp>;
 using vec3 = glm::vec<3, float, glm::packed_highp>;
@@ -889,8 +882,12 @@ static void GetGPUConfig( CModuleGPUConfig *config ) {
     config->extensionsString = config->gpuConfig.extensions_string;
 }
 
-static void SetCameraPos( const vec2 *pos ) {
-//    G_SetCameraData( (const float *)pos, 1.6f, 0.0f );
+static void SetCameraPos( asIScriptGeneric *pGeneric ) {
+    const vec2 *pos = (const vec2 *)pGeneric->GetArgObject( 0 );
+    const float zoom = pGeneric->GetArgFloat( 1 );
+    const float rotation = pGeneric->GetArgFloat( 2 );
+
+    G_SetCameraData( (const vec_t *)pos, zoom, rotation );
 }
 
 static nhandle_t OpenFileRead( const string_t *fileName ) {
@@ -1527,12 +1524,6 @@ static void Register_VecType( const char *name, const char *p_name )
 void ModuleLib_Register_Engine( void )
 {
     PROFILE_FUNCTION();
-
-    // reset SGame singletons
-    s_pEntitySystem = NULL;
-    s_pGameSystem = NULL;
-    s_pStateSystem = NULL;
-    s_pGfxSystem = NULL;
 
     CScriptConvert::Register( g_pModuleLib->GetScriptEngine() );
 
@@ -2255,7 +2246,8 @@ void ModuleLib_Register_Engine( void )
         
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetString( const string& in, string& out )", WRAP_FN( GetString ) );
 
-        REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::SetCameraPos( const vec2& in )", WRAP_FN( SetCameraPos ) );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::GameSystem::SetCameraPos( const vec2& in, float, float )",
+            asFUNCTION( SetCameraPos ), asCALL_GENERIC );
 
         #undef REGISTER_GLOBAL_FUNCTION
         #define REGISTER_GLOBAL_FUNCTION( decl, funcPtr ) \
@@ -2377,10 +2369,11 @@ void ModuleLib_Register_Engine( void )
             asFUNCTION( GetSpawnData ), asCALL_GENERIC );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetTileData( array<array<uint>>@ )", WRAP_FN( GetTileData ) );
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::GameSystem::SetActiveMap( int, uint& out, uint& out, uint& out )", asFUNCTION( ModuleLib_SetActiveMap ), asCALL_GENERIC );
-        REGISTER_GLOBAL_FUNCTION( "int LoadMap( const string& in )", WRAP_FN( LoadMap ) );
+        REGISTER_GLOBAL_FUNCTION( "int TheNomad::GameSystem::LoadMap( const string& in )", WRAP_FN( LoadMap ) );
 
 //        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "TheNomad::GameSystem::GameObject@ TheNomad::GameSystem::AddSystem( "
 //                "TheNomad::GameSystem::GameObject@ SystemHandle )", asFUNCTION( RegisterGameObject ), asCALL_GENERIC );
+        RESET_NAMESPACE();
     }
 
     SET_NAMESPACE( "TheNomad" );
@@ -2509,6 +2502,9 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_VAR( "const vec4 colorCyan", colorCyan );
         REGISTER_GLOBAL_VAR( "const vec4 colorWhite", colorWhite );
         REGISTER_GLOBAL_VAR( "const vec4 colorGold", colorGold );
+
+        REGISTER_GLOBAL_VAR( "float Game_CameraZoom", &gi.cameraZoom );
+        REGISTER_GLOBAL_VAR( "vec3 Game_CameraPos", &gi.cameraPos );
 
         REGISTER_GLOBAL_VAR( "const TheNomad::GameSystem::DirType[] InverseDirs", inversedirs );
 

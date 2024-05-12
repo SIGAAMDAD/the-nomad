@@ -188,7 +188,7 @@ namespace TheNomad::SGame {
 				}
 
 				if ( @ent.GetState() is null ) {
-					DebugPrint( "EntitySystem::OnRunTic: null entity state\n" );
+//					DebugPrint( "EntitySystem::OnRunTic: null entity state\n" );
 					continue;
 				} else {
 					ent.SetState( @ent.GetState().Run() );
@@ -226,30 +226,19 @@ namespace TheNomad::SGame {
 		}
 		void OnLevelStart() {
 			vec2 size;
+			
+			array<MapSpawn@>@ spawns = @LevelManager.GetMapData().GetCheckpoints()[0].m_Spawns;
 
-			DebugPrint( "Spawning entities...\n" );
+			DebugPrint( "Initializing entities...\n" );
 
-			array<MapSpawn>@ spawns = @LevelManager.GetMapData().GetSpawns();
 			for ( uint i = 0; i < spawns.Count(); i++ ) {
-				switch ( spawns[i].m_nEntityType ) {
-				case TheNomad::GameSystem::EntityType::Playr:
-					size = vec2( sgame_PlayerWidth.GetFloat(), sgame_PlayerHeight.GetFloat() );
-					break;
-				case TheNomad::GameSystem::EntityType::Mob: {
-					const InfoSystem::MobInfo@ info = @InfoSystem::InfoManager.GetMobInfo( spawns[i].m_nEntityId );
-					size = vec2( info.width, info.height );
-					break; }
-				case TheNomad::GameSystem::EntityType::Weapon:
-				case TheNomad::GameSystem::EntityType::Item:
-					size = vec2( 1.0f ); // always at least 1 tile large
-					break;
-				};
-
-				Spawn( spawns[i].m_nEntityType, spawns[i].m_nEntityId,
-					vec3( spawns[i].m_Origin.x, spawns[i].m_Origin.y, spawns[i].m_Origin.z ), size );
+				EntityManager.Spawn( spawns[i].m_nEntityType, spawns[i].m_nEntityId,
+					vec3( float( spawns[i].m_Origin.x ), float( spawns[i].m_Origin.y ), float( spawns[i].m_Origin.z ) ),
+					vec2( 0.0f, 0.0f ) );
 			}
+			LevelManager.GetMapData().GetCheckpoints()[0].m_bPassed = true;
 
-			DebugPrint( "Found " + m_EntityList.Count() + " entity spawns.\n" );
+			DebugPrint( formatUInt( m_EntityList.Count() ) + " total entities.\n" );
 		}
 		void OnLevelEnd() {
 			// clear all level locals

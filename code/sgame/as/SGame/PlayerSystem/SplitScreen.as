@@ -257,14 +257,14 @@ namespace TheNomad::SGame {
 			const uint flags = RSF_ORTHO_TYPE_WORLD;
 			
 			// snap to the player's position
-			TheNomad::GameSystem::SetCameraPos( vec2( origin.x, origin.y ) );
+//			Game_CameraPos = vec3( origin.x, origin.y, 0.0f );
 			
 			TheNomad::Engine::Renderer::ClearScene();
 			for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 				TheNomad::GameSystem::GameSystems[i].OnRenderScene();
 			}
 			TheNomad::Engine::Renderer::RenderScene( scenePos.x, scenePos.y, sceneSize.x, sceneSize.y, flags, 
-				TheNomad::GameSystem::GameManager.GetGameTic()  );
+				TheNomad::GameSystem::GameManager.GetGameTic() );
 		}
 
 		uint GetPlayerIndex( PlayrObject@ obj ) {
@@ -283,6 +283,7 @@ namespace TheNomad::SGame {
 				TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight );
 			
 			switch ( m_nPlayerCount ) {
+			case 0:
 			case 1:
 				RenderScene( pos, size, m_PlayerData[0].GetOrigin() );
 				break;

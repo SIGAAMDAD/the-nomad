@@ -64,6 +64,7 @@ qboolean UI_MenuTitle( const char *label, float fontScale )
 	ImVec2 cursorPos;
 	renderSceneRef_t refdef;
 	extern cvar_t *in_joystick;
+	nhandle_t hShader;
 
 	memset( &refdef, 0, sizeof( refdef ) );
 	refdef.x = 0;
@@ -86,7 +87,12 @@ qboolean UI_MenuTitle( const char *label, float fontScale )
 //	ImGui::SetWindowFontScale( 1.5f * scale );
 	ImGui::SetCursorScreenPos( ImVec2( 16 * ui->scale, 680 * ui->scale ) );
 	if ( ui->menusp >= 2 ) {
-		ImGui::Image( (ImTextureID)(uintptr_t)( ui->backHovered ? ui->back_1 : ui->back_0 ), ImVec2( 256 * ui->scale, 72 * ui->scale ) );
+		if ( in_mode->i == 1 ) {
+			hShader = ui->controller_back;
+		} else {
+			hShader = ui->backHovered ? ui->back_1 : ui->back_0;
+		}
+		ImGui::Image( (ImTextureID)(uintptr_t)hShader, ImVec2( 256 * ui->scale, 72 * ui->scale ) );
 		ui->backHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
 		if ( ImGui::IsItemClicked() ) {
 			Snd_PlaySfx( ui->sfx_back );

@@ -51,6 +51,8 @@ static void NewGameMenu_Draw( void )
 {
     int i;
     extern cvar_t *in_joystick;
+    nhandle_t hShader;
+    ImVec2 imageSize;
 
     ImGui::Begin( s_newGame->menu.name, NULL, s_newGame->menu.flags );
     ImGui::SetWindowSize( ImVec2( s_newGame->menu.width, s_newGame->menu.height ) );
@@ -77,9 +79,7 @@ static void NewGameMenu_Draw( void )
         ImGui::TableNextColumn();
 
         if ( in_mode->i == 1 ) {
-            char buf[MAX_STRING_CHARS];
-
-            if ( ImGui::Button( va( "%s##SinglePlayerMenuSaveNamePromptInput", buf ),
+            if ( ImGui::Button( va( "%s##SinglePlayerMenuSaveNamePromptInput", s_newGame->saveName ),
                 ImVec2( 528 * ui->scale, 72 * ui->scale ) ) )
             {
                 // accessing it through the controller, toggle the on-screen keyboard
@@ -144,11 +144,18 @@ static void NewGameMenu_Draw( void )
     }
     ImGui::EndTable();
 
+    if ( in_mode->i == 1 ) {
+        hShader = ui->controller_start;
+        imageSize = ImVec2( 172 * ui->scale, 64 * ui->scale );
+    } else {
+        hShader = s_newGame->acceptHovered ? s_newGame->accept_1 : s_newGame->accept_0;
+        imageSize = ImVec2( 256 * ui->scale, 72 * ui->scale );
+    }
+
     ImGui::SetCursorScreenPos( ImVec2( 970 * ui->scale, 680 * ui->scale ) );
-    ImGui::Image( (ImTextureID)(uintptr_t)( s_newGame->acceptHovered ? s_newGame->accept_1 : s_newGame->accept_0 ),
-		ImVec2( 256 * ui->scale, 72 * ui->scale ) );
+    ImGui::Image( (ImTextureID)(uintptr_t)hShader, imageSize );
 	s_newGame->acceptHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
-	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
+	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) || Key_IsDown( KEY_PAD0_START ) ) {
 		Snd_PlaySfx( ui->sfx_select );
         BeginNewGame();
 	}
@@ -185,6 +192,7 @@ void NewGameMenu_Cache( void )
     }
 
     memset( &ui->virtKeyboard, 0, sizeof( ui->virtKeyboard ) );
+    memset( s_newGame->saveName, 0, sizeof( s_newGame->saveName ) );
 
     srand( Sys_Milliseconds() );
     s_newGame->hardestIndex = rand() % s_newGame->numHardestStrings;

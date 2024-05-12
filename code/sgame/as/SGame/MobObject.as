@@ -48,7 +48,7 @@ namespace TheNomad::SGame {
 			return m_MFlags;
 		}
 		
-		private void DoAttack( const InfoSystem::AttackInfo@ atk ) {
+		private void DoAttack( InfoSystem::AttackInfo@ atk ) {
 			TheNomad::GameSystem::RayCast@ rayData = null;
 			
 			switch ( atk.attackMethod ) {
@@ -59,7 +59,7 @@ namespace TheNomad::SGame {
 				
 				ray.m_Origin = m_Link.m_Origin;
 				ray.m_nLength = atk.range;
-				ray.m_nAngle = Util::Dir2Angle( m_PhysicsObject.GetAngle() );
+				ray.m_nAngle = m_PhysicsObject.GetAngle();
 				ray.m_nEntityNumber = 0;
 
 				TheNomad::GameSystem::CastRay( @ray );
@@ -69,7 +69,8 @@ namespace TheNomad::SGame {
 				}
 				break; }
 			case InfoSystem::AttackMethod::Projectile:
-				EntityManager.SpawnProjectile( m_Link.m_Origin, m_PhysicsObject.GetAngle(), @atk, m_ );
+				EntityManager.SpawnProjectile( m_Link.m_Origin, m_PhysicsObject.GetAngle(), @atk,
+					vec2( m_CurrentAttack.projectileWidth, m_CurrentAttack.projectileHeight ) );
 				return; // we'll let the entity manager deal with it now
 			default:
 				// should theoretically NEVER happen
@@ -110,7 +111,7 @@ namespace TheNomad::SGame {
 //					EntityManager.GibbEntity( @this );
 				}
 				TheNomad::Engine::SoundSystem::SoundManager.PushSfxToScene( m_Info.dieSfx );
-				EntityManager.KillEntity( cast<EntityObject@>( @this ) );
+				EntityManager.KillEntity( @source, cast<EntityObject@>( @this ) );
 				
 				// alert mobs within the vicinity
 				EntityManager.GetPlayerObject().MakeSound();
@@ -208,7 +209,7 @@ namespace TheNomad::SGame {
 			TheNomad::GameSystem::CastRay( @ray );
 			
 			if ( ray.m_nEntityNumber == ENTITYNUM_INVALID || ray.m_nEntityNumber == ENTITYNUM_WALL ) {
-				if ( ray.m_nEntityNumber == ENITTYNUM_WALL ) {
+				if ( ray.m_nEntityNumber == ENTITYNUM_WALL ) {
 					ShuffleDirection();
 				}
 				return false;
@@ -224,23 +225,13 @@ namespace TheNomad::SGame {
 			if ( CheckCollision() ) {
 				return;
 			}
-			
-			vec3 speedClamp;
-			
+						
 			if ( @m_Target !is null ) {
 				// get closer to target
 				m_PhysicsObject.SetAngle( atan2( m_Link.m_Origin.x - m_Target.GetOrigin().x, m_Link.m_Origin.y - m_Target.GetOrigin().y ) );
 			}
 			
-			const uint flags = LevelManager.GetMapData().GetTile( m_Link.m_Origin );
-			
-			if ( ( flags & SURFACEPARM_WOOD ) != 0 ) {
-				
-			} else if ( ( flags & SURFACEPARM_WATER ) != 0 ) {
-				speedClamp = vec3( sgame_WaterFriction.GetFloat() );
-			}
-			
-			m_PhysicsObject.OnRunTic( m_Link.m_Origin );
+			m_PhysicsObject.OnRunTic();
 		}
 		
 		//===========================================================
@@ -253,12 +244,12 @@ namespace TheNomad::SGame {
 			const uint gameTic = TheNomad::GameSystem::GameManager.GetGameTic();
 			const float scale = LevelManager.GetDifficultyScale();
 
-			if ( m_nAlertLevel > 6 / scale ) {
+			if ( m_nAlertLevel > uint( 6 / scale ) ) {
 				SetState( StateNum::ST_MOB_FIGHT );
 			}
 			
 			// wait roughly 6 seconds before another check
-			if ( gameTic - m_nLastAlertTime > 6000 / scale ) {
+			if ( gameTic - m_nLastAlertTime > uint( 6000 / scale ) ) {
 				m_nLastAlertTime = 0;
 				m_nAlertLevel++;
 			} else {
@@ -275,8 +266,8 @@ namespace TheNomad::SGame {
 			vec3 delta, pos, p;
 			EntityObject@ ent;
 			
-			delta.x = cos( m_PhysicsObject.GetAngle());
-			delta.y = sin( m_PhysicsObject.GetAngle());
+			delta.x = cos( m_PhysicsObject.GetAngle() );
+			delta.y = sin( m_PhysicsObject.GetAngle() );
 			delta.z = 0.0f;
 			
 			pos = EntityManager.GetPlayerObject().GetOrigin() - m_Link.m_Origin;
@@ -331,7 +322,7 @@ namespace TheNomad::SGame {
 				return false;
 			}
 			
-			return ;
+			return true;
 		}
 		
 		//===========================================================
@@ -384,7 +375,7 @@ namespace TheNomad::SGame {
 				// initiate the attack
 				m_bIsAttacking = true;
 				
-				if ( m_CurrentAttack.method == InfoSystem::AttackMethod::Projectile ) {
+				if ( m_CurrentAttack.attackMethod == InfoSystem::AttackMethod::Projectile ) {
 					// spawn an independent projectile entity
 					m_bIsAttacking = false;
 					// NOTE: spawn with an offset?
@@ -395,26 +386,21 @@ namespace TheNomad::SGame {
 				// we are attacking, take aim, and draw the parry indicator
 				vec4 color;
 				
-				if ( m_CurrentAttack.canParry && m_nAttackTime <= ( m_Info.duration / 2 ) ) {
+				if ( m_CurrentAttack.canParry && m_nAttackTime <= ( m_CurrentAttack.duration / 2 ) ) {
 					color = colorGreen;
 				} else {
 					color = colorRed;
 				}
-				switch ( m_CurrentAttack.method ) {
+				TheNomad::Engine::Renderer::SetColor( color );
+				switch ( m_CurrentAttack.attackMethod ) {
 				case InfoSystem::AttackMethod::Hitscan:
 					// boolets
-					TheNomad::Engine::Renderer::SceneData.PushLine( m_Link.m_Origin, m_Link.m_Origin + m_Info.range,
-						TheNomad::Engine::ResourceCache.GetShader( "gfx/player/parryline" ), color );
 					break;
 				case InfoSystem::AttackMethod::RayCast:
 					// melee without the AOE
-					TheNomad::Engine::Renderer::SceneData.PushQuad( m_Link.m_Origin,
-						TheNomad::Engine::ResourceCache.GetShader( "gfx/player/parry" ), color );
 					break;
 				case InfoSystem::AttackMethod::AreaOfEffect:
 					// this will draw a circle as a texture, then overlay it with color
-					TheNomad::Engine::Renderer::SceneData.PushQuad( m_Link.m_Origin,
-						TheNomad::Engine::ResourceCache.GetShader( "gfx/player/parrybox" ), color );
 					break;
 				case InfoSystem::AttackMethod::Projectile:
 					// shouldn't really be happening...
@@ -422,14 +408,14 @@ namespace TheNomad::SGame {
 					return;
 				};
 				
-				if ( m_nAttackTime >= m_Info.duration ) {
+				if ( m_nAttackTime >= m_CurrentAttack.duration ) {
 					// SHOOT!
 					DoAttack( @m_CurrentAttack );
 					m_nLastAttackTime = TheNomad::GameSystem::GameManager.GetGameTic();
 					m_nAttackTime = 0;
 					m_bIsAttacking = false;
 					return;
-				} else if ( m_nAttackTime <= ( m_Info.duration / 2 ) ) {
+				} else if ( m_nAttackTime <= ( m_CurrentAttack.duration / 2 ) ) {
 					// parry it
 					if ( EntityManager.GetPlayerObject().CheckParry( @this, @m_CurrentAttack ) ) {
 						m_nLastAttackTime = TheNomad::GameSystem::GameManager.GetGameTic();

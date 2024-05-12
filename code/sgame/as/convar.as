@@ -76,7 +76,8 @@ namespace TheNomad {
 		}
 
 		void OnInit() {
-			TheNomad::Engine::CommandSystem::CmdManager.AddCommand( @this, "sgame.list_cvars" );
+//			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+//				TheNomad::Engine::CommandSystem::CommandFunc( @ListVars_f ), "sgame.list_cvars" );
 		}
 		void OnShutdown() {
 			for ( uint i = 0; i < m_CvarCache.Count(); i++ ) {

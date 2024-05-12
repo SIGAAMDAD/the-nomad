@@ -24,6 +24,7 @@ namespace TheNomad::Engine::CommandSystem {
 
     class CommandManager {
         CommandManager() {
+            m_CommandList.Reserve( 1024 );
         }
         ~CommandManager() {
             for ( uint i = 0; i < m_CommandList.Count(); i++ ) {
@@ -53,12 +54,14 @@ namespace TheNomad::Engine::CommandSystem {
 
         void AddCommand( CommandFunc@ fn, const string& in name ) {
             m_CommandList.Add( Command( name, @fn ) );
+            TheNomad::Engine::CmdAddCommand( name );
             DebugPrint( "Added SGame command \"" + name + "\".\n" );
         }
-        void AddCommand( TheNomad::GameSystem::GameObject@ obj, const string& in name ) {
-            m_CommandList.Add( Command( name, @obj ) );
-            DebugPrint( "Added GameObject command \"" + name + "\".\n" );
-        }
+//        void AddCommand( TheNomad::GameSystem::GameObject@ obj, const string& in name ) {
+//            m_CommandList.Add( Command( name, @obj ) );
+//            TheNomad::Engine::CmdAddCommand( name );
+//            DebugPrint( "Added GameObject command \"" + name + "\".\n" );
+//        }
 
         private array<Command> m_CommandList;
     };
