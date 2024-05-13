@@ -45,6 +45,7 @@ namespace TheNomad::SGame {
 			//
 			// add keybind commands
 			//
+			/*
 			
 			// these specific movement commands MUST NOT CHANGE as they are hardcoded into the engine
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
@@ -100,6 +101,11 @@ namespace TheNomad::SGame {
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.SwitchHand_Down_f ), "+switchhand", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.DummyFn_Up_f ), "-switchhand", true );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.NextWeapon_f ), "+weapnext", true );
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.PrevWeapon_f ), "+weapprev", true );
+				*/
 		}
 		
 		private PlayrObject@ GetPlayerIndex() const {

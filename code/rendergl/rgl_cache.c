@@ -504,22 +504,13 @@ void RB_FlushBatchBuffer( void )
 
 	buf = backend.drawBatch.buffer;
 
-	// orphan the old buffers so that we don't stall on it
-	nglBufferData( GL_ELEMENT_ARRAY_BUFFER, backend.drawBatch.maxVertices, NULL, backend.drawBatch.buffer->index.glUsage );
-	nglBufferData( GL_ARRAY_BUFFER, backend.drawBatch.maxIndices, NULL, backend.drawBatch.buffer->vertex.glUsage );
+	// orphan the old index buffer so that we don't stall on it
+	nglBufferData( GL_ELEMENT_ARRAY_BUFFER, backend.drawBatch.maxIndices, NULL, backend.drawBatch.buffer->index.glUsage );
+	nglBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize, backend.drawBatch.indices );
 
-	switch ( buf->vertex.usage ) {
-	case BUF_GL_MAPPED: {
-		nglMapBufferRange( GL_ELEMENT_ARRAY_BUFFER, 0, backend.drawBatch.buffer->vertex.size, GL_MAP_INVALIDATE_BUFFER_BIT );
-		break; }
-	case BUF_GL_BUFFER: {
-		nglBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, backend.drawBatch.idxOffset * backend.drawBatch.idxDataSize, backend.drawBatch.indices );
-		nglBufferSubData( GL_ARRAY_BUFFER, 0, backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize, backend.drawBatch.vertices );
-		break; }
-	default:
-		assert( false );
-		break;
-	};
+	// orphan the old index buffer so that we don't stall on it
+	nglBufferData( GL_ARRAY_BUFFER, backend.drawBatch.maxVertices, NULL, backend.drawBatch.buffer->vertex.glUsage );
+	nglBufferSubData( GL_ARRAY_BUFFER, 0, backend.drawBatch.vtxOffset * backend.drawBatch.vtxDataSize, backend.drawBatch.vertices );
 
 	RB_IterateShaderStages( backend.drawBatch.shader );
 

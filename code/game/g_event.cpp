@@ -281,6 +281,13 @@ uint32_t Key_StringToKeynum( const char *str )
 		return str[0];
 	}
 
+	// scan for a text match
+	for ( kn = keynames ; kn->name ; kn++ ) {
+		if ( !N_stricmp( str, kn->name ) ) {
+			return kn->keynum;
+		}
+	}
+
 	// check for hex code
 	if ( strlen( str ) == 4 ) {
 		uint32_t n = Com_HexStrToInt( str );
@@ -288,12 +295,6 @@ uint32_t Key_StringToKeynum( const char *str )
 		if ( n >= 0 ) {
 			return n;
 		}
-	}
-
-	// scan for a text match
-	for ( kn = keynames ; kn->name ; kn++ ) {
-		if ( !N_stricmp( str, kn->name ) )
-			return kn->keynum;
 	}
 
 	return -1;
@@ -491,8 +492,6 @@ void Key_WriteBindings( fileHandle_t f )
 		
 		FS_Printf( f, "bind %s \"%s\"" GDR_NEWLINE, Key_KeynumToString(i), keys[i].binding );
 	}
-
-	Cbuf_ExecuteText( EXEC_APPEND, "ui.settingi_write_bindings" );
 }
 
 static void Key_Bindlist_f( void )
@@ -517,14 +516,15 @@ void Key_KeynameCompletion( void(*callback)(const char *s) )
 
 
 /*
-Key_ParseBinding: execute the commands in the bind string
+* Key_ParseBinding: execute the commands in the bind string
 */
-void Key_ParseBinding(uint32_t key, qboolean down, uint32_t time)
+void Key_ParseBinding( uint32_t key, qboolean down, uint32_t time )
 {
 	char buf[MAX_STRING_CHARS], *p, *end;
 
-	if (!keys[key].binding || keys[key].binding[0] == '\0')
+	if ( !keys[key].binding || keys[key].binding[0] == '\0' ) {
 		return;
+	}
 	
 	p = buf;
 

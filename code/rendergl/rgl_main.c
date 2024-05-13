@@ -229,13 +229,14 @@ void R_DrawPolys( void )
             CrossProduct( edge1, edge2, normal );
         }
 
-        firstVert = (uint64_t)( backendData->verts - vtx );
+        firstVert = (uint64_t)( vtx - backendData->verts );
         for ( j = 0; j < poly->numVerts; j++ ) {
-            VectorCopy( vtx->xyz, poly->verts[j].xyz );
-            R_VaoPackNormal( vtx->normal, normal );
-            VectorCopy2( vtx->st, poly->verts[j].uv );
-            VectorCopy2( vtx->lightmap, poly->verts[j].uv );
-            R_CalcTangentVectors( (drawVert_t *)vtx );
+            VectorCopy( vtx[j].xyz, poly->verts[j].xyz );
+            R_VaoPackNormal( vtx[j].normal, normal );
+            VectorCopy2( vtx[j].st, poly->verts[j].uv );
+            VectorCopy2( vtx[j].lightmap, poly->verts[j].uv );
+            VectorCopy( vtx[j].worldPos, poly->verts[j].worldPos );
+//            R_CalcTangentVectors( (drawVert_t *)vtx );
             vtx++;
         }
 
@@ -286,9 +287,16 @@ static void R_DrawWorld( void )
             R_WorldToGL( vtx, pos );
 
             // generate normals
-            VectorSubtract( vtx->xyz, vtx->xyz + 1, edge1 );
-            VectorSubtract( vtx->xyz, vtx->xyz + 3, edge2 );
-            CrossProduct( edge1, edge2, normal );
+            // FIXME: this is hideous
+            if ( &vtx[3] != &rg.world->vertices[rg.world->numVertices] ) {
+                VectorSubtract( vtx->xyz, vtx[1].xyz, edge1 );
+                VectorSubtract( vtx->xyz, vtx[3].xyz, edge2 );
+                CrossProduct( edge1, edge2, normal );
+            } else {
+                VectorSubtract( vtx->xyz, vtx[1].xyz, edge1 );
+                VectorSubtract( vtx->xyz, vtx[2].xyz, edge2 );
+                CrossProduct( edge1, edge2, normal );
+            }
 
             for ( i = 0; i < 4; i++ ) {
                 VectorCopy2( vtx[i].uv, rg.world->sprites[ rg.world->tiles[y * rg.world->width + x].index ][i] );
@@ -302,13 +310,7 @@ static void R_DrawWorld( void )
         }
     }
 
-    // submit
-    nglBufferData( GL_ARRAY_BUFFER, rg.world->buffer->vertex.size, NULL, rg.world->buffer->vertex.glUsage );
-    nglBufferData( GL_ELEMENT_ARRAY_BUFFER, rg.world->buffer->index.size, NULL, rg.world->buffer->index.glUsage );
-
-    nglBufferSubData( GL_ARRAY_BUFFER, 0, rg.world->buffer->vertex.size, rg.world->vertices );
-    nglBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, rg.world->buffer->index.size, rg.world->indices );
-//    RB_CommitDrawData( rg.world->vertices, rg.world->numVertices, rg.world->indices, rg.world->numIndices );
+    RB_CommitDrawData( rg.world->vertices, rg.world->numVertices, rg.world->indices, rg.world->numIndices );
 
     // flush it we have anything left in there
     RB_FlushBatchBuffer();
@@ -381,12 +383,12 @@ nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32
 
     len = strlen( npath );
 
-    if ( ( (float)sheetWidth / (float)spriteWidth ) != (int)( (float)sheetWidth / (float)spriteWidth )
-        ||  ( (float)sheetHeight / (float)spriteHeight ) != (int)( (float)sheetHeight / (float)spriteHeight ) )
+    if ( !( ( (uint32_t)sheetWidth % 2 ) == 0 && ( (uint32_t)sheetHeight % 2 ) == 0 )
+	    || !( ( (uint32_t)spriteWidth % 2 ) == 0 && ( (uint32_t)spriteHeight % 2 ) == 0 ) )
     {
         ri.Error( ERR_DROP, "RE_RegisterSpriteSheet: please ensure your sprite dimensions and sheet dimensions are powers of two" );
     }
-    if ( len >= MAX_GDR_PATH ) {
+    if ( len >= MAX_NPATH ) {
         ri.Error( ERR_DROP, "RE_RegisterSpriteSheet: name '%s' too long", npath );
     }
 

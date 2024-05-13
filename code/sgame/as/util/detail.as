@@ -312,7 +312,7 @@ namespace TheNomad::Util {
 	// Angle2Dir:
 	//
 	TheNomad::GameSystem::DirType Angle2Dir( float angle ) {
-		if ( angle >= 337.5f && angle <= 22.5f ) {
+		if ( ( angle >= 337.5f && angle <= 360.0f ) || ( angle >= 0.0f && angle <= 22.5f ) ) {
 			return TheNomad::GameSystem::DirType::North;
 		} else if ( angle >= 22.5f && angle <= 67.5f ) {
 			return TheNomad::GameSystem::DirType::NorthEast;

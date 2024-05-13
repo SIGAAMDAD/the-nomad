@@ -464,6 +464,8 @@ namespace TheNomad::SGame {
 			m_Link.m_Origin = origin;
 			m_nHealth = 100.0f;
 			m_nRage = 100.0f;
+			m_PhysicsObject.SetAngle( Util::Dir2Angle( TheNomad::GameSystem::DirType::East ) );
+			m_Direction = Util::Angle2Dir( m_PhysicsObject.GetAngle() );
 			@m_SpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/raio_base", 32, 32, 528, 528 );
 			if ( @m_SpriteSheet is null ) {
 				GameError( "PlayrObject::Spawn: failed to initialize sprite sheet" );
@@ -478,9 +480,22 @@ namespace TheNomad::SGame {
 		// custom draw because of adaptive weapons and leg sprites
 		void Draw() override {
 			int hLegSprite = FS_INVALID_HANDLE;
-			
-			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, m_SpriteSheet.GetShader(), m_State.GetSpriteOffset().y
-				* m_SpriteSheet.GetSpriteCountX() + m_State.GetSpriteOffset().x + m_Facing );
+
+			m_Link.m_Origin = vec3( 1.0f, 1.0f, 0.0f );
+//
+//			verts[0].xyz = vec3( 64.0f, 0.0f, 0.0f );
+//			verts[0].uv = m_SpriteSheet[0][0];
+//
+//			verts[1].xyz = vec3( 64.0f, 64.0f, 0.0f );
+//			verts[1].uv = m_SpriteSheet[0][1];
+//			
+//			verts[2].xyz = vec3( 0.0f, 64.0f, 0.0f );
+//			verts[2].uv = m_SpriteSheet[0][2];
+//
+//			verts[3].xyz = vec3( 0.0f, 0.0f, 0.0f );
+//			verts[3].uv = m_SpriteSheet[0][3];
+
+			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, m_SpriteSheet.GetShader(), 0 );
 			
 			//
 			// draw the legs
@@ -548,6 +563,7 @@ namespace TheNomad::SGame {
 		int m_CurrentWeapon = 0;
 		
 		private QuickShot m_QuickShot;
+		private TheNomad::Engine::Renderer::PolyVert[] verts( 4 );
 		
 		// sound effects
 		private TheNomad::Engine::SoundSystem::SoundEffect parrySfx;

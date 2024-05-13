@@ -47,16 +47,20 @@ public:
 
 	// Sets a key/value pair
 	void Set(const jsonKey_t &key, const bool &value);
-	void Set(const jsonKey_t &key, const json::number_integer_t &value);
-	void Set(const jsonKey_t &key, const json::number_unsigned_t &value);
+	void Set(const jsonKey_t &key, const asINT32 &value);
+	void Set(const jsonKey_t &key, const asINT64 &value);
+	void Set(const jsonKey_t &key, const asDWORD &value);
+	void Set(const jsonKey_t &key, const asQWORD &value);
 	void Set(const jsonKey_t &key, const json::number_float_t &value);
 	void Set(const jsonKey_t &key, const string_t &value);
 	void Set(const jsonKey_t &key, const CScriptArray &value);
 
 	// Gets the stored value. Returns false if the value isn't compatible
 	bool Get(const jsonKey_t &key, bool &value) const;
-	bool Get(const jsonKey_t &key, json::number_integer_t &value) const;
-	bool Get(const jsonKey_t &key, json::number_unsigned_t &value) const;
+	bool Get(const jsonKey_t &key, asINT32 &value) const;
+	bool Get(const jsonKey_t &key, asINT64 &value) const;
+	bool Get(const jsonKey_t &key, asDWORD &value) const;
+	bool Get(const jsonKey_t &key, asQWORD &value) const;
 	bool Get(const jsonKey_t &key, json::number_float_t &value) const;
 	bool Get(const jsonKey_t &key, string_t &value) const;
 	bool Get(const jsonKey_t &key, CScriptArray &value) const;

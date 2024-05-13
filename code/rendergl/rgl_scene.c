@@ -15,7 +15,7 @@ uint64_t r_numPolyVerts;
 
 uint64_t r_numQuads;
 
-void R_InitNextFrame(void)
+void R_InitNextFrame( void )
 {
     backendData->commandList.usedBytes = 0;
     backendData->numIndices = 0;
@@ -36,21 +36,52 @@ void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t
 {
     srfPoly_t *poly;
     polyVert_t *vtx;
+    srfVert_t *vt;
     vec3_t pos;
+    uint32_t *idx;
     uint32_t i;
+    uint64_t numVerts, numIndices;
 
     if ( !rg.registered ) {
         return;
     }
 
     if ( !rg.sheets[ hSpriteSheet ] ) {
+        ri.Printf( PRINT_DEVELOPER, "RE_AddSpriteToScene: invalid sprite sheet %i\n", hSpriteSheet );
         return;
     }
     if ( r_numPolyVerts + 4 >= r_maxPolys->i * 4 ) {
-        ri.Printf( PRINT_DEVELOPER, "RE_AddPolyToScene: r_maxPolyVerts hit, dropping %i vertices\n", 4 );
+        ri.Printf( PRINT_DEVELOPER, "RE_AddSpriteToScene: r_maxPolyVerts hit, dropping %i vertices\n", 4 );
         return;
     }
+
+    vtx = backendData->polyVerts;
     
+    vt = backend.drawBatch.vertices;
+    idx = backend.drawBatch.indices;
+
+    numVerts = backend.drawBatch.vtxOffset;
+    numIndices = backend.drawBatch.idxOffset;
+
+    VectorCopy( pos, origin );
+    R_WorldToGL2( vtx, pos, 4 );
+
+    for ( i = 0; i < 4; i++ ) {
+        VectorCopy2( vt[ numVerts + i ].st, rg.sheets[ hSpriteSheet ]->sprites[ hSprite ].texCoords[i] );
+        VectorCopy( vt[ numVerts + i ].xyz, vtx[i].xyz );
+        VectorCopy( vt[ numVerts + i ].worldPos, origin );
+    }
+
+    idx[ numIndices + 0 ] = numVerts;
+	idx[ numIndices + 1 ] = numVerts + 1;
+	idx[ numIndices + 2 ] = numVerts + 2;
+	idx[ numIndices + 3 ] = numVerts + 0;
+	idx[ numIndices + 4 ] = numVerts + 2;
+	idx[ numIndices + 5 ] = numVerts + 3;
+
+    RB_CommitDrawData( vt, 4, idx, 6 );
+
+    /*
     poly = &backendData->polys[r_numPolys];
     vtx = &backendData->polyVerts[r_numPolyVerts];
 
@@ -62,18 +93,21 @@ void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t
     poly->numVerts = 4;
     poly->hShader = rg.sheets[hSpriteSheet]->hShader;
 
+    R_WorldToGL2( poly->verts, pos, 4 );
+
     for ( i = 0; i < 4; i++ ) {
         VectorCopy2( vtx[i].uv, rg.sheets[ hSpriteSheet ]->sprites[ hSprite ].texCoords[i] );
+        VectorCopy( vtx[i].worldPos, origin );
     }
 
     r_numPolyVerts += 4;
     r_numPolys++;
+    */
 }
 
 void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t numVerts )
 {
     uint32_t i, offset;
-    uint32_t *idx;
     polyVert_t *vt;
     srfPoly_t *poly;
 
@@ -91,7 +125,7 @@ void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t num
         return;
     }
 
-    poly = &backendData->polys[r_numPolys];
+    poly = &backendData->polys[numVerts];
     vt = &backendData->polyVerts[r_numPolyVerts];
 
     poly->verts = vt;

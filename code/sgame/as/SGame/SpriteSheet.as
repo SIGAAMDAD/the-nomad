@@ -21,12 +21,11 @@ namespace TheNomad::SGame {
 			m_nSpriteCountX = uint( sheetSize.x / spriteSize.x );
 			m_nSpriteCountY = uint( sheetSize.y / spriteSize.y );
 
-			m_hShader = TheNomad::Engine::Renderer::RegisterShader( fileName );
-			if ( m_hShader == FS_INVALID_HANDLE ) {
-				ConsoleWarning( "SpriteSheet::Load: bad shader '" + fileName + "'!\n" );
-				return;
-			}
+			m_hShader = TheNomad::Engine::Renderer::RegisterSpriteSheet( fileName, uint( sheetSize.x ), uint( sheetSize.y ),
+				uint( spriteSize.x ), uint( spriteSize.y ) );
+//			m_hShader = TheNomad::Engine::Renderer::RegisterShader( fileName );
 
+/*
 			DebugPrint( "Processing sprite sheet '" + fileName + "', SpriteCount: [ " + m_nSpriteCountX + ", " + m_nSpriteCountY + " ]\n" );
 
 			for ( uint y = 0; y < m_nSpriteCountY; y++ ) {
@@ -35,6 +34,7 @@ namespace TheNomad::SGame {
 				}
 			}
 			DebugPrint( "Generated " + m_SpriteData.Count() + " sprites for '" + fileName + "'\n" );
+			*/
 		}
 		const Sprite& opIndex( uint nIndex ) const {
 			return m_SpriteData[ nIndex ];

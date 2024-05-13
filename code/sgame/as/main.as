@@ -223,7 +223,6 @@ int ModuleOnShutdown() {
 int ModuleOnConsoleCommand() {
 	const string cmd = TheNomad::Engine::CmdArgv( 0 );
 
-	DebugPrint( "Checking for command \"" + cmd + "\"...\n" );
 	if ( TheNomad::Engine::CommandSystem::CmdManager.CheckCommand( cmd ) ) {
 		return 1;
 	}

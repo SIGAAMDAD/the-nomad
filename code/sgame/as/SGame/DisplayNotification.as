@@ -48,10 +48,10 @@ namespace TheNomad::SGame {
 			// this class
 			if ( @m_SpriteSheet !is null ) {
 				// we're rendering from a spritesheet
-				const vec2[]@ texCoords = @m_SpriteSheet[ m_nSpriteId ].GetTexCoords();
-				
 				TheNomad::Engine::Renderer::DrawImage( m_Origin.x, m_Origin.y, m_Size.x, m_Size.y,
-					texCoords[0][0], texCoords[0][1], texCoords[2][0], texCoords[2][1], m_SpriteSheet[ m_nSpriteId ].GetShader() );
+					m_SpriteSheet[ m_nSpriteId ][0][0], m_SpriteSheet[ m_nSpriteId ][0][1],
+					m_SpriteSheet[ m_nSpriteId ][2][0], m_SpriteSheet[ m_nSpriteId ][2][1],
+					m_SpriteSheet[ m_nSpriteId ].GetShader() );
 			} else {
 				// just use the shader provided
 				TheNomad::Engine::Renderer::DrawImage( m_Origin.x, m_Origin.y, m_Size.x, m_Size.y, 0, 0, 1, 1, m_hShader );

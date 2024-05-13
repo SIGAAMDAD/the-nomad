@@ -35,7 +35,13 @@
 #define ID_WEAPONPREV      6
 #define ID_USEWEAPON       7
 #define ID_ALTUSEWEAPON    8
-#define NUMKEYBINDS        9
+#define ID_SWITCHWIELDING  9
+#define ID_SWITCHMODE      10
+#define ID_SWITCHHAND      11
+#define ID_DASH            12
+#define ID_MELEE           13
+#define ID_CROUCH          14
+#define NUMKEYBINDS        15
 
 typedef struct {
     const char *command;
@@ -159,10 +165,16 @@ static const bind_t s_defaultKeybinds[NUMKEYBINDS] = {
 	{ "+south", "move south", ID_MOVESOUTH, KEY_S, -1, -1, -1 },
 	{ "+east", "move east", ID_MOVEEAST, KEY_D, -1, -1, -1 },
 	{ "+jump", "jump", ID_UPMOVE, KEY_SPACE, -1, -1, -1 },
-	{ "weaponnext", "next weapon", ID_WEAPONNEXT, KEY_WHEEL_DOWN, -1, -1, -1 },
-	{ "weaponprev", "prev weapon", ID_WEAPONPREV, KEY_WHEEL_UP, -1, -1, -1 },
-	{ "+useweapon", "use weapon", ID_USEWEAPON, KEY_MOUSE_LEFT, -1, -1, -1 },
-	{ "+altuseweapon", "use weapon alt fire", ID_ALTUSEWEAPON, KEY_MOUSE_RIGHT, -1, -1, -1 }
+	{ "weapnext", "next weapon", ID_WEAPONNEXT, KEY_WHEEL_DOWN, -1, -1, -1 },
+	{ "weapprev", "prev weapon", ID_WEAPONPREV, KEY_WHEEL_UP, -1, -1, -1 },
+	{ "+useweap", "use weapon", ID_USEWEAPON, KEY_MOUSE_LEFT, -1, -1, -1 },
+	{ "+altuseweap", "use weapon alt fire", ID_ALTUSEWEAPON, KEY_MOUSE_RIGHT, -1, -1, -1 },
+	{ "+switchwielding", "switch weapon wielding", ID_SWITCHWIELDING, KEY_MOUSE_BUTTON_4, -1, -1, -1 },
+	{ "+switchmode", "switch weapon mode", ID_SWITCHMODE, KEY_MOUSE_BUTTON_5, -1, -1, -1 },
+	{ "+switchhand", "switch weapon hand", ID_SWITCHHAND, KEY_Q, -1, -1, -1 },
+	{ "+dash", "dash", ID_DASH, KEY_SHIFT, -1, -1, -1 },
+	{ "+melee", "melee", ID_MELEE, KEY_F, -1, -1, -1 },
+	{ "+crouch", "crouch", ID_CROUCH, KEY_CTRL, -1, -1, -1 }
 };
 
 static void SettingsMenu_GetInitial( void )

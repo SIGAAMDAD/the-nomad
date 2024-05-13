@@ -84,7 +84,7 @@ namespace TheNomad::SGame {
 			}
 
 			ConsolePrint( "State \"" + m_Name + "\" registered with ID " + m_nStateNum + " and offset of " + m_nStateOffset +
-				", with next state \"" + m_NextState.m_Name + "\"\n" );
+				", with next state \"" + m_NextState.m_Name + "\" with " + m_nTics + " tics\n" );
 
 			return true;
 		}

@@ -61,9 +61,9 @@ namespace TheNomad::SGame {
 
 			@sheet = @weapon.GetSpriteSheet();
 			if ( @sheet !is null ) {
-				@texCoords = @sheet[ weapon.GetSpriteIndex() ].GetTexCoords();
 				TheNomad::Engine::Renderer::DrawImage( pos.x, pos.y, size.x, size.y,
-					texCoords[0][0], texCoords[0][1], texCoords[2][0], texCoords[2][1],
+					sheet[ weapon.GetSpriteIndex() ][0][0], sheet[ weapon.GetSpriteIndex() ][0][1],
+					sheet[ weapon.GetSpriteIndex() ][2][0], sheet[ weapon.GetSpriteIndex() ][2][1],
 					hShader );
 			}
 			else {
