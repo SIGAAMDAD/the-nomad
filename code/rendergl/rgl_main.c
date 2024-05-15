@@ -2,28 +2,28 @@
 
 // this is here to that functions in n_shared.c can link
 
-void GDR_DECL N_Error(errorCode_t code, const char *err, ...)
+void GDR_DECL N_Error( errorCode_t code, const char *err, ... )
 {
     va_list argptr;
     char msg[MAXPRINTMSG];
 
-    va_start(argptr, err);
-    N_vsnprintf(msg, sizeof(msg), err, argptr);
-    va_end(argptr);
+    va_start( argptr, err );
+    N_vsnprintf( msg, sizeof( msg ) - 1, err, argptr );
+    va_end( argptr );
 
-    ri.Error(code, "%s", msg);
+    ri.Error( code, "%s", msg );
 }
 
-void GDR_DECL Con_Printf(const char *fmt, ...)
+void GDR_DECL Con_Printf( const char *fmt, ... )
 {
     va_list argptr;
     char msg[MAXPRINTMSG];
 
-    va_start(argptr, fmt);
-    N_vsnprintf(msg, sizeof(msg), fmt, argptr);
-    va_end(argptr);
+    va_start( argptr, fmt );
+    N_vsnprintf( msg, sizeof( msg ) - 1, fmt, argptr );
+    va_end( argptr );
 
-    ri.Printf(PRINT_INFO, "%s", msg);
+    ri.Printf( PRINT_INFO, "%s", msg );
 }
 
 void RB_MakeViewMatrix( void )
@@ -136,17 +136,19 @@ static int SortPoly( const void *a, const void *b ) {
 void R_WorldToGL( drawVert_t *verts, vec3_t pos )
 {
     vec3_t xyz[4];
+    int i;
 
     ri.GLM_TransformToGL( pos, xyz, 1.0f, glState.viewData.camera.viewProjectionMatrix );
 
-    for (uint32_t i = 0; i < 4; ++i)
+    for ( i = 0; i < 4; ++i ) {
         VectorCopy( verts[i].xyz, xyz[i] );
+	}
 }
 
 void R_WorldToGL2( polyVert_t *verts, vec3_t pos, uint32_t numVerts )
 {
     vec3_t xyz[4];
-    uint32_t i;
+    int i;
 
     ri.GLM_TransformToGL( pos, xyz, 1.0f, glState.viewData.camera.viewProjectionMatrix );
 
@@ -178,19 +180,17 @@ void R_ScreenToGL( polyVert_t *verts )
 */
 void R_DrawPolys( void )
 {
-    uint64_t i, j;
-    uint64_t firstIndex;
-    srfPoly_t *poly;
-    nhandle_t oldShader;
-    srfVert_t vtx[MAX_VERTS_ON_POLY];
-    uint32_t indices[MAX_VERTEX_BUFFERS*2];
-    uint64_t numVerts, numIndices;
-    vec3_t normal, edge1, edge2;
-
-    // no polygon submissions this frame
-    if ( !r_numPolys && !r_numPolyVerts || ( backend.refdef.flags & RSF_ORTHO_BITS ) == RSF_ORTHO_TYPE_SCREENSPACE ) {
-        return;
-    }
+	uint64_t i, j;
+	uint64_t firstIndex;
+	srfPoly_t *poly;
+	nhandle_t oldShader;
+	uint64_t numVerts;
+	vec3_t normal, edge1, edge2;
+	
+	// no polygon submissions this frame
+	if ( !r_numPolys && !r_numPolyVerts || ( backend.refdef.flags & RSF_ORTHO_BITS ) == RSF_ORTHO_TYPE_SCREENSPACE ) {
+	    return;
+	}
 
     RB_SetBatchBuffer( backend.drawBuffer, backendData->verts, sizeof( srfVert_t ), backendData->indices, sizeof( glIndex_t ) );
 
@@ -200,13 +200,7 @@ void R_DrawPolys( void )
     poly = backend.refdef.polys;
     oldShader = poly->hShader;
     backend.drawBatch.shader = R_GetShaderByHandle( oldShader );
-
-    memset( vtx, 0, sizeof( vtx ) );
-    memset( indices, 0, sizeof( indices ) );
-
-    numVerts = 0;
-    backendData->numIndices = 0;
-
+	
     GLSL_UseProgram( &rg.genericShader[0] );
 
     for ( i = 0; i < backend.refdef.numPolys; i++ ) {
@@ -216,45 +210,43 @@ void R_DrawPolys( void )
             oldShader = poly->hShader;
             backend.drawBatch.shader = R_GetShaderByHandle( poly->hShader );
         }
-
-        numIndices = 0;
-
-        // generate fan indexes into the buffer
-        firstIndex = backendData->numIndices;
-        for ( j = 0; j < poly->numVerts - 2; j++ ) {
-            indices[ 0 ] = numVerts;
-            indices[ 1 ] = numVerts + j + 1;
-            indices[ 2 ] = numVerts + j + 2;
-            numIndices += 3;
-            backendData->numIndices += 3;
-
-            // generate normals
-//            VectorSubtract( poly->verts[ j ].xyz, poly->verts[ j + 1 ].xyz, edge1 );
-//            VectorSubtract( poly->verts[ j ].xyz, poly->verts[ j + 2 ].xyz, edge2 );
-//            CrossProduct( edge1, edge2, normal );
-//            R_VaoPackNormal( vtx[ numVerts + j ].normal, normal );
-//            VectorCopy( vtx[ numVerts + j + 1 ].normal, vtx[ numVerts + j + 0 ].normal );
-//            VectorCopy( vtx[ numVerts + j + 2 ].normal, vtx[ numVerts + j + 0 ].normal );
-        }
-
-        for ( j = 0; j < poly->numVerts; j++ ) {
-            VectorCopy( vtx[ j ].xyz, poly->verts[j].xyz );
-            VectorCopy2( vtx[ j ].st, poly->verts[j].uv );
-//            VectorCopy2( vtx[ numVerts + j ].lightmap, poly->verts[j].uv );
-//            VectorCopy( vtx[ numVerts + j ].worldPos, poly->verts[j].worldPos );
-//            R_CalcTangentVectors( (drawVert_t *)&vtx[j] );
-        }
-
-        // submit to draw buffer
-        ri.Printf( PRINT_INFO, "numVerts: %u\n", poly->numVerts );
-        ri.Printf( PRINT_INFO, "numIndices: %lu\n", numIndices );
-        RB_CommitDrawData( vtx, poly->numVerts, indices, numIndices );
-        
-        poly++;
-    }
-
-    // flush out anything remaining
-    RB_FlushBatchBuffer();
+		
+		if ( backend.drawBatch.vtxOffset + poly->numVerts >= r_maxPolys->i * 4
+			|| backend.drawBatch.idxOffset + ( (int64_t)( poly->numVerts ) - 2 ) >= r_maxPolys->i * 6 )
+		{
+			RB_FlushBatchBuffer();
+		}
+		
+		// generate fan indexes into the buffer
+		for ( j = 0; j < poly->numVerts - 2; j++ ) {
+			backendData->indices[ backend.drawBatch.idxOffset + 0 ] = backend.drawBatch.vtxOffset;
+			backendData->indices[ backend.drawBatch.idxOffset + 1 ] = backend.drawBatch.vtxOffset + j + 1;
+			backendData->indices[ backend.drawBatch.idxOffset + 2 ] = backend.drawBatch.vtxOffset + j + 2;
+			backend.drawBatch.idxOffset += 3;
+			
+			// generate normals
+			VectorSubtract( poly->verts[ j ].xyz, poly->verts[ j + 1 ].xyz, edge1 );
+			VectorSubtract( poly->verts[ j ].xyz, poly->verts[ j + 2 ].xyz, edge2 );
+			CrossProduct( edge1, edge2, normal );
+			R_VaoPackNormal( vtx[ backend.drawBatch.vtxOffset + j ].normal, normal );
+			VectorCopy( vtx[ backend.drawBatch.vtxOffset + j + 1 ].normal, vtx[ backend.drawBatch.vtxOffset + j + 0 ].normal );
+			VectorCopy( vtx[ backend.drawBatch.vtxOffset + j + 2 ].normal, vtx[ backend.drawBatch.vtxOffset + j + 0 ].normal );
+		}
+		
+		for ( j = 0; j < poly->numVerts; j++ ) {
+			VectorCopy( backendData->verts[ backend.drawBatch.vtxOffset + j ].xyz, poly->verts[j].xyz );
+			VectorCopy2( backendData->verts[ backend.drawBatch.vtxOffset + j ].st, poly->verts[j].uv );
+			VectorCopy2( backendData->verts[ backend.drawBatch.vtxOffset + j ].lightmap, poly->verts[j].uv );
+			VectorCopy( backendData->verts[ backend.drawBatch.vtxOffset + j ].worldPos, poly->verts[j].worldPos );
+//			R_CalcTangentVectors( (drawVert_t *)&vtx[j] );
+			backend.drawBatch.vtxOffset++;
+		}
+		
+		poly++;
+	}
+	
+	// flush out anything remaining
+	RB_FlushBatchBuffer();
 }
 
 static void R_DrawWorld( void )
@@ -625,4 +617,3 @@ static const float s_flipMatrix[16] = {
 	 0, 1,  0, 0,
 	 0, 0,  0, 1
 };
-
