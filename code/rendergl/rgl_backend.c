@@ -799,9 +799,8 @@ static const void *RB_ColorMask(const void *data) {
 static const void *RB_DrawImage( const void *data ) {
 	const drawImageCmd_t *cmd;
 	shader_t *shader;
-	uint32_t numVerts, numIndices;
-	srfVert_t *verts;
-	uint32_t *indices;
+	srfVert_t verts[4];
+	uint32_t indices[6];
 
 	cmd = (const drawImageCmd_t *)data;
 
@@ -813,13 +812,7 @@ static const void *RB_DrawImage( const void *data ) {
 		RB_SetBatchBuffer( backend.drawBuffer, backendData->verts, sizeof( srfVert_t ),
 			backendData->indices, sizeof( glIndex_t ) );
 	}
-
-	verts = backend.drawBatch.vertices;
-	indices = backend.drawBatch.indices;
-
 	backend.drawBatch.shader = shader;
-	numVerts = backend.drawBatch.vtxOffset;
-	numIndices = backend.drawBatch.idxOffset;
 
 	R_VaoPackColor( verts[0].color, backend.color2D );
 	R_VaoPackColor( verts[1].color, backend.color2D );
@@ -839,40 +832,40 @@ static const void *RB_DrawImage( const void *data ) {
 	}
 	*/
 
-	verts[ numVerts + 0 ].xyz[0] = cmd->x;
-	verts[ numVerts + 0 ].xyz[1] = cmd->y;
-	verts[ numVerts + 0 ].xyz[2] = 0;
+	verts[ 0 ].xyz[0] = cmd->x;
+	verts[ 0 ].xyz[1] = cmd->y;
+	verts[ 0 ].xyz[2] = 0;
 
-	verts[ numVerts + 0 ].st[0] = cmd->u1;
-	verts[ numVerts + 0 ].st[1] = cmd->v1;
+	verts[ 0 ].st[0] = cmd->u1;
+	verts[ 0 ].st[1] = cmd->v1;
 
-	verts[ numVerts + 1 ].xyz[0] = cmd->x + cmd->w;
-	verts[ numVerts + 1 ].xyz[1] = cmd->y;
-	verts[ numVerts + 1 ].xyz[2] = 0;
+	verts[ 1 ].xyz[0] = cmd->x + cmd->w;
+	verts[ 1 ].xyz[1] = cmd->y;
+	verts[ 1 ].xyz[2] = 0;
 
-	verts[ numVerts + 1 ].st[0] = cmd->u2;
-	verts[ numVerts + 1 ].st[1] = cmd->v1;
+	verts[ 1 ].st[0] = cmd->u2;
+	verts[ 1 ].st[1] = cmd->v1;
 
-	verts[ numVerts + 2 ].xyz[0] = cmd->x + cmd->w;
-	verts[ numVerts + 2 ].xyz[1] = cmd->y + cmd->h;
-	verts[ numVerts + 2 ].xyz[2] = 0;
+	verts[ 2 ].xyz[0] = cmd->x + cmd->w;
+	verts[ 2 ].xyz[1] = cmd->y + cmd->h;
+	verts[ 2 ].xyz[2] = 0;
 
-	verts[ numVerts + 2 ].st[0] = cmd->u2;
-	verts[ numVerts + 2 ].st[1] = cmd->v2;
+	verts[ 2 ].st[0] = cmd->u2;
+	verts[ 2 ].st[1] = cmd->v2;
 
-	verts[ numVerts + 3 ].xyz[0] = cmd->x;
-	verts[ numVerts + 3 ].xyz[1] = cmd->y + cmd->h;
-	verts[ numVerts + 3 ].xyz[2] = 0;
+	verts[ 3 ].xyz[0] = cmd->x;
+	verts[ 3 ].xyz[1] = cmd->y + cmd->h;
+	verts[ 3 ].xyz[2] = 0;
 
-	verts[ numVerts + 3 ].st[0] = cmd->u1;
-	verts[ numVerts + 3 ].st[1] = cmd->v2;
+	verts[ 3 ].st[0] = cmd->u1;
+	verts[ 3 ].st[1] = cmd->v2;
 
-	indices[ numIndices + 0 ] = numVerts;
-	indices[ numIndices + 1 ] = numVerts + 1;
-	indices[ numIndices + 2 ] = numVerts + 2;
-	indices[ numIndices + 3 ] = numVerts + 0;
-	indices[ numIndices + 4 ] = numVerts + 2;
-	indices[ numIndices + 5 ] = numVerts + 3;
+	indices[ 0 ] = 0;
+	indices[ 1 ] = 1;
+	indices[ 2 ] = 2;
+	indices[ 3 ] = 0;
+	indices[ 4 ] = 2;
+	indices[ 5 ] = 3;
 
 	RB_CommitDrawData( verts, 4, indices, 6 );
 

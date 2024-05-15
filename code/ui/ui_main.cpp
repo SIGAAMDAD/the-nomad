@@ -843,6 +843,7 @@ extern "C" void UI_Refresh( int32_t realtime )
 //		return;
 //	}
 
+
 	{
         refdef_t refdef;
 
@@ -854,16 +855,16 @@ extern "C" void UI_Refresh( int32_t realtime )
         refdef.time = 0;
         refdef.flags = RSF_ORTHO_TYPE_SCREENSPACE | RSF_NOWORLDMODEL;
 
-        re.ClearScene();
-        re.DrawImage( 0, 0, refdef.width, refdef.height, 0, 0, 1, 1, ui->backdrop );
-		re.RenderScene( &refdef );
+//        re.ClearScene();
+//        re.DrawImage( 0, 0, refdef.width, refdef.height, 0, 0, 1, 1, ui->backdrop );
+//		re.RenderScene( &refdef );
     }
 
 	if ( !( Key_GetCatcher() & KEYCATCH_UI ) ) {
 		return;
 	}
 
-	if ( ui_debugOverlay->i ) {
+	if ( ui_debugOverlay->i && 0 ) {
 		UI_DrawDebugOverlay();
 	}
 

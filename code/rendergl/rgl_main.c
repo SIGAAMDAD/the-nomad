@@ -179,10 +179,12 @@ void R_ScreenToGL( polyVert_t *verts )
 void R_DrawPolys( void )
 {
     uint64_t i, j;
-    uint64_t startIndex, firstVert;
+    uint64_t firstIndex;
     srfPoly_t *poly;
     nhandle_t oldShader;
-    srfVert_t *vtx;
+    srfVert_t vtx[MAX_VERTS_ON_POLY];
+    uint32_t indices[MAX_VERTEX_BUFFERS*2];
+    uint64_t numVerts, numIndices;
     vec3_t normal, edge1, edge2;
 
     // no polygon submissions this frame
@@ -198,10 +200,15 @@ void R_DrawPolys( void )
     poly = backend.refdef.polys;
     oldShader = poly->hShader;
     backend.drawBatch.shader = R_GetShaderByHandle( oldShader );
-    vtx = backendData->verts;
+
+    memset( vtx, 0, sizeof( vtx ) );
+    memset( indices, 0, sizeof( indices ) );
+
+    numVerts = 0;
+    backendData->numIndices = 0;
 
     GLSL_UseProgram( &rg.genericShader[0] );
-    
+
     for ( i = 0; i < backend.refdef.numPolys; i++ ) {
         if ( oldShader != poly->hShader ) {
             // if we have a new shader, flush the current batch
@@ -210,39 +217,38 @@ void R_DrawPolys( void )
             backend.drawBatch.shader = R_GetShaderByHandle( poly->hShader );
         }
 
-        startIndex = backendData->numIndices;
-
-        if ( ( backend.refdef.flags & RSF_ORTHO_BITS ) == RSF_ORTHO_TYPE_WORLD ) {
-            R_WorldToGL2( poly->verts, poly->verts[0].worldPos, poly->numVerts );
-        }
+        numIndices = 0;
 
         // generate fan indexes into the buffer
+        firstIndex = backendData->numIndices;
         for ( j = 0; j < poly->numVerts - 2; j++ ) {
-            backendData->indices[ backendData->numIndices + 0 ] = backend.drawBatch.vtxOffset;
-            backendData->indices[ backendData->numIndices + 1 ] = backend.drawBatch.vtxOffset + j + 1;
-            backendData->indices[ backendData->numIndices + 2 ] = backend.drawBatch.vtxOffset + j + 2;
+            indices[ 0 ] = numVerts;
+            indices[ 1 ] = numVerts + j + 1;
+            indices[ 2 ] = numVerts + j + 2;
+            numIndices += 3;
             backendData->numIndices += 3;
 
             // generate normals
-            VectorSubtract( poly->verts[j].xyz, poly->verts[j + 1].xyz, edge1 );
-            VectorSubtract( poly->verts[j].xyz, poly->verts[j + 2].xyz, edge2 );
-            CrossProduct( edge1, edge2, normal );
+//            VectorSubtract( poly->verts[ j ].xyz, poly->verts[ j + 1 ].xyz, edge1 );
+//            VectorSubtract( poly->verts[ j ].xyz, poly->verts[ j + 2 ].xyz, edge2 );
+//            CrossProduct( edge1, edge2, normal );
+//            R_VaoPackNormal( vtx[ numVerts + j ].normal, normal );
+//            VectorCopy( vtx[ numVerts + j + 1 ].normal, vtx[ numVerts + j + 0 ].normal );
+//            VectorCopy( vtx[ numVerts + j + 2 ].normal, vtx[ numVerts + j + 0 ].normal );
         }
 
-        firstVert = (uint64_t)( vtx - backendData->verts );
         for ( j = 0; j < poly->numVerts; j++ ) {
-            VectorCopy( vtx[j].xyz, poly->verts[j].xyz );
-            R_VaoPackNormal( vtx[j].normal, normal );
-            VectorCopy2( vtx[j].st, poly->verts[j].uv );
-            VectorCopy2( vtx[j].lightmap, poly->verts[j].uv );
-            VectorCopy( vtx[j].worldPos, poly->verts[j].worldPos );
-//            R_CalcTangentVectors( (drawVert_t *)vtx );
-            vtx++;
+            VectorCopy( vtx[ j ].xyz, poly->verts[j].xyz );
+            VectorCopy2( vtx[ j ].st, poly->verts[j].uv );
+//            VectorCopy2( vtx[ numVerts + j ].lightmap, poly->verts[j].uv );
+//            VectorCopy( vtx[ numVerts + j ].worldPos, poly->verts[j].worldPos );
+//            R_CalcTangentVectors( (drawVert_t *)&vtx[j] );
         }
 
         // submit to draw buffer
-        RB_CommitDrawData( &backendData->verts[ firstVert ], poly->numVerts, &backendData->indices[ startIndex ],
-            backendData->numIndices - startIndex );
+        ri.Printf( PRINT_INFO, "numVerts: %u\n", poly->numVerts );
+        ri.Printf( PRINT_INFO, "numIndices: %lu\n", numIndices );
+        RB_CommitDrawData( vtx, poly->numVerts, indices, numIndices );
         
         poly++;
     }
@@ -259,17 +265,17 @@ static void R_DrawWorld( void )
     drawVert_t *vtx;
     vec3_t edge1, edge2, normal;
 
-    if ((backend.refdef.flags & RSF_NOWORLDMODEL)) {
+    if ( ( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {
         // nothing to draw
         return;
     }
 
-    if (!rg.world) {
+    if ( !rg.world ) {
         ri.Error( ERR_FATAL, "R_DrawWorld: no world model loaded" );
     }
 
     // prepare the batch
-    RB_SetBatchBuffer( rg.world->buffer, rg.world->vertices, sizeof(drawVert_t), rg.world->indices, sizeof(glIndex_t) );
+    RB_SetBatchBuffer( rg.world->buffer, rg.world->vertices, sizeof( drawVert_t ), rg.world->indices, sizeof( glIndex_t ) );
 
     backend.drawBatch.shader = rg.world->shader;
 
@@ -339,8 +345,9 @@ void R_RenderView( const viewData_t *parms )
 static void R_CalcSpriteTextureCoords( uint32_t x, uint32_t y, uint32_t spriteWidth, uint32_t spriteHeight,
     uint32_t sheetWidth, uint32_t sheetHeight, spriteCoord_t texCoords )
 {
-    const vec2_t min = { (((float)x + 1) * spriteWidth) / sheetWidth, (((float)y + 1) * spriteHeight) / sheetHeight };
-    const vec2_t max = { ((float)x * spriteWidth) / sheetWidth, ((float)y * spriteHeight) / sheetHeight };
+    const vec2_t min = { ( ( (float)x + 1 ) * spriteWidth ) / sheetWidth, ( ( (float)y + 1 ) * spriteHeight ) / sheetHeight };
+    const vec2_t max = { ( (float)x * spriteWidth ) / sheetWidth, ( (float)y * spriteHeight ) / sheetHeight };
+    int i;
 
     texCoords[0][0] = min[0];
     texCoords[0][1] = max[1];
@@ -353,6 +360,11 @@ static void R_CalcSpriteTextureCoords( uint32_t x, uint32_t y, uint32_t spriteWi
     
     texCoords[3][0] = max[0];
     texCoords[3][1] = max[1];
+
+    ri.Printf( PRINT_DEVELOPER, "Generated sprite texCoords for [ %u, %u ]:\n", x, y );
+    for ( i = 0; i < 4; i++ ) {
+        ri.Printf( PRINT_DEVELOPER, "  TexCoords[%i]: %f, %f\n", i, texCoords[i][0], texCoords[i][1] );
+    }
 }
 
 /*
@@ -425,6 +437,8 @@ nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32
 
     spriteCountX = sheetWidth / spriteWidth;
     spriteCountY = sheetHeight / spriteHeight;
+
+    ri.Printf( PRINT_DEVELOPER, "Generate sprite sheet, [ %u, %u ]:[ %u, %u ]\n", sheetWidth, sheetHeight, spriteWidth, spriteHeight );
 
     sheet->hShader = RE_RegisterShader( npath );
     if ( sheet->hShader == FS_INVALID_HANDLE ) {

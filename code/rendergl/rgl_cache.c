@@ -116,9 +116,9 @@ void R_InitGPUBuffers( void )
 	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_TEXCOORD].enabled		= qtrue;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_COLOR].enabled			= qtrue;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_NORMAL].enabled		= qtrue;
+	backend.drawBuffer->attribs[ATTRIB_INDEX_NORMAL].enabled		= qfalse;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_WORLDPOS].enabled		= qtrue;
-	backend.drawBuffer->attribs[ATTRIB_INDEX_LIGHTCOORD].enabled	= qtrue;
+	backend.drawBuffer->attribs[ATTRIB_INDEX_LIGHTCOORD].enabled	= qfalse;
 
 	backend.drawBuffer->attribs[ATTRIB_INDEX_POSITION].count		= 3;
 	backend.drawBuffer->attribs[ATTRIB_INDEX_TEXCOORD].count		= 2;
@@ -339,7 +339,7 @@ vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t ver
 	N_strncpyz( buf->name, name, sizeof( buf->name ) );
 
 	nglGenVertexArrays( 1, &buf->vaoId );
-	nglBindVertexArray(buf->vaoId);
+	nglBindVertexArray( buf->vaoId );
 
 	buf->vertex.usage = BUF_GL_BUFFER;
 	buf->index.usage = BUF_GL_BUFFER;
@@ -385,8 +385,6 @@ void VBO_Bind( vertexBuffer_t *vbo )
 		backend.pc.c_bufferBinds++;
 
 		nglBindVertexArray( vbo->vaoId );
-		nglBindBuffer( GL_ARRAY_BUFFER, vbo->vertex.id );
-		nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, vbo->index.id );
 
 		// Intel Graphics doesn't save GL_ELEMENT_ARRAY_BUFFER binding with VAO binding.
 		if ( glContext.intelGraphics ) {
@@ -404,15 +402,15 @@ void VBO_BindNull( void )
 {
 	ri.GLimp_LogComment("--- VBO_BindNull ---\n");
 
-	if (glState.currentVao) {
+	if ( glState.currentVao ) {
 		glState.currentVao = NULL;
 		glState.vaoId = glState.vboId = glState.iboId = 0;
-        nglBindVertexArray(0);
-		nglBindBuffer( GL_ARRAY_BUFFER, 0 );
-		nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+        nglBindVertexArray( 0 );
 
         // why you no save GL_ELEMENT_ARRAY_BUFFER binding, Intel?
-        if (glContext.intelGraphics) nglBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        if ( glContext.intelGraphics ) {
+			nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+		}
 	}
 
 	GL_CheckErrors();
@@ -519,18 +517,16 @@ void RB_FlushBatchBuffer( void )
 
     backend.drawBatch.idxOffset = 0;
     backend.drawBatch.vtxOffset = 0;
-
-	backend.drawBatch.shader = NULL;
 }
 
 void RB_CommitDrawData( const void *verts, uint32_t numVerts, const void *indices, uint32_t numIndices )
 {
     if ( numVerts > backend.drawBatch.maxVertices / backend.drawBatch.vtxDataSize ) {
-        ri.Error( ERR_DROP, "RB_CommitDrawData: numVerts > backend.drawBatch.maxVertices (%i > %li)", numVerts,
+        ri.Error( ERR_DROP, "RB_CommitDrawData: numVerts > backend.drawBatch.maxVertices (%u > %li)", numVerts,
 			backend.drawBatch.maxVertices / backend.drawBatch.vtxDataSize );
     }
     if ( numIndices > backend.drawBatch.maxIndices / backend.drawBatch.idxDataSize ) {
-        ri.Error( ERR_DROP, "RB_CommitDrawData: numIndices > backend.drawBatch.maxIndices (%i > %li)", numIndices,
+        ri.Error( ERR_DROP, "RB_CommitDrawData: numIndices > backend.drawBatch.maxIndices (%u > %li)", numIndices,
 			backend.drawBatch.maxIndices / backend.drawBatch.idxDataSize );
     }
 

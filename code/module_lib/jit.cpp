@@ -31,7 +31,7 @@ class CScriptJITCompiler : public asIJITCompiler
 {
 public:
 	CScriptJITCompiler( void );
-	virtual ~CScriptJITCompiler() override;
+	~CScriptJITCompiler();
 	int CompileFunction( asIScriptFunction *pFunction, asJITFunction *pOutPut );
 	void ReleaseJITFunction( asJITFunction func );
 
@@ -86,14 +86,16 @@ asmjit::Label CScriptJITCompiler::EmitThrowExceptionLabel( EVMAbortException iRe
 CScriptJITCompiler::CScriptJITCompiler( void )
 {
 	const char *path;
-	
+
+	path = FS_BuildOSPath( Cvar_VariableString( "fs_homepath" ), NULL, "_cache/asmjit_debug_log.log" );
+	m_pFileHandle = fopen( path, "w" );
+	if ( !m_pFileHandle ) {
+		Con_Printf( COLOR_YELLOW "WARNING: failed to create asmjit log file\n" );
+	} else {
+		m_pLogger = new ( S_Malloc( sizeof( *m_pLogger ) ) ) asmjit::FileLogger( m_pFileHandle );
+	}
+
 	m_CodeHolder.init( m_RunTime.environment(), m_RunTime.cpuFeatures() );
-    m_pCompiler = new ( Z_Malloc( sizeof( *m_pCompiler ), TAG_STATIC ) ) JitCompiler( &m_CodeHolder );
-	
-	path = FS_BuildOSPath( FS_GetHomePath(), NULL, "cache/debugasm.txt" );
-	m_pFileHandle = fopen( path, "wb" );
-	
-	m_pLogger = new ( Z_Malloc( sizeof( *m_pLogger ), TAG_STATIC ) ) asmjit::FileLogger( m_pFileHandle );
 }
 
 CScriptJITCompiler::~CScriptJITCompiler() {
@@ -186,6 +188,7 @@ void CScriptJITCompiler::CompileJITFunction( asDWORD *pByteCode, asDWORD *pEnd, 
 	unsigned reservedPushBytes = 0;
 	Assembler a( &m_CodeHolder );
 	volatile byte *retPtr;
+	size_t firstEntry;
 	
 	// NOTE: using 32 bit instructions will zero the top of the 64 bit reigsters, but that's only the 32 bit registers, not the 16 bit ones
 	// NOTE: mov can only have one argument that is a variable, moving register value to register value is fine
@@ -253,49 +256,14 @@ void CScriptJITCompiler::CompileJITFunction( asDWORD *pByteCode, asDWORD *pEnd, 
 	// initialize FPU
 	a.finit();
 	
-	// push unmutable registers (these registers must retain their value after we leave our function)
-	a.push( esi );
-	a.push( edi );
-	a.push( ebx );
-	a.push( ebp );
-	
-	// reserve two pointers for various things
-	a.sub( esp, FUNCTION_RESERVE_SPACE );
-	
-	// x64
-	a.mov( ebp, edi );
-	a.mov( rax, esi );
-	
-	//TODO:x86
-	
-	a.mov( rdi, ptr( ebp, offsetof( asSVMRegisters, stackFramePointer ) ) ); // VM frame pointer
-	a.mov( esi, ptr( ebp, offsetof( asSVMRegisters, stackPointer ) ) ); // VM stack pointer
-	a.mov( rbx, ptr( ebp, offsetof( asSVMRegisters, valueRegister ) ) ); // VM temporary
-	
-	// jump to the section of the function we'll actually be executing
-	a.jmp( rax );
-	
-	retPtr = (volatile byte *)pByteCode;
-	
-	a.mov( ptr( ebp, offsetof( asSVMRegisters, programPointer ) ), rdx );
-	a.mov( ptr( ebp, offsetof( asSVMRegisters, stackFramePointer ) ), rdi );
-	a.mov( ptr( ebp, offsetof( asSVMRegisters, stackPointer ) ), esi );
-	a.mov( ptr( ebp, offsetof( asSVMRegisters, valueRegister ) ), rbx );
-	
-	// pop reserved and saved pointers
-	a.add( esp, FUNCTION_RESERVE_SPACE );
-	a.pop( ebp );
-	a.pop( ebx );
-	a.pop( edi );
-	a.pop( esi );
-	a.ret();
-	
 	auto Return = [&]( bool bExpected ) {
 		// set rdx to the bytecode pointer so the vm can be returned to the correct state
 		a.mov( rdx, (uintptr_t)(void *)pByteCode );
 		a.jmp( (uintptr_t)(volatile void *)retPtr );
 		waitingForEntry = bExpected;
 	};
+
+	firstEntry = a.offset();
 	
     // asSVMRegister::stackPointer is essentially esi
 	while ( pByteCode < pEnd ) {
@@ -331,11 +299,13 @@ void CScriptJITCompiler::CompileJITFunction( asDWORD *pByteCode, asDWORD *pEnd, 
 			a.mov( rax, ptr( edi, -offset0 ) );
 			a.mov( ptr( esi, reservedPushBytes ), rax );
 			break;
+		case asBC_PshGPtr:
+			break;
 		case asBC_PopPtr:
-			a.mov( ebx, ptr( eax, offsetof( asSVMRegisters, stackPointer ) ) );
-			a.lea( ecx, ptr( ebx, AS_PTR_SIZE ) );
-			a.mov( ptr( eax, offsetof( asSVMRegisters, stackPointer ) ), ecx );
-			a.inc( ptr( eax, offsetof( asSVMRegisters, programPointer ) ) );
+			a.mov( rbx, ptr( rax, offsetof( asSVMRegisters, stackPointer ) ) );
+			a.lea( rcx, ptr( rbx, AS_PTR_SIZE ) );
+			a.mov( ptr( rax, offsetof( asSVMRegisters, stackPointer ) ), rcx );
+			a.inc( ptr( rax, offsetof( asSVMRegisters, programPointer ) ) );
 			break;
 		case asBC_PSF:
 			pushPrep( sizeof( void * ) );
@@ -372,32 +342,32 @@ void CScriptJITCompiler::CompileJITFunction( asDWORD *pByteCode, asDWORD *pEnd, 
             break;
 		case asBC_PshC4:
 			pushPrep( sizeof( asDWORD ) );
-			a.mov( ebx, ptr( eax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ) );
-			a.mov( ecx, ptr( eax, ASMJIT_OFFSET_OF( asSVMRegisters, programPointer ) ) );
+			a.mov( ebx, ptr( eax, offsetof( asSVMRegisters, stackPointer ) ) );
+			a.mov( ecx, ptr( eax, offsetof( asSVMRegisters, programPointer ) ) );
 			a.mov( dword_ptr( ebx ), ecx );
-			a.mov( ptr( eax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ), ebx );
+			a.mov( ptr( eax, offsetof( asSVMRegisters, stackPointer ) ), ebx );
 			a.add( ecx, 2 );
 			break;
 		case asBC_PshC8:
 			pushPrep( sizeof( asQWORD ) );
-			a.mov( ebx, ptr( eax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ) );
-			a.mov( ecx, ptr( eax, ASMJIT_OFFSET_OF( asSVMRegisters, programPointer ) ) );
+			a.mov( ebx, ptr( eax, offsetof( asSVMRegisters, stackPointer ) ) );
+			a.mov( ecx, ptr( eax, offsetof( asSVMRegisters, programPointer ) ) );
 			a.mov( qword_ptr( ebx ), ecx );
-			a.mov( ptr( eax, ASMJIT_OFFSET_OF( asSVMRegisters, stackPointer ) ), ebx );
+			a.mov( ptr( eax, offsetof( asSVMRegisters, stackPointer ) ), ebx );
 			a.add( ecx, 2 );
 			break;
 		};
 	}
 	// bind a jump table target
 	a.bind( jump );
-	a.mov( a.zbx(), ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, programPointer ) ) );
-	a.mov( a.zcx(), ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, programPointer ) ) );
-	a.add( a.zcx(), 4 );
-	a.mov( a.zcx(), ptr( a.zcx() ) );
-	a.add( a.zcx(), 2 );
-	a.sal( a.zcx(), 2 );
-	a.add( a.zbx(), a.zcx() );
-	a.mov( a.zcx(), ptr( zax, ASMJIT_OFFSET_OF( asSVMRegisters, programPointer ) ) );
+	a.mov( rbx, ptr( rax, offsetof( asSVMRegisters, programPointer ) ) );
+	a.mov( rcx, ptr( rax, offsetof( asSVMRegisters, programPointer ) ) );
+	a.add( rcx, 4 );
+	a.mov( rcx, ptr( rcx ) );
+	a.add( rcx, 2 );
+	a.sal( rcx, 2 );
+	a.add( rbx, rcx );
+	a.mov( rcx, ptr( rax, offsetof( asSVMRegisters, programPointer ) ) );
 	a.mov( ptr( a.zcx() ), a.zbx() );
 	a.bind( epilog );
 	a.nop();

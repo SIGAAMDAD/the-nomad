@@ -466,7 +466,7 @@ namespace TheNomad::SGame {
 			m_nRage = 100.0f;
 			m_PhysicsObject.SetAngle( Util::Dir2Angle( TheNomad::GameSystem::DirType::East ) );
 			m_Direction = Util::Angle2Dir( m_PhysicsObject.GetAngle() );
-			@m_SpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/raio_base", 32, 32, 528, 528 );
+			@m_SpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/raio_base", 32, 32, 512, 512 );
 			if ( @m_SpriteSheet is null ) {
 				GameError( "PlayrObject::Spawn: failed to initialize sprite sheet" );
 			}
@@ -482,20 +482,22 @@ namespace TheNomad::SGame {
 			int hLegSprite = FS_INVALID_HANDLE;
 
 			m_Link.m_Origin = vec3( 1.0f, 1.0f, 0.0f );
-//
-//			verts[0].xyz = vec3( 64.0f, 0.0f, 0.0f );
-//			verts[0].uv = m_SpriteSheet[0][0];
-//
-//			verts[1].xyz = vec3( 64.0f, 64.0f, 0.0f );
-//			verts[1].uv = m_SpriteSheet[0][1];
-//			
-//			verts[2].xyz = vec3( 0.0f, 64.0f, 0.0f );
-//			verts[2].uv = m_SpriteSheet[0][2];
-//
-//			verts[3].xyz = vec3( 0.0f, 0.0f, 0.0f );
-//			verts[3].uv = m_SpriteSheet[0][3];
 
-			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, m_SpriteSheet.GetShader(), 0 );
+			verts[0].xyz = vec3( -1.001040, 0.998368, 0.000000 );
+			verts[0].uv = m_SpriteSheet[0][0];
+
+			verts[1].xyz = vec3( -1.001040, 0.998364, 0.000000 );
+			verts[1].uv = m_SpriteSheet[0][1];
+			
+			verts[2].xyz = vec3( -1.001041, 0.998364, 0.000000 );
+			verts[2].uv = m_SpriteSheet[0][2];
+
+			verts[3].xyz = vec3( -1.001041, 0.998368, 0.000000 );
+			verts[3].uv = m_SpriteSheet[0][3];
+
+//			TheNomad::Engine::Renderer::DrawImage( 0, 0, 32, 32, 0, 0, 1, 1, m_SpriteSheet.GetShader() );
+//			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, m_SpriteSheet.GetShader(), 0 );
+			TheNomad::Engine::Renderer::AddPolyToScene( m_SpriteSheet.GetShader(), verts );
 			
 			//
 			// draw the legs

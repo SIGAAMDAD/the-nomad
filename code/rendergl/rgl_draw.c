@@ -24,7 +24,7 @@ static void DrawTris( void ) {
 		GLSL_UseProgram( sp );
 		
 		GLSL_SetUniformMatrix4( sp, UNIFORM_MODELVIEWPROJECTION, glState.viewData.camera.viewProjectionMatrix );
-		VectorSet4( color, 1, 1, 1, 1);
+		VectorSet4( color, 1, 1, 1, 1 );
 		GLSL_SetUniformVec4( sp, UNIFORM_COLOR, color );
 		GLSL_SetUniformInt( sp, UNIFORM_ALPHATEST, 0 );
 		GLSL_SetUniformInt( sp, UNIFORM_TEXTURE_MAP, TB_DIFFUSEMAP );
@@ -626,7 +626,7 @@ void RB_IterateShaderStages( shader_t *shader )
     }
 
 	if ( r_glDebug->i ) {
-//		DrawTris();
+		DrawTris();
 	}
 }
 

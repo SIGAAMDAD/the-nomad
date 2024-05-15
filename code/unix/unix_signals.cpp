@@ -8,13 +8,16 @@ extern void GDR_NORETURN Sys_Exit( int code );
 static void SignalHandle( int sig )
 {
     char msg[32];
+    const char *str;
 
     if ( signalcaught == qtrue ) {
-        printf( "DOUBLE SIGNAL FAUL: Recieved signal %i, exiting...\n", sig );
+        str = va( "DOUBLE SIGNAL FAULT: Recieved signal %i, exiting...\n", sig );
+        write( STDERR_FILENO, str, strlen( str ) );
         Sys_Exit( 1 ); // abstraction
     }
 
-    printf( "Recieved signal %i, exiting...\n", sig );
+    str = va( "Recieved signal %i, exiting...\n", sig );
+    write( STDERR_FILENO, str, strlen( str ) );
 
     switch ( sig ) {
     case SIGSEGV:
