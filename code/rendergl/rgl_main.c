@@ -48,9 +48,9 @@ void RB_MakeViewMatrix( void )
         VectorClear( glState.viewData.camera.origin );
         break;
     case RSF_ORTHO_TYPE_WORLD:
-        ortho[0] = 0;
+        ortho[0] = 0.0f;
         ortho[1] = rg.world->width;
-        ortho[2] = 0;
+        ortho[2] = 0.0f;
         ortho[3] = rg.world->height;
         break;
     case RSF_ORTHO_TYPE_CORDESIAN:
@@ -203,6 +203,8 @@ void R_DrawPolys( void )
 	
     GLSL_UseProgram( &rg.genericShader[0] );
 
+    assert( backend.refdef.polys );
+
     for ( i = 0; i < backend.refdef.numPolys; i++ ) {
         if ( oldShader != poly->hShader ) {
             // if we have a new shader, flush the current batch
@@ -216,7 +218,12 @@ void R_DrawPolys( void )
 		{
 			RB_FlushBatchBuffer();
 		}
-		
+
+        if ( poly->numVerts == 4 && ( backend.refdef.flags & RSF_ORTHO_BITS ) == RSF_ORTHO_TYPE_WORLD ) {
+            // its a sprite
+            R_WorldToGL2( poly->verts, poly->verts[0].worldPos, poly->numVerts );
+        }
+        
 		// generate fan indexes into the buffer
 		for ( j = 0; j < poly->numVerts - 2; j++ ) {
 			backendData->indices[ backend.drawBatch.idxOffset + 0 ] = backend.drawBatch.vtxOffset;
@@ -225,24 +232,26 @@ void R_DrawPolys( void )
 			backend.drawBatch.idxOffset += 3;
 			
 			// generate normals
-			VectorSubtract( poly->verts[ j ].xyz, poly->verts[ j + 1 ].xyz, edge1 );
-			VectorSubtract( poly->verts[ j ].xyz, poly->verts[ j + 2 ].xyz, edge2 );
+			VectorSubtract( backend.refdef.polys[i].verts[ j ].xyz, poly->verts[ j + 1 ].xyz, edge1 );
+			VectorSubtract( backend.refdef.polys[i].verts[ j ].xyz, poly->verts[ j + 2 ].xyz, edge2 );
 			CrossProduct( edge1, edge2, normal );
-			R_VaoPackNormal( vtx[ backend.drawBatch.vtxOffset + j ].normal, normal );
-			VectorCopy( vtx[ backend.drawBatch.vtxOffset + j + 1 ].normal, vtx[ backend.drawBatch.vtxOffset + j + 0 ].normal );
-			VectorCopy( vtx[ backend.drawBatch.vtxOffset + j + 2 ].normal, vtx[ backend.drawBatch.vtxOffset + j + 0 ].normal );
+			R_VaoPackNormal( backendData->verts[ backend.drawBatch.vtxOffset + j ].normal, normal );
+			VectorCopy( backendData->verts[ backend.drawBatch.vtxOffset + j + 1 ].normal,
+                backendData->verts[ backend.drawBatch.vtxOffset + j + 0 ].normal );
+			VectorCopy( backendData->verts[ backend.drawBatch.vtxOffset + j + 2 ].normal,
+                backendData->verts[ backend.drawBatch.vtxOffset + j + 0 ].normal );
 		}
 		
 		for ( j = 0; j < poly->numVerts; j++ ) {
-			VectorCopy( backendData->verts[ backend.drawBatch.vtxOffset + j ].xyz, poly->verts[j].xyz );
-			VectorCopy2( backendData->verts[ backend.drawBatch.vtxOffset + j ].st, poly->verts[j].uv );
-			VectorCopy2( backendData->verts[ backend.drawBatch.vtxOffset + j ].lightmap, poly->verts[j].uv );
-			VectorCopy( backendData->verts[ backend.drawBatch.vtxOffset + j ].worldPos, poly->verts[j].worldPos );
+//            ri.Printf( PRINT_INFO, "verts[%i]: %f, %f, %f\n", j, backendData->verts[ backend.drawBatch.vtxOffset + j ].xyz[0],
+//                backendData->verts[ backend.drawBatch.vtxOffset + j ].xyz[1], backendData->verts[ backend.drawBatch.vtxOffset + j ].xyz[2] );
+			VectorCopy( backendData->verts[ backend.drawBatch.vtxOffset ].xyz, backend.refdef.polys[i].verts[j].xyz );
+			VectorCopy2( backendData->verts[ backend.drawBatch.vtxOffset ].st, backend.refdef.polys[i].verts[j].uv );
+			VectorCopy2( backendData->verts[ backend.drawBatch.vtxOffset ].lightmap, backend.refdef.polys[i].verts[j].uv );
+			VectorCopy( backendData->verts[ backend.drawBatch.vtxOffset ].worldPos, backend.refdef.polys[i].verts[j].worldPos );
 //			R_CalcTangentVectors( (drawVert_t *)&vtx[j] );
 			backend.drawBatch.vtxOffset++;
 		}
-		
-		poly++;
 	}
 	
 	// flush out anything remaining

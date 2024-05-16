@@ -41,6 +41,7 @@ void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t
     srfVert_t *vt;
     vec3_t pos;
     uint32_t i;
+    drawVert_t verts[4];
 
     if ( !rg.registered ) {
         return;
@@ -66,17 +67,13 @@ void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t
     pos[1] = rg.world->height - origin[1];
     pos[2] = origin[2];
 
-    R_WorldToGL2( vtx, pos, 4 );
-
     poly->verts = vtx;
     poly->numVerts = 4;
     poly->hShader = rg.sheets[hSpriteSheet]->hShader;
 
-    ri.Printf( PRINT_INFO, "Drawing Sprite:\n" );
     for ( i = 0; i < 4; i++ ) {
         VectorCopy2( vtx[i].uv, rg.sheets[ hSpriteSheet ]->sprites[ hSprite ].texCoords[i] );
         VectorCopy( vtx[i].worldPos, pos );
-        ri.Printf( PRINT_INFO, " xyz[ %i ]: %f, %f, %f\n", i, vtx[i].xyz[0], vtx[i].xyz[1], vtx[i].xyz[2] );
     }
 
     r_numPolyVerts += 4;
@@ -103,7 +100,7 @@ void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t num
         return;
     }
 
-    poly = &backendData->polys[numVerts];
+    poly = &backendData->polys[r_numPolys];
     vt = &backendData->polyVerts[r_numPolyVerts];
 
     poly->verts = vt;
@@ -116,37 +113,37 @@ void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t num
     r_numPolys++;
 }
 
-void RE_AddPolyListToScene(const poly_t *polys, uint32_t numPolys)
+void RE_AddPolyListToScene( const poly_t *polys, uint32_t numPolys )
 {
     uint32_t i;
 
-    if (!rg.registered) {
+    if ( !rg.registered ) {
         return;
     }
 
-    if (r_numPolys + numPolys >= r_maxPolys->i) {
-        ri.Printf(PRINT_DEVELOPER, "RE_AddPolyListToScene: r_maxPolys hit, dropping %i polygons\n", numPolys);
+    if ( r_numPolys + numPolys >= r_maxPolys->i ) {
+        ri.Printf( PRINT_DEVELOPER, "RE_AddPolyListToScene: r_maxPolys hit, dropping %i polygons\n", numPolys );
         return;
     }
 
-    for (i = 0; i < numPolys; i++) {
+    for ( i = 0; i < numPolys; i++ ) {
         RE_AddPolyToScene( polys[i].hShader, polys[i].verts, polys[i].numVerts );
     }
 }
 
 void RE_AddEntityToScene( const renderEntityRef_t *ent )
 {
-    if (!rg.registered) {
+    if ( !rg.registered ) {
         return;
     }
 
-    if (r_numEntities >= MAX_RENDER_ENTITIES) {
-        ri.Printf(PRINT_DEVELOPER, "RE_AddEntityToScene: MAX_RENDER_ENTITIES hit, dropping entity\n");
+    if ( r_numEntities >= MAX_RENDER_ENTITIES ) {
+        ri.Printf( PRINT_DEVELOPER, "RE_AddEntityToScene: MAX_RENDER_ENTITIES hit, dropping entity\n" );
         return;
     }
-    if ( N_isnan(ent->origin[0]) || N_isnan(ent->origin[1]) || N_isnan(ent->origin[2]) ) {
+    if ( N_isnan( ent->origin[0] ) || N_isnan( ent->origin[1] ) || N_isnan( ent->origin[2] ) ) {
 		static qboolean firstTime = qtrue;
-		if (firstTime) {
+		if ( firstTime ) {
 			firstTime = qfalse;
 			ri.Printf( PRINT_INFO, COLOR_YELLOW "RE_AddEntityToScene passed a refEntity which has an origin with a NaN component\n");
 		}
@@ -179,6 +176,9 @@ void RE_BeginScene( const renderSceneRef_t *fd )
     backend.refdef.polys = &backendData->polys[r_firstScenePoly];
 
     backend.refdef.drawn = qfalse;
+
+//    ri.Printf( PRINT_DEVELOPER, "Generated %lu polys %lu polyVerts %lu entities %lu dlights\n", r_numPolys - r_firstScenePoly,
+//        r_numPolyVerts - r_firstSceneVert, r_numEntities - r_firstSceneEntity, r_numDLights - r_firstSceneDLight );
 
     rg.frameSceneNum++;
     rg.frameCount++;
@@ -217,7 +217,7 @@ void RE_RenderScene( const renderSceneRef_t *fd )
 
     RE_BeginScene( fd );
 
-    memset( &parms, 0, sizeof(parms) );
+    memset( &parms, 0, sizeof( parms ) );
     parms.viewportX = backend.refdef.x;
     parms.viewportY = backend.refdef.y;
 

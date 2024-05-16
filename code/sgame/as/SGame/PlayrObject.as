@@ -481,8 +481,10 @@ namespace TheNomad::SGame {
 		void Draw() override {
 			int hLegSprite = FS_INVALID_HANDLE;
 
-			m_Link.m_Origin = vec3( 1.0f, 1.0f, 0.0f );
+			m_Link.m_Origin = vec3( 64.0f, 25.0f, 0.0f );
 
+/*
+[ -0.997916, 0.925926 ], [ -0.997916, 0.925928 ], [ -0.997917, 0.925928 ], [ -0.997917, 0.925926 ]
 			verts[0].xyz = vec3( -1.001040, 0.998368, 0.000000 );
 			verts[0].uv = m_SpriteSheet[0][0];
 
@@ -494,10 +496,11 @@ namespace TheNomad::SGame {
 
 			verts[3].xyz = vec3( -1.001041, 0.998368, 0.000000 );
 			verts[3].uv = m_SpriteSheet[0][3];
+			*/
 
-//			TheNomad::Engine::Renderer::DrawImage( 0, 0, 32, 32, 0, 0, 1, 1, m_SpriteSheet.GetShader() );
-//			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, m_SpriteSheet.GetShader(), 0 );
-			TheNomad::Engine::Renderer::AddPolyToScene( m_SpriteSheet.GetShader(), verts );
+//			TheNomad::Engine::Renderer::DrawImage( 5, 2, 64, 64, 0, 0, 1, 1, m_SpriteSheet.GetShader() );
+			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, m_SpriteSheet.GetShader(), 0 );
+//			TheNomad::Engine::Renderer::AddPolyToScene( m_SpriteSheet.GetShader(), verts );
 			
 			//
 			// draw the legs

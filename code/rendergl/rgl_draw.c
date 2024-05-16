@@ -417,6 +417,10 @@ void RB_DrawShaderStages( nhandle_t hShader, uint32_t nElems, uint32_t type, con
 			nglBindSampler( TB_DIFFUSEMAP, 0 );
 		}
 	}
+
+	if ( r_showTris->i ) {
+		DrawTris();
+	}
 }
 
 void RB_IterateShaderStages( shader_t *shader )
@@ -625,7 +629,7 @@ void RB_IterateShaderStages( shader_t *shader )
         R_DrawElements( backend.drawBatch.idxOffset, 0 );
     }
 
-	if ( r_glDebug->i ) {
+	if ( r_showTris->i ) {
 		DrawTris();
 	}
 }

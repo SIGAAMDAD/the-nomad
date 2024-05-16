@@ -55,6 +55,8 @@ cvar_t *r_fullbright;
 cvar_t *r_lightmap;
 cvar_t *r_vertexLight;
 
+cvar_t *r_showTris;
+
 cvar_t *r_showSky;
 cvar_t *r_clear;
 
@@ -1053,7 +1055,7 @@ static void R_Register( void )
     r_textureDetail = ri.Cvar_Get( "r_textureDetail", va( "%i", TexDetail_Normie ), CVAR_SAVE | CVAR_LATCH );
     ri.Cvar_CheckRange(r_textureDetail, va( "%i", TexDetail_MSDOS ), va( "%i", TexDetail_GPUvsGod ), CVT_INT );
 
-    r_speeds = ri.Cvar_Get("r_speeds", "0", CVAR_SAVE | CVAR_LATCH);
+    r_speeds = ri.Cvar_Get( "r_speeds", "0", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_speeds,
                             "Prints out various debugging stats from renderer:\n"
                             "0: Disabled\n"
@@ -1064,6 +1066,9 @@ static void R_Register( void )
     //
     // temporary variables that can change at any time
     //
+    r_showTris = ri.Cvar_Get( "r_showTris", "0", CVAR_TEMP );
+    ri.Cvar_SetDescription( r_showTris, "Draw outlines of polygons for bounding box debugging." );
+
     r_showImages = ri.Cvar_Get( "r_showImages", "0", CVAR_TEMP );
 	ri.Cvar_SetDescription( r_showImages,
                                         "Draw all images currently loaded into memory:\n"

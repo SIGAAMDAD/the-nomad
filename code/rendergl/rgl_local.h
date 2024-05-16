@@ -1408,6 +1408,8 @@ extern cvar_t *r_showImages;
 
 extern cvar_t *r_printShaders;
 
+extern cvar_t *r_showTris;
+
 extern cvar_t *r_useExtensions;
 extern cvar_t *r_allowLegacy;
 extern cvar_t *r_allowShaders;
@@ -1586,6 +1588,7 @@ void RE_BeginRegistration(gpuConfig_t *config);
 nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32_t sheetHeight, uint32_t spriteWidth, uint32_t spriteHeight );
 nhandle_t RE_RegisterSprite( nhandle_t hSpriteSheet, uint32_t index );
 void R_WorldToGL2( polyVert_t *verts, vec3_t pos, uint32_t numVerts );
+void R_WorldToGL( drawVert_t *verts, vec3_t pos );
 qboolean R_CalcTangentVectors(drawVert_t dv[3]);
 
 //

@@ -775,12 +775,12 @@ void Menu_Cache( void )
 	ui->controller_left_trigger = re.RegisterShader( "menu/left_trigger" );
 	ui->controller_right_trigger = re.RegisterShader( "menu/right_trigger" );
 
-	ui->backdrop = re.RegisterShader( "menu/mainbackdrop" );
+//	ui->backdrop = re.RegisterShader( "menu/mainbackdrop" );
 
     // IT MUST BE THERE!
-    if ( !FS_LoadFile( "textures/coconut.jpg", NULL ) || ui->backdrop == FS_INVALID_HANDLE ) {
-        N_Error( ERR_FATAL, "Menu_Cache: could not load coconut.jpg" );
-    }
+//    if ( !FS_LoadFile( "textures/coconut.jpg", NULL ) || ui->backdrop == FS_INVALID_HANDLE ) {
+//        N_Error( ERR_FATAL, "Menu_Cache: could not load coconut.jpg" );
+//    }
 }
 
 /*
@@ -864,6 +864,10 @@ extern "C" void UI_Refresh( int32_t realtime )
 		return;
 	}
 
+	if ( ui->activemenu && ui->activemenu->fullscreen ) {
+		UI_DrawMenuBackground();
+	}
+
 	if ( ui_debugOverlay->i && 0 ) {
 		UI_DrawDebugOverlay();
 	}
@@ -873,9 +877,6 @@ extern "C" void UI_Refresh( int32_t realtime )
 	}
 
 	if ( ui->activemenu ) {
-		if ( ui->activemenu->fullscreen ) {
-			UI_DrawMenuBackground();
-		}
 		if ( ui->activemenu->track != FS_INVALID_HANDLE ) {
 			Snd_SetLoopingTrack( ui->activemenu->track );
 		}

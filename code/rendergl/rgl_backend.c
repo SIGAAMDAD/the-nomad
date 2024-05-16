@@ -800,7 +800,10 @@ static const void *RB_DrawImage( const void *data ) {
 	const drawImageCmd_t *cmd;
 	shader_t *shader;
 	srfVert_t verts[4];
+	polyVert_t vtx[4];
 	uint32_t indices[6];
+	int i;
+	vec3_t origin;
 
 	cmd = (const drawImageCmd_t *)data;
 
@@ -866,6 +869,15 @@ static const void *RB_DrawImage( const void *data ) {
 	indices[ 3 ] = 0;
 	indices[ 4 ] = 2;
 	indices[ 5 ] = 3;
+
+	if ( ( backend.refdef.flags & RSF_ORTHO_BITS ) == RSF_ORTHO_TYPE_WORLD ) {
+		VectorSet( origin, cmd->x, cmd->y, 0.0f );
+		R_WorldToGL2( vtx, origin, 4 );
+
+		for ( i = 0; i < 4; i++ ) {
+			VectorCopy( verts[i].xyz, vtx[i].xyz );
+		}
+	}
 
 	RB_CommitDrawData( verts, 4, indices, 6 );
 

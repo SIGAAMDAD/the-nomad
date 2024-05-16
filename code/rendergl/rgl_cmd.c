@@ -355,7 +355,7 @@ void RE_EndFrame(uint64_t *frontEndMsec, uint64_t *backEndMsec)
 	}
 	cmd->commandId = RC_SWAP_BUFFERS;
 
-	R_IssueRenderCommands(qtrue);
+	R_IssueRenderCommands( qtrue );
 	R_InitNextFrame();
 
 	if (frontEndMsec) {

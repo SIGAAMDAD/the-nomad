@@ -214,14 +214,25 @@ static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, const glm::mat4&
 
     viewProjectionMatrix = vpm;
 
-    model = glm::translate( viewProjectionMatrix, glm::vec3( world[0], world[1], world[2] ) );
+    model = glm::translate( glm::mat4( 1.0f ), glm::vec3( world[0], world[1], world[2] ) );
     mvp = viewProjectionMatrix * model;
 
     const glm::vec4 positions[4] = {
-        { 1.0f,  1.0f, 0.0f, 1.0f },
-        { 1.0f,  0.0f, 0.0f, 1.0f },
-        { 0.0f,  0.0f, 0.0f, 1.0f },
-        { 0.0f,  1.0f, 0.0f, 1.0f },
+#if 0
+        { 0.0f, 1.0f, 0.0f, 1.0f },
+        { 1.0f, 1.0f, 0.0f, 1.0f },
+        { 1.0f, 0.0f, 0.0f, 1.0f },
+        { 0.0f, 0.0f, 0.0f, 1.0f }
+#else
+        { 0.0f, 0.5f, 0.0f, 1.0f },
+        { 0.5f, 0.5f, 0.0f, 1.0f },
+        { 0.5f, 0.0f, 0.0f, 1.0f },
+        { 0.0f, 0.0f, 0.0f, 1.0f }
+#endif
+//        { 1.0f,  1.0f, 0.0f, 1.0f },
+//        { 1.0f,  0.0f, 0.0f, 1.0f },
+//        { 0.0f,  0.0f, 0.0f, 1.0f },
+//        { 0.0f,  1.0f, 0.0f, 1.0f },
     };
 
     for ( uint32_t i = 0; i < 4; i++ ) {
@@ -295,17 +306,24 @@ static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, float scale, mat
     glm::mat4 mvp, model;
     glm::vec4 pos;
 
-    memcpy( &viewProjectionMatrix[0][0], &vpm[0][0], sizeof(mat4_t) );
+    memcpy( &viewProjectionMatrix[0][0], &vpm[0][0], sizeof( mat4_t ) );
 
     model = glm::translate( viewProjectionMatrix, glm::vec3( world[0], world[1], world[2] ) );
-//        * glm::scale( viewProjectionMatrix, glm::vec3( scale ) );
+//            * glm::scale( viewProjectionMatrix, glm::vec3( 0.5f ) );
     mvp = viewProjectionMatrix * model;
 
     const glm::vec4 positions[4] = {
-        { 1.0f,  1.0f, 0.0f, 1.0f },
-        { 1.0f,  0.0f, 0.0f, 1.0f },
-        { 0.0f,  0.0f, 0.0f, 1.0f },
-        { 0.0f,  1.0f, 0.0f, 1.0f },
+#if 1
+        { 0.0f, 1.0f, 0.0f, 1.0f },
+        { 1.0f, 1.0f, 0.0f, 1.0f },
+        { 1.0f, 0.0f, 0.0f, 1.0f },
+        { 0.0f, 0.0f, 0.0f, 1.0f }
+#else
+        { 0.5f, 0.0f, 0.0f, 1.0f },
+        { 0.5f, 0.5f, 0.0f, 1.0f },
+        { 0.0f, 0.5f, 0.0f, 1.0f },
+        { 0.0f, 0.0f, 0.0f, 1.0f }
+#endif
     };
 
     for ( uint32_t i = 0; i < 4; i++ ) {
@@ -1139,10 +1157,10 @@ static void G_MoveCamera_f( void )
     if ( keys[KEY_D].down || keys[KEY_PAD0_LEFTSTICK_RIGHT].down ) {
         gi.cameraPos[0] += 0.05f;
     }
-    if ( keys[KEY_N].down || keys[KEY_PAD0_RIGHTSTICK_UP].down ) {
+    if ( keys[KEY_N].down || keys[KEY_PAD0_RIGHTSTICK_DOWN].down ) {
         gi.cameraZoom += 0.005f;
     }
-    if ( keys[KEY_M].down || keys[KEY_PAD0_RIGHTSTICK_DOWN].bound ) {
+    if ( keys[KEY_M].down || keys[KEY_PAD0_RIGHTSTICK_UP].down ) {
         gi.cameraZoom -= 0.005f;
     }
 }
