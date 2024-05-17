@@ -160,7 +160,7 @@ static void G_RefImGuiDraw( void ) {
 
 static void G_SetScaling(float factor, uint32_t captureWidth, uint32_t captureHeight)
 {
-    if (gi.con_factor != factor) {
+    if ( gi.con_factor != factor ) {
         // rescale console
         con_scale->modified = qtrue;
     }
@@ -260,7 +260,7 @@ static void GLM_MakeVPM( const vec4_t ortho, float *zoom, float zNear, float zFa
     // first transform the origin
     projectionMatrix = glm::ortho( ortho[0], ortho[1], ortho[2], ortho[3], zNear, zFar );
 
-    if ( !( orthoFlags & RSF_ORTHO_TYPE_SCREENSPACE ) ) {
+    if ( ( orthoFlags & RSF_ORTHO_BITS ) != RSF_ORTHO_TYPE_SCREENSPACE ) {
         transpose = glm::translate( glm::mat4( 1.0f ), glm::vec3( gi.cameraPos[0], gi.cameraPos[1], 0.0f ) )
                     * glm::scale( glm::mat4( 1.0f ), glm::vec3( gi.cameraZoom ) );
         viewMatrix = glm::inverse( transpose );
@@ -279,7 +279,7 @@ static void GLM_MakeVPM( const vec4_t ortho, float *zoom, float zNear, float zFa
 }
 
 void G_SetCameraData( const vec2_t origin, float zoom, float rotation ) {
-    VectorCopy2( gi.cameraPos, origin );
+    VectorCopy2( gi.cameraWorldPos, origin );
     gi.cameraZoom = zoom;
 }
 
@@ -295,12 +295,7 @@ static float *GLM_Mat4Transform( const mat4_t m, const vec4_t p ) {
     return out;
 }
 
-/*
-const glm::mat4 model = glm::translate( viewProjectionMatrix, glm::vec3( worldCameraPosition[0], worldCameraPosition[1], 0.0f ) );
-const glm::mat4 mvp = viewProjectionMatrix * model;
-*/
-
-static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, float scale, mat4_t vpm )
+static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, float scale, float rotation, mat4_t vpm )
 {
     glm::mat4 viewProjectionMatrix;
     glm::mat4 mvp, model;
@@ -308,22 +303,16 @@ static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, float scale, mat
 
     memcpy( &viewProjectionMatrix[0][0], &vpm[0][0], sizeof( mat4_t ) );
 
-    model = glm::translate( viewProjectionMatrix, glm::vec3( world[0], world[1], world[2] ) );
-//            * glm::scale( viewProjectionMatrix, glm::vec3( 0.5f ) );
+    model = glm::translate( viewProjectionMatrix, glm::vec3( world[0], world[1], world[2] ) )
+            * glm::scale( glm::mat4( 1.0f ), glm::vec3( scale, scale, 0.0f ) )
+            * glm::rotate( glm::mat4( 1.0f ), (float)DEG2RAD( rotation ), glm::vec3( 0, 0, 1 ) );
     mvp = viewProjectionMatrix * model;
 
     const glm::vec4 positions[4] = {
-#if 1
-        { 0.0f, 1.0f, 0.0f, 1.0f },
-        { 1.0f, 1.0f, 0.0f, 1.0f },
-        { 1.0f, 0.0f, 0.0f, 1.0f },
-        { 0.0f, 0.0f, 0.0f, 1.0f }
-#else
-        { 0.5f, 0.0f, 0.0f, 1.0f },
-        { 0.5f, 0.5f, 0.0f, 1.0f },
-        { 0.0f, 0.5f, 0.0f, 1.0f },
-        { 0.0f, 0.0f, 0.0f, 1.0f }
-#endif
+        { 1.0f,  1.0f, 0.0f, 1.0f },
+        { 1.0f,  0.0f, 0.0f, 1.0f },
+        { 0.0f,  0.0f, 0.0f, 1.0f },
+        { 0.0f,  1.0f, 0.0f, 1.0f },
     };
 
     for ( uint32_t i = 0; i < 4; i++ ) {

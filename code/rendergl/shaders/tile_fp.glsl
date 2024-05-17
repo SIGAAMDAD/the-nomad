@@ -393,7 +393,7 @@ vec4 sharpenImage( sampler2D tex, vec2 pos )
 void main() {
     a_Color = sharpenImage( u_DiffuseMap, v_TexCoords );
 
-//    ApplyLighting();
+    ApplyLighting();
 
 #if defined(USE_BLOOM) && !defined(USE_FAST_LIGHT)
 	const float brightness = dot( a_Color.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );

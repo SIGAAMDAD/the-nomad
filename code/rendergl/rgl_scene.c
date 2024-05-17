@@ -1,4 +1,4 @@
-// rgl_scene.c -- only one scene per frame. All rendering data submissions must come through here or rgl_cmd.c
+// rgl_scene.c -- there can be multiple scenes per frame, all rendering data submissions must come through here or rgl_cmd.c
 
 #include "rgl_local.h"
 
@@ -41,7 +41,6 @@ void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t
     srfVert_t *vt;
     vec3_t pos;
     uint32_t i;
-    drawVert_t verts[4];
 
     if ( !rg.registered ) {
         return;
@@ -141,6 +140,14 @@ void RE_AddEntityToScene( const renderEntityRef_t *ent )
         ri.Printf( PRINT_DEVELOPER, "RE_AddEntityToScene: MAX_RENDER_ENTITIES hit, dropping entity\n" );
         return;
     }
+    if ( ent->sheetNum >= rg.numSpriteSheets || !rg.sheets[ ent->sheetNum ] ) {
+        ri.Printf( PRINT_DEVELOPER, "RE_AddEntityToScene: invalid sheetNum\n" );
+        return;
+    }
+    if ( ent->spriteId >= rg.sheets[ ent->sheetNum ]->numSprites ) {
+        ri.Printf( PRINT_DEVELOPER, "RE_AddEntityToScene: invalid spriteId\n" );
+        return;
+    }
     if ( N_isnan( ent->origin[0] ) || N_isnan( ent->origin[1] ) || N_isnan( ent->origin[2] ) ) {
 		static qboolean firstTime = qtrue;
 		if ( firstTime ) {
@@ -153,6 +160,49 @@ void RE_AddEntityToScene( const renderEntityRef_t *ent )
     backendData->entities[r_numEntities].e = *ent;
 
     r_numEntities++;
+}
+
+void RE_ProcessEntities( void )
+{
+    renderEntityDef_t *refEntity;
+    vec3_t xyz[4];
+    vec3_t origin;
+    polyVert_t verts[4];
+    uint64_t i, j;
+    uint64_t maxVerts;
+
+    if ( !r_numEntities || !backend.refdef.numEntities || ( backend.refdef.flags & RSF_ORTHO_BITS ) != RSF_ORTHO_TYPE_WORLD ) {
+        return;
+    }
+
+    refEntity = backend.refdef.entities;
+    maxVerts = r_maxPolys->i * 4;
+
+    for ( i = 0; i < backend.refdef.numEntities; i++ ) {
+        if ( r_numPolys >= r_maxPolys->i || r_numPolyVerts >= maxVerts ) {
+            ri.Printf( PRINT_DEVELOPER, "R_ProcessEntities: too many entities, dropping %lu entities\n", backend.refdef.numEntities - i );
+            break;
+        }
+
+        origin[0] = refEntity->e.origin[0];
+        origin[1] = rg.world->height - refEntity->e.origin[1];
+        origin[2] = refEntity->e.origin[2];
+
+        ri.GLM_TransformToGL( origin, xyz, refEntity->e.scale, refEntity->e.rotation, glState.viewData.camera.viewProjectionMatrix );
+
+        for ( j = 0; j < 4; j++ ) {
+            VectorCopy( verts[i].xyz, xyz[i] );
+            VectorCopy2( verts[i].uv, rg.sheets[ refEntity->e.sheetNum ]->sprites[ refEntity->e.spriteId ].texCoords[j] );
+            VectorCopy( verts[i].worldPos, refEntity->e.origin );
+        }
+
+        RE_AddPolyToScene( rg.sheets[ refEntity->e.sheetNum ]->hShader, verts, 4 );
+
+        refEntity++;
+    }
+
+    backend.refdef.numPolys = r_numPolys - r_firstScenePoly;
+    backend.refdef.polys = &backendData->polys[r_firstScenePoly];
 }
 
 void RE_BeginScene( const renderSceneRef_t *fd )
@@ -171,9 +221,6 @@ void RE_BeginScene( const renderSceneRef_t *fd )
     
     backend.refdef.numEntities = r_numEntities - r_firstSceneEntity;
     backend.refdef.entities = &backendData->entities[r_firstSceneEntity];
-
-    backend.refdef.numPolys = r_numPolys - r_firstScenePoly;
-    backend.refdef.polys = &backendData->polys[r_firstScenePoly];
 
     backend.refdef.drawn = qfalse;
 

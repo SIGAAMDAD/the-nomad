@@ -1604,6 +1604,7 @@ void RE_BeginScene( const renderSceneRef_t *fd );
 void RE_EndScene( void );
 void RE_ClearScene( void );
 void R_InitNextFrame( void );
+void RE_ProcessEntities( void );
 
 //
 // rgl_shader.c

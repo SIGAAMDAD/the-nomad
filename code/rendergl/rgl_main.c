@@ -127,7 +127,7 @@ static void R_RadixSort( srfPoly_t *source, uint32_t size )
     ri.Hunk_FreeTempMemory( scratch );
 }
 
-extern uint64_t r_numPolys, r_numPolyVerts, r_numQuads;
+extern uint64_t r_numPolys, r_numPolyVerts, r_numQuads, r_numEntities;
 
 static int SortPoly( const void *a, const void *b ) {
     return (int)( ( (srfPoly_t *)a )->hShader - ( (srfPoly_t *)b )->hShader );
@@ -138,7 +138,7 @@ void R_WorldToGL( drawVert_t *verts, vec3_t pos )
     vec3_t xyz[4];
     int i;
 
-    ri.GLM_TransformToGL( pos, xyz, 1.0f, glState.viewData.camera.viewProjectionMatrix );
+    ri.GLM_TransformToGL( pos, xyz, 1.0f, 0.0f, glState.viewData.camera.viewProjectionMatrix );
 
     for ( i = 0; i < 4; ++i ) {
         VectorCopy( verts[i].xyz, xyz[i] );
@@ -150,7 +150,7 @@ void R_WorldToGL2( polyVert_t *verts, vec3_t pos, uint32_t numVerts )
     vec3_t xyz[4];
     int i;
 
-    ri.GLM_TransformToGL( pos, xyz, 1.0f, glState.viewData.camera.viewProjectionMatrix );
+    ri.GLM_TransformToGL( pos, xyz, 1.0f, 0.0f, glState.viewData.camera.viewProjectionMatrix );
 
     for ( i = 0; i < numVerts; ++i ) {
         VectorCopy( verts[i].xyz, xyz[i] );
@@ -168,7 +168,7 @@ void R_ScreenToGL( polyVert_t *verts )
 
     scale = verts[0].xyz[0] * verts[0].xyz[1];
 
-    ri.GLM_TransformToGL( pos, xyz, scale, glState.viewData.camera.viewProjectionMatrix );
+    ri.GLM_TransformToGL( pos, xyz, scale, 0.0f, glState.viewData.camera.viewProjectionMatrix );
 
     for ( i = 0; i < 4; i++ ) {
         VectorCopy( verts[i].xyz, xyz[i] );
@@ -188,7 +188,7 @@ void R_DrawPolys( void )
 	vec3_t normal, edge1, edge2;
 	
 	// no polygon submissions this frame
-	if ( !r_numPolys && !r_numPolyVerts || ( backend.refdef.flags & RSF_ORTHO_BITS ) == RSF_ORTHO_TYPE_SCREENSPACE ) {
+	if ( !r_numPolys && !r_numPolyVerts || ( backend.refdef.flags & RSF_ORTHO_BITS ) != RSF_ORTHO_TYPE_WORLD ) {
 	    return;
 	}
 
@@ -247,6 +247,7 @@ void R_DrawPolys( void )
 //                backendData->verts[ backend.drawBatch.vtxOffset + j ].xyz[1], backendData->verts[ backend.drawBatch.vtxOffset + j ].xyz[2] );
 			VectorCopy( backendData->verts[ backend.drawBatch.vtxOffset ].xyz, backend.refdef.polys[i].verts[j].xyz );
 			VectorCopy2( backendData->verts[ backend.drawBatch.vtxOffset ].st, backend.refdef.polys[i].verts[j].uv );
+
 			VectorCopy2( backendData->verts[ backend.drawBatch.vtxOffset ].lightmap, backend.refdef.polys[i].verts[j].uv );
 			VectorCopy( backendData->verts[ backend.drawBatch.vtxOffset ].worldPos, backend.refdef.polys[i].verts[j].worldPos );
 //			R_CalcTangentVectors( (drawVert_t *)&vtx[j] );
@@ -335,6 +336,8 @@ void R_RenderView( const viewData_t *parms )
     // draw any queued up images
     R_IssuePendingRenderCommands();
 
+    RE_ProcessEntities();
+
     // draw the tilemap
     R_DrawWorld();
 
@@ -350,6 +353,19 @@ static void R_CalcSpriteTextureCoords( uint32_t x, uint32_t y, uint32_t spriteWi
     const vec2_t max = { ( (float)x * spriteWidth ) / sheetWidth, ( (float)y * spriteHeight ) / sheetHeight };
     int i;
 
+#if 0
+    texCoords[0][0] = min[0];
+    texCoords[0][1] = min[1];
+
+    texCoords[1][0] = min[0];
+    texCoords[1][1] = max[1];
+
+    texCoords[2][0] = max[0];
+    texCoords[2][1] = max[1];
+
+    texCoords[3][0] = max[0];
+    texCoords[3][1] = min[1];
+#else
     texCoords[0][0] = min[0];
     texCoords[0][1] = max[1];
 
@@ -361,6 +377,7 @@ static void R_CalcSpriteTextureCoords( uint32_t x, uint32_t y, uint32_t spriteWi
     
     texCoords[3][0] = max[0];
     texCoords[3][1] = max[1];
+#endif
 
     ri.Printf( PRINT_DEVELOPER, "Generated sprite texCoords for [ %u, %u ]:\n", x, y );
     for ( i = 0; i < 4; i++ ) {
@@ -439,7 +456,8 @@ nhandle_t RE_RegisterSpriteSheet( const char *npath, uint32_t sheetWidth, uint32
     spriteCountX = sheetWidth / spriteWidth;
     spriteCountY = sheetHeight / spriteHeight;
 
-    ri.Printf( PRINT_DEVELOPER, "Generate sprite sheet, [ %u, %u ]:[ %u, %u ]\n", sheetWidth, sheetHeight, spriteWidth, spriteHeight );
+    ri.Printf( PRINT_DEVELOPER, "Generate sprite sheet, [ %u, %u ]:[ %u, %u ], %u sprites\n", sheetWidth, sheetHeight, spriteWidth, spriteHeight,
+        numSprites );
 
     sheet->hShader = RE_RegisterShader( npath );
     if ( sheet->hShader == FS_INVALID_HANDLE ) {

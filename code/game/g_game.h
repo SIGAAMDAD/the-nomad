@@ -170,8 +170,7 @@ typedef struct {
     float cameraZoom;
 #ifdef __cplusplus
     glm::vec3 cameraPos;
-#else
-    vec3_t cameraPos;
+    glm::vec3 cameraWorldPos;
 #endif
 } gameInfo_t;
 

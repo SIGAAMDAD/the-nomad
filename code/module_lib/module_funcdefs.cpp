@@ -788,21 +788,56 @@ DEFINE_CALLBACK( RenderScene ) {
     re.RenderScene( &refdef );
 }
 
-static void AddEntityToScene( nhandle_t sheetNum, const vec3 *origin, uint32_t flags ) {
+static void AddEntityToScene( asIScriptGeneric *pGeneric ) {
     refEntity_t refEntity;
 
+	nhandle_t sheetNum = (nhandle_t)pGeneric->GetArgDWord( 0 );
+	nhandle_t spriteId = (nhandle_t)pGeneric->GetArgDWord( 1 );
+	int renderfx = (int)pGeneric->GetArgDWord( 2 );
+	const vec3& lightingOrigin = *(const vec3 *)pGeneric->GetArgObject( 3 );
+	const vec3& origin = *(const vec3 *)pGeneric->GetArgObject( 4 );
+	uint64_t frame = pGeneric->GetArgQWord( 5 );
+	uint32_t flags = pGeneric->GetArgDWord( 6 );
+    uint32_t color = pGeneric->GetArgDWord( 7 );
+	const vec2& shaderTexCoord = *(const vec2 *)pGeneric->GetArgObject( 8 );
+    float shaderTime = pGeneric->GetArgFloat( 9 );
+	float rotation = pGeneric->GetArgFloat( 10 );
+	float scale = pGeneric->GetArgFloat( 11 );
+
     memset( &refEntity, 0, sizeof( refEntity ) );
+    VectorCopy( refEntity.origin, origin );
+    VectorCopy( refEntity.lightingOrigin, lightingOrigin );
+    VectorCopy2( refEntity.shaderTexCoord, shaderTexCoord );
     refEntity.sheetNum = sheetNum;
-    VectorCopy( refEntity.origin, *origin );
+    refEntity.spriteId = spriteId;
+    refEntity.renderfx = renderfx;
+    refEntity.frame = frame;
     refEntity.flags = flags;
+    refEntity.rotation = rotation;
+    refEntity.scale = scale;
+    refEntity.shaderTime.f = shaderTime;
 
     CThreadAutoLock<CThreadMutex> lock( g_hRenderLock );
     re.AddEntityToScene( &refEntity );
 }
 
 static void AddPolyToScene( nhandle_t hShader, const CScriptArray *pPolyList ) {
+    polyVert_t *verts;
+    const asIScriptObject *pObject;
+    uint32_t i;
+
+    verts = (polyVert_t *)alloca( sizeof( *verts ) * pPolyList->GetSize() );
+    for ( i = 0; i < pPolyList->GetSize(); i++ ) {
+        pObject = (const asIScriptObject *)pPolyList->At( i );
+        if ( pObject->GetObjectType()->GetSize() != sizeof( *verts ) ) {
+            N_Error( ERR_DROP, "RE_AddPolyToScene: only submit PolyVert objects to this, not \"%s\"", pObject->GetObjectType()->GetName() );
+        }
+
+        // TODO: this, cache the properties
+    }
+
     CThreadAutoLock<CThreadMutex> lock( g_hRenderLock );
-    re.AddPolyToScene( hShader, (const polyVert_t *)pPolyList->GetBuffer(), pPolyList->GetSize() );
+    re.AddPolyToScene( hShader, verts, pPolyList->GetSize() );
 }
 
 static void AddSpriteToScene( const vec3 *origin, nhandle_t hSpriteSheet, nhandle_t hSprite ) {
@@ -2183,7 +2218,9 @@ void ModuleLib_Register_Engine( void )
 
             REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::ClearScene()", WRAP_FN( ClearScene ) );
             g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::Renderer::RenderScene( uint, uint, uint, uint, uint, uint )", asFUNCTION( ModuleLib_RenderScene ), asCALL_GENERIC );
-//            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::RE_AddEntityToScene( int, vec3, uint,  )", AddEntityToScene );
+            g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::Renderer::AddEntityToScene( int, int, int, const vec3& in, const vec3& in, uint64,"
+                " uint32, uint32, const vec2& in, float, float, float )",
+                asFUNCTION( AddEntityToScene ), asCALL_GENERIC );
             REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddPolyToScene( int, const TheNomad::Engine::Renderer::PolyVert[]& in )", WRAP_FN_PR( AddPolyToScene, ( nhandle_t, const CScriptArray * ), void ) );
             REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::Renderer::AddSpriteToScene( const vec3& in, int, int )", WRAP_FN( AddSpriteToScene ) );
             REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::Renderer::RegisterShader( const string& in )", WRAP_FN( RegisterShader ) );
