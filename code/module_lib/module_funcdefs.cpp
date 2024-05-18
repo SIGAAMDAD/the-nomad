@@ -752,6 +752,14 @@ static int StrCmp( const string_t *str1, const string_t *str2 ) {
     return N_strcmp( str1->c_str(), str2->c_str() );
 }
 
+static void KeyGetBinding( asIScriptGeneric *pGeneric ) {
+    ::new ( pGeneric->GetAddressOfReturnLocation() ) string_t( Key_GetBinding( pGeneric->GetArgDWord( 0 ) ) );
+}
+
+static void KeyGetKey( asIScriptGeneric *pGeneric ) {
+    pGeneric->SetReturnDWord( Key_GetKey( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
+}
+
 static void LoadWorld( const string_t *npath ) {
     re.LoadWorld( npath->c_str() );
 }
@@ -1304,7 +1312,11 @@ static bool ImGui_RadioButton( const string_t *label, bool selected ) {
     return ImGui::RadioButton( label->c_str(), selected );
 }
 
-static void ImGui_ProgressBar( float fraction, const vec2& size, const string_t *overlay ) {
+static void ImGui_ProgressBar( asIScriptGeneric *pGeneric ) {
+    float fraction = pGeneric->GetArgFloat( 0 );
+    const vec2& size = *(const vec2 *)pGeneric->GetArgObject( 1 );
+    const string_t *overlay = (const string_t *)pGeneric->GetArgObject( 2 );
+
     ImGui::ProgressBar( fraction, ImVec2( size.x, size.y ), overlay->c_str() );
 }
 
@@ -1919,7 +1931,8 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::ArrowButton( const string& in, ImGuiDir )", ImGui_ArrowButton, ( const string_t *, ImGuiDir ), bool );
         REGISTER_GLOBAL_FUNCTION( "bool ImGui::RadioButton( const string& in, bool )", ImGui_RadioButton, ( const string_t *, bool ), bool );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::SetCursorScreenPos( const vec2& in )", ImGui::SetCursorScreenPos, ( const ImVec2& ), void );
-        REGISTER_GLOBAL_FUNCTION( "void ImGui::ProgressBar( float, const vec2& in = vec2( -FLT_MIN, 0.0f ), const string& in = \"\" )", ImGui_ProgressBar, ( float, const vec2&, const string_t * ), void );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void ImGui::ProgressBar( float, const vec2& in = vec2( -FLT_MIN, 0.0f ), const string& in = \"\" )",
+            asFUNCTION( ImGui_ProgressBar ), asCALL_GENERIC );
         REGISTER_GLOBAL_FUNCTION( "void ImGui::Separator()", ImGui::Separator, ( void ), void );
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
             "int ImGui::SliderInt( const string& in, int, int, int, int = 0 )", asFUNCTION( ImGui_SliderInt ),
@@ -2061,6 +2074,10 @@ void ModuleLib_Register_Engine( void )
 
         REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::IsAnyKeyDown()", WRAP_FN( Key_AnyDown ) );
         REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Engine::IsKeyDown( KeyNum )", WRAP_FN( Key_IsDown ) );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "uint32 TheNomad::Engine::KeyGetKey( const string& in )",
+            asFUNCTION( KeyGetKey ), asCALL_GENERIC );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "const string TheNomad::Engine::KeyGetBinding( uint32 )",
+            asFUNCTION( KeyGetBinding ), asCALL_GENERIC );
 
         SET_NAMESPACE( "TheNomad::Engine::System" );
         REGISTER_GLOBAL_FUNCTION( "uint64 TheNomad::Engine::System::Milliseconds()", WRAP_FN( Sys_Milliseconds ) );
@@ -2539,6 +2556,8 @@ void ModuleLib_Register_Engine( void )
 
         REGISTER_GLOBAL_VAR( "float Game_CameraZoom", &gi.cameraZoom );
         REGISTER_GLOBAL_VAR( "vec3 Game_CameraPos", &gi.cameraPos );
+        REGISTER_GLOBAL_VAR( "const int Game_FrameTime", &com_frameTime );
+        REGISTER_GLOBAL_VAR( "const uint64 Game_FrameNumber", &com_frameNumber );
 
         REGISTER_GLOBAL_VAR( "const TheNomad::GameSystem::DirType[] InverseDirs", inversedirs );
 

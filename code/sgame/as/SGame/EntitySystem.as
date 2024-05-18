@@ -46,6 +46,9 @@ namespace TheNomad::SGame {
 
     class EntitySystem : TheNomad::GameSystem::GameObject {
 		EntitySystem() {
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.SetPlayerPosition_f ), "sgame.set_player_position", true
+			);
 		}
 		
 		void OnInit() {
@@ -335,6 +338,13 @@ namespace TheNomad::SGame {
 		}
 		uint NumEntities() const {
 			return m_EntityList.Count();
+		}
+
+		void SetPlayerPosition_f() {
+			const float x = Convert().ToFloat( TheNomad::Engine::CmdArgv( 1 ) );
+			const float y = Convert().ToFloat( TheNomad::Engine::CmdArgv( 2 ) );
+
+			m_PlayrObject.GetLink().m_Origin = vec3( x, y, 0.0f );
 		}
 
 		private bool BoundsIntersectLine( const vec3& in start, const vec3& in end, const TheNomad::GameSystem::BBox& in bounds ) {

@@ -61,6 +61,21 @@ namespace TheNomad::SGame {
 	ConVar sgame_PlayerHeight;
 	ConVar sgame_PlayerWidth;
 	ConVar sgame_Gravity;
+
+	class KeyBinding {
+		KeyBinding() {
+		}
+		KeyBinding( uint num, TheNomad::Engine::CommandSystem::CommandFunc@ downFunc, TheNomad::Engine::CommandSystem::CommandFunc@ upFunc ) {
+			m_nKeyNum = num;
+			@m_DownFunc = @downFunc;
+			@m_UpFunc = @upFunc;
+		}
+
+		uint m_nKeyNum = 0;
+		TheNomad::Engine::CommandSystem::CommandFunc@ m_DownFunc = null;
+		TheNomad::Engine::CommandSystem::CommandFunc@ m_UpFunc = null;
+	};
+	array<KeyBinding> sgame_KeyBindTable;
 };
 
 namespace ImGui {
@@ -134,7 +149,7 @@ void InitCvars() {
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_cheats_enabled, "sgame_cheats_enabled", "0", CVAR_CHEAT | CVAR_SAVE, false );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_LevelIndex, "g_levelIndex", "0", CVAR_LATCH | CVAR_TEMP, false );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_MapName, "mapname", "", CVAR_LATCH | CVAR_TEMP, false );
-	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_MaxFps, "com_maxfps", "60", CVAR_LATCH | CVAR_SAVE, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_MaxFps, "com_maxfps", "", CVAR_LATCH | CVAR_SAVE, false );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_SaveName, "sgame_SaveName", "nomadsv", CVAR_TEMP, false );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_QuickShotMaxTargets, "sgame_QuickShotMaxTargets", "20", CVAR_TEMP, false );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_QuickShotTime, "sgame_QuickShotTime", "100", CVAR_TEMP, false );
@@ -144,9 +159,9 @@ void InitCvars() {
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_GroundFriction, "sgame_GroundFriction", "0.9", CVAR_SAVE, true );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_GroundFriction, "sgame_WaterFriction", "2.5", CVAR_SAVE, true );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_AirFriction, "sgame_AirFriction", "0.5", CVAR_SAVE, true );
-	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_MaxSpeed, "sgame_MaxSpeed", "20.5", CVAR_TEMP, false );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_MaxSpeed, "sgame_MaxSpeed", "2.5", CVAR_TEMP, false );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_ToggleHUD, "sgame_ToggleHUD", "1", CVAR_SAVE, true );
-	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_Friction, "sgame_Friction", "0.05", CVAR_TEMP, true );
+	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_Friction, "sgame_Friction", "0.1", CVAR_TEMP, true );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_Gravity, "sgame_Gravity", "0.9", CVAR_TEMP, true );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_PlayerWidth, "sgame_PlayerWidth", "1.0", CVAR_TEMP, false );
 	TheNomad::CvarManager.AddCvar( @TheNomad::SGame::sgame_PlayerHeight, "sgame_PlayerHeight", "1.0", CVAR_TEMP, false );
@@ -252,6 +267,7 @@ int ModuleOnLoadGame() {
 }
 
 int ModuleOnLevelStart() {
+	TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::InLevel;
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLevelStart();
 	}
@@ -268,10 +284,21 @@ int ModuleOnLevelEnd() {
 }
 
 int ModuleOnKeyEvent( uint key, uint down ) {
+	for ( uint i = 0; i < TheNomad::SGame::sgame_KeyBindTable.Count(); i++ ) {
+		if ( TheNomad::SGame::sgame_KeyBindTable[i].m_nKeyNum == key ) {
+			if ( down == 1 ) {
+				TheNomad::SGame::sgame_KeyBindTable[i].m_DownFunc();
+			} else {
+				TheNomad::SGame::sgame_KeyBindTable[i].m_UpFunc();
+			}
+			return 1;
+		}
+	}
+
 	return 0;
 }
 
-int ModuleOnMouseEvent( uint dx, uint dy ) {
+int ModuleOnMouseEvent( int dx, int dy ) {
 	TheNomad::GameSystem::GameManager.SetMousePos( uvec2( dx, dy ) );
 	return 0;
 }

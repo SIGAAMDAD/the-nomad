@@ -269,9 +269,14 @@ static void R_DrawWorld( void )
 {
     uint32_t y, x;
     uint32_t i;
+    uint64_t j;
     vec3_t pos;
+    ivec3_t origin;
     drawVert_t *vtx;
     vec3_t edge1, edge2, normal;
+    vec4_t color;
+    uint16_t color16[4];
+    const renderEntityDef_t *refEntity;
 
     if ( ( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {
         // nothing to draw
@@ -311,6 +316,26 @@ static void R_DrawWorld( void )
                 VectorSubtract( vtx->xyz, vtx[2].xyz, edge2 );
                 CrossProduct( edge1, edge2, normal );
             }
+
+            // check if there's any entities in the way
+            VectorSet4( color, 1.0f, 1.0f, 1.0f, 1.0f );
+            for ( j = 0; j < backend.refdef.numEntities; j++ ) {
+                refEntity = &backend.refdef.entities[j];
+
+                origin[0] = refEntity->e.origin[0];
+                origin[1] = (int)( refEntity->e.origin[1] + 1 );
+                origin[2] = refEntity->e.origin[2];
+
+                if ( rg.world->tiles[ origin[1] * rg.world->width + origin[0] ].sides[DIR_SOUTH] ) {
+                    color[3] = 0.10f;
+                    break;
+                }
+            }
+            R_VaoPackColor( color16, color );
+            VectorCopy4( vtx[0].color, color );
+            VectorCopy4( vtx[1].color, color );
+            VectorCopy4( vtx[2].color, color );
+            VectorCopy4( vtx[3].color, color );
 
             for ( i = 0; i < 4; i++ ) {
                 VectorCopy2( vtx[i].uv, rg.world->sprites[ rg.world->tiles[y * rg.world->width + x].index ][i] );
@@ -357,7 +382,6 @@ static void R_CalcSpriteTextureCoords( uint32_t x, uint32_t y, uint32_t spriteWi
 {
     const vec2_t min = { ( ( (float)x + 1 ) * spriteWidth ) / sheetWidth, ( ( (float)y + 1 ) * spriteHeight ) / sheetHeight };
     const vec2_t max = { ( (float)x * spriteWidth ) / sheetWidth, ( (float)y * spriteHeight ) / sheetHeight };
-    int i;
 
 #if 0
     texCoords[0][0] = min[0];
@@ -384,11 +408,6 @@ static void R_CalcSpriteTextureCoords( uint32_t x, uint32_t y, uint32_t spriteWi
     texCoords[3][0] = max[0];
     texCoords[3][1] = max[1];
 #endif
-
-    ri.Printf( PRINT_DEVELOPER, "Generated sprite texCoords for [ %u, %u ]:\n", x, y );
-    for ( i = 0; i < 4; i++ ) {
-        ri.Printf( PRINT_DEVELOPER, "  TexCoords[%i]: %f, %f\n", i, texCoords[i][0], texCoords[i][1] );
-    }
 }
 
 /*

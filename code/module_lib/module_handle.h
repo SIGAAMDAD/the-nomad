@@ -28,6 +28,7 @@ enum : uint64_t
     ModuleOnRunTic,
     ModuleOnSaveGame,
     ModuleOnLoadGame,
+	ModuleOnPlayerInput,
 
     NumFuncs
 };

@@ -96,9 +96,7 @@ namespace TheNomad::SGame {
 			ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, vec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
 
 			ImGui::SetWindowFontScale( 2.0f * scale );
-			ImGui::ProgressBar( health, vec2( 350 * scale, 26 * scale ) );
-			ImGui::SameLine();
-			ImGui::Text( formatFloat( health ) + "%" );
+			ImGui::ProgressBar( health, vec2( 350 * scale, 26 * scale ), formatFloat( health ) + "%" );
 			ImGui::SetWindowFontScale( 1.0f );
 
 			ImGui::PopStyleColor( 3 );
@@ -116,9 +114,7 @@ namespace TheNomad::SGame {
 			ImGui::PushStyleColor( ImGuiCol::FrameBgHovered, vec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
 
 			ImGui::SetWindowFontScale( 2.0f * scale );
-			ImGui::ProgressBar( rage, vec2( 350 * scale, 26 * scale ) );
-			ImGui::SameLine();
-			ImGui::Text( formatFloat( rage ) + "%" );
+			ImGui::ProgressBar( rage, vec2( 350 * scale, 26 * scale ), formatFloat( rage ) + "%" );
 			ImGui::SetWindowFontScale( 1.0f );
 
 			ImGui::PopStyleColor( 3 );
@@ -132,8 +128,8 @@ namespace TheNomad::SGame {
 				| ImGuiWindowFlags::NoScrollbar ) );
 			ImGui::SetWindowPos( vec2( 0.0f, 0.0f ) );
 			ImGui::SetWindowSize( vec2( float( screenSize.x ), float( screenSize.y ) ) );
-			DrawRageBar();
 			DrawHealthBar();
+//			DrawRageBar();
 			ImGui::End();
 		}
 		
@@ -145,14 +141,9 @@ namespace TheNomad::SGame {
 			uint time;
 			const vec2 screenSize = vec2( TheNomad::GameSystem::GameManager.GetGPUConfig().screenWidth,
 				TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight );
-			
-			TheNomad::Engine::Renderer::ClearScene();
-			
+						
 			DrawStatusBars();
 			DrawMouseReticle();
-			
-			TheNomad::Engine::Renderer::RenderScene( 0, 0, uint( screenSize.x ), uint( screenSize.y ),
-				RSF_ORTHO_TYPE_SCREENSPACE | RSF_NOWORLDMODEL, 0 );
 		}
 		
 		private HudOverlay m_RageBar;

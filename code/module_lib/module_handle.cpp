@@ -32,7 +32,8 @@ const moduleFunc_t funcDefs[NumFuncs] = {
     { "int ModuleOnLevelEnd()", ModuleOnLevelEnd, 0, qfalse },
     { "int ModuleOnRunTic( uint )", ModuleOnRunTic, 1, qtrue },
     { "int ModuleOnSaveGame()", ModuleOnSaveGame, 0, qfalse },
-    { "int ModuleOnLoadGame()", ModuleOnLoadGame, 0, qfalse }
+    { "int ModuleOnLoadGame()", ModuleOnLoadGame, 0, qfalse },
+    { "int ModuleOnUserCmd( int, int, int )", ModuleOnPlayerInput, 3, qfalse }
 };
 
 CModuleHandle::CModuleHandle( const char *pName, const nlohmann::json& sourceFiles, int32_t moduleVersionMajor,

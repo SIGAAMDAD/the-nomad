@@ -21,7 +21,6 @@ namespace TheNomad::Engine::CommandSystem {
 
     class CommandManager {
         CommandManager() {
-            m_CommandList.Reserve( 1024 );
         }
         ~CommandManager() {
             for ( uint i = 0; i < m_CommandList.Count(); i++ ) {
@@ -33,9 +32,12 @@ namespace TheNomad::Engine::CommandSystem {
 
         bool CheckCommand( const string& in name ) const {
             for ( uint i = 0; i < m_CommandList.Count(); i++ ) {
-                if ( name == m_CommandList[i].m_Name ) {
-                    if ( m_CommandList[i].m_bLevelCommand && TheNomad::SGame::GlobalState != TheNomad::SGame::GameState::InLevel ) {
-                        continue;
+                if ( m_CommandList[i].m_Name == name ) {
+                    if ( @m_CommandList[i].m_Function is null ) {
+                        ConsoleWarning( "Command callback for \"" + name + "\" is null! (" + m_CommandList[i].m_Name + ")\n" );
+                        return false;
+                    } else if ( m_CommandList[i].m_bLevelCommand && TheNomad::SGame::GlobalState != TheNomad::SGame::GameState::InLevel ) {
+                        return false;
                     }
                     m_CommandList[i].m_Function();
                     return true;

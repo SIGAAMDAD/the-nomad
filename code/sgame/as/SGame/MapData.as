@@ -56,7 +56,8 @@ namespace TheNomad::SGame {
 			}
 
 			DebugPrint( "Map \"" + m_Name + "\" loaded with " + m_Checkpoints.Count() + " checkpoints, " +
-				m_Spawns.Count() + " spawns, and " + m_Secrets.Count() + " secrets.\n" );
+				m_Spawns.Count() + " spawns, and " + m_Secrets.Count() + " secrets."
+				+ "Width is " + m_nWidth + " and Height is " + m_nHeight + "\n" );
 		}
 		
 		const array<array<uint>>@ GetTiles() const {
@@ -75,6 +76,10 @@ namespace TheNomad::SGame {
 			return level;
 		}
 		uint GetTile( const vec3& in origin, const TheNomad::GameSystem::BBox& in bounds ) const {
+			const uint level = GetLevel( bounds );
+			if ( level > m_TileData.Count() || origin.x < 0.0f || origin.y < 0.0f || origin.x > m_nWidth || origin.y > m_nHeight ) {
+				return 0;
+			}
 			return m_TileData[ GetLevel( bounds ) ][ uint( origin.y ) * m_nWidth + uint( origin.x ) ];
 		}
 		const array<MapSpawn>@ GetSpawns() const {

@@ -873,7 +873,6 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 	}
 
 	// draw the background
-	height = frac * gi.gpuConfig.vidHeight;
 	re.ClearScene();
 
 	ImGui::Begin( "CommandConsole", NULL, windowFlags | ImGuiWindowFlags_NoBackground );

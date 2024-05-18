@@ -45,29 +45,56 @@ namespace TheNomad::SGame {
 			//
 			// add keybind commands
 			//
+
 			/*
+			TheNomad::SGame::sgame_KeyBindTable.Add( KeyBinding(
+				TheNomad::Engine::KeyGetKey( "+north" ),
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Down_f ),
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Up_f )
+			) );
+			TheNomad::SGame::sgame_KeyBindTable.Add( KeyBinding(
+				TheNomad::Engine::KeyGetKey( "+south" ),
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_Down_f ),
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_Up_f )
+			) );
+			TheNomad::SGame::sgame_KeyBindTable.Add( KeyBinding(
+				TheNomad::Engine::KeyGetKey( "+east" ),
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveEast_Down_f ),
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveEast_Up_f )
+			) );
+			TheNomad::SGame::sgame_KeyBindTable.Add( KeyBinding(
+				TheNomad::Engine::KeyGetKey( "+west" ),
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveWest_Down_f ),
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveWest_Up_f )
+			) );
+			TheNomad::SGame::sgame_KeyBindTable.Add( KeyBinding(
+				TheNomad::Engine::KeyGetKey( "+jump" ),
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Jump_Down_f ),
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Jump_Up_f )
+			) );
+			*/
 			
 			// these specific movement commands MUST NOT CHANGE as they are hardcoded into the engine
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Down_f ), "+north", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_f ), "+north", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_Up_f ), "-north", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveNorth_f ), "-north", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_Down_f ), "+south", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_f ), "+south", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_Up_f ), "-south", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveSouth_f ), "-south", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveWest_Down_f ), "+west", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveWest_f ), "+west", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveWest_Up_f ), "-west", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveWest_f ), "-west", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveEast_Down_f ), "+east", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveEast_f ), "+east", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveEast_Up_f ), "-east", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.MoveEast_f ), "-east", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Jump_Down_f ), "+jump", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Jump_f ), "+jump", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
-				TheNomad::Engine::CommandSystem::CommandFunc( @this.Jump_Up_f ), "-jump", true );
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.Jump_f ), "-jump", true );
 			
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.Crouch_Down_f ), "+crouch", true );
@@ -105,7 +132,8 @@ namespace TheNomad::SGame {
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.NextWeapon_f ), "+weapnext", true );
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.PrevWeapon_f ), "+weapprev", true );
-				*/
+		}
+		void Shutdown() {
 		}
 		
 		private PlayrObject@ GetPlayerIndex() const {
@@ -132,6 +160,48 @@ namespace TheNomad::SGame {
 
 			obj.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE ) );
 		}
+
+		void MoveNorth_f() {
+			PlayrObject@ obj = @GetPlayerIndex();
+			if ( TheNomad::Engine::CmdArgv( 0 )[0] == '+' ) {
+//				obj.key_MoveNorth.Down();
+			} else {
+//				obj.key_MoveNorth.Up();
+			}
+		}
+		void MoveSouth_f() {
+			PlayrObject@ obj = @GetPlayerIndex();
+			if ( TheNomad::Engine::CmdArgv( 0 )[0] == '+' ) {
+				obj.key_MoveSouth.Down();
+			} else {
+				obj.key_MoveSouth.Up();
+			}
+		}
+		void MoveEast_f() {
+			PlayrObject@ obj = @GetPlayerIndex();
+			if ( TheNomad::Engine::CmdArgv( 0 )[0] == '+' ) {
+				obj.key_MoveEast.Down();
+			} else {
+				obj.key_MoveEast.Up();
+			}
+		}
+		void MoveWest_f() {
+			PlayrObject@ obj = @GetPlayerIndex();
+			if ( TheNomad::Engine::CmdArgv( 0 )[0] == '+' ) {
+				obj.key_MoveWest.Down();
+			} else {
+				obj.key_MoveWest.Up();
+			}
+		}
+		void Jump_f() {
+			PlayrObject@ obj = @GetPlayerIndex();
+			if ( TheNomad::Engine::CmdArgv( 0 )[0] == '+' ) {
+				obj.key_Jump.Down();
+			} else {
+				obj.key_Jump.Up();
+			}
+		}
+
 		void UseWeapon_Down_f() { GetPlayerIndex().m_bUseWeapon = true; }
 		void UseWeapon_Up_f() { GetPlayerIndex().m_bUseWeapon = false; }
 		void AltUseWeapon_Down_f() { GetPlayerIndex().m_bAltUseWeapon = true; }
@@ -268,10 +338,11 @@ namespace TheNomad::SGame {
 			
 			// snap to the player's position
 			if ( LevelManager.GetMapData().GetWidth() > 0 && LevelManager.GetMapData().GetHeight() > 0 ) {
-			//	Game_CameraPos.x = 1.0f / float( LevelManager.GetMapData().GetWidth() ) * origin.x;
-			//	Game_CameraPos.y = 1.0f / float( LevelManager.GetMapData().GetHeight() ) * origin.y;
+//				Game_CameraPos.x = 1.0f / float( LevelManager.GetMapData().GetWidth() ) * origin.x - ( Game_CameraZoom * 30.0f );
+//				Game_CameraPos.y = 1.0f / float( LevelManager.GetMapData().GetHeight() ) + origin.y + ( Game_CameraZoom * 20.0f ) + 1.0f;
 			}
 			// technically no z coordinate because it's 2D
+//			Game_CameraZoom = 1.9f;
 			
 			TheNomad::Engine::Renderer::ClearScene();
 			for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {

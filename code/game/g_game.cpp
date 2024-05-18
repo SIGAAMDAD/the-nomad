@@ -1180,6 +1180,21 @@ static void G_PhotoMode( void )
     }
 }
 
+static void G_WriteCommands( void )
+{
+    int i, j;
+    int count;
+    const usercmd_t *cmd;
+
+    count = gi.cmdNumber - gi.oldCmdNumber;
+    for ( i = 0; i < count; i++ ) {
+        j = ( gi.cmdNumber - count + i + 1 ) & CMD_MASK;
+        cmd = &gi.cmds[j];
+        g_pModuleLib->ModuleCall( sgvm, ModuleOnPlayerInput, 3, cmd->forwardmove, cmd->sidemove, cmd->upmove );
+    }
+    gi.oldCmdNumber = gi.cmdNumber;
+}
+
 void G_Frame( int msec, int realMsec )
 {
     uint32_t i, j;
@@ -1194,6 +1209,7 @@ void G_Frame( int msec, int realMsec )
 //    gi.realtime += gi.frametime;
 
     G_MoveCamera_f();
+    G_PhotoMode();
 
     // update the screen
     gi.framecount++;

@@ -464,6 +464,9 @@ namespace TheNomad::SGame {
 			m_Link.m_Origin = origin;
 			m_nHealth = 100.0f;
 			m_nRage = 100.0f;
+			m_Link.m_nEntityType = TheNomad::GameSystem::EntityType::Playr;
+			m_PhysicsObject.Init( cast<EntityObject@>( @this ), vec3( sgame_BaseSpeed.GetFloat(), sgame_BaseSpeed.GetFloat(), 0.0f ),
+				vec3( sgame_MaxSpeed.GetFloat(), sgame_MaxSpeed.GetFloat(), 0.0f ) );
 			m_PhysicsObject.SetAngle( Util::Dir2Angle( TheNomad::GameSystem::DirType::East ) );
 			m_Direction = Util::Angle2Dir( m_PhysicsObject.GetAngle() );
 			@m_SpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/raio_base", 32, 32, 512, 512 );
@@ -482,7 +485,7 @@ namespace TheNomad::SGame {
 			int hLegSprite = FS_INVALID_HANDLE;
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
-			m_Link.m_Origin = vec3( 0.0f, 0.0f, 0.0f );
+//			m_Link.m_Origin = vec3( 0.0f, 0.0f, 0.0f );
 
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.sheetNum = m_SpriteSheet.GetShader();
@@ -528,7 +531,7 @@ namespace TheNomad::SGame {
 				}
 			}
 			
-//			hLegSprite = m_LegState.GetSpriteOffset().y * m_LegSpriteSheet.GetSpriteCountX() +
+//			hLegSprite = m_LegState.GetSpriteOffset().y * m_SpriteSheet.GetSpriteCountX() +
 //				m_LegState.GetSpriteOffset().x + m_LegState.GetAnimation().GetFrame() + m_LegsFacing;
 //			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, m_SpriteSheet.GetShader(), hLegSprite );
 		}
@@ -597,6 +600,6 @@ namespace TheNomad::SGame {
 		
 		private EntityState@ m_LegState;
 		private PlayerDisplayUI m_HudData;
-		private PMoveData Pmove;
+		private PMoveData Pmove( @this );
 	};
 };

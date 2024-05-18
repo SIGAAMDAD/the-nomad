@@ -281,6 +281,7 @@ void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns, 
 	*pHeight = info->height;
 
 	g_world->Init( &gi.mapCache.info );
+	Key_SetCatcher( Key_GetCatcher() | KEYCATCH_SGAME );
 
 	Cbuf_ExecuteText( EXEC_APPEND, va( "setmap %s\n", gi.mapCache.info.name ) );
 }

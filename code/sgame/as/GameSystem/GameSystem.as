@@ -79,8 +79,8 @@ namespace TheNomad::GameSystem {
 			return m_nGameMsec;
 		}
 		void SetMsec( uint msec ) {
-			m_nDeltaTics = msec - m_nGameMsec;
-			m_nGameMsec = msec;
+			m_nDeltaTics = msec - m_nGameTic;
+			m_nGameTic = msec;
 		}
 
 		TheNomad::Engine::Renderer::GPUConfig& GetGPUConfig() {

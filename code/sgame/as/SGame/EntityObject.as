@@ -62,6 +62,9 @@ namespace TheNomad::SGame {
 		TheNomad::GameSystem::DirType GetDirection() const {
 			return m_Direction;
 		}
+		TheNomad::Engine::Physics::PhysicsObject& GetPhysicsObject() {
+			return m_PhysicsObject;
+		}
 		InfoSystem::InfoLoader@ GetInfo() {
 			return @m_InfoData;
 		}

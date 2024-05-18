@@ -4,8 +4,7 @@ namespace TheNomad::SGame {
 		}
 		
 		KeyBind& opAssign( const KeyBind& in other ) {
-			down0 = other.down0;
-			down1 = other.down1;
+			down = other.down;
 			downtime = other.downtime;
 			msec = other.msec;
 			active = other.active;
@@ -16,71 +15,65 @@ namespace TheNomad::SGame {
 			uint k;
 			string c;
 			
+			DebugPrint( "key down: " + TheNomad::Engine::CmdArgv( 0 ) + " " + TheNomad::Engine::CmdArgv( 1 ) + " "
+				+ TheNomad::Engine::CmdArgv( 2 ) + "\n" );
+			
 			c = TheNomad::Engine::CmdArgv( 1 );
-			if ( c[0] != 0 ) {
+			if ( c.size() > 0 ) {
 				k = Convert().ToUInt( c );
-			} else {
-				return;
 			}
 			
-			if ( down0 == 0 ) {
-				down0 = k;
-			} else if ( down1 == 0 ) {
-				down1 = k;
+			/*
+			if ( down[0] == 0 ) {
+				down[0] = k;
+			} else if ( down[1] == 0 ) {
+				down[1] = k;
 			} else {
 				ConsolePrint( "Three keys down for a button!\n" );
 				return;
 			}
+			*/
 			
 			if ( active ) {
 				return; // still down
 			}
-			
+
 			// save the timestamp for partial frame summing
 			c = TheNomad::Engine::CmdArgv( 2 );
-			downtime = Convert().ToUInt( c );
+			downtime = Convert().ToInt( c );
 			
 			active = true;
 		}
 		
 		void Up() {
-			uint uptime;
+			DebugPrint( "key up: " + TheNomad::Engine::CmdArgv( 0 ) + " " + TheNomad::Engine::CmdArgv( 1 ) + " "
+				+ TheNomad::Engine::CmdArgv( 2 ) + "\n" );
+
+			int uptime;
 			uint k;
 			string c;
 
 			c = TheNomad::Engine::CmdArgv( 1 );
-			if ( c[0] != 0 ) {
+			if ( c.size() > 0 ) {
 				k = Convert().ToUInt( c );
 			} else {
 				return;
 			}
-			
-			if ( down0 == k ) {
-				down0 = 0;
-			} else if ( down1 == k ) {
-				down1 = 0;
-			} else {
-				return; // key up without corresponding down (menu pass through)
-			}
-			
-			active = false;
-			
+
 			// save timestamp for partial frame summing
 			c = TheNomad::Engine::CmdArgv( 2 );
-			uptime = Convert().ToUInt( c );
+			uptime = Convert().ToInt( c );
 			if ( uptime > 0 ) {
 				msec += uptime - downtime;
 			} else {
-				msec += TheNomad::GameSystem::GameManager.GetGameMsec() / 2;
+				msec += Game_FrameTime / 2;
 			}
-			
 			active = false;
 		}
 		
-		uint down0 = 0;
-		uint down1 = 0;
-		uint downtime = 0;
-		uint msec = 0;
+		uvec2 down = uvec2( 0 );
+		int downtime = 0;
+		int msec = 0;
 		bool active = false;
 	};
 };

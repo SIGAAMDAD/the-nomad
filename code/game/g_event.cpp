@@ -180,7 +180,7 @@ static void Field_CharEvent( field_t *edit, uint32_t ch );
 void G_MouseEvent( int dx, int dy /*, int time */ )
 {
 	if ( Key_GetCatcher() & KEYCATCH_SGAME ) {
-		g_pModuleLib->ModuleCall( sgvm, 2, ModuleOnMouseEvent, 2, dx, dy );
+		g_pModuleLib->ModuleCall( sgvm, ModuleOnMouseEvent, 2, dx, dy );
 	} else {
 		gi.mouseDx[gi.mouseIndex] += dx;
 		gi.mouseDy[gi.mouseIndex] += dy;
@@ -1085,10 +1085,9 @@ static void G_KeyDownEvent(uint32_t key, uint32_t time)
 		if ( sgvm ) {
 			g_pModuleLib->ModuleCall( sgvm, ModuleOnKeyEvent, 2, key, qtrue );
 		}
-	} else {
-		// send the bound action
-		Key_ParseBinding( key, qtrue, time );
 	}
+	// send the bound action
+	Key_ParseBinding( key, qtrue, time );
 }
 
 static void G_KeyUpEvent(uint32_t key, uint32_t time)
@@ -1114,9 +1113,7 @@ static void G_KeyUpEvent(uint32_t key, uint32_t time)
 			g_pModuleLib->ModuleCall( sgvm, ModuleOnKeyEvent, 2, key, qfalse );
 		}
 	}
-	else {
-		Key_ParseBinding( key, qfalse, time );
-	}
+	Key_ParseBinding( key, qfalse, time );
 }
 
 static void Key_Unbind_f( void )

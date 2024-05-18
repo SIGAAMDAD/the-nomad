@@ -81,6 +81,7 @@ static void PauseMenu_Draw( void )
 
     FontCache()->SetActiveFont( RobotoMono );
     Menu_Draw( &s_pauseMenu->menu );
+    FontCache()->SetActiveFont( RobotoMono );
 }
 
 static void PauseMenu_LoadDailyTips( void )

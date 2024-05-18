@@ -123,6 +123,15 @@ typedef struct {
 } mapCache_t;
 
 #define	MAX_CONFIGSTRINGS	1024
+#define CMD_BACKUP 64
+#define CMD_MASK ( CMD_BACKUP - 1 )
+
+typedef struct {
+	int angles[3];
+	signed char forwardmove;
+	signed char sidemove;
+	signed char upmove;
+} usercmd_t;
 
 typedef struct {
     char mapname[MAX_NPATH];
@@ -146,6 +155,14 @@ typedef struct {
     int mouseDx[2], mouseDy[2]; // added to by mouse events
     int mouseIndex;
     int joystickAxis[MAX_JOYSTICK_AXIS];
+
+    // cmds[cmdNumber] is the predicted command, [cmdNumber-1] is the last
+	// properly generated command
+	usercmd_t	cmds[CMD_BACKUP];	// each message will send several old cmds
+	int			cmdNumber;			// incremented each frame, because multiple
+									// frames may need to be packed into a single packet
+    int         oldCmdNumber;
+
 
     gameState_t oldState;
     gameState_t state;

@@ -106,6 +106,18 @@ public:
         CheckASCall( pEngine->RegisterObjectMethod( "Convert", "string ToString( int16 ) const", WRAP_FN( CScriptConvert::ShortToString ), asCALL_GENERIC ) );
         CheckASCall( pEngine->RegisterObjectMethod( "Convert", "string ToString( uint16 ) const", WRAP_FN( CScriptConvert::UShortToString ), asCALL_GENERIC ) );
 
+        CheckASCall( pEngine->RegisterObjectMethod( "Convert", "float ToFloat( const string& in ) const", WRAP_FN( CScriptConvert::StringToFloat ), asCALL_GENERIC ) );
+        CheckASCall( pEngine->RegisterObjectMethod( "Convert", "float ToFloat( double ) const", WRAP_FN( CScriptConvert::ToFloat<double> ), asCALL_GENERIC ) );
+        CheckASCall( pEngine->RegisterObjectMethod( "Convert", "float ToFloat( int8 ) const", WRAP_FN( CScriptConvert::ToFloat<int8_t> ), asCALL_GENERIC ) );
+        CheckASCall( pEngine->RegisterObjectMethod( "Convert", "float ToFloat( int16 ) const", WRAP_FN( CScriptConvert::ToFloat<int16_t> ), asCALL_GENERIC ) );
+        CheckASCall( pEngine->RegisterObjectMethod( "Convert", "float ToFloat( int32 ) const", WRAP_FN( CScriptConvert::ToFloat<int32_t> ), asCALL_GENERIC ) );
+        CheckASCall( pEngine->RegisterObjectMethod( "Convert", "float ToFloat( int64 ) const", WRAP_FN( CScriptConvert::ToFloat<int32_t> ), asCALL_GENERIC ) );
+        CheckASCall( pEngine->RegisterObjectMethod( "Convert", "float ToFloat( uint8 ) const", WRAP_FN( CScriptConvert::ToFloat<uint8_t> ), asCALL_GENERIC ) );
+        CheckASCall( pEngine->RegisterObjectMethod( "Convert", "float ToFloat( uint16 ) const", WRAP_FN( CScriptConvert::ToFloat<uint16_t> ), asCALL_GENERIC ) );
+        CheckASCall( pEngine->RegisterObjectMethod( "Convert", "float ToFloat( uint32 ) const", WRAP_FN( CScriptConvert::ToFloat<uint32_t> ), asCALL_GENERIC ) );
+        CheckASCall( pEngine->RegisterObjectMethod( "Convert", "float ToFloat( uint64 ) const", WRAP_FN( CScriptConvert::ToFloat<uint64_t> ), asCALL_GENERIC ) );
+        CheckASCall( pEngine->RegisterObjectMethod( "Convert", "float ToFloat( bool ) const", WRAP_FN( CScriptConvert::ToFloat<bool> ), asCALL_GENERIC ) );
+
         CheckASCall( pEngine->RegisterObjectMethod( "Convert", "int64 ToLong( const string& in ) const", WRAP_FN( CScriptConvert::StringToLong ), asCALL_GENERIC ) );
         CheckASCall( pEngine->RegisterObjectMethod( "Convert", "int64 ToLong( float ) const", WRAP_FN( CScriptConvert::ToLong<float> ), asCALL_GENERIC ) );
         CheckASCall( pEngine->RegisterObjectMethod( "Convert", "int64 ToLong( double ) const", WRAP_FN( CScriptConvert::ToLong<double> ), asCALL_GENERIC ) );

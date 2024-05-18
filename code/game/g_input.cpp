@@ -1,5 +1,4 @@
 #include "g_game.h"
-#include "../sgame/sg_public.h"
 
 static uint32_t frame_msec;
 static int32_t old_com_frameTime;
@@ -32,8 +31,8 @@ typedef struct {
 	qboolean	wasPressed;		// set when down, not cleared when up
 } kbutton_t;
 
-static kbutton_t in_forward, in_left, in_right, in_backward;
-static kbutton_t in_up;
+static kbutton_t in_north, in_west, in_east, in_south;
+static kbutton_t in_jump;
 static kbutton_t in_buttons[16];
 
 static cvar_t *g_mouseAcceleration;
@@ -160,16 +159,16 @@ static float G_KeyState( kbutton_t *key ) {
 	return val;
 }
 
-static void IN_ForwardDown( void ) {IN_KeyDown(&in_forward);}
-static void IN_ForwardUp( void ) {IN_KeyUp(&in_forward);}
-static void IN_BackDown( void ) {IN_KeyDown(&in_backward);}
-static void IN_BackUp( void ) {IN_KeyUp(&in_backward);}
-static void IN_LeftDown( void ) {IN_KeyDown(&in_left);}
-static void IN_LeftUp( void ) {IN_KeyUp(&in_left);}
-static void IN_RightDown( void ) {IN_KeyDown(&in_right);}
-static void IN_RightUp( void )  {IN_KeyUp(&in_right);}
-static void IN_UpDown( void ) {IN_KeyDown(&in_up);}
-static void IN_UpUp( void ) {IN_KeyUp(&in_up);}
+static void IN_NorthDown( void ) { IN_KeyDown( &in_north ); }
+static void IN_NorthUp( void ) { IN_KeyUp( &in_north ); }
+static void IN_SouthDown( void ) { IN_KeyDown( &in_south ); }
+static void IN_SouthUp( void ) { IN_KeyUp( &in_south ); }
+static void IN_WestDown( void ) { IN_KeyDown( &in_west ); }
+static void IN_WestUp( void ) { IN_KeyUp( &in_west ); }
+static void IN_EastDown( void ) { IN_KeyDown( &in_east ); }
+static void IN_EastUp( void )  { IN_KeyUp( &in_east ); }
+static void IN_JumpDown( void ) { IN_KeyDown( &in_jump ); }
+static void IN_JumpUp( void ) { IN_KeyUp( &in_jump ); }
 
 static void IN_Button0Down( void ) {IN_KeyDown(&in_buttons[0]);}
 static void IN_Button0Up( void ) {IN_KeyUp(&in_buttons[0]);}
@@ -208,13 +207,12 @@ static void G_AdjustAngles( void )
 	
     speed = 0.001 * gi.frametime;
 
-    gi.viewangles[YAW] -= speed*g_mouseSensitivity->f*G_KeyState (&in_right);
-	gi.viewangles[YAW] += speed*g_mouseSensitivity->f*G_KeyState (&in_left);
-
-	gi.viewangles[PITCH] -= speed*g_mouseSensitivity->f; //* G_KeyState (&in_lookup);
-	gi.viewangles[PITCH] += speed*g_mouseSensitivity->f; //* G_KeyState (&in_lookdown);
+//    gi.viewangles[YAW] -= speed*g_mouseSensitivity->f*G_KeyState (&in_east);
+//	gi.viewangles[YAW] += speed*g_mouseSensitivity->f*G_KeyState (&in_west);
+//
+//	gi.viewangles[PITCH] -= speed*g_mouseSensitivity->f; //* G_KeyState (&in_lookup);
+//	gi.viewangles[PITCH] += speed*g_mouseSensitivity->f; //* G_KeyState (&in_lookdown);
 }
-
 
 /*
 ================
@@ -226,25 +224,25 @@ Sets the usercmd_t based on key states
 static void G_KeyMove( usercmd_t *cmd )
 {
 	int32_t     movespeed;
-	int32_t     forward, side, up;
+	int32_t		forward, side, up;
+	int32_t		jump;
 
-	cmd->buttons |= BUTTON_WALKING;
+//	cmd->buttons |= BUTTON_WALKING;
 	movespeed = 4;
-
 	forward = 0;
 	side = 0;
 	up = 0;
 
-	side += movespeed * G_KeyState (&in_right);
-	side -= movespeed * G_KeyState (&in_left);
+	side += movespeed * G_KeyState( &in_east );
+	side -= movespeed * G_KeyState( &in_west );
 
-	forward += movespeed * G_KeyState (&in_forward);
-	forward -= movespeed * G_KeyState (&in_backward);
+	forward += movespeed * G_KeyState( &in_north );
+	forward -= movespeed * G_KeyState( &in_south );
 
-	up += movespeed * G_KeyState (&in_up);
+	up += movespeed * G_KeyState( &in_jump );
 
 	cmd->forwardmove = ClampCharMove( forward );
-	cmd->rightmove = ClampCharMove( side );
+	cmd->sidemove = ClampCharMove( side );
 	cmd->upmove = ClampCharMove( up );
 }
 
@@ -257,7 +255,7 @@ G_MouseEvent
 void G_MouseEvent( int32_t dx, int32_t dy /*, int time*/ )
 {
 	if ( Key_GetCatcher() & KEYCATCH_SGAME ) {
-		VM_Call( sgvm, 2, SGAME_MOUSE_EVENT, dx, dy );
+		g_pModuleLib->ModuleCall( sgvm, ModuleOnMouseEvent, dx, dy );
 	} else {
 		gi.mouseDx[gi.mouseIndex] += dx;
 		gi.mouseDy[gi.mouseIndex] += dy;
@@ -272,7 +270,6 @@ CL_JoystickEvent
 Joystick values stay set until changed
 =================
 */
-#if 0
 void CL_JoystickEvent( int axis, int value, int time ) {
 	if ( axis < 0 || axis >= MAX_JOYSTICK_AXIS ) {
 		N_Error( ERR_DROP, "CL_JoystickEvent: bad axis %i", axis );
@@ -291,34 +288,33 @@ static void CL_JoystickMove( usercmd_t *cmd ) {
 	//int		movespeed;
 	float	anglespeed;
 
-	if ( in_speed.active ^ cl_run->integer ) {
-		//movespeed = 2;
-	} else {
-		//movespeed = 1;
-		cmd->buttons |= BUTTON_WALKING;
-	}
+//	if ( in_speed.active ^ cl_run->integer ) {
+//		//movespeed = 2;
+//	} else {
+//		//movespeed = 1;
+//		cmd->buttons |= BUTTON_WALKING;
+//	}
 
-	if ( in_speed.active ) {
-		anglespeed = 0.001 * cls.frametime * cl_anglespeedkey->value;
-	} else {
-		anglespeed = 0.001 * cls.frametime;
-	}
+//	if ( in_speed.active ) {
+//		anglespeed = 0.001 * cls.frametime * cl_anglespeedkey->value;
+//	} else {
+//		anglespeed = 0.001 * cls.frametime;
+//	}
 
-	if ( !in_strafe.active ) {
-		gi.viewangles[YAW] += anglespeed * g_mouseSensitivity->f * gi.joystickAxis[AXIS_SIDE];
-	} else {
-		cmd->rightmove = ClampCharMove( cmd->rightmove + gi.joystickAxis[AXIS_SIDE] );
-	}
-
-	if ( in_mlooking ) {
-		gi.viewangles[PITCH] += anglespeed * g_mouseSensitivity->f * gi.joystickAxis[AXIS_FORWARD];
-	} else {
-		cmd->forwardmove = ClampCharMove( cmd->forwardmove + gi.joystickAxis[AXIS_FORWARD] );
-	}
+//	if ( !in_strafe.active ) {
+//		gi.viewangles[YAW] += anglespeed * g_mouseSensitivity->f * gi.joystickAxis[AXIS_SIDE];
+//	} else {
+//		cmd->rightmove = ClampCharMove( cmd->rightmove + gi.joystickAxis[AXIS_SIDE] );
+//	}
+//
+//	if ( in_mode->i == 0 ) {
+//		gi.viewangles[PITCH] += anglespeed * g_mouseSensitivity->f * gi.joystickAxis[AXIS_FORWARD];
+//	} else {
+//		cmd->forwardmove = ClampCharMove( cmd->forwardmove + gi.joystickAxis[AXIS_FORWARD] );
+//	}
 
 	cmd->upmove = ClampCharMove( cmd->upmove + gi.joystickAxis[AXIS_UP] );
 }
-#endif
 
 /*
 =================
@@ -394,9 +390,9 @@ static void G_MouseMove( usercmd_t *cmd )
 	}
 
 	// ingame FOV
-//	mx *= gi.cgameSensitivity;
-//	my *= gi.cgameSensitivity;
-//
+	mx *= g_mouseSensitivity->f;
+	my *= g_mouseSensitivity->f;
+
 	// add mouse X/Y movement to cmd
 //	gi.viewangles[YAW] -= g_->value * mx;
 //	gi.viewangles[PITCH] += m_pitch->value * my;
@@ -417,9 +413,6 @@ static void G_CmdButtons( usercmd_t *cmd ) {
 	// less than a frame
 	//
 	for ( i = 0 ; i < arraylen( in_buttons ); i++ ) {
-		if ( in_buttons[i].active || in_buttons[i].wasPressed ) {
-			cmd->buttons |= 1 << i;
-		}
 		in_buttons[i].wasPressed = qfalse;
 	}
 
@@ -437,7 +430,7 @@ G_FinishMove
 ==============
 */
 static void G_FinishMove( usercmd_t *cmd ) {
-	uint32_t	i;
+	int i;
 
 	// copy the state that the cgame is currently sending
 //	cmd->weapon = gi.cgameUserCmdValue;
@@ -446,8 +439,8 @@ static void G_FinishMove( usercmd_t *cmd ) {
 	// can be determined without allowing cheating
 //	cmd->serverTime = gi.serverTime;
 
-	for (i=0 ; i<3 ; i++) {
-		cmd->angles[i] = ANGLE2SHORT(gi.viewangles[i]);
+	for ( i = 0; i < 3; i++ ) {
+	//	cmd->angles[i] = ANGLE2SHORT( gi.viewangles[i] );
 	}
 }
 
@@ -460,7 +453,7 @@ static usercmd_t G_CreateCmd( void ) {
 	usercmd_t	cmd;
 	vec3_t		oldAngles;
 
-	VectorCopy( gi.viewangles, oldAngles );
+//	VectorCopy( gi.viewangles, oldAngles );
 
 	// keyboard angle adjustment
 	G_AdjustAngles ();
@@ -476,14 +469,14 @@ static usercmd_t G_CreateCmd( void ) {
 	G_MouseMove( &cmd );
 
 	// get basic movement from joystick
-//	CL_JoystickMove( &cmd );
+	CL_JoystickMove( &cmd );
 
 	// check to make sure the angles haven't wrapped
-	if ( gi.viewangles[PITCH] - oldAngles[PITCH] > 90 ) {
-		gi.viewangles[PITCH] = oldAngles[PITCH] + 90;
-	} else if ( oldAngles[PITCH] - gi.viewangles[PITCH] > 90 ) {
-		gi.viewangles[PITCH] = oldAngles[PITCH] - 90;
-	}
+//	if ( gi.viewangles[PITCH] - oldAngles[PITCH] > 90 ) {
+//		gi.viewangles[PITCH] = oldAngles[PITCH] + 90;
+//	} else if ( oldAngles[PITCH] - gi.viewangles[PITCH] > 90 ) {
+//		gi.viewangles[PITCH] = oldAngles[PITCH] - 90;
+//	}
 
 	// store out the final values
 	G_FinishMove( &cmd );
@@ -502,13 +495,12 @@ G_CreateNewCommand
 Create a new usercmd_t structure for this frame
 =================
 */
-usercmd_t G_CreateNewCommand( void ) {
-	uint32_t	cmdNum;
+void G_CreateNewCommands( void ) {
+	int cmdNum;
 
 	// no need to create usercmds until we have a gamestate
 	if ( gi.state < GS_LEVEL ) {
-		usercmd_t cmd{};
-		return cmd; // return an empty command
+		return;
 	}
 
 	frame_msec = com_frameTime - old_com_frameTime;
@@ -526,42 +518,39 @@ usercmd_t G_CreateNewCommand( void ) {
 	}
 	old_com_frameTime = com_frameTime;
 
-
 	// generate a command for this frame
 	gi.cmdNumber++;
-	
-	return G_CreateCmd();
+	cmdNum = gi.cmdNumber & CMD_MASK;
+	gi.cmds[cmdNum] = G_CreateCmd();
 }
 
-/*
 void G_SendCmd( void ) {
     // dont't send the usercmd to the vm if we aren't running anything
-    if (gi.state != GS_LEVEL) {
+    if ( gi.state != GS_LEVEL ) {
         return;
     }
 
     // don't send commands if paused
-    if (g_paused->i) {
+    if ( g_paused->i ) {
         return;
     }
 
     // create a new command
     G_CreateNewCommands();
 }
-*/
 
 void G_InitInput( void )
 {
-    Cmd_AddCommand( "+forward", IN_ForwardDown );
-    Cmd_AddCommand( "-forward", IN_ForwardUp );
-    Cmd_AddCommand( "+backward", IN_BackDown );
-    Cmd_AddCommand( "-backward", IN_BackUp );
-    Cmd_AddCommand( "+left", IN_LeftDown );
-    Cmd_AddCommand( "-left", IN_LeftUp );
-    Cmd_AddCommand( "+right", IN_RightDown );
-    Cmd_AddCommand( "-right", IN_RightUp );
-    Cmd_AddCommand( "+moveup", IN_UpDown );
-    Cmd_AddCommand( "-moveup", IN_UpUp );
+	Cmd_AddCommand( "+north", IN_NorthDown );
+	Cmd_AddCommand( "-north", IN_NorthUp );
+	Cmd_AddCommand( "+south", IN_SouthDown );
+	Cmd_AddCommand( "-south", IN_SouthUp );
+	Cmd_AddCommand( "+west", IN_WestDown );
+	Cmd_AddCommand( "-west", IN_WestUp );
+	Cmd_AddCommand( "+east", IN_EastDown );
+	Cmd_AddCommand( "-east", IN_EastUp );
+	Cmd_AddCommand( "+jump", IN_JumpDown );
+	Cmd_AddCommand( "-jump", IN_JumpUp );
     Cmd_AddCommand( "+button0", IN_Button0Down );
     Cmd_AddCommand( "-button0", IN_Button0Up );
     Cmd_AddCommand( "+button1", IN_Button1Down );
@@ -602,18 +591,16 @@ void G_InitInput( void )
 
 void G_ShutdownInput( void )
 {
-    Cmd_RemoveCommand( "+forward" );
-    Cmd_RemoveCommand( "-forward" );
-    Cmd_RemoveCommand( "+back" );
-    Cmd_RemoveCommand( "-back" );
-    Cmd_RemoveCommand( "+left" );
-    Cmd_RemoveCommand( "-left" );
-    Cmd_RemoveCommand( "+right" );
-    Cmd_RemoveCommand( "-right" );
-    Cmd_RemoveCommand( "+moveup" );
-    Cmd_RemoveCommand( "-moveup" );
-    Cmd_RemoveCommand( "+movedown" );
-    Cmd_RemoveCommand( "-movedown" );
+    Cmd_RemoveCommand( "+north" );
+	Cmd_RemoveCommand( "-north" );
+	Cmd_RemoveCommand( "+south" );
+	Cmd_RemoveCommand( "-south" );
+	Cmd_RemoveCommand( "+west" );
+	Cmd_RemoveCommand( "-west" );
+	Cmd_RemoveCommand( "+east" );
+	Cmd_RemoveCommand( "-east" );
+	Cmd_RemoveCommand( "+jump" );
+	Cmd_RemoveCommand( "-jump" );
     Cmd_RemoveCommand( "+button0" );
     Cmd_RemoveCommand( "-button0" );
     Cmd_RemoveCommand( "+button1" );
