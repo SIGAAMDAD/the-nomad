@@ -186,6 +186,7 @@ void R_DrawPolys( void )
 	nhandle_t oldShader;
 	uint64_t numVerts;
 	vec3_t normal, edge1, edge2;
+    vec3_t xyz[4];
 	
 	// no polygon submissions this frame
 	if ( !r_numPolys && !r_numPolyVerts || ( backend.refdef.flags & RSF_ORTHO_BITS ) != RSF_ORTHO_TYPE_WORLD ) {
@@ -218,10 +219,15 @@ void R_DrawPolys( void )
 		{
 			RB_FlushBatchBuffer();
 		}
-
         if ( poly->numVerts == 4 && ( backend.refdef.flags & RSF_ORTHO_BITS ) == RSF_ORTHO_TYPE_WORLD ) {
-            // its a sprite
-            R_WorldToGL2( poly->verts, poly->verts[0].worldPos, poly->numVerts );
+            vec3_t origin;
+
+            VectorCopy( origin, poly->verts[0].worldPos );
+            ri.GLM_TransformToGL( origin, xyz, poly->scale, poly->rotation, glState.viewData.camera.viewProjectionMatrix );
+
+            for ( j = 0; j < poly->numVerts; ++j ) {
+                VectorCopy( poly->verts[j].xyz, xyz[j] );
+            }
         }
         
 		// generate fan indexes into the buffer
@@ -328,7 +334,7 @@ void R_RenderView( const viewData_t *parms )
 {
     rg.viewCount++;
 
-    memcpy( &glState.viewData, parms, sizeof(*parms) );
+    memcpy( &glState.viewData, parms, sizeof( *parms ) );
 
     // setup the correct matrices
     RB_MakeViewMatrix();

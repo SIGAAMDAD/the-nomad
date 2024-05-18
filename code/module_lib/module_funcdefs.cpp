@@ -24,17 +24,6 @@
 
 static CThreadMutex g_hRenderLock;
 
-// glm has a lot of very fuzzy template types
-using vec2 = glm::vec<2, float, glm::packed_highp>;
-using vec3 = glm::vec<3, float, glm::packed_highp>;
-using vec4 = glm::vec<4, float, glm::packed_highp>;
-using ivec2 = glm::vec<2, int, glm::packed_highp>;
-using ivec3 = glm::vec<3, int, glm::packed_highp>;
-using ivec4 = glm::vec<4, int, glm::packed_highp>;
-using uvec2 = glm::vec<2, unsigned, glm::packed_highp>;
-using uvec3 = glm::vec<3, unsigned, glm::packed_highp>;
-using uvec4 = glm::vec<4, unsigned, glm::packed_highp>;
-
 #define REQUIRE_ARG_COUNT( amount ) \
     Assert( pGeneric->GetArgCount() == amount )
 #define DEFINE_CALLBACK( name ) \
@@ -887,8 +876,10 @@ DEFINE_CALLBACK( SetActiveMap ) {
     uint32_t *nCheckpoints = (uint32_t *)pGeneric->GetArgAddress( 1 );
     uint32_t *nSpawns = (uint32_t *)pGeneric->GetArgAddress( 2 );
     uint32_t *nTiles = (uint32_t *)pGeneric->GetArgAddress( 3 );
+    int32_t *pWidth = (int32_t *)pGeneric->GetArgAddress( 4 );
+    int32_t *pHeight = (int32_t *)pGeneric->GetArgAddress( 5 );
 
-    G_SetActiveMap( hMap, nCheckpoints, nSpawns, nTiles );
+    G_SetActiveMap( hMap, nCheckpoints, nSpawns, nTiles, pWidth, pHeight );
 }
 
 static void GetSpawnData( asIScriptGeneric *pGeneric ) {
@@ -1453,6 +1444,8 @@ static const asDWORD script_SURFACEPARM_WATER = SURFACEPARM_WATER;
 static const asDWORD script_NOMAD_VERSION = NOMAD_VERSION;
 static const asDWORD script_NOMAD_VERSION_UPDATE = NOMAD_VERSION_UPDATE;
 static const asDWORD script_NOMAD_VERSION_PATCH = NOMAD_VERSION_PATCH;
+static const string_t script_NOMAD_VERSION_STRING = GLN_VERSION;
+static const string_t script_NOMAD_VERSION_STR = va( "%u", NOMAD_VERSION_FULL );
 
 static const float script_M_PI = M_PI;
 static const float script_FLT_MAX = FLT_MAX;
@@ -2405,7 +2398,8 @@ void ModuleLib_Register_Engine( void )
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::GameSystem::GetSpawnData( uvec3& out, uint& out, uint& out, uint, uint& out )",
             asFUNCTION( GetSpawnData ), asCALL_GENERIC );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetTileData( array<array<uint>>@ )", WRAP_FN( GetTileData ) );
-        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::GameSystem::SetActiveMap( int, uint& out, uint& out, uint& out )", asFUNCTION( ModuleLib_SetActiveMap ), asCALL_GENERIC );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::GameSystem::SetActiveMap( int, uint& out, uint& out, uint& out, int& out, int& out )",
+            asFUNCTION( ModuleLib_SetActiveMap ), asCALL_GENERIC );
         REGISTER_GLOBAL_FUNCTION( "int TheNomad::GameSystem::LoadMap( const string& in )", WRAP_FN( LoadMap ) );
 
 //        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "TheNomad::GameSystem::GameObject@ TheNomad::GameSystem::AddSystem( "
@@ -2539,6 +2533,9 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_VAR( "const vec4 colorCyan", colorCyan );
         REGISTER_GLOBAL_VAR( "const vec4 colorWhite", colorWhite );
         REGISTER_GLOBAL_VAR( "const vec4 colorGold", colorGold );
+
+        REGISTER_GLOBAL_VAR( "const string GAME_NAME", &script_NOMAD_VERSION_STRING );
+        REGISTER_GLOBAL_VAR( "const string NOMAD_VERSION_STRING", &script_NOMAD_VERSION_STR );
 
         REGISTER_GLOBAL_VAR( "float Game_CameraZoom", &gi.cameraZoom );
         REGISTER_GLOBAL_VAR( "vec3 Game_CameraPos", &gi.cameraPos );

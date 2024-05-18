@@ -69,6 +69,8 @@ void RE_AddSpriteToScene( const vec3_t origin, nhandle_t hSpriteSheet, nhandle_t
     poly->verts = vtx;
     poly->numVerts = 4;
     poly->hShader = rg.sheets[hSpriteSheet]->hShader;
+    poly->scale = 1.0f;
+    poly->rotation = 0.0f;
 
     for ( i = 0; i < 4; i++ ) {
         VectorCopy2( vtx[i].uv, rg.sheets[ hSpriteSheet ]->sprites[ hSprite ].texCoords[i] );
@@ -105,6 +107,8 @@ void RE_AddPolyToScene( nhandle_t hShader, const polyVert_t *verts, uint32_t num
     poly->verts = vt;
     poly->hShader = hShader;
     poly->numVerts = numVerts;
+    poly->rotation = 0.0f;
+    poly->scale = 1.0f;
 
     memcpy( vt, verts, sizeof( *vt ) * numVerts );
 
@@ -144,6 +148,9 @@ void RE_AddEntityToScene( const renderEntityRef_t *ent )
         ri.Printf( PRINT_DEVELOPER, "RE_AddEntityToScene: invalid sheetNum\n" );
         return;
     }
+    if ( !rg.world ) {
+        ri.Error( ERR_DROP, "RE_AddEntityToScene: only use when a world is loaded" );
+    }
     if ( ent->spriteId >= rg.sheets[ ent->sheetNum ]->numSprites ) {
         ri.Printf( PRINT_DEVELOPER, "RE_AddEntityToScene: invalid spriteId\n" );
         return;
@@ -157,7 +164,7 @@ void RE_AddEntityToScene( const renderEntityRef_t *ent )
 		return;
 	}
 
-    backendData->entities[r_numEntities].e = *ent;
+    backendData->entities[ r_numEntities ].e = *ent;
 
     r_numEntities++;
 }
@@ -167,7 +174,8 @@ void RE_ProcessEntities( void )
     renderEntityDef_t *refEntity;
     vec3_t xyz[4];
     vec3_t origin;
-    polyVert_t verts[4];
+    polyVert_t *verts;
+    srfPoly_t *poly;
     uint64_t i, j;
     uint64_t maxVerts;
 
@@ -177,6 +185,8 @@ void RE_ProcessEntities( void )
 
     refEntity = backend.refdef.entities;
     maxVerts = r_maxPolys->i * 4;
+    poly = &backend.refdef.polys[ backend.refdef.numPolys ];
+    verts = &backendData->polyVerts[ r_numPolyVerts ];
 
     for ( i = 0; i < backend.refdef.numEntities; i++ ) {
         if ( r_numPolys >= r_maxPolys->i || r_numPolyVerts >= maxVerts ) {
@@ -188,21 +198,23 @@ void RE_ProcessEntities( void )
         origin[1] = rg.world->height - refEntity->e.origin[1];
         origin[2] = refEntity->e.origin[2];
 
-        ri.GLM_TransformToGL( origin, xyz, refEntity->e.scale, refEntity->e.rotation, glState.viewData.camera.viewProjectionMatrix );
+        poly->verts = verts;
+        poly->hShader = rg.sheets[ refEntity->e.sheetNum ]->hShader;
+        poly->numVerts = 4;
+        poly->scale = refEntity->e.scale;
+        poly->rotation = refEntity->e.rotation;
 
         for ( j = 0; j < 4; j++ ) {
-            VectorCopy( verts[i].xyz, xyz[i] );
-            VectorCopy2( verts[i].uv, rg.sheets[ refEntity->e.sheetNum ]->sprites[ refEntity->e.spriteId ].texCoords[j] );
-            VectorCopy( verts[i].worldPos, refEntity->e.origin );
+            VectorCopy2( verts->uv, rg.sheets[ refEntity->e.sheetNum ]->sprites[ refEntity->e.spriteId ].texCoords[j] );
+            VectorCopy( verts->worldPos, origin );
+            verts++;
+            r_numPolyVerts++;
         }
 
-        RE_AddPolyToScene( rg.sheets[ refEntity->e.sheetNum ]->hShader, verts, 4 );
-
         refEntity++;
+        poly++;
+        backend.refdef.numPolys++;
     }
-
-    backend.refdef.numPolys = r_numPolys - r_firstScenePoly;
-    backend.refdef.polys = &backendData->polys[r_firstScenePoly];
 }
 
 void RE_BeginScene( const renderSceneRef_t *fd )
@@ -217,10 +229,13 @@ void RE_BeginScene( const renderSceneRef_t *fd )
     backend.refdef.floatTime = (double)backend.refdef.time * 0.001f; // -EC-: cast to double
 
     backend.refdef.numDLights = r_numDLights - r_firstSceneDLight;
-    backend.refdef.dlights = backendData->dlights;
+    backend.refdef.dlights = &backendData->dlights[ r_firstSceneDLight ];
     
     backend.refdef.numEntities = r_numEntities - r_firstSceneEntity;
-    backend.refdef.entities = &backendData->entities[r_firstSceneEntity];
+    backend.refdef.entities = &backendData->entities[ r_firstSceneEntity ];
+
+    backend.refdef.numPolys = r_numPolys - r_firstScenePoly;
+    backend.refdef.polys = &backendData->polys[ r_firstScenePoly ];
 
     backend.refdef.drawn = qfalse;
 

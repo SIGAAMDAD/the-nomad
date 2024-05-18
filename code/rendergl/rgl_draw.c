@@ -431,7 +431,7 @@ void RB_IterateShaderStages( shader_t *shader )
 	uint32_t numLights;
 
 	numLights = backend.refdef.numDLights;
-	if ( !( backend.refdef.flags & RSF_NOWORLDMODEL ) ) {
+	if ( !( backend.refdef.flags & RSF_NOWORLDMODEL ) && rg.world ) {
 		numLights += rg.world->numLights;
 	}
 

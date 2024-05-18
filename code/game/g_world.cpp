@@ -254,7 +254,7 @@ void G_GetTileData( uint32_t *pTiles, uint32_t nLevel ) {
 	}
 }
 
-void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns, uint32_t *nTiles )
+void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns, uint32_t *nTiles, int32_t *pWidth, int32_t *pHeight )
 {
 	mapinfo_t *info;
 	uint64_t start, size;
@@ -277,6 +277,8 @@ void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns, 
 	*nCheckpoints = info->numCheckpoints;
 	*nSpawns = info->numSpawns;
 	*nTiles = info->numTiles;
+	*pWidth = info->width;
+	*pHeight = info->height;
 
 	g_world->Init( &gi.mapCache.info );
 

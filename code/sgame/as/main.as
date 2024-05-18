@@ -154,6 +154,8 @@ void InitCvars() {
 
 int ModuleOnInit() {
 	ConsolePrint( "----- SG_Init -----\n" );
+	ConsolePrint( "GameName: " + GAME_NAME + "\n" );
+	ConsolePrint( "GameVersion: " + NOMAD_VERSION_STRING + "\n" );
 
 	@TheNomad::CvarManager = cast<TheNomad::CvarSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::CvarSystem() ) );
 

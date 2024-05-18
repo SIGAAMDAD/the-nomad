@@ -22,7 +22,7 @@ namespace TheNomad::SGame {
 			uint i;
 			uvec3 xyz;
 			
-			TheNomad::GameSystem::SetActiveMap( hMap, nCheckpoints, nSpawns, nTiles );
+			TheNomad::GameSystem::SetActiveMap( hMap, nCheckpoints, nSpawns, nTiles, m_nWidth, m_nHeight );
 			TheNomad::GameSystem::GetTileData( @m_TileData );
 			TheNomad::Engine::Renderer::LoadWorld( m_Name );
 			

@@ -34,6 +34,17 @@ private:
     string_t m_szMessage;
 };
 
+// glm has a lot of very fuzzy template types
+using vec2 = glm::vec<2, float, glm::packed_highp>;
+using vec3 = glm::vec<3, float, glm::packed_highp>;
+using vec4 = glm::vec<4, float, glm::packed_highp>;
+using ivec2 = glm::vec<2, int, glm::packed_highp>;
+using ivec3 = glm::vec<3, int, glm::packed_highp>;
+using ivec4 = glm::vec<4, int, glm::packed_highp>;
+using uvec2 = glm::vec<2, unsigned, glm::packed_highp>;
+using uvec3 = glm::vec<3, unsigned, glm::packed_highp>;
+using uvec4 = glm::vec<4, unsigned, glm::packed_highp>;
+
 void ModuleLib_Register_Util( void );
 void ModuleLib_Register_Cvar( void );
 void ModuleLib_Register_RenderEngine( void );

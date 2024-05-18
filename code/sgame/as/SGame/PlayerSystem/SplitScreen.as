@@ -267,7 +267,11 @@ namespace TheNomad::SGame {
 			const uint flags = RSF_ORTHO_TYPE_WORLD;
 			
 			// snap to the player's position
-//			Game_CameraPos = vec3( origin.x, origin.y, 0.0f );
+			if ( LevelManager.GetMapData().GetWidth() > 0 && LevelManager.GetMapData().GetHeight() > 0 ) {
+			//	Game_CameraPos.x = 1.0f / float( LevelManager.GetMapData().GetWidth() ) * origin.x;
+			//	Game_CameraPos.y = 1.0f / float( LevelManager.GetMapData().GetHeight() ) * origin.y;
+			}
+			// technically no z coordinate because it's 2D
 			
 			TheNomad::Engine::Renderer::ClearScene();
 			for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {

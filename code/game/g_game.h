@@ -292,8 +292,7 @@ void G_SetCameraData( const vec2_t origin, float zoom, float rotation );
 // g_world.cpp
 //
 void G_InitMapCache( void );
-void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns,
-    uint32_t *nTiles );
+void G_SetActiveMap( nhandle_t hMap, uint32_t *nCheckpoints, uint32_t *nSpawns, uint32_t *nTiles, int32_t *pWidth, int32_t *pHeight );
 nhandle_t G_LoadMap( const char *name );
 
 //

@@ -484,47 +484,6 @@ namespace TheNomad::SGame {
 
 			m_Link.m_Origin = vec3( 0.0f, 0.0f, 0.0f );
 
-/*
-			verts[0].xyz = vec3( -1.001040, 0.998368, 0.000000 );
-			verts[0].uv = m_SpriteSheet[0][0];
-
-			verts[1].xyz = vec3( -1.001040, 0.998364, 0.000000 );
-			verts[1].uv = m_SpriteSheet[0][1];
-			
-			verts[2].xyz = vec3( -1.001041, 0.998364, 0.000000 );
-			verts[2].uv = m_SpriteSheet[0][2];
-
-			verts[3].xyz = vec3( -1.001041, 0.998368, 0.000000 );
-			verts[3].uv = m_SpriteSheet[0][3];
-			*/
-
-			//u1 min[0]
-			//v1 min[1]
-			//
-			//u2 max[0]
-			//v1 min[1]
-			//
-			//u2 max[0]
-			//v2 max[1]
-			//
-			//u1 min[0]
-			//v2 max[1]
-
-			//texCoords[0][0] = min[0];
-    		//texCoords[0][1] = max[1];
-			//
-    		//texCoords[1][0] = min[0];
-    		//texCoords[1][1] = min[1];
-			//
-    		//texCoords[2][0] = max[0];
-    		//texCoords[2][1] = min[1];
-			//
-    		//texCoords[3][0] = max[0];
- 			//texCoords[3][1] = max[1];
-
-//			TheNomad::Engine::Renderer::DrawImage( 0, 0, 64, 64, 0, 0, 1, 1, TheNomad::Engine::ResourceCache.GetShader( "sprites/players/raio_base" ) );
-//			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, m_SpriteSheet.GetShader(), 0 );
-//			TheNomad::Engine::Renderer::AddPolyToScene( m_SpriteSheet.GetShader(), verts );
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.sheetNum = m_SpriteSheet.GetShader();
 			refEntity.spriteId = 0;
@@ -597,7 +556,6 @@ namespace TheNomad::SGame {
 		int m_CurrentWeapon = 0;
 		
 		private QuickShot m_QuickShot;
-		private TheNomad::Engine::Renderer::PolyVert[] verts( 4 );
 		
 		// sound effects
 		private TheNomad::Engine::SoundSystem::SoundEffect parrySfx;
