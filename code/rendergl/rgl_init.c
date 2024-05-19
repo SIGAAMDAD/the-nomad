@@ -889,16 +889,17 @@ static void R_Register( void )
     r_drawMode = ri.Cvar_Get( "r_drawMode", "2", CVAR_SAVE | CVAR_LATCH );
     ri.Cvar_SetDescription( r_drawMode,
                             "Sets the rendering mode (see OpenGL docs if you want more info):\n"
-                            " 0: immediate mode, deprecated in modern GPUs\n"
+                            " 0: immediate mode, deprecated in modern GPUs, this will not be supported\n"
                             " 1: client buffered, cpu buffers, but uses glDrawElements\n"
-                            " 2: gpu buffered, gpu and cpu buffers, most supported and (probably) the fastest" );
+                            " 2: gpu buffered, gpu and cpu buffers, most supported\n"
+                            " 3: mapped to client space using glMapBuffer, the most recent in NVidia\n" );
 
     r_depthPrepass = ri.Cvar_Get( "r_depthPrepass", "1", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_depthPrepass, "Do a depth-only pass before rendering. Speeds up rendering in cases where advanced features are used. Required for r_sunShadows." );
 	r_ssao = ri.Cvar_Get( "r_ssao", "0", CVAR_LATCH | CVAR_SAVE );
 	ri.Cvar_SetDescription( r_ssao, "Enable screen-space ambient occlusion." );
-    r_bloom = ri.Cvar_Get( "r_bloom", "1", CVAR_SAVE );
-    ri.Cvar_SetDescription( r_bloom, "Enables framebuffer based bloom to make light sources stand out, requires \\r_hdr.\n" );
+    r_bloom = ri.Cvar_Get( "r_bloom", "1", CVAR_LATCH | CVAR_SAVE );
+    ri.Cvar_SetDescription( r_bloom, "Enables framebuffer based bloom to make light sources stand out, requires \\r_hdr." );
 
     r_normalMapping = ri.Cvar_Get( "r_normalMapping", "1", CVAR_SAVE | CVAR_LATCH );
 	ri.Cvar_SetDescription( r_normalMapping, "Enable normal maps for materials that support it." );
@@ -1404,18 +1405,18 @@ static void R_InitSamplers( void )
     nglSamplerParameteri( rg.samplers[TexFilter_NearestLinear], GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 }
 
-void R_Init(void)
+void R_Init( void )
 {
     GLenum error;
 
     ri.Printf(PRINT_INFO, "---------- RE_Init ----------\n");
 
     // clear all globals
-    memset( &rg, 0, sizeof(rg) );
-    memset( &glState, 0, sizeof(glState) );
-    memset( &backend, 0, sizeof(backend) );
-    memset( &glConfig, 0, sizeof(glConfig) );
-    memset( &glContext, 0, sizeof(glContext) );
+    memset( &rg, 0, sizeof( rg ) );
+    memset( &glState, 0, sizeof( glState ) );
+    memset( &backend, 0, sizeof( backend ) );
+    memset( &glConfig, 0, sizeof( glConfig ) );
+    memset( &glContext, 0, sizeof( glContext ) );
 
     glState.viewData.camera.zoom = 1.0f;
     screenshotFrame = qfalse;
@@ -1465,8 +1466,6 @@ void R_Init(void)
     R_InitGPUBuffers();
 
     R_InitShaders();
-
-    R_Register();
 
     // init samplers
     R_InitSamplers();

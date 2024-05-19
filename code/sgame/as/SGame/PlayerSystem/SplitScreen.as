@@ -164,9 +164,9 @@ namespace TheNomad::SGame {
 		void MoveNorth_f() {
 			PlayrObject@ obj = @GetPlayerIndex();
 			if ( TheNomad::Engine::CmdArgv( 0 )[0] == '+' ) {
-//				obj.key_MoveNorth.Down();
+				obj.key_MoveNorth.Down();
 			} else {
-//				obj.key_MoveNorth.Up();
+				obj.key_MoveNorth.Up();
 			}
 		}
 		void MoveSouth_f() {

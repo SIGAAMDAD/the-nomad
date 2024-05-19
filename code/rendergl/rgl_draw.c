@@ -1,7 +1,35 @@
 #include "rgl_local.h"
 
 void R_DrawElements( uint32_t numElements, uintptr_t nOffset ) {
-    nglDrawElements( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, BUFFER_OFFSET(nOffset) );
+	switch ( r_drawMode->i ) {
+	case DRAWMODE_GPU:
+		nglDrawElements( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, BUFFER_OFFSET( nOffset ) );
+		break;
+	case DRAWMODE_IMMEDIATE: {
+		// immediate mode drawing is the least supported, if there's a bug here, I probably will not try to fix it
+		// only use this if you really want a retro feel
+		// im not even sure if it'll really work
+
+		drawVert_t *vtx = backend.drawBatch.vertices;
+
+		nglBegin( GL_TRIANGLES );
+		for ( uint64_t i = 0; i < numElements; i++ ) {
+			nglVertex3f( vtx[ i + nOffset ].xyz[0], vtx[ i + nOffset ].xyz[1], vtx[ i + nOffset ].xyz[2] );
+			nglColor4us( vtx[ i + nOffset ].color[0], vtx[ i + nOffset ].color[1], vtx[ i + nOffset ].color[2],
+				vtx[ i + nOffset ].color[3] );
+		}
+		nglEnd();
+		break; }
+	case DRAWMODE_CLIENT: {
+		nglVertexPointer( 3, GL_FLOAT, sizeof( drawVert_t ), ( (drawVert_t *)backend.drawBatch.vertices )->xyz );
+		nglTexCoordPointer( 2, GL_FLOAT, sizeof( drawVert_t ), ( (drawVert_t *)backend.drawBatch.vertices )->uv );
+		nglColorPointer( 4, GL_UNSIGNED_SHORT, sizeof( drawVert_t ), ( (drawVert_t *)backend.drawBatch.vertices )->color );
+
+		nglDrawElements( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, (byte *)backend.drawBatch.indices + nOffset );
+		break; }
+	default:
+		ri.Error( ERR_FATAL, "R_DrawElements: invalid draw mode" );
+	};
 }
 
 /*

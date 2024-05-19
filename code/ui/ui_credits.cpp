@@ -71,12 +71,12 @@ void CreditsMenu_Cache( void )
     }
     memset( s_credits, 0, sizeof( *s_credits ) );
 
-    s_credits->menu.flags = MENU_DEFAULT_FLAGS;
+    s_credits->menu.flags = MENU_DEFAULT_FLAGS | ImGuiWindowFlags_HorizontalScrollbar;
     s_credits->menu.x = 0;
     s_credits->menu.y = 0;
     s_credits->menu.draw = CreditsMenu_Draw;
     s_credits->menu.width = ui->gpuConfig.vidWidth;
-    s_credits->menu.height = ui->gpuConfig.vidHeight;
+    s_credits->menu.height = 680 * ui->scale;
     s_credits->menu.fullscreen = qtrue;
     s_credits->menu.textFontScale = 1.5f;
     s_credits->menu.titleFontScale = 3.5f;

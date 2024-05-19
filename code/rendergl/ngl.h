@@ -94,6 +94,7 @@ typedef void*(*NGLloadproc)(const char *name);
     NGL( void, glColor3f, GLfloat r, GLfloat g, GLfloat b ) \
     NGL( void, glColor4fv, const GLfloat *values ) \
     NGL( void, glColor3fv, const GLfloat *values ) \
+    NGL( void, glColor4us, GLushort r, GLushort g, GLushort blue, GLushort alpha ) \
     NGL( void, glVertex3fv, const GLfloat *values ) \
     NGL( void, glVertex3f, GLfloat x, GLfloat y, GLfloat z ) \
     NGL( void, glVertex2f, GLfloat x, GLfloat y ) \

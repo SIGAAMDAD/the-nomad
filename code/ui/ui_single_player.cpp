@@ -56,7 +56,7 @@ void SinglePlayerMenu_Cache( void )
     playMissionString = strManager->ValueForKey( "SP_PLAY_MISSION" );
 
     s_campaignMenu->menu.name = titleString->value;
-    s_campaignMenu->menu.flags = MENU_DEFAULT_FLAGS;
+    s_campaignMenu->menu.flags = MENU_DEFAULT_FLAGS | ImGuiWindowFlags_HorizontalScrollbar;
     s_campaignMenu->menu.x = 0;
     s_campaignMenu->menu.y = 0;
     s_campaignMenu->menu.titleFontScale = 3.5f;

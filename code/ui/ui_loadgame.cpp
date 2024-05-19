@@ -201,12 +201,12 @@ void LoadGameMenu_Cache( void )
     s_loadGame->title = strManager->ValueForKey( "SP_LOADGAME_TITLE" );
 
     s_loadGame->menu.draw = LoadGameMenu_Draw;
-    s_loadGame->menu.flags = MENU_DEFAULT_FLAGS;
+    s_loadGame->menu.flags = MENU_DEFAULT_FLAGS | ImGuiWindowFlags_HorizontalScrollbar;
     s_loadGame->menu.name = s_loadGame->title->value;
     s_loadGame->menu.x = 0;
     s_loadGame->menu.y = 0;
     s_loadGame->menu.width = ui->gpuConfig.vidWidth * 0.75f;
-    s_loadGame->menu.height = ui->gpuConfig.vidHeight;
+    s_loadGame->menu.height = 680 * ui->scale;
     s_loadGame->menu.fullscreen = qtrue;
     s_loadGame->menu.titleFontScale = 3.5f;
     s_loadGame->menu.textFontScale = 1.5f;

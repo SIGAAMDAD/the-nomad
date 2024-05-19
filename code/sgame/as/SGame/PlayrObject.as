@@ -347,8 +347,8 @@ namespace TheNomad::SGame {
 			}
 
 			if ( m_nHealth < 100.0f ) {
-				m_nHealth += sgame_PlayerHealBase.GetFloat() * m_nHealMult;
-				m_nHealMult -= m_nHealMultDecay * LevelManager.GetDifficultyScale();
+				m_nHealth += m_nHealMult * sgame_PlayerHealBase.GetFloat();
+				m_nHealMult -= m_nHealMultDecay;
 
 				if ( m_nHealth > 100.0f ) {
 					m_nHealth = 100.0f;
@@ -461,23 +461,34 @@ namespace TheNomad::SGame {
 		}
 
 		void Spawn( uint id, const vec3& in origin ) override {
+			//
+			// init all player data
+			//
 			m_Link.m_Origin = origin;
 			m_nHealth = 100.0f;
 			m_nRage = 100.0f;
+			@m_LeftHandWeapon = @m_LeftArm;
+			@m_RightHandWeapon = @m_RightArm;
+			m_CurrentWeapon = 0;
 			m_Link.m_nEntityType = TheNomad::GameSystem::EntityType::Playr;
+
 			m_PhysicsObject.Init( cast<EntityObject@>( @this ), vec3( sgame_BaseSpeed.GetFloat(), sgame_BaseSpeed.GetFloat(), 0.0f ),
 				vec3( sgame_MaxSpeed.GetFloat(), sgame_MaxSpeed.GetFloat(), 0.0f ) );
 			m_PhysicsObject.SetAngle( Util::Dir2Angle( TheNomad::GameSystem::DirType::East ) );
+
 			m_Direction = Util::Angle2Dir( m_PhysicsObject.GetAngle() );
+
 			@m_SpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/raio_base", 32, 32, 512, 512 );
 			if ( @m_SpriteSheet is null ) {
 				GameError( "PlayrObject::Spawn: failed to initialize sprite sheet" );
 			}
-
 			@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE );
 			if ( @m_State is null ) {
 				GameError( "PlayrObject::Spawn: failed to initialize idle state" );
 			}
+
+			m_nHealMult = 0.0f;
+			m_nHealMultDecay = LevelManager.GetDifficultyScale();
 		}
 		
 		// custom draw because of adaptive weapons and leg sprites

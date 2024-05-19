@@ -150,6 +150,7 @@ void PauseMenu_Cache( void )
     checkpointString = strManager->ValueForKey( "MENU_PAUSE_CHECKPOINT" );
     exitToMainMenuString = strManager->ValueForKey( "MENU_PAUSE_ETMM" );
     helpString = strManager->ValueForKey( "MENU_PAUSE_HELP" );
+    settingsString = strManager->ValueForKey( "MENU_PAUSE_SETTINGS" );
 
     s_pauseMenu->menu.width = ui->gpuConfig.vidWidth;
     s_pauseMenu->menu.height = ui->gpuConfig.vidHeight;
@@ -166,7 +167,7 @@ void PauseMenu_Cache( void )
     s_pauseMenu->resume.generic.id = ID_RESUME;
     s_pauseMenu->resume.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
     s_pauseMenu->resume.generic.eventcallback = PauseMenu_EventCallback;
-    s_pauseMenu->resume.generic.font = AlegreyaSC;
+    s_pauseMenu->resume.generic.font = PressStart2P;
     s_pauseMenu->resume.text = resumeString->value;
     s_pauseMenu->resume.color = color_white;
 
@@ -174,15 +175,23 @@ void PauseMenu_Cache( void )
     s_pauseMenu->checkpoint.generic.id = ID_CHECKPOINT;
     s_pauseMenu->checkpoint.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
     s_pauseMenu->checkpoint.generic.eventcallback = PauseMenu_EventCallback;
-    s_pauseMenu->checkpoint.generic.font = AlegreyaSC;
+    s_pauseMenu->checkpoint.generic.font = PressStart2P;
     s_pauseMenu->checkpoint.text = checkpointString->value;
     s_pauseMenu->checkpoint.color = color_white;
+
+    s_pauseMenu->settings.generic.type = MTYPE_TEXT;
+    s_pauseMenu->settings.generic.id = ID_SETTINGS;
+    s_pauseMenu->settings.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
+    s_pauseMenu->settings.generic.eventcallback = PauseMenu_EventCallback;
+    s_pauseMenu->settings.generic.font = PressStart2P;
+    s_pauseMenu->settings.text = settingsString->value;
+    s_pauseMenu->settings.color = color_white;
 
     s_pauseMenu->help.generic.type = MTYPE_TEXT;
     s_pauseMenu->help.generic.id = ID_EXIT;
     s_pauseMenu->help.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
     s_pauseMenu->help.generic.eventcallback = PauseMenu_EventCallback;
-    s_pauseMenu->help.generic.font = AlegreyaSC;
+    s_pauseMenu->help.generic.font = PressStart2P;
     s_pauseMenu->help.text = helpString->value;
     s_pauseMenu->help.color = color_white;
 
@@ -190,7 +199,7 @@ void PauseMenu_Cache( void )
     s_pauseMenu->exitToMainMenu.generic.id = ID_EXIT;
     s_pauseMenu->exitToMainMenu.generic.flags = QMF_HIGHLIGHT_IF_FOCUS;
     s_pauseMenu->exitToMainMenu.generic.eventcallback = PauseMenu_EventCallback;
-    s_pauseMenu->exitToMainMenu.generic.font = AlegreyaSC;
+    s_pauseMenu->exitToMainMenu.generic.font = PressStart2P;
     s_pauseMenu->exitToMainMenu.text = exitToMainMenuString->value;
     s_pauseMenu->exitToMainMenu.color = color_white;
 
@@ -205,6 +214,7 @@ void PauseMenu_Cache( void )
 
     Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->resume );
     Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->checkpoint );
+    Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->settings );
     Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->help );
     Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->exitToMainMenu );
 //    Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->dailyTipText );

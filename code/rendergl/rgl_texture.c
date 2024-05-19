@@ -2739,7 +2739,7 @@ static void R_CreateBuiltinTextures( void )
 		}
 
 		if ( r_bloom->i && r_hdr->i ) {
-//			rg.bloomImage = R_CreateImage( "*bloom", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA16F );
+			rg.bloomImage = R_CreateImage( "*bloom", NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_RGBA16F );
 		}
 
 		rg.renderDepthImage  = R_CreateImage( "*renderdepth",  NULL, width, height, IMGTYPE_COLORALPHA, IMGFLAG_NO_COMPRESSION | IMGFLAG_CLAMPTOEDGE, GL_DEPTH_COMPONENT24 );

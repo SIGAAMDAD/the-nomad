@@ -545,7 +545,7 @@ static const void *RB_PostProcess(const void *data)
 
 	if ( !glContext.ARB_framebuffer_object || !r_postProcess->i ) {
 		// do nothing
-		return (const void *)(cmd + 1);
+		return (const void *)( cmd + 1 );
 	}
 
 	if ( cmd ) {
@@ -583,7 +583,7 @@ static const void *RB_PostProcess(const void *data)
 	if ( srcFbo ) {
 		if ( r_hdr->i && ( r_toneMap->i || r_forceToneMap->i ) ) {
 			autoExposure = r_autoExposure->i || r_forceAutoExposure->i;
-			RB_ToneMap(srcFbo, srcBox, NULL, dstBox, autoExposure);
+			RB_ToneMap( srcFbo, srcBox, NULL, dstBox, autoExposure );
 		}
 		else if ( r_cameraExposure->f == 0.0f ) {
 			FBO_FastBlit( srcFbo, srcBox, NULL, dstBox, GL_COLOR_BUFFER_BIT, GL_NEAREST );
@@ -601,10 +601,10 @@ static const void *RB_PostProcess(const void *data)
 	}
 
 	if ( r_drawSunRays->i ) {
-		RB_SunRays( NULL, srcBox, NULL, dstBox );
+//		RB_SunRays( NULL, srcBox, NULL, dstBox );
 	}
 
-	if ( 1 ) {
+	if ( 0 ) {
 		RB_BokehBlur( NULL, srcBox, NULL, dstBox, backend.refdef.blurFactor );
 	} else {
 		RB_GaussianBlur( backend.refdef.blurFactor );

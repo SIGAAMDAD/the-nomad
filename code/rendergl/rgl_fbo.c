@@ -269,7 +269,9 @@ static void FBO_Restart_f( void )
 		} else {
 		    rg.msaaResolveFbo = FBO_Create( "_msaaResolve", width, height );
 		}
-		FBO_CreateBuffer( rg.msaaResolveFbo, hdrFormat, 0, 0 );
+//		FBO_CreateBuffer( rg.msaaResolveFbo, hdrFormat, 0, 0 );
+//		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, 0 );
+		FBO_AttachImage( rg.msaaResolveFbo, rg.renderImage, GL_COLOR_ATTACHMENT0 );
 		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, 0 );
 		R_CheckFBO( rg.msaaResolveFbo );
 	}
@@ -413,12 +415,6 @@ void FBO_Init( void )
 		FBO_CreateBuffer( rg.msaaResolveFbo, hdrFormat, 0, 0 );
 		FBO_CreateBuffer( rg.msaaResolveFbo, GL_DEPTH24_STENCIL8, 0, 0 );
 		R_CheckFBO( rg.msaaResolveFbo );
-	}
-	else if ( r_hdr->i ) {
-		rg.renderFbo = FBO_Create( "_render", width, height );
-		FBO_CreateBuffer( rg.renderFbo, hdrFormat, 0, 0 );
-		FBO_CreateBuffer( rg.renderFbo, GL_DEPTH24_STENCIL8, 0, 0 );
-		R_CheckFBO( rg.renderFbo );
 	}
 
 	// clear render buffer
@@ -615,7 +611,8 @@ void FBO_Blit( fbo_t *src, ivec4_t inSrcBox, vec2_t srcTexScale, fbo_t *dst, ive
 		VectorSet4( srcTexCorners, 0.0f, 0.0f, 1.0f, 1.0f );
 	}
 
-	FBO_BlitFromTexture( src->colorImage[0], srcTexCorners, srcTexScale, dst, dstBox, shaderProgram, color, blend | GLS_DEPTHTEST_DISABLE );
+	FBO_FastBlit( src, inSrcBox, dst, dstBox, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+//	FBO_BlitFromTexture( src->colorImage[0], srcTexCorners, srcTexScale, dst, dstBox, shaderProgram, color, blend | GLS_DEPTHTEST_DISABLE );
 }
 
 void FBO_FastBlit( fbo_t *src, ivec4_t srcBox, fbo_t *dst, ivec4_t dstBox, int buffers, int filter )
@@ -731,7 +728,7 @@ void RB_ToneMap( fbo_t *hdrFbo, ivec4_t hdrBox, fbo_t *ldrFbo, ivec4_t ldrBox, i
 	}
 
 	FBO_FastBlit( hdrFbo, hdrBox, ldrFbo, NULL, GL_COLOR_BUFFER_BIT, GL_LINEAR );
-//	FBO_Blit( hdrFbo, hdrBox, NULL, ldrFbo, ldrBox, &rg.tonemapShader, color, 0 );
+	FBO_Blit( hdrFbo, hdrBox, NULL, ldrFbo, ldrBox, &rg.tonemapShader, color, 0 );
 }
 
 

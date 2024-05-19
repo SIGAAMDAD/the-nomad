@@ -185,49 +185,6 @@ void R_ShutdownGPUBuffers( void )
 	rg.numBuffers = 0;
 }
 
-static void R_InitGPUMemory(GLenum target, GLuint id, void *data, uint32_t size, bufferType_t usage)
-{
-	GLbitfield bits;
-	GLenum glUsage;
-
-	switch (usage) {
-	case BUFFER_DYNAMIC:
-	case BUFFER_FRAME:
-		glUsage = GL_DYNAMIC_DRAW;
-		break;
-	case BUFFER_STATIC:
-		glUsage = GL_STATIC_DRAW;
-		break;
-	default:
-		ri.Error(ERR_FATAL, "R_AllocateBuffer: invalid buffer usage %i", usage);
-	};
-
-#if 0
-	// zero clue how well this'll work
-	if (r_experimental->i) {
-		if (glContext.ARB_map_buffer_range) {
-			bits = GL_MAP_READ_BIT;
-
-			if (glUsage == GL_DYNAMIC_DRAW) {
-				bits |= GL_MAP_WRITE_BIT;
-				if (usage == BUFFER_FRAME) {
-					bits |= GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
-				}
-			}
-
-			if (glContext.ARB_buffer_storage || NGL_VERSION_ATLEAST(4, 5)) {
-				nglBufferStorage(target, size, data, bits | (glUsage == GL_DYNAMIC_DRAW ? GL_DYNAMIC_STORAGE_BIT : 0));
-			}
-			else {
-				nglBufferData(target, size, NULL, glUsage);
-			}
-		}
-	}
-	else {
-		nglBufferData(target, size, data, glUsage);
-	}
-#endif
-}
 #if defined( GL_ARB_buffer_storage ) && defined( GL_ARB_sync )
 /*
 ============
@@ -297,6 +254,10 @@ static void R_ShutdownRingbuffer( GLenum target, glRingbuffer_t *rb ) {
 }
 #endif
 
+static void R_InitBufferStorage( GLuint bufferId, GLenum usage )
+{
+	bufferMemType_t memType;
+}
 
 vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t verticesSize, void *indices, uint32_t indicesSize,
 	bufferType_t type )
@@ -384,11 +345,18 @@ void VBO_Bind( vertexBuffer_t *vbo )
 		glState.iboId = vbo->index.id;
 		backend.pc.c_bufferBinds++;
 
-		nglBindVertexArray( vbo->vaoId );
+		if ( r_drawMode->i == DRAWMODE_CLIENT ) {
+			nglEnableClientState( GL_COLOR_ARRAY );
+			nglEnableClientState( GL_VERTEX_ARRAY );
+			nglEnableClientState( GL_TEXTURE_COORD_ARRAY );
+			nglEnableClientState( GL_NORMAL_ARRAY );
+		} else if ( r_drawMode->i >= DRAWMODE_GPU ) {
+			nglBindVertexArray( vbo->vaoId );
 
-		// Intel Graphics doesn't save GL_ELEMENT_ARRAY_BUFFER binding with VAO binding.
-		if ( glContext.intelGraphics ) {
-			nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, vbo->index.id );
+			// Intel Graphics doesn't save GL_ELEMENT_ARRAY_BUFFER binding with VAO binding.
+			if ( glContext.intelGraphics ) {
+				nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, vbo->index.id );
+			}
 		}
 	}
 }
@@ -405,11 +373,19 @@ void VBO_BindNull( void )
 	if ( glState.currentVao ) {
 		glState.currentVao = NULL;
 		glState.vaoId = glState.vboId = glState.iboId = 0;
-        nglBindVertexArray( 0 );
 
-        // why you no save GL_ELEMENT_ARRAY_BUFFER binding, Intel?
-        if ( glContext.intelGraphics ) {
-			nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+		if ( r_drawMode->i == DRAWMODE_CLIENT ) {
+			nglDisableClientState( GL_COLOR_ARRAY );
+			nglDisableClientState( GL_VERTEX_ARRAY );
+			nglDisableClientState( GL_TEXTURE_COORD_ARRAY );
+			nglDisableClientState( GL_NORMAL_ARRAY );
+		} else if ( r_drawMode->i >= DRAWMODE_GPU ) {
+	        nglBindVertexArray( 0 );
+
+	        // why you no save GL_ELEMENT_ARRAY_BUFFER binding, Intel?
+	        if ( glContext.intelGraphics ) {
+				nglBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+			}
 		}
 	}
 
@@ -439,9 +415,7 @@ void R_ShutdownBuffer( vertexBuffer_t *vbo )
 		}
 		nglDeleteBuffers( 1, &vbo->index.id );
 	}
-
 	memset( vbo, 0, sizeof( *vbo ) );
-	rg.numBuffers--;
 }
 
 void RB_SetBatchBuffer( vertexBuffer_t *buffer, void *vertexBuffer, uintptr_t vtxSize, void *indexBuffer, uintptr_t idxSize )

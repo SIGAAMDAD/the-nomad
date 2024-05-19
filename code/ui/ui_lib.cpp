@@ -85,7 +85,8 @@ qboolean UI_MenuTitle( const char *label, float fontScale )
 	cursorPos = ImGui::GetCursorScreenPos();
 
 //	ImGui::SetWindowFontScale( 1.5f * scale );
-	ImGui::SetCursorScreenPos( ImVec2( 16 * ui->scale, 680 * ui->scale ) );
+	ImGui::Begin( "##BackButtonArrowMainMenu", NULL, MENU_DEFAULT_FLAGS | ImGuiWindowFlags_AlwaysAutoResize );
+	ImGui::SetWindowPos( ImVec2( 16 * ui->scale, 680 * ui->scale ) );
 	if ( ui->menusp >= 2 ) {
 		if ( in_mode->i == 1 ) {
 			hShader = ui->controller_back;
@@ -100,6 +101,7 @@ qboolean UI_MenuTitle( const char *label, float fontScale )
 		}
 	}
 	ImGui::SetCursorScreenPos( cursorPos );
+	ImGui::End();
 
 	ImGui::SetWindowFontScale( 1.0f );
 

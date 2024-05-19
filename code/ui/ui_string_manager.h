@@ -4,6 +4,7 @@
 #pragma once
 
 #include "ui_strings.h"
+#include <EASTL/unordered_map.h>
 
 #define MAX_UI_STRINGS 4096
 
@@ -26,7 +27,23 @@ typedef struct stringHash_s {
     char *value;
     language_t lang;
     struct stringHash_s *next;
+    
+    bool operator==( const stringHash_s *other ) const {
+        return this == other;
+    }
 } stringHash_t;
+
+namespace eastl {
+	template<> struct hash<stringHash_t *> {
+		size_t operator()( const stringHash_t *str ) const {
+			const unsigned char *p = (const unsigned char *)str->value; // To consider: limit p to at most 256 chars.
+			unsigned int c, result = 2166136261U; // We implement an FNV-like string hash.
+			while((c = *p++) != 0) // Using '!=' disables compiler warnings.
+				result = (result * 16777619) ^ c;
+			return (size_t)result;
+		}
+	};
+};
 
 class CUIStringManager
 {

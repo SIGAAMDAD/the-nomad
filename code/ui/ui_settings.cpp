@@ -41,16 +41,22 @@
 #define ID_DASH            12
 #define ID_MELEE           13
 #define ID_CROUCH          14
-#define NUMKEYBINDS        15
+#define ID_QUICKSHOT       15
+#define NUMKEYBINDS        16
+
+#define BINDGROUP_MOVEMENT 0
+#define BINDGROUP_COMBAT   1
+#define BINDGROUP_MISC     2
 
 typedef struct {
     const char *command;
     const char *label;
-    int32_t id;
-    int32_t defaultBind1;
-    int32_t defaultBind2;
-    int32_t bind1;
-    int32_t bind2;
+    int id;
+    int defaultBind1;
+    int defaultBind2;
+    int bind1;
+    int bind2;
+	int group;
 } bind_t;
 
 typedef struct {
@@ -119,14 +125,23 @@ typedef struct {
 
 	int mouseAcceleration;
 	float mouseSensitivity;
+	int currentBindingGroup;
+	int rebindIndex;
 
 	bind_t *rebindKey;
 } controlsSettings_t;
 
 typedef struct {
+	const char **difficultyNames;
+	const char **mouseTypes;
+
+	int numMouseTypes;
+	int numDifficultyTypes;
+
 	int mouseCursor;
 	int difficulty;
 	int debugPrint;
+	int toggleHUD;
 } gameplaySettings_t;
 
 typedef struct settingsMenu_s {
@@ -149,6 +164,7 @@ typedef struct settingsMenu_s {
 	videoSettings_t video;
 	audioSettings_t audio;
 	controlsSettings_t controls;
+	gameplaySettings_t gameplay;
 
 	const char *hintLabel;
 	const char *hintMessage;
@@ -160,21 +176,22 @@ static settingsMenu_t *s_settingsMenu;
 static settingsMenu_t *s_initial;
 
 static const bind_t s_defaultKeybinds[NUMKEYBINDS] = {
-	{ "+north", "move north", ID_MOVENORTH, KEY_W, -1, -1, -1 },
-	{ "+west", "move west", ID_MOVEWEST, KEY_A, -1, -1, -1 },
-	{ "+south", "move south", ID_MOVESOUTH, KEY_S, -1, -1, -1 },
-	{ "+east", "move east", ID_MOVEEAST, KEY_D, -1, -1, -1 },
-	{ "+jump", "jump", ID_UPMOVE, KEY_SPACE, -1, -1, -1 },
-	{ "weapnext", "next weapon", ID_WEAPONNEXT, KEY_WHEEL_DOWN, -1, -1, -1 },
-	{ "weapprev", "prev weapon", ID_WEAPONPREV, KEY_WHEEL_UP, -1, -1, -1 },
-	{ "+useweap", "use weapon", ID_USEWEAPON, KEY_MOUSE_LEFT, -1, -1, -1 },
-	{ "+altuseweap", "use weapon alt fire", ID_ALTUSEWEAPON, KEY_MOUSE_RIGHT, -1, -1, -1 },
-	{ "+switchwielding", "switch weapon wielding", ID_SWITCHWIELDING, KEY_MOUSE_BUTTON_4, -1, -1, -1 },
-	{ "+switchmode", "switch weapon mode", ID_SWITCHMODE, KEY_MOUSE_BUTTON_5, -1, -1, -1 },
-	{ "+switchhand", "switch weapon hand", ID_SWITCHHAND, KEY_Q, -1, -1, -1 },
-	{ "+dash", "dash", ID_DASH, KEY_SHIFT, -1, -1, -1 },
-	{ "+melee", "melee", ID_MELEE, KEY_F, -1, -1, -1 },
-	{ "+crouch", "crouch", ID_CROUCH, KEY_CTRL, -1, -1, -1 }
+	{ "+north", "forward", ID_MOVENORTH, KEY_W, -1, -1, -1, BINDGROUP_MOVEMENT },
+	{ "+west", "left", ID_MOVEWEST, KEY_A, -1, -1, -1, BINDGROUP_MOVEMENT },
+	{ "+south", "backward", ID_MOVESOUTH, KEY_S, -1, -1, -1, BINDGROUP_MOVEMENT },
+	{ "+east", "right", ID_MOVEEAST, KEY_D, -1, -1, -1, BINDGROUP_MOVEMENT },
+	{ "+jump", "jump", ID_UPMOVE, KEY_SPACE, -1, -1, -1, BINDGROUP_MOVEMENT },
+	{ "+weapnext", "next weapon", ID_WEAPONNEXT, KEY_WHEEL_DOWN, -1, -1, -1, BINDGROUP_COMBAT },
+	{ "+weapprev", "prev weapon", ID_WEAPONPREV, KEY_WHEEL_UP, -1, -1, -1, BINDGROUP_COMBAT },
+	{ "+useweap", "use weapon", ID_USEWEAPON, KEY_MOUSE_LEFT, -1, -1, -1, BINDGROUP_COMBAT },
+	{ "+altuseweap", "use weapon alt fire", ID_ALTUSEWEAPON, KEY_MOUSE_RIGHT, -1, -1, -1, BINDGROUP_COMBAT },
+	{ "+switchwielding", "switch weapon wielding", ID_SWITCHWIELDING, KEY_MOUSE_BUTTON_4, -1, -1, -1, BINDGROUP_COMBAT },
+	{ "+switchmode", "switch weapon mode", ID_SWITCHMODE, KEY_MOUSE_BUTTON_5, -1, -1, -1, BINDGROUP_COMBAT },
+	{ "+switchhand", "switch weapon hand", ID_SWITCHHAND, KEY_Q, -1, -1, -1, BINDGROUP_COMBAT },
+	{ "+dash", "dash", ID_DASH, KEY_SHIFT, -1, -1, -1, BINDGROUP_MOVEMENT },
+	{ "+melee", "melee", ID_MELEE, KEY_F, -1, -1, -1, BINDGROUP_COMBAT },
+	{ "+crouch", "crouch", ID_CROUCH, KEY_CTRL, -1, -1, -1, BINDGROUP_MOVEMENT },
+	{ "+quickshot", "quickshot", ID_QUICKSHOT, KEY_Q, -1, -1, -1, BINDGROUP_COMBAT }
 };
 
 static void SettingsMenu_GetInitial( void )
@@ -559,35 +576,35 @@ static void SettingsMenu_Rebind( void )
 
             if ( binding != NULL ) {
 				const int32_t index = SettingsMenu_GetBindIndex( binding );
-                if ( s_settingsMenu->controls.keybinds[ index ].bind1 != -1 ) {
+                if ( s_settingsMenu->controls.keybinds[i].bind1 != -1 && s_settingsMenu->controls.rebindIndex == 1 ) {
                     // we're overwriting a binding, warn them
                     ret = Sys_MessageBox( "WARNING",
                         va( "You are overwriting another binding, are you sure about this? (\"%s\" = \"%s\")",
-                            Key_KeynumToString( s_settingsMenu->controls.keybinds[ index ].defaultBind1 ),
+                            Key_KeynumToString( s_settingsMenu->controls.keybinds[ index ].bind1 ),
                             binding ),
                         true );
                     
                     if ( ret == 0 ) {
 						Snd_PlaySfx( ui->sfx_select );
                     } else {
-						s_settingsMenu->controls.rebindKey->defaultBind1 = i;
+						s_settingsMenu->controls.rebindKey->bind1 = i;
 						Snd_PlaySfx( ui->sfx_select );
 					}
 					ImGui::End();
 					return;
                 }
-				else if ( s_settingsMenu->controls.keybinds[ index ].bind2 != -1 ) {
+				else if ( s_settingsMenu->controls.keybinds[i].bind2 != -1 && s_settingsMenu->controls.rebindIndex == 2 ) {
                     // we're overwriting a binding, warn them
                     ret = Sys_MessageBox( "WARNING",
                         va( "You are overwriting another binding, are you sure about this? (\"%s\" = \"%s\")",
-                            Key_KeynumToString( s_settingsMenu->controls.keybinds[ index ].defaultBind2 ),
+                            Key_KeynumToString( s_settingsMenu->controls.keybinds[ index ].bind2 ),
                             binding ),
                         true );
                     
                     if ( ret == 0 ) {
 						Snd_PlaySfx( ui->sfx_select );
                     } else {
-						s_settingsMenu->controls.rebindKey->defaultBind2 = i;
+						s_settingsMenu->controls.rebindKey->bind2 = i;
 						Snd_PlaySfx( ui->sfx_select );
 					}
 					ImGui::End();
@@ -595,19 +612,17 @@ static void SettingsMenu_Rebind( void )
                 }
             }
 
-            if ( s_settingsMenu->controls.rebindKey->defaultBind1 != -1 ) {
-                Con_Printf( "setting double-binding for key \"%s\".\n",
-                    Key_GetBinding( s_settingsMenu->controls.rebindKey->defaultBind1 ) );
-
-                s_settingsMenu->controls.rebindKey->defaultBind2 = i;
-            } else {
-				s_settingsMenu->controls.rebindKey->defaultBind1 = i;
-            }
+			if ( s_settingsMenu->controls.rebindIndex == 1 ) {
+				s_settingsMenu->controls.keybinds[i].bind1 = i;
+			} else if ( s_settingsMenu->controls.rebindIndex == 2 ) {
+				s_settingsMenu->controls.keybinds[i].bind2 = i;
+			}
             Cbuf_ExecuteText( EXEC_APPEND, va( "bind %s \"%s\"\n",
                 Key_KeynumToString( i ),
                 s_settingsMenu->controls.rebindKey->command ) );
 
 			s_settingsMenu->controls.rebindKey = NULL;
+			s_settingsMenu->controls.rebindIndex = 0;
 			ImGui::End();
 			return;
         }
@@ -640,11 +655,52 @@ static void SettingsMenu_DrawHint( void )
 	ImGui::End();
 }
 
+static void ControlsMenu_DrawBindings( int group )
+{
+	static char bind[1024];
+	static char bind2[1024];
+	int i;
+
+//	ImGui::BeginTable( va( "##ControlsSettingsMenuBindingsTableGrouping%i", group ), 2 );
+	for ( i = 0; i < arraylen( s_defaultKeybinds ); i++ ) {
+		if ( s_settingsMenu->controls.keybinds[i].group != group ) {
+			continue;
+		}
+
+		ImGui::TableNextColumn();
+		if ( s_settingsMenu->controls.keybinds[i].bind1 == -1 ) {
+			strcpy( bind, "???" );
+		} else {
+			strcpy( bind, Key_KeynumToString( s_settingsMenu->controls.keybinds[i].bind1 ) );
+		}
+		if ( s_settingsMenu->controls.keybinds[i].bind2 == -1 ) {
+			strcpy( bind2, "???" );
+		} else {
+			strcpy( bind2, Key_KeynumToString( s_settingsMenu->controls.keybinds[i].bind2 ) );
+		}
+		ImGui::TextUnformatted( s_settingsMenu->controls.keybinds[i].label );
+		ImGui::TableNextColumn();
+		if ( ImGui::Button( bind ) ) {
+			Snd_PlaySfx( ui->sfx_select );
+			s_settingsMenu->controls.rebindKey = &s_settingsMenu->controls.keybinds[i];
+			s_settingsMenu->controls.rebindIndex = 1;
+		}
+		ImGui::SameLine();
+		if ( ImGui::Button( bind2 ) ) {
+			Snd_PlaySfx( ui->sfx_select );
+			s_settingsMenu->controls.rebindKey = &s_settingsMenu->controls.keybinds[i];
+			s_settingsMenu->controls.rebindIndex = 2;
+		}
+		if ( i != NUMKEYBINDS - 1 ) {
+			ImGui::TableNextRow();
+		}
+	}
+//	ImGui::EndTable();
+}
+
 static void ControlsMenu_Draw( void )
 {
 	uint64_t i;
-	char bind[1024];
-	char bind2[1024];
 
 	FontCache()->SetActiveFont( RobotoMono );
 	
@@ -664,40 +720,57 @@ static void ControlsMenu_Draw( void )
 
 		ImGui::Separator();
 
-		ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 3.5f ) * ui->scale );
+		ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 2.5f ) * ui->scale );
 		
+		FontCache()->SetActiveFont( PressStart2P );
+
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted( "Binding" );
 		ImGui::TableNextColumn();
 		ImGui::TextUnformatted( "Key" );
 
+		FontCache()->SetActiveFont( RobotoMono );
+
 		ImGui::TableNextRow();
+
+		ImGui::TableNextColumn();
 
 		ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 1.5f ) * ui->scale );
 
-		for ( i = 0; i < arraylen( s_defaultKeybinds ); i++ ) {
-			ImGui::TableNextColumn();
-			if ( s_settingsMenu->controls.keybinds[i].bind1 == -1 ) {
-				strcpy( bind, "???" );
-			}
-			else {
-				strcpy( bind, Key_KeynumToString( s_settingsMenu->controls.keybinds[i].bind1 ) );
-				
-				if ( s_settingsMenu->controls.keybinds[i].bind2 != - 1 ) {
-					strcpy( bind2, Key_KeynumToString( s_settingsMenu->controls.keybinds[i].bind2 ) );
-					N_strcat( bind, sizeof( bind ) - 1, " or " );
-					N_strcat( bind, sizeof( bind ) - 1, bind2 );
+		if ( ImGui::BeginTabBar( "##ControlsSettingsBindingSelector" ) ) {
+			ImGui::PushStyleColor( ImGuiCol_Tab, ImVec4( 1.0f, 1.0f, 1.0f, 0.0f ) );
+			ImGui::PushStyleColor( ImGuiCol_TabActive, ImVec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
+			ImGui::PushStyleColor( ImGuiCol_TabHovered, ImVec4( 0.0f, 1.0f, 0.0f, 1.0f ) );
+
+			if ( ImGui::BeginTabItem( "Movement##ControlsSettingsBindingsMovement" ) ) {
+				if ( s_settingsMenu->controls.currentBindingGroup != BINDGROUP_MOVEMENT ) {
+					Snd_PlaySfx( ui->sfx_select );
 				}
+				s_settingsMenu->controls.currentBindingGroup = BINDGROUP_MOVEMENT;
+				ImGui::EndTabItem();
 			}
-			ImGui::TextUnformatted( s_settingsMenu->controls.keybinds[i].label );
-			ImGui::TableNextColumn();
-			if ( ImGui::Button( bind ) ) {
-				s_settingsMenu->controls.rebindKey = &s_settingsMenu->controls.keybinds[i];
+			if ( ImGui::BeginTabItem( "Combat##ControlsSettingsBindingsCombat" ) ) {
+				if ( s_settingsMenu->controls.currentBindingGroup != BINDGROUP_COMBAT ) {
+					Snd_PlaySfx( ui->sfx_select );
+				}
+				s_settingsMenu->controls.currentBindingGroup = BINDGROUP_COMBAT;
+				ImGui::EndTabItem();
 			}
-			if ( i != NUMKEYBINDS - 1 ) {
-				ImGui::TableNextRow();
+			if ( ImGui::BeginTabItem( "General##ControlsSettingsBindingsGeneral" ) ) {
+				if ( s_settingsMenu->controls.currentBindingGroup != BINDGROUP_MISC ) {
+					Snd_PlaySfx( ui->sfx_select );
+				}
+				s_settingsMenu->controls.currentBindingGroup = BINDGROUP_MISC;
+				ImGui::EndTabItem();
 			}
+
+			ImGui::EndTabBar();
 		}
+
+		ImGui::PopStyleColor( 3 );
+		ImGui::TableNextRow();
+
+		ControlsMenu_DrawBindings( s_settingsMenu->controls.currentBindingGroup );
 	}
 	ImGui::EndTable();
 }
@@ -854,7 +927,6 @@ static void VideoMenu_Draw( void )
 
 	ImGui::BeginTable( "##VideoSettingsMenuConfigTable", 2 );
 	{
-
 		SettingsMenu_RadioButton( "Fullscreen", "Fullscreen",
 			"Sets the game's window mode to fullscreen",
 			&s_settingsMenu->video.fullscreen, true );
@@ -895,6 +967,32 @@ static void VideoMenu_Draw( void )
 		SettingsMenu_MultiSliderFloat( "Sharpening", "ImageSharpening",
 			"Sets the amount of sharpening applied to a rendered texture",
 			&s_settingsMenu->video.sharpening, 0.5f, 5.0f, 0.1f );
+	}
+	ImGui::EndTable();
+}
+
+static void GameplayMenu_Draw( void )
+{
+	FontCache()->SetActiveFont( RobotoMono );
+
+	ImGui::BeginTable( "##GameSettingsMenuConfigTable", 2 );
+	{
+		SettingsMenu_MultiAdjustable( "Difficulty", "Difficulty",
+			"Sets the game's difficulty",
+			s_settingsMenu->gameplay.difficultyNames, s_settingsMenu->gameplay.numDifficultyTypes, &s_settingsMenu->gameplay.difficulty,
+			s_settingsMenu->gameplay.difficulty != DIF_HARDEST );
+		
+		ImGui::TableNextRow();
+
+		SettingsMenu_RadioButton( "Toggle HUD", "Toggle HUD",
+			"Toggles Heads-Up-Display (HUD), turn this off if you want a more immersive experience",
+			&s_settingsMenu->gameplay.toggleHUD, true );
+
+		ImGui::TableNextRow();
+
+		SettingsMenu_RadioButton( "Debug Mode", "Debug Mode",
+			"Toggles debug messages from SGame",
+			&s_settingsMenu->gameplay.debugPrint, true );
 	}
 	ImGui::EndTable();
 }
@@ -966,8 +1064,30 @@ static void AudioMenu_Save( void )
 
 static void ControlsMenu_Save( void )
 {
+	int i;
+	const bind_t *bind;
+
 	Cvar_SetIntegerValue( "g_mouseAcceleration", s_settingsMenu->controls.mouseAcceleration );
 	Cvar_SetFloatValue( "g_mouseSensitivity", s_settingsMenu->controls.mouseSensitivity );
+
+	for ( i = 0; i < arraylen( s_defaultKeybinds ); i++ ) {
+		bind = &s_settingsMenu->controls.keybinds[i];
+
+		if ( bind->bind1 != -1 ) {
+
+		}
+		if ( bind->bind2 != -1 ) {
+
+		}
+	}
+}
+
+static void GameplayMenu_Save( void )
+{
+	Cvar_SetIntegerValue( "sgame_Difficulty", s_settingsMenu->gameplay.difficulty );
+	Cvar_SetIntegerValue( "sgame_CursorType", s_settingsMenu->gameplay.mouseCursor );
+	Cvar_SetIntegerValue( "sgame_DebugMode", s_settingsMenu->gameplay.debugPrint );
+	Cvar_SetIntegerValue( "sgame_ToggleHUD", s_settingsMenu->gameplay.toggleHUD );
 }
 
 static void PerformanceMenu_SetDefault( void )
@@ -1040,10 +1160,24 @@ static void AudioMenu_SetDefault( void )
 
 static void ControlsMenu_SetDefault( void )
 {
+	int i;
+
 	s_settingsMenu->controls.mouseAcceleration = Cvar_VariableInteger( "g_mouseAcceleration" );
 	s_settingsMenu->controls.mouseSensitivity = Cvar_VariableFloat( "g_mouseSensitivity" );
 
 	memcpy( s_settingsMenu->controls.keybinds, s_defaultKeybinds, sizeof( s_defaultKeybinds ) );
+	for ( i = 0; i < arraylen( s_defaultKeybinds ); i++ ) {
+		s_settingsMenu->controls.keybinds[i].bind1 = s_defaultKeybinds[i].defaultBind1;
+		s_settingsMenu->controls.keybinds[i].bind2 = s_defaultKeybinds[i].defaultBind2;
+	}
+}
+
+static void GameplayMenu_SetDefault( void )
+{
+	s_settingsMenu->gameplay.difficulty = Cvar_VariableInteger( "sgame_Difficulty" );
+	s_settingsMenu->gameplay.mouseCursor = Cvar_VariableInteger( "sgame_CursorType" );
+	s_settingsMenu->gameplay.debugPrint = Cvar_VariableInteger( "sgame_DebugMode" );
+	s_settingsMenu->gameplay.toggleHUD = Cvar_VariableInteger( "sgame_ToggleHUD" );
 }
 
 static void SettingsMenu_Draw( void )
@@ -1086,6 +1220,7 @@ static void SettingsMenu_Draw( void )
 		ControlsMenu_Draw();
 		break;
 	case ID_GAMEPLAY:
+		GameplayMenu_Draw();
 		break;
 	};
 
@@ -1113,6 +1248,7 @@ static void SettingsMenu_Draw( void )
 			ControlsMenu_Save();
 			break;
 		case ID_GAMEPLAY:
+			GameplayMenu_Save();
 			break;
 		};
 	}
@@ -1212,6 +1348,19 @@ void SettingsMenu_Cache( void )
 		"Disabled",
 		"Enabled",
 	};
+	static const char *difficulties[ NUMDIFS - 1 ] = {
+        difficultyTable[ DIF_NOOB ].name,
+        difficultyTable[ DIF_RECRUIT ].name,
+        difficultyTable[ DIF_MERC ].name,
+        difficultyTable[ DIF_NOMAD ].name,
+        difficultyTable[ DIF_BLACKDEATH ].name
+    };
+	static const char *s_mouseTypes[] = {
+		"dot",
+		"circle & dot",
+		"full crosshair",
+		"filled crosshair"
+	};
 
 	if ( !ui->uiAllocated ) {
 		s_settingsMenu = (settingsMenu_t *)Hunk_Alloc( sizeof( *s_settingsMenu ), h_high );
@@ -1224,6 +1373,7 @@ void SettingsMenu_Cache( void )
 	s_settingsMenu->menu.x = 0;
 	s_settingsMenu->menu.y = 0;
 	s_settingsMenu->menu.draw = SettingsMenu_Draw;
+	s_settingsMenu->menu.flags = MENU_DEFAULT_FLAGS;
 	s_settingsMenu->menu.width = ui->gpuConfig.vidWidth * 0.60f;
 	s_settingsMenu->menu.height = ui->gpuConfig.vidHeight;
 	s_settingsMenu->menu.titleFontScale = 3.5f;
@@ -1235,6 +1385,8 @@ void SettingsMenu_Cache( void )
 	s_settingsMenu->performance.anisotropyTypes = s_anisotropyTypes;
 	s_settingsMenu->performance.textureDetails = s_textureDetail;
 	s_settingsMenu->performance.textureFilters = s_textureFilters;
+
+	s_settingsMenu->gameplay.difficultyNames = difficulties;
 
 	s_settingsMenu->video.vsyncList = s_vsync;
 	s_settingsMenu->video.windowSizes = s_windowSizes;
@@ -1248,12 +1400,15 @@ void SettingsMenu_Cache( void )
 	s_settingsMenu->performance.numTextureFilters = arraylen( s_textureFilters );
 	s_settingsMenu->performance.numToneMappingTypes = arraylen( s_toneMappingTypes );
 
+	s_settingsMenu->gameplay.numDifficultyTypes = arraylen( difficulties );
+
 	SettingsMenu_GetInitial();
 
 	PerformanceMenu_SetDefault();
 	VideoMenu_SetDefault();
 	AudioMenu_SetDefault();
 	ControlsMenu_SetDefault();
+	GameplayMenu_SetDefault();
 
 	s_settingsMenu->save_0 = re.RegisterShader( "menu/save_0" );
 	s_settingsMenu->save_1 = re.RegisterShader( "menu/save_1" );

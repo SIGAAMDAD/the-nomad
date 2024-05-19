@@ -46,7 +46,6 @@ namespace TheNomad::SGame {
 			LevelInfoData@ data;
 			json@ rankS, rankA, rankB, rankC, rankD, rankF, rankU;
 			uint i;
-			string str;
 			string mapname;
 			string levelName;
 
@@ -132,31 +131,31 @@ namespace TheNomad::SGame {
 				}
 
 				data.m_RankS.rank = LevelRank::RankS;
-				if ( !LoadLevelRankData( str, "RankS", @data.m_RankS, rankS ) ) {
+				if ( !LoadLevelRankData( "RankS", @data.m_RankS, rankS ) ) {
 					continue;
 				}
 				data.m_RankA.rank = LevelRank::RankA;
-				if ( !LoadLevelRankData( str, "RankA", @data.m_RankA, rankA ) ) {
+				if ( !LoadLevelRankData( "RankA", @data.m_RankA, rankA ) ) {
 					continue;
 				}
 				data.m_RankB.rank = LevelRank::RankB;
-				if ( !LoadLevelRankData( str, "RankB", @data.m_RankB, rankB ) ) {
+				if ( !LoadLevelRankData( "RankB", @data.m_RankB, rankB ) ) {
 					continue;
 				}
 				data.m_RankC.rank = LevelRank::RankC;
-				if ( !LoadLevelRankData( str, "RankC", @data.m_RankC, rankC ) ) {
+				if ( !LoadLevelRankData( "RankC", @data.m_RankC, rankC ) ) {
 					continue;
 				}
 				data.m_RankD.rank = LevelRank::RankD;
-				if ( !LoadLevelRankData( str, "RankD", @data.m_RankD, rankD ) ) {
+				if ( !LoadLevelRankData( "RankD", @data.m_RankD, rankD ) ) {
 					continue;
 				}
 				data.m_RankF.rank = LevelRank::RankF;
-				if ( !LoadLevelRankData( str, "RankF", @data.m_RankF, rankF ) ) {
+				if ( !LoadLevelRankData( "RankF", @data.m_RankF, rankF ) ) {
 					continue;
 				}
 				data.m_RankU.rank = LevelRank::RankWereUBotting;
-				if ( !LoadLevelRankData( str, "RankU", @data.m_RankU, rankU ) ) {
+				if ( !LoadLevelRankData( "RankU", @data.m_RankU, rankU ) ) {
 					continue;
 				}
 
@@ -301,7 +300,7 @@ namespace TheNomad::SGame {
 					stats.kills_Rank = LevelRank( section.LoadUInt( "KillsRank" ) );
 					stats.style_Rank = LevelRank( section.LoadUInt( "StyleRank" ) );
 					stats.deaths_Rank = LevelRank( section.LoadUInt( "DeathsRank" ) );
-					
+
 					stats.isClean = section.LoadBool( "CleanRun" );
 					stats.m_TimeMilliseconds = section.LoadUInt( "TimeMilliseconds" );
 					stats.m_TimeSeconds = section.LoadUInt( "TimeSeconds" );
@@ -451,7 +450,9 @@ namespace TheNomad::SGame {
 			}
 		}
 
-		bool LoadLevelRankData( string& in str, const string& in rankName, LevelRankData@ data, json@ src ) {
+		bool LoadLevelRankData( const string& in rankName, LevelRankData@ data, json@ src ) {
+			json@ minTime;
+
 			if ( !src.get( "MinKills", data.minKills ) ) {
 				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'MinKills'.\n" );
 				return false;
@@ -470,6 +471,18 @@ namespace TheNomad::SGame {
 			}
 			if ( !src.get( "RequiresClean", data.requiresClean ) ) {
 				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'RequiresClean'.\n" );
+				return false;
+			}
+			if ( !src.get( "MinTime.Milliseconds", data.min_TimeMilliseconds ) ) {
+				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'MinTime.Milliseconds'.\n" );
+				return false;
+			}
+			if ( !src.get( "MinTime.Seconds", data.min_TimeSeconds ) ) {
+				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'MinTime.Seconds'.\n" );
+				return false;
+			}
+			if ( !src.get( "MinTime.Minutes", data.min_TimeMinutes ) ) {
+				ConsoleWarning( "invalid level info object '" + rankName + "', no variable 'MinTime.Minutes'.\n" );
 				return false;
 			}
 

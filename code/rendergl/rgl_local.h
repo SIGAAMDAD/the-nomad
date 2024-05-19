@@ -83,6 +83,11 @@ typedef uint32_t glIndex_t;
 #define LIGHTMAP_WHITEIMAGE -2
 #define LIGHTMAP_NONE       -1
 
+#define DRAWMODE_IMMEDIATE 0
+#define DRAWMODE_CLIENT    1
+#define DRAWMODE_GPU       2
+#define DRAWMODE_MAPPED    3
+
 typedef enum {
     MI_NONE,
     MI_NVX,

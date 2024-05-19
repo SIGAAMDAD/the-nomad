@@ -5,6 +5,136 @@ namespace TheNomad::SGame {
 		LevelStats() {
 		}
 
+		void CalcLevelStats() {
+			LevelInfoData@ data = @LevelManager.GetCurrentData();
+			LevelRank rank;
+
+			rank = LevelRank::RankWereUBotting;
+			if ( numKills > data.m_RankU.minKills ) {
+				rank = LevelRank::RankF;
+			}
+			if ( numKills > data.m_RankF.minKills ) {
+				rank = LevelRank::RankD;
+			}
+			if ( numKills > data.m_RankD.minKills ) {
+				rank = LevelRank::RankC;
+			}
+			if ( numKills > data.m_RankC.minKills ) {
+				rank = LevelRank::RankB;
+			}
+			if ( numKills > data.m_RankB.minKills ) {
+				rank = LevelRank::RankA;
+			}
+			if ( numKills > data.m_RankA.minKills ) {
+				rank = LevelRank::RankS;
+			}
+			kills_Rank = rank;
+
+			rank = LevelRank::RankWereUBotting;
+			if ( stylePoints > data.m_RankU.minStyle ) {
+				rank = LevelRank::RankF;
+			}
+			if ( stylePoints > data.m_RankF.minStyle ) {
+				rank = LevelRank::RankD;
+			}
+			if ( stylePoints > data.m_RankD.minStyle ) {
+				rank = LevelRank::RankC;
+			}
+			if ( stylePoints > data.m_RankC.minStyle ) {
+				rank = LevelRank::RankB;
+			}
+			if ( stylePoints > data.m_RankB.minStyle ) {
+				rank = LevelRank::RankA;
+			}
+			if ( stylePoints > data.m_RankA.minStyle ) {
+				rank = LevelRank::RankS;
+			}
+			style_Rank = rank;
+
+			rank = LevelRank::RankWereUBotting;
+			if ( numDeaths > data.m_RankS.maxDeaths ) {
+				rank = LevelRank::RankA;
+			}
+			if ( numDeaths > data.m_RankA.maxDeaths ) {
+				rank = LevelRank::RankB;
+			}
+			if ( numDeaths > data.m_RankB.maxDeaths ) {
+				rank = LevelRank::RankC;
+			}
+			if ( numDeaths > data.m_RankC.maxDeaths ) {
+				rank = LevelRank::RankD;
+			}
+			if ( numDeaths > data.m_RankD.maxDeaths ) {
+				rank = LevelRank::RankF;
+			}
+			if ( numDeaths > data.m_RankF.maxDeaths ) {
+				rank = LevelRank::RankWereUBotting;
+			}
+			deaths_Rank = rank;
+
+			rank = LevelRank::RankWereUBotting;
+			if ( stylePoints > data.m_RankU.minStyle ) {
+				rank = LevelRank::RankF;
+			}
+			if ( stylePoints > data.m_RankF.minStyle ) {
+				rank = LevelRank::RankD;
+			}
+			if ( stylePoints > data.m_RankD.minStyle ) {
+				rank = LevelRank::RankC;
+			}
+			if ( stylePoints > data.m_RankC.minStyle ) {
+				rank = LevelRank::RankB;
+			}
+			if ( stylePoints > data.m_RankB.minStyle ) {
+				rank = LevelRank::RankA;
+			}
+			if ( stylePoints > data.m_RankA.minStyle ) {
+				rank = LevelRank::RankS;
+			}
+			style_Rank = rank;
+		}
+
+		private bool AllRanksAre( LevelRank rank ) const {
+			return ( style_Rank == rank && kills_Rank == rank && deaths_Rank == rank && time_Rank == rank );
+		}
+
+		void CalcTotalLevelStats() {
+			LevelRank highestRank;
+			uint numHighestRanks = 0;
+
+			CalcLevelStats();
+
+			// absolute perfection
+			if ( AllRanksAre( LevelRank::RankS ) && collateralScore == 0 ) {
+				total_Rank = LevelRank::RankS;
+				return;
+			}
+
+			highestRank = GetHighestRank();
+			if ( style_Rank == highestRank ) {
+				numHighestRanks++;
+			}
+			if ( kills_Rank == highestRank ) {
+				numHighestRanks++;
+			}
+			if ( deaths_Rank == highestRank ) {
+				numHighestRanks++;
+			}
+			if ( time_Rank == highestRank ) {
+				numHighestRanks++;
+			}
+			if ( numHighestRanks >= 3 ) {
+				total_Rank = highestRank;
+			} else {
+				total_Rank = LevelRank( uint( highestRank ) - 1 );
+			}
+
+			// apply collateral damages
+			if ( collateralScore > 0 ) {
+				ApplyCollateral();
+			}
+		}
+
 		private void DrawEndOfLevelStats() const {
 			const float fontScale = ImGui::GetFontScale();
 			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
@@ -201,6 +331,61 @@ namespace TheNomad::SGame {
 			ImGui::EndTable();
 			
 			ImGui::End();
+		}
+
+		//
+		// LevelStats::ApplyCollateral: collateral damage (killing innocents, unnecessary destruction)
+		// will cost the ranking to go down a lot
+		//
+		private void ApplyCollateral() {
+			LevelInfoData@ data = @LevelManager.GetCurrentData();
+
+			if ( total_Rank == LevelRank::RankS && ( collateralScore >= data.m_RankS.maxCollateral || data.m_RankS.requiresClean ) ) {
+				total_Rank = LevelRank::RankA;
+			}
+			if ( total_Rank == LevelRank::RankA && ( collateralScore >= data.m_RankA.maxCollateral || data.m_RankA.requiresClean ) ) {
+				total_Rank = LevelRank::RankB;
+			}
+			if ( total_Rank == LevelRank::RankB && ( collateralScore >= data.m_RankB.maxCollateral || data.m_RankB.requiresClean ) ) {
+				total_Rank = LevelRank::RankC;
+			}
+			if ( total_Rank == LevelRank::RankC && ( collateralScore >= data.m_RankC.maxCollateral || data.m_RankC.requiresClean ) ) {
+				total_Rank = LevelRank::RankD;
+			}
+			if ( total_Rank == LevelRank::RankD && ( collateralScore >= data.m_RankD.maxCollateral || data.m_RankD.requiresClean ) ) {
+				total_Rank = LevelRank::RankF;
+			}
+			if ( total_Rank == LevelRank::RankF && ( collateralScore >= data.m_RankF.maxCollateral || data.m_RankF.requiresClean ) ) {
+				total_Rank = LevelRank::RankWereUBotting;
+			}
+		}
+		private LevelRank GetHighestRank() const {
+			LevelRank rank = kills_Rank;
+
+			if ( rank < style_Rank ) {
+				rank = style_Rank;
+			}
+			if ( rank < deaths_Rank ) {
+				rank = deaths_Rank;
+			}
+			if ( rank < time_Rank ) {
+				rank = time_Rank;
+			}
+			return rank;
+		}
+		private LevelRank GetLowestRank() const {
+			LevelRank rank = kills_Rank;
+
+			if ( rank > style_Rank ) {
+				rank = style_Rank;
+			}
+			if ( rank > deaths_Rank ) {
+				rank = deaths_Rank;
+			}
+			if ( rank > time_Rank ) {
+				return rank;
+			}
+			return rank;
 		}
 
 		uint m_TimeMilliseconds = 0;

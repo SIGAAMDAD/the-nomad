@@ -13,7 +13,9 @@
                 "MinKills": 0,
                 "MinStyle": 0,
                 "MaxDeaths": 0,
-                "MinTime": 0,
+                "MinTime.Milliseconds": 0,
+                "MinTime.Seconds": 0,
+                "MinTime.Minutes": 0,
                 "MaxCollateral": 0,
                 "RequiresClean": true
             },
@@ -21,7 +23,9 @@
                 "MinKills": 0,
                 "MinStyle": 0,
                 "MaxDeaths": 0,
-                "MinTime": 0,
+                "MinTime.Milliseconds": 0,
+                "MinTime.Seconds": 0,
+                "MinTime.Minutes": 0,
                 "MaxCollateral": 0,
                 "RequiresClean": true
             },
@@ -29,7 +33,9 @@
                 "MinKills": 0,
                 "MinStyle": 0,
                 "MaxDeaths": 0,
-                "MinTime": 0,
+                "MinTime.Milliseconds": 0,
+                "MinTime.Seconds": 0,
+                "MinTime.Minutes": 0,
                 "MaxCollateral": 0,
                 "RequiresClean": false
             },
@@ -37,7 +43,9 @@
                 "MinKills": 0,
                 "MinStyle": 0,
                 "MaxDeaths": 0,
-                "MinTime": 0,
+                "MinTime.Milliseconds": 0,
+                "MinTime.Seconds": 0,
+                "MinTime.Minutes": 0,
                 "MaxCollateral": 0,
                 "RequiresClean": false
             },
@@ -45,7 +53,9 @@
                 "MinKills": 0,
                 "MinStyle": 0,
                 "MaxDeaths": 0,
-                "MinTime": 0,
+                "MinTime.Milliseconds": 0,
+                "MinTime.Seconds": 0,
+                "MinTime.Minutes": 0,
                 "MaxCollateral": 0,
                 "RequiresClean": false
             },
@@ -53,7 +63,9 @@
                 "MinKills": 0,
                 "MinStyle": 0,
                 "MaxDeaths": 0,
-                "MinTime": 0,
+                "MinTime.Milliseconds": 0,
+                "MinTime.Seconds": 0,
+                "MinTime.Minutes": 0,
                 "MaxCollateral": 0,
                 "RequiresClean": false
             },
@@ -61,7 +73,9 @@
                 "MinKills": 0,
                 "MinStyle": 0,
                 "MaxDeaths": 0,
-                "MinTime": 0,
+                "MinTime.Milliseconds": 0,
+                "MinTime.Seconds": 0,
+                "MinTime.Minutes": 0,
                 "MaxCollateral": 0,
                 "RequiresClean": false
             }

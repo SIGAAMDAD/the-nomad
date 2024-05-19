@@ -38,7 +38,7 @@ void CScriptJson::Release() const
     }
 }
 
-CScriptJson &CScriptJson::operator =(bool other)
+CScriptJson& CScriptJson::operator =(bool other)
 {
     // Clear everything we had before
     js_info.clear();
@@ -48,7 +48,7 @@ CScriptJson &CScriptJson::operator =(bool other)
     return *this;
 }
 
-CScriptJson &CScriptJson::operator =(json::number_integer_t other)
+CScriptJson& CScriptJson::operator =(json::number_integer_t other)
 {
     // Clear everything we had before
     js_info.clear();
@@ -58,7 +58,7 @@ CScriptJson &CScriptJson::operator =(json::number_integer_t other)
     return *this;
 }
 
-CScriptJson &CScriptJson::operator =(json::number_unsigned_t other)
+CScriptJson& CScriptJson::operator =(json::number_unsigned_t other)
 {
     // Clear everything we had before
     js_info.clear();
@@ -68,7 +68,7 @@ CScriptJson &CScriptJson::operator =(json::number_unsigned_t other)
     return *this;
 }
 
-CScriptJson &CScriptJson::operator =(json::number_float_t other)
+CScriptJson& CScriptJson::operator =(json::number_float_t other)
 {
     // Clear everything we had before
     js_info.clear();
@@ -78,7 +78,7 @@ CScriptJson &CScriptJson::operator =(json::number_float_t other)
     return *this;
 }
 
-CScriptJson &CScriptJson::operator=( const string_t& other )
+CScriptJson& CScriptJson::operator=( const string_t& other )
 {
     // Clear everything we had before
     js_info.clear();
@@ -87,7 +87,7 @@ CScriptJson &CScriptJson::operator=( const string_t& other )
     return *this;
 }
 
-CScriptJson &CScriptJson::operator=(const CScriptArray& other)
+CScriptJson& CScriptJson::operator=(const CScriptArray& other)
 {
     json js_temp;
 
@@ -110,11 +110,11 @@ CScriptJson &CScriptJson::operator=(const CScriptArray& other)
     return *this;
 }
 
-CScriptJson &CScriptJson::operator =(const CScriptJson& other)
+CScriptJson& CScriptJson::operator=( const CScriptJson& other )
 {
     // Clear everything we had before
     js_info.clear();
-    js_info = eastl::move( other.js_info ); // NOTE: will this cause a segfault?
+    js_info = other.js_info;
 
     return *this;
 }
@@ -170,6 +170,11 @@ void CScriptJson::Set(const jsonKey_t &key, const CScriptArray& value)
         }
     }
     (js_info)[key] = eastl::move( js_temp );
+}
+
+void CScriptJson::Set(const jsonKey_t &key, const CScriptJson& value)
+{
+    (js_info)[key] = value.js_info;
 }
 
 bool CScriptJson::Get(const jsonKey_t &key, bool &value) const
@@ -277,6 +282,15 @@ bool CScriptJson::Get(const jsonKey_t &key, CScriptArray& value) const
         value.SetValue( i, &childNode );
         childNode->Release();
     }
+    return true;
+}
+
+bool CScriptJson::Get(const jsonKey_t& key, CScriptJson& value) const
+{
+    if ( !js_info.contains( key ) ) {
+        return false;
+    }
+
     return true;
 }
 
@@ -532,6 +546,14 @@ void ScriptJsonSetArr_Generic(asIScriptGeneric *gen)
     CATCH_JSON_BLOCK( json->Set(*key, *(CScriptArray*)ref); );
 }
 
+void ScriptJsonSetObj_Generic(asIScriptGeneric *gen)
+{
+    CScriptJson *json = (CScriptJson*)gen->GetObjectData();
+    jsonKey_t *key = (jsonKey_t*)gen->GetArgObject(0);
+    void *ref = (void*)gen->GetAddressOfArg(1);
+    CATCH_JSON_BLOCK( json->Set(*key, *(CScriptJson*)ref); );
+}
+
 void ScriptJsonGetBool_Generic(asIScriptGeneric *gen)
 {
     CScriptJson *json = (CScriptJson*)gen->GetObjectData();
@@ -576,6 +598,13 @@ void ScriptJsonGetArr_Generic(asIScriptGeneric *gen)
     CScriptJson *json = (CScriptJson*)gen->GetObjectData();
     jsonKey_t *key = (jsonKey_t*)gen->GetArgObject(0);
     CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(CScriptArray*)gen->GetArgObject( 1 )); );
+}
+
+void ScriptJsonGetObj_Generic(asIScriptGeneric *gen)
+{
+    CScriptJson *json = (CScriptJson*)gen->GetObjectData();
+    jsonKey_t *key = (jsonKey_t*)gen->GetArgObject(0);
+    CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(CScriptJson*)gen->GetArgObject( 1 )); );
 }
 
 void ScriptJsonConvBool_Generic( asIScriptGeneric *gen )
@@ -707,7 +736,7 @@ static void CScriptJson_ParseFile( asIScriptGeneric *gen ) {
 // Json to text
 static bool JsonWriteFile(const CScriptJson& node,const string_t& file)
 {
-    const nlohmann::json::string_t&& str = eastl::move( node.js_info.dump( 1, '\t' ) );
+    const nlohmann::json::string_t&& str = node.js_info.dump( 1, '\t' );
 
     // this will throw an error if it fails anyway
     FS_WriteFile( file.c_str(), str.data(), str.size() );
@@ -717,7 +746,7 @@ static bool JsonWriteFile(const CScriptJson& node,const string_t& file)
 
 static bool JsonWrite(const CScriptJson& node, string_t& content)
 {
-    content = eastl::move( node.js_info.dump( 1, '\t' ).c_str() );
+    content = eastl::move( node.js_info.dump( 1, '\t' ) );
     return true;
 }
 
@@ -951,6 +980,9 @@ void RegisterScriptJson_Generic(asIScriptEngine *engine)
 
     CheckASCall( engine->RegisterObjectMethod("json", "void set(const string &in, const array<json@>& in)", asFUNCTION(ScriptJsonSetArr_Generic), asCALL_GENERIC) );
     CheckASCall( engine->RegisterObjectMethod("json", "bool get(const string &in, array<json@>& out) const", asFUNCTION(ScriptJsonGetArr_Generic), asCALL_GENERIC) );
+
+    CheckASCall( engine->RegisterObjectMethod("json", "void set(const string &in, const json@)", asFUNCTION(ScriptJsonSetObj_Generic), asCALL_GENERIC) );
+    CheckASCall( engine->RegisterObjectMethod("json", "bool get(const string &in, json@) const", asFUNCTION(ScriptJsonGetObj_Generic), asCALL_GENERIC) );
 
     CheckASCall( engine->RegisterObjectMethod("json", "bool exists(const string &in) const", asFUNCTION(ScriptJsonExists_Generic), asCALL_GENERIC) );
     CheckASCall( engine->RegisterObjectMethod("json", "bool isEmpty() const", asFUNCTION(ScriptJsonIsEmpty_Generic), asCALL_GENERIC) );
