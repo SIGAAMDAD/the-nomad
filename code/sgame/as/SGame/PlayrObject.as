@@ -472,8 +472,7 @@ namespace TheNomad::SGame {
 			m_CurrentWeapon = 0;
 			m_Link.m_nEntityType = TheNomad::GameSystem::EntityType::Playr;
 
-			m_PhysicsObject.Init( cast<EntityObject@>( @this ), vec3( sgame_BaseSpeed.GetFloat(), sgame_BaseSpeed.GetFloat(), 0.0f ),
-				vec3( sgame_MaxSpeed.GetFloat(), sgame_MaxSpeed.GetFloat(), 0.0f ) );
+			m_PhysicsObject.Init( cast<EntityObject@>( @this ) );
 			m_PhysicsObject.SetAngle( Util::Dir2Angle( TheNomad::GameSystem::DirType::East ) );
 
 			m_Direction = Util::Angle2Dir( m_PhysicsObject.GetAngle() );

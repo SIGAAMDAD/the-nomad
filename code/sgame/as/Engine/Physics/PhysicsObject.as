@@ -3,10 +3,8 @@ namespace TheNomad::Engine::Physics {
         PhysicsObject() {
         }
 
-        void Init( TheNomad::SGame::EntityObject@ ent, const vec3& in speed, const vec3& in maxSpeed ) {
+        void Init( TheNomad::SGame::EntityObject@ ent ) {
             @m_EntityData = @ent;
-            m_Speed = speed;
-            m_MaxSpeed = maxSpeed;
         }
         void Shutdown() {
         }
@@ -23,9 +21,11 @@ namespace TheNomad::Engine::Physics {
         void SetVelocity( const vec3& in vel ) {
             m_Velocity = vel;
         }
-
-        const vec3& GetVelocity() const {
-            return m_Velocity;
+        void SetWaterLevel( int nWaterLevel ) {
+        	m_nWaterLevel = nWaterLevel;
+        }
+        vec3& GetAcceleration() {
+            return m_Acceleration;
         }
         vec3& GetVelocity() {
             return m_Velocity;
@@ -50,85 +50,128 @@ namespace TheNomad::Engine::Physics {
             }
             if ( m_EntityData.GetOrigin().y < 0.0f ) {
                 m_EntityData.SetOrigin( vec3( m_EntityData.GetOrigin().x, 0.0f, m_EntityData.GetOrigin().z ) );
-            }
+		    }
+		}
+		
+		void ApplyFriction() {
+			vec3 vec;
+			float speed, newspeed, control;
+			float drop;
+			const uint frameTime = TheNomad::GameSystem::GameManager.GetGameTic();
+			
+			vec = m_Velocity;
+			speed = Util::VectorLength( vec );
+			if ( speed < 1.0f ) {
+				m_Velocity[0] = 0.0f;
+				m_Velocity[1] = 0.0f;
+				m_Velocity[2] = 0.0f; // allow sinking underwater
+				return;
+			}
+			
+			drop = 0.0f;
+			
+			// apply water friction even if just wading
+			if ( m_nWaterLevel() > 0 ) {
+				drop += speed * TheNomad::SGame::sgame_WaterFriction.GetFloat() * m_nWaterLevel * frameTime;
+			} else {
+				drop += speed * TheNomad::SGame::sgame_Friction.GetFloat() * frameTime;
+			}
+			
+			// scale the velocity
+			newspeed = speed - drop;
+			if ( newspeed < 0.0f ) {
+				newspeed = 0.0f;
+			}
+			newspeed /= speed;
+			
+			m_Velocity[0] = m_Velocity[0] * newspeed;
+			m_Velocity[1] = m_Velocity[1] * newspeed;
+			m_Velocity[2] = m_Velocity[2] * newspeed;
+		}
+		
+		void SetWaterLevel() {
+			vec3 point;
+			uint tile;
+			TheNomad::GameSystem::BBox bounds;
+			
+			//
+			// get waterlevel, accounting for ducking
+			//
+			m_nWaterLevel = 0;
+			m_nWaterType = WaterType::None;
+			
+			point = m_EntityData.GetOrigin();
+			bounds = m_EntityData.GetBounds();
+			tile = LevelManager.GetMapData().GetTile( point, bounds );
+			
+			if ( ( tile & SURFACEPARM_WATER ) != 0 || ( tile & SURFACEPARM_LAVA ) != 0 ) {
+				m_nWaterType = WaterType( tile );
+				m_nWaterLevel = 1; // just walking in a puddle
+				
+				// check the level below us
+				bounds.m_Mins.z--;
+				bounds.m_Maxs.z--;
+				tile = LevelManager.GetMapData().GetTile( point, bounds );
+				if ( ( tile & SURFACEPARM_WATER ) != 0 || ( tile & SURFACEPARM_LAVA ) != 0 ) {
+					m_nWaterLevel = 2; // swimming now
+					
+					// check the level above us
+					bounds.m_Mins.z += 2;
+					bounds.m_Maxs.z += 2;
+					tile = LevelManager.GetMapData().GetTile( point, bounds );
+					if ( ( tile & SURFACEPARM_WATER ) != 0 || ( tile & SURFACEPARM_LAVA ) != 0 ) {
+						m_nWaterLevel = 3; // fully submerged
+					}
+				}
+			}
         }
-
-        void OnRunTic() {
-            const uint gameTic = TheNomad::GameSystem::GameManager.GetDeltaTics();
-            vec3 accel;
-            float friction = TheNomad::SGame::sgame_Friction.GetFloat();
-            vec3 origin;
-
-            // clip it
-            ClipBounds();
-
-            origin = m_EntityData.GetOrigin();
-
-            const uint tileFlags = TheNomad::SGame::LevelManager.GetMapData().GetTile( origin, m_EntityData.GetBounds() );
-            if ( ( tileFlags & SURFACEPARM_WATER ) != 0 || ( tileFlags & SURFACEPARM_LAVA ) != 0 ) {
-                friction = TheNomad::SGame::sgame_WaterFriction.GetFloat() * m_nWaterLevel;
-            } else if ( origin.z > 0.0f && m_nWaterLevel == 0 ) {
-                friction = TheNomad::SGame::sgame_AirFriction.GetFloat();
-            }
-
-            accel.x = m_Speed.x + m_Acceleration.x;
-            accel.y = m_Speed.y + m_Acceleration.y;
-            accel.z = m_Speed.z + m_Acceleration.z;
-
-            // calculate velocity
-            m_Velocity.x = gameTic * accel.x;
-            m_Velocity.y = gameTic * accel.y;
-            m_Velocity.z = gameTic * accel.z;
-
-            // apply gravity
-            if ( m_Velocity.z > 0.0f ) {
-                m_Velocity.z -= gameTic * TheNomad::SGame::sgame_Gravity.GetFloat();
-            }
-
-            if ( m_Velocity.x > 0 ) {
-                m_Velocity.x -= friction * gameTic;
-                if ( m_Velocity.x < 0 ) {
-                    m_Velocity.x = 0.0f;
-                }
-            } else if ( m_Velocity.x < 0 ) {
-                m_Velocity.x += friction * gameTic;
-                if ( m_Velocity.x > 0 ) {
-                    m_Velocity.x = 0.0f;
-                }
-            }
-            if ( m_Velocity.y > 0 ) {
-                m_Velocity.y -= friction * gameTic;
-                if ( m_Velocity.y < 0 ) {
-                    m_Velocity.y = 0.0f;
-                }
-            } else if ( m_Velocity.y < 0 ) {
-                m_Velocity.y += friction * gameTic;
-                if ( m_Velocity.y > 0 ) {
-                    m_Velocity.y = 0.0f;
-                }
-            }
-
-            m_Velocity.x = Util::Clamp( m_Velocity.x, -m_MaxSpeed.x, m_MaxSpeed.x );
-            m_Velocity.y = Util::Clamp( m_Velocity.y, -m_MaxSpeed.y, m_MaxSpeed.y );
-            m_Velocity.z = Util::Clamp( m_Velocity.z, -9999.0f, m_MaxSpeed.z );
-
-            origin.x += m_Velocity.x;
-            origin.y += m_Velocity.y;
-            origin.z += m_Velocity.z;
-
-            m_EntityData.SetOrigin( origin );
-
-            // clip it
-            ClipBounds();
-
-            m_Acceleration = 0.0f;
+		
+		void OnRunTic() {
+			const uint gameTic = TheNomad::GameSystem::GameManager.GetDeltaTics();
+			vec3 accel;
+			float friction = TheNomad::SGame::sgame_Friction.GetFloat();
+			vec3 origin;
+			
+			// clip it
+			ClipBounds();
+			SetWaterLevel();
+			
+			origin = m_EntityData.GetOrigin();
+			
+			const uint tileFlags = TheNomad::SGame::LevelManager.GetMapData().GetTile( origin, m_EntityData.GetBounds() );
+			if ( ( tileFlags & SURFACEPARM_WATER ) != 0 || ( tileFlags & SURFACEPARM_LAVA ) != 0 ) {
+				friction = TheNomad::SGame::sgame_WaterFriction.GetFloat() * m_nWaterLevel;
+			} else if ( origin.z > 0.0f && m_nWaterLevel == 0 ) {
+				friction = TheNomad::SGame::sgame_AirFriction.GetFloat();
+			}
+			
+			// calculate velocity
+			m_Velocity.x = m_Acceleration.x;
+			m_Velocity.y = m_Acceleration.y;
+			m_Velocity.z = m_Acceleration.z;
+			
+			ApplyFriction();
+			
+			// apply gravity
+			if ( m_Velocity.z > 0.0f ) {
+				m_Velocity.z -= TheNomad::SGame::sgame_Gravity.GetFloat() * gameTic;
+			}
+			
+			origin.x += m_Velocity.x;
+			origin.y += m_Velocity.y;
+			origin.z += m_Velocity.z;
+			
+			m_EntityData.SetOrigin( origin );
+			
+			// clip it
+			ClipBounds();
+			
+			m_Acceleration = 0.0f;
         }
-
+        
         private TheNomad::SGame::EntityObject@ m_EntityData = null;
         private vec3 m_Velocity = vec3( 0.0f );
-        private vec3 m_Speed = vec3( 0.0f );
         private vec3 m_Acceleration = vec3( 0.0f );
-        private vec3 m_MaxSpeed = vec3( 0.0f );
         private float m_nAngle = 0.0f;
         private int m_nWaterLevel = 0;
     };

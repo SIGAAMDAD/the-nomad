@@ -77,6 +77,18 @@ namespace TheNomad::SGame {
 		vec3& GetVelocity() {
 			return m_PhysicsObject.GetVelocity();
 		}
+		const vec3& GetAcceleration() const {
+			return m_PhysicsObject.GetAcceleration();
+		}
+		void SetAcceleration( const vec3& in accel ) {
+			m_PhysicsObject.SetAcceleration( accel );
+		}
+		int GetWaterLevel() const {
+			return m_PhysicsObject.GetWaterLevel();
+		}
+		void SetWaterLevel( int level ) {
+			m_PhysicsObject.SetWaterLevel( level );
+		}
 		TheNomad::GameSystem::EntityType GetType() const {
 			return TheNomad::GameSystem::EntityType( m_Link.m_nEntityType );
 		}

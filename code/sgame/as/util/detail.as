@@ -248,7 +248,7 @@ namespace TheNomad::Util {
 		return sqrt( DotProduct( v, v ) );
 	}
 
-	float NormalizeVector( vec3& out v ) {
+	float VectorNormalize( vec3& out v ) {
 		float length, ilength;
 
 		length = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
