@@ -1,0 +1,16 @@
+dol
+{
+    name        "dol"
+    map         "darkofnight.bmf"
+    longname    "Dark of The Night"
+    levelIndex  "0"
+    texture     "desert.png"
+
+    shader
+    {
+        background_R "1.0"
+        background_G "1.0"
+        background_B "1.0"
+        background_A "1.0"
+    }
+}
