@@ -272,7 +272,7 @@ namespace TheNomad::SGame {
 			
 			pos = EntityManager.GetPlayerObject().GetOrigin() - m_Link.m_Origin;
 			
-			p = Util::NormalizeVector( pos );
+			p = Util::VectorNormalize( pos );
 			
 			if ( Util::DotProduct( pos, delta ) > cos( m_Info.sightRadius ) ) {
 				return false;

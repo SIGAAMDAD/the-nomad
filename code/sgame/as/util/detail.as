@@ -240,6 +240,35 @@ namespace TheNomad::Util {
 		return true;
 	}
 
+	void CrossProduct( const vec3& in v1, const vec3& in v2, vec3& out cross ) {
+		cross[0] = v1[1]*v2[2] - v1[2]*v2[1];
+		cross[1] = v1[2]*v2[0] - v1[0]*v2[2];
+		cross[2] = v1[0]*v2[1] - v1[1]*v2[0];
+	}
+
+	float RadiusFromBounds( const TheNomad::GameSystem::BBox& in bounds ) {
+		int		i;
+		vec3	corner;
+
+		// quiet down compiler
+		float	a = 0.0f;
+		float	b = 0.0f;
+
+		for ( i = 0; i < 3; i++ ) {
+			a = abs( bounds.m_Mins[i] );
+			b = abs( bounds.m_Maxs[i] );
+			corner[i] = a > b ? a : b;
+		}
+
+		return VectorLength( corner );
+	}
+
+	void VectorScale( const vec3& in src, float scale, vec3& out dst ) {
+		dst[0] = src[0]*scale;
+		dst[1] = src[1]*scale;
+		dst[2] = src[2]*scale;
+	}
+
 	float DotProduct( const vec3& in a, const vec3& in b ) {
 		return ( a[0]*b[0] + a[1]*b[1] + a[2]*b[2] );
 	}
@@ -265,12 +294,71 @@ namespace TheNomad::Util {
 		return length;
 	}
 
-	float Lerp( float a, float b, float f ) {
-		return ( a * ( 1.0f - f ) ) + ( b * f );
+
+	int8 ClampChar( int8 i ) {
+		if ( i < -128 ) {
+			return -128;
+		}
+		if ( i > 127 ) {
+			return 127;
+		}
+		return i;
 	}
 
-	bool StringToBool( const string& in str ) {
-		return StrICmp( str, "true" ) == 0 ? true : false;
+	int8 ClampCharMove( int8 i ) {
+		if ( i < -127 ) {
+			return -127;
+		}
+		if ( i > 127 ) {
+			return 127;
+		}
+		return i;
+	}
+
+	int16 ClampShort( int16 i ) {
+		if ( i < -32768 ) {
+			return -32768;
+		}
+		if ( i > 0x7fff ) {
+			return 0x7fff;
+		}
+		return i;
+	}
+
+	bool IsPrint( int c ) {
+		if ( c >= 0x20 && c <= 0x7E ) {
+			return true;
+		}
+		return false;
+	}
+
+	bool IsLower( int c ) {
+		if ( c >= 'a' && c <= 'z' ) {
+			return true;
+		}
+		return false;
+	}
+
+	bool IsUpper( int c ) {
+		if ( c >= 'A' && c <= 'Z' ) {
+			return true;
+		}
+		return false;
+	}
+
+	bool IsAlpha( int c ) {
+		if ( ( c >= 'a' && c <= 'z' ) || ( c >= 'A' && c <= 'Z' ) ) {
+			return true;
+		}
+		return false;
+	}
+
+	bool IsIntegral( float f ) {
+		return ( int( f ) == f );
+	}
+
+	float Lerp( float a, float b, float f ) {
+		return ( a * ( 1.0f - f ) ) + ( b * f );
 	}
 
 	float DEG2RAD( float x ) {

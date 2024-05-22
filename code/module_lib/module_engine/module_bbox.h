@@ -13,7 +13,9 @@ public:
 
     CModuleBoundBox& operator=( const CModuleBoundBox& );
 
+    void Clear( void );
     void MakeBounds( const glm::vec3& origin );
+
     const bbox_t ToPOD( void ) const;
 
     glm::vec3 mins;
@@ -38,8 +40,8 @@ CModuleBoundBox& CModuleBoundBox::operator=( const CModuleBoundBox& other ) {
     return *this;
 }
 
-const bbox_t CModuleBoundBox::ToPOD( void ) const {
-    return { .mins = { mins[0], mins[1], mins[2] }, .maxs = { maxs[0], maxs[1], maxs[2] } };
+void CModuleBoundBox::Clear( void ) {
+    AxisClear( (vec3_t *)this );
 }
 
 void CModuleBoundBox::MakeBounds( const glm::vec3& origin ) {
@@ -50,6 +52,10 @@ void CModuleBoundBox::MakeBounds( const glm::vec3& origin ) {
 	maxs[0] = origin[0] + ( width / 2 );
 	maxs[1] = origin[1] + ( height / 2 );
 	maxs[2] = origin[2] + ( height / 2 );
+}
+
+const bbox_t CModuleBoundBox::ToPOD( void ) const {
+    return { .mins = { mins[0], mins[1], mins[2] }, .maxs = { maxs[0], maxs[1], maxs[2] } };
 }
 
 #endif

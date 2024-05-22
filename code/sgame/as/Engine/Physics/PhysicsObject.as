@@ -1,4 +1,11 @@
 namespace TheNomad::Engine::Physics {
+	enum WaterType {
+		None,
+		Water,
+		Lava,
+		Acid
+	};
+
     class PhysicsObject {
         PhysicsObject() {
         }
@@ -27,7 +34,13 @@ namespace TheNomad::Engine::Physics {
         vec3& GetAcceleration() {
             return m_Acceleration;
         }
+        const vec3& GetAcceleration() const {
+            return m_Acceleration;
+        }
         vec3& GetVelocity() {
+            return m_Velocity;
+        }
+        const vec3& GetVelocity() const {
             return m_Velocity;
         }
         int GetWaterLevel() const {
@@ -71,14 +84,14 @@ namespace TheNomad::Engine::Physics {
 			drop = 0.0f;
 			
 			// apply water friction even if just wading
-			if ( m_nWaterLevel() > 0 ) {
+			if ( m_nWaterLevel > 0 ) {
 				drop += speed * TheNomad::SGame::sgame_WaterFriction.GetFloat() * m_nWaterLevel * frameTime;
 			} else {
 				drop += speed * TheNomad::SGame::sgame_Friction.GetFloat() * frameTime;
 			}
 			
 			// scale the velocity
-			newspeed = speed - drop;
+			newspeed = speed - TheNomad::SGame::sgame_Friction.GetFloat();
 			if ( newspeed < 0.0f ) {
 				newspeed = 0.0f;
 			}
@@ -102,7 +115,7 @@ namespace TheNomad::Engine::Physics {
 			
 			point = m_EntityData.GetOrigin();
 			bounds = m_EntityData.GetBounds();
-			tile = LevelManager.GetMapData().GetTile( point, bounds );
+			tile = TheNomad::SGame::LevelManager.GetMapData().GetTile( point, bounds );
 			
 			if ( ( tile & SURFACEPARM_WATER ) != 0 || ( tile & SURFACEPARM_LAVA ) != 0 ) {
 				m_nWaterType = WaterType( tile );
@@ -111,14 +124,14 @@ namespace TheNomad::Engine::Physics {
 				// check the level below us
 				bounds.m_Mins.z--;
 				bounds.m_Maxs.z--;
-				tile = LevelManager.GetMapData().GetTile( point, bounds );
+				tile = TheNomad::SGame::LevelManager.GetMapData().GetTile( point, bounds );
 				if ( ( tile & SURFACEPARM_WATER ) != 0 || ( tile & SURFACEPARM_LAVA ) != 0 ) {
 					m_nWaterLevel = 2; // swimming now
 					
 					// check the level above us
 					bounds.m_Mins.z += 2;
 					bounds.m_Maxs.z += 2;
-					tile = LevelManager.GetMapData().GetTile( point, bounds );
+					tile = TheNomad::SGame::LevelManager.GetMapData().GetTile( point, bounds );
 					if ( ( tile & SURFACEPARM_WATER ) != 0 || ( tile & SURFACEPARM_LAVA ) != 0 ) {
 						m_nWaterLevel = 3; // fully submerged
 					}
@@ -174,5 +187,6 @@ namespace TheNomad::Engine::Physics {
         private vec3 m_Acceleration = vec3( 0.0f );
         private float m_nAngle = 0.0f;
         private int m_nWaterLevel = 0;
+		private WaterType m_nWaterType = WaterType::None;
     };
 };

@@ -298,13 +298,50 @@ float NormalizeColor( const vec3_t in, vec3_t out ) {
 }
 
 dirtype_t Angle2Dir( float angle ) {
-	//TODO:
-	return NUMDIRS;
+	if ( ( angle >= 337.5f && angle <= 360.0f ) || ( angle >= 0.0f && angle <= 22.5f ) ) {
+		return DIR_NORTH;
+	} else if ( angle >= 22.5f && angle <= 67.5f ) {
+		return DIR_NORTH_EAST;
+	} else if ( angle >= 67.5f && angle <= 112.5f ) {
+		return DIR_EAST;
+	} else if ( angle >= 112.5f && angle <= 157.5f ) {
+		return DIR_SOUTH_EAST;
+	} else if ( angle >= 157.5f && angle <= 202.5f ) {
+		return DIR_SOUTH;
+	} else if ( angle >= 202.5f && angle <= 247.5f ) {
+		return DIR_SOUTH_WEST;
+	} else if ( angle >= 247.5f && angle <= 292.5f ) {
+		return DIR_WEST;
+	} else if ( angle >= 292.5f && angle <= 337.5f ) {
+		return DIR_NORTH_WEST;
+	} else {
+		Con_Printf( COLOR_YELLOW "WARNING: Angle2Dir: funny angle %f\n", angle );
+	}
+	return DIR_NORTH;
 }
 
 float Dir2Angle( dirtype_t dir ) {
-	//TODO:
-	return 0.0f;
+	switch ( dir ) {
+	case DIR_NORTH:
+		return 0.0f;
+	case DIR_NORTH_EAST:
+		return 45.0f;
+	case DIR_EAST:
+		return 90.0f;
+	case DIR_SOUTH_EAST:
+		return 135.0f;
+	case DIR_SOUTH:
+		return 180.0f;
+	case DIR_SOUTH_WEST:
+		return 225.0f;
+	case DIR_WEST:
+		return 270.0f;
+	case DIR_NORTH_WEST:
+		return 315.0f;
+	default:
+		Con_Printf( COLOR_YELLOW "WARNING: Dir2Angle: invalid dir %i", (int)dir );
+	};
+	return -1.0f;
 }
 
 dirtype_t DirFromPoint( const vec3_t v ) {
@@ -525,7 +562,7 @@ Given a normalized forward vector, create two
 other perpendicular vectors
 ================
 */
-void MakeNormalVectors( const vec3_t forward, vec3_t right, vec3_t up) {
+void MakeNormalVectors( const vec3_t forward, vec3_t right, vec3_t up ) {
 	float		d;
 
 	// this rotate and negate guarantees a vector

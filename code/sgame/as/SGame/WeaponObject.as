@@ -177,6 +177,11 @@ namespace TheNomad::SGame {
 			GameError( "WeaponObject::Think: called" );
 		}
 		void Spawn( uint id, const vec3& in origin ) override {
+			@m_Info = @InfoSystem::InfoManager.GetWeaponInfo( id );
+			if ( @m_Info is null ) {
+				GameError( "WeaponObject::Spawn: invalid weapon id " + id );
+			}
+
 			m_nID = id;
 			m_Link.m_Origin = origin;
 			m_Link.m_Bounds.MakeBounds( origin );

@@ -40,6 +40,7 @@ namespace TheNomad::SGame {
 			float smove, fmove;
 			float velocity;
 			float wishspeed;
+			float accelerate;
 			
 			if ( !groundPlane ) {
 				return;
@@ -57,12 +58,12 @@ namespace TheNomad::SGame {
 			wishvel[0] = northmove * fmove + eastmove * smove;
 			wishvel[1] = southmove * fmove + westmove * smove;
 			wishvel[2] = upmove;
+
+			accelerate = sgame_AirSpeed.GetFloat();
 			
 			wishdir = wishvel;
 			wishspeed = Util::VectorNormalize( wishdir );
-			wishspeed *= scale;
-			
-			accelerate = sgame_AirSpeed.GetFloat();
+			wishspeed *= accelerate;
 			
 			Accelerate( wishdir, wishspeed, accelerate );
 			Util::VectorScale( vel, velocity, vel );
@@ -75,6 +76,7 @@ namespace TheNomad::SGame {
 			float smove, fmove;
 			float velocity;
 			float wishspeed;
+			float accelerate;
 			
 			if ( !groundPlane ) {
 				return;
@@ -92,10 +94,12 @@ namespace TheNomad::SGame {
 			wishvel[0] = northmove * fmove + eastmove * smove;
 			wishvel[1] = southmove * fmove + westmove * smove;
 			wishvel[2] = upmove;
+
+			accelerate = sgame_BaseSpeed.GetFloat();
 			
 			wishdir = wishvel;
 			wishspeed = Util::VectorNormalize( wishdir );
-			wishspeed *= scale;
+			wishspeed *= accelerate;
 			
 			// clamp the speed lower if wading or walking on the bottom
 			if ( m_EntityData.GetWaterLevel() > 0 ) {
@@ -104,12 +108,12 @@ namespace TheNomad::SGame {
 				waterScale = m_EntityData.GetWaterLevel() / 3.0f;
 				waterScale = 1.0f - ( 1.0f - sgame_SwimSpeed.GetFloat() ) * waterScale;
 				if ( wishspeed > vel * waterScale ) {
-					wishspeed = m_nSpeed * waterScale;
+					wishspeed = sgame_SwimSpeed.GetFloat() * waterScale;
 				}
 			}
 			
-			Accelerate( wishdir, wishspeed, accelerate );
-			Util::VectorScale( vel, velocity, vel );
+//			Accelerate( wishdir, wishspeed, accelerate );
+//			Util::VectorScale( vel, velocity, vel );
 			m_EntityData.GetPhysicsObject().SetAcceleration( vel );
 		}
 		
@@ -145,21 +149,19 @@ namespace TheNomad::SGame {
 		}
 		
 		void Accelerate( const vec3& in wishdir, float wishspeed, float accel ) {
-			int i;
-			float addspeed, accelspeed, currentspeed;
 			vec3 vel = m_EntityData.GetPhysicsObject().GetAcceleration();
 			
-			currentspeed = Util::DotProduct( m_Velocity );
-			addspeed = wishspeed - currentspeed;
+			float currentspeed = Util::DotProduct( vel, vel );
+			float addspeed = wishspeed - currentspeed;
 			if ( addspeed <= 0.0f ) {
 				return;
 			}
-			accelspeed = accel * TheNomad::GameSystem::GameManager.GetGameTic() * wishspeed;
+			float accelspeed = accel * TheNomad::GameSystem::GameManager.GetGameTic() * wishspeed;
 			if ( accelspeed > addspeed ) {
 				accelspeed = addspeed;
 			}
 			
-			for ( i = 0; i < 3; i++ ) {
+			for ( int i = 0; i < 3; i++ ) {
 				vel[i] += accelspeed * wishdir[i];
 			}
 			m_EntityData.GetPhysicsObject().SetAcceleration( vel );
@@ -254,11 +256,20 @@ namespace TheNomad::SGame {
 				flags &= ~PMF_JUMP_HELD;
 			}
 			CheckJump();
+
+			groundPlane = upmove == 0;
 			
 			if ( m_EntityData.GetWaterLevel() > 1 ) {
-				WaterMove();
+//				WaterMove();
 			} else if ( groundPlane ) {
-				WalkMove();
+				vec3 accel = m_EntityData.GetPhysicsObject().GetAcceleration();
+
+				accel.y -= northmove;
+				accel.y += southmove;
+				accel.x -= westmove;
+				accel.x += eastmove;
+
+				m_EntityData.GetPhysicsObject().SetAcceleration( accel );
 			} else {
 				AirMove();
 			}
@@ -304,7 +315,7 @@ namespace TheNomad::SGame {
 			m_EntityData.key_MoveSouth.msec = 0;
 			m_EntityData.key_MoveEast.msec = 0;
 			m_EntityData.key_MoveWest.msec = 0;
-			
+
 			m_EntityData.GetPhysicsObject().OnRunTic();
 		}
 		

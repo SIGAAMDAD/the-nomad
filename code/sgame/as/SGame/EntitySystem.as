@@ -49,6 +49,9 @@ namespace TheNomad::SGame {
 			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
 				TheNomad::Engine::CommandSystem::CommandFunc( @this.SetPlayerPosition_f ), "sgame.set_player_position", true
 			);
+			TheNomad::Engine::CommandSystem::CmdManager.AddCommand(
+				TheNomad::Engine::CommandSystem::CommandFunc( @this.PrintPlayerState_f ), "sgame.player_state", true
+			);
 		}
 		
 		void OnInit() {
@@ -340,6 +343,11 @@ namespace TheNomad::SGame {
 			return m_EntityList.Count();
 		}
 
+		void PrintPlayerState_f() {
+			ConsolePrint( "\n" );
+			ConsolePrint( "[PLAYER STATE]\n" );
+			ConsolePrint( "Origin: [ " + m_PlayrObject.GetOrigin().x + ", " + m_PlayrObject.GetOrigin().y + " ]\n" );
+		}
 		void SetPlayerPosition_f() {
 			const float x = Convert().ToFloat( TheNomad::Engine::CmdArgv( 1 ) );
 			const float y = Convert().ToFloat( TheNomad::Engine::CmdArgv( 2 ) );

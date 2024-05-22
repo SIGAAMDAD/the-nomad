@@ -14,10 +14,7 @@ namespace TheNomad::SGame {
 		void Down() {
 			uint k;
 			string c;
-			
-			DebugPrint( "key down: " + TheNomad::Engine::CmdArgv( 0 ) + " " + TheNomad::Engine::CmdArgv( 1 ) + " "
-				+ TheNomad::Engine::CmdArgv( 2 ) + "\n" );
-			
+
 			c = TheNomad::Engine::CmdArgv( 1 );
 			if ( c.size() > 0 ) {
 				k = Convert().ToUInt( c );
@@ -46,9 +43,6 @@ namespace TheNomad::SGame {
 		}
 		
 		void Up() {
-			DebugPrint( "key up: " + TheNomad::Engine::CmdArgv( 0 ) + " " + TheNomad::Engine::CmdArgv( 1 ) + " "
-				+ TheNomad::Engine::CmdArgv( 2 ) + "\n" );
-
 			int uptime;
 			uint k;
 			string c;

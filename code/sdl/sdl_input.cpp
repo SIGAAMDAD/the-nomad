@@ -687,7 +687,9 @@ static void IN_InitJoystick( void )
 		Con_Printf( COLOR_YELLOW "WARNING: too many input devices for split-screen coop, setting to maximum of %i\n", total );
 		numInputDevices = total;
 	}
-	Cvar_Set( "in_numInputDevices", va( "%i", numInputDevices ) );
+	cv = Cvar_Get( "in_numInputDevices", va( "%i", numInputDevices ), CVAR_TEMP );
+	Cvar_CheckRange( cv, "0", "4", CVT_INT );
+	Cvar_SetDescription( cv, "Sets the number of input devices that are handled by the engine.\nNOTE: only used for split-screen co-op." );
 
 	stick_states = (stick_state *)S_Malloc( sizeof( stick_state ) * numInputDevices );
 	for ( i = 0; i < numInputDevices; i++ ) {
@@ -709,10 +711,6 @@ static void IN_InitJoystick( void )
 		Con_Printf( "Use Analog: %s\n", in_joystickUseAnalog->i ? "Yes" : "No" );
 		Con_Printf( "Is gamepad: %s\n", gamepads[i] ? "Yes" : "No" );
 	}
-
-	cv = Cvar_Get( "in_numInputDevices", in_joystick->i ? "1" : "0", CVAR_TEMP );
-	Cvar_CheckRange( cv, "0", "4", CVT_INT );
-	Cvar_SetDescription( cv, "Sets the number of input devices that are handled by the engine.\nNOTE: only used for split-screen co-op." );
 
 	IN_InitHaptic();
 
@@ -1312,7 +1310,7 @@ void HandleEvents( void )
 			if ( in_joystick->i ) {
 				numInputDevices--;
 				if ( numInputDevices < 0 ) {
-					Assert( numInputDevices >= 0 );
+					Assert( numInputDevices > 0 );
 					numInputDevices = 0;
 				}
 				IN_InitJoystick();
