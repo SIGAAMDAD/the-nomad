@@ -1085,9 +1085,9 @@ static void G_KeyDownEvent(uint32_t key, uint32_t time)
 		if ( sgvm ) {
 			g_pModuleLib->ModuleCall( sgvm, ModuleOnKeyEvent, 2, key, qtrue );
 		}
+		// send the bound action
+		Key_ParseBinding( key, qtrue, time );
 	}
-	// send the bound action
-	Key_ParseBinding( key, qtrue, time );
 }
 
 static void G_KeyUpEvent(uint32_t key, uint32_t time)
@@ -1112,8 +1112,8 @@ static void G_KeyUpEvent(uint32_t key, uint32_t time)
 		if ( sgvm ) {
 			g_pModuleLib->ModuleCall( sgvm, ModuleOnKeyEvent, 2, key, qfalse );
 		}
+		Key_ParseBinding( key, qfalse, time );
 	}
-	Key_ParseBinding( key, qfalse, time );
 }
 
 static void Key_Unbind_f( void )

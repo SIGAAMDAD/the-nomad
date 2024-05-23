@@ -12,7 +12,7 @@ namespace TheNomad::SGame {
 		}
 		
 		void Run() {
-			if ( uint( m_nOldTic + m_nNumFrames ) > TheNomad::GameSystem::GameManager.GetGameTic() ) {
+			if ( m_nOldTic + m_nNumFrames > TheNomad::GameSystem::GameManager.GetGameTic() ) {
 				return;
 			}
 			
@@ -67,9 +67,9 @@ namespace TheNomad::SGame {
 		}
 		
         private string m_Name;
-		private int64 m_nOldTic = 0;
+		private int m_nOldTic = 0;
 		private int m_nNumFrames = 1;
-		private int m_nTicRate = 35;
+		private int m_nTicRate = 1;
 		private int m_nCurrentFrame = 0;
 		private bool m_bOscillate = false;
 		private EntityState@ m_State = null;

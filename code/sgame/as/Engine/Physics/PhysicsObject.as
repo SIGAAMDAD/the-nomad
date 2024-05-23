@@ -52,18 +52,25 @@ namespace TheNomad::Engine::Physics {
             mapBounds.m_Mins = vec3( 0.0f, 0.0f, 0.0f );
             mapBounds.m_Maxs = vec3( float( TheNomad::SGame::LevelManager.GetMapData().GetWidth() ),
                 float( TheNomad::SGame::LevelManager.GetMapData().GetHeight() ), 0 );
+			vec3 origin = m_EntityData.GetOrigin();
 
             if ( !Util::BoundsIntersect( m_EntityData.GetBounds(), mapBounds ) ) {
                 const float width = m_EntityData.GetBounds().m_Maxs.x - m_EntityData.GetBounds().m_Mins.x;
                 const float height = m_EntityData.GetBounds().m_Maxs.y - m_EntityData.GetBounds().m_Mins.y;
                 m_EntityData.SetOrigin( vec3( width, height, m_EntityData.GetOrigin().z ) );
             }
-            if ( m_EntityData.GetOrigin().x < 0.0f ) {
-                m_EntityData.SetOrigin( vec3( 0.0f, m_EntityData.GetOrigin().y, m_EntityData.GetOrigin().z ) );
+            if ( origin.x < 0.0f ) {
+                m_EntityData.SetOrigin( vec3( 0.0f, origin.y, origin.z ) );
             }
-            if ( m_EntityData.GetOrigin().y < 0.0f ) {
-                m_EntityData.SetOrigin( vec3( m_EntityData.GetOrigin().x, 0.0f, m_EntityData.GetOrigin().z ) );
+            if ( origin.y < 0.0f ) {
+                m_EntityData.SetOrigin( vec3( origin.x, 0.0f, origin.z ) );
 		    }
+			if ( origin.x >= TheNomad::SGame::LevelManager.GetMapData().GetWidth() ) {
+				m_EntityData.SetOrigin( vec3( TheNomad::SGame::LevelManager.GetMapData().GetWidth() - 1, origin.y, origin.z ) );
+			}
+			if ( origin.y >= TheNomad::SGame::LevelManager.GetMapData().GetHeight() ) {
+				m_EntityData.SetOrigin( vec3( origin.x, TheNomad::SGame::LevelManager.GetMapData().GetHeight() - 1, origin.z ) );
+			}
 		}
 		
 		void ApplyFriction() {

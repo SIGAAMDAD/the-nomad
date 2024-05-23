@@ -97,7 +97,7 @@ icons/iconw_db
     }
 }
 
-icons/iconw_fullauto_shotty
+icons/iconw_fab
 {
     nopicmip
     nomipmaps

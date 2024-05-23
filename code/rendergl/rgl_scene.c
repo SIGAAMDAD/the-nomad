@@ -239,9 +239,6 @@ void RE_BeginScene( const renderSceneRef_t *fd )
 
     backend.refdef.drawn = qfalse;
 
-//    ri.Printf( PRINT_DEVELOPER, "Generated %lu polys %lu polyVerts %lu entities %lu dlights\n", r_numPolys - r_firstScenePoly,
-//        r_numPolyVerts - r_firstSceneVert, r_numEntities - r_firstSceneEntity, r_numDLights - r_firstSceneDLight );
-
     rg.frameSceneNum++;
     rg.frameCount++;
 }

@@ -108,7 +108,9 @@ void CModuleHandle::Build( const nlohmann::json& sourceFiles ) {
     int error;
 
     for ( const auto& it : sourceFiles ) {
-        LoadSourceFile( it );
+        if ( !LoadSourceFile( it ) ) {
+            N_Error( ERR_DROP, "CModuleHandle::Build: failed to compile source file '%s'", it.get<string_t>().c_str() );
+        }
     }
 
     try {
@@ -373,7 +375,7 @@ bool CModuleHandle::InitCalls( void )
     return true;
 }
 
-void CModuleHandle::LoadSourceFile( const string_t& filename )
+bool CModuleHandle::LoadSourceFile( const string_t& filename )
 {
     union {
         void *v;
@@ -384,12 +386,13 @@ void CModuleHandle::LoadSourceFile( const string_t& filename )
 
     length = FS_LoadFile( va( "modules/%s/%s", m_szName.c_str(), filename.c_str() ), &f.v );
     if ( !f.v ) {
-        N_Error( ERR_DROP, "CModuleHandle::LoadSourceFile: failed to load source file '%s'", filename.c_str() );
+        return false;
     }
     
     retn = g_pModuleLib->GetScriptBuilder()->AddSectionFromMemory( filename.c_str(), f.b, length );
     if ( retn < 0 ) {
         Con_Printf( COLOR_RED "ERROR: failed to add source file '%s' -- %s\n", filename.c_str(), AS_PrintErrorString( retn ) );
+        return false;
     }
 
     FS_FreeFile( f.v );
@@ -418,6 +421,8 @@ void CModuleHandle::LoadSourceFile( const string_t& filename )
         Con_Printf( COLOR_RED "ERROR: failed to add source file '%s' -- %s\n", filename.c_str(), AS_PrintErrorString( retn ) );
     }
     */
+
+   return true;
 }
 
 #define AS_CACHE_CODE_IDENT (('C'<<24)+('B'<<16)+('S'<<8)+'A')

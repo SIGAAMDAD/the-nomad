@@ -210,6 +210,10 @@ vec4 sharpenImage( sampler2D tex, vec2 pos )
 
 void main() {
     a_Color = sharpenImage( u_DiffuseMap, v_TexCoords );
+    if ( a_Color.a == 0.0 ) {
+        discard;
+    }
+
     ApplyLighting();
 
 #if defined(USE_HDR)

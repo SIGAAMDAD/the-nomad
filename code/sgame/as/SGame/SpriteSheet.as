@@ -24,8 +24,9 @@ namespace TheNomad::SGame {
 			m_hShader = TheNomad::Engine::Renderer::RegisterSpriteSheet( fileName, uint( sheetSize.x ), uint( sheetSize.y ),
 				uint( spriteSize.x ), uint( spriteSize.y ) );
 
-//			m_hShader = TheNomad::Engine::Renderer::RegisterShader( fileName );
 /*
+			m_hShader = TheNomad::Engine::Renderer::RegisterShader( fileName );
+
 			DebugPrint( "Processing sprite sheet '" + fileName + "', SpriteCount: [ " + m_nSpriteCountX + ", " + m_nSpriteCountY + " ]\n" );
 
 			for ( uint y = 0; y < m_nSpriteCountY; y++ ) {

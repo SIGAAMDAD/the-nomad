@@ -79,12 +79,13 @@ public:
 	const nlohmann::json& GetIncludePaths( void ) const {
 		return m_IncludePaths;
 	}
+
+	bool LoadSourceFile( const string_t& filename );
 private:
 	void RegisterGameObject( void );
 	void PrepareContext( asIScriptFunction *pFunction );
 	void Build( const nlohmann::json& sourceFiles );
     bool InitCalls( void );
-    void LoadSourceFile( const string_t& filename );
 
 	string_t m_szName;
 

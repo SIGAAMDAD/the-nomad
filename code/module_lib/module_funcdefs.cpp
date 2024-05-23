@@ -819,22 +819,8 @@ static void AddEntityToScene( asIScriptGeneric *pGeneric ) {
 }
 
 static void AddPolyToScene( nhandle_t hShader, const CScriptArray *pPolyList ) {
-    polyVert_t *verts;
-    const asIScriptObject *pObject;
-    uint32_t i;
-
-    verts = (polyVert_t *)alloca( sizeof( *verts ) * pPolyList->GetSize() );
-    for ( i = 0; i < pPolyList->GetSize(); i++ ) {
-        pObject = (const asIScriptObject *)pPolyList->At( i );
-        if ( pObject->GetObjectType()->GetSize() != sizeof( *verts ) ) {
-            N_Error( ERR_DROP, "RE_AddPolyToScene: only submit PolyVert objects to this, not \"%s\"", pObject->GetObjectType()->GetName() );
-        }
-
-        // TODO: this, cache the properties
-    }
-
     CThreadAutoLock<CThreadMutex> lock( g_hRenderLock );
-    re.AddPolyToScene( hShader, verts, pPolyList->GetSize() );
+    re.AddPolyToScene( hShader, (const polyVert_t *)pPolyList->GetBuffer(), pPolyList->GetSize() );
 }
 
 static void AddSpriteToScene( const vec3 *origin, nhandle_t hSpriteSheet, nhandle_t hSprite ) {
@@ -869,6 +855,12 @@ static nhandle_t RegisterSprite( nhandle_t hSpriteSheet, uint32_t nIndex ) {
 
 static void CastRay( ray_t *ray ) {
     g_world->CastRay( ray );
+}
+
+static void TransformCameraFromWorld( asIScriptGeneric *pGeneric ) {
+    const vec3& origin = *(const vec3 *)pGeneric->GetArgObject( 0 );
+
+    gi.cameraPos = gi.viewProjectionMatrix * glm::vec4( origin.x, gi.mapCache.info.height - origin.y, gi.cameraZoom, 1.0f );
 }
 
 static bool CheckWallHit( const vec3 *origin, dirtype_t dir ) {
@@ -1078,7 +1070,7 @@ static uint64_t LoadFile( const string_t *fileName, CScriptArray *buffer ) {
     return length;
 }
 
-static void GetModuelDependencies( CScriptArray *depList, const string_t *modName ) {
+static void GetModuleDependencies( CScriptArray *depList, const string_t *modName ) {
     const CModuleInfo *info = g_pModuleLib->GetModule( modName->c_str() );
 
     if ( !info ) {
@@ -1089,6 +1081,53 @@ static void GetModuelDependencies( CScriptArray *depList, const string_t *modNam
     depList->Resize( info->m_Dependencies.size() );
     for ( uint64_t i = 0; info->m_Dependencies.size(); i++ ) {
         *(string_t *)depList->At( i ) = info->m_Dependencies[i].c_str();
+    }
+}
+
+static void AddScriptSectionToModule( asIScriptGeneric *pGeneric )
+{
+    const string_t& moduleName = *(const string_t *)pGeneric->GetArgObject( 0 );
+    const string_t& fileName = *(const string_t *)pGeneric->GetArgObject( 1 );
+    CModuleInfo *pHandle;
+
+    pHandle = g_pModuleLib->GetModule( moduleName.c_str() );
+    if ( !pHandle ) {
+        N_Error( ERR_DROP, "Util::AddScriptSectionToModule: invalid module '%s'", moduleName.c_str() );
+    }
+
+    Con_Printf( "Loading dynamic module section '%s'...\n", fileName.c_str() );
+
+    if ( !pHandle->m_pHandle->LoadSourceFile( fileName ) ) {
+        pGeneric->SetReturnDWord( false );
+        return;
+    }
+
+    CheckASCall( pHandle->m_pHandle->GetModule()->Build() );
+
+    pGeneric->SetReturnDWord( true );
+}
+
+static void LoadFunctionFromSection( asIScriptGeneric *pGeneric )
+{
+    char szName[MAX_STRING_CHARS];
+    const string_t& moduleName = *(const string_t *)pGeneric->GetArgObject( 0 );
+    const string_t& funcName = *(const string_t *)pGeneric->GetArgObject( 1 );
+    const string_t& section = *(const string_t *)pGeneric->GetArgObject( 2 );
+    asIScriptFunction **pFunction = (asIScriptFunction **)pGeneric->GetArgObject( 3 );
+    CModuleInfo *pHandle;
+
+    pHandle = g_pModuleLib->GetModule( moduleName.c_str() );
+    if ( !pHandle ) {
+        N_Error( ERR_DROP, "Util::LoadFunctionFromSection: invalid module '%s'", moduleName.c_str() );
+    }
+
+    Com_snprintf( szName, sizeof( szName ) - 1, "TheNomad::SGame::%s::%s", section.c_str(), funcName.c_str() );
+
+    Con_Printf( "Loading dynamic script function proc '%s' from '%s'...\n", szName, section.c_str() );
+
+    *pFunction = pHandle->m_pHandle->GetModule()->GetFunctionByName( szName );
+    if ( !*pFunction ) {
+        Con_Printf( COLOR_YELLOW "Failed to load dynamic function proc '%s'.\n", szName );
     }
 }
 
@@ -1362,15 +1401,15 @@ static void DebugPrint( asIScriptGeneric *pGeneric ) {
 //
 // script globals
 //
-static const int8_t script_S_COLOR_BLACK = S_COLOR_BLACK;
-static const int8_t script_S_COLOR_RED = S_COLOR_RED;
-static const int8_t script_S_COLOR_GREEN = S_COLOR_GREEN;
-static const int8_t script_S_COLOR_YELLOW = S_COLOR_YELLOW;
-static const int8_t script_S_COLOR_BLUE = S_COLOR_BLUE;
-static const int8_t script_S_COLOR_CYAN = S_COLOR_CYAN;
-static const int8_t script_S_COLOR_MAGENTA = S_COLOR_MAGENTA;
-static const int8_t script_S_COLOR_WHITE = S_COLOR_WHITE;
-static const int8_t script_S_COLOR_RESET = S_COLOR_RESET;
+static const int32_t script_S_COLOR_BLACK = S_COLOR_BLACK;
+static const int32_t script_S_COLOR_RED = S_COLOR_RED;
+static const int32_t script_S_COLOR_GREEN = S_COLOR_GREEN;
+static const int32_t script_S_COLOR_YELLOW = S_COLOR_YELLOW;
+static const int32_t script_S_COLOR_BLUE = S_COLOR_BLUE;
+static const int32_t script_S_COLOR_CYAN = S_COLOR_CYAN;
+static const int32_t script_S_COLOR_MAGENTA = S_COLOR_MAGENTA;
+static const int32_t script_S_COLOR_WHITE = S_COLOR_WHITE;
+static const int32_t script_S_COLOR_RESET = S_COLOR_RESET;
 
 static const string_t script_COLOR_BLACK = COLOR_BLACK;
 static const string_t script_COLOR_RED = COLOR_RED;
@@ -2412,6 +2451,8 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_FUNCTION( "bool TheNomad::GameSystem::CheckWallHit( const vec3& in, TheNomad::GameSystem::DirType )", WRAP_FN( CheckWallHit ) );
 		
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetCheckpointData( uvec3& out, uint )", WRAP_FN( G_GetCheckpointData ) );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::GameSystem::TransformCameraFromWorld( const vec3& in )",
+            asFUNCTION( TransformCameraFromWorld ), asCALL_GENERIC );
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::GameSystem::GetSpawnData( uvec3& out, uint& out, uint& out, uint, uint& out )",
             asFUNCTION( GetSpawnData ), asCALL_GENERIC );
         REGISTER_GLOBAL_FUNCTION( "void TheNomad::GameSystem::GetTileData( array<array<uint>>@ )", WRAP_FN( GetTileData ) );
@@ -2447,8 +2488,12 @@ void ModuleLib_Register_Engine( void )
             "float TheNomad::Util::Distance( const vec3& in, const vec3& in )", WRAP_FN_PR( disBetweenOBJ, ( const vec3&, const vec3& ), float ), asCALL_GENERIC );
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
             "float TheNomad::Util::Distance( const uvec3& in, const uvec3& in )", WRAP_FN_PR( disBetweenOBJ, ( const uvec3_t, const uvec3_t ), unsigned ), asCALL_GENERIC );
-            g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
             "float TheNomad::Util::Distance( const ivec3& in, const ivec3& in )", WRAP_FN_PR( disBetweenOBJ, ( const ivec3_t, const ivec3_t ), int ), asCALL_GENERIC );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+            "bool TheNomad::Util::AddScriptSectionToModule( const string& in, const string& in )", asFUNCTION( AddScriptSectionToModule ), asCALL_GENERIC );
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction(
+            "bool TheNomad::Util::LoadFunctionFromSection( const string& in, const string& in, const string& in, ?& out )", asFUNCTION( LoadFunctionFromSection ), asCALL_GENERIC );
         REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Util::BoundsIntersect( const TheNomad::GameSystem::BBox& in, const TheNomad::GameSystem::BBox& in )", WRAP_FN_PR( BoundsIntersect, ( const CModuleBoundBox *, const CModuleBoundBox * ), bool ) );
         REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Util::BoundsIntersectPoint( const TheNomad::GameSystem::BBox& in, const vec3& in )", WRAP_FN_PR( BoundsIntersectPoint, ( const CModuleBoundBox *, const vec3 * ), bool ) );
         REGISTER_GLOBAL_FUNCTION( "bool TheNomad::Util::BoundsIntersectSphere( const TheNomad::GameSystem::BBox& in, const vec3& in, float )", WRAP_FN_PR( BoundsIntersectSphere, ( const CModuleBoundBox *, const vec3 *, float ), bool ) );
@@ -2502,15 +2547,15 @@ void ModuleLib_Register_Engine( void )
         REGISTER_GLOBAL_VAR( "const string COLOR_WHITE", &script_COLOR_WHITE );
         REGISTER_GLOBAL_VAR( "const string COLOR_RESET", &script_COLOR_RESET );
 
-        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_BLACK", &script_S_COLOR_BLACK );
-        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_RED", &script_S_COLOR_RED );
-        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_GREEN", &script_S_COLOR_GREEN );
-        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_YELLOW", &script_S_COLOR_YELLOW );
-        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_BLUE", &script_S_COLOR_BLUE );
-        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_CYAN", &script_S_COLOR_CYAN );
-        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_MAGENTA", &script_S_COLOR_MAGENTA );
-        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_WHITE", &script_S_COLOR_WHITE );
-        REGISTER_GLOBAL_VAR( "const int8 S_COLOR_RESET", &script_S_COLOR_RESET );
+        REGISTER_GLOBAL_VAR( "const int32 S_COLOR_BLACK", &script_S_COLOR_BLACK );
+        REGISTER_GLOBAL_VAR( "const int32 S_COLOR_RED", &script_S_COLOR_RED );
+        REGISTER_GLOBAL_VAR( "const int32 S_COLOR_GREEN", &script_S_COLOR_GREEN );
+        REGISTER_GLOBAL_VAR( "const int32 S_COLOR_YELLOW", &script_S_COLOR_YELLOW );
+        REGISTER_GLOBAL_VAR( "const int32 S_COLOR_BLUE", &script_S_COLOR_BLUE );
+        REGISTER_GLOBAL_VAR( "const int32 S_COLOR_CYAN", &script_S_COLOR_CYAN );
+        REGISTER_GLOBAL_VAR( "const int32 S_COLOR_MAGENTA", &script_S_COLOR_MAGENTA );
+        REGISTER_GLOBAL_VAR( "const int32 S_COLOR_WHITE", &script_S_COLOR_WHITE );
+        REGISTER_GLOBAL_VAR( "const int32 S_COLOR_RESET", &script_S_COLOR_RESET );
 
         REGISTER_GLOBAL_VAR( "const uint32 RSF_NOWORLDMODEL", &script_RSF_NORWORLDMODEL );
         REGISTER_GLOBAL_VAR( "const uint32 RSF_ORTHO_TYPE_CORDESIAN", &script_RSF_ORTHO_TYPE_CORDESIAN );

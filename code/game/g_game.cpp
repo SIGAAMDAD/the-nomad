@@ -208,14 +208,11 @@ static void G_RefImGuiInit( void *shaderData, const void *importData ) {
 
 static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, const glm::mat4& vpm )
 {
-    glm::mat4 viewProjectionMatrix;
     glm::mat4 mvp, model;
     glm::vec4 pos;
 
-    viewProjectionMatrix = vpm;
-
     model = glm::translate( glm::mat4( 1.0f ), glm::vec3( world[0], world[1], world[2] ) );
-    mvp = viewProjectionMatrix * model;
+    mvp = gi.viewProjectionMatrix * model;
 
     const glm::vec4 positions[4] = {
 #if 0
@@ -246,8 +243,8 @@ static void GLM_TransformCameraPosition( const glm::mat4& viewProjectionMatrix )
     glm::vec4 position;
     glm::mat4 model, mvp;
 
-    model = glm::translate( viewProjectionMatrix, glm::vec3( gi.cameraPos[0], gi.cameraPos[1], gi.cameraZoom ) );
-    mvp  = viewProjectionMatrix * model;
+    model = glm::translate( gi.viewProjectionMatrix, glm::vec3( gi.cameraPos[0], gi.cameraPos[1], gi.cameraZoom ) );
+    mvp  = gi.viewProjectionMatrix * model;
 
     position = mvp * glm::vec4( 0.0f, 0.0f, 0.0f, 1.0f );
 }
@@ -255,27 +252,31 @@ static void GLM_TransformCameraPosition( const glm::mat4& viewProjectionMatrix )
 static void GLM_MakeVPM( const vec4_t ortho, float *zoom, float zNear, float zFar, vec3_t origin, mat4_t vpm,
     mat4_t projection, mat4_t view, uint32_t orthoFlags )
 {
-    glm::mat4 viewProjectionMatrix, projectionMatrix, viewMatrix, transpose;
+    glm::mat4 transpose;
+    glm::vec4 position;
 
     // first transform the origin
-    projectionMatrix = glm::ortho( ortho[0], ortho[1], ortho[2], ortho[3], zNear, zFar );
+    gi.projectionMatrix = glm::ortho( ortho[0], ortho[1], ortho[2], ortho[3], zNear, zFar );
 
     if ( ( orthoFlags & RSF_ORTHO_BITS ) != RSF_ORTHO_TYPE_SCREENSPACE ) {
-        transpose = glm::translate( glm::mat4( 1.0f ), glm::vec3( gi.cameraPos[0], gi.cameraPos[1], 0.0f ) )
+        position = gi.projectionMatrix * glm::vec4( gi.cameraPos[0], gi.mapCache.info.height - gi.cameraPos[1], 0.0f, 1.0f );
+        transpose = glm::translate( glm::mat4( 1.0f ), glm::vec3( position.x, position.y, 0.0f ) )
                     * glm::scale( glm::mat4( 1.0f ), glm::vec3( gi.cameraZoom ) );
-        viewMatrix = glm::inverse( transpose );
-        viewProjectionMatrix = projectionMatrix * viewMatrix;
+//        transpose = glm::translate( glm::mat4( 1.0f ), glm::vec3( gi.cameraPos[0], gi.cameraPos[1], 0.0f ) )
+//                    * glm::scale( glm::mat4( 1.0f ), glm::vec3( gi.cameraZoom ) );
+        gi.viewMatrix = glm::inverse( transpose );
+        gi.viewProjectionMatrix = gi.projectionMatrix * gi.viewMatrix;
     } else {
-        viewMatrix = glm::mat4( 1.0f );
-        viewProjectionMatrix = projectionMatrix;
+        gi.viewMatrix = glm::mat4( 1.0f );
+        gi.viewProjectionMatrix = gi.projectionMatrix;
     }
 
     VectorCopy( origin, gi.cameraPos );
     *zoom = gi.cameraZoom;
 
-    memcpy( &projection[0][0], &projectionMatrix[0][0], sizeof( mat4_t ) );
-    memcpy( &view[0][0], &viewMatrix[0][0], sizeof( mat4_t ) );
-    memcpy( &vpm[0][0], &viewProjectionMatrix[0][0], sizeof( mat4_t ) );
+    memcpy( &projection[0][0], &gi.projectionMatrix[0][0], sizeof( mat4_t ) );
+    memcpy( &view[0][0], &gi.viewMatrix[0][0], sizeof( mat4_t ) );
+    memcpy( &vpm[0][0], &gi.viewProjectionMatrix[0][0], sizeof( mat4_t ) );
 }
 
 void G_SetCameraData( const vec2_t origin, float zoom, float rotation ) {
@@ -297,16 +298,13 @@ static float *GLM_Mat4Transform( const mat4_t m, const vec4_t p ) {
 
 static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, float scale, float rotation, mat4_t vpm )
 {
-    glm::mat4 viewProjectionMatrix;
     glm::mat4 mvp, model;
     glm::vec4 pos;
 
-    memcpy( &viewProjectionMatrix[0][0], &vpm[0][0], sizeof( mat4_t ) );
-
-    model = glm::translate( viewProjectionMatrix, glm::vec3( world[0], world[1], world[2] ) )
+    model = glm::translate( gi.viewProjectionMatrix, glm::vec3( world[0], world[1], world[2] ) )
             * glm::scale( glm::mat4( 1.0f ), glm::vec3( scale, scale, 0.0f ) )
             * glm::rotate( glm::mat4( 1.0f ), (float)DEG2RAD( rotation ), glm::vec3( 0, 0, 1 ) );
-    mvp = viewProjectionMatrix * model;
+    mvp = gi.viewProjectionMatrix * model;
 
     const glm::vec4 positions[4] = {
         { 1.0f,  1.0f, 0.0f, 1.0f },

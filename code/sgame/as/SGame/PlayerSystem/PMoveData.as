@@ -278,6 +278,12 @@ namespace TheNomad::SGame {
 			angle = atan2( ( screenWidth / 2 ) - mousePos.x, ( screenHeight / 2 ) - mousePos.y );
 			dir = Util::Angle2Dir( angle );
 			
+			if ( eastmove > westmove ) {
+				m_EntityData.SetFacing( FACING_RIGHT );
+			} else if ( westmove > eastmove ) {
+				m_EntityData.SetFacing( FACING_LEFT );
+			}
+
 			switch ( dir ) {
 			case TheNomad::GameSystem::DirType::North:
 			case TheNomad::GameSystem::DirType::South:
@@ -356,22 +362,22 @@ namespace TheNomad::SGame {
 			
 			up += int( movespeed * KeyState( m_EntityData.key_Jump ) );
 			
-			forward += int( movespeed * KeyState( m_EntityData.key_MoveNorth ) );
-			forward -= int( movespeed * KeyState( m_EntityData.key_MoveSouth ) );
+			forward -= int( movespeed * KeyState( m_EntityData.key_MoveNorth ) );
+			forward += int( movespeed * KeyState( m_EntityData.key_MoveSouth ) );
 			
 			northmove = southmove = 0.0f;
-			if ( forward > 0 ) {
+//			if ( forward > 0 ) {
 				northmove = Util::Clamp( KeyState( m_EntityData.key_MoveNorth ), -sgame_MaxSpeed.GetFloat(), sgame_MaxSpeed.GetFloat() );
-			} else if ( forward < 0 ) {
+//			} else if ( forward < 0 ) {
 				southmove = Util::Clamp( KeyState( m_EntityData.key_MoveSouth ), -sgame_MaxSpeed.GetFloat(), sgame_MaxSpeed.GetFloat() );
-			}
+//			}
 
 			westmove = eastmove = 0.0f;
-			if ( side > 0 ) {
+//			if ( side > 0 ) {
 				eastmove = Util::Clamp( KeyState( m_EntityData.key_MoveEast ), -sgame_MaxSpeed.GetFloat(), sgame_MaxSpeed.GetFloat() );
-			} else if ( side < 0 ) {
+//			} else if ( side < 0 ) {
 				westmove = Util::Clamp( KeyState( m_EntityData.key_MoveWest ), -sgame_MaxSpeed.GetFloat(), sgame_MaxSpeed.GetFloat() );
-			}
+//			}
 		}
 		
 		PlayrObject@ m_EntityData = null;

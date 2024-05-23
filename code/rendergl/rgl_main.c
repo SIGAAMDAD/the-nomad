@@ -127,7 +127,17 @@ static void R_RadixSort( srfPoly_t *source, uint32_t size )
     ri.Hunk_FreeTempMemory( scratch );
 }
 
-extern uint64_t r_numPolys, r_numPolyVerts, r_numQuads, r_numEntities;
+extern uint64_t r_numEntities;
+extern uint64_t r_firstSceneEntity;
+
+extern uint64_t r_numDLights;
+extern uint64_t r_firstSceneDLight;
+
+extern uint64_t r_numPolys;
+extern uint64_t r_firstScenePoly;
+
+extern uint64_t r_numPolyVerts;
+extern uint64_t r_firstSceneVert;
 
 static int SortPoly( const void *a, const void *b ) {
     return (int)( ( (srfPoly_t *)a )->hShader - ( (srfPoly_t *)b )->hShader );
@@ -207,39 +217,41 @@ void R_DrawPolys( void )
     assert( backend.refdef.polys );
 
     for ( i = 0; i < backend.refdef.numPolys; i++ ) {
-        if ( oldShader != poly->hShader ) {
+        if ( oldShader != backend.refdef.polys[i].hShader ) {
             // if we have a new shader, flush the current batch
             RB_FlushBatchBuffer();
-            oldShader = poly->hShader;
-            backend.drawBatch.shader = R_GetShaderByHandle( poly->hShader );
+            oldShader = backend.refdef.polys[i].hShader;
+            backend.drawBatch.shader = R_GetShaderByHandle( backend.refdef.polys[i].hShader );
         }
 		
-		if ( backend.drawBatch.vtxOffset + poly->numVerts >= r_maxPolys->i * 4
-			|| backend.drawBatch.idxOffset + ( (int64_t)( poly->numVerts ) - 2 ) >= r_maxPolys->i * 6 )
+		if ( backend.drawBatch.vtxOffset + backend.refdef.polys[i].numVerts >= r_maxPolys->i * 4
+			|| backend.drawBatch.idxOffset + ( (int64_t)( backend.refdef.polys[i].numVerts ) - 2 ) >= r_maxPolys->i * 6 )
 		{
 			RB_FlushBatchBuffer();
 		}
-        if ( poly->numVerts == 4 && ( backend.refdef.flags & RSF_ORTHO_BITS ) == RSF_ORTHO_TYPE_WORLD ) {
+        if ( backend.refdef.polys[i].numVerts == 4 && ( backend.refdef.flags & RSF_ORTHO_BITS ) == RSF_ORTHO_TYPE_WORLD ) {
             vec3_t origin;
 
-            VectorCopy( origin, poly->verts[0].worldPos );
-            ri.GLM_TransformToGL( origin, xyz, poly->scale, poly->rotation, glState.viewData.camera.viewProjectionMatrix );
+            VectorCopy( origin, backend.refdef.polys[i].verts[0].worldPos );
+            ri.GLM_TransformToGL( origin, xyz, backend.refdef.polys[i].scale, backend.refdef.polys[i].rotation,
+                glState.viewData.camera.viewProjectionMatrix );
+            
 
-            for ( j = 0; j < poly->numVerts; ++j ) {
-                VectorCopy( poly->verts[j].xyz, xyz[j] );
+            for ( j = 0; j < backend.refdef.polys[i].numVerts; ++j ) {
+                VectorCopy( backend.refdef.polys[i].verts[j].xyz, xyz[j] );
             }
         }
         
 		// generate fan indexes into the buffer
-		for ( j = 0; j < poly->numVerts - 2; j++ ) {
+		for ( j = 0; j < backend.refdef.polys[i].numVerts - 2; j++ ) {
 			backendData->indices[ backend.drawBatch.idxOffset + 0 ] = backend.drawBatch.vtxOffset;
 			backendData->indices[ backend.drawBatch.idxOffset + 1 ] = backend.drawBatch.vtxOffset + j + 1;
 			backendData->indices[ backend.drawBatch.idxOffset + 2 ] = backend.drawBatch.vtxOffset + j + 2;
 			backend.drawBatch.idxOffset += 3;
 			
 			// generate normals
-			VectorSubtract( backend.refdef.polys[i].verts[ j ].xyz, poly->verts[ j + 1 ].xyz, edge1 );
-			VectorSubtract( backend.refdef.polys[i].verts[ j ].xyz, poly->verts[ j + 2 ].xyz, edge2 );
+			VectorSubtract( backend.refdef.polys[i].verts[ j ].xyz, backend.refdef.polys[i].verts[ j + 1 ].xyz, edge1 );
+			VectorSubtract( backend.refdef.polys[i].verts[ j ].xyz, backend.refdef.polys[i].verts[ j + 2 ].xyz, edge2 );
 			CrossProduct( edge1, edge2, normal );
 			R_VaoPackNormal( backendData->verts[ backend.drawBatch.vtxOffset + j ].normal, normal );
 			VectorCopy( backendData->verts[ backend.drawBatch.vtxOffset + j + 1 ].normal,
@@ -248,7 +260,7 @@ void R_DrawPolys( void )
                 backendData->verts[ backend.drawBatch.vtxOffset + j + 0 ].normal );
 		}
 		
-		for ( j = 0; j < poly->numVerts; j++ ) {
+		for ( j = 0; j < backend.refdef.polys[i].numVerts; j++ ) {
 //            ri.Printf( PRINT_INFO, "verts[%i]: %f, %f, %f\n", j, backendData->verts[ backend.drawBatch.vtxOffset + j ].xyz[0],
 //                backendData->verts[ backend.drawBatch.vtxOffset + j ].xyz[1], backendData->verts[ backend.drawBatch.vtxOffset + j ].xyz[2] );
 			VectorCopy( backendData->verts[ backend.drawBatch.vtxOffset ].xyz, backend.refdef.polys[i].verts[j].xyz );
@@ -368,7 +380,7 @@ void R_RenderView( const viewData_t *parms )
     R_IssuePendingRenderCommands();
 
     RE_ProcessEntities();
-
+    
     // draw the tilemap
     R_DrawWorld();
 

@@ -495,13 +495,13 @@ namespace TheNomad::SGame {
 			int hLegSprite = FS_INVALID_HANDLE;
 			TheNomad::Engine::Renderer::RenderEntity refEntity;
 
-//			m_Link.m_Origin = vec3( 0.0f, 0.0f, 0.0f );
-
 			refEntity.origin = m_Link.m_Origin;
 			refEntity.sheetNum = m_SpriteSheet.GetShader();
-			refEntity.spriteId = 0;
+			refEntity.spriteId = 0 + m_Facing;
 			refEntity.scale = 2.0f;
-			refEntity.Draw();
+//			refEntity.Draw();
+			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, refEntity.sheetNum, refEntity.spriteId );
+//			TheNomad::Engine::Renderer::AddPolyToScene( m_SpriteSheet.GetShader(), verts );
 			
 			//
 			// draw the legs
@@ -540,6 +540,14 @@ namespace TheNomad::SGame {
 					@m_LegState = @StateManager.GetStateForNum( StateNum::ST_PLAYR_LEGS_MOVE_GROUND );
 				}
 			}
+
+			refEntity.origin = m_Link.m_Origin;
+			refEntity.sheetNum = m_SpriteSheet.GetShader();
+			refEntity.spriteId = 29 + m_LegsFacing;
+			refEntity.scale = 2.0f;
+//			refEntity.Draw();
+			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, refEntity.sheetNum, refEntity.spriteId );
+//			TheNomad::Engine::Renderer::AddPolyToScene( m_SpriteSheet.GetShader(), verts );
 			
 //			hLegSprite = m_LegState.GetSpriteOffset().y * m_SpriteSheet.GetSpriteCountX() +
 //				m_LegState.GetSpriteOffset().x + m_LegState.GetAnimation().GetFrame() + m_LegsFacing;
@@ -554,6 +562,8 @@ namespace TheNomad::SGame {
 		
 		// toggled with "sgame_SaveLastUsedWeaponModes"
 		private InfoSystem::WeaponProperty[] m_WeaponModes( 9 );
+
+		TheNomad::Engine::Renderer::PolyVert[] verts( 4 );
 		
 		// 9 weapons in total
 		WeaponObject@[] m_WeaponSlots( 9 );
