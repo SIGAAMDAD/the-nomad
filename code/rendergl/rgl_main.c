@@ -395,19 +395,6 @@ static void R_CalcSpriteTextureCoords( uint32_t x, uint32_t y, uint32_t spriteWi
     const vec2_t min = { ( ( (float)x + 1 ) * spriteWidth ) / sheetWidth, ( ( (float)y + 1 ) * spriteHeight ) / sheetHeight };
     const vec2_t max = { ( (float)x * spriteWidth ) / sheetWidth, ( (float)y * spriteHeight ) / sheetHeight };
 
-#if 0
-    texCoords[0][0] = min[0];
-    texCoords[0][1] = min[1];
-
-    texCoords[1][0] = min[0];
-    texCoords[1][1] = max[1];
-
-    texCoords[2][0] = max[0];
-    texCoords[2][1] = max[1];
-
-    texCoords[3][0] = max[0];
-    texCoords[3][1] = min[1];
-#else
     texCoords[0][0] = min[0];
     texCoords[0][1] = max[1];
 
@@ -419,7 +406,6 @@ static void R_CalcSpriteTextureCoords( uint32_t x, uint32_t y, uint32_t spriteWi
     
     texCoords[3][0] = max[0];
     texCoords[3][1] = max[1];
-#endif
 }
 
 /*

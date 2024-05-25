@@ -185,6 +185,31 @@ typedef struct {
     mapCache_t mapCache;
     
     float cameraZoom;
+
+    // demo information
+    char demoName[MAX_OSPATH];
+    char recordName[MAX_OSPATH]; // without extension
+    qboolean explicitRecordName;
+    char recordNameShort[TRUNCATE_LENGTH]; // for recording message
+    qboolean spDemoRecording;
+    qboolean demorecording;
+    qboolean demoplaying;
+    qboolean demowaiting;
+    qboolean firstDemoFrameSkipped;
+
+    fileHandle_t demofile;
+    fileHandle_t recordfile;
+
+    int timeDemoFrames;   // counter of rendered frames
+    int timeDemoStart;    // gi.realtime before first frame
+    int timeDemoBaseTime; // each frame will be at this time + frameNum * 50
+
+    // simultaneous demo playback and recording
+    int eventMask;
+    int demoCommandSequence;
+    int demoDeltaNum;
+    int demoMessageSequence;
+
 #ifdef __cplusplus
     glm::vec3 cameraPos;
     glm::vec3 cameraWorldPos;
@@ -193,6 +218,15 @@ typedef struct {
     glm::mat4 projectionMatrix;
 #endif
 } gameInfo_t;
+
+#define USE_GAMEKEY
+// file full of random crap that gets used to create g_guid
+#define GAMEKEY_FILE "gamekey"
+#define GAMEKEY_SIZE 2048
+
+#define EM_GAMESTATE 1
+#define EM_SNAPSHOT  2
+#define EM_COMMAND   4
 
 extern field_t g_consoleField;
 extern gameInfo_t gi;

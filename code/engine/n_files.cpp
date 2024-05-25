@@ -4,6 +4,7 @@
 #include "../system/sys_timer.h"
 #include "../system/sys_thread.h"
 #include "gln_files.h"
+#include "unzip.h"
 
 // every time a new demo bff file is built, this checksum must be updated.
 // the easiest way to get it is to just run the game and see what it spits out
@@ -34,41 +35,53 @@ typedef struct {
 } bffheader_t;
 
 // tunables
-// #define USE_BFF_CACHE_FILE // cache the bff archives into a file for faster load times
+#define USE_BFF_CACHE
+#define USE_BFF_CACHE_FILE // cache the bff archives into a file for faster load times
 
-typedef struct fileInBFF_s
-{
+//#define USE_HANDLE_CACHE
+#define MAX_CACHED_HANDLES 528
+
+typedef struct fileInBFF_s {
+#ifdef USE_ZIP
+	char					*name;		// name of the file
+	unsigned long			pos;		// file info position in zip
+	unsigned long			size;		// file size
+	struct	fileInBFF_s*	next;		// next file in the hash
+#else
 	char *name;
 	char *buf;
 	int64_t nameLen;
 	int64_t size;
     int64_t bytesRead;
+	int64_t pos;
 	struct fileInBFF_s *next;
+#endif
 } fileInBFF_t;
 
 typedef struct bffFile_s
 {
-	char *bffBasename;
-	char *bffFilename;
-	char bffGamename[MAX_BFF_PATH];
-
-	uint64_t numfiles;
-	uint64_t hashSize;
+	char *bffBasename;					// c:\The Nomad\gamedata\bff0.bff
+	char *bffFilename;					// bff0
+//	char *bffGamename;
+	char bffGamename[MAX_BFF_PATH];		// gamedata
+#ifdef USE_ZIP
+	unzFile handle;						// handle to zip file
+#else
+	FILE *handle;						// handle to os file
+#endif
+	uint32_t referenced;				// referenced file flags
+	uint32_t checksum;					// regular checksum
+	uint32_t pure_checksum;				// checksum for pure
+	qboolean exclude;					// found in \fs_excludeReference list
+	uint64_t numfiles;					// number of files in bff
+	uint64_t hashSize;					// hash table size (power of 2)
+	fileInBFF_t **hashTable;			// hash table
+	fileInBFF_t *buildBuffer;			// buffer with the filenames etc.
 	int64_t index;
-
-	FILE *handle;
-
-	fileInBFF_t **hashTable;
-	fileInBFF_t *buildBuffer;
-	
-	uint32_t referenced;
 	uint32_t handlesUsed;
-	uint32_t checksum;
-	uint32_t pure_checksum;
-	qboolean exclude;
 
 #ifdef USE_HANDLE_CACHE
-	struct bffFile_s	*next_h;						// double-linked list of unreferenced paks with open file handles
+	struct bffFile_s	*next_h;		// double-linked list of unreferenced bffs with open file handles
 	struct bffFile_s	*prev_h;
 #endif
 
@@ -82,18 +95,22 @@ typedef struct bffFile_s
 	struct bffFile_s *next;
 	struct bffFile_s *prev;
 	uint32_t checksumFeed;
+	uint32_t *headerLongs;
+	uint32_t numHeaderLongs;
 #endif
 } bffFile_t;
 
-typedef union
-{
+typedef union {
 	FILE *fp;
+#ifdef USE_ZIP
+	unzFile chunk;
+#else
 	fileInBFF_t *chunk;
+#endif
 	void *stream;
 } fileData;
 
-typedef struct
-{
+typedef struct {
 	char name[MAX_NPATH];
 
 	fileData data;
@@ -101,6 +118,11 @@ typedef struct
 	int64_t bffIndex;
 	bffFile_t *bff;
 	qboolean bffFile;
+	qboolean handleSync;
+#ifdef USE_ZIP
+	int zipFilePos;
+	int zipFileLen;
+#endif
 	qboolean tmp;
 	qboolean used;
 	qboolean mapped;
@@ -113,14 +135,12 @@ typedef enum : uint64_t
 	DIR_CONST,		// read-only access
 } diraccess_t;
 
-typedef struct
-{
+typedef struct {
 	char *path;
 	char *gamedir;
 } directory_t;
 
-typedef struct searchpath_s
-{
+typedef struct searchpath_s {
 	directory_t *dir;
 	bffFile_t *bff;
 	struct searchpath_s *next;
@@ -140,9 +160,7 @@ static uint32_t		fs_checksumFeed;
 static searchpath_t *fs_searchpaths;
 static cvar_t		*fs_excludeReference;
 static cvar_t		*fs_homepath;
-#ifdef USE_HANDLE_CACHE
 static cvar_t		*fs_locked;
-#endif
 #ifdef __APPLE__
 // Also search the .app bundle for .bff files
 static cvar_t		*fs_apppath;
@@ -166,6 +184,9 @@ static uint64_t		fs_bffChunks;
 static uint64_t		fs_dirCount;
 
 int64_t		fs_lastBFFIndex;
+
+void Com_AppendCDKey( const char *filename );
+void Com_ReadCDKey( const char *filename );
 
 static fileHandleData_t handles[MAX_FILE_HANDLES];
 
@@ -556,6 +577,12 @@ void FS_VM_FClose(fileHandle_t f, handleOwner_t owner)
 	}
 	
 	FS_FClose(f);
+}
+
+static fnamecallback_f fnamecallback = NULL;
+
+void FS_SetFilenameCallback( fnamecallback_f func )  {
+	fnamecallback = func;
 }
 
 qboolean FS_Initialized( void ) {
@@ -1135,6 +1162,9 @@ static qboolean FS_GeneralRef( const char *filename )
 
 static void FS_OpenChunk( const char *name, fileInBFF_t *chunk, fileHandleData_t *f, bffFile_t *bff )
 {
+#ifdef USE_ZIP
+	unz_s *zfi;
+#endif
 	if ( !( bff->referenced & FS_GENERAL_REF ) && FS_GeneralRef( chunk->name ) ) {
 		bff->referenced |= FS_GENERAL_REF;
 	}
@@ -1145,13 +1175,42 @@ static void FS_OpenChunk( const char *name, fileInBFF_t *chunk, fileHandleData_t
 		bff->referenced |= FS_UI_REF;
 	}
 
+
+	if ( !bff->handle ) {
+#ifdef USE_ZIP
+		bff->handle = unzOpen( bff->bffFilename );
+#else
+		bff->handle = Sys_FOpen( bff->bffFilename, "rb" );
+#endif
+		if ( !bff->handle ) {
+			Con_Printf( COLOR_RED "Error opening %s@%s\n", bff->bffBasename, name );
+			memset( f, 0, sizeof( *f ) );
+			return;
+		}
+	}
+
+#ifdef USE_ZIP
+	zfi = (unz_s *)bff->handle;
+	unzSetCurrentFileInfoPosition( bff->handle, chunk->pos );
+	// set the file position in the zip file (also sets the current file info)
+	unzSetCurrentFileInfoPosition( pak->handle, pakFile->pos );
+	// copy the file info into the unzip structure
+	memcpy( zfi, bff->handle, sizeof( *zfi ) );
+	// we copy this back into the structure
+	zfi->file = (unz_s *)bff->handle;
+	// open the file in the zip
+	unzOpenCurrentFile( f->data.chunk );
+	f->zipFilePos = pakFile->pos;
+	f->zipFileLen = pakFile->size;
+#endif
+
 	f->bff = bff;
 	f->bffIndex = bff->index;
 	f->bffFile = qtrue;
 	f->data.chunk = chunk;
 	f->used = qtrue;
 	fs_lastBFFIndex = bff->index;
-	N_strncpyz( f->name, chunk->name, sizeof(f->name) );
+	N_strncpyz( f->name, chunk->name, sizeof( f->name ) );
 
 	bff->handlesUsed++;
 }
@@ -1204,8 +1263,22 @@ static uint64_t FS_ReturnPath( const char *bffname, char *bffpath, uint64_t *dep
 }
 
 /*
-FS_ListFilteredFiles: returns a unique list of files that match the given criteria
-from all search paths
+===========
+FS_ConvertPath
+===========
+*/
+static void FS_ConvertPath( char *s ) {
+	while (*s) {
+		if ( *s == '\\' || *s == ':' ) {
+			*s = '/';
+		}
+		s++;
+	}
+}
+
+/*
+* FS_ListFilteredFiles: returns a unique list of files that match the given criteria
+* from all search paths
 */
 static char **FS_ListFilteredFiles( const char *path, const char *extension, const char *filter, uint64_t *numfiles, uint32_t flags )
 {
@@ -1282,23 +1355,31 @@ static char **FS_ListFilteredFiles( const char *path, const char *extension, con
 
 					length = strlen( name );
 
-					if ( length < extLen ) {
-						continue;
-					}
-					
-					if ( *extension ) {
-						if ( hasPatterns ) {
-							x = strrchr( name, '.' );
-							if ( !x || !Com_FilterExt( extension, x + 1 ) ) {
-								continue;
+					if ( fnamecallback ) {
+						// use custom filter
+						if ( !fnamecallback( name, length ) ) {
+							continue;
+						}
+					} else {
+						if ( length < extLen ) {
+							continue;
+						}
+
+						if ( *extension ) {
+							if ( hasPatterns ) {
+								x = strrchr( name, '.' );
+								if ( !x || !Com_FilterExt( extension, x + 1 ) ) {
+									continue;
+								}
+							}
+							else {
+								if ( N_stricmp( name + length - extLen, extension ) ) {
+									continue;
+								}
 							}
 						}
-						else {
-							if ( N_stricmp( name + length - extLen, extension ) ) {
-								continue;
-							}
-						}
 					}
+
 					// unique the match
 					temp = pathLength;
 					if ( pathLength ) {
@@ -1424,36 +1505,28 @@ BFF FILE LOADING
 ==========================================================
 */
 
-static uint64_t fs_bffsReaded;		// actually read from the disk
-static uint64_t fs_bffsReleased;	// unreferenced bffs since last FS restart
+#ifdef USE_BFF_CACHE
 
-static uint64_t fs_bffsCached;		// read from cache file
-static uint64_t fs_bffsSkipped;		// outdated/non-existent cache file bff entries
+#define BFF_HASH_SIZE 512
 
-static qboolean fs_cacheLoaded = qfalse;
-static qboolean fs_cacheSynced = qtrue;
+static void FS_FreeBFF( bffFile_t *bff );
+static bffFile_t *bffHashTable[ BFF_HASH_SIZE ];
 
 #ifdef USE_BFF_CACHE_FILE
 
 #define CACHE_FILE_NAME "bffcache.dat"
 #define CACHE_SYNC_CONDITION ( fs_bffsReaded + fs_bffsSkipped + fs_bffsReaded >= NUM_GDR_BFFS )
 
+static uint64_t fs_bffsCached;		// read from cache file
+static uint64_t fs_bffsSkipped;		// outdated/non-existent cache file bff entries
+
+static uint64_t fs_bffsReaded;		// actually read from the disk
+static uint64_t fs_bffsReleased;	// unreferenced bffs since last FS restart
+
+static qboolean fs_cacheLoaded = qfalse;
+static qboolean fs_cacheSynced = qtrue;
+
 #pragma pack( push, 1 )
-
-typedef struct {
-	uint64_t bffNameLen;
-	uint64_t numFiles;
-	uint64_t contentLen;
-	fileTime_t ctime;	// creation/status change time
-	fileTime_t mtime;	// modification time
-	fileOffset_t size;	// bff file size
-} bffCacheHeader_t;
-
-typedef struct {
-	char *name;
-	uint64_t size;
-	uint64_t pos;
-} bffCacheFileItem_t;
 
 // platform-specific 4-byte signature:
 // 0: [version] anything following depends from it
@@ -1463,7 +1536,7 @@ typedef struct {
 // non-matching header will cause whole file being ignored
 static const byte cache_header[ 4 ] = {
 	0, //version
-#ifdef Q3_LITTLE_ENDIAN
+#ifdef GDR_LITTLE_ENDIAN
 	0x0,
 #else
 	0x1,
@@ -1472,13 +1545,103 @@ static const byte cache_header[ 4 ] = {
 	( ( sizeof( fileOffset_t ) - 1 ) << 4 ) | ( sizeof( fileTime_t ) - 1 )
 };
 
+typedef struct {
+	uint64_t bffNameLen;
+	uint64_t numFiles;
+	uint64_t contentLen;
+	uint64_t numHeaderLongs;
+	uint64_t namesLen;
+	fileTime_t ctime;	// creation/status change time
+	fileTime_t mtime;	// modification time
+	fileOffset_t size;	// bff file size
+} bffCacheHeader_t;
+
+typedef struct {
+	uint64_t name;
+	uint64_t size;
+	uint64_t pos;
+} bffCacheFileItem_t;
+
 #pragma pack(pop)
 
 #endif // USE_BFF_CACHE_FILE
 
-#define MAX_BFF_HASH 64
+#ifdef USE_HANDLE_CACHE
 
-static bffFile_t *bffHashTable[MAX_BFF_HASH];
+static uint64_t	hbffsCount;
+static bffFile_t *hhead;
+
+static void FS_RemoveFromHandleList( bffFile_t *bff )
+{
+	if ( bff->next_h != bff ) {
+		// cut bff from list
+		bff->next_h->prev_h = bff->prev_h;
+		bff->prev_h->next_h = bff->next_h;
+		if ( hhead == bff ) {
+			hhead = bff->next_h;
+		}
+	} else {
+#if defined(_DEBUG) || !defined(NDEBUG)
+		if ( hhead != bff ) {
+			N_Error( ERR_DROP, "%s(): invalid head pointer", __func__ );
+		}
+#endif
+		hhead = NULL;
+	}
+
+	bff->next_h = NULL;
+	bff->prev_h = NULL;
+	
+	hbffsCount--;
+
+#if defined(_DEBUG) || !defined(NDEBUG)
+	if ( hbffsCount < 0 ) {
+		N_Error( ERR_DROP, "%s(): negative bffs count", __func__ );
+	}
+
+	if ( hbffsCount == 0 && hhead != NULL ) {
+		N_Error( ERR_DROP, "%s(): non-null head with zero bffs count", __func__ );
+	}
+#endif
+}
+
+
+static void FS_AddToHandleList( bffFile_t *bff )
+{
+#if defined(_DEBUG) || !defined(NDEBUG)
+	if ( !bff->handle ) {
+		N_Error( ERR_DROP, "%s(): invalid bff handle", __func__ );
+	}
+	if ( bff->next_h || bff->prev_h ) {
+		N_Error( ERR_DROP, "%s(): invalid bff pointers", __func__ );
+	}
+#endif
+	while ( hbffsCount >= MAX_CACHED_HANDLES ) {
+		bffFile_t *file = hhead->prev_h; // tail item
+#if defined(_DEBUG) || !defined(NDEBUG)
+		if ( file->handle == NULL || file->handlesUsed != 0 ) {
+			N_Error( ERR_DROP, "%s(): invalid bff handle", __func__ );
+		}
+#endif
+		fclose( file->handle );
+		file->handle = NULL;
+		FS_RemoveFromHandleList( file );
+	} 
+
+	if ( hhead == NULL ) {
+		bff->next_h = bff;
+		bff->prev_h = bff;
+	} else {
+		hhead->prev_h->next_h = bff;
+		bff->prev_h = hhead->prev_h;
+		hhead->prev_h = bff;
+		bff->next_h = hhead;
+	}
+
+	hhead = bff;
+	hbffsCount++;
+}
+#endif
 
 static uint32_t FS_HashBFF( const char *name )
 {
@@ -1487,7 +1650,24 @@ static uint32_t FS_HashBFF( const char *name )
 		hash = hash * 101 + c;
 	}
 	hash = hash ^ ( hash >> 16 );
-	return hash & ( MAX_BFF_HASH-1 );
+	return hash & ( BFF_HASH_SIZE-1 );
+}
+
+static bffFile_t *FS_FindInCache( const char *zipfile )
+{
+	bffFile_t *bff;
+	uint32_t hash;
+
+	hash = FS_HashBFF( zipfile );
+	bff = bffHashTable[ hash ];
+	while ( bff ) {
+		if ( !strcmp( zipfile, bff->bffFilename ) ) {
+			return bff;
+		}
+		bff = bff->next;
+	}
+
+	return NULL;
 }
 
 uint64_t FS_BFFHashSize( uint32_t fileCount )
@@ -1503,72 +1683,64 @@ uint64_t FS_BFFHashSize( uint32_t fileCount )
 	return hashSize;
 }
 
+static void FS_AddToCache( bffFile_t *bff )
+{
+	bff->namehash = FS_HashBFF( bff->bffGamename );
+	bff->next = bffHashTable[ bff->namehash ];
+	bff->prev = NULL;
+	if ( bffHashTable[ bff->namehash ] ) {
+		bffHashTable[ bff->namehash ] = bff;
+	}
+	bffHashTable[ bff->namehash ] = bff;
+}
+
+/*
+=================
+FS_FreeBFF
+
+Frees a bff structure and releases all associated resources
+=================
+*/
 static void FS_FreeBFF( bffFile_t *bff )
 {
-	fileInBFF_t *file;
-	uint64_t i;
-
 	if ( !bff ) {
 		N_Error( ERR_FATAL, "FS_FreeBFF(NULL)" );
 	}
 
-	for ( i = 0; i < bff->numfiles; i++ ) {
-		file = &bff->buildBuffer[i];
-
-		if ( file->buf ) {
-			Z_Free( file->buf );
+	if ( bff->handle ) {
+#ifdef USE_HANDLE_CACHE
+		if ( bff->next_h ) {
+			FS_RemoveFromHandleList( bff );
 		}
-		if ( file->name ) {
-			Z_Free( file->name );
-		}
+#endif
+	#ifdef USE_ZIP
+		unzClose( bff->handle );
+	#else
+		fclose( bff->handle );
+	#endif
+		bff->handle = NULL;
 	}
 
 	Z_Free( bff );
 }
 
-#ifdef USE_BFF_CACHE_FILE
-
-static bffFile_t *FS_FindInCache( const char *bffFile )
-{
-	bffFile_t *bff;
-	uint64_t hash;
-
-	hash = FS_HashBFF( bffFile );
-	bff = bffHashTable[hash];
-	while ( bff ) {
-		if ( !strcmp( bffFile, bff->bffGamename ) ) {
-			return bff;
-		}
-		bff = bff->next;
-	}
-	return NULL;
-}
-
 static void FS_RemoveFromCache( bffFile_t *bff )
 {
-	if ( !bff->next && !bff->prev && bffHashTable[bff->nameHash] != bff ) {
+	if ( !bff->next && !bff->prev && bffHashTable[bff->namehash] != bff ) {
 		N_Error( ERR_FATAL, "Invalid BFF Link" );
 	}
 
-	if ( bff->prev )
+	if ( bff->prev ) {
 		bff->prev->next = bff->next;
-	else
-		bffHashTable[bff->nameHash] = bff->next;
+	} else {
+		bffHashTable[bff->namehash] = bff->next;
+	}
 	
-	if ( bff->next )
+	if ( bff->next ) {
 		bff->next->prev = bff->prev;
+	}
 }
 
-static void FS_AddToCache( bffFile_t *bff )
-{
-	bff->nameHash = FS_HashBFF(bff->bffGamename);
-	bff->next = bffHashTable[bff->nameHash];
-	bff->prev = NULL;
-	if ( bffHashTable[bff->nameHash] )
-		bffHashTable[bff->nameHash]->prev = bff;
-	
-	bffHashTable[bff->nameHash] = bff;
-}
 
 static bffFile_t *FS_LoadCachedBFF( const char *bffpath )
 {
@@ -1586,7 +1758,7 @@ static bffFile_t *FS_LoadCachedBFF( const char *bffpath )
 		return NULL;
 	}
 
-	if ( bff->size != stats.size || bff->mtime != stats.mtime || bff->ctime != ctime ) {
+	if ( bff->size != stats.size || bff->mtime != stats.mtime || bff->ctime != stats.ctime ) {
 		// release outdated information
 		FS_RemoveFromCache( bff );
 		FS_FreeBFF( bff );
@@ -1613,10 +1785,11 @@ static void FS_ResetCacheReferences( void )
 	bffFile_t *bff;
 	uint64_t i;
 
-	for ( i = 0; i < arraylen(bffHashTable); i++ ) {
+	for ( i = 0; i < arraylen( bffHashTable ); i++ ) {
 		bff = bffHashTable[i];
 		while ( bff ) {
 			bff->touched = qfalse;
+			bff->referenced = 0;
 			bff = bff->next;
 		}
 	}
@@ -1634,65 +1807,413 @@ static void FS_FreeUnusedCache( void )
 			if ( !bff->touched ) {
 				FS_RemoveFromCache( bff );
 				FS_FreeBFF( bff );
+#ifdef USE_BFF_CACHE_FILE
 				fs_bffsReleased++;
+#endif
 			}
 			bff = next;
 		}
 	}
 }
 
+#ifdef USE_BFF_CACHE_FILE
+
 static void FS_WriteCacheHeader( FILE *f )
 {
-	fwrite( cache_header, sizeof(cache_header), 1, f );
+	fwrite( cache_header, sizeof( cache_header ), 1, f );
 }
 
 static qboolean FS_ValidateCacheHeader( FILE *f )
 {
 	byte buf[ sizeof(cache_header) ];
 
-	if ( fread( buf, sizeof(buf), 1, f ) != 1 ) {
+	if ( fread( buf, sizeof( buf ), 1, f ) != 1 ) {
 		return qfalse;
 	}
 
-	if ( memcmp( buf, cache_header, sizeof(buf) ) != 0 ) {
+	if ( memcmp( buf, cache_header, sizeof( buf ) ) != 0 ) {
 		return qfalse;
 	}
 	
 	return qtrue;
 }
 
+static void FS_WriteCachedItems( const bffFile_t *bff, char *namePtr, FILE *f )
+{
+	// had to separate this because g++ refused to compile an if-statement in FS_SaveBFFToFile
+	uint64_t i;
+	bffCacheFileItem_t it;
+
+	for ( i = 0; i < bff->numfiles; i++ ) {
+		it.name = (uint64_t)( bff->buildBuffer[i].name - namePtr );
+		it.size = bff->buildBuffer[i].size;
+		it.pos = bff->buildBuffer[i].pos;
+		fwrite( &it, sizeof( it ), 1, f );
+	}
+}
+
 static qboolean FS_SaveBFFToFile( const bffFile_t *bff, FILE *f )
 {
-	uint64_t i, bffNameLen;
+	uint64_t bffNameLen;
 	const char *bffName;
-	bffCacheHeader_t bff;
+	bffCacheHeader_t header;
+	uint64_t namesLen, contentLen;
+	char *namePtr;
+	uint64_t i;
 	bffCacheFileItem_t it;
+
+	namePtr = (char *)( bff->buildBuffer + bff->numfiles );
 
 	bffName = bff->bffFilename;
 	bffNameLen = strlen( bffName ) + 1;
-	bffNameLen = PAD( bffNameLen, sizeof(uintptr_t) );
+	bffNameLen = PAD( bffNameLen, sizeof( uintptr_t ) );
 
-	memset( &bff, 0, sizeof(bff) );
+	namesLen = bffName - namePtr;
+
+	// file content length
+	contentLen = 0;
+
+	memset( &header, 0, sizeof( header ) );
 
 	// bff filename length
-	bff.bffNameLen = bffNameLen;
+	header.bffNameLen = bffNameLen;
+	// filenames length
+	header.namesLen = namesLen;
 	// number of files
-	bff.numFiles = bff->numfiles;
+	header.numFiles = bff->numfiles;
+	// number of checksums
+	header.numHeaderLongs = bff->numHeaderLongs;
 	// creation/status change time
-	bff.ctime = bff->ctime;
+	header.ctime = bff->ctime;
 	// modification time
-	bff.mtime = bff->mtime;
+	header.mtime = bff->mtime;
 	// bff file size
-	bff.size = bff->size;
+	header.size = bff->size;
 
 	// dump header
-	fwrite( &bff, sizeof(bff), 1, f );
+	fwrite( &header, sizeof( header ), 1, f );
 
 	// bff filename
 	fwrite( bffName, bffNameLen, 1, f );
+
+	// filenames
+	fwrite( namePtr, namesLen, 1, f );
+
+	// file entries
+	for ( i = 0; i < bff->numfiles; i++ ) {
+		it.name = (uint64_t)( bff->buildBuffer[i].name - namePtr );
+		it.size = bff->buildBuffer[i].size;
+		it.pos = bff->buildBuffer[i].pos;
+		fwrite( &it, sizeof( it ), 1, f );
+	}
+
+	// pure checksums, excluding first uninitialized
+	fwrite( bff->headerLongs + 1, ( bff->numHeaderLongs - 1 ) * sizeof( bff->headerLongs[0] ), 1, f );
+
+	return qtrue;
 }
 
-#endif
+static qboolean FS_LoadBffFromFile( FILE *f )
+{
+	fileStats_t stats;
+	fileOffset_t fsize;
+	fileInBFF_t *curFile;
+	char bffName[ PAD( MAX_OSPATH*3+1, sizeof( int ) ) ];
+	char bffBase[ PAD( MAX_OSPATH, sizeof( int ) ) ], *basename;
+	char *filename_inbff;
+	bffCacheHeader_t header;
+	bffCacheFileItem_t it;
+	bffFile_t *bff;
+	char *namePtr;
+	int size, i;
+	int bffBaseLen;
+	int hashSize;
+	long hash;
+
+	if ( !fread( &header, sizeof( header ), 1, f ) ) {
+		return qfalse; // probably EOF
+	}
+
+	// validate header data
+
+	if ( header.bffNameLen > sizeof( bffName ) || header.bffNameLen & 3 || header.bffNameLen == 0 ) {
+		Con_Printf( "bad bffNameLen: %08lx\n", header.bffNameLen );
+		return qfalse;
+	}
+
+	if ( header.namesLen & 3 || header.namesLen < header.numFiles ) {
+		Con_Printf( "bad namesLen: %lu\n", header.namesLen );
+		return qfalse;
+	}
+
+	if ( header.numHeaderLongs == 0 || header.numHeaderLongs > header.numFiles + 1 ) {
+		Con_Printf( "bad numHeaderLongs: %lu\n", header.numHeaderLongs );
+		return qfalse;
+	}
+
+	if ( header.contentLen & 3 || header.contentLen < 0 ) {
+		Con_Printf( "bad contentLen: %lu\n", header.contentLen );
+		return qfalse;
+	}
+
+	// load filename
+	if ( !fread( bffName, header.bffNameLen, 1, f ) ) {
+		Con_Printf( "error reading bffname\n" );
+		return qfalse;
+	}
+
+	// bffName must be zero-terminated
+	if ( bffName[ header.bffNameLen - 1 ] != '\0' ) {
+		Con_Printf( "bffname is not zero-terminated!\n" );
+		return qfalse;
+	}
+
+	if ( !Sys_GetFileStats( &stats, bffName ) || fsize != header.size || stats.mtime != header.mtime || stats.ctime != header.ctime ) {
+		const int seek_len = header.namesLen + header.numFiles * sizeof( it ) + (header.numHeaderLongs-1) * sizeof( bff->headerLongs[0] ) + header.contentLen;
+//		const int seek_len = header.namesLen + header.numFiles * sizeof( it ) + header.contentLen;
+		if ( fseek( f, seek_len, SEEK_CUR ) != 0 ) {
+			return qfalse;
+		}
+		else {
+			fs_bffsSkipped++;
+			return qtrue; // just outdated info, we can continue
+		}
+	}
+
+	// extract basename from zip path
+	basename = strrchr( bffName, PATH_SEP );
+	if ( basename == NULL ) {
+		basename = bffName;
+	} else {
+		basename++;
+	}
+
+	N_strncpyz( bffBase, basename, sizeof( bffBase ) );
+	FS_StripExt( bffBase, ".header" );
+	bffBaseLen = (int)strlen( bffBase ) + 1;
+	bffBaseLen = PAD( bffBaseLen, sizeof( int ) );
+
+	hashSize = FS_BFFHashSize( header.numFiles );
+
+	size = sizeof( *bff ) + sizeof( *bff->buildBuffer ) * header.numFiles + hashSize * sizeof( *bff->hashTable ) + header.namesLen;
+	size += header.bffNameLen;
+	size += bffBaseLen;
+	size += header.numHeaderLongs * sizeof( bff->headerLongs[0] );
+
+	bff = (bffFile_t *)Z_Malloc( size, TAG_BFF );
+	memset( bff, 0, size );
+
+	bff->mtime = header.mtime;
+	bff->ctime = header.ctime;
+	bff->size = header.size;
+
+//	bff->handle = f;
+	bff->numfiles = header.numFiles;
+	bff->numHeaderLongs = header.numHeaderLongs;
+
+	// setup memory layout
+	bff->hashSize = hashSize;
+	bff->hashTable = (fileInBFF_t **)( bff + 1 );
+
+	bff->buildBuffer = (fileInBFF_t *)( bff->hashTable + bff->hashSize );
+
+	namePtr = (char *)( bff->buildBuffer + bff->numfiles );
+
+	bff->bffFilename = (char *)( namePtr );
+	bff->bffBasename = (char *)( bff->bffFilename + header.bffNameLen );
+	bff->headerLongs = (uint32_t *)( bff->bffBasename + bffBaseLen );
+
+	strcpy( bff->bffFilename, bffName );
+	strcpy( bff->bffBasename, bffBase );
+	
+	if ( !fread( namePtr, header.namesLen, 1, f ) ) {
+		Con_Printf( "error reading bff filenames\n" );
+		goto __error;
+	}
+
+	// filenames buffer must be zero-terminated
+	if ( namePtr[ header.namesLen - 1 ] != '\0' ) {
+		Con_Printf( "not zero terminated filenames\n" );
+		goto __error;
+	}
+
+	curFile = bff->buildBuffer;
+	for ( i = 0; i < header.numFiles; i++ ) {
+		if ( !fread( &it, sizeof( it ), 1, f ) ) {
+			Con_Printf( "error reading file item[%i]\n", i );
+			goto __error;
+		}
+		if ( it.name >= header.namesLen ) {
+			Con_Printf( "bad name offset: %i (expecting less than %i)\n", it.name, header.namesLen );
+			goto __error;
+		}
+
+		filename_inbff = namePtr + it.name;
+		FS_ConvertFilename( filename_inbff );
+//		if ( !FS_BannedbffFile( filename_inzip ) ) {
+			// store the file position in the zip
+			curFile->name = filename_inbff;
+			curFile->size = it.size;
+			curFile->pos = it.pos;
+
+			// update hash table
+			hash = FS_HashFileName( filename_inbff, bff->hashSize );
+			curFile->next = bff->hashTable[ hash ];
+			bff->hashTable[ hash ] = curFile;
+			curFile++;
+//		} else {
+//			bff->numfiles--;
+//		}
+	}
+
+	if ( !fread( bff->headerLongs + 1, ( bff->numHeaderLongs - 1 ) * sizeof( bff->headerLongs[0] ), 1, f ) ) {
+		Con_Printf( COLOR_YELLOW "WARNING: couldn't read headerLongs\n" );
+//		goto __error;
+	}
+
+	bff->checksumFeed = fs_checksumFeed;
+	bff->headerLongs[ 0 ] = LittleInt( fs_checksumFeed );
+
+	bff->checksum = Com_BlockChecksum( bff->headerLongs + 1, sizeof( bff->headerLongs[0] ) * ( bff->numHeaderLongs - 1 ) );
+	bff->checksum = LittleInt( bff->checksum );
+
+	bff->pure_checksum = Com_BlockChecksum( bff->headerLongs, sizeof( bff->headerLongs[0] ) * bff->numHeaderLongs );
+	bff->pure_checksum = LittleInt( bff->pure_checksum );
+
+	// seek through unused content
+	if ( header.contentLen > 0 ) {
+		if ( fseek( f, header.contentLen, SEEK_CUR ) != 0 ) {
+			goto __error;
+		}
+	}
+	else if ( header.contentLen < 0 ) {
+		goto __error;
+	}
+
+	fs_bffsCached++;
+
+	FS_InsertBFFToCache( bff );
+
+	return qtrue;
+
+__error:
+	FS_FreeBFF( bff );
+	return qfalse;
+}
+
+/*
+============
+FS_SaveCache
+
+Called at the end of FS_Startup() after releasing unused bffs
+============
+*/
+static qboolean FS_SaveCache( void )
+{
+	const char *filename = CACHE_FILE_NAME;
+	const char *ospath;
+	const searchpath_t *sp;
+	FILE *fp;
+
+	if ( !fs_searchpaths ) {
+		return qfalse;
+	}
+
+	if ( !fs_cacheLoaded ) {
+		Con_DPrintf( "synced FS cache on startup\n" );
+		fs_cacheSynced = qfalse;
+		fs_cacheLoaded = qtrue;
+	}
+	else if ( CACHE_SYNC_CONDITION ) {
+		Con_DPrintf( "synced FS cache on readed=%lu, release=%lu, skipped=%lu\n",
+			fs_bffsReaded, fs_bffsReleased, fs_bffsSkipped );
+		fs_cacheSynced = qfalse;
+	}
+
+	if ( fs_cacheSynced ) {
+		return qtrue;
+	}
+
+	sp = fs_searchpaths;
+
+	ospath = FS_BuildOSPath( fs_homepath->s, filename, NULL );
+
+	fp = Sys_FOpen( ospath, "wb" );
+	if ( fp == NULL ) {
+		return qfalse;
+	}
+
+	FS_WriteCacheHeader( fp );
+
+	while ( sp != NULL ) {
+		if ( sp->bff ) {
+			FS_SaveBFFToFile( sp->bff, fp );
+		}
+		sp = sp->next;
+	}
+
+	fclose( fp );
+
+	fs_bffsReleased = 0;
+	fs_bffsSkipped = 0;
+	fs_bffsReaded = 0;
+
+	fs_cacheSynced = qtrue;
+
+	return qtrue;
+}
+
+/*
+============
+FS_LoadCache
+
+Called at FS_Startup() before loading any header3 file
+============
+*/
+static void FS_LoadCache( void )
+{
+	const char *filename = CACHE_FILE_NAME;
+	const char *ospath;
+	FILE *fp;
+
+	fs_bffsReaded = 0;
+	fs_bffsReleased = 0;
+
+	if ( fs_cacheLoaded ) {
+		return;
+	}
+
+	fs_bffsCached = 0;
+	fs_bffsSkipped = 0;
+
+	ospath = FS_BuildOSPath( fs_homepath->s, filename, NULL );
+
+	Con_Printf( "Loading cached bffs from '%s'...\n", ospath );
+	fp = Sys_FOpen( ospath, "rb" );
+	if ( fp == NULL ) {
+		Con_DPrintf( "Couldn't open cache file '%s'\n", ospath );
+		return;
+	}
+
+	if ( !FS_ValidateCacheHeader( fp ) ) {
+		fclose( fp );
+		Con_DPrintf( "Invalid heaer in cache file '%s'\n", ospath );
+		return;
+	}
+
+	while ( FS_LoadBffFromFile( fp ) )
+		;
+
+	fclose( fp );
+
+	fs_cacheLoaded = qtrue;
+
+	Con_Printf( "...found %lu cached bffs\n", fs_bffsCached );
+}
+
+#endif // USE_BFF_CACHE_FILE
+
+#endif // USE_BFF_CACHE
 
 /*
 ==========================================================
@@ -1702,10 +2223,11 @@ BFF FILE LOADING
 ==========================================================
 */
 
+
 /*
 * FS_LoadBFF: creates a new bffFile_t in the search chain for the contents of a bff archive file
 */
-static bffFile_t *FS_LoadBFF(const char *bffpath)
+static bffFile_t *FS_LoadBFF( const char *bffpath )
 {
 	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
 	fileInBFF_t *curFile;
@@ -1717,6 +2239,11 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 	uint64_t chunkCount;
 	const char *basename;
 	char gameName[MAX_BFF_PATH], *namePtr;
+#ifdef USE_ZIP
+	char filename_inzip[256];
+#else
+	char filename_inbff[MAX_STRING_CHARS];
+#endif
 	uint64_t chunkSize;
 	uint64_t gameNameLen;
 	uint64_t baseNameLen, fileNameLen;
@@ -1724,22 +2251,58 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 	FILE *fp;
 	fileStats_t stats;
 	char *tempBuf;
-	uint64_t outSize;
+	uint64_t outSize, pos;
+	int64_t tmp;
+	uint64_t namelen, filecount;
+	uint32_t fs_numHeaderLongs;
+	uint32_t *fs_headerLongs;
+#ifdef USE_ZIP
+	unzFile uf;
+	int err;
+	unz_global_info gi;
+	unz_file_info file_info;
+#endif
 
 	PROFILE_FUNCTION();
 
-	// extract the basename from bffpath
-	basename = strrchr(bffpath, PATH_SEP);
-	if (basename == NULL)
-		basename = bffpath;
-	else
-		basename++;
-	
-	fileNameLen = strlen(bffpath) + 1;
-	baseNameLen = strlen(basename) + 1;
+#ifdef USE_BFF_CACHE
+	bff = FS_LoadCachedBFF( bffpath );
+	if ( bff ) {
+		// update pure checksum
+		if ( bff->checksumFeed != fs_checksumFeed ) {
+			bff->headerLongs[ 0 ] = LittleLong( fs_checksumFeed );
+			bff->pure_checksum = Com_BlockChecksum( bff->headerLongs, sizeof( bff->headerLongs[0] ) * bff->numHeaderLongs );
+			bff->pure_checksum = LittleLong( bff->pure_checksum );
+			bff->checksumFeed = fs_checksumFeed;
+		}
 
-	if (!Sys_GetFileStats(&stats, bffpath)) {
-		N_Error(ERR_DROP, "FS_LoadBFF: failed to load bff %s", bffpath);
+		bff->touched = qtrue;
+		return bff; // loaded from cache
+	}
+#endif
+
+	// extract the basename from bffpath
+	basename = strrchr( bffpath, PATH_SEP );
+	if ( basename == NULL ) {
+		basename = bffpath;
+	} else {
+		basename++;
+	}
+	
+	fileNameLen = strlen( bffpath ) + 1;
+	baseNameLen = strlen( basename ) + 1;
+
+#ifdef USE_ZIP
+	uf = unzOpen( bffpath );
+	err = unzGetGlobalInfo( uf, &gi );
+
+	if ( err != UNZ_OK ) {
+		return NULL;
+	}
+#endif
+
+	if ( !Sys_GetFileStats( &stats, bffpath ) ) {
+		N_Error( ERR_DROP, "FS_LoadBFF: failed to load bff %s", bffpath );
 	}
 
 	chunkCount = 0;
@@ -1758,15 +2321,16 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 	}
 	else
 */
+#ifndef USE_ZIP
 	{
-		fp = Sys_FOpen(bffpath, "rb");
+		fp = Sys_FOpen( bffpath, "rb" );
 		if ( !fp ) {
-			N_Error(ERR_FATAL, "FS_LoadBFF: failed to open bff %s in readonly mode", bffpath);
+			N_Error( ERR_FATAL, "FS_LoadBFF: failed to open bff %s in readonly mode", bffpath );
 			return NULL;
 		}
 	}
 
-	if ( !fread( &header, sizeof(header), 1, fp ) ) {
+	if ( !fread( &header, sizeof( header ), 1, fp ) ) {
 		fclose( fp );
 		N_Error( ERR_FATAL, "FS_LoadBFF: failed to read header for '%s'", bffpath );
 	}
@@ -1798,36 +2362,144 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 		fclose( fp );
 		N_Error( ERR_FATAL, "FS_LoadBFF: failed to read gameName" );
 	}
+#endif
 
-	hashSize = FS_BFFHashSize( header.numChunks );
+	namelen = 0;
+	filecount = 0;
+#ifdef USE_ZIP
+	unzGoToFirstFile( uf );
+	for ( i = 0; i < gi.number_entry; i++ ) {
+		err = unzGetCurrentFileInfo( uf, &file_info, filename_inzip, sizeof( filename_inzip ), NULL, 0, NULL );
+		filename_inzip[ sizeof( filename_inzip ) - 1 ] = '\0';
+		if ( err != UNZ_OK ) {
+			break;
+		}
+		if ( file_info.compression_method != 0 && file_info.compression_method != 8 /*Z_DEFLATED*/ ) {
+			Con_Printf( COLOR_YELLOW "%s|%s: unsupported compression method %i\n", basename, filename_inzip, (int)file_info.compression_method );
+			unzGoToNextFile( uf );
+			continue;
+		} 
+		namelen += strlen( filename_inzip ) + 1;
+		unzGoToNextFile( uf );
+		filecount++;
+	}
+#else
+	pos = ftell( fp );
+	for ( i = 0; i < header.numChunks; i++ ) {
+		if ( !fread( &tmp, sizeof( tmp ), 1, fp ) ) {
+			fclose( fp );
+			Con_Printf( COLOR_RED "ERROR: failed reading chunk nameLen at %lu\n", i );
+			return NULL;
+		}
+		tmp = LittleLong( tmp );
+		if ( !fread( filename_inbff, tmp, 1, fp ) ) {
+			fclose( fp );
+			Con_Printf( COLOR_RED "ERROR: failed reading chunk name at %lu\n", i );
+			return NULL;
+		}
+		if ( !fread( &tmp, sizeof( tmp ), 1, fp ) ) {
+			fclose( fp );
+			Con_Printf( COLOR_RED "ERROR: failed reading chunk size at %lu\n", i );
+			return NULL;
+		}
+		tmp = LittleLong( tmp );
+		fseek( fp, tmp, SEEK_CUR );
 
-	size = 0;
-	size += sizeof(*bff) + sizeof(*bff->buildBuffer) * header.numChunks + hashSize * sizeof( *bff->hashTable );
-	size += PAD( fileNameLen, sizeof(uintptr_t) );
-	size += PAD( baseNameLen, sizeof(uintptr_t) );
+		filename_inbff[ sizeof( filename_inbff ) - 1 ] = '\0';
+		namelen += strlen( filename_inbff ) + 1;
+		filecount++;
+	}
+#endif
+	if ( filecount == 0 ) {
+#ifdef USE_ZIP
+		unzClose( uf );
+#else
+		fclose( fp );
+#endif
+		return NULL;
+	}
 
+	hashSize = FS_BFFHashSize( filecount );
+
+	namelen = PAD( namelen, sizeof( uintptr_t ) );
+	size = sizeof( *bff ) + sizeof( *bff->buildBuffer ) * header.numChunks + hashSize * sizeof( *bff->hashTable ) + namelen;
+	size += PAD( fileNameLen, sizeof( uintptr_t ) );
+	size += PAD( baseNameLen, sizeof( uintptr_t ) );
+#ifdef USE_BFF_CACHE
+	size += ( filecount + 1 ) * sizeof( fs_headerLongs[0] );
+#endif
 	bff = (bffFile_t *)Z_Malloc( size, TAG_BFF );
 	memset( bff, 0, size );
 
-	bff->numfiles = header.numChunks;
+	bff->handle = fp;
 	bff->hashSize = hashSize;
+	bff->numfiles = filecount;
 	bff->handlesUsed = 0;
+	bff->hashTable = (fileInBFF_t **)( bff + 1 );
 
 	// setup memory layout
-	bff->hashTable = (fileInBFF_t **)( bff + 1 );
 	bff->buildBuffer = (fileInBFF_t *)( bff->hashTable + bff->hashSize );
+	namePtr = (char *)( bff->buildBuffer + filecount );
 
-	bff->bffFilename = (char *)( bff->buildBuffer + header.numChunks );
-	bff->bffBasename = (char *)( bff->bffFilename + PAD( fileNameLen, sizeof(uintptr_t) ) );
+	bff->bffFilename = (char *)( namePtr + namelen );
+	bff->bffBasename = (char *)( bff->bffFilename + PAD( fileNameLen, sizeof( uintptr_t ) ) );
 
-	memcpy( bff->bffGamename, gameName, sizeof(bff->bffGamename) );
+#ifdef USE_BFF_CACHE
+	fs_headerLongs = (uint32_t *)( bff->bffBasename + PAD( baseNameLen, sizeof( uintptr_t ) ) );
+#else
+	fs_headerLongs = (uint32_t *)Z_Malloc( ( filecount + 1 ) * sizeof( fs_headerLongs[0] ), TAG_STATIC );
+#endif
+
+	fs_numHeaderLongs = 0;
+	fs_headerLongs[ fs_numHeaderLongs++ ] = LittleInt( fs_checksumFeed );
+
+	memcpy( bff->bffGamename, gameName, sizeof( bff->bffGamename ) );
 	memcpy( bff->bffFilename, bffpath, fileNameLen );
 	memcpy( bff->bffBasename, basename, baseNameLen );
 
 	// strip the .bff if needed
 	FS_StripExt( bff->bffBasename, ".bff" );
-	
+
+#ifdef USE_ZIP
+	unzGoToFirstFile( uf );
+#else
+	fseek( fp, pos, SEEK_SET );
+#endif
+
 	curFile = bff->buildBuffer;
+#ifdef USE_ZIP
+	for ( i = 0; i < gi.number_entry; i++ ) {
+		err = unzGetCurrentFileInfo( uf, &file_info, filename_inzip, sizeof( filename_inzip ), NULL, 0, NULL );
+		filename_inzip[ sizeof( filename_inzip ) - 1 ] = '\0';
+		if ( err != UNZ_OK ) {
+			break;
+		}
+		if ( file_info.compression_method != 0 && file_info.compression_method != 8 /*Z_DEFLATED*/ ) {
+			unzGoToNextFile( uf );
+			continue;
+		}
+		if ( file_info.uncompressed_size > 0 ) {
+			fs_headerLongs[ fs_numHeaderLongs++ ] = LittleInt( file_info.crc );
+		}
+
+		FS_ConvertFilename( filename_inzip );
+
+		// store the file position in the zip
+		unzGetCurrentFileInfoPosition( uf, &curFile->pos );
+		curFile->size = file_info.uncompressed_size;
+		curFile->name = namePtr;
+		strcpy( curFile->name, filename_inzip );
+		namePtr += strlen( filename_inzip ) + 1;
+
+		// update has table
+		hash = FS_HashFileName( filename_inzip, bff->hashSize );
+		curFile->next = bff->hashTable[ hash ];
+		bff->hashTable[ hash ] = curFile;
+		curFile++;
+
+		unzGoToNextFile( uf );
+	}
+#else
 	for ( i = 0; i < bff->numfiles; i++ ) {
 		if ( !fread( &curFile->nameLen, sizeof( curFile->nameLen ), 1, fp ) ) {
 			fclose( fp );
@@ -1835,76 +2507,73 @@ static bffFile_t *FS_LoadBFF(const char *bffpath)
 			return NULL;
 		}
 		curFile->nameLen = LittleLong( curFile->nameLen );
-
-		curFile->name = (char *)Z_Malloc( curFile->nameLen, TAG_BFF );
-		if ( !fread( curFile->name, curFile->nameLen, 1, fp ) ) {
+		if ( !fread( filename_inbff, curFile->nameLen, 1, fp ) ) {
 			fclose( fp );
 			Con_Printf( COLOR_RED "ERROR: failed reading chunk name at %lu\n", i );
 			return NULL;
 		}
 		if ( !fread( &curFile->size, sizeof( curFile->size ), 1, fp ) ) {
 			fclose( fp );
-			Con_Printf( COLOR_RED "ERROR: failed reading read chunk size at %lu\n", i );
+			Con_Printf( COLOR_RED "ERROR: failed reading chunk size at %lu\n", i );
 			return NULL;
 		}
-
 		curFile->size = LittleLong( curFile->size );
 
-		if ( !curFile->size ) {
-			fclose( fp );
-			Con_Printf( COLOR_RED "ERROR: bad chunk size at %lu\n", i );
-			return NULL;
-		}
+		Con_DPrintf( "Chunk[%lu]: %s (%lu) %lu\n", i, filename_inbff, curFile->nameLen, curFile->size );
 
-		FS_ConvertFilename( curFile->name );
+		filename_inbff[ sizeof( filename_inbff ) - 1 ] = '\0';
+		FS_ConvertFilename( filename_inbff );
 
-		hash = FS_HashFileName( curFile->name, bff->hashSize );
-		curFile->next = bff->hashTable[hash];
-		bff->hashTable[hash] = curFile;
-		curFile->bytesRead = 0;
+		// store the file position in the bff
+		curFile->pos = ftell( fp );
+		curFile->name = namePtr;
+		strcpy( curFile->name, filename_inbff );
+		namePtr += strlen( filename_inbff ) + 1;
+		fseek( fp, curFile->size, SEEK_CUR );
 
-		if ( header.compression != COMPRESS_NONE ) {
-			uint64_t outLen;
-
-			if ( !fread( &compressedSize, sizeof( compressedSize ), 1, fp ) ) {
-				fclose( fp );
-				Con_Printf( COLOR_RED "ERROR: failed reading read chunk compressed size at %lu\n", i );
-				return NULL;
-			}
-
-			outLen = LittleLong( compressedSize );
-			tempBuf = (char *)Z_Malloc( curFile->size, TAG_STATIC );
-			if ( !fread( tempBuf, curFile->size, 1, fp ) ) {
-				fclose( fp );
-				Con_DPrintf( "Error reading chunk buffer at %lu\n", i );
-				return NULL;
-			}
-			curFile->buf = Decompress( tempBuf, curFile->size, &outLen, header.compression );
-			Z_Free( tempBuf );
-		}
-		else {
-			// read the chunk data
-			curFile->buf = (char *)Z_Malloc( curFile->size, TAG_BFF );
-			if ( !fread( curFile->buf, curFile->size, 1, fp ) ) {
-				fclose( fp );
-				Con_DPrintf( "Error reading chunk buffer at %lu\n", i );
-				return NULL;
-			}
-		}
-
+		// update hash table
+		hash = FS_HashFileName( filename_inbff, bff->hashSize );
+		curFile->next = bff->hashTable[ hash ];
+		bff->hashTable[ hash ] = curFile;
 		curFile++;
 	}
-
-	bff->checksum = Com_BlockChecksum( bff, size );
-	bff->checksum = LittleInt( bff->checksum );
-
-	Con_Printf( "Loaded bff resource file with md4 blockchecksum %u\n", bff->checksum );
-
-#ifdef USE_BFF_CACHE_FILE
-	FS_InsertBFFToCache( bff );
 #endif
 
-	fclose( fp );
+	bff->checksum = Com_BlockChecksum( fs_headerLongs + 1, sizeof( fs_headerLongs[0] ) * ( fs_numHeaderLongs - 1) );
+	bff->checksum = LittleInt( bff->checksum );
+
+	bff->pure_checksum = Com_BlockChecksum( fs_headerLongs, sizeof( fs_headerLongs[0] ) * fs_numHeaderLongs );
+	bff->pure_checksum = LittleLong( bff->pure_checksum );
+
+#ifdef USE_BFF_CACHE
+	bff->headerLongs = fs_headerLongs;
+	bff->numHeaderLongs = fs_numHeaderLongs;
+	bff->checksumFeed = fs_checksumFeed;
+#else
+	Z_Free( fs_headerLongs );
+#endif
+
+#ifdef USE_HANDLE_CACHE
+	FS_AddToHandleList( bff );
+#else
+	if ( fs_locked->i == 0 ) {
+	#ifdef USE_ZIP
+		unzClose( bff->handle );
+	#else
+		fclose( bff->handle );
+	#endif
+		bff->handle = NULL;
+	}
+#endif
+
+	Con_Printf( "Loaded bff resource file with crc32 block checksum %u\n", bff->checksum );
+	
+#ifdef USE_BFF_CACHE
+	FS_InsertBFFToCache( bff );
+#ifdef USE_BFF_CACHE_FILE
+	fs_bffsReaded++;
+#endif
+#endif
 
 	return bff;
 }
@@ -1972,6 +2641,8 @@ fileOffset_t FS_FileTell(fileHandle_t f)
 	return (fileOffset_t)ftell( p->data.fp );
 }
 
+#define BFF_SEEK_BUFFER_SIZE 65536
+
 fileOffset_t FS_FileSeek( fileHandle_t f, fileOffset_t offset, uint32_t whence )
 {
 	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
@@ -1993,12 +2664,66 @@ fileOffset_t FS_FileSeek( fileHandle_t f, fileOffset_t offset, uint32_t whence )
 	}
 
 	if ( file->bffFile ) {
+	#ifdef USE_ZIP
+		//FIXME: this is really, really crappy
+		//(but better than what was here before)
+		byte	buffer[BFF_SEEK_BUFFER_SIZE];
+		int		remainder;
+		int		currentPosition = FS_FTell( f );
+
+		// change negative offsets into FS_SEEK_SET
+		if ( offset < 0 ) {
+			switch ( origin ) {
+			case FS_SEEK_END:
+				remainder = handles[f].zipFileLen + offset;
+				break;
+			case FS_SEEK_CUR:
+				remainder = currentPosition + offset;
+				break;
+			case FS_SEEK_SET:
+			default:
+				remainder = 0;
+				break;
+			};
+
+			if ( remainder < 0 ) {
+				remainder = 0;
+			}
+
+			origin = FS_SEEK_SET;
+		} else {
+			if ( origin == FS_SEEK_END ) {
+				remainder = handles[f].zipFileLen - currentPosition + offset;
+			} else {
+				remainder = offset;
+			}
+		}
+
+		switch ( origin ) {
+		case FS_SEEK_SET:
+			if ( remainder == currentPosition ) {
+				return offset;
+			}
+			unzSetCurrentFileInfoPosition( handles[f].data.chunk, fsh[f].zipFilePos );
+			unzOpenCurrentFile( handles[f].data.chunk );
+			//fallthrough
+		case FS_SEEK_END:
+		case FS_SEEK_CUR:
+			while ( remainder > BFF_SEEK_BUFFER_SIZE ) {
+				FS_Read( buffer, BFF_SEEK_BUFFER_SIZE, f );
+				remainder -= BFF_SEEK_BUFFER_SIZE;
+			}
+			FS_Read( buffer, remainder, f );
+			return offset;
+		default:
+			N_Error( ERR_FATAL, "Bad origin in FS_Seek" );
+			return -1;
+		};
+	#else
 		if ( whence == FS_SEEK_END && offset ) {
 			return -1;
 		}
-		else if ( whence == FS_SEEK_CUR
-		&& file->data.chunk->bytesRead + offset >= file->data.chunk->size )
-		{
+		else if ( whence == FS_SEEK_CUR && file->data.chunk->bytesRead + offset >= file->data.chunk->size ) {
 			return -1;
 		}
 		switch ( whence ) {
@@ -2015,6 +2740,7 @@ fileOffset_t FS_FileSeek( fileHandle_t f, fileOffset_t offset, uint32_t whence )
 			N_Error(ERR_FATAL, "FS_FileSeek: invalid seek");
 		};
 		return (fileOffset_t)( file->data.chunk->size - file->data.chunk->bytesRead );
+	#endif
 	}
 
 	switch ( whence ) {
@@ -2098,17 +2824,55 @@ uint64_t FS_Write( const void *buffer, uint64_t size, fileHandle_t f )
 		remaining -= writeCount;
 		fs_writeCount += writeCount;
 	}
-	// fflush(fp);
+	if ( handles[f].handleSync ) {
+		fflush( fp );
+	}
 
 	return size;
 }
 
-static uint64_t FS_ReadFromChunk(void *buffer, uint64_t size, fileHandle_t f)
+#ifndef USE_ZIP
+static uint64_t FS_ReadFromChunk( void *buffer, uint64_t size, fileHandle_t f )
 {
 	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
 	fileHandleData_t *handle = &handles[f];
 
-	if (handle->data.chunk->bytesRead + size > handle->data.chunk->size) {
+	if ( !handle->data.chunk->buf ) {
+		/*
+		if ( header.compression != COMPRESS_NONE ) {
+			uint64_t outLen;
+
+			if ( !fread( &compressedSize, sizeof( compressedSize ), 1, fp ) ) {
+				fclose( fp );
+				Con_Printf( COLOR_RED "ERROR: failed reading read chunk compressed size at %lu\n", i );
+				return NULL;
+			}
+
+			outLen = LittleLong( compressedSize );
+			tempBuf = (char *)Z_Malloc( curFile->size, TAG_STATIC );
+			if ( !fread( tempBuf, curFile->size, 1, fp ) ) {
+				fclose( fp );
+				Con_DPrintf( "Error reading chunk buffer at %lu\n", i );
+				return NULL;
+			}
+			curFile->buf = Decompress( tempBuf, curFile->size, &outLen, header.compression );
+			Z_Free( tempBuf );
+		}
+		else
+		*/
+		{
+			// read the chunk data
+			handle->data.chunk->buf = (char *)Z_Malloc( handle->data.chunk->size, TAG_BFF );
+			fseek( handle->bff->handle, handle->data.chunk->pos, SEEK_SET );
+			if ( !fread( handle->data.chunk->buf, handle->data.chunk->size, 1, handle->bff->handle ) ) {
+				fclose( handle->bff->handle );
+				N_Error( ERR_DROP, "Error reading chunk buffer at %lu\n", (uint64_t)( handle->bff->buildBuffer - handle->data.chunk ) );
+			}
+			handle->data.chunk->bytesRead = 0;
+		}
+	}
+
+	if ( handle->data.chunk->bytesRead + size > handle->data.chunk->size ) {
 #if 0
 		if (size >= handle->data.chunk->size) {
 			N_Error( ERR_FATAL, "FS_ReadFromChunk: size >= chunk size" );
@@ -2119,19 +2883,26 @@ static uint64_t FS_ReadFromChunk(void *buffer, uint64_t size, fileHandle_t f)
 			size = amount;
 		}
 #else
-		N_Error( ERR_FATAL, "FS_ReadFromChunk: overread of %lu bytes", (handle->data.chunk->bytesRead + size) - handle->data.chunk->size );
+		N_Error( ERR_FATAL, "FS_ReadFromChunk: overread of %lu bytes",
+			( handle->data.chunk->bytesRead + size ) - handle->data.chunk->size );
 #endif
 	}
 
-	memcpy(buffer, handle->data.chunk->buf + handle->data.chunk->bytesRead, size);
+	fseek( handle->bff->handle, handle->data.chunk->pos + handle->data.chunk->bytesRead, SEEK_SET );
+	memcpy( buffer, handle->data.chunk->buf + handle->data.chunk->bytesRead, size );
 	handle->data.chunk->bytesRead += size;
 	return size;
 }
+#endif
 
 /*
-* FS_Read: properly handles partial reads
+=================
+FS_Read
+
+Properly handles partial reads
+=================
 */
-uint64_t FS_Read(void *buffer, uint64_t size, fileHandle_t f)
+uint64_t FS_Read( void *buffer, uint64_t size, fileHandle_t f )
 {
 	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
 	int64_t readCount, remaining, block;
@@ -2170,8 +2941,8 @@ uint64_t FS_Read(void *buffer, uint64_t size, fileHandle_t f)
 				}
 			}
 
-			if (readCount == -1) {
-				N_Error(ERR_FATAL, "FS_Read: -1 bytes read");
+			if ( readCount == -1 ) {
+				N_Error( ERR_FATAL, "FS_Read: -1 bytes read" );
 			}
 
 			remaining -= readCount;
@@ -2180,7 +2951,11 @@ uint64_t FS_Read(void *buffer, uint64_t size, fileHandle_t f)
 		return size;
 	}
 	else {
-		return FS_ReadFromChunk(buffer, size, f);
+#ifdef USE_ZIP
+		return unzReadCurrentFile( handles[f].data.chunk, buffer, size );
+#else
+		return FS_ReadFromChunk( buffer, size, f );
+#endif
 	}
 }
 
@@ -2235,7 +3010,7 @@ static void FS_CheckGDRBffs( void )
 			}
 		}
 		else if ( !N_stricmpn( path->bff->bffGamename, BASEGAME_DIR, MAX_OSPATH )
-			&& strlen( bffBasename ) == 4 && !N_stricmpn( bffBasename, "pak", 3 )
+			&& strlen( bffBasename ) == 4 && !N_stricmpn( bffBasename, "bff", 3 )
 			&& bffBasename[3] >= '0' && bffBasename[3] <= '8' )
 		{
 			if ( path->bff->checksum != bff_checksums[bffBasename[3]-'0'] ) {
@@ -2313,7 +3088,7 @@ const char *FS_LoadedBFFChecksums( qboolean *overflowed ) {
 	*overflowed = qfalse;
 
 	for ( search = fs_searchpaths ; search ; search = search->next ) {
-		// is the element a pak file?
+		// is the element a bff file?
 		if ( !search->bff ) {
 			continue;
 		}
@@ -2358,7 +3133,7 @@ const char *FS_LoadedBFFNames( void ) {
 	max = &info[sizeof( info ) - 1];
 
 	for ( search = fs_searchpaths ; search ; search = search->next ) {
-		// is the element a pak file?
+		// is the element a bff file?
 		if ( !search->bff )
 			continue;
 
@@ -2427,14 +3202,14 @@ const char *FS_ReferencedBFFPureChecksums( uint64_t maxlen ) {
 	static char	info[ MAX_STRING_CHARS*2 ];
 	char *s, *max;
 	const searchpath_t	*search;
-	int nFlags, numPaks, checksum;
+	int nFlags, numbffs, checksum;
 
 	max = info + maxlen; // maxlen is always smaller than MAX_STRING_CHARS so we can overflow a bit
 	s = info;
 	*s = '\0';
 
 	checksum = fs_checksumFeed;
-	numPaks = 0;
+	numbffs = 0;
 	for ( nFlags = FS_SGAME_REF; nFlags; nFlags = nFlags >> 1 ) {
 		if ( nFlags & FS_GENERAL_REF ) {
 			// add a delimiter between must haves and general refs
@@ -2443,7 +3218,7 @@ const char *FS_ReferencedBFFPureChecksums( uint64_t maxlen ) {
 				break;
 		}
 		for ( search = fs_searchpaths ; search ; search = search->next ) {
-			// is the element a pak file and has it been referenced based on flag?
+			// is the element a bff file and has it been referenced based on flag?
 			if ( search->bff && ( search->bff->referenced & nFlags ) ) {
 				s = N_stradd( s, va( "%i ", search->bff->pure_checksum ) );
 				if ( s > max ) // client-side overflow
@@ -2452,13 +3227,13 @@ const char *FS_ReferencedBFFPureChecksums( uint64_t maxlen ) {
 					break;
 				}
 				checksum ^= search->bff->pure_checksum;
-				numPaks++;
+				numbffs++;
 			}
 		}
 	}
 
-	// last checksum is the encoded number of referenced pk3s
-	checksum ^= numPaks;
+	// last checksum is the encoded number of referenced header3s
+	checksum ^= numbffs;
 	s = N_stradd( s, va( "%i ", checksum ) );
 	if ( s > max ) { 
 		// client-side overflow
@@ -2525,7 +3300,7 @@ const char *FS_ReferencedBFFNames( void ) {
 	// we want to return ALL bff's from the fs_game path
 	// and referenced one's from nomadmain
 	for ( search = fs_searchpaths ; search ; search = search->next ) {
-		// is the element a pak file?
+		// is the element a bff file?
 		if ( search->bff ) {
 			if ( search->bff->exclude ) {
 				continue;
@@ -2556,7 +3331,7 @@ void FS_ClearBFFReferences( uint32_t flags ) {
 		flags = -1;
 	}
 	for ( search = fs_searchpaths; search; search = search->next ) {
-		// is the element a pak file and has it been referenced?
+		// is the element a bff file and has it been referenced?
 		if ( search->bff ) {
 			search->bff->referenced &= ~flags;
 		}
@@ -2718,7 +3493,7 @@ fileHandle_t FS_FOpenRW(const char *path)
 	return fd;
 }
 
-fileHandle_t FS_FOpenRead(const char *path)
+fileHandle_t FS_FOpenRead( const char *path )
 {
 	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
 	fileHandle_t fd;
@@ -2744,7 +3519,7 @@ fileHandle_t FS_FOpenRead(const char *path)
 	f = &handles[fd];
 	FS_InitHandle(f);
 
-	// we will calculate full hash only once then just mask it by current pack->hashSize
+	// we will calculate full hash only once then just mask it by current bff->hashSize
 	// we can do that as long as we know properties of our hash function
 	fullHash = FS_HashFileName( path, 0U );
 
@@ -2811,7 +3586,7 @@ uint64_t FS_FOpenFileRead(const char *path, fileHandle_t *fd)
 		return -1;
 	}
 
-	// we will calculate full hash only once then just mask it by current pack->hashSize
+	// we will calculate full hash only once then just mask it by current bff->hashSize
 	// we can do that as long as we know properties of our hash function
 	fullHash = FS_HashFileName( path, 0U );
 
@@ -2946,24 +3721,24 @@ uint64_t FS_LoadFile(const char *npath, void **buffer)
 
 int FS_FileToFileno( fileHandle_t f )
 {
-	return fileno(handles[f].data.fp);
+	return fileno( handles[f].data.fp );
 }
 
-void FS_FreeFile(void *buffer)
+void FS_FreeFile( void *buffer )
 {
 	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
-	if (!fs_searchpaths) {
-		N_Error(ERR_FATAL, "Filesystem call made without initialization");
+	if ( !fs_searchpaths ) {
+		N_Error( ERR_FATAL, "Filesystem call made without initialization" );
 	}
-	if (!buffer) {
-		N_Error(ERR_FATAL, "FS_FreeFile(NULL)");
+	if ( !buffer ) {
+		N_Error( ERR_FATAL, "FS_FreeFile(NULL)" );
 	}
 	fs_loadStack--;
 
-	Hunk_FreeTempMemory(buffer);
+	Hunk_FreeTempMemory( buffer );
 
 	// if all our temp files are free, clear all of our space
-	if (fs_loadStack == 0) {
+	if ( fs_loadStack == 0 ) {
 		Hunk_ClearTempMemory();
 	}
 }
@@ -2974,34 +3749,47 @@ void FS_FClose( fileHandle_t f )
 	fileHandleData_t *p;
 //	fileStats_t stats;
 
-	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
-		N_Error(ERR_FATAL, "FS_FClose: out of range");
+	if ( f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES ) {
+		N_Error( ERR_FATAL, "FS_FClose: out of range" );
 	}
 
 	p = &handles[f];
 
-	if (p->bff && p->bffFile) {
+	if ( p->bff && p->bffFile ) {
+#ifdef USE_ZIP
+		unzCloseCurrentFile( p->data.chunk );
+#else
 		p->data.chunk->bytesRead = 0;
+#endif
 		p->data.stream = NULL;
 		p->bffFile = qfalse;
 		p->bff->handlesUsed--;
+#ifdef USE_HANDLE_CACHE
+		if ( p->bff->handlesUsed == 0 ) {
+			FS_AddToHandleList( p->bff );
+		}
+#endif
 #ifdef USE_BFF_CACHE_FILE
-		if (!fs_locked->i) {
-			if (p->bff->handle && !p->bff->handlesUsed) {
-				fclose(p->bff->handle);
+		if ( !fs_locked->i ) {
+			if ( p->bff->handle && !p->bff->handlesUsed ) {
+#ifdef USE_ZIP
+				unzClose( p->bff->handle );
+#else
+				fclose( p->bff->handle );
+#endif
 				p->bff->handle = NULL;
 			}
 		}
 #endif
 	}
 	else {
-		if (p->data.fp) {
-			fclose(p->data.fp);
+		if ( p->data.fp ) {
+			fclose( p->data.fp );
 			p->data.fp = NULL;
 		}
 	}
 
-	memset(p, 0, sizeof(*p));
+	memset( p, 0, sizeof( *p ) );
 }
 
 qboolean FS_StripExt( char *filename, const char *ext )
@@ -3024,13 +3812,232 @@ qboolean FS_StripExt( char *filename, const char *ext )
 	return qfalse;
 }
 
-uint64_t FS_LoadStack(void)
-{
+uint64_t FS_LoadStack( void ) {
 	return fs_loadStack;
 }
 
 
-static void FS_AddGameDirectory(const char *path, const char *dir)
+/*
+================
+FS_NewDir_f
+================
+*/
+static void FS_NewDir_f( void ) {
+	const char *filter;
+	char	**dirnames;
+	char	dirname[ MAX_STRING_CHARS ];
+	uint64_t ndirs;
+	int		i;
+
+	if ( Cmd_Argc() < 2 ) {
+		Con_Printf( "usage: fdir <filter>\n" );
+		Con_Printf( "example: fdir *darkofthenight*.map\n");
+		return;
+	}
+
+	filter = Cmd_Argv( 1 );
+
+	Con_Printf( "---------------\n" );
+
+	dirnames = FS_ListFilteredFiles( "", "", filter, &ndirs, FS_MATCH_ANY );
+
+	if ( ndirs >= 2 )  {
+		FS_SortFileList( dirnames, ndirs - 1 );
+	}
+
+	for ( i = 0; i < ndirs; i++ ) {
+		N_strncpyz( dirname, dirnames[i], sizeof( dirname ) );
+		FS_ConvertPath( dirname );
+		Con_Printf( "%s\n", dirname );
+	}
+
+	Con_Printf( "%lu files listed\n", ndirs );
+	FS_FreeFileList( dirnames );
+}
+
+/*
+============
+FS_Path_f
+============
+*/
+static void FS_Path_f( void ) {
+	const searchpath_t *s;
+	int i;
+
+	Con_Printf( "Current search path:\n" );
+	for ( s = fs_searchpaths; s; s = s->next ) {
+		if ( s->bff ) {
+			Con_Printf( "%s (%lu files)\n", s->bff->bffFilename, s->bff->numfiles );
+/*			if ( fs_numServerbffs ) {
+				if ( !FS_bffIsPure( s->bff ) ) {
+					Con_Printf( S_COLOR_YELLOW "    not on the pure list\n" );
+				} else {
+					Con_Printf( "    on the pure list\n" );
+				}
+			}*/
+		} else {
+			Con_Printf( "%s%c%s\n", s->dir->path, PATH_SEP, s->dir->gamedir );
+		}
+	}
+
+	Con_Printf( "\n" );
+	for ( i = 1 ; i < MAX_FILE_HANDLES ; i++ ) {
+		if ( handles[i].data.fp ) {
+			Con_Printf( "handle %i: %s\n", i, handles[i].name );
+		}
+	}
+}
+
+
+/*
+============
+FS_TouchFile_f
+
+The only purpose of this function is to allow game script files to copy
+arbitrary files furing an "fs_copyfiles 1" run.
+============
+*/
+static void FS_TouchFile_f( void ) {
+	fileHandle_t	f;
+
+	if ( Cmd_Argc() != 2 ) {
+		Con_Printf( "Usage: touchFile <file>\n" );
+		return;
+	}
+
+	FS_FOpenFileRead( Cmd_Argv( 1 ), &f );
+	if ( f != FS_INVALID_HANDLE ) {
+		FS_FClose( f );
+	}
+}
+
+
+/*
+============
+FS_CompleteFileName
+============
+*/
+static void FS_CompleteFileName( const char *args, uint32_t argNum ) {
+	if ( argNum == 2 ) {
+		Field_CompleteFilename( "", "", qfalse, FS_MATCH_ANY );
+	}
+}
+
+
+/*
+============
+FS_Which_f
+============
+*/
+static void FS_Which_f( void ) {
+	const searchpath_t *search;
+	char			*netpath;
+	bffFile_t		*bff;
+	fileInBFF_t		*bffFile;
+	directory_t		*dir;
+	long			hash;
+	FILE			*temp;
+	const char		*filename;
+	char			buf[ MAX_OSPATH*2 + 1 ];
+	int				numfound;
+
+	hash = 0;
+	numfound = 0;
+	filename = Cmd_Argv(1);
+
+	if ( !filename[0] ) {
+		Con_Printf( "Usage: which <file>\n" );
+		return;
+	}
+
+	// qpaths are not supposed to have a leading slash
+	if ( filename[0] == '/' || filename[0] == '\\' ) {
+		filename++;
+	}
+
+	// just wants to see if file is there
+	for ( search = fs_searchpaths ; search ; search = search->next ) {
+		if ( search->bff ) {
+			hash = FS_HashFileName( filename, search->bff->hashSize );
+		}
+		// is the element a bff file?
+		if ( search->bff && search->bff->hashTable[hash] ) {
+			// look through all the bff file elements
+			bff = search->bff;
+			bffFile = bff->hashTable[hash];
+			do {
+				// case and separator insensitive comparisons
+				if ( !FS_FilenameCompare( bffFile->name, filename ) ) {
+					// found it!
+					Con_Printf( "File \"%s\" found in \"%s\"\n", filename, bff->bffFilename );
+					if ( ++numfound >= 32 ) {
+						return;
+					}
+				}
+				bffFile = bffFile->next;
+			} while( bffFile != NULL );
+		} else if ( search->dir ) {
+			dir = search->dir;
+
+			netpath = FS_BuildOSPath( dir->path, dir->gamedir, filename );
+			temp = Sys_FOpen( netpath, "rb" );
+			if ( !temp ) {
+				continue;
+			}
+
+			fclose( temp );
+			Com_snprintf( buf, sizeof( buf ), "%s%c%s", dir->path, PATH_SEP, dir->gamedir );
+			FS_ReplaceSeparators( buf );
+			Con_Printf( "File \"%s\" found at \"%s\"\n", filename, buf );
+			if ( ++numfound >= 32 ) {
+				return;
+			}
+		}
+	}
+
+	if ( !numfound ) {
+		Con_Printf( "File not found: \"%s\"\n", filename );
+	}
+}
+
+
+/*
+===========
+FS_Rename
+===========
+*/
+void FS_Rename( const char *from, const char *to ) {
+	const char *from_ospath, *to_ospath;
+	FILE *f;
+
+	if ( !fs_searchpaths ) {
+		N_Error( ERR_FATAL, "Filesystem call made without initialization" );
+	}
+
+	// don't let sound stutter
+	// S_ClearSoundBuffer();
+
+	from_ospath = FS_BuildOSPath( fs_homepath->s, fs_gamedir, from );
+	to_ospath = FS_BuildOSPath( fs_homepath->s, fs_gamedir, to );
+
+	if ( fs_debug->i ) {
+		Con_Printf( "FS_Rename: %s --> %s\n", from_ospath, to_ospath );
+	}
+
+	f = Sys_FOpen( from_ospath, "rb" );
+	if ( f ) {
+		fclose( f );
+		FS_Remove( to_ospath );
+	}
+
+	if ( rename( from_ospath, to_ospath ) ) {
+		// Failed, try copying it and deleting the original
+		FS_CopyFile( from_ospath, to_ospath );
+		FS_Remove( from_ospath );
+	}
+}
+
+static void FS_AddGameDirectory( const char *path, const char *dir )
 {
 	const searchpath_t *sp;
 	searchpath_t *search;
@@ -3181,7 +4188,8 @@ static void FS_AddGameDirectory(const char *path, const char *dir)
 			}
 
 			// store the game name
-			N_strncpyz(bff->bffGamename, gamedir, sizeof(bff->bffGamename));
+//			bff->bffGamename = search->dir->gamedir;
+			N_strncpyz( bff->bffGamename, gamedir, sizeof( bff->bffGamename ) );
 
 			bff->index = fs_bffCount;
 			bff->referenced = 0;
@@ -3235,20 +4243,6 @@ static void FS_AddGameDirectory(const char *path, const char *dir)
 	// done
 	Sys_FreeFileList(bffDirs);
 	Sys_FreeFileList(bffFiles);
-}
-
-/*
-===========
-FS_ConvertPath
-===========
-*/
-static void FS_ConvertPath( char *s ) {
-	while (*s) {
-		if ( *s == '\\' || *s == ':' ) {
-			*s = '/';
-		}
-		s++;
-	}
 }
 
 
@@ -3598,7 +4592,7 @@ void FS_Startup( void )
 		N_Error( ERR_FATAL, "* fs_basegame not set *" );
 	}
 
-#ifdef USE_HANDLE_CACHE
+#ifndef USE_HANDLE_CACHE
 	fs_locked = Cvar_Get( "fs_locked", "0", CVAR_INIT );
 	Cvar_SetDescription( fs_locked, "Set file handle policy for bff files:\n"
 		" 0 - release after use, unlimited number of bff files can be loaded\n"
@@ -3687,6 +4681,22 @@ void FS_Startup( void )
 
 	timer.Stop();
 
+	Com_ReadCDKey( basegame );
+	if ( !FS_IsBaseGame( fs_gamedirvar->s ) ) {
+		Com_AppendCDKey( fs_gamedirvar->s );
+	}
+
+	// add our commands
+	Cmd_AddCommand( "path", FS_Path_f );
+	Cmd_AddCommand( "dir", FS_ShowDir_f );
+	Cmd_AddCommand( "ls", FS_ShowDir_f );
+	Cmd_AddCommand( "list", FS_ListBFF_f );
+	Cmd_AddCommand( "addmod", FS_AddMod_f );
+	Cmd_AddCommand( "fs_restart", FS_Restart );
+	Cmd_AddCommand( "lsof", FS_ListOpenFiles_f );
+	Cmd_AddCommand( "which", FS_Which_f );
+	Cmd_SetCommandCompletionFunc( "which", FS_CompleteFileName );
+
 	Con_Printf(
 		"fs_gamedir: %s\n"
 		"fs_basepath: %s\n"
@@ -3707,13 +4717,6 @@ void FS_Startup( void )
 	FS_SaveCache();
 #endif
 #endif
-	
-	Cmd_AddCommand("dir", FS_ShowDir_f);
-	Cmd_AddCommand("ls", FS_ShowDir_f);
-	Cmd_AddCommand("list", FS_ListBFF_f);
-	Cmd_AddCommand("addmod", FS_AddMod_f);
-	Cmd_AddCommand("fs_restart", FS_Restart);
-	Cmd_AddCommand("lsof", FS_ListOpenFiles_f);
 }
 
 
@@ -3864,11 +4867,9 @@ uint64_t FS_GetFileList( const char *path, const char *extension, char *listbuf,
 	nFiles = 0;
 	nTotal = 0;
 
-/*
-	if (N_stricmp(path, "$modlist") == 0) {
-		return FS_GetModList(listbuf, bufsize);
+	if ( N_stricmp( path, "$modlist" ) == 0 ) {
+		return FS_GetModList( listbuf, bufsize );
 	}
-*/
 
 	pFiles = FS_ListFiles(path, extension, &nFiles);
 
@@ -3894,7 +4895,7 @@ uint64_t FS_GetFileList( const char *path, const char *extension, char *listbuf,
 FS_GetModList: returns a list of mod directory names. A mod directory is
 a peer to gamedata/ with a .bff in it
 */
-static uint64_t FS_GetModList(char *listbuf, uint64_t bufSize)
+uint64_t FS_GetModList(char *listbuf, uint64_t bufSize)
 {
 	uint64_t i, j, k;
 	uint64_t nMods, nTotal, nLen, nBFFs, nPotential, nDescLen;
@@ -3904,13 +4905,17 @@ static uint64_t FS_GetModList(char *listbuf, uint64_t bufSize)
 	char **pDirs = NULL;
 	const char *name, *path;
 	char description[MAX_OSPATH];
+	cvar_t *fs_modules;
+
+	fs_modules = (cvar_t *)alloca( sizeof( *fs_modules ) );
+	fs_modules->s = strdup_a( "modules/" );
 
 	uint64_t dummy;
 	char **pFiles0 = NULL;
 	qboolean bDrop = qfalse;
 
 	// paths to search for mods
-	cvar_t *const *paths[] = { &fs_basepath, &fs_homepath
+	cvar_t *const *paths[] = { &fs_basepath, &fs_homepath, &fs_modules
 #ifdef NOMAD_STEAM_APP
 		, &fs_steampath
 #endif

@@ -579,7 +579,7 @@ void G_OpenedBFFList_f( void ) {
 
 /*
 ==================
-G_PureList_f
+G_ReferencedBFFList_f
 ==================
 */
 static void G_ReferencedBFFList_f( void ) {
@@ -597,9 +597,407 @@ static void G_ViewMemory_f( void ) {
     Con_Printf( "Viewing memory of hunk block.\n" );
 }
 
+
+/*
+====================
+G_Record_f
+
+record <demoname>
+
+Begins recording a demo from the current position
+====================
+*/
+static void G_Record_f( void ) {
+	char		demoName[MAX_OSPATH];
+	char		name[MAX_OSPATH];
+	char		demoExt[16];
+	const char	*ext;
+	qtime_t		t;
+
+	if ( Cmd_Argc() > 2 ) {
+		Con_Printf( "record <demoname>\n" );
+		return;
+	}
+
+	if ( gi.demorecording ) {
+		if ( !gi.spDemoRecording ) {
+			Con_Printf( "Already recording.\n" );
+		}
+		return;
+	}
+
+	if ( gi.state != GS_LEVEL ) {
+		Con_Printf( "You must be in a level to record.\n" );
+		return;
+	}
+
+	if ( Cmd_Argc() == 2 ) {
+		// explicit demo name specified
+		N_strncpyz( demoName, Cmd_Argv( 1 ), sizeof( demoName ) );
+		ext = COM_GetExtension( demoName );
+		if ( *ext ) {
+			// strip demo extension
+			sprintf( demoExt, "%s", DEMOEXT );
+			if ( N_stricmp( ext, demoExt ) == 0 ) {
+				*( strrchr( demoName, '.' ) ) = '\0';
+			} else {
+				// check both protocols
+				sprintf( demoExt, "%s", DEMOEXT );
+				if ( N_stricmp( ext, demoExt ) == 0 ) {
+					*( strrchr( demoName, '.' ) ) = '\0';
+				}
+			}
+		}
+		Com_snprintf( name, sizeof( name ) - 1, "demos/%s", demoName );
+
+		gi.explicitRecordName = qtrue;
+	} else {
+		Com_RealTime( &t );
+		Com_snprintf( name, sizeof( name ) - 1, "demos/demo-%04d%02d%02d-%02d%02d%02d",
+			1900 + t.tm_year, 1 + t.tm_mon,	t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec );
+
+		gi.explicitRecordName = qfalse;
+	}
+
+	// save desired filename without extension
+	N_strncpyz( gi.recordName, name, sizeof( gi.recordName ) );
+
+	Con_Printf( "recording to %s.\n", name );
+
+	// start new record with temporary extension
+	N_strcat( name, sizeof( name ), ".tmp" );
+
+	// open the demo file
+	gi.recordfile = FS_FOpenWrite( name );
+	if ( gi.recordfile == FS_INVALID_HANDLE ) {
+		Con_Printf( COLOR_RED "ERROR: couldn't open.\n" );
+		gi.recordName[0] = '\0';
+		return;
+	}
+
+	gi.demorecording = qtrue;
+
+	Com_TruncateLongString( gi.recordNameShort, gi.recordName );
+
+	if ( Cvar_VariableInteger( "ui_recordSPDemo" ) ) {
+        gi.spDemoRecording = qtrue;
+	} else {
+	    gi.spDemoRecording = qfalse;
+	}
+
+	// don't start saving messages until a non-delta compressed message is received
+	gi.demowaiting = qtrue;
+
+	// write out the gamestate message
+//	CL_WriteGamestate( qtrue );
+}
+
+
+/*
+====================
+G_CompleteRecordName
+====================
+*/
+static void G_CompleteRecordName( const char *args, uint32_t argNum )
+{
+	if ( argNum == 2 ) {
+		char demoExt[ 16 ];
+
+		Com_snprintf( demoExt, sizeof( demoExt ) - 1, ".%s", DEMOEXT );
+		Field_CompleteFilename( "demos", demoExt, qtrue, FS_MATCH_EXTERN );
+	}
+}
+
+/*
+=======================================================================
+
+GAME DEMO PLAYBACK
+
+=======================================================================
+*/
+
+
+/*
+==================
+G_NextDemo
+
+Called when a demo or cinematic finishes
+If the "nextdemo" cvar is set, that command will be issued
+==================
+*/
+static void G_NextDemo( void ) {
+	char v[ MAX_CVAR_VALUE ];
+
+	Cvar_VariableStringBuffer( "nextdemo", v, sizeof( v ) );
+	Con_DPrintf( "G_NextDemo: %s\n", v );
+	if ( !v[0] ) {
+		return;
+	}
+
+	Cvar_Set( "nextdemo", "" );
+	Cbuf_AddText( v );
+	Cbuf_AddText( "\n" );
+	Cbuf_Execute();
+}
+
+
+/*
+=================
+G_DemoCompleted
+=================
+*/
+static void G_DemoCompleted( void ) {
+	if ( com_timedemo->i ) {
+		int	time;
+
+		time = Sys_Milliseconds() - gi.timeDemoStart;
+		if ( time > 0 ) {
+			Con_Printf( "%i frames, %3.*f seconds: %3.1f fps\n", gi.timeDemoFrames,
+			time > 10000 ? 1 : 2, time/1000.0, gi.timeDemoFrames*1000.0 / time );
+		}
+	}
+
+//	CL_Disconnect( qtrue );
+	G_NextDemo();
+}
+
+/*
+====================
+G_WalkDemoExt
+====================
+*/
+static int G_WalkDemoExt( const char *arg, char *name, int name_len, fileHandle_t *handle )
+{
+	int i;
+
+	*handle = FS_INVALID_HANDLE;
+	i = 0;
+
+	//while ( demo_protocols[ i ] )
+	//{
+		Com_snprintf( name, name_len, "demos/%s.%s", arg, DEMOEXT );
+//		FS_BypassPure();
+		FS_FOpenFileRead( name, handle );
+//		FS_RestorePure();
+		if ( *handle != FS_INVALID_HANDLE ) {
+			Con_Printf( "Demo file: %s\n", name );
+            return 1;
+//			return demo_protocols[ i ];
+		}
+		else {
+			Con_Printf( "Not found: %s\n", name );
+        }
+//		i++;
+//	}
+	return -1;
+}
+
+
+/*
+====================
+CL_DemoExtCallback
+====================
+*/
+static qboolean CL_DemoNameCallback_f( const char *filename, int length )
+{
+	const int ext_len = strlen( "." DEMOEXT );
+	const int num_len = 2;
+	int version;
+
+	if ( length <= ext_len + num_len || N_stricmpn( filename + length - ( ext_len + num_len ), "." DEMOEXT, ext_len ) != 0 ) {
+		return qfalse;
+    }
+
+/*
+	version = atoi( filename + length - num_len );
+	if ( version == com_protocol->integer )
+		return qtrue;
+
+	if ( version < 66 || version > NEW_PROTOCOL_VERSION )
+		return qfalse;
+    */
+
+	return qtrue;
+}
+
+
+/*
+====================
+G_CompleteDemoName
+====================
+*/
+static void G_CompleteDemoName( const char *args, uint32_t argNum )
+{
+	if ( argNum == 2 ) {
+		FS_SetFilenameCallback( CL_DemoNameCallback_f );
+		Field_CompleteFilename( "demos", "." DEMOEXT, qfalse, FS_MATCH_ANY );
+		FS_SetFilenameCallback( NULL );
+	}
+}
+
+/*
+====================
+G_StopRecording_f
+
+stop recording a demo
+====================
+*/
+void G_StopRecord_f( void ) {
+
+	if ( gi.recordfile != FS_INVALID_HANDLE ) {
+		char tempName[MAX_OSPATH];
+		char finalName[MAX_OSPATH];
+		int	len, sequence;
+
+		// finish up
+		len = -1;
+		FS_Write( &len, 4, gi.recordfile );
+		FS_Write( &len, 4, gi.recordfile );
+		FS_FClose( gi.recordfile );
+		gi.recordfile = FS_INVALID_HANDLE;
+
+		Com_snprintf( tempName, sizeof( tempName ) - 1, "%s.tmp", gi.recordName );
+		Com_snprintf( finalName, sizeof( finalName ) - 1, "%s.%s", gi.recordName, DEMOEXT );
+
+		if ( gi.explicitRecordName ) {
+			FS_Remove( finalName );
+		} else {
+			// add sequence suffix to avoid overwrite
+			sequence = 0;
+			while ( FS_FileExists( finalName ) && ++sequence < 1000 ) {
+				Com_snprintf( finalName, sizeof( finalName ) - 1, "%s-%02d.%s",
+					gi.recordName, sequence, DEMOEXT );
+			}
+		}
+
+		FS_Rename( tempName, finalName );
+	}
+
+	if ( !gi.demorecording ) {
+		Con_Printf( "Not recording a demo.\n" );
+	} else {
+		Con_Printf( "Stopped demo recording.\n" );
+	}
+
+	gi.demorecording = qfalse;
+	gi.spDemoRecording = qfalse;
+}
+
+
+/*
+==================
+G_PlayDemo_f
+
+demo <demoname>
+==================
+*/
 static void G_PlayDemo_f( void )
 {
+    char name[MAX_OSPATH];
+    const char *arg;
+    char *ext_test;
+    int protocol, i;
+    char retry[MAX_OSPATH];
+    const char *shortname, *slash;
+    fileHandle_t hFile;
 
+    if ( Cmd_Argc() != 2 ) {
+        Con_Printf( "demo <demoname>\n" );
+        return;
+    }
+
+    // open the demo file
+    arg = Cmd_Argv( 1 );
+
+    // check for an extension .DEMOEXT
+	ext_test = const_cast<char *>( strrchr( arg, '.' ) );
+	if ( ext_test && !N_stricmpn( ext_test + 1, DEMOEXT, arraylen( DEMOEXT ) - 1 ) ) {
+		protocol = atoi( ext_test + arraylen( DEMOEXT ) );
+
+        /*
+		for( i = 0; demo_protocols[ i ]; i++ ) {
+			if ( demo_protocols[ i ] == protocol )
+				break;
+		}
+        */
+
+//		if ( demo_protocols[ i ] || protocol == com_protocol->integer  ) {
+			Com_snprintf( name, sizeof( name ) - 1, "demos/%s", arg );
+			FS_FOpenFileRead( name, &hFile );
+        /*
+		}
+		else {
+			size_t len;
+
+			Con_Printf( "Protocol %d not supported for demos\n", protocol );
+			len = ext_test - arg;
+
+			if ( len > arraylen( retry ) - 1 ) {
+				len = arraylen( retry ) - 1;
+			}
+
+			N_strncpyz( retry, arg, len + 1);
+			retry[len] = '\0';
+			protocol = G_WalkDemoExt( retry, name, sizeof( name ), &hFile );
+		}
+        */
+	}
+	else {
+		protocol = G_WalkDemoExt( arg, name, sizeof( name ), &hFile );
+    }
+
+	if ( hFile == FS_INVALID_HANDLE ) {
+		Con_Printf( COLOR_YELLOW "couldn't open %s\n", name );
+		return;
+	}
+
+	FS_FClose( hFile );
+	hFile = FS_INVALID_HANDLE;
+
+	// make sure a local server is killed
+	// 2 means don't force disconnect of local client
+//	Cvar_Set( "sv_killserver", "2" );
+
+	if ( FS_FOpenFileRead( name, &gi.demofile ) == -1 ) {
+		// drop this time
+		N_Error( ERR_DROP, "couldn't open %s\n", name );
+		return;
+	}
+
+	if ( ( slash = strrchr( name, '/' ) ) != NULL ) {
+		shortname = slash + 1;
+    } else {
+		shortname = name;
+    }
+
+	N_strncpyz( gi.demoName, shortname, sizeof( gi.demoName ) );
+
+	Con_Close();
+    
+    gi.state = GS_LEVEL;
+	gi.demoplaying = qtrue;
+
+    /*
+	Q_strncpyz( cls.servername, shortname, sizeof( cls.servername ) );
+
+	if ( protocol <= OLD_PROTOCOL_VERSION )
+		gi.compat = qtrue;
+	else
+		gi.compat = qfalse;
+
+	// read demo messages until connected
+#ifdef USE_CURL
+	while ( cls.state >= CA_CONNECTED && cls.state < CA_PRIMED && !Com_DL_InProgress( &download ) ) {
+#else
+	while ( cls.state >= CA_CONNECTED && cls.state < CA_PRIMED ) {
+#endif
+		CL_ReadDemoMessage();
+	}
+    */
+
+	// don't get the first snapshot this frame, to prevent the long
+	// time from the gamestate load from messing causing a time skip
+	gi.firstDemoFrameSkipped = qfalse;
 }
 
 static void G_Vid_Restart_f( void )
@@ -790,6 +1188,73 @@ static void G_SetCameraPos_f( void )
 }
 
 /*
+===============
+G_GenerateGameKey
+
+test to see if a valid GAMEKEY_FILE exists. If one does not, try to generate
+it by filling it with 2048 bytes of random data.
+===============
+*/
+#ifdef USE_GAMEKEY
+static void G_GenerateGameKey( void )
+{
+	int len = 0;
+	unsigned char buf[ GAMEKEY_SIZE ];
+	fileHandle_t f;
+
+	len = FS_FOpenFileRead( GAMEKEY_FILE, &f );
+	FS_FClose( f );
+	if( len == GAMEKEY_SIZE ) {
+		Con_Printf( "GAMEKEY found.\n" );
+		return;
+	}
+	else {
+		if ( len > 0 ) {
+			Con_Printf( "GAMEKEY file size != %i, regenerating\n", GAMEKEY_SIZE );
+		}
+
+		Con_Printf( "GAMEKEY building random string\n" );
+		Com_RandomBytes( buf, sizeof( buf ) );
+
+		f = FS_FOpenWrite( GAMEKEY_FILE );
+		if( !f ) {
+			Con_Printf( "GAMEKEY could not open %s for write\n", GAMEKEY_FILE );
+			return;
+		}
+		FS_Write( buf, sizeof( buf ), f );
+		FS_FClose( f );
+		Con_Printf( "GAMEKEY generated\n" );
+	}
+}
+#endif
+
+/*
+====================
+G_UpdateGUID
+
+update g_guid using GAMEKEY_FILE and optional prefix
+====================
+*/
+static void G_UpdateGUID( const char *prefix, int prefix_len )
+{
+#ifdef USE_GAMEKEY
+	fileHandle_t f;
+	int len;
+
+	len = FS_FOpenFileRead( GAMEKEY_FILE, &f );
+	FS_FClose( f );
+
+	if ( len != GAMEKEY_SIZE ) {
+		Cvar_Set( "g_guid", "" );
+    } else {
+		Cvar_Set( "g_guid", Com_MD5File( GAMEKEY_FILE, GAMEKEY_SIZE, prefix, prefix_len ) );
+    }
+#else
+	Cvar_Set( "g_guid", Com_MD5Buf( &cl_cdkey[0], sizeof(cl_cdkey), prefix, prefix_len));
+#endif
+}
+
+/*
 * G_Init: called every time a new level is loaded
 */
 void G_Init( void )
@@ -943,6 +1408,10 @@ void G_Init( void )
     //
 
     Cmd_AddCommand( "demo", G_PlayDemo_f );
+    Cmd_SetCommandCompletionFunc( "demo", G_CompleteDemoName );
+    Cmd_AddCommand( "record", G_Record_f );
+    Cmd_SetCommandCompletionFunc( "record", G_CompleteRecordName );
+    Cmd_AddCommand( "stoprecord", G_StopRecord_f );
     Cmd_AddCommand( "vid_restart", G_Vid_Restart_f );
     Cmd_AddCommand( "snd_restart", G_Snd_Restart_f );
     Cmd_AddCommand( "modelist", G_ModeList_f );
@@ -956,6 +1425,11 @@ void G_Init( void )
     Cmd_AddCommand( "setcamerapos", G_SetCameraPos_f );
     Cmd_AddCommand( "referenced_bffs", G_ReferencedBFFList_f );
     Cmd_AddCommand( "opened_bffs", G_OpenedBFFList_f );
+
+#ifdef USE_MD5
+    G_GenerateGameKey();
+#endif
+    Cvar_Get( "g_guid", "", CVAR_USERINFO | CVAR_ROM | CVAR_PROTECTED );
 
     Con_Printf( "----- Game State Initialization Complete ----\n" );
 }

@@ -45,6 +45,7 @@ uintptr_t COM_Compress( char *data_p );
 void COM_ParseError( const char *format, ... ) GDR_ATTRIBUTE((format(printf, 1, 2)));
 void COM_ParseWarning( const char *format, ... ) GDR_ATTRIBUTE((format(printf, 1, 2)));
 
+int Com_RealTime( qtime_t *qtime );
 void Com_ParseCommandLine( char *commandLine );
 
 void Com_BeginLoadingScreen( void );
@@ -54,6 +55,14 @@ void Com_LoadResources( void );
 // md4 functions
 uint32_t Com_BlockChecksum ( const void *buffer, uint64_t length );
 void Com_RandomBytes( byte *string, int len );
+
+// MD5 functions
+
+char		*Com_MD5File(const char *filename, int length, const char *prefix, int prefix_len);
+char		*Com_MD5Buf( const char *data, int length, const char *data2, int length2 );
+
+// stateless challenge functions
+void		Com_MD5Init( void );
 
 //int		COM_ParseInfos( const char *buf, int max, char infos[][MAX_INFO_STRING] );
 
@@ -274,6 +283,7 @@ const char* Cmd_Argv( uint32_t index );
 void Cmd_Clear( void );
 void Cmd_CommandCompletion( void(*callback)( const char *s ) );
 qboolean Cmd_CompleteArgument( const char *command, const char *args, uint32_t argnum );
+void Cmd_CompleteWriteCfgName( const char *args, uint32_t argNum );
 
 const char* GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL va( const char *format, ... );
 
@@ -375,6 +385,7 @@ extern cvar_t *com_version;
 extern cvar_t *com_devmode;
 extern cvar_t *sys_cpuString;
 extern cvar_t *com_maxfps;
+extern cvar_t *com_timedemo;
 extern uint64_t com_frameNumber;
 extern uint32_t com_fps;
 extern int com_frameTime;
@@ -399,7 +410,13 @@ uint64_t FS_VM_Write( const void *buffer, uint64_t len, fileHandle_t file, handl
 uint64_t FS_VM_Read( void *buffer, uint64_t len, fileHandle_t file, handleOwner_t owner );
 uint64_t FS_VM_FileLength( fileHandle_t file, handleOwner_t owner );
 
-void FS_VM_CloseFiles(handleOwner_t owner);
+void FS_VM_CloseFiles( handleOwner_t owner );
+
+typedef qboolean ( *fnamecallback_f )( const char *filename, int length );
+
+void FS_SetFilenameCallback( fnamecallback_f func );
+
+uint64_t FS_GetModList( char *listbuf, uint64_t bufsize );
 
 void FS_Startup(void);
 void FS_InitFilesystem(void);
@@ -470,6 +487,7 @@ char *FS_ReadLine(char *buf, uint64_t size, fileHandle_t f);
 
 // customizable window title
 extern char cl_title[ MAX_CVAR_VALUE ];
+extern char cl_cdkey[34];
 
 extern int CPU_flags;
 

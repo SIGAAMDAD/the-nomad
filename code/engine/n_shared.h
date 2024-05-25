@@ -583,6 +583,24 @@ extern void __assert_failure(const char *expr, const char *file, unsigned line);
 #define MAX(a,b) ((a)>(b)?(a):(b))
 #endif
 
+// real time
+//=============================================
+
+
+typedef struct qtime_s {
+	int tm_sec;     /* seconds after the minute - [0,59] */
+	int tm_min;     /* minutes after the hour - [0,59] */
+	int tm_hour;    /* hours since midnight - [0,23] */
+	int tm_mday;    /* day of the month - [1,31] */
+	int tm_mon;     /* months since January - [0,11] */
+	int tm_year;    /* years since 1900 */
+	int tm_wday;    /* days since Sunday - [0,6] */
+	int tm_yday;    /* days since January 1 - [0,365] */
+	int tm_isdst;   /* daylight savings time flag */
+} qtime_t;
+
+#define DEMOEXT	"dmne"			// standard demo extension
+
 typedef float vec_t;
 typedef int32_t ivec_t;
 typedef uint32_t uvec_t;
@@ -1020,6 +1038,9 @@ typedef enum {
 
 #define LERP( a, b, w ) ( ( a ) * ( 1.0f - ( w ) ) + ( b ) * ( w ) )
 #define LUMA( red, green, blue ) ( 0.2126f * ( red ) + 0.7152f * ( green ) + 0.0722f * ( blue ) )
+
+#define CDKEY_LEN 16
+#define CDCHKSUM_LEN 2
 
 // extra debug stuff
 #include "n_debug.h"

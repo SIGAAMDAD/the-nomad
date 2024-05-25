@@ -118,8 +118,7 @@ ERRORS        =-Werror=return-type
 
 DEFINES       =$(VERSION_DEFINE) $(DEBUGDEF) -D_NOMAD_ENGINE
 OPTIMIZERS    = \
-			-ffast-math \
-			-mfma -msse3 -msse2 -msse -mavx -mavx2 -mmmx -mfpmath=sse \
+			-mfma -msse3 -msse2 -msse \
 			-fno-omit-frame-pointer
 
 CFLAGS        =-std=c++17 $(FTYPE) -Wno-unused-result $(DEFINES) $(INCLUDE) $(OPTIMIZERS)
@@ -309,6 +308,7 @@ SRC=\
 	$(O)/engine/n_debug.o \
 	$(O)/engine/n_steam.o \
 	$(O)/engine/md4.o \
+	$(O)/engine/md5.o \
 	$(O)/engine/decompress.o \
 	\
 	$(O)/rendercommon/imgui.o \
