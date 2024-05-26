@@ -429,7 +429,7 @@ static void GLSL_ShowProgramUniforms(GLuint program)
 	for (i = 0; i < count; i++) {
 		nglGetActiveUniform(program, i, sizeof(uniformName), NULL, &size, &type, uniformName);
 
-		ri.Printf(PRINT_DEVELOPER, "active uniform: '%s'\n", uniformName);
+//		ri.Printf(PRINT_DEVELOPER, "active uniform: '%s'\n", uniformName);
 	}
 }
 

@@ -38,7 +38,7 @@ using ModuleIncludePath = eastl::string;
 class CModuleHandle
 {
 public:
-    CModuleHandle( const char *pName, const nlohmann::json& sourceFiles,
+    CModuleHandle( const char *pName, const char *pDescription, const nlohmann::json& sourceFiles,
 		int32_t moduleVersionMajor, int32_t moduleVersionUpdate, int32_t moduleVersionPatch,
 		const nlohmann::json& includePaths );
     ~CModuleHandle();
@@ -50,6 +50,7 @@ public:
     asIScriptContext *GetContext( void );
     asIScriptModule *GetModule( void );
     const string_t& GetName( void ) const;
+	const string_t& GetDescription( void ) const;
 
 	const char *GetModulePath( void ) const;
 
@@ -88,10 +89,9 @@ private:
     bool InitCalls( void );
 
 	string_t m_szName;
+	string_t m_szDescription;
 
 	asIScriptFunction *m_pFuncTable[NumFuncs];
-//	asIScriptObject *m_pEntryPoint;
-//	asITypeInfo *m_pModuleObject;
 
     asIScriptContext *m_pScriptContext;
     asIScriptModule *m_pScriptModule;
@@ -216,7 +216,7 @@ public:
 	virtual int Write( const void *pBuffer, asUINT nBytes ) override;
 
 	virtual ~CModuleCacheHandle() override;
-private:
+
 	fileHandle_t m_hFile;
 };
 

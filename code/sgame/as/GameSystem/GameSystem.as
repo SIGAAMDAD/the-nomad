@@ -1,6 +1,5 @@
 #include "GameSystem/SaveSystem/LoadSection.as"
 #include "GameSystem/SaveSystem/SaveSection.as"
-#include "GameSystem/SaveSystem/ObjectDataSync.as"
 #include "Engine/UserInterface/FontCache.as"
 #include "Engine/ResourceCache.as"
 #include "Engine/Renderer/RenderEntity.as"

@@ -1899,8 +1899,6 @@ void Com_AppendCDKey( const char *filename ) {
 	}
 }
 
-
-#ifndef DEDICATED // bk001204
 /*
 =================
 Com_WriteCDKey
@@ -1945,8 +1943,6 @@ out:
 	;
 #endif
 }
-#endif
-
 
 static void Com_WriteConfigToFile( const char *filename ) {
 	fileHandle_t f;

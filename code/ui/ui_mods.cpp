@@ -27,17 +27,6 @@ typedef struct {
 	module_t *modList;
     uint32_t numMods;
 
-	char			description[NAMEBUFSIZE];
-	char			fs_game[GAMEBUFSIZE];
-
-	char			*descriptionPtr;
-	char			*fs_gamePtr;
-
-	char			*descriptionList[MAX_MODS];
-	char			*fs_gameList[MAX_MODS];
-	const char **modNames;
-	uint32_t modCount;
-
 	menuframework_t menu;
 
     nhandle_t backgroundShader;
@@ -582,58 +571,6 @@ static void ModsMenu_Load( void )
     Con_Printf( "...Got %u modules\n", mods->numMods );
 }
 
-/*
-===============
-UI_Mods_ParseInfos
-===============
-*/
-static void UI_Mods_ParseInfos( char *modDir, char *modDesc ) {
-	mods->fs_gameList[mods->modCount] = mods->fs_gamePtr;
-	N_strncpyz( mods->fs_gamePtr, modDir, 16 );
-
-	mods->descriptionList[mods->modCount] = mods->descriptionPtr;
-	N_strncpyz( mods->descriptionPtr, modDesc, 48 );
-
-	mods->modNames[mods->modCount] = mods->descriptionPtr;
-	mods->descriptionPtr += strlen( mods->descriptionPtr ) + 1;
-	mods->fs_gamePtr += strlen( mods->fs_gamePtr ) + 1;
-	mods->modCount++;
-}
-
-static void UI_Mods_LoadMods( void ) {
-	int		numdirs;
-	char	dirlist[2048];
-	char	*dirptr;
-  	char  *descptr;
-	int		i;
-	int		dirlen;
-	const char *description;
-
-	description = (const char *)mods->descriptionList;
-	mods->modNames = (const char **)description;
-	mods->descriptionPtr = mods->description;
-	mods->fs_gamePtr = mods->fs_game;
-
-	// always start off with gamedata
-	mods->modCount = 1;
-	mods->modNames[0] = "The Nomad ";
-	mods->fs_gameList[0] = "";
-
-	numdirs = FS_GetFileList( "$modlist", "", dirlist, sizeof( dirlist ) );
-	dirptr  = dirlist;
-	for( i = 0; i < numdirs; i++ ) {
-		dirlen = strlen( dirptr ) + 1;
-	    descptr = dirptr + dirlen;
-	  	UI_Mods_ParseInfos( dirptr, descptr );
-	    dirptr += dirlen + strlen( descptr ) + 1;
-	}
-
-	Con_Printf( "%i mods parsed\n", mods->modCount );
-	if ( mods->modCount > MAX_MODS ) {
-		mods->modCount = MAX_MODS;
-	}
-}
-
 void ModsMenu_Cache( void )
 {
 	uint64_t size, i;
@@ -662,15 +599,7 @@ void ModsMenu_Cache( void )
 	mods->menu.track = Snd_RegisterTrack( "music/tales_around_the_campfire.ogg" );
 
     ModsMenu_Load();
-	UI_Mods_LoadMods();
-	
-	for ( i = 0; i < mods->modCount; i++ ) {
-		Con_Printf( "Loaded mod directory '%s'.\n", mods->fs_gameList[i] );
-		Con_Printf( "  Name: %s\n", mods->modNames[i] );
-		Con_Printf( "  Description: %s\n", mods->descriptionList[i] );
-		Con_Printf( "\n" );
-	}
-	
+
     mods->backgroundShader = re.RegisterShader( "menu/tales_around_the_campfire" );
 
 	ui->menubackShader = mods->backgroundShader;

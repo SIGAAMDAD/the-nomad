@@ -34,6 +34,10 @@ static void ML_CleanCache_f( void ) {
         path = va( "_cache/%s_code.dat", it->m_pHandle->GetName().c_str() );
         FS_Remove( path );
         FS_HomeRemove( path );
+
+        path = va( "_cache/%s_metadata.dat", it->m_pHandle->GetName().c_str() );
+        FS_Remove( path );
+        FS_HomeRemove( path );
     }
 
     Cbuf_ExecuteText( EXEC_APPEND, "ui.clear_load_list" );
@@ -142,6 +146,7 @@ void CModuleLib::LoadModule( const char *pModule )
     nlohmann::json parse;
     nlohmann::json includePaths;
     CModuleInfo *m;
+    string_t description;
     union {
         void *v;
         char *b;
@@ -224,13 +229,13 @@ void CModuleLib::LoadModule( const char *pModule )
     } else {
         includePaths.emplace_back( va( "%s/", pModule ) );
     }
-
+    description = parse.contains( "Description" ) ? parse[ "Description" ].get<string_t>() : "";
     const int32_t versionMajor = parse[ "Version" ][ "VersionMajor" ];
     const int32_t versionUpdate = parse[ "Version" ][ "VersionUpdate" ];
     const int32_t versionPatch = parse[ "Version" ][ "VersionPatch" ];
 
-    pHandle = new ( Hunk_Alloc( sizeof( *pHandle ), h_low ) ) CModuleHandle( pModule, parse.at( "SubModules" ), versionMajor, versionUpdate, versionPatch,
-        includePaths );
+    pHandle = new ( Hunk_Alloc( sizeof( *pHandle ), h_low ) ) CModuleHandle( pModule, description.c_str(), parse.at( "SubModules" ),
+        versionMajor, versionUpdate, versionPatch, includePaths );
     m = new ( Hunk_Alloc( sizeof( *m ), h_low ) ) CModuleInfo( parse, pHandle );
     m_LoadList.emplace_back( m );
 }
@@ -315,10 +320,10 @@ int CModuleLib::ModuleCall( CModuleInfo *pModule, EModuleFuncId nCallId, uint32_
     };
 
     switch ( nCallId ) {
-    case ModuleOnLevelStart: {
+    case ModuleOnLevelStart:
     case ModuleOnLevelEnd:
     case ModuleOnLoadGame:
-    case ModuleOnSaveGame:
+    case ModuleOnSaveGame: {
         CTimer time;
 
         time.Run();
@@ -493,6 +498,8 @@ bool CModuleLib::AddDefaultProcs( void ) const {
 CModuleLib::CModuleLib( void )
 {
     const char *path;
+    char **fileList;
+    uint64_t nFiles, i;
 
     if ( s_pModuleInstance && s_pModuleInstance->m_pEngine ) {
         return;
@@ -535,10 +542,17 @@ CModuleLib::CModuleLib( void )
     // load all the modules
     //
 
-    Con_Printf( "Loading module configurations from \"%s\"...\n", Cvar_VariableString( "fs_basegame" ) );
+    Con_Printf( "Loading module configurations from \"modules/\"...\n" );
 
-    path = va( "%s/modules/", Cvar_VariableString( "fs_basegame" ) );
+    path = "modules/";
+    fileList = FS_ListFiles( "modules/", "/", &nFiles );
+    
+    for ( i = 0; i < nFiles; i++ ) {
+        Con_Printf( "...found module directory \"%s\".\n", fileList[i] );
+        LoadModule( fileList[i] );
+    }
 
+/*
     try {
         // this is really inefficient but it'll do for now
         for ( const auto& it : std::filesystem::directory_iterator{ path } ) {
@@ -552,6 +566,7 @@ CModuleLib::CModuleLib( void )
     } catch ( const std::exception& e ) {
         N_Error( ERR_FATAL, "InitModuleLib: failed to load module directories, std::exception was thrown -> %s", e.what() );
     }
+*/
 
     // bind all the functions
     for ( auto& it : m_LoadList ) {

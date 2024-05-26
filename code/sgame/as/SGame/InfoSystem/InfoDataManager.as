@@ -20,7 +20,7 @@ namespace TheNomad::SGame::InfoSystem {
 			json@ data;
 			array<json@> values;
 			
-			path = "modules/" + modName + "/scripts/" + fileName;
+			path = "modules/" + modName + "/DataScripts/" + fileName;
 
 			@data = json();
 			if ( !data.ParseFile( path ) ) {
@@ -44,7 +44,7 @@ namespace TheNomad::SGame::InfoSystem {
 
 			@data = json();
 			for ( uint i = 0; i < sgame_ModList.Count(); i++ ) {
-				path = "modules/" + sgame_ModList[i] + "/scripts/entitydata.json";
+				path = "modules/" + sgame_ModList[i] + "/DataScripts/entitydata.json";
 				if ( !data.ParseFile( path ) ) {
 					ConsoleWarning( "failed to load entity data info file for \"" + sgame_ModList[i] + "\"\n" );
 					return;

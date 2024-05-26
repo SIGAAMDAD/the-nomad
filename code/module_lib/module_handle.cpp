@@ -36,10 +36,10 @@ const moduleFunc_t funcDefs[NumFuncs] = {
     { "int ModuleOnUserCmd( int, int, int )", ModuleOnPlayerInput, 3, qfalse }
 };
 
-CModuleHandle::CModuleHandle( const char *pName, const nlohmann::json& sourceFiles, int32_t moduleVersionMajor,
+CModuleHandle::CModuleHandle( const char *pName, const char *pDescription, const nlohmann::json& sourceFiles, int32_t moduleVersionMajor,
     int32_t moduleVersionUpdate, int32_t moduleVersionPatch, const nlohmann::json& includePaths
 )
-    : m_szName{ pName }, m_nStateStack{ 0 }, m_nVersionMajor{ moduleVersionMajor },
+    : m_szName{ pName }, m_szDescription{ pDescription }, m_nStateStack{ 0 }, m_nVersionMajor{ moduleVersionMajor },
     m_nVersionUpdate{ moduleVersionUpdate }, m_nVersionPatch{ moduleVersionPatch }
 {
     int error;
@@ -64,6 +64,9 @@ CModuleHandle::CModuleHandle( const char *pName, const nlohmann::json& sourceFil
     if ( !m_pScriptModule ) {
         N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: GetModule() failed on \"%s\"\n", pName );
     }
+
+    // add standard definitions
+    g_pModuleLib->AddDefaultProcs();
     
     switch ( ( error = LoadFromCache() ) ) {
     case 1:
@@ -74,14 +77,8 @@ CModuleHandle::CModuleHandle( const char *pName, const nlohmann::json& sourceFil
         break;
     case -1:
         Con_Printf( COLOR_RED "failed to load module bytecode.\n" );
-
-        // if we have any old or outdated bytecode, we'll want to clean it out
-        Cbuf_ExecuteText( EXEC_APPEND, "ml.clean_script_cache\n" );
         break;
     };
-
-    // add standard definitions
-    g_pModuleLib->AddDefaultProcs();
     
     if ( error != 1 ) {
         Build( sourceFiles );
@@ -94,7 +91,7 @@ CModuleHandle::CModuleHandle( const char *pName, const nlohmann::json& sourceFil
     m_pScriptContext->AddRef();
 
 //    m_pScriptModule->SetUserData( this );
-//    SaveToCache();
+    SaveToCache();
 
     m_nLastCallId = NumFuncs;
     m_bLoaded = qtrue;
@@ -382,10 +379,13 @@ bool CModuleHandle::LoadSourceFile( const string_t& filename )
         char *b;
     } f;
     int retn;
+    const char *path;
     uint64_t length;
 
-    length = FS_LoadFile( va( "modules/%s/%s", m_szName.c_str(), filename.c_str() ), &f.v );
+    path = va( "modules/%s/%s", m_szName.c_str(), filename.c_str() );
+    length = FS_LoadFile( path, &f.v );
     if ( !f.v ) {
+        Con_Printf( "Couldn't load script file '%s'.\n", path );
         return false;
     }
     
@@ -430,82 +430,128 @@ bool CModuleHandle::LoadSourceFile( const string_t& filename )
 typedef struct {
     int64_t ident;
     version_t gameVersion;
-    int32_t moduleVersion; // versionMajor
+    int32_t moduleVersionMajor;
+    int32_t moduleVersionUpdate;
+    int32_t moduleVersionPatch;
+    uint32_t checksum;
     qboolean hasDebugSymbols;
 } asCodeCacheHeader_t;
+
+static void SaveCodeDataCache( const string_t& moduleName, const CModuleHandle *pHandle, asIScriptModule *pModule )
+{
+    asCodeCacheHeader_t header;
+    int ret;
+    CModuleCacheHandle dataStream( va( "_cache/%s_code.dat", moduleName.c_str() ), FS_OPEN_WRITE );
+    byte *pByteCode;
+    uint64_t nLength;
+    fileHandle_t hFile;
+
+    memset( &header, 0, sizeof( header ) );
+    header.hasDebugSymbols = ml_debugMode->i;
+    header.gameVersion.m_nVersionMajor = _NOMAD_VERSION;
+    header.gameVersion.m_nVersionUpdate = _NOMAD_VERSION_UPDATE;
+    header.gameVersion.m_nVersionPatch = _NOMAD_VERSION_PATCH;
+    header.ident = AS_CACHE_CODE_IDENT;
+    pHandle->GetVersion( &header.moduleVersionMajor, &header.moduleVersionUpdate, &header.moduleVersionPatch );
+
+    ret = pModule->SaveByteCode( &dataStream, header.hasDebugSymbols );
+    if ( ret != asSUCCESS ) {
+        Con_Printf( COLOR_RED "ERROR: failed to save module bytecode for '%s'\n", moduleName.c_str() );
+    }
+    FS_FClose( dataStream.m_hFile );
+
+    nLength = FS_LoadFile( va( "_cache/%s_code.dat", moduleName.c_str() ), (void **)&pByteCode );
+    if ( !nLength || !pByteCode ) {
+        N_Error( ERR_DROP, "SaveCodeDataCache: failed to load code data cache for '%s'", moduleName.c_str() );
+    }
+    header.checksum = crc32_buffer( pByteCode, nLength );
+    FS_FreeFile( pByteCode );
+
+    Con_Printf( "Saved bytecode cache with checksum %u\n", header.checksum );
+
+    FS_WriteFile( va( "_cache/%s_metadata.bin", moduleName.c_str() ), &header, sizeof( header ) );
+}
+
+static bool LoadCodeFromCache( const string_t& moduleName, const CModuleHandle *pHandle, asIScriptModule *pModule )
+{
+    const char *path;
+    uint64_t nLength;
+    asCodeCacheHeader_t *header;
+    uint32_t checksum;
+    byte *pByteCode;
+    int32_t versionMajor, versionUpdate, versionPatch;
+
+    path = va( "_cache/%s_metadata.bin", moduleName.c_str() );
+    nLength = FS_LoadFile( path, (void **)&header );
+    if ( !nLength || !header ) {
+        return false;
+    }
+
+    if ( nLength != sizeof( *header ) ) {
+        Con_Printf( COLOR_RED "LoadCodeFromCache: module script metadata for '%s' has a bad header\n", moduleName.c_str() );
+        return false;
+    }
+
+    // load the code's checksum
+    path = va( "_cache/%s_code.dat", moduleName.c_str() );
+    nLength = FS_LoadFile( path, (void **)&pByteCode );
+    if ( !nLength || !pByteCode ) {
+        Con_Printf( COLOR_RED "LoadCodeFromCache: metadata for module '%s' found, but couldn't load the cached code\n", moduleName.c_str() );
+        return false;
+    }
+    checksum = crc32_buffer( pByteCode, nLength );
+    FS_FreeFile( pByteCode );
+
+    pHandle->GetVersion( &versionMajor, &versionUpdate, &versionPatch );
+
+    if ( header->checksum != checksum ) {
+        // recompile, updated checksum
+        return false;
+    }
+    else if ( header->moduleVersionMajor != versionMajor || header->moduleVersionUpdate != versionUpdate
+        || header->moduleVersionPatch != versionPatch )
+    {
+        // recompile, different version
+        return false;
+    }
+    else {
+        // load the bytecode
+        CModuleCacheHandle dataStream( va( "_cache/%s_code.dat", moduleName.c_str() ), FS_OPEN_READ );
+        int ret;
+        
+        ret = pModule->LoadByteCode( &dataStream, (bool *)&header->hasDebugSymbols );
+        if ( ret != asSUCCESS ) {
+            // clean cache to get rid of any old and/or corrupt code
+            FS_Remove( va( "_cache/%s_code.dat", moduleName.c_str() ) );
+            FS_HomeRemove( va( "_cache/%s_code.dat", moduleName.c_str() ) );
+            Con_Printf( COLOR_RED "Error couldn't load cached byte code for '%s'\n", moduleName.c_str() );
+            return false;
+        }
+    }
+
+    FS_FreeFile( header );
+
+    return true;
+}
 
 void CModuleHandle::SaveToCache( void ) const {
     PROFILE_FUNCTION();
     
-    CModuleCacheHandle *dataStream;
-    const char *path;
-    asCodeCacheHeader_t header;
-    int ret;
+    Con_Printf( "Saving compiled module \"%s\" bytecode...\n", m_szName.c_str() );
 
-    path = va( "_cache/%s_code.dat", m_szName.c_str() );
-
-    dataStream = CreateStackObject( CModuleCacheHandle, path, FS_OPEN_WRITE );
-    Con_Printf( "Saving compiled module \"%s\" bytecode to \"%s\"...\n", m_szName.c_str(), path );
-
-/*
-    memset( &header, 0, sizeof(header) );
-    header.ident = AS_CACHE_CODE_IDENT;
-    header.gameVersion = version_t{ NOMAD_VERSION_FULL };
-    header.moduleVersion = m_nVersion;
-#ifdef _NOMAD_DEBUG
-    header.hasDebugSymbols = true;
-#else
-    header.hasDebugSymbols = ml_debugMode->i;
-#endif
-
-    dataStream->Write( &header, sizeof(header) ); */
-
-    ret = m_pScriptModule->SaveByteCode( dataStream, !header.hasDebugSymbols );
-    if ( ret != asSUCCESS ) {
-        Con_Printf( COLOR_RED "ERROR: failed to save module bytecode.\n" );
-    }
+    SaveCodeDataCache( m_szName, this, m_pScriptModule );
 }
 
 int CModuleHandle::LoadFromCache( void ) {
     PROFILE_FUNCTION();
 
-    CModuleCacheHandle *dataStream;
-    const char *path;
-    asCodeCacheHeader_t header;
-    int ret;
-
     if ( ml_alwaysCompile->i ) {
         return 0; // force recompilation
     }
 
-    path = va( "_cache/%s_code.dat", m_szName.c_str() );
-    if ( !FS_FileExists( path ) ) {
-        return -1;
-    }
+    Con_Printf( "Loading compiled module \"%s\" bytecode...\n", m_szName.c_str() );
 
-    dataStream = CreateStackObject( CModuleCacheHandle, path, FS_OPEN_READ );
-    Con_Printf( "Loading compiled module \"%s\" bytecode from \"%s\"...\n", m_szName.c_str(), path );
-
-/*    dataStream->Read( &header, sizeof(header) );
-    if ( header.ident != AS_CACHE_CODE_IDENT ) {
-        Con_Printf( COLOR_RED "ERROR: invalid code cache file \"%s\", identifier is incorrect.\n", path );
-        return -1;
-    }
-    if ( header.gameVersion != version_t{ NOMAD_VERSION_FULL } ) {
-        Con_Printf( COLOR_YELLOW
-            "WARNING: game version found in code cache file is different,"
-            "GDR Games is not responsible for an unstable experience.\n" );
-    }
-    if ( header.moduleVersion != m_nVersion ) {
-        Con_Printf( "Module version found in code cache file isn't the same as the one loaded, recompiling.\n" );
-        return -1;
-    }*/
-
-    ret = m_pScriptModule->LoadByteCode( dataStream, NULL );
-    if ( ret != asSUCCESS ) {
-        // clean cache to get rid of any old and/or corrupt code
-        Cbuf_ExecuteText( EXEC_APPEND, "ml.clean_script_cache\n" );
-        
+    if ( !LoadCodeFromCache( m_szName, this, m_pScriptModule ) ) {
         return -1; // just recompile it
     }
 

@@ -10,7 +10,7 @@
 // the easiest way to get it is to just run the game and see what it spits out
 #define	DEMO_BFF0_CHECKSUM	0
 static const uint32_t bff_checksums[] = {
-	317812776u
+	3156427443u, // bff0
 };
 
 #ifdef _WIN32
@@ -2519,7 +2519,7 @@ static bffFile_t *FS_LoadBFF( const char *bffpath )
 		}
 		curFile->size = LittleLong( curFile->size );
 
-		Con_DPrintf( "Chunk[%lu]: %s (%lu) %lu\n", i, filename_inbff, curFile->nameLen, curFile->size );
+//		Con_DPrintf( "Chunk[%lu]: %s (%lu) %lu\n", i, filename_inbff, curFile->nameLen, curFile->size );
 
 		filename_inbff[ sizeof( filename_inbff ) - 1 ] = '\0';
 		FS_ConvertFilename( filename_inbff );
@@ -2539,11 +2539,16 @@ static bffFile_t *FS_LoadBFF( const char *bffpath )
 	}
 #endif
 
-	bff->checksum = Com_BlockChecksum( fs_headerLongs + 1, sizeof( fs_headerLongs[0] ) * ( fs_numHeaderLongs - 1) );
-	bff->checksum = LittleInt( bff->checksum );
-
-	bff->pure_checksum = Com_BlockChecksum( fs_headerLongs, sizeof( fs_headerLongs[0] ) * fs_numHeaderLongs );
-	bff->pure_checksum = LittleLong( bff->pure_checksum );
+//	if ( fs_numHeaderLongs ) {
+//		bff->checksum = Com_BlockChecksum( fs_headerLongs + 1, sizeof( fs_headerLongs[0] ) * ( fs_numHeaderLongs - 1 ) );
+//		bff->checksum = LittleInt( bff->checksum );
+//
+//		bff->pure_checksum = Com_BlockChecksum( fs_headerLongs, sizeof( fs_headerLongs[0] ) * fs_numHeaderLongs );
+//		bff->pure_checksum = LittleLong( bff->pure_checksum );
+//	}
+//	else {
+		bff->checksum = crc32_buffer( (const byte *)bff->bffBasename, sizeof( baseNameLen ) );
+//	}
 
 #ifdef USE_BFF_CACHE
 	bff->headerLongs = fs_headerLongs;
@@ -4094,6 +4099,8 @@ static void FS_AddGameDirectory( const char *path, const char *dir )
 //		FS_SortFileList( bffDirs, numdirs - 1 );
 	}
 
+	Con_DPrintf( "Adding game directory '%s'...\n", curpath );
+
 #if 0
 	for (bffFilesI = 0; bffFilesI < numfiles; bffFilesI++) {
 		len = strlen( bffFiles[bffFilesI] );
@@ -4653,6 +4660,7 @@ void FS_Startup( void )
 		for ( i = 0; i < basegame_cnt; i++ ) {
 			FS_AddGameDirectory( fs_basepath->s, basegames[i] );
 		}
+		FS_AddGameDirectory( fs_basepath->s, BASEGAME_DIR "/modules" );
 	}
 	// fs_homepath is somewhat particular to *nix systems, only add if relevant
 	// NOTE: same filtering below for mods and basegame
