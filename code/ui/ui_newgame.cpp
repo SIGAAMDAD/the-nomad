@@ -30,7 +30,7 @@ static newGameMenu_t *s_newGame;
 
 static void BeginNewGame( void )
 {
-    UI_SetActiveMenu( UI_MENU_PAUSE );
+    UI_SetActiveMenu( UI_MENU_NONE );
 
     gi.state = GS_LEVEL;
 
@@ -151,14 +151,25 @@ static void NewGameMenu_Draw( void )
         hShader = s_newGame->acceptHovered ? s_newGame->accept_1 : s_newGame->accept_0;
         imageSize = ImVec2( 256 * ui->scale, 72 * ui->scale );
     }
+    
+    if ( !sgvm->m_pHandle->IsValid() ) {
+        hShader = s_newGame->accept_0;
+    }
 
     ImGui::SetCursorScreenPos( ImVec2( 970 * ui->scale, 680 * ui->scale ) );
     ImGui::Image( (ImTextureID)(uintptr_t)hShader, imageSize );
-	s_newGame->acceptHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
-	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) || Key_IsDown( KEY_PAD0_START ) ) {
-		Snd_PlaySfx( ui->sfx_select );
-        BeginNewGame();
-	}
+    s_newGame->acceptHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
+    if ( sgvm->m_pHandle->IsValid() ) {
+    	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) || Key_IsDown( KEY_PAD0_START ) ) {
+    		Snd_PlaySfx( ui->sfx_select );
+            BeginNewGame();
+    	}
+    } else {
+        if ( s_newGame->acceptHovered ) {
+            FontCache()->SetActiveFont( RobotoMono );
+            ImGui::SetItemTooltip( "ERROR: cannot begin new game, SGame module isn't valid, check the console log for details" );
+        }
+    }
 
     ImGui::SetCursorScreenPos( ImVec2( 16 * ui->scale, 300 * ui->scale ) );
 
@@ -224,6 +235,8 @@ void NewGameMenu_Cache( void )
 
     s_newGame->accept_0 = re.RegisterShader( "menu/accept_0" );
     s_newGame->accept_1 = re.RegisterShader( "menu/accept_1" );
+
+    strcpy( s_newGame->saveName, "The Ultimate Lad" );
 }
 
 void UI_NewGameMenu( void )

@@ -683,7 +683,7 @@ static void Con_DrawInput( void ) {
 	const int windowFlags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar
 		| ImGuiWindowFlags_AlwaysAutoResize;
 	
-	if ( !( Key_GetCatcher( ) & KEYCATCH_CONSOLE ) ) {
+	if ( !( Key_GetCatcher() & KEYCATCH_CONSOLE ) ) {
 		return;
 	}
 
@@ -798,43 +798,7 @@ static void Con_DrawText( const char *txt )
 		RobotoMono = FontCache()->AddFontToCache( "RobotoMono", "Bold" );
 	}
 
-	for ( i = 0, text = txt; i < len; i++, text++ ) {
-		// track color changes
-		while ( Q_IsColorString(text) && *(text+1) != '\n' ) {
-			colorIndex = ColorIndexFromChar(*(text+1));
-			if (currentColorIndex != colorIndex) {
-				currentColorIndex = colorIndex;
-				if (usedColor) {
-					ImGui::PopStyleColor();
-				}
-				ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( g_color_table[ colorIndex ] ) );
-				usedColor = qtrue;
-			}
-			text += 2;
-		}
-		
-		switch (*text) {
-		case '\n':
-			if ( usedColor ) {
-				ImGui::PopStyleColor();
-				currentColorIndex = ColorIndex( S_COLOR_WHITE );
-				ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( g_color_table[currentColorIndex] ) );
-				usedColor = qfalse;
-			}
-			ImGui::NewLine();
-			break;
-		case '\r':
-			ImGui::SameLine();
-			break;
-		default:
-			s[0] = *text;
-			s[1] = 0;
-
-			ImGui::TextWrapped( s );
-			ImGui::SameLine();
-			break;
-		};
-	}
+	UI_DrawText( txt );
 }
 
 /*
@@ -864,7 +828,7 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 	refdef.width = gi.gpuConfig.vidWidth;
 	refdef.height = gi.gpuConfig.vidHeight;
 //	refdef.time = gi.frametime * 0.001f;
-	refdef.time = -( gi.frametime - gi.realFrameTime ) * 0.10f;
+	refdef.time = gi.realtime * 0.1f;
 	refdef.flags = RSF_NOWORLDMODEL | RSF_ORTHO_TYPE_SCREENSPACE;
 
 	height = gi.gpuConfig.vidHeight * frac;
@@ -926,7 +890,7 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 	Con_DrawInput();
 
 	if ( open ) {
-		ImGui::SetScrollHereY();
+		ImGui::SetScrollY( ImGui::GetScrollMaxY() );
 	}
 
 	ImGui::End();

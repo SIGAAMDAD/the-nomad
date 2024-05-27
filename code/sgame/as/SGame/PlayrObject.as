@@ -274,7 +274,7 @@ namespace TheNomad::SGame {
 			return m_State.GetID() == StateNum::ST_PLAYR_DOUBLEJUMP;
 		}
 
-		void SetLegFacing( int facing ) {
+		void SetLegsFacing( int facing ) {
 			m_LegsFacing = facing;
 		}
 
@@ -464,7 +464,7 @@ namespace TheNomad::SGame {
 			//
 			// init all player data
 			//
-			m_Link.m_Origin = vec3( 0.0f );
+			m_Link.m_Origin = origin;
 			m_nHealth = 100.0f;
 			m_nRage = 100.0f;
 			@m_LeftHandWeapon = @m_LeftArm;
@@ -499,8 +499,8 @@ namespace TheNomad::SGame {
 			refEntity.sheetNum = m_SpriteSheet.GetShader();
 			refEntity.spriteId = 0 + m_Facing;
 			refEntity.scale = 2.0f;
-//			refEntity.Draw();
-			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, refEntity.sheetNum, refEntity.spriteId );
+			refEntity.Draw();
+//			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, refEntity.sheetNum, refEntity.spriteId );
 //			TheNomad::Engine::Renderer::AddPolyToScene( m_SpriteSheet.GetShader(), verts );
 			
 			//
@@ -545,8 +545,8 @@ namespace TheNomad::SGame {
 			refEntity.sheetNum = m_SpriteSheet.GetShader();
 			refEntity.spriteId = 29 + m_LegsFacing;
 			refEntity.scale = 2.0f;
-//			refEntity.Draw();
-			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, refEntity.sheetNum, refEntity.spriteId );
+			refEntity.Draw();
+//			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, refEntity.sheetNum, refEntity.spriteId );
 //			TheNomad::Engine::Renderer::AddPolyToScene( m_SpriteSheet.GetShader(), verts );
 			
 //			hLegSprite = m_LegState.GetSpriteOffset().y * m_SpriteSheet.GetSpriteCountX() +

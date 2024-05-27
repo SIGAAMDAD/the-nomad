@@ -259,9 +259,6 @@ static void GLM_MakeVPM( const vec4_t ortho, float *zoom, float zNear, float zFa
     gi.projectionMatrix = glm::ortho( ortho[0], ortho[1], ortho[2], ortho[3], zNear, zFar );
 
     if ( ( orthoFlags & RSF_ORTHO_BITS ) != RSF_ORTHO_TYPE_SCREENSPACE ) {
-//        gi.cameraPos = glm::vec3( gi.projectionMatrix * glm::vec4( gi.cameraWorldPos[0] - gi.mapCache.info.width / 2.0f,
-//            ( gi.mapCache.info.height - gi.cameraWorldPos[1] ) / 2.0f,
-//            0.0f, 1.0f ) );
         position = gi.projectionMatrix * glm::mat4( 1.0f ) * glm::vec4(
             ( gi.cameraPos[0] * 8.0f ) + ( gi.cameraZoom * 100.0f ),
             ( gi.cameraPos[1] * 8.0f ) + ( gi.cameraZoom * 1000.0f ),
@@ -269,12 +266,8 @@ static void GLM_MakeVPM( const vec4_t ortho, float *zoom, float zNear, float zFa
         );
         transpose = glm::translate( glm::mat4( 1.0f ), glm::vec3( position[0], position[1], 0.0f ) )
                     * glm::scale( glm::mat4( 1.0f ), glm::vec3( gi.cameraZoom ) );
-//        transpose = glm::translate( glm::mat4( 1.0f ), glm::vec3( gi.cameraPos[0], gi.cameraPos[1], 0.0f ) )
-//                    * glm::scale( glm::mat4( 1.0f ), glm::vec3( gi.cameraZoom ) );
         gi.viewMatrix = glm::inverse( transpose );
-//        gi.viewMatrix = transpose;
         gi.viewProjectionMatrix = gi.projectionMatrix * gi.viewMatrix;
-//        gi.cameraPos = gi.viewProjectionMatrix * glm::vec4( gi.cameraWorldPos[0], gi.cameraWorldPos[1], 0.0f, 1.0f );
     } else {
         gi.viewMatrix = glm::mat4( 1.0f );
         gi.viewProjectionMatrix = gi.projectionMatrix;

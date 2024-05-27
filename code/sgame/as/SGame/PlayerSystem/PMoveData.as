@@ -198,18 +198,18 @@ namespace TheNomad::SGame {
 		private void SetMovementDir() {
 			if ( forward > side ) {
 				if ( northmove > southmove ) {
-					m_EntityData.SetLegFacing( FACING_FORWARD );
+					m_EntityData.SetLegsFacing( FACING_FORWARD );
 				}
 				else if ( southmove > northmove ) {
-					m_EntityData.SetLegFacing( FACING_BACKWARD );
+					m_EntityData.SetLegsFacing( FACING_BACKWARD );
 				}
 			}
 			else if ( side > forward ) {
 				if ( eastmove > westmove ) {
-					m_EntityData.SetLegFacing( FACING_RIGHT );
+					m_EntityData.SetLegsFacing( FACING_RIGHT );
 				}
 				else if ( westmove > eastmove ) {
-					m_EntityData.SetLegFacing( FACING_LEFT );
+					m_EntityData.SetLegsFacing( FACING_LEFT );
 				}
 			}
 		}
@@ -249,8 +249,6 @@ namespace TheNomad::SGame {
 			*/
 			KeyMove();
 			
-			SetMovementDir();
-			
 			if ( upmove < 1.0f ) {
 				// not holding jump
 				flags &= ~PMF_JUMP_HELD;
@@ -271,34 +269,46 @@ namespace TheNomad::SGame {
 				accel.x += side;
 
 				m_EntityData.GetPhysicsObject().SetAcceleration( accel );
-			
-			// set torso direction
-			angle = atan2( ( screenWidth / 2 ) - mousePos.x, ( screenHeight / 2 ) - mousePos.y );
-			dir = Util::Angle2Dir( angle );
-			
+
+			// set legs direction
 			if ( eastmove > westmove ) {
-				m_EntityData.SetFacing( FACING_RIGHT );
+				m_EntityData.SetLegsFacing( FACING_RIGHT );
 			} else if ( westmove > eastmove ) {
-				m_EntityData.SetFacing( FACING_LEFT );
+				m_EntityData.SetLegsFacing( FACING_LEFT );
 			}
 
-			switch ( dir ) {
-			case TheNomad::GameSystem::DirType::North:
-			case TheNomad::GameSystem::DirType::South:
-				break; // not implemented for now
-			case TheNomad::GameSystem::DirType::NorthEast:
-			case TheNomad::GameSystem::DirType::SouthEast:
-			case TheNomad::GameSystem::DirType::East:
-				m_EntityData.SetFacing( FACING_RIGHT );
-				break;
-			case TheNomad::GameSystem::DirType::NorthWest:
-			case TheNomad::GameSystem::DirType::SouthWest:
-			case TheNomad::GameSystem::DirType::West:
-				m_EntityData.SetFacing( FACING_LEFT );
-				break;
-			default:
-				break;
-			};
+			//
+			// set torso direction
+			//
+			if ( TheNomad::Engine::CvarVariableInteger( "in_mode" ) == 0 ) {
+				angle = atan2( ( screenWidth / 2 ) - mousePos.x, ( screenHeight / 2 ) - mousePos.y );
+				dir = Util::Angle2Dir( angle );
+
+				switch ( dir ) {
+				case TheNomad::GameSystem::DirType::North:
+				case TheNomad::GameSystem::DirType::South:
+					break; // not implemented for now
+				case TheNomad::GameSystem::DirType::NorthEast:
+				case TheNomad::GameSystem::DirType::SouthEast:
+				case TheNomad::GameSystem::DirType::East:
+					m_EntityData.SetFacing( FACING_RIGHT );
+					break;
+				case TheNomad::GameSystem::DirType::NorthWest:
+				case TheNomad::GameSystem::DirType::SouthWest:
+				case TheNomad::GameSystem::DirType::West:
+					m_EntityData.SetFacing( FACING_LEFT );
+					break;
+				default:
+					break;
+				};
+			}
+			else {
+				if ( eastmove > westmove ) {
+					m_EntityData.SetFacing( FACING_RIGHT );
+				} else if ( westmove > eastmove ) {
+					m_EntityData.SetFacing( FACING_LEFT );
+				}
+			}
 
 			ImGui::Begin( "Debug Player Movement" );
 			ImGui::Text( "NorthMove: " + northmove );

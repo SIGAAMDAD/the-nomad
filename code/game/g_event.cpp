@@ -1029,26 +1029,28 @@ static void G_KeyDownEvent(uint32_t key, uint32_t time)
 	keys[key].repeats++;
 
 #ifndef _WIN32
-	if (keys[KEY_ALT].down && key == KEY_ENTER) {
-		Cvar_SetIntegerValue("r_fullscreen", !Cvar_VariableInteger("r_fullscreen"));
-		Cbuf_ExecuteText(EXEC_APPEND, "vid_restart\n");
+	if ( keys[KEY_ALT].down && key == KEY_ENTER ) {
+		Cvar_SetIntegerValue( "r_fullscreen", !Cvar_VariableInteger( "r_fullscreen" ) );
+		Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n" );
 		return;
 	}
 #endif
+	if ( keys[KEY_ALT].down && key == KEY_F4 ) {
+		Cbuf_ExecuteText( EXEC_NOW, "quit" );
+	}
 
 	// console key is hardcoded, so the user can never unbind it
-	if ( key == KEY_CONSOLE || (keys[KEY_SHIFT].down && key == KEY_ESCAPE ) ) {
+	if ( key == KEY_CONSOLE || ( keys[KEY_SHIFT].down && key == KEY_ESCAPE ) ) {
 		Con_ToggleConsole_f();
 		return;
 	}
 
 	// hardcoded screenshot key
-	if (key == KEY_SCREENSHOT) {
-		if (keys[KEY_SHIFT].down) {
-			Cbuf_ExecuteText(EXEC_APPEND, "screenshotBMP\n");
-		}
-		else {
-			Cbuf_ExecuteText(EXEC_APPEND, "screenshotBMP clipboard\n");
+	if ( key == KEY_SCREENSHOT ) {
+		if ( keys[KEY_SHIFT].down ) {
+			Cbuf_ExecuteText( EXEC_APPEND, "screenshotBMP\n" );
+		} else {
+			Cbuf_ExecuteText( EXEC_APPEND, "screenshotBMP clipboard\n" );
 		}
 		return;
 	}
@@ -1080,13 +1082,17 @@ static void G_KeyDownEvent(uint32_t key, uint32_t time)
 
 	if ( Key_GetCatcher() & KEYCATCH_CONSOLE ) {
 //		Console_Key( key );
-	} else if ( Key_GetCatcher() & KEYCATCH_UI ) {
-	} else if ( Key_GetCatcher() & KEYCATCH_SGAME ) {
+	}
+	if ( Key_GetCatcher() & KEYCATCH_UI ) {
+	}
+	if ( Key_GetCatcher() & KEYCATCH_SGAME ) {
 		if ( sgvm ) {
 			g_pModuleLib->ModuleCall( sgvm, ModuleOnKeyEvent, 2, key, qtrue );
 		}
 		// send the bound action
-		Key_ParseBinding( key, qtrue, time );
+		if ( Key_GetCatcher() & KEYCATCH_UI ) {
+			Key_ParseBinding( key, qtrue, time );
+		}
 	}
 }
 

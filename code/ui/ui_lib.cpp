@@ -136,6 +136,59 @@ void UI_PushMenu( menuframework_t *menu )
     Key_SetCatcher( KEYCATCH_UI );
 }
 
+/*
+* UI_DrawText: renders text, only handles colors and Quake3 engine style formatting
+*/
+extern "C" void UI_DrawText( const char *txt )
+{
+	uint64_t i, len;
+	const char *text;
+	int colorIndex, currentColorIndex;
+	qboolean usedColor = qfalse;
+	char s[2];
+
+	len = strlen( txt );
+	currentColorIndex = ColorIndex( S_COLOR_WHITE );
+
+	for ( i = 0, text = txt; i < len; i++, text++ ) {
+		// track color changes
+		while ( Q_IsColorString( text ) && *( text + 1 ) != '\n' ) {
+			colorIndex = ColorIndexFromChar( *( text + 1 ) );
+			if ( currentColorIndex != colorIndex ) {
+				currentColorIndex = colorIndex;
+				if ( usedColor ) {
+					ImGui::PopStyleColor();
+				}
+				ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( g_color_table[ colorIndex ] ) );
+				usedColor = qtrue;
+			}
+			text += 2;
+		}
+
+		switch ( *text ) {
+		case '\n':
+			if ( usedColor ) {
+				ImGui::PopStyleColor();
+				currentColorIndex = ColorIndex( S_COLOR_WHITE );
+				ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( g_color_table[ currentColorIndex ] ) );
+				usedColor = qfalse;
+			}
+			ImGui::NewLine();
+			break;
+		case '\r':
+			ImGui::SameLine();
+			break;
+		default:
+			s[0] = *text;
+			s[1] = 0;
+
+			ImGui::TextUnformatted( s );
+			ImGui::SameLine();
+			break;
+		};
+	}
+}
+
 void UI_PopMenu( void )
 {
     ui->menusp--;
@@ -200,10 +253,9 @@ void UI_SetActiveMenu( uiMenu_t menu )
 	switch ( menu ) {
 	case UI_MENU_NONE:
 		FontCache()->SetActiveFont( RobotoMono );
-		Key_SetCatcher( Key_GetCatcher() & ~KEYCATCH_UI );
+		UI_ForceMenuOff();
 		Key_SetCatcher( Key_GetCatcher() | KEYCATCH_SGAME );
 		Cvar_Set( "g_paused", "0" );
-		UI_ForceMenuOff();
 		break;
 	case UI_MENU_PAUSE:
 //		Cvar_Set( "g_paused", "1" );

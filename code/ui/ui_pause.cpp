@@ -68,17 +68,21 @@ static void PauseMenu_EventCallback( void *ptr, int event )
 
 static void DailyTip_Draw( void *ptr )
 {
-    ImGui::SetCursorScreenPos( ImVec2( 800 * ui->scale, 100 * ui->scale ) );
+    FontCache()->SetActiveFont( AlegreyaSC );
+    ImGui::PushStyleColor( ImGuiCol_FrameBg, colorGold );
+    ImGui::PushStyleColor( ImGuiCol_FrameBgActive, colorGold );
+    ImGui::PushStyleColor( ImGuiCol_FrameBgHovered, colorGold );
+    ImGui::SetCursorScreenPos( ImVec2( 900 * ui->scale, 100 * ui->scale ) );
+    ImGui::BeginChild( ImGui::GetID( "Tip of the Day" ), ImVec2( 400 * ui->scale, 500 * ui->scale ), ImGuiChildFlags_Border );
     ImGui::SeparatorText( "Tip of the Day" );
-    ImGui::TextUnformatted( s_pauseMenu->dailyTipText.text );
+    FontCache()->SetActiveFont( RobotoMono );
+    ImGui::TextWrapped( s_pauseMenu->dailyTipText.text );
+    ImGui::EndChild();
+    ImGui::PopStyleColor( 3 );
 }
 
 static void PauseMenu_Draw( void )
 {
-    if ( !ui_active->i ) {
-        return;
-    }
-
     FontCache()->SetActiveFont( RobotoMono );
     Menu_Draw( &s_pauseMenu->menu );
     FontCache()->SetActiveFont( RobotoMono );
@@ -207,7 +211,8 @@ void PauseMenu_Cache( void )
     s_pauseMenu->dailyTipText.generic.flags = QMF_OWNERDRAW;
     s_pauseMenu->dailyTipText.generic.ownerdraw = DailyTip_Draw;
     srand( Sys_Milliseconds() );
-    s_pauseMenu->dailyTipText.text = s_pauseMenu->dailyTips[ rand() & s_pauseMenu->numDailyTips ];
+    s_pauseMenu->dailyTipText.color = color_white;
+    s_pauseMenu->dailyTipText.text = s_pauseMenu->dailyTips[ rand() & s_pauseMenu->numDailyTips - 1 ];
 
     s_pauseMenu->oldVolume = Cvar_VariableFloat( "snd_musicvol" );
     Cvar_Set( "snd_musicvol", va( "%i", PAUSEMENU_VOLUME_CAP ) );
@@ -217,21 +222,19 @@ void PauseMenu_Cache( void )
     Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->settings );
     Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->help );
     Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->exitToMainMenu );
-//    Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->dailyTipText );
+    Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->dailyTipText );
 }
 
 void UI_PauseMenu( void )
 {
-    bool toggle = Cvar_VariableInteger( "g_paused" );
-
     // force as top level menu
     UI_ForceMenuOff();
-    Key_ClearStates();
-    Key_SetCatcher( !toggle ? KEYCATCH_UI : KEYCATCH_SGAME );
-    Snd_PlaySfx( ui->sfx_select );
 
-    if ( !toggle ) {
+    if ( !ui_active->i ) {
+        Key_SetCatcher( Key_GetCatcher() | KEYCATCH_UI );
         UI_PushMenu( &s_pauseMenu->menu );
     }
-    Cvar_SetIntegerValue( "g_paused", !toggle );
+    Key_SetCatcher( Key_GetCatcher() | KEYCATCH_SGAME );
+    Snd_PlaySfx( ui->sfx_select );
+    Cvar_SetIntegerValue( "g_paused", !ui_active->i );
 }
