@@ -687,7 +687,7 @@ static void IN_InitJoystick( void )
 		Con_Printf( COLOR_YELLOW "WARNING: too many input devices for split-screen coop, setting to maximum of %i\n", total );
 		numInputDevices = total;
 	}
-	cv = Cvar_Get( "in_numInputDevices", va( "%i", numInputDevices ), CVAR_TEMP );
+	cv = Cvar_Get( "in_numInputDevices", "0", CVAR_TEMP );
 	Cvar_CheckRange( cv, "0", "4", CVT_INT );
 	Cvar_SetDescription( cv, "Sets the number of input devices that are handled by the engine.\nNOTE: only used for split-screen co-op." );
 

@@ -19,6 +19,14 @@ namespace TheNomad::Engine {
             }
             return ret;
         }
+        int GetTrack( const string& in npath ) {
+            int ret;
+            if ( !m_MusicCache.TryGetValue( npath, ret ) ) {
+                ret = TheNomad::Engine::SoundSystem::RegisterTrack( npath );
+                m_MusicCache.Add( npath, ret );
+            }
+            return ret;
+        }
         TheNomad::SGame::SpriteSheet@ GetSpriteSheet( const string& in shader, uint spriteWidth, uint spriteHeight,
             uint sheetWidth, uint sheetHeight )
         {
@@ -32,6 +40,7 @@ namespace TheNomad::Engine {
 
         private dictionary m_ShaderCache;
         private dictionary m_SfxCache;
+        private dictionary m_MusicCache;
         private dictionary m_SpriteSheetCache;
     };
 

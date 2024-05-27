@@ -80,6 +80,9 @@ public:
 	const nlohmann::json& GetIncludePaths( void ) const {
 		return m_IncludePaths;
 	}
+	const nlohmann::json& GetSourceFiles( void ) const {
+		return m_SourceFiles;
+	}
 
 	bool LoadSourceFile( const string_t& filename );
 private:
@@ -103,7 +106,8 @@ private:
 	int32_t m_nVersionMajor;
 	int32_t m_nVersionUpdate;
 	int32_t m_nVersionPatch;
-
+	
+	nlohmann::json m_SourceFiles;
 	nlohmann::json m_IncludePaths;
 };
 

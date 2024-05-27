@@ -3,6 +3,8 @@
 #include <zlib.h>
 #include <bzlib.h>
 
+#define BUFFER_SIZE (8*1024)
+
 static inline const char *bzip2_strerror( int err )
 {
 	switch ( err ) {
@@ -192,8 +194,8 @@ static char *Decompress_BZIP2( void *buf, uint64_t buflen, uint64_t *outlen )
 
 	Con_Printf( "Decompressing %lu bytes with bzip2...\n", buflen );
 
-	len = buflen * 2;
-	out = (char *)Hunk_AllocateTempMemory( buflen * 2 );
+	len = buflen;
+	out = (char *)Z_Malloc( len, TAG_BFF );
 
 	ret = BZ2_bzBuffToBuffDecompress( out, &len, (char *)buf, buflen, 0, 4 );
 	if ( !CheckBZIP2( ret, buflen, "Decompression" ) ) {
@@ -201,35 +203,70 @@ static char *Decompress_BZIP2( void *buf, uint64_t buflen, uint64_t *outlen )
 	}
 
 	Con_Printf( "Successful decompression of %lu to %u bytes with bzip2.\n", buflen, len );
-	newbuf = (char *)Z_Malloc( len, TAG_BFF );
-	memcpy( newbuf, out, len );
-	Hunk_FreeTempMemory( out );
 	*outlen = len;
 
 	return newbuf;
 }
 
-static char *Decompress_ZLIB( void *buf, uint64_t buflen, uint64_t *outlen )
+char *Decompress_ZLIB( void *buf, uint64_t buflen, uint64_t *outlen )
 {
-	char *out, *newbuf;
+	char *out;
+	Bytef *dataPtr;
 	int ret;
+	z_stream stream;
+	uint64_t uncompressedBytes;
+
+	out = (char *)Z_Malloc( *outlen, TAG_BFF );
+
+	stream.zalloc = Z_NULL;
+	stream.zfree = Z_NULL;
+	stream.opaque = Z_NULL;
+	stream.avail_in = 0;
+	stream.next_in = Z_NULL;
 
 	Con_Printf( "Decompressing %lu bytes with zlib...\n", buflen );
-	out = (char *)Hunk_AllocateTempMemory( buflen );
+
+/*
+	ret = inflateInit2( &stream, 16 + MAX_WBITS );
+	if ( ret != Z_OK ) {
+		N_Error( ERR_FATAL, "inflateInit2 failed: %s", zError( ret ) );
+	}
+
+	stream.avail_in = buflen;
+	stream.next_in = (Bytef *)buf;
+
+	dataPtr = (Bytef *)out;
+
+	do {
+		stream.avail_out = *outlen;
+		stream.next_out = dataPtr;
+		ret = inflateInit2( &stream, -MAX_WBITS );
+		switch ( ret ) {
+		case Z_NEED_DICT:
+			ret = Z_DATA_ERROR;
+		case Z_DATA_ERROR:
+		case Z_MEM_ERROR:
+		case Z_STREAM_ERROR:
+			N_Error( ERR_FATAL, "inflateInit2 failed: %s", zError( ret ) );
+		};
+		uncompressedBytes = *outlen - stream.avail_out;
+		*outlen -= uncompressedBytes;
+		dataPtr += uncompressedBytes;
+	} while ( stream.avail_out == 0 );
+
+	inflateEnd( &stream );
+*/
 	
 	ret = uncompress( (Bytef *)out, (uLongf *)outlen, (const Bytef *)buf, buflen );
 	if ( ret != Z_OK ) {
-		N_Error( ERR_FATAL, "ZLib Decompression Failure: failure on decompression of %lu bytes. ZLIB error reason:\n\t:%s", buflen * 2, zError( ret ) );
+		N_Error( ERR_FATAL, "ZLib Decompression Failure: failure on decompression of %lu bytes. ZLIB error reason: %s", buflen,
+			zlib_strerror( ret ) );
 		return (char *)buf;
 	}
 	
 	Con_Printf( "Successful decompression of %lu bytes to %lu bytes with zlib.\n", buflen, *outlen );
 
-	newbuf = (char *)Z_Malloc( *outlen, TAG_BFF );
-	memcpy( newbuf, out, *outlen );
-	Hunk_FreeTempMemory( out );
-
-	return newbuf;
+	return out;
 }
 
 char *Decompress( void *buf, uint64_t buflen, uint64_t *outlen, int compression )

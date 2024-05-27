@@ -162,7 +162,7 @@ public:
 			Assert( pStr );
 			return asERROR;
 		}
-		
+
 		CThreadAutoLock<CThreadMutex> lock( *const_cast<CThreadMutex *>( &m_hLock ) );
 		const string_t *data = (const string_t *)pStr;
 		if ( nLength ) {

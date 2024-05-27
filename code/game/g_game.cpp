@@ -221,9 +221,9 @@ static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, const glm::mat4&
         { 1.0f, 0.0f, 0.0f, 1.0f },
         { 0.0f, 0.0f, 0.0f, 1.0f }
 #else
-        { 0.0f, 0.5f, 0.0f, 1.0f },
-        { 0.5f, 0.5f, 0.0f, 1.0f },
-        { 0.5f, 0.0f, 0.0f, 1.0f },
+        { 0.0f, 1.0f, 0.0f, 1.0f },
+        { 1.0f, 1.0f, 0.0f, 1.0f },
+        { 1.0f, 0.0f, 0.0f, 1.0f },
         { 0.0f, 0.0f, 0.0f, 1.0f }
 #endif
 //        { 1.0f,  1.0f, 0.0f, 1.0f },
@@ -259,13 +259,22 @@ static void GLM_MakeVPM( const vec4_t ortho, float *zoom, float zNear, float zFa
     gi.projectionMatrix = glm::ortho( ortho[0], ortho[1], ortho[2], ortho[3], zNear, zFar );
 
     if ( ( orthoFlags & RSF_ORTHO_BITS ) != RSF_ORTHO_TYPE_SCREENSPACE ) {
-        position = gi.projectionMatrix * glm::vec4( gi.cameraPos[0], gi.mapCache.info.height - gi.cameraPos[1], 0.0f, 1.0f );
-        transpose = glm::translate( glm::mat4( 1.0f ), glm::vec3( position.x, position.y, 0.0f ) )
+//        gi.cameraPos = glm::vec3( gi.projectionMatrix * glm::vec4( gi.cameraWorldPos[0] - gi.mapCache.info.width / 2.0f,
+//            ( gi.mapCache.info.height - gi.cameraWorldPos[1] ) / 2.0f,
+//            0.0f, 1.0f ) );
+        position = gi.projectionMatrix * glm::mat4( 1.0f ) * glm::vec4(
+            ( gi.cameraPos[0] * 8.0f ) + ( gi.cameraZoom * 100.0f ),
+            ( gi.cameraPos[1] * 8.0f ) + ( gi.cameraZoom * 1000.0f ),
+            0.0f, 1.0f
+        );
+        transpose = glm::translate( glm::mat4( 1.0f ), glm::vec3( position[0], position[1], 0.0f ) )
                     * glm::scale( glm::mat4( 1.0f ), glm::vec3( gi.cameraZoom ) );
 //        transpose = glm::translate( glm::mat4( 1.0f ), glm::vec3( gi.cameraPos[0], gi.cameraPos[1], 0.0f ) )
 //                    * glm::scale( glm::mat4( 1.0f ), glm::vec3( gi.cameraZoom ) );
         gi.viewMatrix = glm::inverse( transpose );
+//        gi.viewMatrix = transpose;
         gi.viewProjectionMatrix = gi.projectionMatrix * gi.viewMatrix;
+//        gi.cameraPos = gi.viewProjectionMatrix * glm::vec4( gi.cameraWorldPos[0], gi.cameraWorldPos[1], 0.0f, 1.0f );
     } else {
         gi.viewMatrix = glm::mat4( 1.0f );
         gi.viewProjectionMatrix = gi.projectionMatrix;
@@ -301,16 +310,23 @@ static void GLM_TransformToGL( const vec3_t world, vec3_t *xyz, float scale, flo
     glm::mat4 mvp, model;
     glm::vec4 pos;
 
-    model = glm::translate( gi.viewProjectionMatrix, glm::vec3( world[0], world[1], world[2] ) )
+    model = glm::translate( glm::mat4( 1.0f ), glm::vec3( world[0], world[1], world[2] ) )
             * glm::scale( glm::mat4( 1.0f ), glm::vec3( scale, scale, 0.0f ) )
             * glm::rotate( glm::mat4( 1.0f ), (float)DEG2RAD( rotation ), glm::vec3( 0, 0, 1 ) );
     mvp = gi.viewProjectionMatrix * model;
 
     const glm::vec4 positions[4] = {
+    #if 0
+        { 0.0f, 1.0f, 0.0f, 1.0f },
+        { 0.0f, 0.0f, 0.0f, 1.0f },
+        { 1.0f, 0.0f, 0.0f, 1.0f },
+        { 1.0f, 1.0f, 0.0f, 1.0f }
+    #else
         { 1.0f,  1.0f, 0.0f, 1.0f },
         { 1.0f,  0.0f, 0.0f, 1.0f },
         { 0.0f,  0.0f, 0.0f, 1.0f },
         { 0.0f,  1.0f, 0.0f, 1.0f },
+    #endif
     };
 
     for ( uint32_t i = 0; i < 4; i++ ) {
@@ -798,7 +814,7 @@ static int G_WalkDemoExt( const char *arg, char *name, int name_len, fileHandle_
 CL_DemoExtCallback
 ====================
 */
-static qboolean CL_DemoNameCallback_f( const char *filename, int length )
+static qboolean G_DemoNameCallback_f( const char *filename, int length )
 {
 	const int ext_len = strlen( "." DEMOEXT );
 	const int num_len = 2;
@@ -829,7 +845,7 @@ G_CompleteDemoName
 static void G_CompleteDemoName( const char *args, uint32_t argNum )
 {
 	if ( argNum == 2 ) {
-		FS_SetFilenameCallback( CL_DemoNameCallback_f );
+		FS_SetFilenameCallback( G_DemoNameCallback_f );
 		Field_CompleteFilename( "demos", "." DEMOEXT, qfalse, FS_MATCH_ANY );
 		FS_SetFilenameCallback( NULL );
 	}
@@ -1607,16 +1623,16 @@ static void G_MoveCamera_f( void )
     }
 
     if ( keys[KEY_W].down || keys[KEY_PAD0_LEFTSTICK_UP].down ) {
-        gi.cameraPos[1] += 0.05f;
+        gi.cameraPos[1] -= 0.5f;
     }
     if ( keys[KEY_S].down || keys[KEY_PAD0_LEFTSTICK_DOWN].down ) {
-        gi.cameraPos[1] -= 0.05f;
+        gi.cameraPos[1] += 0.5f;
     }
     if ( keys[KEY_A].down || keys[KEY_PAD0_LEFTSTICK_LEFT].down ) {
-        gi.cameraPos[0] -= 0.05f;
+        gi.cameraPos[0] -= 0.5f;
     }
     if ( keys[KEY_D].down || keys[KEY_PAD0_LEFTSTICK_RIGHT].down ) {
-        gi.cameraPos[0] += 0.05f;
+        gi.cameraPos[0] += 0.5f;
     }
     if ( keys[KEY_N].down || keys[KEY_PAD0_RIGHTSTICK_DOWN].down ) {
         gi.cameraZoom += 0.005f;
@@ -1633,16 +1649,16 @@ static void G_PhotoMode( void )
     }
 
     if ( keys[KEY_W].down || keys[KEY_PAD0_LEFTSTICK_UP].down ) {
-        gi.cameraPos[1] += 0.05f;
+        gi.cameraWorldPos[1] -= 0.05f;
     }
     if ( keys[KEY_S].down || keys[KEY_PAD0_LEFTSTICK_DOWN].down ) {
-        gi.cameraPos[1] -= 0.05f;
+        gi.cameraWorldPos[1] += 0.05f;
     }
     if ( keys[KEY_A].down || keys[KEY_PAD0_LEFTSTICK_LEFT].down ) {
-        gi.cameraPos[0] -= 0.05f;
+        gi.cameraWorldPos[0] -= 0.05f;
     }
     if ( keys[KEY_D].down || keys[KEY_PAD0_LEFTSTICK_RIGHT].down ) {
-        gi.cameraPos[0] += 0.05f;
+        gi.cameraWorldPos[0] += 0.05f;
     }
     if ( keys[KEY_N].down || keys[KEY_PAD0_RIGHTSTICK_UP].down ) {
         gi.cameraZoom += 0.005f;

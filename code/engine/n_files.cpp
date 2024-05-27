@@ -5,6 +5,7 @@
 #include "../system/sys_thread.h"
 #include "gln_files.h"
 #include "unzip.h"
+#include <zip.h>
 
 // every time a new demo bff file is built, this checksum must be updated.
 // the easiest way to get it is to just run the game and see what it spits out
@@ -17,6 +18,8 @@ static const uint32_t bff_checksums[] = {
 	#define WIN32_LEAN_AND_MEAN
 	#include <io.h>
 #endif
+
+//#define USE_ZIP
 
 #define MAX_FILE_HANDLES 1024
 #define MAX_FILEHASH_SIZE 256
@@ -44,16 +47,19 @@ typedef struct {
 typedef struct fileInBFF_s {
 #ifdef USE_ZIP
 	char					*name;		// name of the file
-	unsigned long			pos;		// file info position in zip
-	unsigned long			size;		// file size
+	zip_uint64_t			pos;		// file info position in zip
+	zip_uint64_t			size;		// file size
+	zip_file_t				*file;		// libzip file source
 	struct	fileInBFF_s*	next;		// next file in the hash
 #else
 	char *name;
 	char *buf;
 	int64_t nameLen;
 	int64_t size;
+	int64_t compressedSize;
     int64_t bytesRead;
 	int64_t pos;
+	int64_t compression;
 	struct fileInBFF_s *next;
 #endif
 } fileInBFF_t;
@@ -65,7 +71,7 @@ typedef struct bffFile_s
 //	char *bffGamename;
 	char bffGamename[MAX_BFF_PATH];		// gamedata
 #ifdef USE_ZIP
-	unzFile handle;						// handle to zip file
+	zip_t *handle;						// handle to zip file
 #else
 	FILE *handle;						// handle to os file
 #endif
@@ -102,11 +108,7 @@ typedef struct bffFile_s
 
 typedef union {
 	FILE *fp;
-#ifdef USE_ZIP
-	unzFile chunk;
-#else
 	fileInBFF_t *chunk;
-#endif
 	void *stream;
 } fileData;
 
@@ -1163,7 +1165,9 @@ static qboolean FS_GeneralRef( const char *filename )
 static void FS_OpenChunk( const char *name, fileInBFF_t *chunk, fileHandleData_t *f, bffFile_t *bff )
 {
 #ifdef USE_ZIP
-	unz_s *zfi;
+	int err;
+	zip_error_t error;
+	zip_file_t *file;
 #endif
 	if ( !( bff->referenced & FS_GENERAL_REF ) && FS_GeneralRef( chunk->name ) ) {
 		bff->referenced |= FS_GENERAL_REF;
@@ -1178,7 +1182,7 @@ static void FS_OpenChunk( const char *name, fileInBFF_t *chunk, fileHandleData_t
 
 	if ( !bff->handle ) {
 #ifdef USE_ZIP
-		bff->handle = unzOpen( bff->bffFilename );
+		bff->handle = zip_open( bff->bffFilename, 0, &err );
 #else
 		bff->handle = Sys_FOpen( bff->bffFilename, "rb" );
 #endif
@@ -1190,18 +1194,14 @@ static void FS_OpenChunk( const char *name, fileInBFF_t *chunk, fileHandleData_t
 	}
 
 #ifdef USE_ZIP
-	zfi = (unz_s *)bff->handle;
-	unzSetCurrentFileInfoPosition( bff->handle, chunk->pos );
-	// set the file position in the zip file (also sets the current file info)
-	unzSetCurrentFileInfoPosition( pak->handle, pakFile->pos );
-	// copy the file info into the unzip structure
-	memcpy( zfi, bff->handle, sizeof( *zfi ) );
-	// we copy this back into the structure
-	zfi->file = (unz_s *)bff->handle;
-	// open the file in the zip
-	unzOpenCurrentFile( f->data.chunk );
-	f->zipFilePos = pakFile->pos;
-	f->zipFileLen = pakFile->size;
+	chunk->file = zip_fopen_index( bff->handle, chunk->pos, 0 );
+	if ( !chunk->file ) {
+		Con_Printf( COLOR_RED "Error opening %s@%s\n", bff->bffBasename, name );
+		memset( f, 0, sizeof( *f ) );
+		return;
+	}
+	f->zipFilePos = chunk->pos;
+	f->zipFileLen = chunk->size;
 #endif
 
 	f->bff = bff;
@@ -2223,7 +2223,6 @@ BFF FILE LOADING
 ==========================================================
 */
 
-
 /*
 * FS_LoadBFF: creates a new bffFile_t in the search chain for the contents of a bff archive file
 */
@@ -2247,7 +2246,7 @@ static bffFile_t *FS_LoadBFF( const char *bffpath )
 	uint64_t chunkSize;
 	uint64_t gameNameLen;
 	uint64_t baseNameLen, fileNameLen;
-	int64_t compressedSize;
+	uint64_t compressedSize;
 	FILE *fp;
 	fileStats_t stats;
 	char *tempBuf;
@@ -2257,10 +2256,11 @@ static bffFile_t *FS_LoadBFF( const char *bffpath )
 	uint32_t fs_numHeaderLongs;
 	uint32_t *fs_headerLongs;
 #ifdef USE_ZIP
-	unzFile uf;
+	zip_t *zip;
+	zip_source_t *source;
+	zip_stat_t *fdata;
+	zip_error_t error;
 	int err;
-	unz_global_info gi;
-	unz_file_info file_info;
 #endif
 
 	PROFILE_FUNCTION();
@@ -2293,10 +2293,13 @@ static bffFile_t *FS_LoadBFF( const char *bffpath )
 	baseNameLen = strlen( basename ) + 1;
 
 #ifdef USE_ZIP
-	uf = unzOpen( bffpath );
-	err = unzGetGlobalInfo( uf, &gi );
+	fdata = (zip_stat_t *)alloca( sizeof( *fdata ) );
 
-	if ( err != UNZ_OK ) {
+	zip = zip_open( bffpath, ZIP_RDONLY, &err );
+	if ( !zip ) {
+		zip_error_init_with_code( &error, err );
+		Con_Printf( COLOR_RED "FS_LoadBFF: failed to open bff %s (zip_open): %s\n", bffpath, error.str );
+		zip_error_fini( &error );
 		return NULL;
 	}
 #endif
@@ -2367,21 +2370,18 @@ static bffFile_t *FS_LoadBFF( const char *bffpath )
 	namelen = 0;
 	filecount = 0;
 #ifdef USE_ZIP
-	unzGoToFirstFile( uf );
-	for ( i = 0; i < gi.number_entry; i++ ) {
-		err = unzGetCurrentFileInfo( uf, &file_info, filename_inzip, sizeof( filename_inzip ), NULL, 0, NULL );
+	header.numChunks = 0;
+	zip_stat_init( fdata );
+	while ( ( zip_stat_index( zip, header.numChunks, 0, fdata ) ) == 0 ) {
+		strcpy( filename_inzip, fdata->name );
 		filename_inzip[ sizeof( filename_inzip ) - 1 ] = '\0';
-		if ( err != UNZ_OK ) {
-			break;
-		}
-		if ( file_info.compression_method != 0 && file_info.compression_method != 8 /*Z_DEFLATED*/ ) {
-			Con_Printf( COLOR_YELLOW "%s|%s: unsupported compression method %i\n", basename, filename_inzip, (int)file_info.compression_method );
-			unzGoToNextFile( uf );
+		if ( fdata->comp_method != 0 && fdata->comp_method != 8 /*Z_DEFLATED*/ ) {
+			Con_Printf( COLOR_YELLOW "%s|%s: unsupported compression method %i\n", basename, filename_inzip, (int)fdata->comp_method );
 			continue;
-		} 
+		}
 		namelen += strlen( filename_inzip ) + 1;
-		unzGoToNextFile( uf );
 		filecount++;
+		header.numChunks++;
 	}
 #else
 	pos = ftell( fp );
@@ -2392,18 +2392,27 @@ static bffFile_t *FS_LoadBFF( const char *bffpath )
 			return NULL;
 		}
 		tmp = LittleLong( tmp );
+		Assert( tmp < sizeof( filename_inbff ) );
 		if ( !fread( filename_inbff, tmp, 1, fp ) ) {
 			fclose( fp );
 			Con_Printf( COLOR_RED "ERROR: failed reading chunk name at %lu\n", i );
 			return NULL;
 		}
+//		if ( !fread( &compressedSize, sizeof( compressedSize ), 1, fp ) ) {
+//			fclose( fp );
+//			Con_Printf( COLOR_RED "ERROR: failed reading chunk compressed size at %lu\n", i );
+//			return NULL;
+//		}
 		if ( !fread( &tmp, sizeof( tmp ), 1, fp ) ) {
 			fclose( fp );
 			Con_Printf( COLOR_RED "ERROR: failed reading chunk size at %lu\n", i );
 			return NULL;
 		}
-		tmp = LittleLong( tmp );
-		fseek( fp, tmp, SEEK_CUR );
+//		if ( header.compression != COMPRESS_NONE ) {
+//			fseek( fp, compressedSize, SEEK_CUR );
+//		} else {
+			fseek( fp, tmp, SEEK_CUR );
+//		}
 
 		filename_inbff[ sizeof( filename_inbff ) - 1 ] = '\0';
 		namelen += strlen( filename_inbff ) + 1;
@@ -2412,7 +2421,7 @@ static bffFile_t *FS_LoadBFF( const char *bffpath )
 #endif
 	if ( filecount == 0 ) {
 #ifdef USE_ZIP
-		unzClose( uf );
+		zip_close( zip );
 #else
 		fclose( fp );
 #endif
@@ -2431,7 +2440,11 @@ static bffFile_t *FS_LoadBFF( const char *bffpath )
 	bff = (bffFile_t *)Z_Malloc( size, TAG_BFF );
 	memset( bff, 0, size );
 
+#ifdef USE_ZIP
+	bff->handle = zip;
+#else
 	bff->handle = fp;
+#endif
 	bff->hashSize = hashSize;
 	bff->numfiles = filecount;
 	bff->handlesUsed = 0;
@@ -2461,32 +2474,29 @@ static bffFile_t *FS_LoadBFF( const char *bffpath )
 	FS_StripExt( bff->bffBasename, ".bff" );
 
 #ifdef USE_ZIP
-	unzGoToFirstFile( uf );
 #else
 	fseek( fp, pos, SEEK_SET );
 #endif
 
 	curFile = bff->buildBuffer;
 #ifdef USE_ZIP
-	for ( i = 0; i < gi.number_entry; i++ ) {
-		err = unzGetCurrentFileInfo( uf, &file_info, filename_inzip, sizeof( filename_inzip ), NULL, 0, NULL );
+	tmp = 0;
+	while ( ( zip_stat_index( zip, tmp, 0, fdata ) ) == 0 ) {
+		strcpy( filename_inzip, fdata->name );
 		filename_inzip[ sizeof( filename_inzip ) - 1 ] = '\0';
-		if ( err != UNZ_OK ) {
-			break;
-		}
-		if ( file_info.compression_method != 0 && file_info.compression_method != 8 /*Z_DEFLATED*/ ) {
-			unzGoToNextFile( uf );
+		if ( fdata->comp_method != 0 && fdata->comp_method != ZIP_CM_DEFLATE ) {
 			continue;
 		}
-		if ( file_info.uncompressed_size > 0 ) {
-			fs_headerLongs[ fs_numHeaderLongs++ ] = LittleInt( file_info.crc );
+		if ( fdata->size > 0 ) {
+			fs_headerLongs[ fs_numHeaderLongs++ ] = LittleInt( fdata->crc );
 		}
 
 		FS_ConvertFilename( filename_inzip );
 
 		// store the file position in the zip
-		unzGetCurrentFileInfoPosition( uf, &curFile->pos );
-		curFile->size = file_info.uncompressed_size;
+		curFile->pos = zip_name_locate( zip, namePtr, ZIP_FL_UNCHANGED );
+		curFile->file = NULL;
+		curFile->size = fdata->size;
 		curFile->name = namePtr;
 		strcpy( curFile->name, filename_inzip );
 		namePtr += strlen( filename_inzip ) + 1;
@@ -2496,8 +2506,7 @@ static bffFile_t *FS_LoadBFF( const char *bffpath )
 		curFile->next = bff->hashTable[ hash ];
 		bff->hashTable[ hash ] = curFile;
 		curFile++;
-
-		unzGoToNextFile( uf );
+		tmp++;
 	}
 #else
 	for ( i = 0; i < bff->numfiles; i++ ) {
@@ -2512,11 +2521,17 @@ static bffFile_t *FS_LoadBFF( const char *bffpath )
 			Con_Printf( COLOR_RED "ERROR: failed reading chunk name at %lu\n", i );
 			return NULL;
 		}
+//		if ( !fread( &curFile->compressedSize, sizeof( curFile->compressedSize ), 1, fp ) ) {
+//			fclose( fp );
+//			Con_Printf( COLOR_RED "ERROR: failed reading chunk size at %lu\n", i );
+//			return NULL;
+//		}
 		if ( !fread( &curFile->size, sizeof( curFile->size ), 1, fp ) ) {
 			fclose( fp );
 			Con_Printf( COLOR_RED "ERROR: failed reading chunk size at %lu\n", i );
 			return NULL;
 		}
+		curFile->compressedSize = LittleLong( curFile->compressedSize );
 		curFile->size = LittleLong( curFile->size );
 
 //		Con_DPrintf( "Chunk[%lu]: %s (%lu) %lu\n", i, filename_inbff, curFile->nameLen, curFile->size );
@@ -2527,9 +2542,15 @@ static bffFile_t *FS_LoadBFF( const char *bffpath )
 		// store the file position in the bff
 		curFile->pos = ftell( fp );
 		curFile->name = namePtr;
+		curFile->compression = header.compression;
 		strcpy( curFile->name, filename_inbff );
 		namePtr += strlen( filename_inbff ) + 1;
-		fseek( fp, curFile->size, SEEK_CUR );
+
+//		if ( header.compression != COMPRESS_NONE ) {
+//			fseek( fp, curFile->compressedSize, SEEK_CUR );
+//		} else {
+			fseek( fp, curFile->size, SEEK_CUR );
+//		}
 
 		// update hash table
 		hash = FS_HashFileName( filename_inbff, bff->hashSize );
@@ -2563,7 +2584,7 @@ static bffFile_t *FS_LoadBFF( const char *bffpath )
 #else
 	if ( fs_locked->i == 0 ) {
 	#ifdef USE_ZIP
-		unzClose( bff->handle );
+		zip_close( bff->handle );
 	#else
 		fclose( bff->handle );
 	#endif
@@ -2631,7 +2652,7 @@ fileOffset_t FS_FileTell(fileHandle_t f)
 	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
 	fileHandleData_t *p;
 
-	if (f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES) {
+	if ( f <= FS_INVALID_HANDLE || f >= MAX_FILE_HANDLES ) {
 		N_Error(ERR_FATAL, "FS_FileTell: out of range");
 	}
 
@@ -2639,7 +2660,10 @@ fileOffset_t FS_FileTell(fileHandle_t f)
 
 	// not a unique file
 	if ( p->bffFile ) {
+#ifdef USE_ZIP
+#else
 		return (fileOffset_t)( p->data.chunk->size - p->data.chunk->bytesRead );
+#endif
 	}
 	
 	// normal file pointer
@@ -2670,56 +2694,13 @@ fileOffset_t FS_FileSeek( fileHandle_t f, fileOffset_t offset, uint32_t whence )
 
 	if ( file->bffFile ) {
 	#ifdef USE_ZIP
-		//FIXME: this is really, really crappy
-		//(but better than what was here before)
-		byte	buffer[BFF_SEEK_BUFFER_SIZE];
-		int		remainder;
-		int		currentPosition = FS_FTell( f );
-
-		// change negative offsets into FS_SEEK_SET
-		if ( offset < 0 ) {
-			switch ( origin ) {
-			case FS_SEEK_END:
-				remainder = handles[f].zipFileLen + offset;
-				break;
-			case FS_SEEK_CUR:
-				remainder = currentPosition + offset;
-				break;
-			case FS_SEEK_SET:
-			default:
-				remainder = 0;
-				break;
-			};
-
-			if ( remainder < 0 ) {
-				remainder = 0;
-			}
-
-			origin = FS_SEEK_SET;
-		} else {
-			if ( origin == FS_SEEK_END ) {
-				remainder = handles[f].zipFileLen - currentPosition + offset;
-			} else {
-				remainder = offset;
-			}
-		}
-
-		switch ( origin ) {
+		switch ( whence ) {
 		case FS_SEEK_SET:
-			if ( remainder == currentPosition ) {
-				return offset;
-			}
-			unzSetCurrentFileInfoPosition( handles[f].data.chunk, fsh[f].zipFilePos );
-			unzOpenCurrentFile( handles[f].data.chunk );
-			//fallthrough
+			return zip_fseek( file->data.chunk->file, offset, SEEK_SET );
 		case FS_SEEK_END:
+			return zip_fseek( file->data.chunk->file, offset, SEEK_END );
 		case FS_SEEK_CUR:
-			while ( remainder > BFF_SEEK_BUFFER_SIZE ) {
-				FS_Read( buffer, BFF_SEEK_BUFFER_SIZE, f );
-				remainder -= BFF_SEEK_BUFFER_SIZE;
-			}
-			FS_Read( buffer, remainder, f );
-			return offset;
+			return zip_fseek( file->data.chunk->file, offset, SEEK_CUR );
 		default:
 			N_Error( ERR_FATAL, "Bad origin in FS_Seek" );
 			return -1;
@@ -2739,7 +2720,7 @@ fileOffset_t FS_FileSeek( fileHandle_t f, fileOffset_t offset, uint32_t whence )
 			file->data.chunk->bytesRead = offset;
 			break;
 		case FS_SEEK_END:
-			file->data.chunk->bytesRead = file->data.chunk->size;
+			file->data.chunk->bytesRead = file->data.chunk->size - offset;
 			break;
 		default:
 			N_Error(ERR_FATAL, "FS_FileSeek: invalid seek");
@@ -2843,29 +2824,22 @@ static uint64_t FS_ReadFromChunk( void *buffer, uint64_t size, fileHandle_t f )
 	fileHandleData_t *handle = &handles[f];
 
 	if ( !handle->data.chunk->buf ) {
-		/*
-		if ( header.compression != COMPRESS_NONE ) {
+		if ( handle->data.chunk->compression != COMPRESS_NONE ) {
 			uint64_t outLen;
+			int64_t compressedSize;
+			char *tempBuf;
 
-			if ( !fread( &compressedSize, sizeof( compressedSize ), 1, fp ) ) {
-				fclose( fp );
-				Con_Printf( COLOR_RED "ERROR: failed reading read chunk compressed size at %lu\n", i );
-				return NULL;
-			}
+			outLen = handle->data.chunk->size;
+			tempBuf = (char *)Hunk_AllocateTempMemory( handle->data.chunk->compressedSize );
 
-			outLen = LittleLong( compressedSize );
-			tempBuf = (char *)Z_Malloc( curFile->size, TAG_STATIC );
-			if ( !fread( tempBuf, curFile->size, 1, fp ) ) {
-				fclose( fp );
-				Con_DPrintf( "Error reading chunk buffer at %lu\n", i );
-				return NULL;
+			fseek( handle->bff->handle, handle->data.chunk->pos, SEEK_SET );
+			if ( !fread( tempBuf, handle->data.chunk->size, 1, handle->bff->handle ) ) {
+				N_Error( ERR_FATAL, "Error reading chunk buffer at %s", handle->name );
 			}
-			curFile->buf = Decompress( tempBuf, curFile->size, &outLen, header.compression );
-			Z_Free( tempBuf );
+			handle->data.chunk->buf = Decompress( tempBuf, handle->data.chunk->size, &outLen, handle->data.chunk->compression );
+			Hunk_FreeTempMemory( tempBuf );
 		}
-		else
-		*/
-		{
+		else {
 			// read the chunk data
 			handle->data.chunk->buf = (char *)Z_Malloc( handle->data.chunk->size, TAG_BFF );
 			fseek( handle->bff->handle, handle->data.chunk->pos, SEEK_SET );
@@ -2957,7 +2931,7 @@ uint64_t FS_Read( void *buffer, uint64_t size, fileHandle_t f )
 	}
 	else {
 #ifdef USE_ZIP
-		return unzReadCurrentFile( handles[f].data.chunk, buffer, size );
+		return zip_fread( handles[f].data.chunk->file, buffer, size );
 #else
 		return FS_ReadFromChunk( buffer, size, f );
 #endif

@@ -262,17 +262,15 @@ namespace TheNomad::SGame {
 			if ( m_EntityData.GetWaterLevel() > 1 ) {
 //				WaterMove();
 			} else if ( groundPlane ) {
-				vec3 accel = m_EntityData.GetPhysicsObject().GetAcceleration();
-
-				accel.y -= northmove;
-				accel.y += southmove;
-				accel.x -= westmove;
-				accel.x += eastmove;
-
-				m_EntityData.GetPhysicsObject().SetAcceleration( accel );
 			} else {
 				AirMove();
 			}
+			vec3 accel = m_EntityData.GetPhysicsObject().GetAcceleration();
+
+				accel.y += forward;
+				accel.x += side;
+
+				m_EntityData.GetPhysicsObject().SetAcceleration( accel );
 			
 			// set torso direction
 			angle = atan2( ( screenWidth / 2 ) - mousePos.x, ( screenHeight / 2 ) - mousePos.y );
@@ -308,6 +306,8 @@ namespace TheNomad::SGame {
 			ImGui::Text( "EastMove: " + eastmove );
 			ImGui::Text( "WestMove: " + westmove );
 			ImGui::Text( "Velocity: [ " + m_EntityData.GetVelocity().x + ", " + m_EntityData.GetVelocity().y + " ]" );
+			ImGui::Text( "CameraPos: [ " + Game_CameraPos.x + ", " + Game_CameraPos.y + " ]" );
+			ImGui::Text( "CameraWorldPos: [ " + Game_CameraWorldPos.x + ", " + Game_CameraWorldPos.y + " ]" );
 			ImGui::Separator();
 			ImGui::Text( "North MSec: " + m_EntityData.key_MoveNorth.msec );
 			ImGui::Text( "South MSec: " + m_EntityData.key_MoveSouth.msec );
@@ -330,7 +330,7 @@ namespace TheNomad::SGame {
 			float val;
 
 			msec = key.msec;
-			key.msec = 0;
+//			key.msec = 0;
 			
 			if ( key.active ) {
 				// still down
@@ -348,7 +348,7 @@ namespace TheNomad::SGame {
 		}
 
 		private void KeyMove() {
-			const int movespeed = 4;
+			const float movespeed = 1.5f;
 			
 			forward = 0;
 			side = 0;
@@ -357,34 +357,34 @@ namespace TheNomad::SGame {
 			// FIXME: limiting movement to only if the key is directly held might
 			// lead to not being able to quickly inverse directional movement
 			
-			side += int( movespeed * KeyState( m_EntityData.key_MoveEast ) );
-			side -= int( movespeed * KeyState( m_EntityData.key_MoveWest ) );
+			side += movespeed * KeyState( m_EntityData.key_MoveEast );
+			side -= movespeed * KeyState( m_EntityData.key_MoveWest );
 			
 			up += int( movespeed * KeyState( m_EntityData.key_Jump ) );
 			
-			forward -= int( movespeed * KeyState( m_EntityData.key_MoveNorth ) );
-			forward += int( movespeed * KeyState( m_EntityData.key_MoveSouth ) );
+			forward -= movespeed * KeyState( m_EntityData.key_MoveNorth );
+			forward += movespeed * KeyState( m_EntityData.key_MoveSouth );
 			
 			northmove = southmove = 0.0f;
-//			if ( forward > 0 ) {
-				northmove = Util::Clamp( KeyState( m_EntityData.key_MoveNorth ), -sgame_MaxSpeed.GetFloat(), sgame_MaxSpeed.GetFloat() );
-//			} else if ( forward < 0 ) {
-				southmove = Util::Clamp( KeyState( m_EntityData.key_MoveSouth ), -sgame_MaxSpeed.GetFloat(), sgame_MaxSpeed.GetFloat() );
-//			}
+			if ( forward > 0 ) {
+				northmove = Util::Clamp( forward * KeyState( m_EntityData.key_MoveNorth ), -sgame_MaxSpeed.GetFloat(), sgame_MaxSpeed.GetFloat() );
+			} else if ( forward < 0 ) {
+				southmove = Util::Clamp( forward * KeyState( m_EntityData.key_MoveSouth ), -sgame_MaxSpeed.GetFloat(), sgame_MaxSpeed.GetFloat() );
+			}
 
-			westmove = eastmove = 0.0f;
-//			if ( side > 0 ) {
-				eastmove = Util::Clamp( KeyState( m_EntityData.key_MoveEast ), -sgame_MaxSpeed.GetFloat(), sgame_MaxSpeed.GetFloat() );
-//			} else if ( side < 0 ) {
-				westmove = Util::Clamp( KeyState( m_EntityData.key_MoveWest ), -sgame_MaxSpeed.GetFloat(), sgame_MaxSpeed.GetFloat() );
-//			}
+			eastmove = westmove = 0.0f;
+			if ( side > 0 ) {
+				eastmove = Util::Clamp( side * KeyState( m_EntityData.key_MoveEast ), -sgame_MaxSpeed.GetFloat(), sgame_MaxSpeed.GetFloat() );
+			} else if ( side < 0 ) {
+				westmove = Util::Clamp( side * KeyState( m_EntityData.key_MoveWest ), -sgame_MaxSpeed.GetFloat(), sgame_MaxSpeed.GetFloat() );
+			}
 		}
 		
 		PlayrObject@ m_EntityData = null;
 		
-		int forward = 0;
-		int side = 0;
-		int up = 0;
+		float forward = 0;
+		float side = 0;
+		float up = 0;
 		float northmove = 0.0f;
 		float southmove = 0.0f;
 		float eastmove = 0.0f;

@@ -35,12 +35,10 @@ static void ML_CleanCache_f( void ) {
         FS_Remove( path );
         FS_HomeRemove( path );
 
-        path = va( "_cache/%s_metadata.dat", it->m_pHandle->GetName().c_str() );
+        path = va( "_cache/%s_metadata.bin", it->m_pHandle->GetName().c_str() );
         FS_Remove( path );
         FS_HomeRemove( path );
     }
-
-    Cbuf_ExecuteText( EXEC_APPEND, "ui.clear_load_list" );
 }
 
 static void ML_GarbageCollectionStats_f( void ) {

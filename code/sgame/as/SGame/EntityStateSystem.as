@@ -43,7 +43,7 @@ namespace TheNomad::SGame {
 			array<json@> values;
 			json@ data;
 			
-			path = "modules/" + modName + "/scripts/" + fileName + ".json";
+			path = "modules/" + modName + "/DataScripts/" + fileName + ".json";
 			
 			@data = json();
 			if ( !data.ParseFile( path ) ) {

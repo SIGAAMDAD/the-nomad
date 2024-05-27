@@ -121,7 +121,7 @@ OPTIMIZERS    = \
 			-mfma -msse3 -msse2 -msse \
 			-fno-omit-frame-pointer
 
-CFLAGS        =-std=c++17 $(FTYPE) -Wno-unused-result $(DEFINES) $(INCLUDE) $(OPTIMIZERS)
+CFLAGS        =$(FTYPE) -Wno-unused-result $(DEFINES) $(INCLUDE) $(OPTIMIZERS)
 ifndef release
 CFLAGS        +=-Wall
 endif
@@ -133,8 +133,8 @@ O             = bin/obj/unix
 endif
 QVM           = qvm
 SDIR          = code
-COMPILE_SRC   =$(CC) $(CFLAGS) -o $@ -c $<
-COMPILE_C     =distcc gcc $(FTYPE) $(OPTIMIZERS) $(INCLUDE) -o $@ -c $<
+COMPILE_SRC   =$(CC) -std=c++17 $(CFLAGS) -o $@ -c $<
+COMPILE_C     =distcc gcc $(CFLAGS) -o $@ -c $<
 COMPILE_LIBSRC=$(CC) -fPIC -shared $(CFLAGS) -o $@ -c $<
 
 ifeq ($(VM_CANNOT_COMPILE),true)
@@ -162,7 +162,8 @@ LDLIBS= \
 		-lSDL2 \
 		-lsndfile \
 		-lz \
-		-lbz2
+		-lbz2 \
+		-lzip \
 
 ifndef release
 LDLIBS+=-leasy_profiler
@@ -310,6 +311,7 @@ SRC=\
 	$(O)/engine/md4.o \
 	$(O)/engine/md5.o \
 	$(O)/engine/decompress.o \
+	$(O)/engine/unzip.o \
 	\
 	$(O)/rendercommon/imgui.o \
 	$(O)/rendercommon/imgui_draw.o \

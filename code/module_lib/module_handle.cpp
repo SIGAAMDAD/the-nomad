@@ -60,6 +60,7 @@ CModuleHandle::CModuleHandle( const char *pName, const char *pDescription, const
     g_pModuleLib->SetHandle( this );
     m_pScriptModule = g_pModuleLib->GetScriptEngine()->GetModule( pName, asGM_CREATE_IF_NOT_EXISTS );
     m_IncludePaths = eastl::move( includePaths );
+    m_SourceFiles = eastl::move( sourceFiles );
     
     if ( !m_pScriptModule ) {
         N_Error( ERR_DROP, "CModuleHandle::CModuleHandle: GetModule() failed on \"%s\"\n", pName );
@@ -460,15 +461,6 @@ static void SaveCodeDataCache( const string_t& moduleName, const CModuleHandle *
     }
     FS_FClose( dataStream.m_hFile );
 
-    nLength = FS_LoadFile( va( "_cache/%s_code.dat", moduleName.c_str() ), (void **)&pByteCode );
-    if ( !nLength || !pByteCode ) {
-        N_Error( ERR_DROP, "SaveCodeDataCache: failed to load code data cache for '%s'", moduleName.c_str() );
-    }
-    header.checksum = crc32_buffer( pByteCode, nLength );
-    FS_FreeFile( pByteCode );
-
-    Con_Printf( "Saved bytecode cache with checksum %u\n", header.checksum );
-
     FS_WriteFile( va( "_cache/%s_metadata.bin", moduleName.c_str() ), &header, sizeof( header ) );
 }
 
@@ -480,6 +472,7 @@ static bool LoadCodeFromCache( const string_t& moduleName, const CModuleHandle *
     uint32_t checksum;
     byte *pByteCode;
     int32_t versionMajor, versionUpdate, versionPatch;
+    uint64_t i;
 
     path = va( "_cache/%s_metadata.bin", moduleName.c_str() );
     nLength = FS_LoadFile( path, (void **)&header );
@@ -492,23 +485,14 @@ static bool LoadCodeFromCache( const string_t& moduleName, const CModuleHandle *
         return false;
     }
 
-    // load the code's checksum
-    path = va( "_cache/%s_code.dat", moduleName.c_str() );
-    nLength = FS_LoadFile( path, (void **)&pByteCode );
-    if ( !nLength || !pByteCode ) {
-        Con_Printf( COLOR_RED "LoadCodeFromCache: metadata for module '%s' found, but couldn't load the cached code\n", moduleName.c_str() );
-        return false;
-    }
-    checksum = crc32_buffer( pByteCode, nLength );
-    FS_FreeFile( pByteCode );
-
     pHandle->GetVersion( &versionMajor, &versionUpdate, &versionPatch );
 
-    if ( header->checksum != checksum ) {
-        // recompile, updated checksum
-        return false;
-    }
-    else if ( header->moduleVersionMajor != versionMajor || header->moduleVersionUpdate != versionUpdate
+    //if ( header->checksum != checksum ) {
+    //    // recompile, updated checksum
+    //    Con_Printf( "Module script code '%s' changed, recompiling.\n", moduleName.c_str() );
+    //    return false;
+    //}
+    if ( header->moduleVersionMajor != versionMajor || header->moduleVersionUpdate != versionUpdate
         || header->moduleVersionPatch != versionPatch )
     {
         // recompile, different version
@@ -524,6 +508,8 @@ static bool LoadCodeFromCache( const string_t& moduleName, const CModuleHandle *
             // clean cache to get rid of any old and/or corrupt code
             FS_Remove( va( "_cache/%s_code.dat", moduleName.c_str() ) );
             FS_HomeRemove( va( "_cache/%s_code.dat", moduleName.c_str() ) );
+            FS_Remove( va( "_cache/%s_metadata.bin", moduleName.c_str() ) );
+            FS_HomeRemove( va( "_cache/%s_metadata.bin", moduleName.c_str() ) );
             Con_Printf( COLOR_RED "Error couldn't load cached byte code for '%s'\n", moduleName.c_str() );
             return false;
         }

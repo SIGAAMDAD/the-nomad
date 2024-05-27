@@ -222,12 +222,16 @@ void PauseMenu_Cache( void )
 
 void UI_PauseMenu( void )
 {
+    bool toggle = Cvar_VariableInteger( "g_paused" );
+
     // force as top level menu
     UI_ForceMenuOff();
     Key_ClearStates();
-    Key_SetCatcher( KEYCATCH_UI );
+    Key_SetCatcher( !toggle ? KEYCATCH_UI : KEYCATCH_SGAME );
     Snd_PlaySfx( ui->sfx_select );
 
-    UI_PushMenu( &s_pauseMenu->menu );
-    Cvar_SetIntegerValue( "g_paused", !Cvar_VariableInteger( "g_paused" ) );
+    if ( !toggle ) {
+        UI_PushMenu( &s_pauseMenu->menu );
+    }
+    Cvar_SetIntegerValue( "g_paused", !toggle );
 }

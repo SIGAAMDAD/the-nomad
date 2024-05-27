@@ -87,12 +87,16 @@ namespace ImGui {
 };
 
 //
-// InitConstants: initializes all variables that won't really change throughout execution
+// InitResources: caches all important SGame resources
 //
-void InitConstants() {
-	DebugPrint( "Initializing SGame Constants...\n" );
-
+void InitResources() {
 	string str;
+
+	ConsolePrint( "Initializing SGame Resources...\n" );
+
+	//
+	// init shaders
+	//
 
 	//
 	// register strings
@@ -188,10 +192,10 @@ int ModuleOnInit() {
 	ConsolePrint( TheNomad::SGame::sgame_ModList.Count() + " total mods registered.\n" );
 
 	//
-	// init constants
+	// init resources
 	//
 
-	InitConstants();
+	InitResources();
 
 	@TheNomad::Engine::SoundSystem::SoundManager = TheNomad::Engine::SoundSystem::SoundFrameData();
 
@@ -288,17 +292,6 @@ int ModuleOnLevelEnd() {
 }
 
 int ModuleOnKeyEvent( uint key, uint down ) {
-	for ( uint i = 0; i < TheNomad::SGame::sgame_KeyBindTable.Count(); i++ ) {
-		if ( TheNomad::SGame::sgame_KeyBindTable[i].m_nKeyNum == key ) {
-			if ( down == 1 ) {
-				TheNomad::SGame::sgame_KeyBindTable[i].m_DownFunc();
-			} else {
-				TheNomad::SGame::sgame_KeyBindTable[i].m_UpFunc();
-			}
-			return 1;
-		}
-	}
-
 	return 0;
 }
 

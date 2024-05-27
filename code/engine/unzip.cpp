@@ -7,8 +7,8 @@
  *
  *****************************************************************************/
 
-#include "../qcommon/q_shared.h"
-#include "../qcommon/qcommon.h"
+#include "../engine/n_shared.h"
+#include "../engine/n_common.h"
 #include "unzip.h"
 
 /* unzip.h -- IO for uncompress .zip files using zlib 
@@ -236,7 +236,11 @@ typedef Byte    *voidp;
 #define Z_DEFLATED   8
 /* The deflate compression method (the only one supported in this version) */
 
+#ifndef __cplusplus
 #define Z_NULL  (void *)0  /* for initializing zalloc, zfree, opaque */
+#else
+#define Z_NULL NULL
+#endif
 
 #define zlib_version zlibVersion()
 /* for compatibility with versions < 1.0.2 */
@@ -798,7 +802,7 @@ int    gzwrite OF((gzFile file,
    (0 in case of error).
 */
 
-int    QDECL gzprintf OF((gzFile file, const char *format, ...));
+int    GDR_DECL gzprintf OF((gzFile file, const char *format, ...));
 /*
      Converts, formats, and writes the args to the compressed file under
    control of the format string, as in fprintf. gzprintf returns the number of
@@ -1016,11 +1020,14 @@ typedef unsigned long  ulg;
 #  define zstrerror(errnum) ""
 #endif
 
-#define zmemcpy Com_Memcpy
+#define zmemcpy memcpy
 #define zmemcmp memcmp
-#define zmemzero(dest, len) Com_Memset(dest, 0, len)
+#define zmemzero(dest, len) memset(dest, 0, len)
 
 /* Diagnostic functions */
+#ifdef Assert
+# undef Assert
+#endif
 #ifdef _ZIP_DEBUG_
    int z_verbose = 0;
 #  define Assert(cond,msg) assert(cond);
@@ -1031,7 +1038,7 @@ typedef unsigned long  ulg;
 #  define Tracec(c,x) {if (z_verbose>0 && (c)) Sys_Error x ;}
 #  define Tracecv(c,x) {if (z_verbose>1 && (c)) Sys_Error x ;}
 #else
-#  define Assert(cond,msg)
+#  define Assert(cond,msg) assert(cond && !msg);
 #  define Trace(x)
 #  define Tracev(x)
 #  define Tracevv(x)
@@ -1065,7 +1072,7 @@ static void   zcfree  OF((voidp opaque, voidp ptr));
 #endif
 
 #ifndef ALLOC
-# define ALLOC(size) (Z_Malloc(size))
+# define ALLOC(size) (Z_Malloc(size,TAG_STATIC))
 #endif
 #ifndef TRYFREE
 # define TRYFREE(p) {if (p) Z_Free(p);}
@@ -1313,7 +1320,7 @@ extern unzFile unzReOpen (const char* path, unzFile file)
 		return NULL;
 
 	s=(unz_s*)ALLOC(sizeof(unz_s));
-	Com_Memcpy(s, (unz_s*)file, sizeof(unz_s));
+	memcpy(s, (unz_s*)file, sizeof(unz_s));
 
 	s->file = fin;
 	return (unzFile)s;	

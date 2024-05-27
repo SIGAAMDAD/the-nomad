@@ -337,14 +337,16 @@ namespace TheNomad::SGame {
 			const uint flags = RSF_ORTHO_TYPE_WORLD;
 			
 			// snap to the player's position
-//			TheNomad::GameSystem::TransformCameraFromWorld( origin );
-			Game_CameraPos = vec3( origin.x, origin.y, 0.0f );
-//			if ( LevelManager.GetMapData().GetWidth() > 0 && LevelManager.GetMapData().GetHeight() > 0 ) {
-//				Game_CameraPos.x = 1.0f / float( LevelManager.GetMapData().GetWidth() ) * origin.x - ( Game_CameraZoom * 30.0f );
-//				Game_CameraPos.y = 1.0f / float( LevelManager.GetMapData().GetHeight() ) + origin.y + ( Game_CameraZoom * 20.0f ) + 1.0f;
+			// if we're in photomode, ignore
+//			if ( TheNomad::Engine::CvarVariableInteger( "r_debugCamera" ) == 0 ) {
+			Game_CameraPos.x = origin.x;
+			if ( origin.x >= LevelManager.GetMapData().GetWidth() / 2 ) {
+				Game_CameraPos.x *= 1.25f;
+			}
+			Game_CameraPos.y = LevelManager.GetMapData().GetHeight() - origin.y;
 //			}
 			// technically no z coordinate because it's 2D
-//			Game_CameraZoom = 1.9f;
+//			Game_CameraZoom = 0.070f;
 			
 			TheNomad::Engine::Renderer::ClearScene();
 			for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {

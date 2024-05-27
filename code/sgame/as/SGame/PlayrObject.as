@@ -464,7 +464,7 @@ namespace TheNomad::SGame {
 			//
 			// init all player data
 			//
-			m_Link.m_Origin = origin;
+			m_Link.m_Origin = vec3( 0.0f );
 			m_nHealth = 100.0f;
 			m_nRage = 100.0f;
 			@m_LeftHandWeapon = @m_LeftArm;
