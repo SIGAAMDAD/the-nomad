@@ -1,6 +1,7 @@
 #include "g_game.h"
 #include "../rendercommon/imgui.h"
 #include "../rendercommon/imgui_impl_sdl2.h"
+#include "../rendercommon/imgui_internal.h"
 
 extern field_t g_consoleField;
 qboolean key_overstrikeMode;
@@ -11,14 +12,14 @@ typedef struct {
 } keyname_t;
 
 static const keyname_t keynames[] = {
-	{ "WHEEL_DOWN", KEY_WHEEL_DOWN },
-	{ "WHEEL_UP", KEY_WHEEL_UP },
+	{ "Wheel Down", KEY_WHEEL_DOWN },
+	{ "Wheel Up", KEY_WHEEL_UP },
 
-	{ "MOUSE_LEFT", KEY_MOUSE_LEFT },
-	{ "MOUSE_MIDDLE", KEY_MOUSE_MIDDLE },
-	{ "MOUSE_RIGHT", KEY_MOUSE_RIGHT },
-	{ "MOUSE_4", KEY_MOUSE_BUTTON_4 },
-	{ "MOUSE_5", KEY_MOUSE_BUTTON_5 },
+	{ "Mouse Left", KEY_MOUSE_LEFT },
+	{ "Mouse Middle", KEY_MOUSE_MIDDLE },
+	{ "Mouse Right", KEY_MOUSE_RIGHT },
+	{ "Mouse Button 4", KEY_MOUSE_BUTTON_4 },
+	{ "Mouse Button 5", KEY_MOUSE_BUTTON_5 },
 	{ "a", KEY_A },
 	{ "b", KEY_B },
 	{ "c", KEY_C },
@@ -46,22 +47,22 @@ static const keyname_t keynames[] = {
 	{ "y", KEY_Y },
 	{ "z", KEY_Z },
 
-	{ "ESCAPE", KEY_ESCAPE },
-	{ "ALT", KEY_ALT },
-	{ "SHIFT", KEY_SHIFT },
-	{ "CTRL", KEY_CTRL },
-	{ "TAB", KEY_TAB },
-	{ "ENTER", KEY_ENTER },
-	{ "BACKSPACE", KEY_BACKSPACE },
-	{ "SPACE", KEY_SPACE },
+	{ "Escape", KEY_ESCAPE },
+	{ "Alt", KEY_ALT },
+	{ "Shift", KEY_SHIFT },
+	{ "Ctrl", KEY_CTRL },
+	{ "Tab", KEY_TAB },
+	{ "Enter", KEY_ENTER },
+	{ "Backspace", KEY_BACKSPACE },
+	{ "Space", KEY_SPACE },
 
 	{ "CONSOLE", KEY_CONSOLE },
 	{ "PRINTSCREEN", KEY_SCREENSHOT },
 
-	{ "UPARROW", KEY_UP },
-	{ "DOWNARROW", KEY_DOWN },
-	{ "RIGHTARROW", KEY_RIGHT },
-	{ "LEFTARROW", KEY_LEFT },
+	{ "Up Arrow", KEY_UP },
+	{ "Down Arrow", KEY_DOWN },
+	{ "Right Arrow", KEY_RIGHT },
+	{ "Left Arrow", KEY_LEFT },
 
 	{ "F1", KEY_F1 },
 	{ "F2", KEY_F2 },
@@ -137,44 +138,44 @@ static const keyname_t keynames[] = {
 	{ "EURO", KEY_EURO },
 	{ "UNDO", KEY_UNDO },
 
-	{ "PAD_A", KEY_PAD0_A },
-	{ "PAD_B", KEY_PAD0_B },
-	{ "PAD_X", KEY_PAD0_X },
-	{ "PAD_Y", KEY_PAD0_Y },
-	{ "PAD_BACK", KEY_PAD0_BACK },
-	{ "PAD_GUIDE", KEY_PAD0_GUIDE },
-	{ "PAD_START", KEY_PAD0_START },
-	{ "PAD_LEFTCLICK", KEY_PAD0_LEFTSTICK_CLICK },
-	{ "PAD_RIGHTCLICK", KEY_PAD0_RIGHTSTICK_CLICK },
-	{ "PAD_LEFTBUTTON", KEY_PAD0_LEFTBUTTON },
-	{ "PAD_RIGHTBUTTON", KEY_PAD0_RIGHTBUTTON },
-	{ "PAD_DPAD_UP", KEY_PAD0_DPAD_UP },
-	{ "PAD_DPAD_DOWN", KEY_PAD0_DPAD_DOWN },
-	{ "PAD_DPAD_LEFT", KEY_PAD0_DPAD_LEFT },
-	{ "PAD_DPAD_RIGHT", KEY_PAD0_DPAD_RIGHT },
+	{ "Gamepad A", KEY_PAD0_A },
+	{ "Gamepad B", KEY_PAD0_B },
+	{ "Gamepad X", KEY_PAD0_X },
+	{ "Gamepad Y", KEY_PAD0_Y },
+	{ "Gamepad Back", KEY_PAD0_BACK },
+	{ "Gamepad Guide", KEY_PAD0_GUIDE },
+	{ "Gamepad Start", KEY_PAD0_START },
+	{ "Gamepad LeftClick", KEY_PAD0_LEFTSTICK_CLICK },
+	{ "Gamepad RightClick", KEY_PAD0_RIGHTSTICK_CLICK },
+	{ "Gamepad LeftButton", KEY_PAD0_LEFTBUTTON },
+	{ "Gamepad RightButton", KEY_PAD0_RIGHTBUTTON },
+	{ "Gamepad DPad Up", KEY_PAD0_DPAD_UP },
+	{ "Gamepad DPad Down", KEY_PAD0_DPAD_DOWN },
+	{ "Gamepad DPad Left", KEY_PAD0_DPAD_LEFT },
+	{ "Gamepad DPad Right", KEY_PAD0_DPAD_RIGHT },
 
-	{ "PAD_LEFTSTICK_LEFT", KEY_PAD0_LEFTSTICK_LEFT },
-	{ "PAD_LEFTSTICK_RIGHT", KEY_PAD0_LEFTSTICK_RIGHT },
-	{ "PAD_LEFTSTICK_UP", KEY_PAD0_LEFTSTICK_UP },
-	{ "PAD_LEFTSTICK_DOWN", KEY_PAD0_LEFTSTICK_DOWN },
-	{ "PAD_RIGHTSTICK_LEFT", KEY_PAD0_RIGHTSTICK_LEFT },
-	{ "PAD_RIGHTSTICK_RIGHT", KEY_PAD0_RIGHTSTICK_RIGHT },
-	{ "PAD_RIGHTSTICK_UP", KEY_PAD0_RIGHTSTICK_UP },
-	{ "PAD_RIGHTSTICK_DOWN", KEY_PAD0_RIGHTSTICK_DOWN },
-	{ "PAD_LEFTTRIGGER", KEY_PAD0_LEFTTRIGGER },
-	{ "PAD_RIGHTTRIGGER", KEY_PAD0_RIGHTTRIGGER },
+	{ "Gamepad LeftStick Left", KEY_PAD0_LEFTSTICK_LEFT },
+	{ "Gamepad LeftStick Right", KEY_PAD0_LEFTSTICK_RIGHT },
+	{ "Gamepad LeftStick Up", KEY_PAD0_LEFTSTICK_UP },
+	{ "Gamepad LeftStick Down", KEY_PAD0_LEFTSTICK_DOWN },
+	{ "Gamepad RightStick Left", KEY_PAD0_RIGHTSTICK_LEFT },
+	{ "Gamepad RightStick Right", KEY_PAD0_RIGHTSTICK_RIGHT },
+	{ "Gamepad RightStick Up", KEY_PAD0_RIGHTSTICK_UP },
+	{ "Gamepad RightStick Down", KEY_PAD0_RIGHTSTICK_DOWN },
+	{ "Gamepad LeftTrigger", KEY_PAD0_LEFTTRIGGER },
+	{ "Gamepad RightTrigger", KEY_PAD0_RIGHTTRIGGER },
 
-	{ "PAD_MISC1", KEY_PAD0_MISC1 },
-	{ "PAD_PADDLE1", KEY_PAD0_PADDLE1 },
-	{ "PAD_PADDLE2", KEY_PAD0_PADDLE2 },
-	{ "PAD_PADDLE3", KEY_PAD0_PADDLE3 },
-	{ "PAD_PADDLE4", KEY_PAD0_PADDLE4 },
-	{ "PAD_TOUCHPAD", KEY_PAD0_TOUCHPAD },
+	{ "Gamepad_MISC1", KEY_PAD0_MISC1 },
+	{ "Gamepad_PADDLE1", KEY_PAD0_PADDLE1 },
+	{ "Gamepad_PADDLE2", KEY_PAD0_PADDLE2 },
+	{ "Gamepad_PADDLE3", KEY_PAD0_PADDLE3 },
+	{ "Gamepad_PADDLE4", KEY_PAD0_PADDLE4 },
+	{ "Gamepad_TOUCHPAD", KEY_PAD0_TOUCHPAD },
 
 	{ NULL, 0 }
 };
 
-static ImGuiKey EngineKeyToImGuiKey(uint32_t key);
+static ImGuiKey EngineKeyToImGuiKey( uint32_t key );
 static void Field_CharEvent( field_t *edit, uint32_t ch );
 
 void G_MouseEvent( int dx, int dy /*, int time */ )
@@ -182,8 +183,8 @@ void G_MouseEvent( int dx, int dy /*, int time */ )
 	if ( Key_GetCatcher() & KEYCATCH_SGAME ) {
 		g_pModuleLib->ModuleCall( sgvm, ModuleOnMouseEvent, 2, dx, dy );
 	} else {
-		gi.mouseDx[gi.mouseIndex] += dx;
-		gi.mouseDy[gi.mouseIndex] += dy;
+		gi.mouseDx[ gi.mouseIndex ] += dx;
+		gi.mouseDy[ gi.mouseIndex ] += dy;
 	}
 }
 
@@ -404,7 +405,7 @@ void Key_SetBinding(uint32_t keynum, const char *binding)
 		return;
 	}
 
-	// free old bindingi
+	// free old binding
 	if (keys[keynum].binding) {
 		Z_Free(keys[keynum].binding);
 	}
@@ -413,7 +414,7 @@ void Key_SetBinding(uint32_t keynum, const char *binding)
 	keys[keynum].binding = CopyString(binding);
 }
 
-const char *Key_GetBinding(uint32_t keynum)
+const char *Key_GetBinding( int32_t keynum )
 {
 	if (keynum >= NUMKEYS) {
 		return "";
@@ -422,9 +423,9 @@ const char *Key_GetBinding(uint32_t keynum)
 	return keys[keynum].binding;
 }
 
-uint32_t Key_GetKey( const char *binding )
+int32_t Key_GetKey( const char *binding )
 {
-	uint32_t i;
+	int i;
 
 	if ( binding ) {
 		for ( i = 0 ; i < NUMKEYS ; i++ ) {
@@ -449,7 +450,7 @@ static void Key_Unbindall_f( void )
 
 static void Key_Bind_f( void )
 {
-	uint32_t c, b;
+	int c, b;
 
 	c = Cmd_Argc();
 
@@ -506,7 +507,7 @@ static void Key_Bindlist_f( void )
 }
 
 
-void Key_KeynameCompletion( void(*callback)(const char *s) )
+void Key_KeynameCompletion( void(*callback)( const char *s ) )
 {
 	uint32_t i;
 
@@ -528,34 +529,37 @@ void Key_ParseBinding( uint32_t key, qboolean down, uint32_t time )
 	
 	p = buf;
 
-	N_strncpyz(buf, keys[key].binding, sizeof(buf));
+	N_strncpyz( buf, keys[key].binding, sizeof( buf ) );
 
-	while (1) {
-		while (isspace(*p))
+	while ( 1 ) {
+		while ( isspace( *p ) ) {
 			p++;
+		}
 		
-		end = strchr(p, ';');
-		if (end)
+		end = strchr( p, ';' );
+		if ( end ) {
 			*end = '\0';
-		if (*p == '+') {
+		}
+		if ( *p == '+' ) {
 			// button commands add keynum and time as parameters
 			// so that multiple sources can be discriminated and
 			// subframe corrected
 			char cmd[1024];
-			snprintf(cmd, sizeof(cmd), "%c%s %i %i\n", (down) ? '+' : '-', p + 1, key, time);
-			Cbuf_AddText(cmd);
-			if (down) {
+			snprintf( cmd, sizeof( cmd ), "%c%s %i %i\n", ( down ) ? '+' : '-', p + 1, key, time );
+			Cbuf_AddText( cmd );
+			if ( down ) {
 				keys[key].bound = qtrue;
 			}
 		}
-		else if (down) {
+		else if ( down ) {
 			// normal commands only execute on key press
-			Cbuf_AddText(p);
-			Cbuf_AddText("\n");
+			Cbuf_AddText( p );
+			Cbuf_AddText( "\n" );
 		}
 
-		if (!end)
+		if ( !end ) {
 			break;
+		}
 		
 		p = end + 1;
 	}
@@ -1022,7 +1026,7 @@ static void Console_Key( int key ) {
 
 //============================================================================
 
-static void G_KeyDownEvent(uint32_t key, uint32_t time)
+static void G_KeyDownEvent( uint32_t key, uint32_t time )
 {
 	keys[key].down = qtrue;
 	keys[key].bound = qfalse;
@@ -1073,7 +1077,7 @@ static void G_KeyDownEvent(uint32_t key, uint32_t time)
 			Cbuf_ExecuteText( EXEC_APPEND, "togglepausemenu\n" );
 		}
 
-		if ( !( Key_GetCatcher() & KEYCATCH_UI ) ) {
+		if ( Key_GetCatcher() & KEYCATCH_UI || com_errorEntered ) {
 			Cmd_Clear();
 			Cvar_Set( "com_errorMessage", "" );
 		}
@@ -1081,7 +1085,6 @@ static void G_KeyDownEvent(uint32_t key, uint32_t time)
 	}
 
 	if ( Key_GetCatcher() & KEYCATCH_CONSOLE ) {
-//		Console_Key( key );
 	}
 	if ( Key_GetCatcher() & KEYCATCH_UI ) {
 	}
@@ -1090,13 +1093,13 @@ static void G_KeyDownEvent(uint32_t key, uint32_t time)
 			g_pModuleLib->ModuleCall( sgvm, ModuleOnKeyEvent, 2, key, qtrue );
 		}
 		// send the bound action
-		if ( Key_GetCatcher() & KEYCATCH_UI ) {
+		if ( !( Key_GetCatcher() & KEYCATCH_CONSOLE ) ) {
 			Key_ParseBinding( key, qtrue, time );
 		}
 	}
 }
 
-static void G_KeyUpEvent(uint32_t key, uint32_t time)
+static void G_KeyUpEvent( uint32_t key, uint32_t time )
 {
 	const qboolean bound = keys[key].bound;
 
@@ -1105,12 +1108,12 @@ static void G_KeyUpEvent(uint32_t key, uint32_t time)
 	keys[key].bound = qfalse;
 
 	// don't process key-up events for the console key
-	if (key == KEY_CONSOLE || (key == KEY_ESCAPE && keys[KEY_SHIFT].down)) {
+	if ( key == KEY_CONSOLE || ( key == KEY_ESCAPE && keys[KEY_SHIFT].down ) ) {
 		return;
 	}
 
 	// hardcoded screenshot key
-	if (key == KEY_SCREENSHOT) {
+	if ( key == KEY_SCREENSHOT ) {
 		return;
 	}
 	
@@ -1119,6 +1122,8 @@ static void G_KeyUpEvent(uint32_t key, uint32_t time)
 			g_pModuleLib->ModuleCall( sgvm, ModuleOnKeyEvent, 2, key, qfalse );
 		}
 		Key_ParseBinding( key, qfalse, time );
+	}
+	if ( Key_GetCatcher() & KEYCATCH_UI ) {
 	}
 }
 
@@ -1140,12 +1145,13 @@ static void Key_Unbind_f( void )
 	Key_SetBinding( b, "" );
 }
 
-void G_KeyEvent(uint32_t key, qboolean down, uint32_t time)
+void G_KeyEvent( uint32_t key, qboolean down, uint32_t time )
 {
-	if (down)
-		G_KeyDownEvent(key, time);
-	else
-		G_KeyUpEvent(key, time);
+	if ( down ) {
+		G_KeyDownEvent( key, time );
+	} else {
+		G_KeyUpEvent( key, time );
+	}
 }
 
 static void Key_PrintCatchers_f( void )
@@ -1190,9 +1196,12 @@ Key_ClearStates
 */
 void Key_ClearStates( void )
 {
-	for (uint32_t i = 0; i < NUMKEYS; i++) {
-		if ( keys[i].down )
+	int i;
+
+	for ( i = 0; i < NUMKEYS; i++ ) {
+		if ( keys[i].down ) {
 			G_KeyEvent( i, qfalse, 0 );
+		}
 
 		keys[i].down = qfalse;
 		keys[i].repeats = 0;
@@ -1228,9 +1237,33 @@ void Key_SetCatcher( uint32_t catcher )
 
 
 
-static ImGuiKey EngineKeyToImGuiKey(uint32_t key)
+static ImGuiKey EngineKeyToImGuiKey( uint32_t key )
 {
 	switch ( key ) {
+	case KEY_PAD0_A: return ImGuiKey_GamepadFaceDown;
+	case KEY_PAD0_B: return ImGuiKey_GamepadFaceRight;
+	case KEY_PAD0_X: return ImGuiKey_GamepadFaceLeft;
+	case KEY_PAD0_Y: return ImGuiKey_GamepadFaceUp;
+	case KEY_PAD0_LEFTBUTTON: return ImGuiKey_GamepadL1;
+	case KEY_PAD0_RIGHTBUTTON: return ImGuiKey_GamepadR1;
+	case KEY_PAD0_LEFTSTICK_CLICK: return ImGuiKey_GamepadL3;
+	case KEY_PAD0_LEFTSTICK_UP: return ImGuiKey_GamepadLStickUp;
+	case KEY_PAD0_LEFTSTICK_RIGHT: return ImGuiKey_GamepadLStickRight;
+	case KEY_PAD0_LEFTSTICK_DOWN: return ImGuiKey_GamepadLStickDown;
+	case KEY_PAD0_LEFTSTICK_LEFT: return ImGuiKey_GamepadLStickLeft;
+	case KEY_PAD0_RIGHTSTICK_CLICK: return ImGuiKey_GamepadR3;
+	case KEY_PAD0_RIGHTSTICK_UP: return ImGuiKey_GamepadRStickUp;
+	case KEY_PAD0_RIGHTSTICK_RIGHT: return ImGuiKey_GamepadRStickRight;
+	case KEY_PAD0_RIGHTSTICK_DOWN: return ImGuiKey_GamepadRStickDown;
+	case KEY_PAD0_RIGHTSTICK_LEFT: return ImGuiKey_GamepadRStickLeft;
+	case KEY_PAD0_LEFTTRIGGER: return ImGuiKey_GamepadL2;
+	case KEY_PAD0_RIGHTTRIGGER: return ImGuiKey_GamepadR2;
+	case KEY_PAD0_BACK: return ImGuiKey_GamepadBack;
+	case KEY_PAD0_START: return ImGuiKey_GamepadStart;
+	case KEY_PAD0_DPAD_UP: return ImGuiKey_GamepadDpadUp;
+	case KEY_PAD0_DPAD_RIGHT: return ImGuiKey_GamepadDpadRight;
+	case KEY_PAD0_DPAD_DOWN: return ImGuiKey_GamepadDpadDown;
+	case KEY_PAD0_DPAD_LEFT: return ImGuiKey_GamepadDpadLeft;
 	case KEY_A: return ImGuiKey_A;
     case KEY_B: return ImGuiKey_B;
     case KEY_C: return ImGuiKey_C;

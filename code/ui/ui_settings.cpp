@@ -1005,6 +1005,7 @@ static void VideoMenu_Save( void )
 	Cvar_SetIntegerValue( "r_customHeight", s_settingsMenu->video.windowHeight );
 	Cvar_SetIntegerValue( "r_mode", s_settingsMenu->video.windowResolution - 2 );
 	Cvar_SetFloatValue( "r_imageSharpenAmount", s_settingsMenu->video.sharpening );
+	Cvar_SetFloatValue( "r_autoExposure", s_settingsMenu->video.exposure );
 
 	Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n" );
 }
@@ -1074,10 +1075,10 @@ static void ControlsMenu_Save( void )
 		bind = &s_settingsMenu->controls.keybinds[i];
 
 		if ( bind->bind1 != -1 ) {
-
+			Cbuf_ExecuteText( EXEC_APPEND, va( "bind %s \"%s\"\n", Key_GetBinding( s_defaultKeybinds[i].bind1 ), s_defaultKeybinds[i].command ) );
 		}
 		if ( bind->bind2 != -1 ) {
-
+			Cbuf_ExecuteText( EXEC_APPEND, va( "bind %s \"%s\"\n", Key_GetBinding( s_defaultKeybinds[i].bind2 ), s_defaultKeybinds[i].command ) );
 		}
 	}
 }
@@ -1147,6 +1148,7 @@ static void VideoMenu_SetDefault( void )
 	s_settingsMenu->video.fullscreen = Cvar_VariableInteger( "r_fullscreen" );
 	s_settingsMenu->video.noborder = Cvar_VariableInteger( "r_noborder" );
 	s_settingsMenu->video.sharpening = Cvar_VariableFloat( "r_imageSharpenAmount" );
+	s_settingsMenu->video.exposure = Cvar_VariableFloat( "r_autoExposure" );
 }
 
 static void AudioMenu_SetDefault( void )
@@ -1167,8 +1169,11 @@ static void ControlsMenu_SetDefault( void )
 
 	memcpy( s_settingsMenu->controls.keybinds, s_defaultKeybinds, sizeof( s_defaultKeybinds ) );
 	for ( i = 0; i < arraylen( s_defaultKeybinds ); i++ ) {
-		s_settingsMenu->controls.keybinds[i].bind1 = s_defaultKeybinds[i].defaultBind1;
-		s_settingsMenu->controls.keybinds[i].bind2 = s_defaultKeybinds[i].defaultBind2;
+//		s_settingsMenu->controls.keybinds[i].bind1 = s_defaultKeybinds[i].defaultBind1;
+//		s_settingsMenu->controls.keybinds[i].bind2 = s_defaultKeybinds[i].defaultBind2;
+
+		s_settingsMenu->controls.keybinds[i].bind1 = Key_GetKey( s_defaultKeybinds[i].command );
+		s_settingsMenu->controls.keybinds[i].bind2 = -1;
 	}
 }
 

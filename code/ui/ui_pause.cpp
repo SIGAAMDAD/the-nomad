@@ -1,13 +1,20 @@
 #include "ui_lib.h"
 
-#define MAX_DAILY_TIPS 1024
-
 #define ID_TITLE       0
 #define ID_HELP        1
 #define ID_RESUME      2
 #define ID_SETTINGS    3
 #define ID_CHECKPOINT  4
-#define ID_EXIT        5
+#define ID_PHOTOMODE   5
+#define ID_EXIT        6
+
+typedef struct {
+    float exposure;
+    float cameraScale;
+    float cameraRotation;
+
+    float oldCameraScale;
+} photomode_t;
 
 typedef struct {
     menuframework_t menu;
@@ -19,6 +26,8 @@ typedef struct {
     menutext_t exitToMainMenu;
 
     menutext_t dailyTipText;
+
+    photomode_t photomode;
 
     char **dailyTips;
     uint64_t numDailyTips;
@@ -47,9 +56,17 @@ static void PauseMenu_EventCallback( void *ptr, int event )
 
         UI_SetActiveMenu( UI_MENU_NONE );
         break;
+    case ID_PHOTOMODE: 
+        s_pauseMenu->photomode.cameraRotation = 0.0f;
+        s_pauseMenu->photomode.cameraScale = s_pauseMenu->photomode.oldCameraScale = gi.cameraZoom;
+        s_pauseMenu->photomode.exposure = Cvar_VariableFloat( "r_autoExposure" );
+
+        Cbuf_ExecuteText( EXEC_APPEND, "togglephotomode\n" );
+        break;
     case ID_HELP:
         break;
     case ID_SETTINGS:
+        gi.state = GS_MENU;
         UI_SettingsMenu();
         break;
     case ID_EXIT:
@@ -81,9 +98,32 @@ static void DailyTip_Draw( void *ptr )
     ImGui::PopStyleColor( 3 );
 }
 
+static void PauseMenu_DrawPhotoMode( void )
+{
+    ImGui::Begin( "##PhotoModeWindow", NULL, MENU_DEFAULT_FLAGS );
+    {
+        ImGui::SetCursorScreenPos( ImVec2( 64 * ui->scale, 64 * ui->scale ) );
+        ImGui::BeginChild( ImGui::GetID( "PhotoModeSettings" ), ImVec2( 72 * ui->scale, 128 * ui->scale ), ImGuiChildFlags_AlwaysAutoResize );
+        ImGui::SliderFloat( "Exposure##PhotoModeSettingsExposure", &s_pauseMenu->photomode.exposure, 0.0f, 10.0f );
+        ImGui::EndChild();
+
+        ImGui::SetCursorScreenPos( ImVec2( 0, 700 * ui->scale ) );
+        if ( ImGui::Button( "Exit" ) ) {
+            Cbuf_ExecuteText( EXEC_APPEND, "togglephotomode\n" );
+        }
+        if ( ImGui::Button( "Take Picture" ) ) {
+            Cbuf_ExecuteText( EXEC_APPEND, "screenshotBMP\n" );
+        }
+    }
+    ImGui::End();
+}
+
 static void PauseMenu_Draw( void )
 {
     FontCache()->SetActiveFont( RobotoMono );
+    if ( gi.togglePhotomode ) {
+        PauseMenu_DrawPhotoMode();
+    }
     Menu_Draw( &s_pauseMenu->menu );
     FontCache()->SetActiveFont( RobotoMono );
 }
@@ -227,6 +267,8 @@ void PauseMenu_Cache( void )
 
 void UI_PauseMenu( void )
 {
+    gi.state = GS_LEVEL;
+
     // force as top level menu
     UI_ForceMenuOff();
 

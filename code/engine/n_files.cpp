@@ -2398,21 +2398,12 @@ static bffFile_t *FS_LoadBFF( const char *bffpath )
 			Con_Printf( COLOR_RED "ERROR: failed reading chunk name at %lu\n", i );
 			return NULL;
 		}
-//		if ( !fread( &compressedSize, sizeof( compressedSize ), 1, fp ) ) {
-//			fclose( fp );
-//			Con_Printf( COLOR_RED "ERROR: failed reading chunk compressed size at %lu\n", i );
-//			return NULL;
-//		}
 		if ( !fread( &tmp, sizeof( tmp ), 1, fp ) ) {
 			fclose( fp );
 			Con_Printf( COLOR_RED "ERROR: failed reading chunk size at %lu\n", i );
 			return NULL;
 		}
-//		if ( header.compression != COMPRESS_NONE ) {
-//			fseek( fp, compressedSize, SEEK_CUR );
-//		} else {
-			fseek( fp, tmp, SEEK_CUR );
-//		}
+		fseek( fp, tmp, SEEK_CUR );
 
 		filename_inbff[ sizeof( filename_inbff ) - 1 ] = '\0';
 		namelen += strlen( filename_inbff ) + 1;
@@ -2521,11 +2512,6 @@ static bffFile_t *FS_LoadBFF( const char *bffpath )
 			Con_Printf( COLOR_RED "ERROR: failed reading chunk name at %lu\n", i );
 			return NULL;
 		}
-//		if ( !fread( &curFile->compressedSize, sizeof( curFile->compressedSize ), 1, fp ) ) {
-//			fclose( fp );
-//			Con_Printf( COLOR_RED "ERROR: failed reading chunk size at %lu\n", i );
-//			return NULL;
-//		}
 		if ( !fread( &curFile->size, sizeof( curFile->size ), 1, fp ) ) {
 			fclose( fp );
 			Con_Printf( COLOR_RED "ERROR: failed reading chunk size at %lu\n", i );
@@ -2546,11 +2532,7 @@ static bffFile_t *FS_LoadBFF( const char *bffpath )
 		strcpy( curFile->name, filename_inbff );
 		namePtr += strlen( filename_inbff ) + 1;
 
-//		if ( header.compression != COMPRESS_NONE ) {
-//			fseek( fp, curFile->compressedSize, SEEK_CUR );
-//		} else {
-			fseek( fp, curFile->size, SEEK_CUR );
-//		}
+		fseek( fp, curFile->size, SEEK_CUR );
 
 		// update hash table
 		hash = FS_HashFileName( filename_inbff, bff->hashSize );
@@ -2830,13 +2812,14 @@ static uint64_t FS_ReadFromChunk( void *buffer, uint64_t size, fileHandle_t f )
 			char *tempBuf;
 
 			outLen = handle->data.chunk->size;
-			tempBuf = (char *)Hunk_AllocateTempMemory( handle->data.chunk->compressedSize );
+			tempBuf = (char *)Hunk_AllocateTempMemory( handle->data.chunk->size );
 
 			fseek( handle->bff->handle, handle->data.chunk->pos, SEEK_SET );
 			if ( !fread( tempBuf, handle->data.chunk->size, 1, handle->bff->handle ) ) {
 				N_Error( ERR_FATAL, "Error reading chunk buffer at %s", handle->name );
 			}
 			handle->data.chunk->buf = Decompress( tempBuf, handle->data.chunk->size, &outLen, handle->data.chunk->compression );
+			handle->data.chunk->size = outLen;
 			Hunk_FreeTempMemory( tempBuf );
 		}
 		else {
@@ -4033,25 +4016,25 @@ static void FS_AddGameDirectory( const char *path, const char *dir )
 	uint64_t len;
 	int bffWhich;
 
-	for (sp = fs_searchpaths; sp; sp = sp->next) {
-		if (sp->dir && sp->dir->path && sp->dir->gamedir && !N_stricmp(sp->dir->path, path) && !N_stricmp(sp->dir->gamedir, dir)) {
+	for ( sp = fs_searchpaths; sp; sp = sp->next ) {
+		if ( sp->dir && sp->dir->path && sp->dir->gamedir && !N_stricmp( sp->dir->path, path ) && !N_stricmp( sp->dir->gamedir, dir ) ) {
 			return; // we've already got this one
 		}
 	}
 
-	path_len = PAD(strlen(path) + 1, sizeof(uintptr_t));
-	dir_len = PAD(strlen(dir) + 1, sizeof(uintptr_t));
-	size = sizeof(*search) + sizeof(*search->dir) + path_len + dir_len;
+	path_len = PAD( strlen( path ) + 1, sizeof( uintptr_t ) );
+	dir_len = PAD( strlen( dir ) + 1, sizeof( uintptr_t ) );
+	size = sizeof( *search ) + sizeof( *search->dir ) + path_len + dir_len;
 
-	search = (searchpath_t *)Z_Malloc(size, TAG_SEARCH_PATH);
+	search = (searchpath_t *)Z_Malloc( size, TAG_SEARCH_PATH );
 	memset(search, 0, size);
-	search->dir = (directory_t *)(search + 1);
-	search->dir->path = (char *)(search->dir + 1);
-	search->dir->gamedir = (char *)(search->dir->path + path_len);
+	search->dir = (directory_t *)( search + 1 );
+	search->dir->path = (char *)( search->dir + 1 );
+	search->dir->gamedir = (char *)( search->dir->path + path_len );
 	search->access = DIR_STATIC;
 
-	strcpy(search->dir->path, path);
-	strcpy(search->dir->gamedir, dir);
+	strcpy( search->dir->path, path );
+	strcpy( search->dir->gamedir, dir );
 	gamedir = search->dir->gamedir;
 
 	search->next = fs_searchpaths;
@@ -4060,12 +4043,12 @@ static void FS_AddGameDirectory( const char *path, const char *dir )
 	bffFilesI = 0;
 	bffDirsI = 0;
 
-	N_strncpyz(curpath, FS_BuildOSPath(path, dir, NULL), sizeof(curpath));
+	N_strncpyz( curpath, FS_BuildOSPath( path, dir, NULL ), sizeof( curpath ) );
 
 	// get .bff files
 	bffFiles = Sys_ListFiles( curpath, ".bff", NULL, &numfiles, qfalse );
 	if (numfiles >= 2) {
-		FS_SortFileList( bffFiles, numfiles - 1 );
+//		FS_SortFileList( bffFiles, numfiles - 1 );
 	}
 
 	bffDirs = Sys_ListFiles(curpath, "/", NULL, &numdirs, qfalse);

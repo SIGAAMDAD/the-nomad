@@ -341,7 +341,7 @@ namespace TheNomad::SGame {
 //			if ( TheNomad::Engine::CvarVariableInteger( "r_debugCamera" ) == 0 ) {
 			Game_CameraPos.x = origin.x;
 			if ( origin.x >= LevelManager.GetMapData().GetWidth() / 2 ) {
-				Game_CameraPos.x *= 1.25f;
+				Game_CameraPos.x += 5.25f;
 			}
 			Game_CameraPos.y = LevelManager.GetMapData().GetHeight() - origin.y;
 //			}

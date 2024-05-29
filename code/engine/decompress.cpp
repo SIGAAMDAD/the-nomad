@@ -190,33 +190,54 @@ static char *Decompress_BZIP2( void *buf, uint64_t buflen, uint64_t *outlen )
 {
 	char *out, *newbuf;
 	unsigned int len;
-	int ret;
+	int ret, attempts;
 
-	Con_Printf( "Decompressing %lu bytes with bzip2...\n", buflen );
+	len = *outlen * 2;
+	out = (char *)Hunk_AllocateTempMemory( len );
 
-	len = buflen;
-	out = (char *)Z_Malloc( len, TAG_BFF );
+	attempts = 0;
+	do {
+		Con_Printf( "Decompressing %lu bytes with bzip2 to %u...\n", buflen, len );
 
-	ret = BZ2_bzBuffToBuffDecompress( out, &len, (char *)buf, buflen, 0, 4 );
-	if ( !CheckBZIP2( ret, buflen, "Decompression" ) ) {
-		return (char *)buf;
-	}
+		ret = BZ2_bzBuffToBuffDecompress( out, &len, (char *)buf, buflen, 0, 1 );
+		if ( ret == BZ_OK ) {
+			break;
+		}
+		if ( attempts++ > 3 || ret != BZ_OUTBUFF_FULL ) {
+			// give up
+			CheckBZIP2( ret, buflen, "Decompression" );
+		}
+		if ( ret == BZ_OUTBUFF_FULL ) {
+			// resize the temp buffer
+			Con_DPrintf( "BZ_OUTBUFF_FULL: retrying with a bigger buffer.\n" );
+			len *= 2;
+			Hunk_FreeTempMemory( out );
+			out = (char *)Hunk_AllocateTempMemory( len );
+		}
+	} while ( 1 );
 
-	Con_Printf( "Successful decompression of %lu to %u bytes with bzip2.\n", buflen, len );
+	Con_Printf( "Successful decompression of %lu to %u bytes with bzip2 (inflate %0.02f%%).\n", buflen, len,
+		( (float)buflen / (float)len ) * 100.0f );
+	
 	*outlen = len;
+	newbuf = (char *)Z_Malloc( len, TAG_BFF );
+	memcpy( newbuf, out, len );
+	Hunk_FreeTempMemory( out );
+	out = newbuf;
 
-	return newbuf;
+	return out;
 }
 
 char *Decompress_ZLIB( void *buf, uint64_t buflen, uint64_t *outlen )
 {
-	char *out;
+	char *out, *newbuf;
 	Bytef *dataPtr;
 	int ret;
 	z_stream stream;
 	uint64_t uncompressedBytes;
 
-	out = (char *)Z_Malloc( *outlen, TAG_BFF );
+	*outlen = buflen * 4;
+	out = (char *)Hunk_AllocateTempMemory( *outlen );
 
 	stream.zalloc = Z_NULL;
 	stream.zfree = Z_NULL;
@@ -263,6 +284,11 @@ char *Decompress_ZLIB( void *buf, uint64_t buflen, uint64_t *outlen )
 			zlib_strerror( ret ) );
 		return (char *)buf;
 	}
+
+	newbuf = (char *)Z_Malloc( *outlen, TAG_BFF );
+	memcpy( newbuf, out, *outlen );
+	Hunk_FreeTempMemory( out );
+	out = newbuf;
 	
 	Con_Printf( "Successful decompression of %lu bytes to %lu bytes with zlib.\n", buflen, *outlen );
 
