@@ -655,11 +655,43 @@ static void SettingsMenu_DrawHint( void )
 	ImGui::End();
 }
 
+static nhandle_t GetCustomButton( int button )
+{
+	switch ( button ) {
+	case KEY_PAD0_A: return ui->controller_a;
+	case KEY_PAD0_B: return ui->controller_b;
+	case KEY_PAD0_X: return ui->controller_x;
+	case KEY_PAD0_Y: return ui->controller_y;
+	case KEY_PAD0_LEFTTRIGGER: return ui->controller_left_trigger;
+	case KEY_PAD0_RIGHTTRIGGER: return ui->controller_right_trigger;
+	case KEY_PAD0_LEFTBUTTON: return ui->controller_left_button;
+	case KEY_PAD0_RIGHTBUTTON: return ui->controller_right_button;
+	case KEY_PAD0_LEFTSTICK_CLICK:
+	case KEY_PAD0_LEFTSTICK_UP:
+	case KEY_PAD0_LEFTSTICK_RIGHT:
+	case KEY_PAD0_LEFTSTICK_DOWN:
+	case KEY_PAD0_LEFTSTICK_LEFT:
+	case KEY_PAD0_RIGHTSTICK_CLICK:
+	case KEY_PAD0_RIGHTSTICK_UP:
+	case KEY_PAD0_RIGHTSTICK_RIGHT:
+	case KEY_PAD0_RIGHTSTICK_DOWN:
+	case KEY_PAD0_RIGHTSTICK_LEFT:
+	case KEY_PAD0_DPAD_UP: return ui->controller_dpad_up;
+	case KEY_PAD0_DPAD_RIGHT: return ui->controller_dpad_right;
+	case KEY_PAD0_DPAD_DOWN: return ui->controller_dpad_down;
+	case KEY_PAD0_DPAD_LEFT: return ui->controller_dpad_left;
+	default:
+		break;
+	};
+	return FS_INVALID_HANDLE;
+}
+
 static void ControlsMenu_DrawBindings( int group )
 {
 	static char bind[1024];
 	static char bind2[1024];
 	int i;
+	nhandle_t hShader;
 
 //	ImGui::BeginTable( va( "##ControlsSettingsMenuBindingsTableGrouping%i", group ), 2 );
 	for ( i = 0; i < arraylen( s_defaultKeybinds ); i++ ) {
@@ -680,6 +712,7 @@ static void ControlsMenu_DrawBindings( int group )
 		}
 		ImGui::TextUnformatted( s_settingsMenu->controls.keybinds[i].label );
 		ImGui::TableNextColumn();
+
 		if ( ImGui::Button( bind ) ) {
 			Snd_PlaySfx( ui->sfx_select );
 			s_settingsMenu->controls.rebindKey = &s_settingsMenu->controls.keybinds[i];

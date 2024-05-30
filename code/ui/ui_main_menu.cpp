@@ -115,15 +115,27 @@ void MainMenu_Draw( void )
     }
 
     // show the user WTF just happened
-    if ( s_errorMenu->message[0] ) {
+    if ( s_errorMenu->message[0] || ui->activemenu == &s_errorMenu->menu ) {
         Sys_MessageBox( "Game Error", s_errorMenu->message, false );
         Cvar_Set( "com_errorMessage", "" );
         UI_PopMenu();
         UI_MainMenu();
         Snd_PlaySfx( ui->sfx_null );
+        return;
     } else {
         Menu_Draw( &s_main->menu );
     }
+
+    //
+	// draw the version
+	//
+    FontCache()->SetActiveFont( RobotoMono );
+
+	ImGui::Begin( "MainMenuVersion", NULL, windowFlags | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_AlwaysAutoResize );
+    ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * 1.5f );
+	ImGui::SetWindowPos( ImVec2( ui->gpuConfig.vidWidth - ( 280 * ui->scale ), ui->gpuConfig.vidHeight - 48 ) );
+	ImGui::TextUnformatted( GLN_VERSION );
+	ImGui::End();
 }
 
 void MainMenu_Cache( void )
@@ -142,7 +154,6 @@ void MainMenu_Cache( void )
 
         s_errorMenu->menu.draw = MainMenu_Draw;
         s_errorMenu->menu.fullscreen = qtrue;
-        s_errorMenu->crashData = eastl::addressof( g_pModuleLib->GetCrashData() );
 
         UI_ForceMenuOff();
         UI_PushMenu( &s_errorMenu->menu );

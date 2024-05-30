@@ -2620,16 +2620,16 @@ void FS_ForceFlush(fileHandle_t f)
 	}
 
 	fh = &handles[f];
-	if (fh->data.fp) {
-//		setvbuf(fh->data.fp, NULL, _IONBF, 0);
-		fflush(fh->data.fp); // better to fflush?
+	if ( fh->data.fp ) {
+//		setvbuf( fh->data.fp, NULL, _IONBF, 0 );
+		fflush( fh->data.fp ); // better to fflush?
 	}
 	else {
-		Con_DPrintf("FS_ForceFlush: not open\n");
+		Con_DPrintf( "FS_ForceFlush: not open\n" );
 	}
 }
 
-fileOffset_t FS_FileTell(fileHandle_t f)
+fileOffset_t FS_FileTell( fileHandle_t f )
 {
 	CThreadAutoLock<CThreadMutex> lock( fs_mutex );
 	fileHandleData_t *p;
@@ -2705,7 +2705,7 @@ fileOffset_t FS_FileSeek( fileHandle_t f, fileOffset_t offset, uint32_t whence )
 			file->data.chunk->bytesRead = file->data.chunk->size - offset;
 			break;
 		default:
-			N_Error(ERR_FATAL, "FS_FileSeek: invalid seek");
+			N_Error( ERR_FATAL, "FS_FileSeek: invalid seek" );
 		};
 		return (fileOffset_t)( file->data.chunk->size - file->data.chunk->bytesRead );
 	#endif

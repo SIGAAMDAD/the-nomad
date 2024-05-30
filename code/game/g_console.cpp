@@ -792,12 +792,7 @@ static void Con_DrawText( const char *txt )
 	ImGui::GetStyle().ItemSpacing.y = 0.5f;
 	ImGui::GetStyle().ItemSpacing.x = 0.0f;
 
-	if ( RobotoMono ) {
-		FontCache()->SetActiveFont( RobotoMono );
-	} else {
-		RobotoMono = FontCache()->AddFontToCache( "RobotoMono", "Bold" );
-	}
-
+	FontCache()->SetActiveFont( RobotoMono );
 	UI_DrawText( txt );
 }
 

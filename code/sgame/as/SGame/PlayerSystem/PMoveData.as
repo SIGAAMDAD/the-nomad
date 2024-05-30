@@ -12,6 +12,11 @@ namespace TheNomad::SGame {
 	class PMoveData {
 		PMoveData( PlayrObject@ ent ) {
 			@m_EntityData = @ent;
+
+			moveGravel0.Set( "sfx/players/moveGravel0.wav" );
+			moveGravel1.Set( "sfx/players/moveGravel1.wav" );
+			moveGravel2.Set( "sfx/players/moveGravel2.wav" );
+			moveGravel3.Set( "sfx/players/moveGravel3.wav" );
 		}
 		PMoveData() {
 		}
@@ -45,76 +50,52 @@ namespace TheNomad::SGame {
 			if ( !groundPlane ) {
 				return;
 			}
-			//ApplyFriction();
-			
-			fmove = forward;
-			smove = side;
-			
-			vel = m_EntityData.GetPhysicsObject().GetAcceleration();
-			velocity = Util::VectorLength( vel );
-			ClipVelocity( vel, vec3( 1.0f ), OVERCLIP );
-			Util::VectorNormalize( vel );
-			
-			wishvel[0] = northmove * fmove + eastmove * smove;
-			wishvel[1] = southmove * fmove + westmove * smove;
-			wishvel[2] = upmove;
-
-			accelerate = sgame_AirSpeed.GetFloat();
-			
-			wishdir = wishvel;
-			wishspeed = Util::VectorNormalize( wishdir );
-			wishspeed *= accelerate;
-			
-			Accelerate( wishdir, wishspeed, accelerate );
-			Util::VectorScale( vel, velocity, vel );
-			m_EntityData.GetPhysicsObject().SetAcceleration( vel );
 		}
 		
 		private void WalkMove() {
-			vec3 vel, wishvel, wishdir;
 			const uint gameTic = TheNomad::GameSystem::GameManager.GetGameTic();
-			float smove, fmove;
-			float velocity;
-			float wishspeed;
-			float accelerate;
+			vec3 accel = m_EntityData.GetPhysicsObject().GetAcceleration();
 			
-			if ( !groundPlane ) {
-				return;
-			}
-			//ApplyFriction();
+			KeyMove( sgame_BaseSpeed.GetFloat() );
 			
-			fmove = forward;
-			smove = side;
+			accel.y += forward;
+			accel.x += side;
 			
-			vel = m_EntityData.GetPhysicsObject().GetAcceleration();
-			velocity = Util::VectorLength( vel );
-			ClipVelocity( vel, vec3( 1.0f ), OVERCLIP );
-			Util::VectorNormalize( vel );
-			
-			wishvel[0] = northmove * fmove + eastmove * smove;
-			wishvel[1] = southmove * fmove + westmove * smove;
-			wishvel[2] = upmove;
-
-			accelerate = sgame_BaseSpeed.GetFloat();
-			
-			wishdir = wishvel;
-			wishspeed = Util::VectorNormalize( wishdir );
-			wishspeed *= accelerate;
-			
-			// clamp the speed lower if wading or walking on the bottom
-			if ( m_EntityData.GetWaterLevel() > 0 ) {
-				float waterScale;
+			const uint tile = LevelManager.GetMapData().GetTile( m_EntityData.GetOrigin(), m_EntityData.GetBounds() );
+			if ( ( tile & SURFACEPARM_WATER ) != 0 ) {
 				
-				waterScale = m_EntityData.GetWaterLevel() / 3.0f;
-				waterScale = 1.0f - ( 1.0f - sgame_SwimSpeed.GetFloat() ) * waterScale;
-				if ( wishspeed > vel * waterScale ) {
-					wishspeed = sgame_SwimSpeed.GetFloat() * waterScale;
-				}
+			}
+			if ( ( tile & SURFACEPARM_METAL ) != 0 ) {
+				
 			}
 			
-//			Accelerate( wishdir, wishspeed, accelerate );
-//			Util::VectorScale( vel, velocity, vel );
-			m_EntityData.GetPhysicsObject().SetAcceleration( vel );
+			switch ( move_toggle ) {
+			case 0:
+				moveGravel0.Play();
+				break;
+			case 1:
+				moveGravel1.Play();
+				break;
+			case 2:
+				moveGravel2.Play();
+				break;
+			case 3:
+				moveGravel3.Play();
+				break;
+			default:
+				move_toggle = 0;
+				break;
+			};
+			move_toggle++;
+			
+			m_EntityData.GetPhysicsObject().SetAcceleration( accel );
+		}
+		
+		private void WaterMove() {
+			const uint gameTic = TheNomad::GameSystem::GameManager.GetGameTic();
+			vec3 accel = m_EntityData.GetPhysicsObject().GetAcceleration();
+			
+			KeyMove( sgame_SwimSpeed.GetFloat() );
 		}
 		
 		private bool CheckJump() {
@@ -196,37 +177,66 @@ namespace TheNomad::SGame {
 		*/
 		
 		private void SetMovementDir() {
-			if ( forward > side ) {
-				if ( northmove > southmove ) {
-					m_EntityData.SetLegsFacing( FACING_FORWARD );
-				}
-				else if ( southmove > northmove ) {
-					m_EntityData.SetLegsFacing( FACING_BACKWARD );
-				}
+			// set legs direction
+			if ( side > 0 ) {
+				m_EntityData.SetLegsFacing( FACING_RIGHT );
+			} else if ( side < 0 ) {
+				m_EntityData.SetLegsFacing( FACING_LEFT );
 			}
-			else if ( side > forward ) {
-				if ( eastmove > westmove ) {
-					m_EntityData.SetLegsFacing( FACING_RIGHT );
-				}
-				else if ( westmove > eastmove ) {
-					m_EntityData.SetLegsFacing( FACING_LEFT );
+
+			//
+			// set torso direction
+			//
+			if ( TheNomad::Engine::CvarVariableInteger( "in_mode" ) == 0 ) {
+				// mouse & keyboard
+				// position torso facing wherever the mouse is
+				const uvec2 mousePos = TheNomad::GameSystem::GameManager.GetMousePos();
+				const int screenWidth = TheNomad::GameSystem::GameManager.GetGPUConfig().screenWidth;
+				const int screenHeight = TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight;
+				
+				float angle = atan2( float( mousePos.y ) - ( screenHeight / 2 ), float( screenHeight / 2 ) - float( mousePos.x ) );
+				TheNomad::GameSystem::DirType dir = Util::Angle2Dir( angle );
+				
+				switch ( dir ) {
+				case TheNomad::GameSystem::DirType::North:
+					m_EntityData.SetFacing( FACING_UP );
+					break;
+				case TheNomad::GameSystem::DirType::South:
+					m_EntityData.SetFacing( FACING_DOWN );
+					break;
+				case TheNomad::GameSystem::DirType::NorthEast:
+				case TheNomad::GameSystem::DirType::SouthEast:
+				case TheNomad::GameSystem::DirType::East:
+					m_EntityData.SetFacing( FACING_RIGHT );
+					break;
+				case TheNomad::GameSystem::DirType::NorthWest:
+				case TheNomad::GameSystem::DirType::SouthWest:
+				case TheNomad::GameSystem::DirType::West:
+					m_EntityData.SetFacing( FACING_LEFT );
+					break;
+				default:
+					GameError( "PMoveData::RunTic: Invalid DirType " + uint( dir ) );
+					break;
+				};
+			}
+			else {
+				if ( side > 0 ) {
+					m_EntityData.SetFacing( FACING_RIGHT );
+				} else if ( side < 0 ) {
+					m_EntityData.SetFacing( FACING_LEFT );
 				}
 			}
 		}
 		
 		void RunTic() {
-			uvec2 mousePos;
-			int screenWidth, screenHeight;
 			float angle;
 			TheNomad::GameSystem::DirType dir;
 			const uint gameTic = TheNomad::GameSystem::GameManager.GetGameTic();
 			
-			mousePos = TheNomad::GameSystem::GameManager.GetMousePos();
-			screenWidth = TheNomad::GameSystem::GameManager.GetGPUConfig().screenWidth;
-			screenHeight = TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight;
-
+			frametime = gameTic * 0.0001f;
+			
 			frame_msec = Game_FrameTime - old_frame_msec;
-
+			
 			// if running over 1000fps, act as if each frame is 1ms
 			// prevents divisions by zero
 			if ( frame_msec < 1 ) {
@@ -240,84 +250,27 @@ namespace TheNomad::SGame {
 			}
 			old_frame_msec = Game_FrameTime;
 			
-			/*
-			northmove = m_EntityData.key_MoveNorth.msec;
-			southmove = m_EntityData.key_MoveSouth.msec;
-			eastmove = m_EntityData.key_MoveEast.msec;
-			westmove = m_EntityData.key_MoveWest.msec;
-			upmove = m_EntityData.key_Jump.msec;
-			*/
-			KeyMove();
-			
-			if ( upmove < 1.0f ) {
+			if ( up < 1.0f ) {
 				// not holding jump
 				flags &= ~PMF_JUMP_HELD;
 			}
 			CheckJump();
-
-			groundPlane = upmove == 0;
+			
+			groundPlane = up == 0;
 			
 			if ( m_EntityData.GetWaterLevel() > 1 ) {
-//				WaterMove();
+				WaterMove();
 			} else if ( groundPlane ) {
+				WalkMove();
 			} else {
 				AirMove();
 			}
-			vec3 accel = m_EntityData.GetPhysicsObject().GetAcceleration();
-
-				accel.y += forward;
-				accel.x += side;
-
-				m_EntityData.GetPhysicsObject().SetAcceleration( accel );
-
-			// set legs direction
-			if ( eastmove > westmove ) {
-				m_EntityData.SetLegsFacing( FACING_RIGHT );
-			} else if ( westmove > eastmove ) {
-				m_EntityData.SetLegsFacing( FACING_LEFT );
-			}
-
-			//
-			// set torso direction
-			//
-			if ( TheNomad::Engine::CvarVariableInteger( "in_mode" ) == 0 ) {
-				angle = atan2( ( screenWidth / 2 ) - mousePos.x, ( screenHeight / 2 ) - mousePos.y );
-				dir = Util::Angle2Dir( angle );
-
-				switch ( dir ) {
-				case TheNomad::GameSystem::DirType::North:
-				case TheNomad::GameSystem::DirType::South:
-					break; // not implemented for now
-				case TheNomad::GameSystem::DirType::NorthEast:
-				case TheNomad::GameSystem::DirType::SouthEast:
-				case TheNomad::GameSystem::DirType::East:
-					m_EntityData.SetFacing( FACING_RIGHT );
-					break;
-				case TheNomad::GameSystem::DirType::NorthWest:
-				case TheNomad::GameSystem::DirType::SouthWest:
-				case TheNomad::GameSystem::DirType::West:
-					m_EntityData.SetFacing( FACING_LEFT );
-					break;
-				default:
-					break;
-				};
-			}
-			else {
-				if ( eastmove > westmove ) {
-					m_EntityData.SetFacing( FACING_RIGHT );
-				} else if ( westmove > eastmove ) {
-					m_EntityData.SetFacing( FACING_LEFT );
-				}
-			}
+			
+			SetMovementDir();
 
 			ImGui::Begin( "Debug Player Movement" );
-			ImGui::Text( "NorthMove: " + northmove );
-			ImGui::Text( "SouthMove: " + southmove );
-			ImGui::Text( "EastMove: " + eastmove );
-			ImGui::Text( "WestMove: " + westmove );
 			ImGui::Text( "Velocity: [ " + m_EntityData.GetVelocity().x + ", " + m_EntityData.GetVelocity().y + " ]" );
 			ImGui::Text( "CameraPos: [ " + Game_CameraPos.x + ", " + Game_CameraPos.y + " ]" );
-			ImGui::Text( "CameraWorldPos: [ " + Game_CameraWorldPos.x + ", " + Game_CameraWorldPos.y + " ]" );
 			ImGui::Separator();
 			ImGui::Text( "North MSec: " + m_EntityData.key_MoveNorth.msec );
 			ImGui::Text( "South MSec: " + m_EntityData.key_MoveSouth.msec );
@@ -357,24 +310,19 @@ namespace TheNomad::SGame {
 			return val;
 		}
 
-		private void KeyMove() {
-			const float movespeed = 1.5f;
-			
-			forward = 0;
-			side = 0;
-			up = 0;
-			
-			// FIXME: limiting movement to only if the key is directly held might
-			// lead to not being able to quickly inverse directional movement
+		private void KeyMove( float movespeed ) {
+			forward = 0.0f;
+			side = 0.0f;
+			up = 0.0f;
 			
 			side += movespeed * KeyState( m_EntityData.key_MoveEast );
 			side -= movespeed * KeyState( m_EntityData.key_MoveWest );
 			
-			up += int( movespeed * KeyState( m_EntityData.key_Jump ) );
+			up += movespeed * KeyState( m_EntityData.key_Jump );
 			
 			forward -= movespeed * KeyState( m_EntityData.key_MoveNorth );
 			forward += movespeed * KeyState( m_EntityData.key_MoveSouth );
-			
+
 			northmove = southmove = 0.0f;
 			if ( forward > 0 ) {
 				northmove = Util::Clamp( forward * KeyState( m_EntityData.key_MoveNorth ), -sgame_MaxSpeed.GetFloat(), sgame_MaxSpeed.GetFloat() );
@@ -392,19 +340,27 @@ namespace TheNomad::SGame {
 		
 		PlayrObject@ m_EntityData = null;
 		
-		float forward = 0;
-		float side = 0;
-		float up = 0;
+		float forward = 0.0f;
+		float side = 0.0f;
+		float up = 0.0f;
+		float upmove = 0.0f;
 		float northmove = 0.0f;
 		float southmove = 0.0f;
 		float eastmove = 0.0f;
 		float westmove = 0.0f;
-		float upmove = 0.0f;
 		
 		uint flags = 0;
+		uint frametime = 0;
 
 		uint frame_msec = 0;
 		int old_frame_msec = 0;
+
+		int move_toggle = 0;
+		
+		TheNomad::Engine::SoundSystem::SoundEffect moveGravel0;
+		TheNomad::Engine::SoundSystem::SoundEffect moveGravel1;
+		TheNomad::Engine::SoundSystem::SoundEffect moveGravel2;
+		TheNomad::Engine::SoundSystem::SoundEffect moveGravel3;
 		
 		bool groundPlane = false;
 	};

@@ -745,6 +745,8 @@ extern "C" void UI_Init( void )
 		ImPlot::CreateContext();
 	}
 
+	memset( previousTimes, 0, sizeof( previousTimes ) );
+
     // add commands
     Cmd_AddCommand( "ui.cache", UI_Cache_f );
 	Cmd_AddCommand( "ui.fontinfo", CUIFontCache::ListFonts_f );
@@ -775,12 +777,12 @@ void Menu_Cache( void )
 	ui->controller_left_trigger = re.RegisterShader( "menu/left_trigger" );
 	ui->controller_right_trigger = re.RegisterShader( "menu/right_trigger" );
 
-//	ui->backdrop = re.RegisterShader( "menu/mainbackdrop" );
+	ui->backdrop = re.RegisterShader( "menu/mainbackdrop" );
 
     // IT MUST BE THERE!
-//    if ( !FS_LoadFile( "textures/coconut.jpg", NULL ) || ui->backdrop == FS_INVALID_HANDLE ) {
-//        N_Error( ERR_FATAL, "Menu_Cache: could not load coconut.jpg" );
-//    }
+    if ( !FS_LoadFile( "textures/coconut.jpg", NULL ) || ui->backdrop == FS_INVALID_HANDLE ) {
+        N_Error( ERR_FATAL, "Menu_Cache: could not load coconut.jpg" );
+    }
 }
 
 /*

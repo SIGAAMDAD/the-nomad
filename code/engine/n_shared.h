@@ -406,8 +406,15 @@ Compiler Macro Abstraction
 #define NOMAD_VERSION_PATCH _NOMAD_VERSION_PATCH
 #define VSTR_HELPER(x) #x
 #define VSTR(x) VSTR_HELPER(x)
-#define NOMAD_VERSION_STRING "v" VSTR(_NOMAD_VERSION) "." VSTR(_NOMAD_VERSION_UPDATE) "." VSTR(_NOMAD_VERSION_PATCH)
+#define NOMAD_VERSION_STRING "v" VSTR( _NOMAD_VERSION ) "." VSTR( _NOMAD_VERSION_UPDATE ) "." VSTR( _NOMAD_VERSION_PATCH )
+
+#if _NOMAD_VERSION == 1
 #define GLN_VERSION "The Nomad " NOMAD_VERSION_STRING " Alpha"
+#elif _NOMAD_VERSION == 2
+#define GLN_VERSION "The Nomad " NOMAD_VERSION_STRING " Beta"
+#else
+#define GLN_VERSION "The Nomad " NOMAD_VERSION_STRING ""
+#endif
 
 // disable name-mangling
 #ifdef __cplusplus
