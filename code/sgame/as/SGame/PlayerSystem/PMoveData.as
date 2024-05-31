@@ -69,10 +69,10 @@ namespace TheNomad::SGame {
 			const uint gameTic = TheNomad::GameSystem::GameManager.GetGameTic();
 			vec3 accel = m_EntityData.GetPhysicsObject().GetAcceleration();
 			
-			KeyMove( sgame_BaseSpeed.GetFloat() );
+			KeyMove();
 			
-			accel.y += forward;
-			accel.x += side;
+			accel.y += sgame_BaseSpeed.GetFloat() * forward;
+			accel.x += sgame_BaseSpeed.GetFloat() * side;
 			
 			const uint tile = LevelManager.GetMapData().GetTile( m_EntityData.GetOrigin(), m_EntityData.GetBounds() );
 			if ( ( tile & SURFACEPARM_WATER ) != 0 ) {
@@ -88,12 +88,6 @@ namespace TheNomad::SGame {
 					moveGravel0.Play();
 					break;
 				case 1:
-					moveGravel1.Play();
-					break;
-				case 2:
-					moveGravel2.Play();
-					break;
-				case 3:
 					moveGravel3.Play();
 					break;
 				default:
@@ -110,7 +104,7 @@ namespace TheNomad::SGame {
 			const uint gameTic = TheNomad::GameSystem::GameManager.GetGameTic();
 			vec3 accel = m_EntityData.GetPhysicsObject().GetAcceleration();
 			
-			KeyMove( sgame_SwimSpeed.GetFloat() );
+			KeyMove();
 		}
 		
 		private bool CheckJump() {
@@ -274,14 +268,15 @@ namespace TheNomad::SGame {
 			
 			groundPlane = up == 0;
 
-			SetMovementDir();
-			
 			if ( m_EntityData.GetWaterLevel() > 1 ) {
 				WaterMove();
+			} else if ( groundPlane ) {
+				WalkMove();
 			} else {
 				AirMove();
 			}
-			WalkMove();
+
+			SetMovementDir();
 
 			if ( m_EntityData.GetState().GetID() == StateNum::ST_PLAYR_DASH ) {
 				switch ( m_EntityData.GetFacing() ) {
@@ -336,18 +331,18 @@ namespace TheNomad::SGame {
 			return val;
 		}
 
-		private void KeyMove( float movespeed ) {
+		private void KeyMove() {
 			forward = 0.0f;
 			side = 0.0f;
 			up = 0.0f;
 			
-			side += movespeed * KeyState( m_EntityData.key_MoveEast );
-			side -= movespeed * KeyState( m_EntityData.key_MoveWest );
+			side += 1.5f * KeyState( m_EntityData.key_MoveEast );
+			side -= 1.5f * KeyState( m_EntityData.key_MoveWest );
 			
-			up += movespeed * KeyState( m_EntityData.key_Jump );
+			up += 1.5f * KeyState( m_EntityData.key_Jump );
 			
-			forward -= movespeed * KeyState( m_EntityData.key_MoveNorth );
-			forward += movespeed * KeyState( m_EntityData.key_MoveSouth );
+			forward -= 1.5f * KeyState( m_EntityData.key_MoveNorth );
+			forward += 1.5f * KeyState( m_EntityData.key_MoveSouth );
 
 			northmove = southmove = 0.0f;
 			if ( forward > 0 ) {

@@ -138,11 +138,9 @@ private:
     ALuint m_iSource;
     ALuint m_iBuffer;
 
-    bool m_bLoop;
+    qboolean m_bLoop;
 
     SF_INFO m_hFData;
-
-    short *m_pCache;
 };
 
 typedef struct trackQueue_s {
@@ -248,6 +246,14 @@ void CSoundSource::Init( void )
 
 void CSoundSource::Shutdown( void )
 {
+    if ( alIsSource( m_iSource ) && m_iTag != TAG_MUSIC ) {
+        ALCall( alSourcei( m_iSource, AL_BUFFER, 0 ) );
+        ALCall( alDeleteSources( 1, &m_iSource ) );
+    }
+    if ( alIsBuffer( m_iBuffer ) ) {
+        ALCall( alDeleteBuffers( 1, &m_iBuffer ) );
+    }
+
     m_iBuffer = 0;
     m_iSource = 0;
     m_iType = 0;
@@ -267,17 +273,17 @@ ALenum CSoundSource::Format( void ) const {
 
 int64_t CSoundSource::FileFormat( const char *ext ) const
 {
-    if (!N_stricmp( ext, "wav" )) {
+    if ( !N_stricmp( ext, "wav" ) ) {
         return SF_FORMAT_WAV;
-    } else if (!N_stricmp( ext, "aiff" )) {
+    } else if ( !N_stricmp( ext, "aiff" ) ) {
         return SF_FORMAT_AIFF;
-    } else if (!N_stricmp( ext, "ogg" )) {
+    } else if ( !N_stricmp( ext, "ogg" ) ) {
         return SF_FORMAT_OGG;
-    } else if (!N_stricmp( ext, "opus" )) {
+    } else if ( !N_stricmp( ext, "opus" ) ) {
         return SF_FORMAT_OPUS;
-    } else if (!N_stricmp( ext, "flac" )) {
+    } else if ( !N_stricmp( ext, "flac" ) ) {
         return SF_FORMAT_FLAC;
-    } else if (!N_stricmp( ext, "sd2" )) {
+    } else if ( !N_stricmp( ext, "sd2" ) ) {
         return SF_FORMAT_SD2;
     } else {
         Con_Printf( COLOR_YELLOW "WARNING: unknown audio file format extension '%s', refusing to load\n", ext );
@@ -289,8 +295,10 @@ void CSoundSource::Alloc( void )
 {
     switch ( m_hFData.format & SF_FORMAT_SUBMASK ) {
     case SF_FORMAT_ALAW:
+        Con_Printf( COLOR_YELLOW "WARNING: alaw sound format not supported.\n" );
         break;
     case SF_FORMAT_ULAW:
+        Con_Printf( COLOR_YELLOW "WARNING: ulaw sound format not supported.\n" );
         break;
     case SF_FORMAT_FLOAT:
         m_iType = SNDBUF_FLOAT;
@@ -426,8 +434,6 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     uint64_t length;
     const char *ospath;
     short *data;
-//    stb_vorbis *ov;
-//    stb_vorbis_info stbvi;
 
     m_iTag = tag;
 
@@ -441,8 +447,6 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     // even if it's failed, we won't try loading
     // it again
     sndManager->AddSourceToHash( this );
-
-    Con_Printf( "Loading sound file \"%s\"...\n", npath );
 
     length = FS_LoadFile( npath, &buffer );
     if ( !length || !buffer ) {
@@ -481,11 +485,10 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     // allocate the buffer
     Alloc();
 
-    m_pCache = (short *)Z_Malloc( sizeof( *m_pCache ) * m_hFData.channels * m_hFData.frames, TAG_SFX );
-//    data = (short *)Hunk_AllocateTempMemory( sizeof( *data ) * m_hFData.channels * m_hFData.frames );
-    if ( !sf_read_short( sf, m_pCache, sizeof( *m_pCache ) * m_hFData.channels * m_hFData.frames ) ) {
+    data = (short *)Hunk_AllocateTempMemory( sizeof( *data ) * m_hFData.channels * m_hFData.frames );
+    if ( !sf_read_short( sf, data, m_hFData.channels * m_hFData.frames ) ) {
         N_Error( ERR_FATAL, "CSoundSource::LoadFile(%s): failed to read %lu bytes from audio stream, sf_strerror(): %s\n",
-            npath, sizeof( *m_pCache ) * m_hFData.channels * m_hFData.frames, sf_strerror( sf ) );
+            npath, sizeof( *data ) * m_hFData.channels * m_hFData.frames, sf_strerror( sf ) );
     }
     
     sf_close( sf );
@@ -504,7 +507,7 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
         ALCall( alGenSources( 1, &m_iSource ) );
     }
 
-    ALCall( alBufferData( m_iBuffer, format, m_pCache, sizeof( *m_pCache ) * m_hFData.channels * m_hFData.frames, m_hFData.samplerate ) );
+    ALCall( alBufferData( m_iBuffer, format, data, sizeof( *data ) * m_hFData.channels * m_hFData.frames, m_hFData.samplerate ) );
 //    ALCall( alBufferData( m_iBuffer, format, data.data(), sizeof( short ) * m_hFData.channels * m_hFData.frames, m_hFData.samplerate ) );
 
     if ( tag == TAG_SFX ) {
@@ -515,7 +518,7 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
         ALCall( alSourcei( m_iSource, AL_BUFFER, 0 ) );
     }
 
-//    Hunk_FreeTempMemory( data );
+    Hunk_FreeTempMemory( data );
 
     return true;
 }

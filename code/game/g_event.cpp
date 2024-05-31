@@ -1059,7 +1059,7 @@ static void G_KeyDownEvent( uint32_t key, uint32_t time )
 		return;
 	}
 
-	if ( key == KEY_ESCAPE ) {
+	if ( key == KEY_ESCAPE || key == KEY_PAD0_B ) {
 		if ( Key_GetCatcher() & KEYCATCH_CONSOLE ) {
 			// escape always closes the console
 			Con_ToggleConsole_f();
@@ -1093,7 +1093,7 @@ static void G_KeyDownEvent( uint32_t key, uint32_t time )
 			g_pModuleLib->ModuleCall( sgvm, ModuleOnKeyEvent, 2, key, qtrue );
 		}
 		// send the bound action
-		if ( !( Key_GetCatcher() & KEYCATCH_CONSOLE ) ) {
+		if ( !( Key_GetCatcher() & KEYCATCH_CONSOLE ) && !g_paused->i ) {
 			Key_ParseBinding( key, qtrue, time );
 		}
 	}
