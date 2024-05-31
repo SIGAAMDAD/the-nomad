@@ -1,7 +1,10 @@
-#ifndef _N_SOUND_
-#define _N_SOUND_
+#ifndef __N_SOUND__
+#define __N_SOUND__
 
 #pragma once
+
+//#define USE_QUAKE3_SOUND
+#ifndef USE_QUAKE3_SOUND
 
 void Snd_DisableSounds( void );
 void Snd_StopAll( void );
@@ -18,5 +21,7 @@ void Snd_ClearLoopingTrack( void );
 
 void Snd_StartupThread( int msec );
 void Snd_JoinThread( void );
+
+#endif
 
 #endif

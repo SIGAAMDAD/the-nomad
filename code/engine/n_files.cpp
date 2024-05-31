@@ -2736,6 +2736,10 @@ uint64_t FS_FileLength( fileHandle_t f )
 		N_Error( ERR_FATAL, "FS_FileLength: out of range" );
 	}
 
+	if ( handles[f].bffFile ) {
+		return handles[f].data.chunk->size;
+	}
+
 	curPos = FS_FileTell( f );
 	FS_FileSeek( f, 0, FS_SEEK_END );
 	length = FS_FileTell( f );
@@ -2845,7 +2849,7 @@ static uint64_t FS_ReadFromChunk( void *buffer, uint64_t size, fileHandle_t f )
 			size = amount;
 		}
 #else
-		N_Error( ERR_FATAL, "FS_ReadFromChunk: overread of %lu bytes",
+		N_Error( ERR_FATAL, "FS_ReadFromChunk: overread of %lu bytes\n",
 			( handle->data.chunk->bytesRead + size ) - handle->data.chunk->size );
 #endif
 	}

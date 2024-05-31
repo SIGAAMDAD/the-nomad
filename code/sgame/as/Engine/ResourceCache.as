@@ -15,6 +15,7 @@ namespace TheNomad::Engine {
             int ret;
             if ( !m_SfxCache.TryGetValue( sfx, ret ) ) {
                 ret = TheNomad::Engine::SoundSystem::RegisterSfx( sfx );
+                ConsolePrint( "- Loaded sfx \"" + sfx + "\".\n" );
                 m_SfxCache.Add( sfx, ret );
             }
             return ret;

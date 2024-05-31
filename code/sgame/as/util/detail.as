@@ -171,8 +171,7 @@ namespace TheNomad::Util {
 		return -1;
 	}
 
-	int HexStringToInt( const string& in str )
-	{
+	int HexStringToInt( const string& in str ) {
 		if ( str.size() < 1 ) {
 			return -1;
 		}
@@ -199,8 +198,7 @@ namespace TheNomad::Util {
 		return -1;
 	}
 
-	bool GetHashColor( const string& in str, vec3& out color )
-	{
+	bool GetHashColor( const string& in str, vec3& out color ) {
 		uint i, len;
 		int[] hex( 6 );
 

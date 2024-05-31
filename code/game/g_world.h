@@ -36,6 +36,7 @@ private:
 
 #define ENTITYNUM_INVALID (unsigned)( ~0 )
 #define ENTITYNUM_WALL ENTITYNUM_INVALID - 1
+#define MAX_ENTITIES 4096
 
 void G_GetTileData( uint32_t *pTiles, uint32_t nLevel );
 void G_GetCheckpointData( uvec3_t xyz, uint32_t nIndex );

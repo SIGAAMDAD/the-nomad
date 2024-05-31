@@ -4,8 +4,14 @@
 #include <ALsoft/alc.h>
 #include <ALsoft/alext.h>
 #include <sndfile.h>
-//#include <ogg/ogg.h>
-//#include <vorbis/vorbisfile.h>
+#include "snd_codec.h"
+#include "snd_local.h"
+#include "../module_lib/module_memory.h"
+#define STB_VORBIS_NO_STDIO
+#define STB_VORBIS_NO_PUSHDATA_API // we're using the pulldata API
+#include <ogg/ogg.h>
+#include <vorbis/vorbisfile.h>
+#include "stb_vorbis.c"
 
 #define MAX_SOUND_SOURCES 2048
 #define MAX_MUSIC_QUEUE 12
@@ -18,6 +24,8 @@ cvar_t *snd_musicon;
 cvar_t *snd_sfxon;
 cvar_t *snd_mastervol;
 cvar_t *snd_debugPrint;
+
+static idDynamicBlockAlloc<short, 1<<20, 1<<10> soundCacheAllocator;
 
 #define Snd_HashFileName(x) Com_GenerateHashValue((x),MAX_SOUND_SOURCES)
 
@@ -133,6 +141,8 @@ private:
     bool m_bLoop;
 
     SF_INFO m_hFData;
+
+    short *m_pCache;
 };
 
 typedef struct trackQueue_s {
@@ -169,6 +179,8 @@ public:
     inline uint64_t NumSources( void ) const { return m_nSources; }
     inline CSoundSource *GetSource( sfxHandle_t handle ) { return m_pSources[handle]; }
     inline const CSoundSource *GetSource( sfxHandle_t handle ) const { return m_pSources[handle]; }
+
+    void FreeOldestSound( void );
 
     CSoundSource *m_pCurrentTrack, *m_pQueuedTrack;
 
@@ -330,19 +342,19 @@ void CSoundSource::Stop( void ) {
 }
 
 static sf_count_t SndFile_Read( void *data, sf_count_t size, void *file ) {
-    return FS_Read( data, size, *(fileHandle_t *)file );
+    return FS_Read( data, size, (fileHandle_t)(uintptr_t)file );
 }
 
 static sf_count_t SndFile_Tell( void *file ) {
-    return FS_FileTell( *(fileHandle_t *)file );
+    return FS_FileTell( (fileHandle_t)(uintptr_t)file );
 }
 
-static sf_count_t SndFile_GetFileLen(void *file) {
-    return FS_FileLength( *(fileHandle_t *)file );
+static sf_count_t SndFile_GetFileLen( void *file ) {
+    return FS_FileLength( (fileHandle_t)(uintptr_t)file );
 }
 
-static sf_count_t SndFile_Seek( sf_count_t offset, int64_t whence, void *file ) {
-    fileHandle_t f = *(fileHandle_t *)file;
+static sf_count_t SndFile_Seek( sf_count_t offset, int whence, void *file ) {
+    fileHandle_t f = (fileHandle_t)(uintptr_t)file;
     switch ( whence ) {
     case SEEK_SET:
         return FS_FileSeek( f, (fileOffset_t)offset, FS_SEEK_SET );
@@ -355,6 +367,50 @@ static sf_count_t SndFile_Seek( sf_count_t offset, int64_t whence, void *file ) 
     };
     N_Error( ERR_FATAL, "SndFile_Seek: bad whence" );
     return 0; // quiet compiler warning
+}
+
+
+static const char* my_stbv_strerror( int stbVorbisError )
+{
+	switch ( stbVorbisError ) {
+	case VORBIS__no_error: return "No Error";
+#define ERRCASE(X) \
+	case VORBIS_ ## X : return #X;
+
+	ERRCASE( need_more_data )    // not a real error
+
+	ERRCASE( invalid_api_mixing )           // can't mix API modes
+	ERRCASE( outofmem )                     // not enough memory
+	ERRCASE( feature_not_supported )        // uses floor 0
+	ERRCASE( too_many_channels )            // STB_VORBIS_MAX_CHANNELS is too small
+	ERRCASE( file_open_failure )            // fopen() failed
+	ERRCASE( seek_without_length )          // can't seek in unknown-length file
+
+	ERRCASE( unexpected_eof )               // file is truncated?
+	ERRCASE( seek_invalid )                 // seek past EOF
+
+	// decoding errors (corrupt/invalid stream) -- you probably
+	// don't care about the exact details of these
+
+	// vorbis errors:
+	ERRCASE( invalid_setup )
+	ERRCASE( invalid_stream )
+
+	// ogg errors:
+	ERRCASE( missing_capture_pattern )
+	ERRCASE( invalid_stream_structure_version )
+	ERRCASE( continued_packet_flag_invalid )
+	ERRCASE( incorrect_stream_serial_number )
+	ERRCASE( invalid_first_page )
+	ERRCASE( bad_packet_type )
+	ERRCASE( cant_find_last_page )
+	ERRCASE( seek_failed )
+	ERRCASE( ogg_skeleton_not_supported )
+
+#undef ERRCASE
+	};
+	Assert( 0 && "unknown stb_vorbis errorcode!" );
+	return "Unknown Error!";
 }
 
 bool CSoundSource::LoadFile( const char *npath, int64_t tag )
@@ -370,6 +426,8 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     uint64_t length;
     const char *ospath;
     short *data;
+//    stb_vorbis *ov;
+//    stb_vorbis_info stbvi;
 
     m_iTag = tag;
 
@@ -384,31 +442,35 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     // it again
     sndManager->AddSourceToHash( this );
 
-    length = FS_LoadFile( npath, &buffer );
+    Con_Printf( "Loading sound file \"%s\"...\n", npath );
 
+    length = FS_LoadFile( npath, &buffer );
     if ( !length || !buffer ) {
         Con_Printf( COLOR_RED "CSoundSource::LoadFile: failed to load file '%s'.\n", npath );
         return false;
     }
 
     fp = tmpfile();
-    AssertMsg( fp, "Failed to open temprorary file!" );
+    Assert( fp );
 
-/*
+    /*
     vio.get_filelen = SndFile_GetFileLen;
     vio.write = NULL; // no need for this
     vio.read = SndFile_Read;
     vio.tell = SndFile_Tell;
     vio.seek = SndFile_Seek;
 
-    sf = sf_open_virtual( &vio, SFM_READ, &m_hFData, &f );
-    if (!sf) {
-        Con_Printf(COLOR_YELLOW "WARNING: libsndfile sf_open_virtual failed on '%s', sf_sterror(): %s\n", npath, sf_strerror( sf ));
+    sf = sf_open_virtual( &vio, SFM_READ, &m_hFData, (void *)(uintptr_t)f );
+    if ( !sf ) {
+        Con_Printf( COLOR_YELLOW "WARNING: libsndfile sf_open_virtual failed on '%s', sf_sterror(): %s\n", npath, sf_strerror( sf ) );
         return false;
     }
-*/
+    */
     fwrite( buffer, length, 1, fp );
     fseek( fp, 0L, SEEK_SET );
+//    FS_Write( buffer, length, f );
+//    FS_FileSeek( f, 0, FS_SEEK_SET );
+    FS_FreeFile( buffer );
     
     sf = sf_open_fd( fileno( fp ), SFM_READ, &m_hFData, SF_FALSE );
     if ( !sf ) {
@@ -419,10 +481,11 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     // allocate the buffer
     Alloc();
 
-    data = (short *)Hunk_AllocateTempMemory( sizeof( *data ) * m_hFData.channels * m_hFData.frames );
-    if ( !sf_read_short( sf, data, sizeof( *data ) * m_hFData.channels * m_hFData.frames ) ) {
+    m_pCache = (short *)Z_Malloc( sizeof( *m_pCache ) * m_hFData.channels * m_hFData.frames, TAG_SFX );
+//    data = (short *)Hunk_AllocateTempMemory( sizeof( *data ) * m_hFData.channels * m_hFData.frames );
+    if ( !sf_read_short( sf, m_pCache, sizeof( *m_pCache ) * m_hFData.channels * m_hFData.frames ) ) {
         N_Error( ERR_FATAL, "CSoundSource::LoadFile(%s): failed to read %lu bytes from audio stream, sf_strerror(): %s\n",
-            npath, sizeof( *data ) * m_hFData.channels * m_hFData.frames, sf_strerror( sf ) );
+            npath, sizeof( *m_pCache ) * m_hFData.channels * m_hFData.frames, sf_strerror( sf ) );
     }
     
     sf_close( sf );
@@ -440,7 +503,9 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     if ( tag == TAG_SFX && m_iSource == 0 ) {
         ALCall( alGenSources( 1, &m_iSource ) );
     }
-    ALCall( alBufferData( m_iBuffer, format, data, sizeof( *data ) * m_hFData.channels * m_hFData.frames, m_hFData.samplerate ) );
+
+    ALCall( alBufferData( m_iBuffer, format, m_pCache, sizeof( *m_pCache ) * m_hFData.channels * m_hFData.frames, m_hFData.samplerate ) );
+//    ALCall( alBufferData( m_iBuffer, format, data.data(), sizeof( short ) * m_hFData.channels * m_hFData.frames, m_hFData.samplerate ) );
 
     if ( tag == TAG_SFX ) {
         ALCall( alSourcef( m_iSource, AL_GAIN, snd_sfxvol->f ) );
@@ -450,8 +515,7 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
         ALCall( alSourcei( m_iSource, AL_BUFFER, 0 ) );
     }
 
-    Hunk_FreeTempMemory( data );
-    FS_FreeFile( buffer );
+//    Hunk_FreeTempMemory( data );
 
     return true;
 }
@@ -611,6 +675,7 @@ void CSoundManager::DisableSounds( void ) {
 void Snd_DisableSounds( void ) {
     sndManager->DisableSounds();
     ALCall( alListenerf( AL_GAIN, 0.0f ) );
+    soundCacheAllocator.FreeEmptyBaseBlocks();
 }
 
 void Snd_StopAll( void ) {
@@ -644,6 +709,7 @@ void Snd_Shutdown( void ) {
     if ( !sndManager ) {
         return;
     }
+    soundCacheAllocator.Shutdown();
     sndManager->Shutdown();
 }
 
@@ -885,4 +951,6 @@ void Snd_Init( void )
     Cmd_AddCommand( "snd.toggle", Snd_Toggle_f );
     Cmd_AddCommand( "snd.updatevolume", Snd_UpdateVolume_f );
     Cmd_AddCommand( "snd.list_files", Snd_ListFiles_f );
+
+    soundCacheAllocator.Init();
 }

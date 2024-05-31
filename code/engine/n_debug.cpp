@@ -345,13 +345,15 @@ void GDR_ATTRIBUTE((format(printf, 5, 6))) Sys_AssertionFailureMsg( const char *
     N_vsnprintf( text, sizeof(text), msg, argptr );
     va_end( argptr );
 
-    N_Error( ERR_FATAL,
+    Con_Printf( COLOR_RED
             "Assertion '%s' failed:\n"
             "\tFile: %s\n"
             "\tFunction: %s\n"
             "\tLine: %u\n"
             "\tMessage: %s\n"
     , expr, file, func, line, text );
+
+	abort();
 }
 
 void Sys_DebugString( const char *str )

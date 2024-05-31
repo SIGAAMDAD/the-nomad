@@ -1,5 +1,5 @@
 #include "g_game.h"
-#include "g_sound.h"
+//#include "g_sound.h"
 #include "g_world.h"
 #include "g_archive.h"
 #include "../rendercommon/imgui.h"
@@ -11,6 +11,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "g_threads.h"
 #include "../engine/n_steam.h"
+#include "snd_public.h"
 
 CModuleLib *g_pModuleLib;
 CModuleInfo *sgvm;
@@ -550,7 +551,12 @@ static void G_Vid_Restart( refShutdownCode_t code )
     PROFILE_FUNCTION();
 
     // clear and mute all sounds until next registration
+#ifdef USE_QUAKE3_SOUND
     Snd_DisableSounds();
+#else
+    Snd_StopAll();
+    Snd_Shutdown();
+#endif
 
     // shutdown VMs
     G_ShutdownVMs( qfalse );
@@ -561,8 +567,7 @@ static void G_Vid_Restart( refShutdownCode_t code )
     // clear bff references
     FS_ClearBFFReferences( FS_SGAME_REF );
 
-    Snd_Shutdown();
-    gi.soundStarted = qfalse;
+    gi.soundRegistered = qfalse;
 
     G_ShutdownArchiveHandler();
 
@@ -1458,7 +1463,7 @@ void G_Shutdown( qboolean quit )
     recursive = qtrue;
 
     // clear and mute all sounds until next registration
-    Snd_StopAll();
+    Snd_Shutdown();
 
     Con_Shutdown();
 
@@ -1532,6 +1537,12 @@ void G_StartHunkUsers( void )
         gi.soundStarted = qtrue;
         Snd_Init();
     }
+#ifdef USE_QUAKE3_SOUND
+    if ( !gi.soundRegistered ) {
+        gi.soundRegistered = qtrue;
+        Snd_BeginRegistration();
+    }
+#endif
     if ( !g_pModuleLib ) {
         G_InitModuleLib();
     }
@@ -1550,8 +1561,7 @@ void G_ShutdownAll( void )
     G_ShutdownArchiveHandler();
 
     // clear and mute all sounds until next registration
-    Snd_StopAll();
-    Snd_Shutdown();
+    Snd_DisableSounds();
 
     // shutdown VMs
     G_ShutdownVMs( qfalse );

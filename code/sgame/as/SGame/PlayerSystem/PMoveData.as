@@ -13,10 +13,23 @@ namespace TheNomad::SGame {
 		PMoveData( PlayrObject@ ent ) {
 			@m_EntityData = @ent;
 
-			moveGravel0.Set( "sfx/players/moveGravel0.wav" );
-			moveGravel1.Set( "sfx/players/moveGravel1.wav" );
-			moveGravel2.Set( "sfx/players/moveGravel2.wav" );
-			moveGravel3.Set( "sfx/players/moveGravel3.wav" );
+			moveGravel0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveGravel0.ogg" );
+			moveGravel1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveGravel1.ogg" );
+			moveGravel2 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveGravel2.ogg" );
+			moveGravel3 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveGravel3.ogg" );
+
+			moveWater0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveWater0.wav" );
+			moveWater1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveWater1.wav" );
+
+			moveMetal0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal0.wav" );
+			moveMetal1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal1.wav" );
+			moveMetal2 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal2.wav" );
+			moveMetal3 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal3.wav" );
+
+			slide0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide0.wav" );
+			slide1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide1.wav" );
+
+			dashSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/dash.wav" );
 		}
 		PMoveData() {
 		}
@@ -69,24 +82,26 @@ namespace TheNomad::SGame {
 				
 			}
 			
-			switch ( move_toggle ) {
-			case 0:
-				moveGravel0.Play();
-				break;
-			case 1:
-				moveGravel1.Play();
-				break;
-			case 2:
-				moveGravel2.Play();
-				break;
-			case 3:
-				moveGravel3.Play();
-				break;
-			default:
-				move_toggle = 0;
-				break;
-			};
-			move_toggle++;
+			if ( accel.x != 0.0f || accel.y != 0.0f ) {
+				switch ( move_toggle ) {
+				case 0:
+					moveGravel0.Play();
+					break;
+				case 1:
+					moveGravel1.Play();
+					break;
+				case 2:
+					moveGravel2.Play();
+					break;
+				case 3:
+					moveGravel3.Play();
+					break;
+				default:
+					move_toggle = 0;
+					break;
+				};
+				move_toggle++;
+			}
 			
 			m_EntityData.GetPhysicsObject().SetAcceleration( accel );
 		}
@@ -178,9 +193,9 @@ namespace TheNomad::SGame {
 		
 		private void SetMovementDir() {
 			// set legs direction
-			if ( side > 0 ) {
+			if ( eastmove > westmove ) {
 				m_EntityData.SetLegsFacing( FACING_RIGHT );
-			} else if ( side < 0 ) {
+			} else if ( westmove > eastmove ) {
 				m_EntityData.SetLegsFacing( FACING_LEFT );
 			}
 
@@ -194,10 +209,11 @@ namespace TheNomad::SGame {
 				const int screenWidth = TheNomad::GameSystem::GameManager.GetGPUConfig().screenWidth;
 				const int screenHeight = TheNomad::GameSystem::GameManager.GetGPUConfig().screenHeight;
 				
-				float angle = atan2( float( mousePos.y ) - ( screenHeight / 2 ), float( screenHeight / 2 ) - float( mousePos.x ) );
-				TheNomad::GameSystem::DirType dir = Util::Angle2Dir( angle );
+				float angle = atan2( float( mousePos.y ) - float( screenHeight / 2 ),
+					float( screenHeight / 2 ) - float( mousePos.x ) );
+//				TheNomad::GameSystem::DirType dir = Util::Angle2Dir( angle );
 				
-				switch ( dir ) {
+				switch ( m_EntityData.GetDirection() ) {
 				case TheNomad::GameSystem::DirType::North:
 					m_EntityData.SetFacing( FACING_UP );
 					break;
@@ -215,14 +231,14 @@ namespace TheNomad::SGame {
 					m_EntityData.SetFacing( FACING_LEFT );
 					break;
 				default:
-					GameError( "PMoveData::RunTic: Invalid DirType " + uint( dir ) );
+					GameError( "PMoveData::RunTic: Invalid DirType " + uint( m_EntityData.GetDirection() ) );
 					break;
 				};
 			}
 			else {
-				if ( side > 0 ) {
+				if ( eastmove > westmove ) {
 					m_EntityData.SetFacing( FACING_RIGHT );
-				} else if ( side < 0 ) {
+				} else if ( westmove > eastmove ) {
 					m_EntityData.SetFacing( FACING_LEFT );
 				}
 			}
@@ -257,16 +273,26 @@ namespace TheNomad::SGame {
 			CheckJump();
 			
 			groundPlane = up == 0;
+
+			SetMovementDir();
 			
 			if ( m_EntityData.GetWaterLevel() > 1 ) {
 				WaterMove();
-			} else if ( groundPlane ) {
-				WalkMove();
 			} else {
 				AirMove();
 			}
-			
-			SetMovementDir();
+			WalkMove();
+
+			if ( m_EntityData.GetState().GetID() == StateNum::ST_PLAYR_DASH ) {
+				switch ( m_EntityData.GetFacing() ) {
+				case FACING_DOWN:
+				case FACING_UP:
+				case FACING_LEFT:
+				case FACING_RIGHT:
+					break;
+				};
+				dashSfx.Play();
+			}
 
 			ImGui::Begin( "Debug Player Movement" );
 			ImGui::Text( "Velocity: [ " + m_EntityData.GetVelocity().x + ", " + m_EntityData.GetVelocity().y + " ]" );
@@ -361,6 +387,19 @@ namespace TheNomad::SGame {
 		TheNomad::Engine::SoundSystem::SoundEffect moveGravel1;
 		TheNomad::Engine::SoundSystem::SoundEffect moveGravel2;
 		TheNomad::Engine::SoundSystem::SoundEffect moveGravel3;
+
+		TheNomad::Engine::SoundSystem::SoundEffect moveWater0;
+		TheNomad::Engine::SoundSystem::SoundEffect moveWater1;
+
+		TheNomad::Engine::SoundSystem::SoundEffect moveMetal0;
+		TheNomad::Engine::SoundSystem::SoundEffect moveMetal1;
+		TheNomad::Engine::SoundSystem::SoundEffect moveMetal2;
+		TheNomad::Engine::SoundSystem::SoundEffect moveMetal3;
+
+		TheNomad::Engine::SoundSystem::SoundEffect slide0;
+		TheNomad::Engine::SoundSystem::SoundEffect slide1;
+
+		TheNomad::Engine::SoundSystem::SoundEffect dashSfx;
 		
 		bool groundPlane = false;
 	};

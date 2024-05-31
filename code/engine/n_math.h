@@ -49,6 +49,7 @@ unsigned disBetweenOBJ( const glm::uvec3& src, const glm::uvec3& tar );
 int disBetweenOBJ( const glm::ivec3& src, const glm::ivec3& tar );
 #endif
 
+void VectorRotate( const vec3_t in, const vec3_t matrix[3], vec3_t out );
 dirtype_t Angle2Dir( float angle );
 float Dir2Angle( dirtype_t dir );
 dirtype_t DirFromPoint( const vec3_t v );

@@ -2,7 +2,16 @@ namespace TheNomad::Engine::SoundSystem {
     class SoundEffect {
         SoundEffect() {
         }
+        SoundEffect( int hSfx ) {
+            m_hSfx = hSfx;
+        }
+        SoundEffect( const string& in fileName ) {
+            Set( fileName );
+        }
 
+        void Set( int hSfx ) {
+            m_hSfx = hSfx;
+        }
         void Set( const string& in fileName ) {
             m_hSfx = RegisterSfx( fileName );
             if ( m_hSfx == FS_INVALID_HANDLE ) {

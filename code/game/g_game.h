@@ -145,6 +145,7 @@ typedef struct {
     qboolean uiStarted;
     qboolean sgameStarted;
     qboolean soundStarted;
+    qboolean soundRegistered;
     qboolean rendererStarted;
     qboolean mapLoaded;
 

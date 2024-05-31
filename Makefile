@@ -265,12 +265,22 @@ JPGOBJ=\
   	$(O)/libjpeg/jquant2.o \
   	$(O)/libjpeg/jutils.o
 
+
+#$(O)/game/snd_adpcm.o \
+#$(O)/game/snd_codec_ogg.o \
+#$(O)/game/snd_codec_wav.o \
+#$(O)/game/snd_codec.o \
+#$(O)/game/snd_dma.o \
+#$(O)/game/snd_main.o \
+#$(O)/game/snd_mem.o \
+#$(O)/game/snd_mix.o \
+#$(O)/game/snd_wavelet.o \
+
 SRC=\
 	$(O)/game/g_game.o \
 	$(O)/game/g_sgame.o \
 	$(O)/game/g_ui.o \
 	$(O)/game/g_event.o \
-	$(O)/game/g_sound.o \
 	$(O)/game/g_screen.o \
 	$(O)/game/g_console.o \
 	$(O)/game/g_archive.o \
@@ -278,6 +288,7 @@ SRC=\
 	$(O)/game/g_world.o \
 	$(O)/game/g_jpeg.o \
 	$(O)/game/g_threads.o \
+	$(O)/game/g_sound.o \
 	\
 	$(O)/module_lib/module_memory.o \
 	$(O)/module_lib/module_main.o \

@@ -17,6 +17,9 @@
 #include "scriptlib/scriptjson.h"
 #include "module_engine/module_gpuconfig.h"
 #include "scriptlib/scriptconvert.h"
+#ifdef USE_QUAKE3_SOUND
+#include "../game/snd_public.h"
+#endif
 
 //
 // c++ compatible wrappers around angelscript engine function calls
