@@ -303,7 +303,7 @@ idHeap::Allocate16
 void *idHeap::Allocate16( const uint32_t bytes ) {
 	byte *ptr, *alignedPtr;
 
-	ptr = (byte *) malloc( bytes + 16 + sizeof(uintptr_t) );
+	ptr = (byte *) malloc( bytes + 16 + sizeof(intptr_t) );
 	if ( !ptr ) {
 		N_Error( ERR_FATAL, "malloc failure for %i", bytes );
 	}
@@ -1137,7 +1137,7 @@ void *Mem_Alloc16( const uint32_t size ) {
 	}
 	void *mem = mem_heap->Allocate16( size );
 	// make sure the memory is 16 byte aligned
-	Assert( ( ((uintptr_t)mem) & 15) == 0 );
+	Assert( ( ( ( uintptr_t)mem ) & 15 ) == 0 );
 	return mem;
 }
 
@@ -1158,7 +1158,7 @@ void Mem_Free16( void *ptr ) {
 		return;
 	}
 	// make sure the memory is 16 byte aligned
-	Assert( ( ((uintptr_t)ptr) & 15) == 0 );
+	Assert( ( ( (uintptr_t)ptr ) & 15 ) == 0 );
 	mem_heap->Free16( ptr );
 }
 

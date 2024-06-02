@@ -407,6 +407,7 @@ void idDynamicBlockAlloc<type, baseBlockSize, minBlockSize>::Shutdown( void ) {
 		if ( lockMemory ) {
 //			idLib::sys->UnlockMemory( block, block->GetSize() + sizeof( idDynamicBlock<type> ) );
 		}
+//		Mem_Free( block );
 		Mem_Free16( block );
 	}
 
@@ -478,6 +479,7 @@ void idDynamicBlockAlloc<type, baseBlockSize, minBlockSize>::FreeEmptyBaseBlocks
 			numBaseBlocks--;
 			baseBlockMemory -= block->GetSize() + sizeof( idDynamicBlock<type> );
 			Mem_Free16( block );
+//			Mem_Free( block );
 		}
 	}
 
@@ -655,6 +657,7 @@ idDynamicBlock<type> *idDynamicBlockAlloc<type, baseBlockSize, minBlockSize>::Al
 	} else if ( allowAllocs ) {
 		uint32_t allocSize = MAX( baseBlockSize, alignedBytes + sizeof( idDynamicBlock<type> ) );
 		block = ( idDynamicBlock<type> * ) Mem_Alloc16( allocSize );
+//		block = ( idDynamicBlock<type> * ) Mem_Alloc( allocSize );
 		if ( lockMemory ) {
 //			idLib::sys->LockMemory( block, baseBlockSize );
 		}

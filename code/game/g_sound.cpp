@@ -4,8 +4,6 @@
 #include <ALsoft/alc.h>
 #include <ALsoft/alext.h>
 #include <sndfile.h>
-#include "snd_codec.h"
-#include "snd_local.h"
 #include "../module_lib/module_memory.h"
 #define STB_VORBIS_NO_STDIO
 #define STB_VORBIS_NO_PUSHDATA_API // we're using the pulldata API
@@ -25,7 +23,7 @@ cvar_t *snd_sfxon;
 cvar_t *snd_mastervol;
 cvar_t *snd_debugPrint;
 
-static idDynamicBlockAlloc<short, 1<<20, 1<<10> soundCacheAllocator;
+static idDynamicBlockAlloc<byte, 1<<20, 1<<10> soundCacheAllocator;
 
 #define Snd_HashFileName(x) Com_GenerateHashValue((x),MAX_SOUND_SOURCES)
 
@@ -246,12 +244,20 @@ void CSoundSource::Init( void )
 
 void CSoundSource::Shutdown( void )
 {
-    if ( alIsSource( m_iSource ) && m_iTag != TAG_MUSIC ) {
-        ALCall( alSourcei( m_iSource, AL_BUFFER, 0 ) );
-        ALCall( alDeleteSources( 1, &m_iSource ) );
-    }
+    ALint state;
+
     if ( alIsBuffer( m_iBuffer ) ) {
+        if ( alIsSource( m_iSource ) ) {
+            ALCall( alGetSourcei( m_iSource, AL_SOURCE_STATE, &state ) );
+            if ( state == AL_PLAYING ) {
+                ALCall( alSourceStop( m_iSource ) );
+            }
+            ALCall( alSourcei( m_iSource, AL_BUFFER, AL_NONE ) );
+        }
         ALCall( alDeleteBuffers( 1, &m_iBuffer ) );
+    }
+    if ( alIsSource( m_iSource ) && m_iTag != TAG_MUSIC ) {
+        ALCall( alDeleteSources( 1, &m_iSource ) );
     }
 
     m_iBuffer = 0;
@@ -293,6 +299,9 @@ int64_t CSoundSource::FileFormat( const char *ext ) const
 
 void CSoundSource::Alloc( void )
 {
+    uint64_t nLength;
+
+    nLength = 0;
     switch ( m_hFData.format & SF_FORMAT_SUBMASK ) {
     case SF_FORMAT_ALAW:
         Con_Printf( COLOR_YELLOW "WARNING: alaw sound format not supported.\n" );
@@ -315,6 +324,8 @@ void CSoundSource::Alloc( void )
     case SF_FORMAT_PCM_16:
     case SF_FORMAT_DPCM_16:
     case SF_FORMAT_DWVW_16:
+    case SF_FORMAT_PCM_24:
+    case SF_FORMAT_PCM_32:
     case SF_FORMAT_NMS_ADPCM_16:
         m_iType = SNDBUF_16BIT;
         break;
@@ -472,8 +483,6 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     */
     fwrite( buffer, length, 1, fp );
     fseek( fp, 0L, SEEK_SET );
-//    FS_Write( buffer, length, f );
-//    FS_FileSeek( f, 0, FS_SEEK_SET );
     FS_FreeFile( buffer );
     
     sf = sf_open_fd( fileno( fp ), SFM_READ, &m_hFData, SF_FALSE );
@@ -485,12 +494,12 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     // allocate the buffer
     Alloc();
 
-    data = (short *)Hunk_AllocateTempMemory( sizeof( *data ) * m_hFData.channels * m_hFData.frames );
+    data = (short *)Hunk_AllocateTempMemory( sizeof( short ) * m_hFData.channels * m_hFData.frames );
     if ( !sf_read_short( sf, data, m_hFData.channels * m_hFData.frames ) ) {
         N_Error( ERR_FATAL, "CSoundSource::LoadFile(%s): failed to read %lu bytes from audio stream, sf_strerror(): %s\n",
-            npath, sizeof( *data ) * m_hFData.channels * m_hFData.frames, sf_strerror( sf ) );
+            m_pName, sizeof( *data ) * m_hFData.channels * m_hFData.frames, sf_strerror( sf ) );
     }
-    
+
     sf_close( sf );
     fclose( fp );
 
@@ -507,8 +516,8 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
         ALCall( alGenSources( 1, &m_iSource ) );
     }
 
-    ALCall( alBufferData( m_iBuffer, format, data, sizeof( *data ) * m_hFData.channels * m_hFData.frames, m_hFData.samplerate ) );
-//    ALCall( alBufferData( m_iBuffer, format, data.data(), sizeof( short ) * m_hFData.channels * m_hFData.frames, m_hFData.samplerate ) );
+    ALCall( alBufferData( m_iBuffer, format, data, sizeof( short ) * m_hFData.channels * m_hFData.frames, m_hFData.samplerate ) );
+    Hunk_FreeTempMemory( data );
 
     if ( tag == TAG_SFX ) {
         ALCall( alSourcef( m_iSource, AL_GAIN, snd_sfxvol->f ) );
@@ -517,8 +526,6 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
         ALCall( alSourcef( m_iSource, AL_GAIN, snd_musicvol->f ) );
         ALCall( alSourcei( m_iSource, AL_BUFFER, 0 ) );
     }
-
-    Hunk_FreeTempMemory( data );
 
     return true;
 }
@@ -542,6 +549,10 @@ void CSoundManager::Init( void )
 
     // generate the recyclable music source
     ALCall( alGenSources( 1, &m_iMusicSource ) );
+
+    Con_Printf( "OpenAL vendor: %s\n", alGetString( AL_VENDOR ) );
+    Con_Printf( "OpenAL renderer: %s\n", alGetString( AL_RENDERER ) );
+    Con_Printf( "OpenAL version: %s\n", alGetString( AL_VERSION ) );
 }
 
 void CSoundManager::PlaySound( CSoundSource *snd ) {
