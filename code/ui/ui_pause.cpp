@@ -31,6 +31,7 @@ typedef struct {
 
     char **dailyTips;
     uint64_t numDailyTips;
+    qboolean popped;
 
     int oldVolume;
 } pauseMenu_t;
@@ -67,6 +68,7 @@ static void PauseMenu_EventCallback( void *ptr, int event )
         break;
     case ID_SETTINGS:
         gi.state = GS_MENU;
+        Cvar_SetIntegerValue( "g_paused", 0 );
         UI_SettingsMenu();
         break;
     case ID_EXIT:
@@ -275,8 +277,10 @@ void UI_PauseMenu( void )
     if ( !ui_active->i ) {
         Key_SetCatcher( Key_GetCatcher() | KEYCATCH_UI );
         UI_PushMenu( &s_pauseMenu->menu );
+        Cvar_SetIntegerValue( "g_paused", 1 );
+    } else {
+        Cvar_SetIntegerValue( "g_paused", 0 );
     }
     Key_SetCatcher( Key_GetCatcher() | KEYCATCH_SGAME );
     Snd_PlaySfx( ui->sfx_select );
-    Cvar_SetIntegerValue( "g_paused", !ui_active->i );
 }

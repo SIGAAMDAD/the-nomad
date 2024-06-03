@@ -10,15 +10,14 @@
 #define STATUS_DONE 4
 
 #define BOOT_TIME 2
-#define CHECK_TIME 2
-#define NEED_TIME 1
+#define CHECK_TIME 4
+#define NEED_TIME 2
 
 #define CALC_TICS(seconds) (TICRATE*(seconds))
 
 typedef struct
 {
-	CUIMenu menu;
-	ImFont *msdosFont;
+	menuframework_t menu;
 	
 	const stringHash_t *osString;
 	const stringHash_t *statusBooting;
@@ -26,14 +25,14 @@ typedef struct
 	const stringHash_t *statusString1;
 	const stringHash_t *statusString2;
 	
-//	const stringHash_t *audioPrompt;
-//	const stringHash_t *inputPrompt;
-//	const stringHash_t *videoPrompt;
-//	const stringHash_t *mechanicsPrompt;
+	const stringHash_t *audioPrompt;
+	const stringHash_t *inputPrompt;
+	const stringHash_t *videoPrompt;
+	const stringHash_t *mechanicsPrompt;
 	
-//	const stringHash_t *needString;
+	const stringHash_t *needString;
 	const stringHash_t *checkingString;
-//	const stringHash_t *waitingString;
+	const stringHash_t *waitingString;
 	const stringHash_t *runningString;
 	const stringHash_t *doneString;
 	
@@ -75,15 +74,17 @@ static intromenu_t intro;
 static void IntroMenu_Booting( void )
 {
 	// are we done?
-	if (!intro.ticker) {
-		ui->DrawString( intro.statusBooting->value );
+	if ( !intro.ticker ) {
+		UI_DrawText( intro.statusBooting->value );
 		intro.ticker = CALC_TICS( CHECK_TIME );
 		intro.updateStatus = STATUS_CHECKING_UPDATES;
 		return;
 	}
 	
 	// draw it as flickering text
-	ui->DrawStringBlink( intro.statusBooting->value, intro.ticker, 2 );
+	if ( intro.ticker % 2 ) {
+		UI_DrawText( intro.statusBooting->value );
+	}
 	
 	intro.ticker--;
 }
@@ -91,10 +92,10 @@ static void IntroMenu_Booting( void )
 static void IntroMenu_CheckingUpdates( void )
 {
 	// draw everything else
-	ui->DrawString( intro.statusString0->value );
+	UI_DrawText( intro.statusString0->value );
 	
 	// are we done?
-	if (!intro.ticker) {
+	if ( !intro.ticker ) {
 		intro.ticker = CALC_TICS( NEED_TIME );
 		intro.updateStatus = STATUS_NEEDS_UPDATES;
 		return;
@@ -437,38 +438,33 @@ void IntroMenu_Cache( void )
 {
 	memset(&intro, 0, sizeof(intro));
 	
-//	intro.osString = strManager->ValueForKey("INTRO_OS_STRING");
-//	intro.statusBooting = strManager->ValueForKey("INTRO_STATUS_BOOTING");
-//	intro.statusString0 = strManager->ValueForKey("INTRO_STATUS_STRING0");
-//	intro.statusString1 = strManager->ValueForKey("INTRO_STATUS_STRING1");
-//	intro.statusString2 = strManager->ValueForKey("INTRO_STATUS_STRING2");
+	intro.osString = strManager->ValueForKey( "INTRO_OS_STRING");
+	intro.statusBooting = strManager->ValueForKey( "INTRO_STATUS_BOOTING");
+	intro.statusString0 = strManager->ValueForKey( "INTRO_STATUS_STRING0");
+	intro.statusString1 = strManager->ValueForKey( "INTRO_STATUS_STRING1");
+	intro.statusString2 = strManager->ValueForKey( "INTRO_STATUS_STRING2");
 	
-//	intro.audioPrompt = strManager->ValueForKey("INTRO_AUDIO_STRING");
-//	intro.inputPrompt = strManager->ValueForKey("INTRO_INPUT_STRING");
-//	intro.videoPrompt = strManager->ValueForKey("INTRO_VIDEO_STRING");
-//	intro.mechanicsPrompt = strManager->ValueForKey("INTRO_MECHANICS_STRING");
-//	
-//	intro.needString = strManager->ValueForKey("INTRO_NEED_STRING");
-//	intro.checkingString = strManager->ValueForKey("INTRO_CHECKING_STRING");
-//	intro.waitingString = strManager->ValueForKey("INTRO_WAITING_STRING");
-//	intro.runningString = strManager->ValueForKey("INTRO_RUNNING_STRING");
-//	intro.doneString = strManager->ValueForKey("INTRO_DONE_STRING");
+	intro.audioPrompt = strManager->ValueForKey("INTRO_AUDIO_STRING");
+	intro.inputPrompt = strManager->ValueForKey("INTRO_INPUT_STRING");
+	intro.videoPrompt = strManager->ValueForKey("INTRO_VIDEO_STRING");
+	intro.mechanicsPrompt = strManager->ValueForKey("INTRO_MECHANICS_STRING");
 	
-//	intro.bootString = strManager->ValueForKey("INTRO_BOOT_STRING");
-//	intro.finishingString = strManager->ValueForKey("INTRO_FINISHING");
-//	intro.completedString = strManager->ValueForKey("INTRO_COMPLETED");
+	intro.needString = strManager->ValueForKey("INTRO_NEED_STRING");
+	intro.checkingString = strManager->ValueForKey("INTRO_CHECKING_STRING");
+	intro.waitingString = strManager->ValueForKey("INTRO_WAITING_STRING");
+	intro.runningString = strManager->ValueForKey("INTRO_RUNNING_STRING");
+	intro.doneString = strManager->ValueForKey("INTRO_DONE_STRING");
+	
+	intro.bootString = strManager->ValueForKey("INTRO_BOOT_STRING");
+	intro.finishingString = strManager->ValueForKey("INTRO_FINISHING");
+	intro.completedString = strManager->ValueForKey("INTRO_COMPLETED");
 	
 	intro.ticker = CALC_TICS( BOOT_TIME );
 	intro.updateStatus = STATUS_BOOTING;
-
-//	intro.msdosFont = FontCache()->AddFontToCache( "fonts/PressStart2P-Regular.ttf" );
 }
 
 void UI_IntroMenu( void )
 {	
 	IntroMenu_Cache();
-
-	intro.menu.Draw = IntroMenu_Draw;
-
-	ui->PushMenu( &intro.menu );
+	UI_PushMenu( &intro.menu );
 }

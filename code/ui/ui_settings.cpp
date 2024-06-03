@@ -1089,11 +1089,11 @@ static void PerformanceMenu_Save( void )
 
 static void AudioMenu_Save( void )
 {
-	Cvar_SetIntegerValue( "snd_mastervol", s_settingsMenu->audio.masterVolume );
-	Cvar_SetIntegerValue( "snd_sfxvol", s_settingsMenu->audio.sfxVolume );
-	Cvar_SetIntegerValue( "snd_musicvol", s_settingsMenu->audio.musicVolume );
-	Cvar_SetIntegerValue( "snd_sfxon", s_settingsMenu->audio.sfxOn );
-	Cvar_SetIntegerValue( "snd_musicon", s_settingsMenu->audio.musicOn );
+	Cvar_SetIntegerValue( "snd_masterVolume", s_settingsMenu->audio.masterVolume );
+	Cvar_SetIntegerValue( "snd_effectsVolume", s_settingsMenu->audio.sfxVolume );
+	Cvar_SetIntegerValue( "snd_musicVolume", s_settingsMenu->audio.musicVolume );
+	Cvar_SetIntegerValue( "snd_effectsOn", s_settingsMenu->audio.sfxOn );
+	Cvar_SetIntegerValue( "snd_musicOn", s_settingsMenu->audio.musicOn );
 }
 
 static void ControlsMenu_Save( void )
@@ -1186,11 +1186,11 @@ static void VideoMenu_SetDefault( void )
 
 static void AudioMenu_SetDefault( void )
 {
-	s_settingsMenu->audio.masterVolume = Cvar_VariableInteger( "snd_mastervol" );
-	s_settingsMenu->audio.musicVolume = Cvar_VariableInteger( "snd_musicvol" );
-	s_settingsMenu->audio.sfxVolume = Cvar_VariableInteger( "snd_sfxvol" );
-	s_settingsMenu->audio.musicOn = Cvar_VariableInteger( "snd_musicon" );
-	s_settingsMenu->audio.sfxOn = Cvar_VariableInteger( "snd_sfxon" );
+	s_settingsMenu->audio.masterVolume = Cvar_VariableInteger( "snd_masterVolume" );
+	s_settingsMenu->audio.musicVolume = Cvar_VariableInteger( "snd_musicVolume" );
+	s_settingsMenu->audio.sfxVolume = Cvar_VariableInteger( "snd_effectsVolume" );
+	s_settingsMenu->audio.musicOn = Cvar_VariableInteger( "snd_musicOn" );
+	s_settingsMenu->audio.sfxOn = Cvar_VariableInteger( "snd_effectsOn" );
 }
 
 static void ControlsMenu_SetDefault( void )
@@ -1311,6 +1311,7 @@ static void SettingsMenu_Draw( void )
 			ControlsMenu_SetDefault();
 			break;
 		case ID_GAMEPLAY:
+			GameplayMenu_SetDefault();
 			break;
 		};
 	}

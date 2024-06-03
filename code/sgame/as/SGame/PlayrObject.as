@@ -26,7 +26,20 @@ namespace TheNomad::SGame {
 			@m_WeaponSlots[6] = @m_RightArm;
 			@m_WeaponSlots[7] = @m_LeftArm;
 			@m_WeaponSlots[8] = @m_Ordnance;
-			
+
+			dieSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die0.wav" );
+			dieSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die1.wav" );
+			dieSfx2 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die2.wav" );
+
+			painSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain0.wav" );
+			painSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain1.wav" );
+			painSfx2 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain2.wav" );
+
+			slideSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide0.wav" );
+			slideSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide1.wav" );
+
+			dashSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/dash.wav" );
+
 			EntityManager.SetPlayerObject( @this );
 			m_HudData.Init( @this );
 		}
@@ -308,12 +321,32 @@ namespace TheNomad::SGame {
 				if ( m_nFrameDamage > 0 ) {
 					return; // as long as you're hitting SOMETHING, you cannot die
 				}
-				dieSfx[ Util::PRandom() & dieSfx.Count() ].Play();
+				switch ( Util::PRandom() & 3 ) {
+				case 0:
+					dieSfx0.Play();
+					break;
+				case 1:
+					dieSfx1.Play();
+					break;
+				case 2:
+					dieSfx2.Play();
+					break;
+				};
 				EntityManager.KillEntity( @attacker, @this );
 				
 				Util::HapticRumble( ScreenData.GetPlayerIndex( @this ), 0.80f, 4000 );
 			} else {
-				painSfx[ Util::PRandom() & painSfx.Count() ].Play();
+				switch ( Util::PRandom() & 3 ) {
+				case 0:
+					painSfx0.Play();
+					break;
+				case 1:
+					painSfx1.Play();
+					break;
+				case 2:
+					painSfx2.Play();
+					break;
+				};
 				
 				Util::HapticRumble( ScreenData.GetPlayerIndex( @this ), 0.50f, 300 );
 			}
@@ -327,14 +360,16 @@ namespace TheNomad::SGame {
 		}
 		
 		void Think() override {
+			TheNomad::Engine::SoundSystem::SetWorldListener( m_Link.m_Origin );
+
 			if ( m_State.GetID() == StateNum::ST_PLAYR_QUICKSHOT ) {
 				m_QuickShot.Think();
 			}
 
 			if ( m_bUseWeapon ) {
-				GetCurrentWeapon().Use( cast<EntityObject@>( @this ), GetCurrentWeaponMode() );
+				m_nFrameDamage += GetCurrentWeapon().Use( cast<EntityObject@>( @this ), GetCurrentWeaponMode() );
 			} else if ( m_bAltUseWeapon ) {
-				GetCurrentWeapon().UseAlt( cast<EntityObject@>( @this ), GetCurrentWeaponMode() );
+				m_nFrameDamage += GetCurrentWeapon().UseAlt( cast<EntityObject@>( @this ), GetCurrentWeaponMode() );
 			}
 		
 			
@@ -580,7 +615,9 @@ namespace TheNomad::SGame {
 		
 		private QuickShot m_QuickShot;
 		
+		//
 		// sound effects
+		//
 		private TheNomad::Engine::SoundSystem::SoundEffect parrySfx;
 		private TheNomad::Engine::SoundSystem::SoundEffect counterParrySfx;
 		TheNomad::Engine::SoundSystem::SoundEffect beginQuickshotSfx;
@@ -589,9 +626,15 @@ namespace TheNomad::SGame {
 		TheNomad::Engine::SoundSystem::SoundEffect crouchDownSfx;
 		TheNomad::Engine::SoundSystem::SoundEffect crouchUpSfx;
 		TheNomad::Engine::SoundSystem::SoundEffect dashSfx;
+		TheNomad::Engine::SoundSystem::SoundEffect slideSfx0;
+		TheNomad::Engine::SoundSystem::SoundEffect slideSfx1;
 		TheNomad::Engine::SoundSystem::SoundEffect weaponFancySfx;
-		private TheNomad::Engine::SoundSystem::SoundEffect[] painSfx( 3 );
-		private TheNomad::Engine::SoundSystem::SoundEffect[] dieSfx( 3 );
+		private TheNomad::Engine::SoundSystem::SoundEffect painSfx0;
+		private TheNomad::Engine::SoundSystem::SoundEffect painSfx1;
+		private TheNomad::Engine::SoundSystem::SoundEffect painSfx2;
+		private TheNomad::Engine::SoundSystem::SoundEffect dieSfx0;
+		private TheNomad::Engine::SoundSystem::SoundEffect dieSfx1;
+		private TheNomad::Engine::SoundSystem::SoundEffect dieSfx2;
 
 		// the amount of damage dealt in the frame
 		private float m_nFrameDamage = 0.0f;
@@ -616,10 +659,13 @@ namespace TheNomad::SGame {
 		private SpriteSheet@ m_LegSpriteSheet;
 		private int m_LegsFacing = 0;
 
+		int m_nTimeSinceDash = 1000;
+		bool m_bDashing = false;
+
 		bool m_bEmoting = false;
 		
 		private EntityState@ m_LegState;
 		private PlayerDisplayUI m_HudData;
-		private PMoveData Pmove( @this );
+		PMoveData Pmove( @this );
 	};
 };

@@ -397,7 +397,7 @@ static void IN_ActivateMouse( void )
 	}
 
 	if ( !mouseActive ) {
-		IN_GobbleMouseEvents();
+//		IN_GobbleMouseEvents();
 
 //		SDL_SetRelativeMouseMode( in_mouse->i == 1 ? SDL_TRUE : SDL_FALSE );
 //		SDL_SetWindowGrab( SDL_window, SDL_TRUE );
@@ -446,7 +446,7 @@ static void IN_DeactivateMouse( void )
 #ifdef DEBUG_EVENTS
 		Con_Printf( "%4lu %s\n", Sys_Milliseconds(), __func__ );
 #endif
-		IN_GobbleMouseEvents();
+//		IN_GobbleMouseEvents();
 
 //		SDL_SetWindowGrab( SDL_window, SDL_FALSE );
 //		SDL_SetRelativeMouseMode( SDL_FALSE );
@@ -1175,7 +1175,7 @@ void HandleEvents( void )
 	in_eventTime = Sys_Milliseconds();
 
 	while ( SDL_PollEvent( &e ) ) {
-		if ( ( Key_GetCatcher() & KEYCATCH_CONSOLE || Key_GetCatcher() & KEYCATCH_UI ) && ImGui::GetCurrentContext() ) {
+		if ( ImGui::GetCurrentContext() ) {
 			ImGui_ImplSDL2_ProcessEvent( &e );
 		}
 

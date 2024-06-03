@@ -1135,12 +1135,12 @@ static void LoadFunctionFromSection( asIScriptGeneric *pGeneric )
 }
 
 static void GetModuleList( CScriptArray *modList ) {
-    const UtlVector<CModuleInfo *>& loadList = g_pModuleLib->GetLoadList();
+    const CModuleInfo *loadList = g_pModuleLib->GetLoadList();
 
-    modList->Resize( loadList.size() );
-    for ( uint64_t i = 0; i < loadList.size(); i++ ) {
+    modList->Resize( g_pModuleLib->GetModCount() );
+    for ( uint64_t i = 0; i < g_pModuleLib->GetModCount(); i++ ) {
         string_t *str = (string_t *)modList->At( i );
-        *str = loadList[i]->m_szName;
+        *str = loadList[i].m_szName;
     }
 }
 
@@ -2145,6 +2145,8 @@ void ModuleLib_Register_Engine( void )
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::ClearLoopingTrack()", WRAP_FN( Snd_ClearLoopingTrack ) );
 			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::SoundSystem::RegisterSfx( const string& in )", WRAP_FN( SndRegisterSfx ) );
 			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::SoundSystem::RegisterTrack( const string& in )", WRAP_FN( SndRegisterTrack ) );
+            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::PlayWorldSfx( const vec3& in, int )", WRAP_FN( Snd_PlayWorldSfx ) );
+            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::SetWorldListener( const vec3& in )", WRAP_FN( Snd_SetWorldListener ) );
 
             RESET_NAMESPACE();
 		}

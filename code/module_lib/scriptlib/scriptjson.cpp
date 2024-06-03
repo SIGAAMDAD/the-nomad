@@ -9,36 +9,34 @@ BEGIN_AS_NAMESPACE
 
 CScriptJson *CScriptJson::Create(asIScriptEngine *engine)
 {
-    // Use the custom memory routine from AngelScript to allow application to better control how much memory is used
-    CScriptJson *obj = (CScriptJson*)asAllocMem(sizeof(CScriptJson));
+    CScriptJson *obj = (CScriptJson *)Mem_ClearedAlloc( sizeof( CScriptJson ) );
     new(obj) CScriptJson(engine);
     return obj;
 }
 
 CScriptJson *CScriptJson::Create(asIScriptEngine *engine, const json& js)
 {
-    // Use the custom memory routine from AngelScript to allow application to better control how much memory is used
-    CScriptJson *obj = (CScriptJson*)asAllocMem(sizeof(CScriptJson));
+    CScriptJson *obj = (CScriptJson *)Mem_ClearedAlloc( sizeof( CScriptJson ) );
     new(obj) CScriptJson(engine);
     (obj->js_info) = js;
     return obj;
 }
 
-void CScriptJson::AddRef() const
+void CScriptJson::AddRef( void ) const
 {
     const_cast<CScriptJson *>( this )->refCount.fetch_add();
 }
 
-void CScriptJson::Release() const
+void CScriptJson::Release( void ) const
 {
     if( const_cast<CScriptJson *>( this )->refCount.fetch_sub() == 0 )
     {
         this->~CScriptJson();
-        asFreeMem(const_cast<CScriptJson*>(this));
+        Mem_Free( const_cast<CScriptJson *>( this ) );
     }
 }
 
-CScriptJson& CScriptJson::operator =(bool other)
+CScriptJson& CScriptJson::operator=(bool other)
 {
     // Clear everything we had before
     js_info.clear();
@@ -48,7 +46,7 @@ CScriptJson& CScriptJson::operator =(bool other)
     return *this;
 }
 
-CScriptJson& CScriptJson::operator =(json::number_integer_t other)
+CScriptJson& CScriptJson::operator=(json::number_integer_t other)
 {
     // Clear everything we had before
     js_info.clear();
@@ -58,7 +56,7 @@ CScriptJson& CScriptJson::operator =(json::number_integer_t other)
     return *this;
 }
 
-CScriptJson& CScriptJson::operator =(json::number_unsigned_t other)
+CScriptJson& CScriptJson::operator=(json::number_unsigned_t other)
 {
     // Clear everything we had before
     js_info.clear();
@@ -68,7 +66,7 @@ CScriptJson& CScriptJson::operator =(json::number_unsigned_t other)
     return *this;
 }
 
-CScriptJson& CScriptJson::operator =(json::number_float_t other)
+CScriptJson& CScriptJson::operator=(json::number_float_t other)
 {
     // Clear everything we had before
     js_info.clear();

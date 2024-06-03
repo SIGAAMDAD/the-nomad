@@ -31,25 +31,16 @@ static void PrintArrayMemoryStats_f( void ) {
 	memstats.currentBytesAllocated, memstats.overHeadBytes );
 }
 
+//static idDynamicBlockAlloc<byte, 1<<20, 1<<10> arrayCacheAllocator;
+
 // Set the default memory routines
 // Use the angelscript engine's memory routines by default
 
-static asALLOCFUNC_t _arrayUserAlloc;
 static asFREEFUNC_t _arrayUserFree;
-
-#ifdef _NOMAD_DEBUG
-#define arrayUserAlloc( size ) _arrayUserAlloc( (size), __FILE__, __LINE__ )
-#define arrayUserFree( ptr ) _arrayUserFree( (ptr), __FILE__, __LINE__ )
-#else
-#define arrayUserAlloc( size ) _arrayUserAlloc( (size) )
-#define arrayUserFree( ptr ) _arrayUserFree( (ptr) )
-#endif
 
 // Allows the application to set which memory routines should be used by the array object
 void CScriptArray::SetMemoryFunctions(asALLOCFUNC_t allocFunc, asFREEFUNC_t freeFunc)
 {
-	_arrayUserAlloc = allocFunc;
-	_arrayUserFree = freeFunc;
 }
 
 static void RegisterScriptList_Native(asIScriptEngine *engine);
@@ -66,16 +57,15 @@ static void CleanupTypeInfoArrayCache(asITypeInfo *type)
 	if( cache )
 	{
 		cache->~SArrayCache();
-		arrayUserFree(cache);
+		Mem_Free( (byte *)cache );
 	}
 }
 
 CScriptArray* CScriptArray::Create(asITypeInfo *ti, asUINT length)
 {
 	// Allocate the memory
-	void *mem = arrayUserAlloc(sizeof(CScriptArray));
-	if( mem == 0 )
-	{
+	void *mem = Mem_ClearedAlloc( sizeof( CScriptArray ) );
+	if( mem == 0 ) {
 		asIScriptContext *ctx = asGetActiveContext();
 		if( ctx )
 			ctx->SetException("out of memory");
@@ -92,9 +82,8 @@ CScriptArray* CScriptArray::Create(asITypeInfo *ti, asUINT length)
 CScriptArray* CScriptArray::Create(asITypeInfo *ti, void *initList)
 {
 	// Allocate the memory
-	void *mem = arrayUserAlloc(sizeof(CScriptArray));
-	if( mem == 0 )
-	{
+	void *mem = Mem_ClearedAlloc( sizeof( CScriptArray ) );
+	if( mem == 0 ) {
 		asIScriptContext *ctx = asGetActiveContext();
 		if( ctx )
 			ctx->SetException("out of memory");
@@ -111,7 +100,7 @@ CScriptArray* CScriptArray::Create(asITypeInfo *ti, void *initList)
 CScriptArray* CScriptArray::Create(asITypeInfo *ti, asUINT length, void *defVal)
 {
 	// Allocate the memory
-	void *mem = arrayUserAlloc(sizeof(CScriptArray));
+	void *mem = Mem_ClearedAlloc( sizeof( CScriptArray ) );
 	if( mem == 0 )
 	{
 		asIScriptContext *ctx = asGetActiveContext();
@@ -738,7 +727,7 @@ void CScriptArray::Clear( void )
 void CScriptArray::AllocBuffer( uint32_t nItems )
 {
 	if ( !buffer ) {
-		buffer = (SArrayBuffer *)arrayUserAlloc( sizeof( *buffer ) - 1 + ( ( nItems * 4 ) * elementSize ) );
+		buffer = (SArrayBuffer *)Mem_Alloc( sizeof( *buffer ) - 1 + ( ( nItems * 4 ) * elementSize ) );
 		if ( !buffer ) {
 			asIScriptContext *pContext = asGetActiveContext();
 			if ( pContext ) {
@@ -787,7 +776,7 @@ void CScriptArray::DoAllocate( int delta, uint32_t at )
 		// allocate new space
 		buffer->capacity += delta * 4;
 
-		SArrayBuffer *buf = (SArrayBuffer *)arrayUserAlloc( sizeof( *buf ) + ( buffer->capacity * elementSize ) );
+		SArrayBuffer *buf = (SArrayBuffer *)Mem_Alloc( sizeof( *buf ) + ( buffer->capacity * elementSize ) );
 		if ( buf ) {
 			buf->size = buffer->size + delta;
 			buf->capacity = buffer->capacity;
@@ -806,7 +795,7 @@ void CScriptArray::DoAllocate( int delta, uint32_t at )
 			memcpy( buf->data + ( at + delta ) * elementSize, buffer->data + at * elementSize, ( buffer->size - at ) * elementSize );
 		}
 		Construct( buf, at, at + delta );
-		arrayUserFree( buffer );
+		Mem_Free( (byte *)buffer );
 
 		buffer = buf;
 	} else if ( delta < 0 ) {
@@ -955,7 +944,8 @@ void CScriptArray::RemoveLast( void )
 void CScriptArray::DeleteBuffer( SArrayBuffer *buffer )
 {
 	Destruct( buffer, 0, buffer->size );
-	arrayUserFree( buffer );
+//	arrayCacheAllocator.Free( (byte *)buffer );
+	Mem_Free( buffer );
 }
 
 
@@ -1015,7 +1005,8 @@ const void *CScriptArray::GetBuffer( void ) const {
 // internal
 void CScriptArray::CreateBuffer( SArrayBuffer **buffer, asUINT nItems )
 {
-	*buffer = (SArrayBuffer *)arrayUserAlloc( sizeof( *buffer ) - 1 + ( nItems * elementSize ) );
+//	*buffer = (SArrayBuffer *)arrayCacheAllocator.Alloc( sizeof( *buffer ) - 1 + ( nItems * elementSize ) );
+	*buffer = (SArrayBuffer *)Mem_ClearedAlloc( sizeof( *buffer ) - 1 + ( nItems * elementSize ) );
 
 	if ( *buffer ) {
 		(*buffer)->size = nItems;
@@ -1822,7 +1813,7 @@ void CScriptArray::Precache( void )
 	}
 
 	// Create the cache
-	cache = reinterpret_cast<SArrayCache*>(arrayUserAlloc(sizeof(SArrayCache)));
+	cache = reinterpret_cast<SArrayCache*>( Mem_Alloc(sizeof(SArrayCache)) );
 	if( !cache ) {
 		asIScriptContext *ctx = asGetActiveContext();
 		if( ctx )
@@ -1985,7 +1976,7 @@ void CScriptArray::Release() const
 		// When reaching 0 no more references to this instance
 		// exists and the object should be destroyed
 		this->~CScriptArray();
-		arrayUserFree(const_cast<CScriptArray*>(this));
+		Mem_Free(const_cast<CScriptArray*>(this));
 	}
 }
 
@@ -2268,7 +2259,9 @@ static void ScriptListClear_Generic( asIScriptGeneric *gen ) {
 static void RegisterScriptList_Generic(asIScriptEngine *engine)
 {
 	Cmd_AddCommand( "ml_debug.print_list_memory_stats", PrintArrayMemoryStats_f );
-	
+
+//	arrayCacheAllocator.Init();
+
 	memset( &memstats, 0, sizeof( memstats ) );
 
 	engine->SetTypeInfoUserDataCleanupCallback(CleanupTypeInfoArrayCache, ARRAY_CACHE);

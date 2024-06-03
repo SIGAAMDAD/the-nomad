@@ -25,11 +25,6 @@ namespace TheNomad::SGame {
 			moveMetal1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal1.wav" );
 			moveMetal2 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal2.wav" );
 			moveMetal3 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal3.wav" );
-
-			slide0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide0.wav" );
-			slide1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide1.wav" );
-
-			dashSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/dash.wav" );
 		}
 		PMoveData() {
 		}
@@ -73,7 +68,14 @@ namespace TheNomad::SGame {
 			
 			accel.y += sgame_BaseSpeed.GetFloat() * forward;
 			accel.x += sgame_BaseSpeed.GetFloat() * side;
-			
+
+			if ( m_EntityData.m_bDashing ) {
+				accel.y += 5.5f * forward;
+				accel.x += 5.5f * side;
+				m_EntityData.dashSfx.Play( m_EntityData.GetOrigin() );
+				m_EntityData.m_bDashing = false;
+			}
+
 			const uint tile = LevelManager.GetMapData().GetTile( m_EntityData.GetOrigin(), m_EntityData.GetBounds() );
 			if ( ( tile & SURFACEPARM_WATER ) != 0 ) {
 				
@@ -85,10 +87,10 @@ namespace TheNomad::SGame {
 			if ( accel.x != 0.0f || accel.y != 0.0f ) {
 				switch ( move_toggle ) {
 				case 0:
-					moveGravel0.Play();
+					moveGravel0.Play( m_EntityData.GetOrigin() );
 					break;
 				case 1:
-					moveGravel3.Play();
+					moveGravel3.Play( m_EntityData.GetOrigin() );
 					break;
 				default:
 					move_toggle = 0;
@@ -185,7 +187,7 @@ namespace TheNomad::SGame {
 		}
 		*/
 		
-		private void SetMovementDir() {
+		void SetMovementDir() {
 			// set legs direction
 			if ( eastmove > westmove ) {
 				m_EntityData.SetLegsFacing( FACING_RIGHT );
@@ -278,17 +280,6 @@ namespace TheNomad::SGame {
 
 			SetMovementDir();
 
-			if ( m_EntityData.GetState().GetID() == StateNum::ST_PLAYR_DASH ) {
-				switch ( m_EntityData.GetFacing() ) {
-				case FACING_DOWN:
-				case FACING_UP:
-				case FACING_LEFT:
-				case FACING_RIGHT:
-					break;
-				};
-				dashSfx.Play();
-			}
-
 			ImGui::Begin( "Debug Player Movement" );
 			ImGui::Text( "Velocity: [ " + m_EntityData.GetVelocity().x + ", " + m_EntityData.GetVelocity().y + " ]" );
 			ImGui::Text( "CameraPos: [ " + Game_CameraPos.x + ", " + Game_CameraPos.y + " ]" );
@@ -331,7 +322,7 @@ namespace TheNomad::SGame {
 			return val;
 		}
 
-		private void KeyMove() {
+		void KeyMove() {
 			forward = 0.0f;
 			side = 0.0f;
 			up = 0.0f;
@@ -390,11 +381,6 @@ namespace TheNomad::SGame {
 		TheNomad::Engine::SoundSystem::SoundEffect moveMetal1;
 		TheNomad::Engine::SoundSystem::SoundEffect moveMetal2;
 		TheNomad::Engine::SoundSystem::SoundEffect moveMetal3;
-
-		TheNomad::Engine::SoundSystem::SoundEffect slide0;
-		TheNomad::Engine::SoundSystem::SoundEffect slide1;
-
-		TheNomad::Engine::SoundSystem::SoundEffect dashSfx;
 		
 		bool groundPlane = false;
 	};

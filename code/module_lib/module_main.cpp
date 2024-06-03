@@ -28,9 +28,13 @@ cvar_t *ml_garbageCollectionIterations;
 
 static void ML_CleanCache_f( void ) {
     const char *path;
+    uint64_t i;
+    const CModuleInfo *it;
 
     Con_Printf( "Clearing cached bytecode script files...\n" );
-    for ( auto it : g_pModuleLib->GetLoadList() ) {
+    for ( i = 0; i < g_pModuleLib->GetModCount(); i++ ) {
+        it = &g_pModuleLib->GetLoadList()[ i ];
+
         path = va( "_cache/%s_code.dat", it->m_pHandle->GetName().c_str() );
         FS_Remove( path );
         FS_HomeRemove( path );
@@ -232,10 +236,10 @@ void CModuleLib::LoadModule( const char *pModule )
     const int32_t versionUpdate = parse[ "Version" ][ "VersionUpdate" ];
     const int32_t versionPatch = parse[ "Version" ][ "VersionPatch" ];
 
-    pHandle = new ( Hunk_Alloc( sizeof( *pHandle ), h_low ) ) CModuleHandle( pModule, description.c_str(), parse.at( "SubModules" ),
+    pHandle = new ( Hunk_Alloc( sizeof( *pHandle ), h_high ) ) CModuleHandle( pModule, description.c_str(), parse.at( "SubModules" ),
         versionMajor, versionUpdate, versionPatch, includePaths );
-    m = new ( Hunk_Alloc( sizeof( *m ), h_low ) ) CModuleInfo( parse, pHandle );
-    m_LoadList.emplace_back( m );
+    m = new ( &m_pLoadList[ m_nModuleCount ] ) CModuleInfo( parse, pHandle );
+    m_nModuleCount++;
 }
 
 void CModuleLib::RunModules( EModuleFuncId nCallId, uint32_t nArgs, ... )
@@ -271,13 +275,13 @@ void CModuleLib::RunModules( EModuleFuncId nCallId, uint32_t nArgs, ... )
         break; }
     };
 
-    for ( j = 0; j < m_LoadList.size(); j++ ) {
-        if ( m_LoadList[i] == sgvm ) {
+    for ( j = 0; j < m_nModuleCount; j++ ) {
+        if ( sgvm == &m_pLoadList[j] ) {
             continue; // avoid running it twice
         }
-        if ( m_LoadList[j]->m_pHandle->CallFunc( nCallId, nArgs, args ) == -1 ) {
+        if ( m_pLoadList[j].m_pHandle->CallFunc( nCallId, nArgs, args ) == -1 ) {
             Con_Printf( COLOR_YELLOW "WARNING: module \"%s\" returned error code on call to proc \"%s\".\n",
-                m_LoadList[j]->m_szName, funcDefs[ nCallId ].name );
+                m_pLoadList[i].m_szName, funcDefs[ nCallId ].name );
         }
     }
 }
@@ -544,11 +548,14 @@ CModuleLib::CModuleLib( void )
 
     path = "modules/";
     fileList = FS_ListFiles( "modules/", "/", &nFiles );
+    m_pLoadList = (CModuleInfo *)Hunk_Alloc( sizeof( *m_pLoadList ) * nFiles, h_high );
     
     for ( i = 0; i < nFiles; i++ ) {
         Con_Printf( "...found module directory \"%s\".\n", fileList[i] );
         LoadModule( fileList[i] );
     }
+
+    FS_FreeFileList( fileList );
 
 /*
     try {
@@ -567,14 +574,14 @@ CModuleLib::CModuleLib( void )
 */
 
     // bind all the functions
-    for ( auto& it : m_LoadList ) {
-        if ( !it->m_pHandle->GetModule() ) { // failed to compile or didn't have any source files
+    for ( i = 0; i < m_nModuleCount; i++ ) {
+        if ( !m_pLoadList[i].m_pHandle->GetModule() ) { // failed to compile or didn't have any source files
             continue;
         }
 
         // this might fail, yes but, it'll just crash automatically if we're missing a function, and not
         // all functions have to be imported
-        it->m_pHandle->GetModule()->BindAllImportedFunctions();
+        m_pLoadList[i].m_pHandle->GetModule()->BindAllImportedFunctions();
     }
 
     #undef CALL
@@ -674,14 +681,13 @@ void CModuleLib::Shutdown( qboolean quit )
     Cmd_RemoveCommand( "ml_debug.print_string_cache" );
 
     m_pEngine->GarbageCollect( asGC_FULL_CYCLE | asGC_DESTROY_GARBAGE | asGC_DETECT_GARBAGE, 100 );
-    for ( auto& it : m_LoadList ) {
-        if ( it && it->m_pHandle ) {
-            it->m_pHandle->CallFunc( ModuleShutdown, 0, NULL );
-            it->m_pHandle->ClearMemory();
-            it->m_pHandle->~CModuleHandle();
+    for ( i = 0; i < m_nModuleCount; i++ ) {
+        if ( m_pLoadList[i].m_pHandle ) {
+            m_pLoadList[i].m_pHandle->CallFunc( ModuleShutdown, 0, NULL );
+            m_pLoadList[i].m_pHandle->ClearMemory();
+            m_pLoadList[i].m_pHandle->~CModuleHandle();
         }
     }
-    m_LoadList.clear();
     
     if ( m_bRegistered ) {
         if ( m_pCompiler ) {
@@ -727,15 +733,21 @@ CContextMgr *CModuleLib::GetContextManager( void ) {
 
 CModuleInfo *CModuleLib::GetModule( const char *pName ) {
     PROFILE_FUNCTION();
+    
+    uint64_t i;
 
-    for ( auto it = m_LoadList.begin(); it != m_LoadList.end(); it++ ) {
-        if ( !N_stricmp( ( *it )->m_szName, pName ) ) {
-            return *it; // THANK YOU eastl for just being a MOTHERFUCKING POINTER instead of an overcomplicated class
+    for ( i = 0; i < m_nModuleCount; i++ ) {
+        if ( !N_stricmp( m_pLoadList[i].m_szName, pName ) ) {
+            return &m_pLoadList[i];
         }
     }
     return NULL;
 }
 
-UtlVector<CModuleInfo *>& CModuleLib::GetLoadList( void ) {
-    return m_LoadList;
+CModuleInfo *CModuleLib::GetLoadList( void ) {
+    return m_pLoadList;
+}
+
+uint64_t CModuleLib::GetModCount( void ) const {
+    return m_nModuleCount;
 }

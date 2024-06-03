@@ -22,6 +22,13 @@
 			"Shader": "sprites/player/raio_base"
 		},
 		{
+			"State": "player_dash",
+			"TicRate": 20,
+			"FlipFlop": false,
+			"Frames": 1,
+			"Shader": "sprites/player/raio_base"
+		},
+		{
 			"State": "player_ground_move",
 			"TicRate": 1,
 			"FlipFlop": true,

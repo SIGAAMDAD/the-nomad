@@ -151,14 +151,21 @@ namespace TheNomad::SGame {
 		
 		void Dash_Down_f() {
 			PlayrObject@ obj = GetPlayerIndex();
+			const int time = TheNomad::GameSystem::GameManager.GetGameTic();
 
-			obj.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_DASH ) );
-			obj.dashSfx.Play();
+			// wait at little bit before launching another dash
+			if ( obj.m_nTimeSinceDash - time < 500 ) {
+				obj.m_nTimeSinceDash += time;
+				return;
+			}
+
+			obj.m_nTimeSinceDash = 0;
+			obj.m_bDashing = true;
 		}
 		void Dash_Up_f() {
 			PlayrObject@ obj = GetPlayerIndex();
-
-			obj.SetState( @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE ) );
+			
+			obj.m_bDashing = false;
 		}
 
 		void MoveNorth_f() {

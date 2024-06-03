@@ -104,6 +104,7 @@ protected:
 	asIScriptFunction *subTypeHandleAssignFunc;
 	uint32_t         elementSize;
 	int32_t         subTypeId;
+//	idDynamicAlloc<byte, 4096, 1024> arrayCacheAllocator;
 
 	SArrayBuffer *buffer;
 

@@ -16,11 +16,13 @@
 
 #define CLAMP_VOLUME 10.0f
 
-cvar_t *snd_musicvol;
-cvar_t *snd_sfxvol;
-cvar_t *snd_musicon;
-cvar_t *snd_sfxon;
-cvar_t *snd_mastervol;
+cvar_t *snd_noSound;
+cvar_t *snd_force22kHz;
+cvar_t *snd_musicVolume;
+cvar_t *snd_effectsVolume;
+cvar_t *snd_musicOn;
+cvar_t *snd_effectsOn;
+cvar_t *snd_masterVolume;
 cvar_t *snd_debugPrint;
 
 static idDynamicBlockAlloc<byte, 1<<20, 1<<10> soundCacheAllocator;
@@ -116,6 +118,7 @@ public:
     inline uint32_t GetSource( void ) const { return m_iSource; }
     inline uint32_t GetBuffer( void ) const { return m_iBuffer; }
     inline void SetSource( uint32_t source ) { m_iSource = source; }
+    inline const SF_INFO& GetInfo( void ) const { return m_hFData; }
 
     void Play( bool loop = false );
     void Stop( void );
@@ -126,11 +129,16 @@ private:
     int64_t FileFormat( const char *ext ) const;
     void Alloc( void );
     ALenum Format( void ) const;
+    void CheckForDownSample( void );
 
     char m_pName[MAX_NPATH];
 
+    byte *m_pNonCacheData;
+
     uint32_t m_iType;
     uint32_t m_iTag;
+    uint32_t m_nObjectSize;
+    uint32_t m_nObjectMemSize;
 
     // AL data
     ALuint m_iSource;
@@ -175,8 +183,7 @@ public:
     inline uint64_t NumSources( void ) const { return m_nSources; }
     inline CSoundSource *GetSource( sfxHandle_t handle ) { return m_pSources[handle]; }
     inline const CSoundSource *GetSource( sfxHandle_t handle ) const { return m_pSources[handle]; }
-
-    void FreeOldestSound( void );
+    inline void SetListenerPos( const vec3_t origin ) { VectorCopy( m_ListenerPosition, origin ); }
 
     CSoundSource *m_pCurrentTrack, *m_pQueuedTrack;
 
@@ -185,6 +192,8 @@ public:
 private:
     CSoundSource *m_pSources[MAX_SOUND_SOURCES];
     uint64_t m_nSources;
+
+    vec3_t m_ListenerPosition;
 
     ALCdevice *m_pDevice;
     ALCcontext *m_pContext;
@@ -270,7 +279,7 @@ void CSoundSource::SetVolume( void ) const {
     if ( m_iTag == TAG_MUSIC || m_iSource == 0 ) {
         return;
     }
-    alSourcef( m_iSource, AL_GAIN, snd_sfxvol->f / CLAMP_VOLUME );
+    alSourcef( m_iSource, AL_GAIN, snd_effectsVolume->f / CLAMP_VOLUME );
 }
 
 ALenum CSoundSource::Format( void ) const {
@@ -295,6 +304,50 @@ int64_t CSoundSource::FileFormat( const char *ext ) const
         Con_Printf( COLOR_YELLOW "WARNING: unknown audio file format extension '%s', refusing to load\n", ext );
         return 0;
     }
+}
+
+static inline qboolean IsPCMFormat( int format )
+{
+    switch ( format & SF_FORMAT_SUBMASK ) {
+    case SF_FORMAT_PCM_S8:
+    case SF_FORMAT_PCM_U8:
+    case SF_FORMAT_PCM_16:
+    case SF_FORMAT_PCM_24:
+    case SF_FORMAT_PCM_32:
+        return qtrue;
+    default:
+        break;
+    };
+    return qfalse;
+}
+
+void CSoundSource::CheckForDownSample( void )
+{
+    if ( !snd_force22kHz->i ) {
+		return;
+	}
+	if ( !IsPCMFormat( m_hFData.format ) || m_hFData.samplerate != 44100 ) {
+		return;
+	}
+
+	const int shortSamples = m_nObjectSize >> 1;
+	short *converted = (short *)Z_Malloc( shortSamples * sizeof( short ), (memtag_t)m_iTag );
+
+	if ( m_hFData.channels == 1 ) {
+		for ( int i = 0; i < shortSamples; i++ ) {
+			converted[i] = ((short *)m_pNonCacheData)[i*2];
+		}
+	} else {
+		for ( int i = 0; i < shortSamples; i += 2 ) {
+			converted[i+0] = ((short *)m_pNonCacheData)[i*2+0];
+			converted[i+1] = ((short *)m_pNonCacheData)[i*2+1];
+		}
+	}
+    Z_Free( m_pNonCacheData );
+	m_pNonCacheData = (byte *)converted;
+	m_nObjectSize >>= 1;
+	m_nObjectMemSize >>= 1;
+	m_hFData.samplerate >>= 1;
 }
 
 void CSoundSource::Alloc( void )
@@ -330,6 +383,8 @@ void CSoundSource::Alloc( void )
         m_iType = SNDBUF_16BIT;
         break;
     };
+
+//    m_pNonCacheData = (byte *)Z_Malloc( m_nObjectMemSize, (memtag_t)m_iTag );
 }
 
 void CSoundSource::Play( bool loop )
@@ -339,6 +394,9 @@ void CSoundSource::Play( bool loop )
     }
     if ( loop ) {
         alSourcei( m_iSource, AL_LOOPING, AL_TRUE );
+    }
+    if ( m_iTag == TAG_SFX ) {
+//        alSourcef( m_iSource, AL_GAIN, snd_effectsVolume->f / 100.0f );
     }
     alSourcePlay( m_iSource );
 }
@@ -355,7 +413,7 @@ void CSoundSource::Stop( void ) {
         return; // nothing's playing
     }
     if ( m_iTag == TAG_MUSIC ) {
-        alSourcei( m_iSource, AL_BUFFER, 0 );
+        alSourcei( m_iSource, AL_BUFFER, AL_NONE );
     }
     alSourceStop( m_iSource );
 }
@@ -490,14 +548,18 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
         Con_Printf( COLOR_YELLOW "WARNING: libsndfile sf_open_fd failed on '%s', sf_strerror(): %s\n", npath, sf_strerror( sf ) );
         return false;
     }
+
+    m_nObjectSize = ( sizeof( short ) * 8 ) * m_hFData.channels;
+    m_nObjectMemSize = m_nObjectSize * sizeof( short );
     
     // allocate the buffer
     Alloc();
 
+//    data = (short *)soundCacheAllocator.Alloc( sizeof( short ) * m_hFData.channels * m_hFData.frames );
     data = (short *)Hunk_AllocateTempMemory( sizeof( short ) * m_hFData.channels * m_hFData.frames );
     if ( !sf_read_short( sf, data, m_hFData.channels * m_hFData.frames ) ) {
         N_Error( ERR_FATAL, "CSoundSource::LoadFile(%s): failed to read %lu bytes from audio stream, sf_strerror(): %s\n",
-            m_pName, sizeof( *data ) * m_hFData.channels * m_hFData.frames, sf_strerror( sf ) );
+            m_pName, sizeof( short ) * m_hFData.channels * m_hFData.frames, sf_strerror( sf ) );
     }
 
     sf_close( sf );
@@ -517,15 +579,17 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
     }
 
     ALCall( alBufferData( m_iBuffer, format, data, sizeof( short ) * m_hFData.channels * m_hFData.frames, m_hFData.samplerate ) );
-    Hunk_FreeTempMemory( data );
 
     if ( tag == TAG_SFX ) {
-        ALCall( alSourcef( m_iSource, AL_GAIN, snd_sfxvol->f ) );
+        ALCall( alSourcef( m_iSource, AL_GAIN, snd_effectsVolume->f ) );
         ALCall( alSourcei( m_iSource, AL_BUFFER, m_iBuffer ) );
     } else if ( tag == TAG_MUSIC ) {
-        ALCall( alSourcef( m_iSource, AL_GAIN, snd_musicvol->f ) );
+        ALCall( alSourcef( m_iSource, AL_GAIN, snd_musicVolume->f ) );
         ALCall( alSourcei( m_iSource, AL_BUFFER, 0 ) );
     }
+
+//    soundCacheAllocator.Free( (byte *)data );
+    Hunk_FreeTempMemory( data );
 
     return true;
 }
@@ -549,6 +613,7 @@ void CSoundManager::Init( void )
 
     // generate the recyclable music source
     ALCall( alGenSources( 1, &m_iMusicSource ) );
+    alSourcef( m_iMusicSource, AL_GAIN, snd_musicVolume->f / 100.0f );
 
     Con_Printf( "OpenAL vendor: %s\n", alGetString( AL_VENDOR ) );
     Con_Printf( "OpenAL renderer: %s\n", alGetString( AL_RENDERER ) );
@@ -556,13 +621,17 @@ void CSoundManager::Init( void )
 }
 
 void CSoundManager::PlaySound( CSoundSource *snd ) {
+    if ( gi.state == GS_LEVEL ) {
+        vec3_t pos;
+        alGetListenerfv( AL_POSITION, pos );
+        alSource3f( snd->GetSource(), AL_POSITION, pos[0], pos[1], pos[2] );
+    }
     snd->Play();
 }
 
 void CSoundManager::StopSound( CSoundSource *snd ) {
     snd->Stop();
 }
-
 
 void CSoundManager::Shutdown( void )
 {
@@ -593,6 +662,8 @@ void CSoundManager::Shutdown( void )
     alcMakeContextCurrent( NULL );
     alcDestroyContext( m_pContext );
     alcCloseDevice( m_pDevice );
+
+    soundCacheAllocator.Shutdown();
 }
 
 void CSoundManager::AddSourceToHash( CSoundSource *src )
@@ -696,20 +767,43 @@ void Snd_StopAll( void ) {
     sndManager->DisableSounds();
 }
 
-void Snd_PlaySfx(sfxHandle_t sfx) {
-    if ( sfx == FS_INVALID_HANDLE || !snd_sfxon->i ) {
+void Snd_PlaySfx( sfxHandle_t sfx ) {
+    if ( sfx == FS_INVALID_HANDLE || !snd_effectsOn->i ) {
         return;
     }
 
     sndManager->PlaySound( sndManager->GetSource( sfx ) );
 }
 
+void Snd_PlayWorldSfx( const vec3_t origin, sfxHandle_t hSfx )
+{
+    CSoundSource *source;
+
+    if ( hSfx == FS_INVALID_HANDLE || !snd_effectsOn->i ) {
+        return;
+    }
+
+    source = sndManager->GetSource( hSfx );
+    Assert( source );
+
+    alSourcei( source->GetSource(), AL_SOURCE_RELATIVE, AL_TRUE );
+    alSource3f( source->GetSource(), AL_POSITION, origin[0], origin[1], origin[2] );
+    alSource3f( source->GetSource(), AL_DIRECTION, 0.0f, 0.0f, 0.0f );
+//    alSourcei( source->GetSource(), AL_ROLLOFF_FACTOR, 1.0f );
+    source->Play();
+}
+
 void Snd_StopSfx( sfxHandle_t sfx ) {
-    if ( sfx == FS_INVALID_HANDLE || !snd_sfxon->i ) {
+    if ( sfx == FS_INVALID_HANDLE || !snd_effectsOn->i ) {
         return;
     }
 
     sndManager->StopSound( sndManager->GetSource( sfx ) );
+}
+
+void Snd_SetWorldListener( const vec3_t origin ) {
+    sndManager->SetListenerPos( origin );
+    alListener3f( AL_POSITION, origin[0], origin[2], origin[1] );
 }
 
 void Snd_Restart( void ) {
@@ -723,7 +817,6 @@ void Snd_Shutdown( void ) {
     if ( !sndManager ) {
         return;
     }
-    soundCacheAllocator.Shutdown();
     sndManager->Shutdown();
 }
 
@@ -753,7 +846,7 @@ void Snd_SetLoopingTrack( sfxHandle_t handle ) {
     CSoundSource *track;
     trackQueue_t *pTrack;
 
-    if ( !snd_musicon->i ) {
+    if ( !snd_musicOn->i ) {
         return;
     }
 
@@ -773,20 +866,17 @@ void Snd_SetLoopingTrack( sfxHandle_t handle ) {
 
     Snd_ClearLoopingTrack();
 
-    Con_DPrintf( "Setting music track to %i...\n", handle );
-
-    alSourcei( sndManager->GetMusicSource(), AL_BUFFER, 0 );
+    alSourcei( sndManager->GetMusicSource(), AL_BUFFER, AL_NONE );
     alSourcei( sndManager->GetMusicSource(), AL_BUFFER, track->GetBuffer() );
+    alSourcef( sndManager->GetMusicSource(), AL_GAIN, snd_musicVolume->f / 100.0f );
     sndManager->m_pCurrentTrack = track;
     sndManager->m_pCurrentTrack->Play( true );
 }
 
 void Snd_ClearLoopingTrack( void ) {
-    if ( !snd_musicon->i || !sndManager->m_pCurrentTrack ) {
+    if ( !snd_musicOn->i || !sndManager->m_pCurrentTrack ) {
         return;
     }
-
-    Con_DPrintf( "Clearing current track...\n" );
 
     // stop the track and pop it
     alSourcei( sndManager->GetMusicSource(), AL_LOOPING, AL_FALSE );
@@ -802,6 +892,9 @@ static void Snd_AudioInfo_f( void )
     Con_Printf( "Audio Driver: %s\n", SDL_GetCurrentAudioDriver() );
     Con_Printf( "Current Track: %s\n", sndManager->m_pCurrentTrack ? sndManager->m_pCurrentTrack->GetName() : "None" );
     Con_Printf( "Number of Sound Sources: %lu\n", sndManager->NumSources() );
+    Con_Printf( "OpenAL vendor: %s\n", alGetString( AL_VENDOR ) );
+    Con_Printf( "OpenAL renderer: %s\n", alGetString( AL_RENDERER ) );
+    Con_Printf( "OpenAL version: %s\n", alGetString( AL_VERSION ) );
 }
 
 static void Snd_Toggle_f( void )
@@ -820,18 +913,15 @@ static void Snd_Toggle_f( void )
 
     if ( ( toggle[0] == '1' && toggle[1] == '\0' ) || !N_stricmp( toggle, "on" ) ) {
         option = true;
-    }
-    else if ( ( toggle[0] == '0' && toggle[1] == '\0' ) || !N_stricmp( toggle, "off" ) ) {
+    } else if ( ( toggle[0] == '0' && toggle[1] == '\0' ) || !N_stricmp( toggle, "off" ) ) {
         option = false;
     }
 
     if ( !N_stricmp( var, "sfx" ) ) {
-        Cvar_Set( "snd_sfxon", va( "%i", option ) );
-    }
-    else if ( !N_stricmp( var, "music" ) ) {
-        Cvar_Set( "snd_musicon", va( "%i", option ) );
-    }
-    else {
+        Cvar_Set( "snd_effectsOn", va( "%i", option ) );
+    } else if ( !N_stricmp( var, "music" ) ) {
+        Cvar_Set( "snd_musicOn", va( "%i", option ) );
+    } else {
         Con_Printf( "snd.toggle: unknown parameter '%s', use either 'sfx' or 'music'\n", var );
         return;
     }
@@ -852,14 +942,14 @@ static void Snd_SetVolume_f( void )
 
     change = Cmd_Argv( 2 );
     if ( !N_stricmp( change, "sfx" ) ) {
-        if ( snd_sfxvol->f != vol ) {
-            Cvar_Set( "snd_sfxvol", va("%f", vol) );
+        if ( snd_effectsVolume->f != vol ) {
+            Cvar_Set( "snd_effectsVolume", va("%f", vol) );
             sndManager->UpdateParm( TAG_SFX );
         }
     }
     else if ( !N_stricmp( change, "music" ) ) {
-        if ( snd_musicvol->f != vol ) {
-            Cvar_Set( "snd_musicvol", va( "%f", vol ) );
+        if ( snd_musicVolume->f != vol ) {
+            Cvar_Set( "snd_musicVolume", va( "%f", vol ) );
             sndManager->UpdateParm( TAG_MUSIC );
         }
     }
@@ -881,12 +971,13 @@ void Snd_Update( int32_t msec )
 {
     uint64_t i;
     CSoundSource *source;
+    ALfloat v;
 
-    if ( snd_mastervol->modified ) {
-        snd_sfxvol->modified = qtrue;
-        snd_musicvol->modified = qtrue;
+    if ( snd_masterVolume->modified ) {
+        snd_effectsVolume->modified = qtrue;
+        snd_musicVolume->modified = qtrue;
     }
-    if ( snd_sfxvol->modified ) {
+    if ( snd_effectsVolume->modified ) {
         for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
             source = sndManager->GetSource( i );
             if ( !source ) {
@@ -896,11 +987,14 @@ void Snd_Update( int32_t msec )
                 source->SetVolume();
             }
         }
-        snd_sfxvol->modified = qfalse;
+        snd_effectsVolume->modified = qfalse;
     }
-    if ( snd_musicvol->modified ) {
-        alSourcef( sndManager->GetMusicSource(), AL_GAIN, CLAMP( snd_musicvol->f, 0.0f, snd_mastervol->f ) / CLAMP_VOLUME );
-        snd_musicvol->modified = qfalse;
+    alGetSourcef( sndManager->GetMusicSource(), AL_GAIN, &v );
+    if ( v != snd_musicVolume->f ) {
+        alSourcePause( sndManager->GetMusicSource() );
+        alSourcef( sndManager->GetMusicSource(), AL_GAIN, snd_musicVolume->f / 100.0f );
+        alSourcePlay( sndManager->GetMusicSource() );
+        snd_musicVolume->modified = qfalse;
     }
     if ( sndManager->m_pCurrentTrack && !sndManager->m_pCurrentTrack->IsPlaying() || sndManager->m_pQueuedTrack ) {
         Snd_ClearLoopingTrack();
@@ -910,52 +1004,52 @@ void Snd_Update( int32_t msec )
 static void Snd_ListFiles_f( void )
 {
     uint64_t i, numFiles;
+    const CSoundSource *source;
 
     Con_Printf( "\n---------- Snd_ListFiles_f ----------\n" );
+    Con_Printf( "----name---- --channels-- ---samplerate--- ----cache size----\n" );
 
     numFiles = 0;
     for ( i = 0; i < MAX_SOUND_SOURCES; i++ ) {
-        if ( !sndManager->GetSource( i ) ) {
+        source = sndManager->GetSource( i );
+
+        if ( !source ) {
             continue;
         }
         numFiles++;
-        Con_Printf( "[Sound File #%lu]\n", i );
-        Con_Printf( "path: %s\n", sndManager->GetSource( i )->GetName() );
+        Con_Printf( "%10s: %4i %4i %8lu\n", source->GetName(), source->GetInfo().channels, source->GetInfo().samplerate,
+            source->GetInfo().channels * source->GetInfo().frames );
     }
     Con_Printf( "Total sound files loaded: %lu\n", numFiles );
 }
 
 void Snd_Init( void )
 {
-    snd_sfxon = Cvar_Get( "snd_sfxon", "1", CVAR_SAVE );
-    Cvar_CheckRange( snd_sfxon, "0", "1", CVT_INT );
-    Cvar_SetDescription( snd_sfxon, "Toggles sound effects." );
+    snd_effectsOn = Cvar_Get( "snd_effectsOn", "1", CVAR_SAVE );
+    Cvar_CheckRange( snd_effectsOn, "0", "1", CVT_INT );
+    Cvar_SetDescription( snd_effectsOn, "Toggles sound effects." );
 
-    snd_musicon = Cvar_Get( "snd_musicon", "1", CVAR_SAVE );
-    Cvar_CheckRange( snd_musicon, "0", "1", CVT_INT );
-    Cvar_SetDescription( snd_musicon, "Toggles music." );
+    snd_musicOn = Cvar_Get( "snd_musicOn", "1", CVAR_SAVE );
+    Cvar_CheckRange( snd_musicOn, "0", "1", CVT_INT );
+    Cvar_SetDescription( snd_musicOn, "Toggles music." );
 
-    snd_sfxvol = Cvar_Get( "snd_sfxvol", "50", CVAR_SAVE );
-    Cvar_CheckRange( snd_sfxvol, "0", "100", CVT_INT );
-    Cvar_SetDescription( snd_sfxvol, "Sets global sound effects volume." );
+    snd_effectsVolume = Cvar_Get( "snd_effectsVolume", "50", CVAR_SAVE );
+    Cvar_CheckRange( snd_effectsVolume, "0", "100", CVT_INT );
+    Cvar_SetDescription( snd_effectsVolume, "Sets global sound effects volume." );
 
-    snd_musicvol = Cvar_Get( "snd_musicvol", "80", CVAR_SAVE );
-    Cvar_CheckRange( snd_musicvol, "0", "100", CVT_INT );
-    Cvar_SetDescription( snd_musicvol, "Sets volume for music." );
+    snd_musicVolume = Cvar_Get( "snd_musicVolume", "80", CVAR_SAVE );
+    Cvar_CheckRange( snd_musicVolume, "0", "100", CVT_INT );
+    Cvar_SetDescription( snd_musicVolume, "Sets volume for music." );
 
-    snd_mastervol = Cvar_Get( "snd_mastervol", "80", CVAR_SAVE );
-    Cvar_CheckRange( snd_mastervol, "0", "100", CVT_INT );
-    Cvar_SetDescription( snd_mastervol, "Sets the cap for sfx and music volume." );
+    snd_masterVolume = Cvar_Get( "snd_masterVolume", "80", CVAR_SAVE );
+    Cvar_CheckRange( snd_masterVolume, "0", "100", CVT_INT );
+    Cvar_SetDescription( snd_masterVolume, "Sets the cap for sfx and music volume." );
 
-#ifdef _NOMAD_DEBUG
-    snd_debugPrint = Cvar_Get( "snd_debugPrint", "1", CVAR_TEMP );
-#else
     snd_debugPrint = Cvar_Get( "snd_debugPrint", "0", CVAR_CHEAT | CVAR_TEMP );
-#endif
     Cvar_CheckRange( snd_debugPrint, "0", "1", CVT_INT );
     Cvar_SetDescription( snd_debugPrint, "Toggles OpenAL-soft debug messages." );
 
-    Con_Printf("---------- Snd_Init ----------\n");
+    Con_Printf( "---------- Snd_Init ----------\n" );
 
     // init sound manager
     sndManager = (CSoundManager *)Hunk_Alloc( sizeof( *sndManager ), h_low );
@@ -966,5 +1060,7 @@ void Snd_Init( void )
     Cmd_AddCommand( "snd.updatevolume", Snd_UpdateVolume_f );
     Cmd_AddCommand( "snd.list_files", Snd_ListFiles_f );
 
-    soundCacheAllocator.Init();
+    alDistanceModel( AL_EXPONENT_DISTANCE_CLAMPED );
+
+//    soundCacheAllocator.Init();
 }

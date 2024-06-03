@@ -73,6 +73,9 @@ namespace TheNomad::SGame {
 		InfoSystem::InfoLoader@ GetInfo() {
 			return @m_InfoData;
 		}
+		vec3& GetOrigin() {
+			return m_Link.m_Origin;
+		}
 		const vec3& GetOrigin() const {
 			return m_Link.m_Origin;
 		}

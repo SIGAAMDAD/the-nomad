@@ -491,7 +491,7 @@ void Key_WriteBindings( fileHandle_t f )
 		if (!keys[i].binding || !keys[i].binding[0])
 			continue;
 		
-		FS_Printf( f, "bind %s \"%s\"" GDR_NEWLINE, Key_KeynumToString(i), keys[i].binding );
+		FS_Printf( f, "bind \"%s\" \"%s\"" GDR_NEWLINE, Key_KeynumToString(i), keys[i].binding );
 	}
 }
 
@@ -1059,7 +1059,7 @@ static void G_KeyDownEvent( uint32_t key, uint32_t time )
 		return;
 	}
 
-	if ( key == KEY_ESCAPE || key == KEY_PAD0_B ) {
+	if ( key == KEY_ESCAPE || ( gi.state == GS_MENU && key == KEY_PAD0_B ) || ( gi.state == GS_LEVEL && key == KEY_PAD0_START ) ) {
 		if ( Key_GetCatcher() & KEYCATCH_CONSOLE ) {
 			// escape always closes the console
 			Con_ToggleConsole_f();

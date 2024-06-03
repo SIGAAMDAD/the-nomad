@@ -497,9 +497,9 @@ static void ModsMenu_Load( void )
 
     Con_Printf( "Caching module info data...\n" );
 
-    const UtlVector<CModuleInfo *>& loadList = g_pModuleLib->GetLoadList();
+    CModuleInfo *loadList = g_pModuleLib->GetLoadList();
 
-    mods->numMods = loadList.size();
+    mods->numMods = g_pModuleLib->GetModCount();
     if ( !mods->numMods ) {
         Con_Printf( COLOR_YELLOW "WARNING: no mods to load!\n" );
         return;
@@ -507,15 +507,15 @@ static void ModsMenu_Load( void )
 
     m = mods->modList;
     for ( i = 0; i < mods->numMods; i++ ) {
-        m->info = loadList[i];
-        m->valid = loadList[i]->m_pHandle->IsValid();
+        m->info = &loadList[i];
+        m->valid = loadList[i].m_pHandle->IsValid();
         m->active = qtrue;
         m->bootIndex = i;
         m->isRequired = IsRequiredMod( m->info->m_szName );
-		m->numDependencies = loadList[i]->m_Dependencies.size();
+		m->numDependencies = loadList[i].m_Dependencies.size();
 
         // check if we have any dependencies that either don't exist or aren't properly loaded
-        for ( const auto& it : loadList[i]->m_Dependencies ) {
+        for ( const auto& it : loadList[i].m_Dependencies ) {
             const CModuleInfo *dep = g_pModuleLib->GetModule( it.c_str() );
 
             if ( !dep || !dep->m_pHandle->IsValid() ) {
@@ -523,13 +523,13 @@ static void ModsMenu_Load( void )
             }
         }
         
-        if ( loadList[i]->m_Dependencies.size() ) {
+        if ( loadList[i].m_Dependencies.size() ) {
         	Con_Printf( "Module \"%s\" has dependencies: ", m->info->m_szName );
-        	for ( j = 0; j < loadList[i]->m_Dependencies.size(); j++ ) {
-        		if ( j < loadList[i]->m_Dependencies.size() - 1 ) {
+        	for ( j = 0; j < loadList[i].m_Dependencies.size(); j++ ) {
+        		if ( j < loadList[i].m_Dependencies.size() - 1 ) {
         			Con_Printf( ", " );
         		}
-        		Con_Printf( "%s", loadList[i]->m_Dependencies[j].c_str() );
+        		Con_Printf( "%s", loadList[i].m_Dependencies[j].c_str() );
         	}
         	Con_Printf( "\n" );
         }
@@ -579,10 +579,10 @@ void ModsMenu_Cache( void )
 	
 	size = 0;
 	size += PAD( sizeof( *mods ), sizeof( uintptr_t ) );
-	size += PAD( sizeof( *mods->modList ) * g_pModuleLib->GetLoadList().size(), sizeof( uintptr_t ) );
+	size += PAD( sizeof( *mods->modList ) * g_pModuleLib->GetModCount(), sizeof( uintptr_t ) );
     mods = (modmenu_t *)Hunk_Alloc( size, h_high );
     memset( mods, 0, size );
-    if ( g_pModuleLib->GetLoadList().size() ) {
+    if ( g_pModuleLib->GetModCount() ) {
 	    mods->modList = (module_t *)( mods + 1 );
 	}
 

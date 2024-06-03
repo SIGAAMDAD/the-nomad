@@ -106,6 +106,9 @@ CUIFontCache::CUIFontCache( void ) {
 
 void CUIFontCache::SetActiveFont( ImFont *font )
 {
+	if ( !ImGui::GetFont()->ContainerAtlas ) {
+		return;
+	}
 	if ( !ImGui::GetIO().Fonts->IsBuilt() ) {
 		Finalize();
 	}
@@ -651,12 +654,12 @@ static void UI_DrawDebugOverlay( void )
 	}
 
 	if ( ImGui::Begin( "ModuleLib Debug##DebugOverlayModuleLib" ) ) {
-		const UtlVector<CModuleInfo *>& loadList = g_pModuleLib->GetLoadList();
+		const CModuleInfo *loadList = g_pModuleLib->GetLoadList();
 
-		ImGui::Text( "ModuleCount: %lu", loadList.size() );
-		for ( i = 0; i < loadList.size(); i++ ) {
-			ImGui::Text( "  [%lu]: %s v%i.%i.%i", i, loadList[i]->m_szName, loadList[i]->m_nModVersionMajor,
-				loadList[i]->m_nModVersionUpdate, loadList[i]->m_nModVersionPatch );
+		ImGui::Text( "ModuleCount: %lu", g_pModuleLib->GetModCount() );
+		for ( i = 0; i < g_pModuleLib->GetModCount(); i++ ) {
+			ImGui::Text( "  [%lu]: %s v%i.%i.%i", i, loadList[i].m_szName, loadList[i].m_nModVersionMajor,
+				loadList[i].m_nModVersionUpdate, loadList[i].m_nModVersionPatch );
 		}
 		ImGui::End();
 	}
@@ -664,7 +667,7 @@ static void UI_DrawDebugOverlay( void )
 
 void UI_EscapeMenuToggle( void )
 {
-    if ( ( Key_IsDown( KEY_ESCAPE ) || Key_IsDown( KEY_PAD0_B ) ) &&  ui->menusp > 1 ) {
+    if ( ( Key_IsDown( KEY_ESCAPE ) || Key_IsDown( KEY_PAD0_B ) ) && ui->menusp > 1 ) {
 		if ( !ui->escapeToggle ) {
 			ui->escapeToggle = qtrue;
 			UI_PopMenu();

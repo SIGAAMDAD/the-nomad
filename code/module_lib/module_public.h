@@ -364,7 +364,8 @@ public:
     void Shutdown( qboolean quit );
 	CModuleInfo *GetModule( const char *pName );
 	int ModuleCall( CModuleInfo *pModule, EModuleFuncId nCallId, uint32_t nArgs, ... );
-    UtlVector<CModuleInfo *>& GetLoadList( void );
+    CModuleInfo *GetLoadList( void );
+    uint64_t GetModCount( void ) const;
 
     // runs all modules besides for sgame
     void RunModules( EModuleFuncId nCallId, uint32_t nArgs, ... );
@@ -394,7 +395,8 @@ public:
 private:
 	void LoadModule( const char *pModuleName );
 
-	UtlVector<CModuleInfo *> m_LoadList;
+	CModuleInfo *m_pLoadList;
+    uint64_t m_nModuleCount;
 
 	CScriptBuilder *m_pScriptBuilder;
 	CContextMgr *m_pContextManager;

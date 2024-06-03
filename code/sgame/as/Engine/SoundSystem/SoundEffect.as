@@ -22,6 +22,9 @@ namespace TheNomad::Engine::SoundSystem {
         void Play() const {
             PlaySfx( m_hSfx );
         }
+        void Play( const vec3& in origin ) const {
+            PlayWorldSfx( origin, m_hSfx );
+        }
 
         private int m_hSfx = FS_INVALID_HANDLE;
     };

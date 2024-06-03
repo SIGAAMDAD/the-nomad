@@ -955,15 +955,15 @@ bool CGameArchive::Save( const char *filename )
 		return false;
 	}
 
-	UtlVector<CModuleInfo *>& loadList = g_pModuleLib->GetLoadList();
+	CModuleInfo *loadList = g_pModuleLib->GetLoadList();
 	
 	memset( &header, 0, sizeof( header ) );
 	N_strncpyz( header.gamedata.mapname, Cvar_VariableString( "mapname" ), sizeof( header.gamedata.mapname ) );
 	header.gamedata.dif = (gamedif_t)Cvar_VariableInteger( "sgame_Difficulty" );
-	header.gamedata.numMods = loadList.size();
+	header.gamedata.numMods = g_pModuleLib->GetModCount();
 
-	for ( const auto& it : loadList ) {
-		if ( !it->m_pHandle->IsValid() ) {
+	for ( i = 0; i < g_pModuleLib->GetModCount(); i++ ) {
+		if ( !loadList[i].m_pHandle->IsValid() ) {
 			header.gamedata.numMods--;
 		}
 	}
@@ -983,18 +983,18 @@ bool CGameArchive::Save( const char *filename )
 	FS_Write( &header.gamedata.numMods, sizeof( header.gamedata.numMods ), m_hFile );
 
 	for ( i = 0; i < header.gamedata.numMods; i++ ) {
-		if ( loadList[i]->m_pHandle->IsValid() ) {
-			FS_Write( loadList[i]->m_szName, sizeof( loadList[i]->m_szName ), m_hFile );
-			FS_Write( &loadList[i]->m_nModVersionMajor, sizeof( loadList[i]->m_nModVersionMajor ), m_hFile );
-			FS_Write( &loadList[i]->m_nModVersionUpdate, sizeof( loadList[i]->m_nModVersionUpdate ), m_hFile );
-			FS_Write( &loadList[i]->m_nModVersionPatch, sizeof( loadList[i]->m_nModVersionPatch ), m_hFile );
+		if ( loadList[i].m_pHandle->IsValid() ) {
+			FS_Write( loadList[i].m_szName, sizeof( loadList[i].m_szName ), m_hFile );
+			FS_Write( &loadList[i].m_nModVersionMajor, sizeof( loadList[i].m_nModVersionMajor ), m_hFile );
+			FS_Write( &loadList[i].m_nModVersionUpdate, sizeof( loadList[i].m_nModVersionUpdate ), m_hFile );
+			FS_Write( &loadList[i].m_nModVersionPatch, sizeof( loadList[i].m_nModVersionPatch ), m_hFile );
 		}
 	}
 
-	for ( auto& it : loadList ) {
-		Con_DPrintf( "Adding module '%s' save sections...\n", it->m_szName );
+	for ( i = 0; i < g_pModuleLib->GetModCount(); i++ ) {
+		Con_DPrintf( "Adding module '%s' save sections...\n", loadList[i].m_szName );
 
-		g_pModuleLib->ModuleCall( it, ModuleOnSaveGame, 0 );
+		g_pModuleLib->ModuleCall( &loadList[i], ModuleOnSaveGame, 0 );
 /*
 		for ( i = 0; i < nPartFiles; i++ ) {
 			length = FS_LoadFile( partFiles[i], &f.v );
@@ -1148,7 +1148,7 @@ bool CGameArchive::Load( const char *name )
 			m_pArchiveCache[ m_nCurrentArchive ]->m_pSectionList[i].size );
 	}
 
-	UtlVector<CModuleInfo *>& loadList = g_pModuleLib->GetLoadList();
+	CModuleInfo *loadList = g_pModuleLib->GetLoadList();
 
 	m_hFile = FS_FOpenRead( szName );
 	if ( m_hFile == FS_INVALID_HANDLE ) {
@@ -1163,8 +1163,8 @@ bool CGameArchive::Load( const char *name )
 	offset += m_pArchiveCache[ m_nCurrentArchive ]->m_nMods * ( MAX_NPATH + ( sizeof( int32_t ) * 3 ) );
 
 	FS_FileSeek( m_hFile, offset, FS_SEEK_CUR );
-	for ( auto& it : loadList ) {
-		g_pModuleLib->ModuleCall( it, ModuleOnLoadGame, 0 );
+	for ( i = 0; i < g_pModuleLib->GetModCount(); i++ ) {
+		g_pModuleLib->ModuleCall( &loadList[i], ModuleOnLoadGame, 0 );
 	}
 	FS_FClose( m_hFile );
 

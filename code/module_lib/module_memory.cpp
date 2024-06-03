@@ -1137,7 +1137,7 @@ void *Mem_Alloc16( const uint32_t size ) {
 	}
 	void *mem = mem_heap->Allocate16( size );
 	// make sure the memory is 16 byte aligned
-	Assert( ( ( ( uintptr_t)mem ) & 15 ) == 0 );
+	Assert( ( ( ( uintptr_t)mem ) & 16 ) == 0 );
 	return mem;
 }
 
@@ -1158,7 +1158,7 @@ void Mem_Free16( void *ptr ) {
 		return;
 	}
 	// make sure the memory is 16 byte aligned
-	Assert( ( ( (uintptr_t)ptr ) & 15 ) == 0 );
+	Assert( ( ( (uintptr_t)ptr ) & 16 ) == 0 );
 	mem_heap->Free16( ptr );
 }
 
@@ -1678,7 +1678,7 @@ void *Mem_Alloc16Debug( const uint32_t size, const char *fileName, const uint32_
 	}
 	void *mem = Mem_AllocDebugMemory( size, fileName, lineNumber, true );
 	// make sure the memory is 16 byte aligned
-	Assert( ( ((uintptr_t)mem) & 15) == 0 );
+	Assert( ( ((uintptr_t)mem) & 16) == 0 );
 	return mem;
 }
 
@@ -1692,7 +1692,7 @@ void Mem_Free16Debug( void *ptr, const char *fileName, const uint32_t lineNumber
 		return;
 	}
 	// make sure the memory is 16 byte aligned
-	Assert( ( ((uintptr_t)ptr) & 15) == 0 );
+	Assert( ( ((uintptr_t)ptr) & 16) == 0 );
 	Mem_FreeDebugMemory( ptr, fileName, lineNumber, true );
 }
 

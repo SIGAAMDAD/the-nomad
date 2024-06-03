@@ -7,6 +7,14 @@
             "Entity": "player",
             "NextState": "this",
             "SpriteOffset": [ 0, 0 ]
+        },
+        {
+            "Id": "player_dash",
+            "Tics": 30,
+            "BaseNum": "ST_PLAYR_DASH",
+            "Entity": "player",
+            "NextState": "player_idle",
+            "SpriteOffset": [ 0, 0 ]
         }
     ]
 }
