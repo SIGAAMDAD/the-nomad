@@ -277,10 +277,8 @@ void UI_PauseMenu( void )
     if ( !ui_active->i ) {
         Key_SetCatcher( Key_GetCatcher() | KEYCATCH_UI );
         UI_PushMenu( &s_pauseMenu->menu );
-        Cvar_SetIntegerValue( "g_paused", 1 );
-    } else {
-        Cvar_SetIntegerValue( "g_paused", 0 );
     }
     Key_SetCatcher( Key_GetCatcher() | KEYCATCH_SGAME );
     Snd_PlaySfx( ui->sfx_select );
+    Cvar_SetIntegerValue( "g_paused", !ui_active->i );
 }

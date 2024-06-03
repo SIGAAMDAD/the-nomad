@@ -9,14 +9,14 @@ BEGIN_AS_NAMESPACE
 
 CScriptJson *CScriptJson::Create(asIScriptEngine *engine)
 {
-    CScriptJson *obj = (CScriptJson *)Mem_ClearedAlloc( sizeof( CScriptJson ) );
+    CScriptJson *obj = (CScriptJson *)Mem_Alloc( sizeof( CScriptJson ) );
     new(obj) CScriptJson(engine);
     return obj;
 }
 
 CScriptJson *CScriptJson::Create(asIScriptEngine *engine, const json& js)
 {
-    CScriptJson *obj = (CScriptJson *)Mem_ClearedAlloc( sizeof( CScriptJson ) );
+    CScriptJson *obj = (CScriptJson *)Mem_Alloc( sizeof( CScriptJson ) );
     new(obj) CScriptJson(engine);
     (obj->js_info) = js;
     return obj;
@@ -194,25 +194,28 @@ bool CScriptJson::Get(const jsonKey_t &key, asINT32 &value) const
     {
 //        if(js_info.is_number())
 //        {
-            value = (js_info)[key];
+            value = (json::number_integer_t)js_info.at( key );
+            Con_Printf( "Json value '%s' is int32: %i\n", key.c_str(), value );
             return true;
 //        }
     }
     return false;
 }
 
+/*
 bool CScriptJson::Get(const jsonKey_t &key, asINT64 &value) const
 {
     if(js_info.contains(key))
     {
 //        if(js_info.is_number())
 //        {
-            value = (js_info)[key];
+            value = (int64_t)(js_info)[key];
             return true;
 //        }
     }
     return false;
 }
+*/
 
 bool CScriptJson::Get(const jsonKey_t &key, asDWORD &value) const
 {
@@ -220,13 +223,15 @@ bool CScriptJson::Get(const jsonKey_t &key, asDWORD &value) const
     {
 //        if(js_info.is_number())
 //        {
-            value = (js_info)[key];
+            value = (json::number_unsigned_t)js_info.at( key );
+            Con_Printf( "Json value '%s' is uint32: %u\n", key.c_str(), (uint32_t)js_info.at( key ) );
             return true;
 //        }
     }
     return false;
 }
 
+/*
 bool CScriptJson::Get(const jsonKey_t &key, asQWORD &value) const
 {
     if(js_info.contains(key))
@@ -239,6 +244,7 @@ bool CScriptJson::Get(const jsonKey_t &key, asQWORD &value) const
     }
     return false;
 }
+*/
 
 bool CScriptJson::Get(const jsonKey_t &key, json::number_float_t &value) const
 {
@@ -461,14 +467,14 @@ void ScriptJsonAssignBool_Generic(asIScriptGeneric *gen)
 void ScriptJsonAssignInt_Generic(asIScriptGeneric *gen)
 {
 	CScriptJson *json = (CScriptJson*)gen->GetObjectData();
-	*json = (json::number_integer_t)gen->GetArgQWord(0);
+	*json = (json::number_integer_t)gen->GetArgDWord(0);
     CATCH_JSON_BLOCK( *(CScriptJson**)gen->GetAddressOfReturnLocation() = json; );
 }
 
 void ScriptJsonAssignFlt_Generic(asIScriptGeneric *gen)
 {
 	CScriptJson *json = (CScriptJson*)gen->GetObjectData();
-	*json = (json::number_integer_t)gen->GetArgDouble(0);
+	*json = gen->GetArgFloat(0);
     CATCH_JSON_BLOCK( *(CScriptJson**)gen->GetAddressOfReturnLocation() = json; );
 }
 
@@ -549,31 +555,28 @@ void ScriptJsonSetObj_Generic(asIScriptGeneric *gen)
     CScriptJson *json = (CScriptJson*)gen->GetObjectData();
     jsonKey_t *key = (jsonKey_t*)gen->GetArgObject(0);
     void *ref = (void*)gen->GetAddressOfArg(1);
-    CATCH_JSON_BLOCK( json->Set(*key, *(CScriptJson*)ref); );
+    CATCH_JSON_BLOCK( json->Set(*key, *(CScriptJson*)ref) );
 }
 
 void ScriptJsonGetBool_Generic(asIScriptGeneric *gen)
 {
     CScriptJson *json = (CScriptJson*)gen->GetObjectData();
     jsonKey_t *key = (jsonKey_t*)gen->GetArgObject(0);
-    void *ref = (void*)gen->GetAddressOfArg(1);
-    CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(bool*)ref); );
+    CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(bool*)gen->GetAddressOfArg(1)) );
 }
 
 void ScriptJsonGetUInt_Generic(asIScriptGeneric *gen)
 {
     CScriptJson *json = (CScriptJson*)gen->GetObjectData();
     jsonKey_t *key = (jsonKey_t*)gen->GetArgObject(0);
-    void *ref = (void*)gen->GetAddressOfArg(1);
-    CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(asDWORD *)ref); );
+    CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(asDWORD *)gen->GetAddressOfArg(1)) );
 }
 
 void ScriptJsonGetInt_Generic(asIScriptGeneric *gen)
 {
     CScriptJson *json = (CScriptJson*)gen->GetObjectData();
     jsonKey_t *key = (jsonKey_t*)gen->GetArgObject(0);
-    void *ref = (void*)gen->GetAddressOfArg(1);
-    CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(asINT32 *)ref); );
+    CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(asINT32 *)gen->GetAddressOfArg(1)) );
 }
 
 void ScriptJsonGetFlt_Generic(asIScriptGeneric *gen)
@@ -581,28 +584,28 @@ void ScriptJsonGetFlt_Generic(asIScriptGeneric *gen)
     CScriptJson *json = (CScriptJson*)gen->GetObjectData();
     jsonKey_t *key = (jsonKey_t*)gen->GetArgObject(0);
     void *ref = (void*)gen->GetAddressOfArg(1);
-    CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(json::number_float_t*)ref); );
+    CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(json::number_float_t*)ref) );
 }
 
 void ScriptJsonGetStr_Generic(asIScriptGeneric *gen)
 {
     CScriptJson *json = (CScriptJson*)gen->GetObjectData();
     jsonKey_t *key = (jsonKey_t*)gen->GetArgObject(0);
-    CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(string_t*)gen->GetArgObject( 1 )); );
+    CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(string_t*)gen->GetArgObject( 1 )) );
 }
 
 void ScriptJsonGetArr_Generic(asIScriptGeneric *gen)
 {
     CScriptJson *json = (CScriptJson*)gen->GetObjectData();
     jsonKey_t *key = (jsonKey_t*)gen->GetArgObject(0);
-    CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(CScriptArray*)gen->GetArgObject( 1 )); );
+    CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(CScriptArray*)gen->GetArgObject( 1 )) );
 }
 
 void ScriptJsonGetObj_Generic(asIScriptGeneric *gen)
 {
     CScriptJson *json = (CScriptJson*)gen->GetObjectData();
     jsonKey_t *key = (jsonKey_t*)gen->GetArgObject(0);
-    CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(CScriptJson*)gen->GetArgObject( 1 )); );
+    CATCH_JSON_BLOCK( *(bool*)gen->GetAddressOfReturnLocation() = json->Get(*key, *(CScriptJson*)gen->GetArgObject( 1 )) );
 }
 
 void ScriptJsonConvBool_Generic( asIScriptGeneric *gen )
@@ -614,13 +617,13 @@ void ScriptJsonConvBool_Generic( asIScriptGeneric *gen )
 void ScriptJsonConvInt_Generic( asIScriptGeneric *gen )
 {
     CScriptJson *json = (CScriptJson *)gen->GetObjectData();
-    CATCH_JSON_BLOCK( *(json::number_integer_t *)gen->GetAddressOfReturnLocation() = json->GetNumber() );
+    CATCH_JSON_BLOCK( *(int32_t *)gen->GetAddressOfReturnLocation() = json->GetNumber() );
 }
 
 void ScriptJsonConvUInt_Generic( asIScriptGeneric *gen )
 {
     CScriptJson *json = (CScriptJson *)gen->GetObjectData();
-    CATCH_JSON_BLOCK( *(json::number_unsigned_t *)gen->GetAddressOfReturnLocation() = json->GetUNumber() );
+    CATCH_JSON_BLOCK( *(uint32_t *)gen->GetAddressOfReturnLocation() = json->GetUNumber() );
 }
 
 void ScriptJsonConvFlt_Generic( asIScriptGeneric *gen )

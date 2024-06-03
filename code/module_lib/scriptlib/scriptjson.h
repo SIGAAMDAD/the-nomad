@@ -59,9 +59,9 @@ public:
 	// Gets the stored value. Returns false if the value isn't compatible
 	bool Get(const jsonKey_t& key, bool& value) const;
 	bool Get(const jsonKey_t& key, asINT32& value) const;
-	bool Get(const jsonKey_t& key, asINT64& value) const;
+//	bool Get(const jsonKey_t& key, asINT64& value) const;
 	bool Get(const jsonKey_t& key, asDWORD& value) const;
-	bool Get(const jsonKey_t& key, asQWORD& value) const;
+//	bool Get(const jsonKey_t& key, asQWORD& value) const;
 	bool Get(const jsonKey_t& key, json::number_float_t& value) const;
 	bool Get(const jsonKey_t& key, string_t& value) const;
 	bool Get(const jsonKey_t& key, CScriptArray& value) const;

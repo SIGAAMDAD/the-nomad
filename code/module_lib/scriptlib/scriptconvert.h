@@ -11,6 +11,9 @@ public:
     CScriptConvert( void ) = default;
     ~CScriptConvert() = default;
 
+    static string_t *BoolToString( bool b ) {
+        return new string_t( b ? "true" : "false" );
+    }
     static string_t *ShortToString( int16_t i ) {
         return new string_t( va( "%hi", i ) );
     }
@@ -99,6 +102,7 @@ public:
         CheckASCall( pEngine->RegisterObjectMethod( "Convert", "int32 StringToHexInt( const string& in ) const", WRAP_FN( CScriptConvert::HexStringToInt ), asCALL_GENERIC ) );
         CheckASCall( pEngine->RegisterObjectMethod( "Convert", "uint64 FromHexString( const string& in ) const", WRAP_FN( CScriptConvert::HexStringToULong ), asCALL_GENERIC ) );
 
+        CheckASCall( pEngine->RegisterObjectMethod( "Convert", "string ToString( bool ) const", WRAP_FN( CScriptConvert::BoolToString ), asCALL_GENERIC ) );
         CheckASCall( pEngine->RegisterObjectMethod( "Convert", "string ToString( int64 ) const", WRAP_FN( CScriptConvert::LongToString ), asCALL_GENERIC ) );
         CheckASCall( pEngine->RegisterObjectMethod( "Convert", "string ToString( uint64 ) const", WRAP_FN( CScriptConvert::ULongToString ), asCALL_GENERIC ) );
         CheckASCall( pEngine->RegisterObjectMethod( "Convert", "string ToString( int32 ) const", WRAP_FN( CScriptConvert::IntToString ), asCALL_GENERIC ) );

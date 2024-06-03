@@ -1233,9 +1233,13 @@ static void SettingsMenu_Draw( void )
 	ImGui::SetWindowPos( ImVec2( s_settingsMenu->menu.x, s_settingsMenu->menu.y ) );
 
 	UI_EscapeMenuToggle();
+	if ( ui->activemenu != &s_settingsMenu->menu && ui->menustate == UI_MENU_PAUSE ) {
+		UI_SetActiveMenu( UI_MENU_PAUSE );
+	}
 	if ( UI_MenuTitle( "Settings" ) ) {
-		UI_PopMenu();
-
+		if ( ui->menustate == UI_MENU_PAUSE ) {
+			UI_SetActiveMenu( UI_MENU_PAUSE );
+		}
 		ImGui::End();
 		return;
 	}

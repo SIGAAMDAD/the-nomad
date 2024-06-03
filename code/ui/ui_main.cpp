@@ -77,7 +77,7 @@ CUIFontCache::CUIFontCache( void ) {
 		N_Error( ERR_FATAL, "CUIFontCache::Init: font_config missing FontList object array" );
 	}
 
-	for ( const auto& it : data.at( "FontList"  ) ) {
+	for ( const auto& it : data.at( "FontList" ) ) {
 		if ( !it.contains( "Name" ) ) {
 			N_Error( ERR_FATAL, "CUIFontCache::Init: font config object missing variable 'Name'" );
 		}
