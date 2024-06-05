@@ -1239,6 +1239,7 @@ static void SettingsMenu_Draw( void )
 	if ( UI_MenuTitle( "Settings" ) ) {
 		if ( ui->menustate == UI_MENU_PAUSE ) {
 			UI_SetActiveMenu( UI_MENU_PAUSE );
+		} else {
 		}
 		ImGui::End();
 		return;
