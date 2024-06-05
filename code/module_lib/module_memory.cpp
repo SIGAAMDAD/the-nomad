@@ -1347,7 +1347,7 @@ void Mem_Dump_f( void ) {
 	if ( Cmd_Argc() >= 2 ) {
 		fileName = Cmd_Argv( 1 );
 	} else {
-		fileName = "memorydump.txt";
+		fileName = LOG_DIR "/memorydump.txt";
 	}
 	Mem_Dump( fileName );
 }
@@ -1547,7 +1547,7 @@ void Mem_DumpCompressed_f( void ) {
 		};
 	}
 	if ( argNum >= Cmd_Argc() ) {
-		fileName = "memorydump.txt";
+		fileName = LOG_DIR "/memorydump.txt";
 	} else {
 		fileName = arg;
 	}
@@ -1729,7 +1729,7 @@ void Mem_Init( void ) {
 	if ( mem_heap != NULL ) {
 		return;
 	}
-	mem_heap = new ( malloc( sizeof( *mem_heap ) ) ) idHeap();
+	mem_heap = new ( Hunk_Alloc( sizeof( *mem_heap ), h_low ) ) idHeap();
 	Cmd_AddCommand( "memoryDumpCompressed", Mem_DumpCompressed_f );
 	Cmd_AddCommand( "memoryDump", Mem_Dump_f );
 
@@ -1759,7 +1759,6 @@ void Mem_Shutdown( void ) {
 	idHeap *m = mem_heap;
 	mem_heap = NULL;
 	m->~idHeap();
-	free( m );
 
 	Cmd_RemoveCommand( "memoryDumpCompressed" );
 	Cmd_RemoveCommand( "memoryDump" );

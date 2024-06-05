@@ -10,6 +10,7 @@
 #endif
 #include "sdl_glw.h"
 #include "../rendercommon/imgui_impl_sdl2.h"
+#include <SDL2/SDL_image.h>
 
 #define CTRL(a) ((a)-'a'+1)
 
@@ -21,8 +22,12 @@ SDL_GameController *gamepads[MAX_COOP_PLAYERS];
 SDL_Haptic *haptics[MAX_COOP_PLAYERS];
 SDL_Joystick *sticks[MAX_COOP_PLAYERS];
 
+static SDL_Cursor *mouse_cursor_active, *mouse_cursor;
+
 static qboolean mouseAvailable = qfalse;
 static qboolean mouseActive = qfalse;
+
+qboolean sdlImageActive = qfalse;
 
 static cvar_t *in_mouse;
 
@@ -32,6 +37,7 @@ cvar_t *in_joystickNo;
 cvar_t *in_joystickUseAnalog;
 cvar_t *in_haptic;
 cvar_t *in_mode;
+cvar_t *in_mouseIcon;
 static int numInputDevices;
 
 static cvar_t *j_pitch;
@@ -384,6 +390,53 @@ static void IN_GobbleMouseEvents( void )
 	}
 }
 
+static void IN_LoadMouseIcons( void )
+{
+	SDL_Surface *image;
+
+	if ( !sdlImageActive ) {
+		return;
+	}
+
+	if ( in_mouseIcon->i == 0 ) {
+		image = IMG_Load( va( "%s/textures/cursor_n.png", FS_GetBaseGameDir() ) );
+		if ( !image ) {
+			Con_Printf( "Error loading textures/cursor_n.png: %s\n", IMG_GetError() );
+			return;
+		}
+		mouse_cursor = SDL_CreateColorCursor( image, 0, 0 );
+		if ( !mouse_cursor ) {
+			Con_Printf( "Error on SDL_CreateColorCursor( textures/cursor_n.png ): %s\n", SDL_GetError() );
+			return;
+		}
+		SDL_FreeSurface( image );
+
+		image = IMG_Load( va( "%s/textures/cursor_a.png", FS_GetBaseGameDir() ) );
+		if ( !image ) {
+			Con_Printf( "Error loading textures/cursor_a.png: %s\n", IMG_GetError() );
+			return;
+		}
+		mouse_cursor_active = SDL_CreateColorCursor( image, 0, 0 );
+		if ( !mouse_cursor_active ) {
+			Con_Printf( "Error on SDL_CreateColorCursor( textures/cursor_a.png ): %s\n", SDL_GetError() );
+			return;
+		}
+		SDL_FreeSurface( image );
+	}
+	else if ( in_mouseIcon->i == 1 ) {
+		image = IMG_Load( va( "%s/textures/cursor.png", FS_GetBaseGameDir() ) );
+		if ( !image ) {
+			Con_Printf( "Error loading textures/cursor.png: %s\n", IMG_GetError() );
+			return;
+		}
+		mouse_cursor_active = SDL_CreateColorCursor( image, 0, 0 );
+		if ( !mouse_cursor_active ) {
+			Con_Printf( "Error on SDL_CreateColorCursor( textures/cursor.png ): %s\n", SDL_GetError() );
+			return;
+		}
+		SDL_FreeSurface( image );
+	}
+}
 
 /*
 ===============
@@ -396,7 +449,12 @@ static void IN_ActivateMouse( void )
 		return;
 	}
 
-	SDL_ShowCursor( in_mouse->i == 0 );
+	SDL_ShowCursor( in_mode->i == 0 ? SDL_ENABLE : SDL_DISABLE );
+	if ( in_mode->i == 0 && mouse_cursor_active && keys[KEY_MOUSE_LEFT].down ) {
+		SDL_SetCursor( mouse_cursor_active );
+	} else if ( in_mode->i == 0 && mouse_cursor && !keys[KEY_MOUSE_LEFT].down ) {
+		SDL_SetCursor( mouse_cursor );
+	}
 	if ( !mouseActive ) {
 //		IN_GobbleMouseEvents();
 
@@ -455,8 +513,8 @@ static void IN_DeactivateMouse( void )
 		if ( gw_active ) {
 //			SDL_WarpMouseInWindow( SDL_window, glw_state.window_width / 2, glw_state.window_height / 2 );
 		} else {
-			if ( glw_state.isFullscreen ) {
-//				SDL_ShowCursor( SDL_TRUE );
+			if ( glw_state.isFullscreen && in_mode->i == 0 ) {
+				SDL_ShowCursor( SDL_TRUE );
 			}
 
 //			SDL_WarpMouseGlobal( glw_state.desktop_width / 2, glw_state.desktop_height / 2 );
@@ -467,7 +525,7 @@ static void IN_DeactivateMouse( void )
 
 	// Always show the cursor when the mouse is disabled,
 	// but not when fullscreen
-	if ( !glw_state.isFullscreen ) {
+	if ( !glw_state.isFullscreen && in_mode->i == 0 ) {
 		SDL_ShowCursor( SDL_TRUE );
 	}
 }
@@ -1401,6 +1459,15 @@ void IN_Init( void )
 		return;
 	}
 
+	Con_Printf( "Calling IMG_Init( IMG_INIT_PNG | IMG_INIT_JPG )...\n" );
+	if ( IMG_Init( IMG_INIT_PNG | IMG_INIT_JPG ) == 0 ) {
+		Con_Printf( "IMG_Init( IMG_INIT_PNG ) failed: %s\n", SDL_GetError() );
+		sdlImageActive = qfalse;
+	} else {
+		Con_Printf( "IMG_Init( IMG_INIT_PNG | IMG_INIT_JPG ) passed.\n" );
+		sdlImageActive = qtrue;
+	}
+
 	Con_DPrintf( "\n------- Input Initialization -------\n" );
 
 	in_mode = Cvar_Get( "in_mode", "0", CVAR_SAVE );
@@ -1458,6 +1525,10 @@ void IN_Init( void )
 	Cvar_CheckRange( j_up_axis, "0", va( "%i", MAX_JOYSTICK_AXIS - 1 ), CVT_INT );
 	Cvar_SetDescription( j_up_axis, "Selects which joystick axis controls up/down." );
 
+	in_mouseIcon = Cvar_Get( "in_mouseIcon", "0", CVAR_SAVE | CVAR_LATCH );
+	Cvar_CheckRange( in_mouseIcon, "0", "1", CVT_INT );
+	Cvar_SetDescription( in_mouseIcon, "Sets in menu mouse texture icon." );
+
 	// ~ and `, as keys and characters
 	g_consoleKeys = Cvar_Get( "g_consoleKeys", "~ ` 0x7e 0x60", CVAR_SAVE );
 	Cvar_SetDescription( g_consoleKeys, "Space delimited list of key names or characters that toggle the console." );
@@ -1474,6 +1545,12 @@ void IN_Init( void )
 	Cmd_AddCommand( "in_restart", IN_Restart );
 	Cmd_AddCommand( "in_haptic_rumble", IN_HapticRumble );
 
+	// FIXME: dont load mouse icons on console
+	IN_LoadMouseIcons();
+	if ( in_mode->i == 0 && mouse_cursor ) {
+		SDL_SetCursor( mouse_cursor );
+	}
+
 	Con_DPrintf( "------------------------------------\n" );
 }
 
@@ -1486,6 +1563,15 @@ void IN_Shutdown( void )
     mouseAvailable = qfalse;
 
 	IN_ShutdownJoystick();
+
+	if ( mouse_cursor ) {
+		SDL_FreeCursor( mouse_cursor );
+		mouse_cursor = NULL;
+	}
+	if ( mouse_cursor_active ) {
+		SDL_FreeCursor( mouse_cursor_active );
+		mouse_cursor_active = NULL;
+	}
 
     Cmd_RemoveCommand( "minimize" );
     Cmd_RemoveCommand( "in_restart" );

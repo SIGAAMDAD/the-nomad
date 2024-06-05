@@ -1039,6 +1039,7 @@ extern "C" void UI_AddJoystickKeyEvents( void )
 extern "C" void UI_Refresh( int32_t realtime )
 {
 	extern cvar_t *in_joystick;
+	static qboolean windowFocus = qfalse;
 
 	ui->realtime = realtime;
 	ui->frametime = ui->frametime - realtime;
@@ -1087,7 +1088,6 @@ extern "C" void UI_Refresh( int32_t realtime )
 	}
 
 	if ( ui->activemenu ) {
-//		ImGui::SetNextWindowFocus();
 		if ( ui->activemenu->track != FS_INVALID_HANDLE ) {
 			Snd_SetLoopingTrack( ui->activemenu->track );
 		}

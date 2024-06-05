@@ -670,7 +670,7 @@ void Com_QueueEvent(uint32_t evTime, sysEventType_t evType, uint32_t evValue, ui
 	lastEvent = ev;
 }
 
-static sysEvent_t Com_GetEvent(void)
+static sysEvent_t Com_GetEvent( void )
 {
 	if (com_pushedEventsHead - com_pushedEventsTail > 0) {
 		return com_pushedEvents[(com_pushedEventsTail++) & (MAX_EVENT_QUEUE - 1)];
@@ -679,7 +679,7 @@ static sysEvent_t Com_GetEvent(void)
 	return Com_GetRealEvent();
 }
 
-uint64_t Com_EventLoop(void)
+uint64_t Com_EventLoop( void )
 {
 	sysEvent_t ev;
 
@@ -704,16 +704,16 @@ uint64_t Com_EventLoop(void)
 		case SE_CHAR:
 			break;
 		case SE_CONSOLE:
-			Cbuf_AddText((char *)ev.evPtr);
+			Cbuf_AddText( (char *)ev.evPtr );
 			Cbuf_AddText("\n");
 			break;
 		default:
-			N_Error(ERR_FATAL, "Com_EventLoop: bad event type %i", ev.evType);
+			N_Error( ERR_FATAL, "Com_EventLoop: bad event type %i", ev.evType );
 		};
 
 		// free any block data
-		if (ev.evPtr) {
-			Z_Free(ev.evPtr);
+		if ( ev.evPtr ) {
+			Z_Free( ev.evPtr );
 			ev.evPtr = NULL;
 		}
 	}
@@ -725,7 +725,7 @@ uint64_t Com_EventLoop(void)
 // Com_Error_f: Just throw a fatal error to
 // test error shutdown procedures
 //
-static void GDR_NORETURN Com_Error_f (void)
+static void GDR_NORETURN Com_Error_f ( void )
 {
 	if ( Cmd_Argc() > 1 ) {
 		N_Error( ERR_DROP, "Testing drop error" );
@@ -746,7 +746,7 @@ static void Com_Freeze_f( void ) {
 		Con_Printf( "freeze <seconds>\n" );
 		return;
 	}
-	s = atoi( Cmd_Argv(1) ) * 1000;
+	s = atoi( Cmd_Argv( 1 ) ) * 1000;
 
 	start = Com_Milliseconds();
 
@@ -763,12 +763,12 @@ static void Com_Freeze_f( void ) {
 //
 void Com_LoadConfig( void )
 {
-    Cbuf_ExecuteText( EXEC_APPEND, "exec default.cfg\n" );
+    Cbuf_ExecuteText( EXEC_APPEND, "exec " LOG_DIR "/default.cfg\n" );
     Cbuf_Execute();  // Always execute after exec to prevent text buffer overflowing
 
 	if ( !Com_SafeMode() ) {
 		// skip the user config
-		Cbuf_ExecuteText( EXEC_NOW, "exec " NOMAD_CONFIG "\n" );
+		Cbuf_ExecuteText( EXEC_NOW, "exec " LOG_DIR "/" NOMAD_CONFIG "\n" );
 		Cbuf_Execute();
 	}
 }
@@ -790,9 +790,9 @@ static void Com_Shutdown_f( void ) {
 //
 // Com_ExecuteCfg: for controlling engine variables
 //
-static void Com_ExecuteCfg(void)
+static void Com_ExecuteCfg( void )
 {
-	Cbuf_ExecuteText(EXEC_NOW, "exec default.cfg\n");
+	Cbuf_ExecuteText( EXEC_NOW, "exec " LOG_DIR "/default.cfg\n" );
 	Cbuf_Execute(); // Always execute after exec to prevent text buffer overflowing
 }
 
@@ -809,14 +809,14 @@ void Com_InitJournals(void)
 	if (com_journal->i == 1) {
 		Con_Printf( "Journaling events.\n" );
 
-		com_journalFile = FS_FOpenWrite( "journal.dat" );
+		com_journalFile = FS_FOpenWrite( CACHE_DIR "/journal.dat" );
 	} else if (com_journal->i == 2) {
 		Con_Printf( "Replaying journaled events.\n" );
 
-		FS_FOpenFileRead( "journal.dat", &com_journalFile );
+		FS_FOpenFileRead( CACHE_DIR "/journal.dat", &com_journalFile );
 	}
 
-	if (com_journalFile == FS_INVALID_HANDLE) {
+	if ( com_journalFile == FS_INVALID_HANDLE ) {
 		Cvar_Set( "com_journal", "0" );
 		Con_Printf( "Couldn't open journal file.\n" );
 	}

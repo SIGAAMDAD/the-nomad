@@ -198,9 +198,9 @@ namespace TheNomad::SGame {
 		
 		void SetMovementDir() {
 			// set legs direction
-			if ( eastmove > westmove ) {
+			if ( side > 0 ) {
 				m_EntityData.SetLegsFacing( FACING_RIGHT );
-			} else if ( westmove > eastmove ) {
+			} else if ( side > 0 ) {
 				m_EntityData.SetLegsFacing( FACING_LEFT );
 			}
 
@@ -241,9 +241,9 @@ namespace TheNomad::SGame {
 				};
 			}
 			else {
-				if ( eastmove > westmove ) {
+				if ( side > 0 ) {
 					m_EntityData.SetFacing( FACING_RIGHT );
-				} else if ( westmove > eastmove ) {
+				} else if ( side < 0 ) {
 					m_EntityData.SetFacing( FACING_LEFT );
 				}
 			}

@@ -1,3 +1,25 @@
+/*
+===========================================================================
+Copyright (C) 2023-2024 GDR Games
+
+This file is part of The Nomad source code.
+
+The Nomad source code is free software; you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation; either version 2 of the License,
+or (at your option) any later version.
+
+The Nomad source code is distributed in the hope that it will be
+useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Foobar; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+===========================================================================
+*/
+
 #include "g_game.h"
 #include "g_sound.h"
 #include "g_world.h"
@@ -104,6 +126,9 @@ static void G_RefImGuiFree( void *ptr, void * ) {
 }
 
 static void G_RefImGuiShutdown( void ) {
+    const char *iniData;
+    size_t iniDataSize;
+
     ImGuiIO& io = ImGui::GetIO();
     io.BackendRendererName = NULL;
     io.BackendRendererUserData = NULL;
@@ -114,7 +139,8 @@ static void G_RefImGuiShutdown( void ) {
 
     FontCache()->ClearCache();
 
-    ImGui::SaveIniSettingsToDisk( io.IniFilename );
+    iniData = ImGui::SaveIniSettingsToMemory( &iniDataSize );
+    FS_WriteFile( LOG_DIR "/imgui.ini", iniData, iniDataSize );
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
@@ -136,8 +162,7 @@ static void G_RefImGuiNewFrame( void ) {
     io.Fonts->Flags |= ImFontAtlasFlags_NoBakedLines;
     io.BackendUsingLegacyNavInputArray = false;
     io.BackendUsingLegacyKeyArrays = false;
-    io.WantSaveIniSettings = true;
-    io.IniFilename = CACHE_DIR "/imgui.ini";
+    io.WantSaveIniSettings = false;
 
     ImGuiStyle& style = ImGui::GetStyle();
 
@@ -196,8 +221,7 @@ static void G_RefImGuiInit( void *shaderData, const void *importData ) {
     ImGuiIO& io = ImGui::GetIO();
 
     io.BackendPlatformName = OS_STRING;
-    io.IniFilename = CACHE_DIR "/imgui.ini";
-    io.WantSaveIniSettings = true;
+    io.WantSaveIniSettings = false;
 
     Con_Printf( "-------- ImGui_Init( %s ) --------\n", g_renderer->s );
 

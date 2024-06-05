@@ -164,6 +164,7 @@ LDLIBS= \
 		-lz \
 		-lbz2 \
 		-lzip \
+		-lSDL2_image \
 
 ifndef release
 LDLIBS+=-leasy_profiler

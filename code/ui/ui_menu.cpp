@@ -646,6 +646,7 @@ static void Menu_DrawItemList( void **items, int numitems )
 
 void Menu_Draw( menuframework_t *menu ) {
 	ImGui::Begin( va( "%s##%sMainMenu", menu->name, menu->name ), NULL, menu->flags );
+	ImGui::SetWindowFocus();
 	ImGui::SetWindowPos( ImVec2( menu->x, menu->y ) );
 	ImGui::SetWindowSize( ImVec2( menu->width, menu->height ) );
 

@@ -426,9 +426,6 @@ static void SettingsMenu_List( const char *label, const char **itemnames, int nu
 	int i;
 
 	if ( ImGui::BeginCombo( va( "##%sSettingsMenuConfigList", label ), itemnames[*curitem] ) ) {
-		if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && enabled ) {
-			Snd_PlaySfx( ui->sfx_select );
-		}
 		for ( i = 0; i < numitems; i++ ) {
 			if ( ImGui::Selectable( va( "%s##%sSettingsMenuConfigList", itemnames[i], label ), ( *curitem == i ) ) ) {
 				if ( enabled ) {
@@ -441,9 +438,6 @@ static void SettingsMenu_List( const char *label, const char **itemnames, int nu
 		ImGui::EndCombo();
 	}
 	SfxFocused( label );
-	if ( !ImGui::IsItemActivated() && ImGui::IsItemToggledOpen() && enabled ) {
-		Snd_PlaySfx( ui->sfx_select );
-	}
 }
 
 static void SettingsMenu_MultiAdjustable( const char *name, const char *label, const char *hint, const char **itemnames, int numitems,
@@ -713,6 +707,10 @@ static void SettingsMenu_DrawHint( void )
 	ImGui::SetWindowSize( ImVec2( ui->gpuConfig.vidWidth - s_settingsMenu->menu.width, 256 * ui->scale ) );
 	ImGui::SetWindowPos( ImVec2( s_settingsMenu->menu.width, 100 * ui->scale ) );
 
+	if ( !s_settingsMenu->hintLabel || !s_settingsMenu->hintMessage ) {
+		return;
+	}
+
 	FontCache()->SetActiveFont( AlegreyaSC );
 	ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 1.5f ) * ui->scale );
 	ImGui::TextUnformatted( s_settingsMenu->hintLabel );
@@ -782,8 +780,7 @@ static void ControlsMenu_DrawBindings( int group )
 		} else {
 			strcpy( bind2, Key_KeynumToString( s_settingsMenu->controls.keybinds[i].bind2 ) );
 		}
-		ImGui::TextUnformatted( s_settingsMenu->controls.keybinds[i].label );
-		SfxFocused( s_settingsMenu->controls.keybinds[i].label );
+		SettingsMenu_Text( s_settingsMenu->controls.keybinds[i].label, NULL );
 		ImGui::TableNextColumn();
 		if ( ImGui::Button( bind ) ) {
 			Snd_PlaySfx( ui->sfx_select );
@@ -1116,6 +1113,7 @@ static void VideoMenu_Save( void )
 	Cvar_SetIntegerValue( "r_mode", s_settingsMenu->video.windowResolution - 2 );
 	Cvar_SetFloatValue( "r_imageSharpenAmount", s_settingsMenu->video.sharpening );
 	Cvar_SetFloatValue( "r_autoExposure", s_settingsMenu->video.exposure );
+	Cvar_SetFloatValue( "r_gammaAmount", s_settingsMenu->video.gamma );
 
 	Cbuf_ExecuteText( EXEC_APPEND, "vid_restart\n" );
 }
@@ -1361,7 +1359,7 @@ static void SettingsMenu_Draw( void )
 	ImGui::Image( (ImTextureID)(uintptr_t)( s_settingsMenu->saveHovered ? s_settingsMenu->save_1 : s_settingsMenu->save_0 ),
 		ImVec2( 256 * ui->scale, 72 * ui->scale ) );
 	if ( !s_settingsMenu->saveHovered && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) ) {
-//		Snd_PlaySfx( ui->sfx_move );
+		Snd_PlaySfx( ui->sfx_move );
 	}
 	s_settingsMenu->saveHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
 	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
@@ -1390,7 +1388,7 @@ static void SettingsMenu_Draw( void )
 	ImGui::Image( (ImTextureID)(uintptr_t)( s_settingsMenu->setDefaultsHovered ? s_settingsMenu->reset_1 : s_settingsMenu->reset_0 ),
 		ImVec2( 256 * ui->scale, 72 * ui->scale ) );
 	if ( !s_settingsMenu->setDefaultsHovered && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) ) {
-//		Snd_PlaySfx( ui->sfx_move );
+		Snd_PlaySfx( ui->sfx_move );
 	}
 	s_settingsMenu->setDefaultsHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
 	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {

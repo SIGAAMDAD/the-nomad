@@ -266,7 +266,7 @@ void Field_CompleteCommand(const char *cmd, qboolean doCommands, qboolean doCvar
 }
 
 
-#define CONSOLE_HISTORY_FILE "glnomad_history.dat"
+#define CONSOLE_HISTORY_FILE LOG_DIR "/history.txt"
 /*
 Field_AutoComplete: perform tab expansion
 */
