@@ -35,11 +35,11 @@ static void ML_CleanCache_f( void ) {
     for ( i = 0; i < g_pModuleLib->GetModCount(); i++ ) {
         it = &g_pModuleLib->GetLoadList()[ i ];
 
-        path = va( "_cache/%s_code.dat", it->m_pHandle->GetName().c_str() );
+        path = va( CACHE_DIR "/%s_code.dat", it->m_pHandle->GetName().c_str() );
         FS_Remove( path );
         FS_HomeRemove( path );
 
-        path = va( "_cache/%s_metadata.bin", it->m_pHandle->GetName().c_str() );
+        path = va( CACHE_DIR "/%s_metadata.bin", it->m_pHandle->GetName().c_str() );
         FS_Remove( path );
         FS_HomeRemove( path );
     }

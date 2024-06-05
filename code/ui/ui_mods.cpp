@@ -104,15 +104,13 @@ qboolean ModsMenu_IsModuleActive( const char *pName ) {
 void ModsMenu_SaveModList( void )
 {
     uint32_t i, j;
-    nlohmann::json json;
-    nlohmann::json::array_t loadList;
     fileHandle_t f;
 
     Con_Printf( "Saving mod list...\n" );
     
-    f = FS_FOpenWrite( "_cache/loadlist.json" );
+    f = FS_FOpenWrite( CACHE_DIR "/loadlist.json" );
     if ( f == FS_INVALID_HANDLE ) {
-    	N_Error( ERR_DROP, "ModsMenu_SaveModList: failed to save _cache/loadlist.json" );
+    	N_Error( ERR_DROP, "ModsMenu_SaveModList: failed to save " CACHE_DIR "/loadlist.json" );
     }
     
     FS_Printf( f, "{\n" );
@@ -151,10 +149,15 @@ static void ModsMenu_LoadModList( void )
 {
     char *b;
     uint64_t nLength;
-    uint32_t i;
+	int i, j;
+	const char **text;
+	const char *text_p;
+	const char *tok;
+	char *modName;
+	char **loadList;
     nlohmann::json json;
 
-    nLength = FS_LoadFile( "_cache/loadlist.json", (void **)&b );
+    nLength = FS_LoadFile( CACHE_DIR "/loadlist.json", (void **)&b );
     if ( !nLength || !b ) {
         return;
     }
@@ -162,8 +165,10 @@ static void ModsMenu_LoadModList( void )
     try {
         json = nlohmann::json::parse( b, b + nLength );
     } catch ( const nlohmann::json::exception& e ) {
-        N_Error( ERR_DROP, "ModsMenu_LoadModList: invalid loadlist.json (nlohmann::json::exception) ->\n  id: %i\n  message: %s",
+        Con_Printf( COLOR_RED "ModsMenu_LoadModList: invalid loadlist.json (nlohmann::json::exception) ->\n  id: %i\n  message: %s\n",
             e.id, e.what() );
+		FS_FreeFile( b );
+		return;
     }
     FS_FreeFile( b );
 
@@ -174,13 +179,14 @@ static void ModsMenu_LoadModList( void )
     const nlohmann::json& data = json.at( "LoadList" );
     for ( i = 0; i < mods->numMods; i++ ) {
         for ( const auto& it : data ) {
-            if ( !N_strcmp( mods->modList[i].info->m_szName, it.at( "Name" ).get<const nlohmann::json::string_t>().c_str() ) ) {
-                mods->modList[i].valid = it.at( "Valid" );
-                mods->modList[i].active = it.at( "Active" );
-                mods->modList[i].bootIndex = i;
-            }
+			if ( !N_strcmp( mods->modList[i].info->m_szName, it.at( "Name" ).get<nlohmann::json::string_t>().c_str() ) ) {
+			    mods->modList[i].valid = it.at( "Valid" );
+			    mods->modList[i].active = it.at( "Active" );
+			    mods->modList[i].bootIndex = i;
+			}
         }
     }
+	
     for ( i = 0; i < mods->numMods; i++ ) {
 		module_t m = mods->modList[ mods->modList[i].bootIndex ];
 		mods->modList[ mods->modList[i].bootIndex ] = mods->modList[i];

@@ -359,6 +359,10 @@ Compiler Macro Abstraction
 	#endif
 #endif
 
+#define CACHE_DIR "Cache"
+#define LOG_DIR "Config"
+#define LOGFILE LOG_DIR "/debug.log"
+
 // dunno WHY microsoft does this, but they do
 #ifdef _WIN32
 //#define strcpy _strcpy

@@ -1,3 +1,25 @@
+/*
+===========================================================================
+Copyright (C) 2023-2024 GDR Games
+
+This file is part of The Nomad source code.
+
+The Nomad source code is free software; you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation; either version 2 of the License,
+or (at your option) any later version.
+
+The Nomad source code is distributed in the hope that it will be
+useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Foobar; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+===========================================================================
+*/
+
 #include "../game/g_game.h"
 #include "ui_public.hpp"
 #include "ui_menu.h"
@@ -142,10 +164,6 @@ typedef struct {
 	int difficulty;
 	int debugPrint;
 	int toggleHUD;
-
-	const stringHash_t *difficultyString;
-	const stringHash_t *debugPrintString;
-	const stringHash_t *toggleHUDString;
 } gameplaySettings_t;
 
 typedef struct settingsMenu_s {
@@ -408,7 +426,7 @@ static void SettingsMenu_List( const char *label, const char **itemnames, int nu
 	int i;
 
 	if ( ImGui::BeginCombo( va( "##%sSettingsMenuConfigList", label ), itemnames[*curitem] ) ) {
-		if ( ImGui::IsItemClicked() && enabled ) {
+		if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) && enabled ) {
 			Snd_PlaySfx( ui->sfx_select );
 		}
 		for ( i = 0; i < numitems; i++ ) {
@@ -422,10 +440,10 @@ static void SettingsMenu_List( const char *label, const char **itemnames, int nu
 		}
 		ImGui::EndCombo();
 	}
-	if ( !ImGui::IsItemActivated() && ImGui::IsItemClicked() && enabled ) {
+	SfxFocused( label );
+	if ( !ImGui::IsItemActivated() && ImGui::IsItemToggledOpen() && enabled ) {
 		Snd_PlaySfx( ui->sfx_select );
 	}
-	SfxFocused( label );
 }
 
 static void SettingsMenu_MultiAdjustable( const char *name, const char *label, const char *hint, const char **itemnames, int numitems,
@@ -450,6 +468,7 @@ static void SettingsMenu_MultiAdjustable( const char *name, const char *label, c
 			}
 		}
 	}
+	SfxFocused( (void *)( (uintptr_t)curitem * 0xaf ) );
 	ImGui::SameLine();
 	SettingsMenu_List( label, itemnames, numitems, curitem, enabled );
 	ImGui::SameLine();
@@ -460,6 +479,7 @@ static void SettingsMenu_MultiAdjustable( const char *name, const char *label, c
 			*curitem = numitems - 1;
 		}
 	}
+	SfxFocused( (void *)( (uintptr_t)curitem * 0xfa ) );
 
 	if ( !enabled ) {
 		ImGui::PopStyleColor( 4 );
@@ -479,10 +499,12 @@ static void SettingsMenu_MultiSliderFloat( const char *name, const char *label, 
 			*curvalue = minvalue;
 		}
 	}
+	SfxFocused( (void *)( (uintptr_t)curvalue * 0xaf ) );
 	ImGui::SameLine();
 	if ( ImGui::SliderFloat( va( "##%sSettingsMenuConfigSlider", label ), curvalue, minvalue, maxvalue ) ) {
 		Snd_PlaySfx( ui->sfx_move );
 	}
+	SfxFocused( curvalue );
 	ImGui::SameLine();
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigRight", label ), ImGuiDir_Right ) ) {
 		Snd_PlaySfx( ui->sfx_move );
@@ -491,6 +513,7 @@ static void SettingsMenu_MultiSliderFloat( const char *name, const char *label, 
 			*curvalue = maxvalue;
 		}
 	}
+	SfxFocused( (void *)( (uintptr_t)curvalue * 0xfa ) );
 }
 
 static void SettingsMenu_MultiSliderInt( const char *name, const char *label, const char *hint, int *curvalue, int minvalue, int maxvalue,
@@ -515,12 +538,14 @@ static void SettingsMenu_MultiSliderInt( const char *name, const char *label, co
 			}
 		}
 	}
+	SfxFocused( (void *)( (uintptr_t)curvalue * 0xaf ) );
 	ImGui::SameLine();
 	if ( ImGui::SliderInt( va( "##%sSettingsMenuConfigSlider", label ), curvalue, minvalue, maxvalue, "%d", enabled ? 0 : ImGuiSliderFlags_NoInput ) ) {
 		if ( enabled ) {
 			Snd_PlaySfx( ui->sfx_move );
 		}
 	}
+	SfxFocused( curvalue );
 	ImGui::SameLine();
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigRight", label ), ImGuiDir_Right ) ) {
 		if ( enabled ) {
@@ -531,6 +556,7 @@ static void SettingsMenu_MultiSliderInt( const char *name, const char *label, co
 			}
 		}
 	}
+	SfxFocused( (void *)( (uintptr_t)curvalue * 0xfa ) );
 
 	if ( !enabled ) {
 		ImGui::PopStyleColor( 4 );
@@ -585,6 +611,7 @@ static void SettingsMenu_Rebind( void )
 	float width;
 	float height;
 	float x, y;
+	float scale;
 
 	x = 256 * ui->scale;
 	y = 128 * ui->scale;
@@ -592,19 +619,23 @@ static void SettingsMenu_Rebind( void )
 	height = ( ui->gpuConfig.vidHeight * 0.5f ) - ( y * 0.5f );
 	
 	ImGui::SetNextWindowFocus();
-	ImGui::Begin( "##RebindKeyPopup", NULL, MENU_DEFAULT_FLAGS & ~( ImGuiWindowFlags_NoBackground ) );
+	ImGui::Begin( "##RebindKeyPopup", NULL, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar
+		| ImGuiWindowFlags_NoCollapse );
 	ImGui::SetWindowPos( ImVec2( x, y ) );
 	ImGui::SetWindowSize( ImVec2( width, height ) );
+
+	ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 2.25f ) * ui->scale );
+	ImGui::TextUnformatted( strManager->ValueForKey( "GAMEUI_REBIND" )->value );
 
 	if ( Key_IsDown( KEY_ESCAPE ) ) {
 		keys[KEY_ESCAPE].down = qfalse;
 		s_settingsMenu->controls.rebindKey = NULL;
-		Snd_PlaySfx( ui->sfx_select );
+		Snd_PlaySfx( ui->sfx_null );
 		ImGui::End();
 		return;
 	}
 
-	ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 3.0f ) * ui->scale );
+	ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 1.5f ) * ui->scale );
 	ImGui::TextUnformatted( strManager->ValueForKey( "GAMEUI_PRESSKEY" )->value );
 
     for ( i = 0; i < NUMKEYS; i++ ) {
@@ -654,7 +685,7 @@ static void SettingsMenu_Rebind( void )
 			} else if ( s_settingsMenu->controls.rebindIndex == 2 ) {
 				s_settingsMenu->controls.keybinds[i].bind2 = i;
 			}
-            Cbuf_ExecuteText( EXEC_APPEND, va( "bind %s \"%s\"\n",
+            Cbuf_ExecuteText( EXEC_APPEND, va( "bind \"%s\" \"%s\"\n",
                 Key_KeynumToString( i ),
                 s_settingsMenu->controls.rebindKey->command ) );
 
@@ -664,6 +695,7 @@ static void SettingsMenu_Rebind( void )
 			return;
         }
     }
+	ImGui::SetWindowFontScale( ImGui::GetFont()->Scale );
 	ImGui::End();
 }
 
@@ -751,21 +783,21 @@ static void ControlsMenu_DrawBindings( int group )
 			strcpy( bind2, Key_KeynumToString( s_settingsMenu->controls.keybinds[i].bind2 ) );
 		}
 		ImGui::TextUnformatted( s_settingsMenu->controls.keybinds[i].label );
-		SfxFocused( bind );
+		SfxFocused( s_settingsMenu->controls.keybinds[i].label );
 		ImGui::TableNextColumn();
 		if ( ImGui::Button( bind ) ) {
 			Snd_PlaySfx( ui->sfx_select );
 			s_settingsMenu->controls.rebindKey = &s_settingsMenu->controls.keybinds[i];
 			s_settingsMenu->controls.rebindIndex = 1;
 		}
-		SfxFocused( bind );
+		SfxFocused( &s_settingsMenu->controls.keybinds[i].bind1 );
 		ImGui::SameLine();
 		if ( ImGui::Button( bind2 ) ) {
 			Snd_PlaySfx( ui->sfx_select );
 			s_settingsMenu->controls.rebindKey = &s_settingsMenu->controls.keybinds[i];
 			s_settingsMenu->controls.rebindIndex = 2;
 		}
-		SfxFocused( bind2 );
+		SfxFocused( &s_settingsMenu->controls.keybinds[i].bind2 );
 		if ( i != NUMKEYBINDS - 1 ) {
 			ImGui::TableNextRow();
 		}
@@ -1055,7 +1087,7 @@ static void GameplayMenu_Draw( void )
 
 	ImGui::BeginTable( "##GameSettingsMenuConfigTable", 2 );
 	{
-		SettingsMenu_MultiAdjustable( "Difficulty", "Difficulty",
+		SettingsMenu_MultiAdjustable( "Game Difficulty", "GameDifficulty",
 			"Sets the game's difficulty",
 			s_settingsMenu->gameplay.difficultyNames, s_settingsMenu->gameplay.numDifficultyTypes, &s_settingsMenu->gameplay.difficulty,
 			s_settingsMenu->gameplay.difficulty != DIF_HARDEST );
@@ -1153,10 +1185,12 @@ static void ControlsMenu_Save( void )
 		bind = &s_settingsMenu->controls.keybinds[i];
 
 		if ( bind->bind1 != -1 ) {
-			Cbuf_ExecuteText( EXEC_APPEND, va( "bind %s \"%s\"\n", Key_GetBinding( s_defaultKeybinds[i].bind1 ), s_defaultKeybinds[i].command ) );
+			Cbuf_ExecuteText( EXEC_APPEND, va( "bind \"%s\" \"%s\"\n", Key_GetBinding( s_defaultKeybinds[i].bind1 ),
+				s_defaultKeybinds[i].command ) );
 		}
 		if ( bind->bind2 != -1 ) {
-			Cbuf_ExecuteText( EXEC_APPEND, va( "bind %s \"%s\"\n", Key_GetBinding( s_defaultKeybinds[i].bind2 ), s_defaultKeybinds[i].command ) );
+			Cbuf_ExecuteText( EXEC_APPEND, va( "bind \"%s\" \"%s\"\n", Key_GetBinding( s_defaultKeybinds[i].bind2 ),
+				s_defaultKeybinds[i].command ) );
 		}
 	}
 }
@@ -1327,7 +1361,7 @@ static void SettingsMenu_Draw( void )
 	ImGui::Image( (ImTextureID)(uintptr_t)( s_settingsMenu->saveHovered ? s_settingsMenu->save_1 : s_settingsMenu->save_0 ),
 		ImVec2( 256 * ui->scale, 72 * ui->scale ) );
 	if ( !s_settingsMenu->saveHovered && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) ) {
-		Snd_PlaySfx( ui->sfx_move );
+//		Snd_PlaySfx( ui->sfx_move );
 	}
 	s_settingsMenu->saveHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
 	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
@@ -1356,7 +1390,7 @@ static void SettingsMenu_Draw( void )
 	ImGui::Image( (ImTextureID)(uintptr_t)( s_settingsMenu->setDefaultsHovered ? s_settingsMenu->reset_1 : s_settingsMenu->reset_0 ),
 		ImVec2( 256 * ui->scale, 72 * ui->scale ) );
 	if ( !s_settingsMenu->setDefaultsHovered && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) ) {
-		Snd_PlaySfx( ui->sfx_move );
+//		Snd_PlaySfx( ui->sfx_move );
 	}
 	s_settingsMenu->setDefaultsHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
 	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
@@ -1469,6 +1503,13 @@ void SettingsMenu_Cache( void )
 		"circle & dot",
 		"full crosshair",
 		"filled crosshair"
+	};
+	static const char *s_hudOptions[] = {
+		strManager->ValueForKey( "MENU_HUD" )->value,
+		strManager->ValueForKey( "MENU_ADVANCED_HUD" )->value,
+		strManager->ValueForKey( "MENU_HUD_STYLE" )->value,
+		strManager->ValueForKey( "MENU_HUD_PSTATS" )->value,
+		
 	};
 
 	if ( !ui->uiAllocated ) {

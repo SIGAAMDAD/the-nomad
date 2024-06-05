@@ -1,3 +1,25 @@
+/*
+===========================================================================
+Copyright (C) 2023-2024 GDR Games
+
+This file is part of The Nomad source code.
+
+The Nomad source code is free software; you can redistribute it
+and/or modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation; either version 2 of the License,
+or (at your option) any later version.
+
+The Nomad source code is distributed in the hope that it will be
+useful, but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Foobar; if not, write to the Free Software
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+===========================================================================
+*/
+
 #include "../game/g_game.h"
 #include "ui_public.hpp"
 #include "ui_menu.h"
@@ -65,12 +87,11 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
         hash = Com_GenerateHashValue( tok, ui_maxLangStrings->i );
         for ( str = stringHash[lang][hash]; str; str = str->next ) {
             if ( !N_stricmp( str->name, tok ) ) {
-                Con_Printf( COLOR_YELLOW "CUIStringManager::LoadTokenList: (WARNING) found duplicate string token for '%s', ignoring it.\n", tok );
+                COM_ParseWarning( "found duplicate string token for '%s', ignoring it.\n", tok );
                 ignore = qtrue;
                 break;
             }
         }
-
         if ( ignore ) {
             continue;
         }
@@ -106,7 +127,7 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
     return 1;
 }
 
-void CUIStringManager::LoadFile( const char *filename )
+void CUIStringManager::LoadLanguage( const char *filename )
 {
     const char *tok, *t1, **text;
     uint64_t fileLength;
@@ -115,76 +136,85 @@ void CUIStringManager::LoadFile( const char *filename )
         void *v;
         char *b;
     } f;
-    
-    fileLength = FS_LoadFile( filename, &f.v );
-    if ( !fileLength || !f.v) {
-        Con_Printf( COLOR_YELLOW "WARNING: failed to load ui string file '%s'\n", filename );
-        return;
-    }
+    char **fileList;
+    const char *language;
+    uint64_t nFiles, i;
 
-    t1 = f.b;
-    text = &t1;
+    language = filename;
+    fileList = FS_ListFiles( va( "scripts/langs/%s", language ), ".txt", &nFiles );
 
-    Con_Printf( "CUIStringManager::LoadFile: loading language file '%s'\n", filename );
-
-    COM_BeginParseSession( filename );
-
-    tok = COM_ParseExt( text, qtrue );
-    if ( tok[0] != '{' ) {
-        COM_ParseWarning( "expected '{', got '%s'", tok );
-        return;
-    }
-
-    while ( 1 ) {
-        tok = COM_ParseExt( text, qtrue );
-        if (!tok[0]) {
-            COM_ParseWarning( "no concluding '}' in ui file" );
+    for ( i = 0; i < nFiles; i++ ) {
+        filename = va( "scripts/langs/%s/%s", language, fileList[i] );
+        fileLength = FS_LoadFile( filename, &f.v );
+        if ( !fileLength || !f.v ) {
+            Con_Printf( COLOR_YELLOW "WARNING: failed to load ui string file '%s'\n", filename );
             return;
         }
 
-        // end of ui file
-        if ( tok[0] == '}' ) {
-            break;
+        t1 = f.b;
+        text = &t1;
+
+        Con_Printf( "CUIStringManager::LoadFile: loading language file '%s'\n", filename );
+
+        COM_BeginParseSession( filename );
+
+        tok = COM_ParseExt( text, qtrue );
+        if ( tok[0] != '{' ) {
+            COM_ParseWarning( "expected '{', got '%s'", tok );
+            continue;
         }
-        //
-        // language <language>
-        //
-        else if ( !N_stricmp( tok, "language" ) ) {
+
+        while ( 1 ) {
             tok = COM_ParseExt( text, qtrue );
             if ( !tok[0] ) {
-                COM_ParseError( "missing parameter for language in ui file" );
-                return;
+                COM_ParseWarning( "no concluding '}' in ui file" );
+                continue;
             }
 
-            lang = StringToLanguage( tok );
+            // end of ui file
+            if ( tok[0] == '}' ) {
+                break;
+            }
+            //
+            // language <language>
+            //
+            else if ( !N_stricmp( tok, "language" ) ) {
+                tok = COM_ParseExt( text, qtrue );
+                if ( !tok[0] ) {
+                    COM_ParseError( "missing parameter for language in ui file" );
+                    continue;
+                }
+
+                lang = StringToLanguage( tok );
+            }
+            //
+            // tokens { ... }
+            //
+            else if ( !N_stricmp( tok, "tokens" ) ) {
+                tok = COM_ParseExt( text, qtrue );
+                if ( tok[0] != '{' ) {
+                    COM_ParseError( "missing opening '{' for tokens in ui file" );
+                    continue;
+                }
+
+                if ( lang == NUMLANGS ) {
+                    COM_ParseError( "no language specified" );
+                    continue;
+                }
+
+                if ( !LoadTokenList( text, lang ) ) {
+                    continue;
+                }
+            }
         }
-        //
-        // tokens ...
-        //
-        else if ( !N_stricmp( tok, "tokens" ) ) {
-            tok = COM_ParseExt( text, qtrue );
-            if ( tok[0] != '{' ) {
-                COM_ParseError( "missing opening '{' for tokens in ui file" );
-                return;
-            }
-
-            if ( lang == NUMLANGS ) {
-                COM_ParseError( "no language specified" );
-                return;
-            }
-
-            if ( !LoadTokenList( text, lang ) ) {
-                return;
-            }
-        }
+        FS_FreeFile( f.v );
     }
-
-    FS_FreeFile( f.v );
+    FS_FreeFileList( fileList );
     numLanguages++;
 
     if ( ui_printStrings->i ) {
         Con_Printf( "\n---------- UI Strings: %s ----------\n", UI_LangToString( (int32_t)lang ) );
-        for ( uint64_t i = 0; i < ui_maxLangStrings->i; i++ ) {
+        for ( i = 0; i < ui_maxLangStrings->i; i++ ) {
             if ( stringHash[lang][i] ) {
                 Con_Printf( "\"%s\" = \"%s\" (HASH: %lu)\n", stringHash[lang][i]->name, stringHash[lang][i]->value, i );
             }
@@ -221,8 +251,8 @@ const stringHash_t *CUIStringManager::AllocErrorString( const char *key ) {
     N_strncpyz( str->value, value, MAX_STRING_CHARS );
 
     hash = Com_GenerateHashValue( key, ui_maxLangStrings->i );
-    str->next = stringHash[ui_language->i][hash];
-    stringHash[ui_language->i][hash] = str;
+    str->next = stringHash[ ui_language->i ][hash];
+    stringHash[ ui_language->i ][hash] = str;
 
     return str;
 }

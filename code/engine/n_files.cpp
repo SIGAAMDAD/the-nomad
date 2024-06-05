@@ -1514,7 +1514,7 @@ static bffFile_t *bffHashTable[ BFF_HASH_SIZE ];
 
 #ifdef USE_BFF_CACHE_FILE
 
-#define CACHE_FILE_NAME "bffcache.dat"
+#define CACHE_FILE_NAME CACHE_DIR "/bffcache.dat"
 #define CACHE_SYNC_CONDITION ( fs_bffsReaded + fs_bffsSkipped + fs_bffsReaded >= NUM_GDR_BFFS )
 
 static uint64_t fs_bffsCached;		// read from cache file

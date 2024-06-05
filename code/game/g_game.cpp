@@ -1,5 +1,5 @@
 #include "g_game.h"
-//#include "g_sound.h"
+#include "g_sound.h"
 #include "g_world.h"
 #include "g_archive.h"
 #include "../rendercommon/imgui.h"
@@ -114,9 +114,11 @@ static void G_RefImGuiShutdown( void ) {
 
     FontCache()->ClearCache();
 
+    ImGui::SaveIniSettingsToDisk( io.IniFilename );
+
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
-    //ImGui::DestroyContext();
+    ImGui::DestroyContext();
     ImGui::SetCurrentContext( NULL );
 
     // clean everything up
@@ -134,6 +136,8 @@ static void G_RefImGuiNewFrame( void ) {
     io.Fonts->Flags |= ImFontAtlasFlags_NoBakedLines;
     io.BackendUsingLegacyNavInputArray = false;
     io.BackendUsingLegacyKeyArrays = false;
+    io.WantSaveIniSettings = true;
+    io.IniFilename = CACHE_DIR "/imgui.ini";
 
     ImGuiStyle& style = ImGui::GetStyle();
 
@@ -192,6 +196,8 @@ static void G_RefImGuiInit( void *shaderData, const void *importData ) {
     ImGuiIO& io = ImGui::GetIO();
 
     io.BackendPlatformName = OS_STRING;
+    io.IniFilename = CACHE_DIR "/imgui.ini";
+    io.WantSaveIniSettings = true;
 
     Con_Printf( "-------- ImGui_Init( %s ) --------\n", g_renderer->s );
 

@@ -116,7 +116,7 @@ void CModuleHandle::Build( const nlohmann::json& sourceFiles ) {
             Con_Printf( COLOR_RED "ERROR: CModuleHandle::CModuleHandle: failed to build module '%s' -- %s\n", m_szName.c_str(), AS_PrintErrorString( error ) );
 
             // clean cache to get rid of any old and/or corrupt code
-            Cbuf_ExecuteText( EXEC_APPEND, "ml.clean_script_cache\n" );
+            Cbuf_ExecuteText( EXEC_APPEND, "ml.clean_scripCACHE_DIR t\n" );
         }
     } catch ( const std::exception& e ) {
         Con_Printf( COLOR_RED "ERROR: std::exception thrown when loading module \"%s\", %s\n", m_szName.c_str(), e.what() );
@@ -442,7 +442,7 @@ static void SaveCodeDataCache( const string_t& moduleName, const CModuleHandle *
 {
     asCodeCacheHeader_t header;
     int ret;
-    CModuleCacheHandle dataStream( va( "_cache/%s_code.dat", moduleName.c_str() ), FS_OPEN_WRITE );
+    CModuleCacheHandle dataStream( va( CACHE_DIR "/%s_code.dat", moduleName.c_str() ), FS_OPEN_WRITE );
     byte *pByteCode;
     uint64_t nLength;
     fileHandle_t hFile;
@@ -461,7 +461,7 @@ static void SaveCodeDataCache( const string_t& moduleName, const CModuleHandle *
     }
     FS_FClose( dataStream.m_hFile );
 
-    FS_WriteFile( va( "_cache/%s_metadata.bin", moduleName.c_str() ), &header, sizeof( header ) );
+    FS_WriteFile( va( CACHE_DIR "/%s_metadata.bin", moduleName.c_str() ), &header, sizeof( header ) );
 }
 
 static bool LoadCodeFromCache( const string_t& moduleName, const CModuleHandle *pHandle, asIScriptModule *pModule )
@@ -474,7 +474,7 @@ static bool LoadCodeFromCache( const string_t& moduleName, const CModuleHandle *
     int32_t versionMajor, versionUpdate, versionPatch;
     uint64_t i;
 
-    path = va( "_cache/%s_metadata.bin", moduleName.c_str() );
+    path = va( CACHE_DIR "/%s_metadata.bin", moduleName.c_str() );
     nLength = FS_LoadFile( path, (void **)&header );
     if ( !nLength || !header ) {
         return false;
@@ -500,16 +500,16 @@ static bool LoadCodeFromCache( const string_t& moduleName, const CModuleHandle *
     }
     else {
         // load the bytecode
-        CModuleCacheHandle dataStream( va( "_cache/%s_code.dat", moduleName.c_str() ), FS_OPEN_READ );
+        CModuleCacheHandle dataStream( va( CACHE_DIR "/%s_code.dat", moduleName.c_str() ), FS_OPEN_READ );
         int ret;
         
         ret = pModule->LoadByteCode( &dataStream, (bool *)&header->hasDebugSymbols );
         if ( ret != asSUCCESS ) {
             // clean cache to get rid of any old and/or corrupt code
-            FS_Remove( va( "_cache/%s_code.dat", moduleName.c_str() ) );
-            FS_HomeRemove( va( "_cache/%s_code.dat", moduleName.c_str() ) );
-            FS_Remove( va( "_cache/%s_metadata.bin", moduleName.c_str() ) );
-            FS_HomeRemove( va( "_cache/%s_metadata.bin", moduleName.c_str() ) );
+            FS_Remove( va( CACHE_DIR "/%s_code.dat", moduleName.c_str() ) );
+            FS_HomeRemove( va( CACHE_DIR "/%s_code.dat", moduleName.c_str() ) );
+            FS_Remove( va( CACHE_DIR "/%s_metadata.bin", moduleName.c_str() ) );
+            FS_HomeRemove( va( CACHE_DIR "/%s_metadata.bin", moduleName.c_str() ) );
             Con_Printf( COLOR_RED "Error couldn't load cached byte code for '%s'\n", moduleName.c_str() );
             return false;
         }

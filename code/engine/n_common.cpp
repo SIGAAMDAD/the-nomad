@@ -65,10 +65,11 @@ static int	rd_buffersize;
 static qboolean rd_flushing = qfalse;
 static void	(*rd_flush)( const char *buffer );
 
-void Com_BeginRedirect( char *buffer, uint64_t buffersize, void (*flush)(const char *) )
+void Com_BeginRedirect( char *buffer, uint64_t buffersize, void (*flush)( const char * ) )
 {
-	if (!buffer || !buffersize || !flush)
+	if ( !buffer || !buffersize || !flush ) {
 		return;
+	}
 	rd_buffer = buffer;
 	rd_buffersize = buffersize;
 	rd_flush = flush;
@@ -90,49 +91,56 @@ void Com_EndRedirect( void )
 	rd_flush = NULL;
 }
 
-void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Con_Printf(const char *fmt, ...)
+static qboolean printableChar( char c ) {
+	if ( ( c >= ' ' && c <= '~' ) || c == '\n' || c == '\r' || c == '\t' ) {
+		return qtrue;
+	}
+	return qfalse;
+}
+
+void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Con_Printf( const char *fmt, ... )
 {
     va_list argptr;
-    int length;
+    int length, i;
     char msg[MAXPRINTMSG];
     static qboolean opening_console = qfalse;
 
-	memset(msg, 0, sizeof(msg));
-    va_start(argptr, fmt);
-    length = N_vsnprintf(msg, sizeof(msg), fmt, argptr);
-    va_end(argptr);
+    va_start( argptr, fmt );
+    length = N_vsnprintf( msg, sizeof( msg ) - 1, fmt, argptr );
+    va_end( argptr );
 
-    if (rd_buffer && !rd_flushing) {
-        if (length + strlen(rd_buffer) > (rd_buffersize + 1)) {
+    if ( rd_buffer && !rd_flushing ) {
+        if ( length + strlen( rd_buffer ) > ( rd_buffersize + 1 ) ) {
             rd_flushing = qtrue;
-            rd_flush(rd_buffer);
+            rd_flush( rd_buffer );
             rd_flushing = qfalse;
             *rd_buffer = '\0';
         }
-        N_strcat(rd_buffer, rd_buffersize, msg);
+        N_strcat( rd_buffer, rd_buffersize, msg );
     }
 
     // append to the debug console buffer
-	G_ConsolePrint(msg);
+	G_ConsolePrint( msg );
 
     // echo to the actual console
-    Sys_Print(msg);
+    Sys_Print( msg );
 
     // slap that shit into the logfile
-    if (com_logfile && com_logfile->i) {
-        if (logfile == FS_INVALID_HANDLE && FS_Initialized() && !opening_console) {
-            const char *logName = "debug.log";
-            int32_t mode;
+    if ( com_logfile && com_logfile->i ) {
+        if ( logfile == FS_INVALID_HANDLE && FS_Initialized() && !opening_console ) {
+            const char *logName = LOGFILE;
+            int mode;
             opening_console = qtrue;
 
             mode = com_logfile->i - 1;
 
-            if (mode & 2)
-                logfile = FS_FOpenAppend(logName);
-            else
-                logfile = FS_FOpenWrite(logName);
+            if ( mode & 2 ) {
+                logfile = FS_FOpenAppend( logName );
+			} else {
+                logfile = FS_FOpenWrite( logName );
+			}
             
-            if (logfile != FS_INVALID_HANDLE) {
+            if ( logfile != FS_INVALID_HANDLE ) {
                 struct tm *newtime;
 				time_t aclock;
 				char timestr[32];
@@ -154,13 +162,25 @@ void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Con_Printf(const char *fmt, 
 			}
             opening_console = qfalse;
         }
-        if (logfile != FS_INVALID_HANDLE && FS_Initialized()) {
-			FS_Write( msg, strlen(msg), logfile );
+        if ( logfile != FS_INVALID_HANDLE && FS_Initialized() ) {
+			char *ptr = msg;
+			char *out = msg;
+	        while ( *ptr != '\0' && out < ptr + sizeof( msg ) ) {
+				while ( Q_IsColorString( ptr ) && *( ptr + 1 ) != '\n' ) {
+					ptr += 2;
+				}
+	            if ( printableChar( *ptr ) ) {
+	                *out++ = *ptr;
+				}
+	            ptr++;
+	        }
+			length = out - msg;
+			FS_Write( msg, length, logfile );
         }
     }
 }
 
-void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Con_DPrintf(const char *fmt, ...)
+void GDR_ATTRIBUTE((format(printf, 1, 2))) GDR_DECL Con_DPrintf( const char *fmt, ... )
 {
 	va_list argptr;
 	char msg[MAXPRINTMSG];
@@ -192,7 +212,7 @@ void GDR_NORETURN GDR_ATTRIBUTE((format(printf, 2, 3))) GDR_DECL N_Error( errorC
 	}
 	com_errorEntered = qtrue;
 
-	Cvar_Set( "com_errorCode", va( "%i" , code ) );
+	Cvar_SetIntegerValue( "com_errorCode", (int)code );
 
 	// if we are getting a solid stream of ERR_DROP, do an ERR_FATAL
 	currentTime = Sys_Milliseconds();

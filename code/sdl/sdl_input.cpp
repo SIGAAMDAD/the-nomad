@@ -396,6 +396,7 @@ static void IN_ActivateMouse( void )
 		return;
 	}
 
+	SDL_ShowCursor( in_mouse->i == 0 );
 	if ( !mouseActive ) {
 //		IN_GobbleMouseEvents();
 
