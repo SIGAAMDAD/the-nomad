@@ -38,9 +38,11 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
     qboolean ignore;
 
     // we may be just reloading the language file, so clear it out
-    memset( stringHash[lang], 0, sizeof( *str ) * MAX_UI_STRINGS );
+    if ( !stringHash[ lang ] ) {
+        stringHash[ lang ] = (stringHash_t **)Hunk_Alloc( sizeof( stringHash_t ** ) * ui_maxLangStrings->i, h_high );
+    }
 
-    for ( i = 0; i < MAX_UI_STRINGS; i++ ) {
+    for ( i = 0; i < ui_maxLangStrings->i; i++ ) {
         ignore = qfalse;
 
         memset( name, 0, sizeof( name ) );
@@ -60,7 +62,7 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
             continue;
         }
 
-        hash = Com_GenerateHashValue( tok, MAX_UI_STRINGS );
+        hash = Com_GenerateHashValue( tok, ui_maxLangStrings->i );
         for ( str = stringHash[lang][hash]; str; str = str->next ) {
             if ( !N_stricmp( str->name, tok ) ) {
                 Con_Printf( COLOR_YELLOW "CUIStringManager::LoadTokenList: (WARNING) found duplicate string token for '%s', ignoring it.\n", tok );
@@ -76,11 +78,7 @@ int CUIStringManager::LoadTokenList( const char **text, language_t lang )
         N_strncpyz( name, tok, sizeof( name ) );
 
         tok = COM_ParseExt( text, qtrue );
-        if ( !tok[0] ) {
-            COM_ParseError( "expected value for string token '%s', got nothing", name );
-            return -1;
-        }
-        else if ( strlen( tok ) >= sizeof( value ) ) {
+        if ( strlen( tok ) >= sizeof( value ) ) {
             COM_ParseError( "string token value '%s' is too long", tok );
             return -1;
         }
@@ -186,7 +184,7 @@ void CUIStringManager::LoadFile( const char *filename )
 
     if ( ui_printStrings->i ) {
         Con_Printf( "\n---------- UI Strings: %s ----------\n", UI_LangToString( (int32_t)lang ) );
-        for ( uint64_t i = 0; i < MAX_UI_STRINGS; i++ ) {
+        for ( uint64_t i = 0; i < ui_maxLangStrings->i; i++ ) {
             if ( stringHash[lang][i] ) {
                 Con_Printf( "\"%s\" = \"%s\" (HASH: %lu)\n", stringHash[lang][i]->name, stringHash[lang][i]->value, i );
             }
@@ -222,7 +220,7 @@ const stringHash_t *CUIStringManager::AllocErrorString( const char *key ) {
     N_strncpyz( str->name, key, MAX_STRING_CHARS );
     N_strncpyz( str->value, value, MAX_STRING_CHARS );
 
-    hash = Com_GenerateHashValue( key, MAX_UI_STRINGS );
+    hash = Com_GenerateHashValue( key, ui_maxLangStrings->i );
     str->next = stringHash[ui_language->i][hash];
     stringHash[ui_language->i][hash] = str;
 
@@ -238,7 +236,7 @@ const stringHash_t *CUIStringManager::ValueForKey( const char *name )
         N_Error( ERR_FATAL, "CUIStringManager::ValueForKey: NULL or empty name" );
     }
 
-    hash = Com_GenerateHashValue( name, MAX_UI_STRINGS );
+    hash = Com_GenerateHashValue( name, ui_maxLangStrings->i );
     for ( str = stringHash[ui_language->i][hash]; str; str = str->next ) {
         if ( !N_stricmp( name, str->name ) ) {
             return str;

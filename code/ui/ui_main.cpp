@@ -24,6 +24,7 @@ cvar_t *ui_active;
 cvar_t *ui_diagnostics;
 cvar_t *r_gpuDiagnostics;
 cvar_t *ui_debugOverlay;
+cvar_t *ui_maxLangStrings;
 dif_t difficultyTable[NUMDIFS];
 
 static cvar_t *com_drawFPS;
@@ -53,56 +54,86 @@ CUIFontCache::CUIFontCache( void ) {
         char *b;
     } f;
     uint64_t nLength;
-	nlohmann::json data;
+	const char **text;
+	const char *tok, *text_p;
+	float scale;
+	char name[MAX_NPATH];
 
 	Con_Printf( "Initializing font cache...\n" );
 
 	memset( m_FontList, 0, sizeof( m_FontList ) );
 	m_pCurrentFont = NULL;
 
-    nLength = FS_LoadFile( "fonts/font_config.json", &f.v );
+    nLength = FS_LoadFile( "fonts/font_config.txt", &f.v );
     if ( !nLength || !f.v ) {
-        N_Error( ERR_FATAL, "CUIFontCache::Init: failed to load fonts/font_config.json" );
+        N_Error( ERR_FATAL, "CUIFontCache::Init: failed to load fonts/font_config.txt" );
     }
-	try {
-		data = nlohmann::json::parse( f.b, f.b + nLength );
-	} catch ( const nlohmann::json::exception& e ) {
-		N_Error( ERR_FATAL,
-			"CUIFontCache::Init: failed to parse fonts/font_config.json, nlohmann::json::exception thrown ->\n"
-			"  id: %i\n"
-			"  what: %s\n"
-		, e.id, e.what() );
+
+	text_p = f.b;
+	text = (const char **)&text_p;
+
+	COM_BeginParseSession( "fonts/font_config.txt" );
+
+	tok = COM_ParseExt( text, qtrue );
+	if ( tok[0] != '{' ) {
+		COM_ParseError( "expected '{' at beginning of file" );
+		FS_FreeFile( f.v );
+		return;
 	}
-	if ( !data.contains( "FontList" ) ) {
-		N_Error( ERR_FATAL, "CUIFontCache::Init: font_config missing FontList object array" );
-	}
-
-	for ( const auto& it : data.at( "FontList" ) ) {
-		if ( !it.contains( "Name" ) ) {
-			N_Error( ERR_FATAL, "CUIFontCache::Init: font config object missing variable 'Name'" );
+	while ( 1 ) {
+		tok = COM_ParseExt( text, qtrue );
+		if ( !tok[0] ) {
+			COM_ParseError( "unexpected end of file" );
+			break;
 		}
-		const nlohmann::json::string_t& name = it.at( "Name" );
-
-		if ( !it.contains( "Scale" ) ) {
-			N_Error( ERR_FATAL, "CUIFontCache::Init: font_config object missing variable 'Scale'" );
-		}
-		const float scale = it.at( "Scale" );
-
-		if ( !it.contains( "Variants" ) ) {
-			N_Error( ERR_FATAL, "CUIFontCache::Init: font_config object missing object array 'Variants'" );
+		if ( tok[0] == '}' ) {
+			break;
 		}
 
-		for ( const auto& var : it.at( "Variants" ) ) {
-			const nlohmann::json::string_t& variant = var.get<nlohmann::json::string_t>();
-			if ( !AddFontToCache( name.c_str(), variant.c_str(), scale ) ) {
-				N_Error( ERR_FATAL, "CUIFontCache::Init: failed to load font data for 'fonts/%s/%s-%s.ttf'", name.c_str(), name.c_str(),
-					variant.c_str() );
+		scale = 1.0f;
+
+		if ( tok[0] == '{' ) {
+			while ( 1 ) {
+				tok = COM_ParseExt( text, qtrue );
+				if ( !tok[0] ) {
+					COM_ParseError( "unexpected end of font defintion" );
+					FS_FreeFile( f.v );
+					return;
+				}
+				if ( tok[0] == '}' ) {
+					break;
+				}
+				if ( !N_stricmp( tok, "name" ) ) {
+					tok = COM_ParseExt( text, qfalse );
+					if ( !tok[0] ) {
+						COM_ParseError( "missing parameter for 'name'" );
+						FS_FreeFile( f.v );
+						return;
+					}
+					N_strncpyz( name, tok, sizeof( name ) - 1 );
+				}
+				else if ( !N_stricmp( tok, "scale" ) ) {
+					tok = COM_ParseExt( text, qfalse );
+					if ( !tok[0] ) {
+						COM_ParseError( "missing parameter for 'scale'" );
+						FS_FreeFile( f.v );
+						return;
+					}
+					scale = atof( tok );
+				}
+				else {
+					COM_ParseWarning( "unrecognized token '%s'", tok );
+				}
+			}
+			if ( !AddFontToCache( name, "", scale ) ) {
+				N_Error( ERR_FATAL, "CUIFontCache::Init: failed to load font data for 'fonts/%s/%s.ttf'", name, name );
 			}
 		}
 	}
 
 	FS_FreeFile( f.v );
 }
+
 
 void CUIFontCache::SetActiveFont( ImFont *font )
 {
@@ -167,7 +198,7 @@ nhandle_t CUIFontCache::RegisterFont( const char *filename, const char *variant,
 	if ( rpath[ strlen( rpath ) - 1 ] == '.' ) {
 		rpath[ strlen( rpath) - 1 ] = 0;
 	}
-	Com_snprintf( hashpath, sizeof( hashpath ) - 1, "%s-%s", rpath, variant );
+	Com_snprintf( hashpath, sizeof( hashpath ) - 1, "%s", rpath );
 
 	hash = Com_GenerateHashValue( hashpath, MAX_UI_FONTS );
 	AddFontToCache( filename, variant, scale );
@@ -194,9 +225,9 @@ ImFont *CUIFontCache::AddFontToCache( const char *filename, const char *variant,
 		rpath[ strlen( rpath) - 1 ] = 0;
 	}
 
-	Com_snprintf( hashpath, sizeof( hashpath ) - 1, "%s-%s", rpath, variant );
+	Com_snprintf( hashpath, sizeof( hashpath ) - 1, "%s", rpath );
 
-	path = va( "fonts/%s/%s.ttf", rpath, hashpath );
+	path = va( "fonts/%s.ttf", hashpath );
 	hash = Com_GenerateHashValue( hashpath, MAX_UI_FONTS );
 
 	//
@@ -316,7 +347,10 @@ static void UI_RegisterCvars( void )
 											" 0 - disabled\n"
 											" 1 - display gpu memory usage\n"
 											" 2 - display cpu memory usage\n"
-											" 3 - SHOW ME EVERYTHING!!!!\n" );
+											" 3 - SHOW ME EVERYTHING!!!!" );
+	
+	ui_maxLangStrings = Cvar_Get( "ui_maxLangStrings", "1024", CVAR_TEMP | CVAR_LATCH );
+	Cvar_CheckRange( ui_maxLangStrings, "528", "8192", CVT_INT );
 }
 
 extern "C" void UI_Shutdown( void )

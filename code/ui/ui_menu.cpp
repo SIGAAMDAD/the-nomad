@@ -39,7 +39,7 @@ vec4_t text_color_normal    = { 1.00f, 0.43f, 0.00f, 1.00f};	// white
 static void Slider_Draw( menuslider_t *slider );
 static void TabList_Draw( menutab_t *tab );
 static void Table_Draw( menutable_t *table );
-static void Text_Draw( menutext_t *text );
+void Text_Draw( menutext_t *text );
 static void RadioButton_Draw( menuswitch_t *button );
 static void List_Draw( menulist_t *list );
 static void Button_Draw( menubutton_t *button );
@@ -410,7 +410,7 @@ static void Table_Draw( menutable_t *table )
 	ImGui::EndTable();
 }
 
-static void Text_Draw( menutext_t *text )
+void Text_Draw( menutext_t *text )
 {
 	qboolean colorChanged;
 

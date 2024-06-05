@@ -63,7 +63,7 @@ private:
     const stringHash_t *AllocErrorString( const char *key );
     int LoadTokenList( const char **text, language_t lang );
 
-    stringHash_t *stringHash[NUMLANGS][MAX_UI_STRINGS];
+    stringHash_t **stringHash[NUMLANGS];
     uint64_t numLanguages;
 };
 

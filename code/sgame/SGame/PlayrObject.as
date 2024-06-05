@@ -38,7 +38,7 @@ namespace TheNomad::SGame {
 			slideSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide0.wav" );
 			slideSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide1.wav" );
 
-			dashSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/dash.wav" );
+			dashSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/dash.ogg" );
 
 			EntityManager.SetPlayerObject( @this );
 			m_HudData.Init( @this );

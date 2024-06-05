@@ -389,7 +389,7 @@ void CSoundSource::Alloc( void )
 
 void CSoundSource::Play( bool loop )
 {
-    if ( IsPlaying() || ( IsLooping() && loop ) ) {
+    if ( ( IsLooping() && loop ) ) {
         return;
     }
     if ( loop ) {

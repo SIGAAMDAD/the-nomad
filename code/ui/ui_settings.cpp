@@ -173,6 +173,8 @@ typedef struct settingsMenu_s {
 	const char *hintLabel;
 	const char *hintMessage;
 
+	const void *focusedItem;
+
 	qboolean modified;
 } settingsMenu_t;
 
@@ -314,6 +316,15 @@ static void SettingsMenu_InitPresets( void ) {
 	s_settingsMenu->presets = (settingsMenu_t *)Hunk_Alloc( sizeof( *s_settingsMenu->presets ) * NUM_PRESETS, h_high );
 }
 
+static inline void SfxFocused( const void *item ) {
+	if ( ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) ) {
+		if ( s_settingsMenu->focusedItem != item ) {
+			s_settingsMenu->focusedItem = item;
+			Snd_PlaySfx( ui->sfx_move );
+		}
+	}
+}
+
 static void SettingsMenu_TabBar( void ) {
 	if ( ImGui::BeginTabBar( "##SettingsMenuTabBar" ) ) {
 		ImGui::PushStyleColor( ImGuiCol_Tab, ImVec4( 1.0f, 1.0f, 1.0f, 0.0f ) );
@@ -328,6 +339,7 @@ static void SettingsMenu_TabBar( void ) {
 			}
 			ImGui::EndTabItem();
 		}
+		SfxFocused( "Video" );
 		if ( ImGui::BeginTabItem( "Performance" ) ) {
 			if ( s_settingsMenu->lastChild != ID_PERFORMANCE ) {
 				s_settingsMenu->lastChild = ID_PERFORMANCE;
@@ -335,6 +347,7 @@ static void SettingsMenu_TabBar( void ) {
 			}
 			ImGui::EndTabItem();
 		}
+		SfxFocused( "Performance" );
 		if ( ImGui::BeginTabItem( "Audio" ) ) {
 			if ( s_settingsMenu->lastChild != ID_AUDIO ) {
 				s_settingsMenu->lastChild = ID_AUDIO;
@@ -342,6 +355,7 @@ static void SettingsMenu_TabBar( void ) {
 			}
 			ImGui::EndTabItem();
 		}
+		SfxFocused( "Audio" );
 		if ( ImGui::BeginTabItem( "Controls" ) ) {
 			if ( s_settingsMenu->lastChild != ID_CONTROLS ) {
 				s_settingsMenu->lastChild = ID_CONTROLS;
@@ -349,6 +363,7 @@ static void SettingsMenu_TabBar( void ) {
 			}
 			ImGui::EndTabItem();
 		}
+		SfxFocused( "Controls" );
 		if ( ImGui::BeginTabItem( "Gameplay" ) ) {
 			if ( s_settingsMenu->lastChild != ID_GAMEPLAY ) {
 				s_settingsMenu->lastChild = ID_GAMEPLAY;
@@ -356,28 +371,36 @@ static void SettingsMenu_TabBar( void ) {
 			}
 			ImGui::EndTabItem();
 		}
+		SfxFocused( "Gameplay" );
 
 		ImGui::PopStyleColor( 3 );
 		ImGui::EndTabBar();
 	}
 }
 
+extern void Text_Draw( menutext_t *text );
+
 static void SettingsMenu_Text( const char *name, const char *hint )
 {
-	qboolean hovered, clicked;
-
 	ImGui::PushStyleColor( ImGuiCol_Button, ImVec4( 0, 0, 0, 0 ) );
 	ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4( 0, 0, 0, 0 ) );
 	ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4( 0, 0, 0, 0 ) );
+	if ( s_settingsMenu->focusedItem == name ) {
+		ImGui::PushStyleColor( ImGuiCol_Text, colorGold );
+	}
 	ImGui::Button( name );
-	ImGui::PopStyleColor( 3 );
 //	UI_DrawText( name, &hovered, &clicked );
+	ImGui::PopStyleColor( 3 );
+	if ( s_settingsMenu->focusedItem == name ) {
+		ImGui::PopStyleColor();
+	}
 	if ( ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone )
 		|| ImGui::IsItemClicked( ImGuiMouseButton_Left ) )
 	{
 		s_settingsMenu->hintLabel = name;
 		s_settingsMenu->hintMessage = hint;
 	}
+	SfxFocused( name );
 }
 
 static void SettingsMenu_List( const char *label, const char **itemnames, int numitems, int *curitem, bool enabled )
@@ -395,12 +418,14 @@ static void SettingsMenu_List( const char *label, const char **itemnames, int nu
 					*curitem = i;
 				}
 			}
+			SfxFocused( itemnames[i] );
 		}
 		ImGui::EndCombo();
 	}
 	if ( !ImGui::IsItemActivated() && ImGui::IsItemClicked() && enabled ) {
 		Snd_PlaySfx( ui->sfx_select );
 	}
+	SfxFocused( label );
 }
 
 static void SettingsMenu_MultiAdjustable( const char *name, const char *label, const char *hint, const char **itemnames, int numitems,
@@ -418,7 +443,7 @@ static void SettingsMenu_MultiAdjustable( const char *name, const char *label, c
 	ImGui::TableNextColumn();
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigLeft", label ), ImGuiDir_Left ) ) {
 		if ( enabled ) {
-			Snd_PlaySfx( ui->sfx_select );
+			Snd_PlaySfx( ui->sfx_move );
 			( *curitem )--;
 			if ( *curitem < 0 ) {
 				*curitem = 0;
@@ -429,7 +454,7 @@ static void SettingsMenu_MultiAdjustable( const char *name, const char *label, c
 	SettingsMenu_List( label, itemnames, numitems, curitem, enabled );
 	ImGui::SameLine();
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigRight", label ), ImGuiDir_Right ) ) {
-		Snd_PlaySfx( ui->sfx_select );
+		Snd_PlaySfx( ui->sfx_move );
 		( *curitem )++;
 		if ( *curitem > numitems - 1 ) {
 			*curitem = numitems - 1;
@@ -532,6 +557,7 @@ static void SettingsMenu_RadioButton( const char *name, const char *label, const
 			*curvalue = !*curvalue;
 		}
 	}
+	SfxFocused( curvalue );
 
 	if ( !enabled ) {
 		ImGui::PopStyleColor( 4 );
@@ -565,8 +591,8 @@ static void SettingsMenu_Rebind( void )
 	width = ( ui->gpuConfig.vidWidth * 0.5f ) - ( x * 0.5f );
 	height = ( ui->gpuConfig.vidHeight * 0.5f ) - ( y * 0.5f );
 	
+	ImGui::SetNextWindowFocus();
 	ImGui::Begin( "##RebindKeyPopup", NULL, MENU_DEFAULT_FLAGS & ~( ImGuiWindowFlags_NoBackground ) );
-	ImGui::SetWindowFocus( "##RebindKeyPopup" );
 	ImGui::SetWindowPos( ImVec2( x, y ) );
 	ImGui::SetWindowSize( ImVec2( width, height ) );
 
@@ -705,6 +731,9 @@ static void ControlsMenu_DrawBindings( int group )
 	nhandle_t hShader;
 
 //	ImGui::BeginTable( va( "##ControlsSettingsMenuBindingsTableGrouping%i", group ), 2 );
+	ImGui::PushStyleColor( ImGuiCol_Button, ImVec4( 0.10f, 0.10f, 0.10f, 1.0f ) );
+	ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4( 0.10f, 0.10f, 0.10f, 1.0f ) );
+	ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4( 0.10f, 0.10f, 0.10f, 1.0f ) );
 	for ( i = 0; i < arraylen( s_defaultKeybinds ); i++ ) {
 		if ( s_settingsMenu->controls.keybinds[i].group != group ) {
 			continue;
@@ -722,23 +751,26 @@ static void ControlsMenu_DrawBindings( int group )
 			strcpy( bind2, Key_KeynumToString( s_settingsMenu->controls.keybinds[i].bind2 ) );
 		}
 		ImGui::TextUnformatted( s_settingsMenu->controls.keybinds[i].label );
+		SfxFocused( bind );
 		ImGui::TableNextColumn();
-
 		if ( ImGui::Button( bind ) ) {
 			Snd_PlaySfx( ui->sfx_select );
 			s_settingsMenu->controls.rebindKey = &s_settingsMenu->controls.keybinds[i];
 			s_settingsMenu->controls.rebindIndex = 1;
 		}
+		SfxFocused( bind );
 		ImGui::SameLine();
 		if ( ImGui::Button( bind2 ) ) {
 			Snd_PlaySfx( ui->sfx_select );
 			s_settingsMenu->controls.rebindKey = &s_settingsMenu->controls.keybinds[i];
 			s_settingsMenu->controls.rebindIndex = 2;
 		}
+		SfxFocused( bind2 );
 		if ( i != NUMKEYBINDS - 1 ) {
 			ImGui::TableNextRow();
 		}
 	}
+	ImGui::PopStyleColor( 3 );
 //	ImGui::EndTable();
 }
 
@@ -753,7 +785,7 @@ static void ControlsMenu_Draw( void )
 		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_MOUSEACCEL" )->value, "MouseAcceleration",
 			"Toggles mouse acceleration",
 			&s_settingsMenu->controls.mouseAcceleration, true );
-	
+		
 		ImGui::TableNextRow();
 		
 		SettingsMenu_MultiSliderFloat( strManager->ValueForKey( "GAMEUI_MOUSESENSITIVITY" )->value, "MouseSensitivity",
@@ -793,6 +825,7 @@ static void ControlsMenu_Draw( void )
 				s_settingsMenu->controls.currentBindingGroup = BINDGROUP_MOVEMENT;
 				ImGui::EndTabItem();
 			}
+			SfxFocused( "Movement##ControlsSettingsBindingsMovement" );
 			if ( ImGui::BeginTabItem( "Combat##ControlsSettingsBindingsCombat" ) ) {
 				if ( s_settingsMenu->controls.currentBindingGroup != BINDGROUP_COMBAT ) {
 					Snd_PlaySfx( ui->sfx_select );
@@ -800,6 +833,7 @@ static void ControlsMenu_Draw( void )
 				s_settingsMenu->controls.currentBindingGroup = BINDGROUP_COMBAT;
 				ImGui::EndTabItem();
 			}
+			SfxFocused( "Combat##ControlsSettingsBindingsCombat" );
 			if ( ImGui::BeginTabItem( "General##ControlsSettingsBindingsGeneral" ) ) {
 				if ( s_settingsMenu->controls.currentBindingGroup != BINDGROUP_MISC ) {
 					Snd_PlaySfx( ui->sfx_select );
@@ -807,6 +841,7 @@ static void ControlsMenu_Draw( void )
 				s_settingsMenu->controls.currentBindingGroup = BINDGROUP_MISC;
 				ImGui::EndTabItem();
 			}
+			SfxFocused( "General##ControlsSettingsBindingsGeneral" );
 
 			ImGui::EndTabBar();
 		}
@@ -1231,12 +1266,16 @@ static void GameplayMenu_SetDefault( void )
 static void SettingsMenu_Draw( void )
 {
 	const int windowFlags = MENU_DEFAULT_FLAGS;
+	ImVec2 itemSpacing;
 
 	if ( s_settingsMenu->controls.rebindKey ) {
 		SettingsMenu_Rebind();
 	}
 
 	SettingsMenu_DrawHint();
+
+	itemSpacing = ImGui::GetStyle().ItemSpacing;
+	ImGui::GetStyle().ItemSpacing.y = 0.0f;
 
 	ImGui::Begin( "SettingsMenu##MainMenuSettingsConfigThingy", NULL, windowFlags );
 	ImGui::SetWindowSize( ImVec2( s_settingsMenu->menu.width, s_settingsMenu->menu.height ) );
@@ -1287,6 +1326,9 @@ static void SettingsMenu_Draw( void )
 	ImGui::SetCursorScreenPos( ImVec2( 256 * ui->scale, 680 * ui->scale ) );
 	ImGui::Image( (ImTextureID)(uintptr_t)( s_settingsMenu->saveHovered ? s_settingsMenu->save_1 : s_settingsMenu->save_0 ),
 		ImVec2( 256 * ui->scale, 72 * ui->scale ) );
+	if ( !s_settingsMenu->saveHovered && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) ) {
+		Snd_PlaySfx( ui->sfx_move );
+	}
 	s_settingsMenu->saveHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
 	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
 		Snd_PlaySfx( ui->sfx_select );
@@ -1313,6 +1355,9 @@ static void SettingsMenu_Draw( void )
 	ImGui::SetCursorScreenPos( ImVec2( 528 * ui->scale, 680 * ui->scale ) );
 	ImGui::Image( (ImTextureID)(uintptr_t)( s_settingsMenu->setDefaultsHovered ? s_settingsMenu->reset_1 : s_settingsMenu->reset_0 ),
 		ImVec2( 256 * ui->scale, 72 * ui->scale ) );
+	if ( !s_settingsMenu->setDefaultsHovered && ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone ) ) {
+		Snd_PlaySfx( ui->sfx_move );
+	}
 	s_settingsMenu->setDefaultsHovered = ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone );
 	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) ) {
 		Snd_PlaySfx( ui->sfx_select );
@@ -1334,6 +1379,12 @@ static void SettingsMenu_Draw( void )
 			break;
 		};
 	}
+
+	if ( !ImGui::IsAnyItemHovered() ) {
+		s_settingsMenu->focusedItem = NULL;
+	}
+
+	ImGui::GetStyle().ItemSpacing = itemSpacing;
 
 	ImGui::End();
 }

@@ -85,17 +85,26 @@ namespace TheNomad::SGame {
 			}
 			
 			if ( accel.x != 0.0f || accel.y != 0.0f ) {
+				if ( ( move_toggle % 16 ) == 0 ) {
+					// it sound like a machine gun if it isn't spaced out
+					moveGravel0.Play();
+				}
+				/*
 				switch ( move_toggle ) {
 				case 0:
 					moveGravel0.Play( m_EntityData.GetOrigin() );
 					break;
 				case 1:
+				case 2:
+					break;
+				case 3:
 					moveGravel3.Play( m_EntityData.GetOrigin() );
 					break;
 				default:
 					move_toggle = 0;
 					break;
 				};
+				*/
 				move_toggle++;
 			}
 			
@@ -327,13 +336,13 @@ namespace TheNomad::SGame {
 			side = 0.0f;
 			up = 0.0f;
 			
-			side += 1.5f * KeyState( m_EntityData.key_MoveEast );
-			side -= 1.5f * KeyState( m_EntityData.key_MoveWest );
+			side += 1.25f * KeyState( m_EntityData.key_MoveEast );
+			side -= 1.25f * KeyState( m_EntityData.key_MoveWest );
 			
-			up += 1.5f * KeyState( m_EntityData.key_Jump );
+			up += 1.25f * KeyState( m_EntityData.key_Jump );
 			
-			forward -= 1.5f * KeyState( m_EntityData.key_MoveNorth );
-			forward += 1.5f * KeyState( m_EntityData.key_MoveSouth );
+			forward -= 1.25f * KeyState( m_EntityData.key_MoveNorth );
+			forward += 1.25f * KeyState( m_EntityData.key_MoveSouth );
 
 			northmove = southmove = 0.0f;
 			if ( forward > 0 ) {

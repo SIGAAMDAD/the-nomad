@@ -161,9 +161,9 @@ void MainMenu_Cache( void )
         return;
     }
 
-    PressStart2P = FontCache()->AddFontToCache( "PressStart2P" );
-    s_main->font = FontCache()->AddFontToCache( "AlegreyaSC", "Bold" );
-    RobotoMono = FontCache()->AddFontToCache( "RobotoMono", "Bold" );
+    PressStart2P = FontCache()->AddFontToCache( "PressStart2P-Regular" );
+    s_main->font = FontCache()->AddFontToCache( "AlegreyaSC-Bold" );
+    RobotoMono = FontCache()->AddFontToCache( "RobotoMono-Bold" );
 
     s_main->logoString = strManager->ValueForKey( "MENU_LOGO_STRING" );
     s_main->settingsString = strManager->ValueForKey( "MENU_MAIN_SETTINGS" );
