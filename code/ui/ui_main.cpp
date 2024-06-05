@@ -762,6 +762,7 @@ void Menu_Cache( void )
 	ui->back_0 = re.RegisterShader( "menu/backbutton0" );
 	ui->back_1 = re.RegisterShader( "menu/backbutton1" );
 	ui->sfx_select = Snd_RegisterSfx( "sfx/menu1.wav" );
+	ui->sfx_move = Snd_RegisterSfx( "sfx/menu2.wav" );
 	ui->sfx_back = Snd_RegisterSfx( "sfx/menu3.wav" );
 	ui->sfx_null = Snd_RegisterSfx( "sfx/menu4.wav" );
 
@@ -882,6 +883,7 @@ extern "C" void UI_Refresh( int32_t realtime )
 	}
 
 	if ( ui->activemenu ) {
+//		ImGui::SetNextWindowFocus();
 		if ( ui->activemenu->track != FS_INVALID_HANDLE ) {
 			Snd_SetLoopingTrack( ui->activemenu->track );
 		}

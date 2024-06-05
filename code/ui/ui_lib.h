@@ -57,6 +57,7 @@ typedef enum : uint64_t
 extern cvar_t *ui_language;
 extern cvar_t *ui_printStrings;
 extern cvar_t *ui_active;
+extern cvar_t *ui_maxLangStrings;
 
 extern const char *UI_LangToString( int32_t lang );
 
@@ -130,6 +131,7 @@ typedef struct {
     sfxHandle_t sfx_scroll;
     sfxHandle_t sfx_back;
     sfxHandle_t sfx_select;
+    sfxHandle_t sfx_move;
     qboolean sfx_scroll_toggle;
 
     nhandle_t rb_on;

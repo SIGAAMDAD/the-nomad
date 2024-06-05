@@ -142,6 +142,10 @@ typedef struct {
 	int difficulty;
 	int debugPrint;
 	int toggleHUD;
+
+	const stringHash_t *difficultyString;
+	const stringHash_t *debugPrintString;
+	const stringHash_t *toggleHUDString;
 } gameplaySettings_t;
 
 typedef struct settingsMenu_s {
@@ -360,9 +364,16 @@ static void SettingsMenu_TabBar( void ) {
 
 static void SettingsMenu_Text( const char *name, const char *hint )
 {
-	ImGui::TextUnformatted( name );
-	if ( ImGui::IsItemClicked( ImGuiMouseButton_Left ) || ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled
-		| ImGuiHoveredFlags_DelayNone ) )
+	qboolean hovered, clicked;
+
+	ImGui::PushStyleColor( ImGuiCol_Button, ImVec4( 0, 0, 0, 0 ) );
+	ImGui::PushStyleColor( ImGuiCol_ButtonActive, ImVec4( 0, 0, 0, 0 ) );
+	ImGui::PushStyleColor( ImGuiCol_ButtonHovered, ImVec4( 0, 0, 0, 0 ) );
+	ImGui::Button( name );
+	ImGui::PopStyleColor( 3 );
+//	UI_DrawText( name, &hovered, &clicked );
+	if ( ImGui::IsItemHovered( ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_DelayNone )
+		|| ImGui::IsItemClicked( ImGuiMouseButton_Left ) )
 	{
 		s_settingsMenu->hintLabel = name;
 		s_settingsMenu->hintMessage = hint;
@@ -374,7 +385,7 @@ static void SettingsMenu_List( const char *label, const char **itemnames, int nu
 	int i;
 
 	if ( ImGui::BeginCombo( va( "##%sSettingsMenuConfigList", label ), itemnames[*curitem] ) ) {
-		if ( ImGui::IsItemActivated() && ImGui::IsItemClicked() && enabled ) {
+		if ( ImGui::IsItemClicked() && enabled ) {
 			Snd_PlaySfx( ui->sfx_select );
 		}
 		for ( i = 0; i < numitems; i++ ) {
@@ -437,7 +448,7 @@ static void SettingsMenu_MultiSliderFloat( const char *name, const char *label, 
 	SettingsMenu_Text( name, hint );
 	ImGui::TableNextColumn();
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigLeft", label ), ImGuiDir_Left ) ) {
-		Snd_PlaySfx( ui->sfx_select );
+		Snd_PlaySfx( ui->sfx_move );
 		( *curvalue ) -= delta;
 		if ( *curvalue < minvalue ) {
 			*curvalue = minvalue;
@@ -445,11 +456,11 @@ static void SettingsMenu_MultiSliderFloat( const char *name, const char *label, 
 	}
 	ImGui::SameLine();
 	if ( ImGui::SliderFloat( va( "##%sSettingsMenuConfigSlider", label ), curvalue, minvalue, maxvalue ) ) {
-		Snd_PlaySfx( ui->sfx_select );
+		Snd_PlaySfx( ui->sfx_move );
 	}
 	ImGui::SameLine();
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigRight", label ), ImGuiDir_Right ) ) {
-		Snd_PlaySfx( ui->sfx_select );
+		Snd_PlaySfx( ui->sfx_move );
 		( *curvalue ) += delta;
 		if ( *curvalue > maxvalue ) {
 			*curvalue = maxvalue;
@@ -472,7 +483,7 @@ static void SettingsMenu_MultiSliderInt( const char *name, const char *label, co
 	ImGui::TableNextColumn();
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigLeft", label ), ImGuiDir_Left ) ) {
 		if ( enabled ) {
-			Snd_PlaySfx( ui->sfx_select );
+			Snd_PlaySfx( ui->sfx_move );
 			( *curvalue ) -= delta;
 			if ( *curvalue < minvalue ) {
 				*curvalue = minvalue;
@@ -482,13 +493,13 @@ static void SettingsMenu_MultiSliderInt( const char *name, const char *label, co
 	ImGui::SameLine();
 	if ( ImGui::SliderInt( va( "##%sSettingsMenuConfigSlider", label ), curvalue, minvalue, maxvalue, "%d", enabled ? 0 : ImGuiSliderFlags_NoInput ) ) {
 		if ( enabled ) {
-			Snd_PlaySfx( ui->sfx_select );
+			Snd_PlaySfx( ui->sfx_move );
 		}
 	}
 	ImGui::SameLine();
 	if ( ImGui::ArrowButton( va( "##%sSettingsMenuConfigRight", label ), ImGuiDir_Right ) ) {
 		if ( enabled ) {
-			Snd_PlaySfx( ui->sfx_select );
+			Snd_PlaySfx( ui->sfx_move );
 			( *curvalue ) += delta;
 			if ( *curvalue > maxvalue ) {
 				*curvalue = maxvalue;
@@ -568,7 +579,7 @@ static void SettingsMenu_Rebind( void )
 	}
 
 	ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 3.0f ) * ui->scale );
-	ImGui::TextUnformatted( "Press Any Key..." );
+	ImGui::TextUnformatted( strManager->ValueForKey( "GAMEUI_PRESSKEY" )->value );
 
     for ( i = 0; i < NUMKEYS; i++ ) {
         if ( Key_IsDown( i ) ) {
@@ -641,8 +652,8 @@ static void SettingsMenu_DrawHint( void )
 	flags = ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoTitleBar
 			| ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize;
 	ImGui::Begin( "##SettingsMenuHintWindow", NULL, flags );
-	ImGui::SetWindowPos( ImVec2( s_settingsMenu->menu.width, 100 * ui->scale ) );
 	ImGui::SetWindowSize( ImVec2( ui->gpuConfig.vidWidth - s_settingsMenu->menu.width, 256 * ui->scale ) );
+	ImGui::SetWindowPos( ImVec2( s_settingsMenu->menu.width, 100 * ui->scale ) );
 
 	FontCache()->SetActiveFont( AlegreyaSC );
 	ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 1.5f ) * ui->scale );
@@ -701,12 +712,12 @@ static void ControlsMenu_DrawBindings( int group )
 
 		ImGui::TableNextColumn();
 		if ( s_settingsMenu->controls.keybinds[i].bind1 == -1 ) {
-			strcpy( bind, "???" );
+			strcpy( bind, strManager->ValueForKey( "GAMEUI_NOBIND" )->value );
 		} else {
 			strcpy( bind, Key_KeynumToString( s_settingsMenu->controls.keybinds[i].bind1 ) );
 		}
 		if ( s_settingsMenu->controls.keybinds[i].bind2 == -1 ) {
-			strcpy( bind2, "???" );
+			strcpy( bind2, strManager->ValueForKey( "GAMEUI_NOBIND" )->value );
 		} else {
 			strcpy( bind2, Key_KeynumToString( s_settingsMenu->controls.keybinds[i].bind2 ) );
 		}
@@ -739,13 +750,13 @@ static void ControlsMenu_Draw( void )
 	
 	ImGui::BeginTable( "##ControlsSettingsMenuConfigTable", 2 );
 	{
-		SettingsMenu_RadioButton( "Mouse Acceleration", "MouseAcceleration",
+		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_MOUSEACCEL" )->value, "MouseAcceleration",
 			"Toggles mouse acceleration",
 			&s_settingsMenu->controls.mouseAcceleration, true );
 	
 		ImGui::TableNextRow();
 		
-		SettingsMenu_MultiSliderFloat( "Mouse Sensitivity", "MouseSensitivity",
+		SettingsMenu_MultiSliderFloat( strManager->ValueForKey( "GAMEUI_MOUSESENSITIVITY" )->value, "MouseSensitivity",
 			"Sets the speed of the mouse",
 			&s_settingsMenu->controls.mouseSensitivity, 1.0f, 50.0f, 1.0f );
 
@@ -812,10 +823,9 @@ static void PerformanceMenu_Draw( void )
 {
 	FontCache()->SetActiveFont( RobotoMono );
 
-	ImGui::SetWindowSize( ImVec2( s_settingsMenu->menu.width * 0.90f, s_settingsMenu->menu.height ) );
 	ImGui::BeginTable( "##PerformanceSettingsMenuConfigTable", 2 );
 	{
-		SettingsMenu_MultiAdjustable( "Anti-Aliasing", "AntiAliasing",
+		SettingsMenu_MultiAdjustable( strManager->ValueForKey( "GAMEUI_ANTIALIASING" )->value, "AntiAliasing",
 			"Sets anti-aliasing technique used by the engine",
 			s_settingsMenu->performance.multisampleTypes, s_settingsMenu->performance.numMultisampleTypes,
 			&s_settingsMenu->performance.multisampleType,
@@ -823,65 +833,65 @@ static void PerformanceMenu_Draw( void )
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_MultiAdjustable( "Anisotropic Filtering", "AnisotropicFiltering",
+		SettingsMenu_MultiAdjustable( strManager->ValueForKey( "GAMEUI_ANISOTROPY" )->value, "AnisotropicFiltering",
 			"",
 			s_settingsMenu->performance.anisotropyTypes, s_settingsMenu->performance.numAnisotropyTypes,
 			&s_settingsMenu->performance.anisotropicFilter, true );
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_MultiAdjustable( "Texture Quality", "TextureQuality",
+		SettingsMenu_MultiAdjustable( strManager->ValueForKey( "GAMEUI_TEXDETAIL" )->value, "TextureQuality",
 			"Sets the quality of textures rendered, may effect performance",
 			s_settingsMenu->performance.textureDetails, s_settingsMenu->performance.numTextureDetails,
 			&s_settingsMenu->performance.textureDetail, true );
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_MultiAdjustable( "Texture Filtering", "TextureFiltering",
+		SettingsMenu_MultiAdjustable( strManager->ValueForKey( "GAMEUI_TEXFILTER" )->value, "TextureFiltering",
 			"Sets the type of texture filtering",
 			s_settingsMenu->performance.textureFilters, s_settingsMenu->performance.numTextureFilters,
 			&s_settingsMenu->performance.textureFilter, true );
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_RadioButton( "HDR", "HDR",
+		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_HDR" )->value, "HDR",
 			"Enables HDR (High Dynamic Range) texture/framebuffer usage, uses more GPU memory but allows for much more "
 			"range in rendered color palette",
 			&s_settingsMenu->performance.hdr, s_settingsMenu->performance.postProcessing );
 		
 		ImGui::TableNextRow();
 
-		SettingsMenu_RadioButton( "PBR", "PBR",
+		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_PBR" )->value, "PBR",
 			"Enables Physically Based Rendering (PBR) for a more realistic texture look.",
 			&s_settingsMenu->performance.pbr, true );
 		
 		ImGui::TableNextRow();
 
-		SettingsMenu_RadioButton( "Bloom", "Bloom",
+		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_BLOOM" )->value, "Bloom",
 			"Enables bloom to make light sources stand out more in an environment",
 			&s_settingsMenu->performance.bloom, s_settingsMenu->performance.postProcessing );
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_RadioButton( "Vertex Lighting", "VertexLighting",
+		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_VERTEXLIGHT" )->value, "VertexLighting",
 			"Enables per-vertex software lighting",
 			&s_settingsMenu->performance.vertexLighting, true );
 		
 		ImGui::TableNextRow();
 
-		SettingsMenu_RadioButton( "Dynamic Lighting", "DynamicLighting",
+		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_DYNLIGHT" )->value, "DynamicLighting",
 			"Enables per-pixel hardware accelerated lighting, slower than vertex lighting, but much higher quality",
 			&s_settingsMenu->performance.dynamicLighting, true );
 		
 		ImGui::TableNextRow();
 
-		SettingsMenu_RadioButton( "Tone Mapping", "ToneMapping",
+		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_TONEMAP" )->value, "ToneMapping",
 			"Enables a more diverse range of colors when applying lighting to a scene",
 			&s_settingsMenu->performance.toneMapping, true );
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_MultiAdjustable( "Tone Mapping Type", "ToneMappingType",
+		SettingsMenu_MultiAdjustable( strManager->ValueForKey( "GAMEUI_TONEMAPTYPE" )->value, "ToneMappingType",
 			"Sets the desired tone mapping type.\n"
 			"NOTE: Reinhard uses a fixed range, and makes darker spots less detailed, Exposure uses an adjustable level",
 			s_settingsMenu->performance.toneMappingTypes, s_settingsMenu->performance.numToneMappingTypes,
@@ -889,25 +899,25 @@ static void PerformanceMenu_Draw( void )
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_RadioButton( "Bump/Normal Mapping", "BumpMapping",
+		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_NORMALMAP" )->value, "BumpMapping",
 			"Toggles usage of normal maps",
 			&s_settingsMenu->performance.normalMapping, true );
 		
 		ImGui::TableNextRow();
 
-		SettingsMenu_RadioButton( "Specular Mapping", "SpecularMapping",
+		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_SPECULARMAP" )->value, "SpecularMapping",
 			"Toggles usage of specular maps",
 			&s_settingsMenu->performance.specularMapping, true );
 		
 		ImGui::TableNextRow();
 
-		SettingsMenu_RadioButton( "Depth (Parallax) Mapping", "ParallaxMapping",
+		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_DEPTHMAP" )->value, "ParallaxMapping",
 			"Toggles usage of parallax maps",
 			&s_settingsMenu->performance.depthMapping, true );
 		
 		ImGui::TableNextRow();
 
-		SettingsMenu_RadioButton( "Post Processing", "PostProcessing",
+		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_POSTPROCESS" )->value, "PostProcessing",
 			"Toggles multiple framebuffers being used to apply special affects to a frame",
 			&s_settingsMenu->performance.postProcessing, true );
 	}
@@ -960,32 +970,32 @@ static void VideoMenu_Draw( void )
 
 	ImGui::BeginTable( "##VideoSettingsMenuConfigTable", 2 );
 	{
-		SettingsMenu_RadioButton( "Fullscreen", "Fullscreen",
+		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_MODE_FULLSCREEN" )->value, "Fullscreen",
 			"Sets the game's window mode to fullscreen",
 			&s_settingsMenu->video.fullscreen, true );
 
 		ImGui::TableNextRow();
 	
-		SettingsMenu_RadioButton( "Borderless", "Borderless",
+		SettingsMenu_RadioButton( strManager->ValueForKey( "GAMEUI_MODE_BORDERLESS" )->value, "Borderless",
 			"Sets the game's window mode to bordless",
 			&s_settingsMenu->video.noborder, true );
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_MultiAdjustable( "Window Resoluiton", "Resolution",
+		SettingsMenu_MultiAdjustable( strManager->ValueForKey( "GAMEUI_MODE_WINDOWRES" )->value, "Resolution",
 			"Sets the game window's size",
 			s_settingsMenu->video.windowSizes, s_settingsMenu->video.numWindowSizes, &s_settingsMenu->video.windowResolution, true );
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_MultiAdjustable( "VSync", "VSync",
+		SettingsMenu_MultiAdjustable( strManager->ValueForKey( "GAMEUI_VSYNC" )->value, "VSync",
 			"Toggles when a frame will be rendered, vertical tearing may occur if disabled.\n"
 			"NOTE: setting this to \"Enabled\" will force a maximum of your moniter's refresh rate.",
 			s_settingsMenu->video.vsyncList, s_settingsMenu->video.numVSync, &s_settingsMenu->video.vsync, true );
 
 		ImGui::TableNextRow();
 
-		SettingsMenu_MultiSliderFloat( "Gamma", "Gamma",
+		SettingsMenu_MultiSliderFloat( strManager->ValueForKey( "GAMEUI_GAMMA" )->value, "Gamma",
 			"Sets gamma linear light correction factor",
 			&s_settingsMenu->video.gamma, 0.5f, 3.0f, 0.10f );
 
@@ -1018,7 +1028,7 @@ static void GameplayMenu_Draw( void )
 		ImGui::TableNextRow();
 
 		SettingsMenu_RadioButton( "Toggle HUD", "Toggle HUD",
-			"Toggles Heads-Up-Display (HUD), turn this off if you want a more immersive experience",
+			"Toggles Heads-Up-Display (HUD). Turn this off if you want a more immersive experience",
 			&s_settingsMenu->gameplay.toggleHUD, true );
 
 		ImGui::TableNextRow();
@@ -1233,6 +1243,9 @@ static void SettingsMenu_Draw( void )
 	ImGui::SetWindowPos( ImVec2( s_settingsMenu->menu.x, s_settingsMenu->menu.y ) );
 
 	UI_EscapeMenuToggle();
+
+	// [SIREngine] 6/3/24
+	// fixed pause menu to settings menu
 	if ( ui->activemenu != &s_settingsMenu->menu && ui->menustate == UI_MENU_PAUSE ) {
 		UI_SetActiveMenu( UI_MENU_PAUSE );
 	}
@@ -1240,6 +1253,7 @@ static void SettingsMenu_Draw( void )
 		if ( ui->menustate == UI_MENU_PAUSE ) {
 			UI_SetActiveMenu( UI_MENU_PAUSE );
 		} else {
+			UI_PopMenu();
 		}
 		ImGui::End();
 		return;
@@ -1327,70 +1341,70 @@ static void SettingsMenu_Draw( void )
 void SettingsMenu_Cache( void )
 {
 	static const char *s_multisampleTypes[] = {
-		"None",
-	    "2x MSAA",
-	    "4x MSAA",
-	    "8x MSAA",
-	    "16x MSAA",
-	    "32x MSAA",
-	    "2x SSAA",
-	    "4x SSAA",
+		strManager->ValueForKey( "GAMEUI_NONE" )->value,
+	    strManager->ValueForKey( "GAMEUI_2X_MSAA" )->value,
+	    strManager->ValueForKey( "GAMEUI_4X_MSAA" )->value,
+	    strManager->ValueForKey( "GAMEUI_8X_MSAA" )->value,
+	    strManager->ValueForKey( "GAMEUI_16X_MSAA" )->value,
+	    strManager->ValueForKey( "GAMEUI_32X_MSAA" )->value,
+	    strManager->ValueForKey( "GAMEUI_2X_SSAA" )->value,
+	    strManager->ValueForKey( "GAMEUI_4X_SSAA" )->value,
 //		"TAA",
 //		"SMAA",
 //		"FXAA"
 	};
 	static const char *s_anisotropyTypes[] = {
-	    "2x",
-	    "4x",
-	    "8x",
-	    "16x",
-	    "32x"
+	    strManager->ValueForKey( "GAMEUI_ANISOTROPIC2X" )->value,
+	    strManager->ValueForKey( "GAMEUI_ANISOTROPIC4X" )->value,
+	    strManager->ValueForKey( "GAMEUI_ANISOTROPIC8X" )->value,
+	    strManager->ValueForKey( "GAMEUI_ANISOTROPIC16X" )->value,
+	    strManager->ValueForKey( "GAMEUI_ANISOTROPIC32X" )->value
 	};
 	static const char *s_textureDetail[] = {
-	    "MS-DOS",
-	    "Integrated GPU",
-	    "Normie",
-	    "Expensive Shit We've Got Here!",
-	    "GPU vs GOD"
+	    strManager->ValueForKey( "GAMEUI_TEXDETAIL_VERYLOW" )->value,
+		strManager->ValueForKey( "GAMEUI_TEXDETAIL_LOW" )->value,
+		strManager->ValueForKey( "GAMEUI_TEXDETAIL_MEDIUM" )->value,
+		strManager->ValueForKey( "GAMEUI_TEXDETAIL_HIGH" )->value,
+		strManager->ValueForKey( "GAMEUI_TEXDETAIL_ULTRA" )->value,
 	};
 	static const char *s_textureFilters[] = {
-	    "Bilinear",
-	    "Nearest",
-	    "Linear Nearest",
-	    "Nearest Linear"
+	    strManager->ValueForKey( "GAMEUI_BILINEAR" )->value,
+	    strManager->ValueForKey( "GAMEUI_NEAREST" )->value,
+	    strManager->ValueForKey( "GAMEUI_LINEARNEAREST" )->value,
+	    strManager->ValueForKey( "GAMEUI_NEARESTLINEAR" )->value
 	};
 	static const char *s_toneMappingTypes[] = {
 	    "Reinhard",
 	    "Exposure"
 	};
 	static const char *s_windowSizes[] = {
-		"Native Resolution",
-		"Custom Resolution",
-		"1024x768",
-	    "1280x720",
-	    "1280x800",
-	    "1280x1024",
-	    "1440x900",
-	    "1440x960",
-	    "1600x900",
-	    "1600x1200",
-	    "1600x1050",
-	    "1920x800",
-	    "1920x1080",
-	    "1920x1200",
-	    "1920x1280",
-	    "2560x1080",
-	    "2560x1440",
-	    "2560x1600",
-	    "2880x1620",
-	    "3200x1800",
-	    "3840x1600",
-	    "3840x2160"
+		strManager->ValueForKey( "GAMEUI_WINDOW_NATIVE" )->value,
+		strManager->ValueForKey( "GAMEUI_WINDOW_CUSTOM" )->value,
+		strManager->ValueForKey( "GAMEUI_WINDOW_1024X768" )->value,
+	    strManager->ValueForKey( "GAMEUI_WINDOW_1280X720" )->value,
+	    strManager->ValueForKey( "GAMEUI_WINDOW_1280X800" )->value,
+	    strManager->ValueForKey( "GAMEUI_WINDOW_1280X1024" )->value,
+	    strManager->ValueForKey( "GAMEUI_WINDOW_1440X900" )->value,
+	    strManager->ValueForKey( "GAMEUI_WINDOW_1440X960" )->value,
+	    strManager->ValueForKey( "GAMEUI_WINDOW_1600X900" )->value,
+	    strManager->ValueForKey( "GAMEUI_WINDOW_1600X1200" )->value,
+	    strManager->ValueForKey( "GAMEUI_WINDOW_1600X1050" )->value,
+	    strManager->ValueForKey( "GAMEUI_WINDOW_1920X800" )->value,
+	    strManager->ValueForKey( "GAMEUI_WINDOW_1920X1080" )->value,
+	    strManager->ValueForKey( "GAMEUI_WINDOW_1920X1200" )->value,
+	    strManager->ValueForKey( "GAMEUI_WINDOW_1920X1280" )->value,
+	    strManager->ValueForKey( "GAMEUI_WINDOW_2560X1080" )->value,
+	    strManager->ValueForKey( "GAMEUI_WINDOW_2560X1440" )->value,
+	    strManager->ValueForKey( "GAMEUI_WINDOW_2560X1600" )->value,
+	    strManager->ValueForKey( "GAMEUI_WINDOW_2880X1620" )->value,
+	    strManager->ValueForKey( "GAMEUI_WINDOW_3200X1800" )->value,
+	    strManager->ValueForKey( "GAMEUI_WINDOW_3840X1600" )->value,
+	    strManager->ValueForKey( "GAMEUI_WINDOW_3840X2160" )->value
 	};
 	static const char *s_vsync[] = {
-		"Adaptive",
-		"Disabled",
-		"Enabled",
+		strManager->ValueForKey( "GAMEUI_VSYNC_ADAPTIVE" )->value,
+		strManager->ValueForKey( "GAMEUI_VSYNC_DISABLED" )->value,
+		strManager->ValueForKey( "GAMEUI_VSYNC_ENABLED" )->value
 	};
 	static const char *difficulties[ NUMDIFS - 1 ] = {
         difficultyTable[ DIF_NOOB ].name,
