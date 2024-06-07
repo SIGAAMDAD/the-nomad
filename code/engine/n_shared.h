@@ -1009,7 +1009,7 @@ typedef struct {
 	#define PROFILE_FUNCTION()
 #endif
 
-#define NOMAD_CONFIG "glnomad.cfg"
+#define NOMAD_CONFIG "nomad.cfg"
 
 extern const vec4_t	g_color_table[ 64 ];
 extern int ColorIndexFromChar( char ccode );

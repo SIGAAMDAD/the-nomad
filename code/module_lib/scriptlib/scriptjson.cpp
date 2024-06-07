@@ -195,7 +195,6 @@ bool CScriptJson::Get(const jsonKey_t &key, asINT32 &value) const
 //        if(js_info.is_number())
 //        {
             value = (json::number_integer_t)js_info.at( key );
-            Con_Printf( "Json value '%s' is int32: %i\n", key.c_str(), value );
             return true;
 //        }
     }
@@ -224,7 +223,6 @@ bool CScriptJson::Get(const jsonKey_t &key, asDWORD &value) const
 //        if(js_info.is_number())
 //        {
             value = (json::number_unsigned_t)js_info.at( key );
-            Con_Printf( "Json value '%s' is uint32: %u\n", key.c_str(), (uint32_t)js_info.at( key ) );
             return true;
 //        }
     }

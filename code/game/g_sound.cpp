@@ -189,6 +189,8 @@ public:
 
     CThreadMutex m_hAllocLock;
     CThreadMutex m_hQueueLock;
+
+    eastl::fixed_vector<CSoundSource *, 10> m_LoopingTracks;
 private:
     CSoundSource *m_pSources[MAX_SOUND_SOURCES];
     uint64_t m_nSources;
@@ -871,6 +873,41 @@ void Snd_SetLoopingTrack( sfxHandle_t handle ) {
     alSourcef( sndManager->GetMusicSource(), AL_GAIN, snd_musicVolume->f / 100.0f );
     sndManager->m_pCurrentTrack = track;
     sndManager->m_pCurrentTrack->Play( true );
+}
+
+void Snd_AddLoopingTrack( sfxHandle_t handle ) {
+    CSoundSource *track;
+
+    if ( !snd_musicOn->i ) {
+        return;
+    }
+
+    if ( handle == FS_INVALID_HANDLE ) {
+        Con_Printf( COLOR_RED "Snd_AddLoopingTrack: invalid handle, ignoring call.\n" );
+        return;
+    }
+
+    CThreadAutoLock<CThreadMutex> lock( sndManager->m_hQueueLock );
+    track = sndManager->GetSource( handle );
+    if ( !track ) {
+        Con_Printf( COLOR_RED "Snd_AddLoopingTrack: invalid handle, ignoring call.\n" );
+        return;
+    }
+    Snd_ClearLoopingTrack();
+
+    alSourcei( track->GetSource(), AL_LOOPING, AL_TRUE );
+    alSourcef( track->GetSource(), AL_GAIN, snd_musicVolume->f / 100.0f );
+
+    sndManager->m_LoopingTracks.emplace_back( track );
+}
+
+void Snd_ClearLoopingTracks( void ) {
+    for ( auto& it : sndManager->m_LoopingTracks ) {
+        if ( it->IsPlaying() ) {
+            it->Stop();
+        }
+    }
+    sndManager->m_LoopingTracks.clear();
 }
 
 void Snd_ClearLoopingTrack( void ) {

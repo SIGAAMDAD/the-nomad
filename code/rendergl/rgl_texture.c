@@ -2489,12 +2489,12 @@ texture_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags )
 		return NULL;
 	}
 
-	hash = generateHashValue(name);
+	hash = generateHashValue( name );
 
 	//
 	// see if the image is already loaded
 	//
-	for (image=hashTable[hash]; image; image=image->next) {
+	for ( image = hashTable[hash]; image; image = image->next ) {
 		if ( !N_strcmp( name, image->imgName ) ) {
 			// the white image can be used with any set of parms, but other mismatches are errors
 			if ( N_strcmp( name, "*white" ) ) {
@@ -2539,7 +2539,7 @@ texture_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags )
 
 			normalWidth = width;
 			normalHeight = height;
-			normalPic = ri.Malloc(width * height * 4);
+			normalPic = ri.Hunk_AllocateTempMemory( width * height * 4 );
 			RGBAtoNormal(pic, normalPic, width, height, flags & IMGFLAG_CLAMPTOEDGE);
 
 #if 1
@@ -2615,7 +2615,7 @@ texture_t *R_FindImageFile( const char *name, imgType_t type, imgFlags_t flags )
 #endif
 
 			R_CreateImage( normalName, normalPic, normalWidth, normalHeight, IMGTYPE_NORMAL, normalFlags, 0 );
-			ri.Free( normalPic );	
+			ri.Hunk_FreeTempMemory( normalPic );	
 		}
 	}
 

@@ -378,16 +378,6 @@ char **parse_csv( const char *line ) {
             *tptr = '\0';
             *bptr = CopyUIString( tmp );
 
-            if ( !*bptr ) {
-                for ( bptr--; bptr >= buf; bptr-- ) {
-//                    Z_Free( *bptr );
-                }
-//                Z_Free( buf );
-                Hunk_FreeTempMemory( tmp );
-
-                return NULL;
-            }
-
             bptr++;
             tptr = tmp;
 

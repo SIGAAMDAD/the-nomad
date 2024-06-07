@@ -6,13 +6,7 @@
 #include "../engine/n_shared.h"
 #include "../game/g_game.h"
 
-#include <foonathan/memory/container.hpp>
-#include <foonathan/memory/namespace_alias.hpp>
-#include <foonathan/memory/virtual_memory.hpp>
-#include <foonathan/memory/memory_arena.hpp>
-#include <foonathan/memory/memory_pool.hpp>
 #include <string>
-
 #include <glm/glm.hpp>
 
 #include <EASTL/allocator.h>

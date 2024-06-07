@@ -149,7 +149,7 @@ void G_MapInfo_f( void ) {
 
 	Con_Printf( "\nMap List:\n" );
     for ( i = 0; i < gi.mapCache.numMapFiles; i++ ) {
-		Con_Printf( "%s\n", gi.mapCache.mapList[i] );
+		Con_Printf( "- %s\n", gi.mapCache.mapList[i] );
     }
 }
 

@@ -672,10 +672,12 @@ static void UI_DrawDebugOverlay( void )
 
 	if ( ImGui::Begin( "ImGui Debug##DebugOverlayImGuiDebug" ) ) {
 		ImGui_ShowAboutWindow();
-		ImGui::ShowIDStackToolWindow();
-		ImGui::ShowMetricsWindow();
 		ImGui::End();
 	}
+
+	ImGui::ShowIDStackToolWindow();
+	ImGui::ShowMetricsWindow();
+	ImGui::ShowDebugLogWindow();
 
 	if ( ImGui::Begin( "GPU Debug##DebugOverlayGPUDriver" ) ) {
 		char *p;
@@ -966,7 +968,7 @@ void Menu_Cache( void )
 	ui->back_0 = re.RegisterShader( "menu/backbutton0" );
 	ui->back_1 = re.RegisterShader( "menu/backbutton1" );
 	ui->sfx_select = Snd_RegisterSfx( "sfx/menu1.wav" );
-	ui->sfx_move = Snd_RegisterSfx( "sfx/menu2.wav" );
+//	ui->sfx_move = Snd_RegisterSfx( "sfx/menu2.wav" );
 	ui->sfx_back = Snd_RegisterSfx( "sfx/menu3.wav" );
 	ui->sfx_null = Snd_RegisterSfx( "sfx/menu4.wav" );
 

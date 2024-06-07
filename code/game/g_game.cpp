@@ -213,10 +213,25 @@ static void *G_RefImGuiMalloc( size_t size ) {
 static void G_RefImGuiInit( void *shaderData, const void *importData ) {
     extern SDL_Window *SDL_window;
     extern SDL_GLContext SDL_glContext;
+    union {
+        void *v;
+        char *b;
+    } f;
+    uint64_t nLength;
 
     IMGUI_CHECKVERSION();
     ImGui::SetAllocatorFunctions( (ImGuiMemAllocFunc)G_RefImGuiMalloc, (ImGuiMemFreeFunc)G_RefImGuiFree );
     ImGui::CreateContext();
+
+    ImGui::LogToFile( 4, LOG_DIR "/imgui_log.txt" );
+
+    nLength = FS_LoadFile( LOG_DIR "/imgui.ini", &f.v );
+    if ( !nLength || !f.v ) {
+        Con_Printf( COLOR_RED "Error loading " LOG_DIR "/imgui.ini!\n" );
+    } else {
+        ImGui::LoadIniSettingsFromMemory( f.b, nLength );
+        FS_FreeFile( f.v );
+    }
 
     ImGuiIO& io = ImGui::GetIO();
 

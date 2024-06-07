@@ -177,7 +177,7 @@ SYS=\
 	$(O)/module_lib/module_virtual_asm_linux.o
 SYS_DIR=$(SDIR)/unix
 else
-INCLUDE+=-Ideps/
+INCLUDE+=-Ideps/ -Ideps/glm -Icode/libsdl/include
 LDLIBS=-L. \
 		-lSDL2 \
 		-lOpenAL32 \

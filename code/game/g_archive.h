@@ -102,7 +102,7 @@ typedef struct {
 } ngdsection_write_t;
 
 template<typename Key, typename Value>
-using ArchiveCache = eastl::unordered_map<Key, Value, eastl::hash<Key>, eastl::equal_to<Key>, CZoneAllocator<TAG_SAVEFILE>, true>;
+using ArchiveCache = eastl::unordered_map<Key, Value, eastl::hash<Key>, eastl::equal_to<Key>, CHunkAllocator<h_low>, true>;
 
 typedef struct ngdsection_read_s
 {

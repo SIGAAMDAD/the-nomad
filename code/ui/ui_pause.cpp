@@ -279,7 +279,7 @@ void PauseMenu_Cache( void )
     s_pauseMenu->dailyTipText.text = s_pauseMenu->dailyTips[ rand() & s_pauseMenu->numDailyTips - 1 ];
 
     s_pauseMenu->oldVolume = Cvar_VariableFloat( "snd_musicvol" );
-    Cvar_Set( "snd_musicvol", va( "%i", PAUSEMENU_VOLUME_CAP ) );
+    Cvar_Set( "snd_musicVolume", va( "%i", PAUSEMENU_VOLUME_CAP ) );
 
     Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->resume );
     Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->checkpoint );

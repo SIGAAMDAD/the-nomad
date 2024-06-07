@@ -45,6 +45,8 @@ typedef struct {
     nhandle_t play_0;
     nhandle_t play_1;
     qboolean playHovered;
+    
+    qboolean saveOpen;
 
     const stringHash_t *title;
 } loadGameMenu_t;
@@ -78,35 +80,39 @@ static void LoadGameMenu_Draw( void )
             ImGui::SetWindowPos( ImVec2( ui->gpuConfig.vidWidth * 0.75f, 64 * ui->scale ) );
             ImGui::SetWindowSize( ImVec2( ui->gpuConfig.vidWidth * 0.25f, ui->gpuConfig.vidHeight - 10 ) );
             ImGui::SeparatorText( "Loaded Modules" );
-            for ( uint64_t m = 0; m < s_loadGame->saveList[s_loadGame->currentSave].gd.numMods; m++ ) {
-                if ( !s_loadGame->saveList[s_loadGame->currentSave].modsLoaded[m] ) {
-                    ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
-                    ImGui::PushStyleColor( ImGuiCol_TextDisabled, colorRed );
-                    ImGui::PushStyleColor( ImGuiCol_TextSelectedBg, colorRed );
-                } else {
-                    ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
-                    ImGui::PushStyleColor( ImGuiCol_TextDisabled, colorGreen );
-                    ImGui::PushStyleColor( ImGuiCol_TextSelectedBg, colorGreen );
-                }
-                ImGui::Text( "%s v%i.%i.%i", s_loadGame->saveList[s_loadGame->currentSave].gd.modList[m].name,
-                    s_loadGame->saveList[s_loadGame->currentSave].gd.modList[m].nVersionMajor,
-                    s_loadGame->saveList[s_loadGame->currentSave].gd.modList[m].nVersionUpdate,
-                    s_loadGame->saveList[s_loadGame->currentSave].gd.modList[m].nVersionPatch );
-                ImGui::PopStyleColor( 3 );
-                if ( ImGui::IsItemHovered() && !s_loadGame->saveList[s_loadGame->currentSave].modsLoaded[m] ) {
-                    ImGui::SetTooltip(
-                                "This module either hasn't been loaded or failed to load, check"
-                                "the console/logfile for more detailed information" );
+            if ( s_loadGame->saveOpen ) {
+                for ( uint64_t m = 0; m < s_loadGame->saveList[s_loadGame->currentSave].gd.numMods; m++ ) {
+                    if ( !s_loadGame->saveList[s_loadGame->currentSave].modsLoaded[m] ) {
+                        ImGui::PushStyleColor( ImGuiCol_Text, colorRed );
+                        ImGui::PushStyleColor( ImGuiCol_TextDisabled, colorRed );
+                        ImGui::PushStyleColor( ImGuiCol_TextSelectedBg, colorRed );
+                    } else {
+                        ImGui::PushStyleColor( ImGuiCol_Text, colorGreen );
+                        ImGui::PushStyleColor( ImGuiCol_TextDisabled, colorGreen );
+                        ImGui::PushStyleColor( ImGuiCol_TextSelectedBg, colorGreen );
+                    }
+                    ImGui::Text( "%s v%i.%i.%i", s_loadGame->saveList[s_loadGame->currentSave].gd.modList[m].name,
+                        s_loadGame->saveList[s_loadGame->currentSave].gd.modList[m].nVersionMajor,
+                        s_loadGame->saveList[s_loadGame->currentSave].gd.modList[m].nVersionUpdate,
+                        s_loadGame->saveList[s_loadGame->currentSave].gd.modList[m].nVersionPatch );
+                    ImGui::PopStyleColor( 3 );
+                    if ( ImGui::IsItemHovered() && !s_loadGame->saveList[s_loadGame->currentSave].modsLoaded[m] ) {
+                        ImGui::SetTooltip(
+                                    "This module either hasn't been loaded or failed to load, check"
+                                    "the console/logfile for more detailed information" );
+                    }
                 }
             }
             ImGui::End();
         }
         FontCache()->SetActiveFont( PressStart2P );
+        s_loadGame->saveOpen = qfalse;
         for ( i = 0; i < s_loadGame->numSaves; i++ ) {
             if ( ImGui::TreeNodeEx( (void *)(uintptr_t)s_loadGame->saveList[i].name, treeNodeFlags, s_loadGame->saveList[i].name ) ) {
                 if ( ImGui::IsItemActivated() && ImGui::IsMouseClicked( ImGuiMouseButton_Left ) ) {
                     Snd_PlaySfx( ui->sfx_select );
                 }
+                s_loadGame->saveOpen = qtrue;
                 s_loadGame->currentSave = i;
 
                 ImGui::SetWindowFontScale( ( ImGui::GetFont()->Scale * 1.05f ) * ui->scale );

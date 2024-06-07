@@ -79,8 +79,6 @@ using CStringCache = memory::unordered_set<string_data_t, string_allocator_t>;
 using string_hash_t = string_data_t;
 #endif
 
-using namespace memory::literals;
-
 class CModuleStringFactory : public asIStringFactory
 {
 public:

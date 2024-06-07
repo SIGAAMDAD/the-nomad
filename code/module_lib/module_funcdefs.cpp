@@ -117,7 +117,7 @@ DEFINE_CALLBACK( CvarRegisterGeneric ) {
     const string_t *name = (const string_t *)pGeneric->GetArgObject( 0 );
     string_t *value = (string_t *)pGeneric->GetArgObject( 1 );
     asDWORD flags = pGeneric->GetArgDWord( 2 );
-    asINT64 *intValue = (asINT64 *)pGeneric->GetArgAddress( 3 );
+    asINT32 *intValue = (asINT32 *)pGeneric->GetArgAddress( 3 );
     float *floatValue = (float *)pGeneric->GetArgAddress( 4 );
     asINT32 *modificationCount = (asINT32 *)pGeneric->GetArgAddress( 5 );
     cvarHandle_t *cvarHandle = (cvarHandle_t *)pGeneric->GetArgAddress( 6 );
@@ -135,7 +135,7 @@ DEFINE_CALLBACK( CvarUpdateGeneric ) {
     vmCvar_t vmCvar;
 
     string_t *value = (string_t *)pGeneric->GetArgObject( 0 );
-    asINT64 *intValue = (asINT64 *)pGeneric->GetArgAddress( 1 );
+    asINT32 *intValue = (asINT32 *)pGeneric->GetArgAddress( 1 );
     float *floatValue = (float *)pGeneric->GetArgAddress( 2 );
     asINT32 *modificationCount = (asINT32 *)pGeneric->GetArgAddress( 3 );
     const cvarHandle_t cvarHandle = pGeneric->GetArgWord( 4 );
@@ -166,7 +166,7 @@ static void CvarVariableString( asIScriptGeneric *pGeneric ) {
 }
 
 static void CvarVariableInt( asIScriptGeneric *pGeneric ) {
-    pGeneric->SetReturnQWord( Cvar_VariableInteger( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
+    pGeneric->SetReturnDWord( Cvar_VariableInteger( ( (const string_t *)pGeneric->GetArgObject( 0 ) )->c_str() ) );
 }
 
 static void CvarVariableFloat( asIScriptGeneric *pGeneric ) {
@@ -2020,13 +2020,13 @@ void ModuleLib_Register_Engine( void )
 	SET_NAMESPACE( "TheNomad::Engine" );
 	{ // Engine
         
-        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::CvarRegister( const string& in, const string& in, uint, int64& out, float& out, int& out, int& out )",
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::CvarRegister( const string& in, const string& in, uint, int32& out, float& out, int& out, int& out )",
             asFUNCTION( ModuleLib_CvarRegisterGeneric ), asCALL_GENERIC );
-        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::CvarUpdate( string& out, int64& out, float& out, int& out, const int )",
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::CvarUpdate( string& out, int32& out, float& out, int& out, const int )",
             asFUNCTION( ModuleLib_CvarUpdateGeneric ), asCALL_GENERIC );
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "void TheNomad::Engine::CvarSet( const string& in, const string& in )",
             asFUNCTION( CvarSetValue ), asCALL_GENERIC );
-        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "int64 TheNomad::Engine::CvarVariableInteger( const string& in )",
+        g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "int32 TheNomad::Engine::CvarVariableInteger( const string& in )",
             asFUNCTION( CvarVariableInt ), asCALL_GENERIC );
         g_pModuleLib->GetScriptEngine()->RegisterGlobalFunction( "float TheNomad::Engine::CvarVariableFloat( const string& in )",
             asFUNCTION( CvarVariableFloat ), asCALL_GENERIC );
@@ -2143,6 +2143,8 @@ void ModuleLib_Register_Engine( void )
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::PlaySfx( int )", WRAP_FN( Snd_PlaySfx ) );
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::SetLoopingTrack( int )", WRAP_FN( Snd_SetLoopingTrack ) );
 			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::ClearLoopingTrack()", WRAP_FN( Snd_ClearLoopingTrack ) );
+            REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::AddLoopingTrack( int )", WRAP_FN( Snd_AddLoopingTrack ) );
+			REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::ClearLoopingTracks()", WRAP_FN( Snd_ClearLoopingTracks ) );
 			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::SoundSystem::RegisterSfx( const string& in )", WRAP_FN( SndRegisterSfx ) );
 			REGISTER_GLOBAL_FUNCTION( "int TheNomad::Engine::SoundSystem::RegisterTrack( const string& in )", WRAP_FN( SndRegisterTrack ) );
             REGISTER_GLOBAL_FUNCTION( "void TheNomad::Engine::SoundSystem::PlayWorldSfx( const vec3& in, int )", WRAP_FN( Snd_PlayWorldSfx ) );

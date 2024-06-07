@@ -533,8 +533,9 @@ void G_ConsolePrint( const char *txt ) {
 			} else {
 				con.contimes[ con.contime % NUM_CON_TIMES ] = gi.realtime;
 			}
-			buf = con.times[con.contime % NUM_CON_TIMES];
-			con.current++;
+			buf = con.times[ con.contime % NUM_CON_TIMES ];
+			*buf++ = '\0';
+			con.contime++;
 			startLine = buf;
 			break;
 		case '\r':
@@ -545,7 +546,6 @@ void G_ConsolePrint( const char *txt ) {
 			break;
 		};
 	}
-	con.contime++;
 }
 
 
@@ -885,7 +885,7 @@ static void Con_DrawSolidConsole( float frac, qboolean open )
 	Con_DrawInput();
 
 	if ( open ) {
-		ImGui::SetScrollY( ImGui::GetScrollMaxY() );
+		ImGui::SetScrollHereY();
 	}
 
 	ImGui::End();

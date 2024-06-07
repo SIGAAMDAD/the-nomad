@@ -8,7 +8,8 @@ namespace TheNomad::SGame {
 		string m_Name;
 		
 		// music data
-		string m_;
+		int m_hAmbientTheme = FS_INVALID_HANDLE;
+		int m_hCombatTheme = FS_INVALID_HANDLE;
 
 		uint m_nIndex = 0;
 		LevelRankData m_RankS;
