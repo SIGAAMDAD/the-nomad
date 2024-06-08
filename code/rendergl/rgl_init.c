@@ -1248,7 +1248,7 @@ static void RE_GetTextureId( nhandle_t hShader, uint32_t stageNum, uint32_t *id 
     *id = shader->stages[stageNum]->bundle[0].image->id;
 }
 
-static void R_InitImGui(void)
+static void R_InitImGui( void )
 {
     imguiGL3Import_t import;
 
@@ -1383,6 +1383,8 @@ static void R_UnloadWorld_f( void ) {
     if ( !rg.world ) {
         return;
     }
+
+    R_ShutdownBuffer( rg.world->buffer );
 
     rg.world = NULL;
     rg.worldMapLoaded = qfalse;

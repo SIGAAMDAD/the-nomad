@@ -22,6 +22,8 @@ typedef struct {
 	int64_t	maxSize;
 } memoryStats_t;
 
+#define USE_IDHEAP
+
 void		Mem_DrawMemoryEdit( void );
 
 void		Mem_Init( void );
@@ -131,7 +133,11 @@ idBlockAlloc<type,blockSize>::~idBlockAlloc( void ) {
 template<class type, uint32_t blockSize>
 type *idBlockAlloc<type,blockSize>::Alloc( void ) {
 	if ( !free ) {
+	#ifdef USE_IDHEAP
 		block_t *block = new block_t;
+	#else
+		block_t *block = (block_t *)malloc( sizeof( *block ) );
+	#endif
 		block->next = blocks;
 		blocks = block;
 		for ( uint32_t i = 0; i < blockSize; i++ ) {
@@ -157,10 +163,14 @@ void idBlockAlloc<type,blockSize>::Free( type *t ) {
 
 template<class type, uint32_t blockSize>
 void idBlockAlloc<type,blockSize>::Shutdown( void ) {
-	while( blocks ) {
+	while ( blocks ) {
 		block_t *block = blocks;
 		blocks = blocks->next;
+	#ifdef USE_IDHEAP
 		delete block;
+	#else
+		::free( block );
+	#endif
 	}
 	blocks = NULL;
 	free = NULL;
@@ -242,7 +252,11 @@ type *idDynamicAlloc<type, baseBlockSize, minBlockSize>::Alloc( const uint32_t n
 	}
 	numUsedBlocks++;
 	usedBlockMemory += num * sizeof( type );
+#ifdef USE_IDHEAP
 	return (type *)Mem_Alloc16( num * sizeof( type ) );
+#else
+	return (type *)malloc( num * sizeof( type ) );
+#endif
 }
 
 template<class type, uint32_t baseBlockSize, uint32_t minBlockSize>
@@ -269,7 +283,11 @@ void idDynamicAlloc<type, baseBlockSize, minBlockSize>::Free( type *ptr ) {
 	if ( ptr == NULL ) {
 		return;
 	}
+#ifdef USE_IDHEAP
 	Mem_Free16( ptr );
+#else
+	free( ptr );
+#endif
 }
 
 template<class type, uint32_t baseBlockSize, uint32_t minBlockSize>
@@ -405,11 +423,13 @@ void idDynamicBlockAlloc<type, baseBlockSize, minBlockSize>::Shutdown( void ) {
 		firstBlock = block->next;
 		Assert( block->IsBaseBlock() );
 		if ( lockMemory ) {
-//			idLib::sys->UnlockMemory( block, block->GetSize() + sizeof( idDynamicBlock<type> ) );
+			Sys_UnlockMemory( block, block->GetSize() + sizeof( idDynamicBlock<type> ) );
 		}
-//		Mem_Free( block );
-//		Mem_Free16( block );
+	#ifdef USE_IDHEAP
+		Mem_Free16( block );
+	#else
 		free( block );
+	#endif
 	}
 
 	freeTree.Shutdown();
@@ -422,10 +442,13 @@ void idDynamicBlockAlloc<type, baseBlockSize, minBlockSize>::SetFixedBlocks( uin
 	idDynamicBlock<type> *block;
 
 	for ( uint32_t i = numBaseBlocks; i < numBlocks; i++ ) {
-//		block = ( idDynamicBlock<type> * ) Mem_Alloc16( baseBlockSize );
-		block = ( idDynamicBlock<type> * ) aligned_alloc( 16, baseBlockSize );
+	#ifdef USE_IDHEAP
+		block = ( idDynamicBlock<type> * ) Mem_Alloc16( baseBlockSize );
+	#else
+		block = ( idDynamicBlock<type> * ) malloc( baseBlockSize );
+	#endif
 		if ( lockMemory ) {
-//			idLib::sys->LockMemory( block, baseBlockSize );
+			Sys_LockMemory( block, baseBlockSize );
 		}
 #ifdef DYNAMIC_BLOCK_ALLOC_CHECK
 		memcpy( block->id, blockId, sizeof( block->id ) );
@@ -476,13 +499,15 @@ void idDynamicBlockAlloc<type, baseBlockSize, minBlockSize>::FreeEmptyBaseBlocks
 				lastBlock = block->prev;
 			}
 			if ( lockMemory ) {
-//				idLib::sys->UnlockMemory( block, block->GetSize() + sizeof( idDynamicBlock<type> ) );
+				Sys_UnlockMemory( block, block->GetSize() + sizeof( idDynamicBlock<type> ) );
 			}
 			numBaseBlocks--;
 			baseBlockMemory -= block->GetSize() + sizeof( idDynamicBlock<type> );
+		#ifdef USE_IDHEAP
+			Mem_Free16( block );
+		#else
 			free( block );
-//			Mem_Free16( block );
-//			Mem_Free( block );
+		#endif
 		}
 	}
 
@@ -659,11 +684,13 @@ idDynamicBlock<type> *idDynamicBlockAlloc<type, baseBlockSize, minBlockSize>::Al
 		UnlinkFreeInternal( block );
 	} else if ( allowAllocs ) {
 		uint32_t allocSize = MAX( baseBlockSize, alignedBytes + sizeof( idDynamicBlock<type> ) );
-		block = ( idDynamicBlock<type> * ) aligned_alloc( 16, allocSize );
-//		block = ( idDynamicBlock<type> * ) Mem_Alloc16( allocSize );
-//		block = ( idDynamicBlock<type> * ) Mem_Alloc( allocSize );
+	#ifdef USE_IDHEAP
+		block = ( idDynamicBlock<type> * ) Mem_Alloc16( allocSize );
+	#else
+		block = ( idDynamicBlock<type> * ) malloc( allocSize );
+	#endif
 		if ( lockMemory ) {
-//			idLib::sys->LockMemory( block, baseBlockSize );
+			Sys_LockMemory( block, baseBlockSize );
 		}
 #ifdef DYNAMIC_BLOCK_ALLOC_CHECK
 		memcpy( block->id, blockId, sizeof( block->id ) );

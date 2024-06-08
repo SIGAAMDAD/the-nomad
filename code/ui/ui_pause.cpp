@@ -75,7 +75,7 @@ static void PauseMenu_EventCallback( void *ptr, int event )
         break;
     case ID_CHECKPOINT:
         // rewind the checkpoint
-        Cbuf_ExecuteText( EXEC_APPEND, "sgame.rewind_to_last_checkpoint\n" );
+        Cbuf_ExecuteText( EXEC_NOW, "sgame.rewind_checkpoint\n" );
 
         UI_SetActiveMenu( UI_MENU_NONE );
         break;
@@ -97,10 +97,11 @@ static void PauseMenu_EventCallback( void *ptr, int event )
         UI_PopMenu();
         UI_SetActiveMenu( UI_MENU_MAIN );
         gi.mapLoaded = qfalse;
+        gi.mapCache.currentMapLoaded = -1;
         gi.state = GS_INACTIVE;
         g_pModuleLib->ModuleCall( sgvm, ModuleOnLevelEnd, 0 );
         g_pModuleLib->RunModules( ModuleOnLevelEnd, 0 );
-        Cbuf_ExecuteText( EXEC_APPEND, "unloadworld\n" );
+        Cbuf_ExecuteText( EXEC_APPEND, "setmap\n" ); // setting an empty mapname will unload the level
         break;
     default:
         break;
@@ -278,7 +279,7 @@ void PauseMenu_Cache( void )
     s_pauseMenu->dailyTipText.color = color_white;
     s_pauseMenu->dailyTipText.text = s_pauseMenu->dailyTips[ rand() & s_pauseMenu->numDailyTips - 1 ];
 
-    s_pauseMenu->oldVolume = Cvar_VariableFloat( "snd_musicvol" );
+    s_pauseMenu->oldVolume = Cvar_VariableFloat( "snd_musicVolume" );
     Cvar_Set( "snd_musicVolume", va( "%i", PAUSEMENU_VOLUME_CAP ) );
 
     Menu_AddItem( &s_pauseMenu->menu, &s_pauseMenu->resume );

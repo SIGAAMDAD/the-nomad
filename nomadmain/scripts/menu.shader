@@ -2,9 +2,27 @@ menu/mainbackground
 {
     nomipmaps
     nopicmip
-    {
+    if ( $r_textureDetail == 1 || $r_textureDetail == 0 ) {
         texFilter bilinear
-        map textures/menu/fromeaglespeak.jpg
+        map textures/menu/standard/fromeaglespeak.jpg
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        tcGen texture
+    }
+    elif ( $r_textureDetail == 2 ) {
+        texFilter bilinear
+        map textures/menu/standard/fromeaglespeak.jpg
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        tcGen texture
+    }
+    elif ( $r_textureDetail == 3 || $r_textureDetail == 4 ) {
+        texFilter bilinear
+        map textures/menu/high/fromeaglespeak.jpg
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        tcGen texture
+    }
+    else {
+        texFilter bilinear
+        map textures/menu/standard/fromeaglespeak.jpg
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         tcGen texture
     }

@@ -194,6 +194,7 @@ typedef struct {
     uiMenu_t menustate;
     qboolean escapeToggle;
     qboolean backHovered;
+    qboolean demoVersion;
 } uiGlobals_t;
 
 extern uiGlobals_t *ui;

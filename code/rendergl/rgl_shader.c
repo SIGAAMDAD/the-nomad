@@ -15,27 +15,289 @@ static shader_t *hashTable[MAX_RENDER_SHADERS];
 #define MAX_SHADERTEXT_HASH 2048
 static const char **shaderTextHashTable[MAX_SHADERTEXT_HASH];
 
-static void ParseSort(const char **text)
-{
-	const char *tok;
+/*
+=================
+ParseSort
+=================
+*/
+static void ParseSort( const char **text ) {
+	const char	*token;
 
-	tok = COM_ParseExt(text, qfalse);
-	if (tok[0] == 0) {
-		ri.Printf(PRINT_WARNING, "missing sort in shader '%s'\n", shader.name);
+	token = COM_ParseExt( text, qfalse );
+	if ( token[0] == 0 ) {
+		ri.Printf( PRINT_WARNING, "WARNING: missing sort parameter in shader '%s'\n", shader.name );
 		return;
 	}
 
-	shader.sort = SS_BAD;
-
-	if (!N_stricmp(tok, "opaque")) {
+	if ( !N_stricmp( token, "portal" ) ) {
+//		shader.sort = SS_PORTAL;
+	} else if ( !N_stricmp( token, "sky" ) ) {
+//		shader.sort = SS_ENVIRONMENT;
+	} else if ( !N_stricmp( token, "opaque" ) ) {
 		shader.sort = SS_OPAQUE;
-	} else if (!N_stricmp(tok, "decal")) {
+	} else if ( !N_stricmp( token, "decal" ) ) {
 		shader.sort = SS_DECAL;
-	} else if (!N_stricmp(tok, "blend")) {
-		shader.sort = SS_BLEND;
+	} else if ( !N_stricmp( token, "seeThrough" ) ) {
+		shader.sort = SS_SEE_THROUGH;
+	} else if ( !N_stricmp( token, "banner" ) ) {
+//		shader.sort = SS_BANNER;
+	} else if ( !N_stricmp( token, "additive" ) ) {
+//		shader.sort = SS_BLEND1;
+	} else if ( !N_stricmp( token, "nearest" ) ) {
+//		shader.sort = SS_NEAREST;
+	} else if ( !N_stricmp( token, "underwater" ) ) {
+//		shader.sort = SS_UNDERWATER;
 	} else {
-		ri.Printf(PRINT_WARNING, "invalid shaderSort name '%s' in shader '%s'\n", tok, shader.name);
+		shader.sort = N_atof( token );
 	}
+}
+
+
+// this table is also present in q3map
+
+typedef struct {
+	const char *name;
+	int clearSolid, surfaceFlags, contents;
+} infoParm_t;
+
+static const infoParm_t infoParms[] = {
+	// server relevant contents
+	{ "water",		1,	0,	CONTENTS_WATER },
+	{ "slime",		1,	0,	CONTENTS_SLIME },			// mildly damaging
+	{ "lava",		1,	0,	CONTENTS_LAVA },			// very damaging
+	{ "playerclip",	1,	0,	CONTENTS_PLAYERCLIP },
+	{ "monsterclip", 1,	0,	CONTENTS_MONSTERCLIP },
+	{ "nodrop",		1,	0,	CONTENTS_NODROP },			// don't drop items or leave bodies (death fog, lava, etc)
+	{ "nonsolid",	1,	SURFACEPARM_NONSOLID, 0 },		// clears the solid flag
+
+
+	// utility relevant attributes
+	{ "trans",		0,	0,	CONTENTS_TRANSLUCENT },		// don't eat contained surfaces
+
+	{ "lightfilter",	0,	SURFACEPARM_LIGHTFILTER, 0 },	// filter light going through it
+	{ "alphashadow",	0,	SURFACEPARM_ALPHASHADOW, 0 },	// test light on a per-pixel basis
+
+	// server attributes
+	{ "slick",		0,	SURFACEPARM_SLICK,		0 },
+	{ "noimpact",	0,	SURFACEPARM_NOMISSILE,	0 },	// don't make impact explosions or marks
+	{ "nomarks",	0,	SURFACEPARM_NOMARKS,	0 },	// don't make impact marks, but still explode
+	{ "ladder",		0,	SURFACEPARM_LADDER,		0 },
+	{ "nodamage",	0,	SURFACEPARM_NODAMAGE,	0 },
+	{ "metalsteps",	0,	SURFACEPARM_METAL,		0 },
+	{ "flesh",		0,	SURFACEPARM_FLESH,		0 },
+	{ "nosteps",	0,	SURFACEPARM_NOSTEPS,	0 },
+
+	// drawsurf attributes
+	{ "nodraw",		0,	SURFACEPARM_NODRAW,		0 },	// don't generate a drawsurface (or a lightmap)
+	{ "pointlight",	0,	SURFACEPARM_POINTLIGHT, 0 },	// sample lighting at vertexes
+	{ "nolightmap",	0,	SURFACEPARM_NOLIGHTMAP,	0 },	// don't generate a lightmap
+	{ "nodlight",	0,	SURFACEPARM_NODLIGHT,	0 },	// don't ever add dynamic lights
+	{ "dust",		0,	SURFACEPARM_DUST, 		0 }		// leave a dust trail when walking on this surface
+};
+
+
+/*
+===============
+ParseSurfaceParm
+
+surfaceparm <name>
+===============
+*/
+static void ParseSurfaceParm( const char **text ) {
+	const char	*token;
+	int		numInfoParms = arraylen( infoParms );
+	int		i;
+
+	token = COM_ParseExt( text, qfalse );
+	for ( i = 0 ; i < numInfoParms ; i++ ) {
+		if ( !N_stricmp( token, infoParms[i].name ) ) {
+			shader.surfaceFlags |= infoParms[i].surfaceFlags;
+			shader.contentFlags |= infoParms[i].contents;
+#if 0
+			if ( infoParms[i].clearSolid ) {
+				si->contents &= ~CONTENTS_SOLID;
+			}
+#endif
+			break;
+		}
+	}
+}
+
+
+typedef enum {
+	res_invalid = -1,
+	res_false = 0,
+	res_true = 1
+} resultType;
+
+typedef enum {
+	brIF,
+	brELIF,
+	brELSE
+} branchType;
+
+typedef enum {
+	maskOR,
+	maskAND
+} resultMask;
+
+
+static void derefVariable( const char *name, char *buf, int size )
+{
+	if ( !N_stricmp( name, "vid_width" ) ) {
+		Com_snprintf( buf, size, "%i", glConfig.vidWidth );
+		return;
+	}
+	if ( !N_stricmp( name, "vid_height" ) ) {
+		Com_snprintf( buf, size, "%i", glConfig.vidHeight );
+		return;
+	}
+	ri.Cvar_VariableStringBuffer( name, buf, size );
+}
+
+
+/*
+===============
+ParseCondition
+
+if ( $cvar|<integer value> [<condition> $cvar|<integer value> [ [ || .. ] && .. ] ] )
+{ shader stage }
+[ else
+{ shader stage } ]
+===============
+*/
+static qboolean ParseCondition( const char **text, resultType *res )
+{
+	char lval_str[ MAX_CVAR_VALUE ];
+	char rval_str[ MAX_CVAR_VALUE ];
+	tokenType_t lval_type;
+	tokenType_t rval_type;
+	const char *token;
+	tokenType_t op;
+	resultMask	rm;
+	qboolean	str;
+	int r, r0;
+
+	r = 0;			// resulting value
+	rm = maskOR;	// default mask
+
+	for ( ;; ) {
+		rval_str[0] = '\0';
+		rval_type = TK_GENEGIC;
+
+		// expect l-value at least
+		token = COM_ParseComplex( text, qfalse );
+		if ( token[0] == '\0' ) {
+			ri.Printf( PRINT_WARNING, "WARNING: expecting lvalue for condition in shader %s\n", shader.name );
+			return qfalse;
+		}
+	
+		N_strncpyz( lval_str, token, sizeof( lval_str ) );
+		lval_type = com_tokentype;
+
+		// get operator
+		token = COM_ParseComplex( text, qfalse );
+		if ( com_tokentype >= TK_EQ && com_tokentype <= TK_LTE ) {
+			op = com_tokentype;
+
+			// expect r-value
+			token = COM_ParseComplex( text, qfalse );
+			if ( token[0] == '\0' ) {
+				ri.Printf( PRINT_WARNING, "WARNING: expecting rvalue for condition in shader %s\n", shader.name );
+				return qfalse;
+			}
+
+			N_strncpyz( rval_str, token, sizeof( rval_str ) );
+			rval_type = com_tokentype;
+
+			// read next token, expect '||', '&&' or ')', allow newlines
+			/*token =*/ COM_ParseComplex( text, qtrue );
+		} 
+		else if ( com_tokentype == TK_SCOPE_CLOSE || com_tokentype == TK_OR || com_tokentype == TK_AND ) {
+			// no r-value, assume 'not zero' comparison
+			op = TK_NEQ;
+		}
+		else {
+			ri.Printf( PRINT_WARNING, "WARNING: unexpected operator '%s' for comparison in shader %s\n", token, shader.name );
+			return qfalse;
+		}
+		
+		str = qfalse;
+
+		if ( lval_type == TK_QUOTED ) {
+			str = qtrue;
+		} else {
+			// dereference l-value
+			if ( lval_str[0] == '$' ) {
+				derefVariable( lval_str + 1, lval_str, sizeof( lval_str ) );
+			}
+		}
+
+		if ( rval_type == TK_QUOTED ) {
+			str = qtrue;
+		} else {
+			// dereference r-value
+			if ( rval_str[0] == '$' ) {
+				derefVariable( rval_str + 1, rval_str, sizeof( rval_str ) );
+			}
+		}
+
+		// evaluate expression
+		if ( str ) {
+			// string comparison
+			switch ( op ) {
+			case TK_EQ:  r0 = strcmp( lval_str, rval_str ) == 0; break;
+			case TK_NEQ: r0 = strcmp( lval_str, rval_str ) != 0; break;
+			case TK_GT:  r0 = strcmp( lval_str, rval_str ) >  0; break;
+			case TK_GTE: r0 = strcmp( lval_str, rval_str ) >= 0; break;
+			case TK_LT:  r0 = strcmp( lval_str, rval_str ) <  0; break;
+			case TK_LTE: r0 = strcmp( lval_str, rval_str ) <= 0; break;
+			default:     r0 = 0; break;
+			};
+		} else {
+			// integer comparison
+			int lval = atoi( lval_str );
+			int rval = atoi( rval_str );
+			switch ( op ) {
+			case TK_EQ:  r0 = ( lval == rval ); break;
+			case TK_NEQ: r0 = ( lval != rval ); break;
+			case TK_GT:  r0 = ( lval >  rval ); break;
+			case TK_GTE: r0 = ( lval >= rval ); break;
+			case TK_LT:  r0 = ( lval <  rval ); break;
+			case TK_LTE: r0 = ( lval <= rval ); break;
+			default:     r0 = 0; break;
+			};
+		}
+
+		if ( rm == maskOR ) {
+			r |= r0;
+		} else {
+			r &= r0;
+		}
+			
+		if ( com_tokentype == TK_OR ) {
+			rm = maskOR;
+			continue;
+		}
+
+		if ( com_tokentype == TK_AND ) {
+			rm = maskAND;
+			continue;
+		}
+
+		if ( com_tokentype != TK_SCOPE_CLOSE ) {
+			ri.Printf( PRINT_WARNING, "WARNING: expecting ')' in shader %s\n", shader.name );
+			return qfalse;
+		}
+
+		break;
+	}
+
+	if ( res ) {
+		*res = r ? res_true : res_false;
+	}
+	
+	return qtrue;
 }
 
 /*
@@ -45,16 +307,11 @@ NameToAFunc
 */
 static unsigned NameToAFunc( const char *funcname )
 {	
-	if ( !N_stricmp( funcname, "GT0" ) )
-	{
+	if ( !N_stricmp( funcname, "GT0" ) ) {
 		return GLS_ATEST_GT_0;
-	}
-	else if ( !N_stricmp( funcname, "LT128" ) )
-	{
+	} else if ( !N_stricmp( funcname, "LT128" ) ) {
 		return GLS_ATEST_LT_80;
-	}
-	else if ( !N_stricmp( funcname, "GE128" ) )
-	{
+	} else if ( !N_stricmp( funcname, "GE128" ) ) {
 		return GLS_ATEST_GE_80;
 	}
 
@@ -490,8 +747,8 @@ static qboolean ParseStage(shaderStage_t *stage, const char **text)
         //
         // map <name>
         //
-        else if (!N_stricmp(tok, "map")) {
-            tok = COM_ParseExt(text, qfalse);
+        else if ( !N_stricmp( tok, "map" ) ) {
+            tok = COM_ParseExt( text, qfalse );
 			if (!tok[0]) {
 				ri.Printf(PRINT_WARNING, "missing parameter for 'map' keyword in shader '%s'\n", shader.name);
 				return qfalse;
@@ -987,6 +1244,8 @@ static qboolean ParseShader( const char **text )
 {
     const char *tok;
 	int s;
+	branchType branch;
+	resultType res;
     unsigned depthMaskBits = GLS_DEPTHMASK_TRUE, blendSrcBits = 0, blendDstBits = 0, atestBits = 0, depthFuncBits = 0;
     qboolean depthMaskExplicit;
 	uintptr_t p1, p2;
@@ -998,9 +1257,11 @@ static qboolean ParseShader( const char **text )
 	s = 0;
 	r_extendedShader = p1 + p2;
 
-	tok = COM_ParseExt(text, qtrue);
-	if (tok[0] != '{') {
-		ri.Printf(PRINT_WARNING, "expecting '{', found '%s' instead in shader '%s'\n", tok, shader.name);
+	res = res_invalid;
+
+	tok = COM_ParseExt( text, qtrue );
+	if ( tok[0] != '{' ) {
+		ri.Printf( PRINT_WARNING, "expecting '{', found '%s' instead in shader '%s'\n", tok, shader.name );
 		return qfalse;
 	}
 
@@ -1041,6 +1302,11 @@ static qboolean ParseShader( const char **text )
 			shader.noPicMip = qtrue;
 			continue;
 		}
+		// sort
+		else if ( !N_stricmp( tok, "sort" ) ) {
+			ParseSort( text );
+			continue;
+		}
         //
         // shaderSort <sort>
         //
@@ -1054,12 +1320,83 @@ static qboolean ParseShader( const char **text )
             ParseSort( text );
         }
 		// polygonOffset
-		else if (!N_stricmp(tok, "polygonOffset")) {
+		else if ( !N_stricmp( tok, "polygonOffset" ) ) {
 			shader.polygonOffset = qtrue;
 			continue;
 		}
+		// tonemap parms
+		else if  ( !N_stricmp( tok, "tonemap" ) ) {
+			tok = COM_ParseExt( text, qfalse );
+			rg.toneMinAvgMaxLevel[0] = N_atof( tok );
+			tok = COM_ParseExt( text, qfalse );
+			rg.toneMinAvgMaxLevel[1] = N_atof( tok );
+			tok = COM_ParseExt( text, qfalse );
+			rg.toneMinAvgMaxLevel[2] = N_atof( tok );
+
+			tok = COM_ParseExt( text, qfalse );
+			rg.autoExposureMinMax[0] = N_atof( tok );
+			tok = COM_ParseExt( text, qfalse );
+			rg.autoExposureMinMax[1] = N_atof( tok );
+
+			SkipRestOfLine( text );
+			continue;
+		}
+		// skip stuff that only q3map or the server needs
+		else if ( !N_stricmp( tok, "surfaceParm" ) ) {
+			ParseSurfaceParm( text );
+			continue;
+		}
+		// conditional stage definition
+		else if ( ( !N_stricmp( tok, "if" ) || !N_stricmp( tok, "else" ) || !N_stricmp( tok, "elif" ) ) /* && r_extendedShader */ ) {
+			if ( N_stricmp( tok, "if" ) == 0 ) {
+				branch = brIF;
+			} else {
+				if ( res == res_invalid  ) {
+					// we don't have any previous 'if' statements
+					ri.Printf( PRINT_WARNING, "WARNING: unexpected '%s' in '%s'\n", tok, shader.name );
+					return qfalse;
+				}
+				if ( N_stricmp( tok, "else" ) == 0 ) {
+					branch = brELSE;
+				} else {
+					branch = brELIF;
+				}
+			}
+
+			if ( branch != brELSE ) { // we can set/update result
+				tok = COM_ParseComplex( text, qfalse );
+				if ( com_tokentype != TK_SCOPE_OPEN ) {
+					ri.Printf( PRINT_WARNING, "WARNING: expecting '(' in '%s'\n", shader.name );
+					return qfalse;
+				}
+				if ( !ParseCondition( text, ( branch == brIF || res == res_true ) ? &res : NULL ) ) {
+					ri.Printf( PRINT_WARNING, "WARNING: error parsing condition in '%s'\n", shader.name );
+					return qfalse;
+				}
+			}
+
+			if ( res == res_false )	{
+				// skip next stage or keyword until newline
+				tok = COM_ParseExt( text, qtrue );
+				if ( tok[0] == '{' ) {
+					SkipBracedSection( text, 1 );
+				} else {
+					SkipRestOfLine( text );
+				}
+			} else {
+				// parse next tokens as usual
+			}
+
+			if ( branch == brELSE ) {
+				res = res_invalid; // finalize branch
+			} else {
+				res ^= 1; // or toggle for possible "elif" / "else" statements
+			}
+
+			continue;
+		}
         else {
-            ri.Printf(PRINT_WARNING, "unrecognized parameter in shader '%s': '%s'\n", shader.name, tok);
+            ri.Printf( PRINT_WARNING, "unrecognized parameter in shader '%s': '%s'\n", shader.name, tok );
             continue;
         }
     }

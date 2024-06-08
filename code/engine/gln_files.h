@@ -216,6 +216,16 @@ typedef struct {
 #define TILETYPE_NORMAL           0x0004
 #define TILETYPE_BITS             0x000f
 
+#define	CONTENTS_NODROP			    0x10000000	// don't leave bodies or items (death fog, lava)
+#define CONTENTS_MOVER			    0x20000000
+#define	CONTENTS_PLAYERCLIP		    0x40000000
+#define	CONTENTS_MONSTERCLIP	    0x80000000
+#define	CONTENTS_SOLID			    0x01000000	// an eye is never valid in a solid
+#define	CONTENTS_LAVA			    0x02000000
+#define	CONTENTS_SLIME			    0x04000000
+#define	CONTENTS_WATER			    0x08000000
+#define	CONTENTS_TRANSLUCENT        0x00100000	// don't consume surface fragments inside
+
 #define SURFACEPARM_WOOD            0x10000000 // makes wood sounds and effects
 #define SURFACEPARM_METAL           0x20000000 // enables metallic effects in the game
 #define SURFACEPARM_FLESH           0x40000000 // makes flesh sounds and effects
@@ -226,6 +236,15 @@ typedef struct {
 #define SURFACEPARM_NODLIGHT        0x08000000 // dynamic lighting will not be applied to this tile
 #define SURFACEPARM_NOMARKS         0x00100000 // no gfx will be drawn on this tile
 #define SURFACEPARM_NOMISSILE       0x00200000 // missiles will not explode when hitting this tile, even if it is marked as solid
+#define	SURFACEPARM_SLICK		    0x00400000 // effects game physics
+#define SURFACEPARM_LIGHTFILTER     0x00800000 // allows for fancy light filters
+#define SURFACEPARM_ALPHASHADOW     0x00010000 // do per-pixel light shadow light casting
+#define SURFACEPARM_LADDER          0x00020000
+#define SURFACEPARM_NODRAW          0x00040000
+#define SURFACEPARM_POINTLIGHT      0x00080000 // generate lighting info at vertexes
+#define SURFACEPARM_NOLIGHTMAP      0x00001000 // surface doesn't need a lightmap
+#define SURFACEPARM_DUST            0x00002000 // generate dust particles when walking on this tile
+#define SURFACEPARM_NONSOLID        0x00004000 // don't apply collision physics here
 
 #define LIGHT_POINT       0
 #define LIGHT_DIRECTIONAL 1

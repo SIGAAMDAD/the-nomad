@@ -58,9 +58,9 @@ static void BeginNewGame( void )
 
     N_strncpyz( s_newGame->saveName, COM_SkipPath( s_newGame->saveName ), sizeof( s_newGame->saveName ) );
 
-    Cvar_Set( "g_paused", "0" );
-    Cvar_Set( "sgame_SaveName", s_newGame->saveName );
+    Cvar_SetIntegerValue( "g_paused", 0 );
     Cvar_SetIntegerValue( "g_levelIndex", 0 );
+    Cvar_Set( "sgame_SaveName", s_newGame->saveName );
     Cvar_Set( "mapname", *gi.mapCache.mapList );
 
     memset( s_newGame->saveName, 0, sizeof( s_newGame->saveName ) );

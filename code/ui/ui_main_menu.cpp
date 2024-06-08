@@ -138,14 +138,19 @@ void MainMenu_Draw( void )
 
     // show the user WTF just happened
     if ( s_errorMenu->message[0] || ui->activemenu == &s_errorMenu->menu ) {
-        ImGui::BeginPopupModal( "Game Error", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize
-            | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus );
-        Sys_MessageBox( "Game Error", s_errorMenu->message, false );
+        ImGui::Begin( "Game Error", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize
+            | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoMove );
+        ImGui::SetWindowPos( ImVec2( 450 * ui->scale, 360 * ui->scale ) );
+//        Sys_MessageBox( "Game Error", s_errorMenu->message, false );
+        ui->menubackShader = re.RegisterShader( "menu/mainbackground" );
+        ImGui::TextUnformatted( s_errorMenu->message );
         if ( Key_AnyDown() ) {
             Snd_PlaySfx( ui->sfx_null );
             Cvar_Set( "com_errorMessage", "" );
             UI_PopMenu();
             UI_MainMenu();
+            ImGui::End();
+            return;
         }
         ImGui::End();
         return;
@@ -160,8 +165,13 @@ void MainMenu_Draw( void )
 
 	ImGui::Begin( "MainMenuVersion", NULL, windowFlags | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_AlwaysAutoResize );
     ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * 1.5f );
-	ImGui::SetWindowPos( ImVec2( ui->gpuConfig.vidWidth - ( 280 * ui->scale ), ui->gpuConfig.vidHeight - 48 ) );
-	ImGui::TextUnformatted( GLN_VERSION );
+	ImGui::SetWindowPos( ImVec2( 800 * ui->scale, 710 * ui->scale ) );
+    if ( ui->demoVersion ) {
+        ImGui::TextUnformatted( "(DEMO) FOR MATURE AUDIENCES" );
+    } else {
+        ImGui::NewLine();
+    }
+	ImGui::TextUnformatted( GLN_VERSION " (C) 2020-2024, GDR Games, All Rights Reserved" );
 	ImGui::End();
 }
 

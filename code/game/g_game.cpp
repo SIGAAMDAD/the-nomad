@@ -586,7 +586,7 @@ void G_ShutdownRenderer( refShutdownCode_t code )
         renderLib = NULL;
     }
 
-    memset( &re, 0, sizeof(re) );
+    memset( &re, 0, sizeof( re ) );
 
     gi.rendererStarted = qfalse;
 }
@@ -597,9 +597,8 @@ static void G_Vid_Restart( refShutdownCode_t code )
 
     // clear and mute all sounds until next registration
 #ifdef USE_QUAKE3_SOUND
-    Snd_DisableSounds();
+//    Snd_DisableSounds();
 #else
-    Snd_StopAll();
     Snd_Shutdown();
 #endif
 
@@ -1324,7 +1323,7 @@ void G_Init( void )
 
     SteamApp_Init();
 
-    Con_Printf( "----- Game State Initialization ----\n" );
+    Con_Printf( "----- Game State Initialization -----\n" );
 
     // clear the hunk before anything
     Hunk_Clear();
@@ -1653,6 +1652,7 @@ void G_Restart( void ) {
 */
 void G_ClearMem( void )
 {
+    Z_FreeTags( TAG_GAME );
     // if not in a level, clear the whole hunk
     if ( !gi.mapLoaded ) {
         // clear the whole hunk

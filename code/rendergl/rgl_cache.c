@@ -69,7 +69,7 @@ static void R_SetVertexPointers( const vertexAttrib_t attribs[ATTRIB_INDEX_COUNT
     }
 }
 
-void VBO_SetVertexPointers(vertexBuffer_t *vbo, uint32_t attribBits)
+void VBO_SetVertexPointers( vertexBuffer_t *vbo, uint32_t attribBits )
 {
 	// if nothing is set, set everything
 	if ( !( attribBits & ATTRIB_BITS ) ) {
@@ -181,7 +181,7 @@ void R_ShutdownGPUBuffers( void )
 		R_ShutdownBuffer( vbo );
 	}
 
-	memset( rg.buffers, 0, sizeof(rg.buffers) );
+	memset( rg.buffers, 0, sizeof( rg.buffers ) );
 	rg.numBuffers = 0;
 }
 

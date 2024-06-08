@@ -954,6 +954,13 @@ extern "C" void UI_Init( void )
 		ImPlot::CreateContext();
 	}
 
+	// are we running a demo?
+	if ( FS_FOpenFileRead( "demokey.txt", NULL ) > 0 ) {
+		ui->demoVersion = qtrue;
+	} else {
+		ui->demoVersion = qfalse;
+	}
+
 	memset( previousTimes, 0, sizeof( previousTimes ) );
 
     // add commands

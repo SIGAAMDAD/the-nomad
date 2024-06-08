@@ -824,6 +824,7 @@ typedef struct shader_s {
     qboolean explicitlyDefined;     // found in a .shader file
 
     uint32_t surfaceFlags;          // if explicitly defined this will have SURFACEPARM_* flags
+    uint32_t contentFlags;
 
     uint32_t vertexAttribs;         // not all shaders will need all data to be gathered
     
@@ -1111,6 +1112,7 @@ typedef struct
 
 	qboolean				worldMapLoaded;
 	qboolean				worldDeluxeMapping;
+    vec2_t                  autoExposureMinMax;
 	vec3_t                  toneMinAvgMaxLevel;
     renderEntityDef_t       worldEntity;
 	world_t					*world;

@@ -25,7 +25,7 @@ cvar_t *snd_effectsOn;
 cvar_t *snd_masterVolume;
 cvar_t *snd_debugPrint;
 
-static idDynamicBlockAlloc<byte, 1<<20, 1<<10> soundCacheAllocator;
+//static idDynamicBlockAlloc<byte, 1<<20, 1<<10> soundCacheAllocator;
 
 #define Snd_HashFileName(x) Com_GenerateHashValue((x),MAX_SOUND_SOURCES)
 
@@ -385,8 +385,6 @@ void CSoundSource::Alloc( void )
         m_iType = SNDBUF_16BIT;
         break;
     };
-
-//    m_pNonCacheData = (byte *)Z_Malloc( m_nObjectMemSize, (memtag_t)m_iTag );
 }
 
 void CSoundSource::Play( bool loop )
@@ -590,7 +588,6 @@ bool CSoundSource::LoadFile( const char *npath, int64_t tag )
         ALCall( alSourcei( m_iSource, AL_BUFFER, 0 ) );
     }
 
-//    soundCacheAllocator.Free( (byte *)data );
     Hunk_FreeTempMemory( data );
 
     return true;
@@ -620,6 +617,8 @@ void CSoundManager::Init( void )
     Con_Printf( "OpenAL vendor: %s\n", alGetString( AL_VENDOR ) );
     Con_Printf( "OpenAL renderer: %s\n", alGetString( AL_RENDERER ) );
     Con_Printf( "OpenAL version: %s\n", alGetString( AL_VERSION ) );
+
+    gi.soundStarted = qtrue;
 }
 
 void CSoundManager::PlaySound( CSoundSource *snd ) {
@@ -645,6 +644,7 @@ void CSoundManager::Shutdown( void )
             continue;
         }
         m_pSources[i]->Shutdown();
+        m_pSources[i] = NULL;
     }
 
     m_nSources = 0;
@@ -665,7 +665,9 @@ void CSoundManager::Shutdown( void )
     alcDestroyContext( m_pContext );
     alcCloseDevice( m_pDevice );
 
-    soundCacheAllocator.Shutdown();
+    gi.soundStarted = qfalse;
+
+//    soundCacheAllocator.Shutdown();
 }
 
 void CSoundManager::AddSourceToHash( CSoundSource *src )
@@ -753,16 +755,20 @@ void CSoundManager::UpdateParm( int64_t tag )
 }
 
 void CSoundManager::DisableSounds( void ) {
-    for ( uint64_t i = 0; i < m_nSources; i++ ) {
-        m_pSources[i]->Stop();
+    for ( uint64_t i = 0; i < MAX_SOUND_SOURCES; i++ ) {
+        if ( !m_pSources[i] ) {
+            continue;
+        }
+        m_pSources[i]->Shutdown();
     }
+    memset( m_pSources, 0, sizeof( m_pSources ) );
 }
 
 
 void Snd_DisableSounds( void ) {
     sndManager->DisableSounds();
     ALCall( alListenerf( AL_GAIN, 0.0f ) );
-    soundCacheAllocator.FreeEmptyBaseBlocks();
+//    soundCacheAllocator.FreeEmptyBaseBlocks();
 }
 
 void Snd_StopAll( void ) {

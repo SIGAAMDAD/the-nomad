@@ -7,6 +7,9 @@ namespace TheNomad::Engine {
             int ret;
             if ( !m_ShaderCache.TryGetValue( shader, ret ) ) {
                 ret = TheNomad::Engine::Renderer::RegisterShader( shader );
+                if ( ret != -1 ) {
+                    ConsolePrint( "- Loaded shader \"" + shader + "\".\n" );
+                }
                 m_ShaderCache.Add( shader, ret );
             }
             return ret;
@@ -15,7 +18,9 @@ namespace TheNomad::Engine {
             int ret;
             if ( !m_SfxCache.TryGetValue( sfx, ret ) ) {
                 ret = TheNomad::Engine::SoundSystem::RegisterSfx( sfx );
-                ConsolePrint( "- Loaded sfx \"" + sfx + "\".\n" );
+                if ( ret != -1 ) {
+                    ConsolePrint( "- Loaded sfx \"" + sfx + "\".\n" );
+                }
                 m_SfxCache.Add( sfx, ret );
             }
             return ret;
@@ -24,6 +29,9 @@ namespace TheNomad::Engine {
             int ret;
             if ( !m_MusicCache.TryGetValue( npath, ret ) ) {
                 ret = TheNomad::Engine::SoundSystem::RegisterTrack( npath );
+                if ( ret != -1 ) {
+                    ConsolePrint( "- Loaded music \"" + npath + "\".\n" );
+                }
                 m_MusicCache.Add( npath, ret );
             }
             return ret;

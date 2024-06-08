@@ -10,6 +10,10 @@
 #	include <SDL2/SDL_vulkan.h>
 #endif
 #endif
+#define NOMAD_ICON_INCLUDE
+#ifdef NOMAD_ICON_INCLUDE
+    #include "sdl_icon.h"
+#endif
 
 #include "../game/g_game.h"
 #include "../rendercommon/r_public.h"
@@ -260,13 +264,13 @@ static int GLimp_CreateBaseWindow( gpuConfig_t *config )
         config->colorBits, config->depthBits, config->stencilBits );
 
     if ( SDL_window ) {
-#ifdef GLNOMAD_ICON_INCLUDE
+#ifdef NOMAD_ICON_INCLUDE
         SDL_Surface *icon = SDL_CreateRGBSurfaceFrom(
-            (void *)WINDOW_ICON.pixel_data,
-            WINDOW_ICON.width,
-            WINDOW_ICON.height,
-            WINDOW_ICON.bytes_per_pixel * 8,
-            WINDOW_ICON.bytes_per_pixel * WINDOW_ICON.width
+            (void *)GAME_WINDOW_ICON.pixel_data,
+            GAME_WINDOW_ICON.width,
+            GAME_WINDOW_ICON.height,
+            GAME_WINDOW_ICON.bytes_per_pixel * 8,
+            GAME_WINDOW_ICON.bytes_per_pixel * GAME_WINDOW_ICON.width,
 #ifdef GDR_LITTLE_ENDIAN
 			0x000000FF, 0x0000FF00, 0x00FF0000, 0xFF000000
 #else
