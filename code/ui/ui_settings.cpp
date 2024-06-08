@@ -1508,7 +1508,7 @@ void SettingsMenu_Cache( void )
 	    strManager->ValueForKey( "GAMEUI_ANISOTROPIC4X" )->value,
 	    strManager->ValueForKey( "GAMEUI_ANISOTROPIC8X" )->value,
 	    strManager->ValueForKey( "GAMEUI_ANISOTROPIC16X" )->value,
-	    strManager->ValueForKey( "GAMEUI_ANISOTROPIC32X" )->value
+		strManager->ValueForKey( "GAMEUI_ANISOTROPIC32X" )->value
 	};
 	static const char *s_textureDetail[] = {
 	    strManager->ValueForKey( "GAMEUI_TEXDETAIL_VERYLOW" )->value,
@@ -1553,8 +1553,8 @@ void SettingsMenu_Cache( void )
 	};
 	static const char *s_vsync[] = {
 		strManager->ValueForKey( "GAMEUI_VSYNC_ADAPTIVE" )->value,
-		strManager->ValueForKey( "GAMEUI_VSYNC_DISABLED" )->value,
-		strManager->ValueForKey( "GAMEUI_VSYNC_ENABLED" )->value
+		strManager->ValueForKey( "GAMEUI_DISABLED" )->value,
+		strManager->ValueForKey( "GAMEUI_ENABLED" )->value
 	};
 	static const char *difficulties[ NUMDIFS - 1 ] = {
         difficultyTable[ DIF_NOOB ].name,

@@ -1614,7 +1614,7 @@ void Cvar_Restart(qboolean unsetVM)
 
         if (!(curvar->flags & (CVAR_ROM | CVAR_INIT | CVAR_NORESTART))) {
             // Just reset the rest to their default values.
-            Cvar_Set2(curvar->name, curvar->resetString, qfalse);
+            Cvar_Set2(curvar->name, curvar->resetString, qtrue);
         }
 
         curvar = curvar->next;
@@ -2022,34 +2022,34 @@ Cvar_Init
 Reads in all archived cvars
 ============
 */
-void Cvar_Init(void)
+void Cvar_Init( void )
 {
-    memset(cvar_indexes, 0, sizeof(cvar_indexes));
-    memset(hashTable, 0, sizeof(hashTable));
+    memset( cvar_indexes, 0, sizeof( cvar_indexes ) );
+    memset( hashTable, 0, sizeof( hashTable ) );
 
-    c_cheatsAllowed = Cvar_Get("c_cheatsAllowed", "1", CVAR_ROM | CVAR_SYSTEMINFO);
-    Cvar_SetDescription(c_cheatsAllowed, "Enable cheating commands.");
+    c_cheatsAllowed = Cvar_Get( "c_cheatsAllowed", "1", CVAR_ROM | CVAR_SYSTEMINFO );
+    Cvar_SetDescription( c_cheatsAllowed, "Enable cheating commands." );
 
-    Cmd_AddCommand("print", Cvar_Print_f);
-    Cmd_AddCommand("toggle", Cvar_Toggle_f);
-    Cmd_SetCommandCompletionFunc("toggle", Cvar_CompleteCvarName);
-    Cmd_AddCommand("set", Cvar_Set_f);
-    Cmd_SetCommandCompletionFunc("set", Cvar_CompleteCvarName);
-    Cmd_AddCommand("sets", Cvar_Set_f);
-    Cmd_SetCommandCompletionFunc("sets", Cvar_CompleteCvarName);
-    Cmd_AddCommand("setu", Cvar_Set_f);
-    Cmd_SetCommandCompletionFunc("setu", Cvar_CompleteCvarName);
-    Cmd_AddCommand("seta", Cvar_Set_f);
-    Cmd_SetCommandCompletionFunc("seta", Cvar_CompleteCvarName);
-    Cmd_AddCommand("reset", Cvar_Reset_f);
-    Cmd_SetCommandCompletionFunc("reset", Cvar_CompleteCvarName);
-    Cmd_AddCommand("unset", Cvar_Unset_f);
-    Cmd_SetCommandCompletionFunc("unset", Cvar_CompleteCvarName);
+    Cmd_AddCommand( "print", Cvar_Print_f );
+    Cmd_AddCommand( "toggle", Cvar_Toggle_f );
+    Cmd_SetCommandCompletionFunc( "toggle", Cvar_CompleteCvarName );
+    Cmd_AddCommand( "set", Cvar_Set_f );
+    Cmd_SetCommandCompletionFunc( "set", Cvar_CompleteCvarName );
+    Cmd_AddCommand( "sets", Cvar_Set_f );
+    Cmd_SetCommandCompletionFunc( "sets", Cvar_CompleteCvarName );
+    Cmd_AddCommand( "setu", Cvar_Set_f );
+    Cmd_SetCommandCompletionFunc( "setu", Cvar_CompleteCvarName );
+    Cmd_AddCommand( "seta", Cvar_Set_f );
+    Cmd_SetCommandCompletionFunc( "seta", Cvar_CompleteCvarName );
+    Cmd_AddCommand( "reset", Cvar_Reset_f );
+    Cmd_SetCommandCompletionFunc( "reset", Cvar_CompleteCvarName );
+    Cmd_AddCommand( "unset", Cvar_Unset_f );
+    Cmd_SetCommandCompletionFunc( "unset", Cvar_CompleteCvarName );
 
     Cmd_AddCommand("varfunc", Cvar_Func_f);
 
-    Cmd_AddCommand("cvarlist", Cvar_List_f);
-    Cmd_AddCommand("cvar_modified", Cvar_ListModified_f);
-    Cmd_AddCommand("cvar_restart", Cvar_Restart_f);
-    Cmd_AddCommand("cvar_trim", Cvar_Trim_f);
+    Cmd_AddCommand( "cvarlist", Cvar_List_f );
+    Cmd_AddCommand( "cvar_modified", Cvar_ListModified_f );
+    Cmd_AddCommand( "cvar_restart", Cvar_Restart_f );
+    Cmd_AddCommand( "cvar_trim", Cvar_Trim_f );
 }

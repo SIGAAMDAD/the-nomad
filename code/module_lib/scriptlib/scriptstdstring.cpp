@@ -16,9 +16,7 @@ CModuleStringFactory *GetStringFactorySingleton( void )
 		CThreadMutex mutex;
 		
 		CThreadAutoLock<CThreadMutex> lock( mutex );
-		if ( !g_pStringFactory ) {
-			g_pStringFactory = new ( malloc( sizeof( *g_pStringFactory ) ) ) CModuleStringFactory();
-		}
+		g_pStringFactory = new ( malloc( sizeof( *g_pStringFactory ) ) ) CModuleStringFactory();
 	}
 	return g_pStringFactory;
 }

@@ -147,7 +147,7 @@ void ModsMenu_SaveModList( void )
     		, mods->modList[i].info->m_szName, mods->modList[i].valid, mods->modList[i].active );
     	
     	for ( j = 0; j < mods->modList[i].numDependencies; j++ ) {
-    		FS_Printf( f, "\t\t\t\t\"%s\"", mods->modList[i].info->m_Dependencies[j].c_str() );
+    		FS_Printf( f, "\t\t\t\t\"%s\"", mods->modList[i].info->m_pDependencies[j].c_str() );
     		if ( j != mods->modList[i].numDependencies - 1 ) {
     			FS_Printf( f, "," );
     		}
@@ -227,9 +227,9 @@ static void ModToggleActive( module_t *mod, qboolean valid )
 	
 	// toggle anything thay may depend on this mod
 	for ( i = 0; i < mods->numMods; i++ ) {
-		for ( j = 0; j < mods->modList[i].info->m_Dependencies.size(); j++ ) {
-			if ( N_strcmp( mod->info->m_szName, mods->modList[i].info->m_Dependencies[j].c_str() ) == 0 ) {
-				module_t *m = eastl::find( mods->modList, mods->modList + mods->numMods, mods->modList[i].info->m_Dependencies[j] );
+		for ( j = 0; j < mods->modList[i].info->m_nDependencies; j++ ) {
+			if ( N_strcmp( mod->info->m_szName, mods->modList[i].info->m_pDependencies[j].c_str() ) == 0 ) {
+				module_t *m = eastl::find( mods->modList, mods->modList + mods->numMods, mods->modList[i].info->m_pDependencies[j] );
 				if ( m != &mods->modList[ mods->numMods ] ) {
 					m->active = mod->active;
 				} else {
@@ -269,7 +269,7 @@ static void ModsMenu_DrawListing( module_t *mod, qboolean dimColor )
 	}
 	
 	ImGui::TableNextColumn();
-	if ( mod->info->m_Dependencies.size() ) {
+	if ( mod->info->m_nDependencies ) {
 		ImGui::PushStyleColor( ImGuiCol_Text, ImVec4( 0.71f, 0.65f, 0.26f, 1.0f ) );
 		ImGui::PushStyleColor( ImGuiCol_TextDisabled, ImVec4( 0.71f, 0.65f, 0.26f, 1.0f ) );
 		ImGui::PushStyleColor( ImGuiCol_FrameBg, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) );
@@ -283,8 +283,8 @@ static void ModsMenu_DrawListing( module_t *mod, qboolean dimColor )
 			const float fontScale = ImGui::GetFont()->Scale;
 			ImGui::SetWindowFontScale( fontScale * 1.5f );
 			ImGui::SeparatorText( "this module depends on" );
-			for ( const auto& it : mod->info->m_Dependencies ) {
-				ImGui::TextUnformatted( it.c_str() );
+			for ( j = 0; j < mod->info->m_nDependencies; j++ ) {
+				ImGui::TextUnformatted( mod->info->m_pDependencies[j].c_str() );
 			}
 			ImGui::SetWindowFontScale( fontScale );
 			ImGui::EndTooltip();
@@ -326,8 +326,8 @@ static qboolean IsDependentOn( const module_t *mod, const module_t *dep ) {
 		Con_Printf( COLOR_YELLOW "WARNING: bad mod info\n" );
 		return qfalse;
 	}
-	for ( uint32_t i = 0; i < mod->info->m_Dependencies.size(); i++ ) {
-		if ( !N_stricmp( mod->info->m_Dependencies[i].c_str(), dep->info->m_szName ) ) {
+	for ( uint32_t i = 0; i < mod->info->m_nDependencies; i++ ) {
+		if ( !N_stricmp( mod->info->m_pDependencies[i].c_str(), dep->info->m_szName ) ) {
 			return qtrue;
 		}
 	}
@@ -560,24 +560,24 @@ static void ModsMenu_Load( void )
         m->active = qtrue;
         m->bootIndex = i;
         m->isRequired = IsRequiredMod( m->info->m_szName );
-		m->numDependencies = loadList[i].m_Dependencies.size();
+		m->numDependencies = loadList[i].m_nDependencies;
 
         // check if we have any dependencies that either don't exist or aren't properly loaded
-        for ( const auto& it : loadList[i].m_Dependencies ) {
-            const CModuleInfo *dep = g_pModuleLib->GetModule( it.c_str() );
+        for ( j = 0; j < loadList[i].m_nDependencies; j++ ) {
+            const CModuleInfo *dep = g_pModuleLib->GetModule( loadList[i].m_pDependencies[j].c_str() );
 
             if ( !dep || !dep->m_pHandle->IsValid() ) {
                 m->valid = m->active = qfalse;
             }
         }
         
-        if ( loadList[i].m_Dependencies.size() ) {
+        if ( loadList[i].m_nDependencies ) {
         	Con_Printf( "Module \"%s\" has dependencies: ", m->info->m_szName );
-        	for ( j = 0; j < loadList[i].m_Dependencies.size(); j++ ) {
-        		if ( j < loadList[i].m_Dependencies.size() - 1 ) {
+        	for ( j = 0; j < loadList[i].m_nDependencies; j++ ) {
+        		if ( j < loadList[i].m_nDependencies - 1 ) {
         			Con_Printf( ", " );
         		}
-        		Con_Printf( "%s", loadList[i].m_Dependencies[j].c_str() );
+        		Con_Printf( "%s", loadList[i].m_pDependencies[j].c_str() );
         	}
         	Con_Printf( "\n" );
         }
@@ -592,9 +592,9 @@ static void ModsMenu_Load( void )
     for ( i = 0; i < mods->numMods; i++ ) {
 		bool done = false;
 		mods->modList[i].allDepsActive = qtrue;
-    	for ( const auto& it : mods->modList[i].info->m_Dependencies ) {
+    	for ( j = 0; j < mods->modList[i].info->m_nDependencies; j++ ) {
 			for ( j = 0; j < mods->numMods; j++ ) {
-				if ( N_strcmp( mods->modList[j].info->m_szName, it.c_str() ) == 0 ) {
+				if ( N_strcmp( mods->modList[j].info->m_szName, loadList[i].m_pDependencies[j].c_str() ) == 0 ) {
 					if ( !mods->modList[j].info->m_pHandle->IsValid() ) {
 						mods->modList[i].allDepsActive = qfalse;
 						done = true;

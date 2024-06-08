@@ -624,10 +624,17 @@ static void G_Vid_Restart( refShutdownCode_t code )
     Cbuf_ExecuteText( EXEC_APPEND, "updatevolume\n" );
 }
 
+static void G_GameInfo_f( void ) {
+    Con_Printf( "--------- Game Information ---------\n" );
+	Con_Printf( "state: %i\n", gi.state );
+	Con_Printf( "User info settings:\n" );
+	Info_Print( Cvar_InfoString( CVAR_USERINFO, NULL ) );
+	Con_Printf( "--------------------------------------\n" );
+}
 
 /*
 ==================
-G_PK3List_f
+G_OpenedBFFList_f
 ==================
 */
 void G_OpenedBFFList_f( void ) {
@@ -1312,23 +1319,122 @@ static void G_UpdateGUID( const char *prefix, int prefix_len )
 #endif
 }
 
-/*
-* G_Init: called every time a new level is loaded
-*/
-void G_Init( void )
+typedef struct skin_s {
+    char *name;
+    char *displayText;
+    char *description;
+    struct skin_s *next;
+} skin_t;
+
+static skin_t *s_pSkinList;
+
+static void G_LoadSkins( void )
+{
+    char *b;
+    uint64_t nLength;
+    const char **text;
+    const char *tok, *text_p;
+    char name[MAX_NPATH];
+    char display[MAX_NPATH];
+    char description[MAX_NPATH];
+    uint32_t numSkins, size;
+    skin_t *skin;
+
+    Con_Printf( "Loading skins configuration...\n" );
+
+    nLength = FS_LoadFile( LOG_DIR "/skins.cfg", (void **)&b );
+    if ( !nLength || !b ) {
+        Con_Printf( COLOR_YELLOW "Error loading " LOG_DIR "/skins.cfg, using default\n" );
+        Cvar_Set( "skin", "raio" );
+        return;
+    }
+
+    text_p = b;
+    text = (const char **)&text_p;
+    numSkins = 0;
+
+    COM_BeginParseSession( LOG_DIR "/skins.cfg" );
+
+    while ( 1 ) {
+        tok = COM_ParseExt( text, qfalse );
+        if ( !tok[0] ) {
+            break;
+        }
+        N_strncpyz( name, tok, sizeof( name ) - 1 );
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( !tok[0] ) {
+            COM_ParseError( "missing parameter for 'displayName' in skin definition" );
+            break;
+        }
+        N_strncpyz( display, tok, sizeof( display ) - 1 );
+
+        tok = COM_ParseExt( text, qfalse );
+        if ( !tok[0] ) {
+            COM_ParseError( "missing parameter for 'description' in skin definition" );
+            break;
+        }
+        N_strncpyz( description, tok, sizeof( description ) - 1 );
+
+        size = sizeof( *skin );
+        size += PAD( strlen( name ) + 1, sizeof( uintptr_t ) );
+        size += PAD( strlen( display ) + 1, sizeof( uintptr_t ) );
+        size += PAD( strlen( description ) + 1, sizeof( uintptr_t ) );
+        skin = (skin_t *)Hunk_Alloc( sizeof( *skin ), h_low );
+        
+        strcpy( skin->name, name );
+        strcpy( skin->displayText, display );
+        strcpy( skin->description, description );
+        skin->next = s_pSkinList;
+        s_pSkinList = skin;
+
+        numSkins++;
+    }
+
+    FS_FreeFile( b );
+
+    Con_Printf( "Loaded %u skins.\n", numSkins );
+}
+
+skin_t *G_FindSkin( const char *name )
+{
+    skin_t *skin;
+    
+    skin = NULL;
+    for ( skin = s_pSkinList; skin; skin = skin->next ) {
+        if ( !N_stricmp( skin->name, name ) ) {
+            return skin;
+        }
+    }
+
+    return NULL;
+}
+
+static void G_SetSkin_f( void )
+{
+    const char *skin;
+    skin_t *s;
+
+    if ( Cmd_Argc() != 2 ) {
+        Con_Printf( "usage: setskin <skin name>\n" );
+        return;
+    }
+
+    skin = Cmd_Argv( 1 );
+
+    s = G_FindSkin( skin );
+
+    if ( s == NULL ) {
+        Con_Printf( "couldn't find skin '%s'.\n", skin );
+        return;
+    }
+
+    Cvar_Set( "skin", s->name );
+}
+
+static void G_InitRenderer_Cvars( void )
 {
     cvar_t *temp;
-
-    PROFILE_FUNCTION();
-
-    SteamApp_Init();
-
-    Con_Printf( "----- Game State Initialization -----\n" );
-
-    // clear the hunk before anything
-    Hunk_Clear();
-
-    G_ClearState();
 
     r_allowLegacy = Cvar_Get( "r_allowLegacy", "0", CVAR_SAVE | CVAR_LATCH );
     Cvar_SetDescription( r_allowLegacy, "Allow the use of old OpenGL API versions, requires \\r_drawMode 0 or 1 and \\r_allowShaders 0" );
@@ -1438,8 +1544,31 @@ void G_Init( void )
                         "Set your desired renderer, valid options: opengl, vulkan, sdl2, d3d11\n"
                         "NOTICE: Vulkan, SDL2, and DirectX 11 rendering not supported yet... *will be tho soon :)*\n"
                         "requires \\vid_restart when changed"
-                        );
+        );
+}
+
+/*
+* G_Init: called every time a new level is loaded
+*/
+void G_Init( void )
+{
+    PROFILE_FUNCTION();
+
+    SteamApp_Init();
+
+    Con_Printf( "----- Game State Initialization -----\n" );
+
+    // clear the hunk before anything
+    Hunk_Clear();
+
+    G_ClearState();
+
+    G_InitRenderer_Cvars();
     
+    // userinfo
+    Cvar_Get( "name", "The Ultimate Lad", CVAR_USERINFO | CVAR_ARCHIVE_ND );
+    Cvar_Get( "skin", "raio", CVAR_USERINFO | CVAR_ARCHIVE_ND );
+    Cvar_Get( "voice", "0", CVAR_USERINFO | CVAR_ARCHIVE_ND ); // for the future
     
     if ( !isValidRenderer( g_renderer->s ) ) {
         Cvar_ForceReset( "g_renderer" );
@@ -1459,12 +1588,11 @@ void G_Init( void )
     // init developer console
     Con_Init();
 
-	Cvar_Get( "vm_sgame", "2", CVAR_SAVE | CVAR_PROTECTED );
-
     //
     // register game commands
     //
 
+    Cmd_AddCommand( "gameinfo", G_GameInfo_f );
     Cmd_AddCommand( "demo", G_PlayDemo_f );
     Cmd_SetCommandCompletionFunc( "demo", G_CompleteDemoName );
     Cmd_AddCommand( "record", G_Record_f );

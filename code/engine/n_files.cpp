@@ -38,8 +38,8 @@ typedef struct {
 } bffheader_t;
 
 // tunables
-#define USE_BFF_CACHE
-#define USE_BFF_CACHE_FILE // cache the bff archives into a file for faster load times
+//#define USE_BFF_CACHE
+//#define USE_BFF_CACHE_FILE // cache the bff archives into a file for faster load times
 
 //#define USE_HANDLE_CACHE
 #define MAX_CACHED_HANDLES 528
@@ -1670,19 +1670,6 @@ static bffFile_t *FS_FindInCache( const char *zipfile )
 	return NULL;
 }
 
-uint64_t FS_BFFHashSize( uint32_t fileCount )
-{
-	uint64_t hashSize;
-
-	for ( hashSize = 2; hashSize < MAX_FILEHASH_SIZE; hashSize <<= 1 ) {
-		if ( hashSize >= fileCount ) {
-			break;
-		}
-	}
-
-	return hashSize;
-}
-
 static void FS_AddToCache( bffFile_t *bff )
 {
 	bff->namehash = FS_HashBFF( bff->bffGamename );
@@ -1692,36 +1679,6 @@ static void FS_AddToCache( bffFile_t *bff )
 		bffHashTable[ bff->namehash ] = bff;
 	}
 	bffHashTable[ bff->namehash ] = bff;
-}
-
-/*
-=================
-FS_FreeBFF
-
-Frees a bff structure and releases all associated resources
-=================
-*/
-static void FS_FreeBFF( bffFile_t *bff )
-{
-	if ( !bff ) {
-		N_Error( ERR_FATAL, "FS_FreeBFF(NULL)" );
-	}
-
-	if ( bff->handle ) {
-#ifdef USE_HANDLE_CACHE
-		if ( bff->next_h ) {
-			FS_RemoveFromHandleList( bff );
-		}
-#endif
-	#ifdef USE_ZIP
-		unzClose( bff->handle );
-	#else
-		fclose( bff->handle );
-	#endif
-		bff->handle = NULL;
-	}
-
-	Z_Free( bff );
 }
 
 static void FS_RemoveFromCache( bffFile_t *bff )
@@ -2215,6 +2172,19 @@ static void FS_LoadCache( void )
 
 #endif // USE_BFF_CACHE
 
+uint64_t FS_BFFHashSize( uint32_t fileCount )
+{
+	uint64_t hashSize;
+
+	for ( hashSize = 2; hashSize < MAX_FILEHASH_SIZE; hashSize <<= 1 ) {
+		if ( hashSize >= fileCount ) {
+			break;
+		}
+	}
+
+	return hashSize;
+}
+
 /*
 ==========================================================
 
@@ -2584,6 +2554,36 @@ static bffFile_t *FS_LoadBFF( const char *bffpath )
 #endif
 
 	return bff;
+}
+
+/*
+=================
+FS_FreeBFF
+
+Frees a bff structure and releases all associated resources
+=================
+*/
+static void FS_FreeBFF( bffFile_t *bff )
+{
+	if ( !bff ) {
+		N_Error( ERR_FATAL, "FS_FreeBFF(NULL)" );
+	}
+
+	if ( bff->handle ) {
+#ifdef USE_HANDLE_CACHE
+		if ( bff->next_h ) {
+			FS_RemoveFromHandleList( bff );
+		}
+#endif
+	#ifdef USE_ZIP
+		unzClose( bff->handle );
+	#else
+		fclose( bff->handle );
+	#endif
+		bff->handle = NULL;
+	}
+
+	Z_Free( bff );
 }
 
 //
@@ -4367,6 +4367,7 @@ void FS_Shutdown(qboolean closeFiles)
 {
 	searchpath_t *p, *next;
 	uint64_t i;
+	extern fileHandle_t logfile;
 
 	if ( closeFiles ) {
 		for ( i = 1; i < MAX_FILE_HANDLES; i++ ) {
@@ -4379,8 +4380,9 @@ void FS_Shutdown(qboolean closeFiles)
 	}
 	memset( handles, 0, sizeof( handles ) );
 
+	logfile = FS_INVALID_HANDLE;
 #ifdef USE_BFF_CACHE_FILE
-	FS_ResetCacheReferences();
+//	FS_ResetCacheReferences();
 #endif
 
 	// free everything
@@ -4401,12 +4403,14 @@ void FS_Shutdown(qboolean closeFiles)
 	fs_bffChunks = 0;
 	fs_dirCount = 0;
 
+	Cmd_RemoveCommand( "path" );
 	Cmd_RemoveCommand( "dir" );
 	Cmd_RemoveCommand( "ls" );
 	Cmd_RemoveCommand( "list" );
+	Cmd_RemoveCommand( "addmod" );
 	Cmd_RemoveCommand( "fs_restart" );
 	Cmd_RemoveCommand( "lsof" );
-	Cmd_RemoveCommand( "addmod" );
+	Cmd_RemoveCommand( "which" );
 }
 
 void FS_Restart( void )

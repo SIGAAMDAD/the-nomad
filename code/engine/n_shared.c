@@ -1912,6 +1912,25 @@ void Com_PrintStartupEnd( void ) {
 	Con_Printf( "%*c", 20, '-' );
 }
 
+void Info_Print( const char *s ) {
+	char	key[BIG_INFO_KEY];
+	char	value[BIG_INFO_VALUE];
+
+	do {
+		s = Info_NextPair( s, key, value );
+		if ( key[0] == '\0' ) {
+			break;
+		}
+
+		if ( value[0] == '\0' ) {
+			strcpy( value, "MISSING VALUE" );
+		}
+
+		Con_Printf( "%-20s %s\n", key, value );
+
+	} while ( *s != '\0' );
+}
+
 /*
 =====================================================================
 

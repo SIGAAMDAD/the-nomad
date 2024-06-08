@@ -27,16 +27,16 @@ namespace TheNomad::SGame {
 			@m_WeaponSlots[7] = @m_LeftArm;
 			@m_WeaponSlots[8] = @m_Ordnance;
 
-			dieSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die0.wav" );
-			dieSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die1.wav" );
-			dieSfx2 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die2.wav" );
+			dieSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die0.ogg" );
+			dieSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die1.ogg" );
+			dieSfx2 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die2.ogg" );
 
-			painSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain0.wav" );
-			painSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain1.wav" );
-			painSfx2 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain2.wav" );
+			painSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain0.ogg" );
+			painSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain1.ogg" );
+			painSfx2 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain2.ogg" );
 
-			slideSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide0.wav" );
-			slideSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide1.wav" );
+			slideSfx0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide0.ogg" );
+			slideSfx1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide1.ogg" );
 
 			dashSfx = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/dash.ogg" );
 
@@ -400,7 +400,8 @@ namespace TheNomad::SGame {
 
 			m_Direction = Util::Angle2Dir( m_PhysicsObject.GetAngle() );
 
-			@m_SpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/raio_base", 32, 32, 512, 512 );
+			@m_SpriteSheet = TheNomad::Engine::ResourceCache.GetSpriteSheet( "sprites/players/"
+				+ TheNomad::Engine::CvarVariableString( "skin" ) + "_base", 32, 32, 512, 512 );
 			if ( @m_SpriteSheet is null ) {
 				GameError( "PlayrObject::Spawn: failed to initialize sprite sheet" );
 			}
@@ -423,8 +424,6 @@ namespace TheNomad::SGame {
 			refEntity.spriteId = 0 + m_Facing;
 			refEntity.scale = 2.0f;
 			refEntity.Draw();
-//			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, refEntity.sheetNum, refEntity.spriteId );
-//			TheNomad::Engine::Renderer::AddPolyToScene( m_SpriteSheet.GetShader(), verts );
 			
 			//
 			// draw the legs
@@ -469,12 +468,6 @@ namespace TheNomad::SGame {
 			refEntity.spriteId = 29 + m_LegsFacing;
 			refEntity.scale = 2.0f;
 			refEntity.Draw();
-//			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, refEntity.sheetNum, refEntity.spriteId );
-//			TheNomad::Engine::Renderer::AddPolyToScene( m_SpriteSheet.GetShader(), verts );
-			
-//			hLegSprite = m_LegState.GetSpriteOffset().y * m_SpriteSheet.GetSpriteCountX() +
-//				m_LegState.GetSpriteOffset().x + m_LegState.GetAnimation().GetFrame() + m_LegsFacing;
-//			TheNomad::Engine::Renderer::AddSpriteToScene( m_Link.m_Origin, m_SpriteSheet.GetShader(), hLegSprite );
 		}
 		
 		KeyBind key_MoveNorth, key_MoveSouth, key_MoveEast, key_MoveWest;
@@ -545,7 +538,12 @@ namespace TheNomad::SGame {
 		private float m_nHealMult = 0.0f;
 		private float m_nHealMultDecay = 1.0f;
 		
-		private SpriteSheet@ m_LegSpriteSheet;
+		private SpriteSheet@ m_ArmSpriteSheet = null;
+		private EntityState@ m_ArmState = null;
+		private int m_ArmsFacing = 0;
+
+		private SpriteSheet@ m_LegSpriteSheet = null;
+		private EntityState@ m_LegState = null;
 		private int m_LegsFacing = 0;
 
 		int m_nTimeSinceDash = 1000;
@@ -553,7 +551,6 @@ namespace TheNomad::SGame {
 
 		bool m_bEmoting = false;
 		
-		private EntityState@ m_LegState;
 		private PlayerDisplayUI m_HudData;
 		PMoveData Pmove( @this );
 	};

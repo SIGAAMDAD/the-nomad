@@ -10,14 +10,14 @@ BEGIN_AS_NAMESPACE
 CScriptJson *CScriptJson::Create(asIScriptEngine *engine)
 {
     CScriptJson *obj = (CScriptJson *)Mem_Alloc( sizeof( CScriptJson ) );
-    new(obj) CScriptJson(engine);
+    new (obj) CScriptJson(engine);
     return obj;
 }
 
 CScriptJson *CScriptJson::Create(asIScriptEngine *engine, const json& js)
 {
     CScriptJson *obj = (CScriptJson *)Mem_Alloc( sizeof( CScriptJson ) );
-    new(obj) CScriptJson(engine);
+    new (obj) CScriptJson(engine);
     (obj->js_info) = js;
     return obj;
 }

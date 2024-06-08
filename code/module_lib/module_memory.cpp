@@ -36,7 +36,11 @@ If you have questions concerning this license or the applicable additional terms
 #endif
 
 #ifndef MEMHEAP_DEBUG
-//	#define MEMHEAP_DEBUG 0
+//	#define MEMHEAP_DEBUG 1
+#endif
+
+#ifndef USE_ZONE_HEAP
+//	#define USE_ZONE_HEAP
 #endif
 
 #ifndef CRASH_ON_STATIC_ALLOCATION
@@ -230,7 +234,11 @@ idHeap::~idHeap( void ) {
 	ReleaseSwappedPages();
 
 	if ( defragBlock ) {
-		free( defragBlock );
+	#ifdef USE_ZONE_HEAP
+		Z_Free( defragBlock );
+	#else
+		::free( defragBlock );
+	#endif
 	}
 
 	Assert( pagesAllocated == 0 );
@@ -303,7 +311,11 @@ idHeap::Allocate16
 void *idHeap::Allocate16( const uint32_t bytes ) {
 	byte *ptr, *alignedPtr;
 
+#ifdef USE_ZONE_HEAP
+	ptr = (byte *) Z_Malloc( bytes + 16 + sizeof(intptr_t), TAG_MODULES );
+#else
 	ptr = (byte *) malloc( bytes + 16 + sizeof(intptr_t) );
+#endif
 	if ( !ptr ) {
 		N_Error( ERR_FATAL, "malloc failure for %i", bytes );
 	}
@@ -321,7 +333,11 @@ idHeap::Free16
 ================
 */
 void idHeap::Free16( void *p ) {
+#ifdef USE_ZONE_HEAP
+	Z_Free( (void *) *((uintptr_t *) (( (byte *) p ) - sizeof(uintptr_t))) );
+#else
 	free( (void *) *((uintptr_t *) (( (byte *) p ) - sizeof(uintptr_t))) );
+#endif
 }
 
 #include <malloc.h>
@@ -416,7 +432,11 @@ void idHeap::FreePageReal( idHeap::page_s *p ) {
 		Con_DPrintf( "Releasing page 0x%08lx, %u bytes\n", (uintptr_t)(void *)p, p->dataSize );
 	}
 #endif
+#ifdef USE_ZONE_HEAP
+	::Z_Free( p );
+#else
 	::free( p );
+#endif
 }
 
 /*
@@ -951,7 +971,7 @@ void idHeap::LargeFree( void *ptr) {
 	}
 	pg->next = pg->prev = NULL;
 
-	FreePage(pg);
+	FreePage( pg );
 }
 
 void idHeap::DrawEditorView( void )
@@ -1412,7 +1432,11 @@ void Mem_DumpCompressed( const char *fileName, memorySortType_t memSort, int num
 
 		// if this is an allocation from a new source location
 		if ( !a ) {
+		#ifdef USE_ZONE_HEAP
+			a = (allocInfo_t *) ::Z_Malloc( sizeof( allocInfo_t ), TAG_MODULES );
+		#else
 			a = (allocInfo_t *) ::malloc( sizeof( allocInfo_t ) );
+		#endif
 			a->fileName = b->fileName;
 			a->lineNumber = b->lineNumber;
 			a->size = b->size;
@@ -1481,7 +1505,11 @@ void Mem_DumpCompressed( const char *fileName, memorySortType_t memSort, int num
 		FS_Printf( f, "size: %6d KB, allocs: %5d: %s, line: %d\r\n",
 					(a->size >> 10), a->numAllocs, Mem_CleanupFileName(a->fileName),
 							a->lineNumber );
+	#ifdef USE_ZONE_HEAP
+		::Z_Free( a );
+	#else
 		::free( a );
+	#endif
 	}
 
 	FS_Printf( f, "%8d total memory blocks allocated\r\n", numBlocks );

@@ -18,13 +18,13 @@ namespace TheNomad::SGame {
 			moveGravel2 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveGravel2.ogg" );
 			moveGravel3 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveGravel3.ogg" );
 
-			moveWater0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveWater0.wav" );
-			moveWater1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveWater1.wav" );
+			moveWater0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveWater0.ogg" );
+			moveWater1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveWater1.ogg" );
 
-			moveMetal0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal0.wav" );
-			moveMetal1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal1.wav" );
-			moveMetal2 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal2.wav" );
-			moveMetal3 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal3.wav" );
+			moveMetal0 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal0.ogg" );
+			moveMetal1 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal1.ogg" );
+			moveMetal2 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal2.ogg" );
+			moveMetal3 = TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal3.ogg" );
 		}
 		PMoveData() {
 		}

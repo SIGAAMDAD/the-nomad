@@ -97,9 +97,11 @@ void InitResources() {
 	//
 	// init shaders
 	//
-	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/raio_base" );
-	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/raio_legs" );
-	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/raio_arms" );
+	str = TheNomad::Engine::CvarVariableString( "skin" );
+
+	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_base" );
+	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_legs" );
+	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/" + str + "_arms" );
 
 	TheNomad::SGame::InfoSystem::InfoManager.LoadMobInfos();
 	TheNomad::SGame::InfoSystem::InfoManager.LoadItemInfos();
@@ -109,14 +111,14 @@ void InitResources() {
 	//
 	// init sfx
 	//
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die0.wav" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die1.wav" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die2.wav" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain0.wav" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain1.wav" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain2.wav" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide0.wav" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide1.wav" );
+	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die0.ogg" );
+	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die1.ogg" );
+	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/die2.ogg" );
+	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain0.ogg" );
+	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain1.ogg" );
+	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/pain2.ogg" );
+	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide0.ogg" );
+	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/slide1.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/dash.ogg" );
 
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/misc/pass_checkpoint.ogg" );
@@ -125,12 +127,12 @@ void InitResources() {
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveGravel1.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveGravel2.ogg" );
 	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveGravel3.ogg" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveWater0.wav" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveWater1.wav" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal0.wav" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal1.wav" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal2.wav" );
-	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal3.wav" );
+	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveWater0.ogg" );
+	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveWater1.ogg" );
+	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal0.ogg" );
+	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal1.ogg" );
+	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal2.ogg" );
+	TheNomad::Engine::ResourceCache.GetSfx( "sfx/players/moveMetal3.ogg" );
 
 	//
 	// register strings

@@ -233,6 +233,8 @@ typedef struct {
     int demoDeltaNum;
     int demoMessageSequence;
 
+    char gameconfigStrings[BIG_INFO_STRING];
+
 #ifdef __cplusplus
     glm::vec3 cameraPos;
     glm::vec3 cameraWorldPos;

@@ -146,12 +146,10 @@ menu/backbutton0
         rgbGen vertex
     }
     else {
-        {
         texFilter bilinear
         map textures/menu/standard/back_0.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
-    }
     }
 }
 

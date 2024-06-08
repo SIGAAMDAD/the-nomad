@@ -863,20 +863,19 @@ GDR_INLINE void CThread::Sleep( uint64_t duration )
 
 // Optional pre-run call, with ability to fail-create. Note Init()
 // is forced synchronous with Start()
-GDR_INLINE bool CThread::Init( void )
-{
+GDR_INLINE bool CThread::Init( void ) {
 	return true;
 }
 
 //---------------------------------------------------------
 
-GDR_INLINE int32_t CThread::Run( void )
-{
+GDR_INLINE int32_t CThread::Run( void ) {
 	return -1;
 }
 
 // Called when the thread exits
-GDR_INLINE void CThread::OnExit( void ) { }
+GDR_INLINE void CThread::OnExit( void ) {
+}
 
 /*
 // Allow for custom start waiting

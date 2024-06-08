@@ -1081,9 +1081,9 @@ static void GetModuleDependencies( CScriptArray *depList, const string_t *modNam
         return;
     }
 
-    depList->Resize( info->m_Dependencies.size() );
-    for ( uint64_t i = 0; info->m_Dependencies.size(); i++ ) {
-        *(string_t *)depList->At( i ) = info->m_Dependencies[i].c_str();
+    depList->Resize( info->m_nDependencies );
+    for ( uint64_t i = 0; info->m_nDependencies; i++ ) {
+        *(string_t *)depList->At( i ) = info->m_pDependencies[i].c_str();
     }
 }
 

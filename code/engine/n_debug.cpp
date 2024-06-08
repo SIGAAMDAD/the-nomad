@@ -111,12 +111,12 @@ static void bt_syminfo_callback( void *data, uintptr_t pc, const char *symname,
 			symname = name;
 		}
 
-		if (logfile != FS_INVALID_HANDLE) {
+		if ( logfile != FS_INVALID_HANDLE && FS_Initialized() ) {
 			FS_Printf( logfile, "  %-8zu %s\n", pc, symname );
 		}
 		fprintf( stdout, "  %-8zu %s\n", pc, symname );
 	} else {
-		if (logfile != FS_INVALID_HANDLE) {
+		if ( logfile != FS_INVALID_HANDLE && FS_Initialized() ) {
 			FS_Printf( logfile, "%-8zu (unknown symbol)\n", pc );
 		}
 		fprintf( stdout, "  %-8zu (unknown symbol)\n", pc );

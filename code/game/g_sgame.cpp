@@ -20,12 +20,10 @@ void G_ShutdownSGame( void )
 void G_InitSGame( void )
 {
     PROFILE_FUNCTION();
-
-    vmInterpret_t interpret;
+    
     CTimer timer;
 
     timer.Run();
-    interpret = (vmInterpret_t)Cvar_VariableInteger( "vm_sgame" );
 
     // allow vertex lighting for in-game elements
     re.VertexLighting( qtrue );

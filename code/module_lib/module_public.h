@@ -287,21 +287,25 @@ inline void DeleteObject( T *pObject ) {
 struct CModuleInfo
 {
 	CModuleInfo( nlohmann::json& parse, CModuleHandle *pHandle ) {
-		N_strncpyz( m_szName, parse["Name"].get<string_t>().c_str(), MAX_NPATH );
-        N_strncpyz( m_szId, parse["Id"].get<string_t>().c_str(), MAX_NPATH );
+        string_t *pString;
+
+		N_strncpyz( m_szName, parse[ "Name" ].get<string_t>().c_str(), MAX_NPATH );
+        N_strncpyz( m_szId, parse[ "Id" ].get<string_t>().c_str(), MAX_NPATH );
         
-        m_Dependencies.reserve( parse.at( "DependedModules" ).size() );
+        m_nDependencies = parse.at( "DependedModules" ).size();
+        m_pDependencies = (string_t *)Hunk_Alloc( sizeof( *m_pDependencies ) * m_nDependencies, h_high );
+        pString = m_pDependencies;
         for ( const auto& it : parse.at( "DependedModules" ) ) {
-            m_Dependencies.emplace_back( eastl::move( it.get<string_t>() ) );
+            *pString++ = eastl::move( it.get<string_t>() );
         }
 
-		m_GameVersion.m_nVersionMajor = parse["Version"]["GameVersionMajor"];
-		m_GameVersion.m_nVersionUpdate = parse["Version"]["GameVersionUpdate"];
-		m_GameVersion.m_nVersionPatch = parse["Version"]["GameVersionPatch"];
+		m_GameVersion.m_nVersionMajor = parse[ "Version" ][ "GameVersionMajor" ];
+		m_GameVersion.m_nVersionUpdate = parse[ "Version" ][ "GameVersionUpdate" ];
+		m_GameVersion.m_nVersionPatch = parse[ "Version" ][ "GameVersionPatch" ];
 
-		m_nModVersionMajor = parse["Version"]["VersionMajor"];
-		m_nModVersionUpdate = parse["Version"]["VersionUpdate"];
-		m_nModVersionPatch = parse["Version"]["VersionPatch"];
+		m_nModVersionMajor = parse[ "Version" ][ "VersionMajor" ];
+		m_nModVersionUpdate = parse[ "Version" ][ "VersionUpdate" ];
+		m_nModVersionPatch = parse[ "Version" ][ "VersionPatch" ];
 
 		m_pHandle = pHandle;
 
@@ -316,7 +320,8 @@ struct CModuleInfo
 
 	char m_szName[MAX_NPATH];
     char m_szId[MAX_NPATH];
-	UtlVector<string_t> m_Dependencies;
+    uint32_t m_nDependencies;
+	string_t *m_pDependencies;
 
 	CModuleHandle *m_pHandle;
 	

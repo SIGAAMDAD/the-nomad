@@ -1096,10 +1096,10 @@ static void R_Register( void )
     r_drawBuffer = ri.Cvar_Get( "r_drawBuffer", "GL_BACK", CVAR_CHEAT );
     ri.Cvar_SetDescription( r_drawBuffer, "Sets which frame buffer to draw into." );
 
-    r_shadows = ri.Cvar_Get( "cg_shadows", "1", 0 );
+    r_shadows = ri.Cvar_Get( "sgame_Shadows", "1", 0 );
 
-    r_maxPolys = ri.Cvar_Get( "r_maxPolys", va( "%i", MAX_BATCH_QUADS ), CVAR_LATCH | CVAR_PROTECTED );
-    ri.Cvar_CheckRange( r_maxPolys, va( "%i", MAX_BATCH_QUADS ), va( "%lu", ( MAX_INT / sizeof(srfPoly_t) ) ), CVT_INT );
+    r_maxPolys = ri.Cvar_Get( "r_maxPolys", "4096", CVAR_LATCH | CVAR_PROTECTED );
+    ri.Cvar_CheckRange( r_maxPolys, "64", va( "%lu", ( MAX_INT / sizeof(srfPoly_t) ) ), CVT_INT );
     ri.Cvar_SetDescription(r_maxPolys, "Sets the maximum amount of polygons that can be processed per scene.\n"
                                         "NOTE: there can be multiple scenes rendered in a single frame.");
     
@@ -1110,10 +1110,10 @@ static void R_Register( void )
     r_screenshotJpegQuality = ri.Cvar_Get( "r_screenshotJpegQuality", "90", CVAR_SAVE );
 	ri.Cvar_SetDescription( r_screenshotJpegQuality, "Controls quality of Jpeg screenshots when using screenshotJpeg." );
 
-    r_maxDLights = ri.Cvar_Get( "r_maxDLights", va("%lu", (uint64_t)MAX_DLIGHTS), CVAR_LATCH | CVAR_PROTECTED );
+    r_maxDLights = ri.Cvar_Get( "r_maxDLights", "128", CVAR_LATCH | CVAR_PROTECTED );
     ri.Cvar_SetDescription( r_maxDLights, "Sets the maximum amount of dynamic lights that can be processed per scene.\n"
                                             "NOTE: there can be multiple scenes rendered in a single frame." );
-    r_maxEntities = ri.Cvar_Get( "r_maxEntities", va("%lu", (uint64_t)MAX_RENDER_ENTITIES), CVAR_LATCH | CVAR_PROTECTED );
+    r_maxEntities = ri.Cvar_Get( "r_maxEntities", "2048", CVAR_LATCH | CVAR_PROTECTED );
     ri.Cvar_SetDescription( r_maxEntities, "Sets the maximum amount of dynamic entities that can be processed per scene.\n"
                                             "NOTE: there can be multiple scenes rendered in a single frame." );
 
@@ -1126,7 +1126,7 @@ static void R_Register( void )
     ri.Cmd_AddCommand( "gpumeminfo", GpuMemInfo_f );
 }
 
-static void R_InitGLContext(void)
+static void R_InitGLContext( void )
 {
     if ( glConfig.vidWidth == 0 ) {
         GLint temp;
@@ -1335,7 +1335,7 @@ static void R_AllocBackend( void ) {
     size += PAD( sizeof(renderEntityDef_t) * r_maxEntities->i, sizeof(uintptr_t) );
     size += PAD( sizeof(dlight_t) * r_maxDLights->i, sizeof(uintptr_t) );
 
-    backendData = (renderBackendData_t *)ri.Hunk_Alloc( size, h_low );
+    backendData = (renderBackendData_t *)ri.Malloc( size );
     backendData->verts = (srfVert_t *)( backendData + 1 );
     backendData->polyVerts = (polyVert_t *)( backendData->verts + r_maxPolys->i * 4 );
     backendData->polys = (srfPoly_t *)( backendData->polyVerts + r_maxPolys->i * 4 );

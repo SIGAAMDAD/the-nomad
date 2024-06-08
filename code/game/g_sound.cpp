@@ -25,6 +25,31 @@ cvar_t *snd_effectsOn;
 cvar_t *snd_masterVolume;
 cvar_t *snd_debugPrint;
 
+class CSoundThread : public CThread
+{
+public:
+    CSoundThread( void );
+	virtual ~CSoundThread() override;
+
+    bool LoadSound( const char *npath, sfxHandle_t *hSfx );
+
+	const char *GetName( void ) { return "SoundThread"; }
+private:
+	// Optional pre-run call, with ability to fail-create. Note Init()
+	// is forced synchronous with Start()
+	virtual bool Init( void ) override;
+
+	// Thread will run this function on startup, must be supplied by
+	// derived class, performs the intended action of the thread.
+	virtual int Run( void ) override;
+
+	// Called when the thread exits
+	virtual void OnExit( void ) override;
+
+    eastl::vector<eastl::pair<const char *, sfxHandle_t *>> m_LoadQueue;
+};
+
+//static CSoundThread m_hSoundThread;
 //static idDynamicBlockAlloc<byte, 1<<20, 1<<10> soundCacheAllocator;
 
 #define Snd_HashFileName(x) Com_GenerateHashValue((x),MAX_SOUND_SOURCES)
@@ -833,7 +858,7 @@ sfxHandle_t Snd_RegisterTrack( const char *npath ) {
 
     track = sndManager->InitSource( npath, TAG_MUSIC );
     if ( !track ) {
-        return FS_INVALID_HANDLE;
+        return -1;
     }
 
     return Snd_HashFileName( track->GetName() );
@@ -844,7 +869,7 @@ sfxHandle_t Snd_RegisterSfx( const char *npath ) {
 
     sfx = sndManager->InitSource( npath, TAG_SFX );
     if ( !sfx ) {
-        return FS_INVALID_HANDLE;
+        return -1;
     }
 
     return Snd_HashFileName( sfx->GetName() );
@@ -858,7 +883,7 @@ void Snd_SetLoopingTrack( sfxHandle_t handle ) {
         return;
     }
 
-    if ( handle == FS_INVALID_HANDLE ) {
+    if ( handle == -1 ) {
         Con_Printf( COLOR_RED "Snd_SetLoopingTrack: invalid handle, ignoring call.\n" );
         return;
     }
@@ -888,7 +913,7 @@ void Snd_AddLoopingTrack( sfxHandle_t handle ) {
         return;
     }
 
-    if ( handle == FS_INVALID_HANDLE ) {
+    if ( handle == -1 ) {
         Con_Printf( COLOR_RED "Snd_AddLoopingTrack: invalid handle, ignoring call.\n" );
         return;
     }
@@ -903,6 +928,7 @@ void Snd_AddLoopingTrack( sfxHandle_t handle ) {
 
     alSourcei( track->GetSource(), AL_LOOPING, AL_TRUE );
     alSourcef( track->GetSource(), AL_GAIN, snd_musicVolume->f / 100.0f );
+    alSourcePlay( track->GetSource() );
 
     sndManager->m_LoopingTracks.emplace_back( track );
 }
@@ -924,7 +950,7 @@ void Snd_ClearLoopingTrack( void ) {
     // stop the track and pop it
     alSourcei( sndManager->GetMusicSource(), AL_LOOPING, AL_FALSE );
     alSourceStop( sndManager->GetMusicSource() );
-    alSourcei( sndManager->GetMusicSource(), AL_BUFFER, 0 );
+    alSourcei( sndManager->GetMusicSource(), AL_BUFFER, AL_NONE );
 
     sndManager->m_pCurrentTrack = NULL;
 }
@@ -1065,6 +1091,42 @@ static void Snd_ListFiles_f( void )
     }
     Con_Printf( "Total sound files loaded: %lu\n", numFiles );
 }
+
+/*
+bool CSoundThread::Init( void ) {
+    m_LoadQueue.reserve( MAX_SOUND_SOURCES );
+    return true;
+}
+
+int CSoundThread::Run( void ) {
+    sfxHandle_t hSound;
+
+    while ( 1 ) {
+        if ( !m_LoadQueue.size() ) {
+            // nothing to load, wait a little bit
+            CThread::Sleep( 1000 );
+        }
+        for ( const auto& it : m_LoadQueue ) {
+            m_hLock.Lock();
+            *it.second = Snd_RegisterSfx( it.first );
+            m_LoadQueue.erase( &it );
+            m_hLock.Unlock();
+        }
+    }
+}
+
+void CSoundThread::OnExit( void ) {
+}
+
+bool CSoundThread::LoadSound( const char *npath, sfxHandle_t *hSfx )
+{
+    m_hLock.Lock();
+    m_LoadQueue.emplace_back( eastl::pair<const char *, sfxHandle_t *>( npath, hSfx ) );
+    m_hLock.Unlock();
+
+    return true;
+}
+*/
 
 void Snd_Init( void )
 {
