@@ -1524,6 +1524,8 @@ const char *GL_ErrorString( GLenum error );
 
 void R_AddPostProcessCmd( void );
 
+void R_InitWorldBuffer( void );
+
 //
 // rgl_extensions.c
 //

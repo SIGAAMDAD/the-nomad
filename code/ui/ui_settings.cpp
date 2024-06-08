@@ -188,6 +188,10 @@ typedef struct settingsMenu_s {
 	controlsSettings_t controls;
 	gameplaySettings_t gameplay;
 
+	char availableGPUMemory[64];
+	char dedicatedGPUMemory[64];
+	char totalGPUMemory[64];
+
 	const char *hintLabel;
 	const char *hintMessage;
 
@@ -343,6 +347,60 @@ static inline void SfxFocused( const void *item ) {
 	}
 }
 
+static void SettingsMenu_GetGPUMemoryInfo( void )
+{
+	GLint v;
+	const char *memSuffix;
+
+	renderImport.glGetIntegerv( GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX, &v );
+	if ( v > 1000 ) {
+		v /= 1000;
+		memSuffix = "Kb";
+	}
+	if ( v > 1000 ) {
+		v /= 1000;
+		memSuffix = "Mb";
+	}
+	if ( v > 1000 ) {
+		v /= 1000;
+		memSuffix = "Gb";
+	}
+	Com_snprintf( s_settingsMenu->dedicatedGPUMemory, sizeof( s_settingsMenu->dedicatedGPUMemory ) - 1,
+		"%i%s", v, memSuffix );
+
+	renderImport.glGetIntegerv( GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &v );
+	if ( v > 1000 ) {
+		v /= 1000;
+		memSuffix = "Kb";
+	}
+	if ( v > 1000 ) {
+		v /= 1000;
+		memSuffix = "Mb";
+	}
+	if ( v > 1000 ) {
+		v /= 1000;
+		memSuffix = "Gb";
+	}
+	Com_snprintf( s_settingsMenu->availableGPUMemory, sizeof( s_settingsMenu->availableGPUMemory ) - 1,
+		"%i%s", v, memSuffix );
+	
+	renderImport.glGetIntegerv( GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &v );
+	if ( v > 1000 ) {
+		v /= 1000;
+		memSuffix = "Kb";
+	}
+	if ( v > 1000 ) {
+		v /= 1000;
+		memSuffix = "Mb";
+	}
+	if ( v > 1000 ) {
+		v /= 1000;
+		memSuffix = "Gb";
+	}
+	Com_snprintf( s_settingsMenu->totalGPUMemory, sizeof( s_settingsMenu->totalGPUMemory ) - 1,
+		"%i%s", v, memSuffix );
+}
+
 static void SettingsMenu_TabBar( void ) {
 	if ( ImGui::BeginTabBar( "##SettingsMenuTabBar" ) ) {
 		ImGui::PushStyleColor( ImGuiCol_Tab, ImVec4( 1.0f, 1.0f, 1.0f, 0.0f ) );
@@ -363,6 +421,7 @@ static void SettingsMenu_TabBar( void ) {
 				s_settingsMenu->lastChild = ID_PERFORMANCE;
 				Snd_PlaySfx( ui->sfx_select );
 			}
+			SettingsMenu_GetGPUMemoryInfo();
 			ImGui::EndTabItem();
 		}
 		SfxFocused( "Performance" );
@@ -986,8 +1045,14 @@ static void PerformanceMenu_Draw( void )
 			&s_settingsMenu->performance.postProcessing, true );
 	}
 	ImGui::EndTable();
-	ImGui::SetWindowSize( ImVec2( s_settingsMenu->menu.width, s_settingsMenu->menu.height ) );
 
+	ImGui::Begin( "##GPUMemoryInfo", NULL, MENU_DEFAULT_FLAGS | ImGuiWindowFlags_AlwaysAutoResize & ~( ImGuiWindowFlags_NoBackground ) );
+	ImGui::SetWindowPos( ImVec2( 900 * ui->scale, 600 * ui->scale ) );
+	ImGui::SetWindowFontScale( ImGui::GetFont()->Scale * 2.5f );
+	ImGui::Text( "Available GPU Memory: %s", s_settingsMenu->availableGPUMemory );
+	ImGui::Text( "Total GPU Memory: %s", s_settingsMenu->totalGPUMemory );
+	ImGui::Text( "Dedicated GPU Memory: %s", s_settingsMenu->dedicatedGPUMemory );
+	ImGui::End();
 }
 
 static void AudioMenu_Draw( void )
@@ -1246,6 +1311,8 @@ static void PerformanceMenu_SetDefault( void )
 			break;
 		}
 	}
+
+	SettingsMenu_GetGPUMemoryInfo();
 }
 
 static void VideoMenu_SetDefault( void )

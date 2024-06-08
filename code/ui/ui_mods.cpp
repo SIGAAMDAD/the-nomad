@@ -345,6 +345,7 @@ void ModsMenu_Draw( void )
 	float itemSpacing;
     const float fontScale = ImGui::GetFont()->Scale;
     extern ImFont *RobotoMono;
+	module_t *swap;
     
 	ui->menubackShader = mods->backgroundShader;
 
@@ -364,15 +365,15 @@ void ModsMenu_Draw( void )
     style->ItemSpacing.y = 50.0f;
    	
    	ImGui::BeginTable( "##ModLoadList", 5 );
-   	
+
    	ImGui::SetWindowFontScale( ( fontScale * 1.5f ) );
-   	ImGui::TableNextColumn();
+	ImGui::TableNextColumn();
    	ImGui::TextUnformatted( "Active" );
-   	ImGui::TableNextColumn();
-   	ImGui::TextUnformatted( "Name" );
-   	ImGui::TableNextColumn();
+	ImGui::TableNextColumn();
+	ImGui::TextUnformatted( "Name" );
+	ImGui::TableNextColumn();
    	ImGui::TextUnformatted( "Mod Version" );
-   	ImGui::TableNextColumn();
+	ImGui::TableNextColumn();
    	ImGui::TextUnformatted( "Game Version" );
 	ImGui::TableNextColumn();
 	ImGui::SetWindowFontScale( ( fontScale * 1.75f ) );
@@ -383,6 +384,7 @@ void ModsMenu_Draw( void )
 
 	ImGui::TableNextRow();
    	
+	swap = NULL;
    	for ( i = 0; i < mods->numMods; i++ ) {
    		Com_snprintf( loadId, sizeof( loadId ) - 1, "%s##ModLoad%i", mods->modList[i].info->m_szName, i );
    		ImGui::PushID( i );
@@ -412,9 +414,28 @@ void ModsMenu_Draw( void )
 			Snd_PlaySfx( ui->sfx_select );
    			ModToggleActive( &mods->modList[ mods->selectedMod ], !dimColor );
    		}
-		
 		ModsMenu_DrawListing( &mods->modList[i], dimColor );
-		
+		if ( ImGui::BeginDragDropSource( ImGuiDragDropFlags_SourceNoDisableHover ) ) {
+			ImGui::SetDragDropPayload( "##ModuleReorderDragDrop", &mods->modList[i], sizeof( module_t ), ImGuiCond_Once );
+			ImGui::EndDragDropSource();
+		}
+		if ( ImGui::BeginDragDropTarget() ) {
+			const ImGuiPayload *pData = ImGui::AcceptDragDropPayload( "##ModuleReorderDragDrop" );
+			if ( pData != NULL ) {
+				if ( pData->DataSize != sizeof( *swap ) ) {
+					N_Error( ERR_DROP, "ImGuiPayload dataSize != sizeof( module_t )!" );
+				}
+				swap = (module_t *)const_cast<ImGuiPayload *>( pData )->Data;
+
+				if ( !IsDependentOn( swap, &mods->modList[i] )
+					&& !IsDependentOn( &mods->modList[i], swap ) )
+				{
+					eastl::swap( *swap, mods->modList[i] );
+				}
+			}
+			ImGui::EndDragDropTarget();
+		}
+
 		ImGui::TextUnformatted( mods->modList[i].info->m_szName );
 		ImGui::TableNextColumn();
 		ImGui::Text( "v%i.%i.%i", mods->modList[i].info->m_nModVersionMajor, mods->modList[i].info->m_nModVersionUpdate,
@@ -429,7 +450,6 @@ void ModsMenu_Draw( void )
 
 		ImGui::TableNextColumn();
 		
-		module_t *swap = NULL;
 		if ( ImGui::ArrowButton( "##ModsMenuConfigUp", ImGuiDir_Up ) ) {
 			Snd_PlaySfx( ui->sfx_select );
 			if ( i == 0 ) {
@@ -458,7 +478,7 @@ void ModsMenu_Draw( void )
 		if ( i < mods->numMods - 1 ) {
             ImGui::TableNextRow();
         }
-		
+
 		ImGui::PopID();
    	}
    	

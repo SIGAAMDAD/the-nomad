@@ -86,28 +86,6 @@ namespace ImGui {
 	}
 };
 
-void LoadLevelAssets() {
-	ConsolePrint( "Loading level assets...\n" );
-
-	// loading shaders after a hunk mark is set won't end up with GPU memory leaks
-	// like doing it directly with a texture, because the texture will just be allocated
-	// and stay cached
-	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/raio_base" );
-	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/raio_legs" );
-	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/raio_arms" );
-
-	TheNomad::SGame::InfoSystem::InfoManager.LoadMobInfos();
-	TheNomad::SGame::InfoSystem::InfoManager.LoadItemInfos();
-	TheNomad::SGame::InfoSystem::InfoManager.LoadAmmoInfos();
-	TheNomad::SGame::InfoSystem::InfoManager.LoadWeaponInfos();
-
-	@TheNomad::SGame::InfoSystem::InfoManager = TheNomad::SGame::InfoSystem::InfoDataManager();
-	@TheNomad::SGame::EntityManager = cast<TheNomad::SGame::EntitySystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::EntitySystem() ) );
-	@TheNomad::SGame::StateManager = cast<TheNomad::SGame::EntityStateSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::EntityStateSystem() ) );
-
-	TheNomad::SGame::ScreenData.Init();
-}
-
 //
 // InitResources: caches all important SGame resources
 //
@@ -116,10 +94,17 @@ void InitResources() {
 
 	ConsolePrint( "Initializing SGame Resources...\n" );
 
-	@TheNomad::Engine::SoundSystem::SoundManager = TheNomad::Engine::SoundSystem::SoundFrameData();
-	@TheNomad::GameSystem::GameManager = cast<TheNomad::GameSystem::CampaignManager@>( @TheNomad::GameSystem::AddSystem( TheNomad::GameSystem::CampaignManager() ) );
-	@TheNomad::SGame::LevelManager = cast<TheNomad::SGame::LevelSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::LevelSystem() ) );
-	TheNomad::SGame::InitCheatCodes();
+	//
+	// init shaders
+	//
+	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/raio_base" );
+	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/raio_legs" );
+	TheNomad::Engine::ResourceCache.GetShader( "sprites/players/raio_arms" );
+
+	TheNomad::SGame::InfoSystem::InfoManager.LoadMobInfos();
+	TheNomad::SGame::InfoSystem::InfoManager.LoadItemInfos();
+	TheNomad::SGame::InfoSystem::InfoManager.LoadAmmoInfos();
+	TheNomad::SGame::InfoSystem::InfoManager.LoadWeaponInfos();
 
 	//
 	// init sfx
@@ -240,6 +225,16 @@ int ModuleOnInit() {
 	TheNomad::Util::GetModuleList( TheNomad::SGame::sgame_ModList );
 	ConsolePrint( TheNomad::SGame::sgame_ModList.Count() + " total mods registered.\n" );
 
+	@TheNomad::Engine::SoundSystem::SoundManager = TheNomad::Engine::SoundSystem::SoundFrameData();
+	@TheNomad::GameSystem::GameManager = cast<TheNomad::GameSystem::CampaignManager@>( @TheNomad::GameSystem::AddSystem( TheNomad::GameSystem::CampaignManager() ) );
+	@TheNomad::SGame::LevelManager = cast<TheNomad::SGame::LevelSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::LevelSystem() ) );
+	@TheNomad::SGame::InfoSystem::InfoManager = TheNomad::SGame::InfoSystem::InfoDataManager();
+	@TheNomad::SGame::EntityManager = cast<TheNomad::SGame::EntitySystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::EntitySystem() ) );
+	@TheNomad::SGame::StateManager = cast<TheNomad::SGame::EntityStateSystem@>( @TheNomad::GameSystem::AddSystem( TheNomad::SGame::EntityStateSystem() ) );
+
+	TheNomad::SGame::InitCheatCodes();
+	TheNomad::SGame::ScreenData.Init();
+
 	//
 	// init resources
 	//
@@ -295,7 +290,6 @@ int ModuleOnSaveGame() {
 }
 
 int ModuleOnLoadGame() {
-	LoadLevelAssets();
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLoad();
 	}
@@ -304,7 +298,6 @@ int ModuleOnLoadGame() {
 }
 
 int ModuleOnLevelStart() {
-	LoadLevelAssets();
 	TheNomad::SGame::GlobalState = TheNomad::SGame::GameState::InLevel;
 	for ( uint i = 0; i < TheNomad::GameSystem::GameSystems.Count(); i++ ) {
 		TheNomad::GameSystem::GameSystems[i].OnLevelStart();

@@ -324,6 +324,19 @@ namespace TheNomad::SGame::InfoSystem {
 			return null;
 		}
 
+		dictionary@ GetItemTypes() {
+			return @m_ItemTypes;
+		}
+		dictionary@ GetMobTypes() {
+			return @m_MobTypes;
+		}
+		dictionary@ GetWeaponTypes() {
+			return @m_WeaponTypes;
+		}
+		dictionary@ GetAmmoTypes() {
+			return @m_AmmoTypes;
+		}
+
 		const dictionary@ GetItemTypes() const {
 			return @m_ItemTypes;
 		}

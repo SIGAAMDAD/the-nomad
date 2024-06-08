@@ -808,7 +808,7 @@ static const void *RB_DrawImage( const void *data ) {
 	cmd = (const drawImageCmd_t *)data;
 
 	shader = cmd->shader;
-	if ( backend.drawBatch.shader != shader ) {
+	if ( backend.drawBatch.shader != shader || backend.drawBuffer != backend.drawBatch.buffer ) {
 		if ( backend.drawBatch.idxOffset ) {
 			RB_FlushBatchBuffer();
 		}

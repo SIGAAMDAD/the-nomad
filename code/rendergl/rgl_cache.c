@@ -284,6 +284,14 @@ vertexBuffer_t *R_AllocateBuffer( const char *name, void *vertices, uint32_t ver
 
 	for ( i = 0; i < rg.numBuffers; i++ ) {
 		if ( !N_stricmp( rg.buffers[i]->name, name ) ) {
+			// resize buffers if necessary
+			VBO_Bind( rg.buffers[i] );
+			if ( rg.buffers[i]->vertex.size != verticesSize ) {
+				nglBufferData( GL_ARRAY_BUFFER, verticesSize, vertices, usage );
+			}
+			if ( rg.buffers[i]->index.size != indicesSize ) {
+				nglBufferData( GL_ELEMENT_ARRAY_BUFFER, indicesSize, indices, usage );
+			}
 			return rg.buffers[i];
 		}
 	}
@@ -394,10 +402,7 @@ void VBO_BindNull( void )
 
 void R_ShutdownBuffer( vertexBuffer_t *vbo )
 {
-	if ( vbo->vaoId ) {
-		nglDeleteVertexArrays( 1, &vbo->vaoId );
-	}
-
+	VBO_Bind( vbo );
 	if ( vbo->vertex.id ) {
 		if ( vbo->vertex.usage == BUF_GL_MAPPED ) {
 			nglBindBuffer( GL_ARRAY_BUFFER, vbo->vertex.id );
@@ -415,7 +420,14 @@ void R_ShutdownBuffer( vertexBuffer_t *vbo )
 		}
 		nglDeleteBuffers( 1, &vbo->index.id );
 	}
+
+	if ( vbo->vaoId ) {
+		nglDeleteVertexArrays( 1, &vbo->vaoId );
+	}
+
 	memset( vbo, 0, sizeof( *vbo ) );
+
+	VBO_BindNull();
 }
 
 void RB_SetBatchBuffer( vertexBuffer_t *buffer, void *vertexBuffer, uintptr_t vtxSize, void *indexBuffer, uintptr_t idxSize )

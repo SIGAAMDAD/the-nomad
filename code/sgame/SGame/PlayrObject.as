@@ -142,133 +142,6 @@ namespace TheNomad::SGame {
 			return InfoSystem::WeaponProperty::None;
 		}
 		
-		//
-		// controls
-		//
-		/*
-		void MoveNorth_Up_f() { key_MoveNorth.Up(); }
-		void MoveNorth_Down_f() { key_MoveNorth.Down(); }
-		void MoveSouth_Up_f() { key_MoveSouth.Up(); }
-		void MoveSouth_Down_f() { key_MoveSouth.Down(); }
-		void MoveEast_Down_f() { key_MoveEast.Down(); }
-		void MoveEast_Up_f() { key_MoveEast.Up(); }
-		void MoveWest_Down_f() { key_MoveWest.Down(); }
-		void MoveWest_Up_f() { key_MoveWest.Up(); }
-		void Jump_Down_f() { key_Jump.Down(); }
-		void Jump_Up_f() { key_Jump.Up(); }
-		
-		void Quickshot_Down_f() {
-			@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_QUICKSHOT );
-			beginQuickshotSfx.Play();
-		}
-		void Quickshot_Up_f() {
-			m_PFlags &= ~PF_QUICKSHOT;
-			endQuickshotSfx.Play();
-		}
-		void SwitchWeaponWielding_f() {
-			weaponFancySfx.Play();
-			switch ( m_nHandsUsed ) {
-			case 0:
-				SwitchWeaponWielding( m_LeftHandMode, m_RightHandMode, @m_LeftHandWeapon, @m_RightHandWeapon );
-				break;
-			case 1:
-			case 2:
-				SwitchWeaponWielding( m_RightHandMode, m_LeftHandMode, @m_RightHandWeapon, @m_LeftHandWeapon );
-				break;
-			};
-		}
-		void SwitchWeaponMode_f() {
-			weaponFancySfx.Play();
-			switch ( m_nHandsUsed ) {
-			case 0:
-				SwitchWeaponMode( m_LeftHandMode, @m_LeftHandWeapon );
-				break;
-			case 1:
-				SwitchWeaponMode( m_RightHandMode, @m_RightHandWeapon );
-				break;
-			case 2: {
-				const uint bits = uint( m_LeftHandMode );
-				SwitchWeaponMode( m_LeftHandMode, @m_LeftHandWeapon );
-				if ( bits == uint( m_LeftHandMode ) ) {
-					SwitchWeaponMode( m_RightHandMode, @m_RightHandWeapon );
-				}
-				break; }
-			default:
-				break;
-			};
-		}
-		void SwitchHand_f() {
-			switch ( m_nHandsUsed ) {
-			case 0:
-				m_nHandsUsed = 1;
-				break;
-			case 1:
-				m_nHandsUsed = 0;
-				break;
-			case 2:
-			default:
-				break; // can't switch if we're using both hands for one weapon
-			};
-		}
-		void Crouch_Down_f() {
-			if ( key_MoveNorth.active || key_MoveSouth.active || key_MoveWest.active || key_MoveEast.active ) {
-				beginSlidingSfx.Play();
-				@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_SLIDING );
-			} else {
-				crouchSfxDown.Play();
-				@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_CROUCH );
-			}
-		}
-		void Crouch_Up_f() {
-			if ( ( m_PFlags & PF_CROUCHING ) != 0 ) {
-				crouchSfxUp.Play();
-			}
-			m_PFlags &= ~( PF_CROUCHING | PF_SLIDING );
-		}
-		
-		void Melee_Down_f() {
-			m_nParryBoxWidth = 0.0f;
-			@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_MELEE );
-		}
-		void Melee_Up_f() {
-			@m_State = @StateManager.GetStateForNum( StateNum::ST_PLAYR_IDLE );
-		}
-		
-		void NextWeapon_f() {
-			m_CurrentWeapon++;
-			if ( m_CurrentWeapon >= m_WeaponSlots.Count() ) {
-				m_CurrentWeapon = 0;
-			}
-			m_WeaponSlots[ m_CurrentWeapon ].GetInfo().equipSfx.Play();
-		}
-		void PrevWeapon_f() {
-			m_CurrentWeapon--;
-			if ( m_CurrentWeapon < 0 ) {
-				m_CurrentWeapon = m_WeaponSlots.Count();
-			}
-			m_WeaponSlots[ m_CurrentWeapon ].GetInfo().equipSfx.Play();
-		}
-		void UseWeapon_Down_f() { m_bUseWeapon = true; }
-		void UseWeapon_Up_f() { m_bUseWeapon = false; }
-		void AltUseWeapon_Down_f() { m_bAltUseWeapon = true; }
-		void AltUseWeapon_Up_f() { m_bAltUseWeapon = false; }
-		void UseItem_f() {
-		}
-		void PickupItem_f() {
-		}
-		void Emote_f() {
-			m_bEmoting = true;
-//			m_nEmoteLifeTime = 0;
-//			m_nEmoteEndTime = GameSystem::GameManager.GetGameMsec() + m_SelectedEmote.m_nDuration;
-		}
-		void EmoteWheel_Down_f() {
-//			m_bEmoteWheelActive = true;
-		}
-		void EmoteWheel_Up_f() {
-//			m_bEmoteWheelActive = false;
-		}
-		*/
-		
 		void DrawEmoteWheel() {
 //			if ( !m_bEmoteWheelActive ) {
 //				DebugPrint( "DrawEmoteWheel: called when inactive.\n" );
@@ -479,9 +352,9 @@ namespace TheNomad::SGame {
 			}
 		}
 		
-		///
-		/// PlayrObject::ParryThink: calculates the bounds of the parry box
-		///
+		//
+		// PlayrObject::ParryThink: calculates the bounds of the parry box
+		//
 		private void ParryThink() {
 			m_ParryBox.m_nWidth = 2.5f + m_nParryBoxWidth;
 			m_ParryBox.m_nHeight = 1.0f;
@@ -506,6 +379,21 @@ namespace TheNomad::SGame {
 			@m_RightHandWeapon = @m_RightArm;
 			m_CurrentWeapon = 0;
 			m_Link.m_nEntityType = TheNomad::GameSystem::EntityType::Playr;
+
+			m_EmptyInfo.name = "Fist (Empty)";
+			m_EmptyInfo.type = ENTITYNUM_INVALID - 2;
+			m_EmptyInfo.damage = 100.0f; // this is the god of war
+			m_EmptyInfo.range = 1.5f;
+			m_EmptyInfo.magSize = 0;
+			m_EmptyInfo.weaponProps = InfoSystem::WeaponProperty::OneHandedBlunt;
+			m_EmptyInfo.weaponType = InfoSystem::WeaponType::LeftArm;
+
+			InfoSystem::InfoManager.GetWeaponTypes()[ "weapon_fist" ] = ENTITYNUM_INVALID - 2;
+			InfoSystem::InfoManager.AddWeaponInfo( @m_EmptyInfo );
+			for ( uint i = 0; i < m_WeaponSlots.Count(); i++ ) {
+				m_WeaponSlots[i].SetOwner( cast<EntityObject@>( @this ) );
+				m_WeaponSlots[i].Spawn( ENTITYNUM_INVALID - 2, origin );
+			}
 
 			m_PhysicsObject.Init( cast<EntityObject@>( @this ) );
 			m_PhysicsObject.SetAngle( Util::Dir2Angle( TheNomad::GameSystem::DirType::East ) );
@@ -611,6 +499,7 @@ namespace TheNomad::SGame {
 		WeaponObject m_RightArm;
 		WeaponObject m_LeftArm;
 		WeaponObject m_Ordnance;
+		InfoSystem::WeaponInfo m_EmptyInfo;
 		int m_CurrentWeapon = 0;
 		
 		private QuickShot m_QuickShot;

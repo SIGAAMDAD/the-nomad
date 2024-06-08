@@ -1384,8 +1384,6 @@ static void R_UnloadWorld_f( void ) {
         return;
     }
 
-    R_ShutdownBuffer( rg.world->buffer );
-
     rg.world = NULL;
     rg.worldMapLoaded = qfalse;
 }
@@ -1481,6 +1479,8 @@ void R_Init( void )
     error = nglGetError();
     if ( error != GL_NO_ERROR )
         ri.Printf(PRINT_INFO, COLOR_RED "glGetError() = 0x%x\n", error);
+    
+    R_InitWorldBuffer();
 
     // print info
     GpuInfo_f();

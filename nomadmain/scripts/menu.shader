@@ -2,9 +2,9 @@ menu/mainbackground
 {
     nomipmaps
     nopicmip
-    if ( $r_textureDetail == 1 || $r_textureDetail == 0 ) {
+    if ( $r_textureDetail == 0 || $r_textureDetail == 1 ) {
         texFilter bilinear
-        map textures/menu/standard/fromeaglespeak.jpg
+        map textures/menu/low/fromeaglespeak.jpg
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         tcGen texture
     }
@@ -139,20 +139,34 @@ menu/rb_off
 menu/backbutton0
 {
     nomipmaps
-    {
+    if ( $r_textureDetail < 2 ) {
         texFilter bilinear
-        map textures/menu/back_0.tga
+        map textures/menu/low/back_0.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
+    }
+    else {
+        {
+        texFilter bilinear
+        map textures/menu/standard/back_0.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        rgbGen vertex
+    }
     }
 }
 
 menu/backbutton1
 {
     nomipmaps
-    {
+    if ( $r_textureDetail < 2 ) {
         texFilter bilinear
-        map textures/menu/back_1.tga
+        map textures/menu/low/back_1.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        rgbGen vertex
+    }
+    else {
+        texFilter bilinear
+        map textures/menu/standard/back_1.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -161,9 +175,15 @@ menu/backbutton1
 menu/save_0
 {
     nomipmaps
-    {
+    if ( $r_textureDetail < 2 ) {
         texFilter bilinear
-        map textures/menu/save_0.tga
+        map textures/menu/low/save_0.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        rgbGen vertex
+    }
+    else {
+        texFilter bilinear
+        map textures/menu/standard/save_0.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -172,9 +192,15 @@ menu/save_0
 menu/save_1
 {
     nomipmaps
-    {
+    if ( $r_textureDetail < 2 ) {
         texFilter bilinear
-        map textures/menu/save_1.tga
+        map textures/menu/low/save_1.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        rgbGen vertex
+    }
+    else {
+        texFilter bilinear
+        map textures/menu/standard/save_1.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -183,9 +209,15 @@ menu/save_1
 menu/reset_0
 {
     nomipmaps
-    {
+    if ( $r_textureDetail < 2 ) {
         texFilter bilinear
-        map textures/menu/reset_0.tga
+        map textures/menu/low/reset_0.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        rgbGen vertex
+    }
+    else {
+        texFilter bilinear
+        map textures/menu/standard/reset_0.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -194,9 +226,15 @@ menu/reset_0
 menu/reset_1
 {
     nomipmaps
-    {
+    if ( $r_textureDetail < 2 ) {
         texFilter bilinear
-        map textures/menu/reset_1.tga
+        map textures/menu/low/reset_1.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        rgbGen vertex
+    }
+    else {
+        texFilter bilinear
+        map textures/menu/standard/reset_1.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -205,9 +243,15 @@ menu/reset_1
 menu/accept_0
 {
     nomipmaps
-    {
+    if  ( $r_textureDetail < 2 ) {
         texFilter bilinear
-        map textures/menu/accept_0.tga
+        map textures/menu/low/accept_0.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        rgbGen vertex
+    }
+    else {
+        texFilter bilinear
+        map textures/menu/standard/accept_0.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -216,9 +260,15 @@ menu/accept_0
 menu/accept_1
 {
     nomipmaps
-    {
+    if  ( $r_textureDetail < 2 ) {
         texFilter bilinear
-        map textures/menu/accept_1.tga
+        map textures/menu/low/accept_1.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        rgbGen vertex
+    }
+    else {
+        texFilter bilinear
+        map textures/menu/standard/accept_1.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -227,9 +277,15 @@ menu/accept_1
 menu/play_0
 {
     nomipmaps
-    {
+    if ( $r_textureDetail < 2 ) {
         texFilter bilinear
-        map textures/menu/play_0.tga
+        map textures/menu/low/play_0.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        rgbGen vertex
+    }
+    else {
+        texFilter bilinear
+        map textures/menu/standard/play_0.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }
@@ -238,9 +294,15 @@ menu/play_0
 menu/play_1
 {
     nomipmaps
-    {
+    if ( $r_textureDetail < 2 ) {
         texFilter bilinear
-        map textures/menu/play_1.tga
+        map textures/menu/low/play_1.tga
+        blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
+        rgbGen vertex
+    }
+    else {
+        texFilter bilinear
+        map textures/menu/standard/play_1.tga
         blendFunc GL_SRC_ALPHA GL_ONE_MINUS_SRC_ALPHA
         rgbGen vertex
     }

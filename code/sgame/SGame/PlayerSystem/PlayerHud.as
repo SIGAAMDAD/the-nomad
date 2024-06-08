@@ -41,37 +41,6 @@ namespace TheNomad::SGame {
 			}
 		}
 		
-		private void DrawWeaponStatus() const {
-			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
-			const ivec2 screenSize = TheNomad::GameSystem::GameManager.GetScreenSize();
-			const WeaponObject@ weapon;
-			const SpriteSheet@ sheet;
-			const vec2[]@ texCoords;
-			int hShader;
-			vec2 pos, size;
-			
-			@weapon = @m_Parent.GetCurrentWeapon();
-			hShader = weapon.GetShader();
-
-			return;
-
-			size = weapon.GetSpriteSheet().GetSpriteSize();
-			pos.x = ( screenSize.x - 8 ) - ( 256 * scale );
-			pos.y = ( screenSize.y - 8 ) - ( 72 * scale );
-
-			@sheet = @weapon.GetSpriteSheet();
-			if ( @sheet !is null ) {
-				TheNomad::Engine::Renderer::DrawImage( pos.x, pos.y, size.x, size.y,
-					sheet[ weapon.GetSpriteIndex() ][0][0], sheet[ weapon.GetSpriteIndex() ][0][1],
-					sheet[ weapon.GetSpriteIndex() ][2][0], sheet[ weapon.GetSpriteIndex() ][2][1],
-					hShader );
-			}
-			else {
-				// standalone shader
-				TheNomad::Engine::Renderer::DrawImage( pos.x, pos.y, size.x, size.y, 0, 0, 1, 1, hShader );
-			}
-		}
-		
 		private void DrawMouseReticle() const {
 			const float scale = TheNomad::GameSystem::GameManager.GetUIScale();
 			const ivec2 screenSize = TheNomad::GameSystem::GameManager.GetScreenSize();

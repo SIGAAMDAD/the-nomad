@@ -1527,7 +1527,7 @@ static void Com_PrintVersionStrings( const char *commandLine )
 	//
 	// print program version and exit
 	//
-	if (strstr( commandLine, "--version" ) || strstr( commandLine, "-version" )) {
+	if ( strstr( commandLine, "--version" ) || strstr( commandLine, "-version" ) ) {
 		Sys_Print( GLN_VERSION "\n" );
 		Sys_Exit( 1 );
 	}
@@ -1541,11 +1541,11 @@ static void Com_PrintVersionStrings( const char *commandLine )
 	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad (Experimental)" ):
 #elif defined(_NOMAD_DEMO)
 	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad (Demo)" );
-#elif _NOMAD_VERSION_UPDATE == 2
+#elif _NOMAD_VERSION_UPDATE == 1
 	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad (Alpha Test)" );
-#elif _NOMAD_VERSION_UPDATE == 3
+#elif _NOMAD_VERSION_UPDATE == 2
 	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad (Beta Test)" );
-#elif _NOMAD_VERSION == 2
+#elif _NOMAD_VERSION == 3
 	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad (Early Access)" );
 #else
 	Com_snprintf( gamedesc, sizeof(gamedesc), "The Nomad" );

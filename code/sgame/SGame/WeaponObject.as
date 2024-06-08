@@ -5,19 +5,14 @@ namespace TheNomad::SGame {
     class WeaponObject : EntityObject {
 		WeaponObject() {
 		}
-		InfoSystem::WeaponType GetWeaponType() const {
-			return m_nType;
+
+		void SetOwner( EntityObject@ ent ) {
+			@m_Owner = @ent;
 		}
-		uint GetWeaponID() const {
-			return m_nID;
+		EntityObject@ GetOwner() {
+			return @m_Owner;
 		}
 
-		void SetWeaponType( InfoSystem::WeaponType type ) {
-			m_nType = type;
-		}
-		void SetWeaponID( uint id ) {
-			m_nID = id;
-		}
 		InfoSystem::WeaponProperty GetProperties() const {
 			return m_Info.weaponProps;
 		}
@@ -182,18 +177,11 @@ namespace TheNomad::SGame {
 				GameError( "WeaponObject::Spawn: invalid weapon id " + id );
 			}
 
-			m_nID = id;
 			m_Link.m_Origin = origin;
 			m_Link.m_Bounds.MakeBounds( origin );
 		}
 
-		uint GetSpriteIndex() const {
-			return m_nSpriteOffset;
-		}
-
-		private InfoSystem::WeaponType m_nType;
-		private uint m_nID;
-		private uint m_nSpriteOffset;
-		private InfoSystem::WeaponInfo@ m_Info;
+		private InfoSystem::WeaponInfo@ m_Info = null;
+		private EntityObject@ m_Owner = null;
 	};
 };

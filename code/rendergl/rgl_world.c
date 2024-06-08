@@ -143,21 +143,27 @@ static void R_GenerateTexCoords( tile2d_info_t *info )
     }
 }
 
-void R_GenerateDrawData( void )
+void R_InitWorldBuffer( void )
 {
     maptile_t *tile;
     uint32_t numSurfs, i;
     uint32_t offset;
     vertexAttrib_t *attribs;
 
-    r_worldData.numIndices = r_worldData.width * r_worldData.height * 6;
-    r_worldData.numVertices = r_worldData.width * r_worldData.height * 4;
+    if ( fileBase ) {
+        r_worldData.numIndices = r_worldData.width * r_worldData.height * 6;
+        r_worldData.numVertices = r_worldData.width * r_worldData.height * 4;
 
-    r_worldData.indices = ri.Hunk_Alloc( sizeof( glIndex_t ) * r_worldData.numIndices, h_low );
-    r_worldData.vertices = ri.Hunk_Alloc( sizeof( drawVert_t ) * r_worldData.numVertices, h_low );
+        r_worldData.indices = ri.Hunk_Alloc( sizeof( glIndex_t ) * r_worldData.numIndices, h_low );
+        r_worldData.vertices = ri.Hunk_Alloc( sizeof( drawVert_t ) * r_worldData.numVertices, h_low );
 
-    r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, r_worldData.numVertices * sizeof(drawVert_t), NULL,
-                                        r_worldData.numIndices * sizeof(glIndex_t), BUFFER_FRAME );
+        r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, r_worldData.numVertices * sizeof(drawVert_t), NULL,
+                                            r_worldData.numIndices * sizeof(glIndex_t), BUFFER_FRAME );
+    }
+    else {
+        r_worldData.buffer = R_AllocateBuffer( "worldDrawBuffer", NULL, MAX_BATCH_VERTICES * sizeof(drawVert_t), NULL,
+                                            MAX_BATCH_INDICES * sizeof(glIndex_t), BUFFER_FRAME );
+    }
     attribs = r_worldData.buffer->attribs;
 
     attribs[ATTRIB_INDEX_POSITION].enabled		= qtrue;
@@ -315,7 +321,7 @@ void RE_LoadWorldMap(const char *filename)
     R_LoadLights(&mheader->lumps[LUMP_LIGHTS]);
 
 //    R_ProcessLights();
-    R_GenerateDrawData();
+    R_InitWorldBuffer();
     R_GenerateTexCoords( &theader->info );
 
     rg.world = &r_worldData;

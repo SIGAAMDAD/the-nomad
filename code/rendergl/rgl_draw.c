@@ -1,6 +1,11 @@
 #include "rgl_local.h"
 
 void R_DrawElements( uint32_t numElements, uintptr_t nOffset ) {
+	if ( !glState.currentVao ) {
+		VBO_Bind( backend.drawBuffer );
+		return;
+	}
+
 	switch ( r_drawMode->i ) {
 	case DRAWMODE_GPU:
 		nglDrawElements( GL_TRIANGLES, numElements, GLN_INDEX_TYPE, BUFFER_OFFSET( nOffset ) );
